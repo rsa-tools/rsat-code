@@ -36,13 +36,18 @@ foreach $key (keys %default) {
 
 ### head
 print "<CENTER>";
-print "Generate random DNA sequences with markov chains or independently distributed nucleotides<P>\n";
+print "Generate random DNA sequences according to various probabilistic models (Markov chains or independently distributed nucleotides)<P>\n";
 print "</CENTER>";
 
 
 print $query->start_multipart_form(-action=>"random-seq.cgi");
 
 print "<FONT FACE='Helvetica'>";
+
+
+print "<B>General options </B>\n";
+
+print "<UL>\n";
 
 print " <A HREF='help.random-seq.html#length'>Sequence length</A> ";
 print $query->textfield(-name=>'length',
@@ -54,16 +59,30 @@ print $query->textfield(-name=>'repet',
 			-default=>$default{repet},
 			-size=>10);
 
+print "<BR>\n";
+
+### sequence format 
+print "<B><A HREF='help.random-seq.html#formats'>Sequence format</A></B>&nbsp;";
+print $query->popup_menu(-name=>'format',
+			 -Values=>['fasta', 
+				   'IG',
+				   'wconsensus',
+				   'multi'],
+			 -default=>$default{sequence_format});
+
 print " <A HREF='help.random-seq.html#lw'>Line width</A> ";
 print $query->textfield(-name=>'lw',
 			-default=>$default{lw},
 			-size=>10);
 
+print "</UL>\n";
+
+
 print "<H4><A HREF='help.random-seq.html#alphabet'>Nucleotide probabilities</a></H4>";
 
 print "<UL>";
 
-print "<INPUT TYPE='radio' NAME='proba' VALUE='ncf' checked>Oligonucleotide frequencies calibrated on non-coding sequences<BR>";
+print "<INPUT TYPE='radio' NAME='proba' VALUE='ncf' checked>Markov chain (calibrated on non-coding oligonucleotide frequencies)<BR>";
 
 print "<UL>";
 &OrganismPopUp;
@@ -96,15 +115,6 @@ print "<INPUT TYPE='radio' NAME='proba' VALUE='equi'>Independent and equiprobabl
 
 print "</UL>";
 
-### sequence format 
-print "<B><A HREF='help.random-seq.html#formats'>Sequence format</A></B>&nbsp;";
-print $query->popup_menu(-name=>'format',
-			 -Values=>['fasta', 
-				   'IG',
-				   'wconsensus',
-				   'multi'],
-			 -default=>$default{sequence_format});
-print "<BR>\n";
 
 ### send results by e-mail or display on the browser
 &SelectOutput;
@@ -118,7 +128,7 @@ print $query->end_form;
 
 
 #print "<TD><B><A HREF='demo.random-seq.html'>DEMO</A></B></TD>\n";
-#print "<TD><B><A HREF='help.random-seq.html'>MANUAL</A></B></TD>\n";
+print "<TD><B><A HREF='help.random-seq.html'>MANUAL</A></B></TD>\n";
 #print "<TD><B><A HREF='tutorials/tut_random-seq.html'>TUTORIAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:jvanheld\@ucmb.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
