@@ -240,7 +240,8 @@ multi:
 
 ################################################################
 ## Calculate the effect of the number of sequences on mean and variance
-SEQ_NUMBER_SERIES=1 2 3 4 5 6 7 8 9 10 15 20
+SEQ_NUMBER_SERIES=1 2 3 4 5 6 7 8 9 10 15 20 40 60 80 100
+
 seq_nb_series:
 	for nb in ${SEQ_NUMBER_SERIES} ; do		\
 		${MAKE} calibrate_oligos N=$${nb} ;	\
@@ -248,12 +249,15 @@ seq_nb_series:
 
 HUMAN_LENGTHS=500 1000 1500 2000 3000
 seq_nb_series_human:
-	${MAKE} seq_nb_series ORG=Homo_sapiens SEQ_LEN=1000 REPET=1000
-	${MAKE} seq_nb_series ORG=Homo_sapiens SEQ_LEN=2000 REPET=1000
-
+	@for len in ${HUMAN_LENGTHS}; do						\
+	${MAKE} seq_nb_series ORG=Homo_sapiens SEQ_LEN=$${len} REPET=1000;	\
+	done
+	
+YEAST_LENGTHS=500 1000
 seq_nb_series_yeast:
-	${MAKE} seq_nb_series ORG=Saccharomyces_cerevisiae SEQ_LEN=500 REPET=1000
-	${MAKE} seq_nb_series ORG=Saccharomyces_cerevisiae SEQ_LEN=1000 REPET=1000
+	@for len in ${YEAST_LENGTHS}; do						\
+		${MAKE} seq_nb_series ORG=Saccharomyces_cerevisiae SEQ_LEN=$${len} REPET=1000;	\
+	done
 
 FLY_LENGTHS=1500 2000 2500 3000
 seq_nb_series_fly:
@@ -374,8 +378,8 @@ good_fittings:
 check_distrib_files: good_distrib_files bad_distrib_files
 
 all_fittings:
-	${MAKE} all_fittings_queue DISTRIB_LAW=poisson
-	${MAKE} all_fittings_queue DISTRIB_LAW=negbin
+	${MAKE} all_fittings_${WHEN} DISTRIB_LAW=poisson
+	${MAKE} all_fittings_${WHEN} DISTRIB_LAW=negbin
 
 
 all_fittings_queue:
@@ -385,6 +389,12 @@ all_fittings_queue:
 		JOB=`mktemp ${JOB_DIR}/job.XXXXXX`;		\
 	done
 
+all_fittings_now:
+	@for infile in ${DISTRIB_FILES} ; do							\
+		fit-distribution -v 1 -distrib ${DISTRIB_LAW} -i $${infile} -o ${WORK_DIR}/`echo $${infile} | perl -pe 's/distrib.tab/${DISTRIB_LAW}.tab/'`;				\
+	done
+
+
 ## Submit the program to a queue
 one_fitting_queue:
 	@mkdir -p ${JOB_DIR}
@@ -393,6 +403,7 @@ one_fitting_queue:
 	echo "${FITTING_CMD}" > $${job};				\
 	qsub -m e -q rsa@merlin.ulb.ac.be -N $${job} -j oe		\
 		-o $${job}.log $${job};					\
+	done
 
 one_fitting_one_law:
 	@echo "Fitting ${DISTRIB_LAW}	${FITTING_FILE}"
@@ -404,3 +415,42 @@ _distrib.tab_poisson.tab:
 
 _distrib.tab_negbin.tab:
 	@fit-distribution -v 1 -distrib negbin -i $< -o $@
+
+###################################################################
+# extract mean and variance from random distributions (stat files)
+###################################################################
+
+#LIST_STATS_FILES=`find ${RES_DIR}/${ORG}/${RAND_DIR}/${OLIGO_LEN}nt${STR}${NOOV}_*_L${SEQ_LEN}_R${REPET} -name '*_stats.tab'`
+
+list_stats_files:
+	rm -f ${ORG}_${OLIGO_LEN}nt_${STR}${NOOV}_l${SEQ_LEN}_r${REPET}_files.tmp
+	@for n in ${SEQ_NUMBER_SERIES};do				\
+	find ${RES_DIR}/${ORG}/${RAND_DIR}/${OLIGO_LEN}nt${STR}${NOOV}_N$${n}_L${SEQ_LEN}_R${REPET}/${ORG}_${OLIGO_LEN}nt_${STR}${NOOV}_n$${n}_l${SEQ_LEN}_r${REPET}_stats.tab >> ${RES_DIR}/${ORG}/${RAND_DIR}/${ORG}_${OLIGO_LEN}nt_${STR}${NOOV}_l${SEQ_LEN}_r${REPET}_files.tmp;	\
+	done
+
+LIST_STATS_FILES=`more ${RES_DIR}/${ORG}/${RAND_DIR}/${ORG}_${OLIGO_LEN}nt_${STR}${NOOV}_l${SEQ_LEN}_r${REPET}_files.tmp`
+
+join_mean_var_N:
+	${MAKE} list_stats_files
+	compare-scores -sc 3 -files ${LIST_STATS_FILES} > \
+	${RES_DIR}/${ORG}/${RAND_DIR}/${OLIGO_LEN}nt${STR}${NOOV}_L${SEQ_LEN}_R${REPET}_allN_means.tab
+	compare-scores -sc 4 -files ${LIST_STATS_FILES} > \
+	${RES_DIR}/${ORG}/${RAND_DIR}/${OLIGO_LEN}nt${STR}${NOOV}_L${SEQ_LEN}_R${REPET}_allN_vars.tab
+	rm -f ${RES_DIR}/${ORG}/${RAND_DIR}/${ORG}_${OLIGO_LEN}nt_${STR}${NOOV}_l${SEQ_LEN}_r${REPET}_files.tmp
+
+join_all_mean_var_N:
+	${MAKE} join_mean_var_N ORG=Saccharomyces_cerevisiae SEQ_LEN=500 REPET=1000
+	${MAKE} join_mean_var_N ORG=Saccharomyces_cerevisiae SEQ_LEN=1000 REPET=1000
+	${MAKE} join_mean_var_N ORG=Homo_sapiens SEQ_LEN=1000 REPET=1000
+	${MAKE} join_mean_var_N ORG=Homo_sapiens SEQ_LEN=2000 REPET=1000
+	${MAKE} join_mean_var_N ORG=Drosophila_melanogaster SEQ_LEN=1500 REPET=1000
+	${MAKE} join_mean_var_N ORG=Drosophila_melanogaster SEQ_LEN=2000 REPET=1000
+	${MAKE} join_mean_var_N ORG=Drosophila_melanogaster SEQ_LEN=2500 REPET=1000
+	${MAKE} join_mean_var_N ORG=Drosophila_melanogaster SEQ_LEN=3000 REPET=1000
+	${MAKE} join_mean_var_N ORG=Mus_musculus SEQ_LEN=500 REPET=1000
+	${MAKE} join_mean_var_N ORG=Mus_musculus SEQ_LEN=1000 REPET=1000
+	${MAKE} join_mean_var_N ORG=Mus_musculus SEQ_LEN=1500 REPET=1000
+	# ${MAKE} join_mean_var_N ORG=Saccharomyces_cerevisiae SEQ_LEN=500 REPET=10000
+	# ${MAKE} join_mean_var_N ORG=Saccharomyces_cerevisiae SEQ_LEN=1000 REPET=10000
+	# ${MAKE} join_mean_var_N ORG=Homo_sapiens SEQ_LEN=1000 REPET=10000
+	# ${MAKE} join_mean_var_N ORG=Homo_sapiens SEQ_LEN=2000 REPET=10000
