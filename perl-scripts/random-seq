@@ -6,9 +6,298 @@ require "RSA.lib.pl";
 
 
 
-if ($ARGV[0] eq "-h") {
-  open HELP, "| more";
-  print HELP <<End_of_help;
+#### initialise parameters ####
+$out_format = "fasta";
+$repetitions = 1;
+$line_width = 70;
+$sequence_type = "dna";
+
+&ReadArguments();
+
+
+################################################################
+#
+# calculate residue frequencies
+#
+if ($sequence_type eq "dna") {
+    @letters = qw ( A C G T );
+} elsif ($sequence_type =~ /prot/) {
+    @letters = qw ( a c d e f g h i k l m n p q r s t v w y );
+#    @letters = qw ( A C D E F G H I K L M N P Q R S T V W Y );
+} else {
+    die "Error: unknown sequence type $sequence_type\n";
+}
+
+if (defined(%alphabet)) {
+    %freq = %alphabet
+} else {
+    foreach $letter (@letters) {
+	$freq{$letter} = 1/($#letters + 1);
+    }
+}
+
+
+#### check argument values ####
+unless (&IsNatural($seq_length)) {
+    warn "	You should specify the sequence length.\n";
+    warn "	Type random-seq -h for more info.\n";
+    exit;
+} 
+
+unless ($repetitions >=1) {
+    warn "	Number of repetitions should be >=1.\n";
+    warn "	Type random-seq -h for more info.\n";
+    exit;
+}
+
+&CheckOutputSeqFormat($out_format);
+
+
+### oligomer frequencies ###
+if ($freq_file) {
+    die "	cannot open frequency file\n"
+	unless (open EXPECTED, $freq_file);
+    
+    while (<EXPECTED>) {
+	chomp;
+	next if (/^;/);
+	next unless (/\S/);
+	($oligo_seq, $expected_freq) = split "\t";
+#print STDERR "HELLO\t$oligo_seq";
+
+	die "error: frequency files contains non-number values\t'$expected_freq'\n"
+	    unless (&IsReal($expected_freq));
+	    
+	$oligo_seq = lc($oligo_seq);
+#warn "\t$oligo_seq\n";
+	if (defined($expected_freq{$oligo_seq})) {
+	    warn ("; WARNING: oligomer\t", $oligo_seq, "\t found twice in the expected frequency file\n",
+		  "; only taking the first frequency into account\n");
+	} else {
+	    $expected_freq{$oligo_seq} = $expected_freq;
+	    $sum_expected_freq+= $expected_freq{$oligo_seq};
+	}
+    }
+    $oligo_length = length($oligo_seq); ##!!! all oligomers must be the same size
+    close EXPECTED;
+
+    #### make sure the sum of frequencies is 1
+#    foreach $oligo_seq (keys %expected_freq) {
+#	$expected_freq{$oligo_seq} = $expected_freq{$oligo_seq}/$sum_expected_freq;
+#    }
+    #### calculate subword frequencies
+    foreach $oligo_seq (keys %expected_freq) {
+	$subword = substr($oligo_seq,0,$oligo_length-1);
+	$subword_freq{$subword} += $expected_freq{$oligo_seq};
+    }
+    #### calculate conditional residue probabilities
+    foreach $subword (keys %subword_freq) {
+	$word = lc($subword.$letters[0]);
+	$cum_letter_freq{$subword}[0] = $expected_freq{$word};
+	$cum_letter_freq{$subword}[0]/=$subword_freq{$subword} if $expected_freq{$word};
+	for $l (1..$#letters) {
+	    $word = lc($subword.$letters[$l]);
+	    $cum_letter_freq{$subword}[$l] = $cum_letter_freq{$subword}[$l-1];
+#	    print (join ("\t", 
+#			 $subword, 
+#			 $subword_freq{$subword},
+#			 $word, 
+#			 $expected_freq{$word}
+#			 ), "\n");
+	    $cum_letter_freq{$subword}[$l] += $expected_freq{$word}/$subword_freq{$subword} if $expected_freq{$word};
+	}
+    }
+    @subword_keys = sort keys %subword_freq;
+	    
+} else {
+### calculate cumulated frequencies ###
+### for individual residues ###
+    $cum_letter_freq[0] = $freq{$letters[0]};
+    for $l (1..$#letters) {
+	$cum_letter_freq[$l] = $cum_letter_freq[$l-1]+$freq{$letters[$l]};
+    }
+    unless ($cum_letter_freq[$#letters] > 0) {
+	warn "	Error: invalid alphabet specification.\n";
+	warn "	Type random-seq -h for more info.\n";
+	exit;
+    }
+    for $l (0..$#letters) {
+	$freq{$letters[$l]} /= $cum_letter_freq[$#letters];
+	$cum_letter_freq[$l] /= $cum_letter_freq[$#letters];
+    }
+}
+
+
+
+### open output file ###
+$out = &OpenOutputFile($outputfile);
+
+
+
+#### verbose ####
+if ($verbose) {
+    print $out "; random sequence\n";
+    print $out "; sequence length	$seq_length\n";
+    print $out "; repetitions		$repetitions\n";
+    print $out "; format			$out_format\n";
+    if ($outputfile ne "") {
+	print $out "; Output file	$outputfile\n";
+    }
+    print $out "; residue frequencies: \n";
+    if ($freq_file) {
+	print $out "; Calibrated oligomer frequencies\n";
+	print $out "; 	oligomer length:         $oligo_length\n";
+	print $out "; 	expected frequency file: $freq_file\n";
+	print $out "; oligomer frequencies\n";
+#	foreach $key (sort keys %expected_freq) {
+#	    printf $out ";\t%s\t%f\n", $key, $expected_freq{$key};
+#	}
+	print $out "; subword frequencies\n";
+
+	foreach $subword (sort keys %subword_freq) {
+	    printf $out ";\t%s\t%f\t", $subword, $subword_freq{$subword};
+	    for $l (0..$#letters) {
+		printf $out (" %s:%g",
+			    $letters[$l],
+			    $cum_letter_freq{$subword}[$l] - ($l>0)*$cum_letter_freq{$subword}[$l-1]
+			     );
+	    }
+	    print $out "\n";
+	}
+    } else {
+	for $l (0..$#letters) {
+	    print $out "; \t";
+	    print $out "; $letters[$l]\t";
+	    print $out "; $freq{$letters[$l]}\n";    
+	}
+    }
+}
+
+
+################################################################
+#
+# generate the random sequence
+#
+if (defined($seed)) {
+    srand($seed);
+} else {
+    srand (time);
+}
+
+for $r (1..$repetitions) {
+    ### initialization
+    $sequence = "";
+    $seq_id = "rand_$r";
+    @comments = ();
+    push (@comments, "random sequence");
+    push (@comments, "length: $seq_length");
+    if ($repetitions > 1) {
+	push (@comments, "repetition nb $r of $repetitions");
+    }
+    
+    if ($freq_file) {
+	$rand = int (rand $#subword_keys);
+	#### first work selection should be improved
+	$subword = $subword_keys[$rand];
+	$sequence .= uc($subword);
+
+	for $i ($oligo_length..$seq_length) {
+#	    @cum_letter_freq = @{$cum_letter_freq{$subword}};
+	    $rand = rand;
+	    $l = 0;
+	    while ($l <= $#letters) {
+		if ($cum_letter_freq{$subword}[$l] >= $rand) {
+		    last;
+		}
+		else {
+		    $l++;
+		}
+	    }
+	    $next_letter = $letters[$l];
+#	    print "\t$subword\t$rand\t$l\t$next_letter\t", $cum_letter_freq{$subword}[$l] , "\n";
+	    $sequence .= $next_letter;
+	    $subword = lc(substr($subword.$next_letter,1));
+	}
+    } else {
+	for $i (1..$seq_length) {
+	    $rand = rand;
+	    $l = -1;
+	    do {
+		$l++;
+	    } until (($l > $#letters) || ($cum_letter_freq[$l] >= $rand));
+	    $next_letter = $letters[$l];
+	    $sequence .= $next_letter;
+	}
+    }
+    PrintNextSequence($out, $out_format, $line_width, $sequence, $seq_id, @comments);
+}  
+
+###### close output file ######
+close $out if ($outputfile);
+
+
+exit(0);
+
+
+
+
+sub ReadArguments {
+    #### read arguments ####
+    foreach $a (0..$#ARGV) {
+	
+	if ($ARGV[$a] eq "-v") {
+	    $verbose = 1;
+	    
+	} elsif ($ARGV[$a] eq "-l") {
+	    $seq_length = $ARGV[$a+1];
+
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp();
+	    
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions();
+	    
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outputfile = $ARGV[$a+1];
+
+	} elsif ($ARGV[$a] eq "-format") {
+	    $out_format = lc($ARGV[$a+1]);
+
+	} elsif ($ARGV[$a] eq "-type") {
+	    $sequence_type = lc($ARGV[$a+1]);
+
+	} elsif ($ARGV[$a] eq "-r") {
+	    $repetitions = $ARGV[$a+1];
+
+	} elsif ($ARGV[$a] eq "-expfreq") {
+	    $freq_file = $ARGV[$a+1];
+
+	} elsif ($ARGV[$a] eq "-lw") {
+	    $line_width = $ARGV[$a+1];
+
+	} elsif ($ARGV[$a] eq "-seed") {
+	    $seed = $ARGV[$a+1];
+
+	} elsif ($ARGV[$a] eq "-a") {
+	    if (("$ARGV[$a+1] $ARGV[$a+2]" =~ /a:t (\S+)/i) && ($1 <=1) && ($1 >=0)){
+		$alphabet{'A'} = $alphabet{'T'} = $1;
+	    }
+	    if (("$ARGV[$a+3] $ARGV[$a+4]" =~ /c:g (\S+)/i) && ($1 <=1) && ($1 >=0)){
+		$alphabet{'C'} = $alphabet{'G'} = $1;
+	    }
+	    
+	    if ($ARGV[$a+1] eq "yeast") {
+		$alphabet{'A'} = $alphabet{'T'} = 0.308512197555054;
+		$alphabet{'C'} = $alphabet{'G'} = 0.191487802444946;
+	    }
+
+	}
+    }
+}
+
+sub PrintHelp {
+    open HELP, "| more";
+    print HELP <<End_of_help;
 NAME
 	random-seq
 	
@@ -33,10 +322,12 @@ OPTIONS
         -lw ##  Line width. A newline character will be inserted in the 
                 sequence every ## bases. Default is 70. 
                 -lw 0 will prevent newline insertion.
+	-type	protein|DNA
+	-seed #	seed for the random generator
                 
     PROBABILITIES
 	-a	alphabet
-		must be followed by nucleotide frequencies expressed precisely 
+		must be followed by residue frequencies expressed precisely 
 		this way:
 		-a a:t # c:g #
 		ex: 
@@ -44,13 +335,13 @@ OPTIONS
 		
 		The option 
 		-a yeast
-		will automatically use the nucleotide frequencies from yeast 
+		will automatically use the residue frequencies from yeast 
 		genome.  
 	-expfreq
-		indicate the file that contains expected oligonucleotide 
+		indicate the file that contains expected oligomer 
 		frequencies. When this option is used, the sequences are 
 		generated according to a Markov chain. For instance if the 
-		frequency file contains tetranucleotides, each base will be 
+		frequency file contains tetramers, each base will be 
 		selected randomly with a probability depending on the 3 
 		preceding bases:
 		
@@ -59,248 +350,37 @@ OPTIONS
 		          p(Wj-3,j-1)
 		          
 		where	Bj	is the base at position j
-			B	is a nucleotide, ie A, C, G or T
+			B	is a residue, ie A, C, G or T
 			Wj-3,j-1
 				is a word found in the sequence between 
 				positions j-3 and j-1
 			Wj-3,j	is the same word with the character B 
 				concatenated at its end
 WEB VERSION
-	http://www.cifn.unam.mx/Computational_Biology/yeast/random-seq.html
+	http://ucmb.ulb.ac.be/bioinformatics/rsa-tools/
 
 End_of_help
     close HELP;
-  exit;
+    exit(0);
 }
 
-if ($ARGV[0] eq "-help") {
-  open HELP, "| more";
-  print HELP <<End_short_help;
+
+sub PrintOptions {
+    open HELP, "| more";
+    print HELP <<End_short_help;
 random-seq options
 ==================
-	-l	sequence length
-	-r	repetitions. 
-	-v	verbose.
-	-o outputfile
-	-format	output format. 
-        -lw ##  Line width. 
-	-a	alphabet. ex: -a a:t 0.3 c:g 0.2
-	-expfreq
+-l		sequence length
+-r		repetitions (number of sequences)
+-v		verbose
+-o		outputfile
+-format		output format. 
+-lw ##		Line width. 
+-a		alphabet. ex: -a a:t 0.3 c:g 0.2
+-expfreq	file containing expected oligomer frequencies
+-type   protein|DNA
+-seed #	seed for the random generator
 End_short_help
     close HELP;
-  exit;
+    exit(0);
 }
-
-#### initialise parameters ####
-$format = "raw";
-$repetitions = 1;
-$line_width = 70;
-@letters = ('A','C','G','T');
-$freq{'A'} = 0.25;
-$freq{'C'} = 0.25;
-$freq{'G'} = 0.25;
-$freq{'T'} = 0.25;
-
-#### read arguments ####
-foreach $a (0..$#ARGV) {
-
-  if ($ARGV[$a] eq "-v") {
-    $verbose = 1;
-    
-  } elsif ($ARGV[$a] eq "-l") {
-    $seq_length = $ARGV[$a+1];
-
-  } elsif ($ARGV[$a] eq "-o") {
-    $outputfile = $ARGV[$a+1];
-
-  } elsif ($ARGV[$a] eq "-format") {
-    $format = lc($ARGV[$a+1]);
-
-  } elsif ($ARGV[$a] eq "-r") {
-    $repetitions = $ARGV[$a+1];
-
-  } elsif ($ARGV[$a] eq "-expfreq") {
-    $freq_file = $ARGV[$a+1];
-
-  } elsif ($ARGV[$a] eq "-lw") {
-    $line_width = $ARGV[$a+1];
-
-  } elsif ($ARGV[$a] eq "-a") {
-    if (("$ARGV[$a+1] $ARGV[$a+2]" =~ /a:t (\S+)/i) && ($1 <=1) && ($1 >=0)){
-      $freq{'A'} = $freq{'T'} = $1;
-    }
-    if (("$ARGV[$a+3] $ARGV[$a+4]" =~ /c:g (\S+)/i) && ($1 <=1) && ($1 >=0)){
-      $freq{'C'} = $freq{'G'} = $1;
-    }
-    
-    if ($ARGV[$a+1] eq "yeast") {
-      $freq{'A'} = $freq{'T'} = 0.308512197555054;
-      $freq{'C'} = $freq{'G'} = 0.191487802444946;
-    }
-
-  }
-}
-
-
-#### check argument values ####
-if ($seq_length eq "") {
-  print "	You should specify the sequence length.\n";
-  print "	Type random-seq -h for more info.\n";
-  exit;
-} 
-
-unless ($seq_length > 0) {
-  print "	Sequence length should be > 0.\n";
-  print "	Type random-seq -h for more info.\n";
-  exit;
-}
-
-unless ($repetitions >=1) {
-  print "	Number of repetitions should be >=1.\n";
-  print "	Type random-seq -h for more info.\n";
-  exit;
-}
-
-CheckOutputSeqFormat($format);
-
-### calculate cumulated frequencies ###
-
-### for individual nucleotides ###
-$cum_letter_freq[0] = $freq{$letters[0]};
-for $l (1..$#letters) {
-  $cum_letter_freq[$l] = $cum_letter_freq[$l-1]+$freq{$letters[$l]};
-}
-unless ($cum_letter_freq[$#letters] > 0) {
-  print "	Error: invalid alphabet specification.\n";
-  print "	Type random-seq -h for more info.\n";
-  exit;
-}
-for $l (0..$#letters) {
-  $freq{$letters[$l]} /= $cum_letter_freq[$#letters];
-  $cum_letter_freq[$l] /= $cum_letter_freq[$#letters];
-}
-
-### oligonucleotide frequencies ###
-if ($freq_file ne "") {
-  unless (open EXPECTED, $freq_file) {
-    print "	cannot open frequency file\n";
-    exit;
-  }
-  while (<EXPECTED>) {
-    if (/([acgt]+)\t(\S+)/i) {
-      $oligo_seq = lc($1);
-      $expected_freq{$oligo_seq} = $2;
-    }
-  }
-  $oligo_length = length($oligo_seq); ##!!! all oligonucleotides must be the same size
-  close EXPECTED;
-  foreach $oligo_seq (keys %expected_freq) {
-    $subword = substr($oligo_seq,0,$oligo_length-1);
-    $subword_freq{$subword} += $expected_freq{$oligo_seq};
-  }
-  foreach $subword (keys %subword_freq) {
-    $word = lc($subword.$letters[0]);
-    $cum_letter_freq{$subword}[0] = $expected_freq{$word}/$subword_freq{$subword};
-    for $l (1..$#letters) {
-      $word = lc($subword.$letters[$l]);
-      $cum_letter_freq{$subword}[$l] = $cum_letter_freq{$subword}[$l-1] + $expected_freq{$word}/$subword_freq{$subword};
-    }
-  }
-}
-
-
-#### verbose ####
-if ($verbose) {
-  print "random sequence\n";
-  print "sequence length	$seq_length\n";
-  print "repetitions		$repetitions\n";
-  print "format			$format\n";
-  if ($outputfile ne "") {
-    print "Output file	$outputfile\n";
-  }
-  print "nucleotide frequencies: \n";
-  if ($freq_file ne "") {
-    print "Calibrated oligonucleotide frequencies\n";
-    print "	oligonucleotide length:  $oligo_length\n";
-    print "	expected frequency file: $freq_file\n";
-  } else {
-    for $l (0..$#letters) {
-      print "\t";
-      print "$letters[$l]\t";
-      print "$freq{$letters[$l]}\n";    
-    }
-  }
-  print "\n";
-}
-
-
-
-### open output file ###
-if ($outputfile ne "") {
-  unless (open(OUTPUT, ">$outputfile")) {
-    print "\tcannot open output file\n";
-    print "\ttype oligo-analysis -h for help\n";
-    exit;
-  }
-  $out = OUTPUT;
-} else {
-  $out = STDOUT;
-}
-
-###### execute the command #########
-srand (time);
-
-for $r (1..$repetitions) {
-  ### initialization
-  $sequence = "";
-  $seq_id = "rand_$r";
-  @comments = ();
-  push (@comments, "random sequence");
-  push (@comments, "length: $seq_length");
-  if ($repetitions > 1) {
-      push (@comments, "repetition nb $r of $repetitions");
-  }
-
-  if ($freq_file ne "") {
-    @subword_keys = sort keys %subword_freq;
-    $rand = int (rand $#subword_keys);
-    $subword = $subword_keys[$rand];
-    $sequence .= uc($subword);
-    for $i ($oligo_length..$seq_length) {
-        @cum_letter_freq = @{$cum_letter_freq{$subword}};
-        $rand = rand;
-        $l = -1;
-        do {
-          $l++;
-        } until (($l > $#letters) || ($cum_letter_freq[$l] >= $rand));
-        $next_letter = $letters[$l];
-        $sequence .= $next_letter;
-        $subword = lc(substr($subword.$next_letter,1));
-      }
-  } else {
-    for $i (1..$seq_length) {
-      $rand = rand;
-      $l = -1;
-      do {
-        $l++;
-      } until (($l > $#letters) || ($cum_letter_freq[$l] >= $rand));
-      $next_letter = $letters[$l];
-      $sequence .= $next_letter;
-    }
-  }
-  PrintNextSequence($out, $format, $line_width, $sequence, $seq_id, @comments);
-}  
-
-###### close input file ######
-if ($inputfile ne "") {
-  close $in;
-}
-
-###### close output file ######
-if ($outputfile ne "") {
-  close $out;
-}
-
-
-exit(0);
-
