@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.9 2001/01/26 22:54:58 jvanheld Exp $
+# $Id: oligo-analysis,v 1.10 2001/01/26 23:40:33 jvanheld Exp $
 #
-# Time-stamp: <2001-01-26 22:32:01 jvanheld>
+# Time-stamp: <2001-01-27 00:39:27 jvanheld>
 #
 ############################################################
 
@@ -58,7 +58,7 @@ if ($noov) {
 }
 
 ### markov_order
-if ($markov) {
+if ($method eq "Markov chain") {
     if ($markov_order < 0){
 	$markov_order = $oligo_length + $markov_order;
 	$markov_order = 0 
@@ -96,23 +96,23 @@ if ($ncf) {
   $data_dir = $supported_organism{$organism}->{'data'};
 
   ### localize dyad non-coding frequency file
+  $method = "Frequency file";
   $exp_freq_file = "$data_dir/oligo-frequencies/${oligo_length}nt_non-coding_${organism}.freq";
   
   #### TEMPORARY / ACCEPT OVERLAPS IN CALIBRATED FREQS
-  unless (-r $exp_freq_file) {
-    $exp_freq_file = "$data_dir/oligo-frequencies/dyads_3nt_sp0-16_non-coding_${organism}.freq";
-  }
+#  unless (-r $exp_freq_file) {
+#    $exp_freq_file = "$data_dir/oligo-frequencies/dyads_3nt_sp0-16_non-coding_${organism}.freq";
+#  }
   
   die "Error: cannot read expected frequency file $exp_freq_file\n" unless (-r  $exp_freq_file);
 }
 
 ### read expected frequencies
-if (($exp_freq_file) && 
+if (($method eq "Frequency file") && 
     ($return{'exp_freq'})) {    #### expected frequencies ####
-    unless (open EXPECTED, $exp_freq_file) {
-	warn "	cannot open frequency file \"$exp_freq_file\"\n";
-	exit;
-    }
+    die "	cannot open frequency file \"$exp_freq_file\"\n"
+	unless (open EXPECTED, $exp_freq_file);
+
     while (<EXPECTED>) {
 	next if (/^;/);
 	if (/(\S+)\t(\S+)/i) {
@@ -126,9 +126,6 @@ if (($exp_freq_file) &&
 ### open sequence file ###
 $in = &OpenInputFile($inputfile);
 
-
-
-
 if ($hyperverbose) {
   $current_time = `date '+%H:%M:%S'`;
   chomp($current_time);
@@ -139,12 +136,12 @@ $out = &OpenOutputFile($outputfile);
 
 &CountOligo;
 
-&CalcSubWordFrequencies if ($markov);
+&CalcSubWordFrequencies if (($method eq "Markov chain") || ($method eq "dictionary"));
 &CalcAlphabet if (($input_alphabet) || ($return{'zscore'}));
 &Degenerate if ($one_var_position);
 &SumStrands if ($sum_strands);
 #&SubstractOverlap if ($noov);
-&CalcFrequencies if (($return{'freq'}) || ($verbose) || ($markov));
+&CalcFrequencies if (($return{'freq'}) || ($verbose) || ($method eq "Markov chain"));
 &GroupRc if ($group_rc);
 &OccurrenceThreshold if ($occurrence_threshold > 0);
 &MatchingSeqThreshold ($mseq_threshold > 0); 
@@ -216,7 +213,7 @@ sub CountOligo {
     $last_pos = $seq_length[$sequence_number] - $oligo_length;	
     
     ### if requested, calculate alphabet from input sequence ####
-#    if (($input_alphabet) || ($return{'zscore'}) || ($markov)) {
+#    if (($input_alphabet) || ($return{'zscore'}) || ($method eq "Markov chain")) {
       for $pos (0..$seq_length[$sequence_number]-1) {
 	$letter = lc(substr($current_seq,$pos,1));
 	$residue_occ{$letter}++;
@@ -224,7 +221,7 @@ sub CountOligo {
 #    }
     
     #### for markov chains, count trailing oligomers of length shorter than $oligo_length ####
-    if ($markov) {
+    if ($method eq "Markov chain") {
       for $w (1..$oligo_length - 1) {
 	$subseq = lc(substr($current_seq,$seq_length[$sequence_number]-$w,$w));
 	$sub_freq[$w]{$subseq}++;
@@ -600,7 +597,7 @@ sub CalcExpected {
     }
   
     ### expected frequency file
-    if ($exp_freq_file ne "") {    
+    if ($method eq "Frequency file") {    
 	if ($one_var_position) {
 	    foreach $deg_oligo_seq (sort keys %oligo) {
 		$pattern = IUPAC_to_regular($deg_oligo_seq);
@@ -613,7 +610,7 @@ sub CalcExpected {
 	    undef %deg_exp_freq;
 	}
 	
-    } elsif ($markov) {  ### Markov chain
+    } elsif ($method eq "Markov chain") {  ### Markov chain
 	### expected frequency according to Markov chain model
 	foreach $oligo_seq (sort keys %oligo) {
 	    $oligo{$oligo_seq}->{exp_freq} = 1;
@@ -780,78 +777,91 @@ sub CalcRatio {
 
 #### probabilities ####
 sub CalcProba {
-  #### converts threshold on occurence significance index into a 
-  #### threshold on occurrence probability
-  if ($occ_significance_threshold ne "") {
-    $proba_occ_threshold = exp(-$occ_significance_threshold*log(10))/$nb_possible_oligo;
-  }
-  
-  
-  #### converts threshold on mseq significance index into a 
-  #### threshold on mseq probability
-  if ($mseq_significance_threshold ne "") {
-    $proba_mseq_threshold = exp(-$mseq_significance_threshold*log(10))/$nb_possible_oligo;
-  }
-  
-  
-  ### calculate oligo probabilities
-  foreach $oligo_seq (sort keys %oligo) {
-    if ($hyperverbose) {
-      $current_time = `date '+%H:%M:%S'`;
-      chomp($current_time);
-      printf ("oligo-analysis\t$current_time\tcalculating proba $oligo_seq obs %7d exp %7.1f\n", 
-	      $oligo{$oligo_seq}->{occ}, 
-	      $oligo{$oligo_seq}->{exp_occ});
-    }
-    
-    ### probability of the observed number of occurrences ####
-    $rev_compl = uc(&ReverseComplement($oligo_seq));
-    if (($sum_strands) && (uc($oligo_seq) eq $rev_compl)) {
-      $oligo{$oligo_seq}->{occ_pro} = &sum_of_binomials($oligo{$oligo_seq}->{exp_freq},$oligo{$oligo_seq}->{nb_possible_pos}/2,$oligo{$oligo_seq}->{occ}/2);
-      $oligo{$oligo_seq}->{remark} = "\tpalindrome";
-    } else {
-      $oligo{$oligo_seq}->{occ_pro} = &sum_of_binomials($oligo{$oligo_seq}->{exp_freq},$oligo{$oligo_seq}->{nb_possible_pos} - $oligo{$oligo_seq}->{overlaps},$oligo{$oligo_seq}->{occ});
-    }
-    
-    #### check threshold on occurrence probability ####
-    if ($oligo{$oligo_seq}->{occ_pro} > $proba_occ_threshold) {
-      delete $oligo{$oligo_seq};
-      next;
+    #### converts threshold on occurence significance index into a 
+    #### threshold on occurrence probability
+    if ($occ_significance_threshold ne "") {
+	$proba_occ_threshold = exp(-$occ_significance_threshold*log(10))/$nb_possible_oligo;
     }
     
     
-    ### Significance index for occurrence number
-    if ($nb_possible_oligo > 0) {
-      if ($oligo{$oligo_seq}->{occ_pro} > 0) {
-	$oligo{$oligo_seq}->{occ_sig} = -log($nb_possible_oligo*$oligo{$oligo_seq}->{occ_pro})/log(10);
-      } else {
-	$oligo{$oligo_seq}->{occ_sig} = 20;
-      }
+    #### converts threshold on mseq significance index into a 
+    #### threshold on mseq probability
+    if ($mseq_significance_threshold ne "") {
+	$proba_mseq_threshold = exp(-$mseq_significance_threshold*log(10))/$nb_possible_oligo;
     }
+
     
-    
-    #### matching seq probability
-    if ($return{'mseq'}) {	    
-      ### probability of the observed number of matching sequences ####
-      $avg_mseq_proba = $oligo{$oligo_seq}->{exp_ms}/$sequence_number;
-      $oligo{$oligo_seq}->{ms_pro} = &sum_of_binomials($avg_mseq_proba, $sequence_number, $oligo{$oligo_seq}->{mseq});    
-      
-      #### check threshold on mseq probability ####
-      if ($oligo{$oligo_seq}->{ms_pro} > $proba_mseq_threshold) {
-	delete $oligo{$oligo_seq};
-	next;
-      }
-      
-      ### Significance index for number of matching sequences
-      if ($nb_possible_oligo > 0) {
-	if ($oligo{$oligo_seq}->{ms_pro} > 0) {
-	  $oligo{$oligo_seq}->{ms_sig} = -log($nb_possible_oligo*$oligo{$oligo_seq}->{ms_pro})/log(10);
-	} else {
-	  $oligo{$oligo_seq}->{ms_sig} = 20;
+    #### dictionary method (Bussemaker 2000)
+    if ($method eq "dictionary") {
+	foreach $oligo_seq (sort keys %oligo) {
+	    die "Sorry, the dictionary method is not yet implemented\n";
 	}
-      }
+	
+	
+	#### binomial probability
+    } else {
+	
+	### calculate oligo probabilities
+	foreach $oligo_seq (sort keys %oligo) {
+	    if ($hyperverbose) {
+		$current_time = `date '+%H:%M:%S'`;
+		chomp($current_time);
+		printf ("oligo-analysis\t$current_time\tcalculating proba $oligo_seq obs %7d exp %7.1f\n", 
+			$oligo{$oligo_seq}->{occ}, 
+			$oligo{$oligo_seq}->{exp_occ});
+	    }
+	    
+	    ### probability of the observed number of occurrences ####
+	    $rev_compl = uc(&ReverseComplement($oligo_seq));
+	    if (($sum_strands) && (uc($oligo_seq) eq $rev_compl)) {
+		$oligo{$oligo_seq}->{occ_pro} = &sum_of_binomials($oligo{$oligo_seq}->{exp_freq},$oligo{$oligo_seq}->{nb_possible_pos}/2,$oligo{$oligo_seq}->{occ}/2);
+		$oligo{$oligo_seq}->{remark} = "\tpalindrome";
+	    } else {
+		$oligo{$oligo_seq}->{occ_pro} = &sum_of_binomials($oligo{$oligo_seq}->{exp_freq},$oligo{$oligo_seq}->{nb_possible_pos} - $oligo{$oligo_seq}->{overlaps},$oligo{$oligo_seq}->{occ});
+	    }
+	}
     }
-  }  
+	
+    foreach $oligo_seq (sort keys %oligo) {
+	#### check threshold on occurrence probability ####
+	if ($oligo{$oligo_seq}->{occ_pro} > $proba_occ_threshold) {
+	    delete $oligo{$oligo_seq};
+	    next;
+	}
+	
+	
+	### Significance index for occurrence number
+	if ($nb_possible_oligo > 0) {
+	    if ($oligo{$oligo_seq}->{occ_pro} > 0) {
+		$oligo{$oligo_seq}->{occ_sig} = -log($nb_possible_oligo*$oligo{$oligo_seq}->{occ_pro})/log(10);
+	    } else {
+		$oligo{$oligo_seq}->{occ_sig} = 20;
+	    }
+	}
+	
+	
+	#### matching seq probability
+	if ($return{'mseq'}) {	    
+	    ### probability of the observed number of matching sequences ####
+	    $avg_mseq_proba = $oligo{$oligo_seq}->{exp_ms}/$sequence_number;
+	    $oligo{$oligo_seq}->{ms_pro} = &sum_of_binomials($avg_mseq_proba, $sequence_number, $oligo{$oligo_seq}->{mseq});    
+	    
+	    #### check threshold on mseq probability ####
+	    if ($oligo{$oligo_seq}->{ms_pro} > $proba_mseq_threshold) {
+		delete $oligo{$oligo_seq};
+		next;
+	    }
+	    
+	    ### Significance index for number of matching sequences
+	    if ($nb_possible_oligo > 0) {
+		if ($oligo{$oligo_seq}->{ms_pro} > 0) {
+		    $oligo{$oligo_seq}->{ms_sig} = -log($nb_possible_oligo*$oligo{$oligo_seq}->{ms_pro})/log(10);
+		} else {
+		    $oligo{$oligo_seq}->{ms_sig} = 20;
+		}
+	    }
+	}
+    }  
 } ### CalcProba
 
 
@@ -868,69 +878,66 @@ sub PrintResult {
   
   ### verbose ###
   if ($verbose) {
-    print $out "; oligo-analysis";
-    foreach $a (@ARGV) {
-      print $out " $a";
-    }
-    print $out "\n";
-    print $out "; Input file	$inputfile\n" if ($inputfile ne "");
-    print $out "; Input format	$in_format\n";
-    print $out "; Expected frequency file	$exp_freq_file\n" if ($exp_freq_file ne "");
-    print $out "; Markov chain order	$markov_order\n" if ($markov);
+    print $out "; oligo-analysis ", join(" ", @ARGV), "\n";
+    printf $out "; %.21s\t%s\n", "Oligomer length", $oligo_length;
+    printf $out "; %-29s\t%s\n", "Input file",	$inputfile if ($inputfile ne "");
+    printf $out "; %-29s\t%s\n", "Input format", $in_format;
+    printf $out "; %-29s\t%s\n", "Method", $method if ($method);
+    printf $out "; %-29s\t%s\n", "Expected frequency file", $exp_freq_file if ($exp_freq_file);
+    printf $out "; %-29s\t%s\n", "Markov chain order", $markov_order if ($method eq "Markov chain");
     if ($alphabet) {
-      print $out "; Alphabet\n";
-      foreach $key (sort keys %residue_proba) {
-	print $out ";\t$key\t$residue_proba{$key}\n";
-      }
+	print $out "; Alphabet\n";
+	foreach $key (sort keys %residue_proba) {
+	    print $out ";\t$key\t$residue_proba{$key}\n";
+	}
     }
     if ($pseudo_weight) {
-	print $out "; Pseudo weight\t", $pseudo_weight, "\n";
-	print $out "; Pseudo frequency\t", $pseudo_frequency, "\n";
+	printf $out "; %-29s\t%s\n", "Pseudo weight", $pseudo_weight;
+	printf $out "; %-29s\t%s\n", "Pseudo frequency", $pseudo_frequency;
     }
     
-    print $out "; Output file	$outputfile\n" if ($outputfile ne "");
-    print $out "; Oligomer length	$oligo_length\n";
+    printf $out "; %-29s\t%s\n", "Output file", $outputfile if ($outputfile ne "");
     if ($noov) {
-      print $out "; Discard overlapping matches\n";
+       print $out "; Discard overlapping matches\n";
     } else {
-      print $out "; Count overlapping matches\n";
+       print $out "; Count overlapping matches\n";
     }
     if ($sum_strands) {
-      print $out "; Counted on both strands\n";
-      if ($group_rc) {
-	print $out "; \tgrouped by pairs of reverse complements\n";
-      }
+	print $out "; Counted on both strands\n";
+	if ($group_rc) {
+	    print $out "; \tgrouped by pairs of reverse complements\n";
+	}
     } else {
-      print $out "; Counted on a single strand\n";
+	print $out "; Counted on a single strand\n";
     }
     if ($one_var_position) {
-      print $out "; Neighborhood: one variable position\t";
-      foreach $d (@degenerate_code) {
-	print $out "; $d "; 
-      }
-      print $out "\n"; 
+	print $out "; Neighborhood: one variable position\t";
+	foreach $d (@degenerate_code) {
+	    print $out ";\t$d "; 
+	}
+	print $out "\n"; 
     }
-    print $out "; Nb of sequences		$sequence_number\n";
-    print $out "; Sum of sequence lengthes\t$sum_seq_length\n";
+    printf $out "; %-29s\t%s\n", "Nb of sequences", $sequence_number;
+    printf $out "; %-29s\t%s\n", "Sum of sequence lengths", $sum_seq_length;
     if ($noov) {
-      print $out "; total overlaps		$sum_overlaps\n";
-      print $out "; total non overlapping occ	$sum_noov\n";
+	printf $out "; %-29s\t%s\n", "total overlaps", $sum_overlaps;
+	printf $out "; %-29s\t%s\n", "total non overlapping occ", $sum_noov;
     }
-    print $out "; total oligo occurrences         $sum_occurrences\n";
-    print $out "; nb possible positions\t\t",$nb_possible_pos ,"\n";
-    print $out "; alphabet size\t", $alphabet_size, "\n";
-    print $out "; nb possible oligomers\t$nb_possible_oligo\n";
-    print $out "; threshold on occurrence #	$occurrence_threshold\n" if ($occurrence_threshold > 0);
-    print $out "; threshold on occ signif. index	$occ_significance_threshold\n" if ($occ_significance_threshold ne "");
-    print $out "; threshold on matching seq #	$mseq_threshold\n" if ($mseq_threshold > 0);
-    print $out "; threshold on occurrence proba	$proba_occ_threshold\n" if ($proba_occ_threshold < 1);
-    print $out "; threshold on obs/exp occ ratio	$ratio_threshold\n" if ($ratio_threshold > 0);
-    print $out "; thresh. on match. seq proba	$proba_mseq_threshold\n" if ($proba_mseq_threshold < 1);
+     printf $out "; %-29s\t%s\n", "total oligo occurrences", $sum_occurrences;
+     printf $out "; %-29s\t%s\n", "nb possible positions",$nb_possible_pos;
+     printf $out "; %-29s\t%s\n", "alphabet size", $alphabet_size;
+     printf $out "; %-29s\t%s\n", "nb possible oligomers", $nb_possible_oligo;
+     printf $out "; %-29s\t%s\n", "threshold on occurrences", $occurrence_threshold if ($occurrence_threshold > 0);
+     printf $out "; %-29s\t%s\n", "threshold on occ sig", $occ_significance_threshold if ($occ_significance_threshold ne "");
+     printf $out "; %-29s\t%s\n", "threshold on matching seq.", $mseq_threshold if ($mseq_threshold > 0);
+     printf $out "; %-29s\t%s\n", "threshold on occ proba", $proba_occ_threshold if ($proba_occ_threshold < 1);
+     printf $out "; %-29s\t%s\n", "threshold on occ ratio", $ratio_threshold if ($ratio_threshold > 0);
+     printf $out "; %-29s\t%s\n", "threshold on match. seq proba", $proba_mseq_threshold if ($proba_mseq_threshold < 1);
     unless ($sequence_number > 1000) {
-      print $out "; Sequences:\n";
-      foreach $s (1..$sequence_number) {
-	print $out ";\t$id_list[$s]\t$seq_length[$s]\n";
-      }
+	print $out "; Sequences:\n";
+	foreach $s (1..$sequence_number) {
+	    print $out ";\t$id_list[$s]\t$seq_length[$s]\n";
+	}
     }
     print $out ";\n";
   }
@@ -1274,15 +1281,20 @@ sub ReadArguments {
 	    
 	    #### expected frequency file
 	} elsif ($ARGV[$a] eq "-expfreq") {
+	    $method = "Frequency file";
 	    $exp_freq_file = $ARGV[$a+1];
 	    
 	    ### use oligo non-coding frequencies as expected frequencies
 	} elsif ($ARGV[$a] =~ /^-ncf/i) {
 	    $ncf = 1;
 	    
+	    #### dictionary
+	} elsif ($ARGV[$a] =~ /^-dict/i) { ### Markov chains
+	    $method = "dictionary";
+
 	    #### markov chain
 	} elsif ($ARGV[$a] =~ /^-markov/i) { ### Markov chains
-	    $markov = 1;
+	    $method = "Markov chain";
 	    if (&IsInteger($ARGV[$a+1])) {
 		$a++;
 		$markov_order = $ARGV[$a];
