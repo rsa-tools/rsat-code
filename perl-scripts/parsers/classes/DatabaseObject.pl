@@ -350,6 +350,7 @@ sub unique_names {
     my %names = ();
     if (@names = $self->get_attribute("names")) {
 	foreach my $name (@names) {
+	    next if ($name eq $main::null);
 	    unless ($names{lc($name)}) {
 		push @new_names, $name;
 		$names{lc($name)}++; 
