@@ -99,6 +99,17 @@ foreach my $gene (@{$slice->get_all_Genes()}) {
     @feature = &get_feature($gene);
     print $FT_TABLE join("\t", @feature), "\n";
     print_DBEntries($gene->get_all_DBLinks());
+    
+    foreach my $trans (@{$gene->get_all_Transcripts()}) {
+        my @feature = &get_feature($trans);
+        $feature[1] = "transcript";
+        print $FT_TABLE join("\t", @feature), "\n";
+
+        foreach my $exon (@{$trans->get_all_Exons()}) {
+            my @exonfeature = &get_exonfeature($exon);
+            print $FT_TABLE join("\t", @exonfeature), "\n";
+        }
+    }
 }
 
 my $sequence = $slice->seq();
@@ -303,6 +314,45 @@ sub get_feature {
     }
     
     return @feature;
+}
+
+
+################################################################
+## Convert a feature to a string for export to the feature table
+sub get_exonfeature {
+    my ($exon) = @_;
+    my @exonfeature = ();
+            
+    ## ID
+    my $id = $exon->stable_id();
+    push @exonfeature, $id;
+ 
+    ## Type
+    push @exonfeature, "exon";
+
+    ## Exon name
+    push @exonfeature, "";
+
+    ## Chromosome name.
+    push @exonfeature, $exon->slice->seq_region_name();
+
+    ## Start position
+    push @exonfeature, $exon->start();
+    
+    ## End position
+    push @exonfeature, $exon->end();
+ 
+    ## Strand
+    my $strand = "D";
+    unless ($exon->strand()) {
+        $strand =  "R";   
+    }
+    push @exonfeature, $strand;
+
+    ## Description
+    push @exonfeature, "";
+
+    return @exonfeature;
 }
 
 
