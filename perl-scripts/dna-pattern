@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dna-pattern,v 1.11 2001/10/11 19:48:00 jvanheld Exp $
+# $Id: dna-pattern,v 1.12 2001/10/11 20:25:29 jvanheld Exp $
 #
-# Time-stamp: <2001-10-11 21:37:51 jvanheld>
+# Time-stamp: <2001-10-11 22:24:37 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -41,7 +41,7 @@ if ($HelpRequested) {
 
 #### return values
 unless (defined(%return)) {
-    $return{matching_positions} = 1;
+    $return{match_positions} = 1;
 }
 
 #### check allowed substitutions ####
@@ -110,11 +110,8 @@ if ($verbose) {
     }
     print $out "; \n";
     
-    if ($return{sum_only}) {
-	print $out "; PatID\tPattern\tMatches\n";
-    } elsif ($return{match_counts}) {
-	print $out "; SeqID\tPatID\tPattern\tMatches\n";
-    } elsif ($return{matching_positions}) {
+    if ($return{match_positions}) {
+	print $out "; Matching positions\n";
 	print $out "; PatID";
 	print $out "\tStrand";
 	print $out "\tPattern";
@@ -199,30 +196,45 @@ while ((($current_seq, $sequence_id, @comments) = &ReadNextSequence($in, $in_for
 	#### store match count if requested
 	if ($calc{match_counts}) {
 	    $match_count{$sequence_id}{$pattern} = $match_count;
-	} elsif (($return{match_counts}) && 
-		 (!$return{sum_only}) &&
-		 ($match_count >= $threshold)) {
-	    print $out "$sequence_id";
-	    print $out "\t", $pattern->get_attribute("id");
+	}
+    }
+}
+
+#### match counts
+if ($return{match_counts}) {
+    if ($return{sum_only}) {
+	print $out "; Counts per pattern\n";
+	print $out "; PatID\tPattern\tMatches\n";
+	foreach my $pattern (@patterns) {
+	    print $out $pattern->get_attribute("id");
 	    print $out "\t", $pattern->get_attribute("sequence");
-	    print $out "\t$match_count\n";
+	    print $out "\t", $sum_per_pattern{$pattern};
+	    print $out "\ttotal";
+	    print $out "\n";
+	}
+
+    } else {
+	print $out "; Counts per sequence and per pattern\n";
+	print $out "; SeqID\tPatID\tPattern\tMatches\n";
+	foreach $sequence_id (@sequence_ids) {
+	    foreach $pattern (@patterns) {
+		if ($match_count{$sequence_id}{$pattern} >= $threshold) {
+		    print $out join ("\t", "$sequence_id",
+				     $pattern->get_attribute("id"),
+				     $pattern->get_attribute("sequence"),
+				     $match_count{$sequence_id}{$pattern}
+				     ), "\n";
+		}
+	    }
 	}
     }
 }
 
 #### print the sum of occurrences per pattern
-if ($return{sum_only}) {
-    foreach my $pattern (@patterns) {
-	print $out $pattern->get_attribute("id");
-	print $out "\t", $pattern->get_attribute("sequence");
-	print $out "\t", $sum_per_pattern{$pattern};
-	print $out "\ttotal";
-	print $out "\n";
-    }
-}
 
 ### print the matching table (patterns/sequences)
 if ($return{table}) {
+    print $out "; Match count table\n";
     print $out ";seq";
     foreach my $pattern (@patterns) {
 	print $out "\t", $pattern->get_attribute("id");
@@ -271,22 +283,22 @@ if ($return{stats}) {
 	$matched_sequences_pct = 100*$matched_sequences/$nb_sequences;
     }
 
-    print $out ";\n";
+    print $out "; Matching statistics\n";
 
     printf $out ( "%-21s\t%s\t%s\t%s\n", 
-		  "; stats",
+		  "; statistics",
 		  "total",
 		  "matched",
 		  "percent"
 		  ), "\n";
     printf $out ( "%-21s\t%d\t%d\t%.1f\n", 
-		  "; stats on patterns",
+		  "pattern statistics",
 		  $nb_patterns,
 		  $matching_patterns,
 		  $matching_patterns_pct
 		  );
     printf $out ( "%-21s\t%d\t%d\t%.1f\n", 
-		  "; stats on sequences",
+		  "sequence statistics",
 		  $nb_sequences,
 		  $matched_sequences,
 		  $matched_sequences_pct
@@ -328,7 +340,7 @@ sub RegExpSearch {
 	    $matching_word_length = length($matching_word);
 	    $remaining_seq = $2;
 	    $offset = $matching_word_length + length($remaining_seq)-1;
-	    if ($return{matching_positions}) {
+	    if ($return{match_positions}) {
 		if ($strand eq "R") {
 		    $matching_word = &ReverseComplement($matching_word);
 		    $up_neighborhood = $right_neighborhood;
@@ -491,6 +503,7 @@ ARGUMENTS
 	-R 	search matches only on the reverse complement strand.
 	-id	pattern identifier (one word). 
 		Use this option combined with -p.
+	-pos	return match positions (default)
 	-c	return the count of matches rather than the list of
 		positions and matching words. 
 		If a list of sequence files is given (-sl), the count of 
@@ -668,6 +681,7 @@ dna-pattern options
 -DR	search matches on both strands (default)
 -D	search matches on the Direct strand only
 -R 	search matches on the Reverse complementary strand only
+-pos	return match positions (default)
 -c	return the count of matches for each pattern in each sequence
 -table	return a table with the count of pattern matches per sequence
 -colsum	return total occ per sequence in the count table
@@ -780,10 +794,15 @@ sub ReadArguments {
 	    $no_overlap = 1;
 	    
 	    ################################################################
-            #### output type
+            #### output 
+	    
+	    #### count matches
+	} elsif ($ARGV[$a] eq "-pos") {
+	    $return{match_positions} = 1;
 	    
 	    #### count matches
 	} elsif ($ARGV[$a] eq "-c") {
+	    $calc{match_counts} = 1;
 	    $return{match_counts} = 1;
 	    
 	    #### sum matches over all sequences
