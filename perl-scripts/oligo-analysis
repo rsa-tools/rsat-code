@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.30 2001/06/25 19:13:14 jvanheld Exp $
+# $Id: oligo-analysis,v 1.31 2001/06/25 20:20:39 jvanheld Exp $
 #
-# Time-stamp: <2001-06-25 21:10:20 jvanheld>
+# Time-stamp: <2001-06-25 22:20:37 jvanheld>
 #
 ############################################################
 
@@ -29,7 +29,7 @@ $nb_possible_pos = 0;
 $nb_possible_oligo = 0;
 $sum_seq_length = 0;
 
-$max_seq_verbose=99;
+$max_seq_verbose = 99;
 
 ### default residue probabilities      
 $seq_type = "DNA";

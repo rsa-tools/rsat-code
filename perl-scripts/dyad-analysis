@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis,v 1.13 2001/06/25 19:28:26 jvanheld Exp $
+# $Id: dyad-analysis,v 1.14 2001/06/25 20:24:46 jvanheld Exp $
 #
-# Time-stamp: <2001-06-25 21:24:40 jvanheld>
+# Time-stamp: <2001-06-25 22:24:44 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -34,6 +34,9 @@ $accepted_dyad_type{any} = 1; #any dyad, repeat or not
 
 $dyad_type = "any";
 $input_format = "fasta";
+
+$nb_possible_pos = 0;
+$sum_seq_length = 0;
 
 ### read command line arguments
 &ReadArguments;
@@ -199,6 +202,7 @@ sub PrintHeaderLine {
     $col_description{"occ+ovl"} = "number of non-overlapping + overlapping occurrences"; 
     $col_description{"ovlaps"} = "number of overlapping occurrences"; 
     $col_description{"ratio"} = "observed/expected ratio"; 
+    $col_description{"rank"} = "rank"; 
     $col_description{"ov_coef"} = "overlap coefficient"; 
     $col_description{"remark"} = "remark"; 
 
@@ -232,6 +236,8 @@ sub PrintHeaderLine {
 	push @out_col, "ovlaps";
 	push @out_col, "occ+ovl";
     }
+    push @out_col, "ratio"  if ($return{ratio});
+    push @out_col, "rank"  if ($return{rank});
     if (($return{proba})|| ($return{zscore})) {
 	push @out_col, "ov_coef" ;
 	push @out_col, "remark";
@@ -300,9 +306,11 @@ sub PrintResult {
     }
     
     ### print values for each dyad
+    my $rank = 0;
     foreach $p (0..$#sorted_patterns) {
 	my $pattern_seq = $sorted_patterns[$p];
 	next unless (defined($patterns{$pattern_seq}->{obs_occ}));
+	$rank++;
 	print $out "$pattern_seq";
 	print $out "\t$pattern_seq";
 	if ($sum_strands){
@@ -329,7 +337,7 @@ sub PrintResult {
 	    printf $out "\t%d", $patterns{$pattern_seq}->{overlaps};
 	    printf $out "\t%d", $patterns{$pattern_seq}->{overlaps} + $patterns{$pattern_seq}->{obs_occ};
 	}
-	printf $out "\t%d", $p+1 if ($return{rank});
+	printf $out "\t%d", $rank if ($return{rank});
 	if (($return{proba}) || ($return{zscore})) {
 	    printf $out "\t%.3f", $overlap_coeff{$pattern_seq};
 	    print $out "\t", $patterns{$pattern_seq}->{remark};
@@ -701,7 +709,7 @@ sub ReadArguments {
 	  $return{exp_freq} = 1;
 	} elsif  ($field =~ /^occ/i) {
 	  $return{occ} = 1;
-	} elsif  ($field =~ /^rank/i) {
+	} elsif  ($field eq "rank") {
 	  $return{rank} = 1;
 	}
       }
@@ -1092,8 +1100,6 @@ sub PrintVerbose {
 sub CountDyads {
     $in = &OpenInputFile($inputfile);
     my $sequence_number = 0;
-    $nb_possible_pos = 0;
-    $sum_seq_length = 0;
     while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $input_format)) &&
        (($current_seq ne "") || ($current_id ne ""))) {
 	
