@@ -404,10 +404,10 @@ $image->stringUp(gdSmallFont, $y_legend2_x_pos, $y_legend2_y_pos, $y_legend2, $t
 
 #### draw the legend ####
 if ($legend) {
-    $legend_point_size = &max(5,$point_size);
+    $legend_point_size = &checked_max(5,$point_size);
     $legend_x_pos = $right + $legend_point_size + 20;
     $point_x_pos = $right + 10;
-    $line_spacing = &max($small_font_height, $legend_point_size) + 6;
+    $line_spacing = &checked_max($small_font_height, $legend_point_size) + 6;
     
     $series = 0; 
     $legend_y_pos = 0;
@@ -917,7 +917,7 @@ sub ReadData {
 	    $legend_length = 0;
 	    for $series (0..$#y_col_list) {
 		$new_length = length($legend_fields[$y_col_list[$series]]);
-		$legend_length = &max($legend_length,$new_length);
+		$legend_length = &checked_max($legend_length,$new_length);
 	    }
 	    $legend_size = $legend_length * $small_font_width + $point_size + 20;
 	}
@@ -1006,13 +1006,13 @@ sub ReadData {
 	    if ($header) {
 		$line_legend = shift @data_fields;    ### take first word as legend
 		$legend_fields[$line_nb] =  $line_legend;
-		$legend_length = &max($legend_length,length($line_legend));
+		$legend_length = &checked_max($legend_length,length($line_legend));
 		$legend_size = $legend_length * $small_font_width + $point_size + 20;
 	    }
 	    
 	    ### read X values
 	    if ($x_col == -1) {
-		$max_col = &max($max_col, $#data_fields+1);
+		$max_col = &checked_max($max_col, $#data_fields+1);
 	    } elsif ($line_nb == $x_col) {
 		for $c (0..$#data_fields) {
 		    if ($xlog)  {
