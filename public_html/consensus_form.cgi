@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: consensus_form.cgi,v 1.4 2003/10/29 09:04:36 jvanheld Exp $
+# $Id: consensus_form.cgi,v 1.5 2004/02/28 17:08:18 jvanheld Exp $
 #
 # Time-stamp: <2003-07-11 15:07:43 jvanheld>
 #
@@ -25,7 +25,8 @@ $default{sequence_format} = "fasta";
 $default{sequence_file} = "";
 $default{upload_file} = "";
 $default{length} = 10;
-$default{repeats} = "auto";
+$default{cycles} = "auto";
+$default{matrices_to_save} = "auto";
 $default{alphabet} = "a:t 0.3 c:g 0.2";
 $default{strands} = "include as a single sequence";
 $default{symmetrical} = '';
@@ -93,10 +94,10 @@ print "</B></A>\n";
 print "<BR>\n";
 
 ### expected number of matches
-print "<B><A HREF='help.consensus.html#repeats'>\n";
+print "<B><A HREF='help.consensus.html#cycles'>\n";
 print "Expected number of matches</A>\n";
-print $query->textfield(-name=>'repeats',
-		  -default=>$default{repeats},
+print $query->textfield(-name=>'cycles',
+		  -default=>$default{cycles},
 		  -size=>5);
 #print "<BR>\n";
 
@@ -110,6 +111,15 @@ print $query->checkbox(-name=>'one_per_seq',
 print "<A HREF='help.consensus.html#one_per_seq'><B>\n";
 print " at least one match within each sequence\n";
 print "</B></A>\n";
+print "<BR>\n";
+
+
+### matrices to save
+print "<B><A HREF='help.consensus.html#matrices_to_save'>\n";
+print "Number of matrices to save</A>\n";
+print $query->textfield(-name=>'matrices_to_save',
+		  -default=>$default{matrices_to_save},
+		  -size=>5);
 print "<BR>\n";
 
 ### alphabet
@@ -221,7 +231,7 @@ print $query->hidden(-name=>'sequence',-default=>$demo_sequence);
 print $query->hidden(-name=>'sequence_format',-default=>"fasta");
 print $query->hidden(-name=>'length',-default=>"10");
 print $query->hidden(-name=>'alphabet',-default=>"a:t 0.325 c:g 0.175");
-print $query->hidden(-name=>'repeats',-default=>"10");
+print $query->hidden(-name=>'cycles',-default=>"10");
 print $query->hidden(-name=>'prior_freq',-default=>"on");
 print $query->submit(-label=>"DEMO");
 print "</B></TD>\n";

@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: consensus.cgi,v 1.7 2003/10/29 09:04:36 jvanheld Exp $
+# $Id: consensus.cgi,v 1.8 2004/02/28 17:08:18 jvanheld Exp $
 #
 # Time-stamp: <2003-07-03 10:06:42 jvanheld>
 #
@@ -26,7 +26,7 @@ require "RSA.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 $command = "$BIN/consensus";
-$matrix_from_consensus_command = "$SCRIPTS/matrix-from-consensus";
+$matrix_from_consensus_command = "$SCRIPTS/matrix-from-consensus -v 1";
 $convert_seq_command = "$SCRIPTS/convert-seq";
 $tmp_file_name = sprintf "consensus.%s", &AlphaDate;
 
@@ -35,7 +35,7 @@ $query = new CGI;
 
 ### print the result page
 &RSA_header("consensus result");
-#&ListParameters;
+&ListParameters() if ($ECHO >= 2);
 
 #### update log file ####
 &UpdateLogFile;
@@ -49,8 +49,10 @@ $query = new CGI;
 ($sequence_file,$sequence_format) = &GetSequenceFile("wconsensus", 1, 0);
 $parameters .= " -f $sequence_file ";
 
-
-
+## Number of matrices to save
+if (&IsNatural($query->param('matrices_to_save'))) {
+    $parameters .= " -q ".$query->param('matrices_to_save');
+}
 
 ### strands and pattern symmetry 
 if ($query->param('symmetrical')) {
@@ -76,15 +78,14 @@ if ($query->param('prior_freq') eq "on") {
     $parameters .= " -d ";
 }
 
-
 $seed_ok = 1; #### for option compatibility
 
 ### expected matches ###
-if (&IsNatural($query->param('repeats'))) {
+if (&IsNatural($query->param('cycles'))) {
     if ($query->param('one_per_seq')) {
-	$parameters .= " -N ".$query->param('repeats');
+	$parameters .= " -N ".$query->param('cycles');
     } else {
-	$parameters .= " -n ".$query->param('repeats');
+	$parameters .= " -n ".$query->param('cycles');
 	$seed_ok = 0;
     }
 }
