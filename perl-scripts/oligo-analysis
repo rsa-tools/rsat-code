@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.52 2002/09/03 18:56:37 jvanheld Exp $
+# $Id: oligo-analysis,v 1.53 2002/09/14 14:07:29 jvanheld Exp $
 #
-# Time-stamp: <2002-09-03 13:54:41 jvanheld>
+# Time-stamp: <2002-09-14 09:06:32 jvanheld>
 #
 ############################################################
 
@@ -96,23 +96,19 @@ if ($method eq "Markov chain") {
 ### check input format 
 &CheckInputSeqFormat($in_format);
 
-### check pre-defined frequency tables
-### non-coding frequency calibration
-if ($ncf) {
+### Pre-defined frequency tables
+### for background frequency calibration
+if ($background_model) {
     
     $data_dir = $supported_organism{$organism_name}->{'data'};
     
     ### localize dyad non-coding frequency file
     $method = "Frequency file";
     
-    $exp_freq_file = &ExpectedFreqFile($organism_name, $oligo_length);
-
-    
-#    &FatalError("cannot read expected frequency file $exp_freq_file\n") unless (-r  $exp_freq_file);
-}
+    $exp_freq_file = &ExpectedFreqFile($organism_name, $oligo_length, $background_model);
 
 #### read alphabet from a file
-if ($alphabet_file) {
+} elsif ($alphabet_file) {
     ($alpha) = &OpenInputFile($alphabet_file);
     while (<$alpha>) {
 	next if (/^;/);
@@ -133,7 +129,6 @@ if ($alphabet_file) {
 	}
     }
     close $alpha;
-
 }
 
 #### normalize alphabet (sum must be 1)
@@ -1069,7 +1064,7 @@ sub PrintHeaderLine {
     $col_description{"occ_sig"} = "occurrence significance (binomial)";
     $col_description{"zscore"} = "z-score (normal)"; 
     $col_description{"occ_lkh"} = "occurrence likelihood"; 
-    $col_description{"ovlaps"} = "number of overlapping occurrences"; 
+    $col_description{"ovl_occ"} = "number of overlapping occurrences (discarded from the count)"; 
     $col_description{"ratio"} = "observed/expected ratio"; 
     $col_description{"ms"} = "number of matching sequences";
     $col_description{"exp_ms"} = "expected number of matching sequences";
@@ -1116,7 +1111,7 @@ sub PrintHeaderLine {
 	}
 	push(@out_col,"zscore") if ($return{'zscore'});
 	push(@out_col,"occ_lkh") if ($return{'like'});
-	push(@out_col,"ovlaps") if ($noov);
+	push(@out_col,"ovl_occ") if ($noov);
 	#    push(@out_col,"est_var") if ($return{'zscore'});
     }
     push(@out_col,"ratio") if ($return{'ratio'});
@@ -1163,15 +1158,9 @@ sub PrintHeaderLine {
 }
 
 
-
 ################################################################
-### Print the result
-sub PrintResult {
-    ### open output file ###
-    if ($verbose >= 2) {
-	&Warning(&AlphaDate()."\tPrinting output file");
-    }
-    
+#### verbose
+sub Verbose {
     ### verbose ###
     if ($verbose >= 1) {
 	print $out "; oligo-analysis ";
@@ -1187,6 +1176,7 @@ sub PrintResult {
 	printf $out "; %-29s\t%s\n", "Oligomer length", $oligo_length;
 	printf $out "; %-29s\t%s\n", "Input file",	$inputfile if ($inputfile);
 	printf $out "; %-29s\t%s\n", "Input format", $in_format;
+	printf $out "; %-29s\t%s\n", "Background model", $background_model if ($background_model);
 	printf $out "; %-29s\t%s\n", "Method", $method;
 	printf $out "; %-29s\t%s\n", "Expected frequency file", $exp_freq_file if ($exp_freq_file);
 	printf $out "; %-29s\n", "\trescaled to 1" if ($rescale_freq);
@@ -1233,7 +1223,7 @@ sub PrintResult {
 	printf $out "; %-29s\t%s\n", "nb possible positions",$nb_possible_pos;
 	printf $out "; %-29s\t%s\n", "total oligo occurrences", $sum_occurrences;
 	if ($noov) {
-	    printf $out "; %-29s\t%s\n", "total overlaps", $sum_overlaps;
+	    printf $out "; %-29s\t%s\n", "total overlapping occurrences", $sum_overlaps;
 	    printf $out "; %-29s\t%s\n", "total non overlapping occ", $sum_noov;
 	}
 	printf $out "; %-29s\t%s\n", "alphabet size", $alphabet_size;
@@ -1253,7 +1243,19 @@ sub PrintResult {
 	}
 	print $out ";\n";
     }
-    
+}
+
+
+################################################################
+### Print the result
+sub PrintResult {
+    ### open output file ###
+    if ($verbose >= 2) {
+	&Warning(&AlphaDate()."\tPrinting output file");
+    }
+
+    #### print verbose
+    &Verbose if ($verbose >= 1);
 
     ### sort oligomers in function of significance or alphabetically
     if ($sort_result) {
@@ -1550,8 +1552,13 @@ sub ReadArguments {
 
 	    ### use oligo non-coding frequencies as expected frequencies
 	} elsif ($ARGV[$a] =~ /^-ncf/i) {
-	    $ncf = 1;
+	    $background_model = "non-coding";
 #	    $rescale_freq = 1;
+
+	    ### specify a background model for estimating expected frequencies
+	} elsif ($ARGV[$a] =~ /^-bg/i) {
+	    $background_model = $ARGV[$a+1];
+	    $background_model =~ s/ncf/non-coding/;
 	    
 	    #### lexicon
 	} elsif ($ARGV[$a] =~ /^-lex/i) { ### Markov chains
@@ -1804,7 +1811,25 @@ ARGUMENTS
 		rescale expected frequencies to obtain a sum of 1.
 		This allows to use absolute occurrences (rather than
 		relative frequencies).
-	-ncf	use non-coding frequencies as expected frequencies
+	-ncf	(deprecated, use "-bg ncf" instead)
+		use non-coding frequencies as background frequencies
+	-bg	background model
+		Type of sequences used as background model for
+		estimating expected oligonucleotide frequencies.
+		
+		Supported models: 
+		-bg allup 
+			 all upstream sequences, allowing overlap with
+		         upstream ORFs
+
+		-bg allup-noorf
+			  all upstream sequences, preventing overlap
+			  with upstream ORFs
+
+		-bg ncf  non-coding frequencies 
+			 Whole set of intergenic regions, including
+			 upstream and downstream sequences
+
 	-org	organism 
 		This is necessary with the option -ncf, to determine
 		which frequency file has to be sued for expected
