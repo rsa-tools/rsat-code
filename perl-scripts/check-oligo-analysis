@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: check-oligo-analysis,v 1.1 2003/10/21 00:19:43 jvanheld Exp $
+# $Id: check-oligo-analysis,v 1.2 2003/10/21 17:24:20 jvanheld Exp $
 #
-# Time-stamp: <2003-10-21 02:19:07 jvanheld>
+# Time-stamp: <2003-10-21 08:54:49 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -27,10 +27,28 @@ $seq_len=800;
 $seq_nb=10;
 $noov="-noov";
 $thosig = -2;
-$repetitions = 1000;
+$repetitions = 100;
+$from=1;
 
+@tasks = ();
+%supported_tasks = ();
+$supported_task{"oligos"}++;
+$supported_task{"synthesis"}++;
+$supported_tasks = join",", keys (%supported_task);
 
 &ReadArguments();
+
+################################################################
+#### task list
+if (scalar(@tasks) <= 0) {
+    &FatalError("You should select at least one task. Supported: $supported_tasks.");
+}
+foreach my $t (@tasks) {
+    unless ($supported_task{$t}) {
+	&FatalError ("Task $t is invalid. Supported: $supported_tasks.");
+    }
+    $task{$t}++;
+}
 
 ################################################################
 #### check argument values
@@ -48,11 +66,23 @@ $out = &OpenOutputFile($outfile{output});
 #### print verbose
 &Verbose if ($verbose);
 
-foreach $noov ("-noov", "-ovlp") {
-    foreach $str ("-1str", "-2str") {
-	$result_dir=$dir{output}."/RAND_L${seq_len}_N${seq_nb}${str}${noov}";
-	&AllJobs();
-	&SummarizeResults();
+if ($task{oligos}) {
+    for $job ($from..$repetitions) {
+	foreach $noov ("-noov", "-ovlp") {
+	    foreach $str ("-2str", "-1str") {
+		$result_dir=$dir{output}."/RAND_L${seq_len}_N${seq_nb}${str}${noov}";
+		&OneJob($job);
+	    }
+	}
+    }
+}
+
+if ($task{synthesis}) {
+    foreach $noov ("-noov", "-ovlp") {
+	foreach $str ("-2str", "-1str") {
+	    $result_dir=$dir{output}."/RAND_L${seq_len}_N${seq_nb}${str}${noov}";
+	    &SummarizeResults() ;
+	}
     }
 }
 
@@ -78,6 +108,8 @@ exit(0);
 ################################################################
 ## Calculate score distributions
 sub SummarizeResults {
+    warn join( "\t", "\n; Summarizing results", ${str}, $noov), "\n" if ($verbose >= 1);
+    
     $score_col=9;
     $synthesis_dir=$dir{output}."/synthesis";
     &CheckOutputDir($synthesis_dir);
@@ -89,15 +121,11 @@ sub SummarizeResults {
     $command .= " | classfreq -ci 1 -v 1 -min ${thosig}";
     $command .= " >> ${synthesis_file}";
     &doit ($command);
-    warn "\n; Synthesis file\t", ${synthesis_file}, "\n\n" if ($verbose >= 1);
+    warn "; Synthesis file\t", ${synthesis_file}, "\n\n" if ($verbose >= 1);
 }
 
-sub AllJobs {
-    for $job (1..$repetitions) {
-	&OneJob($job);
-    }
-}
-
+################################################################
+## perform a single comparison
 sub OneJob {
     my ($job) = @_;
 
@@ -119,12 +147,6 @@ sub OneJob {
     warn "$result_file\n" if ($verbose >= 1);
 }
 
-
-sub doit {
-    my ($command) = @_;
-    warn "$command\n" if ($verbose >= 2);
-    system $command;
-}
 
 ################################################################
 #### display full help message 
@@ -160,6 +182,8 @@ OPTIONS
 	-sn	sequence number
 	-ol	oligo length
 	-thosig occurrence significance
+	-task	task (supported: $supported_tasks)
+	-from #	starting iteration (to pursue an interrupted test)
 End_of_help
   close HELP;
   exit;
@@ -182,6 +206,8 @@ check-oligo-analysis options
 -sn		sequence number
 -ol		oligo length
 -thosig		occurrence significance
+-task		task (supported: $supported_tasks)
+-from #	starting iteration (to pursue an interrupted test)
 End_short_help
   close HELP;
   exit;
@@ -235,7 +261,16 @@ sub ReadArguments {
 	    ### threshold on oligo significance
 	} elsif ($ARGV[$a] eq "-thosig") {
 	    $thosig = $ARGV[$a+1];
+
+	    ### tasks
+	} elsif ($ARGV[$a] eq "-task") {
+	    push @tasks, split( ",", $ARGV[$a+1]);
+
+	    ### starting iteration
+	} elsif ($ARGV[$a] eq "-from") {
+	    $from = $ARGV[$a+1];
 	    
+
 	}
     }
 }
