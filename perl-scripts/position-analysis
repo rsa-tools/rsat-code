@@ -142,11 +142,11 @@ if ($return{'graph'}) {
 
     $date = `date +%H:%M:%S`;
     chomp $date;
-    print ";$date\tgenerating the graphs ... \n" if ($hyperverbose);
+    print ";$date\tgenerating the graphs ... \n" if ($verbose >= 2);
 
     #### index for the graphs
-    if ($output_file) {
-	$index_file = "${output_file}_graph_index.html";
+    if ($outputfile) {
+	$index_file = "${outputfile}_graph_index.html";
     } else {
 	$index_file = "$dir{output}/graph_index_${oligo_length}nt_ci${class_interval}_$strands.html";
     }
@@ -174,7 +174,7 @@ if ($return{'graph'}) {
 	$command .= " -xleg1 'position' -yleg1 'class frequency' ";
 	$command .= " -ymin 0 -xmin $class_min[0] -xmax $class_max[$max_class] ";
 	$command .= " -xgstep2 $class_interval -xsize 600";
-	print "; $command\n" if ($verbose >= 1);
+	print "; $command\n" if ($verbose >= 2);
 	open XY, "| $command";
 	print XY ";class\tocc_$oligo_seq\texp_$oligo_seq\n"; ### header line
 	foreach $class (0..$max_class) {
@@ -213,7 +213,7 @@ sub SumStrands {
   ### sum profiles of reverse complement patterns for strand insensitive analysis ###
   $date = `date '+%H:%M:%S'`;
   chomp $date;
-  print ";$date\tsumming occurrences of reverse complementary patterns ...\n" if ($hyperverbose);
+  print ";$date\tsumming occurrences of reverse complementary patterns ...\n" if ($verbose >= 2);
   
   ### occurrences
   foreach $oligo_seq (keys %occurrences) {
@@ -246,7 +246,7 @@ sub SumStrands {
   if ($group_rc) {
     $date = `date '+%H:%M:%S'`;
     chomp $date;
-    print ";$date\tgrouping patterns by pairs of reverse complements ...\n" if ($hyperverbose);
+    print ";$date\tgrouping patterns by pairs of reverse complements ...\n" if ($verbose >= 2);
     foreach $oligo_seq (keys %occurrences) {
       $rc_oligo_seq = lc(&ReverseComplement($oligo_seq));
       if ($rc_oligo_seq gt $oligo_seq) { ### only suppress one oligo from the dyad 
@@ -264,7 +264,7 @@ sub SumStrands {
 sub LocalReadPatterns {
     $date = `date '+%H:%M:%S'`;
     chomp $date;
-    print ";$date\treading pattern file ...\n" if ($hyperverbose);
+    print ";$date\treading pattern file ...\n" if ($verbose >= 2);
     open PATTERNS, "$pattern_file" || die "Error: cannot open pattern file $pattern_file\n";
     while (<PATTERNS>) {
 	next if (/^;/);
@@ -272,7 +272,7 @@ sub LocalReadPatterns {
 	chomp;
 	@fields = split, "\t";
 	$pattern = lc($fields[0]);
-	print ";\t$pattern\n" if ($hyperverbose);
+	print ";\t$pattern\n" if ($verbose >= 2);
 	$selected_pattern{$pattern} = 1;
 	$score{$pattern} = $fields[$score_column-1] if ($score_column > 0);
     }
@@ -284,7 +284,7 @@ sub LocalReadPatterns {
 ################################################################
 #### Read input sequence and calculate oligo distributions 
 sub ReadSequence {
-    if ($hyperverbose) {
+    if ($verbose >= 2) {
 	$date = `date '+%H:%M:%S'`;
 	chomp $date;
 	print "$date\tReading sequences\n";
@@ -293,7 +293,7 @@ sub ReadSequence {
     while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir)) &&
 	   (($current_seq ne "") || ($current_id ne ""))) {
 	
-	print "; analysing sequence $current_id\n" if ($hyperverbose);
+	print "; analysing sequence $current_id\n" if ($verbose >= 2);
 	### remove tabs and blank spaces ###    
 	$current_seq = &FoldSequence($current_seq,0);
 	
@@ -347,7 +347,7 @@ sub ReadSequence {
 
 
     ### return sequence lengthes
-    if ($hyperverbose) {
+    if ($verbose >= 2) {
 	for $s (1..$sequence_number) {
 	    print ";\t$s\t$id_list[$sequence_number] \t$seq_length[$s]\n";
 	}
@@ -356,7 +356,7 @@ sub ReadSequence {
     ### statistics on sequence lengthes
     $date = `date '+%H:%M:%S'`;
     chomp $date;
-    print ";$date\tcalculating stats on sequence lengthes ...\n" if ($hyperverbose);
+    print ";$date\tcalculating stats on sequence lengthes ...\n" if ($verbose >= 2);
     for $s (1..$sequence_number) {
 	$sum_seq_length += $seq_length[$s];
 	if ($seq_length[$s] >= $oligo_length) {
@@ -417,7 +417,7 @@ sub CalcExpected {
     ### calculate expected occurrences for each class
     $date = `date '+%H:%M:%S'`;
     chomp $date;
-    print ";$date\tcalculating expected occurrences ...\n" if ($hyperverbose);
+    print ";$date\tcalculating expected occurrences ...\n" if ($verbose >= 2);
     foreach $oligo_seq (sort keys %occurrences) {
 	foreach $class ($min_calc_class..$max_calc_class) {
 	    $in_bound_occurrences{$oligo_seq} += $class_freq{$oligo_seq}[$class];
@@ -447,7 +447,7 @@ sub CalcChi {
     ### calculate chi2 to compare the position distribution with a flat line
     $date = `date '+%H:%M:%S'`;
     chomp $date;
-    print ";$date\tcalculating chi values ...\n" if ($hyperverbose);
+    print ";$date\tcalculating chi values ...\n" if ($verbose >= 2);
     foreach $oligo_seq (sort keys %occurrences) {
 
 	@chi_values = ();
@@ -835,7 +835,7 @@ sub PrintResult {
     if ($sort_result) {
 	$date = `date '+%H:%M:%S'`;
 	chomp $date;
-	print ";$date\tsorting results ...\n" if ($hyperverbose);
+	print ";$date\tsorting results ...\n" if ($verbose >= 2);
 	if ($score_column > 0) {
 	    @sorted_keys = sort { 
 		$sccore{$b} <=>  $score{$a}
@@ -856,7 +856,7 @@ sub PrintResult {
     ### header 
     $date = `date '+%H:%M:%S'`;
     chomp $date;
-    print ";$date\tprinting results ...\n" if ($hyperverbose);
+    print ";$date\tprinting results ...\n" if ($verbose >= 2);
     print $out ";seq";
     print $out "\tid";
     print $out "\tocc";
