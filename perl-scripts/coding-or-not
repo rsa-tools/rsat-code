@@ -341,49 +341,50 @@ sub OldReadOrganism {
 }
 
 
-sub OldReadOrfpositions {
+#  sub OldReadOrfpositions {
     
-#### read all ORF positions ####
-    unless (open ORFS, $supported_organism{$organism_name}->{'features'}) {
-	die "	Cannot open ORF location file ", $supported_organism{$organism_name}->{'features'}, "\n";
-    }
-    while (<ORFS>) {
-	next if (/^;/);
-	next unless (/\S/);
-	s/\t\t/\t-\t/;
-	chomp;
-	@fields = split, /\t/;
+#  #### read all ORF positions ####
+#      open ORFS, $supported_organism{$organism_name}->{'features'} ||
+#  	die "	Cannot open ORF location file ", $supported_organism{$organism_name}->{'features'}, "\n";
+
+
+#      while (<ORFS>) {
+#  	next if (/^;/);
+#  	next unless (/\S/);
+#  	s/\t\t/\t-\t/;
+#  	chomp;
+#  	@fields = split, /\t/;
 	
-	### only take into consideration the CDS features
-	if (($type_column >= 0) && ($fields[$type_column] ne "CDS")) {
-	    next;
-	}
+#  	### only take into consideration the CDS features
+#  	if (($type_column >= 0) && ($fields[$type_column] ne "CDS")) {
+#  	    next;
+#  	}
 	
-	$orf_count++;
-	$id = $fields[$id_column];
-	if ($chr_column < 0) {
-	    $chr{$id} = "genome";
-	} else {
-	    $chr{$id} = $fields[$chr_column];
-	}
-	push @{$ids{$chr{$id}}}, $id;
-	$start{$id} = $fields[$start_column];
-	$end{$id} = $fields[$end_column];
-	$left{$id} = &min($start{$id},$end{$id});
-	$right{$id} = &max($start{$id},$end{$id});
-	if ($organism_name eq "yeast") {
-	    if ($start{$id} > $end{$id}) {
-		$strand{$id} = "R";
-	    } else {
-		$strand{$id} = "D";
-	    }
-	} else {
-	    $strand{$id} = $fields[$strand_column];
-	}
-#print "$id\t$chr{$id}\t$left{$id}\t$right{$id}\t$strand{$id}\n";
-    }
-    close ORFS;
-}
+#  	$orf_count++;
+#  	$id = $fields[$id_column];
+#  	if ($chr_column < 0) {
+#  	    $chr{$id} = "genome";
+#  	} else {
+#  	    $chr{$id} = $fields[$chr_column];
+#  	}
+#  	push @{$ids{$chr{$id}}}, $id;
+#  	$start{$id} = $fields[$start_column];
+#  	$end{$id} = $fields[$end_column];
+#  	$left{$id} = &min($start{$id},$end{$id});
+#  	$right{$id} = &max($start{$id},$end{$id});
+#  	if ($organism_name eq "yeast") {
+#  	    if ($start{$id} > $end{$id}) {
+#  		$strand{$id} = "R";
+#  	    } else {
+#  		$strand{$id} = "D";
+#  	    }
+#  	} else {
+#  	    $strand{$id} = $fields[$strand_column];
+#  	}
+#  #print "$id\t$chr{$id}\t$left{$id}\t$right{$id}\t$strand{$id}\n";
+#      }
+#      close ORFS;
+#  }
 
 sub PrintVerbose {
     printf "; %-16s\t%s\n", "Organism", $supported_organism{$organism_name}->{'name'};
