@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.32 2001/06/25 23:30:17 jvanheld Exp $
+# $Id: oligo-analysis,v 1.33 2001/06/29 21:25:27 jvanheld Exp $
 #
-# Time-stamp: <2001-06-26 01:30:14 jvanheld>
+# Time-stamp: <2001-06-29 23:24:45 jvanheld>
 #
 ############################################################
 
@@ -124,12 +124,6 @@ if (($method eq "Frequency file") &&
 ### open sequence file ###
 $in = &OpenInputFile($inputfile);
 
-if ($verbose >= 2) {
-    $current_time = `date '+%H:%M:%S'`;
-    chomp($current_time);
-    warn "oligo-analysis\t$current_time\tReading sequences\n";
-}
-
 $out = &OpenOutputFile($outputfile);
 
 &CountOligo();
@@ -139,7 +133,7 @@ $out = &OpenOutputFile($outputfile);
 &Degenerate() if ($one_var_position);
 &SumStrands() if ($sum_strands);
 #&SubstractOverlap() if ($noov);
-&CalcFrequencies() if (($return{'freq'}) || ($verbose) || ($method eq "Markov chain"));
+&CalcFrequencies() if (($return{'freq'}) || ($verbose >= 1) || ($method eq "Markov chain"));
 &GroupRc() if ($group_rc);
 &OccurrenceThreshold() if ($occurrence_threshold > 0);
 &MatchingSeqThreshold() if ($mseq_threshold > 0); 
@@ -173,6 +167,12 @@ exit(0);
 
 #### Read input sequences and count oligomers ####
 sub CountOligo {
+    if ($verbose >= 2) {
+	$current_time = `date '+%H:%M:%S'`;
+	chomp($current_time);
+	warn "oligo-analysis\t$current_time\tCounting oligo frequencies\n";
+    }
+
     if ($return{'table'}) {
 	@possible_oligos = &all_oligos($oligo_length);
 	print $out $current_id;
@@ -192,7 +192,7 @@ sub CountOligo {
 	$id_list[$sequence_number] = $current_id;
 	$seq_length[$sequence_number] = length($current_seq);
 	
-	if ($verbose >= 2) {
+	if ($verbose >= 3) {
 	    $current_time = `date '+%H:%M:%S'`;
 	    chomp($current_time);
 	    warn "oligo-analysis\t$curent_time\t$current_id\t$seq_length[$sequence_number]\n";
@@ -232,7 +232,7 @@ sub CountOligo {
 	my $chunk=100000;
 	
 	while ($current_pos >=0) {
-	    if ($verbose >= 2 && (($current_pos%$chunk) == 0) && ($current_pos > 0)) {
+	    if ($verbose >= 3 && (($current_pos%$chunk) == 0) && ($current_pos > 0)) {
 		$current_length = length($current_seq);
 		warn "\t$current_id\tremain to read: $current_pos\n";
 	    }
@@ -256,6 +256,10 @@ sub CountOligo {
 			next;
 		    }
 		}
+		$forbidden_pos = &min($min_overlap_dist-1,
+				      $last_pos - $current_pos);
+		$patterns{$pattern_seq}->{nb_possible_pos} -= $forbidden_pos;
+		$patterns{$rc}->{nb_possible_pos} -= $forbidden_pos if ($sum_strands);
 	    }
 	    $patterns{$pattern_seq}->{occ}++;
 	    $last_pos{$pattern_seq} = $current_pos;
@@ -420,7 +424,7 @@ sub CalcSubWordFrequencies {
 	}
     }	
     
-    if ($verbose >= 2) {
+    if ($verbose >= 4) {
 	for $w (1..$oligo_length-1) {
 	    foreach $pattern_seq (sort keys %{$sub_word[$w]}) {
 		printf ";\tsubword_freq\t$w\t$occ_sum[$w]\t$pattern_seq\t%15.13f\n", $sub_word[$w]{$pattern_seq}->{freq};
@@ -757,11 +761,11 @@ sub CalcExpected {
 
     #### expected number of occurrences and matching sequences ####
     foreach $pattern_seq (sort keys %patterns) {
-	if ($noov) {
-	    $patterns{$pattern_seq}->{nb_possible_pos} = $nb_possible_pos - ($patterns{$pattern_seq}->{occ} * ($oligo_length -1));
-	} else {
-	    $patterns{$pattern_seq}->{nb_possible_pos} = $nb_possible_pos;
-	}
+#	if ($noov) {
+#	    $patterns{$pattern_seq}->{nb_possible_pos} = $nb_possible_pos - ($patterns{$pattern_seq}->{occ} * ($oligo_length -1));
+#	} else {
+	$patterns{$pattern_seq}->{nb_possible_pos} += $nb_possible_pos;
+#	}
 	$patterns{$pattern_seq}->{exp_occ} = $patterns{$pattern_seq}->{exp_freq} * $patterns{$pattern_seq}->{nb_possible_pos}; 
 	if ($return{'mseq'}) {
 	    ### expected number of matching sequences ###
@@ -875,7 +879,7 @@ sub CalcProba {
     
     ### calculate oligo probabilities
     foreach $pattern_seq (sort keys %patterns) {
-	if ($verbose >= 2) {
+	if ($verbose >= 4) {
 	    $current_time = `date '+%H:%M:%S'`;
 	    chomp($current_time);
 	    printf ("oligo-analysis\t$current_time\tcalculating proba $pattern_seq obs %7d exp %7.1f\n", 
@@ -883,17 +887,35 @@ sub CalcProba {
 		    $patterns{$pattern_seq}->{exp_occ});
 	}
 	
-	### probability of the observed number of occurrences ####
 	$rev_compl = uc(&ReverseComplement($pattern_seq));
-	if (($sum_strands) && (uc($pattern_seq) eq $rev_compl)) {
-	    $patterns{$pattern_seq}->{occ_pro} = &sum_of_binomials($patterns{$pattern_seq}->{exp_freq},
-							      $patterns{$pattern_seq}->{nb_possible_pos}/2,
-							      $patterns{$pattern_seq}->{occ}/2);
-	    $patterns{$pattern_seq}->{remark} = "\tpalindrome";
+
+	if ($under_represented) {
+	    #### probability of observing less than the observed number of occurrences ####
+	    #### for searching under-represented patterns only
+	    if (($sum_strands) && (uc($pattern_seq) eq $rev_compl)) {
+		$patterns{$pattern_seq}->{occ_pro} = &sum_of_binomials($patterns{$pattern_seq}->{exp_freq},
+								 $patterns{$pattern_seq}->{nb_possible_pos}/2,
+								 0,
+								 $patterns{$pattern_seq}->{occ}/2-1);
+		$patterns{$pattern_seq}->{remark} = "\tpalindrome";
+	    } else {
+		$patterns{$pattern_seq}->{occ_pro} = &sum_of_binomials($patterns{$pattern_seq}->{exp_freq},
+								 $patterns{$pattern_seq}->{nb_possible_pos} - $patterns{$pattern_seq}->{overlaps},
+								 0,
+								 $patterns{$pattern_seq}->{occ}-1);
+	    }
 	} else {
-	    $patterns{$pattern_seq}->{occ_pro} = &sum_of_binomials($patterns{$pattern_seq}->{exp_freq},
-							      $patterns{$pattern_seq}->{nb_possible_pos} - $patterns{$pattern_seq}->{overlaps},
-							      $patterns{$pattern_seq}->{occ});
+	    ### probability of observing at least the observed number of occurrences ####
+	    if (($sum_strands) && (uc($pattern_seq) eq $rev_compl)) {
+		$patterns{$pattern_seq}->{occ_pro} = &binomial_boe($patterns{$pattern_seq}->{exp_freq},
+								   $patterns{$pattern_seq}->{nb_possible_pos}/2,
+								   $patterns{$pattern_seq}->{occ}/2);
+		$patterns{$pattern_seq}->{remark} = "\tpalindrome";
+	    } else {
+		$patterns{$pattern_seq}->{occ_pro} = &binomial_boe($patterns{$pattern_seq}->{exp_freq},
+								   $patterns{$pattern_seq}->{nb_possible_pos} - $patterns{$pattern_seq}->{overlaps},
+								   $patterns{$pattern_seq}->{occ});
+	    }
 	}
 
 	#### check threshold on occurrence probability ####
@@ -901,15 +923,6 @@ sub CalcProba {
 	    delete $patterns{$pattern_seq};
 	    next;
 	}
-	
-#	    print (join ("\t", 
-#			 "HELLO",  
-#			 $pattern_seq, 
-#			 $patterns{$pattern_seq}->{exp_freq},
-#			 $patterns{$pattern_seq}->{nb_possible_pos} - $patterns{$pattern_seq}->{overlaps},
-#			 $patterns{$pattern_seq}->{occ},
-#			 $patterns{$pattern_seq}->{occ_pro}), 
-#		   "\n");
 	
 	### Significance index for occurrence number
 	if ($nb_possible_oligo > 0) {
@@ -925,7 +938,7 @@ sub CalcProba {
 	if ($return{'mseq'}) {	    
 	    ### probability of the observed number of matching sequences ####
 	    $avg_mseq_proba = $patterns{$pattern_seq}->{exp_ms}/$sequence_number;
-	    $patterns{$pattern_seq}->{ms_pro} = &sum_of_binomials($avg_mseq_proba, $sequence_number, $patterns{$pattern_seq}->{mseq});    
+	    $patterns{$pattern_seq}->{ms_pro} = &binomial_boe($avg_mseq_proba, $sequence_number, $patterns{$pattern_seq}->{mseq});    
 	    
 	    #### check threshold on mseq probability ####
 	    if ($patterns{$pattern_seq}->{ms_pro} > $proba_mseq_threshold) {
@@ -958,7 +971,7 @@ sub PrintResult {
     }
     
     ### verbose ###
-    if ($verbose) {
+    if ($verbose >= 1) {
 	print $out "; oligo-analysis ", join(" ", @ARGV), "\n";
 	printf $out "; %-29s\t%s\n", "Oligomer length", $oligo_length;
 	printf $out "; %-29s\t%s\n", "Input file",	$inputfile if ($inputfile);
@@ -1186,7 +1199,7 @@ sub PrintResult {
     }
     
     
-    if ($verbose) {
+    if ($verbose >= 1) {
 	$done_time  = `date '+%d/%m/%y %H:%M:%S %Z'`;
 	print $out "; Job started $start_time";
 	print $out "; Job done    $done_time";
@@ -1286,7 +1299,7 @@ sub PrintHeaderLine {
     push(@out_col,"remark") if ($return{'remark'});
     push(@out_col,"segments") if ($return{'segments'});
 
-    if ($verbose) {
+    if ($verbose >= 1) {
 	print $out "; column headers\n";
 	foreach $c (0..$#out_col) {
 	    printf $out ";\t%d\t%-15s\t%s\n", $c+1, $out_col[$c], $col_description{$out_col[$c]};
@@ -1310,7 +1323,7 @@ sub ReadArguments {
 	if ($ARGV[$a] eq "-v") {
 	    if (&IsNatural($ARGV[$a+1])) {
 		$a++;
-		$verbose = $argv[$a];
+		$verbose = $ARGV[$a];
 	    } else {
 		$verbose = 1;
 	    }
@@ -1616,6 +1629,9 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-sort") {
 	    $sort_result = 1;
 	    
+	} elsif ($ARGV[$a] eq "-under") {
+	    $under_represented = 1;
+	    
 	}
 	$a++;
     }
@@ -1780,6 +1796,9 @@ ARGUMENTS
 	-v #	verbose level
 			1 report parameters and statistics
 			2 warn when the program enters a new subroutine
+			3 warn when the program reads a new sequence
+			4 very high verbosity (for debugging)
+
 	-return	list of statistics to return
 		this option is followed by a list of words, 
 		separated by commas, indicating which values
@@ -1828,6 +1847,9 @@ ARGUMENTS
 		- Z-score
 		- binomial significance
 		- occurrence number
+
+	-under	detect under-represented instead of over-represented words 
+
 
     THRESHOLDS
 	-tho #	where # is an integer. Occurrence threshold: only returns the 
@@ -2135,6 +2157,7 @@ oligo-analysis options
 -oneN           one undefined position
 -onedeg         one degenerate position		
 -sort		sort oligomers by overrepresentation
+-under		detect under-represented instead of over-represented words 
 End_of_help
     close HELP;
     exit(0);
