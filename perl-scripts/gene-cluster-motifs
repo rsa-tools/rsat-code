@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.24 2002/09/26 16:54:01 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.25 2002/10/16 06:46:26 jvanheld Exp $
 #
-# Time-stamp: <2002-09-26 11:50:54 jvanheld>
+# Time-stamp: <2002-10-16 00:42:18 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -95,7 +95,11 @@ if ($verbose >= 1) {
     printf ";\t%-22s\t%d\n", "max spacing", $max_sp;
     printf ";\t%-22s\t%s\n", "dyad type", $dyad_type;
     printf ";\t%-22s\t%g\n", "sig threshold", $th;
-    printf ";%-13s\t%s\n", "background model", $background;
+    if ($markov) {
+	printf ";%-13s\t%s\n", "Markov chains, order", $markov_order;
+    } elsif ($background) {
+	printf ";%-13s\t%s\n", "background model", $background;
+    }
     printf ";%-13s\t%s\n", "organism", $organism_name;
     print "; no overlap with upstream ORFs" if ($noorf);
 }
@@ -151,7 +155,11 @@ sub SetFileNames {
   $dyad_options .= " -sp $sp ";
   
   $dyad_suffix = "_dyads";
-  $dyad_suffix .= "_bg_${background}" if ($background); ### TEMP
+  if ($markov) {
+      $dyad_suffix .= "_monad"; ### TEMP
+  } elsif ($background) {
+      $dyad_suffix .= "_bg_${background}"; ### TEMP
+  }
   $dyad_suffix .= "_l${monad_length}";
   $dyad_suffix .= "_sp${sp}";
   $dyad_suffix .= "_${strands}";
@@ -181,7 +189,11 @@ sub SetFileNames {
   $noorf_string = "_noorf" if ($noorf);
   $noov_string = "_noov" if ($noov);
   $oligo_suffix = "_oligos";
-  $oligo_suffix .= "_bg_${background}" if ($background);
+  if ($markov) {
+      $oligo_suffix .= "_mkv${markov_order}";
+  } elsif ($background) {
+      $oligo_suffix .= "_bg_${background}";
+  }
   $oligo_suffix .= "_${min_oligo_length}-${max_oligo_length}nt";
   $oligo_suffix .= "_${strands}";
   $oligo_suffix .= "_sig${th}${noov_string}";
@@ -205,7 +217,11 @@ sub SetFileNames {
   }  
 
   $table_suffix = $family_file;
-  $table_suffix .= "_bg_${background}" if ($background);
+  if ($markov) {
+      $table_suffix .= "_mkv${markov_order}";
+  } elsif ($background) {
+      $table_suffix .= "_bg_${background}";
+  }
   $table_suffix .= "_up".$from."_".$to.$noorf_string;
   $table_suffix .= $noov_string;
   $table_suffix = `basename $table_suffix`;
@@ -218,7 +234,7 @@ sub SetFileNames {
 
 #### retrieve upstream sequences
 sub UpstreamSequences {
-  warn ";\tGenerating upstream sequences for family $family_name\n" if ($verbose >= 1);
+  warn ";\tRetrieving upstream sequences for family $family_name\n" if ($verbose >= 1);
   $command = "retrieve-seq -type upstream -org $organism_name";
   $command .= " -noorf " if ($noorf);
   $command .= " -i $family{$family_name}->{family_file}";
@@ -258,7 +274,9 @@ sub OligoAnalysis {
 	$oligo_options .= "-${strands} ";
 	$oligo_options .= "-l $oligo_length ";
 	$oligo_options .= "-thosig $th ";
-	if ($exp_freq_file{oligos}) {
+	if ($markov) {
+	    $oligo_options .= "-markov $markov_order ";
+	} elsif ($exp_freq_file{oligos}) {
 	    $oligo_options .= "-expfreq $exp_freq_file{oligos} ";
 	} else {
 	    $oligo_options .= "-org $organism_name ";
@@ -277,11 +295,11 @@ sub OligoAnalysis {
 	$command = "oligo-analysis -i $family{$family_name}->{seq_file_purged} -format $seq_format -o $oligo_file $oligo_options";
 	
 	&doit($command);
-	system "cat $oligo_file | grep -v ';' >> $family{$family_name}->{oligo_file}";
+	system "cat $oligo_file >> $family{$family_name}->{oligo_file}";
     }
     
     ### fragment assembly
-    $command = "pattern-assembly -i $family{$family_name}->{oligo_file} -sc 8 -${strands} -v -o $family{$family_name}->{oligo_assembly_file} -maxfl 1 -maxpat 200 ";
+    $command = "pattern-assembly -i $family{$family_name}->{oligo_file} -${strands} -v -o $family{$family_name}->{oligo_assembly_file} -maxfl 1 -maxpat 200 ";
     
     &doit($command);
     
@@ -299,7 +317,7 @@ sub DrawOligoFeatureMap {
     
 #    $origin = -$from + 1;
     $origin = "-0";
-    $command = "dna-pattern -i $family{$family_name}->{seq_file} -format $seq_format -pl $family{$family_name}->{oligo_file} -origin $origin -sc 8 -N 4 ";
+    $command = "dna-pattern -i $family{$family_name}->{seq_file} -format $seq_format -pl $family{$family_name}->{oligo_file} -origin $origin -N 4 ";
     $command .= " | features-from-dnapat -o $family{$family_name}->{oligo_ft_file} ";
     $command .= " ; feature-map -i $family{$family_name}->{oligo_ft_file} -scalebar -scalestep 50 -legend -from $from -to $to -o $fmap_file -scorethick -htmap > $htmap_file ";
     
@@ -325,7 +343,7 @@ sub DyadAnalysis {
     &doit($command);
     
     ### fragment assembly
-    $command = "pattern-assembly -v -i $family{$family_name}->{dyad_file} -o $family{$family_name}->{dyad_assembly_file} -$strands -maxfl 2 -sc 8 -maxpat 200 ";
+    $command = "pattern-assembly -v -i $family{$family_name}->{dyad_file} -o $family{$family_name}->{dyad_assembly_file} -$strands -maxfl 2 -maxpat 200 ";
     
     &doit($command);
     
@@ -660,17 +678,24 @@ sub SyntheticTable {
     if ($transpose) {
 	foreach $r (0..$row_num) {
 	    print TABLE "<TR>\n";
-	    foreach $c (0..$col) {
+#		foreach $c (0..$col) {
+	    foreach $f (@sorted_families) {
+		my $c = $column{$f};
 		print TABLE "<TD>", $table[$r][$c], "</TD>\n";
 	    }
 	    print TABLE "</TR>\n";
 	}
     } else {
-
-	    
+	
+	
+	#### print table header
+	foreach $r (0..$row_num) {
+	    print TABLE "<TH>", $table[$r][0], "</TH>\n";
+	}
+	#### print table content
+#	foreach $c (0..$col) {
 	foreach $f (@sorted_families) {
 	    my $c = $column{$f};
-#	foreach $c (0..$col) {
 	    print TABLE "<TR>\n";
 	    foreach $r (0..$row_num) {
 		print TABLE "<TD>", $table[$r][$c], "</TD>\n";
@@ -696,7 +721,7 @@ sub DrawDyadFeatureMap {
     warn ";\tDrawing feature-map with results of dyad-analysis for family $family_name\n" if ($verbose >= 1);
     die "Error : cannot read file $family{$family_name}->{seq_file}\n" unless (-r $family{$family_name}->{seq_file});
     $origin = "-0";
-    $command = "dna-pattern -pl $family{$family_name}->{dyad_file} -format $seq_format -i $family{$family_name}->{seq_file}  -sc 8 -origin $origin -N 4 ";
+    $command = "dna-pattern -pl $family{$family_name}->{dyad_file} -format $seq_format -i $family{$family_name}->{seq_file} -origin $origin -N 4 ";
     $command .= "| features-from-dnapat -o $family{$family_name}->{dyad_ft_file} ";
     $command .= "; feature-map -i $family{$family_name}->{dyad_ft_file} -o $family{$family_name}->{fmap_file} ";;
     $command .= "-from $from -to $to ";
@@ -1053,6 +1078,11 @@ sub ReadArguments {
 		 || ($ARGV[$a] =~ /^-bg/)) {
 	    $background = $ARGV[$a+1];
 	    $background =~ s/^ncf$/intergenic/;
+
+	    #### Markov chain estimation of expected oligo frequencies
+	} elsif ($ARGV[$a] =~ /^-markov/) {
+	    $markov_order = $ARGV[$a+1];
+	    $markov=1;
 	    
 	    #### prevent self-overlap
 	} elsif ($ARGV[$a] eq "-noov") {
