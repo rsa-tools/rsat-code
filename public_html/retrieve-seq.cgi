@@ -4,8 +4,9 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
-require "RSA.lib.pl";
-require "RSA.cgi.lib.pl";
+require "RSA.lib";
+require "RSA.cgi.lib";
+$output_context = "cgi";
 
 $retrieve_seq_command = "$SCRIPTS/retrieve-seq";
 $tmp_file_name = sprintf "retrieve-seq.%s", &AlphaDate;
@@ -34,7 +35,8 @@ if (defined($supported_organism{$query->param('organism')})) {
 
 ### sequence type
 if ($query->param('sequence_type')) {
-  $parameters .= " -type ".$query->param('sequence_type');
+    my ($seq_type) = split " ", $query->param('sequence_type'); ### take the first word
+    $parameters .= " -type ".$seq_type;
 }
 
 ### output format ###
@@ -115,17 +117,57 @@ if ($query->param('output') =~ /display/i) {
   ### open the mirror file ###
   $mirror_file = "$TMP/$tmp_file_name.res";
   if (open MIRROR, ">$mirror_file") {
-    $mirror = 1;
-    &DelayedRemoval($mirror_file);
+      $mirror = 1;
+      &DelayedRemoval($mirror_file);
   }
+
   
+  ### print the result ### 
+  &PipingWarning();
+  print '<H3>Result</H3>';
+  print "<PRE>";
+  while (<RESULT>) {
+    print "$_";
+    print MIRROR $_ if ($mirror);
+  }
+  print "</PRE>";
+  close RESULT;
+
   ### prepare data for piping
+  &PipingForm();
+  
+  
+} else {
+  ### send an e-mail with the result ###
+  if ($query->param('user_email') =~ /(\S+\@\S+)/) {
+    $address = $1;
+    print "<B>Result will be sent to your account: <P>";
+    print "$address</B><P>";
+    system "$retrieve_seq_command $parameters | $mail_command $address";
+  } else {
+    if ($query->param('user_email') eq "") {
+      print "<B>ERROR: you did not enter your e-mail address<P>";
+    } else {
+      print "<B>ERROR: the e-mail address you entered is not valid<P>";
+      print "$query->param('user_email')</B><P>";      
+    }
+  } 
+}
+
+print "<HR SIZE = 3>";
+print $query->end_html;
+
+exit(0);
+
+
+sub PipingForm {
   print <<End_of_form;
+<HR SIZE = 3>
 <TABLE CELLSPACING=0 CELLPADDING=10 BORDER=0 NOWRAP BGCOLOR= #FFEEDD>
 
 <TR VALIGN="top" ALIGN="center">
     <TD COLSPAN=5 BGCOLOR=	#FFEEDD>
-	<FONT SIZE=+1><B>Next step</B></FONT>
+	<H3>Next step</H3>
     </TD>
 
 </TR>
@@ -160,7 +202,7 @@ if ($query->param('output') =~ /display/i) {
     </TD>
 
     <TD>
-	<FORM METHOD="POST" ACTION="fill-form.consensus.cgi">
+	<FORM METHOD="POST" ACTION="consensus_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism">
 	<INPUT type="hidden" NAME="from" VALUE="$from">
 	<INPUT type="hidden" NAME="to" VALUE="$to">
@@ -186,7 +228,7 @@ if ($query->param('output') =~ /display/i) {
 <TR VALIGN="top" ALIGN="center">
 
     <TD BGCOLOR=		#FFEEDD>
-	<B>Pattern search</B><BR>
+	<B>Pattern matching</B><BR>
 	(known patterns)
     </TD>
 
@@ -224,36 +266,4 @@ if ($query->param('output') =~ /display/i) {
 
 </TABLE>
 End_of_form
-  
-  ### print the result ### 
-  print '<H4>Result</H4>';
-  print "<PRE>";
-  while (<RESULT>) {
-    print "$_";
-    print MIRROR $_ if ($mirror);
-  }
-  print "</PRE>";
-  close RESULT;
-  
-} else {
-  ### send an e-mail with the result ###
-  if ($query->param('user_email') =~ /(\S+\@\S+)/) {
-    $address = $1;
-    print "<B>Result will be sent to your account: <P>";
-    print "$address</B><P>";
-    system "$retrieve_seq_command $parameters | $mail_command $address";
-  } else {
-    if ($query->param('user_email') eq "") {
-      print "<B>ERROR: you did not enter your e-mail address<P>";
-    } else {
-      print "<B>ERROR: the e-mail address you entered is not valid<P>";
-      print "$query->param('user_email')</B><P>";      
-    }
-  } 
 }
-
-print "<HR SIZE = 3>";
-print $query->end_html;
-
-exit(0);
-

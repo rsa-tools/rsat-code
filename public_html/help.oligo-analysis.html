@@ -29,15 +29,15 @@ Calculates oligonucleotide occurrences in a set of sequences, and detects overre
 
 Title of the data set. This information is returned as title of the
 result page.
-<P>
 
+<P>
 <A NAME="sequence">
 <B>Input sequence:</B></A><BR>
 
 The sequence that will be analyzed. Multiple sequences can be entered
 at once with most sequence formats (see below).
-<P>
 
+<P>
 <A NAME="sequence_format">
 <B>Format:</B></A><BR>
 
@@ -65,8 +65,8 @@ format defined by Jerry Hertz for his programs (patser, consensus,
 wconsensus).
 </UL>
 
-<P>
 
+<P>
 <A NAME="sequence_type">
 <B>Sequence type:</B></A><BR>
 
@@ -92,16 +92,14 @@ valid. This allows to analyze texts in human language.
 <P>
 <A NAME="purge">
 <B>Purge sequences (highly recommended)</B></A><BR> When checked,
-large duplicated regions (>= 100 bp)) are filtered out before
-analysis. Purging is essential for any pattern discovery process, to
-avoid a bias due to non-independence of sequences. Purging is
-performed with the programs <TT>mkvtree</TT> and <TT>vmatch</TT>
-developed by Stefan Kurtz (<a
+large duplicated regions (>= 40 bp alignment with less than 3
+mismatches)) are filtered out before analysis. Purging is essential
+for any pattern discovery process, to avoid a bias due to
+non-independence of sequences. Purging is performed with the programs
+<TT>mkvtree</TT> and <TT>vmatch</TT> developed by Stefan Kurtz (<a
 href="mailto:kurtz@TechFak.Uni-Bielefeld.DE">kurtz@TechFak.Uni-Bielefeld.DE</a>).
 
-
 <P>
-
 <A NAME="oligo_size">
 <B>Oligonucleotide size:</B></A><BR>
 
@@ -112,8 +110,8 @@ recommend starting with an analysis of hexanucleotides (size=6), and
 scanning sizes between 4 and 8. When a pattern is significantly
 overrepresented, it generaly appears from the analyses with various
 sizes.
-<P>
 
+<P>
 <A NAME="count_strands">
 <B>Count on:</B></A> (single or both strands)<BR> 
 
@@ -121,8 +119,8 @@ By selecting "both strands", the occurrences of each oligonucleotide
 are summed on both strands. This allows to detect elements which act
 in an orientation-insensitive way (as is generally the case for yeast
 upstream elements). 
-<P>
 
+<P>
 <A NAME="grouprc">
 <B>Group reverse complement together in the output</B></A><BR> (only
 valid for two strand analysis). This parameter does not affect the
@@ -140,8 +138,8 @@ For example, <TT>TATATATATATA</TT> would represent
 <LI>5 occurrences of <TT>TATATA</TT> when self-overlap is allowed
 </UL>
 Note that Z-score introduce a correction for self-overlapping patterns (see van Helden et al., 1999), but Z-scores are only valid for very large sequences (for example a set of 6000 downstream sequences), and are not appropriate for small gene clusters such as those extracted from DNA chip experiment. 
-<P>
 
+<P>
 <A NAME="exp_freq">
 <B>Expected frequency:</B></A><BR>
 
@@ -176,8 +174,8 @@ Expected(GATAAC) = observed(GATAA) * observed(ATAAC) / observed(ATAA)
 For words of size k, the highest possible order is k-2. A Markov order
 of 0 amounts to use observed residue frequencies for calculating
 expected oligomer frequencies (no dependency between neighbour
-residues).<P>
-
+residues).
+<P>
 The higher the Markov order, the most stringent is the analysis:
 specificity is increased, but there si a loss of sensitivity,
 i.e. some relevant patterns might be overlooked. The optimal markov
@@ -219,8 +217,8 @@ for didactic purposes (to allow anyone to test how bad it performs).
 
 
 </UL>
-<P>
 
+<P>
 <UL>
 
 <B>Attention !</B> 
@@ -281,8 +279,8 @@ overrepresentation.
 	</UL>
 </UL>
 
-<P>
 
+<P>
 <A NAME="thresholds">
 <B>Thresholds:</B></A><BR>
 
@@ -297,8 +295,8 @@ to automatically select the biologicaly significant regulatory sites,
 irrespective of oligonucleotide size, number and size of the sequences
 in the input set.
 
-<P>
 
+<P>
 </UL>
 
 <A NAME="proba">

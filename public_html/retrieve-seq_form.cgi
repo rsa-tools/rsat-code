@@ -5,8 +5,9 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
-require "RSA.lib.pl";
-require "RSA.cgi.lib.pl";
+require "RSA.lib";
+require "RSA.cgi.lib";
+$output_context = "cgi";
 
 ### Read the CGI query
 $query = new CGI;
@@ -69,7 +70,7 @@ print "<BR>\n";
 ### sequence type
 print "<B><A HREF='help.retrieve-seq.html#sequence_type'>Sequence type</A></B>&nbsp;";
 print $query->popup_menu(-name=>'sequence_type',
-			 -Values=>['upstream','downstream','ORF'],
+			 -Values=>['upstream','downstream','ORFs (unspliced)'],
 			 -default=>$default{sequence_type});
 
 ### from to

@@ -53,50 +53,56 @@ sub SelectOutput {
 ### - sequences piped from a previous script, and stored on the server
 ###   (typically  in a temporary dir)
 sub DisplaySequenceChoice {
-  print "<B>Sequence</B>";
-  #print "<UL>\n";
-  
-  if ($sequence_file = $query->param(sequence_file)) {
-    ### sequence file is already on the server machine 
-    ### (piped from a previous script)
-      $sequence_url = $sequence_file;
-      $sequence_url =~ s|$RSA/public_html|$WWW_RSA|;
-      print "<a href=$sequence_url>";
-      print " transferred from previous query<BR>\n";
-      print "</a>";
-      $sequence_format = $query->param(sequence_format);
-      print "<INPUT type='hidden' NAME='sequence_format' VALUE='$sequence_format'>\n";
-      print "<INPUT type='hidden' NAME='sequence_file' VALUE='$sequence_file'>\n";
-  } else {
-      #### sequence format (pop-up menu)
-      print "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
-      print "<B><A HREF='help.formats.html'>Format</A></B>&nbsp;";
-      print $query->popup_menu(-name=>'sequence_format',
-			       -Values=>['fasta', 
-					 'ig',
-					 'wconsensus',
-					 'raw',
-					 'ncbi',
-					 'multi'],
-			       -default=>$sequence_format);
-      print "<BR>\n";
-      ### text area to copy-paste the sequence
-      print "Paste your sequence in the box below<BR>\n";
-      print $query->textarea(-name=>'sequence',
-			     -default=>$default{sequence},
-			     -rows=>4,
-			     -columns=>55);
-      print "<BR>\n";
+    print &SequenceChoice();
+}
+
+sub SequenceChoice {
+    my $sequenceChoiceString = "";
+    $sequenceChoiceString .=  "<B>Sequence</B>";
+    #$sequenceChoiceString .=  "<UL>\n";
     
-    ### option to upload the sequence file from the client machine 
-    print "Or select a file to upload<BR>\n";
-    print $query->filefield(-name=>'uploaded_file',
-			    -default=>'starting value',
-			    -size=>45,
-			    -maxlength=>200);
-  }
-  print "<BR>\n";
-  #print "</UL>\n";
+    if ($sequence_file = $query->param(sequence_file)) {
+	### sequence file is already on the server machine 
+	### (piped from a previous script)
+	$sequence_url = $sequence_file;
+	$sequence_url =~ s|$RSA/public_html|$WWW_RSA|;
+	$sequenceChoiceString .=  "<a href=$sequence_url>";
+	$sequenceChoiceString .=  " transferred from previous query<BR>\n";
+	$sequenceChoiceString .=  "</a>";
+	$sequence_format = $query->param(sequence_format);
+	$sequenceChoiceString .=  "<INPUT type='hidden' NAME='sequence_format' VALUE='$sequence_format'>\n";
+	$sequenceChoiceString .=  "<INPUT type='hidden' NAME='sequence_file' VALUE='$sequence_file'>\n";
+    } else {
+	#### sequence format (pop-up menu)
+	$sequenceChoiceString .=  "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
+	$sequenceChoiceString .=  "<B><A HREF='help.formats.html'>Format</A></B>&nbsp;";
+	$sequenceChoiceString .=  $query->popup_menu(-name=>'sequence_format',
+						    -Values=>['fasta', 
+							      'ig',
+							      'wconsensus',
+							      'raw',
+							      'ncbi',
+							      'multi'],
+						    -default=>$sequence_format);
+	$sequenceChoiceString .=  "<BR>\n";
+	### text area to copy-paste the sequence
+	$sequenceChoiceString .=  "Paste your sequence in the box below<BR>\n";
+	$sequenceChoiceString .=  $query->textarea(-name=>'sequence',
+						  -default=>$default{sequence},
+						  -rows=>4,
+						  -columns=>55);
+	$sequenceChoiceString .=  "<BR>\n";
+	
+	### option to upload the sequence file from the client machine 
+	$sequenceChoiceString .=  "Or select a file to upload<BR>\n";
+	$sequenceChoiceString .=  $query->filefield(-name=>'uploaded_file',
+						   -default=>'starting value',
+						   -size=>45,
+						   -maxlength=>200);
+    }
+    $sequenceChoiceString .=  "<BR>\n";
+    #$sequenceChoiceString .=  "</UL>\n";
+    return $sequenceChoiceString;
 }
 
 
@@ -198,52 +204,36 @@ sub GetSequenceFile {
 
 #### warn the users to wait for complete result before clicking on piping buttons
 sub PipingWarning {
-    my $warning_message = join ("\n", "<font color=#660000>",
-				"<blockquote>",
-				"<center>",
-				"<B>",
-				"ONe or several button(s) will appear at the bottom of this page, allowing you to send the result as input for a subsequent query.",
-				"</B>",
-				"</center>",
-				"</blockquote>",
-				"</font>");
-    return $warning_message;
+    my $message = "One or several button(s) will appear at the bottom of this page, ";
+    $message .= "allowing you to send the result as input for a subsequent query."; 
+    &cgiMessage($message, "Information");
 }
 
 
-### general routine to report errors and interrupt the cgi
-sub cgiError {
-    my $error_message = join "", @_;
-    print ("<blockquote>",
-	   "<HR SIZE=3>",
-	   "<h2>Error</h2>",
-	   "<FONT SIZE=+1 color=#bb0000><blockquote><B>",
-	   $error_message,
-	   "</B></blockquote></FONT>",
-	   "<P><HR SIZE=3>",
-	   "</body></html>"
-	   );
-    exit(0);
-}
 
 
 
 ### display a pop-up menu with a selection of organism
 ### on the basis of the configuration found in RSA.config
 sub OrganismPopUp {
-  print "<B>Organism</B>&nbsp;";
-  print "<SELECT NAME='organism'>\n";
-  foreach $key (sort keys %supported_organism) {
-    $name = $supported_organism{$key}->{'name'};
-    if ((lc($key) eq lc($default{organism})) ||
-	(lc($name) eq lc($default{organism}))) {
-      print "<OPTION SELECTED VALUE='$key'>$name\n";
-    } else {
-      print "<OPTION VALUE='$key'>$name\n";
+    print &OrganismPopUpString();
+}
+sub OrganismPopUpString {
+    my $popUpString = "";
+    $popupString .=  "<B>Organism</B>&nbsp;";
+    $popupString .=  "<SELECT NAME='organism'>\n";
+    foreach $key (sort keys %supported_organism) {
+	$name = $supported_organism{$key}->{'name'};
+	if ((lc($key) eq lc($default{organism})) ||
+	    (lc($name) eq lc($default{organism}))) {
+	    $popupString .=  "<OPTION SELECTED VALUE='$key'>$name\n";
+	} else {
+	    $popupString .=  "<OPTION VALUE='$key'>$name\n";
+	}
     }
-  }
-  print "</SELECT>";
-  print "<BR>\n";
+    $popupString .=  "</SELECT>";
+    $popupString .=  "<BR>\n";
+    return $popupString;
 }
 
 
@@ -285,12 +275,15 @@ sub PrintHtmlTable {
   
   print "<PRE>";
   while (<$FILE>) {
+      s|$RSA/||g; #### avoid exposing the full path through the web interface
       if ($mirror) {
 	  print MIRROR $_
 	      unless ((/^;/) && !($mirror_verbose)); 
       }
 
       if (/^\s*$/) {		#nothing on the line
+      } elsif (/^;WARNING/) {		# warning
+	  push @warnings, $_;
       } elsif (/^;/) {		# comment line
 	  if ($table_opened) {
 	      print "<\/TABLE><PRE>\n";
@@ -331,7 +324,9 @@ sub PrintHtmlTable {
     }
   }
   if ($table_opened) {
-    print "<\/TABLE><PRE>\n";
+    print "<\/TABLE>";
+    print @warnings;
+    print "<PRE>\n";
     $table_opened = 0;
   }
   print $last_line;
