@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: util.pl,v 1.2 2003/11/16 00:17:38 jvanheld Exp $
+# $Id: util.pl,v 1.3 2003/11/30 07:46:17 jvanheld Exp $
 #
 # Time-stamp: <2003-07-10 11:46:32 jvanheld>
 #
@@ -9,7 +9,8 @@
 ### util.pl
 ### utilities for the AMAZE project
 
-
+$delivery_date =`date +%Y%m%d`;
+chomp $delivery_date;
 $null = "<NULL>";
 
 ################################################################

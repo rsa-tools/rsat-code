@@ -1,7 +1,7 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: parse-embl.pl,v 1.3 2003/10/20 23:18:06 jvanheld Exp $
+# $Id: parse-embl.pl,v 1.4 2003/11/30 07:45:45 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:17:49 jvanheld>
 #
@@ -10,157 +10,355 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
+#require "RSA.lib";
+#push @INC, $ENV{PARSER};
+#require "PFBP_classes.pl";
+#require "PFBP_parsing_util.pl";
+
 require "RSA.lib";
-push @INC, $ENV{PARSER};
-require "PFBP_classes.pl";
-require "PFBP_parsing_util.pl";
-
-#### initialise parameters ####
-my $start_time = &AlphaDate;
-
-local %infile = ();
-local %outfile = ();
-
-local $verbose = 0;
-local $in = STDIN;
-local $out = STDOUT;
-
-my $genes = PFBP::ClassFactory->new_class(object_type=>"PFBP::Gene",
-					  prefix=>"gene_");
-$genes->set_out_fields(qw( id type name chromosome start end strand description position names db_xref introns exons ));
-
-#### working directory
-$wd = `pwd`;
-chomp($wd);
-
-&ReadArguments;
+push @INC, "$RSA/perl-scripts/parsers/";
+require "lib/load_classes.pl";
+#require "lib/util.pl";
+require "lib/parsing_util.pl";
+#require "classes/Genbank_classes.pl";
 
 
-#### check argument values ####
-
-#### input directory
-unless (defined($dir{input})) {
-    &FatalError("You must specify the input directory.\n");
-}
-unless (-d $dir{input}) {
-    &FatalError("Input directory '$dir{input}' does not exist.\n");
-}
-unless (defined($org)) {
-    $org = `basename $dir{input}`;
-    chomp($org);
-    warn "; Auto selection of organism name\t$org\n" if ($verbose >= 1);
+################################################################
+#### Class for EMBL feature
+package EMBL::Feature;
+{
+  @ISA = qw ( classes::DatabaseObject );
+  ### class attributes
+  $_count = 0;
+  $_prefix = "ft_";
+  @_objects = ();
+  %_name_index = ();
+  %_id_index = ();
+  %_attribute_count = ();
+  %_attribute_cardinality = (id=>"SCALAR",
+			     names=>"ARRAY",
+			     organism=>"SCALAR",
+			     type=>"SCALAR",
+			     description=>"SCALAR",
+			     position=>"SCALAR",
+			     position=>"SCALAR",
+			     chromosome=>"SCALAR",
+			     strand=>"SCALAR",
+			     start=>"SCALAR",
+			     end=>"SCALAR",
+			     xrefs=>"EXPANDED"
+			     );
 }
 
-#### find embl files in the input directory
-chdir ($dir{input});
-@embl_files = glob("*.contig");
-if ($#embl_files < 0) {
-    &FatalError("There is no embl file in the input directory $dir{input}\n");
-} else {
-    warn "; EMBL files\n;\t", join("\n;\t", @embl_files), "\n" if ($verbose >= 1);
+
+################################################################
+#### Class for EMBL organism
+package EMBL::Organism;
+{
+  @ISA = qw ( classes::DatabaseObject );
+  ### class attributes
+  $_count = 0;
+  $_prefix = "ft_";
+  @_objects = ();
+  %_name_index = ();
+  %_id_index = ();
+  %_attribute_count = ();
+  %_attribute_cardinality = (id=>"SCALAR",
+			     names=>"ARRAY",
+			     taxonomy=>"SCALAR",
+			     );
 }
 
-#### come back to the starting directory
-chdir($wd);
-
-#### output directory
-unless (defined($dir{output})) {
-    $dir{output} = "$RSA/data/$org/genome";
-    warn "; Auto selection of output dir\t$dir{output}\n" if ($verbose >= 1);
+################################################################
+#### Class for EMBL contig
+package EMBL::Contig;
+{
+  @ISA = qw ( classes::DatabaseObject );
+  ### class attributes
+  $_count = 0;
+  $_prefix = "ft_";
+  @_objects = ();
+  %_name_index = ();
+  %_id_index = ();
+  %_attribute_count = ();
+  %_attribute_cardinality = (id=>"SCALAR",
+			     accession=>"SCALAR",
+			     version=>"SCALAR",
+			     type=>"SCALAR",
+			     length=>"SCALAR",
+			     description=>"SCALAR",
+			     );
 }
-&CheckOutputDir($dir{output});
 
-#### verbose ####
-&Verbose if ($verbose);
 
-#### parse the embl files
-$chrom = &OpenOutputFile("$dir{output}/Contigs_${org}.txt"); # file with chromosome IDs
-foreach my $file (@embl_files) {
-    my $contig = `basename $file .contig`;
-    chomp($contig);
-    my $sequence = &ParseEMBLFile("$dir{input}/$file", $genes, source=>$contig);
-    open RAW, ">$dir{output}/${contig}.raw";
-    &PrintNextSequence(RAW, "raw", 0, $sequence, $contig);
-    close RAW;
-    print $chrom "$contig.raw", "\t", $contig, "\n";
-}
-close $chrom;
 
-#### parse gene positions
-&ParsePositions($genes);
 
-#### check some gene attributes (name, description, ...)
-foreach $gene ($genes->get_objects()) {
-    foreach my $name ($gene->get_attribute("gene")) {
-	$gene->push_attribute("names",$name);
-    };
+################################################################
+#### main package
+package main;
+{
+
+    #### initialise parameters ####
+    my $start_time = &AlphaDate();
+
+    local %infile = ();
+    local %outfile = ();
+    $outfile{stats} = "embl_stats.txt";
+
+    local $verbose = 0;
+    local $in = STDIN;
+    local $out = STDOUT;
+    local $test_lines = 1000;
+    local $feature_count = 0;
     
-    ### define a single name  (take the first value in the name list)
-    if ($name = $gene->get_name()) {
-	$gene->set_attribute("name",$name);
+
+    #### SQL options
+    $host= $default{'host'};
+    $schema="embl";
+    $user="embl";
+    $password="embl";
+    
+
+#    my $genes = classes::ClassFactory->new_class(object_type=>"EMBL::Gene",
+#						 prefix=>"gene_");
+
+    ################################################################
+    #### Open class factories
+
+    #### Organism
+    my $organisms = classes::ClassFactory->new_class(object_type=>"EMBL::Organism",prefix=>"org_");
+    $organisms->set_out_fields(qw (id
+				   name
+				   names
+				   taxonomy
+				   ));
+    
+
+    #### Contig
+    my $contigs = classes::ClassFactory->new_class(object_type=>"EMBL::Contig",prefix=>"ctg_");
+    $contigs->set_out_fields(qw (id
+				 accession
+				 version
+				 form
+				 type
+				 file
+				 length
+				 description
+				 ));
+    
+    
+    #### Features
+    my $features = classes::ClassFactory->new_class(object_type=>"EMBL::Feature",prefix=>"ft_");
+    $features->set_out_fields(qw( id
+				  type
+				  name
+				  contig
+				  start
+				  end
+				  strand
+				  description
+				  organism
+				  chromosome
+				  position
+				  names
+				  db_xref
+				  introns
+				  exons
+				  
+				  EC_number
+				  
+				  function
+				  isolate
+				  mol_type
+				  note
+				  product
+				  translation
+				  strain
+				  locus_tag
+				  sub_strain
+				  bound_moiety
+				  
+				  ));
+    #### classes
+    @classes = qw ( EMBL::Feature
+		  EMBL::Contig
+		  EMBL::Organism
+		    );
+    
+    #### working directory
+    $wd = `pwd`;
+    chomp($wd);
+    
+
+
+    &ReadArguments();
+    
+    ################################################################
+    #### check argument values ####
+    
+    #### input directory
+    unless (defined($dir{input})) {
+	&FatalError("You must specify the input directory.\n");
+    }
+    unless (-d $dir{input}) {
+	&FatalError("Input directory '$dir{input}' does not exist.\n");
+    }
+
+    #### First guess for organism
+    unless (defined($org)) {
+	$org = `basename $dir{input}`;
+	chomp($org);
+	warn "; Auto selection of organism name\t$org\n" if ($verbose >= 1);
+    }
+
+    #### find embl files in the input directory
+    chdir ($dir{input});
+    @embl_files =();
+    push @embl_files, glob("*.embl");
+    push @embl_files, glob("*.embl.Z");
+    if ($#embl_files < 0) {
+	&FatalError("There is no embl file in the input directory $dir{input}\n");
     } else {
-	$gene->set_attribute("name",$gene->get_id());
+	warn "; EMBL files\n;\t", join("\n;\t", @embl_files), "\n" if ($verbose >= 1);
+    }
+
+    #### come back to the starting directory
+    chdir($wd);
+
+    #### output directory
+    unless (defined($dir{output})) {
+	#### default output directory
+	$export_subdir = "embl";
+	$dir{output} = "$parsed_data/$export_subdir/$delivery_date/$org";
+#	$dir{output} = "$RSA/data/embl_genomes/$org/genome";
+	warn "; Auto selection of output dir\t$dir{output}\n" if ($verbose >= 1);
+    }
+    &CheckOutputDir($dir{output});
+
+    #### verbose ####
+    &Verbose() if ($verbose);
+
+    #### parse the embl files
+    $contig_handle = &OpenOutputFile("$dir{output}/Contigs.txt"); # file with chromosome IDs
+    foreach my $file (@embl_files) {
+	my $sequence = &ParseEMBLFile("$dir{input}/$file", 
+				      $organisms, 
+				      $contigs,
+				      $features, 
+				      source=>$file);
+	my $seq_file = $contig->get_attribute("id");
+	$seq_file .= ".raw";
+	open RAW, ">$dir{output}/$seq_file";
+	&PrintNextSequence(RAW, "raw", 0, $sequence, $contig);
+	close RAW;
+	print $contig_handle $seq_file, "\t", $contig->get_attribute("id"), "\n";
+    }
+    close $contig_handle;
+
+
+    ################################################################
+    #### Postprocessing : we interpret the features to extract more information
+    #### check some feature attributes (name, description, ...)
+
+    warn "Processing features\n" if ($verbose >= 1);
+    my $organism_name = $org; #### first guess
+    my $chromosome = "";
+    foreach $feature ($features->get_objects()) {
+
+	#### the real organism name is annotated in the feature of type "source"
+	if ($feature->get_attribute("type") eq "source") {
+            $organism_name = $feature->get_attribute("organism");
+            $chromosome = $feature->get_attribute("chromosome");
+            unless ($chromosome) {
+		$chromosome = $feature->get_attribute("contig");
+            }
+# die "HELLO $chromosome";
+        } else {
+           $feature->set_attribute("organism", $organism_name);
+           $feature->set_attribute("chromosome", $chromosome);
+        }
+	
+#	foreach my $name ($feature->get_attribute("feature")) {
+#	    $feature->push_attribute("names",$name);
+#	};
+	
+	### define a single name  (take the first value in the name list)
+	if ($name = $feature->get_name()) {
+	    $feature->set_attribute("name",$name);
+	} else {
+	    $feature->set_attribute("name",$feature->get_id());
+	}
+	
+	#### check for features without description
+	if (($feature->get_attribute("description") eq $null) 
+	    || ($feature->get_attribute("description") eq "")) {
+            my $description =  join (";", $feature->get_attribute("product"));
+            unless ($description) {
+                $description =  join (";", $feature->get_attribute("note"));
+	    }
+            $feature->set_attribute("description",$description);
+        }
+	
+	#### use GI as feature identifier
+	my @xrefs = $feature->get_attribute("db_xref");
+	my $gi = "";
+	foreach my $xref (@xrefs) {
+	    if ($xref =~ /GI:/) {
+		$gi = $';
+		last;
+	    } 
+	}
+	if ($gi) {
+	    $feature->force_attribute("id",$gi);
+	} else {
+	    &ErrorMessage("; Error\tfeature ".$feature->get_attribute("id")." has no GI.\n"); 
+	}
+	
+#  	#### use embl name as chromosome name
+#  	my $source = $feature->get_attribute("source");
+#  	if ($source =~ /embl:/) {
+#  	    my $chromosome = $';
+#  	    $chromosome =~ s/\.gz$//;
+#  	    $chromosome =~ s/\.contig$//;
+#  	    $feature->force_attribute("chromosome",$chromosome);
+#  	}
     }
     
-    #### check for genes without description
-    if (($gene->get_attribute("description") eq $null) 
-	|| ($gene->get_attribute("description") eq "")) {
-	$gene->set_attribute("description",
-			     join("; ", $gene->get_attribute("product"),
-				  $gene->get_attribute("note")));
+    ### print result
+    chdir $dir{output};
+    foreach $class_factory ($organisms, $contigs, $features) {
+	$class_factory->dump_tables();
+	$class_factory->generate_sql(dir=>"$dir{output}/sql_scripts",
+				schema=>$schema,
+				host=>$host,
+				user=>$user,
+				password=>$password
+				);
     }
-    
-    #### use GI as gene identifier
-    my @xrefs = $gene->get_attribute("db_xref");
-    my $gi = "";
-    foreach my $xref (@xrefs) {
-	if ($xref =~ /GI:/) {
-	    $gi = $';
-	    last;
-	} 
+    &ExportMakefile(@classes);
+    &PrintStats($outfile{stats}, @classes);
+
+    ###### verbose ######
+    if ($verbose) {
+	my $done_time = &AlphaDate();
+	print $out "; Job started $start_time\n";
+	print $out "; Job done    $done_time\n";
     }
+
+
+    ###### close output file ######
+    close $out if ($outfile{output});
     
-      if ($gi) {
-  	$gene->force_attribute("id",$gi);
-      } else {
-  	&ErrorMessage("; Error\tgene ".$gene->get_attribute("id")." has no GI.\n"); 
-      }
-    
-    #### use embl name as chromosome name
-    my $source = $gene->get_attribute("source");
-    if ($source =~ /embl:/) {
-	my $chromosome = $';
-	$chromosome =~ s/\.gz$//;
-	$chromosome =~ s/\.contig$//;
-	$gene->force_attribute("chromosome",$chromosome);
-    }
+    warn "; Results exported in directory\t", $dir{output}, "\n" if ($verbose >= 1);
+
+    exit(0);
 }
-
-### print result
-chdir $dir{output};
-#&PrintStats($out_file{stats}, @classes);
-$genes->dump_tables("_$org");
-#&ExportClasses($out_file{genes}, $out_format, PFBP::Gene) if $export{obj};
-
-###### verbose ######
-if ($verbose) {
-    my $done_time = &AlphaDate;
-    print $out "; Job started $start_time\n";
-    print $out "; Job done    $done_time\n";
-}
-
-
-###### close output file ######
-close $out if ($outfile{output});
-
-
-exit(0);
-
 
 ########################## subroutine definition ############################
 
-sub PrintHelp {
+################################################################
 #### display full help message #####
+sub PrintHelp {
   open HELP, "| more";
   print HELP <<End_of_help;
 NAME
@@ -182,6 +380,8 @@ OPTIONS
 	-h	(must be first argument) display full help message
 	-help	(must be first argument) display options
 	-v	verbose
+	-test #	quick test (for debugging): only parse the # first
+		lines of each Genabnk file (default $test_lines).
 	-i	input directory
 		input directory. This directory must contain one or
 		several embl files (extension .contig). 
@@ -189,31 +389,108 @@ OPTIONS
 		The parsing result will be saved in this directory. If
 		the directory does not exist, it will be created.
 	-org	organism name
+
+   Options for the automaticaly generated SQL scripts
+	-schema database schema (default: $schema)
+	-host	database host (efault: $host)
+	-user	database user (efault: $user)
+	-password	
+		database password (default: $password)
+
+INPUT FILE
+
+        This parser takes as input all the .embl and .embl.Z files
+        found in the input directory. Each file is parsed and the
+        results are exported in a single directory (the outpu
+        directory). Features found in different files are merged in
+        the same output file (Features.tab). The idea is tha one
+        parsing corresponds to one genome.
+
+OBJECT TYPES
+
+        The parser is based on a syntactic decomposition of the .embl
+        files. Internally, it creates the following objects
+
+	    EMBL::Organism
+	    EMBL::Contig
+	    EMBL::Feature
+
+	Each feature has a type (CDS, tRNA, rRNA, promoter, ...), as
+	found in the original EMBL file. The feature type si indicated
+	by a line starting with FT, followed by 3 white spaces, the
+	type, some additional spaces, and the position.
+
+	There is thus one generic object called 'feature', which has a
+	type attribute. An alternative possibility would have been to
+	create one distinct object type for each feature
+	type. However, since the types of features encountered vary
+	from file to file, we preferred to leave the feature
+	completely generic, so we avoid to skip features which would
+	not have been encountered in the files used for the
+	development of the parser.
+
+	Each feature has several attributes. The attributes names are
+	assigned dynamically on the basis of a syntactic
+	analysis. This means that the parser might create attributes
+	which had bever been assigned before. This makes a problem,
+	since one organism would export some tables which were not
+	found in another organism. Since tables are created only once
+	(before loading the first organism), the new data could not be
+	loaded. To avoid this, the attributes to be exported are
+	specified in the parser. Unrecognized attributes are parsed
+	and appear in the file embl_tats.txt, but the tables and SQL
+	scripts for loading these attributes are not exported.
+
+OUTPUT
+
+	The parsed data is exported in several tab-delimited files:
+	one main table with all the single-value attributes, and one
+	separate table for each multi-value attribute.
+
+	However, in this parser, I do not strictly follow this
+	normalization rule, for the sae of space economy. Indeed, some
+	single-value attributes are specific for some feature types
+	(e.g. the attribute 'product' is found for the feature type
+	'CDS' but not for feature type 'promoter'; the attribute
+	'bound_moiety' is assigned to feature type 'protein_bind',
+	which is annotated in some genomes like ecoli_K12, but absent
+	from most other genome annotations). Thus, having these fields
+	in the main table Feature.tab would result in columns almost
+	full of <NULL>. To avoid this, I export these fields in side
+	tables, with a foreign key to the feature ID.
+
+
 End_of_help
   close HELP;
   exit;
 }
 
-sub PrintOptions {
+################################################################
 #### display short help message #####
+sub PrintOptions {
   open HELP, "| more";
   print HELP <<End_short_help;
 parse-embl options
 ----------------
 -h	(must be first argument) display full help message
 -help	(must be first argument) display options
+-test #	quick test (for debugging)
 -i	input dir
 -o	output dir
 -v	verbose
 -org	organism name
+-schema database schema (default: $schema)
+-host	database host (default: $host)
+-user	database user (default: $user)
+-password	database password (default: $password)
 End_short_help
   close HELP;
   exit;
 }
 
-
-sub ReadArguments {
+################################################################
 #### read arguments ####
+sub ReadArguments {
     foreach my $a (0..$#ARGV) {
 	### verbose ###
 	if ($ARGV[$a] eq "-v") {
@@ -231,6 +508,13 @@ sub ReadArguments {
 	} elsif ($ARGV[0] eq "-help") {
 	    &PrintOptions;
 	    
+	    ### quick test
+	} elsif ($ARGV[$a] eq "-test") {
+	    $test = 1;
+	    if (&IsNatural($ARGV[$a+1])) {
+		$test_lines = $ARGV[$a+1];
+	    }
+
 	    ### input file ###
 	} elsif ($ARGV[$a] eq "-i") {
 	    $dir{input} = $ARGV[$a+1];
@@ -243,10 +527,34 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-org") {
 	    $org = $ARGV[$a+1];
 	    $org =~ s/\s+/_/g;
+
+
+	    ################################################################
+	    #### SQL database parameters
+
+	    ### schema
+	} elsif ($ARGV[$a] eq "-schema") {
+	    $schema = $ARGV[$a+1];
+	    
+	    ### host
+	} elsif ($ARGV[$a] eq "-host") {
+	    $host = $ARGV[$a+1];
+	    
+	    ### user
+	} elsif ($ARGV[$a] eq "-user") {
+	    $user = $ARGV[$a+1];
+	    
+	    ### password 
+	} elsif ($ARGV[$a] eq "-password") {
+	    $password = $ARGV[$a+1];
+	    
 	}
     }
 }
 
+
+################################################################
+#### print verbose message
 sub Verbose {
     print $out "; parse-embl ";
     &PrintArguments($out);
@@ -273,129 +581,287 @@ sub Verbose {
 }
 
 
+
+################################################################
+#### parse one EMBL file
 sub ParseEMBLFile {
-    my ($input_file, $class_holder, %args) = @_;
-    warn ";\n; Parsing file $input_file.\n" if ($verbose >= 1);
+    my ($input_file, $organisms, $contigs, $features, %args) = @_;
+    warn ";\n; Parsing file $input_file\n" if ($verbose >= 1);
     
-    $embl = &OpenInputFile($input_file);
+    my ($file,$dir) = &OpenInputFile($input_file);
 #    open EMBL, $input_file 
 #	|| die "Error: cannot open input file $input_file.\n";
-    my $l = 0;
-    my $in_features = 0;
-    my $in_feature = 0;
-    my $in_gene = 0;
-    my $in_cds = 0;
-    my $current_gene = null;
-    my $organism_name = "";
+
+    #### initialize parsing variables
+    my $l = 0; #### line counter
+    my $in_FT = 0; #### flag to indicate whether we are reading a feature
+#    my $in_feature = 0;
+#    my $in_cds = 0;
+
+    my $current_feature = null;
     my $sequence = "";
-    while (my $line = <$embl>) {
+    my $organism_name = "";
+    my $organism;
+
+    #### parse the file
+    while (my $line = <$file>) {
 	$l++;
-	print STDERR $line if ($verbose >= 10);
+	if (($test) && ($l > $test_lines)) {
+	    warn "Test: stopping at line $l\n";
+	    last; 
+	}
+
+	warn $line if ($verbose >= 10);
 	chomp $line;
 	next unless ($line =~ /\S/);
 
 	#### read the full sequence
 	if  ($line =~ /^SQ/) {
-	    $in_featuress = 0;
+	    $in_FT = 0;
 	    $in_sequence = 1;
-	    while (my $line = <$embl>) {
+	    while (my $line = <$file>) {
 		if ($line =~ /\d+\s*$/) {
 		    $sequence .= $`;
 		} elsif ($line =~ /^\/\/$/) {
 		    $in_sequence = 0;
 		}
 	    }
-	    
         }
+	
+	if  ($line =~ /^ID\s+(\S+)\s*/) {
+	    #### contig ID line
+	    $contig = $contigs->new_object(id=>$1);
+	    my $contig_description = $';
+	    $contig->set_attribute("description",$contig_description);
+	    $contig->set_attribute("file",$file);
 
-
-	unless ($in_features) {
-#	    if ($line =~ /^\s+ORGANISM\s+/) {
-#		$organism_name = $';
-#		warn "; Organism name\t\t$organism_name\n" if ($verbose >= 1);
-#	    }
-	    if ($line =~ /^FT\s+/) {
-		$in_features = 1 ;
-		warn "; Reading features\n" if ($verbose >= 1);
+	    #### contig length
+	    if ($contig_description =~ /(\d+)\s+BP\./i) {
+		$contig->set_attribute("length", $1);
 	    }
-	    next;
+
+	    #### contig form
+	    if ($contig_description =~ /circular/i) {
+		$contig->set_attribute("form", "circular");
+	    } else {
+		$contig->set_attribute("form", "linear");
+	    }
+
+	} elsif ($line =~ /^AC\s+/) {
+	    #### accession number for the currrent contig
+	    my $AC = $';
+	    $AC =~ s/;$//;
+	    $contig->set_attribute("accession", $AC);
+
+	} elsif ($line =~ /^SV\s+/) {
+	    #### sequence version for the currrent contig
+	    my $version = $';
+	    $contig->set_attribute("version", $version);
+
+	} elsif ($line =~ /^OS\s+/) {
+	    #### organism name
+	    $organism_name = $';
+	    warn "; Organism name\t", $organism_name, "\n" if ($verbose >= 2);
+	    $organism = $organisms->new_object(%args);
+	    $organism->push_attribute("names", $organism_name);
+	    $organism->set_attribute("name",$organism_name);
+
+	} elsif ($line =~ /^OC\s+/) {
+	    my $taxonomy = $';
+
+	    #### read the rest of the taxxonomy (it can be larger than
+	    #### one line)
+	    while ($line = <$file>) {
+		chomp $line;
+		$l++;
+		if ($line =~ /^OC\s+/) {
+		    $taxonomy .= $';
+		} else {
+		    last;
+		}
+	    }
+	    
+	    #### organism taxonomy
+	    if ($organism) {
+		$organism->set_attribute("taxonomy", $taxxonomy);
+	    }
+	} 
+
+
+	#### start reading features
+	unless ($in_FT) {
+	    if ($line =~ /^FT\s+/) {
+		$in_FT = 1 ;
+		warn "; Reading features\n" if ($verbose >= 10);
+	    }
 	}
-	if ($line =~ /^FT   CDS\s+(.*)/) {
-	    $in_gene = 0;
-	    $in_cds = 1;
-	    $position = &trim($1);
+
+
+	#### new feature
+	if ($line =~ /^FT   (\S+)\s+(.*)/) {
+	    
+	    #### feature type
+	    $feature_type = $1;
+	    
+	    #### read the feature position
+	    $position = &trim($2);
 	    if ($position =~ /join\(/){
 		### check that the position is complete
 		my $start_line = $l;
-		unless ($' =~ /\)/) {
-		    do {
-			die "Error: position starting at line $l is not terminated properly.\n"
-			    unless $position_suite = <$embl>;
-			$position_suite =~ s/^FT//;
-			$position .= &trim($position_suite);
-		    } until ($position =~ /\)/);
-		}
-	    }
-	    $current_gene = $class_holder->new_object(%args);
-	    $current_gene->set_attribute("type","CDS");
-	    $current_gene->set_attribute("organism",$organism_name);
-	    $current_gene->set_attribute("position",$position);
-	    warn ";\tline $l\tnew CDS\n" if ($verbose >= 2);
-	} elsif ($line =~ /^FT   \S+/) {
-	    $in_cds = 0;
-#	} elsif ($line =~ /     gene\s+(.*)/) {
-#	    $in_cds = 0;
-#	    $in_gene  = 1;
-#	    $position = $1;
-#	    &trim($position);
-	} elsif ($in_cds) {
-	    unless ($current_gene) {
-		die "Error: $file $input_file\tline $l\tno gene defined\n.";
-	    }
-	    if ($line =~ /^FT +\/(\S+)\=(\d+)/) {
-		#### numerical value
-		$key = $1;
-		$value = $2;
-		$current_gene->new_attribute_value($key,$value);
-		
-	    } elsif ($line =~ /^FT +\/(\S+)\=\"(.+)\"/) {
-		#### short string
-		$key = $1;
-		$value = $2;
-		$current_gene->new_attribute_value($key,$value);
-
-	    } elsif ($line =~ /^FT +\/(\S+)\=\"(.+)/) {
-		#### long string
-		$key = $1;
-		$value = $2;
-		$in_feature = 1;
-		
-	    } elsif ($in_feature) {
-		if ($line =~ /^FT +/) {
-		    $to_add = &trim($');
-		    if ($to_add =~ /\"$/) {
-			$value .= " " unless ($key eq "translation");
-			$value .= $`;
-#		    die "HELLO\n$to_add\n$`\n$value\n";
-			$current_gene->new_attribute_value($key,$value);
-			$key = "";
-			$value  = "";
-			$in_feature = 0;
+		while ($line = <$file>) {
+		    $l++;
+		    chomp($line);
+		    if (($line =~ /^FT   (\S+)\s+(.*)/) ||
+			($line =~ /^FT    \s+\/(\S+)\=\"/)) {
+			last;
+		    } elsif ($line =~ /^FT    \s+[^\/](\S+)/) {
+			$position .= $1;
 		    } else {
-			$value .= " " unless ($key eq "translation");
-			$value .= $to_add;
+			die "Error: feature position started at line $start_line not properly terminated at line $l\n";
 		    }
-		} else {
-		    warn ("file ".$input_file."\tline $l\tnot parsed\t$line\n") if ($verbose >= 2);
 		}
-	    } elsif ($in_gene) {
-		#### genes are not parsed for the time being (which means that tRNA are not parsed, since there is no corresponding CDS)
+		
+#  		unless ($' =~ /\)/) {
+#  		    do {
+#  			die "Error: position starting at line $l is not terminated properly.\n"
+#  			    unless $position_suite = <$file>;
+#  			$position_suite =~ s/^FT//;
+#  			$position .= &trim($position_suite);
+#  		    } until ($position =~ /\)/);
+#  		}
 	    }
-	} else {
-	    warn ("file ".$input_file."\tline $l\tnot parsed\t$line\n") if ($verbose >= 2);
+
+	    #### create a new object for the feature
+	    $current_feature = $features->new_object(%args);
+	    $feature_count++;
+	    warn join "\t",  "; file $input_file", "line $l", "feature $feature_count", $feature_type, "\n" if ($verbose >= 2);
+	    $current_feature->set_attribute("type",$feature_type);
+	    $current_feature->set_attribute("contig",$contig->get_attribute("id"));
+#	    $current_feature->set_attribute("organism",$organism_name);
+	    $current_feature->set_attribute("position",$position);
+	    &ParsePositionEMBL($current_feature);
+
+	    ### chromosome
+#	    my $chromosome = $current_feature->get_attribute("source");
+#	    $chromosome =~ s/\.embl.*//;
+#	    $current_feature->set_attribute("chromosome",$chromosome);
 	}
+
+
+
+	#### new feature attribute
+	if ($line =~ /^FT    \s+\/(\S+)\=\"/) {
+	    my $key = $1;
+	    my $value = $';
+	    my $start_l = $l;
+
+	    if  ($value =~ /\"\s*$/) {
+		#### value terminates on the first line
+		$value = $`;
+	    } else {
+		#### collect following lines until value is terminated
+		while ($line = <$file>) {
+		    chomp $line;
+		    $l++;
+		    if  ($line =~ /^FT\s+/) {
+			#### value is included in the first line
+			$value .= " ".$';
+			if  ($value =~ /\"\s*$/) {
+			    #### value is terminated
+			    $value = $`;
+			    last;
+			}
+		    } else  {
+			die "Error: feature attribute started at line $start_l is not terminated at line $l\n";
+		    }
+		}
+	    }
+	    
+	    #### remove spaces from sequences
+	    if ($key eq "translation") {
+		$value =~ s/\s//g;
+	    }
+
+	    $current_feature->new_attribute_value($key, $value);
+	    warn join ("\t", "; attribute", $feature_count, $start_l, $l, $key, $value), "\n" if ($verbose >= 4);
+
+	}
+	
     }
-    close $embl;
+    close $file;
     return $sequence;
 }
+
+
+################################################################
+#### parse the position of the current feature
+sub ParsePositionEMBL {
+    my ($current_feature) = @_;
+    my $position = $current_feature->get_attribute("position");
+    my $complete_position = $position;
+    my $start = $null;
+    my $end = $null;
+    my $strand = $null;
+
+    #### strand
+    if ($position =~ /^complement\((.*)\)$/) {
+	$position = $1;
+	$strand = "R";
+    } else {
+	$strand = "D";
+    }
+
+    #### introns/exons
+    if ($position =~ /^join\((.*)\)$/) {
+	$position = $1;
+    }
+    my @exons = split ",", $position;
+    
+
+    #### The start of the first exon is the feature start, the end of
+    #### the last exon is the feature end
+    my @exon_starts = ();
+    my @exon_ends = ();
+    foreach my $exon (@exons) {
+
+	#### strand !!! in some cases, the complement is WITHIN the join, and repeated for each exon 
+	##  FT   CDS             join(complement(173191..173432),complement(172942..173107)
+	##  FT                   )
+	##  FT                   /db_xref="SPTREMBL:O11851"
+	##  FT                   /note="ORF YCR028"
+	##  FT                   /gene="RIM1"
+	if ($exon =~ /^complement\((.*)\)$/) {
+	    $exon = $1;
+	    $strand = "R";
+	} else {
+	    $strand = "D";
+	}
+	
+	if ($exon =~ /^(<*\d+)..(>*\d+)$/) {
+	    push @exon_starts, $1;
+	    push @exon_ends, $2;
+	} else {
+	    &ErrorMessage("invalid exon specification\t", $exon, "\t", $complete_position, "\n");
+	}
+    }
+
+    #### if the feature contains several exons infer introns
+    if ($#exon_starts >= 1) {
+	for my $e (0..$#exon_starts-1) {
+	    my $intron = $exon_ends[$e]."..".$exon_starts[$e+1];
+	    $current_feature->push_attribute("introns", $intron);
+	}
+    }
+
+    $current_feature->set_attribute("start",$exon_starts[0]);
+    $current_feature->set_attribute("end",$exon_ends[$#exon_ends]);
+    $current_feature->set_attribute("strand",$strand);
+
+
+    
+    return();
+} 
+
+
+
 
