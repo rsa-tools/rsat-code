@@ -1,39 +1,39 @@
-<HTML>
-<HEAD>
-   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <TITLE>RSA-tools - tutorials</TITLE>
-</HEAD>
-<BODY TEXT="#000000" BGCOLOR="#FFFFFF" LINK="#0000EE" VLINK="#55008B" ALINK="#FF0000">
+<html>
+<head>
+   <meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <title>RSA-tools - tutorials</title>
+</head>
+<body text="#000000" bgcolor="#ffffff" link="#0000ee" vlink="#55008b" alink="#ff0000">
 <blockquote>
 
-<HR SIZE=6 WIDTH="100%">
-<CENTER>
-<H2><A HREF="../RSA_home.cgi">RSA-tools</A> - 
+<hr size=6 width="100%">
+<center>
+<h2><a href="../RSA_home.cgi">RSA-tools</a> - 
 <a href="tutorials.html">Tutorials</a> - 
 <a href="../retrieve-seq_form.cgi">retrieve-seq</a>
-</H2>
-</CENTER>
+</h2>
+</center>
 
-<HR SIZE=6 WIDTH="100%">
+<hr size=6 width="100%">
 
 In the left pannel, under the title <B>Sequence retrieval</B>, click
-on the tool "<B>Retrieve sequence</B>". A form appears, allowing you
+on the tool "<B>retrieve sequence</B>". A form appears, allowing you
 to select the parameters of sequence retrieval.
 
 
-<h3>Retrieving upstream sequences for a selected set of genes</h3>
-<UL>
+<h3>Retrieving sequences for a selected set of genes</h3>
+<ul>
 
 We will first retrieve upstream sequences for a set of 5 yeast genes
 involved in yeast phosphate metabolism.
 
 <OL>
 
-<P><LI>
-In the pop-up menu "<B>Organism</b>", select <I>Saccharomyces cerevisiae</I> 
+<p><li> In the pop-up menu "<B>Organism</b>", select <I>Saccharomyces
+cerevisiae</I>
 
-<P><LI>
-In the text area under "<B>Genes</B>", type the names of your genes</LI>
+<p><li> In the text area under "<B>Genes</B>", type the following list
+of genes</LI>
 
 <PRE>
 YBR093C
@@ -43,34 +43,109 @@ PHO81
 Pho84
 </PRE>
 
-<B>Warning:</B> gene names must be separated by carriage returns, because
-only the first word of each line is considered as a query.
+<p><li>Inactivate the option <b>Prevent overlap with upstream
+ORFs</b>.
 
-
-<P>
-Notice that gene names are case-insensitive. 
-
-<P>Genes can be specified either by the systematic ORF identifier or
-by a common name. Synonyms are supported.
-
-<P><LI>Leave all other options unchanged and click on the button <B>GO</B></LI>
+<p><li>Leave all other options unchanged and click on the button
+<b>GO</b>
 
 </OL>
 
-<P>
-After a few seconds, the upstream sequence of the selected genes
-will be displayed.
+<p><B>Remarks</B>
+<ul>
+<li>gene names must be separated by carriage returns, because
+only the first word of each line is considered as a query.
 
-<P>
+<li>Notice that gene names are case-insensitive. 
 
+<li>Genes can be specified either by the systematic ORF identifier or
+by a common name. Synonyms are supported.
+</ul>
+
+
+<p>
+After a few seconds, the upstream sequence of the selected genes will
+be displayed. Check the sizes of the sequences you obtained.
+
+<p>
 At the bottom of the sequences, you can see a series of buttons, which
-will allow you to send the retrieved sequences to the next task (see
-other tutorials).
+will allow you to send the retrieved sequences to the next task (as we
+will see in the next tutorials). For the time being, do not click
+these buttons.
 
 
-</UL>
-<h3>Retrieving all downstream sequencs</h3>
-<UL>
+</ul>
+<h3>Preventing overlap with upstream ORFs</h3>
+<ul>
+
+<ol>
+<p><li>Come back to the <b>retrieve sequnece</b> form. 
+<p><li>Perform the same operations as above, but this time, activate
+the option <b>Prevent overlap with upstream ORFs</b>.
+<p><li>Compare what you obtain with the previous result. 
+</ol>
+
+<p>
+The default size for yeast upstream sequences is 800bp. The reason for
+this choice is that 99% of the regulatory elements found in TRANSFAC
+(the Transcription Factor Database) are located between -1 and -800,
+relative to the start codon.
+
+<p>
+However, the median value for the distance between a gene and its
+upstream neighbour is 450 bp. Thus, with a distance of 800bp, most
+upstream regions would include a fragment of coding sequence from the
+upstream ORF, which might bias subsequent analyses.
+
+<p>
+
+The situation is even worst in bacteria, due to the organization of
+genes into operons. In <i>Escherichia coli</i>, 25% of the genes have
+an upstream neighbour closer than 50bp. When this neighbour is on the
+same strand as the gene, it might indicate that they belong to the
+same operon. 
+
+<p>
+For most organisms, it is thus preferible to prevent overlap with
+upstream ORFs. A notable exception is the yeast <i>Saccharomyces
+cerevisiae</i>. We evaluated the results obtained when this option is
+activated and inactivated respectively, and it is clear that many
+patterns escape detection when upstream ORFs are clipped. One possible
+reason is that the yeast annotation contain many false ORFs (some
+auhors estimate that there were ~1000 false ORFs in the original
+annotation).
+
+<p>
+This is particularly well examplified with the yeast PHO genes : when
+the option is activated, PHO8 and PHO64 upstream regions are truncated
+at 180 and 237 base pairs, respectively. In both cases, the putative
+upsteram ORF is very short (~300bp), and there is no experimental
+evidence for the existence of a gene. In addition, several cis-acting
+elements have been shown to be located in the regions corresponding to
+these questionable ORFs. When the sequences are clipped, the remaining
+Pho4p are not sufficiently over-rerpesented for allowing their
+detection in a pattern discovery programs.
+
+<p>
+The PHO family is an extreme case, and when one disposes of a larger
+family, it is less likely for false ORFs to prevent detection of
+cis-acting elements. However, even in these cases, we noticed a loss
+in sensitivity when the option was activated.
+
+<p>
+In summary, we propose the following strategy :
+<ul>
+<li>When working with bacteria, systematically activate the option
+<b>prevent overlap with upstream ORFs</b>, to prevent including too
+many coding sequences when the genes are located in operons.
+<li>With eukaryotes, inactivate this option, to circumvent the
+weaknesses of gene location procedures.
+</ul>
+
+
+</ul>
+<h3>Retrieving sequences for all the genes of a genome</h3>
+<ul>
 
 As an illustration fo the retrieval of all sequences, we will retrieve
 the complete set of downstream sequences for the yeast
@@ -78,82 +153,84 @@ the complete set of downstream sequences for the yeast
 
 <OL>
 
-<P><LI> Come back to the previous form by clicking <b>retrieve
-sequence</b> in the left pannel.
+<p><li>Open the <b>retrieve sequence</b> form by clicking
+<b>retrieve sequence</b> in the left pannel.
 
-<P><LI>Make sure that the selected organism is <I>Saccharomyces
+<p><li>Make sure that the selected organism is <I>Saccharomyces
 cerevisiae</I>
 
-<P><LI>Besides the label <B>Genes</B>, select "all".
+<p><li>Besides the label <B>Genes</B>, select "all".
 
-<P><LI>Do not enter anything in the "Gene" box (it would be ignored
+<p><li>Do not enter anything in the "Gene" box (it would be ignored
 anyway).
 
-<P><LI>Select "downstream" as <B>Sequence type</B>.
+<p><li>Select "downstream" as <B>Sequence type</B>.
 
-<P><LI>In the <B>From</b> box, type "1".
+<p><li>In the <B>From</b> box, type "1".
 
-<P><LI>In the <B>to</b> box, type "50".
+<p><li>In the <B>to</b> box, type "50".
 
-<P><LI>Select "ORF id + Gene name" in the pop-up menu <B>Sequence
+<p><li>Select "ORF id + Gene name" in the pop-up menu <B>Sequence
 label</B>
 
-<P><LI>Click <B>GO</B>
+<p><li>Click <B>GO</B>
 
 </OL>
 
 </ul>
-<h3>Reference point</H3>
+<h3>Remark about the reference position</H3>
 <ul>
 
-<P>
-The reference point (coordinate 0) depends on the type of sequences to
-be retrieved : 
-<P>
+<p>
+The reference position (coordinate 0) depends on the type of sequences
+to be retrieved :
+<p>
 
 <ul>
 
-<li>For <B>upstream sequences</B>, the reference point is the ORF start,
-i.e. the first nucleotide of the start codon. Negative coordinates are
-used to indicate sequences located upstream the start codon, i.e. in
-the 5'end flank of the gene (e.g. from -1 to -800 for the yeast).
+<li>For <B>upstream sequences</B>, the reference position is the ORF
+start, i.e. the first nucleotide of the start codon. Negative
+coordinates are used to indicate sequences located upstream the start
+codon, i.e. in the 5'end flank of the gene (e.g. from -1 to -800 for
+the yeast).
 
 <li>On the contrary, when selecting <B>downstream sequences</B>, the
-reference point (position 0) is the ORF end, i.e. the last nucleotide
-of the stop codon. Positive coordinates are used to represent
-sequences located downstream the stop codon, i.e. the 3'end flank of
-the gene.
+reference position (position 0) is the ORF end, i.e. the last
+nucleotide of the stop codon. Positive coordinates are used to
+represent sequences located downstream the stop codon, i.e. the 3'end
+flank of the gene.
 
-</UL>
+</ul>
 
 </ul>
 <h3>Positive/negative coordinates</H3>
 <ul>
 
-<P>
-Notice that selecting upstream sequencs with positive coordinates
-would amont to pick coding sequences on the 5' side of the gene.
-As an exercise, try to extract all start codons for a given organism
-(say Saccharomyces cerevisiae).
+<p>
+Notice that selecting upstream sequences with positive coordinates
+amounts to pick coding sequences on the 5' side of the gene.  As an
+exercise, try to extract all start codons for a given organism (say
+<i>Saccharomyces cerevisiae</i>).
 
-<P>
+<p>
 Recprocally, for downstream sequences, negative coordinates could be
 specified to retrieve coding sequences on the 3'end of the gene. As en
-exercise, try to extract all the stop codons for a given organism.
+exercise, try to extract all the stop codons for the same organism.
 
 
-<P>
+<p>
 You can now come back to the <a href=tutorials.html>tutorial main
-page</a> and try the next tutorial.
+page</a> and follow the next tutorials.
 
-</UL>
-<HR WIDTH="100%">
-<CENTER>
-<ADDRESS>
-For suggestions or information request, please contact :</ADDRESS></CENTER>
-
-<CENTER><A HREF="mailto:jvanheld@ucmb.ulb.ac.be">Jacques van Helden (jvanheld@ucmb.ulb.ac.be)</A></CENTER>
+</ul>
+<hr width="100%">
+<center>
+<address>
+For suggestions or information request, please contact <a
+href="mailto:jvanheld@ucmb.ulb.ac.be">Jacques van Helden
+(jvanheld@ucmb.ulb.ac.be)</a>
+</address></center>
 
 </blockquote>
-</BODY>
-</HTML>
+</body>
+</html>
