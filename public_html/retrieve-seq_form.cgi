@@ -80,13 +80,13 @@ print $query->popup_menu(-name=>'sequence_type',
 print "<B><A HREF='help.retrieve-seq.html#from_to'>From</A></B>&nbsp;\n";
 print $query->textfield(-name=>'from',
 			-default=>$default{from},
-			-size=>10);
+			-size=>5);
 
 print "&nbsp;&nbsp;";
 print "<B><A HREF='help.retrieve-seq.html#from_to'>To</A></B>&nbsp;\n";
 print $query->textfield(-name=>'to',
 			-default=>$default{to},
-			-size=>10);
+			-size=>5);
 print "<BR>\n";
 
 ### prevent ORF overlap
@@ -120,7 +120,14 @@ print "<BR>\n";
 
 
 ### send results by e-mail or display on the browser
-&SelectOutput;
+&SelectOutput();
+
+### data for the demo 
+#@demo_genes = qw ( MET1 MET2 MET3 MET6 MET14 MET19 MET25 MET30 MUP3
+#		    SAM1 SAM2);
+@demo_genes = qw (DAL5 GAP1 MEP1 MEP2 PUT4 MEP3 DAL80);
+$demo_genes = join "\n", @demo_genes;
+
 
 ### action buttons
 print "<UL><UL><TABLE>\n";
@@ -129,13 +136,7 @@ print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
 print "<TD>", $query->reset, "</TD>\n";
 print $query->end_form;
 
-### data for the demo 
 print $query->start_multipart_form(-action=>"retrieve-seq_form.cgi");
-$demo_genes = "PHO5\n";
-$demo_genes .= "PHO8\n";
-$demo_genes .= "PHO11\n";
-$demo_genes .= "PHO81\n";
-$demo_genes .= "PHO84\n";
 print "<TD><B>";
 print $query->hidden(-name=>'gene_selection',-default=>$demo_genes);
 print $query->hidden(-name=>'organism',-default=>"Saccharomyces cerevisiae");
