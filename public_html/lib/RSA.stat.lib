@@ -244,7 +244,7 @@ sub binomial_boe {
 }
 
 
-
+################################################################
 ### usage: &binomial_approx($proba,$trials,$successes)
 ### this is the entropy approximation for the sum of binomials
 ### note that the approximation is only valid for s/r > p 
@@ -264,12 +264,161 @@ sub binomial_approx {
 }
 
 
-### usage poisson($successes,$expected)
-### note: on our sun station, this algorithm works only for m < 746
-### direct calculation would be                  
-###    p(x) = lambda^x exp(-lambda)/x!
-### We use a recursive formula 
-###    p(x) = p(x-1) * lambda / x
+################################################################
+#### Negative binomial distribution
+##
+## usage:
+##    negbin($successes,$p, $k)
+##    negbin2($successes,$mean, $variance)
+##		  s        s    k+s
+##	P(X=s) = C      * p  / q
+##  	          k+s-1
+##  
+##  	 where	s is the number of successful trials,
+##		p is a real value comprized between 0 and 1
+##		q = 1 + p
+##  	
+##	This distribution is aggregative, with a mean 
+##	     m = kp
+##	and a variance
+##	     v = kpq
+##
+##	Instead of p and k, the mean (m) and variance (v) can be
+##	provided; p and k are then calculated from these parameters as
+##	follows.
+##	
+##		q = v/m
+##		p = 1-q = 1-v/m
+##		k = m/p = 1/(v = m)
+##
+##  COMPUTATION
+##
+##	The probability is calculated with the recursive formula.
+##
+##	                p(k+x)
+##	    P(X=s+1) = --------*P(X=s)
+##	                q(x+1)
+
+################################################################
+## Calculate negbin with mean and variance as parameters
+sub negbin2 {
+    my ($x, $mean, $variance, $series) = @_;
+    
+    ### Check parameters
+    &FatalError("negbin2: the mean should be strictly positive") if ($mean <= 0);
+    &FatalError("negbin2: the variance should be positive") if ($variance < 0);
+    &FatalError("negbin2: the variance should be greater than the mean") if ($variance <= $mean);
+
+    ### Convert mean and variance to p and k
+    my $p = $variance/$mean -1;
+    my $k = $mean/$p;
+    warn ("; Calculating p and k from mean and variance\n",
+	  ";\tp = ", $p, "\n",
+	  ";\tk = ", $k, "\n"
+	  ) if ($main::verbose >= 5);
+
+    ### Calculate the negbin
+    my @negbin = &negbin($x, $p, $k, $series);
+    return ($p, $k, @negbin);
+}
+
+################################################################
+## Calculate negbin with p and k as parameters
+sub negbin {
+    my ($x,$p, $k, $series) = @_;
+
+    my $q = 1 + $p;
+    my $log_q = log($q);
+    my $log_p = log($p);
+    my $log_k = log($k);
+    my @log_negbins = ();
+
+    warn ("; Calculating negative binomial\n",
+	  ";\tp = ", $p, "\n",
+	  ";\tq = ", $q, "\n",
+	  ";\tk = ", $k, "\n",
+	  ";\tx = ", $x, "\n",
+	  ) if ($main::verbose >= 5);
+
+    ## Calculate proba for 0 successes
+    my $log_negbin = - $log_q*$k;;
+    push @log_negbins, $log_negbin if ($series);
+
+    ## Use recursive formula
+    for my $i (1..$x) {
+	$log_negbin += $log_p + log($k+$i - 1) - $log_q - log($i);
+	if ($series) {
+	    push @log_negbins, $log_negbin; ## value for x==$i
+	}
+    }
+
+    if ($series) {
+	my @negbins = ();
+	foreach my $log_negbin (@log_negbins) {
+	    my $negbin = &LogToEng($log_negbin);
+	    push @negbins, $negbin;
+#	    warn join ("\t", $log_negbin, $negbin), "\n" if ($main::verbose >= 10);
+	}
+	return @negbins;
+    } else {
+	my $negbin = &LogToEng($log_negbin);
+	return $negbin;
+    }
+}
+
+################################################################
+## sum_of_negbin($lambda, $from, $to)
+## Calculates the Negbin probability for a given interval of values
+sub sum_of_negbin {
+    my ($p, $k, $from,$to) = @_;
+    my $sum_of_negbin;
+    my $prev_sum;
+
+    my $q = 1 + $p;
+    my $log_q = log($q);
+    my $log_p = log($p);
+    my $log_k = log($k);
+    my @log_negbins = ();
+
+    warn ("; Calculating negative binomial\n",
+	  ";\tp = ", $p, "\n",
+	  ";\tq = ", $q, "\n",
+	  ";\tk = ", $k, "\n",
+	  ";\tfrom = ", $from, "\n",
+	  ";\tto = ", $to, "\n",
+	  ) if ($main::verbose >= 0);
+
+    
+
+    ## Calculate proba for 0 successes
+    my $log_negbin = - $log_q*$k;;
+    $sum_of_negbin = &LogToEng($log_negbin) if ($from == 0);
+
+    ## Use recursive formula
+    for my $i (1..$to) {
+	$prev_sum = $sum_of_negbin;
+	$log_negbin += $log_p + log($k+$i - 1) - $log_q - log($i);
+	if ($i >= $from) {
+	    $sum_of_negbin += &LogToEng($log_negbin);
+	}
+	warn join ("\t", $i, $log_negbin, &LogToEng($log_negbin), $sum_of_negbin), "\n" 
+	    if ($main::verbose >= 0);
+	last if (($sum_of_negbin > 0) && ($prev_sum == $sum_of_negbin));
+    }
+
+    return $sum_of_negbin;
+}
+
+
+################################################################
+#### Poisson distribution
+##
+## usage poisson($successes,$expected)
+## note: on our sun station, this algorithm works only for m < 746
+## direct calculation would be                  
+##    p(x) = lambda^x exp(-lambda)/x!
+## We use a recursive formula 
+##    p(x) = p(x-1) * lambda / x
 sub poisson {
     my ($x,$lambda, $series) = @_;
     my $log_lambda = log($lambda);
@@ -308,12 +457,9 @@ sub poisson {
     }
 }
 
-### usage poisson($successes,$expected)
-### note: on our sun station, this algorithm works only for m < 746
-### direct calculation would be                  
-###    p(x) = lambda^x exp(-lambda)/x!
-### We use a recursive formula 
-###    p(x) = p(x-1) * lambda / x
+################################################################
+## sum_of_poisson($lambda, $from, $to)
+## Calculates the Poisson probability for a given interval of values
 sub sum_of_poisson {
     my ($lambda,$from,$to) = @_;
     my $poi;
@@ -464,7 +610,7 @@ sub hypergeometric {
 
 
     
-# 	$Id: RSA.stat.lib,v 1.14 2003/12/28 19:48:22 jvanheld Exp $	
+# 	$Id: RSA.stat.lib,v 1.15 2004/01/05 11:25:23 jvanheld Exp $	
 
     #### initialization
     if (defined($args{previous_value})) {
@@ -854,19 +1000,18 @@ sub ChiSquare {
 
     ### check parameter values ###
     unless (($test =~ /^indep/i) || ($test =~ /^good/i) || ($test =~ /^homog/i)) {
-	return ";Error: unknown test (supported: 'goodness of fit', 'homogeneity' and 'independence')"; # 
+	&FatalError("Unknown test (supported: 'goodness of fit', 'homogeneity' and 'independence')"); 
     }
     if (($row_nb < 2) || ($col_nb < 2)) {
-	return ";Error: at least 2 rows and 2 columns are required"; # too few rows or columns
+	&FatalError("At least 2 rows and 2 columns are required"); # too few rows or columns
     }
     unless ($val_nb == $row_nb * $col_nb) {
-	return ";Error: invalid number of numeric values"; # inappropriate number of values provided
+	&FatalError("Invalid number of numeric values"); # inappropriate number of values provided
     }
     ### all values must be real numbers
     foreach $val (@values) {
-	return ";Error: $val is not a real number" unless &IsReal($val); # invalid values
+	&FatalError("Invalid values: $val is not a real number") unless &IsReal($val); # invalid values
     }
-
 
     ################################################################
     ## Independence of homogeneity test
@@ -929,7 +1074,8 @@ sub ChiSquare {
 	    do {
 		$left_group++;
 		$left_sum += $expected[$left_group-1];
-	    } until (($left_sum >= 5) || ($left_group >= $col_nb));
+	    } until (($expected[$left_group] >= 5) || ($left_group >= $col_nb));
+#	    } until (($left_sum >= 5) || ($left_group >= $col_nb));
 	    if ($left_group > 1) {
 		my $left_obs = 0;
 		my $left_exp = 0;
@@ -953,7 +1099,8 @@ sub ChiSquare {
 	    do {
 		$right_group++;
 		$right_sum += $expected[$col_nb -$right_group];
-	    } until (($right_sum >= 5) || ($right_group >= $col_nb));
+	    } until (($expected[$col_nb -$right_group - 1] >= 5) || ($left_group >= $col_nb));
+#	    } until (($right_sum >= 5) || ($right_group >= $col_nb));
 	    if ($right_group > 1) {
 		my $right_obs = 0;
 		my $right_exp = 0;
@@ -1036,6 +1183,7 @@ sub ChiSquare {
 	    print $out "\n";
 	}
     }
+
     my $answer = $chi_square;
     if ($chi_square eq "NA") {
 	$answer = $chi_square;
@@ -1052,7 +1200,7 @@ sub ChiSquare {
 	      $#expected,
 	      $expected[0],
 	      $expected[$#expected],
-	      ), "\n" if ($main::verbose >= 4);
+	      ), "\n" if ($main::verbose >= 5);
     return ($answer, $deg_freedom, $left_group, $right_group);
 } ### end ChiSquare
 
