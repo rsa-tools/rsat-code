@@ -1,0 +1,167 @@
+#!/usr/bin/perl -w
+#use strict;;
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib.pl";
+
+
+#### initialise parameters ####
+$start_time = &AlphaDate;
+
+$verbose = 0;
+
+&ReadArguments;
+
+
+#### check argument values ####
+
+
+### open output file ###
+if (defined($outfile{output})) {
+  $out = &OpenOutputFile($outfile{output});
+} else {
+  $out = STDOUT;
+}
+
+##### read input #####
+if (defined($infile{input})) {
+  $in = &OpenInputFile($infile{input});
+} else {
+  $in = STDIN;
+}
+
+#### verbose ####
+&Verbose if ($verbose);
+
+
+$sum = 0;
+while ((($current_seq, $current_id) = &ReadNextSequence($in, $in_format)) &&
+       (($current_seq ne "") || ($current_id ne ""))) {
+  
+  $length = length(&FoldSequence($current_seq,0));
+  $sum+= $length;
+  print $out $current_id, "\t", $length , "\n";
+}
+
+close $in if ($infile{input});
+
+
+###### verbose ######
+if ($verbose) {
+  print $out "; sum\t$sum\n";
+  $done_time = &AlphaDate;
+
+  print $out "; Job started $start_time\n";
+  print $out "; Job done    $done_time\n";
+}
+
+
+###### close output file ######
+close $out if ($outfile{output});
+
+
+exit(0);
+
+
+########################## subroutine definition ############################
+
+sub PrintHelp {
+#### display full help message #####
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	sequence-lengths
+
+        1999 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
+	
+USAGE
+        sequence-lengths [-i inputfile] [-o outputfile] [-v]
+
+DESCRIPTION
+	
+OPTIONS
+	-h	(must be first argument) display full help message
+	-help	(must be first argument) display options
+	-v	verbose
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+
+End_of_help
+  close HELP;
+  exit;
+}
+
+sub PrintOptions {
+#### display short help message #####
+  open HELP, "| more";
+  print HELP <<End_short_help;
+sequence-lengths options
+----------------
+-h	(must be first argument) display full help message
+-help	(must be first argument) display options
+-i	input file
+-o	output file
+-v	verbose
+End_short_help
+  close HELP;
+  exit;
+}
+
+
+sub ReadArguments {
+  #### read arguments ####
+  foreach my $a (0..$#ARGV) {
+    ### verbose ###
+    if ($ARGV[$a] eq "-v") {
+      if (&IsNatural($ARGV[$a+1])) {
+	$verbose = $ARGV[$a+1];
+      } else {
+	$verbose = 1;
+      }
+      
+      ### detailed help
+    } elsif ($ARGV[$a] eq "-h") {
+      &PrintHelp;
+      
+      ### list of options
+    } elsif ($ARGV[0] eq "-help") {
+      &PrintOptions;
+      
+      ### input file ###
+    } elsif ($ARGV[$a] eq "-i") {
+      $infile{input} = $ARGV[$a+1];
+      
+      ### output file ###
+    } elsif ($ARGV[$a] eq "-o") {
+      $outfile{output} = $ARGV[$a+1];
+      
+      ### sequence format ###
+    } elsif ($ARGV[$a] eq "-format") {
+      $in_format = $ARGV[$a+1];
+      
+    }
+  }
+}
+
+sub Verbose {
+  print $out "; sequence-lengths ";
+  &PrintArguments($out);
+  if (defined(%infile)) {
+    print $out "; Input files\n";
+    while (($key,$value) = each %infile) {
+      print $out ";\t$key\t$value\n";
+    }
+  }
+  if (defined(%outfile)) {
+    print $out "; Output files\n";
+    while (($key,$value) = each %outfile) {
+      print $out ";\t$key\t$value\n";
+    }
+  }
+  print $out "; seq format\t$in_format\n";
+}
