@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: retrieve-seq,v 1.29 2003/01/06 14:30:14 jvanheld Exp $
+# $Id: retrieve-seq,v 1.30 2003/06/06 10:15:26 jvanheld Exp $
 #
-# Time-stamp: <2003-01-06 08:27:08 jvanheld>
+# Time-stamp: <2003-06-06 12:14:37 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -15,20 +15,20 @@ require "RSA.seq.lib";
 
 # warn "Starting" if ($verbose >= 1);
 
-############# help ###########
-if ($ARGV[0] eq "-h") {
-    &PrintHelp;
-}
-
-if ($ARGV[0] eq "-help") {
-    &PrintShortHelp;
-}
-
 #### initialize parameters
 my $start_time = &AlphaDate;
 
 my %chomosome = ();
 my $chrom = "";
+
+@supported_feature_types = qw (CDS mRNA);
+%supported_feature_types = ();
+foreach my $type (@supported_feature_types) {
+    $supported_feature_types{lc($type)} = 1;
+}
+$supported_feature_types = join ",", @supported_feature_types;
+
+
 
 $feature_table_file = "";
 $seq_label = "gene";  
@@ -47,6 +47,11 @@ $prefix = "";
 ################################################################################
 ############################### check parameters ###############################
 ################################################################################
+
+#### accepted feature types
+unless (defined %accepted_feature_types) {
+    $accepted_feature_types{cds} = 1;
+}
 
 #### selection of genome and feature file
 if ($input_sequence_file) {
@@ -68,7 +73,7 @@ unless ($feature_table_file) {
 if ($sequence_type eq "upstream") {
     
     if (defined($supported_organism{$organism_name}->{'up_to'})) {
-	$default{from} = $supported_organism{$organism_name}->{'up_to'};
+	$default{to} = $supported_organism{$organism_name}->{'up_to'};
     } else {
 	$default{to} = -1;
     }
@@ -369,6 +374,8 @@ exit(0);
 ################################################################
 #### detailed help message
 sub PrintHelp {
+    
+    my $supported_organisms = &ListSupportedOrganisms("sizes");
     open(HELP, "| more");
     print HELP<<End_help;
 USAGE
@@ -403,6 +410,9 @@ $supported_organisms
 	-informat	input sequence format
 	-prefix
 		prefix for sequence identifier
+	-feattype
+		Feature type.
+		Supported: $supported_feature_types
 	-type	sequence type
 		Currently supported sequence types
 			upstream (default)
@@ -496,12 +506,11 @@ INPUT FORMATS
 	Feature file
 		The feature file contains one line per feature, with
 		tab-delimited columns providing the following information:
-		column	field
+		column	field   description
 		1	id	feature identifier
-		2	kind	orf for coding sequence
+		2	type	feature type (CDS or mRNA)
 		3	name	feature name
-		4	chrom	chomosome. 
-				For bacteria, use the organism abbrev
+		4	chrom	chomosome.or contig
 		5	left	left end position
 		6	right	right end position
 		7	strand	D (direct) or R (reverse)
@@ -533,6 +542,7 @@ retrieve-seq options
 -seq		sequence file (alternative to organism)
 -informat	input sequence format
 -prefix		prefix for sequence identifiers
+-feattype	Feature type. Supported: $supported_feature_types
 -type		upstream | downstream | orf | random
 -n		number of sequences (only with -type random)
 -randsels #	random selection of # ORFs.
@@ -549,6 +559,7 @@ retrieve-seq options
 -nowarn		prevents warning when a gene can not be identified
 -nocom		do not print related information (start, end position, ...)
 -features	alternate feature table
+-feattype	accepted feature types. Supported: $supported_feature_types
 End_short_help
   close HELP;
   exit;
@@ -621,6 +632,7 @@ sub ReadArguments {
 	    #### organism
 	} elsif ($ARGV[$a] eq "-org") {
 	    $organism_name =$ARGV[$a+1];
+	    &CheckOrganismName($organism_name);
 
 	    #### input sequence file
 	} elsif ($ARGV[$a] eq "-seq") {
@@ -644,7 +656,18 @@ sub ReadArguments {
 		&FatalError("The number of sequences must be a strictly positive");
 	    }
 
-	    #### type
+	    #### feature types
+	} elsif ($ARGV[$a] eq "-feattype") {
+	    my @types = split ",", $ARGV[$a+1];
+	    foreach my $type (@types) {
+		if ($supported_feature_types{lc($type)}) {
+		    $accepted_feature_types{lc($type)}++;
+		} else {
+		    &FatalError("$type invalid feature type. Supported: $supported_feature_types");
+		}
+	    }
+
+	    #### sequence type
 	} elsif ($ARGV[$a] eq "-type") {
 	    if ($ARGV[$a+1] =~ /^up/i) {
 		$sequence_type = "upstream";
