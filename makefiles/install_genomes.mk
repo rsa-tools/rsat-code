@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_genomes.mk,v 1.17 2005/01/27 21:37:11 jvanheld Exp $
+# $Id: install_genomes.mk,v 1.18 2005/02/01 20:56:31 jvanheld Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -33,7 +33,7 @@ V=1
 ### Install one organism
 ORG=Arabidopsis_thaliana
 ORG_DIR=${NCBI_DIR}/${ORG}
-INSTALL_TASK=allup,clean,config,dyads,oligos,parse,start_stop,upstream_freq,phylogeny
+INSTALL_TASK=allup,config,dyads,oligos,parse,start_stop,upstream_freq,phylogeny
 INSTALL_CMD=install-organism -v ${V}		\
 		-org ${ORG}			\
 		-task ${INSTALL_TASK}		\
@@ -99,7 +99,8 @@ EUKARYOTES=					\
 	Canis_familiaris			\
 	Pan_troglodytes
 install_all_eukaryotes:
-	for org in ${EUKARYOTES} ; do ${MAKE} install_one_organism	\
-		ORG=$${org} ; done
+	for org in ${EUKARYOTES} ; do \
+		${MAKE} install_one_organism ORG=$${org} INSTALL_TASK=${INSTALL_TASK},clean; \
+	done
 
 
