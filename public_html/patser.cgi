@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: patser.cgi,v 1.11 2002/09/16 16:02:50 jvanheld Exp $
+# $Id: patser.cgi,v 1.12 2002/09/16 16:12:58 jvanheld Exp $
 #
-# Time-stamp: <2002-09-16 11:02:07 jvanheld>
+# Time-stamp: <2002-09-16 11:12:19 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -43,12 +43,13 @@ $query = new CGI;
 
 #### read parameters ####
 
+################################################################
 ### alphabet ###
 $parameters .= " -A ".$query->param('alphabet');
 
-#$parameters = " -A a:t c:g ";
 
-### matrix ####
+################################################################
+### matrix specification
 unless ($query->param('matrix') =~ /\S/) { ### empty matrix
     &cgiError("You did not enter the matrix");
 }
@@ -70,16 +71,36 @@ close MAT;
 &DelayedRemoval($matrix_file);
 $parameters .= " -m $matrix_file";
 
+#### [-w <Matrix is a weight matrix>]
+if ($query->param('matrix_is_weight')) {
+    $parameters .= " -w";
+} else {
+    #### pseudo-counts and weights are mutually exclusive
+    if (&IsReal($query->param('pseudo_counts'))) {
+	$parameters .= " -b ".$query->param('pseudo_counts');
+    }
+
+}
+
+#### [-v <Vertical matrix---rows correspond to positions>]
+if ($query->param('matrix_is_vertical')) {
+    $parameters .= " -v";
+}
+
+
+################################################################
 ### sequence file ####
 ($sequence_file,$sequence_format) = &GetSequenceFile("wconsensus", 1);
 $parameters .= " -f $sequence_file";
 
+################################################################
 ### strands ###
 if ($query->param('strands') =~ /both/i) {
     $parameters .= " -c";
 }
 
-### top value only ###
+################################################################
+### return top values
 if ($query->param('return') =~ /top/i) {
     $parameters .= " -t";
     $top_scores = $query->param('top_scores');
@@ -94,6 +115,15 @@ if ($query->param('return') =~ /top/i) {
     }
 }
 
+################################################################
+#### case sensitivity
+if ($query->param('case') eq "sensitive") {
+    $parameters .= ' -CS'; #### [-CS <Ascii alphabet is case sensitive (default: ascii alphabets are case insensitive)>]
+} elsif ($query->param('case') =~ /mark/) {
+    $parameters .= ' -CM'; #### [-CM <Ascii alphabet is case insensitive, but mark the location of lowercase letters>]
+}
+
+################################################################
 ### thresholds ###
 if (&IsReal($query->param('lthreshold'))) {
     $parameters .= " -ls ".$query->param('lthreshold');
@@ -101,11 +131,6 @@ if (&IsReal($query->param('lthreshold'))) {
 }
 if (&IsReal($query->param('uthreshold'))) {
     $parameters .= " -u ".$query->param('uthreshold');
-}
-
-#### pseudo-counts
-if (&IsReal($query->param('pseudo_counts'))) {
-    $parameters .= " -b ".$query->param('pseudo_counts');
 }
 
 print "<pre>$patser_command $parameters</pre>" if ($ECHO);
