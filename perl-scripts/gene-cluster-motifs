@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.21 2002/09/13 15:04:38 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.22 2002/09/14 15:45:39 jvanheld Exp $
 #
-# Time-stamp: <2002-09-13 10:02:28 jvanheld>
+# Time-stamp: <2002-09-14 10:45:29 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -31,7 +31,7 @@ $default{from} = -800;
 $default{to} = 0;
 $known_site_file = "known-consensus";
 $known_sites_provided = 0;
-$exp = "ncf";
+$background = "upstream-noorf";
 $seq_format = "fasta";
 $min_oligo_length = 6;
 $max_oligo_length = 6;
@@ -82,9 +82,11 @@ if ($verbose >= 1) {
     printf ";\t%-22s\t%d\n", "monad length", $monad_length;
     printf ";\t%-22s\t%d\n", "min spacing", $min_sp;
     printf ";\t%-22s\t%d\n", "max spacing", $max_sp;
-    printf ";\t%-22s\t%s\n", "dyad type", $type;
+    printf ";\t%-22s\t%s\n", "dyad type", $dyad_type;
     printf ";\t%-22s\t%g\n", "sig threshold", $th;
-    printf "; exp freq     \t%s\n", $exp;
+    printf ";%-13s\t%s\n", "background model", $background;
+    printf ";%-13s\t%s\n", "organism", $organism_name;
+    print "; no overlap with upstream ORFs" if ($noorf);
 }
 
 
@@ -131,20 +133,11 @@ sub SetFileNames {
   $dyad_options = "-v ";
   $dyad_options .= " -sort ";
   $dyad_options .= " -${strands} ";
-  $dyad_options .= " -type $type ";
+  $dyad_options .= " -type $dyad_type ";
   $dyad_options .= " -noov " if ($noov);
   $dyad_options .= " -l $monad_length ";
   $dyad_options .= " -thosig $th ";
   $dyad_options .= " -sp $sp ";
-  if ($exp_freq_file{dyads}) {
-    $dyad_options .= " -expfreq $exp_freq_file{dyads}";
-  } elsif ($exp eq "ncf") {
-    $dyad_options .= " -ncf ";
-    $dyad_options .= " -org $organism_name ";
-  } elsif ($exp eq "mncf") {
-    $dyad_options .= " -mncf ";
-    $dyad_options .= " -org $organism_name ";
-  }
   
   $dyad_suffix = "_dyads";
   $dyad_suffix .= "_l${monad_length}";
@@ -157,9 +150,17 @@ sub SetFileNames {
   } else {
     $dyad_suffix .= "_ov";
   }
-  if ($exp eq "ncf") {
+
+  #### expected frequency model
+  if ($exp_freq_file{dyads}) {
+    $dyad_options .= " -expfreq $exp_freq_file{dyads}";
+  } elsif ($background eq "intergenic") {
+    $dyad_options .= " -ncf ";
+    $dyad_options .= " -org $organism_name ";
     $dyad_suffix .= "_ncf";
-  } elsif ($exp eq "mncf") {
+  } elsif ($background eq "mncf") {
+    $dyad_options .= " -mncf ";
+    $dyad_options .= " -org $organism_name ";
     $dyad_suffix .= "_mncf";
   }
 
@@ -238,7 +239,7 @@ sub OligoAnalysis {
 	    $oligo_options .= "-expfreq $exp_freq_file{oligos} ";
 	} else {
 	    $oligo_options .= "-org $organism_name ";
-	    $oligo_options .= "-ncf ";
+	    $oligo_options .= "-bg $background ";
 	}
 	$oligo_options .= "-return occ,proba,mseq,rank ";
 	$oligo_options .= "-noov " if ($noov);
@@ -440,6 +441,7 @@ sub SyntheticTable {
 		$rc{$pattern} = uc(&ReverseComplement($pattern->get_attribute("sequence")));
 		$score{$pattern} = $fields[2];
 		$type{$pattern} = $fields[3];
+		$max_score{$family} = &max($max_score{$family}, $score{$pattern});
 	    }
 	}
 	@sorted_patterns = sort { $score{$b} <=> $score{$a} } @patterns;
@@ -592,6 +594,8 @@ sub SyntheticTable {
     print TABLE "<H1>$table_file</H1>\n";
     
     print TABLE "<TABLE BORDER=1>\n";
+
+    @sorted_families = sort {$max_score{$a} <=> $max_score{$b}} @families;
     
     if ($transpose) {
 	foreach $r (0..$row_num) {
@@ -671,11 +675,8 @@ sub CheckParameters {
     $from = $default{from} unless defined($from);
     $to = $default{to} unless defined($to);
     $seq_length = abs($to - $from) + 1;
-    if (defined($force{type})) {
-	$type = $force{type}; ### force
-    } else {
-	$type = "any";
-    }
+    $dyad_type = "any" unless ($dyad_type);
+
     if (defined($force{strands})) {
 	$strands = $force{strands}; ### force
     } else {
@@ -981,10 +982,13 @@ sub ReadArguments {
 	    $exp_freq_file{oligos} = $ARGV[$a+1];
 
 
-	    #### expected frequency model. Supported: "ncf", "mncf"
-	} elsif ($ARGV[$a] =~ /^-exp/) {
-	    $force{exp} = $ARGV[$a+1];
-
+	    #### background model for expected frequency. 
+	    #### Supported: "upstream", "upstam-noorf", "intergenic", "mncf"
+	} elsif (($ARGV[$a] =~ /^-exp/) 
+		 || ($ARGV[$a] =~ /^-bg/)) {
+	    $background = $ARGV[$a+1];
+	    $background =~ s/^ncf$/intergenic/;
+	    
 	    #### prevent self-overlap
 	} elsif ($ARGV[$a] eq "-noov") {
 	    $noov = 1;
