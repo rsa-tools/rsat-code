@@ -256,19 +256,26 @@ sub ReadCalibration {
 	next if (/^;/);
 	next unless (/\S/);
 	my @fields =  split /\s+/;
-	my $pattern_seq = lc($fields[0]);
+	my $pattern_seq = lc(shift(@fields));
+	my $pattern_id = $pattern_seq;
 
+	## Check if the 1st field contains a pair of reverse complements
 	if ($pattern_seq =~ /(\S+)\|/) {
 	    $pattern_seq = $1;
 	}
+	
+	## Check if the second field contains the ID
+	if ($fields[0] =~ /(\S+)\|/) {
+	    $pattern_id = shift(@fields);
+	}
 
 	## Expected occurrences
-	my $exp_occ = $fields[1];
-	&FatalError("Invalid expected occurrences") unless ((&IsReal($exp_occ)) && ($exp_occ >= 0));
+	my $exp_occ = $fields[0];
+	&FatalError("Invalid expected occurrences\t${exp_occ}") unless ((&IsReal($exp_occ)) && ($exp_occ >= 0));
 	$patterns{$pattern_seq}->{exp_occ} = $exp_occ;
 
 	## Expected variance
-	my $exp_var = $fields[3];
+	my $exp_var = $fields[2];
 	&FatalError("Invalid expected variance") unless ((&IsReal($exp_var)) && ($exp_ocvar >= 0));
 	$patterns{$pattern_seq}->{exp_var} = $exp_var;
 
