@@ -2,7 +2,7 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
+require "RSA.lib";
 
 
 
@@ -20,6 +20,9 @@ USAGE
 
 DESCRIPTION
 	Returns a segment from the input sequence, specified by its position. 
+	
+CATEGORY
+	sequences
 
 OPTIONS
         -h      (must be first argument) display full help message
@@ -139,7 +142,7 @@ if ($from > $to) {
 }
 
 ### open input file ###
-$in = &OpenInputFile($inputfile);
+($in, $input_dir) = &OpenInputFile($inputfile);
 
 ### open output file ###
 $out = &OpenOutputFile($outputfile);
@@ -163,7 +166,8 @@ if ($verbose) {
 }
 
 ###### execute the command #########
-while ((($current_seq, $current_id) = &ReadNextSequence($in, $in_format)) && (($current_seq ne "") || ($current_id ne ""))) {
+while ((($current_seq, $current_id) = &ReadNextSequence($in, $in_format, $input_dir)) &&
+       (($current_seq ne "") || ($current_id ne ""))) {
     $current_seq =~ s/\s//g;
     $seq_length = length($current_seq);
     if ($from < 0) {

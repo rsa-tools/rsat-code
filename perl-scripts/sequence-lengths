@@ -3,7 +3,7 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
+require "RSA.lib";
 
 
 #### initialise parameters ####
@@ -26,7 +26,7 @@ if (defined($outfile{output})) {
 
 ##### read input #####
 if (defined($infile{input})) {
-  $in = &OpenInputFile($infile{input});
+  ($in, $input_dir) = &OpenInputFile($infile{input});
 } else {
   $in = STDIN;
 }
@@ -36,7 +36,7 @@ if (defined($infile{input})) {
 
 
 $sum = 0;
-while ((($current_seq, $current_id) = &ReadNextSequence($in, $in_format)) &&
+while ((($current_seq, $current_id) = &ReadNextSequence($in, $in_format, $input_dir)) &&
        (($current_seq ne "") || ($current_id ne ""))) {
   
   $length = length(&FoldSequence($current_seq,0));
@@ -77,11 +77,16 @@ NAME
 
         1999 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
 	
+DESCRIPTION
+	Return the lengths of each sequence from an input
+	file. Otionally, return the sum of lengths.
+
+CATEGORY
+	sequences
+
 USAGE
         sequence-lengths [-i inputfile] [-o outputfile] [-v]
 
-DESCRIPTION
-	
 OPTIONS
 	-h	(must be first argument) display full help message
 	-help	(must be first argument) display options

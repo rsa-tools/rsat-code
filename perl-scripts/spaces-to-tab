@@ -11,11 +11,15 @@ NAME
 	
 	01 July 1997 by Jacques van Helden
 
-USAGE
-	spaces-ti-tab -i inputfile -o outpufile
-	
+DESCRIPTION
 	replaces any series of contiguous spaces from input file 
 	by a tab character.
+	
+CATEGORY
+	util
+
+USAGE
+	spaces-ti-tab -i inputfile -o outpufile
 	
 End_of_Help
   close HELP;
