@@ -1,0 +1,216 @@
+#!/usr/bin/perl
+############################################################
+#
+# $Id: binomial-series,v 1.1 2001/05/06 13:01:28 jvanheld Exp $
+#
+# Time-stamp: <2001-05-06 14:38:17 jvanheld>
+#
+############################################################
+#use strict;;
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib.pl";
+
+
+#### initialise parameters ####
+my $start_time = &AlphaDate;
+
+
+$proba = 1/4^6;
+$trials = 8000;
+
+
+&ReadArguments();
+
+$step = 1 unless ($step >= 1);
+$max = $trials unless ($max >= 1);
+
+### open output file ###
+$out = &OpenOutputFile($outfile{output});
+
+&PrintVerbose if ($verbose);
+
+#### header
+print $out (join("\t", "; s", 
+		 "binomial    ",
+		 "binomial_boe",
+		 "poisson     ",
+		 "poisson_boe ",
+		 "large_dev_est")
+	    ,"\n");
+
+#### result
+for ($s = 0; $s <= $max; $s += $step) {
+    $expected_successes = $proba*$trials;
+    #$bin = `binomial -p $proba -r $trials -s $s`;
+    $bin = &binomial($proba,$trials,$s);
+    #$bin_boe = `binomial -p $proba -r $trials -s $s -boe`;
+    $bin_boe = &sum_of_binomials($proba,$trials,$s);
+    #$poisson = `poisson -p $proba -r $trials -s $s`;
+    $poisson = &poisson($s, $expected_successes);
+    #$poisson_boe = `poisson -p $proba -r $trials -s $s -boe`;
+    $poisson_boe = &sum_of_poissons($s, $expected_successes, "boe");
+    #$bin_approx = `binomial -p $proba -r $trials -s $s -approx`;
+    $bin_approx = &binomial_approx($proba,$trials,$s);
+#    $bin =~ s/\n//;
+#    $bin_boe =~ s/\n//;
+#    $poisson =~ s/\n//;
+    $poisson_boe =~ s/\n//;
+#    $bin_approx =~ s/\n//;
+    print $out "$s";
+    if (&IsReal($bin)) {
+	printf $out "\t%e",  $bin;
+    } else {
+	print $out "\t",  $bin;
+    }
+    if (&IsReal($bin_boe)) {
+	printf $out "\t%e",  $bin_boe;
+    } else {
+	print $out "\t",  $bin_boe;
+    }
+    if (&IsReal($poisson)) {
+	printf $out "\t%e",  $poisson;
+    } else {
+	print $out "\t",  $poisson;
+    }
+    if (&IsReal($poisson_boe)) {
+	printf $out "\t%e",  $poisson_boe;
+    } else {
+	print $out "\t",  $poisson_boe;
+    }
+    if (&IsReal($bin_approx)) {
+	printf $out "\t%e",  $bin_approx;
+    } else {
+	print $out "\t",  $bin_approx;
+    }
+    print $out "\n";
+}
+
+###### verbose ######
+if ($verbose) {
+  my $done_time = &AlphaDate;
+  print $out "; Job started $start_time\n";
+  print $out "; Job done    $done_time\n";
+}
+
+
+exit(0);
+
+########################## subroutine definition ############################
+
+sub PrintHelp {
+#### display full help message #####
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	binomial-series
+
+        2001 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
+	
+USAGE
+        binomial-series [-o outputfile] [-v]
+
+DESCRIPTION
+        Comparison of different approximations for the binomial 
+	formula.
+	
+OPTIONS
+	-h	(must be first argument) display full help message
+	-help	(must be first argument) display options
+	-v	verbose
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+	-p	success probability
+	-r	trials
+	-step	step
+	-max	max number of successes
+End_of_help
+  close HELP;
+  exit;
+}
+
+sub PrintOptions {
+#### display short help message #####
+  open HELP, "| more";
+  print HELP <<End_short_help;
+template options
+----------------
+-h	(must be first argument) display full help message
+-help	(must be first argument) display options
+-o	output file
+-v	verbose
+-p	success probability
+-r	trials
+-step	step
+-max	max number of successes
+End_short_help
+  close HELP;
+  exit;
+}
+
+
+sub ReadArguments {
+#### read arguments ####
+    foreach my $a (0..$#ARGV) {
+	### verbose ###
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+	    
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp;
+	    
+	    ### list of options
+	} elsif ($ARGV[0] eq "-help") {
+	    &PrintOptions;
+	    
+	    ### output file ###
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outfile{output} = $ARGV[$a+1];
+	    
+	    #### probability
+	} elsif ($ARGV[$a] eq "-p") {
+	    $proba = $ARGV[$a+1];
+	    
+	    #### tials
+	} elsif ($ARGV[$a] eq "-r") {
+	    $trials = $ARGV[$a+1];
+	    
+	    #### step
+	} elsif ($ARGV[$a] eq "-step") {
+	    $step = $ARGV[$a+1];
+
+	    #### max
+	} elsif ($ARGV[$a] eq "-max") {
+	    $max = $ARGV[$a+1];
+
+	}
+    }
+}
+
+sub Verbose {
+  print $out "; binomial-series ";
+  &PrintArguments($out);
+  if (defined(%infile)) {
+    print $out "; Input files\n";
+    while (($key,$value) = each %infile) {
+      print $out ";\t$key\t$value\n";
+    }
+  }
+  if (defined(%outfile)) {
+    print $out "; Output files\n";
+    while (($key,$value) = each %outfile) {
+      print $out ";\t$key\t$value\n";
+    }
+  }
+  printf $out "; %-8s\t%f", "proba", $proba;
+  printf $out "; %-8s\t%d", "trials", $trials;
+  printf $out "; %-8s\t%d", "step", $step;
+
+}
