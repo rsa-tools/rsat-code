@@ -813,6 +813,15 @@ sub _readFromConsensusFile {
     while (<$in>) {
 	next unless (/\S/);
 	chomp();
+
+	## The following information (final cycle) is only exported
+	## when the number of cycles is automatic. I don't understand
+	## the reason for this. I need to ask Jerry. Inbetween, I
+	## always use the same information (THE LIST OF TOP MATRICES
+	## FROM EACH CYCLE).
+
+	last if (/THE LIST OF MATRICES FROM FINAL CYCLE/);
+
 	if (/COMMAND LINE: /) {
 	    $command = $'; # '
 	    $self->set_parameter("command", $command);
