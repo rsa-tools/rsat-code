@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: calibrate-oligos,v 1.5 2004/05/21 09:28:18 jvanheld Exp $
+# $Id: calibrate-oligos,v 1.6 2005/03/13 10:42:09 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -11,6 +11,7 @@ if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
 require "RSA.lib";
+require RSAT::util;
 
 ################################################################
 #### initialise parameters
@@ -51,7 +52,7 @@ $die_on_error = 1;
 
 #### check selected tasks
 unless (defined(%task)) {
-    &FatalError("You should select at least one task.");
+    &RSAT::error::FatalError("You should select at least one task.");
 }
 if ($task{all}) {
     foreach my $t (@supported_tasks) {
@@ -67,9 +68,9 @@ if ($task{all}) {
 unless (defined($dir{output})) {
     $dir{output} = "results/".$organism_name."/rand_gene_selections/".$oligo_len."nt".$str.$ov."_N".$seq_nb."_L".$seq_len."_R".$repet;
 }
-&CheckOutDir($dir{output});
+&RSAT::util::CheckOutDir($dir{output});
 $dir{oligos} = $dir{output}."/oligos";
-&CheckOutDir($dir{oligos});
+&RSAT::util::CheckOutDir($dir{oligos});
 
 chdir($dir{output});
 
@@ -171,7 +172,7 @@ if ($task{distrib}) {
     for my $r (1..$repet) {
 	my $oligo_file = "oligos/oligos_".$oligo_len."nt".$str.$ov."_L".$seq_len."_n".$seq_nb."_r".$r;
 #	my $oligo_file = "oligos/oligos_".$oligo_len."nt".$str.$ov."_L".$seq_len."_n".$seq_nb."_r".$r;
-	&FatalError("File ".$oligo_file." does not exist in directory ".$dir{output}."\n") unless (-e $oligo_file);
+	&RSAT::error::FatalError("File ".$oligo_file." does not exist in directory ".$dir{output}."\n") unless (-e $oligo_file);
 	my ($oligos) = &OpenInputFile($oligo_file);
 	while (<$oligos>) {
 	    next if (/^;/);
@@ -434,7 +435,7 @@ sub ReadArguments {
 		if ($supported_task{$task}) {
 		    $task{$task} = 1;
 		} else {
-		    &FatalError("Unsupported task '$task'. \n\tSupported: $supported_tasks");
+		    &RSAT::error::FatalError("Unsupported task '$task'. \n\tSupported: $supported_tasks");
 		}
 	    }
 
