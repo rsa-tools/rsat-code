@@ -87,45 +87,45 @@ near future, we will also distribute it via a CVS server, which will
 greatly facilitate the updates.
 
 
-% \RSAT can be distributed either as a compressed archive, or via the CVS
-% server. The CVS distribution greatly facilitates updates.
+\RSAT can be distributed either as a compressed archive, or via the CVS
+server. The CVS distribution greatly facilitates updates.
 
-% \textbf{Note} The CVS distribution will soon be available for external
-% users, but we still need to configure the CVS server to accept a guest
-% login. For the time being, the CVS distribution is still restricted to
-% the people from the lab. Inbetween, the only distribution mode for
-% external users is the compressed archive.
+\textbf{Note} The CVS distribution will soon be available for external
+users, but we still need to configure the CVS server to accept a guest
+login. For the time being, the CVS distribution is still restricted to
+the people from the lab. Inbetween, the only distribution mode for
+external users is the compressed archive.
 
-% \subsection{Installation from the CVS repository}
+\subsection{Installation from the CVS repository}
 
 
-% Before being able to retrieve \RSAT from the CVS repository, you need
-% an account on our server. For this, please contact Jacques van Helden
-% (\email{jvanheld@scmbb.ulb.ac.be}).
+Before being able to retrieve \RSAT from the CVS repository, you need
+an account on our server. For this, please contact Jacques van Helden
+(\email{jvanheld@scmbb.ulb.ac.be}).
 
-% \subsubsection{First installation}
+\subsubsection{First installation}
 
-% The following command should be used the first time you retrieve the
-% tools from the server:
-% \begin{verbatim}
-% cvs -d mylogin@rubens.ulb.ac.be:/rubens/dsk2/cvs co rsa-tools
-% \end{verbatim}
+The following command should be used the first time you retrieve the
+tools from the server:
+\begin{verbatim}
+cvs -d mylogin@cvs.scmbb.ulb.ac.be:/cvs co rsa-tools
+\end{verbatim}
 
-% This will create a directory \file{rsa-tools} on your computer, and
-% store the programs in it. Note that at this stage the programs are not
-% yet functional, because you still need to install genomes, which are
-% not included in the CVS distribution.
+This will create a directory \file{rsa-tools} on your computer, and
+store the programs in it. Note that at this stage the programs are not
+yet functional, because you still need to install genomes, which are
+not included in the CVS distribution.
 
-% \subsubsection{Updates}
+\subsubsection{Updates}
 
-% Once the tools have been retrieved, you can obtain updates very
-% easily. For this, you need to change your directory to the rsa-tools
-% directory, and use the \texttt{cvs} command in the following way.
+Once the tools have been retrieved, you can obtain updates very
+easily. For this, you need to change your directory to the rsa-tools
+directory, and use the \texttt{cvs} command in the following way.
 
-% \begin{verbatim}
-% cd rsa-tools
-% cvs update .
-% \end{verbatim}
+\begin{verbatim}
+cd rsa-tools
+cvs update .
+\end{verbatim}
 
 
 \subsection{Installation from a compressed archive}
