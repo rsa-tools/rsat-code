@@ -6,22 +6,23 @@ include ${RSAT}/makefiles/util.mk
 WHEN=now
 MAKEFILE=${RSAT}/makefiles/regulon_analysis.mk
 
+WORK_DIR=`pwd`
 ################################################################
 ## queue tasks on merlin
 QUEUE_TASKS = oligos oligo_maps gibbs consensus MotifSampler dyads dyad_maps
 queue_all:
-	for family in ${REGULONS} ${RAND_FAM}; do				\
-		${MAKE} multi MULTI_TASK=upstream FAM=$${family} WHEN=now;	\
-	done
+#	for family in ${REGULONS} ${RAND_FAM}; do				\
+#		${MAKE} multi MULTI_TASK=upstream,purge FAM=${WORK_DIR}/$${family} WHEN=now;	\
+#	done
 	for task in ${QUEUE_TASKS}; do							\
 		for family in ${REGULONS} ${RAND_FAM}; do				\
-			${MAKE} multi MULTI_TASK=$${task} FAM=$${family} WHEN=queue;	\
+			${MAKE} multi MULTI_TASK=$${task} FAM=${WORK_DIR}/$${family} WHEN=queue;	\
 		done;									\
 	done
 
 after_queue:
 	for family in ${REGULONS} ${RAND_FAM}; do					\
-		${MAKE} multi MULTI_TASK=clean,synthesis,sql FAM=$${family} WHEN=now;	\
+		${MAKE} multi MULTI_TASK=clean,synthesis,sql FAM=${WORK_DIR}/$${family} WHEN=now;	\
 	done
 
 
@@ -39,14 +40,14 @@ rand_fam:
 #### Parameters for pattern discovery (oligo-analysis and
 #### dyad-analysis)
 FAM=${REGULONS}
-FAM_FILE=data/${FAM}
+FAM_FILE=data/${FAMS}
 
-MULTI_INPUT=-i ${FAM_FILE}
+MULTI_INPUT=-i ${FAM}
 ORG=Saccharomyces_cerevisiae
 STR=-2str
 THOSIG=0
 NOOV=-noov
-MULTI_TASK=upstream,purge,oligos,merge_oligos,oligo_maps,dyads,dyad_maps,consensus,gibbs,MotifSampler,synthesis,sql
+MULTI_TASK=upstream,purge,oligos,merge_oligos,oligo_maps,dyads,dyad_maps,consensus,gibbs,MotifSampler,meme,synthesis,sql
 MULTI_BG=upstream
 MULTI_EXP=-bg ${MULTI_BG}
 PURGE=-purge
@@ -83,17 +84,33 @@ multi:
 	${MAKE} my_command MY_COMMAND="${MULTI_CMD}"
 
 
-SERVER=merlin.ulb.ac.be
+SERVER=164.15.109.32
 LOGIN=jvanheld
 SERVER_DIR=regulons/
 SERVER_LOCATION=${LOGIN}@${SERVER}:${SERVER_DIR}
 TO_SYNC=results
+TARGET_DIR=.
+TO_SERVER_CMD=${RSYNC} ${TO_SYNC} ${SERVER_LOCATION}
 to_server:
-	${RSYNC} ${TO_SYNC} ${SERVER_LOCATION}
+	@echo ${TO_SERVER_CMD}
+	${TO_SERVER_CMD}
 
+FROM_SERVER_CMD=${RSYNC} ${SERVER_LOCATION}${TO_SYNC} ${TARGET_DIR}
 from_server:
-	${RSYNC} ${SERVER_LOCATION}${TO_SYNC} . 
+	@mkdir -p ${TARGET_DIR}
+	@echo ${FROM_SERVER_CMD}
+	${FROM_SERVER_CMD}
 
+################################################################
+# Synchronize results of discriminant analysis
+#
+DISCRIM_DIR=/home/nicolas/discriminant_analysis/gctfya_discr_an
+get_discrim:
+	${MAKE} from_server TO_SYNC=${DISCRIM_DIR} SERVER_DIR='' TARGET_DIR=results/discriminant_analysis/gctfya_discr_an
+
+################################################################
+# Compare results obtained with different pattern discovery programs
+#
 CRITERIA=ln.exp exp ln.Pval Pval unadjusted.information adjusted.information MAP model.map betaprior.map
 compare:
 	@${MAKE} compare_one_criterion PROGRAM=oligo-analysis CRITERION=max.score CI=0.5 COMPA_MIN=0  COMPA_SC=9 COMPA_MAX=auto
@@ -175,6 +192,4 @@ compare_one_criterion:
 		-title2 'Comparison between annotated regulons and random gene selections'	\
 		-xleg1 "random selections"							\
 		 -legend -lines -xsize 800 -ysize 400
-
-
 
