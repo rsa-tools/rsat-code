@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: convert-seq,v 1.9 2001/07/06 12:24:06 jvanheld Exp $
+# $Id: convert-seq,v 1.10 2001/11/21 19:08:57 jvanheld Exp $
 #
-# Time-stamp: <2001-07-06 14:20:28 jvanheld>
+# Time-stamp: <2001-11-21 20:08:28 jvanheld>
 #
 ############################################################
 
@@ -74,13 +74,35 @@ if ($verbose) {
 ###### execute the command #########
 while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir)) &&
        (($current_seq ne "") || ($current_id ne ""))) {
+
+    $seq_nb++;
+
+    #### case conversion
     if ($lowercases) {
         $current_seq = lc($current_seq);
+
     } elsif ($uppercases) {
         $current_seq = uc($current_seq);
     } 
+
+    #### DNA only
+    if ($dna) {
+        $current_seq = &CleanDNA($current_seq);
+    }
+
+    #### identifier specified with the -id option
+    if ($seq_identifier) {
+	$current_id = $seq_identifier;
+    }
+
+    #### sequence id from file name
     if ($in_format eq "raw") {
 	$current_id =~ s/\.raw$//;
+    }
+
+    #### check that the a sequence identifier has a value
+    unless ($current_id) {
+	$current_id = $seq_nb;
     }
 
     if ($out_format eq "filelist") {
@@ -164,6 +186,7 @@ NAME
 	
 USAGE
         consvert-seq [-i inputfile] [-o outputfile] [-v] 
+	          -id identifier
                   -from inputformat -to outputformat
                   [-lw line_width]
 	
@@ -188,7 +211,11 @@ OPTIONS
                 cannot handle reverse complement (like the Gibbs Sampler).
 	-lc	lowercase. the sequence is printed in lowercase.
 	-uc	lowercase. the sequence is printed in uppercase.
-
+	-dna	convert any non-acgt character into "." 
+		This is to filter out partly speciied nucleotides.
+	-id identifier
+		sequence identifier (useful for converting a raw
+		sequence from the STDIN)
 
 SUPPORTED FORMATS
     INPUT $accepted_input_string
@@ -219,6 +246,8 @@ consvert-seq options
 -addrc  adds the reverse complement of each input sequence
 -lc	lowercase
 -uc	uppsercase
+-dna	convert any non-acgt character into "." 
+-id identifier
 
 SUPPORTED FORMATS
     INPUT $accepted_input_string
@@ -238,16 +267,19 @@ sub ReadArguments {
 	if ($ARGV[$a] eq "-v") {
 	    $verbose = 1;
 	    
-      ### detailed help
-    } elsif ($ARGV[$a] eq "-h") {
-      &PrintHelp;
-      
-      ### list of options
-    } elsif ($ARGV[0] eq "-help") {
-      &PrintOptions;
-      
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp;
+	    
+	    ### list of options
+	} elsif ($ARGV[0] eq "-help") {
+	    &PrintOptions;
+	    
 	} elsif ($ARGV[$a] eq "-i") {
 	    $inputfile = $ARGV[$a+1];
+	    
+	} elsif ($ARGV[$a] eq "-id") {
+	    $seq_identifier = $ARGV[$a+1];
 	    
 	} elsif ($ARGV[$a] eq "-o") {
 	    $outputfile = $ARGV[$a+1];
@@ -271,6 +303,9 @@ sub ReadArguments {
 	    
 	} elsif ($ARGV[$a] eq "-addrc") {
 	    $add_RC = 1;
+
+	} elsif ($ARGV[$a] eq "-dna") {
+	    $dna = 1;
 	    
 	}
     }
