@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_swissprot.pl,v 1.28 2003/10/29 09:04:13 jvanheld Exp $
+# $Id: parse_swissprot.pl,v 1.29 2003/11/28 15:45:44 oly Exp $
 #
 # Time-stamp: <2003-07-10 11:52:54 jvanheld>
 #
@@ -219,8 +219,9 @@ package main;
 
     #### special field formats for SQL
     $special_field_size{features} = 2047;
-    $special_field_size{bioseq} = 10000; ### long type 
-#    $special_field_size{comments} = 10000; ### long type
+    $special_field_size{description} = 1023;
+    $special_field_size{bioseq} = 10000; 
+#    $special_field_size{comments} = 10000;
 
     ### generate SQL scripts for loading the data
     $polypeptides->generate_sql(schema=>$main::schema, 
