@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: mirror.mk,v 1.4 2003/12/19 15:13:45 jvanheld Exp $
+# $Id: mirror.mk,v 1.5 2004/01/05 11:19:14 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 12:05:45 jvanheld>
 #
@@ -58,7 +58,7 @@ rsync_to_server: script_to_server pub_to_server
 
 scripts_to_server:
 	echo "Synchronizing perl-scripts to server ${SERVER}"
-	${RSYNC} --exclude perl-scripts/lib/arch --exclude qd.pl perl-scripts ${SERVER}/
+	${RSYNC} --exclude perllib --exclude perl-scripts/lib/arch --exclude qd.pl perl-scripts ${SERVER}/
 
 pub_to_server:
 	echo "Synchronizing public_html to server ${SERVER}"
