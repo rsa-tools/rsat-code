@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: downloads.mk,v 1.9 2003/12/23 17:23:13 jvanheld Exp $
+# $Id: downloads.mk,v 1.10 2003/12/29 13:56:59 jvanheld Exp $
 #
 # Time-stamp: <2003-10-09 14:02:21 jvanheld>
 #
@@ -24,9 +24,7 @@ usage:
 	@echo "implemented targets"
 	@perl -ne 'if (/^([a-z]\S+):/){ print "\t$$1\n";  }' ${MAKEFILE}
 
-all:
-	${MAKE} kegg
-	${MAKE} expasy
+update: genbank kegg expasy ebi_genomes taxonomy ensembl go prosite bind dbtbs
 
 ################################################################
 #
