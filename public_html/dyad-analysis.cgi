@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.18 2003/07/07 22:16:50 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.19 2003/10/10 22:33:36 jvanheld Exp $
 #
-# Time-stamp: <2003-07-08 00:16:34 jvanheld>
+# Time-stamp: <2003-10-11 00:30:17 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -43,13 +43,14 @@ $query = new CGI;
 #### read parameters ####
 $parameters = " -v 1 -sort -return proba,rank -timeout 3600 ";
 
-#### purge sequence option
-$purge = $query->param('purge');
 
 ### sequence file
 ($sequence_file,$sequence_format) = &GetSequenceFile();
+$purge = $query->param('purge');
 if ($purge) {
-    $command= "$purge_sequence_command -i $sequence_file -format $sequence_format | $dyad_analysis_command ";
+    #### purge sequence option
+#    $command= "$purge_sequence_command -i $sequence_file -format $sequence_format | $dyad_analysis_command ";
+    $command= "$purge_sequence_command -i $sequence_file -format $sequence_format -o $sequence_file.purged; $dyad_analysis_command -i $sequence_file.purged ";
 } else {
     $command= "$dyad_analysis_command -i $sequence_file  ";
 }
@@ -137,7 +138,11 @@ if ($query->param('freq_estimate') eq 'background') {
     }
 }
 
-print "<PRE><B>Command:</B> $command $parameters </PRE>" if ($ECHO);
+$command .= $parameters;
+
+print "<PRE><B>Command:</B> $command </PRE>" if ($ECHO);
+
+&SaveCommand($command, "$TMP/$tmp_file_name");
 
 if ($query->param('output') eq "display") {  
 
@@ -145,7 +150,7 @@ if ($query->param('output') eq "display") {
 
     ### execute the command ###
     $result_file = "$TMP/$tmp_file_name.res";
-    open RESULT, "$command $parameters | ";
+    open RESULT, "$command | ";
 
 
     ### Print result on the web page
@@ -177,9 +182,9 @@ if ($query->param('output') eq "display") {
     &PipingForm();
     
 } elsif ($query->param('output') =~ /server/i) {
-    &ServerOutput("$command $parameters", $query->param('user_email'));
+    &ServerOutput("$command", $query->param('user_email'));
 } else {
-    &EmailTheResult("$command $parameters", $query->param('user_email'));
+    &EmailTheResult("$command", $query->param('user_email'));
 }
 
 
