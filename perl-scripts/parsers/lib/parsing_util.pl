@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parsing_util.pl,v 1.4 2003/11/02 00:25:29 jvanheld Exp $
+# $Id: parsing_util.pl,v 1.5 2003/11/16 00:15:12 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -80,25 +80,6 @@ sub ExportClasses {
   return 1;
 }
 
-
-################################################################
-## Export a makefile which will call other makefiles for the loading
-###    &ExportMakefile(@classes);
-sub ExportMakefile {
-    my @classes = @_;
-
-    chdir "$dir{output}/sql_scripts";
-    open MAKEFILE, ">makefile";
-
-
-    ## data loading
-    foreach my $target ("usage", "create", "uncompress", "load", "recompress", "all", "drop") {
-	print MAKEFILE "${target}:\n";
-	for my $class (@classes) {
-	    print MAKEFILE "\tmake -f ${class}.mk ${target}\n";
-	}
-    }
-}
 
 
 ################################################################
