@@ -31,7 +31,8 @@ create_tables:
 ## Loading
 TABLE=gene
 TABLE_FILE=${ENSEMBL_DIR}/${TABLE}.txt.table
-TABLES=`ls ${ENSEMBL_DIR}/*.txt.table.gz | perl -pe 's|${ENSEMBL_DIR}/||g' | perl -pe 's|.txt.table.gz||g' | xargs`
+ALL_TABLES=`ls ${ENSEMBL_DIR}/*.txt.table.gz | perl -pe 's|${ENSEMBL_DIR}/||g' | perl -pe 's|.txt.table.gz||g' | xargs`
+TABLES=${ALL_TABLES}
 one_table_load:
 	@echo "Loading table ${TABLE} from file ${TABLE_FILE}"
 	@if [ -f "${TABLE_FILE}.gz" ] ; then						\
@@ -41,7 +42,7 @@ one_table_load:
 	gzip -f ${TABLE_FILE}
 
 
-all_tables_load:
+tables_load:
 	@echo "Loading all tables ${TABLES}"
 	@for table in ${TABLES}; do \
 		${MAKE} one_table_load TABLE=$${table} ; \
@@ -51,7 +52,7 @@ COUNT=`${MYSQL} -e "SELECT COUNT(*) FROM ${TABLE};" | grep -v '^+' | grep -iv 'c
 one_table_count:
 	@echo "${COUNT}	rows in table ${TABLE}"
 
-all_tables_count:
+tables_count:
 	@echo "Loading all tables ${TABLES}"
 	@for table in ${TABLES}; do \
 		${MAKE} one_table_count TABLE=$${table} ; \
@@ -64,7 +65,7 @@ one_table_delete:
 	${MYSQL} -e "DELETE FROM ${TABLE};"
 
 TABLES=`ls ${ENSEMBL_DIR}/*.txt.table.gz | perl -pe 's|${ENSEMBL_DIR}/||g' | perl -pe 's|.txt.table.gz||g' | xargs`
-all_tables_delete:
+tables_delete:
 	@echo "Deleting all tables ${TABLES}"
 	@for table in ${TABLES}; do \
 		${MAKE} one_table_delete TABLE=$${table} ; \
