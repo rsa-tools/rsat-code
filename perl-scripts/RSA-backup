@@ -18,7 +18,7 @@ for $folder ("perl-scripts","public_html") {
     warn "; Archiving folder $folder\n" if $verbose;
     $tar_file = "${out_dir}/${folder}_${config_site}_${alpha_date}.tar";
     if ($folder eq "public_html") {
-	$excluded = " --exclude tmp --exclude logs --exclude data";
+	$excluded = " --exclude tmp --exclude logs --exclude data --exclude papers";
     }
     $command = "tar $excluded -cpf $tar_file $folder; gzip $tar_file";
 
@@ -27,8 +27,10 @@ for $folder ("perl-scripts","public_html") {
 }
 
 $done_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
-print ";Job started $start_time";
-print ";Job done    $done_time";
+if ($verbose >= 1) {
+    print ";Job started $start_time";
+    print ";Job done    $done_time";
+}
 
 exit(0);
 

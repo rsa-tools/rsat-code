@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: position-analysis,v 1.15 2002/11/21 04:38:53 jvanheld Exp $
+# $Id: position-analysis,v 1.16 2002/11/21 07:26:51 jvanheld Exp $
 #
-# Time-stamp: <2002-11-20 22:38:02 jvanheld>
+# Time-stamp: <2002-11-21 01:26:47 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -911,7 +911,7 @@ sub Verbose {
 	printf $out "; %-29s\n", "Occurrences counted  on a single  strands";
     }
     print $out "; Conditions of applicability not checked !\n" if $no_check;
-    print $out "; WARNING ! chi2 is shown between curly braces when the applicability conditions are not satisfy.\n" if $no_filter;
+    print $out "; WARNING ! chi2 is shown between curly braces when the applicability conditions are not satisfied.\n" if $no_filter;
 
     print $out "; Sequence statistics:\n";
     printf $out ";\t%-29s\t%d\n", "Nb of sequences", $sequence_number;
