@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_pathway_skeletons.pl,v 1.1 2001/11/12 11:22:46 jvanheld Exp $
+# $Id: parse_pathway_skeletons.pl,v 1.2 2001/11/12 14:44:41 jvanheld Exp $
 #
-# Time-stamp: <2001-10-30 23:58:58 jvanheld>
+# Time-stamp: <2001-11-12 15:10:56 jvanheld>
 #
 ############################################################
 
@@ -112,6 +112,7 @@ package main;
 				     matching_reactions
 				     problematic_reactions
 				     no_match_reactions
+				     duplicate_reactions
 				     multi_match_reactions
 				     unidentified_compounds
 				     missing_direction
@@ -391,6 +392,7 @@ sub ReadProcesses {
 	$process->set_attribute("multi_match_reactions",0);
 	$process->set_attribute("missing_direction",0);
 	$process->set_attribute("no_match_reactions",0);
+	$process->set_attribute("duplicate_reactions",0);
 	$process->new_attribute_value("names",$process_name);
 	
 	my $product_index = PFBP::Index->new();
@@ -400,7 +402,7 @@ sub ReadProcesses {
 	    #### mirror file to report the matching reactions for each pathway step
 	    my $mirror_file = "$dir{mirror}/mirror_${organism}_${process_name}.tab";
 	    $mirror_file =~ s/ /_/g;
-	    warn "Mirror file\t$mirror_file\n" if ($verbose >=1);
+	    warn "; Mirror file\t$mirror_file\n" if ($verbose >=1);
 	    open MIRROR, ">$mirror_file"
 		|| die "Error: cannot open mirror file $dir{skeletons}/$mirror_file\n";
 	}
@@ -422,6 +424,7 @@ sub ReadProcesses {
 	    my @fields = split "\t", $line;
 	    warn "line\t$line\n" if ($verbose >=3);
 
+	    next if ($line =~ /^;/);
 	    #### step number
 #	    $step = $fields[$col{step}];
 	    $step++;
@@ -900,12 +903,29 @@ sub ReadProcesses {
 	    }
 	}
 
+	#### check that there is no duplicate reaction
+	my @reactions = sort($process->get_attribute("reactions"));
+	warn ("; Reactions\n",
+	      ";\t", 
+	      join ("\n;\t", @reactions), 
+	      "\n") if ($verbose >= 0);
+	for my $i (0..$#reactions -1) {
+	    if ($reactions[$i] eq $reactions[$i+1]) {
+		&ErrorMessage (join ("\t", $file, "Duplicate reaction", $reactions[$i]), "\n");
+		$process->force_attribute("duplicate_reactions", $process->get_attribute("duplicate_reactions") + 1) ; 
+		$process->force_attribute("complete", 0);
+	    }
+	}
+
 	#### report the number of steps in the process
 	$process->set_attribute("steps", $step) ;
 	
 	#### count the number of problematic reactions
 	$process->set_attribute("problematic_reactions", 
-				$process->get_attribute("multi_match_reactions") + $process->get_attribute("no_match_reactions"));
+				$process->get_attribute("multi_match_reactions") 
+				+ $process->get_attribute("no_match_reactions")
+				+ $process->get_attribute("duplicate_reactions")
+				);
 	if ($process->get_attribute("complete") == 1) {
 	    $process->set_attribute("status", "OK");
 	} else {
