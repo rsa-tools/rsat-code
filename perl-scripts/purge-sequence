@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence,v 1.10 2001/11/21 19:23:47 jvanheld Exp $
+# $Id: purge-sequence,v 1.11 2001/12/02 21:30:48 jvanheld Exp $
 #
-# Time-stamp: <2001-11-21 20:22:58 jvanheld>
+# Time-stamp: <2001-12-02 21:49:18 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -37,13 +37,13 @@ $in_format = "fasta";
 ### check input format 
 &CheckInputSeqFormat($in_format);
 
+$pwd = `pwd`;
+chomp $pwd;
 if ($inputfile) {
     $basename = `basename ${inputfile}`;
     chomp $basename;
     $dirname = `dirname ${inputfile}`;
     chomp $dirname;
-    $pwd = `pwd`;
-    chomp $pwd;
 } else {
     $dirname = ".";
     $basename = $start_time;
@@ -89,19 +89,23 @@ $mkvtree_options .= " -db $tmp_file"; # sequence file
 
 #### locate the duplications
 my $vmatch_options = "-s"; # show the sequence content of a match
-$vmatch_options .= " -dbnomatch 1"; # show all database sequence not containing a match
+$vmatch_options .= " -dbnomatch 1 "; # show all database sequence not containing a match
+$vmatch_options .= " keepleft"; # keep the left occurrence of each repeat
 $vmatch_options .= " -l $match_len"; # specify that match must have the given length
 $vmatch_options .= " -e $mismatches" if ($mismatches > 0); # specify the allowed edit distance > 0
 $vmatch_options .= " -d"; # compute direct matches 
+$vmatch_options .= " -showdesc 0"; # use the original sequence identifier 
 if ($both_strands) {
     $vmatch_options .= " -p"; # compute reverse complemented (palindromic) matches
 } 
 $vmatch_options .= " $tmp_file ";
 $vmatch_options .= " | grep -v '# args=' ";
-$vmatch_options .= "> $outputfile" if ($outputfile);
+$vmatch_options .= " | gawk '\$1 ~ \"\>\" {print \$1 \"_\" \$2 \"_\" (\$2+\$3-1)}; \$1 !~ \"\>\" {print}'";
+
+$vmatch_options .= "> ${pwd}/$outputfile" if ($outputfile);
 &doit("$skdir/vmatch $vmatch_options");
 foreach $ext  (@extensions) {
-    &doit("rm -f ${tmp_file}.${ext}");
+#    &doit("rm -f ${tmp_file}.${ext}");
 }
 
 #### remove the temp file
@@ -124,7 +128,7 @@ exit(0);
 sub doit {
     my ($command) = @_;
     chdir($TMP);
-    warn ";\n$command\n" if ($verbose);
+    warn "; $command\n" if ($verbose);
     system $command unless $dry_run;
 }
 
