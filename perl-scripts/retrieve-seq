@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.37 2005/03/13 10:16:28 jvanheld Exp $
+# $Id: retrieve-seq,v 1.38 2005/03/17 13:35:13 jvanheld Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -18,6 +18,8 @@ require RSAT::organism;
 my $start_time = &AlphaDate();
 my $organism = "";
 my %chomosome = ();
+$imp_pos = 0;
+$no_comments = 0;
 $label_sep = "|";
 $annotation_table = "";
 $sequence_type = "upstream";
@@ -157,7 +159,7 @@ if ($sequence_type eq "random fragments") {
     
 } else {
     ### read feature attributes (position, description, ...)
-    $organism->LoadFeatures($annotation_table, $feature_types);
+    $organism->LoadFeatures($annotation_table, $feature_types, $imp_pos);
 #    &ReadFeatures($organism_name, $annotation_table, $feature_types);
 
     #### read synonyms
@@ -519,6 +521,7 @@ OPTIONS
                 This option is incompatible with -q.
 	-all	return all genomic upstream regions
 	-o	followed by the name of the outputfile. 
+
         -from #1 -to #2 
                 where #1 and #2 are numbers. #2 should be higher than #1.
                 limits of the region to extract, relative to orf start 
@@ -526,6 +529,7 @@ OPTIONS
                         example: -from -800 -to -1 
                         will extract the 800 bp upstream the orf start.
 			 (this is the default)
+
 	-format	allows to select different output formats, with the following 
 		options:
 		IG	IntelliGenetics (default format)
@@ -533,9 +537,11 @@ OPTIONS
 		raw	only the sequence is returned, without spaces, newlines
 			nor comments.
                 FastA
+
 	-lw ##	Line width. A newline character will be inserted in the 
 		sequence every ## bases. Default is 60. 
 		-lw 0 will prevent newline insertion.
+
         -label label_fields
 	       Field(s) to be used in the sequence label. 
 	       Default: name.
@@ -549,8 +555,10 @@ OPTIONS
 
 	       In this case, the sequence identifier will contain all
 	       of these fields, separated by underscore.
+
 	-labelsep
 		Separator between label fields. Default: $label_sep
+
 	-noorf	the upstream sequence can only contain non-coding sequence.
 		i.e. the -from values is modified if a predicted orf
 		is encountered within its range. 
@@ -558,14 +566,26 @@ OPTIONS
 		- all predicted orf do not correspond to real orf,
 		- there is no a priori reason to exclude a regulatory site
 		  which would overlap the upstream coding sequence.
+
 	-nocom	no comments. Only the identifier and the sequence are
 		returned. By default, the comment indicates the orf and
 		upstream sequence coordinates.
+
+	-imp_pos
+		Admit imprecise positions.
+		In the annotation of some genomes, the limits of some genes
+	        are imprecisely specified (e.g. <555245, >898098). By default,
+	        these genes are not laoded. The option -imp_pos allows to
+	        retrieve sequence for these genes as well, using the imprecise
+	        coordinate as reference position.
+
 	-nowarn
 		Prevents warning when a gene cannot be identified.
+
 	-randsels #	
 		Return the sequences (specified by the option -type)
 		for a random selection of # ORFs.
+
 	-lf	length file 
 		(only with the option '-type random')
 		Allows to generate random sequences with the same
@@ -575,6 +595,7 @@ OPTIONS
 		The length file contains two columns : 
 		    - sequence ID (ignored)
 		    - sequence length
+
 	-features	
 		alternate feature table. This option allows to speify
 		an alternate file where the ORF locations are found. 
@@ -644,6 +665,7 @@ retrieve-seq options
 -labelsep	separator between label fields. Default: $label_sep
 -noorf		the upstream sequence can only contain non-coding sequence.
 -nowarn		prevents warning when a gene can not be identified
+-imp_pos	admit imprecise positions.
 -nocom		do not print related information (start, end position, ...)
 -features	alternate feature table
 End_short_help
@@ -811,6 +833,10 @@ sub ReadArguments {
 	    #### do not print the comments field
 	} elsif ($ARGV[$a] =~ /^-nocom/i) {
 	    $no_comments = 1;
+	    
+	    #### admit imprecise positions
+	} elsif ($ARGV[$a] =~ /^-imp_pos/i) {
+	    $imp_pos = 1;
 	    
 	    #### do not warn
 	} elsif ($ARGV[$a] =~ /^-nowarn/i) {

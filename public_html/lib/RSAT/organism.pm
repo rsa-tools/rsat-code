@@ -366,7 +366,8 @@ The features are embedded in the organism object, and indexed by contig.
 sub LoadFeatures {
     my ($self, 
 	$annotation_table,
-	$feature_types)= @_;
+	$feature_types,
+	$imp_pos)= @_;
 
     ## Organism name
     my $organism_name = $self->get_attribute("name");
@@ -467,8 +468,14 @@ sub LoadFeatures {
 	    next;
 	}
 	unless (&RSAT::util::IsNatural($left) ) {
-	    &RSAT::message::Warning("invalid left position specification in the feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 3);
-	    next;
+	    if ($imp_pos) {
+		&RSAT::message::Warning("imprecise specification of the left position for gene $id\n;\t",join "\t", @fields) if ($main::verbose >= 2);
+		$left =~ s/\>//;
+		$left =~ s/\<//;
+	    } else {
+		&RSAT::message::Warning("invalid left position specification in the feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 3);
+		next;
+	    }
 	}
 
 	## Check right
@@ -477,12 +484,18 @@ sub LoadFeatures {
 	    next;
 	}
 	unless (&RSAT::util::IsNatural($right) ) {
-	    &RSAT::message::Warning("invalid right position specification in the feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 3);
-	    next;
+	    if ($imp_pos) {
+		&RSAT::message::Warning("imprecise specification of the right position for gene $id\n;\t",join "\t", @fields) if ($main::verbose >= 2);
+		$right =~ s/\>//;
+		$right =~ s/\<//;
+	    } else {
+		&RSAT::message::Warning("invalid right position specification in the feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 3);
+		next;
+	    }
 	}
 
 	unless ($left < $right) {
-	    &RSAT::message::Warning("left should be smaller than right position specification in in  feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 2);
+	    &RSAT::message::Warning("left should be smaller than right position specification in in  feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 3);
 	    next;
 	}
 
@@ -722,7 +735,7 @@ sub LoadSynonyms {
 	    $name_index->add_value(uc($name), $feature);
 #	    &RSAT::message::Debug(join ("\t", "Added synonym", $id, $name)) if ($main::verbose >= 0);
 	} else {
-	    &RSAT::message::Debug(join ("\t", "Cannot add synonym", "no feature with ID", $id)) if ($main::verbose >= 3);
+	    &RSAT::message::Debug(join ("\t", "Cannot add synonym", "no feature with ID", $id)) if ($main::verbose >= 4);
 	}
     }
     close $syn if ($synonym_file);
