@@ -1,12 +1,12 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-matrix,v 1.4 2004/04/01 22:07:30 jvanheld Exp $
+# $Id: convert-matrix,v 1.5 2004/05/21 09:28:56 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
 ############################################################
-#use strict;;
+#use strict;
 BEGIN {
     if ($0 =~ /([^(\/)]+)$/) {
 	push (@INC, "$`lib/");
@@ -35,14 +35,14 @@ local $out = STDOUT;
 ## Return formats
 @return_formats = ();
 %supported_return_format = (
-			   "profile"=>1,
-			   "alignment"=>1,
-			   "frequencies"=>1,
-			   "weights"=>1,
-			   "information"=>1,
-			   "parameters"=>1,
-			   "consensus"=>1
-			   );
+			    "profile"=>1,
+			    "alignment"=>1,
+			    "frequencies"=>1,
+			    "weights"=>1,
+			    "information"=>1,
+			    "parameters"=>1,
+			    "consensus"=>1
+			    );
 $supported_return_formats = join ",", sort keys %supported_return_format;
 
 ## input formats
@@ -177,7 +177,7 @@ sub PrintHelp {
 NAME
 	convert-matrix
 
-        1999 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
+        1999 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
 	
 USAGE
         convert-matrix [-i inputfile] [-o outputfile] [-v]
