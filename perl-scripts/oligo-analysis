@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.41 2002/04/17 09:02:37 jvanheld Exp $
+# $Id: oligo-analysis,v 1.42 2002/04/26 00:33:54 jvanheld Exp $
 #
-# Time-stamp: <2002-04-17 11:01:30 jvanheld>
+# Time-stamp: <2002-04-26 02:18:50 jvanheld>
 #
 ############################################################
 
@@ -492,30 +492,38 @@ sub CalcSubWordFrequencies {
 
 ### calculate relative frequencies if requested ###
 sub CalcFrequencies {
-  if ($verbose >= 2) {
-    $current_time = `date '+%H:%M:%S'`;
-    chomp($current_time);
-    &Warning( "oligo-analysis\t$current_time\tCalculating relative frequencies\n");
-  }
-  
-  $sum_overlaps = 0;
-  $sum_noov = 0;
-  $sum_occurrences = 0;
-  foreach $pattern_seq (keys %patterns) {
-    $sum_occurrences += $patterns{$pattern_seq}->{occ} + $patterns{$pattern_seq}->{overlaps};
-    $sum_overlaps += $patterns{$pattern_seq}->{overlaps};
-    $sum_noov += $patterns{$pattern_seq}->{occ};
-  }
-  if ($return{'freq'}) {
-    foreach $pattern_seq (keys %patterns) {
-      $patterns{$pattern_seq}->{freq} = $patterns{$pattern_seq}->{occ}/$sum_occurrences;
+    if ($verbose >= 2) {
+	$current_time = `date '+%H:%M:%S'`;
+	chomp($current_time);
+	&Warning( "oligo-analysis\t$current_time\tCalculating relative frequencies\n");
     }
-  }
-  if (($return{'mseq'}) && ($return{'freq'})) {
+    
+    #### sum of occurrences
+    $sum_overlaps = 0;
+    $sum_noov = 0;
+    $sum_occurrences = 0;
     foreach $pattern_seq (keys %patterns) {
-      $patterns{$pattern_seq}->{ms_freq} = $patterns{$pattern_seq}->{mseq}/$sequence_number;
+	$sum_occurrences += $patterns{$pattern_seq}->{occ} + $patterns{$pattern_seq}->{overlaps};
+	$sum_overlaps += $patterns{$pattern_seq}->{overlaps};
+	$sum_noov += $patterns{$pattern_seq}->{occ};
     }
-  }
+    if ($sum_strands) {
+	$sum_occurrences /= 2;
+	$sum_overlaps /= 2;
+	$sum_noov /= 2;
+    }
+    
+    #### relative frequencies
+    foreach $pattern_seq (keys %patterns) {
+	$patterns{$pattern_seq}->{freq} = $patterns{$pattern_seq}->{occ}/$sum_occurrences;
+    }
+
+    #### frequency of matching sequences
+    if ($return{'mseq'}) {
+	foreach $pattern_seq (keys %patterns) {
+	    $patterns{$pattern_seq}->{ms_freq} = $patterns{$pattern_seq}->{mseq}/$sequence_number;
+	}
+    }
 }
 
 
@@ -849,7 +857,6 @@ sub CalcExpected {
 
 #### calculate overlap coefficient
 sub CalcOverlapCoefficient {
-#    die "HELLO";
     foreach $pattern_seq (keys %patterns) {
 	$patterns{$pattern_seq}->{ovlp} = &OverlapCoeff($pattern_seq, %residue_proba);
     }
@@ -1454,7 +1461,7 @@ sub ReadArguments {
 		$seq_type = "other";
 
 	    } else {
-		die "\tError: sequence type '$ARGV[$a]' is not supported\n";
+		&FatalError( "\tError: sequence type '$ARGV[$a]' is not supported\n");
 	    }
 
 	    #### output file
@@ -1637,7 +1644,7 @@ sub ReadArguments {
 	    
 	    #### threshold on occurrence significance
 	} elsif ($ARGV[$a] eq "-thosig") {
-	    die "Error : significance threshold should be a real number\n" unless (&IsReal($ARGV[$a+1]));
+	    &FatalError( "Error : significance threshold should be a real number\n") unless (&IsReal($ARGV[$a+1]));
 	    $occ_significance_threshold = $ARGV[$a+1];
 	    $return{'occ'} = 1;
 	    $return{'proba'} = 1;
