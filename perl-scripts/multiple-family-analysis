@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.25 2002/10/16 06:46:26 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.26 2002/10/16 06:48:28 jvanheld Exp $
 #
-# Time-stamp: <2002-10-16 00:42:18 jvanheld>
+# Time-stamp: <2002-10-16 00:48:23 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -172,7 +172,9 @@ sub SetFileNames {
   }
 
   #### expected frequency model
-  if ($exp_freq_file{dyads}) {
+  if ($markov) {
+      ## do nothing. Expected dyad frequencies will be calculated on the basis of monad frequencies
+  } elsif ($exp_freq_file{dyads}) {
       $dyad_options .= " -expfreq $exp_freq_file{dyads}";
   } elsif ($background eq "intergenic") {
       $dyad_options .= " -ncf ";
