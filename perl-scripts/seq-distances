@@ -33,7 +33,7 @@ my $in = &OpenInputFile($inputfile);
 while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $seq_format)) &&
        (($current_seq) || ($current_id))) {
   $seq_count++;
-  $seq[$seq_count] = new RSA::sequence(
+  $seq[$seq_count] = new RSA::Sequence(
 				       id=>$current_id, 
 				       sequence=>$current_seq,
 				       description=>$comments[0],
