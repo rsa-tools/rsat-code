@@ -1,0 +1,168 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <TITLE>RSA-tools - tutorials</TITLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF" LINK="#0000EE" VLINK="#55008B" ALINK="#FF0000">
+<blockquote>
+
+<HR SIZE=6 WIDTH="100%">
+<CENTER>
+<H2><A HREF="../RSA_home.cgi">RSA-tools</A> - Tutorials - Pattern matching</H2></CENTER>
+
+
+<UL>Let us suppose that you are searching the positions of putative GATA
+boxes and Hap sites within the upstream regions of the genes from the GDH
+family (GDH1, GDH2, and GDH3). We will first retrieve the sequences upstream
+from your genes.
+
+</UL>
+<P>
+
+<OL>
+<OL>
+<P><LI>
+Retrieve upstream sequences from -800 to -1 for the following yeast
+genes (as you have seen in the <a
+href="tut_sequence_retrieval.html">tutorial on sequence retrieval</a>)
+
+<PRE>
+GDH1
+GDH2
+GDH3
+</PRE>
+
+<P>Now we have the upstream sequences, we will scan them with the consensi
+for GATA boxes and HAP sites. At the top of the result page, a series of
+buttons are presented. These buttons allow you to send your sequence to
+a selection of sequence analysis programs. Click on <B>dna-pattern (IUPAC)</B>.
+A new form appears. 
+
+<P>
+Note that the search will automatically be performed on the sequences
+you just retrieved (<i>sequences transferred from your previous
+query</I>). This differs from the form you would receive by clicking
+on "dna-pattern" in the left panel, and which would allow to fill an
+additional box with your own sequences.
+
+<P><LI>
+In the <B>Query pattern(s)</B> box, we will enter the patterns to search
+for. Eah pattern must come on a separate line. The first word of each line
+is the string to search for, the second word is an identifier for this
+pattern. Type the following text in the Query pattern(s) box:</LI>
+
+<PRE>GATWA&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Gata_box
+CCAAY&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Hap_site</PRE>
+Note the use of degenerate IUPAC degenerate code: the W from GATWA on the
+first line means "either A or T", the Y from CCAAY on the second line means
+"either C or T".
+<P><LI>
+&nbsp;click <B>GO</B>.</LI>
+
+<P>
+You see now the positions of all matches with the patterns you entered
+within the upstream sequence of GDH1, GDH2 and GDH3. Each line shows a
+single match, and the different columns indicate respectively:
+<OL>
+<P><LI>
+the pattern identifier.</LI>
+
+<P><LI>
+the strand on which the match was found (W for Watson, C for Crick).</LI>
+
+<P><LI>
+the pattern searched for (i.e. the consensus you provided)</LI>
+
+<P><LI>
+the sequence in which it was found.</LI>
+
+<P><LI>
+the starting position of the match</LI>
+
+<P><LI>
+the end position of the match</LI>
+
+<P><LI>
+the matching sequence. The matching bases are indicated in UPPERCASES.
+The 4 flanking bases at left and right are provided in lowercases.</LI>
+</OL>
+
+</UL>
+
+<P>
+We will now display the same results graphically.
+
+<OL>
+<P><LI>
+Click on the <B>Feature map</B> button on the top of the result page.</LI>
+
+<P><LI>
+In the <B>Title </B>box, type</LI>
+
+<PRE>Gata boxes and Hap sites in the upstream regions from GDH genes</PRE>
+
+<P><LI>
+after the title <B>Display limits</B>, fill</LI>
+
+<UL>
+<P><LI>
+the <B>from </B>box with -800,</LI>
+
+<P><LI>
+the <B>to </B>box with 0</LI>
+</UL>
+
+<P><LI>
+In the pop-up menu "<B>feature handle</B>", select <B>symbol</B></LI>
+
+<P><LI>
+make sure the <B>Dynamic map</B> option is checked.</LI>
+
+<P><LI>
+Leave other parameters unchanged and click <B>GO</B>.</LI>
+</OL>
+
+<P>
+After a few seconds, the feature map should appear. A few comments:
+<UL>
+<P><LI>
+Gata boxes appear in blue, Hap sites in red</LI>
+
+<P><LI> Color boxes are either above or below the horizontal black
+lines, accordingly to the strand (Watson or Crick respectively) of the
+match.</LI>
+
+<P><LI>
+A specific symbol is associated to each pattern, allowing to distinguish
+them when the feature map is printed in black and white</LI>
+
+<P><LI> Coordinates are provided with reference to the ORF starting
+position, negative values indicate an upstream, and positive values
+for the coding sequences (0 corresponds to the first nucelotide ot the
+start codon).
+
+<P><LI>
+Just for the fun, note the nice repetition of Hap-Gata site pairs in the
+upstream sequence of GDH1.
+
+<P><LI>
+If your browser is recent, the map is dynamic. With your mouse, position
+the cursor just above one of the sites in the sequences. Look now at the
+bottom border of your Netscape window. The complete information about this
+site is displayed. Move the cursor to another site and check that the information
+is well updated. If you are using Internet Explorer, make sure to activate
+the <B>status bar</B> (in the <B>View</B> menu).
+</UL>
+</UL>
+
+
+<HR WIDTH="100%">
+<CENTER>
+<ADDRESS>
+For suggestions or information request, please contact :</ADDRESS></CENTER>
+
+<CENTER><A HREF="mailto:jvanheld@ucmb.ulb.ac.be">Jacques van Helden (jvanheld@ucmb.ulb.ac.be)</A></CENTER>
+
+</blockquote>
+</BODY>
+</HTML>
