@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.15 2002/09/05 09:18:42 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.16 2002/09/05 09:40:03 jvanheld Exp $
 #
-# Time-stamp: <2002-09-05 04:18:40 jvanheld>
+# Time-stamp: <2002-09-05 04:33:28 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -32,7 +32,7 @@ $query = new CGI;
 &UpdateLogFile;
 
 #### read parameters ####
-$parameters = "-v -sort -return proba,rank -timeout 3600 ";
+$parameters = " -v 1 -sort -return proba,rank -timeout 3600 ";
 
 #### purge sequence option
 $purge = $query->param('purge');
@@ -105,7 +105,7 @@ if ($query->param('exp_freq') =~ /non\-coding/i) {
   $parameters .= " -ncf";
 } 
 
-print "<PRE><B>Command:</B> $command $parameters </PRE>" if $ECHO;
+print "<PRE><B>Command:</B> $command $parameters </PRE>" if ($ECHO);
 
 if ($query->param('output') eq "display") {  
 
@@ -129,7 +129,7 @@ if ($query->param('output') eq "display") {
 	} else {
 	    $pattern_assembly_command .= " -2str";
 	}
-	$pattern_assembly_command .= "-maxfl 2 -subst 0 ";
+	$pattern_assembly_command .= " -maxfl 2 -subst 0 ";
 	
 	print "<H4>Pattern assembly</H4>\n";
 	open CLUSTERS, "$pattern_assembly_command -i $result_file |";
@@ -145,7 +145,7 @@ if ($query->param('output') eq "display") {
     &PipingForm();
     
 } else {
-    &EmailTheResult("$dyad_analysis_command $parameters", $query->param('user_email'));
+    &EmailTheResult("$command $parameters", $query->param('user_email'));
 }
 
 
