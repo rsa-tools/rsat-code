@@ -29,23 +29,40 @@ $default{noov} = 'checked';
 $default{grouprc} = 'checked';
 $default{purge} = 'checked';
 #$default{purge} = '';
-$default{rank} = 'checked';
+
 $default{freq_estimate} = "Background model";
-$default{occ} = 'checked';
-$default{proba} = 'checked';
+
 $default{zscore} = '';
-$default{freq} = '';
-$default{mseq} = '';
+$default{lth_zscore} = 'none';
+$default{uth_zscore} = 'none';
+
+$default{rank} = 'checked';
+$default{lth_rank} = "none";
+$default{uth_rank} = "none";
+
 $default{ratio} = '';
+$default{lth_ratio} = "none";
+$default{uth_ratio} = "none";
+
+$default{occ} = 'checked';
 $default{lth_occ} = "1";
 $default{uth_occ} = "none";
+
+$default{mseq} = '';
+$default{uth_mseq} = "none";
 $default{lth_mseq} = "none";
+
+$default{proba} = 'checked';
 $default{lth_occ_pro} = "none";
 $default{uth_occ_pro} = "none";
+
 $default{lth_occ_sig} = "0";
 $default{uth_occ_sig} = "none";
+
+$default{freq} = '';
 $default{lth_observed_freq} = "none";
 $default{uth_observed_freq} = "none";
+
 $default{return}="fields";
 
 ### print the form ###
@@ -259,8 +276,13 @@ print $query->table({-border=>1,-cellpadding=>0,-cellspacing=>0},
 			  $query->td([$query->checkbox(-name=>'zscore',
 						    -checked=>$default{zscore},
 						    -label=>' Z-scores '),
-				   '',
-				   '']),
+				   $query->textfield(-name=>'lth_zscore',
+						     -default=>$default{lth_zscore},
+						     -size=>5),
+				   $query->textfield(-name=>'uth_zscore',
+						     -default=>$default{uth_zscore},
+						     -size=>5)
+				      ]),
 
 			  ### frequencies
 			  $query->td([$query->checkbox(-name=>'freq',
@@ -281,26 +303,38 @@ print $query->table({-border=>1,-cellpadding=>0,-cellspacing=>0},
 				   $query->textfield(-name=>'lth_mseq',
 						     -default=>$default{lth_mseq},
 						     -size=>5),
-				   '']),
+				   $query->textfield(-name=>'uth_mseq',
+						     -default=>$default{uth_mseq},
+						     -size=>5)
+				      ]),
 
 			  ### ratio
 			  $query->td([$query->checkbox(-name=>'ratio',
 						    -checked=>$default{ratio},
 						    -label=>' Obs/exp ratio '),
-				   '',
-				   '']),
+				   $query->textfield(-name=>'lth_ratio',
+						     -default=>$default{lth_ratio},
+						     -size=>5),
+				   $query->textfield(-name=>'uth_ratio',
+						     -default=>$default{uth_ratio},
+						     -size=>5)
+				      ]),
 
 			  ### rank
 			  $query->td([$query->checkbox(-name=>'rank',
-						    -checked=>$default{rank},
-						    -label=>' Rank '),
-				   '',
-				   ''])
-
-
-			 ]
-			)
-		);
+						       -checked=>$default{rank},
+						       -label=>' Rank '),
+				      $query->textfield(-name=>'lth_rank',
+							-default=>$default{lth_rank},
+							-size=>5),
+				      $query->textfield(-name=>'uth_rank',
+							-default=>$default{uth_rank},
+							-size=>5)
+				      ]),
+			  
+			  ]
+			       )
+		    );
 print "</BLOCKQUOTE>\n";
 print ("<INPUT TYPE='radio' NAME='return' VALUE='table'>", 
        "One row per gene (occurrence counts only, email output recommended)", "<P>\n");

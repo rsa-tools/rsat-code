@@ -96,25 +96,66 @@ if ($query->param('return') eq "table") {
     ### matching sequences
     if ($query->param('mseq')) {
 	$return_fields .= "mseq,";
-	### threshold on matching sequences
-	if ($query->param('lth_mseq') =~ /^\d+$/) {
-	    $parameters .= " -thms ".$query->param('lth_mseq');
-	}  
+
+	### Lower threshold on matching sequences
+	if (&IsReal($query->param('lth_mseq'))) {
+	    $parameters .= " -lth mseq ".$query->param('lth_mseq');
+	}
+
+	### Upper threshold on matching sequences
+	if (&IsReal($query->param('uth_mseq'))) {
+	    $parameters .= " -uth mseq ".$query->param('uth_mseq');
+	}
+
+#	### threshold on matching sequences
+#	if ($query->param('lth_mseq') =~ /^\d+$/) {
+#	    $parameters .= " -thms ".$query->param('lth_mseq');
+#	}  
     } 
     
     ### observed/expected ratio
     if ($query->param('ratio')) {
 	$return_fields .= "ratio,";
+
+	### Lower threshold on ratio
+	if (&IsReal($query->param('lth_ratio'))) {
+	    $parameters .= " -lth ratio ".$query->param('lth_ratio');
+	}
+
+	### Upper threshold on ratio
+	if (&IsReal($query->param('uth_ratio'))) {
+	    $parameters .= " -uth ratio ".$query->param('uth_ratio');
+	}
     } 
     
     ### rank
     if ($query->param('rank')) {
 	$return_fields .= "rank,";
+
+	### Lower threshold on rank
+	if (&IsReal($query->param('lth_rank'))) {
+	    $parameters .= " -lth rank ".$query->param('lth_rank');
+	}
+
+	### Upper threshold on rank
+	if (&IsReal($query->param('uth_rank'))) {
+	    $parameters .= " -uth rank ".$query->param('uth_rank');
+	}
     } 
     
     ### z-score
     if ($query->param('zscore')) {
 	$return_fields .= "zscore,";
+
+	### Lower threshold on z-score
+	if (&IsReal($query->param('lth_zscore'))) {
+	    $parameters .= " -lth zscore ".$query->param('lth_zscore');
+	}
+
+	### Upper threshold on z-score
+	if (&IsReal($query->param('uth_zscore'))) {
+	    $parameters .= " -uth zscore ".$query->param('uth_zscore');
+	}
     } 
     
     ### binomial probabilities
@@ -122,22 +163,22 @@ if ($query->param('return') eq "table") {
 	$return_fields .= "proba,";
 
 	### Lower threshold on probabilities
-	if ($query->param('lth_occ_pro') =~ /^[\d\.\-+e]+$/i) {
+	if (&IsReal($query->param('lth_occ_pro'))) {
 	    $parameters .= " -lth occ_pro ".$query->param('lth_occ_pro');
 	}
 
 	### Upper threshold on probabilities
-	if ($query->param('uth_occ_pro') =~ /^[\d\.\-+e]+$/i) {
+	if (&IsReal($query->param('uth_occ_pro'))) {
 	    $parameters .= " -uth occ_pro ".$query->param('uth_occ_pro');
 	}
 
 	### Lower threshold on significance
-	if ($query->param('lth_occ_sig') =~ /^-{0,1}[\d\.\-+e]+$/i) {
+	if (&IsReal($query->param('lth_occ_sig'))) {
 	    $parameters .= " -lth occ_sig ".$query->param('lth_occ_sig');
 	}
 
 	### Upper threshold on significance
-	if ($query->param('uth_occ_sig') =~ /^-{0,1}[\d\.\-+e]+$/i) {
+	if (&IsReal($query->param('uth_occ_sig'))) {
 	    $parameters .= " -uth occ_sig ".$query->param('uth_occ_sig');
 	}
     } 

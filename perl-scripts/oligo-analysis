@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.80 2004/06/01 10:25:01 jvanheld Exp $
+# $Id: oligo-analysis,v 1.81 2004/06/04 21:49:51 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -34,15 +34,13 @@ $supported_bg = join ",", sort keys %supported_bg;
 			   observed_freq
 			   exp_freq
 			   occ_pro
+			   zscore
+			   mseq
+			   ratio
+			   rank
 			 );
-#			   freq
-#			   mseq
-#			   zscore
 #			   likelihood
-#			   ratio
-#			   rank
-#			   occ_proba
-#			   occ_sig
+
 $supported_thresholds = join ",", @supported_thresholds;
 %supported_threshold = ();
 foreach my $thr (@supported_thresholds) {
@@ -244,7 +242,9 @@ if ($return{'table'}) {
     &CalcFrequencies() if (($return{'freq'}) || ($method eq "Markov chain"));
 #&GroupRc() if ($group_rc);
     &SelectPalindroms() if (($palindroms_only) || ($return{'remark'}));
-    &MatchingSeqThreshold() if ($mseq_threshold > 0); 
+
+#    &MatchingSeqThreshold() if (defined($lth{mseq})); 
+
     &NbPossibleOligo();
     &CalcOverlapCoefficient();# if ($return{'ovlp'});
 
@@ -255,6 +255,7 @@ if ($return{'table'}) {
 
     ## Check somte thresholds before calculating other scores
     &CheckThresholds("exp_freq") if ($return{exp_freq}); ## Check thresholds on expected frequencies
+    &CheckThresholds("mseq") if ($return{mseq}); ## Check thresholds on matching sequences
     &CheckThresholds("occ") if ($return{occ}); ## Check thresholds on occurrences
     &CheckThresholds("observed_freq") if ($return{exp_freq}); ## Check thresholds on frequencies
 
@@ -696,16 +697,16 @@ sub CheckPatternThresholds {
 
 ################################################################
 #### check threshold on matching sequences
-sub MatchingSeqThreshold {
-  if ($verbose >= 2) {
-    &TimeWarn("Threshold on matching sequences");
-  }
-  foreach $pattern_seq (keys %patterns) {
-    if ($patterns{$pattern_seq}->{mseq} < $mseq_threshold) {
-      delete $patterns{$pattern_seq};
-    }
-  }  
-}
+# sub MatchingSeqThreshold {
+#   if ($verbose >= 2) {
+#     &TimeWarn("Threshold on matching sequences");
+#   }
+#   foreach $pattern_seq (keys %patterns) {
+#     if ($patterns{$pattern_seq}->{mseq} < $lth{mseq}) {
+#       delete $patterns{$pattern_seq};
+#     }
+#   }  
+# }
 
 ################################################################
 ### Calculate subword frequencies
@@ -1117,8 +1118,11 @@ sub CalcOverlapCoefficient {
     }
 }
 
+
+################################################################
+## Calculate z-scores
 sub CalcZscore {
-    #### z-scores ####
+    &TimeWarn( "; Calculating z-scores\n") if ($main::verbose >= 1);
     if ($return{'occ'}) {
 	foreach $pattern_seq (keys %patterns) {
 
@@ -1132,7 +1136,6 @@ sub CalcZscore {
 		    ### Correction for self-overlapping patterns
 #		$patterns{$pattern_seq}->{ovlp} = &OverlapCoeff($pattern_seq);
 		    $patterns{$pattern_seq}->{exp_var} = $patterns{$pattern_seq}->{nb_possible_pos} * $patterns{$pattern_seq}->{exp_freq}*(2*$patterns{$pattern_seq}->{ovlp} - 1 - (2*$oligo_length+1)*$patterns{$pattern_seq}->{exp_freq});
-		    
 #       	$patterns{$pattern_seq}->{exp_var} = $patterns{$pattern_seq}->{nb_possible_pos} * $patterns{$pattern_seq}->{exp_freq}*(1 - $patterns{$pattern_seq}->{exp_freq});
 		}
 	    }
@@ -1144,20 +1147,9 @@ sub CalcZscore {
 		$stdev = "NA";
 		$patterns{$pattern_seq}->{zscore} = "NA";
 	    }
-#  	    print STDERR join ("\t", 
-#  			       $pattern_seq,
-#  			       $patterns{$pattern_seq}->{occ},
-#  			       $patterns{$pattern_seq}->{exp_occ},
-#  			       $patterns{$pattern_seq}->{nb_possible_pos},
-#  			       $patterns{$pattern_seq}->{exp_freq},
-#  			       1-$patterns{$pattern_seq}->{exp_freq},
-#  			       $patterns{$pattern_seq}->{ovlp},
-#  			       $patterns{$pattern_seq}->{exp_var},
-#  			       sqrt($patterns{$pattern_seq}->{exp_var}),
-#  			       $patterns{$pattern_seq}->{zscore}
-#  			       ), "\n";
 	}
     }
+    &CheckThresholds("zscore");
 }
 
 
@@ -1190,32 +1182,33 @@ sub CalcLikelihood {
 ################################################################
 #### Calculate observed/expected ratio
 sub CalcRatio {
-  if ($return{'freq'}) {
-    foreach $pattern_seq (sort keys %patterns) {
-      if ($patterns{$pattern_seq}->{exp_freq} == 0) {
-	$patterns{$pattern_seq}->{ratio} = 0;
-      } else {
-	$patterns{$pattern_seq}->{ratio} =  $patterns{$pattern_seq}->{observed_freq}/$patterns{$pattern_seq}->{exp_freq};
-      }
-      #### check threshold on occurrence probability ####
-      if ($patterns{$pattern_seq}->{ratio} < $ratio_threshold) {
-	delete $patterns{$pattern_seq};
-      }
+    if ($return{'freq'}) {
+	foreach $pattern_seq (sort keys %patterns) {
+	    if ($patterns{$pattern_seq}->{exp_freq} == 0) {
+		$patterns{$pattern_seq}->{ratio} = 0;
+	    } else {
+		$patterns{$pattern_seq}->{ratio} =  $patterns{$pattern_seq}->{observed_freq}/$patterns{$pattern_seq}->{exp_freq};
+	    }
+	    #### check threshold on occurrence probability ####
+	    if ($patterns{$pattern_seq}->{ratio} < $ratio_threshold) {
+		delete $patterns{$pattern_seq};
+	    }
+	}
+    } elsif ($return{'occ'}) {
+	foreach $pattern_seq (sort keys %patterns) {
+	    if ($patterns{$pattern_seq}->{exp_occ} == 0) {
+		$patterns{$pattern_seq}->{ratio} = 0;
+	    } else {
+		$patterns{$pattern_seq}->{ratio} =  $patterns{$pattern_seq}->{occ}/$patterns{$pattern_seq}->{exp_occ};
+	    }
+	    
+	    #### check threshold on occurrence probability ####
+	    if ($patterns{$pattern_seq}->{ratio} < $ratio_threshold) {
+		delete $patterns{$pattern_seq};
+	    }
+	}
     }
-  } elsif ($return{'occ'}) {
-    foreach $pattern_seq (sort keys %patterns) {
-      if ($patterns{$pattern_seq}->{exp_occ} == 0) {
-	$patterns{$pattern_seq}->{ratio} = 0;
-      } else {
-	$patterns{$pattern_seq}->{ratio} =  $patterns{$pattern_seq}->{occ}/$patterns{$pattern_seq}->{exp_occ};
-      }
-      
-      #### check threshold on occurrence probability ####
-      if ($patterns{$pattern_seq}->{ratio} < $ratio_threshold) {
-	delete $patterns{$pattern_seq};
-      }
-    }
-  }
+    &CheckThresholds("ratio");
 } ### CalcRatio
 
 
@@ -1575,7 +1568,7 @@ sub Verbose {
 	    printf $out "; %-29s\t%s\n", "threshold on occurrences", $lth{occ} if ($lth{occ} > 0);
 	    printf $out "; %-29s\t%s\n", "threshold on occ sig", $lth{occ_sig} if (defined($lth{occ_sig}));
 	    printf $out "; %-29s\t%s\n", "threshold on matching seq sig", $mseq_significance_threshold if (defined($mseq_significance_threshold));
-	    printf $out "; %-29s\t%s\n", "threshold on matching seq.", $mseq_threshold if ($mseq_threshold > 0);
+	    printf $out "; %-29s\t%s\n", "threshold on matching seq.", $lth{mseq} if ($lth{mseq} > 0);
 	    printf $out "; %-29s\t%s\n", "threshold on occ proba", $uth{occ_pro} if ($uth{occ_pro} < 1);
 	    printf $out "; %-29s\t%s\n", "threshold on occ ratio", $ratio_threshold if ($ratio_threshold > 0);
 	    printf $out "; %-29s\t%s\n", "threshold on match. seq proba", $proba_mseq_threshold if ($proba_mseq_threshold < 1);
@@ -1658,13 +1651,33 @@ sub PrintResult {
 	@sorted_keys = reverse(@sorted_keys);
     }
 
+    
+    
+    ## Print the header line
     &PrintHeaderLine();
     
-    ### print result ###
+    ## Calculate rank
     my $rank = 0;
-    foreach $p (0..$#sorted_keys) {
+    foreach my $pattern_seq (@sorted_keys) {
 	$rank++;
+	$patterns{$pattern_seq}->{'rank'} = $rank;
+#	&CalcThresholds('rank');
+    }
+
+    ### print result ###
+    foreach my $p (0..$#sorted_keys) {
+	my $rank = $p+1;
 	my $pattern_seq = $sorted_keys[$p];
+	
+	## Thresholds on rank
+	if (defined($lth{rank})) {
+#	    print join( "\t", $p, $rank, $pattern_seq, $lth{rank}), "\n";
+	    next if ($rank < $lth{rank});
+	}
+	if (defined($uth{rank})) {
+	    next if ($rank > $uth{rank});
+	}
+
 	### oligo sequence and identifier
 	print $out $pattern_seq;
 	print $out "\t", &PatternID($pattern_seq, $sum_rc);
@@ -1747,7 +1760,7 @@ sub PrintResult {
 	
 	### rank ###
 	if ($return{'rank'}) {
-	    print $out "\t", $p+1;
+	    print $out "\t", $patterns{$pattern_seq}->{rank};
 	}
 
 	### positions ###
@@ -1991,8 +2004,9 @@ sub ReadArguments {
 	    #### threshold on matching sequences
 	} elsif (($ARGV[$a] eq "-thms") && 
 		 (&IsInteger($ARGV[$a+1]))) {
-	    $mseq_threshold = $ARGV[$a+1];
-	    
+	    $lth{mseq} = $ARGV[$a+1];
+	    &Warning("Option -thms is deprecated. Please use '-lth mseq' instead.");
+
 	    #### threshold on matching sequence frequency
 	} elsif (($ARGV[$a] eq "-thmsf") && 
 		 (&IsReal($ARGV[$a+1]))) {
