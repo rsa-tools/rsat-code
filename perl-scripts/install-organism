@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.37 2004/01/22 00:13:58 jvanheld Exp $
+# $Id: install-organism,v 1.38 2004/03/11 09:13:04 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -15,6 +15,8 @@ require "RSA.lib";
 
 
 #### initialisation
+$verbose = 0;
+$die_on_error = 1;
 $img_format = $IMG_FORMAT || "png";
 $noov="";
 $strands="-1str";
@@ -87,11 +89,9 @@ unless ($organism_full_name) {
     }
 }
 
-################################################################
-##################### installation directories #################
-################################################################
-umask 0002;
 
+################################################################
+## Input directory
 unless ($dir{genbank}) {
     if ($GENBANK_DIR) {
 	$dir{genbank} = $GENBANK_DIR;
@@ -99,39 +99,24 @@ unless ($dir{genbank}) {
 	&FatalError("You should specify the directory where Genbank genomes can be found.");
     }
 }
-&CheckOutDir($dir{genbank});
+unless (-d $dir{genbank}) {
+    &FatalError("Genbank directory $dir{genbank} does not exists");
+}
 
+################################################################
+##################### installation directories #################
+################################################################
+umask 0002;
 unless ($dir{install}) {
     $dir{install} = $RSA."/data/genomes/".$organism_short_name;
 }
-
 &CheckOutDir($dir{install});
-#unless (-d $dir{install}) {
-#    warn "\tCreating installation directory $dir{install}\n" if ($verbose >= 1);
-#    mkdir $dir{install}, 0775;
-#}
 
 $dir{genome} = "$dir{install}/genome";
 &CheckOutDir($dir{genome});
-#unless (-d $dir{genome}) {
-#    warn "\tCreating genome directory $dir{genome}\n" if ($verbose >= 1);
-#    mkdir $dir{genome}, 0775;
-#}
 
 $dir{oligos} = "$dir{install}/oligo-frequencies";
 &CheckOutDir($dir{oligos});
-#unless (-d $dir{oligos}) {
-#    print "Creating dir $dir{oligos}\n";
-#    mkdir $dir{oligos}, 0775;
-#}
-
-#$outfile{genome} = "$dir{genome}/${organism_short_name}_chromosomes.txt";
-#$outfile{features} = "$dir{genome}/${organism_short_name}_features.tab";
-#$outfile{synonyms} = "$dir{genome}/${organism_short_name}_synonyms.tab";
-
-#$outfile{genome} = "$dir{genome}/Contigs_${organism_short_name}.txt" unless ($outfile{genome});
-#$outfile{features} = "$dir{genome}/Feature_${organism_short_name}.tab" unless ($outfile{features});
-#$outfile{synonyms} = "$dir{genome}/Feature_names_${organism_short_name}.tab" unless ($outfile{synonyms});
 
 $outfile{features} = "$dir{genome}/Feature.tab" unless ($outfile{features});
 $outfile{synonyms} = "$dir{genome}/Feature_names.tab" unless ($outfile{synonyms});
@@ -142,8 +127,8 @@ $outfile{genome} = "$dir{genome}/Contigs.txt" unless ($outfile{genome});
 ###################### Installation tasks ######################
 ################################################################
 
+## Open an output stream for messages
 $out = &OpenOutputFile($outputfile);
-
 &Verbose() if ($verbose >= 1);
 
 &ParseGenome() if ($task{parse});
@@ -324,7 +309,7 @@ sub IntergenicSegments {
     my $command = "coding-or-not ";
     $command .= "-v " if ($verbose >= 1);
     $command .= "-org $organism_short_name -return ncs,seq,cs \n\n";
-    &doit($command, $dry_run);
+    &doit($command, $dry_run, $die_one_error, $verbose);
 
     my @types = ();
     push @types, "gene";
@@ -338,7 +323,7 @@ sub IntergenicSegments {
 	
 	#### compress sequence file
 	$command = "gzip -f $seq_file";
-	&doit($command, $dry_run);
+	&doit($command, $dry_run, $die_one_error, $verbose);
 
 	#### purge sequences
 	&PurgeSequences($seq_file) if ($purged_frequencies);
@@ -364,14 +349,14 @@ sub AllUpstream {
 	my $command = "retrieve-seq ${noorf} -format $format";
 	$command .= " -type upstream -all -org $organism_short_name ";
 	$command .= " -all -o $seq_file\n\n";
-	&doit($command, $dry_run);
+	&doit($command, $dry_run, $die_one_error, $verbose);
 	
 	#### draw sequence length distributions
 	&SeqLengthDistribution($seq_file, $format, $seq_type, 50) if ($noorf);
 	
 	#### compress sequence file
 	$command = "gzip -f $seq_file";
-	&doit($command, $dry_run);
+	&doit($command, $dry_run, $die_one_error, $verbose);
 	
 	#### purge sequences
 	&PurgeSequences($seq_file) if ($purged_frequencies);
@@ -399,7 +384,7 @@ sub SeqLengthDistribution {
     $command .= " -title1 '$organism_full_name'";
     $command .= " -title2 'length distribution of ${seq_type} sequences'";
     $command .= " -o  ${organism_short_name}_${seq_type}_segments_lengths.${img_format}";
-    &doit($command, $dry_run);
+    &doit($command, $dry_run, $die_one_error, $verbose);
 }
 
 ################################################################
@@ -410,10 +395,10 @@ sub PurgeSequences {
     my $purged_seq_file = `basename $seq_file $format`;
     $purged_seq_file .= "_purged.$format";
     my $command = "purge-sequence -i $seq_file -format wc -ml 300 -mis 9 -2str -o $purged_seq_file";
-    &doit($command, $dry_run);
+    &doit($command, $dry_run, $die_one_error, $verbose);
     #### compress purged sequence file
     $command = "gzip -f $purged_seq_file";
-    &doit($command, $dry_run);
+    &doit($command, $dry_run, $die_one_error, $verbose);
 }
 
 ################################################################
@@ -423,8 +408,9 @@ sub PurgeSequences {
 ### - genomic
 ### 
 sub CalcFrequencies { 
-    my ($seq_file, $seq_format, $seq_type) = ();
+#    my ($seq_file, $seq_format, $seq_type) = ();
 
+    warn join ("\t", "; Calculating oligo and dyad frequencies",$strands, $noov),"\n" if ($main::verbose >= 1);
 
     chdir $dir{oligos};
 
@@ -499,16 +485,17 @@ sub CalcFrequencies {
 #### file
 sub CalcOligoFreq {
     my ($seq_file,$seq_format,$seq_type) = @_;
-    foreach $oligo_length (1..8) {
+    warn join ("\t", "; Calculating oligo frequencies",$seq_file, $seq_format, $seq_type),"\n" if ($main::verbose >= 1);
+    foreach my $oligo_length (1..8) {
 	$out_file = "$dir{oligos}/${oligo_length}nt_${seq_type}_${organism_short_name}${noov}${strands}.freq";
 	my $command = "$SCRIPTS/oligo-analysis -v 1 ${strands} -i $seq_file -format $seq_format ";
-	$command .= " $strands";
-	$command .= " $noov";
-	$command .= "-l ${oligo_length} -type dna ";
-	$command .= "-return freq,occ -nogrouprc ";
-	$command .= "-o $out_file ";
-	$command .= "; gzip -f $out_file ";
-	&doit($command, $dry_run);  
+	$command .= " ".$strands;
+	$command .= " ".$noov;
+	$command .= " -l ".$oligo_length." -type dna ";
+	$command .= " -return freq,occ -nogrouprc ";
+	$command .= " -o ".$out_file;
+	$command .= "; gzip -f ".$out_file;
+	&doit($command, $dry_run, $die_one_error, $verbose);  
     }
 }
 
@@ -527,7 +514,7 @@ sub CalcOligoDistrib {
 	$command .= " -return occ -distrib -nogrouprc";
 	$command .= " -o ".$distrib_file;
 	$command .= " ; gzip -f ".$distrib_file;
-	&doit($command, $dry_run);  
+	&doit($command, $dry_run, $die_one_error, $verbose);  
 	
 	#### Fit a Poisson and a negbin on occurrence distribution
 	foreach my $theor ("negbin", "poisson") {
@@ -536,7 +523,7 @@ sub CalcOligoDistrib {
 	    $command .= " -o ".$fitting_file;
 	    $command .= " -distrib ".$theor;
 	    $command .= " ; gzip -f ".$fitting_file;
-	    &doit($command, $dry_run);  
+	    &doit($command, $dry_run, $die_one_error, $verbose);  
 		}
     }
 }
@@ -566,7 +553,7 @@ sub CalcDyadFreq {
 	$command .= " -nogrouprc";
 	$command .= " -o $dyad_file";
 	$command .= "; gzip -f $dyad_file ";
-	&doit($command, $dry_run);
+	&doit($command, $dry_run, $die_one_error, $verbose);
     }
 }
 
@@ -822,24 +809,16 @@ sub StartAndStopCodons {
     $command .= "-format wc -nocomment -label orf \ ";
     $command .= " | oligo-analysis -type dna -l 3 -return occ,freq -v -format wc -1str -sort \ ";
     $command .= " -o $dir{genome}/${organism_short_name}_stop_codon_frequencies";
-    &doit($command, $dry_run);
+    &doit($command, $dry_run, $die_one_error, $verbose);
 
     $command = "retrieve-seq -v -org ${organism_short_name} -all  \ ";
     $command .= "-type upstream -from 0 -to 2  \ ";
     $command .= "-format wc -nocomment -label orf \ ";
     $command .= " | oligo-analysis -type dna -l 3 -return occ,freq -v -format wc -1str -sort \ ";
     $command .= " -o $dir{genome}/${organism_short_name}_start_codon_frequencies";
-    &doit($command, $dry_run);
+    &doit($command, $dry_run, $die_one_error, $verbose);
 }
 
-#  sub doit {
-#      print $out "\n", &AlphaDate(), "\t$command\n" if ($verbose >= 1);
-#      unless ($dry_run) {
-#  	my $error = system "$command";
-#  	die "Error whilst executing the following command\n$command\n"
-#  	    if ($error);
-#      }
-#  }
 
 
 # ################################################################
@@ -1170,7 +1149,7 @@ sub ParseGenome {
 	&FatalError("Cannot find a directory $organism_short_name in genbank dir $dir{genbank}" );
     }
     my $command = "$RSA/perl-scripts/parse-genbank.pl -v 1 -i $dir{source}";
-    &doit($command, $dry_run);
+    &doit($command, $dry_run, $die_one_error, $verbose);
 }
 
 ################################################################
@@ -1196,6 +1175,6 @@ sub CleanUp {
     }
     foreach my $file (@files) {
 	my $command = "rm -f $file";
-	&doit($command, $dry_run);
+	&doit($command, $dry_run, $die_one_error, $verbose);
     }
 }
