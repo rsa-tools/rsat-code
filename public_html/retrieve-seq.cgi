@@ -17,7 +17,7 @@ require "RSA.lib";
 require "RSA.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
-$retrieve_seq_command = "$SCRIPTS/retrieve-seq";
+$command = "$SCRIPTS/retrieve-seq";
 $tmp_file_name = sprintf "retrieve-seq.%s", &AlphaDate;
 
 ### Read the CGI query
@@ -122,11 +122,11 @@ if ($query->param('genes') eq "all") {
     }
 }
 
-print  "<PRE><B>Command :</B> $retrieve_seq_command $parameters</PRE><P>" if ($ECHO >= 1);
+print  "<PRE><B>Command :</B> $command $parameters</PRE><P>" if ($ECHO >= 1);
 
 #### execute the command #####
 if ($query->param('output') =~ /display/i) {
-    open RESULT, "$retrieve_seq_command $parameters |";
+    open RESULT, "$command $parameters |";
     
     ### open the mirror file ###
     $mirror_file = "$TMP/$tmp_file_name.res";
@@ -154,9 +154,9 @@ if ($query->param('output') =~ /display/i) {
     print "<HR SIZE = 3>";
 
 } elsif ($query->param('output') =~ /server/i) {
-    &ServerOutput("$retrieve_seq_command $parameters");
+    &ServerOutput("$command $parameters", $query->param('user_email'));
 } else {
-    &EmailTheResult("$retrieve_seq_command $parameters", $query->param('user_email'));
+    &EmailTheResult("$command $parameters", $query->param('user_email'));
 }
 
 print $query->end_html;
@@ -218,6 +218,18 @@ sub PipingForm {
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
 	<INPUT type="hidden" NAME="background" VALUE="$background">
 	<INPUT type="submit" value="dyad analysis">
+	</FORM>
+    </TD>
+
+    <TD>
+	<FORM METHOD="POST" ACTION="position-analysis_form.cgi">
+	<INPUT type="hidden" NAME="organism" VALUE="$organism">
+	<INPUT type="hidden" NAME="from" VALUE="$from">
+	<INPUT type="hidden" NAME="to" VALUE="$to">
+	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
+	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
+	<INPUT type="hidden" NAME="background" VALUE="$background">
+	<INPUT type="submit" value="position analysis">
 	</FORM>
     </TD>
 
