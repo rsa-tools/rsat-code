@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: downloads.mk,v 1.15 2004/09/04 06:22:06 jvanheld Exp $
+# $Id: downloads.mk,v 1.16 2004/09/04 06:43:21 jvanheld Exp $
 #
 # Time-stamp: <2003-10-09 14:02:21 jvanheld>
 #
@@ -177,6 +177,12 @@ yeast_mit:
 		${WGET} $${dir} ;		\
 	done
 
+
+################################################################
+## Genomes from Genolevure
+GENOLEVURE=http://cbi.labri.fr/Genolevures/download.php
+genolevure:
+	${WGET}  ${GENOLEVURE}
 
 ################################################################
 #

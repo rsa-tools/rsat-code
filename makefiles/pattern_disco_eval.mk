@@ -17,7 +17,7 @@ site_map:
 ## Run pattern discovery programs with the regulons
 REGULONS=data/${ORG}/gene_factor_${ORG}.tab
 REGULON_DIR=results/${ORG}/regulons/
-MULTI_TASK=upstream,purge,oligos,oligo_maps,dyads,dyad_maps,synthesis,sql,clean,consensus
+MULTI_TASK=upstream,purge,oligos,oligo_maps,dyads,dyad_maps,synthesis,sql,clean,consensus,meme,gibbs
 FAM=${REGULONS}
 MULTI_DIR=${REGULON_DIR}
 multi:
@@ -47,3 +47,8 @@ rand_genes:
 ## Run pattern discovery programs with the random gene selections 
 rand_multi:
 	${MAKE} multi MULTI_DIR=${RAND_DIR} FAM=${RAND_GENES}
+
+################################################################
+## synchronize on mamaze
+to_scmbb:
+	rsync -ruptvl -e ssh . jvanheld@mamaze.scmbb.ulb.ac.be:pattern_disco_eval
