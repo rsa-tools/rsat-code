@@ -1,9 +1,19 @@
 #!/usr/bin/perl
+#### redirect error log to a file
 if ($0 =~ /([^(\/)]+)$/) {
   push (@INC, "$`lib/");
 }
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
+#### redirect error log to a file
+BEGIN {
+    $ERR_LOG = "/dev/null";
+#    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
+    use CGI::Carp qw(carpout);
+    open (LOG, ">> $ERR_LOG")
+	|| die "Unable to redirect log\n";
+    carpout(*LOG);
+}
 require "RSA.lib";
 require "RSA.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
@@ -237,7 +247,7 @@ if ($query->param('output') =~ /display/i) {
 	} else {
 	    $pattern_assembly_command .= " -2str";
 	}
-
+	
 	unless ($ENV{RSA_ERROR}) {
 	    print "<H2>Pattern assembly</H2>\n";
 	    open CLUSTERS, "$pattern_assembly_command -i $result_file |";
@@ -250,27 +260,14 @@ if ($query->param('output') =~ /display/i) {
 	    close(CLUSTERS);
 	}
     }
-
+    
     &PipingForm();
     print '<HR SIZE=3>';
   
+} elsif ($query->param('output') =~ /server/i) {
+    &ServerOutput("$command $parameters");
 } else {
-
     &EmailTheResult("$command $parameters", $query->param('user_email'));
-#     #### send e-mail with the result
-#     if ($query->param('user_email') =~ /(\S+\@\S+)/) {
-# 	$address = $1;
-# 	print "<B>Result will be sent to your account: <P>";
-# 	print "$address</B><P>";
-# 	system "$command $parameters | $mail_command $address &"; 
-#     } else {
-# 	if ($query->param('user_email') eq "") {
-# 	    &cgiError("You did not enter your e-mail address");
-# 	} else {
-# 	    &cgiError("The e-mail address you entered is not valid");
-# 	    print $query->param('user_email')."</B><P>";      
-# 	}
-#     }
 }
 
 print $query->end_html;
@@ -279,7 +276,13 @@ exit(0);
 
 
 sub PipingForm {
-  ### prepare data for piping
+    ### prepare data for piping
+    
+    #### title
+    $title = $query->param('title');
+    $title =~ s/\"/\'/g;
+
+    #### strand for pattern-assembly
     if ($query->param('strand') =~ /single/) {
 	$strand_opt .= " sensitive";
     } else {
@@ -309,6 +312,7 @@ sub PipingForm {
 <INPUT type="hidden" NAME="local_pattern_file" VALUE="$result_file">
 <INPUT type="hidden" NAME="subst" VALUE=1>
 <INPUT type="hidden" NAME="maxfl" VALUE=1>
+<INPUT type="hidden" NAME="sc" VALUE="auto">
 <INPUT type="hidden" NAME="strand" VALUE=$strand_opt>
 <INPUT type="submit" value="pattern assembly">
 </FORM>
