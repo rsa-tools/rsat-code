@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genes.pl,v 1.20 2002/07/02 18:06:15 jvanheld Exp $
+# $Id: parse_genes.pl,v 1.21 2002/07/04 14:00:08 jvanheld Exp $
 #
-# Time-stamp: <2002-07-02 20:02:41 jvanheld>
+# Time-stamp: <2002-07-04 16:00:05 jvanheld>
 #
 ############################################################
 
@@ -16,6 +16,32 @@ require "PFBP_classes.pl";
 require "PFBP_util.pl";
 require "PFBP_loading_util.pl"; ### for converting polypeptide IDs into ACs
 require "PFBP_parsing_util.pl";
+
+
+package KEGG::Gene;
+{
+  @ISA = qw ( PFBP::DatabaseObject );
+  ### class attributes
+  $_count = 0;
+  $_prefix = "gene_";
+  @_objects = ();
+  %_name_index = ();
+  %_id_index = ();
+  %_attribute_count = ();
+  %_attribute_cardinality = (id=>"SCALAR",
+			     names=>"ARRAY",
+			     organism=>"SCALAR",
+			     type=>"SCALAR",
+			     description=>"SCALAR",
+			     chrom_position=>"SCALAR",
+			     chromosome=>"SCALAR",
+			     strand=>"SCALAR",
+			     start=>"SCALAR",
+			     end=>"SCALAR",
+			     source=>"SCALAR",
+			     xrefs=>"EXPANDED"
+			     );
+}
 
 package main ;
 {
@@ -56,20 +82,20 @@ package main ;
 	push @all_organisms, $organism;
     }
 
-    $organism_name{"S.cerevisiae"} = "Saccharomyces cerevisiae";
-    $organism_name{"E.coli"} = "Escherichia coli";
-    $organism_name{"H.sapiens"} = "Homo sapiens";
+#    $organism_name{"S.cerevisiae"} = "Saccharomyces cerevisiae";
+#    $organism_name{"E.coli"} = "Escherichia coli";
+#    $organism_name{"H.sapiens"} = "Homo sapiens";
 
-    $organism_name{"yeast"} = "Saccharomyces cerevisiae";
-    $organism_name{"ecoli"} = "Escherichia coli";
-    $organism_name{"human"} = "Homo sapiens";
+#    $organism_name{"yeast"} = "Saccharomyces cerevisiae";
+#    $organism_name{"ecoli"} = "Escherichia coli";
+#    $organism_name{"human"} = "Homo sapiens";
 
     $verbose = 0;
     $out_format = "obj";
 
     #### classes and classholders
-    @classes = qw( PFBP::Gene );
-    $genes = PFBP::ClassFactory->new_class(object_type=>"PFBP::Gene",
+    @classes = qw( KEGG::Gene );
+    $genes = PFBP::ClassFactory->new_class(object_type=>"KEGG::Gene",
 					   prefix=>"gene_");
 
 
@@ -82,19 +108,21 @@ package main ;
 	$genes->set_out_fields(qw( id type name chromosome start_pos end_pos strand description chrom_position names xrefs));
     } else {
 	$genes->set_out_fields(qw( id source organism type chrom_position chromosome strand start_pos end_pos description names exons introns xrefs dblinks ECs));
-	#@{$out_fields{'PFBP::Gene'}} = qw( id source organism raw_position chromosome strand start_base end_base description names exons );
+	#@{$out_fields{'KEGG::Gene'}} = qw( id source organism raw_position chromosome strand start_base end_base description names exons );
     }
 
 
     $dir{output} = $parsed_data."/kegg_genes/".$delivery_date;
-    unless (-d $dir{output}) {
-	warn "Creating output dir $dir{output}\n";
-	mkdir $dir{output}, 0775 || die "Error: cannot create directory $dir\n";
-    }
-    chdir $dir{output};
-    if ($clean) {
-	system "\\rm -f $dir{output}/*";
-    }
+    &CheckOutputDir();
+
+#      unless (-d $dir{output}) {
+#  	warn "Creating output dir $dir{output}\n";
+#  	mkdir $dir{output}, 0775 || die "Error: cannot create directory $dir\n";
+#      }
+#      chdir $dir{output};
+#      if ($clean) {
+#  	system "\\rm -f $dir{output}/*";
+#      }
     $out_file{error} = "$dir{output}/gene.errors.txt";
     $out_file{stats} = "$dir{output}/gene.stats.txt";
     $out_file{genes} = "$dir{output}/gene.obj" if ($export{obj});
@@ -224,7 +252,7 @@ package main ;
 			 prefix=>"k_",
 			 dbms=>$dbms
 			 );
-    &ExportClasses($out_file{genes}, $out_format, PFBP::Gene) if $export{obj};
+    &ExportClasses($out_file{genes}, $out_format, @classes) if $export{obj};
 
 
     ### report execution time
@@ -356,104 +384,4 @@ sub ReadArguments {
     }
 }
 
-
-
-
-
-#  sub ParsePositions {
-#  ### clean up positions
-#      warn ("; ",
-#  	  &AlphaDate(),
-#  	  "\tparsing gene positions\n")
-#  	if ($verbose >= 1);
-
-#      foreach my $gene ($genes->get_objects()) {
-#  	my $position = $gene->get_attribute("position");
-
-#  	if ($position eq $null) {
-#  	    $gene->set_attribute("position",$null);
-#  	    $gene->set_attribute("chromosome", $null);
-#  	    $gene->set_attribute("strand",$null);
-#  	    $gene->set_attribute("start",$null);
-#  	    $gene->set_attribute("end",$null);
-#  	    &ErrorMessage("Warning: gene ", $gene->get_attribute("id"), " has no position attribute\n");
-#  	    next;
-#  	}
-#  	my $coord = $null;
-#  	my $chomosome = $null;
-#  	my $chrom_position = $null;
-#  	my $strand = $null;
-#  	my $start = $null;
-#  	my $end = $null;
-
-#  	if ($position =~ /^(\S+)\:(.*)/) {
-#  	    $chromosome = $1;
-#  	    $chrom_pos = $2;
-#  	} elsif ($position =~ /^([^\:]*)$/) {
-#  	    $chromosome = "genome";
-#  	    $chrom_pos = $1;
-#  	} else {
-#  	    &ErrorMessage("Warning: invalid position",
-#  			  "\t", $gene->get_attribute("id"),
-#  			  "\t", $gene->get_attribute("organism"),
-#  			  "\t", $position, "\n");
-#  	    $gene->set_attribute("chromosome", $null);
-#  	    $gene->set_attribute("strand",$null);
-#  	    $gene->set_attribute("start",$null);
-#  	    $gene->set_attribute("end",$null);
-#  	    next;
-#  	}
-
-#  	if ($chrom_pos =~ /complement\((.*)\)/) {
-#  	    $strand = "R";
-#  	    $coord = $1;
-#  	} else {
-#  	    $strand = "D";
-#  	    $coord = $chrom_pos;
-#  	}
-
-#  	if ($coord =~ /^(\d+)\.\.(\d+)$/) {
-#  	    $start = $1;
-#  	    $end = $2;
-#  	} elsif ($coord =~ /^join\((.*)\)$/) { ### exons
-#  	    my @exons = split ",", $1;
-#  	    my @exon_starts = ();
-#  	    my @exon_ends = ();
-
-#  	    #### exon limits
-#  	    foreach my $exon (@exons) {
-#  		$exon =~ s/\s+//g;
-#  		$gene->push_attribute("exons", $exon);
-#  		if ($exon =~ /(\d+)\.\.(\d+)/) {
-#  		    push @exon_starts, $1;
-#  		    push @exon_ends, $2;
-#  		} else {
-#  		    &ErrorMessage("Error gene\t",$gene->get_id(),"\tinvalid exon\t$exon\n");
-#  		}
-#  	    }
-	    
-#  	    #### gene start and end 
-#  	    $start = $exon_starts[0] || $null;
-#  	    $end = $exon_ends[$#exons] || $null;
-
-#  	    #### introns
-#  	    my @introns = ();
-#  	    for my $e (0..$#exon_starts - 1) {
-#  		my $intron = $exon_ends[$e] + 1;
-#  		$intron .= "..";
-#  		$intron .= $exon_starts[$e+1] -1;
-#  		$gene->push_attribute("introns", $intron);
-#  	    }
-#  	} else {
-#  	    &ErrorMessage("Warning : gene ",$gene->get_attribute("id"),"\tinvalid gene position $position\n");
-#  	    $strand = $null;
-#  	    $start = $null;
-#  	    $end = $null;
-#  	}
-#  	$gene->set_attribute("chromosome", $chromosome);
-#  	$gene->set_attribute("strand",$strand);
-#  	$gene->set_attribute("start",$start);
-#  	$gene->set_attribute("end",$end);
-#      }
-#  }
 
