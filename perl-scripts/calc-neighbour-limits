@@ -1,17 +1,17 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: calc-neighbour-limits,v 1.7 2004/05/07 07:20:03 jvanheld Exp $
+# $Id: calc-neighbour-limits,v 1.8 2005/03/13 10:29:33 jvanheld Exp $
 #
 # Time-stamp: <2003-07-06 20:15:37 jvanheld>
 #
 ############################################################
+
 #use strict;;
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
 require "RSA.lib";
-require "RSA.classes";
 
 #### initialise parameters ####
 my $start_time = &AlphaDate;
@@ -55,7 +55,7 @@ $out = &OpenOutputFile($outfile{output});
 print $out (join ("\t",
 		  ";ORF",
 		  "name",
-		  "chrom",
+		  "ctgom",
 		  "left",
 		  "right",
 		  "strand",
@@ -65,13 +65,13 @@ print $out (join ("\t",
 		  "DWN_sze",
 		  "\n"
 		  ));
-foreach my $chr (sort keys %chromosome) {
-    my @orfs = sort { $left{$a} <=> $left{$b} } $chromosome{$chr}->get_genes();
+foreach my $ctg (sort keys %contig) {
+    my @orfs = sort { $left{$a} <=> $left{$b} } $contig{$ctg}->get_genes();
     foreach $orf (@orfs) {
 	print $out (join ("\t",
 			  $orf,
 			  $name{$orf},
-			  $chr,
+			  $ctg,
 			  $left{$orf},
 			  $right{$orf},
 			  $strand{$orf},
