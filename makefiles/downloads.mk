@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: downloads.mk,v 1.13 2004/06/12 19:00:23 jvanheld Exp $
+# $Id: downloads.mk,v 1.14 2004/08/18 05:21:01 jvanheld Exp $
 #
 # Time-stamp: <2003-10-09 14:02:21 jvanheld>
 #
@@ -30,11 +30,15 @@ update: genbank kegg expasy ebi_genomes taxonomy ensembl go prosite bind dbtbs
 #
 # Complete genomes at EBI
 #
+GENOME_REVIEWS=ftp://ftp.ebi.ac.uk/pub/databases/genome_reviews/
+ebi_genome_reviews:
+	@echo importing genomereviews from EBI
+	${WGET} ${GENOME_REVIEWS}
+
 EBI_GENOMES=ftp://ftp.ebi.ac.uk/pub/databases/genomes/
 ebi_genomes:
 	@echo importing genomes from EBI
 	${WGET} --accept=.embl.Z --accept .con --accept .prot ${EBI_GENOMES}
-
 
 ################################################################
 #
@@ -404,9 +408,22 @@ prosite:
 #########################################
 #   Gene Ontology database
 #########################################
+GO_URLS= www.godatabase.org/dev/database/archive/latest/README				\
+	www.godatabase.org/dev/database/archive/latest/go_200407-schema-mysql.sql.gz	\
+	www.godatabase.org/dev/database/archive/latest/go_200407-termdb-data.gz		\
+	www.godatabase.org/dev/database/archive/latest/go_200407-termdb-summary.txt.gz	\
+	www.godatabase.org/dev/database/archive/latest/go_200407-termdb-tables.tar.gz	\
+	www.godatabase.org/dev/database/archive/latest/go_200407-termdb.xml.gz		\
+	www.godatabase.org/dev/database/archive/latest/go_200407.dtd.gz			\
+	www.geneontology.org/ontology/gene_ontology.obo
+
 GO_URL=www.godatabase.org/dev/database/archive/latest/
 GO_HTTP=http://${GO_URL}
+GO_FTP=ftp://ftp.geneontology.org/pub/go/
 go:
+	for url in ${GO_URLS} ; do ${MAKE} go_one_url GO_URL=$${url}; done
+
+go_one_url:
 	@mkdir -p logs
 	wget -np -r -l 1 -N ${GO_HTTP}
 	chmod -R g+w ${GO_URL}
