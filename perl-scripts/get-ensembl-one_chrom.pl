@@ -14,16 +14,13 @@ BEGIN {
 }
 require "RSA.lib";
 
-# use DBI;
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
-# use Bio::EnsEMBL::DBSQL::DBConnection;
 use Bio::EnsEMBL::DBSQL::SliceAdaptor;
 
 ## TO DO
-## Get as much names as possible
 ## Add an argument -org to specify the organism, and see how to obtain the current version
-## Get intron and exon positions
-
+## (not sure it is possible; dbname seems mandatory)
+## Get intron positions ? (we have transcripts and exons)
 
 ################################################################
 #### initialise parameters
@@ -38,6 +35,7 @@ $outfile{log}="get-ensembl-genome_log.txt";
 $outfile{err}="get-ensembl-genome_err.txt";
 $outfile{feature} = "feature.tab";
 $outfile{xreference} = "xreference.tab";
+$outfile{ft_name} = "feature_name.tab";
 
 local $verbose = 0;
 
@@ -55,7 +53,7 @@ my $dbname = 'homo_sapiens_core_28_35a';
 ################################################################
 ### open output streams
 unless ($dir{output}) {
-    $dir{output} = "ENSEMBL_chrom".$chromname."-".$dbname;
+    $dir{output} = "ENSEMBL_chrom_".$chromname."_".$dbname;
 }
 &CheckOutDir($dir{output});
 chdir($dir{output});
@@ -72,6 +70,9 @@ $FT_TABLE =  &OpenOutputFile($outfile{feature});
 
 ## xref file
 open $XREF_TABLE, ">".$outfile{xreference} || die "cannot open error log file".$outfile{xreference}."\n";
+
+## feature_name table
+open $FT_NAME_TABLE, ">".$outfile{ft_name} || die "cannot open error log file".$outfile{ft_name}."\n";
 
 
 ################################################################
@@ -93,30 +94,67 @@ warn join ("\t", "; Adaptor", $slice_adaptor), "\n" if ($main::verbose >= 3);
 ## Get one chromosome object
 my $slice = $slice_adaptor->fetch_by_region('chromosome', $chromname);
 warn join ("\t", "; Slice", $slice), "\n" if ($main::verbose >= 3);
-    
+
+## Get all Gene objects
 foreach my $gene (@{$slice->get_all_Genes()}) {
-	warn join("\t", "gene", $gene), "\n" if ($main::verbose >= 5);
+    warn join("\t", "gene", $gene), "\n" if ($main::verbose >= 5);
     @feature = &get_feature($gene);
     print $FT_TABLE join("\t", @feature), "\n";
     print_DBEntries($gene->get_all_DBLinks());
-    
+
+## Get all Transcript objects
     foreach my $trans (@{$gene->get_all_Transcripts()}) {
+        warn join("\t", "transcript", $trans), "\n" if ($main::verbose >= 5);
         my @feature = &get_feature($trans);
         $feature[1] = "transcript";
         print $FT_TABLE join("\t", @feature), "\n";
+        $transcriptID = $feature[0];
 
+## Get CDS ID and coordinates (relative to chromosome) - there is a strand trick (see API doc)
+## Problem: corrdinates are strange
+        my $coding_region_start = $trans->coding_region_start;
+        my $coding_region_end = $trans->coding_region_end;
+        if($trans->translation()) {
+            $feature[0] =  $trans->translation()->stable_id();
+            $feature[1] = "CDS";
+            if ($feature[6] eq 'D') {
+                $feature[4] = $coding_region_start;
+                $feature[5] = $coding_region_end;
+            } else {
+                $feature[4] = $coding_region_end;
+                $feature[5] = $coding_region_start;
+            }
+            print $FT_TABLE join ("\t", @feature), "\n"; 
+        }
+
+## Tests to make sure a transcripts includes UTRs (are also in first and last exons!)
+#        print $feature[0], " : ", $trans->spliced_seq(), "\n";
+#        print $feature[0], " : ", $trans->translateable_seq(), "\n";
+#        my $fiv_utr = $trans->five_prime_utr();
+#        my $thr_utr = $trans->three_prime_utr();
+#        print $feature[0], " : ", ($fiv_utr) ? $fiv_utr->seq() : 'No 5 prime UTR', "\n";
+#        print $feature[0], " : ", ($thr_utr) ? $thr_utr->seq() : 'No 3 prime UTR', "\n";
+
+## Get all Exon objects
         foreach my $exon (@{$trans->get_all_Exons()}) {
             my @exonfeature = &get_exonfeature($exon);
             print $FT_TABLE join("\t", @exonfeature), "\n";
         }
+
+## Get all Intron objects
+        foreach my $intron (@{$trans->get_all_Introns()}) {
+            my @intronfeature = &get_intronfeature($intron);
+            $intronfeature[0] = "Trnscrpt - ".$transcriptID;
+            print $FT_TABLE join("\t", @intronfeature), "\n";
+        }
     }
 }
 
-my $sequence = $slice->seq();
-$outfile{sequence} = "$feature[3].raw";
-open $SEQ, ">".$outfile{sequence} || die "cannot open error log file".$outfile{sequence}."\n";
-print $SEQ $sequence;
-close $SEQ if ($outfile{sequence});
+#my $sequence = $slice->seq();
+#$outfile{sequence} = "$feature[3].raw";
+#open $SEQ, ">".$outfile{sequence} || die "cannot open error log file".$outfile{sequence}."\n";
+#print $SEQ $sequence;
+#close $SEQ if ($outfile{sequence});
 
 
 ################################################################
@@ -134,6 +172,7 @@ close $log if ($outfile{log});
 close ERR if ($outfile{err});
 close $FT_TABLE if ($outfile{feature});
 close $XREF_TABLE if ($outfile{xreference});
+close $FT_NAME_TABLE if ($outfile{ft_name});
 
 
 exit(0);
@@ -168,7 +207,7 @@ OPTIONS
 	-help	display options
 	-v	verbose
 	-outdir output directory
-        -chrom  chromosome name
+	-chrom	chromosome name
 
    Connection to the ENSEMBL MYSQL server
    	-user	username (default: $user)
@@ -192,8 +231,8 @@ get-ensembl-genome.pl options
 -help		(must be first argument) display options
 -i		input file
 -outdir		output directory
+-chrom		chromosome name
 -v		verbose
--chrom  chromosome name
 -user		username (default: $user)
 -host		host (default: $host)
 -dbname		database name (default: $dbname)
@@ -274,7 +313,7 @@ sub get_feature {
     my @feature = ();
    
     ## ID
-    my $id = $gene->stable_id(); 
+    my $id = $gene->stable_id();
     push @feature, $id;
 
     ## Type
@@ -299,7 +338,7 @@ sub get_feature {
 
     ## Strand
     my $strand = "D";
-    unless ($gene->strand()) {
+    unless ($gene->strand() == 1) {
 	$strand =  "R";
     }
     push @feature, $strand; 
@@ -318,41 +357,80 @@ sub get_feature {
 
 
 ################################################################
-## Convert a feature to a string for export to the feature table
+## Convert an exon feature to a string for export to the feature table
 sub get_exonfeature {
     my ($exon) = @_;
     my @exonfeature = ();
-            
+  
     ## ID
     my $id = $exon->stable_id();
     push @exonfeature, $id;
- 
+
     ## Type
     push @exonfeature, "exon";
-
+    
     ## Exon name
     push @exonfeature, "";
-
+        
     ## Chromosome name.
     push @exonfeature, $exon->slice->seq_region_name();
 
     ## Start position
     push @exonfeature, $exon->start();
-    
+
     ## End position
     push @exonfeature, $exon->end();
- 
+    
     ## Strand
     my $strand = "D";
-    unless ($exon->strand()) {
-        $strand =  "R";   
+    unless ($exon->strand() == 1) {
+        $strand =  "R";
     }
     push @exonfeature, $strand;
 
     ## Description
     push @exonfeature, "";
-
+   
     return @exonfeature;
+}
+
+
+
+################################################################
+## Convert an intron feature to a string for export to the feature table
+sub get_intronfeature {
+    my ($intron) = @_;
+    my @intronfeature = ();
+ 
+    ## ID (introns have no ID in EnsEMBL)
+    push @intronfeature, "";
+
+    ## Type
+    push @intronfeature, "intron";
+   
+    ## Intron name
+    push @intronfeature, "";
+
+    ## Chromosome name.
+    push @intronfeature, $intron->slice->seq_region_name();
+
+    ## Start position
+    push @intronfeature, $intron->start();
+
+    ## End position
+    push @intronfeature, $intron->end();
+   
+    ## Strand
+    my $strand = "D";
+    unless ($intron->strand() == 1) {
+        $strand =  "R";
+    }
+    push @intronfeature, $strand;
+
+    ## Description
+    push @intronfeature, "";
+  
+    return @intronfeature;
 }
 
 
@@ -362,6 +440,9 @@ sub print_DBEntries {
     my $db_entries = shift;
     foreach my $dbe (@$db_entries) {
 	    print $XREF_TABLE $feature[0],"\t",$dbe->dbname(),"\t",$dbe->display_id(),"\n";
+	    if ($dbe->dbname() eq 'HUGO') {
+    		print $FT_NAME_TABLE $feature[0],"\t",$dbe->display_id(),"\n";
+	    }
     }
 }
 
