@@ -83,6 +83,7 @@ if ($verbose) {
     print $out "; max flanking bases\t$max_flanking\n";
     print $out "; max substitutions\t$max_subst\n";
     print $out "; number of patterns\t$pattern_nb\n";
+    print $out ";\n";
 }
 
 #### make a list of words remaining to cluster

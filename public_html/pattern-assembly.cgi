@@ -100,15 +100,12 @@ if ($query->param('strand') =~ /insensitive/) {
 #### run the command
 print "<PRE>command: $pattern_assembly_command $parameters<P>\n</PRE>" if ($ECHO >=1);
 if ($query->param('output') eq "display") {
-#    &PipingWarning();
 
     open RESULT, "$pattern_assembly_command $parameters |";
 
     print '<H2>Result</H2>';
     &PrintHtmlTable(RESULT, $result_file, true);
     close(RESULT);
-
-    &PipingForm();
 
     print "<HR SIZE = 3>";
 } else { 
@@ -118,32 +115,4 @@ print $query->end_html();
 
 exit(0);
 
-
-################################################################
-#
-# Pipe the result to other commands
-#
-sub PipingForm {
-    my $genes = `cat $result_file`;
-    ### prepare data for piping
-    print <<End_of_form;
-<HR SIZE = 3>
-<TABLE>
-<TR>
-<TD>
-<H3>Next step</H3>
-</TD>
-<TD>
-<FORM METHOD="POST" ACTION="retrieve-seq_form.cgi">
-<INPUT type="hidden" NAME="organism" VALUE="$organism">
-<INPUT type="hidden" NAME="genes" VALUE="selection">
-<INPUT type="hidden" NAME="gene_selection" VALUE="$genes">
-<INPUT type="submit" value="retrieve sequences">
-</FORM>
-</TD>
-</TR>
-</TABLE>
-End_of_form
-
-}
 

@@ -112,7 +112,8 @@ print $query->end_form;
 
 ### data for the demo 
 print $query->start_multipart_form(-action=>"pattern-assembly_form.cgi");
-$demo_patterns = "acgtgc	2.82
+$demo_patterns = ";seq	score
+acgtgc	2.82
 tgccaa	2.52
 ctgcac	1.30
 acgtgg	1.10
