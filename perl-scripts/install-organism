@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.28 2003/01/06 19:37:44 jvanheld Exp $
+# $Id: install-organism,v 1.29 2003/04/29 20:08:32 jvanheld Exp $
 #
-# Time-stamp: <2003-01-06 13:35:50 jvanheld>
+# Time-stamp: <2003-04-29 22:06:43 jvanheld>
 #
 ############################################################
 
@@ -17,7 +17,7 @@ require "RSA.lib";
 #### initialisation
 $noov="";
 $strands="-1str";
-$purged_frequencies = 0; #### temporarily inactivte because for human genome it suppresses almost all sequences !!!!
+$purged_frequencies = 0; #### temporarily inactivated because for human genome it suppresses almost all sequences !!!!
 $supported_for_installation{"fasta"} = 1;
 $supported_for_installation{"raw"} = 1;
 $supported_for_installation{"filelist"} = 1;
@@ -73,7 +73,7 @@ unless ($organism_short_name) {
 }
 
 unless ($organism_full_name) {
-    if ($organism_short_name =~ /^[\_\w]+$/) {
+    if ($organism_short_name =~ /^[\_\-\w]+$/) {
 	$organism_full_name = $organism_short_name;
 	$organism_full_name =~ s/\_/ /g;
     } else {
@@ -94,13 +94,13 @@ unless ($install_dir) {
     $install_dir = $RSA."/data/genomes/".$organism_short_name;
 }
 unless (-d $install_dir) {
-    warn "\tCreating installation directory $install_dir\n" if ($verbose);
+    warn "\tCreating installation directory $install_dir\n" if ($verbose >= 1);
     mkdir $install_dir, 0775;
 }
 
 $genome_dir = "$install_dir/genome";
 unless (-d $genome_dir) {
-    warn "\tCreating genome directory $genome_dir\n" if ($verbose);
+    warn "\tCreating genome directory $genome_dir\n" if ($verbose >= 1);
     mkdir $genome_dir, 0775;
 }
 
@@ -123,7 +123,9 @@ $outfile{synonyms} = "$genome_dir/Feature_names_${organism_short_name}.tab" unle
 ###################### Installation tasks ######################
 ################################################################
 
-&Verbose() if ($verbose);
+$out = &OpenOutputFile($outputfile);
+
+&Verbose() if ($verbose >= 1);
 
 &ParseGenome() if ($task{parse});
 
@@ -139,59 +141,52 @@ $outfile{synonyms} = "$genome_dir/Feature_names_${organism_short_name}.tab" unle
 
 &CleanUp if ($task{clean});
 
+close $out if ($outputfile);
+
+system "touch $install_dir";
+
 exit(0);
 
 
 
 ################################################################
-################     subroutine declaration     ################
+#####################     subroutines     ######################
 ################################################################
 
-# sub trim {
-#     my ($input) = @_;
-#     chomp $input;
-#     $input =~ s/^\s+//g;
-#     $input =~ s/\s+$//g;
-#     return $input;
-# }
 
 ################################################################
 #### display verbosity message
 sub Verbose {
-    print "; Installing organism\n";
-    print "; -------------------\n";
+    print $out "; install-organism ";
+    &PrintArguments($out);
+    print $out ";\n; Installing organism\n";
+    print $out "; -------------------\n";
 
-    print ";\n; Tasks:\n";
+    print $out ";\n; Tasks:\n";
     foreach my $task (keys %task) {
-	print ";\t$task\n";
+	print $out ";\t$task\n";
     }
 
-    print ";\n; Config files:", $rsa_config,"\n";
-    printf ";    %-25s\t%s\n", "RSA config", $config_file;
-    printf ";    %-25s\t%s\n", "\$RSA_LOCAL_CONFIG", $ENV{'RSA_LOCAL_CONFIG'} if ($ENV{'RSA_LOCAL_CONFIG'});
+    print $out ";\n; Config files:", $rsa_config,"\n";
+    printf $out ";    %-25s\t%s\n", "RSA config", $config_file;
+    printf $out ";    %-25s\t%s\n", "\$RSA_LOCAL_CONFIG", $ENV{'RSA_LOCAL_CONFIG'} if ($ENV{'RSA_LOCAL_CONFIG'});
 
-    print ";\n; Directories and files:\n";
+    print $out ";\n; Directories and files:\n";
     if ($task{genome}) {
-	printf ";    %-25s\t%s\n", "data source", $source;
-	printf ";    %-25s\t%s\n", "genome sequence format", $seq_format;
-	printf ";    %-25s\t%s\n", "genome sequence file", $infile{genome};
+	printf $out ";    %-25s\t%s\n", "data source", $source;
+	printf $out ";    %-25s\t%s\n", "genome sequence format", $seq_format;
+	printf $out ";    %-25s\t%s\n", "genome sequence file", $infile{genome};
     }
-    printf ";    %-25s\t%s\n", "organism short name", $organism_short_name;
-    printf ";    %-25s\t%s\n", "organism full name", $organism_full_name;
-    printf ";    %-25s\t%s\n", "feature table", $infile{features} if ($infile{features} );;
-    printf ";    %-25s\t%s\n", "feature file", $infile{ptt} if ($infile{ptt} );
-    printf ";    %-25s\t%s\n", "synonyms", $infile{synonyms} if ($infile{synonyms});
-    printf ";    %-25s\t%s\n", "installation dir", $install_dir;
-    printf ";    %-25s\t%s\n", "genome sequence file", $outfile{genome};
-    printf ";    %-25s\t%s\n", "feature table", $outfile{features};
-    printf ";    %-25s\t%s\n", "synonyms", $outfile{synonyms};
-
-    if ($local_config) {
-	printf ";    %-25s\t%s\n", "file to update", $ENV{'RSA_LOCAL_CONFIG'} ;
-    } else {
-	printf ";    %-25s\t%s\n", "file to update", $config_file;
-    }
-
+    printf $out ";    %-25s\t%s\n", "organism short name", $organism_short_name;
+    printf $out ";    %-25s\t%s\n", "organism full name", $organism_full_name;
+    printf $out ";    %-25s\t%s\n", "feature table", $infile{features} if ($infile{features} );;
+    printf $out ";    %-25s\t%s\n", "feature file", $infile{ptt} if ($infile{ptt} );
+    printf $out ";    %-25s\t%s\n", "synonyms", $infile{synonyms} if ($infile{synonyms});
+    printf $out ";    %-25s\t%s\n", "installation dir", $install_dir;
+    printf $out ";    %-25s\t%s\n", "genome sequence file", $outfile{genome};
+    printf $out ";    %-25s\t%s\n", "feature table", $outfile{features};
+    printf $out ";    %-25s\t%s\n", "synonyms", $outfile{synonyms};
+    printf $out ";    %-25s\t%s\n", "file to update", $config_to_update;
     
 }
 
@@ -231,7 +226,7 @@ sub Verbose {
 
 #     #### convert the genome file
 #     warn "Installing genome from file $infile{genome} (format $seq_format) \n\tto file $outfile{genome}\n"
-# 	if ($verbose);
+# 	if ($verbose >= 1);
 #     $command = "convert-seq -i $infile{genome} -from $seq_format -to filelist -o $outfile{genome}";
 #     &doit();
 # }
@@ -268,13 +263,33 @@ sub UpdateConfig {
     }
 
     if (defined($supported_organism{$organism_short_name}->{'genome'})) {
-	warn ("\n\tWARNING : organism $organism_short_name already defined in the config file",
-	      "\n\tthe previous config will be commented\n");
+	&Warning ("Organism $organism_short_name already defined in the config file",
+		  "\n\tthe previous config will be commented\n");
     }
 
+    ### read taxonomy from the parsing result
+    $organism_table = $install_dir."/genome/${organism_short_name}.tab";
+    ($org_handle) = &OpenInputFile($organism_table);
+    while (<$org_handle>) {
+	chomp;
+	if (/^-- field (\d)	taxonomy/) {
+	    $taxonomy_field = $1;
+	} elsif (/^--/) {
+	    next;
+	} else {
+	    if (defined($taxonomy_field)) {
+		@fields = split "\t";
+		$taxonomy = $fields[$taxonomy_field - 1];
+		&Warning ("Taxonomy\t$taxonomy\n");
+	    } else {
+		&Warning("Cannot read taxonomy in file $organism_table\n");
+	    }
+	}
+    }
+    close $org_handle;
+    
+
     #### read previous config
-    $install_date = `date`;
-    chomp $install_date;
     open CONFIG, $config_to_update;
     while ($line = <CONFIG>) {
 	chomp $line;
@@ -291,17 +306,23 @@ sub UpdateConfig {
     close CONFIG;
     
     #### write new config
-    warn ";\n; Updating config file\t$config_to_update\n" if ($verbose);
+    warn ";\n; Updating config file\t$config_to_update\n" if ($verbose >= 1);
     open CONFIG, ">$config_to_update" 
 	|| die "Error: cannot write config file $config_to_update\n";
     print CONFIG $previous_config;
     
+    ### installation date
+    $install_date = `date '+%Y/%m/%d %H:%M:%S'`;
+    chomp $install_date;
+
     my $new_org_config = 	 "\n#### $organism_short_name\t$organism_full_name\t$install_date\n";
     $new_org_config .= "\$supported_organism{'$organism_short_name'}->{'name'} = \"$organism_full_name\";\n";
     $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'data'} = \"$install_dir\";\n";
+    $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'last_update'} = \"".$install_date."\";\n";
     $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'features'} = \"$outfile{features}\";\n";
     $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'genome'} = \"$outfile{genome}\";\n";
     $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'seq_format'} = \"filelist\";\n";
+    $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'taxonomy'} = \"$taxonomy\";\n";
     if (defined($outfile{synonyms})) {
 	$new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'synonyms'} = \"$outfile{synonyms}\";\n";
     }
@@ -334,7 +355,7 @@ sub IntergenicSegments {
 
     #### retrieve intergenic sequences
     $command = "coding-or-not ";
-    $command .= "-v " if ($verbose);
+    $command .= "-v " if ($verbose >= 1);
     $command .= "-org $organism_short_name -return ncs,seq,cs \n\n";
     &doit();
 
@@ -437,11 +458,13 @@ sub PurgeSequences {
 sub CalcFrequencies { 
     my ($seq_file, $seq_format, $seq_type) = ();
 
+
     chdir $oligo_dir;
 
     ################################################################
     # calculate oligont frequencies in all upstream sequences
     if ($task{upstream_freq}) {
+#	foreach my $noorf ("-noorf") {
 	foreach my $noorf ("", "-noorf") {
 	    $seq_type = "upstream${noorf}";
 	    if ($purged_frequencies) {
@@ -507,7 +530,7 @@ sub CalcOligoFreq {
     my ($seq_file,$seq_format,$seq_type) = @_;
     foreach $oligo_length (1..8) {
 	$out_file = "$oligo_dir/${oligo_length}nt_${seq_type}_${organism_short_name}${noov}${strands}.freq";
-	$command = "$SCRIPTS/oligo-analysis ${strands} -i $seq_file -format $seq_format ";
+	$command = "$SCRIPTS/oligo-analysis -v 1 ${strands} -i $seq_file -format $seq_format ";
 	$command .= " $strands";
 	$command .= " $noov";
 	$command .= "-l ${oligo_length} -type dna ";
@@ -532,7 +555,7 @@ sub CalcDyadFreq {
     foreach $monad_length (@monad_lengths) {
 	$dyad_file = "dyads_${monad_length}nt_sp${min_spacing}-${max_spacing}_${seq_type}_${organism_short_name}${noov}${strands}";
 	$dyad_file .= ".freq";
-	$command = "$SCRIPTS/dyad-analysis -i $seq_file -format $seq_format";
+	$command = "$SCRIPTS/dyad-analysis -v 1 -i $seq_file -format $seq_format";
 	$command .= " -timeout 240000 ";
 	$command .= " -type any -seqtype dna";
 	$command .= " $strands";
@@ -799,6 +822,10 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-help") {
 	    &PrintOptions;
 	    
+	    #### output file
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outputfile = $ARGV[$a+1];
+
 	    ### data source
 	} elsif ($ARGV[$a] eq "-source") {
 	    $source = lc($ARGV[$a+1]);
@@ -881,7 +908,7 @@ sub StartAndStopCodons {
 }
 
 sub doit {
-    warn "\n", &AlphaDate, "\t$command\n" if ($verbose);
+    print $out "\n", &AlphaDate(), "\t$command\n" if ($verbose >= 1);
     unless ($dry_run) {
 	my $error = system "$command";
 	die "Error whilst executing the following command\n$command\n"
@@ -1220,7 +1247,9 @@ sub ParseGenome {
     } else {
 	&FatalError("Cannot find a directory $organism_short_name in genbank dir $GENBANK_DIR" );
     }
-    $command = "parse-genbank.pl -v 1 -i $source_dir";
+    $command = "$RSA/perl-scripts/parse-genbank.pl -v 1 -i $source_dir";
+#    $command = "$RSA/perl-scripts/parsers/parse_genbank.pl -v 1 -i $source_dir";
+#    die $command;
     &doit();
 }
 
