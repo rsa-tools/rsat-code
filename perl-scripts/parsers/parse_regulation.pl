@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_regulation.pl,v 1.4 2002/11/25 17:45:21 jvanheld Exp $
+# $Id: parse_regulation.pl,v 1.5 2002/11/25 19:03:19 jvanheld Exp $
 #
-# Time-stamp: <2002-11-25 11:44:45 jvanheld>
+# Time-stamp: <2002-11-25 13:03:00 jvanheld>
 #
 ############################################################
 ### parse_regulation.plt
@@ -24,19 +24,30 @@ require "PFBP_parsing_util.pl";
 #
 package main;
 {
+    ################################################################
     ### default parameters
+
+    #### relational DBMS parameters
+    $schema="annotator";
+    $user="annotator";
+    $password="annotator";
+
+    #### other parameters
     $verbose = 0;
     $debug = 0;
     $clean = 0;
 
     ### files to parse
-    $dir{amaze_export} = "/win/amaze/amaze_data/exported_2001_0719";
-#    $dir{regulation_data} = "/win/amaze/amaze_team/gaurab/excel_tables_2001_08";
-#    $file_name = "metabolic_regulation_2001_05_18.tab";
-#    $in_file{metabolic_regulation} = "cat ".$dir{regulation_data}."/".$file_name." |";
-    $in_file{metabolic_regulation} = "/win/amaze/amaze_team/gaurab/metabolic_regulation_2001_09_07.txt";
-    
-    $dir{output} = "$parsed_data/regulation_parsed/$delivery_date";
+
+#    $in_file{regulation} = "/win/amaze/amaze_team/gaurab/regulation_2001_09_07.txt";
+    $in_file{regulation} = "/win/amaze/amaze_team/georges_cohen/excel_files_georges/regulation/concatenated_regulations.tab";
+
+
+    $dir{genes} = "$parsed_data/kegg_genes/20020822";
+    $dir{polypeptides} = "$parsed_data/swissprot/20021016";
+
+
+    $dir{output} = "$parsed_data/regulation/$delivery_date";
     $dir{delivery} = "/win/amaze/amaze_programs/amaze_oracle_data";
     unless (-d $dir{output}) {
 	warn "Creating output dir $dir{output}\n"  if ($verbose >= 1);
@@ -52,8 +63,32 @@ package main;
     $out_format = "obj";
 
 
-
+    ################################################################
+    #### read command-line arguments
     &ReadArguments();
+
+
+    ################################################################
+    #### check some parameters
+
+    #### check the existence of gene index files
+    unless (-d $dir{genes}) {
+	die "ERROR: gene directory  $dir{genes} does not exist\n";
+    }
+    $in_file{gene_names} =  "gunzip -c $dir{genes}/Gene_names.tab.gz | grep -v '^--' | grep -v 'H.sapiens' | ";
+    $in_file{genes} = "gunzip -c $dir{genes}/Gene.tab.gz |";
+    $in_file{genes} .= " grep -v '^--' | cut -f 1,2  |";
+    $in_file{genes} .= " grep -v 'H.sapiens' |";
+    $in_file{genes} .= " perl -pe 's|S.cerevisiae|Saccharomyces cerevisiae|' |";
+    $in_file{genes} .= " perl -pe 's|E.coli|Escherichia coli|' |";
+
+    #### check existence of polypeptide index files
+    unless (-d $dir{polypeptides}) {
+	die "ERROR: polypeptide directory  $dir{polypeptides} does not exist\n";
+    }
+    $in_file{polypeptide_names} = "gunzip -c $dir{polypeptides}/Polypeptide_names.tab.gz  | grep -v '^--' |";
+    $in_file{polypeptides} = "gunzip -c $dir{polypeptides}/Polypeptide_organisms.tab.gz  | grep -v '^--'|";
+
 
     #### remove all files from the output directory
     if ($clean) {
@@ -64,17 +99,15 @@ package main;
 
     open ERR, ">$out_file{errors}" || die "Error: cannot write error report fle $$out_file{errors}\n";
 
-
-
     ### testing mode
     if ($test) {
 	warn ";TEST\n" if ($verbose >= 1);
 	### fast partial parsing for debugging
-	$in_file{metabolic_regulation} .= " head -10 |";
+	$in_file{regulation} .= " head -10 |";
     }
 
     ### default verbose message
-    &DefaultVerbose if ($verbose >= 1);
+    &DefaultVerbose() if ($verbose >= 1);
 
     #### class factories
     $controlOfControls = PFBP::ClassFactory->new_class(object_type=>"PFBP::ControlOfControl",
@@ -97,6 +130,7 @@ package main;
 		     gene_id
 		     is_positive
 		     description
+		     pathway
 
 		     pubmedIDs 
 		     );
@@ -128,10 +162,10 @@ package main;
 						prefix=>"ind_");
 
     #### indexes
-    &LoadIndexes();
+#    &LoadIndexes();
 
     #### parse reactions
-    &ParseRegulation($in_file{metabolic_regulation});
+    &ParseRegulation($in_file{regulation});
     &IdentifyInputsOutputs();
 
     ### print result
@@ -144,6 +178,16 @@ package main;
     #push @classes, ("PFBP::ControlOfControl");
     #push @classes, ("PFBP::Induction");
     &ExportClasses($out_file{regulation}, $out_format, @classes)  if ($export{obj});
+
+
+    #### export SQL scripts to load the data in a relational database
+    foreach $class_holder ($transcriptionalRegulations) {
+	$class_holder->generate_sql(schema=>$schema, 
+				    user=>$user,
+				    password=>$password,
+				    dir=>"$dir{output}/sql_scripts", 
+				    prefix=>"");
+    }
 
     ### print some stats after parsing
     &PrintStats($out_file{stats}, @classes);
@@ -160,8 +204,8 @@ package main;
 
     &deliver() if ($deliver);
 
-    system "gzip -f $dir{output}/*.tab $dir{output}/*.txt";
-    system "gzip -f $dir{output}/*.obj" if ($export{obj});
+#    system "gzip -f $dir{output}/*.tab $dir{output}/*.txt";
+#    system "gzip -f $dir{output}/*.obj" if ($export{obj});
 
 
 
@@ -201,6 +245,16 @@ OPTIONS
 $generic_option_message
 	-d	debug
 		export additional info for debugging (e.g. indexes
+	-genes  gene_dir
+	        parsed genes directory. 
+	        This directory should contain the result of the script
+	        parse_genes.pl. Parsed genes are used for identifying
+	        the  target genes.
+	-pp	polypeptide_dir
+	        parsed polypeptides directory. 
+	        This directory should contain the result of the script
+	        parse_swissprot.pl. Parsed polypeptides are used for
+	        identifying the transcription factors.
 	-deliver 
 		copy the relevant files in the delivery directory,
 		for loading in the aMAZE database. 
@@ -258,7 +312,7 @@ sub ReadArguments {
 	    ### input file
 	} elsif ($ARGV[$a] eq "-i") {
 	    $a++;
-	    $in_file{metabolic_regulation} = $ARGV[$a];
+	    $in_file{regulation} = $ARGV[$a];
 	    
 	    ### output file
 	} elsif ($ARGV[$a] eq "-o") {
@@ -320,12 +374,24 @@ sub ParseRegulation {
 	$in = STDIN;
     } 
 
-    #### read header line
+    ################################################################
+    #### read header line and parse it to know which column contains
+    #### which information
     $header = <$in>;
     chomp($header);
+    #### fix some inconsistencies between Gaurab's and Georges' headers
+    $header =~ s/controlled from/controlledFrom/;
+    $header =~ s/controlled to/controlledTo/;
+    $header =~ s/PubmedID/pubmedID/;
+    $header =~ s/type of inhibition/type_of_inhibition/;
+
+    
     my @cols = split "\t", $header;
 
-    my @single_value = qw( row_nb
+
+    my @single_value = qw( 
+			   pathway
+			   row_nb
 			   source
 			   inputType
 			   input
@@ -348,6 +414,15 @@ sub ParseRegulation {
     }
 
 
+    #### report column contents
+    if ($verbose >= 2) {
+	warn "; Column contents\n";
+	for my $c (1..$#cols) {
+	    warn join ("\t", ";", $c, $cols[$c]), "\n";
+	}
+    }
+
+
 #      my @cols = ();
 #      my %col = ();
 #      push @cols, "pathwayIDs";
@@ -363,7 +438,8 @@ sub ParseRegulation {
 #      push @cols, "ligand2";
 #      push @cols, "org_not_Ecoli";
     
-    
+
+    #### read the interactions
     while (<$in>) {
 	$l++;
 	next if (/^;/);
@@ -384,6 +460,7 @@ sub ParseRegulation {
 		       $field{$key}
 		       ), "\n" if ($verbose >=4);
 	}
+
 	unless (defined($class_holder{$field{controlType}})) {
 	    &ErrorMessage(join ("\t", 
 				$filename,
@@ -403,19 +480,32 @@ sub ParseRegulation {
 	#### when there are multiple outputs, create one regulation per output
 	my @control_outputs = split /\|/, $field{controlledFrom};
 
+	warn join "\t", "HELLO", "output",  $field{controlledFrom}, "\n";
+
+	unless ($#control_outputs >= 1) {
+	    &ErrorMessage(join ("\t", 
+				$filename,
+				$l,
+				"the field controlledFrom is empty",
+				$field{controlledFrom}), "\n");
+	    next;
+	}
+
 	warn ($field{controlledFrom}, "\t",
 	      $#control_outputs + 1, "\t",
 	      join ("\t", @control_outputs), "\n" )
 	    if ($verbose >=4);
-
+	
 	foreach my $control_output (@control_outputs) {
 	    $field{controlledFrom} = $control_output;
 	    my $current_control = $class_holder->new_object();
-
+	    
+	    #### assign single-value attributes
 	    foreach my $key (@single_value) {
 		$current_control->set_attribute($key, $field{$key});
 	    }
 	    
+	    #### assign multi-value attributes
 	    foreach my $key  (@multi_value) {
 		my @values = split '\|', $field{$key};
 		foreach my $value (@values) {
@@ -440,6 +530,13 @@ sub ParseRegulation {
 		    $current_control->new_attribute_value("biblioref", $id);
 		}
 	    }
+
+	    #### report the content of the object
+	    warn join ("\t", 
+		       $current_control->get_attribute("id"),
+		       $current_control->get_attribute("controlType"),
+		       ), "\n"
+		if ($verbose >= 2);
 	}
     }
     
@@ -456,52 +553,32 @@ sub LoadIndexes {
     warn ("; Loading index files\n") 
 	if ($verbose >= 1);
 
-    #### gene expressions (WARNING : these are unstable ObjectIDs)
-#    $index{gene_expression} = PFBP::Index->new();
-#    warn ("; ", &AlphaDate(), "\tgene_expression index from file ", $dir{amaze_export}."/gene_expression.tab","\n") 
-#	if ($verbose >= 1);
-#    $index{gene_expression}->load($dir{amaze_export}."/gene_expression.tab", 1, 1);
-
-    #### polypeptide names from amaze export
-#    $index{polypeptides} = PFBP::Index->new();
-#    $polypeptide_index_file = $dir{amaze_export}."/polypeptides.tab";
-#    warn ("; ", &AlphaDate(), "\tpolypeptide index ...\n") 
-#	if ($verbose >= 1);
-#    $index{polypeptides}->load($polypeptide_index_file, 1, 1);
 
     #### gene names
     $index{name_gene} = PFBP::Index->new();
-    $gene_name_index_file = "gunzip -c /win/amaze/amaze_data/parsed_data/kegg_parsed/20001213/Gene_names.tab.gz | grep -v '^--' | grep -v 'H.sapiens' | ";
     warn ("; ", &AlphaDate(), "\tgene name index ...\n") 
 	if ($verbose >= 1);
-    $index{name_gene}->load($gene_name_index_file, 1, 0, reverse=>1);
+    $index{name_gene}->load($in_file{gene_names}, 1, 0, reverse=>1);
 
     #### gene organism
     $index{gene_organism} = PFBP::Index->new();
-    $gene_organism_index_file = "gunzip -c /win/amaze/amaze_data/parsed_data/kegg_parsed/20001213/Gene.tab.gz |";
-    $gene_organism_index_file .= " grep -v '^--' | cut -f 1,2  |";
-    $gene_organism_index_file .= " perl -pe 's|S.cerevisiae|Saccharomyces cerevisiae|' |";
-    $gene_organism_index_file .= " perl -pe 's|E.coli|Escherichia coli|' |";
-    $gene_organism_index_file .= " grep -v 'H.sapiens' |";
-#    $gene_organism_index_file .= " perl -pe 's|H.sapiens|Homo sapiens|' |";
+#    $in_file{genes} .= " perl -pe 's|H.sapiens|Homo sapiens|' |";
     warn ("; ", &AlphaDate(), "\tgene organism index ...\n") 
 	if ($verbose >= 1);
-    $index{gene_organism}->load($gene_organism_index_file, 0, 0);
+    $index{gene_organism}->load($in_file{genes}, 0, 0);
 
 
     #### polypeptide names from swissprot
     $index{name_polypeptide} = PFBP::Index->new();
-    $polypeptide_name_index_file = "gunzip -c /win/amaze/amaze_data/parsed_data/swissprot_parsed/20001212/Polypeptide_names.tab.gz  | grep -v '^--' |";
     warn ("; ", &AlphaDate(), "\tpolypeptide name index ...\n") 
 	if ($verbose >= 1);
-    $index{name_polypeptide}->load($polypeptide_name_index_file, 1, 0, reverse=>1);
+    $index{name_polypeptide}->load($in_file{polypeptide_names}, 1, 0, reverse=>1);
 
     #### polypeptide organisms from swissprot
     $index{polypeptide_organism} = PFBP::Index->new();
-    $polypeptide_organism_index_file = "gunzip -c /win/amaze/amaze_data/parsed_data/swissprot_parsed/20001212/Polypeptide_organisms.tab.gz  | grep -v '^--'|";
     warn ("; ", &AlphaDate(), "\tpolypeptide organism index ...\n") 
 	if ($verbose >= 1);
-    $index{polypeptide_organism}->load($polypeptide_organism_index_file, 0, 1);
+    $index{polypeptide_organism}->load($in_file{polypeptides}, 0, 1);
 
     #### report index sizes
     if ($verbose >=1) {
