@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: mirror.mk,v 1.2 2003/11/14 11:24:44 jvanheld Exp $
+# $Id: mirror.mk,v 1.3 2003/12/19 08:50:54 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 12:05:45 jvanheld>
 #
@@ -9,6 +9,7 @@
 RSA=${HOME}/rsa-tools
 RSA_SERVER=rsat.ulb.ac.be
 RSA_SERVER_DIR=rsa-tools
+RSA_LOGIN=jvanheld
 
 DATE = `date +%Y%m%d_%H%M%S`
 
@@ -25,12 +26,12 @@ RSYNC = rsync ${RSYNC_OPT} ${SSH}
 #
 # Servers
 
-CIFN = jvanheld@itzamna.cifn.unam.mx:rsa-tools/
-PAULUS = jvanheld@paulus.ulb.ac.be:rsa-tools/
-RUBENS = jvanheld@rubens.ulb.ac.be:rsa-tools/
-#UCMB = /rubens/dsk4/jvanheld/rsa-tools
-UPPSALA = jvanheld@bioinformatics.bmc.uu.se:rsa-tools
-RSAT = jvanheld@rsat.ulb.ac.be:/home/rsa/rsa-tools
+CIFN = ${RSA_LOGIN}@itzamna.cifn.unam.mx:rsa-tools/
+PAULUS = ${RSA_LOGIN}@paulus.ulb.ac.be:rsa-tools/
+RUBENS = ${RSA_LOGIN}@rubens.ulb.ac.be:rsa-tools/
+#UCMB = /rubens/dsk4/${RSA_LOGIN}/rsa-tools
+UPPSALA = ${RSA_LOGIN}@bioinformatics.bmc.uu.se:rsa-tools
+RSAT = ${RSA_LOGIN}@rsat.ulb.ac.be:/home/rsa/rsa-tools
 MEDICEL = root@grimsel.co.helsinki.fi:/work/programs/rsa-tools
 SERVERS = ${RSAT} ${PAULUS} ${CIFN} ${UPPSALA} 
 
@@ -93,7 +94,7 @@ all_from_server: scripts_from_server pub_from_server data_from_server logs_from_
 
 DIR=doc
 TARGET_DIR=${RSA}/
-RSYNC_FROM_SERVER_CMD=${RSYNC} jvanheld@${RSA_SERVER}:${RSA_SERVER_DIR}/${DIR} ${TARGET_DIR}
+RSYNC_FROM_SERVER_CMD=${RSYNC} ${RSA_LOGIN}@${RSA_SERVER}:${RSA_SERVER_DIR}/${DIR} ${TARGET_DIR}
 dir_from_server:
 	@echo ${RSYNC_FROM_SERVER_CMD}
 	${RSYNC_FROM_SERVER_CMD}
@@ -112,7 +113,7 @@ pub_from_server:
 		--exclude data							\
 		--exclude logs							\
 		--exclude tmp							\
-		jvanheld@${RSA_SERVER}:${RSA_SERVER_DIR}/public_html ${RSA}/
+		${RSA_LOGIN}@${RSA_SERVER}:${RSA_SERVER_DIR}/public_html ${RSA}/
 
 EXCLUDED=						\
 		--exclude previous_version		\
@@ -123,7 +124,7 @@ EXCLUDED=						\
 		--exclude Homo_sapiens*		
 data_from_server:
 	${RSYNC} ${EXCLUDED}							\
-		jvanheld@${RSA_SERVER}:${RSA_SERVER_DIR}/public_html/data/*	\
+		${RSA_LOGIN}@${RSA_SERVER}:${RSA_SERVER_DIR}/public_html/data/*	\
 		${RSA}/public_html/data/
 
 ################################################################
