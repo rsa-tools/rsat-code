@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.8 2001/12/06 22:07:27 jvanheld Exp $
+# $Id: install-organism,v 1.9 2001/12/24 02:33:41 jvanheld Exp $
 #
-# Time-stamp: <2001-12-06 23:03:17 jvanheld>
+# Time-stamp: <2001-12-24 03:22:53 jvanheld>
 #
 ############################################################
 
@@ -90,9 +90,13 @@ unless (-d $oligo_dir) {
     mkdir $oligo_dir, 0775;
 }
 
-$outfile{genome} = "$genome_dir/${organism_short_name}_chromosomes.txt";
-$outfile{features} = "$genome_dir/${organism_short_name}_features.tab";
-$outfile{synonyms} = "$genome_dir/${organism_short_name}_synonyms.tab";
+#$outfile{genome} = "$genome_dir/${organism_short_name}_chromosomes.txt";
+#$outfile{features} = "$genome_dir/${organism_short_name}_features.tab";
+#$outfile{synonyms} = "$genome_dir/${organism_short_name}_synonyms.tab";
+
+$outfile{genome} = "$genome_dir/Chromosomes_${organism_short_name}.txt";
+$outfile{features} = "$genome_dir/Gene_${organism_short_name}.tab";
+$outfile{synonyms} = "$genome_dir/Gene_names_${organism_short_name}.tab";
 
 
 &Verbose() if ($verbose);
@@ -109,6 +113,7 @@ if ($install_steps{features}) {
 &NonCodingSegments() if ($install_steps{ncf});
 &OligoFrequencies() if ($install_steps{oligos});
 &DyadFrequencies() if ($install_steps{dyads});
+
 
 exit(0);
 
@@ -295,7 +300,11 @@ sub NonCodingSegments {
     $command .= "-org $organism_short_name -return ncs,seq \n\n";
     &doit;
 
-    $command = "sequence-lengths -i ${genome_dir}/${organism_short_name}_non_coding_segments.wc";
+    my $seq_file = "${genome_dir}/${organism_short_name}_non_coding_segments.wc";
+    my $purged_seq_file = "${genome_dir}/${organism_short_name}_non_coding_segments_purged.fasta";
+
+    #### histogram of intergenic segment lengths
+    $command = "sequence-lengths -i $seq_file";
     $command .= " -format wc | cut -f 2 | classfreq -ci 100 -v -from 0 -to 2000";
     $command .= " | XYgraph -xcol 3 -ycol 7,8,9 -lines -xmin 0 -xmax 2000";
     $command .= " -ymin 0 -ymax 1  -xsize 600 -ysize 400 -legend";
@@ -306,6 +315,16 @@ sub NonCodingSegments {
     $command .= " -title2 'length distribution of intergenic segments'";
     $command .= " -o  ${organism_short_name}_non_coding_segments_lengths.gif";
     &doit;
+
+    #### purge non-coding segments
+    $command = "purge-sequence -i $seq_file -format wc -ml 100 -mis 3 -2str -o $purged_seq_file";
+    &doit;
+
+    #### compress intergenic sequence file
+    $command = "gzip -f $seq_file";
+    $command = "gzip -f $purged_seq_file";
+    &doit;
+
     chdir "../";
 }
 
@@ -315,12 +334,12 @@ sub OligoFrequencies {
     pwd;
     
     $type = "non-coding";
-    $seq = "${organism_short_name}_non_coding_segments.wc";
+    $seq = "${organism_short_name}_non_coding_segments_purged.fasta";
 
     ### calculate oligont frequencies in all non-coding sequences
     foreach $oligo_length (1..8) {
 	$oligo_freq = "${oligo_length}nt_${type}_${organism_short_name}.freq";
-	$command = "$SCRIPTS/oligo-analysis -i $genome_dir/$seq -format wc ";
+	$command = "$SCRIPTS/oligo-analysis -i $genome_dir/$seq -format fasta ";
 	$command .= "-l ${oligo_length} -type dna ";
 	$command .= "-return freq,occ -nogrouprc ";
 	$command .= "| cut -f1,3,4 ";
@@ -335,7 +354,7 @@ sub DyadFrequencies {
     pwd;
     
     $type = "non-coding";
-    $seq = "${organism_short_name}_non_coding_segments.wc";
+    $seq = "${organism_short_name}_non_coding_segments_purged.fasta";
     ### calculate dyad frequencies in all non-coding sequences
     $oligo_length = 3;
     $min_spacing = 0;
@@ -344,8 +363,8 @@ sub DyadFrequencies {
     $dyad_file = "dyads_${oligo_length}nt_sp${min_spacing}-${max_spacing}_${type}_${organism_short_name}";
     $dyad_file .= "_noov" if ($noov);
     $dyad_file .= ".freq";
-    $command = "$SCRIPTS/dyad-analysis -i $genome_dir/$seq -format wc";
-    $command .= " -v 3 -vv -timeout 100000 ";
+    $command = "$SCRIPTS/dyad-analysis -i $genome_dir/$seq -format fasta";
+    $command .= " -timeout 150000 ";
     $command .= " -type any -seqtype dna";
     $command .= " -2str";
     $command .= " -noov" if ($noov);
@@ -426,7 +445,7 @@ sub GenerateFeatureTable {
     } elsif (lc($source) eq "ncbi") {
 	&ParseNcbiFeatures($infile{ptt});
     } elsif (lc($source) eq "genbank") {
-	&ParseGenbankFeatures($infile{ptt});
+	&ParseNCBIFeatures($infile{ptt});
     } else {
 	die "Error: cannot convert genome from source '$source'\n";
     }
@@ -509,8 +528,8 @@ OPTIONS
 		indicated by the environment variable RSA_LOCAL_CONFIG
 		rather than the main RSA config file.
 
-	-ptt	Genbank/NCBI feature table
-		A Genbank/NCBI feature table can be provided instead
+	-ptt	NCBI feature table
+		A NCBI feature table can be provided instead
 		of the RSA-formatted feature table. It will be
 		converted.
 
@@ -653,7 +672,7 @@ sub StartAndStopCodons {
 }
 
 sub doit {
-    warn "\n$command\n" if ($verbose);
+    warn "\n", &AlphaDate, "\t$command\n" if ($verbose);
     system $command unless $dry_run;
 }
 
@@ -862,7 +881,7 @@ sub ParseNcbiFeatures {
     close FTT;
 }
 
-sub ParseGenbankFeatures {
+sub ParseNCBIFeatures {
     ################################################################
     #  Generates a RSAT feature table (.ftt) 
     #  from a NCBI feature table (.ptt)
