@@ -93,7 +93,7 @@ if ($query->param('proba') eq "alphabet") {
     unless (&IsNatural($oligo_size)) {
 	&cgiError("Invalid oligonucleotide length $oligo_size");
     }
-    $parameters .= " -ncf -org $organism -ol $oligo_size";
+    $parameters .= " -bg intergenic -org $organism -ol $oligo_size";
 }
 
 print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ECHO >= 1);
