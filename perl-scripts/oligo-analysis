@@ -1,16 +1,16 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.34 2001/07/05 12:43:40 jvanheld Exp $
+# $Id: oligo-analysis,v 1.35 2001/08/23 00:22:35 jvanheld Exp $
 #
-# Time-stamp: <2001-07-05 14:42:12 jvanheld>
+# Time-stamp: <2001-08-23 02:08:16 jvanheld>
 #
 ############################################################
 
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
+require "RSA.lib";
 
 
 ###### initialize parameters ##########
@@ -1750,8 +1750,9 @@ ARGUMENTS
 				GATAA & G
 
 		The expected frequency of each segmented pair is the
-		sum of expected frequency of its members. The expected
-		word frequency is the maximum expected pair frequency.
+		product of expected frequencies of its members. The
+		expected word frequency is the maximum expected pair
+		frequency.
 
 	-pseudo #
 		 pseudo-weight
