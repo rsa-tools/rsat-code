@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_glaxo.pl,v 1.3 2001/05/30 08:54:55 jvanheld Exp $
+# $Id: parse_glaxo.pl,v 1.4 2001/10/31 01:02:43 jvanheld Exp $
 #
-# Time-stamp: <2001-05-30 10:51:30 jvanheld>
+# Time-stamp: <2001-10-31 02:00:46 jvanheld>
 #
 ############################################################
 ### parse_ligand.plt
@@ -32,6 +32,8 @@ package PFBP::Smiles;
     %_attribute_cardinality = (id=>"SCALAR",
 			       names=>"ARRAY",
 			       SMILES=>"SCALAR",
+			       Biosequence=>"SCALAR",
+			       Parent_Formula=>"SCALAR",
 			       source=>"SCALAR");
 }
 
@@ -49,12 +51,31 @@ package PFBP::ECreference;
 			       source=>"SCALAR");
 }
 
+package PFBP::BrendaName;
+{
+    @ISA = qw ( PFBP::Compound );
+    ### class attributes
+    $_count = 0;
+    $_prefix = "gbn_";
+    @_objects = ();
+    %_name_index = ();
+    %_id_index = ();
+    %_attribute_count = ();
+    %_attribute_cardinality = (id=>"SCALAR",
+			       names=>"ARRAY",
+			       source=>"SCALAR",
+			       parent_smiles=>"SCALAR",
+			       BRENDA_name=>"SCALAR",
+			       Mol_Formula=>"SCALAR",
+			       Isomer=>"ARRAY");
+}
+
 package PFBP::Biosequence;
 {
     @ISA = qw ( PFBP::DatabaseObject );
     ### class attributes
     $_count = 0;
-    $_prefix = "grf_";
+    $_prefix = "gbs_";
     @_objects = ();
     %_name_index = ();
     %_id_index = ();
@@ -70,12 +91,14 @@ package main;
 $start_time = `date +%Y-%m-%d.%H%M%S`;
 $delivery_date = `date +%Y%m%d`;
 chomp $delivery_date;
-$warn_level = 0;
+$verbose = 0;
+$clean = 0;
 
 ### files to parse
 $file_name = "didier.fdt";
-$source = "GLAXO".$file_name;
-$in_file{glaxo} = "gunzip -c  $data_glaxo/".$file_name.".gz | ";
+$source = "GLAXO:".$file_name;
+$dir{input} = $data_glaxo;
+$in_file{glaxo} = "gunzip -c ".$dir{input}."/".$file_name.".gz | ";
 
 $dir{output} = "$parsed_data/glaxo_parsed/$delivery_date";
 unless (-d $dir{output}) {
@@ -92,27 +115,55 @@ open ERR, ">$out_file{errors}" || die "Error: cannot write error report fle $out
 $out_format = "obj";
 
 push @classes, "PFBP::Smiles";
-push @classes, "PFBP::Compound";
+push @classes, "PFBP::BrendaName";
 push @classes, "PFBP::Biosequence";
 push @classes, "PFBP::ECreference";
 
 &ReadArguments;
 
-### testing mode
-if ($test) {
-    warn ";TEST\n" if ($warn_level >= 1);
-    ### fast partial parsing for debugging
-    $in_file{glaxo} .= " head -10000 |";
+#### clean the output directory
+if ($clean) {
+    warn "Cleaning output directory $dir{output}\n" if ($verbose >=1);
+    system "\\rm -f $dir{output}/*.tab.gz $dir{output}/*.txt.gz $dir{output}/*.obj.gz" ;
+    system "\\rm -rf $dir{output}/mirror";
 }
 
+
+### test mode
+if ($test) {
+    warn ";TEST\n" if ($verbose >= 1);
+    ### fast partial parsing for debugging
+    $in_file{glaxo} .= " head -5000 |";
+}
+
+
+
 ### default verbose message
-&DefaultVerbose if ($warn_level >= 1);
+&DefaultVerbose if ($verbose >= 1);
 
 ### parse data from original files
 $smiles = PFBP::ClassFactory->new_class(object_type=>"PFBP::Smiles",
 					prefix=>"gsm_");
-$brenda_names = PFBP::ClassFactory->new_class(object_type=>"PFBP::Compound",
+@smiles_out_fields = qw (id
+			 source
+			 Parent_Avg_molecular_weight	
+			 LIGAND_AccNo	
+			 primary_name	
+			 SMILES	
+			 Parent_Formula
+			 BRENDA_name
+			 Biosequence
+			 Remark
+#			 names
+			 );
+if ($export{analysis}) {
+    push @smiles_out_fields, qw( gbn_count gbs_count );
+}
+$smiles->set_out_fields(@smiles_out_fields);
+
+$brenda_names = PFBP::ClassFactory->new_class(object_type=>"PFBP::BrendaName",
 					      prefix=>"gbn_");
+
 $biosequences = PFBP::ClassFactory->new_class(object_type=>"PFBP::Biosequence",
 					      prefix=>"gbs_");
 $ec_references = PFBP::ClassFactory->new_class(object_type=>"PFBP::ECreference",
@@ -124,11 +175,11 @@ $ec_references = PFBP::ClassFactory->new_class(object_type=>"PFBP::ECreference",
 ### define a primary name (take the first value in the name list)
 foreach $smile ($smiles->get_objects()) {
     @BRENDA_names = $smile->get_attribute("BRENDA_name");
-    if ($#BRENDA_names >= 0) {
-	$smile->set_attribute("primary_name",$BRENDA_names[0]);
-    } elsif ($name = $smile->get_name()) {
-	$smile->set_attribute("primary_name",$name);
-    }
+#    if ($#BRENDA_names >= 0) {
+#	$smile->set_attribute("primary_name",$BRENDA_names[0]);
+#    } elsif ($name = $smile->get_name()) {
+#	$smile->set_attribute("primary_name",$name);
+#    }
 }
 
 foreach $brenda_name ($brenda_names->get_objects()) {
@@ -137,18 +188,60 @@ foreach $brenda_name ($brenda_names->get_objects()) {
     }
 }
 
+#### restore the biosequence attributes to their parent SMILES
+foreach my $gbs_obj ($biosequences->get_objects()) {
+    my $gsm_id = $gbs_obj->get_attribute("parent_smiles");
+    my $gsm_obj = $smiles->get_object($gsm_id);
+    $gsm_obj->set_attribute("Parent Formula", $gbs_obj->get_attribute("Parent Formula"));
+
+#    print STDERR join ("\t", "HELLO", 
+#		       $gsm_id, 
+#		       $gbs_obj->get_attribute("biosequence"), 
+#		       $gbs_obj->get_attribute("Parent_Formula")), "\n";
+    
+
+    foreach my $pamw ($gbs_obj->get_attribute("Parent_Avg_molecular_weight")) {
+	$gsm_obj->push_attribute("Parent_Avg_molecular_weight", $pamw);
+#	print STDERR "PAMW\t", $gsm_id, "\t", $pamw, "\n";
+    }
+    foreach my $remark ($gbs_obj->get_attribute("Remark")) {
+	$gsm_obj->push_attribute("Remark", $remark);
+	#print STDERR "REMARK\t", $gsm_id, "\t", $remark, "\n";
+    }
+}
+
+
+#### analyze the result
+if ($export{analysis}) {
+    warn "; Analyzing parsing result\n" if ($verbose >=1);
+    foreach my $gbn_obj ($brenda_names->get_objects()) {
+	my $gsm_id = $gbn_obj->get_attribute("parent_smiles");
+	$gbn_count{$gsm_id}++;
+    }
+    foreach my $gbs_obj ($biosequences->get_objects()) {
+	my $gsm_id = $gbs_obj->get_attribute("parent_smiles");
+	$gbs_count{$gsm_id}++;
+    }
+    foreach my $gsm_obj ($smiles->get_objects()) {
+	my $gsm_id = $gsm_obj->get_attribute("id");
+	$gsm_obj->set_attribute("gbn_count", $gbn_count{$gsm_id} || 0);
+	$gsm_obj->set_attribute("gbs_count", $gbs_count{$gsm_id} || 0);
+    }
+}
+
 ### print result
 $smiles->dump_tables();
 $brenda_names->dump_tables();
 $biosequences->dump_tables();
 $ec_references->dump_tables();
-&ExportClasses($out_file{glaxo}, $out_format, @classes);
+&ExportClasses($out_file{glaxo}, $out_format, @classes) if ($export{obj});
+
 
 ### print some stats after parsing
 &PrintStats($out_file{stats}, @classes);
 
 ### report execution time
-if ($warn_level >= 1) {
+if ($verbose >= 1) {
     $done_time = `date +%Y-%m-%d.%H%M%S`;
     warn ";\n";
     warn "; job started $start_time";
@@ -157,11 +250,12 @@ if ($warn_level >= 1) {
 
 close ERR;
 
-warn "compressing parsed files\n" 
-    if ($warn_level >= 1);
-system "gzip -f $dir{output}/*.tab $dir{output}/*.obj $dir{output}/*.txt";
+warn "; compressing parsed files\n" 
+    if ($verbose >= 1);
+system "gzip -f $dir{output}/*.tab $dir{output}/*.txt";
+system "gzip -f $dir{output}/*.obj" if ($export{obj});
 
-if ($warn_level >= 1) {
+if ($verbose >= 1) {
     my @commands = ("ls -l '$dir{output}'",
 		    "gunzip -c '${out_file{stats}}.gz'");
     foreach my $command (@commands) {
@@ -185,10 +279,10 @@ sub PrintHelp {
     DESCRIPTION
 
 	Parse smiles from Glaxo.  The daylight file is parsed in two
-	separate files Smiles one object per SMILES entry in the Glaxo
-	file Compounds one object per "BRENDA name" entry in the Glaxo
-	file
-
+	separate files :
+	- Smiles:      one object per SMILES entry in the Glaxo file 
+	- BrendaName:  one object per "BRENDA name" entry in the 
+		       Glaxo file
 					
 	I think that BRENDA names are nothing else than synonyms for
 	the compound associated to each SMILES. If this happens to be
@@ -198,6 +292,12 @@ sub PrintHelp {
 	be easy to merge separate objects than to split a composite
 	object.
 
+	Note added 2001/09/10 
+	=====================
+	Apparently some SMILES correspond to generic compounds, which
+	are parent for a list of well distinct compounds in KEGG. See
+	for example OC1COC(O)C(O)C1O.
+
     AUTHOR
 	Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)  
 
@@ -206,22 +306,20 @@ sub PrintHelp {
 	Created		2000/10/25
 	Last modified	2000/10/25
 
-    SYNOPSIS	
-	parse_ligand.pl [-v] [-vv] [-i infile] [-format output_format]
-	    [-o outfile]
-
     OPTIONS	
 	-h	detailed help
 	-help	short list of options
 	-test	fast parsing of partial data, for debugging
-	-w #	warn level
+	-v #	warn level
 		Warn level 1 corresponds to a restricted verbose
 		Warn level 2 reports all polypeptide instantiations
 		Warn level 3 reports failing get_attribute()
-	-i	input file
-		If ommited, the defult file is used (specified in the
-		initialization of the code).
-	-o	output file
+	-obj	export data in object format (.obj file)
+		which are human-readable
+	-analysis
+	        analyze the data and report the result. 
+	-clean remove all files from the outpu directory before
+	       parsing.
 EndHelp
     close HELP;
 }
@@ -233,23 +331,27 @@ sub ReadArguments {
     for $a (0..$#ARGV) {
 
 	### warn level
-	if (($ARGV[$a] eq "-w" ) && 
+	if (($ARGV[$a] eq "-v" ) && 
 	    ($ARGV[$a+1] =~ /^\d+$/)){
-	    $main::warn_level = $ARGV[$a+1];
+	    $main::verbose = $ARGV[$a+1];
 	    
 	    ### fast test
 	} elsif ($ARGV[$a] eq "-test") {
 	    $test = 1;
-
-	    ### input file
-	} elsif ($ARGV[$a] eq "-i") {
-	    $a++;
-	    $in_file{glaxo} = $ARGV[$a];
 	    
-	    ### output file
-	} elsif ($ARGV[$a] eq "-o") {
+	    ### export in object format
+ 	} elsif ($ARGV[$a] eq "-obj") {
 	    $a++;
-	    $out_file{glaxo} = $ARGV[$a];
+	    $main::export{obj} = 1;
+	    
+	    ### analyze the data
+ 	} elsif ($ARGV[$a] eq "-analysis") {
+	    $a++;
+	    $main::export{analysis} = 1;
+	    
+	    ### clean
+	} elsif ($ARGV[$a] eq "-clean") {
+	    $main::clean = 1;
 
 	    ### help
 	} elsif (($ARGV[$a] eq "-h") ||
@@ -266,14 +368,14 @@ sub ParseGlaxoFile{
     if ($in_file{glaxo}) {
 	warn (";\n; ", &AlphaDate,
 	      " parsing class $class from $in_file{glaxo}\n")
-	    if ($warn_level >= 1);
+	    if ($verbose >= 1);
 	open COMP, $in_file{glaxo} 
 	|| die "Error: cannot $in_file{glaxo}\n";
 	$in = COMP;
     } else {
 	warn (";\n; ", &AlphaDate,
 	      " parsing class $class from STDIN\n")
-	    if ($warn_level >= 1);
+	    if ($verbose >= 1);
 	$in = STDIN;
     } 
     
@@ -282,13 +384,13 @@ sub ParseGlaxoFile{
     my %smiles_multi_value_attributes;
     $smiles_multi_value_attributes{"Remark"} = 1;
     $smiles_multi_value_attributes{"BRENDA name"} = 1;
-    $smiles_multi_value_attributes{"Biosequence"} = 1;
+    $smiles_single_value_attributes{"Biosequence"} = 1;
+    $smiles_multi_value_attributes{"LIGAND AccNo"} = 1;
+    $smiles_multi_value_attributes{"Parent Avg molecular weight"} = 1;
 
     my @smiles_single_value_attributes;
-    $smiles_single_value_attributes{"Parent Avg molecular weight"} = 1;
     $smiles_single_value_attributes{"Parent Formula"} = 1;
 #  $smiles_single_value_attributes{"Biosequence"} = 1;
-    $smiles_single_value_attributes{"LIGAND AccNo"} = 1;
     
     my @smiles_single_value_attributes;
     foreach $attr (keys %smiles_multi_value_attributes, keys %smiles_single_value_attributes) {
@@ -299,13 +401,14 @@ sub ParseGlaxoFile{
     my $current_child;
     my %child_multi_value_attributes;
     $child_multi_value_attributes{"Remark"} = 1;
-    $child_single_value_attributes{"Isomer"} = 1;
     $child_multi_value_attributes{"Local Name"} = 1;
     $child_multi_value_attributes{"Avg molecular weight"} = 1;
-    $child_single_value_attributes{"Mol Formula"} = 1;
     $child_multi_value_attributes{"EC Number"} = 1;
-    $child_single_value_attributes{"Parent Avg molecular weight"} = 1;
-    $child_single_value_attributes{"Parent Formula"} = 1;
+    $child_multi_value_attributes{"Isomer"} = 1; #### THERE IS A SINGLE CASE WITH 2 VALUES IN THE WHOLE FILE ! IS THIS AN ERROR ? 
+
+    $child_multi_value_attributes{"Mol Formula"} = 1; #### there is at least one case at the 14921th BRENDA name
+    $child_multi_value_attributes{"Parent Avg molecular weight"} = 1; ### this is for biosequence
+    $child_single_value_attributes{"Parent Formula"} = 1; ### this is for biosequence
     
     my @child_single_value_attributes;
     foreach $attr (keys %child_multi_value_attributes, keys %child_single_value_attributes) {
@@ -326,12 +429,16 @@ sub ParseGlaxoFile{
 	    undef($current_child);
 
 	    ### instantiate new object
-	    warn ";creating object\t$current_id in class\t$class\n" 
-		if ($warn_level >= 2);
-	    warn ("\t", $smiles, "\n")
-		if ($warn_level >= 3);
+	    warn ("\tsmiles string", $smiles_string, "\n")
+		if ($verbose >= 3);
 	    $current_smiles = $smiles->new_object(source=>$source);
 	    $current_smiles->set_attribute("SMILES",$smiles_string);
+	    $smiles_count++;
+	    if (($verbose >=1) and ($smiles_count % 100 == 0)) {
+		warn "; Treated\t", $smiles_count, " Smiles and ", "\t", $brenda_names_count, " BrendaNames", "\n";
+	    }
+	    warn ";created object\t", $current_smiles->get_attribute("id"), "\n" 
+		if ($verbose >= 2);
 	    
 	    ### reeinitialize the arguments
 	    my %attributes = ();
@@ -350,17 +457,19 @@ sub ParseGlaxoFile{
 		    $current_smiles->new_attribute_value($field_name{$attr},$value);
 		    if ($attr eq "BRENDA name") {
 			$current_child = $brenda_names->new_object(source=>$source);
+			$brenda_names_count++;
 			$current_child->set_attribute("BRENDA_name",$value);
-			$current_child->set_attribute("parent_smiles",$current_smiles->get_id());
-		    } elsif ($attr eq "Biosequence") {
-			$current_child = $biosequences->new_object(source=>$source);
-			$current_child->set_attribute("biosequence",$value);
 			$current_child->set_attribute("parent_smiles",$current_smiles->get_id());
 		    }
 		    $found = 1;
 		    last;
 		} elsif (defined($smiles_single_value_attributes{$attr})) {
 		    $current_smiles->set_attribute($field_name{$attr},$value);
+		    if ($attr eq "Biosequence") {
+			$current_child = $biosequences->new_object(source=>$source);
+			$current_child->set_attribute("biosequence",$value);
+			$current_child->set_attribute("parent_smiles",$current_smiles->get_id());
+		    }
 		    $found = 1;
 		    last;
 		}
