@@ -1,6 +1,6 @@
 #!/usr/bin/perl 
 #############################################################
-# $Id: parse-genbank.pl,v 1.25 2005/03/13 10:36:13 jvanheld Exp $
+# $Id: parse-genbank.pl,v 1.26 2005/03/22 23:12:56 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -250,9 +250,7 @@ package main;
 	#### Create features from CDSs and RNAs
 	&CreateGenbankFeatures($features, $genes, $mRNAs, $scRNAs, $tRNAs, $rRNAs, $misc_RNAs, $misc_features, $CDSs, $sources, $contigs);
     }
-
-#    &ParsePositions($features);
-
+    
     ################################################################
     ### export result in various formats
 #    chdir $dir{output};
