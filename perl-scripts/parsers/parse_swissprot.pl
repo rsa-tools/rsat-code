@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_swissprot.pl,v 1.7 2001/01/15 17:37:42 jvanheld Exp $
+# $Id: parse_swissprot.pl,v 1.8 2002/01/21 17:01:02 jvanheld Exp $
 #
-# Time-stamp: <2001-01-15 18:17:31 jvanheld>
+# Time-stamp: <2002-01-21 17:59:21 jvanheld>
 #
 ############################################################
 
@@ -33,10 +33,16 @@ package main;
     $full_name{human} = "Homo sapiens (Human)";
     
     ### input directories and files
-    $dir{swissprot} = "/win/databases/downloads/ftp.ebi.ac.uk/pub/databases/swissprot/release_compressed/";
-    $source{swissprot} = "sprot39";
+#    $dir{input} = "/win/databases/downloads/ftp.ebi.ac.uk/pub/databases/";
+    $dir{input} = "/win/databases/downloads/ftp.expasy.org/databases";
+
+    $dir{swissprot} = $dir{input}."/sp_tr_nrdb/";
+    $source{swissprot} = "sprot";
+
+#    $dir{swissprot} = $dir{input}."/swiss-prot/release_compressed";
+#    $source{swissprot} = "sprot40";
     
-    $dir{trembl} = "/win/databases/downloads/ftp.ebi.ac.uk/pub/databases/trembl/";
+    $dir{trembl} = $dir{input}."/trembl";
     $source{yeast} = "sptrembl/fun";
     $source{human} = "sptrembl/hum";
     $source{ecoli} = "sptrembl/pro";
@@ -50,12 +56,14 @@ package main;
     
     #### output directory
     $out_format = "obj";
-    $dir = $parsed_data."/swissprot_parsed";
-    unless (-d $dir) {
-	warn "Creating output dir $dir", "\n";
-	mkdir $dir, 0775 || die "Error: cannot create directory $dir\n";
+    unless (defined($dir{output})) {
+	$dir = $parsed_data."/swissprot_parsed";
+	unless (-d $dir) {
+	    warn "Creating output dir $dir", "\n";
+	    mkdir $dir, 0775 || die "Error: cannot create directory $dir\n";
+	}
+	$dir{output} = $dir."/".$delivery_date;
     }
-    $dir{output} = $dir."/".$delivery_date;
     unless (-d $dir{output}) {
 	warn "Creating output dir $dir{output}\n";
 	mkdir $dir{output}, 0775 || die "Error: cannot create directory $dir\n";
@@ -85,8 +93,9 @@ package main;
     open ERR, ">$out_file{errors}" || 
 	die "Error: cannot write error file $out_file{errors}\n";
     
-    ### select all organisms if none was selected (-org)
-    unless ($#selected_organisms >= 0) {
+    ### select three predefined organisms if none was selected (-org)
+    unless (($#selected_organisms >= 0) || 
+	    ($export{allorg})){
 	push @selected_organisms, "ecoli";
 	push @selected_organisms, "human";
 	push @selected_organisms, "yeast";
@@ -108,7 +117,7 @@ package main;
 	$data_sources{swissprot} = 1;
     }
     if ($data_sources{swissprot}) {
-	$in_file{$source{swissprot}} = "uncompress -c ".$dir{swissprot}."/".$source{swissprot}.".dat.Z | ";
+	$in_file{$source{swissprot}} = "gunzip -c ".$dir{swissprot}."/".$source{swissprot}.".dat.gz | ";
 	$files_to_parse{$source{swissprot}} = 1;
     }
     if ($data_sources{trembl}) {
@@ -231,6 +240,15 @@ OPTIONS
 	-h	detailed help
 	-help	short list of options
 	-test	fast parsing of partial data, for debugging
+	-indir	input directory. 
+		This directory should contain a download of the
+		expasy ftp sites :
+		       ftp://ftp.expasy.org/databases/
+		The following subdirectories are required :
+		    sp_tr_nrdb
+		    swiss-prot/release_compressed
+	-outdir	output directory.
+		The parsed data will be stored in this directory.
 	-w #	warn level
 		Warn level 1 corresponds to a restricted verbose
 		Warn level 2 reports all polypeptide instantiations
@@ -243,14 +261,14 @@ OPTIONS
 			ecoli
 			human
 			yeast
-		by default, all organisms are selected
+		by default, these three organisms are selected
 	-allorg export all organisms
 	-data	select and organism for exportation
 		   Valid data sources:
 			swissprot
 			trembl
 
-		by default, all sources are selected
+		by default, both sources are selected
 	-obj	export data in object format (.obj file)
 		which are human-readable (with some patience 
 		and a good cup of coffee)
@@ -336,11 +354,14 @@ sub ParseSwissprot {
 	
 	### check that the entry matches organism name 
 	### before converting it to an object
-	my $parse = 0;
-	foreach $regexp (@regexps) {
-	    if ($text_entry =~ /$regexp/i) {
-		$parse = 1;
-		last;
+	my $parse = 1;
+	unless ($export{allorg}) {
+	    $parse = 0;
+	    foreach $regexp (@regexps) {
+		if ($text_entry =~ /$regexp/i) {
+		    $parse = 1;
+		    last;
+		}
 	    }
 	}
 	next unless $parse;
@@ -409,7 +430,7 @@ sub ParseSwissprot {
 	if (defined($geneNames[0])) {
 	    $polypeptide->set_attribute("gene",$geneNames[0]);
 	} else {
-	    $polypeptide->set_attribute("gene","<NULL>");
+	    $polypeptide->set_attribute("gene",$null);
 	}
 
 	my %already_assigned = ();
@@ -458,26 +479,4 @@ sub ParseSwissprot {
     return 1;
 }
 
-
-#### create catalysis objects from the EC numbers found in the description field
-#### Note that these EC numbers are not cross-validated with those from KEGG (entered in teh DB)
-#### this cross-validation has tom be done in the oracle database itself
-#  sub CreateCatalyses {
-#      foreach my $polypeptide (PFBP::Polypeptide->get_objects()) {
-#  	my $pp_id = $polypeptide->get_attribute("id");
-#  	if (my @ECs = $polypeptide->get_attribute("ECs")) {
-#  	    foreach my $ec (@ECs) {
-#  #		unless (defined($ECSet_index{$ec})) {
-#  #		    $error_message = "Error: in $pp_id\tEC number $ec is not defined\n";
-#  #		    print ERR $error_message;
-#  #		    warn $error_message if ($warn_level >= 2);
-#  #		}
-#  		my $source = $polypeptide->get_attribute("source");
-#  		$catalysis = $catalyses->new_object(source=>      $source,
-#  						    catalyst=>    $pp_id,
-#  						    catalyzed=>   $ec);
-#  	    }
-#  	}
-#      }
-#  }
 
