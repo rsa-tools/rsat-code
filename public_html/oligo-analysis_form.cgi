@@ -21,15 +21,16 @@ $default{sequence_file} = "";
 $default{exp_freq_file} = "";
 $default{sequence_type} = "dna";
 $default{oligo_size} = 6;
+$default{background} = "upstream-noorf";
 $default{markov_order} = 2;
-$default{pseudo_weight} = "0.00";
+$default{pseudo_weight} = "0.05";
 $default{strand} = "both strands";
-$default{noov} = '';
+$default{noov} = 'checked';
 $default{grouprc} = 'checked';
 $default{purge} = 'checked';
 #$default{purge} = '';
 $default{rank} = 'checked';
-$default{freq_estimate} = "Oligo frequencies from all non-coding regions";
+$default{freq_estimate} = "Background model";
 $default{occ} = 'checked';
 $default{proba} = 'checked';
 $default{zscore} = '';
@@ -124,35 +125,62 @@ print "<BR>";
 
 print "<HR width=550 align=left>\n";
 
-### expected frequency calculation
-print $query->table({-border=>0,-cellpadding=>3,-cellspacing=>0},
-		    $query->Tr($query->td("<A HREF='help.oligo-analysis.html#exp_freq'><B>Expected frequency calibration</B></A>&nbsp;<BR>")),
-		    $query->Tr($query->td(["<INPUT TYPE='radio' NAME='freq_estimate' VALUE='Oligo frequencies from all non-coding regions' CHECKED>Oligo frequencies from all non-coding regions<BR>",
-					   &OrganismPopUpString
-					   ])),
-		    $query->Tr($query->td([
-					   "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='Markov Chain (higher order dependencies)'>Markov Chain (higher order dependencies)<BR>",
-					   "Markov order &nbsp;".$query->textfield(-name=>'markov_order',
-										   -default=>$default{markov_order},
-										   -size=>5),
-					   ])),
-		    $query->Tr($query->td("<INPUT TYPE='radio' NAME='freq_estimate' VALUE='Lexicon partitioning'>Lexicon partitioning<BR>")),
-		    $query->Tr($query->td("<INPUT TYPE='radio' NAME='freq_estimate' VALUE='Residue frequencies from input sequence'>Residue frequencies from input sequence<BR>")),
-		    $query->Tr($query->td("<INPUT TYPE='radio' NAME='freq_estimate' VALUE='Equiprobable residues'>Equiprobable residues (<A HREF='help.oligo-analysis.html#equiprobable'>usually NOT recommended</a>)<BR>")),
-		    $query->Tr($query->td("<INPUT TYPE='radio' NAME='freq_estimate' VALUE='file_upload'><a href='help.oligo-analysis.html#upload_freq_file'>Upload your own expected frequency file</a><BR>"),
-			       $query->td($query->filefield(-name=>'upload_freq_file',
-							    -default=>'starting value',
-							    -size=>30,
-							    -maxlength=>200)
-					  )
-			       ),
-		    );
 
-print ("<a href=help.oligo-analysis.html#pseudo>Pseudo-weight</a> &nbsp;",
+
+################################################################
+#### estimation of expected frequencies
+print "<A HREF='help.oligo-analysis.html#exp_freq'><B>Expected frequency calibration</B></A>&nbsp;<p>";
+
+
+#### pre-defined background frequencies
+print ( "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='background' CHECKED>", 
+	"Predefined background frequencies");
+print "<ul>";
+print ( "<a href='help.oligo-analysis.html#background'>Background model</a> &nbsp;&nbsp;&nbsp;&nbsp;", 
+	$query->popup_menu(-name=>'background',
+			   -Values=>["upstream","upstream-noorf","non-coding"],
+			   -default=>$default{background}));
+	
+print "<br>", &OrganismPopUpString;
+print "</ul>";
+
+
+print "<p>";
+
+#### Markov chain model
+print ("<INPUT TYPE='radio' NAME='freq_estimate' VALUE='Markov Chain (higher order dependencies)'>", 
+       "Markov Chain (higher order dependencies) ");
+
+print "order &nbsp;";
+print $query->textfield(-name=>'markov_order',
+			-default=>$default{markov_order},
+			-size=>5);
+print "<p>";
+
+#### Lexicon partitioning
+print "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='Lexicon partitioning'>Lexicon partitioning<p>";
+
+#### Bernouilli model
+print "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='Residue frequencies from input sequence'>Residue frequencies from input sequence<p>";
+
+#### equiprobable residues
+print "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='Equiprobable residues'>Equiprobable residues (<A HREF='help.oligo-analysis.html#equiprobable'>usually NOT recommended</a>)<p>";
+
+#### custom expected frequency file
+print "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='file_upload'><a href='help.oligo-analysis.html#upload_freq_file'>Upload your own expected frequency file</a><BR>";
+
+print $query->filefield(-name=>'upload_freq_file',
+			-default=>'starting value',
+			-size=>30,
+			-maxlength=>200);
+print "<p>";
+
+################################################################
+#### pseudo-weights
+print ("<b><a href=help.oligo-analysis.html#pseudo>Pseudo-weight</a></b> &nbsp;",
        $query->textfield(-name=>'pseudo_weight',
 			 -default=>$default{pseudo_weight},
 			 -size=>5));
-
 
 print "<HR width=550 align=left>\n";
 
