@@ -1,12 +1,12 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
 <HTML>
 <HEAD>
-   <TITLE>RSA-tools: oligonucleotide analysis manual</TITLE>
+   <TITLE>RSA-tools: position-analysis manual</TITLE>
    <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
 </HEAD>
 <BODY TEXT="#000000" BGCOLOR="#FFEEDD" LINK="#0000EE" VLINK="#55008B" ALINK="#FF0000">
 
-<H3 ALIGN=CENTER><A HREF="RSA_home.cgi">RSA-tools</A> - oligonucleotide analysis manual</H3>
+<H3 ALIGN=CENTER><A HREF="RSA_home.cgi">RSA-tools</A> - position-analysis manual</H3>
 <blockquote>
 
 <H4>Name</H4>
@@ -27,61 +27,124 @@ Calculates the positional distribution of oligonucleotides in a set of
 sequences, and detects those which significantly discard from a
 homogeneous distribution.
 
+
+<P>
+This program is useful for detecting patterns with a positional bias,
+in large sets of sequences (e.g. a few hundreds or thousands of
+sequences) aligned on some referencce (e.g. the start
+codon). Significant patterns are not likely to be found in smaller
+sequence sets. This tools is thus typically designed for pattern
+discovery in full genomes rather than for small fmilies of
+co-expressed genes.
+
+</UL>
+<H4>Reference</H4>
+<UL>
+
+van Helden, J., Olmo, M. & Perez-Ortin, J. E. (2000). Statistical
+analysis of yeast genomic downstream sequences reveals putative
+polyadenylation signals. Nucleic Acids Res 28(4), 1000-1010.  <a
+HREF="http://www.ncbi.nlm.nih.gov:80/entrez/query.fcgi?cmd=Retrieve&db=PubMed&list_uids=10648794&dopt=Abstract">Pubmed
+10648794</a>
+
+
 </ul>
 <h4>Options</h4>
 <ul>
 
 
-<P>
-<A NAME="sequence">
-<B>Input sequence:</B></A><BR>
 
-The sequence that will be analyzed. Multiple sequences can be entered
-at once with most sequence formats (see below).
 
 <P>
-<A NAME="sequence_format">
-<B>Format:</B></A><BR>
+<A NAME="class_grouping">
+<B>Class grouping:</B></A><BR>
 
-Input sequence format. Various standards are supported (click on the
-links for more details):
+Positions are grouped by class interval. 
+<ul>
 
-<UL>
-
-<LI><A HREF="help.formats.html#raw"><B>raw</B></A>: 
-
-the raw sequence without any identifier or comment.  
-
-<LI><A HREF="help.formats.html#multi"><B>multi</B></A>: several raw
-sequences concatenated.  
-
-<LI><A HREF="help.formats.html#ig"><B>IG</B></A>: IntelliGenetics
-format.
-
-<LI><A HREF="help.formats.html#fasta"><B>FastA</B></A>: the sequence
-format used by FastA, BLAST, Gibbs sampler and a lot of other
-bioinformatic programs.  
-
-<LI><A HREF="help.formats.html#wconsensus"><B>Wconsensus</B></A>: the
-format defined by Jerry Hertz for his programs (patser, consensus,
-wconsensus).
-</UL>
 
 <P>
 <A NAME="class_interval">
-<B>Class interval:</B></A><BR>
-Positions are grouped by class interval.
+<B>Class interval:</B></A> number of bases to group together. To avoid
+class grouping, specify 1. The choice of the appropriate class
+interval depends on several considerations.
+<ul>
+
+<li>Increasing the class interval reduces the resolution of the
+analysis, but it smoothes the distributions.
+
+<li>When class intervals are too short, the number of occurrences per
+class may become too low, and the condition of applicability for the
+chi2 will not be fulfilled for some oligonucleotides.
+
+<li>For short oligonucleotides, smaller class intervals can be used,
+since there are less idstinct possible words, and the number of
+occurrences per word thus increases.
+
+</ul>
+<BR>
 
 <P>
-<A NAME="oligo_size">
-<B>Oligonucleotide size:</B></A><BR>
-The analysis can be performed with oligonuleotides of any size between
-1 and 8. Selecting size 1 amounts to counting the alphabet utilization
-within the input sequeces. For the detection of regulatory sites, w
-recommend starting with an analysis of hexanucleotides (size=6), and
-scanning sizes between 4 and 8. When a pattern is significantly
-overrepresented, it generaly appears from the analyses with various
-sizes.
+<A NAME="origin">
+
+<B>Origin:</B></A> reference position for class grouping. Positive
+values specify a position relative to the sequence start, negative
+values a position relative to sequence end. The default is to consider
+sequence end, which is more relevant for upstream sequences. <b>Beware
+! the default value -0 has a specific meaning</b>. For example :
+
+<ul>
+<li><b>0</b> : sequence start is used as reference, i.e. the first
+letter of the sequence is the position 1.
+
+<li><b>100</b> : the 100th letter of the sequence is the reference
+(position 0) i.e. the 101th letter is the position 1, the 99th letter
+position -1, ...
+
+<li><b>-100</b> : the 100th letter of the sequence is the reference
+(position 0) i.e. the 101th letter is the position 1, the 99th letter
+position -1, ...
+
+
+<li><b>-0 (default)</b> : sequence end is used as reference, i.e. the last
+letter of the sequence is the position -1.
+
+</ul>
+<BR>
+
+
+<P>
+<A NAME="applicability">
+<B>Condition of applicability for the chi2 test:</B></A><BR> A
+condition of applicability for the chi2 test is that the expected
+frequency shuld be >= 5 for each class. By default, this condition is
+tested for each oligonucleotide, and, for those which do not fulfill
+the test, the observed chi2 is displayed between curly brackets.
+
+<ul>
+<li>
+<a name='Check'>The test for the condition of applicability can be
+inactivated, in order to obtain real values in this column. It is not
+recommended to inactivate it, since this may lead to false positives.
+
+<li>
+<a name=Filter'>This option filters out the oligonucleotides which do
+not fulfill the condition of applicability for the chi2 test. The
+output is lighter and easier to read.
+
+</ul>
+
+</ul>
+
+<P>
+<A NAME="oligo_length">
+<B>Oligonucleotide size:</B></A><BR> The analysis can be performed
+with oligonuleotides of any size between 1 and 8. Selecting size 1
+amounts to counting the alphabet utilization within the input
+sequeces. For the detection of regulatory sites, w recommend starting
+with an analysis of hexanucleotides (size=6), and scanning sizes
+between 4 and 8. When a pattern is significantly overrepresented, it
+generaly appears from the analyses with various sizes.
 
 <P>
 <A NAME="count_strands">
