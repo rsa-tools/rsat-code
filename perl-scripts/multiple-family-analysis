@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.5 2000/12/29 21:21:13 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.6 2001/02/08 13:00:10 jvanheld Exp $
 #
-# Time-stamp: <2000-11-12 10:08:47 jvanheld>
+# Time-stamp: <2001-02-08 13:28:06 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -733,7 +733,7 @@ HOW TO PROCEED
     
     3) run the command
 
-       multiple-family-analysis -orf organism -fam family_file \
+       multiple-family-analysis -org organism -fam family_file \
            -v -from -200 -to 49
 
     4) Open Netscape and locate the directory.  There is one folder
