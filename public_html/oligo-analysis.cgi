@@ -24,7 +24,7 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $oligo_analysis_command = "$SCRIPTS/oligo-analysis";
 $convert_seq_command = "$SCRIPTS/convert-seq";
 $purge_sequence_command = "$SCRIPTS/purge-sequence";
-$tmp_file_name = sprintf "oligo-analysis.%s", &AlphaDate;
+$tmp_file_name = sprintf "oligo-analysis.%s", &AlphaDate();
 
 ### Read the CGI query
 $query = new CGI;
@@ -40,7 +40,6 @@ $query = new CGI;
 $parameters = "";
 $parameters .= " -sort";
 
-
 ### sequence file
 ($sequence_file,$sequence_format) = &GetSequenceFile();
 
@@ -48,11 +47,10 @@ $purge = $query->param('purge');
 if ($purge) {
     #### purge sequence option
 #    $command= "$purge_sequence_command -i $sequence_file -format $sequence_format |  $oligo_analysis_command ";
-    $command= "$purge_sequence_command -i $sequence_file -format $sequence_format -o ${sequence_file}.purged;  $oligo_analysis_command -i ${sequence_file}.purged  ";
+    $command= "$purge_sequence_command -i $sequence_file -format $sequence_format -o ${sequence_file}.purged;  $oligo_analysis_command -i ${sequence_file}.purged -formt fasta ";
 } else {
     $command= "$oligo_analysis_command -i $sequence_file  ";
 }
-
 
 ### fields to return
 $return_fields = "";

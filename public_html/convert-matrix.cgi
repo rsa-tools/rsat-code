@@ -53,7 +53,7 @@ $parameters .= " -format $matrix_format";
 
 ## Return fields
 my @return_fields = ();
-foreach my $stat qw (alignment frequencies weights information consensus parameters profile margins) {
+foreach my $stat qw (counts frequencies weights information consensus parameters profile margins) {
     if ($query->param($stat)) {
 	push @return_fields, $stat;
     }

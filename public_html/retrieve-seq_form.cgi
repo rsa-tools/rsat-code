@@ -118,9 +118,9 @@ print "<BR>\n";
 ### sequence label
 print "<B><A HREF='help.retrieve-seq.html#seq_label'>Sequence label</A></B>&nbsp;";
 print $query->popup_menu(-name=>'seq_label',
-			 -Values=>['ORF identifier', 
+			 -Values=>['gene identifier', 
 				   'gene name',
-				   'ORF id + gene name',
+				   'gene identifier + name',
 				   'full identifier'
 				   ],
 			 -default=>$default{seq_label});

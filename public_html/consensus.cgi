@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: consensus.cgi,v 1.10 2004/06/10 04:42:45 jvanheld Exp $
+# $Id: consensus.cgi,v 1.11 2005/03/13 15:59:39 jvanheld Exp $
 #
 # Time-stamp: <2003-07-03 10:06:42 jvanheld>
 #
@@ -27,7 +27,7 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 $command = "$BIN/consensus";
 #$convert_matrix_command = "$SCRIPTS/matrix-from-consensus -v 1";
-$convert_matrix_command = "$SCRIPTS/convert-matrix -format consensus -return alignment";
+$convert_matrix_command = "$SCRIPTS/convert-matrix -format consensus -return counts";
 $convert_seq_command = "$SCRIPTS/convert-seq";
 $tmp_file_name = sprintf "consensus.%s", &AlphaDate();
 
@@ -105,7 +105,7 @@ $result_file = "$TMP/$tmp_file_name.res";
 $matrix_file = "$TMP/$tmp_file_name.matrix";
 
 #### Matrix conversion command
-$convert_matrix_command.= " -i".$result_file." -o ".$matrix_file;
+$convert_matrix_command.= " -i ".$result_file." -o ".$matrix_file;
 
 #### error file
 #$error_file  = "$TMP/$tmp_file_name.err";

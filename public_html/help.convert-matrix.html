@@ -1,0 +1,260 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
+<head>
+   <title>RSA-tools: convert-matrix manual</title>
+</head>
+<body text="#000000" bgcolor="#ffeedd" link="#0000ee" vlink="#55008b" alink="#ff0000">
+
+<h3 align=center><a href="RSA_home.cgi">RSA-tools</A> - <a href=oligo-analysis_form.cgi>oligonucleotide analysis</a> manual</h3>
+
+<H4>Name</H4><UL>
+
+convert-matrix
+
+<p>
+2004 by Jacques van Helden (<A HREF="mailto:Jacques van Helden <jvanheld@scmbb.ulb.ac.be>">jvanheld@scmbb.ulb.ac.be</A>)
+
+</ul><h4>Description</h4><ul>
+
+<p> Read a position-specific scoring matrix (PSSM) from different
+formats, and exports it in a format that can be used by the matrix
+matching program patser (Hertz et al, 1999).
+
+<p> The program also converts the original matrix to return different
+position-specific scores (weight, frequencies, information contents),
+general statistics (E-value, total information content), and synthetic
+descriptions (consensus).
+
+<p>PSSM can be used to represent the binding specificity of a transcription
+factor or the conserved residues of a protein domain.</p>
+
+<p>Each row of the matrix corresponds to one residue (nucleotide or
+amino-acid depending on the sequence type).  Each column corresponds
+to one position in the alignment.  The value within each cell
+represents the frequency of each residue at each position.</p>
+
+</ul><h4>Output formats</h4><ul>
+<dl>
+<dt><strong><a name="item_alignment">alignment</a></strong><br />
+</dt>
+<dd>
+Each cell of the matrix indicates the number of occurrences of the
+residue at a given position of the alignment.
+</dd>
+
+<p></p>
+<dt><strong><a name="item_profile">profile</a></strong><br />
+</dt>
+<dd>
+The matrix is printed vertically (each matrix column becomes a row in
+the output text). Additional parameters (consensus, information) are
+indicated besides each position, and a histogram is drawed.
+</dd>
+
+<p></p>
+<dt><strong><a name="item_crude_frequencies">crude frequencies</a></strong><br />
+</dt>
+<dd>
+Relative frequencies are calculated as the counts of residues divided
+by the total count of the column.
+</dd>
+<dd>
+
+<p>Fij=Cij/SUMi(Cij)</p>
+</dd>
+<dd>
+
+<p>where</p>
+</dd>
+<dl>
+<dt><strong><a name="item_cij">Cij</a></strong><br />
+</dt>
+<dd>
+is the absolute frequency (counts) of residue i at position j of the alignment
+</dd>
+
+<p></p>
+<dt><strong><a name="item_fij">Fij</a></strong><br />
+</dt>
+<dd>
+is the relative frequency of residue i at position j of the alignment
+</dd>
+
+<p></p></dl>
+<dt><strong><a name="item_frequencies_corrected_with_pseudo_2dweights">frequencies corrected with pseudo-weights</a></strong><br />
+</dt>
+<dd>
+Relative frequencies can be corrected by a pseudo-weight (b) to reduce
+the bias due to the small number of observations.
+</dd>
+<dd>
+
+<p>F''ij=Cij+b*Pi/[SUMi(Cij)+b]</p>
+</dd>
+<dd>
+
+<p>where</p>
+</dd>
+<dl>
+<dt><strong><a name="item_pi">Pi</a></strong><br />
+</dt>
+<dd>
+is the prior frequency for residue i
+</dd>
+
+<p></p>
+<dt><strong><a name="item_b">b</a></strong><br />
+</dt>
+<dd>
+is the pseudo-weight, which is ``shared'' between residues according to
+their prior frequencies.
+</dd>
+
+<p></p></dl>
+<dt><strong><a name="item_weights">weights</a></strong><br />
+</dt>
+<dd>
+Weights are calculated according to the formula from Hertz (1999), as
+the natural logarithm of the ratio between the relative frequency
+(corrected for pseudo-weights) and the prior residue probability.
+</dd>
+<dd>
+
+<p>Wij=ln(F''ij/Pi)</p>
+</dd>
+
+<p></p>
+<dt><strong><a name="item_information">information</a></strong><br />
+</dt>
+<dd>
+The crude information content is calculated according to the formula
+from Hertz (1999).
+</dd>
+<dd>
+
+<p>Iij&nbsp;=&nbsp;Fij*ln(Fij/Pi)</p>
+</dd>
+<dd>
+
+<p>In addition, we calculate a ``corrected'' information content which
+takes pseudo-weights into account.</p>
+</dd>
+<dd>
+
+<p>I''ij&nbsp;=&nbsp;F''ij*ln(F''ij/Pi)</p>
+</dd>
+
+<p></p>
+<dt><strong><a name="item_p_2dvalue">P-value</a></strong><br />
+</dt>
+<dd>
+The P-value indicates the probability to observe at least Cij
+occurrences of a residue at a given position of the matrix. It is
+calculated with the binomial formula:
+</dd>
+<dd>
+<pre>
+    k=C.j    C.j!      k      Cij-k
+Pij= SUM  ---------- Pi (1-Pi)
+    k=Cij k!(C.j-k)!</pre>
+</dd>
+<dd>
+
+<p>where</p>
+</dd>
+<dl>
+<dt><strong>Cij</strong><br />
+</dt>
+<dd>
+is the number of occurrences of residue i at position j of
+the matrix.
+</dd>
+
+<p></p>
+<dt><strong><a name="item_c_2ej">C.j</a></strong><br />
+</dt>
+<dd>
+is the sum of all residue occurrences at position j of the
+matrix.
+</dd>
+
+<p></p>
+<dt><strong>Pi</strong><br />
+</dt>
+<dd>
+is the prior probability of residue i.
+</dd>
+
+<p></p></dl>
+<dt><strong><a name="item_parameters">parameters</a></strong><br />
+</dt>
+<dd>
+Returns a series of parameters associated to the matrix. The list of
+parameters to be exported depends on the input formats (each pattern
+discovery program returns specific parameters, which are more or less
+related to each others but not identical).
+</dd>
+<dd>
+
+<p>Some additional parameters are optionally calculated</p>
+</dd>
+<dl>
+<dt><strong><a name="item_consensus">consensus</a></strong><br />
+</dt>
+<dd>
+The degenerate consensus is calculated by collecting, at each
+position, the list of residues with a positive weight. Contrarily to
+most applications, this consensus is thus weighted by prior residue
+frequencies: a residue with a high frequency might not be represented
+in the consensus if this frequency does not significantly exceed the
+expected frequency. Uppercases are used to highlight weights &gt;= 1.
+</dd>
+<dd>
+
+<p>The consensus is exported as regular expression, and with the IUPAC
+code for ambiguous nucleotides (http://www.chem.qmw.ac.uk/iupac/misc/naseq.html).</p>
+</dd>
+<dd>
+<pre>
+        A                       (Adenine) 
+        C                       (Cytosine)
+        G                       (Guanine)
+        T                       (Thymine)
+        R       = A or G        (puRines)
+        Y       = C or T        (pYrimidines)
+        W       = A or T        (Weak hydrogen bonding)
+        S       = G or C        (Strong hydrogen bonding)
+        M       = A or C        (aMino group at common position)
+        K       = G or T        (Keto group at common position)
+        H       = A, C or T     (not G)
+        B       = G, C or T     (not A)
+        V       = G, A, C       (not T)
+        D       = G, A or T     (not C)
+        N       = G, A, C or T  (aNy)</pre>
+</dd>
+<dd>
+
+<p>The strict consensus indicates, at each position, the residue with the
+highest positive weight.</p>
+</dd>
+
+<p></p>
+<dt><strong>information</strong><br />
+</dt>
+<dd>
+The total information is calculated by summing the information content
+of all the cells of the matrix. This parameters is already returned by
+the program consensus (Hertz), but not by other programs.
+</dd>
+
+</ul>
+
+<hr size=3></p></center>
+
+<center><address>For information, contact <a href="mailto:jvanheld@scmbb.ulb.ac.be">Jacques
+van Helden (jvanheld@scmbb.ulb.ac.be)</a></address></center>
+
+</body>
+</html>
+

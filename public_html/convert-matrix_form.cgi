@@ -19,7 +19,7 @@ $default{output}="display";
 $default{matrix}="";
 $default{matrix_file}="";
 $default{matrix_format} = "consensus";
-$default{alignment}="checked";
+$default{counts}="checked";
 $default{consensus}="checked";
 $default{frequencies}="";
 $default{information}="";
@@ -84,7 +84,7 @@ print $query->textarea(-name=>'matrix',
 #### Return fields
 print "<p><B><A HREF='help.convert-matrix.html#return'>Return fields</A></B>&nbsp;<br>\n";
 my $i = 0;
-foreach my $stat qw(alignment frequencies weights information margins consensus parameters profile) {
+foreach my $stat qw(counts frequencies weights information margins consensus parameters profile) {
     print $query->checkbox(-name=>$stat,
 			   -checked=>$default{$stat},
 			   -label=>'');

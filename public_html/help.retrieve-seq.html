@@ -6,30 +6,30 @@
 
 <H2 ALIGN=CENTER><A HREF="RSAT_home.cgi">RSA-tools</A> - retrieve-seq manual</H2>
 
-<H3>Name</H3>
+<H2>Name</H2>
 <UL>
 retrieve-seq<P>
 1997-98 by <a HREF="mailto:Jacques van Helden <jvanheld@scmbb.ulb.ac.be>">Jacques van Helden (jvanheld@scmbb.ulb.ac.be)</A>.
 </UL>
 
-<H3>Description</H3>
+<H2>Description</H2>
 
 <UL>
 Returns upstream, downstream or ORF sequences for one or several genes. <P>
 </UL>
 
-<H3>Options</H3>
+<H2>Options</H2>
 
 <UL>
 
 <A NAME="Organism"></A>
-<h4>Organism</h4>
+<h3>Organism</h3>
 <ul>
 A pop-up menu shows the list of organisms supported on this web site. 
 </ul>
 
 <A NAME="genes"></A>
-<h4>Genes</h4>
+<h3>Genes</h3>
 <ul>
 Two options are proposed
 <ul>
@@ -53,14 +53,24 @@ information is ignored. <P>
 </ul>
 
 <A NAME="feattype"></A>
-<h4>Feature type</h4>
+<h3>Feature type</h3>
 <ul>
-Currently supported: <b>CDS</b>, <b>mRNA</b>.
+Currently supported:
+<ul>
+<li><b>CDS:</b> coding sequences (from start to stop codon, unspliced)</li>
+<li><b>mRNA:</b>messenger RNA</li>
+<li><b>tRNA:</b>transfer RNA</li>
+<li><b>rRNA:</b>ribosomial RNA</li>
+<li><b>scRNA:</b></li>
+</ul>
 
 <P>
-Some Genbank flat files contain only CDSs (e.g. bacteria), some also
-contain mRNAs (e.g. <i>A.thaliana</i>). When mRNAs are annotated in
-Genbank, their coordinates are stored and can be used.
+The availability of some sequence types depends on the genome. For
+example, some Genbank flat files contain annotations about CDSs but no
+mRNA (e.g. bacterial annotations from the NCBI). Some other genome
+contain separate annotations for CDS and mRNA
+(e.g. <i>A.thaliana</i>). When mRNAs are annotated in Genbank, their
+coordinates are stored and can be used.
 
 <P>
 The advantage of using mRNA is that, if the mRNA is complete (which is
@@ -77,7 +87,7 @@ transcription initiation site, rather than the start codon.
 
 </ul>
 <A NAME="sequence_type"></A>
-<h4>Sequence type</h4>
+<h3>Sequence type</h3>
 <ul>
 Currentlly supported:
 <ul>
@@ -95,43 +105,49 @@ implemented in further versions)
 </ul>
 
 <A NAME="from_to"></A>
-<h4>From, to:</h4>
-<ul>
-Limits of the region to retrieve. Coordintates are calculated relative to the ORF start. 
-<UL>
-<B>Sign</B> 
-  <UL>
-    <LI><B><FONT COLOR="#DD0000">negative</FONT></B> 
+<h3>Sequence limits (from, to)</h3><ul>
+
+Limits of the region to retrieve. Coordintates are calculated relative
+to the ORF start.
+
+<h4>Sign</h4><UL>
+
+  <LI><B><FONT COLOR="#DD0000">negative</FONT></B> 
            values return sequence located <B><FONT COLOR="#DD0000">upstream</FONT></B> the origin 
     <LI><B><FONT COLOR="#00AA00">positive</FONT></B> 
            values return sequences <B><FONT COLOR="#00AA00">downstream</FONT></B> the origin 
-<br>
+      <br>
 	   The origin itself depends on the sequence type, see above)
- </UL>
-		   <P>
 
-<h4>Suggested values for upstream sequence retrieval</B>
-<UL>
+</ul><h4>Default values for upstream sequence retrieval</h4><ul>
 
 <LI>For <B>yeast</B>, we generally obtain good results with upstream
 regions from -800 to -1. About 99% of the known upstream elements are
-comprized between these limits (source: Transfac).<BR> <LI>For
-<B>bacteria</B>, the distribution of regulatory sites depends on the
-mode of regulation :
+comprized between these limits (source: Transfac).<BR> 
+
+<LI>For <B>bacteria</B>, the distribution of regulatory sites depends
+on the mode of regulation :
 <UL>
 <LI><B>transcriptional repressors</B> generally bind proximally, and
-may overlap the transcription start or even be located downstream. A
+may overlap the transcription initiation or even be located downstream. A
 good guess is from -200 to +50.  <LI>Binding sites for
 <B>transcriptional activators</B> have a more distal distribution
 (-400 to -1). <P>
 </UL>
+The default is from -400 to -1 from the start codon (since we
+currently do not have annotations about transcription initiation
+sites).
+
+<li>The default values for each organism can be obtained with the
+program <a
+href=supported-organisms.cgi>supported-organisms</i>.
 </UL>
-</UL>
+
 
 </ul>
 
 <A NAME="noorf"></A>
-<h4>Prevent overlap with upstream ORFs:</h4>
+<h3>Prevent overlap with upstream ORFs:</h3>
 <ul>
 It is quite frequent to find a predicted ORF in close proximity
 upstream from a query ORF. If you want to discard these sequences from
@@ -163,7 +179,7 @@ HREF="neighbour-orfs.html"><B>neighbour-orfs</B></A>.
 </ul>
 
 <A NAME="formats"></A>
-<h4>Output sequence format:</h4>
+<h3>Output sequence format:</h3>
 <ul>
 The result can be displayed in various sequence formats (click on the links for more details). 
 <UL>
@@ -176,7 +192,7 @@ The result can be displayed in various sequence formats (click on the links for 
 </UL>
 
 <A NAME="seq_label"></A>
-<h4>Sequence label</h4>
+<h3>Sequence label</h3>
 <ul>
 Sequences can be labeled (named) in different ways:
 <ul>
@@ -189,7 +205,7 @@ Sequences can be labeled (named) in different ways:
 
 </ul>
 
-<H3>Availability</H3>
+<H2>Availability</H2>
 <UL>
 The program can be used through its web interface at:
 <A HREF="http://scmbb.ulb.ac.be/bioinformatics/rsa-tools/" target=_blank>

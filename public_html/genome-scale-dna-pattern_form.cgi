@@ -214,7 +214,7 @@ print "<BR>\n";
 &SelectOutput;
 
 
-print "<font color=red><B>Warning ! genome-scale searches can be time-consuming. If you don't obtain any result after 5 minuts,  we recommend email output.</b></font><BR>\n";
+print "<font color=red><B>Warning ! genome-scale searches can be time-consuming. If you don't obtain any result after 5 minutes,  we recommend email output.</b></font><BR>\n";
 
 
 ### action buttons

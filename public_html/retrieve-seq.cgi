@@ -62,15 +62,14 @@ if ($accepted_output_seq{$out_format}) {
 
 ### sequence label
 $seq_label = lc($query->param('seq_label'));
-if (($seq_label =~ /gene/) && 
-    ($seq_label =~ /orf/)) {
-    $parameters .= " -label orf_gene";
-} elsif ($seq_label =~ /gene/) {
-    $parameters .= " -label gene";
-} elsif ($seq_label =~ /orf/) {
-    $parameters .= " -label orf";
-} elsif ($seq_label =~ /full/) {
-    $parameters .= " -label full";
+if ($seq_label eq 'gene identifier') {
+    $parameters .= " -label id";
+} elsif ($seq_label eq 'gene name') {
+    $parameters .= " -label name";
+} elsif ($seq_label eq 'gene identifier + name') {
+    $parameters .= " -label id,name";
+} elsif ($seq_label eq 'full identifier') {
+    $parameters .= " -label id,name,organism_name,sequence_type,current_from,current_to,ctg,orf_strand,reg_left,reg_right";
 } else {
     &cgiError("Invalid option for sequence label '$seq_label'");
 }

@@ -20,7 +20,7 @@ require "$RSA/public_html/genome-scale.lib.pl";
 
 $dna_pattern_command = "$SCRIPTS/dna-pattern -nolimits";
 $add_linenb_command = "$SCRIPTS/add-linenb";
-$add_orf_function_command = "$SCRIPTS/add-orf-function";
+$add_orf_function_command = "$SCRIPTS/add-gene-info -info descr";
 $link_command = "$SCRIPTS/add-yeast-link -db all ";
 $tmp_file_name = sprintf "genome-scale-dna-pattern.%s", &AlphaDate;
 
@@ -162,11 +162,12 @@ unless (($query->param("sequence_type") =~ /chromosome/) ||
 	($query->param("match_format") eq "fasta")) {
     $command .= "| $add_orf_function_command -org $org ";
     $command .= "| $add_linenb_command ";
-#### linking to external databases
-    if ( ($query->param("output") =~ /display/i) &&
-	 ($org eq "Saccharomyces_cerevisiae")) { #### not yet supported for other organisms
-	$command .= "| $link_command -col $orf_col  ";
-    }
+
+    #### linking to external databases
+#    if ( ($query->param("output") =~ /display/i) &&
+#	 ($org eq "Saccharomyces_cerevisiae")) { #### not yet supported for other organisms
+#	$command .= "| $link_command -col $orf_col  ";
+#    }
 }
 
 print "<PRE>$command</PRE>" if ($ECHO >= 1);
