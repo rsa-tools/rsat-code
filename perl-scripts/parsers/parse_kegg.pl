@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_kegg.pl,v 1.6 2001/08/24 09:44:15 jvanheld Exp $
+# $Id: parse_kegg.pl,v 1.7 2001/09/23 22:34:59 jvanheld Exp $
 #
-# Time-stamp: <2001-08-24 11:41:42 jvanheld>
+# Time-stamp: <2001-09-24 00:28:51 jvanheld>
 #
 ############################################################
 
@@ -31,7 +31,7 @@ package PFBP::GenericPathway;
   %_attribute_count = ();
   %_attribute_cardinality = (id=>"SCALAR",
 		      names=>"ARRAY",
-		      reactions=>"ARRAY",
+		      reactions=>"EXPANDED",
 		      ECs=>"ARRAY",
 		     );
 }
@@ -65,13 +65,26 @@ package main;
 #
 
 #### ligand
-$in_file{compounds} = "gunzip -c ".$dir{KEGG}."/molecules/ligand/compound.gz | ";
-$in_file{reactions} = "gunzip -c ".$dir{KEGG}."/molecules/ligand/reaction.lst.gz | ";
-$in_file{ec} = "gunzip -c ".$dir{KEGG}."/molecules/ligand/ECtable.gz | ";
+$data_file{compound} = $dir{KEGG}."/molecules/ligand/compound";
+$data_file{reaction} = $dir{KEGG}."/molecules/ligand/reaction.lst";
+$data_file{reaction_name} = $dir{KEGG}."/molecules/ligand/reaction_name.lst";
+$data_file{ec} = $dir{KEGG}."/molecules/ligand/ECtable";
+
+foreach $key (keys %data_file) {
+    if (-e $data_file{$key}) {
+	$in_file{$key} = $data_file{$key};
+    } elsif (-e "$data_file{$key}.gz") {
+	$in_file{$key} = "gunzip -c $data_file{$key}.gz | ";
+    } elsif (-e "$data_file{$key}.Z") {
+	$in_file{$key} = "uncompress -c $data_file{$key}.Z | ";
+    } else {
+	die "Error: $key data file $data_file{$key} does not exist\n";
+    }
+}
 $in_file{reaction2ec} = "uncompress -c ".$dir{KEGG}."/molecules/ligand/reaction.tar.Z | tar -xpOf - | cut -d ':' -f 1,2 | sort -u |";
 
 #### pathways
-$dir{pathway_reactions} = $dir{KEGG}."/molecules/ligand/reaction/";
+$dir{pathway_reactions} = $dir{KEGG}."/molecules/ligand/reaction.main/";
 $dir{eco} = $dir{KEGG}."/pathways/eco/";
 $dir{sce} = $dir{KEGG}."/pathways/sce/";
 $dir{hsa} = $dir{KEGG}."/pathways/hsa/";
@@ -100,7 +113,7 @@ push @classes, ("PFBP::Compound");
 push @classes, ("PFBP::Reaction");
 push @classes, ("PFBP::Reactant");
 push @classes, ("PFBP::ECSet");
-push @classes, ("PFBP::KeggPathway");
+push @classes, ("PFBP::GenericPathway");
 
 #@{$out_fields{'PFBP::Compound'}} = qw( id names formula source );
 #@{$out_fields{'PFBP::Reaction'}} = qw( id  source);
@@ -115,8 +128,8 @@ push @classes, ("PFBP::KeggPathway");
 if ($test) {
     warn ";TEST\n" if ($warn_level >= 1);
     ### fast partial parsing for debugging
-    $in_file{compounds} .= " head -5000 |";
-    $in_file{reactions} .= " head -50 |";
+    $in_file{compound} .= " head -5000 |";
+    $in_file{reaction} .= " head -50 |";
     $in_file{ec} .= " head -20 |";
     $in_file{reaction2ec} .= " head -200 |";
 }
@@ -140,19 +153,22 @@ $genericPathways = PFBP::ClassFactory->new_class(object_type=>"PFBP::GenericPath
 
 ### default output fields for each class
 $compounds->set_out_fields(qw( id names formula source ));
-$reactions->set_out_fields(qw( id  source));
+$reactions->set_out_fields(qw( id  source equation));
 $reactants->set_out_fields(qw( id reactant_type reaction_id compound_id stoichio valid_interm ));
 $ecs->set_out_fields(qw( id names parent reactions ));
 $pathways->set_out_fields(qw( id parent organism source names reactions ECs genes ));
 $genericPathways->set_out_fields(qw( id source names reactions ECs ));
 
+$genericPathways->set_attribute_header("reactions", join ("\t", "id", "direction") );
+
+
 #### parse compounds
-&ParseKeggFile($in_file{compounds}, $compounds, source=>'KEGG:compound');
+&ParseKeggFile($in_file{compound}, $compounds, source=>'KEGG:compound');
 $compounds->index_names();
 
 
 #### parse reactions
-&ParseReactions($in_file{reactions}, $reactions);
+&ParseReactions($in_file{reaction}, $reactions, $in_file{reaction_name});
 
 ### parse EC numbers
 &ParseEC($in_file{ec}, $ecs);
@@ -229,7 +245,7 @@ OPTIONS
 	-test	fast parsing of partial data, for debugging
 	-w #	warn level
 		Warn level 1 corresponds to a restricted verbose
-		Warn level 2 reports all polypeptide instantiations
+		Warn level 2 reports all object instantiations
 		Warn level 3 reports failing get_attribute()
 	-obj	export data in object format (.obj file)
 		which is human-readable (with some patience and
@@ -294,7 +310,7 @@ sub TrivialCompounds {
 
 sub ParseReactions {
     ### read the reaction file from KEGG
-    my ($input_file, $class_holder) = @_;
+    my ($input_file, $class_holder, $equation_file) = @_;
 
     &TrivialCompounds;
     
@@ -310,17 +326,15 @@ sub ParseReactions {
 	    warn "STDIN\n";
 	}
     }
-    ### open the input stream
-    if ($input_file) {
-	open RXN, $input_file 
-	    || die "Error: cannot read $input_file\n";
-	$rxn_handle = RXN;
-    } else {
-	$rxn_handle = STDIN;
-    } 
-    
-    ### read data
-    while (<$rxn_handle>) {
+
+    ### read reactions
+    die "Error: reaction file $input_file does not exist\n" 
+	unless (-e $input_file); 
+    die "Error: cannot read reaction file $input_file\n" 
+	unless (-r $input_file); 
+    open RXN, $input_file 
+	|| die "Error: cannot read $input_file\n";
+    while (<RXN>) {
 	if (/(R\d+):\s*(.*)\s*$/) {
 	    $reaction_id = $1;
 	    $reaction = $reactions->new_object(id=>$reaction_id,
@@ -366,7 +380,30 @@ sub ParseReactions {
 	    }
 	}
     }
-    close $rxn_handle if ($input_file);
+    close RXN;
+
+    ### read reaction equations by name
+    die "Error: equationfile $equation_file does not exist\n" 
+	unless (-e $equation_file); 
+    die "Error: cannot read equation file $equation_file\n" 
+	unless (-r $equation_file); 
+    open EQUATIONS, $equation_file 
+	|| die "Error: cannot read $equation_file\n";
+    while (<EQUATIONS>) {
+	if (/(R\d+):\s*(.*)\s*$/) {
+	    my $reaction_id = $1;
+	    my $equation = $2;
+
+	    #### assign the "equation by names" to the previously defined reaction
+	    my $reaction = $reactions->get_object($reaction_id);
+	    if ($reaction == null) {
+		&ErrorMessage ("Error: equation $reaction_id found in file $equation_file but not in $input_file.\n");
+		next;
+	    }
+	    $reaction->set_attribute("equation",$equation);
+	}
+    }
+    close EQUATIONS; 
 }
 
 
@@ -679,7 +716,7 @@ sub ParseKeggPathways {
 	    if ($warn_level >= 1);
 	&ParsePathwayReactions($pathway,$filename);
     }
-
+    
     ################################################################
     # parse organism-specific pathways (lists of genes)
     #
@@ -729,66 +766,77 @@ sub ParseKeggPathways {
 }
 
 sub ParsePathwayReactions {
-  my ($pathway, $input_file) = @_;
-  
-  if ($input_file =~ /\.gz$/) {
-    $input_stream = "gunzip -c $input_file |";
-  }
-
-  open PATH_REACT, $input_file ||
-      die "Error: cannot read file $input_file\n";
-  my %pathway_reaction = ();
-  my %pathway_ec = ();
-  while ($line = <PATH_REACT>) {
-    chomp $line;
-    my ($reaction_id, $ec_id, $equation)  = split ":", $line;
-    $ec_id = &trim($ec_id);
-    $ec_id =~ s/\.$/\.-/;
+    my ($pathway, $input_file) = @_;
     
-    $pathway_reaction{$reaction_id}++;
-    $pathway_ec{$ec_id}++;
-  }
+    if ($input_file =~ /\.gz$/) {
+	$input_stream = "gunzip -c $input_file |";
+    } else {
+	$input_stream = $input_file;
+    }
 
-  #### assign EC numbers as elements
-  foreach $ec_id (sort keys %pathway_ec) {
-      if ($ecs->get_object($ec_id)) {
-	  $pathway->new_attribute_value("ECs", $ec_id);
-      } else {
-	  &ErrorMessage("Error in file $input_file: unknown EC number '$ec_id'\n$line\n");
-      }
-  }
-  
-  #### assign reactions as elements
-  foreach $reaction_id (sort keys %pathway_reaction) {
-      if ($reactions->get_object($reaction_id)) {
-	  $pathway->new_attribute_value("reactions", $reaction_id);
-      } else {
-	  &ErrorMessage("Error in file $input_file: unknown reaction '$reaction_id'\n");
-	  next;
-      }
-  }
+    open PATH_REACT, $input_stream ||
+	die "Error: cannot read file $input_file\n";
+    my %pathway_reaction = ();
+    my %pathway_ec = ();
+    while ($line = <PATH_REACT>) {
+	my $reaction_direction = "<UNDEF>";
+	chomp $line;
+	my ($reaction_id, $ec_id, $equation)  = split ":", $line;
+	$ec_id = &trim($ec_id);
+	$ec_id =~ s/\.$/\.-/;
+	
+	if ($equation =~ / <=> /) {
+	    $reaction_direction = "both";
+	} elsif ($equation =~ / => /) {
+	    $reaction_direction = "forward";
+	} elsif ($equation =~ / <= /) {
+	    $reaction_direction = "reverse";
+	}
+	$pathway_reaction{$reaction_id} = $reaction_direction;
+	$pathway_ec{$ec_id}++;
+    }
 
-  close PATH_REACT;
-  return;
+    #### assign EC numbers as elements
+    foreach $ec_id (sort keys %pathway_ec) {
+	if ($ecs->get_object($ec_id)) {
+	    $pathway->new_attribute_value("ECs", $ec_id);
+	} else {
+	    &ErrorMessage("Error in file $input_file: unknown EC number '$ec_id'\n$line\n");
+	}
+    }
+    
+    #### assign reactions as elements
+    foreach $reaction_id (sort keys %pathway_reaction) {
+	my $reaction_direction = $pathway_reaction{$reaction_id};
+	if ($reactions->get_object($reaction_id)) {
+	    $pathway->push_expanded_attribute("reactions", $reaction_id, $reaction_direction);
+	} else {
+	    &ErrorMessage("Error in file $input_file: unknown reaction '$reaction_id'\n");
+	    next;
+	}
+    }
+
+    close PATH_REACT;
+    return;
 }
 
 
 sub ParseGenes {
-  my ($pathway, $input_file) = @_;
-  
-  if ($input_file =~ /\.gz$/) {
-    $input_file = "gunzip -c $input_file |";
-  }
-  open GENES, $input_file ||
-      die "Error: cannot read file $input_file\n";
-  while ($line = <GENES>) {
-    chomp $line;
-#    my $expr_pointer = undef;
-    my ($Gene, $description)  = split "\t", $line;
+    my ($pathway, $input_file) = @_;
     
-    if ($org eq "hsa") {
-      $Gene = "KEGG_gn_".$Gene."_CDS_H.sapiens";
+    if ($input_file =~ /\.gz$/) {
+	$input_file = "gunzip -c $input_file |";
     }
+    open GENES, $input_file ||
+	die "Error: cannot read file $input_file\n";
+    while ($line = <GENES>) {
+	chomp $line;
+#    my $expr_pointer = undef;
+	my ($Gene, $description)  = split "\t", $line;
+	
+	if ($org eq "hsa") {
+	    $Gene = "KEGG_gn_".$Gene."_CDS_H.sapiens";
+	}
 
 #    my $gene_id = undef;
 #    unless ($gene_id = $database->get_id("PFBP::Gene::".$Gene)) {
@@ -799,14 +847,14 @@ sub ParseGenes {
 #      &ErrorMessage("line $l file $in_file{pathway_index}: no expression for gene $Gene\n");
 #      next;
 #    }
-    
+	
 #    my $expression = $database->get_object($expr_pointer);
 #    $pathway->new_attribute_value(elements=>"PFBP::Expression::".$expression->get_attribute("id"));
-    $pathway->new_attribute_value(genes=>$Gene);
-    
+	$pathway->new_attribute_value(genes=>$Gene);
+	
 #    $pathway->new_attribute_value("elements",$gene_id);
-  }
+    }
 
-  close PATH_REACT;
-  return;
+    close PATH_REACT;
+    return;
 }
