@@ -295,7 +295,7 @@ sub PrintHtmlTable {
     ####       $font{variable} = 1;
     my ($FILE, $mirror_file, $mirror_verbose, $chunk, $out, $border) = @_;
     $out = STDOUT unless ($out);
-    $chunk = 50 unless (&IsNatural($chunk));
+    $chunk = 100 unless (&IsNatural($chunk));
     my $line_count = 0;
     my $last_line = "";
     my $header_line = "";
@@ -320,7 +320,7 @@ sub PrintHtmlTable {
     
     print $out "<PRE>";
     while (<$FILE>) {
-	s|$RSA/||g; #### avoid exposing the full path through the web interface
+	s|$RSA/(public_html/)*||g; #### avoid exposing the full path through the web interface
 	if ($mirror) {
 	    print MIRROR $_
 		unless ((/^;/) && !($mirror_verbose)); 
@@ -412,7 +412,7 @@ sub ServerOutput {
     &Info("Your task is currently being processed. <P>When the result will be ready, you will be warned at your email address $email_address.");
 
     print "<PRE>$command > $TMP/$tmp_file_name</PRE>" if ($ECHO >= 1);
-    system "$command > $TMP/$tmp_file_name";
+    system "$command | perl -pe 's|$RSA/(public_html/)*||g' > $TMP/$tmp_file_name";
 
     my $message = "The results are available on the following URL\n";
     $message .= "\t$WWW_RSA/tmp/$tmp_file_name\n";
@@ -433,6 +433,7 @@ sub EmailTheResult {
     #### redirect the task to ServerOutput
     &ServerOutput(@_);
 }
+
 sub OldEmailTheResult {
     my ($command, $email_address) = @_;
 
