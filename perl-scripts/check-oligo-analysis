@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: check-oligo-analysis,v 1.4 2003/10/27 18:42:18 jvanheld Exp $
+# $Id: check-oligo-analysis,v 1.5 2003/12/23 09:35:25 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 23:00:11 jvanheld>
 #
@@ -31,7 +31,7 @@ $ov="-noov";
 @overlap_modes=("-noov", "-ovlp");
 $thosig = -2;
 $repet = 1000;
-$from=1;
+$start=1;
 
 @tasks = ();
 %supported_task = ();
@@ -77,13 +77,16 @@ $out = &OpenOutputFile($outfile{output});
 #### print verbose
 &Verbose if ($verbose);
 
+
+################################################################
+#### run oligo-analysis
 if ($task{oligos}) {
-    for $job ($from..$repet) {
+    for $job ($start..$repet) {
 	foreach $ov (@overlap_modes) {
 	    foreach $str (@strand_modes) {
 		
 		## use a verbosity of 1 for the first job only
-		if ($job == $from) {
+		if ($job == $start) {
 		    $job_verbose = 1;
 		} else {
 		    $job_verbose = 0;
@@ -237,7 +240,7 @@ OPTIONS
 	-ol	oligo length
 	-thosig occurrence significance
 	-task	task (supported: $supported_tasks)
-	-from #	starting iteration (to pursue an interrupted test)
+	-start #	starting iteration (to pursue an interrupted test)
 	-max_occ #
 		maximum number of occurrences for calculating 
 		the theoretical distributions
@@ -294,7 +297,7 @@ check-oligo-analysis options
 -ol		oligo length
 -thosig		occurrence significance
 -task		task (supported: $supported_tasks)
--from #	starting iteration (to pursue an interrupted test)E
+-start #	starting iteration (to pursue an interrupted test)E
 -max_occ #	maximum occurrences for the theoretical distributions
 End_short_help
   close HELP;
@@ -355,8 +358,8 @@ sub ReadArguments {
 	    push @tasks, split( ",", $ARGV[$a+1]);
 
 	    ### starting iteration
-	} elsif ($ARGV[$a] eq "-from") {
-	    $from = $ARGV[$a+1];
+	} elsif ($ARGV[$a] eq "-start") {
+	    $start = $ARGV[$a+1];
 	    
 	    ### max occurrences for the theoretical distrib
 	} elsif ($ARGV[$a] eq "-max_occ") {
