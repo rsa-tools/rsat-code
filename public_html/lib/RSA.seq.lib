@@ -1,0 +1,1105 @@
+#!/usr/bin/perl
+
+### initialization
+
+$accepted_input_seq{'raw'} = 1;
+$accepted_input_seq{'multi'} = 1;
+$accepted_input_seq{'ig'} = 1;
+$accepted_input_seq{'wconsensus'} = 1;
+$accepted_input_seq{'wc'} = 1;
+$accepted_input_seq{'fasta'} = 1;
+$accepted_input_seq{'filelist'} = 1;
+$accepted_input_seq{'gcg'} = 1;
+$accepted_input_seq{'ncbi'} = 1;
+$accepted_input_seq{'genbank'} = 1;
+$accepted_input_seq{'embl'} = 1;
+
+$accepted_output_seq{'raw'} = 1;
+$accepted_output_seq{'multi'} = 1;
+$accepted_output_seq{'ig'} = 1;
+$accepted_output_seq{'wconsensus'} = 1;
+$accepted_output_seq{'wc'} = 1;
+$accepted_output_seq{'fasta'} = 1;
+$accepted_output_seq{'filelist'} = 1;
+
+
+&InitMatchScores;
+
+
+sub InitMatchScores {
+  ### based on the IUPAC code for partly specified nucleotides
+  ###	A			(Adenine)
+  ###	C			(Cytosine)
+  ###	G			(Guanine)
+  ###	T			(Thymine)
+  ###	R	= A or G        (puRines)
+  ###	Y	= C or T        (pYrimidines)
+  ###	W	= A or T        (Weak hydrogen bonding)
+  ###	S	= G or C        (Strong hydrogen bonding)
+  ###	M	= A or C        (aMino group at common position)
+  ###	K	= G or T        (Keto group at common position)
+  ###	H	= A, C or T     (not G)
+  ###	B	= G, C or T     (not A)
+  ###	V	= G, A, C       (not T)
+  ###	D	= G, A or T     (not C)
+  ###	N	= G, A, C or T  (aNy)
+  $match{A}{A} = 1/4;
+  $match{C}{C} = 1/4;
+  $match{G}{G} = 1/4;
+  $match{T}{T} = 1/4;
+  
+  $match{R}{A} = 1/2;
+  $match{R}{G} = 1/2;
+  $match{S}{C} = 1/2;
+  $match{S}{G} = 1/2;
+  $match{W}{T} = 1/2;
+  $match{W}{A} = 1/2;
+  $match{Y}{C} = 1/2;
+  $match{Y}{T} = 1/2;
+  $match{B}{C} = 3/4;
+  $match{B}{G} = 3/4;
+  $match{B}{T} = 3/4;
+  $match{D}{A} = 3/4;
+  $match{D}{G} = 3/4;
+  $match{D}{T} = 3/4;
+  $match{H}{A} = 3/4;
+  $match{H}{C} = 3/4;
+  $match{H}{T} = 3/4;
+  $match{V}{A} = 3/4;
+  $match{V}{C} = 3/4;
+  $match{V}{G} = 3/4;
+  $match{N}{A} = 1;
+  $match{N}{C} = 1;
+  $match{N}{G} = 1;
+  $match{N}{T} = 1;
+  
+  $match{A}{R} = 1/2;
+  $match{G}{R} = 1/2;
+  $match{C}{S} = 1/2;
+  $match{G}{S} = 1/2;
+  $match{T}{W} = 1/2;
+  $match{A}{W} = 1/2;
+  $match{C}{Y} = 1/2;
+  $match{T}{Y} = 1/2;
+  $match{C}{B} = 3/4;
+  $match{G}{B} = 3/4;
+  $match{T}{B} = 3/4;
+  $match{A}{D} = 3/4;
+  $match{G}{D} = 3/4;
+  $match{T}{D} = 3/4;
+  $match{A}{H} = 3/4;
+  $match{C}{H} = 3/4;
+  $match{T}{H} = 3/4;
+  $match{A}{V} = 3/4;
+  $match{C}{V} = 3/4;
+  $match{G}{V} = 3/4;
+  $match{A}{N} = 1;
+  $match{C}{N} = 1;
+  $match{G}{N} = 1;
+  $match{T}{N} = 1;
+  
+  $match{N}{N} = 1;
+}
+
+sub CountMatches {
+  ### returns the number of matching positions between two sequences 
+  ### of same length
+  ### usage:
+  ###    ($matches,$score) = &CountMatches($seq1,$seq2);
+  ### accepts IUPAC degenrate codes as first or second argument
+  ### the score is in base units, i.e. 
+  ### each unit correspond to one perfectly specified base
+  ### it is calculated from the matching probability:
+  ###       score = -log4(proba)
+  my $seq1 = $_[0];
+  my $seq2 = $_[1];
+  my $matches = 0;
+  my $proba = 1;
+  my $seq_len = length($seq1);
+  my $score = "inf";
+
+  foreach my $pos (0..$seq_len-1) {
+    my $base1 = uc(substr($seq1,$pos,1));
+    my $base2 = uc(substr($seq2,$pos,1));
+    if ($match{$base1}{$base2}) {
+      $matches++;
+      $proba *= $match{$base1}{$base2};
+    }
+  }
+  if ($proba > 0) {
+    $score = abs(log($proba))/log(4);
+  } 
+  return ($matches, $score);
+} ### CountMatches
+
+
+sub CountMismatches {
+  ### returns the number of non-matching positions between two sequences 
+  ### of same length, up to the maximum allowed value $max.
+  ### usage:
+  ###    $mismatches = &CountMismatches($seq1,$seq2,$max);
+  ### accepts IUPAC degenerate codes as first or second argument
+  my $seq1 = $_[0];
+  my $seq2 = $_[1];
+  my $max = $_[2];
+  my $mismatches = 0;
+  
+  my $seq_len = length($seq1);
+  
+  foreach my $pos (0..$seq_len-1) {
+    my $base1 = uc(substr($seq1,$pos,1));
+    my $base2 = uc(substr($seq2,$pos,1));
+    unless ($match{$base1}{$base2}){
+      $mismatches++;
+      if ($mismatches > $max) {
+	return $mismatches;
+      }
+    }
+  }
+  return $mismatches;
+} ### CountMismatches
+
+
+sub NextMatch {
+### returns the next matching position
+### given an input sequence and a pattern
+### substitutions are allowed, and an offset can be introduce to start searching from an abitrary position
+### if no match is encountered, -1 is returned
+### usage: 
+###     ($match_pos,$match_seq,$mismatches) = &NextMatch($input_seq, $pattern,$allowed_subst,$offset);
+
+    local($input_seq) = uc($_[0]);
+    local($pattern) = uc($_[1]);
+    local($allowed_subst) = $_[2];
+    local($offset) = $_[3];
+    local($pattern_len) = length($pattern);
+    local($last_pos) =  length($input_seq) - $pattern_len;
+    local($min) = $pattern_len - $allowed_subst;
+    local($mismatches = 0);
+
+    for $pos ($offset..$last_pos) {
+	$sub_seq = substr($input_seq,$pos,$pattern_len);
+
+#	$mismatches = 0;
+#	foreach $base (0..$pattern_len-1) {
+#	    $base1 = substr($sub_seq,$base,1);
+#	    $base2 = substr($pattern,$base,1);
+#	    unless ($match{$base1}{$base2}){
+#		$mismatches++;
+#		if ($mismatches > $allowed_subst) {
+#		    $base = $seq_len;
+#		}
+#	    }
+#	}
+
+	$mismatches = &CountMismatches($sub_seq,$pattern,$allowed_subst);
+	if ($mismatches <= $allowed_subst) {
+	    $match_pos = $pos+1;
+	    $match_seq = $sub_seq;
+	    return($match_pos,$match_seq,$mismatches);
+	}
+    }
+    return(-1);
+
+} ### NetxMatch
+
+### DNA sequence substitutions ####
+sub Substitute {
+###
+### usage 
+### %subst_hash = Substitute($pattern, $allowed_subst, $IUPAC_output);
+###
+### returns a hash of DNA sequences matching $pattern 
+### with >= $allowed_subst substitutions
+### the keys of the hash are the matching patterns,
+### the values give the number of substitutions
+
+    local($l_pattern) = uc($_[0]);
+    local($l_allowed_subst) = $_[1];
+    local($l_IUPAC_output) = $_[2];
+    local($l_pattern_length) = length($l_pattern);
+    local($s);
+    local($pos);
+    local($subst_nucl);
+    local(@new_patterns);
+    local(@last_patterns);
+    local(%l_subst);
+    local($nucl);
+    local($new_p);
+
+    if ($l_IUPAC_output) {
+	@{$not{'A'}} = ('b');
+	@{$not{'C'}} = ('d');
+	@{$not{'G'}} = ('h');
+	@{$not{'T'}} = ('v');
+	@{$not{'R'}} = ('y');
+	@{$not{'Y'}} = ('r');
+	@{$not{'W'}} = ('s');
+	@{$not{'S'}} = ('w');
+	@{$not{'M'}} = ('k');
+	@{$not{'K'}} = ('k');
+	@{$not{'H'}} = ('g');
+	@{$not{'B'}} = ('a');
+	@{$not{'V'}} = ('t');
+	@{$not{'D'}} = ('c');
+	@{$not{'N'}} = ();
+    } else {
+	@{$not{'A'}} = ('c','g','t');
+	@{$not{'C'}} = ('a','g','t');
+	@{$not{'G'}} = ('a','c','t');
+	@{$not{'T'}} = ('a','c','g');
+	@{$not{'R'}} = ('c','t');
+	@{$not{'Y'}} = ('a','g');
+	@{$not{'W'}} = ('c','g');
+	@{$not{'S'}} = ('a','t');
+	@{$not{'M'}} = ('g','t');
+	@{$not{'K'}} = ('a','c');
+	@{$not{'H'}} = ('g');
+	@{$not{'B'}} = ('a');
+	@{$not{'V'}} = ('t');
+	@{$not{'D'}} = ('c');
+	@{$not{'N'}} = ();
+    }
+
+    $l_subst{$l_pattern} = 0;
+    @last_patterns = ($l_pattern);
+
+    for $s (1..$l_allowed_subst) {
+	@new_patterns = ();
+	foreach $p (@last_patterns) {
+	    for $pos (0..$l_pattern_length-1) {
+		$nucl = substr($p,$pos,1);
+		foreach $subst_nucl (@{$not{$nucl}}) {
+		    if ($pos == 0) {
+			$subst_pattern = "";
+		    } else {
+			$subst_pattern = substr($p,0,$pos);
+		    }
+		    $subst_pattern .= $subst_nucl;
+		    $subst_pattern .= substr($p,$pos+1,$l_pattern_length - $pos) unless ($pos == $l_pattern_length);
+		    @new_patterns = (@new_patterns, $subst_pattern);
+		}
+	    }
+	}
+	foreach $new_p (@new_patterns) {
+	    $l_subst{$new_p} = $s;
+	}
+	@last_patterns = @new_patterns;
+    }
+    return(%l_subst);
+}
+
+
+sub Insert {
+### usage 
+### %ins_hash = Insert($pattern, $allowed_ins, $IUPAC_output)
+### returns a hash of DNA sequences matching $pattern 
+### with >= $allowed_ins insertions
+### the keys of the hash are the matching patterns,
+### the values give the number of insertions
+
+    local($l_pattern) = uc($_[0]);
+    local($l_allowed_ins) = $_[1];
+    local($l_IUPAC_output) = $_[2];
+    local($l_pattern_length) = length($l_pattern);
+    local(@to_insert) = ();
+    local(@inserted) = ($l_pattern);
+    local(%inserted);
+    $inserted{$l_pattern} = 0;
+
+    if ($l_IUPAC_output) {
+	@insertable_nucl = (N);
+    } else {
+	@insertable_nucl = (A,C,G,T);
+    }
+
+
+    for $ins (1..$allowed_ins) {
+	@to_insert = @inserted;
+	@inserted = ();
+	foreach $pat (@to_insert) {
+	    for $pos (0..$l_pattern_length) {
+		foreach $nucl (@insertable_nucl) {
+		    if ($pos == 0) {
+			$inserted_pattern = "";
+		    } else {
+			$inserted_pattern = substr($pat,0,$pos);
+		    }
+		    $inserted_pattern .= $nucl;
+		    $inserted_pattern .= substr($pat,$pos);
+		    $inserted{$inserted_pattern} = $ins;
+		    @inserted = (@inserted, $inserted_pattern);
+		}
+	    }
+	}
+    }
+
+    return(%inserted);
+}
+
+
+
+sub Delete {
+### usage 
+### %del_hash = Delete($pattern, $allowed_del, $IUPAC_output)
+### returns a hash of DNA sequences matching $pattern 
+### with >= $allowed_del deletions
+### the keys of the hash are the matching patterns,
+### the values give the number of deletions
+
+    local($l_pattern) = uc($_[0]);
+    local($l_allowed_del) = $_[1];
+    local($l_IUPAC_output) = $_[2];
+    local($l_pattern_length) = length($l_pattern);
+    local(@to_delete) = ();
+    local(@deleted) = ($l_pattern);
+    local(%deleted);
+    $deleted{$l_pattern} = 0;
+
+    for $del (1..$allowed_del) {
+	@to_delete = @deleted;
+	@deleted = ();
+	foreach $pat (@to_delete) {
+	    for $pos (0..$l_pattern_length-1) {
+		$deleted_pattern = substr($pat,0,$pos);
+		$deleted_pattern .= substr($pat,$pos+1);
+		$deleted{$deleted_pattern} = $del;
+		@deleted = (@deleted, $deleted_pattern);
+	    }
+	}
+    }
+
+    return(%deleted);
+}
+
+
+sub ExpandSeq {
+#### replaces the multipliers within a sequence
+#### eg: atgn(3)gta is transformed to atgnnngta
+#### usage
+####   $exp_seq = &ExpandSeq($seq);
+    local($seq) = $_[0];
+    local($exp_seq) = "";
+
+    while ($seq =~ /(.)\{(\d+)\}/) {
+	$exp_seq .= $`;
+	for $i (1..$2) {
+	    $exp_seq .= $1;
+	}
+	$seq = $';
+    }
+    $exp_seq .= $seq;
+    return($exp_seq);
+
+}
+
+sub compress_pattern {
+### transform letter repeats into a single letter followed by a multiplier
+#### usage 
+### $compressed_pattern = compress_pattern($expanded_pattern,@letters_to_compress);
+### example: $compressed = &compress_pattern("aaannnnnnnccc","n");
+### returns aaan{7}ccc
+  my ($expanded_pattern,@letters_to_compress) = @_;
+  my $compressed_pattern = "";
+  my $epl = length($expanded_pattern);
+  my $last_letter = "";
+  my $current_letter = "";
+  my $count = 0;
+  my $letter = "";
+  my %to_compress;
+  
+  $expanded_pattern = lc($expanded_pattern);
+  if ($#letters_to_compress > -1) {
+    foreach $letter (@letters_to_compress) {
+      $to_compress{lc($letter)} = 1;
+    }
+  } else {
+    $compress_all = 1;
+  }
+  
+  foreach $pos (0..$epl) {
+    $current_letter = substr($expanded_pattern,$pos,1);
+    if (($current_letter eq $last_letter) && 
+	(($to_compress{$current_letter}) ||
+	 ($compress_all))) {
+      $count++;
+    } elsif ($count > 0) {
+      $count++;
+      $compressed_pattern .= "{$count}";
+      $count = 0;
+      $compressed_pattern .= uc($current_letter);
+    } else {
+      $compressed_pattern .= uc($current_letter);
+    }
+    $last_letter = $current_letter;
+  }
+  return($compressed_pattern);
+}
+
+
+sub IUPAC_to_regular {
+### converts a DNA sequence with IUPAC ambiguous codes
+### into a regular expression 
+    local($regular) = $_[0];
+    $regular =~ s/R/[AG]/g;
+    $regular =~ s/Y/[CT]/g;
+    $regular =~ s/M/[AC]/g;
+    $regular =~ s/K/[GT]/g;
+    $regular =~ s/S/[CG]/g;
+    $regular =~ s/W/[AT]/g;
+    $regular =~ s/B/[CGT]/g;
+    $regular =~ s/D/[AGT]/g;
+    $regular =~ s/H/[ACT]/g;
+    $regular =~ s/V/[ACG]/g;
+    $regular =~ s/N/[ACGT]/g;
+    $regular =~ s/r/[ag]/g;
+    $regular =~ s/y/[ct]/g;
+    $regular =~ s/m/[ac]/g;
+    $regular =~ s/k/[gt]/g;
+    $regular =~ s/s/[cg]/g;
+    $regular =~ s/w/[at]/g;
+    $regular =~ s/b/[cgt]/g;
+    $regular =~ s/d/[agt]/g;
+    $regular =~ s/h/[act]/g;
+    $regular =~ s/v/[acg]/g;
+    $regular =~ s/n/[acgt]/g;
+    return $regular;
+}
+
+#### overlap coefficient ####
+sub OverlapCoeff {
+### calculates the overlap coefficient, calculated following
+### Pevzner et al.(1989). J. Biomol. Struct & Dynamics 5:1013-1026
+### and adapted for the overlapping with reverse complement
+### usage: OverlapCoeff($pattern)
+### returns a value of 1 for non-overlapping patterns, and greater for 
+### self-overlapping patterns
+    local($word) = $_[0];
+    local($rc_word);
+    local($coeff) = 1;
+    local($word_length) = length($word);
+    local($comp_word);
+
+    #### check that nucleotide probabilities were defined
+    foreach $base (sort keys %nt_proba) {
+	$nt_proba_sum += $nt_proba{$base};
+    }
+    #### if not, assume equiprobable nucleotides
+    if  ($nt_proba_sum == 0) {
+	$nt_proba{'a'} = 0.25;
+	$nt_proba{'c'} = 0.25;
+	$nt_proba{'g'} = 0.25;
+	$nt_proba{'t'} = 0.25;
+    }
+
+    ### direct overlaps
+    for $i (1..$word_length-1) {
+	$comp_word = substr($word,0,$i).$word;
+	if ($comp_word =~ /^${word}/i) {
+#	    $coeff += 0.25**$i;
+            $coeff_add = 1;
+	    for $offset (0..$i-1) {
+		$base = lc(substr($comp_word,$offset,1));
+		$coeff_add *= $nt_proba{$base};
+	    }
+	    $coeff += $coeff_add;
+	}
+    }
+
+    ### reverse complement overlaps 
+    if ($sum_strands) {
+	$rc_word = ReverseComplement($word);
+	for $i (0..$word_length-1) {
+	    $comp_word = substr($word,0,$i).$rc_word;
+	    if ($comp_word =~ /^$word/i) {
+#		$coeff += 0.25**$i;
+		$coeff_add = 1;
+		for $offset (0..$i-1) {
+		    $base = lc(substr($comp_word,$offset,1));
+		    $coeff_add *= $nt_proba{$base};
+		}
+		$coeff += $coeff_add;
+	    }
+	}
+    }
+
+    return($coeff);
+}
+
+sub ReverseComplement {
+    local($orig_seq) = $_[0];
+    $complement = reverse $orig_seq;
+    $complement =~ tr/a-z/A-Z/;
+    ### simple nucleotides
+    $complement =~ s/A/t/g;
+    $complement =~ s/T/a/g;
+    $complement =~ s/C/g/g;
+    $complement =~ s/G/c/g;
+    ### degenerate code
+    $complement =~ s/R/y/g;
+    $complement =~ s/Y/r/g;
+    $complement =~ s/M/k/g;
+    $complement =~ s/K/m/g;
+    $complement =~ s/B/v/g;
+    $complement =~ s/V/b/g;
+    $complement =~ s/H/d/g;
+    $complement =~ s/D/h/g;
+    #  $complement =~ s/S/s/g;
+    #  $complement =~ s/W/w/g;
+    #  $complement =~ s/N/n/g;
+    ###  brackets
+    $complement =~ s/\[/temp/g;
+    $complement =~ s/\]/\[/g;
+    $complement =~ s/temp/\]/g;
+    $complement =~ tr/a-z/A-Z/;
+    ### multiplier
+    while (($complement =~ /(\}\d+\{)/) 
+	   || ($complement =~ /(\}\d+,\d+\{)/) ) {
+	$rev_mul = reverse $1;
+	$complement =~ s/$1/$rev_mul/g;
+    }
+    $complement =~ s/(\{\d+\})(\w)/$2$1/g;
+    $complement =~ s/(\{\d+,\d+\})(\w)/$2$1/g;
+    $complement =~ s/(\{\d+\})(\[\w+\])/$2$1/g;
+    $complement =~ s/(\{\d+,\d+\})(\[\w+\])/$2$1/g;
+    return $complement;
+}# ReverseComplement
+
+
+sub Palindromic {
+#### usage
+####    Palindromic($sequence)
+#### returns true if a sequence is palindromic, i.e., if 
+#### it is equal to its reverse complement
+    local($seq) = lc($_[0]);
+    local($rc) = lc(&ReverseComplement($seq));
+
+    if ($seq eq $rc) {
+	return 1;
+    } else {
+	return 0;
+    }
+
+}
+
+###### print next sequence #####
+    sub PrintNextSequence {
+##### prints DNA sequence in various formats 
+##### See the hash %accepted_output_seq for a list of accepted formats
+##### Usage: 
+##### PrintNextSequence(OUTFILE, $format,$line_width,$sequence,$seq_id, @comments)
+##### where 
+#####       OUTFILE is a file handle
+#####       $format is one of the accepted formats
+#####       $line_width indicates the number of nucleotides beofre 
+#####                   each carriage return
+#####                   a 0 value means no carriage return
+#####       $sequence is the sequence
+#####       $seq_id is an identifier for the sequence 
+#####               (required or not depending on the format)
+#####       @comments is a list of comments (one element per line)
+#####                 comments are only supported for some formats such as
+#####                 IG or Wconsensus 
+	local($OUTFILE) =  shift;
+	local($out_format) = lc(shift);
+	local($line_width) = shift;
+	local($sequence) = shift;
+	local($seq_id) = shift;
+	local(@comments) = @_;
+
+	### insert the carriage returns
+#	if (($out_format eq "wc") || ($out_format eq "wconsensus") || ($out_format eq "multi")) {
+	if ($out_format eq "multi") {
+	    $line_width = 0;
+	}
+	$sequence = &FoldSequence($sequence,$line_width);
+
+	if ($out_format eq "ig") {          #### IntelliGenetics format
+	    foreach $line (@comments) {
+		print $OUTFILE ";$line\n";
+	    }
+	    print $OUTFILE "$seq_id\n";
+	    print $OUTFILE $sequence;
+	    print $OUTFILE "1\n";
+	} elsif ($out_format eq "fasta") {  #### fastA format
+	    print $OUTFILE  ">$seq_id\t$comments[0]\n";
+	    print $OUTFILE $sequence;
+	    print $OUTFILE "\n";
+	} elsif (($out_format eq "wc") || ($out_format eq "wconsensus")) {     #### wconsensus format
+	    foreach $line (@comments) {
+		print $OUTFILE ";$line\n";
+	    }
+	    print $OUTFILE $seq_id;
+	    print $OUTFILE "\t";
+	    print $OUTFILE "\\$sequence\\";
+	    print $OUTFILE "\n";
+	} elsif ($out_format eq "raw") {
+	    print $OUTFILE "$sequence\n";
+	} elsif ($out_format eq "multi") {
+	    print $OUTFILE "$sequence\n";
+	}
+    }
+
+
+
+##### DNA sequence reading & writing ######
+
+sub CheckInputSeqFormat {
+#### checks whether the sequence format is supported
+#### Usage:
+####     &CheckInputSeqFormat($format)
+#### Returns 1 if the format is accepted for input sequence,
+#### exits otherwise
+  local($sequence_format) = lc($_[0]);
+  if ($accepted_input_seq{$sequence_format}) {
+    return 1;
+  } else {
+    print "$sequence_format: invalid format for input sequence\n";
+    exit;
+  }
+}
+
+sub CheckOutputSeqFormat {
+#### checks whether the sequence format is supported
+#### Usage:
+####     &CheckOutputSeqFormat($format)
+#### Returns 1 if the format is accepted for output sequence,
+#### exits otherwise
+    local($sequence_format) = lc($_[0]);
+    if ($accepted_output_seq{$sequence_format}) {
+	return 1;
+    } else {
+	print "$sequence_format: invalid format for output sequence\n";
+	exit;
+    }
+}
+
+sub CheckFormat {
+### checks that a sequence is written in the expected format
+### usage 
+###    CheckFormat($sequence,$expected_format);
+### where $expected_format may be any of the following:
+###        wconsensus
+###        fasta
+###        IntelliGenetics
+###        raw
+  local($l_sequence) = $_[0];
+  local($expected_format) = lc($_[1]);
+  $expected_format = "wconsensus" if ($expected_format eq "wc");
+  $expected_format = "raw" if ($expected_format eq "multi");
+  $expected_format = "raw" if ($expected_format eq "filelist");
+  local($apparent_format) = "";
+  
+  
+  if ($l_sequence =~ /\\/) {
+    $apparent_format = "wconsensus";
+  } elsif ($l_sequence =~ />/) {
+    $apparent_format = "fasta";
+  } elsif ($sequence =~ /[12]/)  {
+    $apparent_format = "IntelliGenetics";
+  } else {
+    $apparent_format = "raw";
+  }
+  unless ($apparent_format eq $expected_format) {
+    print ";\tERROR: input sequence is not in the expected format $expected_format.\n";
+    print ";\tIt seems to be in $apparent_format format\n";
+    exit;
+  }
+  return;
+}
+
+sub ReadNextSequence {
+    ##### Reads a DNA sequence
+    ##### various formats are accepted (see the hash %accepted_raw_formats
+    ##### Usage:
+    ##### ($sequence, $seq_id, @seq_comments) = &ReadNextSequence(FILE, $format)
+    ##### where   FILE is a file handle
+    #####         $format is one of the accepted sequence formats 
+    #####                 (see CheckSeqFormat) 
+    local $SEQFILE = $_[0];
+    local $sequence_format = lc($_[1]);
+    local $sequence = "";
+    local $seq_id = "";
+    local @comments = ();
+    
+    ### single raw file ###
+    if ($sequence_format eq "raw") {
+	if ($inputfile =~ /([\S]*\/)*([\S^\/]+)$/ ) {
+	    $seq_id = $2;
+	} else {
+	    $seq_id = $inputfile;
+	}
+	
+	$sequence = "";
+	while (<$SEQFILE>) {
+	    next if (/^;/);
+	    $sequence .= $_;
+	}
+	&CheckFormat($sequence, $sequence_format);
+	if ($sequence) {
+	    &FoldSequence($sequence, 0);
+	    return ($sequence, $seq_id, @comments);
+	} else {
+	    return ("","");
+	}
+	
+	#### multi: several raw sequences in the same file, separated by a newline
+    } elsif ($sequence_format eq "multi") {
+	$seq_counter++;
+	if ($inputfile =~ /([\S]*\/)*([\S^\/]+)$/ ) {
+	    $seq_id = $2;
+	} else {
+	    $seq_id = $Sequence_File;
+	}
+	$seq_id .= "_$seq_counter";
+	$sequence = "";
+	my $gotit = 0;
+	while ((defined($SEQFILE)) && ($sequence = <$SEQFILE>) && !($gotit)) {
+	    next if ($sequence =~ /^;/);
+	    $gotit = 1;
+	    &CheckFormat($sequence, $sequence_format);
+	    FoldSequence($sequence, 0);
+	    return ($sequence, $seq_id, @comments);
+	} 
+	return ("","") unless $gotit;
+	
+	
+	### file list ###
+    } elsif ($sequence_format eq "filelist") {
+	$found = 0;
+	do {
+	    $next_line = <$SEQFILE> || return ("","");
+	    next if ($next_line =~ /^;/); ### skip comment lines
+	    if ($next_line =~ /^\s*(\S+)/) { ### make sure to take a non-empty line
+		$next_file = $1;	### file name is the first word of the line
+		$found = 1;
+	    }
+	} until ($found);
+	
+	if ((-e $next_file) && (open NEXT_SEQ, $next_file)) {
+	    #### extract the sequence file name without path ####
+	    if ($next_file =~ /([\S]*\/)*([\S^\/]+)$/ ) {
+		$seq_id = $2;
+	    } else {
+		$seq_id = $next_file;
+	    }
+	    $sequence = "";
+	    while (<NEXT_SEQ>) {
+		$sequence .= $_;
+	    }
+	    close NEXT_SEQ;
+	    &CheckFormat($sequence, $sequence_format);
+	    FoldSequence($sequence, 0);
+	    return ($sequence, $seq_id, @comments);
+	} else {
+	    die "\tError: cannot open sequence file $next_file\n";
+	}
+	
+	### IntelliGenetics format ###
+    } elsif ($sequence_format eq "ig") {
+	while (<$SEQFILE>) {
+	    if (/^;(.*)/) {		### comment line
+		@comments = (@comments, $1);
+	    } elsif (($seq_id eq "") && (/(\S+)\s/)) { ### identifier for the next sequence
+		$seq_id = $1;
+	    } elsif (/(.*)[12]/) {	### end of the current sequence
+		$sequence .= $1;
+		FoldSequence($sequence, 0);
+		return ($sequence, $seq_id, @comments);
+	    } else {
+		$sequence .= $_;
+	    }
+	}
+	return ("","");		### when input file has been totally read
+	
+	
+	### Wconsensus format ###
+    } elsif (($sequence_format eq "wc") || ($sequence_format eq "wconsensus")) {
+	while (<$SEQFILE>) {
+	    if (/^;(.*)/) {		### comment line
+		@comments = (@comments, $1);
+	    } elsif (($seq_id eq "") && (/(\S+)\s+\\(.*)/)) { 
+		$seq_id = $1;
+		$the_rest = $2;
+		if ($the_rest =~ /(.*)\\/) {
+		    $sequence = $1;
+		} else {
+		    $end_of_seq = 0;
+		    $sequence = $the_rest;
+		    do { 
+			if ($next_line = <$SEQFILE>) {
+			    if ($next_line=~ /(.*)\\/) {
+				$end_of_seq = 1;
+				$sequence .= $1;
+			    } else {
+				$sequence .= $next_line;
+			    }
+			} else {
+			    return ("","");	### when input file has been totally read
+			}
+		    } until ($end_of_seq);
+		}
+		FoldSequence($sequence, 0);
+		return ($sequence, $seq_id, @comments);
+	    }
+	}
+	return ("","");		### when input file has been totally read
+	
+	
+	### FastA format ###
+    } elsif ($sequence_format eq "fasta") {
+	while (<$SEQFILE>) {
+	    next if (/^;/);
+	    if (/^\s*>\s*(\S+)\s*(.*)/) { ### new identifier
+		@comment = ($2);
+		unless ((defined($current_seq_id)) && 
+			($current_seq_id ne "")) { ###  first id from the seq file
+		    $current_seq_id = $1;
+		} else  {
+		    &FoldSequence($sequence, 0);
+		    $done_seq_id = $current_seq_id;
+		    $current_seq_id = $1;
+		    return ($sequence, $done_seq_id, @comments);
+		}
+		
+	    } else {			### sequence continues
+		$sequence .= $_;
+	    }
+	}
+	unless ($current_seq_id) {
+	    return ("","");		### when input file has been totally read
+	} else {
+	    FoldSequence($sequence, 0);
+	    $done_seq_id = $current_seq_id;
+	    $current_seq_id = "";
+	    return ($sequence, $done_seq_id, @comments);
+	}
+	
+	
+	### GCG format ###
+    } elsif ($sequence_format eq "gcg") {
+	$seq_id = "";
+	$sequence = "";
+	@comments = ();
+	$in_sequence = 0;
+	
+	while (<$SEQFILE>) {
+	    if (/^\/\/$/) {		### end of record
+		&FoldSequence($sequence, 0);
+		return ($sequence, $seq_id, @comments);
+	    } elsif (/^\s*(\S+).+\.\.\s*$/) {	### dividing line
+		$seq_id = $1;
+		$sequence = "";
+		chomp;
+		push @comments, $_;
+		$in_sequence = 1;
+	    } elsif (($in_sequence) && (/(\d+)\s+(.+)$/)) { ### sequence
+		$position = $1;
+		$sequence .= $2;
+	    } elsif (($in_sequence == 0) && (/\S/)) {	### comment
+		chomp;
+		push @comments, $_;
+	    }
+	}
+	
+	FoldSequence($sequence, 0);
+	return ($sequence, $seq_id, @comments);
+	
+	### NCBI/GENBANK format ###
+    } elsif (($sequence_format eq "ncbi") ||
+	     ($sequence_format eq "genbank")) {
+	$seq_id = "";
+	$sequence = "";
+	@comments = ();
+	$in_sequence = 0;
+	
+	while (<$SEQFILE>) {
+	    chomp;
+	    if (/^\/\/$/) {		### end of record
+		FoldSequence($sequence, 0);
+		return ($sequence, $seq_id, @comments);
+	    } elsif (/^ACCESSION\s+(\S+)/) {	### dividing line
+		$seq_id = $1;
+		$sequence = "";
+		chomp;
+		push @comments, $seq_id;
+	    } elsif (/^DEFINITION\s+/) {	### definition
+		push @comments, $';
+	    } elsif (/^ORIGIN/) {
+		$in_sequence = 1;
+	    } elsif (($in_sequence) && (/(\d+)\s+(.+)$/)) { ### sequence
+		$position = $1;
+		$sequence .= $2;
+	    } 
+	}
+	
+	FoldSequence($sequence, 0);
+	return ($sequence, $seq_id, @comments);
+	
+	### EMBL format ###
+    } elsif ($sequence_format eq "embl") {
+	$seq_id = "";
+	$sequence = "";
+	@comments = ();
+	$in_sequence = 0;
+	
+	while (<$SEQFILE>) {
+	    chomp;
+	    if (/^\/\/$/) {		### end of record
+		FoldSequence($sequence, 0);
+		return ($sequence, $seq_id, @comments);
+	    } elsif (/^AC\s+(\S+);/) {	### accession number
+		$seq_id = $1;
+		$sequence = "";
+		chomp;
+		push @comments, $seq_id;
+	    } elsif (/^DE\s+/) {	### definition
+		push @comments, $';
+	    } elsif (/^SQ\s+/) {
+		$in_sequence = 1;
+	    } elsif (($in_sequence) && (/^(.+)\s+(\d+)\s*$/)) { ### sequence
+		$position = $2;
+		$sequence .= $1;
+	    } 
+	}
+	
+	FoldSequence($sequence, 0);
+	return ($sequence, $seq_id, @comments);
+	
+	### end of sequence file ###
+    } else {
+	return ("","");
+    }
+}
+
+sub ReadMSF {
+  #### reads a multiple sequence file, 
+  #### according to the output format from PILEUP (GCG package)
+  ####
+  #### Usage:
+  #### ======
+  #### %seq_hash = ReadMsf(FILE);
+  ####
+  local $SEQFILE = $_[0];
+  local(%seq_hash);
+  local($id);
+  local($started) = 0;
+  
+  while (<$SEQFILE>) {
+    if (/\/\//) {
+      $started = 1;
+    } elsif (/^\s*(\d+)\s+(\d+)\s+$/) {
+           ### position 
+	} elsif (($started) && (/(\S+)\s+(.+)/)) {
+	    $id = $1;
+	    $seq_hash{$id} .= $2;
+	}
+    }
+    foreach $id (keys %seq_hash) {
+	$seq_hash{$id} =~ s/\s//g;
+    }
+  return %seq_hash;
+}
+
+####### fold sequence ##########
+sub FoldSequence {
+### usage FoldSequence($sequence, $line_width)
+### remove all blank spaces from a sequence, 
+### and insert return carriages every $l characters
+### no carriage return is inserted if $l = 0
+    local ($in_seq) = $_[0];
+    local ($lw) = $_[1];
+    local ($out_seq);
+    $in_seq =~ s/\s//g;  ### remove blank spaces, tabs and newlines
+    #### insert newline characters for output ####
+    if ($lw > 0) {
+	$out_seq = "";
+	while ($in_seq ne "") {
+	    $out_seq .= substr($in_seq, 0, $lw);
+	    $in_seq = substr($in_seq, $lw);
+	    $out_seq .= "\n" unless ($in_seq eq "");
+	}
+    } else {
+	$out_seq = $in_seq;
+    }
+    return $out_seq;
+}
+
+sub EditDistance {
+  use strict;
+  ### usage : $dist = EditDistance($string1,$string2);
+  ### usage : $dist = EditDistance($string1,$string2,1); 
+  ### $main::hyperverbose -> print matrix
+  my ($string1,$string2,$hyperverbose) = @_;
+  my @dist = ();
+  my $len1 = length($string1);
+  my $len2 = length($string2);
+  my %weight = ();
+  my $i = 0;
+  my $j = 0;
+  
+  my @l1 = split "", $string1;
+  my @l2 = split "", $string2;
+  my @prev_line = ();
+  my @current_line = ();
+  
+  ### initialization
+  $weight{substitution} = 1; 
+  $weight{insertion} = 1; 
+  $weight{deletion} = 1; 
+  $weight{end_space} = 0; ### Gusfield p 228-229
+  
+  $current_line[0] = 0;
+  for $j (1..$len2) {
+    $current_line[$j] = $current_line[$j-1] + $weight{end_space};
+  }
+  
+  if ($hyperverbose) {
+    warn "- - ", join(" ",@l2), "\n";
+    warn "- ", join(" ",@current_line), "\n";
+  }
+  
+  ### run trhough the array and calculate distance
+  for $i (1..$len1) {
+    @prev_line = @current_line;
+    @current_line = (); ### empty current line
+
+    $current_line[0] = $prev_line[0] + $weight{end_space};
+    for $j (1..$len2) {
+      my $match = $prev_line[$j-1];
+      
+      $match += $weight{substitution} unless ($l1[$i-1] eq $l2[$j-1]);
+      
+      ($current_line[$j]) = sort { 
+	$a <=> $b } (
+		     $prev_line[$j] + $weight{insertion},
+		     $current_line[$j-1] + $weight{deletion},
+		     $match
+		    );
+    }
+    warn ($l1[$i-1], " ", join(" ",@current_line), "\n")
+      if ($hyperverbose);
+  }
+  
+  return $current_line[$len2]; ### this is the edit distance
+}
+
+sub all_oligos {
+    #### usage : all_oligos($length)
+    my $len = $_[0];
+    my @alphabet = ("a", "c", "g", "t");
+    my @oligos = ();
+    if  ($len == 1) {
+	@oligos = @alphabet;
+    } elsif ($len > 1) {
+	foreach my $letter (@alphabet) {
+	    foreach my $oligo (&all_oligos($len-1)) {
+		push @oligos, $letter.$oligo;
+	    }
+	}
+    }
+    return @oligos;
+}
+
+
+1;
