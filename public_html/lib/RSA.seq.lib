@@ -93,12 +93,17 @@ sub InitMatchScores {
 	    R1: foreach my $r1 (@match1) {
 		R2: foreach my $r2 (@match2) {
 		    if ($r1 eq $r2) {
+#<<<<<<< RSA.seq.lib
+#			$match{$d2}{$d1} = $match{$d1}{$d2} = &max($match1, $match2)/4;
+##			warn join("\t", "match", $d1, $r1, $d2, $r2, $match{$d2}{$d1}, $match{$d2}{$d1}), "\n" if ($main::verbose >= 10);
+#=======
 			my $max_match = &max($match1, $match2);
 			my $min_match = &min($match1, $match2);
 #			$match{$d2}{$d1} = $match{$d1}{$d2} = $max_match/4;
 			$match{$d2}{$d1} = $match{$d1}{$d2} = &sum_of_hypergeometrics($match1, 4, $match2, 1, $min_match);
 
 			warn join("\t", "match", $d1, $r1, $d2, $r2, $max_match, $min_match, $match{$d2}{$d1}, $match{$d2}{$d1}), "\n" if ($main::verbose >= 10);
+#>>>>>>> 1.22
 			last R1;
 		    }
 		}
@@ -107,19 +112,18 @@ sub InitMatchScores {
     }
 
     ## Check (debug)
-    if ($main::verbose >= 10) {
-	foreach my $d1 (@IUPAC) {
-	    foreach my $d2 (@IUPAC) {
-		warn join("\t", 
-			  "d1:$d1", join ("", @match1), $match1,
-			  "d2:$d2", join ("", @match2), $match2,
-		      $match{$d1}{$d2},
-			  $match{$d2}{$d1},
-			 ), "\n";
-	    }
-
-	}
-    }
+#    if ($main::verbose >= 10) {
+#	foreach my $d1 (@IUPAC) {
+#	    foreach my $d2 (@IUPAC) {
+#		warn join("\t", 
+#			  "d1:$d1", join ("", @match1), $match1,
+#			  "d2:$d2", join ("", @match2), $match2,
+#		      $match{$d1}{$d2},
+#			  $match{$d2}{$d1},
+#			 ), "\n";
+#	    }
+#	}
+#    }
 
 #     $match{A}{A} = 1/4;
 #     $match{C}{C} = 1/4;
@@ -210,7 +214,7 @@ sub CountMatches {
     my $len1 = length($seq1);
     my $len2 = length($seq2);
     my $weight = "Inf";
-    my $weight = 0;
+#    my $weight = 0;
     my $length = &min($len1, $len2);
     foreach my $offset (0..$length-1) {
 	my $base1 = uc(substr($seq1,$offset,1));
