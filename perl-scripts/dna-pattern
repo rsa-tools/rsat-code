@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dna-pattern,v 1.21 2002/06/06 10:16:47 jvanheld Exp $
+# $Id: dna-pattern,v 1.22 2003/06/17 11:10:16 jvanheld Exp $
 #
-# Time-stamp: <2002-06-06 12:16:36 jvanheld>
+# Time-stamp: <2003-06-17 13:09:15 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -200,7 +200,7 @@ while ((($current_seq, $sequence_id, @comments) = &ReadNextSequence($in, $in_for
     }
 }
 
-
+&MatchProfiles() if ($return{match_profiles});
 
 &MatchCounts if ($return{match_counts});
 
@@ -325,7 +325,8 @@ sub IUPACsearch {
 ################################################################
 # Print a single match location
 sub PrintMatchLocation {
-    if ($score_column > 0) {
+    if (($search_method eq "sliding window") ||
+	($score_column > 0)) {
 	$score = $pattern->get_attribute("score");
     } else {
 	$match_length = length($matching_word);
@@ -340,6 +341,506 @@ sub PrintMatchLocation {
     print $out "\t$matching_word";
     printf $out "\t%.2f", $score;
     print $out "\n";
+}
+
+
+
+sub ShortHelp	{
+    open HELP, "|more";
+    print HELP <<EndShortHelp;
+dna-pattern options
+-------------------
+-h	complete help message
+-help   short help message
+-p	pattern
+-pl	pattern list file
+-s	sequence file. 
+-subst  allowed substitutions
+-sc	score column
+-o	output file.
+-format	input format (raw, filelist or IG)
+-id	pattern identifier (one word). 
+-noid	use pattern sequence as id
+-noov	prevent detection of overlapping pattern
+-DR	search matches on both strands (default)
+-D	search matches on the Direct strand only
+-R 	search matches on the Reverse complementary strand only
+-pos	return match positions (default)
+-c	return the count of matches for each pattern in each sequence
+-table	return a table with the count of pattern matches per sequence
+-colsum	return total occ per sequence in the count table
+-rowsum	return total occ per pattern in the count table
+-total	return total occ per sequence and per pattern in the count table
+-stats	return matching statistics
+-window	sliding window size
+-top	only return the top score
+-sort	sort sequences according to their top score
+-th     threshold
+-ct	return total count in all sequences
+-N #	return matching sequences with # flanking nucleotides
+-NL #	return matching sequences with # left flanking nucleotides
+-NR #	return matching sequences with # right flanking nucleotides
+-v	verbose
+-origin origin (position 0)
+EndShortHelp
+    close HELP;
+    exit(0);
+}
+
+
+################################################################
+#
+# Read command line arguments
+#
+sub ReadArguments {
+    foreach $a (0..$#ARGV) {
+	if ($ARGV[$a] eq "-h") {
+	    &Help;
+	} elsif  ($ARGV[$a] eq "-help") {
+	    &ShortHelp;
+	    
+	} elsif ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+
+	} elsif ($ARGV[$a] =~ /^-ori/) {
+	    $origin = $ARGV[$a+1];
+	    
+	} elsif (($ARGV[$a] eq "-subst") && (&IsNatural($ARGV[$a+1]))){
+	    $allowed_subst = $ARGV[$a+1];
+	    if ($allowed_subst > 0) {
+		$search_method = "IUPAC";
+		warn "; Seach method: IUPAC\n" if ($verbose >=1);
+	    }
+	    
+	} elsif ($ARGV[$a] eq "-IUPAC") {
+	    $search_method = "IUPAC";
+	    warn "; Seach method: IUPAC\n" if ($verbose >=1);
+	    
+	    ################################################################
+	    #### pattern specification
+	} elsif ($ARGV[$a] eq "-id") {
+	    # directly read pattern identifier from the command line
+	    if ($ARGV[$a+1] =~ /(\S+)/) {
+		$pattern_id = $1;
+	    }
+	    
+	} elsif ($ARGV[$a] eq "-p") {
+	    # directly read pattern sequence from the command line
+	    $pattern_seq = $ARGV[$a+1];
+	    warn ("; Pattern sequence\t", $pattern_seq, "\n") if ($verbose >=4);
+	    
+	} elsif ($ARGV[$a] eq "-pl") {
+	    # read name of file containing the list of patterns and open it
+	    if ($ARGV[$a+1] =~ /(\S+)/) {
+		$pattern_file = $1;
+		&FatalError("Cannot read pattern file '$pattern_file'.") 
+		    unless (-r $pattern_file);
+	    } 
+
+	    #### score column in the pattern file
+	} elsif (($ARGV[$a] eq "-sc") && (&IsNatural($ARGV[$a+1])) && ($ARGV[$a+1] > 1)) {
+	    $score_column = $ARGV[$a+1];
+	    
+	    #### the pattern file contains no identifier
+	} elsif ($ARGV[$a] eq "-noid") {
+	    $noid = 1;
+	    
+	    ################################################################
+	    #### sequence file
+	} elsif ($ARGV[$a] eq "-i") {
+	    # read input file name (sequence file)
+	    $inputfile = $ARGV[$a+1];
+	    
+	} elsif ($ARGV[$a] eq "-format") {
+	    # read input format (sequence format)
+	    $in_format = lc($ARGV[$a+1]);
+	    
+	    
+	    ################################################################
+	    #### output file
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outputfile = $ARGV[$a+1];
+
+	    ################################################################
+            #### matching options
+
+	    #### strands
+	} elsif (($ARGV[$a] eq "-D") ||($ARGV[$a] eq "-W") || ($ARGV[$a] eq "-1str")) {
+	    $strands_to_search = "D";
+	} elsif (($ARGV[$a] eq "-R") ||($ARGV[$a] eq "-C")) {
+	    $strands_to_search = "R";
+	} elsif (($ARGV[$a] eq "-DR") || 
+		 ($ARGV[$a] eq "-RD") ||
+		 ($ARGV[$a] eq "-CW") ||
+		 ($ARGV[$a] eq "-CW") ||
+		 ($ARGV[$a] eq "2str")
+		 ) {
+	    $strands_to_search = "DR";
+	    
+	    #### threshold
+	} elsif ($ARGV[$a] eq "-th") {
+	    $threshold = $ARGV[$a+1];
+	    unless (&IsReal($threshold)) {
+		&FatalError("Threshold must have a real value");
+	    }
+
+	    #### no overlap
+	} elsif ($ARGV[$a] eq "-noov") {
+	    $no_overlap = 1;
+	    
+	    ################################################################
+            #### output 
+	    
+	    #### count matches
+	} elsif ($ARGV[$a] eq "-pos") {
+	    $return{match_positions} = 1;
+	    
+	    #### count matches
+	} elsif ($ARGV[$a] eq "-c") {
+	    $calc{match_counts} = 1;
+	    $return{match_counts} = 1;
+	    
+	    #### sum matches over all sequences
+	} elsif ($ARGV[$a] eq "-ct") {
+	    $return{match_counts} = 1;
+	    $return{sum_only} = 1;
+	    
+	    #### return results in a sequence x pattern_count table
+	} elsif ($ARGV[$a] eq "-table") {
+	    $calc{match_counts} = 1;
+#	    $return{sum_only} = 0;
+	    $return{table} = 1;
+
+	    #### add a column containing the sum of colums to the table output
+	} elsif ($ARGV[$a] eq "-colsum") {
+	    $return{col_sum} = 1;
+	    #### add a row containing the sum of rows to the table output
+	} elsif ($ARGV[$a] eq "-rowsum") {
+	    $return{row_sum} = 1;
+	    #### add a column and a row for totals to the table output
+	} elsif ($ARGV[$a] eq "-total") {
+	    $return{col_sum} = 1;
+	    $return{row_sum} = 1;
+
+	    #### return a summary of matching statistics 
+	} elsif ($ARGV[$a] eq "-stats") {
+	    $calc{match_counts} = 1;
+	    $calc{col_sum} = 1;
+	    $calc{row_sum} = 1;
+	    $return{stats} = 1;
+
+	    #### matching profiles
+	} elsif ($ARGV[$a] =~ /-prof/) {
+	    $return{match_profiles} = 1;
+
+	    #### sliding window
+	} elsif ($ARGV[$a] =~ /-win/) {
+	    $search_method = "sliding window";
+	    $sliding_window_size = $ARGV[$a+1];
+	    unless (&IsNatural($sliding_window_size)) {
+		&FatalError( "Sliding window size must be a natural number");
+	    }
+	    unless ($sliding_window_size > 0) {
+		&FatalError( "Sliding window size must be > 0");
+	    }
+
+	    #### top score
+	} elsif ($ARGV[$a] eq "-top") {
+	    $return{top} = 1;
+	    #### sort
+	} elsif ($ARGV[$a] eq "-sort") {
+	    $sort = 1;
+
+	    #### neighborhood (return flanking residues)
+	} elsif (($ARGV[$a] eq "-N") && (&IsNatural($ARGV[$a+1]))) {
+	    $left_neighborhood = $ARGV[$a+1];
+	    $right_neighborhood = $ARGV[$a+1];
+	} elsif (($ARGV[$a] eq "-NL") && (&IsNatural($ARGV[$a+1]))) {
+	    $left_neighborhood = $ARGV[$a+1];
+	} elsif (($ARGV[$a] eq "-NR") && (&IsNatural($ARGV[$a+1]))) {
+	    $right_neighborhood = $ARGV[$a+1];
+	    
+	}
+    }
+}
+
+
+
+################################################################
+# scan the sequence with a sliding window
+sub SlidingWindowSearch {
+    $last_pos = $sequence_length - $pattern_length;
+
+    return if ($last_pos < $sliding_window_size);
+
+    $current_seq = lc($current_seq);
+    my @scores = ();
+    my $current_score = 0;
+    my $previous_score = 0;
+    my $score_sum = 0;
+    my $top_score;
+
+    #### initialize score vector
+    for my $pos (0..($sliding_window_size-2)) {
+	my $subseq = substr($current_seq, $pos, $pattern_length);
+	my $current_score = $pattern_scores{$subseq};
+	push @scores, $current_score;
+	$score_sum += $current_score;
+    }
+    $top_score = $score_sum;
+
+    #### scan the sequence with the sliding window
+    for my $pos (($sliding_window_size-1)..$last_pos) {
+	my $subseq = substr($current_seq, $pos, $pattern_length);
+	my $current_score = $pattern_scores{$subseq};
+
+	push @scores, $current_score;
+	$score_sum += $current_score;
+
+	if ($score_sum >= $threshold) {
+	    $pattern->set_attribute("score", $score_sum);
+	    $end_pos = $pos - $orig_pos + $pattern_length ;
+	    $start_pos = $pos - $orig_pos - $sliding_window_size +2;
+	    $matching_word = substr($current_seq, $start_pos, $sliding_window_size + $pattern_length - 1);
+	    &PrintMatchLocation() if ($return{match_positions});
+	    $profile_score{$sequence_id}{$start_pos} = $score_sum if ($return{match_profiles});
+#	    die $profile_score{$sequence_id}{$start_pos};
+	}
+
+	$previous_score = shift @scores;
+	$score_sum -= $previous_score;
+	$top_score = &max($top_score, $score_sum);
+    }
+    if ($top_score >= $threshold) {
+	$top_score{$sequence_id} = $top_score;
+    }
+}
+
+
+################################################################
+#
+# Report sliding window profiles
+#
+sub MatchProfiles {
+    
+    ################################################################
+    #### calculate min and max positions
+    for my $id  (@sequence_ids) {
+	my %matches = %{$profile_score{$id}};
+	$min_pos = &min($min_pos, keys %matches);
+	$max_pos = &max($man_pos, keys %matches);
+    }
+
+    #### print header
+    print $out join( "\t", 
+		     "; position",
+		     ($min_pos..$max_pos)
+		     ), "\n";
+
+    #### print profiles
+    for my $id  (@sequence_ids) {
+	my %matches = %{$profile_score{$id}};
+	my @match_positions = sort {$a <=> $b} keys %matches;
+	print $out join( "\t", 
+			 $id,
+			 @matches{@match_positions}, 
+			 ), "\n";
+    }
+}
+
+
+################################################################
+# Verbosity: report parameters
+# 
+sub Verbose {
+    print $out "; dna-pattern ";
+    &PrintArguments($out);
+    print $out "; Citation: van Helden et al. (2000). Yeast 16(2), 177-187.\n";
+    printf $out "; %-21s\t%s\n", "Input file", $inputfile if ($inputfile);
+    printf $out "; %-21s\t%s\n", "Input format", $in_format; 
+    printf $out "; %-21s\t%s\n", "Output file", $outputfile if ($outputfile);
+    printf $out "; %-21s\t%s\n", "Pattern file", $pattern_file if ($pattern_file);
+    printf $out "; %-21s\t%s\n", "Search method", $search_method;
+    if ($search_method eq "sliding window") {
+	printf $out "; %-21s\t%s\n", "Sliding window", $sliding_window_size;
+	printf $out "; %-21s\t%s\n", "Pattern length", $pattern_length;
+    }
+    
+    printf $out "; %-21s\t%g\n", "Threshold", $threshold;
+    printf $out "; %-21s\t%d\n", "Allowed substitutions", $allowed_subst;
+    if (defined(%return)) {
+	foreach $key (keys %return) {
+	    printf $out "; %-21s\t%s\n", "return", $key 
+		if ($return{$key});
+	}
+    }
+    print $out "; Patterns\n";
+    print $out "; \tseq\tid\tscore\n";
+    foreach my $pattern (@patterns) {
+	print $out ("; ", 
+		    "\t", $pattern->get_attribute("sequence"),
+		    "\t", $pattern->get_attribute("id"),
+		    "\t", $pattern->get_attribute("score"),
+		    "\n");
+    }
+    print $out "; \n";
+
+    if ($return{match_positions}) {
+	print $out "; Matching positions\n";
+	print $out "; PatID";
+	print $out "\tStrand";
+	print $out "\tPattern";
+	print $out "\tSeqID";
+	print $out "\tStart";
+	print $out "\tEnd";
+	print $out "\tMatching_word";
+	print $out "\tScore";
+	print $out "\n";
+    }
+}
+
+
+
+
+
+################################################################
+# Matching statistics
+#
+sub MatchingStatistics {
+    my $nb_sequences = $#sequence_ids + 1;
+    my $nb_patterns = $#patterns + 1;
+    my $matching_patterns = 0;
+    my $matching_patterns_pct = 0;
+    my $max_matching_score_pct = 0;
+    my $max_matching_score;
+    my $max_score;
+    foreach my $pattern (@patterns) {
+	$max_score = &max($max_score, $pattern->get_attribute("score"));
+	if ($sum_per_pattern{$pattern} > 0) {
+	    $matching_patterns++ ;
+	    $max_matching_score = &max($max_matching_score, $pattern->get_attribute("score"));
+	}
+    }
+    if ($nb_patterns > 0) {
+	$matching_patterns_pct =  100*$matching_patterns/$nb_patterns;
+    }
+
+    if ($max_score > 0) {
+	$max_matching_score_pct =  100*$max_matching_score/$max_score;
+    }
+
+    my $matched_sequences = 0;
+    my $matched_sequences_pct = 0;
+    foreach my $sequence_id (@sequence_ids) {
+	$matched_sequences++ if ($sum_per_sequence{$sequence_id} > 0);
+    }
+    if ($nb_sequences > 0) {
+	$matched_sequences_pct = 100*$matched_sequences/$nb_sequences;
+    }
+
+    print $out "; Matching statistics\n";
+
+    printf $out ( "%-21s\t%s\t%s\t%s\n", 
+		  "; statistics",
+		  "max",
+		  "matched",
+		  "percent"
+		  ), "\n";
+    printf $out ( "%-21s\t%d\t%d\t%.1f\n", 
+		  "matching patterns",
+		  $nb_patterns,
+		  $matching_patterns,
+		  $matching_patterns_pct
+		  );
+    printf $out ( "%-21s\t%.2f\t%.2f\t%.1f\n", 
+		  "matching scores",
+		  $max_score,
+		  $max_matching_score,
+		  $max_matching_score_pct
+		  );
+    printf $out ( "%-21s\t%d\t%d\t%.1f\n", 
+		  "matching sequence",
+		  $nb_sequences,
+		  $matched_sequences,
+		  $matched_sequences_pct
+		  );
+}
+
+################################################################
+# print the matching table (patterns/sequences)
+sub CountTable {
+#    print $out "; Match count table\n";
+    print $out ";seq";
+    foreach my $pattern (@patterns) {
+	print $out "\t", $pattern->get_attribute("id");
+    }
+    print $out "\ttotal" if ($return{col_sum}); #### print total of occurrences per sequence
+    print $out "\n";
+    foreach $sequence_id (@sequence_ids) {
+	print $out $sequence_id;
+	foreach my $pattern (@patterns) {
+	    print $out "\t", $match_count{$sequence_id}{$pattern};
+	}
+	print $out "\t", $sum_per_sequence{$sequence_id} if ($return{col_sum});
+	print $out "\n";
+    }
+    #### print total of occurrences per pattern
+    if ($return{row_sum}) {
+	print $out "total";
+	foreach my $pattern (@patterns) {
+	    print $out "\t", $sum_per_pattern{$pattern};
+	}
+	print $out "\t", $total_sum;
+	print $out "\n";
+    }
+}
+
+################################################################
+# match counts
+sub MatchCounts {
+    if ($return{sum_only}) {
+	print $out "; Counts per pattern\n";
+	print $out "; PatID\tPattern\tMatches\n";
+	foreach my $pattern (@patterns) {
+	    print $out $pattern->get_attribute("id");
+	    print $out "\t", $pattern->get_attribute("sequence");
+	    print $out "\t", $sum_per_pattern{$pattern};
+	    print $out "\ttotal";
+	    print $out "\n";
+	}
+
+    } else {
+	print $out "; Counts per sequence and per pattern\n";
+	print $out "; SeqID\tPatID\tPattern\tMatches\n";
+	foreach $sequence_id (@sequence_ids) {
+	    foreach $pattern (@patterns) {
+		if ($match_count{$sequence_id}{$pattern} >= $threshold) {
+		    print $out join ("\t", "$sequence_id",
+				     $pattern->get_attribute("id"),
+				     $pattern->get_attribute("sequence"),
+				     $match_count{$sequence_id}{$pattern}
+				     ), "\n";
+		}
+	    }
+	}
+    }
+}
+
+################################################################
+# top scores
+sub TopScores {
+    print $out "; Top score per sequence (sliding window)\n";
+    print $out "; SeqID\ttop\n";
+    if ($sort) {
+	@sequence_ids = sort {$top_score{$b} <=> $top_score{$a}} @sequence_ids;
+    }
+    foreach $sequence_id (@sequence_ids) {
+	printf $out  "$sequence_id\t%f\n", $top_score{$sequence_id};
+    }
 }
 
 ############ HELP message ####################
@@ -358,6 +859,7 @@ DESCRIPTION
 
 CATEGORY
 	sequences
+	pattern matching
 
 USAGE
 	(get help)
@@ -579,468 +1081,7 @@ EXAMPLES
 	in the file $RSAGENOME/chr1.raw.
 WEB VERSION
 	http://www.ucmb.ulb.ac.be/bioinformatics/rsa-tools/
-";
 EndOfHelp
     close HELP;
     exit(0);
-}
-
-
-sub ShortHelp	{
-    open HELP, "|more";
-    print HELP <<EndShortHelp;
-dna-pattern options
--------------------
--h	complete help message
--help   short help message
--p	pattern
--pl	pattern list file
--s	sequence file. 
--subst  allowed substitutions
--sc	score column
--o	output file.
--format	input format (raw, filelist or IG)
--id	pattern identifier (one word). 
--noid	use pattern sequence as id
--noov	prevent detection of overlapping pattern
--DR	search matches on both strands (default)
--D	search matches on the Direct strand only
--R 	search matches on the Reverse complementary strand only
--pos	return match positions (default)
--c	return the count of matches for each pattern in each sequence
--table	return a table with the count of pattern matches per sequence
--colsum	return total occ per sequence in the count table
--rowsum	return total occ per pattern in the count table
--total	return total occ per sequence and per pattern in the count table
--stats	return matching statistics
--window	sliding window size
--top	only return the top score
--sort	sort sequences according to their top score
--th     threshold
--ct	return total count in all sequences
--N #	return matching sequences with # flanking nucleotides
--NL #	return matching sequences with # left flanking nucleotides
--NR #	return matching sequences with # right flanking nucleotides
--v	verbose
--origin origin (position 0)
-EndShortHelp
-    close HELP;
-    exit(0);
-}
-
-
-################################################################
-#
-# Read command line arguments
-#
-sub ReadArguments {
-    foreach $a (0..$#ARGV) {
-	if ($ARGV[$a] eq "-h") {
-	    &Help;
-	} elsif  ($ARGV[$a] eq "-help") {
-	    &ShortHelp;
-	    
-	} elsif ($ARGV[$a] eq "-v") {
-	    if (&IsNatural($ARGV[$a+1])) {
-		$verbose = $ARGV[$a+1];
-	    } else {
-		$verbose = 1;
-	    }
-
-	} elsif ($ARGV[$a] =~ /^-ori/) {
-	    $origin = $ARGV[$a+1];
-	    
-	} elsif (($ARGV[$a] eq "-subst") && (&IsNatural($ARGV[$a+1]))){
-	    $allowed_subst = $ARGV[$a+1];
-	    if ($allowed_subst > 0) {
-		$search_method = "IUPAC";
-		warn "; Seach method: IUPAC\n" if ($verbose >=1);
-	    }
-	    
-	} elsif ($ARGV[$a] eq "-IUPAC") {
-	    $search_method = "IUPAC";
-	    warn "; Seach method: IUPAC\n" if ($verbose >=1);
-	    
-	    ################################################################
-	    #### pattern specification
-	} elsif ($ARGV[$a] eq "-id") {
-	    # directly read pattern identifier from the command line
-	    if ($ARGV[$a+1] =~ /(\S+)/) {
-		$pattern_id = $1;
-	    }
-	    
-	} elsif ($ARGV[$a] eq "-p") {
-	    # directly read pattern sequence from the command line
-	    $pattern_seq = $ARGV[$a+1];
-	    warn ("; Pattern sequence\t", $pattern_seq, "\n") if ($verbose >=4);
-	    
-	} elsif ($ARGV[$a] eq "-pl") {
-	    # read name of file containing the list of patterns and open it
-	    if ($ARGV[$a+1] =~ /(\S+)/) {
-		$pattern_file = $1;
-		&FatalError("Cannot read pattern file '$pattern_file'.") 
-		    unless (-r $pattern_file);
-	    } 
-
-	    #### score column in the pattern file
-	} elsif (($ARGV[$a] eq "-sc") && (&IsNatural($ARGV[$a+1])) && ($ARGV[$a+1] > 1)) {
-	    $score_column = $ARGV[$a+1];
-	    
-	    #### the pattern file contains no identifier
-	} elsif ($ARGV[$a] eq "-noid") {
-	    $noid = 1;
-	    
-	    ################################################################
-	    #### sequence file
-	} elsif ($ARGV[$a] eq "-i") {
-	    # read input file name (sequence file)
-	    $inputfile = $ARGV[$a+1];
-	    
-	} elsif ($ARGV[$a] eq "-format") {
-	    # read input format (sequence format)
-	    $in_format = lc($ARGV[$a+1]);
-	    
-	    
-	    ################################################################
-	    #### output file
-	} elsif ($ARGV[$a] eq "-o") {
-	    $outputfile = $ARGV[$a+1];
-
-	    ################################################################
-            #### matching options
-
-	    #### strands
-	} elsif (($ARGV[$a] eq "-D") ||($ARGV[$a] eq "-W") || ($ARGV[$a] eq "-1str")) {
-	    $strands_to_search = "D";
-	} elsif (($ARGV[$a] eq "-R") ||($ARGV[$a] eq "-C")) {
-	    $strands_to_search = "R";
-	} elsif (($ARGV[$a] eq "-DR") || 
-		 ($ARGV[$a] eq "-RD") ||
-		 ($ARGV[$a] eq "-CW") ||
-		 ($ARGV[$a] eq "-CW") ||
-		 ($ARGV[$a] eq "2str")
-		 ) {
-	    $strands_to_search = "DR";
-	    
-	    #### threshold
-	} elsif ($ARGV[$a] eq "-th") {
-	    $threshold = $ARGV[$a+1];
-	    unless (&IsReal($threshold)) {
-		&FatalError("Threshold must have a real value");
-	    }
-
-	    #### no overlap
-	} elsif ($ARGV[$a] eq "-noov") {
-	    $no_overlap = 1;
-	    
-	    ################################################################
-            #### output 
-	    
-	    #### count matches
-	} elsif ($ARGV[$a] eq "-pos") {
-	    $return{match_positions} = 1;
-	    
-	    #### count matches
-	} elsif ($ARGV[$a] eq "-c") {
-	    $calc{match_counts} = 1;
-	    $return{match_counts} = 1;
-	    
-	    #### sum matches over all sequences
-	} elsif ($ARGV[$a] eq "-ct") {
-	    $return{match_counts} = 1;
-	    $return{sum_only} = 1;
-	    
-	    #### return results in a sequence x pattern_count table
-	} elsif ($ARGV[$a] eq "-table") {
-	    $calc{match_counts} = 1;
-#	    $return{sum_only} = 0;
-	    $return{table} = 1;
-
-	    #### add a column containing the sum of colums to the table output
-	} elsif ($ARGV[$a] eq "-colsum") {
-	    $return{col_sum} = 1;
-	    #### add a row containing the sum of rows to the table output
-	} elsif ($ARGV[$a] eq "-rowsum") {
-	    $return{row_sum} = 1;
-	    #### add a column and a row for totals to the table output
-	} elsif ($ARGV[$a] eq "-total") {
-	    $return{col_sum} = 1;
-	    $return{row_sum} = 1;
-
-	    #### return a summary of matching statistics 
-	} elsif ($ARGV[$a] eq "-stats") {
-	    $calc{match_counts} = 1;
-	    $calc{col_sum} = 1;
-	    $calc{row_sum} = 1;
-	    $return{stats} = 1;
-
-	    #### sliding window
-	} elsif ($ARGV[$a] =~ /-win/) {
-	    $search_method = "sliding window";
-	    $sliding_window_size = $ARGV[$a+1];
-	    unless (&IsNatural($sliding_window_size)) {
-		&FatalError( "Sliding window size must be a natural number");
-	    }
-	    unless ($sliding_window_size > 0) {
-		&FatalError( "Sliding window size must be > 0");
-	    }
-
-	    #### top score
-	} elsif ($ARGV[$a] eq "-top") {
-	    $return{top} = 1;
-	    #### sort
-	} elsif ($ARGV[$a] eq "-sort") {
-	    $sort = 1;
-
-	    #### neighborhood (return flanking residues)
-	} elsif (($ARGV[$a] eq "-N") && (&IsNatural($ARGV[$a+1]))) {
-	    $left_neighborhood = $ARGV[$a+1];
-	    $right_neighborhood = $ARGV[$a+1];
-	} elsif (($ARGV[$a] eq "-NL") && (&IsNatural($ARGV[$a+1]))) {
-	    $left_neighborhood = $ARGV[$a+1];
-	} elsif (($ARGV[$a] eq "-NR") && (&IsNatural($ARGV[$a+1]))) {
-	    $right_neighborhood = $ARGV[$a+1];
-	    
-	}
-    }
-}
-
-
-
-################################################################
-# scan the sequence with a sliding window
-sub SlidingWindowSearch {
-    $last_pos = $sequence_length - $pattern_length;
-
-    return if ($last_pos < $sliding_window_size);
-
-    $current_seq = lc($current_seq);
-    my @scores = ();
-    my $current_score = 0;
-    my $previous_score = 0;
-    my $score_sum = 0;
-    my $top_score;
-
-    #### initialize score vector
-    for my $pos (0..($sliding_window_size-2)) {
-	my $subseq = substr($current_seq, $pos, $pattern_length);
-	my $current_score = $pattern_scores{$subseq};
-	push @scores, $current_score;
-	$score_sum += $current_score;
-    }
-    $top_score = $score_sum;
-
-    #### scan the sequence with the sliding window
-    for my $pos (($sliding_window_size-1)..$last_pos) {
-	my $subseq = substr($current_seq, $pos, $pattern_length);
-	my $current_score = $pattern_scores{$subseq};
-
-	push @scores, $current_score;
-	$score_sum += $current_score;
-
-	if ($score_sum >= $threshold) {
-	    $pattern->set_attribute("score", $score_sum);
-	    $end_pos = $pos - $orig_pos + $pattern_length ;
-	    $start_pos = $pos - $orig_pos - $sliding_window_size +2;
-	    $matching_word = substr($current_seq, $start_pos, $sliding_window_size + $pattern_length - 1);
-	    &PrintMatchLocation() if ($return{match_positions});
-	}
-
-	$previous_score = shift @scores;
-	$score_sum -= $previous_score;
-	$top_score = &max($top_score, $score_sum);
-    }
-    if ($top_score >= $threshold) {
-	$top_score{$sequence_id} = $top_score;
-    }
-}
-
-
-
-################################################################
-# Verbosity: report parameters
-# 
-sub Verbose {
-    print $out "; dna-pattern ";
-    &PrintArguments($out);
-    print $out "; Citation: van Helden et al. (2000). Yeast 16(2), 177-187.\n";
-    printf $out "; %-21s\t%s\n", "Input file", $inputfile if ($inputfile);
-    printf $out "; %-21s\t%s\n", "Input format", $in_format; 
-    printf $out "; %-21s\t%s\n", "Output file", $outputfile if ($outputfile);
-    printf $out "; %-21s\t%s\n", "Pattern file", $pattern_file if ($pattern_file);
-    printf $out "; %-21s\t%s\n", "Search method", $search_method;
-    if ($search_method eq "sliding window") {
-	printf $out "; %-21s\t%s\n", "Sliding window", $sliding_window_size;
-	printf $out "; %-21s\t%s\n", "Pattern length", $pattern_length;
-    }
-    
-    printf $out "; %-21s\t%g\n", "Threshold", $threshold;
-    printf $out "; %-21s\t%d\n", "Allowed substitutions", $allowed_subst;
-    if (defined(%return)) {
-	foreach $key (keys %return) {
-	    printf $out "; %-21s\t%s\n", "return", $key 
-		if ($return{$key});
-	}
-    }
-    print $out "; Patterns\n";
-    print $out "; \tseq\tid\tscore\n";
-    foreach my $pattern (@patterns) {
-	print $out ("; ", 
-		    "\t", $pattern->get_attribute("sequence"),
-		    "\t", $pattern->get_attribute("id"),
-		    "\t", $pattern->get_attribute("score"),
-		    "\n");
-    }
-    print $out "; \n";
-
-    if ($return{match_positions}) {
-	print $out "; Matching positions\n";
-	print $out "; PatID";
-	print $out "\tStrand";
-	print $out "\tPattern";
-	print $out "\tSeqID";
-	print $out "\tStart";
-	print $out "\tEnd";
-	print $out "\tMatching_word";
-	print $out "\tScore";
-	print $out "\n";
-    }
-}
-
-
-
-################################################################
-# Matching statistics
-#
-sub MatchingStatistics {
-    my $nb_sequences = $#sequence_ids + 1;
-    my $nb_patterns = $#patterns + 1;
-    my $matching_patterns = 0;
-    my $matching_patterns_pct = 0;
-    my $max_matching_score_pct = 0;
-    my $max_matching_score;
-    my $max_score;
-    foreach my $pattern (@patterns) {
-	$max_score = &max($max_score, $pattern->get_attribute("score"));
-	if ($sum_per_pattern{$pattern} > 0) {
-	    $matching_patterns++ ;
-	    $max_matching_score = &max($max_matching_score, $pattern->get_attribute("score"));
-	}
-    }
-    if ($nb_patterns > 0) {
-	$matching_patterns_pct =  100*$matching_patterns/$nb_patterns;
-    }
-
-    if ($max_score > 0) {
-	$max_matching_score_pct =  100*$max_matching_score/$max_score;
-    }
-
-    my $matched_sequences = 0;
-    my $matched_sequences_pct = 0;
-    foreach my $sequence_id (@sequence_ids) {
-	$matched_sequences++ if ($sum_per_sequence{$sequence_id} > 0);
-    }
-    if ($nb_sequences > 0) {
-	$matched_sequences_pct = 100*$matched_sequences/$nb_sequences;
-    }
-
-    print $out "; Matching statistics\n";
-
-    printf $out ( "%-21s\t%s\t%s\t%s\n", 
-		  "; statistics",
-		  "max",
-		  "matched",
-		  "percent"
-		  ), "\n";
-    printf $out ( "%-21s\t%d\t%d\t%.1f\n", 
-		  "matching patterns",
-		  $nb_patterns,
-		  $matching_patterns,
-		  $matching_patterns_pct
-		  );
-    printf $out ( "%-21s\t%.2f\t%.2f\t%.1f\n", 
-		  "matching scores",
-		  $max_score,
-		  $max_matching_score,
-		  $max_matching_score_pct
-		  );
-    printf $out ( "%-21s\t%d\t%d\t%.1f\n", 
-		  "matching sequence",
-		  $nb_sequences,
-		  $matched_sequences,
-		  $matched_sequences_pct
-		  );
-}
-
-################################################################
-# print the matching table (patterns/sequences)
-sub CountTable {
-#    print $out "; Match count table\n";
-    print $out ";seq";
-    foreach my $pattern (@patterns) {
-	print $out "\t", $pattern->get_attribute("id");
-    }
-    print $out "\ttotal" if ($return{col_sum}); #### print total of occurrences per sequence
-    print $out "\n";
-    foreach $sequence_id (@sequence_ids) {
-	print $out $sequence_id;
-	foreach my $pattern (@patterns) {
-	    print $out "\t", $match_count{$sequence_id}{$pattern};
-	}
-	print $out "\t", $sum_per_sequence{$sequence_id} if ($return{col_sum});
-	print $out "\n";
-    }
-    #### print total of occurrences per pattern
-    if ($return{row_sum}) {
-	print $out "total";
-	foreach my $pattern (@patterns) {
-	    print $out "\t", $sum_per_pattern{$pattern};
-	}
-	print $out "\t", $total_sum;
-	print $out "\n";
-    }
-}
-
-################################################################
-# match counts
-sub MatchCounts {
-    if ($return{sum_only}) {
-	print $out "; Counts per pattern\n";
-	print $out "; PatID\tPattern\tMatches\n";
-	foreach my $pattern (@patterns) {
-	    print $out $pattern->get_attribute("id");
-	    print $out "\t", $pattern->get_attribute("sequence");
-	    print $out "\t", $sum_per_pattern{$pattern};
-	    print $out "\ttotal";
-	    print $out "\n";
-	}
-
-    } else {
-	print $out "; Counts per sequence and per pattern\n";
-	print $out "; SeqID\tPatID\tPattern\tMatches\n";
-	foreach $sequence_id (@sequence_ids) {
-	    foreach $pattern (@patterns) {
-		if ($match_count{$sequence_id}{$pattern} >= $threshold) {
-		    print $out join ("\t", "$sequence_id",
-				     $pattern->get_attribute("id"),
-				     $pattern->get_attribute("sequence"),
-				     $match_count{$sequence_id}{$pattern}
-				     ), "\n";
-		}
-	    }
-	}
-    }
-}
-
-################################################################
-# top scores
-sub TopScores {
-    print $out "; Top score per sequence (sliding window)\n";
-    print $out "; SeqID\ttop\n";
-    if ($sort) {
-	@sequence_ids = sort {$top_score{$b} <=> $top_score{$a}} @sequence_ids;
-    }
-    foreach $sequence_id (@sequence_ids) {
-	printf $out  "$sequence_id\t%f\n", $top_score{$sequence_id};
-    }
 }
