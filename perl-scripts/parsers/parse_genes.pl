@@ -1,10 +1,9 @@
-
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genes.pl,v 1.8 2000/11/20 22:38:47 jvanheld Exp $
+# $Id: parse_genes.pl,v 1.9 2000/11/21 08:29:42 jvanheld Exp $
 #
-# Time-stamp: <2000-11-20 11:50:28 jvanheld>
+# Time-stamp: <2000-11-20 23:43:39 jvanheld>
 #
 ############################################################
 
@@ -81,7 +80,7 @@ if ($export{all}) {
 }
 $suffix .= "_test" if ($test);
 
-$dir{output} = $parsed_data."/genes_kegg";
+$dir{output} = $parsed_data."/kegg";
 unless (-d $dir{output}) {
     warn "Creating output dir $dir{output}";
     mkdir $dir{output}, 0775 || die "Error: cannot create directory $dir\n";
@@ -91,13 +90,6 @@ $out_file{error} = "$dir{output}/Gene".$suffix.".errors.txt";
 $out_file{stats} = "$dir{output}/Gene".$suffix.".stats.txt";
 $out_file{genes} = "$dir{output}/Gene".$suffix.".obj";
 $out_file{synonyms} = "$dir{output}/Gene".$suffix.".synonyms.tab";
-#$out_file{mldbm_genes} = "$dir{output}/Gene".$suffix.".mldbm";
-#$out_file{mldbm_gene_index} = "$dir{output}/Gene".$suffix."__name_index.mldbm";
-#$out_file{mldbm_expression_name_index} = "$dir{output}/Expression".$suffix."__name_index.mldbm";
-#$out_file{mldbm_expression_input_index} = "$dir{output}/Expression".$suffix."__input_index.mldbm";
-#$out_file{mldbm_expression_output_index} = "$dir{output}/Expression".$suffix."__output_index.mldbm";
-#$out_file{expressions} = "$dir{output}/Expression".$suffix.".obj";
-#$out_file{mldbm_expressions} = "$dir{output}/Expression".$suffix.".mldbm";
 
 ### open error report file
 open ERR, ">$out_file{error}" || die "Error: cannot write error file $out_file{error}\n";
@@ -135,24 +127,11 @@ $genes->index_names();
 
 &ParsePositions();
 
-#&CreateExpression;
-#$expressions->index_names();
-#$expressions->index_inputs();
-#$expressions->index_outputs();
 
 ### print result
 &ExportClasses($out_file{genes}, $out_format, PFBP::Gene);
-#&ExportClasses($out_file{expressions}, $out_format, PFBP::Expression);
 
 $genes->dump_tables($suffix);
-#$expressions->dump_tables($suffix);
-
-#$genes->export('MLDBM',$out_file{mldbm_genes});
-#$genes->export_name_index("MLDBM",$out_file{mldbm_gene_index});
-#$expressions->export_name_index("MLDBM",$out_file{mldbm_expression_name_index});
-#$expressions->export_input_index("MLDBM",$out_file{mldbm_expression_input_index});
-#$expressions->export_output_index("MLDBM",$out_file{mldbm_expression_output_index});
-#$expressions->export('MLDBM',$out_file{mldbm_expressions});
 
 &PrintStats($out_file{stats}, @classes);
 
@@ -274,74 +253,6 @@ sub ReadArguments {
 
 
 
-sub CreateExpression {
-### the field "definition" contains a reference to the Swissprot ID
-### of the polypeptide that the gene codes for
-### this sbroutine etxracts this information, and instantiates 
-### objects in the PFBP::Expression class
-
-  ### load polypeptide class 
-  ### for converting Swissprot IDs in ACs
-#  $class_holder{polypeptides} = &ImportClass("$data_dir/polypeptides/Polypeptide.mldbm", "PFBP::Polypeptide");
- 
-  
-#  $infile{polypeptide_index} = "$mldbm_dir/Polypeptide".$suffix."__name_index.mldbm";
-#  warn "; opening polpeptide index $infile{polypeptide_index}\n"
-#      if ($warn_level >= 1);
-
-  ### open the persistent polypeptide index
-#  tie %index, 'MLDBM', $infile{polypeptide_index} ||
-#      die "Error: cannot tie file $infile{polypeptide_index}";
-  $database = new PFBP::Database;
-  $database->open_class("PFBP::Polypeptide");
-
-
-  foreach my $gene (PFBP::Gene->get_objects()) {
-    my $gene_id = $gene->get_attribute("id");
-    if (my $definition = join(" ", $gene->get_attribute("definition"))) {
-      if ($definition =~ /\[SP:(\S+)\]/) {
-	while ($definition =~ s/\[SP:(\S+)\]//) {
-	  
-	  ### identify the polypeptide
-	  my $swissprot_id = $1;
-	  my $polypeptide = undef;
-	  my $polypeptide_id = undef;
-	
-	  if ($id = $database->get_id("PFBP::Polypeptide::$swissprot_id")) {
-	    $polypeptide_id = $id;
-#	  if (exists $index{uc($swissprot_id)}) {
-#	    $id_table = $index{uc($swissprot_id)};
-#	    $polypeptide_id = $$id_table[0];
-	  } else {
-	    &ErrorMessage("ERROR : could not identify polypeptide $swissprot_id\n");
-	    next;
-	  }
-	  
-	  $expr_id = "expr_".$gene_id."_".$polypeptide_id;
-	  if (my $expression = $expressions->new_object(id=>$expr_id,
-							source=>"KEGG")) {
-	    warn "created expression from gene $gene_id to polypeptide $polypeptide_id\n" 
-		if ($warn_level >= 2);
-	    $expression->set_attribute("gene_id",$gene_id);
-	    $expression->set_attribute("polypeptide_id",$polypeptide_id);
-	  } else {
-	    die "Error: could not instantiate expression\n";
-	  }
-	}
-      } else {
-	&ErrorMessage ("WARNING: gene $gene_id could not be linked to swissprot",
-		       "\tdefinition\t$definition",
-		       "\n");
-      }
-    } else {
-      &ErrorMessage("WARNING: gene $gene_id has no definition field\n");
-    }
-    
-    untie %polypeptides_name_index ||
-	die "Error: cannot untie file $infile{polypeptide_index}";
-    
-  }
-}
 
 
 sub ParsePositions {
