@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_kegg.pl,v 1.13 2002/10/25 19:27:48 jvanheld Exp $
+# $Id: parse_kegg.pl,v 1.14 2002/10/28 18:43:00 jvanheld Exp $
 #
-# Time-stamp: <2002-10-25 13:27:11 jvanheld>
+# Time-stamp: <2002-10-28 12:41:43 jvanheld>
 #
 ############################################################
 
@@ -18,7 +18,7 @@ require "PFBP_config.pl";
 require "PFBP_util.pl";
 require "PFBP_parsing_util.pl";
 
-package PFBP::GenericPathway;
+package KEGG::GenericPathway;
 ### A class to treat EC numenclature
 {
   @ISA = qw ( PFBP::ObjectSet );
@@ -36,7 +36,7 @@ package PFBP::GenericPathway;
 		     );
 }
 
-package PFBP::Pathway;
+package KEGG::Pathway;
 ### A class to treat EC numenclature
 {
   @ISA = qw ( PFBP::ObjectSet );
@@ -56,6 +56,48 @@ package PFBP::Pathway;
 		     );
 }
 
+package KEGG::Reaction;
+{
+  @ISA = qw ( PFBP::HasReactants );
+  ### class attributes
+  $_count = 0;
+  $_prefix = "rctn_";
+  @_objects = ();
+  %_name_index = ();
+  %_id_index = ();
+  %_attribute_count = ();
+  %_attribute_cardinality = (id=>"SCALAR",
+		      equation=>"SCALAR",
+		      description=>"SCALAR",
+		      enzyme=>"SCALAR",
+		      pathway=>"ARRAY",
+#		      substrates=>"ARRAY",
+#		      products=>"ARRAY",
+		      source=>"SCALAR");
+}
+
+
+### reactant is just a class to store a hash attribute for Reaction
+### it describes 
+### - the compound ID, 
+### - the stoichiometry 
+### - the validity of the reactant as intermediate betweeen 2 successive reactions in a pathway
+package KEGG::Reactant;
+{
+  @ISA = qw ( PFBP::DatabaseObject );
+  ### class attributes
+  $_count = 0;
+  $_prefix = "rctt_";
+  @_objects = ();
+  %_name_index = ();
+  %_id_index = ();
+  %_attribute_count = ();
+  %_attribute_cardinality = (id=>"SCALAR",
+			     compound_id=>"SCALAR",
+			     stoichio=>"SCALAR",
+			     valid_interm=>"SCALAR"
+			     );
+}
 
 package main;
 
@@ -76,8 +118,9 @@ $password = "kegg";
 #### ligand
 $dir{KEGG} = "${Databases}/ftp.genome.ad.jp/pub/kegg";
 $data_file{compound} = $dir{KEGG}."/ligand/compound";
-$data_file{reaction} = $dir{KEGG}."/ligand/reaction.lst";
-$data_file{reaction_name} = $dir{KEGG}."/ligand/reaction_name.lst";
+$data_file{reaction} = $dir{KEGG}."/ligand/reaction";
+#$data_file{reaction} = $dir{KEGG}."/ligand/reaction.lst";
+#$data_file{reaction_name} = $dir{KEGG}."/ligand/reaction_name.lst";
 $data_file{ec} = $dir{KEGG}."/ligand/ECtable";
 
 #### pathways
@@ -91,19 +134,19 @@ $in_file{pathway_names} = $dir{KEGG}."/pathways/map_title.tab";
 #
 # output files
 #
-$dir{output} = "$parsed_data/kegg_ligand/$delivery_date";
-
-open ERR, ">$out_file{errors}" || die "Error: cannot write error report fle $$out_file{errors}\n";
+$export_subdir = "kegg_ligand";
+$dir{output} = "$parsed_data/${export_subdir}/$delivery_date";
 
 $out_format = "obj";
 
 push @classes, ("PFBP::Compound");
-push @classes, ("PFBP::Reaction");
-push @classes, ("PFBP::Reactant");
+push @classes, ("KEGG::Reaction");
+push @classes, ("KEGG::Reactant");
 push @classes, ("PFBP::ECSet");
-push @classes, ("PFBP::GenericPathway");
+push @classes, ("KEGG::GenericPathway");
 
 &ReadArguments;
+
 
 #### input directories
 unless (-d $dir{pathway_reactions}) {
@@ -119,30 +162,34 @@ $out_file{kegg} = "$dir{output}/kegg.obj";
 $out_file{connectivity} = "$dir{output}/kegg.connectivity.txt";
 $out_file{stats} = "$dir{output}/kegg.stats.txt";
 $out_file{errors} = "$dir{output}/kegg.errors.txt";
+open ERR, ">$out_file{errors}" || die "Error: cannot write error report fle $$out_file{errors}\n";
+
 
 #### check input files
 foreach $key (keys %data_file) {
     if (-e $data_file{$key}) {
 	$in_file{$key} = $data_file{$key};
 	if ($test) {
-	    $in_file{$key} = "head -500 $in_file{$key} | ";
+	    $in_file{$key} = "head -1000 $in_file{$key} | ";
 	}
     } elsif (-e "$data_file{$key}.gz") {
 	$in_file{$key} = "gunzip -c $data_file{$key}.gz | ";
 	if ($test) {
-	    $in_file{$key} = "| head -500 ";
+	    $in_file{$key} = "| head -1000 ";
 	}
     } elsif (-e "$data_file{$key}.Z") {
 	$in_file{$key} = "uncompress -c $data_file{$key}.Z | ";
 	if ($test) {
-	    $in_file{$key} = "| head -500 ";
+	    $in_file{$key} = "| head -1000 ";
 	}
     } else {
 	die "Error: $key data file $data_file{$key} does not exist\n";
     }
 }
-$in_file{reaction2ec} = "uncompress -c ".$dir{KEGG}."/ligand/reaction.tar.Z | tar -xpOf - | cut -d ':' -f 1,2 | sort -u |";
 
+################################################################
+#### KEGG reactions come in a compressed archive
+$in_file{reaction2ec} = "uncompress -c ".$dir{KEGG}."/ligand/reaction.tar.Z | tar -xpOf - | cut -d ':' -f 1,2 | sort -u |";
 
 ### default verbose message
 &DefaultVerbose if ($verbose >= 1);
@@ -150,20 +197,28 @@ $in_file{reaction2ec} = "uncompress -c ".$dir{KEGG}."/ligand/reaction.tar.Z | ta
 ### instantiate class factories
 $compounds = PFBP::ClassFactory->new_class(object_type=>"PFBP::Compound",
 					   prefix=>"comp_");
-$reactions = PFBP::ClassFactory->new_class(object_type=>"PFBP::Reaction",
+$reactions = PFBP::ClassFactory->new_class(object_type=>"KEGG::Reaction",
 					   prefix=>"rctn_");
-$reactants = PFBP::ClassFactory->new_class(object_type=>"PFBP::Reactant",
+$reactants = PFBP::ClassFactory->new_class(object_type=>"KEGG::Reactant",
 					   prefix=>"rctt_");
 $ecs = PFBP::ClassFactory->new_class(object_type=>"PFBP::ECSet",
 				     prefix=>"ec_");
-$pathways = PFBP::ClassFactory->new_class(object_type=>"PFBP::Pathway",
+$pathways = PFBP::ClassFactory->new_class(object_type=>"KEGG::Pathway",
 					  prefix=>"pthw_");
-$genericPathways = PFBP::ClassFactory->new_class(object_type=>"PFBP::GenericPathway",
+$genericPathways = PFBP::ClassFactory->new_class(object_type=>"KEGG::GenericPathway",
 						 prefix=>"gptw_");
+$compounds->generate_sql(schema=>$schema,
+			 user=>$user,
+			 password=>$password,
+#				  dir=>"$dir{output}/sql_scripts",
+			 prefix=>"$class_factory_",
+			 dbms=>$dbms
+			 );
 
 ### default output fields for each class
 $compounds->set_out_fields(qw( id names formula source ));
-$reactions->set_out_fields(qw( id  source equation ecs));
+$reactions->set_out_fields(qw( id  source equation description ecs pathways
+			       name pathway enzyme  left right)); ## for parsing only
 $reactants->set_out_fields(qw( id reactant_type reaction_id compound_id stoichio valid_interm ));
 $ecs->set_out_fields(qw( id names parent ));
 $pathways->set_out_fields(qw( id parent organism source names reactions ECs genes ));
@@ -175,21 +230,7 @@ $genericPathways->set_attribute_header("reactions", join ("\t", "reaction", "dir
 #### parse compounds
 &ParseKeggFile($in_file{compound}, $compounds, source=>'KEGG:compound');
 $compounds->index_names();
-
-
-#### parse reactions
-&ParseReactions($in_file{reaction}, $reactions, $in_file{reaction_name});
-
-### parse EC numbers
-&ParseEC($in_file{ec}, $ecs);
-&ParseReactionEC($in_file{reaction2ec});
-&ParseKeggPathways();
-
 foreach $compound ($compounds->get_objects()) {
-    ### define a primary name (take the first value in the name list)
-#    if ($name = $compound->get_name()) {
-#	$compound->set_attribute("primary_name",$name);
-#    }
     #### check for compounds without formula
     if ($compound->get_attribute("formula") eq $null) {
 	$compound->set_attribute("formula",$null);
@@ -197,15 +238,20 @@ foreach $compound ($compounds->get_objects()) {
 }
 
 
+##### parse reactions
+&ParseReactions($in_file{reaction}, $reactions);
+$reactions->set_out_fields(qw( id  source equation description ecs pathways)); ### remove temporary fields, which were necessary for parsing but not for export
 
-### print result
-#  $compounds->dump_tables();
-#  $reactions->dump_tables();
-#  $reactants->dump_tables();
-#  $ecs->dump_tables();
-#  $pathways->dump_tables();
-#  $genericPathways->dump_tables();
+#### parse EC numbers
+&ParseEC($in_file{ec}, $ecs);
 
+#### parse pathways
+&ParseKeggPathways();
+
+
+
+################################################################
+### export parsing result
 @class_factories = qw (
 		       compounds
 		       reactions
@@ -220,7 +266,6 @@ foreach $class_factory (@class_factories) {
     $$class_factory->generate_sql(schema=>$schema,
 				  user=>$user,
 				  password=>$password,
-				  dir=>"$dir{output}/sql_scripts",
 				  prefix=>"$class_factory_",
 				  dbms=>$dbms
 				  );
@@ -243,6 +288,7 @@ if ($verbose >= 1) {
 }
 
 close ERR;
+
 
 system "gzip -f $dir{output}/*.tab $dir{output}/*.txt";
 system "gzip -f $dir{output}/*.obj" if ($export{obj});
@@ -309,24 +355,115 @@ sub TrivialCompounds {
     $trivial{"C00027"} = 1; ## C00027	12	72	84	H2O2
 }
 
-
 ################################################################
 #### parse reactions
 sub ParseReactions {
+    ### read the reaction file from KEGG
+    my ($reaction_file, $class_holder, $equation_file) = @_;
+
+    &TrivialCompounds();
+    
+    warn (";\n; ", 
+	  &AlphaDate, 
+	  "\tparsing class ", 
+	  $class_holder->get_object_type(),
+	  " from ",
+	  $reaction_file,
+	  "\n")     if ($verbose >= 1);
+
+
+    &ParseKeggFile($reaction_file,$class_holder, source=>"KEGG:reaction");
+
+    ################################################################
+    #### post-processing of KEGG information to better fit with our objects
+    foreach my $reaction ($reactions->get_objects()) {
+
+	my $reaction_id = $reaction->get_attribute("id");
+
+	################################################################
+	#### parse reaction equations to create reactants
+	my $equation = $reaction->get_attribute("equation");
+	if ($equation =~ /^\s*(.*)\s*\<\=\>\s*(.*)\s*$/) {
+	    $left = $1;
+	    $right = $2;
+	    
+	    ### temporary
+	    $reaction->set_attribute("left",$left);
+	    $reaction->set_attribute("right",$right);
+	    
+	    ### split the equation into reactants
+	    %substrate = &SplitReactants($left);
+	    %product = &SplitReactants($right);
+	    
+	    foreach $reactant_type ("substrate","product") {
+		while (($compound, $stoichio) = each %{$reactant_type}) {
+		    ### instantiate a new reactant
+		    $reactant = $reactants->new_object();
+		    $reactant_id = $reactant->get_attribute("id");
+		    $reactant->set_attribute("compound_id",$compound);
+		    $reactant->set_attribute("reaction_id",$reaction_id);
+		    $reactant->set_attribute("reactant_type",$reactant_type);
+		    $reactant->new_attribute_value("stoichio",$stoichio);
+		    
+		    ### validity of the reactant as intermediate
+		    ### between two successive reactions in a pathway
+		    if ($trivial{$compound}) {
+			$validity = "0";
+		    } else {
+			$validity = "1";
+		    }
+		    $reactant->set_attribute("valid_interm", $validity);
+		}
+	    }
+	} else {
+	    &ErrorMessage("invalid equation for reaction $reaction_id\t$equation");
+	}
+
+	################################################################
+	#### parse pathways in which each reaction is involved
+	foreach my $pathway ($reaction->get_attribute("pathway")) {
+	    if ($pathway =~ /PATH: (MAP\d+)/) {
+		my $pathway_id = $1;
+		$reaction->push_attribute("pathways", $pathway_id);
+	    } else {
+		&ErrorMessage("reaction $reaction_id\tinvalid pathway\t$pathway");
+	    }
+	}
+
+
+	################################################################
+	#### parse ECs associated to each reaction
+	foreach my $enzyme_string ($reaction->get_attribute("enzyme")) {
+
+	    if ($enzyme_string eq $null) {
+		warn "; Reaction $reaction_id has no enzyme\n" if ($verbose >= 2);
+		next;
+	    }
+	    my @ecs = split /\s+/, $enzyme_string;
+	    foreach my $ec (@ecs) {
+		$reaction->push_attribute("ecs", $ec);
+	    }
+	}
+
+    }
+}
+
+################################################################
+#### parse reactions
+sub ParseReactions_old {
     ### read the reaction file from KEGG
     my ($input_file, $class_holder, $equation_file) = @_;
 
     &TrivialCompounds;
     
     if ($verbose >= 1) {
-	my $message = 
-	    warn (";\n; ", 
-		  &AlphaDate, 
-		  "\tparsing class ", 
-		  $class_holder->get_object_type(),
-		  " from ",
-		  $input_file,
-		  "\n");
+	warn (";\n; ", 
+	      &AlphaDate, 
+	      "\tparsing class ", 
+	      $class_holder->get_object_type(),
+	      " from ",
+	      $input_file,
+	      "\n");
     }
 
     ### read reactions
@@ -513,12 +650,20 @@ sub ParseEC {
 }
 
 
+################################################################
+#### parse the link between reactions and ECs
 sub ParseReactionEC {
     my ($file) = @_;
     
     warn (";\n; ", &AlphaDate, " parsing reaction ECs from $file\n")
 	if ($verbose >= 1);
     
+#    unless (-e $file) {
+#	die "Error: ec2reaction file $file does not exist\n";
+#    }
+#    unless (-r $file) {
+#	die "Error: ec2reaction file $file is not readable\n";
+#    }
     open EC_REACT, $file || die "Error: cannot read ec2reaction file $file\n";
     
     while (<EC_REACT>) {
@@ -651,15 +796,12 @@ sub ParseKeggPathways {
 		      $in_file{pathway_names},
 		      "'\n");
     }
-    
-    
-    
+
     #### generic pathways
     &ParseGenericPathways();
-    
+
     #### organism-specific pathways
     &ParseSpecificPathways(); 
-    
 }
 
 ################################################################
