@@ -7,7 +7,6 @@ require "RSA.seq.lib";
 require "RSA.stat.lib";
 umask 0022;
 
-
 ############################################################################
 ############################################################################
 ############################################################################
@@ -380,10 +379,10 @@ sub ReadExpectedFrequencies {
     #### if not, infer them from the direct strand 
     foreach my $pattern_seq (sort keys %patterns) {
   	my $rc = lc(&SmartRC($pattern_seq));
-  	if (($patterns{$rc}->{exp_freq} <= 0) &&
+  	if ((!defined($patterns{$rc}->{exp_freq})) &&
   	    ($patterns{$pattern_seq}->{exp_freq})) {
   	    $patterns{$rc}->{exp_freq} = $patterns{$pattern_seq}->{exp_freq};
-	    #print STDERR join "\t", $pattern_seq,  $patterns{$pattern_seq}->{exp_freq}, $rc, $patterns{$rc}->{exp_freq}, "\n";
+#	    warn join "\t", $pattern_seq,  $patterns{$pattern_seq}->{exp_freq}, $rc, $patterns{$rc}->{exp_freq}, "\n" if ($main::verbose >= 10);
   	}
     }
 
@@ -454,7 +453,7 @@ sub CalcConditionalProbabilities {
     my ($exp_freq_file) = @_;
 
     &ReadExpectedFrequencies($exp_freq_file) ;
-    
+
     warn "; Calculating conditional probabilities\n" if ($main::verbose >= 2);
     
     foreach my $pattern_seq (keys %patterns) {
