@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.38 2004/03/11 09:13:04 jvanheld Exp $
+# $Id: install-organism,v 1.39 2004/03/29 12:39:22 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -38,6 +38,7 @@ $supported_for_installation{"filelist"} = 1;
 		   intergenic_freq=>1,
 		   dyads=>1,
 		   clean=>1,
+		   phylogeny=>1,
 		   all=>1
 		   );
 $supported_tasks = join ",", sort (keys %supported_task);
@@ -118,9 +119,9 @@ $dir{genome} = "$dir{install}/genome";
 $dir{oligos} = "$dir{install}/oligo-frequencies";
 &CheckOutDir($dir{oligos});
 
-$outfile{features} = "$dir{genome}/Feature.tab" unless ($outfile{features});
-$outfile{synonyms} = "$dir{genome}/Feature_names.tab" unless ($outfile{synonyms});
-$outfile{genome} = "$dir{genome}/Contigs.txt" unless ($outfile{genome});
+$outfile{features} = "$dir{genome}/feature.tab" unless ($outfile{features});
+$outfile{synonyms} = "$dir{genome}/feature_names.tab" unless ($outfile{synonyms});
+$outfile{genome} = "$dir{genome}/contigs.txt" unless ($outfile{genome});
 
 
 ################################################################
@@ -134,6 +135,8 @@ $out = &OpenOutputFile($outputfile);
 &ParseGenome() if ($task{parse});
 
 &UpdateConfig() if ($task{config});
+
+&CreatePhylogeny() if ($task{phylogeny});
 
 &StartAndStopCodons() if ($task{start_stop});
 
@@ -216,10 +219,7 @@ sub UpdateConfig {
     }
 
     ### read taxonomy from the parsing result
-    $organism_table = $dir{install}."/genome/Organism.tab";
-    unless (-e $organism_table) {
-	$organism_table = $dir{install}."/genome/Organism_${organism_short_name}.tab";
-    }
+    $organism_table = $dir{install}."/genome/organism.tab";
 
     ($org_handle) = &OpenInputFile($organism_table);
     while (<$org_handle>) {
@@ -297,6 +297,47 @@ sub UpdateConfig {
     print CONFIG $new_org_config;
     print CONFIG "\nreturn 1;\n";
     close CONFIG;
+
+}
+
+################################################################
+## Create a directory for the taxonomic group of the organism
+sub CreatePhylogeny {
+    my $taxonomy = "";
+
+    ### read taxonomy from the parsing result
+    $organism_table = $dir{install}."/genome/organism.tab";
+
+    ($org_handle) = &OpenInputFile($organism_table);
+    while (<$org_handle>) {
+	chomp;
+	if (/^-- field (\d)	taxonomy/) {
+	    $taxonomy_field = $1;
+	} elsif (/^--/) {
+	    next;
+	} else {
+	    if (defined($taxonomy_field)) {
+		@fields = split "\t";
+		$taxonomy = $fields[$taxonomy_field - 1];
+		&Warning ("Taxonomy\t$taxonomy\n");
+	    } else {
+		&Warning("Cannot read taxonomy in file $organism_table\n");
+	    }
+	}
+    }
+    close $org_handle;
+
+    if ($taxonomy) {
+	$taxonomy = &trim($taxonomy);
+	$taxonomy =~ s|\s*;\s*|/|g;
+	$taxonomy =~ s|\s+|_|g;
+	my $dir = $RSA."/data/phylogeny/".$taxonomy;
+	warn "; Taxonomy directory\t", $dir, "\n" if ($main::verbose >= 1);
+	&CheckOutDir($dir);
+	&doit("cd $dir; ln -s $dir{install} .",0,0,$verbose);
+    } else {
+	&FatalError("Cannot identify taxonomy in table ".$organism_table);
+    }
 
 }
 
@@ -570,10 +611,7 @@ NAME
         2001 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
 	
 USAGE
-        install-organism -org short_org -organism 'Full organism' \
-		-genome genome_seq.fasta -format fasta \
-		-features feature_file.tab [-source data_source]\
-		[-dir dir{install}] [-conf local_config_file] \
+        install-organism -org organism_name
 
 DESCRIPTION
 	Add support for an organism in RSA-tools.
@@ -590,13 +628,14 @@ OPTIONS
 	-v	verbose
 
     MANDATORY ARGUMENTS
-	-org	short organism name (e.g. 'yeast')
+	-org	organism name without spaces 
+	        (e.g. Saccharomyces_cerevisiae)
 
 
     OPTIONAL ARGUMENTS
 	-organism
-		Full name of the organism (e.g. 'Saccharomyces
-		cerevisiae').
+		Full name of the organism 
+		(e.g. 'Saccharomyces cerevisiae').
 
 	-source	data source
 
@@ -695,10 +734,10 @@ install_organism options
 -help		(must be first argument) display options
 -v		verbose
 -n		dry run (print commands without executing them)
--org		short organism name (e.g. yeast);
--organism	full organism name (e.. Saccharomyces cerevisiae)
+-org		organism name without spaces (e.g. Saccharomyces_cerevisiae);
+-organism	full organism name (e.g. Saccharomyces cerevisiae)
 -source		data source (e.g. ncbi);
--dir		absolut path of the installation directory
+-dir		absolute path of the installation directory
 -local		update local config file 
 		(specified by the environment variable RSA_LOCAL_CONFIG)
 -genbank	genbank directory
@@ -1178,3 +1217,4 @@ sub CleanUp {
 	&doit($command, $dry_run, $die_one_error, $verbose);
     }
 }
+
