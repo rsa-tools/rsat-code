@@ -1235,7 +1235,7 @@ sub ReadPatterns {
 		}
 		next;
 	    }
-	    my @fields = split /\t/, $line;
+	    my @fields = split /\s+/, $line;
 	    next unless ($fields[0] =~ /\S/);
 	    $pattern_seq = $fields[0];
 	    if (($noid) || ($fields[1] !~ /\S/)) {
