@@ -3,6 +3,8 @@
 # Check the calibration of upstream frequencies for some organisms
 # - position analysis of all promoters
 
+MAKEFILE=${RSAT}/makefiles/upstream_calibrations.mk
+
 #### programs
 NICE=nice -n 20
 MAKE=${NICE} make -s
@@ -47,7 +49,7 @@ SEQ_FILE=${ORG_DIR}/${ORG}_allup${NOORF}.fta${COMPRESS}
 usage:
 	@echo "usage: make [-OPT='options'] target"
 	@echo "implemented targets"
-	@perl -ne 'if (/^(\S+):/){ print "\t$$1\n" }' makefile
+	@perl -ne 'if (/^(\S+):/){ print "\t$$1\n" }' ${MAKEFILE}
 
 dirs:
 	mkdir -p ${ORG_DIR}
@@ -191,7 +193,7 @@ oligo_windows:
 	${MAKE} one_oligo_table FROM=-4501 TO=-4750
 	${MAKE} one_oligo_table FROM=-4751 TO=-5000
 
-OLIGO_LENGTHS=1 2 3 4
+OLIGO_LENGTHS=1 2 3 4 5 6
 oligo_tables:
 	@for ol in ${OLIGO_LENGTHS}; do			\
 		${MAKE} oligo_windows OL=$${ol};	\
@@ -265,7 +267,10 @@ rand_stats:
 	@${MAKE} compare_sig_distrib TOP=_top
 	@${MAKE} compare_sig_distrib TOP=''
 
+################################################################
+#### calculate the distribution of significance index
 
+#### number of patterns per sig
 PATTERN_TABLE=${RAND_MULTI_DIR}/sql_export/Pattern.tab
 SIG_DISTRIB_DIR=${RAND_MULTI_DIR}/stats
 SIG_DISTRIB_TOP=${SIG_DISTRIB_DIR}/sig_distrib_top
@@ -279,6 +284,7 @@ sig_distrib:
 		| classfreq -v -ci 0.5 -min 0	\
 		> ${SIG_DISTRIB}.tab
 
+#### number of families per sig
 sig_distrib_top:
 	@echo 'Calculating top sig distrib	${ORG}'
 	@mkdir -p ${SIG_DISTRIB_DIR}
@@ -289,7 +295,7 @@ sig_distrib_top:
 		| classfreq -v -ci 0.5 -min 0	\
 		> ${SIG_DISTRIB_TOP}.tab
 
-
+#### compare sig distrributions between genomes
 TMP=tmp
 TOP=_top
 COMPA_DIR=${RESULT}/comparisons/rand_R${R}_N${N}
