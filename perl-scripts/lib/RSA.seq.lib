@@ -93,8 +93,12 @@ sub InitMatchScores {
 	    R1: foreach my $r1 (@match1) {
 		R2: foreach my $r2 (@match2) {
 		    if ($r1 eq $r2) {
-			$match{$d2}{$d1} = $match{$d1}{$d2} = &max($match1, $match2)/4;
-			warn join("\t", "match", $d1, $r1, $d2, $r2, $match{$d2}{$d1}, $match{$d2}{$d1}), "\n" if ($main::verbose >= 10);
+			my $max_match = &max($match1, $match2);
+			my $min_match = &min($match1, $match2);
+#			$match{$d2}{$d1} = $match{$d1}{$d2} = $max_match/4;
+			$match{$d2}{$d1} = $match{$d1}{$d2} = &sum_of_hypergeometrics($match1, 4, $match2, 1, $min_match);
+
+			warn join("\t", "match", $d1, $r1, $d2, $r2, $max_match, $min_match, $match{$d2}{$d1}, $match{$d2}{$d1}), "\n" if ($main::verbose >= 10);
 			last R1;
 		    }
 		}
