@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: downloads.mk,v 1.14 2004/08/18 05:21:01 jvanheld Exp $
+# $Id: downloads.mk,v 1.15 2004/09/04 06:22:06 jvanheld Exp $
 #
 # Time-stamp: <2003-10-09 14:02:21 jvanheld>
 #
@@ -127,6 +127,8 @@ expasy:
 		${WGET} ${EXPASY}/$${dir} ;	\
 	done
 
+uniprot:
+	${WGET} ftp://ftp.uniprot.org/pub/databases/uniprot/knowledgebase/
 
 ################################################################
 #
