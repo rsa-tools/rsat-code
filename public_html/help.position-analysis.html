@@ -1,0 +1,127 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE>RSA-tools: oligonucleotide analysis manual</TITLE>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFEEDD" LINK="#0000EE" VLINK="#55008B" ALINK="#FF0000">
+
+<H3 ALIGN=CENTER><A HREF="RSA_home.cgi">RSA-tools</A> - oligonucleotide analysis manual</H3>
+<blockquote>
+
+<H4>Name</H4>
+<UL>
+position-analysis
+
+
+</ul>
+<H4>Author</H4>
+<UL>
+Jacques van Helden (<A HREF="mailto:Jacques van Helden
+<jvanheld@ucmb.ulb.ac.be>">jvanheld@ucmb.ulb.ac.be</A>)
+
+</UL>
+<H4>Description</H4>
+<UL>
+Calculates the positional distribution of oligonucleotides in a set of
+sequences, and detects those which significantly discard from a
+homogeneous distribution.
+
+</ul>
+<h4>Options</h4>
+<ul>
+
+
+<P>
+<A NAME="sequence">
+<B>Input sequence:</B></A><BR>
+
+The sequence that will be analyzed. Multiple sequences can be entered
+at once with most sequence formats (see below).
+
+<P>
+<A NAME="sequence_format">
+<B>Format:</B></A><BR>
+
+Input sequence format. Various standards are supported (click on the
+links for more details):
+
+<UL>
+
+<LI><A HREF="help.formats.html#raw"><B>raw</B></A>: 
+
+the raw sequence without any identifier or comment.  
+
+<LI><A HREF="help.formats.html#multi"><B>multi</B></A>: several raw
+sequences concatenated.  
+
+<LI><A HREF="help.formats.html#ig"><B>IG</B></A>: IntelliGenetics
+format.
+
+<LI><A HREF="help.formats.html#fasta"><B>FastA</B></A>: the sequence
+format used by FastA, BLAST, Gibbs sampler and a lot of other
+bioinformatic programs.  
+
+<LI><A HREF="help.formats.html#wconsensus"><B>Wconsensus</B></A>: the
+format defined by Jerry Hertz for his programs (patser, consensus,
+wconsensus).
+</UL>
+
+<P>
+<A NAME="class_interval">
+<B>Class interval:</B></A><BR>
+Positions are grouped by class interval.
+
+<P>
+<A NAME="oligo_size">
+<B>Oligonucleotide size:</B></A><BR>
+The analysis can be performed with oligonuleotides of any size between
+1 and 8. Selecting size 1 amounts to counting the alphabet utilization
+within the input sequeces. For the detection of regulatory sites, w
+recommend starting with an analysis of hexanucleotides (size=6), and
+scanning sizes between 4 and 8. When a pattern is significantly
+overrepresented, it generaly appears from the analyses with various
+sizes.
+
+<P>
+<A NAME="count_strands">
+<B>Count on:</B></A> (single or both strands)<BR> 
+
+By selecting "both strands", the occurrences of each oligonucleotide
+are summed on both strands. This allows to detect elements which act
+in an orientation-insensitive way (as is generally the case for yeast
+upstream elements). 
+
+<P>
+<A NAME="grouprc">
+<B>Group reverse complement together in the output</B></A><BR> (only
+valid for two strand analysis). This parameter does not affect the
+counting itself, but only the format of output. If this option is NOT
+checked, two separate lines are used to show a word and its reverse
+complement. This is redundant but might be useful for compatibility
+with other programs.
+
+<P>
+<A NAME="noov">
+<B>Prevent overlapping matches</B></A><BR> Periodic pattern
+(e.g. AAAAAA, ATATAT) have an aggregative tendency, i.e. each
+occurrence of such a pattern strongly favours additional occurrences
+in its immediate vicinity. This introduces a bias to most statistics
+(binomial, log-likelihood). A simple way to correct for this bias is
+to prevent counting twice mutually overlapping occurrences. <BR> For
+example, <TT>TATATATATATA</TT> would represent
+<UL>
+<LI>2 occurrences of <TT>TATATA</TT> when self-overlap is prevented
+<LI>5 occurrences of <TT>TATATA</TT> when self-overlap is allowed
+</UL>
+Note that Z-score introduce a correction for self-overlapping patterns
+(see van Helden et al., 1999), but Z-scores are only valid for very
+large sequences (for example a set of 6000 downstream sequences), and
+are not appropriate for small gene clusters such as those extracted
+from DNA chip experiment.
+
+
+
+</blockquote>
+</body>
+</html>
