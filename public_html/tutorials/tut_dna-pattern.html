@@ -244,11 +244,11 @@ numbers, separated by a comma, in the curly brackets
 Run the tutorial as above, but enter the following patterns.
 
 <PRE>
-GATAAGn{0,60}GATAAG	Gata_tandem
-CTTATCn{0,60}GATAAG	Gata_inv1
-GATAAGn{0,60}CTTATC	Gata_inv2
-GATAA	Gata_box
-GATAAG	Gata_box_strict
+	GATAAGn{0,60}GATAAG	Gata_tandem
+	CTTATCn{0,60}GATAAG	Gata_inv1
+	GATAAGn{0,60}CTTATC	Gata_inv2
+	GATAA			Gata_box
+	GATAAG			Gata_box_strict
 </PRE>
 
 
@@ -270,6 +270,9 @@ dna-pattern button as above.
 <li><b>GO</b>
 </ol>
 
+The program returns a table, where each row represents a sequence and
+each column a pattern. Totals per row and per columns are optionally
+included.
 
 <P>
 You can now come back to the <a href=tutorials.html>tutorial main
