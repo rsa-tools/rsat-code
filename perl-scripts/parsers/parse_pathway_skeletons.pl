@@ -1,12 +1,15 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_pathway_skeletons.pl,v 1.7 2002/10/25 19:27:31 jvanheld Exp $
+# $Id: parse_pathway_skeletons.pl,v 1.8 2002/11/09 00:00:03 jvanheld Exp $
 #
-# Time-stamp: <2002-10-25 13:27:04 jvanheld>
+# Time-stamp: <2002-11-08 17:45:19 jvanheld>
 #
 ############################################################
 
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`"); ### add the program's directory to the lib path
+}
 require "PFBP_config.pl";
 require "PFBP_classes.pl";
 require "PFBP_util.pl";
@@ -16,7 +19,7 @@ require "PFBP_loading_util.pl";
 package main;
 {
     #### default parameters
-
+    
     $schema="annotator";
     $user="annotator";
     $password="annotator";
@@ -30,8 +33,7 @@ package main;
     $forward = 1;
     
 #    $dir{amaze_export} = "/win/amaze/amaze_data/exported_2001_0719";
-    $dir{skeletons} = "/win/amaze/amaze_data/pathway_skeletons/";
-    $dir{kegg_parsed} = "$parsed_data/kegg_ligand/20020709";
+    $dir{kegg_parsed} = "$parsed_data/kegg_ligand/20021028";
 #    $dir{georges_export} = "/win/amaze/amaze_team/for_georges";
 #    $dir{skeletons} = "/win/amaze/amaze_team/gaurab/excel_tables/Pathway_ECno/Amino_acids/Amino_acid_biosyn";
 #    $dir{skeletons} = "/win/amaze/amaze_team/gaurab/2001_07/Pathway_ECno/";
@@ -40,19 +42,10 @@ package main;
     $in_file{georges_identified_compounds} = "/win/amaze/amaze_team/georges_cohen/excel_files_georges/unidentified_compounds/identified_compounds_2001_1007.tab";
 
 
-    my $files_to_parse = `find $dir{skeletons} -name "*.txt" | xargs`;
-    $files_to_parse =~ s/$dir{skeletons}//g;
-    @files_to_parse = split " ", $files_to_parse;
+    $export_subdir = "pathway_skeletons";
 
-    $dir{output} = "$parsed_data/pathway_skeletons/$delivery_date";
+    $dir{output} = "$parsed_data/$export_subdir/$delivery_date";
 
-    $dir{seed_files} = "$dir{output}/amaze_pathway_seeds";
-#    $dir{seed_files} = "/win/amaze/amaze_programs/amaze_graph_analysis/amaze_pathway_seeds";
-
-    $out_file{process_skeleton} = "$dir{output}/process_skeleton.obj";
-    $out_file{stats} = "$dir{output}/process_skeleton.stats.txt";
-    $out_file{errors} = "$dir{output}/process_skeleton.errors.txt";
-    
     $out_format = "obj";
 
     #### class factory
@@ -65,26 +58,49 @@ package main;
     push @classes, ("PFBP::Process");
     push @classes, ("PFBP::ProcessLeaf");
 
-    &ReadArguments;
+    &ReadArguments();
 
     #### output directories
     &CheckOutputDir();
+
     if ($mirror) {
 	$dir{mirror} = $dir{output}."/mirror";
 	unless (-d $dir{mirror}) {
-	    warn "Creating mirror dir $dir{mirror}\n"  if ($verbose >=1);
+	    warn "; Creating mirror dir $dir{mirror}\n"  if ($verbose >=1);
 	    `mkdir -p $dir{mirror}`;
 	    die "Error: cannot create mirror directory $dir{mirror}\n" unless (-d $dir{mirror});
 	}
     }
-
-    #### error stream
-    open ERR, ">$out_file{errors}" || die "Error: cannot write error report fle $$out_file{errors}\n";
     
-    #### test 
+    $dir{seed_files} = "$dir{output}/amaze_pathway_seeds";
+#    $dir{seed_files} = "/win/amaze/amaze_programs/amaze_graph_analysis/amaze_pathway_seeds";
+
+    $out_file{process_skeleton} = "$dir{output}/process_skeleton.obj";
+    $out_file{stats} = "$dir{output}/process_skeleton.stats.txt";
+    $out_file{errors} = "$dir{output}/process_skeleton.errors.txt";
+    
+    #### open error stream
+    
+    open ERR, ">$out_file{errors}" || die "Error: cannot write error report fle $$out_file{errors}\n";
+
+    unless (-e $out_file{errors}) {
+	die "Error: cannot open error file $out_file{errors} with write access";
+    }
+
+    my $files_to_parse = `find $dir{skeletons} -name "*.txt" -o -name "*.tab" | xargs`;
+    $files_to_parse =~ s|$dir{skeletons}/*||g;
+    @files_to_parse = split " ", $files_to_parse;
+
+    unless (-d $dir{skeletons}) {
+	die "Error: input directory $dir{skeletons} does not exist\n";
+    }
+
+    #### quick test 
     if ($test) {
-#	@files_to_parse = qw ( Saccharomyces_cerevisiae/Isoleucine_and_valine_biosynth.txt );
-	@files_to_parse = qw ( Escherichia_coli/TCA_glyoxylate_bypass.txt );
+	@files_to_parse = qw (
+			      Escherichia_coli/TCA_glyoxylate_bypass.txt 
+			      Saccharomyces_cerevisiae/Isoleucine_and_valine_biosynth.txt
+			      );
     }
 
     #### fields to export
@@ -182,18 +198,23 @@ package main;
 #### export data in a special format for pathway reconstruction
 ################################################################
 sub GenerateECSeeds {
-    print STDERR "; Generating EC seeds for pathway reconstruction\n"
+    warn "; Generating EC seeds for pathway reconstruction\n"
 	if ($verbose >=1);
+
+    #### create directory for storing seed files
     unless (-d $dir{seed_files}) {
-	warn "Creating seed_files dir $dir{seed_files}\n"  if ($verbose >=1);
+	warn "; Creating seed_files dir $dir{seed_files}\n"  if ($verbose >=1);
 	`mkdir -p  $dir{seed_files}`;
 	die "Error: cannot create directory $dir{seed_files}\n" unless (-d $dir{seed_files});
     }
+    
+    #### export one seed file per pathway
     foreach $process ($processes->get_objects()) {
 	my $file = $process->get_attribute("parsed_file");
 	my $organism_prefix = $process->get_attribute("organism");
 	$organism_prefix =~ s/\s/_/g;
 	my $basename = `basename $file .txt`;
+	$basename =~ s/\.tab$//;
 	chomp $basename;
 
 	#### export EC number as seeds for pathway reconstruction
@@ -201,9 +222,10 @@ sub GenerateECSeeds {
 	$export_file .= "/".$organism_prefix."_".$basename;
 #	$export_file .= ".".$process->get_attribute("complete");
 	open ECS, ">$export_file.ecs";
-	foreach $ec ($process->get_attribute(ECs)) {
+	foreach my $ec_ref ($process->get_attribute(ECs)) {
+	    my ($ec, $step) = @{$ec_ref};
 	    print ECS "$ec\n";
-	    print ECS "${ec}*\n"; #### for acccepting the reverse reaction
+###	    print ECS "${ec}*\n"; #### for acccepting the reverse reaction
 	}
 	close ECS;
 	
@@ -212,7 +234,8 @@ sub GenerateECSeeds {
 	#### reactions are identified in an unequivocal way.
 	next unless ($process->get_attribute("status") eq "OK");
 	open REACTIONS, ">$export_file.reactions";
-	foreach $reaction ($process->get_attribute(reactions)) {
+	foreach my $reaction_ref ($process->get_attribute(reactions)) {
+	    my ($reaction, $step) = @{$reaction_ref};
 	    print REACTIONS "$reaction\n";
 	}
 	close ECS;
@@ -247,14 +270,20 @@ $generic_option_message
 		identified or not.
 	-clean remove all files from the outpu directory before
 	       parsing.
-	-skel  skeleton directory
+	-skel  skel_dir
+	       skeleton directory
 	       Directory with the input files. See below for a
 	       description of directory organization and file formats.
-	-kegg  parsed kegg directory. 
+	-kegg  kegg_dir
+	       parsed kegg directory. 
 	       This directory should contain the result of the script
 	       parse_kegg.pl. KEGG parsed files are used for
 	       identifying compounds and reactions involved in each
 	       pathway.
+	-seeds
+	       Export pathway seeds. Pathway seeds are lists of
+	       reactions, which can be used by the pathway builder to
+	       draw a pathway diagram.
 
 FILES AND DIRECTORIES
 
@@ -271,12 +300,12 @@ INPUT FORMAT
 
 	Column  contents
 	----------------
-	1	reaction
+	1	step
 	2	EC number
 	3	gene
 	4	from_comp
 	5	to_comp
-	6	Reaction
+	6	equation of the reaction
 
 	(in George Cohen\'s files, there are some additional columns,
 	which are currently ignored)
@@ -351,14 +380,20 @@ sub LoadIndexes {
     $index{reaction_product}->load("gunzip -c $dir{kegg_parsed}/Reactant.tab.gz | awk -F\"\t\" '\$2 == \"product\" {print \$3\"\t\"\$4}' |", 0, 0);
     $index{product_reaction} = $index{reaction_product}->reverse();
 
-    #### reactions <-> equations
+    #### reactions <-> equations with compound IDs
     warn ("\tindexing reactions <-> equations ...\n") if ($verbose >=1);
     $index{reaction_equation} = PFBP::Index->new();
     $index{reaction_equation}->load("gunzip -c $dir{kegg_parsed}/Reaction.tab.gz | grep -v '^--' | cut -f 1,3 |", 0 ,1);
     $index{equation_reaction} = $index{reaction_equation}->reverse();
 
+    #### reactions <-> equations with compound names
+    warn ("\tindexing reactions <-> equations (names) ...\n") if ($verbose >=1);
+    $index{reaction_equation_names} = PFBP::Index->new();
+    $index{reaction_equation_names}->load("gunzip -c $dir{kegg_parsed}/Reaction.tab.gz | grep -v '^--' | cut -f 1,4 |", 0 ,1);
+    $index{equation_reaction_names} = $index{reaction_equation}->reverse();
+
     #### amaze_id <-> kegg_id
-    warn ("\tindexing reaction amaze_id <-> kegg_id ...\n") if ($verbose >=1);
+#    warn ("\tindexing reaction amaze_id <-> kegg_id ...\n") if ($verbose >=1);
 #    $index{amaze_kegg} = PFBP::Index->new();
 #    $index{amaze_kegg}->load("$dir{amaze_export}/amaze_kegg_reactions.tab", 0 , 0);
 #    $index{kegg_amaze} = $index{amaze_kegg}->reverse();
@@ -391,6 +426,7 @@ sub LoadIndexes {
     }
 }
 
+################################################################
 #### read process files
 sub ReadProcesses {
     #### columns in the input file
@@ -400,13 +436,14 @@ sub ReadProcesses {
 	       gene=>2,
 	       substrates=>3,
 	       products=>4,
-	       amaze_id=>5
+	       equation=>5,
+	       kegg_id => 6,
+	       reverse => 7
 	       );
-    $col{kegg_id} = 5;
-    $col{equation} = 5;
 
     foreach my $file (@files_to_parse) {
 	my $process_name = `basename $file .txt`;
+	$process_name =~ s/\.tab$//;
 	chomp $process_name;
 	$process_name =~ s/_/ /g;
 	$process_name =~ s/biosyn$/biosynthesis/;
@@ -417,6 +454,7 @@ sub ReadProcesses {
 	my $organism =  `dirname $file`;
 	chomp $organism;
 	$organism =~ s/_/ /g;
+	$organism =~ s|/||g;
 
 	$process = $processes->new_object();
 	$process->set_attribute("source","amaze");
@@ -442,31 +480,84 @@ sub ReadProcesses {
 
 	if ($mirror) {
 	    #### mirror file to report the matching reactions for each pathway step
-	    my $mirror_file = "$dir{mirror}/mirror_${organism}_${process_name}.tab";
+	    my $dir = join "/", $dir{mirror}, $organism;
+	    $dir =~ s/\s/_/g;
+	    unless (-d $dir) {
+		unless (-d $dir) {
+		    warn "; Creating mirror dir $dir\n"  if ($verbose >=1);
+		    `mkdir -p $dir`;
+		    die "Error: cannot create mirror directory $dir\n" unless (-d $dir);
+		}
+		
+	    }
+
+	    	    #### create a control file for viewing the mirror file as a form in emacs
+	    my $control_file = "$dir/${process_name}.fctl";
+	    $control_file =~ s/\s/_/g;
+	    my $mirror_file_short = $process_name.".tab";
+	    $mirror_file_short =~ s/\s+/_/g;
+
+	    open FCTL, ">$control_file";
+	    print FCTL<<EndForm;
+(setq forms-file \"$mirror_file_short\")
+(setq forms-number-of-fields 17)
+;; (setq forms-read-only t)                 ; to make sure
+(setq forms-field-sep \"\t\")
+;;(setq forms-multi-line nil)               ; Don\'t allow multi-line fields.
+(setq forms-read-only nil)
+(setq forms-format-list (list
+        \"\# 1-step        \# \" 1
+        \"\\n\# 2-EC          \# \" 2
+        \"\\n\# 3-gene        \# \" 3
+        \"\\n\# 4-substrate   \# \" 4
+        \"\\n\# 5-product     \# \" 5
+        \"\\n\# 6-reaction    \# \" 6
+        \"\\n\# 7-reaction id \# \" 7
+        \"\\n\# 8-direction   \# \" 8
+        \"\\n\# 9-status      \# \" 9
+        \"\\n\# 10-remark     \# \" 10
+        \"\\n\# 11            \# \" 11
+        \"\\n\# 12            \# \" 12
+        \"\\n\# 13            \# \" 13
+        \"\\n\# 14            \# \" 14
+        \"\\n\# 15            \# \" 15
+        \"\\n\# 16            \# \" 16
+        \"\\n\# 17            \# \" 17))
+EndForm
+
+    close FCTL;
+
+	    
+	    my $mirror_file = "$dir/${process_name}.tab";
 	    $mirror_file =~ s/ /_/g;
 	    warn "; Mirror file\t$mirror_file\n" if ($verbose >=1);
 	    open MIRROR, ">$mirror_file"
 		|| die "Error: cannot open mirror file $dir{skeletons}/$mirror_file\n";
+	    print MIRROR join ("\t", "; step", "EC", "gene", "substrate", "product", "reaction", "reaction_id", "direction", "status", "remark"), "\n";
+
 	}
 
 	#### opening the data file
-	warn "; Parsing file\t$file\n" if ($verbose >=1);
-	die "Error: file $dir{skeletons}/$file does not exist\n"
-	    unless (-e "$dir{skeletons}/$file");
-	open FILE, "$dir{skeletons}/$file"
+        warn "; Parsing file\t$dir{skeletons}/$file\n" if ($verbose >=1);
+        die "Error: file $dir{skeletons}/$file does not exist\n"
+        unless (-e "$dir{skeletons}/$file");
+        open FILE, "$dir{skeletons}/$file"
 	    || die "Error: cannot read file $dir{skeletons}/$file\n";
 
-	my $header = <FILE>;
+#	my $header = <FILE>;
 	my $l = 0;
 	my $step = 0;
 	while (my $line = <FILE>) {
 	    $l++;
 	    chomp $line;
+            $line =~ s/ +\t/\t/g;
+            $line =~ s/\t +/\t/g;
 	    next unless ($line =~ /\S/);
+	    next if ($line =~ /^;/);
+	    next if (($l==1) & ($line =~ /^reaction/i));
 	    $line =~ s/\r//;
 	    my @fields = split "\t", $line;
-	    warn "line\t$line\n" if ($verbose >=3);
-
+	    warn "line $l\t$line\n" if ($verbose >=3);
 	    next if ($line =~ /^;/);
 	    #### step number
 #	    $step = $fields[$col{step}];
@@ -474,23 +565,34 @@ sub ReadProcesses {
 
 	    my @matching_reactions = ();
 	    my %is_direct = ();
-	    my $provided_reaction = &trim($fields[$col{amaze_id}]);
-	    my $provided_amaze_id = "";
-	    my $provided_kegg_id = ""; 
+	    my $provided_reaction = &trim($fields[$col{equation}]);
+#	    my $provided_amaze_id = "";
+	    my $provided_kegg_id = &trim($fields[$col{kegg_id}]); 
 	    my $provided_equation = "";
 	    my $reverse_equation = "";
 	    my $multi_allowed = 0;
 
 
-		#### reaction provided in the form of an aMAZE ID
-	    if ($provided_reaction =~ /aMAZEReaction/) {
-		$provided_amaze_id = $provided_reaction;
-		warn ("provided_amaze_id\t", $provided_amaze_id, "\n") if ($verbose >=3);
 
-		#### reaction provided in the form of a KEGG ID
+	    ################################################################
+	    #### Identify the reaction
+
+	    #### reaction provided in the form of a KEGG ID
+	    if ($provided_kegg_id =~ /^R0/) {
+		warn ("provided_kegg_id\tin column ", 
+		      $col{kegg_id} + 1, 
+		      "\t", $provided_kegg_id, "\n") if ($verbose >=1);
+
 	    } elsif ($provided_reaction =~ /^R0/) {
 		$provided_kegg_id = $provided_reaction;
-		warn ("provided_kegg_id\t", $provided_kegg_id, "\n") if ($verbose >=3);
+		warn ("provided_kegg_id\tin column ", 
+		      $col{equation} + 1, 
+		      "\t", $provided_kegg_id, "\n") if ($verbose >=1);
+
+#		#### reaction provided in the form of an aMAZE ID
+#	    } elsif ($provided_reaction =~ /aMAZEReaction/) {
+#		$provided_amaze_id = $provided_reaction;
+#		warn ("provided_amaze_id\t", $provided_amaze_id, "\n") if ($verbose >=3);
 
 		#### reaction described by its equation
 	    } elsif (($provided_reaction =~ /=/) || 
@@ -528,13 +630,16 @@ sub ReadProcesses {
 		    &ErrorMessage (join ("\t", $file, $l, "Cannot reverse equation", $provided_equation), "\n");
 		}
 	    } 
+	    #### initialize the reaction direction
+	    $is_direct{$reaction} = "NA";
+	    
 
-	    #### EC number
+	    ################################################################
+	    #### Parse  and check EC number
 	    my $ec = &trim($fields[$col{ec}]);
 	    if ($ec) {
 		if ($ec =~ /^[\d\-\.]+$/) {
-#		    $process->new_attribute_value("ECs", $ec); #if ($debug);
-		    $process->push_expanded_attribute("ECs", $ec, $step); #if ($debug);
+		    $process->push_expanded_attribute("ECs", $ec, $step); 
 		} else {
 		    &ErrorMessage(join ("\t", 
 					$file, 
@@ -543,12 +648,10 @@ sub ReadProcesses {
 					$ec), 
 				  "\n");
 		}
-#	    } else {
-#		&ErrorMessage(join("\t", $file, $l, "no_EC_number"), "\n");
 	    }
 	    
+	    ################################################################
 	    #### parse gene names
-	    #	    if ($debug) {
 	    my $gene_string = &trim($fields[$col{gene}]);
 	    if ($gene_string) {
 		my @genes = split '\|', $gene_string;
@@ -557,6 +660,7 @@ sub ReadProcesses {
 		}
 	    }
 	    
+	    ################################################################
 	    #### main substrates
 	    my $substrate_string = &unquote($fields[$col{substrates}]);
 	    my @substrates = ();
@@ -585,6 +689,7 @@ sub ReadProcesses {
 		warn "substrates\t", join ("|", @substrates), "\n" ;
 	    }
 	    
+	    ################################################################
 	    #### main products
 	    my $product_string = &unquote($fields[$col{products}]);
 	    my @products = ();
@@ -595,16 +700,14 @@ sub ReadProcesses {
 		    &ErrorMessage(join ("\t", $file, $l, "empty_product", $product_string), "\n");
 		} elsif ($index{name_compound}->contains($product_name)) {
 		    push @products, $index{name_compound}->get_first_value($product_name);
-#		    $process->new_attribute_value("products", $product_name); #if ($debug);
-		    $process->push_expanded_attribute("products", $product_name, $step); #if ($debug);
+		    $process->push_expanded_attribute("products", $product_name, $step); 
 		} elsif ($index{wrong_kegg}->contains($product_name)) {
 		    my $product_name = $index{wrong_kegg}->get_first_value($product_name);
 		    push @products, $index{name_compound}->get_first_value($product_name);
-#		    $process->new_attribute_value("products", $product_name); #if ($debug);
-		    $process->push_expanded_attribute("products", $product_name, $step); #if ($debug);
+		    $process->push_expanded_attribute("products", $product_name, $step); 
 		} else {
 		    $process->force_attribute("unidentified_compounds", 
-					    $process->get_attribute("unidentified_compounds") + 1) ; #if ($debug);
+					    $process->get_attribute("unidentified_compounds") + 1) ;
 		    &ErrorMessage(join("\t", $file, $l, "unidentified_compound", $product_name), "\n");
 		}
 	    }
@@ -626,6 +729,7 @@ sub ReadProcesses {
 #  	    }
 
 	    
+	    ################################################################
 	    #### match forward reactions
 	    my @matching_substrates_fwd = ();
 	    if ($substrates[0]) {
@@ -694,19 +798,21 @@ sub ReadProcesses {
 
 	    #### in case of doubt, use provided reaction column
 	    if ($#matching_reactions != 0) {
-		warn join ("\t", "Trying other columns", $provided_amaze_id || $provided_kegg_id || $provided_equation ), "\n" if ($verbose >=3);
+		warn join ("\t", "Trying other columns", 
+			   $provided_kegg_id || $provided_equation ), "\n" if ($verbose >=3);
 
-		#### aMAZE ID provided directly in the file
-		if ($provided_amaze_id =~ /aMAZEReaction/) {
-		    @matching_reactions = split '\|', $provided_amaze_id;
-		    $multi_allowed = 1;
-		    warn join ("\t", $file, $l, "provided_amaze_id", $provided_amaze_id), "\n" if ($verbose >=3);
-		    
-		} elsif ($provided_kegg_id =~ /R0/) {
+		if ($provided_kegg_id =~ /R0/) {
 		    @matching_reactions = split '\|', $provided_kegg_id;
 		    $multi_allowed = 1;
 
 		    warn join ("\t", $file, $l, "provided_kegg_id", $provided_kegg_id), "\n" if ($verbose >=3);
+
+#		#### aMAZE ID provided directly in the file
+#		} elsif ($provided_amaze_id =~ /aMAZEReaction/) {
+#		    @matching_reactions = split '\|', $provided_amaze_id;
+#		    $multi_allowed = 1;
+#		    warn join ("\t", $file, $l, "provided_amaze_id", $provided_amaze_id), "\n" if ($verbose >=3);
+		    
 		}
 
 		#### reaction equation provided by Georges Cohen
@@ -730,7 +836,8 @@ sub ReadProcesses {
 		    }
 		}
 
-		#### checking reaction direction
+		################################################################
+		#### determine the direction of the reaction (forward or reverse) in each step
 		foreach my $reaction (@matching_reactions) {
 		    unless (defined($is_direct{$reaction})) {
 			my $kegg_id = "";
@@ -772,7 +879,7 @@ sub ReadProcesses {
 			    my @rev_matches = ();
 			    push @rev_matches, &intersection(\@kegg_substrates, \@products);
 			    push @rev_matches, &intersection(\@kegg_products, \@substrates);
-
+			    
 			    if ($#fwd_matches >=0) {
 				$is_direct{$reaction} = $forward;
 				warn join ("\t", "Identified direction for reaction", $reaction, $kegg_id, $is_direct{$reaction}), "\n";
@@ -808,12 +915,13 @@ sub ReadProcesses {
 		}
 	    }
 
+	    ################################################################
 	    #### report matching reactions
 	    if ($verbose >=3) {
 		my $msg = join ("\t", 
-			     "matching_reactions", 
-			     $#matching_reactions + 1, 
-			     join ("\|", @matching_reactions));
+				"matching_reactions", 
+				$#matching_reactions + 1, 
+				join ("\|", @matching_reactions));
 		if ($provided_amaz_id || $provided_equation) {
 		    $msg .= "\t".join ("\t",, 
 				       "provided", 
@@ -823,13 +931,17 @@ sub ReadProcesses {
 	    } 
 
 
+	    $mirror_line = join ("\t", @fields[0..5]);
+
 	    ################################################################
 	    #### report multiple matches
 	    if (!($multi_allowed) && ($#matching_reactions > 0)) {
+
 		#### several matching reactions
 		$process->force_attribute("multi_match_reactions", $process->get_attribute("multi_match_reactions") + 1) ; #if ($debug);
 		$process->force_attribute("complete", 0);
-		print MIRROR join ("\t", $line, "MULTI", join ("\|", @matching_reactions)), "\n" if ($mirror);
+		print MIRROR join ("\t", $mirror_line, "", "",  "MULTI", join ("\|", @matching_reactions)), "\n" if ($mirror);
+		
 
 		#### report error
 		&ErrorMessage (join ("\t",
@@ -864,7 +976,7 @@ sub ReadProcesses {
 		#### no reaction matchs the line
 		$process->force_attribute("no_match_reactions", $process->get_attribute("no_match_reactions") + 1) ; #if ($debug);
 		$process->force_attribute("complete", 0);
-		print MIRROR $line, "\t", "NO MATCHING REACTION\n" if ($mirror);
+		print MIRROR join ("\t", $mirror_line, "", "",  "NO MATCHING REACTION"), "\n" if ($mirror);
 		
 
 		#### report error
@@ -876,8 +988,8 @@ sub ReadProcesses {
 				     ),
 			       "\n");
 	    } else {
-		#### the reaction could b identified in an unequivocal way
-		#### create a process step
+		#### If the reaction has been identified in an
+		#### unequivocal way, create a process step
 
 		$process->force_attribute("matching_reactions", 
 					$process->get_attribute("matching_reactions") + 1) ; #if ($debug);
@@ -886,18 +998,18 @@ sub ReadProcesses {
 
 		foreach my $r (0..$max_reactions) {
 		    my $reaction = $matching_reactions[$r];
-		    print MIRROR join ("\t", $line, "OK", $reaction, 
-				       $index{reaction_equation}->get_values($reaction)), "\n" if ($mirror);
+		    print MIRROR join ("\t", $mirror_line, $reaction, $is_direct{$reaction}, "OK", 
+				       $index{reaction_equation_names}->get_values($reaction)), "\n" if ($mirror);
 		    my $reaction = $matching_reactions[0];
 		    my $kegg_id = "ERROR";
-		    if ($reaction =~ /aMAZEReaction/) {
+		    if ($reaction =~ /R0/) {
+			$kegg_id = $reaction;
+#		    } elsif ($reaction =~ /aMAZEReaction/) {
 #			if ( $index{amaze_kegg}->contains($reaction)) {
 #			    $kegg_id = $index{amaze_kegg}->get_first_value($reaction);
 #			} else {
-			    &ErrorMessage(join ("\t", $file, $l, "cannot_map_amaze_id_to_kegg_id", $reaction), "\n");
+#			    &ErrorMessage(join ("\t", $file, $l, "cannot_map_amaze_id_to_kegg_id", $reaction), "\n");
 #			}
-		    } elsif ($reaction =~ /R0/) {
-			$kegg_id = $reaction;
 		    } else {
 			&ErrorMessage(join ("\t", $file, $l, "invalid_reaction_identifier", $reaction), "\n");		
 		    }
