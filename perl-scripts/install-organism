@@ -1,14 +1,15 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.21 2002/09/14 14:53:58 jvanheld Exp $
+# $Id: install-organism,v 1.22 2002/09/14 14:56:31 jvanheld Exp $
 #
-# Time-stamp: <2002-09-14 09:52:44 jvanheld>
+# Time-stamp: <2002-09-14 09:55:51 jvanheld>
 #
 ############################################################
 
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
+
 }
 require "RSA.lib";
 
