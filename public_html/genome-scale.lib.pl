@@ -1,0 +1,129 @@
+### default values for sequence retrieval
+$default{sequence_format} = "fasta";
+$default{seq_label} = "gene name";
+$default{organism} = "Saccharomyces cerevisiae";
+$default{from} = "default";
+$default{to} = "default";
+$default{sequence_type} = "upstream";
+
+
+################################################################
+#
+# retrieve-seq options
+#
+sub DisplayRetrieveSeqOptions {
+    print $query->h3("Sequence retrieval options");
+
+    print $query->hidden(-name=>'genes',-default=>"all");
+    print $query->hidden(-name=>'sequence_format',-default=>$default{sequence_format});
+
+
+    &OrganismPopUp;
+
+    ### sequence type
+    print "<B><A HREF='help.retrieve-seq.html#sequence_type'>Sequence type</A></B>&nbsp;";
+    print $query->popup_menu(-name=>'sequence_type',
+			     -Values=>['upstream','downstream','ORF (unspliced)','whole chromosomes'],
+			     -default=>$default{sequence_type});
+
+    ### from to
+    print "<B><A HREF='help.retrieve-seq.html#from_to'>From</A></B>&nbsp;\n";
+    print $query->textfield(-name=>'from',
+			    -default=>$default{from},
+			    -size=>10);
+
+    print "&nbsp;&nbsp;";
+    print "<B><A HREF='help.retrieve-seq.html#from_to'>To</A></B>&nbsp;\n";
+    print $query->textfield(-name=>'to',
+			    -default=>$default{to},
+			    -size=>10);
+    print "<BR>\n";
+
+
+    ### allow ORF overlap
+    print $query->checkbox(-name=>'orf_overlap',
+			 -checked=>'checked',
+			 -label=>'');
+    print "&nbsp;<A HREF='help.retrieve-seq.html#noorf'><B>allow overlap with upstream ORFs</B></A>";
+    print "<BR>\n";
+
+### temporarily inactivated because it does not work with all organisms
+#    print $query->hidden(-name=>'orf_overlap',-default=>'on');
+
+    ### sequence label
+    print $query->hidden(-name=>'seq_label',-default=>'ORF id');
+
+    print "<BR>\n";
+}
+
+################################################################
+#
+# retrieve-seq parameters
+#
+sub ReadRetrieveSeqParams {
+    if ($query->param('sequence_type') =~ /chromosome/i) {
+	$retrieve_seq_command = "$SCRIPTS/convert-seq";
+
+	#### take whole genome as input file
+	$retrieve_seq_parameters .= " -i $supported_organism{$org}->{'genome'}";
+	$retrieve_seq_parameters .= " -from $supported_organism{$org}->{'seq_format'}";
+	
+	### output format ###
+	if ($accepted_output_seq{$query->param('sequence_format')}) {
+	    $retrieve_seq_parameters .= " -to ".$query->param('sequence_format');;
+	}
+	
+
+    } else {
+	$retrieve_seq_command = "$SCRIPTS/retrieve-seq";
+	$retrieve_seq_parameters = " -all -nocomment";
+	
+	#### organism
+	if (defined($supported_organism{$query->param('organism')})) {
+	    $org = $query->param('organism');
+	} else {
+	    $org = "yeast";
+	}
+	$retrieve_seq_parameters .= " -org ".$org;
+	
+	### sequence type
+	if ($query->param('sequence_type')) {
+	    $retrieve_seq_parameters .= " -type ".$query->param('sequence_type');
+	}
+
+	### output format ###
+	if ($accepted_output_seq{$query->param('sequence_format')}) {
+	    $retrieve_seq_parameters .= " -format ".$query->param('sequence_format');;
+	}
+
+	### sequence label
+	$seq_label = lc($query->param('seq_label'));
+	if (($seq_label =~ /gene/) && 
+	    ($seq_label =~ /orf/)) {
+	    $retrieve_seq_parameters .= " -label orf_gene";
+	} elsif ($seq_label =~ /gene/) {
+	    $retrieve_seq_parameters .= " -label gene";
+	} elsif ($seq_label =~ /orf/) {
+	    $retrieve_seq_parameters .= " -label orf";
+	} elsif ($seq_label =~ /full/) {
+	    $retrieve_seq_parameters .= " -label full";
+	} else {
+	    &cgiError("Invalid option for sequence label '$seq_label'");
+	}
+
+	### limits ###
+	if (&IsInteger($query->param('from'))) {
+	    $retrieve_seq_parameters .= " -from ".$query->param('from');
+	}  
+	if (&IsInteger($query->param('to'))) {
+	    $retrieve_seq_parameters .= " -to ".$query->param('to');
+	}
+
+	### orf overlap ###
+	unless (lc($query->param('orf_overlap')) eq "on") {
+	    $retrieve_seq_parameters .= " -noorf ";
+	}
+    }
+}
+return 1;
+
