@@ -4,9 +4,151 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 require "RSA.lib.pl";
 
+#### initialise parameters ####
+$boe = 0;
+$soe = 0;
+$approx = 0;
+
+&ReadArguments();
+
+#### check argument values ####
+if ($p eq "") {
+  print "	Error: p was not specified.\n";
+  print "	Type binomial -h for more information\n";
+  exit;
+} elsif (($p > 1) || ($p < 0)) {
+  print "	Error: p should be comprised between 0 and 1.\n";
+  print "	Type binomial -h for more information\n";
+  exit;
+}
+
+if ($r eq "") {
+  print "	Error: r was not specified.\n";
+  print "	Type binomial -h for more information\n";
+  exit;
+} elsif ($r < 1) {
+  print "	Error: r should be an integer >= 1.\n";
+  print "	Type binomial -h for more information\n";
+  exit;
+}
 
 
-if ($ARGV[0] eq "-h") {
+unless (defined($s) || $from_to) {
+  print "	Error: s was not specified.\n";
+  print "	Type binomial -h for more information\n";
+  exit;
+} elsif (($s < 0) || ($s > $r)) {
+  print "	Error: s should be an integer >= 0 and <= r.\n";
+  print "	Type binomial -h for more information\n";
+  exit;
+}
+
+
+if ($verbose) {
+    if ($from_to) {
+	print "P($from<=s<=$to | r=$r,p=$p) = ";
+    } else {
+	if ($boe) {
+	    print "P(s>=$s | r=$r,p=$p) = ";
+	} elsif ($soe) {
+	    print "P(s<=$s | r=$r,p=$p) = ";
+	} else {
+	    print "P(s=$s | r=$r,p=$p) = ";
+	}
+    }
+}
+
+
+if ($approx) {
+    $b = &binomial_approx($p, $r, $s);
+} elsif ($boe) {
+    $b = &binomial_boe($p, $r, $s);
+} elsif ($soe) {
+    $b = sum_of_binomials($p,$r,$0,$s);
+} elsif (defined($from) && (defined($to))) {
+    $b = sum_of_binomials($p,$r,$from,$to);
+} else {
+    $b = &binomial($p, $r, $s);
+}
+
+
+if ($b < 0) {
+### this can happen when using boe or soe options,
+### due to the precision limit
+  $b = 0;
+}
+if ($b >= 0.0001) {
+    printf "%.7f\n", $b;
+} else {
+    printf "%.7g\n", $b;
+}
+
+exit(0);
+
+
+
+#### read arguments ####
+sub ReadArguments {
+    foreach $a (0..$#ARGV) {
+	
+	if ($ARGV[$a] eq "-p") {
+	    $p = $ARGV[$a+1];
+	    
+	} elsif ($ARGV[$a] eq "-r") {
+	    $r = $ARGV[$a+1];
+	    
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp();
+
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions();
+	    
+	} elsif ($ARGV[$a] eq "-s") {
+	    $s = $ARGV[$a+1];
+	    
+	} elsif ($ARGV[$a] eq "-v") {
+	    $verbose = 1;
+	    
+	} elsif ($ARGV[$a] eq "-boe") {
+	    $boe = 1;
+	    
+	} elsif ($ARGV[$a] eq "-soe") {
+	    $soe = 1;
+
+	} elsif ($ARGV[$a] eq "-from") {
+	    $from_to = 1;
+	    $from = $ARGV[$a+1];
+
+	} elsif ($ARGV[$a] eq "-to") {
+	    $from_to = 1;
+	    $to = $ARGV[$a+1];
+	    
+	} elsif ($ARGV[$a] eq "-approx") {
+	    $boe = 1;
+	    $approx = 1;
+	}
+    }
+}
+
+sub PrintOptions {
+  open HELP, "| more";
+  print HELP <<End_short_help;
+binomial options
+----------------
+-p #p		probability of success of the event at each trial. 
+-r #r		number of repetitions of the trial. #r mmust be an integer
+-s #s		number of succesful trials
+-v		verbose
+-boe		bigger or equal. 
+-soe		smaller or equal. 
+-approx		only valid in combination with -boe
+-from # -to #	sum of binomial between two values (inclusive)   
+End_short_help
+    close HELP;
+  exit;
+}
+
+sub PrintHelp {
   open HELP, "| more";
   print HELP <<End_of_help;
 NAME
@@ -56,6 +198,9 @@ OPTIONS
 		Calculate the probability of >= -s successes.
 	-soe	smaller or equal. 
 		Calculate the probability of <= -s successes.
+	-from # -to #
+		calculates the sum of binomials between two values 
+		(inclusive).
 	-approx	only valid in combination with -boe
 		Uses the entropy formulae instead of the exact binomial
 		for the calculation of Proba(r repetitions, success >= s).
@@ -67,121 +212,3 @@ End_of_help
     close HELP;
   exit;
 }
-
-if ($ARGV[0] eq "-help") {
-  open HELP, "| more";
-  print HELP <<End_short_help;
-binomial options
-----------------
--p #p	probability of success of the event at each trial. 
--r #r	number of repetitions of the trial. #r mmust be an integer
--s #s	number of succesful trials
--v	verbose
--boe	bigger or equal. 
--soe	smaller or equal. 
--approx	only valid in combination with -boe
-End_short_help
-    close HELP;
-  exit;
-}
-
-#### initialise parameters ####
-$soe = 0;
-$approx = 0;
-
-#### read arguments ####
-foreach $a (0..$#ARGV) {
-
-  if ($ARGV[$a] eq "-p") {
-    $p = $ARGV[$a+1];
-
-  } elsif ($ARGV[$a] eq "-r") {
-    $r = $ARGV[$a+1];
-
-  } elsif ($ARGV[$a] eq "-s") {
-    $s = $ARGV[$a+1];
-
-  } elsif ($ARGV[$a] eq "-v") {
-    $verbose = 1;
-    
-  } elsif ($ARGV[$a] eq "-boe") {
-    $boe = 1;
-
-  } elsif ($ARGV[$a] eq "-soe") {
-    $soe = 1;
-
-  } elsif ($ARGV[$a] eq "-approx") {
-    $boe = 1;
-    $approx = 1;
-  }
-}
-
-
-#### check argument values ####
-if ($p eq "") {
-  print "	Error: p was not specified.\n";
-  print "	Type binomial -h for more information\n";
-  exit;
-} elsif (($p > 1) || ($p < 0)) {
-  print "	Error: p should be comprised between 0 and 1.\n";
-  print "	Type binomial -h for more information\n";
-  exit;
-}
-
-if ($r eq "") {
-  print "	Error: r was not specified.\n";
-  print "	Type binomial -h for more information\n";
-  exit;
-} elsif ($r < 1) {
-  print "	Error: r should be an integer >= 1.\n";
-  print "	Type binomial -h for more information\n";
-  exit;
-}
-
-if ($s eq "") {
-  print "	Error: s was not specified.\n";
-  print "	Type binomial -h for more information\n";
-  exit;
-} elsif (($s < 0) || ($s > $r)) {
-  print "	Error: s should be an integer >= 0 and <= r.\n";
-  print "	Type binomial -h for more information\n";
-  exit;
-}
-
-
-if ($verbose) {
-  print "p= $p	r=$r	s= $s	b= ";
-  if ($boe) {
-    print "P(>=s,r) = ";
-  } elsif ($soe) {
-    print "P(<=s,m) = ";
-  } else {
-    print "P(s,r) = ";
-  }
-}
-
-
-if ($approx) {
-    $b = &binomial_approx($p, $r, $s);
-} elsif ($boe) {
-    $b = &binomial_boe($p, $r, $s);
-} elsif ($soe) {
-    $b = 1 - &binomial_boe($p, $r, $s+1);
-} else {
-    $b = &binomial($p, $r, $s);
-}
-
-
-if ($b < 0) {
-### this can happen when using boe or soe options,
-### due to the precision limit
-  $b = 0;
-}
-if ($b >= 0.0001) {
-    printf "%.5f\n", $b;
-} else {
-    printf "%.2g\n", $b;
-}
-
-exit(0);
-
