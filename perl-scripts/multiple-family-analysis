@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.38 2003/12/29 23:08:18 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.39 2003/12/29 23:50:05 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -226,16 +226,26 @@ sub SetFileNames {
 	$family{$family_name}->{htmap_file} = $family{$family_name}->{dyad_file}.".html";
     }  
 
-    $table_suffix = $family_file;
+    if ($family_file) {
+	$table_suffix = $family_file;
+    } elsif ($sequence_file_list) {
+	$table_suffix .= $sequence_file_list;
+	$table_suffix =~  s/\.tab$//;
+	$table_suffix =~  s/\.txt$//;
+    } else {
+	$table_suffix = $organism_name;
+    }
     if ($markov) {
 	$table_suffix .= "_mkv${markov_order}";
     } elsif ($background) {
 	$table_suffix .= "_bg_${background}";
     }
 
-    $table_suffix .= "_up".$from     if (defined($from));
-    $table_suffix .= "_".$to     if (defined($to));
-    $table_suffix .= $noorf_string;
+    if ($family_file) {
+	$table_suffix .= "_up".$from     if (defined($from));
+	$table_suffix .= "_".$to     if (defined($to));
+	$table_suffix .= $noorf_string;
+    }
     $table_suffix .= $noov_string;
     $table_suffix .= "_".$strands;
     $table_suffix = `basename $table_suffix`;
@@ -1394,13 +1404,14 @@ sub ExportSQL {
     
     my $test = new RSAT::Family;
 
+    my $time_prefix = time();
     my $family_factory = classes::ClassFactory->new_class(object_type=>"RSAT::Family",
-							  prefix=>"fam_");
+							  prefix=>$time_prefix);
     
     
-    
+#    my $pattern_prefix = "pat_".&AlphaDate()."_";
     my $pattern_factory = classes::ClassFactory->new_class(object_type=>"RSAT::Pattern",
-							   prefix=>"pat_");
+							   prefix=>$time_prefix);
 
     #### output directory
     $dir{output} = "sql_export";
@@ -1420,7 +1431,7 @@ sub ExportSQL {
 	$family_object->set_attribute("organism", $organism_name);
 	$family_object->set_attribute("suffix", $table_suffix);
 
-	warn join ("\t", ";\tSQL export for family", $family_name, $organism_name), "\n" if ($main::verbose >= 0);
+	warn join ("\t", ";\tSQL export for family", $family_name, $organism_name), "\n" if ($main::verbose >= 2);
 	
 	#### family members
 	my @members = @{$family{$family_name}->{members}};
@@ -1529,19 +1540,6 @@ sub ExportSQL {
 			     );
 #    push @pattern_out_fields, sort keys %export_columns;
     $pattern_factory->set_out_fields(@pattern_out_fields);
-
-
-    my @fam_obj = $family_factory->get_objects();
-    foreach $fam (@fam_obj) {
-	warn join ("\t",
-		   "CONTROL",
-		   $fam->get_attribute("id"),
-		   $fam->get_attribute("name"),
-		   $fam->get_attribute("size"),
-		   $fam->get_attribute("organism"),
-		   $fam->get_attribute("suffix"),
-		   ), "\n";
-    }
 
     #### export the result tables
     foreach my $factory ($family_factory, $pattern_factory) {
