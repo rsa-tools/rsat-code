@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.31 2001/06/25 20:20:39 jvanheld Exp $
+# $Id: oligo-analysis,v 1.32 2001/06/25 23:30:17 jvanheld Exp $
 #
-# Time-stamp: <2001-06-25 22:20:37 jvanheld>
+# Time-stamp: <2001-06-26 01:30:14 jvanheld>
 #
 ############################################################
 
@@ -124,7 +124,7 @@ if (($method eq "Frequency file") &&
 ### open sequence file ###
 $in = &OpenInputFile($inputfile);
 
-if ($hyperverbose) {
+if ($verbose >= 2) {
     $current_time = `date '+%H:%M:%S'`;
     chomp($current_time);
     warn "oligo-analysis\t$current_time\tReading sequences\n";
@@ -154,7 +154,7 @@ $out = &OpenOutputFile($outputfile);
 &PrintResult;
 
 
-if ($hyperverbose) {
+if ($verbose >= 2) {
   $current_time = `date '+%H:%M:%S'`;
   chomp($current_time);
   warn "oligo-analysis\t$current_time\tDone\n";
@@ -192,7 +192,7 @@ sub CountOligo {
 	$id_list[$sequence_number] = $current_id;
 	$seq_length[$sequence_number] = length($current_seq);
 	
-	if ($hyperverbose) {
+	if ($verbose >= 2) {
 	    $current_time = `date '+%H:%M:%S'`;
 	    chomp($current_time);
 	    warn "oligo-analysis\t$curent_time\t$current_id\t$seq_length[$sequence_number]\n";
@@ -232,7 +232,7 @@ sub CountOligo {
 	my $chunk=100000;
 	
 	while ($current_pos >=0) {
-	    if ($hyperverbose && (($current_pos%$chunk) == 0) && ($current_pos > 0)) {
+	    if ($verbose >= 2 && (($current_pos%$chunk) == 0) && ($current_pos > 0)) {
 		$current_length = length($current_seq);
 		warn "\t$current_id\tremain to read: $current_pos\n";
 	    }
@@ -303,6 +303,7 @@ sub CountOligo {
     }
     undef $current_seq; ### release the memory occupied
     close $in;
+
     exit(0) if $return{'table'};
 
     #### filter out undefined residues for DNA sequences
@@ -339,7 +340,7 @@ sub GroupRc {
 
 ### occurrence threshold ###
 sub OccurrenceThreshold {
-  if ($hyperverbose) {
+  if ($verbose >= 2) {
     $current_time = `date '+%H:%M:%S'`;
     chomp($current_time);
     warn "oligo-analysis\t$current_time\tThreshold on occurrences\n";
@@ -354,7 +355,7 @@ sub OccurrenceThreshold {
 
 ### matching sequence threshold ###
 sub MatchingSeqThreshold {
-  if ($hyperverbose) {
+  if ($verbose >= 2) {
     $current_time = `date '+%H:%M:%S'`;
     chomp($current_time);
     warn "oligo-analysis\t$current_time\tThreshold on matching sequences\n";
@@ -371,7 +372,7 @@ sub MatchingSeqThreshold {
 
 ### Calculate subword frequencies
 sub CalcSubWordFrequencies {
-    if ($hyperverbose) {
+    if ($verbose >= 2) {
 	$current_time = `date '+%H:%M:%S'`;
 	chomp($current_time);
 	warn "oligo-analysis\t$current_time\tCalculating subword frequencies\n";
@@ -419,7 +420,7 @@ sub CalcSubWordFrequencies {
 	}
     }	
     
-    if ($hyperverbose) {
+    if ($verbose >= 2) {
 	for $w (1..$oligo_length-1) {
 	    foreach $pattern_seq (sort keys %{$sub_word[$w]}) {
 		printf ";\tsubword_freq\t$w\t$occ_sum[$w]\t$pattern_seq\t%15.13f\n", $sub_word[$w]{$pattern_seq}->{freq};
@@ -430,7 +431,7 @@ sub CalcSubWordFrequencies {
 
 ### calculate relative frequencies if requested ###
 sub CalcFrequencies {
-  if ($hyperverbose) {
+  if ($verbose >= 2) {
     $current_time = `date '+%H:%M:%S'`;
     chomp($current_time);
     warn "oligo-analysis\t$current_time\tCalculating relative frequencies\n";
@@ -460,7 +461,7 @@ sub CalcFrequencies {
 
 ### input alphabet ###
 sub CalcAlphabet {
-  if ($hyperverbose) {
+  if ($verbose >= 2) {
     $current_time = `date '+%H:%M:%S'`;
     chomp($current_time);
     warn "oligo-analysis\t$current_time\tCalculating input alphabet\n";
@@ -483,7 +484,7 @@ sub CalcAlphabet {
 
 ### substract the occurrences beyond the minimal overlap distance
 #sub SubstractOverlap {
-#	if ($hyperverbose) {
+#	if ($verbose >= 2) {
 #		$current_time = `date '+%H:%M:%S'`;
 #		chomp($current_time);
 #		warn "oligo-analysis\t$current_time\tCalculating input alphabet\n";
@@ -503,7 +504,7 @@ sub CalcAlphabet {
 
 ### sum occurrences on both strands ###
 sub SumStrands {
-    if ($hyperverbose) {
+    if ($verbose >= 2) {
 	$current_time = `date '+%H:%M:%S'`;
 	chomp($current_time);
 	warn "oligo-analysis\t$current_time\tSumming occurrences for pairs of reverse complements\n";
@@ -553,7 +554,7 @@ sub SumStrands {
 
 ### calculate occurrences with 1 degenerated position ###
 sub Degenerate {
-  if ($hyperverbose) {
+  if ($verbose >= 2) {
     $current_time = `date '+%H:%M:%S'`;
     chomp($current_time);
     warn "oligo-analysis\t$current_time\tNeighborhood\n";
@@ -624,7 +625,7 @@ sub NbPossibleOligo {
 
 #### expected oligomer frequencies #####
 sub CalcExpected {
-    if ($hyperverbose) {
+    if ($verbose >= 2) {
 	$current_time = `date '+%H:%M:%S'`;
 	chomp($current_time);
 	warn "oligo-analysis\t$current_time\tCalculating probabilities\n";
@@ -702,8 +703,8 @@ sub CalcExpected {
 		    $patterns{$pattern_seq}->{segments} = join (" ", 
 							   $head,
 							   $tail,
-							   $sub_word[$s]{$head}->{max_freq},
-							   $sub_word[$l-$s]{$tail}->{max_freq}
+							   sprintf("%15.13f", $sub_word[$s]{$head}->{max_freq}),
+							   sprintf("%15.13f", $sub_word[$l-$s]{$tail}->{max_freq})
 								#,$sub_word[$s]{$head}->{max_freq} * $sub_word[$l-$s]{$tail}->{max_freq}
 							   );
 #		    print join ("\t", $l, $pattern_seq, 
@@ -874,7 +875,7 @@ sub CalcProba {
     
     ### calculate oligo probabilities
     foreach $pattern_seq (sort keys %patterns) {
-	if ($hyperverbose) {
+	if ($verbose >= 2) {
 	    $current_time = `date '+%H:%M:%S'`;
 	    chomp($current_time);
 	    printf ("oligo-analysis\t$current_time\tcalculating proba $pattern_seq obs %7d exp %7.1f\n", 
@@ -950,7 +951,7 @@ sub CalcProba {
 ### print the result file
 sub PrintResult {
     ### open output file ###
-    if ($hyperverbose) {
+    if ($verbose >= 2) {
 	$current_time = `date '+%H:%M:%S'`;
 	chomp($current_time);
 	warn "oligo-analysis\t$current_time\tPrinting output file\n";
@@ -1302,16 +1303,20 @@ sub PrintHeaderLine {
 
 
 sub ReadArguments {
-    $a = 0;
+    my $a = 0;
     while ($a <= $#ARGV) {
 	
 	#### verbose
 	if ($ARGV[$a] eq "-v") {
-	    $verbose = 1;
+	    if (&IsNatural($ARGV[$a+1])) {
+		$a++;
+		$verbose = $argv[$a];
+	    } else {
+		$verbose = 1;
+	    }
 	    
 	} elsif ($ARGV[$a] eq "-vv") {
-	    $verbose = 1;
-	    $hyperverbose = 1;
+	    $verbose = 2;
 	    
 	    ### detailed help
 	} elsif ($ARGV[$a] eq "-h") {
@@ -1615,7 +1620,7 @@ sub ReadArguments {
 	$a++;
     }
     
-    if ($hyperverbose) {
+    if ($verbose >= 2) {
 	$current_time = `date '+%H:%M:%S'`;
 	chomp($current_time);
 	warn "oligo-analysis\t$current_time\tStarting\n";
@@ -1772,10 +1777,9 @@ ARGUMENTS
 		
 	-o file	outputfile. Returns a list of the oligomers 
 		encountered in the sequences, with their frequencies.
-	-v	verbose. 
-	-vv	hyperverbose. Same as verbose, but in addition the program 
-		returns information about processes it is executing, allowing
-		to estimate how far it has reached at any moment.
+	-v #	verbose level
+			1 report parameters and statistics
+			2 warn when the program enters a new subroutine
 	-return	list of statistics to return
 		this option is followed by a list of words, 
 		separated by commas, indicating which values
@@ -2100,8 +2104,7 @@ oligo-analysis options
 -format         input format. Accepted: fasta (default), wconsensus, IG, raw, filelist
 -seqtype       	sequence type (dna|prot|other)
 -o              output file
--v              verbose
--vv		hyperverbose (monitor processes during execution).
+-v #            verbose level
 -l              oligomer length
 -a a:t # c:g #  alphabet utilization
 -a yeast        use yeast genomic alphabet
