@@ -1,11 +1,11 @@
 #!/usr/bin/perl 
 #############################################################
-# $Id: parse-genbank.pl,v 1.17 2004/03/08 14:14:21 jvanheld Exp $
+# $Id: parse-genbank.pl,v 1.18 2004/03/29 12:42:41 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
 ############################################################
-#use strict;;
+#use strict;
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
@@ -14,6 +14,7 @@ push @INC, "$RSA/perl-scripts/parsers/";
 require "lib/load_classes.pl";
 require "lib/util.pl";
 require "lib/parsing_util.pl";
+require "lib/parse_genbank_lib.pl";
 require "classes/Genbank_classes.pl";
 
 
@@ -77,6 +78,7 @@ package main;
 				 description
 				 chrom_position
 				 organism
+				 gene_id
 
 				 names
 				 db_xref
@@ -111,9 +113,9 @@ package main;
 	    &FatalError("Input directory '$dir{input}' does not exist.\n");
 	}
     } 
-
+    
     #### organism name
-    unless (defined($org)) {
+    unless ($org) {
 	$org = `basename $dir{input}`;
 	chomp($org);
 	warn "; Auto selection of organism name\t$org\n" if ($verbose >= 1);
@@ -203,7 +205,7 @@ package main;
 
     #### write the chromosome file
     chdir $dir{main};
-    $chrom = &OpenOutputFile("$dir{output}/Contigs.txt"); # file with chromosome IDs
+    $chrom = &OpenOutputFile("$dir{output}/contigs.txt"); # file with chromosome IDs
     foreach my $contig ($contigs->get_objects()) {
 	print $chrom join ("\t", 
 			   $contig->get_attribute("file"),
@@ -292,7 +294,7 @@ package main;
     close $out if ($outfile{output});
     
     ### State the output directory
-    warn "; Output directorry\t", $dir{output}, "\n";
+    warn "; Output directory\t", $dir{output}, "\n";
 
     exit(0);
 }
@@ -354,18 +356,37 @@ OPTIONS
 		Specify one file to be parsed.
 		Can be used iteratively to specify several files.
 		 -f file1 -f file2 -f ...
+
 	-i	input directory
 		input directory. This directory must contain one or
 		several genbank files (extension .gbk by default). 
+
 	-ext    extension to be found in the director specified 
 	        with the option -i. 
+
+	-org    organism name (you should replace spaces by
+		underscores to avoid problems)
+
+		This name is used for creating the organism path in
+		the export directory.
+
+		If not provided, the basename of the genbank directory
+		is used as organism name. It can be convenient to
+		specify it manually, when the Genbank directory is not
+		the complete organism name (example: H_sapiens instead
+		of Homo_sapiens).
+
 	-o	output directory
 		The parsing result will be saved in this directory. If
 		the directory does not exist, it will be created.
+
 	-test #	quick test (for debugging): only parse the # first
 		lines of each Genabnk file (default $test_lines).
+
 	-refseq	input files are refseq entries
+
 	-noseq  do not export sequences in .raw files
+
    Options for the automaticaly generated SQL scripts
 	-schema database schema (default: $schema)
 	-host	database host (efault: $host)
@@ -390,6 +411,7 @@ parse-genbank options
 -f	input file
 -i	input dir
 -ext    extension of the input files
+-org	organism name (you should replace spaces by underscores)
 -refseq	input files are refseq entries
 -noseq  do not export sequences in .raw files
 -o	output dir
@@ -438,6 +460,10 @@ sub ReadArguments {
 	    ### extension to be searched in the input directory
 	} elsif ($ARGV[$a] eq "-ext") {
 	    $ext = $ARGV[$a+1];
+
+	    ### organism name
+	} elsif ($ARGV[$a] eq "-org") {
+	    $org = $ARGV[$a+1];
 
 	    ### refseq
 	} elsif ($ARGV[$a] eq "-refseq") {
