@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: orf-info,v 1.10 2002/06/06 11:20:42 jvanheld Exp $
+# $Id: orf-info,v 1.11 2002/09/17 00:57:16 jvanheld Exp $
 #
-# Time-stamp: <2002-06-06 13:20:39 jvanheld>
+# Time-stamp: <2002-09-16 19:31:13 jvanheld>
 #
 ############################################################
 
@@ -20,6 +20,7 @@ $orf_col = 0;
 $locus_col = 2;
 $full = 0;
 $no_query = 0;
+$match_description = 0;
 
 &ReadArguments;
 
@@ -28,31 +29,18 @@ $no_query = 0;
 #### organism
 &CheckOrganism($organism_name);
 
-### read ORF information
-&ReadOrfPositions($organism_name);
-&ReadSynonyms($organism_name);
 
 ### open output file ###
 $out = &OpenOutputFile($outputfile);
 
-#### $verbose #####
-if ($verbose) {
-    print $out ";orf-info result\n";
-    printf $out "; %-14s\t%s\n", "organism", $organism_name;
-    if ($inputfile) {
-	print $out ";Query file	$inputfile\n";
-    } else {
-	print $out "; queries\n;\t";
-	print $out join ("\n;\t",@queries);
-	print $out "\n";
-    }
-    if ($outputfile) {
-	print $out ";Output file	$outputfile\n";
-    }
-}
+&Verbose();
+
+### read ORF information
+&ReadOrfPositions($organism_name);
+&ReadSynonyms($organism_name);
 
 
-
+################################################################
 #### read query file
 if (($inputfile) || ($#queries == -1)) {
     ($in, $input_dir) = &OpenInputFile($inputfile);
@@ -70,10 +58,7 @@ if (($inputfile) || ($#queries == -1)) {
     @queries = $ARGV[0];
 }
 
-
-
-
-
+################################################################
 #### search orf info for all queries ####
 &Header;
 foreach $query (@queries) {
@@ -86,7 +71,15 @@ foreach $query (@queries) {
 	    if ($key =~ /^$query$/i) {
 		$found = 1;
 		&PrintInfo($query, $orf_id{$key});
-		
+	    }
+	}
+
+	if ($match_description) {
+	    foreach my $orf_id (keys %descr) {
+		if ($descr{$orf_id}=~ /^$query$/i) {
+		    $found = 1;
+		    &PrintInfo($query, $orf_id{$key});
+		}
 	    }
 	}
 #	if (defined($orf_id{uc($query)})) {
@@ -101,8 +94,18 @@ foreach $query (@queries) {
 		
 	    }
 	}
+	if ($match_description) {
+	    foreach my $orf_id (keys %descr) {
+#		warn join "\t", $orf_id, $descr{$orf_id}, "\n";
+		if ($descr{$orf_id}=~ /$query/i) {
+		    $found = 1;
+		    &PrintInfo($query, $orf_id);
+		}
+	    }
+	}
     }
 
+    #### send a warning when the query did not match anything
     unless ($found) {
 	&PrintWarning($query);
     }
@@ -110,7 +113,7 @@ foreach $query (@queries) {
 }
 
 
-
+#### end of verbose
 if ($verbose) {
     $done_time = $date = `date '+%d/%m/%y %H:%M:%S %Z'`;
     print $out ";Job started $start_time";
@@ -123,7 +126,12 @@ close $out unless ($outputfile eq "");
 
 exit(0);
 
-########################## subroutine definition ############################
+################################################################
+################### subroutine definition ######################
+################################################################
+
+################################################################
+#### print header
 sub Header {
     print $out ";", join ("\t", 
 			  "orf_id",
@@ -140,6 +148,8 @@ sub Header {
     print $out "\n";
 }
 
+################################################################
+#### print information for one ORF
 sub PrintInfo {
     my ($query, $orf_id) = @_;
     print $out join ("\t", 
@@ -160,6 +170,8 @@ sub PrintInfo {
     print $out "\n";
 }
 
+################################################################
+#### print warning
 sub PrintWarning {
     my ($query) = @_;
     print $out join ("\t", 
@@ -168,7 +180,8 @@ sub PrintWarning {
 		     "no info"), "\n";
 }
 
-
+################################################################
+#### print full help message
 sub PrintHelp {
   open HELP, "| more ";
   print HELP <<EnfOfHelp;
@@ -200,7 +213,8 @@ $supported_organisms
 	-full	full match only (no substring matching)
 	-noquery	
 		do not print the query at the beginning of each line
-
+	-descr	match queries against the description 
+		(in addition to gene ID and  names)
 QUERY
 	The simplest way to enter a query is with the -q option :
 	    the query can be a ORF identifier 
@@ -237,8 +251,9 @@ EnfOfHelp
   exit(0);
 }
 
+################################################################
+#### display short help message
 sub PrintOptions {
-#### display short help message #####
   open HELP, "| more";
   print HELP <<End_short_help;
 orf-info options
@@ -254,14 +269,15 @@ $supported_organisms
 -q		query (can be reiterated on the same command line)
 -full		full match only (no substring matching)
 -noquery	do not print the query at the beginning of each line
-
+-descr		match queries against the description 
 End_short_help
   close HELP;
   exit;
 }
 
+################################################################
+#### read arguments
 sub ReadArguments {
-#### read arguments ####
     foreach $a (0..$#ARGV) {
 	### verbose ###
 	if ($ARGV[$a] eq "-v") {
@@ -283,6 +299,10 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-full") {
 	    $full = 1;
 	    
+	    #### match query against description
+	} elsif ($ARGV[$a] =~ /^-desc/) {
+	    $match_description = 1;
+	    
 	    #### don't print the query in output
 	} elsif ($ARGV[$a] eq "-noquery") {
 	    $no_query = 1;
@@ -299,5 +319,23 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-o") {
 	    $outputfile = $ARGV[$a+1];
 	}
+    }
+}
+
+################################################################
+#### verbose
+sub Verbose {
+    if ($verbose) {
+	print $out "; orf-info ";
+	&PrintArguments($out);
+	
+	printf $out "; %-14s\t%s\n", "organism", $organism_name;
+	print $out "; Output file	$outputfile\n" if ($outputfile);
+	print $out "; Query file	$inputfile\n" if ($inputfile);
+	print $out "; Queries\n;\t";
+	print $out join ("\n;\t",@queries), "\n";
+	print $out "; Match queries against description\n" if ($match_description);
+	print $out "; Full match\n" if ($full);
+	print $out "\n";
     }
 }
