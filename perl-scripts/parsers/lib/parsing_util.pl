@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parsing_util.pl,v 1.13 2005/01/27 08:57:34 jvanheld Exp $
+# $Id: parsing_util.pl,v 1.14 2005/01/27 14:46:45 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -492,25 +492,25 @@ sub ParsePositions {
 	    next;
 	}
 
-#	die (join ("\t", "DEBUG", "position", $position, , $chrom_pos, "\n")) if ($main::verbose >= 0);
-
 	################################################################
 	#### direct or reverse strand
+	$coord = $chrom_pos;
 	if ($chrom_pos =~ /complement\((.*)\)/) {
 	    $strand = "R";
-	    $coord = $1;
+	    $coord =~ s/complement\(//g;
+	    $coord =~ s/\)//g;
 	} else {
 	    $strand = "D";
-	    $coord = $chrom_pos;
 	}
 
 	################################################################
 	#### split exons
+	if ($coord =~ /^join\(/) { ### exons
+	    $coord =~ s/^join\(//;
+	    $coord =~ s/\)$//;
 
-	
-	if ($coord =~ /^join\((.*)\)$/) { ### exons
 	    #### multiple segments
-	    my @exons = split ",", $1;
+	    my @exons = split ",", $coord;
 	    my @exon_starts = ();
 	    my @exon_ends = ();
 
@@ -540,6 +540,8 @@ sub ParsePositions {
 	    #### a single segment
 	    ($start_pos, $end_pos) = &segment_limits($coord);
 	}
+
+	warn (join ("\t", "DEBUG", "ParsePositions", $position, , "\n", "chrom_pos", $chrom_pos, "\n", "coord", $strand, $coord, "\n")) if ($main::verbose >= 10);
 
 
 	#### a single segment
@@ -594,6 +596,7 @@ sub ParsePositions {
 	$feature->force_attribute("start_pos",$start_pos);
 	$feature->force_attribute("end_pos",$end_pos);
     }
+
 }
 
 
@@ -610,6 +613,8 @@ sub segment_limits {
     my ($segment) = @_;
     my $segment_start = $null;
     my $segment_end = $null;
+
+    warn "; Segment limits $segment\n" if ($main::verbose >= 10);
 
     #### start and end positions are different
     if ($segment =~ /^([\>\<]{0,1}\d+)\.\.([\>\<]{0,1}\d+)$/) {

@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank_lib.pl,v 1.12 2005/01/27 08:57:34 jvanheld Exp $
+# $Id: parse_genbank_lib.pl,v 1.13 2005/01/27 14:46:45 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -256,6 +256,7 @@ sub ParseGenbankFile {
 	
 	    #### new feature
 	} elsif ($line =~ /^ {5}(\S+)\s+/) {
+
 	    $feature_type = $1;
 	    $value = "$'";
 	    
@@ -265,14 +266,19 @@ sub ParseGenbankFile {
 		### check that the position is complete
 		my $start_line = $l;
 		my $next = "$'";;
-		unless ($next =~ /\)/) {
+		my $end_expression = '\)';
+		if ($position =~ /join\(complement\(/){
+		    $end_expression = '\)\)';
+		}
+
+		unless ($next =~ /${end_expression}/) {
 		    do {
 			$l++;
 			die "Error: position starting at line $l is not terminated properly.\n"
 			    unless $position_suite = <GBK>;
 			$position_suite =~ s/^FT//;
 			$position .= &trim($position_suite);
-		    } until ($position =~ /\)/);
+		    } until ($position =~ /${end_expression}/);
 		}
 	    }
 	    

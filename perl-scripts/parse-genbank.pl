@@ -1,6 +1,6 @@
 #!/usr/bin/perl 
 #############################################################
-# $Id: parse-genbank.pl,v 1.22 2005/01/27 08:57:34 jvanheld Exp $
+# $Id: parse-genbank.pl,v 1.23 2005/01/27 14:46:45 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -241,7 +241,7 @@ package main;
     &ParsePositions($misc_RNAs);
     &ParsePositions($misc_features);
     &ParsePositions($CDSs);
-
+	
     if ($data_type eq "refseq") {
 	&RefseqPostProcessing();
     } else {
@@ -318,12 +318,12 @@ sub PrintHelp {
   open HELP, "| more";
   print HELP <<End_of_help;
 NAME
-	parse-genbank
+	parse-genbank.pl
 
         2001 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
 	
 USAGE
-        parse-genbank [-dir input_dir][-i inputfile] [-o outputfile] [-v]
+        parse-genbank.pl [-dir input_dir][-i inputfile] [-o outputfile] [-v]
 
 DESCRIPTION
 	Parse one or sveral Genbank files for extracting genome
@@ -417,7 +417,7 @@ End_of_help
 sub PrintOptions {
   open HELP, "| more";
   print HELP <<End_short_help;
-parse-genbank options
+parse-genbank.pl options
 ----------------
 -h		(must be first argument) display full help message
 -help		(must be first argument) display options
@@ -526,7 +526,7 @@ sub ReadArguments {
 ################################################################
 #### report parameters
 sub Verbose {
-    print $out "; parse-genbank ";
+    print $out "; parse-genbank.pl ";
     &PrintArguments($out);
     if (defined(%dir)) {
 	print $out "; Directories\n";
