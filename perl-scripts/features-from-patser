@@ -13,7 +13,7 @@ $matrix_length = 1;
 $seq_format = "wconsensus";  ### because this is the usual format for patser
 $flank_len = 0;
 
-@supported_table_fields = qw (scores starts strands positions);
+@supported_table_fields = qw (score start strand position);
 foreach my $field  (@supported_table_fields) {
     $supported_table_fields{$field} = 1;
 }
@@ -28,7 +28,7 @@ unless (defined(%return)) {
     $return{matches} = 1;
 }
 if (($return{table}) && !(defined(%table_fields))){
-    $table_fields{scores} = 1;
+    $table_fields{score} = 1;
 }
 
 
@@ -167,13 +167,13 @@ while (<$in>) {
 	    &PrintFeature();
 	}
 
-	#### store scores for the score table
+	#### store score for the score table
 	if ($return{table}) {
-	    push @{$scores{$map}}, $score;
-	    push @{$starts{$map}},  $start if ($table_fields{starts});
-	    push @{$strands{$map}},  $strand if ($table_fields{strands});
-	    push @{$positions{$map}},  join ("", $start,"..",$end,$strand) if ($table_fields{positions});
-	    $max_scores_per_map = &max($max_scores_per_map, $#{$scores{$map}}+1);
+	    push @{$score{$map}}, $score;
+	    push @{$start{$map}},  $start if ($table_fields{start});
+	    push @{$strand{$map}},  $strand if ($table_fields{strand});
+	    push @{$position{$map}},  join ("", $start,"..",$end,$strand) if ($table_fields{position});
+	    $max_score_per_map = &max($max_score_per_map, $#{$score{$map}}+1);
 	}
 	
 
@@ -188,52 +188,52 @@ if ($return{table}) {
     print $out "; Score table\n" if ($verbose >= 1);
     
     #### header
-#    print $out join ("\t", "; seq_id", 1..$max_scores_per_map), "\n";
+#    print $out join ("\t", "; seq_id", 1..$max_score_per_map), "\n";
     print $out "; seq_id";
-    if ($table_fields{scores}) {
-	for my $i (1..$max_scores_per_map) {
+    if ($table_fields{score}) {
+	for my $i (1..$max_score_per_map) {
 	    print $out "\tscore.${i}";
 	} 
     }
-    if ($table_fields{starts}) {
-	for my $i (1..$max_scores_per_map) {
+    if ($table_fields{start}) {
+	for my $i (1..$max_score_per_map) {
 	    print $out "\tstart.${i}";
 	} 
     }
-    if ($table_fields{strands}) {
-	for my $i (1..$max_scores_per_map) {
+    if ($table_fields{strand}) {
+	for my $i (1..$max_score_per_map) {
 	    print $out "\tstrand.${i}";
 	} 
     }
-    if ($table_fields{positions}) {
-	for my $i (1..$max_scores_per_map) {
+    if ($table_fields{position}) {
+	for my $i (1..$max_score_per_map) {
 	    print $out "\tposition.${i}";
 	} 
     }
     print $out "\n";
 
-    #### print matche and positions
-    foreach my $map (sort keys %scores) {
+    #### print matche and position
+    foreach my $map (sort keys %score) {
 
-	for my $i ($#{$scores{$map}}..$max_scores_per_map-2) {
-	    push @{$scores{$map}}, "";
-	    push @{$starts{$map}}, "" if ($table_fields{$starts});
-	    push @{$strands{$map}}, "" if ($table_fields{$strands});
-	    push @{$positions{$map}}, "" if ($table_fields{$positions});
+	for my $i ($#{$score{$map}}..$max_score_per_map-2) {
+	    push @{$score{$map}}, "";
+	    push @{$start{$map}}, "" if ($table_fields{start});
+	    push @{$strand{$map}}, "" if ($table_fields{strand});
+	    push @{$position{$map}}, "" if ($table_fields{position});
 	}
 	print $out $map;
 	print $out "\t", join ("\t", 
-			       (sort {$b <=> $a} @{$scores{$map}}), 
-			       ) if ($table_fields{scores});
+			       (sort {$b <=> $a} @{$score{$map}}), 
+			       ) if ($table_fields{score});
 	print $out "\t", join ("\t", 
-			       (sort {$scores{$b} <=> $scores{$a}} @{$starts{$map}}),
-			       ) if ($table_fields{starts});
+			       (sort {$score{$b} <=> $score{$a}} @{$start{$map}}),
+			       ) if ($table_fields{start});
 	print $out "\t", join ("\t", 
-			       (sort {$scores{$b} <=> $scores{$a}} @{$strands{$map}}),
-			       ) if ($table_fields{strands});
+			       (sort {$score{$b} <=> $score{$a}} @{$strand{$map}}),
+			       ) if ($table_fields{strand});
 	print $out "\t", join ("\t", 
-			       (sort {$scores{$b} <=> $scores{$a}} @{$positions{$map}})
-			       ) if ($table_fields{positions});
+			       (sort {$score{$b} <=> $score{$a}} @{$position{$map}})
+			       ) if ($table_fields{position});
 	print $out "\n";
     }
 }
