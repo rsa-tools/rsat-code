@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: Genbank_classes.pl,v 1.1 2003/08/08 22:15:30 jvanheld Exp $
+# $Id: Genbank_classes.pl,v 1.2 2003/08/08 22:37:17 jvanheld Exp $
 #
-# Time-stamp: <2003-08-09 00:14:44 jvanheld>
+# Time-stamp: <2003-08-09 00:37:11 jvanheld>
 #
 ############################################################
 
@@ -285,6 +285,34 @@ package Genbank::rRNA;
 ################################################################
 #### Ribosomial RNA
 package Genbank::misc_RNA;
+{
+  @ISA = qw ( Genbank::Feature );
+  ### class attributes
+  $_count = 0;
+  $_prefix = "ft_";
+  @_objects = ();
+  %_name_index = ();
+  %_id_index = ();
+  %_attribute_count = ();
+  %_attribute_cardinality = (id=>"SCALAR",
+			     gene_id=>"SCALAR",
+			     names=>"ARRAY",
+
+			     ### primary info found in Genbank flat files
+			     chrom_position=>"SCALAR",
+			     gene=>"SCALAR",
+			     product=>"SCALAR",
+
+			     #### multi-value attributes
+			     note=>"ARRAY",
+			     function=>"ARRAY",
+			     );
+}
+
+
+################################################################
+#### Ribosomial RNA
+package Genbank::misc_feature;
 {
   @ISA = qw ( Genbank::Feature );
   ### class attributes
