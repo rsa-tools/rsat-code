@@ -183,18 +183,18 @@ sub OpenOutputFile {
 ################################################################
 ## Check for the existence of an output directory, and, if it does not
 ## exist, create it
-sub CheckOutputDir {
+sub CheckOutDir {
     my ($output_dir, $umask) = @_;
-
     $umask = 0002 unless ($umask);
     umask($umask);
 
     if ($output_dir) {
 	unless (-d $output_dir) {
-	    warn "Creating directory $output_dir\n";
+	    warn "Creating directory $output_dir\n" if ($main::verbose >= 1);
 	}
 	mkdir $output_dir;
 	unless (-d $output_dir) {
+	    warn "Creating directory with all parents $output_dir\n" if ($main::verbose >= 1);
 	    system "mkdir -p $output_dir"; ## create output directory with all parents
 	}
 	unless (-d $output_dir) {
