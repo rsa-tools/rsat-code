@@ -180,14 +180,16 @@ pattern_disco: oligos dyads
 ################################################################
 #### Detect over-represented oligonucleotides
 OLIGO_DIR=${CURRENT_RES_DIR}/oligos
-OLIGO_FILE=${OLIGO_DIR}/oligos_${CURRENT_SET}_${OLIGO_LEN}nt${STR}${NOOV}_sig${THOSIG}
-OLIGO_FILE_HTML=${OLIGO_DIR}/oligos_${CURRENT_SET}_${OLIGO_LEN}nt${STR}${NOOV}_sig${THOSIG}.html
+MODEL=-expfreq ${BG_OLIGO_FILE}
+MODEL_SUFFIX=allup
+OLIGO_FILE=${OLIGO_DIR}/oligos_${CURRENT_SET}_${OLIGO_LEN}nt${STR}${NOOV}_sig${THOSIG}_${MODEL_SUFFIX}
+OLIGO_FILE_HTML=${OLIGO_FILE}.html
 oligos:
 	@echo "${ORG}	${CURRENT_SET}	Detecting over-represented oligonucleotides	${OLIGO_FILE}"
 	@mkdir -p ${OLIGO_DIR}
 	oligo-analysis -v ${V}			\
 		-i ${SEQ_FILE}			\
-		-expfreq ${BG_OLIGO_FILE}	\
+		${MODEL}			\
 		-l ${OLIGO_LEN} ${NOOV}		\
 		-return occ,freq,proba,rank	\
 		-sort -thosig ${THOSIG}		\
@@ -252,7 +254,7 @@ seq_nb_series_human:
 	@for len in ${HUMAN_LENGTHS}; do						\
 	${MAKE} seq_nb_series ORG=Homo_sapiens SEQ_LEN=$${len} REPET=1000;	\
 	done
-	
+
 YEAST_LENGTHS=500 1000
 seq_nb_series_yeast:
 	@for len in ${YEAST_LENGTHS}; do						\
@@ -301,7 +303,7 @@ CALIB_TASK=all,clean_oligos
 START=1
 REPET=10000
 WORK_DIR=`pwd`
-OUT_DIR=${WORK_DIR}/${RES_DIR}/${ORG}/${RAND_DIR}/${OLIGO_LEN}nt${STR}${NOOV}_N${N}_L${SEQ_LEN}_R${REPET}
+CALIB_DIR=${WORK_DIR}/${RES_DIR}/${ORG}/${RAND_DIR}/${OLIGO_LEN}nt${STR}${NOOV}_N${N}_L${SEQ_LEN}_R${REPET}
 CALIBRATE_CMD=								\
 	calibrate-oligos -v ${V}					\
 		-r ${REPET} -sn ${N} -ol ${OLIGO_LEN} -sl ${SEQ_LEN}	\
@@ -309,11 +311,12 @@ CALIBRATE_CMD=								\
 		-start ${START}						\
 		${END}							\
 		${STR} ${NOOV}						\
-		-outdir ${OUT_DIR}					\
+		-outdir ${CALIB_DIR}					\
 		-org ${ORG}
 
 ## Run the program immediately (WHEN=now) or submit it to a queue (WHEN=queue)
 WHEN=queue
+N=5
 calibrate_oligos:
 	${MAKE} calibrate_oligos_${WHEN}
 
@@ -345,8 +348,23 @@ give_access:
 
 
 ## ##############################################################
+## oligo-analysis with a calibration file
+CURRENT_CALIB_DIR=${WORK_DIR}/${RES_DIR}/${ORG}/${RAND_DIR}/${OLIGO_LEN}nt${STR}${NOOV}_N${SEQ_NB}_L${CURRENT_SEQ_LEN}_R${REPET}
+CURRENT_CALIB_FILE=${CURRENT_CALIB_DIR}/${ORG}_${OLIGO_LEN}nt_${STR}${NOOV}_n${SEQ_NB}_l${CURRENT_SEQ_LEN}_r${REPET}_negbin.tab
+oligos_with_calibration:
+	@echo "calibration directory ${CURRENT_CALIB_DIR}"
+	@echo "calibration file ${CURRENT_CALIB_FILE}"
+	${MAKE} oligos MODEL="-calib ${CURRENT_CALIB_FILE}" MODEL_SUFFIX=calib
+
+compare_models:
+	${MAKE} oligos THOSIG=-4
+	${MAKE} oligos_with_calibration THOSIG=-4
+
+## ##############################################################
 ## Fit all previously calculated distributions with a Poisson and a
 ## negbin, respectively
+## THIS IS OBSOLETE: calibrate-oligos now automatically exports the negbin and poisson files
+
 DISTRIB_FILES=`find ${RES_DIR} -name '*_distrib.tab'`
 GOOD_DISTRIB_FILES=`find ${RES_DIR} -name '*_distrib.tab' -exec wc {} \; | awk '$$1 >= 2000 {print $$4}'`
 DISTRIB_LAW=negbin
