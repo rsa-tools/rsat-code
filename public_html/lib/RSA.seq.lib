@@ -786,7 +786,7 @@ sub ReadNextSequence {
 	
 	$sequence = "";
 	while (<$SEQ>) {
-	    next if (/^;/);
+	    next if ((/^;/) || (/^\#/) || (/^--/));
 	    $sequence .= $_;
 	}
 	&CheckFormat($sequence, $sequence_format);
@@ -909,7 +909,7 @@ sub ReadNextSequence {
 	### FastA format ###
     } elsif ($sequence_format eq "fasta") {
 	while (<$SEQ>) {
-	    next if (/^;/);
+	    next if ((/^;/) || (/^\#/) || (/^--/));
 	    if (/^\s*>\s*(\S+)\s*(.*)/) { ### new identifier
 		@comment = ($2);
 		unless ((defined($current_seq_id)) && 
@@ -974,18 +974,27 @@ sub ReadNextSequence {
 	$in_sequence = 0;
 	
 	while (<$SEQ>) {
+#  	    $l++;
+#  	    if (($verbose >= 5) && ($l%100000 == 0)){
+#  		warn "reading line $l\n";
+#  	    }
 	    chomp;
 	    if (/^\/\/$/) {		### end of record
+		warn "Folding sequence $seq_id\n" if ($verbose >=3);
 		$sequence = &FoldSequence($sequence, 0);
+		warn "Read sequence $seq_id\n" if ($verbose >=3);
 		return ($sequence, $seq_id, @comments);
-	    } elsif (/^ACCESSION\s+(\S+)/) {	### dividing line
+	    } elsif ((/^ACCESSION\s+(\S+)/) ||
+		     (/^LOCUS\s+(\S+)/)) {
 		$seq_id = $1;
+		warn "Sequence ID\t$seq_id\n" if ($verbose >= 2);
 		$sequence = "";
 		chomp;
 		push @comments, $seq_id;
 	    } elsif (/^DEFINITION\s+/) {	### definition
 		push @comments, $';
 	    } elsif (/^ORIGIN/) {
+		warn "Reading sequence\t$seq_id\n" if ($verbose >= 2);
 		$in_sequence = 1;
 	    } elsif (($in_sequence) && (/(\d+)\s+(.+)$/)) { ### sequence
 		$position = $1;
