@@ -53,7 +53,7 @@ ORFs</b>.
 
 <p><B>Remarks</B>
 <ul>
-<li>gene names must be separated by carriage returns, because
+<li>Gene names must be separated by carriage returns, because
 only the first word of each line is considered as a query.
 
 <li>Notice that gene names are case-insensitive. 
@@ -64,11 +64,16 @@ by a common name. Synonyms are supported.
 
 
 <p>
-After a few seconds, the upstream sequence of the selected genes will
-be displayed. Check the sizes of the sequences you obtained.
+After a few seconds, the result appears, in the form of a link to the
+sequences, followed by a series of Buttons. 
+
+<P>
+Click on the link, to see the upstream sequence of the selected
+genes. Check the sizes of the sequences obtained. Click on the
+<b>Back</b> button to come back to the previous result page.
 
 <p>
-At the bottom of the sequences, you can see a series of buttons, which
+Below the link, you can see a series of buttons, which
 will allow you to send the retrieved sequences to the next task (as we
 will see in the next tutorials). For the time being, do not click
 these buttons.
@@ -82,8 +87,13 @@ these buttons.
 <p><li>Come back to the <b>retrieve sequnece</b> form. 
 <p><li>Perform the same operations as above, but this time, activate
 the option <b>Prevent overlap with upstream ORFs</b>.
-<p><li>Compare what you obtain with the previous result. 
+<p><li>Compare the size of the sequences with the previous result. 
 </ol>
+
+</ul>
+<h3>Interpretation of the results</h3>
+<ul>
+
 
 <p>
 The default size for yeast upstream sequences is 800bp. The reason for
@@ -111,15 +121,15 @@ upstream ORFs. A notable exception is the yeast <i>Saccharomyces
 cerevisiae</i>. We evaluated the results obtained when this option is
 activated and inactivated respectively, and it is clear that many
 patterns escape detection when upstream ORFs are clipped. One possible
-reason is that the yeast annotation contain many false ORFs (some
-auhors estimate that there were ~1000 false ORFs in the original
-annotation).
+reason is that the annotations of <i>Saccharomyces cerevisiae</i>
+contain many false ORFs (some auhors estimate that there are ~1000
+false ORFs in the original annotation).
 
 <p>
 This is particularly well examplified with the yeast PHO genes : when
 the option is activated, PHO8 and PHO64 upstream regions are truncated
 at 180 and 237 base pairs, respectively. In both cases, the putative
-upsteram ORF is very short (~300bp), and there is no experimental
+upstream ORF is very short (~300bp), and there is no experimental
 evidence for the existence of a gene. In addition, several cis-acting
 elements have been shown to be located in the regions corresponding to
 these questionable ORFs. When the sequences are clipped, the remaining
@@ -133,13 +143,13 @@ cis-acting elements. However, even in these cases, we noticed a loss
 in sensitivity when the option was activated.
 
 <p>
-In summary, we propose the following strategy :
+<b>In summary</b>, we propose the following strategy :
 <ul>
 <li>When working with bacteria, systematically activate the option
 <b>prevent overlap with upstream ORFs</b>, to prevent including too
 many coding sequences when the genes are located in operons.
 <li>With eukaryotes, inactivate this option, to circumvent the
-weaknesses of gene location procedures.
+weaknesses of gene boundary annotations.
 </ul>
 
 
@@ -147,9 +157,9 @@ weaknesses of gene location procedures.
 <h3>Retrieving sequences for all the genes of a genome</h3>
 <ul>
 
-As an illustration fo the retrieval of all sequences, we will retrieve
-the complete set of downstream sequences for the yeast
-<I>Saccharmoyces cerevisiae</I>
+As an illustration fo the retrieval of all sequences, we will now use
+the same program to retrieve sequences on the other side of the genes
+: downstream sequences.
 
 <OL>
 
@@ -210,13 +220,15 @@ flank of the gene.
 Notice that selecting upstream sequences with positive coordinates
 amounts to pick coding sequences on the 5' side of the gene. As an
 exercise, try to extract all start codons for a given organism (say
-<i>Saccharomyces cerevisiae</i>).
+<i>Saccharomyces cerevisiae</i>). Check that the codons correspond to
+the expectation (ATG).
 
 <p>
 Reciprocally, for downstream sequences, negative coordinates could be
 specified to retrieve coding sequences on the 3'end of the gene. As en
-exercise, try to extract all the stop codons for the same organism.
-
+exercise, try to extract all the stop codons for the same
+organism. Check that the stop codons correspond to the expectation
+(TAA, TAG or TGA).
 
 </ul>
 <p>
