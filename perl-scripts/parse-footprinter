@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: parse-footprinter,v 1.1 2004/08/03 14:29:53 jvanheld Exp $
+# $Id: parse-footprinter,v 1.2 2004/08/03 14:39:34 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -43,6 +43,7 @@ $out = &OpenOutputFile($outfile{output});
 ##### read input
 ($in) = &OpenInputFile($infile{input});
 my $id = "";
+my $score = "";
 while ($line = <$in>) {
 
     ## Remove some tags to convert HTML to text
@@ -62,12 +63,20 @@ while ($line = <$in>) {
 	next;
     }
 
+
+    ################################################################
     ## print the result in tab-delimited format (default)
+
+#    warn $line if ($main::verbose >= 10);
 
     ## Detect the start of a motif description
     if ($line =~ /Motif\s+#(\d+)/) {
 	$id = $1;
 	warn "; New motif\t$id\n" if ($main::verbose >= 2);
+	if ($line =~ /score\:\s+(\S+)/) {
+	    $score = $1;
+	    warn "Invalid parsimony score\t$score\n" unless (&IsReal($score));
+	} 
     } elsif ($id eq "") {
 	## Print as comment all the lines preceding the first motif    
 	$line =~ s/\n/\n${comment_char}/g;
@@ -82,6 +91,7 @@ while ($line = <$in>) {
 	## Print the new site in the output file
 	print $out join ("\t", 
 			 $id,
+			 $score,
 			 $organism,
 			 $position,
 			 $sequence,
@@ -159,9 +169,10 @@ OUTPUT
        The tab-delimited file contains one row per motif instance
        (site). Column contents:
        	   1. motif ID
-	   2. organism
-	   3. site position 
-	   4. site sequence
+       	   2. parsimony score
+	   3. organism
+	   4. site position 
+	   5. site sequence
 End_of_help
   close HELP;
   exit;
