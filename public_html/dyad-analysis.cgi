@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.9 2001/09/21 06:17:25 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.10 2001/09/21 06:30:03 jvanheld Exp $
 #
-# Time-stamp: <2001-09-21 08:16:23 jvanheld>
+# Time-stamp: <2001-09-21 08:27:10 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -26,7 +26,7 @@ $query = new CGI;
 
 ### print the result page
 &RSA_header("dyad-analysis result");
-#&ListParameters;
+&ListParameters if $ECHO;
 
 #### update log file ####
 &UpdateLogFile;
