@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.86 2005/03/20 15:28:30 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.87 2005/03/29 05:08:32 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -996,16 +996,16 @@ sub ReadKnownSites {
 	    next if (/^\#/);
 	    next unless (/\S/);
 	    chomp;
-	    @fields = split "\t";
-	    $family_name = &trim($fields[0]);
-	    $site_sequence = &trim($fields[1]);
-	    next if (length($site_sequence) > $known_site_max_len);
-	    $source = &trim($fields[2]);
-	    #$site_sequence = &compress_pattern($site_sequence,"n");
+	    my @fields = split "\t";
+	    my $site_sequence = &trim(shift(@fields));
 	    $site_sequence =~ s/N/n/g;
+	    #$site_sequence = &compress_pattern($site_sequence,"n");
+	    my $family_name = &trim(shift(@fields));
+	    next if (length($site_sequence) > $known_site_max_len);
+	    my $source =  &trim(shift(@fields));
 	    push @{$known_site{$family_name}}, $site_sequence;
 	    push @{$known_site_source{$family_name}}, $source;
-	    warn join ("\t", "; known site", $family_name, $site_sequence, $source), "\n" if ($main::verbose >= 2);
+	    warn join ("\t", "; known site", "family:".$family_name, "site:".$site_sequence, $source), "\n" if ($main::verbose >= 0);
 	}
 	close KNOWN_SITE;
    }
@@ -1035,7 +1035,10 @@ sub SyntheticTable {
    $row{family} = $row++;
    $row{size} = $row++;
    $row{genes} = $row++;
-   $row{total_length} = $row++ if ($seq_length_calculated);
+   if ($seq_length_calculated) {
+       $row{total_length} = $row++;
+       $row{avg_length} = $row++;
+   }
    $row{known} = $row++ if ($known_sites_provided);
    $row{oligos} = $row++;
    $row{dyads} = $row++;
@@ -1083,8 +1086,17 @@ sub SyntheticTable {
 	$table[$row{size}][$col] = scalar(@{$family{$family_name}->{members}});
 	
 	#### sequence length
-	$table[$row{total_length}][$col] = $family{$family_name}->{total_length} if ($seq_length_calculated);
-	
+	if ($seq_length_calculated) {
+	    my $members = scalar(@{$family{$family_name}->{members}});
+	    if ($members > 0) {
+		$family{$family_name}->{avg_length} = $family{$family_name}->{total_length}/$members;
+	    } else {
+		$family{$family_name}->{avg_length} = "NA";
+	    }
+	    $table[$row{total_length}][$col] = $family{$family_name}->{total_length};
+	    $table[$row{avg_length}][$col] = sprintf("%.1f", $family{$family_name}->{avg_length});
+	}
+
 	### list of genes
 	$table[$row{genes}][$col] = "<a href='../".$family{$family_name}->{family_file}."'>";
 	$table[$row{genes}][$col] .= join " ", @{$family{$family_name}->{members}};
@@ -2587,9 +2599,10 @@ sub CalcCalibrationLengths {
 	    my $current_len = $fields[1];
 	    $family{$family_name}->{total_length} += $current_len;
 	    ## check that all sequences of one family have the same length
-	    if (defined($family{$family_name}->{calib_length})) {
+
+	    if ((defined($family{$family_name}->{calib_length})) && ($task{calibrate})) {
 		unless ($family{$family_name}->{calib_length} == $current_len) {
-		    &RSAT::error::FatalError("Sequences of family $family_name have different lengths.\nThis is not incompatible with the option calibrate");
+		    &RSAT::error::FatalError("Sequences of family $family_name have different lengths.\nThis is not compatible with the option calibrate");
 		}
 	    } else {
 		$family{$family_name}->{calib_length} = $current_len;
