@@ -56,24 +56,13 @@ unless ($repetitions >=1) {
 
 #### non-coding frequencies
 if ($ncf) {
-    #### check organism
-    &CheckOrganism($organism_name);
   
-    #### check oligo length
-#    die $oligo_length;
-    unless ((&IsNatural($oligo_length)) && ($oligo_length > 0)) {
-	&FatalError("For using intergenic oligonucleotide frequencies, the oligo length needs to be specified\n");
-    }
-
     $data_dir = $supported_organism{$organism_name}->{'data'};
     
     ### localize dyad non-coding frequency file
     $method = "Frequency file";
-    $exp_freq_file = "$data_dir/oligo-frequencies/${oligo_length}nt_non-coding_${organism_name}.freq";
-    
-#    &FatalError("cannot read expected frequency file $exp_freq_file\n") 
-#	unless ((-e  $exp_freq_file) && 
-#		(-e  $exp_freq_file.".gz"));
+    $exp_freq_file = &ExpectedFreqFile($organism_name, $oligo_length);
+
 } 
 
 
