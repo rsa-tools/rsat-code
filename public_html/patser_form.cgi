@@ -43,6 +43,7 @@ if (($matrix_file = $query->param("matrix_file")) &&
 
 ### print the form ###
 &RSA_header("patser");
+#&ListParameters;
 
 ### head
 print "<CENTER>";
