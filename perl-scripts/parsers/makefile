@@ -1,8 +1,8 @@
 ############################################################
 #
-# $Id: makefile,v 1.3 2000/11/29 14:00:48 jvanheld Exp $
+# $Id: makefile,v 1.4 2000/12/12 02:52:01 jvanheld Exp $
 #
-# Time-stamp: <2000-11-29 14:58:26 jvanheld>
+# Time-stamp: <2000-12-12 03:48:51 jvanheld>
 #
 ############################################################
 
@@ -24,28 +24,21 @@ usage:
 
 all:
 	make kegg
+	make genes
 	make swissprot
 	make glaxo
 	make gaurab
 	make rsync_to_bach
 	make rsync_to_rubens
 
-kegg_pathways:
-	perl parse_kegg_pathways.pl -w 1
-
 swissprot:
 	perl parse_swissprot.pl -w 1 -data swissprot -data trembl
 
 kegg:
-	make ligand
-	make genes
-	make kegg_pathways
-
-ligand:
-	perl parse_ligand.pl -w 1
+	perl parse_kegg.pl -w 1
 
 genes:
-	perl parse_genes.pl -w 1
+	perl parse_genes.pl -w 1 -org S.cerevisiae -org E.coli -org H.sapiens -suffix "" 
 
 glaxo:
 	perl parse_glaxo.pl -w 1
@@ -62,5 +55,6 @@ rsync_to_rubens:
 	rsync -avl -e ssh ${PARSED_DATA} ${RUBENS_PARSED_DATA}
 
 deliver:
-	rsync -avl -e ssh ${PARSED_DATA} ${RUBENS_DELIVERY}
+	rsync -ruptvln -e ssh ${PARSED_DATA}/kegg_parsed/20001212 ${RUBENS_DELIVERY}/kegg_parsed
+	rsync -ruptvln -e ssh ${PARSED_DATA}/swissprot_parsed/20001212 ${RUBENS_DELIVERY}/swissprot_parsed
 
