@@ -18,23 +18,37 @@
 
 
 <P>
-DNA-pattern is a program that allow to match known patterns against a
-sequence set. The program has some features that make it particularly
-well suited for the recognition of regulatory motifs in DNA sequences, in short :
+DNA-pattern is a program that allows to match known patterns (motifs)
+against a sequence set. Patterns are described as strings. The program
+has some features that make it particularly well suited for the
+recognition of regulatory motifs in DNA sequences, in short :
 <P>
 <ol>
 
 <li>Motifs can automatically be searched on both strands of the
 sequences.
 
-<li>Motis can contain any letter from the degenerate nucleotide
-alphabet.
+<li>Motifs can contain letters from the degenerate nucleotide alphabet
+(e.g. N for "any nucleotide", W for "A or T", ..., see the <a
+href=../help.dna-pattern.html>manual page</a> for the complete list).
 
-<li>It is possible to specify a number of allowed substitutions. The
-program will not allow deletions or insertions in the motif. This is
-important because many transcription factors allow some degeneracy,
-but insertions and deletions usually prevent the factor from
-recognizing a site.
+<li>Patterns can contain spacers of fixed length
+(e.g. <tt>CGGn{11}CCG</tt>) or variable length
+(e.g. <tt>GATAAGn{0,60}GATAAG</tt>).
+
+<li>It is possible to detect imperfect matches by specifying a number
+of allowed substitutions. The program will only consider
+substitutions, and not deletions or insertions. This is important
+because many transcription factors allow some degeneracy, but
+insertions and deletions usually prevent the factor from recognizing a
+site.
+
+<li>Several patterns can be entered in the query box (the first word
+of each row is considere as a distinct pattern), all of them will be
+matched against the sequences.
+
+<li>Several sequences can be entered in the sequence box, patterns
+will be matched against all of them.
 
 </ol>
 
@@ -60,11 +74,11 @@ GDH2
 GDH3
 </PRE>
 
-<P>Now we have the upstream sequences, we will scan them with the consensi
-for GATA boxes and HAP sites. At the top of the result page, a series of
-buttons are presented. These buttons allow you to send your sequence to
-a selection of sequence analysis programs. Click on <B>dna-pattern (IUPAC)</B>.
-A new form appears. 
+<P>Now we have the upstream sequences, we will scan them with the
+consensi for GATA boxes and HAP sites. At the bottom of the sequences,
+a series of buttons are presented. These buttons allow you to send
+your sequence to a selection of sequence analysis programs. Click on
+<B>dna-pattern (IUPAC)</B>.  A new form appears.
 
 <P>
 Note that the search will automatically be performed on the sequences
@@ -73,11 +87,11 @@ query</I>). This differs from the form you would receive by clicking
 on "dna-pattern" in the left panel, and which would contain an
 additional box for entering your own sequences.
 
-<P><LI>
-In the <B>Query pattern(s)</B> box, we will enter the patterns to search
-for. Eah pattern must come on a separate line. The first word of each line
-is the string to search for, the second word is an identifier for this
-pattern. Type the following text in the Query pattern(s) box:</LI>
+<P><LI> In the <B>Query pattern(s)</B> box, we will enter the patterns
+to be searched for. Eah pattern must come on a separate line. The
+first word of each line is the string to search for, the second word
+is an identifier for this pattern. Type the following text in the
+Query pattern(s) box:</LI>
 
 <PRE>GATWA&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Gata_box
 CCAAY&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Hap_site</PRE>
@@ -121,10 +135,11 @@ how to use this column.
 
 </UL>
 
-Notice that positions are returned in negative coordinates, relative
+<P>Notice that positions are returned in negative coordinates, relative
 to the end of the sequence (the last nucleotide has position -1). This
-option (Origin=end) is particularly useful for analyzing regulatory
-sequences, but it can be inactivated in other cases.
+behaviour was selected with the "Origin" option in the dna-pattern
+form (Origin=end). This option is particularly useful for analyzing
+regulatory sequences, but it can be inactivated in other cases.
 
 </UL>
 
@@ -132,7 +147,7 @@ sequences, but it can be inactivated in other cases.
 We will now display the same results graphically.
 
 <OL>
-<P><LI> Click on the <B>Feature map</B> button on the top of the
+<P><LI> Click on the <B>Feature map</B> button on the bottom of the
 result page.</LI>
 
 <P><LI>
@@ -167,30 +182,29 @@ After a few seconds, the feature map should appear. A few comments:
 <P><LI>
 Gata boxes appear in blue, Hap sites in red</LI>
 
-<P><LI> Color boxes are either above or below the horizontal black
-lines, accordingly to the strand (Watson or Crick respectively) of the
-match.</LI>
-
 <P><LI>
 A specific symbol is associated to each pattern, allowing to distinguish
 them when the feature map is printed in black and white</LI>
 
-<P><LI> Coordinates are provided with reference to the ORF starting
-position, negative values indicate an upstream, and positive values
-for the coding sequences (0 corresponds to the first nucelotide ot the
-start codon).
+<P><LI> Color boxes are either above or below the horizontal black
+lines, accordingly to the strand of the match.</LI>
 
-<P><LI>
-Just for the fun, note the nice repetition of Hap-Gata site pairs in the
-upstream sequence of GDH1.
+<P><LI> Coordinates are provided with reference to the ORF starting
+position, negative values indicate an upstream position, and positive
+coordinates are within the coding sequences (0 corresponds to the
+first nucleotide ot the start codon).
 
 <P><LI> If your browser is recent, the map is dynamic. With your
 mouse, position the cursor just above one of the sites in the
-sequences. Look now at the bottom border of your Netscape window. The
-complete information about this site is displayed. Move the cursor to
-another site and check that the information is well updated. If you
-are using Internet Explorer, make sure to activate the <B>status
-bar</B> (in the <B>View</B> menu).
+sequences. Look now at the status bar (at the bottom) of your browser
+window. The complete information about this site is displayed. Move
+the cursor to another site and check that the information is well
+updated. If you are using Internet Explorer, make sure to activate the
+<B>status bar</B> (in the <B>View</B> menu).
+
+<P><LI> Just for the fun, note the nice association of Hap and Gata
+sites in the upstream sequence of GDH1.
+
 </UL>
 </UL>
 
