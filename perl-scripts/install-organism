@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.22 2002/09/14 14:56:31 jvanheld Exp $
+# $Id: install-organism,v 1.23 2002/09/15 01:51:47 jvanheld Exp $
 #
-# Time-stamp: <2002-09-14 09:55:51 jvanheld>
+# Time-stamp: <2002-09-14 20:51:36 jvanheld>
 #
 ############################################################
 
@@ -22,21 +22,20 @@ $supported_for_installation{"fasta"} = 1;
 $supported_for_installation{"raw"} = 1;
 $supported_for_installation{"filelist"} = 1;
 %supported_task = (
-#		   genome=>1, 
-#		   features=>1, 
+		   parse=>1,
 		   config=>1,
 		   start_stop=>1,
 		   ncf=>1,
 		   allup=>1,
 		   oligos=>1,
-#		    coding_freq=>1,
+		   gene_freq=>1,
 		   genome_freq=>1,
 		   intergenic_freq=>1,
 		   dyads=>1,
 		   clean=>1,
 		   all=>1
 		   );
-$supported_tasks = join ",", keys %supported_task;
+$supported_tasks = join ",", sort (keys %supported_task);
 %task = ();
 
 ################################################################
@@ -58,7 +57,10 @@ if ($task{all}) {
 #################### check argument values #####################
 ################################################################
 
-#### organism ####
+### if new data is parsed from Genbank, automatically update the config
+$task{config} = 1 if ($task{parse}); 
+
+#### check organism name
 unless ($organism_short_name) {
     print "Enter organism short name : ";
     $organism_short_name = <STDIN>;
@@ -120,14 +122,15 @@ $outfile{synonyms} = "$genome_dir/Feature_names_${organism_short_name}.tab" unle
 ################################################################
 ###################### start installation ######################
 ################################################################
-&InstallGenome() if ($task{genome});
-if ($task{features}) {
-    &GenerateFeatureTable() if ($infile{ptt});
-    &InstallFeatureTable();
-}
+#&InstallGenome() if ($task{genome});
+#if ($task{features}) {
+#    &GenerateFeatureTable() if ($infile{ptt});
+#    &InstallFeatureTable();
+#}
+&ParseGenome() if ($task{parse});
 &UpdateConfig() if ($task{config});
 &StartAndStopCodons() if ($task{start_stop});
-&NonCodingSegments() if ($task{ncf});
+&IntergenicSegments() if ($task{ncf});
 &AllUpstream() if ($task{allup});
 &CalcFrequencies() if (($task{oligos}) || ($task{dyads}));
 
@@ -245,6 +248,7 @@ sub InstallFeatureTable {
 
 #### update configuration file
 sub UpdateConfig {
+    my $comment_previous_config = 0;
     if ($local_config) {
 	$config_to_update = $ENV{'RSA_LOCAL_CONFIG'} ;
     } else {
@@ -265,7 +269,9 @@ sub UpdateConfig {
 	last if ($line =~ /return/);
 	if (($line =~ /supported_organism\{\'$organism_short_name\'\}/) && ($line !~ /^\#/)) {
 	    #### comment the previous config
-	    $previous_config .= "# ${line} # reinstalled on\t${date}\n";
+	    if ($comment_previous_config) {
+		$previous_config .= "# ${line} # reinstalled on\t${date}\n";
+	    }
 	} else {
 	    $previous_config .= $line."\n";
 	}
@@ -296,9 +302,8 @@ sub UpdateConfig {
 }
 
 ################################################################
-### extract the non-redudant set of intergenic and coding sequences
-sub NonCodingSegments {
-
+### extract the non-redudant set of intergenic and gene sequences
+sub IntergenicSegments {
     chdir $genome_dir;
 
     #### retrieve intergenic sequences
@@ -308,11 +313,10 @@ sub NonCodingSegments {
     &doit();
 
     my @types = ();
-    push @type, "coding";
-    push @types, "non_coding" if ($task{coding_freq});
+    push @types, "gene";
+    push @types, "intergenic";
 	    
     foreach my $seq_type (@types) {
-	
 	my $seq_file = "${genome_dir}/${organism_short_name}_${seq_type}_segments.wc";
 
 	#### draw sequence length distributions
@@ -375,6 +379,7 @@ sub SeqLengthDistribution {
     $command .= " | XYgraph -xcol 3 -ycol 7,8,9 -lines -xmin $from";
     $command .= " -ymin 0 -ymax 1  -xsize 600 -ysize 400 -legend";
     $command .= " -xgtask1 100 -xgtask2 250 -ygtask1 0.1";
+    $command .= " -xlog" if( ($seq_type eq "intergenic") || ($seq_type eq "gene"));
     $command .= " -xleg1 'sequence length (bp)'";
     $command .= " -yleg1 'frequency'";
     $command .= " -title1 '$organism_full_name'";
@@ -426,12 +431,12 @@ sub CalcFrequencies {
     ################################################################
     # calculate oligont frequencies in all intergenic sequences
     if ($task{intergenic_freq}) {
-	$seq_type = "non-coding";
+	$seq_type = "intergenic";
 	if ($purged_frequencies) {
-	    $seq_file = "${organism_short_name}_non_coding_segments_purged.fasta";
+	    $seq_file = "${organism_short_name}_intergenic_segments_purged.fasta";
 	    $seq_format = "fasta";
 	} else {
-	    $seq_file = "${organism_short_name}_non_coding_segments.wc";
+	    $seq_file = "${organism_short_name}_intergenic_segments.wc";
 	    $seq_format = "wc";
 	}
 	&CalcOligoFreq($genome_dir."/".$seq_file, $seq_format, $seq_type) if ($task{oligos});
@@ -449,14 +454,14 @@ sub CalcFrequencies {
     }
 
     ################################################################
-    # calculate oligont frequencies in all coding sequences
-    if ($task{coding_freq}) {
-	$seq_type = "coding";
+    # calculate oligont frequencies in all gene sequences
+    if ($task{gene_freq}) {
+	$seq_type = "gene";
 	if ($purged_frequencies) {
-	    $seq_file = "${organism_short_name}_coding_segments_purged.fasta";
+	    $seq_file = "${organism_short_name}_gene_segments_purged.fasta";
 	    $seq_format = "fasta";
 	} else {
-	    $seq_file = "${organism_short_name}_coding_segments.wc";
+	    $seq_file = "${organism_short_name}_gene_segments.wc";
 	    $seq_format = "wc";
 	}
 	&CalcOligoFreq($genome_dir."/".$seq_file, $seq_format, $seq_type) if ($task{oligos});
@@ -684,7 +689,7 @@ OPTIONS
 			     calculate start and stop codon
 			     frequencies
 
-		ncf	     retrieve non-coding fragments
+		ncf	     retrieve intergenic fragments
 
 		allup	     retrieve all upstream sequences
 
@@ -700,7 +705,7 @@ OPTIONS
 			     calculate oligo and dyad frequencies from
 			     intergenic sequences
 
-		clean	     remove intergenic sequence files
+		clean	     remove unnecessary sequence files
 
 End_of_help
     close HELP;
@@ -1162,15 +1167,30 @@ sub ParseNCBIFeatures {
 }
 
 
+sub ParseGenome {
+    unless ($GENBANK_DIR) {
+	&FatalError("You should specify the directory where Genbank genomes can be found.");
+    }
+    if (-d "${GENBANK_DIR}/$organism_short_name") {
+	$source_dir = "${GENBANK_DIR}/$organism_short_name";
+    } elsif (-d "${GENBANK_DIR}/Bacteria/$organism_short_name") {
+	$source_dir = "${GENBANK_DIR}/Bacteria/$organism_short_name";
+    } else {
+	&FatalError("Cannot find a directory $organism_short_name in genbank dir $GENBANK_DIR" );
+    }
+    $command = "parse-genbank.pl -v 1 -i $source_dir";
+    &doit();
+}
+
 ################################################################
 ## clean up unnecessary files to save disk space
 
 sub CleanUp {
     chdir $genome_dir;
 
-    #### delete files with non-coding and coding segment sequences
+    #### delete files with intergenic and gene segment sequences
     my @files = ();
-    foreach my $seq_type qw(non_coding coding upstream upstream-noorf) {
+    foreach my $seq_type qw(intergenic gene upstream upstream-noorf) {
 	foreach my $format qw(wc fasta) {
 	    foreach my $extension ("", ".gz") {
 		foreach my $segments ("", "_segments") {
