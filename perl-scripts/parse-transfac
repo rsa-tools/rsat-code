@@ -4,8 +4,11 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 require "RSA.lib";
 
+die "This program is obsolete.\nPlease use parse_transfac.pl instead\n";
 
 
+################################################################
+## Help message
 if ($ARGV[0] eq "-h") {
   open HELP, "| more ";
   print HELP<<End_of_Help;

@@ -1,22 +1,27 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: split-column,v 1.2 2005/03/13 10:41:02 jvanheld Exp $
+# $Id: draw-tree,v 1.1 2005/03/13 10:41:01 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
 ############################################################
 #use strict;;
-if ($0 =~ /([^(\/)]+)$/) {
-    push (@INC, "$`lib/");
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push @INC, "$`lib/";
+    }
 }
 require "RSA.lib";
+require "RSA.stat.lib";
+use GD;
+use Bio::TreeIO;
+#use Bio::Tree::Tree;
+use RSAT::PostscriptWrapper;
 
 ################################################################
 #### initialise parameters
 my $start_time = &AlphaDate();
-$field_separator = '\|';
-$split_col = 2;
 
 local %infile = ();
 local %outfile = ();
@@ -24,6 +29,17 @@ local %outfile = ();
 local $verbose = 0;
 local $in = STDIN;
 local $out = STDOUT;
+
+
+## Output format
+%supported_img_format = ("jpg"=>1, 
+			 "gif"=>1,
+			 "png"=>1,
+			 "ps"=>1,
+			);
+
+$img_format = $IMG_FORMAT || "png";
+$supported_img_formats = join (",", keys %supported_img_format); 
 
 &ReadArguments();
 
@@ -36,45 +52,32 @@ local $out = STDOUT;
 $out = &OpenOutputFile($outfile{output});
 
 ################################################################
-##### read input
-($in) = &OpenInputFile($infile{input});
-my $l=0;
-while ($line = <$in>) {
-    $l++;
+##### read input tree
+my %nodes = (); # node index
 
-    ## Print comments as such
-    if ($line =~ /^;/) {
-	print $line;
-	next;
-    }
+## Create a tree with the taxonomy
+my $tree_input = new Bio::TreeIO('-format' => 'newick',
+			     '-file'   => $infile{input});
+while (my $tree = $tree_input->next_tree()) {
+
     
-    ## Split fields
-    chomp($line);
-    my @fields = split "\t", $line;
-    my $field_nb = scalar(@fields);
-    if ($field_nb < $split_col) {
-	warn $line;
-	&RSAT::error::FatalError("Line $l contains only $field_nb fields (< split-column: $split_col");
-    }
+    ## Identify the root of the tree
+    my $root = $tree->get_root_node();
+    
+#     &RSAT::message::Debug("tree: ".$tree, 
+# 			  "number_nodes: ".$tree->number_nodes,
+# 			  "root", $root, 
+# 			  $root->internal_id, 
+# 			 ) if ($main::verbose >= 10);
 
-    ## fields before the column to split
-    my @pre_fields = (); 
-    for my $c (1..($split_col-1)) {
-	push @pre_fields, shift(@fields);
-    }
+    &layout($tree);
 
-    ## Column to split
-    $to_split = shift @fields;
-    warn join("\t", "To split", $to_split), "\n" if ($main::verbose >= 10);
+#     ## Export the tree in SVG format
+#     my $tree_output = new Bio::TreeIO('-format' => 'svggraph',
+# 			     '-file'   => ">".$outfile{output});
+#     $tree_output->write_tree($tree);
 
-
-    my @split = split $field_separator, $to_split;
-    foreach my $value (@split) {
-	print $out join ("\t", @pre_fields, $value, @fields), "\n";
-    }
 }
-
-close $in if ($infile{input});
 
 ################################################################
 #### print verbose
@@ -103,6 +106,7 @@ close $out if ($outfile{output});
 
 exit(0);
 
+
 ################################################################
 ################### subroutine definition ######################
 ################################################################
@@ -114,19 +118,18 @@ sub PrintHelp {
   open HELP, "| more";
   print HELP <<End_of_help;
 NAME
-	template
+	draw-tree
 
         2004 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
 	
 DESCRIPTION
-	Split one column of 2-column file (relation table) containing
-	multiple values separated by a specified field separator.
+	Draws a tree. 
 
 CATEGORY
-	util
+	drawing
 
 USAGE
-        template [-i inputfile] [-o outputfile] [-v]
+        draw-tree [-i inputfile] [-o outputfile] [-v]
 
 OPTIONS
 	-h	display full help message
@@ -138,8 +141,12 @@ OPTIONS
 	-o outputfile
 		if not specified, the standard output is used.
 		This allows to place the command within a pipe.
-	-sep	field separator (default $field_separator)
-	-col	column to split (default $split_col)
+
+INPUT FORMAT
+    The input format is the widely used newick format.
+    For a description of the newick format:
+        http://evolution.genetics.washington.edu/phylip/newicktree.html
+
 End_of_help
   close HELP;
   exit;
@@ -150,15 +157,13 @@ End_of_help
 sub PrintOptions {
   open HELP, "| more";
   print HELP <<End_short_help;
-template options
+draw-tree options
 ----------------
 -h		(must be first argument) display full help message
 -help		(must be first argument) display options
 -i		input file
 -o		output file
 -v		verbose
--sep		field separator (default $field_separator)
--col		column to split (default $split_col)
 End_short_help
   close HELP;
   exit;
@@ -193,14 +198,6 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-o") {
 	    $outfile{output} = $ARGV[$a+1];
 	    
-	    ### field separator
-	} elsif ($ARGV[$a] eq "-sep") {
-	    $field_separator = $ARGV[$a+1];
-
-	    ### field separator
-	} elsif ($ARGV[$a] eq "-col") {
-	    $split_col = $ARGV[$a+1];
-	    
 	}
     }
 }
@@ -208,7 +205,7 @@ sub ReadArguments {
 ################################################################
 #### verbose message
 sub Verbose {
-    print $out "; template ";
+    print $out "; draw-tree ";
     &PrintArguments($out);
     if (defined(%infile)) {
 	print $out "; Input files\n";
@@ -223,3 +220,78 @@ sub Verbose {
 	}
     }
 }
+
+
+################################################################
+## Assign a layer to each node, and rank nodes within each layer
+## Nodes are traversed with a BFS algorithm
+sub layout {
+    my ($tree) = @_;
+    my $root = $tree->get_root_node();
+    my @queue = ();
+    my %layer_nodes = ();
+    my %layer_width = ();
+
+    my %layer = ();
+    my %level = ();
+
+    ## Enqueue root
+    push @queue, $root;
+
+    ## While queue is not empty
+    while ($#queue >= 0) {
+	## Dequeue a vertex and write it to the output list
+	my $node = shift @queue;
+	my $layer = $node->height;
+	push @{$layer_nodes[$layer]}, $node;
+	
+	my $level = scalar(@{$layer_nodes[$layer]});
+	my $width = length($node->id);
+	if ($width >= $layer_width{$layer}) {
+	    $layer_width{$layer} = $width;
+	}
+
+	
+	$mayer{$node} = $layer;
+	$level{$node} = $level;
+
+	## Enqueue its children left-to-right
+	my @children = $node->each_Descendent;
+	push @queue, @children;
+
+	&RSAT::message::Debug("node", $node->internal_id, 
+			      "layer",$layer, 
+			      "level", $level, scalar(@{$layer_nodes[$layer]}),
+			      "child",scalar(@children), $node->id) if ($main::verbose >= 0);
+    }
+
+    ## Assign vertical coordinates to non-leave nodes
+    ## Place each parent node at the middle level of its children
+    foreach my $node( @{$layer_nodes[0]}) {
+	$min_level{$node} = $level{$node};
+	$max_level{$node} = $level{$node};
+    }
+    foreach my $layer (1..$#layer_nodes) {
+	&RSAT::message::Debug("layer", $layer, scalar(@{$layer_nodes[$layer]}), $layer_width{$layer});
+	my @nodes = @{$layer_nodes[$layer]};
+	foreach my $node (@nodes) {
+	    my @children = $node->each_Descendent;
+	    $min_level{$node} = $min_level{$children[0]};
+	    $max_level{$node} = $max_level{$children[$#chldren]};
+	    $level{$node} = ($max_level{$node} + $min_level{$node})/2; 
+	    &RSAT::message::Debug("parent level", 
+				  $node->internal_id, 
+				  $layer,
+				  scalar(@children),
+				  $min_level{$node}, 
+				  $max_level{$node}, 
+				  $level{$node},
+				  $node->id) if ($main::verbose >= 0);
+	}
+    }
+
+}
+
+
+################################################################
+## Assign coordinates to each node

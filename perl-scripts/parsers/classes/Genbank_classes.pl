@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: Genbank_classes.pl,v 1.4 2004/04/02 00:26:16 jvanheld Exp $
+# $Id: Genbank_classes.pl,v 1.5 2005/03/13 10:41:02 jvanheld Exp $
 #
 # Time-stamp: <2003-08-09 00:37:11 jvanheld>
 #
@@ -55,6 +55,7 @@ package Genbank::Contig; ### for parsing genbank files
 			     type=>"SCALAR",
 			     date=>"SCALAR",
 			     xrefs=>"EXPANDED",
+			     comment=>"ARRAY",
 
 			     taxid=>"SCALAR",
 			     );

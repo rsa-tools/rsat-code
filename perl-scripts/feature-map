@@ -3,14 +3,14 @@ BEGIN {
     if ($0 =~ /([^(\/)]+)$/) {
 	push @INC, "$`lib/";
     }
-    require "RSA.lib";
-    push @INC, "$RSA/extlib/arch/";
+#    push @INC, "$RSA/extlib/arch/";
 #    if ($config_site eq "uppsala") {
 #	use lib ('/home/jvanheld/rsa-tools/perl-scripts/lib',  
 #		 '/home/jvanheld/rsa-tools/perl-scripts/lib/arch');
 #    }
 }
 
+require "RSA.lib";
 use GD;
 use RSAT::PostscriptWrapper;
 
@@ -149,7 +149,7 @@ if ($img_format eq "gif") {
 } elsif ($img_format eq "ps") {
     $image->output($outputfile);
 } else {
-    &FatalError("Error: Format $img_format cannot be exported\n");
+    &RSAT::error::FatalError("Error: Format $img_format cannot be exported\n");
 }
 
 close $out if ($outputfile);
@@ -1306,7 +1306,7 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-format") {
 	    $img_format = lc($ARGV[$a+1]);
 	    unless ($supported_format{$img_format}) {
-		&FatalError("Format $img_format is not supported (supported: $supported_formats)");
+		&RSAT::error::FatalError("Format $img_format is not supported (supported: $supported_formats)");
 	    }
 	    
 	    ### data report ###

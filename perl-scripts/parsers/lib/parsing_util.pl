@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parsing_util.pl,v 1.17 2005/03/10 15:55:30 jvanheld Exp $
+# $Id: parsing_util.pl,v 1.18 2005/03/13 10:41:02 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -392,8 +392,8 @@ sub PrintStats {
 	%attr_types = $class->get_attribute_cardinalities();
 	
 	foreach $attribute ($class->get_attribute_names()) {
-	  $count = $attr_counts{$attribute};
-	  $type = $attr_types{$attribute};
+	  $count = $attr_counts{$attribute} || 0;
+	  $type = $attr_types{$attribute} || "NA";
 	  printf $stats ";\t\t%-15s\t%d\t%s\n", $attribute, $count, $type;
 	}
       }

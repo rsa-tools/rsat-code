@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: template,v 1.19 2005/03/13 10:41:02 jvanheld Exp $
+# $Id: permute-table,v 1.1 2005/03/13 10:41:02 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -12,11 +12,12 @@
 
 =head1 NAME
 
-template
+permute-table
 
 =head1 DESCRIPTION
 
-Template or writing new perl scripts.
+Permute the entries of a table. This function is useful for checking
+random expectations of programs such as compare-profiles.
 
 =head1 CATEGORY
 
@@ -24,12 +25,19 @@ util
 
 =head1 USAGE
     
-template [-i inputfile] [-o outputfile] [-v]
+permute-table [-i inputfile] [-o outputfile] [-v]
 
 =head1 INPUT FORMAT
 
+A tab-delimited text file. 
+
+Lines starting with a semi-column ";" are considered as
+comment. Comment lines are printed in the output.
+
 =head1 OUTPUT FORMAT
 
+A tab-delimited table with the same number of entries as in the input
+table.
 
 =cut
 
@@ -45,12 +53,19 @@ require "RSA.lib";
 #### initialise parameters
 my $start_time = &AlphaDate();
 
+
 local %infile = ();
 local %outfile = ();
 
 local $verbose = 0;
 local $in = STDIN;
 local $out = STDOUT;
+
+## Default values
+local $sep = "\t";
+local $row_names = 0;
+local $header = 0;
+local @header = ();
 
 &ReadArguments();
 
@@ -64,36 +79,75 @@ $out = &OpenOutputFile($outfile{output});
 
 ################################################################
 ##### read input
+local @values = ();
+my @row_len = ();
+my @row_names = ();
 ($in) = &OpenInputFile($infile{input});
-while (<$in>) {
 
+## Read the header
+if ($header) {
+    $header = <$in>;
+    chomp($header);
+    $header =~ s/\r//g;
+    @header = split($sep, $header)
+}
+
+my $l = 0;
+while (my $line = <$in>) {
+    $l++;
+    ## echo the comment lines
+    if ($line =~ /^;/) {
+	print $out $line;
+	next;
+    }
+    next unless ($line =~ /\S/);
+    chomp($line);
+    $line =~ s/\r//g; ## Suppress Windows-specific carriage return
+    my @fields =  split($sep, $line);
+
+#    &RSAT::message::Debug($line) if ($main::verbose >= 10);
+
+    ## extract row name
+    if ($row_names) {
+	push @row_names, shift @fields;
+    }
+
+    ## Number of elements in this row
+    push @row_len, scalar(@fields);
+
+    ## Take the elements
+    push @values,  @fields;
+    
+#    &RSAT::message::Debug(join ("\t", "Reading table", "line: ".$l, "rows: ".scalar(@row_len), "cells: ".scalar(@fields), "total cells: ".scalar(@values))) if ($main::verbose >= 10);
 }
 close $in if ($infile{input});
 
-################################################################
-#### print verbose
-&Verbose() if ($verbose);
+&RSAT::message::TimeWarn(join ("\t", "Finished reading the table", "rows: ".scalar(@row_len), "cells: ".scalar(@values))) if ($main::verbose >= 1);
+#die;
+
+@values = &RSAT::stats::permute(@values);
 
 ################################################################
-###### execute the command
+## Print the output
 
-################################################################
-###### print output
-
-
-################################################################
-###### finish verbose
-if ($verbose >= 1) {
-    my $done_time = &AlphaDate();
-    print $out "; Job started $start_time\n";
-    print $out "; Job done    $done_time\n";
+## Print the header
+if ($header) {
+    print $out join($sep, @header);
 }
 
+## Print the table
+for my $r (0..$#row_len) {
+    warn join ("\t", "Printing row", $r, $row_len[$r], $row_names[$r]),"\n" if ($main::verbose >= 10);
+    if ($row_names) {
+	print $out $row_names[$r], $sep;
+    }
+    my @next = splice(@values, 0, $row_len[$r]);
+    print $out (join $sep, @next), "\n";
+}
 
 ################################################################
 ###### close output stream
 close $out if ($outfile{output});
-
 
 exit(0);
 
@@ -188,6 +242,42 @@ allows to use the command within a pipe.
 	} elsif ($ARGV[$a] eq "-o") {
 	    $outfile{output} = $ARGV[$a+1];
 	    
+	    ## Column separator
+=pod
+
+=item	B<-sep separator>
+
+Column separator (by default, the tabulation character \t).
+
+=cut
+	} elsif ($ARGV[$a] eq "-sep") {
+	    $sep = $ARGV[$a+1];
+	    
+	    ## Header
+=pod
+
+=item	B<-header>
+
+Header. When this option is used, the first (non-comment) row of the
+input file is used as header. The header is not permuted. 
+
+=cut
+	} elsif ($ARGV[$a] eq "-header") {
+	    $header=1;
+
+	    ## Header
+=pod
+
+=item	B<-rownames>
+
+
+Row names. When this option is ised, the first column of the input
+file is supposed to contain row names, and is not permuted.
+
+=cut
+	} elsif ($ARGV[$a] eq "-rownames") {
+	    $row_names=1;
+
 	}
     }
 
@@ -202,7 +292,7 @@ allows to use the command within a pipe.
 ################################################################
 #### verbose message
 sub Verbose {
-    print $out "; template ";
+    print $out "; permute-table ";
     &PrintArguments($out);
     if (defined(%infile)) {
 	print $out "; Input files\n";

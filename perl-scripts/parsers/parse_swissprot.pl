@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_swissprot.pl,v 1.35 2003/12/23 17:22:31 jvanheld Exp $
+# $Id: parse_swissprot.pl,v 1.36 2005/03/13 10:41:02 jvanheld Exp $
 #
 # Time-stamp: <2003-07-10 11:52:54 jvanheld>
 #
@@ -27,6 +27,8 @@ package main;
     
     ################################################################
     #### initialize parameters
+    $distrib = "uniprot" ; # can be uniprot or swissprot
+
 
     #### output fields
     @out_fields = qw( id 
@@ -51,14 +53,23 @@ package main;
     $full_name{human} = "Homo sapiens (Human)";
     $full_name{mouse} = "Mus musculus";
 
-    #### input directories and files
-    $dir{input} = "$Databases/ftp.expasy.org/databases/sp_tr_nrdb";
-    $source{swissprot} = "sprot";
-    $source{trembl} = "trembl";
-    $source{trembl_new} = "trembl_new";
+    #### input directories and files for the old swissprot database
+    if ($distrib eq "swissprot") {
+	$dir{input} = "$Databases/ftp.expasy.org/databases/sp_tr_nrdb";
+	$source{swissprot} = "sprot";
+	$source{trembl} = "trembl";
+	$source{trembl_new} = "trembl_new";
+	$export_subdir = "swissprot";
+    } else {
+	#### input directories and files for the uniprot database
+	$dir{input} = "$Databases/ftp.uniprot.org/pub/databases/uniprot/knowledgebase";
+	$source{swissprot} = "uniprot_sprot";
+	$source{trembl} = "uniprot_trembl";
+	$source{trembl_new} = "uniprot_trembl_new";
+	$export_subdir = "uniprot";
+    }
 
     #### default output directory
-    $export_subdir = "swissprot";
     $dir{output} = "$parsed_data/$export_subdir/$delivery_date";
     
     #### export classes
@@ -218,20 +229,11 @@ package main;
 
     #### parse data from original files
     foreach $source (keys %files_to_parse) {
-	&ParseSwissprot($in_file{$source}, "SWISSPROT:".$source);
+	&ParseSwissprot($in_file{$source}, $source);
     }
 
     #### check that all the selected acs have been found
     &CheckSelectedACs() if ($in_file{acs});
-
-    #### use first name as primary name
-#  foreach $polypeptide ($polypeptides->get_objects()) {
-#      if ($name = $polypeptide->get_name()) {
-#	  $polypeptide->set_attribute("primary_name",$name);
-#      }
-#  }
-
-
     
     #### print the result
     &PrintStats($out_file{stats}, @classes);
@@ -411,7 +413,6 @@ sub ParseSwissprot {
 	
 	my $parse = 1;
 
-
 	################################################################ 
 	# Pre-parsing checks, to save memory and time
         #
@@ -424,11 +425,10 @@ sub ParseSwissprot {
 	if ($regexp) {
 	    unless ($text_entry =~ /$regexp/i) {
 		$parse = 0;
-		warn ";\tSkipping entry $entries (no match with selected organisms)\n" if ($verbose >= 3); 
+		warn("; Skipping entry ", $entries, " (no match with selected organisms regexp)\n") if ($verbose >= 3); 
 		next;
 	    }
 	}
-	warn ";\tParsing entry $entries\n" if ($verbose >=3);
 
 	#### convert the entry into an object
 	my $object_entry = SWISS::Entry->fromText($text_entry);
@@ -437,7 +437,7 @@ sub ParseSwissprot {
 	my $swissprot_ac = $object_entry->AC;
 	my $swissprot_id = $object_entry->ID;
 
-	warn ";\tParsed polypeptide $swissprot_ac\t$swissprot_id\n" if ($verbose >= 3);
+	warn join ("\t", "; Parsing entry", $entries, $swissprot_ac, $swissprot_id), "\n" if ($verbose >= 3);
 
 	#### initialize the export flag
 	my $export = 0;
@@ -478,9 +478,12 @@ sub ParseSwissprot {
 	}
 	
 
-	next unless $export;
-	
-	warn ";\tExporting polypeptide $swissprot_ac\t$swissprot_id\n" if ($verbose >= 3);
+	unless ($export) {
+	    warn(";\tSkipping entry ", $entries, " (field organisms does not match selected organisms )\n") if ($verbose >= 3); 
+	    next;
+	}
+
+#	warn ";\tExporting polypeptide $swissprot_ac\t$swissprot_id\n" if ($verbose >= 3);
 
 	#### Swissprot identifiers
 	my @swissprot_ids = $object_entry->IDs->elements;
@@ -488,13 +491,8 @@ sub ParseSwissprot {
 	#### Swissprot accession numbers
 	my @swissprot_acs = $object_entry->ACs->elements;
 
-
 	#### Description
 	my $descr = $object_entry->DEs->text;
-
-	#### Gene names
-	my $geneNames = $object_entry->GNs->text;
-	my @geneNames = split " OR ", $geneNames;
 
 	### Extract polypeptide name from description
 	my @names = ();
@@ -529,10 +527,36 @@ sub ParseSwissprot {
 	}
 	
 	### create a new polypeptide
-	warn "$source\tentry $entries\t$swissprot_ids[0]\t$names[0]\n"
+	warn join ("\t", ";", "Creating polypeptide",$source, $entries, $swissprot_acs[0], $swissprot_ids[0], $names[0]), "\n"
 	    if ($verbose >= 3); 
 	my $polypeptide = $polypeptides->new_object(id=>$swissprot_ac,
 						    source=>$source);
+
+	#### Gene names
+	my $geneNames = $object_entry->GNs->text;
+	if ($distrib eq "swissprot") {
+	    @geneNames = split " OR ", $geneNames; ## SUPPORT FOR THE OLD FORMAT
+	} 
+
+	## parse qualified gene names from uniprot
+	my @geneNames = ();
+	my %qualifier = (); # names with qualifies
+	my @fields = split "\;", $geneNames;
+	foreach my $g (@fields) {
+	    $g = &trim($g);
+	    if ($g =~ /\=/) {
+		$name = $'; ####';
+		$qualifier = $`;
+	    } else {
+		$name = $g;
+		$qualifier = 'alternate';
+	    }
+	    push @geneNames, $name;
+	    $qualifier{$name} = $qualifier; # index gene names
+	    warn join ("\t", ";", "gene name", $name, "qualifier", $qualifier), "\n" if ($main::verbose >= 4);
+
+	}
+	## Set single-value "gene" attribute
 	if (defined($geneNames[0])) {
 	    $polypeptide->set_attribute("gene",$geneNames[0]);
 	} else {
@@ -541,10 +565,25 @@ sub ParseSwissprot {
 
 	my %already_assigned = ();
 #	foreach my $name (@names, @geneNames, @swissprot_ids, @swissprot_acs) {
-	foreach my $name (@names, @geneNames) {
-	    $polypeptide->push_attribute("names",$name) 
-		unless $already_assigned{uc($name)};
-	    $already_assigned{uc($name)}++;  #### prevent assigning twice the same name
+	if ($distrib eq "swissprot") {
+	    foreach my $name (@names, @geneNames) {
+		$polypeptide->push_attribute("names",$name) 
+		    unless $already_assigned{uc($name)};
+		$already_assigned{uc($name)}++;  #### prevent assigning twice the same name
+	    }
+	} else {
+	    foreach my $name (@names, @geneNames) {
+		## Define name qualifier
+		my $qualifier = "alternate";
+		if (defined($geneNames{$name})) {
+		    $qualifier = geneNames{$name};
+		}
+		unless ($already_assigned{uc($name)}) { #### prevent assigning twice the same name
+		    $polypeptide->push_attribute("names",$name) ;
+		    $polypeptide->push_expanded_attribute("names_qualified",$name, $qualifier) ;
+		    $already_assigned{uc($name)}++;  
+		}
+	    }
 	}
 	
 	#### Features

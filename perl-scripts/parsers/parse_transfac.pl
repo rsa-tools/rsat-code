@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_transfac.pl,v 1.4 2004/07/06 17:45:47 jvanheld Exp $
+# $Id: parse_transfac.pl,v 1.5 2005/03/13 10:41:02 jvanheld Exp $
 #
 # Time-stamp: <2003-07-10 11:52:52 jvanheld>
 #
@@ -20,8 +20,27 @@ require "lib/parsing_util.pl";
 
 
 ################################################################
+## Matrix
+package TRANSFAC::Matrix;
+{
+  @ISA = qw ( classes::DatabaseObject );
+  ### class attributes
+  $_count = 0;
+  $_prefix = "matrix_";
+  @_objects = ();
+  %_name_index = ();
+  %_id_index = ();
+  %_attribute_count = ();
+  %_attribute_cardinality = (id=>"SCALAR",           ### internal ID for the pathway diagram
+			     transfac_id=>"SCALAR",      ### site ID from the Transfac entry
+			     description=>"SCALAR",
+			     );     
+}
+
+
+################################################################
 ## regulatory site
-package classes::Site;
+package TRANSFAC::Site;
 {
   @ISA = qw ( classes::DatabaseObject );
   ### class attributes
@@ -56,7 +75,7 @@ package classes::Site;
 
 ################################################################
 ## Transcription factor
-package classes::Factor;
+package TRANSFAC::Factor;
 {
   @ISA = qw ( classes::DatabaseObject );
   ### class attributes
@@ -79,7 +98,7 @@ package classes::Factor;
 
 ################################################################
 ## Gene
-package classes::Gene;
+package TRANSFAC::Gene;
 {
   @ISA = qw ( classes::DatabaseObject );
   ### class attributes
@@ -112,6 +131,8 @@ package main ;
     $password="transfac";
 #    $special_field_size{description} = 10000;
 
+    $pssm_sep="\t";
+
     %key_alias = ();
     %transfac_index = (); ## Index transfac objects with transfac AC as key
 
@@ -123,22 +144,26 @@ package main ;
     $export_subdir = "transfac";
     $dir{output} = "$parsed_data/${export_subdir}/$delivery_date";
 
-    @files = qw (site factor gene);
-#    @files = qw (site factor matrix class cell );
+    @data_types = qw (site factor gene matrix);
+#    @data_types = qw (site factor matrix class cell classification reference);
 
     $verbose = 0;
     $out_format = "obj";
 
     #### classes and class_holders
-    @classes = qw( classes::Site classes::Factor classes::Gene );
-    $sites = classes::ClassFactory->new_class(object_type=>"classes::Site");
-    $factors = classes::ClassFactory->new_class(object_type=>"classes::Factor");
-    $genes = classes::ClassFactory->new_class(object_type=>"classes::Gene");
+    @classes = qw( TRANSFAC::Site TRANSFAC::Factor TRANSFAC::Gene TRANSFAC::Matrix );
+    $site_holder = classes::ClassFactory->new_class(object_type=>"TRANSFAC::Site");
+    $site_holder->set_attribute_header("modifications", join("\t", "date", "author"));
 
-    $sites->set_attribute_header("modifications", join("\t", "date", "author"));
-    $factors->set_attribute_header("modifications", join("\t", "date", "author"));
-    $genes->set_attribute_header("modifications", join("\t", "date", "author"));
-    $genes->set_attribute_header("xrefs", join("\t", "xdb", "xid"));
+    $factor_holder = classes::ClassFactory->new_class(object_type=>"TRANSFAC::Factor");
+    $factor_holder->set_attribute_header("modifications", join("\t", "date", "author"));
+
+    $gene_holder = classes::ClassFactory->new_class(object_type=>"TRANSFAC::Gene");
+    $gene_holder->set_attribute_header("modifications", join("\t", "date", "author"));
+    $gene_holder->set_attribute_header("xrefs", join("\t", "xdb", "xid"));
+
+    $matrix_holder = classes::ClassFactory->new_class(object_type=>"TRANSFAC::Matrix");
+    $matrix_holder->set_attribute_header("pssm", join("\t", "pos", "A", "C", "G", "T", "consensus"));
 
     &ReadArguments();
 
@@ -147,16 +172,17 @@ package main ;
 
     #### check existence of input and output directories
     foreach $d (keys %dir) {
-	warn "Checking existence of $d directory $dir{$d}\n" if ($main::verbose >= 1);
+	warn "; Checking existence of $d directory $dir{$d}\n" if ($main::verbose >= 1);
 	unless (-d ($dir{$d}) ) {
 	    die "Error: $d directory $dir{$d} does not exist\n";
 	}
     }
 
     #### Check existence of input files
-    foreach my $file (@files) {
-	$in_file{$file} = $dir{transfac}."/".$file.".dat";
-	unless (-e $in_file{$file}) {
+#    foreach my $file ("factor") {
+    foreach my $type (@data_types) {
+	$in_file{$type} = $dir{transfac}."/".$type.".dat";
+	unless (-e $in_file{$type}) {
 	    die "Error: $file file does not exist\t$in_file{$file}\n";
 	}
     }
@@ -179,17 +205,20 @@ package main ;
     &DefaultVerbose() if ($verbose >= 1);
  
     ### parse data from original files
-    &ParseTransfacFile($in_file{site}, $sites);
-    &ParseTransfacFile($in_file{factor}, $factors);
-    &ParseTransfacFile($in_file{gene}, $genes);
+    foreach my $type (@data_types) {
+	my $holder = $type."_holder";
+	&ParseTransfacFile($in_file{$type}, $$holder);
+    } 
 
+    ## Data type-specific treatment
     &TreatSites();
     &TreatFactors();
     &TreatGenes();
+    &TreatMatrices();
 
     ### print result
     &PrintStats($out_file{stats}, @classes);
-    foreach my $class_factory ($sites, $factors, $genes) {
+    foreach my $class_factory ($site_holder, $factor_holder, $gene_holder, $matrix_holder) {
 	warn "; Dumping class $factory_name $class_factory\n" if ($verbose >= 1);
 	$class_factory->dump_tables();
 	$class_factory->generate_sql(dir=>"$dir{output}/sql_scripts",
@@ -217,7 +246,7 @@ package main ;
     close ERR;
 
 
-    &deliver("transfac_parsed") if ($deliver);
+#    &deliver("transfac_parsed") if ($deliver);
 
 #    &CompressParsedData();
     
@@ -237,7 +266,7 @@ sub PrintHelp {
   open HELP, "| more";
   print <<EndHelp;
 NAME
-	parse_kegg.pl
+	parse_transfac.pl
 
 DESCRIPTION
 	Parse TRANSFAC regulatory sites.
@@ -249,19 +278,26 @@ OPTIONS
 	-h	detailed help
 	-help	short list of options
 	-test	fast parsing of partial data, for debugging
+
 	-indir  input directory. 
 		This directory contains the TRANSFAC flat files. 
-	-outdir output directory
+
+	-outdir output 
+		If not specified, a directory is automatically
+		created in your home directory.
+		${HOME}/parsed_data/transfac/[YYYYMMDD]
+		where [YYYYMMDD] indicates the current date
+
 	-v #	warn level
 		Warn level 1 corresponds to a restricted verbose
 		Warn level 2 reports all polypeptide instantiations
 		Warn level 3 reports failing get_attribute()
+
 	-obj    Export results in "obj" format (human readable)
+
 	-clean	remove all files from the output directory before
 		parsing
-	-deliver 
-		copy the relevant files in the delivery directory,
-		for loading in the aMAZE database. 
+
    Options for the automaticaly generated SQL scripts
 	-schema database schema (default: $schema)
 	-host	database host (efault: $host)
@@ -294,9 +330,9 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-clean") {
 	    $main::clean = 1;
 	    
-	    ### deliver
-	} elsif ($ARGV[$a] eq "-deliver") {
-	    $main::deliver = 1;
+# 	    ### deliver
+# 	} elsif ($ARGV[$a] eq "-deliver") {
+# 	    $main::deliver = 1;
 	    
 
 	    ### output dir
@@ -349,11 +385,11 @@ sub ReadArguments {
 sub ParseTransfacFile {
     my ($input_file, $class_holder, $source) = @_;
     
-    warn (";\n; ", &AlphaDate,  "  parsing file $input_file\n")
+    warn (join "\t", ";", &AlphaDate(),  "parsing file", $input_file, "class holder", $class_holder->get_object_type(), "source", $source,  "\n")
 	if ($verbose >= 1);
 
     open DATA, $input_file || 
-	die "Error: cannot open data file $input_file\n";
+	die "Error: cannot open data file ", $input_file, "\n";
     
     #### Read an entire record at a time
     $/ = "\/\/\n";
@@ -394,9 +430,12 @@ sub ParseTransfacFile {
 	    next unless ($line); # skip empty lines
 	    next if ($line =~ /^XX$/); # skip separator lines
 	    next if ($line =~ /^\/\/$/); # skip record separator
+
+	    
+	    
 	    if ($line =~ /^(\S{2})  /) {
-		my $key = $1;
-		my $value = $'; #';
+		my $key = $1; ## Attribute name
+		my $value = $'; #'; ## Attribute value
 
 		################################################################
 		#### Create new object 
@@ -406,7 +445,27 @@ sub ParseTransfacFile {
 							     transfac_ac=>$value);
 		    $transfac_index{$value} = $current_obj;
 		    next;
+
+		    ## Specific treatment for matrices
+		} elsif ($class_holder->get_object_type() eq "TRANSFAC::Matrix") {
+		    if ($key eq "P0") { ## Matrix header
+			$value = &trim($value);
+			unless ($value =~ /^\s*A\s+C\s+G\s+T/i) {
+			    ## Check if all matrices have the same header
+			    &ErrorMessage("Non-conform header", $value, "\n");
+			    my @header = split /\s+/, $value;
+			    $current_obj->push_expanded_attribute("pssm_header", join "\t", $key, @header); 
+			}
+			next;
+		    } elsif ($key =~ /^\d+$/) {
+			$value = &trim($value);
+			my @values = split /\s+/, $value;
+			warn join "\t", "PSSM", $key, @values, "\n" if ($main::verbose >= 10); 
+			$current_obj->push_expanded_attribute("pssm", join "\t", $key, @values);
+			next;
+		    }
 		}
+		
 
 		## Replace some field names by aliases to avoid
 		## conflicts with reserved SQL words (e.g. ID, IN)
@@ -489,8 +548,6 @@ sub treat_generic_attributes {
 	$current_obj->push_expanded_attribute("modifications", $date, $author);
     }
     
-    #### organism classification
-    my $taxonomy = &join_attribute($current_obj, "organism_classification", " ", "taxonomy");
 #    &join_$current_obj->set_attribute("taxonomy", join (" ", $current_obj->get_attribute("OC"))); ## join for possible multi-line sequence
     
     #### Add AC as name, in order to be able to retrieve it
@@ -529,11 +586,14 @@ sub parse_database_references {
 # Specific treatment for sites
 #
 sub TreatSites {
-    $sites->set_attribute_header("binding_factors_expanded", join("\t", "factor_ac", "factor_name", "quality"));
+    $site_holder->set_attribute_header("binding_factors_expanded", join("\t", "factor_ac", "factor_name", "quality"));
 
-    foreach my $site ($sites->get_objects()) {
+    foreach my $site ($site_holder->get_objects()) {
 	#### Description
 	my $description = &join_attribute($site, "descr", "", "description");
+
+	#### organism classification
+	my $taxonomy = &join_attribute($current_obj, "organism_classification", " ", "taxonomy");
 
 	################################################################
 	#### extract gene AC from description
@@ -557,7 +617,7 @@ sub TreatSites {
 	    } else {
 		&ErrorMessage(join("\t", "; Site", 
 				   $site->get_attribute('id'),
-				   "Cannot identify gene", $gene_ac));
+				   "Cannot identify gene", $gene_ac), "\n");
 			     }
 	} else {
 	    &ErrorMessage (join ("\t", "Missing gene in site ",$site->get_attribute("ac") , $description), "\n");
@@ -590,7 +650,10 @@ sub TreatSites {
 ################################################################
 ## post-parsing for genes (assign explicit field names)
 sub TreatGenes {
-    foreach my $gene ($genes->get_objects()) {
+    foreach my $gene ($gene_holder->get_objects()) {
+	
+	#### organism classification
+	my $taxonomy = &join_attribute($current_obj, "organism_classification", " ", "taxonomy");
 
 	#### Use short description as primary name
 	$gene->set_attribute("name", $gene->get_attribute("short_description"));
@@ -607,18 +670,83 @@ sub TreatGenes {
 
     }
 
-    &parse_database_references($genes);
+    &parse_database_references($gene_holder);
 }
 
 ################################################################
 ## post-parsing for factors (assign explicit field names)
 sub TreatFactors {
-    foreach my $factor ($factors->get_objects()) {
-	my $primary_name = $factor->get_attribute($key_alias{FA});
+    foreach my $factor ($factor_holder->get_objects()) {
+	#### organism classification
+	my $taxonomy = &join_attribute($current_obj, "organism_classification", " ", "taxonomy");
+
+	## Factor name(s)
+	my @names = $factor->get_attribute($key_alias{FA});
+	my $primary_name = $names[0];
+	unless ($primary_name) {
+	    $primary_name = $factor->get_attribute("transfac_id");
+	};
 	$factor->set_attribute("name", $primary_name);
 	$factor->push_attribute("names", $primary_name);
     }
 
+}
+
+
+################################################################
+## post-parsing for matrices (assign explicit field names)
+sub TreatMatrices {
+    warn "; Treating matrices\n" if ($main::verbose >= 1);
+    
+    ## Description
+    foreach my $matrix ($matrix_holder->get_objects()) {
+	$matrix->set_attribute("description", $matrix->get_attribute("descr"));
+    }
+
+    ## Export the matrix in patser format and extract consensus
+    chdir ($dir{output});
+    unless (-d "matrices") {
+	system "mkdir -p matrices";
+    }
+    foreach my $matrix ($matrix_holder->get_objects()) {
+	warn "Exporting PSSM for matrix", $matrix->get_attribute("id"), "\n" if ($main::verbose >= 20);
+	my $consensus  = "";
+	my @pssm = ();
+	my @columns = $matrix->get_attribute("pssm");
+	my $max_pos = -1;
+	foreach my $column_ref (@columns) {
+	    my $fields = shift @{$column_ref};
+	    my @fields = split "\t", $fields;
+	    my $pos = shift @fields; 
+	    for my $i (0..3) {
+		$pssm[$pos][$i] = shift @fields;
+		$max_pos = $pos if ($pos > $max_pos);
+	    }
+	    $consensus .= shift @fields;
+#	    warn join ("\t", $matrix->get_attribute("id"), $column_ref, $pos, $consensus), "\n" if ($main::verbose >= 10)
+	}
+	
+	## Export the matrix in a separate file
+	my $file_name = $matrix->get_attribute("id");
+	my $pssm = "";
+	$file_name .= ".matrix";
+	$file_name =~ s/\$/_/g;
+	open MATRIX, ">matrices/".$file_name || die "Cannot write matrix file", $file_name, "\n";
+	@residues = qw( A C G T ); 
+	for my $r (0..$#residues) {
+	    $pssm .= $residues[$r]." |";
+	    for my $pos (1..$max_pos) {
+		$pssm .= $pssm_sep.$pssm[$pos][$r];
+	    }
+	    $pssm .= "\n";
+	}
+	print MATRIX  $pssm;
+	close MATRIX;
+
+	## Set the consensus attribute
+	$matrix->set_attribute("consensus", $consensus); 
+    }
+    
 }
 
 

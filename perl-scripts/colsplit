@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: colsplit,v 1.9 2004/05/17 15:35:48 jvanheld Exp $
+# $Id: colsplit,v 1.10 2005/03/13 10:41:01 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:21:08 jvanheld>
 #
@@ -11,6 +11,7 @@ if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
 require "RSA.lib";
+require RSAT::util;
 
 
 #### initialise parameters ####
@@ -39,11 +40,11 @@ local $separator = "\t";
 #### check argument 
 
 #### check existence of output dir
-&CheckOutDir($output_dir);
+&RSAT::util::CheckOutDir($output_dir);
 #unless (-d $output_dir) {
 #    `mkdir -p $output_dir`;
 #    unless (-d $output_dir) {
-#	&FatalError("Cannot create output directory $output_dir");
+#	&RSAT::error::FatalError("Cannot create output directory $output_dir");
 #    }
 #}
 
@@ -217,10 +218,10 @@ sub ReadArguments {
 	    @output_fields = split ",", $ARGV[$a+1];
 	    foreach $field (@output_fields) {
 		unless (&IsNatural($field)) {
-		    &FatalError("Field columns must be natural numbers");
+		    &RSAT::error::FatalError("Field columns must be natural numbers");
 		}
 		unless ($field >=1)  {
-		    &FatalError("Field columns must be strictly positive");
+		    &RSAT::error::FatalError("Field columns must be strictly positive");
 		}
 	    }
 	    for $f (0..$#output_fields) {
@@ -231,10 +232,10 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-c") {
 	    $column = $ARGV[$a+1];
 	    unless (&IsNatural($column)) {
-		&FatalError("Key column must be a natural number");
+		&RSAT::error::FatalError("Key column must be a natural number");
 	    }
 	    unless ($column >=1)  {
-		&FatalError("Key column must be strictly positive");
+		&RSAT::error::FatalError("Key column must be strictly positive");
 	    }
 
 	}

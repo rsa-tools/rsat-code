@@ -190,18 +190,21 @@ use Data::Dumper;
 #    }
 #  }
   
+  ### reset the list of objects inluded in the class
+  ### this is mainly for having the appropriate pseudo_pointers after reloading a DB
   sub set_objects {
-    ### reset the list of objects inluded in the class
-    ### this is mainly for having the appropriate pseudo_pointers after reloading a DB
     my ($class_holder, @new_objects) = @_;
     @{$class_holder->{_objects}} = @new_objects;
     return @{$class_holder->{_objects}};
   }
   
+  ### index the names for a single object in the class_holder
   sub index_object_id {
-    ### index the names for a single object in the class_holder
     my ($class_holder, $object) = @_;
-    next unless ($id = $object->get_attribute("id"));
+    unless ($id = $object->get_attribute("id")) {
+	warn "Object $object has no ID\n";
+	return;
+    }
     ${$class_holder->{_id_index}}{uc($id)} = $object;
   }
 
@@ -211,7 +214,10 @@ use Data::Dumper;
   sub index_object_names {
     ### index the names for a single object in the class_holder
     my ($class_holder, $object) = @_;
-    next unless (my $id = $object->get_attribute("id"));
+    unless (my $id = $object->get_attribute("id")) {
+	warn "Object $object has no ID\n";	
+	return;
+    }
     foreach $name  ($id, $object->get_attribute("names")) {
       my $index_key = uc($name); ### indexes ar case-insensitive
       $index_key =~ s/^\s+//; ### suppress leading spaces
@@ -242,7 +248,7 @@ use Data::Dumper;
 
     warn ("; indexing names for class ", 
 	  $class_holder->get_object_type(), "\n") 
-      if ($main::verbose >= 1);
+      if ($main::verbose >= 4);
     %{$class_holder->{_name_index}} = ();
 
     foreach $object ($class_holder->get_objects()) {
@@ -327,7 +333,7 @@ use Data::Dumper;
 	  ### header of the main table, indicating the column content
 	  my @scalar_fields = ();
 	  foreach my $attribute (@out_fields) { 
-	      my $cardinality = $attribute_cardinalities{$attribute};
+	      my $cardinality = $attribute_cardinalities{$attribute} || "ARRAY";
 	      my $header = $attribute_header{$attribute} || $attribute;
 	      unless ($attribute eq "id") { ### ID  treated separately because comes as first column
 		  if ($cardinality eq "SCALAR") {
@@ -353,7 +359,7 @@ use Data::Dumper;
 	      my $id = $object->get_attribute("id");
 	      my @scalar_fields = ();
 	      foreach my $attribute (@out_fields) { 
-		  my $cardinality = $attribute_cardinalities{$attribute};
+		  my $cardinality = $attribute_cardinalities{$attribute} || "ARRAY";
 		  my $header = $object_type->get_attribute_header($attribute) || $attribute;
 		  unless ($attribute eq "id") {
 		      
@@ -418,9 +424,11 @@ use Data::Dumper;
 				  } elsif ($#array_values > $#expanded_fields) {
 				      &main::ErrorMessage(join "\t", "Too many values for attribute", 
 							  $attribute,
-							  "fields", $#expanded_fields+1,
-							  "values", $#array_values+1,
-							  "supplemental values are ignored",
+							  "fields", scalar(@expanded_fields),
+							  "values", scalar(@array_values),
+							  join ";", @expanded_fields, 
+							  join ";", @array_values, 
+							  "supplementary values are ignored",
 							  "\n"
 							  );
 				      @array_values = @array_values[0..$#expanded_fields];
@@ -441,9 +449,10 @@ use Data::Dumper;
 		  }
 	      }
 	      
-	      $tables{$short_class} .= join("\t",
-					    $id, 
-					    @scalar_fields);
+	      $tables{$short_class} .= $id;
+	      if (scalar(@scalar_fields) > 0) {
+		  $tables{$short_class} .= join("\t","", @scalar_fields);
+	      }
 	      $tables{$short_class} .= "\n";
 	  }
 	  return %tables;
@@ -469,7 +478,7 @@ use Data::Dumper;
 	  
 	  untie %db;
 	  warn ("; ", &main::AlphaDate, " export done\n")
-	      if ($main::verbose >= 1);
+	      if ($main::verbose >= 2);
 	  return();
 	  
 	  
@@ -479,14 +488,14 @@ use Data::Dumper;
 	      open STDOUT, ">$outfile"  || die "Error : cannot write file $outfile\n"; 
 	  }
 	  warn (";\n; ", &main::AlphaDate, " exporting class ", $object_type, " to file '$outfile'\n") 
-	      if ($main::verbose >= 2);
+	      if ($main::verbose >= 4);
 	  my @selected = $class_holder->get_out_fields();
 #	  my @selected = @{$out_fields{$object_type}};
 	  foreach my $object ($class_holder->get_objects()) {
 	      $object->print_attributes($format, @selected);
 	  }
 	  warn ("; ", &main::AlphaDate, " class ", $object_type, " exported\n") 
-	      if ($main::verbose >= 1);
+	      if ($main::verbose >= 2);
 	  close STDOUT if ($outfile);
 	  return(1);
 	  
@@ -516,7 +525,7 @@ use Data::Dumper;
 	      unless ($outfile);
 	  warn (";\n; ", &main::AlphaDate, 
 		" exporting name index for class $object_type in format MLDBM to file $outfile\n")
-	      if ($main::verbose >= 2);
+	      if ($main::verbose >= 4);
 	  
 	  tie %db, 'MLDBM', $outfile ||
 	      die "Cannnot tie to $outfile\n";
@@ -531,7 +540,7 @@ use Data::Dumper;
       
 	  untie %db;
 	  warn ("; ", &main::AlphaDate, " export done\n")
-	      if ($main::verbose >= 1);
+	      if ($main::verbose >= 2);
 	  return;
 	  
 	  ### unsupported format
@@ -556,7 +565,7 @@ use Data::Dumper;
 	  unless ($outfile);
       warn (";\n; ", &main::AlphaDate, 
 	    " exporting input index for class $object_type in format MLDBM to file $outfile\n")
-	  if ($main::verbose >= 2);
+	  if ($main::verbose >= 4);
       tie %db, 'MLDBM', $outfile ||
 	  die "Cannnot tie to $outfile\n";
       
@@ -568,7 +577,7 @@ use Data::Dumper;
 
       untie %db;
       warn ("; ", &main::AlphaDate, " export done\n")
-	  if ($main::verbose >= 1);
+	  if ($main::verbose >= 2);
       return;
       
       ### unsupported format
@@ -593,7 +602,7 @@ use Data::Dumper;
 	  unless ($outfile);
       warn (";\n; ", &main::AlphaDate, 
 	    " exporting output index for class $object_type in format MLDBM to file $outfile\n")
-	  if ($main::verbose >= 2);
+	  if ($main::verbose >= 4);
       tie %db, 'MLDBM', $outfile ||
 	  die "Cannnot tie to $outfile\n";
       
@@ -605,7 +614,7 @@ use Data::Dumper;
 
       untie %db;
       warn ("; ", &main::AlphaDate, " export done\n")
-	  if ($main::verbose >= 1);
+	  if ($main::verbose >= 2);
       return;
       
       ### unsupported format
@@ -618,6 +627,7 @@ use Data::Dumper;
   ### uses the export("tab") function
   sub dump_tables {
       my ($class_holder,$file_suffix, $export_indexes) = @_;
+      $file_suffix = "" unless (defined($file_suffix));
       my $object_type = $class_holder->get_object_type();
       (my $short_class = $object_type) =~ s/.*:://g;
       $short_class = lc($short_class);
@@ -625,7 +635,7 @@ use Data::Dumper;
       my $pwd = `pwd`;
 
       warn (";\n; ", &main::AlphaDate, " dumping class ", $class_holder->get_object_type(),
-	    " to tables\n") if ($main::verbose >= 1);
+	    " to tables\n") if ($main::verbose >= 2);
       
       ### dump the class content in tables 
       ### according to relational normalization standards
@@ -635,14 +645,14 @@ use Data::Dumper;
 	  open TABLE, ">$file_name" || die "Error: cannot write file $file_name\n";
 	  my $dump_date = `date +%Y%m%d_%H%M%S`;
 	  ### print version
-	  printf TABLE "$comment_symbol %-12s\t%d\n", "dump date", $dump_date; 
+	  printf TABLE "$comment_symbol %-12s\t%s\n", "dump date", $dump_date; 
 	  printf TABLE "$comment_symbol %-12s\t%s\n", "class", $class_holder->get_object_type(); 
 	  printf TABLE "$comment_symbol %-12s\t%s\n", "table", $table_name; 
 	  ### print content of the table
 	  print TABLE $tables{$table_name};
 	  close TABLE;
 	  warn "; dumping table: $table_name in file $file_name\n" 
-	      if ($main::verbose >= 1);
+	      if ($main::verbose >= 4);
       }
       
       ### dump separate tables with indexes 
@@ -658,7 +668,7 @@ use Data::Dumper;
 	  my $file_name = lc($short_class.$file_suffix."__name_index.tab");
 	  
 	  warn "; dumping $object_type name index in file $file_name\n"
-	      if ($main::verbose >= 1);
+	      if ($main::verbose >= 2);
 	  
 	  open INDEX, ">$file_name" || 
 	      die "Error: cannot write name index file '$file_name'\n";
@@ -675,7 +685,7 @@ use Data::Dumper;
 	      (defined( $class_holder->{_input_index}))){
 	      my $file_name = lc($short_class.$file_suffix."__input_index.tab");
 	      warn "; dumping $object_type input index in file $file_name\n"
-		  if ($main::verbose >= 1);
+		  if ($main::verbose >= 2);
 	      open INDEX, ">$file_name" || 
 		  die "Error: cannot write input index file '$file_name'\n";
 	      my $input_index = $class_holder->{_input_index};
@@ -693,7 +703,7 @@ use Data::Dumper;
 	      (defined( $class_holder->{_output_index}))){
 	      my $file_name = lc($short_class.$file_suffix."__output_index.tab");
 	      warn "; dumping $object_type output index in file $file_name\n"
-		  if ($main::verbose >= 1);
+		  if ($main::verbose >= 2);
 	      open INDEX, ">$file_name" || 
 		  die "Error: cannot write output index file '$file_name'\n";
 	      my $output_index = $class_holder->{_output_index};
@@ -707,7 +717,7 @@ use Data::Dumper;
       }
 
       warn ("; ", &main::AlphaDate, " class ", $object_type, " dumped\n") 
-	  if ($main::verbose >= 1);
+	  if ($main::verbose >= 2);
 
       
       return;
@@ -735,7 +745,7 @@ use Data::Dumper;
   sub generate_sql {
       my ($class_holder,%args) = @_;
       foreach my $dbms (keys %main::supported_dbms) {
-	  warn "Exporting SQL scripts for $dbms\n" if ($main::verbose >= 2);
+	  warn "; Exporting SQL scripts for $dbms\n" if ($main::verbose >= 4);
 	  $class_holder->generate_sql_one_dbms(%args, dbms=>$dbms,
 					       dir=>$main::dir{output}."/sql_scripts/".$dbms);
       }
@@ -768,7 +778,7 @@ use Data::Dumper;
       warn join ("\t", ";\n;", &main::AlphaDate(), 
 		 " Generating SQL scripts for class ", $class_holder->get_object_type(),
 		 "sql_dir: $sql_dir"),
-		 "\n" if ($main::verbose >= 2);
+		 "\n" if ($main::verbose >= 4);
       
       #### create SQL export directory if required
       unless (-d $sql_dir) {
@@ -814,7 +824,7 @@ use Data::Dumper;
 	    ";\tgranted readers\t", join (",",@granted_readers), "\n",
 	    ";\tgranted writers\t", join (",",@granted_writers), "\n",
 	    ";\tpassword\t", $password, "\n",
-	    ) if ($main::verbose >= 2);
+	    ) if ($main::verbose >= 4);
 
 
 
@@ -839,7 +849,7 @@ use Data::Dumper;
       my @array_fields = ();
       my @expanded_fields = ();
       foreach my $attribute (@out_fields) { 
-	  my $cardinality = $attribute_cardinalities{$attribute};
+	  my $cardinality = $attribute_cardinalities{$attribute} || "ARRAY";
 	  my $header = $attribute_header{$attribute} || $attribute;
 #	  while (my ($attribute,$cardinality) = each %attribute_cardinalities) {
 	  unless ($attribute eq "id") { ### ID  treated separately because comes as first column
@@ -858,14 +868,14 @@ use Data::Dumper;
       #### Table creation
       my $create_file = "${table_prefix}_table_create.sql";
       warn ";\ttable creation scripts to file $create_file\n" 
-	  if ($main::verbose >= 2);
+	  if ($main::verbose >= 4);
       open SQL, "> $sql_dir/$create_file" || die "Error: cannot write file $create_file\n";
 
       ################################################################
       #### Alter table
       my $alter_file = "${table_prefix}_table_alter.sql";
       warn ";\talter table scripts to file $alter_file\n" 
-	  if ($main::verbose >= 2);
+	  if ($main::verbose >= 4);
       open ALTER, "> $sql_dir/$alter_file" || die "Error: cannot write file $alter_file\n";
 
       print_sql_header ("Table creation scripts for class $table_prefix");
@@ -1028,7 +1038,7 @@ use Data::Dumper;
 	  my $table_path = $schema.".".$table_name;
 	  my $load_file = "${table_prefix}_table_load.ctl";
 	  warn ";\ttable loading scripts to file $load_file\n" 
-	      if ($main::verbose >= 2);
+	      if ($main::verbose >= 4);
 	  open SQL, "> $sql_dir/$load_file" || die "Error: cannot write file $load_file\n";
 	  print_sql_header ("Table loading scripts for class $table_prefix");
 	  print_sql_header ("Main table - $table_prefix");
@@ -1071,7 +1081,7 @@ use Data::Dumper;
 	      my $table_path = $schema.".".$table_name;
 	      my $load_file = "${table_prefix}_${field}_table_load.ctl";
 	      warn ";\ttable loading scripts to file $load_file\n" 
-		  if ($main::verbose >= 2);
+		  if ($main::verbose >= 4);
 	      open SQL, "> $sql_dir/$load_file" || die "Error: cannot write file $load_file\n";
 	      print_sql_header ("Table loading scripts for class $table_prefix");
 	      print_sql_header ("Multivalue attribute - $table_name");
@@ -1133,7 +1143,7 @@ use Data::Dumper;
 	      my @fields = split "\t", $header;
 #	      shift @fields;
 	      warn ";\ttable loading scripts to file $load_file\n" 
-		  if ($main::verbose >= 2);
+		  if ($main::verbose >= 4);
 	      open SQL, "> $sql_dir/$load_file" || die "Error: cannot write file $load_file\n";
 	      print_sql_header ("Table loading scripts for class $table_prefix");
 	      print_sql_header ("Multivalue attribute - $table_name");
@@ -1167,7 +1177,7 @@ use Data::Dumper;
 	  my $table_path = $schema.".".$table_name;
 	  my $load_file = "${table_prefix}_table_load.ctl";
 	  warn ";\ttable loading scripts to file $load_file\n" 
-	      if ($main::verbose >= 2);
+	      if ($main::verbose >= 4);
 	  open SQL, "> $sql_dir/$load_file" || die "Error: cannot write file $load_file\n";
 	  print_sql_header ("Table loading scripts for class $table_prefix");
 	  print_sql_header ("Main table - $table_prefix");
@@ -1181,7 +1191,7 @@ use Data::Dumper;
 	      my $table_path = $schema.".".$table_name;
 	      my $load_file = "${table_prefix}_${field}_table_load.ctl";
 	      warn ";\ttable loading scripts to file $load_file\n" 
-		  if ($main::verbose >= 2);
+		  if ($main::verbose >= 4);
 	      open SQL, "> $sql_dir/$load_file" || die "Error: cannot write file $load_file\n";
 	      print_sql_header ("Table loading scripts for class $table_prefix");
 	      print_sql_header ("Multivalue attribute - $table_name");
@@ -1196,7 +1206,7 @@ use Data::Dumper;
 	  my $table_path = $schema.".".$table_name;
 	  my $load_file = "${table_prefix}_table_load.ctl";
 	  warn ";\ttable loading scripts to file $load_file\n" 
-	      if ($main::verbose >= 2);
+	      if ($main::verbose >= 4);
 	  open SQL, "> $sql_dir/$load_file" || die "Error: cannot write file $load_file\n";
 	  print_sql_header ("Table loading scripts for class $table_prefix");
 	  print SQL "use ", $schema, ";\n\n";
@@ -1211,7 +1221,7 @@ use Data::Dumper;
 	      my $table_path = $schema.".".$table_name;
 	      my $load_file = "${table_prefix}_${field}_table_load.ctl";
 	      warn ";\ttable loading scripts to file $load_file\n" 
-		  if ($main::verbose >= 2);
+		  if ($main::verbose >= 4);
 	      open SQL, "> $sql_dir/$load_file" || die "Error: cannot write file $load_file\n";
 	      print_sql_header ("Table loading scripts for class $table_prefix");
 	      print SQL "use ", $schema, ";\n\n";
@@ -1228,7 +1238,7 @@ use Data::Dumper;
       #### Table dropping
       my $drop_file = "${table_prefix}_table_drop.sql";
       warn ";\ttable dropping scripts to file $drop_file\n" 
-	  if ($main::verbose >= 2);
+	  if ($main::verbose >= 4);
       open SQL, "> $sql_dir/$drop_file" || die "Error: cannot write file $drop_file\n";
       
       print_sql_header ("Table droping scripts for class $table_prefix");

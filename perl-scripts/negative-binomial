@@ -24,16 +24,16 @@ local $out = STDOUT;
 ## Series is not compatible with sums
 if ($series) {
     if (($boe) || ($soe) || ($to)) {
-	&FatalError("The option -series is currently incompatible with -boe, -soe, -from and -to\n");
+	&RSAT::error::FatalError("The option -series is currently incompatible with -boe, -soe, -from and -to\n");
     }
 }
 
 ### Number of successes
 if ($from_to) {
-    &FatalError("-from should be smaller than -to") if ($from > $to);
+    &RSAT::error::FatalError("-from should be smaller than -to") if ($from > $to);
 } else {
     unless (defined($s)) {
-	&FatalError("You should specify the number of successes s.\n");
+	&RSAT::error::FatalError("You should specify the number of successes s.\n");
     } 
 }
 
@@ -125,33 +125,33 @@ sub ReadArguments {
 	    ### p
 	} elsif ($ARGV[$a] eq "-p") {
 	    $p = $ARGV[$a+1];
-	    &FatalError("p must be a real number") unless (&IsReal($p));
-	    &FatalError("p must be comprized between 0 and 1") unless (($p >= 0) && ($p <= 1));
+	    &RSAT::error::FatalError("p must be a real number") unless (&IsReal($p));
+	    &RSAT::error::FatalError("p must be comprized between 0 and 1") unless (($p >= 0) && ($p <= 1));
 
 	    ### k
 	} elsif ($ARGV[$a] eq "-k") {
 	    $k = $ARGV[$a+1];
-	    &FatalError("k must be a real number") unless (&IsReal($k));
-	    &FatalError("k must be positive") unless ($k >= 0);
+	    &RSAT::error::FatalError("k must be a real number") unless (&IsReal($k));
+	    &RSAT::error::FatalError("k must be positive") unless ($k >= 0);
 
 	    ### Successes
 	} elsif ($ARGV[$a] eq "-s") {
 	    $s = $ARGV[$a+1];
-	    &FatalError("s must be an integer number") unless (&IsInteger($s));
-	    &FatalError("The number of successes (s) should be positive.\n") if ($s < 0);
+	    &RSAT::error::FatalError("s must be an integer number") unless (&IsInteger($s));
+	    &RSAT::error::FatalError("The number of successes (s) should be positive.\n") if ($s < 0);
 
 	    ### Mean
 	} elsif ($ARGV[$a] eq "-m") {
 	    $m = $ARGV[$a+1];
 	    $by_mean = 1;
-	    &FatalError("m must be a real number") unless (&IsReal($m));
-	    &FatalError("m must be strictly positive") unless ($m > 0);
+	    &RSAT::error::FatalError("m must be a real number") unless (&IsReal($m));
+	    &RSAT::error::FatalError("m must be strictly positive") unless ($m > 0);
 
 	    ### Variance
 	} elsif ($ARGV[$a] eq "-var") {
 	    $var = $ARGV[$a+1];
-	    &FatalError("v must be a real number") unless (&IsReal($var));
-	    &FatalError("v must be strictly positive") unless ($var > 0);
+	    &RSAT::error::FatalError("v must be a real number") unless (&IsReal($var));
+	    &RSAT::error::FatalError("v must be strictly positive") unless ($var > 0);
 
 	    ### Bigger or equal
 	} elsif ($ARGV[$a] eq "-boe") {

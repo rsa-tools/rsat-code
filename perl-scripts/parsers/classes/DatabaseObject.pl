@@ -200,7 +200,7 @@ sub push_attribute {
 ## entries, where #### each entry is itself an array of values
 sub push_expanded_attribute {
     my ($self,$attr,@value_array) = @_;
-    warn join "\t", "pushing expanded attribute", $self->get_attribute("id"), @value_array, "\n" if ($main::verbose >=3);
+    warn join "\t", "pushing expanded attribute", $self->get_attribute("id"), @value_array, "\n" if ($main::verbose >=4);
     $self->_set_attribute_cardinality($attr, "EXPANDED");
     $self->_incr_attribute_count($attr);
     push @{$self->{$attr}}, \@value_array;

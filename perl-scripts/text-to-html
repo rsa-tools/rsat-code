@@ -179,7 +179,7 @@ sub ReadArguments {
 	    } elsif ($ARGV[$a] eq "-chunk") {
 		$chunk= $ARGV[$a+1];
 		unless (&IsNatural($chunk)) {
-		    &FatalError("Chunk must be a natural number");
+		    &RSAT::error::FatalError("Chunk must be a natural number");
 		}
 		
 		### output file ###

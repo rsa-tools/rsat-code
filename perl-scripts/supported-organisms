@@ -15,11 +15,15 @@ $formats = join ",", @formats;
 
 &ReadArguments();
 
+$out = &OpenOutputFile($outfile{output});
+
 if ($out_format eq "tree") {
     &SupportedOrganismTree();
 } else {
-    print &ListSupportedOrganisms($out_format);
+    print $out &ListSupportedOrganisms($out_format);
 }
+
+close $out if ($outfile{output});
 
 exit(0);
 
@@ -54,7 +58,9 @@ sub SupportedOrganismTree {
 	my $taxonomy = $supported_organism{$org}->{taxonomy};
 
 	## Replace prolematic characters by _
+	$taxonomy = &RSAT::util::trim($taxonomy);
 	$taxonomy =~ s|/|_|g; ## / are reserved in phylip format
+	$taxonomy =~ s|; +|;|g; ## 
 	$taxonomy =~ s| |_|g; ## 
 	$taxonomy =~ s|\(|_|g; ## / are reserved in phylip format
 	$taxonomy =~ s|\)|_|g; ## / are reserved in phylip format
@@ -99,7 +105,10 @@ sub SupportedOrganismTree {
 #	$tree->add_Descendent($org_node);
     }
     
-    my $out_tree = new Bio::TreeIO(-format => 'newick');
+    my $out_tree = new Bio::TreeIO(-format=>'newick');
+    if ($outfile{output}) {
+	*STDOUT = $out;
+    }
     $out_tree->write_tree($tree)
 }
 
@@ -173,12 +182,16 @@ sub ReadArguments {
 	} elsif ($ARGV[0] eq "-help") {
 	    &PrintOptions;
 	    
-	    ### input file ###
+	    ### output format
 	} elsif ($ARGV[$a] eq "-format") {
 	    $out_format = $ARGV[$a+1];
 	    unless ($supported_format{$out_format}) {
-		&FatalError("Format $out_format is not supported\n");
+		&RSAT::error::FatalError("Format $out_format is not supported\n");
 	    }
+	    
+	    ### output file  
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outfile{output} = $ARGV[$a+1];
 	    
 	}
     }

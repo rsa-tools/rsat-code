@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: check-oligo-analysis,v 1.8 2004/05/07 07:20:03 jvanheld Exp $
+# $Id: check-oligo-analysis,v 1.9 2005/03/13 10:41:01 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 23:00:11 jvanheld>
 #
@@ -11,6 +11,7 @@ if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
 require "RSA.lib";
+require RSAT::util;
 require POSIX;
 
 ################################################################
@@ -48,11 +49,11 @@ $supported_tasks = join",", sort(keys (%supported_task));
 ################################################################
 #### task list
 if (scalar(@tasks) <= 0) {
-    &FatalError("You should select at least one task. Supported: $supported_task.");
+    &RSAT::error::FatalError("You should select at least one task. Supported: $supported_task.");
 }
 foreach my $t (@tasks) {
     unless ($supported_task{$t}) {
-	&FatalError ("Task $t is invalid. Supported: $supported_tasks.");
+	&RSAT::error::FatalError("Task $t is invalid. Supported: $supported_tasks.");
     }
     $task{$t}++;
 }
@@ -68,7 +69,7 @@ if ($task{all}) {
 unless (defined($dir{output})) {
     $dir{output} = "oligo_check_results";
 }
-&CheckOutDir($dir{output});
+&RSAT::util::CheckOutDir($dir{output});
 
 
 ################################################################
@@ -144,7 +145,7 @@ sub SummarizeResults {
     warn join( "\t", "\n; Summarizing results", $str, $ov), "\n" if ($verbose >= 1);
     $score_col=9;
     $synthesis_dir=$dir{output}."/synthesis";
-    &CheckOutDir($synthesis_dir);
+    &RSAT::util::CheckOutDir($synthesis_dir);
     $synthesis_file = $synthesis_dir."/RAND_L${seq_len}_N${seq_nb}_oligos_${oligo_len}nt${str}${ov}_sig${thosig}_distrib.tab";
 
     
@@ -191,7 +192,7 @@ sub OneJob {
     ################################################################
     ### compose the command
     my $result_file=${result_dir}."/oligos_r${job}_${oligo_len}nt${str}${ov}_sig${thosig}.tab";
-    &CheckOutDir($result_dir);
+    &RSAT::util::CheckOutDir($result_dir);
     $command = "random-seq -l ${seq_len} -r ${seq_nb} ";
     $command .= " | oligo-analysis -v $job_verbose -return occ,freq,proba,rank -sort "; 
     $command .= " -l $oligo_len";
@@ -398,7 +399,7 @@ sub CalcTheoreticalDistributions {
     my @descriptions = ();
 
     $theory_dir=$dir{output}."/theory";
-    &CheckOutDir($theory_dir);
+    &RSAT::util::CheckOutDir($theory_dir);
     $theory_file = $theory_dir."/RAND_L${seq_len}_N${seq_nb}_oligos_${oligo_len}nt${str}${ov}_sig${thosig}_distrib.tab";
 
     $thf = &OpenOutputFile($theory_file); ## open output file

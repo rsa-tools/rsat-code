@@ -480,7 +480,7 @@ if ($img_format eq "gif") {
 } elsif ($img_format eq "png") {
     print $out $image->png;
 } else {
-    &FatalError("Error: Format $img_format is not supported\n");
+    &RSAT::error::FatalError("Error: Format $img_format is not supported\n");
 }
 
 &CloseHTMLmap if ($HTML_map);
@@ -1117,7 +1117,7 @@ sub CalcLimits {
     $max_x_value = &checked_max(@X_values);
     unless ((&IsReal($max_x_value)) && 
 	    (&IsReal($min_x_value))) {
-	&FatalError("X axis data (column ", $x_col+1, ") are not numeric.");
+	&RSAT::error::FatalError("X axis data (column ", $x_col+1, ") are not numeric.");
     }
     
     for $series (0..$#y_col_list) {
@@ -1128,7 +1128,7 @@ sub CalcLimits {
     
     unless ((&IsReal($max_y_value)) &&
 	    (&IsReal($min_y_value))) {
-	&FatalError("\tError: Y axis data (column ", join(",", @y_col_list),
+	&RSAT::error::FatalError("\tError: Y axis data (column ", join(",", @y_col_list),
 		    ") are not numeric.");
     }
 
@@ -1436,7 +1436,7 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-format") {
 	    $img_format = lc($ARGV[$a+1]);
 	    unless ($supported_format{$img_format}) {
-		&FatalError("Format $img_format is not supported (supported: $supported_formats)");
+		&RSAT::error::FatalError("Format $img_format is not supported (supported: $supported_formats)");
 	    }
 	    
 	    ### verbose ###
@@ -1518,7 +1518,7 @@ sub ReadArguments {
 		|| (&IsReal($ARGV[$a+1]))) {
 		$x_log_base = $ARGV[$a+1];
 		$y_log_base = $ARGV[$a+1];
-		&FatalError("Log base should be strictly higher than 1.") 
+		&RSAT::error::FatalError("Log base should be strictly higher than 1.") 
 		    unless (($x_log_base > 1) || ($x_log_base eq "e"));
 	    }
 	} elsif ($ARGV[$a] eq "-xlog") {
@@ -1526,7 +1526,7 @@ sub ReadArguments {
 	    if (($ARGV[$a+1] eq "e") 
 		|| (&IsReal($ARGV[$a+1]))) {
 		$x_log_base = $ARGV[$a+1];
-		&FatalError("Log base should be strictly higher than 1.") 
+		&RSAT::error::FatalError("Log base should be strictly higher than 1.") 
 		    unless (($x_log_base > 1) || ($x_log_base eq "e"));
 	    }
 	} elsif ($ARGV[$a] eq "-ylog") {
@@ -1534,7 +1534,7 @@ sub ReadArguments {
 	    if (($ARGV[$a+1] eq "e") 
 		|| (&IsReal($ARGV[$a+1]))) {
 		$y_log_base = $ARGV[$a+1];
-		&FatalError("Log base should be strictly higher than 1.") 
+		&RSAT::error::FatalError("Log base should be strictly higher than 1.") 
 		    unless (($y_log_base > 1) || ($y_log_base eq "e"));
 	    }
 

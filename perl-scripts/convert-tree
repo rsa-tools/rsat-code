@@ -1,55 +1,28 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: template,v 1.19 2005/03/13 10:41:02 jvanheld Exp $
+# $Id: convert-tree,v 1.1 2005/03/13 10:41:01 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
 ############################################################
 #use strict;;
-
-=pod
-
-=head1 NAME
-
-template
-
-=head1 DESCRIPTION
-
-Template or writing new perl scripts.
-
-=head1 CATEGORY
-
-util
-
-=head1 USAGE
-    
-template [-i inputfile] [-o outputfile] [-v]
-
-=head1 INPUT FORMAT
-
-=head1 OUTPUT FORMAT
-
-
-=cut
-
-
-BEGIN {
-    if ($0 =~ /([^(\/)]+)$/) {
-	push (@INC, "$`lib/");
-    }
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
 }
 require "RSA.lib";
+use Bio::TreeIO;
 
 ################################################################
 #### initialise parameters
 my $start_time = &AlphaDate();
-
+$in_format = "newick";
+$out_format = "tabtree";
 local %infile = ();
 local %outfile = ();
 
 local $verbose = 0;
-local $in = STDIN;
+#local $in = STDIN;
 local $out = STDOUT;
 
 &ReadArguments();
@@ -59,16 +32,12 @@ local $out = STDOUT;
 
 
 ################################################################
-### open output stream
-$out = &OpenOutputFile($outfile{output});
-
-################################################################
 ##### read input
-($in) = &OpenInputFile($infile{input});
-while (<$in>) {
+#($in) = &OpenInputFile($infile{input});
+my $treeio = new Bio::TreeIO(-format => $in_format, 
+			     -file => $infile{input});
+my $tree = $treeio->next_tree();
 
-}
-close $in if ($infile{input});
 
 ################################################################
 #### print verbose
@@ -80,6 +49,18 @@ close $in if ($infile{input});
 ################################################################
 ###### print output
 
+$out = &OpenOutputFile($outfile{output});
+if ($outfile{output}) {
+    $out_stream = ">".$outfile{output};
+} else {
+    $out_stream = "";
+}
+
+my $out_tree = new Bio::TreeIO(-format => $out_format, 
+			       -file => $out_stream);
+$out_tree->write_tree($tree);
+
+close $out if ($outfile{output});
 
 ################################################################
 ###### finish verbose
@@ -88,12 +69,6 @@ if ($verbose >= 1) {
     print $out "; Job started $start_time\n";
     print $out "; Job done    $done_time\n";
 }
-
-
-################################################################
-###### close output stream
-close $out if ($outfile{output});
-
 
 exit(0);
 
@@ -106,34 +81,61 @@ exit(0);
 ################################################################
 #### display full help message 
 sub PrintHelp {
-    system "pod2text -c $0";
-    exit()
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	convert-tree
+
+        2004 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
+	
+DESCRIPTION
+	Convert-Tree for writing new perl scripts
+
+CATEGORY
+	util
+
+USAGE
+        convert-tree [-i inputfile] [-o outputfile] [-v]
+
+OPTIONS
+	-h	display full help message
+	-help	display options
+	-v	verbose
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+
+End_of_help
+  close HELP;
+  exit;
 }
 
 ################################################################
 #### display short help message
 sub PrintOptions {
-    &PrintHelp();
+  open HELP, "| more";
+  print HELP <<End_short_help;
+convert-tree options
+----------------
+-h		(must be first argument) display full help message
+-help		(must be first argument) display options
+-i		input file
+-o		output file
+-v		verbose
+End_short_help
+  close HELP;
+  exit;
 }
 
+
 ################################################################
-#### Read arguments 
+#### read arguments 
 sub ReadArguments {
     foreach my $a (0..$#ARGV) {
-
-	## Verbosity
-=pod
-
-
-=head1 OPTIONS
-
-=over 4
-
-=item B<-v #>
-
-Level of verbosity (detail in the warning messages during execution)
-
-=cut
+	### verbose  
 	if ($ARGV[$a] eq "-v") {
 	    if (&IsNatural($ARGV[$a+1])) {
 		$verbose = $ARGV[$a+1];
@@ -141,68 +143,38 @@ Level of verbosity (detail in the warning messages during execution)
 		$verbose = 1;
 	    }
 	    
-	    ## Help message
-=pod
-
-=item B<-h>
-
-Display full help message
-
-=cut
+	    ### detailed help
 	} elsif ($ARGV[$a] eq "-h") {
 	    &PrintHelp();
 	    
-	    ## List of options
-=pod
-
-=item B<-help>
-
-display options
-
-=cut
+	    ### list of options
 	} elsif ($ARGV[$a] eq "-help") {
 	    &PrintOptions();
 	    
-
-	    ## Input file
-=pod
-
-=item B<-i inputfile>
-
-If no input file is specified, the standard input is used.  This
-allows to use the command within a pipe.
-
-=cut
+	    ### input file  
 	} elsif ($ARGV[$a] eq "-i") {
 	    $infile{input} = $ARGV[$a+1];
 	    
-	    ## Output file
-=pod
-
-=item	B<-o outputfile>
-
-If no output file is specified, the standard output is used.  This
-allows to use the command within a pipe.
-
-=cut
+	    ### output file  
 	} elsif ($ARGV[$a] eq "-o") {
 	    $outfile{output} = $ARGV[$a+1];
 	    
+	    ### input format  
+	} elsif ($ARGV[$a] eq "-informat") {
+	    $in_format = $ARGV[$a+1];
+
+	    ### output format  
+	} elsif ($ARGV[$a] eq "-outformat") {
+	    $out_format = $ARGV[$a+1];
+	    
 	}
     }
-
-=pod
-
-=back
-
-=cut
-
 }
 
 ################################################################
 #### verbose message
 sub Verbose {
-    print $out "; template ";
+    print $out "; convert-tree ";
     &PrintArguments($out);
     if (defined(%infile)) {
 	print $out "; Input files\n";
@@ -217,12 +189,3 @@ sub Verbose {
 	}
     }
 }
-
-
-__END__
-
-=pod
-
-=head1 SEE ALSO
-
-=cut

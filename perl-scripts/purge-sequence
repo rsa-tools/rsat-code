@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence,v 1.23 2004/05/07 07:07:05 jvanheld Exp $
+# $Id: purge-sequence,v 1.24 2005/03/13 10:41:02 jvanheld Exp $
 #
 # Time-stamp: <2003-10-05 23:01:33 jvanheld>
 #
@@ -183,8 +183,8 @@ OPTIONS
 		This allows to place the command within a pipe.
 	-n	dry run
 		print commands without executing them
-	-ml #	match length
-	-mis #	mismatches
+	-ml #	match length (default: $match_len)
+	-mis #	mismatches (default: $mismatches)
 	-1str	discard duplications on the direct strand only
 	-2str	discard duplications on the reverse complement as well
 	-del	delete repeats instead of masking them
@@ -212,8 +212,8 @@ purge-sequence options
 -v	verbose
 -n	dry run
 -format sequence format
--ml #	match length
--mis #	mismatches
+-ml #	match length (default: $match_len)
+-mis #	mismatches (default: $mismatches)
 -1str	discard duplications on the direct strand only
 -2str	discard duplications on the reverse complement as well
 -del	delete repeats instead of masking them

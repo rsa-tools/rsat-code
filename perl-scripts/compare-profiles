@@ -1,0 +1,844 @@
+#!/usr/bin/perl
+############################################################
+#
+# $Id: compare-profiles,v 1.1 2005/03/13 10:41:01 jvanheld Exp $
+#
+# Time-stamp: <2003-07-04 12:48:55 jvanheld>
+#
+############################################################
+#use strict;;
+
+## TO DO
+## - Add columns for join probability P{A|B} and P{B|A}
+## - add a return option
+## - in verbosity: size of the table
+## In verbosity : average probability over columns and rows
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+require "RSA.stat.lib";
+use RSAT::table;
+
+=pod
+
+=head1 NAME
+
+compare-profiles
+
+=head1 DESCRIPTION
+
+Compare profiles between rows of a tab-delimited profile matrix. The
+profiles should be expressed as discrete variables: either binary
+(presence-absence), or integer (pattern counts).  
+
+A typical application is the comparison of phylogenetic profiles
+(Pellegrini et al. , 1999).
+
+=head1 WARNINGS
+
+=over 4
+
+=item B<Output file size>
+
+The size of the output file increases quadratically with the number of
+rows in the input file (n), since number of possible pairs is
+n*(n-1)/2.
+
+A comparison of 5000 profiles (e.g. genes) represents 12,497,500
+comparisons. Each row of the output file contains ~115 characters, the
+output file for a full comparison costs thus more than 1Gb !
+
+It is thus B<highly recommended> to apply a restrictive threshold on
+the P-value in order to return only the gene pairs which have either
+significantly similar profiles (e.g. co-exising genes), or on the
+contrary those which have mutually exclusive profiles. 
+
+Genes with significantly similar profiles can be selected with an
+upper threshold on Pval_r (e.g. -uth Pval_r 1e-6).
+
+Genes with significantly different profiles (mutually exclusive) can
+be selected with an upper threshold on Pval_l (e.g. -uth Pval_l 1e-6).
+
+=item B<Significance threshold>
+
+The choice of the appropriate threshold on P-value depends on the data
+size. since you are performing multiple tests, it is recommended to
+apply Bonferoni's rule: the threshold should be inferior to 1 divided
+by the number of tests. An analysis of n profiles represents n*(n-1)/2
+tests, the threshold should be smaller than 2/[n*(n-1)].
+
+=item B<computation time> 
+
+The time required for an analysis increases linearly with the number
+of columns, but quadratically with the number of rows.
+
+=item B<memory usage>
+
+All profiles are loaded in memory before comparing pairs. The memory
+requirement is thus proportional to the size input table. The program
+works fine on my laptop for 4873 genes and 67 genomes. 
+
+=back
+
+=head1 CATEGORY
+
+util
+
+=head1 USAGE
+    
+compare-profiles [-i inputfile] [-o outputfile] [-v]
+
+=head1 INPUT FORMAT
+
+A tab-delimited text file, with one row per objet (e.g. gene), and one
+column per variable (e.g. genome where an ortholog of this gene can be
+found).
+
+The first row of the file must contain column headers (e.g. organism
+names).
+
+The first column contains row headers (e.g. gene names).
+
+=head1 OUTPUT FORMAT
+
+The output file contains one row per pair of profiles, and one column
+per statistics. Various statistics can be calculated. 
+
+=head2 STATISTICS
+
+=over 4
+
+=item B<ID A>
+
+Identifier of profile A (row name in the input file). 
+
+=item B<ID B>
+
+Identifier of profile B (row name in the input file). 
+
+=item B<name A>
+
+Name of profile A (can be specified with option -names). 
+
+=item B<name B>
+
+Name of profile B (can be specified with option -names). 
+
+=item B<N{A}>
+
+Number of true (1) columns in profile A.
+
+=item B<N{B}>
+
+Number of true (1) columns in profile B.
+
+=item B<N{AB}>
+
+Number of true columns (1) in both A and B.
+
+=item B<N{A!B}>
+
+Number of true columns (1) for A but not B.
+
+=item B<N{!AB}>
+
+Number of true columns (1) for B but not A.
+
+=item B<N{!A!B}>
+
+Number of false columns (0) for both B and A.
+
+=item B<P{A}>
+
+P{A}=N{A}/C
+
+where C is the number of columns in the table. 
+
+Marginal probability of A.
+Probability of true (1) columns in profile A.
+
+=item B<P{B}>
+
+Marginal probability of B.
+Probability of true (1) columns in profile B.
+
+=item B<P{AB}>
+
+P{AB} = N{AB}/C
+
+Join probability of A and B. 
+Probability of true columns (1) in both A and B.
+
+=item B<P{A!B}>
+
+Probability of true columns (1) for A but not B.
+
+=item B<P{A!B}>
+
+Probability of true columns (1) for A but not B.
+
+=item B<P{!AB}>
+
+Probability of true columns (1) for B but not A.
+
+=item B<P{!A!B}>
+
+Probability of false columns (0) for both B and A.
+
+=item B<H(A)>
+
+Entropy of row A.
+
+H(A) = - P(A)*log[P(A)]  - [1-P(A)]*log[1-P(A)]
+
+=item B<H(B)>
+
+Entropy of row B.
+
+=item B<H(A,B)>
+
+Join entropy for rows A and B.
+
+=begin text
+
+    H(A,B) = - P(AB)*log[P(AB)]
+             - P(A!B)*log[P(A!B)]
+             - P(!AB)*log[P(!AB)]
+             - P(!A!B)*log[P(!A!B)]
+
+=end text
+
+=item B<H(A|B)>
+
+Conditional entropy for rows A and B (A given B).
+
+H(A|B) = H(A,B) - H(A)
+
+=item B<H(B|A)>
+
+Conditional entropy for rows B and A (B given A).
+
+H(B|A) = H(A,B) - H(B)
+
+=item B<I(A;B)>
+
+Mutual information between rows A and B.
+
+I(A;B) = H(A) + H(B) - H(A,B)
+
+=item B<U(A|B)>
+
+Uncertainty of A given B.
+
+U(A|B) = I(A;B)/U(A)
+
+=item B<U(B|A)>
+
+Uncertainty of B given A.
+
+U(B|A) = I(A;B)/U(B)
+
+=item B<Pval_r> 
+
+P-value P(X >= N{AB}) calcualted with the right tail of the
+hypergeometric distibution. Small Pval_r values indicate that the
+overlap between two profiles is significantly large.
+
+                       q     i  q-i     q
+P_value = P(X >= c) = SUM ( C  C     / C  )
+                      i=c    r  n-r     n
+
+
+=item B<Pval_l>
+
+P-value P(X <= N{AB}) calcualted with the left tail of the
+hypergeometric distibution. Small Pval_r values indicate that the
+overlap between two profiles is significantly small.
+
+
+
+
+=back
+
+=cut
+
+
+################################################################
+#### initialise parameters
+my $start_time = &AlphaDate();
+
+local $header=1;
+#local $base=2; ## Base for the logarithms
+local $base=exp(1); ## Base for the logarithms
+
+## Threshold parameters
+%lth = (); # lower threshold values
+%uth = (); # upper threshold values
+@supported_thresholds = qw( A B AB Pval_r Pval_l );
+$supported_thresholds = join ",", @supported_thresholds;
+%supported_threshold = ();
+foreach my $thr (@supported_thresholds) {
+    $supported_threshold{$thr} = 1;
+}
+
+
+local %infile = ();
+local %outfile = ();
+
+local $verbose = 0;
+#local $in = STDIN;
+local $out = STDOUT;
+
+&ReadArguments();
+
+################################################################
+#### check argument values
+$log_base = log($base); ## Calcualte it only once
+
+## Row names
+my %row_names = ();
+if (defined($infile{names})) {
+    &RSAT::message::TimeWarn(join ("\t", "Reading row names from file", $infile{names}));
+    ($names) = &OpenInputFile($infile{names});
+    while (<$names>) {
+	s/\r//;
+	chomp();
+	next if (/^;/);
+	next unless (/\S/);
+	my @fields = split "\t";
+	my $id = $fields[0];
+	my $name = $fields[1];
+	$row_names{lc($id)} = $name;
+#	warn join ("\t", "row names",  $id, $name), "\n" if ($main::verbose >= 10); 
+    }
+    close $names if ($infile{input});
+}
+
+################################################################
+### open output stream
+$out = &OpenOutputFile($outfile{output});
+
+################################################################
+#### print verbose
+&Verbose() if ($verbose);
+
+## ##############################################################
+## Read the profile table
+&RSAT::message::TimeWarn(join ("\t", "Reading profiles from file", $infile{input}));
+my $profiles = new RSAT::table();
+$profiles->readFromFile($infile{input}, "tab",header=>$header);
+
+# print $profiles->toString() if ($main::verbose >= 10);
+
+
+## ##############################################################
+## Get matrix dimensions
+my $nrow = $profiles->nrow();
+my $ncol = $profiles->ncol();
+my @row_names = $profiles->getAlphabet();
+my @header = $profiles->get_attribute("header");
+
+## ##############################################################
+## Calculate row statistics (probability, entropy)
+## Print the header
+if ($return{row_stats})  {
+    print $out join ("\t", 
+		     "; ID",
+		     "sum",
+		     "mean",
+		     "proba",
+		     "H"
+		    ), "\n";
+}
+&RSAT::message::TimeWarn("Calculating row statistics") if ($main::verbose >= 1);
+my @row_sum = ();
+my @row_mean = ();
+my @row_proba = ();
+my @row_H = (); ## Entropy per row
+for my $r (1..$nrow) {
+    my @row = $profiles->get_row($r);
+#    print $out join("\t", "row", $r, "length", $#row+1), "\n";
+#    print $out join "", @row, "\n";
+    my $row_sum = 0;
+    my $row_proba = 0;
+    for my $c (1..$ncol) {
+	$row_sum += $row[$c-1];
+	$row_proba += 1 if ($row[$c-1]);
+#	die join "\t", "sum != proba", $r, $c, $row[$c-1], $row_sum, $row_proba, "\n", if ($row_proba != $row_sum);
+    }
+    my $row_mean = $row_sum / $ncol;
+    $row_proba = $row_proba / $ncol;
+    my $row_H = 0;
+    if (($row_proba > 0) && ($row_proba < 1)) {
+	$row_H = - $row_proba*log($row_proba) - (1-$row_proba)*log(1-$row_proba);
+	$row_H /= $log_base;
+    }
+
+    push @row_sum, $row_sum;
+    push @row_mean, $row_mean;
+    push @row_proba, $row_proba;
+    push @row_H, $row_H;
+    
+    if ($return{row_stats}) {
+	print $out join ("\t", 
+			 $row_names[$r-1], 
+			 $row_sum,
+			 $row_mean,
+			 $row_proba,
+			 $row_H
+			), "\n";
+    }
+}
+
+## Store proba and entropy values
+$profiles->set_array_attribute("row_sum", @row_sum);
+$profiles->set_array_attribute("row_mean", @row_mean);
+$profiles->set_array_attribute("row_proba", @row_proba);
+$profiles->set_array_attribute("row_H", @row_H);
+
+## ##############################################################
+## Compare profiles (pairwise)
+&RSAT::message::TimeWarn("Calculating pairwise statistics") if ($main::verbose >= 1);
+
+## Print header for pairwise statistics
+print $out join ("\t", 
+		 "; ID A",
+		 "ID B",
+		 "name A",
+		 "name B",
+		 "N{A}",
+		 "N{B}",
+		 "N{AB}",
+		 "N{A!B}",
+		 "N{!AB}",
+		 "N{!A!B}",
+		 "H(A)",
+		 "H(B)",
+		 "H(A,B)", ## Join entropy
+		 "H(A|B)", ## Conditional entropy
+		 "H(B|A)", ## Conditional entropy
+#		 "D(A||B)", ## Relative entropy (=Kullback-Leiber distance)
+#		 "D(B||A)", ## Relative entropy (=Kullback-Leiber distance)
+		 "I(A;B)", ## Mutual information
+		 "U(A|B)", ## Uncertainty coefficient (Bowers et al., 2004)
+		 "U(B|A)", ## Uncertainty coefficient (Bowers et al., 2004)
+		 "Pval_r", ## Hypergeometric probability, right tail
+		 "Pval_l", ## Hypergeometric probability, left tail
+		), "\n";
+for my $r1 (1..$nrow) {
+    
+    &RSAT::message::TimeWarn(join (" ", "Starting row", $r1, "of", $nrow)) if ($main::verbose >= 2);
+
+    ## Identifier for the first row
+    my $ID_A = $row_names[$r1-1];
+    my $N_A = $row_sum[$r1-1];
+    ## check thresholds on N{A}
+    if ((defined($uth{A}) && ($N_A > $uth{A}))
+	|| ((defined($lth{A})) && ($N_A < $lth{A}))) {
+	warn join ("\t", "threshold skipped row", $r1, $ID_A, "A", $N_A), "\n" if ($main::verbose >= 2);
+	next;
+    }
+    
+
+    my $name_A = $ID_A;
+    if (defined($row_names{lc($ID_A)})) {
+	$name_A = $row_names{lc($ID_A)};
+    };
+    my @row1 = $profiles->get_row($r1);
+    
+    for my $r2 (($r1+1)..$nrow) {
+	## IDentifier for the second row
+	my $ID_B = $row_names[$r2-1];
+	if (defined($row_names{lc($ID_B)})) {
+	    $name_B = $row_names{lc($ID_B)};
+	} else {
+	    $name_B = $ID_B;
+	};
+
+	## sum per row
+	my $N_B = $row_sum[$r2-1];
+
+	## check thresholds on N{B}
+	if ((defined($uth{B}) && ($N_B > $uth{B}))
+	    || ((defined($lth{B})) && ($N_B < $lth{B}))) {
+	    warn join ("\t", "threshold skipped", $ID_B, "B", $N_B), "\n" if ($main::verbose >= 4);
+	    next;
+	}
+    
+
+	## Count frequencies of all A, B combinations
+	my @row2 = $profiles->get_row($r2);
+	my %N = (AB=>0,
+		 AnotB=>0,
+		 notAB=>0,
+		 notAnotB=>0
+		);
+	for my $c (0..($ncol-1)) {
+	    if ($row1[$c]) {
+		if ($row2[$c]) {
+		    $N{AB}++;
+		} else {
+		    $N{AnotB}++;
+		}
+	    } elsif ($row2[$c]) {
+		$N{notAB}++;
+	    } else {
+		$N{notAnotB}++;
+	    }
+	}
+
+	## check thresholds on N{AB}
+	if ((defined($uth{AB}) && ($N{AB} > $uth{AB}))
+	    || ((defined($lth{AB})) && ($N{AB} < $lth{AB}))) {
+	    warn join ("\t", "threshold skipped", $ID_A, $ID_B, "AB", $N{AB}), "\n" if ($main::verbose >= 4);
+	    next;
+	}
+
+	## Hypergeometric P-value for P(X>=N{AB})
+	$Pval_r = &cache_sum_of_hypergeometrics($N_A, $ncol, $N_B, $N{AB}, &min($N_A, $N_B));
+	## check thresholds on Pval_r
+	if ((defined($uth{Pval_r}) && ($Pval_r > $uth{Pval_r}))
+	    || ((defined($lth{Pval_r})) && ($Pval_r < $lth{Pval_r}))) {
+	    warn join ("\t", "threshold skipped", $ID_A, $ID_B, "Pval_r", $Pval_r), "\n" if ($main::verbose >= 4);
+	    next;	    
+	}
+
+	## Hypergeometric P-value for P(X<=N{AB})
+	$Pval_l = &cache_sum_of_hypergeometrics($N_A, $ncol, $N_B, 0, $N{AB});
+	## check thresholds on Pval_l
+	if ((defined($uth{Pval_l}) && ($Pval_l > $uth{Pval_l}))
+		 || ((defined($lth{Pval_l})) && ($Pval_l < $lth{Pval_l}))) {
+	    warn join ("\t", "threshold skipped", $ID_A, $ID_B, "Pval_l", $Pval_l), "\n" if ($main::verbose >= 4);
+	    next;
+	}
+
+
+	## Row entropy
+	my $H_A = $row_H[$r1-1];
+	my $H_B = $row_H[$r2-1];
+
+	## Probabilities and join entropy
+	my %P = ();
+	my $H_join = 0;
+	foreach $k (keys %N) {
+	    $P{$k} = $N{$k}/$ncol;
+	    if ($P{$k} > 0) {
+		$H_join -= $P{$k}*log($P{$k});
+	    }
+	}
+	$H_join /= $log_base;
+
+	## Conditional entropy
+	my $H_AgivenB = $H_join - $H_A;
+	my $H_BgivenA = $H_join - $H_B;
+	
+	## Mutual information
+	my $I = $H_A + $H_B  - $H_join;
+
+	## Uncertainty coefficient (as defined by Bowers et al, 2004)
+	my $U_AgivenB = 0;
+	if ($H_A > 0) {
+	    $U_AgivenB = $I/$H_A;
+	}
+	my $U_BgivenA = 0;
+	if ($H_B > 0) {
+	    $U_BgivenA = $I/$H_B;
+	}
+
+
+	$entropy_format = "%.5f";
+	
+	print $out join ("\t",  
+			 $ID_A,
+			 $ID_B,
+			 $name_A,
+			 $name_B,
+			 $N_A,
+			 $N_B,
+			 $N{AB},
+			 $N{AnotB},
+			 $N{notAB},
+			 $N{notAnotB},
+			 sprintf($entropy_format, $H_A),
+			 sprintf($entropy_format, $H_B),
+			 sprintf($entropy_format, $H_join),
+			 sprintf($entropy_format, $H_AgivenB),
+			 sprintf($entropy_format, $H_BgivenA),
+			 sprintf($entropy_format, $I),
+			 sprintf($entropy_format, $U_AgivenB),
+			 sprintf($entropy_format, $U_BgivenA),
+			 sprintf("%-.2g", $Pval_r),
+			 sprintf("%-.2g", $Pval_l),
+			), "\n";
+    }
+}
+
+
+
+################################################################
+###### finish verbose
+if ($verbose >= 1) {
+    my $done_time = &AlphaDate();
+    print $out "; Job started $start_time\n";
+    print $out "; Job done    $done_time\n";
+}
+
+
+################################################################
+###### close output stream
+close $out if ($outfile{output});
+
+
+exit(0);
+
+
+################################################################
+################### subroutine definition ######################
+################################################################
+
+
+################################################################
+#### display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+#### display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+#### Read arguments 
+sub ReadArguments {
+    foreach my $a (0..$#ARGV) {
+
+	## Verbosity
+=pod
+
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+	    
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp();
+	    
+	    ## List of options
+=pod
+
+=item B<-help>
+
+display options
+
+=cut
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions();
+	    
+
+	    ## Input file
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($ARGV[$a] eq "-i") {
+	    $infile{input} = $ARGV[$a+1];
+	    
+	    ## Output file
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outfile{output} = $ARGV[$a+1];
+	    
+	    ## base for the logarihtms
+=pod
+
+=item	B<-base #>
+
+Base for the logarithms (default: $base)
+
+=cut
+	} elsif ($ARGV[$a] eq "-base") {
+	    $base = $ARGV[$a+1];
+	    &RSAT::error::FatalError("base should be a real number") unless (&IsReal($base));
+	    &RSAT::error::FatalError("base should be larger than 1") if ($base <= 1);
+
+=pod
+    
+=item	B<-lth param lower_threshold>
+
+=item	B<-uth param upper_threshold>
+
+Threshold on some parameter (-lth: lower, -uth: upper threshold). 
+
+Profile pairs with a parameter value smaller (-lth) or larger
+(-uth) than the threshold are discarded. 
+
+Supported paramaters: 
+
+=over 8
+
+=item B<AB> number of common elements between two profiles
+
+=item B<Pval_r> P-value (right tail of the hypergeometric distribution)
+
+=item B<Pval_r> P-value (left tail of the hypergeometric distribution)
+
+=back
+
+=cut
+	    
+	    ### Upper threshold
+	    
+	} elsif ($ARGV[$a] eq "-lth") {
+	    my $thr_field = $ARGV[$a+1];
+	    my $thr_value =  $ARGV[$a+2];
+	    unless ($supported_threshold{$thr_field}) {
+		&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
+	    }
+	    $lth{$thr_field} = $thr_value;
+	    
+	    ### Lower threshold
+	} elsif ($ARGV[$a] eq "-uth") {
+	    my $thr_field = $ARGV[$a+1];
+	    my $thr_value =  $ARGV[$a+2];
+	    unless ($supported_threshold{$thr_field}) {
+		&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
+	    }
+	    $uth{$thr_field} = $thr_value;
+	    
+	    
+	    ## File containing row names
+=pod
+
+=item	B<-names row_name_file>
+
+File containing row names. A tab-delimited file with at least two
+columns. The first column is the row ID (the one used in the table),
+the second column contains the row name. Additional columns are
+ignored.
+
+=cut
+	} elsif ($ARGV[$a] eq "-names") {
+	    $infile{names} = $ARGV[$a+1];
+
+=pod
+    
+=back
+
+=cut
+	}
+    }
+
+
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $out "; compare-profiles ";
+    &PrintArguments($out);
+    if (defined(%infile)) {
+	print $out "; Input files\n";
+	while (($key,$value) = each %infile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+    if (defined(%outfile)) {
+	print $out "; Output files\n";
+	while (($key,$value) = each %outfile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+    my @th_keys = keys %lth;
+    push @th_keys, keys %uth;
+    if (scalar(@th_keys)) {
+	print $out "; Thresholds on parameters\n";
+	print $out ";\tparam\tlower\tupper\n";
+	foreach my $key (@th_keys) {
+	    my $lower = "NA";
+	    my $upper = "NA";
+	    if (defined($lth{$key})) {
+		$lower = $lth{$key};
+	    }
+	    if (defined($uth{$key})) {
+		$upper = $uth{$key};
+	    }
+	    print $out ";\t$key\t$lower\t$upper\n";
+	}
+    }
+    print $out "; Logarithm base\t$base\n";
+}
+
+## ##############################################################
+## Store the results of hypergeometrics to reduce calculation time
+sub cache_sum_of_hypergeometrics {
+    my ($m, $n, $k, $from, $to) = @_;
+    my $id = join "_", @_;
+    unless (defined($cache_sum_of_hypergeometrics{$id})) {
+	$cache_sum_of_hypergeometrics{$id} = &sum_of_hypergeometrics($m, $n, $k, $from, $to);
+    }
+    return $cache_sum_of_hypergeometrics{$id};
+}
+
+__END__
+
+=pod
+
+
+=head1 REFERENCES
+
+=over 4
+
+=item B<Pellegrini 1999>
+
+Pellegrini, M., Marcotte, E.M., Thompson, M.J., Eisenberg, D. and
+Yeates, T.O. (1999) Assigning protein functions by comparative genome
+analysis: protein phylogenetic profiles. Proc Natl Acad Sci U S A, 96,
+4285-4288.
+
+=item B<Bowers 2004>
+
+Bowers, P.M., Cokus, S.J., Eisenberg, D. and Yeates, T.O. (2004) Use
+of logic relationships to decipher protein network
+organization. Science, 306, 2246-2249.
+
+=back
+
+=cut

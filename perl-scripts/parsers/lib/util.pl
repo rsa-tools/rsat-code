@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: util.pl,v 1.6 2005/03/10 15:55:30 jvanheld Exp $
+# $Id: util.pl,v 1.7 2005/03/13 10:41:02 jvanheld Exp $
 #
 # Time-stamp: <2003-07-10 11:46:32 jvanheld>
 #
@@ -29,17 +29,18 @@ $generic_option_message = "	-h	detailed help
 		Directory where parsed data must be stored. The output
 		directory is calculated by adding the database name
 		and the current dte to this directory.
-	-v #	warn level
-		Warn level 1 corresponds to a restricted verbose
-		Warn level 2 reports all object instantiations
-		Warn level 3 reports failing get_attribute()
+	-v #	verbosity level
 	-obj	export data in object format (.obj file)
 		which is human-readable (with some patience and
 		a good cup of coffee)
 	-nocomp skip data compression
 	-clean	remove all files from the output directory before
 		parsing
-	-db	database schema (default=$main::default{schema}, current=$main::schema)
+
+	-schema	db schema (default=$main::default{schema}, current=$main::schema)
+	-user	db user (default=$main::default{user}, current=$main::user)
+	-pass	db password (default=$main::default{password}, current=$main::password)
+	-host	db host (default=$main::default{host}, current=$main::host)
 ";
 
 
@@ -74,9 +75,21 @@ sub ReadGenericOptions {	### warn level
     } elsif ($ARGV[$a] eq "-nocomp") {
 	$no_compression = 1;
 
+	### database host
+    } elsif ($ARGV[$a] eq "-host") {
+	$main::host = $ARGV[$a+1];
+
 	### database schema
     } elsif ($ARGV[$a] eq "-schema") {
 	$main::schema = $ARGV[$a+1];
+
+	### database user
+    } elsif ($ARGV[$a] eq "-user") {
+	$main::user = $ARGV[$a+1];
+
+	### database password
+    } elsif ($ARGV[$a] eq "-pass") {
+	$main::password = $ARGV[$a+1];
 
 	### export .obj file
     } elsif ($ARGV[$a] eq "-obj") {
@@ -142,14 +155,14 @@ sub intersection {
     return @result;
 }
 
-sub IsInteger {
-  my ($query) = @_;
-  if ($query =~ /^[\+\-]{0,1}\d+$/) {
-    return 1;
-  } else {
-    return 0;
-  }
-}
+# sub IsInteger {
+#   my ($query) = @_;
+#   if ($query =~ /^[\+\-]{0,1}\d+$/) {
+#     return 1;
+#   } else {
+#     return 0;
+#   }
+# }
 
 ################################################################
 #### Print a message in th error log file
@@ -170,43 +183,67 @@ sub next_count {
 }
 
 
+# ################################################################
+# #### print the command-line arguments
+# sub PrintArguments {
+#     my $local_out = $_[0];
+# #    unless ($local_out)  {
+# #	$local_out = STDOUT;
+# #    }
+#     my $argument_string = "";
+
+#     foreach my $a (@main::ARGV) {
+# 	if (($a =~ /\s+/)  ||
+# 	    ($a !~ /\S+/) ||
+# 	    ($a =~ /[\(\)\>\<\&]/)) {
+# 	    $argument_string .= " '$a'";
+# 	} else {
+# 	    $argument_string .= " $a";
+# 	}
+#     }
+#     print $local_out $argument_string, "\n" if ($local_out);
+#     return $argument_string;
+# }
+
 ################################################################
 #### Default verbose message
 sub DefaultVerbose {
-  warn "; directories\n";
-  while (($key, $value) = each %dir) {
-    warn sprintf ";\t%-23s\t%s\n", $key, $value;
-  }
-  warn "; input files\n";
-  while (($key, $value) = each %in_file) {
-    warn sprintf ";\t%-23s\t%s\n", $key, $value;
-  }
-  warn "; output files\n";
-  while (($key, $value) = each %out_file) {
-    warn sprintf ";\t%-23s\t%s\n", $key, $value;
-  }
+    warn "; $0 "; 
+    &PrintArguments(STERR);
+    warn "; directories\n";
+    while (($key, $value) = each %dir) {
+	warn sprintf ";\t%-23s\t%s\n", $key, $value;
+    }
+    warn "; input files\n";
+    while (($key, $value) = each %in_file) {
+	warn sprintf ";\t%-23s\t%s\n", $key, $value;
+    }
+    warn "; output files\n";
+    while (($key, $value) = each %out_file) {
+	warn sprintf ";\t%-23s\t%s\n", $key, $value;
+    }
 }
 
-################################################################
-#### Return date and time in alphabetical order (year - month - day)
-sub AlphaDate {
-  ### usage : $alpha_date = &AlphaDate;
-  my $date = `date +%Y_%m_%d_%H%M%S`;
-  $date =~ s/\s+$//;
-  return $date;
-}
+# ################################################################
+# #### Return date and time in alphabetical order (year - month - day)
+# sub AlphaDate {
+#   ### usage : $alpha_date = &AlphaDate;
+#   my $date = `date +%Y_%m_%d_%H%M%S`;
+#   $date =~ s/\s+$//;
+#   return $date;
+# }
 
 
-################################################################
-#### Trim the leading and trailing spaces of a string
-sub trim {
-  ### remove leading and trailing spaces from a string
-  ### usage $trimmed_string = &trim($string);
-  local $string = $_[0];
-  $string =~ s/\s*$//;
-  $string =~ s/^\s*//;
-  return $string;
-}
+# ################################################################
+# #### Trim the leading and trailing spaces of a string
+# sub trim {
+#   ### remove leading and trailing spaces from a string
+#   ### usage $trimmed_string = &trim($string);
+#   local $string = $_[0];
+#   $string =~ s/\s*$//;
+#   $string =~ s/^\s*//;
+#   return $string;
+# }
 
 ################################################################
 #### Trim the leading and trailing spaces of a string

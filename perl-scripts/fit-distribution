@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: fit-distribution,v 1.12 2004/08/02 22:16:19 jvanheld Exp $
+# $Id: fit-distribution,v 1.13 2005/03/13 10:41:01 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -144,13 +144,13 @@ while (<$in>) {
 
     for my $i (0..$#counts) {
 	my $occ = $values[$i] || 0;
-	&FatalError(join "\t", "Invalid number of occurrences (must be integer)", 
+	&RSAT::error::FatalError(join "\t", "Invalid number of occurrences (must be integer)", 
 		    "pattern=".$pattern, 
 		    "i=".$i, 
 		    "occ=".$occ, 
 		    "repet=".$repet) unless (&IsInteger($occ));
 	$repet += $counts[$i];
-	&FatalError(join "\t", "Invalid number of repetitions (must be integer)", 
+	&RSAT::error::FatalError(join "\t", "Invalid number of repetitions (must be integer)", 
 		    "pattern=".$pattern, 
 		    "i=".$i, 
 		    "occ=".$occ, 
@@ -409,7 +409,7 @@ sub ReadArguments {
 	    ### distribution  
 	} elsif ($ARGV[$a] eq "-distrib") {
 	    $distrib = lc($ARGV[$a+1]);
-	    &FatalError("Invalid distribution '$distrib'. Supported $supported_distrib") 
+	    &RSAT::error::FatalError("Invalid distribution '$distrib'. Supported $supported_distrib") 
 		unless ($supported_distrib{$distrib});
 
 	}

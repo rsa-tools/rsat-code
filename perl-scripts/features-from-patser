@@ -478,7 +478,7 @@ sub ReadArguments {
 	    $max_col_per_seq = $ARGV[$a+1];
 	    $max_scores_per_map  = $max_col_per_seq;
 	    unless (&IsNatural($max_col_per_seq)) {
-		&FatalError("$max_col_per_seq invalid number of columns");
+		&RSAT::error::FatalError("$max_col_per_seq invalid number of columns");
 	    }
 
 	    ### return a table
@@ -488,7 +488,7 @@ sub ReadArguments {
 	    @to_return = split ",", $ARGV[$a+1];
 	    foreach my $field (@to_return) {
 		unless ($supported_table_fields{$field}) {
-		    &FatalError("$field is not a supported return field");
+		    &RSAT::error::FatalError("$field is not a supported return field");
 		}
 		$table_fields{$field} = 1;
 	    }

@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank_lib.pl,v 1.13 2005/01/27 14:46:45 jvanheld Exp $
+# $Id: parse_genbank_lib.pl,v 1.14 2005/03/13 10:41:02 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -215,7 +215,7 @@ sub ParseGenbankFile {
 		$current_contig->set_attribute("seq_dir", $args{seq_dir});
 		$current_contig->set_attribute("file", $seq_file);
 		
-#		die join ("\t", $current_contig, $seq_file), "\n";
+		&RSAT::message::Debug ("Contig sequence file", $current_contig, $contig_id, $seq_file) if ($main::verbose >= 0);
 		
 		warn ("; Storing sequence ",
 		      $current_contig->get_attribute("id"), 

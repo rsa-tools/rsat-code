@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: MDCreport-from-dnapat,v 1.3 2004/05/07 07:20:03 jvanheld Exp $
+# $Id: MDCreport-from-dnapat,v 1.4 2005/03/13 10:41:01 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -63,7 +63,7 @@ while (<$in>) {
     if ($in_format eq "ft") {
 	($seq_id, $type, $pattern_id, $strand, $from, $to, $match, $score) = split "\t";
     } else {
-	&FatalError("$in_format is not a valid input format");
+	&RSAT::error::FatalError("$in_format is not a valid input format");
     }
     
     $seq_id =~ s/^seq_//;

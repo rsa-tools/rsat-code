@@ -1,7 +1,7 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: parse-yeast-from-mips.pl,v 1.4 2004/05/07 07:07:06 jvanheld Exp $
+# $Id: parse-yeast-from-mips.pl,v 1.5 2005/03/13 10:41:02 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:29:16 jvanheld>
 #
@@ -55,23 +55,23 @@ $synonym_file = $dir{genome}."Feature_names_Saccharomyces_cerevisiae.tab";
 
 #### check for existence of input directory
 unless (-d $dir{input}) {
-    &FatalError("Input directory $dir{input} does not exist\n");
+    &RSAT::error::FatalError("Input directory $dir{input} does not exist\n");
 }
 foreach my $dir (@chromosome_dirs) {
     unless (-d "$dir{input}/$dir") {
-	&FatalError("Chromosome directory $dir does not exist\n");
+	&RSAT::error::FatalError("Chromosome directory $dir does not exist\n");
     }
 }
 
 unless (-e $infile{orfs}) {
-    &FatalError("ORF location file $infile{orfs} does not exist\n");
+    &RSAT::error::FatalError("ORF location file $infile{orfs} does not exist\n");
 }
 
 #### create output directory if necessary
 unless (-d $dir{genome}) {
     system "mkdir -p $dir{genome}";
     unless (-d $dir{genome}) {
-	&FatalError("Could not create output directory $dir{genome}\n");
+	&RSAT::error::FatalError("Could not create output directory $dir{genome}\n");
     }
 }
 
@@ -203,15 +203,15 @@ sub Verbose {
 sub ConvertSequences {
     #### chromosome list file
     open CHR, ">$chr_file"
-	|| &FatalError("Cannot write chromosome sfile $chr_file\n");
+	|| &RSAT::error::FatalError("Cannot write chromosome sfile $chr_file\n");
 
     #### convert sequences into raw format (without any spacing) #########
     foreach my $chr (@chromosome_dirs) {
 	my @ascii_files = glob($dir{input}."/".$chr."/${chr}*.ascii");
 	if ($#ascii_files == -1) {
-	    &FatalError("Cannot find the ascii sequence for chromosome $chr\n");
+	    &RSAT::error::FatalError("Cannot find the ascii sequence for chromosome $chr\n");
 	} elsif ($#ascii_files > 0) {
-	    &FatalError("Multiple ascii files in directory $chr\n");
+	    &RSAT::error::FatalError("Multiple ascii files in directory $chr\n");
 	}
 	my $raw_file= $dir{genome}."/$chr.raw";
 	my $command = "convert-seq -i $ascii_files[0] -from raw -to raw -lw 0 -o $raw_file";
@@ -229,7 +229,7 @@ sub ConvertSequences {
 sub ParseFeatures {
     #### open output file
     open FEATURES, ">$feature_file"
-	|| &FatalError("Cannot create feature file $feature_file\n");
+	|| &RSAT::error::FatalError("Cannot create feature file $feature_file\n");
     print FEATURES join ("\t",  
 			 ";ID",	
 			 "TYPE",
@@ -260,7 +260,7 @@ sub ParseFeatures {
     $chr_conversion{Q_CONTIG} = "mito";
 
     open ORFS, $infile{orfs} 
-	|| &FatalError ("Cannot read ORF file $infile{orfs}") ;
+	|| &RSAT::error::FatalError ("Cannot read ORF file $infile{orfs}") ;
     my $header = <ORFS>; # skip header row
     my $l = 0;
     
@@ -329,9 +329,9 @@ sub ParseFeatures {
 
 sub ParseSynonyms {
     open SYNONYMS, ">$synonym_file"
-	|| &FatalError("Cannot create synonym file $synonym_file\n");
+	|| &RSAT::error::FatalError("Cannot create synonym file $synonym_file\n");
     open NAMES, "$infile{synonyms}" 
-	|| &FatalError ("Cannot read synonym file $infile{synonyms}") ;
+	|| &RSAT::error::FatalError ("Cannot read synonym file $infile{synonyms}") ;
     my $header = <NAMES>; # skip header row
     my $l = 0;
     while (<NAMES>) {
