@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.55 2004/01/29 14:57:05 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.56 2004/01/29 15:28:06 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -24,6 +24,7 @@ require "$RSA/perl-scripts/lib/RSA.classes";
 ################################################################
 ## initialisations	    
 $skip=0;
+$sliding_window_size = 3;
 $die_on_error = 1;
 $analyze_purged_sequences = 1;
 $repetitions=10000; ### Repetitions for the calibN
@@ -482,10 +483,10 @@ sub MatchPatterns {
 #### draw feature-map for the result of oligo-analysis
 sub DrawFeatureMap {
     my ($fmap_prefix, $title) = @_;
-    $title = $fmap_prefix unless ($title);
 
     ## check file names
     $fmap_prefix = $family{$family_name}->{oligo_ft_prefix} unless ($fmap_prefix);
+    $title = $fmap_prefix unless ($title);
 
     ### pattern matching
     die "Error : cannot read file $family{$family_name}->{seq_file}\n" unless (-r $family{$family_name}->{seq_file});
@@ -2196,15 +2197,19 @@ sub MDCreport {
 	foreach my $pattern (@patterns) {
 	    push @scores, $pattern->get_attribute("score");
 	}	
-	my $threshold = &max($scores);
+
+	## Threshold for reporting a match
+	my $threshold = 0;
 	if (scalar(@patterns) >= 1) {
-	    $threshold = $max_score + 0.01;
+	    $threshold = &max(@scores) + 0.01;
+	} elsif (scalar(@patterns) == 1) {
+	    $threshold = &max(@scores);
 	}
 
 #	close $in;
 
 	## Draw the feature map of the selected oligos
-	&MatchPatterns($oligo_file, $feature_prefix, "-window 10 -th $threshold");
+	&MatchPatterns($oligo_file, $feature_prefix, "-window $sliding_window_size -th $threshold");
 	&DrawFeatureMap($feature_prefix);
 
 	## Convert the features in MDC format
