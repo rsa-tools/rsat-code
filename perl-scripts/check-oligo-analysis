@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: check-oligo-analysis,v 1.7 2004/03/11 09:12:30 jvanheld Exp $
+# $Id: check-oligo-analysis,v 1.8 2004/05/07 07:20:03 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 23:00:11 jvanheld>
 #
@@ -178,7 +178,7 @@ sub SummarizeResults {
     $command .= " | classfreq -ci 1 -v 1 -min ${thosig}";
     $command .= " >> ${synthesis_file}; ";
 
-    &doit($command, $dry_run, $die_one_error, $verbose);
+    &doit($command, $dry_run, $die_on_error, $verbose);
 
     warn "; Synthesis file\t", ${synthesis_file}, "\n\n" if ($verbose >= 1);
 }
@@ -202,7 +202,7 @@ sub OneJob {
 
     ################################################################
     ###### execute the command
-    &doit($command, $dry_run, $die_one_error, $verbose);
+    &doit($command, $dry_run, $die_on_error, $verbose);
     warn "$result_file\n" if ($verbose >= 1);
 }
 
@@ -215,7 +215,7 @@ sub PrintHelp {
 NAME
 	check-oligo-analysis
 
-        2002 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
+        2002 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
 	
 DESCRIPTION
 	Check the program oligo-analysis by generating random

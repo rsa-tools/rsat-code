@@ -1278,7 +1278,7 @@ sub PrintHelp {
 NAME
 	XYgraph
 
-	1997-98 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
+	1997-98 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
 
 DESCRIPTION
 	Draws a XY graph with the numbers of the 2 first columns of 
@@ -1414,7 +1414,7 @@ OPTIONS
 		this column contains the label associated to each point
 		(this info is used when the -htmap option is active).
 WEB VERSION
-	http://www.ucmb.ulb.ac.be/bioinformatics/rsa-tools/
+	http://www.scmbb.ulb.ac.be/bioinformatics/rsa-tools/
 
 End_of_Help
   close HELP;

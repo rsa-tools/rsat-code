@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-consensus,v 1.6 2004/03/22 22:29:55 jvanheld Exp $
+# $Id: matrix-from-consensus,v 1.7 2004/05/07 07:20:03 jvanheld Exp $
 #
 # Time-stamp: <2004-03-22 22:39:41 jvanheld>
 #
@@ -72,7 +72,7 @@ sub PrintHelp {
 NAME
 	matrix-from-consensus
 
-        1999 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
+        1999 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
 	
 USAGE
         matrix-from-consensus [-i inputfile] [-o outputfile] [-v]

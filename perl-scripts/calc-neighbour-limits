@@ -1,7 +1,7 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: calc-neighbour-limits,v 1.6 2003/10/29 09:04:12 jvanheld Exp $
+# $Id: calc-neighbour-limits,v 1.7 2004/05/07 07:20:03 jvanheld Exp $
 #
 # Time-stamp: <2003-07-06 20:15:37 jvanheld>
 #
@@ -27,6 +27,14 @@ local $out = STDOUT;
 
 
 #### check argument values ####
+
+#### accepted feature types
+unless (defined %accepted_feature_types) {
+    %accepted_feature_types = %supported_feature_types;
+}
+$feature_types = join ",", keys (%accepted_feature_types);
+
+
 die "Error: you should specify an organism\n$supported_organisms\n"
     unless ($organism_name);
 
@@ -38,7 +46,7 @@ $out = &OpenOutputFile($outfile{output});
 
 ###### execute the command #########
 &CheckOrganism($organism_name);
-&ReadFeatures($organism_name);
+&ReadFeatures($organism_name,"",$feature_types);
 &CalcNeighbourLimits();
 
 ###### print output ######
@@ -100,7 +108,7 @@ sub PrintHelp {
 NAME
 	calc-neighbour-limits
 
-        1999 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
+        1999 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
 	
 USAGE
         calc-neighbour-limits [-v] -org genus_species
