@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: retrieve-seq,v 1.19 2002/04/24 23:16:33 jvanheld Exp $
+# $Id: retrieve-seq,v 1.20 2002/04/25 00:23:35 jvanheld Exp $
 #
-# Time-stamp: <2002-03-29 12:18:33 jvanheld>
+# Time-stamp: <2002-04-25 02:21:32 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -96,13 +96,35 @@ if ($to < $from) {
     $to = $from;
     $from = $tmp;
 }
+$seq_length = abs($to - $from + 1);
 
 ################################################################
 ## organism data 
-warn "Reading ORF table for $organism_name\n" if ($warn_level >= 1);
-&ReadOrfPositions($organism_name, $feature_table_file);
-warn "Reading synonyms for $organism_name\n" if ($warn_level >= 1);
-&ReadSynonyms($organism_name);
+
+
+#### random genomic segments
+if ($sequence_type eq "random genomic segments") {
+    #### calculate chromosome lengths
+    @chroms = sort keys %chromosome_seq;
+    @chr_start;
+    @chr_len;
+    $chr_start[0] = 0;
+    for my $c (0..$#chroms) {
+	$chr_len[$c] = $chromosome_seq{$chroms[$c]}->get_length();
+	$chr_start[$c+1] = $chr_start[$c] +  $chr_len[$c];
+	warn join ("\t", ";\tchromosome", $c+1, $chroms[$c], $chr_len[$c], $chr_start[$c], $chr_start[$c+1]), "\n" 
+	    if ($verbose >= 0);
+    }
+    $genome_len = $chr_start[$#chroms+1];
+    warn join ("\t", ";", "genome length", $genome_len), "\n"	    
+	if ($verbose >= 0);
+    
+} else {
+    warn "Reading ORF table for $organism_name\n" if ($warn_level >= 1);
+    &ReadOrfPositions($organism_name, $feature_table_file);
+    warn "Reading synonyms for $organism_name\n" if ($warn_level >= 1);
+    &ReadSynonyms($organism_name);
+}
 
 #### no overlapping with upstream orfs
 if ($noorf) {
@@ -126,9 +148,14 @@ if ($random_orfs > 0) {
     for my $i (1..$random_orfs) {
 	my $remaining_orfs = $#orfs+1;
 	my $selected = int(rand($remaining_orfs));
-	warn ";", join ("\t", "Selected ORF", $selected, $remaining_orfs), "\n" if ($warn_level >= 3);
+	warn ";", join ("\t", "Selected ORF", $selected, $remaining_orfs), "\n" if ($warn_level >= 0);
 	push @queries, splice(@orfs, $selected, 1);
     }
+} elsif ($num_rand_sel) {
+    for $i (1..$num_rand_sel) {
+	push @queries, $seq_length;
+    }
+
 } elsif (@queries == ()) {
     #### read queries
     ($in, $input_dir) = &OpenInputFile($query_file);
@@ -176,17 +203,19 @@ if ($warn_level) {
 
 ################################################################
 #### retrieve the sequences ####
-my $seq_length = abs($to - $from + 1);
 my $q = 0;
-foreach $query (@queries) {
+
+foreach my  $query (@queries) {
     $q++;
-    unless (defined($orf_id{uc($query)})) {
+
+    #### check the validity of the query
+    unless (($sequence_type eq "random genomic segments") ||
+	    (defined($orf_id{uc($query)}))) {
 	my $warn_message = ";WARNING\tinvalid query $query"; 
-#      warn $warn_message, "\n" unless $no_warn;
 	push @warnings, $warn_message;
 	next;
     }
-
+    
     $orf_id = $orf_id{uc($query)};
     if ($name{$orf_id}) {
 	$name = $name{$orf_id}; 
@@ -194,7 +223,7 @@ foreach $query (@queries) {
 	$name = $orf_id;
     }
     $chrom = $chr{$orf_id};
-
+    
     $orf_left = $left{$orf_id};
     $orf_right = $right{$orf_id};
     $orf_strand = $strand{$orf_id};
@@ -231,20 +260,44 @@ foreach $query (@queries) {
 	### ORF (wargning: this does not splice out introns
     } elsif ($sequence_type eq "unspliced ORF") {
 	$reg_left = $orf_left;
-	    $reg_right = $orf_right;
-
-	#### random genomic segments
+	$reg_right = $orf_right;
+	
+    #### select random genommic positions
     } elsif ($sequence_type eq "random genomic segments") {
-	my $chr_length = $chromosome_seq{$chrom}->get_length();
-	my $max_pos = $chr_length - $seq_length +1;
-	$reg_left = int(rand($max_pos));
+#	foreach my $seq_length (@seq_lengths) {
+	my $seq_length = $query;
+	my $max_pos = $genome_len - ($#chroms + 1) * ($seq_length  - 1); ### skip the last  L-1 positions of each chromosome because they would not allow a sequence of length $seq_length
+	my $position = int(rand($max_pos));
+	my $c = 0;
+	warn join("\t", $seq_length, $position, $max_pos, $genome_len), "\n" if ($warn_level >= 3);
+	while ($position > ($chr_len[$c] - $seq_length + 1)) {
+	    $position -= $chr_len[$c]; 
+	    $c++;
+	}
+	$chrom = $chroms[$c];
+	$chr_length = $chromosome_seq{$chroms[$c]}->get_length();
+	$reg_left = $position;
 	$reg_right = $reg_left + $seq_length -1;
 	if (int(rand(2))) {
 	    $orf_strand = "D";
 	} else {
 	    $orf_strand = "R";
 	};
-	warn join("\t", $chrom, $chr_length, $seq_length, $max_pos, $reg_left, $reg_right, $orf_strand), "\n" if ($warn_level >= 3);
+	warn join("\t", $chrom, $reg_left, $reg_right, $orf_strand, $seq_length, $chr_length, $position, $max_pos), "\n" if ($warn_level >= 3);
+
+
+#  	#### random genomic segments
+#      } elsif ($sequence_type eq "random genomic segments") {
+#  	my $chr_length = $chromosome_seq{$chrom}->get_length();
+#  	my $max_pos = $chr_length - $seq_length +1;
+#  	$reg_left = int(rand($max_pos));
+#  	$reg_right = $reg_left + $seq_length -1;
+#  	if (int(rand(2))) {
+#  	    $orf_strand = "D";
+#  	} else {
+#  	    $orf_strand = "R";
+#  	};
+#  	warn join("\t", $chrom, $chr_length, $seq_length, $max_pos, $reg_left, $reg_right, $orf_strand), "\n" if ($warn_level >= 3);
     }
     
     
@@ -309,6 +362,7 @@ foreach $query (@queries) {
     &PrintNextSequence($out,$out_format,$line_width,$current_seq,$current_id, @comments);
 }
 
+
 print $out (join "\n", @warnings), "\n" 
     unless $no_warn;
 
@@ -352,6 +406,11 @@ $supported_organisms
 		To implement in the future
 			introns
 			coding
+
+		The sub-option 
+		    -type random
+		requires to use the -n for specifying the number of sequences.
+	-n number of sequecnes (only with -type random) 
 	-q query
 		The query should be an orf identifier (eg 'metR').
 		The query is case-insensitive.
@@ -456,6 +515,7 @@ retrieve-seq options
 -org		organism
 $supported_organisms
 -type		upstream | downstream | orf | random
+-n		number of sequences (only with -type random)
 -randsels #	random selection of # ORFs.
 -i		query file. This option is incompatible with -q.
 -q		query
@@ -532,7 +592,17 @@ sub ReadArguments {
 	    #### organism
 	} elsif ($ARGV[$a] eq "-org") {
 	    $organism_name =$ARGV[$a+1];
-	    
+
+	    #### organism
+	} elsif ($ARGV[$a] eq "-n") {
+	    $num_rand_sel =$ARGV[$a+1];
+	    unless (&IsNatural($num_rand_sel)) {
+		&FatalError("The number of sequences must be a natural number");
+	    }
+	    unless ($num_rand_sel > 0) {
+		&FatalError("The number of sequences must be a strictly positive");
+	    }
+
 	    #### type
 	} elsif ($ARGV[$a] eq "-type") {
 	    if ($ARGV[$a+1] =~ /^up/i) {
