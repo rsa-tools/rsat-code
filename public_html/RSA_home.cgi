@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSA_home.cgi,v 1.9 2002/01/06 23:29:43 jvanheld Exp $
+# $Id: RSA_home.cgi,v 1.10 2002/06/10 14:16:11 jvanheld Exp $
 #
-# Time-stamp: <2002-01-07 00:29:37 jvanheld>
+# Time-stamp: <2002-06-10 16:15:14 jvanheld>
 #
 ############################################################
 #### this cgi script fills the HTML form for the program dna-pattern
@@ -96,13 +96,14 @@ print <<EndText;
 
   <P> An increasing number of organisms are supported on this web
   site. We installed a few eukaryotes (<i>Saccharomyces
-  cerevisiae</i>, <i>Drosophila melanogaster</i>, <i>Caenorhabditis
-  elegans</i>, <i>Arabidopsis thaliana</i>) and all the completely
-  sequenced bacterial genomes (from Genbank). We are willing to
-  install additional organisms provided their genome has been fully
-  sequenced and is publicly available. If you would like to add such
-  an organism, please contact <a target=_top
-  href="http://www.ucmb.ulb.ac.be/~jvanheld/">Jacques van Helden</a>.
+  cerevisiae</i>, <i>Schizosaccharomyces pombe</i>, <i>Drosophila
+  melanogaster</i>, <i>Caenorhabditis elegans</i>, <i>Arabidopsis
+  thaliana</i>) and all the completely sequenced bacterial genomes
+  (from Genbank). We are willing to install additional organisms
+  provided their genome has been fully sequenced and is publicly
+  available. If you would like to add such an organism, please contact
+  <a target=_top href="http://www.ucmb.ulb.ac.be/~jvanheld/">Jacques
+  van Helden</a>.
 
   <P>
   This web site is freely available for academic users. For users from
@@ -116,11 +117,11 @@ print <<EndText;
   <TR ALIGN=CENTER VALIGN=BOTTOM>
 
   <TD>
-  <A HREF="http://www.ucmb.ulb.ac.be/bioinformatics/rsa-tools/" target="_top">
+  <A HREF="http://rsat.ulb.ac.be/rsat/" target="_top">
   <B>Belgium</B><BR>
   <IMG SRC="manneken_pis.jpg" HEIGHT=80 WIDTH=53 BORDER=0><BR>
   <FONT SIZE=-2>
-  http://www.ucmb.ulb.ac.be/bioinformatics/rsa-tools/</A>
+  http://rsat.ulb.ac.be/rsat/</A>
   </FONT>
   </TD>
 
@@ -147,7 +148,7 @@ EndText
 
 @orgs =  &ListSupportedOrganisms("keys");
 
-print "<H4>",$#orgs ," Organisms supported on <A HREF='$WWW_RSA' target=_top>",$WWW_RSA,"</A></H4>\n";
+print "<H4>",$#orgs ," organisms supported on <A HREF='$WWW_RSA' target=_top>",$WWW_RSA,"</A></H4>\n";
 print &ListSupportedOrganisms("html_list");
 
 &UpdateLogFile;
