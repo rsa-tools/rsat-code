@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank.pl,v 1.8 2003/10/29 09:04:13 jvanheld Exp $
+# $Id: parse_genbank.pl,v 1.9 2003/11/05 15:49:59 oly Exp $
 #
 # Time-stamp: <2003-10-01 15:41:54 jvanheld>
 #
@@ -102,15 +102,19 @@ package main;
 
     ### select all organisms if none was selected (-org)
     if (($export{all}) || 
-	($#selected_organisms < 0)) {
-	@selected_organisms = &SelectAllOrganisms();
-    }
-    #### check existence of input directories
-    foreach my $org (@selected_organisms) {
-	my $org_dir = "${org}/";
-	my $data_dir = $dir{genbank}."/${org_dir}";
-	die ("Error: directory ", $data_dir, " does not exist.\n") 
-	    unless (-d $data_dir);
+	   ($#selected_organisms < 0)) {
+	   %data_dir = &SelectAllOrganisms();
+	   foreach my $org (keys %data_dir) {
+	   		push @selected_organisms, $org;
+	   }
+    } else {
+	    #### check existence of input directories
+	    foreach my $org (@selected_organisms) {
+		my $org_dir = "${org}/";
+		my $data_dir = $dir{genbank}."${org_dir}";
+		die ("Error: directory ", $data_dir, " does not exist.\n") 
+		    unless (-d $data_dir);
+		$data_dir{$org} = $data_dir;
     }
 
 
@@ -145,10 +149,9 @@ package main;
     
 
     #### define organism-specific data directories
-    my %data_dir = ();
-    foreach my $org (@selected_organisms) {
-	my $org_dir = "${org}/";
-	$data_dir{$org} = $dir{genbank}."/${org_dir}";
+#    foreach my $org (@selected_organisms) {
+#	my $org_dir = "${org}/";
+#	$data_dir{$org} = $dir{genbank}."${org_dir}";
 #	die ("Error: directory ", $data_dir, " does not exist.\n") 
 #	    unless (-d $data_dir);
 
@@ -196,7 +199,7 @@ package main;
     if ($verbose >=1) {
 	warn ";TEST\n" if ($test); 
 	
-	&DefaultVerbose;
+	&DefaultVerbose();
 
 	warn "; Selected organisms\n;\t", join("\n;\t", @selected_organisms), "\n";
 	warn "; Parsed organisms\n";
@@ -473,16 +476,29 @@ sub ReadArguments {
     }
 }
 
-
+## find all gbk files in the genbank directory, and deduce the directories containing an organism
 sub SelectAllOrganisms {
     my @organisms = ();
     my $dir = $dir{genbank};
-    die "Error: directory $dir does not exist.\n"
-	unless (-d $dir);
-    chdir $dir;
-    @organisms = glob "Bacteria/*_*";
-    die "Error: there are no organisms in the directory $dir.\n"
-	unless $#organisms >=0;
-    return @organisms;
+    die "Error: directory $dir does not exist.\n" unless (-d $dir);
+#    chdir $dir;
+#    @organisms = glob "Bacteria/*_*";   ####problem: recognizes all_bacteria files (not directories!)
+	$gbk_dirs = `find $dir -name '*.gbk*' -maxdepth 2 -exec dirname {} \\; | sort -u`;
+	$gbk_dirs .= `find $dir/Bacteria -name '*.gbk*' -maxdepth 2 -exec dirname {} \\; | sort -u`;
+	
+	@gbk_dirs = split "\n", $gbk_dirs;
+	my %gbk_dirs = ();
+	foreach my $d (@gbk_dirs) {	
+		my $organism_name = `basename $d`;
+		chomp($organism_name);
+		$gbk_dirs{$organism_name} = $d;
+		warn join( "\t", $organism_name, $d), "\n" if ($verbose >= 2);
+	}
+	
+	@organisms = keys %gbk_dirs;
+	unless ($#organisms >=0) {
+	    die "Error: could not identify the organisms in the directory $dir.\n" ;
+	}
+    return %gbk_dirs;
 }
 
