@@ -63,8 +63,9 @@ $TMP = "$RSA/public_html/tmp";
 $LOGS = "$RSA/logs";
 $SCRIPTS = "$RSA/perl-scripts";
 
+my $login = getlogin;
+
 if ($config_site eq "rubens_old") {
-    my $login = getlogin;
     if (($login eq "webserv") || !($login)) {
 #	@remote_servers = qw ( 164.15.61.35 );
 	@remote_servers = qw ( bouts jordaens khnopff magritte paulus tytgat );
@@ -76,8 +77,9 @@ if ($config_site eq "rubens_old") {
 	$RSH = "rsh -l jvanheld ${remote_server} $NICE";
 	$SCRIPTS = "$RSH ~jvanheld/rsa-tools/perl-scripts";
 	$BIN = "$RSH ~jvanheld/rsa-tools/bin";
-
+    }	
 }  elsif ($config_site eq "rubens") {
+    if (($login eq "webserv") || !($login)) {
 	$remote_server = "164.15.61.35";
 	$NICE = "nice +5";
 	$RSH = "rsh -l jvanheld ${remote_server} $NICE";
@@ -85,8 +87,9 @@ if ($config_site eq "rubens_old") {
 	$BIN = "$RSH /home/rsa/rsa-tools/perl-scripts";
     }
 }
-$HTML = "$RSA/public_html";
-$WWW_TMP = "$WWW_RSA/tmp";
+
+
+$HTML = "$RSA/public_html"; $WWW_TMP = "$WWW_RSA/tmp";
 $ENV{SERVER_ADMIN} = "jvanheld\@ucmb.ulb.ac.be";
 
 $counter_file = "$LOGS/count-file";
@@ -143,11 +146,12 @@ $latin{16} = 'XVI';
 ### open input file ###
 sub OpenInputFile {
     #### usage 
-    ####    $in = &OpenInputFile($filename);
+    ####    ($in,$input_dir) = &OpenInputFile($filename);
     #### returns a file handle
     my $filename = $_[0];
     my $input_stream = STDIN; ### default is standard input
-    
+    my ($short_file_name, $input_dir) = ();
+
     if ($filename) {
 	unless (-e $filename) {
 	    if (-e "${filename}.gz") {
@@ -164,9 +168,9 @@ sub OpenInputFile {
 	    exit;
 	}
 	$input_stream = INPUT;
-	$input_dir = `dirname $filename`;
-	chomp $input_dir;
+	($input_dir, $short_file_name) = &SplitFileName($filename);
     } 
+#    warn join "\t", $input_dir, $short_file_name, "\n";
     return ($input_stream, $input_dir);
 }
 
@@ -183,7 +187,7 @@ sub OpenOutputFile {
 	    $to_open = ">$filename";
 	}
 	unless (open(OUTPUT, "$to_open")) {
-	    die "\tError : cannot write output file $filename\n";
+	    &FatalError ("\tError : cannot write output file $filename\n");
 	}
 	$output_stream = OUTPUT;
     } else {
@@ -360,6 +364,7 @@ sub SplitFileName {
     if ($full_file_name =~ /[^(\/)]+$/) {
 	$dir = $`;
 	$short_file_name = $&;
+#	$dir =~ s|/$||; #### suppress the trailing /
     }
     return ($dir, $short_file_name);
 }
@@ -448,7 +453,6 @@ sub PrintArguments {
 
 ### organism ###
 sub CheckOrganism {
-
     my ($organism_name, $feature_table_file) = @_;
     my $organism_object = new RSA::Organism;
 
@@ -457,65 +461,63 @@ sub CheckOrganism {
     &FatalError("You should specify an organism.", 
 		"Supported organisms\n".&ListSupportedOrganisms)
 	unless ($organism_name);
-
-    if ($supported_organism{$organism_name}) {
-	unless ($feature_table_file) {
-	    $feature_table_file = $supported_organism{$organism_name}->{'features'};
-	}	
-	&Warning("Feature table\t$feature_table_file") if ($warn_level >= 2);
-	$genome_file = $supported_organism{$organism_name}->{'genome'};
-	$genome_seq_format = $supported_organism{$organism_name}->{'seq_format'};
+    
+    unless ($supported_organism{$organism_name}) {
+	&FatalError("Unsupported organism $organism_name.",
+		    "Supported on this site : \n".&ListSupportedOrganisms());
+    }
+    
+    unless ($feature_table_file) {
+	$feature_table_file = $supported_organism{$organism_name}->{'features'};
+    }	
+    &Warning("Feature table\t$feature_table_file") if ($warn_level >= 2);
+    $genome_file = $supported_organism{$organism_name}->{'genome'};
+    $genome_seq_format = $supported_organism{$organism_name}->{'seq_format'};
+    
+    if ($genome_seq_format eq "raw") {
+	### open a direct read access to the genome file
+	$chr = $organism_name;
+	$genome_file =~ s/\.fna$/\.raw/;
+	$chromosome_seq{$chr} = new RSA::SequenceOnDisk (filename=>  $genome_file,
+							 id=>        $chr,
+							 circular=>  1, ### for bacterial genomes
+							 organism=>  $organism_name);
+	$chromosome{$chr} = new RSA::Chromosome();
+	$chromosome{$chr}->set_name($chr);
+	$chromosome{$chr}->set_sequence($chromosome_seq{$chr});
+	$chromosome{$chr}->set_organism($organism_name);
+	$organism_object->add_chromosome($chromosome{$chr});
 	
-	if ($genome_seq_format eq "raw") {
-	    ### open a direct read access to the genome file
-#	    $chrom = "genome";
-	    $chr = $organism_name;
-	    $genome_file =~ s/\.fna$/\.raw/;
-	    $chromosome_seq{$chr} = new RSA::SequenceOnDisk (filename=>  $genome_file,
-							       id=>        $chr,
-							       circular=>  1, ### for bacterial genomes
-							       organism=>  $organism_name);
+    } elsif ($genome_seq_format eq "filelist") {
+	my ($seq_dir, $seq_list) = &SplitFileName($genome_file);
+	unless (-e $genome_file) {
+	    &FatalError("Genome file $genome_file does not exist.");
+	}
+	open FILES, $genome_file || 
+	    &Fatalrror("Cannot open genome file $genome_file for reading.");
+	while (<FILES>) {
+	    chomp;
+	    ($seq_file, $chr, $type) = split "\t";
+	    if ($type eq "circular") {
+		$circular = 1;
+	    } else {
+		$circular = 0;
+	    }
+	    $chr = $seq_file unless ($chr);
+	    $chromosome_seq{$chr} = new RSA::SequenceOnDisk (filename=>  $seq_dir.$seq_file,
+							     id=>        $chr,
+							     circular=>  $circular, 
+							     organism=>  $organism_name);
 	    $chromosome{$chr} = new RSA::Chromosome();
 	    $chromosome{$chr}->set_name($chr);
 	    $chromosome{$chr}->set_sequence($chromosome_seq{$chr});
 	    $chromosome{$chr}->set_organism($organism_name);
 	    $organism_object->add_chromosome($chromosome{$chr});
-
-	} elsif ($genome_seq_format eq "filelist") {
-	    my ($seq_dir, $seq_list) = &SplitFileName($genome_file);
-	    unless (-e $genome_file) {
-		&FatalError("Genome file $genome_file does not exist.");
-	    }
-	    open FILES, $genome_file || 
-		&Fatalrror("Cannot open genome file $genome_file for reading.");
-	    while (<FILES>) {
-		chomp;
-		($seq_file, $chr, $type) = split "\t";
-		if ($type eq "circular") {
-		    $circular = 1;
-		} else {
-		    $circular = 0;
-		}
-		$chr = $seq_file unless ($chr);
-		$chromosome_seq{$chr} = new RSA::SequenceOnDisk (filename=>  $seq_dir.$seq_file,
-								 id=>        $chr,
-								 circular=>  $circular, 
-								 organism=>  $organism_name);
-		$chromosome{$chr} = new RSA::Chromosome();
-		$chromosome{$chr}->set_name($chr);
-		$chromosome{$chr}->set_sequence($chromosome_seq{$chr});
-		$chromosome{$chr}->set_organism($organism_name);
-		$organism_object->add_chromosome($chromosome{$chr});
 #		warn join "\t", $seq_file, $chr, $chromosome_seq{$chr}->get_attribute("filename"), "\n";
-	    }
-	    close FILES;
-	} else {
-	    &FatalError("Unsupported genome sequence format $genome_seq_format");
 	}
+	close FILES;
     } else {
-	&FatalError("Unsupported organism $organism_name.",
-		    "Supported on this site : \n".&ListSupportedOrganisms());
-	
+	&FatalError("Unsupported genome sequence format $genome_seq_format");
     }
     return $organism_object;
 }
@@ -559,7 +561,7 @@ sub ReadOrfPositions {
     
     
     ### read ORF positions
-    my $orfs = &OpenInputFile($feature_table_file);
+    my ($orfs) = &OpenInputFile($feature_table_file);
     my $linenb = 0;
     while (<$orfs>) {
 	$linenb++;
@@ -668,7 +670,7 @@ sub ReadOrfPositions {
 ### note: this version is valid for yeast only
 #  sub ReadYeastOrfPositions {
 #      $feature_table_file = $supported_organism{$organism_name}->{'features'};
-#      $orfs = &OpenInputFile($feature_table_file);
+#      ($orfs) = &OpenInputFile($feature_table_file);
 #      while (<$orfs>) {
 #  	next if ((/^;/) || (/^\#/) || (/^--/));
 #  	next unless (/\S/);
@@ -727,7 +729,7 @@ sub ReadSynonyms {
 	return;
     }
 
-    $syn = &OpenInputFile( $supported_organism{$organism_name}->{'synonyms'});
+    ($syn) = &OpenInputFile( $supported_organism{$organism_name}->{'synonyms'});
     if (($organism_name eq "") || 
 	($organism_name eq "yeast")
 	){
