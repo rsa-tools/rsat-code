@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSA_home.cgi,v 1.12 2003/10/29 09:04:36 jvanheld Exp $
+# $Id: RSA_home.cgi,v 1.13 2003/11/28 16:48:12 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -125,7 +125,7 @@ print <<EndText;
 <B>
 <font face=arial,helvetica color='#ff0000'>Warnings</font>
 <ul>
-<li><a href=warnings.html>human and mouse genomes</a>
+<li><a href=warnings.html>Human, mouse and rat genomes</a>
 </ul>
 </b>
 </table>
