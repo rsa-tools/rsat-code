@@ -2,15 +2,15 @@
 use CGI;
 use CGI::Carp;
 
-#### redirect error log to a file
-BEGIN {
-    $ERR_LOG = "/dev/null";
-#    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
-    use CGI::Carp qw(carpout);
-    open (LOG, ">> $ERR_LOG")
-	|| die "Unable to redirect log\n";
-    carpout(*LOG);
-}
+#  #### redirect error log to a file
+#  BEGIN {
+#      $ERR_LOG = "/dev/null";
+#  #    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
+#      use CGI::Carp qw(carpout);
+#      open (LOG, ">> $ERR_LOG")
+#  	|| die "Unable to redirect log\n";
+#      carpout(*LOG);
+#  }
 
 
 ### for debugging
@@ -70,7 +70,7 @@ sub RSA_header {
 sub SelectOutput {
   print "<B>Output</B>&nbsp;";
   print $query->radio_group(-name=>'output',
-			    -values=>['display','e-mail'],
+			    -values=>['display','server','e-mail'],
 			    -default=>'display');
   print $query->textfield(-name=>'user_email',
 			  -size=>30);
@@ -384,7 +384,24 @@ sub Print_CGI_Input {
 }
 
 
+#### save the result on the server
 
+sub ServerOutput {
+    my ($command, $tmp_file_name) = @_;
+
+    ## temporary file for storing the result
+    unless ($tmp_file_name) {
+	$tmp_file_name = sprintf "result.%s", &AlphaDate.".txt";
+    }
+    
+    print "Your task is currently being processed ....<P>";
+    print "<PRE>$command > $TMP/$tmp_file_name</PRE>" if ($ECHO >= 1);
+    system "$command > $TMP/$tmp_file_name";
+    print "Click the link below to see the result<P>";
+    print "<ul><a href=$WWW_RSA/tmp/$tmp_file_name>$WWW_RSA/tmp/$tmp_file_name</a></ul>";
+    print "This file will remain on the server for 24h.<P>";
+    &DelayedRemoval("$TMP/$tmp_file_name");
+}
 
 #### send e-mail with the result of a command
 sub EmailTheResult {
