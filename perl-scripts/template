@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: template,v 1.13 2003/12/28 19:49:35 jvanheld Exp $
+# $Id: template,v 1.14 2004/01/05 11:22:11 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -55,7 +55,7 @@ close $in if ($infile{input});
 
 ################################################################
 ###### finish verbose
-if ($verbose) {
+if ($verbose >= 1) {
     my $done_time = &AlphaDate();
     print $out "; Job started $start_time\n";
     print $out "; Job done    $done_time\n";
