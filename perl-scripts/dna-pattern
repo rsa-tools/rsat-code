@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dna-pattern,v 1.5 2001/01/13 11:13:21 jvanheld Exp $
+# $Id: dna-pattern,v 1.6 2001/04/20 13:38:08 jvanheld Exp $
 #
-# Time-stamp: <2001-01-13 12:13:15 jvanheld>
+# Time-stamp: <2001-04-20 15:37:48 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -21,7 +21,7 @@ $start_date = &AlphaDate;
 
 #### init variables ####
 $strands_to_search = "DR";
-$in_format = "ig";
+$in_format = "fasta";
 #$search_method = "IUPAC";
 $search_method = "regexp";
 
@@ -135,6 +135,8 @@ while ((($current_seq, $sequence_id, @comments) = &ReadNextSequence($in, $in_for
     $D_regular_expression = &IUPAC_to_regular($expression);
     $R_regular_expression = &ReverseComplement($D_regular_expression);
     
+#print STDERR $D_regular_expression, "\n";
+#die;
     $RC_pattern = &ReverseComplement($expression);
     
     $match_count = 0;
