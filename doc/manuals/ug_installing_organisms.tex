@@ -257,8 +257,17 @@ ls -ltr $RSAT/data/genomes/Debaryomyces_hansenii/genome
 
 \subsubsection{Updating the configuration file}
 
+The fact to add a directory is not sufficient for \RSAT to be aware of
+the new organism. For this, we must update the configuration file. We
+will also specify the default upstream sequence length. For a yeast
+(\textit{Debaryomyces hansenii}), a good guess is 800bp (this is at
+least the value I chose for \textit{Saccharomyces cerevisiae}).
+
 \begin{verbatim}
-install-organism -v 1 -org Debaryomyces_hansenii -task config
+install-organism -v 1 -org Debaryomyces_hansenii -task config -up_from -800
+
+## Check the last lines of the configuration file
+tail -15 $RSAT/data/supported_organisms.pl
 \end{verbatim}
 
 \subsubsection{Checking the start codons}
@@ -313,6 +322,11 @@ The programs \program{oligo-analysis} and \program{dyad-analysis}
 few hours for small bacterial genomes, and several days for the human
 genome).
 
+\begin{verbatim}
+install-organism -v 1 -org Debaryomyces_hansenii \
+    -task allup,oligos,dyads,upstream_freq,clean
+\end{verbatim}
+
 \subsubsection{Installing a genome in your own account}
 
 We describe below how this information should be formatted to be used
@@ -347,28 +361,28 @@ needed for genome installation.
 
 \end{itemize}
 
-\subsection{Checking that the organism is installed properly}
+%% \subsection{Checking that the organism is installed properly}
 
-To check the installation, start by checking whether your newly
-installed now appears in the list of supported organisms.
+%% To check the installation, start by checking whether your newly
+%% installed now appears in the list of supported organisms.
 
-\begin{verbatim}
-retrieve-seq -help
-\end{verbatim}
+%% \begin{verbatim}
+%% retrieve-seq -help
+%% \end{verbatim}
 
-Will give you a list of installed organisms.
+%% Will give you a list of installed organisms.
 
-Once the organism is found in your configuration, you need to check
-whether sequences are retrieved properly. A good test for this is to
-retrieve all the start codons, and check whether they are made of the
-expected codons (mainly ATG, plus some alternative start codons like
-GTG or TTG for bacteria).
+%% Once the organism is found in your configuration, you need to check
+%% whether sequences are retrieved properly. A good test for this is to
+%% retrieve all the start codons, and check whether they are made of the
+%% expected codons (mainly ATG, plus some alternative start codons like
+%% GTG or TTG for bacteria).
 
-\begin{verbatim}
-retrieve-seq -org myorganism -all -from 0 -to 2 \
-    -format multi \
-    | oligo-analysis -format multi -v \
-    -1str -l 3 -return occ,freq
-\end{verbatim}
+%% \begin{verbatim}
+%% retrieve-seq -org myorganism -all -from 0 -to 2 \
+%%     -format multi \
+%%     | oligo-analysis -format multi -v \
+%%     -1str -l 3 -return occ,freq
+%% \end{verbatim}
 
-\subsection{Calibrating the newly installed genome}
+%% \subsection{Calibrating the newly installed genome}
