@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.3 2000/08/03 01:40:26 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.4 2000/11/12 08:59:28 jvanheld Exp $
 #
-# Time-stamp: <2000-08-03 03:39:43 jvanheld>
+# Time-stamp: <2000-11-12 09:59:21 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -58,6 +58,7 @@ if ($verbose) {
     printf ";\t%s\n", $family;
   }
   printf "; upstream region\n";
+  printf ";\tstrands\t%s\n", $strands;
   printf ";\tfrom\t%d\n", $from;
   printf ";\tto\t%d\n", $to;
   printf ";\tsize\t%d\n", $size;
@@ -193,7 +194,7 @@ sub OldUpstreamSequences {
 
 sub UpstreamSequences {
   warn "; Generating upstream sequences for family $family_name\n" if ($verbose);
-  $command = "upstream-region -org $organism";
+  $command = "retrieve-seq -type upstream -org $organism";
   $command .= " -i $family{$family_name}->{family_file}";
   $command .= " -o $family{$family_name}->{seq_file}";
   $command .= " -from $from -to $to ";
@@ -267,7 +268,7 @@ sub DyadAnalysis {
     mkdir $dir, 0755 || die "Error: cannot create directory $dir\n";
   }
   die "Error : cannot read file $family{$family_name}->{seq_file}\n" unless (-r $family{$family_name}->{seq_file});
-  $command = "dyad-detector -i $family{$family_name}->{seq_file} -format $seq_format -o $family{$family_name}->{dyad_file} $dyad_options";
+  $command = "dyad-analysis -i $family{$family_name}->{seq_file} -format $seq_format -o $family{$family_name}->{dyad_file} $dyad_options";
   print "\n$command\n" if ($verbose);
   system $command;
   
@@ -622,12 +623,16 @@ sub InitParameters {
   } else {
     $type = "any";
   }
+  if (defined($force{strands})) {
+    $strands = $force{strands}; ### force
+  } else {
+    $strands = "2str";
+  }
   if (defined($force{exp})) {
     $exp = $force{exp}; ### force
   } else {
     $exp = "ncf";
   }
-  $strands = "2str";
   if (&IsReal($force{th})) {
     $th = $force{th}; ### force
   } elsif ($#families > 0) {
@@ -700,6 +705,8 @@ OPTIONS
 	-org	organism
 	-from	upstream region left limit
 	-to	upstream region right limit
+	-1str   strand-sensitive analysis
+	-2str   strand-insensitive analysis
 FILE FORMAT
     FAMILY FILE
 	The family file specifies the co;position of several gene families.
@@ -754,10 +761,15 @@ sub PrintOptions {
   print HELP <<End_short_help;
 multiple-family-analysis options
 --------------------------------
--h	(must be first argument) display full help message
--help	(must be first argument) display options
--v	verbose
--fam	family file
+	-h	(must be first argument) display full help message
+	-help	(must be first argument) display options
+	-v	verbose
+	-fam	family file
+	-org	organism
+	-from	upstream region left limit
+	-to	upstream region right limit
+	-1str   strand-sensitive analysis
+	-2str   strand-insensitive analysis
 End_short_help
   close HELP;
   exit;
@@ -795,9 +807,9 @@ sub ReadArguments {
 
       ### strands 
     } elsif ($ARGV[$a] eq "-1str") {
-      $strands = "1str";
+      $force{strands} = "1str";
     } elsif ($ARGV[$a] eq "-2str") {
-      $strands = "2str";
+      $force{strands} = "2str";
 
       ### organism
     } elsif ($ARGV[$a] eq "-org") {

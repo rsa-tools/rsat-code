@@ -1,4 +1,11 @@
 #!/usr/bin/perl
+############################################################
+#
+# $Id: RSA_home.cgi,v 1.3 2000/11/12 09:00:27 jvanheld Exp $
+#
+# Time-stamp: <2000-11-12 10:00:20 jvanheld>
+#
+############################################################
 #### this cgi script fills the HTML form for the program dna-pattern
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
@@ -23,7 +30,7 @@ print <<EndText;
   <TR>
   <TD VALIGN=TOP WIDTH="160">
   <CENTER>
-  <A HREF="http://www.cifn.unam.mx/Computational_Biology/index.html" target=_top>
+  <A HREF="http://www.cifn.unam.mx/Computational_Biology/" target=_top>
   <IMG SRC="lablogo.gif" ALT="lab logo" BORDER=0 HEIGHT=48 WIDTH=75></A>
   <BR>
   <FONT COLOR="#006600" SIZE=-2>
@@ -60,8 +67,8 @@ print <<EndText;
   <TD><FONT FACE="Helvetica" SIZE=-1><A HREF="intro.html"><B>
   Introduction</B></A></FONT></TD>
   
-  <TD><FONT FACE="Helvetica" SIZE=-1><A HREF="tutorial.html"><B>
-  Tutorial</B></A></FONT></TD>
+  <TD><FONT FACE="Helvetica" SIZE=-1><A HREF="tutorials/tutorials.html"><B>
+  Tutorials</B></A></FONT></TD>
   
   <TD><FONT FACE="Helvetica" SIZE=-1><A HREF="data/"><B>
   Data</B></A></FONT></TD>
@@ -81,15 +88,6 @@ print <<EndText;
   
   <FONT SIZE=-1>
   
-  <CENTER>
-  <P>
-  <BLINK>
-  <FONT COLOR=#FF6666 SIZE=+2>
-  <B>New ! 16 bacteria supported</B>
-  </FONT>
-  </BLINK>
-  </CENTER>
-  
   <P>
   Welcome to Regulatory Sequence Analysis Tools. This site provides a
   series of modular computer programs specifically designed for the
@@ -107,9 +105,9 @@ print <<EndText;
 
   <P>Basically, the same tools can be used for bacteria as for
   yeast. For pattern discovery in bacteria, we strongly recommend the
-  <A HREF="dyad-detector_form.cgi">dyad-detector</A>, which has been
+  <A HREF="dyad-analysis_form.cgi">dyad-analysis</A>, which has been
   specifically designed for the detection of HTH-like sites. The
-  dyad-detector is also recommended for yeast, where it allows to
+  dyad-analysis is also recommended for yeast, where it allows to
   detect the sites bound by Zn cluster-containing factors.
 
   <P> This web site is freely available for academic users. For users
@@ -132,8 +130,8 @@ print <<EndText;
   </TD>
 
   <TD ALIGN=CENTER>
-  <A HREF="http://copan.cifn.unam.mx/Computational_Biology/yeast-tools" target="_top">
-  <B>Mexico (yeast only)</B><BR>
+  <A HREF="http://copan.cifn.unam.mx/~jvanheld/rsa-tools/" target="_top">
+  <B>Mexico</B><BR>
   <IMG SRC="zapata.jpg" HEIGHT=80 WIDTH=89 BORDER=0><BR>
   <FONT SIZE=-2>http://copan.cifn.unam.mx/Computational_Biology/yeast-tools</A>
   </FONT>
@@ -145,7 +143,7 @@ print <<EndText;
 EndText
 
 
-print "<H4>Organisms supported on <A HREF='$WWW_RSA'>",$WWW_RSA,"</A></H4>\n";
+print "<H4>Organisms supported on <A HREF='$WWW_RSA' target=_top>",$WWW_RSA,"</A></H4>\n";
 print &ListSupportedOrganisms("html_list");
 
 &UpdateLogFile;
