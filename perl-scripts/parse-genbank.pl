@@ -1,6 +1,6 @@
 #!/usr/bin/perl 
 #############################################################
-# $Id: parse-genbank.pl,v 1.20 2004/05/04 15:01:52 rekins Exp $
+# $Id: parse-genbank.pl,v 1.21 2004/05/21 09:23:19 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -119,7 +119,7 @@ package main;
     
     #### organism name
     unless ($org) {
-	$org = `basename "$dir{input}"`;
+	$org = `basename $dir{input}`;
 	chomp($org);
 	warn "; Auto selection of organism name\t$org\n" if ($verbose >= 1);
     }
@@ -231,16 +231,7 @@ package main;
     $misc_features->index_names();
     $CDSs->index_names();
 
-
-    if ($data_type eq "refseq") {
-	&RefseqPostProcessing();
-    } else {
-	#### Create features from CDSs and RNAs
-	&CreateGenbankFeatures($features, $genes, $mRNAs, $scRNAs, $tRNAs, $rRNAs, $misc_RNAs, $misc_features, $CDSs, $sources);
-    }
-
     #### parse chromosomal positions
-    &ParsePositions($features);
     &ParsePositions($genes);
     &ParsePositions($mRNAs);
     &ParsePositions($scRNAs);
@@ -249,6 +240,15 @@ package main;
     &ParsePositions($misc_RNAs);
     &ParsePositions($misc_features);
     &ParsePositions($CDSs);
+
+    if ($data_type eq "refseq") {
+	&RefseqPostProcessing();
+    } else {
+	#### Create features from CDSs and RNAs
+	&CreateGenbankFeatures($features, $genes, $mRNAs, $scRNAs, $tRNAs, $rRNAs, $misc_RNAs, $misc_features, $CDSs, $sources, $contigs);
+    }
+
+#    &ParsePositions($features);
 
     ################################################################
     ### export result in various formats
@@ -319,7 +319,7 @@ sub PrintHelp {
 NAME
 	parse-genbank
 
-        2001 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
+        2001 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
 	
 USAGE
         parse-genbank [-dir input_dir][-i inputfile] [-o outputfile] [-v]

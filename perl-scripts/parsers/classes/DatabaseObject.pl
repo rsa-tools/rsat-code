@@ -71,7 +71,8 @@ sub init {
     
     ### make sure the new object has an ID
     unless ($args{id}) {
-	my $auto_id = sprintf "%s%6d", $self->get_prefix, $class->get_count;
+	my $prefix =  $self->get_prefix() || "";
+	my $auto_id = sprintf "%s%6d", $prefix, $class->get_count();
 	$auto_id =~ s/ /0/g;
 	$self->set_attribute("id",$auto_id);
     }
