@@ -319,14 +319,23 @@ sub sum_of_poisson {
 ### Hypergeometric formula. 
 ###
 ### Usage:
-###     $p = &hypergeometric($m, $n, $k, $x)
+###     $proba = &hypergeometric($m, $n, $k, $x)
 ### where
 ###   $m = number of black balls in the urn
 ###   $n = total number of balls in the urn
 ###   $k = number of balls in the sample
 ###   $x = number of black balls in the sample
 ###
-### The hypergeometric is calculated with the recursive formula. 
+### The hypergeometric probability is
+###
+###             x  k-x
+###            Cm Cn-m
+###  P(X=x) = ---------
+###               k
+###              Cn
+###
+### For efficiency reasons, the hypergeometric is calculated with the
+### recursive formula.
 ###
 ###                       (m - x + 1) (k - x + 1)
 ###  P(X = x) = P(X=x-1) ------------------------
@@ -345,15 +354,22 @@ sub sum_of_poisson {
 ###
 sub hypergeometric {
     my($m, $n, $k, $x, %args) = @_;
-    
-#     warn join ( "\t", 
-# 		"Hypergeometric", 
-# 		"m=$m",
-# 		"n=$n",
-# 		"k=$k",
-# 		"x=$x"
-# 		), "\n";
 
+    #### some verbosity
+     warn join ( "\t", 
+ 		"Hypergeometric", 
+ 		"m=$m",
+ 		"n=$n",
+ 		"k=$k",
+ 		"x=$x",
+		 "depth=$args{depth}"
+ 		), "\n" if ($verbose >= 4);
+
+    ### error if too high recursion depth
+    my $max_depth = 1000; 
+    exit(1) if ($args{depth} > $max_depth);
+    
+    #### initilization
     my $to;
     my $proba = 0;
 
@@ -370,27 +386,40 @@ sub hypergeometric {
 	    &FatalError( "Number of black balls in the sample ($x) must be strictly positive\n");
 	}
 	if ($k > $n) {
-	    &FatalError("Sample ($k) cannot be larged than number of balls in the urn ($n)");	
+	    &FatalError("Sample ($k) cannot be larger than number of balls in the urn ($n)");	
 	}
 	if ($m > $n) {
-	    &FatalError("Number of black balls in the urn ($m) cannot be larged than number of balls in the urn ($n)");	
+	    &FatalError("Number of black balls in the urn ($m) cannot be larger than number of balls in the urn ($n)");	
 	}
 	if ($x > $m) {
-	    &FatalError("Number of black balls in the sample ($x) cannot be larged than number of black balls in the urn ($m)");	
+	    &FatalError("Number of black balls in the sample ($x) cannot be larger than number of black balls in the urn ($m)");	
+	}
+	if ($k - $x > $n - $m) {
+	    &FatalError(join( "", "Number of white balls in the sample (",
+			      $k-$x,
+			      ") cannot be larger than number of white balls in the urn (", 
+			      $n - $m, 
+			      ")"));	
 	}
 	if ($x > $k) {
-	    &FatalError("Number of black balls in the sample ($x) cannot be larged than sample size ($k)");	
+	    &FatalError("Number of black balls in the sample ($x) cannot be larger than sample size ($k)");	
 	}
     }
-# 	$Id: RSA.stat.lib,v 1.7 2002/09/27 05:43:06 jvanheld Exp $	
+    
+# 	$Id: RSA.stat.lib,v 1.8 2002/10/02 05:39:56 jvanheld Exp $	
 
     #### initialization
     if (defined($args{previous_value})) {
 	#### a single recursion is sufficient
 #	die;
 	$log_proba = log($args{previous_value});
-	warn "Previous value\t", $log_proba, "\n";
+	warn "Previous value\t", $log_proba, "\n" if ($verbose >= 4);
 	$start = $x;
+
+    } elsif ($n - $m - $k < 0) {
+	$min_p = &hypergeometric( $n - $m, $n , $k, $k - $x, depth=>$args{depth}+1);
+	$start = $x+1;
+
     } else {
 	#### calculate value for 0 successes
 	$log_proba = 0;
@@ -410,7 +439,6 @@ sub hypergeometric {
 	$log_proba += log($k - $i + 1);
 	$log_proba -= log($n - $m - $k + $i);
     }
-
     $proba = &LogToEng($log_proba);
 
     #### recursive calculation
@@ -433,7 +461,19 @@ sub hypergeometric {
 sub sum_of_hypergeometrics {
     my ($m, $n, $k, $from, $to) = @_;
 
-    return (&hypergeometric($m,$n,$k,$from,to=>$to));
+    if ($n - $m - $k < 0) {
+	$min_x = $k + $m - $n;
+    } else {
+	$min_x = $from;
+    }
+    
+    warn join( "\tsum_of_hypergeometrics", "m=$m", "n=$n", "k=$k", "from=$from", "to=$to", "min_x=$min_x"), "\n" if ($verbose >= 4);
+    
+    if ($min_x > $to) {
+	return(0);
+    } else {
+	return (&hypergeometric($m,$n,$k,$min_x,to=>$to));
+    }
 }
 
 
