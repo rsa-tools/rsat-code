@@ -8,7 +8,7 @@ require "RSA.lib";
 $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
 $class_interval = 20;
 $in_format = "fasta";
-$sum_strands = 0;
+$strands = "1str";
 $group_rc = 0;
 $XYgraph_command = "$SCRIPTS/XYgraph";
 
@@ -35,6 +35,25 @@ if ((&IsNatural($min_pos)) && (&IsNatural($max_pos))) {
 }
 
 
+### open output file ###
+if ($outputfile) {
+    $dir{output} =`dirname $outputfile`; 
+    chomp $dir{output};
+    mkdir 0755, $dir{output}."/graphs";
+#    die join "\t", $outputfile, $dir{output}, "\n";
+#    `ls -lt $outputfile`;
+#    die;
+}
+if ($dir{output}) {
+    unless (-d $dir{output}) {
+	warn "Creating directory $dir{output}\n";
+    }
+    mkdir $dir{output}, 0775;
+} else {
+    $dir{output} = ".";
+}
+$out = &OpenOutputFile($outputfile);
+
 ### open sequence file ###
 &CheckInputSeqFormat($in_format);
 ($in, $input_dir) = &OpenInputFile($inputfile);
@@ -60,7 +79,7 @@ foreach $oligo_seq (sort keys %occurrences) {
   $sum_overlaps += $overlaps{$oligo_seq};	
 }
 
-&SumStrands if ($sum_strands);
+&SumStrands if ($strands eq "2str");
 
 
 #### if a pattern file has been specified, forget info about other patterns
@@ -85,11 +104,8 @@ if (&IsNatural($low_thr{'occ'})) {
 
 &CalcChi();
 
-### open output file ###
-$out = &OpenOutputFile($outputfile);
-
 ### verbose ###
-if ($verbose) {
+if ($verbose >= 1) {
   print $out ";position-analysis";
   foreach $a (@ARGV) {
     print $out " $a";
@@ -102,7 +118,7 @@ if ($verbose) {
   print $out ";\tOligonucleotide length	$oligo_length\n";
   print $out ";\tchi threshold (lower)\t$low_thr{'chi'}\n" if (&IsReal($low_thr{'chi'}));
   print $out ";\toccurrence threshold (lower)\t$low_thr{'occ'}\n" if (&IsNatural($low_thr{'occ'}));
-  if ($sum_strands) {
+  if ($strands eq "2str") {
     print $out ";\tCounted on both strands\n";
     if ($group_rc) {
       print $out ";\tgrouped by pairs of reverse complements\n";
@@ -240,19 +256,18 @@ foreach $oligo_seq (@sorted_keys) {
 
 
 ### generate XYgraphs
+
 if ($return{'graph'}) {
-    if ($outputfile) {
-	$dir =`dirname $outputfile`; 
-	if ($dir) {
-	    chdir ($dir);
-	    #### PROBLEM
-#	    die "HELLO\t$dir",`pwd`,"\n";
-	}
+    $dir{graphs} = $dir{output}."/graphs";
+    unless (-d $dir{graphs}) {
+	warn "Creating directory $dir{graphs}\n";
+	mkdir $dir{graphs}, 0775;
     }
-    $date = `date '+%H:%M:%S'`;
+    $date = `date +%H:%M:%S`;
     chomp $date;
     print ";$date\tgenerating the graphs ... \n" if ($hyperverbose);
-    $index_file = "graph_index_${oligo_length}nt_ci${class_interval}.html";
+    $index_file = "$output_file_graph_index.html";
+    ### "$dir{output}/graph_index_${oligo_length}nt_ci${class_interval}.html";
     open INDEX, ">$index_file";
     print INDEX "<HTML><BODY><PRE>\n";
     close INDEX;
@@ -266,8 +281,14 @@ if ($return{'graph'}) {
 	    $score = sprintf "%.2f", $chi_square{$oligo_seq};
 	    $title2 .= ", score = $score";
 	} 
-	$command = "$XYgraph_command -o $graph_file_name -lines -xcol 1 -ycol 2,3 -legend -title1 '$oligo_seq distribution profile' -title2 '$title2' -xleg1 'position' -yleg1 'class frequency' -ymin 0 -xmin $class_min[0] -xmax $class_max[$max_class] -xgstep2 $class_interval -xsize 600";
-	print "; $command\n" if ($verbose);
+	$command = "$XYgraph_command -o $dir{graphs}/$graph_file_name";
+	$command .= " -lines -xcol 1 -ycol 2,3 -legend ";
+	$command .= " -title1 '$oligo_seq distribution profile' ";
+	$command .= " -title2 '$title2' ";
+	$command .= " -xleg1 'position' -yleg1 'class frequency' ";
+	$command .= " -ymin 0 -xmin $class_min[0] -xmax $class_max[$max_class] ";
+	$command .= " -xgstep2 $class_interval -xsize 600";
+	print "; $command\n" if ($verbose >= 1);
 	open XY, "| $command";
 	print XY ";class\tocc_$oligo_seq\texp_$oligo_seq\n"; ### header line
 	foreach $class (0..$max_class) {
@@ -277,7 +298,7 @@ if ($return{'graph'}) {
 	}
 	close XYgraph;
 	open INDEX, ">>$index_file";
-	print INDEX "<A HREF=\"$graph_file_name\">$oligo_seq</A>";
+	print INDEX "<A HREF=\"graphs/$graph_file_name\">$oligo_seq</A>";
 	print INDEX "\t$in_bound_occurrences{$oligo_seq}";
 	print INDEX "\t$score";
 	print INDEX "\n";
@@ -290,7 +311,7 @@ if ($return{'graph'}) {
 
 
 
-if ($verbose) {
+if ($verbose >= 1) {
   $done_time  = `date '+%d/%m/%y %H:%M:%S %Z'`;
   print $out ";Job started $start_time";
   print $out ";Job done    $done_time";
@@ -448,7 +469,7 @@ sub ReadSequence {
     for $s (1..$sequence_number) {
 	$sum_seq_length += $seq_length[$s];
 	if ($seq_length[$s] >= $oligo_length) {
-	    if ($sum_strands) {
+	    if ($strands eq "2str") {
 		$nb_possible_pos += 2*($seq_length[$s] + 1 - $oligo_length);
 	    } else {
 		$nb_possible_pos += $seq_length[$s] + 1 - $oligo_length;
@@ -544,6 +565,13 @@ sub CalcChi {
 	    if ($no_check) {
 		$chi_square{$oligo_seq} =~ s/\(//;
 		$chi_square{$oligo_seq} =~ s/\)//;
+	    } else {
+		unless (&IsReal($chi_square{$oligo_seq})) {
+		    print $out "; WARNING: $oligo_seq $chi_square{$oligo_seq} discarded because does not fit conditions for the chi-square\n" 
+			if ($verbose >= 2);
+		    delete $occurrences{$oligo_seq};
+		    delete $chi_square{$oligo_seq};
+		}
 	    }
 
 	    #### check the threshold on chi-square
@@ -597,9 +625,7 @@ OPTIONS
 		See below for the description of these formats.
 	-o file	outputfile. Returns a list of the oligonucleotides 
 		encountered in the sequences, with their frequencies.
-	-v	verbose. 
-	-vv	hyperverbose
-		same as verbose but returns additional info (sequence lengthes)
+	-v \#	verbose level. 
 	-l	oligonucleotide length.
 	-ci	class interval (default 20 bases). 
 		The width of the position classes (in number of bases)
@@ -675,8 +701,7 @@ position-analysis options
 -i		input file
 -format		input format. Accepted: fasta (default), wconsensus, IG, raw, filelist
 -o 		output file
--v		verbose
--vv		hyperverbose
+-v \#		verbose level
 -l		oligonucleotide length
 -ci		class interval (default 20 bases). 
 -1str		inactivate summation of occ on both strands
@@ -740,14 +765,14 @@ sub ReadArguments {
 	    
 	    ### strands
 	} elsif ($ARGV[$a] eq "-1str") {
-	    $sum_strands = 0;
+	    $strands = "1str";
 	    $group_rc = 0;
 	} elsif ($ARGV[$a] eq "-2str") {
-	    $sum_strands = 1;
+	    $strands = "2str";
 	    
 	    ### grouping of reverse complements
 	} elsif ($ARGV[$a] eq "-grouprc") {
-	    $sum_strands = 1;
+	    $strands = "2str";
 	    $group_rc = 1;
 	} elsif ($ARGV[$a] eq "-nogrouprc") {
 	    $group_rc = 0;
