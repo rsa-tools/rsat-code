@@ -315,6 +315,7 @@ sub ReadArguments {
 
 	    ### use oligo intergenic frequencies as expected frequencies
 	} elsif ($ARGV[$a] =~ /^-ncf/i) {
+	    &Warning ("option -ncf is deprecated, use '-bg intergenic' instead");
 	    $background_model = "intergenic";
 
 	    ### specify a background model for estimating expected frequencies
@@ -405,13 +406,32 @@ OPTIONS
 				positions j-3 and j-1
 			Wj-3,j	is the same word with the character B 
 				concatenated at its end
-	-ncf	use intergenic frequencies as expected frequencies
+	-ncf	(deprecated, use "-bg intergenic" instead)
+		use intergenic frequencies as background frequencies
+	-bg	background model
+		Type of sequences used as background model for
+		estimating expected oligonucleotide frequencies.
+		
+		Supported models: 
+		-bg upstream 
+			 all upstream sequences, allowing overlap with
+		         upstream ORFs
+
+		-bg upstream-noorf
+			  all upstream sequences, preventing overlap
+			  with upstream ORFs
+
+		-bg intergenic
+		         intergenic frequencies 
+			 Whole set of intergenic regions, including
+			 upstream and downstream sequences
+
 	-org	organism 
-		This is necessary with the option -ncf, to determine
+		This is necessary with the option -bg, to determine
 		which frequency file has to be sued for expected
 		frequency calibration.
 	-ol	oligo-length
-		This is necessary with the option -ncf, to determine
+		This is necessary with the option -bg, to determine
 		the oligonucleotide length for the Markov chain model.
 	-lf	length file 
 		Allows to generate random sequences with the same
@@ -445,7 +465,8 @@ random-seq options
 -expfreq	file containing expected oligomer frequencies
 -type		protein|DNA|other
 -seed #	seed for the random generator
--ncf		use dyad intergenic frequencies as expected frequencies
+-ncf		(deprecated, use '-bg intergenic' instead) 
+-bg		background model (supported: $supported_bg)
 -org		organism 
 -ol		oligo-length
 -lf		length file 
