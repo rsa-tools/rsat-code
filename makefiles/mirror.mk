@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: mirror.mk,v 1.18 2005/02/02 07:51:27 jvanheld Exp $
+# $Id: mirror.mk,v 1.19 2005/03/17 14:46:04 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 12:05:45 jvanheld>
 #
@@ -58,7 +58,7 @@ data_to_server:
 
 genomes_to_server:
 	echo "Synchronizing genomes to server ${SERVER}"
-	${RSYNC} --exclude '*.wc.gz' --exclude '*.wc'  public_html/data/genomes ${SERVER}/public_html/data/
+	${RSYNC} ${EXCLUDED_FILES} public_html/data/genomes ${SERVER}/public_html/data/
 	${RSYNC}  public_html/data/supported*.pl ${SERVER}/public_html/data/
 
 doc_to_server:
