@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.45 2005/01/27 21:37:10 jvanheld Exp $
+# $Id: install-organism,v 1.46 2005/03/13 10:30:28 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -12,6 +12,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 
 }
 require "RSA.lib";
+require RSAT::util;
 
 
 #### initialisation
@@ -52,7 +53,7 @@ $supported_tasks = join ",", sort (keys %supported_task);
 
 @task = keys %task;
 if ($#task == -1) {
-    &FatalError("You should specify at least one task.\nSupported tasks\n\t$supported_tasks\n");
+    &RSAT::error::FatalError("You should specify at least one task.\nSupported tasks\n\t$supported_tasks\n");
 }
 if ($task{all}) {
     %task = %supported_task;
@@ -93,15 +94,17 @@ unless ($organism_full_name) {
 
 ################################################################
 ## Input directory
-unless ($dir{genbank}) {
-    if ($GENBANK_DIR) {
-	$dir{genbank} = $GENBANK_DIR;
-    } else {
-	&FatalError("You should specify the directory where Genbank genomes can be found.");
+if ($task{parse}) {
+    unless ($dir{genbank}) {
+	if ($GENBANK_DIR) {
+	    $dir{genbank} = $GENBANK_DIR;
+	} else {
+	    &RSAT::error::FatalError("You should specify the directory where Genbank genomes can be found.");
+	}
     }
-}
-unless (-d $dir{genbank}) {
-    &FatalError("Genbank directory $dir{genbank} does not exists");
+    unless (-d $dir{genbank}) {
+	&RSAT::error::FatalError("Genbank directory $dir{genbank} does not exists");
+    }
 }
 
 ################################################################
@@ -111,13 +114,13 @@ umask 0002;
 unless ($dir{install}) {
     $dir{install} = $RSA."/data/genomes/".$organism_short_name;
 }
-&CheckOutDir($dir{install});
+&RSAT::util::CheckOutDir($dir{install});
 
 $dir{genome} = "$dir{install}/genome";
-&CheckOutDir($dir{genome});
+&RSAT::util::CheckOutDir($dir{genome});
 
 $dir{oligos} = "$dir{install}/oligo-frequencies";
-&CheckOutDir($dir{oligos});
+&RSAT::util::CheckOutDir($dir{oligos});
 
 $outfile{features} = "$dir{genome}/feature.tab" unless ($outfile{features});
 $outfile{synonyms} = "$dir{genome}/feature_names.tab" unless ($outfile{synonyms});
@@ -337,10 +340,10 @@ sub CreatePhylogeny {
 	$taxonomy =~ s|\s+|_|g;
 	my $dir = $RSA."/data/phylogeny/".$taxonomy;
 	warn "; Taxonomy directory\t", $dir, "\n" if ($main::verbose >= 1);
-	&CheckOutDir($dir);
+	&RSAT::util::CheckOutDir($dir);
 	&doit("cd $dir; ln -s $dir{install} .",0,0,$verbose);
     } else {
-	&FatalError("Cannot identify taxonomy in table ".$organism_table);
+	&RSAT::error::FatalError("Cannot identify taxonomy in table ".$organism_table);
     }
 
 }
@@ -353,7 +356,7 @@ sub IntergenicSegments {
     #### retrieve intergenic sequences
     my $command = "coding-or-not ";
     $command .= "-v " if ($verbose >= 1);
-    $command .= "-org $organism_short_name -return ncs,seq,cs \n\n";
+    $command .= "-org $organism_short_name -return ncs,seq,cs,stats \n\n";
     &doit($command, $dry_run, $die_on_error, $verbose);
 
     my @types = ();
@@ -837,7 +840,7 @@ sub ReadArguments {
 		if ($supported_task{$task}) {
 		    $task{$task} = 1;
 		} else {
-		    &FatalError("Unsupported task '$task'. \n\tSupported: $supported_tasks");
+		    &RSAT::error::FatalError("Unsupported task '$task'. \n\tSupported: $supported_tasks");
 		}
 	    }
 
@@ -856,8 +859,8 @@ sub ReadArguments {
 #### retrieve start and stop codons and calculate word occurrences
 #### (for checking)
 sub StartAndStopCodons {
-    my $label =  "orf";
-#    my $label =  "id,ctg,reg_left,reg_right,orf_strand";
+#    my $label =  "orf";
+    my $label =  "id,ctg,reg_left,reg_right,orf_strand";
     my $prefix = $dir{genome}."/".${organism_short_name};
     my $command = "retrieve-seq -v -org ${organism_short_name} -all  \ ";
     $command .= "-type upstream -feattype CDS -from 0 -to 2  \ ";
@@ -914,7 +917,7 @@ sub StartAndStopCodons {
 #     print FTT ";ID";
 #     print FTT "\tTYPE";
 #     print FTT "\tNAME";
-#     print FTT "\tCHROMOSOME";
+#     print FTT "\tCONTIG";
 #     print FTT "\tLEFT";
 #     print FTT "\tRIGHT";
 #     print FTT "\tSTRAND";
@@ -970,22 +973,22 @@ sub StartAndStopCodons {
 # 		print SYNONYMS "$id\t$synonym\n";
 # 	    }
 	    
-# 	    #### get the chromosome sequence identifier for bacteria
-# 	    open CHROM, $outfile{genome} ||
-# 		die "Error: cannot open chromosome list file $outfile{genome}\n";
-# 	    while (<CHROM>) {
+# 	    #### get the contig sequence identifier for bacteria
+# 	    open CTG, $outfile{genome} ||
+# 		die "Error: cannot open contig list file $outfile{genome}\n";
+# 	    while (<CTG>) {
 # 		chomp;
 # 		@fields = split "\t";
 # 		$chom = $fields[1];
 
 # 	    }
-# 	    close CHROM;
-# 	    #$chrom = $organism_short_name;
+# 	    close CTG;
+# 	    #$ctg = $organism_short_name;
 # 	    $type = "CDS";
 # 	    print FTT "$id";
 # 	    print FTT "\t$type";
 # 	    print FTT "\t$name";
-# 	    print FTT "\t$chrom";
+# 	    print FTT "\t$ctg";
 # 	    print FTT "\t$left";
 # 	    print FTT "\t$right";
 # 	    print FTT "\t$strand";
@@ -1016,7 +1019,7 @@ sub StartAndStopCodons {
 #     print FTT ";ID";
 #     print FTT "\tTYPE";
 #     print FTT "\tNAME";
-#     print FTT "\tCHROM";
+#     print FTT "\tCTG";
 #     print FTT "\tLEFT";
 #     print FTT "\tRIGHT";
 #     print FTT "\tSTRAND";
@@ -1072,22 +1075,22 @@ sub StartAndStopCodons {
 # 		print SYNONYMS "$id\t$synonym\n";
 # 	    }
 	    
-# 	    #### get the chromosome sequence identifier for bacteria
-# 	    open CHROM, $outfile{genome} ||
-# 		die "Error: cannot open chromosome list file $outfile{genome}\n";
-# 	    while (<CHROM>) {
+# 	    #### get the contig sequence identifier for bacteria
+# 	    open CTG, $outfile{genome} ||
+# 		die "Error: cannot open contig list file $outfile{genome}\n";
+# 	    while (<CTG>) {
 # 		chomp;
 # 		@fields = split "\t";
 # 		$chom = $fields[1];
 
 # 	    }
-# 	    close CHROM;
-# 	    $chrom = $organism_short_name;
+# 	    close CTG;
+# 	    $ctg = $organism_short_name;
 # 	    $type = "CDS";
 # 	    print FTT "$id";
 # 	    print FTT "\t$type";
 # 	    print FTT "\t$name";
-# 	    print FTT "\t$chrom";
+# 	    print FTT "\t$ctg";
 # 	    print FTT "\t$left";
 # 	    print FTT "\t$right";
 # 	    print FTT "\t$strand";
@@ -1124,7 +1127,7 @@ sub StartAndStopCodons {
 #     print FTT ";ID";
 #     print FTT "\tTYPE";
 #     print FTT "\tNAME";
-#     print FTT "\tCHROM";
+#     print FTT "\tCTG";
 #     print FTT "\tLEFT";
 #     print FTT "\tRIGHT";
 #     print FTT "\tSTRAND";
@@ -1185,23 +1188,23 @@ sub StartAndStopCodons {
 # 	$descr = join " ", @fields;
 
 	
-# 	#### get the chromosome sequence identifier for bacteria
-# 	open CHROM, $outfile{genome} ||
-# 	    die "Error: cannot open chromosome list file $outfile{genome}\n";
-# 	while (<CHROM>) {
+# 	#### get the contig sequence identifier for bacteria
+# 	open CTG, $outfile{genome} ||
+# 	    die "Error: cannot open contig list file $outfile{genome}\n";
+# 	while (<CTG>) {
 # 	    chomp;
 # 	    @fields = split "\t";
-# 	    $chrom = $fields[1];
+# 	    $ctg = $fields[1];
 	    
 # 	}
-# 	close CHROM;
+# 	close CTG;
 
 # 	$type = "CDS";
 
 # 	print FTT "$id";
 # 	print FTT "\t$type";
 # 	print FTT "\t$name";
-# 	print FTT "\t$chrom";
+# 	print FTT "\t$ctg";
 # 	print FTT "\t$left";
 # 	print FTT "\t$right";
 # 	print FTT "\t$strand";
@@ -1226,7 +1229,7 @@ sub ParseGenome {
     } elsif (-d "$dir{genbank}/Bacteria/$organism_short_name") {
 	$dir{source} = "$dir{genbank}/Bacteria/$organism_short_name";
     } else {
-	&FatalError("Cannot find a directory $organism_short_name in genbank dir $dir{genbank}" );
+	&RSAT::error::FatalError("Cannot find a directory $organism_short_name in genbank dir $dir{genbank}" );
     }
     my $command = "$RSA/perl-scripts/parse-genbank.pl -v 1 -i $dir{source}";
     if ($dir{ensembl}) {
