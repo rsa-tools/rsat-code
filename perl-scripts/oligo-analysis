@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.50 2002/06/10 00:05:29 jvanheld Exp $
+# $Id: oligo-analysis,v 1.51 2002/06/21 12:01:20 jvanheld Exp $
 #
-# Time-stamp: <2002-06-10 02:04:34 jvanheld>
+# Time-stamp: <2002-06-21 13:53:56 jvanheld>
 #
 ############################################################
 
@@ -99,20 +99,14 @@ if ($method eq "Markov chain") {
 ### check pre-defined frequency tables
 ### non-coding frequency calibration
 if ($ncf) {
-    #### organism
-    &CheckOrganism($organism_name);
     
     $data_dir = $supported_organism{$organism_name}->{'data'};
     
     ### localize dyad non-coding frequency file
     $method = "Frequency file";
-    if ((-e "$data_dir/oligo-frequencies/${oligo_length}nt_non-coding_${organism_name}-1str.freq") || 
-	(-e "$data_dir/oligo-frequencies/${oligo_length}nt_non-coding_${organism_name}-1str.freq.gz")) {
-	$exp_freq_file = "$data_dir/oligo-frequencies/${oligo_length}nt_non-coding_${organism_name}-1str.freq";
-    } else {
-	#### TEMPORARYL the previous format is still supported
-	$exp_freq_file = "$data_dir/oligo-frequencies/${oligo_length}nt_non-coding_${organism_name}.freq";
-    }
+    
+    $exp_freq_file = &ExpectedFreqFile($organism_name, $oligo_length);
+
     
 #    &FatalError("cannot read expected frequency file $exp_freq_file\n") unless (-r  $exp_freq_file);
 }
@@ -379,7 +373,10 @@ sub CountOligo {
 	    }
 	}
     }
-    
+
+    if ($sequence_number < 1) {
+	&FatalError("The input contained no readable sequence. The file might be empty or be wronlgy formatted."); 
+    }
 }
 
 
@@ -774,6 +771,7 @@ sub CalcExpected {
 	### calculate the expected oligo frequency with 
 	#### independent nucleotide probabilities 
 	#### calculate probability for ambiguous nucleotide codes  ####
+	$method = "alphabet";
 	if ($seq_type eq "DNA") {
 	    $residue_proba{'r'} = $residue_proba{'a'}+$residue_proba{'g'};
 	    $residue_proba{'y'} = $residue_proba{'c'}+$residue_proba{'t'};
@@ -1170,12 +1168,12 @@ sub PrintResult {
 	printf $out "; %-29s\t%s\n", "Oligomer length", $oligo_length;
 	printf $out "; %-29s\t%s\n", "Input file",	$inputfile if ($inputfile);
 	printf $out "; %-29s\t%s\n", "Input format", $in_format;
-	printf $out "; %-29s\t%s\n", "Method", $method if ($method);
+	printf $out "; %-29s\t%s\n", "Method", $method;
 	printf $out "; %-29s\t%s\n", "Expected frequency file", $exp_freq_file if ($exp_freq_file);
 	printf $out "; %-29s\n", "\trescaled to 1" if ($rescale_freq);
 	printf $out "; %-29s\t%s\n", "Markov chain order", $markov_order if ($method eq "Markov chain");
 	printf $out "; %-29s\t%s\n", "Alphabet frequency file", $alphabet_file if ($alphabet_file);
-	if ($alphabet) {
+	if (($alphabet) || ($method eq "alphabet")){
 	    print $out "; Alphabet\n";
 	    foreach $key (sort keys %residue_proba) {
 		print $out ";\t$key\t$residue_proba{$key}\n";
@@ -1771,9 +1769,6 @@ ARGUMENTS
 		-a a:t 0.3 c:g 0.2
 		
 		Special alphabet options
-	        -a yeast
-		        automatically use the nucleotide frequencies from 
-                        yeast genome.
                 -a input
                         use the alphabet of the input sequence
 	-expfreq
@@ -2189,8 +2184,10 @@ PROBABILITIES
 	2str	8
 
 EXAMPLE
-	oligo-analysis -i $RSA_GENOME/chrlist -format filelist -l 6 -occ 
-                       -freq -o hexanucleotides.occ_and_freq -v
+	oligo-analysis \
+		 -i $RSA/data/Saccharomyces_cerevisiae/genome/Contigs_Saccharomyces_cerevisiae.tab \ 
+		 -format filelist -l 6 -occ \
+                 -freq -o hexanucleotides.occ_and_freq -v
 	
 	will return a list of all hexanucleotides found in yeast genome, with 
 	the number of occurrences and relative frequency for each one.
