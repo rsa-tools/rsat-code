@@ -19,10 +19,14 @@ $default{sequence} = "";
 $default{sequence_format} = "fasta";
 $default{sequence_file} = "";
 $default{strands} = "both strands";
+
+## Return formats
 $default{match_positions} = 'checked';
+$default{limits} = 'checked';
 $default{match_counts} = '';
 $default{table} = '';
 $default{stats} = '';
+
 $default{noov} = "on";
 $default{flanking} = "4";
 $default{threshold} = "0";
@@ -93,26 +97,35 @@ print CGI::table({-border=>0,-cellpadding=>3,-cellspacing=>0},
 		       [
 		      CGI::td({-align=>left,-valign=>MIDDLE},
 			      [
+			       ## Return matching positions
 			       "<A HREF='help.dna-pattern.html#return'><B>Return</B></A>\n",
-			       
 			       $query->checkbox(-name=>'match_positions',
 						-checked=>$default{match_positions},
 						-label=>' match positions'),
-			       "<A HREF='help.all-upstream-search.html#flanking'><B> flanking residues</B></A>",
-			       $query->textfield(-name=>'flanking',
-						 -default=>$default{flanking},
-						 -size=>2),
+
 			       "<A HREF='help.dna-pattern.html#origin'><B>Origin</B></A>",
 			       $query->popup_menu(-name=>'origin',
 						  -Values=>['start',
 							    'end'],
 						  -default=>$default{origin}),
+
 			       "<A HREF='help.dna-pattern.html#match_format'><B>Format</B></A>",
 			       $query->popup_menu(-name=>'match_format',
 						  -Values=>['table',
 							    'fasta'],
 						  -default=>$default{match_format})
 			       ]),
+			## Sequence limits
+		      CGI::td({-align=>left,-valign=>MIDDLE},
+			      [
+			       '',
+			       $query->checkbox(-name=>'limits',
+						-checked=>$default{limits},
+						-label=>' sequence limits'),
+			       '',
+			       ''
+			       ]),
+
 		      CGI::td({-align=>left,-valign=>MIDDLE},
 			      [
 			       '',
@@ -135,6 +148,8 @@ print CGI::table({-border=>0,-cellpadding=>3,-cellspacing=>0},
 						-label=>'totals'),
 			       ''
 			       ]),
+
+			## Statistics
 		      CGI::td({-align=>left,-valign=>MIDDLE},
 			      [
 			       '',
@@ -255,6 +270,7 @@ ACTCCACGAATACAATCCAA
 $demo_patterns = "CACGTG\nCACGTT\n";
 
 print "<TD><B>";
+print $query->hidden(-name=>'limits',-default=>"");
 print $query->hidden(-name=>'patterns',-default=>$demo_patterns);
 print $query->hidden(-name=>'sequence',-default=>$demo_sequence);
 print $query->hidden(-name=>'organism',-default=>'Saccharomyces cerevisiae');

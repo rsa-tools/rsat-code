@@ -75,6 +75,12 @@ if ($query->param('match_positions')) {
     
 } 
 
+### return sequence limits
+if ($query->param('limits')) {
+  $parameters .= " -limits";
+}
+  
+
 ### return match count ###
 if ($query->param('match_counts')) {
     $parameters .= " -c";
