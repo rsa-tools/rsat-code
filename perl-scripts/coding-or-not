@@ -112,7 +112,7 @@ unless (defined(%return)) {
 if ($organism eq "yeast") {
     $feature_file = "$RSA/data/yeast/orfs/ORF_table.txt";
     $id_column = 0;
-    $kind_column = -1;
+    $type_column = -1;
     $gene_column = 2;
     $chr_column = 3;
     $start_column = 4;
@@ -144,7 +144,7 @@ if ($organism eq "yeast") {
 } elsif ($organism eq "coli") {
     $feature_file = "$RSA/data/coli/sequences/CDS_table.txt";
     $id_column = 0;
-    $kind_column = 1;
+    $type_column = 1;
     $gene_column = 2;
     $chr_column = -1;
     $start_column = 3;
@@ -157,7 +157,7 @@ if ($organism eq "yeast") {
 } elsif ($supported_organism{$organism}) {
     $feature_file = $supported_organism{$organism}->{'features'};
     $id_column = 0;
-    $kind_column = 1;
+    $type_column = 1;
     $gene_column = 2;
     $chr_column = 3;
     $start_column = 4;
@@ -180,23 +180,23 @@ while (<ORFS>) {
     next unless (/\S/);
     s/\t\t/\t-\t/;
     chomp;
-    @feature_descr = split, /\t/;
+    @fields = split, /\t/;
 
     ### only take into consideration the CDS features
-    if (($kind_column >= 0) && ($feature_descr[$kind_column] ne "CDS")) {
+    if (($type_column >= 0) && ($fields[$type_column] ne "CDS")) {
 	next;
     }
 
     $orf_count++;
-    $id = $feature_descr[$id_column];
+    $id = $fields[$id_column];
     if ($chr_column < 0) {
 	$chr{$id} = "genome";
     } else {
-	$chr{$id} = $feature_descr[$chr_column];
+	$chr{$id} = $fields[$chr_column];
     }
     push @{$ids{$chr{$id}}}, $id;
-    $start{$id} = $feature_descr[$start_column];
-    $end{$id} = $feature_descr[$end_column];
+    $start{$id} = $fields[$start_column];
+    $end{$id} = $fields[$end_column];
     $left{$id} = &min($start{$id},$end{$id});
     $right{$id} = &max($start{$id},$end{$id});
     if ($organism eq "yeast") {
@@ -206,7 +206,7 @@ while (<ORFS>) {
 	$strand{$id} = "D";
       }
     } else {
-      $strand{$id} = $feature_descr[$strand_column];
+      $strand{$id} = $fields[$strand_column];
     }
 #print "$id\t$chr{$id}\t$left{$id}\t$right{$id}\t$strand{$id}\n";
 }
@@ -329,9 +329,7 @@ foreach $chr (@chr_list) {
 	    &PrintNextSequence(NC_SEQ, $out_format,$line_width,$current_seq,$seq_id, @comments)  if ($return{'ncs'});
 
 	}
-
     } until $end_reached;
-
 }
 
 close NC_SEQ;
