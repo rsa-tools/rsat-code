@@ -114,6 +114,35 @@ takes pseudo-weights into account.
 
 S<I''ij = F''ij*ln(F''ij/Pi)>
 
+=item P-value
+
+The P-value indicates the probability to observe at least Cij
+occurrences of a residue at a given position of the matrix. It is
+calculated with the binomial formula:
+
+    k=C.j    C.j!      k      Cij-k
+Pij= SUM  ---------- Pi (1-Pi)
+    k=Cij k!(C.j-k)!
+
+where
+
+=over
+
+=item Cij 
+
+is the number of occurrences of residue i at position j of
+the matrix.
+
+=item C.j 
+
+is the sum of all residue occurrences at position j of the
+matrix.
+
+=item Pi 
+
+is the prior probability of residue i.
+
+=back
 
 =item parameters
 
@@ -1511,6 +1540,7 @@ sub setInformation {
     $self->force_attribute("information_specified", 1);
 }
 
+
 ################################################################
 =pod 
 
@@ -1724,6 +1754,87 @@ sub calcFrequencies {
     $self->setCrudeFrequencies($nrow,$ncol,@crude_frequencies);
 }
 
+################################################################
+=pod 
+
+=item calcProbabilities()
+
+Calculate probabilities (with the binomial distribution) from the
+alignment matrix.
+
+=cut
+sub calcProbabilities {
+    my ($self) = @_;
+    
+
+    die "The procedure calcProbabilities() is in construction";
+
+    ## Get alphabet
+    my @alphabet = $self->get_attribute("alphabet");
+    if (scalar(@alphabet) <= 0) {
+	&main::FatalError("Cannot calculate weigths for an empty matrix.");
+    }
+
+    ## Matrix size
+    my ($nrow, $ncol) = $self->size();
+    if (($nrow <= 0) ||
+	($ncol <= 0)) {
+	&main::FatalError("Cannot calculate weigths for an empty matrix.");
+    }
+
+    
+    ## Get or calculate prior residue probabilities
+    my %prior = $self->get_attribute("prior");
+    if (scalar(keys %prior) <= 0) {
+	&main::Warning( "No prior defined: using equiprobable residues");
+	my $alphabet_size = scalar(@alphabet);
+	foreach my $letter (@alphabet) {
+	    $prior{$letter} = 1/$alphabet_size;
+	    warn join "\t", ";", $letter, $prior{$letter}, "\n" if ($main::verbose >= 10);
+	}
+    }
+
+    ## pseudo-weight
+    my $pseudo = $self->get_attribute("pseudo");
+    
+    ## Alignment matrix
+    my @matrix = $self->getMatrix();
+    
+    ## Calculate the frequencies
+    my @frequencies = ();
+    my @crude_frequencies = ();
+#    my @col_sum = &col_sum(@matrix);
+    
+    for my $c (0..($ncol-1)) {
+	my $col_sum = 0;
+	for my $r (0..($nrow-1)) {
+	    my $letter = $alphabet[$r];
+	    my $prior = $prior{$letter};
+	    my $occ = $matrix[$c][$r];
+	    $col_sum += $occ;
+	    $frequencies[$c][$r] = $occ + $pseudo*$prior{$letter};
+	    warn join "\t", "freq", $r, $c, $letter, $prior, $pseudo, $occ, $col_sum, "\n" if ($main::verbose >= 10);
+	}
+	for my $r (0..($nrow-1)) {
+	    if ($col_sum eq 0) {
+		$crude_frequencies[$c][$r] = 0;
+	    } else {
+		$crude_frequencies[$c][$r] = $matrix[$c][$r]/$col_sum;
+	    }
+	    $frequencies[$c][$r] /= ($col_sum + $pseudo);
+	    warn join( "\t", "freq", $r, $c, $pseudo, 
+		       $col_sum, 
+		       "a:".$matrix[$c][$r], 
+		       "f:".$crude_frequencies[$c][$r], 
+		       "f':".$frequencies[$c][$r]), "\n" 
+			   if ($main::verbose >= 10);
+	}
+    }
+
+    $self->setFrequencies($nrow,$ncol,@frequencies);
+    $self->setCrudeFrequencies($nrow,$ncol,@crude_frequencies);
+}
+
 
 ################################################################
 =pod
@@ -1812,11 +1923,12 @@ sub calcConsensus {
 ################################################################
 =pod
 
-=_printMatrixRow($row_name, @values)
+=item _printMatrixRow($row_name, @values)
 
 Print a row for the matrix output.
 
 =cut
+
 sub _printMatrixRow {
     my ($self, $row_name, @values) = @_;
     my $row_string = $row_name;
