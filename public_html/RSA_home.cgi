@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSA_home.cgi,v 1.5 2001/01/13 19:14:41 jvanheld Exp $
+# $Id: RSA_home.cgi,v 1.6 2001/02/08 13:01:51 jvanheld Exp $
 #
-# Time-stamp: <2001-01-13 20:13:47 jvanheld>
+# Time-stamp: <2001-02-08 14:01:46 jvanheld>
 #
 ############################################################
 #### this cgi script fills the HTML form for the program dna-pattern
@@ -30,7 +30,7 @@ print <<EndText;
   <TR>
   <TD VALIGN=TOP WIDTH="160">
   <CENTER>
-  <A HREF="http://www.cifn.unam.mx/Computational_Biology/" target=_top>
+  <A HREF="http://www.cifn.unam.mx/Computational_Biology/" target=_blank>
   <IMG SRC="lablogo.gif" ALT="lab logo" BORDER=0 HEIGHT=48 WIDTH=75></A>
   <BR>
   <FONT COLOR="#006600" SIZE=-2>
@@ -48,7 +48,7 @@ print <<EndText;
   
   <TD VALIGN=TOP WIDTH="160">
   <CENTER>
-  <A HREF="http://www.ucmb.ulb.ac.be" TARGET=_top>
+  <A HREF="http://www.ucmb.ulb.ac.be" TARGET=_blank>
   <IMG SRC="ULB_Blue_215.gif" ALT="ULB_Blue_215.gif" BORDER=0 HEIGHT=75 WIDTH=75>
   <BR>
   <FONT COLOR="#0000dd" SIZE=-2>
@@ -121,7 +121,7 @@ print <<EndText;
   <TR ALIGN=CENTER VALIGN=BOTTOM>
 
   <TD>
-  <A HREF="http://www.ucmb.ulb.ac.be/bioinformatics/rsa-tools/" target="_top">
+  <A HREF="http://www.ucmb.ulb.ac.be/bioinformatics/rsa-tools/" target="_blank">
   <B>Belgium</B><BR>
   <IMG SRC="manneken_pis.jpg" HEIGHT=80 WIDTH=53 BORDER=0><BR>
   <FONT SIZE=-2>
@@ -130,7 +130,7 @@ print <<EndText;
   </TD>
 
   <TD ALIGN=CENTER>
-  <A HREF="http://www.cifn.unam.mx/~jvanheld/rsa-tools/" target="_top">
+  <A HREF="http://www.cifn.unam.mx/~jvanheld/rsa-tools/" target="_blank">
   <B>Mexico</B><BR>
   <IMG SRC="zapata.jpg" HEIGHT=80 WIDTH=89 BORDER=0><BR>
   <FONT SIZE=-2>http://itzamna.cifn.unam.mx/~jvanheld/rsa-tools</A>
@@ -143,7 +143,7 @@ print <<EndText;
 EndText
 
 
-print "<H4>Organisms supported on <A HREF='$WWW_RSA' target=_top>",$WWW_RSA,"</A></H4>\n";
+print "<H4>Organisms supported on <A HREF='$WWW_RSA' target=_blank>",$WWW_RSA,"</A></H4>\n";
 print &ListSupportedOrganisms("html_list");
 
 &UpdateLogFile;
