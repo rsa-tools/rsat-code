@@ -314,7 +314,7 @@ use Data::Dumper;
 	  #### out fields
 	  my @out_fields = $class_holder->get_out_fields();
 	  if ($#out_fields < 0) {
-	      @out_fields = keys %attribute_cardinalities;
+	      @out_fields = sort keys %attribute_cardinalities;
 	  }
 
 	  ### header of the main table, indicating the column content
@@ -438,7 +438,7 @@ use Data::Dumper;
 	  untie %db;
 	  warn ("; ", &main::AlphaDate, " export done\n")
 	      if ($main::verbose >= 1);
-	  return;
+	  return();
 	  
 	  
 	  ### export on "obj" format
@@ -456,7 +456,7 @@ use Data::Dumper;
 	  warn ("; ", &main::AlphaDate, " class ", $object_type, " exported\n") 
 	      if ($main::verbose >= 1);
 	  close STDOUT if ($outfile);
-	  return 1;
+	  return(1);
 	  
 	  
 	  ### unsupported format
