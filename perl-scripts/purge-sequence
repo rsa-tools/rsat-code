@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence,v 1.15 2002/01/16 19:03:41 jvanheld Exp $
+# $Id: purge-sequence,v 1.16 2002/01/18 11:43:35 jvanheld Exp $
 #
-# Time-stamp: <2002-01-16 20:01:20 jvanheld>
+# Time-stamp: <2002-01-18 12:42:57 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -48,25 +48,12 @@ if ($inputfile) {
     $basename = $start_time;
 }
 
-#chdir $dirname;
-
-#unless ($outputfile) {
-#    $outputfile = "$dirname/$basemane"."_purged_l${match_len}_m${mismatches}.fasta";
-#    $outputfile =~ s/\s//g;
-#}
-
-
-#### verbose ####
-#&Verbose if ($verbose);
-
 
 #### create a temp file to filter out non-conform lines 
-#### (comment lines starting with ";")
 $tmp_file = "tmp_".$basename.".fasta";
-#&doit("grep -v '^;' $basename > $tmp_file");
-#&doit("grep -v '^;' $inputfile > $tmp_file");
 
-$command = "$convert_seq_command -from $in_format -to fasta -o $tmp_file";
+#$command = "cd $TMP ; ";
+$command = " $convert_seq_command -from $in_format -to fasta -o ${TMP}/$tmp_file";
 $command .= " -i $dir{input}/$basename" if ($inputfile);
 &doit($command);
 
@@ -84,7 +71,7 @@ $mkvtree_options .= " -suf"; # output suffix array to file
 $mkvtree_options .= " -lcp"; # output longest common prefix lengths to file
 $mkvtree_options .= " -pl 8"; # length of prefix for bucket sort (default 0)
 $mkvtree_options .= " -db $tmp_file"; # sequence file
-&doit("$skdir/mkvtree $mkvtree_options");
+&doit("cd $TMP; $skdir/mkvtree $mkvtree_options");
 
 #### locate the duplications
 my $vmatch_options = "-s"; # show the sequence content of a match
@@ -103,13 +90,13 @@ $vmatch_options .= " | grep -v '# args=' ";
 $vmatch_options .= " | perl -pe 's| (\\d+) |_\$1_|'";
 
 $vmatch_options .= "> $outputfile" if ($outputfile);
-&doit("$skdir/vmatch $vmatch_options");
+&doit("cd $TMP ; $skdir/vmatch $vmatch_options");
 foreach $ext  (@extensions) {
-    &doit("rm -f ${tmp_file}.${ext}");
+    &doit("rm -f ${TMP}/${tmp_file}.${ext}");
 }
 
 #### remove the temp file
-&doit("rm -f $tmp_file");
+&doit("rm -f ${TMP}/$tmp_file");
 
 
 ###### verbose ######
@@ -127,7 +114,7 @@ exit(0);
 
 sub doit {
     my ($command) = @_;
-    chdir($TMP);
+#    chdir($TMP);
     warn "; $command\n" if ($verbose);
     system $command unless $dry_run;
 }
