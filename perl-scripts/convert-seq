@@ -5,8 +5,120 @@ if ($0 =~ /([^(\/)]+)$/) {
 require "RSA.lib.pl";
 
 
-
 if ($ARGV[0] eq "-h") {
+    &PrintHelp();
+}
+
+if ($ARGV[0] eq "-help") {
+    &PrintOptions();
+}
+
+
+$start_time = `date`;
+$line_width = 60;
+
+#### initialise parameters ####
+
+&ReadArguments();
+
+
+#### check argument values ####
+unless ($line_width >= 0) {
+    print "\tinvalid line width\n";
+    print "\ttype convert-seq -h for help\n";
+    exit;
+
+}
+&CheckInputSeqFormat($in_format);
+&CheckOutputSeqFormat($out_format);
+
+if ($out_format eq "wc") {
+    $line_width = 0;
+}
+if ($out_format eq "multi") {
+    $line_width = 0;
+}
+
+### open input file ###
+$in = &OpenInputFile($inputfile);
+
+### open output file ###
+$out = &OpenOutputFile($outputfile);
+
+#### verbose ####
+if ($verbose) {
+    print ";convert-seq result\n";
+    if ($inputfile ne "") {
+	print ";Input file	$inputfile\n";
+    }
+    if ($outputfile ne "") {
+	print ";Output file	$outputfile\n";
+    }
+    print ";Input format\t$in_format\n";
+    print ";Output format\t$out_format\n";
+}
+
+###### execute the command #########
+
+while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format)) &&
+       (($current_seq ne "") || ($current_id ne ""))) {
+    if ($lowercases) {
+        $current_seq = lc($current_seq);
+    } elsif ($uppercases) {
+        $current_seq = uc($current_seq);
+    } 
+    if ($out_format eq "filelist") {
+	$one_seq_file = "${current_id}.raw";
+	open RAW, "> $one_seq_file";
+	&PrintNextSequence(RAW, "raw", 0, $current_seq, $current_id);
+	close RAW;
+	print $out "$one_seq_file\n";
+    } else {
+	&PrintNextSequence($out, $out_format, $line_width, $current_seq, $current_id, @comments);
+    }
+    if ($add_RC) {
+	$current_id .= "_reverse_complement";
+	@comments = ();
+	$rev_seq = &ReverseComplement($current_seq);
+	if ($lowercases) {
+	    $rev_seq = lc($rev_seq);
+	} elsif ($uppercases) {
+	    $rev_seq = uc($rev_seq);
+	} 
+	&PrintNextSequence($out, $out_format, $line_width, $rev_seq, $current_id, @comments);
+    }
+}
+
+###### verbose ######
+if ($verbose) {
+    $done_time = `date`;
+    print ";Job started $start_time";
+    print ";Job done    $done_time";
+}
+
+
+###### close input file ######
+if ($inputfile ne "") {
+    close $in;
+}
+
+###### close output file ######
+if ($outputfile ne "") {
+    close $out;
+}
+
+
+exit(0);
+
+
+
+################################################################
+######################### SUBROUTINES ##########################
+################################################################
+
+
+sub PrintHelp {
+
     $accepted_input_string = "\n\t\t\t";
     $accepted_input_string .= join "\n\t\t\t", keys %accepted_input_seq;
     $accepted_output_string = "\n\t\t\t";
@@ -66,10 +178,10 @@ EXAMPLES
 
 End_of_help
   close HELP;
-  exit;
+  exit(0);
 }
 
-if ($ARGV[0] eq "-help") {
+sub PrintOptions {
   open HELP, "| more";
   print HELP <<End_shorthelp;
 consvert-seq options
@@ -99,126 +211,41 @@ End_shorthelp
   exit;
 }
 
-$start_time = `date`;
-$line_width = 60;
 
-#### initialise parameters ####
 
+sub ReadArguments {
 #### read arguments ####
-foreach $a (0..$#ARGV) {
-
-  if ($ARGV[$a] eq "-v") {
-    $verbose = 1;
-    
-  } elsif ($ARGV[$a] eq "-i") {
-    $inputfile = $ARGV[$a+1];
-
-  } elsif ($ARGV[$a] eq "-o") {
-    $outputfile = $ARGV[$a+1];
-
-  } elsif ($ARGV[$a] eq "-from") {
-    $in_format = lc($ARGV[$a+1]);
-
-  } elsif ($ARGV[$a] eq "-to") {
-    $out_format = lc($ARGV[$a+1]);
-
-  } elsif ($ARGV[$a] eq "-lw") {
-    $line_width = $ARGV[$a+1];
-
-  } elsif ($ARGV[$a] eq "-lc") {
-    $uppercases = 0;
-    $lowercases = 1;
-
-  } elsif ($ARGV[$a] eq "-uc") {
-    $uppercases = 1;
-    $lowercases = 0;
-
-  } elsif ($ARGV[$a] eq "-addrc") {
-    $add_RC = 1;
-
-  }
-}
-
-
-#### check argument values ####
-unless ($line_width >= 0) {
-    print "\tinvalid line width\n";
-    print "\ttype convert-seq -h for help\n";
-    exit;
-
-}
-&CheckInputSeqFormat($in_format);
-&CheckOutputSeqFormat($out_format);
-
-if ($out_format eq "wc") {
-    $line_width = 0;
-}
-if ($out_format eq "multi") {
-    $line_width = 0;
-}
-
-### open input file ###
-$in = &OpenInputFile($inputfile);
-
-### open output file ###
-$out = &OpenOutputFile($outputfile);
-
-#### verbose ####
-if ($verbose) {
-  print ";convert-seq result\n";
-  if ($inputfile ne "") {
-    print ";Input file	$inputfile\n";
-  }
-  if ($outputfile ne "") {
-    print ";Output file	$outputfile\n";
-  }
-  print ";Input format\t$in_format\n";
-  print ";Output format\t$out_format\n";
-}
-
-###### execute the command #########
-
-while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format)) &&
-(($current_seq ne "") || ($current_id ne ""))) {
-    if ($lowercases) {
-        $current_seq = lc($current_seq);
-    } elsif ($uppercases) {
-        $current_seq = uc($current_seq);
-    } 
-    &PrintNextSequence($out, $out_format, $line_width, $current_seq, $current_id, @comments);
-    if ($add_RC) {
-	$current_id .= "_reverse_complement";
-	@comments = ();
-	$rev_seq = &ReverseComplement($current_seq);
-	if ($lowercases) {
-	    $rev_seq = lc($rev_seq);
-	} elsif ($uppercases) {
-	    $rev_seq = uc($rev_seq);
-	} 
-	&PrintNextSequence($out, $out_format, $line_width, $rev_seq, $current_id, @comments);
+    foreach $a (0..$#ARGV) {
+	
+	if ($ARGV[$a] eq "-v") {
+	    $verbose = 1;
+	    
+	} elsif ($ARGV[$a] eq "-i") {
+	    $inputfile = $ARGV[$a+1];
+	    
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outputfile = $ARGV[$a+1];
+	    
+	} elsif ($ARGV[$a] eq "-from") {
+	    $in_format = lc($ARGV[$a+1]);
+	    
+	} elsif ($ARGV[$a] eq "-to") {
+	    $out_format = lc($ARGV[$a+1]);
+	    
+	} elsif ($ARGV[$a] eq "-lw") {
+	    $line_width = $ARGV[$a+1];
+	    
+	} elsif ($ARGV[$a] eq "-lc") {
+	    $uppercases = 0;
+	    $lowercases = 1;
+	    
+	} elsif ($ARGV[$a] eq "-uc") {
+	    $uppercases = 1;
+	    $lowercases = 0;
+	    
+	} elsif ($ARGV[$a] eq "-addrc") {
+	    $add_RC = 1;
+	    
+	}
     }
 }
-
-###### verbose ######
-if ($verbose) {
-    $done_time = `date`;
-  print ";Job started $start_time";
-  print ";Job done    $done_time";
-}
-
-
-###### close input file ######
-if ($inputfile ne "") {
-  close $in;
-}
-
-###### close output file ######
-if ($outputfile ne "") {
-  close $out;
-}
-
-
-exit(0);
-
-
-
