@@ -201,7 +201,7 @@ label</B>
 
 <p>
 The reference position (coordinate 0) depends on the type of sequences
-to be retrieved :
+to be retrieved:
 <p>
 
 <ul>
@@ -226,17 +226,29 @@ flank of the gene.
 
 <p>
 Notice that selecting upstream sequences with positive coordinates
-amounts to pick coding sequences on the 5' side of the gene. As an
-exercise, try to extract all start codons for a given organism (say
-<i>Saccharomyces cerevisiae</i>). Check that the codons correspond to
-the expectation (ATG).
+amounts to pick coding sequences on the 5' side of the gene. So, for
+<b>upstream</b>sequences, the coordinate 0 corresponds to the first
+nucleotide of the coding sequences, i.e. the first lettter of the
+start codon.
+
+<ul>
+<li>As an exercise, try to extract all start codons for a given
+organism (say <i>Saccharomyces cerevisiae</i>). Check that the codons
+correspond to the expectation (ATG).
+</ul>
 
 <p>
 Reciprocally, for downstream sequences, negative coordinates could be
-specified to retrieve coding sequences on the 3'end of the gene. As en
-exercise, try to extract all the stop codons for the same
+specified to retrieve coding sequences on the 3'end of the gene. The
+coordinate 0 corresponds to the last nucleotide of the coring
+sequence, i.e. the last letter of the stop codon.
+
+<ul>
+<li>
+As en exercise, try to extract all the stop codons for the same
 organism. Check that the stop codons correspond to the expectation
 (TAA, TAG or TGA).
+</ul>
 
 </ul>
 <p>
