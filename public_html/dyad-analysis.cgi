@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.5 2001/05/17 00:25:34 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.6 2001/05/27 08:37:36 jvanheld Exp $
 #
-# Time-stamp: <2001-05-17 02:25:29 jvanheld>
+# Time-stamp: <2001-05-27 10:37:17 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -29,7 +29,7 @@ $query = new CGI;
 &UpdateLogFile;
 
 #### read parameters ####
-$parameters = "-v -sort -return proba ";
+$parameters = "-v -sort -return proba -timeout 3600 ";
 
 ### sequence file
 ($sequence_file,$sequence_format) = &GetSequenceFile();
