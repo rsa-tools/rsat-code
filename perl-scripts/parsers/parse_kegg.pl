@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_kegg.pl,v 1.5 2001/08/24 09:27:54 jvanheld Exp $
+# $Id: parse_kegg.pl,v 1.6 2001/08/24 09:44:15 jvanheld Exp $
 #
-# Time-stamp: <2001-08-24 11:27:33 jvanheld>
+# Time-stamp: <2001-08-24 11:41:42 jvanheld>
 #
 ############################################################
 
@@ -378,18 +378,18 @@ sub ParseEC {
 	if ($warn_level >= 1);
     
     ### create the class for 0.0.0.0
-#    $ec_object = $ecs->new_object(%args,id=>"0.0.0.0");
-    $ec_object = $ecs->new_object(%args);
-    $ec_object->push_attribute("names", "non-enzymatic or not clearly enzymatic");
+    $ec_object = $ecs->new_object(%args,id=>"0.0.0.0");
+#    $ec_object = $ecs->new_object(%args);
     $ec_object->push_attribute("names", "0.0.0.0");
+    $ec_object->push_attribute("names", "non-enzymatic or not clearly enzymatic");
     $ec_object->set_attribute("ec", "0.0.0.0");
     $ec_object->set_attribute("parent","<NULL>");
 
     ### create the class for -.-.-.-
-#    $ec_object = $ecs->new_object(%args,id=>"-.-.-.-");
-    $ec_object = $ecs->new_object(%args);
-    $ec_object->push_attribute("names", "non-assigned EC number");
+    $ec_object = $ecs->new_object(%args,id=>"-.-.-.-");
+#    $ec_object = $ecs->new_object(%args);
     $ec_object->push_attribute("names", "-.-.-.-");
+    $ec_object->push_attribute("names", "non-assigned EC number");
     $ec_object->set_attribute("ec", "-.-.-.-");
     $ec_object->set_attribute("parent","<NULL>");
 
@@ -412,32 +412,34 @@ sub ParseEC {
 	    $ec_number =~ s/\.$//; ### suppress the trailing dot from the ec number
 	    @names = split /\; /, $names;
 	    
-#	    $ec_object = $ecs->new_object(%args,id=>$ec_number);
-	    $ec_object = $ecs->new_object(%args);
+	    $ec_object = $ecs->new_object(%args,id=>$ec_number);
+#	    $ec_object = $ecs->new_object(%args);
 	    foreach $name (@names) {
-		$ec_object->push_attribute("names",$name);
 		$ec_object->push_attribute("names",$ec_number);
+		$ec_object->push_attribute("names",$name);
 		$ec_object->set_attribute("ec",$ec_number);
 	    }
 	    
 	    ### partially specified ecs
 	    unless ($ec_number =~ /^\d+\.\d+\.\d+\.\d+$/) {
 		if ($ec_number =~ /^\d+\.\d+\.\d+$/) { 
-		    $uncomplete_id = $ec_number.".-";
+		    $partial_ec = $ec_number.".-";
 		} elsif ($ec_number =~ /^\d+\.\d+$/) { 
-		    $uncomplete_id = $ec_number.".-.-";
+		    $partial_ec = $ec_number.".-.-";
 		} elsif ($ec_number =~ /^\d+$/) { 
-		    $uncomplete_id = $ec_number.".-.-.-";
+		    $partial_ec = $ec_number.".-.-.-";
 		} else {
-		    $uncomplete_id = undef;
+		    $partial_ec = undef;
 		    &Errormessage("Error: non-standard EC number\n");
 		}
-		if ($uncomplete_id) {
-		    $uncomplete_object = $ecs->new_object(%args,id=>$uncomplete_id);
+		if ($partial_ec) {
+		    $uncomplete_object = $ecs->new_object(%args,id=>$partial_ec);
+#		    $uncomplete_object = $ecs->new_object(%args);
 		    foreach $name (@names) {
+			$uncomplete_object->push_attribute("names",$partial_ec);
 			$uncomplete_object->push_attribute("names",$name);
 		    }
-#		    $ec_object->push_attribute("subsets",$uncomplete_id);
+#		    $ec_object->push_attribute("subsets",$partial_ec);
 		    $uncomplete_object->set_attribute("parent",$ec_number);
 		}
 	    }
@@ -453,7 +455,7 @@ sub ParseEC {
     ### create taxonomic relationships between EC numbersc
     #my %objects = $class->get_id_index();
     foreach my $ec_object ($ecs->get_objects()) {
-	if (my $ec_number = $ec_object->get_attribute("id")) {
+	if (my $ec_number = $ec_object->get_attribute("ec")) {
 	    if ($ec_number =~ /\.\d+$/) {
 		$parent_ec = $`;
 		if ($parent_object = $ecs->get_object($parent_ec)) {
