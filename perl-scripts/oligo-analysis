@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.46 2002/05/03 06:51:14 jvanheld Exp $
+# $Id: oligo-analysis,v 1.47 2002/05/08 02:17:21 jvanheld Exp $
 #
-# Time-stamp: <2002-05-03 08:48:35 jvanheld>
+# Time-stamp: <2002-05-08 04:17:03 jvanheld>
 #
 ############################################################
 
@@ -108,7 +108,7 @@ if ($ncf) {
     $method = "Frequency file";
     $exp_freq_file = "$data_dir/oligo-frequencies/${oligo_length}nt_non-coding_${organism_name}.freq";
     
-    &FatalError("cannot read expected frequency file $exp_freq_file\n") unless (-r  $exp_freq_file);
+#    &FatalError("cannot read expected frequency file $exp_freq_file\n") unless (-r  $exp_freq_file);
 }
 
 #### read alphabet from a file
@@ -202,7 +202,7 @@ if (($method eq "Frequency file") &&
     #### check if reverse complements were included in the expected freq file;
     #### if not, infer them from the direct strand 
     foreach my $pattern_seq (sort keys %patterns) {
-  	my $rc = lc(&ReverseComplement($pattern_seq));
+  	my $rc = lc(&SmartRC($pattern_seq));
   	if (($patterns{$rc}->{exp_freq} <= 0) &&
   	    ($patterns{$pattern_seq}->{exp_freq})) {
   	    $patterns{$rc}->{exp_freq} = $patterns{$pattern_seq}->{exp_freq};
@@ -222,7 +222,7 @@ $out = &OpenOutputFile($outputfile);
 &CalcSubWordFrequencies() if (($method eq "Markov chain") || ($method eq "lexicon"));
 &CalcAlphabet() if (($input_alphabet) || ($return{'zscore'}));
 &Degenerate() if ($one_var_position);
-&SumReverseComplements() if ($sum_rc);
+&SumSmartRCs() if ($sum_rc);
 #&SubstractOverlap() if ($noov);
 &CalcFrequencies() if (($return{'freq'}) || ($verbose >= 1) || ($method eq "Markov chain"));
 #&GroupRc() if ($group_rc);
@@ -339,9 +339,9 @@ sub CountOligo {
 		    $patterns{$pattern_seq}->{overlaps}++;
 		    $current_pos--;
 		    next;
-		}
+		} 
 		if ($sum_rc) {
-		    $rc = lc(&ReverseComplement($pattern_seq));
+		    $rc = lc(&SmartRC($pattern_seq));
 		    if ((&IsNatural($last_pos{$rc})) && 
 			($last_pos{$rc} - $current_pos < $min_overlap_dist)) {
 			$patterns{$rc}->{overlaps}++;
@@ -349,10 +349,12 @@ sub CountOligo {
 			next;
 		    }
 		}
+
+		#### substract the forbidden positions from the nb of possible positions
 		$forbidden_pos = &min($min_overlap_dist-1,
 				      $last_pos - $current_pos);
 		$patterns{$pattern_seq}->{nb_possible_pos} -= $forbidden_pos;
-#		$patterns{$rc}->{nb_possible_pos} -= $forbidden_pos if ($sum_rc);
+		$patterns{$rc}->{nb_possible_pos} -= $forbidden_pos if ($sum_rc);
 	    }
 	    $patterns{$pattern_seq}->{occ}++;
 	    $last_pos{$pattern_seq} = $current_pos;
@@ -362,7 +364,7 @@ sub CountOligo {
 	    
 	    ### matching sequences (only count first occurrence per sequence)
 	    if ($return{'mseq'}) {
-		if (($sum_rc == 0) || ($current_mseq{lc(&ReverseComplement($pattern_seq))} < 1)) {
+		if (($sum_rc == 0) || ($current_mseq{lc(&SmartRC($pattern_seq))} < 1)) {
 		    $current_mseq{$pattern_seq} = 1;
 		}
 	    }
@@ -374,7 +376,7 @@ sub CountOligo {
 	    foreach $pattern_seq (keys %current_mseq) {
 		$patterns{$pattern_seq}->{mseq} += 1;
 		if ($sum_rc) {
-		    $rc = lc(&ReverseComplement($pattern_seq));
+		    $rc = lc(&SmartRC($pattern_seq));
 		    unless ($rc eq $pattern_seq) { ### palindroms
 			$patterns{$rc}->{mseq} += 1;
 		    }
@@ -412,6 +414,7 @@ sub CountOligo {
 		delete $patterns{$pattern_seq};
 	    }
 	}
+	$nb_possible_pos -= $discarded_occurrences;
 	foreach $letter (keys %residue_occ) {
 	    if ($letter =~ /[^atcg]/i) {
 		$discarded_residues += $residue_occ;
@@ -425,7 +428,7 @@ sub CountOligo {
 
 ################################################################
 ### sum occurrences of reverse complement patterns
-sub SumReverseComplements {
+sub SumSmartRCs {
     if ($verbose >= 2) {
 	&Warning(&AlphaDate()."\tSumming occurrences for pairs of reverse complements");
     }
@@ -433,7 +436,7 @@ sub SumReverseComplements {
 #	$discarded_occurrences *=2;
 #    }
     foreach my $pattern_seq (keys %patterns) {
-	my $rc_pattern_seq = lc(&ReverseComplement($pattern_seq));
+	my $rc_pattern_seq = lc(&SmartRC($pattern_seq));
 
 	if ($rc_pattern_seq eq $pattern_seq) {
 	    #### don't count twice the reverse palindroms !!!!!!!
@@ -457,7 +460,7 @@ sub SumReverseComplements {
     
     ### residue occurrences
     foreach my $residue (keys %residue_occ) {
-	my $rc_residue =lc(&ReverseComplement($residue));
+	my $rc_residue =lc(&SmartRC($residue));
 	$occ_2str{$rc_residue} = $occ_2str{$residue} = $residue_occ{$residue} + $residue_occ{$rc_residue};
     }
     foreach my $residue (keys %occ_2str) {
@@ -469,7 +472,7 @@ sub SumReverseComplements {
     if (($return{'pos'}) || ($noov)) {
 	for $seq (1..$sequence_number) {
 	    foreach $pattern_seq (sort keys %patterns) {
-		$rc_pattern_seq = lc(&ReverseComplement($pattern_seq));
+		$rc_pattern_seq = lc(&SmartRC($pattern_seq));
 		if ($rc_pattern_seq eq $pattern_seq) {
 		    @{$m_pos_bothstrands{$pattern_seq}[$seq]} = @{$match_pos{$pattern_seq}[$seq]};
 		} else {
@@ -491,7 +494,7 @@ sub SumReverseComplements {
 #### only retain one of each pair. 
 sub GroupRc {
     foreach $pattern_seq (keys %patterns) {
-	$rc_pattern_seq = lc(&ReverseComplement($pattern_seq));
+	$rc_pattern_seq = lc(&SmartRC($pattern_seq));
 	if ($rc_pattern_seq gt $pattern_seq) { ### only suppress one oligo from the dyad 
 	    delete $patterns{$rc_pattern_seq};
 	}
@@ -552,7 +555,7 @@ sub CalcSubWordFrequencies {
     if ($sum_rc) {
 	for $w (1..$oligo_length-1) {
 	    foreach $subseq (keys %{$sub_word[$w]}) {
-		$rc = lc(&ReverseComplement($subseq));
+		$rc = lc(&SmartRC($subseq));
 		if ($rc eq $subseq) {
 		    #### count  palindromic patterns only once !!!!!!!!!!!!
 		    $sub_occ_2str[$w]{$subseq} = $sub_word[$w]{$subseq}->{occ};
@@ -573,7 +576,7 @@ sub CalcSubWordFrequencies {
     for $w (1..$oligo_length-1) {
 	$occ_sum[$w] = 0;
 	foreach $subseq (keys %{$sub_word[$w]}) {
-	    unless (($sum_rc) && ($subseq gt lc(&ReverseComplement($subseq)))) {
+	    unless (($sum_rc) && ($subseq gt lc(&SmartRC($subseq)))) {
 		$occ_sum[$w] += $sub_word[$w]{$subseq}->{occ};
 	    }
 	}
@@ -635,7 +638,7 @@ sub CalcAlphabet {
   if ($residue_total > 0) {
     foreach $key (sort keys %residue_occ) {
       if ($sum_rc) {
-	$residue_proba{$key} = ($residue_occ{$key} + $residue_occ{lc(ReverseComplement($key))})/(2*$residue_total);
+	$residue_proba{$key} = ($residue_occ{$key} + $residue_occ{lc(SmartRC($key))})/(2*$residue_total);
       } else {
 	$residue_proba{$key} = $residue_occ{$key}/$residue_total;
       }
@@ -858,7 +861,7 @@ sub CalcExpected {
 	    ### expected number of matching sequences ###
 	    $avg_seq_length = $sum_seq_length/$sequence_number;
 	    $pos_per_seq = $avg_seq_length - $oligo_length + 1;
-	    $pos_per_seq *=2 if ($sum_rc);
+#	    $pos_per_seq *=2 if ($sum_rc);
 	    
 	    $exp_freq_est = $patterns{$pattern_seq}->{exp_freq};
 	    
@@ -992,7 +995,7 @@ sub CalcProba {
 		    $patterns{$pattern_seq}->{exp_occ});
 	}
 	
-#	$rc = uc(&ReverseComplement($pattern_seq));
+#	$rc = uc(&SmartRC($pattern_seq));
 	
 	if ($under_represented) {
 	    #### probability of observing less than the observed number of occurrences ####
@@ -1005,7 +1008,7 @@ sub CalcProba {
 #		$patterns{$pattern_seq}->{remark} = "\tpalindrome";
 #	    } else {
 	    $patterns{$pattern_seq}->{occ_pro} = &sum_of_binomials($patterns{$pattern_seq}->{exp_freq},
-								   $patterns{$pattern_seq}->{nb_possible_pos} - $patterns{$pattern_seq}->{overlaps},
+								   $patterns{$pattern_seq}->{nb_possible_pos},
 								   0,
 								   $patterns{$pattern_seq}->{occ}-1);
 #	    }
@@ -1018,16 +1021,17 @@ sub CalcProba {
 #		$patterns{$pattern_seq}->{remark} = "\tpalindrome";
 #	    } else {
 	    $patterns{$pattern_seq}->{occ_pro} = &binomial_boe($patterns{$pattern_seq}->{exp_freq},
-							       $patterns{$pattern_seq}->{nb_possible_pos} - $patterns{$pattern_seq}->{overlaps},
+							       $patterns{$pattern_seq}->{nb_possible_pos},
 							       $patterns{$pattern_seq}->{occ});
 
-#	    print STDERR join( "\t", "HELLO", 
-#			       $pattern_seq, 
-#			       $patterns{$pattern_seq}->{occ},  
-#			       $patterns{$pattern_seq}->{exp_freq},  
-#			       $patterns{$pattern_seq}->{nb_possible_pos},
-#			       $patterns{$pattern_seq}->{occ_pro}
-#			       ),"\n";
+	    print STDERR join( "\t", "HELLO", 
+			       $pattern_seq, 
+			       $patterns{$pattern_seq}->{occ},  
+			       $patterns{$pattern_seq}->{exp_freq},  
+			       $patterns{$pattern_seq}->{nb_possible_pos},
+			       $patterns{$pattern_seq}->{occ_pro}
+			       ),"\n";
+
 #	    }
 	}
 
@@ -1144,7 +1148,7 @@ sub PrintHeaderLine {
 	push(@out_col,"ms");
 	if ($return{'proba'}) {
 	    push(@out_col,"exp_ms");
-	    push(@out_col,"ems_cor");
+	    push(@out_col,"ems_cor") unless ($noov);
 	    push(@out_col,"ms_prb");
 	    push(@out_col,"ms_sig");
 	}
@@ -1206,6 +1210,7 @@ sub PrintResult {
 	printf $out "; %-29s\t%s\n", "Input format", $in_format;
 	printf $out "; %-29s\t%s\n", "Method", $method if ($method);
 	printf $out "; %-29s\t%s\n", "Expected frequency file", $exp_freq_file if ($exp_freq_file);
+	printf $out "; %-29s\n", "\trescaled to 1" if ($rescale_freq);
 	printf $out "; %-29s\t%s\n", "Markov chain order", $markov_order if ($method eq "Markov chain");
 	printf $out "; %-29s\t%s\n", "Alphabet frequency file", $alphabet_file if ($alphabet_file);
 	if ($alphabet) {
@@ -1243,10 +1248,10 @@ sub PrintResult {
 	printf $out "; %-29s\t%s\n", "Sequence type", $seq_type;
 	printf $out "; %-29s\t%s\n", "Nb of sequences", $sequence_number;
 	printf $out "; %-29s\t%s\n", "Sum of sequence lengths", $sum_seq_length;
-	printf $out "; %-29s\t%s\n", "nb possible positions",$nb_possible_pos;
 	if ($seq_type eq "DNA") {
 	    printf $out "; %-29s\t%d\t%s\n", "discarded occurrences", $discarded_occurrences, " (contain other letters than ACGT)";
 	}
+	printf $out "; %-29s\t%s\n", "nb possible positions",$nb_possible_pos;
 	printf $out "; %-29s\t%s\n", "total oligo occurrences", $sum_occurrences;
 	if ($noov) {
 	    printf $out "; %-29s\t%s\n", "total overlaps", $sum_overlaps;
@@ -1329,7 +1334,7 @@ sub PrintResult {
 	### oligo sequence and identifier
 	print $out "$pattern_seq";
 	if ($sum_rc) {
-	    print $out "\t$pattern_seq|", lc(ReverseComplement($pattern_seq));
+	    print $out "\t$pattern_seq|", lc(&SmartRC($pattern_seq));
 	} else {
 	    print $out "\t$pattern_seq";
 	}
@@ -1342,7 +1347,7 @@ sub PrintResult {
 	if ($return{'occ'}) {
 	    print $out "\t", $patterns{$pattern_seq}->{occ};
 	    
-	    ### expected frequency
+	    ### expected occurrences
 	    if ($return{'exp_freq'}) {
 		if ($patterns{$pattern_seq}->{exp_occ} >= 0.01) {
 		    printf $out "\t%.2f", $patterns{$pattern_seq}->{exp_occ};
@@ -1350,6 +1355,9 @@ sub PrintResult {
 		    printf $out "\t%.2g", $patterns{$pattern_seq}->{exp_occ};
 		}
 	    }
+
+	    ### TEMPORARY ###
+#	    printf $out "\t%.2f", $patterns{$pattern_seq}->{nb_possible_pos};
 	    
 	    ### occurrence probability
 	    if ($return{'proba'}) {
@@ -1391,7 +1399,7 @@ sub PrintResult {
 	    print $out "\t", $patterns{$pattern_seq}->{mseq};
 	    if ($return{'proba'}) {
 		printf $out "\t%.2f", $patterns{$pattern_seq}->{exp_ms};
-		printf $out "\t%.2f", $patterns{$pattern_seq}->{ems_cor};
+		printf $out "\t%.2f", $patterns{$pattern_seq}->{ems_cor} unless ($noov);
 		if ($patterns{$pattern_seq}->{ms_pro} >= 0.0001) {
 		    printf $out "\t%.5f", $patterns{$pattern_seq}->{ms_pro};     
 		} else {
@@ -1562,6 +1570,7 @@ sub ReadArguments {
 	    ### use oligo non-coding frequencies as expected frequencies
 	} elsif ($ARGV[$a] =~ /^-ncf/i) {
 	    $ncf = 1;
+#	    $rescale_freq = 1;
 	    
 	    #### lexicon
 	} elsif ($ARGV[$a] =~ /^-lex/i) { ### Markov chains
