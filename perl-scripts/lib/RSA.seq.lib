@@ -577,6 +577,13 @@ sub IUPAC_to_regular {
 ### ambiguous codes
 sub regular_to_IUPAC {
     my ($regular) = @_;
+    
+    ## Ignore non-letter characters
+    $regular =~ s/\.//g;
+    $regular =~ s/\[\-/\[/g;
+
+    $regular =~ s/\[(\S)\]/$1/g; ## single letter in brackets
+
     $regular =~ s/\[AG\]/R/g;
     $regular =~ s/\[CT\]/Y/g;
     $regular =~ s/\[AC\]/M/g;
