@@ -2,9 +2,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genes.pl,v 1.7 2000/11/17 07:44:39 jvanheld Exp $
+# $Id: parse_genes.pl,v 1.8 2000/11/20 22:38:47 jvanheld Exp $
 #
-# Time-stamp: <2000-11-17 08:34:26 jvanheld>
+# Time-stamp: <2000-11-20 11:50:28 jvanheld>
 #
 ############################################################
 
@@ -35,7 +35,7 @@ $species_name{human} = "H.sapiens";
 $species_name{ecoli} = "E.coli";
 
 foreach $org (keys %species_name) {
-    my $data_file = "$KEGG_dir/genomes/genes/".$species_name{$org}.".ent";
+    my $data_file = $dir{KEGG}."/genomes/genes/".$species_name{$org}.".ent";
     if (-e $data_file) {
 	$in_file{$org} = "cat ${data_file} | ";
     } elsif (-e "${data_file}.gz") {
@@ -81,23 +81,23 @@ if ($export{all}) {
 }
 $suffix .= "_test" if ($test);
 
-$output_dir = $parsed_data."/genes_kegg";
-unless (-d $output_dir) {
-    warn "Creating output dir $output_dir";
-    mkdir $output_dir, 0775 || die "Error: cannot create directory $dir\n";
+$dir{output} = $parsed_data."/genes_kegg";
+unless (-d $dir{output}) {
+    warn "Creating output dir $dir{output}";
+    mkdir $dir{output}, 0775 || die "Error: cannot create directory $dir\n";
 }
-chdir $output_dir;
-$out_file{error} = "$output_dir/Gene".$suffix.".errors.txt";
-$out_file{stats} = "$output_dir/Gene".$suffix.".stats.txt";
-$out_file{genes} = "$output_dir/Gene".$suffix.".obj";
-$out_file{synonyms} = "$output_dir/Gene".$suffix.".synonyms.tab";
-#$out_file{mldbm_genes} = "$output_dir/Gene".$suffix.".mldbm";
-#$out_file{mldbm_gene_index} = "$output_dir/Gene".$suffix."__name_index.mldbm";
-#$out_file{mldbm_expression_name_index} = "$output_dir/Expression".$suffix."__name_index.mldbm";
-#$out_file{mldbm_expression_input_index} = "$output_dir/Expression".$suffix."__input_index.mldbm";
-#$out_file{mldbm_expression_output_index} = "$output_dir/Expression".$suffix."__output_index.mldbm";
-#$out_file{expressions} = "$output_dir/Expression".$suffix.".obj";
-#$out_file{mldbm_expressions} = "$output_dir/Expression".$suffix.".mldbm";
+chdir $dir{output};
+$out_file{error} = "$dir{output}/Gene".$suffix.".errors.txt";
+$out_file{stats} = "$dir{output}/Gene".$suffix.".stats.txt";
+$out_file{genes} = "$dir{output}/Gene".$suffix.".obj";
+$out_file{synonyms} = "$dir{output}/Gene".$suffix.".synonyms.tab";
+#$out_file{mldbm_genes} = "$dir{output}/Gene".$suffix.".mldbm";
+#$out_file{mldbm_gene_index} = "$dir{output}/Gene".$suffix."__name_index.mldbm";
+#$out_file{mldbm_expression_name_index} = "$dir{output}/Expression".$suffix."__name_index.mldbm";
+#$out_file{mldbm_expression_input_index} = "$dir{output}/Expression".$suffix."__input_index.mldbm";
+#$out_file{mldbm_expression_output_index} = "$dir{output}/Expression".$suffix."__output_index.mldbm";
+#$out_file{expressions} = "$dir{output}/Expression".$suffix.".obj";
+#$out_file{mldbm_expressions} = "$dir{output}/Expression".$suffix.".mldbm";
 
 ### open error report file
 open ERR, ">$out_file{error}" || die "Error: cannot write error file $out_file{error}\n";
@@ -166,7 +166,7 @@ if ($warn_level >= 1) {
 
 close ERR;
 
-system "gzip -f $output_dir/*.tab $output_dir/*.obj $output_dir/*.txt";
+system "gzip -f $dir{output}/*.tab $dir{output}/*.obj $dir{output}/*.txt";
 
 
 exit(0);
