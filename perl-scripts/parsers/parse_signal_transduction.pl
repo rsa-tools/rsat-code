@@ -83,7 +83,6 @@ package main;
     }
     if ($clean) {
 	warn "Cleaning output directory\n" if ($verbose >= 1);
-#	die "HELLO";
 	system "\\rm -rf $dir{output}/*";
     }
 
@@ -118,7 +117,7 @@ package main;
 
     ### print each pathway in a separate file
     foreach $pathway ($pathways->get_objects()) {
-	&ExportPathway($pathway);
+	&PathwayToDiagram($pathway);
     }
 
     #####################
@@ -165,9 +164,6 @@ sub ReadEntities {
 	warn "$_\n" if ($verbose >= 4);
 
 	### read the fields ###
-#	$entity_nb++;
-#	$ac = sprintf "ent%5d", $entity_nb;
-#	$ac =~ s/ /0/g;
 	$name = $fields[$col{name}];
 	$description = $fields[$col{descr}];
 	
@@ -195,14 +191,9 @@ sub ReadEntities {
 		   ), "\n")
 	    if ($verbose >= 2);
 	
-	### old routine to export in prolog
-	&CreateEntity($ac,&PrologString($type),&PrologString($name),&PrologString($description));
-	
-	
 	### remind accession number ###
 	$lc_name = lc($entity{$ac}->{name});
 	$AC{$lc_name} = $ac;
-#print "$ac\t$lc_name\n";
     } 
     close ENT;
 
@@ -228,13 +219,6 @@ sub ReadEntities {
 	
 	$name = $fields[$col{name}];
 	$altName = $fields[$col{altName}];
-	#$lc_name = lc($name);
-	#if (defined($AC{$lc_name})) {
-	#  $AC{lc($altName)} =  $AC{$lc_name};
-	#  push @{$altName{$name}}, $altName; 
-	#} else {
-	#  print  ERR ";Error in $in_file{synonyms} line $line_nb: $name had not been previously declared in $in_file{entities}\n";
-	#}
 
 	### add new name to the object
 	if ($object = $entities->get_object($name)) {
@@ -345,21 +329,6 @@ sub ReadInteractions {
 	
 	$activ_object->push_attribute("inputs",$ent_id);
 	
-	#$lc_molec = lc($molec);
-	#if (defined ($AC{$lc_molec})) {
-	#  $molecAC = $AC{$lc_molec};
-	#} else {
-	#  print ERR "Error in $in_file{interaction_source} line $line_nb: $molecAC has not been defined in $in_file{entities}\n";
-	#  print ERR "\t$_\n";
-#   #   next;
-	#}
-	#push @{$association{$inter}->{sources}}, $molecAC;
-
-	#foreach $attribute (keys %col) {
-	#  ${$source_attributes}[$line_nb]->{$attribute} = $fields[$col{$attribute}];
-	#  push @{$source_records{$inter}{$molecAC}}, $line_nb;
-	#}
-#print "$inter\t", ${$source_attributes}[$line_nb]->{molec}, "\t", ${$source_attributes}[$line_nb]->{stoeichiometry}, "\n";
     }
     close SOURCE;
 
@@ -399,32 +368,6 @@ sub ReadInteractions {
 	
 	$activ_object->push_attribute("outputs",$ent_id);
 
-
-	#$inter = $fields[$col{inter}];
-	#unless (defined($association{$inter})) {
-	#  print ERR "Error in $in_file{interaction_target} line $line_nb: $inter has not been defined in $InteractionFile\n";
-	#  print ERR "\t$_\n";
-	#  next;
-	#}
-	#$molec = &PrologString($fields[$col{molec}]);
-	#$lc_molec = lc($molec);
-	#if (defined ($AC{$lc_molec})) {
-	#  $molecAC = $AC{$lc_molec};
-	#} else {
-	#  print ERR "Error in $in_file{interaction_target} line $line_nb: $molecAC has not been defined in $in_file{entities}\n";
-	#  print ERR "\t$_\n";
-	#  next;
-	#}
-
-	#$subunit = $fields[$col{subunit}];
-	#$state_before = $fields[$col{state_before}];
-	#$state_after = $fields[$col{state_after}];
-#
-	#push @{$association{$inter}->{targets}}, $molecAC;
-	#foreach $attribute (keys %col) {
-	#  ${$target_attributes}[$line_nb]->{$attribute} = $fields[$col{$attribute}];
-	#  push @{$target_records{$inter}{$molecAC}}, $line_nb;
-	#}
     }
     close TARGET;
 
@@ -494,16 +437,8 @@ sub ReadPathways {
 	&MySplit;
 	my $name = $fields[0];
 	my $description = $fields[1];
-#  	my $id = $name;
-#  	$id =~ s/^\'//g;
-#  	$id =~ s/\'$//g;
-#  	$id =~ s/\'/prime/g;
-#  	$id =~ s/\s/_/g;
-#  	$id =~ s/\-/_/g;
-#  	$id = "path_".$id;
 	
 	my $pathway = $pathways->new_object(names=>$name);
-#	$pathway->push_attribute("names", $name);
 	if ($description) {
 	    $pathway->set_attribute("description", $description);
 	} else {
@@ -614,97 +549,41 @@ sub ReadPathways {
 
 }
 
-#  sub oldReadPathways {
-#      open PATHEL, "> $PathwayElementFile" || die  "Error: cannot write pathway element file $PathwayElementFile\n";
-#      open PATH, "$PathwayFile" || die "Error: cannot read pathway file $PathwayFile\n";
-#      while (<PATH>) {
-#  	&MySplit;
-#  	### pathway name
-#  	$PathwayName = $fields[0];
-#  	$PathwayName = "undef" if ($PathwayName eq "");
-#  	### pathway accession number
-#  	$PathwayAC = "$PathwayName";
-#  	$PathwayAC =~ s/^\'//g;
-#  	$PathwayAC =~ s/\'$//g;
-#  	$PathwayAC =~ s/\'/prime/g;
-#  	$PathwayAC =~ s/\s/_/g;
-#  	$PathwayAC =~ s/\-/_/g;
-#  	$PathwayAC = "path_".$PathwayAC;
-#  	$pathway{$PathwayAC}->{ac} = $PathwayAC;
-#  	$pathway{$PathwayAC}->{name} = $PathwayName;
-#  	### entities
-#  	$EntityName = $fields[1];
-#  	$lc_name = lc($EntityName);
-#  	if ($AC{$lc_name} ne "") {
-#  	    $EntityAC = $AC{$lc_name};
-#  	    $Type = $entity{$EntityAC}->{type};
-#  	} else {
-#  	    print  ERR ";Error in $PathwayFile: $name had not been previously declared in $in_file{entities}\n";
-#  	}
-#  	&CreatePathwayEntity($PathwayAC,$EntityAC,$Type,$EntityName);
-#      }
-#      close PATH;
-#      ### convert associations into pathway elements
-#      foreach $AssocAC (keys %association) {
-#  	$AssocAC = $association{$AssocAC}->{ac};
-#  	$AssocType = $association{$AssocAC}->{type};
-#  	$Label = $association{$AssocAC}->{name};
-#  	$source = $association{$AssocAC}->{source};
-#  	$target = $association{$AssocAC}->{target};
-#  	foreach $PathwayAC (keys %pathway) {
-#  	    next if ($PathwayAC eq "path_undef");
-#  	    if (($member{$source}{$PathwayAC}) && ($member{$target}{$PathwayAC})) {
-#  		$PwelAC = &GetNextPwelAC;
-#  		$FromAC = $member{$source}{$PathwayAC};
-#  		$ToAC = $member{$target}{$PathwayAC};
-#  		print PATHEL "pathway_element($PwelAC,$PathwayAC,$Step,association,$AssocType,$AssocAC,$FromAC,$ToAC,$Label,_,_).\n";
-#  	    }
-#  	}
-#      }
-#      close PATHEL;
-#      ### split pathway_element by pathway
-#      foreach $PathwayAC (keys %pathway) {
-#  	next if ($PathwayAC eq "path_undef");
-#  	$command = "grep $PathwayAC $PathwayElementFile > ${PathwayAC}.pl";
-#  	system $command;
-#      }
+#  sub GetNextPwelAC {
+#      $path_element_count++;
+#      local($PwelAC) = sprintf "pwel_%5d", $path_element_count;
+#      $PwelAC =~ s/ /0/g;
+#      return $PwelAC;
 #  }
 
-sub GetNextPwelAC {
-    $path_element_count++;
-    local($PwelAC) = sprintf "pwel_%5d", $path_element_count;
-    $PwelAC =~ s/ /0/g;
-    return $PwelAC;
-}
+#  sub CreatePathwayEntity {
+#      local($PwelAC) = &GetNextPwelAC;
+#      local($PathwayAC) = $_[0];
+#      local($EntityAC) = $_[1];
+#      local($Type) = $_[2];
+#      local($Label) = $_[3];
+#      local($Step) = 0;  
+#      local($Xpos) = "_";
+#      local($Ypos) = "_";
 
-sub CreatePathwayEntity {
-    local($PwelAC) = &GetNextPwelAC;
-    local($PathwayAC) = $_[0];
-    local($EntityAC) = $_[1];
-    local($Type) = $_[2];
-    local($Label) = $_[3];
-    local($Step) = 0;  
-    local($Xpos) = "_";
-    local($Ypos) = "_";
-
-    $pwel{$PwelAC}->{PwelAC} = $PwelAC;
-    $pwel{$PwelAC}->{PathwayAC} = $PathwayAC;
-    $pwel{$PwelAC}->{Step} = $Step;
-    $pwel{$PwelAC}->{Type} = $Type;
-    $pwel{$PwelAC}->{EntityAC} = $EntityAC;
-    $pwel{$PwelAC}->{Label} = $Label;
-    $pwel{$PwelAC}->{Xpos} = $Xpos;
-    $pwel{$PwelAC}->{Ypos} = $Ypos;
+#      $pwel{$PwelAC}->{PwelAC} = $PwelAC;
+#      $pwel{$PwelAC}->{PathwayAC} = $PathwayAC;
+#      $pwel{$PwelAC}->{Step} = $Step;
+#      $pwel{$PwelAC}->{Type} = $Type;
+#      $pwel{$PwelAC}->{EntityAC} = $EntityAC;
+#      $pwel{$PwelAC}->{Label} = $Label;
+#      $pwel{$PwelAC}->{Xpos} = $Xpos;
+#      $pwel{$PwelAC}->{Ypos} = $Ypos;
     
-    print PATHEL "pathway_element($PwelAC,$PathwayAC,$Step,entity,$Type,$EntityAC,$Label,$Xpos,$Ypos).\n";
-    ### remind the pertainance of this entity to this pathway
-    $member{$EntityAC}{$PathwayAC} = $PwelAC;
+#      print PATHEL "pathway_element($PwelAC,$PathwayAC,$Step,entity,$Type,$EntityAC,$Label,$Xpos,$Ypos).\n";
+#      ### remind the pertainance of this entity to this pathway
+#      $member{$EntityAC}{$PathwayAC} = $PwelAC;
 
-}
+#  }
 
-sub CreatePathwayAssociation {
-    print PATHEL "pathway_element($PwelAC,$PathwayAC,$Step,association,$Type,$AssocAC,$FromAC,$ToAC,$Label,$Xpos,$Ypos).\n";
-}
+#  sub CreatePathwayAssociation {
+#      print PATHEL "pathway_element($PwelAC,$PathwayAC,$Step,association,$Type,$AssocAC,$FromAC,$ToAC,$Label,$Xpos,$Ypos).\n";
+#  }
 
 ### create a new entity
 sub CreateEntity {
@@ -735,10 +614,6 @@ sub CreateAssociation {
     $association{$lac}->{source} = $lsource;
     $association{$lac}->{target} = $ltarget;
     $assoc_count{$ltype}++;
-#print "ac\t$lac\t", $association{$lac}->{ac}, "\n";
-#print "type\t$ltype\t", $association{$ltype}->{ac}, "\n";
-#print "name\t$lname\t", $association{$lname}->{ac}, "\n";
-#print "description\t$ldescription\t", $association{$ldescription}->{ac}, "\n";
 }
 
 ### print entity file
@@ -910,8 +785,8 @@ sub ReadArguments {
 
 
 ### export a pathway diagram
-sub ExportPathway {
-    ### usage : &ExportPathway($pathway);
+sub PathwayToDiagram {
+    ### usage : &PathwayToDiagram($pathway);
     ### collects all inputs and outputs of these interactions
     ### and prints the diagramin text format
     my ($pathway) = @_;
@@ -954,11 +829,39 @@ sub ExportPathway {
 	}
     }
 
-    ### print nodes corresponding to these entities
+    ### create nodes corresponding to subpathway
+    foreach my $sub_id (@subpathway_ids) {
+	$subpathway = $pathways->get_object($sub_id);
+
+	unless ($diagram->get_node($sub_id)) {
+	    #### create a node for the entity if necessary
+	    my $node = $diagram->add_node(id=>$sub_id);
+	    $node->set_attribute("label", $subpathway->get_name());
+	    $node->set_attribute("type", "pathway");
+	    $node->set_attribute("xpos", int(rand $xsize));
+	    $node->set_attribute("ypos", int(rand $ysize));
+	}
+    }
+    
+    ### create nodes corresponding to interaction inputs/output
     foreach my $ent_id (keys %linked_entities) {
 	$entity = $entities->get_object($ent_id);
 
-	unless ($diagram->get_node("ent_id")) {
+	unless ($diagram->get_node($ent_id)) {
+	    #### create a node for the entity if necessary
+	    my $node = $diagram->add_node(id=>$ent_id);
+	    $node->set_attribute("label", $entity->get_name());
+	    $node->set_attribute("type", $entity->get_attribute("type"));
+	    $node->set_attribute("xpos", int(rand $xsize));
+	    $node->set_attribute("ypos", int(rand $ysize));
+	}
+    }
+    
+    #### create nodes for the explicitly specified entities
+    foreach my $ent_id (@entity_ids) {
+	$entity = $entities->get_object($ent_id);
+
+	unless ($diagram->get_node($ent_id)) {
 	    #### create a node for the entity if necessary
 	    my $node = $diagram->add_node(id=>$ent_id);
 	    $node->set_attribute("label", $entity->get_name());
