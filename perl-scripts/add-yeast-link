@@ -32,7 +32,7 @@ warn "; Checking organism $organism_name\n" if ($verbose >= 1);
 &CheckOrganism($organism_name, $feature_table_file);
 
 warn "; Reading ORF table for $organism_name\n" if ($verbose >= 1);
-&ReadOrfPositions($organism_name, $feature_table_file);
+&ReadFeatures($organism_name, $feature_table_file);
 warn "; Reading synonyms for $organism_name\n" if ($verbose >= 1);
 &ReadSynonyms($organism_name);
 
@@ -62,7 +62,9 @@ if ($verbose) {
 #print $out "<H1>$inputfile</H1>\n";
 #print $out "<PRE>\n";
 
-$link_start{'mips'} = "<A TARGET=_blank HREF=\"http://mips.gsf.de/cgi-bin/proj/yeast/search.pl?searchstr=";
+
+$link_start{'mips'} = "<A TARGET=_blank HREF=\"http://mips.gsf.de/genre/proj/yeast/searchEntryAction.do?text=";
+#$link_start{'mips'} = "<A TARGET=_blank HREF=\"http://mips.gsf.de/cgi-bin/proj/yeast/search.pl?searchstr=";
 #$link_start{'mips'} = "<A TARGET=_blank HREF=\"http:\/\/speedy.mips.biochem.mpg.de\/htbin\/search_code\/";
 #$link_start{'ypd'} = "<A TARGET=_blank HREF=\"http:\/\/quest7.proteome.com\/YPD\/";
 #$link_start{'sgd'} = "<A TARGET=_blank HREF=\"http:\/\/genome-www.stanford.edu\/cgi-bin\/dbrun\/SacchDB?find+Locus+%22";
@@ -217,7 +219,7 @@ sub ReadArguments {
 	    &PrintHelp();
 	    
 	    ### list of options
-	} elsif ($ARGV[0] eq "-help") {
+	} elsif ($ARGV[$a] eq "-help") {
 	    &PrintOptions();
 	    
 	} elsif ($ARGV[$a] eq "-i") {
