@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: downloads.mk,v 1.11 2004/03/29 12:43:17 jvanheld Exp $
+# $Id: downloads.mk,v 1.12 2004/05/17 15:06:46 jvanheld Exp $
 #
 # Time-stamp: <2003-10-09 14:02:21 jvanheld>
 #
@@ -409,3 +409,13 @@ go:
 	@mkdir -p logs
 	wget -np -r -l 1 -N ${GO_HTTP}
 	chmod -R g+w ${GO_URL}
+
+################################################################
+## JASPAR
+
+JASPAR=http://jaspar.cgb.ki.se/DOWNLOAD/
+jaspar:
+	@mkdir -p logs
+	@echo "${DATE}	updating dir	${JASPAR}" 
+	${WGET} ${JASPAR}
+	@echo "${DATE}	updated dir	${JASPAR}"
