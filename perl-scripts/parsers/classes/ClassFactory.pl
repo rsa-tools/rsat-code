@@ -861,6 +861,13 @@ use Data::Dumper;
 	  if ($main::verbose >= 2);
       open SQL, "> $sql_dir/$create_file" || die "Error: cannot write file $create_file\n";
 
+      ################################################################
+      #### Alter table
+      my $alter_file = "${table_prefix}_table_alter.sql";
+      warn ";\talter table scripts to file $alter_file\n" 
+	  if ($main::verbose >= 2);
+      open ALTER, "> $sql_dir/$alter_file" || die "Error: cannot write file $alter_file\n";
+
       print_sql_header ("Table creation scripts for class $table_prefix");
 
       #### schema
@@ -873,16 +880,10 @@ use Data::Dumper;
 	  }
       }
 
+      #### name and path for the main table
+      my $main_table_name = $table_name = $table_prefix;
+      my $main_table_path = $table_path = $schema.".".$table_name;
 
-      #### main table
-      my $table_path = my $table_name = $table_prefix;
-      if ($dbms eq "postgresql") {
-	  $table_path = $schema.".".$table_name;
-      }
-      my $main_table_name = $table_name;
-      if ($dbms eq "postgresql") {
-	  $main_table_path = $table_path;
-      }
       print_sql_header ("Main table - $table_name");
       print SQL "CREATE TABLE $table_path", "\n\t(", "\n";
       my @field_defs = ();
@@ -917,10 +918,9 @@ use Data::Dumper;
       #### multivalue attributes
       foreach my $field (@array_fields) {
 	  $field = lc($field);
-	  my $table_path = my $table_name = $table_prefix."_".$field;
-	  if ($dbms eq "postgresql") {
-	      $table_path = $schema.".".$table_name; 
-	  }
+	  my $table_name = $table_prefix."_".$field;
+	  my $table_path = $schema.".".$table_name; 
+
 	  print_sql_header ("Multivalue field - $table_name");
 	  print SQL "CREATE TABLE $table_path", "\n\t(", "\n";
 	  my @field_defs = ();
@@ -950,7 +950,7 @@ use Data::Dumper;
 	      print SQL "\t)", "\n", ";", "\n";
 	  }
 	  print SQL "CREATE INDEX ".$table_name."_id_index ON ".$table_path." (id);\n";
-	  print SQL "ALTER TABLE ${table_path} ADD FOREIGN KEY (id) REFERENCES ${main_table_path}(id) ON DELETE CASCADE;\n";
+	  print ALTER "ALTER TABLE ${table_path} ADD FOREIGN KEY (id) REFERENCES ${main_table_path}(id) ON DELETE CASCADE;\n";
 	  foreach $g (@granted_readers) {
 	      print SQL "GRANT select ON $table_path TO $g;\n";
 	  }
@@ -966,10 +966,8 @@ use Data::Dumper;
 	  my @fields = split "\t", $header;
 #	  shift @fields;
 #	  warn "HELLO\tEXPANDED\t$field\t$cardinality\t$header\t", join (";", @fields), "\n";
-	  my $table_path = my $table_name = $table_prefix."_".$field;
-	  if ($dbms eq "postgresql") {
-	      $table_path = $schema.".".$table_name;
-	  }
+	  my $table_name = $table_prefix."_".$field;
+	  my $table_path = $schema.".".$table_name;
 	  print_sql_header ("Expanded attribute - $table_name");
 	  print SQL "CREATE TABLE $table_path", "\n\t(", "\n";
 	  my @field_defs = ();
@@ -1004,7 +1002,7 @@ use Data::Dumper;
 	      print SQL "\t)", "\n", ";", "\n";
 	  }
 	  print SQL "CREATE INDEX ".$table_name."_id_index ON ".$table_path." (id);\n";
-	  print SQL "ALTER TABLE ${table_path} ADD FOREIGN KEY (id) REFERENCES ${main_table_path}(id) ON DELETE CASCADE;\n";
+	  print ALTER "ALTER TABLE ${table_path} ADD FOREIGN KEY (id) REFERENCES ${main_table_path}(id) ON DELETE CASCADE;\n";
 	  foreach $g (@granted_readers) {
 	      print SQL "GRANT select ON $table_path TO $g;\n";
 	  }
@@ -1013,21 +1011,21 @@ use Data::Dumper;
 	  }
       }
 
-      #### close the table creation script file
+      #### close the table creation and alter script files
       if ($dbms eq "oracle") {
 	  print_sql_header ("Quit");
 	  print SQL "quit;";
-	  close SQL;
       } 
+      
+      close SQL;
+      close ALTER;
 
       ################################################################
       #### Table loading
       if ($dbms eq "oracle") {
 	  #### load main table
-	  my $table_path = my $table_name = $table_prefix;
-	  if ($dbms eq "postgresql") {
-	      $table_path = $schema.".".$table_name;
-	  }
+	  my $table_name = $table_prefix;
+	  my $table_path = $schema.".".$table_name;
 	  my $load_file = "${table_prefix}_table_load.ctl";
 	  warn ";\ttable loading scripts to file $load_file\n" 
 	      if ($main::verbose >= 2);
@@ -1069,10 +1067,8 @@ use Data::Dumper;
 	  #### load multivalue attributes
 	  foreach my $field (@array_fields) {
 	      $field = lc($field);
-	      my $table_path = my $table_name = $table_prefix."_".$field;
-	      if ($dbms eq "postgresql") {
-		  $table_path = $schema.".".$table_name;
-	      }
+	      my $table_name = $table_prefix."_".$field;
+	      my $table_path = $schema.".".$table_name;
 	      my $load_file = "${table_prefix}_${field}_table_load.ctl";
 	      warn ";\ttable loading scripts to file $load_file\n" 
 		  if ($main::verbose >= 2);
@@ -1121,10 +1117,8 @@ use Data::Dumper;
 	  #### load expanded attributes
 	  foreach $field (@expanded_fields) {
 	      $field = lc($field);
-	      my $table_path = my $table_name = $table_prefix."_".$field;
-	      if ($dbms eq "postgresql") {
-		  $table_path = $schema.".".$table_name;
-	      }
+	      my $table_name = $table_prefix."_".$field;
+	      my $table_path = $schema.".".$table_name;
 	      my $load_file = "${table_prefix}_${field}_table_load.ctl";
 	      my $field_size = $main::special_field_size{$field} || $default_field_size;
 	      my $load_field_format;
@@ -1169,10 +1163,8 @@ use Data::Dumper;
 
 	  #### postgresql loader
       } elsif ($dbms eq "postgresql") {
-	  my $table_path = my $table_name = $table_prefix;
-	  if ($dbms eq "postgresql") {
-	      $table_path = $schema.".".$table_name;
-	  }
+	  my $table_name = $table_prefix;
+	  my $table_path = $schema.".".$table_name;
 	  my $load_file = "${table_prefix}_table_load.ctl";
 	  warn ";\ttable loading scripts to file $load_file\n" 
 	      if ($main::verbose >= 2);
@@ -1185,10 +1177,8 @@ use Data::Dumper;
 	  
 	  foreach $field (@array_fields, @expanded_fields) {
 	      $field = lc($field);
-	      my $table_path = my $table_name = $table_prefix."_".$field;
-	      if ($dbms eq "postgresql") {
-		  $table_path = $schema.".".$table_name;
-	      }
+	      my $table_name = $table_prefix."_".$field;
+	      my $table_path = $schema.".".$table_name;
 	      my $load_file = "${table_prefix}_${field}_table_load.ctl";
 	      warn ";\ttable loading scripts to file $load_file\n" 
 		  if ($main::verbose >= 2);
@@ -1202,10 +1192,8 @@ use Data::Dumper;
 	  
 	  #### mysql loader
       } elsif ($dbms eq "mysql") {
-	  my $table_path = my $table_name = $table_prefix;
-	  if ($dbms eq "postgresql") {
-	      $table_path = $schema.".".$table_name;
-	  }
+	  my $table_name = $table_prefix;
+	  my $table_path = $schema.".".$table_name;
 	  my $load_file = "${table_prefix}_table_load.ctl";
 	  warn ";\ttable loading scripts to file $load_file\n" 
 	      if ($main::verbose >= 2);
@@ -1219,10 +1207,8 @@ use Data::Dumper;
 	  
 	  foreach $field (@array_fields, @expanded_fields) {
 	      $field = lc($field);
-	      my $table_path = my $table_name = $table_prefix."_".$field;
-	      if ($dbms eq "postgresql") {
-		  $table_path = $schema.".".$table_name;
-	      }
+	      my $table_name = $table_prefix."_".$field;
+	      my $table_path = $schema.".".$table_name;
 	      my $load_file = "${table_prefix}_${field}_table_load.ctl";
 	      warn ";\ttable loading scripts to file $load_file\n" 
 		  if ($main::verbose >= 2);
@@ -1258,10 +1244,8 @@ use Data::Dumper;
       }
 
       #### main table
-      my $table_path = my $table_name = $table_prefix;
-      if ($dbms eq "postgresql") {
-	  $table_path = $schema.".".$table_name;
-      }
+      my $table_name = $table_prefix;
+      my $table_path = $schema.".".$table_name;
       print_sql_header ("Main table - $table_prefix");
       print SQL "DROP TABLE ", $table_path, ";\n";
 
@@ -1269,10 +1253,8 @@ use Data::Dumper;
       print_sql_header ("Multivalue attributes - $table_prefix");
       foreach $field (@array_fields) {
 	  $field = lc($field);
-	  my $table_path = my $table_name = $table_prefix."_".$field;
-	  if ($dbms eq "postgresql") {
-	      $table_path = $schema.".".$table_name;
-	  }
+	  my $table_name = $table_prefix."_".$field;
+	  my $table_path = $schema.".".$table_name;
 	  print SQL "DROP TABLE ", $table_path, ";\n";
       }
 
@@ -1280,10 +1262,8 @@ use Data::Dumper;
       print_sql_header ("Expanded attributes - $table_prefix");
       foreach $field (@expanded_fields) {
 	  $field = lc($field);
-	  my $table_path = my $table_name = $table_prefix."_".$field;
-	  if ($dbms eq "postgresql") {
-	      $table_path = $schema.".".$table_name;
-	  }
+	  my $table_name = $table_prefix."_".$field;
+	  my $table_path = $schema.".".$table_name;
 	  print SQL "DROP TABLE ", $table_path, ";\n";
       }
 
@@ -1324,7 +1304,7 @@ use Data::Dumper;
       print MK "\t", '@perl -ne \'if (/^([a-z]\S+):/){ print "\t$$1\n";  }\' ', ${makefile}, "\n";
 
       #### all
-      print MK "\nall: uncompress create load recompress\n";
+      print MK "\nall: create alter load recompress\n";
 
       #### uncompression
       print MK "\nuncompress:\n";
@@ -1345,6 +1325,19 @@ use Data::Dumper;
 	  print MK "\n";
       } elsif ($dbms eq "mysql") {
 	  print MK "\tcat $create_file | \${MYSQL}\n";
+      }
+
+      #### alter table 
+      print MK "\nalter:\n";
+      print MK "\t", '@echo "--- Alter ',$table_prefix,'"', "\n";
+      if ($dbms eq "oracle") {
+	  print MK "\t", '${SQLPLUS} < ', $alter_file, "\n";
+      } elsif ($dbms eq "postgresql") {
+	  print MK "\t", 'psql -f ', $alter_file;
+	  print MK " -d ", $schema if ($schema);
+	  print MK "\n";
+      } elsif ($dbms eq "mysql") {
+	  print MK "\tcat $alter_file | \${MYSQL}\n";
       }
 
       #### table loading
@@ -1370,20 +1363,25 @@ use Data::Dumper;
              my $table_file = lc("../../".$short_class."_".$field.".tab");
 	     my $load_file = "${table_prefix}_${field}_table_load.ctl";
 	     my $skip_lines=4;
+
 	     print MK "\t", "grep -v '^$comment_symbol' ${table_file} | psql -f ", $load_file;
              print MK " -d ", $schema if ($schema);
              print MK "\n";
          }
      } elsif ($dbms eq "mysql") {
-	 print MK "\tgrep -v '^$comment_symbol' ../../${short_class}.tab > ../../${short_class}_filtered.tab\n";
-	 print MK "\tcat $load_file | \${MYSQL}\n";
-	 print MK "\trm ../../${short_class}_filtered.tab\n";
+	 print MK "\t", "\@if [ -f \"../../${short_class}.tab\" ] ; then ";
+	 print MK "grep -v '^$comment_symbol' ../../${short_class}.tab > ../../${short_class}_filtered.tab"," ; ";
+	 print MK "cat $load_file | \${MYSQL}"," ; ";
+	 print MK "rm ../../${short_class}_filtered.tab"," ; ";
+	 print MK "fi\n";
 	 foreach $field (@array_fields,@expanded_fields) {
 	     $field = lc($field);
 	     my $load_file = "${table_prefix}_${field}_table_load.ctl";
-	     print MK "\tgrep -v '^$comment_symbol' ../../${short_class}_${field}.tab > ../../${short_class}_${field}_filtered.tab\n";
-	     print MK "\tcat ${load_file} | \${MYSQL}\n";
-	     print MK "\trm ../../${short_class}_${field}_filtered.tab\n";
+	     print MK "\t", "\@if [ -f \"../../${short_class}_${field}.tab\" ] ; then ";
+	     print MK "grep -v '^$comment_symbol' ../../${short_class}_${field}.tab > ../../${short_class}_${field}_filtered.tab"," ; ";
+	     print MK "cat ${load_file} | \${MYSQL}"," ; ";
+	     print MK "rm ../../${short_class}_${field}_filtered.tab"," ; ";
+	     print MK "fi\n";
          }
       }
 
