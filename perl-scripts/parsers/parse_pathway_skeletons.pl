@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_pathway_skeletons.pl,v 1.6 2002/10/25 17:56:05 jvanheld Exp $
+# $Id: parse_pathway_skeletons.pl,v 1.7 2002/10/25 19:27:31 jvanheld Exp $
 #
-# Time-stamp: <2002-10-25 11:54:57 jvanheld>
+# Time-stamp: <2002-10-25 13:27:04 jvanheld>
 #
 ############################################################
 
@@ -31,11 +31,11 @@ package main;
     
 #    $dir{amaze_export} = "/win/amaze/amaze_data/exported_2001_0719";
     $dir{skeletons} = "/win/amaze/amaze_data/pathway_skeletons/";
+    $dir{kegg_parsed} = "$parsed_data/kegg_ligand/20020709";
 #    $dir{georges_export} = "/win/amaze/amaze_team/for_georges";
 #    $dir{skeletons} = "/win/amaze/amaze_team/gaurab/excel_tables/Pathway_ECno/Amino_acids/Amino_acid_biosyn";
 #    $dir{skeletons} = "/win/amaze/amaze_team/gaurab/2001_07/Pathway_ECno/";
 #    $dir{skeletons} = "/win/amaze/amaze_team/gaurab/excel_tables/Pathway_ECno/";
-    $dir{kegg_parsed} = "$parsed_data/kegg_ligand/20020709";
 
     $in_file{georges_identified_compounds} = "/win/amaze/amaze_team/georges_cohen/excel_files_georges/unidentified_compounds/identified_compounds_2001_1007.tab";
 
@@ -220,8 +220,8 @@ sub GenerateECSeeds {
     
 }
 
+################################################################
 ### print the help message 
-### when the program is called with the -h or -help option
 sub PrintHelp {
   open HELP, "| more";
   print <<EndHelp;
@@ -237,15 +237,7 @@ AUTHOR
 	Created		2001/07/20
 	
 OPTIONS
-	-h	detailed help
-	-help	short list of options
-	-test	fast parsing of partial data, for debugging
-	-v #	warn level
-		Warn level 1 corresponds to a restricted verbose
-		Warn level 2 reports all polypeptide instantiations
-		Warn level 3 reports failing get_attribute()
-	-obj	export data in object format (.obj file)
-		which are human-readable
+$generic_option_message
 	-d	debug
 		add attributes to the process to reflect the 
 		parsed data, which ar not required for the actual 
@@ -258,6 +250,11 @@ OPTIONS
 	-skel  skeleton directory
 	       Directory with the input files. See below for a
 	       description of directory organization and file formats.
+	-kegg  parsed kegg directory. 
+	       This directory should contain the result of the script
+	       parse_kegg.pl. KEGG parsed files are used for
+	       identifying compounds and reactions involved in each
+	       pathway.
 
 FILES AND DIRECTORIES
 
@@ -281,7 +278,7 @@ INPUT FORMAT
 	5	to_comp
 	6	Reaction
 
-	(in George Cohen's files, there are some additional columns,
+	(in George Cohen\'s files, there are some additional columns,
 	which are currently ignored)
 	7	Name of enzyme
 	8	Coenzyme
@@ -293,49 +290,35 @@ EndHelp
   close HELP;
 }
 
+################################################################
 ### read arguments from the command line
 sub ReadArguments {
     for my $a (0..$#ARGV) {
 	
-	### warn level
-	if (($ARGV[$a] eq "-v" ) && 
-	    ($ARGV[$a+1] =~ /^\d+$/)){
-	    $main::verbose = $ARGV[$a+1];
-	    
-	    ### test run
-	} elsif ($ARGV[$a] eq "-test") {
-	    $main::test = 1;
-	    
-	    ### output file
- 	} elsif ($ARGV[$a] eq "-obj") {
-	    $a++;
-	    $main::export{obj} = 1;
-	    
-	    ### debug
-	} elsif ($ARGV[$a] eq "-d") {
+	&ReadGenericOptions($a);
+
+	################################################################
+	#### specific options
+
+	### debug
+	if ($ARGV[$a] eq "-d") {
 	    $main::debug = 1;
 
 	    ### mirror
 	} elsif ($ARGV[$a] eq "-mirror") {
 	    $main::mirror = 1;
 
-	    ### clean
-	} elsif ($ARGV[$a] eq "-clean") {
-	    $main::clean = 1;
-
 	    ### skeleton directory
 	} elsif ($ARGV[$a] eq "-skel") {
 	    $main::dir{skeletons} = $ARGV[$a+1];
 
+	    ### skeleton directory
+	} elsif ($ARGV[$a] eq "-kegg") {
+	    $main::dir{kegg_parsed} = $ARGV[$a+1];
+
 	    ### ec seeds
 	} elsif ($ARGV[$a] eq "-seeds") {
 	    $main::seeds = 1;
-
-	    ### help
-	} elsif (($ARGV[$a] eq "-h") ||
-		 ($ARGV[$a] eq "-help")) {
-	    &PrintHelp;
-	    exit(0);
 	}
     }
 }
