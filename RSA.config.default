@@ -54,7 +54,7 @@ if (-e $RSA."/data/supported_organisms.pl") {
 
 ################################################################
 # MEME installation dir (to find the test files)
-$ENV{MEME_DIR}="$RSA/app_source/meme.3.0.4"
+$ENV{MEME_DIR}="$RSA/app_source/meme.3.0.4";
 
 ###############################################################
 # configuration for the parsers
