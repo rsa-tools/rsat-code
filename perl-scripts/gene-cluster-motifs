@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.70 2004/02/05 02:08:30 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.71 2004/02/05 11:11:46 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -89,8 +89,14 @@ $expected_sites_per_gene = 2;
 $seed = undef;
 
 ## MotifSampler
-$bg_order = 0;
-$MotifSampler_background = "/home/nicolas/motifsampler/background_models/yeast_up800_nomit_noorf_o3.bg"; ### TEMPORARY
+$MS_bg_order = 0;
+$MS_b = "/home/nicolas/motifsampler/background_models/yeast_up800_nomit_noorf_o3.bg"; ### TEMPORARY
+$MS_p = 0.2;
+$MS_M = 0;
+$MS_n = 4;
+$MS_w = $matrix_width;
+$MS_x = 1;
+$MS_r = 5;
 
 ## Comparison between discovered and known motifs
 $known_site_file = "";
@@ -315,64 +321,64 @@ sub SetFileNames {
 
 	 ################################################################
 	 ## Gert Thijs' MoifSampler options and files
-	 my $MotifSampler_options = "";
-	 my $MotifSampler_suffix = "";
+	 my $MS_options = "";
+	 my $MS_suffix = "";
 
 	 $family{$family_name}->{MotifSampler_dir} = "${family_name}/MotifSampler_${family_name}";
 
 	 ## input file
-	 $MotifSampler_options = " -f ".$family{$family_name}->{input_seq_file};
+	 $MS_options = " -f ".$family{$family_name}->{input_seq_file};
 
 	 ## background model
-	 if ($MotifSampler_background) {
-	     $MotifSampler_options .= " -b ".$MotifSampler_background;
+	 if ($MS_b) {
+	     $MS_options .= " -b ".$MS_b;
 	 } else {
-	     $family{$family_name}->{MotifSamplerBackground} = $dir{output}."/".$family{$family_name}->{input_seq_file}."_MotifSampler_bg".$bg_order;
-	     $MotifSampler_options .= " -b ".$family{$family_name}->{MotifSamplerBackground};
+	     $family{$family_name}->{MotifSamplerBackground} = $dir{output}."/".$family{$family_name}->{input_seq_file}."_MotifSampler_bg".$MS_bg_order;
+	     $MS_options .= " -b ".$family{$family_name}->{MotifSamplerBackground};
 	 }
 
 	 ## strand
 	 if ($strand eq "-1str") {
-	     $MotifSampler_options .= " -s 0";
-	     $MotifSampler_suffix .= "-s0";
+	     $MS_options .= " -s 0";
+	     $MS_suffix .= "-s0";
 	 } else {
-	     $MotifSampler_options .= " -s 1";
-	     $MotifSampler_suffix .= "-s1";
+	     $MS_options .= " -s 1";
+	     $MS_suffix .= "-s1";
 	 }
 	 
 	 ## prior
-	 $MotifSampler_options .= " -p 0.2";
-	 $MotifSampler_suffix .= "-p0.2";	 
+	 $MS_options .= " -p ".$MS_p;
+	 $MS_suffix .= "-p".$MS_p;	 
 
 	 ## Maximal number of motif instances per sequence. (default unset = 0)
-	 $MotifSampler_options .= " -M 0";
-	 $MotifSampler_suffix .= "-M0";	 
+	 $MS_options .= " -M ".$MS_M;
+	 $MS_suffix .= "-M".$MS_M;	 
 	 
 	 ## Sets number of different motifs to search for (default 4).
-	 $MotifSampler_options .= " -n 1";
-	 $MotifSampler_suffix .= "-n1";	 
+	 $MS_options .= " -n ".$MS_n;
+	 $MS_suffix .= "-n".$MS_n;	 
 
 	 ## Sets length of the motif (default 8).
-	 $MotifSampler_options .= " -w ".$matrix_width;
-	 $MotifSampler_suffix .= "-w".$matrix_width;	 
+	 $MS_options .= " -w ".$matrix_width;
+	 $MS_suffix .= "-w".$matrix_width;	 
 
 	 ## Sets allowed overlap between different motifs. (default 1)
-	 $MotifSampler_options .= " -x ".1;
-	 $MotifSampler_suffix .= "-x".1;	 
+	 $MS_options .= " -x ".$MS_x;
+	 $MS_suffix .= "-x".$MS_x;	 
 
 	 ## Set number of times the MotifSampler should be repeated
-	 $MotifSampler_options .= " -r ".1;
-	 $MotifSampler_suffix .= "-r".1;	 
+	 $MS_options .= " -r ".$MS_r;
+	 $MS_suffix .= "-r".$MS_r;	 
 
 	 ## output file
-	 $family{$family_name}->{MotifSampler_file} = $family{$family_name}->{MotifSampler_dir}."/".$family{$family_name}->{file_prefix}.$MotifSampler_suffix;
-	 $MotifSampler_options .= " -o ".$family{$family_name}->{MotifSampler_file}."sites";
-	 $MotifSampler_options .= " -m ".$family{$family_name}->{MotifSampler_file}.".matrix";
+	 $family{$family_name}->{MotifSampler_file} = $family{$family_name}->{MotifSampler_dir}."/".$family{$family_name}->{file_prefix}.$MS_suffix;
+	 $MS_options .= " -o ".$family{$family_name}->{MotifSampler_file}.".sites";
+	 $MS_options .= " -m ".$family{$family_name}->{MotifSampler_file}.".matrix";
 
 
 	 ## Assign MotifSampler options to the family
-	 $family{$family_name}->{MotifSampler_suffix} = $MotifSampler_suffix;
-	 $family{$family_name}->{MotifSampler_options} = $MotifSampler_options;
+	 $family{$family_name}->{MotifSampler_suffix} = $MS_suffix;
+	 $family{$family_name}->{MotifSampler_options} = $MS_options;
 	 
 	 ################################################################
 	## Consensus options and files
@@ -648,8 +654,6 @@ sub MatchPatterns {
    $command .= $options;
    $command .= " | features-from-dnapat -o ".$feature_file;
 
-#    warn "HELLO\t", $command, "\n";
-
    ## Check if pattern matching is OK (sometimes there are no patterns)
    my $error = &doit($command,$dry_run, 0);
    if ($error) {
@@ -795,26 +799,25 @@ sub MotifSampler {
    &CheckOutDir($dir);
 
    chdir($dir{output});
-   print "HELLO\t", `pwd`;
 
 #   ## Create ackground model if required
-#   unless ($MotifSampler_background) {
-#	warn "; Creating background model for the input sequence\torder ".$bg_order."\n" 
+#   unless ($MS_b) {
+#	warn "; Creating background model for the input sequence\torder ".$MS_bg_order."\n" 
 #	    if ($main::verbose >= 1);
 #	## create bacakground model
 #	my $command = " CreateBackgroundModel -f ".$family{$family_name}->{input_seq_file};
 #	$command .= " -b ".$family{$family_name}->{MotifSamplerBackground};
-#	$command .= " -o ".$bg_order;
+#	$command .= " -o ".$MS_bg_order;
 #	&doit($command,$dry_run, $die_on_error);
 #   }
 
    ## run the command
-   my $MotifSampler_command = "MotifSampler ".$family{$family_name}->{MotifSampler_options};
-#   $MotifSampler_command .= " > ".$family{$family_name}->{MotifSampler_file};
+   my $MS_command = "MotifSampler ".$family{$family_name}->{MotifSampler_options};
+#   $MS_command .= " > ".$family{$family_name}->{MotifSampler_file};
 #    unless ($main::verbose >= 4) {
-#	$MotifSampler_command .= ">& /dev/null";
+#	$MS_command .= ">& /dev/null";
 #    }
-   &doit($MotifSampler_command, $dry_run, $die_on_error);
+   &doit($MS_command, $dry_run, $die_on_error);
 
 }
 
@@ -1246,7 +1249,6 @@ sub IndexPatterns {
 	    my $sequence = $p->get_attribute("sequence"); 
 	    $compressed = &compress_pattern($sequence, "n");
 	    $compressed =~ s/N/n/g;
-#	    die join "\t", "HELLO", $family_name, $p, $sequence, $compressed, "\n";
 	    $table[$row][$col] .= $compressed;
 	    $table[$row][$col] .= "</B>" if ($p->get_attribute("score") >= 1);
 	    $table[$row][$col] .= "<BR>" unless ($p == $#sorted_patterns);
@@ -1619,8 +1621,16 @@ OPTIONS
 	-sps	expected number of sites per sequence
 		(default $expected_sites_per_gene)
 
-   Gibbs sampler (Neuwald 1995)
+   Gibbs sampler (Neuwald, 1995)
 	-seed	 seed number for the random generator
+
+   MotifSampler (This, 200X)
+	-MS_b	backgound file
+	-MS_p	prior probability of 1 motif copy (default $MS_p)
+	-MS_M   Maximal number of motif instances per sequence. (default $MS_M; unset=0)
+	-MS_n	number of different motifs to search for (default $MS_n).
+	-MS_x	allowed overlap between different motifs. (default $MS_x)
+	-MS_r	number of times the MotifSampler should be repeated (default = $MS_r).
 
    Output options
 	-transp	transpose synthetic result table (columns become rows)
@@ -1753,9 +1763,6 @@ multiple-family-analysis options
 -monad		monad length for dyad-analysis
 -minsp		maximum spacing for dyad-analysis
 -maxsp		maximum spacing for dyad-analysis
--width		matrix width
--seed		seed number for the random generator
--sps		expected number of sites per sequence (default $expected_sites_per_gene)
 -n      	dry run: print commands without executing them
 -exp		expected frequency file
 -transp		transpose synthetic result table (columns become rows)
@@ -1777,6 +1784,18 @@ multiple-family-analysis options
 -host		database host (default: $host)
 -user		database user (default: $user)
 -password	database password (default: $password)
+## Matrix-based pattern dscovery
+-width		matrix width
+-sps		expected number of sites per sequence (default $expected_sites_per_gene)
+## Gibbs sampler
+-seed		seed number for the random generator
+## MotifSampler 
+-MS_b		backgound file
+-MS_p		prior probability of 1 motif copy (default $MS_p)
+-MS_M   	Maximal number of motif instances per sequence. (default $MS_M; unset=0)
+-MS_n		number of different motifs to search for (default $MS_n).
+-MS_x		allowed overlap between different motifs. (default $MS_x)
+-MS_r		number of times the MotifSampler should be repeated (default = $MS_r).
 End_short_help
  close HELP;
  exit;
@@ -1867,6 +1886,10 @@ sub ReadArguments {
 	    ### Gibbs sampler options
 	} elsif ($ARGV[$a] eq "-seed") {
 	    $seed = $ARGV[$a+1];
+
+	    ### MotifSampler options
+	} elsif ($ARGV[$a] =~ /-(MS_\S)/) {
+	    $$1 =  $ARGV[$a+1];
 
 	    ### organism
 	} elsif ($ARGV[$a] eq "-org") {
