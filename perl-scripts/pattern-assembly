@@ -456,7 +456,7 @@ End_of_help
   close HELP;
   exit(0);
 }
-
+  
 sub PrintOptions {
   #### display short help message #####
   open HELP, "| more";
