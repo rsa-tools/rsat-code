@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_genomes.mk,v 1.16 2005/01/27 13:21:32 jvanheld Exp $
+# $Id: install_genomes.mk,v 1.17 2005/01/27 21:37:11 jvanheld Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -70,6 +70,14 @@ install_one_bacteria:
 parse_organism:
 	@echo "Parsing organism ${ORG}"
 	${MAKE} install_one_organism INSTALL_TASK=parse
+
+
+ENSEMBL_DIR=${RSAT}/downloads/ftp.ensembl.org/pub/current_worm/data/flatfiles/genbank
+parse_organism_ensembl:
+	parse-genbank.pl -v 1 -source ensembl -ext dat -i ${ENSEMBL_DIR} -org ${ORG}_ENSEMBL
+
+install_organism_ensembl:
+	${MAKE} install_one_organism  ORG=${ORG}_ENSEMBL OPT='-source ensembl -ensembl ${ENSEMBL_DIR}'
 
 ################################################################
 #### Install all eukaryote genomes

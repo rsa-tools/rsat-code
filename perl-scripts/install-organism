@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.44 2005/01/24 10:11:36 jvanheld Exp $
+# $Id: install-organism,v 1.45 2005/01/27 21:37:10 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -687,6 +687,12 @@ OPTIONS
 		defining a global variable GENBANK_DIR in the config
 		file. The option -genbank allows to overwrite this
 		value.
+	-ensembl
+		ENSEMBL directory. Directory containing the ENSEMBL
+		flat files in Genbank format (ext .dat)
+
+		Example: 
+		ftp.ensembl.org/pub/current_worm/data/flatfiles/genbank
 
 	-task	specification of a single installation task
 		    e.g.
@@ -748,6 +754,7 @@ install_organism options
 -local		update local config file 
 		(specified by the environment variable RSA_LOCAL_CONFIG)
 -genbank	genbank directory
+-ensembl	ensembl directory
 -task		installation task ($supported_tasks)
 -syn		synonym table
 -up_from       	distal limit of the upstream regions (e.g. -800 for yeast)
@@ -813,9 +820,13 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] =~ /^-dir/) {
 	    $dir{install} = $ARGV[$a+1];
 
-	    #### installation dir
+	    #### Genbank dir
 	} elsif ($ARGV[$a] =~ /^-genbank/) {
 	    $dir{genbank} = $ARGV[$a+1];
+
+	    #### ENSEMBL dir
+	} elsif ($ARGV[$a] =~ /^-ensembl/) {
+	    $dir{ensembl} = $ARGV[$a+1];
 
 	    #### task selection
 	} elsif (($ARGV[$a] =~ /^-task/) 
@@ -1208,7 +1219,9 @@ sub StartAndStopCodons {
 ################################################################
 #### parse the genome from Genbank files
 sub ParseGenome {
-    if (-d "$dir{genbank}/$organism_short_name") {
+    if ($dir{ensembl}) {
+	$dir{source} = $dir{ensembl};
+    } elsif (-d "$dir{genbank}/$organism_short_name") {
 	$dir{source} = "$dir{genbank}/$organism_short_name";
     } elsif (-d "$dir{genbank}/Bacteria/$organism_short_name") {
 	$dir{source} = "$dir{genbank}/Bacteria/$organism_short_name";
@@ -1216,6 +1229,13 @@ sub ParseGenome {
 	&FatalError("Cannot find a directory $organism_short_name in genbank dir $dir{genbank}" );
     }
     my $command = "$RSA/perl-scripts/parse-genbank.pl -v 1 -i $dir{source}";
+    if ($dir{ensembl}) {
+	$command .= " -ext dat";
+	$command .= " -org ".$organism_short_name;
+    }
+    if ($source) {
+	$command .= " -source $source";
+    }
     &doit($command, $dry_run, $die_on_error, $verbose);
 }
 
