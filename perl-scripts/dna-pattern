@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dna-pattern,v 1.18 2002/04/02 01:06:53 jvanheld Exp $
+# $Id: dna-pattern,v 1.19 2002/05/13 23:21:04 jvanheld Exp $
 #
-# Time-stamp: <2002-04-02 03:04:05 jvanheld>
+# Time-stamp: <2002-05-14 01:16:23 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -46,6 +46,11 @@ unless (defined(%return)) {
     $return{match_positions} = 1;
 }
 
+#### top scores only valid with sliding window
+if (($return{top} ) && !($search_method eq "sliding window")) {
+    &FatalError("The option -top is only vlid with the option -window\n");
+}
+
 #### check allowed substitutions ####
 unless (($allowed_subst eq "") || (&IsNatural($allowed_subst))) {
     &FatalError("Invalid number of allowed substitutions.\n");
@@ -53,6 +58,7 @@ unless (($allowed_subst eq "") || (&IsNatural($allowed_subst))) {
 
 ### check input format 
 &CheckInputSeqFormat($in_format);
+
 
 
 @patterns = &ReadPatterns(pattern_file=>$pattern_file, 
@@ -134,6 +140,7 @@ while ((($current_seq, $sequence_id, @comments) = &ReadNextSequence($in, $in_for
     
     if ($search_method eq "sliding window") {
 	&SlidingWindowSearch();
+	
     } else {
 	foreach $pattern (@patterns) {
 	    $expression = $pattern->get_attribute("sequence");
@@ -193,6 +200,8 @@ while ((($current_seq, $sequence_id, @comments) = &ReadNextSequence($in, $in_for
 
 
 &MatchCounts if ($return{match_counts});
+
+&TopScores if ($return{top});
 
 &CountTable if ($return{table});
 
@@ -440,6 +449,9 @@ ARGUMENTS
 		option automatically returns matching positions. 
 		A threshold can be specified to specify the minimal
 		matching score to be returned.
+	-top	(with sliding window only)
+		only return the top score obtained with the sliding
+		window for each sequence.
 
 PATTERN FORMATS
 	PATTERN SEQUENCE FORMAT
@@ -593,6 +605,7 @@ dna-pattern options
 -total	return total occ per sequence and per pattern in the count table
 -stats	return matching statistics
 -window	sliding window size
+-top	only return the top score
 -th     threshold
 -ct	return total count in all sequences
 -N #	return matching sequences with # flanking nucleotides
@@ -762,6 +775,10 @@ sub ReadArguments {
 		&FatalError( "Sliding window size must be > 0");
 	    }
 
+	    #### top score
+	} elsif ($ARGV[$a] eq "-top") {
+	    $return{top} = 1;
+
 	    #### neighborhood (return flanking residues)
 	} elsif (($ARGV[$a] eq "-N") && (&IsNatural($ARGV[$a+1]))) {
 	    $left_neighborhood = $ARGV[$a+1];
@@ -789,6 +806,7 @@ sub SlidingWindowSearch {
     my $current_score = 0;
     my $previous_score = 0;
     my $score_sum = 0;
+    my $top_score;
 
     #### initialize score vector
     for my $pos (0..($sliding_window_size-2)) {
@@ -797,9 +815,13 @@ sub SlidingWindowSearch {
 	push @scores, $current_score;
 	$score_sum += $current_score;
     }
+    $top_score = $score_sum;
+
+    #### scan the sequence with the sliding window
     for my $pos (($sliding_window_size-1)..$last_pos) {
 	my $subseq = substr($current_seq, $pos, $pattern_length);
 	my $current_score = $pattern_scores{$subseq};
+
 	push @scores, $current_score;
 	$score_sum += $current_score;
 
@@ -808,13 +830,14 @@ sub SlidingWindowSearch {
 	    $end_pos = $pos - $orig_pos + $pattern_length ;
 	    $start_pos = $pos - $orig_pos - $sliding_window_size +2;
 	    $matching_word = substr($current_seq, $start_pos, $sliding_window_size + $pattern_length - 1);
-	    &PrintMatchLocation() ;
+	    &PrintMatchLocation() if ($return{match_positions});
 	}
 
 	$previous_score = shift @scores;
 	$score_sum -= $previous_score;
+	$top_score = &max($top_score, $score_sum);
     }
-
+    $top_score{$sequence_id} = $top_score;
 }
 
 
@@ -991,5 +1014,17 @@ sub MatchCounts {
 		}
 	    }
 	}
+    }
+}
+
+################################################################
+# top scores
+sub TopScores {
+    print $out "; Top score per sequence (sliding window)\n";
+    print $out "; SeqID\ttop\n";
+    foreach $sequence_id (@sequence_ids) {
+	print $out join ("\t", "$sequence_id",
+			 $top_score{$sequence_id}
+			 ), "\n";
     }
 }
