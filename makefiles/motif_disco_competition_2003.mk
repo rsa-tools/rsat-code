@@ -28,6 +28,14 @@ usage:
 	@echo "implemented targets"
 	@perl -ne 'if (/^([a-z]\S+):/){ print "\t$$1\n";  }' ${MAKEFILE}
 
+test2:
+	${MAKE} test
+
+test:
+	mkdir test
+	ls > test/test1.txt
+
+
 ################################################################
 #### Synchronization between different machines
 
@@ -241,8 +249,7 @@ MIN_SP=0
 MAX_SP=20
 NOOV=-noov
 SORT=score
-multi:
-	@multiple-family-analysis -v ${V}				\
+MULTI_CMD=multiple-family-analysis -v ${V}				\
 		-org ${ORG}						\
 		-seq ${SEQ_LIST_FILE}					\
 		-outdir ${MULTI_DIR}					\
@@ -252,6 +259,9 @@ multi:
 		-bg ${MULTI_BG} -sort ${SORT} -task ${MULTI_TASK}		\
 		${NOOV} 						\
 		-user jvanheld -password jvanheld -schema multifam
+
+multi:
+	${MAKE} my_command MY_COMMAND="${MULTI_CMD}"
 
 multi_calib:
 	${MAKE} multi MULTI_BG=calib MULTI_TASK=${MULTI_CALIB_TASK}
@@ -358,9 +368,10 @@ calibrate_oligos_test:
 	${MAKE} calibrate_oligos ORG=Mycoplasma_genitalium N=10 SEQ_LEN=200 STR=-1str NOOV=-ovlp R=10
 
 
+ACCESS=results
 give_access:
-	find . -type d -exec chmod 775 {} \;
-	find . -type f -exec chmod 664 {} \;
+	find ${ACCESS} -type d -exec chmod 775 {} \;
+	find ${ACCESS} -type f -exec chmod 664 {} \;
 
 
 ## ##############################################################
@@ -488,3 +499,19 @@ join_all_mean_var_N:
 	# ${MAKE} join_mean_var_N ORG=Saccharomyces_cerevisiae SEQ_LEN=1000 REPET=10000
 	# ${MAKE} join_mean_var_N ORG=Homo_sapiens SEQ_LEN=1000 REPET=10000
 	# ${MAKE} join_mean_var_N ORG=Homo_sapiens SEQ_LEN=2000 REPET=10000
+
+my_command:
+	${MAKE} command_${WHEN}
+
+command_queue:
+	@mkdir -p ${JOB_DIR}
+	@for job in ${JOB} ; do						\
+		echo "Job $${job}" ;					\
+		echo "${MY_COMMAND}" > $${job} ;		\
+		qsub -m e -q rsa@merlin.ulb.ac.be -N $${job} -j oe	\
+			-o $${job}.log $${job} ;	\
+	done
+
+command_now:
+	${MY_COMMAND}
+
