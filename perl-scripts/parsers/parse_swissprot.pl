@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_swissprot.pl,v 1.32 2003/12/19 16:34:04 jvanheld Exp $
+# $Id: parse_swissprot.pl,v 1.33 2003/12/19 16:47:17 oly Exp $
 #
 # Time-stamp: <2003-07-10 11:52:54 jvanheld>
 #
@@ -36,6 +36,7 @@ package main;
 		      names
 		      organisms
 		      features
+		      db_refs
 #		      comments
 		      swissprot_acs
 		      swissprot_ids
@@ -177,7 +178,8 @@ package main;
     $polypeptides = classes::ClassFactory->new_class(object_type=>"classes::Polypeptide",
 						     prefix=>"spp_");
     $polypeptides->set_out_fields(@out_fields);
-    $polypeptides->set_attribute_header("features", join ("\t", "Feature_key", "start_pos", "end_pos", "description", "method", "f6", "f7", "f8") );
+    $polypeptides->set_attribute_header("features", join ("\t", "Feature_key", "start_pos", "end_pos", "description", "method", "f6", "f7") );
+    $polypeptides->set_attribute_header("db_refs", join ("\t", "DB_identifier", "primary_key", "secondary_key", "description"));
 #    $polypeptides->set_attribute_header("comments", join ("\t", "topic", "comments") );
 
     #### testing mode
@@ -223,6 +225,7 @@ package main;
 
     #### special field formats for SQL
     $special_field_size{features} = 2047;
+#    $special_field_size{db_refs} = 2047;
     $special_field_size{description} = 1023;
     $special_field_size{bioseq} = 10000; 
 #    $special_field_size{comments} = 10000;
@@ -537,6 +540,10 @@ sub ParseSwissprot {
 	foreach my $ft (@features) {
 	    warn join "'|'", "HELLO ft", $#{$ft}, @{$ft} , "'\n" if ($verbose >= 10);
 	    $polypeptide->push_expanded_attribute("features", @{$ft});
+	}
+	my @db_refs = $object_entry->DRs->elements;
+	foreach my $dr (@db_refs) {
+	    $polypeptide->push_expanded_attribute("db_refs", @{$dr});
 	}
 #	my @comments = $object_entry->CCs->elements;
 #	foreach my $cc (@comments) {
