@@ -89,13 +89,17 @@ for my $s1 (1..$seq_count-1) {
 				 $seq[$s1]->get_sequence(),
 				 $seq[$s2]->get_sequence()
 				 );
-
+    
     ### edit distance with reverse complement
     if ($both_strands) {
-      my $rc_dist = &EditDistance(
-				  $seq[$s1]->get_sequence(),
-				  &ReverseComplement($seq[$s2]->get_sequence())				 );
-      $distance = &min($distance,$rc_dist); 
+	my $seq1 = $seq[$s1]->get_sequence();
+	my $seq2 = $seq[$s2]->get_sequence();
+	my $rc_seq = &ReverseComplement($seq2);
+	my $rc_dist = &EditDistance(
+				    $seq1,
+				    $rc_seq);
+	warn "reverse complement $seq1\t$seq2\t$rc_seq\t$distance\t$rc_dist\n" if ($hyperverbose);
+	$distance = &min($distance,$rc_dist); 
     }
 
     #### print result line
