@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: retrieve-seq,v 1.10 2001/04/01 23:50:19 jvanheld Exp $
+# $Id: retrieve-seq,v 1.11 2001/04/24 16:50:49 jvanheld Exp $
 #
-# Time-stamp: <2001-02-20 01:47:09 jvanheld>
+# Time-stamp: <2001-04-24 18:50:30 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -27,7 +27,7 @@ my $start_time = &AlphaDate;
 
 my %chomosome = ();
 my $chrom = "";
-$seq_label = "full";  
+$seq_label = "orf_gene";  
 $sequence_type = "upstream";
 $default{from} = -400;
 $default{to} = -1;
