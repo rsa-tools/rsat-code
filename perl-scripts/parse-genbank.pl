@@ -1,9 +1,9 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: parse-genbank.pl,v 1.4 2002/06/06 11:23:51 jvanheld Exp $
+# $Id: parse-genbank.pl,v 1.5 2003/04/28 11:32:21 jvanheld Exp $
 #
-# Time-stamp: <2002-06-06 13:23:49 jvanheld>
+# Time-stamp: <2003-04-28 13:24:52 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -16,12 +16,47 @@ require "PFBP_classes.pl";
 require "PFBP_parsing_util.pl";
 
 
-package PFBP::Feature;
+package Genbank::Organism; ### for parsing genbank files
 {
-  @ISA = qw ( PFBP::BiochemicalEntity );
+  @ISA = qw ( PFBP::DatabaseObject );
   ### class attributes
   $_count = 0;
-  $_prefix = "gene_";
+  $_prefix = "ctg_";
+  @_objects = ();
+  %_name_index = ();
+  %_id_index = ();
+  %_attribute_count = ();
+  %_attribute_cardinality = (id=>"SCALAR",
+			     names=>"ARRAY",
+			     taxonomy=>"SCALAR"
+			     );
+}
+
+
+package Genbank::Contig; ### for parsing genbank files
+{
+  @ISA = qw ( PFBP::DatabaseObject );
+  ### class attributes
+  $_count = 0;
+  $_prefix = "ctg_";
+  @_objects = ();
+  %_name_index = ();
+  %_id_index = ();
+  %_attribute_count = ();
+  %_attribute_cardinality = (id=>"SCALAR",
+			     names=>"ARRAY",
+			     organism=>"SCALAR",
+			     type=>"SCALAR",
+			     xrefs=>"EXPANDED"
+			     );
+}
+
+package Genbank::Feature;
+{
+  @ISA = qw ( PFBP::DatabaseObject );
+  ### class attributes
+  $_count = 0;
+  $_prefix = "ft_";
   @_objects = ();
   %_name_index = ();
   %_id_index = ();
@@ -41,6 +76,7 @@ package PFBP::Feature;
 			     );
 }
 
+
 package main;
 {
     #### initialise parameters ####
@@ -53,21 +89,20 @@ package main;
     local $in = STDIN;
     local $out = STDOUT;
     
-    my $features = PFBP::ClassFactory->new_class(object_type=>"PFBP::Feature",
+    my $features = PFBP::ClassFactory->new_class(object_type=>"Genbank::Feature",
 						 prefix=>"ft_");
-    my $contigs = PFBP::ClassFactory->new_class(object_type=>"PFBP::Contig",
+    my $contigs = PFBP::ClassFactory->new_class(object_type=>"Genbank::Contig",
 					     prefix=>"ctg_");
-    $features->set_out_fields(qw( id type name contig start end strand description position names db_xref introns exons EC_number));
-    
-    #### working directory
-    $wd = `pwd`;
-    chomp($wd);
+    $features->set_out_fields(qw( id type name contig start_pos end_pos strand description chrom_position names db_xref introns exons EC_number));
+    $organisms = PFBP::ClassFactory->new_class(object_type=>"Genbank::Organism",
+					  prefix=>"org_");
+    @classes = qw( Genbank::Feature Genbank::Contig Genbank::Organism );
     
     &ReadArguments();
     
-    
+    ################################################################
     #### check argument values ####
-    
+
     #### input directory
     unless (defined($dir{input})) {
 	&FatalError("You must specify the input directory.\n");
@@ -75,13 +110,25 @@ package main;
     unless (-d $dir{input}) {
 	&FatalError("Input directory '$dir{input}' does not exist.\n");
     }
+
+    #### organism name
     unless (defined($org)) {
 	$org = `basename $dir{input}`;
 	chomp($org);
 	warn "; Auto selection of organism name\t$org\n" if ($verbose >= 1);
     }
+    #### output directory
+    unless (defined($dir{output})) {
+	$dir{output} = "$RSA/data/genomes/".$org."/genome";
+	warn "; Auto selection of output dir\t$dir{output}\n" if ($verbose >= 1);
+    }
+    &CheckOutputDir();
     
+    
+    ################################################################
     #### find genbank files in the input directory
+    $wd = `pwd`; #### remember working directory
+    chomp($wd);
     chdir ($dir{input});
     push @genbank_files, glob("*.gbk");
     push @genbank_files, glob("*.gbk.gz");
@@ -90,27 +137,13 @@ package main;
     } else {
 	warn "; Genbank files\n;\t", join("\n;\t", @genbank_files), "\n" if ($verbose >= 1);
     }
+    chdir($wd);     #### come back to the starting directory
     
-    #### come back to the starting directory
-    chdir($wd);
-    
-    #### output directory
-    unless (defined($dir{output})) {
-	$dir{output} = "$RSA/data/$org/genome";
-	warn "; Auto selection of output dir\t$dir{output}\n" if ($verbose >= 1);
-    }
-    unless (-d $dir{output}) {
-	#### create output directory if necessary
-	warn "; Creating output dir $dir{output}\n" if ($verbose >= 1);
-	system "mkdir -p $dir{output}";
-	unless (-d $dir{output}) {
-	    &FatalError("Could not create output directory $dir{output}\n");
-	}
-    }
-    
+
     #### verbose ####
     &Verbose if ($verbose);
     
+    ################################################################
     #### parse the genbank files
     foreach my $file (@genbank_files) {
 	$file{input} = "$dir{input}/$file";
@@ -129,6 +162,7 @@ package main;
 	&ParseGenbankFile($file{input}, 
 			  $features, 
 			  $contigs, 
+			  $organisms, 
 			  source=>$contig, 
 			  seq_dir=>$dir{output});
     }
@@ -144,65 +178,26 @@ package main;
     close $chrom;
     
     #### parse feature positions
+#    die "HELLO\t$ENV{PARSER}\t$0\t@INC\n";   
+
     &ParsePositions($features);
-    
-    #### check some feature attributes (name, description, ...)
-    foreach $feature ($features->get_objects()) {
-	foreach my $name ($feature->get_attribute("gene")) {
-	    $feature->push_attribute("names",$name);
-	};
-	#$feature->push_attribute("names", $feature->get_attribute("gene"));
-	
-	### define a single name  (take the first value in the name list)
-	if ($name = $feature->get_name()) {
-	    $feature->set_attribute("name",$name);
-	} else {
-	    $feature->set_attribute("name",$feature->get_id());
-	}
-	
-	#### check for features without description
-	if (($feature->get_attribute("description") eq $null) 
-	    || ($feature->get_attribute("description") eq "")) {
-	    $feature->set_attribute("description",
-				    join("; ", $feature->get_attribute("product"),
-					 $feature->get_attribute("note")));
-	}
-	
-	#### use GI as feature identifier
-	my @xrefs = $feature->get_attribute("db_xref");
-	my $gi = "";
-	foreach my $xref (@xrefs) {
-	    if ($xref =~ /GI:/) {
-		$gi = $';
-		last;
-	    } 
-	}
-	
-	if ($gi) {
-	    $feature->force_attribute("id",$gi);
-	} else {
-	    &ErrorMessage("; Error\tfeature ".$feature->get_attribute("id")." has no GI.\n"); 
-	}
-	
-	#### use genbank name as chromosome name
-	my $source = $feature->get_attribute("source");
-	if ($source =~ /genbank:/) {
-	    my $chromosome = $';
-	    $chromosome =~ s/\.gz$//;
-	    $chromosome =~ s/\.gbk$//;
-	    $feature->force_attribute("chromosome",$chromosome);
-	}
-    }
-    
+
+
+    #### check feature names, description, cross-references
+    &CheckGenbankFeatures($features);
+#    &GuessSynonyms($features);
+
+
     #### print result
     chdir $dir{output};
     #&PrintStats($out_file{stats}, @classes);
     $features->dump_tables("_$org");
     $contigs->dump_tables("_$org");
+    $organisms->dump_tables("_$org");
 
 #    $features->generate_sql();
 #    $contigs->generate_sql();
-    #&ExportClasses($out_file{features}, $out_format, PFBP::Feature) if $export{obj};
+    #&ExportClasses($out_file{features}, $out_format, Genbank::Feature) if $export{obj};
     
     ###### verbose ######
     if ($verbose) {

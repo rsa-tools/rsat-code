@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank.pl,v 1.4 2002/12/09 00:22:31 jvanheld Exp $
+# $Id: parse_genbank.pl,v 1.5 2003/04/28 11:32:34 jvanheld Exp $
 #
-# Time-stamp: <2002-10-25 12:05:54 jvanheld>
+# Time-stamp: <2003-04-28 13:25:15 jvanheld>
 #
 ############################################################
 
@@ -20,6 +20,22 @@ require "PFBP_util.pl";
 require "PFBP_loading_util.pl"; ### for converting polypeptide IDs into ACs
 require "PFBP_parsing_util.pl";
 
+
+package Genbank::Organism; ### for parsing genbank files
+{
+  @ISA = qw ( PFBP::DatabaseObject );
+  ### class attributes
+  $_count = 0;
+  $_prefix = "ctg_";
+  @_objects = ();
+  %_name_index = ();
+  %_id_index = ();
+  %_attribute_count = ();
+  %_attribute_cardinality = (id=>"SCALAR",
+			     names=>"ARRAY",
+			     taxonomy=>"SCALAR"
+			     );
+}
 
 package Genbank::Contig; ### for parsing genbank files
 {
@@ -62,6 +78,7 @@ package Genbank::Feature;
 			     end_pos=>"SCALAR",
 			     source=>"SCALAR",
 			     note=>"ARRAY",
+			     protein_id=>"ARRAY",
 			     xrefs=>"EXPANDED"
 			     );
 
@@ -104,7 +121,9 @@ package main;
 
     $contigs = PFBP::ClassFactory->new_class(object_type=>"Genbank::Contig",
 					  prefix=>"contig_");
-    @classes = qw( Genbank::Feature Genbank::Contig );
+    $organisms = PFBP::ClassFactory->new_class(object_type=>"Genbank::Organism",
+					  prefix=>"org_");
+    @classes = qw( Genbank::Feature Genbank::Contig Genbank::Organism );
 
     #### read command arguments
     &ReadArguments();
@@ -246,77 +265,20 @@ package main;
 	    &ParseGenbankFile($file{input}, 
 			      $features, 
 			      $contigs, 
+			      $organisms, 
 			      source=>"genbank:".$short_file{$org},
 			      no_seq=>1);
 	}
 	
-#  	&ParseGenbankFile($in_stream{$org}, 
-#  			  $features, 
-#  			  $contigs, 
-#  			  source=>"genbank:".$short_file{$org},
-#  			  no_seq=>1);
 	
     }
     
     &ParsePositions($features);
-
-    &GuessSynonyms($features);
     
-    
-    foreach $feature ($features->get_objects()) {
-	foreach my $name ($feature->get_attribute("gene")) {
-	    $feature->push_attribute("names",$name);
-	};
-	#$feature->push_attribute("names", $feature->get_attribute("gene"));
-	
-	### define a single name  (take the first value in the name list)
-	if ($single_name) {
-	    if ($name = $feature->get_name()) {
-		$feature->set_attribute("name",$name);
-	    } else {
-		$feature->set_attribute("name",$feature->get_id());
-	    }
-	}
-	
-	#### check for features without description
-	if (($feature->get_attribute("description") eq $null) 
-	    || ($feature->get_attribute("description") eq "")) {
-	    $feature->set_attribute("description",$feature->get_attribute("product"));
-	}
-
-	################################################################
-	#### cross-references
-	my @xrefs = $feature->get_attribute("db_xref");
-	my $gi = "";
-	foreach my $xref (@xrefs) {
-#	    my @fields = split ":", $xref;
-	    #### use GI as feature identifier
-	    if ($xref =~ /GI:/) {
-		$gi = $';
-		last;
-	    } 
-	}
-
-	if ($gi) {
-	    $feature->force_attribute("id",$gi);
-	} else {
-	    &ErrorMessage("; Error\tfeature ".$feature->get_attribute("id")." has no GI.\n"); 
-	}
-
-	#### use genbank name as chromosome name
-	my $source = $feature->get_attribute("source");
-	if ($source =~ /genbank:/) {
-	    my $chromosome = $';
-	    $chromosome =~ s/\.gz$//;
-	    $chromosome =~ s/\.gbk$//;
-	    $feature->force_attribute("chromosome",$chromosome);
-	}
+#    &GuessSynonyms($features);
+    &CheckGenbankFeatures($features);
 
 
-
-    }
-    
-    
     ################################################################
     ### export result in various formats
     chdir $dir{output};
@@ -326,6 +288,7 @@ package main;
     @class_factories = qw (
 			   features
 			   contigs
+			   organisms
 			   );
     foreach $class_factory (@class_factories) {
 	
@@ -382,6 +345,7 @@ OPTIONS
 	-h	detailed help
 	-help	short list of options
 	-test	fast parsing of partial data, for debugging
+	-indir  input directory (with genbank .gbk files)
 	-outdir output directory
 	-v #	warn level
 		Warn level 1 corresponds to a restricted verbose
@@ -440,6 +404,11 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-suffix") {
 	    $a++;
 	    $main::suffix = $ARGV[$a];
+	    
+	    ### input dir (with genbank files)
+	} elsif ($ARGV[$a] eq "-indir") {
+	    $a++;
+	    $main::dir{genbank} = $ARGV[$a];
 	    
 	    ### output dir
 	} elsif ($ARGV[$a] eq "-outdir") {
