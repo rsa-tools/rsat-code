@@ -90,7 +90,8 @@ large duplicated regions (>= 40 bp alignment with less than 3
 mismatches)) are filtered out before analysis. Purging is essential
 for any pattern discovery process, to avoid a bias due to
 non-independence of sequences. Purging is performed with the programs
-<TT>mkvtree</TT> and <TT>vmatch</TT> developed by Stefan Kurtz (<a
+<TT>mkvtree</TT> and <TT>vmatch</TT> developed by <a
+href=http://www.techfak.uni-bielefeld.de/~kurtz/>Stefan Kurtz</a> (<a
 href="mailto:kurtz@TechFak.Uni-Bielefeld.DE">kurtz@TechFak.Uni-Bielefeld.DE</a>).
 
 <P>
@@ -123,6 +124,7 @@ checked, two separate lines are used to show a word and its reverse
 complement. This is redundant but might be useful for compatibility
 with other programs.
 
+<P>
 <A NAME="noov">
 <B>Prevent overlapping matches</B></A><BR> 
 Periodic pattern (e.g. AAAAAA, ATATAT) have an aggregative tendency, i.e. each occurrence of such a pattern strongly favours additional occurrences in its immediate vicinity. This introduces a bias to most statistics (binomial, log-likelihood). A simple way to correct for this bias is to prevent counting twice mutually overlapping occurrences. <BR>
@@ -157,17 +159,28 @@ frequencies from input sequence" works poorly.
 
 
 <P>
+<A NAME="background">
 
-<LI><B>Oligo frequencies from all non-coding regions :</B>
-pre-calculted tables are used to estimate expected oligonucleotide
-frequencies (background frequencies). These tables were calculated for
-each supported organism, by selecting all the intergenic regions (the
-background sequences) and counting the oligonucleotide frequencies for
-all sizes between 1 and 8.
+<p><li><B>Predefined background frequencies :</B>
 
+Pre-calculted tables are used to estimate expected oligonucleotide
+frequencies (background frequencies). These tables were calculated by
+calculating all oligonucleotide frequencies (from size 1 to 8) in
+different sequence types, and this for each organism :
 
-<P>
-<LI><B>Markov chain :</B> expected word (oligonucleotide) frequencies
+<ul>
+<li><b>upstream</b>: all upstream regions, allowing overlap with
+upstream ORFs.
+
+<li><b>upstream-noorf</b>: all upstream regions, preventing overlap
+with upstream ORFs (sequences are clipped to discard upstream ORF
+sequences).
+
+<li><b>non-coding</b>: all the intergenic regions, including upstream
+and downstream sequences.
+</ul>
+
+<p><li><B>Markov chain :</B> expected word (oligonucleotide) frequencies
 are calculated on the basis of the subword frequencies observed in the
 input sequence set. This calculation takes into account the higher
 order dependencies between neighbouring residues. 
@@ -197,8 +210,7 @@ order depends on the size of the sequence set. For small gene families
 loss of sensitivity. For sequence sets of 1Mb, a Markov chain of 3 is
 optimal for hexanucleotides.
 
-<P>
-<LI><B>Lexicon partitioning :</B>
+<p><li><B>Lexicon partitioning :</B>
 
 		Expected word frequencies are calculated on the basis
 		of subword frequencies, in a similar (but not
@@ -219,19 +231,16 @@ optimal for hexanucleotides.
 		frequency is the maximum expected pair frequency.
 
 
-<P>
-<LI><B>Residue frequencies from input sequence :</B> (Note: this is
+<p><li><B>Residue frequencies from input sequence :</B> (Note: this is
 equivalent to a markov chain with order 0).
 
-<P>
 <a name='equiprobable'>
-<LI><B>Equiprobable residues:</B> This option gives very poor
+<p><li><B>Equiprobable residues:</B> This option gives very poor
 results and should never be used in practice. I leave it there only
 for didactic purposes (to allow anyone to test how bad it performs).
 
-<P>
 <a name='upload_freq_file'>
-<LI><B>Upload your own expected frequency file:</B> You can upload
+<p><li><B>Upload your own expected frequency file:</B> You can upload
 your own table of expected frequency file. This option can be useful
 if you are working with an organism which is not supported on the web
 server.
