@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank_lib.pl,v 1.1 2004/03/29 10:56:11 jvanheld Exp $
+# $Id: parse_genbank_lib.pl,v 1.2 2004/04/01 22:14:42 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -413,10 +413,25 @@ sub ParseGenbankFile {
     }
 
     &ParseFeatureNames($genes, $mRNAs, $CDSs);
+    &ParseFeatureNames($CDSs);
     
     return ($file_description, $sequence);
 }
 
+
+################################################################
+=pod
+
+=item ParseGO()
+
+Extract GO identifiers from the feature notes
+
+=cut
+
+sub ParseGO {
+    my ($CDSs) = @_;
+    warn "ParseGO: TO BE IMPLEMENTED";
+}
 
 ################################################################
 =pod
