@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_swissprot.pl,v 1.24 2002/09/24 21:34:45 jvanheld Exp $
+# $Id: parse_swissprot.pl,v 1.25 2002/10/16 06:51:41 jvanheld Exp $
 #
-# Time-stamp: <2002-09-24 16:31:37 jvanheld>
+# Time-stamp: <2002-10-16 00:51:13 jvanheld>
 #
 ############################################################
 
@@ -216,15 +216,17 @@ package main;
 
     #### special field formats for SQL
     $special_field_size{features} = 2047;
-    $special_field_size{bioseqs} = 2047;
+    $special_field_size{bioseq} = 10000; ### long type 
+    $special_field_size{comments} = 10000; ### long type
 
     ### generate SQL scripts for loading the data
-    $polypeptides->generate_sql(schema=>$schema, 
-				user=>$user,
-				password=>$password,
+    $polypeptides->generate_sql(schema=>$main::schema, 
+				user=>$main::user,
+				password=>$main::password,
 				dir=>"$dir{output}/sql_scripts",
 				prefix=>"",
-				dbms=>$dbms
+				dbms_address=>$main::default{dbms_address},
+				dbms=>$main::default{dbms}
 				);
     &ExportClasses($out_file{polypeptides}, $out_format,PFBP::Polypeptide) if ($export{obj});
 
@@ -317,7 +319,9 @@ OPTIONS
 	-seq    return polypeptide bioseqs
 	-dbms	database management system
 		supported: oracle, postgresql
-	-db	database schema
+	-dbms_address	
+		address of the database management system
+	-schema	database schema
 
 EXAMPLE
 	parse_polypeptides.pl -v 2 -org ecoli -data swissprot -enz
@@ -340,10 +344,14 @@ sub ReadArguments {
 	    
 	    ### dbms
 	} elsif ($ARGV[$a] eq "-dbms") {
-	    $main::dbms = $ARGV[$a+1];
-	    unless ($supported_dbms{$main::dbms}) {
-		die "Error: this dbms is not supported\n";
+	    $main::default{dbms} = $ARGV[$a+1];
+	    unless ($supported_dbms{$main::default{dbms}}) {
+		die "Error: dbms ", $main::default{dbms}, " is not supported\n";
 	    }
+
+	    ### dbms address
+	} elsif ($ARGV[$a] eq "-dbms_address") {
+	    $main::default{dbms_address} = $ARGV[$a+1];
 
 	    ### database schema
 	} elsif ($ARGV[$a] eq "-schema") {
