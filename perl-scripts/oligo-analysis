@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.64 2003/11/30 07:47:52 jvanheld Exp $
+# $Id: oligo-analysis,v 1.65 2003/12/30 15:12:31 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -27,6 +27,8 @@ $supported_bg = join ",", sort keys %supported_bg;
 $palindroms = 0;
 $in_format = "fasta";
 @output_fields = ();
+@output_patterns = ();
+
 $sum_rc = 1;
 #$group_rc = 1;
 $proba_occ_threshold = 1;
@@ -190,7 +192,13 @@ $out = &OpenOutputFile($outputfile);
 &CalcRatio() if ($return{'ratio'});
 &CalcProba() if ($return{'proba'}) ;
 
-&PrintResult() unless ($return{'table'});
+if ($return{'table'}) {
+    ## already printed
+} elsif ($return{'distrib'}) {
+    &PrintCountDistrib();
+} else {
+    &PrintResult();
+}
 
 if ($verbose >= 1) {
     $done_time  = `date '+%d/%m/%y %H:%M:%S %Z'`;
@@ -217,21 +225,25 @@ sub CountOligo {
     }
     
     if ($return{'table'}) {
-
+	
 	if ($seq_type eq "DNA") {
 	    @possible_oligos = &all_oligos($oligo_length);
 	} else {
 	    @possible_oligos = sort keys %patterns;
 	}
+
 	#### print verbose
 	&Verbose() if ($verbose >= 1);
 
-	print $out "; seq_ID";
-	foreach my $pattern_seq (@possible_oligos) {
-	    print $out "\t", $pattern_seq;
+    } elsif ($return{'distrib'}) {
+	if ($seq_type eq "DNA") {
+	    @possible_oligos = &all_oligos($oligo_length);
+	} else {
+	    @possible_oligos = sort keys %patterns;
 	}
-	print $out "\n";
     }
+
+
     while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir, $seq_type)) &&
 	   (($current_seq) || ($current_id))) {
 	
@@ -348,16 +360,40 @@ sub CountOligo {
 	
 	undef %last_pos;
 	
-	if ($return{'table'}) {
-	    print $out $current_id;
+	if (($return{'table'}) || ($return{'distrib'})){
+	    ## summarize pattern counts
 	    foreach my $pattern_seq (@possible_oligos) {
-		if ($patterns{$pattern_seq}->{occ} > 0 ) {
-		    print $out "\t", $patterns{$pattern_seq}->{occ};
-		} else {
-		    print $out "\t", 0;
+		## Assign 0 values
+		unless ($patterns{$pattern_seq}->{occ} > 0 ) {
+		    $patterns{$pattern_seq}->{occ} = 0;
 		}
 	    }
-	    print $out "\n";
+	    &SumReverseComplements() if ($sum_rc);
+	    @output_patterns = sort keys %patterns;
+
+	    if ($return{'table'}) {
+		## Print table header before the first pattern counts
+		unless ($header_printed) {
+		    &PrintTableHeader(@output_patterns);
+		    $header_printed = 1;
+		}
+		
+		## Print patern counts for the current sequence
+		print $out $current_id;
+		foreach my $pattern_seq (@output_patterns) {
+		    print $out "\t", $patterns{$pattern_seq}->{occ};
+		}
+		print $out "\n";
+	    } elsif ($return{'distrib'}) {
+		foreach my $pattern_seq (@possible_oligos) {
+		    ## Check if no occurrences were found
+		    unless ($patterns{$pattern_seq}->{occ}) {
+			$patterns{$pattern_seq}->{occ} = 0;
+		    }
+		    ## Increment the occurrence counter
+		    $distrib{$pattern_seq}{$patterns{$pattern_seq}->{occ}}++;
+		}
+	    }
 	    undef(%patterns);
 	}
 	
@@ -386,8 +422,30 @@ sub CountOligo {
     if ($sequence_number < 1) {
 	&FatalError("The input contained no readable sequence. The file might be empty or be wronlgy formatted."); 
     }
+
 }
 
+################################################################
+## Print header for oligo count table
+sub PrintTableHeader {
+    my @output_patterns = @_;
+    print $out "; seq";
+    foreach my $pattern_seq (@output_patterns) {
+	print $out "\t", &PatternID($pattern_seq);
+    }
+    print $out "\n";
+}
+
+################################################################
+## Prit pattern ID, depending on the strands
+sub PatternID {
+    my ($pattern_seq) = @_;
+    if ($sum_rc) {
+	return join( "",  $pattern_seq, "|", lc(&SmartRC($pattern_seq)));
+    } else {
+	return $pattern_seq;
+    }
+}
 
 ################################################################
 ### sum occurrences of reverse complement patterns
@@ -410,9 +468,9 @@ sub SumReverseComplements {
 	    $occ_2strands{$rc_pattern_seq} = $occ_2strands{$pattern_seq} = $patterns{$pattern_seq}->{occ} + $patterns{$rc_pattern_seq}->{occ};
 	    $overlaps_2strands{$rc_pattern_seq} = $overlaps_2strands{$pattern_seq} = $patterns{$pattern_seq}->{overlaps} + $patterns{$rc_pattern_seq}->{overlaps};
 	}
-#	print STDERR join( "\t", "HELLO", $pattern_seq, $rc_pattern_seq,  
+#	warn join( "\t", "HELLO", $pattern_seq, $rc_pattern_seq,  
 #			   $occ_2strands{$pattern_seq} ,  $occ_2strands{$rc_pattern_seq},
-#			   ), "\n";
+#			   ), "\n" if ($main::verbose >= 10);
     }
     foreach my $pattern_seq (keys %occ_2strands) {
 	$patterns{$pattern_seq}->{occ} = $occ_2strands{$pattern_seq};
@@ -458,7 +516,7 @@ sub SumReverseComplements {
 sub GroupRc {
     foreach $pattern_seq (keys %patterns) {
 	$rc_pattern_seq = lc(&SmartRC($pattern_seq));
-	if ($rc_pattern_seq gt $pattern_seq) { ### only suppress one oligo from the dyad 
+	if ($rc_pattern_seq gt $pattern_seq) { ### only suppress one oligo from the pair
 	    delete $patterns{$rc_pattern_seq};
 	}
     }
@@ -1032,13 +1090,13 @@ sub CalcProba {
 							       $patterns{$pattern_seq}->{nb_possible_pos},
 							       $patterns{$pattern_seq}->{occ});
 
-#  	    print STDERR join( "\t", "HELLO", 
+#  	    warn join( "\t", "HELLO", 
 #  			       $pattern_seq, 
 #  			       $patterns{$pattern_seq}->{occ},  
 #  			       $patterns{$pattern_seq}->{exp_freq},  
 #  			       $patterns{$pattern_seq}->{nb_possible_pos},
 #  			       $patterns{$pattern_seq}->{occ_pro}
-#  			       ),"\n";
+#  			       ),"\n" if ($main::verbose >= 10);
 
 #	    }
 	}
@@ -1278,7 +1336,8 @@ sub Verbose {
 	    printf $out "; %-29s\t%s\n", "threshold on occ proba", $proba_occ_threshold if ($proba_occ_threshold < 1);
 	    printf $out "; %-29s\t%s\n", "threshold on occ ratio", $ratio_threshold if ($ratio_threshold > 0);
 	    printf $out "; %-29s\t%s\n", "threshold on match. seq proba", $proba_mseq_threshold if ($proba_mseq_threshold < 1);
-	    unless ($sequence_number > $max_seq_verbose) {
+
+	    unless (($return{'table'}) || ($sequence_number > $max_seq_verbose)) {
 		print $out "; Sequences:\n";
 		foreach $s (1..$sequence_number) {
 		    print $out ";\t$id_list[$s]\t$seq_length[$s]\n";
@@ -1360,11 +1419,7 @@ sub PrintResult {
 	my $pattern_seq = $sorted_keys[$p];
 	### oligo sequence and identifier
 	print $out "$pattern_seq";
-	if ($sum_rc) {
-	    print $out "\t$pattern_seq|", lc(&SmartRC($pattern_seq));
-	} else {
-	    print $out "\t$pattern_seq";
-	}
+	print $out "\t", &PatternID($pattern_seq);
 	
 	### relative frequencies
 	printf $out "\t%15.13f", $patterns{$pattern_seq}->{freq} if ($return{'freq'});	
@@ -1770,8 +1825,24 @@ sub ReadArguments {
 		}
 
 	    }
+
+	    ################################################################
+	    ## Return a table with one row per sequence and one column per pattern
 	} elsif ($ARGV[$a] eq "-table") {
+	    if ($return{'distrib'}) {
+		&FatalError("The options -table and -distrib are mutually incompatible");
+	    }
 	    $return{'table'} = 1;
+	    push(@output_fields, "occ");
+	    
+	    
+	    ################################################################
+	    ## Return a table with one row per pattern and one column per occurrence value
+	} elsif ($ARGV[$a] eq "-distrib") {
+	    if ($return{'table'}) {
+		&FatalError("The options -table and -distrib are mutually incompatible");
+	    }
+	    $return{'distrib'} = 1;
 	    push(@output_fields, "occ");
 	    
 	    
@@ -1999,7 +2070,8 @@ ARGUMENTS
 		return a table where rows represents input sequences,
 		and columns the counts of occurrences for each
 		possible oligo
-			
+	-distrib
+		return occurrence distributions (one row per pattern)		
 	-grouprc (default)
 		group reverse complement with the direct sequence in the 
                 output file. This avoids redundancy (since the frequence of 
@@ -2382,6 +2454,7 @@ oligo-analysis options
 -return		fields to return, among: 
 			occ,proba,freq,mseq,ratio,zscore,like,pos,rank
 -table		return a table sequences (rows)/oligo occurrences (cols)
+-distrib	return occurrence distributions (one row per pattern)
 -noov		no overlapping
 -1str		inactivate summation of occ on both strands
 -2str		sum occurences on both strands (default)
@@ -2421,4 +2494,52 @@ sub SelectPalindroms {
 	  delete $patterns{$pattern_seq};
       }
   }
+}
+
+
+################################################################
+#
+# Print oligo count distribution
+#
+
+sub PrintCountDistrib {
+    my %min = ();
+    my %max = ();
+    my $distrib_min = undef;
+    my $distrib_max = undef;
+
+    #### Calculate maximum and minimum occurrence values
+    foreach my $pattern_seq (@output_patterns) {
+	my @sorted_values = sort {$a <=> $b} keys %{$distrib{$pattern_seq}};
+	$min{$pattern_seq} = $sorted_values[0];
+	$max{$pattern_seq} = $sorted_values[$#sorted_values];
+	$distrib_min = &checked_min($distrib_min, $min{$pattern_seq});
+	$distrib_max = &checked_max($distrib_max, $max{$pattern_seq});
+	print $out join ("\t", 
+			 $pattern_seq,
+			 $min{$pattern_seq},
+			 $max{$pattern_seq},
+			 $distrib_min,
+			 $distrib_max,
+			 join (";", @sorted_values),
+			 ), "\n" if ($main::verbose >= 5);
+    }
+
+    #### print verbose
+    &Verbose() if ($verbose >= 1);
+
+    #### Print the header
+    print $out join ("\t", 
+		     ";occ", 
+		     $distrib_min..$distrib_max), "\n";
+
+    #### Print the result
+    foreach my $pattern_seq (@output_patterns) {
+	print $out &PatternID($pattern_seq);
+	foreach my $occ ($distrib_min..$distrib_max) {
+	    my $freq = $distrib{$pattern_seq}{$occ} || 0;
+	    print $out "\t", $freq;
+	}
+	print $out "\n";
+    }
 }

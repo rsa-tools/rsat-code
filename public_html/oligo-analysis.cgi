@@ -59,6 +59,8 @@ $return_fields = "";
 
 if ($query->param('return') eq "table") {
     $parameters .= " -return occ -table"; 
+} elsif ($query->param('return') eq "distrib") {
+    $parameters .= " -return occ -distrib"; 
 } else {
     
     ### occurrences
@@ -251,6 +253,7 @@ if ($query->param('output') =~ /display/i) {
     
     #### oligonucleotide assembly ####
     if (($query->param('return') ne "table") &&
+	($query->param('return') ne "distrib") &&
 	(&IsReal($query->param('occ_significance_threshold')))) {
 	$pattern_assembly_command = "$SCRIPTS/pattern-assembly -v 1 -subst 1";
 	if ($query->param('strand') =~ /single/) {

@@ -287,6 +287,9 @@ print "</BLOCKQUOTE>\n";
 print ("<INPUT TYPE='radio' NAME='return' VALUE='table'>", 
        "One row per gene (occurrence counts only, email output recommended)", "<P>\n");
 
+print ("<INPUT TYPE='radio' NAME='return' VALUE='distrib'>", 
+       "Pattern count distribubtions, one row per pattern (occurrence counts only, email output recommended)", "<P>\n");
+
 
 print "<HR width=550 align=left>\n";
 
