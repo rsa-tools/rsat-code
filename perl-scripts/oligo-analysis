@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.62 2003/11/19 20:06:23 jvanheld Exp $
+# $Id: oligo-analysis,v 1.63 2003/11/26 22:42:41 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -73,16 +73,16 @@ if ($return{'mseq'} && $return{'proba'} && !($noov)) {
 }
 
 ### check oligomer length
-unless ($oligo_length > 0) {
-    &Warning("\tYou should specify an oligomer length > 0.\n",
-	     "\tType oligo-analysis -h for more info..\n");
-    exit;
-}
+&FatalError("You should specify an oligomer length.") unless (defined($oligo_length));
+&FatalError("Oligomer length should be a natural number.") unless (&IsNatural($oligo_length));
+&FatalError("Oligomer length should be strictly positive.") unless ($oligo_length > 0);
+
+## minimum overlap distance
 if ($noov) {
     $min_overlap_dist = $oligo_length;
 }
 
-### markov_order
+### Markov order
 if ($method eq "Markov chain") {
     if ($markov_order < 0){
 	if ($oligo_length == 1) {
