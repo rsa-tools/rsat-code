@@ -52,7 +52,13 @@ sub SupportedOrganismTree {
 	my $org_node = new Bio::Tree::Node(-id=>$org, -description=>$org);
 	$nodes{$org} = $org_node; # index the new node
 	my $taxonomy = $supported_organism{$org}->{taxonomy};
+
+	## Replace prolematic characters by _
 	$taxonomy =~ s|/|_|g; ## / are reserved in phylip format
+	$taxonomy =~ s| |_|g; ## 
+	$taxonomy =~ s|\(|_|g; ## / are reserved in phylip format
+	$taxonomy =~ s|\)|_|g; ## / are reserved in phylip format
+
 	my @taxonomy = split /\s*;\s*/, $taxonomy;
 
 	warn join ("\t", ";", $org_counter, $org, $taxonomy), "\n" if ($main::verbose >= 3);
