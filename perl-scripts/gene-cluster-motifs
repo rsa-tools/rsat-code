@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.19 2002/06/06 11:16:19 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.20 2002/09/12 09:01:53 jvanheld Exp $
 #
-# Time-stamp: <2002-06-06 13:16:13 jvanheld>
+# Time-stamp: <2002-09-12 04:00:47 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -36,8 +36,9 @@ $seq_format = "fasta";
 $min_oligo_length = 6;
 $max_oligo_length = 6;
 $min_matching_score = 4;
-$dyad_element_length = 3;
+$monad_length = 3;
 $noov = 1;
+$min_sp = 0;
 $max_sp = 20;
 $start_date = `date`;
 
@@ -67,13 +68,18 @@ if ($verbose >= 1) {
     foreach $family (@families) {
 	printf ";\t%s\n", $family;
     }
+    printf "; family file", $family_file;
     printf "; upstream region\n";
-    printf ";\tstrands\t%s\n", $strands;
-    printf ";\tfrom\t%d\n", $from;
-    printf ";\tto\t%d\n", $to;
-    printf ";\tsize\t%d\n", $size;
+    printf ";\t%-22s\t%d\n", "strands", $strands;
+    printf ";\t%-22s\t%d\n", "from", $from;
+    printf ";\t%-22s\t%d\n", "to", $to;
+    printf ";\t%-22s\t%d\n", "size", $size;
+    printf "; oligo-analysis\n";
+    printf ";\t%-22s\t%d\n", "max oligo length", $max_oligo_length;
+    printf ";\t%-22s\t%d\n", "min oligo length", $min_oligo_length;
+    printf "; dyad-analysis\n";
+    printf "; \tdyad type    \t%s\n", $type;
     printf "; sig threshold\t%.1f\n", $th;
-    printf "; dyad type    \t%s\n", $type;
     printf "; exp freq     \t%s\n", $exp;
 }
 
@@ -117,13 +123,13 @@ exit(0);
 
 #### set the file names as a function of parameters
 sub SetFileNames {
-  $sp = "0-$max_sp";
+  $sp = "$min_sp-$max_sp";
   $dyad_options = "-v ";
   $dyad_options .= " -sort ";
   $dyad_options .= " -${strands} ";
   $dyad_options .= " -type $type ";
   $dyad_options .= " -noov " if ($noov);
-  $dyad_options .= " -l $dyad_element_length ";
+  $dyad_options .= " -l $monad_length ";
   $dyad_options .= " -thosig $th ";
   $dyad_options .= " -sp $sp ";
   if ($exp_freq_file{dyads}) {
@@ -137,7 +143,7 @@ sub SetFileNames {
   }
   
   $dyad_suffix = "_dyads";
-  $dyad_suffix .= "_l${dyad_element_length}";
+  $dyad_suffix .= "_l${monad_length}";
   $dyad_suffix .= "_sp${sp}";
   $dyad_suffix .= "_${strands}";
   $dyad_suffix .= "_${type}";
@@ -204,7 +210,10 @@ sub UpstreamSequences {
 
 ### oligo-analysis
 sub OligoAnalysis {
-    warn ";\tAnalyzing oligonucleotides for family $family_name\n" if ($verbose >= 1);
+    warn join ("\t", 
+	       ";\tAnalyzing oligonucleotides for family $family_name",
+	       "min len: $min_oligo_length",
+	       "max len: $max_oligo_length"), "\n" if ($verbose >= 1);
     $dir = "${family_name}/oligos_${family_name}";
     unless (-d $dir) {
 	mkdir $dir, 0755 || die "Error: cannot create directory $dir\n";
@@ -247,14 +256,15 @@ sub OligoAnalysis {
     $fmap_file = $family{$family_name}->{oligo_file}.".gif";
     $htmap_file = $family{$family_name}->{oligo_file}.".html";
     
-    $command = "pattern-assembly -i $family{$family_name}->{oligo_file} -sc 7 -${strands} -v -o $family{$family_name}->{oligo_assembly_file} -maxfl 1 -maxpat 200 ";
+    $command = "pattern-assembly -i $family{$family_name}->{oligo_file} -sc 8 -${strands} -v -o $family{$family_name}->{oligo_assembly_file} -maxfl 1 -maxpat 200 ";
     
     &doit($command);
     
     ### feature-map for oligo-analysis
     die "Error : cannot read file $family{$family_name}->{seq_file}\n" unless (-r $family{$family_name}->{seq_file});
-    $origin = -$from + 1;
-    $command = "dna-pattern -i $family{$family_name}->{seq_file} -format $seq_format -pl $family{$family_name}->{oligo_file} -origin $origin -sc 7 -N 4 ";
+#    $origin = -$from + 1;
+    $origin = "-0";
+    $command = "dna-pattern -i $family{$family_name}->{seq_file} -format $seq_format -pl $family{$family_name}->{oligo_file} -origin $origin -sc 8 -N 4 ";
     $command .= " | features-from-dnapat -o $family{$family_name}->{oligo_ft_file} ";
     $command .= " ; feature-map -i $family{$family_name}->{oligo_ft_file} -scalebar -scalestep 50 -legend -from $from -to $to -o $fmap_file -scorethick -htmap > $htmap_file ";
     
@@ -263,7 +273,12 @@ sub OligoAnalysis {
 
 ### dyad analysis
 sub DyadAnalysis {
-    warn ";\tAnalyzing dyads for family $family_name\n" if ($verbose >= 1);
+    warn join( "\t", 
+	       ";\tAnalyzing dyads for family $family_name",
+	       "monad length: $monad_length",
+	       "min_sp", $min_sp,
+	       "max_sp", $max_sp,
+	       ), "\n" if ($verbose >= 1);
     $dir = "${family_name}/dyads_${family_name}";
     unless (-d $dir) {
 	mkdir $dir, 0755 || die "Error: cannot create directory $dir\n";
@@ -274,7 +289,7 @@ sub DyadAnalysis {
     &doit($command);
     
     ### fragment assembly
-    $command = "pattern-assembly -v -i $family{$family_name}->{dyad_file} -o $family{$family_name}->{dyad_assembly_file} -$strands -maxfl 2 -sc 7 -maxpat 200 ";
+    $command = "pattern-assembly -v -i $family{$family_name}->{dyad_file} -o $family{$family_name}->{dyad_assembly_file} -$strands -maxfl 2 -sc 8 -maxpat 200 ";
     
     &doit($command);
     
@@ -314,8 +329,8 @@ sub ReadSiteLibrary {
   if (-e $library_file) {
     open LIBRARY, $library_file;
     while (<LIBRARY>) {
-	next if (/^\#/);
 	next if (/^;/);
+	next if (/^\#/);
 	next unless (/\S/);
 	chomp;
 	my @fields = split "\t";
@@ -594,20 +609,21 @@ sub SyntheticTable {
 }
 
 sub DrawFeatureMaps {
-  $origin = -$from + 1;
-  $command = "dna-pattern -pl $family{$family_name}->{dyad_file} -format $seq_format -i $family{$family_name}->{seq_file}  -sc 7 -origin $origin -N 4 ";
-  $command .= "| features-from-dnapat -o $family{$family_name}->{dyad_ft_file} ";
-  $command .= "; feature-map -i $family{$family_name}->{dyad_ft_file} -o $family{$family_name}->{fmap_file} ";;
-  $command .= "-from $from -to $to ";
-  $command .= "-legend ";
-  $command .= "-scalebar -scalestep 50 ";
-  $command .= "-scorethick ";
-  $command .= "-mlen 520 ";
-  $command .= "-title '${family_name}$dyad_suffix' ";
-  $command .= "-htmap >  $family{$family_name}->{htmap_file}";
-  #  $command .= " ;  xv -o $family{$family_name}->{fmap_file} &";
+##  $origin = -$from + 1;
+    $origin = "-0";
+    $command = "dna-pattern -pl $family{$family_name}->{dyad_file} -format $seq_format -i $family{$family_name}->{seq_file}  -sc 8 -origin $origin -N 4 ";
+    $command .= "| features-from-dnapat -o $family{$family_name}->{dyad_ft_file} ";
+    $command .= "; feature-map -i $family{$family_name}->{dyad_ft_file} -o $family{$family_name}->{fmap_file} ";;
+    $command .= "-from $from -to $to ";
+    $command .= "-legend ";
+    $command .= "-scalebar -scalestep 50 ";
+    $command .= "-scorethick ";
+    $command .= "-mlen 520 ";
+    $command .= "-title '${family_name}$dyad_suffix' ";
+    $command .= "-htmap >  $family{$family_name}->{htmap_file}";
+    #  $command .= " ;  xv -o $family{$family_name}->{fmap_file} &";
 
-  &doit($command);
+    &doit($command);
 }
 
 
@@ -680,9 +696,15 @@ sub AnalyzeFamilies {
 	
 	### delete upstream sequence file
 	if ($task{clean}) {
-	    warn ";\tRemoving sequences from the hard drive for family $family_name\n" if ($verbose >=1);
-	    system "rm $family{$family_name}->{seq_file}" ;
-	    system "rm $family{$family_name}->{seq_file_purged}" ;
+	    warn ";\tCleaning files from the hard drive for family $family_name\n" if ($verbose >=1);
+	    foreach my $file ($family{$family_name}->{seq_file},
+			      $family{$family_name}->{seq_file_purged},
+			      $family{$family_name}->{oligo_ft_file},
+			      $family{$family_name}->{dyad_ft_file}
+			      ) {
+		warn ";\t\t$file\n" if ($verbose >=1);
+		system "rm -f $file" ;
+	    }
 	}
 	
     }
@@ -732,12 +754,17 @@ OPTIONS
 	-h	(must be first argument) display full help message
 	-help	(must be first argument) display options
 	-v	verbose
-	-fam	family file
+	-i	family file
 	-org	organism
 	-from	upstream region left limit
 	-to	upstream region right limit
 	-1str   strand-sensitive analysis
 	-2str   strand-insensitive analysis
+	-maxol	maximum oligonucleotide length
+	-minol	minimum oligonucleotide length
+	-monad  monad length for dyad-analysis
+	-minsp	maximum spacing for dyad-analysis
+	-maxsp	maximum spacing for dyad-analysis
 	-task selected_task
 		Select the tasks to be performed.
 		Supported tasks: $supported_tasks
@@ -756,6 +783,9 @@ OPTIONS
 		name of a file containing the expected frequencies for
 		oligo-analysis.
 	-noorf	exclude upstream ORFs from upstream sequences
+	-noov	prevent overlapping matches for self-overlapping patterms
+		(default)
+	-ovlp	allow overlapping matches for self-overlapping patterms
 	-pseudo	pseudo-weight (see oligo-analysis manual)
 
 FILE FORMAT
@@ -784,7 +814,7 @@ HOW TO PROCEED
     
     3) run the command
 
-       multiple-family-analysis -org organism -fam family_file \
+       multiple-family-analysis -org organism -i family_file \
            -v -from -200 -to 49
 
     4) Open Netscape and locate the directory.  There is one folder
@@ -816,12 +846,17 @@ multiple-family-analysis options
 -help		(must be first argument) display options
 -v		verbose
 -vv 		hyperverbose
--fam		family file
+-i		family file
 -org		organism
 -from		upstream region left limit
 -to		upstream region right limit
 -1str   	strand-sensitive analysis
 -2str   	strand-insensitive analysis
+-maxol		maximum oligonucleotide length
+-minol		minimum oligonucleotide length
+-monad		monad length for dyad-analysis
+-minsp		maximum spacing for dyad-analysis
+-maxsp		maximum spacing for dyad-analysis
 -n      	dry run: print commands without executing them
 -exp		expected frequency file
 -transp		transpose synthetic result table (columns become rows)
@@ -829,6 +864,8 @@ multiple-family-analysis options
 -dyad_exp_freq	expected frequencies for dyad-analysis
 -oligo_exp_freq	expected frequencies for oligo-analysis
 -noorf		exclude upstream ORFs from upstream sequences
+-noov		prevent overlapping matches for self-overlapping patterms
+-ovlp		allow overlapping matches for self-overlapping patterms
 -pseudo		pseudo-weight (see oligo-analysis manual)
 End_short_help
   close HELP;
@@ -858,7 +895,9 @@ sub ReadArguments {
 	    &PrintOptions;
 	    
 	    ### family file
-	} elsif ($ARGV[$a] eq "-fam") {
+	} elsif (($ARGV[$a] eq "-i") ||
+		 ($ARGV[$a] eq "-fam") # for compatibility with previous versions
+		 ) {
 	    $family_file = $ARGV[$a+1];
 
 	    ### upstream sequence lmits
@@ -875,6 +914,18 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-2str") {
 	    $force{strands} = "2str";
 
+	    ### oligo-analysis parameters
+	} elsif ($ARGV[$a] eq "-minol") {
+	    $min_oligo_length = $ARGV[$a+1];;
+	} elsif ($ARGV[$a] eq "-maxol") {
+	    $max_oligo_length = $ARGV[$a+1];;
+	    
+	    ### dyad-analysis parameters
+	} elsif ($ARGV[$a] eq "-minsp") {
+	    $min_sp = $ARGV[$a+1];;
+	} elsif ($ARGV[$a] eq "-maxsp") {
+	    $max_sp = $ARGV[$a+1];;
+
 	    ### organism
 	} elsif ($ARGV[$a] eq "-org") {
 	    $organism_name = $ARGV[$a+1];
@@ -882,13 +933,16 @@ sub ReadArguments {
 
 	    #### task selection
 	} elsif ($ARGV[$a] eq "-task") {
-	    $requested_task = $ARGV[$a+1];
-	    if ($supported_task{$requested_task}) {
-		$task{$requested_task} = 1;
-	    } else {
-		&FatalError("This task is not supported. Supported: $supported_tasks");
+	    my @requested_tasks = split ",", $ARGV[$a+1];
+	    foreach my $task (@requested_tasks) {
+		next unless $task;
+#	    $task = $ARGV[$a+1];
+		if ($supported_task{$task}) {
+		    $task{$task} = 1;
+		} else {
+		    &FatalError("Unsupported task '$task'. \n\tSupported: $supported_tasks");
+		}
 	    }
-
 
 	    #### transpose synthetic table
 	} elsif ($ARGV[$a] =~ /^-transp/) {
@@ -914,9 +968,20 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] =~ /^-oligo_exp_freq/) {
 	    $exp_freq_file{oligos} = $ARGV[$a+1];
 
+
+	    #### expected frequency model. Supported: "ncf", "mncf"
 	} elsif ($ARGV[$a] =~ /^-exp/) {
 	    $force{exp} = $ARGV[$a+1];
 
+	    #### prevent self-overlap
+	} elsif ($ARGV[$a] eq "-noov") {
+	    $noov = 1;
+
+	    #### allow self-overlap
+	} elsif ($ARGV[$a] eq "-ovlp") {
+	    $noov = 0;
+
+	    #### pseudo-weight
 	} elsif ($ARGV[$a] =~ /^-pseudo/) {
 	    $pseudo = $ARGV[$a+1];
 	    unless ((&IsReal($pseudo)) && ($pseudo > 0)) {
@@ -928,21 +993,21 @@ sub ReadArguments {
 
 
 
-sub OldReadFamilies {
-  ### read family list
-  open FAM, "$family_file" || die "Error: cannot open family file $family_file\n";
-  while (<FAM>) {
-    next if (/^;/);
-    next if (/^\#/);
-    next unless (/\S/);
-    chomp;
-    @fields = split;
-    $family_name = shift @fields;
-    push @families, $family_name;
-    @{$family{$family_name}->{members}} = @fields;
-  }
-  close FAM;
-}
+# sub OldReadFamilies {
+#   ### read family list
+#   open FAM, "$family_file" || die "Error: cannot open family file $family_file\n";
+#   while (<FAM>) {
+#     next if (/^;/);
+#     next if (/^\#/);
+#     next unless (/\S/);
+#     chomp;
+#     @fields = split;
+#     $family_name = shift @fields;
+#     push @families, $family_name;
+#     @{$family{$family_name}->{members}} = @fields;
+#   }
+#   close FAM;
+# }
 
 
 sub ReadFamilies {
