@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: check-oligo-analysis,v 1.3 2003/10/26 22:35:40 jvanheld Exp $
+# $Id: check-oligo-analysis,v 1.4 2003/10/27 18:42:18 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 23:00:11 jvanheld>
 #
@@ -34,7 +34,7 @@ $repet = 1000;
 $from=1;
 
 @tasks = ();
-%supported_tasks = ();
+%supported_task = ();
 $supported_task{'oligos'}++;
 $supported_task{'synthesis'}++;
 $supported_task{'theory'}++;
@@ -46,7 +46,7 @@ $supported_tasks = join",", sort(keys (%supported_task));
 ################################################################
 #### task list
 if (scalar(@tasks) <= 0) {
-    &FatalError("You should select at least one task. Supported: $supported_tasks.");
+    &FatalError("You should select at least one task. Supported: $supported_task.");
 }
 foreach my $t (@tasks) {
     unless ($supported_task{$t}) {
@@ -56,7 +56,7 @@ foreach my $t (@tasks) {
 }
 
 if ($task{all}) {
-    foreach my $t (keys %supported_tasks) {
+    foreach my $t (keys %supported_task) {
 	$task{$t}++;
     }
 }
@@ -136,18 +136,45 @@ exit(0);
 ################################################################
 ## Calculate score distributions
 sub SummarizeResults {
-    warn join( "\t", "\n; Summarizing results", ${str}, $ov), "\n" if ($verbose >= 1);
+    warn join( "\t", "\n; Summarizing results", $str, $ov), "\n" if ($verbose >= 1);
     $score_col=9;
     $synthesis_dir=$dir{output}."/synthesis";
     &CheckOutputDir($synthesis_dir);
-    $synthesis_file = ${synthesis_dir}."/oligos_${oligo_len}nt${str}${ov}_sig${thosig}_distrib.tab";
-    $command =  "echo ';Jobs' `ls ${result_dir}/oligos_*_${oligo_len}nt${str}${ov}_sig${thosig}.tab | wc | awk '{print \$0}'` > ${synthesis_file}; ";
-    $command .=  " cat ${result_dir}/oligos_*_${oligo_len}nt${str}${ov}_sig${thosig}.tab";
+    $synthesis_file = $synthesis_dir."/RAND_L${seq_len}_N${seq_nb}_oligos_${oligo_len}nt${str}${ov}_sig${thosig}_distrib.tab";
+
+    
+    ### count the number of files in the output dir
+    @output_files = glob("${result_dir}/oligos_*_${oligo_len}nt${str}${ov}_sig${thosig}.tab");
+    $jobs_done = scalar(@output_files);
+    $command =  "echo ';Jobs done' $jobs_done > ${synthesis_file}; ";
+
+    ## number of patterns
+    $command .= "echo ';' >> ${synthesis_file}; ";
+    $command .= "echo '; Number of patterns' >> ${synthesis_file}; ";
+    $command .= " cat ${result_dir}/oligos_*_${oligo_len}nt${str}${ov}_sig${thosig}.tab";
     $command .= " | grep -v ';'" ;
     $command .= " | cut -f ${score_col}";
     $command .= " | classfreq -ci 1 -v 1 -min ${thosig}";
-    $command .= " >> ${synthesis_file}";
+    $command .= " >> ${synthesis_file}; ";
+
+
+    ## number of families
+    if ($ov eq "-noov") {
+	$rank_col=11;
+    } else {
+	$rank_col=10;
+    }
+    $command .= "echo ';' >> ${synthesis_file}; ";
+    $command .= "echo '; Number of families' >> ${synthesis_file}; ";
+    $command .=  " cat ${result_dir}/oligos_*_${oligo_len}nt${str}${ov}_sig${thosig}.tab";
+    $command .= " | grep -v ';'" ;
+    $command .= " | awk \'\$".$rank_col."==1\'" ;
+    $command .= " | cut -f ${score_col}";
+    $command .= " | classfreq -ci 1 -v 1 -min ${thosig}";
+    $command .= " >> ${synthesis_file}; ";
+
     &doit ($command);
+
     warn "; Synthesis file\t", ${synthesis_file}, "\n\n" if ($verbose >= 1);
 }
 
@@ -362,14 +389,13 @@ sub Verbose {
 ################################################################
 ## calculate theoretical distributions as a function of the conditions
 sub CalcTheoreticalDistributions {
-#    my ($theory_file) = @_;
 
     my @descriptions = ();
 
     $theory_dir=$dir{output}."/theory";
     &CheckOutputDir($theory_dir);
-    $theory_file = $theory_dir."/oligos_${oligo_len}nt${str}${ov}_sig${thosig}_distrib.tab";
-    
+    $theory_file = $theory_dir."/RAND_L${seq_len}_N${seq_nb}_oligos_${oligo_len}nt${str}${ov}_sig${thosig}_distrib.tab";
+
     $thf = &OpenOutputFile($theory_file); ## open output file
     
     ## number of jobs
@@ -416,10 +442,10 @@ sub CalcTheoreticalDistributions {
 
 
     ## calculate the P-value, E-value and sig for each occurrence
-    if (defined($manual_max_occ)) {
+    if ($manual_max_occ) {
 	$max_occ = manual_max_occ;
     } else {
-	$max_occ = &min($T, POSIX::ceil($m*5));
+	$max_occ = &min($T, POSIX::ceil($m*10));
     }
 
     print $thf ";", join( "\t",
