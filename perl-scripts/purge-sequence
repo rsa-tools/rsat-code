@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence,v 1.18 2002/06/06 11:35:55 jvanheld Exp $
+# $Id: purge-sequence,v 1.19 2003/09/30 21:40:08 jvanheld Exp $
 #
-# Time-stamp: <2002-06-06 13:35:53 jvanheld>
+# Time-stamp: <2003-09-30 23:39:21 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -26,7 +26,7 @@ $match_len = 40;
 $mismatches = 3;
 $in_format = "fasta";
 
-&ReadArguments;
+&ReadArguments();
 
 
 #### check argument values ####
@@ -73,7 +73,7 @@ $command .= " -i $dir{input}/$basename" if ($inputfile);
 
 
 ###### execute the command #########
-@extensions = qw(al1 ssp bck bwt des lcp llv prj suf tis sds);
+@extensions = qw(al1 ssp bck bwt des lcp ois llv prj suf tis sds);
 
 #### build the tree
 my $mkvtree_options = "";
@@ -82,14 +82,17 @@ $mkvtree_options .= " -dna"; # input is DNA sequence
 $mkvtree_options .= " -tis"; # output parsed and transformed input string to file
 $mkvtree_options .= " -bwt"; # output Burrows & Wheeler Transform to file
 $mkvtree_options .= " -suf"; # output suffix array to file
+$mkvtree_options .= " -sti1"; # output reduced inverse suffix array (sti1tab) to file
 $mkvtree_options .= " -lcp"; # output longest common prefix lengths to file
-$mkvtree_options .= " -pl 8"; # length of prefix for bucket sort (default 0)
+$mkvtree_options .= " -ois"; # output the parsed input string to a file
+$mkvtree_options .= " -pl"; # length of prefix for bucket sort (default 0)
 $mkvtree_options .= " -db $tmp_file"; # sequence file
 &doit("cd $TMP; $skdir/mkvtree $mkvtree_options");
 
 #### locate the duplications
 my $vmatch_options = "-s"; # show the sequence content of a match
-$vmatch_options .= " -dbnomatch 1 "; # show all database sequence not containing a match
+#$vmatch_options .= " -dbnomatch 1 "; # show all database sequence not containing a match
+$vmatch_options .= " -dbmaskmatch n "; # show all database sequence not containing a match
 $vmatch_options .= " keepleft"; # keep the left occurrence of each repeat
 $vmatch_options .= " -l $match_len"; # specify that match must have the given length
 $vmatch_options .= " -e $mismatches" if ($mismatches > 0); # specify the allowed edit distance > 0
