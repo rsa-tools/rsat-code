@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.32 2003/03/21 08:20:46 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.33 2003/06/15 22:36:37 jvanheld Exp $
 #
-# Time-stamp: <2003-03-21 09:20:43 jvanheld>
+# Time-stamp: <2003-06-16 00:31:11 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -53,7 +53,7 @@ $noov = 1;
 $min_sp = 0;
 $max_sp = 20;
 $start_date = `date`;
-#$maps=1;
+$no_map=0;
 $sort_key = "score";
 $verbose = 0;
 
@@ -221,6 +221,7 @@ sub UpstreamSequences {
     $command .= " -from $from" if (defined($from));
     $command .= " -to $to " if (defined($to));
     $command .= " -label orf_gene ";
+    $command .= " -feattype $feature_types " if ($feature_types);
     $command .= " -format $seq_format";
     &doit($command);
 
@@ -755,6 +756,14 @@ sub DrawDyadFeatureMap {
 
 ############################### check parameters ###############################
 sub CheckParameters {
+
+    #### accepted feature types
+    unless (defined %accepted_feature_types) {
+	$accepted_feature_types{cds} = 1;
+    }
+    $feature_types = join ",", keys (%accepted_feature_types);
+
+
     #### check selected tasks
     unless (defined(%task)) {
 	&FatalError("You should select at least one task.");
@@ -762,6 +771,9 @@ sub CheckParameters {
     if ($task{all}) {
 	foreach my $t (@supported_tasks) {
 	    $task{$t} = 1;
+	}
+	if ($no_map) {
+	    $task{maps} = 0;
 	}
     }
     
@@ -892,20 +904,57 @@ OPTIONS
 	-v	verbose
 	-i	family file
 	-outdir	output directory
+
+    Sequence retrieval options
 	-org	organism
+	-noorf	exclude upstream ORFs from upstream sequences
 	-from	upstream region left limit
 	-to	upstream region right limit
+        -feattype
+		feature type (e.g. CDS, mRNA)
+
+    oligo-analysis and dyad-analysis options
 	-1str   strand-sensitive analysis
 	-2str   strand-insensitive analysis
+	-htmaps	draw html maps (dynamic map with pointers to the features)
+		These html files take space on the hard drive, so I
+		suppressed them from the default output.
+	-noov	prevent overlapping matches for self-overlapping patterms
+		(default)
+	-ovlp	allow overlapping matches for self-overlapping patterms
+	-nomap	do not draw feature maps (for saving time and hard disk space)
+	-bg	background frequency model
+		This parameter indicates which background model has to
+		be used for the estimation of expected pattern
+		frequencies.
+		Supported: $supported_background
+
+    oligo-analysis options
 	-maxol	maximum oligonucleotide length
 	-minol	minimum oligonucleotide length
+	-oligo_exp_freq
+		name of a file containing the expected frequencies for
+		oligo-analysis.
+	-pseudo	pseudo-weight (see oligo-analysis manual)
+	-markov #	
+		calculate expected frequencies on the basis of a
+		Markov chain model of order #
+
+    dyad-analysis options
 	-monad  monad length for dyad-analysis
 	-minsp	maximum spacing for dyad-analysis
 	-maxsp	maximum spacing for dyad-analysis
+	-dyad_exp_freq
+		name of a file containing the expected frequencies for
+		dyad-analysis.
+
+    Output options
 	-transp	transpose synthetic result table (columns become rows)
 	-sort sort_key
 	        sort key for the synthetic table
 		Supported: $supported_sort_keys
+
+    Other options
 	-task selected_task
 		Select the tasks to be performed.
 		Supported tasks: $supported_tasks
@@ -917,30 +966,6 @@ OPTIONS
 		    -task upstream -task oligos -task synthesis
 		For a full analysis, simply type 
 		    -task all
-
-	-htmaps	draw html maps (dynamic map with pointers to the features)
-		These html files take space on the hard drive, so I
-		suppressed them from the default output.
-	-dyad_exp_freq
-		name of a file containing the expected frequencies for
-		dyad-analysis.
-	-oligo_exp_freq
-		name of a file containing the expected frequencies for
-		oligo-analysis.
-	-noorf	exclude upstream ORFs from upstream sequences
-	-noov	prevent overlapping matches for self-overlapping patterms
-		(default)
-	-ovlp	allow overlapping matches for self-overlapping patterms
-	-pseudo	pseudo-weight (see oligo-analysis manual)
-	-nomap	do not draw feature maps (for saving time and hard disk space)
-	-bg	background frequency model
-		This parameter indicates which background model has to
-		be used for the estimation of expected pattern
-		frequencies.
-		Supported: $supported_background
-	-markov #	
-		calculate expected frequencies on the basis of a
-		Markov chain model of order #
 	-known	known_site_file
 		A file containing a list of known sites/motifs for
 		each of the gene families. These known sites are NOT
@@ -992,6 +1017,8 @@ multiple-family-analysis options
 -org		organism
 -from		upstream region left limit
 -to		upstream region right limit
+-noorf		exclude upstream ORFs from upstream sequences
+-feattype	feature type for sequence retrieval (e.g. CDS, mRNA)
 -1str   	strand-sensitive analysis
 -2str   	strand-insensitive analysis
 -maxol		maximum oligonucleotide length
@@ -1007,7 +1034,6 @@ multiple-family-analysis options
 -htmaps		draw html maps (dynamic map with pointers to the features)
 -dyad_exp_freq	expected frequencies for dyad-analysis
 -oligo_exp_freq	expected frequencies for oligo-analysis
--noorf		exclude upstream ORFs from upstream sequences
 -noov		prevent overlapping matches for self-overlapping patterms
 -ovlp		allow overlapping matches for self-overlapping patterms
 -pseudo		pseudo-weight (see oligo-analysis manual)
@@ -1027,6 +1053,9 @@ sub ReadArguments {
 	### verbose ###
 	if ($ARGV[$a] eq "-v") {
 	    $verbose = $ARGV[$a+1];
+	    unless (&IsNatural($verbose)) {
+		$verbose = 1;
+	    }
 	    
 	    #### dry run
 	} elsif ($ARGV[$a] eq "-n") {
@@ -1122,6 +1151,17 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] =~ /^-type/) {
 	    $force{type} = $ARGV[$a+1];
 
+	    #### feature types
+	} elsif ($ARGV[$a] eq "-feattype") {
+	    my @types = split ",", $ARGV[$a+1];
+	    foreach my $type (@types) {
+		if ($supported_feature_types{lc($type)}) {
+		    $accepted_feature_types{lc($type)}++;
+		} else {
+		    &FatalError("$type invalid feature type. Supported: $supported_feature_types");
+		}
+	    }
+
 	    #### expected frequency file for dyad-analysis 
 	} elsif ($ARGV[$a] =~ /^-dyad_exp_freq/) {
 	    $exp_freq_file{dyads} = $ARGV[$a+1];
@@ -1157,7 +1197,7 @@ sub ReadArguments {
 
 	    #### prevent feature-map drawing
 	} elsif ($ARGV[$a] eq "-nomap") {
-	    $maps = 0;
+	    $no_map = 1;
 
 	    #### draw htmaps
 	} elsif ($ARGV[$a] eq "-htmaps") {
