@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank_lib.pl,v 1.6 2004/05/12 22:01:58 jvanheld Exp $
+# $Id: parse_genbank_lib.pl,v 1.7 2004/05/17 15:07:49 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -507,9 +507,24 @@ sub ParseFeatureNames {
 		warn "NOTE\t'$note'\n" if ($verbose >= 4);
 		
 		if ($note =~ /synonyms:/) {
-		    ## For some genomes (e.g. Saccharomyces cerevisiae),
-		    ## there is a note of type 'synonyms'
-		    my @synonyms = split ',', $';
+		    ## For some genomes there is a note of type 'synonyms:' (e.g. Saccharomyces cerevisiae),
+		    my $synonyms = $';
+		    my @synonyms = split /, /, $synonyms;
+		    foreach my $new_name (@synonyms) {
+			$new_name = &trim($new_name);
+			warn join( "\t", "Adding synonym to feature", 
+				   $feature->get_attribute("id"), 
+				   $new_name
+				   ), "\n" if ($verbose >= 4);
+			$feature->push_attribute("names", $new_name);
+		    }
+		    
+		} elsif ($note =~ /synonym:/) {
+		    ## For other genomes there is a note of type 'synonym:' (e.g. Arabidopsis thaliana),
+		    my $synonyms = $';
+		    $synonyms =~ s/;.*//; ## In A.thaliana there are comments after the synonym
+		    
+		    my @synonyms = split /, /, $synonyms;
 		    foreach my $new_name (@synonyms) {
 			$new_name = &trim($new_name);
 			warn join( "\t", "Adding synonym to feature", 
@@ -568,7 +583,7 @@ summarizes information (only retins selected fields) and reformats it
 
 =cut
 sub CreateGenbankFeatures {
-    my ($features, $genes, $mRNAs, $scRNA, $tRNAs, $rRNAs, $misc_RNAs, $misc_features, $CDSs, $sources) = @_;
+    my ($features, $genes, $mRNAs, $scRNA, $tRNAs, $rRNAs, $misc_RNAs, $misc_features, $CDSs, $sources, $contigs) = @_;
 
     #### initialize parameters
     my $xref_as_id = 1;
@@ -582,11 +597,41 @@ sub CreateGenbankFeatures {
 
 
 
+
     #### extract taxid for each source object
     foreach my $source ($sources->get_objects()) {
 	$source->get_taxid();
     }
     
+    #### Create features for contig limits
+    foreach my $contig ($contigs->get_objects()) {
+	my $contig_length = $contig->get_attribute("length");
+
+#  	## Contig start position
+#  	my $start_feature = $features->new_object(%args);
+#  	$start_feature->set_attribute("type","SEQ_START");
+#  	$start_feature->set_attribute("name","SEQ_START");
+#  	$start_feature->set_attribute("description",$contig->get_attribute("id")."; contig start");
+#  	$start_feature->set_attribute("contig",$contig->get_attribute("id"));
+#  	$start_feature->set_attribute("organism",$contig->get_attribute("organism"));
+#  	$start_feature->set_attribute("chrom_position","1..1");
+#  	$start_feature->set_attribute("start_pos",1);
+#  	$start_feature->set_attribute("end_pos",1);
+#  	$start_feature->set_attribute("strand","DR");
+
+	## Contig start position
+	my $end_feature = $features->new_object(%args);
+	$end_feature->set_attribute("type","SEQ_END");
+	$end_feature->set_attribute("name","SEQ_END");
+	$end_feature->set_attribute("description",$contig->get_attribute("id")."; contig end");
+	$end_feature->set_attribute("contig",$contig->get_attribute("id"));
+	$end_feature->set_attribute("organism",$contig->get_attribute("organism"));
+	$end_feature->set_attribute("chrom_position",$contig_length."..".$contig_length);
+	$end_feature->set_attribute("start_pos",$contig_length);
+	$end_feature->set_attribute("end_pos",$contig_length);
+	$end_feature->set_attribute("strand","DR");
+	
+    }
     
     warn "; Creating unified features from different feature types (CDS, mRNA, tRNA, ...)\n" if ($verbose >= 1);
     foreach my $parsed_feature ($CDSs->get_objects(),
@@ -845,6 +890,7 @@ sub CreateGenbankFeatures {
 	}
 
     }
+
 
     ## Check object for all the parsed features, before building the RSAT features from it
     &CheckObjectNames($features, $genes, $mRNAs, $scRNAs, $tRNAs, $rRNAs, $misc_RNAs, $misc_features, $CDSs);
