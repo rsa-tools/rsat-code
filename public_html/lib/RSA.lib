@@ -108,6 +108,8 @@ sub doit {
 	} elsif ($error) {
 	    &FatalError("Error $error occurred during execution of the command\n\t$command");
 	}
+    } else {
+	return ($error);
     }
 }
 
