@@ -29,11 +29,11 @@ unless (defined(%return)) {
    
 #### organism
 $organism = &CheckOrganism($organism_name);
+&ReadOrfPositions($organism_name);
 
  
 #&OldReadOrganism;
 
-&ReadOrfPositions($organism_name);
 
 #&OldReadOrfpositions;
 
@@ -41,15 +41,15 @@ $organism = &CheckOrganism($organism_name);
 &PrintVerbose if ($verbose);
 
 ### open all output files
-open NC_POSITIONS, ">${organism_name}_non_coding_segments.pos" if ($return{pos});
-open NC_SEQ, ">${organism_name}_non_coding_segments.$out_format" if (($return{'ncs'}) && ($return{seq}));
+open NC_POSITIONS, ">${organism_name}_intergenic_segments.pos" if ($return{pos});
+open NC_SEQ, ">${organism_name}_intergenic_segments.$out_format" if (($return{'ncs'}) && ($return{seq}));
 
-open DIVERGENT_NC_SEQ, ">${organism_name}_non_coding_segments_divergent.$out_format" if (($return{'div'}) && ($return{seq}));
-open CONVERGENT_NC_SEQ, ">${organism_name}_non_coding_segments_convergent.$out_format" if (($return{'conv'}) && ($return{seq}));
-open TANDEM_NC_SEQ, ">${organism_name}_non_coding_segments_tandem.$out_format" if (($return{'tandem'}) && ($return{seq}));
+open DIVERGENT_NC_SEQ, ">${organism_name}_intergenic_segments_divergent.$out_format" if (($return{'div'}) && ($return{seq}));
+open CONVERGENT_NC_SEQ, ">${organism_name}_intergenic_segments_convergent.$out_format" if (($return{'conv'}) && ($return{seq}));
+open TANDEM_NC_SEQ, ">${organism_name}_intergenic_segments_tandem.$out_format" if (($return{'tandem'}) && ($return{seq}));
 
-open C_POSITIONS, ">${organism_name}_coding_segments.pos" if ($return{pos});
-open C_SEQ, ">${organism_name}_coding_segments.$out_format" if (($return{'cs'}) && ($return{seq}));
+open C_POSITIONS, ">${organism_name}_gene_segments.pos" if ($return{pos});
+open C_SEQ, ">${organism_name}_gene_segments.$out_format" if (($return{'cs'}) && ($return{seq}));
 open ORF_SEQ, ">${organism_name}_ORF_sequences.$out_format" if (($return{'orf'}) && ($return{seq}));
 
 ### print headers
@@ -59,9 +59,14 @@ print C_POSITIONS ";segm_type_nb\tORFs\tchr\tstart\tend\tleft\tright\n"  if ($re
 foreach my $chromosome ($organism->get_chromosomes()) {
     ### read chromosomal sequence
     my $chr = $chromosome->get_name();
-    my $seq_file = $chromosome->get_sequence()->get_attribute("filename");
     
-    my $sequence = $chromosome->get_sequence();
+    my $sequence = $chromosome->get_attribute("sequence");
+    if ($sequence) {
+	$seq_file = $sequence->get_attribute("filename");
+    } else {
+	&FatalError("There is no sequence for chromosome $chr");
+    }
+    
     my $chr_length = $sequence->get_length();
 
     ### sort ORF from current chromosome
@@ -85,24 +90,24 @@ foreach my $chromosome ($organism->get_chromosomes()) {
 	&PrintNextSequence(ORF_SEQ, $out_format,$line_width,$current_seq,$seq_id)  if (($return{'orf'}) && ($return{seq}));
     }
     
-    #### coding and non-coding segments
-    $coding_end = 0;
+    #### gene and intergenic segments
+    $gene_end = 0;
     $end_reached = 0;
     $orf_nb = 0;
     $nc_left_ORF = "none";
     
     do {
-	### next non-coding segments
-	$nc_start = $coding_end+1;
+	### next intergenic segments
+	$nc_start = $gene_end+1;
 	$cluster++;
 	$orf_cluster = "$sorted_orfs[$orf_nb]";
-	$coding_start = $left{$sorted_orfs[$orf_nb]};
+	$gene_start = $left{$sorted_orfs[$orf_nb]};
 	$nc_right_ORF = $sorted_orfs[$orf_nb];
-	$nc_end = $coding_start - 1;
+	$nc_end = $gene_start - 1;
 
-	@comments = ("non_coding_segment_${cluster}\t$chr\t$nc_start\t$nc_end\t$nc_left_ORF\t$nc_right_ORF");
+	@comments = ("intergenic_segment_${cluster}\t$chr\t$nc_start\t$nc_end\t$nc_left_ORF\t$nc_right_ORF");
 	print NC_POSITIONS "$comments[0]\n" if ($return{pos});
-	$seq_id = "non_coding_segment_${cluster}_${chr}_${nc_start}_${nc_end}_l${nc_left_ORF}_r${nc_right_ORF}";
+	$seq_id = "intergenic_segment_${cluster}_${chr}_${nc_start}_${nc_end}_l${nc_left_ORF}_r${nc_right_ORF}";
 	$current_seq = $sequence->get_sequence($nc_start,$nc_end);
 	&PrintNextSequence(NC_SEQ, $out_format,$line_width,$current_seq,$seq_id) if (($return{'ncs'}) && ($return{seq}));
 	if ($strand{$nc_left_ORF} eq $strand{$nc_right_ORF}) {
@@ -113,37 +118,37 @@ foreach my $chromosome ($organism->get_chromosomes()) {
 	    &PrintNextSequence(CONVERGENT_NC_SEQ, $out_format,$line_width,$current_seq,$seq_id)  if (($return{'conv'}) && ($return{seq}));
 	}
 
-	### next coding segment
-	$coding_end = $right{$sorted_orfs[$orf_nb]};
+	### next gene segment
+	$gene_end = $right{$sorted_orfs[$orf_nb]};
 	$nc_left_ORF = "";
 
         #### look for next ORF whose left limit is at right
 	while (($orf_nb < $#sorted_orfs) && 
-	       ($left{$sorted_orfs[$orf_nb+1]} <= $coding_end)) { 
+	       ($left{$sorted_orfs[$orf_nb+1]} <= $gene_end)) { 
 	    $orf_nb++;
 	    $orf_cluster .= ";$sorted_orfs[$orf_nb]";
-	    $nc_left_ORF = $sorted_orfs[$orf_nb] unless ($coding_end > $right{$sorted_orfs[$orf_nb]});
-	    $coding_end = &max($coding_end, $right{$sorted_orfs[$orf_nb]});
+	    $nc_left_ORF = $sorted_orfs[$orf_nb] unless ($gene_end > $right{$sorted_orfs[$orf_nb]});
+	    $gene_end = &max($gene_end, $right{$sorted_orfs[$orf_nb]});
 	}
 
-	@comments = ("coding_segment_${cluster}\t$orf_cluster\t$chr\t$coding_start\t$coding_end");
+	@comments = ("gene_segment_${cluster}\t$orf_cluster\t$chr\t$gene_start\t$gene_end");
 	print C_POSITIONS "$comments[0]\n"  if ($return{pos});
-	$seq_id = "coding_segment_${cluster}_${chr}_${coding_start}_${coding_end}";
-	$current_seq = $sequence->get_sequence($coding_start,$coding_end);
+	$seq_id = "gene_segment_${cluster}_${chr}_${gene_start}_${gene_end}";
+	$current_seq = $sequence->get_sequence($gene_start,$gene_end);
 	&PrintNextSequence(C_SEQ, $out_format,$line_width,$current_seq,$seq_id)  if (($return{'cs'}) && ($return{seq}));
 
-	$nc_left_ORF = $sorted_orfs[$orf_nb] unless ($coding_end > $right{$sorted_orfs[$orf_nb]});
+	$nc_left_ORF = $sorted_orfs[$orf_nb] unless ($gene_end > $right{$sorted_orfs[$orf_nb]});
 	$orf_nb++;
 
-	### last non-coding segment
+	### last intergenic segment
 	if ($orf_nb > $#sorted_orfs) {
 	    $end_reached = 1;
-	    $nc_start = $coding_end+1;
+	    $nc_start = $gene_end+1;
 	    $nc_end = $chr_length;
 
-	    @comments = ("non_coding_segment_${cluster}\t$chr\t$nc_start\t$nc_end");
+	    @comments = ("intergenic_segment_${cluster}\t$chr\t$nc_start\t$nc_end");
 	    print NC_POSITIONS "$comments[0]\n"  if ($return{pos});
-	    $seq_id = "non_coding_segment_${cluster}_${chr}_${nc_start}_${nc_end}";
+	    $seq_id = "intergenic_segment_${cluster}_${chr}_${nc_start}_${nc_end}";
 	    $current_seq = $sequence->get_sequence($nc_start,$nc_end);
 	    &PrintNextSequence(NC_SEQ, $out_format,$line_width,$current_seq,$seq_id, @comments)  if (($return{'ncs'}) && ($return{seq}));
 
@@ -192,44 +197,44 @@ OPTIONS
 $supported_organisms
 	-return	type of sequences to return. 
 		The following options are available
-		pos	positions of the coding/non-coding segments
+		pos	positions of the gene/intergenic segments
 		seq	return sequences
 			(otherwise, only position files are printed)
-		ncs	non-coding segments
+		ncs	intergenic segments
 			These sequences are further separated into 3 
 			subsets, corresponding to the options div, conv 
 			and tandem
-		div	non-coding sequences separating two genes
+		div	intergenic sequences separating two genes
 			transcribed in divergent directions
-		conv	non-coding sequences separating two genes
+		conv	intergenic sequences separating two genes
 			transcribed in convergent directions
-		tandem  non-coding sequences separating two genes
+		tandem  intergenic sequences separating two genes
 			transcribed in the same direction (tandem
 			genes)
-		cs	coding segments
+		cs	gene segments
 			Warning : 
 			- in case of gene overlap, a single segment
 			is returned encompassing the two genes in a 
 			non-redundant way.
 			- the segments are returned in the same strand 
 			as in the genome sequence file, which is 
-			sometimes the reverse complement of the coding 
+			sometimes the reverse complement of the gene 
 			sequence.  . 
 		orf	open reading frame sequences
 			Contrarily to cs, orf returns every gene sequence
 			from the start to the stop codon, and in the
-			coding strand 
+			gene strand 
 		
 
 OUTPUT
-	coding sequence coordinates are stored in a file named 
-		${organism_name}_coding_segments.pos
-	non coding sequence coordinates are stored in another file named 
-		${organism_name}_non_coding_segments.pos
-	coding sequences are stored in a file named 
-		${organism_name}_coding_segments.seq
-	non coding sequences are stored in another file named 
-		${organism_name}_non_coding_segments.seq
+	gene sequence coordinates are stored in a file named 
+		${organism_name}_gene_segments.pos
+	intergenic sequence coordinates are stored in another file named 
+		${organism_name}_intergenic_segments.pos
+	gene sequences are stored in a file named 
+		${organism_name}_gene_segments.seq
+	intergenic sequences are stored in another file named 
+		${organism_name}_intergenic_segments.seq
 ";
     close HELP;
     exit(0);
@@ -272,9 +277,7 @@ sub ReadArguments {
 		} elsif ($field =~ /^seq/) {
 		    $return{'seq'} = 1;
 		} else {
-		    die ("\tError : unrecognized request: $field\n",
-			 "\tType coding-or-not -help for info\n");
-		    
+		    &FatalError ("Unrecognized request: $field");
 		}	
 		
 	    }
@@ -394,16 +397,19 @@ sub ReadArguments {
 #      close ORFS;
 #  }
 
+################################################################
+#### print some verbosity
 sub PrintVerbose {
     printf "; %-16s\t%s\n", "Organism", $supported_organism{$organism_name}->{'name'};
     printf "; %-16s\t%-12s\t%s\n", "feature file", $supported_organism{$organism_name}->{'features'};
     printf "; chromosome sequence file(s)\n";
     foreach $chromosome ($organism->get_chromosomes()) {
-	print (";\t", join ("\t", 
-			    $chromosome->get_name(),
-			    $chromosome->get_sequence()->get_attribute("filename")
-			    )
-	       , "\n");
+#	print "HELLO\tChromosome\t$chromosome\n";
+#	print (";\t", join ("\t", 
+#			    $chromosome->get_name(),
+#			    $chromosome->get_sequence()->get_attribute("filename")
+#			    )
+#	       , "\n");
     }
     printf "; %-16s\t%-12s\t%s\n", , "ORFs in total", $orf_count;
     printf "; chr\tlength\torfs\n";
