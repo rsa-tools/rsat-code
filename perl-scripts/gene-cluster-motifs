@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.63 2004/02/01 22:21:46 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.64 2004/02/02 07:45:46 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -34,7 +34,7 @@ $dir{main} = `pwd`;
 $dir{calib1} = "calibrations_1gene"; 
 chomp($dir{main});
 
-@supported_tasks = qw (upstream purge calibrate oligos merge_oligos oligo_maps dyad_maps maps dyads merge_patterns slide synthesis sql clean all report);
+@supported_tasks = qw (upstream purge calibrate oligos merge_oligos oligo_maps dyad_maps maps dyads merge_patterns slide synthesis sql clean all report consensus);
 foreach my $task (@supported_tasks) {
     $supported_task{$task} = 1;
 }
@@ -248,7 +248,6 @@ sub SetFileNames {
 #	$family{$family_name}->{selection_ft_prefix} = $family{$family_name}->{oligo_ft_prefix}."_report";
 	$family{$family_name}->{oligo_ft_file} = $family{$family_name}->{oligo_ft_prefix}.".ft";
 	
-
 	$family{$family_name}->{dyad_file} = "$family_name/dyads_${family_name}/".$family{$family_name}->{file_prefix}.$dyad_suffix;
 	$family{$family_name}->{dyad_assembly_file} = $family{$family_name}->{dyad_file}."_contigs";
 	$family{$family_name}->{dyad_ft_prefix} = $family{$family_name}->{dyad_file};
@@ -259,6 +258,9 @@ sub SetFileNames {
 
 	$family{$family_name}->{merged_file} =  "${family_name}/merged_${family_name}/".$family{$family_name}->{file_prefix}.$oligo_suffix.$dyad_suffix;
 	$family{$family_name}->{merged_ft_file} = $family{$family_name}->{merged_file}.".ft";
+
+	$family{$family_name}->{consensus_dir} = "$family_name/consensus_${family_name}/".$family{$family_name}->{file_prefix}.$consensus_suffix;
+
     }  
 
 
@@ -1147,6 +1149,9 @@ sub AnalyzeFamilies {
 
 	### dyad feature-maps
 	&DrawDyadFeatureMap() if ($task{dyad_maps});
+	
+	### Jerry Hertz' consensus
+	&Consensus() if ($task{consensus});
 	
 #	### merge oligo-analysis and dyad-analysis results
 #	&MergePatterns() if ($task{merge_patterns});
@@ -2113,29 +2118,29 @@ sub CalibrationPrefix {
 sub MDCreport {
     &CheckOutDir($dir{mdc_report});
     warn ";\n; Generating report\t", $outfile{results}, "\n" if ($verbose >=1);
-
+    
     ################################################################
-    ## Print the header ot the result file
+    ## Open a file for the report of results
     ($results) = &OpenOutputFile($outfile{results});
-    print $results join ("\n", 
-			">name of contact",
-			"Jacques van Helden",
-			">email",
-			"jvanheld\@scmbb.ulb.ac.be",
-			">program name",
-			"multiple-family-analyis"), "\n";
+#      print $results join ("\n", 
+#  			 ">name of contact",
+#  			 "Jacques van Helden",
+#  			 ">email",
+#  			 "jvanheld\@scmbb.ulb.ac.be",
+#  			 ">program name",
+#  			 "multiple-family-analyis"), "\n";
     close $results;
-
+    
     ################################################################
-    ## Print the header ot the result file
+    ## Open a file for the report of parameters
     ($parameters) = &OpenOutputFile($outfile{parameters});
-    print $parameters join ("\n", 
-			">name of contact",
-			"Jacques van Helden",
-			">email",
-			"jvanheld\@scmbb.ulb.ac.be",
-			">program name",
-			"multiple-family-analyis"), "\n";
+#      print $parameters join ("\n", 
+#  			    ">name of contact",
+#  			    "Jacques van Helden",
+#  			    ">email",
+#  			    "jvanheld\@scmbb.ulb.ac.be",
+#  			    ">program name",
+#  			    "multiple-family-analyis"), "\n";
 
     ################################################################
     ## Generate the report for each family
