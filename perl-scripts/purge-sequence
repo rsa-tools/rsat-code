@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence,v 1.9 2001/09/21 06:10:34 jvanheld Exp $
+# $Id: purge-sequence,v 1.10 2001/11/21 19:23:47 jvanheld Exp $
 #
-# Time-stamp: <2001-09-21 08:09:38 jvanheld>
+# Time-stamp: <2001-11-21 20:22:58 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -22,12 +22,13 @@ my $skdir = "$RSA/bin";
 #### initialise parameters ####
 my $start_time = &AlphaDate();
 my $convert_seq_command = "$SCRIPTS/convert-seq";
-local $inputfile = "";
-local $outputfile = "";
-local $verbose = 0;
-local $match_len = 40;
-local $mismatches = 3;
-local $in_format = "fasta";
+$both_strands = 1;
+$inputfile = "";
+$outputfile = "";
+$verbose = 0;
+$match_len = 40;
+$mismatches = 3;
+$in_format = "fasta";
 
 &ReadArguments;
 
@@ -73,13 +74,32 @@ $command .= " -i $pwd/$inputfile" if ($inputfile);
 
 ###### execute the command #########
 @extensions = qw(al1 ssp bck bwt des lcp llv prj suf tis sds);
-&doit("$skdir/mkvtree -bck -dna -tis -bwt -suf -lcp -pl 8 -db $tmp_file");
-my $command = "$skdir/vmatch -s -dbnomatch 1 -l $match_len ";
-$command .= " -e $mismatches" if ($mismatches > 0);
-$command .= " $tmp_file ";
-$command .= " | grep -v '# args=' ";
-$command .= "> $outputfile" if ($outputfile);
-&doit($command);
+
+#### build the tree
+my $mkvtree_options = "";
+$mkvtree_options .= " -bck"; # bucket boundaries ???
+$mkvtree_options .= " -dna"; # input is DNA sequence
+$mkvtree_options .= " -tis"; # output parsed and transformed input string to file
+$mkvtree_options .= " -bwt"; # output Burrows & Wheeler Transform to file
+$mkvtree_options .= " -suf"; # output suffix array to file
+$mkvtree_options .= " -lcp"; # output longest common prefix lengths to file
+$mkvtree_options .= " -pl 8"; # length of prefix for bucket sort (default 0)
+$mkvtree_options .= " -db $tmp_file"; # sequence file
+&doit("$skdir/mkvtree $mkvtree_options");
+
+#### locate the duplications
+my $vmatch_options = "-s"; # show the sequence content of a match
+$vmatch_options .= " -dbnomatch 1"; # show all database sequence not containing a match
+$vmatch_options .= " -l $match_len"; # specify that match must have the given length
+$vmatch_options .= " -e $mismatches" if ($mismatches > 0); # specify the allowed edit distance > 0
+$vmatch_options .= " -d"; # compute direct matches 
+if ($both_strands) {
+    $vmatch_options .= " -p"; # compute reverse complemented (palindromic) matches
+} 
+$vmatch_options .= " $tmp_file ";
+$vmatch_options .= " | grep -v '# args=' ";
+$vmatch_options .= "> $outputfile" if ($outputfile);
+&doit("$skdir/vmatch $vmatch_options");
 foreach $ext  (@extensions) {
     &doit("rm -f ${tmp_file}.${ext}");
 }
@@ -118,7 +138,7 @@ NAME
         1999 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
 	
 USAGE
-        purge-sequence [-i inputfile] [-o outputfile] [-v]
+        purge-sequence [-i inputfile] [-o outputfile] [-v] [-2str | -1str]
 
 DESCRIPTION
 	
@@ -138,6 +158,8 @@ OPTIONS
 		print commands without executing them
 	-ml #	match length
 	-mis #	mismatches
+	-1str	discard duplications on the direct strand only
+	-2str	discard duplications on the reverse complement as well
 End_of_help
   close HELP;
   exit;
@@ -158,6 +180,8 @@ purge-sequence options
 -format sequence format
 -ml #	match length
 -mis #	mismatches
+-1str	discard duplications on the direct strand only
+-2str	discard duplications on the reverse complement as well
 End_short_help
   close HELP;
   exit;
@@ -201,6 +225,12 @@ sub ReadArguments {
 	    ### output file ###
 	} elsif ($ARGV[$a] eq "-o") {
 	    $outputfile = $ARGV[$a+1];
+	    
+	    ### strands
+	} elsif ($ARGV[$a] eq "-1str") {
+	    $both_strands = 0;
+	} elsif ($ARGV[$a] eq "-2str") {
+	    $both_strands = 1;
 	    
 	    ### matching length
 	} elsif (($ARGV[$a] eq "-ml") && (&IsInteger($ARGV[$a+1]))) {
