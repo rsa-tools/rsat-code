@@ -138,7 +138,7 @@ if (($query->param('output') =~ /display/i) ||
     ### print the result ### 
     &PipingWarning();
     if ($query->param('output') =~ /server/i) {
-	&Info("The server is currently retrieving your sequences...");
+	&Info("The result will appear below ...");
     }
 
     print '<H3>Result</H3>';
@@ -161,9 +161,9 @@ if (($query->param('output') =~ /display/i) ||
     
     if ($query->param('output') =~ /server/i) {
 	$result_URL = "${WWW_RSA}/tmp/${tmp_file_name}.res";
-	print ("Result is available in the file ",
+	print ("The result is available at the following URL: ", "\n<br>",
 	       "<a href=${result_URL}>${result_URL}</a>",
-	       "\n");
+	       "<p>\n");
     }
 
     ### prepare data for piping
