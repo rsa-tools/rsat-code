@@ -56,7 +56,6 @@ uncompress_data:
 	mv -f M.musculus Mus_musculus;			\
 	mv -f D.melanogaster Drosophila_melanogaster)
 
-
 ################################################################
 #### parameters for analyzing one data set
 ORG=Saccharomyces_cerevisiae
@@ -83,7 +82,7 @@ iterate_organisms:
 
 ################################################################
 #### iterate over all data sets for a given organism
-ORG_SETS=`ls -1 ${DATA}/${ORG}/*.fasta | perl -pe 's|${DATA}/${ORG}/||g'  | perl -pe 's|\.fasta||g'`
+ORG_SETS=`ls -1 ${DATA}/${ORG}/*.fasta | grep -v purged | perl -pe 's|${DATA}/${ORG}/||g'  | perl -pe 's|\.fasta||g'`
 TASK=seq_len
 iterate_sets:
 	@echo "iterating over data sets for organism ${ORG}"
@@ -198,19 +197,19 @@ index_one_row:
 #### Run multiple-family-analysis for one organism
 
 #### Index fasta files
-FASTA_FILES= ls -1 ${DATA}/${ORG}/*.fasta
+FASTA_FILES= ls -1 ${DATA}/${ORG}/*.fasta | grep -v purged
 SEQ_LIST_FILE=${ORG}_files.txt
 list_fasta_files:
 	${FASTA_FILES}
 	${FASTA_FILES} > ${SEQ_LIST_FILE}
 
-MULTI_TASK=purge,oligos,maps,synthesis,sql
+MULTI_TASK=purge,oligos,dyads,maps,synthesis,sql
 MULTI_DIR=${RES_DIR}/multi/${ORG}
 MIN_OL=6
 MAX_OL=6
 NOOV=-noov
 multi:
-	@multiple-family-analysis -v ${V}					\
+	@multiple-family-analysis -v ${V}				\
 		-org ${ORG}						\
 		-seq ${SEQ_LIST_FILE}					\
 		-outdir ${MULTI_DIR}					\
@@ -322,8 +321,7 @@ calibrate_oligos_queue:
 calibrate_oligos_test:
 	${MAKE} calibrate_oligos ORG=Mycoplasma_genitalium N=10 SEQ_LEN=200 STR=-1str NOOV=-ovlp R=10
 
-
 ## Synchronize calibrations from merlin
 from_merlin:
-	rsync -e ssh -ruptvlz --exclude oligos --exclude '*.wc'  jvanheld@merlin.ulb.ac.be:results . 
+	rsync -e ssh -ruptvLz --exclude oligos --exclude '*.wc'  jvanheld@merlin.ulb.ac.be:results . 
 
