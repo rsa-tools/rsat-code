@@ -176,10 +176,6 @@ while (<$in>) {
   } else {
     $score{$word} = "nd";
   }
-  #if ($strand_insensitive) {
-  #  $rc_word = lc(&ReverseComplement($word));
-  #  $score{$rc_word} = $score{$word};
-  #}
 }
 close $in unless ($inputfile eq "");
 
@@ -227,9 +223,6 @@ while ($#to_assemble > -1) {
       #### best alignment for the direct word
       $best_word = $word = shift(@to_align);
       $min_score = &InfoLength($word) - $max_flanking;
-      #if ($strand_insensitive) {
-      #  $rc_word = lc(&ReverseComplement($word));
-      #}
       
       #### alignment by substitutions ####
       if ($max_subst > 0) {
@@ -259,24 +252,6 @@ while ($#to_assemble > -1) {
       #### alignment by offset ###
       unless ($found) {
 	($best_offset,$flanking_length,$assembly_score) = (&BestOffset($seed,$word));
-	
-	#### best alignment for the reverse complement
-	#if ($strand_insensitive) {
-	#  #### best offset for the reverse complement
-	#  ($best_offset_rc,$flanking_length_rc,$assembly_score_rc) = (&BestOffset($seed,$rc_word));
-	#  
-	#  if ((&IsInteger($best_offset_rc)) && 
-	#      (!(&IsInteger($best_offset)) || 
-	#       ($flanking_length > $flanking_length_rc))) {
-	#    $best_offset = $best_offset_rc;
-	#    $best_word = $rc_word;
-	#    $flanking_length = $flanking_length_rc;
-	#    $assembly_score = $assembly_score_rc;
-	#    if ($info{$rc_word} eq "") {
-	#      $info{$rc_word} = $info{$word};
-	#    }
-	#  } 
-	#}
 	
 	#print "$seed\t$word\t$best_word\t$best_offset\t$flanking_length\t$assembly_score\t$min_score\n";
 	next if ($best_offset eq "none");
@@ -321,11 +296,14 @@ if ($#isolated >=0) {
   printf $out "\n; Isolated patterns: %d\n", $#isolated+1;
   foreach $word (@isolated) {
     print $out "$word";
-    printf $out "\t%s", lc(&ReverseComplement($word)) if ($strand_insensitive);
+    if ($strand_insensitive) {
+      $rc = lc(&ReverseComplement($word));
+      printf $out "\t%s", $rc;
+    }
     if (defined($score_col)) {
-      print $out "\t$score{$word}";
+      print $out "\t", $score{$word} || $score{$rc};
     } else {
-      print $out "\t$info{$word}";
+      print $out "\t", $info{$word} || $info{$rc};
     }
     print $out "\tisol";
     print $out "\n";
@@ -526,20 +504,21 @@ sub PrintCluster {
     }
     
     if ($strand_insensitive) {
+      $rc = lc(&ReverseComplement($word));
       print $out "\t";
       for $p ($position+length($word)+1..$max_length-$min_pos) {
 	print $out ".";
       }
-      print $out lc(&ReverseComplement($word));
+      print $out $rc;
       for $p (0..$position-1) {
 	print $out ".";
       }
     }
     
     if (defined($score_col)) {
-      print $out "\t$score{$word}";
+      print $out "\t", $score{$word} || $score{$rc};
     } else {
-      print $out "\t$info{$word}";
+      print $out "\t", $info{$word} || $info{$rc};
     }
     print $out "\n";
   }
