@@ -1,7 +1,7 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: compare-classes,v 1.4 2004/07/27 14:19:10 jvanheld Exp $
+# $Id: compare-classes,v 1.5 2004/07/29 07:12:17 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -441,8 +441,8 @@ compare-classes options
 -o              output file
 -v              verbose
 -return         return fields (supported $supported_return_fields)
--lth            threshold on a given field
--uth            threshold on a given field
+-lth            lower threshold on a given field
+-uth            upper threshold on a given field
 -pop            population size
 -sort           sort key (supported keys: occ, sig)
 -rep            sampling with replacement (use binomial instead of
