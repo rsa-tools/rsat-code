@@ -847,8 +847,8 @@ sub ReadNextSequence {
 		$sequence .= $_;
 	    }
 	    close NEXT_SEQ;
-	    &CheckFormat($sequence, $sequence_format);
 	    $sequence = &FoldSequence($sequence, 0);
+	    &CheckFormat($sequence, $sequence_format);
 	    return ($sequence, $seq_id, @comments);
 	} else {
 	    die "\tError: cannot open sequence file $next_file\n";
@@ -1207,22 +1207,35 @@ sub ReadPatterns {
     my $pattern_score = $args{pattern_score};
     my $pattern_seq = $args{pattern_seq};
     
-    if ($pattern_file) {
-	### read patterns from a file
+    warn "; Reading patterns from file $pattern_file\n"
+	if ($verbose >= 2);
+    
+    #### single pattern specified on the command line
+    if ($pattern_seq) {
+	if ($pattern_id) {
+	    $pattern_id = $pattern_id;
+	} else {
+	    $pattern_id = $pattern_seq;
+	}
+	push @patterns, new RSA::pattern(id=>$pattern_id,
+					 sequence=>$pattern_seq,
+					 score=>$pattern_score);
+    } else {
+	### read patterns from a file or from standard input
 	my ($pattern_stream) = &OpenInputFile($pattern_file);
-	while (<$pattern_stream>) {
-	    if (/^;/) {
+	while (my $line = <$pattern_stream>) {
+	    chomp($line);
+	    next unless ($line =~ /\S/);
+	    if ($line =~ /^;/) {
 		#### for piping with oligo-analysis and dyad-analysis
 		#### take occ_sig as the score column
 		if (!(defined($score_column)) &&
-		    (/^;\s+(\d+)\s+occ_sig\s+/)) {
+		    ($line =~ /^;\s+(\d+)\s+occ_sig\s+/)) {
 		    $score_column = $1;
 		}
 		next;
 	    }
-	    next unless (/\S/);
-	    chomp;
-	    my @fields = split, /\t/;
+	    my @fields = split /\t/, $line;
 	    next unless ($fields[0] =~ /\S/);
 	    $pattern_seq = $fields[0];
 	    if (($noid) || ($fields[1] !~ /\S/)) {
@@ -1238,22 +1251,12 @@ sub ReadPatterns {
 	    }
 	    push @patterns, new RSA::pattern(id => $pattern_id,
 					     sequence => $pattern_seq,
-					     score => $pattern_score);
+					     score => $pattern_score,
+					     description => $line);
 	}
 	close $pattern_stream;
 	
-	#### pattern specified on the command line
-    } elsif ($pattern_seq) {
-	if ($pattern_id) {
-	    $pattern_id = $pattern_id;
-	} else {
-	    $pattern_id = $pattern_seq;
-	}
-	push @patterns, new RSA::pattern(id=>$pattern_id,
-					 sequence=>$pattern_seq,
-					 score=>$pattern_score);
     }
-
     return @patterns;
 }
 
