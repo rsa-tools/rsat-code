@@ -1,0 +1,396 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <TITLE>RSA-tools - tutorials</TITLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF" LINK="#0000EE" VLINK="#55008B" ALINK="#FF0000">
+<blockquote>
+
+<HR SIZE=6 WIDTH="100%">
+<CENTER>
+<H2><A HREF="../RSA_home.cgi">RSA-tools</A> - Tutorials</H2></CENTER>
+
+<HR SIZE=6 WIDTH="100%">
+The aim of this document is to present the tools
+for the analysis of yeast regulatory regions. The most conveninent way
+to follow the tutorial is to print this document and then to connect you
+to RSA home page 
+(<A HREF="../RSA_home.cgi">http://ucmb.ulb.ac.be/rsa-tools/</A>)
+with your printed copy in hand.
+
+<P>
+You should now see a window with two pannels. The left pannel contains
+a menu, presenting the tools available. Each time you click on a link
+in the left pannel, the right pannel shows you the form page for the
+corresponding tool. The tools are interconnected, allowing you to
+send automatically the result of one request as input for the next
+request. This is illustrated in the following flow chart.
+
+
+<P>
+We will use practical examples to get familiar with the different
+tools,and the way they are interconnected.
+
+The tutorial contains different parts,illustrating the typical situations one 
+can face when analysing regulatory sequences : 
+
+<OL>
+<LI>
+You know the genes, you ignore the regulatory motif : you look for elements
+shared by a set of functionally related upstream sequences, which could
+reveal unknown regulatory sites (<B>pattern discovery</B>).</LI>
+
+<LI>
+you know the regulatory motif (e.g. the consensus for a transcriptional
+factor), you know the genes: you look for the matching positions within
+the upstream regions from your genes (<B>pattern matching</B>);</LI>
+
+<LI>
+you know the regulatory motif, you ignore the genes : you look in
+the genome for all genes possibly regulated by your element
+(<B>genome-scale pattern matching</B>);</LI>
+
+</OL>
+
+<h3>Tutorials</h3>
+
+<ol>
+
+<li>
+<A HREF="tut_sequence_retrieval.html">
+Sequence retrieval
+</a>
+
+<li>
+<A HREF="tut_pattern_matching.html">
+Pattern matching
+</a>
+
+<li>
+<A HREF="tut_genome_scale_pattern_matching.html">
+Genome-scale pattern matching
+</a>
+
+<li>
+<A HREF="tut_pattern_discovery.html">
+Pattern discovery
+</a>
+
+
+</ol>
+
+<P>
+<IMG SRC="RSA_flowchart.gif" ALT="RSA_flowchart.gif" WIDTH=800 HSPACE=20 VSPACE=20 BORDER=0>
+
+
+
+<!--
+<H3>
+Part 1: you know the sites, you know the genes (pattern search)</H3>
+
+<UL>Let us suppose that you are searching the positions of putative GATA
+boxes and Hap sites within the upstream regions of the genes from the GDH
+family (GDH1, GDH2, and GDH3). We will first retrieve the sequences upstream
+from your genes.
+
+</UL>
+<P>
+
+<OL>
+<OL>
+<LI>
+In the left pannel, under the title <B>Sequence retrieva</B>l, click on
+the tool "<B>upstream region</B>"</LI>
+
+<LI>
+in the "<B>Query</B>" box, type the names of your genes</LI>
+
+<PRE>GDH1
+GDH2
+GDH3</PRE>
+<B>Warning:</B> gene names must be separated by carriage returns, because
+only the first word of each line is considered as a query.
+<LI>
+leave all other options unchanged and click on the button <B>GO</B></LI>
+</OL>
+After a few seconds, the upstream sequence of GDH1, GDH2 and GDH3 will
+be displayed. The lines beginning with a semicolon are comments, and will
+be ignored by the other programs of this sites.
+
+<P>Now we have the upstream sequences, we will scan them with the consensi
+for GATA boxes and HAP sites. At the top of the result page, a series of
+buttons are presented. These buttons allow you to send your sequence to
+a selection of sequence analysis programs. Click on <B>Pattern Search</B>.
+A new form appears. Note that the second box of the form (<B>Sequence</B>)
+is already filled with the result of the preceding request (retrieve upstream
+region).
+<UL>
+<LI>
+In the <B>Query pattern(s)</B> box, we will enter the patterns to search
+for. Eah pattern must come on a separate line. The first word of each line
+is the string to search for, the second word is an identifier for this
+pattern. Type the following text in the Query pattern(s) box:</LI>
+
+<PRE>GATWA&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Gata_box
+CCAAY&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Hap_site</PRE>
+Note the use of degenerate IUPAC degenerate code: the W from GATWA on the
+first line means "either A or T", the Y from CCAAY on the second line means
+"either C or T.
+<LI>
+&nbsp;click <B>GO</B>.</LI>
+</UL>
+
+<P>
+You see now the positions of all matches with the patterns you entered
+within the upstream sequence of GDH1, GDH2 and GDH3. Each line shows a
+single match, and the different columns indicate respectively:
+<OL>
+<LI>
+the pattern identifier.</LI>
+
+<LI>
+the strand on which the match was found (W for Watson, C for Crick).</LI>
+
+<LI>
+the pattern searched for (i.e. the consensus you provided)</LI>
+
+<LI>
+the sequence in which it was found.</LI>
+
+<LI>
+the starting position of the match</LI>
+
+<LI>
+the end position of the match</LI>
+
+<LI>
+the matching sequence. The matching bases are indicated in UPPERCASES.
+The 4 flanking bases at left and right are provided in lowercases.</LI>
+</OL>
+
+<P>
+We will now display the same results graphically.
+<UL>
+<LI>
+Click on the <B>Feature map</B> button on the top of the result page.</LI>
+
+<LI>
+In the <B>Title </B>box, type</LI>
+
+<PRE>Gata boxes and Hap sites in the upstream regions from GDH genes</PRE>
+
+<LI>
+after the title <B>Display limits</B>, fill</LI>
+
+<UL>
+<LI>
+the <B>from </B>box with -600,</LI>
+
+<LI>
+the <B>to </B>box with 0</LI>
+</UL>
+
+<LI>
+In the pop-up menu "<B>feature handle</B>", select <B>symbol</B></LI>
+
+<LI>
+Check the <B>Dynamic map</B> option.</LI>
+
+<LI>
+Leave other parameters unchanged and click <B>GO</B>.</LI>
+</UL>
+
+<P>
+After a few seconds, the feature map should appear. A few comments:
+<UL>
+<LI>
+the Gata boxes appear in blue, the Hap sites in red</LI>
+
+<LI>
+the color boxes are either on the left or on the right of the vertical
+black line, accordingly to the strand (Crick or Watson respectively) of
+the match.</LI>
+
+<LI>
+a specific symbol is associated to each pattern, allowing to distinguish
+them when the feature map is printed in black and white</LI>
+
+<LI>
+the coordinates are provided with reference to the ORF starting position,
+with negative values for the upstream regions, and positive values for
+the coding sequences.</LI>
+
+<LI>
+Just for the fun, note the nice repetition of Hap-Gata site pairs in the
+upstream sequence of GDH1.</LI>
+
+<LI>
+If your browser is recent, the map is dynamic. With your mouse, position
+the cursor just above one of the sites in the sequences. Look now at the
+bottom border of your Netscape window. The complete information about this
+site is displayed. Move the cursor to another site and check that the information
+is well updated. If you are using INternet Explorer, make sure to activate
+the <B>status bar</B> (in the <B>View</B> menu).</LI>
+</UL>
+</OL>
+
+<H3>
+Part 2: you know the sites, you don't know the genes (genome-scale pattern search)</H3>
+
+<UL>We are now in the case where we know the binding specificity of a given
+transcription factor, and we are looking for all the genes potentially
+regulated by this factor. We will use the Nitrogen regulation as an example.
+Response to nitrogen is mediated by the so-called GATA-box, whose most
+common motif is GATAAG. An interesting property is that a single GATA-box
+is insufficient to affect the transcription. All genes effectively controlled
+by these elements possess at least one group of 2 to 4 closely associated
+GATA-boxes. We will use the tools to select all genes having 3 or more
+occurrences of the GATA box in their 500 bp upstream region.
+<BR>&nbsp;
+<UL>
+<LI>
+On the left pannel, click on <B>search pattern in all upstream regions</B>.</LI>
+
+<LI>
+In the <B>Query pattern</B> box, type</LI>
+
+<PRE>GATAAG</PRE>
+
+<LI>
+Select <B>from -1 to -500</B> as <B>upstream region limits</B>.</LI>
+
+<LI>
+In the <B>Return </B>option, select <B>match counts</B>.</LI>
+
+<LI>
+Change the <B>Threshold </B>to 3.</LI>
+
+<LI>
+Click <B>GO</B></LI>
+</UL>
+
+<P>
+After a few seconds, appears a list of the genes with 3 or more occurrences
+of the GATAAG pattern in their 400 bp upstream sequence. Each ORF identifier
+appears underlined as a link, which is connected to the information on
+this ORF in the MIPS yeast database.</UL>
+
+<H3>
+Part 3: you know the genes, you don't know the sites (pattern discovery)</H3>
+
+<UL>Starting from the simple knowledge that a set of genes share some regulatory
+behaviour, one can suppose that some elements are shared by their upstream
+region, and one would like to detect such elements. We implemented a simple
+and fast method to extract such elements, based on a detection of over-represented
+oligonucleotides. This method has been described in detail in 
+<A HREF="http://www.ncbi.nlm.nih.gov/htbin-post/Entrez/query?uid=9719638&form=6&db=m&Dopt=b">
+J.Mol. Biol. (1998) 281, 827-842</A>.
+
+<P>We will illustrate this approach with a set of genes for which the regulatory
+sites is well known: the Nitrogen-responsive genes.
+<UL>
+<LI>
+In the menu from the left frame, click on <B>retrieve upstream region</B>.</LI>
+
+<LI>
+in the <B>Query</B> box, type the following gene names:</LI>
+
+<PRE>DAL5
+GAP1
+MEP1
+MEP2
+MEP3
+PUT4
+DAL80</PRE>
+Don't forget that gene names must come separated by carriage returns.
+<LI>
+We will perform the analysis on a wider upstream region. In the <B>From</B>
+box, replace -600 by -800.</LI>
+
+<LI>
+Click <B>GO</B></LI>
+
+<LI>
+After a few seconds, the upstream sequences from the 7 Nitrogen sensitive
+genes are displayed. At the top of the response, click the button labelled
+<B>oligonucleotide analysis</B>.</LI>
+
+<LI>
+a new form appears. In the title box, type</LI>
+
+<PRE>Nitrogen sensitive genes</PRE>
+
+<LI>
+Leave all other parameters unchanged and click <B>GO</B>.</LI>
+
+<LI>
+The results of the analysis are now displayed in columns, showing respectively</LI>
+
+<OL>
+<LI>
+the oligonucleotide sequence</LI>
+
+<LI>
+the same followed by its reverse complement</LI>
+
+<LI>
+the expected frequency for this specific oligonucleotide</LI>
+
+<LI>
+the total number of occurrences observed in the set of upstream regions</LI>
+
+<LI>
+the number of occurrences expected at random</LI>
+
+<LI>
+the probability to observe as much or more occurrences</LI>
+
+<LI>
+the significance of the observed number of occurrences</LI>
+</OL>
+Note the particularly high significance index (9.2) for the <TT>cttatc|gataag</TT>
+oligonucleotide. This corresponds to the GATA box consensus, which is in
+fact the regulatory site characteristic for the Nitrogen sensitive genes.
+<LI>
+In the top of the result page, click on the button <B>Pattern search</B>.
+The same form as in the part 1 is displayed, but the <B>Query pattern</B>
+box is now filled with the result of oligonucleotide analysis. Do not change
+anything to the form and click <B>GO</B>.</LI>
+
+<LI>
+the list of positions of the over-represented oligonucleotides is displayed.
+On the bottom of the result page, click the <B>Feature map</B> button.</LI>
+
+<LI>
+The feature map form appears. Note that the title box is already filled.</LI>
+
+<LI>
+Fill</LI>
+
+<UL>
+<LI>
+the from<B> </B>box with -600,</LI>
+
+<LI>
+the <B>max </B>box with 0</LI>
+</UL>
+
+<LI>
+click <B>GO</B>.</LI>
+
+<LI>
+On the feature map, note the high number of CTTATC (=GATAAG) sites.</LI>
+</UL>
+</UL>
+-->
+
+<HR WIDTH="100%">
+<CENTER>
+<ADDRESS>
+For suggestions or information request, please contact :</ADDRESS></CENTER>
+
+<CENTER><A HREF="mailto:jvanheld@ucmb.ulb.ac.be">Jacques van Helden (jvanheld@ucmb.ulb.ac.be)</A></CENTER>
+
+</blockquote>
+</BODY>
+</HTML>
