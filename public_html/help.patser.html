@@ -1,0 +1,185 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.5b1 [en] (X11; I; Linux 2.0.33 i586) [Netscape]">
+   <TITLE>PATSER manual</TITLE>
+</HEAD>
+<BODY>
+
+<PRE>Copyright 1990, 1994, 1995, 1996 Gerald Z. Hertz
+May be copied for noncommercial purposes.
+
+Author:
+&nbsp; Gerald Z. Hertz
+&nbsp; Dept. of Molecular, Cellular, and Developmental Biology
+&nbsp; University of Colorado
+&nbsp; Campus Box 347
+&nbsp; Boulder, CO&nbsp; 80309-0347
+
+&nbsp; <A HREF="mailto:hertz@boulder.colorado.edu">hertz@boulder.colorado.edu
+
+
+
+</A>PATSER (version 3b)
+
+This program scores the L-mers (subsequences of length L) of the
+indicated sequences against the indicated alignment or weight matrix.
+The elements of an alignment matrix are simply the number of times
+that the indicated letter is observed at the indicated position of a
+sequence alignment.&nbsp; Such elements must be processed before the matrix
+can be used to score an L-mer (e.g., Hertz et al., 1990, CABIOS, 6:81-92).
+A weight matrix is a matrix whose elements are in a form
+considered appropriate for scoring an L-mer.
+
+Each element of an alignment matrix is converted to an element of a
+weight matrix by first adding pseudo-counts in proportion to the a
+priori probability of the corresponding letter (see option "-b" in
+section 1 below) and dividing by the total number of sequences plus
+the total number of pseudo-counts.&nbsp; The resulting frequency is
+normalized by the a priori probability for the corresponding letter.
+The final quotient is converted to an element of a weight matrix by
+taking its natural logarithm.&nbsp; The use of pseudo-counts here differs
+from previous versions of this program by being proportional to the a
+priori probability.
+
+Version 3 of this program differs from previous versions by also
+numerically estimating the p-value of the scores.&nbsp; The p-value
+calculated here is the probability of observing a particular score or
+higher at a particular sequence position and does NOT account for the
+total amount of sequence being scored.&nbsp; P-values are estimated by the
+method described in Staden, 1989, CABIOS, p. 89--96.&nbsp; The relative
+value for each element of the weight matrix is approximated by
+integers in a range determined by the "-R" and "-M" options (section 6
+below).&nbsp; The p-value is calculated for each possible integer score and
+the values are stored.&nbsp; The actual scores for the sequences are
+determined from the true weight matrix.&nbsp; The true scores are converted
+to their corresponding integer values and their p-values are looked up.
+
+<A NAME="matrix"></A>
+Matrices can be either horizontal or vertical.&nbsp; In a horizontal
+matrix, the columns correspond to the positions within the pattern,
+and the rows correspond to the letters.&nbsp; Each row begins with the
+corresponding letter (or integer, if the "-i" option is used).&nbsp; In a
+vertical matrix, the rows correspond to the positions within the
+pattern, and the columns correspond to the letters.&nbsp; The first row
+contains the letters (or integers, if the "-i" option is used)
+corresponding to each column.&nbsp; In both types of matrices, spaces,
+tabs, and vertical bars (|) are ignored.&nbsp; The output of the "consensus"
+and "wconsensus" programs consists of horizontal alignment matrices.
+
+The input files can contain comments according to the following
+convention.&nbsp; The portion of a line following a ';', '%', or '#' is
+considered a comment and is ignored.&nbsp; Comments can begin anywhere in a
+line and always end at the end of the line.&nbsp; The output of this
+program is sent to the standard output.
+
+The following options can be determined on the command line.
+
+&nbsp; 0) -h: print these directions.
+
+&nbsp; 1) Matrix options.
+&nbsp;&nbsp;&nbsp;&nbsp; -m filename: (default name is "matrix") file containing the matrix.
+&nbsp;&nbsp;&nbsp;&nbsp; -w: the matrix is a weight matrix (default: alignment matrix)
+&nbsp;&nbsp;&nbsp;&nbsp; -b number: a non-negative number indicating the total number of
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; pseudo-counts added to each alignment position (default: 1).
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Before converting an alignment matrix to a weight matrix, the
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; total pseudo-counts multiplied by the a priori probability
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (see section 3 below) of the corresponding letter is added
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; to each matrix element.
+&nbsp;&nbsp;&nbsp;&nbsp; -v: the matrix is a vertical matrix (default: horizontal matrix).
+&nbsp;&nbsp;&nbsp;&nbsp; -p: print the weight matrix derived from the alignment matrix.
+
+<A NAME="sequence"></A>
+&nbsp; 2) -f filename: this file (default: read from the standard input) contains
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; the names of the sequences.&nbsp; The corresponding sequence may follow
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; its name if the sequence is enclosed between backslashes (\).
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Otherwise, the sequence is assumed to be in a separate file having
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; the indicated name.
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; In the sequences, whitespace, slashes (/), periods, dashes (unless
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; part of an integer when the "-i" option is used), and comments
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; beginning with ';', '%', or '#' are ignored.&nbsp; When using letter
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; characters (i.e., with the "-a" or "-A" alphabet option), integers
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; are also ignored so that the sequence file can contain positional
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; information.&nbsp; When using integer characters (i.e., with the "-i"
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; alphabet option) the integers must be separated by whitespace.
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; A "-c" preceding the name of a sequence file indicates that the
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; corresponding sequence is circular.
+
+&nbsp; 3) Alphabet options---the three options in this section are mutually
+&nbsp;&nbsp;&nbsp;&nbsp; exclusive (default: "-a alphabet").&nbsp; The a priori probabilities mentioned
+&nbsp;&nbsp;&nbsp;&nbsp; below are used when converting an alignment matrix to a weight matrix.
+&nbsp;&nbsp;&nbsp;&nbsp; -a filename: file containing the alphabet and normalization information.
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Each line contains a letter (a symbol in the alphabet) followed by an
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; optional normalization number (default: 1.0).&nbsp; The normalization is
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; based on the relative a priori probabilities of the letters.&nbsp; For
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; nucleic acids, this might be be the genomic frequency of the bases
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; or the frequencies observed in the data used to generate the alignment.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; In nucleic acid alphabets, a letter and its complement appear on the
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; same line, separated by a colon (a letter can be its own complement,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; e.g. when using a dimer alphabet). Complementary letters may use the
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; same normalization number.&nbsp; Only the standard 26 letters are
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; permissible; however, when the "-CS" option is used, the alphabet is
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; case sensitive so that a total of 52 different characters are possible.
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; POSSIBLE LINE FORMATS WITHOUT COMPLEMENTARY LETTERS:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; letter
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; letter normalization
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; POSSIBLE LINE FORMATS WITH COMPLEMENTARY LETTERS:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; letter:complement
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; letter:complement normalization
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; letter:complement normalization:complement's_normalization
+
+&nbsp;&nbsp;&nbsp;&nbsp; -i filename: same as the "-a" option, except that the symbols of
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; the alphabet are represented by integers rather than by letters.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Any integer permitted by the machine is a permissible symbol.
+
+&nbsp;&nbsp;&nbsp;&nbsp; -A alphabet_and_normalization_information: same as "-a" option, except
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; information appears on the command line (e.g., -A a:t 3 c:g 2).
+
+&nbsp; 4) Alphabet modifiers indicating whether ascii alphabets are case
+&nbsp;&nbsp;&nbsp;&nbsp; sensitive---the two options in this section are mutually exclusive
+&nbsp;&nbsp;&nbsp;&nbsp; with each other and with the "-i" option (default: ascii alphabets are
+&nbsp;&nbsp;&nbsp;&nbsp; case insensitive).
+&nbsp;&nbsp;&nbsp;&nbsp; -CS: ascii alphabets are case sensitive.
+&nbsp;&nbsp;&nbsp;&nbsp; -CM: ascii alphabets are case insensitive, but mark the location
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; of lowercase letters by printing a line containing their locations.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; This option is useful when lowercase letters indicate a functional
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; landmark such as a transcriptional start in a DNA sequence.
+
+&nbsp; 5) Options for adjusting or restricting which scores are printed.
+<A NAME="strands"></A>
+&nbsp;&nbsp;&nbsp;&nbsp; -c: also score the complementary sequences.&nbsp; The complements are
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; determined by the program and are not explicitly stated in the
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sequence files.
+&nbsp;&nbsp;&nbsp;&nbsp; -l number: lower threshold for printing scores, inclusive.
+&nbsp;&nbsp;&nbsp;&nbsp; -u number: upper threshold for printing scores, exclusive.
+&nbsp;&nbsp;&nbsp;&nbsp; -t: just print the top score for each sequence.
+
+&nbsp; 6) Options indicating how unrecognized symbols are treated (default: -d1).
+&nbsp;&nbsp;&nbsp;&nbsp; Symbols are letters when option "-a" or "-A" is used;
+&nbsp;&nbsp;&nbsp;&nbsp; symbols are integers when option "-i" is used.
+&nbsp;&nbsp;&nbsp;&nbsp; The following three options are mutually exclusive.
+&nbsp;&nbsp;&nbsp;&nbsp; -d0: treat unrecognized symbols as errors and exit the program.
+&nbsp;&nbsp;&nbsp;&nbsp; -d1: treat unrecognized symbols as discontinuities, but print a warning.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Treating a symbol as a discontinuity means that any L-mer
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; containing the unrecognized symbol will be ignored.
+&nbsp;&nbsp;&nbsp;&nbsp; -d2: treat unrecognized symbols as discontinuities, and print NO warning.
+
+&nbsp; 7) Options for adjusting the estimation of p-value.
+&nbsp;&nbsp;&nbsp;&nbsp; If the -R option is set to zero, the p-value is not estimated.
+&nbsp;&nbsp;&nbsp;&nbsp; -R number: the range for approximating a column of the weight matrix with
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; integers (default: 10000).&nbsp; This number is the difference
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; between the largest and smallest integers used to estimate
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; the scores.&nbsp; Higher values increase precision, but will take
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; longer to calculate the table of p-values.
+&nbsp;&nbsp;&nbsp;&nbsp; -M number: the minimum score for approximating p-values (default: 0).
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Higher values will increase precision,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; but may miss interesting scores.</PRE>
+
+</BODY>
+</HTML>

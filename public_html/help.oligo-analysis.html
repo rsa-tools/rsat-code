@@ -1,0 +1,325 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE>RSA-tools: oligonucleotide analysis manual</TITLE>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFEEDD" LINK="#0000EE" VLINK="#55008B" ALINK="#FF0000">
+
+<H3 ALIGN=CENTER><A HREF="RSA_home.cgi">RSA-tools</A> - oligonucleotide analysis manual</H3>
+
+<H4>Name</H4>
+<UL>
+oligo-analysis
+<P>
+1997-98 by Jacques van Helden (<A HREF="mailto:Jacques van Helden <jvanheld@ucmb.ulb.ac.be>">jvanheld@ucmb.ulb.ac.be</A>)
+</UL>
+
+<H4>Description</H4>
+<UL>
+Calculates oligonucleotide occurrences in a set of sequences, and detects overrepresented oligonucleotides.
+<P>
+</UL>
+
+<H4>Options</H4>
+<UL>
+
+<A NAME="title"><B>Title</B></A>
+(facultative)<BR>
+
+Title of the data set. This information is returned as title of the
+result page.
+<P>
+
+<A NAME="sequence">
+<B>Input sequence:</B></A><BR>
+
+The sequence that will be analyzed. Multiple sequenes can be entered
+at once with most sequence formats (see below).
+<P>
+
+<A NAME="sequence_format">
+<B>Format:</B></A><BR>
+
+Input sequence format. Various standards are supported (click on the
+links for more details):
+
+<UL>
+
+<LI><A HREF="help.formats.html#raw"><B>raw</B></A>: 
+
+the raw sequence without any identifier or comment.  
+
+<LI><A HREF="help.formats.html#multi"><B>multi</B></A>: several raw
+sequences concatenated.  
+
+<LI><A HREF="help.formats.html#ig"><B>IG</B></A>: IntelliGenetics
+format.
+
+<LI><A HREF="help.formats.html#fasta"><B>FastA</B></A>: the sequence
+format used by FastA, BLAST, Gibbs sampler and a lot of other
+bioinformatic programs.  
+
+<LI><A HREF="help.formats.html#wconsensus"><B>Wconsensus</B></A>: the
+format defined by Jerry Hertz for his programs (patser, consensus,
+wconsensus).
+</UL>
+
+<P>
+
+<A NAME="oligo_size">
+<B>Oligonucleotide size:</B></A><BR>
+
+The analysis can be performed with oligonuleotides of any size between
+1 and 8. Selecting size 1 amounts to counting the alphabet utilization
+within the input sequeces. For the detection of regulatory sites, w
+recommend starting with an analysis of hexanucleotides (size=6), and
+scanning sizes between 4 and 8. When a pattern is significantly
+overrepresented, it generaly appears from the analyses with various
+sizes.
+<P>
+
+<A NAME="count_strands">
+<B>Count on:</B></A> (single or both strands)<BR> 
+
+By selecting "both strands", the occurrences of each oligonucleotide
+are summed on both strands. This allows to detect elements which act
+in an orientation-insensitive way (as is generally the case for yeast
+upstream elements). 
+<P>
+
+<A NAME="noov">
+<B>Prevent overlapping matches</B></A><BR> 
+Periodic pattern (e.g. AAAAAA, ATATAT) have an aggregative tendency, i.e. each occurrence of such a pattern strongly favours additional occurrences in its immediate vicinity. This introduces a bias to most statistics (binomial, log-likelihood). A simple way to correct for this bias is to prevent counting twice mutually overlapping occurrences. <BR>
+For example, <TT>TATATATATATA</TT> would represent
+<UL>
+<LI>2 occurrences of <TT>TATATA</TT> when self-overlap is prevented
+<LI>5 occurrences of <TT>TATATA</TT> when self-overlap is allowed
+</UL>
+Note that Z-score introduce a correction for self-overlapping patterns (see van Helden et al., 1999), but Z-scores are only valid for very large sequences (for example a set of 6000 downstream sequences), and are not appropriate for small gene clusters such as those extracted from DNA chip experiment. 
+<P>
+
+<A NAME="exp_freq">
+<B>Expected frequency:</B></A><BR>
+
+Various probabilistic models can be used to estimate the expected
+frequency of each oligonucleotide. <BR>
+<UL>
+
+<LI><B>equiprobable nucleotides:</B> 
+
+A, T, C, and G are considered to have a random probability of 0.25
+each. All oligonuleotides of size <TT>w</TT>@ have thus an expected
+frequency of <TT>0.25^w</TT>.
+
+<LI><B>alphabet from input sequence:</B>
+
+<LI><B>genomic alphabet:</B>
+
+<LI><B>oligo frequency in whole genome:</B>
+
+<LI><B>oligo frequency in non-coding regions:</B>
+
+<LI><B>oligo frequency in coding regions:</B>
+</UL>
+<P>
+
+<UL>
+
+<B>Attention !</B> 
+
+The results will be dramatically affected by the choice of expected
+frequency, which is the main specificity of this program. It has been
+shown that for the detection of regulatory sites in yeast upstream
+sequences, the best choice is to estimate the expected oligonucleotide
+frequencies on basis of the frequencies observed in the set ofall
+non-coding sequences from the genome. For the same purpose, choosing
+"equiprobqble nucleotides" is totally inefficient, and "alphabet from
+input sequence" works poorly.
+<P>
+</UL>
+
+<A NAME="return">
+<B>Return:</B></A><BR>
+Various measures of oligonucleotide distribution can be returned/
+<UL>
+
+<LI><B>Occurrences:</B> a simple count of the number of ocurrences of each oligonucleotide. Overlapping matches are detected and summed in the counting. 
+
+<LI><B>Frequencies:</B> relative frequencies, i.e. the number of ocurrence of the oligonucleotides divided by the sum of occurrencesfor all oligonucleotides.
+
+<LI><B>Matching sequences:</B> the number of sequences from the input set which contain at least one ocurrence of the oligonucleotide. 
+
+<LI><B>Ratio:</B> observed/expected occurence ratio. This ratio can be used as a rough indicator of over-representation, but it has the weakness to overestimate the patterns with a very weak number of expected occurrences. For instance, observing 1 occurrence when expecting 0.1 will have a very high index of 10 while it is quite likely to occur at random (proba ~10%). For comparison, observing 20 occurences when expecting 10 has a probability of ~0.3%, although the ratio is only 2!
+
+
+<LI><B>Proba:</B> probabilities. Different statistics are calculated (see below for <A HREF="#proba">details of calculation</A>). 
+
+<UL>
+	
+<LI><B>Expected occurrences (exp_occ):</B> the number of occurrences
+expected for the considered oligonucleotide within the set of
+sequences. The calculation of this value depends on the probabilistic
+model selected by the user (see above).
+	
+<LI><B>Occurrence probability (occ_pro):</B> the probability to have N
+or more occurrences, given the expected number of occurrences (where N
+is the observed number of occurrences).
+	
+<LI><B>Expected matching sequences (exp_ms):</B> the expected number
+of sequences with at least one occurrence.
+	
+<LI><B>Matching sequence probability (ms_pro):</B> the probability to
+have L or more sequences with at least one ocurrence of the
+oligonucleotide, given the probabilistic model (where L is the
+observed number of matching sequences).
+	
+<LI><B>Significance index (sig):</B> this is a conversion of the
+occurrence probability, taking into account the number of possible
+oligonucleotides (which varies with oligo size) and doing a
+logarithmic transformation. The highest sig corespond to the most
+overrepresented oligonucleotide. Sig value higher than 0 indicate
+overrepresentation.
+
+	</UL>
+</UL>
+
+<P>
+
+<A NAME="thresholds">
+<B>Thresholds:</B></A><BR>
+
+Thresholds can be imposed to select the most significantly
+overrepresented patterns. When acting on probabilities, upper
+thresholds are used (i.e. values smaller than the threshold are
+returned). For occurrence numbers, matching sequences and significance
+indices, lower thresholds are used (i.e. all values higher than the
+threshold are returned).  A threshold of 0 on occurrence significance
+index is selected by default. This is the most efficient way we found
+to automatically select the biologicaly significant regulatory sites,
+irrespective of oligonucleotide size, number and size of the sequences
+in the input set.
+
+<P>
+
+</UL>
+
+<A NAME="proba">
+<H4>Probabilities</H4></A>
+<UL>
+
+Various calibration models can be used to estimate the probability of
+each oligonucleotide (see above). From there, and expected number of
+occurrences is calculated and compared to the observed number of
+occurrences. The significance of the observed number of occurrences is
+calculated with the binomial formulae.  
+
+<PRE> EXPECTED OCCURRENCES :
+      Exp_occ = p * 2 * SUM (Lj + 1 - w) = p * T j=1
+	
+	where	p  = probability of the pattern
+		     in our case, a good estimate for this value is the 
+		     frequence observed for this pattern in all non-coding 
+		     genomic regions.
+		n  = number of regulatory regions considered 
+		     (members of the family)
+		Lj = length of the jth regulatory region
+		l  = length of the pattern
+                T = the number of possible matching positions.
+		
+		the factor 2 stands for the fact that patterns are searched 
+		on both strands (it is omitted when the option -1str 
+                is active).
+	
+	
+    PROBABILITY OF SEQUENCE MATCHING
+	The probability to find at least one occurrence of the pattern within
+	a single sequence is :
+	
+	                 T
+	    q = 1 - (1-p)
+	    
+	with the same abbreviations as above
+	
+
+    EXPECTED NUMBER OF MATCHING SEQUENCES
+	             n
+	   Exp_ms = SUM (1 - (1 - p)^T)
+	            j=1
+	
+	with the same abbreviations as above
+	
+    
+    PROBABILITY OF THE OBSERVED NUMBER OF MATCHING SEQUENCES
+	
+	The probability to observe obs or more occurrences in the whole family
+  	of sequences is calculated by the sum of binomials:
+	
+	                n                 j     n-i
+	    P(>=ms) =  SUM        n!     q (1-q)
+	               i=ms   -----------
+	                      i! * (n-i)! 
+	
+	where	q   is the probability to find one or more matches in a single 
+		    sequence
+		ms  is the observed number of matching sequences
+		n   is the number of sequences in the set
+
+    PROBABILITY OF THE OBSERVED NUMBER OF OCCURRENCES
+	
+	The probability to observe exactly obs occurrences in the whole family
+  	of sequences is calculated by the binomial
+	
+	                                              obs      T-obs
+	    P(obs) = bin(p,T,obs) =       T!         p    (1-p)
+                                     ---------------
+                                     obs! * (T-obs)! 
+	
+	where   obs is the observed number of occurrences,
+                p   is the expected frequency for the pattern,
+                T   is the number of possible matching positions,
+                    as defined above. 
+	
+	The probability to observe obs or more occurrences in the whole family
+  	of sequences is calculated by the sum of binomials:
+	
+	                    obs-1
+	    P(>=obs) =  1 - SUM P(j)
+	                    j=0
+	                        
+    SIGNIFICANCE INDEXES
+        Significance indexes are conversions of the probabilities of occurrence 
+        and matching sequences.
+
+	The significance indexes are calculated as follows:
+	
+	      Sig_occ = -log10(NPO * P(>=obs));
+	      Sig_ms  = -log10(NPO * P(>=ms));
+
+	where	NPO	is the number of possible oligonucleotides of the 
+			chosen length (eg 4096 for hexanucleotides). Note 
+			that  when searches are performed on both strands, 
+			NPO is  corrected for the fact that each 
+			non-palindromic pattern will become dependent of its 
+			reverse complement (thus in this case there will be 
+			2080 independent  pentanucleotides).		
+</PRE>
+</UL>
+
+<H4>Availability</H4>
+<UL>
+      
+The program can be used through its web interface at: <A
+HREF="http://copan.cifn.unam.mx/Computational_Biology/yeast-tools">http://copan.cifn.unam.mx/Computational_Biology/yeast-tools</A>
+<BR> oligo-analysis is a perl script running on unix machines (SUN,
+SGI have been tested). The web interface is a perl-cgi script.
+</UL>
+
+
+<HR SIZE=3></P></CENTER>
+
+<CENTER><ADDRESS>For information, contact <A HREF="mailto:jvanheld@ucmb.ulb.ac.be">Jacques
+van Helden (jvanheld@ucmb.ulb.ac.be)</A></ADDRESS></CENTER>
+
+</BODY>
+</HTML>

@@ -1,0 +1,252 @@
+#!/usr/bin/perl
+#### this cgi script fills the HTML form for the program dna-pattern
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+use CGI;
+use CGI::Carp qw/fatalsToBrowser/;
+require "RSA.lib.pl";
+require "RSA_cgi_lib.pl";
+
+### Read the CGI query
+$query = new CGI;
+
+### default values for filling the form
+$default{set_name} = "";
+$default{patterns} = "";
+$default{sequence} = "";
+$default{sequence_format} = "fasta";
+$default{sequence_file} = "";
+$default{strands} = "both strands";
+$default{return} = "positions";
+$default{noov} = "on";
+$default{flanking} = "4";
+$default{threshold} = "0";
+$default{subst} = "0";
+$default{origin} = "end";
+
+### replace defaults by parameters from the cgi call, if defined
+foreach $key (keys %default) {
+  if ($query->param($key)) {
+    $default{$key} = $query->param($key);
+  }
+} 
+
+### if a pattern file is specified in the query,
+### read patterns from this file
+if (($pattern_file = $query->param("pattern_file")) &&
+     (-e $pattern_file)) {
+  open PAT, $pattern_file;
+  while (<PAT>) {
+    $default{patterns} .= $_;
+  }
+  close PAT;
+}
+
+### print the form ###
+&RSA_header("dna-pattern");
+
+### head
+print "<CENTER>";
+print "search a pattern (string description) within a DNA sequence<P>\n";
+print "</CENTER>";
+
+print $query->start_multipart_form(-action=>"dna-pattern.cgi");
+
+### text area to enter the patterns
+print "<A HREF='help.dna-pattern.html#patterns'><B>\n";
+print "Query pattern(s)</B></A><BR>\n";
+print $query->textarea(-name=>'patterns',
+		       -default=>$default{patterns},
+		       -rows=>2,
+		       -columns=>60);
+print "<BR>\n";
+
+&DisplaySequenceChoice;
+
+### strands ###
+print "<A HREF='help.dna-pattern.html#strands'><B>Search strands</B></A>&nbsp;\n";
+print $query->popup_menu(-name=>'strands',
+			 -Values=>['direct only',
+				   'reverse complement only',
+				   'both strands'],
+			 -default=>$default{strands});
+
+### prevent overlapping matches of the same pattern
+print $query->checkbox(-name=>'noov',
+		       -checked=>'checked',
+		       -label=>'');
+print "&nbsp;<A HREF='help.dna-pattern.html#noov'><B>
+prevent overlapping matches
+</B></A>";
+
+
+### return matching positions or matching count
+print "<BR>\n";
+print CGI::table({-border=>0,-cellpadding=>3,-cellspacing=>0},
+	       CGI::Tr({-align=>left,-valign=>MIDDLE},
+		       [
+		      CGI::td({-align=>left,-valign=>MIDDLE},
+			      [
+			       "<A HREF='help.dna-pattern.html#return'><B>Return</B></A>\n",
+			       "<INPUT TYPE=RADIO NAME='return' VALUE='positions' CHECKED> match positions",
+			       "<A HREF='help.all-upstream-search.html#flanking'><B> flanking</B></A>",
+			       $query->textfield(-name=>'flanking',
+						 -default=>$default{flanking},
+						 -size=>2),
+			       
+				   "<A HREF='help.dna-pattern.html#origin'><B>Origin</B></A>",
+			       $query->popup_menu(-name=>'origin',
+						  -Values=>['start',
+							    'end'],
+						  -default=>$default{origin})
+			       ]),
+		      CGI::td({-align=>left,-valign=>MIDDLE},
+			      [
+			       '',
+			       "<INPUT TYPE=RADIO NAME='return' VALUE='counts'>match counts",
+			       "<A HREF='help.all-upstream-search.html#threshold'><B> threshold</B></A>",
+			       $query->textfield(-name=>'threshold',
+						 -default=>$default{threshold},
+						 -size=>2)
+			       
+			       ]),
+		      CGI::td({-align=>left,-valign=>MIDDLE},
+			      [
+			       '',
+			       "<INPUT TYPE=RADIO NAME='return' VALUE='table'>match count table",
+			       "",
+			       ""
+			       ])
+			])
+		 );
+print "<BR>\n";
+
+
+### substitutions
+print "<B><A HREF='help.dna-pattern.html#subst'>Substitutions </A></B>&nbsp;\n";
+print $query->textfield(-name=>'subst',
+			-default=>$default{subst},
+			-size=>2);
+
+
+print "<BR>\n";
+
+
+
+### send results by e-mail or display on the browser
+&SelectOutput;
+
+### action buttons
+print "<UL><UL><TABLE>\n";
+print "<TR VALIGN=MIDDLE>\n";
+print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
+print "<TD>", $query->reset, "</TD>\n";
+print $query->end_form;
+
+### data for the demo 
+print $query->start_multipart_form(-action=>"dna-pattern_form.cgi");
+
+$demo_sequence = ">PHO5   pho5 upstream sequence, from -800 to -1
+TTTTACACATCGGACTGATAAGTTACTACTGCACATTGGCATTAGCTAGGAGGGCATCCA
+AGTAATAATTGCGAGAAACGTGACCCAACTTTGTTGTAGGTCCGCTCCTTCTAATAATCG
+CTTGTATCTCTACATATGTTCTATTTACTGACCGAAAGTAGCTCGCTACAATAATAATGT
+TGACCTGATGTCAGTCCCCACGCTAATAGCGGCGTGTCGCACGCTCTCTTTACAGGACGC
+CGGAGACCGGCATTACAAGGATCCGAAAGTTGTATTCAACAAGAATGCGCAAATATGTCA
+ACGTATTTGGAAGTCATCTTATGTGCGCTGCTTTAATGTTTTCTCATGTAAGCGGACGTC
+GTCTATAAACTTCAAACGAAGGTAAAAGGTTCATAGCGCTTTTTCTTTGTCTGCACAAAG
+AAATATATATTAAATTAGCACGTTTTCGCATAGAACGCAACTGCACAATGCCAAAAAAAG
+TAAAAGTGATTAAAAGAGTTAATTGAATAGGCAATCTCTAAATGAATCGATACAACCTTG
+GCACTCACACGTGGGACTAGCACAGACTAAATTTATGATTCTGGTCCCTGTTTTCGAAGA
+GATCGCACATGCCAAATTATCAAATTGGTCACCTTACTTGGCAAGGCATATACCCATTTG
+GGATAAGGGTAAACATCTTTGAATTGTCGAAATGAAACGTATATAAGCGCTGATGTTTTG
+CTAAGTCGAGGTTAGTATGGCTTCATCTCTCATGAGAATAAGAACAACAACAAATAGAGC
+AAGCAAATTCGAGATTACCA
+>PHO8   pho8 upstream sequence, from -800 to -1
+TCTTCACCAAATTTCTTTTTTTTTTCCTACTAGAAGAAGGCGTAGCAGATAAGAAGGAAA
+AATTATATTAAGCGTGCGGGTAAAGGCAAGGAAGAATCAAGTAAGACCTCAAGAATGGCA
+CTATAAGTGTGGTATTATAATCTGTGTAATCCTAATTTGAGCTCTACACAATACCATTCG
+ACGGTTAACAGCTACTGCATCACCGTCCAGTCATGTCGTACAACGGAATAGGGCTCAAGT
+CGGCAAAAGGGTCATCTACGTCGGGCCACGTGCAGCGATCACTTGCTAGCAACAATAGGC
+GCAGACCACAGGGTAGTCAACAGCAGCGGCAACAACGACAAAATGCGATCAAAAAGGCCA
+GCCATGACAAGGCAAGCAGGCCTCTTGCTGTGCAGAAACAGATAGAGACTCATATGGAGA
+AACGTGAGATTGAAGTACAAGTTAGCGAGCTACGGGACCGACTGGAGGAGGAAGAAACGC
+TCTCGGAAGAGCAGATTGACAAGAAATGTGAAGCGTTGAGGGCAAAACTGACGAACGAGT
+GGCAAGAACAGCAGCGGATGTCCTCTTTGTACACCCCTCGTAAGGCGCGTCTAACGGAAG
+AGCAGCATCGACATGAATAGCAGCATTGACGATAGCGATAAGCTTCGCGCGTAGAGGAAA
+AGTAAAGGGATTTTAGTATATAAAGAAAGAAGTGTATCTAAACGTTTATATTTTTTCGTG
+CTCCACATTTTGCCAGCAAGTGGCTACATAAACATTTACATATCAGCATACGGGACATTA
+TTTGAACGCGCATTAGCAGC
+>PHO11  pho11 upstream sequence, from -800 to -1
+GCAGCCTCTACCATGTTGCAAGTGCGAACCATACTGTGGCCACATAGATTACAAAAAAAG
+TCCAGGATATCTTGCAAACCTAGCTTGTTTTGTAAACGACATTGAAAAAAGCGTATTAAG
+GTGAAACAATCAAGATTATCTATGCCGATGAAAAATGAAAGGTATGATTTCTGCCACAAA
+TATATAGTAGTTATTTTATACATCAAGATGAGAAAATAAAGGGATTTTTTCGTTCTTTTA
+TCATTTTCTCTTTCTCACTTCCGACTACTTCTTATATCTACTTTCATCGTTTCATTCATC
+GTGGGTGTCTAATAAAGTTTTAATGACAGAGATAACCTTGATAAGCTTTTTCTTATACGC
+TGTGTCACGTATTTATTAAATTACCACGTTTTCGCATAACATTCTGTAGTTCATGTGTAC
+TAAAAAAAAAAAAAAAAAAGAAATAGGAAGGAAAGAGTAAAAAGTTAATAGAAAACAGAA
+CACATCCCTAAACGAAGCCGCACAATCTTGGCGTTCACACGTGGGTTTAAAAAGGCAAAT
+TACACAGAATTTCAGACCCTGTTTACCGGAGAGATTCCATATTCCGCACGTCACATTGCC
+AAATTGGTCATCTCACCAGATATGTTATACCCGTTTTGGAATGAGCATAAACAGCGTCGA
+ATTGCCAAGTAAAACGTATATAAGCTCTTACATTTCGATAGATTCAAGCTCAGTTTCGCC
+TTGGTTGTAAAGTAGGAAGAAGAAGAAGAAGAAGAGGAACAACAACAGCAAAGAGAGCAA
+GAACATCATCAGAAATACCA
+>PHO81  pho81 upstream sequence, from -800 to -1
+AAACGAGCATGAGGGTTACAAAGAACTTCCGTTTCAAAAATGAATATAATCGTACGTTTA
+CCTTGTGGCAGCACTAGCTAACGCTACGTGGAATGAACGTACCGTGCCCTATTATTCTTG
+CTTGTGCTATCTCAAGAATTGCATTTTGTAATAACAACTGCATGGGAAAAATTATATAGA
+TTTTCTACTATTATGTCCGCCTAAGTCAGTTAACCATCTTTATCACAAAATATACAATTA
+ACCAACTACTTAATCAATTCGGTTATATTGCTTAGTATATACGTCTTTGGCACGCGATTG
+AAACGCGCTAATTGCATCAGCCTATCTTTCTATGCAAGAATGCAAGAAAAATTGATGTGA
+TGTGCCTTATCACAATTCATTACCTCCTATTTCCTCTGCAGCAACAAGTTTCCTTGATTA
+TAAAGGTCTTTAGCGTGAGAGGTACAGGTGTTATGGCACGTGCGAATAAGGGCAGAAATT
+AATCAAATTTATCAACTATTTGGCGATGGCTCGAGACAGGTATAGAACCACTACTAGGTG
+ATATTGAGGCTTTTGTACAATTTATAGCAAGTTTTTGAGAGTCCCTTCAAGTTTGTTACA
+TAATCTTCTTTGTGCAACGTACAAGAGCAAAGTAGAAAAATTTGGTTTTTATTTTTTTAA
+GCAACATCAGCTGCACTAGTTGAGCTTTTGACAAGACATACTGCTCAAAAAATCTTCATA
+ACATTATTTTTCGGTTCCACAGTGATTGAGCTTTTTGAGAGAATAACCCTTTGGAGGCAA
+CATAGATAGATAAACGTGCA
+>PHO84  pho84 upstream sequence, from -800 to -1
+AAAAAAAAAGATTCAATAAAAAAAGAAATGAGATCAAAAAAAAAAAAAATTAAAAAAAAA
+AAGAAACTAATTTATCAGCCGCTCGTTTATCAACCGTTATTACCAAATTATGAATAAAAA
+AACCATATTATTATGAAAAGACACAACCGGAAGGGGAGATCACAGACCTTGACCAAGAAA
+ACATGCCAAGAAATGACAGCAATCAGTATTACGCACGTTGGTGCTGTTATAGGCGCCCTA
+TACGTGCAGCATTTGCTCGTAAGGGCCCTTTCAACTCATCTAGCGGCTATGAAGAAAATG
+TTGCCCGGCTGAAAAACACCCGTTCCTCTCACTGCCGCACCGCCCGATGCCAATTTAATA
+GTTCCACGTGGACGTGTTATTTCCAGCACGTGGGGCGGAAATTAGCGACGGCAATTGATT
+ATGGTTCGCCGCAGTCCATCGAAATCAGTGAGATCGGTGCAGTTATGCACCAAATGTCGT
+GTGAAAGGCTTTCCTTATCCCTCTTCTCCCGTTTTGCCTGCTTATTAGCTAGATTAAAAA
+CGTGCGTATTACTCATTAATTAACCGACCTCATCTATGAGCTAATTATTATTCCTTTTTG
+GCAGCATGATGCAACCACATTGCACACCGGTAATGCCAACTTAGATCCACTTACTATTGT
+GGCTCGTATACGTATATATATAAGCTCATCCTCATCTCTTGTATAAAGTAAAGTTCTAAG
+TTCACTTCTAAATTTTATCTTTCCTCATCTCGTAGATCACCAGGGCACACAACAAACAAA
+ACTCCACGAATACAATCCAA
+";
+$demo_patterns = "CACGTG\nCACGTT\n";
+
+print "<TD><B>";
+print $query->hidden(-name=>'patterns',-default=>$demo_patterns);
+print $query->hidden(-name=>'sequence',-default=>$demo_sequence);
+print $query->hidden(-name=>'organism',-default=>'Saccharomyces cerevisiae');
+print $query->hidden(-name=>'set_name',-default=>'upstream sequences from the yeast PHO genes');
+print $query->submit(-label=>"DEMO");
+print "</B></TD>\n";
+print $query->end_form;
+
+
+#print "<TD><B><A HREF='demo.dna-pattern.html'>DEMO</A></B></TD>\n";
+print "<TD><B><A HREF='help.dna-pattern.html'>MANUAL</A></B></TD>\n";
+print "<TD><B><A HREF='mailto:jvanheld\@ucmb.ulb.ac.be'>MAIL</A></B></TD>\n";
+print "</TR></TABLE></UL></UL>\n";
+
+print "</FONT>\n";
+
+print $query->end_html;
+
+exit(0);
+
+
+
+
+

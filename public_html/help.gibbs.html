@@ -1,0 +1,92 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE>RSA-tools: gibbs sampler manual</TITLE>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFEEDD" LINK="#0000EE" VLINK="#55008B" ALINK="#FF0000">
+
+<H3 ALIGN=CENTER><A HREF="RSA_home.cgi">RSA-tools</A> - gibbs sampler manual</H3>
+
+<H4>Name</H4>
+<UL>
+
+gibbs<P>
+
+<P>Program developed by <A HREF="mailto:neuwald@cshl.org (Andrew Neuwald)">Andrew Neuwald</A>.
+
+<P>Web interface 1998 by Jacques van Helden (<A HREF="mailto:Jacques van Helden <jvanheld@ucmb.ulb.ac.be>">jvanheld@ucmb.ulb.ac.be</A>)
+</UL>
+
+<H4>Description</H4>
+<UL>
+The gibbs sampler detects motifs shared by a set of functionally related sequences. 
+</UL>
+
+<H4>Options</H4>
+<UL>
+
+
+<A NAME="sequence">
+<B>Input sequence:</B></A><BR>
+The sequence that will be analyzed. Multiple sequenes can be entered at once with most sequence formats (see below).<P>
+
+<A NAME="format">
+<B>Format:</B></A><BR>
+Input sequence format. Various standards are supported (click on the links for more details):
+<UL>
+<LI><A HREF="help.formats.html#raw"><B>raw</B></A>: the raw sequence without any identifier or comment.
+<LI><A HREF="help.formats.html#multi"><B>multi</B></A>: several raw sequences concatenated.
+<LI><A HREF="help.formats.html#ig"><B>IG</B></A>: IntelliGenetics format.
+<LI><A HREF="help.formats.html#fasta"><B>FastA</B></A>: the sequence format used by FastA, BLAST, Gibbs sampler and a lot of other bioinformatic programs.
+<LI><A HREF="help.formats.html#wconsensus"><B>Wconsensus</B></A>: the format defined by Jerry Hertz for his programs (patser, consensus, wconsensus).
+</UL>
+<P>
+
+<A NAME="seq_type">
+<B>Sequence type</B></A><BR>
+The program can analyse either proteic or DNA sequences.
+<P>
+
+<A NAME="add_rc"> 
+<B> Add reverse complement strand</B></A><BR>
+For DNA sequences only, this option allows to detect motifs irrespective of the strand. The gibbs sampler does not include this option, we replace it by a trick consisting in analysing a modified sequence file including all the input sequences plus thir reverse complement.
+<P>
+
+<A NAME="length">
+<B>Pattern length</B></A><BR>
+This option determines the expected length for the motif. It is anessential parameter of the algorithm. Some patterns can be found with a specific length and missed with a different one. 
+<P>
+
+<A NAME="expected">
+<B>Expected number of matches</B></A><BR>
+This is the second essential parameter for the gibbs sampler. Fiddling around with this parameter will allow to detect different patterns.
+<P>
+
+</UL>
+
+<H4>Availability</H4>
+<UL>
+The gibbs sampler can be downloaded on Andrew Neuwald's ftp site 
+(<A HREF="ftp://ncbi.nlm.nih.gov/pub/neuwald/" TARGET=_top>ftp://ncbi.nlm.nih.gov/pub/neuwald/</A>)
+The program can be used through its web interface at:
+<A HREF="http://copan.cifn.unam.mx/Computational_Biology/yeast-tools" TARGET=_top>http://copan.cifn.unam.mx/Computational_Biology/yeast-tools</A> <BR>
+gibbs is writen in C and runs on unix machines (SUN, SGI have been tested). The web interface is a perl-cgi script.
+</UL>
+
+
+<HR SIZE=3></P></CENTER>
+
+
+<CENTER><ADDRESS>For information, contact <A HREF="mailto:jvanheld@ucmb.ulb.ac.be">Jacques
+van Helden (jvanheld@ucmb.ulb.ac.be)</A></ADDRESS></CENTER>
+
+</BODY>
+</HTML>
+
+
+
+
+
+
+

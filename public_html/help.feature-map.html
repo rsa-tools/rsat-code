@@ -1,0 +1,189 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE>RSA-tools - feature map manual</TITLE>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/3.01Gold (X11; I; SunOS 5.5.1 sun4u) [Netscape]">
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFEEDD" LINK="#0000EE" VLINK="#55008B" ALINK="#FF0000">
+
+<H3 ALIGN=CENTER><A HREF="RSA_home.cgi">RSA-tools</A> - feature map manual</H3>
+
+
+<H4>Name</H4>
+<UL>
+feature-map<P>
+1997-98 by <a HREF="mailto:Jacques van Helden <jvanheld@ucmb.ulb.ac.be>">Jacques van Helden (jvanheld@ucmb.ulb.ac.be)</A>.
+</UL>
+
+<H4>Description and concept definitions</H4>
+<UL>
+Feature map draws a graphical map of a series of features. Given the diversity of feature types, we will illustrate this with a few examples:<BR>
+<UL>
+<LI><B>Regulatory sites:</B> each map represents a DNA sequence located upstream a given ORF. Each regulatory site constitutes a feature. 
+<LI><B>Swissprot records</B> each map represents a proteic sequence. Each swissprot feature (dna-binding domain, mutagen, ...) constitutes a feature.
+<LI><B>Multiple alignment</B> each map is a sequence (several maps are drawn in parallel), and each aminoacid is a feature. 
+</UL>
+Several maps can be drawn in parallel, allowing to detect conserved positions across them. 
+</UL>
+</UL>
+
+<H4>Options</H4>
+
+<UL>
+
+<A NAME="formats">
+<B>Feature map format</B><BR>
+In the standard input format, each feature is represented by a single line,
+which must contain the following information: </P>
+<OL>
+<LI>- map name (eg: gene name), </LI>
+<LI>- feature type (site, ORF), </LI>
+<LI>- identifier(ex: GATA_box, Abf1_site) </LI>
+<LI>- strand (D for Direct, R for Reverse), </LI>
+<LI>- start position (may be negative)</LI>
+<LI>- end position (may be negative)</LI>
+<LI>- (optional) sequence (ex: AAGATAAGCG) </LI>
+</OL>
+These topics must be provided in this order, separated by tabs. <P>
+
+Feature map also imports result files from some other programs or databases:
+<UL>
+<LI><A HREF="dna-pattern.html"><B>dna-pattern</B></A> a program which localizes the occurrences of your query patterns within your sequences. 
+<LI><A HREF="http://transfac.gbf.de/cgi-bin/matSearch/matsearch.pl"><B>Matinspector</B></A>, a program that scans a sequence with a library of matrices for regulatory sites. 
+<LI><A HREF="http://bimas.dcrt.nih.gov/molbio/signal/"><B>SignalScan</B></A>, a program which scans your sequences with a librairy of consensus for regulatory sites.
+</UL>
+These files are converted into feature-map proprietary format before the map is drawn.
+</P>
+
+<A NAME="title">
+<B>Title</B><BR>
+The title appears in large fonts at the top of the image. A single line of title is allowed. Its maximal length depends on the image width. 
+<P>
+
+
+<A NAME="legend">
+<B>Legend</B><BR>
+The legend is drawn at the left top of the image. It indicates the color (and optionally symbol) associated to each feature identifier.
+<P>
+
+<A NAME="scalebar">
+<B>Scale bar</B><BR>
+The scale bar appears either under the title (horizontal map) or at the left side of the image (vertical map). It indicates the coordinates. The step is calculated automatically but can also be specified manually.
+<P>
+
+<A NAME="orientation">
+<B>Orientation</B><BR>
+The maps can either be drawn horizontally or vertically. 
+<P>
+
+
+<A NAME="limits">
+<B>Display limits</B><BR>
+The options <B>from</B> and <B>to</B> define the maximum and minimum coordinated displayed in the map. This allows to zoom on a given part of the graph. If no value are entered, the min and max feature positions are used as limits.
+<P>
+
+<A NAME="origin">
+<B>Origin</B><BR>
+All coordinates are recalculated relative to this value).
+<P>
+
+<A NAME="dimensions">
+<B>Map dimensions</B><BR>
+All dimensions are in pixels. <BR>
+<UL>
+<LI>Map <B>length</B> refers to either width (horizontal map) or height (vertical map). It is the dimension of the map axis (the sequence backbone).
+<LI>Map <B>thick</B>refers to either height (horizontal map) or with (vertical map). It is calculated automatically according to the content of the map (handles, labels). It can also be adjusted manually. 
+<LI>Map spacing refers to a margin between maps, which is displayed in the same color as the background. 
+</UL>
+<B>Warning !</B> the bigger the surface of the map, the more time is required for its transfer to your client browser. 
+<P>
+
+
+
+<A NAME="handle">
+<B>Feature handle</B><BR>
+A color dot or a symbol can be associated to each feature. This is particularly convenient to discernate overlapping features, because the handle are shifted in order to avoid overlap. Black symbols are conveninent to distinguish features on a black and white printing.
+<P>
+
+<A NAME="htmap">
+<B>Dynamic map</B><BR>
+This option requires a recent browser (Netscape 3 or later). When the mous is placed for a second on a given feature, a specific message appears at the bottom of the window, providing all characteristics of this feature (type, position, identifier, description).
+<P>
+
+
+<A NAME="keys">
+<P><B>Label keys:</B><BR>
+A label can be written nearby each feature, providing one or several of the following data:
+<UL>
+<LI>strand
+<LI>position (start and end coordinates), 
+<LI>identifier
+<LI>description
+</UL>
+Note that this option gives a better effect with vertical maps, where the labels have less tendency to overlap with each other. 
+</P>
+
+</FONT>
+</UL>
+
+<H4>Availability</H4>
+<UL>
+The program can be used through its web interface at:
+<A HREF="http://copan.cifn.unam.mx/Computational_Biology/yeast-tools">http://copan.cifn.unam.mx/Computational_Biology/yeast-tools</A> <BR>
+feature-map is a perl script running on unix machines (SUN, SGI have been tested). The web interface is a perl-cgi script.
+</UL>
+
+<H4>Credits</H4>
+<UL>
+<P>
+<B>feature-map</B> has been written by Jacques van Helden (<A HREF="mailto:jvanheld@ucmb.ulb.ac.be (Jacques van Helden)">jvanheld@ucmb.ulb.ac.be</A>). This program can be used freely by academic users via its web interface. For commercial users, please read or <A HREF="disclaimer.html">disclaimer</A>.
+
+<P>
+feature-map uses the graphical library GD, developed by Thomas Boutell (<A HREF="mailto:boutell@boutell.com (Thomas Boutell)">(boutell@boutell.com)</A>. 
+
+<P>Copyright statement for the graphical library GD:
+	<PRE>
+	Portions copyright 1994, 1995, 1996, 1997, 1998, by 
+	Cold Spring Harbor Laboratory. Funded under Grant P41-RR02188 by the
+	National Institutes of Health. 
+
+	Portions copyright 1996, 1997, 1998, by Boutell.Com, Inc. 
+
+	GIF decompression code copyright 1990, 1991, 1993, by David Koblas 
+	(koblas@netcom.com). 
+
+	Non-LZW-based GIF compression code copyright 1998, by Hutchison Avenue
+	Software Corporation (http://www.hasc.com/, info@hasc.com). 
+
+	Permission has been granted to copy and distribute gd in any context, 
+	including a commercial application, provided that this notice is 
+	present in user-accessible supporting documentation. 
+
+	This does not affect your ownership of the derived work itself, and 
+	the intent is to assure proper credit for the authors of gd, not to 
+	interfere with your productive use of gd. If you have questions, ask. 
+	"Derived works" includes all programs that utilize the library. 
+	Credit must be given in user-accessible documentation. 
+
+	Permission to use, copy, modify, and distribute this software and its 
+	documentation for any purpose and without fee is hereby granted, 
+	provided that the above copyright notice appear in all copies and 
+	that both that copyright notice and this permission notice appear in 
+	supporting documentation. This software is provided "as is" without 
+	express or implied warranty. 
+	</PRE>
+</UL>
+
+
+<CENTER><P>
+<HR SIZE=3></P></CENTER>
+
+<CENTER><ADDRESS>For information, contact <A HREF="mailto:jvanheld@ucmb.ulb.ac.be">Jacques
+van Helden (jvanheld@ucmb.ulb.ac.be)</A></ADDRESS></CENTER>
+
+</BODY>
+</HTML>
+
+
+

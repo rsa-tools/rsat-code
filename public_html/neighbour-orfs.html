@@ -1,0 +1,66 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE>neighbour-orfs</TITLE>
+   <META NAME="GENERATOR" CONTENT="Mozilla/3.01Gold (X11; I; SunOS 5.5.1 sun4u) [Netscape]">
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFEEDD" LINK="#0000EE" VLINK="#55008B" ALINK="#FF0000">
+
+<CENTER><P><B><FONT SIZE=+1><A HREF="RSA_home.cgi">RSA-tools</A> - Neighbour ORFs</FONT></B><BR>
+<BR>Returns the closest neighbour ORFs from a given ORF or chromosomal position</P></CENTER>
+
+<FORM METHOD="POST" ACTION="neighbour-orfs.cgi">
+
+<B>Organism</B>&nbsp;<SELECT NAME='organism'>
+<OPTION SELECTED VALUE='yeast'>Saccharomyces cerevisiae
+</SELECT><BR>
+
+<B><A HREF="help.neighbour-orfs.html#query">Query</A></B>
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<B><A HREF="help.neighbour-orfs.html#query_format">Format</A> </B>
+<SELECT name="query_format">
+<OPTION selected>ORF identifiers
+<OPTION>chromosomal positions
+<OPTION>result of a genome search
+</SELECT>
+<BR> 
+<TEXTAREA NAME="query" ROWS=4 COLS=60>
+</TEXTAREA>
+<BR>
+
+<UL>
+<B><A HREF="help.neighbour-orfs.html#database_link">Link to database</A> </B>
+<SELECT name="database_link">
+<OPTION>YPD
+<OPTION>Standford SGD
+<OPTION SELECTED>MIPS
+<OPTION>none
+</SELECT>
+
+</UL>
+
+</P>
+
+<P><B>Output</B>
+
+<INPUT type="radio" name="output" value="display" checked>Display
+<INPUT type="radio" name="output" value="email">e-mail 
+<INPUT TEXT NAME="user_email" SIZE=25></P>
+
+
+<CENTER><TABLE>
+<TR VALIGN=CENTER>
+<TD><INPUT type="submit" value="GO"></TD>
+<TD><INPUT type="reset" value="RESET"></TD>
+<TD WIDTH=40></TD>
+<TD><B><A HREF="help.neighbour-orfs.html">MANUAL</A></B></TD>
+<TD VALIGN=CENTER><B><A HREF="mailto:jvanheld@ucmb.ulb.ac.be">MAIL</A></B></TD>
+</TR>
+</TABLE></CENTER>
+
+</FORM>
+<HR SIZE=3>
+
+</BODY>
+</HTML>

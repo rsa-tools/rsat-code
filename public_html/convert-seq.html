@@ -1,0 +1,72 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE>convert-seq</TITLE>
+   <META NAME="GENERATOR" CONTENT="Mozilla/3.01Gold (X11; I; SunOS 5.5.1 sun4u) [Netscape]">
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFEEDD" LINK="#0000EE" VLINK="#55008B" ALINK="#FF0000">
+
+
+<CENTER><P><B><FONT SIZE=+1><A HREF="RSA_home.cgi">RSA-tools</A> - Convert sequences</FONT></B><BR>
+performs conversions between various sequence formats</P></CENTER>
+
+<P><FORM METHOD="POST" ACTION="convert-seq.cgi"></P>
+
+<H4>Input sequence</H4>
+
+<P><TEXTAREA NAME="sequence" ROWS=4 COLS=60>
+</TEXTAREA></P>
+
+<TT>
+
+<P>
+<UL>
+<B>Input format</B> <SELECT name="input_format">
+<OPTION SELECTED>raw
+<OPTION>multi
+<OPTION>IG
+<OPTION>Wconsensus
+<OPTION>FastA
+</SELECT>
+
+<B>Output format</B>  <SELECT name="output_format">
+<OPTION>raw
+<OPTION>multi
+<OPTION>IG
+<OPTION>Wconsensus
+<OPTION SELECTED>FastA
+</SELECT>
+
+<BR>
+<B>Line width</B> <INPUT TEXT NAME="line_width" SIZE=3 VALUE=60>
+
+<INPUT type="checkbox" name="addrc" value="yes"><B>Add reverse complement</B>
+
+</P>
+
+</UL>
+</TT>
+
+
+<P><B>Output</B>
+<TT>
+<INPUT type="radio" name="output" value="display" checked>Display
+<INPUT type="radio" name="output" value="email">e-mail 
+<INPUT TEXT NAME="user_email" SIZE=25></P>
+</TT>
+
+<CENTER><TABLE>
+<TR VALIGN=CENTER>
+<TD><INPUT type="submit" value="GO"></TD>
+<TD><INPUT type="reset" value="RESET"></TD>
+<TD WIDTH=40></TD>
+<TD><B><A HREF="help.convert-seq.html">MANUAL</A></B></TD>
+<TD VALIGN=CENTER><B><A HREF="mailto:jvanheld@ucmb.ulb.ac.be">MAIL</A></B></TD>
+</TR>
+</TABLE></CENTER>
+</FORM>
+<HR SIZE=3>
+
+
+</BODY>
+</HTML>
