@@ -366,11 +366,16 @@ print "<hr>";
 print <<EndCredits;
 <H4>Credits</H4>
 <UL>
-<P>
-XYgraph has been written by Jacques van Helden (<A HREF="mailto:jvanheld\@ucmb.ulb.ac.be (Jacques van Helden)">jvanheld\@ucmb.ulb.ac.be</A>). This program can be used freely by academic users via its web interface. For commercial users, please read or <A HREF="disclaimer.html">disclaimer</A>.
 
-<P>
-XYgraph uses a graphical library developed by Thomas Boutell (<A HREF="mailto:boutell\@boutell.com (Thomas Boutell)">boutell\@boutell.com</A>). 
+<P> XYgraph has been written by Jacques van Helden (<A
+HREF="mailto:jvanheld\@ucmb.ulb.ac.be (Jacques van
+Helden)">jvanheld\@ucmb.ulb.ac.be</A>). This program can be used
+freely by academic users via its web interface. For commercial users,
+please read our <A HREF="disclaimer.html">disclaimer</A>.
+
+<P> XYgraph uses a graphical library developed by Thomas Boutell (<A
+HREF="mailto:boutell\@boutell.com (Thomas
+Boutell)">boutell\@boutell.com</A>).
 
 <p> Copyright statement for the graphical library GD: Portions
 copyright 1994, 1995, 1996, 1997, 1998, by Cold Spring Harbor
