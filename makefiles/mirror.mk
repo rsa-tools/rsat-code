@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: mirror.mk,v 1.10 2004/08/18 17:06:09 jvanheld Exp $
+# $Id: mirror.mk,v 1.11 2004/09/23 18:10:27 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 12:05:45 jvanheld>
 #
@@ -25,16 +25,8 @@ RSYNC = rsync ${RSYNC_OPT} ${SSH}
 
 ################################################################
 #
-# Servers
-
-CIFN = ${RSA_LOGIN}@itzamna.cifn.unam.mx:rsa-tools/
-PAULUS = ${RSA_LOGIN}@paulus.ulb.ac.be:rsa-tools/
-RUBENS = ${RSA_LOGIN}@rubens.ulb.ac.be:rsa-tools/
-#UCMB = /rubens/dsk4/${RSA_LOGIN}/rsa-tools
-UPPSALA = ${RSA_LOGIN}@bioinformatics.bmc.uu.se:rsa-tools
+# Server
 RSAT_SERVER = ${RSA_LOGIN}@rsat.scmbb.ulb.ac.be:/home/rsa/rsa-tools
-MEDICEL = root@grimsel.co.helsinki.fi:/work/programs/rsa-tools
-SERVERS = ${RSAT_SERVER} ${PAULUS} ${CIFN} ${UPPSALA} 
 
 SERVER=${RSAT_SERVER}
 
@@ -49,10 +41,6 @@ usage:
 ################################################################
 DIR=perl-scripts
 DIRS=perl-scripts public_html doc
-rsync_to_servers:
-	for server in ${SERVERS} ; do \
-		${MAKE} rsync_server SERVER=$${server} DIR=$${dir} ; \
-	done
 
 rsync_to_server: script_to_server pub_to_server
 
@@ -63,11 +51,6 @@ scripts_to_server:
 pub_to_server:
 	echo "Synchronizing public_html to server ${SERVER}"
 	${RSYNC} --exclude logs --exclude tmp --exclude data public_html ${SERVER}/  
-
-data_to_servers:
-	@for server in ${SERVERS} ; do \
-		${RSYNC}  data/* $${server}/data/ ; \
-	done
 
 data_to_server:
 	echo "Synchronizing data to server ${SERVER}"
@@ -80,11 +63,6 @@ doc_to_server:
 dir_to_server:
 	echo "Synchronizing dir ${DIR} to server ${SERVER}" 
 	${RSYNC} ${DIR} ${SERVER}/ 
-
-archives_to_servers:
-	@for server in ${SERVERS} ; do \
-		${RSYNC} archives/* $${server}/archives/ ; \
-	done
 
 
 ################################################################
@@ -144,16 +122,6 @@ medicel:
 ################################################################
 #### from servers to brol
 ################################################################
-rsync_logs:
-	@for server in ${SERVERS} ; do					\
-		echo "${RSYNC} $${server}/logs/log-file_* logs/" ;	\
-		${RSYNC} $${server}/logs/log-file_* logs/ ;		\
-	done
-
-rsync_config:
-	@for server in ${SERVERS} ; do \
-		${RSYNC} $${server}/config/*.config config/ ;\
-	done
 
 from_rsat:
 	${MAKE} dir_from_rsat DIR=perl-scripts
