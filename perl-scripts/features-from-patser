@@ -180,6 +180,7 @@ while (<$in>) {
 	
 
     } else {
+	#### Print the line as a comment
 	print $out "; $_" if ($verbose >= 1);
     }
 }

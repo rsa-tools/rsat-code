@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: convert-seq,v 1.12 2002/09/25 02:25:18 jvanheld Exp $
+# $Id: convert-seq,v 1.13 2004/02/28 17:10:33 jvanheld Exp $
 #
 # Time-stamp: <2002-09-24 21:24:13 jvanheld>
 #
@@ -16,10 +16,8 @@ $start_time = `date`;
 $line_width = 60;
 
 #### initialise parameters ####
-$accepted_input_string = "\n\t\t\t";
-$accepted_input_string .= join "\n\t\t\t", keys %accepted_input_seq;
-$accepted_output_string = "\n\t\t\t";
-$accepted_output_string .= join "\n\t\t\t", keys %accepted_output_seq; 
+$accepted_input_string = join "\n\t\t\t", "",keys %accepted_input_seq;
+$accepted_output_string = join "\n\t\t\t", "", keys %accepted_output_seq; 
 
 &ReadArguments();
 
