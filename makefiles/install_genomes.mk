@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_genomes.mk,v 1.5 2004/06/17 06:51:24 jvanheld Exp $
+# $Id: install_genomes.mk,v 1.6 2004/09/23 18:44:32 jvanheld Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -31,14 +31,14 @@ V=1
 ### Targets
 
 ### Install one organism
-ORGANISM=Arabidopsis_thaliana
-ORGANISM_DIR=${NCBI_DIR}/${ORGANISM}
+ORG=Arabidopsis_thaliana
+ORG_DIR=${NCBI_DIR}/${ORG}
 INSTALL_TASK=allup,clean,config,dyads,ncf,intergenic_freq,oligos,parse,start_stop,upstream_freq
 install_one_organism:
 	@echo "install log	${INSTALL_LOG}"
-	@echo "Parsing organism ${ORGANISM}" 
+	@echo "Parsing organism ${ORG}" 
 	install-organism -v ${V}								\
-		-org ${ORGANISM}							\
+		-org ${ORG}							\
 		-task  ${INSTALL_TASK}
 
 #BACTERIA = `cat TO_INSTALL.txt| sort -ru | xargs `
@@ -67,12 +67,12 @@ install_all_bacteria:
 install_one_bacteria:
 	@echo
 	@echo "${DATE}	Installing bacteria ${BACT}"
-	@${MAKE} install_one_organism ORGANISM=${BACT}		\
-		ORGANISM_DIR=${NCBI_DIR}/Bacteria/${BACT}
+	@${MAKE} install_one_organism ORG=${BACT}		\
+		ORG_DIR=${NCBI_DIR}/Bacteria/${BACT}
 
 ### Parse one organism
 parse_organism:
-	@echo "Parsing organism ${ORGANISM}"
+	@echo "Parsing organism ${ORG}"
 	${MAKE} install_one_organism INSTALL_TASK=parse
 
 ################################################################
@@ -93,6 +93,6 @@ EUKARYOTES=					\
 	Schizosaccharomyces_pombe 
 install_all_eukaryotes:
 	for org in ${EUKARYOTES} ; do ${MAKE} install_one_organism	\
-		ORGANISM=$${org} ; done
+		ORG=$${org} ; done
 
 
