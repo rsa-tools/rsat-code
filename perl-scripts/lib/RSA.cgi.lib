@@ -61,7 +61,6 @@ sub RSA_header {
   print $query->start_html(-title=>"RSA-tools : $title",
                          -author=>'jvanheld@ucmb.ulb.ac.be',
                          -BGCOLOR=>'#FFFFFF');
-
   print "<H3 ALIGN='center'><A HREF='$WWW_RSA/RSA_home.cgi'>RSA-tools</A> - $title</H3>";
 
 }
