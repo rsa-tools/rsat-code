@@ -841,7 +841,7 @@ use Data::Dumper;
 
 
       #### main table
-      my $table_name = $table_prefix;
+      my $table_name = $schema.".".$table_prefix;
       my $main_table_name = $table_name;
       print_sql_header ("Main table - $table_name");
       print SQL "CREATE TABLE $table_name", "\n\t(", "\n";
@@ -875,7 +875,7 @@ use Data::Dumper;
 
       #### multivalue attributes
       foreach my $field (@array_fields) {
-	  my $table_name = $table_prefix."_".$field;
+	  my $table_name = $schema.".".$table_prefix."_".$field;
 	  print_sql_header ("Multivalue field - $table_name");
 	  print SQL "CREATE TABLE $table_name", "\n\t(", "\n";
 	  my @field_defs = ();
@@ -896,7 +896,7 @@ use Data::Dumper;
 	      push @field_defs, sprintf "\t\t%-33s\t%s", "qualifier", "VARCHAR(20)";
 	  }
 	  print SQL join (",\n", @field_defs, 
-			  "INDEX(id)",
+#			  "INDEX(id)",
 			  "FOREIGN KEY (id) REFERENCES ${main_table_name}(id) ON DELETE CASCADE",
 			  ), "\n";
 	  if ($dbms eq mysql) {
@@ -904,6 +904,7 @@ use Data::Dumper;
 	  } else {
 	      print SQL "\t)", "\n", ";", "\n";
 	  }
+	  print SQL "CREATE INDEX ".$table_name."_id_index ON ".$table_name." (id);\n";
 	  foreach $g (@granted_readers) {
 	      print SQL "GRANT select ON $table_name TO $g;\n";
 	  }
@@ -918,7 +919,7 @@ use Data::Dumper;
 	  my @fields = split "\t", $header;
 #	  shift @fields;
 #	  warn "HELLO\tEXPANDED\t$field\t$cardinality\t$header\t", join (";", @fields), "\n";
-	  my $table_name = $table_prefix."_".$field;
+	  my $table_name = $schema.".".$table_prefix."_".$field;
 	  print_sql_header ("Expanded attribute - $table_name");
 	  print SQL "CREATE TABLE $table_name", "\n\t(", "\n";
 	  my @field_defs = ();
@@ -943,7 +944,7 @@ use Data::Dumper;
 	      push @field_defs, sprintf "\t\t%-33s\t%s", $field, $field_format;
 	  }
 	  print SQL join (",\n", @field_defs, 
-			  "INDEX(id)",
+#			  "INDEX(id)",
 			  "FOREIGN KEY (id) REFERENCES ${main_table_name}(id) ON DELETE CASCADE",
 			  ), "\n";
 	  if ($dbms eq mysql) {
@@ -951,6 +952,7 @@ use Data::Dumper;
 	  } else {
 	      print SQL "\t)", "\n", ";", "\n";
 	  }
+	  print SQL "CREATE INDEX ".$table_name."_id_index ON ".$table_name." (id);\n";
 	  foreach $g (@granted_readers) {
 	      print SQL "GRANT select ON $table_name TO $g;\n";
 	  }
@@ -970,6 +972,7 @@ use Data::Dumper;
       #### Table loading
       if ($dbms eq "oracle") {
 	  #### load main table
+	  my $table_name = $schema.".".$table_prefix;
 	  my $load_file = "${table_prefix}_table_load.ctl";
 	  warn ";\ttable loading scripts to file $load_file\n" 
 	      if ($main::verbose >= 1);
@@ -978,7 +981,7 @@ use Data::Dumper;
 	  print_sql_header ("Main table - $table_prefix");
 	  print SQL "LOAD DATA", "\n";
 	  print SQL "INFILE '", "../../${short_class}.tab", "'\n";
-	  print SQL "APPEND INTO TABLE $table_prefix", "\n";
+	  print SQL "APPEND INTO TABLE $table_name", "\n";
 	  print SQL "REENABLE DISABLED_CONSTRAINTS", "\n";
 	  print SQL "FIELDS TERMINATED BY X'09'", "\n";
 #      print SQL "TRAILING NULLCOLS", "\n";
@@ -1009,7 +1012,7 @@ use Data::Dumper;
 	  
 	  #### load multivalue attributes
 	  foreach $field (@array_fields) {
-	      my $table_name = $table_prefix."_".$field;
+	      my $table_name = $schema.".".$table_prefix."_".$field;
 	      my $load_file = "${table_prefix}_${field}_table_load.ctl";
 	      warn ";\ttable loading scripts to file $load_file\n" 
 		  if ($main::verbose >= 1);
@@ -1056,7 +1059,7 @@ use Data::Dumper;
 	  
 	  #### load expanded attributes
 	  foreach $field (@expanded_fields) {
-	      my $table_name = $table_prefix."_".$field;
+	      my $table_name = $schema.".".$table_prefix."_".$field;
 	      my $load_file = "${table_prefix}_${field}_table_load.ctl";
 	      my $field_size = $main::special_field_size{$field} || $default_field_size;
 	      my $load_field_format;
@@ -1100,18 +1103,19 @@ use Data::Dumper;
 
 	  #### postgresql loader
       } elsif ($dbms eq "postgresql") {
+      my $table_name = $schema.".".$table_prefix;
 	  my $load_file = "${table_prefix}_table_load.ctl";
 	  warn ";\ttable loading scripts to file $load_file\n" 
 	      if ($main::verbose >= 1);
 	  open SQL, "> $sql_dir/$load_file" || die "Error: cannot write file $load_file\n";
 	  print_sql_header ("Table loading scripts for class $table_prefix");
 	  print_sql_header ("Main table - $table_prefix");
-#	  print SQL "copy $table_prefix from ../../${short_class}.tab with null as '", $main::null, "'\n";
-	  print SQL "copy $table_prefix from stdin with null as '", $main::null, "'\n";
+#	  print SQL "copy $table_name from ../../${short_class}.tab with null as '", $main::null, "'\n";
+	  print SQL "copy $table_name from stdin with null as '", $main::null, "'\n";
 	  close SQL;
 	  
 	  foreach $field (@array_fields, @expanded_fields) {
-	      my $table_name = $table_prefix."_".$field;
+	      my $table_name = $schema.".".$table_prefix."_".$field;
 	      my $load_file = "${table_prefix}_${field}_table_load.ctl";
 	      warn ";\ttable loading scripts to file $load_file\n" 
 		  if ($main::verbose >= 1);
@@ -1125,6 +1129,7 @@ use Data::Dumper;
 	  
 	  #### mysql loader
       } elsif ($dbms eq "mysql") {
+      my $table_name = $schema.".".$table_prefix;
 	  my $load_file = "${table_prefix}_table_load.ctl";
 	  warn ";\ttable loading scripts to file $load_file\n" 
 	      if ($main::verbose >= 1);
@@ -1137,7 +1142,7 @@ use Data::Dumper;
 
 	  
 	  foreach $field (@array_fields, @expanded_fields) {
-	      my $table_name = $table_prefix."_".$field;
+	      my $table_name = $schema.".".$table_prefix."_".$field;
 	      my $load_file = "${table_prefix}_${field}_table_load.ctl";
 	      warn ";\ttable loading scripts to file $load_file\n" 
 		  if ($main::verbose >= 1);
@@ -1173,20 +1178,21 @@ use Data::Dumper;
       }
 
       #### main table
+      my $table_name = $schema.".".$table_prefix;
       print_sql_header ("Main table - $table_prefix");
-      print SQL "DROP TABLE ", $table_prefix, ";\n";
+      print SQL "DROP TABLE ", $table_name, ";\n";
 
       #### multivalue attributes
       print_sql_header ("Multivalue attributes - $table_prefix");
       foreach $field (@array_fields) {
-	  my $table_name = $table_prefix."_".$field;
+	  my $table_name = $schema.".".$table_prefix."_".$field;
 	  print SQL "DROP TABLE ", $table_name, ";\n";
       }
 
       #### expanded attributes
       print_sql_header ("Expanded attributes - $table_prefix");
       foreach $field (@expanded_fields) {
-	  my $table_name = $table_prefix."_".$field;
+	  my $table_name = $schema.".".$table_prefix."_".$field;
 	  print SQL "DROP TABLE ", $table_name, ";\n";
       }
 
