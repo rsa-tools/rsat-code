@@ -1,0 +1,127 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% Installing organisms
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Installing additional organisms}
+
+\subsection{Parsing a genome from Genbank}
+
+The easiest way to install an organism in \RSAT is to download the
+complete genome files from the NCBI
+\urlref{ftp://ftp.ncbi.nih.gov/genomes/}, and to parse it with the
+program \program{parse-genbank.pl}.
+
+
+
+
+\subsection{Manual installation of a genome}
+
+If you are not lucky, the genome you want to work with is not
+available in Genbank format. If this is the case, you cn still try a
+manual installation. This is a bit tricky, but basically you will need
+two informations :
+
+\begin{enumerate}
+\item the complete genome sequence in raw format
+\item a table with gene description (position, nme, ...)
+\end{enumerate}
+
+We describe below how this information should be formatted to be used
+in rsa-tools.
+
+In this chapter, we explain how to add support for an organism on your
+local configuration of \RSAT. This assumes that you have the complete
+sequence of a genome, and a table describing the predicted location of
+genes.
+
+First, prepare a directory where you will store the data for your
+organism. For example:
+
+\begin{verbatim}
+~myaccount/rsat-add/data/Mygenus_myspecies/
+\end{verbatim}
+
+You need two informations to start installing a new genome:
+
+\begin{itemize}
+\item The genome in fasta format. If the genome contains multiple
+chromosomes, they should all be included in a common multi-sequence
+fasta file.
+
+\item A feature-table giving the basic information about genes. This is
+a tab-delimited text file. Each row contains information about one
+gene. The columns contain the following information: 
+\begin{enumerate}
+
+\item Identifier
+
+\item Feature type (e.g. ORF, tRNA, ...)
+
+\item Name
+
+\item Chromosome. This must correspond to one of the sequence
+identifiers from the fasta file.
+
+\item Left limit
+
+\item Right limit
+
+\item Strand (D for direct, R for reverse complemet)
+
+\item Description. A one-sentence description of the gene function.
+
+\end{enumerate}
+
+\item Optionally, you can provide a synonym file, which contains two
+columns:
+
+\begin{enumerate}
+\item ID. This must be one identifier found in the feature table
+\item Synonym
+\end{enumerate}
+
+Multiple synonyms can be given for a gene, by adding several lines with
+the same ID in the first column.
+
+\end{itemize}
+
+\subsection{Installing the genome locally}
+One you have this information, start the program
+\begin{verbatim}
+install-organism
+\end{verbatim}
+You will be asked to enter the information needed for genome installation. 
+
+\subsection{Updating your local configuration}
+
+\begin{itemize}
+\item Modify the local config file
+
+\item You need to define an environment variable called
+RSA\_LOCAL\_CONFIG, and which indicates the loca config file.
+
+\end{itemize}
+
+\subsection{Checking that the organism is installed properly}
+
+To check the installation, start by checking whether your newly
+installed now appears in the list of supported organisms.
+
+\begin{verbatim}
+retrieve-seq -help
+\end{verbatim}
+
+Will give you a list of installed organisms.
+
+Once the organism is found in your configuration, you need to check
+whether sequences are retrieved properly. A good test for this is to
+retrieve all the start codons, and check whether they are made of the
+expected codons (mainly ATG, plus some alternative start codons like
+GTG or TTG for bacteria).
+
+\begin{verbatim}
+retrieve-seq -org myorganism -all -from 0 -to 2 \
+    -format multi \
+    | oligo-analysis -format multi -v \
+    -1str -l 3 -return occ,freq
+\end{verbatim}
