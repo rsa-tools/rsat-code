@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: mirror.mk,v 1.17 2005/02/01 20:54:54 jvanheld Exp $
+# $Id: mirror.mk,v 1.18 2005/02/02 07:51:27 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 12:05:45 jvanheld>
 #
@@ -26,7 +26,7 @@ RSYNC = rsync ${RSYNC_OPT} ${SSH}
 ################################################################
 #
 # Server
-RSAT_SERVER = ${RSA_SERVER_LOGIN}@rsat.scmbb.ulb.ac.be:/home/rsa/rsa-tools
+RSAT_SERVER = ${RSA_SERVER_LOGIN}@rsat.scmbb.ulb.ac.be:/home/rsat/rsa-tools
 
 SERVER=${RSAT_SERVER}
 
