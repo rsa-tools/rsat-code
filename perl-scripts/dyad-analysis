@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis,v 1.9 2001/05/07 10:24:50 jvanheld Exp $
+# $Id: dyad-analysis,v 1.10 2001/05/10 10:10:27 jvanheld Exp $
 #
-# Time-stamp: <2001-03-24 18:05:58 jvanheld>
+# Time-stamp: <2001-05-10 12:10:24 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -1113,7 +1113,7 @@ sub CountDyads {
 	
 	#### count oligonucleotides and dyads
 	$last_pos = $seq_length[$sequence_number] - $oligo_length;
-	$chunk = 10000;
+	$chunk = 100000;
 	$pos1 = 0;
 	while ($pos1 <= $last_pos) {
 	    
