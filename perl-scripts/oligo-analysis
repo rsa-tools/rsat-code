@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.71 2004/01/23 23:17:38 jvanheld Exp $
+# $Id: oligo-analysis,v 1.72 2004/01/23 23:46:05 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -1527,7 +1527,7 @@ sub PrintResult {
 	$rank++;
 	my $pattern_seq = $sorted_keys[$p];
 	### oligo sequence and identifier
-	print $out "$pattern_seq";
+	print $out $pattern_seq;
 	print $out "\t", &PatternID($pattern_seq, $sum_rc);
 	
 	### relative frequencies
@@ -2631,6 +2631,8 @@ sub PrintCountDistrib {
     my %max = ();
     my $distrib_min = undef;
     my $distrib_max = undef;
+
+    my @output_patterns = sort keys %distrib;
 
     #### Calculate maximum and minimum occurrence values
     foreach my $pattern_seq (@output_patterns) {
