@@ -67,15 +67,25 @@ later is recommended.
 
 \subsection{Perl modules}
 
-Two perl modules are required for the graphical tools of \RSAT.
+Some perl modules are required for the graphical tools of \RSAT, and
+for some other specific programs.
 
 \begin{description}
-\item[GD.pm] Interface to Gd Graphics Library.
-\item[PostScript::Simple]  Produce PostScript files from Perl.
+\item[GD.pm] Interface to Gd Graphics Library. Used by
+  \program{XYgraph} and \program{feature-map}.
+\item[PostScript::Simple] Produce PostScript files from Perl. Used by
+  \program{feature-map}.
+\item[bioperl] \RSAT was developed independently of the bioperl
+  project, but for some recent programs, I used bioperl classes
+  (e.g. for reading and exporting taxonomic trees). It is thus useful
+  to install a recent version of bioperl to take benefit of the full
+  functionalities of \RSAT.
 \end{description}
 
 These modules can be found in the Comprehensive Perl Archive Network
-(\url{http://www.cpan.org/}).
+(\url{http://www.cpan.org/}). For \program{bioperl}, we recommend to
+use the CVS distribution (\url{http://cvs.open-bio.org/}), which
+includes more recent updates.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -336,6 +346,58 @@ If the modules are available, you should see the help message of the
 program feature-map. If not, you will see an error message complaining
 about the missing librairies. In such a case, ask your system
 administrator to install the missing modules.
+
+\subsection{Installing third-party programs}
+
+The \RSAT distribution only contains the programs developed by Jacques
+van Helden. A few additional programs, developed by third parties, can
+be integrated in the package. In order to obtain these programs,
+please download them from their original site.
+
+In particular, we recommend to install the following programs.
+
+\begin{description}
+\item[\program{vmatch}]: developed by Stefan Kurtz, is used used by the
+program \program{purge-sequences}, for the detection of sequence repeats.
+
+\item[\program{patser}]: developed by Jerry Hertz, is used for
+  matrix-based pattern matching.
+
+\item[matrix-based pattern discovery]: several other pattern discovery
+  programs have been embedded in the \RSAT program
+  \program{multiple-family-analysis}: 
+\program{consensus} (Jerry Hertz),
+\program{meme} (Tim Bailey),
+\program{MotifSampler} (Gert Thijs),
+\program{gibbs} (Andrew Neuwald).
+
+\end{description}
+
+
+\begin{table}
+\begin{center}
+\begin{tabular}{lll}
+\hline
+Program & author  & URL \\
+\hline
+vmatch & Stefan Kurtz & http://www.vmatch.de/ \\
+patser & Jerry Hertz & ftp://ftp.genetics.wustl.edu/pub/stormo/Consensus/ \\
+consensus & Jerry Hertz &  ftp://ftp.genetics.wustl.edu/pub/stormo/Consensus/ \\
+meme & Tim Bailey & http://meme.sdsc.edu/meme/website/meme-download.html \\
+MotifSampler & Gert Thijs & http://www.esat.kuleuven.ac.be/$\tilde{\hspace{0.4em}}$thijs/download.html \\
+gibbs & Andrew Neuwald & ftp://ftp.ncbi.nih.gov/pub/neuwald/gibbs9\_95/ \\
+\hline
+\end{tabular}
+\end{center}
+\caption{\label{table:other_programs} Programs from other developers
+  which are complementary to the \RSAT package.}
+\end{table}
+
+In order to add functionalities to \RSAT, install some or all of these
+programs and include their binaries in the user path. If you are not
+familiar with the installation of unix programs, ask assistance to
+your system administrator.
+
 
 \section{Further steps}
 
