@@ -47,7 +47,7 @@ if (($matrix_file = $query->param("matrix_file")) &&
 ### head
 print "<CENTER>";
 print "Scan a DNA sequence with a profile matrix<BR>\n";
-print "Pprogram developed by <A HREF='mailto:hertz\@colorado.edu (Jerry Hertz)'>Jerry Hertz</A><BR>";
+print "Program developed by <A HREF='mailto:hertz\@colorado.edu (Jerry Hertz)'>Jerry Hertz</A><BR>";
 print "Web interface by <A HREF='mailto:jvanheld\@ucmb.ulb.ac.be'>Jacques van Helden</A><P>";
 
 print "</CENTER>";
