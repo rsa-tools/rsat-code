@@ -2,7 +2,7 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
+require "RSA.lib";
 
 ### initialization
 $ec_file = "$RSA/data/enzymes/enzymes.tab";
@@ -112,7 +112,7 @@ unless (defined($selected_organism)) {
 $out = &OpenOutputFile($outputfile);
 
 ##### read input #####
-$in = &OpenInputFile($inputfile);
+($in, $input_dir) = &OpenInputFile($inputfile);
 while (<$in>) {
   next if (/^;/);
   next unless (/\S/);
