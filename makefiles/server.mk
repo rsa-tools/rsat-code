@@ -1,13 +1,14 @@
 ############################################################
 #
-# $Id: server.mk,v 1.11 2004/09/23 18:12:29 jvanheld Exp $
+# $Id: server.mk,v 1.12 2004/11/08 09:09:27 jvanheld Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
 ############################################################
 
-RSAT=${HOME}/rsa-tools/
-#RSA=${HOME}/rsa/rsa-tools/
+#RSAT=${HOME}/rsa-tools/
+include ${RSAT}/makefiles/util.mk
+
 GENBANK_DIR=/home/rsa/downloads/ftp.ncbi.nih.gov/genbank/genomes
 NCBI_DIR=/home/rsa/downloads/ftp.ncbi.nih.gov/genomes
 
@@ -25,7 +26,6 @@ SSH=-e 'ssh -x'
 RSYNC = rsync ${RSYNC_OPT} ${SSH}
 
 ################################################################
-#
 # Mirrors
 RSAT_SERVER = jvanheld@rsat.scmbb.ulb.ac.be:rsa-tools
 NEWPAULUS = jvanheld@164.15.109.52:rsa-tools
@@ -34,19 +34,14 @@ FLYCHIP = jvanheld@flychip.org.uk:rsa-tools
 CIFN = jvanheld@itzamna.cifn.unam.mx:rsa-tools
 GIN = jvanheld@gin.univ-mrs.fr:rsa-tools
 LIV = jvanheld@liv.bmc.uu.se:rsa-tools
-MIRROR_SERVERS = ${NEW_PAULUS} ${MERLIN} ${LIV} ${FLYCHIP} ${GIN} ${CIFN}
+TORONTO=jvanheld@ws03.ccb.sickkids.ca:rsa-tools
+MIRROR_SERVERS = ${NEW_PAULUS} ${MERLIN} ${LIV} ${FLYCHIP} ${GIN} ${TORONTO} ${CIFN}
 
+################################################################
 ## distribution
 MEDICEL = root@grimsel.co.helsinki.fi:/work/programs/rsa-tools
 
 MIRROR=${LIV}
-#MIRROR=${UPPSALA}
-
-### tags
-usage:
-	@echo "usage: make [-OPT='options'] target"
-	@echo "implemented targets"
-	@perl -ne 'if (/^(\S+):/){ print "\t$$1\n"}' ${MAKEFILE}
 
 ################################################################
 #### from brol to mirrors

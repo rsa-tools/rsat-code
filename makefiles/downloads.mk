@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: downloads.mk,v 1.16 2004/09/04 06:43:21 jvanheld Exp $
+# $Id: downloads.mk,v 1.17 2004/11/08 09:09:27 jvanheld Exp $
 #
 # Time-stamp: <2003-10-09 14:02:21 jvanheld>
 #
@@ -18,7 +18,7 @@ WGET=wget --passive-ftp -np -rNL ${LOGFILE}
 # #WGET = wget -rNL -o logs/wget_${DATE}_log.txt
 RSYNC = rsync -ruptvl -e ssh
 
-### tags
+### target
 usage:
 	@echo "usage: make [-OPT='options'] target"
 	@echo "implemented targets"
