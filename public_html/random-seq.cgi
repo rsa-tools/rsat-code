@@ -18,6 +18,7 @@ require "RSA.lib";
 require "RSA.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $command = "$SCRIPTS/random-seq";
+$tmp_file_name = sprintf "random-seq.%s", &AlphaDate();
 
 $size_limit = 5e+6;
 
@@ -100,10 +101,11 @@ print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ECHO >= 1);
 
 ### execute the command ###
 if ($query->param('output') eq "display") {
+    $mirror_file = "$TMP/$tmp_file_name.res";
+
     open RESULT, "$command $parameters |";
     
     ### open the mirror file ###
-    $mirror_file = "$TMP/$tmp_file_name.res";
     if (open MIRROR, ">$mirror_file") {
 	$mirror = 1;
 	&DelayedRemoval($mirror_file);
@@ -123,24 +125,14 @@ if ($query->param('output') eq "display") {
     
     ### prepare data for piping
     &PipingForm();
-
-#      &PipingWarning();
-#      ### Print the result on Web page
-#      open RESULT, "$command $parameters  & |";
-#      print "<PRE>";
-#      while (<RESULT>) {
-#  	print "$_";
-#      }
-#      print "</PRE>";
-#      close RESULT;
-#      ### prepare data for piping
-#      &PipingForm();
     print "<HR SIZE = 3>";
 
+    &DelayedRemoval($mirror_file);
+
 } elsif ($query->param('output') =~ /server/i) {
-    &ServerOutput("$command $parameters", $query->param('user_email'));
+    &ServerOutput("$command $parameters", $query->param('user_email'), $tmp_file_name);
 } else {
-    &EmailTheResult("$command $parameters", $query->param('user_email'));
+    &EmailTheResult("$command $parameters", $query->param('user_email'), $tmp_file_name);
 }
 print $query->end_html;
 
@@ -252,7 +244,7 @@ sub PipingForm {
 	<INPUT type="hidden" NAME="to" VALUE="$to">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
-	<INPUT type="submit" value="patser (matrices)";
+	<INPUT type="submit" value="patser (matrices)">
 	</FORM>
     </TD>
 
@@ -266,6 +258,35 @@ sub PipingForm {
 
 </TR>
 
+
+
+<TR VALIGN="top" ALIGN="center">
+
+    <TD BGCOLOR=		#FFEEDD>
+	<B>Utilities</B>
+    </TD>
+
+    <TD>
+	<FORM METHOD="POST" ACTION="purge-sequence_form.cgi">
+	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
+	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
+	<INPUT type="submit" value="purge sequence">
+	</FORM>
+    </TD>
+
+    <TD>
+    &nbsp;
+    </TD>
+
+    <TD>
+    &nbsp;
+    </TD>
+
+    <TD>
+    &nbsp;
+    </TD>
+
+</TR>
 
 <!--
 <TR VALIGN="top" ALIGN="center">

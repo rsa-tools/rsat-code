@@ -131,9 +131,18 @@ if ($query->param('genes') eq "all") {
 print  "<PRE><B>Command :</B> $command $parameters</PRE><P>" if ($ECHO >= 1);
 
 #### execute the command #####
-if ($query->param('output') =~ /display/i) {
+if (($query->param('output') =~ /display/i) ||
+    ($query->param('output') =~ /server/i)) {
     open RESULT, "$command $parameters |";
-    
+
+    ### print the result ### 
+    &PipingWarning();
+    if ($query->param('output') =~ /server/i) {
+	&Info("The server is currently retrieving your sequences...");
+    }
+
+    print '<H3>Result</H3>';
+
     ### open the mirror file ###
     $mirror_file = "$TMP/$tmp_file_name.res";
     if (open MIRROR, ">$mirror_file") {
@@ -141,26 +150,29 @@ if ($query->param('output') =~ /display/i) {
 	&DelayedRemoval($mirror_file);
     }
     
-    
-    ### print the result ### 
-    &PipingWarning();
-    print '<H3>Result</H3>';
     print "<PRE>";
     while (<RESULT>) {
-	print "$_";
+	print "$_" unless ($query->param('output') =~ /server/i);
 	print MIRROR $_ if ($mirror);
     }
     print "</PRE>";
     close RESULT;
     close MIRROR if ($mirror);
     
+    if ($query->param('output') =~ /server/i) {
+	$result_URL = "${WWW_RSA}/tmp/${tmp_file_name}.res";
+	print ("Result is available in the file ",
+	       "<a href=${result_URL}>${result_URL}</a>",
+	       "\n");
+    }
+
     ### prepare data for piping
     &PipingForm();
     
     print "<HR SIZE = 3>";
 
-} elsif ($query->param('output') =~ /server/i) {
-    &ServerOutput("$command $parameters", $query->param('user_email'));
+#} elsif 
+#    &ServerOutput("$command $parameters", $query->param('user_email'));
 } else {
     &EmailTheResult("$command $parameters", $query->param('user_email'));
 }
@@ -270,6 +282,7 @@ sub PipingForm {
 	(known patterns)
     </TD>
 
+
     <TD>
 	<FORM METHOD="POST" ACTION="dna-pattern_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism">
@@ -288,9 +301,10 @@ sub PipingForm {
 	<INPUT type="hidden" NAME="to" VALUE="$to">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
-	<INPUT type="submit" value="patser (matrices)";
+	<INPUT type="submit" value="patser (matrices)">
 	</FORM>
     </TD>
+
 
     <TD>
     &nbsp;
@@ -303,7 +317,6 @@ sub PipingForm {
 </TR>
 
 
-<!--
 <TR VALIGN="top" ALIGN="center">
 
     <TD BGCOLOR=		#FFEEDD>
@@ -331,7 +344,7 @@ sub PipingForm {
     </TD>
 
 </TR>
--->
+
 
 </TABLE>
 End_of_form
