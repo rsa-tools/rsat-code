@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.17 2002/06/06 11:11:54 jvanheld Exp $
+# $Id: install-organism,v 1.18 2002/06/10 01:10:44 jvanheld Exp $
 #
-# Time-stamp: <2002-06-06 13:11:49 jvanheld>
+# Time-stamp: <2002-06-10 03:09:59 jvanheld>
 #
 ############################################################
 
@@ -400,15 +400,14 @@ sub CalcFrequencies {
 
 sub CalcOligoFreq {
     my ($seq_file,$seq_format,$seq_type) = @_;
-    foreach $oligo_length (1..3) {
+    foreach $oligo_length (1..8) {
 	$out_file = "$oligo_dir/${oligo_length}nt_${seq_type}_${organism_short_name}${noov}${strands}.freq";
 	$command = "$SCRIPTS/oligo-analysis ${strands} -i $seq_file -format $seq_format ";
 	$command .= " $strands";
 	$command .= " $noov";
 	$command .= "-l ${oligo_length} -type dna ";
 	$command .= "-return freq,occ -nogrouprc ";
-#	$command .= "| cut -f1,3,4 ";
-	$command .= "> $out_file ";
+	$command .= "-o $out_file ";
 	$command .= "; gzip -f $out_file ";
 	&doit;  
     }
@@ -434,8 +433,7 @@ sub CalcDyadFreq {
 	$command .= " -l $monad_length";
 	$command .= " -return freq,occ";
 	$command .= " -nogrouprc";
-	$command .= " | cut -f1,3,4";
-	$command .= " > $dyad_file";
+	$command .= " -o $dyad_file";
 	$command .= "; gzip -f $dyad_file ";
 	&doit;
     }
