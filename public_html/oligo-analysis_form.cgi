@@ -239,14 +239,14 @@ print $query->table({-border=>1,-cellpadding=>0,-cellspacing=>0},
 
 			  ### occurrences
 			  $query->td([$query->checkbox(-name=>'occ',
-						    -checked=>$default{occ},
-						    -label=>' Occurrences '),
-				   $query->textfield(-name=>'lth_occ',
-						     -default=>$default{lth_occ},
-						     -size=>5),
-				   $query->textfield(-name=>'uth_occ',
-						     -default=>$default{uth_occ},
-						     -size=>5)
+						       -checked=>$default{occ},
+						       -label=>' Occurrences '),
+				      $query->textfield(-name=>'lth_occ',
+							-default=>$default{lth_occ},
+							-size=>5),
+				      $query->textfield(-name=>'uth_occ',
+							-default=>$default{uth_occ},
+							-size=>5)
 				   ]),
 
 			  ### binomial proba
