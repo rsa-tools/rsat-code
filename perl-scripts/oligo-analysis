@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.45 2002/05/03 06:19:35 jvanheld Exp $
+# $Id: oligo-analysis,v 1.46 2002/05/03 06:51:14 jvanheld Exp $
 #
-# Time-stamp: <2002-05-03 08:18:34 jvanheld>
+# Time-stamp: <2002-05-03 08:48:35 jvanheld>
 #
 ############################################################
 
@@ -158,14 +158,26 @@ if (($method eq "Frequency file") &&
     ($return{'exp_freq'})) {    #### expected frequencies ####
 
     ($exp) = &OpenInputFile($exp_freq_file);
+    my $l=0;
     while (<$exp>) {
+	$l++;
 	next if (/^;/);
-	if (/(\S+)\t(\S+)/i) {
-	    $pattern_seq = lc($1);
-	    $patterns{$pattern_seq}->{exp_freq} = $2;
-	    if ($patterns{$pattern_seq}->{exp_freq} < 0) {
-		&FatalError("Expected frequency cannot be negative\t$pattern_seq\t".$patterns{$pattern_seq}->{exp_freq});
-	    }
+	next unless (/\S/);
+	my @fields =  split "\t";
+	$pattern_seq = lc($fields[0]);
+	if (&IsReal($fields[1])) {
+	    $patterns{$pattern_seq}->{exp_freq} = $fields[1];
+	} elsif (($fields[1] =~ /(\S+)\|(\S+)/) &&(&IsReal($fields[2]))) {
+	    $rc = lc($2);
+	    $fw = lc($1);
+	    $patterns{$rc}->{exp_freq} = $fields[2];
+	    $patterns{$fw}->{exp_freq} = $fields[2];
+	} else {
+	    &FatalError("Invalid expected frequency at line $l\n");
+	}
+
+	if ($patterns{$pattern_seq}->{exp_freq} < 0) {
+	    &FatalError("Expected frequency cannot be negative\t$pattern_seq\t".$patterns{$pattern_seq}->{exp_freq});
 	}
     }
     close $exp if ($exp_freq_file);
@@ -184,12 +196,11 @@ if (($method eq "Frequency file") &&
 	print $out "; Rescaling expected frequencies\n" if ($verbsoe >=1);
 	foreach my $pattern_seq (keys %patterns) {
 	    $patterns{$pattern_seq}->{exp_freq} /= $freq_sum;
-#	     print join "\t", $pattern, $freq_sum, $patterns{$pattern_seq}->{exp_freq}, $patterns{$pattern_seq}->{exp_freq}, "\n";
 	}
     }
     
     #### check if reverse complements were included in the expected freq file;
-    #### if not, infer them from the direct strand sequences
+    #### if not, infer them from the direct strand 
     foreach my $pattern_seq (sort keys %patterns) {
   	my $rc = lc(&ReverseComplement($pattern_seq));
   	if (($patterns{$rc}->{exp_freq} <= 0) &&
@@ -198,6 +209,7 @@ if (($method eq "Frequency file") &&
 	    #print STDERR join "\t", $pattern_seq,  $patterns{$pattern_seq}->{exp_freq}, $rc, $patterns{$rc}->{exp_freq}, "\n";
   	}
     }
+
 }
 
 ### open sequence file ###
@@ -1550,7 +1562,6 @@ sub ReadArguments {
 	    ### use oligo non-coding frequencies as expected frequencies
 	} elsif ($ARGV[$a] =~ /^-ncf/i) {
 	    $ncf = 1;
-	    $rescale_freq = 1;
 	    
 	    #### lexicon
 	} elsif ($ARGV[$a] =~ /^-lex/i) { ### Markov chains
