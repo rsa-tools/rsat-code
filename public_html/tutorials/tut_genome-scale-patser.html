@@ -1,7 +1,7 @@
 <html>
 <head>
  <meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
- <title>RSA-tools - tutorials</title>
+ <title>RSA-tools - tutorials - genome-scale patser</title>
 </head>
 <body text="#000000" bgcolor="#ffffff" link="#0000ee" vlink="#55008b" alink="#ff0000">
 <blockquote>
@@ -16,16 +16,47 @@
 
 <hr size=6 width="100%">
 
-<h2>Introduction</h2>
-<ul>
+
+<h2>Contents</h2>
 
 <p>
 <ol>
+<li><a href=#prerequisite>Prerequisite</a>
+<li><a href=#intro>Introduction</a>
+<li><a href=#example>Example of utilization</a>
+<li><a href=#interpret>Interpreting the result</a>
+<li><a href=#exercises>Additional exercises</a>
 </ol>
 
+<a name=prerequisite><h2>Prerequisite</h2>
+<ul>
+
+<P>This tutorial assumes that you  already followed the tutorials on 
+<ul>
+
+<li><a href=tut_PSSM.html>Position-Specific Scoring Matrices</a>
+<li><a href=tut_patser.html>Matrix-based matching (patser)</a>
 
 </ul>
-<h2>Scanning all upstream regions with a position-specific scoring matrix</h2>
+
+</ul>
+<a name=intro><h2>Introduction</h2>
+<ul>
+
+Position-Specifi Scoring Matrices (PSSM) offer a more sensitive way
+than strings to describe the variability of DNA binding
+sites. However, the motifs are usually very short, so that
+genome-scale matching usually returns many matches.
+
+<P>Applying matrix-based pattern matching to rpedict the target genes
+of a given transcription factor is thus far fom trivial. The threshold
+has to be selected carefully, and there is always a tradeoff beteweeb
+sensitivity (which percentage of the true target genes will be
+detected ?) and specificity (among the prediction, how many represent
+true targets ?).
+
+</ul>
+<a name=example><h2>Example of utilization</h2>
 <ul>
 
 <p>
@@ -35,7 +66,7 @@ by the transcription factor Gcn4p.
 
 <p>
 <ol>
-<p><li>In the left pannel, select the tool <b>genome-scale patser</b>
+<p><li>In the left frame, select the tool <b>genome-scale patser</b>
 <p><li>Paste the following matrix in the <b>matrix</b> box. 
 <pre>
 A | 4  2  7  2  3  5  5  4  6 19  0  0 43  0  2  1 43  1 12  4 12  6  7  4  5  8  6
@@ -74,15 +105,16 @@ that many of these genes are associated with amino-acid metabolism.
 This is consistent with the function of Gcn4p, the general control of
 amino-acid metabolism.
 
-
 </ul>
-<h2>Remarks</h2>
+<a name=interpret><h2>Interpreting the results</h2>
 <ul>
 
 
+</ul>
+<a name=exercises><h2>Additional exercises</h2>
+<ul>
 
-
-
+</ul>
 <p>
 You can now come back to the <a href=tutorials.html>tutorial main
 page</a> and follow the next tutorials.
