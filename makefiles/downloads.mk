@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: downloads.mk,v 1.10 2003/12/29 13:56:59 jvanheld Exp $
+# $Id: downloads.mk,v 1.11 2004/03/29 12:43:17 jvanheld Exp $
 #
 # Time-stamp: <2003-10-09 14:02:21 jvanheld>
 #
@@ -141,15 +141,20 @@ SGD_dir=/pub/yeast/data_download
 SGD_excl=${SGD_dir}/obsolete_files/,${SGD_dir}/sequence/,${SGD_dir}/chromosomal_feature/archive/,${SGD_dir}/gene_registry/archive/,${SGD_dir}/literature_curation/archive/,${SGD_dir}/oracle_schema/archive/,${SGD_dir}/protein_info/archive/,${SGD_dir}/sequence_similarity/archive/,${SGD_dir}/systematic_results/archive/,${SGD_dir}/systematic_results/SAGE/archive/
 sgd:
 	@mkdir -p logs
+	${WGET} --accept '*.gbf' ftp://genome-ftp.stanford.edu/pub/yeast/data_download/sequence/NCBI_genome_source/
+	${WGET} ftp://genome-ftp.stanford.edu/pub/yeast/data_download/sequence/genomic_sequence/chromosomes/fasta/
 	${WGET} -X ${SGD_excl} ${SGD_FTP}${SGD_dir}/
-
-
 
 ################################################################
 #
 # Alternative yeast genomes
 #
 yeasts: yeast_mti
+
+## Fungal genomes at Stanford
+SGD_FUNGAL_GENOMES=ftp://genome-ftp.stanford.edu/pub/yeast/data_download/sequence/fungal_genomes/
+fungal_genomes:
+	${WGET} -X '*archive' -X '*.gcg'  ${SGD_FUNGAL_GENOMES}
 
 ################################################################
 # Several Saccharomyces genomes from the MIT 

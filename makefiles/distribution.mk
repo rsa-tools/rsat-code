@@ -11,15 +11,15 @@ DATE=`date +%Y%m%d`
 ARCHIVE=rsa-tools/rsa-tools_${DATE}
 
 ## Archive with tar
-TAR =tar ${TAR_EXCLUDE} -cpv ${ARCHIVE}.tar
-TGZ =tar ${TAR_EXCLUDE} -cpvz ${ARCHIVE}.tgz
+#TAR_EXCLUDE=-X CVS '*~' 
+TAR_CREATE =tar ${TAR_EXCLUDE} -cpvf ${ARCHIVE}.tar rsa-tools/RSA.config.default 
+TAR =tar ${TAR_EXCLUDE} -rpvf ${ARCHIVE}.tar 
 
 ## Archive with zip
 ZIP_EXCLUDE=-x CVS '*~' 
-ZIP =zip  -ry ${ARCHIVE}.zip 
+ZIP =zip -ry ${ARCHIVE}.zip 
 
-EXCLUDE=${ZIP_EXCLUDE}
-ARCHIVE_CMD=${ZIP}
+POST_CMD=
 
 ### tags
 usage:
@@ -27,10 +27,32 @@ usage:
 	@echo "implemented targets"
 	@perl -ne 'if (/^([a-z]\S+):/){ print "\t$$1\n";  }' ${MAKEFILE}
 
-zip_distrib:
-	(cd ..;								\
-	${ARCHIVE_CMD} rsa-tools/perl-scripts ${EXCLUDE};		\
-	${ARCHIVE_CMD} rsa-tools/doc/manuals/*.pdf ${EXCLUDE};		\
-	${ARCHIVE_CMD} rsa-tools/makefiles ${EXCLUDE};			\
-	${ARCHIVE_CMD} rsa-tools/config/RSA.config.default ${EXCLUDE};	\
-	)
+DISTRIB_FILES= rsa-tools/perl-scripts					\
+	rsa-tools/RSA.config.default					\
+	rsa-tools/public_html/data/supported_organisms_template.txt	\
+	rsa-tools/makefiles						\
+	rsa-tools/doc/manuals/*.pdf
+fill_archive:
+	(cd ..;						\
+	for f in ${DISTRIB_FILES}; do			\
+		${MAKE} add_one_file FILE=$${f};	\
+	done)
+	@echo "Archive created	${ARCHIVE}"
+
+create_tar_archive:
+	@echo ${TAR_CREATE} 
+	(cd ..; ${TAR_CREATE})
+
+FILE=rsa-tools/perl-scripts
+add_one_file:
+	@echo ${ARCHIVE_CMD} ${FILE} ${POST_CMD}
+	${ARCHIVE_CMD} ${FILE}  ${POST_CMD}
+
+tar_archive:
+	${MAKE} create_tar_archive
+	${MAKE} fill_archive ARCHIVE_CMD='${TAR}' POST_CMD=''
+	(cd ..; gzip -f ${ARCHIVE}.tar)
+
+zip_archive:
+	${MAKE} fill_archive ARCHIVE_CMD='${ZIP}' POST_CMD='${ZIP_EXCLUDE}'
+
