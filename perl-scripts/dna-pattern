@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dna-pattern,v 1.35 2004/08/03 05:45:42 jvanheld Exp $
+# $Id: dna-pattern,v 1.36 2004/08/18 05:27:12 jvanheld Exp $
 #
 # Time-stamp: <2003-08-13 12:16:03 jvanheld>
 #
@@ -19,7 +19,7 @@ $start_date = &AlphaDate();
 $merge_matches = 0;
 $pattern_score = 1;
 $noid = 0;
-$no_limits = 0;
+$limits = 0;
 $strands_to_search = "DR";
 $in_format = "fasta";
 $match_format = "table";
@@ -156,7 +156,8 @@ while ((($current_seq, $sequence_id, @comments) = &ReadNextSequence($in, $in_for
 
 
     #### verbose
-    warn "; Scanning sequence\t$sequence_id\t$sequence_length\n" if ($verbose >= 2);
+    $s++;
+    warn join ("\t", "; Scanning sequence", $s, $sequence_id, $sequence_length), "\n" if ($verbose >= 2);
 
     if (($origin <  0) || ($origin eq "-0")) {
 	$orig_pos = $sequence_length + $origin + 1; 
@@ -165,7 +166,7 @@ while ((($current_seq, $sequence_id, @comments) = &ReadNextSequence($in, $in_for
     }
     
     ## Print sequence limits
-    &PrintSequenceLimits($sequence_id, $sequence_length, $orig_pos) unless ($no_limits);
+    &PrintSequenceLimits($sequence_id, $sequence_length, $orig_pos) if ($limits);
 
     if ($search_method eq "sliding window") {
 	&SlidingWindowSearch();
@@ -632,7 +633,7 @@ dna-pattern options
 -NR #		return matching sequences with # right flanking nucleotides
 -v		verbose
 -origin		origin (position 0)
--nolimit	do not print sequence start and end positions
+-limit 		return start and end positions for each input sequence
 EndShortHelp
     close HELP;
     exit(0);
@@ -660,8 +661,8 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] =~ /^-ori/) {
 	    $origin = $ARGV[$a+1];
 	    
-	} elsif ($ARGV[$a] =~ /^-nolimit/) {
-	    $no_limits = 1;
+	} elsif ($ARGV[$a] =~ /^-limit/) {
+	    $limits = 1;
 	    
 	} elsif (($ARGV[$a] eq "-subst") && (&IsNatural($ARGV[$a+1]))){
 	    $allowed_subst = $ARGV[$a+1];
@@ -731,7 +732,7 @@ sub ReadArguments {
 		 ($ARGV[$a] eq "-RD") ||
 		 ($ARGV[$a] eq "-CW") ||
 		 ($ARGV[$a] eq "-CW") ||
-		 ($ARGV[$a] =~ /2str/)
+		 ($ARGV[$a] =~ /-2str/)
 		 ) {
 	    $strands_to_search = "DR";
 	    
@@ -1236,8 +1237,8 @@ ARGUMENTS
                 origin. The matching positions are then negative values, 
                 providing the distance between the match and the end of the 
                 sequence.
-	-nolimit
-		do not print sequence start and end positions
+	-limit
+		return start and end positions for each input sequence
 	-window #	
 		Sliding window size. The score at each position is
 		calculated by summing the scores of all patterns
