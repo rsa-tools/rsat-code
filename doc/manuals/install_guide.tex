@@ -1,0 +1,114 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Installation guide for regulatory Sequence Analysis Tools
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\documentclass{article}
+%\documentstyle[makeidx]{book}
+\makeindex
+\include{rsat_latex_commands}
+
+\begin{document}
+
+\title{Regulatory Sequence Analysis Tools \\
+Installation guide}
+
+\author{
+	Jacques van Helden \\
+	\email{jvanheld@ucmb.ulb.ac.be} \\
+	\scmb 
+}
+
+
+%\address{\scmb}
+
+\maketitle
+
+%\newpage
+%\tableofcontents
+%\newpage
+
+\section{Description}
+
+This documents contain the installation guide for the package
+\textbf{Regulatory Sequence Analysis Tools (RSAT)}.
+
+In the current release, the version is limited to the perl scripts,
+and does not contain the web interface.
+
+
+\section{Installation}
+
+\begin{enumerate}
+
+\item Uncompress the archive containing the programs. 
+\begin{verbatim}
+tar -xpzf rsat_yyyymmdd.tgz
+\end{verbatim}
+
+where yyyymmdd stands for the version number (delivery date).
+
+\end{enumerate}
+
+\section{Adding rsa-tools to your path}
+
+\begin{enumerate}
+
+\item Create an environment variable named RSATOOLS and containing the
+path of rsa-tools. For example, assuming rsa-tools have been installed
+in the directory \texttt{/usr/local/rsa-tools}, and your shell is bash
+:
+
+\begin{verbatim}
+export RSATOOLS=/usr/local/rsa-tools
+\end{verbatim}
+
+\item add the path of rsa-tools/perl-scripts to your path.
+\begin{verbatim}
+export PATH=${PATH}:${RSATOOLS}/perl-scripts
+\end{verbatim}
+
+\end{enumerate}
+
+\section{Testing the installation}
+
+From now on, you should be able to use the perl scripts from the
+command line. To test this, run: 
+
+\begin{verbatim}
+random-seq -help
+\end{verbatim}
+
+This should display the on-line help for the random sequence
+generator. 
+
+\begin{verbatim}
+random-seq -l 200 -r 4 -a a:t 0.3 c:g 0.2
+\end{verbatim}
+
+Should generate a random sequence.
+
+We will now testif the genomes are correctly installed. You will
+obtain the list of supported organisms with the command:
+
+\begin{verbatim}
+retrieve-seq -help
+\end{verbatim}
+
+Select an organism (say \organism{Saccharomyces cerevisiae}), and
+retrieve all the start codons with the following options :
+
+\begin{verbatim}
+retrieve-seq -org Saccharomyces_cerevisiae \
+        -type upstream -from 0 -to +2 -all \
+        -format wc -nocomment 
+\end{verbatim}
+
+This should return a set of 3 bp sequences, mostly ATG (in the case of
+\organism{Saccharomyces cerevisiae} at least)
+
+\end{document}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
