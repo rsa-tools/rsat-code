@@ -4,13 +4,22 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 require "RSA.lib";
 
-###### initialize parameters ##########
-$start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+################################################################
+###### default values for parameters
 $class_interval = 20;
 $in_format = "fasta";
 $strands = "1str";
 $group_rc = 0;
 $XYgraph_command = "$SCRIPTS/XYgraph";
+
+$reference_pos = 0;
+
+#### initialize other variables
+$start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+$sequence_number = 0;
+$nb_possible_pos = 0;
+$sum_seq_length = 0;
+
 
 &ReadArguments();
 
@@ -35,20 +44,23 @@ if ((&IsNatural($min_pos)) && (&IsNatural($max_pos))) {
 }
 
 
-### open output file ###
+################################################################
+#### specific treatment for output file, because if graphs are
+#### requested, they must be saved in the same directory as the output
+#### file
+
 if ($outputfile) {
     $dir{output} =`dirname $outputfile`; 
     chomp $dir{output};
-    mkdir 0755, $dir{output}."/graphs";
-#    die join "\t", $outputfile, $dir{output}, "\n";
-#    `ls -lt $outputfile`;
-#    die;
 }
 if ($dir{output}) {
     unless (-d $dir{output}) {
 	warn "Creating directory $dir{output}\n";
     }
-    mkdir $dir{output}, 0775;
+    mkdir $dir{output}, 0755;
+    unless (-d $dir{output}) {
+	&FatalError("Cannot create output directory $dir{output}");
+    }
 } else {
     $dir{output} = ".";
 }
@@ -59,18 +71,11 @@ $out = &OpenOutputFile($outputfile);
 ($in, $input_dir) = &OpenInputFile($inputfile);
 
 
-
-#### initializations
-$sequence_number = 0;
-$nb_possible_pos = 0;
-$sum_seq_length = 0;
-
-
-
 #die "POUET\t$pattern_file\n" if ($pattern_file);
 &LocalReadPatterns() if ($pattern_file);
-&ReadSequence;
-&CalcClasses;
+&ReadSequence();
+
+&CalcClasses();
 
 
 ### statistics on oligo occurrences
@@ -79,17 +84,17 @@ foreach $oligo_seq (sort keys %occurrences) {
   $sum_overlaps += $overlaps{$oligo_seq};	
 }
 
-&SumStrands if ($strands eq "2str");
-
+&SumStrands() if ($strands eq "2str");
 
 #### if a pattern file has been specified, forget info about other patterns
 if ($pattern_file) {
-  foreach $oligo_seq (sort keys %occurrences) {
-    unless ($selected_pattern{$oligo_seq}) {
-      delete $occurrences{$oligo_seq};
+    foreach $oligo_seq (sort keys %occurrences) {
+	unless ($selected_pattern{$oligo_seq}) {
+	    delete $occurrences{$oligo_seq};
+	}
     }
-  }
 }
+
 
 #### check threshold on occurrences
 if (&IsNatural($low_thr{'occ'})) {
@@ -100,187 +105,68 @@ if (&IsNatural($low_thr{'occ'})) {
     }
 }
 
+
 &CalcExpected();
 
-&CalcChi();
+&CalcChi() if ($return{'chi'});
 
-### verbose ###
-if ($verbose >= 1) {
-  print $out ";position-analysis";
-  foreach $a (@ARGV) {
-    print $out " $a";
-  }
-  print $out "\n";
-  print $out ";Input parameters\n";
-  print $out ";\tInput file	$inputfile\n" if ($inputfile ne "");
-  print $out ";\tInput format	$in_format\n";
-  print $out ";\tOutput file	$outputfile\n" if ($outputfile ne "");
-  print $out ";\tOligonucleotide length	$oligo_length\n";
-  print $out ";\tchi threshold (lower)\t$low_thr{'chi'}\n" if (&IsReal($low_thr{'chi'}));
-  print $out ";\toccurrence threshold (lower)\t$low_thr{'occ'}\n" if (&IsNatural($low_thr{'occ'}));
-  if ($strands eq "2str") {
-    print $out ";\tCounted on both strands\n";
-    if ($group_rc) {
-      print $out ";\tgrouped by pairs of reverse complements\n";
-    }
-  } else {
-    print $out ";\tCounted on a single strand\n";
-  }
-  print $out ";\tthreshold on occurrence #	$occurrence_threshold\n" if ($occurrence_threshold > 0);
-  
-  print $out ";Sequence statistics:\n";
-  print $out ";\tNb of sequences		$sequence_number\n";
-  print $out ";\tSum of sequence lengthes\t$sum_seq_length\n";
-  print $out ";\tmax sequence length	$max_seq_length\n";
-  print $out ";\tavg sequence length	", $sum_seq_length/$sequence_number ,"\n" if ($sequence_number > 0);
-  print $out ";\tnb possible positions\t\t",$nb_possible_pos ,"\n";
-  unless ($sequence_number > 1000) {
-    print $out ";Sequences:\n";
-    foreach $s (1..$sequence_number) {
-      print $out ";\t$id_list[$s]\t$seq_length[$s]\n";
-    }
-  }
-
-  if ($#selected_patterns >=0) {
-      print $out join ("\n;\t", "; Selected patterns", @selected_patterns), "\n";
-  }
-  
-  print $out ";Class parameters:\n";
-  print $out ";\tmin position\t$min_pos\n" if (&IsNatural($min_pos));
-  print $out ";\tmax position\t$max_pos\n" if (&IsNatural($max_pos));
-  print $out ";\tclass interval	$class_interval\n";
-  print $out ";\tmin class\t$min_calc_class\n" if (&IsNatural($min_pos));
-  print $out ";\tmax class\t$max_calc_class\n" if (&IsNatural($max_pos));
-  print $out ";\ttotal positions\t$sum_pos_per_class\n";
-  print $out ";\tnumber of classes	$calc_class_nb\n";
-  print $out ";\tdegrees of freedom for chi2	", $calc_class_nb-1, "\n";
-  print $out ";\tSequences per class:\n";
-  print $out ";\t\tclass\t\[min\tmax\]\tseq\tpos\n";
-  for $class ($min_calc_class..$max_calc_class) {
-    print $out ";\t\t$class\t\[$class_min[$class]\t$class_max[$class]\]\t$seq_per_class[$class]\t$pos_per_class[$class]\n";
-  }
-  
-  print $out ";Oligonucleotide statistics:\n";	
-  print $out ";\ttotal oligo occurrences         $sum_occurrences\n";
-  if ($no_overlap) {
-    print $out ";\ttotal overlaps         $sum_overlaps\n";
-  }
-  print $out ";\tnb possible oligonucleotides\t$nb_possible_oligo\n";
-  print $out ";\n";
-}
+&Verbose() if ($verbose >= 1);
 
 
-### result ####
-### sort oligonucleotides in function of significance or alphabetically
-if ($sort_result) {
-  $date = `date '+%H:%M:%S'`;
-  chomp $date;
-  print ";$date\tsorting results ...\n" if ($hyperverbose);
-  if ($score_column > 0) {
-    @sorted_keys = sort { 
-      $sccore{$b} <=>  $score{$a}
-    } keys %occurrences;
-  } elsif ($return{'chi'}) {
-    @sorted_keys = sort { 
-      $chi_square{$b} <=>  $chi_square{$a}
-    } keys %occurrences;
-  } else {
-    @sorted_keys = sort { 
-      $in_bound_occurrences{$b} <=>  $in_bound_occurrences{$a}
-    } keys %occurrences;
-  }
-} else {
-  @sorted_keys = sort keys %occurrences;
-}
-
-### print header ###
-$date = `date '+%H:%M:%S'`;
-chomp $date;
-print ";$date\tprinting results ...\n" if ($hyperverbose);
-print $out ";seq";
-print $out "\tid";
-print $out "\tocc";
-print $out "\tover" if ($no_overlaps);
-print $out "\tchi2";
-if ($return{'distrib'}) {
-  for $class ($min_calc_class..$max_calc_class) {
-    print $out "\t\[$class_min[$class]-$class_max[$class]\]";
-    #		print $out " (exp)" if ($return{'exp'});
-  }
-}
-print $out "\n";
+&PrintResult();
 
 
-### print result ###
-foreach $oligo_seq (@sorted_keys) {
-  print $out "$oligo_seq";
-  print $out "\t$oligo_seq";
-  if ($group_rc) {
-    print $out "|", lc(ReverseComplement($oligo_seq));
-  }
-  
-  ### occurrences ###
-  print $out "\t$in_bound_occurrences{$oligo_seq}";
-  print $out "\t$overlaps{$oligo_seq}" if ($no_overlaps);
-  
-  ### chi-square value ###
-  print $out "\t$chi_square{$oligo_seq}";
-  
-  ### position distribution
-  if ($return{'distrib'}) {
-    for $class ($min_calc_class..$max_calc_class) {
-      print $out "\t$class_freq{$oligo_seq}[$class]";
-      #			printf $out " (%.1f)", $exp_occ{$oligo_seq}[$class] if ($return{'exp'});
-    }
-  }
-  
-  print $out "\n";
-  
-  if (($return{'exp'}) && ($return{'distrib'})) {
-    print $out "$oligo_seq";
-    print $out "\t$oligo_seq";
-    if ($group_rc) {
-      print $out "|", lc(ReverseComplement($oligo_seq));
-    }
-    print $out "\t$in_bound_occurrences{$oligo_seq}";
-    print $out "\t$overlaps{$oligo_seq}" if ($no_overlaps);
-    
-    print $out "\texpected";
-    
-    for $class ($min_calc_class..$max_calc_class) {
-      printf $out "\t%.1f", $exp_occ{$oligo_seq}[$class]; 
-    }       
-    print $out "\n";
-  }
-}
-
-
+################################################################
 ### generate XYgraphs
-
 if ($return{'graph'}) {
-    $dir{graphs} = $dir{output}."/graphs";
-    unless (-d $dir{graphs}) {
-	warn "Creating directory $dir{graphs}\n";
-	mkdir $dir{graphs}, 0775;
+
+    #### directory for storing the graphs
+    $rel_dir{graphs}="graphs";
+    if ($outputfile) {
+	$basename = `basename $outputfile`;
+	chomp $basename;
+	$rel_dir{graphs} = $basename."_".$rel_dir{graphs};
     }
+
+    $dir{graphs} = $dir{output}."/".$rel_dir{graphs};
+    mkdir $dir{graphs}, 0755 
+	|| &FatalError("Could not create directory $dir{graphs}");
+    unless (-d $dir{graphs}) {
+	warn "Creating directory $dir{graphs}\n" if ($verbose >= 1);
+	mkdir $dir{graphs}, 0755;
+	unless (-d $dir{graphs}) {
+	    &FatalError("Cannot create graph directory $dir{gtaph}");
+	}
+    }
+
+
     $date = `date +%H:%M:%S`;
     chomp $date;
     print ";$date\tgenerating the graphs ... \n" if ($hyperverbose);
-    $index_file = "$output_file_graph_index.html";
-    ### "$dir{output}/graph_index_${oligo_length}nt_ci${class_interval}.html";
+
+    #### index for the graphs
+    if ($output_file) {
+	$index_file = "${output_file}_graph_index.html";
+    } else {
+	$index_file = "$dir{output}/graph_index_${oligo_length}nt_ci${class_interval}_$strands.html";
+    }
     open INDEX, ">$index_file";
     print INDEX "<HTML><BODY><PRE>\n";
     close INDEX;
+
+    #### generate one graph for each oligo
     foreach $oligo_seq (@sorted_keys) {
-	$graph_file_name = "${oligo_seq}_ci${class_interval}_pos_distrib.gif";
+	$graph_file_name = "${oligo_seq}_ci${class_interval}_${strands}_pos_distrib.gif";
 	$xmax = ($max_class+1) * $class_interval;
 	$title2 = "$in_bound_occurrences{$oligo_seq} occurrences";
+	$title2 .= ", class interval=$class_interval";
 	if ($score_column > 0) {
 	    $score = sprintf "score = %.2f", $score{$oligo_seq};
 	} elsif ($return{'chi'}) {
 	    $score = sprintf "%.2f", $chi_square{$oligo_seq};
 	    $title2 .= ", score = $score";
 	} 
+	
 	$command = "$XYgraph_command -o $dir{graphs}/$graph_file_name";
 	$command .= " -lines -xcol 1 -ycol 2,3 -legend ";
 	$command .= " -title1 '$oligo_seq distribution profile' ";
@@ -298,7 +184,7 @@ if ($return{'graph'}) {
 	}
 	close XYgraph;
 	open INDEX, ">>$index_file";
-	print INDEX "<A HREF=\"graphs/$graph_file_name\">$oligo_seq</A>";
+	print INDEX "<A HREF=\"$rel_dir{graphs}/$graph_file_name\">$oligo_seq</A>";
 	print INDEX "\t$in_bound_occurrences{$oligo_seq}";
 	print INDEX "\t$score";
 	print INDEX "\n";
@@ -373,9 +259,9 @@ sub SumStrands {
 }
 
 
+################################################################
 #### read patterns from a file
 sub LocalReadPatterns {
-#    die "HELLO";
     $date = `date '+%H:%M:%S'`;
     chomp $date;
     print ";$date\treading pattern file ...\n" if ($hyperverbose);
@@ -395,7 +281,8 @@ sub LocalReadPatterns {
 }
 
 
-#### Read input and calculate oligo distribution ####
+################################################################
+#### Read input sequence and calculate oligo distributions 
 sub ReadSequence {
     if ($hyperverbose) {
 	$date = `date '+%H:%M:%S'`;
@@ -416,6 +303,8 @@ sub ReadSequence {
 	$seq_length[$sequence_number] = length($current_seq);
 	$last_pos = $seq_length[$sequence_number] - $oligo_length + 1;
 	$max_last_pos = &max($max_last_pos, $last_pos);
+
+	$reference_pos = 0;
 	if ($origin eq "-0") {
 	    $reference_pos = $seq_length[$sequence_number];
 	} elsif ($origin < 0) {
@@ -433,7 +322,9 @@ sub ReadSequence {
 	    $oligo_seq = lc(substr($current_seq,$current_pos-1,$oligo_length));
 	    $rc = lc(&ReverseComplement($oligo_seq));
 	    $current_pos++;
-	    print ";\t\t$current_pos\t$relative_pos\n" if (($hyperverbose) && ($current_pos%$class_interval == 1));
+	    warn ";\t\t$current_pos\t$relative_pos\n" 
+		if (($verbose >= 3)  &&
+		    ($current_pos%$class_interval == 1));
 	    if ((defined(%selected_pattern)) && 
 		!($selected_pattern{$oligo_seq}) && 
 		!($selected_pattern{$rc})) {
@@ -490,6 +381,8 @@ sub ReadSequence {
 }
 
 
+################################################################
+#### calculate class intervals
 sub CalcClasses {
   ### class definition
   $max_class = int(($max_last_pos-1)/$class_interval);
@@ -518,72 +411,85 @@ sub CalcClasses {
 
 
 
-
+################################################################
+#### calcualte expected frequencies per class interval
 sub CalcExpected {
-  ### calculate expected occurrences for each class
-  $date = `date '+%H:%M:%S'`;
-  chomp $date;
-  print ";$date\tcalculating expected occurrences ...\n" if ($hyperverbose);
-  foreach $oligo_seq (sort keys %occurrences) {
-    foreach $class ($min_calc_class..$max_calc_class) {
-      $in_bound_occurrences{$oligo_seq} += $class_freq{$oligo_seq}[$class];
-    }
-    foreach $class ($min_calc_class..$max_calc_class) {
-      ### check that the class_freq has been defined
-      unless (&IsNatural($class_freq{$oligo_seq}[$class])) {
-	$class_freq{$oligo_seq}[$class] = 0;
-      }
-      #		if ($seq_per_class[$class] > 0) {
-      #			$rel_freq{$oligo_seq}[$class] =  $class_freq{$oligo_seq}[$class]/$seq_per_class[$class];
-      #		} else {
-      #			$rel_freq{$oligo_seq}[$class] = 0;
-      #		}
-      $exp_occ{$oligo_seq}[$class] =  $in_bound_occurrences{$oligo_seq} * $pos_per_class[$class]/$sum_pos_per_class;
-      $max_freq = &max($max_freq,$class_freq{$oligo_seq}[$class],$exp_occ{$oligo_seq}[$class]);
-      $min_freq = &min($min_freq,$class_freq{$oligo_seq}[$class],$exp_occ{$oligo_seq}[$class]);
-    }
-  }
-}
-
-sub CalcChi {
-    ### calculate chi2 to compare the position distribution with a flat line
-    if ($return{'chi'}) {
-	$date = `date '+%H:%M:%S'`;
-	chomp $date;
-	print ";$date\tcalculating chi values ...\n" if ($hyperverbose);
-	foreach $oligo_seq (sort keys %occurrences) {
-	    @chi_values = ();
-	    foreach $class ($min_calc_class..$max_calc_class) {
-		push @chi_values, $class_freq{$oligo_seq}[$class];
+    ### calculate expected occurrences for each class
+    $date = `date '+%H:%M:%S'`;
+    chomp $date;
+    print ";$date\tcalculating expected occurrences ...\n" if ($hyperverbose);
+    foreach $oligo_seq (sort keys %occurrences) {
+	foreach $class ($min_calc_class..$max_calc_class) {
+	    $in_bound_occurrences{$oligo_seq} += $class_freq{$oligo_seq}[$class];
+	}
+	foreach $class ($min_calc_class..$max_calc_class) {
+	    ### check that the class_freq has been defined
+	    unless (&IsNatural($class_freq{$oligo_seq}[$class])) {
+		$class_freq{$oligo_seq}[$class] = 0;
 	    }
-	    foreach $class ($min_calc_class..$max_calc_class) {
-		push @chi_values, $exp_occ{$oligo_seq}[$class];
-	    }
-	    $chi_square{$oligo_seq} = &ChiSquare("goodfit", 2, $calc_class_nb, @chi_values);
-
-	    #### suppress the checking of applicability condition on the chi-square
-	    if ($no_check) {
-		$chi_square{$oligo_seq} =~ s/\(//;
-		$chi_square{$oligo_seq} =~ s/\)//;
-	    } else {
-		unless (&IsReal($chi_square{$oligo_seq})) {
-		    print $out "; WARNING: $oligo_seq $chi_square{$oligo_seq} discarded because does not fit conditions for the chi-square\n" 
-			if ($verbose >= 2);
-		    delete $occurrences{$oligo_seq};
-		    delete $chi_square{$oligo_seq};
-		}
-	    }
-
-	    #### check the threshold on chi-square
-	    if ((&IsReal($low_thr{'chi'})) && 
-		($chi_square{$oligo_seq} < $low_thr{'chi'})) {	
-		delete $occurrences{$oligo_seq};
-		delete $chi_square{$oligo_seq};
-	    }
+	    #		if ($seq_per_class[$class] > 0) {
+	    #			$rel_freq{$oligo_seq}[$class] =  $class_freq{$oligo_seq}[$class]/$seq_per_class[$class];
+	    #		} else {
+	    #			$rel_freq{$oligo_seq}[$class] = 0;
+	    #		}
+	    $exp_occ{$oligo_seq}[$class] =  $in_bound_occurrences{$oligo_seq} * $pos_per_class[$class]/$sum_pos_per_class;
+	    $max_freq = &max($max_freq,$class_freq{$oligo_seq}[$class],$exp_occ{$oligo_seq}[$class]);
+	    $min_freq = &min($min_freq,$class_freq{$oligo_seq}[$class],$exp_occ{$oligo_seq}[$class]);
 	}
     }
 }
 
+################################################################
+#### calculate chi square statistics to compare expected and observed
+#### frequencies
+sub CalcChi {
+
+    ### calculate chi2 to compare the position distribution with a flat line
+    $date = `date '+%H:%M:%S'`;
+    chomp $date;
+    print ";$date\tcalculating chi values ...\n" if ($hyperverbose);
+    foreach $oligo_seq (sort keys %occurrences) {
+
+	@chi_values = ();
+	foreach $class ($min_calc_class..$max_calc_class) {
+	    push @chi_values, $class_freq{$oligo_seq}[$class];
+	}
+	foreach $class ($min_calc_class..$max_calc_class) {
+	    push @chi_values, $exp_occ{$oligo_seq}[$class];
+	}
+	$chi_square{$oligo_seq} = &ChiSquare("goodfit", 2, $calc_class_nb, @chi_values);
+	
+
+	#### chek or not the applicability condition for the chi2
+	if ($no_check) {
+	    #### suppress parentheses in the output
+	    $chi_square{$oligo_seq} =~ s/\(//;
+	    $chi_square{$oligo_seq} =~ s/\)//;
+	} else {
+	    unless (&IsReal($chi_square{$oligo_seq})) {
+		print $out "; WARNING: $oligo_seq $chi_square{$oligo_seq} discarded because does not fit conditions for the chi-square\n" 
+		    if ($verbose >= 2);
+		delete $occurrences{$oligo_seq};
+		delete $chi_square{$oligo_seq};
+	    }
+	}
+	
+
+##	warn join ("\t", $oligo_seq, $occurrences{$oligo_seq}, ${chi_square{$oligo_seq}}, $low_th{'chi'}), "\n";	
+
+	
+	#### check the threshold on chi-square
+	if ((&IsReal($low_thr{'chi'})) && 
+	    ($chi_square{$oligo_seq} < $low_thr{'chi'})) {	
+	    delete $occurrences{$oligo_seq};
+	    delete $chi_square{$oligo_seq};
+	}
+    }
+
+}
+
+################################################################
+#### help message
 sub PrintHelp {
   open HELP, "| more";
   print HELP <<End_of_help; 
@@ -593,13 +499,11 @@ NAME
         1998 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
 	
 DESCRIPTION
-	Detection of oligonucleotides with a biased distribution in a sequence set. 
-	The program begins by detecting all positions where each possible 
-	oligonucleotide is found in the input sequence. 
-	Positions are then grouped into class frequencies, and the class frequencies are 
-	are compared to those expected under a flat distribution hypothesis, i.e. if
-	the frequency of each word was constant along the sequences. 
-		
+
+	Calculates the positional distribution of oligonucleotides in
+	a set of sequences, and detects those which significantly
+	discard from a homogeneous distribution.
+
 CATEGORY
 	sequences
 	pattern-discovery
@@ -685,12 +589,13 @@ OPTIONS
 		To calculate the positions relative to sequence end,
 		use the option:
 			     -origin -0
-
 End_of_help
   close HELP;
   exit(0);
 }
 
+################################################################
+#### short description of the options
 sub PrintOptions {
   open HELP, "| more";
   print HELP <<End_of_help; 
@@ -724,8 +629,9 @@ End_of_help
     exit(0);
 }
 
-sub ReadArguments {
+################################################################
 #### read arguments ####
+sub ReadArguments {
     foreach $a (0..$#ARGV) {
 	### verbose ###
 	if ($ARGV[$a] eq "-v") {
@@ -847,11 +753,164 @@ sub ReadArguments {
 	} elsif (($ARGV[$a] eq "-maxpos") && (&IsNatural($ARGV[$a+1]))) {
 	    $max_pos = $ARGV[$a+1];
 	    
-
-
 	}
+    }
+}
 
-
+################################################################
+### verbose
+sub Verbose {
+    print $out ";position-analysis";
+    foreach $a (@ARGV) {
+	print $out " $a";
+    }
+    print $out "\n";
+    print $out ";Input parameters\n";
+    print $out ";\tInput file	$inputfile\n" if ($inputfile ne "");
+    print $out ";\tInput format	$in_format\n";
+    print $out ";\tOutput file	$outputfile\n" if ($outputfile ne "");
+    print $out ";\tOligonucleotide length	$oligo_length\n";
+    print $out ";\tchi threshold (lower)\t$low_thr{'chi'}\n" if (&IsReal($low_thr{'chi'}));
+    print $out ";\toccurrence threshold (lower)\t$low_thr{'occ'}\n" if (&IsNatural($low_thr{'occ'}));
+    if ($strands eq "2str") {
+	print $out ";\tCounted on both strands\n";
+	if ($group_rc) {
+	    print $out ";\tgrouped by pairs of reverse complements\n";
+	}
+    } else {
+	print $out ";\tCounted on a single strand\n";
+    }
+    print $out ";\tthreshold on occurrence #	$occurrence_threshold\n" if ($occurrence_threshold > 0);
+	
+	print $out ";Sequence statistics:\n";
+    print $out ";\tNb of sequences		$sequence_number\n";
+    print $out ";\tSum of sequence lengthes\t$sum_seq_length\n";
+    print $out ";\tmax sequence length	$max_seq_length\n";
+    print $out ";\tavg sequence length	", $sum_seq_length/$sequence_number ,"\n" if ($sequence_number > 0);
+    print $out ";\tnb possible positions\t\t",$nb_possible_pos ,"\n";
+    unless ($sequence_number > 1000) {
+	print $out ";Sequences:\n";
+	print $out ";\t#\tlength\tID\n";
+	foreach $s (1..$sequence_number) {
+	    print $out ";\t$s\t$seq_length[$s]\t$id_list[$s]\n";
+	}
     }
 
+    if ($#selected_patterns >=0) {
+	print $out join ("\n;\t", "; Selected patterns", @selected_patterns), "\n";
+    }
+    
+    print $out ";Class parameters:\n";
+    print $out ";\tmin position\t$min_pos\n" if (&IsNatural($min_pos));
+    print $out ";\tmax position\t$max_pos\n" if (&IsNatural($max_pos));
+    print $out ";\tclass interval	$class_interval\n";
+    print $out ";\tmin class\t$min_calc_class\n" if (&IsNatural($min_pos));
+    print $out ";\tmax class\t$max_calc_class\n" if (&IsNatural($max_pos));
+    print $out ";\ttotal positions\t$sum_pos_per_class\n";
+    print $out ";\tnumber of classes	$calc_class_nb\n";
+    print $out ";\tdegrees of freedom for chi2	", $calc_class_nb-1, "\n";
+    print $out ";\tSequences per class:\n";
+    print $out ";\t\tclass\t\[min\tmax\]\tseq\tpos\n";
+    for $class ($min_calc_class..$max_calc_class) {
+	print $out ";\t\t$class\t\[$class_min[$class]\t$class_max[$class]\]\t$seq_per_class[$class]\t$pos_per_class[$class]\n";
+    }
+    
+    print $out ";Oligonucleotide statistics:\n";	
+    print $out ";\ttotal oligo occurrences         $sum_occurrences\n";
+    if ($no_overlap) {
+	print $out ";\ttotal overlaps         $sum_overlaps\n";
+    }
+    print $out ";\tnb possible oligonucleotides\t$nb_possible_oligo\n";
+    print $out ";\n";
+}
+
+
+################################################################
+### print the result file
+sub PrintResult {
+
+
+    #### sort oligonucleotides, either according to their significance
+    #### or alphabetically
+    if ($sort_result) {
+	$date = `date '+%H:%M:%S'`;
+	chomp $date;
+	print ";$date\tsorting results ...\n" if ($hyperverbose);
+	if ($score_column > 0) {
+	    @sorted_keys = sort { 
+		$sccore{$b} <=>  $score{$a}
+	    } keys %occurrences;
+	} elsif ($return{'chi'}) {
+	    @sorted_keys = sort { 
+		$chi_square{$b} <=>  $chi_square{$a}
+	    } keys %occurrences;
+	} else {
+	    @sorted_keys = sort { 
+		$in_bound_occurrences{$b} <=>  $in_bound_occurrences{$a}
+	    } keys %occurrences;
+	}
+    } else {
+	@sorted_keys = sort keys %occurrences;
+    }
+
+    ### header 
+    $date = `date '+%H:%M:%S'`;
+    chomp $date;
+    print ";$date\tprinting results ...\n" if ($hyperverbose);
+    print $out ";seq";
+    print $out "\tid";
+    print $out "\tocc";
+    print $out "\tover" if ($no_overlaps);
+    print $out "\tchi2";
+    if ($return{'distrib'}) {
+	for $class ($min_calc_class..$max_calc_class) {
+	    print $out "\t\[$class_min[$class]-$class_max[$class]\]";
+	    #		print $out " (exp)" if ($return{'exp'});
+	}
+    }
+    print $out "\n";
+
+
+    ### pattern distributions
+    foreach $oligo_seq (@sorted_keys) {
+	print $out "$oligo_seq";
+	print $out "\t$oligo_seq";
+	if ($group_rc) {
+	    print $out "|", lc(ReverseComplement($oligo_seq));
+	}
+	
+	### occurrences ###
+	print $out "\t$in_bound_occurrences{$oligo_seq}";
+	print $out "\t$overlaps{$oligo_seq}" if ($no_overlaps);
+	
+	### chi-square value ###
+	print $out "\t$chi_square{$oligo_seq}";
+	
+	### position distribution
+	if ($return{'distrib'}) {
+	    for $class ($min_calc_class..$max_calc_class) {
+		print $out "\t$class_freq{$oligo_seq}[$class]";
+		#			printf $out " (%.1f)", $exp_occ{$oligo_seq}[$class] if ($return{'exp'});
+	    }
+	}
+	
+	print $out "\n";
+	
+	if (($return{'exp'}) && ($return{'distrib'})) {
+	    print $out "$oligo_seq";
+	    print $out "\t$oligo_seq";
+	    if ($group_rc) {
+		print $out "|", lc(ReverseComplement($oligo_seq));
+	    }
+	    print $out "\t$in_bound_occurrences{$oligo_seq}";
+	    print $out "\t$overlaps{$oligo_seq}" if ($no_overlaps);
+	    
+	    print $out "\texpected";
+	    
+	    for $class ($min_calc_class..$max_calc_class) {
+		printf $out "\t%.1f", $exp_occ{$oligo_seq}[$class]; 
+	    }       
+	    print $out "\n";
+	}
+    }
 }
