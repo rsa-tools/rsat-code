@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: convert-seq,v 1.11 2002/06/06 10:13:25 jvanheld Exp $
+# $Id: convert-seq,v 1.12 2002/09/25 02:25:18 jvanheld Exp $
 #
-# Time-stamp: <2002-06-06 12:13:21 jvanheld>
+# Time-stamp: <2002-09-24 21:24:13 jvanheld>
 #
 ############################################################
 
@@ -115,7 +115,7 @@ while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_form
 	$current_id =~ s/\&/_/g;
 
 
-	$one_seq_file .= "$current_id.raw";
+	$one_seq_file = "$current_id.raw";
 	open RAW, "> ${output_dir}/$one_seq_file"
 	    || die "Error: cannot write file ${output_dir}/$one_seq_file\n";
 	&PrintNextSequence(RAW, "raw", 0, $current_seq, $current_id);
@@ -187,7 +187,7 @@ DESCRIPTION
 
 CATEGORY
 	util
-	sequence
+	sequences
 
 USAGE
         consert-seq [-i inputfile] [-o outputfile] [-v] 
