@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.43 2004/01/22 22:21:13 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.44 2004/01/23 00:10:52 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -26,6 +26,7 @@ require "$RSA/perl-scripts/lib/RSA.classes";
 $die_on_error = 1;
 %dir = ();
 $dir{main} = `pwd`;
+$dir{calib} = "calibrations2"; 
 chomp($dir{main});
 
 @supported_tasks = qw (upstream purge calibrate oligos maps dyads merge slide synthesis sql clean all);
@@ -162,7 +163,7 @@ sub SetFileNames {
     $dyad_options .= " -sort ";
     $dyad_options .= " ${strands} ";
     $dyad_options .= " -type $dyad_type ";
-    $dyad_options .= " -noov " if ($noov);
+    $dyad_options .= " ${noov}" ;
     $dyad_options .= " -l $monad_length ";
     $dyad_options .= " -thosig $th ";
     $dyad_options .= " -sp $sp ";
@@ -178,11 +179,7 @@ sub SetFileNames {
     $dyad_suffix .= "$strands";
     $dyad_suffix .= "_${dyad_type}";
     $dyad_suffix .= "_sig${th}";
-    if ($noov) {
-	$dyad_suffix .= "_noov";
-    } else {
-	$dyad_suffix .= "_ov";
-    }
+    $dyad_suffix .= "${noov}";
 
     #### expected frequency model
     if ($markov) {
@@ -202,7 +199,6 @@ sub SetFileNames {
 
     #### suffix for the oligo-analysis file
     $noorf_string = "_noorf" if ($noorf);
-    $noov_string = "_noov" if ($noov);
     $oligo_suffix = "_oligos";
     if ($markov) {
 	$oligo_suffix .= "_mkv${markov_order}";
@@ -261,7 +257,7 @@ sub SetFileNames {
 	$table_suffix .= "_".$to     if (defined($to));
 	$table_suffix .= $noorf_string;
     }
-    $table_suffix .= $noov_string;
+    $table_suffix .= $noov;
     $table_suffix .= "_".$strands;
     $table_suffix = `basename $table_suffix`;
     chomp $table_suffix;
@@ -314,27 +310,33 @@ sub OligoAnalysis {
     
     for $oligo_len ($min_oligo_len..$max_oligo_len) {
 	$oligo_options = "-v ";
-	$oligo_options .= "-pseudo $pseudo " if ($pseudo);
-	$oligo_options .= "-sort ";
-	$oligo_options .= "${strands} ";
-	$oligo_options .= "-l $oligo_len ";
-	$oligo_options .= "-thosig $th ";
+	$oligo_options .= " -pseudo ".$pseudo if ($pseudo);
+	$oligo_options .= " -sort ";
+	$oligo_options .= " ".$strands;
+	$oligo_options .= " -l ".$oligo_len;
+	$oligo_options .= " -thosig ".$th;
 	if ($markov) {
-	    $oligo_options .= "-markov $markov_order ";
+	    $oligo_options .= " -markov ".$markov_order;
 	} elsif ($exp_freq_file{oligos}) {
-	    $oligo_options .= "-expfreq $exp_freq_file{oligos} ";
+	    $oligo_options .= " -expfreq ".$exp_freq_file{oligos};
+	} elsif ($background eq "calib") {
+	    my $calib_length = $family{$family_name}->{calib_length};
+	    my $calib_file = &CalibrationPrefix($calib_length, $oligo_len);
+	    $calib_file .= "_negbin.tab";
+	    $oligo_options .= " -calib1 ".$calib_file;
+#	    die join ("\t", "; Oligonucleotide calibration", $calib_length, $calib_file), "\n";
 	} else {
-	    $oligo_options .= "-org $organism_name ";
-	    $oligo_options .= "-bg $background ";
+	    $oligo_options .= " -org ".$organism_name;
+	    $oligo_options .= " -bg ".$background;
 	}
-	$oligo_options .= "-return occ,proba,mseq,rank ";
-	$oligo_options .= "-noov " if ($noov);
+	$oligo_options .= " -return occ,proba,mseq,rank";
+	$oligo_options .= " ".${noov};
 	
 	$oligo_suffix = "_oligos";
 	$oligo_suffix .= "_${oligo_len}nt";
-	$oligo_suffix .= "$strands";
+	$oligo_suffix .= $strands;
 	$oligo_suffix .= "_sig${th}";
-	$oligo_suffix .= "_noov" if ($noov);
+	$oligo_suffix .= $noov;
 	
 	$oligo_file = "$family_name/oligos_${family_name}/".$family{$family_name}->{file_prefix}.$oligo_suffix;    
 	$command = "oligo-analysis -i $family{$family_name}->{seq_file_purged} -format $seq_format -o $oligo_file $oligo_options";
@@ -974,7 +976,10 @@ sub AnalyzeFamilies {
     my $fam_nb = $#families+1;
 
     ### Calibrate oligonucleotides for each sequence length
-    &CalibrateOligos() if ($task{calibrate});
+    if ($task{calibrate} || ($background eq "calib")) {
+	my @calib_lengths = &CalcCalibrationLengths();
+	&CalibrateOligos(@calib_lengths) if ($task{calibrate});
+    }
 
     foreach $family_name (@families) {
 	$fam_count++;
@@ -1498,7 +1503,11 @@ sub Verbose {
     }
 
     $verbose_message .= "; No overlap with upstream ORFs\n" if ($noorf);
-    $verbose_message .= "; Overlapping matches are discarded for self-overlapping patterns\n" if ($noov);
+    if ($noov eq "-noov") {
+	$verbose_message .= "; Overlapping matches are discarded for self-overlapping patterns\n" ;
+    } else {
+	$verbose_message .= "; Overlapping matches are allowed for self-overlapping patterns\n" ;
+    }
     warn $verbose_message;
     return($verbose_message);
 }
@@ -1771,18 +1780,13 @@ sub ReadSequenceList {
 
 
 ################################################################
-## Calibrate oligonucleotide occurrences (mean and variance) for each
-## sequence length
-sub CalibrateOligos {
-    warn ";\n; Calibrating oligonucleotide occurrences\n" if ($verbose >=1);
-
-
-    ## Index one sequence length per family
-    %calib_lengths = ();
+## Index one sequence length per family
+sub CalcCalibrationLengths {
+    my %calib_lengths = ();
     warn ";\n; Calculating sequence lengths\n" if ($verbose >=1);
     foreach $family_name (@families) {
 	$fam_count++;
-
+	
 	## Calculate sequence lengths
 	warn join("\t", ";\tSequence lengths", 
 		  $family_name, 
@@ -1809,49 +1813,64 @@ sub CalibrateOligos {
 	}
 	close $in;
 	warn ";\tcalibration length for family ", $family_name, "\t", $calib_lengths{$family_name}, "\n" if ($main::verbose >= 1);
-    }    
+    }  
     my @calib_lengths = keys %calib_lengths;
     warn "; Calibration lengths\n;\t", join( "\n;\t", @calib_lengths), "\n";
+    return @calib_lengths;
+}
+
+################################################################
+## Calibrate oligonucleotide occurrences (mean and variance) for each
+## sequence length
+sub CalibrateOligos {
+    my @calib_lengths = @_;
+    warn ";\n; Calibrating oligonucleotide occurrences\n" if ($verbose >=1);
 
     ### Analyse upstream occurrence distributions for each sequence length
-    $dir{calib} = "calibrations"; 
     &CheckOutDir($dir{calib});
     warn "; Calculating oligonucleotide distributions in all upstream sequences\n" if ($verbose >= 1);
-    foreach my $len (@calib_lengths) {
+    foreach my $calib_length (@calib_lengths) {
 	## retrieve all upstream sequence
 	my $allup = $dir{calib}."/tmp_all_up_${len}.fasta";
-	warn ";\tRetrieving all upstream sequences\t", $allup, "\n" if ($main::verbose >= 0);
-	my $command = "retrieve-seq -org $organism_name -all -from -$len -to -1 -o $allup";
-	&doit($command, $dry_run, $die_on_error);
+	my $command = "retrieve-seq -org $organism_name -all -from -$calib_length -to -1 -o $allup";
+#	warn ";\tRetrieving all upstream sequences\t", $allup, "\n" if ($main::verbose >= 0);
+#	&doit($command, $dry_run, $die_on_error);
 
-	## Calculate occurrence distributions
 	for my $oligo_len ($min_oligo_len..$max_oligo_len) {
-	    $noov_string = "-noov" if ($noov);
-	    $distrib_file = $dir{calib}."/";
-	    $distrib_file .= "${oligo_len}nt";
-	    $distrib_file .= "_upstream_L".$len;
-	    $distrib_file .= "_${organism_name}";
-	    if ($noov) {
-		$distrib_file .= "-noov";
-	    } else {
-		$distrib_file .= "-ovlp";
-	    }
-	    $distrib_file .= "${strands}";
-	    $distrib_file .= "_distrib.tab";
+
+	    my $calib_prefix = &CalibrationPrefix($calib_length, $oligo_len);
+
+	    ## Calculate occurrence distributions
+	    my $distrib_file = $calib_prefix."_distrib.tab";
 	    $command = "oligo-analysis -v 1 -l $oligo_len $noov $strands  -i $allup -return occ -distrib -o $distrib_file";
-	    warn ";\tAnalysing ",$oligo_len,"nt distributions\t",$distrib_file, "\n" if ($main::verbose >= 0);
-	    &doit($command, $dry_run, 0);
+#	    warn ";\tAnalysing ",$oligo_len,"nt distributions\t",$distrib_file, "\n" if ($main::verbose >= 0);
+#	    &doit($command, $dry_run, 0);
+	    
+	    ## Calculate stats and fit negbin on the distributions
+	    my $fitting_file = $calib_prefix."_negbin.tab";
+	    $command = "fit-distribution -v 1 -i $distrib_file -distrib negbin -o $fitting_file";
+	    &doit($command, $dry_run, $die_on_error);
 	}
 
 	## Delete the file with all upstream sequences
-	warn ":\tCleaning all upstream sequences\t", $allup, "\n" if ($main::verbose >= 0);
 	$command = "rm -f $allup";
-	&doit($command, $dry_run, 0);
+#	warn ":\tCleaning all upstream sequences\t", $allup, "\n" if ($main::verbose >= 0);
+#	&doit($command, $dry_run, 0);
     }
 
 }
 
-
-
+## ##############################################################
+## Calculate the prefix of the calibration file
+sub CalibrationPrefix {
+    my ($calib_length, $oligo_len) = @_;
+    my $calib_prefix = $dir{calib}."/";
+    $calib_prefix .= $oligo_len."nt";
+    $calib_prefix .= "_upstream_L".$calib_length;
+    $calib_prefix .= "_".$organism_name;
+    $calib_prefix .= $noov;
+    $calib_prefix .= $strands;
+    return $calib_prefix;
+}
 
 
