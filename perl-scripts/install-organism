@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.12 2002/03/29 11:27:51 jvanheld Exp $
+# $Id: install-organism,v 1.13 2002/04/12 11:05:10 jvanheld Exp $
 #
-# Time-stamp: <2002-03-29 12:26:42 jvanheld>
+# Time-stamp: <2002-04-12 12:58:38 jvanheld>
 #
 ############################################################
 
@@ -14,6 +14,7 @@ require "RSA.lib";
 
 
 #### initialisation
+$purged_frequencies = 0; #### temporarily inactivte because for human genome it suppresses almost all sequences !!!!
 $supported_for_installation{"fasta"} = 1;
 $supported_for_installation{"raw"} = 1;
 %supported_steps = (genome=>1,
@@ -298,37 +299,43 @@ sub AllUpstream {
     chdir "../";
 }
 
-### extract the non-redudant set of all non-coding sequences
+################################################################
+### extract the non-redudant set of intergenic and coding sequences
 sub NonCodingSegments {
     chdir $genome_dir;
     $command = "coding-or-not ";
     $command .= "-v " if ($verbose);
-    $command .= "-org $organism_short_name -return ncs,seq \n\n";
+    $command .= "-org $organism_short_name -return ncs,seq,cs \n\n";
     &doit;
 
-    my $seq_file = "${genome_dir}/${organism_short_name}_non_coding_segments.wc";
-    my $purged_seq_file = "${genome_dir}/${organism_short_name}_non_coding_segments_purged.fasta";
-
-    #### histogram of intergenic segment lengths
-    $command = "sequence-lengths -i $seq_file";
-    $command .= " -format wc | cut -f 2 | classfreq -ci 100 -v -from 0 -to 2000";
-    $command .= " | XYgraph -xcol 3 -ycol 7,8,9 -lines -xmin 0 -xmax 2000";
-    $command .= " -ymin 0 -ymax 1  -xsize 600 -ysize 400 -legend";
-    $command .= " -xgstep1 100 -xgstep2 250 -ygstep1 0.1";
-    $command .= " -xleg1 'sequence length (bp)'";
-    $command .= " -yleg1 'frequency'";
-    $command .= " -title1 '$organism_full_name'";
-    $command .= " -title2 'length distribution of intergenic segments'";
-    $command .= " -o  ${organism_short_name}_non_coding_segments_lengths.gif";
-    &doit;
-
-    #### purge non-coding segments
-    $command = "purge-sequence -i $seq_file -format wc -ml 300 -mis 9 -2str -o $purged_seq_file";
-    &doit;
-
-    #### compress intergenic sequence file
-    $command = "gzip -f $seq_file $purged_seq_file";
-    &doit;
+    foreach my $type ('coding', 'non_coding') {
+	
+	my $seq_file = "${genome_dir}/${organism_short_name}_${type}_segments.wc";
+	my $purged_seq_file = "${genome_dir}/${organism_short_name}_${type}_segments_purged.fasta";
+	
+	#### histogram of intergenic segment lengths
+	$command = "sequence-lengths -i $seq_file";
+	$command .= " -format wc | cut -f 2 | classfreq -ci 100 -v -from 0 -to 2000";
+	$command .= " | XYgraph -xcol 3 -ycol 7,8,9 -lines -xmin 0 -xmax 2000";
+	$command .= " -ymin 0 -ymax 1  -xsize 600 -ysize 400 -legend";
+	$command .= " -xgstep1 100 -xgstep2 250 -ygstep1 0.1";
+	$command .= " -xleg1 'sequence length (bp)'";
+	$command .= " -yleg1 'frequency'";
+	$command .= " -title1 '$organism_full_name'";
+	$command .= " -title2 'length distribution of intergenic segments'";
+	$command .= " -o  ${organism_short_name}_${type}_segments_lengths.gif";
+	&doit;
+	
+	#### purge sequences
+	if ($purged_frequencies) {
+	    $command = "purge-sequence -i $seq_file -format wc -ml 300 -mis 9 -2str -o $purged_seq_file";
+	    &doit;
+	    #### compress intergenic sequence file
+	    $command = "gzip -f $seq_file $purged_seq_file";
+	    &doit;
+	}
+	
+    }
 
     chdir "../";
 }
@@ -337,11 +344,18 @@ sub NonCodingSegments {
 ### calculate oligo and dyad frequencies in intergenic and genomic
 ### sequences
 sub CalcFrequencies { 
-    my $purged_frequencies = 0; #### temporarily inactivte because for human genome it suppresses almost all sequences !!!!
     my ($seq_file, $seq_format, $seq_type) = ();
 
     chdir $oligo_dir;
 
+    ################################################################
+    # calculate oligo-frequencies in full genome
+    $seq_type = "genomic";
+    $seq_format = $supported_organism{$organism_short_name}->{'seq_format'};
+    $seq_file = $supported_organism{$organism_short_name}->{'genome'};
+    &CalcOligoFreq($seq_file, $seq_format, $seq_type) if ($install_steps{oligos});
+    &CalcDyadFreq($seq_file, $seq_format, $seq_type) if ($install_steps{dyads});
+     
     ################################################################
     # calculate oligont frequencies in all intergenic sequences
     $seq_type = "non-coding";
@@ -356,13 +370,18 @@ sub CalcFrequencies {
     &CalcDyadFreq($genome_dir."/".$seq_file, $seq_format, $seq_type) if ($install_steps{dyads});
 
     ################################################################
-    # calculate oligo-frequencies in full genome
-    $seq_type = "genomic";
-    $seq_format = $supported_organism{$organism_short_name}->{'seq_format'};
-    $seq_file = $supported_organism{$organism_short_name}->{'genome'};
-    &CalcOligoFreq($seq_file, $seq_format, $seq_type) if ($install_steps{oligos});
-    &CalcDyadFreq($seq_file, $seq_format, $seq_type) if ($install_steps{dyads});
-     
+    # calculate oligont frequencies in all intergenic sequences
+    $seq_type = "coding";
+    if ($purged_frequencies) {
+	$seq_file = "${organism_short_name}_coding_segments_purged.fasta";
+	$seq_format = "fasta";
+    } else {
+	$seq_file = "${organism_short_name}_coding_segments.wc";
+	$seq_format = "wc";
+    }
+    &CalcOligoFreq($genome_dir."/".$seq_file, $seq_format, $seq_type) if ($install_steps{oligos});
+    &CalcDyadFreq($genome_dir."/".$seq_file, $seq_format, $seq_type) if ($install_steps{dyads});
+
     chdir '../';
 }
 
