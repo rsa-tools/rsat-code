@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_pathway_skeletons.pl,v 1.4 2002/05/28 09:17:59 jvanheld Exp $
+# $Id: parse_pathway_skeletons.pl,v 1.5 2002/05/28 14:24:55 jvanheld Exp $
 #
-# Time-stamp: <2002-05-28 11:17:01 jvanheld>
+# Time-stamp: <2002-05-28 16:10:58 jvanheld>
 #
 ############################################################
 
@@ -39,15 +39,7 @@ package main;
     $files_to_parse =~ s/$dir{skeletons}//g;
     @files_to_parse = split " ", $files_to_parse;
 
-    &CheckOutputDir();
-#      $dir{output} = "$parsed_data/pathway_skeletons/$delivery_date";
-#      unless (-d $dir{output}) {
-#  	warn "Creating output dir $dir{output}\n"  if ($verbose >=1);
-#  	`mkdir -p $dir{output}`;
-#  	die "Error: cannot create output directory $dir{output}\n"
-#  	    	unless (-d $dir{output});
-#      }
-#      chdir $dir{output};
+    $dir{output} = "$parsed_data/pathway_skeletons/$delivery_date";
 
     $dir{seed_files} = "$dir{output}/amaze_pathway_seeds";
 #    $dir{seed_files} = "/win/amaze/amaze_programs/amaze_graph_analysis/amaze_pathway_seeds";
@@ -70,12 +62,8 @@ package main;
 
     &ReadArguments;
 
-    if ($clean) {
-	warn "Cleaning output directory $dir{output}\n" if ($verbose >=1);
-	system "\\rm -f $dir{output}/*.tab.gz $dir{output}/*.txt.gz $dir{output}/*.obj.gz" ;
-	system "\\rm -rf $dir{output}/mirror";
-    }
-
+    #### output directories
+    &CheckOutputDir();
     if ($mirror) {
 	$dir{mirror} = $dir{output}."/mirror";
 	unless (-d $dir{mirror}) {
@@ -85,10 +73,10 @@ package main;
 	}
     }
 
-
+    #### error stream
     open ERR, ">$out_file{errors}" || die "Error: cannot write error report fle $$out_file{errors}\n";
     
-
+    #### test 
     if ($test) {
 #	@files_to_parse = qw ( Saccharomyces_cerevisiae/Isoleucine_and_valine_biosynth.txt );
 	@files_to_parse = qw ( Escherichia_coli/TCA_glyoxylate_bypass.txt );
@@ -105,9 +93,15 @@ package main;
 				 names
 				 nodes
 				 arcs
+				     
+				 reactions
+				 ECs
+				 genes
+				 substrates
+				 products
 				 );
-
-
+    
+    
     if ($debug) {
 	push @process_out_fields, qw(
 				     complete
@@ -120,17 +114,16 @@ package main;
 				     unidentified_compounds
 				     missing_direction
 				     parsed_file				 
-
-				     
-				     reactions
-				     ECs
-				     genes
-				     substrates
-				     products
 				     );
     }
     $processes->set_out_fields(@process_out_fields);
+    $processes->set_attribute_header("nodes", join ("\t", "nodes","step"));
+    $processes->set_attribute_header("ECs", join ("\t", "ec","step"));
+    $processes->set_attribute_header("genes", join ("\t", "genes","step"));
+    $processes->set_attribute_header("products", join ("\t", "products","step"));
+    $processes->set_attribute_header("substrates", join ("\t", "substrates","step"));
     $processes->set_attribute_header("arcs", join ("\t", "source", "target") );
+    $processes->set_attribute_header("reactions", join ("\t", "reactions","step"));
     
     $leaves->set_out_fields(qw( 
 				id
@@ -151,8 +144,12 @@ package main;
     
     $processes->dump_tables();
     $leaves->dump_tables();
-    $processes->generate_sql();
-    $leaves->generate_sql();
+    foreach $class_holder ($processes, $leaves) {
+	$class_holder->generate_sql(schema=>"jvanheld", 
+				    grant=>"p3", 
+				    dir=>"$dir{output}/sql_scripts", 
+				    prefix=>"skel_");
+    }
     &ExportClasses($out_file{process_skeleton}, $out_format, @classes) if ($export{obj});
     &PrintStats($out_file{stats}, @classes);
 
@@ -508,7 +505,8 @@ sub ReadProcesses {
 	    my $ec = &trim($fields[$col{ec}]);
 	    if ($ec) {
 		if ($ec =~ /^[\d\-\.]+$/) {
-		    $process->new_attribute_value("ECs", $ec); #if ($debug);
+#		    $process->new_attribute_value("ECs", $ec); #if ($debug);
+		    $process->push_expanded_attribute("ECs", $ec, $step); #if ($debug);
 		} else {
 		    &ErrorMessage(join ("\t", 
 					$file, 
@@ -527,7 +525,7 @@ sub ReadProcesses {
 	    if ($gene_string) {
 		my @genes = split '\|', $gene_string;
 		foreach $gene (@genes) {
-		    $process->new_attribute_value("genes", $gene);
+		    $process->push_expanded_attribute("genes", $gene, $step);
 		}
 	    }
 	    
@@ -541,11 +539,13 @@ sub ReadProcesses {
 		    &ErrorMessage(join ("\t", $file, $l, "empty_substrate", $substrate_string), "\n");
 		} elsif ($index{name_compound}->contains($substrate_name)) {
 		    push @substrates, $index{name_compound}->get_first_value($substrate_name);
-		    $process->new_attribute_value("substrates", $substrate_name); #if ($debug);
+#		    $process->new_attribute_value("substrates", $substrate_name); #if ($debug);
+		    $process->push_expanded_attribute("substrates", $substrate_name, $step); #if ($debug);
 		} elsif ($index{wrong_kegg}->contains($substrate_name)) {
 		    my $substrate_name = $index{wrong_kegg}->get_first_value($substrate_name);
 		    push @substrates, $index{name_compound}->get_first_value($substrate_name);
-		    $process->new_attribute_value("substrates", $substrate_name); #if ($debug);
+#		    $process->new_attribute_value("substrates", $substrate_name); #if ($debug);
+		    $process->push_expanded_attribute("substrates", $substrate_name, $step); #if ($debug);
 		} else {
 		    $process->force_attribute("unidentified_compounds", 
 					    $process->get_attribute("unidentified_compounds") + 1) ; #if ($debug);
@@ -567,11 +567,13 @@ sub ReadProcesses {
 		    &ErrorMessage(join ("\t", $file, $l, "empty_product", $product_string), "\n");
 		} elsif ($index{name_compound}->contains($product_name)) {
 		    push @products, $index{name_compound}->get_first_value($product_name);
-		    $process->new_attribute_value("products", $product_name); #if ($debug);
+#		    $process->new_attribute_value("products", $product_name); #if ($debug);
+		    $process->push_expanded_attribute("products", $product_name, $step); #if ($debug);
 		} elsif ($index{wrong_kegg}->contains($product_name)) {
 		    my $product_name = $index{wrong_kegg}->get_first_value($product_name);
 		    push @products, $index{name_compound}->get_first_value($product_name);
-		    $process->new_attribute_value("products", $product_name); #if ($debug);
+#		    $process->new_attribute_value("products", $product_name); #if ($debug);
+		    $process->push_expanded_attribute("products", $product_name, $step); #if ($debug);
 		} else {
 		    $process->force_attribute("unidentified_compounds", 
 					    $process->get_attribute("unidentified_compounds") + 1) ; #if ($debug);
@@ -881,8 +883,10 @@ sub ReadProcesses {
 		    $leaf->set_attribute("interaction", $kegg_id);
 		    $leaf->set_attribute("is_direct", $is_direct{$reaction});
 		    $leaf->set_attribute("step", $step);
-		    $process->new_attribute_value("nodes",$leaf->get_id());
-		    $process->new_attribute_value("reactions", $reaction); #if ($debug);
+#		    $process->new_attribute_value("nodes",$leaf->get_id());
+		    $process->push_expanded_attribute("nodes",$leaf->get_id(), $step);
+#		    $process->new_attribute_value("reactions", $reaction); #if ($debug);
+		    $process->push_expanded_attribute("reactions", $reaction, $step); #if ($debug);
 		    warn ("OK", 
 			  "\t",$reaction, 
 			  "\t", $index{reaction_equation}->get_values($reaction), 
