@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.14 2002/03/18 13:05:11 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.15 2002/04/27 11:34:11 jvanheld Exp $
 #
-# Time-stamp: <2002-03-18 14:04:27 jvanheld>
+# Time-stamp: <2002-04-27 13:29:50 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -38,7 +38,7 @@ $max_oligo_length = 6;
 $min_matching_score = 4;
 $dyad_element_length = 3;
 $noov = 1;
-$max_sp = 16;
+$max_sp = 20;
 $start_date = `date`;
 
 &ReadArguments();
@@ -172,6 +172,8 @@ sub SetFileNames {
   }  
 
   $table_suffix = $family_file."_up_".$from."_".$to.$noorf_string.$noov_string;
+  $table_suffix = `basename $table_suffix`;
+  chomp $table_suffix;
 }
 
 ################### SUBROUTINE DEFINITION ###################"
@@ -211,6 +213,7 @@ sub OligoAnalysis {
   
   for $oligo_length ($min_oligo_length..$max_oligo_length) {
     $oligo_options = "-v ";
+    $oligo_options .= "-pseudo $pseudo " if ($pseudo);
     $oligo_options .= "-sort ";
     $oligo_options .= "-${strands} ";
     $oligo_options .= "-l $oligo_length ";
@@ -326,11 +329,15 @@ sub ReadSiteLibrary {
   
 ### build a synthetic table ###
 sub SyntheticTable {
-  print "; Generating synthetic table\n" if ($verbose);
   $dir = "synthetic_tables";
+  
+  $table_file = $dir."/".$table_suffix;
+  $table_file .= "_tr" if ($transpose);
+
+  print "; Generating synthetic table $table_file\n" if ($verbose);
   unless (-d $dir) {
     mkdir $dir, 0755 || die "Error: cannot create directory $dir\n";
-  }  
+  }
   
   ### synthesize the results of all families into a single file
   
@@ -357,11 +364,13 @@ sub SyntheticTable {
     }
     
     ### family name
-    $table[$row{family}][$col] = "<B>$family_name</B>";
+    $table[$row{family}][$col] = "<B><a href='../$family_name'>$family_name</a></B>";
 
     ### list of genes
-    $table[$row{genes}][$col] = join " ", @{$family{$family_name}->{members}};
-    
+    $table[$row{genes}][$col] = "<a href='../".$family{$family_name}->{family_file}."'>";
+    $table[$row{genes}][$col] .= join " ", @{$family{$family_name}->{members}};
+    $table[$row{genes}][$col] .= "</a>";
+
     ### known patterns
     if ($known_sites_provided) {
 	$table[$row{known}][$col] = "";
@@ -538,9 +547,8 @@ sub SyntheticTable {
     close DYADS;
   }
   
-  $table_file = "synthetic_tables/".$table_suffix;
-  $table_file .= "_tr" if ($transpose);
-  open TABLE, "> ${table_file}.html";
+  open TABLE, "> ${table_file}.html" 
+    || die "Error: cannot write file $table_file\n";
   print TABLE "<HTML><BODY>\n";
   print TABLE "<H1>$table_file</H1>\n";
     
@@ -731,6 +739,7 @@ OPTIONS
 		name of a file containing the expected frequencies for
 		oligo-analysis.
 	-noorf	exclude upstream ORFs from upstream sequences
+	-pseudo	pseudo-weight (see oligo-analysis manual)
 
 FILE FORMAT
     FAMILY FILE
@@ -803,6 +812,7 @@ multiple-family-analysis options
 -dyad_exp_freq	expected frequencies for dyad-analysis
 -oligo_exp_freq	expected frequencies for oligo-analysis
 -noorf		exclude upstream ORFs from upstream sequences
+-pseudo		pseudo-weight (see oligo-analysis manual)
 End_short_help
   close HELP;
   exit;
@@ -890,6 +900,11 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] =~ /^-exp/) {
 	    $force{exp} = $ARGV[$a+1];
 
+	} elsif ($ARGV[$a] =~ /^-pseudo/) {
+	    $pseudo = $ARGV[$a+1];
+	    unless ((&IsReal($pseudo)) && ($pseudo > 0)) {
+		&FatalError("pseudo-weight must be a positive real number");
+	    }
 	}
     }
 }
@@ -930,7 +945,8 @@ sub ReadFamilies {
     @fields = split /\s+/;
 
     ### family name
-    $family_name = uc($fields[1]);
+#    $family_name = uc($fields[1]);
+    $family_name = $fields[1];
     unless ($family_name =~ /\S/) {
       warn ("Error family file $family_file line $line\t",
 	    "family not specified\n");
