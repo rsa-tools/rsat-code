@@ -63,14 +63,27 @@ $TMP = "$RSA/public_html/tmp";
 $LOGS = "$RSA/logs";
 $SCRIPTS = "$RSA/perl-scripts";
 
-if ($config_site eq "rubens") {
-    @remote_servers = qw ( bouts delvaux jordaens khnopff magritte paulus tytgat );
-    srand(time);
-    $s = int (rand $#remote_servers);
-    $remote_server = @remote_servers[$s];
-    $RSH = "rsh -l jvanheld ${remote_server}.ulb.ac.be";
-    $SCRIPTS = "$RSH ~jvanheld/rsa-tools/perl-scripts";
-    $BIN = "$REMOTE_SERVER ~jvanheld/rsa-tools/bin";
+if ($config_site eq "rubens_old") {
+    my $login = getlogin;
+    if (($login eq "webserv") || !($login)) {
+#	@remote_servers = qw ( 164.15.61.35 );
+	@remote_servers = qw ( bouts jordaens khnopff magritte paulus tytgat );
+#	push @remote_servers, "delvaux"; 
+	srand(time);
+	$s = int (rand $#remote_servers);
+	$remote_server = $remote_servers[$s];
+	$NICE = "nice +5";
+	$RSH = "rsh -l jvanheld ${remote_server} $NICE";
+	$SCRIPTS = "$RSH ~jvanheld/rsa-tools/perl-scripts";
+	$BIN = "$RSH ~jvanheld/rsa-tools/bin";
+
+}  elsif ($config_site eq "rubens") {
+	$remote_server = "164.15.61.35";
+	$NICE = "nice +5";
+	$RSH = "rsh -l jvanheld ${remote_server} $NICE";
+	$SCRIPTS = "$RSH /home/rsa/rsa-tools/perl-scripts";
+	$BIN = "$RSH /home/rsa/rsa-tools/perl-scripts";
+    }
 }
 $HTML = "$RSA/public_html";
 $WWW_TMP = "$WWW_RSA/tmp";
@@ -470,12 +483,17 @@ sub CheckOrganism {
 		&Fatalrror("Cannot open genome file $genome_file for reading.");
 	    while (<FILES>) {
 		chomp;
-		($seq_file, $chr) = split "\t";
+		($seq_file, $chr, $type) = split "\t";
+		if ($type eq "circular") {
+		    $circular = 1;
+		} else {
+		    $circular = 0;
+		}
 		$chr = $seq_file unless ($chr);
 		$chromosome_seq{$chr} = new RSA::SequenceOnDisk (filename=>  $seq_dir.$seq_file,
-								   id=>        $chr,
-								   circular=>  0, ### chromosomes are not circular
-								   organism=>  $organism_name);
+								 id=>        $chr,
+								 circular=>  $circular, 
+								 organism=>  $organism_name);
 		$chromosome{$chr} = new RSA::Chromosome();
 		$chromosome{$chr}->set_name($chr);
 		$chromosome{$chr}->set_sequence($chromosome_seq{$chr});
@@ -485,11 +503,12 @@ sub CheckOrganism {
 	    }
 	    close FILES;
 	} else {
+	    &FatalError("Unsupported genome sequence format $genome_seq_format");
 	}
     } else {
 	&FatalError("Unsupported organism $organism_name.",
-	     "Supported on this site : \n".&ListSupportedOrganisms());
-
+		    "Supported on this site : \n".&ListSupportedOrganisms());
+	
     }
     return $organism_object;
 }
@@ -515,15 +534,12 @@ sub ConvertStrand {
 sub ReadOrfPositions {
     ### usage
     ### &ReadOrfPositions($organism_name);
-    my $organism_name = $_[0];
+    my ($organism_name, 
+	$feature_table_file)= @_;;
     
-#    if ($organism_name eq "yeast") {
-#	&ReadYeastOrfPositions;
-#	return;
-#    }
-    
-    
-    my $feature_table_file = $supported_organism{$organism_name}->{'features'};
+    unless ($feature_table_file) {
+	$feature_table_file = $supported_organism{$organism_name}->{'features'};
+    }
     $col{'orf_id'} = 0;
     $col{'kind'} = 1;
     $col{'name'} = 2;
@@ -533,7 +549,6 @@ sub ReadOrfPositions {
     $col{'strand'} = 6;
     $col{'descr'} = 7;
     $col{'location'} = 8;
-#  my $chr = "genome";
     
     
     ### read ORF positions
@@ -557,6 +572,7 @@ sub ReadOrfPositions {
 	    
 	    $orf_id{uc($orf_id)} = $orf_id;
 	    $orf_id{uc($name)} = $orf_id if ($name =~ /\S/);
+
 	    if ($name eq "") {
 		$name{$orf_id} = $orf_id;
 	    } else {
@@ -699,11 +715,15 @@ sub ReadSynonyms {
     #### read synonym file ###
     ### usage : &ReadSynonyms($organism_name);
     $organism_name = $_[0];
-    $synonym_file = $supported_organism{$organism_name}->{'synonyms'};
-    $syn = &OpenInputFile($synonym_file);
+
+    unless ( $supported_organism{$organism_name}->{'synonyms'}) {
+	return;
+    }
+
+    $syn = &OpenInputFile( $supported_organism{$organism_name}->{'synonyms'});
     if (($organism_name eq "") || 
-	($organism_name eq "yeast")){
-	$syn = &OpenInputFile($synonym_file);
+	($organism_name eq "yeast")
+	){
 	while(<$syn>) {
 	    chomp;
 	    tr/a-z/A-Z/;
@@ -730,10 +750,12 @@ sub ReadSynonyms {
 	    next unless (/\S/);
 	    chomp;
 	    @fields = split "\t";
-	    $id = uc($fields[0]);
-	    $name = $fields[1];
+	    my $id = uc($fields[0]);
+	    my $name = $fields[1];
+#	    print join "\t", $id, $name, $fields[0], $fields[1], "\n"; 
 	    if (defined($orf_id{$id})) {
 		$orf_id{uc($name)} = $orf_id{$id};
+		push @{$synonyms{$orf_id{$id}}}, $name;
 	    }
 	}
     }
@@ -750,10 +772,11 @@ sub CalcNeighbourLimits {
 	@chrom_lefts = sort {$a <=> $b} @left{@genes};
 	@chrom_rights = sort {$a <=> $b} @right{@genes};
 	
+
 	for my $g (0..$#genes) {
 	    my $gene = $genes[$g];
-	    my $ln = $g -1; ### first guess
-	    my $rn = $g +1; ### first guess
+	    my $ln = $g -1; ### first guess for left neighbour
+	    my $rn = $g +1; ### first guess for right neighbour
 	    my $found = 0;
 
 	    #### calculate left upstream limit 
@@ -775,6 +798,8 @@ sub CalcNeighbourLimits {
 	    }
 	    $neighb_left_size{$gene} = $left{$gene} - $neighb_left_limit{$gene} -1;
 	    
+
+
 	    #### calculate right upstream limit 
 	    $found = 0;
 	    do {
@@ -806,9 +831,21 @@ sub CalcNeighbourLimits {
 		$downstr_limit{$gene} = $neighb_right_limit{$gene};
 		$downstr_size{$gene} = $neighb_right_size{$gene};
 	    }    
+
+#  	print join ("\t", "HELLO", $g, $gene, 
+#  		    $left{$gene},$right{$gene}, 
+#  		    "ln", $ln, $chrom_lefts[$ln],$chrom_rights[$ln], 
+#  		    "rn", $rn, $chrom_lefts[$rn],$chrom_rights[$rn], 
+#  		    "left", $neighb_left_limit{$gene}, $neighb_left_size{$gene},
+#  		    "right", $neighb_right_limit{$gene}, $neighb_right_size{$gene},
+#  		    "upstr", $upstr_limit{$gene}, $upstr_size{$gene},
+#  		    "down", $downstr_limit{$gene}, $downstr_size{$gene},
+#  		    "\n");
 	}
+#    die "HELLO";
 	
     }
+
 }
 
 sub ListSupportedOrganisms {
