@@ -1,14 +1,14 @@
 #!/usr/bin/perl
+############################################################
+#
+# $Id: parse_genes.pl,v 1.2 2000/03/08 00:22:15 jvanheld Exp $
+#
+# Time-stamp: <2000-03-08 01:21:40 jvanheld>
+#
+############################################################
+
 ### parse_kegg.pl
 ### type parse_kegg.pl -h for info
-
-############################################################
-#
-# $Id: parse_genes.pl,v 1.1 2000/03/04 23:59:57 jvanheld Exp $
-#
-# Time-stamp: <>
-#
-############################################################
 
 #use strict;
 if ($0 =~ /([^(\/)]+)$/) {
@@ -38,9 +38,9 @@ $out_file{error} = "Gene.errors.txt";
 $out_file{stats} = "Gene.stats.txt";
 $out_file{genes} = "Gene.obj";
 $out_file{synonyms} = "Gene.synonyms.tab";
-$out_file{dump_genes} = "Gene.dump";
-$out_file{expression} = "Expression.obj";
-$out_file{dump_expression} = "Expression.dump";
+$out_file{mldbm_genes} = "Gene.mldbm";
+$out_file{expressions} = "Expression.obj";
+$out_file{mldbm_expressions} = "Expression.mldbm";
 $warn_level = 0;
 $out_format = "obj";
 
@@ -86,14 +86,13 @@ $expressions->index_names();
 
 ### print result
 &ExportClasses($out_file{genes}, $out_format, PFBP::Gene);
-&DumpClass($out_file{dump_genes}, PFBP::Gene);
-&ExportClasses($out_file{expression}, $out_format, PFBP::Expression);
-&DumpClass($out_file{dump_expression}, PFBP::Expression);
-#&PrintSynonymTable($out_file{synonyms},PFBP::Gene);
-### print some stats after parsing
+&ExportClasses($out_file{expressions}, $out_format, PFBP::Expression);
 
 $genes->dump_tables();
 $expressions->dump_tables();
+
+$genes->export('MLDBM',$out_file{mldbm_genes});
+$expressions->export('MLDBM',$out_file{mldbm_expressions});
 
 &PrintStats($out_file{stats}, @classes);
 
