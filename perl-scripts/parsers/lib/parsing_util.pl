@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parsing_util.pl,v 1.11 2004/03/29 10:55:10 jvanheld Exp $
+# $Id: parsing_util.pl,v 1.12 2004/07/06 17:49:47 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -140,12 +140,14 @@ sub ExportMakefile {
 	#### usage
 	print MAKEFILE "\nusage:\n";
 	print MAKEFILE "\t", '@perl -ne \'if (/^([a-z]\S+):/){ print "\t$$1\n";  }\' ', "makefile\n";
-        foreach my $target ("create", "uncompress", "load", "recompress", "all", "drop") {
+        foreach my $target ("create", "alter", "uncompress", "load", "recompress", "all", "drop") {
 	    print MAKEFILE "${target}:\n";
 	    my $usage_done = 0;
 	    for my $class (@classes) {
 		(my $short_class = $class) =~ s/.*:://g;
-		print MAKEFILE "\tmake -i -f ${short_class}.mk ${target}\n";
+		my $class_makefile = lc($short_class);
+		$class_makefile .= ".mk";
+		print MAKEFILE "\tmake -i -f ", $class_makefile, " ", ${target}, "\n";
 	    }
 	}
 	close MAKEFILE;
