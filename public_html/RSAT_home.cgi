@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.1 2004/07/28 12:41:26 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.2 2004/09/23 19:48:21 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -173,17 +173,14 @@ print <<EndText;
   </FONT>
   </TD>
 
-<!--  TEMPORARILY INACTIVATED
 <TD ALIGN=CENTER>
-  <A HREF="http://rsat.ccb.sickkids.ca/" target="_top">
+  <A HREF="http://rsat-new.ccb.sickkids.ca/" target="_top">
   <B>Toronto - Canada</B><BR>
   <IMG SRC="images/toronto.jpg" HEIGHT=80 BORDER=0><BR>
   <FONT SIZE=-1>
-  http://rsat.ccb.sickkids.ca/</A>
+  http://rsat-new.ccb.sickkids.ca/</A>
   </FONT>
   </TD>
--->
-  
 
   </TR>
   </TABLE>
