@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.44 2004/01/23 00:10:52 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.45 2004/01/23 00:23:35 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -1833,8 +1833,8 @@ sub CalibrateOligos {
 	## retrieve all upstream sequence
 	my $allup = $dir{calib}."/tmp_all_up_${len}.fasta";
 	my $command = "retrieve-seq -org $organism_name -all -from -$calib_length -to -1 -o $allup";
-#	warn ";\tRetrieving all upstream sequences\t", $allup, "\n" if ($main::verbose >= 0);
-#	&doit($command, $dry_run, $die_on_error);
+	warn ";\tRetrieving all upstream sequences\t", $allup, "\n" if ($main::verbose >= 0);
+	&doit($command, $dry_run, $die_on_error);
 
 	for my $oligo_len ($min_oligo_len..$max_oligo_len) {
 
@@ -1843,8 +1843,8 @@ sub CalibrateOligos {
 	    ## Calculate occurrence distributions
 	    my $distrib_file = $calib_prefix."_distrib.tab";
 	    $command = "oligo-analysis -v 1 -l $oligo_len $noov $strands  -i $allup -return occ -distrib -o $distrib_file";
-#	    warn ";\tAnalysing ",$oligo_len,"nt distributions\t",$distrib_file, "\n" if ($main::verbose >= 0);
-#	    &doit($command, $dry_run, 0);
+	    warn ";\tAnalysing ",$oligo_len,"nt distributions\t",$distrib_file, "\n" if ($main::verbose >= 0);
+	    &doit($command, $dry_run, 0);
 	    
 	    ## Calculate stats and fit negbin on the distributions
 	    my $fitting_file = $calib_prefix."_negbin.tab";
@@ -1854,8 +1854,8 @@ sub CalibrateOligos {
 
 	## Delete the file with all upstream sequences
 	$command = "rm -f $allup";
-#	warn ":\tCleaning all upstream sequences\t", $allup, "\n" if ($main::verbose >= 0);
-#	&doit($command, $dry_run, 0);
+	warn ":\tCleaning all upstream sequences\t", $allup, "\n" if ($main::verbose >= 0);
+	&doit($command, $dry_run, 0);
     }
 
 }
