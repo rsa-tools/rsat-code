@@ -1,9 +1,9 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence,v 1.1 2001/03/12 23:41:55 jvanheld Exp $
+# $Id: purge-sequence,v 1.2 2001/05/21 14:07:50 jvanheld Exp $
 #
-# Time-stamp: <2001-02-20 01:58:09 jvanheld>
+# Time-stamp: <2001-05-21 15:41:07 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -13,52 +13,76 @@ if ($0 =~ /([^(\/)]+)$/) {
 require "RSA.lib.pl";
 
 
+my $skdir = "$RSA/bin";
+#my $skdir = "~jvanheld/applications/stefan_kurtz/virtual.distrib";
+#if ($config_site eq "rubens") {
+#    $skdir = "/rubens/dsk2/jvanheld/applications/stefan_kurtz/virtual.distrib";
+#}
+
 #### initialise parameters ####
 my $start_time = &AlphaDate;
 
-local $infile{input} = "";
-local $outfile{output} = "";
-
+local $inputfile = "";
+local $outputfile = "";
 local $verbose = 0;
-local $in = STDIN;
-local $out = STDOUT;
+local $match_len = 100;
+local $mismatches = 3;
 
 &ReadArguments;
 
 
 #### check argument values ####
-
-
-### open output file ###
-$out = &OpenOutputFile($outfile{output});
-
-##### read input #####
-$in = &OpenInputFile($infile{input});
-while (<$in>) {
-
+unless ($inputfile) {
+    die "\tError : you should specify an input file (in fasta format)\n";
+}
+unless (-e $inputfile) {
+    die "\tError : input file $inputfile does not exist\n";
 }
 
-close $in if ($infile{input});
+$basename = `basename ${inputfile}`;
+chomp $basename;
+$dirname = `dirname ${inputfile}`;
+chomp $dirname;
+
+chdir $dirname;
+
+unless ($outputfile) {
+    $outputfile = `basename ${inputfile} .fasta`."_purged_l${match_len}_m${mismatches}.fasta";
+    $outputfile =~ s/\s//g;
+}
+
 
 #### verbose ####
-&Verbose if ($verbose);
+#&Verbose if ($verbose);
+
+
+#### create a temp file to filter out non-conform lines 
+#### (comment lines starting with ";")
+$tmp_file = "tmp_".$basename;
+&doit("grep -v '^;' $basename > $tmp_file");
 
 ###### execute the command #########
+@extensions = qw(al1 ssp bck bwt des lcp llv prj suf tis sds);
+&doit("$skdir/mkvtree -bck -dna -tis -bwt -suf -lcp -pl 8 -db $tmp_file");
+my $command = "$skdir/vmatch -s -dbnomatch 1 -l $match_len ";
+$command .= " -e $mismatches" if ($mismatches > 0);
+$command .= " $tmp_file ";
+$command .= " | grep -v '# args=' > $outputfile";
+&doit($command);
+foreach $ext  (@extensions) {
+    &doit("rm -f ${tmp_file}.${ext}");
+}
 
-
-###### print output ######
+#### remove the temp file
+&doit("rm -f $tmp_file");
 
 
 ###### verbose ######
 if ($verbose) {
   my $done_time = &AlphaDate;
-  print $out "; Job started $start_time\n";
-  print $out "; Job done    $done_time\n";
+  warn "; Job started $start_time\n";
+  warn "; Job done    $done_time\n";
 }
-
-
-###### close output file ######
-close $out if ($outfile{output});
 
 
 exit(0);
@@ -66,17 +90,23 @@ exit(0);
 
 ########################## subroutine definition ############################
 
+sub doit {
+    my ($command) = @_;
+    warn "\n$command\n" if ($verbose);
+    system $command unless $dry_run;
+}
+
 sub PrintHelp {
 #### display full help message #####
   open HELP, "| more";
   print HELP <<End_of_help;
 NAME
-	template
+	purge-sequence
 
         1999 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
 	
 USAGE
-        template [-i inputfile] [-o outputfile] [-v]
+        purge-sequence [-i inputfile] [-o outputfile] [-v]
 
 DESCRIPTION
 	
@@ -90,7 +120,10 @@ OPTIONS
 	-o outputfile
 		if not specified, the standard output is used.
 		This allows to place the command within a pipe.
-
+	-n	dry run
+		print commands without executing them
+	-ml #	match length
+	-mis #	mismatches
 End_of_help
   close HELP;
   exit;
@@ -100,13 +133,16 @@ sub PrintOptions {
 #### display short help message #####
   open HELP, "| more";
   print HELP <<End_short_help;
-template options
+purge-sequence options
 ----------------
 -h	(must be first argument) display full help message
 -help	(must be first argument) display options
 -i	input file
 -o	output file
 -v	verbose
+-n	dry run
+-ml #	match length
+-mis #	mismatches
 End_short_help
   close HELP;
   exit;
@@ -124,6 +160,10 @@ sub ReadArguments {
 	$verbose = 1;
       }
       
+      ### dry run
+    } elsif ($ARGV[$a] eq "-n") {
+	$dry_run  = 1;
+      
       ### detailed help
     } elsif ($ARGV[$a] eq "-h") {
       &PrintHelp;
@@ -134,38 +174,21 @@ sub ReadArguments {
       
       ### input file ###
     } elsif ($ARGV[$a] eq "-i") {
-      $infile{input} = $ARGV[$a+1];
+      $inputfile = $ARGV[$a+1];
       
       ### output file ###
     } elsif ($ARGV[$a] eq "-o") {
-      $outfile{output} = $ARGV[$a+1];
+      $outputfile = $ARGV[$a+1];
       
-      ### organism
-    } elsif ($ARGV[$a] eq "-org") {
-      $organism_name = $ARGV[$a+1];
-      unless (defined($supported_organism{$organism_name})) {
-	  die ("Error: organism '$organism_name' is not supported on this site",
-	       $supported_organisms,
-	       "\n");
-      }
-      
+      ### matching length
+    } elsif (($ARGV[$a] eq "-ml") && (&IsInteger($ARGV[$a+1]))) {
+      $match_len = $ARGV[$a+1];
+       
+      ### mismatches
+    } elsif (($ARGV[$a] eq "-mis") && (&IsInteger($ARGV[$a+1]))) {
+      $mismatches = $ARGV[$a+1];
+       
     }
   }
 }
 
-sub Verbose {
-  print $out "; template ";
-  &PrintArguments($out);
-  if (defined(%infile)) {
-    print $out "; Input files\n";
-    while (($key,$value) = each %infile) {
-      print $out ";\t$key\t$value\n";
-    }
-  }
-  if (defined(%outfile)) {
-    print $out "; Output files\n";
-    while (($key,$value) = each %outfile) {
-      print $out ";\t$key\t$value\n";
-    }
-  }
-}
