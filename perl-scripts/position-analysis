@@ -376,88 +376,96 @@ sub LocalReadPatterns {
 
 #### Read input and calculate oligo distribution ####
 sub ReadSequence {
-  if ($hyperverbose) {
+    if ($hyperverbose) {
+	$date = `date '+%H:%M:%S'`;
+	chomp $date;
+	print "$date\tReading sequences\n";
+    }
+    
+    while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir)) &&
+	   (($current_seq ne "") || ($current_id ne ""))) {
+	
+	print "; analysing sequence $current_id\n" if ($hyperverbose);
+	### remove tabs and blank spaces ###    
+	$current_seq = &FoldSequence($current_seq,0);
+	
+	### statistics about sequences ###
+	$sequence_number++;  
+	$id_list[$sequence_number] = $current_id;
+	$seq_length[$sequence_number] = length($current_seq);
+	$last_pos = $seq_length[$sequence_number] - $oligo_length + 1;
+	$max_last_pos = &max($max_last_pos, $last_pos);
+	if ($origin eq "-0") {
+	    $reference_pos = $seq_length[$sequence_number];
+	} elsif ($origin < 0) {
+	    $reference_pos = $seq_length[$sequence_number] - $origin;
+	} else {
+	    $reference_pos = $origin;
+	}
+	
+	#### count oligonucleotides ####
+	$offset = 0;
+	$current_pos = 1;
+	while ($current_pos <= $last_pos) {
+	    $relative_pos = $current_pos - $reference_pos;
+	    $class = int(($relative_pos - 1)/$class_interval);
+	    $oligo_seq = lc(substr($current_seq,$current_pos-1,$oligo_length));
+	    $rc = lc(&ReverseComplement($oligo_seq));
+	    $current_pos++;
+	    print ";\t\t$current_pos\t$relative_pos\n" if (($hyperverbose) && ($current_pos%$class_interval == 1));
+	    if ((defined(%selected_pattern)) && 
+		!($selected_pattern{$oligo_seq}) && 
+		!($selected_pattern{$rc})) {
+		next;
+	    }
+	    if (($no_overlap) 
+		&& ($last_pos{$oligo_seq} > 0) 
+		&& ($current_pos < ($last_pos{$oligo_seq} + $oligo_length))) {
+		$overlaps{$oligo_seq}++;
+	    } else {
+		$occurrences{$oligo_seq}++;
+		$class_freq{$oligo_seq}[$class]++;
+		$last_pos{$oligo_seq} = $current_pos;
+	    }
+	}
+	undef %last_pos;
+    }
+    undef $current_seq; ### release the memory occupied
+    close $in;
+
+
+    ### return sequence lengthes
+    if ($hyperverbose) {
+	for $s (1..$sequence_number) {
+	    print ";\t$s\t$id_list[$sequence_number] \t$seq_length[$s]\n";
+	}
+    }
+    
+    ### statistics on sequence lengthes
     $date = `date '+%H:%M:%S'`;
     chomp $date;
-    print "$date\tReading sequences\n";
-  }
-  
-  while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir)) &&
-	 (($current_seq ne "") || ($current_id ne ""))) {
-    
-    print "; analysing sequence $current_id\n" if ($hyperverbose);
-    ### remove tabs and blank spaces ###    
-    $current_seq = &FoldSequence($current_seq,0);
-    
-    ### statistics about sequences ###
-    $sequence_number++;  
-    $id_list[$sequence_number] = $current_id;
-    $seq_length[$sequence_number] = length($current_seq);
-    $last_pos = $seq_length[$sequence_number] - $oligo_length + 1;
-    $max_last_pos = &max($max_last_pos, $last_pos);
-    
-    #### count oligonucleotides ####
-    $offset = 0;
-    $current_pos = 1;
-    while ($current_pos <= $last_pos) {
-      $class = int(($current_pos-1)/$class_interval);
-      $oligo_seq = lc(substr($current_seq,$current_pos-1,$oligo_length));
-      $rc = lc(&ReverseComplement($oligo_seq));
-      $current_pos++;
-      print ";\t\t$current_pos\n" if (($hyperverbose) && ($current_pos%$class_interval == 1));
-      if ((defined(%selected_pattern)) && 
-	  !($selected_pattern{$oligo_seq}) && 
-	  !($selected_pattern{$rc})) {
-	next;
-      }
-      if (($no_overlap) 
-	  && ($last_pos{$oligo_seq} > 0) 
-	  && ($current_pos < ($last_pos{$oligo_seq} + $oligo_length))) {
-	$overlaps{$oligo_seq}++;
-      } else {
-	$occurrences{$oligo_seq}++;
-	$class_freq{$oligo_seq}[$class]++;
-	$last_pos{$oligo_seq} = $current_pos;
-      }
-    }
-    undef %last_pos;
-  }
-  undef $current_seq; ### release the memory occupied
-  close $in;
-
-
-  ### return sequence lengthes
-  if ($hyperverbose) {
+    print ";$date\tcalculating stats on sequence lengthes ...\n" if ($hyperverbose);
     for $s (1..$sequence_number) {
-      print ";\t$s\t$id_list[$sequence_number] \t$seq_length[$s]\n";
+	$sum_seq_length += $seq_length[$s];
+	if ($seq_length[$s] >= $oligo_length) {
+	    if ($sum_strands) {
+		$nb_possible_pos += 2*($seq_length[$s] + 1 - $oligo_length);
+	    } else {
+		$nb_possible_pos += $seq_length[$s] + 1 - $oligo_length;
+	    }
+	}
+	$max_seq_length = &max($max_seq_length, $seq_length[$s]);
+	$last_pos = $seq_length[$s] - $oligo_length + 1;
+	$current_max_class = int(($last_pos-1)/$class_interval); 
+	for $class (0..$current_max_class-1) {
+	    $seq_per_class[$class]++;
+	    $pos_per_class[$class] += $class_interval;
+	    $sum_seq_per_class++;
+	}
+	$seq_per_class[$current_max_class]++;
+	$pos_per_class[$current_max_class] += ($last_pos-1) % $class_interval;
+	#print "$s\t$id_list[$sequence_number] \t$seq_length[$s]\t",$last_pos-1, "\t", ($last_pos-1) % $class_interval,"\n";
     }
-  }
-  
-  ### statistics on sequence lengthes
-  $date = `date '+%H:%M:%S'`;
-  chomp $date;
-  print ";$date\tcalculating stats on sequence lengthes ...\n" if ($hyperverbose);
-  for $s (1..$sequence_number) {
-    $sum_seq_length += $seq_length[$s];
-    if ($seq_length[$s] >= $oligo_length) {
-      if ($sum_strands) {
-	$nb_possible_pos += 2*($seq_length[$s] + 1 - $oligo_length);
-      } else {
-	$nb_possible_pos += $seq_length[$s] + 1 - $oligo_length;
-      }
-    }
-    $max_seq_length = &max($max_seq_length, $seq_length[$s]);
-    $last_pos = $seq_length[$s] - $oligo_length + 1;
-    $current_max_class = int(($last_pos-1)/$class_interval); 
-    for $class (0..$current_max_class-1) {
-      $seq_per_class[$class]++;
-      $pos_per_class[$class] += $class_interval;
-      $sum_seq_per_class++;
-    }
-    $seq_per_class[$current_max_class]++;
-    $pos_per_class[$current_max_class] += ($last_pos-1) % $class_interval;
-    #print "$s\t$id_list[$sequence_number] \t$seq_length[$s]\t",$last_pos-1, "\t", ($last_pos-1) % $class_interval,"\n";
-  }
 }
 
 
@@ -637,6 +645,16 @@ OPTIONS
 		with smaller clas effective. We allow to suppress the
 		checking, but the responsibility is left to the user,
 		to decide whether the chi2 is or not significant.
+	-origin
+		reference for calculating positions. 
+
+		If a negative value, coordinates are calculated with
+		respect to the specified position relative to rather
+		than the start of the sequence.
+
+		To calculate the positions relative to sequence end,
+		use the option:
+			     -origin -0
 
 End_of_help
   close HELP;
@@ -667,6 +685,7 @@ position-analysis options
 -lth		lower threshold on chi2
 -oth		lower threshold on occurrences
 -pl		pattern list
+-pl		origin (-0 to calculatre positions relative to the end of the sequence)
 -sc		score column
 -minpos		minimal position for chi-square calculation
 -maxpos		maximal position for chi-square calculation
@@ -780,8 +799,18 @@ sub ReadArguments {
 	    $pattern_file = $ARGV[$a+1];
 	    
 	    ### score column
-	} elsif (($ARGV[$a] eq "-sc") && (&IsNatural($ARGV[$a+1]))) {
+	} elsif ($ARGV[$a] eq "-sc") {
 	    $score_column = $ARGV[$a+1];
+	    unless (&IsNatural($score_column)) {
+		&FatalError( "Score column must be a natural number\n");
+	    }
+	    
+	    ### score column
+	} elsif ($ARGV[$a] =~ /^-orig/) {
+	    $origin = $ARGV[$a+1];
+	    unless (&IsInteger($origin)) {
+		&FatalError( "Invalid value $origin\tOrigin must be an integer number\n");
+	    }
 	    
 	    ### min and max positions
 	} elsif (($ARGV[$a] eq "-minpos") && (&IsNatural($ARGV[$a+1]))) {
