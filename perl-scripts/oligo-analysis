@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.67 2004/01/14 04:15:26 jvanheld Exp $
+# $Id: oligo-analysis,v 1.68 2004/01/22 23:56:17 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -65,7 +65,7 @@ if (@output_fields == ()) { #default output is occurrence numbers
 	 ($return{'ratio'})) {
     $return{'exp_freq'};
 }
-if ($method eq "Calibration file") {
+if ($method =~  /calibration/i) {
     $return{'exp_occ'} = 1;
     $return{'exp_var'} = 1;
     $return{'fitted'} = 1;
@@ -173,9 +173,9 @@ if (($method eq "Frequency file") &&
 
 ################################################################
 #### Read calibration from a file
-if ($method eq "Calibration file") {
+if ($method =~ /calibration/i) {
+    warn "; Reading calibration file\t",$infile{calibration},"\n" if ($main::verbose >= 1);
     &ReadCalibration($infile{calibration});
-#    die $patterns{'aaaaaa'}->{exp_occ};
 }
 
 #### open sequence stream
@@ -186,6 +186,7 @@ $out = &OpenOutputFile($outputfile);
 
 &CountOligo();
 
+&CalibrateSetFromSingleSequence() if ($method eq "Calibration per sequence") {
 &CalcSubWordFrequencies() if (($method eq "Markov chain") || ($method eq "lexicon"));
 &CalcAlphabet() if ($input_alphabet); # || ($return{'zscore'}));
 &Degenerate() if ($one_var_position);
@@ -780,7 +781,7 @@ sub CalcExpected {
 	    }
 	}
 
-    } elsif ($method eq "Calibration file") {  ### Markov chain
+    } elsif ($method =~ /calibration/i) {  ### calibration file
 	### calculate expected frequencies from the expected occurrences
 	foreach $pattern_seq (sort keys %patterns) {
 	    if ($patterns{$pattern_seq}->{nb_possible_pos} > 0) {
@@ -911,7 +912,7 @@ sub CalcExpected {
     ################################################################
     #### expected number of occurrences and matching sequences ####
     foreach $pattern_seq (sort keys %patterns) {
-	unless ($method eq "Calibration file") {
+	unless ($method =~ /calibration/i) {
 	    $patterns{$pattern_seq}->{exp_occ} = $patterns{$pattern_seq}->{exp_freq} * $patterns{$pattern_seq}->{nb_possible_pos}; 
 	}
 	if ($return{'mseq'}) {
@@ -963,7 +964,7 @@ sub CalcZscore {
 	foreach $pattern_seq (keys %patterns) {
 
 	    #### Calculate expected variance
-	    unless ($method eq  "Calibration file") {
+	    unless ($method =~ /calibration/i) {
 		if ($noov) {
 		    ### With the option -noov, there is no problem of overlap
 		    ### The expected variance thus equals the expected occurrences
@@ -1100,7 +1101,7 @@ sub CalcProba {
 #		$patterns{$pattern_seq}->{remark} = "\tpalindrome";
 #	    } else {
 
-	    if ($method eq "Calibration file") {
+	    if ($method =~ /calibration/i) {
 		if ($patterns{$pattern_seq}->{exp_occ} < $patterns{$pattern_seq}->{exp_var}) {
 		    #### Fit a negative binomial
 		    ($p, $k, $patterns{$pattern_seq}->{occ_pro}) = &sum_of_negbin2($patterns{$pattern_seq}->{exp_occ},
@@ -1130,7 +1131,7 @@ sub CalcProba {
 #								   $patterns{$pattern_seq}->{occ}/2);
 #		$patterns{$pattern_seq}->{remark} = "\tpalindrome";
 #	    } else {
-	    if ($method eq "Calibration file") {
+	    if ($method =~ /calibration/i) {
 		if ($patterns{$pattern_seq}->{exp_occ} < $patterns{$pattern_seq}->{exp_var}) {
 		    #### Fit a negative binomial
 		    ($p, $k, $patterns{$pattern_seq}->{occ_pro}) = &sum_of_negbin2($patterns{$pattern_seq}->{exp_occ},
@@ -1713,9 +1714,14 @@ sub ReadArguments {
 	    $method = "Frequency file";
 	    $infile{expected_freq} = $ARGV[$a+1];
 
-	    #### calibration file
+	    #### calibration file, occ and var for N sequences
 	} elsif ($ARGV[$a] eq "-calib") {
-	    $method = "Calibration file";
+	    $method = "Calibration per set";
+	    $infile{calibration} = $ARGV[$a+1];
+
+	    #### calibration file, single-sequence occ and var
+	} elsif ($ARGV[$a] eq "-calib1") {
+	    $method = "Calibration per sequence";
 	    $infile{calibration} = $ARGV[$a+1];
 
 	    #### rescale expected frequencies to have a sum of 1
@@ -2008,6 +2014,10 @@ ARGUMENTS
 		the occurrence means and variances of the simulation,
 		which is used for the calculation of probabilities, on
 		the basis of a negative binomial model.
+	-calib1	calibration file based on single sequence analysis. 
+		The mean and variance of occurrences are estimated my
+		multiplying single-sequence estimators by the number
+		of sequences (we checked the linearity).
 	-ncf	(deprecated, use "-bg intergenic" instead)
 		use intergenic frequencies as background frequencies
 	-bg	background model
@@ -2522,7 +2532,8 @@ oligo-analysis options
 -a yeast        use yeast genomic alphabet
 -a input        use alphabet from input sequence
 -expfreq        file with expected frequency table
--calib		file with calibration table
+-calib		file with calibration table based on set analysis
+-calib1		file with calibration table based on single sequence analysis
 -ncf		(deprecated, use '-bg intergenic' instead) 
 -bg		background model (supported: $supported_bg)
 -org		organism 
@@ -2620,5 +2631,20 @@ sub PrintCountDistrib {
 	    print $out "\t", $freq;
 	}
 	print $out "\n";
+    }
+}
+
+## ##############################################################
+## estimate occ mean and var on the basis of single-sequence calibration
+sub CalibrateSetFromSingleSequence {
+    warn "; Estimating mean and var from single-sequence calibration\n" if ($main::verbose >= 1);
+    foreach my $pattern_seq (keys %patterns) {
+	$patterns{$pattern_seq}->{exp_occ} *= $sequence_number;
+	$patterns{$pattern_seq}->{exp_var} *= $sequence_number;
+	warn join ("\t", 
+		  $pattern_seq,
+		  $patterns{$pattern_seq}->{exp_occ},
+		  $patterns{$pattern_seq}->{exp_var},
+		  ), "\n" if ($main::verbose >= 5);
     }
 }
