@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_genomes.mk,v 1.1 2003/12/12 11:29:12 jvanheld Exp $
+# $Id: install_genomes.mk,v 1.2 2003/12/19 08:35:06 jvanheld Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -64,7 +64,7 @@ install_one_bacteria:
 
 ### Parse one organism
 parse_organism:
-	@make install_organism INSTALL_TASK=parse
+	@${MAKE} install_organism INSTALL_TASK=parse
 
 ################################################################
 #### Install all eukaryote genomes
@@ -88,7 +88,7 @@ install_all_eukaryotes:
 
 ### Install one organism
 ORGANISM=Arabidopsis_thaliana
-ORGANISM_DIR=${GENBANK_DIR}/${ORGANISM}
+ORGANISM_DIR=${NCBI_DIR}/${ORGANISM}
 INSTALL_TASK=allup,clean,config,dyads,ncf,intergenic_freq,oligos,parse,start_stop,upstream_freq
 install_organism:
 	@echo "install log	${INSTALL_LOG}"
