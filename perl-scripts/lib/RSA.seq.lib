@@ -23,7 +23,7 @@ $accepted_output_seq{'fasta'} = 1;
 $accepted_output_seq{'filelist'} = 1;
 
 
-&InitMatchScores;
+&InitMatchScores();
 
 
 ################################################################
@@ -47,6 +47,7 @@ sub sub_sequence {
     return ($result);
 }
 
+################################################################
 ### based on the IUPAC code for partly specified nucleotides
 ###	A			(Adenine)
 ###	C			(Cytosine)
@@ -120,24 +121,45 @@ sub InitMatchScores {
     $match{T}{N} = 1;
     
     $match{N}{N} = 1;
+
+
+    my @letters = sort keys %match;
+    foreach my $l1 (@letters) {
+	foreach my $l2 (@letters) {
+	}
+    }
 }
 
+
+################################################################
+=pod
+
+=item CountMatches($seq1, $seq2)
+
+
+returns the number of matching positions between two sequences 
+of same length
+
+usage:
+   ($matches,$weight, $proba) = &CountMatches($seq1,$seq2);
+
+IUPAC degenerate codes are accepted for the first as well as the
+second sequences.
+
+The weight is in base units, i.e.  each unit correspond to one
+perfectly specified base it is calculated from the matching
+probability:
+
+      score = -log4(proba)
+
+=cut
+
 sub CountMatches {
-    ### returns the number of matching positions between two sequences 
-    ### of same length
-    ### usage:
-    ###    ($matches,$score) = &CountMatches($seq1,$seq2);
-    ### accepts IUPAC degenrate codes as first or second argument
-    ### the score is in base units, i.e. 
-    ### each unit correspond to one perfectly specified base
-    ### it is calculated from the matching probability:
-    ###       score = -log4(proba)
-    my $seq1 = $_[0];
-    my $seq2 = $_[1];
+    my ($seq1, $seq2) = @_;
     my $matches = 0;
     my $proba = 1;
     my $seq_len = length($seq1);
-    my $score = "inf";
+    my $weight = "Inf";
 
     foreach my $pos (0..$seq_len-1) {
 	my $base1 = uc(substr($seq1,$pos,1));
@@ -148,18 +170,28 @@ sub CountMatches {
 	}
     }
     if ($proba > 0) {
-	$score = abs(log($proba))/log(4);
+	$weight = abs(log($proba))/log(4);
     } 
-    return ($matches, $score);
-} ### CountMatches
+    return ($matches, $weight, $proba);
+}
 
+
+=pod
+
+=item  &CountMismatches($seq1,$seq2,$max);
+
+returns the number of non-matching positions between two sequences of
+same length, up to the maximum allowed value $max.
+
+usage:
+   $mismatches = &CountMismatches($seq1,$seq2,$max);
+
+IUPAC degenerate codes is supported for the first as well as the
+second sequence.
+
+=cut
 
 sub CountMismatches {
-    ### returns the number of non-matching positions between two sequences 
-    ### of same length, up to the maximum allowed value $max.
-    ### usage:
-    ###    $mismatches = &CountMismatches($seq1,$seq2,$max);
-    ### accepts IUPAC degenerate codes as first or second argument
     my $seq1 = $_[0];
     my $seq2 = $_[1];
     my $max = $_[2];
