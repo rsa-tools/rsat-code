@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: RSA.classes,v 1.9 2004/06/10 05:09:00 jvanheld Exp $
+# $Id: RSA.classes,v 1.10 2004/07/29 07:30:28 jvanheld Exp $
 #
 # Time-stamp: <2003-10-02 17:58:27 jvanheld>
 #
@@ -721,6 +721,20 @@ package RSA::family;
 }
 
 #die "\nHELLO";
+
+package RSAT::Analysis; 
+{
+  @ISA = qw ( classes::DatabaseObject );
+  ### class attributes
+  $_count = 0;
+  $_prefix = "ctg_";
+  @_objects = ();
+  %_name_index = ();
+  %_id_index = ();
+  %_attribute_count = ();
+  %_attribute_cardinality = (id=>"SCALAR"
+			     );
+}
 
 package RSAT::Family; 
 {
