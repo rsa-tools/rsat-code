@@ -301,7 +301,10 @@ sub DrawSymbol {
       $image->arc($s_x_center,$s_y_center,$s_width,$s_height,0,360,$s_color);
 
     } elsif ($s_type eq "filled_circle") {
-      $image->filledArc($s_x_center,$s_y_center,$s_width,$s_height,0,360,$s_color);
+
+	### Temporarily inactivated because there is a bug. TO DEBUG
+      $image->arc($s_x_center,$s_y_center,$s_width,$s_height,0,360,$s_color);
+#      $image->filledArc($s_x_center,$s_y_center,$s_width,$s_height,0,360,$s_color);
 
     } elsif ($s_type eq "crossrect_diag") {
       $image->rectangle($s_left, $s_top, $s_right, $s_bottom, $s_color);
