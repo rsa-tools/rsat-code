@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genes.pl,v 1.16 2000/12/29 00:24:19 jvanheld Exp $
+# $Id: parse_genes.pl,v 1.17 2000/12/29 01:42:38 jvanheld Exp $
 #
-# Time-stamp: <2000-12-29 01:21:16 jvanheld>
+# Time-stamp: <2000-12-29 02:31:14 jvanheld>
 #
 ############################################################
 
@@ -40,7 +40,7 @@ foreach $file (@all_files) {
     if ($file =~ /\/([^\/]*)$/) {
 	$file = $1;
     }
-    $organism = $file;
+    my $organism = $file;
     $organism =~ s/\.ent$//;
     $organism =~ s/\.ent\.gz$//;
     $organism{$organism}->{name} = $organism;
@@ -62,17 +62,23 @@ $out_format = "obj";
 @classes = qw( PFBP::Gene );
 $genes = PFBP::ClassFactory->new_class(object_type=>"PFBP::Gene",
 				       prefix=>"gene_");
-$genes->set_out_fields(qw( id source organism position chromosome strand start end description  names exons introns ));
-
 ### default output fields for each class
 
-#@{$out_fields{'PFBP::Gene'}} = qw( id source organism raw_position chromosome strand start_base end_base description names exons );
 
 &ReadArguments;
 
+#### specific export format for RSA-tools
+if ($rsa) {
+    $single_name = 1;
+    $genes->set_out_fields(qw( id type name chromosome start end strand description position names ));
+} else {
+    $genes->set_out_fields(qw( id source organism type position chromosome strand start end description names exons introns ));
+    #@{$out_fields{'PFBP::Gene'}} = qw( id source organism raw_position chromosome strand start_base end_base description names exons );
+}
+
 ### outfile names
 unless (defined($suffix)) {
-    foreach $organism (@selected_organisms) {
+    foreach my $organism (@selected_organisms) {
 	$suffix .= "_$organism";
     }
     if ($export{enzymes}) {
@@ -136,27 +142,29 @@ warn "; Selected organisms\n;\t", join("\n;\t", @selected_organisms), "\n"
 foreach $org (@selected_organisms) {
     &ParseKeggFile($in_file{$org}, 
 		   $genes, 
-		   source=>"KEGG:".$kegg_file{lc($org)}, 
-		   organism=>$organism{$org}->{name});
+		   source=>"KEGG:".$kegg_file{lc($org)});
+
     ### check organism attribute
     foreach $gene ($genes->get_objects()) {
-	my $organism = $gene->get_attribute("organism");
-	unless (defined($organism)) {
+	unless ($gene->get_attribute("organism")) {
 	    &ErrorMessage("Warning: gene ", $gene->get_attribute("id"), " has no organism attribute\n");
 	    $gene->set_attribute("organism",$org);
 	    next;
 	}
     }
 }
-#$genes->index_names();
 
 &ParsePositions();
 
 foreach $gene ($genes->get_objects()) {
-    ### define a primary name (take the first value in the name list)
-#    if ($name = $gene->get_name()) {
-#	$gene->set_attribute("primary_name",$name);
-#    }
+    ### define a single name  (take the first value in the name list)
+    if ($single_name) {
+	if ($name = $gene->get_name()) {
+	    $gene->set_attribute("name",$name);
+	} else {
+	    $gene->set_attribute("name",$gene->get_id());
+	}
+    }
 
     #### check for genes without description
     if ($gene->get_attribute("description") eq "<UNDEF>") {
@@ -230,6 +238,9 @@ OPTIONS
 	-suffix suffix
 		add a suffix to output file names
 		    -suffix '' prevents from adding any suffix
+	-name
+		exports a name as single value attribute in
+		the main table (this is redundant but can be useful)
 EndHelp
   close HELP;
 }
@@ -250,6 +261,14 @@ sub ReadArguments {
       ### test run
     } elsif ($ARGV[$a] eq "-test") {
       $main::test = 1;
+      
+      ### export single name in main table
+    } elsif ($ARGV[$a] eq "-name") {
+      $main::single_name = 1;
+      
+      ### specific export format  for RSA-tools
+    } elsif ($ARGV[$a] eq "-rsa") {
+      $main::rsa = 1;
       
       ### suffix
     } elsif ($ARGV[$a] eq "-suffix") {
