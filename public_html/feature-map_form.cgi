@@ -215,7 +215,7 @@ print "</B>";
 
 print "<BR>\n";
 print "<B>";
-print "<A HREF='help.feature-map.html#htmap'>";
+print "<A HREF='help.feature-map.html#htmap'>";;
 print $query->checkbox(-name=>'htmap',
 		       -checked=>'checked',
 		       -label=>' Dynamic map ');
