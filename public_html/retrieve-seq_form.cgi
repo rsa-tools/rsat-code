@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-#### this cgi script fills the HTML form for the program upstream-region
+#### this cgi script fills the HTML form for the program retrieve-seq
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
@@ -13,10 +13,12 @@ $query = new CGI;
 
 ### default values for filling the form
 $default{seq_format} = "fasta";
+$default{seq_label} = "gene name";
 $default{organism} = "Saccharomyces cerevisiae";
-$default{from} = "-800";
-$default{to} = "-1";
+$default{from} = "default";
+$default{to} = "default";
 $default{genes} = "";
+$default{sequence_type} = "upstream";
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
@@ -26,21 +28,31 @@ foreach $key (keys %default) {
 } 
 
 ### print the form ###
-&RSA_header("upstream-region");
+&RSA_header("retrieve sequence");
 
 ### head
 print "<CENTER>";
-print "Returns the upstream sequences for a list of genes<P>\n";
+print "Returns upstream, downstream or ORF sequences for a list of genes<P>\n";
 print "</CENTER>";
 
-print $query->start_multipart_form(-action=>"upstream-region.cgi");
+print <<EndText;
+<font color=#660000>
+<ul>
+<b>Note: retrieve-sequence</b> replaces the previous programs <br>
+<b>upstream-region</b> and <b>downstream-region</b> <br>
+(you can select among the two possibilities with the option "Sequence type"). 
+</ul>
+</font>
+EndText
+
+print $query->start_multipart_form(-action=>"retrieve-seq.cgi");
 
 print "<FONT FACE='Helvetica'>";
 
 &OrganismPopUp;
 
 ### query (gene list)
-print "<B><A HREF='help.upstream-region.html#genes'>Genes</A></B>&nbsp;";
+print "<B><A HREF='help.retrieve-seq.html#genes'>Genes</A></B>&nbsp;";
 print $query->radio_group(-name=>'genes',
 			  -values=>['all','selection'],
 			  -default=>'selection');
@@ -55,15 +67,21 @@ print $query->textarea(-name=>'gene_selection',
 print "</UL>\n";
 print "<BR>\n";
 
+### sequence type
+print "<B><A HREF='help.retrieve-seq.html#sequence_type'>Sequence type</A></B>&nbsp;";
+print $query->popup_menu(-name=>'sequence_type',
+			 -Values=>['upstream','downstream','ORF'],
+			 -default=>$default{sequence_type});
+
 ### from to
 
-print "<B><A HREF='help.upstream-region.html#from_to'>From</A></B>&nbsp;\n";
+print "<B><A HREF='help.retrieve-seq.html#from_to'>From</A></B>&nbsp;\n";
 print $query->textfield(-name=>'from',
 			-default=>$default{from},
 			-size=>10);
 
 print "&nbsp;&nbsp;";
-print "<B><A HREF='help.upstream-region.html#from_to'>To</A></B>&nbsp;\n";
+print "<B><A HREF='help.retrieve-seq.html#from_to'>To</A></B>&nbsp;\n";
 print $query->textfield(-name=>'to',
 			-default=>$default{to},
 			-size=>10);
@@ -74,22 +92,33 @@ print "<BR>\n";
 #  print $query->checkbox(-name=>'orf_overlap',
 #  		       -checked=>'checked',
 #  		       -label=>'');
-#  print "&nbsp;<A HREF='help.upstream-region.html#noorf'><B>allow overlap with upstream ORFs</B></A>";
+#  print "&nbsp;<A HREF='help.retrieve-seq.html#noorf'><B>allow overlap with upstream ORFs</B></A>";
 #  print "<BR>\n";
 
 print $query->hidden(-name=>'orf_overlap',-default=>'on');
 
 
 ### sequence format 
-print "<B><A HREF='help.upstream-region.html#formats'>Sequence format</A></B>&nbsp;";
+print "<B><A HREF='help.retrieve-seq.html#formats'>Sequence format</A></B>&nbsp;";
 print $query->popup_menu(-name=>'format',
 			 -Values=>['fasta', 
 				   'IG',
 				   'wconsensus',
-				   'raw',
 				   'multi'],
 			 -default=>$default{seq_format});
 print "<BR>\n";
+
+### sequence label
+print "<B><A HREF='help.retrieve-seq.html#seq_label'>Sequence label</A></B>&nbsp;";
+print $query->popup_menu(-name=>'seq_label',
+			 -Values=>['ORF identifier', 
+				   'gene name',
+				   'ORF id + gene name',
+				   'full identifier'
+				   ],
+			 -default=>$default{seq_label});
+print "<BR>\n";
+
 
 ### send results by e-mail or display on the browser
 &SelectOutput;
@@ -102,7 +131,7 @@ print "<TD>", $query->reset, "</TD>\n";
 print $query->end_form;
 
 ### data for the demo 
-print $query->start_multipart_form(-action=>"upstream-region_form.cgi");
+print $query->start_multipart_form(-action=>"retrieve-seq_form.cgi");
 $demo_genes = "PHO5\n";
 $demo_genes .= "PHO8\n";
 $demo_genes .= "PHO11\n";
@@ -118,8 +147,8 @@ print "</B></TD>\n";
 print $query->end_form;
 
 
-#print "<TD><B><A HREF='demo.upstream-region.html'>DEMO</A></B></TD>\n";
-print "<TD><B><A HREF='help.upstream-region.html'>MANUAL</A></B></TD>\n";
+#print "<TD><B><A HREF='demo.retrieve-seq.html'>DEMO</A></B></TD>\n";
+print "<TD><B><A HREF='help.retrieve-seq.html'>MANUAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:jvanheld\@ucmb.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
