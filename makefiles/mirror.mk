@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: mirror.mk,v 1.14 2005/01/26 22:22:54 jvanheld Exp $
+# $Id: mirror.mk,v 1.15 2005/01/27 15:15:01 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 12:05:45 jvanheld>
 #
@@ -107,6 +107,8 @@ EXCLUDED_GENOMES=				\
 		--exclude Homo_sapiens*
 
 EXCLUDED=${EXCLUDED_GENOMES}			\
+		--exclude '*.wc'		\
+		--exclude '*.wc.gz'		\
 		--exclude embl_genomes		\
 		--exclude previous_version	\
 		--exclude tmp			\
