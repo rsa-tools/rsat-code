@@ -162,7 +162,29 @@ position, the list of residues with a positive weight. Contrarily to
 most applications, this consensus is thus weighted by prior residue
 frequencies: a residue with a high frequency might not be represented
 in the consensus if this frequency does not significantly exceed the
-expected frequency.
+expected frequency. Uppercases are used to highlight weights >= 1.
+
+The consensus is exported as regular expression, and with the IUPAC
+code for ambiguous nucleotides (http://www.chem.qmw.ac.uk/iupac/misc/naseq.html).
+
+       	A			(Adenine) 
+	C			(Cytosine)
+	G			(Guanine)
+	T			(Thymine)
+	R	= A or G        (puRines)
+	Y	= C or T        (pYrimidines)
+	W	= A or T        (Weak hydrogen bonding)
+	S	= G or C        (Strong hydrogen bonding)
+	M	= A or C        (aMino group at common position)
+	K	= G or T        (Keto group at common position)
+	H	= A, C or T     (not G)
+	B	= G, C or T     (not A)
+	V	= G, A, C       (not T)
+	D	= G, A or T     (not C)
+	N	= G, A, C or T  (aNy)
+
+The strict consensus indicates, at each position, the residue with the
+highest positive weight.
 
 =item information
 
@@ -1844,7 +1866,8 @@ sub calcProbabilities {
 Calculate the consensus. 
 
 Caching: if already calculated, do not calculate anymore.
-attribute "force": force calculaton even if aready calculated.
+
+Attribute "force": force calculaton even if aready calculated.
 
 =cut
 sub calcConsensus {
