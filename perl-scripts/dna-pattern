@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dna-pattern,v 1.13 2001/10/11 20:52:48 jvanheld Exp $
+# $Id: dna-pattern,v 1.14 2001/10/11 21:11:52 jvanheld Exp $
 #
-# Time-stamp: <2001-10-11 22:51:36 jvanheld>
+# Time-stamp: <2001-10-11 23:09:36 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -302,7 +302,7 @@ if ($return{stats}) {
 		  "percent"
 		  ), "\n";
     printf $out ( "%-21s\t%d\t%d\t%.1f\n", 
-		  "matches per pattern",
+		  "matching patterns",
 		  $nb_patterns,
 		  $matching_patterns,
 		  $matching_patterns_pct
@@ -314,7 +314,7 @@ if ($return{stats}) {
 		  $max_matching_score_pct
 		  );
     printf $out ( "%-21s\t%d\t%d\t%.1f\n", 
-		  "sequence statistics",
+		  "matching sequence",
 		  $nb_sequences,
 		  $matched_sequences,
 		  $matched_sequences_pct
