@@ -781,6 +781,15 @@ $supported_feature_types = join ",", @supported_feature_types;
 
 
 
+sub CheckOrganismName {
+    my ($organism_name) = @_;
+     unless ($supported_organism{$organism_name}) {
+	&FatalError("Organism $organism_name is not supported.",
+		    "Supported on this site : \n".&ListSupportedOrganisms());
+    }
+}
+
+
 ################################################################
 #### Check if an organism is supported on the current installation,
 #### and open streams to read its genome sequence.
@@ -795,15 +804,6 @@ $supported_feature_types = join ",", @supported_feature_types;
 ####                $feature_table_file, 
 ####                $input_sequence_file,  
 ####                $input_sequence_format);
-
-sub CheckOrganismName {
-    my ($organism_name) = @_;
-     unless ($supported_organism{$organism_name}) {
-	&FatalError("Organism $organism_name is not supported.",
-		    "Supported on this site : \n".&ListSupportedOrganisms());
-    }
-}
-
 
 sub CheckOrganism {
     my ($organism_name, $feature_table_file, $input_sequence_file, $input_sequence_format) = @_;
