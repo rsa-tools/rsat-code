@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: downloads.mk,v 1.17 2004/11/08 09:09:27 jvanheld Exp $
+# $Id: downloads.mk,v 1.18 2005/01/11 19:51:54 jvanheld Exp $
 #
 # Time-stamp: <2003-10-09 14:02:21 jvanheld>
 #
@@ -293,9 +293,9 @@ scpd:
 #
 # Homo sapiens from ENSEMBL
 
-HUMAN_ENSEMBL=ftp://ftp.ensembl.org/pub/current_human/data
+HUMAN_ENSEMBL=ftp://ftp.ensembl.org/pub/current_human/data/
 human_from_ensembl:
-	${WGET} ${HUMAN_ENSEMBL}/golden_path/
+	${WGET} ${HUMAN_ENSEMBL}/mysql
 	${WGET} ${HUMAN_ENSEMBL}/flatfiles/genbank
 
 ENSEMBL_DIRS=						\
@@ -445,3 +445,9 @@ jaspar:
 	@echo "${DATE}	updating dir	${JASPAR}" 
 	${WGET} ${JASPAR}
 	@echo "${DATE}	updated dir	${JASPAR}"
+
+################################################################
+## Anopheles 
+ANOPHELES=ftp://ftp.ensembl.org/pub/current_mosquito/data/flatfiles/genbank/
+anopheles:
+	${WGET} ${ANOPHELES}
