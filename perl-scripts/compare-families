@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-families,v 1.2 2002/09/18 20:50:17 jvanheld Exp $
+# $Id: compare-families,v 1.3 2002/09/19 22:35:25 jvanheld Exp $
 #
-# Time-stamp: <2002-09-18 15:49:20 jvanheld>
+# Time-stamp: <2002-09-19 17:34:31 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -35,6 +35,9 @@ local $out = STDOUT;
 %lth = ();
 %uth = ();
 
+$population_size = 0;
+$sort_key = "name";
+
 &ReadArguments;
 
 ################################################################
@@ -58,6 +61,25 @@ $out = &OpenOutputFile($outfile{output});
 $nb_ref_families = scalar(keys %ref_families);
 $nb_query_families = scalar(keys %query_families);
 
+#### unless specified, calculate population size from the lists of  reference and query members
+unless ($population_size > 0 ) {
+    %member_index = ();
+    foreach my $r (keys %ref_families) {
+	foreach $m ( $ref_families{$r}->get_members()) {
+	    $member_index{$m}++;
+	}
+    }
+    foreach my $q (keys %query_families) {
+	foreach $m ( $query_families{$q}->get_members()) {
+	    $member_index{$m}++;
+	}
+    }
+
+#    die keys %member_index;
+    $population_size = scalar(keys %member_index);
+}
+
+
 ################################################################
 #### print verbose
 &Verbose if ($verbose);
@@ -65,49 +87,54 @@ $nb_query_families = scalar(keys %query_families);
 ################################################################
 #### compare reference and query families
 %common = ();
-%ref_population = ();
 foreach my $r (keys %ref_families) {
     my %ref_members = ();
     foreach $m ( $ref_families{$r}->get_members()) {
 	$ref_member{$m} = 1;
-	$ref_population{$m} = 1;
     }
     foreach my $q (keys %query_families) {
-	@{$common{$r."__VERSUS__".$q}} = ();
+	my $compa_key = $r."__VERSUS__".$q;
+	@{$common{$compa_key}} = ();
 	my @query_members = $query_families{$q}->get_members();
 	foreach my $m (@query_members) {
 	    if ($ref_member{$m}) {
-		push @{$common{$r."__VERSUS__".$q}}, $m;
+		push @{$common{$compa_key}}, $m;
+#		$matching_elements->{$}
 	    }
 	}
-	$compa{$r."__VERSUS__".$q}->{occ} = scalar(@{$common{$r."__VERSUS__".$q}});
+	$compa{$compa_key}->{occ} = scalar(@{$common{$compa_key}});
 
 	#### check thresholds for number of common members
 	if ((defined($lth{occ})) && 
-	    ($compa{$r."__VERSUS__".$q}->{occ}< $lth{occ})) {
-	    delete $compa{$r."__VERSUS__".$q};
-	    undef @{$common{$r."__VERSUS__".$q}};
-	}
-	if ((defined($uth{occ})) && 
-	    ($compa{$r."__VERSUS__".$q}->{occ} > $uth{occ})) {
-	    delete $compa{$r."__VERSUS__".$q};
-	    undef @{$common{$r."__VERSUS__".$q}};
+	    ($compa{$compa_key}->{occ}< $lth{occ})) {
+	    delete $compa{$compa_key};
+	    undef @{$common{$compa_key}};
+	} elsif ((defined($uth{occ})) && 
+	    ($compa{$compa_key}->{occ} > $uth{occ})) {
+	    delete $compa{$compa_key};
+	    undef @{$common{$compa_key}};
 	}
     }
 }
+
+
+
+
 
 ################################################################
 #### calculate probabilities
 if ($return_fields{proba}) {
     $log_base = 10;
     $ref_log = log($log_base);
-    foreach my $c (keys %compa) {
-	my ($r, $q) = split "__VERSUS__", $c;
+
+    my $n = $population_size;
+    foreach my $compa_key (keys %compa) {
+	my ($r, $q) = split "__VERSUS__", $compa_key;
+
 	my $t = $query_families{$q}->get_size(); ### number of trials
-	my $s = $compa{$r."__VERSUS__".$q}->{occ}; ### number of successes
+	my $s = $compa{$compa_key}->{occ}; ### number of successes
 	
 	my $b = $ref_families{$r}->get_size(); ### number of black balls in the urn
-	my $n = scalar(keys %ref_population);
 	my $p = 0;
 	
 	if ($n > 0) {
@@ -115,21 +142,21 @@ if ($return_fields{proba}) {
 	} else {
 	    &FatalError("Cannot calculate probabilities if reference population is empty");
 	}
-	$compa{$r."__VERSUS__".$q}->{P_val} = &sum_of_binomials($p,$t,$s,$t);
+	$compa{$compa_key}->{P_val} = &sum_of_binomials($p,$t,$s,$t);
 	$nb_tests = $nb_ref_families * $nb_query_families;
-	$compa{$r."__VERSUS__".$q}->{E_val} = $compa{$r."__VERSUS__".$q}->{P_val} * $nb_tests;
-	$compa{$r."__VERSUS__".$q}->{sig} = -log($compa{$r."__VERSUS__".$q}->{E_val})/$ref_log;
+	$compa{$compa_key}->{E_val} = $compa{$compa_key}->{P_val} * $nb_tests;
+	$compa{$compa_key}->{sig} = -log($compa{$compa_key}->{E_val})/$ref_log;
 
-	#### check thresholds for number of common members
-	foreach my $key qw(P_val, E_val, sig) {
+	#### check thresholds on probabilities
+	foreach my $key qw(P_val E_val sig) {
 	    if ((defined($lth{$key})) && 
-		($compa{$r."__VERSUS__".$q}->{$key}< $lth{$key})) {
-		delete $compa{$r."__VERSUS__".$q};
-		undef @{$common{$r."__VERSUS__".$q}};
+		($compa{$compa_key}->{$key}< $lth{$key})) {
+		delete $compa{$compa_key};
+		undef @{$common{$compa_key}};
 	    } elsif ((defined($uth{$key})) && 
-		($compa{$r."__VERSUS__".$q}->{$key} > $uth{$key})) {
-		delete $compa{$r."__VERSUS__".$q};
-		undef @{$common{$r."__VERSUS__".$q}};
+		($compa{$compa_key}->{$key} > $uth{$key})) {
+		delete $compa{$compa_key};
+		undef @{$common{$compa_key}};
 	    }
 	}
     }
@@ -152,31 +179,45 @@ push @header_fields, "sig" if $return_fields{proba};
 push @header_fields, "members" if $return_fields{members};
 print $out join("\t", @header_fields), "\n";
 
+#### sort family comparisons
+if ($sort_key eq "sig") {
+    @sorted_keys = sort {$compa{$b}->{sig} <=> $compa{$a}->{sig}} (keys %compa);
+} elsif ($sort_key eq "occ") {
+    @sorted_keys = sort {$compa{$b}->{occ} <=> $compa{$a}->{occ}} (keys %compa);
+} else {
+    @sorted_keys = sort (keys %compa); ### alphabetical order
+}
+
 #### family combinations
-foreach my $c (keys %compa) {
-    my ($r, $q) = split "__VERSUS__", $c;
+foreach my $compa_key (@sorted_keys) {
+    my ($r, $q) = split "__VERSUS__", $compa_key;
+
+    #### counts
     print $out join "\t", ($r, 
 			   $q, 
 			   $ref_families{$r}->get_size(),
 			   $query_families{$q}->get_size(),
-			   $compa{$r."__VERSUS__".$q}->{occ});
-    print $out join( ";", @{$common{$r."__VERSUS__".$q}}) if $return_fields{members};
-    
-    if ($return_fields{proba}) {
-	if ($compa{$r."__VERSUS__".$q}->{P_val} >= 0.0001) {
-	    printf $out "\t%.5f", $compa{$r."__VERSUS__".$q}->{P_val};
-	} else {
-	    printf $out "\t%.2g", $compa{$r."__VERSUS__".$q}->{P_val};
-	}
-	if ($compa{$r."__VERSUS__".$q}->{E_val} >= 0.0001) {
-	    printf $out "\t%.5f", $compa{$r."__VERSUS__".$q}->{E_val};
-	} else {
-	    printf $out "\t%.2g", $compa{$r."__VERSUS__".$q}->{E_val};
-	}
-	printf $out ( "\t%.2f", $compa{$r."__VERSUS__".$q}->{sig});
-    }
-    print $out "\n";
+			   $compa{$compa_key}->{occ});
 
+    #### probabilities
+    if ($return_fields{proba}) {
+	if ($compa{$compa_key}->{P_val} >= 0.0001) {
+	    printf $out "\t%.5f", $compa{$compa_key}->{P_val};
+	} else {
+	    printf $out "\t%.2g", $compa{$compa_key}->{P_val};
+	}
+	if ($compa{$compa_key}->{E_val} >= 0.0001) {
+	    printf $out "\t%.5f", $compa{$compa_key}->{E_val};
+	} else {
+	    printf $out "\t%.2g", $compa{$compa_key}->{E_val};
+	}
+	printf $out ( "\t%.2f", $compa{$compa_key}->{sig});
+    }
+
+    #### members of the intersection
+    print $out "\t", join( ";", @{$common{$compa_key}}) if $return_fields{members};
+
+    print $out "\n";
 }
 
 ################################################################
@@ -249,6 +290,14 @@ OPTIONS
 	-lth field #
 		lower threshold value for a given field 
 		(same fields as -uth)
+	-pop #	
+	        Population size. If not specified, the population size
+	        is estimated as the number of distinct elemenst in the
+	        whole set of referenc families.
+	-sort key
+		sort on the basis of the specified key.
+		Supported keys:
+			  name (default), occ, sig
 
 OUTPUT FORMAT
 
@@ -290,6 +339,8 @@ compare-families options
 -return	return fields (supported $supported_return_fields)
 -lth	threshold on a given field
 -uth	threshold on a given field
+-pop	population size
+-sort   sort key (supported keys: occ, sig)
 End_short_help
   close HELP;
   exit(0);
@@ -328,6 +379,20 @@ sub ReadArguments {
 	    ### output file  
 	} elsif ($ARGV[$a] eq "-o") {
 	    $outfile{output} = $ARGV[$a+1];
+
+	    ### sort key
+	} elsif ($ARGV[$a] eq "-sort") {
+	    $sort_key = $ARGV[$a+1];
+
+	    ### population size
+	} elsif ($ARGV[$a] eq "-pop") {
+	    $population_size = $ARGV[$a+1];
+	    unless (&IsNatural($population_size)) {
+		&FatalError("Population size must be a natural number");
+	    }
+	    unless ($population_size > 0) {
+		&FatalError("Population size must be strictly positive.");
+	    }
 
 	    #### threshold values
 	} elsif ($ARGV[$a] eq "-lth") {
@@ -369,6 +434,24 @@ sub Verbose {
     print $out "; Reference families\n";
     foreach my $f (keys %ref_families) {
 	printf $out ";\t%s\t%d\n", $ref_families{$f}->get_name(), $ref_families{$f}->get_size();
+    }
+    printf $out "; %-21s\t%d\n", "Population size", $population_size;
+    printf $out "; %-21s\t%s\n", "Sort key", $sort_key if ($sort_key);
+    
+    print $out "; Thresholds\tlower\tupper\n";
+    foreach $f qw(occ sig) {
+	print $out ";\t$f";
+	if (defined($lth{$f})) {
+	    printf $out "\t%-5g", $lth{$f};
+	} else {
+	    print $out "\tNA";
+	}
+	if (defined($uth{$f})) {
+	    printf $out "\t%-5g", $uth{$f};
+	} else {
+	    print $out "\tNA";
+	}
+	print $out "\n";
     }
     print $out "; Query families\n";
     foreach my $f (keys %query_families) {
