@@ -1,12 +1,12 @@
 ############################################################
 #
-# $Id: server.mk,v 1.2 2003/11/19 20:03:46 jvanheld Exp $
+# $Id: server.mk,v 1.3 2003/11/28 17:15:57 jvanheld Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
 ############################################################
 
-RSA=${HOME}/rsa-tools/
+RSAT=${HOME}/rsa-tools/
 #RSA=${HOME}/rsa/rsa-tools/
 GENBANK_DIR=/home/rsa/downloads/ftp.ncbi.nih.gov/genbank/genomes
 NCBI_DIR=/home/rsa/downloads/ftp.ncbi.nih.gov/genomes
@@ -18,7 +18,8 @@ DATE = `date +%Y%m%d_%H%M%S`
 # programs
 
 WGET = wget -np -rNL 
-MAKE=nice -n 19 make -s -f ${RSAT}/server.mk
+MAKEFILE=${RSAT}/makefiles/server.mk
+MAKE=nice -n 19 make -s -f ${MAKEFILE}
 RSYNC_OPT = -ruptvl ${OPT}
 SSH=-e 'ssh -x'
 RSYNC = rsync ${RSYNC_OPT} ${SSH}
@@ -26,12 +27,12 @@ RSYNC = rsync ${RSYNC_OPT} ${SSH}
 ################################################################
 #
 # Mirrors
-RSAT=jvanheld@rsat.ulb.ac.be:rsa-tools
-FLYCHIP=jvanheld@flychip.org.uk:rsa-tools
+RSAT_SERVER = jvanheld@rsat.ulb.ac.be:rsa-tools
+FLYCHIP = jvanheld@flychip.org.uk:rsa-tools
 CIFN = jvanheld@itzamna.cifn.unam.mx:rsa-tools
 GIN = jvanheld@gin.univ-mrs.fr:rsa-tools
 LIV = jvanheld@liv.bmc.uu.se:rsa-tools
-MIRROR_SERVERS = ${LIV} ${FLYCHIP} ${GIN}
+MIRROR_SERVERS = ${LIV} ${FLYCHIP} ${GIN} ${RSAT_SERVER} ${CIFN}
 
 ## installation on other machines
 PAULUS = jvanheld@paulus.ulb.ac.be:rsa-tools
@@ -49,7 +50,7 @@ MIRROR=${LIV}
 usage:
 	@echo "usage: make [-OPT='options'] target"
 	@echo "implemented targets"
-	@perl -ne 'if (/^(\S+):/){ print "\t$$1\n"}' makefile
+	@perl -ne 'if (/^(\S+):/){ print "\t$$1\n"}' ${MAKEFILE}
 
 ################################################################
 #### from brol to mirrors
