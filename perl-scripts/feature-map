@@ -202,7 +202,6 @@ if ($HTML_map) {
 
 ##### Image Initialization ####
 &OpenFeatureMap();
-$image->fill(1,1,$bg_color);
 
 #### Title ####
 &DrawTitle();
@@ -1258,6 +1257,8 @@ sub OpenFeatureMap {
 	push(@symbol_list, "crosscircle_med");
 	push(@symbol_list, "crosscircle_diag");
     }
+    
+    $image->fill(1,1,$bg_color);
 }
 
 
