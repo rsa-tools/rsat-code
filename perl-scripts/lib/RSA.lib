@@ -1277,8 +1277,17 @@ $supported_organisms = &ListSupportedOrganisms();
 
 
 ################################################################
-#### Treatment of errors
+#### Treatment of warnings and  errors
 ################################################################
+
+### warn with time 
+sub TimeWarn {
+    my $message = join "\t", &AlphaDate(), @_;
+    chomp($message);
+    $message .= "\n";
+    warn ($message);
+}
+
 
 ################################################################
 #### report an error by sending an email to RSAT administrator
@@ -1311,6 +1320,7 @@ sub cgiError {
     print "</body></html>\n";
     exit(1);
 }
+
 
 ### report a warning
 sub Warning {
