@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.45 2004/01/23 00:23:35 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.46 2004/01/23 00:24:58 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -26,7 +26,7 @@ require "$RSA/perl-scripts/lib/RSA.classes";
 $die_on_error = 1;
 %dir = ();
 $dir{main} = `pwd`;
-$dir{calib} = "calibrations2"; 
+$dir{calib} = "calibrations"; 
 chomp($dir{main});
 
 @supported_tasks = qw (upstream purge calibrate oligos maps dyads merge slide synthesis sql clean all);
