@@ -1,6 +1,6 @@
 #!/usr/bin/perl 
 #############################################################
-# $Id: parse-genbank.pl,v 1.16 2004/01/30 13:07:11 oly Exp $
+# $Id: parse-genbank.pl,v 1.17 2004/03/08 14:14:21 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -127,8 +127,8 @@ package main;
     #### find genbank files in the input directory
     unless ($inputfiles) {
 	chdir ($dir{input});
-	push @genbank_files, glob("*.genomic.${ext}");
-	push @genbank_files, glob("*.genomic.${ext}.gz");
+	push @genbank_files, glob("*.${ext}");
+	push @genbank_files, glob("*.${ext}.gz");
     }
     if ($#genbank_files < 0) {
 	&FatalError("There is no genbank file in the input directory $dir{input}\n");
