@@ -1,15 +1,16 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: position-analysis,v 1.12 2002/11/04 16:45:32 jvanheld Exp $
+# $Id: position-analysis,v 1.13 2002/11/20 14:03:39 jvanheld Exp $
 #
-# Time-stamp: <2002-11-04 10:45:12 jvanheld>
+# Time-stamp: <2002-11-20 08:01:23 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
 require "RSA.lib";
+use POSIX qw(sysconf _PC_CHOWN_RESTRICTED);
 
 ################################################################
 ###### default values for parameters
@@ -24,10 +25,14 @@ $reference_pos = 0;
 #### initialize other variables
 $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
 $sequence_number = 0;
+
+$max_seq_length = 0;
+
 $nb_possible_pos = 0;
 $sum_seq_length = 0;
 $no_check = 0;
 $no_filter = 0;
+$no_filter_graphs = 0;
 
 %supported_seq_type = ("DNA"=>1,
 		       "any"=>1);
@@ -171,6 +176,8 @@ if ($return{'graph'}) {
 
     #### generate one graph for each oligo
     foreach $oligo_seq (@sorted_keys) {
+	next unless (&IsReal($chi_square{$oligo_seq}) || ($no_filter_graphs));
+
 	$graph_file_name = "${oligo_seq}_ci${class_interval}_${strands}_pos_distrib.gif";
 	$xmax = ($max_class+1) * $class_interval;
 	$title2 = "$in_bound_occurrences{$oligo_seq} occurrences";
@@ -178,7 +185,11 @@ if ($return{'graph'}) {
 	if ($score_column > 0) {
 	    $score = sprintf "score = %.2f", $score{$oligo_seq};
 	} elsif ($return{'chi'}) {
-	    $score = sprintf "%.2f", $chi_square{$oligo_seq};
+	    if (&IsReal($chi_square{$oligo_seq})) {
+		$score = sprintf "%.2f", $chi_square{$oligo_seq};
+	    } else {
+		$score = $chi_square{$oligo_seq};
+	    }
 	    $title2 .= ", score = $score";
 	} 
 	
@@ -192,10 +203,10 @@ if ($return{'graph'}) {
 	print "; $command\n" if ($verbose >= 2);
 	open XY, "| $command";
 	print XY ";class\tocc_$oligo_seq\texp_$oligo_seq\n"; ### header line
-	foreach $class (0..$max_class) {
-	    print XY "$class_center[$class]\t";
-	    print XY "$class_freq{$oligo_seq}[$class]\t";
-	    print XY "$exp_occ{$oligo_seq}[$class]\n";
+	foreach $class ($min_class..$max_class) {
+	    print XY "$class_center{$class}\t";
+	    print XY "$class_freq{$oligo_seq}{$class}\t";
+	    print XY "$exp_occ{$oligo_seq}{$class}\n";
 	}
 	close XYgraph;
 	open INDEX, ">>$index_file";
@@ -242,18 +253,18 @@ sub SumStrands {
   undef %occurrences_2strands;
   
   ### positions ###
-  for $class (0..$max_class) {
+  for $class ($min_class..$max_class) {
     foreach $oligo_seq (sort keys %occurrences) {
       $rc_oligo_seq = lc(&ReverseComplement($oligo_seq));
       if ($rc_oligo_seq eq $oligo_seq) {
-	$m_pos_bothstrands{$oligo_seq}[$class] = $class_freq{$oligo_seq}[$class];
+	$m_pos_bothstrands{$oligo_seq}{$class} = $class_freq{$oligo_seq}{$class};
       } else {
-	$m_pos_bothstrands{$oligo_seq}[$class] = $class_freq{$oligo_seq}[$class] + $class_freq{$rc_oligo_seq}[$spos_class];;
+	$m_pos_bothstrands{$oligo_seq}{$class} = $class_freq{$oligo_seq}{$class} + $class_freq{$rc_oligo_seq}[$spos_class];;
       }	  
     }
     foreach $oligo_seq (sort keys %occurrences) {
-      $class_freq{$oligo_seq}[$class] = $m_pos_bothstrands{$oligo_seq}[$class];
-      undef $m_pos_bothstrands{$oligo_seq}[$class];
+      $class_freq{$oligo_seq}{$class} = $m_pos_bothstrands{$oligo_seq}{$class};
+      undef $m_pos_bothstrands{$oligo_seq}{$class};
     }   
   }
   
@@ -279,7 +290,7 @@ sub SumStrands {
 sub LocalReadPatterns {
     $date = `date '+%H:%M:%S'`;
     chomp $date;
-    print ";$date\treading pattern file ...\n" if ($verbose >= 2);
+    warn ";$date\treading pattern file ...\n" if ($verbose >= 1);
     open PATTERNS, "$pattern_file" || die "Error: cannot open pattern file $pattern_file\n";
     while (<PATTERNS>) {
 	next if (/^;/);
@@ -287,7 +298,7 @@ sub LocalReadPatterns {
 	chomp;
 	@fields = split, "\t";
 	$pattern = lc($fields[0]);
-	print ";\t$pattern\n" if ($verbose >= 2);
+	warn ";\t$pattern\n" if ($verbose >= 2);
 	$selected_pattern{$pattern} = 1;
 	$score{$pattern} = $fields[$score_column-1] if ($score_column > 0);
     }
@@ -299,23 +310,26 @@ sub LocalReadPatterns {
 ################################################################
 #### Read input sequence and calculate oligo distributions 
 sub ReadSequence {
-    if ($verbose >= 2) {
+    if ($verbose >= 1) {
 	$date = `date '+%H:%M:%S'`;
 	chomp $date;
-	print "$date\tReading sequences\n";
+	warn ";$date\tReading sequences\n";
     }
     
+
+    #### read all sequences and count oligo occurrences per class interval
+    $sequence_number = 0;
     while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir)) &&
 	   (($current_seq ne "") || ($current_id ne ""))) {
 	
-	print "; analysing sequence $current_id\n" if ($verbose >= 2);
+	warn "; Analysing sequence $current_id\n" if ($verbose >= 2);
 	### remove tabs and blank spaces ###    
 	$current_seq = &FoldSequence($current_seq,0);
 	
 	### statistics about sequences ###
 	$sequence_number++;  
-	$id_list[$sequence_number] = $current_id;
 	$seq_length[$sequence_number] = length($current_seq);
+	$id_list[$sequence_number] = $current_id;
 	$last_pos = $seq_length[$sequence_number] - $oligo_length + 1;
 	$max_last_pos = &max($max_last_pos, $last_pos);
 
@@ -323,23 +337,40 @@ sub ReadSequence {
 	if ($origin eq "-0") {
 	    $reference_pos = $seq_length[$sequence_number];
 	} elsif ($origin < 0) {
-	    $reference_pos = $seq_length[$sequence_number] - $origin;
+	    $reference_pos = $seq_length[$sequence_number] + $origin;
 	} else {
 	    $reference_pos = $origin;
 	}
+
+	warn join ( "\t", 
+		    $sequence_number,
+		    "seq len = ".$seq_length[$sequence_number],
+		    "last_pos = ". $last_pos,
+		    "ref_pos = ". $reference_pos,
+		    ), "\n" if ($verbose >= 3);
 	
 	#### count oligonucleotides ####
 	$offset = 0;
 	$current_pos = 1;
+	my %classes_in_this_seq = ();
 	while ($current_pos <= $last_pos) {
 	    $relative_pos = $current_pos - $reference_pos;
-	    $class = int(($relative_pos - 1)/$class_interval);
+	    $class = POSIX::floor(($relative_pos - 1)/$class_interval);
+	    $pos_per_class{$class}++;
+	    $classes_in_this_seq{$class}++;
 	    $oligo_seq = lc(substr($current_seq,$current_pos-1,$oligo_length));
 	    $rc = lc(&ReverseComplement($oligo_seq));
-	    $current_pos++;
-	    warn ";\t\t$current_pos\t$relative_pos\n" 
-		if (($verbose >= 3)  &&
-		    ($current_pos%$class_interval == 1));
+	    warn join ("\t",
+		       ";",
+		       $sequence_number,
+		       "len = ".$seq_length[$sequence_number],
+		       "pos = ".$current_pos,
+		       "last_pos = ".$last_pos,
+		       "rel_pos = ".$relative_pos,
+		       "class = ".$class,
+		       "oligo_seq = ".$oligo_seq
+		       ), "\n"
+			   if ($verbose >= 4) ; 
 	    if ((defined(%selected_pattern)) && 
 		!($selected_pattern{$oligo_seq}) && 
 		!($selected_pattern{$rc})) {
@@ -351,10 +382,26 @@ sub ReadSequence {
 		$overlaps{$oligo_seq}++;
 	    } else {
 		$occurrences{$oligo_seq}++;
-		$class_freq{$oligo_seq}[$class]++;
+		$class_freq{$oligo_seq}{$class}++;
 		$last_pos{$oligo_seq} = $current_pos;
 	    }
+	    $current_pos++;
 	}
+
+	
+	my $current_min_class = &min (keys %classes_in_this_seq);
+	my $current_max_class = &max (keys %classes_in_this_seq);
+	$min_class = &min ($current_min_class, $min_class);
+	$max_class = &max ($current_max_class, $max_class);
+
+
+	for my $class ($current_min_class..$current_max_class) {
+	    $seq_per_class{$class}++;
+	    $sum_seq_per_class++;
+	    warn join ("\t",  ";", $current_min_class,$current_max_class, $class, $last_pos, $pos_per_class{$class}), "\n";
+	}
+
+	warn join ("\t",  ";", $current_min_class,$current_max_class,$class, $last_pos, $pos_per_class{$current_max_class}), "\n";
 	undef %last_pos;
     }
     undef $current_seq; ### release the memory occupied
@@ -371,7 +418,7 @@ sub ReadSequence {
     ### statistics on sequence lengthes
     $date = `date '+%H:%M:%S'`;
     chomp $date;
-    print ";$date\tcalculating stats on sequence lengthes ...\n" if ($verbose >= 2);
+    warn ";$date\tcalculating stats on sequence lengths ...\n" if ($verbose >= 1);
     for $s (1..$sequence_number) {
 	$sum_seq_length += $seq_length[$s];
 	if ($seq_length[$s] >= $oligo_length) {
@@ -382,15 +429,15 @@ sub ReadSequence {
 	    }
 	}
 	$max_seq_length = &max($max_seq_length, $seq_length[$s]);
-	$last_pos = $seq_length[$s] - $oligo_length + 1;
-	$current_max_class = int(($last_pos-1)/$class_interval); 
-	for $class (0..$current_max_class-1) {
-	    $seq_per_class[$class]++;
-	    $pos_per_class[$class] += $class_interval;
-	    $sum_seq_per_class++;
-	}
-	$seq_per_class[$current_max_class]++;
-	$pos_per_class[$current_max_class] += ($last_pos-1) % $class_interval;
+#	$last_pos = $seq_length[$s] - $oligo_length + 1;
+#	$current_max_class = int(($last_pos-1)/$class_interval); 
+#	for $class (0..$current_max_class-1) {
+#	    $seq_per_class{$class}++;
+#	    $pos_per_class{$class} += $class_interval;
+#	    $sum_seq_per_class++;
+#	}
+#	$seq_per_class[$current_max_class]++;
+#	$pos_per_class[$current_max_class] += ($last_pos-1) % $class_interval;
 	#print "$s\t$id_list[$sequence_number] \t$seq_length[$s]\t",$last_pos-1, "\t", ($last_pos-1) % $class_interval,"\n";
     }
 }
@@ -400,27 +447,26 @@ sub ReadSequence {
 #### calculate class intervals
 sub CalcClasses {
     ### class definition
-    $max_class = int(($max_last_pos-1)/$class_interval);
     $class_nb = $max_class + 1;
-    for $class (0..$max_class) {
-	$class_min[$class] = $class*$class_interval + 1;
-	$class_max[$class] = ($class+1)*$class_interval;
-	$class_center[$class] = ($class_min[$class] + $class_max[$class])/2;
+    for $class ($min_class..$max_class) {
+	$class_min{$class} = $class*$class_interval + 1;
+	$class_max{$class} = ($class+1)*$class_interval;
+	$class_center{$class} = ($class_min{$class} + $class_max{$class})/2;
     }
     if (&IsNatural($min_pos)) {
-	$min_calc_class = int(($min_pos-1)/$class_interval);
+	$min_calc_class = POSIX::floor(($min_pos-1)/$class_interval);	
     } else {
-	$min_calc_class = 0;
+	$min_calc_class = $min_class;
     }
     if (&IsNatural($max_pos)) {
-	$max_calc_class = int(($max_pos-1)/$class_interval);
+	$max_calc_class = POSIX::floor(($max_pos-1)/$class_interval);
     } else {
 	$max_calc_class = $max_class;
     }
     $calc_class_nb = $max_calc_class - $min_calc_class + 1;
     $sum_pos_per_class  = 0;
     for $class ($min_calc_class..$max_calc_class) {
-	$sum_pos_per_class += $pos_per_class[$class];
+	$sum_pos_per_class += $pos_per_class{$class};
     }
 }
 
@@ -432,24 +478,29 @@ sub CalcExpected {
     ### calculate expected occurrences for each class
     $date = `date '+%H:%M:%S'`;
     chomp $date;
-    print ";$date\tcalculating expected occurrences ...\n" if ($verbose >= 2);
+    warn ";$date\tcalculating expected occurrences ...\n" if ($verbose >= 1);
     foreach $oligo_seq (sort keys %occurrences) {
 	foreach $class ($min_calc_class..$max_calc_class) {
-	    $in_bound_occurrences{$oligo_seq} += $class_freq{$oligo_seq}[$class];
+	    $in_bound_occurrences{$oligo_seq} += $class_freq{$oligo_seq}{$class};
 	}
 	foreach $class ($min_calc_class..$max_calc_class) {
 	    ### check that the class_freq has been defined
-	    unless (&IsNatural($class_freq{$oligo_seq}[$class])) {
-		$class_freq{$oligo_seq}[$class] = 0;
+	    unless (&IsNatural($class_freq{$oligo_seq}{$class})) {
+		$class_freq{$oligo_seq}{$class} = 0;
 	    }
-	    #		if ($seq_per_class[$class] > 0) {
-	    #			$rel_freq{$oligo_seq}[$class] =  $class_freq{$oligo_seq}[$class]/$seq_per_class[$class];
+
+	    #		if ($seq_per_class{$class} > 0) {
+	    #			$rel_freq{$oligo_seq}{$class} =  $class_freq{$oligo_seq}{$class}/$seq_per_class{$class};
 	    #		} else {
-	    #			$rel_freq{$oligo_seq}[$class] = 0;
+	    #			$rel_freq{$oligo_seq}{$class} = 0;
 	    #		}
-	    $exp_occ{$oligo_seq}[$class] =  $in_bound_occurrences{$oligo_seq} * $pos_per_class[$class]/$sum_pos_per_class;
-	    $max_freq = &max($max_freq,$class_freq{$oligo_seq}[$class],$exp_occ{$oligo_seq}[$class]);
-	    $min_freq = &min($min_freq,$class_freq{$oligo_seq}[$class],$exp_occ{$oligo_seq}[$class]);
+	    if ($sum_pos_per_class > 0) {
+		$exp_occ{$oligo_seq}{$class} =  $in_bound_occurrences{$oligo_seq} * $pos_per_class{$class}/$sum_pos_per_class;
+	    } else {
+		$exp_occ{$oligo_seq}{$class} =  "NA";
+	    }
+	    $max_freq = &max($max_freq,$class_freq{$oligo_seq}{$class},$exp_occ{$oligo_seq}{$class});
+	    $min_freq = &min($min_freq,$class_freq{$oligo_seq}{$class},$exp_occ{$oligo_seq}{$class});
 	}
     }
 }
@@ -462,15 +513,15 @@ sub CalcChi {
     ### calculate chi2 to compare the position distribution with a flat line
     $date = `date '+%H:%M:%S'`;
     chomp $date;
-    print ";$date\tcalculating chi values ...\n" if ($verbose >= 2);
+    warn ";$date\tcalculating chi values ...\n" if ($verbose >= 2);
     foreach $oligo_seq (sort keys %occurrences) {
 
 	@chi_values = ();
 	foreach $class ($min_calc_class..$max_calc_class) {
-	    push @chi_values, $class_freq{$oligo_seq}[$class];
+	    push @chi_values, $class_freq{$oligo_seq}{$class};
 	}
 	foreach $class ($min_calc_class..$max_calc_class) {
-	    push @chi_values, $exp_occ{$oligo_seq}[$class];
+	    push @chi_values, $exp_occ{$oligo_seq}{$class};
 	}
 	$chi_square{$oligo_seq} = &ChiSquare("goodfit", 2, $calc_class_nb, @chi_values);
 	
@@ -619,6 +670,9 @@ OPTIONS
 		relative to the end rather than the start of the
 		sequences.
 
+		The default value is 0, meaning that positions are
+		calculated from sequence start (5\' side).
+
 		To calculate the positions relative to sequence end,
 		use the option:
 			     -origin -0
@@ -652,7 +706,7 @@ position-analysis options
 -lth		lower threshold on chi2
 -oth		lower threshold on occurrences
 -pl		pattern list
--origin		origin (-0 to calculate positions relative to  sequence end)
+-origin		origin (-0 to calculate positions relative to sequence end)
 -sc		score column
 -minpos		minimal position for chi-square calculation
 -maxpos		maximal position for chi-square calculation
@@ -826,15 +880,16 @@ sub Verbose {
 	printf $out "; %-29s\n", "Occurrences counted  on a single  strands";
     }
     print $out "; Conditions of applicability not checked !\n" if $no_check;
-    print $out "; Oligos which do not fit conditions of applicability are not discarded !\n" if $no_filter;
+    print $out "; WARNING ! Oligos which do not fit conditions of applicability have chi2 between curly braces !\n" if $no_filter;
 
     print $out ";Sequence statistics:\n";
     printf $out ";\t%-29s\t%d\n", "Nb of sequences", $sequence_number;
     printf $out ";\t%-29s\t%d\n", "Sum of sequence lengths", $sum_seq_length;
     printf $out ";\t%-29s\t%d\n", "Max sequence length", $max_seq_length;
+    printf $out ";\t%-29s\t%d\n", "Max sequence length", $max_seq_length;
     printf $out ";\t%-29s\t%d\n", "Average sequence length", $sum_seq_length/$sequence_number ,"\n" if ($sequence_number > 0);
     printf $out ";\t%-29s\t%d\n", "Possible positions", $nb_possible_pos;
-    unless ($sequence_number > 1000) {
+    unless ($sequence_number > 100) {
 	print $out ";Sequences:\n";
 	print $out ";\t#\tlength\tID\n";
 	foreach $s (1..$sequence_number) {
@@ -846,35 +901,36 @@ sub Verbose {
 	print $out join ("\n;\t", "; Selected patterns", @selected_patterns), "\n";
     }
     
+
+    print $out ";Oligonucleotide statistics:\n";	
+    printf $out ";\t%-21s\t%d\n", "Total occurrences", $sum_occurrences;
+    if ($no_overlap) {
+	printf $out ";\t%-21s\t%d\n", "Total overlaps", $sum_overlaps;
+    }
+
     print $out ";Class parameters:\n";
 
     printf $out ";\t%-21s\t%d\n", "Class interval", $class_interval;
     printf $out ";\t%-21s\t%d\n", "Min position", $min_pos if (&IsNatural($min_pos));
     printf $out ";\t%-21s\t%d\n", "Max position", $max_pos if (&IsNatural($max_pos));
-    printf $out ";\t%-21s\t%d\n", "Min class", $min_calc_class if (&IsNatural($min_calc_class));
-    printf $out ";\t%-21s\t%d\n", "Max class", $max_calc_class if (&IsNatural($max_calc_class));
+    printf $out ";\t%-21s\t%d\n", "Min class", $min_calc_class + 1 if (&IsInteger($min_calc_class));
+    printf $out ";\t%-21s\t%d\n", "Max class", $max_calc_class + 1 if (&IsInteger($max_calc_class));
     printf $out ";\t%-21s\t%d\n", "Number of classes", $calc_class_nb;
     printf $out ";\t%-21s\t%d\n", "Total positions", $sum_pos_per_class;
     printf $out ";\t%-21s\t%d\n", "Degrees of freedom", $calc_class_nb - 1;
 
-    print $out ";\tSequences per class:\n";
-    print $out join ("\t", ";\t", "class", "\[min", "max\]", "mid", "seq", "pos"), "\n";
+    print $out "; Sequences per class:\n";
+    print $out join ("\t", ";", "class", "\[min", "max\]", "mid", "seq", "pos"), "\n";
     for $class ($min_calc_class..$max_calc_class) {
-	print $out join ("\t",  ";\t", 
-			 $class, 
-			 "\[".$class_min[$class], 
-			 $class_max[$class]."\]", 
-			 $class_center[$class], 
-			 $seq_per_class[$class], 
-			 $pos_per_class[$class]), "\n";
+	print $out join ("\t",  ";", 
+			 $class + 1, 
+			 "\[".$class_min{$class}, 
+			 $class_max{$class}."\]", 
+			 $class_center{$class}, 
+			 $seq_per_class{$class}, 
+			 $pos_per_class{$class}), "\n";
     }
     
-    print $out ";Oligonucleotide statistics:\n";	
-    print $out ";\ttotal oligo occurrences         $sum_occurrences\n";
-    if ($no_overlap) {
-	print $out ";\ttotal overlaps         $sum_overlaps\n";
-    }
-    print $out ";\tnb possible oligonucleotides\t$nb_possible_oligo\n";
     print $out ";\n";
 }
 
@@ -915,12 +971,15 @@ sub PrintResult {
     print $out "\tid";
     print $out "\tocc";
     print $out "\tover" if ($no_overlaps);
-    print $out "\tchi2";
+    print $out "\tchi2" if ($return{'chi'});
     if ($return{'distrib'}) {
 	for $class ($min_calc_class..$max_calc_class) {
-	    print $out "\t", $class_center[$class];
-#	    print $out "\t\[$class_min[$class]-$class_max[$class]\]";
-	    #		print $out " (exp)" if ($return{'exp'});
+	    print $out "\t", $class_center{$class};
+	}
+	if ($return{'exp'}) {
+	    for $class ($min_calc_class..$max_calc_class) {
+		print $out "\t", $class_center{$class};
+	    }
 	}
     }
     print $out "\n";
@@ -939,31 +998,30 @@ sub PrintResult {
 	print $out "\t$overlaps{$oligo_seq}" if ($no_overlaps);
 	
 	### chi-square value ###
-	print $out "\t$chi_square{$oligo_seq}";
+	print $out "\t$chi_square{$oligo_seq}" if ($return{'chi'});
 	
 	### position distribution
 	if ($return{'distrib'}) {
 	    for $class ($min_calc_class..$max_calc_class) {
-		print $out "\t$class_freq{$oligo_seq}[$class]";
-		#			printf $out " (%.1f)", $exp_occ{$oligo_seq}[$class] if ($return{'exp'});
+		print $out "\t$class_freq{$oligo_seq}{$class}";
+		#			printf $out " (%.1f)", $exp_occ{$oligo_seq}{$class} if ($return{'exp'});
 	    }
 	}
 	
-	print $out "\n";
+#	print $out "\n";
 	
 	if (($return{'exp'}) && ($return{'distrib'})) {
-	    print $out "$oligo_seq";
-	    print $out "\t$oligo_seq";
-	    if ($group_rc) {
-		print $out "|", lc(ReverseComplement($oligo_seq));
-	    }
-	    print $out "\t$in_bound_occurrences{$oligo_seq}";
-	    print $out "\t$overlaps{$oligo_seq}" if ($no_overlaps);
-	    
-	    print $out "\texpected";
+#	    print $out "$oligo_seq";
+#	    print $out "\t$oligo_seq";
+#	    if ($group_rc) {
+#		print $out "|", lc(ReverseComplement($oligo_seq));
+#	    }
+#	    print $out "\t$in_bound_occurrences{$oligo_seq}";
+#	    print $out "\t$overlaps{$oligo_seq}" if ($no_overlaps);
+#	    print $out "\texpected";
 	    
 	    for $class ($min_calc_class..$max_calc_class) {
-		printf $out "\t%.1f", $exp_occ{$oligo_seq}[$class]; 
+		printf $out "\t%.1f", $exp_occ{$oligo_seq}{$class}; 
 	    }       
 	    print $out "\n";
 	}
