@@ -37,7 +37,7 @@ $organism = &CheckOrganism($organism_name);
 #&OldReadOrfpositions;
 
 
-&PrintVerbose;
+&PrintVerbose if ($verbose);
 
 ### open all output files
 open NC_LOCATIONS, ">${organism_name}_non_coding_segments.coord";
@@ -71,7 +71,8 @@ foreach my $chromosome ($organism->get_chromosomes()) {
     ### sort ORF from current chromosome
 #    $ORF_nb{$chr} = $#{$ids{$chr}}+1;;
     my @genes = $chromosome->get_genes();
-    printf "; %s\t%s\t%d\t%d\n", $seq_file, $chr, $chr_length, $#genes+1;
+    printf "; %s\t%s\t%d\t%d\n", $seq_file, $chr, $chr_length, $#genes+1 
+	if ($verbose);
 #die "HELLO\t",$chromosome->count_genes() ,"\n";
 
     @sorted_orfs = sort {
@@ -166,8 +167,8 @@ close C_LOCATIONS;
 close ORF_SEQ;
 
 $done_time  = `date '+%d/%m/%y %H:%M:%S %Z'`;
-print "; Job started $start_time";
-print "; Job done    $done_time";
+print "; Job started $start_time" if ($verbose);
+print "; Job done    $done_time" if ($verbose);
 
 
 exit(0);
@@ -240,7 +241,13 @@ OUTPUT
 sub ReadArguments {
 ##### read parameters ###
     for $a (0..$#ARGV) {
-	if ($ARGV[$a] eq "-org") {
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+	} elsif ($ARGV[$a] eq "-org") {
 	    $organism_name = $ARGV[$a+1];
 	} elsif (($ARGV[$a] eq "-help") || 
 		 ($ARGV[$a] eq "-h")) {
@@ -267,7 +274,7 @@ sub ReadArguments {
 		} else {
 		    die ("\tError : unrecognized request: $field\n",
 			 "\tType coding-or-not -help for info\n");
-
+		    
 		}	
 		
 	    }

@@ -21,10 +21,14 @@ USAGE
 		-stat [chi | like | proba]
 
 DESCRIPTION
-	Compares each position of two clusters of sequences (cl1 and cl2),
-	and determines whether the amino-acid composition is similar between
-	the two clusters.
-	
+	given two matrix files (each containing a position frequency
+	matrix), perform an independence test to estimate whether the
+	matrices are similar or different.
+
+	Alternatively, the output can be provided as two pre-aligned
+	sequence sets. The program then calculates the two
+	corresponding profiles and compares them.
+
 OPTIONS
         -h      (must be first argument) display full help message
         -help   (must be first argument) display options
@@ -67,7 +71,7 @@ OPTIONS
 		Three options are supported:
 		- chi	Pearson chi-square
 		- like	log likelihood
-		- proba	probability calculated by Fisher's exact test
+		- proba	probability calculated by Fisher\'s exact test
 	-dna	input file contains a DNA sequence
 		(by default, the input sequence is considered proteic).
 
@@ -80,6 +84,11 @@ OPTIONS
 
 	
 INPUT FORMAT
+    Matrix files:
+    ============
+	The matrices must be provided in the same format as patser and
+	consensus (Jerry Hertz).
+
     Sequence file:
     ==============
 	This file contains the sequences resulting from a multiple 
@@ -259,7 +268,9 @@ $out = &OpenOutputFile($outputfile);
 
 
 ### Read input data ###
-if ($input_type eq "matrices") { ##### matrices as input
+
+##### matrices as input
+if ($input_type eq "matrices") { 
    for $i (1..$profile_nb) {
       unless ($mat_file[$i] eq "") {
          unless (open MAT, $mat_file[$i] ) {
@@ -278,7 +289,8 @@ if ($input_type eq "matrices") { ##### matrices as input
       close MAT;
    }
 
-} elsif ($input_type eq "clusters") { ###### single sequence file ###
+#### All sequences provided in a file, and the clusters provided separately
+} elsif ($input_type eq "clusters") { 
    unless (($cl_file[1] =~ /\S/) && ($cl_file[2] =~ /\S/)) {
        print "\tError: you should specify two cluster files\n";
        print "\tType differential-profile -h for info\n";
@@ -304,7 +316,9 @@ if ($input_type eq "matrices") { ##### matrices as input
        }
        close CLUSTER;
    }
-} elsif ($input_type eq "sequences") { #### two input sequence files ###
+
+#### two input sequence files ###
+} elsif ($input_type eq "sequences") { 
    for $i (1..$profile_nb) {
       unless ($seq_file[$i] eq "") {
          unless (open SEQ, $seq_file[$i] ) {
