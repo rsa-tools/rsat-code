@@ -49,8 +49,18 @@ command_now:
 ## Iterate over all organisms
 iterate_organisms:
 	@echo "Iterating task ${ORG_TASK} over organisms"
-	@echo ${ORGANISMS}
+	@echo "	${ORGANISMS}"
+	@echo
 	@for org in ${ORGANISMS} ; do			\
 		${MAKE} ${ORG_TASK} ORG=$${org} ;	\
 	done
 
+
+################################################################
+## Iterate over all organisms
+iterate_oligo_lengths:
+	@echo "Iterating task ${OLIGO_TASK} over oligonucleotide lengths ${OLIGO_LENGTHS}"
+	@echo
+	@for ol in ${OLIGO_LENGTHS} ; do			\
+		${MAKE} ${OLIGO_TASK} OL=$${ol} ;	\
+	done
