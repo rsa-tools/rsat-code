@@ -708,7 +708,7 @@ use Data::Dumper;
       foreach my $dbms (keys %main::supported_dbms) {
 	  warn "Exporting SQL scripts for $dbms\n" if ($main::verbose >= 2);
 	  $class_holder->generate_sql_one_dbms(%args, dbms=>$dbms,
-					       dir=>$main::dir{output}."/sql_scripts/".$dbms) if ($main::verbose >= 2);
+					       dir=>$main::dir{output}."/sql_scripts/".$dbms);
       }
   }
 
