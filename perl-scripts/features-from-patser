@@ -254,7 +254,20 @@ sub ReadArguments {
     foreach $a (0..$#ARGV) {
 	### verbose ###
 	if ($ARGV[$a] eq "-v") {
-	    $verbose = 1;
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+	    
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp;
+	    
+	    ### list of options
+	} elsif ($ARGV[0] eq "-help") {
+	    &PrintOptions;
+	    
 	    ### input file ###
 	} elsif ($ARGV[$a] eq "-i") {
 	    $inputfile = $ARGV[$a+1];
