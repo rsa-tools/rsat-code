@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis,v 1.3 2000/12/29 21:19:17 jvanheld Exp $
+# $Id: dyad-analysis,v 1.4 2001/01/13 11:11:36 jvanheld Exp $
 #
-# Time-stamp: <2000-12-27 02:56:11 jvanheld>
+# Time-stamp: <2001-01-13 12:11:27 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -15,7 +15,7 @@ require "RSA.lib.pl";
 if ($ARGV[0] eq "-h") { #### display full help message ##### open
   &HelpMessage;
 } elsif ($ARGV[0] eq "-help") {
-  &ShortHelpMessage;
+  &PrintOptions;
 }
 
 #### initialise parameters ####
@@ -113,85 +113,9 @@ if ($input_format eq "") {
 
 
 ### read sequence and count dyads ###
-$in = &OpenInputFile($inputfile);
-$sequence_number = 0;
-$nb_possible_pos = 0;
-$sum_seq_length = 0;
-while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $input_format)) &&
-       (($current_seq ne "") || ($current_id ne ""))) {
-  
-  if ($hyperverbose) {
-    print STDERR ";Reading sequence\t$current_id\n";
-  }
-  
-  ### remove tabs and blank spaces ###    
-  $current_seq = &FoldSequence($current_seq,0);
-  
-  ### statistics about sequences ###
-  $sequence_number++;  
-  $id_list[$sequence_number] = $current_id;
-  $seq_length[$sequence_number] = length($current_seq);
-  $sum_seq_length += $seq_length[$sequence_number];
-  $new_pos_nb =  max(0,$seq_length[$sequence_number] - 2*$oligo_length - $min_spacing + 1); ### cannot be negative ven if new seq is shorter than dyad length
-  if ($sum_strands) {
-    $new_pos_nb *= 2;
-  }
-  $nb_possible_pos += $new_pos_nb; 
-  
-  
-  #### count oligonucleotides and dyads
-  $last_pos = $seq_length[$sequence_number] - $oligo_length;
-  $pos1 = 0;
-  while ($pos1 <= $last_pos) {
-    
-    #### count oligont occurrences
-    #### will be used for estimation of expected dyad frequencies
-    $oligo1 = lc(substr($current_seq,$pos1,$oligo_length));
-    $oligo{$oligo1}->{obs_occ}++;
-    $sum_oligo_count++;
-    
-    #### count dyad occurrences
-    foreach $spacing ($min_spacing..$max_spacing) {
-      $pos2 = $pos1 + $oligo_length + $spacing;
-      #      $min_overlap_dist = $oligo_length;
-      $min_overlap_dist = 2*$oligo_length + $spacing;
-      
-      if ($pos2 <= $last_pos) {
-	$oligo2 = lc(substr($current_seq,$pos2,$oligo_length));
-	next if (($dyad_type eq "dr") && ($oligo1 ne $oligo2)); ### count only direct repeats
-	next if (($dyad_type eq "ir") && ($oligo2 ne &SmartRC($oligo1))); ### count only inverted repeats
-	next if (($dyad_type eq "rep") && ($oligo1 ne $oligo2) &&($oligo2 ne &SmartRC($oligo1))); ### count only repeats
-	
-	if ($sp_group) {
-	  $dyad_seq = "${oligo1}n\{$min_spacing,$max_spacing\}${oligo2}";
-	} else {
-	  $dyad_seq = "${oligo1}n\{$spacing\}${oligo2}";
-	}
-	
-	if ($noov) {
-	  $dist = $pos1 - $last_pos{$dyad_seq};
-	  if  ((&IsNatural($last_pos{$dyad_seq})) &&
-	       ($dist < $min_overlap_dist)) {
-	    ### new position can overlap with either the first of the second element of the previous dyad occurrence
-	    $dyad{$dyad_seq}->{overlaps}++;
-	    next;
-	  } 
-	  #$rc_dyad = &SmartRC($dyad_seq);
-	  #print "$current_id\t$dyad_seq\t$rc_dyad\t$pos1\t$last_pos{$dyad_seq}\t",$dyad{$rc_dyad}->{obs_occ},"\t",$dyad{$dyad_seq}->{obs_occ},"\t",$dyad{$rc_dyad}->{obs_occ}+$dyad{$dyad_seq}->{obs_occ},"\n";
-	  $last_pos{$dyad_seq} = $pos1;
-	  if ($sum_strands) {
-	    $rc_dyad = &SmartRC($dyad_seq);
-	    $last_pos{$rc_dyad} = $pos1;
-	  } 
-	}
-	$dyad{$dyad_seq}->{obs_occ}++;
-      }
-    }
-    $pos1++;
-  }
-  undef %last_pos;
-}
-
+&CountDyads();
+ 
+   
 &SumReverseComplements if ($sum_strands);
 
 &CalcFrequencies if ($return{freq});
@@ -231,85 +155,155 @@ exit(0);
 
 ########################## subroutine definition ############################
 
-sub PrintResult {
-  ### print header
-  print $out ";pattern    ";
-  if ($sum_strands) {
-    printf $out "\t%23s", dyads;
-  } else {
-    printf $out "\t%11s", dyads;
-  }
-  print $out "\tobs_freq" if ($return{freq});
-  print $out "\texp_frq" if ($return{exp_freq});
-  print $out "\tobs_occ" if ($return{occ});
-  print $out "\texp_occ"  if ($return{exp_occ});
-  if ($return{proba}) {
-    print $out "\tproba";
-    print $out "\tsig";
-  }
-  if ($return{zscore}) {
-    print $out "\tzscore";
-    print $out "\tocc_var";
-  }
-  if ($noov) {
-    print $out "\tovlaps";
-    print $out "\tocc+ovl";
-  }
-  if (($return{proba})|| ($return{zscore})) {
-    print $out "\tov_coef" ;
-    print $out "\tremark";
-  }
-  print $out "\n";
-  
-  #### sort dyads according to significance ####
-  if ($sort_results) {
-    if ($return{proba}) { ### sort by decreasing order of significance
-      @dyad_list = sort { $dyad{$b}->{occ_sig} <=> $dyad{$a}->{occ_sig}} keys %dyad;
-    } elsif ($return{zscore}) { ### sort by decreasing order of zscore
-      @dyad_list = sort {$dyad{$b}->{zscore} <=> $dyad{$a}->{zscore}} keys %dyad;
-    } else { ### sort by decreasing order of occurrences
-      @dyad_list = sort {$dyad{$b}->{obs_occ} <=> $dyad{$a}->{obs_occ}} keys %dyad;
-    }
-  }
-  unless (defined(@dyad_list)) {
-    @dyad_list = sort keys %dyad;
-  }
+sub PrintHeaderLine {
+    $col_description{"dyad_seq"} = "dyad sequence";
+    $col_description{"dyad_sequence"} = "dyad sequence";
+    $col_description{"dyad_identifier"} = "dyad identifier";
+    $col_description{"dyad_id"} = "dyad identifier";
+    $col_description{"observed_freq"} = "observed relative frequency"; 
+    $col_description{"obs_frq"} = "expected relative frequency"; 
+    $col_description{"observed_freq"} = "observed relative frequency"; 
+    $col_description{"exp_frq"} = "expected relative frequency"; 
+    $col_description{"obs_occ"} = "observed occurrences";
+    $col_description{"exp_occ"} = "expected occurrences"; 
+    $col_description{"occ_prb"} = "occurrence probability (binomial)";
+    $col_description{"occ_sig"} = "occurrence significance (binomial)";
+    $col_description{"zscore"} = "z-score (normal)"; 
+    $col_description{"occ_lkh"} = "occurrence likelihood"; 
+    $col_description{"occ+ovl"} = "number of non-overlapping + overlapping occurrences"; 
+    $col_description{"ovlaps"} = "number of overlapping occurrences"; 
+    $col_description{"ratio"} = "observed/expected ratio"; 
+    $col_description{"ov_coef"} = "overlap coefficient"; 
+    $col_description{"remark"} = "remark"; 
 
-  ### print values for each dyad
-  foreach $dyad_seq (@dyad_list) {
-    next unless (defined($dyad{$dyad_seq}->{obs_occ}));
-    print $out "$dyad_seq";
-    print $out "\t$dyad_seq";
-    if ($sum_strands){
-      $rc_dyad = &SmartRC($dyad_seq);
-      print $out "|$rc_dyad";
+    @out_col = ();
+
+    ### print header line ###
+    if ($sum_strands) {
+	push @out_col, "dyad_sequence";
+	push @out_col, "dyad_identifier";
+    } else {
+	push @out_col, "dyad_seque";
+	push @out_col, "dyad_ident";    
     }
-    printf $out "\t%15.13f", $dyad{$dyad_seq}->{obs_freq} if ($return{freq});
-    printf $out "\t%7.5f", $dyad{$dyad_seq}->{exp_freq} if ($return{exp_freq});
-    printf $out "\t%d", $dyad{$dyad_seq}->{obs_occ} if ($return{occ});
-    printf $out "\t%7.2f", $dyad{$dyad_seq}->{exp_occ} if ($return{exp_occ});
+    push @out_col, "observed_freq" if ($return{freq});
+    push @out_col, "expected_freq" if ($return{exp_freq});
+    push @out_col, "obs_occ" if ($return{occ});
+    push @out_col, "exp_occ"  if ($return{exp_occ});
     if ($return{proba}) {
-      if ($dyad{$dyad_seq}->{occ_proba} >= 0.0001) {
-	printf $out "\t%.4f", $dyad{$dyad_seq}->{occ_proba};
-      } else {
-	printf $out "\t%.2g", $dyad{$dyad_seq}->{occ_proba};
-      }
-      printf $out "\t%.1f", $dyad{$dyad_seq}->{occ_sig};
+	push @out_col, "occ_prb";
+	push @out_col, "occ_sig";
     }
     if ($return{zscore}) {
-      printf $out "\t%.2f", $dyad{$dyad_seq}->{zscore};
-      printf $out "\t%.2f", $dyad{$dyad_seq}->{var_est};
+	push @out_col, "zscore";
+	push @out_col, "occ_var";
     }
     if ($noov) {
-      printf $out "\t%d", $dyad{$dyad_seq}->{overlaps};
-      printf $out "\t%d", $dyad{$dyad_seq}->{overlaps} + $dyad{$dyad_seq}->{obs_occ};
+	push @out_col, "ovlaps";
+	push @out_col, "occ+ovl";
     }
-    if (($return{proba}) || ($return{zscore})) {
-      printf $out "\t%.3f", $overlap_coeff{$dyad_seq};
-      print $out "\t", $dyad{$dyad_seq}->{remark};
+    if (($return{proba})|| ($return{zscore})) {
+	push @out_col, "ov_coef" ;
+	push @out_col, "remark";
     }
+    
+    if ($verbose) {
+	print $out "; column headers\n";
+	foreach $c (0..$#out_col) {
+	    printf $out ";\t%d\t%-15s\t%s\n", $c+1, $out_col[$c], $col_description{$out_col[$c]};
+	}
+    }
+
+    print $out ";";
+    print $out join("\t",@out_col);
     print $out "\n";
-  }
+
+}
+
+
+
+
+sub PrintResult {
+    #### print header line
+    &PrintHeaderLine();
+
+#    print $out ";pattern    ";
+#    if ($sum_strands) {
+#      printf $out "\t%23s", dyads;
+#    } else {
+#      printf $out "\t%11s", dyads;
+#    }
+#    print $out "\tobs_freq" if ($return{freq});
+#    print $out "\texp_frq" if ($return{exp_freq});
+#    print $out "\tobs_occ" if ($return{occ});
+#    print $out "\texp_occ"  if ($return{exp_occ});
+#    if ($return{proba}) {
+#      print $out "\tproba";
+#      print $out "\tocc_sig";
+#    }
+#    if ($return{zscore}) {
+#      print $out "\tzscore";
+#      print $out "\tocc_var";
+#    }
+#    if ($noov) {
+#      print $out "\tovlaps";
+#      print $out "\tocc+ovl";
+#    }
+#    if (($return{proba})|| ($return{zscore})) {
+#      print $out "\tov_coef" ;
+#      print $out "\tremark";
+#    }
+#    print $out "\n";
+    
+    #### sort dyads according to significance ####
+    if ($sort_results) {
+	if ($return{proba}) { ### sort by decreasing order of significance
+	    @dyad_list = sort { $dyad{$b}->{occ_sig} <=> $dyad{$a}->{occ_sig}} keys %dyad;
+	} elsif ($return{zscore}) { ### sort by decreasing order of zscore
+	    @dyad_list = sort {$dyad{$b}->{zscore} <=> $dyad{$a}->{zscore}} keys %dyad;
+	} else { ### sort by decreasing order of occurrences
+	    @dyad_list = sort {$dyad{$b}->{obs_occ} <=> $dyad{$a}->{obs_occ}} keys %dyad;
+	}
+    }
+    unless (defined(@dyad_list)) {
+	@dyad_list = sort keys %dyad;
+    }
+    
+    ### print values for each dyad
+    foreach $dyad_seq (@dyad_list) {
+	next unless (defined($dyad{$dyad_seq}->{obs_occ}));
+	print $out "$dyad_seq";
+	print $out "\t$dyad_seq";
+	if ($sum_strands){
+	    $rc_dyad = &SmartRC($dyad_seq);
+	    print $out "|$rc_dyad";
+	}
+	printf $out "\t%15.13f", $dyad{$dyad_seq}->{obs_freq} if ($return{freq});
+	printf $out "\t%15.13f", $dyad{$dyad_seq}->{exp_freq} if ($return{exp_freq});
+	printf $out "\t%7d", $dyad{$dyad_seq}->{obs_occ} if ($return{occ});
+	printf $out "\t%7.2f", $dyad{$dyad_seq}->{exp_occ} if ($return{exp_occ});
+	if ($return{proba}) {
+	    if ($dyad{$dyad_seq}->{occ_proba} >= 0.0001) {
+		printf $out "\t%.4f", $dyad{$dyad_seq}->{occ_proba};
+	    } else {
+	  printf $out "\t%.2g", $dyad{$dyad_seq}->{occ_proba};
+      }
+	    printf $out "\t%.1f", $dyad{$dyad_seq}->{occ_sig};
+	}
+	if ($return{zscore}) {
+	    printf $out "\t%.2f", $dyad{$dyad_seq}->{zscore};
+	    printf $out "\t%.2f", $dyad{$dyad_seq}->{var_est};
+	}
+	if ($noov) {
+	    printf $out "\t%d", $dyad{$dyad_seq}->{overlaps};
+	    printf $out "\t%d", $dyad{$dyad_seq}->{overlaps} + $dyad{$dyad_seq}->{obs_occ};
+	}
+	if (($return{proba}) || ($return{zscore})) {
+	    printf $out "\t%.3f", $overlap_coeff{$dyad_seq};
+	    print $out "\t", $dyad{$dyad_seq}->{remark};
+	}
+	print $out "\n";
+    }
 }
 
 
@@ -899,7 +893,7 @@ PROBABILITIES
 
 AVAILABILITY
       The program can be used through its web interface at:
-      http://copan.cifn.unam.mx/Computational_Biology/yeast-tools 
+      http://www.ucmb.ulb.ac.be/bioinformatics/rsa-tools/
       dyad-analysis is a perl script running on unix machines (SUN, SGI
       have been tested). The web interface is a perl-cgi script. 
 End_of_help
@@ -909,7 +903,7 @@ End_of_help
 
 
 #### display short help message #####
-sub ShortHelpMessage {
+sub PrintOptions {
   open HELP, "| more";
   print HELP <<End_short_help;
 dyad-analysis options
@@ -1038,4 +1032,87 @@ sub PrintVerbose {
   foreach $s (1..$sequence_number) {
     print $out ";\t$id_list[$s]\t$seq_length[$s]\n";
   }
+}
+
+
+sub CountDyads {
+    
+    $in = &OpenInputFile($inputfile);
+    $sequence_number = 0;
+    $nb_possible_pos = 0;
+    $sum_seq_length = 0;
+    while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $input_format)) &&
+       (($current_seq ne "") || ($current_id ne ""))) {
+	
+	if ($hyperverbose) {
+	    print STDERR ";Reading sequence\t$current_id\n";
+	}
+	
+	### remove tabs and blank spaces ###    
+	$current_seq = &FoldSequence($current_seq,0);
+	
+	### statistics about sequences ###
+	$sequence_number++;  
+	$id_list[$sequence_number] = $current_id;
+	$seq_length[$sequence_number] = length($current_seq);
+	$sum_seq_length += $seq_length[$sequence_number];
+	$new_pos_nb =  max(0,$seq_length[$sequence_number] - 2*$oligo_length - $min_spacing + 1); ### cannot be negative ven if new seq is shorter than dyad length
+	if ($sum_strands) {
+	    $new_pos_nb *= 2;
+	}
+	$nb_possible_pos += $new_pos_nb; 
+  
+	
+	#### count oligonucleotides and dyads
+	$last_pos = $seq_length[$sequence_number] - $oligo_length;
+	$pos1 = 0;
+	while ($pos1 <= $last_pos) {
+	    
+	    #### count oligont occurrences
+	    #### will be used for estimation of expected dyad frequencies
+	    $oligo1 = lc(substr($current_seq,$pos1,$oligo_length));
+	    $oligo{$oligo1}->{obs_occ}++;
+	    $sum_oligo_count++;
+	    
+	    #### count dyad occurrences
+	    foreach $spacing ($min_spacing..$max_spacing) {
+		$pos2 = $pos1 + $oligo_length + $spacing;
+		#      $min_overlap_dist = $oligo_length;
+		$min_overlap_dist = 2*$oligo_length + $spacing;
+		
+		if ($pos2 <= $last_pos) {
+		    $oligo2 = lc(substr($current_seq,$pos2,$oligo_length));
+		    next if (($dyad_type eq "dr") && ($oligo1 ne $oligo2)); ### count only direct repeats
+		    next if (($dyad_type eq "ir") && ($oligo2 ne &SmartRC($oligo1))); ### count only inverted repeats
+		    next if (($dyad_type eq "rep") && ($oligo1 ne $oligo2) &&($oligo2 ne &SmartRC($oligo1))); ### count only repeats
+		    
+		    if ($sp_group) {
+			$dyad_seq = "${oligo1}n\{$min_spacing,$max_spacing\}${oligo2}";
+		    } else {
+			$dyad_seq = "${oligo1}n\{$spacing\}${oligo2}";
+		    }
+		    
+		    if ($noov) {
+			$dist = $pos1 - $last_pos{$dyad_seq};
+			if  ((&IsNatural($last_pos{$dyad_seq})) &&
+			     ($dist < $min_overlap_dist)) {
+			    ### new position can overlap with either the first of the second element of the previous dyad occurrence
+			    $dyad{$dyad_seq}->{overlaps}++;
+			    next;
+			} 
+			#$rc_dyad = &SmartRC($dyad_seq);
+			#print "$current_id\t$dyad_seq\t$rc_dyad\t$pos1\t$last_pos{$dyad_seq}\t",$dyad{$rc_dyad}->{obs_occ},"\t",$dyad{$dyad_seq}->{obs_occ},"\t",$dyad{$rc_dyad}->{obs_occ}+$dyad{$dyad_seq}->{obs_occ},"\n";
+			$last_pos{$dyad_seq} = $pos1;
+			if ($sum_strands) {
+			    $rc_dyad = &SmartRC($dyad_seq);
+			    $last_pos{$rc_dyad} = $pos1;
+			} 
+		    }
+		    $dyad{$dyad_seq}->{obs_occ}++;
+		}
+	    }
+	    $pos1++;
+	}
+	undef %last_pos;
+    }
 }

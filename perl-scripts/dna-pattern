@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dna-pattern,v 1.4 2000/12/29 21:20:46 jvanheld Exp $
+# $Id: dna-pattern,v 1.5 2001/01/13 11:13:21 jvanheld Exp $
 #
-# Time-stamp: <2000-11-15 00:57:05 jvanheld>
+# Time-stamp: <2001-01-13 12:13:15 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -574,9 +574,7 @@ EXAMPLES
 	will count all occurences of the strings 'GATAA' and 'GATTA' present 
 	in the file $RSAGENOME/chr1.raw.
 WEB VERSION
-	http://www.cifn.unam.mx/Computational_Biology/yeast/dna-pattern.html
-
-
+	http://www.ucmb.ulb.ac.be/bioinformatics/rsa-tools/
 ";
   close HELP;
   exit(0);
