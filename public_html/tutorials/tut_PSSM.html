@@ -7,7 +7,7 @@
 
 <hr size=6 width="100%">
 <center>
-<h2><a href="../RSA_home.cgi">RSA-tools</A> - 
+<h2><a href="../RSAT_home.cgi">RSA-tools</A> - 
 <a href="tutorials.html">Tutorials</a> - 
 Position-specific scoring matrices
 </h2>
@@ -21,6 +21,7 @@ Position-specific scoring matrices
 <ol>
 <li><a href=#intro>Introduction</a>
 <li><a href=#example>Example</a>
+<li><a href=#convert_matrix>Converting and analyzing PSSM</a>
 </ol>
 
 <a name=prerequisite><h2>Introduction</h2>
@@ -33,22 +34,30 @@ of interest.
 
 <P>
 Knowledge-based PSSM can be obtained from various transcription factor
-databases (e.g. <a href=tut_transfac.html>TRANSFAC</a>). 
+databases (e.g. <a target=_blank
+href=http://www.gene-regulation.com/pub/databases.html#transfac>TRANSFAC</a>).
 
-<P>PSSM can also be inferred by applying matrix-based pattern
-discovery in regulatory regions of a set of co-regulated genes (see
-tutorials on the <a href=tut_gibbs.html>gibbs sampler</a> and <a
-href=tut_consensus.html>consensus</a>).
+<p>PSSM can be used to detect occurrences of a motif in
+sequences. Matrix-based pattern matching will be introduced in the
+tutorial on <a href=tut_patser.html>patser</a>.
 
-</ul>
-<a name=example><h2>Example</h2>
-<ul>
+<P>Several pattern-discovery programs allow to detect significant
+motifs represented as PSSM from a set of unaligned sequences. These
+programs have been used to predict regulatory elements in the
+regulatory regions of sets of co-regulated genes. Matrix-based pattern
+discovery will be discussed in the tutorials on the <a
+href=tut_gibbs.html>gibbs sampler</a> and <a
+href=tut_consensus.html>consensus</a>.
+
+</ul><a name=example><h2>Example</h2><ul>
 
 The matrix below was obtained from <a
-href="http://cgsigma.cshl.org/jian" TARGET=_blank> SCPD</a>, promoter
-database of the yeast <I>Saccharomyces cerevisiae</I>. It has been
-built from an alignment of 12 binding sites for the yeast
-transcription factor Pho4p.
+href="http://cgsigma.cshl.org/jian" TARGET=_blank> SCPD</a>, the
+Saccharomyces cerevisiae promoter database.  
+
+
+<p>The PHO4 matrix has been built from an alignment of 12 binding sites
+for the yeast transcription factor Pho4p.
 
  
 <PRE>
@@ -83,8 +92,105 @@ represented with more elaborated methods, such as Hidden Markov Models
 (HMM), which are ou of scope for this tutorial.
 
 
+</ul><h2><a name=convert_matrix>Converting and analyzing PSSM</a></h2><ul>
+
+The RSAT include a program called <a target=tools
+href=../convert-matrix_form.cgi>convert-matrix</a>, which allows to
+extract a PSSM from the output files of different programs (<a
+target=tools href=../consensus_form.cgi>consensus</a>, <a
+target=tools href=../gibbs_form.cgi>gibbs</a>, <a target=_blank
+href=http://meme.sdsc.edu/meme/website/>MEME</a>, clustal).
+
+
+<p>I still did not find the time to write a tutorial for this program,
+but you can already read the <a target=tools
+href=../help.convert-matrix.html>manual</a>, and do your own test with
+the demo data set (click DEMO at the bottom of the form).
+
+<h3>Matrix information</h3>
+
+We will import a matrix representing the binding specificity of the
+yeast transcription factor Abf1p, and analyze the different parameters
+which characterize this PSSM.
+
+<ol>
+<p><li>Connect <a href="http://cgsigma.cshl.org/jian" target=scpd>
+SCPD</a>, the Saccharomyces cerevisiae promoter database. To access
+the list of sites by factor from the SCPD home page, click on the
+Section "<a target=scpd
+href=http://cgsigma.cshl.org/cgi-bin/jz/getfactorlist>Regulatory
+elements and transcriptional factors</a>".
+
+<li>Click on the link to <a target=scpd
+href=http://cgsigma.cshl.org/cgi-bin/jz/getfactor?ABF1,BAF1>ABF1</a>,
+and then on the button <b>Get matrix</b>. The following PSSM is
+displayed.
+
+<pre>
+>ABF17121SCPD
+
+A   0   0  11   2   3   7   3   5   5  14   0   1
+T  14   0   2   1   6   2   7   3   0   0   0   0
+G   0   0   0   0   2   3   1   2   3   0   1  13
+C   0  14   1  11   3   2   3   4   6   0  13   0. 
+</pre>
+
+<p>Some basic questions
+
+<ul>
+<li>What is the alphabet size ?
+
+<li>What is the matrix width ?
+
+<li>How many inding sites were used to build this matrix ? 
+
+<li>How many Abf1p binding sites are currently stored in SCPD (click on the button <b>Get sites</b>)?
 </ul>
 
+<p><li>We will now analyze the content of this matrix with the program <a
+target=tools
+href=../convert-matrix_form.cgi><b>convert-matrix</b></a>. Copy the
+matrix from SCPD to the text area in the form.
+
+<p><li>The current version of convert-matrix does not support the SCPD
+format (this will be fixed soon), but you can easily enter it in
+consensus format. For this, you need to perform 3 operations: 
+<ul>
+<li>replace the header line
+(<tt>>ABF17121SCPD</tt>) by the words <tt>MATRIX 1</tt>. It should
+give the following result:
+<li>Add a pipe character after each residue (A, C, G, T).
+<li>Suppress the dot at the end of the matrix.
+</ul>
+
+The result should look like this:
+<pre>
+MATRIX 1
+
+A |   0   0  11   2   3   7   3   5   5  14   0   1
+T |  14   0   2   1   6   2   7   3   0   0   0   0
+G |   0   0   0   0   2   3   1   2   3   0   1  13
+C |   0  14   1  11   3   2   3   4   6   0  13   0
+</pre>
+
+<p><li>Select the following options proposed as return fields:
+<ul>
+<li>alignment (counts)
+<li>frequencies
+<li>weights
+<li>information
+<li>margins
+<li>parameters
+</ul>
+<p><li>click <b>GO</b>.
+</ol>
+
+<h4>Interpretation</h4><ul>
+
+<blink><font color=red size=+1>In construction</font></blink>
+</ul>
+
+</ul>
 <p>
 You can now come back to the <a href=tutorials.html>tutorial main
 page</a> and follow the next tutorials.
