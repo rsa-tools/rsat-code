@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: server.mk,v 1.4 2003/12/12 11:31:26 jvanheld Exp $
+# $Id: server.mk,v 1.5 2004/04/21 08:20:31 jvanheld Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -227,6 +227,7 @@ install_ext_apps:
 #### clean temporary directory
 CLEAN_DATE=3
 clean_tmp:
-	@echo "before cleaning	" `du -sk public_html/tmp`
+	@echo "Before cleaning	" `du -sk public_html/tmp`
 	find public_html/tmp/ -mtime +${CLEAN_DATE} -type f -exec rm -f {} \;	
-	@echo "after cleaning	" `du -sk public_html/tmp`
+	@echo "After cleaning	" `du -sk public_html/tmp`
+	@echo Cleaned temporary directory | mail -s 'cleaning tmp' jvanheld@scmbb.ulb.ac.be
