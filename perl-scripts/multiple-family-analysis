@@ -1,17 +1,17 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.7 2001/02/20 00:57:01 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.8 2002/03/07 11:16:12 jvanheld Exp $
 #
-# Time-stamp: <2001-02-20 01:56:47 jvanheld>
+# Time-stamp: <2002-03-07 12:15:12 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
   push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
-require "RSA.cgi.lib.pl";
-require "RSA.classes.pl";
+require "RSA.lib";
+require "RSA.cgi.lib";
+require "RSA.classes";
 
 ###read parameters
 if ($#ARGV < 0) {
@@ -135,7 +135,7 @@ sub SetFileNames {
   foreach $family_name (@families) {
     $family{$family_name}->{family_file} = "$family_name/${family_name}.fam";
     $family{$family_name}->{known_site_file} = "$family_name/${family_name}_known_sites";
-    $family{$family_name}->{seq_file} = "$family_name/${family_name}_up${seq_length}.wc";
+    $family{$family_name}->{seq_file} = "$family_name/${family_name}_up${seq_length}.${seq_format}";
     
     $family{$family_name}->{oligo_file} =  "${family_name}/oligos_${family_name}/${family_name}_oligos_up${seq_length}_${min_oligo_length}-${max_oligo_length}nt_${strands}_sig${th}";
     $family{$family_name}->{oligo_file} .= "_noov" if ($noov);
@@ -198,9 +198,12 @@ sub UpstreamSequences {
   $command .= " -i $family{$family_name}->{family_file}";
   $command .= " -o $family{$family_name}->{seq_file}";
   $command .= " -from $from -to $to ";
+  $command .= " -label orf_gene ";
   $command .= " -format $seq_format";
-  warn "$command\n" if ($verbose > 1);
-  system $command;
+
+  &doit($command);
+#  warn "$command\n" if ($verbose > 1);
+#  system $command;
 }
 
 
@@ -214,7 +217,7 @@ sub OligoAnalysis {
   die "Error : cannot read file $family{$family_name}->{seq_file}\n" unless (-r $family{$family_name}->{seq_file});
   
   
-  system "echo '' > $family{$family_name}->{oligo_file}";
+  system "echo '' > $family{$family_name}->{oligo_file}" if ($verbose >=1);
   
   for $oligo_length ($min_oligo_length..$max_oligo_length) {
     $oligo_options = "-v ";
@@ -238,8 +241,9 @@ sub OligoAnalysis {
     $oligo_file = "$family_name/oligos_${family_name}/$family_name".$oligo_suffix;    
     $command = "oligo-analysis -i $family{$family_name}->{seq_file} -format $seq_format -o $oligo_file $oligo_options";
     
-    warn "\n$command\n" if ($verbose > 1);
-    system $command;
+    &doit($command);
+#    warn "\n$command\n" if ($verbose > 1);
+#    system $command;
     
     system "cat $oligo_file | grep -v ';' >> $family{$family_name}->{oligo_file}";
   }
@@ -248,8 +252,10 @@ sub OligoAnalysis {
   $htmap_file = $family{$family_name}->{oligo_file}.".html";
   
   $command = "pattern-assembly -i $family{$family_name}->{oligo_file} -sc 7 -${strands} -v -o $family{$family_name}->{oligo_assembly_file} -maxfl 1 -maxpat 200 ";
-  print "\n$command\n" if ($verbose);
-  system $command;
+
+  &doit($command);
+#  print "\n$command\n" if ($verbose);
+#  system $command;
   
   ### feature-map for oligo-analysis
   $origin = -$from + 1;
@@ -257,8 +263,9 @@ sub OligoAnalysis {
   $command .= " | features-from-dnapat ";
   $command .= " | feature-map -scalebar -scalestep 50 -legend -from $from -to $to -o $fmap_file -scorethick -htmap > $htmap_file ";
   
-  print "\n$command\n" if ($verbose);
-  system $command;
+  &doit($command);
+#  print "\n$command\n" if ($verbose);
+#  system $command;
 }
 
 ### dyad analysis
@@ -269,13 +276,17 @@ sub DyadAnalysis {
   }
   die "Error : cannot read file $family{$family_name}->{seq_file}\n" unless (-r $family{$family_name}->{seq_file});
   $command = "dyad-analysis -i $family{$family_name}->{seq_file} -format $seq_format -o $family{$family_name}->{dyad_file} $dyad_options";
-  print "\n$command\n" if ($verbose);
-  system $command;
+
+  &doit($command);
+#  print "\n$command\n" if ($verbose);
+#  system $command;
   
   ### fragment assembly
   $command = "pattern-assembly -v -i $family{$family_name}->{dyad_file} -o $family{$family_name}->{dyad_assembly_file} -$strands -maxfl 2 -sc 7 -maxpat 200 ";
-  print "\n$command\n" if ($verbose);
-  system $command;
+
+  &doit($command);
+#  print "\n$command\n" if ($verbose);
+#  system $command;
 
   ### feature-maps
   &DrawFeatureMaps;
@@ -401,7 +412,7 @@ sub SyntheticTable {
       chomp;
       next if (/^;/);
       next unless (/\S/);
-      if ((/contig/) || (/isol/)) {
+      if ((/contig/) || (/consensus/) || (/isol/)) {
 	@fields = split "\t";
 	my $sequence = uc($fields[0]);
 	$pattern = new RSA::pattern(sequence=>$sequence);
@@ -599,8 +610,10 @@ sub DrawFeatureMaps {
   $command .= "-title '${family_name}$dyad_suffix' ";
   $command .= "-htmap >  $family{$family_name}->{htmap_file}";
   #  $command .= " ;  xv -o $family{$family_name}->{fmap_file} &";
-  print "\n$command\n" if ($verbose);
-  system $command;
+
+  &doit($command);
+#  print "\n$command\n" if ($verbose);
+#  system $command;
 }
 
 
@@ -609,8 +622,8 @@ sub InitParameters {
   $from = -400 unless defined($from);
   $to = 0 unless defined($to);
   $seq_length = abs($to - $from) + 1;
-#  $upstream_sequence_file = "$RSA//data/yeast/sequences/all_up${seq_length}.wc";
-  $seq_format = "wc";
+  $seq_format = "fasta";
+#  $upstream_sequence_file = "$RSA//data/yeast/sequences/all_up${seq_length}.${seq_format}";
   
   $min_oligo_length = 6;
   $max_oligo_length = 6;
@@ -649,8 +662,8 @@ sub InitParameters {
 
     
 sub AnalyzeFamilies {
-  print "; Analyzing family $family_name\t", `date` if ($verbose);
   foreach $family_name (@families) {
+    print "; Analyzing family $family_name\t", `date` if ($verbose);
 #    &ReadFamily;
     
     ### retrieve upstream sequences
@@ -665,6 +678,12 @@ sub AnalyzeFamilies {
     ### delete upstream sequence file
 #    system "rm $family{$family_name}->{seq_file}";
   }
+}
+
+sub doit {
+    my ($command) = @_;
+    print "\n$command\n" if ($verbose >=1);
+    system $command unless $dry_run;
 }
 
 
@@ -761,15 +780,21 @@ sub PrintOptions {
   print HELP <<End_short_help;
 multiple-family-analysis options
 --------------------------------
-	-h	(must be first argument) display full help message
-	-help	(must be first argument) display options
-	-v	verbose
-	-fam	family file
-	-org	organism
-	-from	upstream region left limit
-	-to	upstream region right limit
-	-1str   strand-sensitive analysis
-	-2str   strand-insensitive analysis
+-h	(must be first argument) display full help message
+-help	(must be first argument) display options
+-v	verbose
+-vv hyperverbose
+-fam	family file
+-org	organism
+-from	upstream region left limit
+-to	upstream region right limit
+-1str   strand-sensitive analysis
+-2str   strand-insensitive analysis
+-n      dry run: print commands without executing them
+
+-noup	do not generate upstream sequences
+-exp	expected frequency file
+-transp	transpose synthetic result table (columns become rows)
 End_short_help
   close HELP;
   exit;
@@ -778,79 +803,86 @@ End_short_help
 
 sub ReadArguments {
 #### read arguments ####
-  foreach my $a (0..$#ARGV) {
-    ### verbose ###
-    if ($ARGV[$a] eq "-v") {
-      $verbose = 1;
-    } elsif ($ARGV[$a] eq "-vv") {
-      $verbose = 2;
-    
-      ### detailed help
-    } elsif ($ARGV[$a] eq "-h") {
-      &PrintHelp;
-      
-      ### list of options
-    } elsif ($ARGV[$a] eq "-help") {
-      &PrintOptions;
-      
-      ### family file
-    } elsif ($ARGV[$a] eq "-fam") {
-      $family_file = $ARGV[$a+1];
+    foreach my $a (0..$#ARGV) {
+	### verbose ###
+	if ($ARGV[$a] eq "-v") {
+	    $verbose = 1;
+	} elsif ($ARGV[$a] eq "-vv") {
+	    $verbose = 2;
+	    
+	    #### dry run
+	} elsif ($ARGV[$a] eq "-n") {
+	    $dry_run = 1;
+	    
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp;
+	    
+	    ### list of options
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions;
+	    
+	    ### family file
+	} elsif ($ARGV[$a] eq "-fam") {
+	    $family_file = $ARGV[$a+1];
 
-      ### upstream sequence lmits
-    } elsif (($ARGV[$a] eq "-from") &&
-	     (&IsInteger($ARGV[$a+1]))) {
-      $from = $ARGV[$a+1];
-    } elsif (($ARGV[$a] eq "-to") &&
-	     (&IsInteger($ARGV[$a+1]))){
-      $to = $ARGV[$a+1];
+	    ### upstream sequence lmits
+	} elsif (($ARGV[$a] eq "-from") &&
+		 (&IsInteger($ARGV[$a+1]))) {
+	    $from = $ARGV[$a+1];
+	} elsif (($ARGV[$a] eq "-to") &&
+		 (&IsInteger($ARGV[$a+1]))){
+	    $to = $ARGV[$a+1];
 
-      ### strands 
-    } elsif ($ARGV[$a] eq "-1str") {
-      $force{strands} = "1str";
-    } elsif ($ARGV[$a] eq "-2str") {
-      $force{strands} = "2str";
+	    ### strands 
+	} elsif ($ARGV[$a] eq "-1str") {
+	    $force{strands} = "1str";
+	} elsif ($ARGV[$a] eq "-2str") {
+	    $force{strands} = "2str";
 
-      ### organism
-    } elsif ($ARGV[$a] eq "-org") {
-      $organism_name = $ARGV[$a+1];
+	    ### organism
+	} elsif ($ARGV[$a] eq "-org") {
+	    $organism_name = $ARGV[$a+1];
 
-      #### inactivate some tasks
-      
-      ### inactivate upstream sequence retrieval
-    } elsif ($ARGV[$a] eq "-noup") {
-      $no_up = 1;
+	    #### inactivate some tasks
+	    
+	    ### inactivate upstream sequence retrieval
+	} elsif ($ARGV[$a] eq "-noup") {
+	    $no_up = 1;
 
-      ### inactivate synthetic table
-    } elsif ($ARGV[$a] eq "-nosynt") {
-      $no_synt = 1;
+	    ### inactivate synthetic table
+	} elsif ($ARGV[$a] eq "-nosynt") {
+	    $no_synt = 1;
 
-      ### inactivate calculations
-    } elsif ($ARGV[$a] eq "-nocalc") {
-      $no_calc = 1;
+	    ### inactivate calculations
+	} elsif ($ARGV[$a] eq "-nocalc") {
+	    $no_calc = 1;
 
-      ### inactivate oligo-analysis
-    } elsif ($ARGV[$a] =~ /-nooligo/) {
-      $no_oligo = 1;
+	    ### inactivate oligo-analysis
+	} elsif ($ARGV[$a] =~ /-nooligo/) {
+	    $no_oligo = 1;
 
-      ### inactivate dyad-analysis
-    } elsif ($ARGV[$a] =~ /-nodyads/) {
-      $no_dyads = 1;
+	    ### inactivate dyad-analysis
+	} elsif ($ARGV[$a] =~ /-nodyads/) {
+	    $no_dyads = 1;
 
-      
-    } elsif ($ARGV[$a] =~ /^-transp/) {
-      $transpose = 1;
+	    #### transpose synthetic table
+	} elsif ($ARGV[$a] =~ /^-transp/) {
+	    $transpose = 1;
 
-    } elsif ($ARGV[$a] =~ /^-th/) {
-      $force{th} = $ARGV[$a+1];
+	    #### threshold
+	} elsif ($ARGV[$a] =~ /^-th/) {
+	    $force{th} = $ARGV[$a+1];
 
-    } elsif ($ARGV[$a] =~ /^-type/) {
-      $force{type} = $ARGV[$a+1];
+	    #### dyad type
+	} elsif ($ARGV[$a] =~ /^-type/) {
+	    $force{type} = $ARGV[$a+1];
 
-    } elsif ($ARGV[$a] =~ /^-exp/) {
-      $force{exp} = $ARGV[$a+1];
+	} elsif ($ARGV[$a] =~ /^-exp/) {
+	    $force{exp} = $ARGV[$a+1];
+
+	}
     }
-  }
 }
 
 
