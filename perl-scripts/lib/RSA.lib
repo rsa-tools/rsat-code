@@ -184,6 +184,9 @@ sub CheckOutputDir {
 	}
 	mkdir $output_dir, 0755;
 	unless (-d $output_dir) {
+	    system "mkdir -p $output_dir"; ## create output directory with all parents
+	}
+	unless (-d $output_dir) {
 	    &FatalError("Cannot create output directory $output_dir");
 	}
     } else {
