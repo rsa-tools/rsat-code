@@ -887,7 +887,7 @@ foreach $m (0..$#map_list) {
 
 
 #### write the gif file ####
-if ($outputfile ne "") {
+if ($outputfile) {
   print $out $image->gif;
   close $out;
 } else {
@@ -1356,6 +1356,7 @@ sub ReadMapData {
       $temp_features{strand} =~ s/W/D/i;
       $temp_features{strand} =~ s/C/R/i;
       $temp_features{strand} =~ s/\+/D/i;
+      $temp_features{strand} =~ s/F/D/i;
       $temp_features{strand} =~ s/\-/R/i;
       if ($temp_features{strand} =~ /D/i) {
 	$features_on_D_strand = 1;
