@@ -42,6 +42,12 @@ if (defined($supported_organism{$query->param('organism')})) {
 	      "' is not supported on this web site.");
 }
 
+### feature type
+if ($query->param('feattype')) {
+    my ($feattype) = split " ", $query->param('feattype'); ### take the first word
+    $parameters .= " -feattype ".$feattype;
+}
+
 ### sequence type
 if ($query->param('sequence_type')) {
     ($seq_type) = split " ", $query->param('sequence_type'); ### take the first word
