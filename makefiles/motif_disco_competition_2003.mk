@@ -256,22 +256,22 @@ bg_oligos_one_ol_purged_vs_not:
 #		-o ${OLIGO_FILE}
 #	text-to-html -i ${OLIGO_FILE} -o ${OLIGO_FILE_HTML}
 
-################################################################
-#### synthezise the results
-INDEX_FILE=${ORG}_index.html
-index:
-	@echo "<html>" > ${INDEX_FILE}
-	@echo "<table border=1 cellpading=3>" > ${INDEX_FILE}
-	${MAKE} iterate_sets TASK=index_one_row
-	@echo "</table>" >> ${INDEX_FILE}
-	@echo "</html>" >> ${INDEX_FILE}
-	@echo "${ORG}	Index file generated	${INDEX_FILE}"
+# ################################################################
+# #### synthezise the results
+# INDEX_FILE=${ORG}_index.html
+# index:
+# 	@echo "<html>" > ${INDEX_FILE}
+# 	@echo "<table border=1 cellpading=3>" > ${INDEX_FILE}
+# 	${MAKE} iterate_sets TASK=index_one_row
+# 	@echo "</table>" >> ${INDEX_FILE}
+# 	@echo "</html>" >> ${INDEX_FILE}
+# 	@echo "${ORG}	Index file generated	${INDEX_FILE}"
 
-index_one_row:
-	@echo "<tr>" >> ${INDEX_FILE}
-	@echo "<td>${CURRENT_SET}</td>" >> ${INDEX_FILE}
-	@echo "<td><a href=${OLIGO_FILE_HTML}>oligos</a></td>" >> ${INDEX_FILE}
-	@echo "</tr>" >> ${INDEX_FILE}
+# index_one_row:
+# 	@echo "<tr>" >> ${INDEX_FILE}
+# 	@echo "<td>${CURRENT_SET}</td>" >> ${INDEX_FILE}
+# 	@echo "<td><a href=${OLIGO_FILE_HTML}>oligos</a></td>" >> ${INDEX_FILE}
+# 	@echo "</tr>" >> ${INDEX_FILE}
 
 ################################################################
 #### Run multiple-family-analysis for one organism
@@ -732,6 +732,20 @@ some_comparisons:
 	make compare_calibrations ORG=Saccharomyces_cerevisiae SEQ_LEN=500 OLIGO_LEN=6
 	make compare_calibrations ORG=Drosophila_melanogaster SEQ_LEN=2000 OLIGO_LEN=7
 
+
+################################################################
+## Archive the reports
+DATE=`date +%Y%m%d_%H%M%S`
+archive:
+	${MAKE} archive_report REPORT="report_${DATE}.zip"
+
+archive_report:
+	@echo ${REPORT}
+	zip -ry ${REPORT} file_index.html
+	zip -ry -n '*~' ${REPORT} results/reports
+	find results/*/multi -name '*_selection*' -exec zip -ry ${REPORT} {} \;
+	@echo report archived in ${REPORT}
+
 # oligo-analysis  -v 3 -l 7 -noov -2str -i calibrations/tmp_all_up_2000.fasta -return occ -distrib
 
 
@@ -767,7 +781,9 @@ queued_on_merlin:
 	make iterate_organisms ORG_TASK=multi_calibN MIN_OL=5 MAX_OL=5 WHEN=queue
 	make iterate_organisms ORG_TASK=multi_calibN MIN_OL=8 MAX_OL=8 WHEN=queue
 
-	make -s -f ${RSAT}/makefiles/motif_disco_competition_2003.mk calibrate_oligos ORG=Homo_sapiens SEQ_LEN=2000 N=35 STR=-2str STR=-2str NOOV=-noov REPET=100 WHEN=queue
+	make -s -f ${RSAT}/makefiles/motif_disco_competition_2003.mk calibrate_oligos ORG=Homo_sapiens SEQ_LEN=2000 N=35 STR=-2str STR=-2str NOOV=-noov REPET=100 WHEN=queue OLIGO_LEN=8
 
 to_do:
 	make iterate_organisms ORG_TASK=multi_calibN THOSIG=-1
+	make iterate_organisms ORG_TASK=multi_calibN PURGE=-nopurge MIN_OL=8 MAX_OL=8 WHEN=queue
+	make iterate_organisms ORG_TASK=multi_calibN PURGE=-nopurge MIN_OL=5 MAX_OL=8 WHEN=queue THOSIG=-1
