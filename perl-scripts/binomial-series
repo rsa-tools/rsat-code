@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: binomial-series,v 1.3 2001/05/06 16:24:50 jvanheld Exp $
+# $Id: binomial-series,v 1.4 2001/06/29 18:37:00 jvanheld Exp $
 #
-# Time-stamp: <2001-05-06 18:24:23 jvanheld>
+# Time-stamp: <2001-06-29 20:36:58 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -54,7 +54,7 @@ for ($s = $min_successes; $s <= $max_successes; $s += $step) {
     #$bin = `binomial -p $proba -r $trials -s $s`;
     $bin = &binomial($proba,$trials,$s);
     #$bin_boe = `binomial -p $proba -r $trials -s $s -boe`;
-    $bin_boe = &sum_of_binomials($proba,$trials,$s);
+    $bin_boe = &binomial_boe($proba,$trials,$s);
     #$poisson = `poisson -p $proba -r $trials -s $s`;
     $poisson = &poisson($s, $expected_successes);
     #$poisson_boe = `poisson -p $proba -r $trials -s $s -boe`;

@@ -164,9 +164,9 @@ if ($verbose) {
 if ($approx) {
     $b = &binomial_approx($p, $r, $s);
 } elsif ($boe) {
-    $b = &sum_of_binomials($p, $r, $s);
+    $b = &binomial_boe($p, $r, $s);
 } elsif ($soe) {
-    $b = 1 - &sum_of_binomials($p, $r, $s+1);
+    $b = 1 - &binomial_boe($p, $r, $s+1);
 } else {
     $b = &binomial($p, $r, $s);
 }

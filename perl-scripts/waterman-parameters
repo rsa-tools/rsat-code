@@ -109,7 +109,7 @@ if ($verbose) {
 ### calculate F, the number of neighbours
 $possible_words = 4**$k;
 $word_proba = 1/$possible_words;
-$F = $possible_words * sum_of_binomials(0.25, $k, $k-$d); 
+$F = $possible_words * binomial_boe(0.25, $k, $k-$d); 
 
 ### calculate alpha
 ### alpha is the probability that some neighbour of w occurs 
@@ -141,8 +141,8 @@ if ($p_unknown > 1) {
 }
 
 $min_matching_seq = int($beta * $r);
-$p_known_1col = sum_of_binomials($alpha_prime, $r, $min_matching_seq);
-$p_known_prime = sum_of_binomials($p_known_1col, $L, 1);
+$p_known_1col = binomial_boe($alpha_prime, $r, $min_matching_seq);
+$p_known_prime = binomial_boe($p_known_1col, $L, 1);
 $p_unknown_prime = 1 - (1 - $p_known_prime)**$possible_words;
 
 ###### print output ######
