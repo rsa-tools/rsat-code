@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_regulation.pl,v 1.2 2001/10/15 22:12:57 jvanheld Exp $
+# $Id: parse_regulation.pl,v 1.3 2001/10/16 08:12:26 jvanheld Exp $
 #
-# Time-stamp: <2001-10-16 00:12:29 jvanheld>
+# Time-stamp: <2001-10-16 10:11:34 jvanheld>
 #
 ############################################################
 ### parse_regulation.plt
@@ -33,6 +33,7 @@ package main;
     $in_file{metabolic_regulation} = "/win/amaze/amaze_team/gaurab/metabolic_regulation_2001_09_07.txt";
     
     $dir{output} = "$parsed_data/regulation_parsed/$delivery_date";
+    $dir{delivery} = "/win/amaze/amaze_programs/amaze_oracle_data";
     unless (-d $dir{output}) {
 	warn "Creating output dir $dir{output}\n"  if ($warn_level >= 1);
 	`mkdir -p $dir{output}`;
@@ -83,13 +84,14 @@ package main;
     #### output fields
 
     @out_fields = qw(
+		     source
 		     inputType
 		     factor_name
 		     factor_id
 		     controlType
 		     gene_name
 		     gene_id
-		     sign
+		     is_positive
 		     description
 
 		     pubmedIDs 
@@ -153,8 +155,13 @@ package main;
 
     close ERR;
 
+    &deliver() if ($deliver);
+
     system "gzip -f $dir{output}/*.tab $dir{output}/*.txt";
     system "gzip -f $dir{output}/*.obj" if ($export{obj});
+
+
+
 
     exit(0);
 
@@ -165,6 +172,27 @@ package main;
 #
 # SUBROUTINES
 #
+
+#### copy the required files to the delivery directory
+sub deliver {
+    warn "; Delivering parsed data to directory $dir{delivery}.\n" if ($warn_level >=1); 
+    my @files_to_deliver = qw (
+			       TranscriptionalRegulation.tab
+			       );
+    foreach my $file (@files_to_deliver) {
+	unless (-d $dir{delivery}) {
+	    die "Error: the delivery directory $dir{delivery} does not exist\n.";
+	}
+	$source_file = "$dir{output}/$file";
+	if (-e $source_file) {
+	    system "cp $source_file $dir{delivery}/";
+#	    } elsif (-e "${source_file}.gz") {
+#		system "cp ${source_file}.gz $dir{delivery}/; gunzip $dir{delivery}/${file}.gz";
+	} else {
+	    die "Error: cannot deliver the file $source_file\n.";
+	}
+    }
+}
 
 ### print the help message 
 ### when the program is called with the -h or -help option
@@ -194,6 +222,9 @@ OPTIONS
 		export additional info for debugging (e.g. indexes
 	-clean remove all files from the outpu directory before
 	       parsing.
+	-deliver 
+		copy the relevant files in the delivery directory,
+		for loading in the aMAZE database. 
 	-w #	warn level
 		Warn level 1 corresponds to a restricted verbose
 		Warn level 2 reports all polypeptide instantiations
@@ -235,6 +266,10 @@ sub ReadArguments {
 	    ### clean
 	} elsif ($ARGV[$a] eq "-clean") {
 	    $main::clean = 1;
+
+	    ### clean
+	} elsif ($ARGV[$a] eq "-deliver") {
+	    $main::deliver = 1;
 
 	    ### output file
  	} elsif ($ARGV[$a] eq "-obj") {
@@ -284,12 +319,12 @@ sub ParseRegulation {
     $class_holder{'up-regulates'} = $transcriptionalRegulations;
     $class_holder{induces} = $inductions;
     
-    my %sign;
-    $sign{activates} = "+";
-    $sign{inhibits} = "-";
-    $sign{'down-regulates'} = "-";
-    $sign{'up-regulates'} = "+";
-    $sign{induces} = "+";
+    my %is_positive;
+    $is_positive{activates} = "1";
+    $is_positive{inhibits} = "0";
+    $is_positive{'up-regulates'} = "1";
+    $is_positive{'down-regulates'} = "0";
+    $is_positive{induces} = "1";
 
 
 #    foreach my $c (0..$#cols) {
@@ -397,9 +432,7 @@ sub ParseRegulation {
 	foreach my $control_output (@control_outputs) {
 	    $field{controlledFrom} = $control_output;
 	    my $current_control = $class_holder->new_object();
-	    $current_control->set_attribute("file", $filename); #### for error report
-	    $current_control->set_attribute("line", $l);        #### for error report
-	    $current_control->set_attribute("sign", $sign{$field{controlType}});
+
 	    foreach my $key (@single_value) {
 		$current_control->set_attribute($key, $field{$key});
 	    }
@@ -411,10 +444,22 @@ sub ParseRegulation {
 		}
 	    }
 	    
+	    #### change the names of attributes to have an uniform source
+	    $current_control->set_attribute("biblio_source", $current_control->get_attribute("source"));
+	    $current_control->set_attribute("source", $filename); #### for error report
+	    $current_control->set_attribute("line", $l);        #### for error report
+	    $current_control->set_attribute("is_positive", $is_positive{$field{controlType}});
+
 	    #### bibliographic references
-	    my @pubmedIds = split '\|', $field{pubmedIDs};
-	    foreach my $id (@pubmedIds) {
-		$current_control->new_attribute_value("pubmedId", $id);
+	    my @pubmedIDs = split '\|', $field{pubmedIDs};
+	    $current_control->empty_array_attribute("pubmedIDs");
+	    foreach my $id (@pubmedIDs) {
+		$id = &trim($id);
+		if ($id =~ /^\d+$/) {
+		    $current_control->new_attribute_value("pubmedIDs", $id);
+		} else {
+		    $current_control->new_attribute_value("biblioref", $id);
+		}
 	    }
 	}
     }
@@ -505,14 +550,14 @@ sub IdentifyInputsOutputs {
 	
 	if ($#matching_factors < 0) {
 	    &ErrorMessage(join ("\t", 	
-				$trreg->get_attribute("file"),
+				$trreg->get_attribute("source"),
 				$trreg->get_attribute("line"),
 				"Cannot identify polypp", 
 				$factor_name), "\n");
 	} else {
 	    if ($#matching_factors > 0) {
 		&ErrorMessage (join ("\t", 	
-				     $trreg->get_attribute("file"),
+				     $trreg->get_attribute("source"),
 				     $trreg->get_attribute("line"),
 				     "Multiple matching factors", $factor_name, @matching_factors), "\n");
 	    }
@@ -533,14 +578,14 @@ sub IdentifyInputsOutputs {
 
 	if ($#matching_genes < 0) {
 	    &ErrorMessage(join ("\t",
-				$trreg->get_attribute("file"),
+				$trreg->get_attribute("source"),
 				$trreg->get_attribute("line"),
 				"Cannot identify gene",
 				$gene_name), "\n");
 	} else {
 	    if ($#matching_genes > 0) {
 		&ErrorMessage (join ("\t", 	
-				     $trreg->get_attribute("file"),
+				     $trreg->get_attribute("source"),
 				     $trreg->get_attribute("line"),
 				     "Multiple matching genes", $gene_name, @matching_genes), "\n");
 	    }
