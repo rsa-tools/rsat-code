@@ -5,16 +5,20 @@
    <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
 </HEAD>
 <BODY TEXT="#000000" BGCOLOR="#FFEEDD" LINK="#0000EE" VLINK="#55008B" ALINK="#FF0000">
+<blockquote>
 
-<H3 ALIGN=CENTER><A HREF="RSA_home.cgi">RSA-tools</A> - dyad analysis manual</H3>
+<H1 ALIGN=CENTER><A HREF="RSA_home.cgi">RSA-tools</A> - <a href=dyad-analysis_form.cgi>dyad analysis</a> manual</H1>
 
-<H4>Name</H4>
+<H2>Name</H2>
 <UL>
 dyad-analysis<P>
-1998 by Jacques van Helden (<A HREF="mailto:Jacques van Helden <jvanheld@ucmb.ulb.ac.be>">jvanheld@ucmb.ulb.ac.be</A>)
+
+1998 by Jacques van Helden (<A HREF="mailto:Jacques van Helden
+<jvanheld@ucmb.ulb.ac.be>">jvanheld@ucmb.ulb.ac.be</A>)
+
 </UL>
 
-<H4>Description</H4>
+<H2>Description</H2>
 <UL>
 
 Detects overrepresented spaced dyads in a set of DNA sequences. A dyad
@@ -28,67 +32,51 @@ analysis is the binding site for the yeast Gal4p transcription factor,
 which has the consensus <TT><B>CGGNNNNNWNNNNNCCG</B></TT>.<P>
 </UL>
 
-<H4>Options</H4>
+<H2>Options</H2>
 <UL>
 
-<A NAME="title"><B>Title</B></A>
+<P>
+<A NAME="title"><h4>Title</H4></A>
 (facultative)<BR>
 
 Title of the data set. This information is returned as title of the
 result page.<P>
 
+<P>
 <A NAME="sequence">
-<B>Input sequence:</B></A><BR>
+<H4>Input sequence:</H4></A>
 
 The sequence that will be analyzed. Multiple sequences can be entered
-at once with most sequence formats (see below).<P>
+at once with several <a href=help.formats.html>sequence formats</a>.
 
-<A NAME="format">
-<B>Format:</B></A><BR>
+<P>
+<A NAME="sequence_format">
+<H4>Format:</H4></A>
 
-Input sequence format. Various standards are supported (click on the
-links for more details):
-<UL>
-
-<LI><A HREF="help.formats.html#raw"><B>raw</B></A>: the raw sequence
-without any identifier or comment.
-
-<LI><A HREF="help.formats.html#multi"><B>multi</B></A>: several raw
-sequences concatenated.
-
-<LI><A HREF="help.formats.html#ig"><B>IG</B></A>: IntelliGenetics
-format.
-
-<LI><A HREF="help.formats.html#fasta"><B>FastA</B></A>: the sequence
-format used by FastA, BLAST, Gibbs sampler and a lot of other
-bioinformatic programs.
-
-<LI><A HREF="help.formats.html#wconsensus"><B>Wconsensus</B></A>: the
-format defined by Jerry Hertz for his programs (patser, consensus,
-wconsensus).
-
-</UL>
+Input sequence format. <a href=help.formats.html>Various standards</a>
+are supported.
 
 <P>
 <A NAME="purge">
-<B>Purge sequences (highly recommended)</B></A><BR> When checked,
+<H4>Purge sequences (highly recommended)</H4></A> When checked,
 large duplicated regions (>= 40 bp alignment with less than 3
 mismatches)) are filtered out before analysis. Purging is essential
 for any pattern discovery process, to avoid a bias due to
 non-independence of sequences. Purging is performed with the programs
-<TT>mkvtree</TT> and <TT>vmatch</TT> developed by Stefan Kurtz (<a
+<TT>mkvtree</TT> and <TT>vmatch</TT> developed by <a
+href=http://www.techfak.uni-bielefeld.de/~kurtz/>Stefan Kurtz</a> (<a
 href="mailto:kurtz@TechFak.Uni-Bielefeld.DE">kurtz@TechFak.Uni-Bielefeld.DE</a>).
 
 
 <P>
 
 <A NAME="oligo_size">
-<B>Oligonucleotide size</B></A><BR>
+<H4>Oligonucleotide size</H4></A>
 This is the size of a single element (a half dyade). 
 
 <P>
 <A NAME="spacing">
-<B>Spacing</B></A><BR>
+<H4>Spacing</H4></A>
 
 Spacing between the elements of the dyad. The spacing is the number of
 bases between the end of the fisrt element and the start of the second
@@ -103,7 +91,7 @@ scanning one by one th spacing values 8 to 12.
 
 <P>
 <A NAME="dyad_type">
-<B>Dyad type</B></A><BR>
+<H4>Dyad type</H4></A>
 
 In order to fasten execution, the program can be asked to restrict its
 analysis to symmetric dyads, with 3 possibilities : <BR>
@@ -126,37 +114,73 @@ number of dyads increases dramatically with this option, and it should
 not be used for elements widers than 3 nucleotides.
 <P>
 
+<P>
 <A NAME="count_strands">
-<B>Count on:</B></A> (single or both strands)<BR> By selecting "both
+<H4>Count on:</H4></A> (single or both strands)<BR> By selecting "both
 strands", the occurrences of each oligonucleotide are summed on both
 strands. This allows to detect elements which act in an
 orientation-insensitive way (as is generally the case for yeast
 upstream elements). <P>
 
+<P>
+<A NAME="noov">
+<h4>Prevent overlapping matches</h4></A> 
+
+Periodic patterns (e.g. AAAn{0}AAA, TATn{1}TAT) have an aggregative tendency,
+i.e. each occurrence of such a pattern strongly favours additional
+occurrences in its immediate vicinity. This introduces a bias to most
+statistics (binomial, log-likelihood). A simple way to correct for
+this bias is to prevent counting twice mutually overlapping
+occurrences. <BR>
+
+For example, the string <TT>AAAAAAAAAAAAAA</TT> would represent
+<UL>
+<LI>7 occurrences of <TT>AAAn{1}AAA</TT> when self-overlap is allowed
+<LI>2 occurrences of <TT>AAAn{1}AAA</TT> when self-overlap is prevented
+</UL>
+
+<P>
 <A NAME="exp_freq">
-<B>Expected frequency:</B></A><BR> The frequency expected for each
-dyad is the product of the frequency expected for each element
-(oligonucleotide):
+<H4>Expected frequency calibration</H4></A> 
+<ul>
+<h5>Background model</h5>
+
+Compare dyad frequencies observed in the query sequence to those of a
+reference sequence (the background model). 
+
+<P>
+Pre-calculted tables are used to estimate expected oligonucleotide
+frequencies (background frequencies). These tables were obtained by
+counting all dyad frequencies (monad size 3, spacing from 0 to 20) in
+different sequence types, and this for each organism.
+
+<ul>
+<li><b>upstream</b>: all upstream regions, allowing overlap with
+upstream ORFs.
+
+<li><b>upstream-noorf</b>: all upstream regions, preventing overlap
+with upstream ORFs (sequences are clipped to discard upstream ORF
+sequences).
+
+<li><b>intergenic</b>: all the intergenic regions, including upstream
+and downstream sequences.
+</ul>
+
+
+<P>
+<h5>Monad frequencies from the input sequence</h5>
+The frequency expected for each dyad is the product of the frequency
+observed expected for each monad (oligonucleotide) in the sequence file.
+
 <PRE>
 	exp(dyad) = exp(oligo1)*exp(oligo2)
 </PRE>
-By default, the oligonucleotide frequencies observed in the input
-sequences are used to estimate the expected oligo frequencies.
 
-Alternatively, predefined frequency tables can be used. These tables
-have been calculated on basis of<BR>
-<UL>
-<LI><B>the whole yeast genome</B>
-<LI><B>all yeast non-coding regions</B>
-<LI><B>all yeast coding regions</B>
-<BR>
-</UL>
-This allows to correct the bias due to the highly variable
-distribution of oligonucleotides observed in the yeast genome.
+</ul>
 
 <P>
 <A NAME="threshold">
-<B>Threshold of significance:</B></A> 
+<H4>Threshold of significance:</H4></A> 
 <BR> Thresholds can be imposed to select the most significantly
 overrepresented patterns. A threshold of 0 on occurrence significance
 index is selected by default. This is the most efficient way we found
@@ -169,7 +193,7 @@ in the input set.
 
 <P>
 <A NAME="return">
-<B>Output columns</B></A><BR>
+<H3>Output columns</H3></A>
 <UL>
 
 <LI><B>Expected frequency (exp_frq):</B> the probability to observe
@@ -194,12 +218,12 @@ dyads (which varies with oligo size) and doing a logarithmic
 transformation. The highest sig correspond to the most overrepresented
 oligonucleotide. Sig value higher than 0 indicate overrepresentation.
 
-	</UL>
-</UL>
-<P>
 
+</UL>
+
+<P>
 <A NAME="proba">
-<H4>Probabilities</H4></A>
+<H3>Probabilities</H3></A>
 <UL>
 
 Various calibration models can be used to estimate the probability of
@@ -289,6 +313,7 @@ calculated with the binomial formulae.
 <CENTER><ADDRESS>For information, contact <A HREF="mailto:jvanheld@ucmb.ulb.ac.be">Jacques
 van Helden (jvanheld@ucmb.ulb.ac.be)</A></ADDRESS></CENTER>
 
+</blockquote>
 </BODY>
 </HTML>
 
