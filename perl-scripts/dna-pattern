@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dna-pattern,v 1.8 2001/09/09 21:40:55 jvanheld Exp $
+# $Id: dna-pattern,v 1.9 2001/09/09 22:53:33 jvanheld Exp $
 #
-# Time-stamp: <2001-09-09 23:40:14 jvanheld>
+# Time-stamp: <2001-09-10 00:52:01 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -218,19 +218,19 @@ if ($table) {
   foreach $pattern (@patterns) {
     print $out "\t", $pattern->get_attribute("id");
   }
-  print $out "\ttotal" if ($total); ### print total of occurrences per sequence
+  print $out "\ttotal" if ($colsum); ### print total of occurrences per sequence
   print $out "\n";
   foreach $sequence_id (@sequence_ids) {
     print $out $sequence_id;
     foreach $pattern (@patterns) {
       print $out "\t", $match_count{$sequence_id}{$pattern};
     }
-    print $out "\t", $sum_per_sequence{$sequence_id} if ($total);
+    print $out "\t", $sum_per_sequence{$sequence_id} if ($colsum);
     print $out "\n";
   }
   
   ### print total of occurrences per pattern
-  if ($total) {
+  if ($rowsum) {
     print $out "total";
     foreach $pattern (@patterns) {
       print $out "\t", $sum_per_pattern{$pattern};
@@ -446,9 +446,14 @@ ARGUMENTS
 	-table	return the count of pattern matches per sequence
 		in the form of a table.
 		(one line per sequence, one column per pattern)
+	-colsum	(together with -table)
+		prints an extra column with the total occurrences per sequence
+	-rowsum	(together with -table)
+		prints an extra row with total occurrences per pattern
 	-total	(together with -table)
-		print and extra column with the total occurrences per sequence
-		and an extra row with total occurrences per pattern
+		prints an extra column with the total occurrences per sequence
+		and an extra row with total occurrences per pattern.
+		(amounts to combine -colsum and -rowsum)
         -th #   Threshold. 
                 Return match count only for sequences with >= # matches.
                 Only valid in combination with -c.
@@ -612,6 +617,8 @@ dna-pattern options
 -R 	search matches on the Reverse complementary strand only
 -c	return the count of matches for each pattern in each sequence
 -table	return a table with the count of pattern matches per sequence
+-colsum	return total occ per sequence in the count table
+-rowsum	return total occ per pattern in the count table
 -total	return total occ per sequence and per pattern in the count table
 -th     threshold
 -ct	return total count in all sequences
@@ -736,9 +743,16 @@ sub ReadArguments {
 	    $count_matches = 1;
 	    $sum_only = 0;
 	    $table = 1;
+	    #### add a column containing the sum of colums to the table output
+	} elsif ($ARGV[$a] eq "-colsum") {
+	    $colsum = 1;
+	    #### add a row containing the sum of rows to the table output
+	} elsif ($ARGV[$a] eq "-rowsum") {
+	    $rowsum = 1;
 	    #### add a column and a row for totals to the table output
 	} elsif ($ARGV[$a] eq "-total") {
-	    $total = 1;
+	    $colsum = 1;
+	    $rowsum = 1;
 
 	    #### neighborhood (return flanking residues)
 	} elsif (($ARGV[$a] eq "-N") && (&IsNatural($ARGV[$a+1]))) {
