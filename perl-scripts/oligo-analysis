@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.55 2002/09/14 23:01:51 jvanheld Exp $
+# $Id: oligo-analysis,v 1.56 2002/10/15 05:55:04 jvanheld Exp $
 #
-# Time-stamp: <2002-09-14 18:01:12 jvanheld>
+# Time-stamp: <2002-10-14 23:54:43 jvanheld>
 #
 ############################################################
 
@@ -39,6 +39,9 @@ $residue_proba{'a'} = 0.25;
 $residue_proba{'c'} = 0.25;
 $residue_proba{'g'} = 0.25;
 $residue_proba{'t'} = 0.25;
+
+#### include score in pattern ID
+#$score_in_id = 1;
 
 #### read arguments ####
 &ReadArguments();
@@ -178,6 +181,11 @@ $out = &OpenOutputFile($outputfile);
 &CalcRatio() if ($return{'ratio'});
 &CalcProba() if ($return{'proba'}) ;
 
+# if ($score_in_id) {
+#     foreach my $pattern_seq (keys %patterns) {
+#     	printf $out "\t%15.13f", $patterns{$pattern_seq}->{freq} if ($return{'freq'});	
+#     }
+# }
 
 &PrintResult;
 
@@ -1059,7 +1067,7 @@ sub PrintHeaderLine {
     $col_description{"expected_freq"} = "expected relative frequency"; 
     $col_description{"occ"} = "observed occurrences";
     $col_description{"exp_occ"} = "expected occurrences"; 
-    $col_description{"occ_prb"} = "occurrence probability (binomial)";
+    $col_description{"occ_P"} = "occurrence probability (binomial)";
     $col_description{"occ_E"} = "E-value for occurrences (binomial)";
     $col_description{"occ_sig"} = "occurrence significance (binomial)";
     $col_description{"zscore"} = "z-score (normal)"; 
@@ -1069,7 +1077,7 @@ sub PrintHeaderLine {
     $col_description{"ms"} = "number of matching sequences";
     $col_description{"exp_ms"} = "expected number of matching sequences";
     $col_description{"ems_cor"} = "expected number of matching sequences, corrected for autocorrelation (Poisson approx)";
-    $col_description{"ms_prb"} = "matching sequence probability (binomial)";
+    $col_description{"ms_P"} = "matching sequence probability (binomial)";
     $col_description{"ms_sig"} = "matching sequenc significance (binomial)";
     $col_description{"ms_E"} = "E-value for matching sequences (binomial)";
     $col_description{"ms_freq"} = "observed matching sequence frequency"; 
@@ -1105,7 +1113,7 @@ sub PrintHeaderLine {
 	push(@out_col,"occ");
 	push(@out_col,"exp_occ") if ($return{'exp_freq'});
 	if ($return{'proba'}) {
-	    push(@out_col,"occ_prb");
+	    push(@out_col,"occ_P");
 	    push(@out_col,"occ_E");
 	    push(@out_col,"occ_sig");
 	}
@@ -1122,7 +1130,7 @@ sub PrintHeaderLine {
 	if ($return{'proba'}) {
 	    push(@out_col,"exp_ms");
 	    push(@out_col,"ems_cor") unless ($noov);
-	    push(@out_col,"ms_prb");
+	    push(@out_col,"ms_P");
 	    push(@out_col,"ms_E");
 	    push(@out_col,"ms_sig");
 	}
@@ -1664,7 +1672,7 @@ sub ReadArguments {
 	    #### statistics to return
 	} elsif ($ARGV[$a] eq "-return") {
 	    chomp($ARGV[$a+1]);
-	    @fields_to_return = split ",", $ARGV[$a+1];
+	    my @fields_to_return = split ",", $ARGV[$a+1];
 	    foreach $field (@fields_to_return) {
 		if ($field eq "occ") {
 		    $return{'occ'} = 1;
@@ -1720,9 +1728,10 @@ sub ReadArguments {
 		    $return{'est_var'} = 1;
 		    push(@output_fields, "est_var");
 		    
-		    
+		} else {
+		    &FatalError("Invalid return field $field");
 		}
-		
+
 	    }
 	} elsif ($ARGV[$a] eq "-table") {
 	    $return{'table'} = 1;
