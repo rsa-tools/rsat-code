@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: retrieve-seq,v 1.9 2000/12/29 21:19:06 jvanheld Exp $
+# $Id: retrieve-seq,v 1.10 2001/04/01 23:50:19 jvanheld Exp $
 #
-# Time-stamp: <2000-12-29 21:46:37 jvanheld>
+# Time-stamp: <2001-02-20 01:47:09 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -44,7 +44,7 @@ $line_width = 60;
 ################################################################################
 
 #### organism
-&CheckOrganism($organism);
+&CheckOrganism($organism_name);
 
 #### check output format ####
 &CheckOutputSeqFormat($out_format);
@@ -95,7 +95,7 @@ $out = &OpenOutputFile($outputfile);
 #### verbose ####
 if ($warn_level) {
   print $out "; retrieve-seq\n";
-  printf $out "; %-14s\t%s\n", "organism", $organism;
+  printf $out "; %-14s\t%s\n", "organism", $organism_name;
   printf $out "; %-14s\t%s\n", "sequence type", $sequence_type;
   printf $out "; %-14s\t%s\n", "Output format", $out_format;
   printf $out "; %-14s\t%s\n", "Line width", $line_width;
@@ -117,8 +117,8 @@ if ($warn_level) {
 
 #### read data
 #&ReadCDSPositions;
-&ReadOrfPositions($organism);
-&ReadSynonyms($organism);
+&ReadOrfPositions($organism_name);
+&ReadSynonyms($organism_name);
 #&ReadGenomeSequence;
 
 #### no overlapping with upstream orfs
@@ -434,7 +434,7 @@ sub ReadArguments {
       
       #### organism
     } elsif ($ARGV[$a] eq "-org") {
-      $organism =$ARGV[$a+1];
+      $organism_name =$ARGV[$a+1];
       
       #### type
     } elsif ($ARGV[$a] eq "-type") {
