@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: server.mk,v 1.6 2004/04/21 10:36:59 jvanheld Exp $
+# $Id: server.mk,v 1.7 2004/05/12 21:12:43 jvanheld Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -231,3 +231,5 @@ clean_tmp:
 	@echo "Before cleaning	" `du -sk ${RSAT}/public_html/tmp`
 	@find ${RSAT}/public_html/tmp/ -mtime +${CLEAN_DATE} -type f -exec rm -f {} \;	
 	@echo "After cleaning	" `du -sk ${RSAT}/public_html/tmp`
+	@echo "Disk free" 
+	@df `pwd`   
