@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.10 2002/03/07 13:47:00 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.11 2002/03/07 14:53:31 jvanheld Exp $
 #
-# Time-stamp: <2002-03-07 14:41:36 jvanheld>
+# Time-stamp: <2002-03-07 15:10:54 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -30,7 +30,8 @@ $supported_tasks = join ",", @supported_tasks;
 
 $default{from} = -800;
 $default{to} = 0;
-
+$known_site_file = "known-consensus";
+$known_sites_provided = 0;
 
 &ReadArguments;
 
@@ -40,7 +41,7 @@ unless (defined(%task)) {
 }
 if ($task{all}) {
     foreach my $t (@supported_tasks) {
-	next if ($t eq 'clean'); ### clean needs to be actively called
+#	next if ($t eq 'clean'); ### clean needs to be actively called
 	$task{$t} = 1;
     }
 }
@@ -176,11 +177,11 @@ sub SetFileNames {
     $family{$family_name}->{oligo_file} =  "${family_name}/oligos_${family_name}/${family_name}_oligos_up${seq_length}_${min_oligo_length}-${max_oligo_length}nt_${strands}_sig${th}";
     $family{$family_name}->{oligo_file} .= "_noov" if ($noov);
     $family{$family_name}->{oligo_assembly_file} = $family{$family_name}->{oligo_file}."_contigs";
-    
+    $family{$family_name}->{oligo_ft_file} = $family{$family_name}->{oligo_file}.".ft";
     
     $family{$family_name}->{dyad_file} = "$family_name/dyads_${family_name}/$family_name".$dyad_suffix;
     $family{$family_name}->{dyad_assembly_file} = $family{$family_name}->{dyad_file}."_contigs";
-    $family{$family_name}->{ft_file} = $family{$family_name}->{dyad_file}.".ft";
+    $family{$family_name}->{dyad_ft_file} = $family{$family_name}->{dyad_file}.".ft";
     $family{$family_name}->{fmap_file} = $family{$family_name}->{dyad_file}.".gif";
     $family{$family_name}->{htmap_file} = $family{$family_name}->{dyad_file}.".html";
   }  
@@ -257,8 +258,8 @@ sub OligoAnalysis {
   die "Error : cannot read file $family{$family_name}->{seq_file}\n" unless (-r $family{$family_name}->{seq_file});
   $origin = -$from + 1;
   $command = "dna-pattern -i $family{$family_name}->{seq_file} -format $seq_format -pl $family{$family_name}->{oligo_file} -origin $origin -sc 7 -N 4 ";
-  $command .= " | features-from-dnapat ";
-  $command .= " | feature-map -scalebar -scalestep 50 -legend -from $from -to $to -o $fmap_file -scorethick -htmap > $htmap_file ";
+  $command .= " | features-from-dnapat -o $family{$family_name}->{oligo_ft_file} ";
+  $command .= " ; feature-map -i $family{$family_name}->{oligo_ft_file} -scalebar -scalestep 50 -legend -from $from -to $to -o $fmap_file -scorethick -htmap > $htmap_file ";
   
   &doit($command);
 }
@@ -286,28 +287,28 @@ sub DyadAnalysis {
 
 ### read known known_site for each family
 sub ReadKnownSites {
-  %known_site = ();
-  %known_site_source = ();
-  $known_site_file = "known-consensus";
-  if (-e $known_site_file) {
-    open KNOWN_SITE, $known_site_file;
-    while (<KNOWN_SITE>) {
-      next if (/^;/);
-      next unless (/\S/);
-      chomp;
-      @fields = split "\t";
-      $family_name = $fields[0];
-      $source = $fields[2];
-      $known_site = uc($fields[1]);
-      #$known_site = uc(&compress_pattern($known_site,"n"));
-      $known_site =~ s/N/n/g;
-      push @{$known_site{$family_name}}, $known_site;
-      push @{$known_site_source{$family_name}}, $source;
+    %known_site = ();
+    %known_site_source = ();
+    if (-e $known_site_file) {
+	$known_sites_provided = 1;
+	open KNOWN_SITE, $known_site_file;
+	while (<KNOWN_SITE>) {
+	    next if (/^;/);
+	    next unless (/\S/);
+	    chomp;
+	    @fields = split "\t";
+	    $family_name = $fields[0];
+	    $source = $fields[2];
+	    $known_site = uc($fields[1]);
+	    #$known_site = uc(&compress_pattern($known_site,"n"));
+	    $known_site =~ s/N/n/g;
+	    push @{$known_site{$family_name}}, $known_site;
+	    push @{$known_site_source{$family_name}}, $source;
+	}
+	close KNOWN_SITE;
     }
-    close KNOWN_SITE;
-  }
 }
-  
+
 sub ReadSiteLibrary {
   @site_library = ();
   $library_file = "known_sites.tab";
@@ -346,9 +347,10 @@ sub SyntheticTable {
   $row = 0;
   $row{family} = $row++;
   $row{genes} = $row++;
-  $row{known} = $row++;
+  $row{known} = $row++ if ($known_sites_provided);
   $row{oligo} = $row++;
   $row{dyad} = $row++;
+  $row_num = $row-1;
   while (($header,$row) = each %row) {
     $table[$row][0] = "<B>$header</B>";
   }
@@ -370,12 +372,14 @@ sub SyntheticTable {
     $table[$row{genes}][$col] = join " ", @{$family{$family_name}->{members}};
     
     ### known patterns
-    $table[$row{known}][$col] = "";
-    for $c (0..$#{$known_site{$family_name}}) {
-      $table[$row{known}][$col] .= ${known_site{$family_name}}[$c];
-      $table[$row{known}][$col] .= "<BR>(".${known_site_source{$family_name}}[$c].")" if (${known_site_source{$family_name}}[$c]);
-      $table[$row{known}][$col] .= "<P>";
-    }
+    if ($known_sites_provided) {
+	$table[$row{known}][$col] = "";
+	for $c (0..$#{$known_site{$family_name}}) {
+	    $table[$row{known}][$col] .= ${known_site{$family_name}}[$c];
+   	    $table[$row{known}][$col] .= "<BR>(".${known_site_source{$family_name}}[$c].")" if (${known_site_source{$family_name}}[$c]);
+            $table[$row{known}][$col] .= "<P>";
+        }
+    } 
     
     #### oligo-analysis
     open OLIGOS, "$family{$family_name}->{oligo_assembly_file}";
@@ -435,22 +439,23 @@ sub SyntheticTable {
     $table[$row{oligo}][$col] .= "</A></TD>\n";
 
     ### print matching patterns
-    $table[$row{oligo}][$col] .= "<TD>\n";
-    for $p (0..$#sorted_patterns) {
-      my @matches = ();
-      foreach $site (@site_library) {
-	if (($sorted_patterns[$p]->contains($site, min_score=>$min_matching_score)) ||
-	    ($site->contains($sorted_patterns[$p], min_score=>$min_matching_score))) {
-	  #my $match = $site->get_attribute("sequence");
-	  my $match = $site->get_id();
-	  push @matches, $match;
-	}
+    if ($known_sites_provided) {
+       $table[$row{oligo}][$col] .= "<TD>\n";
+       for $p (0..$#sorted_patterns) {
+         my @matches = ();
+         foreach $site (@site_library) {
+	   if (($sorted_patterns[$p]->contains($site, min_score=>$min_matching_score)) ||
+	       ($site->contains($sorted_patterns[$p], min_score=>$min_matching_score))) {
+	     #my $match = $site->get_attribute("sequence");
+	     my $match = $site->get_id();
+	     push @matches, $match;
+	   }
+        }
+        $table[$row{oligo}][$col] .= join(";",@matches);
+        $table[$row{oligo}][$col] .= "<BR>" unless ($p == $#sorted_patterns);
       }
-      $table[$row{oligo}][$col] .= join(";",@matches);
-      #$table[$row{oligo}][$col] .= "hello";
-      $table[$row{oligo}][$col] .= "<BR>" unless ($p == $#sorted_patterns);
+      $table[$row{oligo}][$col] .= "</TD>\n";
     }
-    $table[$row{oligo}][$col] .= "</TD>\n";
     
     $table[$row{oligo}][$col] .= "</TR>\n";
     $table[$row{oligo}][$col] .= "</TABLE>\n";
@@ -519,22 +524,24 @@ sub SyntheticTable {
     $table[$row{dyad}][$col] .= "</A></TD>\n";
 
     ### print matching patterns
-    $table[$row{dyad}][$col] .= "<TD>\n";
-    for $p (0..$#sorted_patterns) {
-      my @matches = ();
-      foreach $site (@site_library) {
-	if (($sorted_patterns[$p]->contains($site, min_score=>$min_matching_score)) ||
-	    ($site->contains($sorted_patterns[$p], min_score=>$min_matching_score))) {
-	  #my $match = $site->get_attribute("sequence");
-	  my $match = $site->get_id();
-	  push @matches, $match;
-	}
+    if ($known_sites_providde) {
+      $table[$row{dyad}][$col] .= "<TD>\n";
+      for $p (0..$#sorted_patterns) {
+        my @matches = ();
+        foreach $site (@site_library) {
+	  if (($sorted_patterns[$p]->contains($site, min_score=>$min_matching_score)) ||
+	     ($site->contains($sorted_patterns[$p], min_score=>$min_matching_score))) {
+	    #my $match = $site->get_attribute("sequence");
+ 	    my $match = $site->get_id();
+ 	    push @matches, $match;
+	  }
+        } 
+        $table[$row{dyad}][$col] .= join(";",@matches);
+        $table[$row{dyad}][$col] .= "<BR>" unless ($p == $#sorted_patterns);
       }
-      $table[$row{dyad}][$col] .= join(";",@matches);
-      $table[$row{dyad}][$col] .= "<BR>" unless ($p == $#sorted_patterns);
+      $table[$row{dyad}][$col] .= "</TD>\n";
     }
-    $table[$row{dyad}][$col] .= "</TD>\n";
-    
+
     $table[$row{dyad}][$col] .= "</TR>\n";
     $table[$row{dyad}][$col] .= "</TABLE>\n";
     close DYADS;
@@ -549,7 +556,7 @@ sub SyntheticTable {
   print TABLE "<TABLE BORDER=1>\n";
 
   if ($transpose) {
-    foreach $r (0..8) {
+    foreach $r (0..$row_num) {
       print TABLE "<TR>\n";
       foreach $c (0..$col) {
 	print TABLE "<TD>", $table[$r][$c], "</TD>\n";
@@ -559,7 +566,7 @@ sub SyntheticTable {
   } else {
     foreach $c (0..$col) {
       print TABLE "<TR>\n";
-      foreach $r (0..8) {
+      foreach $r (0..$row_num) {
 	print TABLE "<TD>", $table[$r][$c], "</TD>\n";
       }
       print TABLE "</TR>\n";
@@ -579,8 +586,8 @@ sub SyntheticTable {
 sub DrawFeatureMaps {
   $origin = -$from + 1;
   $command = "dna-pattern -pl $family{$family_name}->{dyad_file} -format $seq_format -i $family{$family_name}->{seq_file}  -sc 7 -origin $origin -N 4 ";
-  $command .= "| features-from-dnapat -o $family{$family_name}->{ft_file} ";
-  $command .= "; feature-map -i $family{$family_name}->{ft_file} -o $family{$family_name}->{fmap_file} ";;
+  $command .= "| features-from-dnapat -o $family{$family_name}->{dyad_ft_file} ";
+  $command .= "; feature-map -i $family{$family_name}->{dyad_ft_file} -o $family{$family_name}->{fmap_file} ";;
   $command .= "-from $from -to $to ";
   $command .= "-legend ";
   $command .= "-scalebar -scalestep 50 ";
