@@ -797,7 +797,7 @@ use Data::Dumper;
       #### out fields
       my @out_fields = $class_holder->get_out_fields();
       if ($#out_fields < 0) {
-	  @out_fields = keys %attribute_cardinalities;
+	  @out_fields = sort keys %attribute_cardinalities;
       }
       
       ### header of the main table, indicating the column content
