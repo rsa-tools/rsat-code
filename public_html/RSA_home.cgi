@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSA_home.cgi,v 1.8 2001/12/21 10:07:09 jvanheld Exp $
+# $Id: RSA_home.cgi,v 1.9 2002/01/06 23:29:43 jvanheld Exp $
 #
-# Time-stamp: <2001-12-21 11:00:40 jvanheld>
+# Time-stamp: <2002-01-07 00:29:37 jvanheld>
 #
 ############################################################
 #### this cgi script fills the HTML form for the program dna-pattern
@@ -54,7 +54,7 @@ print <<EndText;
   <IMG SRC="ULB_Blue_215.gif" ALT="ULB_Blue_215.gif" BORDER=0 HEIGHT=75 WIDTH=75>
   <BR>
   <FONT COLOR="#0000dd" SIZE=-2>
-  UCMB-ULB
+  SCMB-ULB
   </FONT>
   </A>
   </CENTER>
@@ -97,11 +97,11 @@ print <<EndText;
   <P> An increasing number of organisms are supported on this web
   site. We installed a few eukaryotes (<i>Saccharomyces
   cerevisiae</i>, <i>Drosophila melanogaster</i>, <i>Caenorhabditis
-  elegans</i>) and 50 bacteria. Bacterial genomes are periodically
-  synchronized from Genbank/NCBI data. We are willing to install
-  additional organisms provided their genome has been fully sequenced
-  and is publicly available. If you would like to add such an
-  organism, please contact <a target=_top
+  elegans</i>, <i>Arabidopsis thaliana</i>) and all the completely
+  sequenced bacterial genomes (from Genbank). We are willing to
+  install additional organisms provided their genome has been fully
+  sequenced and is publicly available. If you would like to add such
+  an organism, please contact <a target=_top
   href="http://www.ucmb.ulb.ac.be/~jvanheld/">Jacques van Helden</a>.
 
   <P>
@@ -135,7 +135,7 @@ print <<EndText;
   <TD ALIGN=CENTER>
   <A HREF="http://bioinformatics.bmc.uu.se/~jvanheld/rsa-tools/" target="_top">
   <B>Sweden</B><BR>
-  <IMG SRC="uulogo_red160.gif" HEIGHT=80 BORDER=0><BR>
+  <IMG SRC="uppsala_lcb.jpg" HEIGHT=80 BORDER=0><BR>
   <FONT SIZE=-2>http://bioinformatics.bmc.uu.se/~jvanheld/rsa-tools/</A>
   </FONT>
   </TD>
@@ -145,8 +145,9 @@ print <<EndText;
   
 EndText
 
+@orgs =  &ListSupportedOrganisms("keys");
 
-print "<H4>Organisms supported on <A HREF='$WWW_RSA' target=_top>",$WWW_RSA,"</A></H4>\n";
+print "<H4>",$#orgs ," Organisms supported on <A HREF='$WWW_RSA' target=_top>",$WWW_RSA,"</A></H4>\n";
 print &ListSupportedOrganisms("html_list");
 
 &UpdateLogFile;
