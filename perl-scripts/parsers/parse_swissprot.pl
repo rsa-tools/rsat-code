@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_swissprot.pl,v 1.25 2002/10/16 06:51:41 jvanheld Exp $
+# $Id: parse_swissprot.pl,v 1.26 2002/11/25 23:38:28 jvanheld Exp $
 #
-# Time-stamp: <2002-10-16 00:51:13 jvanheld>
+# Time-stamp: <2002-11-25 17:37:54 jvanheld>
 #
 ############################################################
 
@@ -331,58 +331,20 @@ EndHelp
 
 ### read arguments from the command line
 sub ReadArguments {
+
+    &ReadGenericOptions($a);
+
+
     for my $a (0..$#ARGV) {
 	
-	### warn level
-	if (($ARGV[$a] eq "-v" ) && 
-	    ($ARGV[$a+1] =~ /^\d+$/)){
-	    $main::verbose = $ARGV[$a+1];
-	    
-	    #### test run
-	} elsif ($ARGV[$a] eq "-test") {
-	    $main::test = 1;
-	    
-	    ### dbms
-	} elsif ($ARGV[$a] eq "-dbms") {
-	    $main::default{dbms} = $ARGV[$a+1];
-	    unless ($supported_dbms{$main::default{dbms}}) {
-		die "Error: dbms ", $main::default{dbms}, " is not supported\n";
-	    }
-
-	    ### dbms address
-	} elsif ($ARGV[$a] eq "-dbms_address") {
-	    $main::default{dbms_address} = $ARGV[$a+1];
-
-	    ### database schema
-	} elsif ($ARGV[$a] eq "-schema") {
-	    $main::schema = $ARGV[$a+1];
-
-	    ### clean
-	} elsif ($ARGV[$a] eq "-clean") {
-	    $main::clean = 1;
-	    
-	    #### output file
-	} elsif ($ARGV[$a] eq "-obj") {
-	    $a++;
-	    $main::export{obj} = 1;
-	    
-	    #### help
-	} elsif (($ARGV[$a] eq "-h") ||
-		 ($ARGV[$a] eq "-help")) {
-	    &PrintHelp;
-	    exit(0);
 
 	    #### input directory
-	} elsif ($ARGV[$a] =~ /^-indir/) {
+	if ($ARGV[$a] =~ /^-indir/) {
 	    $dir{input} = $ARGV[$a+1];
 
 	    #### input file with a list of Swissprot AC
 	} elsif ($ARGV[$a] =~ /^-acs/) {
 	    $in_file{acs} = $ARGV[$a+1];
-
-	    #### output directory
-	} elsif ($ARGV[$a] =~ /^-outdir/) {
-	    $dir{output} = $ARGV[$a+1];
 
 	    #### select organisms for exportation
 	} elsif ($ARGV[$a] =~ /^-org/) {
