@@ -1252,7 +1252,7 @@ NAME
 
 	1997-98 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
 
-DESCRIPTION		
+DESCRIPTION
 	Draws a XY graph with the numbers of the 2 first columns of 
 	input file and exports this graph as a GIF file. 
 	

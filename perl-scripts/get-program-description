@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-program-description,v 1.5 2002/06/06 12:02:24 jvanheld Exp $
+# $Id: get-program-description,v 1.6 2002/06/06 12:07:07 jvanheld Exp $
 #
-# Time-stamp: <2002-06-06 14:02:23 jvanheld>
+# Time-stamp: <2002-06-06 14:07:06 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -80,9 +80,8 @@ foreach my $program (@program_names) {
     open HELP, "$program -h | ";
     while (<HELP>) {
 	next unless (/\S/);
-	if (/^([A-Z]+)\s*$/) {
+	if (/^([A-Z \t]+)\s*$/) {
 	    $type = $1;
-##	    warn $type;
 	} elsif ($type eq "DESCRIPTION") {
 	    $description .= $_;
 
@@ -93,7 +92,7 @@ foreach my $program (@program_names) {
 
     }
     close HELP;
-    $description =~ s/\s+/ /g;
+    $description =~ s/\s+/ /mg;
     unless ($description) {
 	&Warning( "no description for program $program");
     }
