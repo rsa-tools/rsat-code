@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.26 2002/11/13 07:37:46 jvanheld Exp $
+# $Id: install-organism,v 1.27 2002/11/13 07:54:11 jvanheld Exp $
 #
-# Time-stamp: <2002-09-15 08:29:56 jvanheld>
+# Time-stamp: <2002-11-13 01:50:45 jvanheld>
 #
 ############################################################
 
@@ -118,38 +118,44 @@ $outfile{features} = "$genome_dir/Feature_${organism_short_name}.tab" unless ($o
 $outfile{synonyms} = "$genome_dir/Feature_names_${organism_short_name}.tab" unless ($outfile{synonyms});
 
 
+################################################################
+###################### Installation tasks ######################
+################################################################
+
 &Verbose() if ($verbose);
-################################################################
-###################### start installation ######################
-################################################################
-#&InstallGenome() if ($task{genome});
-#if ($task{features}) {
-#    &GenerateFeatureTable() if ($infile{ptt});
-#    &InstallFeatureTable();
-#}
+
 &ParseGenome() if ($task{parse});
+
 &UpdateConfig() if ($task{config});
+
 &StartAndStopCodons() if ($task{start_stop});
+
 &IntergenicSegments() if ($task{ncf});
+
 &AllUpstream() if ($task{allup});
+
 &CalcFrequencies() if (($task{oligos}) || ($task{dyads}));
 
 &CleanUp if ($task{clean});
 
 exit(0);
 
+
+
 ################################################################
 ################     subroutine declaration     ################
 ################################################################
 
-sub trim {
-    my ($input) = @_;
-    chomp $input;
-    $input =~ s/^\s+//g;
-    $input =~ s/\s+$//g;
-    return $input;
-}
+# sub trim {
+#     my ($input) = @_;
+#     chomp $input;
+#     $input =~ s/^\s+//g;
+#     $input =~ s/\s+$//g;
+#     return $input;
+# }
 
+################################################################
+#### display verbosity message
 sub Verbose {
     print "; Installing organism\n";
     print "; -------------------\n";
@@ -188,65 +194,69 @@ sub Verbose {
     
 }
 
-sub InstallGenome {
-#### convert the genome in raw format, one file per chromosome
-#### input format is supposed to be fasta
+
+# ################################################################
+# #### convert the genome from fasta to filelist format : one file per
+# #### chromosome in raw format
+# sub InstallGenome {
     
-    #### genome sequence
-    unless ($infile{genome}) {
-	print "Enter the location of the genome sequence file : ";
-	$infile{genome} = <STDIN>;
-	$infile{genome} = &trim($infile{genome});
-	die "\n\tError: you should specify a genome sequence file\n\n"
-	    unless ($infile{genome} =~ /\S/);
-    }
-    die "\n\tError: file $infile{genome} does not exist\n\n"
-	unless (-e $infile{genome});
-    die "\n\tError: cannot read genome file $infile{genome}\n\n"
-	unless (-r $infile{genome});
+#     #### genome sequence
+#     unless ($infile{genome}) {
+# 	print "Enter the location of the genome sequence file : ";
+# 	$infile{genome} = <STDIN>;
+# 	$infile{genome} = &trim($infile{genome});
+# 	die "\n\tError: you should specify a genome sequence file\n\n"
+# 	    unless ($infile{genome} =~ /\S/);
+#     }
+#     die "\n\tError: file $infile{genome} does not exist\n\n"
+# 	unless (-e $infile{genome});
+#     die "\n\tError: cannot read genome file $infile{genome}\n\n"
+# 	unless (-r $infile{genome});
 
-    #### sequence format
-    unless ($seq_format) {
-	print "Enter the genome sequence format : ";
-	$seq_format = <STDIN>;
-	$seq_format = &trim($seq_format);
-	die "\n\tError: you should specify the sequence format\n\n"
-	    unless ($seq_format =~ /\S/);
-    }
-    unless ($supported_for_installation{$seq_format}) {
-	die ("\n\tError: invalid sequence format $seq_format",
-	     "\n\tSupported formats : ", 
-	     join (" ", keys %supported_for_installation),
-	     "\n\n");
-    }
+#     #### sequence format
+#     unless ($seq_format) {
+# 	print "Enter the genome sequence format : ";
+# 	$seq_format = <STDIN>;
+# 	$seq_format = &trim($seq_format);
+# 	die "\n\tError: you should specify the sequence format\n\n"
+# 	    unless ($seq_format =~ /\S/);
+#     }
+#     unless ($supported_for_installation{$seq_format}) {
+# 	die ("\n\tError: invalid sequence format $seq_format",
+# 	     "\n\tSupported formats : ", 
+# 	     join (" ", keys %supported_for_installation),
+# 	     "\n\n");
+#     }
 
-    #### convert the genome file
-    warn "Installing genome from file $infile{genome} (format $seq_format) \n\tto file $outfile{genome}\n"
-	if ($verbose);
-    $command = "convert-seq -i $infile{genome} -from $seq_format -to filelist -o $outfile{genome}";
-    &doit();
-}
+#     #### convert the genome file
+#     warn "Installing genome from file $infile{genome} (format $seq_format) \n\tto file $outfile{genome}\n"
+# 	if ($verbose);
+#     $command = "convert-seq -i $infile{genome} -from $seq_format -to filelist -o $outfile{genome}";
+#     &doit();
+# }
 
-#### install the feature table
-sub InstallFeatureTable {
-    if (($infile{ptt})) {
-	#### do nothing
-    } elsif ($infile{features}) {
-	$command = "cp $infile{features} $outfile{features}";
-	&doit();
-    } else {
-	print "Enter the location of the feature table file : ";
-	$infile{features} = <STDIN>;
-	$infile{features} = &trim($infile{features});
-	die "\n\tError: you should specify the feature table\n\n"
-	    unless ($infile{features} =~ /\S/);
-    }
-    if ($infile{synonyms}) {
-	$command = "cp $infile{synonyms} $outfile{synonyms}"; 
-	&doit();
-    }
-}
+# ################################################################
+# #### install the feature table
+# sub InstallFeatureTable {
+#     if (($infile{ptt})) {
+# 	#### do nothing
+#     } elsif ($infile{features}) {
+# 	$command = "cp $infile{features} $outfile{features}";
+# 	&doit();
+#     } else {
+# 	print "Enter the location of the feature table file : ";
+# 	$infile{features} = <STDIN>;
+# 	$infile{features} = &trim($infile{features});
+# 	die "\n\tError: you should specify the feature table\n\n"
+# 	    unless ($infile{features} =~ /\S/);
+#     }
+#     if ($infile{synonyms}) {
+# 	$command = "cp $infile{synonyms} $outfile{synonyms}"; 
+# 	&doit();
+#     }
+# }
 
+################################################################
 #### update configuration file
 sub UpdateConfig {
     my $comment_previous_config = 0;
@@ -473,6 +483,9 @@ sub CalcFrequencies {
     
 }
 
+################################################################
+#### calculate oligonucleotide frequencies in a specified sequence
+#### file
 sub CalcOligoFreq {
     my ($seq_file,$seq_format,$seq_type) = @_;
     foreach $oligo_length (1..8) {
@@ -489,7 +502,9 @@ sub CalcOligoFreq {
 }
 
 
-
+################################################################
+#### calculate dyad frequencies in a specified sequence
+#### file
 sub CalcDyadFreq {
     my ($seq_file,$seq_format,$seq_type) = @_;
     $min_spacing = 0;
@@ -516,87 +531,85 @@ sub CalcDyadFreq {
 }
 
 
-#### probably obsolete ####
-sub GenerateFeatureTable {
-    if ($source eq "sanger") {
-	$source_dir = "$install_dir/data_source/";
-	$genome_src = "${source_dir}/${organism_short_name}.dbs.gz";
-	$protein_sequences = "${source_dir}/${organism_short_name}.pep.gz";
+# ################################################################
+# #### probably obsolete ####
+# sub GenerateFeatureTable {
+#     if ($source eq "sanger") {
+# 	$source_dir = "$install_dir/data_source/";
+# 	$genome_src = "${source_dir}/${organism_short_name}.dbs.gz";
+# 	$protein_sequences = "${source_dir}/${organism_short_name}.pep.gz";
 	
-	$target_dir = "./";
-	$outfile{genome} = "${genome_dir}/${organism_short_name}.raw";
-	$ftt_file = "${genome_dir}/${organism_short_name}.ftt";
-	#### convert genome to raw format
-	$command = "convert-seq -from fasta -to filelist -lw 0 -i $genome_src -o $outfile{genome}";
-	&doit();
-
-	#### write feature table 
-	@cols =  qw(ID TYPE NAME CHROM LEFT RIGHT STRAND DESCR );
-	open FTT, "> $ftt_file" ||
-	    die "Error: cannot write $ftt_file\n";
-	print FTT (";",
-		   join("\t", @cols),
-		   "\n");
-	my $type = "CDS";
-	my $chrom = $organism_short_name;
-	open DESCR, "zcat $protein_sequences | grep '^>' |";
-	while ($line = <DESCR>) {
-	    if ($line =~ /^>(\S+)\s+(.*)\s+(\d+):(\d+) (reverse|forward)/) {
-		my $id = $1;
-		my $name = "";
-		my $descr = $2;
-		my $left = $3;
-		my $right = $4;;
-		my $strand = $5;
-		$strand =~ s/forward/D/;
-		$strand =~ s/reverse/R/;
-
-		$id =~ s/,$//;
-		if ($descr =~ /^(\S+),/) {
-		    $name = $1;
-		} else {
-		    $name = $id;
-		}
-
-		#print  FTT $line;
-		print FTT (join ("\t",
-				 $id,
-				 $type,
-				 $name,
-				 $chrom,
-				 $left,
-				 $right,
-				 $strand,
-				 $descr
-				 ),
-			   "\n");
-	    } else {
-		warn "cannot parse line\t$line";
-	    }
-
-	}
-	close DESCR;
-
-	close FTT;
-    } elsif (lc($source) eq "ncbi") {
-	&ParseNcbiFeatures($infile{ptt});
-    } elsif (lc($source) eq "genbank") {
-	&ParseNCBIFeatures($infile{ptt});
-    } else {
-	die "Error: cannot convert genome from source '$source'\n";
-    }
-}
-
-sub trim {
-    local($to_trim) = $_[0];
-    $to_trim =~ s/^\s+//;
-    $to_trim =~ s/\s+$//;
-    return $to_trim;
-}
+# 	$target_dir = "./";
+# 	$outfile{genome} = "${genome_dir}/${organism_short_name}.raw";
+# 	$ftt_file = "${genome_dir}/${organism_short_name}.ftt";
+# 	#### convert genome to raw format
+# 	$command = "convert-seq -from fasta -to filelist -lw 0 -i $genome_src -o $outfile{genome}";
+# 	&doit();
+# 	#### write feature table 
+# 	@cols =  qw(ID TYPE NAME CHROM LEFT RIGHT STRAND DESCR );
+# 	open FTT, "> $ftt_file" ||
+# 	    die "Error: cannot write $ftt_file\n";
+# 	print FTT (";",
+# 		   join("\t", @cols),
+# 		   "\n");
+# 	my $type = "CDS";
+# 	my $chrom = $organism_short_name;
+# 	open DESCR, "zcat $protein_sequences | grep '^>' |";
+# 	while ($line = <DESCR>) {
+# 	    if ($line =~ /^>(\S+)\s+(.*)\s+(\d+):(\d+) (reverse|forward)/) {
+# 		my $id = $1;
+# 		my $name = "";
+# 		my $descr = $2;
+# 		my $left = $3;
+# 		my $right = $4;;
+# 		my $strand = $5;
+# 		$strand =~ s/forward/D/;
+# 		$strand =~ s/reverse/R/;
+# 		$id =~ s/,$//;
+# 		if ($descr =~ /^(\S+),/) {
+# 		    $name = $1;
+# 		} else {
+# 		    $name = $id;
+# 		}
+# 		#print  FTT $line;
+# 		print FTT (join ("\t",
+# 				 $id,
+# 				 $type,
+# 				 $name,
+# 				 $chrom,
+# 				 $left,
+# 				 $right,
+# 				 $strand,
+# 				 $descr
+# 				 ),
+# 			   "\n");
+# 	    } else {
+# 		warn "cannot parse line\t$line";
+# 	    }
+# 	}
+# 	close DESCR;
+# 	close FTT;
+#     } elsif (lc($source) eq "ncbi") {
+# 	&ParseNcbiFeatures($infile{ptt});
+#     } elsif (lc($source) eq "genbank") {
+# 	&ParseNCBIFeatures($infile{ptt});
+#     } else {
+# 	die "Error: cannot convert genome from source '$source'\n";
+#     }
+# }
 
 
+# sub trim {
+#     local($to_trim) = $_[0];
+#     $to_trim =~ s/^\s+//;
+#     $to_trim =~ s/\s+$//;
+#     return $to_trim;
+# }
+
+
+################################################################
+#### display full help message
 sub PrintHelp {
-#### display full help message #####
     open HELP, "| more";
     print HELP <<End_of_help;
 NAME
@@ -626,25 +639,20 @@ OPTIONS
 
     MANDATORY ARGUMENTS
 	-org	short organism name (e.g. 'yeast')
+
+
+    OPTIONAL ARGUMENTS
 	-organism
 		Full name of the organism (e.g. 'Saccharomyces
 		cerevisiae').
-	-features
-		feature table.
-	-genome genome_file
-		genome sequence file. preferably in fasta format. 
-	-format 
-		format of the genome sequence file. It is recommended
-		to use fasta, but other formats (e.g. raw) might work
-		as well. Beware: this has not been tested for all
-		formats, and there is no guarantee that it works.
 
-    OPTIONAL ARGUMENTS
 	-source	data source
+
 	-dir install_dir
 		Absolute path of the installation directory. 
 		BEWARE : you should provide the absolute path of the
 		installation directory, not the relative path.
+
 	-local
 		Absolute path of a RSA local config file. 
 
@@ -667,10 +675,21 @@ OPTIONS
 		indicated by the environment variable RSA_LOCAL_CONFIG
 		rather than the main RSA config file.
 
-	-ptt	NCBI feature table
-		A NCBI feature table can be provided instead
-		of the RSA-formatted feature table. It will be
-		converted.
+	-syn	synonym table
+		A tab-delimited file containing two coloumns. The
+		forst column contains a gene ID, the second a gene
+		name.
+	-genbank
+		genbank directory
+
+		A directory containing a mirror of the NCBI genbank
+		genome directory:
+		       http://ftp.ncbi.nih.gov/genomes
+	
+		Normally, the genbank directory is specified by
+		defining a global variable GENBANK_DIR in the config
+		file. The option -genbank allows to overwrite this
+		value.
 
 	-task	specification of a single installation task
 		    e.g.
@@ -727,14 +746,12 @@ install_organism options
 -org		short organism name (e.g. yeast);
 -organism	full organism name (e.. Saccharomyces cerevisiae)
 -source		data source (e.g. ncbi);
--genome		genome file (e.g. /home/fred/yeast_genome.fasta)
--format		genome file format (preferentially fasta)
--features	feature table file
--ptt		NCBI feature table file
 -dir		absolut path of the installation directory
 -local		update local config file 
 		(specified by the environment variable RSA_LOCAL_CONFIG)
+-genbank	genbank directory
 -task		installation task ($supported_tasks)
+-syn		synonym table
 End_short_help
   close HELP;
   exit;
@@ -775,21 +792,21 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-organism") {
 	    $organism_full_name = $ARGV[$a+1];
 
-	    #### genome
-	} elsif ($ARGV[$a] eq "-genome") {
-	    $infile{genome} = $ARGV[$a+1];
-	    $outfile{genome} = $ARGV[$a+1];
-	} elsif ($ARGV[$a] eq "-format") {
-	    $seq_format = $ARGV[$a+1];
+# 	    #### genome
+# 	} elsif ($ARGV[$a] eq "-genome") {
+# 	    $infile{genome} = $ARGV[$a+1];
+# 	    $outfile{genome} = $ARGV[$a+1];
+# 	} elsif ($ARGV[$a] eq "-format") {
+# 	    $seq_format = $ARGV[$a+1];
 
-	    #### feature table
-	} elsif ($ARGV[$a] =~ /-feat/) {
-	    $infile{features} = $ARGV[$a+1];
-	    $outfile{features} = $ARGV[$a+1];
+# 	    #### feature table
+# 	} elsif ($ARGV[$a] =~ /-feat/) {
+# 	    $infile{features} = $ARGV[$a+1];
+# 	    $outfile{features} = $ARGV[$a+1];
 
-	    ### feature table from NCBI
-	} elsif ($ARGV[$a] =~ /-ptt/) {
-	    $infile{ptt} = $ARGV[$a+1];
+# 	    ### feature table from NCBI
+# 	} elsif ($ARGV[$a] =~ /-ptt/) {
+# 	    $infile{ptt} = $ARGV[$a+1];
 
 	    #### synonyms
 	} elsif ($ARGV[$a] =~ /-syn/) {
@@ -798,6 +815,10 @@ sub ReadArguments {
 	    #### installation dir
 	} elsif ($ARGV[$a] =~ /^-dir/) {
 	    $install_dir = $ARGV[$a+1];
+
+	    #### installation dir
+	} elsif ($ARGV[$a] =~ /^-genbank/) {
+	    $GENBANK_DIR = $ARGV[$a+1];
 
 	    #### task selection
 	} elsif (($ARGV[$a] =~ /^-task/) 
@@ -823,8 +844,9 @@ sub ReadArguments {
     }
 }
 
-
-#### retrieve start and stop codons and calculate word occurrences (for checking)
+################################################################
+#### retrieve start and stop codons and calculate word occurrences
+#### (for checking)
 sub StartAndStopCodons {
     $command = "retrieve-seq -v -org ${organism_short_name} -all  \ ";
     $command .= "-type downstream -from 0 -to -2  \ ";
@@ -851,324 +873,325 @@ sub doit {
 }
 
 
-sub ParseNcbiFeatures {
-    ################################################################
-    #  Generates a RSAT feature table (.ftt) 
-    #  from a NCBI feature table (.ptt)
-    #
-    #  usage
-    #    &ParseNcbiFeatures($ptt_file);
-    ################################################################
-    my ($ptt) = @_;
+# ################################################################
+# #  Generates a RSAT feature table (.ftt) 
+# #  from a NCBI feature table (.ptt)
+# #
+# #  usage
+# #    &ParseNcbiFeatures($ptt_file);
+# sub ParseNcbiFeatures {
+#     my ($ptt) = @_;
     
-    open PTT, $ptt || die "Error : cannot read ppt file $ptt\n";
-    open FTT, ">$outfile{features}" || die "Error: cannot write file $outfile{features}\n";
-    open SYNONYMS, ">$outfile{synonyms}" || die "Error: cannot write file $outfile{synonyms}\n";
-    print FTT ";ID";
-    print FTT "\tTYPE";
-    print FTT "\tNAME";
-    print FTT "\tCHROMOSOME";
-    print FTT "\tLEFT";
-    print FTT "\tRIGHT";
-    print FTT "\tSTRAND";
-    print FTT "\tDESCR";
-    print FTT "\t\n";
+#     open PTT, $ptt || die "Error : cannot read ppt file $ptt\n";
+#     open FTT, ">$outfile{features}" || die "Error: cannot write file $outfile{features}\n";
+#     open SYNONYMS, ">$outfile{synonyms}" || die "Error: cannot write file $outfile{synonyms}\n";
+#     print FTT ";ID";
+#     print FTT "\tTYPE";
+#     print FTT "\tNAME";
+#     print FTT "\tCHROMOSOME";
+#     print FTT "\tLEFT";
+#     print FTT "\tRIGHT";
+#     print FTT "\tSTRAND";
+#     print FTT "\tDESCR";
+#     print FTT "\t\n";
     
-    while (<PTT>) {
-	@fields =  split;
-	$pos = shift @fields;
-	#      $pos = &trim(substr($line,0,20));
-	if ($pos =~ /^(\d+)\.\.(\d+)$/) {
-	    $left = $1;
-	    $right = $2;
-	    $strand = shift @fields;
-	    #	$strand = &trim(substr($line,20,3));
-	    $strand =~ s/\+/D/;
-	    $strand =~ s/\-/R/;
-	    $len = shift @fields;
-	    $id = shift @fields;
-	    #	$id = &trim(substr($line,29,9));
-	    $name = shift @fields;
-	    #	$name = &trim(substr($line,38,15));
-	    if ($name eq "") {
-		$name = $id;
-	    }
+#     while (<PTT>) {
+# 	@fields =  split;
+# 	$pos = shift @fields;
+# 	#      $pos = &trim(substr($line,0,20));
+# 	if ($pos =~ /^(\d+)\.\.(\d+)$/) {
+# 	    $left = $1;
+# 	    $right = $2;
+# 	    $strand = shift @fields;
+# 	    #	$strand = &trim(substr($line,20,3));
+# 	    $strand =~ s/\+/D/;
+# 	    $strand =~ s/\-/R/;
+# 	    $len = shift @fields;
+# 	    $id = shift @fields;
+# 	    #	$id = &trim(substr($line,29,9));
+# 	    $name = shift @fields;
+# 	    #	$name = &trim(substr($line,38,15));
+# 	    if ($name eq "") {
+# 		$name = $id;
+# 	    }
 	    
-	    $descr = join " ", @fields;
-	    #	$descr = &trim(substr($line,63));
-	    if (($organism_short_name eq "hinf") && ($descr =~ /\((\S+)\)\s*$/)) {
-		$synonym = $name;
-		$name = $1;
-		print SYNONYMS "$id\t$synonym\n";
-	    } elsif (($organism_short_name eq "bsub") && ($descr =~ /alternate gene name: (.+)/)) {
-		if ($1 =~ /;/) {
-		    $synonyms = $`;
-		} else {
-		    $synonyms = $1;
-		}
-		@synonyms = split ",", $synonyms;
-		foreach $synonym (@synonyms) {
-		    $synonym =~ s/^\s+//;
-		    $synonym =~ s/\s+$//;
-		    print SYNONYMS "$id\t$synonym\n";
-		}
-	    } elsif (($organism_short_name eq "ecoli") & ($descr =~ /^(b\d+)\s/)) {
-		$synonym = $1;
-		print SYNONYMS "$id\t$synonym\n";
-	    } elsif (($organism_short_name eq "mtub") & ($descr =~ /^(Rv\d+)\s/)) {
-		$synonym = $1;
-		print SYNONYMS "$id\t$synonym\n";
-	    } elsif (($organism_short_name eq "aquae") & ($descr =~ /^(aq_\d+)\s/)) {
-		$synonym = $1;
-		print SYNONYMS "$id\t$synonym\n";
-	    }
+# 	    $descr = join " ", @fields;
+# 	    #	$descr = &trim(substr($line,63));
+# 	    if (($organism_short_name eq "hinf") && ($descr =~ /\((\S+)\)\s*$/)) {
+# 		$synonym = $name;
+# 		$name = $1;
+# 		print SYNONYMS "$id\t$synonym\n";
+# 	    } elsif (($organism_short_name eq "bsub") && ($descr =~ /alternate gene name: (.+)/)) {
+# 		if ($1 =~ /;/) {
+# 		    $synonyms = $`;
+# 		} else {
+# 		    $synonyms = $1;
+# 		}
+# 		@synonyms = split ",", $synonyms;
+# 		foreach $synonym (@synonyms) {
+# 		    $synonym =~ s/^\s+//;
+# 		    $synonym =~ s/\s+$//;
+# 		    print SYNONYMS "$id\t$synonym\n";
+# 		}
+# 	    } elsif (($organism_short_name eq "ecoli") & ($descr =~ /^(b\d+)\s/)) {
+# 		$synonym = $1;
+# 		print SYNONYMS "$id\t$synonym\n";
+# 	    } elsif (($organism_short_name eq "mtub") & ($descr =~ /^(Rv\d+)\s/)) {
+# 		$synonym = $1;
+# 		print SYNONYMS "$id\t$synonym\n";
+# 	    } elsif (($organism_short_name eq "aquae") & ($descr =~ /^(aq_\d+)\s/)) {
+# 		$synonym = $1;
+# 		print SYNONYMS "$id\t$synonym\n";
+# 	    }
 	    
-	    #### get the chromosome sequence identifier for bacteria
-	    open CHROM, $outfile{genome} ||
-		die "Error: cannot open chromosome list file $outfile{genome}\n";
-	    while (<CHROM>) {
-		chomp;
-		@fields = split "\t";
-		$chom = $fields[1];
+# 	    #### get the chromosome sequence identifier for bacteria
+# 	    open CHROM, $outfile{genome} ||
+# 		die "Error: cannot open chromosome list file $outfile{genome}\n";
+# 	    while (<CHROM>) {
+# 		chomp;
+# 		@fields = split "\t";
+# 		$chom = $fields[1];
 
-	    }
-	    close CHROM;
-	    #$chrom = $organism_short_name;
-	    $type = "CDS";
-	    print FTT "$id";
-	    print FTT "\t$type";
-	    print FTT "\t$name";
-	    print FTT "\t$chrom";
-	    print FTT "\t$left";
-	    print FTT "\t$right";
-	    print FTT "\t$strand";
-	    print FTT "\t$descr";
-	    print FTT "\n";
-	} 
+# 	    }
+# 	    close CHROM;
+# 	    #$chrom = $organism_short_name;
+# 	    $type = "CDS";
+# 	    print FTT "$id";
+# 	    print FTT "\t$type";
+# 	    print FTT "\t$name";
+# 	    print FTT "\t$chrom";
+# 	    print FTT "\t$left";
+# 	    print FTT "\t$right";
+# 	    print FTT "\t$strand";
+# 	    print FTT "\t$descr";
+# 	    print FTT "\n";
+# 	} 
 	
-    }
+#     }
     
-    close SYNONYMS;
-    close PTT;
-    close FTT;
-}
+#     close SYNONYMS;
+#     close PTT;
+#     close FTT;
+# }
 
-sub ParseNcbiFeatures {
-    ################################################################
-    #  Generates a RSAT feature table (.ftt) 
-    #  from a NCBI feature table (.ptt)
-    #
-    #  usage
-    #    &ParseNcbiFeatures($ptt_file);
-    ################################################################
-    my ($ptt) = @_;
+# sub ParseNcbiFeatures {
+#     ################################################################
+#     #  Generates a RSAT feature table (.ftt) 
+#     #  from a NCBI feature table (.ptt)
+#     #
+#     #  usage
+#     #    &ParseNcbiFeatures($ptt_file);
+#     ################################################################
+#     my ($ptt) = @_;
     
-    open PTT, $ptt || die "Error : cannot read ppt file $ptt\n";
-    open FTT, ">$outfile{features}" || die "Error: cannot write file $outfile{features}\n";
-    open SYNONYMS, ">$outfile{synonyms}" || die "Error: cannot write file $outfile{synonyms}\n";
-    print FTT ";ID";
-    print FTT "\tTYPE";
-    print FTT "\tNAME";
-    print FTT "\tCHROM";
-    print FTT "\tLEFT";
-    print FTT "\tRIGHT";
-    print FTT "\tSTRAND";
-    print FTT "\tDESCR";
-    print FTT "\t\n";
+#     open PTT, $ptt || die "Error : cannot read ppt file $ptt\n";
+#     open FTT, ">$outfile{features}" || die "Error: cannot write file $outfile{features}\n";
+#     open SYNONYMS, ">$outfile{synonyms}" || die "Error: cannot write file $outfile{synonyms}\n";
+#     print FTT ";ID";
+#     print FTT "\tTYPE";
+#     print FTT "\tNAME";
+#     print FTT "\tCHROM";
+#     print FTT "\tLEFT";
+#     print FTT "\tRIGHT";
+#     print FTT "\tSTRAND";
+#     print FTT "\tDESCR";
+#     print FTT "\t\n";
     
-    while (<PTT>) {
-	@fields =  split;
-	$pos = shift @fields;
-	#      $pos = &trim(substr($line,0,20));
-	if ($pos =~ /^(\d+)\.\.(\d+)$/) {
-	    $left = $1;
-	    $right = $2;
-	    $strand = shift @fields;
-	    #	$strand = &trim(substr($line,20,3));
-	    $strand =~ s/\+/D/;
-	    $strand =~ s/\-/R/;
-	    $len = shift @fields;
-	    $id = shift @fields;
-	    #	$id = &trim(substr($line,29,9));
-	    $name = shift @fields;
-	    #	$name = &trim(substr($line,38,15));
-	    if ($name eq "") {
-		$name = $id;
-	    }
+#     while (<PTT>) {
+# 	@fields =  split;
+# 	$pos = shift @fields;
+# 	#      $pos = &trim(substr($line,0,20));
+# 	if ($pos =~ /^(\d+)\.\.(\d+)$/) {
+# 	    $left = $1;
+# 	    $right = $2;
+# 	    $strand = shift @fields;
+# 	    #	$strand = &trim(substr($line,20,3));
+# 	    $strand =~ s/\+/D/;
+# 	    $strand =~ s/\-/R/;
+# 	    $len = shift @fields;
+# 	    $id = shift @fields;
+# 	    #	$id = &trim(substr($line,29,9));
+# 	    $name = shift @fields;
+# 	    #	$name = &trim(substr($line,38,15));
+# 	    if ($name eq "") {
+# 		$name = $id;
+# 	    }
 	    
-	    $descr = join " ", @fields;
-	    #	$descr = &trim(substr($line,63));
-	    if (($organism_short_name eq "hinf") && ($descr =~ /\((\S+)\)\s*$/)) {
-		$synonym = $name;
-		$name = $1;
-		print SYNONYMS "$id\t$synonym\n";
-	    } elsif (($organism_short_name eq "bsub") && ($descr =~ /alternate gene name: (.+)/)) {
-		if ($1 =~ /;/) {
-		    $synonyms = $`;
-		} else {
-		    $synonyms = $1;
-		}
-		@synonyms = split ",", $synonyms;
-		foreach $synonym (@synonyms) {
-		    $synonym =~ s/^\s+//;
-		    $synonym =~ s/\s+$//;
-		    print SYNONYMS "$id\t$synonym\n";
-		}
-	    } elsif (($organism_short_name eq "ecoli") & ($descr =~ /^(b\d+)\s/)) {
-		$synonym = $1;
-		print SYNONYMS "$id\t$synonym\n";
-	    } elsif (($organism_short_name eq "mtub") & ($descr =~ /^(Rv\d+)\s/)) {
-		$synonym = $1;
-		print SYNONYMS "$id\t$synonym\n";
-	    } elsif (($organism_short_name eq "aquae") & ($descr =~ /^(aq_\d+)\s/)) {
-		$synonym = $1;
-		print SYNONYMS "$id\t$synonym\n";
-	    }
+# 	    $descr = join " ", @fields;
+# 	    #	$descr = &trim(substr($line,63));
+# 	    if (($organism_short_name eq "hinf") && ($descr =~ /\((\S+)\)\s*$/)) {
+# 		$synonym = $name;
+# 		$name = $1;
+# 		print SYNONYMS "$id\t$synonym\n";
+# 	    } elsif (($organism_short_name eq "bsub") && ($descr =~ /alternate gene name: (.+)/)) {
+# 		if ($1 =~ /;/) {
+# 		    $synonyms = $`;
+# 		} else {
+# 		    $synonyms = $1;
+# 		}
+# 		@synonyms = split ",", $synonyms;
+# 		foreach $synonym (@synonyms) {
+# 		    $synonym =~ s/^\s+//;
+# 		    $synonym =~ s/\s+$//;
+# 		    print SYNONYMS "$id\t$synonym\n";
+# 		}
+# 	    } elsif (($organism_short_name eq "ecoli") & ($descr =~ /^(b\d+)\s/)) {
+# 		$synonym = $1;
+# 		print SYNONYMS "$id\t$synonym\n";
+# 	    } elsif (($organism_short_name eq "mtub") & ($descr =~ /^(Rv\d+)\s/)) {
+# 		$synonym = $1;
+# 		print SYNONYMS "$id\t$synonym\n";
+# 	    } elsif (($organism_short_name eq "aquae") & ($descr =~ /^(aq_\d+)\s/)) {
+# 		$synonym = $1;
+# 		print SYNONYMS "$id\t$synonym\n";
+# 	    }
 	    
-	    #### get the chromosome sequence identifier for bacteria
-	    open CHROM, $outfile{genome} ||
-		die "Error: cannot open chromosome list file $outfile{genome}\n";
-	    while (<CHROM>) {
-		chomp;
-		@fields = split "\t";
-		$chom = $fields[1];
+# 	    #### get the chromosome sequence identifier for bacteria
+# 	    open CHROM, $outfile{genome} ||
+# 		die "Error: cannot open chromosome list file $outfile{genome}\n";
+# 	    while (<CHROM>) {
+# 		chomp;
+# 		@fields = split "\t";
+# 		$chom = $fields[1];
 
-	    }
-	    close CHROM;
-	    $chrom = $organism_short_name;
-	    $type = "CDS";
-	    print FTT "$id";
-	    print FTT "\t$type";
-	    print FTT "\t$name";
-	    print FTT "\t$chrom";
-	    print FTT "\t$left";
-	    print FTT "\t$right";
-	    print FTT "\t$strand";
-	    print FTT "\t$descr";
-	    print FTT "\n";
-	} 
+# 	    }
+# 	    close CHROM;
+# 	    $chrom = $organism_short_name;
+# 	    $type = "CDS";
+# 	    print FTT "$id";
+# 	    print FTT "\t$type";
+# 	    print FTT "\t$name";
+# 	    print FTT "\t$chrom";
+# 	    print FTT "\t$left";
+# 	    print FTT "\t$right";
+# 	    print FTT "\t$strand";
+# 	    print FTT "\t$descr";
+# 	    print FTT "\n";
+# 	} 
 	
-    }
+#     }
     
-    close SYNONYMS;
-    close PTT;
-    close FTT;
-}
+#     close SYNONYMS;
+#     close PTT;
+#     close FTT;
+# }
 
-sub ParseNCBIFeatures {
-    ################################################################
-    #  Generates a RSAT feature table (.ftt) 
-    #  from a NCBI feature table (.ptt)
-    #
-    #  usage
-    #    &ParseNcbiFeatures($ptt_file);
-    ################################################################
-    my ($ptt) = @_;
+# sub ParseNCBIFeatures {
+#     ################################################################
+#     #  Generates a RSAT feature table (.ftt) 
+#     #  from a NCBI feature table (.ptt)
+#     #
+#     #  usage
+#     #    &ParseNcbiFeatures($ptt_file);
+#     ################################################################
+#     my ($ptt) = @_;
     
-    open PTT, $ptt 
-	|| die "Error : cannot read ppt file $ptt\n";
-    open SYNONYMS, ">$outfile{synonyms}" 
-	|| die "Error: cannot write file $outfile{synonyms}\n";
+#     open PTT, $ptt 
+# 	|| die "Error : cannot read ppt file $ptt\n";
+#     open SYNONYMS, ">$outfile{synonyms}" 
+# 	|| die "Error: cannot write file $outfile{synonyms}\n";
 
-    #### create a feature table file
-    open FTT, ">$outfile{features}" 
-	|| die "Error: cannot write file $outfile{features}\n";
-    #### print feature table header
-    print FTT ";ID";
-    print FTT "\tTYPE";
-    print FTT "\tNAME";
-    print FTT "\tCHROM";
-    print FTT "\tLEFT";
-    print FTT "\tRIGHT";
-    print FTT "\tSTRAND";
-    print FTT "\tDESCR";
-    print FTT "\t\n";
+#     #### create a feature table file
+#     open FTT, ">$outfile{features}" 
+# 	|| die "Error: cannot write file $outfile{features}\n";
+#     #### print feature table header
+#     print FTT ";ID";
+#     print FTT "\tTYPE";
+#     print FTT "\tNAME";
+#     print FTT "\tCHROM";
+#     print FTT "\tLEFT";
+#     print FTT "\tRIGHT";
+#     print FTT "\tSTRAND";
+#     print FTT "\tDESCR";
+#     print FTT "\t\n";
     
     
-    #### read genbank feature table
-    my $line=0;
-    while (<PTT>) {
-	$line++;
-	chomp;
-	next unless (/\S/);
-	@fields =  split "\t";
+#     #### read genbank feature table
+#     my $line=0;
+#     while (<PTT>) {
+# 	$line++;
+# 	chomp;
+# 	next unless (/\S/);
+# 	@fields =  split "\t";
 	
-	#### parse location
-	my $location = shift @fields;
-	$location = &trim($location);
-	if ($location =~ /^(\d+)\.\.(\d+)$/) {
-	    $left = $1;
-	    $right = $2;
-	} else {
-	    warn "Line $line\tInvalid location :$location\tskipping this row.\n";
-	    next;
-	}
+# 	#### parse location
+# 	my $location = shift @fields;
+# 	$location = &trim($location);
+# 	if ($location =~ /^(\d+)\.\.(\d+)$/) {
+# 	    $left = $1;
+# 	    $right = $2;
+# 	} else {
+# 	    warn "Line $line\tInvalid location :$location\tskipping this row.\n";
+# 	    next;
+# 	}
 	
-	#### parse strand
-	$strand = shift @fields;
-	$strand = &trim($strand);
-	$strand =~ s/\+/D/;
-	$strand =~ s/\-/R/;
+# 	#### parse strand
+# 	$strand = shift @fields;
+# 	$strand = &trim($strand);
+# 	$strand =~ s/\+/D/;
+# 	$strand =~ s/\-/R/;
 
-	#### parse length
-	$len = shift @fields;
+# 	#### parse length
+# 	$len = shift @fields;
 
-	#### parse PID
-	$id = shift @fields;
+# 	#### parse PID
+# 	$id = shift @fields;
 
-	#### parse name
-	$name = shift @fields;
-	if (($name eq "") || ($name eq "-")){
-	    $name = $id;
-	}
+# 	#### parse name
+# 	$name = shift @fields;
+# 	if (($name eq "") || ($name eq "-")){
+# 	    $name = $id;
+# 	}
 	
-	#### parse synonym
-	$synonym = shift @fields;
-	if (($synonym) && ($synonym ne "-")){
-	    print SYNONYMS "$id\t$synonym\n";
-	}
+# 	#### parse synonym
+# 	$synonym = shift @fields;
+# 	if (($synonym) && ($synonym ne "-")){
+# 	    print SYNONYMS "$id\t$synonym\n";
+# 	}
 
-	#### parse code 
-	$code = shift @fields;
+# 	#### parse code 
+# 	$code = shift @fields;
 
-	#### parse COG 
-	$cog = shift @fields;
+# 	#### parse COG 
+# 	$cog = shift @fields;
 
-	#### parse descroption
-	$descr = join " ", @fields;
+# 	#### parse descroption
+# 	$descr = join " ", @fields;
 
 	
-	#### get the chromosome sequence identifier for bacteria
-	open CHROM, $outfile{genome} ||
-	    die "Error: cannot open chromosome list file $outfile{genome}\n";
-	while (<CHROM>) {
-	    chomp;
-	    @fields = split "\t";
-	    $chrom = $fields[1];
+# 	#### get the chromosome sequence identifier for bacteria
+# 	open CHROM, $outfile{genome} ||
+# 	    die "Error: cannot open chromosome list file $outfile{genome}\n";
+# 	while (<CHROM>) {
+# 	    chomp;
+# 	    @fields = split "\t";
+# 	    $chrom = $fields[1];
 	    
-	}
-	close CHROM;
+# 	}
+# 	close CHROM;
 
-	$type = "CDS";
+# 	$type = "CDS";
 
-	print FTT "$id";
-	print FTT "\t$type";
-	print FTT "\t$name";
-	print FTT "\t$chrom";
-	print FTT "\t$left";
-	print FTT "\t$right";
-	print FTT "\t$strand";
-	print FTT "\t$descr";
-	print FTT "\n";
+# 	print FTT "$id";
+# 	print FTT "\t$type";
+# 	print FTT "\t$name";
+# 	print FTT "\t$chrom";
+# 	print FTT "\t$left";
+# 	print FTT "\t$right";
+# 	print FTT "\t$strand";
+# 	print FTT "\t$descr";
+# 	print FTT "\n";
 	
-    }
+#     }
     
-    close SYNONYMS;
-    close PTT;
-    close FTT;
-}
+#     close SYNONYMS;
+#     close PTT;
+#     close FTT;
+# }
 
 
+################################################################
+#### parse the genome from Genbank files
 sub ParseGenome {
     unless ($GENBANK_DIR) {
 	&FatalError("You should specify the directory where Genbank genomes can be found.");
@@ -1186,7 +1209,6 @@ sub ParseGenome {
 
 ################################################################
 ## clean up unnecessary files to save disk space
-
 sub CleanUp {
     chdir $genome_dir;
 
