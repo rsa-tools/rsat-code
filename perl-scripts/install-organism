@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.41 2004/08/18 05:29:48 jvanheld Exp $
+# $Id: install-organism,v 1.42 2005/01/14 12:52:18 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -843,20 +843,45 @@ sub ReadArguments {
 #### retrieve start and stop codons and calculate word occurrences
 #### (for checking)
 sub StartAndStopCodons {
+    my $label =  "id,ctg,reg_left,reg_right,orf_strand";
+    my $prefix = $dir{genome}."/".${organism_short_name};
     my $command = "retrieve-seq -v -org ${organism_short_name} -all  \ ";
-    $command .= "-type downstream -from 0 -to -2  \ ";
-    $command .= "-format wc -nocomment -label orf \ ";
-    $command .= " | oligo-analysis -type dna -l 3 -return occ,freq -v -format wc -1str -sort \ ";
-    $command .= " -o $dir{genome}/${organism_short_name}_stop_codon_frequencies";
+    $command .= "-type upstream -feattype CDS -from 0 -to 2  \ ";
+    $command .= "-format wc -nocomment -label $label \ ";
+    $command .= " -o ".$prefix."_start_codons.wc";
+    $command .= " ; oligo-analysis -type dna -l 3 -return occ,freq -v -format wc -1str -sort \ ";
+    $command .= " -i ".$prefix."_start_codons.wc";
+    $command .= " -o ".$prefix."_start_codon_frequencies";
     &doit($command, $dry_run, $die_on_error, $verbose);
 
     $command = "retrieve-seq -v -org ${organism_short_name} -all  \ ";
-    $command .= "-type upstream -from 0 -to 2  \ ";
-    $command .= "-format wc -nocomment -label orf \ ";
-    $command .= " | oligo-analysis -type dna -l 3 -return occ,freq -v -format wc -1str -sort \ ";
-    $command .= " -o $dir{genome}/${organism_short_name}_start_codon_frequencies";
+    $command .= "-type downstream  -feattype CDS -from 0 -to -2  \ ";
+    $command .= "-format wc -nocomment -label $label \ ";
+    $command .= " -o ".$prefix."_stop_codons.wc";
+    $command .= " ; oligo-analysis -type dna -l 3 -return occ,freq -v -format wc -1str -sort \ ";
+    $command .= " -i ".$prefix."_stop_codons.wc";
+    $command .= " -o $dir{genome}/${organism_short_name}_stop_codon_frequencies";
     &doit($command, $dry_run, $die_on_error, $verbose);
+
 }
+# ################################################################
+# #### retrieve start and stop codons and calculate word occurrences
+# #### (for checking)
+# sub StartAndStopCodons {
+#     my $command = "retrieve-seq -v -org ${organism_short_name} -all  \ ";
+#     $command .= "-type downstream -from 0 -to -2  \ ";
+#     $command .= "-format wc -nocomment -label orf \ ";
+#     $command .= " | oligo-analysis -type dna -l 3 -return occ,freq -v -format wc -1str -sort \ ";
+#     $command .= " -o $dir{genome}/${organism_short_name}_stop_codon_frequencies";
+#     &doit($command, $dry_run, $die_on_error, $verbose);
+
+#     $command = "retrieve-seq -v -org ${organism_short_name} -all  \ ";
+#     $command .= "-type upstream -from 0 -to 2  \ ";
+#     $command .= "-format wc -nocomment -label orf \ ";
+#     $command .= " | oligo-analysis -type dna -l 3 -return occ,freq -v -format wc -1str -sort \ ";
+#     $command .= " -o $dir{genome}/${organism_short_name}_start_codon_frequencies";
+#     &doit($command, $dry_run, $die_on_error, $verbose);
+# }
 
 
 
