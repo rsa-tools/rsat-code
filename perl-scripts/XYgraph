@@ -1437,6 +1437,15 @@ sub ReadArguments {
 	    $symbols = 1;
 	    
 	    ### logarithmic representation
+	} elsif ($ARGV[$a] eq "-log") {
+	    $xlog= 1;
+	    $ylog= 1;
+	    if (&IsReal($ARGV[$a+1])) {
+		$x_log_base = $ARGV[$a+1];
+		$y_log_base = $ARGV[$a+1];
+		die "\tError: log base should be strictly higher than 1\n" 
+		    unless ($x_log_base > 1);
+	    }
 	} elsif ($ARGV[$a] eq "-xlog") {
 	    $xlog= 1;
 	    if (&IsReal($ARGV[$a+1])) {
