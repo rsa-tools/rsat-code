@@ -99,9 +99,16 @@ $date = &AlphaDate();
 ################################################################
 ## echo a command and send it to the system
 sub doit {
-    my ($command, $dry) = @_;
+    my ($command, $dry, $die_on_error) = @_;
     warn "\n", &AlphaDate(), "\t", $command, "\n" if ($main::verbose >= 1);
-    system $command unless ($dry);
+    my $error = system $command unless ($dry);
+    if ($die_on_error) {
+	if ($error == -1) {
+	    &FatalError("Could not execute the command\n\t$command");
+	} elsif ($error) {
+	    &FatalError("Error $error occurred during execution of the command\n\t$command");
+	}
+    }
 }
 
 
