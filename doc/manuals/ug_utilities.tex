@@ -44,7 +44,7 @@ To compress the result of a query, simply add the extension
 \begin{verbatim}
 retrieve-seq -all -org Saccharomyces_cerevisiae \
         -from -1 -to -200 -noorf -format fasta \
-        -o all_up200.fta.gz
+        -o all_up200.fa.gz
 \end{verbatim}
 
 The result file is a compressed archive. Check its size with the
@@ -55,7 +55,7 @@ ls -l
 
 Uncompress the file with the command 
 \begin{verbatim}
-gunzip all_up200.fta.gz
+gunzip all_up200.fa.gz
 \end{verbatim}
 
 The file has now lost the \texttt{.gz} extension. Check the size of the
@@ -63,7 +63,7 @@ uncompressed file.
 
 Recompress the file with the command
 \begin{verbatim}
-gzip all_up200.fta
+gzip all_up200.fa
 \end{verbatim}
 
 Similarly, you can directly use a compressed archive as input for
@@ -71,8 +71,8 @@ Similarly, you can directly use a compressed archive as input for
 the hard drive. For example :
 
 \begin{verbatim}
-dna-pattern -i all_up200.fta.gz -p GATAAG -c -th 3
+dna-pattern -i all_up200.fa.gz -p GATAAG -c -th 3
 \end{verbatim}
 
-will return all the genes hacing at least three occurrences f the
+will return all the genes having at least three occurrences f the
 motif \texttt{GATAAG} in their 200 bp upstream region.

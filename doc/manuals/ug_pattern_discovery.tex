@@ -37,7 +37,7 @@ interpretable because the programs always return an answer.
 Basically, I would tend to prefer string-based approaches for any
 problem of pattern discovery. On the contrary, matrix-based approaches
 are much more sensitive for pattern matching problems (see below). The
-ideal would thus be to combine string-based pattern disovery and
+ideal would thus be to combine string-based pattern discovery and
 matrix-based pattern matching.
 
 \subsection{Requirements}
@@ -66,7 +66,7 @@ the observed and expected occurrences, and return words with a
 significant level of over-representation.  
 
 Despite its simplicity, this program already returns good results for
-may families of co-regulated genes in yeast.
+many families of co-regulated genes in yeast.
 
 For a first trial, we will simply use the program to count word
 occurrences. The application will be to check the start and stop
@@ -111,7 +111,7 @@ oligo-analysis -i Escherichia_coli_K12_start_codons.wc \
     -o Escherichia_coli_K12_start_codon_frequencies
 \end{verbatim}
 
-Reaad the result file:
+Read the result file:
 
 \begin{verbatim}
 more Escherichia_coli_K12_start_codon_frequencies
@@ -142,7 +142,7 @@ oligo-analysis -h
 \end{verbatim}
 
 Note that we used pre-calibrated tables as estimators of expected word
-frequencies. these tables have been previously calculated (with
+frequencies. These tables have been previously calculated (with
 oligo-analysis) by counting hexanucleotide frequencies in the whole
 set of yeast upstream regions. Our experience is that these
 frequencies are the optimal estimator for discovering regulatory
@@ -157,7 +157,7 @@ more PHO_up800_6nt_2str_ncf_sig0
 A few questions:
 \begin{enumerate}
 \item How many hexanucleotides can be formed with the 4-letter alphabet A,T,G,C ?
-\item How may possible oligonucleotides are indicated ? Is it the number you would expect ? Why ?
+\item How many possible oligonucleotides are indicated ? Is it the number you would expect ? Why ?
 \item How many patterns have been selected as significant ?
 \item Do you see some similarity between some of the selected patterns ?
 \end{enumerate}
@@ -170,8 +170,8 @@ A few questions:
 both strands. Each oligonucleotide is thus equivalent to its reverse
 complement.
 \item $9$
-\item there are strong mutual overlap between some words (e.g. \texttt{cACGTG}
-and \texttt{ACGTGc}).
+\item some pairs of words are mutually overlapping
+  (e.g. \texttt{cACGTG} and \texttt{ACGTGc}).
 \end{enumerate}
 
 \subsubsection{Assembling the patterns}
@@ -207,12 +207,12 @@ more PHO_up800_6nt_2str_ncf_sig0.assemb
 \subsubsection{Suboptimal settings}
 
 This chapter only aims at emphasizing how crucial is the choice of
-appropriate statistical parameters. we saw above that the optimal
+appropriate statistical parameters. We saw above that the optimal
 parameters give good results with the PHO family: despite the
 simplicity of the algorithm (counting non-degenerate hexanucleotide
-occurrences), we were ablt to extract a description of the regulatory
+occurrences), we were able to extract a description of the regulatory
 motif over a larger width than 6 (by pattern assembly), and we got
-some decription of the degeneracy (the high and low affinity stes).
+some description of the degeneracy (the high and low affinity sites).
 
 We will now intentionally try other parameter settings and see how
 they affect the quality of the results.
@@ -223,7 +223,7 @@ Let us try the simplest approach: each word is considered
 equiprobable. For this, we simply suppress the options
 \texttt{-bg upstream -org yeast} fom the above commands. We
 also omit to specify the output file, so results will immediately
-apper on the screen.
+appear on the screen.
 
 \begin{verbatim} 
 oligo-analysis -i PHO_up800.fasta -format fasta \ 
@@ -257,7 +257,7 @@ oligo-analysis) is not printed to the screen, but is sent as input for
 the second command (in this case pattern-assembly).
 
 Note that the most significant patterns are associated to the poly-A
-(aaaaaa) contig. The true positive come isolated. due to the bad
+(aaaaaa) contig. The true positive come isolated. Due to the bad
 choice of expected frequencies (all hexanucleotides were considered
 equiprobable here), regulatory sites were lost within a majority of
 false positive, and their description is much less accurate than with
@@ -308,7 +308,7 @@ oligo-analysis -markov 4 \
 \begin{itemize}
 \item 
 Markov 0 returns AT-rich patterns with the highest significance, but
-the Pho4p high affinity site is described with a good accuracy. te
+the Pho4p high affinity site is described with a good accuracy. The
 medium affinity site appears as a single word (acgttt) in the isolated
 patterns.
 \item 
@@ -318,8 +318,9 @@ isolated pattern.
 \item 
 The higher the order of the markov chain, the most stringent are the
 conditions. For small sequence sets, selecting a too high order
-prevents from selecting any pattern. Markov order 2 mises most of the
-patterns, and higher orders don't return any single significant word.
+prevents from selecting any pattern. Most of the patterns are missed
+with a Markov chain of order 2, and higher orders don't return any
+single significant word.
 \end{itemize}
 
 \subsection{dyad-analysis}
@@ -335,7 +336,7 @@ patterns, and higher orders don't return any single significant word.
 
 An alternative approach for matrix-based pattern discovery is
 \textit{consensus}, a program written by Jerry hertz, an based on a
-greedy algorithm. We will see how to extract a profile matrix from ths
+greedy algorithm. We will see how to extract a profile matrix from
 upstream regions of the PHO genes.
 
 \subsubsection{Getting help}
@@ -365,7 +366,7 @@ convert-seq -i PHO_up800.fasta -from fasta -to wc \
 
 \subsubsection{Running consensus}
 
-Using consensus requires to chose the appropriate value for a series
+Using consensus requires to choose the appropriate value for a series
 of parameters. We found the following combination of parameters quite
 efficient for discovering patterns in yeast upstream sequences.
 
@@ -388,7 +389,7 @@ yeast.
 Notice that several matrices are returned. Each matrix is followed by
 the alignment of the sites on which it is based. Notice that the 4
 matrices are highly similar, basically they are all made of several
-occurrences of the high afinity site CACGTG, and mtrices 1 and 3
+occurrences of the high afinity site CACGTG, and matrices 1 and 3
 contain one occurrence of the medium affinity site CACGTT. 
 
 Also notice that these matrices are not made of exactly 10 sites
@@ -396,8 +397,8 @@ each. \textit{consensus} is able to adapt the number of sites in the
 alignment in order to get the highest information content. The option
 \texttt{-N 10} was an indication rather than a rigid requirement.
 
-To save the result in a file, you can use the symbol ``>'' which
-redirects the output of a program to a file. 
+To save the result in a file, you can use the symbol ``greater than''
+($>$) which redirects the output of a program to a file.
 
 \begin{verbatim}
 consensus -L 10 -f PHO_up800.wc -A a:t c:g -c2 -N 10 \

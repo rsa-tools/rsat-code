@@ -17,7 +17,7 @@ such \program{dna-pattern} (string-based matching) or \program{patser}
 
 We will analyze the same PHO family as in the tutorial on pattern
 discovery. We will use successively \program{oligo-analysis},
-\program{dna-pattern} and \program{features-from-dnapat} to obtain a
+\program{dna-pattern} and \program{convert-features} to obtain a
 list of features with the matching locations of the over-represented
 hexanucleotides.
 
@@ -44,11 +44,12 @@ dna-pattern -i PHO_up800.fasta -format fasta    \
     -o  PHO_up800_6nt_2str_ncf_sig0_matches.tab
 \end{verbatim}
 
-\item Run \program{features-from-dnapat} to convert these pattern 
-matches into features.
+\item Run \program{convert-features} to convert these pattern matches
+  into features.
 
 \begin{verbatim}
-features-from-dnapat                           \
+convert-features                               \
+    -from dnapat -to ft                        \
     -i PHO_up800_6nt_2str_ncf_sig0_matches.tab \
     -o PHO_up800_6nt_2str_ncf_sig0_matches.ft 
 \end{verbatim}
@@ -195,20 +196,19 @@ feature-map -h
 \subsubsection{Feature converters}
 
 In the previous tutorial, we used the program
-\program{features-from-dnapat} to convert matches from
+\program{convert-features} to convert matches from
 \program{dna-pattern} to features. 
 
-\RSAT includes a few additional converters.
+\RSAT includes a few additional converters (these are older versions,
+and their functionalities will progressively be incorporated in
+\program{convert-features}).
 
 \begin{description}
 
-\item[features-from-dnapat] \program{dna-pattern} is the string-based 
-matching program included in the  \RSAT distribution. 
-
-\item[features-from-dssp] extract features from the output file of
+\item[features-from-dssp] extracts features from the output file of
 \program{dssp} (secondary structures)
 
-\item[features-from-fugue] extract features from the output file of
+\item[features-from-fugue] extracts features from the output file of
 \program{fugue}
 
 \item[features-from-gibbs] extracts features from the \program{gibbs} 
@@ -220,13 +220,13 @@ motif sampler, developed by Andrew Neuwald.
 \item[features-from-msf] converts a multiple alignment file from 
 format \file{msf} for features. 
 
-\item[features-from-patser] extract features from the result of the 
+\item[features-from-patser] extracts features from the result of the 
 matrix-based pattern matching \program{patser}, developed by Jerry Hertz. 
 
-\item[features-from-sigscan] extract features from the results of the
+\item[features-from-sigscan] extracts features from the results of the
 \program{sigscan} program. 
 
-\item[features-from-swissprot] extract features from a \program{Swissprot} file. 
+\item[features-from-swissprot] extracts features from a \program{Swissprot} file. 
 
 \end{description}
 

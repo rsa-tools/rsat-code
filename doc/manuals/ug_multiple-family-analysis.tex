@@ -9,38 +9,51 @@ of the package can be combined in different ways to apply an extensive
 analysis of your data. A typical example is the analysis of clusters
 obtained from gene expression data.
 
-When a few tens or hundreds of gene clusters have to be anayzed, it
+When a few tens or hundreds of gene clusters have to be analyzed, it
 becomes impossible to manage it manually. \RSAT includes a program,
 \program{multiple-family-analysis}, which takes as input a file with
 the composition of gene clusters (the \concept{cluster file}), and
 automatically performs the following analyses on each cluster :
 
 \begin{description}
-\item[directory management] the results are stored in a separate
+\item[directory management:] the results are stored in a separate
 directory for each cluster. Directories are automatically created
 during the execution, and bear the name of the cluster.
 
-\item[sequence retrieval] upstream sequences are retrieved and stored
+\item[sequence retrieval:] upstream sequences are retrieved and stored
 in fasta format
 
-\item[oligonucleotide analysis] \program{oligo-analysis} is used to
-detect over-represented oligonucleotides. \program{dna-pattern} and
-\program{feature-map} are used to draw a feature map of the
-significant patterns.
+\item[sequence purging:] upstream sequences are purged (with the
+  program \program{purge-sequences} to remove redundant
+  fragments. Purged sequences are then used for pattern discovery, an
+  non-purged sequences for pattern matching.
 
-\item[dyad analysis] \program{oligo-analysis} is used to
-detect over-represented oligonucleotides. \program{dna-pattern} and
-\program{feature-map} are used to draw a feature map of the
-significant patterns.
+\item[oligonucleotide analysis:] the program \program{oligo-analysis}
+  is used to detect over-represented
+  oligonucleotides. \program{dna-pattern} and \program{feature-map}
+  are used to draw a feature map of the significant patterns.
 
-\item[other pattern discovery programs] several matrix-based pattern
+\item[dyad analysis:] the program \program{dyad-analysis} is used to
+  detect over-represented oligonucleotides. \program{dna-pattern} and
+  \program{feature-map} are used to draw a feature map of the
+  significant patterns.
+
+\item[other pattern discovery programs:] several matrix-based pattern
 discovery programs developed by other teams can be managed by 
 \program{multiple-family-analysis}. These programs have to be installed 
 separately they are not part of the \RSAT distribution). 
 
-\item[feature map drawing] The patterns discovered by the different 
+\item[feature map drawing:] The patterns discovered by the different 
 programs are matched against the  upsteram sequences, and the result 
 is displayed as a feature map.
+
+\item[synthesis of the results:] A synthetic table is generated (in HTML
+  format) to facilitate the analysis of the results, and the
+  navigation between result files.
+
+\item[result export:] The results can be exported to tab-delimited
+  files, which can then automatically be loaded in a relational
+  database (mySQL, PostgreSQL or Oracle).
 
 \end{description}
 
@@ -138,7 +151,7 @@ multiple-family-analysis  -i test.fam -v 1 \
 Once the analysis is finished, you can open the folder
 \file{synthetic\_tables} with aweb browser and follow the links.
 
-\subsection{Loading the results in arelational database}
+\subsection{Loading the results in a relational database}
 
 The results were exported in tab-delimited text files in the directory
 \file{test\_fam\_results/sql\_export/}. This directory contains 3 files
@@ -151,7 +164,7 @@ Pattern.tab
 sql_scripts/
 \end{verbatim}
 
-The subdirectory \file{sql\_scripts} contains several SQL scripts for crating
+The subdirectory \file{sql\_scripts} contains several SQL scripts for creating
 tables in a relational database management system (\concept{RDBMS}),
 loading data into these tables, and dropping these tables when you
 don't need them anymore.

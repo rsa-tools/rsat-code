@@ -22,7 +22,7 @@ retrieve-seq -type upstream -org Escherichia_coli_K12 \
 This command retrieves a 200 bp upstream sequence for the gene metA of
 \textit{Escherichia coli}. Note the negative coordinates, indicating the
 upstream side. Also note that all coordinates are calculated starting
-relative to the star codon (position 0 is the A from the start ATG).
+relative to the start codon (position 0 is the A from the start ATG).
 
 \subsubsection{Combining upstream and coding sequence}
 For coli genes, regulatory signals sometimes overlap the 5' side of
@@ -52,7 +52,7 @@ retrieve-seq -org Escherichia_coli_K12 \
 
 If you have to retrieve a large number of sequences, it might become
 cumbersome to type each gene name on the command-line. A list of gene
-enames can be provided in a text file, each gene name coming as the
+names can be provided in a text file, each gene name coming as the
 first word of a new line.
 
 To create a test file, you can execute the following steps:
@@ -204,9 +204,9 @@ than a few bp).
 \subsubsection{Retrieving downstream sequences}
 
 \texttt{retrieve-seq} can also be used to retrieve downstream
-sequences. in this case, the origin (position 0) is the third base of
+sequences. In this case, the origin (position 0) is the third base of
 the stop codon, positive coordinates indicate downstream (3')
-location, and negative coordinates locations upstream (5') from th
+location, and negative coordinates locations upstream (5') from the
 stop codon (i.e. coding sequences). 
 
 For example, the following command returns all the stop codons for

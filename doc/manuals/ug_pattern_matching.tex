@@ -70,7 +70,7 @@ You see a list of positions for all the occurrences of CACGTT in the sequence.
 Each row represents one match, and the columns provide the following
 information:
 \begin{enumerate}
-\item pattern identiifier
+\item pattern identifier
 \item strand
 \item pattern searched
 \item sequence identifier
@@ -88,7 +88,7 @@ dna-pattern -v 1 -i PHO_up800.fasta -format fasta \
     -2str -p cacgtt -id 'Pho4p_site'
 \end{verbatim}
 
-Notice that the strand colmn now contains two possible values: D for
+Notice that the strand column now contains two possible values: D for
 ``direct'' and R for ``reverse complement''.
 
 \subsubsection{Allowing substitutions}
@@ -128,7 +128,7 @@ When working with upstream sequences, it is convenient to work with
 coordinates relative to the start codon (i.e. the right side of the
 sequence). Sequence matching programs (including dna-pattern) return
 the positions relative to the beginning (i.e. the left side) of the
-sequence. The reference (coordinate 0) can however be changed iwith
+sequence. The reference (coordinate 0) can however be changed with
 the option \texttt{-origin}. In this case, we retrieved upstream
 sequences over 800bp. the start codon is thus located at position
 801. Try:
@@ -145,8 +145,8 @@ In some cases, a sequence file will contain a mixture of sequences of
 different length (for example if one clipped the sequences to avoid
 upstream coding sequences). The origin should thus vary from sequence
 to sequence. A convenient way to circumvent the problem is to use a
-egative value with the option \texttt{origin}. for example,
-\texttt{-origin -100} would take as origin the 100th neucleotide
+negative value with the option \texttt{origin}. for example,
+\texttt{-origin -100} would take as origin the 100th nucleotide
 starting from the right of each sequence in the sequence file. But in
 our case we want to take as origin the position immediately after the
 last nucleotide. For this, there is a special convention: \texttt{-origin
@@ -165,15 +165,15 @@ the result is identical to the one obtained with \texttt{-origin 801}.
 
 As we said before, there are two forms of Pho4p binding sites: the
 protein has high affinity for motifs containing the core CACGTG, but
-can alos bind, with a medium affinity, CACGTT sites. The IUPAC code
+can also bind, with a medium affinity, CACGTT sites. The IUPAC code
 for partly specified nucleotides allows to represent any combination
-of nucleotids by a single letter.
+of nucleotides by a single letter.
 
 \begin{tabular}{lll}
 \textbf{A} &  & (Adenine) \\
 \textbf{C} &  & (Cytosine) \\
 \textbf{G} &  & (Guanine) \\
-\textbf{T} &  & (Trymine) \\
+\textbf{T} &  & (Thymine) \\
 \textbf{R} & = A or G & (puRines) \\
 \textbf{Y} & = C or T & (pYrimidines) \\
 \textbf{W} & = A or T & (Weak hydrogen bonding) \\
@@ -243,7 +243,7 @@ cat > test_patterns.txt
 cacgtg	high
 cacgtt	medium
 \end{verbatim}
-(then tpye Ctrl-d to close)
+(then type Ctrl-d to close)
 
 check the content of your pattern file.
 \begin{verbatim}
@@ -252,10 +252,10 @@ more test_patterns.txt
 
 There are two lines, each representing a pattern. The first word of
 each line contains the pattern, the second word the identifier for
-that pattern. This column can be left lank, in which case the pattern
+that pattern. This column can be left blank, in which case the pattern
 is used as identifier.
 
-We can now use this file to search all matching psitions of both
+We can now use this file to search all matching positions of both
 patterns in the PHO sequences.
 
 \begin{verbatim}
@@ -278,7 +278,7 @@ dna-pattern -i PHO_up800.fasta -format fasta \
 
 With the option \texttt{-c}, the program returns the number of
 occurrences of each pattern in each sequence. The output format is
-different: there is one row for each combination pattern-sequence. Te
+different: there is one row for each combination pattern-sequence. The
 columns indicate respectively
 \begin{enumerate}
 \item sequence identifier
@@ -299,7 +299,7 @@ This time, only two rows are returned, one per pattern.
 
 \subsubsection{Getting a count table}
 
-Anothe rway to display the count information is in the form of a
+Another way to display the count information is in the form of a
 table, where each row represents a gene and each column a pattern.
 
 \begin{verbatim}
@@ -307,8 +307,8 @@ dna-pattern -i PHO_up800.fasta -format fasta -2str \
     -pl test_patterns.txt -N 4 -origin -0 -table
 \end{verbatim}
 
-This representation is very convenient for aplying multivariate
-statistics on the results (e.g. classificatying genes according to the
+This representation is very convenient for applying multivariate
+statistics on the results (e.g. classifying genes according to the
 patterns found in their upstream sequences)
 
 Last detail: we can add one column and one row for the totals per
@@ -346,7 +346,7 @@ of additional information. One possibility is to copy-paste the matrix
 of interest to a separate file.
 
 To avoid manual editing, RSAT contains a program
-\textit{convert-matrix}, which automaticaly extacts a matrix from
+\textit{convert-matrix}, which automaticaly extracts a matrix from
 various file formats, including consensus.
 
 \begin{verbatim}
@@ -396,7 +396,7 @@ immediately redirect the output of \textit{retrieve-seq} as input for
 below.
 
 \textit{patser} result can be redirected to a file with the unix
-``greater than'' (>) symbol. We will store the result of the
+``greater than'' ($>$) symbol. We will store the result of the
 genome-scale search in a file \file{PHO\_matrix\_matches\_allup.txt}.
 
 \begin{verbatim}
