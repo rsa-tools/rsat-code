@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parsing_util.pl,v 1.1 2003/07/10 11:09:21 jvanheld Exp $
+# $Id: parsing_util.pl,v 1.2 2003/08/08 22:13:59 jvanheld Exp $
 #
-# Time-stamp: <2003-07-10 13:08:02 jvanheld>
+# Time-stamp: <2003-08-09 00:11:08 jvanheld>
 #
 ############################################################
 ### util.pl
@@ -334,7 +334,7 @@ sub SplitReactants {
 # summarizes information (only retins selected fields) and reformats
 # it (multiple gene names) for ease of manipulation.
 sub CreateGenbankFeatures {
-    my ($features, $genes, $mRNAs, $tRNAs, $rRNAs, $CDSs, $sources) = @_;
+    my ($features, $genes, $mRNAs, $tRNAs, $rRNAs, $misc_RNAs, $CDSs, $sources) = @_;
 
     #### warning message
     warn ("; ",
@@ -354,6 +354,7 @@ sub CreateGenbankFeatures {
 			$mRNAs->get_objects(),
 			$tRNAs->get_objects(),
 			$rRNAs->get_objects(),
+			$misc_RNAs->get_objects(),
 			$CDSs->get_objects()
 			) {
 	if ($object->get_attribute("gene")) {
@@ -366,7 +367,7 @@ sub CreateGenbankFeatures {
     
     ################################################################
     #### this only applies to mRNA and CDS because the other features
-    #### (gene, tRNA, rRNA) have no IDs in Genbank flat files !!!!
+    #### (gene, tRNA, rRNA, misc_RNA) have no IDs in Genbank flat files !!!!
     foreach my $object ($mRNAs->get_objects(),
 			$CDSs->get_objects()
 			) {
@@ -380,7 +381,8 @@ sub CreateGenbankFeatures {
     foreach my $parsed_feature ($CDSs->get_objects(),
 				$mRNAs->get_objects(),
 				$tRNAs->get_objects(),
-				$rRNAs->get_objects()
+				$rRNAs->get_objects(),
+				$misc_RNAs->get_objects()
 				) {
 
 	
@@ -758,6 +760,7 @@ sub ParseGenbankFile {
 	$mRNA_holder, 
 	$tRNA_holder, 
 	$rRNA_holder, 
+	$misc_RNA_holder, 
 	$CDS_holder, 
 	$contig_holder, 
 	$organism_holder, 
@@ -769,6 +772,7 @@ sub ParseGenbankFile {
 			     mRNA=>1,
 			     tRNA=>1,
 			     rRNA=>1,
+			     misc_RNA=>1,
 			     misc_RNA=>1,
 			     gene=>1
 			     );
@@ -885,17 +889,22 @@ sub ParseGenbankFile {
 	    $in_features = 0;
 	    $in_sequence = 1;
 	    if ($args{no_seq}) {
+		#### skip the sequence
 		while (<GBK>) {
 		    if (/^\/\/$/) {
 			$current_contig = null;
 			last;
 		    }
 		}
+
+		################################################################
+		#### save the whole contig sequence in a file
 	    } elsif ($args{seq_dir}) {
-		#### directly save the sequence in a file
 		my $seq_file = $current_contig->get_attribute("id").".raw";
-#		$current_contig->set_attribute("dir", $args{seq_dir});
+		$current_contig->set_attribute("seq_dir", $args{seq_dir});
 		$current_contig->set_attribute("file", $seq_file);
+		
+#		die join ("\t", $current_contig, $seq_file), "\n";
 		
 		warn ("; Storing sequence ",
 		      $current_contig->get_attribute("id"), 
@@ -968,6 +977,8 @@ sub ParseGenbankFile {
  		    $holder = $tRNA_holder;
  		} elsif ($feature_type eq "rRNA") {
  		    $holder = $rRNA_holder;
+ 		} elsif ($feature_type eq "misc_RNA") {
+ 		    $holder = $misc_RNA_holder;
 		} elsif ($feature_type eq "CDS") {
 		    $holder = $CDS_holder;
 		} elsif ($feature_type eq "source") {
@@ -975,7 +986,7 @@ sub ParseGenbankFile {
 		} else {
 		    $holder = $feature_holder;
 		}
-		$current_feature = $holder->new_object(%args);
+		$current_feature = $holder->new_object();
 
 		$current_feature->set_attribute("type",$feature_type);
 		unless ($feature_type eq "source") {
@@ -998,13 +1009,18 @@ sub ParseGenbankFile {
 		    #### corresponding gene.
 		} elsif (($feature_type eq 'CDS') ||
 			 ($feature_type eq 'mRNA') ||
-			 ($feature_type eq 'mRNA') ||
-			 ($feature_type eq 'rRNA') 
+			 ($feature_type eq 'tRNA') ||
+			 ($feature_type eq 'rRNA') ||
+			 ($feature_type eq 'misc_RNA') 
 			 ){
 		    foreach my $gene_name ($last_gene->get_attribute("names")) {
 			$current_feature->push_attribute("names", $gene_name);
 		    }
-		    $current_feature->set_attribute("gene_id", $last_gene->get_attribute("id"));
+		    my $gene_id =  $last_gene->get_attribute("id");
+		    $current_feature->set_attribute("gene_id", $gene_id);
+#                   print join ("\t", $feature_type, join (";", $last_gene->get_attribute("names")), $gene_id), "\n";
+#		    $current_feature->set_attribute("gene_id", $last_gene->get_attribute("id"));
+		    $last_gene->force_attribute("type", $feature_type);
 		}
 
 
@@ -1049,6 +1065,7 @@ sub ParseGenbankFile {
 						  $mRNAs, 
 						  $tRNAs, 
 						  $rRNAs, 
+						  $misc_RNAs, 
 						  $CDSs, 
 						  $sources, 
 						  $organisms) {
