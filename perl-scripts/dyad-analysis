@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis,v 1.4 2001/01/13 11:11:36 jvanheld Exp $
+# $Id: dyad-analysis,v 1.5 2001/02/20 00:54:01 jvanheld Exp $
 #
-# Time-stamp: <2001-01-13 12:11:27 jvanheld>
+# Time-stamp: <2001-02-20 01:53:35 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -54,14 +54,14 @@ if ($hyperverbose) {
 ### non-coding frequency calibration
 if (($ncf) || ($mncf)) {
   ### check organism first
-  unless ($organism) {
+  unless ($organism_name) {
     die ";Error: you should specify an organism for using non-coding frequency calibration\n";
   }
-  unless ($supported_organism{$organism}) {
-    die ";Error: organism $organism is not supported on this site\n";
+  unless ($supported_organism{$organism_name}) {
+    die ";Error: organism $organism_name is not supported on this site\n";
   }
 
-  $data_dir = $supported_organism{$organism}->{'data'};
+  $data_dir = $supported_organism{$organism_name}->{'data'};
   if ($ncf) {
     ### localize dyad non-coding frequency file
     $exp_freq_file = "$data_dir/oligo-frequencies/dyads_3nt_sp0-20_non-coding_${organism}_noov.freq";
@@ -607,7 +607,7 @@ sub ReadArguments {
       
       ### organism (for selecting the appropriate expected frequencies)
     } elsif ($ARGV[$a] =~ /^-org/i) {
-      $organism = $ARGV[$a+1];
+      $organism_name = $ARGV[$a+1];
       
       ### use monad non-coding frequencies as expected frequencies
     } elsif ($ARGV[$a] =~ /^-mncf/i) {
@@ -1018,11 +1018,11 @@ sub PrintVerbose {
   printf $out ";exp. freq. calib       ";
   if ($ncf) {
     print $out "dyad frequencies in non-coding region\n";
-    printf $out ";organism              %s\n", ($supported_organism{$organism}->{name} || $organism);
+    printf $out ";organism              %s\n", ($supported_organism{$organism_name}->{name} || $organism_name);
     printf $out ";exp. freq. file       %s\n", $exp_freq_file;
   } elsif ($mncf) {
     print $out "mondad frequencies in non-coding region\n";
-    printf $out ";organism              %s\n", $organism;
+    printf $out ";organism              %s\n", $organism_name;
     printf $out ";exp. monad freq. file %s\n", $monad_exp_freq_file;
   } else {
     print $out "monad calibration in input sequences\n";

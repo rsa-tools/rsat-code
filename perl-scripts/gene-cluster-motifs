@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.6 2001/02/08 13:00:10 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.7 2001/02/20 00:57:01 jvanheld Exp $
 #
-# Time-stamp: <2001-02-08 13:28:06 jvanheld>
+# Time-stamp: <2001-02-20 01:56:47 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -29,11 +29,11 @@ if ($family_file eq "") {
 } 
 
 ### organism ###
-if ($organism eq "") {
+if ($organism_name eq "") {
   die "Error: you should specify an organism\n$supported_organisms\n";  
 } 
-unless ($supported_organism{$organism}) {
-  die ("Error: organism $organism is not supported\n",
+unless ($supported_organism{$organism_name}) {
+  die ("Error: organism $organism_name is not supported\n",
        "Supported organisms:\n$supported_organisms\n");
 }
 &InitParameters;
@@ -42,8 +42,8 @@ unless ($supported_organism{$organism}) {
 ### read gene name and identifiers
 warn "; Reading ORF information ...\n" 
     if ($verbose);
-&ReadOrfPositions($organism);
-&ReadSynonyms($organism);
+&ReadOrfPositions($organism_name);
+&ReadSynonyms($organism_name);
 
 &ReadKnownSites;
 &ReadSiteLibrary;
@@ -108,10 +108,10 @@ sub SetFileNames {
   $dyad_options .= "-sp $sp ";
   if ($exp eq "ncf") {
     $dyad_options .= "-ncf ";
-    $dyad_options .= "-org $organism ";
+    $dyad_options .= "-org $organism_name ";
   } elsif ($exp eq "mncf") {
     $dyad_options .= "-mncf ";
-    $dyad_options .= "-org $organism ";
+    $dyad_options .= "-org $organism_name ";
   }
   
   $dyad_suffix = "_dyads";
@@ -194,7 +194,7 @@ sub OldUpstreamSequences {
 
 sub UpstreamSequences {
   warn "; Generating upstream sequences for family $family_name\n" if ($verbose);
-  $command = "retrieve-seq -type upstream -org $organism";
+  $command = "retrieve-seq -type upstream -org $organism_name";
   $command .= " -i $family{$family_name}->{family_file}";
   $command .= " -o $family{$family_name}->{seq_file}";
   $command .= " -from $from -to $to ";
@@ -222,7 +222,7 @@ sub OligoAnalysis {
     $oligo_options .= "-${strands} ";
     $oligo_options .= "-l $oligo_length ";
     $oligo_options .= "-thosig $th ";
-    $oligo_options .= "-org $organism ";
+    $oligo_options .= "-org $organism_name ";
     $oligo_options .= "-ncf ";
 #    $oligo_options .= "-expfreq $RSA/data/yeast/oligo-frequencies/${oligo_length}nt.non-coding.freq ";
     $oligo_options .= "-return occ,proba,zscore ";
@@ -813,7 +813,7 @@ sub ReadArguments {
 
       ### organism
     } elsif ($ARGV[$a] eq "-org") {
-      $organism = $ARGV[$a+1];
+      $organism_name = $ARGV[$a+1];
 
       #### inactivate some tasks
       
