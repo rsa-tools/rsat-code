@@ -15,6 +15,7 @@ $query = new CGI;
 ### default values for filling the form
 $default{patterns} = "";
 $default{pattern_file} = "";
+$default{local_pattern_file} = "";
 $default{maxfl} = 1;
 $default{maxpat} = 200;
 $default{subst} = 1;
@@ -28,7 +29,7 @@ print "Assembly of patterns (oligos or dyads).<P>\n";
 print "</CENTER>";
 print "<HR>";
 print "<blockquote>";
-
+g
 &ListParameters if ($ECHO >=2);
 
 ### replace defaults by parameters from the cgi call, if defined
@@ -37,6 +38,18 @@ foreach $key (keys %default) {
     $default{$key} = $query->param($key);
   }
 } 
+
+
+### if a pattern file is specified in the query,
+### read patterns from this file
+if (($pattern_file = $query->param("local_pattern_file")) &&
+    (-e $pattern_file)) {
+    open PAT, $pattern_file;
+    while (<PAT>) {
+	$default{patterns} .= $_;
+    }
+    close PAT;
+}
 
 print $query->start_multipart_form(-action=>"pattern-assembly.cgi");
 
