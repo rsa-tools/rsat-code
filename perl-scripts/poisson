@@ -13,7 +13,10 @@ NAME
 	poisson
 	
 	v1.0 by Jacques van Helden, July 1997
-	
+
+DESCRIPTION
+	Calculates Poisson probabilities. 
+
 USAGE
 	poisson -m exp_nb_success -s nb_success [-v] [-boe]
 		
