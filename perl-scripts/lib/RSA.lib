@@ -163,6 +163,24 @@ sub OpenOutputFile {
     return $output_stream;
 }
 
+################################################################
+## Check for the existence of an output directory, and, if it does not
+## exist, create it
+sub CheckOutputDir {
+    my ($output_dir) = @_;
+
+    if ($output_dir) {
+	unless (-d $output_dir) {
+	    warn "Creating directory $output_dir\n";
+	}
+	mkdir $output_dir, 0755;
+	unless (-d $output_dir) {
+	    &FatalError("Cannot create output directory $output_dir");
+	}
+    } else {
+	$output_dir = ".";
+    }
+}
 
 ################################################################
 ## Name of the expected frequency file, 
@@ -262,28 +280,7 @@ sub ReadExpectedFrequencies {
 
     #### sum expected frequencies by reverse complements
     if (($sum_rc) && ($file_type eq "1str")) {
-	foreach my $pattern_seq (sort keys %patterns) {
-	    my $rc = lc(&SmartRC($pattern_seq));
-	    if ($rc eq $pattern_seq) {
-		#### palindromic sequence
-		$freq_2str{$pattern_seq} =   $patterns{$pattern_seq}->{exp_freq};
-	    } else {
-		#### non-palindromic sequence : the expected frequency is the sum of the sequence + its reverse complement 
-		$freq_2str{$pattern_seq} =  $freq_2str{$rc} = $patterns{$rc}->{exp_freq} + $patterns{$pattern_seq}->{exp_freq};
-	    }
-	    warn join ("\t", 
-		       $pattern_seq,  
-		       $patterns{$pattern_seq}->{exp_freq}, 
-		       $freq_2str{$pattern_seq},
-		       $rc, 
-		       $patterns{$rc}->{exp_freq}, 
-		       $freq_2str{$rc},
-		       ), "\n" if ($verbose >= 5);
-	}
-	
-	foreach my $pattern_seq (sort keys %patterns) {
-	    $patterns{$pattern_seq}->{exp_freq} = $patterns{$rc}->{exp_freq} = $freq_2str{$pattern_seq};
-	}
+	&SumExpectedFrequencies(%patterns);
     }
 
     #### make sure that the sum of frequencies is positive
@@ -305,6 +302,35 @@ sub ReadExpectedFrequencies {
     
 }
 
+
+################################################################
+## Sum expected frequencies
+##
+sub SumExpectedFrequencies {
+    %patterns = @_;
+    foreach my $pattern_seq (sort keys %patterns) {
+	my $rc = lc(&SmartRC($pattern_seq));
+	if ($rc eq $pattern_seq) {
+	    #### palindromic sequence
+	    $freq_2str{$pattern_seq} =   $patterns{$pattern_seq}->{exp_freq};
+	} else {
+	    #### non-palindromic sequence : the expected frequency is the sum of the sequence + its reverse complement 
+	    $freq_2str{$pattern_seq} =  $freq_2str{$rc} = $patterns{$rc}->{exp_freq} + $patterns{$pattern_seq}->{exp_freq};
+	}
+	warn join ("\t", 
+		   $pattern_seq,  
+		   $patterns{$pattern_seq}->{exp_freq}, 
+		   $freq_2str{$pattern_seq},
+		   $rc, 
+		   $patterns{$rc}->{exp_freq}, 
+		   $freq_2str{$rc},
+		   ), "\n" if ($verbose >= 5);
+    }
+    
+    foreach my $pattern_seq (sort keys %patterns) {
+	$patterns{$pattern_seq}->{exp_freq} = $patterns{$rc}->{exp_freq} = $freq_2str{$pattern_seq};
+    }
+}
 
 
 ################################################################
@@ -500,7 +526,7 @@ sub ExtractPath {
 ####
 sub DelayedRemoval {
     my ($file_to_remove, $delay) = @_;
-    $delay = "60 minutes" unless ($delay);
+    $delay = "12 hours" unless ($delay);
 
     unless (-e $file_to_remove) {
 	&MessageToAdmin("DelayedRemoval: file $file_to_remove does not exist");
@@ -515,14 +541,15 @@ sub DelayedRemoval {
 	return();
     }
 
+    &MessageToAdmin("DelayedRemoval: file $file_to_remove will be removed in $delay") if ($ECHO >= 2);
+
+    #### TEMPORARILY INACTIVATED BECAUSE IT MOBILIZES A LOT OF MEMORY
+    return();
+
     open REMOVE, "| at now + $delay";
     print REMOVE "rm -f $file_to_remove \n";
     close REMOVE;
-
-    &MessageToAdmin("DelayedRemoval: file $file_to_remove will be removed in $delay") if ($ECHO >= 2);
-
 }
-
 
 
 ################################################################
@@ -563,7 +590,7 @@ sub PrintArguments {
 ###############  Genome data ###############################
 ############################################################
 
-@supported_feature_types = qw (CDS mRNA);
+@supported_feature_types = qw (CDS mRNA tRNA rRNA);
 %supported_feature_types = ();
 foreach my $type (@supported_feature_types) {
     $supported_feature_types{lc($type)} = 1;
@@ -659,6 +686,9 @@ sub CheckOrganism {
 		$circular = 0;
 	    }
 	    $chr = $seq_file unless ($chr);
+
+#	    warn join ("\t", "dir:$seq_dir", "file:$seq_file", "chr:$chr", "circular:$circular", "org:$organism_name"), "\n";
+
 	    $chromosome_seq{$chr} = new RSA::SequenceOnDisk (filename=>  $seq_dir.$seq_file,
 							     id=>        $chr,
 							     circular=>  $circular, 
@@ -720,7 +750,7 @@ sub CheckOrganism {
 #### return a random ORF selection
 #### usage 
 ####      @random_orfs = &SelectRandomORFs($n, $replace);
-#### requires prior loading of an organism [see &LoadOrganism()]
+#### requires prior loading of an organism [see &ReadFeatures()]
 sub SelectRandomORFs {  
   my ($rand_orf_nb, $replace, $init, $seed) = @_;
   my @random_orfs = ();
@@ -770,11 +800,22 @@ sub ConvertStrand {
 
 ################################################################
 #### read ORF positions for a given organism
-#### usage: &ReadOrfPositions($organism_name)
-sub ReadOrfPositions {
+#### usage: &ReadFeatures($organism_name, $feature_table_name, $feature_types)
+sub ReadFeatures {
     my ($organism_name, 
 	$feature_table_file,
-	$warn)= @_;
+	$feature_types)= @_;
+
+#      my @feature_types = ();
+#      my %accepted_feature_types = ();
+#      if ($feature_types) {
+#  	@feature_types = split ",", $feature_types;
+#      } else {
+#  	@feature_types = qw (cds);
+#      }
+#      foreach my $feature_type (@feature_types) {
+#  	$accepted_feature_type{$features_type}++;
+#      }
 
     unless (defined (%accepted_feature_types)) {
 	%accepted_feature_types = (cds=>1,
@@ -1242,7 +1283,11 @@ sub cgiMessage {
 
 
 ################################################################
-#### read  family file
+#### read classification file
+#### The file is supposed to contain at least two columns 
+#### - element (e.g. a gene ID)
+#### - class (e.g. a functional class, or a regulon, or a clustering result)
+#### additional columns are allowed, but they are ignored
 sub ReadFamilies {
     my ($family_file, $get_orf_id) = @_;
     warn "; Reading family file\t$family_file\n" 
@@ -1305,7 +1350,9 @@ sub ReadFamilies {
     return %family;
 }
 
-
+sub ReadClasses {
+    ReadFamilies(@_);
+}
 
 
 #### end of the library #####
