@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: downloads.mk,v 1.19 2005/01/13 20:17:06 jvanheld Exp $
+# $Id: downloads.mk,v 1.20 2005/01/14 12:54:46 jvanheld Exp $
 #
 # Time-stamp: <2003-10-09 14:02:21 jvanheld>
 #
@@ -59,6 +59,7 @@ one_genbank_dir:
 	${WGET}							\
 		--exclude-directories 'Bacteria.OLD'		\
 		--exclude-directories ARCHIVE			\
+		--exclude-directories BACENDS			\
 		--accept=gpff --accept=gpff.gz			\
 		--accept=gbk --accept=README --accept=gbff	\
 		--accept=gaa --accept=faa --accept=gbk.gz	\
@@ -461,3 +462,7 @@ one_ensembl_dir:
 ## Anopheles 
 anopheles:
 	${MAKE} one_ensembl_dir ENSEMBL_DIR=current_mosquito/data/flatfiles/genbank/
+
+MACHIN=worm
+current_machin:
+	${MAKE} one_ensembl_dir ENSEMBL_DIR=current_${MACHIN}/data/flatfiles/genbank/
