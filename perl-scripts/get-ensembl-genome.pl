@@ -1,12 +1,12 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-ensembl-genome.pl,v 1.4 2005/02/21 20:41:40 jvanheld Exp $
+# $Id: get-ensembl-genome.pl,v 1.5 2005/02/23 21:07:39 oly Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
 ############################################################
-#use strict;;
+#use strict;
 BEGIN {
     if ($0 =~ /([^(\/)]+)$/) {
 	push (@INC, "$`lib/");
@@ -14,9 +14,9 @@ BEGIN {
 }
 require "RSA.lib";
 
-use DBI;
+# use DBI;
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
-use Bio::EnsEMBL::DBSQL::DBConnection;
+# use Bio::EnsEMBL::DBSQL::DBConnection;
 use Bio::EnsEMBL::DBSQL::SliceAdaptor;
 
 ## TO DO
@@ -39,6 +39,8 @@ local %outfile = ();
 $outfile{log}="get-ensembl-genome_log.txt";
 $outfile{err}="get-ensembl-genome_err.txt";
 $outfile{feature} = "feature.tab";
+$outfile{xref} = "xref.tab";
+$outfile{seq} = "sequence.raw";
 
 local $verbose = 0;
 
@@ -71,6 +73,12 @@ open ERR, ">".$outfile{err} || die "cannot open error log file".$outfile{err}."\
 $FT_TABLE =  &OpenOutputFile($outfile{feature});
 &PrintFtHeader();
 
+## xref file
+# $XREF_TABLE = &OpenOutputFile($outfile{xref});
+
+## sequence files???
+# $SEQ = &OpenOutputFile($outfile{seq});
+
 ################################################################
 #### print verbose
 &Verbose() if ($verbose);
@@ -89,21 +97,29 @@ warn join ("\t", "; Adaptor", $slice_adaptor), "\n" if ($main::verbose >= 3);
 
 ## TO DO: Get the list of chromosomes from the slice adaptor. 
 ## For the time begin I use a dirty trick
-my @chromosomes = 1..22;
-push @chromosomes, "X";
+## my @chromosomes = 1..22;
+## push @chromosomes, "X";
 
-foreach my $chromosome (@chromosomes) {
-    warn join ("\t", "; Getting chromosome", $chromosome), "\n" if ($main::verbose >= 0);
+## foreach my $chromosome (@chromosomes) {
+##    warn join ("\t", "; Getting chromosome", $chromosome), "\n" if ($main::verbose >= 0);
     
     ## Get one chromosome object
-    my $slice = $slice_adaptor->fetch_by_region('chromosome', $chromosome);
-    warn join ("\t", "; Slice", $slice), "\n" if ($main::verbose >= 3);
+##    my $slice = $slice_adaptor->fetch_by_region('chromosome', $chromosome);
+##    warn join ("\t", "; Slice", $slice), "\n" if ($main::verbose >= 3);
+    
+## Get all chromosome objects
+my @slices = @{$slice_adaptor->fetch_all('chromosome')};
+  
+foreach $slice (@slices) {    
     
     foreach my $gene (@{$slice->get_all_Genes()}) {
-	warn join("\t", "gene", $gene), "\n" if ($main::verbose >= 5);
-	my @feature = &get_feature($gene);
-	print $FT_TABLE join("\t", @feature), "\n";
+	    warn join("\t", "gene", $gene), "\n" if ($main::verbose >= 5);
+	    my @feature = &get_feature($gene);
+	    print $FT_TABLE join("\t", @feature), "\n";
+	    # print_DBEntries($gene->get_all_DBLinks());
     }
+#	my $sequence = $slice->seq();
+#	print $SEQ "$sequence";  ## TO DO: will need to print each sequence to a different file
 }
 
 
@@ -121,6 +137,8 @@ if ($verbose >= 1) {
 close $log if ($outfile{log});
 close ERR if ($outfile{err});
 close $FT_TABLE if ($outfile{feature});
+# close $XREF_TABLE if ($outfile{xref});
+# close $SEQ if ($outfile{seq});
 
 
 exit(0);
@@ -259,7 +277,7 @@ sub get_feature {
     push @feature, $id;
 
     ## Type
-    push @feature, "CDS"; ## We need here the feature type 
+    push @feature, $gene->type();
 
 
     ## Gene name
@@ -270,7 +288,7 @@ sub get_feature {
     }
     push @feature, $name;
 
-    ## Chromosome name. Actually we need the contig ID
+    ## Chromosome name.
     push @feature, $gene->slice->seq_region_name(); 
 
     ## Start position
@@ -297,6 +315,16 @@ sub get_feature {
     
     return @feature;
 }
+
+
+################################################################
+# Print cross-references !!!Problem = need to add feature id!!!
+# sub print_DBEntries {
+#        my $db_entries = shift;
+#        foreach my $dbe (@$db_entries) {
+#			print $XREF_TABLE $dbe->dbname(),"\t",$dbe->display_id(),"\n";
+#        }
+#}
 
 
 ################################################################
