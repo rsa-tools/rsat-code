@@ -6,7 +6,7 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
+require "RSA.lib";
 
 use GD;
 
@@ -1074,8 +1074,7 @@ sub CalcLimits {
 #print "HELLO\t",$min_x_value, $max_x_value, "\n", join " ", @X_values, "\n";    
     unless ((&IsReal($max_x_value)) && 
 	    (&IsReal($min_x_value))) {
-	die ("\tError: X axis data (column ", $x_col+1, ") are not numeric\n",
-	     "\tType XYgraph -help for more info\n");
+	&FatalError("X axis data (column ", $x_col+1, ") are not numeric.");
     }
     
     for $series (0..$#y_col_list) {
@@ -1086,9 +1085,8 @@ sub CalcLimits {
     
     unless ((&IsReal($max_y_value)) &&
 	    (&IsReal($min_y_value))) {
-	die ("\tError: Y axis data (column ", join(",", @y_col_list),
-	     ") are not numeric\n",
-	     "\tType XYgraph -help for more info\n");
+	&FatalError("\tError: Y axis data (column ", join(",", @y_col_list),
+	     ") are not numeric.");
     }
 
     #### min and max axis values ####
@@ -1458,21 +1456,21 @@ sub ReadArguments {
 	    if (&IsReal($ARGV[$a+1])) {
 		$x_log_base = $ARGV[$a+1];
 		$y_log_base = $ARGV[$a+1];
-		die "\tError: log base should be strictly higher than 1\n" 
+		&FatalError("Log base should be strictly higher than 1.") 
 		    unless ($x_log_base > 1);
 	    }
 	} elsif ($ARGV[$a] eq "-xlog") {
 	    $xlog= 1;
 	    if (&IsReal($ARGV[$a+1])) {
 		$x_log_base = $ARGV[$a+1];
-		die "\tError: log base should be strictly higher than 1\n" 
+		&FatalError("Log base should be strictly higher than 1.") 
 		    unless ($x_log_base > 1);
 	    }
 	} elsif ($ARGV[$a] eq "-ylog") {
 	    $ylog= 1;
 	    if (&IsReal($ARGV[$a+1])) {
 		$y_log_base = $ARGV[$a+1];
-		die "\tError: log base should be strictly higher than 1\n" 
+		&FatalError("Log base should be strictly higher than 1.") 
 		    unless ($y_log_base > 1);
 	    }
 	    
