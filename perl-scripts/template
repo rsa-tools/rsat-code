@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: template,v 1.7 2001/05/06 11:24:04 jvanheld Exp $
+# $Id: template,v 1.8 2001/05/08 06:52:31 jvanheld Exp $
 #
-# Time-stamp: <2001-05-06 13:24:02 jvanheld>
+# Time-stamp: <2001-05-08 08:42:38 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -16,8 +16,8 @@ require "RSA.lib.pl";
 #### initialise parameters ####
 my $start_time = &AlphaDate;
 
-local $infile{input} = "";
-local $outfile{output} = "";
+local %infile = ();
+local %outfile = ();
 
 local $verbose = 0;
 local $in = STDIN;
