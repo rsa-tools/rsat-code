@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-families,v 1.9 2002/10/01 22:01:59 jvanheld Exp $
+# $Id: compare-families,v 1.10 2002/10/15 05:56:26 jvanheld Exp $
 #
-# Time-stamp: <2002-10-01 16:00:53 jvanheld>
+# Time-stamp: <2002-10-03 10:08:21 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -104,31 +104,38 @@ unless ($population_size > 0 ) {
 ################################################################
 #### compare reference and query families
 %common = (); ### elements common to query and reference families
-%ref_not_query = (); ### elements found in reference but not in query
-%query_not_ref = (); ### elements found in query but not in reference
+%ref_only = (); ### elements found in reference but not in query
+%query_only = (); ### elements found in query but not in reference
 foreach my $r (keys %ref_families) {
     my %ref_member = ();
     my %not_query = ();
     foreach $m ( $ref_families{$r}->get_members()) {
 	$ref_member{$m} = 1;
-	$not_query{$m} = 1;
     }
     foreach my $q (keys %query_families) {
 	next if (($distinct) && ($r eq $q));
 	my $compa_key = $r."__VERSUS__".$q;
-	@{$query_not_ref{$compa_key}} = ();
+
 	@{$common{$compa_key}} = ();
+	@{$ref_only{$compa_key}} = ();
+	@{$query_only{$compa_key}} = ();
+
 	my @query_members = $query_families{$q}->get_members();
 	foreach my $m (@query_members) {
 	    if ($ref_member{$m}) {
-		push @{$common{$compa_key}}, $m;
-		$matching_elements->{$compa_key}->{$m}++;
-		delete($not_query{$m});
+		push @{$common{$compa_key}}, $m; ### elements common to reference and query family
+ 		$matching_elements->{$compa_key}->{$m}++;
 	    } else {
-		push @{$query_not_ref{$compa_key}}, $m;
+		push @{$query_only{$compa_key}}, $m; ### elements found in the query fmily only
 	    }
 	}
-	@{$ref_not_query{$compa_key}} = keys (%not_query);
+	
+	#### identify elements found in the reference family only
+	foreach $m (sort( $ref_families{$r}->get_members())) {
+	    unless ($matching_elements->{$compa_key}->{$m}) {
+		push @{$ref_only{$compa_key}}, $m;
+	    }
+	}
 
 	$compa{$compa_key}->{occ} = scalar(keys %{$matching_elements->{$compa_key}});
 
@@ -148,6 +155,34 @@ foreach my $r (keys %ref_families) {
 # die;
 
 
+################################################################
+#### percentages
+if ($return_fields{percent}) {
+    foreach my $compa_key (keys %compa) {
+	my ($r, $q) = split "__VERSUS__", $compa_key;
+	warn "; calculating percentages for ", $compa_key, "\n" if ($verbose >= 2);
+	my $n_q = $query_families{$q}->get_size(); ### number of elements in query family
+	my $n_r = $ref_families{$r}->get_size(); ### number of elements in the reference family
+	my $c = $compa{$compa_key}->{occ}; ### number of common elements
+	$compa{$compa_key}->{ref_percent} = 100*$c/$n_r;
+	$compa{$compa_key}->{query_percent} = 100*$c/$n_r;
+
+	for my $key ("ref_percent", "query_percent") {
+	    if ((defined($lth{$key})) && 
+		($compa{$compa_key}->{$key}< $lth{$key})) {
+		delete $compa{$compa_key};
+		undef @{$common{$compa_key}};
+		last;
+	    } elsif ((defined($uth{$key})) && 
+		     ($compa{$compa_key}->{$key} > $uth{$key})) {
+		delete $compa{$compa_key};
+		undef @{$common{$compa_key}};
+		last;
+	    }
+	}
+
+    }
+}
 
 
 ################################################################
@@ -235,8 +270,8 @@ if ($return_fields{proba}) {
 
 if ($return{matrix}) {
     #### print a smilarity matrix
-    my $header = ";";
-    $header .= join "\t", (keys %query_families);
+    my $header = ";fam\t";
+    $header .= join "\t", (sort keys %query_families);
     $header .= "\n";
     print $out $header;
 
@@ -263,15 +298,23 @@ if ($return{matrix}) {
 			 "ref#",
 			 "query#",
 			 "common#");
-    push @header_fields, "P_val" if $return_fields{proba};
-    push @header_fields, "E_val" if $return_fields{proba};
-    push @header_fields, "sig" if $return_fields{proba};
+
+    if ($return_fields{percent}) {
+	push @header_fields, "ref_%" ;
+	push @header_fields, "query_%" ;
+    }
+    if ($return_fields{proba}) {
+	push @header_fields, "P_val" ;
+	push @header_fields, "E_val";
+	push @header_fields, "sig";
+    }
+
     if ($return_fields{members}) {
-	push @header_fields, "ref_members";
-	push @header_fields, "query_members";
-	push @header_fields, "common_members";
+#	push @header_fields, "ref_members";
+#	push @header_fields, "query_members";
 	push @header_fields, "ref_only";
 	push @header_fields, "query_only";
+	push @header_fields, "common_members";
     }
     print $out join("\t", @header_fields), "\n";
     
@@ -295,6 +338,13 @@ if ($return{matrix}) {
 			       $query_families{$q}->get_size(),
 			       $compa{$compa_key}->{occ});
 
+	#### percentages
+	if ($return_fields{percent}) {	    
+	    printf $out "\t%7.4f", $compa{$compa_key}->{ref_percent};
+	    printf $out "\t%7.4f", $compa{$compa_key}->{query_percent};
+	}
+
+
 	#### probabilities
 	if ($return_fields{proba}) {
 	    if ($compa{$compa_key}->{P_val} >= 0.0001) {
@@ -302,21 +352,25 @@ if ($return{matrix}) {
 	    } else {
 		printf $out "\t%.2g", $compa{$compa_key}->{P_val};
 	    }
-	    if ($compa{$compa_key}->{E_val} >= 0.0001) {
-		printf $out "\t%.5f", $compa{$compa_key}->{E_val};
+	    
+	    if ($compa{$compa_key}->{E_val} >= 1) {
+		printf $out "\t%7.3f", $compa{$compa_key}->{E_val};
+	    } elsif ($compa{$compa_key}->{E_val} >= 0.0001) {
+		printf $out "\t%7.4f", $compa{$compa_key}->{E_val};
 	    } else {
 		printf $out "\t%.2g", $compa{$compa_key}->{E_val};
 	    }
 	    printf $out ( "\t%.2f", $compa{$compa_key}->{sig});
 	}
 
+
 	#### members of the intersection
 	if ($return_fields{members}) {
-	    print $out "\t", join( " ", $ref_families{$r}->get_members()) ;
-	    print $out "\t", join( " ", $query_families{$q}->get_members()) ;
+#	    print $out "\t", join( " ", $ref_families{$r}->get_members()) ;
+#	    print $out "\t", join( " ", $query_families{$q}->get_members()) ;
+	    print $out "\t", join( " ", @{$ref_only{$compa_key}}) ;
+	    print $out "\t", join( " ", @{$query_only{$compa_key}}) ;
 	    print $out "\t", join( " ", @{$common{$compa_key}}) ;
-	    print $out "\t", join( " ", @{$ref_not_query{$compa_key}}) ;
-	    print $out "\t", join( " ", @{$query_not_ref{$compa_key}}) ;
 	}
 
 	print $out "\n";
@@ -389,7 +443,7 @@ OPTIONS
 	-uth field #
 		upper threshold value for a given field
 		Supported_fields:
-			occ, P_val, E_val, sig
+			occ, P_val, E_val, sig, ref_percent, query_percent
 	-lth field #
 		lower threshold value for a given field 
 		(same fields as -uth)
@@ -504,7 +558,7 @@ PROBABILITIES
 
 		This index gives an intuitive perception of the
 		exceptionality of the common elements : a negative sig
-		indicates that the common mtches are likely to come by
+		indicates that the common matches are likely to come by
 		chanc alone, a ositive value that they are
 		significant. Higher sig values indicate a higher
 		significance.
