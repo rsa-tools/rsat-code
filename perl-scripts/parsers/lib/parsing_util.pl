@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parsing_util.pl,v 1.14 2005/01/27 14:46:45 jvanheld Exp $
+# $Id: parsing_util.pl,v 1.15 2005/01/27 20:22:40 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -518,7 +518,7 @@ sub ParsePositions {
 	    foreach my $exon (@exons) {
 		$exon =~ s/\s+//g;
 		$feature->push_attribute("exons", $exon);
-		my ($exon_start, $exon_end) = &segment_limits($exon);
+		my ($exon_start, $exon_end) = &segment_limits($exon, $position);
 		push @exon_starts, $exon_start;
 		push @exon_ends, $exon_end;
 	    }
@@ -610,7 +610,7 @@ Return start and end positions of a segment
 =cut
 
 sub segment_limits {
-    my ($segment) = @_;
+    my ($segment, $position) = @_;
     my $segment_start = $null;
     my $segment_end = $null;
 
@@ -626,7 +626,7 @@ sub segment_limits {
 	$segment_start = $1;
 	$segment_end = $1;
     } else {
-	&ErrorMessage ("Invalid segment format\t$segment\n");
+	&ErrorMessage (join "\t", "Invalid segment format", $segment, $position, "\n");
     }
     return ($segment_start, $segment_end);
 }
