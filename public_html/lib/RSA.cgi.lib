@@ -68,14 +68,16 @@ sub RSA_header {
 
 ### send results by e-mail or display on the browser
 sub SelectOutput {
-  print "<B>Output</B>&nbsp;";
-  print $query->radio_group(-name=>'output',
-			    -values=>['display','e-mail'],
-			    -default=>'display');
-  print $query->textfield(-name=>'user_email',
-			  -size=>30);
-  print "<BR>\n";
-  print "<BR>\n";
+    my ($default_output) = @_;
+    $default_output = "display" unless ($default_output);
+    print "<B>Output</B>&nbsp;";
+    print $query->radio_group(-name=>'output',
+			      -values=>['display','e-mail'],
+			      -default=>$default{'output'});
+    print $query->textfield(-name=>'user_email',
+			    -size=>30);
+    print "<BR>\n";
+    print "<BR>\n";
 }
 
 
@@ -140,7 +142,12 @@ sub SequenceChoice {
 }
 
 
-### input sequence ####
+################################################################
+#### Treat input sequence for the web server
+#### The seqence can be specified in 3 ways :
+#### - as a file to upload from the client to the server $query->param('uploaded_file')
+#### - as a text in the textarea $query->param('sequence')
+#### - as a sequence file already on the server $query->param('sequence_file')
 sub GetSequenceFile {
     #### usage : 
     ####    ($sequence_file,$sequence_format) = &GetSequenceFile();
@@ -158,8 +165,9 @@ sub GetSequenceFile {
     }
     
     
-    unless ($sequence_file = $query->param(sequence_file)) { ### sequence file already on the server side
-	$sequence_file = "$TMP/$tmp_file_name.seq"; ### create a new temporary sequence file
+    unless ($sequence_file = $query->param('sequence_file')) { ### sequence file already on the server side
+	### create a new temporary sequence file
+	$sequence_file = "$TMP/$tmp_file_name.seq"; 
     
 	### upload sequence file from the client side
 	$upload_file = $query->param('uploaded_file');
@@ -184,6 +192,9 @@ sub GetSequenceFile {
 	} else {
 	    &cgiError("The sequence box should not be empty.");
 	}
+    
+	#### sequence file will be deleted
+	&DelayedRemoval($sequence_file);
     }
 
     #### convert-seq
@@ -204,12 +215,10 @@ sub GetSequenceFile {
 	system $convert_seq_command;
 	
 	#print "<PRE>$convert_seq_command</PRE>\n";
-	&DelayedRemoval($sequence_file);
+	&DelayedRemoval($converted_seq_file);
 	$sequence_file = $converted_seq_file;
 	$sequence_format = $required_format;
     }
-    
-    &DelayedRemoval($sequence_file);
     
     return($sequence_file, $sequence_format);
 }
@@ -300,7 +309,7 @@ sub PrintHtmlTable {
 	$font_spec_end = "</TT>";
     }
     
-    if ($mirror_file ne "") {
+    if ($mirror_file) {
 	if (open MIRROR, ">$mirror_file") {
 	    $mirror = 1;
 	    &DelayedRemoval($mirror_file);
@@ -330,6 +339,7 @@ sub PrintHtmlTable {
 	    
 	} elsif (!($table_opened)) { # first line of the table
 	    $table_opened = 1;
+	    $line_count = 0;
 	    print $out "</PRE>\n\n$TABLE\n";
 	    
 	    # print the header line
@@ -384,10 +394,12 @@ sub Print_CGI_Input {
 }
 
 
-#### save the result on the server
-
+################################################################
+#### save the result in a temporary file on the server
+#### this file will be deleted after some delay
 sub ServerOutput {
     my ($command, $email_address, $tmp_file_name) = @_;
+    my $delay = "24 hours";
     $mail_command = "mail -s \'RSA-tools - $script_name - $date\'";
 
     ## temporary file for storing the result
@@ -404,7 +416,7 @@ sub ServerOutput {
 
     my $message = "The results are available on the following URL\n";
     $message .= "\t$WWW_RSA/tmp/$tmp_file_name\n";
-    $message .= "This file will remain on the server for 24h.\n";
+    $message .= "This file will remain on the server for $delay.\n";
 
     $html_message = $message;
     $html_message =~ s|(http://\S+)|<a href=$1>$1</a>|gm;
@@ -413,9 +425,7 @@ sub ServerOutput {
 
     system "echo \"$message\" | $mail_command $email_address &"; 
 
-    &DelayedRemoval("$TMP/$tmp_file_name");
-
-
+    &DelayedRemoval("$TMP/$tmp_file_name", $delay);
 }
 
 #### send e-mail with the result of a command

@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: patser.cgi,v 1.17 2003/06/03 20:37:20 jvanheld Exp $
+# $Id: patser.cgi,v 1.19 2003/06/03 22:18:33 jvanheld Exp $
 #
-# Time-stamp: <2003-06-03 22:35:27 jvanheld>
+# Time-stamp: <2003-06-04 00:18:03 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -29,7 +29,7 @@ $command = "$BIN/patser";
 $matrix_from_transfac_command = "$SCRIPTS/matrix-from-transfac";
 $matrix_from_gibbs_command = "$SCRIPTS/matrix-from-gibbs";
 $convert_seq_command = "$SCRIPTS/convert-seq";
-$features_from_patser_cmd = "$SCRIPTS/features-from-patser";
+$features_from_patser_cmd = "$SCRIPTS/features-from-patser -v 1";
 $add_orf_function_command = "$SCRIPTS/add-orf-function";
 $add_yeast_link_command = "$SCRIPTS/add-yeast-link";
 $tmp_file_name = sprintf "patser.%s", &AlphaDate;
@@ -213,6 +213,17 @@ if ($query->param('flanking') =~ /^\d+$/) {
 $features_from_patser_cmd .= " -origin -0";
 #$features_from_patser_cmd .= " -o $feature_file";
 
+### return matching positions
+if ($query->param('positions')) {
+    $features_from_patser_cmd .= " -return matches";
+}
+
+### return score table
+if ($query->param('table')) {
+    $features_from_patser_cmd .= " -return table";
+}
+
+
 $command .= "| $features_from_patser_cmd";
 
 ################################################################
@@ -223,7 +234,9 @@ print "<pre>$command</pre>" if ($ECHO >= 1);
 ### execute the command ###
 if ($query->param('output') eq "display") {
 
-    &PipingWarning();
+    unless ($query->param('table')) {
+	&PipingWarning();
+    }
 
     ### Print the result on Web page
     $result_file =  "$TMP/$tmp_file_name.ft";
@@ -245,7 +258,9 @@ if ($query->param('output') eq "display") {
 #    close RESULT;
     print "</PRE>";
 
-    &PipingForm();
+    unless ($query->param('table')) {
+	&PipingForm();
+    }
 
     print "<HR SIZE = 3>";
     
