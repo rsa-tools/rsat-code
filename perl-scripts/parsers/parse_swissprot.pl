@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_swissprot.pl,v 1.4 2000/12/14 20:57:26 jvanheld Exp $
+# $Id: parse_swissprot.pl,v 1.5 2000/12/28 23:54:49 jvanheld Exp $
 #
-# Time-stamp: <2000-12-12 03:03:07 jvanheld>
+# Time-stamp: <2000-12-29 00:54:19 jvanheld>
 #
 ############################################################
 
@@ -44,9 +44,7 @@ package main;
     
     ### export classes
     push @classes, "PFBP::Polypeptide";
-#  push @classes, "PFBP::Catalysis";
-    @{$out_fields{'PFBP::Polypeptide'}} = qw( id name description gene organisms swissprot_acs swissprot_ids names );
-#  @{$out_fields{'PFBP::Catalysis'}} = qw( id catalyst catalyzed source );
+#    @{$out_fields{'PFBP::Polypeptide'}} = qw( id name description gene organisms swissprot_acs swissprot_ids names );
     
     &ReadArguments;
     
@@ -130,8 +128,7 @@ package main;
 ### create class holders
     $polypeptides = PFBP::ClassFactory->new_class(object_type=>"PFBP::Polypeptide",
 						  prefix=>"spp_");
-#  $catalyses = PFBP::ClassFactory->new_class(object_type=>"PFBP::Catalysis",
-#					     prefix=>"sct_");
+    $polypeptides->set_out_fieldsqw( id name description gene organisms swissprot_acs swissprot_ids names ));
 
 ### testing mode
     if ($test) {
