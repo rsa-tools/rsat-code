@@ -184,6 +184,41 @@ sub OpenOutputFile {
 
 
 ################################################################
+# Name of the expected frequency file, 
+# given the organism and oiligo length
+#
+sub ExpectedFreqFile {
+    my ($organism_name, $oligo_length) = @_;
+
+    #### organism
+    &CheckOrganism($organism_name);
+
+    #### check oligo length
+    unless (&IsNatural($oligo_length)) {
+	&FatalError("Invalid oligonucleotide length : must be a natural number");
+    }
+
+    if ($oligo_length <= 0) {
+	&FatalError("Invalid oligonucleotide length : must be a >= 1");
+    }
+    if ($oligo_length >= 8) {
+	&FatalError("Invalid oligonucleotide length : must be a <= 8");
+    }
+
+
+
+    #### build the name of the expected frequency file 
+    if ((-e "$data_dir/oligo-frequencies/${oligo_length}nt_non-coding_${organism_name}-1str.freq") || 
+	(-e "$data_dir/oligo-frequencies/${oligo_length}nt_non-coding_${organism_name}-1str.freq.gz")) {
+	$exp_freq_file = "$data_dir/oligo-frequencies/${oligo_length}nt_non-coding_${organism_name}-1str.freq";
+    } else {
+	#### TEMPORARYL the previous format is still supported
+	$exp_freq_file = "$data_dir/oligo-frequencies/${oligo_length}nt_non-coding_${organism_name}.freq";
+    }
+    return $exp_freq_file;
+}
+
+################################################################
 # Read pattern expected frequencies from a file
 #
 sub ReadExpectedFrequencies {
