@@ -88,7 +88,7 @@ $header_printed=0;
 while (<$in>) {
     if (($matrix_length == 1) && (/width of the alignment matrix\:\s+(\d+)/)) {
 	$matrix_length = $1;
-	print $out "; $_";
+	print $out "; $_" if ($verbose >= 1);
 
 	#### the row contains a match description
     } elsif (/^\s*(\S+)\s+position=\s+(\d+)([c\s])\s+score=\s+(\S+)(.*)/i) {
@@ -141,7 +141,7 @@ while (<$in>) {
 		    $sub_sequence = $left_flank.$sub_sequence.$right_flank;
 		}
 		
-
+		
 		#### description
 		$descr = "${sub_sequence}";
 	    }
@@ -174,12 +174,13 @@ while (<$in>) {
 	    push @{$end{$map}},  $end if ($table_fields{end});
 	    push @{$strand{$map}},  $strand if ($table_fields{strand});
 	    push @{$position{$map}},  join ("", $start,"..",$end,$strand) if ($table_fields{position});
-	    $max_score_per_map = &max($max_score_per_map, $#{$score{$map}}+1);
+	    $max_scores_per_map = &max($max_scores_per_map, $#{$score{$map}}+1) unless ($max_col_per_seq);
+#	    warn join ("\t", $map, $score, $start, $end, $strand, $#{$score{$map}}), "\n" if ($verbose >= 3);
 	}
 	
 
     } else {
-	print $out "; $_";
+	print $out "; $_" if ($verbose >= 1);
     }
 }
 
@@ -189,30 +190,30 @@ if ($return{table}) {
     print $out "; Score table\n" if ($verbose >= 1);
     
     #### header
-#    print $out join ("\t", "; seq_id", 1..$max_score_per_map), "\n";
+#    print $out join ("\t", "; seq_id", 1..$max_scores_per_map), "\n";
     print $out "; seq_id";
     if ($table_fields{score}) {
-	for my $i (1..$max_score_per_map) {
+	for my $i (1..$max_scores_per_map) {
 	    print $out "\tscore.${i}";
 	} 
     }
     if ($table_fields{start}) {
-	for my $i (1..$max_score_per_map) {
+	for my $i (1..$max_scores_per_map) {
 	    print $out "\tstart.${i}";
 	} 
     }
     if ($table_fields{end}) {
-	for my $i (1..$max_score_per_map) {
+	for my $i (1..$max_scores_per_map) {
 	    print $out "\tend.${i}";
 	} 
     }
     if ($table_fields{strand}) {
-	for my $i (1..$max_score_per_map) {
+	for my $i (1..$max_scores_per_map) {
 	    print $out "\tstrand.${i}";
 	} 
     }
     if ($table_fields{position}) {
-	for my $i (1..$max_score_per_map) {
+	for my $i (1..$max_scores_per_map) {
 	    print $out "\tposition.${i}";
 	} 
     }
@@ -220,29 +221,42 @@ if ($return{table}) {
 
     #### print matche and position
     foreach my $map (sort keys %score) {
+#	warn join ("\t", $map, $#{$score{$map}}), "\n" if ($verbose >= 3);
 
-	for my $i ($#{$score{$map}}..$max_score_per_map-2) {
-	    push @{$score{$map}}, "";
-	    push @{$start{$map}}, "" if ($table_fields{start});
-	    push @{$end{$map}}, "" if ($table_fields{end});
-	    push @{$strand{$map}}, "" if ($table_fields{strand});
-	    push @{$position{$map}}, "" if ($table_fields{position});
+	#### make sure all vectors contains the same number of entries
+	if  ($#{$score{$map}} + 1 > $max_scores_per_map) {
+		@{$score{$map}} = @{$score{$map}}[0..($max_scores_per_map-1)];
+		@{$start{$map}} = @{$start{$map}}[0..($max_scores_per_map-1)] if ($table_fields{start});;
+		@{$end{$map}} = @{$end{$map}}[0..($max_scores_per_map-1)] if ($table_fields{end});;
+		@{$strand{$map}} = @{$strand{$map}}[0..($max_scores_per_map-1)] if ($table_fields{strand});;
+		@{$position{$map}} = @{$position{$map}}[0..($max_scores_per_map-1)] if ($table_fields{position});;
+	} else {
+	    for my $i ($#{$score{$map}}..$max_scores_per_map-2) {
+		push @{$score{$map}}, "";
+		push @{$start{$map}}, "" if ($table_fields{start});
+		push @{$end{$map}}, "" if ($table_fields{end});
+		push @{$strand{$map}}, "" if ($table_fields{strand});
+		push @{$position{$map}}, "" if ($table_fields{position});
+	    }
 	}
+
 	print $out $map;
+	
+	my @sorted_index = sort {$score{$map}->[$b] <=> $score{$map}->[$a] } 0..$#{$score{$map}};
 	print $out "\t", join ("\t", 
 			       (sort {$b <=> $a} @{$score{$map}}), 
 			       ) if ($table_fields{score});
 	print $out "\t", join ("\t", 
-			       (sort {$score{$b} <=> $score{$a}} @{$start{$map}}),
+			       @{$start{$map}}[@sorted_index],
 			       ) if ($table_fields{start});
 	print $out "\t", join ("\t", 
-			       (sort {$score{$b} <=> $score{$a}} @{$end{$map}}),
+			       @{$end{$map}}[@sorted_index],
 			       ) if ($table_fields{end});
 	print $out "\t", join ("\t", 
-			       (sort {$score{$b} <=> $score{$a}} @{$strand{$map}}),
+			       @{$strand{$map}}[@sorted_index],
 			       ) if ($table_fields{strand});
 	print $out "\t", join ("\t", 
-			       (sort {$score{$b} <=> $score{$a}} @{$position{$map}})
+			       @{$position{$map}}[@sorted_index],
 			       ) if ($table_fields{position});
 	print $out "\n";
     }
@@ -343,7 +357,13 @@ OPTIONS
 
 		Beware: this format is not supported by feature-map,
 		but it is very convenient for post-processing.
-		
+	-maxcol	# 
+		max number of columns per sequence for the table
+		This prevents from obtaining more columns than the
+		number of top scores. Indeed, when there are several
+		matches with identical scores, patser return ll of
+		them as a single top score.
+
 INPUT FORMAT
 	The input file should be the result of patser.
 	
@@ -388,6 +408,7 @@ features-from-patser options
 -seq		sequence file
 -format		sequence file format (default wc)
 -table		return a table with specified fields (Supported: $supported_table_fields).
+-maxcol	# 	max number of columns per sequence for the table
 End_short_help
   close HELP;
   exit;
@@ -450,6 +471,14 @@ sub ReadArguments {
 	    ### sequence file format 
 	} elsif ($ARGV[$a] eq "-format") {
 	    $seq_format = $ARGV[$a+1];
+
+	    ### max # of colukns for a table
+	} elsif ($ARGV[$a] eq "-maxcol") {
+	    $max_col_per_seq = $ARGV[$a+1];
+	    $max_scores_per_map  = $max_col_per_seq;
+	    unless (&IsNatural($max_col_per_seq)) {
+		&FatalError("$max_col_per_seq invalid number of columns");
+	    }
 
 	    ### return a table
 	} elsif ($ARGV[$a] eq "-table") {
