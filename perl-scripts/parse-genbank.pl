@@ -1,7 +1,7 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: parse-genbank.pl,v 1.11 2003/11/16 01:04:40 jvanheld Exp $
+# $Id: parse-genbank.pl,v 1.12 2003/11/30 07:47:04 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -332,14 +332,10 @@ OPTIONS
 	-o	output directory
 		The parsing result will be saved in this directory. If
 		the directory does not exist, it will be created.
-	-test	quick test (for debugging): only parse the first $test_lines
-		lines of each Genabnk file
+	-test #	quick test (for debugging): only parse the # first
+		lines of each Genabnk file (default $test_lines).
 
    Options for the automaticaly generated SQL scripts
-
-	-dbms   database management system. 
-		Supported: mysql, oracle, postgresql 
-		(default: $dbms)
 	-schema database schema (default: $schema)
 	-host	database host (efault: $host)
 	-user	database user (efault: $user)
@@ -364,7 +360,6 @@ parse-genbank options
 -o	output dir
 -v	verbose
 -test #	quick test (for debugging)
--dbms   database management system (default: $dbms)
 -schema database schema (default: $schema)
 -host	database host (default: $host)
 -user	database user (default: $user)
@@ -410,10 +405,6 @@ sub ReadArguments {
 		$test_lines = $ARGV[$a+1];
 	    }
 
-	    ### database management system
-	} elsif ($ARGV[$a] eq "-dbms") {
-	    $dbms = $ARGV[$a+1];
-	    
 	    ### database schema
 	} elsif ($ARGV[$a] eq "-schema") {
 	    $schema = $ARGV[$a+1];
@@ -422,11 +413,11 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-host") {
 	    $host = $ARGV[$a+1];
 	    
-	    ### databaseuser
+	    ### database user
 	} elsif ($ARGV[$a] eq "-user") {
 	    $user = $ARGV[$a+1];
 	    
-	    ### database 
+	    ### password 
 	} elsif ($ARGV[$a] eq "-password") {
 	    $password = $ARGV[$a+1];
 	    

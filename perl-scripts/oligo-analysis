@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.63 2003/11/26 22:42:41 jvanheld Exp $
+# $Id: oligo-analysis,v 1.64 2003/11/30 07:47:52 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -2371,7 +2371,7 @@ oligo-analysis options
 -a yeast        use yeast genomic alphabet
 -a input        use alphabet from input sequence
 -expfreq        file with expected frequency table
--rescale	recale expected frequencies to obtain a sum of 1
+-rescale	rescale expected frequencies to obtain a sum of 1
 -ncf		(deprecated, use '-bg intergenic' instead) 
 -bg		background model (supported: $supported_bg)
 -org		organism 
