@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: downloads.mk,v 1.8 2003/12/23 15:49:47 jvanheld Exp $
+# $Id: downloads.mk,v 1.9 2003/12/23 17:23:13 jvanheld Exp $
 #
 # Time-stamp: <2003-10-09 14:02:21 jvanheld>
 #
@@ -233,9 +233,16 @@ worm_from_sanger:
 # Candida albicans genome from Stanford
 #
 ################################################################
+candida: candida_pasteur candida_sgd
+
 CANDIDA = ftp://cycle.stanford.edu/pub/projects/candida/
-candida:
+candida_sgd:
 	${WGET} ${CANDIDA}
+
+
+CANDIDA_PASTEUR=ftp://ftp.pasteur.fr/pub/GenomeDB/CandidaDB/FlatFiles/
+candida_pasteur:
+	${WGET} ${CANDIDA_PASTEUR}
 
 ################################################################
 #
