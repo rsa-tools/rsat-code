@@ -18,7 +18,7 @@ require "RSA.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 $command = "$SCRIPTS/dna-pattern";
-$tmp_file_name = sprintf "dna-pattern.%s", &AlphaDate;
+$tmp_file_name = sprintf "dna-pattern.%s", &AlphaDate();
 
 ### Read the CGI query
 $query = new CGI;
@@ -54,17 +54,25 @@ $parameters .= " -pl $pattern_file";
 $parameters .= " -i $sequence_file -format $sequence_format";
 
 
-### return match positions ###
+### return matching positions
 if ($query->param('match_positions')) {
+    $parameters .= " -pos";
+
     ### origin ###
     if ($query->param('origin') =~ /end/i) {
 	$parameters .= " -origin -0";
     }
     
+    #### flanking residues for the matching sequences
     if ($query->param('flanking') =~ /^\d+$/) {
 	$parameters .= " -N ".$query->param('flanking');
     }
-    $parameters .= " -pos";
+
+    #### match format
+    if ($query->param('match_format') eq "fasta") {
+	$parameters .= " -match_format fasta";
+    }
+    
 } 
 
 ### return match count ###
@@ -120,7 +128,7 @@ if ($query->param("output") =~ /display/i) {
   
     ### Print the result on Web page
     print "<H3>Result</H3>";
-    PrintHtmlTable(RESULT, $result_file);
+    &PrintHtmlTable(RESULT, $result_file, true);
     close RESULT;
     &PipingForm if ($query->param('match_positions'));
     print "<HR SIZE = 3>";

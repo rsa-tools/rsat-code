@@ -28,6 +28,7 @@ $default{flanking} = "4";
 $default{threshold} = "0";
 $default{subst} = "0";
 $default{origin} = "end";
+$default{match_format} = "table";
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
@@ -49,12 +50,12 @@ print $query->start_multipart_form(-action=>"dna-pattern.cgi");
 ### if a pattern file is specified in the query,
 ### read patterns from this file
 if (($pattern_file = $query->param("pattern_file")) &&
-     (-e $pattern_file)) {
-  open PAT, $pattern_file;
-  while (<PAT>) {
-    $default{patterns} .= $_;
-  }
-  close PAT;
+    (-e $pattern_file)) {
+    open PAT, $pattern_file;
+    while (<PAT>) {
+	$default{patterns} .= $_;
+    }
+    close PAT;
 }
 
 ### text area to enter the patterns
@@ -101,11 +102,16 @@ print CGI::table({-border=>0,-cellpadding=>3,-cellspacing=>0},
 			       $query->textfield(-name=>'flanking',
 						 -default=>$default{flanking},
 						 -size=>2),
-				   "<A HREF='help.dna-pattern.html#origin'><B>Origin</B></A>",
+			       "<A HREF='help.dna-pattern.html#origin'><B>Origin</B></A>",
 			       $query->popup_menu(-name=>'origin',
 						  -Values=>['start',
 							    'end'],
-						  -default=>$default{origin})
+						  -default=>$default{origin}),
+			       "<A HREF='help.dna-pattern.html#match_format'><B>Format</B></A>",
+			       $query->popup_menu(-name=>'match_format',
+						  -Values=>['table',
+							    'fasta'],
+						  -default=>$default{match_format})
 			       ]),
 		      CGI::td({-align=>left,-valign=>MIDDLE},
 			      [
@@ -157,7 +163,7 @@ print "<BR>\n";
 
 
 
-### send results by e-mail or display on the browser
+### send results by email or display on the browser
 &SelectOutput;
 
 ### action buttons
