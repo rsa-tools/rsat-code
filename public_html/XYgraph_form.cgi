@@ -53,9 +53,9 @@ foreach $key (keys %default) {
 } 
 
 
-#### specific treatment for internal feature file (piped from dna-patttern)
-if (-e $query->param('feature_file')) {
-    $file = $query->param('feature_file');
+#### specific treatment for internal XYgraph file (piped from dna-patttern)
+if (-e $query->param('XYgraph_file')) {
+    $file = $query->param('XYgraph_file');
     $default{data} = `cat $file`;
 } else {
     $default{data} = $query->param('data');
@@ -84,6 +84,10 @@ print $query->textarea(-name=>'data',
 		       -default=>$default{data},
 		       -rows=>6,
 		       -columns=>60);
+print "<br>File ";
+print "</A></B>&nbsp;";
+print $query->filefield(-name=>'uploaded_file',
+			-size=>45);
 
 print "<hr>\n";
 
@@ -190,7 +194,7 @@ print $query->textfield(-name=>'xgstep1',
 			-default=>$default{xgstep1},
 			-size=>5,
 			);
-print "Second grid step", "&nbsp;"x5;
+print "&nbsp;"x5,"Second grid step", "&nbsp;"x5;
 print $query->textfield(-name=>'xgstep2',
 			-default=>$default{xgstep2},
 			-size=>5,
@@ -246,7 +250,7 @@ print $query->textfield(-name=>'ygstep1',
 			-default=>$default{ygstep1},
 			-size=>5,
 			);
-print "Second grid step", "&nbsp;"x5;
+print  "&nbsp;"x5,"Second grid step", "&nbsp;"x5;
 print $query->textfield(-name=>'ygstep2',
 			-default=>$default{ygstep2},
 			-size=>5,
@@ -349,8 +353,7 @@ print $query->hidden(-name=>'ygstep2',-default=>'none');
 print $query->submit(-label=>"DEMO");
 print "</B></TD>\n";
 print $query->end_form;
-print "<TD><B><A HREF='help.feature-map.html'>MANUAL</A></B></TD>\n";
-##print "<TD><B><A HREF='demo.feature-map.html'>DEMO</A></B></TD>\n";
+#print "<TD><B><A HREF='help.XYgraph.html'>MANUAL</A></B></TD>\n";
 
 
 

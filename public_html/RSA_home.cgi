@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSA_home.cgi,v 1.11 2003/10/01 13:46:46 jvanheld Exp $
+# $Id: RSA_home.cgi,v 1.12 2003/10/29 09:04:36 jvanheld Exp $
 #
-# Time-stamp: <2003-10-01 15:45:52 jvanheld>
+# Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
 ############################################################
 #### this cgi script fills the HTML form for the program dna-pattern
@@ -145,7 +145,7 @@ print <<EndText;
   <A HREF="http://rsat.ulb.ac.be/rsat/" target="_top">
   <B>Brussels - Belgium</B><BR>
   <IMG SRC="images/manneken_pis.jpg" HEIGHT=80 WIDTH=53 BORDER=0><BR>
-  <FONT SIZE=-2>
+  <FONT SIZE=-1>
   http://rsat.ulb.ac.be/rsat/</A>
   </FONT>
   </TD>
@@ -154,7 +154,7 @@ print <<EndText;
   <A HREF="http://embnet.cifn.unam.mx/rsa-tools/" target="_top">
   <B>Cuernavaca - Mexico</B><BR>
   <IMG SRC="images/zapata.jpg" HEIGHT=80 WIDTH=89 BORDER=0><BR>
-  <FONT SIZE=-2>http://embnet.cifn.unam.mx/rsa-tools/</A>
+  <FONT SIZE=-1>http://embnet.cifn.unam.mx/rsa-tools/</A>
   </FONT>
   </TD>
   
@@ -162,15 +162,25 @@ print <<EndText;
   <A HREF="http://liv.bmc.uu.se/rsa-tools/" target="_top">
   <B>Uppsala - Sweden</B><BR>
   <IMG SRC="images/uppsala_lcb.jpg" HEIGHT=80 BORDER=0><BR>
-  <FONT SIZE=-2>http://liv.bmc.uu.se/rsa-tools/</A>
+  <FONT SIZE=-1>http://liv.bmc.uu.se/rsa-tools/</A>
+  </FONT>
+  </TD>
+
+</tr></tr>
+
+  <TD ALIGN=CENTER>
+  <A HREF="http://gin.univ-mrs.fr/~jvanheld/rsa-tools/" target="_top">
+  <B>Marseille - France</B><BR>
+  <IMG SRC="images/calanques.jpg" HEIGHT=80 BORDER=0><BR>
+  <FONT SIZE=-1>http://gin.uiv-mrs.fr/~jvanheld/rsa-tools/</A>
   </FONT>
   </TD>
 
   <TD ALIGN=CENTER>
-  <A HREF="http://flychip.org.uk/rsa-tools/" target="_top">
+  <A HREF="http://www.flychip.org.uk/rsa-tools/" target="_top">
   <B>Cambridge - UK</B><BR>
   <IMG SRC="images/cambridge.jpg" HEIGHT=80 BORDER=0><BR>
-  <FONT SIZE=-2>http://flychip.org.uk/rsa-tools/</A>
+  <FONT SIZE=-1>http://www.flychip.org.uk/rsa-tools/</A>
   </FONT>
   </TD>
 

@@ -52,6 +52,30 @@ information is ignored. <P>
 
 </ul>
 
+<A NAME="feattype"></A>
+<h4>Feature type</h4>
+<ul>
+Currently supported: <b>CDS</b>, <b>mRNA</b>.
+
+<P>
+Some Genbank flat files contain only CDSs (e.g. bacteria), some also
+contain mRNAs (e.g. <i>A.thaliana</i>). When mRNAs are annotated in
+Genbank, their coordinates are stored and can be used.
+
+<P>
+The advantage of using mRNA is that, if the mRNA is complete (which is
+not always the case), the upstream regions aretrieved relative to the
+transcription initiation site, rather than the start codon.
+
+<P>
+<b>Remarks</b>
+<ol>
+<li>One gene can be associated to multiple CDSs and to multiple mRNAs.
+<li>Many annotated "mRNAs" seem to be actually CDS (e.g. in June 2003,
+12,000 out of 27,000 mRNAs from <i>A.thaliana</i> start with ATG).
+</ol>
+
+</ul>
 <A NAME="sequence_type"></A>
 <h4>Sequence type</h4>
 <ul>

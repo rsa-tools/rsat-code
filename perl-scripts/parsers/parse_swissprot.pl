@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_swissprot.pl,v 1.27 2002/12/09 00:23:01 jvanheld Exp $
+# $Id: parse_swissprot.pl,v 1.28 2003/10/29 09:04:13 jvanheld Exp $
 #
-# Time-stamp: <2002-11-25 17:41:53 jvanheld>
+# Time-stamp: <2003-07-10 11:52:54 jvanheld>
 #
 ############################################################
 
@@ -15,11 +15,11 @@ BEGIN {
 	push @INC, "$script_dir/perllib";
     }
 }
-require "PFBP_config.pl";
-require "PFBP_classes.pl";
-require "PFBP_util.pl";
-require "PFBP_parsing_util.pl";
-require "PFBP_loading_util.pl";
+require "config.pl";
+require "lib/load_classes.pl";
+require "lib/util.pl";
+require "lib/parsing_util.pl";
+require "lib/loading_util.pl";
 use SWISS::Entry;
 
 package main;
@@ -59,7 +59,7 @@ package main;
     $dir{output} = "$parsed_data/$export_subdir/$delivery_date";
     
     #### export classes
-    push @classes, "PFBP::Polypeptide";
+    push @classes, "classes::Polypeptide";
 
     #### oracle schema
     $schema = "swissprot";
@@ -170,7 +170,7 @@ package main;
     }
 
     #### create class holders
-    $polypeptides = PFBP::ClassFactory->new_class(object_type=>"PFBP::Polypeptide",
+    $polypeptides = classes::ClassFactory->new_class(object_type=>"classes::Polypeptide",
 						  prefix=>"spp_");
     $polypeptides->set_out_fields(@out_fields);
     $polypeptides->set_attribute_header("features", join ("\t", "Feature_key", "start_pos", "end_pos", "description") );
@@ -193,7 +193,7 @@ package main;
 	warn "; Polypeptide classes\n;\t", join("\n;\t", keys %export), "\n";
 	warn "; Data sources\n;\t", join("\n;\t",  keys %data_sources), "\n";
 	warn "; Output fields\n;\t", join("\n;\t",  @out_fields), "\n";
-	&DefaultVerbose;
+	&DefaultVerbose();
     }
 
     #### parse data from original files
@@ -202,7 +202,7 @@ package main;
     }
 
     #### check that all the selected acs have been found
-    &CheckSelectedACs if ($in_file{acs});
+    &CheckSelectedACs() if ($in_file{acs});
 
     #### use first name as primary name
 #  foreach $polypeptide ($polypeptides->get_objects()) {
@@ -228,10 +228,10 @@ package main;
 				password=>$main::password,
 				dir=>"$dir{output}/sql_scripts",
 				prefix=>"",
-				dbms_address=>$main::default{dbms_address},
-				dbms=>$main::default{dbms}
+				host=>$main::host,
+				dbms=>$main::dbms
 				);
-    &ExportClasses($out_file{polypeptides}, $out_format,PFBP::Polypeptide) if ($export{obj});
+    &ExportClasses($out_file{polypeptides}, $out_format,classes::Polypeptide) if ($export{obj});
 
     &CompressParsedData();
 
@@ -270,19 +270,13 @@ VERSION
 	Last modified	2000/12/11
 	
 OPTIONS
-	-h	detailed help
-	-help	short list of options
-	-test	fast parsing of partial data, for debugging
+$generic_option_message
 	-indir	input directory. 
 		This directory should contain a download of the
 		non-redundant swiss-prot/trembl ftp site :
 		       ftp://ftp.expasy.org/databases/sp_tr_nrdb
 	-outdir	output directory.
 		The parsed data will be stored in this directory.
-	-v #	warn level
-		Warn level 1 corresponds to a restricted verbose
-		Warn level 2 reports all polypeptide instantiations
-		Warn level 3 reports failing get_attribute()
 	-enz	export enzymes only
 	-org	select an organism for exportation
 		can be used reiteratively in the command line 
@@ -301,9 +295,6 @@ OPTIONS
 		This argument can be used iteratively to parse several
 		databases. E.g.
 			   -data swissprot -data trembl
-	-obj	export data in object format (.obj file)
-		which are human-readable (with some patience 
-		and a good cup of coffee)
 	-acs	accession file
 		The parsing will be restricted to the swissprot
 		accession numbers (AC field) or identifers (ID)
@@ -311,19 +302,11 @@ OPTIONS
 		identifier must come as the first word of a new line
 		(all subsequent words are ignored).  
 		This option is incompatible with the option -org.
-	-clean	remove all files from the output directory before
-		parsing
 	-fields
 		Fields to be exported. Several fields can be provided,
 		separated by commas. Example:
 			  -fields id,names,ene,ECs,swissprot_ids
 	-seq    return polypeptide bioseqs
-	-dbms	database management system
-		supported: oracle, postgresql
-	-dbms_address	
-		address of the database management system
-	-schema	database schema
-
 EXAMPLE
 	parse_polypeptides.pl -v 2 -org ecoli -data swissprot -enz
 EndHelp
@@ -395,6 +378,7 @@ sub ParseSwissprot {
     my $entries = 0;
     while ($text_entry = <DATA>){
 	$entries++;
+	warn "; Entry\t$entries\n" if ($verbose >= 2);
 	
 	my $parse = 1;
 
@@ -607,6 +591,7 @@ sub ParseSwissprot {
 	
     }
     close DATA;
+
     
 #    $polypeptides->index_names();
     return 1;

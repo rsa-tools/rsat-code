@@ -21,9 +21,9 @@ package GV::GraphUtil;
 }
 
 
-package PFBP::PathwayDiagram;
+package classes::PathwayDiagram;
 {
-    @ISA = qw ( PFBP::DatabaseObject );
+    @ISA = qw ( classes::DatabaseObject );
     ### class attributes
     $_count = 0;
     $_prefix = "pwdg_";
@@ -108,7 +108,7 @@ package PFBP::PathwayDiagram;
 	####    $diagram->add_node(id=>$id, label=>$label);
 	my ($diagram, %args) = @_;
 	my $element_nb = $diagram->incr_element_count();
-	my $node = new PFBP::PathwayDiagramNode (id=>$element_nb, ### default id is element nb
+	my $node = new classes::PathwayDiagramNode (id=>$element_nb, ### default id is element nb
 						 %args);
 	my $id = $node->get_attribute("id");
 	my $label = $node->get_attribute("label");
@@ -127,7 +127,7 @@ package PFBP::PathwayDiagram;
 	die "Error: arc cannot be created withour specifying attributes 'from' and 'to'\n";
     }
     my $element_nb = $diagram->incr_element_count();
-    my $arc = new PFBP::PathwayDiagramArc (id=>$element_nb, ### default id is element nb
+    my $arc = new classes::PathwayDiagramArc (id=>$element_nb, ### default id is element nb
 					   %args);
     my $id = $arc->get_attribute("id");
     ${$diagram::_id_index{uc($id)}} = $arc;
@@ -367,13 +367,13 @@ package PFBP::PathwayDiagram;
 }
 
 
-package PFBP::PathwayDiagramNode;
+package classes::PathwayDiagramNode;
 ### the pathway diagram node must be of type :
 ### - BiochemicalEntity, 
 ### - BiochemicalActivity,
 ### - Pathway
 {
-  @ISA = qw ( PFBP::DatabaseObject );
+  @ISA = qw ( classes::DatabaseObject );
   ### class attributes
   $_count = 0;
   $_prefix = "pwdn_";
@@ -404,13 +404,13 @@ package PFBP::PathwayDiagramNode;
   }
 }
 
-package PFBP::PathwayDiagramArc;
+package classes::PathwayDiagramArc;
 ### the pathway diagram arc must be of type :
 ### - BiochemicalEntity, 
 ### - BiochemicalActivity,
 ### - Pathway
 {
-  @ISA = qw ( PFBP::DatabaseObject );
+  @ISA = qw ( classes::DatabaseObject );
   ### class attributes
   $_count = 0;
   $_prefix = "pwda_";

@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gibbs.cgi,v 1.8 2003/04/17 20:42:46 jvanheld Exp $
+# $Id: gibbs.cgi,v 1.9 2003/10/29 09:04:36 jvanheld Exp $
 #
-# Time-stamp: <2003-04-17 22:42:20 jvanheld>
+# Time-stamp: <2003-05-13 11:30:48 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -83,8 +83,6 @@ if ($query->param('output') eq "display") {
     ### execute the command ###
     $result_file = "$TMP/$tmp_file_name.res";
     $matrix_file = "$TMP/$tmp_file_name.matrix";
-    &DelayedRemoval($result_file);
-    &DelayedRemoval($matrix_file);
     
     system "$command $parameters > $result_file";
     system "$matrix_from_gibbs_command -i $result_file -o $matrix_file";
@@ -98,6 +96,9 @@ if ($query->param('output') eq "display") {
     
     &PipingForm();
   
+    &DelayedRemoval($result_file);
+    &DelayedRemoval($matrix_file);
+
     print "<HR SIZE = 3>";
 } elsif ($query->param('output') =~ /server/i) {
     &ServerOutput("$command $parameters", $query->param('user_email'));

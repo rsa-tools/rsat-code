@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_glaxo.pl,v 1.5 2002/12/09 00:22:36 jvanheld Exp $
+# $Id: parse_glaxo.pl,v 1.6 2003/10/29 09:04:13 jvanheld Exp $
 #
-# Time-stamp: <2002-05-31 17:06:41 jvanheld>
+# Time-stamp: <2003-07-10 11:53:01 jvanheld>
 #
 ############################################################
 ### parse_ligand.plt
@@ -13,15 +13,15 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`"); ### add the program's directory to the lib path
 }
-require "PFBP_classes.pl";
-require "PFBP_config.pl";
-require "PFBP_util.pl";
-require "PFBP_parsing_util.pl";
+require "lib/load_classes.pl";
+require "config.pl";
+require "lib/util.pl";
+require "lib/parsing_util.pl";
 
 ### specific classes for Glaxo parsing
-package PFBP::Smiles;
+package classes::Smiles;
 {
-    @ISA = qw ( PFBP::DatabaseObject );
+    @ISA = qw ( classes::DatabaseObject );
     ### class attributes
     $_count = 0;
     $_prefix = "gsm_";
@@ -37,9 +37,9 @@ package PFBP::Smiles;
 			       source=>"SCALAR");
 }
 
-package PFBP::ECreference;
+package classes::ECreference;
 {
-    @ISA = qw ( PFBP::DatabaseObject );
+    @ISA = qw ( classes::DatabaseObject );
     ### class attributes
     $_count = 0;
     $_prefix = "grf_";
@@ -51,9 +51,9 @@ package PFBP::ECreference;
 			       source=>"SCALAR");
 }
 
-package PFBP::BrendaName;
+package classes::BrendaName;
 {
-    @ISA = qw ( PFBP::Compound );
+    @ISA = qw ( classes::Compound );
     ### class attributes
     $_count = 0;
     $_prefix = "gbn_";
@@ -70,9 +70,9 @@ package PFBP::BrendaName;
 			       Isomer=>"ARRAY");
 }
 
-package PFBP::Biosequence;
+package classes::Biosequence;
 {
-    @ISA = qw ( PFBP::DatabaseObject );
+    @ISA = qw ( classes::DatabaseObject );
     ### class attributes
     $_count = 0;
     $_prefix = "gbs_";
@@ -110,10 +110,10 @@ $out_format = "obj";
 $export_subdir = "glaxo";
 $dir{output} = "$parsed_data/${export_subdir}/$delivery_date";
 
-push @classes, "PFBP::Smiles";
-push @classes, "PFBP::BrendaName";
-push @classes, "PFBP::Biosequence";
-push @classes, "PFBP::ECreference";
+push @classes, "classes::Smiles";
+push @classes, "classes::BrendaName";
+push @classes, "classes::Biosequence";
+push @classes, "classes::ECreference";
 
 &ReadArguments;
 
@@ -146,7 +146,7 @@ if ($test) {
 &DefaultVerbose if ($verbose >= 1);
 
 ### parse data from original files
-$smiles = PFBP::ClassFactory->new_class(object_type=>"PFBP::Smiles",
+$smiles = classes::ClassFactory->new_class(object_type=>"classes::Smiles",
 					prefix=>"gsm_");
 @smiles_out_fields = qw (id
 			 source
@@ -165,12 +165,12 @@ if ($export{analysis}) {
 }
 $smiles->set_out_fields(@smiles_out_fields);
 
-$brenda_names = PFBP::ClassFactory->new_class(object_type=>"PFBP::BrendaName",
+$brenda_names = classes::ClassFactory->new_class(object_type=>"classes::BrendaName",
 					      prefix=>"gbn_");
 
-$biosequences = PFBP::ClassFactory->new_class(object_type=>"PFBP::Biosequence",
+$biosequences = classes::ClassFactory->new_class(object_type=>"classes::Biosequence",
 					      prefix=>"gbs_");
-$ec_references = PFBP::ClassFactory->new_class(object_type=>"PFBP::ECreference",
+$ec_references = classes::ClassFactory->new_class(object_type=>"classes::ECreference",
 					       prefix=>"grf_");
 &ParseGlaxoFile();
 #$smiles->index_names();

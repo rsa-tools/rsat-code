@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence_form.cgi,v 1.1 2002/01/07 02:00:55 jvanheld Exp $
+# $Id: purge-sequence_form.cgi,v 1.2 2003/10/29 09:04:37 jvanheld Exp $
 #
-# Time-stamp: <2002-01-07 03:00:16 jvanheld>
+# Time-stamp: <2003-10-01 12:17:22 jvanheld>
 #
 ############################################################
 #### this cgi script fills the HTML form for the program purge-sequence
@@ -28,6 +28,7 @@ $default{match_len} = 40;
 $default{mismatches} = 3;
 $default{expected} = "auto";
 $default{both_strands} = "on";
+$default{treatment} = "mask";
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
@@ -41,8 +42,8 @@ foreach $key (keys %default) {
 
 print "<CENTER>\n";
 print "Discards duplicated segments from a sequence set<BR>\n";
-print "Program developed by <A HREF='mailto:kurtz\@TechFak.Uni-Bielefeld.DE (Stefan Kurtz)'>Stefan Kurtz</A><BR>\n";
-print "Web interface by <A HREF='mailto:jvanheld\@ucmb.ulb.ac.be'>Jacques van Helden</A>).\n";
+print "Program developed by <a target=_blank href=http://www.techfak.uni-bielefeld.de/~kurtz/>Stefan Kurtz</a> (<A HREF='mailto:kurtz\@TechFak.Uni-Bielefeld.DE (Stefan Kurtz)'>kurtz\@TechFak.Uni-Bielefeld.DE</A>)<BR>\n";
+print "Web interface by <a target=_blank href=http://www.ucmb.ulb.ac.be/~jvanheld/>Jacques van Helden</a> (<A HREF='mailto:jvanheld\@ucmb.ulb.ac.be'>jvanheld\@ucmb.ulb.ac.be</A>).\n";
 print "</CENTER>\n";
 
 
@@ -51,7 +52,7 @@ print $query->start_multipart_form(-action=>"purge-sequence.cgi");
 #print "<FONT FACE='Helvetica'>";
 
 #### input sequence
-&DisplaySequenceChoice;
+&DisplaySequenceChoice();
 
 ### add reverse complement strand
 print "&nbsp;" x 5;
@@ -62,6 +63,14 @@ print "<A HREF='help.purge-sequence.html#both_strands'><B>\n";
 print "purge reverse complement strand\n";
 print "</B></A>\n";
 
+print "<BR>\n";
+
+### delete or mask repeats them
+print "&nbsp;" x 5;
+print "<B><A HREF='help.oligo-analysis.html#treatment'>Treatment for repeats</A>&nbsp;</B>\n";
+print $query->popup_menu(-name=>'treatment',
+			 -Values=>["delete","mask"],
+			 -default=>$default{treatment});
 print "<BR>\n";
 
 ### match length
@@ -81,8 +90,8 @@ print $query->textfield(-name=>'mismatches',
 print "<BR>\n";
 
 
-### send results by e-mail or display on the browser
-&SelectOutput;
+### send results by email or display on the browser
+&SelectOutput("server");
 
 ### action buttons
 print "<UL><UL><TABLE>\n";

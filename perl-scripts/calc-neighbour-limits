@@ -1,9 +1,9 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: calc-neighbour-limits,v 1.5 2002/06/06 10:08:27 jvanheld Exp $
+# $Id: calc-neighbour-limits,v 1.6 2003/10/29 09:04:12 jvanheld Exp $
 #
-# Time-stamp: <2002-06-06 12:08:25 jvanheld>
+# Time-stamp: <2003-07-06 20:15:37 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -38,7 +38,7 @@ $out = &OpenOutputFile($outfile{output});
 
 ###### execute the command #########
 &CheckOrganism($organism_name);
-&ReadOrfPositions($organism_name);
+&ReadFeatures($organism_name);
 &CalcNeighbourLimits();
 
 ###### print output ######
@@ -154,7 +154,7 @@ sub ReadArguments {
       &PrintHelp;
       
       ### list of options
-    } elsif ($ARGV[0] eq "-help") {
+    } elsif ($ARGV[$a] eq "-help") {
       &PrintOptions;
       
       ### organism

@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_regulation.pl,v 1.8 2002/12/09 00:22:20 jvanheld Exp $
+# $Id: parse_regulation.pl,v 1.9 2003/10/29 09:04:13 jvanheld Exp $
 #
-# Time-stamp: <2002-11-29 10:28:28 jvanheld>
+# Time-stamp: <2003-07-10 11:52:58 jvanheld>
 #
 ############################################################
 ### parse_regulation.plt
@@ -13,10 +13,10 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`"); ### add the program's directory to the lib path
 }
-require "PFBP_classes.pl";
-require "PFBP_config.pl";
-require "PFBP_util.pl";
-require "PFBP_parsing_util.pl";
+require "lib/load_classes.pl";
+require "config.pl";
+require "lib/util.pl";
+require "lib/parsing_util.pl";
 
 ################################################################
 #
@@ -123,12 +123,12 @@ package main;
     &DefaultVerbose() if ($verbose >= 1);
 
     #### class factories
-    $controlOfControls = PFBP::ClassFactory->new_class(object_type=>"PFBP::ControlOfControl",
+    $controlOfControls = classes::ClassFactory->new_class(object_type=>"classes::ControlOfControl",
 						       prefix=>"act_");
-    $transcriptionalRegulations = PFBP::ClassFactory->new_class(object_type=>"PFBP::TranscriptRegul",
+    $transcriptionalRegulations = classes::ClassFactory->new_class(object_type=>"classes::TranscriptRegul",
 								prefix=>"trr_");
 
-    $indirectInteractions = PFBP::ClassFactory->new_class(object_type=>"PFBP::IndirectInteraction",
+    $indirectInteractions = classes::ClassFactory->new_class(object_type=>"classes::IndirectInteraction",
 							  prefix=>"iin_");
 
     #### output fields
@@ -178,7 +178,7 @@ package main;
     
     $transcriptionalRegulations->set_out_fields(@out_fields) unless ($export{all}) ;
 
-    $inductions = PFBP::ClassFactory->new_class(object_type=>"PFBP::Induction",
+    $inductions = classes::ClassFactory->new_class(object_type=>"classes::Induction",
 						prefix=>"ind_");
 
     #### indexes
@@ -194,9 +194,9 @@ package main;
     #$inductions->dump_tables();
 
 
-    push @classes, ("PFBP::TranscriptRegul");
-    #push @classes, ("PFBP::ControlOfControl");
-    #push @classes, ("PFBP::Induction");
+    push @classes, ("classes::TranscriptRegul");
+    #push @classes, ("classes::ControlOfControl");
+    #push @classes, ("classes::Induction");
     &ExportClasses($out_file{regulation}, $out_format, @classes)  if ($export{obj});
 
 
@@ -625,13 +625,13 @@ sub LoadIndexes {
 
 
     #### gene names
-    $index{name_gene} = PFBP::Index->new();
+    $index{name_gene} = classes::Index->new();
     warn ("; ", &AlphaDate(), "\tgene name index ...\n") 
 	if ($verbose >= 1);
     $index{name_gene}->load($in_file{gene_names}, 1, 0, reverse=>1);
 
     #### gene organism
-    $index{gene_organism} = PFBP::Index->new();
+    $index{gene_organism} = classes::Index->new();
 #    $in_file{genes} .= " perl -pe 's|H.sapiens|Homo sapiens|' |";
     warn ("; ", &AlphaDate(), "\tgene organism index ...\n") 
 	if ($verbose >= 1);
@@ -639,13 +639,13 @@ sub LoadIndexes {
 
 
     #### polypeptide names from swissprot
-    $index{name_polypeptide} = PFBP::Index->new();
+    $index{name_polypeptide} = classes::Index->new();
     warn ("; ", &AlphaDate(), "\tpolypeptide name index ...\n") 
 	if ($verbose >= 1);
     $index{name_polypeptide}->load($in_file{polypeptide_names}, 1, 0, reverse=>1);
 
     #### polypeptide organisms from swissprot
-    $index{polypeptide_organism} = PFBP::Index->new();
+    $index{polypeptide_organism} = classes::Index->new();
     warn ("; ", &AlphaDate(), "\tpolypeptide organism index ...\n") 
 	if ($verbose >= 1);
     $index{polypeptide_organism}->load($in_file{polypeptides}, 0, 1);

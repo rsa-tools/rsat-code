@@ -29,13 +29,10 @@ unless (defined(%return)) {
    
 #### organism
 $organism = &CheckOrganism($organism_name);
-&ReadOrfPositions($organism_name);
+&ReadFeatures($organism_name);
 
  
-#&OldReadOrganism;
-
-
-#&OldReadOrfpositions;
+#&OldReadOrganism();
 
 
 &PrintVerbose if ($verbose);
@@ -286,116 +283,7 @@ sub ReadArguments {
 }
 
 
-#  sub OldReadOrganism {
-#  #### initialize parameters according to organism ####
-#      if ($organism_name eq "yeast") {
-#  #	$feature_file = "$RSA/data/yeast/orfs/ORF_table.txt";
-#  	$id_column = 0;
-#  	$type_column = -1;
-#  	$gene_column = 2;
-#  	$chr_column = 3;
-#  	$start_column = 4;
-#  	$end_column = 5;
-#  	$strand_column = -1; ### there is no such column in the ORF file; 
-#  	### strand C is indicated by the fact that start position > end position
-	
-#  	push @chr_list, 'I';
-#  	push @chr_list, 'II';
-#  	push @chr_list, 'III';
-#  	push @chr_list, 'IV';
-#  	push @chr_list, 'V';
-#  	push @chr_list, 'VI';
-#  	push @chr_list, 'VII';
-#  	push @chr_list, 'VIII';
-#  	push @chr_list, 'IX';
-#  	push @chr_list, 'X';
-#  	push @chr_list, 'XI';
-#  	push @chr_list, 'XII';
-#  	push @chr_list, 'XIII';
-#  	push @chr_list, 'XIV';
-#  	push @chr_list, 'XV';
-#  	push @chr_list, 'XVI';
-	
-#  	foreach $chr (@chr_list) {
-#  	    $seq_file{$chr} = "$RSA/data/yeast/sequences/$chr";
-#  	}
-#  	$seq_format = "raw";
-#      } elsif ($organism_name eq "coli") {
-#  #	$feature_file = "$RSA/data/coli/sequences/CDS_table.txt";
-#  	$id_column = 0;
-#  	$type_column = 1;
-#  	$gene_column = 2;
-#  	$chr_column = -1;
-#  	$start_column = 3;
-#  	$end_column = 4;
-#  	$strand_column = 5;
-	
-#  	push @chr_list, 'genome';
-#  	$seq_file{$chr_list[0]} = "$RSA/data/coli/sequences/$chr_list[$0]";
-#  	$seq_format = "fasta";
-#      } elsif ($supported_organism{$organism_name}) {
-#  #	$feature_file = $supported_organism{$organism_name}->{'features'};
-#  	$id_column = 0;
-#  	$type_column = 1;
-#  	$gene_column = 2;
-#  	$chr_column = 3;
-#  	$start_column = 4;
-#  	$end_column = 5;
-#  	$strand_column = 6;
-	
-#  	push @chr_list, $organism_name;
-#  	$seq_file{$chr_list[0]} = $supported_organism{$organism_name}->{'genome'};
-#  	$seq_format =$supported_organism{$organism_name}->{'seq_format'};
-#      } else {
-#  	die "Error: you did not specify the organism\n";
-#      }
-#  }
 
-
-#  sub OldReadOrfpositions {
-    
-#  #### read all ORF positions ####
-#      open ORFS, $supported_organism{$organism_name}->{'features'} ||
-#  	die "	Cannot open ORF position file ", $supported_organism{$organism_name}->{'features'}, "\n";
-
-
-#      while (<ORFS>) {
-#  	next if (/^;/);
-#  	next unless (/\S/);
-#  	s/\t\t/\t-\t/;
-#  	chomp;
-#  	@fields = split, /\t/;
-	
-#  	### only take into consideration the CDS features
-#  	if (($type_column >= 0) && ($fields[$type_column] ne "CDS")) {
-#  	    next;
-#  	}
-	
-#  	$orf_count++;
-#  	$id = $fields[$id_column];
-#  	if ($chr_column < 0) {
-#  	    $chr{$id} = "genome";
-#  	} else {
-#  	    $chr{$id} = $fields[$chr_column];
-#  	}
-#  	push @{$ids{$chr{$id}}}, $id;
-#  	$start{$id} = $fields[$start_column];
-#  	$end{$id} = $fields[$end_column];
-#  	$left{$id} = &min($start{$id},$end{$id});
-#  	$right{$id} = &max($start{$id},$end{$id});
-#  	if ($organism_name eq "yeast") {
-#  	    if ($start{$id} > $end{$id}) {
-#  		$strand{$id} = "R";
-#  	    } else {
-#  		$strand{$id} = "D";
-#  	    }
-#  	} else {
-#  	    $strand{$id} = $fields[$strand_column];
-#  	}
-#  #print "$id\t$chr{$id}\t$left{$id}\t$right{$id}\t$strand{$id}\n";
-#      }
-#      close ORFS;
-#  }
 
 ################################################################
 #### print some verbosity

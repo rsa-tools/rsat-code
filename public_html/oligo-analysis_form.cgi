@@ -18,9 +18,9 @@ $default{title} = "";
 $default{sequence} = "";
 $default{sequence_format} = "fasta";
 $default{sequence_file} = "";
-$default{exp_freq_file} = "";
+$default{upload_freq_file} = "";
 $default{sequence_type} = "dna";
-$default{oligo_size} = 6;
+$default{oligo_length} = 6;
 $default{background} = "upstream-noorf";
 $default{markov_order} = 2;
 $default{pseudo_weight} = "0.05";
@@ -41,6 +41,7 @@ $default{occurrence_threshold} = "1";
 $default{ms_threshold} = "none";
 $default{proba_occ_threshold} = "none";
 $default{occ_significance_threshold} = "0";
+$default{return}="fields";
 
 ### print the form ###
 &RSA_header("oligo-analysis");
@@ -96,10 +97,10 @@ print "<HR width=550 align=left>\n";
 
 
 ### oligo size
-print "<B><A HREF='help.oligo-analysis.html#oligo_size'>Oligonucleotide size</A>&nbsp;</B>\n";
-print $query->popup_menu(-name=>'oligo_size',
+print "<B><A HREF='help.oligo-analysis.html#oligo_length'>Oligonucleotide size</A>&nbsp;</B>\n";
+print $query->popup_menu(-name=>'oligo_length',
 			 -Values=>[1,2,3,4,5,6,7,8],
-			 -default=>$default{oligo_size});
+			 -default=>$default{oligo_length});
 
 ### prevent overlapping matches of the same pattern
 print $query->checkbox(-name=>'noov',
@@ -138,7 +139,7 @@ print ( "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='background' CHECKED>",
 print "<ul>";
 print ( "<a href='help.oligo-analysis.html#background'>Background model</a> &nbsp;&nbsp;&nbsp;&nbsp;", 
 	$query->popup_menu(-name=>'background',
-			   -Values=>["upstream","upstream-noorf","non-coding"],
+			   -Values=>["upstream","upstream-noorf","intergenic"],
 			   -default=>$default{background}));
 	
 print "<br>", &OrganismPopUpString;
@@ -193,18 +194,24 @@ print "<HR width=550 align=left>\n";
 #				    'Residue frequencies from input sequence',
 #				    'Markov Chain (higher order dependencies)',
 #				    'Lexicon partitioning',
-#				    'Oligo frequencies from all non-coding regions'],
+#				    'Oligo frequencies from all intergenic regions'],
 #			  -default=>$default{freq_estimate});
 #print "<BR>";
 
 
 
 #### table with all the statistics and thresholds
+print "<h3>Return</h3>\n";
+
+print ("<INPUT TYPE='radio' NAME='return' VALUE='fields' checked>", 
+       "One row per pattern");
+
+
 print "<BLOCKQUOTE>\n";
 print $query->table({-border=>1,-cellpadding=>0,-cellspacing=>0},
 		    $query->Tr({-align=>left,-valign=>TOP},
 			 [
-			  $query->th([" <A HREF='help.oligo-analysis.html#return'>Return</A> ",
+			  $query->th([" <A HREF='help.oligo-analysis.html#return_fields'>Fields</A> ",
 				   " <A HREF='help.oligo-analysis.html#thresholds'>Lower<BR>Threshold</A> ",
 				   " <A HREF='help.oligo-analysis.html#thresholds'>Upper<BR>Threshold</A> "]),
 
@@ -277,12 +284,14 @@ print $query->table({-border=>1,-cellpadding=>0,-cellspacing=>0},
 			)
 		);
 print "</BLOCKQUOTE>\n";
+print ("<INPUT TYPE='radio' NAME='return' VALUE='table'>", 
+       "One row per gene (occurrence counts only, email output recommended)", "<P>\n");
 
 
 print "<HR width=550 align=left>\n";
 
-### send results by e-mail or display on the browser
-&SelectOutput;
+### send results by email or display on the browser
+&SelectOutput();
 
 
 ### action buttons

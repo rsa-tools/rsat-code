@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: position-analysis,v 1.17 2003/05/06 12:27:26 jvanheld Exp $
+# $Id: position-analysis,v 1.18 2003/10/29 09:04:12 jvanheld Exp $
 #
-# Time-stamp: <2003-05-06 14:17:47 jvanheld>
+# Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -71,17 +71,7 @@ if ($outputfile) {
     $dir{output} =`dirname $outputfile`; 
     chomp $dir{output};
 }
-if ($dir{output}) {
-    unless (-d $dir{output}) {
-	warn "Creating directory $dir{output}\n";
-    }
-    mkdir $dir{output}, 0755;
-    unless (-d $dir{output}) {
-	&FatalError("Cannot create output directory $dir{output}");
-    }
-} else {
-    $dir{output} = ".";
-}
+&CheckOutputDir($dir{output});
 $out = &OpenOutputFile($outputfile);
 
 ### open sequence file ###

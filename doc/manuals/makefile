@@ -3,9 +3,9 @@
 
 ############################################################
 #
-# $Id: makefile,v 1.1 2003/10/01 11:14:37 jvanheld Exp $
+# $Id: makefile,v 1.2 2003/10/29 09:04:17 jvanheld Exp $
 #
-# Time-stamp: <2003-10-01 13:11:59 jvanheld>
+# Time-stamp: <2003-10-02 15:13:34 jvanheld>
 #
 ############################################################
 
@@ -13,6 +13,7 @@ MAKE=make -s
 RM=rm -f
 
 TEX_FILES = \
+	test.tex \
 	install_guide.tex \
 	tutorial_shell_rsat.tex
 

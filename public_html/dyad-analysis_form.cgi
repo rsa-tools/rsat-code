@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis_form.cgi,v 1.7 2002/11/16 14:11:15 jvanheld Exp $
+# $Id: dyad-analysis_form.cgi,v 1.8 2003/10/29 09:04:36 jvanheld Exp $
 #
-# Time-stamp: <2002-11-16 08:10:59 jvanheld>
+# Time-stamp: <2003-07-11 15:08:24 jvanheld>
 #
 ############################################################
 #### this cgi script fills the HTML form for the program dyad-analysis
@@ -34,6 +34,7 @@ $default{noov} = 'checked';
 $default{purge} = 'checked';
 $default{dyad_type} = "any dyad";
 $default{exp_freq} = "background";
+$default{upload_freq_file} = "";
 $default{background} = "upstream-noorf";
 $default{occ_significance_threshold} = "0";
 
@@ -147,6 +148,15 @@ print ( "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='monads'>",
 
 print "<BR>\n";
 
+#### custom expected frequency file
+print "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='file_upload'><a href='help.oligo-analysis.html#upload_freq_file'>Upload your own expected frequency file</a><BR>";
+
+print $query->filefield(-name=>'upload_freq_file',
+			-default=>'starting value',
+			-size=>30,
+			-maxlength=>200);
+print "<p>";
+
 
 # print $query->table({-border=>0,-cellpadding=>3,-cellspacing=>0},
 # 		    $query->Tr($query->td("<A HREF='help.dyad-analysis.html#exp_freq'><B>Expected frequency calibration</B></A>&nbsp;<BR>")),
@@ -169,10 +179,10 @@ print "<BR>\n";
 
 
 
-### send results by e-mail or display on the browser
+### send results by email or display on the browser
 &SelectOutput;
 
-print "<font color=red><B>Warning !</B> dyad-analysis is time-consuming, especially if you select a wide spacing range. If you don't obain any result after 5 minuts, we recommend e-mail output.</font><BR>\n";
+print "<font color=red><B>Warning !</B> dyad-analysis is time-consuming, especially if you select a wide spacing range. If you don't obain any result after 5 minuts, we recommend email output.</font><BR>\n";
 
 ### action buttons
 print "<UL><UL><TABLE>\n";
@@ -276,8 +286,8 @@ TACTAAATTAAGATAGAAAA";
 print "<TD><B>";
 print $query->hidden(-name=>'sequence',-default=>$demo_sequence);
 print $query->hidden(-name=>'sequence_format',-default=>"fasta");
-print $query->hidden(-name=>'spacing_from',-default=>"8");
-print $query->hidden(-name=>'spacing_to',-default=>"12");
+#print $query->hidden(-name=>'spacing_from',-default=>"8");
+#print $query->hidden(-name=>'spacing_to',-default=>"12");
 print $query->hidden(-name=>'background',-default=>"upstream");
 print $query->hidden(-name=>'organism',-default=>'Saccharomyces cerevisiae');
 #print $query->hidden(-name=>'title',-default=>'upstream sequences from the yeast GAL genes');

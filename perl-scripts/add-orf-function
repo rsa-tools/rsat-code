@@ -110,7 +110,7 @@ $out = &OpenOutputFile($outputfile);
 &CheckOrganism($organism_name);
 
 #### read data
-&ReadOrfPositions($organism_name);
+&ReadFeatures($organism_name);
 &ReadSynonyms($organism_name);
 
 
@@ -154,8 +154,8 @@ while ($current_line = <$in>) {
 #		$synonyms .= "]";
 	    }
 	}
-	print join ("\t", $current_line, $descr, $synonyms), "\n";
-#	print join "\t", "HELLO", $current_line, $query, $orf_id, $descr, "\n";
+	print $out join ("\t", $current_line, $descr, $synonyms), "\n";
+#	warn join "\t", "HELLO", $current_line, $query, $orf_id, $descr, "\n";
 #	if ($columns[$ORF_column+1] =~ /(y[a-p][rl]\S+)/i) {
 #	    $ORF_id = $1;
 #	}

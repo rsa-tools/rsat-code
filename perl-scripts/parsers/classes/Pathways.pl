@@ -4,10 +4,10 @@
 ######################### PATHWAYS AND GENERIC OBJECTS ###############################
 ######################################################################################
 
-package PFBP::ProcessNode;
+package classes::ProcessNode;
 ### A class to treat process nodes
 {
-    @ISA = qw ( PFBP::ObjectSet );
+    @ISA = qw ( classes::ObjectSet );
     ### class attributes
     $_count = 0;
     $_prefix = "pthw_";
@@ -18,10 +18,10 @@ package PFBP::ProcessNode;
     %_attribute_cardinality = (id=>"SCALAR");
 }
 
-package PFBP::Process;
+package classes::Process;
 ### A class to treat processes
 {
-    @ISA = qw ( PFBP::ProcessNode );
+    @ISA = qw ( classes::ProcessNode );
     ### class attributes
     $_count = 0;
     $_prefix = "proc_";
@@ -39,10 +39,10 @@ package PFBP::Process;
 }
 
 
-package PFBP::ProcessLeaf;
+package classes::ProcessLeaf;
 ### A class to treat process leaves
 {
-    @ISA = qw ( PFBP::ProcessNode );
+    @ISA = qw ( classes::ProcessNode );
     ### class attributes
     $_count = 0;
     $_prefix = "leaf_";
@@ -56,11 +56,11 @@ package PFBP::ProcessLeaf;
 }
 
 
-package PFBP::Pathway;
+package classes::Pathway;
 #### OBSOLETE: maintained only for backward compatibility
 ### A class to treat Pathways
 {
-  @ISA = qw ( PFBP::ObjectSet );
+  @ISA = qw ( classes::ObjectSet );
   ### class attributes
   $_count = 0;
   $_prefix = "pthw_";
@@ -79,10 +79,10 @@ package PFBP::Pathway;
 		     );
 }
 
-package PFBP::ECSet;
+package classes::ECSet;
 ### A class to treat EC numenclature
 {
-  @ISA = qw ( PFBP::ObjectSet );
+  @ISA = qw ( classes::ObjectSet );
   ### class attributes
   $_count = 0;
   $_prefix = "ecst_";

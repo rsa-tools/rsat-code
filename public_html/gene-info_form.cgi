@@ -90,7 +90,7 @@ print "&nbsp;<A HREF='help.retrieve-seq.html#match_description'><B>Match queries
 print "<P>\n";
 
 ################################################################
-### send results by e-mail or display on the browser
+### send results by email or display on the browser
 &SelectOutput;
 
 ################################################################

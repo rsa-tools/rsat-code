@@ -6,24 +6,24 @@ BEGIN {
 	push (@INC, "$`"); ### add the program's directory to the lib path
     }
 }
-require "PFBP_config.pl";
-require "PFBP_classes.pl";
-require "PFBP_parsing_util.pl";
+require "config.pl";
+require "lib/load_classes.pl";
+require "lib/parsing_util.pl";
 
 #use strict;
 #no strict "refs";
 #no strict "vars";
 
-package PFBP::EntityInState;
+package classes::EntityInState;
 {
-    @ISA = qw ( PFBP::BiochemicalEntity );
+    @ISA = qw ( classes::BiochemicalEntity );
     %_attribute_cardinality = (state=>"SCALAR",
 			       parent=>"SCALAR");
 }
 
-package PFBP::Interaction;
+package classes::Interaction;
 {
-    @ISA = qw ( PFBP::DatabaseObject );
+    @ISA = qw ( classes::DatabaseObject );
     %_attribute_cardinality = (
 			       id=>"SCALAR",
 			       type=>"SCALAR",
@@ -62,53 +62,57 @@ package main;
 {
 
     ### initialization
+
+    ### directory containing the input files 
+    $dir{input} = "/win/amaze/amaze_team/sandra/exported_tables/export_20021223/";
+
     $start_time = `date +%Y-%m-%d.%H%M%S`;
     $clean = 1;
     
     $out_format = "obj";
-    @classes = qw( PFBP::BiochemicalEntity PFBP::EntityInState PFBP::Interaction PFBP::Pathway );
+    @classes = qw( classes::BiochemicalEntity classes::EntityInState classes::Interaction classes::Pathway );
     
     #### class factory for entities
-#    $entities = PFBP::ClassFactory->new_class(object_type=>"PFBP::BiochemicalEntity",
+#    $entities = classes::ClassFactory->new_class(object_type=>"classes::BiochemicalEntity",
 #					      prefix=>"ent_");
 #    $entities->set_out_fields(qw( id type primary_name names states ));
 
     #### class for entities in state
-    $entities_in_state = PFBP::ClassFactory->new_class(object_type=>"PFBP::EntityInState",
+    $entities_in_state = classes::ClassFactory->new_class(object_type=>"classes::EntityInState",
 						       prefix=>"ens_");
     $entities_in_state->set_out_fields(qw( id type primary_name names state location parent ));
     $entities = $entities_in_state; # use the same class for all entities
 
     #### class factory for interactions
-    $interactions = PFBP::ClassFactory->new_class(object_type=>"PFBP::Interaction",
+    $interactions = classes::ClassFactory->new_class(object_type=>"classes::Interaction",
 						  prefix=>"int_");
     $interactions->set_attribute_header("inputs", "object\tsubunit\tstate\tstoeichiometry\tlocation" );
     $interactions->set_attribute_header("outputs", "object\tsubunit\tstate\tstoeichiometry\tlocation" );
     $interactions->set_out_fields(qw( id type description inputs outputs  ));
 
     #### class factory  for pathways
-    $pathways = PFBP::ClassFactory->new_class(object_type=>"PFBP::Pathway",
+    $pathways = classes::ClassFactory->new_class(object_type=>"classes::Pathway",
 					      prefix=>"pth_");
     $pathways->set_out_fields(qw( id names description entities interactions subpathways ));
 
     #### class factory  for diagrams
-    $diagrams = PFBP::ClassFactory->new_class(object_type=>"PFBP::PathwayDiagram",
+    $diagrams = classes::ClassFactory->new_class(object_type=>"classes::PathwayDiagram",
 					      prefix=>"dgm_");
 
     ### old initialisation
     $path_element_count = 0;
     $Step = 0;
 
-    ### directory containing the input files ###
-    $dir{input} = "/win/amaze/amaze_team/Sandra/export_20011208";
-    unless (-d $dir{input}) {
-	die "Error : input dir $dir{input} does not exist\n";
-    }
+    &ReadArguments();
+
 
     ### entities (entities)
     $in_file{entities} = $dir{input}."/description_of_molecules.txt";
-    $in_file{entity_state} = $dir{input}."/molecule_state.txt";
+#    $in_file{entity_state} = $dir{input}."/molecule_state.txt";
     $in_file{synonyms} = $dir{input}."/synonyms.txt";
+
+    #### bibliographic references
+    $in_file{references} = $dir{input}."/reference_description.txt";
 
     ### interactions (interactions)
     $in_file{interactions} = $dir{input}."/description_of_interactions.txt";
@@ -116,15 +120,10 @@ package main;
     $in_file{interaction_output} = $dir{input}."/interaction_target.txt";
 
     ### pathways
-    $in_file{pathway_description} = $dir{input}."/pathway_description.txt";
-    $in_file{pathway_subpathway} = $dir{input}."/pathway_subpathway.txt";
-    $in_file{pathway_interaction} = $dir{input}."/pathway_interaction.txt";
-    $in_file{pathway_entity} = $dir{input}."/pathway_molecule.txt";
-
-    #### check for the existence of all the input files
-    foreach my $file (keys %in_file) {
-	&checkfile($in_file{$file});
-    }
+#    $in_file{pathway_description} = $dir{input}."/pathway_description.txt";
+#    $in_file{pathway_subpathway} = $dir{input}."/pathway_subpathway.txt";
+#    $in_file{pathway_interaction} = $dir{input}."/pathway_interaction.txt";
+#    $in_file{pathway_entity} = $dir{input}."/pathway_molecule.txt";
 
     ### diagram dir
     $dir{diagrams} = $dir{output}."/diagrams";
@@ -143,7 +142,16 @@ package main;
     ### reports
     $out_file{errors} = $dir{output}."/sigtrans_parsing_errors.txt";
 
-    &ReadArguments;
+
+    #### check for the existence of input files
+    unless (-d $dir{input}) {
+	die "Error : input dir $dir{input} does not exist\n";
+    }
+
+    #### check for the existence of all the input files
+    foreach my $file (keys %in_file) {
+	&checkfile($in_file{$file});
+    }
 
 
 
@@ -1120,38 +1128,22 @@ close UPDATED_OUTPUTS;
 }
 
 
+################################################################
 ### read arguments from the command line
 sub ReadArguments {
-    my $a = "";
-    for $a (0..$#ARGV) {
+    for my $a (0..$#ARGV) {
 
-	### warn level
-	if (($ARGV[$a] eq "-v" ) && 
-	    ($ARGV[$a+1] =~ /^\d+$/)){
-	    $main::verbose = $ARGV[$a+1];
-	    $a++;
-
-	    ### clean
-	} elsif ($ARGV[$a] eq "-clean") {
-	    $main::clean = 1;
+	&ReadGenericOptions($a);
 	    
-
-	    ### output file
- 	} elsif ($ARGV[$a] eq "-obj") {
-	    $a++;
-	    $main::export{obj} = 1;
+	#### input directory
+	if ($ARGV[$a] =~ /^-indir/) {
+	    $main::dir{input} = $ARGV[$a+1];
 
 	    ### export diagrams
  	} elsif ($ARGV[$a] eq "-diagrams") {
 	    $a++;
 	    $main::export{diagrams} = 1;
 
-	    #### help
-	} elsif (($ARGV[$a] eq "-h") ||
-		 ($ARGV[$a] eq "-help")) {
-	    &PrintHelp;
-	    exit(0);
-	    
 	}
     }
 }
@@ -1477,15 +1469,10 @@ AUTHOR
 	Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)  
 
 OPTIONS	
-	-h	detailed help
-	-help	short list of options
-	-v #	warn level
-		Warn level 1 corresponds to a restricted verbosity
-		Warn level 2 reports all polypeptide instantiations
-		Warn level 3 reports failing get_attribute()
-	-obj	export the data in .obj format
-	-clean	remove all files from the output directory before
-		parsing
+$generic_option_message
+	-indir	input directory
+		This directory should contain the .txt files resulting
+		from the export of the Access database.
 	-diagrams
 		export pathway diagrams
 EndHelp

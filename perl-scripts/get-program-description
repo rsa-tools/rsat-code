@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-program-description,v 1.6 2002/06/06 12:07:07 jvanheld Exp $
+# $Id: get-program-description,v 1.7 2003/10/29 09:04:12 jvanheld Exp $
 #
-# Time-stamp: <2002-06-06 14:07:06 jvanheld>
+# Time-stamp: <2003-06-26 17:17:06 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -14,7 +14,7 @@ require "RSA.lib";
 
 
 #### initialise parameters ####
-my $start_time = &AlphaDate;
+my $start_time = &AlphaDate();
 
 local %infile = ();
 local %outfile = ();
@@ -23,7 +23,7 @@ local $verbose = 0;
 local $in = STDIN;
 local $out = STDOUT;
 
-&ReadArguments;
+&ReadArguments();
 
 
 #### check argument values ####
@@ -74,14 +74,14 @@ close $in if ($infile{input});
 
 ###### execute the command #########
 foreach my $program (@program_names) {
-    warn ("Getting help for\t$program\n") if ($verbose >=1);
+    warn ("Getting description for\t$program\n") if ($verbose >=1);
     my @categories = ();
     my $description = "";
     open HELP, "$program -h | ";
     while (<HELP>) {
 	next unless (/\S/);
 	if (/^([A-Z \t]+)\s*$/) {
-	    $type = $1;
+	    $type = &trim($1);
 	} elsif ($type eq "DESCRIPTION") {
 	    $description .= $_;
 
@@ -107,7 +107,7 @@ foreach my $program (@program_names) {
 ###### print output ######
 print $out ";program\tcategory\tdescription\n";
 foreach my $program (@program_names) {
-    print $out join ("\t", $program, join (";", @{$categories{$program}}), $description{$program}), "\n";
+    print $out join ("\t", $program, join ("; ", @{$categories{$program}}), $description{$program}), "\n";
 }
 
 
@@ -244,7 +244,7 @@ sub Verbose {
 	    print $out ";\t$key\t$value\n";
 	}
     }
-    print $out join ("\n;\t", ";Program names", @program_names), "\n";
+    print $out join ("\n;\t", ";Program names", @program_names), "\n" if ($verbose >= 2);
 
     if (defined(%outfile)) {
 	print $out "; Output files\n";

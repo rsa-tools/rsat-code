@@ -64,6 +64,22 @@ foreach $f (0..$#input_files) {
 ### open output file ###
 $out = &OpenOutputFile($outputfile);
 
+
+#### verbose ####
+if ($verbose) {
+    print $out "; compare-scores";
+    &PrintArguments($out);
+
+    print $out ";Input files :\n";
+    for $f (0..$#input_files) {
+	print $out ";\t$input_files[$f]\t$sc[$f]\n";
+    }
+    if ($outputfile ne "") {
+	print $out ";Output file	$outputfile\n";
+    }
+}
+
+
 #### print header line
 print $out ";key";
 foreach $f (0..$#input_files) {
@@ -86,33 +102,6 @@ foreach $key (sort keys %id) {
     }
     print $out "\n";
 }
-
-#### verbose ####
-if ($verbose) {
-    print $out "; compare-scores";
-    foreach $a (@ARGV) {
-        if (($a =~ /\S+\s+\S+/) || ($a !~ /\S/)){
-            print $out " '$a'";
-        } else {
-            print $out " $a";
-        }
-    }
-    print $out "\n";
-
-    print $out ";Input files :\n";
-    for $f (0..$#input_files) {
-	print $out ";\t$input_files[$f]\t$sc[$f]\n";
-    }
-    if ($outputfile ne "") {
-	print $out ";Output file	$outputfile\n";
-    }
-}
-
-
-
-###### print output ######
-
-
 
 
 ###### verbose ######

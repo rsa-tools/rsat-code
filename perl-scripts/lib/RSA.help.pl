@@ -10,23 +10,23 @@ sub help_message {
     my ($help_request) = @_;
     my $help_mesage = "";
     
-    if ($help_request eq "family file") {
-	$help_message = "FAMILY FILE
-	The family file specifies the composition of several gene
+    if ($help_request eq "class file") {
+	$help_message = "CLASS FILE
+	The class file specifies the composition of several gene
 	families.  It is a text file containing 2 columns separated by
 	a tab character.
 
-	    col 1:   family member
-	    col 2:   family name
+	    col 1:   class member
+	    col 2:   class name
 
         Additional columns are ignored. 
 
 	Lines starting with a semicolumn (;) are ignored, allowing to
-	document the family files with comments.
+	document the class files with comments.
 
         A given element (e.g. gene) can belong simultaneously to
         several families. In such a case, the element will appear on
-        several rows (one per family),
+        several rows (one per class),
 
 	Example
 		; genes responding to Phosphate stress

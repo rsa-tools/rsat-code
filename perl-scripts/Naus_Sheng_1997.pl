@@ -6,13 +6,13 @@ if (($ARGV[0] eq "-help") || ($ARGV[0] eq "-h")) {
 NAME
 	Naus_Sheng_1997.pl
 	
+	July 1997 by Jacques van Helden
+
+DESCRIPTION
 	This scripts calculates the approximations according to 
 	   Naus, J.I. and Sheng, K. (1997). 
 	   Matching among multiple random sequence. 
 	   Bulletin of Mathematical Biology 59(3): 483-496.
-	
-	July 1997 by Jacques van Helden
-
 USAGE
 	Naus_Sheng_1997.pl -w word_length -T seq_length
 		-R #_matching_seq  [-S #_seq] [-wp pattern_proba] 

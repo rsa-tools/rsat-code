@@ -38,6 +38,7 @@ sub sub_sequence {
     }
 
     if ($offset < 0) {
+	$len += $offset;
 	$offset = 0;
     } elsif ($offset + $len > $seq_len - 1) {
 	$len = $seq_len -1 - $offset;
@@ -46,23 +47,23 @@ sub sub_sequence {
     return ($result);
 }
 
+### based on the IUPAC code for partly specified nucleotides
+###	A			(Adenine)
+###	C			(Cytosine)
+###	G			(Guanine)
+###	T			(Thymine)
+###	R	= A or G        (puRines)
+###	Y	= C or T        (pYrimidines)
+###	W	= A or T        (Weak hydrogen bonding)
+###	S	= G or C        (Strong hydrogen bonding)
+###	M	= A or C        (aMino group at common position)
+###	K	= G or T        (Keto group at common position)
+###	H	= A, C or T     (not G)
+###	B	= G, C or T     (not A)
+###	V	= G, A, C       (not T)
+###	D	= G, A or T     (not C)
+###	N	= G, A, C or T  (aNy)
 sub InitMatchScores {
-    ### based on the IUPAC code for partly specified nucleotides
-    ###	A			(Adenine)
-    ###	C			(Cytosine)
-    ###	G			(Guanine)
-    ###	T			(Thymine)
-    ###	R	= A or G        (puRines)
-    ###	Y	= C or T        (pYrimidines)
-    ###	W	= A or T        (Weak hydrogen bonding)
-    ###	S	= G or C        (Strong hydrogen bonding)
-    ###	M	= A or C        (aMino group at common position)
-    ###	K	= G or T        (Keto group at common position)
-    ###	H	= A, C or T     (not G)
-    ###	B	= G, C or T     (not A)
-    ###	V	= G, A, C       (not T)
-    ###	D	= G, A or T     (not C)
-    ###	N	= G, A, C or T  (aNy)
     $match{A}{A} = 1/4;
     $match{C}{C} = 1/4;
     $match{G}{G} = 1/4;
@@ -750,32 +751,32 @@ sub CheckOutputSeqFormat {
 sub CheckFormat {
 ### checks that a sequence only contains letters from a to z
 ### usage 
-###    CheckFormat($sequence,$current_id);
-  local($l_sequence) = $_[0];
-  local($current_id) = lc($_[1]);
-  $expected_format = "wconsensus" if ($expected_format eq "wc");
-  $expected_format = "raw" if ($expected_format eq "multi");
-  $expected_format = "raw" if ($expected_format eq "filelist");
-  local($apparent_format) = "";
-  
-  if ($l_sequence =~ /([^a-z\s])/i) {
-      $apparent_format = "unknown";
-      $problem = $1;
-      $position = length($`);
-      
-      if ($l_sequence =~ /\\/) {
-	  $apparent_format = "wconsensus";
-      } elsif ($l_sequence =~ />/) {
-	  $apparent_format = "fasta";
-      } elsif ($sequence =~ /[12]$/)  {
-	  $apparent_format = "IntelliGenetics";
-      }
-      &FatalError("Input sequence $current_id is not in the expected format", 
-		  "Invalid character '$problem' at position $position",
-		  "It seems to be in $apparent_format format.");
-      exit();
-  }
-  return;
+###    CheckFormat($sequence,$expected_format, $seq_type);
+    my ($l_sequence, $expected_format, $seq_type) = @_;
+    $expected_format = lc($expected_format);
+    $expected_format = "wconsensus" if ($expected_format eq "wc");
+    $expected_format = "raw" if ($expected_format eq "multi");
+    $expected_format = "raw" if ($expected_format eq "filelist");
+    local($apparent_format) = "";
+    
+    if (($seq_type !~ /other/i) && ($l_sequence =~ /([^a-z\s])/i)) {
+	$apparent_format = "unknown";
+	$problem = $1;
+	$position = length($`);
+	
+	if ($l_sequence =~ /\\/) {
+	    $apparent_format = "wconsensus";
+	} elsif ($l_sequence =~ />/) {
+	    $apparent_format = "fasta";
+	} elsif ($sequence =~ /[12]$/)  {
+	    $apparent_format = "IntelliGenetics";
+	}
+
+	&FatalError("Input sequence $current_id is not in the expected format, or contains invalid characters for a sequence of type $seq_type.");
+
+	exit();
+    }
+    return;
 }
 
 sub ReadNextSequence {
@@ -785,11 +786,11 @@ sub ReadNextSequence {
     ##### ($sequence, $seq_id, @seq_comments) = &ReadNextSequence(FILE, $seq_format, $input_dir])
     ##### where   FILE is a file handle
     #####         $format is one of the accepted sequence formats 
-    #####                 (see CheckSeqFormat) 
-#    die "HELLO";
-    local $SEQ = $_[0];
-    local $sequence_format = lc($_[1]);
-    local $input_dir = $_[2];
+    #####                 (see CheckFormat) 
+
+    my ($SEQ, $sequence_format, $input_dir, $seq_type) = @_;
+    $sequence_format = lc($sequence_format);
+
     local $sequence = "";
     local $seq_id = "";
     local @comments = ();
@@ -809,7 +810,7 @@ sub ReadNextSequence {
 	}
 	if ($sequence) {
 	    $sequence = &FoldSequence($sequence, 0);
-	    &CheckFormat($sequence, $sequence_format);
+	    &CheckFormat($sequence, $sequence_format, $seq_type);
 	    return ($sequence, $seq_id, @comments);
 	} else {
 	    return ("","");
@@ -830,7 +831,7 @@ sub ReadNextSequence {
 	    next if ($sequence =~ /^;/);
 	    $gotit = 1;
 	    $sequence = &FoldSequence($sequence, 0);
-	    &CheckFormat($sequence, $sequence_format);
+	    &CheckFormat($sequence, $sequence_format, $seq_type);
 	    return ($sequence, $seq_id, @comments);
 	} 
 	return ("","") unless $gotit;
@@ -868,7 +869,7 @@ sub ReadNextSequence {
 	    }
 	    close NEXT_SEQ;
 	    $sequence = &FoldSequence($sequence, 0);
-	    &CheckFormat($sequence, $sequence_format);
+	    &CheckFormat($sequence, $sequence_format, $seq_type);
 	    return ($sequence, $seq_id, @comments);
 	} else {
 	    die "\tError: cannot open sequence file $next_file\n";
@@ -884,7 +885,7 @@ sub ReadNextSequence {
 	    } elsif (/(.*)[12]/) {	### end of the current sequence
 		$sequence .= $1;
 		$sequence = &FoldSequence($sequence, 0);
-		&CheckFormat($sequence, "raw");
+		&CheckFormat($sequence, "raw", $seq_type);
 		return ($sequence, $seq_id, @comments);
 	    } else {
 		$sequence .= $_;
@@ -940,7 +941,7 @@ sub ReadNextSequence {
 		    $sequence = &FoldSequence($sequence, 0);
 		    $done_seq_id = $current_seq_id;
 		    $current_seq_id = $1;
-		    &CheckFormat($sequence, "raw");
+		    &CheckFormat($sequence, "raw", $seq_type);
 		    return ($sequence, $done_seq_id, @comments);
 		}
 		

@@ -1,9 +1,6 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
 <HTML>
 <HEAD>
    <TITLE>RSA-tools - pattern search manual</TITLE>
-   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META NAME="GENERATOR" CONTENT="Mozilla/3.01Gold (X11; I; SunOS 5.5.1 sun4u) [Netscape]">
 </HEAD>
 <BODY TEXT="#000000" BGCOLOR="#FFEEDD" LINK="#0000EE" VLINK="#55008B" ALINK="#FF0000">
 
@@ -23,7 +20,7 @@ Searches all occurrences of a pattern within DNA sequences. The pattern can be e
 <H4>Options</H4>
 
 <UL>
-<A NAME="patterns">
+<P><A NAME<="patterns">
 <B>Query pattern(s)</B></A><P>
 
 <UL>
@@ -70,13 +67,12 @@ to 30 nucleotides.</LI>
 </UL>
 </UL><P>
 
-<A NAME="sequence"></A><B>Input sequence</B><P>
+<P><A NAME="sequence"></A><B>Input sequence</B><P>
 
 <UL>
-The sequence in which the pattern has to be searched. <P>
-</UL>
+The sequence in which the pattern has to be searched. </UL>
 
-<A NAME="sequence_format"></A>
+<P><A NAME="sequence_format"></A>
 <B>Input sequence format:</B><BR>
 The following sequence formats are supported(click on the links for more details). 
 <UL>
@@ -87,46 +83,48 @@ The following sequence formats are supported(click on the links for more details
 <LI><A HREF="help.formats.html#wconsensus"><B>Wconsensus</B></A>: the format defined by Jerry Hertz for his programs (patser, consensus, wconsensus).
 </UL><P>
 
-<A NAME="strands"></A><B>Search strands</B><P>
+<P><A NAME="strands"></A><B>Search strands</B><P>
 
 <UL>
 The pattern can be searched on the direct, 
 the reverse complement, 
-or both strands.<P>
-</UL>
+or both strands.</UL>
 
-<A NAME="subst"></A><B>Substitutions</B><P>
+<P><A NAME="subst"></A><B>Substitutions</B><P>
 
 <UL>
 Imperfect matches can be allowed, with a given number of substitutions.
-insertions and deletions are not supported.<P>
-</UL>
+insertions and deletions are not supported.</UL>
 
-<A NAME="return"></A><B>Return</B><P>
+<P><A NAME="return"></A><B>Return</B><P>
 
 <UL>
 The program either returns the matching positions, or the number of
-matches within each input sequence.<P>
-</UL>
+matches within each input sequence.</UL>
 
-<A NAME="flanking"></A><B>Flanking</B><P>
+<P><A NAME="threshold"></A><B>Threshold</B><P>
+<ul>
+(only valid with the option return count)<br>
+Only return sequences having more matches than the specified threshold
+</ul>
+
+
+<P><A NAME="flanking"></A><B>Flanking</B><P>
 <UL>
 When the option &quot;return matching position&quot; is selected, the
 program also return the sequence of the matching word. This sequence can
-be extended leftwards and rightwards with the flanking option. <P>
+be extended leftwards and rightwards with the flanking option. 
 </UL>
 
 
-<A NAME="origin"></A><B>Origin</B><P>
+<P><A NAME="origin"></A><B>Origin</B><P>
 <UL>
 Matching positions can be calculated either relative to the sequence start, or to the sequence end. The second option is most useful for upstream sequences, since it directly indicates the distance between the site and the ORF start. It is thus selected by default. 
-<P>
 </UL>
 
-<A NAME="noov"></A><B>Prevent overlapping matches</B><P>
+<P><A NAME="noov"></A><B>Prevent overlapping matches</B><P>
 <UL>
 This option allows to prevent successiv matches of a periodic pattern to overlap with each other. When the option is activated, each occurrence of a given pattern will prevent another occurrence of the same pattern before the end of the first matching segment. For example, the sequence TATATATATATA could be considered to contain either 4 (with overlap) or 2 (without overlap) occurrences of the pattern TATATA. 
-<P>
 </UL>
 
 

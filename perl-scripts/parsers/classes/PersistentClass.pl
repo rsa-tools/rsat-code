@@ -4,7 +4,7 @@
 ### correspond to that name. There might be several IDs associated to
 ### a single name (homonymy), or, at reverse, several names associated
 ### to a same ID (synonymy). 
-package PFBP::PersistentClass; 
+package classes::PersistentClass; 
 { 
   ### open a new persistenc class and associate it to
   ### - a name index file

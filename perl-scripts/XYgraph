@@ -5,27 +5,26 @@ BEGIN {
     }
     require "RSA.lib";
     push @INC, "$RSA/extlib/arch/";
-#    if ($config_site eq "uppsala") {
-#	use lib ('/home/jvanheld/rsa-tools/perl-scripts/lib',  
-#		 '/home/jvanheld/rsa-tools/perl-scripts/lib/arch');
-#    }
 }
 
 use GD;
 
 %supported_format = ();
 
-if ($config_site eq "rsa") {
-    $supported_format{"jpeg"} = 1;
-    $out_format = "jpeg";
-} else {
-    $supported_format{"gif"} = 1;
-    $out_format = "gif";
-}
-$supported_formats = join (";", keys %supported_format); 
 
-$start_time = `date`;
+################################################################
+#### select output format depending on the site configuration
+%supported_format = ("jpg"=>1, 
+		     "gif"=>1,
+		     "png"=>1,
+		     );
 
+$img_format = $IMG_FORMAT || "png";
+$supported_formats = join (",", keys %supported_format); 
+
+
+################################################################
+#### help messages
 if ($ARGV[0] eq "-h") {
     &PrintHelp;
     exit(0);
@@ -36,8 +35,9 @@ if ($ARGV[0] eq "-help") {
 }
 
 
-
+################################################################
 ##### initialize default parameters #####
+$start_time = `date`;
 $x_log_base=10;
 $y_log_base=10;
 $data_fields = "columns";
@@ -471,16 +471,16 @@ if ($legend) {
 }
 
 
-#### print output ####
-#### write the gif file ####
-if ($out_format eq "gif") {
+#### write the image file
+if ($img_format eq "gif") {
     print $out $image->gif;
-} elsif ($out_format eq "jpeg") {
+} elsif (($img_format eq "jpeg") ||
+	 ($img_format eq "jpg")) {
     print $out $image->jpeg;
-} elsif ($out_format eq "png") {
+} elsif ($img_format eq "png") {
     print $out $image->png;
 } else {
-    &FatalError("Error: ormat $out_format is not supported\n");
+    &FatalError("Error: Format $img_format is not supported\n");
 }
 
 &CloseHTMLmap if ($HTML_map);
@@ -1219,10 +1219,10 @@ sub PrintOptions {
     print SHORTHELP <<End_of_options;
 XYgraph options
 ---------------
--i	inputfile
--o	outpufile
--format		output format (default $out_format)
--v	verbose. 
+-i		inputfile
+-o		outpufile
+-format		image format (supported $supported_formats; default $img_format)
+-v		verbose. 
 -title1 "t1"	first graph title. 
 -title2 "t2"	second graph title. 	
 -xleg1 "legend"	First X legend. 
@@ -1254,7 +1254,7 @@ XYgraph options
 -log #		same as combining -xlog # -ylog #
 -lines	        points are jointed by lines 
 -line #		points of the #th column are jointed by lines
--header		first line of the data file contains a column header 
+-header		first row (column) of the data file contains a column header 
 -legend		use the first line as legend for Y data.
 -histo		histogram. 
 -fhisto		filled histogram. 
@@ -1313,9 +1313,9 @@ OPTIONS
 			the form of a GIF document. 
 			If no output file is specified, the result is sent 
 			to the standard output (screen).
-	-format		output format
+	-format		output image format
 			Supported: $supported_formats
-			Default: $out_format
+			Default: $img_format
 	-v		verbose. Comments about data and graph parameters
 			are printed on the screen.
 	-title1 "t1"	first graph title. The title string should be 
@@ -1432,13 +1432,13 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-o") {
 	    $outputfile = $ARGV[$a+1];
 
-	    ### output format
+	    ### image format
 	} elsif ($ARGV[$a] eq "-format") {
-	    $out_format = lc($ARGV[$a+1]);
-	    unless ($supported_format{$out_format}) {
-		&FatalError("Format $out_format is not supported (supported: $supported_formats)");
+	    $img_format = lc($ARGV[$a+1]);
+	    unless ($supported_format{$img_format}) {
+		&FatalError("Format $img_format is not supported (supported: $supported_formats)");
 	    }
-
+	    
 	    ### verbose ###
 	} elsif ($ARGV[$a] eq "-v") {
 	    $verbose = 1;

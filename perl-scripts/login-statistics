@@ -19,7 +19,7 @@ USAGE
 DESCRIPTION
 	Reads a login file and returns statistics about the 
 	client domains and the scripts that have been requested. 
-	
+
 CATEGORY
 	administration
 

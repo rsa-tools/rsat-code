@@ -1,8 +1,8 @@
 ############################################################
 #
-# $Id: makefile,v 1.8 2002/12/09 00:22:06 jvanheld Exp $
+# $Id: makefile,v 1.9 2003/10/29 09:04:13 jvanheld Exp $
 #
-# Time-stamp: <2002-08-22 16:00:20 jvanheld>
+# Time-stamp: <2002-12-23 15:49:11 jvanheld>
 #
 ############################################################
 
@@ -24,7 +24,8 @@ PERL=perl
 SERVER=paulus.ulb.ac.be
 
 # directory containing the parser scripts
-PARSER=/rubens/dsk2/jvanheld/amaze_programs/amaze_parsers
+#PARSER=/rubens/dsk2/jvanheld/amaze_programs/amaze_parsers
+PARSER=/win/amaze/amaze_programs/amaze_parsers
 
 # Root of the directory where the parsed data will be saved.
 PARSED_ROOT=${HOME}/parsed_for_amaze
@@ -148,9 +149,10 @@ parse_glaxo:
 #
 # Synchronize the parsers between brol and SCMBB
 #
-SCMB_PARSER=jvanheld@${SERVER}:amaze_programs/amaze_parsers
+SCMB_PROGRAMS=jvanheld@${SERVER}:amaze_programs/
+SCMB_PARSER=${SCMB_PROGRAMS}/amaze_parser
 rsync_to_scmb:
-	${RSYNC} --delete ${PARSER} ${SCMB_PARSER}
+	${RSYNC} --delete --exclude SWISS --exclude swiss ${PARSER} ${SCMB_PROGRAMS}
 
 rsync_from_scmb:
 	rsync -uptvl ${SCMB_PARSER}/'*' . 

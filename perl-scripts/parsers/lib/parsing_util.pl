@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parsing_util.pl,v 1.2 2003/08/08 22:13:59 jvanheld Exp $
+# $Id: parsing_util.pl,v 1.3 2003/10/29 09:04:13 jvanheld Exp $
 #
-# Time-stamp: <2003-08-09 00:11:08 jvanheld>
+# Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
 ############################################################
 ### util.pl
@@ -57,9 +57,11 @@ sub deliver {
 }
 
 
+################################################################
+### Export all classes from a list provided as argument
+### usage: 
+###    &ExportClasses($output_file, $out_format, @classes);
 sub ExportClasses {
-  ### export all classes from a list provided as argument
-  ### usage: &ExportClasses($output_file, $out_format, @classes);
   local ($output_file, $out_format, @classes) = @_;
   if ($output_file) {
     open STDOUT, ">$output_file"  || die "Error : cannot write file $output_file\n"; 
@@ -76,6 +78,26 @@ sub ExportClasses {
   }
   close STDOUT if ($output_file);
   return 1;
+}
+
+
+################################################################
+## Export a makefile which will call other makefiles for the loading
+###    &ExportMakefile(@classes);
+sub ExportMakefile {
+    my @classes = @_;
+
+    chdir "$dir{output}/sql_scripts";
+    open MAKEFILE, ">makefile";
+
+
+    ## data loading
+    foreach my $target ("usage", "create", "uncompress", "load", "recompress", "all", "drop") {
+	print MAKEFILE "${target}:\n";
+	for my $class (@classes) {
+	    print MAKEFILE "\tmake -f ${class}.mk ${target}\n";
+	}
+    }
 }
 
 
@@ -334,7 +356,7 @@ sub SplitReactants {
 # summarizes information (only retins selected fields) and reformats
 # it (multiple gene names) for ease of manipulation.
 sub CreateGenbankFeatures {
-    my ($features, $genes, $mRNAs, $tRNAs, $rRNAs, $misc_RNAs, $CDSs, $sources) = @_;
+    my ($features, $genes, $mRNAs, $tRNAs, $rRNAs, $misc_RNAs, $misc_features, $CDSs, $sources) = @_;
 
     #### warning message
     warn ("; ",
@@ -355,6 +377,7 @@ sub CreateGenbankFeatures {
 			$tRNAs->get_objects(),
 			$rRNAs->get_objects(),
 			$misc_RNAs->get_objects(),
+			$misc_features->get_objects(),
 			$CDSs->get_objects()
 			) {
 	if ($object->get_attribute("gene")) {
@@ -367,7 +390,7 @@ sub CreateGenbankFeatures {
     
     ################################################################
     #### this only applies to mRNA and CDS because the other features
-    #### (gene, tRNA, rRNA, misc_RNA) have no IDs in Genbank flat files !!!!
+    #### (gene, tRNA, rRNA, misc_RNA, misc_feature) have no IDs in Genbank flat files !!!!
     foreach my $object ($mRNAs->get_objects(),
 			$CDSs->get_objects()
 			) {
@@ -382,7 +405,8 @@ sub CreateGenbankFeatures {
 				$mRNAs->get_objects(),
 				$tRNAs->get_objects(),
 				$rRNAs->get_objects(),
-				$misc_RNAs->get_objects()
+				$misc_RNAs->get_objects(),
+				$misc_features->get_objects()
 				) {
 
 	
@@ -761,6 +785,7 @@ sub ParseGenbankFile {
 	$tRNA_holder, 
 	$rRNA_holder, 
 	$misc_RNA_holder, 
+	$misc_feature_holder, 
 	$CDS_holder, 
 	$contig_holder, 
 	$organism_holder, 
@@ -773,7 +798,7 @@ sub ParseGenbankFile {
 			     tRNA=>1,
 			     rRNA=>1,
 			     misc_RNA=>1,
-			     misc_RNA=>1,
+			     misc_feature=>1,
 			     gene=>1
 			     );
 
@@ -979,6 +1004,8 @@ sub ParseGenbankFile {
  		    $holder = $rRNA_holder;
  		} elsif ($feature_type eq "misc_RNA") {
  		    $holder = $misc_RNA_holder;
+ 		} elsif ($feature_type eq "misc_feature") {
+ 		    $holder = $misc_feature_holder;
 		} elsif ($feature_type eq "CDS") {
 		    $holder = $CDS_holder;
 		} elsif ($feature_type eq "source") {
@@ -1011,7 +1038,8 @@ sub ParseGenbankFile {
 			 ($feature_type eq 'mRNA') ||
 			 ($feature_type eq 'tRNA') ||
 			 ($feature_type eq 'rRNA') ||
-			 ($feature_type eq 'misc_RNA') 
+			 ($feature_type eq 'misc_RNA') || 
+			 ($feature_type eq 'misc_feature') 
 			 ){
 		    foreach my $gene_name ($last_gene->get_attribute("names")) {
 			$current_feature->push_attribute("names", $gene_name);
@@ -1066,6 +1094,7 @@ sub ParseGenbankFile {
 						  $tRNAs, 
 						  $rRNAs, 
 						  $misc_RNAs, 
+						  $misc_features, 
 						  $CDSs, 
 						  $sources, 
 						  $organisms) {

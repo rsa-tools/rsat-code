@@ -112,7 +112,7 @@ print "<HR width=550 align=left>\n";
 
 
 
-### send results by e-mail or display on the browser
+### send results by email or display on the browser
 &SelectOutput;
 
 

@@ -7,11 +7,11 @@
 ## questions
 ##- how to specify the omitted files ?
 
+MAKEFILE=makefiles/prepare_for_CVS.mk
 MAKE=make -s -f ${MAKEFILE}
 RSYNC=rsync -ruptvl
 RSAT=${HOME}/rsa-tools
 
-MAKEFILE=prepare_for_CVS.mk
 
 
 ## default directory
@@ -23,10 +23,11 @@ DIRS= perl-scripts				\
 	makefiles				\
 	doc
 
-SUBDIRS=`find ${DIR} -type d | grep -v RCS | grep -v SWISS | grep -v perllib`
+SUBDIRS=`find ${TARGET_DIR}/${DIR} -type d | grep -v RCS | perl -pe 's|${TARGET_DIR}/||g'`
 
 ## excluded directories and files
 EXCLUDED=					\
+	--exclude perllib			\
 	--exclude obsolete			\
 	--exclude oldies			\
 	--exclude old				\
@@ -63,42 +64,46 @@ iterate_subdirs:
 		${MAKE} ${TASK} DIR=$${dir};	\
 	done
 
+all:
+	${MAKE} iterate_dirs TASK=all_tasks_one_dir
 
-all_tasks: 
+all_tasks_one_dir: 
 	${MAKE} rsync_one_dir 
-	${MAKE} treat_one_dir
 	${MAKE} iterate_subdirs TASK=treat_one_dir 
 
+TARGET_DIR=for_CVS
 rsync_one_dir:
-	${RSYNC} ${EXCLUDED} ${RSAT}/${DIR} .
+	mkdir -p ${TARGET_DIR}
+	${RSYNC} ${EXCLUDED} ${RSAT}/${DIR} ${TARGET_DIR}
 
-treat_one_dir: find_obsolete_RCS remove_obsolete_RCS check_in clean_tmp
-
+treat_one_dir: find_obsolete_RCS remove_obsolete_RCS check_in rcs_files_one_dir_up clean_tmp 
 
 find_obsolete_RCS:
 	@echo 
-	@echo "Finding obsolete RCS fiels in dir ${DIR}"
-	mkdir -p tmp
-	find ${DIR}/RCS -maxdepth 1 -type f  | perl -pe 's/,v//' | perl -pe 's|RCS/||' | sort -u > tmp/in_RCS.txt
-	find ${DIR} -maxdepth 1 -type f  | sort -u  > tmp/in_dir.txt
-	wc tmp/in_RCS.txt tmp/in_dir.txt
-	diff tmp/in_RCS.txt tmp/in_dir.txt | grep '^<' | wc
-	diff tmp/in_RCS.txt tmp/in_dir.txt | grep '^>' | wc
+	@echo "Finding obsolete RCS fiels in dir ${TARGET_DIR}/${DIR}"
+	mkdir -p ${TEMPORARY}
+	find ${TARGET_DIR}/${DIR}/RCS -maxdepth 1 -type f  | perl -pe 's/,v//' | perl -pe 's|RCS/||' | sort -u > ${TEMPORARY}/in_RCS.txt
+	find ${TARGET_DIR}/${DIR} -maxdepth 1 -type f  | sort -u  > ${TEMPORARY}/in_dir.txt
+	wc ${TEMPORARY}/in_RCS.txt ${TEMPORARY}/in_dir.txt
+	diff ${TEMPORARY}/in_RCS.txt ${TEMPORARY}/in_dir.txt | grep '^<' | wc
+	diff ${TEMPORARY}/in_RCS.txt ${TEMPORARY}/in_dir.txt | grep '^>' | wc
 
 remove_obsolete_RCS: find_obsolete_RCS
 	@echo 
-	@echo "Removing obsolete RCS fiels from dir ${DIR}"
-	diff tmp/in_RCS.txt tmp/in_dir.txt			\
+	@echo "Removing obsolete RCS fiels from dir ${TARGET_DIR}/${DIR}"
+	diff ${TEMPORARY}/in_RCS.txt ${TEMPORARY}/in_dir.txt			\
 		| grep '^<'				\
-		| perl -pe 's|${DIR}/|${DIR}/RCS/|'	\
+		| perl -pe 's|${TARGET_DIR}/${DIR}/|${TARGET_DIR}/${DIR}/RCS/|'	\
 		| perl -pe 's/< //'			\
 		| perl -pe 's/(\S+)/$$1,v/'		\
 		| xargs rm -f
+TEMPORARY=${TARGET_DIR}/tmp
 clean_tmp:
-	\rm -rf tmp
-
+	\rm -rf ${TEMPORARY}
 
 check_in:
-	(cd ${DIR}; find . -maxdepth 1 -type f -exec ci -m'Before converting RCS to CVS' {} \;)
+	(cd ${TARGET_DIR}/${DIR}; find . -maxdepth 1 -type f -exec ci -m'Before converting RCS to CVS' {} \;)
 
-
+rcs_files_one_dir_up:
+	mv ${TARGET_DIR}/${DIR}/RCS/*,v ${TARGET_DIR}/${DIR}/
+	rmdir ${TARGET_DIR}/${DIR}/RCS/

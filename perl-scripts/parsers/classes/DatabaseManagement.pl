@@ -1,9 +1,9 @@
 ################################################################
 ### DATABASE MANAGEMENT
 
-package PFBP::DatabaseManagement;
+package classes::DatabaseManagement;
 {
-  ### convert a query into a key for PFBP indexes
+  ### convert a query into a key for indexes
   ### - convert all letters to uppercases
   ### - convert white spaces and dashes into underscores
   sub get_index_key {
@@ -20,13 +20,13 @@ package PFBP::DatabaseManagement;
 
 
   sub split_pseudo_pointer {
-    ### a pseudo_pointer is a string that refers to a database object (e.g. PFBP::Gene::b0001)
+    ### a pseudo_pointer is a string that refers to a database object (e.g. classes::Gene::b0001)
     ### it consists in two parts :
-    ### - the class (e.g. PFBP::Gene)
+    ### - the class (e.g. classes::Gene)
     ### - the object ID (e.g. b00001)
     ### this allows a system-independent cross-referencing between classes
     ###
-    ### usage: ($class, $key) = PFBP::DatabaseManagement->split_pseudo_pointer($pseudo_pointer);
+    ### usage: ($class, $key) = classes::DatabaseManagement->split_pseudo_pointer($pseudo_pointer);
     my ($database, $pseudo_pointer) = @_;
     my $class;
     my $key;

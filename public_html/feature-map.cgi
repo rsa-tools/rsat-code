@@ -4,12 +4,22 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
+#### redirect error log to a file
+BEGIN {
+    $ERR_LOG = "/dev/null";
+#    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
+    use CGI::Carp qw(carpout);
+    open (LOG, ">> $ERR_LOG")
+	|| die "Unable to redirect log\n";
+    carpout(*LOG);
+}
 require "RSA.lib";
 require "RSA.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 ### intialization
-$feature_map_command = "$SCRIPTS/feature-map";
+$image_format = $IMG_FORMAT || "png";
+$feature_map_command = "$SCRIPTS/feature-map -format $image_format ";
 $tmp_file_name = sprintf "feature-map.%s", &AlphaDate;
 
 $features_from_swissprot_cmd = "$SCRIPTS/features-from-swissprot";
@@ -28,26 +38,19 @@ $features_from_patser_cmd = "$SCRIPTS/features-from-patser";
 ### Read the CGI query
 $query = new CGI;
 
-### default values for filling the form
+# ### replace defaults by parameters from the cgi call, if defined
+# foreach $key (keys %default) {
+#   if ($query->param($key)) {
+#     $default{$key} = $query->param($key);
+#   }
+# } 
 
-
-### replace defaults by parameters from the cgi call, if defined
-foreach $key (keys %default) {
-  if ($query->param($key)) {
-    $default{$key} = $query->param($key);
-  }
-} 
-
-### print the form ###
-#&RSA_header("feature-map");
-
-#### execute the script
 $title = "feature-map result";
 
 #### update log file ####
-&UpdateLogFile;
+&UpdateLogFile();
 
-#&ListParameters;
+&ListParameters() if ($ECHO >= 2);
 
 #### read parameters ####
 $parameters = "";
@@ -196,7 +199,6 @@ if ($query->param('feature_file') =~ /\S/) {
     } elsif ($query->param('format') =~ /matins/i) {
 	open DATA, "| $features_from_matins_cmd -o $feature_file";
     } elsif ($query->param('format') =~ /dna\-pattern/i) {
-#	print "<PRE>HELLO\t $features_from_dnapat_cmd -o $feature_file</PRE>";
 	open DATA, "| $features_from_dnapat_cmd -o $feature_file";
     } elsif ($query->param('format') =~ /patser/i) {
 	open DATA, "| $features_from_patser_cmd -o $feature_file";
@@ -210,12 +212,23 @@ if ($query->param('feature_file') =~ /\S/) {
 	open DATA, ">$feature_file";
     }
     
+
     if ($query->param('uploaded_file')) {
-	### upload file from the client
-	$fh = $query->param('uploaded_file');
-	while (<$fh>) {
+	$upload_feature_file = $query->param('uploaded_file');
+	$type = $query->uploadInfo($upload_feature_file)->{'Content-Type'};
+#	&RSA_header("Debugging");
+#	&Info($feature_file, "\n", $upload_feature_file, "\n", $type);
+	while (<$upload_feature_file>) {
+#	    print $_;
 	    print DATA;
 	}
+	close DATA;
+	
+	### upload file from the client
+#	$fh = $query->param('uploaded_file');
+#	while (<$fh>) {
+#	    print DATA;
+#	}
     } else {
 	### data from the textarea
 	print DATA $query->param('data');
@@ -230,17 +243,15 @@ if ($query->param('feature_file') =~ /\S/) {
 
 
 $parameters .= " -i $feature_file ";
-&DelayedRemoval($feature_file);
 
 ### map file ###
-$map_file = "$tmp_file_name.gif";
+$map_file = "$tmp_file_name.${image_format}";
 $html_file = "$tmp_file_name.html";
 $parameters .= " -o $TMP/$map_file > $TMP/$html_file";
-DelayedRemoval("$TMP/$map_file");
-DelayedRemoval("$TMP/$html_file");
+
 
 ### executre the command
-if ($ECHO) {
+if ($ECHO >= 2) {
     print $query->header();
     print $query->start_html;
     print "<PRE>command = $feature_map_command $parameters \n</PRE>";
@@ -249,6 +260,9 @@ if ($ECHO) {
 } 
 
 system "$feature_map_command $parameters ";
+&DelayedRemoval($feature_file);
+&DelayedRemoval("$TMP/$map_file");
+&DelayedRemoval("$TMP/$html_file");
 
 ### display the result ###
 if (lc($query->param('htmap')) eq "on") {
@@ -257,6 +271,7 @@ if (lc($query->param('htmap')) eq "on") {
     $location = "$WWW_RSA/tmp/$map_file";
 }
 print "Location: $location", "\n\n";
+
 
 exit(0);
 

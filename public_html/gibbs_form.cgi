@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gibbs_form.cgi,v 1.2 2001/10/07 22:51:09 jvanheld Exp $
+# $Id: gibbs_form.cgi,v 1.3 2003/10/29 09:04:36 jvanheld Exp $
 #
-# Time-stamp: <2001-10-08 00:51:05 jvanheld>
+# Time-stamp: <2003-07-11 15:08:18 jvanheld>
 #
 ############################################################
 #### this cgi script fills the HTML form for the program gibbs
@@ -89,7 +89,7 @@ print $query->textfield(-name=>'expected',
 print "<BR>\n";
 
 
-### send results by e-mail or display on the browser
+### send results by email or display on the browser
 &SelectOutput;
 
 ### action buttons

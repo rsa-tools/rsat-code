@@ -45,6 +45,16 @@ foreach $key (keys %default) {
     }
 } 
 
+#### specific treatment for internal feature file (piped from dna-patttern)
+if (-e $query->param('feature_file')) {
+    $file = $query->param('feature_file');
+    $default{data} = `cat $file`;
+} else {
+    $default{data} = $query->param('data');
+}
+$default{data} =~ s/\"//g; #### remove quotes for security reasons (avoid imbedded command)
+
+
 ### remove quotes from the title and data
 $default{data} =~ s/\"//g;
 $default{title} =~ s/\"//g;
@@ -339,7 +349,7 @@ print $query->submit(-label=>"DEMO");
 print "</B></TD>\n";
 print $query->end_form;
 print "<TD><B><A HREF='help.feature-map.html'>MANUAL</A></B></TD>\n";
-print "<TD><B><A HREF='demo.feature-map.html'>DEMO</A></B></TD>\n";
+##print "<TD><B><A HREF='demo.feature-map.html'>DEMO</A></B></TD>\n";
 
 
 

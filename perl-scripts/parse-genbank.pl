@@ -1,9 +1,9 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: parse-genbank.pl,v 1.8 2003/08/08 22:37:38 jvanheld Exp $
+# $Id: parse-genbank.pl,v 1.9 2003/10/29 09:04:12 jvanheld Exp $
 #
-# Time-stamp: <2003-08-09 00:36:24 jvanheld>
+# Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -260,6 +260,7 @@ package main;
 				     password=>$password
 				     );
     }
+    &ExportMakefile(@classes);
     &ExportClasses($out_file{features}, $out_format, @classes) if $export{obj};
     
     ###### verbose ######
@@ -301,6 +302,27 @@ DESCRIPTION
 	
 	Genbank genomes can be retrieved by anonymous ftp :
 		ftp://ftp.ncbi.nlm.nih.gov/genomes
+
+	Genome sequence and annotations are parsed from the genbank
+	flat files (extension .gbk).  
+
+	Each directory contains the genome of one organism.  Note that
+
+	  - a single directoy can contain several files, if the
+	    organism has several chromosomes.  
+
+          - a single .gbk file can contain several contigs, if the
+	    genome is not fully assembled for example.
+
+	Parsed data is exported in tab-delimited format, according to
+	the normalization rules for relational databases : one main
+	table regroups all the single-value attributes(one attribute
+	per column), and each multi-value attribute comes in a
+	separate table with the foregin key in the first column.
+
+	The program also exports some parsing statistics, an error
+	log, and a set of SQL scripts for creating a relational
+	database (supported standards: mysql, postgresql, oracle).
 
 CATEGORY
 	parser

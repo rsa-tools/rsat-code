@@ -7,6 +7,7 @@ require "RSA.classes";
 
 ### initialization
 $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+$rev = 0;
 
 #### default parameters
 $col{'ec'} = 1;
@@ -22,7 +23,8 @@ $col{'gene'} = 0;
     unless ($organism_name);
 
 #### EC file
-$ec_file = "$RSA/data/${organism_name}/genome/Feature_EC_number_${organism_name}.tab";
+$ec_file = $supported_organism{$organism_name}->{'data'}."/genome/Feature_EC_number_${organism_name}.tab";
+#$ec_file = "$RSA/data/${organism_name}/genome/Feature_EC_number_${organism_name}.tab";
 &FatalError("EC file does not exist for organism $organism_name\t$ec_file\n")
     unless (-e $ec_file);
 
@@ -35,7 +37,7 @@ unless ($feature_table_file) {
     $feature_table_file = $supported_organism{$organism_name}->{'features'};
 }
 warn "; Reading ORF table for $organism_name\n" if ($verbose >= 1);
-&ReadOrfPositions($organism_name, $feature_table_file);
+&ReadFeatures($organism_name, $feature_table_file);
 warn "; Reading synonyms for $organism_name\n" if ($verbose >= 1);
 &ReadSynonyms($organism_name);
 
@@ -49,7 +51,7 @@ $out = &OpenOutputFile($outputfile);
 #### verbose ####
 if ($verbose) {
     print $out "; gene2ec ";
-    &PrintArguments();
+    &PrintArguments($out);
     if ($inputfile ne "") {
 	print $out ";Input file	$inputfile\n";
     }
@@ -64,6 +66,7 @@ if ($verbose) {
 ###### read EC numbers
 ($ecs) = &OpenInputFile($ec_file);
 while (<$ecs>) {
+    warn "Reading ECs\n" if ($verbose >= 2);
     next if (/^;/);
     next if (/^--/);
     next if (/^\#/);
@@ -72,11 +75,16 @@ while (<$ecs>) {
 
     @fields = split "\t";
     $ec = $fields[$col{'ec'}];
-    $orf_id = uc($fields[$col{'gene'}]);
+    $orf_id = $orf_id{uc($fields[$col{'gene'}])};
     
     push @{$ecs{$orf_id}}, $ec;
+
+    warn join ("\t", $ec, $orf_id), "\n" if ($verbose >= 3);
+
 }
 close $ecs if $ec_file;
+
+
 
 ################################################################
 ##### read query file
@@ -91,18 +99,25 @@ while (<$in>) {
     push @queries, $query;
     my $orf_id = $orf_id{uc($query)};
     if ($orf_id) {
-	&Warning("Query $query\t$orf_id") if ($verbose >=2);
+
+#	warn join "\t", "HELLO", $orf_id, @{$ecs{$orf_id}}, "\n";
+
+	print $out ("; Query $query\t$orf_id\n") if ($verbose >=2);
 	$query{uc($orf_id)} = 1;
 	if ($#{$ecs{$orf_id}} >= 0) {
 	    foreach $ec (@{$ecs{$orf_id}}) {
 		print $out join ("\t", $ec, @fields), "\n";
+		if ($rev) {
+		     #### reverse EC for aMAZE path builder (the EC followed by a *)
+		    print $out join ("\t", "${ec}*", @fields), "\n";
+		}
 	    }
 	} else {
-	    &Warning("No EC associated with gene $query") if ($verbose >=2);
+	    print $out ("; No EC associated with gene $query\n") if ($verbose >=2);
 	}
 
     } else {
-	&Warning("Cannot identify gene with name $query") if ($verbose >=1);
+	print $out ("; WARNING: Cannot identify gene with name $query\n") if ($verbose >=1);
     }
 }
 close $in unless ($inputfile eq "");
@@ -219,6 +234,10 @@ sub ReadArguments {
 	    ### output file ###
 	} elsif ($ARGV[$a] eq "-o") {
 	    $outputfile = $ARGV[$a+1];
+	    
+	    ### return reverse ECs (a * after the EC)
+	} elsif ($ARGV[$a] =~ /^-rev/) {
+	    $rev = 1;
 	    
 	    ### organism ###
 	} elsif ($ARGV[$a] eq "-org") {

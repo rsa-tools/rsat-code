@@ -1,20 +1,20 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_pathway_skeletons.pl,v 1.14 2002/12/09 00:22:14 jvanheld Exp $
+# $Id: parse_pathway_skeletons.pl,v 1.15 2003/10/29 09:04:13 jvanheld Exp $
 #
-# Time-stamp: <2002-11-29 16:34:29 jvanheld>
+# Time-stamp: <2003-07-10 11:52:59 jvanheld>
 #
 ############################################################
 
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`"); ### add the program's directory to the lib path
 }
-require "PFBP_config.pl";
-require "PFBP_classes.pl";
-require "PFBP_util.pl";
-require "PFBP_parsing_util.pl";
-require "PFBP_loading_util.pl";
+require "config.pl";
+require "lib/load_classes.pl";
+require "lib/util.pl";
+require "lib/parsing_util.pl";
+require "lib/loading_util.pl";
 
 package main;
 {
@@ -52,14 +52,14 @@ package main;
     $out_format = "obj";
 
     #### class factory
-    $processes = PFBP::ClassFactory->new_class(object_type=>"PFBP::Process",
+    $processes = classes::ClassFactory->new_class(object_type=>"classes::Process",
 					       prefix=>"proc_");
-    $leaves = PFBP::ClassFactory->new_class(object_type=>"PFBP::ProcessLeaf",
+    $leaves = classes::ClassFactory->new_class(object_type=>"classes::ProcessLeaf",
 					    prefix=>"leaf_");
 
 
-    push @classes, ("PFBP::Process");
-    push @classes, ("PFBP::ProcessLeaf");
+    push @classes, ("classes::Process");
+    push @classes, ("classes::ProcessLeaf");
 
     &ReadArguments();
 
@@ -381,49 +381,49 @@ sub LoadIndexes {
 
     #### compound names
     warn ("\tindexing compound names ...\n") if ($verbose >=1);
-    $index{compound_name} = PFBP::Index->new();
+    $index{compound_name} = classes::Index->new();
     $index{compound_name}->load("gunzip -c $dir{kegg_parsed}/Compound_names.tab.gz | grep -v '^--' |", 0, 1);
     $index{name_compound} = $index{compound_name}->reverse();
     
     #### reactions <-> EC numbers
     warn ("\tindexing reactions <-> EC numbers ...\n") if ($verbose >=1);
-    $index{reaction_ec} = PFBP::Index->new();
+    $index{reaction_ec} = classes::Index->new();
     $index{reaction_ec}->load("gunzip -c $dir{kegg_parsed}/Reaction_ecs.tab.gz | grep -v '^--' |", 0, 0);
     $index{ec_reaction} = $index{reaction_ec}->reverse();
     
     #### reactions <-> substrates
     warn ("\tindexing reactions <-> substrates ...\n") if ($verbose >=1);
-    $index{reaction_substrate} = PFBP::Index->new();
+    $index{reaction_substrate} = classes::Index->new();
     $index{reaction_substrate}->load("gunzip -c $dir{kegg_parsed}/Reactant.tab.gz | awk -F\"\t\" '\$2 == \"substrate\" {print \$3\"\t\"\$4}' |", 0, 0);
     $index{substrate_reaction} = $index{reaction_substrate}->reverse();
 
     #### reactions <-> products
     warn ("\tindexing reactions <-> products ...\n") if ($verbose >=1);
-    $index{reaction_product} = PFBP::Index->new();
+    $index{reaction_product} = classes::Index->new();
     $index{reaction_product}->load("gunzip -c $dir{kegg_parsed}/Reactant.tab.gz | awk -F\"\t\" '\$2 == \"product\" {print \$3\"\t\"\$4}' |", 0, 0);
     $index{product_reaction} = $index{reaction_product}->reverse();
 
     #### reactions <-> equations with compound IDs
     warn ("\tindexing reactions <-> equations ...\n") if ($verbose >=1);
-    $index{reaction_equation} = PFBP::Index->new();
+    $index{reaction_equation} = classes::Index->new();
     $index{reaction_equation}->load("gunzip -c $dir{kegg_parsed}/Reaction.tab.gz | grep -v '^--' | cut -f 1,3 |", 0 ,1);
     $index{equation_reaction} = $index{reaction_equation}->reverse();
 
     #### reactions <-> equations with compound names
     warn ("\tindexing reactions <-> equations (names) ...\n") if ($verbose >=1);
-    $index{reaction_equation_names} = PFBP::Index->new();
+    $index{reaction_equation_names} = classes::Index->new();
     $index{reaction_equation_names}->load("gunzip -c $dir{kegg_parsed}/Reaction.tab.gz | grep -v '^--' | cut -f 1,4 |", 0 ,1);
     $index{equation_reaction_names} = $index{reaction_equation}->reverse();
 
     #### amaze_id <-> kegg_id
 #    warn ("\tindexing reaction amaze_id <-> kegg_id ...\n") if ($verbose >=1);
-#    $index{amaze_kegg} = PFBP::Index->new();
+#    $index{amaze_kegg} = classes::Index->new();
 #    $index{amaze_kegg}->load("$dir{amaze_export}/amaze_kegg_reactions.tab", 0 , 0);
 #    $index{kegg_amaze} = $index{amaze_kegg}->reverse();
 
     #### patches on compound names
     warn ("\tindexing wrong_name <-> kegg_name ...\n") if ($verbose >=1);
-    $index{wrong_kegg} = PFBP::Index->new();
+    $index{wrong_kegg} = classes::Index->new();
     $index{wrong_kegg}->load($in_file{georges_identified_compounds}, 1, 1);
 
     
@@ -499,8 +499,8 @@ sub ReadProcesses {
 	    $process->set_attribute("annotator", "Georges Cohen");
 	}
 
-	my $product_index = PFBP::Index->new();
-	my $substrate_index = PFBP::Index->new();
+	my $product_index = classes::Index->new();
+	my $substrate_index = classes::Index->new();
 
 	if ($mirror) {
 	    #### mirror file to report the matching reactions for each pathway step

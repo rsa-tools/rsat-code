@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-chip,v 1.1 2003/09/03 08:03:44 jvanheld Exp $
+# $Id: convert-chip,v 1.2 2003/10/29 09:04:12 jvanheld Exp $
 #
-# Time-stamp: <2003-09-03 10:03:42 jvanheld>
+# Time-stamp: <2003-09-03 10:23:23 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -22,6 +22,7 @@ local %outfile = ();
 local $verbose = 0;
 local $in = STDIN;
 local $out = STDOUT;
+local $out_format = "tav";
 
 &ReadArguments();
 
@@ -36,9 +37,7 @@ $out = &OpenOutputFile($outfile{output});
 ################################################################
 ##### read input
 ($in) = &OpenInputFile($infile{input});
-while (<$in>) {
-
-}
+&ReadStanfordFile($in);
 
 close $in if ($infile{input});
 
@@ -162,6 +161,10 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-o") {
 	    $outfile{output} = $ARGV[$a+1];
 	    
+	    ### output format
+	} elsif ($ARGV[$a] eq "-to") {
+	    $out_format = $ARGV[$a+1];
+	    
 	}
     }
 }
@@ -184,3 +187,90 @@ sub Verbose {
 	}
     }
 }
+
+
+################################################################
+#
+# Read Stanford file, according to the standard described in
+# http://genome-www.stanford.edu/cellcycle/data/rawdata/desc.html
+#
+sub ReadStanfordFile {
+    my ($in) = @_;
+
+    #### column description is in the header
+    my $header = lc(<$in>);
+
+    my @columns = split "\t", $header;
+    my %col = ();
+    for my $c (0..$#columns) {
+	$col{$columns[$c]} = $c;
+    }
+
+    if ($verbose >= 1) {
+	print $out "# Input column contents\n";
+	print $out  join ("\t", "#", "index", "content", "column"), "\n";
+	foreach my $c (0..$#columns) {
+	    print $out join ("\t", "#", $c, $columns[$c], $c+1), "\n";
+	}
+    }
+
+
+
+    #### read data and print the result
+    while (<$in>) {
+	@fields = split "\t", $_;
+	if ($out_format eq "tav") {
+	    print $out join ("\t",
+			     $fields[$col{prow}],
+			     $fields[$col{pcol}],
+			     "",
+			     "",
+			     $fields[$col{spot}],
+			     $fields[$col{ch1i}],
+			     $fields[$col{ch2i}],
+			     ), "\n";
+	}
+    }   
+}
+
+
+__END__
+
+
+
+# Input column contents
+#       index   content column
+#       0       exp     1
+#       1       name    2
+#       2       type    3
+#       3       ch1i    4
+#       4       ch1b    5
+#       5       ch1d    6
+#       6       ch2i    7
+#       7       ch2b    8
+#       8       ch2d    9
+#       9       ch2in   10
+#       10      ch2bn   11
+#       11      ch2dn   12
+#       12      rat1    13
+#       13      rat2    14
+#       14      rat1n   15
+#       15      rat2n   16
+#       16      crt1    17
+#       17      crt2    18
+#       18      regr    19
+#       19      corr    20
+#       20      rflag   21
+#       21      plat    22
+#       22      prow    23
+#       23      pcol    24
+#       24      flag    25
+#       25      size    26
+#       26      spot    27
+#       27      left    28
+#       28      top     29
+#       29      right   30
+#       30      bot     31
+#       31      failed  32
+#       32
+        33

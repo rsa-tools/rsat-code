@@ -1,7 +1,7 @@
-### the package PFBP::Index allows to manipulate a special kind of index, where 
+### the package classes::Index allows to manipulate a special kind of index, where 
 ### each key is associated to a list of values rather than a single one
 ### This allows for example to deal with homonymy (several IDs associated to the same name)
-package PFBP::Index;
+package classes::Index;
 {
     ### creator
     sub new {
@@ -187,7 +187,7 @@ package PFBP::Index;
   ####   $reversed_index = $index->reverse();
   sub reverse {
       my ($index) = @_;
-      my $reversed_index = new PFBP::Index;
+      my $reversed_index = new classes::Index;
       foreach my $key ($index->get_keys) {
 	  my @values = $index->get_values($key);
 	  foreach my $value (@values) {

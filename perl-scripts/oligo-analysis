@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.60 2003/10/20 23:10:58 jvanheld Exp $
+# $Id: oligo-analysis,v 1.61 2003/10/29 09:04:12 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -174,7 +174,7 @@ $out = &OpenOutputFile($outputfile);
 &CountOligo();
 
 &CalcSubWordFrequencies() if (($method eq "Markov chain") || ($method eq "lexicon"));
-&CalcAlphabet() if (($input_alphabet) || ($return{'zscore'}));
+&CalcAlphabet() if ($input_alphabet); # || ($return{'zscore'}));
 &Degenerate() if ($one_var_position);
 &CalcFrequencies() if (($return{'freq'}) || ($verbose >= 1) || ($method eq "Markov chain"));
 &SumReverseComplements() if ($sum_rc);
@@ -591,22 +591,24 @@ sub CalcFrequencies {
 ################################################################
 ### residue frequencies from input sequences
 sub CalcAlphabet {
-  if ($verbose >= 2) {
-    &Warning(&AlphaDate()."\tCalculating input alphabet");
-  }
-  
-  foreach $key (sort keys %residue_occ) {
-    $residue_total += $residue_occ{$key};
-  }
-  if ($residue_total > 0) {
-    foreach $key (sort keys %residue_occ) {
-      if ($sum_rc) {
-	$residue_proba{$key} = ($residue_occ{$key} + $residue_occ{lc(SmartRC($key))})/(2*$residue_total);
-      } else {
-	$residue_proba{$key} = $residue_occ{$key}/$residue_total;
-      }
+    %residue_proba = ();
+    if ($verbose >= 0) {
+	&Warning(&AlphaDate()."\tCalculating residue frequencies from input sequences");
     }
-  }
+    
+    foreach $key (sort keys %residue_occ) {
+	$residue_total += $residue_occ{$key};
+    }
+    if ($residue_total > 0) {
+	foreach $key (sort keys %residue_occ) {
+	    if ($sum_rc) {
+		$residue_proba{$key} = ($residue_occ{$key} + $residue_occ{lc(SmartRC($key))})/(2*$residue_total);
+	    } else {
+		$residue_proba{$key} = $residue_occ{$key}/$residue_total;
+	    }
+	}
+    }
+    return %residue_proba;
 }
 
 

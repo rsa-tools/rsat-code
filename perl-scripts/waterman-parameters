@@ -2,7 +2,7 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
+require "RSA.lib";
 
 
 
@@ -14,16 +14,17 @@ NAME
 
         24/10/97 by Jacques van Helden
 	
+DESCRIPTION
+        calculates the probability to find a word within a given % of
+        a set of sequences, following the method of Waterman et al
+        (1984). Bulletin Math. Biol. 45 (4):515-527.
+
 USAGE
         waterman-parameters -k word_length -W window_width 
                 -d allowed_mismatches -r nb_sequences 
                 -beta matching_seq_percentage -L sequence_length
                 [-o outputfile] [-v]
 
-        calculates the probability to find a word within a given % 
-        of a set of sequences with the method of 
-        Waterman et al (1984). Bulletin Math. Biol. 45 (4):515-527.
-	
 OPTIONS
 	-v	verbose.
 	-i inputfile

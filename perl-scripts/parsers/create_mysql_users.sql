@@ -7,19 +7,19 @@
 ################################################################
 # Create databases for amaze parsing result
 create database swissprot;
-GRANT ALL ON swissprot.* TO swissprot;
-GRANT ALL ON swissprot.* TO jvanheld;
-GRANT ALL ON swissprot.* TO rekins;
+GRANT ALL ON swissprot.* TO swissprot@localhost;
+GRANT ALL ON swissprot.* TO jvanheld@localhost;
+GRANT ALL ON swissprot.* TO rekins@localhost;
 
 create database kegg;
-GRANT ALL ON kegg.* TO kegg;
-GRANT ALL ON kegg.* TO jvanheld;
-GRANT ALL ON kegg.* TO rekins;
+GRANT ALL ON kegg.* TO kegg@localhost IDENTIFIED BY kegg;
+GRANT ALL ON kegg.* TO jvanheld@localhost;
+GRANT ALL ON kegg.* TO rekins@localhost;
 
 create database sigtrans;
-GRANT ALL ON sigtrans TO sigtrans;
-GRANT ALL ON sigtrans TO jvanheld;
-GRANT ALL ON sigtrans TO rekins;
+GRANT ALL ON sigtrans TO sigtrans@localhost;
+GRANT ALL ON sigtrans TO jvanheld@localhost;
+GRANT ALL ON sigtrans TO rekins@localhost;
 
 
 ################################################################

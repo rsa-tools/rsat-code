@@ -6,16 +6,16 @@
 ### - access all objects of a class (_objects)
 ### - counters (_count) and ids, 
 ### - indexes (_id_index, _name_index),
-package PFBP::ClassFactory;
+package classes::ClassFactory;
 use Data::Dumper;
 {
    
   sub new_class {
     ### create an empty class factory
     ### usage:
-    ###    $myclass = PFBP::ClassFactory->new_class(object_type=>$object_type,prefix=>$prefix);
+    ###    $myclass = classes::ClassFactory->new_class(object_type=>$object_type,prefix=>$prefix);
     ### example:
-    ###    $compounds = PFBP::ClassFactory->new_class(object_type=>"PFBP::Compound",prefix=>"comp_");
+    ###    $compounds = classes::ClassFactory->new_class(object_type=>"classes::Compound",prefix=>"comp_");
     
     my ($class,%args) = @_;
     my $object_type = "";
@@ -25,12 +25,14 @@ use Data::Dumper;
       die "Error : cannot create a classholder without specified object type\n";
     }
     $object_type = $args{object_type};
+
+#    die "HELLO\t'$object_type'";
     unless ($object_type->can("new")) {
       die "Error: $class->new_class $object_type is not a valid object type\n";
     }
 
-    my $input_index = new PFBP::Index;
-    my $output_index = new PFBP::Index;
+    my $input_index = new classes::Index;
+    my $output_index = new classes::Index;
     
     ### instantiate the new class holder
     my $class_holder = bless {
@@ -54,7 +56,7 @@ use Data::Dumper;
 
   sub init() {
       my ($class_holder) = @_;
-      $class_holder->set_attribute_header("xrefs", join("\t", "database", "external_id"));
+      $class_holder->set_attribute_header("xrefs", join("\t", "external_db", "external_id"));
   }
   
   
@@ -92,6 +94,11 @@ use Data::Dumper;
   sub get_prefix {
     my ($class_holder) = @_;
     return $class_holder->{_prefix};
+  }
+  
+  sub set_prefix {
+    my ($class_holder, $new_prefix) = @_;
+    $class_holder->{_prefix} = $new_prefix;
   }
   
   sub get_count {
@@ -245,8 +252,8 @@ use Data::Dumper;
   }
 
   ### generate an index with all input objects
-  ### the input is a PFBP::Index, where 
-  ### - keys are pseudo_pointers to the input object (ex PFBP::Gene::GeneID)
+  ### the input is a classes::Index, where 
+  ### - keys are pseudo_pointers to the input object (ex classes::Gene::GeneID)
   ### - values are pseudo_pointers to the Activity
   sub index_inputs {
     my ($class_holder) = @_;
@@ -264,8 +271,8 @@ use Data::Dumper;
 
 
   ### generate an index with all output objects
-  ### the output is a PFBP::Index, where 
-  ### - keys are pseudo_pointers to the output object (ex PFBP::Gene::GeneID)
+  ### the output is a classes::Index, where 
+  ### - keys are pseudo_pointers to the output object (ex classes::Gene::GeneID)
   ### - values are pseudo_pointers to the Activity
   sub index_outputs {
     my ($class_holder) = @_;
@@ -631,7 +638,7 @@ use Data::Dumper;
 	  close INDEX;
       
 	  ### dump a separate table with the input_index index
-	  if (($object_type->isa("PFBP::BiochemicalActivity")) &&
+	  if (($object_type->isa("classes::BiochemicalActivity")) &&
 	      (defined( $class_holder->{_input_index}))){
 	      my $file_name = $short_class.$file_suffix."__input_index.tab";
 	      warn "; dumping $object_type input index in file $file_name\n"
@@ -649,7 +656,7 @@ use Data::Dumper;
 	  
 	  
 	  ### dump a separate table with the output index
-	  if (($object_type->isa("PFBP::BiochemicalActivity")) &&
+	  if (($object_type->isa("classes::BiochemicalActivity")) &&
 	      (defined( $class_holder->{_output_index}))){
 	      my $file_name = $short_class.$file_suffix."__output_index.tab";
 	      warn "; dumping $object_type output index in file $file_name\n"
@@ -720,11 +727,10 @@ use Data::Dumper;
 
      #### Database management system
       my $dbms = $args{dbms} || $main::default{dbms};
-      my $dbms_address = $args{dbms_address} || $main::default{dbms_address};
+      my $host = $args{host} || $main::default{host};
       my $user = $args{user} || $main::default{user};
       my $password = $args{password} || $main::default{password};
       my $schema = $args{schema} || $main::default{schema};
-
 
       my $comment_symbol = "--";
 
@@ -752,7 +758,7 @@ use Data::Dumper;
       }
       #### report DBMS options
       warn (";\tdbms\t", $dbms, "\n",
-	    ";\tdbms_address\t", $dbms_address, "\n",
+	    ";\thost\t", $host, "\n",
 	    ";\tschema\t", $schema, "\n",
 	    ";\tuser\t", $user, "\n",
 	    ";\tpassword\t", $password, "\n",
@@ -1168,12 +1174,17 @@ use Data::Dumper;
       open MK, "> $sql_dir/${makefile}" || die "Error: cannot create the makefile\n";
       #### variables
       if ($dbms eq "oracle") {
-	  print MK 'SQLLOGIN=',$user,'/',$password,'@',$dbms_address,"\n";
+	  print MK 'SQLLOGIN=',$user,'/',$password,'@',$host,"\n";
 	  print MK 'SQLLOADER=sqlldr userid=${SQLLOGIN}', "\n";
 	  print MK 'SQLPLUS=sqlplus ${SQLLOGIN}', "\n";
       } elsif ($dbms eq "mysql") {
-	  print MK 'MYSQL=mysql', "\n";
-#	  print MK 'MYSQL=mysql -u ',$user, ' -d ', $schema, '-p', "\n";
+#	  print MK 'MYSQL=mysql', "\n";
+	  my $mysql = "mysql";
+	  $mysql .= " -u $user" if $user;
+	  $mysql .= " -D $schema" if $schema;
+	  $mysql .= " -p$password" if $password;
+	  $mysql .= " -h $host" if $host;
+	  print MK "MYSQL=$mysql\n";
       }
 
       #### usage

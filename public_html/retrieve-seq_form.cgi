@@ -127,7 +127,7 @@ print $query->popup_menu(-name=>'seq_label',
 print "<BR>\n";
 
 
-### send results by e-mail or display on the browser
+### send results by email or display on the browser
 &SelectOutput("server");
 
 ### data for the demo 

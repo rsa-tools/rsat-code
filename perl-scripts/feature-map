@@ -14,21 +14,16 @@ use GD;
 
 $start_time = `date`;
 
-
 ##################################################################
 ##################### DEFAULT PARAMETERS #########################
 ##################################################################
-%supported_format = ();
+%supported_format = ("jpg"=>1, 
+		     "gif"=>1,
+		     "png"=>1,
+		     );
 
-if ($IMG_FORMAT eq "jpg") {
-# if ($config_site eq "rsa") {
-    $supported_format{"jpeg"} = 1;
-    $out_format = "jpeg";
-} else {
-    $supported_format{"gif"} = 1;
-    $out_format = "gif";
-}
-$supported_formats = join (";", keys %supported_format); 
+$img_format = $IMG_FORMAT || "png";
+$supported_formats = join (",", keys %supported_format); 
 
 #### font sizes ####
 $small_font_width = 6;
@@ -596,14 +591,15 @@ foreach $m (0..$#map_list) {
 
 
 #### write the gif file ####
-if ($out_format eq "gif") {
+if ($img_format eq "gif") {
     print $out $image->gif;
-} elsif ($out_format eq "jpeg") {
+} elsif (($img_format eq "jpeg") ||
+	 ($img_format eq "jpg")) {
     print $out $image->jpeg;
-} elsif ($out_format eq "png") {
+} elsif ($img_format eq "png") {
     print $out $image->png;
 } else {
-    &FatalError("Error: ormat $out_format is not supported\n");
+    &FatalError("Error: Format $img_format is not supported\n");
 }
 
 close $out if ($outputfile);
@@ -839,7 +835,6 @@ sub MaxScorePerID {
 	    my $id = $f->{id};
 	    my $score = $f->{score};
 	    $max_score_per_id{$id} = &max ($max_score_per_id{$id}, $score);
-	    warn join "\t", $id, $score, $max_score_per_id{$id}, "\n";
 	}
     }
 }
@@ -877,7 +872,7 @@ sub InitLegend {
 
 
 ################################################################
-#### draw the legen
+#### draw the legend
 sub DrawLegend {
 
     #### calculate limits of the legend box
@@ -1793,11 +1788,11 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-o") {
 	    $outputfile = $ARGV[$a+1];
 
-	    ### output format
+	    ### image format
 	} elsif ($ARGV[$a] eq "-format") {
-	    $out_format = lc($ARGV[$a+1]);
-	    unless ($supported_format{$out_format}) {
-		&FatalError("Format $out_format is not supported (supported: $supported_formats)");
+	    $img_format = lc($ARGV[$a+1]);
+	    unless ($supported_format{$img_format}) {
+		&FatalError("Format $img_format is not supported (supported: $supported_formats)");
 	    }
 	    
 	    ### data report ###
@@ -1948,9 +1943,9 @@ OPTIONS
 			form of a GIF document. 
 			If no output file is specified, the result is sent 
 			to the standard output (screen).
-	-format		output format
+	-format		output image format
 			Supported: $supported_formats
-			Default: $out_format
+			Default: $img_format
 	-from #		lower limit of the positions represented on the graph
 	-to #		upper limit of the positions represented on the graph
 	-title		Generic Title for the feature map.
@@ -2074,7 +2069,7 @@ feature-map options
 -htmap		HTML map
 -i 		inputfile
 -o 		outpufile 
--format		output format (default $out_format)
+-format		image format (supported $supported_formats; default $img_format)
 -from #		lower limit of the positions represented
 -to #		upper limit of the positions represented
 -title		Generic Title for the feature map.

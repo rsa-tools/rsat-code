@@ -5,9 +5,9 @@
 
 
 
-package PFBP::Reference;
+package classes::Reference;
 {
-  @ISA = qw ( PFBP::DatabaseObject );
+  @ISA = qw ( classes::DatabaseObject );
   ### class attributes
   $_count = 0;
   $_prefix = "refr_";
@@ -20,9 +20,9 @@ package PFBP::Reference;
 		     );
 }
 
-package PFBP::Paper;
+package classes::Paper;
 {
-  @ISA = qw ( PFBP::DatabaseObject );
+  @ISA = qw ( classes::DatabaseObject );
   ### class attributes
   $_count = 0;
   $_prefix = "papr_";
@@ -35,9 +35,9 @@ package PFBP::Paper;
 		     );
 }
 
-package PFBP::Book;
+package classes::Book;
 {
-  @ISA = qw ( PFBP::DatabaseObject );
+  @ISA = qw ( classes::DatabaseObject );
   ### class attributes
   $_count = 0;
   $_prefix = "book_";

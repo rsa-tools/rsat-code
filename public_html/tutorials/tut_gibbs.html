@@ -137,6 +137,38 @@ Pho4p binding site (CACGTGggg or CACGTTtt) ?
 <a name=interpret><h2>Interpreting the results</h2>
 <ul>
 
+<p>
+The gibbs sampler returns two matrices, and each matrix is presented
+in two units (residue frequencies, and entropy, respectively). 
+
+
+<h4>Why are there two matrices ? </h4>
+
+<p>The first matrix is the result of the expectation-maximisation (EM)
+cycles. Since the expectation-maximization phase is stochastic, this
+matrix might contain some suboptimal sites.
+
+<p>
+The matrix resulting from the EM cycles is used to scan the input
+sequence set, and the best sites are extracted, to form the second
+matrix. This second matrix is thus very similr, if not identical, to
+the first one.
+
+
+<h4>Is the result significant ?</h4>
+
+<p>
+The main parameter for evaluating the result is the <b>information per
+parameter (IPP)</i>.  The higher the IPP, the more significant is the
+matrix.
+
+<p>
+It is important to realize that the IPP depends on the number of
+sequences and of their size. One empirical way to evaluate the
+significance of a matrix is to run the gibbs sampler on random
+selections of genes, with the same number of genes and sequence sizes
+as in your data set.
+
 
 </ul>
 <a name=exercises><h2>Additional exercises</h2>

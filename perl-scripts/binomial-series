@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: binomial-series,v 1.6 2002/06/06 10:08:14 jvanheld Exp $
+# $Id: binomial-series,v 1.7 2003/10/29 09:04:12 jvanheld Exp $
 #
-# Time-stamp: <2002-06-06 12:08:12 jvanheld>
+# Time-stamp: <2003-07-04 12:46:41 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -185,7 +185,7 @@ sub ReadArguments {
 	    &PrintHelp;
 	    
 	    ### list of options
-	} elsif ($ARGV[0] eq "-help") {
+	} elsif ($ARGV[$a] eq "-help") {
 	    &PrintOptions;
 	    
 	    ### output file ###

@@ -3,9 +3,9 @@
 ### - SystematicGroup (organism classification)
 ### - ECnumber (enzyme classification)
 ### - FunctionalClass (gene function classification; to import from the MIPS for yeast)
-package PFBP::ObjectSet;
+package classes::ObjectSet;
 {
-  @ISA = qw ( PFBP::DatabaseObject );
+  @ISA = qw ( classes::DatabaseObject );
   ### class attributes
   $_count = 0;
   $_prefix = "oset_";

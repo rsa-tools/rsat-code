@@ -24,7 +24,7 @@ DESCRIPTION
 	given offset (0 is the first base of the input sequence).
 	
 CATEGORY
-	sequence
+	sequences
 	pattern matching
 
 OPTIONS

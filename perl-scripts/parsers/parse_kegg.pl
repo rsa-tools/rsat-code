@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_kegg.pl,v 1.15 2002/12/09 00:23:06 jvanheld Exp $
+# $Id: parse_kegg.pl,v 1.16 2003/10/29 09:04:13 jvanheld Exp $
 #
-# Time-stamp: <2002-10-29 17:26:55 jvanheld>
+# Time-stamp: <2003-07-10 11:53:00 jvanheld>
 #
 ############################################################
 
@@ -13,15 +13,15 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`"); ### add the program's directory to the lib path
 }
-require "PFBP_classes.pl";
-require "PFBP_config.pl";
-require "PFBP_util.pl";
-require "PFBP_parsing_util.pl";
+require "lib/load_classes.pl";
+require "config.pl";
+require "lib/util.pl";
+require "lib/parsing_util.pl";
 
 package KEGG::GenericPathway;
 ### A class to treat EC numenclature
 {
-  @ISA = qw ( PFBP::ObjectSet );
+  @ISA = qw ( classes::ObjectSet );
   ### class attributes
   $_count = 0;
   $_prefix = "pthw_";
@@ -39,7 +39,7 @@ package KEGG::GenericPathway;
 package KEGG::Pathway;
 ### A class to treat EC numenclature
 {
-  @ISA = qw ( PFBP::ObjectSet );
+  @ISA = qw ( classes::ObjectSet );
   ### class attributes
   $_count = 0;
   $_prefix = "pthw_";
@@ -58,7 +58,7 @@ package KEGG::Pathway;
 
 package KEGG::Reaction;
 {
-  @ISA = qw ( PFBP::HasReactants );
+  @ISA = qw ( classes::HasReactants );
   ### class attributes
   $_count = 0;
   $_prefix = "rctn_";
@@ -84,7 +84,7 @@ package KEGG::Reaction;
 ### - the validity of the reactant as intermediate betweeen 2 successive reactions in a pathway
 package KEGG::Reactant;
 {
-  @ISA = qw ( PFBP::DatabaseObject );
+  @ISA = qw ( classes::DatabaseObject );
   ### class attributes
   $_count = 0;
   $_prefix = "rctt_";
@@ -141,10 +141,10 @@ $dir{output} = "$parsed_data/${export_subdir}/$delivery_date";
 
 $out_format = "obj";
 
-push @classes, ("PFBP::Compound");
+push @classes, ("classes::Compound");
 push @classes, ("KEGG::Reaction");
 push @classes, ("KEGG::Reactant");
-push @classes, ("PFBP::ECSet");
+push @classes, ("classes::ECSet");
 push @classes, ("KEGG::GenericPathway");
 
 &ReadArguments();
@@ -197,17 +197,17 @@ $in_file{reaction2ec} = "uncompress -c ".$dir{KEGG}."/ligand/reaction.tar.Z | ta
 &DefaultVerbose if ($verbose >= 1);
 
 ### instantiate class factories
-$compounds = PFBP::ClassFactory->new_class(object_type=>"PFBP::Compound",
+$compounds = classes::ClassFactory->new_class(object_type=>"classes::Compound",
 					   prefix=>"comp_");
-$reactions = PFBP::ClassFactory->new_class(object_type=>"KEGG::Reaction",
+$reactions = classes::ClassFactory->new_class(object_type=>"KEGG::Reaction",
 					   prefix=>"rctn_");
-$reactants = PFBP::ClassFactory->new_class(object_type=>"KEGG::Reactant",
+$reactants = classes::ClassFactory->new_class(object_type=>"KEGG::Reactant",
 					   prefix=>"rctt_");
-$ecs = PFBP::ClassFactory->new_class(object_type=>"PFBP::ECSet",
+$ecs = classes::ClassFactory->new_class(object_type=>"classes::ECSet",
 				     prefix=>"ec_");
-$pathways = PFBP::ClassFactory->new_class(object_type=>"KEGG::Pathway",
+$pathways = classes::ClassFactory->new_class(object_type=>"KEGG::Pathway",
 					  prefix=>"pthw_");
-$genericPathways = PFBP::ClassFactory->new_class(object_type=>"KEGG::GenericPathway",
+$genericPathways = classes::ClassFactory->new_class(object_type=>"KEGG::GenericPathway",
 						 prefix=>"gptw_");
 #  $compounds->generate_sql(schema=>$schema,
 #  			 user=>$user,
@@ -782,17 +782,17 @@ sub ParseGenes {
 	}
 
 #    my $gene_id = undef;
-#    unless ($gene_id = $database->get_id("PFBP::Gene::".$Gene)) {
+#    unless ($gene_id = $database->get_id("classes::Gene::".$Gene)) {
 #      &ErrorMessage("line $l file $in_file{pathway_index}: unknown gene $Gene\n", $line, "\n");
 #      next;
 #    }
-#    unless (($expr_pointer) = $database->get_objects_by_input("PFBP::Expression","PFBP::Gene::".$gene_id)) {
+#    unless (($expr_pointer) = $database->get_objects_by_input("classes::Expression","classes::Gene::".$gene_id)) {
 #      &ErrorMessage("line $l file $in_file{pathway_index}: no expression for gene $Gene\n");
 #      next;
 #    }
 	
 #    my $expression = $database->get_object($expr_pointer);
-#    $pathway->new_attribute_value(elements=>"PFBP::Expression::".$expression->get_attribute("id"));
+#    $pathway->new_attribute_value(elements=>"classes::Expression::".$expression->get_attribute("id"));
 	$pathway->new_attribute_value(genes=>$Gene);
 	
 #    $pathway->new_attribute_value("elements",$gene_id);

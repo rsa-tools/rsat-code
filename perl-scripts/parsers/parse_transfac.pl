@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_transfac.pl,v 1.2 2002/12/09 00:22:40 jvanheld Exp $
+# $Id: parse_transfac.pl,v 1.3 2003/10/29 09:04:13 jvanheld Exp $
 #
-# Time-stamp: <2002-07-09 22:41:49 jvanheld>
+# Time-stamp: <2003-07-10 11:52:52 jvanheld>
 #
 ############################################################
 
@@ -11,19 +11,19 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`"); ### add the program's directory to the lib path
 }
-require "PFBP_config.pl";
-require "PFBP_classes.pl";
-require "PFBP_util.pl";
-require "PFBP_loading_util.pl"; ### for converting polypeptide IDs into ACs
-require "PFBP_parsing_util.pl";
+require "config.pl";
+require "lib/load_classes.pl";
+require "lib/util.pl";
+require "lib/loading_util.pl"; ### for converting polypeptide IDs into ACs
+require "lib/parsing_util.pl";
 
 
 
 ################################################################
 ## regulatory site
-package PFBP::TransfacSite;
+package classes::TransfacSite;
 {
-  @ISA = qw ( PFBP::DatabaseObject );
+  @ISA = qw ( classes::DatabaseObject );
   ### class attributes
   $_count = 0;
   $_prefix = "site_";
@@ -47,9 +47,9 @@ package PFBP::TransfacSite;
 
 ################################################################
 ## Transcription factor
-package PFBP::TransfacFactor;
+package classes::TransfacFactor;
 {
-  @ISA = qw ( PFBP::DatabaseObject );
+  @ISA = qw ( classes::DatabaseObject );
   ### class attributes
   $_count = 0;
   $_prefix = "fact_";
@@ -66,9 +66,9 @@ package PFBP::TransfacFactor;
 
 ################################################################
 ## Gene
-package PFBP::TransfacGene;
+package classes::TransfacGene;
 {
-  @ISA = qw ( PFBP::DatabaseObject );
+  @ISA = qw ( classes::DatabaseObject );
   ### class attributes
   $_count = 0;
   $_prefix = "fact_";
@@ -116,10 +116,10 @@ package main ;
     $out_format = "obj";
 
     #### classes and class_holders
-    @classes = qw( PFBP::TransfacSite PFBP::TransfacFactor PFBP::TransfacGene );
-    $sites = PFBP::ClassFactory->new_class(object_type=>"PFBP::TransfacSite");
-    $factors = PFBP::ClassFactory->new_class(object_type=>"PFBP::TransfacFactor");
-    $genes = PFBP::ClassFactory->new_class(object_type=>"PFBP::TransfacGene");
+    @classes = qw( classes::TransfacSite classes::TransfacFactor classes::TransfacGene );
+    $sites = classes::ClassFactory->new_class(object_type=>"classes::TransfacSite");
+    $factors = classes::ClassFactory->new_class(object_type=>"classes::TransfacFactor");
+    $genes = classes::ClassFactory->new_class(object_type=>"classes::TransfacGene");
 
 
     &ReadArguments;

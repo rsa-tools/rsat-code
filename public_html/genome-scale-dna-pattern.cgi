@@ -105,7 +105,7 @@ if ($query->param('return') =~ /count/i) {
   
 ### return matching positions
 } elsif ($query->param('return') =~ /positions/) { 
-    $parameters .= " -pos";
+    $parameters_dna_pattern .= " -pos";
     
     ### origin ###
     if ($query->param('origin') =~ /end/i) {
@@ -119,7 +119,7 @@ if ($query->param('return') =~ /count/i) {
     
     #### match format
     if ($query->param('match_format') eq "fasta") {
-	$parameters .= " -match_format fasta";
+	$parameters_dna_pattern .= " -match_format fasta";
     }
 }
 
@@ -157,7 +157,9 @@ if ($query->param('return') =~ /positions/) {
 } else {
     $orf_col = 1;
 }
-unless ($query->param("sequence_type") =~ /chromosome/) {
+
+unless (($query->param("sequence_type") =~ /chromosome/) ||
+	($query->param("match_format") eq "fasta")) {
     $command .= "| $add_orf_function_command -org $org ";
     $command .= "| $add_linenb_command ";
 #### linking to external databases
@@ -187,9 +189,11 @@ if ($query->param("output") =~ /display/i) {
     $export_genes = `cat $result_file.genes`;
     &DelayedRemoval($gene_file);
 
+    unless ($query->param("match_format" eq "fasta")) {
 #    if ($export_genes =~ /\S/) {
 	&PipingForm () ;
 #    }
+    }
     
     print "<HR SIZE = 3>";
     
@@ -245,11 +249,13 @@ if ($query->param('return') =~ /positions/) {
 part2
     
 }
-
+  
   if (($org eq "Saccharomyces_cerevisiae") && 
-      !($query->param("sequence_type") =~ /chromosome/)) {
+      !($query->param("sequence_type") =~ /chromosome/) &&
+      !($query->param("match_format") eq "fasta") 
+      ) {
 #### pipe to yMGV and KEGG map coloring
-	print <<part3
+      print <<part3
 <TR>
 
 <TR>

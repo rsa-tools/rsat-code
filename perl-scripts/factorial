@@ -9,7 +9,7 @@ NAME
 	v 1.0, 31 July 1997 by Victoria
 
 DESCRIPTION
-	calculates the factoril of a given number
+	Calculates the factorial of a given number.
 
 CATEGORY
 	statistics
@@ -20,7 +20,6 @@ USAGE
 ARGUMENTS
 	#	an integer number
 End_short_help
-
   exit(0);
 }
 

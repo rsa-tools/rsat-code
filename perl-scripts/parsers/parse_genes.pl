@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genes.pl,v 1.23 2002/12/09 00:22:26 jvanheld Exp $
+# $Id: parse_genes.pl,v 1.24 2003/10/29 09:04:13 jvanheld Exp $
 #
-# Time-stamp: <2002-09-19 14:21:44 jvanheld>
+# Time-stamp: <2003-07-10 11:53:04 jvanheld>
 #
 ############################################################
 
@@ -11,16 +11,16 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`"); ### add the program's directory to the lib path
 }
-require "PFBP_config.pl";
-require "PFBP_classes.pl";
-require "PFBP_util.pl";
-require "PFBP_loading_util.pl"; ### for converting polypeptide IDs into ACs
-require "PFBP_parsing_util.pl";
+require "config.pl";
+require "lib/load_classes.pl";
+require "lib/util.pl";
+require "lib/loading_util.pl"; ### for converting polypeptide IDs into ACs
+require "lib/parsing_util.pl";
 
 
 package KEGG::Gene;
 {
-  @ISA = qw ( PFBP::DatabaseObject );
+  @ISA = qw ( classes::DatabaseObject );
   ### class attributes
   $_count = 0;
   $_prefix = "gene_";
@@ -103,7 +103,7 @@ package main ;
 
     #### classes and classholders
     @classes = qw( KEGG::Gene );
-    $genes = PFBP::ClassFactory->new_class(object_type=>"KEGG::Gene",
+    $genes = classes::ClassFactory->new_class(object_type=>"KEGG::Gene",
 					   prefix=>"gene_");
 
     #### default output directory

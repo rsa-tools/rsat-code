@@ -7,36 +7,21 @@ use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
 require "RSA.cgi.lib";
+require "patser.lib.pl";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 require "$RSA/public_html/genome-scale.lib.pl";
 
 ### Read the CGI query
 $query = new CGI;
 
-### default values for filling the form
-$default{matrix_format} = "consensus";
-$default{matrix} = "";
-$default{strands} = "both";
-
-$default{return} = "all matches";
-$default{top_scores} = "1"; ### [-t <Print only the top scores>]
-$default{positions} = "checked"; ### convert the result into a score table
-$default{table} = ""; ### convert the result into a score table
-$default{sort} = ""; ### [-ds <Print top scores in order of decreasing score (default: print in order of position)>]
-
-$default{lthreshold} = "auto";
-$default{uthreshold} = "none";
-$default{alphabet} = "a:t 0.3 c:g 0.2";
-$default{pseudo_counts} = 1;
-
-
 $default{sequence_format} = "wc"; ### Important ! the format supported by patser
+
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
-  if ($query->param($key)) {
-    $default{$key} = $query->param($key);
-  }
+    if ($query->param($key)) {
+	$default{$key} = $query->param($key);
+    }
 } 
 
 ### if a matrix file is specified in the query,
@@ -72,116 +57,10 @@ print $query->start_multipart_form(-action=>"genome-scale-patser.cgi");
 
 &DisplayRetrieveSeqOptions();
 
-################################################################
-#
-# patser options
-#
-### text area to enter the matrix
-print "<A HREF='help.patser.html#matrix'><B>\n";
-print "Matrix</B></A>\n";
-print "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
-print "<B>Format</B>&nbsp;";
-print $query->popup_menu(-name=>'matrix_format',
-			 -Values=>['consensus',
-				   'gibbs',
-				   'transfac'
-				   ],
-			 -default=>$matrix_format);
-print "<BR>\n";
-print $query->textarea(-name=>'matrix',
-		       -default=>$default{matrix},
-		       -rows=>4,
-		       -columns=>60);
-print "<BR>\n";
+&DisplayPatserOptions();
 
-### strands
-print "<A HREF='help.patser.html#strands'><B>Search strands</B></A>&nbsp;\n";
-print $query->popup_menu(-name=>'strands',
-			 -Values=>['single',
-				   'both'],
-			 -default=>$default{strands});
-
-### return
-################################################################
-### return value
-print "<BR>\n";
-print "<table border=0>\n";
-print "<tr><td>\n";
-print "<A HREF='help.patser.html#return'><B>Return</B></A>&nbsp;\n";
-print "</td><td>\n";
-print $query->radio_group(-name=>'return',
-			  -Values=>[ 'all matches'],
-			  -default=>$default{return});
-
-print "</td><td>\n";
-print $query->radio_group(-name=>'return',
-			  -Values=>['top values for each sequence'],
-			  -labels=>{'top values for each sequence'=>''},
-			  -default=>$default{return});
-print $query->textfield(-name=>top_scores,
-			-default=>$default{top_scores},
-			-size=>3
-			);
-print "&nbsp;top value(s) for each sequence";
-
-print "</td></tr><tr><td>\n";
-print "&nbsp;";
-print "</td><td>\n";
-print $query->checkbox(-name=>'positions',
-		       -label=>' matching positions',
-		       -checked=>$default{positions});
-
-print "</td><td>\n";
-print $query->checkbox(-name=>'table',
-		       -label=>' score table',
-		       -checked=>$default{table});
-
-print "</td></tr>\n";
-print "</table>\n";
-
-
-#print "<A HREF='help.patser.html#return'><B>Return</B></A>&nbsp;\n";
-#print $query->popup_menu(-name=>'return',
-#			 -Values=>['top value for each sequence',
-#				   'all matching positions'],
-#			 -default=>$default{return});
-
-### thresholds
-print "<BR>\n";
-print CGI::table({-border=>0,-cellpadding=>3,-cellspacing=>0},
-	       CGI::Tr({-align=>left,-valign=>MIDDLE},
-		       [
-		      CGI::td({-align=>left,-valign=>MIDDLE},
-			      [
-			       "<B><A HREF='help.patser.html#pseudo_counts'>Pseudo-counts</A>\n",
-			       $query->textfield(-name=>'pseudo_counts',
-						       -default=>$default{pseudo_counts},
-						       -size=>2),
-			       "&nbsp;&nbsp;<b>Thresholds</b>",
-			       "<A HREF='help.patser.html#lthreshold'><B> lower</B></A>",
-			       $query->textfield(-name=>'lthreshold',
-						 -default=>$default{lthreshold},
-						 -size=>4),
-			       "<A HREF='help.patser.html#uthreshold'><B> upper</B></A>",
-			       $query->textfield(-name=>'uthreshold',
-						 -default=>$default{uthreshold},
-						 -size=>4)
-			       
-			       ]),
-			])
-		 );
-print "<BR>\n";
-
-### alphabet
-print "<B><A HREF='help.patser.html#alphabet'>\n";
-print "Alphabet</A>\n";
-print $query->textfield(-name=>'alphabet',
-			-default=>$default{alphabet},
-			-size=>50);
-print "<BR>\n";
-
-### send results by e-mail or display on the browser
-&SelectOutput;
+### send results by email or display on the browser
+&SelectOutput();
 
 ### action buttons
 print "<UL><UL><TABLE>\n";
@@ -201,6 +80,8 @@ T    |    4    1    0    0    0    0    0    8    3    2    2    2";
 print "<TD><B>";
 print $query->hidden(-name=>'matrix',-default=>$demo_matrix);
 print $query->hidden(-name=>'sequence',-default=>$demo_sequence);
+print $query->hidden(-name=>'lthreshold_method',-default=>'weight');
+
 print $query->hidden(-name=>'lthreshold',-default=>9);
 print $query->hidden(-name=>'alphabet',-default=>"a:t 0.325 c:g 0.175");
 print $query->hidden(-name=>'sequence_format',-default=>$default{sequence_format});

@@ -4,18 +4,18 @@
 ################################# BIOCHEMICAL ENTITIES ###################################
 ##########################################################################################
 
-package PFBP::BiochemicalEntity;
+package classes::BiochemicalEntity;
 {
-  @ISA = qw ( PFBP::DatabaseObject );
+  @ISA = qw ( classes::DatabaseObject );
   ### this is a super-class for all the biochemical entities
   ### it should be a method class only, instantiation necessitates 
   ### to specify the sub-class
   %_attribute_cardinality = (xref=>"EXPANDED");
 }
 
-package PFBP::Compound;
+package classes::Compound;
 {
-    @ISA = qw ( PFBP::BiochemicalEntity );
+    @ISA = qw ( classes::BiochemicalEntity );
       ### class attributes
     $_count = 0;
     $_prefix = "comp_N";
@@ -31,9 +31,9 @@ package PFBP::Compound;
     
 }
 
-package PFBP::Polypeptide;
+package classes::Polypeptide;
 {
-  @ISA = qw ( PFBP::BiochemicalEntity );
+  @ISA = qw ( classes::BiochemicalEntity );
   ### class attributes
   $_count = 0;
   $_prefix = "ppep_";
@@ -49,9 +49,9 @@ package PFBP::Polypeptide;
 		      source=>"SCALAR");
 }
 
-package PFBP::ProteinComplex;
+package classes::ProteinComplex;
 {
-  @ISA = qw ( PFBP::BiochemicalEntity );
+  @ISA = qw ( classes::BiochemicalEntity );
   ### class attributes
   $_count = 0;
   $_prefix = "ppep_";
@@ -64,9 +64,9 @@ package PFBP::ProteinComplex;
 		      source=>"SCALAR");
 }
 
-package PFBP::ProteicDomain;
+package classes::ProteicDomain;
 {
-  @ISA = qw ( PFBP::BiochemicalEntity );
+  @ISA = qw ( classes::BiochemicalEntity );
   ### class attributes
   $_count = 0;
   $_prefix = "pdom_";
@@ -79,9 +79,9 @@ package PFBP::ProteicDomain;
 			     source=>"SCALAR");
 }
 
-package PFBP::Gene;
+package classes::Gene;
 {
-  @ISA = qw ( PFBP::BiochemicalEntity );
+  @ISA = qw ( classes::BiochemicalEntity );
   ### class attributes
   $_count = 0;
   $_prefix = "gene_";
@@ -122,9 +122,9 @@ package PFBP::Gene;
 #    }
 }
 
-package PFBP::Contig; ### for parsing genbank files
+package classes::Contig; ### for parsing genbank files
 {
-  @ISA = qw ( PFBP::BiochemicalEntity );
+  @ISA = qw ( classes::BiochemicalEntity );
   ### class attributes
   $_count = 0;
   $_prefix = "gene_";

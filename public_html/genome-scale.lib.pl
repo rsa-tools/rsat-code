@@ -1,6 +1,6 @@
 ### default values for sequence retrieval
 $default{sequence_format} = "fasta";
-$default{seq_label} = "gene name";
+$default{seq_label} = "gene";
 $default{organism} = "Saccharomyces cerevisiae";
 $default{from} = "default";
 $default{to} = "default";
@@ -18,7 +18,7 @@ sub DisplayRetrieveSeqOptions {
     print $query->hidden(-name=>'sequence_format',-default=>$default{sequence_format});
 
 
-    &OrganismPopUp;
+    &OrganismPopUp();
 
     ### sequence type
     print "<B><A HREF='help.retrieve-seq.html#sequence_type'>Sequence type</A></B>&nbsp;";
@@ -51,7 +51,7 @@ sub DisplayRetrieveSeqOptions {
 #    print $query->hidden(-name=>'orf_overlap',-default=>'on');
 
     ### sequence label
-    print $query->hidden(-name=>'seq_label',-default=>'ORF id');
+    print $query->hidden(-name=>'seq_label',-default=>$default{seq_label});
 
     print "<BR>\n";
 }
@@ -61,6 +61,7 @@ sub DisplayRetrieveSeqOptions {
 # retrieve-seq parameters
 #
 sub ReadRetrieveSeqParams {
+    $org = $query->param('organism');
     if ($query->param('sequence_type') =~ /chromosome/i) {
 	$retrieve_seq_command = "$SCRIPTS/convert-seq";
 
@@ -82,7 +83,7 @@ sub ReadRetrieveSeqParams {
 	if (defined($supported_organism{$query->param('organism')})) {
 	    $org = $query->param('organism');
 	} else {
-	    $org = "yeast";
+	    $org = "Saccharomyces_cerevisiae";
 	}
 	$retrieve_seq_parameters .= " -org ".$org;
 	
@@ -97,7 +98,11 @@ sub ReadRetrieveSeqParams {
 	}
 
 	### sequence label
-	$seq_label = lc($query->param('seq_label'));
+#	if ($org eq "Saccharomyces_cerevisiae") {
+#	    $seq_label = "orf";
+#	} else {
+	    $seq_label = lc($query->param('seq_label'));
+#	}
 	if (($seq_label =~ /gene/) && 
 	    ($seq_label =~ /orf/)) {
 	    $retrieve_seq_parameters .= " -label orf_gene";

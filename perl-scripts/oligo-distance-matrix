@@ -2,7 +2,7 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
+require "RSA.lib";
 
 
 
@@ -21,8 +21,15 @@ NAME
 	
 	v1.0 by Jacques van Helden, 25 July 1997
 	
-	Elaborate a distance matrix between a series of non aligned sequences.
-	Distances are calculated on bases of oligonucleotide frequencies.
+DESCRIPTION
+	Elaborate a distance matrix between a series of non aligned
+	sequences.  Distances are calculated on bases of
+	oligonucleotide frequencies.
+
+CATEGORY
+	statistics
+	sequences
+	pattern matching
 
 USAGE
 	oligo_distances -i inputfile -o outputfile -l length 

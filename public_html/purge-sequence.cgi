@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence.cgi,v 1.3 2003/04/17 20:54:54 jvanheld Exp $
+# $Id: purge-sequence.cgi,v 1.4 2003/10/29 09:04:37 jvanheld Exp $
 #
-# Time-stamp: <2003-04-17 22:54:13 jvanheld>
+# Time-stamp: <2003-10-01 00:38:45 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -34,7 +34,7 @@ $query = new CGI;
 
 ### print the result page
 &RSA_header("purge-sequence result");
-#&ListParameters;
+&ListParameters() if ($ECHO >= 2);
 
 #### update log file ####
 &UpdateLogFile;
@@ -60,6 +60,10 @@ if ($query->param("both_strands")) {
     $parameters .= "-1str ";
 }
 
+### treatment
+if ($query->param('treatment') eq 'delete') {
+    $parameters .= " -del ";
+}
 
 ### match length
 if (&IsNatural($query->param('match_len'))) {
@@ -71,14 +75,23 @@ if (&IsNatural($query->param('mismatches'))) {
     $parameters .= " -mis ".$query->param('mismatches');
 }
 
-print "<PRE><B>Command:</B> $command $parameters </PRE>" if ($ECHO);
+#$parameters .= " -o $TMP/bounpurged";
 
-if ($query->param('output') eq "display") {  
-    &PipingWarning();
-    
+print "<PRE><B>Command:</B> $command $parameters </PRE>" if ($ECHO >= 1);
+
+if (($query->param('output') =~ /display/i) ||
+    ($query->param('output') =~ /server/i)) {
+
     ### execute the command ###
-#    system "$command $parameters";
     open RESULT, "$command $parameters |";
+
+    ### print the result ### 
+    &PipingWarning();
+    if ($query->param('output') =~ /server/i) {
+	&Info("The server is currently retrieving your sequences...");
+    }
+
+    print '<H2>Result</H2>';
     
     ### open the mirror file ###
     $mirror_file = "$TMP/$tmp_file_name.res";
@@ -88,28 +101,29 @@ if ($query->param('output') eq "display") {
     }
     
     ### Print result on the web page
-    print '<H2>Result</H2>';
     print "<PRE>";
     while (<RESULT>) {
-  	print;
+	print "$_" unless ($query->param('output') =~ /server/i);
 	print MIRROR $_ if ($mirror);
     }
     print "</PRE>";
     close(RESULT);
     close MIRROR if ($mirror);
     
-#    ### Print result on the web page
-#    print '<H4>Result</H4>';
-#    print "<PRE>";
-#    print `cat $result_file`;
-#    print "</PRE>";
+    if ($query->param('output') =~ /server/i) {
+	$result_URL = "${WWW_RSA}/tmp/${tmp_file_name}.res";
+	print ("Result is available in the file ",
+	       "<a href=${result_URL}>${result_URL}</a>",
+	       "\n");
+    }
     
+    ### prepare data for piping
     &PipingForm();
     
     print "<HR SIZE = 3>";
 
-} elsif ($query->param('output') =~ /server/i) {
-    &ServerOutput("$command $parameters", $query->param('user_email'));
+#} elsif ($query->param('output') =~ /server/i) {
+#    &ServerOutput("$command $parameters", $query->param('user_email'));
 } else {
     &EmailTheResult("$command $parameters", $query->param('user_email'));
 }

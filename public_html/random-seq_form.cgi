@@ -62,7 +62,7 @@ print $query->textfield(-name=>'repet',
 print "<BR>\n";
 
 ### sequence format 
-print "<B><A HREF='help.random-seq.html#formats'>Sequence format</A></B>&nbsp;";
+print "<A HREF='help.random-seq.html#formats'>Sequence format</A>&nbsp;";
 print $query->popup_menu(-name=>'format',
 			 -Values=>['fasta', 
 				   'IG',
@@ -82,7 +82,7 @@ print "<H4><A HREF='help.random-seq.html#alphabet'>Nucleotide probabilities</a><
 
 print "<UL>";
 
-print "<INPUT TYPE='radio' NAME='proba' VALUE='ncf' checked>Markov chain (calibrated on non-coding oligonucleotide frequencies)<BR>";
+print "<INPUT TYPE='radio' NAME='proba' VALUE='ncf' checked>Markov chain (calibrated on intergenic oligonucleotide frequencies)<BR>";
 
 print "<UL>";
 &OrganismPopUp;
@@ -116,8 +116,8 @@ print "<INPUT TYPE='radio' NAME='proba' VALUE='equi'>Independent and equiprobabl
 print "</UL>";
 
 
-### send results by e-mail or display on the browser
-&SelectOutput;
+### send results by email or display on the browser
+&SelectOutput();
 
 ### action buttons
 print "<UL><UL><TABLE>\n";
@@ -127,9 +127,8 @@ print "<TD>", $query->reset, "</TD>\n";
 print $query->end_form;
 
 
-#print "<TD><B><A HREF='demo.random-seq.html'>DEMO</A></B></TD>\n";
 print "<TD><B><A HREF='help.random-seq.html'>MANUAL</A></B></TD>\n";
-#print "<TD><B><A HREF='tutorials/tut_random-seq.html'>TUTORIAL</A></B></TD>\n";
+print "<TD><B><A HREF='tutorials/tut_random-seq.html'>TUTORIAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:jvanheld\@ucmb.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 

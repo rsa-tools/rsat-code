@@ -70,9 +70,17 @@ sub RSA_header {
 sub SelectOutput {
     my ($default_output) = @_;
     $default_output = "display" unless ($default_output);
+
+    my @values = ();
+    if ($default_output eq 'server') {
+	push @values, 'server'
+    }
+    push @values, ('display','email');
+
     print "<B>Output</B>&nbsp;";
     print $query->radio_group(-name=>'output',
-			      -values=>['display','e-mail'],
+#			      -values=>['display','server','e-mail'],
+			      -values=>[@values],
 			      -default=>$default{'output'});
     print $query->textfield(-name=>'user_email',
 			    -size=>30);
@@ -395,57 +403,80 @@ sub Print_CGI_Input {
 
 
 ################################################################
+##### Save the command string in a temporry file for debugging
+sub SaveCommand {
+    my ($command, $tmp_file_name) = @_;
+
+    #### temporary file for storing the result
+    unless ($tmp_file_name) {
+	$tmp_file_name = sprintf "command.%s", &AlphaDate.".txt";
+    }
+    open CMD, ">${tmp_file_name}_command.txt";
+    print CMD $command, "\n";
+    close CMD;
+
+}
+
+
+################################################################
 #### save the result in a temporary file on the server
 #### this file will be deleted after some delay
 sub ServerOutput {
+    #### redirect the task to email output
+    &EmailTheResult(@_);
+
+}
+
+#### send e-mail with the result of a command
+sub EmailTheResult {
     my ($command, $email_address, $tmp_file_name) = @_;
-    my $delay = "24 hours";
+    my $delay = "72 hours";
     $mail_command = "mail -s \'RSA-tools - $script_name - $date\'";
 
-    ## temporary file for storing the result
+    #### check the email address
+    &CheckEmailAddress($email_address);
+
+    #### temporary file for storing the result
     unless ($tmp_file_name) {
 	$tmp_file_name = sprintf "result.%s", &AlphaDate.".txt";
     }
+    my $result_URL = "$WWW_RSA/tmp/$tmp_file_name";
     
-    &CheckEmailAddress($email_address);
-
-    &Info("Your task is currently being processed. <P>When the result will be ready, you will be warned at your email address $email_address.");
-
+    #### debugging: report the command
     print "<PRE>$command > $TMP/$tmp_file_name</PRE>" if ($ECHO >= 1);
-    system "$command | perl -pe 's|$RSA/(public_html/)*||g' > $TMP/$tmp_file_name";
 
-    my $message = "The results are available on the following URL\n";
-    $message .= "\t$WWW_RSA/tmp/$tmp_file_name\n";
-    $message .= "This file will remain on the server for $delay.\n";
-
+    #### Indicate the URL of the future result file
+    my $message = "The server is now processing your request.\n"; 
+    $message .= "Once it will be finished, the result will become available at the following URL\n";
+    $message .= "\t${result_URL}\n";
+    $message .= "When the result will be ready, you will be warned at your email address ($email_address).\n";
+    $message .= "The result file will remain on the server for $delay.\n";
     $html_message = $message;
     $html_message =~ s|(http://\S+)|<a href=$1>$1</a>|gm;
 
     &Info($html_message);
 
-    system "echo \"$message\" | $mail_command $email_address &"; 
+    #### concatenate the command with the email notification
+    my $email_message = "Your result is available at the following URL:\n\t${result_URL}";
+    $email_message .= "\nThe result file will remain there for $delay.";
+    $email_command =  "$command | perl -pe 's|$RSA/(public_html/)*||g' > $TMP/$tmp_file_name; ";
+    $email_command .= "echo \"$email_message\" | $mail_command $email_address &"; 
+    print "<PRE>$email_command</PRE>" if ($ECHO >= 1);
+    system $email_command;
 
+
+    #### prepare removal of the temporary file
     &DelayedRemoval("$TMP/$tmp_file_name", $delay);
 }
 
-#### send e-mail with the result of a command
-sub EmailTheResult {
-    #### redirect the task to ServerOutput
-    &ServerOutput(@_);
-}
-
-sub OldEmailTheResult {
-    my ($command, $email_address) = @_;
-
-    $mail_command = "mail -s \'RSA-tools - $script_name - $date\'";
-
-    $email_address = &trim($email_address);
-
-    &CheckEmailAddress($email_address);
-
-    &Info ("Result will be sent to your e-mail address: $email_address");
-    system "$command | $mail_command $email_address &"; 
-}
+#  sub OldEmailTheResult {
+#      my ($command, $email_address) = @_;
+#      $mail_command = "mail -s \'RSA-tools - $script_name - $date\'";
+#      $email_address = &trim($email_address);
+#      &CheckEmailAddress($email_address);
+#      &Info ("Result will be sent to your e-mail address: $email_address");
+#      system "$command | $mail_command $email_address &"; 
+#  }
 
 #### check email address format
 sub CheckEmailAddress {

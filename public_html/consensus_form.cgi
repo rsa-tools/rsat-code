@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: consensus_form.cgi,v 1.3 2001/11/13 23:40:19 jvanheld Exp $
+# $Id: consensus_form.cgi,v 1.4 2003/10/29 09:04:36 jvanheld Exp $
 #
-# Time-stamp: <2001-11-14 00:39:56 jvanheld>
+# Time-stamp: <2003-07-11 15:07:43 jvanheld>
 #
 ############################################################
 #### this cgi script fills the HTML form for the program consensus
@@ -129,7 +129,7 @@ print " use the designated prior frequencies\n";
 print "</B></A>\n";
 print "<BR>\n";
 
-### send results by e-mail or display on the browser
+### send results by email or display on the browser
 &SelectOutput;
 
 ### action buttons

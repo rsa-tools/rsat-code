@@ -15,20 +15,21 @@ Web interface by <a target=_blank href= http://www.ucmb.ulb.ac.be/~jvanheld/>Jac
 
 <H4>Description</H4>
 
-	Remove large duplicate fragments from a sequence. This perl
-	script is no more than a wrapper to facilitate this specific
-	usage for two programs developed by <a href=http://www.techfak.uni-bielefeld.de/~kurtz/>Stefan Kurtz</a> : mkvtree and
-	vmatch.
+        
+<p>Mask redundant fragments in a sequence. This perl script is no more
+than a wrapper to facilitate this specific usage for two programs
+developed by Stefan Kurtz : mkvtree and vmatch.
 
-<P> When a fragment is duplicated, the first ocurrence if it is
-	conserved and the second deleted. By default, the program also
-	searches similarities between the direct and reverse complement
-	strand.
+<p>When a fragment is duplicated, the first ocurrence is conserved and
+the second masked (or optionally deleted).
+
+<p>By default, the program also searches similarities between the direct
+and reverse complement strand.
 
 <P> This web interface is no more than a wrapper around two programs
-    (<b>mkvtree</b> and <b>vmatch</b>) developed by <A
-    HREF='mailto:kurtz\@TechFak.Uni-Bielefeld.DE (Stefan
-    Kurtz)'>Stefan Kurtz</A>.<BR>
+(<b>mkvtree</b> and <b>vmatch</b>) developed by <A
+HREF='mailto:kurtz\@TechFak.Uni-Bielefeld.DE (Stefan Kurtz)'>Stefan
+Kurtz</A>.<BR>
 
 <H4>Options</H4>
 
@@ -37,15 +38,26 @@ Web interface by <a target=_blank href= http://www.ucmb.ulb.ac.be/~jvanheld/>Jac
 <A NAME="both_strands">
 <P><B>Purge both strands</B><BR> Duplicates are also searched between
 the direct and the reverse complementary strand.
-</P>
+
 
 <A NAME="match_len">
 <P><B>Minimal match length</B><BR>
-</P>
+
 
 <A NAME="mismatches">
 <P><B>Maximal number of mismatches</B><BR>
-</P>
+
+<A NAME="treatment">
+<P><B>Treatment of repeats</B> <br>
+
+By default, repeats are masked, i.e. each nucleotide within a repeat
+is replaced by the letter n.
+
+<P>When the option 'delete' is selected, repeats are deleted. This means
+that one sequence of input can be converted to several fragments in
+the output.
+<BR>
+
 
 </UL>
 

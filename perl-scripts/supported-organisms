@@ -5,7 +5,9 @@ if ($0 =~ /([^(\/)]+)$/) {
 require "RSA.lib";
 #use strict;
 
-@formats = qw (html_list html_table array text);
+$out_format = "text";
+
+@formats = qw (html_list html_table array text keys names sizes full);
 foreach $f (@formats) {
     $supported_format{$f} = 1;
 }
@@ -18,45 +20,45 @@ print &ListSupportedOrganisms($out_format);
 
 exit(0);
 
-sub ListSupportedOrganisms {
-  ### usage : &ListSupportedOrganisms($format);
-  ### $supp =  &ListSupportedOrganisms("text");
-  ### $supp =  &ListSupportedOrganisms("html_list");
-  ### $supp =  &ListSupportedOrganisms("html_table");
-  ### @names =  &ListSupportedOrganisms("array");
-  my ($out_format) = @_;
+# sub ListSupportedOrganisms {
+#   ### usage : &ListSupportedOrganisms($format);
+#   ### $supp =  &ListSupportedOrganisms("text");
+#   ### $supp =  &ListSupportedOrganisms("html_list");
+#   ### $supp =  &ListSupportedOrganisms("html_table");
+#   ### @names =  &ListSupportedOrganisms("array");
+#   my ($out_format) = @_;
 
-  if ($out_format eq "html_list") {
-    my $result = "<UL>\n";
-    foreach my $organism_name (sort keys %supported_organism) {
-      $result .= "<LI>";
-      $result .= $supported_organism{$organism_name}->{name};
-      $result .= "\n";
-    }
-    $result .= "</UL>\n";
-    return $result;
-  } elsif ($out_format eq "html_table") {
-    my $result = "<TABLE>\n";
-    foreach my $organism_name (sort keys %supported_organism) {
-      $result .= "<TR>\n";
-      $result .= "<TD>$organism_name</TD>\n";
-      $result .= "<TD>";
-      $result .= $supported_organism{$organism_name}->{name};
-      $result .= "</TD>\n";
-      $result .= "</TR>\n";
-    }
-    $result .= "</TABLE>\n";
-    return $result;
-  } elsif ($out_format eq "array") {
-    my @result = ();
-    foreach my $organism_name (sort keys %supported_organism) {
-      push @result, $supported_organism{$organism_name}->{name};
-    }
-    return @result;
-  }else {
-    return $supported_organisms; 
-  }
-}
+#   if ($out_format eq "html_list") {
+#     my $result = "<UL>\n";
+#     foreach my $organism_name (sort keys %supported_organism) {
+#       $result .= "<LI>";
+#       $result .= $supported_organism{$organism_name}->{name};
+#       $result .= "\n";
+#     }
+#     $result .= "</UL>\n";
+#     return $result;
+#   } elsif ($out_format eq "html_table") {
+#     my $result = "<TABLE>\n";
+#     foreach my $organism_name (sort keys %supported_organism) {
+#       $result .= "<TR>\n";
+#       $result .= "<TD>$organism_name</TD>\n";
+#       $result .= "<TD>";
+#       $result .= $supported_organism{$organism_name}->{name};
+#       $result .= "</TD>\n";
+#       $result .= "</TR>\n";
+#     }
+#     $result .= "</TABLE>\n";
+#     return $result;
+#   } elsif ($out_format eq "array") {
+#     my @result = ();
+#     foreach my $organism_name (sort keys %supported_organism) {
+#       push @result, $supported_organism{$organism_name}->{name};
+#     }
+#     return @result;
+#   }else {
+#     return $supported_organisms; 
+#   }
+# }
 
 ########################## subroutine definition ############################
 
@@ -84,7 +86,7 @@ OPTIONS
 	-h	(must be first argument) display full help message
 	-help	(must be first argument) display options
 	-format	output format
-		supported: $formats;
+		supported: $formats
 End_of_help
   close HELP;
   exit;

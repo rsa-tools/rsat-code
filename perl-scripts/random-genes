@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-genes,v 1.5 2003/03/17 08:11:22 jvanheld Exp $
+# $Id: random-genes,v 1.6 2003/10/29 09:04:12 jvanheld Exp $
 #
-# Time-stamp: <2003-03-17 09:10:45 jvanheld>
+# Time-stamp: <2003-09-10 23:21:27 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -41,11 +41,11 @@ unless ($organism) {
 #unless ($feature_table_file) {
 #    $feature_table_file = $supported_organism{$organism}->{'features'};
 #}
-&ReadOrfPositions($organism, $feature_table_file);
+&ReadFeatures($organism, $feature_table_file);
 
 
 #&CheckOrganism($organism);
-#&ReadOrfPositions($organism);
+#&ReadFeatures($organism);
 
 ### open output file ###
 $out = &OpenOutputFile($outfile{output});

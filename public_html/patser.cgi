@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: patser.cgi,v 1.18 2003/06/03 22:14:20 jvanheld Exp $
+# $Id: patser.cgi,v 1.20 2003/10/29 09:04:37 jvanheld Exp $
 #
-# Time-stamp: <2003-06-04 00:12:08 jvanheld>
+# Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -23,13 +23,14 @@ BEGIN {
 }
 require "RSA.lib";
 require "RSA.cgi.lib";
+require "patser.lib.pl";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 $command = "$BIN/patser";
 $matrix_from_transfac_command = "$SCRIPTS/matrix-from-transfac";
 $matrix_from_gibbs_command = "$SCRIPTS/matrix-from-gibbs";
 $convert_seq_command = "$SCRIPTS/convert-seq";
-$features_from_patser_cmd = "$SCRIPTS/features-from-patser -v 1";
+$features_from_patser_cmd = "$SCRIPTS/features-from-patser";
 $add_orf_function_command = "$SCRIPTS/add-orf-function";
 $add_yeast_link_command = "$SCRIPTS/add-yeast-link";
 $tmp_file_name = sprintf "patser.%s", &AlphaDate;
@@ -38,156 +39,27 @@ $tmp_file_name = sprintf "patser.%s", &AlphaDate;
 ### Read the CGI query
 $query = new CGI;
 
+#$ECHO=2;
+
 ### print the result page
 &RSA_header("patser result");
-&ListParameters if ($ECHO >=2);
+&ListParameters() if ($ECHO >=2);
 
 #### update log file ####
-&UpdateLogFile;
-
-################################################################
-#
-# read parameters
-#
-
-#### read parameters ####
-
-#### alphabet
-my $alphabet = $query->param('alphabet') || " a:t c:g ";
-$patser_parameters = " -A $alphabet";
-
-
-################################################################
-### matrix specification
-unless ($query->param('matrix') =~ /\S/) { ### empty matrix
-    &cgiError("You did not enter the matrix");
-}
-
-$matrix_file = "$TMP/$tmp_file_name.matrix";
-
-$matrix_format = lc($query->param('matrix_format'));
-if ($matrix_format =~ /transfac/i) {
-    open MAT, "| $matrix_from_transfac_command > $matrix_file";
-} elsif ($matrix_format =~ /gibbs/i) {
-    open MAT, "| $matrix_from_gibbs_command > $matrix_file";
-} elsif ($matrix_format =~ /consensus/i) {
-    open MAT, "> $matrix_file";
-} else {
-    &cgiError("Invalid matrix format.");
-}
-print MAT $query->param('matrix');
-close MAT;
-&DelayedRemoval($matrix_file);
-$patser_parameters .= " -m $matrix_file";
-
-#### [-w <Matrix is a weight matrix>]
-if ($query->param('matrix_is_weight')) {
-    $patser_parameters .= " -w";
-} else {
-    #### pseudo-counts and weights are mutually exclusive
-    if (&IsReal($query->param('pseudo_counts'))) {
-	$patser_parameters .= " -b ".$query->param('pseudo_counts');
-    }
-
-}
-
-#### [-v <Vertical matrix---rows correspond to positions>]
-if ($query->param('matrix_is_vertical')) {
-    $patser_parameters .= " -v";
-}
+&UpdateLogFile();
 
 
 ################################################################
 #### sequence file
 ($sequence_file,$sequence_format) = &GetSequenceFile("wconsensus", 1);
+
+#### patser parameters
+&ReadPatserParameters();
 $patser_parameters .= " -f $sequence_file";
 
-################################################################
-#### strands 
-if ($query->param('strands') =~ /both/i) {
-    $patser_parameters .= " -c";
-}
+#### feature-from-patser parameters
+&ReadFeaturesFromPatserParams(); 
 
-################################################################
-### return top values
-if ($query->param('return') =~ /top/i) {
-    $patser_parameters .= " -t";
-    $top_scores = $query->param('top_scores');
-    if (&IsNatural($query->param('top_scores'))) {
-	if ($top_scores == 0) {
-	    &FatalError("number of top scores must be >= 1");
-	} else {
-	    $patser_parameters .= " $top_scores";
-	}
-    } else {
-	&FatalError("Number of top scores must be a strictly positive integer");
-    }
-}
-
-################################################################
-#### case sensitivity
-if ($query->param('case') eq "sensitive") {
-    $patser_parameters .= ' -CS'; #### [-CS <Ascii alphabet is case sensitive (default: ascii alphabets are case insensitive)>]
-} elsif ($query->param('case') =~ /mark/) {
-    $patser_parameters .= ' -CM'; #### [-CM <Ascii alphabet is case insensitive, but mark the location of lowercase letters>]
-}
-
-################################################################
-#### unrecognized characters
-if ($query->param('unrecognized') eq "errors") {
-    $patser_parameters .= " -d0";
-} elsif ($query->param('unrecognized') =~ /no warning/) {
-    $patser_parameters .= " -d2";
-} else {
-    $patser_parameters .= " -d1";
-}
-
-################################################################
-### thresholds ###
-
-#### lower threshold on the weight
-if ($query->param('lthreshold_method') =~ /weight/) {
-    if (&IsReal($query->param('lthreshold'))) {
-	$patser_parameters .= " -ls ".$query->param('lthreshold');
-    } elsif ($query->param('lthreshold') eq 'none') {
-	### no lower threshold
-    } else {
-	&Warning("Lower threshold ignored (not a real value)");
-    }
-    
-#### lower threshold on P-value
-} elsif  ($query->param('lthreshold_method') =~ /p\-value/) {
-   ### [-lp <Determine lower-threshold score from a maximum ln(p-value)>]
-    if (&IsReal($query->param('lthreshold'))) {
-	$patser_parameters .= " -lp ".$query->param('lthreshold');
-    } elsif ($query->param('lthreshold') eq 'none') {
-	### no lower threshold
-    } else {
-	&FatalError ("Lower threshold value must be a real number");
-    }
-
-#### automatic threshold on the basis of adjusted information content
-} elsif  ($query->param('lthreshold_method') =~ /adjusted information content/) {
-    ### [-li <Determine lower-threshold score from adjusted information content>]
-    $patser_parameters .= ' -li';
-} else {
-    &FatalError("Unknown method for estimating lower threshold");
-}
-
-#### upper threshold
-if (&IsReal($query->param('uthreshold'))) {
-    $patser_parameters .= " -u ".$query->param('uthreshold');
-}
-
-
-#### TEMPORARILY DISACTIVATED, BECAUSE INTERFERES WITH ADJUSTED INFO THRESHOLD
-################################################################
-#### minimum score for calculating the P-value
-# if (&IsReal($query->param('min_calc_P'))) {
-#     $patser_parameters .= " -M ".$query->param('min_calc_P');
-# } else {
-#     &FatalError("Minimum score for calculating P-value must e a real number");
-# }
 
 ################################################################
 ### vertically print the matrix
@@ -196,34 +68,6 @@ if ($query->param('vertically_print')){
 }
 
 $command .= " $patser_parameters";
-
-################################################################
-### parameters for the piping to the feature map ###
-#$feature_file =  "$TMP/$tmp_file_name.ft";
-$features_from_patser_cmd .= " -seq $sequence_file ";
-#### origin 
-if ($query->param('origin') =~ /end/i) {
-    $features_from_patser_cmd .= " -origin -0";
-}
-
-#### flanking residues for the matching sequences
-if ($query->param('flanking') =~ /^\d+$/) {
-    $features_from_patser_cmd .= " -N ".$query->param('flanking');
-}
-$features_from_patser_cmd .= " -origin -0";
-#$features_from_patser_cmd .= " -o $feature_file";
-
-### return matching positions
-if ($query->param('positions')) {
-    $features_from_patser_cmd .= " -return matches";
-}
-
-### return score table
-if ($query->param('table')) {
-    $features_from_patser_cmd .= " -return table";
-}
-
-
 $command .= "| $features_from_patser_cmd";
 
 ################################################################
@@ -234,7 +78,9 @@ print "<pre>$command</pre>" if ($ECHO >= 1);
 ### execute the command ###
 if ($query->param('output') eq "display") {
 
-    &PipingWarning();
+    unless ($query->param('table')) {
+	&PipingWarning();
+    }
 
     ### Print the result on Web page
     $result_file =  "$TMP/$tmp_file_name.ft";
@@ -256,7 +102,9 @@ if ($query->param('output') eq "display") {
 #    close RESULT;
     print "</PRE>";
 
-    &PipingForm();
+    if ($query->param('output_format') eq 'feature list') {
+	&PipingForm();
+    }
 
     print "<HR SIZE = 3>";
     

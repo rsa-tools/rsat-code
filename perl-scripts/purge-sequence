@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence,v 1.20 2003/09/30 21:47:02 jvanheld Exp $
+# $Id: purge-sequence,v 1.21 2003/10/29 09:04:12 jvanheld Exp $
 #
-# Time-stamp: <2003-09-30 23:46:45 jvanheld>
+# Time-stamp: <2003-10-05 23:01:33 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -74,7 +74,7 @@ $command .= " -i $dir{input}/$basename" if ($inputfile);
 
 
 ###### execute the command #########
-@extensions = qw(al1 ssp bck bwt des lcp ois llv prj suf tis sds);
+@extensions = qw(al1 ssp bck bwt des lcp ois llv prj suf tis sds sti1);
 
 #### build the tree
 my $mkvtree_options = "";
@@ -93,11 +93,11 @@ $mkvtree_options .= " -db $tmp_file"; # sequence file
 #### locate the duplications
 my $vmatch_options = "-s"; # show the sequence content of a match
 if ($delete_repeats) {
-    ## mask repeats
-    $vmatch_options .= " -dbmaskmatch n "; # show all database sequence not containing a match
-} else {
     ## delete repeats
     $vmatch_options .= " -dbnomatch 1 "; # show all database sequence not containing a match
+} else {
+    ## mask repeats
+    $vmatch_options .= " -dbmaskmatch n "; # show all database sequence not containing a match
 }
 $vmatch_options .= " keepleft"; # keep the left occurrence of each repeat
 $vmatch_options .= " -l $match_len"; # specify that match must have the given length
@@ -188,6 +188,12 @@ OPTIONS
 	-1str	discard duplications on the direct strand only
 	-2str	discard duplications on the reverse complement as well
 	-del	delete repeats instead of masking them
+		By default, repeats are masked, i.e. each nucleotide
+		within a repeat is replaced by the letter n.  When the
+		option -del is selected, repeats are deleted. This
+		means that one sequence of input can be converted to
+		several fragments in the output.
+
 End_of_help
   close HELP;
   exit;

@@ -34,7 +34,7 @@ ARGUMENTS
 	-expfreq
 		file containing the estimations for expected oligonucleotide 
 		frequencies. This can be for instance the olignonucleotide 
-		frequency measured in the whole genome, or in all non-coding 
+		frequency measured in the whole genome, or in all intergenic 
 		regions, or in all coding regions. 
 		This information is used for the calculation of probabilities.
 		If omitted, expected frequencies are calculated on basis of

@@ -15,7 +15,7 @@ $query = new CGI;
 ### default values for filling the form
 $default{organism} = "Saccharomyces cerevisiae";
 $default{gene_nb} = 25;
-$default{replacement} = "checked";
+$default{replacement} = "";
 
 
 ### replace defaults by parameters from the cgi call, if defined
@@ -59,13 +59,13 @@ print "&nbsp;<a href=help.random-genes.html#replacement>With replacement</a>";
 
 #### organism
 print "<P>\n";
-&OrganismPopUp;
+&OrganismPopUp();
 
 
 
-### send results by e-mail or display on the browser
+### send results by email or display on the browser
 print "<P>\n";
-&SelectOutput;
+&SelectOutput();
 
 ### action buttons
 print "<UL><UL><TABLE>\n";
@@ -75,9 +75,8 @@ print "<TD>", $query->reset, "</TD>\n";
 print $query->end_form;
 
 
-#print "<TD><B><A HREF='demo.random-genes.html'>DEMO</A></B></TD>\n";
 print "<TD><B><A HREF='help.random-genes.html'>MANUAL</A></B></TD>\n";
-#print "<TD><B><A HREF='tutorials/tut_random-genes.html'>TUTORIAL</A></B></TD>\n";
+print "<TD><B><A HREF='tutorials/tut_random-genes.html'>TUTORIAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:jvanheld\@ucmb.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 

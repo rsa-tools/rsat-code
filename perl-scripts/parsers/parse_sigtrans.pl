@@ -9,16 +9,16 @@ BEGIN {
 	push (@INC, "$`"); ### add the program's directory to the lib path
     }
 }
-require "PFBP_config.pl";
-require "PFBP_classes.pl";
-require "PFBP_parsing_util.pl";
+require "config.pl";
+require "lib/load_classes.pl";
+require "lib/parsing_util.pl";
 
 
 ################################################################
 #### bibliographic references
 package SIGTRANS::Reference;
 {
-    @ISA = qw ( PFBP::DatabaseObject );
+    @ISA = qw ( classes::DatabaseObject );
     %_attribute_cardinality = (
 			       id=>"SCALAR",
 			       description=>"SCALAR",
@@ -33,7 +33,7 @@ package SIGTRANS::Reference;
 #### biochemical entities
 package SIGTRANS::Entity;
 {
-    @ISA = qw ( PFBP::DatabaseObject );
+    @ISA = qw ( classes::DatabaseObject );
     %_attribute_cardinality = (
 			       id=>"SCALAR",
 			       description=>"SCALAR",
@@ -78,13 +78,13 @@ package main;
     #### define class holders 
 
     #### bibliographic references
-    $references = PFBP::ClassFactory->new_class(object_type=>"SIGTRANS::Reference",
+    $references = classes::ClassFactory->new_class(object_type=>"SIGTRANS::Reference",
 						prefix=>"ref_");
 
     $references->set_out_fields( qw (id pubmedID datastarID description) );
 
     #### biochemical entities
-    $entities =  PFBP::ClassFactory->new_class(object_type=>"SIGTRANS::Entity",
+    $entities =  classes::ClassFactory->new_class(object_type=>"SIGTRANS::Entity",
 					       prefix=>"ent_");
 
     
@@ -101,7 +101,7 @@ package main;
 			      user=>$main::user,
 			      password=>$main::password,
 			      dir=>"$dir{output}/sql_scripts",
-			      dbms_address=>$main::dbms_address,
+			      host=>$main::host,
 			      dbms=>$main::dbms
 			      );
     }

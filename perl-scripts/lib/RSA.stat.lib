@@ -91,9 +91,7 @@ sub checked_avg {
 ###              q(x+1)
 ###
 sub binomial {
-    my($proba) = $_[0];
-    my($trials) = $_[1];
-    my($succ) = $_[2];
+    my($proba, $trials, $succ) = @_;
     my($q) = 1 - $proba;
 
     if ($proba <=0) {
@@ -164,15 +162,36 @@ sub sum_of_binomials {
 
 #    my $precision_limit = 1.0e-06;
     my $expected = $trials*$proba;
-
-    if ($proba <=0) {
+    
+    if ($proba <0) {
 	 &FatalError("Error: invalid probability $proba (must be a positive value)\n");
     }
     ($from,$to) = sort {$a <=> $b} ($from, $to);
     if ($to > $trials) {
 	&FatalError( "Error: successes ($to) cannot be higher than trials ($trials)\n");
     }
+
+
+    #### limit cases
+    if ($proba == 0) {
+	if ($from == 0) {
+	    return 1;
+	} else {
+	    return 0;
+	}
+    }
+    if ($proba == 1) {
+	if ($to == $trials) {
+	    return 1;
+	} else {
+	    return 0;
+	}
+    }
+
+
+    #### initialize
     my $q = 1 - $proba;
+
     my $logproba = log($proba);
     my $logq = log($q);
 
@@ -181,7 +200,6 @@ sub sum_of_binomials {
     my $logbin;
     my $prev_value = -1;
 
-    #### initialize
     $x = 0;
     $logbin = $trials * log($q);
     if ($from == 0) {
@@ -277,7 +295,6 @@ sub poisson {
 ### We use a recursive formula 
 ###    p(x) = p(x-1) * lambda / x
 sub sum_of_poisson {
-
     my ($lambda,$from,$to) = @_;
     my $poi;
     my $log_lambda = log($lambda);
@@ -428,7 +445,7 @@ sub hypergeometric {
 
 
     
-# 	$Id: RSA.stat.lib,v 1.9 2002/10/03 15:45:09 jvanheld Exp $	
+# 	$Id: RSA.stat.lib,v 1.10 2003/10/29 09:04:12 jvanheld Exp $	
 
     #### initialization
     if (defined($args{previous_value})) {
@@ -760,7 +777,7 @@ sub ChiSquare {
 ####
 #### The chi-square value is calculated by:
 ####
-####              (obs_j -exp_j)^2
+####              (obs_j - exp_j)^2
 #### ChiSq = SUM  ----------------
 ####          j      (exp_j)
 ####
@@ -875,9 +892,8 @@ sub ChiSquare {
 	print $out ";Test of $test\n";
 	print $out ";$deg_freedom degrees of freedom\n";
 	print $out ";DATA REPORT\n";
-	if ($not_valid) {
-	    print $out "; WARNING: data do not conform to the applicability conditions\n";
-	    print $out "; WARNING: (each class must have at least 5 expected observations).\n";
+	if (($not_valid) && ($verbose >= 2)) {
+	    print $out "; WARNING: data do not conform to the applicability conditions \n; (some classes have less than 5 expected observations).\n";
 	}
 	print $out ";";
 	for $col (1..$col_nb) {
@@ -911,7 +927,7 @@ sub ChiSquare {
 	}
     }
     if ($not_valid) {
-	$answer = sprintf "(%.3f)", $chi_square;
+	$answer = sprintf "{%.3f}", $chi_square;
     } else {
 	$answer = sprintf "%.3f", $chi_square;
     }

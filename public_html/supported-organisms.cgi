@@ -2,58 +2,56 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
-use strict;
+use CGI;
+use CGI::Carp qw/fatalsToBrowser/;
+#### redirect error log to a file
+BEGIN {
+    $ERR_LOG = "/dev/null";
+#    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
+    use CGI::Carp qw(carpout);
+    open (LOG, ">> $ERR_LOG")
+	|| die "Unable to redirect log\n";
+    carpout(*LOG);
+}
+require "RSA.lib";
+require "RSA.cgi.lib";
+$ENV{RSA_OUTPUT_CONTEXT} = "cgi";
+$tmp_file_name = sprintf "supported-organisms.%s", &AlphaDate;
 
-my $out_format = $ARGV[0];
+$font{variable} = 1;
+$command = "$SCRIPTS/supported-organisms";
 
-print &ListSupportedOrganisms($out_format);
+### Read the CGI query
+$query = new CGI;
+
+### print the header
+&RSA_header("Supported organisms");
+
+
+#### update log file ####
+&UpdateLogFile();
+
+&ListParameters() if ($ECHO >= 2);
+
+$parameters = " -format full";
+
+print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ECHO >=1);
+
+### execute the command ###
+open RESULT, "$command $parameters | awk '{print \$0\"\t<a href=${WWW_RSA}/data/genomes/\"\$1\"/>data</a>\"}' | perl -pe 's|/;/|/|' | ";
+
+### Print result on the web page
+#$result_file = "$TMP/$tmp_file_name.res";
+print "<CENTER>\n";
+&PrintHtmlTable(RESULT, $result_file, false, 1000);
+print "</CENTER>\n";
+
+close(RESULT);
+
+print '<HR SIZE=3>';
+
+
+print $query->end_html;
 
 exit(0);
 
-sub ListSupportedOrganisms {
-  ### usage : &ListSupportedOrganisms($format);
-  ### $supp =  &ListSupportedOrganisms("text");
-  ### $supp =  &ListSupportedOrganisms("html_list");
-  ### $supp =  &ListSupportedOrganisms("html_table");
-  ### @names =  &ListSupportedOrganisms("array");
-  my ($out_format) = @_;
-
-  if ($out_format eq "html_list") {
-    my $result = "<UL>\n";
-    foreach my $organism (sort keys %main::supported_organism) {
-      $result .= "<LI>";
-      $result .= $main::supported_organism{$organism}->{name};
-      $result .= "\n";
-    }
-    $result .= "</UL>\n";
-    return $result;
-  } elsif ($out_format eq "html_table") {
-    my $result = "<TABLE>\n";
-    foreach my $organism (sort keys %main::supported_organism) {
-      $result .= "<TR>\n";
-      $result .= "<TD>$organism</TD>\n";
-      $result .= "<TD>";
-      $result .= $main::supported_organism{$organism}->{name};
-      $result .= "</TD>\n";
-      $result .= "</TR>\n";
-    }
-    $result .= "</TABLE>\n";
-    return $result;
-  } elsif ($out_format eq "array") {
-    my @result = ();
-    foreach my $organism (sort keys %main::supported_organism) {
-      push @result, $main::supported_organism{$organism}->{name};
-    }
-    return @result;
-  }else {
-    my $result = "";
-    foreach my $organism (sort keys %main::supported_organism) {
-      $result .= $organism;
-      $result .= "\t";
-      $result .= $main::supported_organism{$organism}->{name};
-      $result .= "\n";
-    }
-    return $result;
-  }
-}

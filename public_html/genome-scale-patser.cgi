@@ -7,7 +7,8 @@ use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
 require "RSA.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
-require "$RSA/public_html/genome-scale.lib.pl";
+require "genome-scale.lib.pl";
+require "patser.lib.pl";
 
 $patser_command = "$BIN/patser";
 $matrix_from_transfac_command = "$SCRIPTS/matrix-from-transfac";
@@ -26,80 +27,31 @@ $query = new CGI;
 ### print the header of the result page
 &RSA_header("patser result ".$query->param("title"));
 
-&ListParameters if ($ECHO);
+&ListParameters() if ($ECHO >= 2);
 
 #### update log file ####
-&UpdateLogFile;
+&UpdateLogFile();
 
 &ReadRetrieveSeqParams();
 
-################################################################
-#
-# patser parameters
-#
-
-my $patser_parameters = " -p ";
-
-#### alphabet
-my $alphabet = $query->param('alphabet') || " a:t c:g ";
-$patser_parameters .= " -A $alphabet";
-
-### matrix ####
-unless ($query->param('matrix') =~ /\S/) { ### empty matrix
-    &cgiError("You did not enter the matrix");
-}
-
-$matrix_file = "$TMP/$tmp_file_name.matrix";
-
-$matrix_format = lc($query->param('matrix_format'));
-if ($matrix_format =~ /transfac/i) {
-    open MAT, "| $matrix_from_transfac_command > $matrix_file";
-} elsif ($matrix_format =~ /gibbs/i) {
-    open MAT, "| $matrix_from_gibbs_command > $matrix_file";
-} elsif ($matrix_format =~ /consensus/i) {
-    open MAT, "> $matrix_file";
-} else {
-    &cgiError("Invalid matrix format.");
-}
-print MAT $query->param('matrix');
-close MAT;
-&DelayedRemoval($matrix_file);
-$patser_parameters .= " -m $matrix_file";
-
-### sequence file ####
-#($sequence_file,$sequence_format) = &GetSequenceFile("wconsensus", 1);
-#$patser_parameters .= " -f $sequence_file";
-
-### strands ###
-if ($query->param('strands') =~ /both/i) {
-    $patser_parameters .= " -c";
-}
-
-### top value only ###
-if ($query->param('return') =~ /top/i) {
-    $patser_parameters .= " -t";
-}
-
-### thresholds ###
-if (&IsReal($query->param('lthreshold'))) {
-    $patser_parameters .= " -ls ".$query->param('lthreshold');
-    $patser_parameters .= " -M ".$query->param('lthreshold');
-} 
-if (&IsReal($query->param('uthreshold'))) {
-    $patser_parameters .= " -u ".$query->param('uthreshold');
-}
-
-
-#### pseudo-counts
-if (&IsReal($query->param('pseudo_counts'))) {
-    $parameters .= " -b ".$query->param('pseudo_counts');
-}
-
+&ReadPatserParameters();
 
 ### parameters for the piping to the feature map ###
 $feature_file =  "$TMP/$tmp_file_name.ft";
 #$features_from_patser_cmd .= " -seq $sequence_file";
 #$features_from_patser_cmd .= " -o $feature_file";
+
+&ReadPatserTableOutputFields();
+
+#### return matching positions
+#if ($query->param('positions')) {
+#    $features_from_patser_cmd .= " -return matches";
+#}
+##
+#### return score table
+#if ($query->param('table')) {
+#    $features_from_patser_cmd .= " -return table";
+#}
 
 $command = "$retrieve_seq_command $retrieve_seq_parameters ";
 $command .= "| $patser_command $patser_parameters ";
@@ -116,17 +68,21 @@ if ($query->param("output") =~ /display/i) {
 
     ### execute the command ###
     $result_file = "$TMP/$tmp_file_name.res";
-    print "<PRE>$command</PRE>" if ($ECHO);
+    print "<PRE>$command</PRE>" if ($ECHO >= 1);
     open RESULT, "$command & |";
 
-    &PipingWarning();
+    unless ($query->param('table')) {
+	&PipingWarning();
+    }
 
     ### Print result on the web page
     print '<H2>Result</H2>';
     &PrintHtmlTable(RESULT, $result_file, true);
     close(RESULT);
 
-    &PipingForm();
+    unless ($query->param('table')) {
+	&PipingForm();
+    }
 
     print "<HR SIZE = 3>";
     

@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: template,v 1.10 2002/06/06 11:58:23 jvanheld Exp $
+# $Id: template,v 1.11 2003/10/29 09:04:12 jvanheld Exp $
 #
-# Time-stamp: <2002-06-06 13:58:20 jvanheld>
+# Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -12,8 +12,8 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 require "RSA.lib";
 
-
-#### initialise parameters ####
+################################################################
+#### initialise parameters
 my $start_time = &AlphaDate;
 
 local %infile = ();
@@ -23,16 +23,18 @@ local $verbose = 0;
 local $in = STDIN;
 local $out = STDOUT;
 
-&ReadArguments;
+&ReadArguments();
+
+################################################################
+#### check argument values
 
 
-#### check argument values ####
-
-
-### open output file ###
+################################################################
+### open output stream
 $out = &OpenOutputFile($outfile{output});
 
-##### read input #####
+################################################################
+##### read input
 ($in) = &OpenInputFile($infile{input});
 while (<$in>) {
 
@@ -40,16 +42,19 @@ while (<$in>) {
 
 close $in if ($infile{input});
 
-#### verbose ####
+################################################################
+#### print verbose
 &Verbose if ($verbose);
 
-###### execute the command #########
+################################################################
+###### execute the command
+
+################################################################
+###### print output
 
 
-###### print output ######
-
-
-###### verbose ######
+################################################################
+###### finish verbose
 if ($verbose) {
     my $done_time = &AlphaDate;
     print $out "; Job started $start_time\n";
@@ -57,17 +62,22 @@ if ($verbose) {
 }
 
 
-###### close output file ######
+################################################################
+###### close output stream
 close $out if ($outfile{output});
 
 
 exit(0);
 
 
-########################## subroutine definition ############################
+################################################################
+################### subroutine definition ######################
+################################################################
 
+
+################################################################
+#### display full help message 
 sub PrintHelp {
-#### display full help message #####
   open HELP, "| more";
   print HELP <<End_of_help;
 NAME
@@ -100,8 +110,9 @@ End_of_help
   exit;
 }
 
+################################################################
+#### display short help message
 sub PrintOptions {
-#### display short help message #####
   open HELP, "| more";
   print HELP <<End_short_help;
 template options
@@ -117,10 +128,11 @@ End_short_help
 }
 
 
+################################################################
+#### read arguments 
 sub ReadArguments {
-#### read arguments ####
     foreach my $a (0..$#ARGV) {
-	### verbose ###
+	### verbose  
 	if ($ARGV[$a] eq "-v") {
 	    if (&IsNatural($ARGV[$a+1])) {
 		$verbose = $ARGV[$a+1];
@@ -130,17 +142,17 @@ sub ReadArguments {
 	    
 	    ### detailed help
 	} elsif ($ARGV[$a] eq "-h") {
-	    &PrintHelp;
+	    &PrintHelp();
 	    
 	    ### list of options
-	} elsif ($ARGV[0] eq "-help") {
-	    &PrintOptions;
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions();
 	    
-	    ### input file ###
+	    ### input file  
 	} elsif ($ARGV[$a] eq "-i") {
 	    $infile{input} = $ARGV[$a+1];
 	    
-	    ### output file ###
+	    ### output file  
 	} elsif ($ARGV[$a] eq "-o") {
 	    $outfile{output} = $ARGV[$a+1];
 	    
@@ -148,6 +160,8 @@ sub ReadArguments {
     }
 }
 
+################################################################
+#### verbose message
 sub Verbose {
     print $out "; template ";
     &PrintArguments($out);

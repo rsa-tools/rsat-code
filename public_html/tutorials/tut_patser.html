@@ -63,11 +63,12 @@ a more recent article from Jerry Hertz.
 <ul>
 
 <ol>
-<li>Retrieve upstream sequences from -800 to -1 for the following yeast
+
+<p><li>Retrieve upstream sequences from -800 to -1 for the following yeast
 genes (as you have seen in the <a
 href="tut_retrieve-seq.html">tutorial on sequence retrieval</a>).
 
-<p>Since we are working with an eukaryote, make sure that the option
+<p>Since we are working with a eukaryote, make sure that the option
 <b>Prevent overlaps with upstream ORFs</b> is <b>inactivated</b>
 before retrieving the sequence.
 
@@ -83,11 +84,12 @@ PHO87
 PHO89
 </pre></ul>
 
-<li>Click on the button 'patser' at the bottom of the result page, in
+<p><li>Click on the button 'patser' at the bottom of the result page, in
 order to send the sequences to the patser form.
 
-<li>In the <b>Matrix</b> box, paste the PSSM for Pho4p (this matrix
-was obtained from SCPD).
+<p><li>In the <b>Matrix</b> box, paste the PSSM for Pho4p (this matrix
+was obtained from <a href="http://cgsigma.cshl.org/jian"
+TARGET=_blank>SCPD</a>).
 
 <PRE>
 A |  3   2   0  12   0   0   0   0   1   3
@@ -96,17 +98,23 @@ G |  3   7   0   0   0  12   0   7   5   4
 T |  1   1   0   0   0   0  11   5   4   4
 </PRE>
 
-<li>Leave all other parameters unchanged and click <b>GO</b>.
+<p><li>For the lower threshold estimation, make sure that the option
+<b>adjusted information content</b> is selected.
+
+<p><li>Leave all other parameters unchanged and click <b>GO</b>.
 
 
 </ol>
 
 <P>
-The program returns one row per matching position. 
+The program returns one row per matching position. Only a few matches
+are returned. 
+
 
 
 <h4>Remarks</h4> 
 <ul>
+
 
 <li>On the web interface, positions are by default returned as
 negative coordinates, which indicates the location of the binding site
@@ -129,6 +137,15 @@ order to obtain a frawing of the matching positions. In the
 <a name=interpret><h2>Interpreting the results</h2>
 <ul>
 
+
+<P>In this first trial, the threshold on score was calculated
+automatically, due to the choice of the option <i>adjusted information
+content</i>. This methods takes into account the information content
+of the matrix, and the size of the sequence set, in order to choose a
+good comprimise between selectivity and specificity.
+
+
+<P>
 The matching positions probably contain several false positives. In
 particular, sites with a relatively small score (e.g. 6) are likely to
 be false predictions. The whole problem with matrix-based pattern
@@ -145,7 +162,11 @@ new sequences.
 <P>Notice that it is not always a good idea to take the minimal score
 of proven binding sites as lower threshold for patser. Indeed, the
 literature and databases may also contain errors, sot that some of the
-annotated binding sites are not correct. 
+annotated binding sites are not correct. It is preferible to check the
+scores assigned to each experimentally proven binding site, and to see
+whether the colleciton contains outliers, i.e. some sites with a much
+lower score than the other ones. These outliers should be ignored for
+the selection of the threshold.
 
 
 </ul>
@@ -153,21 +174,33 @@ annotated binding sites are not correct.
 <ul>
 
 <P>
-Collect all known binding sites for Pho4p (from SCPD) and apply the
-strategy described above to define an appropriate threshold :
+Collect all known binding sites for Pho4p from <a
+href="http://cgsigma.cshl.org/jian" TARGET=_blank>SCPD</a> and apply
+the strategy described above to define an appropriate threshold :
 
 <ol>
-<li>collect all binding sites for Pho4p. Make sure they have the fasta format.
-<li>Open the <b>patser</b> form, and paste the binding site sequences.
-<li>Paste the Pho4p matrix in the <b>matrix</b> box. 
-<li>For the <b>return</b> option, select <b>1 top value for each sequence</b>
-<li>As lower threshold estimation, set the minimum weight to 0. This is a quite permissive value. 
-<li>Click <b>GO</b>. 
-<li>Analyze the result : which scores are assigned to experimentally
+
+<p><li>collect all binding sites for Pho4p. Make sure they are in
+fasta format. 
+
+<p><li>Open the <b>patser</b> form, and paste the binding site sequences.
+
+<p><li>Paste the Pho4p matrix in the <b>matrix</b> box.
+
+<p><li>For the <b>return</b> option, select <b>1 top value for each
+sequence</b>
+
+<p><li>As lower threshold estimation, set the minimum weight to 0. This
+is a quite permissive value.
+
+<p><li>Click <b>GO</b>. 
+
+<p><li>Analyze the result : which scores are assigned to experimentally
 proven binding sites for Pho4p ?
-<li>Come back to the beginning of this tutorial, retrieve the upstream
-regions for the PHO genes, and scan them with teh adapted threshold on
-the weight.
+
+<p><li>Come back to the beginning of this tutorial, retrieve the upstream
+ regions for the PHO genes, and scan them with teh adapted threshold
+ on the weight.
 </ol>
 
 </ul>

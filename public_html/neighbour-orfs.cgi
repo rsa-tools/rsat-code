@@ -4,6 +4,15 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 require "RSA.lib";
 require "RSA.cgi.lib";
+#### redirect error log to a file
+BEGIN {
+    $ERR_LOG = "/dev/null";
+#    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
+    use CGI::Carp qw(carpout);
+    open (LOG, ">> $ERR_LOG")
+	|| die "Unable to redirect log\n";
+    carpout(*LOG);
+}
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $neighbour_orfs_command = "$SCRIPTS/neighbour-orfs";
 $add_yeast_link_command = "$SCRIPTS/add-yeast-link";
@@ -82,25 +91,10 @@ End_Header
 
   print '<HR SIZE=3>';
 
-} else {
-    
+} else {    
     &EmailTheResult("$neighbour_orfs_command $parameters", $input{'user_email'} );
-#     ### send an e-mail with the result ###
-#     if ($input{'user_email'} =~ /(\S+\@\S+)/) {
-# 	$address = $1;
-# 	print "<B>Result will be sent to your e-mail address: <P>";
-# 	print "$address</B><P>";
-# 	system "$neighbour_orfs_command $parameters | $mail_command $address";
-#     } else {
-# 	if ($input{'user_email'} eq "") {
-# 	    print "<B>ERROR: you did not enter your e-mail address<P>";
-# 	} else {
-# 	    print "<B>ERROR: the e-mail address you entered is not valid<P>";
-# 	    print "$input{'user_email'}</B><P>";      
-# 	}
-#     } 
 }
   
-  print &HtmlBot;  
-}
+
+print &HtmlBot;  
 

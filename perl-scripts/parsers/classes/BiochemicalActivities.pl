@@ -3,9 +3,9 @@
 ###############################################################################################
 
 
-package PFBP::BiochemicalActivity;
+package classes::BiochemicalActivity;
 {
-  @ISA = qw ( PFBP::DatabaseObject );
+  @ISA = qw ( classes::DatabaseObject );
   ### this is a super-class for all the biochemical activities
   ### it should be a method class only, instantiation necessitates 
   ### to specify the sub-class
@@ -34,10 +34,10 @@ package PFBP::BiochemicalActivity;
 
 }
 
-package PFBP::Expression;
+package classes::Expression;
 ### activity connecting a gene to the polypeptide it codes for
 {
-  @ISA = qw ( PFBP::BiochemicalActivity );
+  @ISA = qw ( classes::BiochemicalActivity );
   ### class attributes
   $_count = 0;
   $_prefix = "expr_";
@@ -53,14 +53,14 @@ package PFBP::Expression;
   sub get_inputs {
     my ($object) =  @_;
     my $gene_id = $object->get_attribute("gene_id");
-    my $pseudo_pointer = "PFBP::Gene::".$gene_id;
+    my $pseudo_pointer = "classes::Gene::".$gene_id;
     return $pseudo_pointer;
   }
 
   sub get_outputs {
     my ($object) =  @_;
     my $polypeptide_id = $object->get_attribute("polypeptide_id");
-    my $pseudo_pointer = "PFBP::Polypeptide::".$polypeptide_id;
+    my $pseudo_pointer = "classes::Polypeptide::".$polypeptide_id;
     return $pseudo_pointer;
   }
 
@@ -71,9 +71,9 @@ package PFBP::Expression;
 ### - the compound ID, 
 ### - the stoichiometry 
 ### - the validity of the reactant as intermediate betweeen 2 successive reactions in a pathway
-package PFBP::Reactant;
+package classes::Reactant;
 {
-  @ISA = qw ( PFBP::DatabaseObject );
+  @ISA = qw ( classes::DatabaseObject );
   ### class attributes
   $_count = 0;
   $_prefix = "rctt_";
@@ -88,9 +88,9 @@ package PFBP::Reactant;
 		     );
 }
 
-package PFBP::HasReactants;
+package classes::HasReactants;
 {
-  @ISA = qw ( PFBP::BiochemicalActivity );
+  @ISA = qw ( classes::BiochemicalActivity );
   ### return the list of reactant objects
   sub get_reactants {
     my ($activity, $reactant_type) =  @_;
@@ -107,7 +107,7 @@ package PFBP::HasReactants;
       foreach my $reactant_id ($activity->get_attribute($reactant_type)) {
 	my $reactant = undef;
 	if (
-	    ($reactant = PFBP::Reactant->get_object($reactant_id)) ||
+	    ($reactant = classes::Reactant->get_object($reactant_id)) ||
 	    ((defined($main::reaction_reactants)) && 
 	     ($reactant = $main::reaction_reactants->get_object($reactant_id))) ||
 	    ((defined($main::assembly_reactants)) && 
@@ -115,7 +115,7 @@ package PFBP::HasReactants;
 	    ((defined($main::reactants)) && 
 	     ($reactant = $main::reactants->get_object($reactant_id))) ||
 	    ((defined($main::database)) && 
-	     ($reactant = $main::database->get_object("PFBP::Reactant::$reactant_id"))) 
+	     ($reactant = $main::database->get_object("classes::Reactant::$reactant_id"))) 
 	    ) {
 #print STDERR "get_reactants\t$activity\t$reactant_type\t$reactant_id\t$reactant\n";
 	  push @reactants, $reactant;
@@ -145,8 +145,8 @@ package PFBP::HasReactants;
 	
       } else  {
 	### return input objects
-	if (($compound = $main::database->get_object("PFBP::Compound::$comp_id")) ||
-	    ($compound = PFBP::Compound->get_object($comp_id))) {
+	if (($compound = $main::database->get_object("classes::Compound::$comp_id")) ||
+	    ($compound = classes::Compound->get_object($comp_id))) {
 	  push @pseudo_pointers, $compound->get_pseudo_pointer();
 	} else {
 	  warn ("Error: cannot retrieve compound $comp_id ",
@@ -182,11 +182,11 @@ package PFBP::HasReactants;
 	if (my $comp_id = $reactant->get_attribute("comp_id")) {
 	  if ($args{names}) {
 	    ### try to identify compound name
-	    if (($compound = PFBP::Compound->get_object($comp_id)) ||
+	    if (($compound = classes::Compound->get_object($comp_id)) ||
 		((defined($main::compounds)) && 
-		 ($compound = $main::compounds->get_object("PFBP::Compound::$comp_id"))) ||
+		 ($compound = $main::compounds->get_object("classes::Compound::$comp_id"))) ||
 		((defined($main::database)) && 
-		 ($compound = $main::database->get_object("PFBP::Compound::$comp_id")))) {
+		 ($compound = $main::database->get_object("classes::Compound::$comp_id")))) {
 	      
 	      $comp_name = $compound->get_name();
 	      $term .= $comp_name;
@@ -217,9 +217,9 @@ package PFBP::HasReactants;
   }
 }
 
-package PFBP::Reaction;
+package classes::Reaction;
 {
-  @ISA = qw ( PFBP::HasReactants );
+  @ISA = qw ( classes::HasReactants );
   ### class attributes
   $_count = 0;
   $_prefix = "rctn_";
@@ -235,9 +235,9 @@ package PFBP::Reaction;
 		      source=>"SCALAR");
 }
 
-package PFBP::Assembly;
+package classes::Assembly;
 {
-  @ISA = qw ( PFBP::HasReactants );
+  @ISA = qw ( classes::HasReactants );
   ### class attributes
   $_count = 0;
   $_prefix = "asmb_";
@@ -252,9 +252,9 @@ package PFBP::Assembly;
 		      source=>"SCALAR");
 }
 
-package PFBP::Translocation;
+package classes::Translocation;
 {
-  @ISA = qw ( PFBP::HasReactants );
+  @ISA = qw ( classes::HasReactants );
   ### class attributes
   $_count = 0;
   $_prefix = "trlc_";
@@ -270,9 +270,9 @@ package PFBP::Translocation;
 }
 
 
-package PFBP::IndirectInteraction;
+package classes::IndirectInteraction;
 {
-  @ISA = qw ( PFBP::BiochemicalActivity );
+  @ISA = qw ( classes::BiochemicalActivity );
   ### class attributes
   $_count = 0;
   $_prefix = "treg_";
@@ -288,9 +288,9 @@ package PFBP::IndirectInteraction;
 			     source=>"SCALAR");
 }
 
-package PFBP::Induction;
+package classes::Induction;
 {
-  @ISA = qw ( PFBP::BiochemicalActivity );
+  @ISA = qw ( classes::BiochemicalActivity );
   ### class attributes
   $_count = 0;
   $_prefix = "treg_";
@@ -307,9 +307,9 @@ package PFBP::Induction;
 }
 
 
-package PFBP::TranscriptRegul;
+package classes::TranscriptRegul;
 {
-  @ISA = qw ( PFBP::BiochemicalActivity );
+  @ISA = qw ( classes::BiochemicalActivity );
   ### class attributes
   $_count = 0;
   $_prefix = "treg_";
@@ -326,9 +326,9 @@ package PFBP::TranscriptRegul;
 }
 
 
-package PFBP::TransportFacilitation;
+package classes::TransportFacilitation;
 {
-  @ISA = qw ( PFBP::BiochemicalActivity );
+  @ISA = qw ( classes::BiochemicalActivity );
   ### class attributes
   $_count = 0;
   $_prefix = "trsp_";
@@ -345,11 +345,11 @@ package PFBP::TransportFacilitation;
 		      source=>"SCALAR");
 }
 
-package PFBP::Catalysis;
+package classes::Catalysis;
 ### activity connecting a proteinaceousentity (polypeptide or protein)
 ### to an EC number
 {
-  @ISA = qw ( PFBP::BiochemicalActivity );
+  @ISA = qw ( classes::BiochemicalActivity );
   ### class attributes
   $_count = 0;
   $_prefix = "cata_";
@@ -365,9 +365,9 @@ package PFBP::Catalysis;
 
 
 
-package PFBP::ControlOfControl;
+package classes::ControlOfControl;
 {
-  @ISA = qw ( PFBP::BiochemicalActivity );
+  @ISA = qw ( classes::BiochemicalActivity );
   ### class attributes
   $_count = 0;
   $_prefix = "ctrl_";

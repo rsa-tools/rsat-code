@@ -4,10 +4,19 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
+#### redirect error log to a file
+BEGIN {
+    $ERR_LOG = "/dev/null";
+#    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
+    use CGI::Carp qw(carpout);
+    open (LOG, ">> $ERR_LOG")
+	|| die "Unable to redirect log\n";
+    carpout(*LOG);
+}
 require "RSA.lib";
 require "RSA.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
-$convert_seq_command = "$SCRIPTS/convert-seq";
+$command = "$SCRIPTS/convert-seq";
 $tmp_file_name = sprintf "convert-seq.%s", &AlphaDate;
 
 ### Read the CGI query
@@ -51,8 +60,7 @@ open INSEQ, ">$TMP/$tmp_file_name";
 print INSEQ $query->param('sequence');
 close INSEQ;
 $parameters .= " -i $TMP/$tmp_file_name ";
-DelayedRemoval("$TMP/$tmp_file_name");
-
+&DelayedRemoval("$TMP/$tmp_file_name");
 
 ##### add reverse-complement #####
 if ($query->param('addrc') eq "yes") {
@@ -64,49 +72,26 @@ if ($query->param('line_width') =~ /\d+/) {
     $parameters .= " -lw ".$query->param('line_width');
 }
 
-### print the header
-#  print <<End_Header;
-#  <HEADER>
-#      <TITLE>RSA-tools - convert sequence result</TITLE>
-#      </HEADER><BODY BGCOLOR="#FFFFFF">
-#      <H3 ALIGN=CENTER><A HREF="$WWW_RSA/RSA_home.cgi">
-#      RSA-tools</A> - convert sequence result</H3>
-#  End_Header
-
-
-    ### execute the command ###
-    if ($query->param('output') eq "display") {
-	### Print the result on Web page
-	open RESULT, "$convert_seq_command $parameters  & |";
-
-#print "<PRE>$convert_seq_command $parameters</PRE> ";
-
-	print "<PRE>";
-	while (<RESULT>) {
-	    print "$_";
-	}
-	print "</PRE>";
-	close RESULT;
-
-	print "<HR SIZE = 3>";
-    } else {
-	&EmailTheResult( "$convert_seq_command $parameters", , $query->param('user_email'));
-	
-# 	### send an e-mail with the result ###
-# 	if ($query->param('user_email') =~ /(\S+\@\S+)/) {
-# 	    $address = $1;
-# 	    print "<B>Result will be sent to your e-mail address: <P>";
-# 	    print "$address</B><P>";
-# 	    system "$convert_seq_command $parameters | $mail_command $address &";
-# 	} else {
-# 	    if ($query->param('user_email') eq "") {
-# 		print "<B>ERROR: you did not enter your e-mail address<P>";
-# 	    } else {
-# 		print "<B>ERROR: the e-mail address you entered is not valid<P>";
-# 		print $query->param('user_email')."</B><P>";      
-# 	    }
-# 	} 
+### execute the command ###
+if ($query->param('output') eq "display") {
+    ### Print the result on Web page
+    open RESULT, "$command $parameters  & |";
+    
+    print "<PRE>$command $parameters</PRE> " if ($ECHO >= 1);
+    
+    print "<PRE>";
+    while (<RESULT>) {
+	print "$_";
     }
+    print "</PRE>";
+    close RESULT;
+    
+    print "<HR SIZE = 3>";
+} elsif ($query->param('output') =~ /server/i) {
+    &ServerOutput("$command $parameters", $query->param('user_email'));
+} else {
+    &EmailTheResult( "$command $parameters", , $query->param('user_email'));
+}
 print $query->end_html;
 
 exit(0);

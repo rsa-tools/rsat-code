@@ -114,8 +114,8 @@ if ($#query_list < 0) {
 $out = &OpenOutputFile($outputfile);
 
 ### read synonym file ###
-&ReadOrfPositions;
-&ReadSynonyms;
+&ReadFeatures();
+&ReadSynonyms();
 
 #### verbose ####
 if ($verbose) {

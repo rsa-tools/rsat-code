@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: consensus.cgi,v 1.6 2003/04/17 20:41:21 jvanheld Exp $
+# $Id: consensus.cgi,v 1.7 2003/10/29 09:04:36 jvanheld Exp $
 #
-# Time-stamp: <2003-04-17 22:40:48 jvanheld>
+# Time-stamp: <2003-07-03 10:06:42 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -99,41 +99,25 @@ if ($query->param('seed') eq "on") {
 }
 
 
-### result file
-#  $result_file = "$TMP/$tmp_file_name.res";
-#  $matrix_file = "$TMP/$tmp_file_name.matrix";
+#### error file
 #$error_file  = "$TMP/$tmp_file_name.err";
 
-
-### print the header
-#  print <<End_Header;
-#  <HEADER>
-#  <TITLE>CONSENSUS result</TITLE>
-#  </HEADER><BODY BGCOLOR="#FFFFFF">
-#  <H3 ALIGN=CENTER>Matrix extraction (consensus) result $query->param('set_name')</H3>
-#  End_Header
-
-
-
-    ### execute the command ###
+#### execute the command ###
 if ($query->param('output') eq "display") {
+
     
     $result_file = "$TMP/$tmp_file_name.res";
     $matrix_file = "$TMP/$tmp_file_name.matrix";
-    &DelayedRemoval($result_file);
-    &DelayedRemoval($matrix_file);
-#    print "<PRE>";
-#    print "$command $parameters | ", "\n";
-#    print "$matrix_from_consensus_command -i $result_file -o $matrix_file";
-#    print "</PRE>";
+
+    #### echo the command
+    print "<PRE><B>Command:</B> $command $parameters </PRE>" if ($ECHO >= 1);
+    print "<PRE>$matrix_from_consensus_command -i $result_file -o $matrix_file</PRE>" if ($ECHO >= 1);
+
     open RESULT, "$command $parameters | ";
     open RES_FILE, ">$result_file";
     
-    #print "<PRE><B>Command:</B> $command $parameters </PRE>";
     
     ### prepare data for piping
-#	$title = $query->param('title');
-#	$title =~ s/\"/\'/g;
     &PipingWarning();
     
     ### Print result on the web page
@@ -150,15 +134,20 @@ if ($query->param('output') eq "display") {
     &PipingForm();
     
     system "$matrix_from_consensus_command -i $result_file -o $matrix_file";
+
     print "<HR SIZE = 3>";
+    
+    &DelayedRemoval($result_file);
+    &DelayedRemoval($matrix_file);
 
 } elsif ($query->param('output') =~ /server/i) {
-    &ServerOutput("$command $parameters", $query->param('user_email'));
+    &ServerOutput("$command $parameters", $query->param('user_email'), $tmp_file_name);
 } else {
-    &EmailTheResult("$command $parameters", $query->param('user_email'));
+    &EmailTheResult("$command $parameters", $query->param('user_email'), $tmp_file_name);
 }
 
 print $query->end_html;
+
 exit(0);
 
 
