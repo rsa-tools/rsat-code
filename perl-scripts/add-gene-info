@@ -1,0 +1,228 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+## Initialization
+$start_time = `date`;
+$ORF_column = 1;
+$null = "<NULL>";
+
+@supported_info_types = qw (id descr name names);
+%supported_info_types = ();
+foreach my $type (@supported_info_types) {
+    $supported_info_types{lc($type)} = 1;
+}
+$supported_info_types = join ",", @supported_info_types;
+
+&ReadArguments();
+
+#### output file ####
+$out = &OpenOutputFile($outputfile);
+
+#### organism
+&CheckOrganism($organism_name);
+
+#### Supported feature types
+$feature_types = sort keys %supported_feature_types;
+
+#### Information types
+if (scalar(@types < 1)) {
+    @types = "descr";
+}
+
+@null = ();
+foreach my $type (@types) {
+    &RSAT::error::FatalError("Invalid information type $type. Supported: $supported_info_types") unless ($supported_info_types{$type});
+    push @null, $null;
+    push @header, $type;
+}
+
+################################################################
+## Instantiate organism
+$organism = new RSAT::organism();
+$organism->check_name($organism_name);
+$organism->set_attribute("name", $organism_name);
+$organism->LoadFeatures($annotation_table, $feature_types);
+$organism->LoadSynonyms();
+
+
+#### verbose ####
+if ($verbose) {
+    print $out "; add-gene-info ";
+    &PrintArguments($out);
+    print $out "; Input file	$inputfile\n" if ($inputfile);
+    print $out "; Output file	$outputfile\n" if ($outputfile);
+
+}
+
+#### input file ####
+($in) = &OpenInputFile($inputfile);
+
+###### execute the command #########
+my $l = 0;
+while ($current_line = <$in>) {
+    $l++;
+    chomp($current_line);
+    unless ($current_line =~ /\S/) {
+	print $out $current_line, "\n";
+	next;
+    }
+    if ($current_line =~ /^;/) {
+	print $out join ("\t", $current_line, @header), "\n";
+	next;
+    }
+    $current_line =~ s/\r//g;
+    if ($ORF_column > 0) {
+	@columns = split("\t", $current_line);
+	$query = uc($columns[$ORF_column - 1]);
+
+	my $feature = $organism->get_feature_for_name($query);
+#	&RSAT::message::Debug($query, $feature) if ($main::verbose >= 10);
+	
+	
+	my @info = ();
+	if ($feature) {
+	    foreach my $type (@types) {
+		my $info = join( ";", $feature->get_attribute($type));
+#		&RSAT::message::Warning(join("\t", "Info for query",$query, $info)) if ($main::verbose >= 10);
+		push @info, $info;
+	    }
+	} else {
+	    @info = @null;
+	    &RSAT::message::Warning(join ("\t", "Line", $l, "No info found for query", $query)) if ($main::verbose >= 1);
+	}
+	
+
+	print $out join ("\t", $current_line, @info), "\n";
+    }
+}
+
+
+###### verbose ######
+if ($verbose) {
+    $done_time = `date`;
+    print $out ";Job started $start_time";
+    print $out ";Job done    $done_time";
+}
+
+
+###### close input/output files
+close $in if $inputfile;
+close $out if $outputfile;
+
+
+
+exit(0);
+
+
+########################## subtroutine definition ############################
+
+#### display full help message #####
+sub PrintHelp {
+    open HELP, "| more";
+    print HELP <<End_of_help;
+NAME
+	add-gene-info
+
+DESCRIPTION
+	Takes as input a tab-delimited file where the first word of
+	each row is an ORF identifier, and adds a column with a
+	description of the ORFs.
+	
+CATEGORY
+	genomics
+
+USAGE
+        add-gene-info [-i inputfile] [-o outputfile] [-v] 
+        [-col orf_column] -org organism
+	
+OPTIONS
+	-h	display full help message
+	-help	display options
+	-v	verbose
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+	-org organism
+	-info	information type (supported: $supported_info_types)
+	
+INPUT FORMAT
+	Any text file containing yeats ORF identifiers.
+	
+OUTPUT FORMAT
+	After each line containing reference to an ORF, a 
+        column with ORF function is added. 
+	
+End_of_help
+    close HELP;
+    exit;
+}
+
+
+#### display short help message #####
+sub PrintOptions {
+    open HELP, "| more";
+    print HELP <<End_short_help;
+add-gene-info options
+---------------------
+-h      (must be first argument) display full help message
+-help   (must be first argument) display options
+-i      input file
+-o      output file
+-v      verbose
+-col #  ORF column
+-org	organism
+-info	information type (supported: $supported_info_types)
+End_short_help
+  close HELP;
+  exit;
+}
+
+
+
+################################################################
+#### Read arguments 
+sub ReadArguments() {
+    foreach $a (0..$#ARGV) {
+
+	### verbose  
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+	    
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp();
+	    
+	    ### list of options
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions();
+	    
+	    
+	} elsif ($ARGV[$a] eq "-i") {
+	    $inputfile = $ARGV[$a+1];
+	    
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outputfile = $ARGV[$a+1];
+	    
+	} elsif ($ARGV[$a] eq "-col") {
+	    $ORF_column = $ARGV[$a+1];
+	    
+	    #### organism
+	} elsif ($ARGV[$a] eq "-org") {
+	    $organism_name =$ARGV[$a+1];
+
+	    #### information type
+	} elsif ($ARGV[$a] eq "-info") {
+	    @types = split ",", lc($ARGV[$a+1]);
+	}
+    }
+}
