@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parsing_util.pl,v 1.9 2003/12/23 17:22:32 jvanheld Exp $
+# $Id: parsing_util.pl,v 1.10 2004/01/23 16:25:50 oly Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -834,7 +834,11 @@ sub ParseGenbankFile {
     %contig_keys = ("ACCESSION"=>1,
 #		    "LOCUS"=>1,
 		    "DEFINITION"=>1,
-		    "VERSION"=>1
+		    "VERSION"=>1,
+		    "DBSOURCE"=>1,
+		    "COMMENT"=>1,
+		    "PUBMED"=>1,
+		    "MEDLINE"=>1,
 		    );
 
     while (my $line = <GBK>) {
@@ -875,19 +879,26 @@ sub ParseGenbankFile {
 		}
 	    }
 	    if ($line =~ /^([A-Z]+)\s+/) {
-		my $key = $1;
-		my $value = "$'";
-		chomp $value;
-		$value =~ s/\.\s*$//;
-		if ($contig_keys{$key}) {
-		    warn "parsing\t$key\t$value\n" if ($verbose >= 4);
-		    $current_contig->set_attribute(lc($key), $value);
-
+		$current_contig_key = $1;
+		$current_contig_value = "$'";
+		chomp $current_contig_value;
+		$current_contig_value =~ s/\.\s*$//;
+		if ($contig_keys{$current_contig_key}) {
+		    warn "parsing\t$current_contig_key\t$current_contig_value\n" if ($verbose >= 4);
+		    $current_contig->set_attribute(lc($current_contig_key), $current_contig_value);
 		}
 		
+	    } elsif ($line =~ /^ {12}/) {
+		### suite of the current contig key
+		$current_contig_value .= " ".$';
+		warn "parsing\t$current_contig_key\t$current_contig_value\n" if ($verbose >= 4);
+		$current_contig->force_attribute(lc($current_contig_key), $current_contig_value);
 	    }
+
 	    if ($line =~ /^FEATURES/) {
 		$in_features = 1 ;
+		undef($current_contig_key);
+		undef($current_contig_value);
 		warn "; Reading features\n" if ($main::verbose >= 1);
 		next;
 	    }
