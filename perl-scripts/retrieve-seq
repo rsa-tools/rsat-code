@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: retrieve-seq,v 1.14 2002/01/26 23:20:12 jvanheld Exp $
+# $Id: retrieve-seq,v 1.15 2002/02/13 00:55:02 jvanheld Exp $
 #
-# Time-stamp: <2002-01-27 00:19:51 jvanheld>
+# Time-stamp: <2002-02-01 07:27:59 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -54,10 +54,6 @@ if ($sequence_type eq "upstream") {
 	($organism_name =~ /Drosophila/)) {
 	$default{from} = -800;
 	$default{to} = -1;
-    } elsif (($organism_name eq "droso") ||
-	     ($organism_name eq "c.elegans")){
-	$default{from} = -2000;
-	$default{to} = -1;
     } else { #### bacteria
 	$default{from} = -400;
 	$default{to} = -1;
@@ -65,6 +61,16 @@ if ($sequence_type eq "upstream") {
 } elsif ($sequence_type eq "downstream") {
     $default{from} = 1;
     $default{to} = 200;
+#} elsif ($sequence_type = "exons") {
+#    unless (defined($supported_organism{$organism_name}->{'exons'})) {
+#	&FatalError("There is no informationa about introns for organism ", $organism_name, "\n");
+#    }
+#    #### read exons
+#    $exons = &OpenInputFile($supported_organism{$organism_name}->{'exons'}) {
+#	while (<$exons>) {
+#	    
+#	}
+#    }
 }
 
 #### check output format ####
@@ -112,8 +118,6 @@ if ($#queries <0) {
 #### output file ####
 $out = &OpenOutputFile($outputfile);
 
-
-
 #### verbose ####
 if ($warn_level) {
     print $out "; retrieve-seq\n";
@@ -138,7 +142,6 @@ if ($warn_level) {
 }
 
 #### read data
-#&ReadCDSPositions;
 &ReadOrfPositions($organism_name);
 &ReadSynonyms($organism_name);
 #&ReadGenomeSequence;
@@ -173,13 +176,15 @@ foreach $query (@queries) {
     
     $current_from = $from;
     $current_to = $to;
-
-    ### upstream region
+#    if ($sequence_type eq "exons") {
+	
+#    } else {
+	### upstream region
     if ($sequence_type eq "upstream") {
 	if ($noorf) {
 	    $current_from = &max(-$upstr_size{$orf_id}, $from);
 	} 
-
+	
 	if ($orf_strand eq "D") {
 	    $reg_left = $orf_left + $current_from;
 	    $reg_right = $orf_left + $current_to;
@@ -191,10 +196,9 @@ foreach $query (@queries) {
 	### downstream region
     } elsif ($sequence_type eq "downstream") {
 	if ($noorf) {
-#    print join ("\t", "HELLO", $query, $orf_id, $name, $current_from, $current_to, $upstr_size{$orf_id}, $downstr_size{$orf_id}, "\n");
 	    $current_to = &min($downstr_size{$orf_id}, $to);
 	} 
-
+	
 	if ($orf_strand eq "D") {
 	    $reg_left = $orf_right + $current_from;
 	    $reg_right = $orf_right + $current_to;
@@ -202,14 +206,14 @@ foreach $query (@queries) {
 	    $reg_right = $orf_left - $current_from;
 	    $reg_left = $orf_left - $current_to;
 	}
-
+	
 	### ORF (wargning: this does not splice out introns
     } elsif ($sequence_type eq "unspliced ORF") {
 	$reg_left = $orf_left;
-	$reg_right = $orf_right;
+	    $reg_right = $orf_right;
     }
-
-
+    
+    
     $reg_size =  $reg_right - $reg_left + 1;
     if ($reg_size <= 0) {
 	$reg_size = 0;
@@ -261,8 +265,6 @@ foreach $query (@queries) {
 	  )
 	if ($warn_level >= 2); 
     $current_seq = $chromosome_seq{$chrom}->get_sequence($reg_left,$reg_right,$orf_strand);
-    
-    
 
 ### print result sequence
     &PrintNextSequence($out,$out_format,$line_width,$current_seq,$current_id, @comments);
@@ -481,6 +483,12 @@ sub ReadArguments {
 		$sequence_type = "unspliced ORF";
 		$default{from} = "start";
 		$default{to} = "stop";
+		
+#	    } elsif ($ARGV[$a+1] =~ /^exon/i) {
+#		$sequence_type = "exons";
+#		
+#	    } elsif ($ARGV[$a+1] =~ /^intron/i) {
+#		$sequence_type = "introns";
 		
 	    } else {
 		die ("Error: unsupported sequence type: '$ARGV[$a+1]'", 
