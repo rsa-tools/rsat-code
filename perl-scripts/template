@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: template,v 1.5 2001/02/20 00:57:40 jvanheld Exp $
+# $Id: template,v 1.6 2001/02/20 00:58:11 jvanheld Exp $
 #
-# Time-stamp: <2001-02-20 01:57:28 jvanheld>
+# Time-stamp: <2001-02-20 01:58:09 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -143,7 +143,7 @@ sub ReadArguments {
       ### organism
     } elsif ($ARGV[$a] eq "-org") {
       $organism_name = $ARGV[$a+1];
-      unless (defined($supported_organism{$organism})) {
+      unless (defined($supported_organism{$organism_name})) {
 	  die ("Error: organism '$organism_name' is not supported on this site",
 	       $supported_organisms,
 	       "\n");
