@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.21 2001/03/21 20:57:14 jvanheld Exp $
+# $Id: oligo-analysis,v 1.22 2001/04/20 22:11:58 jvanheld Exp $
 #
-# Time-stamp: <2001-03-21 21:56:32 jvanheld>
+# Time-stamp: <2001-04-21 00:11:55 jvanheld>
 #
 ############################################################
 
@@ -110,17 +110,18 @@ if ($ncf) {
 if (($method eq "Frequency file") && 
     ($return{'exp_freq'})) {    #### expected frequencies ####
     
-    open EXPECTED, $exp_freq_file ||
-	die "	cannot open frequency file \"$exp_freq_file\"\n";
+    $exp = &OpenInputFile($exp_freq_file);
+#    open EXPECTED, $exp_freq_file ||
+#	die "	cannot open frequency file \"$exp_freq_file\"\n";
     
-    while (<EXPECTED>) {
+    while (<$exp>) {
 	next if (/^;/);
 	if (/(\S+)\t(\S+)/i) {
 	    $oligo_seq = lc($1);
 	    $oligo{$oligo_seq}->{exp_freq} = $2;
 	}
     }
-    close EXPECTED;
+    close $exp if ($exp_freq_file);
 }
 
 ### open sequence file ###
@@ -184,7 +185,7 @@ sub CountOligo {
 	print $out "\n";
     }
     while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format)) &&
-	   (($current_seq ne "") || ($current_id ne ""))) {
+	   (($current_seq) || ($current_id))) {
 	
 	### remove tabs and blank spaces ###    
 	$current_seq = &FoldSequence($current_seq,0);
@@ -855,14 +856,14 @@ sub CalcRatio {
 sub CalcProba {
     #### converts threshold on occurence significance index into a 
     #### threshold on occurrence probability
-    if ($occ_significance_threshold ne "") {
+    if (defined($occ_significance_threshold)) {
 	$proba_occ_threshold = exp(-$occ_significance_threshold*log(10))/$nb_possible_oligo;
     }
     
     
     #### converts threshold on mseq significance index into a 
     #### threshold on mseq probability
-    if ($mseq_significance_threshold ne "") {
+    if (defined($mseq_significance_threshold)) {
 	$proba_mseq_threshold = exp(-$mseq_significance_threshold*log(10))/$nb_possible_oligo;
     }
 
@@ -943,7 +944,7 @@ sub PrintResult {
   if ($verbose) {
     print $out "; oligo-analysis ", join(" ", @ARGV), "\n";
     printf $out "; %-29s\t%s\n", "Oligomer length", $oligo_length;
-    printf $out "; %-29s\t%s\n", "Input file",	$inputfile if ($inputfile ne "");
+    printf $out "; %-29s\t%s\n", "Input file",	$inputfile if ($inputfile);
     printf $out "; %-29s\t%s\n", "Input format", $in_format;
     printf $out "; %-29s\t%s\n", "Method", $method if ($method);
     printf $out "; %-29s\t%s\n", "Expected frequency file", $exp_freq_file if ($exp_freq_file);
@@ -959,7 +960,7 @@ sub PrintResult {
 	printf $out "; %-29s\t%s\n", "Pseudo frequency", $pseudo_frequency;
     }
     
-    printf $out "; %-29s\t%s\n", "Output file", $outputfile if ($outputfile ne "");
+    printf $out "; %-29s\t%s\n", "Output file", $outputfile if ($outputfile);
     if ($noov) {
        print $out "; Discard overlapping matches\n";
     } else {
@@ -995,7 +996,8 @@ sub PrintResult {
     printf $out "; %-29s\t%s\n", "alphabet size", $alphabet_size;
     printf $out "; %-29s\t%s\n", "nb possible oligomers", $nb_possible_oligo;
     printf $out "; %-29s\t%s\n", "threshold on occurrences", $occurrence_threshold if ($occurrence_threshold > 0);
-    printf $out "; %-29s\t%s\n", "threshold on occ sig", $occ_significance_threshold if ($occ_significance_threshold ne "");
+    printf $out "; %-29s\t%s\n", "threshold on occ sig", $occ_significance_threshold if (defined($occ_significance_threshold));
+    printf $out "; %-29s\t%s\n", "threshold on matching seq sig", $mseq_significance_threshold if (defined($mseq_significance_threshold));
     printf $out "; %-29s\t%s\n", "threshold on matching seq.", $mseq_threshold if ($mseq_threshold > 0);
     printf $out "; %-29s\t%s\n", "threshold on occ proba", $proba_occ_threshold if ($proba_occ_threshold < 1);
     printf $out "; %-29s\t%s\n", "threshold on occ ratio", $ratio_threshold if ($ratio_threshold > 0);
@@ -1489,17 +1491,21 @@ sub ReadArguments {
 		 (&IsReal($ARGV[$a+1]))
 		 && ($ARGV[$a+1] >= 0) && ($ARGV[$a+1] <= 1)) {
 	    $proba_mseq_threshold = $ARGV[$a+1];
+	    $return{'mseq'} = 1;
 	    $return{'proba'} = 1;
 	    
 	    
 	    #### threshold on occurrence significance
-	} elsif (($ARGV[$a] eq "-thosig") && (&IsReal($ARGV[$a+1]))) {
+	} elsif ($ARGV[$a] eq "-thosig") {
+	    die "Error : significance threshold should be a real number\n" unless (&IsReal($ARGV[$a+1]));
 	    $occ_significance_threshold = $ARGV[$a+1];
+	    $return{'occ'} = 1;
 	    $return{'proba'} = 1;
 	    
 	    #### threshold on matching sequence significance
 	} elsif (($ARGV[$a] eq "-thmssig") && (&IsReal($ARGV[$a+1]))) {
 	    $mseq_significance_threshold = $ARGV[$a+1];
+	    $return{'mseq'} = 1;
 	    $return{'proba'} = 1;
 	    
 	    
@@ -1691,7 +1697,7 @@ ARGUMENTS
 		 pseudo-weight
 		 # must be a real value between 0 and 1. 
 		 This allows to circumvent the problem that the
-		 expected frequency file muight be incomplete (due to
+		 expected frequency file might be incomplete (due to
 		 a too small reference sequence set), in which case
 		 some oligonucleotides might have an observed
 		 frequency > 0, whereas the expected frequency is 0
