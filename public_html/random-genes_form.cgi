@@ -14,7 +14,8 @@ $query = new CGI;
 
 ### default values for filling the form
 $default{organism} = "Saccharomyces cerevisiae";
-$default{gene_nb} = 25;
+$default{gene_nb} = 20;
+$default{group_nb} = 1;
 $default{replacement} = "";
 
 
@@ -44,6 +45,13 @@ print " <A HREF='help.random-genes.html#gene_nb'>Number of genes</A> ";
 print $query->textfield(-name=>'gene_nb',
 			-default=>$default{gene_nb},
 			-size=>5);
+
+#### number of groups
+print " <A HREF='help.random-genes.html#group_nb'>Number of groups</A> ";
+print $query->textfield(-name=>'group_nb',
+			-default=>$default{group_nb},
+			-size=>5);
+
 #### organism
 print "&nbsp;&nbsp;&nbsp;\n";
 print $query->checkbox(-name=>'replacement',

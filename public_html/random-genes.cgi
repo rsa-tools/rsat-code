@@ -34,6 +34,8 @@ $query = new CGI;
 
 #### read parameters ####
 $parameters = "";
+
+#### number of genes
 $gene_nb = $query->param('gene_nb');
 if (&IsNatural($gene_nb)) {
     $parameters .= " -n $gene_nb ";
@@ -41,6 +43,15 @@ if (&IsNatural($gene_nb)) {
     &FatalError("Gene number must be a natural number");
 }
 
+#### number of groups
+$group_nb = $query->param('group_nb');
+if (&IsNatural($group_nb)) {
+    $parameters .= " -r $group_nb ";
+} else {
+    &FatalError("Number of groups must be a natural number");
+}
+
+#### organism
 unless ($organism = $query->param('organism')) {
     &FatalError("You should specify an organism to use intergenic frequency calibration");
 }
