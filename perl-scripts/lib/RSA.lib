@@ -50,9 +50,8 @@ if ($0 =~ /([^(\/)]+)$/) {
 	}
     }
 } else {
-    print "Error: problem when opening config file\n";
-    print "Please contact jvanheld\@ucmb.ulb.ac.be\n";
-    exit;
+    die ( "Error: problem when opening config file\n",
+	  "Please contact jvanheld\@ucmb.ulb.ac.be\n");
 }
 
 
@@ -67,8 +66,6 @@ $HTML = "$RSA/public_html";
 $WWW_TMP = "$WWW_RSA/tmp";
 $ENV{SERVER_ADMIN} = "jvanheld\@ucmb.ulb.ac.be";
 
-$ECHO = 0; ### set to 1 for debigging: list parameters and echo the unix commands on the web interface
-    
 $counter_file = "$LOGS/count-file";
 ($sec, $min, $hour,$day,$month,$year) = localtime(time);
 $log_file = sprintf "$LOGS/log-file_${config_site}_%04d_%02d", $year+1900,$month+1;
@@ -140,8 +137,7 @@ sub OpenInputFile {
 	    $filename = "gunzip -c $filename |";
 	}
 	unless (open(INPUT, $filename)) {
-	    print "\tError : cannot read input file $filename\n";
-	    exit;
+	    die "\tError : cannot read input file $filename\n";
 	}
 	$input_stream = INPUT;
     } 
@@ -161,8 +157,7 @@ sub OpenOutputFile {
 	    $to_open = ">$filename";
 	}
 	unless (open(OUTPUT, "$to_open")) {
-	    print "\tError : cannot write output file $filename\n";
-	    exit;
+	    die "\tError : cannot write output file $filename\n";
 	}
 	$output_stream = OUTPUT;
     } else {
@@ -235,6 +230,12 @@ sub round {
     }
 }
 
+#  sub trim {
+#      my ($string) = @_;
+#      $string =~ s/^\s+//;
+#      $string =~ s/\s+$//;
+#      return $string
+#  }
 
 
 sub ListParameters {
@@ -530,7 +531,7 @@ sub ReadOrfPositions {
     while (<$orfs>) {
 	$linenb++;
 	next unless (/\S/);
-	next if (/^;/);
+	next if ((/^;/) || (/^\#/) || (/^--/));
 	next if (/^--/);
 	chomp;
 	@fields = split "\t";
@@ -635,7 +636,7 @@ sub ReadOrfPositions {
 #      $feature_table_file = $supported_organism{$organism_name}->{'features'};
 #      $orfs = &OpenInputFile($feature_table_file);
 #      while (<$orfs>) {
-#  	next if (/^;/);
+#  	next if ((/^;/) || (/^\#/) || (/^--/));
 #  	next unless (/\S/);
 #  	chomp;
 #  	@fields = split("\t");
@@ -714,7 +715,7 @@ sub ReadSynonyms {
 	}
     } else {
 	while(<$syn>) {
-	    next if (/^;/);
+	    next if ((/^;/) || (/^\#/) || (/^--/));
 	    next unless (/\S/);
 	    chomp;
 	    @fields = split "\t";
@@ -804,14 +805,25 @@ sub ListSupportedOrganisms {
   ### $supp =  &ListSupportedOrganisms("text");
   ### $supp =  &ListSupportedOrganisms("html_list");
   ### $supp =  &ListSupportedOrganisms("html_table");
-  ### @names =  &ListSupportedOrganisms("array");
+  ### @keys =  &ListSupportedOrganisms("keys");
+  ### @names =  &ListSupportedOrganisms("names");
+  ### %organisms =  &ListSupportedOrganisms("hash");
   my $out_format = $_[0] || "text";
 
   foreach my $key (keys %main::supported_organism) {
-      $names{$key} = $main::supported_organism{$key}->{name};
+      $names{$key} = $main::supported_organism{$key}->{'name'};
+#      print "HELLO $key\t",$main::supported_organism{$key}->{'name'}, "\t", $names{$key}, "\n";;
   }
+#  @keys = keys %names;
+#  @names = values %names;
   @sorted_names = sort values %names;
-  @sorted_keys  = sort {$names{$a} ge $names{$b}} keys %names;
+#  @sorted_keys  = sort {lc($a) ge lc($b)} @keys; ### this DOES NOT WORK
+  @sorted_keys = sort keys %supported_organism;
+
+#    warn join ("'\n\t'", "keys", @keys), "\n";
+#    warn join ("'\n\t'", "sorted keys", @sorted_keys), "\n";
+#    warn join ("'\n\t'", "names", @names), "\n";
+#    warn join ("'\n\t'", "sorted names", @sorted_names), "\n";
   
   if ($out_format eq "html_list") {
       my $result = "<UL>\n";
@@ -834,13 +846,18 @@ sub ListSupportedOrganisms {
       }
       $result .= "</TABLE>\n";
       return $result;
-  } elsif ($out_format eq "array") {
-      my @result = ();
-      foreach my $name (@sorted_names) {
-	  push @result, $name;
+  } elsif (($out_format eq "names") ||
+	   ($out_format eq "array")) {
+      return @sorted_names;
+  } elsif ($out_format eq "keys") {
+      return @sorted_keys;
+  } elsif ($out_format eq "hash") {
+      my %result = ();
+      foreach my $ket (@sorted_keys) {
+	  $result{$key} = $main::supported_organism{$key}->{name};
       }
-      return @result;
-  }else {
+      return %result;
+  } else {
       my $result = "";
       foreach $key (@sorted_keys) {
 	  $result .= sprintf "\t\t%-30s", $key;
@@ -862,6 +879,8 @@ $supported_organisms .= &ListSupportedOrganisms();
 #}
 
 
+
+
 ################################################################
 #### Treatment of errors
 ################################################################
@@ -870,8 +889,10 @@ $supported_organisms .= &ListSupportedOrganisms();
 sub FatalError {
     my @error_message = @_;
     my $message = join "\n\t", @error_message;
-    if ($output_context eq "cgi") {
-	$message =~ s/\n/<br>\n/g;
+    $ENV{RSA_ERROR} = "1";
+    if ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi") {
+	$message =~ s/\n\t/ /g;
+	$message =~ s/\t/ /g;
 	&cgiError($message);
     } else {
 	die("Error\n\t", $message, "\n");
@@ -890,13 +911,14 @@ sub cgiError {
 sub Warning {
     my @warning_message = @_;
     my $message = join "\n\t", @warning_message;
-    if ($output_context eq "cgi") {
+    if ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi") {
 	$message =~ s/\n/<br>\n/g;
 	&cgiWarning($message);
     } else {
-	warn("Warning\n\t", $message, "\n");
+	warn("; WARNING\t", $message, "\n");
     }
 }
+
 sub cgiWarning {
     my $warning_message = join "", @_;
     my $warning_color = "#aa0000";
@@ -907,7 +929,7 @@ sub cgiWarning {
 sub Info {
     my @info_message = @_;
     my $message = join "\n\t", @info_message;
-    if ($output_context eq "cgi") {
+    if ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi") {
 	$message =~ s/\n/<br>\n/g;
 	&cgiMessage($message);
     } else {
@@ -919,15 +941,13 @@ sub Info {
 sub cgiMessage {
     my ($message, $message_type, $color) = @_;
     $color = "#00BB00" unless ($color);
-    print (
-	  "<h3>$message_type</h3>",
-	   "<blockquote>",
-	   "<FONT SIZE=+1 color=$color><B>",
-	   $message,
-	   "</B></FONT>",
-	   "</blockquote>",
-	   "<BR><HR SIZE=3>"
-	   );
+    print  "<h3>$message_type</h3>",
+	    "<blockquote>",
+	    "<FONT SIZE=+1 color=$color><B>",
+	    $message,
+	    "</B></FONT>",
+	    "</blockquote>",
+	    "<BR><HR SIZE=3>";
 }
 
 
