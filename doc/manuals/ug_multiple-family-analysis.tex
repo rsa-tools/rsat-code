@@ -1,0 +1,169 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% MULTIPLE FAMILY ANALYSIS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Automatized analysis of multiple gene clusters}
+
+The main interest of using \RSAT from the shell is that it allows to
+automatize the analysis of multiple data sets. The different programs
+of the package can be combined in different ways to apply an extensive
+analysis of your data. A typical example is the analysis of clusters
+obtained from gene expression data.
+
+When a few tens or hundreds of gene clusters have to be anayzed, it
+becomes impossible to manage it manually. \RSAT includes a program,
+\program{multiple-family-analysis}, which takes as input a file with
+the composition of gene clusters (the \concept{cluster file}), and
+automatically performs the following analyses on each cluster :
+
+\begin{description}
+\item[directory management] the results are stored in a separate
+directory for each cluster. Directories are automatically created
+during the execution, and bear the name of the cluster.
+
+\item[sequence retrieval] upstream sequences are retrieved and stored
+in fasta format
+
+\item[oligonucleotide analysis] \program{oligo-analysis} is used to
+detect over-represented oligonucleotides. \program{dna-pattern} and
+\program{feature-map} are used to draw a feature map of the
+significant patterns.
+
+\item[dyad analysis] \program{oligo-analysis} is used to
+detect over-represented oligonucleotides. \program{dna-pattern} and
+\program{feature-map} are used to draw a feature map of the
+significant patterns.
+
+\end{description}
+
+In addition to this cluster-per-cluster analysis, results are
+summarized in two format.
+
+\begin{description}
+\item[synthetic table] A HTML table is generated with one row per
+cluster, and a summary of the results (gene composition, significant
+oligonucleotides, significant dyads). This table contains links to the
+feature maps, making it easy to browse the results.
+
+\item[sql table] The list of significant patterns detected in all the
+cluster are compiled in a single result table (a tab-delimited text
+file), with one row per pattern and cluster, and one column per
+criterion (pattern type, occurrences, significance, ...). 
+
+ The program also automatically exports SQL scripts which allow to
+create the appropriate table and load the data in a relational
+database management system (RDBMS).
+\end{description}
+
+\subsection{Input format}
+
+The input format is a tab-delimited text file with two columns, providing respectively :
+\begin{enumerate}
+\item gene identifier or name
+\item cluster name
+\end{enumerate}
+
+An example of cluster file is displayed in Table
+\ref{table:cluster_file}. This file describes 3 yeast regulons, each
+responding to some specific environmental condition: the NIT family
+contains 7 genes expressed under nitrogen depletion, the PHO fmily 5
+genes expressed under phosphate stress, and the MET family 11 genes
+expressed when methionine is absent fom the culture medium.
+
+
+\begin{table}
+\begin{center}
+\begin{tabular}{ll}
+\hline
+; gene & cluster \\
+YGR121C & NIT \\
+YJR152W & NIT \\
+YKR034W & NIT \\
+YKR039W & NIT \\
+YNL142W & NIT \\
+YOR348C & NIT \\
+YPR138C & NIT \\
+YAR071W & PHO \\
+YBR093C & PHO \\
+YDR481C & PHO \\
+YGR233C & PHO \\
+YML123C & PHO \\
+YDR502C & MET \\
+YER091C & MET \\
+YHL036W & MET \\
+YIL046W & MET \\
+YJR010W & MET \\
+YKL001C & MET \\
+YKR069W & MET \\
+YLR180W & MET \\
+YLR303W & MET \\
+YNL241C & MET \\
+YNL277W & MET \\
+\hline
+\end{tabular}
+\end{center}
+\caption{\label{table:cluster_file} Example of cluster file.}
+\end{table}
+
+
+
+\subsection{Example of utilization}
+
+Let us assume that the file displayed in Table
+\ref{table:cluster_file} has been saved under the name
+\file{test.fam}. The following command will automatically perform all
+the analyses. 
+
+\begin{verbatim}
+multiple-family-analysis  -i test.fam -v 1 \
+    -org Saccharomyces_cerevisiae \
+    -2str -noorf -noov \
+    -task upstream,oligos,maps,synthesis,sql,clean,all \
+    -outdir test_fam_results
+\end{verbatim}
+
+Once the analysis is finished, you can open the folder
+\file{synthetic\_tables} with aweb browser and follow the links.
+
+\subsection{Loading the results in arelational database}
+
+The results were exported in tab-delimited text files in the directory
+\file{test\_fam\_results/sql\_export/}. This directory contains 3 files
+and one subdirectory :
+
+\begin{verbatim}
+Family_genes.tab
+Family.tab
+Pattern.tab
+sql_scripts/
+\end{verbatim}
+
+The subdirectory \file{sql\_scripts} contains several SQL scripts for crating
+tables in a relational database management system (\concept{RDBMS}),
+loading data into these tables, and dropping these tables when you
+don't need them anymore.
+
+\begin{verbatim}
+family_genes_table_load.ctl
+family.mk
+family_table_create.sql
+family_table_drop.sql
+family_table_load.ctl
+makefile
+pattern.mk
+pattern_table_create.sql
+pattern_table_drop.sql
+pattern_table_load.ctl
+\end{verbatim}
+
+The file \file{makefile} allows you to automatically create the tables
+and load the data in two operations.
+
+\begin{verbatim}
+make create MYSQL='mysql -u [your login] -D multifam'
+make load MYSQL='mysql -u [your login] -D multifam'
+\end{verbatim}
+
+This requires the existence of a database space 'multifam' in your
+\concept{RDBMS}. If you are not familar with relational databases, you
+probably need to contact your system administrator to create this
+space for you.
