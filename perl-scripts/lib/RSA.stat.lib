@@ -326,6 +326,7 @@ sub negbin2 {
     ### Calculate the negbin
     my @negbin = &negbin($x, $p, $k, $series);
     return ($p, $k, @negbin);
+    
 }
 
 ################################################################
@@ -616,7 +617,7 @@ sub hypergeometric {
 
 
     
-# 	$Id: RSA.stat.lib,v 1.18 2004/01/10 10:59:23 jvanheld Exp $	
+# 	$Id: RSA.stat.lib,v 1.19 2004/01/14 01:21:53 jvanheld Exp $	
 
     #### initialization
     if (defined($args{previous_value})) {
@@ -1080,8 +1081,10 @@ sub ChiSquare {
 	    do {
 		$left_group++;
 		$left_sum += $expected[$left_group-1];
-	    } until ((($expected[$left_group] >= 5) || ($left_group >= $col_nb)) && 
-		     (($left_sum >= 5) || ($left_group >= $col_nb)));
+	    } until (($left_group >= $col_nb) || 
+		     (($expected[$left_group] >= 5) && ($left_sum >= 5)));
+#	    } until ((($expected[$left_group] >= 5) || ($left_group >= $col_nb)) && 
+#		     (($left_sum >= 5) || ($left_group >= $col_nb)));
 	    if ($left_group > 1) {
 		my $left_obs = 0;
 		my $left_exp = 0;
@@ -1105,8 +1108,10 @@ sub ChiSquare {
 	    do {
 		$right_group++;
 		$right_sum += $expected[$col_nb -$right_group];
-	    } until ((($expected[$col_nb -$right_group -1] >= 5) || ($right_group >= $col_nb)) &&
-		     (($right_sum >= 5) || ($right_group >= $col_nb)));
+	    } until (($right_group >= $col_nb) || 
+		     (($expected[$col_nb -$right_group -1] >= 5) && ($right_group >= $col_nb)));
+#	    } until ((($expected[$col_nb -$right_group -1] >= 5) || ($right_group >= $col_nb)) &&
+#		     (($right_sum >= 5) || ($right_group >= $col_nb)));
 	    if ($right_group > 1) {
 		my $right_obs = 0;
 		my $right_exp = 0;
