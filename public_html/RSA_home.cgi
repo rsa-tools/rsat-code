@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSA_home.cgi,v 1.4 2001/01/13 11:22:50 jvanheld Exp $
+# $Id: RSA_home.cgi,v 1.5 2001/01/13 19:14:41 jvanheld Exp $
 #
-# Time-stamp: <2001-01-13 12:22:36 jvanheld>
+# Time-stamp: <2001-01-13 20:13:47 jvanheld>
 #
 ############################################################
 #### this cgi script fills the HTML form for the program dna-pattern
@@ -130,7 +130,7 @@ print <<EndText;
   </TD>
 
   <TD ALIGN=CENTER>
-  <A HREF="http://itzamna.cifn.unam.mx/~jvanheld/rsa-tools/" target="_top">
+  <A HREF="http://www.cifn.unam.mx/~jvanheld/rsa-tools/" target="_top">
   <B>Mexico</B><BR>
   <IMG SRC="zapata.jpg" HEIGHT=80 WIDTH=89 BORDER=0><BR>
   <FONT SIZE=-2>http://itzamna.cifn.unam.mx/~jvanheld/rsa-tools</A>
