@@ -30,7 +30,8 @@ $out = &OpenOutputFile($outputfile);
 			  noid=>$noid,
 			  pattern_score=>$pattern_score,
 			  pattern_id=>$pattern_id,
-			  pattern_seq=>$pattern_seq);
+			  pattern_seq=>$pattern_seq,
+			  expand=>1);
 
 #### create a hash with pattern scores
 foreach $pattern (@patterns) {
@@ -62,10 +63,9 @@ $pattern_nb = $#to_assemble+1;
 
 #### check that pattern number does not exceed the limit
 if($pattern_nb > $max_pattern_nb) {
-    print "Too many patterns to assemble.\n";
-    print "\tNumber of patterns\t$pattern_nb\n";
-    print "\tmaximum nb allowed\t$max_pattern_nb\n";
-    exit;
+    &FatalError ("Too many patterns to assemble. ",
+		 "Number of patterns = $pattern_nb.",
+		 "Maximum nb allowed = $max_pattern_nb.");
 }
 
 #### verbose ####
@@ -84,25 +84,6 @@ if ($verbose) {
     print $out "; max substitutions\t$max_subst\n";
     print $out "; number of patterns\t$pattern_nb\n";
 }
-
-#  ($in, $input_dir) = &OpenInputFile($inputfile);
-#  while (<$in>) {
-#      next unless (/\S/);
-#      next if (/^;/);
-#      chomp;
-#      @fields = split, /\s+/;
-#      $pattern = shift @fields;
-#      $word = &ExpandSeq($pattern);
-#      $info{$word} = join "\t", @fields;
-#      if ((&IsNatural($score_column-2)) && (&IsReal($fields[$score_column-2]))) {
-#  	$score{$word} = $fields[$score_column-2];
-#      } else {
-#  	$score{$word} = "nd";
-#      }
-#  }
-#  close $in unless ($inputfile eq "");
-
-#delete($to_align{$to_assemble[0]});
 
 #### make a list of words remaining to cluster
 while ($#to_assemble > -1) {
@@ -200,8 +181,8 @@ while ($#to_assemble > -1) {
 #### singleton patterns ####
 if ($#singletons >=0) {
     printf $out "\n; Isolated patterns: %d\n", $#singletons+1;
+    &PrintClusterHeader() if ($verbose);
     foreach $word (@singletons) {
-	$word = &ExpandSeq($word);
 	print $out "$word";
 	if ($strand_insensitive) {
 	    $rc = lc(&ReverseComplement($word));
@@ -365,8 +346,22 @@ sub BestOffset {
     return ($best_offset,$best_flanking,$best_score);    
 }
 
+#### print cluster header 
+sub PrintClusterHeader {
+    $seed_length = length($seed);
+    $l = $seed_length -1;
+    printf $out ";%${l}s", "alignt"; 
+    printf $out "\t%${seed_length}s","rev_cpl" if ($strand_insensitive);
+    if (&IsReal($score_column)) {
+	print $out "\tscore";
+    } else {
+	print $out "\tinfo";
+    }
+    print $out "\n";
+}
 
-#### print the result ####
+
+#### print a cluster
 sub PrintCluster {
     undef($cluster_score);
     print $out  "\n";
@@ -382,21 +377,12 @@ sub PrintCluster {
 	$word_nb++;
     }
     if ($verbose) {
-	$seed_length = length($seed);
 	print $out  ";cluster # $cluster_nb";
 	    print $out "\tseed: $first_seed";
 	print $out  "\t$word_nb words";
 	print $out "\tlength $seed_length";
 	print $out "\n";
-	$l = $seed_length -1;
-	printf $out ";%${l}s", "alignt"; 
-	printf $out "\t%${seed_length}s","rev_cpl" if ($strand_insensitive);
-	if (&IsReal($score_column)) {
-	    print $out "\tscore";
-	} else {
-	    print $out "\tinfo";
-	}
-	print $out "\n";
+	&PrintClusterHeader();
     }
     foreach $word (sort {($position{$a} <=> $position{$b}) || ($score{$b} <=> $score{$a})} keys %position) {
 	$cluster_score = &max($cluster_score, $score{$word}) if (&IsReal($score_column));
@@ -433,7 +419,7 @@ sub PrintCluster {
     print $out "$seed";
     printf $out "\t%s", lc(&ReverseComplement($seed)) if ($strand_insensitive);
     print $out "\t$cluster_score" if (&IsReal($score_column));
-    print $out "\tconsensus\n";
+    print $out "\tbest consensus\n";
 }
 
 
@@ -597,7 +583,7 @@ sub ReadArguments {
 	    &PrintHelp;
 	    
 	    ### list of options
-	} elsif ($ARGV[0] eq "-help") {
+	} elsif ($ARGV[$a] eq "-help") {
 	    &PrintOptions;
 	    
 
