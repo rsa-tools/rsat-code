@@ -3,89 +3,51 @@
 <body bgcolor='#ffffff'>
 <blockquote>
 
-<h1 align=center>Warnings</h1>
+<h1 align=center>Warning</h1>
 
 <a name=human>
-<h2>Human, mouse and rat genomes</h2>
+<h2>Problems for pattern discovery with mammalian genomes</h2>
 
-<P>
-For the time being, human, mouse and rat genomes are available from
-Brussels only (<a target=_top
-href=http://rsat.ulb.ac.be/rsat/>http://rsat.ulb.ac.be/rsat/</a>).
-
-<P>I only started the installation of human and mouse genomes a few
-weeks ago. This is really under construction, and there are several
-problems (see details below). 
-
-
-<P>The main problem is the complexity of human sequences, which
-probably induces many false positives with the pattern discovery
-programs. I am curently working on the improvement of background
-models, in order to solve these programs. All this is reasearch, and
-will take time.
-
-
-<P>Inbetween, I could have chosen to mask human and mouse genomes from
-the web site, in order to avoid confusion. However, I thought that
-some of the tools might be useful (e.g. sequence retrieval, pattern
-matching), so I chose to give access to these genomes during the
-installation phase, with the present warning.
-
-
-<h3>Problems for identifying genes</h3>
-
-I parsed the genome from the latest Genbank release (the latest
-Genbank files are from beginning of January) .
-
-<ul>
-<a href=ftp://ftp.ncbi.nih.gov/genomes/H_sapiens/ target=_blank>ftp://ftp.ncbi.nih.gov/genomes/H_sapiens/</a>
-</ul>
-
-
-
-<ol>
-
-<li>The genome is not fully assembled. There are no less than 953
-contigs, of very different sizes.
-
-<li>Each gene is associated to a GI. Supposedly, the GI is a unique
-identifier for coding sequences (not for genes, contrarily to what its
-name suggests), but I just noticed that, for the human genome, a gene
-could have different GIs associated to its full-genome location and
-to pre-genome Genbank sequences
-
-<li>Gene names also come from Genbank flat files, which contain only
-one name per gene. Synonyms are sometimes documented as notes, but
-all notes are not synonyms, so there is no simple wy to incorporate
-synonyms from Genbank flat files.
-
-</ol>
 
 <p>
-In the future, I will try to improve the quality of the data. My first
-possibility is to import Ensembl genome, which is fully assembled, and
-hopefully better annotated. But this will take time.
+Three mammalian genomes are currrently suported on RSAT: Homo sapiens,
+Mus musculus and Rattus norvegicus.
 
-
-<h3>Problems for pattern discovery</h3>
-<P>
-About oligo-analysis and dyad-analysis, it must be stressed that,
-until now, these method have been proven to be highly efficient with
-the yeast genome, and relatively efficient with A.thaliana and
-Drosophila melanogaster melanogaster. My first tests with human genes
-suggest that with this organism the program is likely to return many
-false positive (i.e. if you submit a random set of genes, you always
-get plenty of 'significant' motifs). This is likely to come from the
-heterogeneity of human sequences, and I am currently working on an
-improvement of the background model.
 
 <P>
-Consensus and the gibbs sampler are not based on an external
-background. This does not mean that they will work better : they are
-likely to return false positives with human sequences, since they
-already do so with either randomly generated sequences, or randomly
-selected yeast sequences.
+Pattern discovery programs (e.g. oligo-analysis and dyad-analysis), it
+have been proven to be highly efficient with the yeast genome, and
+relatively efficient with A.thaliana and Drosophila melanogaster
+melanogaster. 
 
+<P>
+My first tests with human and mouse genes suggest that with
+mammalian genomes these programs return many false positive (i.e. if
+you submit a random set of genes, you always get plenty of highly
+'significant' motifs). This is likely to come from the heterogeneity
+of human sequences, and I am currently working on an improvement of
+the background model.
+
+<P>
+Consensus and the gibbs sampler are also likely to return many false
+positives with human sequences, since they generally return more false
+positives than oligo-analysis and dyad-analysis. I suspect that the
+same problem will be encountered by most currently existing pattern
+discovery programs : if you submit a random selection of human
+promoters, they will always return plenty of motifs, although the
+correct answer would be to return no motif (since these genes are not
+likely to be co-regulated).  If you know any counter example, please
+indicate it to me.
+
+<p>
+I am currently working on methodological improvements to model
+heterogeneous sequences. This is an on-going research, and it may take
+several months. Inbetween, I installed the genomes because you can
+already run some tools (pattern matching for example), but I do not
+recommend to trust pattern discovery results with mammalian genomes.
+
+<P>
+<a href=mailto:jvanheld@scmbb.ulb.ac.be>Jacques van Helden</a>
 
 </blockquote>
 </body>
