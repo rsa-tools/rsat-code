@@ -180,20 +180,6 @@ if ($query->param('output') =~ /display/i) {
 	</FORM>
     </TD>
 
-
-<!--
-    <TD>
-	<FORM METHOD="POST" ACTION="fill-form.meme.cgi" TARGET=_top>
-	<INPUT type="hidden" NAME="organism" VALUE="$organism">
-	<INPUT type="hidden" NAME="from" VALUE="$from">
-	<INPUT type="hidden" NAME="to" VALUE="$to">
-	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
-	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
-	<INPUT type="submit" value="MEME">
-	</FORM>
-    </TD>
--->
-
 </TR>
 
 <TR VALIGN="top" ALIGN="center">
