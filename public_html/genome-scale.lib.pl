@@ -1,6 +1,6 @@
 ### default values for sequence retrieval
 $default{sequence_format} = "fasta";
-$default{seq_label} = "gene";
+$default{seq_label} = "name";
 $default{organism} = "Saccharomyces cerevisiae";
 $default{from} = "default";
 $default{to} = "default";
@@ -97,24 +97,23 @@ sub ReadRetrieveSeqParams {
 	    $retrieve_seq_parameters .= " -format ".$query->param('sequence_format');;
 	}
 
+
+
 	### sequence label
-#	if ($org eq "Saccharomyces_cerevisiae") {
-#	    $seq_label = "orf";
-#	} else {
-	    $seq_label = lc($query->param('seq_label'));
-#	}
-	if (($seq_label =~ /gene/) && 
-	    ($seq_label =~ /orf/)) {
-	    $retrieve_seq_parameters .= " -label orf_gene";
-	} elsif ($seq_label =~ /gene/) {
-	    $retrieve_seq_parameters .= " -label gene";
-	} elsif ($seq_label =~ /orf/) {
-	    $retrieve_seq_parameters .= " -label orf";
-	} elsif ($seq_label =~ /full/) {
-	    $retrieve_seq_parameters .= " -label full";
-	} else {
-	    &cgiError("Invalid option for sequence label '$seq_label'");
-	}
+	my $seq_label = lc($query->param('seq_label'));
+	$retrieve_seq_parameters .= " -label ".$seq_label;
+#  	if (($seq_label =~ /gene/) && 
+# 	    ($seq_label =~ /orf/)) {
+# 	    $retrieve_seq_parameters .= " -label orf_gene";
+# 	} elsif ($seq_label =~ /gene/) {
+# 	    $retrieve_seq_parameters .= " -label gene";
+# 	} elsif ($seq_label =~ /orf/) {
+# 	    $retrieve_seq_parameters .= " -label orf";
+# 	} elsif ($seq_label =~ /full/) {
+# 	    $retrieve_seq_parameters .= " -label full";
+# 	} else {
+# 	    &cgiError("Invalid option for sequence label '$seq_label'");
+# 	}
 
 	### limits ###
 	if (&IsInteger($query->param('from'))) {
@@ -129,6 +128,12 @@ sub ReadRetrieveSeqParams {
 	    $retrieve_seq_parameters .= " -noorf ";
 	}
     }
+    
+
+    ## return command and parameters
+    return($retrieve_seq_command, $retrieve_seq_parameters);
 }
+
+
 return 1;
 

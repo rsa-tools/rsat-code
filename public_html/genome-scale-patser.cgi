@@ -15,9 +15,9 @@ $matrix_from_transfac_command = "$SCRIPTS/matrix-from-transfac";
 $matrix_from_gibbs_command = "$SCRIPTS/matrix-from-gibbs";
 $convert_seq_command = "$SCRIPTS/convert-seq";
 $features_from_patser_cmd = "$SCRIPTS/features-from-patser -v 1";
-$add_orf_function_command = "$SCRIPTS/add-orf-function";
+$add_orf_function_command = "$SCRIPTS/add-gene-info -info descr";
+#$add_orf_function_command = "$SCRIPTS/add-orf-function";
 #$add_yeast_link_command = "$SCRIPTS/add-yeast-link";
-$add_orf_function_command = "$SCRIPTS/add-orf-function";
 $link_command = "$SCRIPTS/add-yeast-link";
 $tmp_file_name = sprintf "genome-scale-patser.%s", &AlphaDate;
 
@@ -32,7 +32,7 @@ $query = new CGI;
 #### update log file ####
 &UpdateLogFile();
 
-&ReadRetrieveSeqParams();
+($retrieve_seq_command, $retrieve_seq_parameters) = &ReadRetrieveSeqParams();
 
 &ReadPatserParameters();
 
@@ -56,15 +56,11 @@ $feature_file =  "$TMP/$tmp_file_name.ft";
 $command = "$retrieve_seq_command $retrieve_seq_parameters ";
 $command .= "| $patser_command $patser_parameters ";
 $command .= "| $features_from_patser_cmd ";
-#$command .= "| $add_orf_function_command -org $org ";
+$command .= "| $add_orf_function_command -org $org ";
 
 
 ### execute the command ###
 if ($query->param("output") =~ /display/i) {
-
-#    if ($org eq "Saccharomyces_cerevisiae") { #### not yet supported for other organisms
-#	$command .= "| $link_command  ";
-#    }
 
     ### execute the command ###
     $result_file = "$TMP/$tmp_file_name.res";
@@ -77,7 +73,13 @@ if ($query->param("output") =~ /display/i) {
 
     ### Print result on the web page
     print '<H2>Result</H2>';
+
+    print '<pre>';
+#    while (<RESULT>) {
+#	print;
+#    }
     &PrintHtmlTable(RESULT, $result_file, true);
+#    print '</pre>';
     close(RESULT);
 
     unless ($query->param('table')) {
