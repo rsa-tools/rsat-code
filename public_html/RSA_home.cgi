@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSA_home.cgi,v 1.7 2001/05/21 16:02:03 jvanheld Exp $
+# $Id: RSA_home.cgi,v 1.8 2001/12/21 10:07:09 jvanheld Exp $
 #
-# Time-stamp: <2001-05-21 18:01:57 jvanheld>
+# Time-stamp: <2001-12-21 11:00:40 jvanheld>
 #
 ############################################################
 #### this cgi script fills the HTML form for the program dna-pattern
@@ -12,8 +12,9 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
-require "RSA.lib.pl";
-require "RSA.cgi.lib.pl";
+require "RSA.lib";
+require "RSA.cgi.lib";
+$ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 
 $query = new CGI;
@@ -128,6 +129,14 @@ print <<EndText;
   <B>Mexico</B><BR>
   <IMG SRC="zapata.jpg" HEIGHT=80 WIDTH=89 BORDER=0><BR>
   <FONT SIZE=-2>http://embnet.cifn.unam.mx/rsa-tools/</A>
+  </FONT>
+  </TD>
+  
+  <TD ALIGN=CENTER>
+  <A HREF="http://bioinformatics.bmc.uu.se/~jvanheld/rsa-tools/" target="_top">
+  <B>Sweden</B><BR>
+  <IMG SRC="uulogo_red160.gif" HEIGHT=80 BORDER=0><BR>
+  <FONT SIZE=-2>http://bioinformatics.bmc.uu.se/~jvanheld/rsa-tools/</A>
   </FONT>
   </TD>
   
