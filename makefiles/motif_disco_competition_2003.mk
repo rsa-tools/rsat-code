@@ -240,10 +240,10 @@ multi:
 
 ################################################################
 ## Calculate the effect of the number of sequences on mean and variance
-SEQ_NUMBER_SERIES=1 2 3 4 5 6 7 8 9 10 15  20 30 40 50 60 70 80 90 100
+SEQ_NUMBER_SERIES=1 2 3 4 5 6 7 8 9 10 15 20
 seq_nb_series:
-	fo*r nb in ${SEQ_NUMBER_SERIES} ; do			\
-		${MAKE} calibrate_oligos N=$${nb};	\
+	for nb in ${SEQ_NUMBER_SERIES} ; do		\
+		${MAKE} calibrate_oligos N=$${nb} ;	\
 	done
 
 HUMAN_LENGTHS=500 1000 1500 2000 3000
@@ -272,7 +272,7 @@ seq_nb_series_mouse:
 LENGTH_SERIES= 100 200 300 500 1000 1500 2000 2500 3000
 seq_length_series:
 	@for len in ${LENGTH_SERIES} ; do			\
-		${MAKE} calibrate_oligos SEQ_LEN=$${len} N=20;	\
+		${MAKE} calibrate_oligos SEQ_LEN=$${len} N=20 ;	\
 	done
 
 LENGTH_SERIES_YEAST=100 200 300 400 500 600 700 800 900 1000
@@ -291,37 +291,43 @@ seq_len_series_fly:
 ################################################################
 ## Calculate oligonucleotide distributions of occurrences for random
 ## gene selections
+RAND_DIR=rand_gene_selections
 SEQ_LEN=500
 CALIB_TASK=all,clean_oligos
 START=1
 REPET=10000
+WORK_DIR=`pwd`
+OUT_DIR=${WORK_DIR}/${RES_DIR}/${ORG}/${RAND_DIR}/${OLIGO_LEN}nt${STR}${NOOV}_N${N}_L${SEQ_LEN}_R${REPET}
 CALIBRATE_CMD=							\
 	calibrate-oligos.pl -v ${V}				\
-		-r ${REPET} -sn ${N} -l ${OL} -sl ${SEQ_LEN}	\
+		-r ${REPET} -sn ${N} -ol ${OLIGO_LEN} -sl ${SEQ_LEN}	\
 		-task ${CALIB_TASK}				\
 		-start ${START}					\
 		${END}						\
 		${STR} ${NOOV}					\
+		-outdir ${OUT_DIR}				\
 		-org ${ORG}
 
-## Run the program immetiately (WHEN=now) or submit it to a queue (WHEN=queue)
-WHEN=now
-calibrate_oligos: calibrate_oligos_${WHEN}
+## Run the program immediately (WHEN=now) or submit it to a queue (WHEN=queue)
+WHEN=queue
+calibrate_oligos:
+	${MAKE} calibrate_oligos_${WHEN}
 
 ## Run the program immediately
 calibrate_oligos_now:
-	${CALIBRATE_CMD}
+	(umask 0002; ${CALIBRATE_CMD})
 
 ## Submit the program to a queue
 JOB_DIR=jobs
-JOB=`mktemp job.XXXXXX`
+JOB=`mktemp ${JOB_DIR}/job.XXXXXX`
+
 calibrate_oligos_queue:
 	@mkdir -p ${JOB_DIR}
 	@for job in ${JOB} ; do						\
 		echo "Job $${job}" ;					\
-		echo "${CALIBRATE_CMD}" > ${JOB_DIR}/$${job} ;		\
+		echo "${CALIBRATE_CMD}" > $${job} ;		\
 		qsub -m e -q rsa@merlin.ulb.ac.be -N $${job} -j oe	\
-			-o ${JOB_DIR}/$${job}.log ${JOB_DIR}/$${job} ;	\
+			-o $${job}.log $${job} ;	\
 	done
 
 ## A quick test for calibrate_oligos
@@ -337,36 +343,57 @@ give_access:
 ## ##############################################################
 ## Fit all previously calculated distributions with a Poisson and a
 ## negbin, respectively
-DISTRIB_FILES=`find ${RES_DIR} -name '*_distrib.tab'` 
+DISTRIB_FILES=`find ${RES_DIR} -name '*_distrib.tab'`
 GOOD_DISTRIB_FILES=`find ${RES_DIR} -name '*_distrib.tab' -exec wc {} \; | awk '$$1 >= 2000 {print $$4}'`
+DISTRIB_LAW=negbin
+FITTING_CMD=					\
+	fit-distribution -v ${V}		\
+	-distrib ${DISTRIB_LAW}			\
+	-i ${DISTRIB_FILE}			\
+	-o ${FITTING_FILE}
+
 find_distrib_files:
 	@echo ${DISTRIB_FILES}
-
-check_distrib_files: good_distrib_files bad_distrib_files
-
-bad_distrib_files:
-	@echo
-	@echo "Bad distrib files"
-	@find ${RES_DIR} -name '*_distrib.tab' -exec wc {} \; | awk '$$1 < 2000'
 
 good_distrib_files:
 	@echo
 	@echo "Good distrib files"
 	@find ${RES_DIR} -name '*_distrib.tab' -exec wc {} \; | awk '$$1 >= 2000'
 
-all_fittings:
+bad_distrib_files:
+	@echo
+	@echo "Bad distrib files"
+	@find ${RES_DIR} -name '*_distrib.tab' -exec wc {} \; | awk '$$1 < 2000'
+
+good_fittings:
 	@echo  ${GOOD_DISTRIB_FILES}
 	@for file in ${GOOD_DISTRIB_FILES} ; do			\
 		${MAKE} one_fitting DISTRIB_FILE=$${file} ;	\
 	done
 
-one_fitting:
-	${MAKE} one_fitting_one_law DISTRIB_LAW=poisson
-	${MAKE} one_fitting_one_law DISTRIB_LAW=negbin
+check_distrib_files: good_distrib_files bad_distrib_files
 
-DISTRIB_LAW=negbin
-DISTRIB_FILE=results/Saccharomyces_cerevisiae/rand_gene_selections/6nt-2str-noov_N10_L1000_R1000/Saccharomyces_cerevisiae_6nt_-2str-noov_n10_l1000_r1000_distrib.tab
-FITTING_FILE=`echo ${DISTRIB_FILE} | perl -pe 's/distrib.tab/${DISTRIB_LAW}.tab/'` 
+all_fittings:
+	${MAKE} all_fittings_queue DISTRIB_LAW=poisson
+	${MAKE} all_fittings_queue DISTRIB_LAW=negbin
+
+
+all_fittings_queue:
+	@for infile in ${DISTRIB_FILES} ; do							\
+		${MAKE} one_fitting_queue DISTRIB_FILE=${WORK_DIR}/$${infile} \
+		FITTING_FILE=${WORK_DIR}/`echo $${infile} | perl -pe 's/distrib.tab/${DISTRIB_LAW}.tab/'` \
+		JOB=`mktemp ${JOB_DIR}/job.XXXXXX`;		\
+	done
+
+## Submit the program to a queue
+one_fitting_queue:
+	@mkdir -p ${JOB_DIR}
+	@for job in ${JOB} ; do						\
+	echo "Job $${job}";						\
+	echo "${FITTING_CMD}" > $${job};				\
+	qsub -m e -q rsa@merlin.ulb.ac.be -N $${job} -j oe		\
+		-o $${job}.log $${job};					\
+
 one_fitting_one_law:
 	@echo "Fitting ${DISTRIB_LAW}	${FITTING_FILE}"
 	@fit-distribution -v 1 -distrib ${DISTRIB_LAW} -i ${DISTRIB_FILE} -o ${FITTING_FILE} 
@@ -377,4 +404,3 @@ _distrib.tab_poisson.tab:
 
 _distrib.tab_negbin.tab:
 	@fit-distribution -v 1 -distrib negbin -i $< -o $@
-
