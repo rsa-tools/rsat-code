@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: transpose-table,v 1.4 2004/05/07 07:07:05 jvanheld Exp $
+# $Id: transpose-table,v 1.5 2005/03/22 23:15:49 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:59:01 jvanheld>
 #
@@ -14,16 +14,17 @@ require "RSA.lib";
 
 
 #### initialise parameters ####
-my $start_time = &AlphaDate;
+my $start_time = &AlphaDate();
 
 local $infile{input} = "";
 local $outfile{output} = "";
 
 local $verbose = 0;
+local $sep="\t";
 local $in = STDIN;
 local $out = STDOUT;
 
-&ReadArguments;
+&ReadArguments();
 
 
 #### check argument values ####
@@ -36,13 +37,18 @@ $out = &OpenOutputFile($outfile{output});
 ($in) = &OpenInputFile($infile{input});
 $row_nb = 0;
 $max_col = 0;
-while (<$in>) {
+while (my $line = <$in>) {
 #    next if (/^;/);
-    chomp;
+#    warn $line if ($main::verbose >= 3);
+    chomp($line);
     $row_nb++;
-    @{$fields[$row_nb]} = split "\t";
-    $max_col = &max($max_col, $#{$fields[$row_nb]});
+    @{$fields[$row_nb]} = split /$sep/, $line;
+    my $columns = scalar(@{$fields[$row_nb]});
+    $max_col = &max($max_col, $columns);
+    &RSAT::message::Info(join ("\t", "rows:".$row_nb, "columns:".$columns, "max columns:".$max_col)) if ($main::verbose >= 3);
 }
+
+&RSAT::message::Info(join ("\t", "rows:".$row_nb,  "max columns:".$max_col)) if ($main::verbose >= 2);
 
 close $in if ($infile{input});
 
@@ -50,7 +56,7 @@ close $in if ($infile{input});
 &Verbose if ($verbose);
 
 ###### print output ######
-for $j (0..$max_col) {
+for $j (0..($max_col-1)) {
     print $out $fields[1][$j];
     for $i (2..$row_nb) {
 	print $out "\t", $fields[$i][$j];
@@ -104,7 +110,7 @@ OPTIONS
 	-o outputfile
 		if not specified, the standard output is used.
 		This allows to place the command within a pipe.
-
+	-sep	field separator (default: tabulation)
 End_of_help
   close HELP;
   exit;
@@ -116,11 +122,12 @@ sub PrintOptions {
   print HELP <<End_short_help;
 transpose-table options
 ----------------
--h	(must be first argument) display full help message
--help	(must be first argument) display options
--i	input file
--o	output file
--v	verbose
+-h		(must be first argument) display full help message
+-help		(must be first argument) display options
+-i		input file
+-o		output file
+-sep		field separator (default: tabulation)
+-v		verbose
 End_short_help
   close HELP;
   exit;
@@ -153,6 +160,10 @@ sub ReadArguments {
       ### output file ###
     } elsif ($ARGV[$a] eq "-o") {
       $outfile{output} = $ARGV[$a+1];
+      
+      ### field separator
+    } elsif ($ARGV[$a] eq "-sep") {
+	$sep = $ARGV[$a+1];
       
     }
   }
