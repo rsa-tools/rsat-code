@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.43 2002/04/27 12:29:28 jvanheld Exp $
+# $Id: oligo-analysis,v 1.44 2002/05/02 21:49:57 jvanheld Exp $
 #
-# Time-stamp: <2002-04-27 14:28:17 jvanheld>
+# Time-stamp: <2002-05-02 23:49:17 jvanheld>
 #
 ############################################################
 
@@ -14,6 +14,7 @@ require "RSA.lib";
 require "RSA.classes";
 
 
+################################################################
 ###### initialize parameters ##########
 $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
 
@@ -95,7 +96,6 @@ if ($method eq "Markov chain") {
 ### check input format 
 &CheckInputSeqFormat($in_format);
 
-
 ### check pre-defined frequency tables
 ### non-coding frequency calibration
 if ($ncf) {
@@ -167,7 +167,7 @@ if (($method eq "Frequency file") &&
 	}
     }
     close $exp if ($exp_freq_file);
-
+    
     #### make sure that the sum of frequencies is positive
     my $freq_sum = 0;
     foreach my $pattern_seq (keys %patterns) {
@@ -181,7 +181,7 @@ if (($method eq "Frequency file") &&
     if ($rescale_freq) {
 	print $out "; Rescaling expected frequencies\n" if ($verbsoe >=1);
 	foreach my $pattern_seq (keys %patterns) {
-	     $patterns{$pattern_seq}->{exp_freq} /= $freq_sum;
+	    $patterns{$pattern_seq}->{exp_freq} /= $freq_sum;
 #	     print join "\t", $pattern, $freq_sum, $patterns{$pattern_seq}->{exp_freq}, $patterns{$pattern_seq}->{exp_freq}, "\n";
 	}
     }
@@ -250,7 +250,7 @@ sub CountOligo {
 	chomp($current_time);
 	&Warning( "oligo-analysis\t$current_time\tCounting oligo frequencies\n");
     }
-
+    
     if ($return{'table'}) {
 	@possible_oligos = &all_oligos($oligo_length);
 	print $out $current_id;
@@ -271,9 +271,7 @@ sub CountOligo {
 	$seq_length[$sequence_number] = length($current_seq);
 	
 	if ($verbose >= 3) {
-	    $current_time = `date '+%H:%M:%S'`;
-	    chomp($current_time);
-	    &Warning( "oligo-analysis\t$curent_time\t$current_id\t$seq_length[$sequence_number]\n");
+	    &Warning( "oligo-analysis\t", &AlphaDate(), "\t$current_id\t$seq_length[$sequence_number]\n");
 	}
 	
 	$sum_seq_length += $seq_length[$sequence_number];
