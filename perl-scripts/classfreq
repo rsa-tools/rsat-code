@@ -42,11 +42,11 @@ OUTPUT
 	- limits of the class (in the form [lower, upper[).
         - class center
 	- absolute frequency
-        - cumulated frequency
-        - inverted cumulated frequency
+        - cumulated frequency (inclusive)
+        - inverted cumulated frequency (inclusive)
         - relative frequency
-        - cumulated relative frequency
-        - inverted cumulated relative frequency
+        - cumulated relative frequency (inclusive)
+        - inverted cumulated relative frequency (inclusive)
 
 	With the option -v, the list of class frequencies is followed by a 
 	short statistical report on the data.
@@ -55,6 +55,10 @@ OUTPUT
 	- greater or equal to the lower limit, and 
 	- strictly smaller than the upper limit of the class
 	(lowerlimit <= x < upperlimit).
+
+	Cumulative frequencies are inclusive, i.e. :
+	cum	   is the count of (x <= upperlimit)
+	inv_cum	   is the count of (x >= lowerlimit)
 
 ARGUMENTS
         -h      (must be first argument) display full help message
@@ -276,16 +280,21 @@ if ($verbose) {
 }
 $cum = 0;
 $rel_cum = 0;
+$next_inv_cum = $count;
 $inv_cum = $count;
+
 $inv_rel_cum = 1;
+$next_inv_rel_cum = 1;
 foreach $c (0.. $#ListOfClasses) {
     ### calculate relative and cumulated frequencies
     $cum += $ListOfFrequencies[$c];
-    $inv_cum -= $ListOfFrequencies[$c];
+    $inv_cum = $next_inv_cum;
+    $next_inv_cum -= $ListOfFrequencies[$c];
     if ($count > 0) {
 	$rel = $ListOfFrequencies[$c]/$count;
 	$rel_cum += $rel;
-	$inv_rel_cum -= $rel;
+	$inv_rel_cum = $next_inv_rel_cum;
+	$next_inv_rel_cum -= $rel;
     }
 
     ### print class result
