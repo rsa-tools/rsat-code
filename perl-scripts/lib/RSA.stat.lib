@@ -616,7 +616,7 @@ sub hypergeometric {
 
 
     
-# 	$Id: RSA.stat.lib,v 1.17 2004/01/05 17:00:59 jvanheld Exp $	
+# 	$Id: RSA.stat.lib,v 1.18 2004/01/10 10:59:23 jvanheld Exp $	
 
     #### initialization
     if (defined($args{previous_value})) {
@@ -1105,7 +1105,7 @@ sub ChiSquare {
 	    do {
 		$right_group++;
 		$right_sum += $expected[$col_nb -$right_group];
-	    } until ((($expected[$col_nb -$right_group - 1] >= 5) || ($left_group >= $col_nb)) &&
+	    } until ((($expected[$col_nb -$right_group -1] >= 5) || ($right_group >= $col_nb)) &&
 		     (($right_sum >= 5) || ($right_group >= $col_nb)));
 	    if ($right_group > 1) {
 		my $right_obs = 0;
