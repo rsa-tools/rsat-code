@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: parse-location.pl,v 1.4 2002/06/06 11:25:48 jvanheld Exp $
+# $Id: parse-location.pl,v 1.5 2002/06/06 12:07:15 jvanheld Exp $
 #
-# Time-stamp: <2002-06-06 13:25:33 jvanheld>
+# Time-stamp: <2002-06-06 14:06:08 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -112,7 +112,7 @@ DESCRIPTION
 CATEGORY
 	parser
 
-INPUT/OUPUT FORMATS
+INPUT AND OUPUT FORMATS
 
 	Tab-delimited text files with 2 columns. the first column
 	contains the ORF identifier, and the second the ORF location.

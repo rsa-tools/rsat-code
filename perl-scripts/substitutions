@@ -2,7 +2,7 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
+require "RSA.lib";
 
 
 
@@ -12,9 +12,13 @@ if ($ARGV[0] eq "-h") {
 NAME
 	substit
 
-	returns a list of sequences matching a DNA pattern 
-        with a given number of substitutions 
-	
+DESCRIPTION
+	Returns a list of sequences matching a nucleotide pattern with
+        a given number of substitutions (only ATGC are supported). 
+
+CATEGORY
+	sequences
+
 USAGE
         substitutions [-i inputfile | -p pattern] [-o outputfile] [-v] -s #
 	

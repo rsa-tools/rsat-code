@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-program-description,v 1.4 2002/06/06 10:52:28 jvanheld Exp $
+# $Id: get-program-description,v 1.5 2002/06/06 12:02:24 jvanheld Exp $
 #
-# Time-stamp: <2002-06-06 12:51:58 jvanheld>
+# Time-stamp: <2002-06-06 14:02:23 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -32,20 +32,25 @@ local $out = STDOUT;
 ### open output file ###
 $out = &OpenOutputFile($outfile{output});
 
+#### get all program descriptions
 if ($all) {
-    #### get all program descriptions
     $exclude{lib} = 1;
     $exclude{obsolete} = 1;
+    $exclude{test_scripts} = 1;
+    $exclude{util} = 1;
+    $exclude{RCS} = 1;
 
-    @listing = glob("$RSA/perl-scripts/*");
-    foreach $file (@listing) {
-	unless ($exclude{$file}) {
+    if (defined($RSA)) {
+	@listing = glob("$RSA/perl-scripts/*");
+
+	foreach $file (@listing) {
 	    $program = `basename $file`;
 	    chomp $program;
-	    push @program_names, $program; 
-##	    last if ($#program_names >= 10);
+	    unless ($exclude{$program}) {
+		push @program_names, $program; 
+	    }
 	}
-    }
+    } 
 
 
 } elsif ($#program_names < 0) {
@@ -55,7 +60,7 @@ if ($all) {
 	next if (/^;/);
 	next if (/^\#/);
 	next unless (/\S/);
-    $_ = &trim($_);
+	$_ = &trim($_);
 	my @fields = split /\s/;
 	push @program_names, &trim($fields[0]);
 	

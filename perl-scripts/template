@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: template,v 1.9 2001/12/09 21:57:32 jvanheld Exp $
+# $Id: template,v 1.10 2002/06/06 11:58:23 jvanheld Exp $
 #
-# Time-stamp: <2001-12-09 22:57:25 jvanheld>
+# Time-stamp: <2002-06-06 13:58:20 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -33,7 +33,7 @@ local $out = STDOUT;
 $out = &OpenOutputFile($outfile{output});
 
 ##### read input #####
-$in = &OpenInputFile($infile{input});
+($in) = &OpenInputFile($infile{input});
 while (<$in>) {
 
 }
@@ -73,13 +73,17 @@ sub PrintHelp {
 NAME
 	template
 
-        2001 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
+        2002 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
 	
+DESCRIPTION
+	Template for writing new perl scripts
+
+CATEGORY
+	util
+
 USAGE
         template [-i inputfile] [-o outputfile] [-v]
 
-DESCRIPTION
-	
 OPTIONS
 	-h	(must be first argument) display full help message
 	-help	(must be first argument) display options
@@ -139,15 +143,6 @@ sub ReadArguments {
 	    ### output file ###
 	} elsif ($ARGV[$a] eq "-o") {
 	    $outfile{output} = $ARGV[$a+1];
-	    
-	    ### organism
-	} elsif ($ARGV[$a] eq "-org") {
-	    $organism_name = $ARGV[$a+1];
-	    unless (defined($supported_organism{$organism_name})) {
-		die ("Error: organism '$organism_name' is not supported on this site",
-		     $supported_organisms,
-		     "\n");
-	    }
 	    
 	}
     }

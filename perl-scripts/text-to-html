@@ -21,7 +21,7 @@ $chunk = 50;
 
 
 ### open input file ###
-$in = &OpenInputFile($infile{input});
+($in, $input_dir) = &OpenInputFile($infile{input});
 
 ### open output file ###
 $out = &OpenOutputFile($outfile{output});
@@ -33,7 +33,7 @@ $out = &OpenOutputFile($outfile{output});
 
 print $out "<HTML>";
 print $out "<TITLE>$infile{input}</TITLE>";
-print $out "<BODY>";
+print $out "<BODY BGCOLOR='#FFFFFF'>";
 
 #### verbose ####
 if ($verbose) {
@@ -47,7 +47,7 @@ if ($verbose) {
 }
 
 
-print &PrintHtmlTable($in, "", "", $chunk, $out);
+print &PrintHtmlTable($in, "", "", $chunk, $out, $border);
 
 print $out "</BODY>";
 print $out "</HTML>";
@@ -91,7 +91,11 @@ USAGE
         text-to-html [-i inputfile] [-o outputfile] [-v] [-font variable]
 
 DESCRIPTION
-	
+	Converts a tab-delimited file into a HTML table.
+
+CATEGORY
+	util
+
 OPTIONS
         -h      (must be first argument) display full help message
         -help   (must be first argument) display options
@@ -177,6 +181,10 @@ sub ReadArguments {
 		unless (&IsNatural($chunk)) {
 		    &FatalError("Chunk must be a natural number");
 		}
+		
+		### output file ###
+	    } elsif ($ARGV[$a] eq "-border") {
+		$border= $ARGV[$a+1];
 
 		### input file ###
 	    } elsif (($ARGV[$a] eq "-font") && ($ARGV[$a+1] =~ /^var/i)) {

@@ -2,7 +2,7 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
+require "RSA.lib";
 
 
 
@@ -19,7 +19,15 @@ USAGE
         substract-origin [-i inputfile] [-o outputfile] [-v]
 
 DESCRIPTION
+	Converts positions by introducting a gene-specific
+	correction. This program can for example be used to correct
+	matching positions (resulting from dna-pattern) to convert
+	positions calculated from the start codon into positions from
+	the transcription start site.
 	
+CATEGORY
+	util
+
 OPTIONS
         -h      (must be first argument) display full help message
         -help   (must be first argument) display options
@@ -114,7 +122,7 @@ while (<ORIG>){
 close ORIG;
 
 ### open input file ###
-$in = &OpenInputFile($inputfile);
+($in) = &OpenInputFile($inputfile);
 
 ### open output file ###
 $out = &OpenOutputFile($outputfile);
