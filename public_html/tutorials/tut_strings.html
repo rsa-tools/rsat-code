@@ -1,0 +1,154 @@
+<html>
+<head>
+   <title>RSA-tools - tutorials - string-based representations</title>
+</head>
+<body text="#000000" bgcolor="#ffffff" link="#0000ee" vlink="#55008b" alink="#ff0000">
+<blockquote>
+
+<hr size=6 width="100%">
+<center>
+<h2><a href="../RSA_home.cgi">RSA-tools</A> - 
+<a href="tutorials.html">Tutorials</a> - 
+string-based representations
+</h2>
+</center>
+
+<hr size=6 width="100%">
+
+<h2>Contents</h2>
+
+<p>
+<ol>
+<li><a href=#strings>simple strings</a>
+<li><a href=#IUPAC>IUPAC code</a>
+<li><a href=#regular>Regular expressions</a>
+<li><a href=#combination>Combination of IUPAC code and Regular expressions</a>
+<li><a href=#case>Case insensiivity</a>
+</ol>
+
+<a name=strings><h2>Simple strings</h2>
+<ul>
+
+<P>The simplest way to represent a transcription factor binding site
+is with a string. DNA sequences are based on a 4-letter alphabet (A,
+C, G and T). 
+
+Unfortunately, transcription factors are generally not restricted to
+one perfectly conserved string. The 4-letter representation is thus
+insufficient tor represent partly specified or aspecific residues in
+the DNA/factor interface.
+
+<P>Some more elaborate representations exist, and are supported on
+RSAT.
+
+</ul>
+<a name=IUPAC><h2>IUPAC code</h2>
+<ul>
+
+The IUPAC-IUB commission defined a <A
+HREF="http://www.chem.qmw.ac.uk/iupac/misc/naseq.html">code for
+ambiguous nucleotides</A>, based on a15-letter alphabet. Each letter
+represents a combination of one or several nucleotides.<P>
+
+<table cellpadding=2 cellspacing=2 border=1>
+</td></tr>
+<tr><th align=left>IUPAC</th><th align=left>nucleotides</th><th align=left>Mnemonics</th></tr>
+<tr><td>A</td><td>&nbsp;</td><td>Adenine</td></tr>
+<tr><td>C</td><td>&nbsp;</td><td>Cytosine</td></tr>
+<tr><td>G</td><td>&nbsp;</td><td>Guanine</td></tr>
+<tr><td>T</td><td>&nbsp;</td><td>Thymine</td></tr>
+<tr><td>R</td><td>A or G       </td><td>puRines</td></tr>
+<tr><td>Y</td><td>C or T       </td><td>pYrimidines</td></tr>
+<tr><td>W</td><td>A or T       </td><td>Weak hydrogen bonding</td></tr>
+<tr><td>S</td><td>G or C       </td><td>Strong hydrogen bonding</td></tr>
+<tr><td>M</td><td>A or C       </td><td>aMino group at common position</td></tr>
+<tr><td>K</td><td>G or T       </td><td>Keto group at common position</td></tr>
+<tr><td>H</td><td>A, C or T    </td><td>not G</td></tr>
+<tr><td>B</td><td>G, C or T    </td><td>not A</td></tr>
+<tr><td>V</td><td>G, A, C      </td><td>not T</td></tr>
+<tr><td>D</td><td>G, A or T    </td><td>not C</td></tr>
+<tr><td>N</td><td>G, A, C or T </td><td>aNy</td></tr>
+</table>
+
+
+</ul>
+<a name=regular><h2>Regular expressions</h2>
+<ul>
+
+Regular expressions are a convenient way to express complex patterns
+with strings. Regular expression contain mny syntacic feature, which
+are out of scope for this tutorial, but a complete description can be
+found in perl textbooks. We will just provide a few examples of useful
+expressions.
+
+<P>
+<ol>
+
+<P><li><b>Brackets</b> can be used to specify  set of alternative letters. 
+<br>Example
+<ul>
+<li><tt>GAT[TA]AG</TT> means "GATTAG or GATAAG" (this is equivalent to GATWAG in IUPAC code)
+</ul>
+
+<P><li><b>Fixed multiplers</b> can be specified by a number between curly brackets.
+<BR>Examples: 
+<ul>
+<li><tt>A{8}</TT> means "AAAAAAAA"
+<li><tt>[AG]{8}</tt> means "a succession of 8 times A or G"
+<li><tt>CGG[ACGT]{11}CCG</TT> means "CCG followed by exactly 11 times A,C,G or T, followed by CCG"
+</ul>
+
+<P><li><b>Variable multiplers</b> can be specified by two numbers between curly brackets.
+<BR>Example
+<ul>
+<li><tt>GATAAG[ACGT]{0,30}GATAAG</TT> means "two GATAAG separated by a spacing between 0 and 30 letters"
+</ul>
+
+<P><li><b>Alternative words</b> can be specified by separating the
+words by a "|".
+<BR>Example
+<ul>
+<li><tt>CACGTTTT|CACGTGGG</TT> means "either CACGTGGG or CACGTTTT"
+</ul>
+
+</ol>
+
+
+</ul>
+<a name=combination><h2>Combinations of IUPAC and regular expressions</h2>
+<ul>
+
+RSAT support patterns described as combinations of IUPAC alphabet and regular expression.
+
+<BR>Example
+<ul>
+<li><tt>GATAAGN{0,30}GATAAG</TT> means "two GATAAG separated by a spacing between 0 and 30 letters"
+</ul>
+
+
+</ul>
+<a name=case><h2>Case insensitivity</h2>
+<ul>
+
+Whichever string-based representation is used, upper and lower case
+are considered equivalent. <BR>
+
+
+</ul>
+
+<p>
+You can now come back to the <a href=tutorials.html>tutorial main
+page</a> and follow the next tutorials.
+
+</ul>
+<hr width="100%">
+<center>
+<address>
+For suggestions or information request, please contact <a
+href="mailto:jvanheld@ucmb.ulb.ac.be">Jacques van Helden
+(jvanheld@ucmb.ulb.ac.be)</a>
+</address></center>
+
+</blockquote>
+</body>
+</html>
