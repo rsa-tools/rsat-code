@@ -1,11 +1,9 @@
 #!/usr/bin/perl
+
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
 require "RSA.lib";
-require "RSA.classes";
-
-
 
 #### initialise parameters ####
 $out_format = "fasta";
@@ -64,11 +62,11 @@ if ($length_file) {
 
     #### check sequence lengths and repetitions
     unless (&IsNatural($seq_length)) {
-	&FatalError ("You should specify the sequence length");
+	&RSAT::error::FatalError ("You should specify the sequence length");
     } 
     
     unless ($repetitions >=1) {
-	&FatalError( "Number of repetitions should be >=1");
+	&RSAT::error::FatalError( "Number of repetitions should be >=1");
     }
 }
  
@@ -94,7 +92,7 @@ if ($exp_freq_file) {
 	$cum_letter_freq[$l] = $cum_letter_freq[$l-1]+$freq{$letters[$l]};
     }
     unless ($cum_letter_freq[$#letters] > 0) {
-	&FatalError( "Invalid alphabet specification.");
+	&RSAT::error::FatalError( "Invalid alphabet specification.");
     }
     for $l (0..$#letters) {
 	$freq{$letters[$l]} /= $cum_letter_freq[$#letters];
@@ -263,7 +261,7 @@ sub ReadArguments {
 		    $alphabet{'C'} = $alphabet{'G'} = $1;
 		}
 	    } else {
-		&FatalError("Invalid alphabet specification");
+		&RSAT::error::FatalError("Invalid alphabet specification");
 	    }
 	    
 
