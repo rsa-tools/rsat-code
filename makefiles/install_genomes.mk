@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_genomes.mk,v 1.6 2004/09/23 18:44:32 jvanheld Exp $
+# $Id: install_genomes.mk,v 1.7 2005/01/15 20:37:16 jvanheld Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -34,12 +34,13 @@ V=1
 ORG=Arabidopsis_thaliana
 ORG_DIR=${NCBI_DIR}/${ORG}
 INSTALL_TASK=allup,clean,config,dyads,ncf,intergenic_freq,oligos,parse,start_stop,upstream_freq
+INSTALL_CMD=install-organism -v ${V}		\
+		-org ${ORG}			\
+		-task  ${INSTALL_TASK}
 install_one_organism:
 	@echo "install log	${INSTALL_LOG}"
 	@echo "Parsing organism ${ORG}" 
-	install-organism -v ${V}								\
-		-org ${ORG}							\
-		-task  ${INSTALL_TASK}
+	${MAKE} my_command MY_COMMAND="${INSTALL_CMD}"
 
 #BACTERIA = `cat TO_INSTALL.txt| sort -ru | xargs `
 #BACTERIA =					\
