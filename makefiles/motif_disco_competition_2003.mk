@@ -219,12 +219,12 @@ bg_oligos_one_ol: bg_oligos_one_ol_nopurge bg_oligos_one_ol_purge  bg_oligos_one
 ## Calculate oligo frequencies in all upstream sequences, non purged
 BG_OLIGOS_CMD=oligo-analysis ${NOOV} -i ${ALL_UP_FILE} -l ${OLIGO_LEN} -v ${V} ${BG_STR} -o ${BG_OLIGO_FILE} -return occ,freq
 bg_oligos_one_ol_nopurge:
-	${MAKE} my_command MY_COMMAND="${BG_OLIGOS_CMD_CMD}"
+	${MAKE} my_command MY_COMMAND="${BG_OLIGOS_CMD}"
 
 ## Calculate oligo frequencies in all upstream sequences, purged
 BG_OLIGOS_CMD_PURGE=oligo-analysis ${NOOV} -i ${ALL_UP_FILE_PURGED} -l ${OLIGO_LEN} -v ${V} ${BG_STR} -o ${BG_OLIGO_FILE_PURGED} -return occ,freq
 bg_oligos_one_ol_purge:
-	${MAKE} my_command MY_COMMAND="${BG_OLIGOS_CMD_CMD_PURGE}"
+	${MAKE} my_command MY_COMMAND="${BG_OLIGOS_CMD_PURGE}"
 
 ## Compare oligo frequencies between purged and not purged upstream sequences
 bg_oligos_one_ol_purged_vs_not:
