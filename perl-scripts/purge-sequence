@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence,v 1.19 2003/09/30 21:40:08 jvanheld Exp $
+# $Id: purge-sequence,v 1.20 2003/09/30 21:47:02 jvanheld Exp $
 #
-# Time-stamp: <2003-09-30 23:39:21 jvanheld>
+# Time-stamp: <2003-09-30 23:46:45 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -14,6 +14,7 @@ require "RSA.lib";
 
 
 my $skdir = "$RSA/bin";
+my $delete_repeats=0;
 
 #### initialise parameters ####
 my $start_time = &AlphaDate();
@@ -91,8 +92,13 @@ $mkvtree_options .= " -db $tmp_file"; # sequence file
 
 #### locate the duplications
 my $vmatch_options = "-s"; # show the sequence content of a match
-#$vmatch_options .= " -dbnomatch 1 "; # show all database sequence not containing a match
-$vmatch_options .= " -dbmaskmatch n "; # show all database sequence not containing a match
+if ($delete_repeats) {
+    ## mask repeats
+    $vmatch_options .= " -dbmaskmatch n "; # show all database sequence not containing a match
+} else {
+    ## delete repeats
+    $vmatch_options .= " -dbnomatch 1 "; # show all database sequence not containing a match
+}
 $vmatch_options .= " keepleft"; # keep the left occurrence of each repeat
 $vmatch_options .= " -l $match_len"; # specify that match must have the given length
 $vmatch_options .= " -e $mismatches" if ($mismatches > 0); # specify the allowed edit distance > 0
@@ -102,7 +108,7 @@ if ($both_strands) {
     $vmatch_options .= " -p"; # compute reverse complemented (palindromic) matches
 } 
 $vmatch_options .= " $tmp_file ";
-$vmatch_options .= " | grep -v '# args=' ";
+$vmatch_options .= " | grep -v '^#' ";
 #$vmatch_options .= " | awk '\$1 ~ \"\>\" {print \$1 \"_\" \$2 \"_\" (\$2+\$3-1)}; \$1 !~ \"\>\" {print}'";
 $vmatch_options .= " | perl -pe 's| (\\d+) |_\$1_|'";
 
@@ -149,15 +155,16 @@ USAGE
         purge-sequence [-i inputfile] [-o outputfile] [-v] [-2str | -1str]
 
 DESCRIPTION
-	Remove large duplicate fragments from a sequence. This perl
-	script is no more than a wrapper to facilitate this specific
-	usage for two programs developed by Stefan Kurtz : mkvtree and
-	vmatch.
 
-	When a fragment is duplicated, the first ocurrence if it is
-	conserved and the second deleted. By default, the program also
-	searches similarities between the direct and reverse
-	complement strand.
+	Mask redundant fragments in a sequence. This perl script is no
+	more than a wrapper to facilitate this specific usage for two
+	programs developed by Stefan Kurtz : mkvtree and vmatch.
+
+	When a fragment is duplicated, the first ocurrence is
+	conserved and the second masked (or optionally deleted). 
+
+	By default, the program also searches similarities between the
+	direct and reverse complement strand.
 
 CATEGORY
 	sequences
@@ -180,6 +187,7 @@ OPTIONS
 	-mis #	mismatches
 	-1str	discard duplications on the direct strand only
 	-2str	discard duplications on the reverse complement as well
+	-del	delete repeats instead of masking them
 End_of_help
   close HELP;
   exit;
@@ -202,6 +210,7 @@ purge-sequence options
 -mis #	mismatches
 -1str	discard duplications on the direct strand only
 -2str	discard duplications on the reverse complement as well
+-del	delete repeats instead of masking them
 End_short_help
   close HELP;
   exit;
@@ -251,6 +260,10 @@ sub ReadArguments {
 	    $both_strands = 0;
 	} elsif ($ARGV[$a] eq "-2str") {
 	    $both_strands = 1;
+	    
+	    ### delete repeats instead of masking them
+	} elsif ($ARGV[$a] eq "-del") {
+	    $delete_repeats = 1;
 	    
 	    ### matching length
 	} elsif (($ARGV[$a] eq "-ml") && (&IsInteger($ARGV[$a+1]))) {
