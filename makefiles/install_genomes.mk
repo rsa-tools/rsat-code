@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_genomes.mk,v 1.12 2005/01/24 19:24:36 jvanheld Exp $
+# $Id: install_genomes.mk,v 1.13 2005/01/24 21:26:34 jvanheld Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -42,7 +42,7 @@ INSTALL_CMD=install-organism -v ${V}		\
 install_one_organism:
 	@echo "install log	${INSTALL_LOG}"
 	@echo "Parsing organism ${ORG}" 
-	${MAKE} my_command MY_COMMAND="${INSTALL_CMD}" JOB_PREFIX=${ORG}
+	${MAKE} my_command MY_COMMAND="${INSTALL_CMD}" JOB_PREFIX=install_${ORG}
 
 ### Bacteria with a small genome for quick testing
 BACT=Mycoplasma_genitalium

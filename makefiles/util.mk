@@ -31,7 +31,8 @@ my_command:
 	${MAKE} command_${WHEN}
 
 JOB_DIR=jobs
-JOB=${JOB_PREFIX}`mktemp ${JOB_DIR}/job.XXXXXX`
+JOB_PREFIX=job
+JOB=`mktemp ${JOB_DIR}/${JOB_PREFIX}.XXXXXX`
 command_queue:
 	@mkdir -p ${JOB_DIR}
 	@for job in ${JOB} ; do						\
