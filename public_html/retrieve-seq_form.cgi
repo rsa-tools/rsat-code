@@ -22,6 +22,7 @@ $default{to} = "default";
 $default{genes} = "selection";
 $default{gene_selection} = "";
 $default{sequence_type} = "upstream";
+$default{feattype} = "CDS";
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
@@ -41,7 +42,7 @@ print "</CENTER>";
 
 print $query->start_multipart_form(-action=>"retrieve-seq.cgi");
 
-print "<FONT FACE='Helvetica'>";
+#print "<FONT FACE='Helvetica'>";
 
 &OrganismPopUp;
 
@@ -67,6 +68,13 @@ print $query->filefield(-name=>'uploaded_file',
 			-maxlength=>200);
 
 print "</UL>\n";
+print "<BR>\n";
+
+#### feature type
+print "<B><A HREF='help.retrieve-seq.html#feattype'>Feature type</A></B>&nbsp;";
+print $query->radio_group(-name=>'feattype',
+			  -values=>['CDS','mRNA (only supported for some organisms)'],
+			  -default=>$default{feattype});
 print "<BR>\n";
 
 ### sequence type
@@ -142,6 +150,7 @@ print $query->hidden(-name=>'gene_selection',-default=>$demo_genes);
 print $query->hidden(-name=>'organism',-default=>"Saccharomyces cerevisiae");
 print $query->hidden(-name=>'from',-default=>"-800");
 print $query->hidden(-name=>'to',-default=>"-1");
+print $query->hidden(-name=>'noorf',-default=>"");
 print $query->submit(-label=>"DEMO");
 print "</B></TD>\n";
 print $query->end_form;
@@ -153,7 +162,7 @@ print "<TD><B><A HREF='tutorials/tut_retrieve-seq.html'>TUTORIAL</A></B></TD>\n"
 print "<TD><B><A HREF='mailto:jvanheld\@ucmb.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
-print "</FONT>\n";
+#print "</FONT>\n";
 
 print $query->end_html;
 
