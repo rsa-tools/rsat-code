@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: server.mk,v 1.7 2004/05/12 21:12:43 jvanheld Exp $
+# $Id: server.mk,v 1.8 2004/06/17 06:56:13 jvanheld Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -27,12 +27,14 @@ RSYNC = rsync ${RSYNC_OPT} ${SSH}
 ################################################################
 #
 # Mirrors
-RSAT_SERVER = jvanheld@rsat.ulb.ac.be:rsa-tools
+RSAT_SERVER = jvanheld@rsat.scmbb.ulb.ac.be:rsa-tools
+NEWPAULUS = jvanheld@164.15.109.52:rsa-tools
+MERLIN = jvanheld@164.15.109.32:rsa-tools
 FLYCHIP = jvanheld@flychip.org.uk:rsa-tools
 CIFN = jvanheld@itzamna.cifn.unam.mx:rsa-tools
 GIN = jvanheld@gin.univ-mrs.fr:rsa-tools
 LIV = jvanheld@liv.bmc.uu.se:rsa-tools
-MIRROR_SERVERS = ${LIV} ${FLYCHIP} ${GIN} ${RSAT_SERVER} ${CIFN}
+MIRROR_SERVERS = ${NEW_PAULUS} ${MERLIN} ${LIV} ${FLYCHIP} ${GIN} ${CIFN}
 
 ## installation on other machines
 PAULUS = jvanheld@paulus.ulb.ac.be:rsa-tools
