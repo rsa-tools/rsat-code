@@ -1,0 +1,65 @@
+<html>
+<head>
+   <title>RSA-tools - FAQ</title>
+</head>
+<body bgcolor="#FFFFFF">
+<blockquote>
+
+<hr size=6 width="100%">
+
+<h2 align=center><a href="RSA_home.cgi">RSA-tools</a> - Frquently Asked Questions (FAQ)</h2>
+<hr size=6 width="100%">
+
+
+
+<h3>I cannot find my gene(s)</h3><ul>
+
+<h4>Question</h4>
+I am trying to retrieve sequences from the genome of <i>Myorg
+sp.</i>, and for some genes (XXX, YYY and ZZZ), the progrm returns the
+following message:
+
+<ul><pre>
+;WARNING	invalid query XXX
+;WARNING	invalid query YYY
+;WARNING	invalid query ZZZ
+</pre></ul>
+
+Am I using the wrong names for these genes?  Can you help?
+</i>
+
+<h4>Answer</h4>
+Genomes are parsed from the NCBI distribution :
+
+<ul><a target=_blank href=ftp://ftp.ncbi.nih.gov/genomes/>ftp://ftp.ncbi.nih.gov/genomes/</a></ul>
+
+
+<p>
+Please check if your genes are correctly annotated at NCBI ? This is
+generally the reason why genes are not identified on rsa-tools.
+
+<p>
+In case your gene names would be annotated in the NCBI files and not
+in RSAT, please contact me and I will try to fix the problem. If the
+info is missing from the NCBI files, you should contact them.
+
+<p>
+If the genes are not there, you could have a look at the EMBL genome
+distribution.
+
+<ul><a target=_blank href=http://ftp.ebi.ac.uk/pub/databases/genomes/>http://ftp.ebi.ac.uk/pub/databases/genomes/</a></ul>
+
+<p>
+EMBL an Genbank/NCBI are supposed to be synchronized, but for some
+reason, their genome annotations (and in particular gene names) are
+not. It is frequent that some genes are annotated at Genbank, whilst
+some other at EMBL (fortunately, there is <i>some</i> overlap).
+
+</ul>
+
+
+<hr size=3>
+</blockquote>
+</body>
+</html>
+
