@@ -31,7 +31,7 @@ It assumes that you already installed the perl scripts and the
 genomes, as described in the \RSAT installation guide.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Web server
+% Web server installation
 
 \section{Installing a local web server}
 
@@ -68,10 +68,21 @@ In summary, the configuration includes the following steps.
 Alias /rsa-tools "/home/myaccount/rsa-tools/public_html/"
 \end{verbatim}
 
+
+\item Associate .cgi extension to CGI scripts
+
+Make sure the following line is present in the config file. If the
+server has not yet been configured, the line is commented, and you
+need to remove the \texttt{\#} character before it.
+
+\begin{verbatim}
+AddHandler cgi-script .cgi
+\end{verbatim}
+
 \item Give authorization to execute CGI scripts in the rsa-tools directory
 
 \begin{verbatim}
-ScriptAlias /cgi-bin/ "/home/myaccount/rsa-tools/public_html/
+ScriptAlias /rsa-tools/ "/home/myaccount/rsa-tools/public_html/
 \end{verbatim}
 
 \item Specify the access options for the rsa-tools directory.
@@ -96,22 +107,81 @@ directory \file{/etc/httpd/users}.
 Note that you need to restart the werb server for these changes to
 take effect.
 
-\subsection{Editing the configuration file for the server}
+\subsection{Editing the configuration file for the \RSAT server}
 
 If you want to install a web server, you need to edit two variables on
 the file \file{RSA.config}. Open this file with a text editor, and
 specify the variables \texttt{\$config\_site} and \texttt{\$WWW\_RSA}
 according to your local configuration.
 
+
+\subsection{testing the web server}
+
+To test the werb server, open a web browser and connect your \RSAT server
+
+\url{http://www.myserver/rsa-tools/} 
+
+(of course you  need to adapt the URL according to your IP address).
+
+If the connection works, try to execute the demonstration of the
+following pages.
+
+\begin{description}
+\item[\program{retrieve-seq}] to test the correct installation of genomes. 
+
+\item[\program{oligo-analysis}] to test the correct installation of
+background oligonucleotide frequencies.
+
+\item[\program{feature-map}] to test the correct installation of the
+graphical librairies.
+
+\end{description}
+
+\section{Managing a local web server}
+
+\subsection{Access logs}
+
+Each time a script is executed via the \RSAT server, some basic
+information is stored in a log file. This information is minimal: it
+is restricted to the time, name of the script executed, and the IP
+address of the client machine. We do not want to store any additional
+information (e.g. selected organism, lists of genes), for obvious
+confidentiality reasons.
+
+The log files are saved in the directory \file{rsa-tools/logs}. There
+is one file per month.
+
+
 \subsection{Cleaning the temporary directory}
 
-The web server stores result ffiles in a temporary directory
-\texttt{\$RSAT/public\_html/tmp}. These files remain 3 days on the
-server, in order to allow users to consult their results.
+The web server stores result files in a temporary directory
+\file{\$RSAT/public\_html/tmp/}. These files should remain 3 days on
+the server, in order to allow users to consult their results.
 
-The management of the temporary directory is performed using the
-\program{crontab} command. For this, you need to add a command to your
-personal \texttt{crontab} configuration file. 
+\subsubsection{Manual cleaning}
+
+The \RSAT package includes a make script to clean old files in the
+temporary directory.
+
+\begin{verbatim}
+cd rsa-tools
+make -f makefiles/server.mk clean_tmp
+\end{verbatim}
+
+This command cleans all the files older than 3 days. You can clean
+more recent files by modifying the variable CLEAN\_DATE.
+
+\begin{verbatim}
+make -f makefiles/server.mk clean_tmp  CLEAN\_DATE=1
+\end{verbatim}
+
+This will clean all files older than 1 day.
+
+\subsubsection{Automatic cleaning}
+
+The automatic management of the temporary directory can be greatly
+facilitated the \program{crontab} command. For this, you need to add a
+command to your personal \texttt{crontab} configuration file.
 
 \begin{enumerate}
 \item Start to edit the crontab command file
@@ -139,27 +209,6 @@ This will execute the make script \file{server.mk}, with the target
 
 In principle, you will receive an email from \program{crontab} each
 time the command is executed.
-
-
-\subsection{testing the web server}
-
-To test the werb server, open a web browser and connect the URL
-\url{http://www.myserver/rsa-tools/} (you of course need to adapt the
- URL according to your IP address).
-
-If you can obtain a connection, try to execute the demonstration of
-the following pages.
-
-\begin{description}
-\item[\program{retrieve-seq}] to test the correct installation of genomes. 
-
-\item[\program{oligo-analysis}] to test the correct installation of
-background oligonucleotide frequencies.
-
-\item[\program{feature-map}] to test the correct installation of the
-graphical librairies.
-
-\end{description}
 
 
 \end{document}
