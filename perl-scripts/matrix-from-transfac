@@ -4,8 +4,82 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 require "RSA.lib";
 
-if ($ARGV[0] eq "-h") {
-  #### display full help message #####
+
+
+
+#### initialise parameters ####
+$start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+
+&ReadArguments();
+
+
+#### check argument values ####
+
+
+### open output file ###
+$out = &OpenOutputFile($outputfile);
+
+
+&Verbose() if ($verbose >= 1);
+
+##### read input #####
+($in) = &OpenInputFile($infile{input});
+while (<$in>) {
+    s/\s+/\t/g;
+    if ((/^\s*PO\s+(.*)/) ||  
+	(/^\s*PO\s+(.*)/)) {
+	@alphabet = split "\t", $1;
+    } elsif (/^\s*(\d+)\s+(.*)/) {
+	$pos = $1;
+	$max_pos = &max($pos,$max_pos);
+	$weigths = $2;
+	$weigths =~ s/\s+/\t/g;
+	@weigths = split /\s+/, $weigths;
+	for $a (0..$#alphabet) {
+	    $matrix[$a][$pos] = $weigths[$a];
+	}
+    }
+}
+close $in unless ($infile{input} eq "");
+
+
+###### print matrix ######
+foreach $a (0..$#alphabet) {
+  print $out $alphabet[$a];
+  print $out "  |";
+  foreach $pos (1..$max_pos) {
+    if ($matrix[$a][$pos] eq "") {
+      $matrix[$a][$pos] =0;
+    }
+    printf $out "%4s", $matrix[$a][$pos];
+  }
+  print $out "\n";
+}
+
+
+
+
+###### verbose ######
+if ($verbose) {
+	$done_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+	print $out ";Job started $start_time";
+	print $out ";Job done    $done_time";
+}
+
+
+###### close output file ######
+close $out unless ($outputfile eq "");
+
+
+exit(0);
+
+################################################################
+################### subroutine definition ######################
+################################################################
+
+#### display full help message #####
+sub PrintHelp {
+
   open HELP, "| more";
   print HELP <<End_of_help;
 NAME
@@ -105,7 +179,61 @@ End_of_help
   exit;
 }
 
-if ($ARGV[0] eq "-help") {
+################################################################
+#### read arguments 
+sub ReadArguments {
+    foreach my $a (0..$#ARGV) {
+	### verbose  
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+	    
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp;
+	    
+	    ### list of options
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions;
+	    
+	    ### input file  
+	} elsif ($ARGV[$a] eq "-i") {
+	    $infile{input} = $ARGV[$a+1];
+	    
+	    ### output file  
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outfile{output} = $ARGV[$a+1];
+	    
+	}
+    }
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $out "; matrix-from-transfac ";
+    &PrintArguments($out);
+    if (defined(%infile)) {
+	print $out "; Input files\n";
+	while (($key,$value) = each %infile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+    if (defined(%outfile)) {
+	print $out "; Output files\n";
+	while (($key,$value) = each %outfile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+}
+
+################################################################
+#### display short help message
+sub PrintOptions {
+
   #### display short help message #####
   open HELP, "| more";
   print HELP <<End_short_help;
@@ -120,97 +248,3 @@ End_short_help
   close HELP;
   exit;
 }
-
-#### initialise parameters ####
-$start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
-
-
-#### read arguments ####
-foreach $a (0..$#ARGV) {
-  ### verbose ###
-  if ($ARGV[$a] eq "-v") {
-    $verbose = 1;
-    
-    ### input file ###
-  } elsif ($ARGV[$a] eq "-i") {
-    $inputfile = $ARGV[$a+1];
-    
-    ### output file ###
-  } elsif ($ARGV[$a] eq "-o") {
-    $outputfile = $ARGV[$a+1];
-    
-  }
-}
-
-
-#### check argument values ####
-
-
-### open output file ###
-$out = &OpenOutputFile($outputfile);
-
-#### verbose ####
-if ($verbose) {
-  print $out "; matrix-from-transfac ";
-  &PrintArguments;
-  print $out "\n";
-  if ($inputfile ne "") {
-    print $out ";Input file	$inputfile\n";
-  }
-  if ($outputfile ne "") {
-    print $out ";Output file	$outputfile\n";
-  }
-}
-
-##### read input #####
-($in) = &OpenInputFile($inputfile);
-while (<$in>) {
-  s/\s+/\t/g;
-  if (/^\s*P0\s+(.*)/) {
-    @alphabet = split "\t", $1;
-  } elsif (/^\s*(\d+)\s+(.*)/) {
-    $pos = $1;
-    $max_pos = &max($pos,$max_pos);
-    $weigths = $2;
-    $weigths =~ s/\s+/\t/g;
-    @weigths = split /\s+/, $weigths;
-    for $a (0..$#alphabet) {
-      $matrix[$a][$pos] = $weigths[$a];
-    }
-  }
-}
-close $in unless ($inputfile eq "");
-
-###### print matrix ######
-foreach $a (0..$#alphabet) {
-  print $out $alphabet[$a];
-  print $out "  |";
-  foreach $pos (1..$max_pos) {
-    if ($matrix[$a][$pos] eq "") {
-      $matrix[$a][$pos] =0;
-    }
-    printf $out "%4s", $matrix[$a][$pos];
-  }
-  print $out "\n";
-}
-
-
-
-
-###### verbose ######
-if ($verbose) {
-	$done_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
-	print $out ";Job started $start_time";
-	print $out ";Job done    $done_time";
-}
-
-
-###### close output file ######
-close $out unless ($outputfile eq "");
-
-
-exit(0);
-
-
-########################## subroutine definition ############################
-
