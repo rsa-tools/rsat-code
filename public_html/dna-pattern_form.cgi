@@ -1,8 +1,5 @@
 #!/usr/bin/perl
 
-## CVS: suppressed the fasta output format (did not work anymore)
-## CVS: added the flanking option (had disappeared !)
-
 #### this cgi script fills the HTML form for the program dna-pattern
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
