@@ -28,14 +28,6 @@ usage:
 	@echo "implemented targets"
 	@perl -ne 'if (/^([a-z]\S+):/){ print "\t$$1\n";  }' ${MAKEFILE}
 
-test2:
-	${MAKE} test
-
-test:
-	mkdir test
-	ls > test/test1.txt
-
-
 ################################################################
 #### Synchronization between different machines
 
@@ -47,11 +39,11 @@ SERVER_LOCATION=${USER}@${SERVER}:${SERVER_DIR}
 SERVER_DIR=motif_discovery_competition_2003/
 SERVER=merlin.ulb.ac.be
 EXCLUDE=--exclude '*~' --exclude oligos --exclude '*.wc' --exclude random_genes.tab --exclude '*.fasta' --exclude '*.fasta.gz' --exclude '*.wc.gz'
-rsync:
+to_server:
 	${MAKE} rsync_one_dir TO_SYNC=TASK_LIST.html
 	${MAKE} rsync_one_dir TO_SYNC=results
 
-rsync_one_dir:
+one_dir_to_server:
 	${RSYNC} ${EXCLUDE} ${TO_SYNC} ${SERVER_LOCATION}
 
 update_from_server:
@@ -71,7 +63,6 @@ from_merlin:
 
 from_liv:
 	${MAKE} update_from_server SERVER=liv.bmc.uu.se ${SERVER_DIR}=motif_discovery_competition_2003/
-
 
 ################################################################
 #### retrieve information from the competition web site 
@@ -100,13 +91,16 @@ ORG=Saccharomyces_cerevisiae
 CURRENT_SET=yst01
 SEQ_FILE=${DATA}/${ORG}/${CURRENT_SET}.fasta
 
-RES_DIR=results
-#CURRENT_RES_DIR=${RES_DIR}/${ORG}/${CURRENT_SET}
-SEQ_LEN_DIR=${RES_DIR}/${ORG}/${CURRENT_SET}
+## Directories
+WORK_DIR=`pwd`
+RES_DIR=${WORK_DIR}/results
+ORG_DIR=${RES_DIR}/${ORG}
+SEQ_LEN_DIR=${ORG_DIR}/sequence_lengths
+
 ################################################################
 #### Create the result directory for the current set
 current_dir:
-	@mkdir -p ${CURRENT_RES_DIR}
+	@mkdir -p ${ORG_DIR}
 
 ################################################################
 ## Iterate over all organisms
@@ -131,22 +125,48 @@ iterate_sets:
 	done
 
 ################################################################
+## Iterate some task over all oligonucleotide lengths
+OL_TASK=background
+OLIGO_LENGTHS=5 6 7 8
+iterate_oligo_lengths:
+	@echo "iterating over oligo lengths for organism ${ORG}"
+	@echo ${OLIGO_LENGTHS}
+	@for ol in ${OLIGO_LENGTHS}; do			\
+		echo "oligo length $${ol}" ;		\
+		${MAKE} ${OL_TASK} OLIGO_LEN=$${ol} ;	\
+	done
+
+################################################################
 #### Calculate background model, depending on the size of the sequences in the current set
-EXP_FREQ_DIR=${RES_DIR}/${ORG}/background_frequencies
-background: seq_len all_up bg_oligos 
+UPSTREAML_DIR=${ORG_DIR}/upstreamL_frequencies
+background: seq_len all_up bg_oligos
 
 ################################################################
 #### report sequence length for the current set
 CURRENT_SEQ_LEN=`sequence-lengths -i ${SEQ_FILE} | cut -f 2 | sort -u`
 SEQ_NB=`sequence-lengths -i ${SEQ_FILE} | wc -l | awk '{print $$1}'`
-SEQ_LEN_FILE=${CURRENT_RES_DIR}/${CURRENT_SET}_lengths.txt
+SEQ_LEN_FILE=${SEQ_LEN_DIR}/${CURRENT_SET}_lengths.txt
 seq_len:  current_dir
+	@mkdir -p ${SEQ_LEN_DIR}
 	@echo "set ${CURRENT_SET} length ${CURRENT_SEQ_LEN}	${SEQ_NB} seqs	${SEQ_LEN_FILE}"
 	@echo ${CURRENT_SEQ_LEN} > ${SEQ_LEN_FILE}
 
-MAKE_DIR=makefiles
+seq_lengths_one_org:
+	${MAKE} iterate_sets TASK=seq_len
+
+seq_lengths:
+	${MAKE} iterate_organisms ORG_TASK=seq_lengths_one_org TASK=seq_len
+
+################################################################
+## Generate organism-specific makefiles for calibrating pattern
+## frequencies in upstream sequences of the same sizes as in the test
+## sets
+MAKE_DIR=${WORK_DIR}/makefiles
 CALIB_SCRIPT=${MAKE_DIR}/calibrate_${ORG}.mk
-calib_script:
+calib_scripts:
+	${MAKE} iterate_organisms ORG_TASK=calib_scripts_one_org
+
+calib_scripts_one_org:
 	@mkdir -p ${MAKE_DIR}
 	@echo "Generating calibration script for organism ${ORG}"
 	@echo "include ${RSAT}/makefiles/upstream_calibrations.mk" > ${CALIB_SCRIPT}
@@ -162,45 +182,46 @@ one_calib_script:
 ################################################################
 #### retrieve all upstream sequences of the same length as in the
 #### current set
-ALL_UP_FILE=${EXP_FREQ_DIR}/${ORG}_allup${SEQ_LEN}.fasta.gz
-ALL_UP_FILE_PURGED_UNCOMP=${EXP_FREQ_DIR}/${ORG}_allup${SEQ_LEN}_purged.fasta
+ALL_UP_FILE=${UPSTREAML_DIR}/${ORG}_allup${SEQ_LEN}.fasta.gz
+ALL_UP_FILE_PURGED_UNCOMP=${UPSTREAML_DIR}/${ORG}_allup${SEQ_LEN}_purged.fasta
 ALL_UP_FILE_PURGED=${ALL_UP_FILE_PURGED_UNCOMP}.gz
 all_up:
 	@echo "${ORG}	${CURRENT_SET}	Retrieving all upstream sequences for bakground model"
-	@mkdir -p ${EXP_FREQ_DIR}
+	@echo ${ALL_UP_FILE}
+	@mkdir -p ${UPSTREAML_DIR}
 	retrieve-seq -all -org ${ORG} -from -1 -to -${SEQ_LEN} -o ${ALL_UP_FILE}
+	@echo "Purging all upstream sequences"
+	@echo ${ALL_UP_FILE_PURGED}
 	purge-sequence -i ${ALL_UP_FILE} -o ${ALL_UP_FILE_PURGED_UNCOMP}
+	@echo "Compressing purged upstream sequences"
 	gzip -f ${ALL_UP_FILE_PURGED_UNCOMP}
 
 ################################################################
 #### calculate background oligo frequencies for the current set
-BG_OLIGO_FILE=${EXP_FREQ_DIR}/${ORG}_allup${SEQ_LEN}_${OLIGO_LEN}nt_1str${NOOV}_freq.tab
-BG_OLIGO_FILE_PURGED=${EXP_FREQ_DIR}/${ORG}_allup${SEQ_LEN}_${OLIGO_LEN}nt_1str${NOOV}_purged_freq.tab
+BG_OLIGO_FILE=${UPSTREAML_DIR}/${ORG}_allup${SEQ_LEN}_${OLIGO_LEN}nt_1str${NOOV}_freq.tab
+BG_OLIGO_FILE_PURGED=${UPSTREAML_DIR}/${ORG}_allup${SEQ_LEN}_${OLIGO_LEN}nt_1str${NOOV}_purged_freq.tab
 OLIGO_LEN=6
 bg_oligos:
+	${MAKE} iterate_oligo_lengths OL_TASK=bg_oligos
+
+bg_oligos_one_ol:
 	@echo "${ORG}	${CURRENT_SET}	Calculating background oligo frequencies"
+	@echo ${BG_OLIGO_FILE}
 	oligo-analysis ${NOOV} -i ${ALL_UP_FILE} -l ${OLIGO_LEN} -v ${V} -1str -o ${BG_OLIGO_FILE} -return occ,freq
 	oligo-analysis ${NOOV} -i ${ALL_UP_FILE_PURGED} -l ${OLIGO_LEN} -v ${V} -1str -o ${BG_OLIGO_FILE_PURGED} -return occ,freq
 	compare-scores											\
 		-i ${BG_OLIGO_FILE_PURGED}								\
 		-i $ ${BG_OLIGO_FILE}  -sc 3								\
-		-o ${EXP_FREQ_DIR}/${ORG}_allup${SEQ_LEN}_${OLIGO_LEN}nt_1str${NOOV}_purged_vs_not.tab
+		-o ${UPSTREAML_DIR}/${ORG}_allup${SEQ_LEN}_${OLIGO_LEN}nt_1str${NOOV}_purged_vs_not.tab
 	XYgraph -xcol 2 -ycol 3										\
-		-i ${EXP_FREQ_DIR}/${ORG}_allup${SEQ_LEN}_${OLIGO_LEN}nt_1str${NOOV}_purged_vs_not.tab	\
-		-o ${EXP_FREQ_DIR}/${ORG}_allup${SEQ_LEN}_${OLIGO_LEN}nt_1str${NOOV}_purged_vs_not.jpg
+		-i ${UPSTREAML_DIR}/${ORG}_allup${SEQ_LEN}_${OLIGO_LEN}nt_1str${NOOV}_purged_vs_not.tab	\
+		-o ${UPSTREAML_DIR}/${ORG}_allup${SEQ_LEN}_${OLIGO_LEN}nt_1str${NOOV}_purged_vs_not.jpg
 
-################################################################
-#### Parameters for pattern discovery (oligo-analysis and
-#### dyad-analysis)
-STR=-2str
-THOSIG=0
-NOOV=-noov
-#NOOV=-ovlp
-pattern_disco: oligos dyads
+#pattern_disco: oligos dyads
 
 ################################################################
 #### Detect over-represented oligonucleotides
-#OLIGO_DIR=${CURRENT_RES_DIR}/oligos
+#OLIGO_DIR=${ORG_DIR}/oligos
 #MODEL=-expfreq ${BG_OLIGO_FILE}
 #MODEL_SUFFIX=allup
 #OLIGO_FILE=${OLIGO_DIR}/oligos_${CURRENT_SET}_${OLIGO_LEN}nt${STR}${NOOV}_sig${THOSIG}_${MODEL_SUFFIX}
@@ -238,23 +259,31 @@ index_one_row:
 ################################################################
 #### Run multiple-family-analysis for one organism
 
-#### Index fasta files
+#### Save the list of fasta files in a text file
 FASTA_FILES= ls -1 ${DATA}/${ORG}/*.fasta | grep -v purged
 SEQ_LIST_FILE=${ORG}_files.txt
 list_fasta_files:
 	${FASTA_FILES}
 	${FASTA_FILES} > ${SEQ_LIST_FILE}
 
+################################################################
+#### Parameters for pattern discovery (oligo-analysis and
+#### dyad-analysis)
+STR=-2str
+THOSIG=0
+NOOV=-noov
+#NOOV=-ovlp
 #MULTI_TASK=purge,oligos,dyads,merge,slide,maps,synthesis,sql
 MULTI_TASK=purge,oligos,maps,synthesis
-MULTI_CALIB_TASK=${MULTI_TASK},calibrate
 MULTI_BG=upstream
-MULTI_DIR=${RES_DIR}/multi/${MULTI_BG}_bg/${ORG}
-MIN_OL=6
-MAX_OL=6
+MULTI_EXP=-bg ${MULTI_BG}
+MULTI_DIR=${ORG_DIR}/multi/${MULTI_BG}_bg
+MIN_OL=5
+MAX_OL=8
 MIN_SP=0
 MAX_SP=20
 SORT=score
+MULTI_OPT=
 MULTI_CMD=multiple-family-analysis -v ${V}				\
 		-org ${ORG}						\
 		-seq ${SEQ_LIST_FILE}					\
@@ -262,18 +291,35 @@ MULTI_CMD=multiple-family-analysis -v ${V}				\
 		${STR}							\
 		-minol ${MIN_OL} -maxol ${MAX_OL}			\
 		-minsp ${MIN_SP} -maxsp ${MAX_SP}			\
-		-bg ${MULTI_BG} -sort ${SORT} -task ${MULTI_TASK}	\
-		${NOOV}							\
+		${MULTI_EXP}						\
+		-sort ${SORT} -task ${MULTI_TASK}			\
+		${NOOV} ${MULTI_OPT}					\
 		-user jvanheld -password jvanheld -schema multifam
 
+
+## generic call for multiple-family-analysis
 multi:
+	@echo ${MULTI_CMD}
 	${MAKE} my_command MY_COMMAND="${MULTI_CMD}"
 
-multi_calib1:
-	${MAKE} multi MULTI_BG=calib1 MULTI_TASK=${MULTI_CALIB_TASK}
+## run multiple-family-analysis with default upstream calibration
+## (same lengths for all sets)
+DYAD_TASK=-task dyads
+multi_upstream: 
+	${MAKE} multi MULTI_OPT='${DYAD_TASK}'
+
+## run multiple-family-analysis with upstream frequencies calculated
+## for each sequence length
+#multi_upstreamL:
+#	${MAKE} multi MULTI_DIR=${ORG_DIR}/multi/upstreamL_bg MULTI_EXP='-oligo_exp_freq ${BG_OLIGO_FILE}' MIN_OL=6 MAX_OL=6
 
 multi_calibN:
-	${MAKE} multi MULTI_BG=calibN MULTI_TASK=${MULTI_TASK}
+	${MAKE} multi MULTI_BG=calibN MULTI_OPT="-calib_dir ${CALIBN_DIR}" MIN_OL=6 MAX_OL=6
+
+CALIBRATE_TASK=-task calibrate
+CALIB1_DIR=${ORG_DIR}/calibrations_1gene
+multi_calib1:
+	${MAKE} multi MULTI_BG=calib1 MULTI_OPT="${CALIBRATE_TASK} -calib_dir ${CALIB1_DIR}"
 
 #multi_calib1_all:
 #	@for org in ${ORGANISMS} ; do							\
@@ -344,8 +390,8 @@ SEQ_LEN=500
 CALIB_TASK=all,clean_oligos
 START=1
 REPET=10000
-WORK_DIR=`pwd`
-CALIBN_DIR=${WORK_DIR}/${RES_DIR}/${ORG}/${RAND_DIR}/${OLIGO_LEN}nt${STR}${NOOV}_N${N}_L${SEQ_LEN}_R${REPET}
+CALIBN_DIR=${ORG_DIR}/${RAND_DIR}
+CURRENT_CALIBN_DIR=${CALIBN_DIR}/${OLIGO_LEN}nt${STR}${NOOV}_N${N}_L${SEQ_LEN}_R${REPET}
 CALIBRATE_CMD=								\
 	calibrate-oligos -v ${V}					\
 		-r ${REPET} -sn ${N} -ol ${OLIGO_LEN} -sl ${SEQ_LEN}	\
@@ -353,7 +399,7 @@ CALIBRATE_CMD=								\
 		-start ${START}						\
 		${END}							\
 		${STR} ${NOOV}						\
-		-outdir ${CALIBN_DIR}					\
+		-outdir ${CURRENT_CALIBN_DIR}					\
 		-org ${ORG}
 
 ## Run the program immediately (WHEN=now) or submit it to a queue (WHEN=queue)
@@ -389,19 +435,6 @@ give_access:
 	find ${ACCESS} -type d -exec chmod 775 {} \;
 	find ${ACCESS} -type f -exec chmod 664 {} \;
 
-
-## ##############################################################
-## oligo-analysis with a calibration file
-CURRENT_CALIBN_DIR=${WORK_DIR}/${RES_DIR}/${ORG}/${RAND_DIR}/${OLIGO_LEN}nt${STR}${NOOV}_N${SEQ_NB}_L${CURRENT_SEQ_LEN}_R${REPET}
-CURRENT_CALIB_FILE=${CURRENT_CALIBN_DIR}/${ORG}_${OLIGO_LEN}nt_${STR}${NOOV}_n${SEQ_NB}_l${CURRENT_SEQ_LEN}_r${REPET}_negbin.tab
-oligos_with_calibration:
-	@echo "calibration directory ${CURRENT_CALIBN_DIR}"
-	@echo "calibration file ${CURRENT_CALIB_FILE}"
-	${MAKE} oligos MODEL="-calib ${CURRENT_CALIB_FILE}" MODEL_SUFFIX=calib
-
-compare_models:
-	${MAKE} oligos THOSIG=-4
-	${MAKE} oligos_with_calibration THOSIG=-4
 
 ## ##############################################################
 ## Fit all previously calculated distributions with a Poisson and a
@@ -481,23 +514,23 @@ _distrib.tab_negbin.tab:
 # extract mean and variance from random distributions (stat files)
 ###################################################################
 
-#LIST_STATS_FILES=`find ${RES_DIR}/${ORG}/${RAND_DIR}/${OLIGO_LEN}nt${STR}${NOOV}_*_L${SEQ_LEN}_R${REPET} -name '*_stats.tab'`
+#LIST_STATS_FILES=`find ${ORG_DIR}/${RAND_DIR}/${OLIGO_LEN}nt${STR}${NOOV}_*_L${SEQ_LEN}_R${REPET} -name '*_stats.tab'`
 
 list_stats_files:
 	rm -f ${ORG}_${OLIGO_LEN}nt_${STR}${NOOV}_l${SEQ_LEN}_r${REPET}_files.tmp
 	@for n in ${SEQ_NUMBER_SERIES};do				\
-	find ${RES_DIR}/${ORG}/${RAND_DIR}/${OLIGO_LEN}nt${STR}${NOOV}_N$${n}_L${SEQ_LEN}_R${REPET}/${ORG}_${OLIGO_LEN}nt_${STR}${NOOV}_n$${n}_l${SEQ_LEN}_r${REPET}_stats.tab >> ${RES_DIR}/${ORG}/${RAND_DIR}/${ORG}_${OLIGO_LEN}nt_${STR}${NOOV}_l${SEQ_LEN}_r${REPET}_files.tmp;	\
+	find ${ORG_DIR}/${RAND_DIR}/${OLIGO_LEN}nt${STR}${NOOV}_N$${n}_L${SEQ_LEN}_R${REPET}/${ORG}_${OLIGO_LEN}nt_${STR}${NOOV}_n$${n}_l${SEQ_LEN}_r${REPET}_stats.tab >> ${ORG_DIR}/${RAND_DIR}/${ORG}_${OLIGO_LEN}nt_${STR}${NOOV}_l${SEQ_LEN}_r${REPET}_files.tmp;	\
 	done
 
-LIST_STATS_FILES=`more ${RES_DIR}/${ORG}/${RAND_DIR}/${ORG}_${OLIGO_LEN}nt_${STR}${NOOV}_l${SEQ_LEN}_r${REPET}_files.tmp`
+LIST_STATS_FILES=`more ${ORG_DIR}/${RAND_DIR}/${ORG}_${OLIGO_LEN}nt_${STR}${NOOV}_l${SEQ_LEN}_r${REPET}_files.tmp`
 
 join_mean_var_N:
 	${MAKE} list_stats_files
 	compare-scores -sc 3 -files ${LIST_STATS_FILES} > \
-	${RES_DIR}/${ORG}/${RAND_DIR}/${OLIGO_LEN}nt${STR}${NOOV}_L${SEQ_LEN}_R${REPET}_allN_means.tab
+	${ORG_DIR}/${RAND_DIR}/${OLIGO_LEN}nt${STR}${NOOV}_L${SEQ_LEN}_R${REPET}_allN_means.tab
 	compare-scores -sc 4 -files ${LIST_STATS_FILES} > \
-	${RES_DIR}/${ORG}/${RAND_DIR}/${OLIGO_LEN}nt${STR}${NOOV}_L${SEQ_LEN}_R${REPET}_allN_vars.tab
-	rm -f ${RES_DIR}/${ORG}/${RAND_DIR}/${ORG}_${OLIGO_LEN}nt_${STR}${NOOV}_l${SEQ_LEN}_r${REPET}_files.tmp
+	${ORG_DIR}/${RAND_DIR}/${OLIGO_LEN}nt${STR}${NOOV}_L${SEQ_LEN}_R${REPET}_allN_vars.tab
+	rm -f ${ORG_DIR}/${RAND_DIR}/${ORG}_${OLIGO_LEN}nt_${STR}${NOOV}_l${SEQ_LEN}_r${REPET}_files.tmp
 
 join_all_mean_var_N:
 	${MAKE} join_mean_var_N ORG=Saccharomyces_cerevisiae SEQ_LEN=500 REPET=1000
@@ -546,7 +579,7 @@ OLD_BG_DIR=results/multi/${BACKGROUND}_bg
 OLD_DIR=${OLD_BG_DIR}/${ORG}
 NEW_DIR=results/${ORG}/multi/${BACKGROUND}_bg/
 
-reorganize: rm_junk organize_all_bg mv_calib1 discard_oldies mv_seq_lengths
+reorganize: rm_junk organize_all_bg mv_calib1 discard_oldies mv_seq_lengths mv_background_dirs
 
 rm_junk:
 	find . -name .DS_Store -exec rm {} \;
@@ -600,4 +633,8 @@ mv_seq_lengths:
 	mv results/Drosophila_melanogaster/dm*/*_lengths.txt results/Drosophila_melanogaster/sequence_lengths
 	rmdir results/Drosophila_melanogaster/dm*
 
+mv_background_dirs:
+	${MAKE} iterate_organisms ORG_TASK=mv_background_dir_one_org
 
+mv_background_dir_one_org:
+	mv results/${ORG}/background_frequencies results/${ORG}/upstreamL_frequencies 
