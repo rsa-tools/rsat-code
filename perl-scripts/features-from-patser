@@ -13,7 +13,7 @@ $matrix_length = 1;
 $seq_format = "wconsensus";  ### because this is the usual format for patser
 $flank_len = 0;
 
-@supported_table_fields = qw (score start strand position);
+@supported_table_fields = qw (score start end strand position);
 foreach my $field  (@supported_table_fields) {
     $supported_table_fields{$field} = 1;
 }
@@ -171,6 +171,7 @@ while (<$in>) {
 	if ($return{table}) {
 	    push @{$score{$map}}, $score;
 	    push @{$start{$map}},  $start if ($table_fields{start});
+	    push @{$end{$map}},  $end if ($table_fields{end});
 	    push @{$strand{$map}},  $strand if ($table_fields{strand});
 	    push @{$position{$map}},  join ("", $start,"..",$end,$strand) if ($table_fields{position});
 	    $max_score_per_map = &max($max_score_per_map, $#{$score{$map}}+1);
@@ -200,6 +201,11 @@ if ($return{table}) {
 	    print $out "\tstart.${i}";
 	} 
     }
+    if ($table_fields{end}) {
+	for my $i (1..$max_score_per_map) {
+	    print $out "\tend.${i}";
+	} 
+    }
     if ($table_fields{strand}) {
 	for my $i (1..$max_score_per_map) {
 	    print $out "\tstrand.${i}";
@@ -218,6 +224,7 @@ if ($return{table}) {
 	for my $i ($#{$score{$map}}..$max_score_per_map-2) {
 	    push @{$score{$map}}, "";
 	    push @{$start{$map}}, "" if ($table_fields{start});
+	    push @{$end{$map}}, "" if ($table_fields{end});
 	    push @{$strand{$map}}, "" if ($table_fields{strand});
 	    push @{$position{$map}}, "" if ($table_fields{position});
 	}
@@ -228,6 +235,9 @@ if ($return{table}) {
 	print $out "\t", join ("\t", 
 			       (sort {$score{$b} <=> $score{$a}} @{$start{$map}}),
 			       ) if ($table_fields{start});
+	print $out "\t", join ("\t", 
+			       (sort {$score{$b} <=> $score{$a}} @{$end{$map}}),
+			       ) if ($table_fields{end});
 	print $out "\t", join ("\t", 
 			       (sort {$score{$b} <=> $score{$a}} @{$strand{$map}}),
 			       ) if ($table_fields{strand});
