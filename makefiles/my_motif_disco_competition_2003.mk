@@ -2,17 +2,14 @@
 
 ################################################################
 ## makefile for getting info for the motif discovery competition
-
-
 ################################################################
 #### General parameters
-
 ## level of verbosity
 V=1
 
 ################################################################
 ### commands
-MAKEFILE=${RSAT}/makefiles/motif_disco_competition_2003.mk
+MAKEFILE=${RSAT}/makefiles/my_motif_disco_competition_2003.mk
 MAKE=make -s -f ${MAKEFILE}
 
 SSH_OPT = -e ssh 
@@ -28,41 +25,27 @@ usage:
 	@echo "implemented targets"
 	@perl -ne 'if (/^([a-z]\S+):/){ print "\t$$1\n";  }' ${MAKEFILE}
 
-test2:
-	${MAKE} test
-
-test:
-	mkdir test
-	ls > test/test1.txt
-
-
 ################################################################
 #### Synchronization between different machines
 
 #### publish
-TO_SYNC=results
+SYNC_DIR=results
 #SERVER_LOCATION=rubens.ulb.ac.be:/rubens/dsk3/genomics/motif_discovery_competition/
 SERVER_LOCATION=merlin.ulb.ac.be:motif_discovery_competition_2003/
-EXCLUDE=--exclude '*~' --exclude oligos --exclude '*.wc' --exclude random_genes.tab --exclude '*.fasta' --exclude '*.fasta.gz' --exclude '*.wc.gz'
+EXCLUDE=--exclude '*~' --exclude oligos --exclude '*.wc' --exclude random_genes.tab
 publish:
-	${MAKE} publish_one_dir TO_SYNC=TASK_LIST.html
-	${MAKE} publish_one_dir TO_SYNC=results
+	${MAKE} publish_one_dir SYNC_DIR=TASK_LIST.html
+	${MAKE} publish_one_dir SYNC_DIR=results
 
 publish_one_dir:
-	${RSYNC} ${EXCLUDE} ${TO_SYNC} ${SERVER_LOCATION}
+	${RSYNC} ${EXCLUDE} ${SYNC_DIR} ${SERVER_LOCATION}
 
 update_from_server:
-	${RSYNC} ${EXCLUDE} ${SERVER_LOCATION}${TO_SYNC} .
+	${RSYNC} ${EXCLUDE} ${SERVER_LOCATION}${SYNC_DIR} .
 
 ## Synchronize calibrations from merlin
 from_merlin:
-	${MAKE} update_from_server SERVER_LOCATION=jvanheld@merlin.ulb.ac.be:motif_discovery_competition_2003/ TO_SYNC='*.xls'
-	${MAKE} update_from_server SERVER_LOCATION=jvanheld@merlin.ulb.ac.be:motif_discovery_competition_2003/ TO_SYNC='*.tab'
-	${MAKE} update_from_server SERVER_LOCATION=jvanheld@merlin.ulb.ac.be:motif_discovery_competition_2003/ TO_SYNC=my_calibrate-oligos.R
 	${MAKE} update_from_server SERVER_LOCATION=jvanheld@merlin.ulb.ac.be:motif_discovery_competition_2003/
-# Temporary
-	${MAKE} update_from_server SERVER_LOCATION=jvanheld@merlin.ulb.ac.be:motif_discovery_competition_2003/makefiles/ TO_SYNC=results
-
 
 from_liv:
 	${MAKE} update_from_server SERVER_LOCATION=jvanheld@liv.bmc.uu.se:/Users/jvanheld/motif_discovery_competition_2003/
@@ -91,8 +74,8 @@ uncompress_data:
 
 ################################################################
 #### parameters for analyzing one data set
-ORG=Saccharomyces_cerevisiae
-CURRENT_SET=yst01
+ORG=Homo_sapiens
+CURRENT_SET=hm01
 SEQ_FILE=${DATA}/${ORG}/${CURRENT_SET}.fasta
 
 RES_DIR=results
@@ -127,8 +110,10 @@ iterate_sets:
 ################################################################
 #### Calculate background model, depending on the size of the sequences in the current set
 EXP_FREQ_DIR=${RES_DIR}/${ORG}/background_frequencies
-background: seq_len all_up bg_oligos 
-
+background:
+	@mkdir -p ${EXP_FREQ_DIR}
+	retrieve-seq -all -org ${ORG} -from -1 -to -${SEQ_LEN} -o ${ALL_UP_FILE}
+	oligo-analysis ${NOOV} -i ${ALL_UP_FILE} -l ${OLIGO_LEN} -v ${V} -1str -o ${BG_OLIGO_FILE} -return occ,freq
 ################################################################
 #### report sequence length for the current set
 CURRENT_SEQ_LEN=`sequence-lengths -i ${SEQ_FILE} | cut -f 2 | sort -u`
@@ -189,7 +174,6 @@ bg_oligos:
 STR=-2str
 THOSIG=0
 NOOV=-noov
-#NOOV=-ovlp
 pattern_disco: oligos dyads
 
 ################################################################
@@ -239,39 +223,21 @@ list_fasta_files:
 	${FASTA_FILES}
 	${FASTA_FILES} > ${SEQ_LIST_FILE}
 
-#MULTI_TASK=purge,oligos,dyads,merge,slide,maps,synthesis,sql
-MULTI_TASK=purge,oligos,dyads,maps,synthesis
-MULTI_CALIB_TASK=${MULTI_TASK},calibrate
-MULTI_BG=upstream
-MULTI_DIR=${RES_DIR}/multi/${MULTI_BG}_bg/${ORG}
-MIN_OL=5
-MAX_OL=8
-MIN_SP=0
-MAX_SP=20
-SORT=score
-MULTI_CMD=multiple-family-analysis -v ${V}				\
+MULTI_TASK=purge,oligos,dyads,maps,synthesis,sql
+MULTI_DIR=${RES_DIR}/multi/${ORG}
+MIN_OL=6
+MAX_OL=6
+NOOV=-noov
+multi:
+	@multiple-family-analysis -v ${V}				\
 		-org ${ORG}						\
 		-seq ${SEQ_LIST_FILE}					\
 		-outdir ${MULTI_DIR}					\
-		${STR}							\
-		-minol ${MIN_OL} -maxol ${MAX_OL}			\
-		-minsp ${MIN_SP} -maxsp ${MAX_SP}			\
-		-bg ${MULTI_BG} -sort ${SORT} -task ${MULTI_TASK}	\
+		-2str -minol ${MIN_OL} -maxol ${MAX_OL}			\
+		-bg upstream -sort name -task ${MULTI_TASK}		\
 		${NOOV}							\
 		-user jvanheld -password jvanheld -schema multifam
 
-multi:
-	${MAKE} my_command MY_COMMAND="${MULTI_CMD}"
-
-multi_calib:
-	${MAKE} multi MULTI_BG=calib MULTI_TASK=${MULTI_CALIB_TASK}
-
-multi_calib_all:
-	@for org in ${ORGANISMS} ; do							\
-		for ol in 5 6 7 8 ; do							\
-			${MAKE} multi_calib ORG=$${org} MIN_OL=$${ol} MAX_OL===$${ol};	\
-		done ;									\
-	done
 
 ################################################################
 ## Calculate the effect of the number of sequences on mean and variance
@@ -348,7 +314,7 @@ CALIBRATE_CMD=								\
 		-org ${ORG}
 
 ## Run the program immediately (WHEN=now) or submit it to a queue (WHEN=queue)
-WHEN=now
+WHEN=queue
 N=5
 calibrate_oligos:
 	${MAKE} calibrate_oligos_${WHEN}
@@ -375,10 +341,9 @@ calibrate_oligos_test:
 	${MAKE} calibrate_oligos ORG=Mycoplasma_genitalium N=10 SEQ_LEN=200 STR=-1str NOOV=-ovlp R=10
 
 
-ACCESS=results
 give_access:
-	find ${ACCESS} -type d -exec chmod 775 {} \;
-	find ${ACCESS} -type f -exec chmod 664 {} \;
+	find . -type d -exec chmod 775 {} \;
+	find . -type f -exec chmod 664 {} \;
 
 
 ## ##############################################################
@@ -506,19 +471,3 @@ join_all_mean_var_N:
 	# ${MAKE} join_mean_var_N ORG=Saccharomyces_cerevisiae SEQ_LEN=1000 REPET=10000
 	# ${MAKE} join_mean_var_N ORG=Homo_sapiens SEQ_LEN=1000 REPET=10000
 	# ${MAKE} join_mean_var_N ORG=Homo_sapiens SEQ_LEN=2000 REPET=10000
-
-my_command:
-	${MAKE} command_${WHEN}
-
-command_queue:
-	@mkdir -p ${JOB_DIR}
-	@for job in ${JOB} ; do						\
-		echo "Job $${job}" ;					\
-		echo "${MY_COMMAND}" > $${job} ;		\
-		qsub -m e -q rsa@merlin.ulb.ac.be -N $${job} -j oe	\
-			-o $${job}.log $${job} ;	\
-	done
-
-command_now:
-	${MY_COMMAND}
-
