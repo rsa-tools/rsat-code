@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dna-pattern,v 1.19 2002/05/13 23:21:04 jvanheld Exp $
+# $Id: dna-pattern,v 1.20 2002/05/13 23:58:23 jvanheld Exp $
 #
-# Time-stamp: <2002-05-14 01:16:23 jvanheld>
+# Time-stamp: <2002-05-14 01:57:32 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -49,6 +49,9 @@ unless (defined(%return)) {
 #### top scores only valid with sliding window
 if (($return{top} ) && !($search_method eq "sliding window")) {
     &FatalError("The option -top is only vlid with the option -window\n");
+}
+if (($sort ) && !($return{top})) {
+    &FatalError("The option -sort is only vlid with the option -top\n");
 }
 
 #### check allowed substitutions ####
@@ -452,7 +455,8 @@ ARGUMENTS
 	-top	(with sliding window only)
 		only return the top score obtained with the sliding
 		window for each sequence.
-
+	-sort	(with -top only)
+		sort sequences according to their top score
 PATTERN FORMATS
 	PATTERN SEQUENCE FORMAT
 	The standard degenerate nucleotide code of the IUPAC-IUB commission 
@@ -606,6 +610,7 @@ dna-pattern options
 -stats	return matching statistics
 -window	sliding window size
 -top	only return the top score
+-top	sort sequences according to their top score
 -th     threshold
 -ct	return total count in all sequences
 -N #	return matching sequences with # flanking nucleotides
@@ -778,6 +783,9 @@ sub ReadArguments {
 	    #### top score
 	} elsif ($ARGV[$a] eq "-top") {
 	    $return{top} = 1;
+	    #### sort
+	} elsif ($ARGV[$a] eq "-sort") {
+	    $sort = 1;
 
 	    #### neighborhood (return flanking residues)
 	} elsif (($ARGV[$a] eq "-N") && (&IsNatural($ARGV[$a+1]))) {
@@ -825,7 +833,7 @@ sub SlidingWindowSearch {
 	push @scores, $current_score;
 	$score_sum += $current_score;
 
-	if ($score_sum > $threshold) {
+	if ($score_sum >= $threshold) {
 	    $pattern->set_attribute("score", $score_sum);
 	    $end_pos = $pos - $orig_pos + $pattern_length ;
 	    $start_pos = $pos - $orig_pos - $sliding_window_size +2;
@@ -837,7 +845,9 @@ sub SlidingWindowSearch {
 	$score_sum -= $previous_score;
 	$top_score = &max($top_score, $score_sum);
     }
-    $top_score{$sequence_id} = $top_score;
+    if ($top_score >= $threshold) {
+	$top_score{$sequence_id} = $top_score;
+    }
 }
 
 
@@ -1022,9 +1032,10 @@ sub MatchCounts {
 sub TopScores {
     print $out "; Top score per sequence (sliding window)\n";
     print $out "; SeqID\ttop\n";
+    if ($sort) {
+	@sequence_ids = sort {$top_score{$b} <=> $top_score{$a}} @sequence_ids;
+    }
     foreach $sequence_id (@sequence_ids) {
-	print $out join ("\t", "$sequence_id",
-			 $top_score{$sequence_id}
-			 ), "\n";
+	printf $out  "$sequence_id\t%f\n", $top_score{$sequence_id};
     }
 }
