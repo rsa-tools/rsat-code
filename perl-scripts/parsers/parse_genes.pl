@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genes.pl,v 1.14 2000/12/14 20:51:34 jvanheld Exp $
+# $Id: parse_genes.pl,v 1.15 2000/12/27 23:47:35 jvanheld Exp $
 #
-# Time-stamp: <2000-12-14 21:37:55 jvanheld>
+# Time-stamp: <2000-12-28 00:47:25 jvanheld>
 #
 ############################################################
 
@@ -87,7 +87,7 @@ unless (defined($suffix)) {
 
 $dir{output} = $parsed_data."/kegg_parsed/".$delivery_date;
 unless (-d $dir{output}) {
-    warn "Creating output dir $dir{output}";
+    warn "Creating output dir $dir{output}\n";
     mkdir $dir{output}, 0775 || die "Error: cannot create directory $dir\n";
 }
 chdir $dir{output};
