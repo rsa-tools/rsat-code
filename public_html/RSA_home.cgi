@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSA_home.cgi,v 1.15 2004/05/07 07:14:23 jvanheld Exp $
+# $Id: RSA_home.cgi,v 1.16 2004/05/14 05:17:48 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -185,11 +185,12 @@ EndText
 print "<H4>", scalar(@orgs) ," organisms supported on <A HREF='$WWW_RSA' target=_top>",$WWW_RSA,"</A></H4>\n";
 print &ListSupportedOrganisms("html_list");
 
-&UpdateLogFile;
-print "This page has been visited\n<B>";
-print &UpdateCounterFile;
-print "</B>\ntimes since May 1998.\n";
-print "Enjoy your visit !";
+&UpdateLogFile();
+$count = &UpdateCounterFile();
+
+# print ("This page has been visited\n<B>", $count,
+#        "</B>\ntimes since May 1998.\n",
+#        "Enjoy your visit !");
 
 
 print <<EndAddress;
