@@ -22,9 +22,13 @@ $sequence_type = "dna";
 #
 if ($sequence_type eq "dna") {
     @letters = qw ( A C G T );
-} elsif ($sequence_type =~ /prot/) {
+} elsif ($sequence_type =~ /^prot/) {
     @letters = qw ( a c d e f g h i k l m n p q r s t v w y );
 #    @letters = qw ( A C D E F G H I K L M N P Q R S T V W Y );
+} elsif ($sequence_type =~ /^other/) {
+    @letters = ("a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", 
+		"n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", 
+		" ", ".", ",", ":", ";");
 } else {
     die "Error: unknown sequence type $sequence_type\n";
 }
@@ -62,7 +66,6 @@ if ($ncf) {
     ### localize dyad non-coding frequency file
     $method = "Frequency file";
     $exp_freq_file = &ExpectedFreqFile($organism_name, $oligo_length);
-
 } 
 
 
@@ -81,7 +84,18 @@ if ($exp_freq_file) {
     
     foreach my $pattern_seq (keys %patterns) {
 	$expected_freq{$pattern_seq} = $patterns{$pattern_seq}->{exp_freq};
+#	warn join "\t",  $pattern_seq, $patterns{$pattern_seq}->{exp_freq}, $expected_freq{$pattern_seq}, "\n";
     }
+
+    #### calculate alphabet from expected frequency keys
+    foreach my $pattern_seq (keys %patterns) {
+	my @residues = split "|", $pattern_seq;
+#	die join "\t", $pattern_seq, @residues, "\n";
+	foreach my $r (@residues) {
+	    $letter{$r} = 1;
+	}
+    }
+    @letters = keys (%letter);
     
 #      die "	cannot open frequency file\n"
 #  	unless (open EXPECTED, $exp_freq_file);
@@ -123,16 +137,24 @@ if ($exp_freq_file) {
 	$word = lc($subword.$letters[0]);
 	$cum_letter_freq{$subword}[0] = $expected_freq{$word};
 	$cum_letter_freq{$subword}[0]/=$subword_freq{$subword} if $expected_freq{$word};
+# 	warn (join ("\t", 
+# 		    $subword, 
+# 		    $subword_freq{$subword},
+# 		    $word, 
+# 		    $expected_freq{$word},
+# 		    $cum_letter_freq{$subword}[0]
+# 		    ), "\n");
 	for $l (1..$#letters) {
 	    $word = lc($subword.$letters[$l]);
 	    $cum_letter_freq{$subword}[$l] = $cum_letter_freq{$subword}[$l-1];
-#	    print (join ("\t", 
-#			 $subword, 
-#			 $subword_freq{$subword},
-#			 $word, 
-#			 $expected_freq{$word}
-#			 ), "\n");
 	    $cum_letter_freq{$subword}[$l] += $expected_freq{$word}/$subword_freq{$subword} if $expected_freq{$word};
+#	    warn (join ("\t", 
+#			$subword, 
+#			$subword_freq{$subword},
+#			$word, 
+#			$expected_freq{$word},
+#			$cum_letter_freq{$subword}[$l]
+#			), "\n");
 	}
     }
     @subword_keys = sort keys %subword_freq;
@@ -243,7 +265,7 @@ for $r (1..$repetitions) {
 		}
 	    }
 	    $next_letter = $letters[$l];
-#	    print "\t$subword\t$rand\t$l\t$next_letter\t", $cum_letter_freq{$subword}[$l] , "\n";
+	    warn join "\t", $subword, $rand, $l, $next_letter, $cum_letter_freq{$subword}[$l] , "\n";
 	    $sequence .= $next_letter;
 	    $subword = lc(substr($subword.$next_letter,1));
 	}
@@ -373,7 +395,7 @@ OPTIONS
         -lw ##  Line width. A newline character will be inserted in the 
                 sequence every ## bases. Default is 70. 
                 -lw 0 will prevent newline insertion.
-	-type	protein|DNA
+	-type	protein|DNA|other
 	-seed #	seed for the random generator
                 
     PROBABILITIES
@@ -437,7 +459,7 @@ random-seq options
 -lw ##		Line width. 
 -a		alphabet. ex: -a a:t 0.3 c:g 0.2
 -expfreq	file containing expected oligomer frequencies
--type   protein|DNA
+-type		protein|DNA|other
 -seed #	seed for the random generator
 -ncf		use dyad non-coding frequencies as expected frequencies
 -org		organism 
