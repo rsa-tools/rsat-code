@@ -1,0 +1,171 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: parse-location.pl,v 1.1 2002/01/26 23:35:07 jvanheld Exp $
+#
+# Time-stamp: <2001-12-09 22:57:25 jvanheld>
+#
+############################################################
+#use strict;;
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+
+#### initialise parameters ####
+my $start_time = &AlphaDate;
+
+local %infile = ();
+local %outfile = ();
+
+local $verbose = 0;
+local $in = STDIN;
+local $out = STDOUT;
+
+&ReadArguments;
+
+
+#### check argument values ####
+
+
+### open output file ###
+$out = &OpenOutputFile($outfile{output});
+
+##### read input #####
+$in = &OpenInputFile($infile{input});
+while (<$in>) {
+
+}
+
+close $in if ($infile{input});
+
+#### verbose ####
+&Verbose if ($verbose);
+
+###### execute the command #########
+
+
+###### print output ######
+
+
+###### verbose ######
+if ($verbose) {
+    my $done_time = &AlphaDate;
+    print $out "; Job started $start_time\n";
+    print $out "; Job done    $done_time\n";
+}
+
+
+###### close output file ######
+close $out if ($outfile{output});
+
+
+exit(0);
+
+
+########################## subroutine definition ############################
+
+sub PrintHelp {
+#### display full help message #####
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	template
+
+        2001 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
+	
+USAGE
+        template [-i inputfile] [-o outputfile] [-v]
+
+DESCRIPTION
+	
+OPTIONS
+	-h	(must be first argument) display full help message
+	-help	(must be first argument) display options
+	-v	verbose
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+
+End_of_help
+  close HELP;
+  exit;
+}
+
+sub PrintOptions {
+#### display short help message #####
+  open HELP, "| more";
+  print HELP <<End_short_help;
+template options
+----------------
+-h	(must be first argument) display full help message
+-help	(must be first argument) display options
+-i	input file
+-o	output file
+-v	verbose
+End_short_help
+  close HELP;
+  exit;
+}
+
+
+sub ReadArguments {
+#### read arguments ####
+    foreach my $a (0..$#ARGV) {
+	### verbose ###
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+	    
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp;
+	    
+	    ### list of options
+	} elsif ($ARGV[0] eq "-help") {
+	    &PrintOptions;
+	    
+	    ### input file ###
+	} elsif ($ARGV[$a] eq "-i") {
+	    $infile{input} = $ARGV[$a+1];
+	    
+	    ### output file ###
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outfile{output} = $ARGV[$a+1];
+	    
+	    ### organism
+	} elsif ($ARGV[$a] eq "-org") {
+	    $organism_name = $ARGV[$a+1];
+	    unless (defined($supported_organism{$organism_name})) {
+		die ("Error: organism '$organism_name' is not supported on this site",
+		     $supported_organisms,
+		     "\n");
+	    }
+	    
+	}
+    }
+}
+
+sub Verbose {
+    print $out "; template ";
+    &PrintArguments($out);
+    if (defined(%infile)) {
+	print $out "; Input files\n";
+	while (($key,$value) = each %infile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+    if (defined(%outfile)) {
+	print $out "; Output files\n";
+	while (($key,$value) = each %outfile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+}
