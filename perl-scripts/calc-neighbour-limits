@@ -1,17 +1,17 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: calc-neighbour-limits,v 1.3 2001/02/20 00:55:46 jvanheld Exp $
+# $Id: calc-neighbour-limits,v 1.4 2002/01/07 08:36:51 jvanheld Exp $
 #
-# Time-stamp: <2001-02-20 01:55:31 jvanheld>
+# Time-stamp: <2002-01-07 09:35:08 jvanheld>
 #
 ############################################################
 #use strict;;
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
-require "RSA.classes.pl";
+require "RSA.lib";
+require "RSA.classes";
 
 #### initialise parameters ####
 my $start_time = &AlphaDate;
@@ -98,26 +98,22 @@ sub PrintHelp {
   open HELP, "| more";
   print HELP <<End_of_help;
 NAME
-	template
+	calc-neighbour-limits
 
         1999 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
 	
 USAGE
-        template [-i inputfile] [-o outputfile] [-v]
+        calc-neighbour-limits [-v] -org genus_species
 
 DESCRIPTION
-	
+	Calculates the relative positions of neighbour CDS for all
+	genes of a selected organism.
+
 OPTIONS
 	-h	(must be first argument) display full help message
 	-help	(must be first argument) display options
 	-v	verbose
-	-i inputfile
-		if not specified, the standard input is used.
-		This allows to place the command within a pipe.
-	-o outputfile
-		if not specified, the standard output is used.
-		This allows to place the command within a pipe.
-
+	-org	organism
 End_of_help
   close HELP;
   exit;
@@ -127,13 +123,12 @@ sub PrintOptions {
 #### display short help message #####
   open HELP, "| more";
   print HELP <<End_short_help;
-template options
+calc-neighbour-limits options
 ----------------
 -h	(must be first argument) display full help message
 -help	(must be first argument) display options
--i	input file
--o	output file
 -v	verbose
+-org	organism
 End_short_help
   close HELP;
   exit;
@@ -159,14 +154,6 @@ sub ReadArguments {
     } elsif ($ARGV[0] eq "-help") {
       &PrintOptions;
       
-      ### input file ###
-    } elsif ($ARGV[$a] eq "-i") {
-      $infile{input} = $ARGV[$a+1];
-      
-      ### output file ###
-    } elsif ($ARGV[$a] eq "-o") {
-      $outfile{output} = $ARGV[$a+1];
-      
       ### organism
     } elsif ($ARGV[$a] eq "-org") {
       $organism_name = $ARGV[$a+1];
@@ -181,7 +168,7 @@ sub ReadArguments {
 }
 
 sub Verbose {
-  print $out "; template ";
+  print $out "; calc-neighbour-limits ";
   &PrintArguments($out);
   if (defined(%infile)) {
     print $out "; Input files\n";
