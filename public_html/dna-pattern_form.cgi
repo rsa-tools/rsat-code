@@ -1,4 +1,8 @@
 #!/usr/bin/perl
+
+## CVS: suppressed the fasta output format (did not work anymore)
+## CVS: added the flanking option (had disappeared !)
+
 #### this cgi script fills the HTML form for the program dna-pattern
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
@@ -109,12 +113,17 @@ print CGI::table({-border=>0,-cellpadding=>3,-cellspacing=>0},
 							    'end'],
 						  -default=>$default{origin}),
 
-			       "<A HREF='help.dna-pattern.html#match_format'><B>Format</B></A>",
-			       $query->popup_menu(-name=>'match_format',
-						  -Values=>['table',
-							    'fasta'],
-						  -default=>$default{match_format})
-			       ]),
+			       "<A HREF='help.dna-pattern.html#flanking'><B> flanking</B></A>",
+			       $query->textfield(-name=>'flanking',
+						 -default=>$default{flanking},
+						 -size=>2)
+			      ]),
+#			       "<A HREF='help.dna-pattern.html#match_format'><B>Format</B></A>",
+#			       $query->popup_menu(-name=>'match_format',
+#						  -Values=>['table',
+#							    'fasta'],
+#						  -default=>$default{match_format})
+#			       ]),
 			## Sequence limits
 		      CGI::td({-align=>left,-valign=>MIDDLE},
 			      [
