@@ -94,7 +94,7 @@ package main;
 
     #### class factory  for diagrams
     $diagrams = PFBP::ClassFactory->new_class(object_type=>"PFBP::PathwayDiagram",
-					     prefix=>"dgm_");
+					      prefix=>"dgm_");
 
     ### old initialisation
     $path_element_count = 0;
@@ -149,10 +149,10 @@ package main;
 	die "Error: cannot create directory $dir\n" 
 	    unless (-d $dir{diagrams});
     }
+    $out_file{graph} = $dir{diagrams}."/sigtrans_graph.tdd";
 
     ### object files
     $out_file{signal_transduction} = $dir{output}."/signal_transduction.obj";
-    $out_file{graph} = $dir{diagrams}."/sigtrans_graph.tdd";
     $out_file{stats} = $dir{output}."/sigtrans_parsing_stats";
 
     ### reports
@@ -170,8 +170,10 @@ package main;
     &ReadPathways();
 
     ### print each pathway in a separate file
-    foreach $pathway ($pathways->get_objects()) {
-	&PathwayToDiagram($pathway);
+    if ($export{diagrams}) {
+	foreach $pathway ($pathways->get_objects()) {
+	    &PathwayToDiagram($pathway);
+	}
     }
 
     #####################
@@ -224,7 +226,7 @@ sub ReadEntities {
 	
 	### check entity type ###
 	if ($fields[$col{type}] =~ /\S/) {
-	    $type = lc($fields[$col{type}]);
+	    $type = $fields[$col{type}];
 	    $type =~ s/ /_/g;
 	    #### set first letter to uppercase, for compatibility with aMAZE styles
 	    $type = ucfirst($type);
@@ -409,15 +411,15 @@ sub ReadInteractions {
 	$input = "";
 	$output = "";
 	
+	#### create an object for the interaction
 	my $interaction = $interactions->new_object(id=>$ac);
 	$interaction->set_attribute("type",$type);
 	$interaction->set_attribute("description",$description);
- 	warn (join ("\t", "new interaction",
-		    $interaction->get_attribute("id"),
+	warn (join ("\t", "new interaction",
+			$interaction->get_attribute("id"),
 		    $interaction->get_attribute("type")
-		   ), "\n")
+		    ), "\n")
 	    if ($warn_level >= 2);
-	
 
 #	&CreateAssociation($ac,$type,$name,$description,$input,$output);
     }
@@ -579,6 +581,58 @@ sub ReadInteractions {
 	    #unless (defined($association{$inter})) {
 	    &ErrorMessage( "$in_file{interaction_output} line $line_nb: $inter has not been defined in $InteractionFile\n");
 	    &ErrorMessage( "\t$_\n");
+	    next;
+	}
+
+	#### specific treatment for transcriptional regulation
+	if (($inter_object->get_attribute("type") eq "transactivation") ||
+	    ($inter_object->get_attribute("type") eq "transrepression")) {
+
+
+	    my $polypeptide_name = $entity_name;
+	    #### check for the existence of the polypeptide
+	    unless ($polypeptide_object = $entities->get_object($polypeptide_name)) {
+		&Error("Polypeptide\t$polypeptide_name\thas not been described\n");
+		next;
+	    }
+	    my $polypeptide_id = $polypeptide_object->get_attribute("id");
+
+	    my $gene_name = uc($polypeptide_name);
+	    my $gene;
+
+	    #### identify the gene
+	    if ($gene = $entities->get_object("$gene_name gene")) {
+		warn "; Gene $gene_name already exists\n" if ($warn_level >= 3); 
+	    } else {
+		#### create a new entity for the gene 
+		warn "; Creating new gene\t$gene_name\n" if ($warn_level >= 2);
+		$gene = $entities->new_object();
+		$gene->push_attribute("names", $gene_name);
+		$gene->set_attribute("type", "Gene");
+		$gene->push_attribute("names", "$gene_name gene");
+		$entities->index_object_names($gene);
+	    }
+	    my $gene_id = $gene->get_attribute("id");
+#	    warn "; Gene\t$gene_id\n";
+
+	    #### identify the expression
+	    my $expression;
+	    if  ($expression = $interactions->get_object("$gene_name expression")) {
+		warn "; Expression\t", $expression->get_attribute("id"), "\talready exists\n" if ($warn_level >= 3);
+	    } else {
+		#### create a new interaction for the expression
+		warn "; Creating new expression object\n" if ($warn_level >= 2);
+		$expression = $interactions->new_object(id=>"$ac_exp");
+		$expression->push_attribute("names", "$gene_name expression");
+		$expression->push_expanded_attribute("inputs", $gene_id, $null, $state_before, $stoeichiometry, $location_before);
+		$expression->push_expanded_attribute("outputs", $polypeptide_id, $subunit, $state_after, $stoeichiometry, $location_after);
+		$expression->set_attribute("description", "$gene_name -> $polypeptide_name");
+		$expression->set_attribute("type", "Expression");
+		$interactions->index_object_names($expression);
+	    }
+
+	    #### set the expression as output for the interaction
+	    $inter_object->push_expanded_attribute("outputs",$expression->get_attribute("id"), $subunit, $state_before, $stoeichiometry, $location_before);
 	    next;
 	}
 
@@ -817,6 +871,19 @@ sub ReadPathwayInteractions {
 	    $int_id = $interaction_object->get_attribute("id");
 	    $pathway->push_attribute("interactions",$int_id);
 	    $complete_pathway->push_attribute("interactions",$int_id);
+
+	    #### add the interaction outputs if it is also an interaction
+	    my @outputs = $interaction_object->get_attribute("outputs");
+	    foreach my $output (@outputs) {
+		my $output_id = ${$output}[0];
+		if ($output_object = $interactions->get_object($output_id)) {
+		    warn ("; Adding interaction output\t", 
+			  $output_object->get_attribute("description"), 
+			  "\tto the pathway\n") if ($warn_level >= 3);
+		    $pathway->push_attribute("interactions",$output_object->get_attribute("id"));
+		}
+	    }
+
 	} else {
 	    &ErrorMessage( "Error in $in_file{pathway_interaction} line $line_nb: $interaction has not been defined in $in_file{interactions}\n");
 	    &ErrorMessage( "\t$_\n");
@@ -1086,6 +1153,11 @@ sub ReadArguments {
 	    $a++;
 	    $main::export{obj} = 1;
 
+	    ### export diagrams
+ 	} elsif ($ARGV[$a] eq "-diagrams") {
+	    $a++;
+	    $main::export{diagrams} = 1;
+
 	    #### help
 	} elsif (($ARGV[$a] eq "-h") ||
 		 ($ARGV[$a] eq "-help")) {
@@ -1203,6 +1275,7 @@ sub PathwayToDiagram {
 	my $type = $interaction->get_attribute("type");
 
 	#### create a node for the entity
+	$abbrev{Expression} = "exp";
 	$abbrev{translocation} = "tloc";
 	$abbrev{association} = "asm";
 	$abbrev{phosphorylation} = "pho";
@@ -1253,19 +1326,18 @@ sub PathwayToDiagram {
     warn "; Exporting diagram\t$diagram_file.tdd\n" if ($warn_level >= 1);
     $diagram->print("tdd", "$diagram_file.tdd");
 
-    #### layout and export the diagram in different formats
-    warn join ("\t", "Layout for diagram",  
-	       $diagram->get_attribute("name"), 
-	       "size", $diagram->size()), "\n" if ($warn_level >= 1);
-    if ($diagram->size() > 500) {
-	warn "too big for exporting in JPEG; skipping\n";
-	next; 
+
+    if ($export{diagrams}) {
+	#### layout and export the diagram in different formats
+	warn join ("\t", "; Layout for diagram",  
+		   $diagram->get_attribute("name"), 
+		   "size", $diagram->size()), "\n" if ($warn_level >= 1);
+	my $classpath = ".:/win/amaze/amaze_programs/delivered/delivery_20011113/amaze_framework_20011113/amaze_framework.jar";
+	$classpath .= ":/win/amaze/amaze_programs/amaze_manuals/programming_examples";
+	my $command = "java -classpath $classpath  DiagramConverterApp ${diagram_file}.tdd $diagram_file";
+	warn $command, "\n" if ($warn_level >= 1);
+#	system $command;
     }
-    my $classpath = ".:/win/amaze/amaze_programs/delivered/delivery_20011113/amaze_framework_20011113/amaze_framework.jar";
-    $classpath .= ":/win/amaze/amaze_programs/amaze_manuals/programming_examples";
-    my $command = "java -classpath $classpath  DiagramConverterApp ${diagram_file}.tdd $diagram_file";
-    warn $command, "\n" if ($warn_level >= 1);
-    system $command;
 }
 
 
@@ -1426,6 +1498,8 @@ OPTIONS
 	-obj	export the data in .obj format
 	-clean	remove all files from the output directory before
 		parsing
+	-diagrams
+		export pathway diagrams
 EndHelp
   close HELP;
 }
