@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: fit-distribution,v 1.5 2004/01/07 16:04:33 jvanheld Exp $
+# $Id: fit-distribution,v 1.6 2004/01/08 07:21:53 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -162,9 +162,9 @@ while (<$in>) {
     local ($chi2, $df, $left_group, $right_group, $obs_ref, $exp_ref) = &ChiSquare("goodness", 2, $max_occ+1, @counts, @expected);
 
     local $obs_grouped;
-    $obs_grouped = join ";", @{$obs_ref};
+    $obs_grouped = join ":", @{$obs_ref};
     local $exp_grouped;
-    $exp_grouped = join ";", @{$exp_ref};
+    $exp_grouped = join ":", @{$exp_ref};
 
     ## Discard cases where applicability conditions are not met
 #    unless (&IsReal($chi2)) {
