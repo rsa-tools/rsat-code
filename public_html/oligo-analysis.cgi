@@ -4,8 +4,8 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
-require "RSA.lib.pl";
-require "RSA.cgi.lib.pl";
+require "RSA.lib";
+require "RSA.cgi.lib";
 
 $oligo_analysis_command = "$SCRIPTS/oligo-analysis";
 $tmp_file_name = sprintf "oligo-analysis.%s", &AlphaDate;
@@ -148,6 +148,8 @@ if ($query->param('freq_estimate') =~ /oligo freq.* in non-coding regions/i) {
   $freq_option = " -a input";
 } elsif ($query->param('freq_estimate') =~ /markov/i) {
   $freq_option = " -markov";
+} elsif ($query->param('freq_estimate') =~ /lexicon/i) {
+  $freq_option = " -lexicon";
 } else {
   $freq_option = "";
 } 
@@ -168,7 +170,7 @@ if ($query->param('output') =~ /display/i) {
   $result_file = "$TMP/$tmp_file_name.res";
   open RESULT, "$oligo_analysis_command $parameters |";
   
-  #print "<PRE>command: oligo-analysis $parameters<P>\n</PRE>";
+#  print "<PRE>command: oligo-analysis $parameters<P>\n</PRE>";
   
   ### prepare data for piping
   $title = $query->param('title');
@@ -198,7 +200,8 @@ End_of_form
   close(RESULT);
   
   #### oligonucleotide assembly ####
-  if ((&IsReal($query->param('occ_significance_threshold'))) && ($query->param('occ_significance_threshold')>= -1)) {
+  if (&IsReal($query->param('occ_significance_threshold'))) {
+#) && ($query->param('occ_significance_threshold')>= -1)) {
     $fragment_assembly_command = "$SCRIPTS/pattern-assembly -v";
     if ($query->param('strand') =~ /single/) {
       $fragment_assembly_command .= " -1str";
