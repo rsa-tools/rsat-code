@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.12 2002/03/13 11:40:41 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.13 2002/03/18 11:03:03 jvanheld Exp $
 #
-# Time-stamp: <2002-03-13 12:29:47 jvanheld>
+# Time-stamp: <2002-03-18 12:00:38 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -28,12 +28,14 @@ foreach my $task (@supported_tasks) {
 }
 $supported_tasks = join ",", @supported_tasks;
 
+$noorf = 0;
 $default{from} = -800;
 $default{to} = 0;
 $known_site_file = "known-consensus";
 $known_sites_provided = 0;
+$exp = "ncf";
 
-&ReadArguments;
+&ReadArguments();
 
 #### check selected tasks
 unless (defined(%task)) {
@@ -153,7 +155,6 @@ sub SetFileNames {
   }
   
   $dyad_suffix = "_dyads";
-  $dyad_suffix .= "_up${seq_length}";
   $dyad_suffix .= "_l${dyad_element_length}";
   $dyad_suffix .= "_sp${sp}";
   $dyad_suffix .= "_${strands}";
@@ -170,22 +171,24 @@ sub SetFileNames {
     $dyad_suffix .= "_mncf";
   }
 
-  foreach $family_name (@families) {
-    $family{$family_name}->{family_file} = "$family_name/${family_name}.fam";
-    $family{$family_name}->{known_site_file} = "$family_name/${family_name}_known_sites";
-    $family{$family_name}->{seq_file} = "$family_name/${family_name}_up${seq_length}.${seq_format}";
-    $family{$family_name}->{seq_file_purged} = "$family_name/${family_name}_up${seq_length}_purged.${seq_format}";
-    
-    $family{$family_name}->{oligo_file} =  "${family_name}/oligos_${family_name}/${family_name}_oligos_up${seq_length}_${min_oligo_length}-${max_oligo_length}nt_${strands}_sig${th}";
-    $family{$family_name}->{oligo_file} .= "_noov" if ($noov);
-    $family{$family_name}->{oligo_assembly_file} = $family{$family_name}->{oligo_file}."_contigs";
-    $family{$family_name}->{oligo_ft_file} = $family{$family_name}->{oligo_file}.".ft";
-    
-    $family{$family_name}->{dyad_file} = "$family_name/dyads_${family_name}/$family_name".$dyad_suffix;
-    $family{$family_name}->{dyad_assembly_file} = $family{$family_name}->{dyad_file}."_contigs";
-    $family{$family_name}->{dyad_ft_file} = $family{$family_name}->{dyad_file}.".ft";
-    $family{$family_name}->{fmap_file} = $family{$family_name}->{dyad_file}.".gif";
-    $family{$family_name}->{htmap_file} = $family{$family_name}->{dyad_file}.".html";
+  $noorf_string = "_noorf" if ($noorf);
+  foreach my $family_name (@families) {
+      $family{$family_name}->{family_file} = "$family_name/${family_name}.fam";
+      $family{$family_name}->{known_site_file} = "$family_name/${family_name}_known_sites";
+      $family{$family_name}->{file_prefix} = "${family_name}_up${seq_length}${noorf_string}"; 
+      $family{$family_name}->{seq_file} = $family_name."/".$family{$family_name}->{file_prefix}.".${seq_format}";
+      $family{$family_name}->{seq_file_purged} = $family_name."/".$family{$family_name}->{file_prefix}."_purged.${seq_format}";
+      
+      $family{$family_name}->{oligo_file} =  "${family_name}/oligos_${family_name}/".$family{$family_name}->{file_prefix}."_oligos_${min_oligo_length}-${max_oligo_length}nt_${strands}_sig${th}";
+      $family{$family_name}->{oligo_file} .= "_noov" if ($noov);
+      $family{$family_name}->{oligo_assembly_file} = $family{$family_name}->{oligo_file}."_contigs";
+      $family{$family_name}->{oligo_ft_file} = $family{$family_name}->{oligo_file}.".ft";
+      
+      $family{$family_name}->{dyad_file} = "$family_name/dyads_${family_name}/".$family{$family_name}->{file_prefix}.$dyad_suffix;
+      $family{$family_name}->{dyad_assembly_file} = $family{$family_name}->{dyad_file}."_contigs";
+      $family{$family_name}->{dyad_ft_file} = $family{$family_name}->{dyad_file}.".ft";
+      $family{$family_name}->{fmap_file} = $family{$family_name}->{dyad_file}.".gif";
+      $family{$family_name}->{htmap_file} = $family{$family_name}->{dyad_file}.".html";
   }  
 }
 
@@ -197,6 +200,7 @@ sub SetFileNames {
 sub UpstreamSequences {
   warn "; Generating upstream sequences for family $family_name\n" if ($verbose);
   $command = "retrieve-seq -type upstream -org $organism_name";
+  $command .= " -noorf " if ($noorf);
   $command .= " -i $family{$family_name}->{family_file}";
   $command .= " -o $family{$family_name}->{seq_file}";
   $command .= " -from $from -to $to ";
@@ -239,13 +243,12 @@ sub OligoAnalysis {
     $oligo_options .= "-noov " if ($noov);
     
     $oligo_suffix = "_oligos";
-    $oligo_suffix .= "_up${seq_length}";
     $oligo_suffix .= "_${oligo_length}nt";
     $oligo_suffix .= "_${strands}";
     $oligo_suffix .= "_sig${th}";
     $oligo_suffix .= "_noov" if ($noov);
     
-    $oligo_file = "$family_name/oligos_${family_name}/$family_name".$oligo_suffix;    
+    $oligo_file = "$family_name/oligos_${family_name}/".$family{$family_name}->{file_prefix}.$oligo_suffix;    
     $command = "oligo-analysis -i $family{$family_name}->{seq_file_purged} -format $seq_format -o $oligo_file $oligo_options";
     
     &doit($command);
@@ -635,8 +638,6 @@ sub InitParameters {
   }
   if (defined($force{exp})) {
     $exp = $force{exp}; ### force
-  } else {
-    $exp = "ncf";
   }
   if (&IsReal($force{th})) {
     $th = $force{th}; ### force
@@ -738,6 +739,7 @@ OPTIONS
 	-oligo_exp_freq
 		name of a file containing the expected frequencies for
 		oligo-analysis.
+	-noorf	exclude upstream ORFs from upstream sequences
 
 FILE FORMAT
     FAMILY FILE
@@ -809,6 +811,7 @@ multiple-family-analysis options
 -task		selected task (supported: $supported_tasks)
 -dyad_exp_freq	expected frequencies for dyad-analysis
 -oligo_exp_freq	expected frequencies for oligo-analysis
+-noorf		exclude upstream ORFs from upstream sequences
 End_short_help
   close HELP;
   exit;
@@ -872,6 +875,10 @@ sub ReadArguments {
 	    #### transpose synthetic table
 	} elsif ($ARGV[$a] =~ /^-transp/) {
 	    $transpose = 1;
+
+	    #### clip upstream ORFs fom upstream regions
+	} elsif ($ARGV[$a] =~ /^-noorf/) {
+	    $noorf = 1;
 
 	    #### threshold
 	} elsif ($ARGV[$a] =~ /^-th/) {
