@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.50 2004/01/28 10:17:30 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.51 2004/01/28 12:37:37 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -24,6 +24,7 @@ require "$RSA/perl-scripts/lib/RSA.classes";
 ################################################################
 ## initialisations	    
 $die_on_error = 1;
+$analyze_purged_sequences = 1;
 %dir = ();
 $dir{main} = `pwd`;
 $dir{calib1} = "calibrations_1gene"; 
@@ -223,6 +224,11 @@ sub SetFileNames {
 	    $family{$family_name}->{seq_file} = $family_name."/".$family{$family_name}->{file_prefix}.".${seq_format}";
 	    $family{$family_name}->{seq_file_purged} = $family_name."/".$family{$family_name}->{file_prefix}."_purged.${seq_format}";
 	}
+	if ($analyze_purged_sequences) {
+	    $family{$family_name}->{input_seq_file} = $family{$family_name}->{seq_file_purged};
+	} else {
+	    $family{$family_name}->{input_seq_file} = $family{$family_name}->{seq_file};
+	}
 	$family{$family_name}->{seq_len_file} = $family_name."/".$family{$family_name}->{file_prefix}."_seq_len.tab";
 #      $family{$family_name}->{oligo_file} =  "${family_name}/oligos_${family_name}/".$family{$family_name}->{file_prefix}."_oligos_${min_oligo_len}-${max_oligo_len}nt$strands_sig${th}${noov_string}";
 	$family{$family_name}->{oligo_file} =  "${family_name}/oligos_${family_name}/".$family{$family_name}->{file_prefix}.$oligo_suffix; ## TEMP
@@ -307,7 +313,7 @@ sub OligoAnalysis {
     my $dir = "${family_name}/oligos_${family_name}";
 
     &CheckOutDir($dir);
-    die "Error : cannot read file $family{$family_name}->{seq_file_purged}\n" unless (-r $family{$family_name}->{seq_file_purged});
+    die "Error : cannot read file $family{$family_name}->{input_seq_file}\n" unless (-r $family{$family_name}->{input_seq_file});
     
     ## initialize the oligo file
     system "echo '' > $family{$family_name}->{oligo_file}"; # if ($verbose >=1);
@@ -361,7 +367,7 @@ sub OligoAnalysis {
 	$oligo_suffix .= $noov;
 	
 	$oligo_file = "$family_name/oligos_${family_name}/".$family{$family_name}->{file_prefix}.$oligo_suffix;    
-	$command = "oligo-analysis -i $family{$family_name}->{seq_file_purged} -format $seq_format -o $oligo_file $oligo_options";
+	$command = "oligo-analysis -i $family{$family_name}->{input_seq_file} -format $seq_format -o $oligo_file $oligo_options";
 	
 	&doit($command,$dry_run, $die_on_error);
 	system "cat $oligo_file >> $family{$family_name}->{oligo_file}";
@@ -420,8 +426,8 @@ sub DyadAnalysis {
 	       ), "\n" if ($verbose >= 1);
     $dir = "${family_name}/dyads_${family_name}";
     &CheckOutDir($dir);
-    die "Error : cannot read file $family{$family_name}->{seq_file_purged}\n" unless (-r $family{$family_name}->{seq_file_purged});
-    $command = "dyad-analysis -return occ,proba,rank -i $family{$family_name}->{seq_file_purged} -format $seq_format -o $family{$family_name}->{dyad_file} $dyad_options";
+    die "Error : cannot read file $family{$family_name}->{input_seq_file}\n" unless (-r $family{$family_name}->{input_seq_file});
+    $command = "dyad-analysis -return occ,proba,rank -i $family{$family_name}->{input_seq_file} -format $seq_format -o $family{$family_name}->{dyad_file} $dyad_options";
     
     &doit($command,$dry_run, $die_on_error);
     
@@ -1100,6 +1106,10 @@ OPTIONS
 	-to	upstream region right limit
         -feattype
 		feature type (e.g. CDS, mRNA)
+	-purge	use purged sequences for pattern discovery
+		(default)
+	-nopurge	
+		use non-purged sequences for pattern discovery
 
     oligo-analysis and dyad-analysis options
 	-1str   strand-sensitive analysis
@@ -1255,6 +1265,8 @@ multiple-family-analysis options
 -v		verbose
 -i		family file (incompatible with -seq)
 -seq		sequence file (incompatible with -i)
+-purge		use purged sequences for pattern discovery (default)
+-nopurge	use non-purged sequences for pattern discovery
 -outdir		output directory
 -org		organism
 -from		upstream region left limit
@@ -1307,6 +1319,12 @@ sub ReadArguments {
 	    #### dry run
 	} elsif ($ARGV[$a] eq "-n") {
 	    $dry_run = 1;
+	    
+	    #### analyze purged or non-purged sequences
+	} elsif ($ARGV[$a] eq "-nopurge") {
+	    $analyze_purged_sequences = 0;
+	} elsif ($ARGV[$a] eq "-purge") {
+	    $analyze_purged_sequences = 1;
 	    
 	    ### detailed help
 	} elsif ($ARGV[$a] eq "-h") {
