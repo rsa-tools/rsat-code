@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.4 2000/11/12 08:59:28 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.5 2000/12/29 21:21:13 jvanheld Exp $
 #
-# Time-stamp: <2000-11-12 09:59:21 jvanheld>
+# Time-stamp: <2000-11-12 10:08:47 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -261,7 +261,7 @@ sub OligoAnalysis {
   system $command;
 }
 
-### dyad detector
+### dyad analysis
 sub DyadAnalysis {
   $dir = "${family_name}/dyads_${family_name}";
   unless (-d $dir) {
@@ -467,7 +467,7 @@ sub SyntheticTable {
     $table[$row{oligo}][$col] .= "</TABLE>\n";
     close OLIGOS;
 
-    ### dyad detector
+    ### dyad analysis
     open DYADS, "$family{$family_name}->{dyad_assembly_file}";
     print "extracting info from\t$family{$family_name}->{dyad_assembly_file}\n" if ($verbose);
     undef @patterns;

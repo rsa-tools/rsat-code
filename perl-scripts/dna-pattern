@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dna-pattern,v 1.3 2000/03/23 23:02:21 jvanheld Exp $
+# $Id: dna-pattern,v 1.4 2000/12/29 21:20:46 jvanheld Exp $
 #
-# Time-stamp: <2000-03-24 00:02:12 jvanheld>
+# Time-stamp: <2000-11-15 00:57:05 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -209,22 +209,26 @@ if ($table) {
   foreach $pattern (@patterns) {
     print $out "\t", $pattern->get_attribute("id");
   }
-  print $out "\ttotal";
+  print $out "\ttotal" if ($total); ### print total of occurrences per sequence
   print $out "\n";
   foreach $sequence_id (@sequence_ids) {
     print $out $sequence_id;
     foreach $pattern (@patterns) {
       print $out "\t", $match_count{$sequence_id}{$pattern};
     }
-    print $out "\t", $sum_per_sequence{$sequence_id};
+    print $out "\t", $sum_per_sequence{$sequence_id} if ($total);
     print $out "\n";
   }
-  print $out "total";
-  foreach $pattern (@patterns) {
-    print $out "\t", $sum_per_pattern{$pattern};
+  
+  ### print total of occurrences per pattern
+  if ($total) {
+    print $out "total";
+    foreach $pattern (@patterns) {
+      print $out "\t", $sum_per_pattern{$pattern};
+    }
+    print $out "\t", $total_sum;
+    print $out "\n";
   }
-  print $out "\t", $total_sum;
-  print $out "\n";
   
 }
 
@@ -433,6 +437,9 @@ ARGUMENTS
 	-table	return the count of pattern matches per sequence
 		in the form of a table.
 		(one line per sequence, one column per pattern)
+	-total	(together with -table)
+		print and extra column with the total occurrences per sequence
+		and an extra row with total occurrences per pattern
         -th #   Threshold. 
                 Return match count only for sequences with >= # matches.
                 Only valid in combination with -c.
@@ -598,6 +605,7 @@ dna-pattern options
 -R 	search matches on the Reverse complementary strand only
 -c	return the count of matches for each pattern in each sequence
 -table	return a table with the count of pattern matches per sequence
+-total	return total occ per sequence and per pattern in the count table
 -th     threshold
 -ct	return total count in all sequences
 -N #	return matching sequences with # flanking nucleotides
@@ -649,6 +657,8 @@ sub ReadArguments {
       #read name of file containing the list of patterns and open it
       if ($ARGV[$a+1] =~ /(\S+)/) {
 	$pattern_file = $1;
+	die "Error: cannot read pattern file '$pattern_file'\n" 
+	    unless (-r $pattern_file);
       } 
       
     } elsif ($ARGV[$a] eq "-i") {
@@ -681,6 +691,9 @@ sub ReadArguments {
       $count_matches = 1;
       $sum_only = 0;
       $table = 1;
+
+    } elsif ($ARGV[$a] eq "-total") {
+      $total = 1;
       
     } elsif ($ARGV[$a] eq "-th") {
       $threshold = $ARGV[$a+1];
@@ -718,43 +731,49 @@ sub ReadPatterns {
     ### read patterns from a file
     open PATTERNS, $pattern_file || die "Error: cannot open pattern file";
     while (<PATTERNS>) {
-      next if (/^;/); #comment lines are ignored    
-      next unless (/\S/);
-      chomp;
-      @fields = split, /\t/;
-      next unless ($fields[0] =~ /\S/);
-      $sequence = $fields[0];
-      if (($noid) || ($fields[1] !~ /\S/)) {
-	$id = $sequence;
-      } else {
-	$id = $fields[1];
-      }
-      if ($score_column >= 1) {
-	$score = $fields[$score_column - 1];
-      } else {
-	$score = 1; ### default score
-      }
-      
-      push @patterns, new RSA::pattern(id=>$id,
-				       sequence=>$sequence,
-				       score=>$score);
+	if (/^;/) {
+	    if (!(defined($score_column)) &&
+		(/^;\s+(\d+)\s+occ_sig\s+/)) {
+		$score_column = $1;
+	    }
+	    next;
+	}
+	next unless (/\S/);
+	chomp;
+	@fields = split, /\t/;
+	next unless ($fields[0] =~ /\S/);
+	$sequence = $fields[0];
+	if (($noid) || ($fields[1] !~ /\S/)) {
+	    $id = $sequence;
+	} else {
+	    $id = $fields[1];
+	}
+	if ($score_column >= 1) {
+	    $score = $fields[$score_column - 1];
+	} else {
+	    $score = 1; ### default score
+	}
+	
+	push @patterns, new RSA::pattern(id => $id,
+					 sequence => $sequence,
+					 score => $score);
     }
     close PATTERNS;
     
     ### pattern specified on the command line
-  } elsif ($pattern_sequence) {
-    if ($pattern_id) {
-      $id = $pattern_id;
+    } elsif ($pattern_sequence) {
+	if ($pattern_id) {
+	    $id = $pattern_id;
+	} else {
+	    $id = $pattern_sequence;
+	}
+	$score = 1;
+	push @patterns, new RSA::pattern(id=>$id,
+					 sequence=>$pattern_sequence,
+					 score=>$score);
+	
+	### no pattern specified
     } else {
-      $id = $pattern_sequence;
+	die "Error: you did not specify the pattern\n";
     }
-    $score = 1;
-    push @patterns, new RSA::pattern(id=>$id,
-				     sequence=>$pattern_sequence,
-				     score=>$score);
-    
-    ### no pattern specified
-  } else {
-    die "Error: you did not specify the pattern\n";
-  }
 }

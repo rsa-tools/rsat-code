@@ -3,10 +3,8 @@ if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
 require "RSA.lib.pl";
-require "RSA_cgi_lib.pl";
-
-
-require "cgi-lib.pl";
+require "RSA.cgi.lib.pl";
+###require "cgi-lib.pl";
 
 if ($ARGV[0] eq "-h") {
 #### display full help message #####

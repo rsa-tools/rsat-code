@@ -448,7 +448,7 @@ if ($verbose) {
   print ";map thickness	$map_thick\n";
   print ";map border  	$map_border\n";
   print ";map spacing 	$map_spacing\n";
-  print ";feature thickness	$max_feature_thick\n";
+  print ";max feature thickness	$max_feature_thick\n";
   print ";scale		$scale\n";
 }
 
@@ -671,6 +671,7 @@ foreach $m (0..$#map_list) {
       } else {
 	$feature_thick = $max_feature_thick;
       }
+      $feature_thick = min($max_feature_thick,$feature_thick);
       
       ### calculate corners of the feature box ###
       if ($horizontal_map) {
@@ -1607,7 +1608,6 @@ sub CalcDimensions {
   
   #### auto determination of map thickness
   @feature_thick_list = values %feature_thick;
-  $max_feature_thick = &max($max_feature_thick, @feature_thick_list);
   if (&IsNatural($map_thick)) {
     $map_border = $map_thick -1;
     $map_border -= 2* $max_feature_thick; #feature boxes
@@ -1624,6 +1624,7 @@ sub CalcDimensions {
     
     $map_border = max(0,$map_border);
   } else {
+    $max_feature_thick = &max($max_feature_thick, @feature_thick_list);
     $map_border = 4;
     $map_thick = 1 + 2*$map_border;
     $map_thick += 2* $max_feature_thick; #feature boxes

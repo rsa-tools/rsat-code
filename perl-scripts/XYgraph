@@ -175,9 +175,12 @@ foreach $a (0..$#ARGV) {
     
   } elsif ($ARGV[$a] eq "-ycol") {
     $y_col_string = $ARGV[$a+1];
+    ### single column
     if (&IsNatural($ARGV[$a+1])) {
       @y_col_list = ();
       push @y_col_list, $ARGV[$a+1]-1;
+
+      ### range of column
     } elsif (($ARGV[$a+1] =~ /(.*)\-(.*)/) &&
 	     (&IsNatural($1)) &&
 	     (&IsNatural($2)) && 
@@ -186,6 +189,8 @@ foreach $a (0..$#ARGV) {
       for $col ($1-1..$2-1) {
 	push  @y_col_list, $col;
       }
+
+      ### comma-separated list of columns
     } elsif ($ARGV[$a+1] =~ /\,/) {
       @y_col_list = split(/,/,$y_col_string);
       foreach $col (0..$#y_col_list) {

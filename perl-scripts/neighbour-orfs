@@ -4,165 +4,9 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 require "RSA.lib.pl";
 
+&ReadArguments;
 
 
-if ($ARGV[0] eq "-h")  {
-  open HELP ,"| more";
-  print HELP <<End_of_help;
-NAME
-	neighbour-orfs  
-
-USAGE
-        neighbour-orfs [-v] -pos #chr #startpos [#endpos]
-
-        neighbour-orfs [-v] -orf ORF_ID
-
-        neighbour-orfs -i inputfile -o outputfile [-v] [-format input_format]
-
-
-DESCRIPTION
-	returns the closest ORFS on left and right side from a given 
-	chromosomal coordinate.
-	
-OPTIONS
-        -h      (must be first argument) display full help message
-        -help   (must be first argument) display options
-	-v	verbose
-	-i inputfile
-		if not specified, the standard input is used.
-		This allows to place the command within a pipe.
-        -format input format
-                Accepted formats
-                        pos
-                        orf
-                        dna-pattern (file input only)
-                Default format is orf.
-	-o outputfile
-		if not specified, the standard output is used.
-		This allows to place the command within a pipe.
-	-orf query_orf_name
-		allows to enter a single orf name as query
-		Can be used reiteratively to enter several queries
-		on the same command line.
-		Mutually exclusive with -pos and -i
-	-pos chr# start# end#	
-		allows to directly enter a single chromosomal position on
-		the command line. 
-		Mutually exclusive with -orf and -i
-	-id identifier
-		enter a single identifier on the command line (use this 
-		option with either -pos or -orf).
-        -lr     left-right (default)
-                the output columns provide the neighbour according to 
-                their left or right location relative to the 
-                query. Mutually exclusive with the -ud option.
-        -ud     upstream-downstream (default)
-                the output columns provide the neighbour according to 
-                their upstream or downstream location relative to the 
-                query. Mutually exclusive with the -lr option. 
-                Valid only if query format is "orf".
-
-INPUT FILE FORMATS
-        ORF IDENTIFIER
-            -format orf
-            
-            The first word of each line contains an ORF identifier
-            (e.g.: YFL021W).
-            Default format.
-
-        POSITION
-            -format pos
-
-            Each line contains a query position specification is the
-            following form 
-                #chr #startpos [#endpos] [id]
-
-            Where 
-               #chr is the chromosome number (in latin or arab notation)
-               #startpos is the start position
-               #endpos is the end position (optional)
-               id is an optional identifier
-
-        RESULT FROM A PATTERN SEARCH IN COMPLETE CHROMOSOMAL 
-        SEQUENCES WITH dna-pattern 
-            -format dna-pattern
-            
-            The matching position returned by dna-pattern is used 
-            as query position
-
-OUTPUT FORMATS
-    The output is presented in 1 line per query.
-    The neighbours are sorted either as left and rigth (-lr option)
-    or as upstream and downstrean (-ud option, default).
-
-    UPSTREAM-DOWNSTREAM ORFS
-        Columns from the output provide respectively
-        - Q_id    query identifier
-        - Q_gene  query gene name
-        - Q_chr   query chromosome
-        - Q_start query start position
-        - Q_end   query end position
-        - U_ORF   upstream neighbour ORF identifier
-        - U_gene  upetrsam neighbour gene name
-        - U_dist  distance between query position and upstream neighbour
-        - U_len	  upstream ORF length
-        - D_ORF   downstream neighbour ORF identifier
-        - D_gene  downstream neighbour gene name
-        - D_dist  distance between query position and downstream neighbour
-        - D_len	  downstream ORF length
-
-    LEFT-RIGHT ORFS
-        Columns from the output provide respectively
-        - Q_id    query identifier
-        - Q_gene  query gene name
-        - Q_chr   query chromosome
-        - Q_start query start position
-        - Q_end   query end position
-        - L_ORF   left neighbour ORF identifier
-        - L_gene  left neighbour gene name
-        - L_dist  distance between query position and left neighbour
-        - L_len	  left ORF length
-        - R_ORF   right neighbour ORF identifier
-        - R_gene  right neighbour gene name
-        - R_dist  distance between query position and right neighbour
-        - R_len	  right ORF length
-
-
-EXAMPLE
-	neighbour-orfs -pos VII 42315
-	neighbour-orfs -orf YFL021W
-	neighbour-orfs -i orf_file -format orf
-	neighbour-orfs -i pos_file -format pos
-	neighbour-orfs -i match_file -format dna-pattern
-	neighbour-orfs -format orf -q nil1 -q gal4 -q YCR037C
-
-End_of_help
-  close HELP;
-  exit(0);
-}
-
-if ($ARGV[0] eq "-help") {
-#### display short help message #####
-  open HELP, "| more";
-  print HELP <<End_short_help;
-neighbour-orfs options
-----------------------
--h      (must be first argument) display full help message
--help   (must be first argument) display options
--i      input file
--q	query on the command line.	
--format input format. Accepted formats: pos, orf, dna-pattern
--o      output file
--v      verbose
--pos    position (e.g neighbour-orfs -pos #chr #start [$end])
--orf    ORF identifier (e.g neighbour-orfs -orf YFL021W)
--id identifier
--lr     left-right output (default)
--ud     upstream-downstream output (valid only if query format is "orf")
-End_short_help
-  close HELP;
-  exit;
-}
 
 ### initialization
 $start_time = `date`;
@@ -207,51 +51,6 @@ for $chr (1..16) {
 }
 
 &ReadSynonyms;
-
-#### read arguments ####
-foreach $a (0..$#ARGV) {
-    if ($ARGV[$a] eq "-v") {
-	$verbose = 1;
-	
-    } elsif ($ARGV[$a] eq "-i") {
-	$inputfile = $ARGV[$a+1];
-
-    } elsif ($ARGV[$a] eq "-o") {
-	$outputfile = $ARGV[$a+1];
-
-    } elsif ($ARGV[$a] eq "-id") {
-	$id[0] = $ARGV[$a+1];
-
-    } elsif ($ARGV[$a] eq "-ud") {
-	$out_format = "ud";
-
-    } elsif ($ARGV[$a] eq "-lr") {
-	$out_format = "lr";
-
-    } elsif ($ARGV[$a] eq "-format") {
-	$in_format = $ARGV[$a+1];
-
-    } elsif ($ARGV[$a] eq "-orf") {
-	$in_format = "orf";
-	$input_as_arg = 1;
-        $query_number = $#id+1;
-	$id[$query_number] = $orf_id{uc($ARGV[$a+1])};
-	$chromosome[$query_number] = $chrom{$id[$query_number]};
-	$startposition[$query_number] = $start{$id[$query_number]};
-	$endposition[$query_number] = $end{$id[$query_number]};
-
-    } elsif ($ARGV[$a] eq "-pos") {
-	$in_format = "pos";
-	$input_as_arg = 1;
-	$chromosome[0] = $ARGV[$a+1];
-	$startposition[0] = $ARGV[$a+2];
-	if ($ARGV[$a+3] =~ /^[-\+\d]\d*$/) {
-	    $endposition[0] = $ARGV[$a+3];
-	} else {
-	    $endposition[0] = $startposition[0];
-	}
-    }
-}
 
 
 #### read queries ####
@@ -382,7 +181,7 @@ for $query (0..$#chromosome) {
 
     ### check parameter values ###
     if (($in_format eq "orf") && !(defined $chrom{$id})) {
-	print $out ";WARNING! $id invalid ORF identifier\n";
+	print $out ";WARNING! $id invalid ORF identifier $id\n";
 	next QUERYLOOP;
     }
 
@@ -521,3 +320,220 @@ if ($verbose) {
 
 close $out unless ($outputfile eq "");
 exit(0);
+
+
+sub PrintHelp  {
+  open HELP ,"| more";
+  print HELP <<End_of_help;
+NAME
+	neighbour-orfs  
+
+USAGE
+        neighbour-orfs [-v] -pos #chr #startpos [#endpos]
+
+        neighbour-orfs [-v] -orf ORF_ID
+
+        neighbour-orfs -i inputfile -o outputfile [-v] [-format input_format]
+
+
+DESCRIPTION
+	returns the closest ORFS on left and right side from a given 
+	chromosomal coordinate.
+	
+OPTIONS
+        -h      (must be first argument) display full help message
+        -help   (must be first argument) display options
+	-v	verbose
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+        -format input format
+                Accepted formats
+                        pos
+                        orf
+                        dna-pattern (file input only)
+                Default format is orf.
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+	-orf query_orf_name
+		allows to enter a single orf name as query
+		Can be used reiteratively to enter several queries
+		on the same command line.
+		Mutually exclusive with -pos and -i
+	-pos chr# start# end#	
+		allows to directly enter a single chromosomal position on
+		the command line. 
+		Mutually exclusive with -orf and -i
+	-id identifier
+		enter a single identifier on the command line (use this 
+		option with either -pos or -orf).
+        -lr     left-right (default)
+                the output columns provide the neighbour according to 
+                their left or right location relative to the 
+                query. Mutually exclusive with the -ud option.
+        -ud     upstream-downstream (default)
+                the output columns provide the neighbour according to 
+                their upstream or downstream location relative to the 
+                query. Mutually exclusive with the -lr option. 
+                Valid only if query format is "orf".
+
+INPUT FILE FORMATS
+        ORF IDENTIFIER
+            -format orf
+            
+            The first word of each line contains an ORF identifier
+            (e.g.: YFL021W).
+            Default format.
+
+        POSITION
+            -format pos
+
+            Each line contains a query position specification is the
+            following form 
+                #chr #startpos [#endpos] [id]
+
+            Where 
+               #chr is the chromosome number (in latin or arab notation)
+               #startpos is the start position
+               #endpos is the end position (optional)
+               id is an optional identifier
+
+        RESULT FROM A PATTERN SEARCH IN COMPLETE CHROMOSOMAL 
+        SEQUENCES WITH dna-pattern 
+            -format dna-pattern
+            
+            The matching position returned by dna-pattern is used 
+            as query position
+
+OUTPUT FORMATS
+    The output is presented in 1 line per query.
+    The neighbours are sorted either as left and rigth (-lr option)
+    or as upstream and downstrean (-ud option, default).
+
+    UPSTREAM-DOWNSTREAM ORFS
+        Columns from the output provide respectively
+        - Q_id    query identifier
+        - Q_gene  query gene name
+        - Q_chr   query chromosome
+        - Q_start query start position
+        - Q_end   query end position
+        - U_ORF   upstream neighbour ORF identifier
+        - U_gene  upetrsam neighbour gene name
+        - U_dist  distance between query position and upstream neighbour
+        - U_len	  upstream ORF length
+        - D_ORF   downstream neighbour ORF identifier
+        - D_gene  downstream neighbour gene name
+        - D_dist  distance between query position and downstream neighbour
+        - D_len	  downstream ORF length
+
+    LEFT-RIGHT ORFS
+        Columns from the output provide respectively
+        - Q_id    query identifier
+        - Q_gene  query gene name
+        - Q_chr   query chromosome
+        - Q_start query start position
+        - Q_end   query end position
+        - L_ORF   left neighbour ORF identifier
+        - L_gene  left neighbour gene name
+        - L_dist  distance between query position and left neighbour
+        - L_len	  left ORF length
+        - R_ORF   right neighbour ORF identifier
+        - R_gene  right neighbour gene name
+        - R_dist  distance between query position and right neighbour
+        - R_len	  right ORF length
+
+
+EXAMPLE
+	neighbour-orfs -pos VII 42315
+	neighbour-orfs -orf YFL021W
+	neighbour-orfs -i orf_file -format orf
+	neighbour-orfs -i pos_file -format pos
+	neighbour-orfs -i match_file -format dna-pattern
+	neighbour-orfs -format orf -q nil1 -q gal4 -q YCR037C
+
+End_of_help
+  close HELP;
+  exit(0);
+}
+
+sub PrintOptions {
+#### display short help message #####
+  open HELP, "| more";
+  print HELP <<End_short_help;
+neighbour-orfs options
+----------------------
+-h      (must be first argument) display full help message
+-help   (must be first argument) display options
+-i      input file
+-q	query on the command line.	
+-format input format. Accepted formats: pos, orf, dna-pattern
+-o      output file
+-v      verbose
+-pos    position (e.g neighbour-orfs -pos #chr #start [$end])
+-orf    ORF identifier (e.g neighbour-orfs -orf YFL021W)
+-id identifier
+-lr     left-right output (default)
+-ud     upstream-downstream output (valid only if query format is "orf")
+End_short_help
+  close HELP;
+  exit(0);
+}
+
+
+sub ReadArguments {
+    #### read arguments ####
+    foreach $a (0..$#ARGV) {
+	### verbose ###
+	if ($ARGV[$a] eq "-v") {
+	    $verbose = 1;
+	    
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp;
+	    
+	    ### list of options
+	} elsif ($ARGV[0] eq "-help") {
+	    &PrintOptions;
+	    
+	} elsif ($ARGV[$a] eq "-i") {
+	    $inputfile = $ARGV[$a+1];
+	    
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outputfile = $ARGV[$a+1];
+	    
+	} elsif ($ARGV[$a] eq "-id") {
+	    $id[0] = $ARGV[$a+1];
+	    
+	} elsif ($ARGV[$a] eq "-ud") {
+	    $out_format = "ud";
+
+	} elsif ($ARGV[$a] eq "-lr") {
+	    $out_format = "lr";
+	    
+	} elsif ($ARGV[$a] eq "-format") {
+	    $in_format = $ARGV[$a+1];
+	    
+	} elsif ($ARGV[$a] eq "-orf") {
+	    $in_format = "orf";
+	    $input_as_arg = 1;
+	    $query_number = $#id+1;
+	    $id[$query_number] = $orf_id{uc($ARGV[$a+1])};
+	    $chromosome[$query_number] = $chrom{$id[$query_number]};
+	    $startposition[$query_number] = $start{$id[$query_number]};
+	    $endposition[$query_number] = $end{$id[$query_number]};
+	    
+	} elsif ($ARGV[$a] eq "-pos") {
+	    $in_format = "pos";
+	    $input_as_arg = 1;
+	    $chromosome[0] = $ARGV[$a+1];
+	    $startposition[0] = $ARGV[$a+2];
+	    if ($ARGV[$a+3] =~ /^[-\+\d]\d*$/) {
+		$endposition[0] = $ARGV[$a+3];
+	    } else {
+		$endposition[0] = $startposition[0];
+	    }
+	}
+    }
+}
+    

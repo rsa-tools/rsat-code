@@ -25,7 +25,7 @@ $parameters = "";
 $parameters .= " -sort";
 
 ### sequence file
-$sequence_file = &GetSequenceFile;
+$sequence_file = &GetSequenceFile();
 $parameters .= " -i $sequence_file";
 
 
@@ -157,7 +157,7 @@ if ($query->param('output') =~ /display/i) {
   
   ### prepare data for piping
   $title = $query->param('title');
-  $title =~ s/\"/'/g;
+  $title =~ s/\"/\'/g;
   print <<End_of_form;
 <TABLE>
 <TR>
@@ -170,7 +170,7 @@ if ($query->param('output') =~ /display/i) {
 <INPUT type="hidden" NAME="pattern_file" VALUE="$result_file">
 <INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 <INPUT type="hidden" NAME="sequence_format" VALUE="$sequence_format">
-<INPUT type="submit" value="pattern search">
+<INPUT type="submit" value="pattern matching (dna-pattern)">
 </FORM>
 </TD>
 </TR>
@@ -179,7 +179,7 @@ End_of_form
   
   ### Print result on the web page
   print '<H2>Result</H2>';
-  PrintHtmlTable(RESULT, $result_file);
+  PrintHtmlTable(RESULT, $result_file, true);
   close(RESULT);
   
   #### oligonucleotide assembly ####

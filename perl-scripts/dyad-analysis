@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis,v 1.2 2000/11/12 08:55:25 jvanheld Exp $
+# $Id: dyad-analysis,v 1.3 2000/12/29 21:19:17 jvanheld Exp $
 #
-# Time-stamp: <2000-11-12 09:55:11 jvanheld>
+# Time-stamp: <2000-12-27 02:56:11 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -678,7 +678,8 @@ sub ReadArguments {
 
 
 sub HelpMessage {
-  HELP, "| more"; print HELP <<End_of_help; 
+  open HELP, "| more"; 
+  print HELP <<End_of_help; 
 
 NAME dyad-analysis
 
@@ -693,7 +694,7 @@ DESCRIPTION
 	This algorithm is able to detect binding sites that escape detection by
 	oligo-analysis, because of the sequence degeneracy within the spacer 
 	region. A typical example of patterns that are efficiently detected by 
-	the dyad detector is the binding site for the yeast Gal4p 
+	the dyad analysis is the binding site for the yeast Gal4p 
 	transcription factor, which has the consensus CGGNNNNNWNNNNNCCG.
 
 	The dyad-analysis is generally efficient to detect binding sites 

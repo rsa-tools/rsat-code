@@ -4,18 +4,17 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 require "RSA.lib.pl";
 
-
-
 #### initialise parameters ####
 $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
 
 $alpha_date = &AlphaDate;
 
 chdir $RSA;
+$out_dir = "$RSA/archives";
 
 for $folder ("perl-scripts","public_html") {
-    $tar_file = "${folder}_${config_site}_${alpha_date}.tar";
-    $command = "tar -cvpf $tar_file $folder; gzip $tar_file";
+    $tar_file = "${out_dir}/${folder}_${config_site}_${alpha_date}.tar";
+    $command = "tar -cpf $tar_file $folder; gzip $tar_file";
 
     print "$command\n";
     system $command;

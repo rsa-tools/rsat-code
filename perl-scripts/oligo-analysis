@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.6 2000/11/10 08:50:20 jvanheld Exp $
+# $Id: oligo-analysis,v 1.7 2000/12/29 21:20:35 jvanheld Exp $
 #
-# Time-stamp: <2000-11-10 09:15:25 jvanheld>
+# Time-stamp: <2000-11-22 00:12:09 jvanheld>
 #
 ############################################################
 
@@ -498,6 +498,8 @@ $residue_proba{'c'} = 0.25;
 $residue_proba{'g'} = 0.25;
 $residue_proba{'t'} = 0.25;
 
+
+
 #### read arguments ####
 $a = 0;
 while ($a <= $#ARGV) {
@@ -896,7 +898,7 @@ sub CountOligo {
     }
     
     $sum_seq_length += $seq_length[$sequence_number];
-    if ($seq_length[$sequence_number] <= $oligo_length) {
+    if ($seq_length[$sequence_number] < $oligo_length) {
 	next;
     } else {
       if ($sum_strands) {
@@ -1602,59 +1604,6 @@ sub PrintResult {
     print $out ";\n";
   }
   
-  ### print header line ###
-  if ($oligo_length < 8) {
-    print $out "; seq";
-  } else {
-    print $out "; sequence";
-  }
-  if (($oligo_length > 8) ||
-      (($oligo_length > 5) && ($sum_strands))) {   
-    print $out "\tidentifier";
-  } else {
-    print $out "\tid";
-  }
-  
-  ### occurrence frequencies
-  print $out "\tobserved_freq" if ($return{'freq'});
-  print $out "\texp_frq" if ($return{'exp_freq'});
-  
-  ### occurrences
-  if ($return{'occ'}) {
-    print $out "\tocc";
-    print $out "\texp_occ" if ($return{'exp_freq'});
-    if ($return{'proba'}) {
-      print $out "\tocc_prb";
-      print $out "\tocc_sig";
-    }
-    print $out "\tzscore" if ($return{'zscore'});
-    print $out "\tocc_lkh" if ($return{'like'});
-    print $out "\tovlaps" if ($noov);
-    #    print $out "\test_var" if ($return{'zscore'});
-  }
-  print $out "\tratio" if ($return{'ratio'});
-  
-  ### matching sequences
-  if ($return{'mseq'}) {
-    print $out "\tms";
-    if ($return{'proba'}) {
-      print $out "\texp_ms";
-      print $out "\tms_prb";
-      print $out "\tms_sig";
-    }
-    print $out "\tms_freq" if ($return{'freq'});
-    print $out "\texp_msf" if ($return{'exp_freq'});
-    print $out "\tms_rati" if ($return{'ratio'});
-    print $out "\tms_lkh" if ($return{'like'});
-  }
-  
-  ### positions
-  print $out "\tpositions" if ($return{'pos'});
-  
-  ### miscellaneous
-  print $out "\tov_coef" if ($return{'ov_coef'});
-  print $out "\tremark" if ($return{'remark'});
-  print $out "\n";
   
   ### result ####
   ### sort oligomers in function of significance or alphabetically
@@ -1696,7 +1645,8 @@ sub PrintResult {
   
   ### in all the other cases, sort by sequence
   @sorted_keys = sort keys %oligo unless ($sorted);
-  
+
+  &PrintHeaderLine();
   
   ### print result ###
   foreach $oligo_seq (@sorted_keys) {
@@ -1805,5 +1755,101 @@ sub PrintResult {
   
 }				### PrintResult
 
+
+
+
+sub PrintHeaderLine {
+
+    $col_description{"seq"} = "oligomer sequence";
+    $col_description{"sequence"} = "oligomer sequence";
+    $col_description{"identifier"} = "oligomer identifier";
+    $col_description{"id"} = "oligomer identifier";
+    $col_description{"observed_freq"} = "observed relative frequency"; 
+    $col_description{"exp_frq"} = "expected relative frequency"; 
+    $col_description{"occ"} = "observed occurrences";
+    $col_description{"exp_occ"} = "expected occurrences"; 
+    $col_description{"occ_prb"} = "occurrence probability (binomial)";
+    $col_description{"occ_sig"} = "occurrence significance (binomial)";
+    $col_description{"zscore"} = "z-score (normal)"; 
+    $col_description{"occ_lkh"} = "occurrence likelihood"; 
+    $col_description{"ovlaps"} = "number of overlapping occurrences"; 
+    $col_description{"ratio"} = "observed/expected ratio"; 
+    $col_description{"ms"} = "number of matching sequences";
+    $col_description{"exp_ms"} = "expected number of matching sequences";
+    $col_description{"ms_prb"} = "matching sequence probability (binomial)";
+    $col_description{"ms_sig"} = "matching sequenc significance (binomial)";
+    $col_description{"ms_freq"} = "observed matching sequence frequency"; 
+    $col_description{"exp_msf"} = "expected matching sequence frequency"; 
+    $col_description{"ms_rati"} = "observed/expected matching seqyences"; 
+    $col_description{"ms_lkh"} = "matching sequence likelihood"; 
+    $col_description{"positions"} = "matching positions"; 
+    $col_description{"ov_coef"} = "overlap coefficient"; 
+    $col_description{"remark"} = "remark"; 
+    @out_col = ();
+    ### print header line ###
+    if ($oligo_length < 8) {
+	push(@out_col,"seq");
+    } else {
+	push(@out_col,"sequence");
+    }
+    if (($oligo_length > 8) ||
+	(($oligo_length > 5) && ($sum_strands))) {   
+	push(@out_col,"identifier");
+    } else {
+	push(@out_col,"id");
+    }
+    
+    ### occurrence frequencies
+    push(@out_col,"observed_freq") if ($return{'freq'});
+    push(@out_col,"exp_frq") if ($return{'exp_freq'});
+    
+    ### occurrences
+    if ($return{'occ'}) {
+	push(@out_col,"occ");
+	push(@out_col,"exp_occ") if ($return{'exp_freq'});
+	if ($return{'proba'}) {
+	    push(@out_col,"occ_prb");
+	    push(@out_col,"occ_sig");
+	}
+	push(@out_col,"zscore") if ($return{'zscore'});
+	push(@out_col,"occ_lkh") if ($return{'like'});
+	push(@out_col,"ovlaps") if ($noov);
+	#    push(@out_col,"est_var") if ($return{'zscore'});
+    }
+    push(@out_col,"ratio") if ($return{'ratio'});
+    
+    ### matching sequences
+    if ($return{'mseq'}) {
+	push(@out_col,"ms");
+	if ($return{'proba'}) {
+	    push(@out_col,"exp_ms");
+	    push(@out_col,"ms_prb");
+	    push(@out_col,"ms_sig");
+	}
+	push(@out_col,"ms_freq") if ($return{'freq'});
+	push(@out_col,"exp_msf") if ($return{'exp_freq'});
+	push(@out_col,"ms_rati") if ($return{'ratio'});
+	push(@out_col,"ms_lkh") if ($return{'like'});
+    }
+    
+    ### positions
+    push(@out_col,"positions") if ($return{'pos'});
+    
+    ### miscellaneous
+    push(@out_col,"ov_coef") if ($return{'ov_coef'});
+    push(@out_col,"remark") if ($return{'remark'});
+
+    if ($verbose) {
+	print $out "; column headers\n";
+	foreach $c (0..$#out_col) {
+	    printf $out ";\t%d\t%-15s\t%s\n", $c+1, $out_col[$c], $col_description{$out_col[$c]};
+	}
+    }
+
+    print $out "\n;";
+    print $out join("\t",@out_col);
+    print $out "\n";
+
+}
 
 
