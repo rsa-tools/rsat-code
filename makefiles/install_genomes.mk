@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_genomes.mk,v 1.11 2005/01/19 20:55:05 jvanheld Exp $
+# $Id: install_genomes.mk,v 1.12 2005/01/24 19:24:36 jvanheld Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -36,24 +36,19 @@ ORG_DIR=${NCBI_DIR}/${ORG}
 INSTALL_TASK=allup,clean,config,dyads,ncf,intergenic_freq,oligos,parse,start_stop,upstream_freq
 INSTALL_CMD=install-organism -v ${V}		\
 		-org ${ORG}			\
-		-task  ${INSTALL_TASK}
+		-task ${INSTALL_TASK}		\
+		${OPT}
+
 install_one_organism:
 	@echo "install log	${INSTALL_LOG}"
 	@echo "Parsing organism ${ORG}" 
-	${MAKE} my_command MY_COMMAND="${INSTALL_CMD}"
+	${MAKE} my_command MY_COMMAND="${INSTALL_CMD}" JOB_PREFIX=${ORG}
 
-#BACTERIA = `cat TO_INSTALL.txt| sort -ru | xargs `
-#BACTERIA =					\
-#	Clostridium_perfringens			\
-#	Pyrobaculum_aerophilum			\
-#	Pyrococcus_furiosus
-
-### Pet bacteria for quick testing
+### Bacteria with a small genome for quick testing
 BACT=Mycoplasma_genitalium
 
 ### All the bacteria in NCBI genome directory
 BACTERIA = `ls -1 ${NCBI_DIR}/Bacteria | grep _ | sort -u | xargs `
-
 list_bacteria:
 	@echo "Bacteria to install	${BACTERIA}"
 
@@ -95,45 +90,5 @@ EUKARYOTES=					\
 install_all_eukaryotes:
 	for org in ${EUKARYOTES} ; do ${MAKE} install_one_organism	\
 		ORG=$${org} ; done
-
-
-################################################################
-#
-# Clean obsolete genome files (those with uppercases)
-ORGANISMS=`ls -d1 data/genomes/*_* | perl -pe "s|/|\t|g" | cut -f 3 | xargs`
-clean_genomes:
-	${MAKE} iterate_organisms ORG_TASK=clean_one_genome
-
-ORG=Mycoplasma_genitalium
-clean_one_genome:
-	@echo "Cleaning genome ${ORG}"
-	@echo Before cleaning ${ORG} `du -sk ${RSAT}/data/genomes/${ORG}/genome/`
-	@rm -f ${RSAT}/data/genomes/${ORG}/genome/Feature*
-	@rm -f ${RSAT}/data/genomes/${ORG}/genome/Gene*
-	@rm -f ${RSAT}/data/genomes/${ORG}/genome/CDS*.ctl
-	@rm -f ${RSAT}/data/genomes/${ORG}/genome/CDS*
-	@rm -f ${RSAT}/data/genomes/${ORG}/genome/mRNA*
-	@rm -f ${RSAT}/data/genomes/${ORG}/genome/tRNA*.ctl
-	@rm -f ${RSAT}/data/genomes/${ORG}/genome/tRNA*
-	@rm -f ${RSAT}/data/genomes/${ORG}/genome/rRNA*
-	@rm -f ${RSAT}/data/genomes/${ORG}/genome/*RNA*
-	@rm -f ${RSAT}/data/genomes/${ORG}/genome/Organism*
-	@rm -f ${RSAT}/data/genomes/${ORG}/genome/Contig*
-	@rm -f ${RSAT}/data/genomes/${ORG}/genome/misc_RNA*
-	@rm -f ${RSAT}/data/genomes/${ORG}/genome/Source*
-	@rm -f ${RSAT}/data/genomes/${ORG}/genome/*.wc
-	@rm -f ${RSAT}/data/genomes/${ORG}/genome/*.wc.gz
-	@echo After cleaning ${ORG} `du -sk ${RSAT}/data/genomes/${ORG}/genome/`
-	@${MAKE} clean_sql
-
-################################################################
-# Clean obsolete SQL files (before splitting into subfolders for
-# mysql, postgresql and oracle)
-clean_sql:
-	@echo "Cleaning SQL files ${ORG}"
-	@rm -f ${RSAT}/data/genomes/${ORG}/genome/sql_scripts/makefile
-	@rm -f ${RSAT}/data/genomes/${ORG}/genome/sql_scripts/*.sql
-	@rm -f ${RSAT}/data/genomes/${ORG}/genome/sql_scripts/*.ctl
-	@rm -f ${RSAT}/data/genomes/${ORG}/genome/sql_scripts/*.mk
 
 
