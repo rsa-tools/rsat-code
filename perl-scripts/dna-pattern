@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dna-pattern,v 1.22 2003/06/17 11:10:16 jvanheld Exp $
+# $Id: dna-pattern,v 1.23 2003/08/13 10:17:55 jvanheld Exp $
 #
-# Time-stamp: <2003-06-17 13:09:15 jvanheld>
+# Time-stamp: <2003-08-13 12:16:03 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -25,6 +25,7 @@ $pattern_score = 1;
 $noid = 0;
 $strands_to_search = "DR";
 $in_format = "fasta";
+$match_format = "table";
 #$search_method = "IUPAC";
 $search_method = "regexp";
 
@@ -130,10 +131,14 @@ while ((($current_seq, $sequence_id, @comments) = &ReadNextSequence($in, $in_for
     
     push @sequence_ids, $sequence_id;
 
+
     #### remove tabs and blank spaces ####    
     $current_seq = &FoldSequence($current_seq, 0);
     
     $sequence_length = length($current_seq);
+
+    #### verbose
+    warn "; Scanning sequence\t$sequence_id\t$sequence_length\n" if ($verbose >= 2);
 
     if (($origin <  0) || ($origin eq "-0")) {
 	$orig_pos = $sequence_length + $origin + 1; 
@@ -332,15 +337,32 @@ sub PrintMatchLocation {
 	$match_length = length($matching_word);
 	$score = ($match_length - $mismatches)/$match_length;
     }
-    print $out $pattern->get_attribute("id");
-    print $out "\t$strand";
-    print $out "\t", $pattern->get_attribute("sequence");
-    print $out "\t$sequence_id";
-    print $out "\t$start_pos";
-    print $out "\t$end_pos";
-    print $out "\t$matching_word";
-    printf $out "\t%.2f", $score;
-    print $out "\n";
+
+    if ($match_format eq "fasta") {
+	#### fasta identifier line
+	print $out ">";
+	print $out join ("_", 
+			 $sequence_id,
+			 $strand,
+			 $start_pos,
+			 $end_pos,
+			 $pattern->get_attribute("id")
+			 );
+	printf $out (" score: %.2f", $score);
+	print $out " pattern: ", $pattern->get_attribute("sequence");
+	print $out "\n";
+	print $out $matching_word, "\n";
+    } else {
+	print $out join ("\t", 
+			 $pattern->get_attribute("id"),
+			 $strand,
+			 $pattern->get_attribute("sequence"),
+			 $sequence_id,
+			 $start_pos,
+			 $end_pos,
+			 $matching_word,
+			 sprintf ("%.2f", $score)), "\n";
+    }
 }
 
 
@@ -350,37 +372,38 @@ sub ShortHelp	{
     print HELP <<EndShortHelp;
 dna-pattern options
 -------------------
--h	complete help message
--help   short help message
--p	pattern
--pl	pattern list file
--s	sequence file. 
--subst  allowed substitutions
--sc	score column
--o	output file.
--format	input format (raw, filelist or IG)
--id	pattern identifier (one word). 
--noid	use pattern sequence as id
--noov	prevent detection of overlapping pattern
--DR	search matches on both strands (default)
--D	search matches on the Direct strand only
--R 	search matches on the Reverse complementary strand only
--pos	return match positions (default)
--c	return the count of matches for each pattern in each sequence
--table	return a table with the count of pattern matches per sequence
--colsum	return total occ per sequence in the count table
--rowsum	return total occ per pattern in the count table
--total	return total occ per sequence and per pattern in the count table
--stats	return matching statistics
--window	sliding window size
--top	only return the top score
--sort	sort sequences according to their top score
--th     threshold
--ct	return total count in all sequences
--N #	return matching sequences with # flanking nucleotides
--NL #	return matching sequences with # left flanking nucleotides
--NR #	return matching sequences with # right flanking nucleotides
--v	verbose
+-h		complete help message
+-help		short help message
+-p		pattern
+-pl		pattern list file
+-s		sequence file. 
+-subst		allowed substitutions
+-sc		score column
+-o		output file.
+-format		input format (raw, filelist or IG)
+-id		pattern identifier (one word). 
+-noid		use pattern sequence as id
+-noov		prevent detection of overlapping pattern
+-DR		search matches on both strands (default)
+-D		search matches on the Direct strand only
+-R		search matches on the Reverse complementary strand only
+-pos		return match positions (default)
+-match_format	format for returning matches (supported: fasta, table)
+-c		return the count of matches for each pattern in each sequence
+-table		return a table with the count of pattern matches per sequence
+-colsum		return total occ per sequence in the count table
+-rowsum		return total occ per pattern in the count table
+-total		return total occ per sequence and per pattern in the count table
+-stats		return matching statistics
+-window		sliding window size
+-top		only return the top score
+-sort		sort sequences according to their top score
+-th		threshold
+-ct		return total count in all sequences
+-N #		return matching sequences with # flanking nucleotides
+-NL #		return matching sequences with # left flanking nucleotides
+-NR #		return matching sequences with # right flanking nucleotides
+-v		verbose
 -origin origin (position 0)
 EndShortHelp
     close HELP;
@@ -495,9 +518,13 @@ sub ReadArguments {
 	    ################################################################
             #### output 
 	    
-	    #### count matches
+	    #### matching positions
 	} elsif ($ARGV[$a] eq "-pos") {
 	    $return{match_positions} = 1;
+
+	    #### match format
+	} elsif ($ARGV[$a] eq "-match_format") {
+	    $match_format = $ARGV[$a+1];;
 	    
 	    #### count matches
 	} elsif ($ARGV[$a] eq "-c") {
@@ -629,6 +656,7 @@ sub MatchProfiles {
     
     ################################################################
     #### calculate min and max positions
+    warn "; Calculating min and max position\n" if ($verbose >= 2);
     for my $id  (@sequence_ids) {
 	my %matches = %{$profile_score{$id}};
 	$min_pos = &min($min_pos, keys %matches);
@@ -641,6 +669,7 @@ sub MatchProfiles {
 		     ($min_pos..$max_pos)
 		     ), "\n";
 
+    warn "; Printing matching profiles\n" if ($verbose >= 2);
     #### print profiles
     for my $id  (@sequence_ids) {
 	my %matches = %{$profile_score{$id}};
@@ -691,15 +720,18 @@ sub Verbose {
 
     if ($return{match_positions}) {
 	print $out "; Matching positions\n";
-	print $out "; PatID";
-	print $out "\tStrand";
-	print $out "\tPattern";
-	print $out "\tSeqID";
-	print $out "\tStart";
-	print $out "\tEnd";
-	print $out "\tMatching_word";
-	print $out "\tScore";
-	print $out "\n";
+	
+	unless ($match_format eq "fasta") {
+	    print $out join ("\t", 
+			     "; PatID",
+			     "Strand",
+			     "Pattern",
+			     "SeqID",
+			     "Start",
+			     "End",
+			     "Matching_word",
+			     "Score"), "\n";
+	}
     }
 }
 
@@ -918,6 +950,8 @@ ARGUMENTS
 	-id	pattern identifier (one word). 
 		Use this option combined with -p.
 	-pos	return match positions (default)
+	-match_format	
+		format for returning matches (supported: fasta, table)
 	-c	return the count of matches rather than the list of
 		positions and matching words. 
 		If a list of sequence files is given (-sl), the count of 
