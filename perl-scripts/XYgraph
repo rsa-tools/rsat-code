@@ -23,16 +23,6 @@ $img_format = $IMG_FORMAT || "png";
 $supported_formats = join (",", keys %supported_format); 
 
 
-################################################################
-#### help messages
-if ($ARGV[0] eq "-h") {
-    &PrintHelp;
-    exit(0);
-}
-if ($ARGV[0] eq "-help") {
-    &PrintOptions;
-    exit(0);
-}
 
 
 ################################################################
@@ -126,10 +116,10 @@ if ($ylog) {
 
 #### open output file ####
 $out = &OpenOutputFile($outputfile);
-&InitHTMLmap if ($HTML_map);  
+&InitHTMLmap() if ($HTML_map);  
 
-&ReadData;
-&CalcLimits;
+&ReadData();
+&CalcLimits();
 
 #### convert tbox into an hbox ###
 if ($tbox_low_x ne "") {
@@ -161,7 +151,7 @@ if ($hbox_left ne "") {
 	} elsif ($hbox_bottom > $bottom) {
 	    $hbox_bottom = $bottom;
 	}
-#### convert hbox into a tbox ###
+    #### convert hbox into a tbox ###
     $tbox_low_x = ($hbox_left - $border)/$x_scale + $x_axis_min;
     $tbox_high_x = ($hbox_right - $border)/$x_scale + $x_axis_min;
     $tbox_high_y = ($hbox_top - $graph_y_size + $border)/$y_scale + $y_axis_min; 
@@ -1105,25 +1095,35 @@ sub ReadData {
 
 } #### ReadData
 
-
+################################################################
+#### Calculate limits for X and Y axes
 sub CalcLimits {
-    #### calculate data limits ####
     $max_x_value = "ND";
     $min_x_value = "ND";
     $max_y_value = "ND";
     $min_y_value = "ND";
     
+    ## Calculate max and min X values
     $min_x_value = &checked_min(@X_values);
     $max_x_value = &checked_max(@X_values);
     unless ((&IsReal($max_x_value)) && 
 	    (&IsReal($min_x_value))) {
 	&RSAT::error::FatalError("X axis data (column ", $x_col+1, ") are not numeric.");
     }
+    if ($max_x_value == $min_x_value) {
+	$max_x_value *= 2;
+	$min_x_value /= 2;
+    }
     
+    ## Calculate max and min Y values
     for $series (0..$#y_col_list) {
 	$min_y_value = &checked_min($min_y_value,@{$Y_values[$series]});
 	$max_y_value = &checked_max($max_y_value,@{$Y_values[$series]});
 	
+    }
+    if ($max_y_value == $min_y_value) {
+	$max_y_value *= 2;
+	$min_y_value /= 2;
     }
     
     unless ((&IsReal($max_y_value)) &&
@@ -1421,13 +1421,21 @@ End_of_Help
 }
 
 ################################################################
-#### read arguments
+#### Read arguments
 sub ReadArguments {
 
     for $a (0..$#ARGV) {
-
-	### input, output files ###
-	if ($ARGV[$a] eq "-i") {
+	
+	#### help messages
+	if ($ARGV[$a] eq "-h") {
+	    &PrintHelp();
+	    exit(0);
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions();
+	    exit(0);
+	    
+	    ### input, output files ###
+	} elsif ($ARGV[$a] eq "-i") {
 	    $inputfile = $ARGV[$a+1];
 	} elsif ($ARGV[$a] eq "-o") {
 	    $outputfile = $ARGV[$a+1];
