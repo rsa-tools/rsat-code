@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: retrieve-seq,v 1.21 2002/04/25 00:29:22 jvanheld Exp $
+# $Id: retrieve-seq,v 1.22 2002/04/25 00:35:15 jvanheld Exp $
 #
-# Time-stamp: <2002-04-25 02:28:37 jvanheld>
+# Time-stamp: <2002-04-25 02:34:39 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -13,7 +13,7 @@ require "RSA.lib";
 require "RSA.classes";
 require "RSA.seq.lib";
 
-warn "Starting" if ($warn_level >= 1);
+# warn "Starting" if ($warn_level >= 1);
 
 ############# help ###########
 if ($ARGV[0] eq "-h") {
@@ -48,9 +48,8 @@ $default{to} = -1;
 ################################################################################
 
 #### organism
-warn "Checking organism $organism_name\n" if ($warn_level >= 1);
+warn "; Checking organism $organism_name\n" if ($warn_level >= 1);
 &CheckOrganism($organism_name, $feature_table_file);
-die "HELLO";
 
 unless ($feature_table_file) {
     $feature_table_file = $supported_organism{$organism_name}->{'features'};
@@ -114,16 +113,16 @@ if ($sequence_type eq "random genomic segments") {
 	$chr_len[$c] = $chromosome_seq{$chroms[$c]}->get_length();
 	$chr_start[$c+1] = $chr_start[$c] +  $chr_len[$c];
 	warn join ("\t", ";\tchromosome", $c+1, $chroms[$c], $chr_len[$c], $chr_start[$c], $chr_start[$c+1]), "\n" 
-	    if ($verbose >= 0);
+	    if ($warn_level >= 2);
     }
     $genome_len = $chr_start[$#chroms+1];
     warn join ("\t", ";", "genome length", $genome_len), "\n"	    
-	if ($verbose >= 0);
+	if ($warn_level >= 2);
     
 } else {
-    warn "Reading ORF table for $organism_name\n" if ($warn_level >= 1);
+    warn "; Reading ORF table for $organism_name\n" if ($warn_level >= 1);
     &ReadOrfPositions($organism_name, $feature_table_file);
-    warn "Reading synonyms for $organism_name\n" if ($warn_level >= 1);
+    warn "; Reading synonyms for $organism_name\n" if ($warn_level >= 1);
     &ReadSynonyms($organism_name);
 }
 
@@ -561,8 +560,12 @@ sub ReadArguments {
 	    
 	    ### verbose
 	} elsif ($ARGV[$a] eq "-v") {
-	    $warn_level = 1;
-	    
+	    if (&IsReal($ARGV[$a+1])) {
+		$warn_level = $ARGV[$a+1];
+	    } else {
+		$warn_level = 1;
+	    }
+
 	    ### warn_level
 	} elsif (($ARGV[$a] eq "-w") &&
 		 (&IsNatural($ARGV[$a+1]))){
