@@ -13,7 +13,7 @@ $patser_command = "$BIN/patser";
 $matrix_from_transfac_command = "$SCRIPTS/matrix-from-transfac";
 $matrix_from_gibbs_command = "$SCRIPTS/matrix-from-gibbs";
 $convert_seq_command = "$SCRIPTS/convert-seq";
-#$features_from_patser_cmd = "$SCRIPTS/features-from-patser";
+$features_from_patser_cmd = "$SCRIPTS/features-from-patser";
 $add_orf_function_command = "$SCRIPTS/add-orf-function";
 #$add_yeast_link_command = "$SCRIPTS/add-yeast-link";
 $add_orf_function_command = "$SCRIPTS/add-orf-function";
@@ -26,8 +26,7 @@ $query = new CGI;
 ### print the header of the result page
 &RSA_header("patser result ".$query->param("title"));
 
-#&ListParameters if ($ECHO);
-
+&ListParameters if ($ECHO);
 
 #### update log file ####
 &UpdateLogFile;
@@ -101,6 +100,7 @@ $feature_file =  "$TMP/$tmp_file_name.ft";
 
 $command = "$retrieve_seq_command $retrieve_seq_parameters ";
 $command .= "| $patser_command $patser_parameters ";
+$command .= "| $features_from_patser_cmd ";
 #$command .= "| $add_orf_function_command -org $org ";
 
 
@@ -114,49 +114,23 @@ if ($query->param("output") =~ /display/i) {
     ### execute the command ###
     $result_file = "$TMP/$tmp_file_name.res";
     print "<PRE>$command</PRE>" if ($ECHO);
-#    print "<PRE>$features_from_patser_cmd</PRE>";
     open RESULT, "$command & |";
-#    open FEATURES, "| $features_from_patser_cmd";
 
-#    &PipingWarning();
+    &PipingWarning();
 
-    ### Print the result on Web page
-    print "<PRE>";
-    while (<RESULT>) {
-	s|$RSA/||g;
-	print;
-#	print FEATURES;
-    }
-#    close FEATURES;
-    close RESULT;
-    print "</PRE>";
-    
-#    &PipingForm();
+    ### Print result on the web page
+    print '<H2>Result</H2>';
+    &PrintHtmlTable(RESULT, $result_file, true);
+    close(RESULT);
 
-#    ### Print the result on Web page
-#    &PrintHtmlTable(RESULT, $result_file);
-#    close RESULT;
-    
+    &PipingForm();
+
     print "<HR SIZE = 3>";
     
+} elsif ($query->param('output') =~ /server/i) {
+    &ServerOutput("$command $parameters", $query->param('user_email'));
 } else {
-
     &EmailTheResult($command, $query->param('user_email'));
-
-#     ### send an e-mail with the result ###
-#     if ($query->param('user_email') =~ /(\S+\@\S+)/) {
-# 	$address = $1;
-# 	print "<B>Result will be sent to your e-mail address: <P>";
-# 	print "$address</B><P>";
-# 	system "$command | $mail_command $address &";
-#     } else {
-# 	if ($query->param('user_email') eq "") {
-# 	    print "<B>ERROR: you did not enter your e-mail address<P>";
-# 	} else {
-# 	    print "<B>ERROR: the e-mail address you entered is not valid<P>";
-# 	    print "$query->param('user_email')</B><P>";      
-# 	}
-#     } 
 }
 
 

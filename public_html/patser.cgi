@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: patser.cgi,v 1.14 2002/09/16 17:04:20 jvanheld Exp $
+# $Id: patser.cgi,v 1.15 2003/04/17 20:45:42 jvanheld Exp $
 #
-# Time-stamp: <2002-09-16 12:02:41 jvanheld>
+# Time-stamp: <2003-04-17 22:45:12 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -12,11 +12,20 @@ if ($0 =~ /([^(\/)]+)$/) {
 
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
+#### redirect error log to a file
+BEGIN {
+    $ERR_LOG = "/dev/null";
+#    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
+    use CGI::Carp qw(carpout);
+    open (LOG, ">> $ERR_LOG")
+	|| die "Unable to redirect log\n";
+    carpout(*LOG);
+}
 require "RSA.lib";
 require "RSA.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
-$patser_command = "$BIN/patser";
+$command = "$BIN/patser";
 $matrix_from_transfac_command = "$SCRIPTS/matrix-from-transfac";
 $matrix_from_gibbs_command = "$SCRIPTS/matrix-from-gibbs";
 $convert_seq_command = "$SCRIPTS/convert-seq";
@@ -180,7 +189,7 @@ if ($query->param('vertically_print')){
 
 ################################################################
 #### echo the command (for debugging)
-print "<pre>$patser_command $parameters</pre>" if ($ECHO);
+print "<pre>$command $parameters</pre>" if ($ECHO);
 
 ################################################################
 ### execute the command ###
@@ -193,7 +202,7 @@ if ($query->param('output') eq "display") {
     &PipingWarning();
 
     ### Print the result on Web page
-    open RESULT, "$patser_command $parameters & |";
+    open RESULT, "$command $parameters & |";
     open FEATURES, "| $features_from_patser_cmd";
     
 
@@ -211,24 +220,10 @@ if ($query->param('output') eq "display") {
 
     print "<HR SIZE = 3>";
     
+} elsif ($query->param('output') =~ /server/i) {
+    &ServerOutput("$command $parameters", $query->param('user_email'));
 } else {
-
-    &EmailTheResult("$patser_command $parameters", $query->param('user_email'));
-
-    ### send an e-mail with the result ###
-#     if ($query->param('user_email') =~ /(\S+\@\S+)/) {
-# 	$address = $1;
-# 	print "<B>Result will be sent to your account: <P>";
-# 	print "$address</B><P>";
-# 	system "$patser_command $parameters | $mail_command $address &";
-#     } else {
-# 	if ($query->param('user_email') eq "") {
-# 	    print "<B>ERROR: you did not enter your e-mail address<P>";
-# 	} else {
-# 	    print "<B>ERROR: the e-mail address you entered is not valid<P>";
-# 	    print $query->param('user_email')."</B><P>";      
-# 	}
-#     } 
+    &EmailTheResult("$command $parameters", $query->param('user_email'));
 }
 
 print $query->end_html;

@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence.cgi,v 1.2 2002/09/05 10:06:38 jvanheld Exp $
+# $Id: purge-sequence.cgi,v 1.3 2003/04/17 20:54:54 jvanheld Exp $
 #
-# Time-stamp: <2002-09-05 05:05:56 jvanheld>
+# Time-stamp: <2003-04-17 22:54:13 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -12,11 +12,20 @@ if ($0 =~ /([^(\/)]+)$/) {
 
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
+#### redirect error log to a file
+BEGIN {
+    $ERR_LOG = "/dev/null";
+#    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
+    use CGI::Carp qw(carpout);
+    open (LOG, ">> $ERR_LOG")
+	|| die "Unable to redirect log\n";
+    carpout(*LOG);
+}
 require "RSA.lib";
 require "RSA.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
-$purge_sequence_command = "$SCRIPTS/purge-sequence";
+$command = "$SCRIPTS/purge-sequence";
 $tmp_file_name = sprintf "purge-sequence.%s", &AlphaDate;
 $out_format = "fasta";
 
@@ -62,14 +71,14 @@ if (&IsNatural($query->param('mismatches'))) {
     $parameters .= " -mis ".$query->param('mismatches');
 }
 
-print "<PRE><B>Command:</B> $purge_sequence_command $parameters </PRE>" if ($ECHO);
+print "<PRE><B>Command:</B> $command $parameters </PRE>" if ($ECHO);
 
 if ($query->param('output') eq "display") {  
     &PipingWarning();
     
     ### execute the command ###
-#    system "$purge_sequence_command $parameters";
-    open RESULT, "$purge_sequence_command $parameters |";
+#    system "$command $parameters";
+    open RESULT, "$command $parameters |";
     
     ### open the mirror file ###
     $mirror_file = "$TMP/$tmp_file_name.res";
@@ -99,24 +108,10 @@ if ($query->param('output') eq "display") {
     
     print "<HR SIZE = 3>";
 
+} elsif ($query->param('output') =~ /server/i) {
+    &ServerOutput("$command $parameters", $query->param('user_email'));
 } else {
-
-    &EmailTheResult("$purge_sequence_command $parameters", $query->param('user_email'));
-
-#   #### send e-mail with the result
-#   if ($query->param('user_email') =~ /(\S+\@\S+)/) {
-#     $address = $1;
-#     print "<B>Result will be sent to your e-mail address: <P>";
-#     print "$address</B><P>";
-#     system "$purge_sequence_command $parameters | $mail_command $address &"; 
-#   } else {
-#     if ($query->param('user_email') eq "") {
-#       print "<B>ERROR: you did not enter your e-mail address<P>";
-#     } else {
-#       print "<B>ERROR: the e-mail address you entered is not valid<P>";
-#       print "$query->param('user_email')</B><P>";      
-#     }
-#     }
+    &EmailTheResult("$command $parameters", $query->param('user_email'));
 }
 
 print $query->end_html;
