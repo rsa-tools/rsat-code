@@ -109,7 +109,7 @@ if ($return_fields eq "") {
   $parameters .= " -return $return_fields";
 }
 
-### single strand search
+### single or both strands
 if ($query->param('strand') =~ /single/) {
   $parameters .= " -1str";
 } else {
@@ -280,12 +280,16 @@ exit(0);
 
 sub PipingForm {
   ### prepare data for piping
-  $title = $query->param('title');
-  $title =~ s/\"/\'/g;
+    if ($query->param('strand') =~ /single/) {
+	$strand_opt .= " sensitive";
+    } else {
+	$strand_opt .= " insensitive";
+    }
   print <<End_of_form;
 <HR SIZE = 3>
 <TABLE>
 <TR>
+
 <TD>
 <H3>Next step</H3>
 </TD>
@@ -298,6 +302,19 @@ sub PipingForm {
 <INPUT type="submit" value="pattern matching (dna-pattern)">
 </FORM>
 </TD>
+
+</TD>
+<TD>
+<FORM METHOD="POST" ACTION="pattern-assembly_form.cgi">
+<INPUT type="hidden" NAME="local_pattern_file" VALUE="$result_file">
+<INPUT type="hidden" NAME="subst" VALUE=1>
+<INPUT type="hidden" NAME="maxfl" VALUE=1>
+<INPUT type="hidden" NAME="strand" VALUE=$strand_opt>
+<INPUT type="submit" value="pattern assembly">
+</FORM>
+</TD>
+
+
 </TR>
 </TABLE>
 End_of_form
