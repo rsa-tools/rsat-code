@@ -1196,6 +1196,7 @@ XYgraph options
 -ycol #,#,#     columns containing data for the Y axis. 
 -xlog #		X data are displayed on a logarithmic scale
 -ylog #		Y data are displayed on a logarithmic scale
+-log #		same as combining -xlog # -ylog #
 -lines	        points are jointed by lines 
 -line #		points of the #th column are jointed by lines
 -header		first line of the data file contains a column header 
@@ -1301,6 +1302,7 @@ OPTIONS
 	-ylog #		Y data are displayed on a logarithmic scale
 			If the next argument is a number, it provides the 
 			log base. Default log base is 10.  
+	-log #		same as combining -xlog # -ylog #
 	-lines	        points are jointed by lines 
 	-line #		same as lines, but for the #th column only
 			can be used recursively to specify several columns for 
