@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.85 2005/03/13 10:25:46 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.86 2005/03/20 15:28:30 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -209,7 +209,7 @@ warn "Remaining families after filtering\t", scalar(@families), "\n";
 
 &SetFileNames();
 
-&RSAT::util::CheckOutDir($dir{output});
+&RSAT::util::CheckOutDir($dir{output}); 
 chdir($dir{output});
 
 &MakeDirectories();
@@ -692,7 +692,7 @@ sub OligoAnalysis {
 	       "max len: $max_oligo_len"), "\n" if ($verbose >= 1);
    my $dir = "${family_name}/oligos_${family_name}";
    
-   &RSAT::util::CheckOutDir($dir);
+   chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
    die "Error : cannot read file $family{$family_name}->{input_seq_file}\n" unless (-r $family{$family_name}->{input_seq_file});
    
    ## initialize the oligo file
@@ -719,7 +719,7 @@ sub MergeOligoLengths {
 	       $family{$family_name}->{oligo_file}), "\n" if ($verbose >= 1);
    my $dir = "${family_name}/oligos_${family_name}";
 
-   &RSAT::util::CheckOutDir($dir);
+   chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
    die "Error : cannot read file $family{$family_name}->{input_seq_file}\n" unless (-r $family{$family_name}->{input_seq_file});
    
    ## initialize the oligo file
@@ -822,7 +822,7 @@ sub DyadAnalysis {
 	       "max_sp: $max_sp",
 	       ), "\n" if ($verbose >= 1);
    $dir = "${family_name}/dyads_${family_name}";
-   &RSAT::util::CheckOutDir($dir);
+   chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
    die "Error : cannot read file $family{$family_name}->{input_seq_file}\n" unless (-r $family{$family_name}->{input_seq_file});
    $command = "dyad-analysis -return occ,proba,rank -i $family{$family_name}->{input_seq_file} -format $seq_format -o $family{$family_name}->{dyad_file} $dyad_options";
    
@@ -847,7 +847,7 @@ sub MergePatterns {
 	       ), "\n" if ($verbose >= 1);
 
    my $dir = "${family_name}/merged_${family_name}";
-   &RSAT::util::CheckOutDir($dir);
+   chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
    my $command = "cat $family{$family_name}->{oligo_file}";
 #    $command .= " | grep -v '^;'";
    $command .= " > $family{$family_name}->{merged_file};";
@@ -906,7 +906,7 @@ sub MotifSampler {
    warn join ("; Running MotifSampler for family $family_name") if ($main::verbose >= 1);
    ## Check output directory
    my $dir = $family{$family_name}->{MotifSampler_dir};
-   &RSAT::util::CheckOutDir($dir);
+   chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
 
    chdir($dir{output});
 
@@ -936,7 +936,7 @@ sub MotifSampler {
 ## Run Andrew Neuwald's gibbs program 
 sub Gibbs {
    chdir($dir{output});
-   &RSAT::util::CheckOutDir($family{$family_name}->{gibbs_dir});
+   chdir($dir{output}); &RSAT::util::CheckOutDir($family{$family_name}->{gibbs_dir});
 
 
    if ($strand = "-2str") {
@@ -961,8 +961,7 @@ sub Gibbs {
 ################################################################
 ## Run MEME program 
 sub MEME {
-   &RSAT::util::CheckOutDir($family{$family_name}->{meme_dir});
-   chdir($dir{output});
+   chdir($dir{output}); &RSAT::util::CheckOutDir($family{$family_name}->{meme_dir});
 
    ## run the command
    $meme_command = "meme ".$family{$family_name}->{meme_options};
@@ -972,8 +971,7 @@ sub MEME {
 ################################################################
 ## Run Jerry Hertz' consensus program 
 sub Consensus {
-   chdir($dir{output});
-   &RSAT::util::CheckOutDir($family{$family_name}->{consensus_dir});
+   chdir($dir{output}); &RSAT::util::CheckOutDir($family{$family_name}->{consensus_dir});
 
    ## input file has to be converted to consensus format
    $consensus_command = "convert-seq -dna -from fasta -to wc -i ".$family{$family_name}->{input_seq_file};
@@ -1482,6 +1480,9 @@ sub DrawDyadFeatureMap {
 ################################################################
 #### check parameters
 sub CheckParameters {
+    
+    ################################################################
+    &RSAT::error::FatalError("You must specify the output directory (option -outdir)") unless $dir{output};
 
    #### accepted feature types
    unless (defined %accepted_feature_types) {
@@ -2460,7 +2461,7 @@ sub ExportSQL {
 
    #### export directory
    $dir{sql} = "sql_export";
-   &RSAT::util::CheckOutDir($dir{sql});
+   chdir($dir{output}); &RSAT::util::CheckOutDir($dir{sql});
 
    ### temporary output directory
    $dir{output_bk} = $dir{output};
@@ -2513,7 +2514,7 @@ sub ReadSequenceList {
 
 	#### create a new family if required
 	unless ($family{$family_name}) {
-	    $family{$family_name} = new RSAT::family(name=>$family_name);
+	    $family{$family_name} = new RSAT::Family(name=>$family_name);
 	}
 
        #### Sequence file
@@ -2611,7 +2612,7 @@ sub CalibrateOligos {
    warn ";\n; Calibrating oligonucleotide occurrences\n" if ($verbose >=1);
 
    ### Analyse upstream occurrence distributions for each sequence length
-   &RSAT::util::CheckOutDir($dir{calib1});
+   chdir($dir{output}); &RSAT::util::CheckOutDir($dir{calib1});
    warn "; Calculating oligonucleotide distributions in all upstream sequences\n" if ($verbose >= 1);
    foreach my $calib_length (sort {$a <=> $b} @calib_lengths) {
 
@@ -2717,7 +2718,7 @@ sub CalibrationPrefix {
 ################################################################
 ## Generate report fiels for the motif disovery competition 2004
 sub MDCreport {
-   &RSAT::util::CheckOutDir($dir{mdc_report});
+   chdir($dir{output}); &RSAT::util::CheckOutDir($dir{mdc_report});
    warn ";\n; Generating report\t", $outfile{results}, "\n" if ($verbose >=1);
    
    ################################################################

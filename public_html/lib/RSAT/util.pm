@@ -231,11 +231,18 @@ sub CheckOutDir {
 
     $umask = 0002 unless ($umask);
     umask($umask);
+    
+    if ($main::verbose >= 2) {
+	my $wd = `pwd`;
+	warn "; Current directory\t", $wd, "\n";
+    }
 
     if ($output_dir) {
-	unless (-d $output_dir) {
-	    warn "Creating directory $output_dir\n" if ($main::verbose >= 1);
+	if (-d $output_dir) {
+	    warn "; Directory $output_dir already exists\n" if ($main::verbose >= 2);
+	    return;
 	}
+	warn "; Creating directory $output_dir\n" if ($main::verbose >= 1);
 	mkdir ($output_dir, 0755);
 	unless (-d $output_dir) {
 	    warn "Creating directory with all parents $output_dir\n" if ($main::verbose >= 1);
