@@ -19,7 +19,7 @@ require "RSA.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 #### TEMPORARY
-$ECHO=2;
+#$ECHO=2;
 
 $position_analysis_command = "$SCRIPTS/position-analysis";
 $convert_seq_command = "$SCRIPTS/convert-seq";
