@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.14 2001/02/08 02:11:42 jvanheld Exp $
+# $Id: oligo-analysis,v 1.15 2001/02/08 14:42:38 jvanheld Exp $
 #
-# Time-stamp: <2001-02-08 03:10:29 jvanheld>
+# Time-stamp: <2001-02-08 15:26:01 jvanheld>
 #
 ############################################################
 
@@ -671,12 +671,12 @@ sub CalcExpected {
 		$segmentation_freq = $sub_word[$s]{$head}->{max_freq} * $sub_word[$l-$s]{$tail}->{max_freq};
 		if ($segmentation_freq > $oligo{$oligo_seq}->{exp_freq}) {		
 		    $oligo{$oligo_seq}->{exp_freq} = $segmentation_freq;
-		    $oligo{$oligo_seq}->{segments} = join (" ", "\n",
+		    $oligo{$oligo_seq}->{segments} = join (" ", 
 							   $head,
-							   #$sub_word[$s]{$head}->{max_freq},
-							   #$sub_word[$l-$s]{$tail}->{max_freq},
-							   #$sub_word[$s]{$head}->{max_freq} * $sub_word[$l-$s]{$tail}->{max_freq},
-							   $tail
+							   $tail,
+							   $sub_word[$s]{$head}->{max_freq},
+							   $sub_word[$l-$s]{$tail}->{max_freq},
+							   $sub_word[$s]{$head}->{max_freq} * $sub_word[$l-$s]{$tail}->{max_freq}
 							   );
 #		    print join ("\t", $l, $oligo_seq, 
 #				$oligo{$oligo_seq}->{freq}, 
@@ -999,7 +999,12 @@ sub PrintResult {
     } elsif ($return{'occ'}) {
       ### preferred fields for sorting are the most generally reliable
       if ($return{'zscore'}){
-	@sorted_keys = sort {$oligo{$b}->{zscore} <=>  $oligo{$a}->{zscore}} keys %oligo;
+	  if ($return{'proba'}) { #### two-criteria sorting, sig is prioritary, but zscore is useful when the proba reaches calculation limits
+	      @sorted_keys = sort { $oligo{$b}->{occ_sig} <=>  $oligo{$a}->{occ_sig} || 
+					$oligo{$b}->{zscore} <=>  $oligo{$a}->{zscore} } keys %oligo;
+	  } else {
+	      @sorted_keys = sort {$oligo{$b}->{zscore} <=>  $oligo{$a}->{zscore}} keys %oligo;
+	  }
 	$sorted = 1;
       } elsif ($return{'proba'}) {
 	@sorted_keys = sort {$oligo{$b}->{occ_sig} <=> $oligo{$a}->{occ_sig}} keys %oligo;
