@@ -1299,11 +1299,11 @@ sub ReadPatterns {
 ### reverse complement is calculated and the result is cached in a hash
 ### table for further calls.
 sub SmartRC {
-  my $direct_seq = lc($_[0]);
-  unless (defined($SmartRC{$direct_seq})) {
-    $SmartRC{$direct_seq} = lc(&ReverseComplement($direct_seq));
-  }
-  return($SmartRC{$direct_seq});
+    my $direct_seq = lc($_[0]);
+    unless (defined($SmartRC{$direct_seq})) {
+	$SmartRC{$direct_seq} = lc(&ReverseComplement($direct_seq));
+    }
+    return($SmartRC{$direct_seq});
 }
 
 ################################################################
