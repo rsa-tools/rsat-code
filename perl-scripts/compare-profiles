@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: compare-profiles,v 1.2 2005/03/22 17:21:15 jvanheld Exp $
+# $Id: compare-profiles,v 1.3 2005/03/22 21:33:37 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -246,7 +246,8 @@ U(B|A) = I(A;B)/U(B)
 
 P-value P(X >= N{AB}) calcualted with the right tail of the
 hypergeometric distibution. Small Pval_R values indicate that the
-overlap between two profiles is significantly large.
+overlap between two profiles is significantly large (similar
+profiles).
 
                        q     i  q-i     q
 P_value = P(X >= c) = SUM ( C  C     / C  )
@@ -257,10 +258,62 @@ P_value = P(X >= c) = SUM ( C  C     / C  )
 
 P-value P(X <= N{AB}) calcualted with the left tail of the
 hypergeometric distibution. Small Pval_R values indicate that the
-overlap between two profiles is significantly small.
+overlap between two profiles is significantly small (antinomic
+profiles).
 
+=item B<Pval>
 
+Minimal P-value.
 
+Pval = min(Pval_L, Pval_R)
+
+=item B<Eval_R>
+
+E-value for the right tail of the hypergeometric distribution (pairs
+of similar profiles). This represents the expected number of false
+positive given the P-value, taking into account a Bonferoni correction
+for multi-testing.
+
+Eval_R = Pval_R * Ntests = Pval * n*(n+1)/2
+
+=item B<Eval_L>
+
+E-value for the left tail of the ypergeometric distribution (pairs of
+antinomic profiles).
+
+Eval_L = Pval_L * Ntests = Pval * n*(n+1)/2
+
+=item B<Eval>
+
+Minimal E-value.
+
+Eval = min(Eval_R, Eval_L)
+
+=item B<sig_R>
+
+Significance of the right tail of the distribution. 
+
+sig_R = -log10(Eval_R)
+
+Large sig_R values indicate highly significant overlap between two
+profiles. Negative values indicate that the overlap is not
+significant.
+
+=item B<sig_L>
+
+Significance of the left tail of the distribution. 
+
+sig_L = -log10(Eval_L)
+
+Large sig_L values indicate highly significant antinomy between two
+profiles. Negative values indicate that the antinomy is not
+significant.
+
+=item B<sig>
+
+Maximal significance value. 
+
+sig = max(sig_R, sig_L)
 
 =back
 
@@ -272,13 +325,15 @@ overlap between two profiles is significantly small.
 my $start_time = &AlphaDate();
 
 local $header=1;
-#local $base=2; ## Base for the logarithms
 local $base=exp(1); ## Base for the logarithms
+$ncompa = "NA";
+$nrow = "NA";
+$ncol = "NA";
 
 ## Threshold parameters
 %lth = (); # lower threshold values
 %uth = (); # upper threshold values
-@supported_thresholds = qw( A B AB Pval_R Pval_L );
+@supported_thresholds = qw( A B AB Pval_R Pval_L Pval Eval_R Eval_L Eval sig_R sig_L sig );
 $supported_thresholds = join ",", @supported_thresholds;
 %supported_threshold = ();
 foreach my $thr (@supported_thresholds) {
@@ -322,9 +377,6 @@ if (defined($infile{names})) {
 ### open output stream
 $out = &OpenOutputFile($outfile{output});
 
-################################################################
-#### print verbose
-&Verbose() if ($verbose);
 
 ## ##############################################################
 ## Read the profile table
@@ -337,10 +389,15 @@ $profiles->readFromFile($infile{input}, "tab",header=>$header);
 
 ## ##############################################################
 ## Get matrix dimensions
-my $nrow = $profiles->nrow();
-my $ncol = $profiles->ncol();
+$nrow = $profiles->nrow();
+$ncol = $profiles->ncol();
+$ncompa = $nrow*($nrow+1)/2;
 my @row_names = $profiles->getAlphabet();
 my @header = $profiles->get_attribute("header");
+
+################################################################
+#### print verbose
+&Verbose() if ($verbose);
 
 ## ##############################################################
 ## Calculate row statistics (probability, entropy)
@@ -426,35 +483,35 @@ print $out join ("\t",
 		 "I(A,B)", ## Mutual information
 		 "U(A|B)", ## Uncertainty coefficient (Bowers et al., 2004)
 		 "U(B|A)", ## Uncertainty coefficient (Bowers et al., 2004)
-		 "Pval_R", ## Hypergeometric probability, right tail
 		 "Pval_L", ## Hypergeometric probability, left tail
-		 "sigR", ## Hypergeometric significance, right tail
-		 "sigL", ## Hypergeometric significance, left tail
+		 "Eval_L", ## Hypergeometric E-value, left tail
+		 "sig_L", ## Hypergeometric significance, left tail
+		 "Pval_R", ## Hypergeometric probability, right tail
+		 "Eval_R", ## Hypergeometric E-value, right tail
+		 "sig_R", ## Hypergeometric significance, right tail
+		 "Pval", ## Hypergeometric probability, smallest value
+		 "Eval", ## Hypergeometric E-value, smallest value
+		 "sig", ## Hypergeometric significance, greatest value
 		), "\n";
 for my $r1 (1..$nrow) {
     
     &RSAT::message::TimeWarn(join (" ", "Starting row", $r1, "of", $nrow)) if ($main::verbose >= 2);
 
     ## Identifier for the first row
-    my $ID_A = $row_names[$r1-1];
-    my $N_A = $row_sum[$r1-1];
+    local $ID_A = $row_names[$r1-1];
+    local $A = $row_sum[$r1-1];
     ## check thresholds on N{A}
-    if ((defined($uth{A}) && ($N_A > $uth{A}))
-	|| ((defined($lth{A})) && ($N_A < $lth{A}))) {
-	warn join ("\t", "threshold skipped row", $r1, $ID_A, "A", $N_A), "\n" if ($main::verbose >= 2);
-	next;
-    }
-    
+    next unless &check_thresholds("A", $A);
 
-    my $name_A = $ID_A;
+    local $name_A = $ID_A;
     if (defined($row_names{lc($ID_A)})) {
 	$name_A = $row_names{lc($ID_A)};
     };
-    my @row1 = $profiles->get_row($r1);
+    local @row1 = $profiles->get_row($r1);
     
     for my $r2 ($r1..$nrow) {
 	## IDentifier for the second row
-	my $ID_B = $row_names[$r2-1];
+	local $ID_B = $row_names[$r2-1];
 	if (defined($row_names{lc($ID_B)})) {
 	    $name_B = $row_names{lc($ID_B)};
 	} else {
@@ -462,19 +519,14 @@ for my $r1 (1..$nrow) {
 	};
 
 	## sum per row
-	my $N_B = $row_sum[$r2-1];
+	local $B = $row_sum[$r2-1];
 
 	## check thresholds on N{B}
-	if ((defined($uth{B}) && ($N_B > $uth{B}))
-	    || ((defined($lth{B})) && ($N_B < $lth{B}))) {
-	    warn join ("\t", "threshold skipped", $ID_B, "B", $N_B), "\n" if ($main::verbose >= 4);
-	    next;
-	}
-    
+	next unless &check_thresholds("B", $B);
 
 	## Count frequencies of all A, B combinations
-	my @row2 = $profiles->get_row($r2);
-	my %N = (AB=>0,
+	local @row2 = $profiles->get_row($r2);
+	local %N = (AB=>0,
 		 AnotB=>0,
 		 notAB=>0,
 		 notAnotB=>0
@@ -494,46 +546,69 @@ for my $r1 (1..$nrow) {
 	}
 
 	## check thresholds on N{AB}
-	if ((defined($uth{AB}) && ($N{AB} > $uth{AB}))
-	    || ((defined($lth{AB})) && ($N{AB} < $lth{AB}))) {
-	    warn join ("\t", "threshold skipped", $ID_A, $ID_B, "AB", $N{AB}), "\n" if ($main::verbose >= 4);
-	    next;
-	}
+	next unless &check_thresholds("AB", $N{AB});
+# 	if ((defined($uth{AB}) && ($N{AB} > $uth{AB}))
+# 	    || ((defined($lth{AB})) && ($N{AB} < $lth{AB}))) {
+# 	    warn join ("\t", "threshold skipped", $ID_A, $ID_B, "AB", $N{AB}), "\n" if ($main::verbose >= 4);
+# 	    next;
+# 	}
 
 	## Hypergeometric P-value for P(X>=N{AB})
-	$Pval_R = &cache_sum_of_hypergeometrics($N_A, $ncol, $N_B, $N{AB}, &min($N_A, $N_B));
-	$sigR = -log($Pval_R)/log(10);
+	$Pval_R = &cache_sum_of_hypergeometrics($A, $ncol, $B, $N{AB}, &min($A, $B));
+	$Eval_R = $Pval_R*$ncompa;
+	$sig_R = -log($Eval_R)/log(10);
 	## check thresholds on Pval_R
-	if ((defined($uth{Pval_R}) && ($Pval_R > $uth{Pval_R}))
-	    || ((defined($lth{Pval_R})) && ($Pval_R < $lth{Pval_R}))) {
-	    warn join ("\t", "threshold skipped", $ID_A, $ID_B, "Pval_R", $Pval_R), "\n" if ($main::verbose >= 4);
-	    next;	    
-	}
-	if ($outfile{table_sigR}) {
-	    $table_sigR[$r1][$r2] = $sigR;
+	next unless &check_thresholds("Pval_R", $Pval_R);
+	next unless &check_thresholds("Eval_R", $Eval_R);
+	next unless &check_thresholds("sig_R", $sig_R);
+# 	if ((defined($uth{Pval_R}) && ($Pval_R > $uth{Pval_R}))
+# 	    || ((defined($lth{Pval_R})) && ($Pval_R < $lth{Pval_R}))) {
+# 	    warn join ("\t", "threshold skipped", $ID_A, $ID_B, "Pval_R", $Pval_R), "\n" if ($main::verbose >= 4);
+# 	    next;	    
+# 	}
+	if ($outfile{table_sig_R}) {
+	    $table_sig_R[$r1][$r2] = $sig_R;
 	}
 
 	## Hypergeometric P-value for P(X<=N{AB})
-	$Pval_L = &cache_sum_of_hypergeometrics($N_A, $ncol, $N_B, 0, $N{AB});
-	$sigL = -log($Pval_L)/log(10);
-	## check thresholds on Pval_L
-	if ((defined($uth{Pval_L}) && ($Pval_L > $uth{Pval_L}))
-		 || ((defined($lth{Pval_L})) && ($Pval_L < $lth{Pval_L}))) {
-	    warn join ("\t", "threshold skipped", $ID_A, $ID_B, "Pval_L", $Pval_L), "\n" if ($main::verbose >= 4);
-	    next;
-	}
-	if ($outfile{table_sigL}) {
-	    $table_sigL[$r1][$r2] = $sigR;
+	$Pval_L = &cache_sum_of_hypergeometrics($A, $ncol, $B, 0, $N{AB});
+	$Eval_L = $Pval_L*$ncompa;
+	$sig_L = -log($Eval_L)/log(10);
+ 	## check thresholds on Pval_L
+	next unless &check_thresholds("Pval_L", $Pval_L);
+	next unless &check_thresholds("Eval_L", $Eval_L);
+	next unless &check_thresholds("sig_L", $sig_L);
+# 	if ((defined($uth{Pval_L}) && ($Pval_L > $uth{Pval_L}))
+# 		 || ((defined($lth{Pval_L})) && ($Pval_L < $lth{Pval_L}))) {
+# 	    warn join ("\t", "threshold skipped", $ID_A, $ID_B, "Pval_L", $Pval_L), "\n" if ($main::verbose >= 4);
+# 	    next;
+# 	}
+	if ($outfile{table_sig_L}) {
+	    $table_sig_L[$r1][$r2] = $sig_R;
 	}
 
+
+	## Check threshold on P-value (each side separately)
+	## Beware, this selects genes which are OK for either of both sites (L or R)
+	$Pval = &RSAT::stats::min($Pval_L, $Pval_R);
+	$Eval = &RSAT::stats::min($Eval_L, $Eval_R);
+	$sig = &RSAT::stats::max($sig_L, $sig_R);
+	next unless &check_thresholds("Pval", $Pval);
+	next unless &check_thresholds("Eval", $Eval);
+	next unless &check_thresholds("sig", $sig);
+# 	if ((defined($uth{Pval}) && ($Pval > $uth{Pval}))
+# 	    || ((defined($lth{Pval})) && ($Pval < $lth{Pval}))) {
+# 	    warn join ("\t", "threshold on Pval skipped", $ID_A, $ID_B, "Pval", $Pval), "\n" if ($main::verbose >= 4);
+# 	    next;	    
+# 	}
 
 	## Row entropy
-	my $H_A = $row_H[$r1-1];
-	my $H_B = $row_H[$r2-1];
+	local $H_A = $row_H[$r1-1];
+	local $H_B = $row_H[$r2-1];
 
 	## Probabilities and join entropy
-	my %P = ();
-	my $H_join = 0;
+	local %P = ();
+	local $H_join = 0;
 	foreach $k (keys %N) {
 	    $P{$k} = $N{$k}/$ncol;
 	    if ($P{$k} > 0) {
@@ -543,21 +618,21 @@ for my $r1 (1..$nrow) {
 	$H_join /= $log_base;
 
 	## Conditional entropy
-	my $H_AgivenB = $H_join - $H_A;
-	my $H_BgivenA = $H_join - $H_B;
+	local $H_AgivenB = $H_join - $H_A;
+	local $H_BgivenA = $H_join - $H_B;
 	
 	## Mutual information
-	my $I = $H_A + $H_B  - $H_join;
+	local $I = $H_A + $H_B  - $H_join;
 	if ($outfile{table_info}) {
 	    $table_info[$r1][$r2] = $I;
 	}
 
 	## Uncertainty coefficient (as defined by Bowers et al, 2004)
-	my $U_AgivenB = 0;
+	local $U_AgivenB = 0;
 	if ($H_A > 0) {
 	    $U_AgivenB = $I/$H_A;
 	}
-	my $U_BgivenA = 0;
+	local $U_BgivenA = 0;
 	if ($H_B > 0) {
 	    $U_BgivenA = $I/$H_B;
 	}
@@ -570,8 +645,8 @@ for my $r1 (1..$nrow) {
 			 $ID_B,
 			 $name_A,
 			 $name_B,
-			 $N_A,
-			 $N_B,
+			 $A,
+			 $B,
 			 $N{AB},
 			 $N{AnotB},
 			 $N{notAB},
@@ -584,14 +659,18 @@ for my $r1 (1..$nrow) {
 			 sprintf($entropy_format, $I),
 			 sprintf($entropy_format, $U_AgivenB),
 			 sprintf($entropy_format, $U_BgivenA),
-			 sprintf("%-.2g", $Pval_R),
 			 sprintf("%-.2g", $Pval_L),
-			 sprintf("%-.2g", $sigR),
-			 sprintf("%-.2g", $sigL),
+			 sprintf("%-.2g", $Eval_L),
+			 sprintf("%-.2g", $sig_L),
+			 sprintf("%-.2g", $Pval_R),
+			 sprintf("%-.2g", $Eval_R),
+			 sprintf("%-.2g", $sig_R),
+			 sprintf("%-.2g", $Pval),
+			 sprintf("%-.2g", $Eval),
+			 sprintf("%-.2g", $sig),
 			), "\n";
     }
 }
-
 
 
 ################################################################
@@ -606,6 +685,7 @@ if ($verbose >= 1) {
 ################################################################
 ###### close output stream
 close $out if ($outfile{output});
+
 
 ################################################################
 ## Export tables
@@ -632,9 +712,9 @@ if ($outfile{table_info}) {
     close $TABLE_INFO;
 }
 
-if ($outfile{table_sigR}) {
-    &RSAT::message::TimeWarn(join ("\t", "Exporting sigR table", $outfile{table_sigR})) if ($main::verbose >= 1);
-    my $TABLE_SIGR = &OpenOutputFile($outfile{table_sigR});
+if ($outfile{table_sig_R}) {
+    &RSAT::message::TimeWarn(join ("\t", "Exporting sig_R table", $outfile{table_sig_R})) if ($main::verbose >= 1);
+    my $TABLE_SIGR = &OpenOutputFile($outfile{table_sig_R});
     print $TABLE_SIGR join("\t", "ID", @row_names), "\n";
 
     for my $r1 (1..$nrow) {
@@ -642,10 +722,10 @@ if ($outfile{table_sigR}) {
 	my $ID_A = $row_names[$r1-1];
 	print $TABLE_SIGR $ID_A;
 	for my $r2 (1..$nrow) {
-	    if (defined($table_sigR[$r1][$r2])) {
-		print $TABLE_SIGR "\t", $table_sigR[$r1][$r2];
-	    } elsif (defined($table_sigR[$r2][$r1])) {
-		print $TABLE_SIGR "\t", $table_sigR[$r2][$r1];
+	    if (defined($table_sig_R[$r1][$r2])) {
+		print $TABLE_SIGR "\t", $table_sig_R[$r1][$r2];
+	    } elsif (defined($table_sig_R[$r2][$r1])) {
+		print $TABLE_SIGR "\t", $table_sig_R[$r2][$r1];
 	    } else {
 		print $TABLE_SIGR "\tNA";
 	    }
@@ -655,9 +735,9 @@ if ($outfile{table_sigR}) {
     close $TABLE_SIGR;
 }
 
-if ($outfile{table_sigL}) {
-    &RSAT::message::TimeWarn(join ("\t", "Exporting sigL table", $outfile{table_sigL})) if ($main::verbose >= 1);
-    my $TABLE_SIGR = &OpenOutputFile($outfile{table_sigL});
+if ($outfile{table_sig_L}) {
+    &RSAT::message::TimeWarn(join ("\t", "Exporting sig_L table", $outfile{table_sig_L})) if ($main::verbose >= 1);
+    my $TABLE_SIGR = &OpenOutputFile($outfile{table_sig_L});
     print $TABLE_SIGR join("\t", "ID", @row_names), "\n";
 
     for my $r1 (1..$nrow) {
@@ -665,10 +745,10 @@ if ($outfile{table_sigL}) {
 	my $ID_A = $row_names[$r1-1];
 	print $TABLE_SIGR $ID_A;
 	for my $r2 (1..$nrow) {
-	    if (defined($table_sigL[$r1][$r2])) {
-		print $TABLE_SIGR "\t", $table_sigL[$r1][$r2];
-	    } elsif (defined($table_sigL[$r2][$r1])) {
-		print $TABLE_SIGR "\t", $table_sigL[$r2][$r1];
+	    if (defined($table_sig_L[$r1][$r2])) {
+		print $TABLE_SIGR "\t", $table_sig_L[$r1][$r2];
+	    } elsif (defined($table_sig_L[$r2][$r1])) {
+		print $TABLE_SIGR "\t", $table_sig_L[$r2][$r1];
 	    } else {
 		print $TABLE_SIGR "\tNA";
 	    }
@@ -783,29 +863,29 @@ Export a table with the mutual information.
 	} elsif ($ARGV[$a] eq "-table_info") {
 	    $outfile{table_info} = $ARGV[$a+1];
 
-	    ## Export  table with sigR
+	    ## Export  table with sig_R
 =pod
 
-=item	B<-table_sigR table_file>
+=item	B<-table_sig_R table_file>
 
 Export a table with the significance of the right tail of the
 hypergeometric distribution.
 
 =cut
-	} elsif ($ARGV[$a] eq "-table_sigR") {
-	    $outfile{table_sigR} = $ARGV[$a+1];
+	} elsif ($ARGV[$a] eq "-table_sig_R") {
+	    $outfile{table_sig_R} = $ARGV[$a+1];
 	    
-	    ## Export  table with sigL
+	    ## Export  table with sig_L
 =pod
 
-=item	B<-table_sigR table_file>
+=item	B<-table_sig_R table_file>
 
 Export a table with the significance of the right tail of the
 hypergeometric distribution.
 
 =cut
-	} elsif ($ARGV[$a] eq "-table_sigL") {
-	    $outfile{table_sigL} = $ARGV[$a+1];
+	} elsif ($ARGV[$a] eq "-table_sig_L") {
+	    $outfile{table_sig_L} = $ARGV[$a+1];
 	    
 	    ## base for the logarihtms
 =pod
@@ -924,7 +1004,10 @@ sub Verbose {
 	    print $out ";\t$key\t$lower\t$upper\n";
 	}
     }
-    print $out "; Logarithm base\t$base\n";
+    print $out "; Logarithm base\t",$base, "\n";
+    print $out "; Rows\t", $nrow, "\n";
+    print $out "; Columns\t", $ncol, "\n";
+    print $out "; Comparisons\t", $ncompa, "\n";
 }
 
 ## ##############################################################
@@ -936,6 +1019,23 @@ sub cache_sum_of_hypergeometrics {
 	$cache_sum_of_hypergeometrics{$id} = &sum_of_hypergeometrics($m, $n, $k, $from, $to);
     }
     return $cache_sum_of_hypergeometrics{$id};
+}
+
+## ##############################################################
+## check thresholds on Eval_R
+sub check_thresholds {
+    my ($param, $value) = @_;
+
+#    &RSAT::message::Debug("check_thresholds", $param, $value, $lth{$param}, $uth{$param}) if ($main::verbose >= 10);
+    if (defined($uth{$param}) && ($value > $uth{$param})) {
+#	warn join ("\t", "Upper threshold",$uth{$param}, "on $param not satisfied", "ID_A:".$main::ID_A, "ID_B:".$main::ID_B, "value:".$value), "\n" if ($main::verbose >= 5);
+	return 0;	    
+    }
+    if (defined($lth{$param}) && ($value < $lth{$param})) {
+#	warn join ("\t", "Lower threshold",$lth{$param}, "on $param not satisfied", "ID_A:".$main::ID_A, "ID_B:".$main::ID_B, "value:".$value), "\n" if ($main::verbose >= 5);
+	return 0;	    
+    }
+    return 1;
 }
 
 __END__
