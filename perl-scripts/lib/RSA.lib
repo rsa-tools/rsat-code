@@ -1132,6 +1132,8 @@ sub ReadClasses {
 	$family_name =~ s/ +/${subst_char}/g; ## spaces create problems with file names in Unix
 	$family_name =~ s/\//${subst_char}/g; ## spaces create problems with file names in Unix
 	$family_name =~ s/\:/${subst_char}/g; ## spaces create problems with file names in Unix
+	$family_name =~ s/\(/${subst_char}/g; ## paretheses interfere with Unix commands
+	$family_name =~ s/\)/${subst_char}/g; ## paretheses interfere with Unix commands
 	unless ($family_name =~ /\S/) {
 	    &RSAT::message::Warning("Error family file", 
 				 $family_file,  "line", 
