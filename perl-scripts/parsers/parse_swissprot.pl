@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_swissprot.pl,v 1.5 2000/12/28 23:54:49 jvanheld Exp $
+# $Id: parse_swissprot.pl,v 1.6 2001/01/15 12:28:08 jvanheld Exp $
 #
-# Time-stamp: <2000-12-29 00:54:19 jvanheld>
+# Time-stamp: <2001-01-15 13:19:39 jvanheld>
 #
 ############################################################
 
@@ -120,17 +120,17 @@ package main;
         }
     }
 
-### select all polypeptide if no specific class was selected (-enz)
+    ### select all polypeptide if no specific class was selected (-enz)
     unless (defined(%export)) {
 	$export{all} = 1;
     }
 
-### create class holders
+    ### create class holders
     $polypeptides = PFBP::ClassFactory->new_class(object_type=>"PFBP::Polypeptide",
 						  prefix=>"spp_");
-    $polypeptides->set_out_fieldsqw( id name description gene organisms swissprot_acs swissprot_ids names ));
+    $polypeptides->set_out_fields( qw( id name description gene organisms swissprot_acs swissprot_ids names ));
 
-### testing mode
+    ### testing mode
     if ($test) {
 	warn ";TEST\n" if ($warn_level >= 1);
 	### fast partial parsing for debugging
@@ -140,7 +140,7 @@ package main;
     }
 
 
-### default verbose message
+    ### default verbose message
     if ($warn_level >= 1) {
 	warn "; Selected organisms\n;\t", join("\n;\t", @selected_organisms), "\n";
 	warn "; Polypeptide classes\n;\t", join("\n;\t", keys %export), "\n";
@@ -149,13 +149,13 @@ package main;
     }
 
 
-### parse data from original files
+    ### parse data from original files
     foreach $source (keys %files_to_parse) {
 	&ParseSwissprot($in_file{$source}, "SWISSPROT:".$source);
     }
 #  &CreateCatalyses;
 
-#### use first name as primary name
+    #### use first name as primary name
 #  foreach $polypeptide ($polypeptides->get_objects()) {
 #      if ($name = $polypeptide->get_name()) {
 #	  $polypeptide->set_attribute("primary_name",$name);
