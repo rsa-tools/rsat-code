@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.72 2004/02/09 00:28:48 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.73 2004/02/09 00:53:56 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -402,7 +402,7 @@ sub SetFileNames {
 
 	## Matrix width
 	$meme_options .= " -w ".$matrix_width;
-	$meme_suffix .= " -w".$matrix_width;
+	$meme_suffix .= "-w".$matrix_width;
 
 	## strands
 	$meme_suffix .= $strands;
@@ -411,7 +411,8 @@ sub SetFileNames {
 	}
 	
 	## Background frequencies
-	$meme_path = "/Users/jvanheld/installers/MEME/meme.3.0.4";
+#	$meme_path = "/Users/jvanheld/installers/MEME/meme.3.0.4";
+	$meme_path = "~nicolas/meme.3.0.4";
 	$meme_bg_file = $meme_path."/tests/yeast.nc.3.freq";
 	$meme_options .= " -bfile ".$meme_bg_file;
 
@@ -895,12 +896,12 @@ sub Gibbs {
 ################################################################
 ## Run MEME program 
 sub MEME {
-   chdir($dir{output});
    &CheckOutDir($family{$family_name}->{meme_dir});
+   chdir($dir{output});
 
    ## run the command
-   $meme_command .= "meme ".$family{$family_name}->{meme_options};
-   &doit($meme_command, $dry_run, $die_on_error);
+   $meme_command = "meme ".$family{$family_name}->{meme_options};
+   &doit($meme_command, $dry_run, 0);
 }
 
 ################################################################
