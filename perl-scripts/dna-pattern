@@ -1,16 +1,16 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dna-pattern,v 1.6 2001/04/20 13:38:08 jvanheld Exp $
+# $Id: dna-pattern,v 1.7 2001/07/19 01:06:31 jvanheld Exp $
 #
-# Time-stamp: <2001-04-20 15:37:48 jvanheld>
+# Time-stamp: <2001-07-19 03:06:17 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
-require "RSA.classes.pl";
+require "RSA.lib";
+require "RSA.classes";
 
 # for more info type:
 #            dna-pattern -help
@@ -134,9 +134,6 @@ while ((($current_seq, $sequence_id, @comments) = &ReadNextSequence($in, $in_for
     $pattern_length = length($expression);
     $D_regular_expression = &IUPAC_to_regular($expression);
     $R_regular_expression = &ReverseComplement($D_regular_expression);
-    
-#print STDERR $D_regular_expression, "\n";
-#die;
     $RC_pattern = &ReverseComplement($expression);
     
     $match_count = 0;
@@ -657,7 +654,7 @@ sub ReadArguments {
       #read name of file containing the list of patterns and open it
       if ($ARGV[$a+1] =~ /(\S+)/) {
 	$pattern_file = $1;
-	die "Error: cannot read pattern file '$pattern_file'\n" 
+	&FatalError("CCannot read pattern file '$pattern_file'.") 
 	    unless (-r $pattern_file);
       } 
       
@@ -727,38 +724,39 @@ sub ReadArguments {
 
 #### Patterns ####
 sub ReadPatterns {
-  if ($pattern_file) {
-    ### read patterns from a file
-    open PATTERNS, $pattern_file || die "Error: cannot open pattern file";
-    while (<PATTERNS>) {
-	if (/^;/) {
-	    if (!(defined($score_column)) &&
-		(/^;\s+(\d+)\s+occ_sig\s+/)) {
-		$score_column = $1;
+    if ($pattern_file) {
+	### read patterns from a file
+	$patterns = &OpenInputFile($pattern_file);
+#	open PATTERNS, $pattern_file || &FatalError"Cannot open pattern file";
+	while (<$patterns>) {
+	    if (/^;/) {
+		if (!(defined($score_column)) &&
+		    (/^;\s+(\d+)\s+occ_sig\s+/)) {
+		    $score_column = $1;
+		}
+		next;
 	    }
-	    next;
+	    next unless (/\S/);
+	    chomp;
+	    @fields = split, /\t/;
+	    next unless ($fields[0] =~ /\S/);
+	    $sequence = $fields[0];
+	    if (($noid) || ($fields[1] !~ /\S/)) {
+		$id = $sequence;
+	    } else {
+		$id = $fields[1];
+	    }
+	    if ($score_column >= 1) {
+		$score = $fields[$score_column - 1];
+	    } else {
+		$score = 1; ### default score
+	    }
+	    
+	    push @patterns, new RSA::pattern(id => $id,
+					     sequence => $sequence,
+					     score => $score);
 	}
-	next unless (/\S/);
-	chomp;
-	@fields = split, /\t/;
-	next unless ($fields[0] =~ /\S/);
-	$sequence = $fields[0];
-	if (($noid) || ($fields[1] !~ /\S/)) {
-	    $id = $sequence;
-	} else {
-	    $id = $fields[1];
-	}
-	if ($score_column >= 1) {
-	    $score = $fields[$score_column - 1];
-	} else {
-	    $score = 1; ### default score
-	}
-	
-	push @patterns, new RSA::pattern(id => $id,
-					 sequence => $sequence,
-					 score => $score);
-    }
-    close PATTERNS;
+	close $patterns;
     
     ### pattern specified on the command line
     } elsif ($pattern_sequence) {
@@ -774,6 +772,6 @@ sub ReadPatterns {
 	
 	### no pattern specified
     } else {
-	die "Error: you did not specify the pattern\n";
+	&FatalError("You did not specify the pattern.");
     }
 }
