@@ -7,16 +7,26 @@ require "RSA.lib";
 #### initialise parameters ####
 $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
 $null = $default_null = "<NULL>"; 
+$default_ic = 1;
 
-&ReadArguments;
+&ReadArguments();
 
-### open input file ###
+### read input file ###
 $last_col;
 foreach $f (0..$#input_files) {
+    #### select the input file
+    $inputfile = $input_files[$f];
+
+    #### identifier column for the current file
+    unless (defined ($ic[$f])) {
+	$ic[$f] = $default_ic;
+    }
+    my $ii = $ic[$f] - 1; ### identifier column index
+    
+    #### score column for the current file
     if ((defined($default_sc)) && !(defined ($sc[$f]))) {
 	$sc[$f] = $default_sc;
     }
-    $inputfile = $input_files[$f];
     
     ($in, $input_dir) = &OpenInputFile($inputfile);
     $max_fields{$f} = 0;
@@ -30,8 +40,9 @@ foreach $f (0..$#input_files) {
 	} else {
 	    $max_fields{$f} = &max($max_fields{$f},$#fields);
 	}
-	$key = lc($fields[0]);
-	$id{$key} = $fields[0];
+	$key = lc($fields[$ii]);
+	$id{$key} = $fields[$ii];
+
 	if (defined($sc[$f])) {
 	    $col = $last_col + 1;
 	    $score{$key}[$col] = $fields[$sc[$f]-1];
@@ -127,10 +138,12 @@ NAME
         1998 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
 	
 USAGE
-        compare-scores -i inputfile_1 -i inputfile_2 [-i inputfile_n] [-o outputfile] [-v] -sc #
+        compare-scores -i inputfile_1 -i inputfile_2 [-i inputfile_n] [-o outputfile] [-v] [-ic \#] -sc \#
 
 DESCRIPTION
 	compares the score associated to keys in different input files
+	(basically, this amounts to join different tables on the basis
+	of a unique identifier).
 
 CATEGORY
 	util
@@ -149,9 +162,9 @@ OPTIONS
 		if not specified, the standard output is used.
 		This allows to place the command within a pipe.
 	-sc	score column. 
-		The score column must be >=2 (the first column
-		contains the object identifier).
 	-sc#	score column for the #th file
+	-ic	Identifier column (default 1) 
+	-ic#	identifier column for the #th file
 	-null	null string (default $default_null)
 		displayed when one file contains no value for a given
 		key)
@@ -187,6 +200,8 @@ compare-scores options
 -v      verbose
 -sc	score column
 -sc#	score column for the #th file
+-ic	identifier column
+-ic#	identifier column for the #th file
 -null	null string (default $default_null)
 End_short_help
   close HELP;
@@ -225,16 +240,31 @@ sub ReadArguments {
 	    $default_sc = $ARGV[$a+1];
 	    unless ((&IsNatural($default_sc)) && ($default_sc >= 1)) {
 		warn "Error : score column must be an integer >= 1\n";
-		&PrintHelp;
+		&PrintHelp();
 	    }
 	    
 	} elsif ($ARGV[$a] =~ /^-sc(\d+)/)  {
 	    $sc[$1-1] = $ARGV[$a+1]; ### substract 1 from the index
-	    unless ((&IsNatural($sc[$1-1])) && ($sc[$1-1] > 0)) {
-		warn "Error : score column must be an integer and > 0\n";
-		&PrintHelp;
+	    unless ((&IsNatural($sc[$1-1])) && ($sc[$1-1] >= 1)) {
+		warn "Error : score column must be an integer and >= 1\n";
+		&PrintHelp();
 	    }
 	    
+	    ### identifier column
+	} elsif ($ARGV[$a] eq "-ic") {
+	    $default_ic = $ARGV[$a+1];
+	    unless ((&IsNatural($default_ic)) && ($default_ic >= 1)) {
+		warn "Error : identifier column must be an integer >= 1\n";
+		&PrintHelp();
+	    }
+	    
+	} elsif ($ARGV[$a] =~ /^-ic(\d+)/)  {
+	    $ic[$1-1] = $ARGV[$a+1]; ### substract 1 from the index
+	    unless ((&IsNatural($ic[$1-1])) && ($ic[$1-1] >= 1)) {
+		warn "Error : identifier column must be an integer and >= 1\n";
+		&PrintHelp();
+
+	    }
 	}
     }
 }
