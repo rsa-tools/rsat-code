@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank.pl,v 1.9 2003/11/05 15:49:59 oly Exp $
+# $Id: parse_genbank.pl,v 1.10 2003/12/02 08:50:03 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 15:41:54 jvanheld>
 #
@@ -118,16 +118,21 @@ package main;
     }
 
 
+    ################################################################
     ### default output fields
-    @out_fields = qw( id type name chromosome start_pos end_pos strand description chrom_position names  exons introns db_xref note);
+
+    ### output fields for features
+    @feature_out_fields = qw( id type name chromosome start_pos end_pos strand description chrom_position names  exons introns db_xref note);
     if ($rsa) {
 	#### specific export format for RSA-tools
 	warn "; Exporting in special format for rsa-tools.\n" if ($verbose >=1);
-	$features->set_out_fields(@out_fields);
+	$features->set_out_fields(@feature_out_fields);
 	$single_name = 1;
     } else {
-	$features->set_out_fields(@out_fields, qw(source organism));
+	$features->set_out_fields(@feature_out_fields, qw(source organism));
     }
+
+    ### output fields for contigs
     $contigs->set_out_fields(qw(id	
 				organism
 				type
@@ -138,6 +143,7 @@ package main;
 				));
     
     
+    #### output directory
     &CheckOutputDir();
     chdir $dir{output};
     $out_file{features} = "$dir{output}/genbank.obj" if ($export{obj});
