@@ -16,7 +16,7 @@ MAKEFILE=${RSAT}/makefiles/motif_disco_competition_2003.mk
 MAKE=make -s -f ${MAKEFILE}
 
 SSH_OPT = -e ssh 
-RSYNC_OPT= -ruptvl  ${SSH_OPT} 
+RSYNC_OPT= -ruptvlz  ${SSH_OPT} 
 RSYNC = rsync  ${RSYNC_OPT}
 
 WGET=wget --passive-ftp -np -rNL
@@ -48,7 +48,7 @@ update_from_server:
 
 ## Synchronize calibrations from merlin
 from_merlin:
-	${MAKE} update_from_server SERVER_LOCATION=jvanheld@merlin.ulb.ac.be:
+	${MAKE} update_from_server SERVER_LOCATION=jvanheld@merlin.ulb.ac.be:motif_discovery_competition_2003/
 
 from_liv:
 	${MAKE} update_from_server SERVER_LOCATION=jvanheld@liv.bmc.uu.se:/Users/jvanheld/motif_discovery_competition_2003/
@@ -302,14 +302,14 @@ START=1
 REPET=10000
 WORK_DIR=`pwd`
 OUT_DIR=${WORK_DIR}/${RES_DIR}/${ORG}/${RAND_DIR}/${OLIGO_LEN}nt${STR}${NOOV}_N${N}_L${SEQ_LEN}_R${REPET}
-CALIBRATE_CMD=							\
-	calibrate-oligos.pl -v ${V}				\
+CALIBRATE_CMD=								\
+	calibrate-oligos -v ${V}					\
 		-r ${REPET} -sn ${N} -ol ${OLIGO_LEN} -sl ${SEQ_LEN}	\
-		-task ${CALIB_TASK}				\
-		-start ${START}					\
-		${END}						\
-		${STR} ${NOOV}					\
-		-outdir ${OUT_DIR}				\
+		-task ${CALIB_TASK}					\
+		-start ${START}						\
+		${END}							\
+		${STR} ${NOOV}						\
+		-outdir ${OUT_DIR}					\
 		-org ${ORG}
 
 ## Run the program immediately (WHEN=now) or submit it to a queue (WHEN=queue)
