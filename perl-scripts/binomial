@@ -164,6 +164,7 @@ if ($verbose) {
 if ($approx) {
     $b = &binomial_approx($p, $r, $s);
 } elsif ($boe) {
+#    die "HELLO";
     $b = &sum_of_binomials($p, $r, $s);
 #    printf "old\t%s\t",  &old_sum_of_binomials($p, $r, $s);
 } elsif ($soe) {
@@ -180,104 +181,108 @@ if ($b < 0) {
 ### due to the precision limit
   $b = 0;
 }
-print "$b\n";
+if ($b >= 0.0001) {
+    printf "\t%.5f\n", $b;
+} else {
+    printf "\t%.2g\n", $b;
+}
 
 exit(0);
 
 ##### subroutine definition #####
 
-sub RecurrentBinomial {
-### usage: 
-###     &RecurrentBinomial($proba,$repetitions,$successes)
-### this routine uses the recurrent formula for the calculation of binomial:
-### We calculate everything in logarithms, and make a custom exp conversion
-### to overcome the limitation of the per exp(x) function
-###
-###           P(x) * p(r-x)
-###  P(x+1) = -------------
-###              q(x+1)
-###
-    local($proba) = $_[0];
-    local($repet) = $_[1];
-    local($succ) = $_[2];
-    local($q) = 1 - $p;
+#  sub RecurrentBinomial {
+#  ### usage: 
+#  ###     &RecurrentBinomial($proba,$repetitions,$successes)
+#  ### this routine uses the recurrent formula for the calculation of binomial:
+#  ### We calculate everything in logarithms, and make a custom exp conversion
+#  ### to overcome the limitation of the per exp(x) function
+#  ###
+#  ###           P(x) * p(r-x)
+#  ###  P(x+1) = -------------
+#  ###              q(x+1)
+#  ###
+#      local($proba) = $_[0];
+#      local($repet) = $_[1];
+#      local($succ) = $_[2];
+#      local($q) = 1 - $p;
 
-    local($logproba) = log($proba);
-    local($logq) = log($q);
+#      local($logproba) = log($proba);
+#      local($logq) = log($q);
 
-    local($x) = 0;
-    local($logbin) = log($q)*($repet-$x);
+#      local($x) = 0;
+#      local($logbin) = log($q)*($repet-$x);
 
-    for $x (0..$succ-1) {
-	$logbin += $logproba + log($repet - $x) - $logq - log($x+1);
-    }
-    $logbin /= log(10);
-    $bin = 10**(1+$logbin - int($logbin));
-    $bin .= "e";
-    if (int($logbin)-1 > 0) {
-	$bin .= "+";
-    }
-    $bin .= int($logbin)-1;
-    return($bin);
-}
-
-
-sub RecurrentSumOfBinomials {
-### usage: 
-###     &RecurrentSumOfBinomial($proba,$repetitions,$successes)
-### calculates the sum of binomials for j varying from s to r
-### this routine uses the recurrent formula for the calculation of binomial:
-###           P(x) * p(r-x)
-###  P(x+1) = -------------
-###              q(x+1)
-###
-    local($proba) = $_[0];
-    local($repet) = $_[1];
-    local($succ) = $_[2];
-
-    local($q) = 1 - $p;
-    local($logproba) = log($proba);
-    local($logq) = log($q);
-
-    local($sum_of_bin);
-    local($x);
-    local($logbin);
-
-    if ($succ < ($repet - $succ)) {
-	$x = 0;
-	$sum_of_bin = 1;
-
-	if ($succ > 0) {
-	    $logbin = $logq*($repet-$x);
-	    $sum_of_bin -= exp($logbin);
-	    $x++;
-	    while ($x < $succ) {
-		$logbin += $logproba + log($repet - $x+1) - $logq - log($x);
-		$sum_of_bin -= exp($logbin);
-		$x++;
-	    }
-	}
-
-   } else {
-	$sum_of_bin = 0;
-	$x = $repet;
-	$logbin = $x*$logproba;
-	$sum_of_bin += exp($logbin);
-	$x--;
-
-	while ($x >= $succ) {
-	    $logbin += -$logproba - log($repet - $x) + $logq + log($x+1);
-	    $sum_of_bin += exp($logbin);
-	    $x--;
-	}
+#      for $x (0..$succ-1) {
+#  	$logbin += $logproba + log($repet - $x) - $logq - log($x+1);
+#      }
+#      $logbin /= log(10);
+#      $bin = 10**(1+$logbin - int($logbin));
+#      $bin .= "e";
+#      if (int($logbin)-1 > 0) {
+#  	$bin .= "+";
+#      }
+#      $bin .= int($logbin)-1;
+#      return($bin);
+#  }
 
 
+#  sub RecurrentSumOfBinomials {
+#  ### usage: 
+#  ###     &RecurrentSumOfBinomial($proba,$repetitions,$successes)
+#  ### calculates the sum of binomials for j varying from s to r
+#  ### this routine uses the recurrent formula for the calculation of binomial:
+#  ###           P(x) * p(r-x)
+#  ###  P(x+1) = -------------
+#  ###              q(x+1)
+#  ###
+#      local($proba) = $_[0];
+#      local($repet) = $_[1];
+#      local($succ) = $_[2];
 
-    }
-    $sum_of_bin = 1 if ($sum_of_bin > 1);
-    $sum_of_bin = 0 if ($sum_of_bin < 0);
-    return($sum_of_bin);
-}
+#      local($q) = 1 - $p;
+#      local($logproba) = log($proba);
+#      local($logq) = log($q);
+
+#      local($sum_of_bin);
+#      local($x);
+#      local($logbin);
+
+#      if ($succ < ($repet - $succ)) {
+#  	$x = 0;
+#  	$sum_of_bin = 1;
+
+#  	if ($succ > 0) {
+#  	    $logbin = $logq*($repet-$x);
+#  	    $sum_of_bin -= exp($logbin);
+#  	    $x++;
+#  	    while ($x < $succ) {
+#  		$logbin += $logproba + log($repet - $x+1) - $logq - log($x);
+#  		$sum_of_bin -= exp($logbin);
+#  		$x++;
+#  	    }
+#  	}
+
+#     } else {
+#  	$sum_of_bin = 0;
+#  	$x = $repet;
+#  	$logbin = $x*$logproba;
+#  	$sum_of_bin += exp($logbin);
+#  	$x--;
+
+#  	while ($x >= $succ) {
+#  	    $logbin += -$logproba - log($repet - $x) + $logq + log($x+1);
+#  	    $sum_of_bin += exp($logbin);
+#  	    $x--;
+#  	}
+
+
+
+#      }
+#      $sum_of_bin = 1 if ($sum_of_bin > 1);
+#      $sum_of_bin = 0 if ($sum_of_bin < 0);
+#      return($sum_of_bin);
+#  }
 
 
 
