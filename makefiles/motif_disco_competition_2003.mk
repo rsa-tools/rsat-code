@@ -50,13 +50,12 @@ to_merlin:
 one_dir_to_server:
 	${RSYNC} ${EXCLUDE} ${TO_SYNC} ${SERVER_LOCATION}
 
-update_from_server:
+from_server:
 	${RSYNC} ${EXCLUDE} ${SERVER_LOCATION}${TO_SYNC} .
 
 ## Synchronize calibrations from merlin
 from_merlin:
 	${MAKE} update_from_server SERVER_DIR=motif_discovery_competition_2003/ 
-
 
 # Temporary
 #	${MAKE} update_from_server SERVER_DIR=./ TO_SYNC=results
@@ -144,7 +143,7 @@ iterate_oligo_lengths:
 ################################################################
 #### Calculate background model, depending on the size of the sequences in the current set
 UPSTREAML_DIR=${ORG_DIR}/upstreamL_frequencies
-background: seq_len all_up bg_oligos
+background: seq_lengths_one_org all_up bg_oligos
 
 ################################################################
 #### report sequence length for the current set
@@ -205,8 +204,9 @@ all_up_purge:
 
 ################################################################
 #### calculate background oligo frequencies for the current set
-BG_OLIGO_FILE=${UPSTREAML_DIR}/${ORG}_allup${SEQ_LEN}_${OLIGO_LEN}nt${STR}${NOOV}_freq.tab
-BG_OLIGO_FILE_PURGED=${UPSTREAML_DIR}/${ORG}_allup${SEQ_LEN}_${OLIGO_LEN}nt${STR}${NOOV}_purged_freq.tab
+BG_STR=-1str
+BG_OLIGO_FILE=${UPSTREAML_DIR}/${ORG}_allup${SEQ_LEN}_${OLIGO_LEN}nt${BG_STR}${NOOV}_freq.tab
+BG_OLIGO_FILE_PURGED=${UPSTREAML_DIR}/${ORG}_allup${SEQ_LEN}_${OLIGO_LEN}nt${BG_STR}${NOOV}_purged_freq.tab
 OLIGO_LEN=6
 bg_oligos:
 	${MAKE} iterate_oligo_lengths OL_TASK=bg_oligos_one_ol_nopurge
@@ -217,22 +217,24 @@ bg_oligos_one_ol: bg_oligos_one_ol_nopurge bg_oligos_one_ol_purge  bg_oligos_one
 	@echo ${BG_OLIGO_FILE}
 
 ## Calculate oligo frequencies in all upstream sequences, non purged
+BG_OLIGOS_CMD=oligo-analysis ${NOOV} -i ${ALL_UP_FILE} -l ${OLIGO_LEN} -v ${V} ${BG_STR} -o ${BG_OLIGO_FILE} -return occ,freq
 bg_oligos_one_ol_nopurge:
-	oligo-analysis ${NOOV} -i ${ALL_UP_FILE} -l ${OLIGO_LEN} -v ${V} ${STR} -o ${BG_OLIGO_FILE} -return occ,freq
+	${MAKE} my_command MY_COMMAND="${BG_OLIGOS_CMD_CMD}"
 
 ## Calculate oligo frequencies in all upstream sequences, purged
+BG_OLIGOS_CMD_PURGE=oligo-analysis ${NOOV} -i ${ALL_UP_FILE_PURGED} -l ${OLIGO_LEN} -v ${V} ${BG_STR} -o ${BG_OLIGO_FILE_PURGED} -return occ,freq
 bg_oligos_one_ol_purge:
-	oligo-analysis ${NOOV} -i ${ALL_UP_FILE_PURGED} -l ${OLIGO_LEN} -v ${V} ${STR} -o ${BG_OLIGO_FILE_PURGED} -return occ,freq
+	${MAKE} my_command MY_COMMAND="${BG_OLIGOS_CMD_CMD_PURGE}"
 
 ## Compare oligo frequencies between purged and not purged upstream sequences
 bg_oligos_one_ol_purged_vs_not:
 	compare-scores											\
 		-i ${BG_OLIGO_FILE_PURGED}								\
 		-i $ ${BG_OLIGO_FILE}  -sc 3								\
-		-o ${UPSTREAML_DIR}/${ORG}_allup${SEQ_LEN}_${OLIGO_LEN}nt_1str${NOOV}_purged_vs_not.tab
+		-o ${UPSTREAML_DIR}/${ORG}_allup${SEQ_LEN}_${OLIGO_LEN}nt_${BG_STR}${NOOV}_purged_vs_not.tab
 	XYgraph -xcol 2 -ycol 3										\
-		-i ${UPSTREAML_DIR}/${ORG}_allup${SEQ_LEN}_${OLIGO_LEN}nt_1str${NOOV}_purged_vs_not.tab	\
-		-o ${UPSTREAML_DIR}/${ORG}_allup${SEQ_LEN}_${OLIGO_LEN}nt_1str${NOOV}_purged_vs_not.jpg
+		-i ${UPSTREAML_DIR}/${ORG}_allup${SEQ_LEN}_${OLIGO_LEN}nt_$ (BG_STR)${NOOV}_purged_vs_not.tab	\
+		-o ${UPSTREAML_DIR}/${ORG}_allup${SEQ_LEN}_${OLIGO_LEN}nt_$ (BG_STR)${NOOV}_purged_vs_not.jpg
 
 #pattern_disco: oligos dyads
 
@@ -336,8 +338,13 @@ multi_upstream_dyads:
 
 ## run multiple-family-analysis with upstream frequencies calculated
 ## for each sequence length
-#multi_upstreamL:
-#	${MAKE} multi MULTI_DIR=${ORG_DIR}/multi/upstreamL_bg MULTI_EXP='-oligo_exp_freq ${BG_OLIGO_FILE}' MIN_OL=6 MAX_OL=6
+multi_upstreamL:
+	make iterate_oligo_lengths OL_TASK=multi_upstreamL_one_length
+
+multi_upstreamL_one_length:
+	${MAKE} multi											\
+		MULTI_DIR=${ORG_DIR}/multi/upstreamL_bg${PURGE}						\
+		MULTI_EXP='-oligo_exp_freq ${BG_OLIGO_FILE}' MIN_OL=${OLIGO_LEN} MAX_OL=${OLIGO_LEN}
 
 multi_calibN:
 	${MAKE} multi MULTI_BG=calibN MULTI_OPT="-calib_dir ${CALIBN_DIR}" 
@@ -581,12 +588,13 @@ join_all_mean_var_N:
 	${MAKE} join_mean_var_N ORG=Mus_musculus SEQ_LEN=500 REPET=1000
 	${MAKE} join_mean_var_N ORG=Mus_musculus SEQ_LEN=1000 REPET=1000
 	${MAKE} join_mean_var_N ORG=Mus_musculus SEQ_LEN=1500 REPET=1000
-	# ${MAKE} join_mean_var_N ORG=Saccharomyces_cerevisiae SEQ_LEN=500 REPET=10000
-	# ${MAKE} join_mean_var_N ORG=Saccharomyces_cerevisiae SEQ_LEN=1000 REPET=10000
-	# ${MAKE} join_mean_var_N ORG=Homo_sapiens SEQ_LEN=1000 REPET=10000
-	# ${MAKE} join_mean_var_N ORG=Homo_sapiens SEQ_LEN=2000 REPET=10000
+#	${MAKE} join_mean_var_N ORG=Saccharomyces_cerevisiae SEQ_LEN=500 REPET=10000
+#	${MAKE} join_mean_var_N ORG=Saccharomyces_cerevisiae SEQ_LEN=1000 REPET=10000
+#	${MAKE} join_mean_var_N ORG=Homo_sapiens SEQ_LEN=1000 REPET=10000
+#	${MAKE} join_mean_var_N ORG=Homo_sapiens SEQ_LEN=2000 REPET=10000
 
 my_command:
+	@echo ${WHEN} command ${MY_COMMAND}
 	${MAKE} command_${WHEN}
 
 command_queue:
@@ -722,6 +730,44 @@ some_comparisons:
 	make compare_calibrations ORG=Saccharomyces_cerevisiae SEQ_LEN=500 OLIGO_LEN=6
 	make compare_calibrations ORG=Drosophila_melanogaster SEQ_LEN=2000 OLIGO_LEN=7
 
+################################################################
+## Compile report
+report: generate_reports compile_reports
+
+generate_reports:
+	${MAKE} iterate_organisms		\
+		ORG_TASK=multi_calibN		\
+		MULTI_TASK=report,synthesis
+
+compile_reports: 
+	@echo "Generating report	${REPORT_DIR}"
+	@${MAKE} report_headers
+	@${MAKE} report_organisms
+	@echo "Report generated"
+	@echo ${RESULT_FILE}
+	@echo ${PARAM_FILE}
+
+REPORT_DIR=${RES_DIR}/reports
+RESULT_FILE=${REPORT_DIR}/Simonis_vanHelden_results.txt
+PARAM_FILE=${REPORT_DIR}/Simonis_vanHelden_parameters.txt
+report_headers:
+	@echo ">name of contact" > ${RESULT_FILE}
+	@echo "Jacques van Helden" >> ${RESULT_FILE}
+	@echo ">email" >> ${RESULT_FILE}
+	@echo "jvanheld@scmbb.ulb.ac.be" >> ${RESULT_FILE}
+	@echo ">program name" >> ${RESULT_FILE}
+	@echo "multiple-family-analyis" >> ${RESULT_FILE}
+	@cp ${RESULT_FILE} ${PARAM_FILE}
+
+report_organisms:
+	${MAKE} iterate_organisms ORG_TASK=report_one_organism
+
+ORG_REPORT_DIR=${ORG_DIR}/multi/calibN_bg-purge/mdc_report
+ORG_RESULT_FILE=${ORG_REPORT_DIR}/${ORG}_files_bg_calibN-purge_6nt_8nt-noov-2str_sig0_results.txt
+ORG_PARAM_FILE=${ORG_REPORT_DIR}/${ORG}_files_bg_calibN-purge_6nt_8nt-noov-2str_sig0_parameters.txt
+report_one_organism:
+	cat ${ORG_RESULT_FILE} >> ${RESULT_FILE}
+	cat ${ORG_PARAM_FILE} >> ${PARAM_FILE}
 
 ################################################################
 ## Archive the reports
