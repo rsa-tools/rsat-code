@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis,v 1.7 2001/03/08 01:34:55 jvanheld Exp $
+# $Id: dyad-analysis,v 1.8 2001/03/24 16:59:40 jvanheld Exp $
 #
-# Time-stamp: <2001-03-08 02:33:45 jvanheld>
+# Time-stamp: <2001-03-24 17:58:52 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -40,6 +40,7 @@ $input_format = "fasta";
 
 #### timeout control
 $SIG{ALRM} = sub { die "timeout" };
+#$ENV{SERVER_ADMIN} = "jvanheld\@localhost.localdomain";
 eval {
     alarm($timeout);
 
@@ -348,78 +349,74 @@ sub SmartRC {
 
 ### expected frequencies ###
 sub CalcExpectedFreq {
-  if ($exp_freq_file ne "") {
-    ### read expected dyad frequencies from a file
-    unless (open FREQ,$exp_freq_file) {
-      print "\tError: could not open expected frequency file\n";
-      print "\t$exp_freq_file\n";	
-      print "\tType dyad-analysis -help for info\n";
-      exit;
-    }
-    while (<FREQ>) {
-      next if (/^;/);
-      chomp;
-      @fields = split;
-      $dyad_seq = lc($fields[0]);
-      $freq = $fields[1];
-      if ((&IsReal($freq)) && (defined($dyad{$dyad_seq}))) {
-	$dyad{$dyad_seq}->{exp_freq} = $freq;
-      }
-    }
-  } elsif ($mncf) {
-    ### read expected monad frequencies from a file
-    unless (open FREQ,$monad_exp_freq_file) {
-      print "\tError: could not open expected frequency file $monad_exp_freq_file\n";
-      print "\tType dyad-analysis -help for info\n";
-      exit;
-    }
-    while (<FREQ>) {
-      next if (/^;/);
-      chomp;
-      @fields = split;
-      $oligo_seq = lc($fields[0]);
-      $freq = $fields[1];
-      if ((&IsReal($freq)) && (defined($oligo{$oligo_seq}))) {
-	$oligo{$oligo_seq}->{exp_freq} = $freq;
-      }
-    }
-    
-  } else { ### use observed monad frequencies
-#    $oligo_file = "$RSA/data/${organism_name}/oligo-frequencies/${oligo_length}nt_non-coding_${organism_name}.freq";
-#    if (open OLIGOS, $oligo_file) {
-#      while (<OLIGOS>) {
-#	next if (/;/);
-#	if (/^([atcg]+)/i) {
-#	  $oligo = lc($1);
-#	  $oligo{$oligo}->{exp_freq} = 0;
+    if (defined($exp_freq_file)) {
+	### read expected dyad frequencies from a file
+
+	$exp = &OpenInputFile($exp_freq_file);
+#	unless (open FREQ,$exp_freq_file) {
+#	    print "\tError: could not open expected frequency file\n";
+#	    print "\t$exp_freq_file\n";	
+#	    print "\tType dyad-analysis -help for info\n";
+#	    exit;
 #	}
-#      }
-#    }
-    foreach $oligo (keys %oligo) {
-      $oligo{$oligo}->{exp_freq} = $oligo{$oligo}->{obs_occ}/$sum_oligo_count;
+	while (<$exp>) {
+	    next if (/^;/);
+	    chomp;
+	    @fields = split;
+	    $dyad_seq = lc($fields[0]);
+	    $freq = $fields[1];
+	    if ((&IsReal($freq)) && (defined($dyad{$dyad_seq}))) {
+		$dyad{$dyad_seq}->{exp_freq} = $freq;
+	    }
+	}
+	close $exp;
+    } elsif ($mncf) {
+	### read expected monad frequencies from a file
+	$exp = &OpenInputFile($exp_freq_file);
+#	unless (open FREQ,$monad_exp_freq_file) {
+#	    print "\tError: could not open expected frequency file $monad_exp_freq_file\n";
+#	    print "\tType dyad-analysis -help for info\n";
+#	    exit;
+#	}
+	while (<$exp>) {
+	    next if (/^;/);
+	    chomp;
+	    @fields = split;
+	    $oligo_seq = lc($fields[0]);
+	    $freq = $fields[1];
+	    if ((&IsReal($freq)) && (defined($oligo{$oligo_seq}))) {
+		$oligo{$oligo_seq}->{exp_freq} = $freq;
+	    }
+	}
+	close $exp;
+	
+    } else { ### use observed monad frequencies
+
+	foreach $oligo (keys %oligo) {
+	    $oligo{$oligo}->{exp_freq} = $oligo{$oligo}->{obs_occ}/$sum_oligo_count;
+	}
+	
     }
     
-  }
-  
-  if ($exp_freq_file eq "") {
-    ### calculate expected dyad freq on basis of oligo frequencies
-    foreach $oligo1 (keys %oligo) {
-      my $freq1 = $oligo{$oligo1}->{exp_freq};
-      foreach my $spacing (@spacing_list) {
-	foreach my $oligo2 (&SecondElement($oligo1)) {
-	  ### build the dyad
-	  my $dyad_seq= "${oligo1}n\{$spacing\}${oligo2}";
-	  my $freq2 = $oligo{$oligo2}->{exp_freq};
-	  if ($sp_group) {
-	    $dyad{$dyad_seq}->{exp_freq} = $freq1*$freq2*($max_spacing-$min_spacing + 1);
-	  } else {
-	    $dyad{$dyad_seq}->{exp_freq} = $freq1*$freq2;
-	  }
+    if ($exp_freq_file eq "") {
+	### calculate expected dyad freq on basis of oligo frequencies
+	foreach $oligo1 (keys %oligo) {
+	    my $freq1 = $oligo{$oligo1}->{exp_freq};
+	    foreach my $spacing (@spacing_list) {
+		foreach my $oligo2 (&SecondElement($oligo1)) {
+		    ### build the dyad
+		    my $dyad_seq= "${oligo1}n\{$spacing\}${oligo2}";
+		    my $freq2 = $oligo{$oligo2}->{exp_freq};
+		    if ($sp_group) {
+			$dyad{$dyad_seq}->{exp_freq} = $freq1*$freq2*($max_spacing-$min_spacing + 1);
+		    } else {
+			$dyad{$dyad_seq}->{exp_freq} = $freq1*$freq2;
+		    }
 #print STDERR "\t$oligo1\t$oligo2\t$freq1\t$freq2\t", $dyad{$dyad_seq}->{exp_freq} , "\n";
+		}
+	    }	
 	}
-      }	
     }
-  }
 }
 
 
@@ -540,10 +537,16 @@ sub CalcProba {
 	  $overlap_coeff{$dyad_seq} = &OverlapCoeff($oligo_pair);
 	}
 	
+
+	if ($dyad{$dyad_seq}->{exp_freq} <= 0) {
+	    warn "Error : expected frequency must be > 0 for dyad\t$dyad_seq\t$dyad{$dyad_seq}->{exp_freq}";
+	    next;
+	}
+
 	### calculate Z-scores ###
 	if ($return{zscore}) {
-	  $dyad{$dyad_seq}->{var_est} = $nb_possible_pos*$dyad{$dyad_seq}->{exp_freq}*(2*$overlap_coeff{$dyad_seq} - 1 - (4*$oligo_length+1)*$dyad{$dyad_seq}->{exp_freq});
-	  $dyad{$dyad_seq}->{zscore} = ($dyad{$dyad_seq}->{obs_occ} - $dyad{$dyad_seq}->{exp_occ})/sqrt($dyad{$dyad_seq}->{var_est});
+	    $dyad{$dyad_seq}->{var_est} = $nb_possible_pos*$dyad{$dyad_seq}->{exp_freq}*(2*$overlap_coeff{$dyad_seq} - 1 - (4*$oligo_length+1)*$dyad{$dyad_seq}->{exp_freq});
+	    $dyad{$dyad_seq}->{zscore} = ($dyad{$dyad_seq}->{obs_occ} - $dyad{$dyad_seq}->{exp_occ})/sqrt($dyad{$dyad_seq}->{var_est});
 	}
 	
 	
@@ -1105,8 +1108,18 @@ sub CountDyads {
 	
 	#### count oligonucleotides and dyads
 	$last_pos = $seq_length[$sequence_number] - $oligo_length;
+	$chunk = 10000;
 	$pos1 = 0;
 	while ($pos1 <= $last_pos) {
+	    
+	    if ($hyperverbose) {
+		if (($pos1%$chunk ==0 ) && ($pos1 > 0)) {
+		    $chunk_nb++;
+		    $ps = `ps v  -p $$ | grep -v TIME`;
+		    chomp $ps;
+		    warn "\tsequence position\t$pos1\t$ps\n";
+		}
+	    }
 	    
 	    #### count oligont occurrences
 	    #### will be used for estimation of expected dyad frequencies
