@@ -12,7 +12,7 @@ require "RSA.cgi.lib.pl";
 $query = new CGI;
 
 ### default values for filling the form
-$default{seq_format} = "fasta";
+$default{sequence_format} = "fasta";
 $default{seq_label} = "gene name";
 $default{organism} = "Saccharomyces cerevisiae";
 $default{from} = "default";
@@ -35,15 +35,6 @@ print "<CENTER>";
 print "Returns upstream, downstream or ORF sequences for a list of genes<P>\n";
 print "</CENTER>";
 
-print <<EndText;
-<font color=#660000>
-<ul>
-<b>Note: retrieve-sequence</b> replaces the previous programs <br>
-<b>upstream-region</b> and <b>downstream-region</b> <br>
-(you can select among the two possibilities with the option "Sequence type"). 
-</ul>
-</font>
-EndText
 
 print $query->start_multipart_form(-action=>"retrieve-seq.cgi");
 
@@ -64,6 +55,14 @@ print $query->textarea(-name=>'gene_selection',
 		       -default=>$default{genes},
 		       -rows=>6,
 		       -columns=>40);
+
+### option to upload a file with the gene list from the client machine 
+print "<BR>Upload gene list from file<BR>\n";
+print $query->filefield(-name=>'uploaded_file',
+			-default=>'',
+			-size=>45,
+			-maxlength=>200);
+
 print "</UL>\n";
 print "<BR>\n";
 
@@ -88,14 +87,11 @@ print $query->textfield(-name=>'to',
 print "<BR>\n";
 
 ### allow ORF overlap
-### temporarily inactivated because it does not work with all organisms
-#  print $query->checkbox(-name=>'orf_overlap',
-#  		       -checked=>'checked',
-#  		       -label=>'');
-#  print "&nbsp;<A HREF='help.retrieve-seq.html#noorf'><B>allow overlap with upstream ORFs</B></A>";
-#  print "<BR>\n";
-
-print $query->hidden(-name=>'orf_overlap',-default=>'on');
+print $query->checkbox(-name=>'orf_overlap',
+  		       -checked=>'checked',
+  		       -label=>'');
+print "&nbsp;<A HREF='help.retrieve-seq.html#noorf'><B>allow overlap with upstream ORFs</B></A>";
+print "<BR>\n";
 
 
 ### sequence format 
@@ -105,7 +101,7 @@ print $query->popup_menu(-name=>'format',
 				   'IG',
 				   'wconsensus',
 				   'multi'],
-			 -default=>$default{seq_format});
+			 -default=>$default{sequence_format});
 print "<BR>\n";
 
 ### sequence label
@@ -149,6 +145,7 @@ print $query->end_form;
 
 #print "<TD><B><A HREF='demo.retrieve-seq.html'>DEMO</A></B></TD>\n";
 print "<TD><B><A HREF='help.retrieve-seq.html'>MANUAL</A></B></TD>\n";
+print "<TD><B><A HREF='tutorials/tut_retrieve-seq.html'>TUTORIAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:jvanheld\@ucmb.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
