@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_swissprot.pl,v 1.21 2002/07/02 17:52:12 jvanheld Exp $
+# $Id: parse_swissprot.pl,v 1.22 2002/08/15 12:01:23 jvanheld Exp $
 #
-# Time-stamp: <2002-07-02 19:45:40 jvanheld>
+# Time-stamp: <2002-08-15 06:42:58 jvanheld>
 #
 ############################################################
 
@@ -40,7 +40,13 @@ package main;
 		      swissprot_acs
 		      swissprot_ids
 		      ECs
+		      sequence
 		      );
+
+    #### hash table with the output fields
+    foreach my $field (@out_fields) {
+	$out_fields{$field} = 1;
+    }
 
     #### organism selection
     @selected_organisms = ();
@@ -56,6 +62,11 @@ package main;
     
     #### export classes
     push @classes, "PFBP::Polypeptide";
+
+    #### oracle schema
+    $schema = "swissprot";
+    $user = "swissprot";
+    $password = "swissprot";
     
     &ReadArguments;
     
@@ -90,17 +101,9 @@ package main;
     #### output directory
     $out_format = "obj";
     unless (defined($dir{output})) {
-	$dir = $parsed_data."/swissprot";
-	unless (-d $dir) {
-	    warn "; Creating output dir $dir", "\n";
-	    mkdir $dir, 0775 || die "Error: cannot create directory $dir\n";
-	}
-	$dir{output} = $dir."/".$delivery_date;
+	$dir{output} = $parsed_data."/swissprot/".$delivery_date;
     }
-    unless (-d $dir{output}) {
-	warn "; Creating output dir $dir{output}\n";
-	mkdir $dir{output}, 0775 || die "Error: cannot create directory $dir\n";
-    }
+    &CheckOutputDir();
 
     #### output file names
     $out_file{polypeptides} = $dir{output}."/Polypeptide".$suffix.".obj";
@@ -219,8 +222,10 @@ package main;
 
     ### generate SQL scripts for loading the data
     $polypeptides->generate_sql(schema=>$schema, 
+				user=>$user,
+				password=>$password,
 				dir=>"$dir{output}/sql_scripts",
-				prefix=>"s_",
+				prefix=>"",
 				dbms=>$dbms
 				);
     &ExportClasses($out_file{polypeptides}, $out_format,PFBP::Polypeptide) if ($export{obj});
@@ -561,6 +566,12 @@ sub ParseSwissprot {
 	    $polypeptide->push_attribute("swissprot_acs",$ac);
 	}
 	$polypeptide->set_attribute("description", $descr);
+
+
+        if ($out_fields{sequence}) {
+  	  my $sequence = $object_entry->SQs->seq;
+	  $polypeptide->set_attribute("sequence", $sequence);
+       }
 
 	my $pp_id = $polypeptide->get_id();
 	foreach my $ec (@ECs) {
