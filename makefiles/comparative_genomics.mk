@@ -522,7 +522,7 @@ link_one_file:
 
 ################################################################
 ## Synchronize the results to the server
-SERVER=rsat.ulb.ac.be
+SERVER=rsat.scmbb.ulb.ac.be
 SERVER_DIR=rsa-tools/data/comparative_genomics
 SCMBB=jvanheld@${SERVER}:${SERVER_DIR}
 TO_SYNC=data
