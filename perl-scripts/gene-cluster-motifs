@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.33 2003/06/15 22:36:37 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.34 2003/10/02 16:00:31 jvanheld Exp $
 #
-# Time-stamp: <2003-06-16 00:31:11 jvanheld>
+# Time-stamp: <2003-10-02 17:55:55 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -53,7 +53,8 @@ $noov = 1;
 $min_sp = 0;
 $max_sp = 20;
 $start_date = `date`;
-$no_map=0;
+$htmaps=0;
+$draw_maps=1;
 $sort_key = "score";
 $verbose = 0;
 
@@ -73,7 +74,7 @@ $schema = "multifam";
 ### read gene name and identifiers
 warn "; Reading ORF information ...\n" 
     if ($verbose >= 1);
-&ReadOrfPositions($organism_name);
+&ReadFeatures($organism_name);
 &ReadSynonyms($organism_name);
 
 
@@ -82,7 +83,7 @@ warn "; Reading ORF information ...\n"
 # read data
 &ReadKnownSites($known_site_file);
 &ReadSiteLibrary();
-%family = &ReadFamilies($family_file, 1);
+%family = &ReadClasses($family_file, 1);
 @families = sort keys %family;
 
 ### write composition of the families in the separated directories
@@ -328,7 +329,7 @@ sub DyadAnalysis {
     &doit($command);
     
     ### fragment assembly
-    $command = "pattern-assembly -v -i $family{$family_name}->{dyad_file} -o $family{$family_name}->{dyad_assembly_file} -$strands -maxfl 2 -maxpat 200 ";
+    $command = "pattern-assembly -v -i $family{$family_name}->{dyad_file} -o $family{$family_name}->{dyad_assembly_file} -$strands -maxfl 1 -maxpat 200 ";
     
     &doit($command);
     
@@ -772,7 +773,7 @@ sub CheckParameters {
 	foreach my $t (@supported_tasks) {
 	    $task{$t} = 1;
 	}
-	if ($no_map) {
+	unless ($draw_maps) {
 	    $task{maps} = 0;
 	}
     }
@@ -1197,11 +1198,12 @@ sub ReadArguments {
 
 	    #### prevent feature-map drawing
 	} elsif ($ARGV[$a] eq "-nomap") {
-	    $no_map = 1;
+	    $draw_maps = 0;
 
 	    #### draw htmaps
-	} elsif ($ARGV[$a] eq "-htmaps") {
-	    $htmaps = 0;
+	} elsif ($ARGV[$a] =~ /^-htmap/) {
+	    $draw_maps = 1;
+	    $htmaps = 1;
 
 	    #### pseudo-weight
 	} elsif ($ARGV[$a] =~ /^-pseudo/) {
@@ -1235,7 +1237,7 @@ sub ReadArguments {
 sub Verbose {
     my $verbose_message = "";
     $verbose_message .= "; multiple-family-analysis ";
-    $verbose_message .= &PrintArguments();
+    $verbose_message .= &PrintArguments()."\n";
     printf "; families     \t%d\n", $#families + 1;
     foreach my $family_name (@families) {
 	printf ";\t%s\t%d elements\n", $family_name, $family{$family_name}->get_size();
@@ -1318,19 +1320,23 @@ sub CheckOutputDirectory {
 ### Generate tab files and SQL scripts for storing the results in a
 ### relational database
 sub ExportSQL {
-#    push @INC, $ENV{PARSER};
-    require "PFBP_classes.pl";
-    require "PFBP_parsing_util.pl";
+    push @INC, "$RSA/perl-scripts/parsers/";
+    require "lib/load_classes.pl";
+    require "lib/util.pl";
+    require "lib/parsing_util.pl";
+    require "$RSA/perl-scripts/lib/RSA.classes";
     
     warn "; Generating SQL $table_file\n" if ($verbose >= 1);
+    
+    my $test = new RSAT::Family;
 
-    my $family_factory = PFBP::ClassFactory->new_class(object_type=>"RSAT::Family",
-						       prefix=>"fam_");
-
-
-
-    my $pattern_factory = PFBP::ClassFactory->new_class(object_type=>"RSAT::Pattern",
-						       prefix=>"pat_");
+    my $family_factory = classes::ClassFactory->new_class(object_type=>"RSAT::Family",
+							  prefix=>"fam_");
+    
+    
+    
+    my $pattern_factory = classes::ClassFactory->new_class(object_type=>"RSAT::Pattern",
+							   prefix=>"pat_");
 
 
     #### output directory
