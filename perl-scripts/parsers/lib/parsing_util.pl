@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parsing_util.pl,v 1.3 2003/10/29 09:04:13 jvanheld Exp $
+# $Id: parsing_util.pl,v 1.4 2003/11/02 00:25:29 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -1041,14 +1041,16 @@ sub ParseGenbankFile {
 			 ($feature_type eq 'misc_RNA') || 
 			 ($feature_type eq 'misc_feature') 
 			 ){
-		    foreach my $gene_name ($last_gene->get_attribute("names")) {
-			$current_feature->push_attribute("names", $gene_name);
-		    }
-		    my $gene_id =  $last_gene->get_attribute("id");
-		    $current_feature->set_attribute("gene_id", $gene_id);
+		    if ($last_gene) {
+			foreach my $gene_name ($last_gene->get_attribute("names")) {
+			    $current_feature->push_attribute("names", $gene_name);
+			}
+			my $gene_id =  $last_gene->get_attribute("id");
+			$current_feature->set_attribute("gene_id", $gene_id);
 #                   print join ("\t", $feature_type, join (";", $last_gene->get_attribute("names")), $gene_id), "\n";
 #		    $current_feature->set_attribute("gene_id", $last_gene->get_attribute("id"));
-		    $last_gene->force_attribute("type", $feature_type);
+			$last_gene->force_attribute("type", $feature_type);
+		    }
 		}
 
 
