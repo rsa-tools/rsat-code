@@ -492,7 +492,7 @@ sub UpdateLogFile {
 #### usage:
 ####     my ($dir, $short_file_name) = &SplitFileName($full_file_name);
 sub SplitFileName {
-    my $full_file_name = $_[0];
+    my ($full_file_name) = @_;
     my $short_file_name = $full_file_name;
     my $dir = "";
     if ($full_file_name =~ /[^(\/)]+$/) {

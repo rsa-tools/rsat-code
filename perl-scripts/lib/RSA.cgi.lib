@@ -139,9 +139,9 @@ sub SequenceChoice {
 	### option to upload the sequence file from the client machine 
 	$sequenceChoiceString .=  "Or select a file to upload<BR>\n";
 	$sequenceChoiceString .=  $query->filefield(-name=>'uploaded_file',
-						   -default=>'starting value',
-						   -size=>45,
-						   -maxlength=>200);
+						    -default=>'',
+						    -size=>45,
+						    -maxlength=>200);
     }
     $sequenceChoiceString .=  "<BR>\n";
     #$sequenceChoiceString .=  "</UL>\n";

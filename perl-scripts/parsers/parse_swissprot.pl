@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_swissprot.pl,v 1.33 2003/12/19 16:47:17 oly Exp $
+# $Id: parse_swissprot.pl,v 1.34 2003/12/23 02:54:56 jvanheld Exp $
 #
 # Time-stamp: <2003-07-10 11:52:54 jvanheld>
 #
@@ -245,7 +245,7 @@ package main;
 
     ### report execution time
     if ($verbose >= 1) {
-	$done_time = &AlphaDate;
+	$done_time = &AlphaDate();
 	warn (";\n",
 	      "; job started $start_time",
 	      "; job done    $done_time\n")
@@ -394,7 +394,7 @@ sub ParseSwissprot {
     my $entries = 0;
     while ($text_entry = <DATA>){
 	$entries++;
-	warn "; Entry\t$entries\n" if ($verbose >= 2);
+	warn "; Entry\t$entries\t",&AlphaDate(), "\n" if (($verbose >= 2) && ($entries%100 == 0));
 	warn "$text_entry\n" if ($verbose >= 4);
 	
 	my $parse = 1;
