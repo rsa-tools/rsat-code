@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.23 2001/04/20 22:59:16 jvanheld Exp $
+# $Id: oligo-analysis,v 1.24 2001/05/06 12:58:58 jvanheld Exp $
 #
-# Time-stamp: <2001-04-21 00:26:59 jvanheld>
+# Time-stamp: <2001-05-06 14:57:50 jvanheld>
 #
 ############################################################
 
@@ -881,18 +881,30 @@ sub CalcProba {
 	### probability of the observed number of occurrences ####
 	$rev_compl = uc(&ReverseComplement($oligo_seq));
 	if (($sum_strands) && (uc($oligo_seq) eq $rev_compl)) {
-	    $oligo{$oligo_seq}->{occ_pro} = &sum_of_binomials($oligo{$oligo_seq}->{exp_freq},$oligo{$oligo_seq}->{nb_possible_pos}/2,$oligo{$oligo_seq}->{occ}/2);
+	    $oligo{$oligo_seq}->{occ_pro} = &sum_of_binomials($oligo{$oligo_seq}->{exp_freq},
+							      $oligo{$oligo_seq}->{nb_possible_pos}/2,
+							      $oligo{$oligo_seq}->{occ}/2);
 	    $oligo{$oligo_seq}->{remark} = "\tpalindrome";
 	} else {
-	    $oligo{$oligo_seq}->{occ_pro} = &sum_of_binomials($oligo{$oligo_seq}->{exp_freq},$oligo{$oligo_seq}->{nb_possible_pos} - $oligo{$oligo_seq}->{overlaps},$oligo{$oligo_seq}->{occ});
+	    $oligo{$oligo_seq}->{occ_pro} = &sum_of_binomials($oligo{$oligo_seq}->{exp_freq},
+							      $oligo{$oligo_seq}->{nb_possible_pos} - $oligo{$oligo_seq}->{overlaps},
+							      $oligo{$oligo_seq}->{occ});
 	}
-    
+
 	#### check threshold on occurrence probability ####
 	if ($oligo{$oligo_seq}->{occ_pro} > $proba_occ_threshold) {
 	    delete $oligo{$oligo_seq};
 	    next;
 	}
 	
+#	    print (join ("\t", 
+#			 "HELLO",  
+#			 $oligo_seq, 
+#			 $oligo{$oligo_seq}->{exp_freq},
+#			 $oligo{$oligo_seq}->{nb_possible_pos} - $oligo{$oligo_seq}->{overlaps},
+#			 $oligo{$oligo_seq}->{occ},
+#			 $oligo{$oligo_seq}->{occ_pro}), 
+#		   "\n");
 	
 	### Significance index for occurrence number
 	if ($nb_possible_oligo > 0) {
