@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_regulation.pl,v 1.5 2002/11/25 19:03:19 jvanheld Exp $
+# $Id: parse_regulation.pl,v 1.6 2002/11/28 07:43:06 jvanheld Exp $
 #
-# Time-stamp: <2002-11-25 13:03:00 jvanheld>
+# Time-stamp: <2002-11-28 01:41:57 jvanheld>
 #
 ############################################################
 ### parse_regulation.plt
@@ -40,25 +40,16 @@ package main;
     ### files to parse
 
 #    $in_file{regulation} = "/win/amaze/amaze_team/gaurab/regulation_2001_09_07.txt";
-    $in_file{regulation} = "/win/amaze/amaze_team/georges_cohen/excel_files_georges/regulation/concatenated_regulations.tab";
+#    $in_file{regulation} = "/win/amaze/amaze_team/georges_cohen/excel_files_georges/regulation/concatenated_regulations.tab";
+    $in_file{regulation} = "/win/amaze/amaze_team/georges_cohen/excel_files_georges/regulation/all_regulation_corrected.txt";
 
 
-    $dir{genes} = "$parsed_data/kegg_genes/20020822";
-    $dir{polypeptides} = "$parsed_data/swissprot/20021016";
+    $dir{genes} = "$parsed_data/kegg_genes/20021127";
+    $dir{polypeptides} = "$parsed_data/swissprot/20021127";
 
 
     $dir{output} = "$parsed_data/regulation/$delivery_date";
     $dir{delivery} = "/win/amaze/amaze_programs/amaze_oracle_data";
-    unless (-d $dir{output}) {
-	warn "Creating output dir $dir{output}\n"  if ($verbose >= 1);
-	`mkdir -p $dir{output}`;
-	die "Error: cannot create directory $dir\n" 
-	    unless (-d $dir{output});
-    }
-    chdir $dir{output};
-    $out_file{regulation} = "$dir{output}/regulation.obj";
-    $out_file{stats} = "$dir{output}/regulation.stats.txt";
-    $out_file{errors} = "$dir{output}/regulation.errors.txt";
 
     $out_format = "obj";
 
@@ -67,6 +58,20 @@ package main;
     #### read command-line arguments
     &ReadArguments();
 
+    #### output directories
+    &CheckOutputDir();
+
+#      unless (-d $dir{output}) {
+#  	warn "Creating output dir $dir{output}\n"  if ($verbose >= 1);
+#  	`mkdir -p $dir{output}`;
+#  	die "Error: cannot create directory $dir\n" 
+#  	    unless (-d $dir{output});
+#      }
+#      chdir $dir{output};
+    $out_file{regulation} = "$dir{output}/regulation.obj";
+    $out_file{stats} = "$dir{output}/regulation.stats.txt";
+    $out_file{errors} = "$dir{output}/regulation.errors.txt";
+    $out_file{mirror} = "$dir{output}/regulation.mirror.txt";
 
     ################################################################
     #### check some parameters
@@ -97,7 +102,8 @@ package main;
 	system "\\rm -f $dir{output}/*.tab  $dir{output}/*.txt $dir{output}/*.obj" ;
     }
 
-    open ERR, ">$out_file{errors}" || die "Error: cannot write error report fle $$out_file{errors}\n";
+    open ERR, ">$out_file{errors}" || die "Error: cannot write error report file $$out_file{errors}\n";
+    open MIRROR, ">$out_file{mirror}" || die "Error: cannot write mirror file $$out_file{mirror}\n";
 
     ### testing mode
     if ($test) {
@@ -121,38 +127,44 @@ package main;
     #### output fields
 
     @out_fields = qw(
+		     pathway
 		     source
 		     inputType
-		     factor_name
-		     factor_id
+		     input
+		     
 		     controlType
-		     gene_name
-		     gene_id
+
+		     controlledFrom
+		     controlledType
+		     controlledTo
+		     
+
 		     is_positive
 		     description
-		     pathway
+
+		     gene_name
+		     gene_id
+		     factor_name
+		     factor_id
+		     file
+		     pathwayIDs 
+		     strength
+		     type_of_inhibition
+		     coenzyme 
+		     cofactor 
+		     relative_concentration_of_input
+		     remark 
 
 		     pubmedIDs 
 		     );
     if ($debug) {
 	push @out_fields, qw(
-			     file
-			     input
 			     input_ids
 			     output_id
-			     controlledFrom
-			     controlledType
-			     controlledTo
-			     strength
-			     type_of_inhibition
-			     coenzyme 
-			     cofactor 
 			     org_if_not_Ecoli 
 			     org_in_addition_to_Ecoli 
-			     pathwayIDs 
-			     relative_concentration_of_input
-			     remark 
-			     remark_pubmedIDs);
+			     remark_pubmedIDs
+			     );
 	
     }
     
@@ -162,11 +174,11 @@ package main;
 						prefix=>"ind_");
 
     #### indexes
-#    &LoadIndexes();
+    &LoadIndexes();
 
     #### parse reactions
     &ParseRegulation($in_file{regulation});
-    &IdentifyInputsOutputs();
+#    &IdentifyInputsOutputs();
 
     ### print result
     $transcriptionalRegulations->dump_tables();
@@ -201,6 +213,7 @@ package main;
     }
 
     close ERR;
+    close MIRROR;
 
     &deliver() if ($deliver);
 
@@ -278,33 +291,26 @@ sub ReadArguments {
     while ($a <= $#ARGV) {
 #    for $a (0..$#ARGV) {
 
-	### warn level
-	if (($ARGV[$a] eq "-v" ) && 
-	    ($ARGV[$a+1] =~ /^\d+$/)){
-	    $main::verbose = $ARGV[$a+1];
-	    $a++;
-
-	    ### fast test
-	} elsif ($ARGV[$a] eq "-test") {
-	    $test = 1;
+	&ReadGenericOptions($a);
 
 	    ### debug
-	} elsif ($ARGV[$a] eq "-d") {
+	if ($ARGV[$a] eq "-d") {
 	    $main::debug = 1;
 
-	    ### clean
-	} elsif ($ARGV[$a] eq "-clean") {
-	    $main::clean = 1;
-
-	    ### clean
+	    ### deliver
 	} elsif ($ARGV[$a] eq "-deliver") {
 	    $main::deliver = 1;
 
-	    ### output file
- 	} elsif ($ARGV[$a] eq "-obj") {
+	    ### gene directory
+	} elsif ($ARGV[$a] eq "-genes") {
 	    $a++;
-	    $main::export{obj} = 1;
-	    
+	    $main::dir{genes} = $ARGV[$a];
+
+	    ### gene directory
+	} elsif ($ARGV[$a] eq "-pp") {
+	    $a++;
+	    $main::dir{polypeptides} = $ARGV[$a];
+
 	    ### export all fields
 	} elsif ($ARGV[$a] eq "-all") {
 	    $main::export{all} = 1;
@@ -318,15 +324,6 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-o") {
 	    $a++;
 	    $out_file{regulation} = $ARGV[$a];
-
-	    ### help
-	} elsif (($ARGV[$a] eq "-h") ||
-		 ($ARGV[$a] eq "-help")) {
-	    &PrintHelp;
-	    exit(0);
-
-	} else {
-	    warn "WARNING: unknown option $ARGV[$a] is ignored\n";
 	}
 
 	$a++;
@@ -341,6 +338,9 @@ sub ReadArguments {
 sub ParseRegulation {
     my ($input_file) = @_;
     my $filename = `basename $input_file`;
+
+    warn "; Parsing file $input_file\n" if ($verbose >= 1);
+
     chomp $filename;
     
     my %class_holder;
@@ -377,16 +377,14 @@ sub ParseRegulation {
     ################################################################
     #### read header line and parse it to know which column contains
     #### which information
-    $header = <$in>;
+    my $header = <$in>;
     chomp($header);
-    #### fix some inconsistencies between Gaurab's and Georges' headers
-    $header =~ s/controlled from/controlledFrom/;
-    $header =~ s/controlled to/controlledTo/;
-    $header =~ s/PubmedID/pubmedID/;
-    $header =~ s/type of inhibition/type_of_inhibition/;
 
-    
     my @cols = split "\t", $header;
+    for my $c (0..$#cols) {
+	$cols[$c] =~ s/ +$//;
+	$cols[$c] =~ s/^ +//;
+    }
 
 
     my @single_value = qw( 
@@ -422,29 +420,37 @@ sub ParseRegulation {
 	}
     }
 
-
-#      my @cols = ();
-#      my %col = ();
-#      push @cols, "pathwayIDs";
-#      push @cols, "pubmedIDs";
-#      push @cols, "source";
-#      push @cols, "inputType";
-#      push @cols, "input";
-#      push @cols, "controlType";
-#      push @cols, "controlledType";
-#      push @cols, "controlledFrom";
-#      push @cols, "controlledTo";
-#      push @cols, "ligand1";
-#      push @cols, "ligand2";
-#      push @cols, "org_not_Ecoli";
+    @mirror_fields = ('pathway',
+		      'pubmedIDs',
+		      'source',
+		      'inputType',
+		      'input',
+		      'enzyme or protein controlled',
+		      'controlType',
+		      'controlledType',
+		      'type_of_inhibition',
+		      'controlledFrom',
+		      'controlledTo',
+		      'remark',
+		      'remark2',
+		      'remark3',
+		      'remark 4',
+		      'method',
+		      'parsing_errors');
+    print MIRROR join( "\t", @mirror_fields), "\n";
     
-
+    
     #### read the interactions
-    while (<$in>) {
+    while (my $current_line = <$in>) {
 	$l++;
-	next if (/^;/);
-	chomp;
-	@fields = split "\t";
+	next if ($current_line =~ /^;/);
+	chomp $current_line;
+	@fields = split "\t", $current_line;
+
+	@current_errors = ();
+
+	%field = ();
+
 	foreach $c (0..$#cols) {
 	    $key = $cols[$c];
 	    $value = $fields[$c];
@@ -462,34 +468,45 @@ sub ParseRegulation {
 	}
 
 	unless (defined($class_holder{$field{controlType}})) {
+	    push @current_errors, "unknown control type";
 	    &ErrorMessage(join ("\t", 
 				$filename,
 				$l,
 				"unknown control type",
 				$field{controlType}), "\n");
+	    &PrintMirrorLine();
 	    next;
 	}
 	
-	my $class_holder;
-	if (lc($field{inputType}) eq "compound") {
+	my $class_holder = $class_holder{$field{controlType}};
+	
+	if (($class_holder == $transcriptionalRegulations) && 
+	    (lc($field{inputType}) ne "protein")) {
 	    $class_holder = $indirectInteractions;
-	} else {
-	    $class_holder = $class_holder{$field{controlType}};
+	    push @current_errors, "transcriptional regulation with inputType different from protein";
+	    &ErrorMessage(join ("\t", 
+				$filename,
+				$l,
+				"transcriptional regulation with inputType different from protein",
+				$field{controlledFrom}), "\n");
+	    &PrintMirrorLine();
+	    next;
 	}
 
 	#### when there are multiple outputs, create one regulation per output
 	my @control_outputs = split /\|/, $field{controlledFrom};
 
-	warn join "\t", "HELLO", "output",  $field{controlledFrom}, "\n";
-
-	unless ($#control_outputs >= 1) {
+	unless ($#control_outputs >= 0) {
+	    push @current_errors, "the field controlledFrom is empty";
 	    &ErrorMessage(join ("\t", 
 				$filename,
 				$l,
 				"the field controlledFrom is empty",
 				$field{controlledFrom}), "\n");
+	    &PrintMirrorLine();
 	    next;
 	}
+
 
 	warn ($field{controlledFrom}, "\t",
 	      $#control_outputs + 1, "\t",
@@ -537,12 +554,28 @@ sub ParseRegulation {
 		       $current_control->get_attribute("controlType"),
 		       ), "\n"
 		if ($verbose >= 2);
+
+	    #### check inputs/outputs for transcriptional regulations
+	    if ($class_holder == $transcriptionalRegulations) {
+		&IdentifyInputsOutputs($current_control);
+	    }
 	}
+
+	&PrintMirrorLine();
     }
     
     close $in if ($input_file);
 }
 
+
+sub PrintMirrorLine {
+    $field{'parsing_errors'} = join (";", @current_errors);
+    my @mirror_line = ();
+    foreach my $f (@mirror_fields) {
+	push @mirror_line, $field{$f}; 
+    }
+    print MIRROR join ("\t", @mirror_line), "\n";
+}
 
 ################################################################
 #
@@ -604,72 +637,98 @@ sub LoadIndexes {
 
 ################################################################
 #
-# Check whether factor-coding genes and target genes have an ID in
-# KEGG
+# Identify target genes (in KEGG genes) and transcription factors
+# (with Swissprot)
 #
 sub IdentifyInputsOutputs {
-    foreach my $trreg ($transcriptionalRegulations->get_objects()) {
-	
-	#### matching factors
-	my $factor_name = $trreg->get_attribute("input");
-	$trreg->set_attribute("factor_id", $null);
-	$trreg->set_attribute("factor_name", $factor_name);
-	my @matching_factors = $index{name_polypeptide}->get_values(&standardize($factor_name));
-	
-	if ($#matching_factors < 0) {
-	    &ErrorMessage(join ("\t", 	
-				$trreg->get_attribute("source"),
-				$trreg->get_attribute("line"),
-				"Cannot identify polypp", 
-				$factor_name), "\n");
-	} else {
-	    if ($#matching_factors > 0) {
-		&ErrorMessage (join ("\t", 	
-				     $trreg->get_attribute("source"),
-				     $trreg->get_attribute("line"),
-				     "Multiple matching factors", $factor_name, @matching_factors), "\n");
-	    }
-	    $trreg->set_attribute("factor_id", $matching_factors[0]);
-	    
-	    foreach my $factor_id (@matching_factors) {
-		warn ("adding polypeptide $factor_id as input for $trreg\n") 
-		    if ($verbose >=3);
-		$trreg->new_attribute_value("input_ids", $factor_id);
-	    }
-	}
+#    foreach my $trreg ($transcriptionalRegulations->get_objects()) {
+    
+    my ($trreg) = @_;
 
-	#### matching genes
-	my $gene_name = $trreg->get_attribute("controlledFrom");
-	$trreg->set_attribute("gene_id", $null);
-	$trreg->set_attribute("gene_name", $gene_name);
-	my @matching_genes = $index{name_gene}->get_values(&standardize($gene_name));
+    warn ";\tIdentifying inputs and outputs for transcriptional regulation", $trreg->get_attribute("id"), "\n" if ($verbose >= 3);
 
-	if ($#matching_genes < 0) {
-	    &ErrorMessage(join ("\t",
-				$trreg->get_attribute("source"),
-				$trreg->get_attribute("line"),
-				"Cannot identify gene",
-				$gene_name), "\n");
-	} else {
-	    if ($#matching_genes > 0) {
-		&ErrorMessage (join ("\t", 	
-				     $trreg->get_attribute("source"),
-				     $trreg->get_attribute("line"),
-				     "Multiple matching genes", $gene_name, @matching_genes), "\n");
-	    }
-	    $trreg->set_attribute("gene_id", $matching_genes[0]);
-	    
-	    foreach my $gene_id (@matching_genes) {
-		warn ("adding polypeptide $gene_id as output for $trreg\n") 
-		    if ($verbose >=3);
-		$trreg->new_attribute_value("output_ids", $gene_id);
-	    }
-	}
+    ################################################################
+    #### matching factors
+    my $factor_name = $trreg->get_attribute("input");
 
-	#### description
-	my $description = $factor_name;
-	$description .= " ".$trreg->get_attribute("controlType");
-	$description .= " ".$gene_name;
-	$trreg->set_attribute("description", $description);
+    $trreg->set_attribute("factor_id", $null);
+    $trreg->set_attribute("factor_name", $factor_name);
+
+    my @matching_factors = $index{name_polypeptide}->get_values(&standardize($factor_name));
+
+    if (($#mathing_factors < 0) && ($factor_name =~ /p$/)){
+	my $truncated_factor_name = $factor_name;
+	$truncated_factor_name =~ s/p$//;
+	@matching_factors = $index{name_polypeptide}->get_values(&standardize($truncated_factor_name));
     }
+
+
+
+    
+    if ($#matching_factors < 0) {
+	push @current_errors, "cannot identify polypeptide";
+	&ErrorMessage(join ("\t", 	
+			    $trreg->get_attribute("source"),
+			    $trreg->get_attribute("line"),
+			    "Cannot identify polypeptide", 
+			    $factor_name), "\n");
+    } else {
+	if ($#matching_factors > 0) {
+	    push @current_errors, join (" ", "Multiple matching factors", $factor_name, @matching_factors);
+	    &ErrorMessage (join ("\t", 	
+				 $trreg->get_attribute("source"),
+				 $trreg->get_attribute("line"),
+				 "Multiple matching factors", $factor_name, @matching_factors), "\n");
+	}
+	$trreg->set_attribute("factor_id", $matching_factors[0]);
+	
+	foreach my $factor_id (@matching_factors) {
+	    warn ("adding polypeptide $factor_id as input for $trreg\n") 
+		if ($verbose >=3);
+	    $trreg->new_attribute_value("input_ids", $factor_id);
+	}
+    }
+
+    ################################################################
+    #### matching genes
+    my $gene_name = $trreg->get_attribute("controlledFrom");
+    $trreg->set_attribute("gene_id", $null);
+    $trreg->set_attribute("gene_name", $gene_name);
+    my @matching_genes = $index{name_gene}->get_values(&standardize($gene_name));
+
+    warn join( "\t", $gene_name, &standardize($gene_name), join( "|", @matching_genes)), "\n" if ($verbose >= 3);
+
+    if ($#matching_genes < 0) {
+	push @current_errors, "cannot identify gene";
+	&ErrorMessage(join ("\t",
+			    $trreg->get_attribute("source"),
+			    $trreg->get_attribute("line"),
+			    "Cannot identify gene",
+			    $gene_name), "\n");
+    } else {
+	if ($#matching_genes > 0) {
+	    push @current_errors, join (" ", "Multiple matching genes", $gene_name, @matching_genes);
+	    &ErrorMessage (join ("\t", 	
+				 $trreg->get_attribute("source"),
+				 $trreg->get_attribute("line"),
+				 "Multiple matching genes", $gene_name, @matching_genes), "\n");
+	}
+	$trreg->set_attribute("gene_id", $matching_genes[0]);
+	
+	foreach my $gene_id (@matching_genes) {
+	    warn ("adding polypeptide $gene_id as output for $trreg\n") 
+		if ($verbose >=3);
+	    $trreg->new_attribute_value("output_ids", $gene_id);
+	}
+    }
+
+    ################################################################
+    #### description
+    my $description = $factor_name;
+    $description .= " ".$trreg->get_attribute("controlType");
+    $description .= " ".$gene_name;
+    $trreg->set_attribute("description", $description);
+
+
+# }
 }
