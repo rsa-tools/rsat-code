@@ -46,6 +46,11 @@ analyzing regulatory sequences in a unix shell
 <li><a href=#xygraph>XYgraph</a>
 </ul>
 
+<li><a href=#advanced>Advanced use of RSA-Tools</a>
+<ul>
+<li><a href=#install_organism>Installing additional organisms</a>
+</ul>
+
 <li><a href=#references>References</a>
 </ul>
 
@@ -1104,7 +1109,7 @@ regions from the 6200 yeast genes. This should allow us to detect new
 genes potentially regulated by Pho4p.
 
 <P>
-One possibility would be to use <i>retrieve-seq</t> to extract all
+One possibility would be to use <i>retrieve-seq</i> to extract all
 yeast upstream regions, and save the result in a file, which will then
 be used as input by <i>patser</i>. To avoid occupying too much space
 on the disk, we could combine both tasks in a single command, and
@@ -1131,6 +1136,105 @@ retrieve-seq -type upstream -from -1 -to -800  -org yeast \
 
 <a name=xygraph>
 <h3>XYgraph</h3>
+
+
+</ul>
+<a name=advanced>
+<h2>Advanced use of RSA-Tools</h2>
+<UL>
+
+<a name=install_organism>
+<h3>Installing additional organisms</h3>
+
+In this chapter, we explain how to add support for an organism on your
+local configuration of RSAT. This assumes that you have the complete
+sequence of a genome, and a table describing the predicted location of
+genes.
+
+<h4>Genome data</h4>
+
+First, prepare a directory where you will store the data for your organism. For example : 
+
+<PRE>
+~myaccount/rsat-add/data/Mygenus_myspecies/
+</PRE>
+
+You need two informations to start installing a new genome :
+
+<ul>
+<li>The genome in fasta format. If the genome contains multiple
+chromosomes, they should all be included in a common multi-sequence
+fasta file.
+
+<li>A feature-table giving the basic information about genes. This is
+a tab-delimited text file. Each row contains information about one
+gene. The columns contain the following information : 
+<ol>
+
+<li>Identifier
+
+<li>Feature type (e.g. ORF, tRNA, ...)
+
+<li>Name
+
+<li>Chromosome. This must correspond to one of the sequence
+identifiers from the fasta file.
+
+<li>Left limit
+
+<li>Right limit
+
+<li>Strand (D for direct, R for reverse complemet)
+
+<li>Description. A one-sentence description of the gene function.
+
+</ol>
+
+<li>Optionally, you can provide a synonym file, which contains two
+columns:
+
+<ol>
+<li>ID. This must be one identifier found in the feature table
+<li>Synonym
+</ol>
+
+Multiple synonyms can be given for a gene, by adding several lines with
+the same ID in the first column.
+
+</ul>
+
+<h4>Installing the genome locally</h4>
+One you have this information, start the program
+<ul><pre>
+install-organism
+</pre></ul>
+You will be asked to enter the information needed for genome installation. 
+
+<h4>Updating your local configuration</h4>
+
+<ul>
+<li>Modify the local config file
+
+<li>You need to define an environment variable called RSA_LOCAL_CONFIG, and which indicates the loca config file. 
+
+</ul>
+
+<h4>Checking that the organism is installed properly</h4>
+
+To check the installation, start by checking whether your newly installed now appears in the list of supported organisms. 
+
+<ul><pre>
+retrieve-seq -help
+</pre></ul>
+
+Will give you a list of installed organisms.
+
+<P>
+Once the organism is found in your configuration, you need to check whether sequences are retrieved properly. A good test for this is to retrieve all the start codons, and check whether they are made of the expected codons (mainly ATG, plus some alternative start codons like GTG or TTG for bacteria). 
+
+<ul><pre>
+retrieve-seq -org myorganism -from 0 -to 2  | oligo-analysis -v -1str -l 3 -return occ,freq
+</pre></ul>
 
 
 </ul>
