@@ -34,7 +34,7 @@ result page.
 <A NAME="sequence">
 <B>Input sequence:</B></A><BR>
 
-The sequence that will be analyzed. Multiple sequenes can be entered
+The sequence that will be analyzed. Multiple sequences can be entered
 at once with most sequence formats (see below).
 <P>
 
@@ -113,6 +113,14 @@ in an orientation-insensitive way (as is generally the case for yeast
 upstream elements). 
 <P>
 
+<A NAME="grouprc">
+<B>Group reverse complement together in the output</B></A><BR> (only
+valid for two strand analysis). This parameter does not affect the
+counting itself, but only the format of output. If this option is NOT
+checked, two separate lines are used to show a word and its reverse
+complement. This is redundant but might be useful for compatibility
+with other programs.
+
 <A NAME="noov">
 <B>Prevent overlapping matches</B></A><BR> 
 Periodic pattern (e.g. AAAAAA, ATATAT) have an aggregative tendency, i.e. each occurrence of such a pattern strongly favours additional occurrences in its immediate vicinity. This introduces a bias to most statistics (binomial, log-likelihood). A simple way to correct for this bias is to prevent counting twice mutually overlapping occurrences. <BR>
@@ -131,21 +139,75 @@ Various probabilistic models can be used to estimate the expected
 frequency of each oligonucleotide. <BR>
 <UL>
 
-<LI><B>equiprobable nucleotides:</B> 
+<LI><B>Oligo frequencies from all non-coding regions :</B>
+pre-calculted tables are used to estimate expected oligonucleotide
+frequencies. These tables were calculated for each supported organism,
+by selecting all the intergenic regions and counting the
+oligonucleotide frequencies for all sizes between 1 and 8. 
 
-A, T, C, and G are considered to have a random probability of 0.25
-each. All oligonuleotides of size <TT>w</TT>@ have thus an expected
-frequency of <TT>0.25^w</TT>.
+<P>
+<LI><B>Markov chain :</B> expected word (oligonucleotide) frequencies
+are calculated on the basis of the subword frequencies observed in the
+input sequence set. This calculation takes into account the higher
+order dependencies between neighbouring residues. 
 
-<LI><B>alphabet from input sequence:</B>
+<P>
+For example, with a markov chain of order 4 :
+<UL><PRE>
+P(GATAAC) = P(GATAA) * P(C|GATAA)
+          = P(GATAA) * P(ATAAC) / P(ATAA)
+</PRE></UL>
+Thus
 
-<LI><B>genomic alphabet:</B>
+<UL><PRE>
+Expected(GATAAC) = observed(GATAA) * observed(ATAAC) / observed(ATAA)
+</PRE></UL>
 
-<LI><B>oligo frequency in whole genome:</B>
+For words of size k, the highest possible order is k-2. A Markov order
+of 0 amounts to use observed residue frequencies for calculating
+expected oligomer frequencies (no dependency between neighbour
+residues).<P>
 
-<LI><B>oligo frequency in non-coding regions:</B>
+The higher the Markov order, the most stringent is the analysis:
+specificity is increased, but there si a loss of sensitivity,
+i.e. some relevant patterns might be overlooked. The optimal markov
+order depends on the size of the sequence set. For small gene families
+(e.g. 10 sequences of 800bp), taking an order > 1 would result in a
+loss of sensitivity. For sequence sets of 1Mb, a Markov chain of 3 is
+optimal for hexanucleotides.
 
-<LI><B>oligo frequency in coding regions:</B>
+<P>
+<LI><B>Lexicon partitioning :</B>
+
+		Expected word frequencies are calculated on the basis
+		of subword frequencies, in a similar (but not
+		identical) way to the "dictionary" approach developed
+		by Harmen Bussemaker.  Each word is segmented in 2
+		subwords in all possible ways:
+
+<PRE>
+			GATAAG	G & ATAAG
+				GA & TAAG
+				GAT & TAG
+				GATA & AG
+				GATAA & G
+</PRE>
+
+		The expected frequency of each segmented pair is the product
+		of expected frequencies of its members. The expected word
+		frequency is the maximum expected pair frequency.
+
+
+<P>
+<LI><B>Residue frequencies from input sequence :</B> (Note: this is
+equivalent to a markov chain with order 0).
+
+<P>
+<LI><B>Equiprobable residues:</B> This option gives very poor
+results and should never be used in practice. I leave it there only
+for didactic purposes (to allow anyone to test how bad it performs).
+
+
 </UL>
 <P>
 
@@ -157,10 +219,10 @@ The results will be dramatically affected by the choice of expected
 frequency, which is the main specificity of this program. It has been
 shown that for the detection of regulatory sites in yeast upstream
 sequences, the best choice is to estimate the expected oligonucleotide
-frequencies on basis of the frequencies observed in the set ofall
+frequencies on basis of the frequencies observed in the set of all
 non-coding sequences from the genome. For the same purpose, choosing
-"equiprobqble nucleotides" is totally inefficient, and "alphabet from
-input sequence" works poorly.
+"equiprobable residues" would be totally inefficient, and "Residue
+frequencies from input sequence" works poorly.
 <P>
 </UL>
 
