@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.40 2002/03/29 09:45:50 jvanheld Exp $
+# $Id: oligo-analysis,v 1.41 2002/04/17 09:02:37 jvanheld Exp $
 #
-# Time-stamp: <2002-03-29 10:45:33 jvanheld>
+# Time-stamp: <2002-04-17 11:01:30 jvanheld>
 #
 ############################################################
 
@@ -113,7 +113,7 @@ if ($ncf) {
 
 #### read alphabet from a file
 if ($alphabet_file) {
-    $alpha = &OpenInputFile($alphabet_file);
+    ($alpha) = &OpenInputFile($alphabet_file);
     while (<$alpha>) {
 	next if (/^;/);
 	next unless (/\S/);
@@ -155,7 +155,7 @@ if (($alphabet) && !($input_alphabet)) {
 ### read expected frequencies
 if (($method eq "Frequency file") && 
     ($return{'exp_freq'})) {    #### expected frequencies ####
-    $exp = &OpenInputFile($exp_freq_file);
+    ($exp) = &OpenInputFile($exp_freq_file);
     while (<$exp>) {
 	next if (/^;/);
 	if (/(\S+)\t(\S+)/i) {
@@ -164,6 +164,17 @@ if (($method eq "Frequency file") &&
 	}
     }
     close $exp if ($exp_freq_file);
+
+      #### check if reverse complements were included in the expected freq file;
+      #### if not, infer them from the direct strand sequences
+      foreach my $pattern_seq (sort keys %patterns) {
+  	my $rc = lc(&ReverseComplement($pattern_seq));
+  	if (($patterns{$rc}->{exp_freq} <= 0) &&
+  	    ($patterns{$pattern_seq}->{exp_freq})) {
+  	    $patterns{$rc}->{exp_freq} = $patterns{$pattern_seq}->{exp_freq};
+	    #print STDERR join "\t", $pattern_seq,  $patterns{$pattern_seq}->{exp_freq}, $rc, $patterns{$rc}->{exp_freq}, "\n";
+  	}
+      }
 }
 
 ### open sequence file ###
