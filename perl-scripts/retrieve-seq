@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: retrieve-seq,v 1.35 2004/05/12 20:36:03 jvanheld Exp $
+# $Id: retrieve-seq,v 1.36 2005/01/20 11:43:22 jvanheld Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -327,21 +327,26 @@ foreach my  $query (@queries) {
     ### substring retrieval
     warn (join "\t", 
 	  ";",
-	  $query, 
-	  $orf_id, 
-	  $chrom, 
-	  $orf_left, 
-	  $orf_right, 
-	  $orf_strand,
-	  $current_from,
-	  $current_to,
-	  $reg_left,
-	  $reg_right,
-	  $reg_size,
+	  "query: ".$query, 
+	  "id: ".$id, 
+	  "ctg: ".$ctg, 
+	  "orf_left:".$orf_left, 
+	  "orf_right: ".$orf_right, 
+	  "orf_strand: ".$orf_strand,
+	  "current_from: ".$current_from,
+	  "current_to: ".$current_to,
+	  "reg_left: ".$reg_left,
+	  "reg_right: ".$reg_right,
+	  "reg_size: ".$reg_size,
 	  "\n"
 	  )
-	if ($verbose >= 2); 
-    $current_seq = $chromosome_seq{$chrom}->get_sequence($reg_left,$reg_right,$orf_strand);
+	if ($main::verbose >= 2); 
+    if ($reg_left < $reg_right) {
+	$current_seq = $chromosome_seq{$chrom}->get_sequence($reg_left,$reg_right,$orf_strand);
+    } else {
+	$current_seq = "";
+    }
+#    die join "\n", "COMMENTS", @comments, "\n";
 
     ### print result sequence
     &PrintNextSequence($out,$out_format,$line_width,$current_seq,$current_id, @comments);
