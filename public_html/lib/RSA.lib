@@ -164,8 +164,10 @@ sub OpenInputFile {
 	    exit;
 	}
 	$input_stream = INPUT;
+	$input_dir = `dirname $filename`;
+	chomp $input_dir;
     } 
-    return $input_stream;
+    return ($input_stream, $input_dir);
 }
 
 ### open output file ###
