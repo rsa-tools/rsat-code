@@ -356,15 +356,16 @@ sub Print_CGI_Input {
 
 #### send e-mail with the result of a command
 sub EmailTheResult {
-    if ($query->param('user_email') =~ /(\S+\@\S+)/) {
+    my ($command_to_email, $email_address) = @_;
+    if ($email_address =~ /(\S+\@\S+)/) {
 	$address = $1;
 	&Info ("Result will be sent to your e-mail address: $address");
 	system "$command | $mail_command $address &"; 
     } else {
-	if ($query->param('user_email') eq "") {
+	if ($email_address eq "") {
 	    &FatalError ("You did not enter your e-mail address");
 	} else {
-	    &FatalError ("The e-mail address you entered is not valid:<P>".$query->param('user_email'));
+	    &FatalError ("The e-mail address you entered is not valid: $email_address");
 	}
     }
 }

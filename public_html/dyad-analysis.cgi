@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.14 2001/12/24 01:51:14 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.15 2002/09/05 09:18:42 jvanheld Exp $
 #
-# Time-stamp: <2001-12-24 02:50:31 jvanheld>
+# Time-stamp: <2002-09-05 04:18:40 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -26,7 +26,7 @@ $query = new CGI;
 
 ### print the result page
 &RSA_header("dyad-analysis result");
-&ListParameters if $ECHO;
+&ListParameters if ($ECHO >=2);
 
 #### update log file ####
 &UpdateLogFile;
@@ -40,7 +40,7 @@ $purge = $query->param('purge');
 ### sequence file
 ($sequence_file,$sequence_format) = &GetSequenceFile();
 if ($purge) {
-    $command= "$convert_seq_command -i $sequence_file -from $sequence_format -to fasta | $purge_sequence_command | $dyad_analysis_command ";
+    $command= "$purge_sequence_command -i $sequence_file -format $sequence_format | $dyad_analysis_command ";
 } else {
     $command= "$dyad_analysis_command -i $sequence_file  ";
 }
@@ -123,18 +123,19 @@ if ($query->param('output') eq "display") {
 
     #### pattern assembly ####
     if ((&IsReal($query->param('occ_significance_threshold'))) && ($query->param('occ_significance_threshold')>= -1)) {
-	$fragment_assembly_command = "$SCRIPTS/pattern-assembly -v";
+	$pattern_assembly_command = "$SCRIPTS/pattern-assembly -v 1 -subst 0";
 	if ($query->param('strand') =~ /single/) {
-	    $fragment_assembly_command .= " -1str";
+	    $pattern_assembly_command .= " -1str";
 	} else {
-	    $fragment_assembly_command .= " -2str";
+	    $pattern_assembly_command .= " -2str";
 	}
-	$fragment_assembly_command .= "-maxfl 2 -subst 0 ";
+	$pattern_assembly_command .= "-maxfl 2 -subst 0 ";
 	
-	print "<H3>Pattern assembly</H3>\n";
-	open CLUSTERS, "$fragment_assembly_command -i $result_file |";
+	print "<H4>Pattern assembly</H4>\n";
+	open CLUSTERS, "$pattern_assembly_command -i $result_file |";
 	print "<PRE>\n";
 	while (<CLUSTERS>) {
+	    s|$RSA/||g;
 	    print;
 	}
 	print "</PRE>\n";
@@ -144,27 +145,12 @@ if ($query->param('output') eq "display") {
     &PipingForm();
     
 } else {
-    #### send e-mail with the result
-    if ($query->param('user_email') =~ /(\S+\@\S+)/) {
-	$address = $1;
-	print "<B>Result will be sent to your e-mail address: <P>";
-	print "$address</B><P>";
-	system "$dyad_analysis_command $parameters | $mail_command $address &"; 
-    } else {
-	if ($query->param('user_email') eq "") {
-	    print "<B>ERROR: you did not enter your e-mail address<P>";
-	} else {
-	    print "<B>ERROR: the e-mail address you entered is not valid<P>";
-	    print "$query->param('user_email')</B><P>";      
-	}
-    }
-    print '<HR SIZE=3>';
+    &EmailTheResult("$dyad_analysis_command $parameters", $query->param('user_email'));
 }
 
-unless ($graph_request) {
-    print "<HR SIZE = 3>";
-    print $query->end_html;
-}
+
+
+print $query->end_html;
 
 
 exit(0);
