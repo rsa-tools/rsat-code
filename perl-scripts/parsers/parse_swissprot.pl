@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_swissprot.pl,v 1.15 2002/03/19 17:24:37 jvanheld Exp $
+# $Id: parse_swissprot.pl,v 1.16 2002/03/22 13:38:45 jvanheld Exp $
 #
-# Time-stamp: <2002-03-19 18:23:49 jvanheld>
+# Time-stamp: <2002-03-22 14:16:42 jvanheld>
 #
 ############################################################
 
@@ -415,7 +415,8 @@ sub ParseSwissprot {
 
 	#### initialize the export flag
 	my $export = 0;
-	
+	my @organisms = ();
+
 	#### check whether the accession number was specified for export 
 	if ($in_file{acs}) {
 	    $export = 1 if (($selected_acs{$swissprot_ac}) ||
@@ -425,7 +426,7 @@ sub ParseSwissprot {
 	} else {
 	    #### check whether the polypeptide organism(s)
 	    #### match the organism selection
-	    my @organisms = $object_entry->OSs->elements;
+	    @organisms = $object_entry->OSs->elements;
 	    foreach $organism (@organisms) {
 		if ($selected_organism{uc($organism)}) {
 		    $export = 1;
@@ -524,8 +525,43 @@ sub ParseSwissprot {
 	foreach my $organism (@organisms) {
 	    $polypeptide->push_attribute("organisms",$organism);
 	}
-	
-	
+
+
+#### in construction 
+#  	@multi_attributes = qw (
+#  				 IDs 
+#  				 ACs 
+#  				);
+#  	@single_attributes = qw (
+#  				 DTs 
+#  				 OSs 
+#  				 DEs 
+#  				 GNs 
+#  				 OCs 
+#  				 Refs 
+#  				 CCs 
+#  				 KWs 
+#  				 DRs 
+#  				 FTs 
+#  				 Stars 
+#  				 SQs 
+#  				 );
+#  	foreach my $attribute (@multi_attributes) {
+#  	    print "\n", $attribute, "\t";
+#  	    if ($attr = $object_entry->{$attribute}) {
+#  		foreach my $value ($attr->elements) {
+#  		    $polypeptide->push_attribute($attribute, $value);
+#  		}
+#  		print join ";", $object_entry->{$attribute}->elements;
+#  	    };
+#  	}
+#  	foreach my $attribute (@single_attributes) {
+#  	    print "\n", $attribute, "\t";
+#  	    if ($attr = $object_entry->{$attribute}) {
+#  		$polypeptide->set_attribute($attribute, $value);
+#  		print join ";", $object_entry->{$attribute}->toText;
+#  	    };
+#  	}
     }
     close DATA;
     
