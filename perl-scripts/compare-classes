@@ -1,7 +1,7 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: compare-classes,v 1.5 2004/07/29 07:12:17 jvanheld Exp $
+# $Id: compare-classes,v 1.6 2004/10/25 22:34:34 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -679,7 +679,7 @@ sub CompareClasses {
 	foreach my $q (keys %query_classes) {
 	    
 	    next if (($distinct) && ($r eq $q));
-	    next if (($infile{ref_classes} eq $infile{query_classes} ) && ($r ge $q));
+	    next if (($infile{ref_classes} eq $infile{query_classes} ) && ($r gt $q));
 
 	    my $compa_key = $r."__VERSUS__".$q;
 
