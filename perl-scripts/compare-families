@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-families,v 1.8 2002/09/27 06:04:20 jvanheld Exp $
+# $Id: compare-families,v 1.9 2002/10/01 22:01:59 jvanheld Exp $
 #
-# Time-stamp: <2002-09-27 00:54:53 jvanheld>
+# Time-stamp: <2002-10-01 16:00:53 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -20,12 +20,25 @@ my $start_time = &AlphaDate;
 local $replacement = 0;
 local $symmetric = 0;
 local $distinct = 0;
+local $simkey = "sig"; ### key to export as similarity index (option -matrix)
+$sort_key = "name";
+
+
 
 %supported_return_fields = (
 			    proba=>1,
+			    percent=>1,
 			    members=>1
 			    );
 $supported_return_fields = join ",", keys %supported_return_fields;
+
+%supported_sort_keys = (
+			name=>1,
+			occ=>1,
+			sig=>1
+			);
+$supported_sort_keys = join ",", keys %supported_sort_keys;
+
 local %infile = ();
 local %outfile = ();
 
@@ -39,9 +52,10 @@ local $out = STDOUT;
 %uth = ();
 
 $population_size = 0;
-$sort_key = "name";
+
 
 &ReadArguments;
+
 
 ################################################################
 #### check argument values
@@ -89,23 +103,32 @@ unless ($population_size > 0 ) {
 
 ################################################################
 #### compare reference and query families
-%common = ();
+%common = (); ### elements common to query and reference families
+%ref_not_query = (); ### elements found in reference but not in query
+%query_not_ref = (); ### elements found in query but not in reference
 foreach my $r (keys %ref_families) {
     my %ref_member = ();
+    my %not_query = ();
     foreach $m ( $ref_families{$r}->get_members()) {
 	$ref_member{$m} = 1;
+	$not_query{$m} = 1;
     }
     foreach my $q (keys %query_families) {
 	next if (($distinct) && ($r eq $q));
 	my $compa_key = $r."__VERSUS__".$q;
+	@{$query_not_ref{$compa_key}} = ();
 	@{$common{$compa_key}} = ();
 	my @query_members = $query_families{$q}->get_members();
 	foreach my $m (@query_members) {
 	    if ($ref_member{$m}) {
 		push @{$common{$compa_key}}, $m;
 		$matching_elements->{$compa_key}->{$m}++;
+		delete($not_query{$m});
+	    } else {
+		push @{$query_not_ref{$compa_key}}, $m;
 	    }
 	}
+	@{$ref_not_query{$compa_key}} = keys (%not_query);
 
 	$compa{$compa_key}->{occ} = scalar(keys %{$matching_elements->{$compa_key}});
 
@@ -209,66 +232,95 @@ if ($return_fields{proba}) {
 ###### print result
 ################################################################
 
-#### header
-@header_fields = (
-		  "; ref", 
-		  "query",
-		  "ref#",
-		  "query#",
-		  "common#");
-push @header_fields, "P_val" if $return_fields{proba};
-push @header_fields, "E_val" if $return_fields{proba};
-push @header_fields, "sig" if $return_fields{proba};
-if ($return_fields{members}) {
-    push @header_fields, "ref_members";
-    push @header_fields, "query_members";
-    push @header_fields, "common_members";
-}
-print $out join("\t", @header_fields), "\n";
 
-#### sort family comparisons
-if ($sort_key eq "sig") {
-    @sorted_keys = sort {$compa{$b}->{sig} <=> $compa{$a}->{sig}} (keys %compa);
-} elsif ($sort_key eq "occ") {
-    @sorted_keys = sort {$compa{$b}->{occ} <=> $compa{$a}->{occ}} (keys %compa);
+if ($return{matrix}) {
+    #### print a smilarity matrix
+    my $header = ";";
+    $header .= join "\t", (keys %query_families);
+    $header .= "\n";
+    print $out $header;
+
+    #### print the result
+    foreach my $q (sort keys %query_families ) {
+	print $out $q;
+	foreach my $r (sort keys %ref_families ) {
+	    my $compa_key = $r."__VERSUS__".$q;
+	    if (defined($compa{$compa_key}->{$simkey})) {
+		print $out "\t",  $compa{$compa_key}->{$simkey};
+	    } else {
+		print $out "\t", "NA";
+	    }
+	}
+	print $out "\n";
+    }
+    
+
 } else {
-    @sorted_keys = sort (keys %compa); ### alphabetical order
-}
-
-#### family combinations
-foreach my $compa_key (@sorted_keys) {
-    my ($r, $q) = split "__VERSUS__", $compa_key;
-
-    #### counts
-    print $out join "\t", ($r, 
-			   $q, 
-			   $ref_families{$r}->get_size(),
-			   $query_families{$q}->get_size(),
-			   $compa{$compa_key}->{occ});
-
-    #### probabilities
-    if ($return_fields{proba}) {
-	if ($compa{$compa_key}->{P_val} >= 0.0001) {
-	    printf $out "\t%.5f", $compa{$compa_key}->{P_val};
-	} else {
-	    printf $out "\t%.2g", $compa{$compa_key}->{P_val};
-	}
-	if ($compa{$compa_key}->{E_val} >= 0.0001) {
-	    printf $out "\t%.5f", $compa{$compa_key}->{E_val};
-	} else {
-	    printf $out "\t%.2g", $compa{$compa_key}->{E_val};
-	}
-	printf $out ( "\t%.2f", $compa{$compa_key}->{sig});
-    }
-
-    #### members of the intersection
+    #### header
+    my @header_fields = (
+			 "; ref", 
+			 "query",
+			 "ref#",
+			 "query#",
+			 "common#");
+    push @header_fields, "P_val" if $return_fields{proba};
+    push @header_fields, "E_val" if $return_fields{proba};
+    push @header_fields, "sig" if $return_fields{proba};
     if ($return_fields{members}) {
-	print $out "\t", join( " ", $ref_families{$r}->get_members()) ;
-	print $out "\t", join( " ", $query_families{$q}->get_members()) ;
-	print $out "\t", join( " ", @{$common{$compa_key}}) ;
+	push @header_fields, "ref_members";
+	push @header_fields, "query_members";
+	push @header_fields, "common_members";
+	push @header_fields, "ref_only";
+	push @header_fields, "query_only";
+    }
+    print $out join("\t", @header_fields), "\n";
+    
+    #### sort family comparisons
+    if ($sort_key eq "sig") {
+	@sorted_keys = sort {$compa{$b}->{sig} <=> $compa{$a}->{sig}} (keys %compa);
+    } elsif ($sort_key eq "occ") {
+	@sorted_keys = sort {$compa{$b}->{occ} <=> $compa{$a}->{occ}} (keys %compa);
+    } else {
+	@sorted_keys = sort (keys %compa); ### alphabetical order
     }
 
-    print $out "\n";
+    #### family combinations
+    foreach my $compa_key (@sorted_keys) {
+	my ($r, $q) = split "__VERSUS__", $compa_key;
+
+	#### counts
+	print $out join "\t", ($r, 
+			       $q, 
+			       $ref_families{$r}->get_size(),
+			       $query_families{$q}->get_size(),
+			       $compa{$compa_key}->{occ});
+
+	#### probabilities
+	if ($return_fields{proba}) {
+	    if ($compa{$compa_key}->{P_val} >= 0.0001) {
+		printf $out "\t%.5f", $compa{$compa_key}->{P_val};
+	    } else {
+		printf $out "\t%.2g", $compa{$compa_key}->{P_val};
+	    }
+	    if ($compa{$compa_key}->{E_val} >= 0.0001) {
+		printf $out "\t%.5f", $compa{$compa_key}->{E_val};
+	    } else {
+		printf $out "\t%.2g", $compa{$compa_key}->{E_val};
+	    }
+	    printf $out ( "\t%.2f", $compa{$compa_key}->{sig});
+	}
+
+	#### members of the intersection
+	if ($return_fields{members}) {
+	    print $out "\t", join( " ", $ref_families{$r}->get_members()) ;
+	    print $out "\t", join( " ", $query_families{$q}->get_members()) ;
+	    print $out "\t", join( " ", @{$common{$compa_key}}) ;
+	    print $out "\t", join( " ", @{$ref_not_query{$compa_key}}) ;
+	    print $out "\t", join( " ", @{$query_not_ref{$compa_key}}) ;
+	}
+
+	print $out "\n";
+    }
 }
 
 ################################################################
@@ -347,8 +399,7 @@ OPTIONS
 	        whole set of referenc families.
 	-sort key
 		sort on the basis of the specified key.
-		Supported keys:
-			  name (default), occ, sig
+		Supported keys: $supported_sort_keys
 	-rep	replacement
 		Sampling was performed with replacement, i.e. a given
 		element can appear several times in the same family.
@@ -363,6 +414,11 @@ OPTIONS
 	-distinct
 		Prevent to compare each family with itself (when the
 		reference and query files contain the same families).
+	-matrix
+		Return a distance matrix, where each row corresponds
+		to a reference family, each column to a query family,
+		and each cell contains a similarity index. By default,
+		the sig index is used as similarity index.
 
 PROBABILITIES
 	P-VALUE
@@ -498,6 +554,7 @@ compare-families options
 -rep		sampling with replacement (use binomial instead of hyergeometric)
 -sym		symmetric comparison (only with -rep, see detailed help)
 -distinct	prevent to compare each family with itself
+-matrix		return a similarity matrix
 End_short_help
   close HELP;
   exit(0);
@@ -548,6 +605,14 @@ sub ReadArguments {
 	    ### sort key
 	} elsif ($ARGV[$a] eq "-sort") {
 	    $sort_key = $ARGV[$a+1];
+	    unless ($supported_sort_keys{$sort_key}) {
+		&FatalError ("Invalid sort key $sort_key. Supported: $supported_sort_keys" );
+	    }
+
+	    ### export a distance matrix
+	} elsif ($ARGV[$a] eq "-matrix") {
+	    $return{matrix} = 1;
+	    $return_fields{proba} = 1;
 
 	    ### prevent to compare each family with itself
 	} elsif ($ARGV[$a] eq "-distinct") {
@@ -585,6 +650,7 @@ sub ReadArguments {
 		}
 	    }
 	}
+
     }
 }
 
