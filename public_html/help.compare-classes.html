@@ -1,0 +1,253 @@
+<html>
+<head>
+   <title>compare-classes help</title>
+</head>
+<body text="#000000" bgcolor="#ffeedd" link="#0000ee" vlink="#55008b" alink="#ff0000">
+<blockquote>
+
+<h3 align=center><a href="RSA_home.cgi">RSA-tools</a> - Help about compare-classes</h3>
+
+<h4>Description</h4>
+<ul>
+
+        Compare two class files (the query file and the reference
+        file). Each class of the query file is compared to each
+        class of the reference file. The number of common elements is
+        reported, as well as the probability to observe at least this
+        number of common elements by chance alone.
+
+
+</ul>
+<h4>Options</h4>
+<ul>
+
+<b>Warning</b>: the following text is the help message from the
+on-line program, we still need to format it for the html form. There
+re possibly some differencs in option names, but the help already
+provides information about the statistics used by the program, and the
+meaning of the different options.
+
+<PRE>
+        -r ref_classes
+                A tab-delimited text file containing the dscription of
+                reference classes (see format description below).
+        -q query_classes
+                A tab-delimited text file containing the dscription of
+                query classes (see format description below).
+        -i input_file
+                This file will be used as both reference and query.
+                This is equivalent to
+                    -q input_file -r input_file
+        -o outputfile
+                if not specified, the standard output is used.
+                This allows to place the command within a pipe.
+        -cat catalog
+                Compare the query file to pre-defined catalogs
+                (e.g. GO, MIPS functional classes, ...). These
+                catalogs associate each gene of a genome to one or
+                several classes.  The organism must be specified
+                (option -org).
+
+                Supported catalogs:
+                TF_targets,GO,regulons,ms_complexes,MIPS
+
+                This option is currently supported for Saccharomyces
+                cerevisiae.
+        -org organism (for pre-defined catalogs)
+        -return return_fields
+                List of fields to return. Supported field :
+                members,proba,percent,occ
+        -uth field #
+                upper threshold value for a given field
+                Supported_fields:
+                        occ, P_val, E_val, sig, ref_percent, query_percent
+        -lth field #
+                lower threshold value for a given field
+                (same fields as -uth)
+        -pop #
+                Population size. If not specified, the population size
+                is estimated as the number of distinct elemenst in the
+                whole set of referenc classes.
+        -sort key
+                sort on the basis of the specified key.
+                Supported keys: E_val,P_val,name,occ,query_percent,ref_percent,sig
+        -rep    replacement
+                Sampling was performed with replacement, i.e. a given
+                element can appear several times in the same class.
+
+                In this case, the binomial distribution is used
+                instead of the hypergeometric.
+
+        -sym    symmetric comparison
+                (only useful when -rep is activated, because th
+                hypergeometric is by definition symmetric)
+
+        -distinct
+                Prevent to compare each class with itself (when the
+                reference and query files contain the same classes).
+        -matrix [key]
+                Return a pairwise matrix, where each row corresponds
+                to a reference class, each column to a query class,
+                and each cell contains a comparison between the two
+                classes. The next argument indicates which statistics
+                has to be returne in the matrix (default = sig).
+                Supported : sig,query_percent,ref_percent,occ,E_val,P_val
+        -dot dot_file
+                Export a graph with the associations in a dot
+                files. Dot files can be visualized and motified with
+                the GraphViz package (http://www.graphviz.com/), which
+                contains several methods of automatic layout.
+
+PROBABILITIES
+        P-VALUE
+
+                The P-value is the probability to observe at least c
+                common elements between a given query class and a
+                given reference class. It can be calculated with
+                different formulae, depending on the underlying random
+                model.
+
+                Let us assume that we have :
+                        q       size of the query class
+                        r       size of the reference class
+                        c       number of common elements
+                        n       population size
+
+                HYPERGEOMETRIC
+                                       q     i  q-i     q
+                P_value = P(X >= c) = SUM ( C  C     / C  )
+                                      i=c    r  n-r     n
+
+                BINOMIAL
+
+                When the option -rep (replacement) is active,
+                probabilities are calculated on the basis of the
+                binomial distribution instead of the hypergeometric.
+
+
+                The binomial formula is applied with
+                        p_r = r/n probability of success at each trial
+                        nb of trials = q
+                        nb of successes = c
+
+                                       q
+                P_value = P(X >= c) = SUM (binom(i,q,p_r))
+                                      i=c
+
+                Beware: the binomial gives an assymmetric result,
+                i.e. the fact to swap query and reference classes
+                changes the probability. This can be circumvented by
+                using the option -sym, described below.
+
+                SYMMETRICAL COMPARISON WITH THE BINOMIAL
+
+                When the comparison is assumed to be symmetrical, the
+                program calculates the joint probability fo at least c
+                elements to belong to both the query set and the
+                reference set.
+
+                In this case, the binomial is applied with :
+                        p_qr = q/n * r/n
+                          = proba of success at each trial
+                        nb of trials = n
+                        nb of successes = c
+
+                                       q
+                P_value = P(X >= c) = SUM (binom(i,n,p_qr))
+                                      i=c
+
+        E-VALUE
+
+                Assuming that there are x query classes and y
+                reference classes, each analysis consists in x*y
+                comparisons. Thus, thhe P-value can be misleading,
+                because even low P-values are expected to emerge by
+                chance alone when the number of query and/or reference
+                classes is very high. The E-value reflects better the
+                degree of exceptionality.
+
+                E_val = P_Val * nb_tests
+                      = P_val * x * y
+
+                      where x = number of query classes
+                            y = number of reference classes
+
+        SIG
+                The significance index is the minus log of the
+                E-value. It is calculated in base 10.
+
+                sig = -log10(E_val)
+
+                This index gives an intuitive perception of the
+                exceptionality of the common elements : a negative sig
+                indicates that the common matches are likely to come by
+                chanc alone, a ositive value that they are
+                significant. Higher sig values indicate a higher
+                significance.
+
+OUTPUT FORMAT
+
+        The program returns a tabdelimited file with one row per
+        combination of reference-query class, and one column per
+        return field.
+
+        Default return fields:
+                1) ref      reference class
+                2) query    query class
+                3) ref#     number of members in the ref class
+                4) query#   number of members in the query class
+                5) common   number of elements in common between the
+                            query and reference class
+
+        Additional return values are optionally returned, and can be
+        specified with the -return option.
+
+FILE FORMATS
+    CLASS FILE
+        The class file specifies the composition of several gene
+        families.  It is a text file containing 2 columns separated by
+        a tab character.
+
+            col 1:   class member
+            col 2:   class name
+
+        Additional columns are ignored.
+
+        Lines starting with a semicolumn (;) are ignored, allowing to
+        document the class files with comments.
+
+        A given element (e.g. gene) can belong simultaneously to
+        several families. In such a case, the element will appear on
+        several rows (one per class),
+
+        Example
+                ; genes responding to Phosphate stress
+                pho5    PHO
+                pho8    PHO
+                ; genes responding to nitrogen starvation
+                DAL5    NIT
+                GAP1    NIT
+                ...
+</PRE>
+<a name="opt1">
+<p><b>opt1</b><br>
+</p>
+
+</ul>
+
+
+<hr size=3>
+
+<address>
+<center>
+<font size=-1>
+For information, contact <a href="mailto:jvanheld@ucmb.ulb.ac.be">Jacques
+van Helden (jvanheld@ucmb.ulb.ac.be)</a> 
+</font>
+</center>
+</address>
+
+
+</blockquote>
+</body>
+</html>
