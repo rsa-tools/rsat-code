@@ -6,6 +6,7 @@
 ### - access all objects of a class (_objects)
 ### - counters (_count) and ids, 
 ### - indexes (_id_index, _name_index),
+
 package classes::ClassFactory;
 use Data::Dumper;
 {
@@ -22,7 +23,7 @@ use Data::Dumper;
 
     ### check the object type 
     unless (defined($args{object_type})) {
-      die "Error : cannot create a classholder without specified object type\n";
+	die "Error : cannot create a classholder without specified object type\n";
     }
     $object_type = $args{object_type};
 
@@ -299,6 +300,8 @@ use Data::Dumper;
   sub export {
       my ($class_holder,$format,$outfile) = @_;
       my $object_type = $class_holder->get_object_type();
+
+
       (my $short_class = $object_type) =~ s/.*:://g;
       $short_class = lc($short_class);
 
@@ -313,6 +316,7 @@ use Data::Dumper;
       if ($format eq "tab") {
 	  my %tables = ();
 	  my %attribute_cardinalities = $object_type->get_attribute_cardinalities();
+#	  my %attribute_headers = $object_type->get_attribute_headers();
 	  
 	  #### out fields
 	  my @out_fields = $class_holder->get_out_fields();
@@ -345,13 +349,12 @@ use Data::Dumper;
 	  $tables{$short_class} .= "\n";
 	  
 	  ### dump object content 
-	  foreach my $object ($class_holder->get_objects()) {
-	      my $id = $object->get_attribute("id");
-	      my @scalar_fields = ();
-	      foreach my $attribute (@out_fields) { 
-		  my $cardinality = $attribute_cardinalities{$attribute};
-		  my $header = $object_type->get_attribute_header($attribute) || $attribute;
-
+	  foreach my $attribute (@out_fields) { 
+	      my $cardinality = $attribute_cardinalities{$attribute};
+	      my $header = $object_type->get_attribute_header($attribute) || $attribute;
+	      foreach my $object ($class_holder->get_objects()) {
+		  my $id = $object->get_attribute("id");
+		  my @scalar_fields = ();
 		  unless ($attribute eq "id") {
 		      
 		      #### SCALAR attibute
@@ -395,15 +398,37 @@ use Data::Dumper;
 			  
 			  #### EXPANDED attribute
 		      } elsif ($cardinality eq "EXPANDED") {
+			  my @expanded_fields = split "\t", $header;
 			  my $table_name = lc($short_class."_".$attribute);
 			  unless (defined($tables{$table_name})) {
 			      $tables{$table_name} = "$comment_symbol id\t".$header."\n";
 			  }
 			  if (my @value_array = $object->get_attribute($attribute)) {
 			      foreach my $array_pointer (@value_array) {
+				  my @array_values = @{$array_pointer};
+				  #### check the size of the array of values
+				  if ($#array_values < $#expanded_fields) {
+				      for $f ($#array_values+1..$#expanded_fields) {
+					  @array_values[$f] = $main::null;
+				      }
+				  } elsif ($#array_values > $#expanded_fields) {
+				      &main::ErrorMessage(join "\t", "Too many values for attribute", 
+							  $attribute,
+							  "fields", $#expanded_fields+1,
+							  "values", $#array_values+1,
+							  "supplemental values are ignored",
+							  "\n"
+							  );
+				      @array_values = @array_values[0..$#expanded_fields];
+				  }
+				  for my $f (0..$#array_values) {
+				      if ($array_values[$f] eq "") {
+					  $array_values[$f] = $main::null;
+				      }
+				  }
 				  $tables{$table_name} .= join("\t", 
 							       $id,
-							       @{$array_pointer});
+							       @array_values);
 				  $tables{$table_name} .= "\n";
 			      }
 			  }

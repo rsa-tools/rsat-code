@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_swissprot.pl,v 1.34 2003/12/23 02:54:56 jvanheld Exp $
+# $Id: parse_swissprot.pl,v 1.35 2003/12/23 17:22:31 jvanheld Exp $
 #
 # Time-stamp: <2003-07-10 11:52:54 jvanheld>
 #
@@ -37,7 +37,7 @@ package main;
 		      organisms
 		      features
 		      db_refs
-#		      comments
+		      comments
 		      swissprot_acs
 		      swissprot_ids
 		      ECs
@@ -178,8 +178,22 @@ package main;
     $polypeptides = classes::ClassFactory->new_class(object_type=>"classes::Polypeptide",
 						     prefix=>"spp_");
     $polypeptides->set_out_fields(@out_fields);
-    $polypeptides->set_attribute_header("features", join ("\t", "Feature_key", "start_pos", "end_pos", "description", "method", "f6", "f7") );
-    $polypeptides->set_attribute_header("db_refs", join ("\t", "DB_identifier", "primary_key", "secondary_key", "description"));
+    $polypeptides->set_attribute_header("features", join ("\t", 
+							  "Feature_key", 
+							  "start_pos", 
+							  "end_pos", 
+							  "description", 
+							  "method", 
+							  "FTId", 
+							  ) );
+#    die join( "\t",  "BOUM",  $polypeptides->get_object_type(),
+#	      $polypeptides->get_object_type()->get_attribute_header("features")), "\n";
+
+    $polypeptides->set_attribute_header("db_refs", join ("\t", 
+							 "DB_identifier", 
+							 "primary_key", 
+							 "secondary_key", 
+							 "description"));
 #    $polypeptides->set_attribute_header("comments", join ("\t", "topic", "comments") );
 
     #### testing mode
@@ -240,18 +254,16 @@ package main;
 				);
     &ExportMakefile(@classes);
     &ExportClasses($out_file{polypeptides}, $out_format,classes::Polypeptide) if ($export{obj});
-
 #    &CompressParsedData();
+    close ERR;
 
     ### report execution time
     if ($verbose >= 1) {
 	$done_time = &AlphaDate();
 	warn (";\n",
 	      "; job started $start_time",
-	      "; job done    $done_time\n")
-	}
-
-    close ERR;
+	      "; job done    $done_time\n");
+    }
     
     exit(0);
 }
@@ -538,8 +550,8 @@ sub ParseSwissprot {
 	#### Features
 	my @features = $object_entry->FTs->elements;
 	foreach my $ft (@features) {
-	    warn join "'|'", "HELLO ft", $#{$ft}, @{$ft} , "'\n" if ($verbose >= 10);
-	    $polypeptide->push_expanded_attribute("features", @{$ft});
+#	    warn join "'|'", "HELLO ft", $#{$ft}, @{$ft} , "'\n" if ($verbose >= 10);
+	    $polypeptide->push_expanded_attribute("features", @{$ft}[0..5]);
 	}
 	my @db_refs = $object_entry->DRs->elements;
 	foreach my $dr (@db_refs) {

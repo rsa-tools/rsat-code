@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: util.pl,v 1.4 2003/12/19 15:14:27 jvanheld Exp $
+# $Id: util.pl,v 1.5 2003/12/23 17:22:32 jvanheld Exp $
 #
 # Time-stamp: <2003-07-10 11:46:32 jvanheld>
 #
@@ -151,17 +151,27 @@ sub IsInteger {
   }
 }
 
+################################################################
+#### Print a message in th error log file
 sub ErrorMessage {
   my @messages = @_;
   print ERR @messages;
   warn @messages if ($main::verbose >= 2);
 }
 
+
+################################################################
+#### Increment a counter nd return the value with a fixed number of
+#### digits (8)
 sub next_count {
   my $count = sprintf "%8d", ++$main::object_count;
   $count =~ s/ /0/g;
   return $count;
 }
+
+
+################################################################
+#### Default verbose message
 sub DefaultVerbose {
   warn "; directories\n";
   while (($key, $value) = each %dir) {
@@ -177,6 +187,8 @@ sub DefaultVerbose {
   }
 }
 
+################################################################
+#### Return date and time in alphabetical order (year - month - day)
 sub AlphaDate {
   ### usage : $alpha_date = &AlphaDate;
   my $date = `date +%Y_%m_%d_%H%M%S`;
@@ -185,6 +197,8 @@ sub AlphaDate {
 }
 
 
+################################################################
+#### Trim the leading and trailing spaces of a string
 sub trim {
   ### remove leading and trailing spaces from a string
   ### usage $trimmed_string = &trim($string);
@@ -194,7 +208,8 @@ sub trim {
   return $string;
 }
 
-
+################################################################
+#### Trim the leading and trailing spaces of a string
 sub my_trim {
   my ($in_string) = @_;
   ### spaces

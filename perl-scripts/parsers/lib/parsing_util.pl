@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parsing_util.pl,v 1.8 2003/12/17 18:08:45 jvanheld Exp $
+# $Id: parsing_util.pl,v 1.9 2003/12/23 17:22:32 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -20,7 +20,7 @@ sub CheckOutputDir {
 	$dir{output} .= "_test";
     }
     unless (-d $dir{output}) {
-	warn "; Creating output dir $dir{output}\n";
+	warn "; Creating output dir $dir{output}\n" if ($main::verbose >= 1);
 	`mkdir -p $dir{output}`;
 #	mkdir $dir{output}, 0775 || die "Error: cannot create directory $dir\n";
 	unless (-d $dir{output}) {

@@ -415,14 +415,17 @@ package classes::DatabaseObject;
     return %{$class."::_id_index"};
   }
 
-  #### attribute headers  
+  ################################################################
+  ### Return the headers of all expanded attributes 
   sub get_attribute_headers {
     my $class = ref($_[0]) || $_[0];
     return %{$class."::_attribute_header"};
   }
 
+  ################################################################
+  ### Return the header for a specified expanded attribute
+  ### usage: $header = $class->get_attribute_header($attr_name)
   sub get_attribute_header { 
-    ### usage: $header = $class->get_attribute_header($attr_name)
     my ($self, $attr) = @_;
     my $class = ref($self) || $self;
     return ${$class."::_attribute_header"}{$attr};
@@ -539,10 +542,12 @@ package classes::DatabaseObject;
     ${$class."::_attribute_cardinality"}{$key} = $cardinality;
   }
   
+  ################################################################
+  ## Set the header for an expanded attribute
   sub _set_attribute_header { 
-    my ($self, $attr, $header) = @_;
-    my $class = ref($self) || $self;
-    ${$class."::_attribute_header"}{$attr} = $header;
+      my ($self, $attr, $header) = @_;
+      my $class = ref($self) || $self;
+      ${$class."::_attribute_header"}{$attr} = $header;
   }
   
 #  sub _set_attribute_type { 
