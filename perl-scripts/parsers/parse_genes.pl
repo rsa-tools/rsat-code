@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genes.pl,v 1.13 2000/12/11 09:19:05 jvanheld Exp $
+# $Id: parse_genes.pl,v 1.14 2000/12/14 20:51:34 jvanheld Exp $
 #
-# Time-stamp: <2000-12-11 10:16:07 jvanheld>
+# Time-stamp: <2000-12-14 21:37:55 jvanheld>
 #
 ############################################################
 
@@ -26,6 +26,7 @@ package main;
 ### files to parse
 @selected_organisms= ();
 
+#$dir{genes} = $dir{KEGG}."/genomes/previous_genes/";
 $dir{genes} = $dir{KEGG}."/genomes/genes/";
 
 $kegg_file{yeast} = "S.cerevisiae.ent";
@@ -62,28 +63,27 @@ $out_format = "obj";
 @classes = qw( PFBP::Gene );
 $genes = PFBP::ClassFactory->new_class(object_type=>"PFBP::Gene",
 				       prefix=>"gene_");
-$expressions = PFBP::ClassFactory->new_class(object_type=>"PFBP::Expression",
-					     prefix=>"expr_");
+#$expressions = PFBP::ClassFactory->new_class(object_type=>"PFBP::Expression",
+#					     prefix=>"expr_");
 
 ### default output fields for each class
 @{$out_fields{'PFBP::Gene'}} = qw( id organism names position chromosome strand start end exons definition source);
+#@{$out_fields{'PFBP::Gene'}} = qw( id source organism raw_position chromosome strand start_base end_base description names exons );
 
-@{$out_fields{'PFBP::Expression'}} = qw( id gene_id polypeptide_id );
+#@{$out_fields{'PFBP::Expression'}} = qw( id gene_id polypeptide_id );
 
 &ReadArguments;
 
 ### outfile names
-$suffix = "";
-foreach $organism (@selected_organisms) {
-  $suffix .= "_$organism";
+unless (defined($suffix)) {
+    foreach $organism (@selected_organisms) {
+	$suffix .= "_$organism";
+    }
+    if ($export{enzymes}) {
+	$suffix .= "_enz";
+    }
+    $suffix .= "_test" if ($test);
 }
-#if ($export{all}) {
-#  $suffix .= "_all";
-#} 
-if ($export{enzymes}) {
-  $suffix .= "_enz";
-}
-#$suffix .= "_test" if ($test);
 
 $dir{output} = $parsed_data."/kegg_parsed/".$delivery_date;
 unless (-d $dir{output}) {
@@ -109,7 +109,11 @@ foreach $org (@selected_organisms) {
 	unless (defined($kegg_file{lc($org)}));
     my $data_file = $dir{genes}.$kegg_file{lc($org)};
     if (-e $data_file) {
-	$in_file{$org} = "cat ${data_file} | ";
+	if ($data_file =~ /\.gz$/) {
+	    $in_file{$org} = "gunzip -c ${data_file} | ";
+	} else {
+	    $in_file{$org} = "cat ${data_file} | ";
+	}
     } elsif (-e "${data_file}.gz") {
 	$in_file{$org} = "gunzip -c ${data_file}.gz | ";
     } else {
@@ -183,7 +187,8 @@ close ERR;
 
 
 warn "; compressing the files\n" if ($warn_level >= 1);
-system "gzip -f $dir{output}/*.tab $dir{output}/*.obj $dir{output}/*.txt";
+system "gzip -f $dir{output}/*.tab $dir{output}/*.txt";
+system "gzip -f $dir{output}/*.obj" if ($export{obj});
 
 
 exit(0);
@@ -209,10 +214,6 @@ VERSION
 	Created		1999/12/16
 	Last modified	2000/01/08
 	
-SYNOPSIS	
-	parse_kegg_genes.pl [-v] [-vv] [-i infile] [-format output_format]
-		[-o outfile] 
-
 OPTIONS	
 	-h	detailed help
 	-help	short list of options
@@ -221,12 +222,6 @@ OPTIONS
 		Warn level 1 corresponds to a restricted verbose
 		Warn level 2 reports all polypeptide instantiations
 		Warn level 3 reports failing get_attribute()
-	-i	input file
-		If ommited, STDIN is used
-		This allows to insert the program within a unix pipe
-	-o	output file
-		If ommited, STDOUT is used. 
-		This allows to insert the program within a unix pipe
 	-obj    Export results in "obj" format (human readable)
 	-enz	export enzymes only
 	-all	export all polypeptides for the selected organisms
@@ -234,11 +229,11 @@ OPTIONS
 	-org	select an organism for exportation
 		can be used reiteratively in the command line 
 		to select several organisms
-		   Supported organisms :
-			ecoli
-			human
-			yeast
-		by default, all organisms are selected
+		by default, all organisms found in the input directory
+		are selected
+	-suffix suffix
+		add a suffix to output file names
+		    -suffix '' prevents from adding any suffix
 EndHelp
   close HELP;
 }
@@ -260,15 +255,10 @@ sub ReadArguments {
     } elsif ($ARGV[$a] eq "-test") {
       $main::test = 1;
       
-      ### input file
-    } elsif ($ARGV[$a] eq "-i") {
+      ### suffix
+    } elsif ($ARGV[$a] eq "-suffix") {
       $a++;
-      $main::in_file{pathway_index} = $ARGV[$a];
-      
-      ### output file
-    } elsif ($ARGV[$a] eq "-o") {
-      $a++;
-      $main::out_file{pathways} = $ARGV[$a];
+      $main::suffix = $ARGV[$a];
       
       ### help
     } elsif (($ARGV[$a] eq "-h") ||

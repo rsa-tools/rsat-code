@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_kegg.pl,v 1.1 2000/12/04 02:08:44 jvanheld Exp $
+# $Id: parse_kegg.pl,v 1.2 2000/12/14 20:55:49 jvanheld Exp $
 #
-# Time-stamp: <2000-12-04 02:35:43 jvanheld>
+# Time-stamp: <2000-12-14 12:44:45 jvanheld>
 #
 ############################################################
 
@@ -18,7 +18,7 @@ require "PFBP_config.pl";
 require "PFBP_util.pl";
 require "PFBP_parsing_util.pl";
 
-package PFBP::KeggPathway;
+package PFBP::GenericPathway;
 ### A class to treat EC numenclature
 {
   @ISA = qw ( PFBP::ObjectSet );
@@ -30,14 +30,28 @@ package PFBP::KeggPathway;
   %_id_index = ();
   %_attribute_count = ();
   %_attribute_cardinality = (id=>"SCALAR",
-#		      description=>"SCALAR",
+		      names=>"ARRAY",
+		      reactions=>"ARRAY",
+		      ECs=>"ARRAY",
+		     );
+}
+
+package PFBP::Pathway;
+### A class to treat EC numenclature
+{
+  @ISA = qw ( PFBP::ObjectSet );
+  ### class attributes
+  $_count = 0;
+  $_prefix = "pthw_";
+  @_objects = ();
+  %_name_index = ();
+  %_id_index = ();
+  %_attribute_count = ();
+  %_attribute_cardinality = (id=>"SCALAR",
 		      organism=>"SCALAR",
 		      parent=>"SCALAR",
 		      source=>"SCALAR",
 		      names=>"ARRAY",
-		      #element_class=>"SCALAR",
-		      reactions=>"ARRAY",
-		      ECs=>"ARRAY",
 		      genes=>"ARRAY"
 		     );
 }
@@ -93,7 +107,8 @@ push @classes, ("PFBP::KeggPathway");
 @{$out_fields{'PFBP::Reaction'}} = qw( id  source);
 @{$out_fields{'PFBP::Reactant'}} = qw( id reactant_type reaction_id compound_id stoichio valid_interm );
 @{$out_fields{'PFBP::ECSet'}} = qw( id names parent reactions );
-@{$out_fields{'PFBP::KeggPathway'}} = qw( id parent organism source names reactions ECs genes );
+@{$out_fields{'PFBP::Pathway'}} = qw( id parent organism source names reactions ECs genes );
+@{$out_fields{'PFBP::GenericPathway'}} = qw( id source names reactions ECs );
 
 &ReadArguments;
 
@@ -119,8 +134,10 @@ $reactants = PFBP::ClassFactory->new_class(object_type=>"PFBP::Reactant",
 					   prefix=>"rctt_");
 $ecs = PFBP::ClassFactory->new_class(object_type=>"PFBP::ECSet",
 				     prefix=>"ec_");
-$pathways = PFBP::ClassFactory->new_class(object_type=>"PFBP::KeggPathway",
+$pathways = PFBP::ClassFactory->new_class(object_type=>"PFBP::Pathway",
 					  prefix=>"pthw_");
+$genericPathways = PFBP::ClassFactory->new_class(object_type=>"PFBP::GenericPathway",
+						 prefix=>"gptw_");
 
 #### parse compounds
 &ParseKeggFile($in_file{compounds}, $compounds, source=>'KEGG:compound');
@@ -137,9 +154,9 @@ $compounds->index_names();
 
 foreach $compound ($compounds->get_objects()) {
     ### define a primary name (take the first value in the name list)
-    if ($name = $compound->get_name()) {
-	$compound->set_attribute("primary_name",$name);
-    }
+#    if ($name = $compound->get_name()) {
+#	$compound->set_attribute("primary_name",$name);
+#    }
     #### check for compounds without formula
     if ($compound->get_attribute("formula") eq "<UNDEF>") {
 	$compound->set_attribute("formula","<NULL>");
@@ -154,7 +171,8 @@ $reactions->dump_tables();
 $reactants->dump_tables();
 $ecs->dump_tables();
 $pathways->dump_tables();
-&ExportClasses($out_file{kegg}, $out_format, @classes);
+$genericPathways->dump_tables();
+&ExportClasses($out_file{kegg}, $out_format, @classes) if ($export{obj});
 
 
 ### print some stats after parsing
@@ -172,7 +190,8 @@ if ($warn_level >= 1) {
 
 close ERR;
 
-system "gzip -f $dir{output}/*.tab $dir{output}/*.obj $dir{output}/*.txt";
+system "gzip -f $dir{output}/*.tab $dir{output}/*.txt";
+system "gzip -f $dir{output}/*.obj" if ($export{obj});
 
 exit(0);
 
@@ -197,10 +216,6 @@ VERSION
 	Created		1999/12/16
 	Last modified	2000/10/25
 	
-SYNOPSIS	
-	parse_kegg.pl [-v] [-vv] [-i infile] [-format output_format]
-		[-o outfile] [-smiles]
-
 OPTIONS	
 	-h	detailed help
 	-help	short list of options
@@ -209,12 +224,9 @@ OPTIONS
 		Warn level 1 corresponds to a restricted verbose
 		Warn level 2 reports all polypeptide instantiations
 		Warn level 3 reports failing get_attribute()
-	-i	input file
-		If ommited, STDIN is used
-		This allows to insert the program within a unix pipe
-	-o	output file
-		If ommited, STDOUT is used. 
-		This allows to insert the program within a unix pipe
+	-obj	export data in object format (.obj file)
+		which is human-readable (with some patience and
+		a good cup of coffee)
 EndHelp
   close HELP;
 }
@@ -237,15 +249,9 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-test") {
 	    $test = 1;
 
-	    ### input file
-	} elsif ($ARGV[$a] eq "-i") {
-	    $a++;
-	    $in_file{compounds} = $ARGV[$a];
-	    
-	    ### output file
-	} elsif ($ARGV[$a] eq "-o") {
-	    $a++;
-	    $out_file{kegg} = $ARGV[$a];
+	    ### export .obj file
+	} elsif ($ARGV[$a] eq "-obj") {
+	    $export{obj} = 1;
 
 	    ### help
 	} elsif (($ARGV[$a] eq "-h") ||
@@ -628,7 +634,9 @@ sub ParseKeggPathways {
 	@in_files = shift @in_files;
     }
     
-    ### parse generic pathways (lists of reactions and ECs)
+    ################################################################
+    # parse generic pathways (lists of reactions and ECs)
+    #
     foreach $filename (@in_files) {
 	$short_file_name = $filename;
 	$short_file_name =~ s|.*/||g;
@@ -636,18 +644,16 @@ sub ParseKeggPathways {
 	    $map_id = $1;
 	}
 
-	$pathway = $pathways->new_object(id=>$map_id,
-					 source=>"KEGG:$short_file_name");
+	$pathway = $genericPathways->new_object(id=>$map_id,
+						source=>"KEGG:$short_file_name");
 	if (defined($pathway_names{$map_id})) {
-	    $pathway->new_attribute_value("names","KEGG - ".$pathway_names{$map_id}." - Generic");
+	    $pathway->new_attribute_value("names",$pathway_names{$map_id});
 	} else {
-	    $pathway->new_attribute_value("names","KEGG - ".$map_id." - Generic");
+	    $pathway->new_attribute_value("names",<NULL>);
 	    &ErrorMessage("WARNING: no name for pathway $map_id\n");
 	}
-	$pathway->set_attribute("organism","generic");
-	$pathway->set_attribute("parent","<NULL>");
 	
-	warn (";\n; reading reactions",
+	warn ("; reading reactions",
 	      "\tfile: ", $short_file_name,
 	      "\tid: ", $pathway->get_attribute("id"),
 	      "\tname: ", $pathway->get_name(),
@@ -656,9 +662,11 @@ sub ParseKeggPathways {
 	&ParsePathwayReactions($pathway,$filename);
     }
 
-    ### parse organism-specific pathways (lists of genes)
+    ################################################################
+    # parse organism-specific pathways (lists of genes)
+    #
     foreach $org (keys %full_name) {
-	$organism = $full_name{$org};
+	$organism = $full_name{$org} || $org;
 	@in_files = glob($dir{$org}."/*.gene*");
 	@in_files = shift @in_files if ($test);
 	
@@ -669,11 +677,11 @@ sub ParseKeggPathways {
 		$map_id = "map".$1;
 	    }
 	    
-	    $pathway = $pathways->new_object(id=>$map_id."_".$org,
+	    $pathway = $pathways->new_object(id=>$short_file_name,
 					     source=>"KEGG:$short_file_name");
 	    
 	    ### include the generic pathway as a sub-pathway
-	    if ($sub_pathway = $pathways->get_object($map_id)) {
+	    if ($sub_pathway = $genericPathways->get_object($map_id)) {
 		$parent_id = $sub_pathway->get_attribute("id");
 		$pathway->set_attribute("parent", $parent_id);
 	    } else {
@@ -683,14 +691,14 @@ sub ParseKeggPathways {
 
 	    ### pathway name
 	    if (defined($pathway_names{$map_id})) {
-		$pathway->new_attribute_value("names","KEGG - ".$pathway_names{$map_id}." - ".$organism);
+		$pathway->new_attribute_value("names",$pathway_names{$map_id});
 	    } else {
-		$pathway->new_attribute_value("names","KEGG - ".$map_id." - ".$organism);
+		$pathway->new_attribute_value("names","<NULL>");
 		&ErrorMessage("WARNING: no name for pathway $map_id\n");
 	    }
 	    $pathway->new_attribute_value("organism",$organism);
 
-	    warn (";\n; reading genes",
+	    warn (";reading genes",
 		  "\tfile: ", $short_file_name,
 		  "\tid: ", $pathway->get_attribute("id"),
 		  "\tname: ", $pathway->get_name(),

@@ -1,8 +1,8 @@
 ############################################################
 #
-# $Id: makefile,v 1.4 2000/12/12 02:52:01 jvanheld Exp $
+# $Id: makefile,v 1.5 2000/12/14 20:55:03 jvanheld Exp $
 #
-# Time-stamp: <2000-12-12 03:48:51 jvanheld>
+# Time-stamp: <2000-12-14 12:55:14 jvanheld>
 #
 ############################################################
 
@@ -16,6 +16,8 @@ SPICA_DIR	= jvanheld@${SPICA}:~/
 RUBENS_DELIVERY	= jvanheld@rubens.ulb.ac.be:/rubens/dsk3/genomics/delivery/internal/
 RUBENS_PARSER	= jvanheld@rubens.ulb.ac.be:/rubens/dsk3/genomics/amaze/aMAZE_team/jvanheld/programs/parsing/amaze_parsers
 RUBENS_PARSED_DATA	= jvanheld@rubens.ulb.ac.be:/rubens/dsk3/genomics/amaze/aMAZE_team/jvanheld/parsed_data
+
+OPT	= -w 1
 
 usage:
 	@echo "usage: make [-OPT='options'] target"
@@ -32,19 +34,19 @@ all:
 	make rsync_to_rubens
 
 swissprot:
-	perl parse_swissprot.pl -w 1 -data swissprot -data trembl
+	perl parse_swissprot.pl -data swissprot -data trembl ${OPT}
 
 kegg:
-	perl parse_kegg.pl -w 1
+	perl parse_kegg.pl ${OPT}
 
 genes:
-	perl parse_genes.pl -w 1 -org S.cerevisiae -org E.coli -org H.sapiens -suffix "" 
+	perl parse_genes.pl -org S.cerevisiae -org E.coli -org H.sapiens -suffix "" ${OPT}
 
 glaxo:
-	perl parse_glaxo.pl -w 1
+	perl parse_glaxo.pl ${OPT}
 
 gaurab:
-	perl parse_gaurab.pl -w 1
+	perl parse_gaurab.pl ${OPT}
 
 rsync_to_bach:
 	rsync -ruptvl --delete -e ssh ${PARSER} ${BACH_DIR}/programs/parsing/amaze_parsers

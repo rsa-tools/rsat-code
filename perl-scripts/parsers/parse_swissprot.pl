@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_swissprot.pl,v 1.3 2000/12/04 02:55:38 jvanheld Exp $
+# $Id: parse_swissprot.pl,v 1.4 2000/12/14 20:57:26 jvanheld Exp $
 #
-# Time-stamp: <2000-12-04 03:43:39 jvanheld>
+# Time-stamp: <2000-12-12 03:03:07 jvanheld>
 #
 ############################################################
 
@@ -24,180 +24,182 @@ use SWISS::Entry;
 
 package main;
 {
-
-
-  ### organism selection
-  @selected_organisms = ();
-  $full_name{yeast} = "Saccharomyces cerevisiae (Baker's yeast)";
-  $full_name{ecoli} = "Escherichia coli";
-  $full_name{human} = "Homo sapiens (Human)";
-
-  ### input directories and files
-  $dir{swissprot} = "/win/databases/downloads/ftp.ebi.ac.uk/pub/databases/swissprot/release_compressed/";
-  $source{swissprot} = "sprot39";
-  
-  $dir{trembl} = "/win/databases/downloads/ftp.ebi.ac.uk/pub/databases/trembl/";
-  $source{yeast} = "sptrembl/fun";
-  $source{human} = "sptrembl/hum";
-  $source{ecoli} = "sptrembl/pro";
+    
+    
+    ### organism selection
+    @selected_organisms = ();
+    $full_name{yeast} = "Saccharomyces cerevisiae (Baker's yeast)";
+    $full_name{ecoli} = "Escherichia coli";
+    $full_name{human} = "Homo sapiens (Human)";
+    
+    ### input directories and files
+    $dir{swissprot} = "/win/databases/downloads/ftp.ebi.ac.uk/pub/databases/swissprot/release_compressed/";
+    $source{swissprot} = "sprot39";
+    
+    $dir{trembl} = "/win/databases/downloads/ftp.ebi.ac.uk/pub/databases/trembl/";
+    $source{yeast} = "sptrembl/fun";
+    $source{human} = "sptrembl/hum";
+    $source{ecoli} = "sptrembl/pro";
 #  &OpenIndex("ECSet");
-  
-  ### export classes
-  @classes = qw( PFBP::Polypeptide PFBP::Catalysis );
-  @{$out_fields{'PFBP::Polypeptide'}} = qw( id name description gene organisms swissprot_acs swissprot_ids names );
-  @{$out_fields{'PFBP::Catalysis'}} = qw( id catalyst catalyzed source );
-  
-  &ReadArguments;
-  
-  #### output directory
-  $out_format = "obj";
-  $dir = $parsed_data."/swissprot_parsed";
-  unless (-d $dir) {
-      warn "Creating output dir $dir", "\n";
-      mkdir $dir, 0775 || die "Error: cannot create directory $dir\n";
-  }
-  $dir{output} = $dir."/".$delivery_date;
-  unless (-d $dir{output}) {
-      warn "Creating output dir $dir{output}\n";
-      mkdir $dir{output}, 0775 || die "Error: cannot create directory $dir\n";
-  }
-  die unless chdir $dir{output};
-  
-  #### output file names depend on the organisms to parse and source 
-  #### -> defined after reading arguments
-  $suffix = "";
-  foreach $organism (@selected_organisms) {
-      $suffix .= "_$organism";
-  }
-  if ($export{all}) {
-      $suffix .= "_all";
-  } elsif ($export{enzymes}) {
-      $suffix .= "_enz";
-  }
-  $suffix .= "_test" if ($test);
-  
-  $out_file{polypeptides} = $dir{output}."/Polypeptide".$suffix.".obj";
+    
+    ### export classes
+    push @classes, "PFBP::Polypeptide";
+#  push @classes, "PFBP::Catalysis";
+    @{$out_fields{'PFBP::Polypeptide'}} = qw( id name description gene organisms swissprot_acs swissprot_ids names );
+#  @{$out_fields{'PFBP::Catalysis'}} = qw( id catalyst catalyzed source );
+    
+    &ReadArguments;
+    
+    #### output directory
+    $out_format = "obj";
+    $dir = $parsed_data."/swissprot_parsed";
+    unless (-d $dir) {
+	warn "Creating output dir $dir", "\n";
+	mkdir $dir, 0775 || die "Error: cannot create directory $dir\n";
+    }
+    $dir{output} = $dir."/".$delivery_date;
+    unless (-d $dir{output}) {
+	warn "Creating output dir $dir{output}\n";
+	mkdir $dir{output}, 0775 || die "Error: cannot create directory $dir\n";
+    }
+    die unless chdir $dir{output};
+    
+    #### output file names depend on the organisms to parse and source 
+    #### -> defined after reading arguments
+#  $suffix = "";
+#  foreach $organism (@selected_organisms) {
+#      $suffix .= "_$organism";
+#  }
+#  if ($export{all}) {
+#      $suffix .= "_all";
+#  } elsif ($export{enzymes}) {
+#      $suffix .= "_enz";
+#  }
+#  $suffix .= "_test" if ($test);
+    
+    $out_file{polypeptides} = $dir{output}."/Polypeptide".$suffix.".obj";
 ##  $out_file{mldbm_polypeptides} = $dir{output}."/Polypeptide".$suffix.".mldbm";
 #  $out_file{mldbm_polypeptide_index} = $dir{output}."/Polypeptide".$suffix."__name_index.mldbm";
-  $out_file{catalyses} = $dir{output}."/Catalysis".$suffix.".obj";
+#  $out_file{catalyses} = $dir{output}."/Catalysis".$suffix.".obj";
 #  $out_file{mldbm_catalyses} = $dir{output}."/Catalysis".$suffix.".mldbm";
-  $out_file{errors} = $dir{output}."/swissprot".$suffix.".errors.txt";
-  $out_file{stats} = $dir{output}."/swissprot".$suffix.".stats.txt";
-  
-  ### open error report file
-  open ERR, ">$out_file{errors}" || 
-      die "Error: cannot write error file $out_file{errors}\n";
-  
-  ### select all organisms if none was selected (-org)
-  unless ($#selected_organisms >= 0) {
-    push @selected_organisms, "ecoli";
-    push @selected_organisms, "human";
-    push @selected_organisms, "yeast";
-  }
-
-  ### define regular expressions to match the selected organisms
-  foreach $organism (@selected_organisms) {
-      $regexp = $full_name{$organism};
-      $regexp = $` if ($regexp =~ /\(/); 
-      $regexp = $` if ($regexp =~ /\)/);
-      $regexp = $` if ($regexp =~ /\'/);
-      $selected_organism{uc($full_name{$organism})} = $regexp;
-      push @regexps, qr /$regexp/; ### list of precompiled regular expressions
-  }
-  
-
-  ### by default, parse swissprot only
-  unless (defined(%data_sources)) {
-      $data_sources{swissprot} = 1;
-  }
-  if ($data_sources{swissprot}) {
-      $in_file{$source{swissprot}} = "uncompress -c ".$dir{swissprot}."/".$source{swissprot}.".dat.Z | ";
-      $files_to_parse{$source{swissprot}} = 1;
-  }
-  if ($data_sources{trembl}) {
-      foreach $organism (@selected_organisms) {
-	  $in_file{${source{$organism}}} = "uncompress -c ".$dir{trembl}."/".$source{$organism}.".dat.Z | ";
-	  $files_to_parse{$source{$organism}} = 1;
-      }
-  }
-
-  ### select all polypeptide if no specific class was selected (-enz)
-  unless (defined(%export)) {
-      $export{all} = 1;
-  }
-  
-  ### create class holders
-  $polypeptides = PFBP::ClassFactory->new_class(object_type=>"PFBP::Polypeptide",
-						prefix=>"spp_");
-  $catalyses = PFBP::ClassFactory->new_class(object_type=>"PFBP::Catalysis",
-					     prefix=>"sct_");
-  
-  ### testing mode
-  if ($test) {
-    warn ";TEST\n" if ($warn_level >= 1);
-    ### fast partial parsing for debugging
-    foreach $key (keys %in_file) {
-	$in_file{$key} .= " head -100000 |";
+    $out_file{errors} = $dir{output}."/swissprot".$suffix.".errors.txt";
+    $out_file{stats} = $dir{output}."/swissprot".$suffix.".stats.txt";
+    
+    ### open error report file
+    open ERR, ">$out_file{errors}" || 
+	die "Error: cannot write error file $out_file{errors}\n";
+    
+    ### select all organisms if none was selected (-org)
+    unless ($#selected_organisms >= 0) {
+	push @selected_organisms, "ecoli";
+	push @selected_organisms, "human";
+	push @selected_organisms, "yeast";
     }
-}
-  
-  
-  ### default verbose message
-  if ($warn_level >= 1) {
-      warn "; Selected organisms\n;\t", join("\n;\t", @selected_organisms), "\n";
-      warn "; Polypeptide classes\n;\t", join("\n;\t", keys %export), "\n";
-      warn "; Data sources\n;\t", join("\n;\t",  keys %data_sources), "\n";
-      &DefaultVerbose;
-  }
-  
-  
-  ### parse data from original files
-  foreach $source (keys %files_to_parse) {
-      &ParseSwissprot($in_file{$source}, "SWISSPROT:".$source);
-  }
+
+    ### define regular expressions to match the selected organisms
+    foreach $organism (@selected_organisms) {
+	$regexp = $full_name{$organism};
+	$regexp = $` if ($regexp =~ /\(/); 
+	$regexp = $` if ($regexp =~ /\)/);
+	$regexp = $` if ($regexp =~ /\'/);
+	$selected_organism{uc($full_name{$organism})} = $regexp;
+	push @regexps, qr /$regexp/; ### list of precompiled regular expressions
+    }
+    
+
+    ### by default, parse swissprot only
+    unless (defined(%data_sources)) {
+	$data_sources{swissprot} = 1;
+    }
+    if ($data_sources{swissprot}) {
+	$in_file{$source{swissprot}} = "uncompress -c ".$dir{swissprot}."/".$source{swissprot}.".dat.Z | ";
+	$files_to_parse{$source{swissprot}} = 1;
+    }
+    if ($data_sources{trembl}) {
+	foreach $organism (@selected_organisms) {
+	    $in_file{${source{$organism}}} = "uncompress -c ".$dir{trembl}."/".$source{$organism}.".dat.Z | ";
+	    $files_to_parse{$source{$organism}} = 1;
+        }
+    }
+
+### select all polypeptide if no specific class was selected (-enz)
+    unless (defined(%export)) {
+	$export{all} = 1;
+    }
+
+### create class holders
+    $polypeptides = PFBP::ClassFactory->new_class(object_type=>"PFBP::Polypeptide",
+						  prefix=>"spp_");
+#  $catalyses = PFBP::ClassFactory->new_class(object_type=>"PFBP::Catalysis",
+#					     prefix=>"sct_");
+
+### testing mode
+    if ($test) {
+	warn ";TEST\n" if ($warn_level >= 1);
+	### fast partial parsing for debugging
+	foreach $key (keys %in_file) {
+	    $in_file{$key} .= " head -20000 |";
+	}
+    }
+
+
+### default verbose message
+    if ($warn_level >= 1) {
+	warn "; Selected organisms\n;\t", join("\n;\t", @selected_organisms), "\n";
+	warn "; Polypeptide classes\n;\t", join("\n;\t", keys %export), "\n";
+	warn "; Data sources\n;\t", join("\n;\t",  keys %data_sources), "\n";
+	&DefaultVerbose;
+    }
+
+
+### parse data from original files
+    foreach $source (keys %files_to_parse) {
+	&ParseSwissprot($in_file{$source}, "SWISSPROT:".$source);
+    }
 #  &CreateCatalyses;
 
-  #### use first name as primary name
-  foreach $polypeptide ($polypeptides->get_objects()) {
-      if ($name = $polypeptide->get_name()) {
-	  $polypeptide->set_attribute("primary_name",$name);
-      }
-  }
-  
+#### use first name as primary name
+#  foreach $polypeptide ($polypeptides->get_objects()) {
+#      if ($name = $polypeptide->get_name()) {
+#	  $polypeptide->set_attribute("primary_name",$name);
+#      }
+#  }
 
-  #### print the result
-  &ExportClasses($out_file{polypeptides}, $out_format,PFBP::Polypeptide);
-  &ExportClasses($out_file{catalyses}, $out_format, PFBP::Catalysis);
-  $polypeptides->dump_tables($suffix);
-  $catalyses->dump_tables($suffix);
+
+#### print the result
+    &PrintStats($out_file{stats}, @classes);
+    $polypeptides->dump_tables($suffix);
+    #  $catalyses->dump_tables($suffix);
+    &ExportClasses($out_file{polypeptides}, $out_format,PFBP::Polypeptide) if ($export{obj});
+#  &ExportClasses($out_file{catalyses}, $out_format, PFBP::Catalysis);
 #  $catalyses->export('MLDBM',$out_file{mldbm_catalyses});
 #  $polypeptides->export("MLDBM",$out_file{mldbm_polypeptides});
 #  $polypeptides->export_name_index("MLDBM",$out_file{mldbm_polypeptide_index});
-  
-  &PrintStats($out_file{stats}, @classes);
-  
-  #if ($out_file{stats}) {
-  #  open STDOUT, ">>$out_file{stats}"
-  #    || die "Error: cannot write stat file $out_file{stats}\n";
-  #  &SwissStats;
-  #  close $out if ($out_file{stats});
-  #}
-  
-  
-  ### report execution time
-  if ($warn_level >= 1) {
-      $done_time = &AlphaDate;
-      warn (";\n",
-	    "; job started $start_time",
-	    "; job done    $done_time\n")
-      }
-  
+
+
+#if ($out_file{stats}) {
+#  open STDOUT, ">>$out_file{stats}"
+#    || die "Error: cannot write stat file $out_file{stats}\n";
+#  &SwissStats;
+#  close $out if ($out_file{stats});
+#}
+
+
+### report execution time
+    if ($warn_level >= 1) {
+	$done_time = &AlphaDate;
+	warn (";\n",
+	      "; job started $start_time",
+	      "; job done    $done_time\n")
+	}
+
 #  &CloseIndex("ECSet");
-  close ERR;
-  
-  system "gzip -f $dir{output}/*.tab $dir{output}/*.obj $dir{output}/*.txt";
-  
-  exit(0);
+    close ERR;
+
+    system "gzip -f $dir{output}/*.tab $dir{output}/*.txt";
+    system "gzip -f $dir{output}/*.obj" if ($export{obj});
+
+    exit(0);
 }
 
 ### subroutines for the main package
@@ -219,13 +221,8 @@ AUTHOR
 VERSION
 	0.01
 	Created		2000/01/11
-	Last modified	2000/01/11
+	Last modified	2000/12/11
 	
-SYNOPSIS	
-	parse_swissprot.pl [-v] [-vv] [-i infile] [-o outfile] 
-		[-w warn_level]
-
-
 OPTIONS
 	-h	detailed help
 	-help	short list of options
@@ -234,12 +231,6 @@ OPTIONS
 		Warn level 1 corresponds to a restricted verbose
 		Warn level 2 reports all polypeptide instantiations
 		Warn level 3 reports failing get_attribute()
-	-i	input file
-		If ommited, STDIN is used
-		This allows to insert the program within a unix pipe
-	-o	output file
-		If ommited, STDOUT is used. 
-		This allows to insert the program within a unix pipe
 	-enz	export enzymes only
 	-org	select an organism for exportation
 		can be used reiteratively in the command line 
@@ -255,6 +246,9 @@ OPTIONS
 			trembl
 
 		by default, all sources are selected
+	-obj	export data in object format (.obj file)
+		which are human-readable (with some patience 
+		and a good cup of coffee)
 EXAMPLE
 	parse_polypeptides.pl -w 2 -org ecoli -data swissprot -enz
 EndHelp
@@ -274,15 +268,10 @@ sub ReadArguments {
     } elsif ($ARGV[$a] eq "-test") {
       $main::test = 1;
       
-      ### input file
-    } elsif ($ARGV[$a] eq "-i") {
-      $a++;
-      $main::in_file{pathway_index} = $ARGV[$a];
-      
       ### output file
-    } elsif ($ARGV[$a] eq "-o") {
+    } elsif ($ARGV[$a] eq "-obj") {
       $a++;
-      $main::out_file{pathways} = $ARGV[$a];
+      $main::export{obj} = 1;
       
       ### help
     } elsif (($ARGV[$a] eq "-h") ||
@@ -387,6 +376,8 @@ sub ParseSwissprot {
 	my $tmp = $descr;
 	while ($tmp =~ /\(EC ([^\(]+)\)/) {
 	    $ec_number = $1;
+	    $ec_number =~ s/^ //g;
+	    $ec_number =~ s/ $//g;
 	    $tmp = $';
 	    if ($ec_number =~ /^\S+\.\S+\.\S+\.\S+$/ ) {
 		push @ECs, $ec_number;
@@ -433,10 +424,10 @@ sub ParseSwissprot {
 
 	my $pp_id = $polypeptide->get_id();
 	foreach my $ec (@ECs) {
-	    my $catalysis = $catalyses->new_object(source=>      $source,
-						   catalyst=>    $pp_id,
-						   catalyzed=>   $ec);
-#	    $polypeptide->push_attribute("ECs",$EC);
+#	    my $catalysis = $catalyses->new_object(source=>      $source,
+#						   catalyst=>    $pp_id,
+#						   catalyzed=>   $ec);
+	    $polypeptide->push_attribute("ECs",$ec);
 	}
 	foreach my $organism (@organisms) {
 	    $polypeptide->push_attribute("organisms",$organism);
