@@ -5,10 +5,19 @@ if ($0 =~ /([^(\/)]+)$/) {
 #require "cgi-lib.pl";
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
+#### redirect error log to a file
+BEGIN {
+    $ERR_LOG = "/dev/null";
+#    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
+    use CGI::Carp qw(carpout);
+    open (LOG, ">> $ERR_LOG")
+	|| die "Unable to redirect log\n";
+    carpout(*LOG);
+}
 require "RSA.lib";
 require "RSA.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
-$random_genes_command = "$SCRIPTS/random-genes";
+$command = "$SCRIPTS/random-genes";
 $tmp_file_name = sprintf "random-genes.%s", &AlphaDate;
 $result_file = "$TMP/$tmp_file_name.res";
 
@@ -33,7 +42,7 @@ if (&IsNatural($gene_nb)) {
 }
 
 unless ($organism = $query->param('organism')) {
-    &FatalError("You should specify an organism to use non-coding frequency calibration");
+    &FatalError("You should specify an organism to use intergenic frequency calibration");
 }
 if (defined(%{$supported_organism{$organism}})) {
     $parameters .= " -org $organism ";
@@ -46,14 +55,14 @@ if ($query->param('replacement')) {
 }
 
 
-print "<PRE>command: $random_genes_command $parameters<P>\n</PRE>" if ($ECHO);
+print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ECHO);
 
 ### execute the command ###
 if ($query->param('output') eq "display") {
     &PipingWarning();
 
     ### prepare data for piping
-    open RESULT, "$random_genes_command $parameters |";
+    open RESULT, "$command $parameters |";
 
     print '<H2>Result</H2>';
     print '<PRE>';
@@ -68,8 +77,10 @@ if ($query->param('output') eq "display") {
 
     print "<HR SIZE = 3>";
 
+} elsif ($query->param('output') =~ /server/i) {
+    &ServerOutput("$command $parameters", $query->param('user_email'));
 } else {
-    &EmailTheResult("$random_genes_command $parameters", $query->param('user_email'));
+    &EmailTheResult("$command $parameters", $query->param('user_email'));
 }
 print $query->end_html;
 
