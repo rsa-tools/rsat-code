@@ -1,315 +1,384 @@
-#!/usr/bin/perl
-############################################################
-#
-# $Id: gene-cluster-motifs,v 1.66 2004/02/04 14:07:11 jvanheld Exp $
-#
-# Time-stamp: <2003-10-21 01:19:12 jvanheld>
-#
-############################################################
-if ($0 =~ /([^(\/)]+)$/) {
-  push (@INC, "$`lib/");
-}
+ #!/usr/bin/perl
+ ############################################################
+ #
+ # $Id: gene-cluster-motifs,v 1.67 2004/02/04 16:49:59 jvanheld Exp $
+ #
+ # Time-stamp: <2003-10-21 01:19:12 jvanheld>
+ #
+ ############################################################
+ if ($0 =~ /([^(\/)]+)$/) {
+   push (@INC, "$`lib/");
+ }
 
-require "RSA.lib";
-require "RSA.seq.lib";
-require "RSA.help.pl";
-require "RSA.cgi.lib";
-require "RSA.classes";
-push @INC, "$RSA/perl-scripts/parsers/";
-require "lib/load_classes.pl";
-require "lib/util.pl";
-require "lib/parsing_util.pl";
-require "$RSA/perl-scripts/lib/RSA.classes";
-
-
-################################################################
-## initialisations	    
-$skip=0;
-$sliding_window_size = 0;
-$die_on_error = 1;
-$analyze_purged_sequences = 1;
-$repetitions=10000; ### Repetitions for the calibN
-%dir = ();
-$dir{main} = `pwd`;
-$dir{calib1} = "calibrations_1gene"; 
-chomp($dir{main});
-
-@supported_tasks = qw (upstream purge calibrate oligos merge_oligos oligo_maps dyad_maps maps dyads merge_patterns slide synthesis sql clean all report consensus gibbs);
-foreach my $task (@supported_tasks) {
-    $supported_task{$task} = 1;
-}
-$supported_tasks = join ",", @supported_tasks;
-
-%supported_sort_key = (
-			"score"=>1,
-			"name"=>1
-			);
-$supported_sort_keys  = join ",", sort keys %supported_sort_key;
-
-%supported_background = (
-			"intergenic"=>1,
-			"upstream"=>1,
-			"upstreamL"=>1,
-			"upstream-noorf"=>1,
-			"calib1"=>1,
-			"calibN"=>1,
-			);
-$supported_background  = join ",", sort keys %supported_background;
-
-## input files
-$family_file = "";
-$sequene_file_list = "";
-
-## feature-map options
-$htmaps=0;
-$draw_maps=1;
-$scalestep = 100; 
-
-## retrieve-seq options
-$noorf = 1; 
-$seq_format = "fasta";
-$seq_dir = "";
-$seq_ext = "fasta";
-
-## pattern discovery options
-$background = "upstream-noorf";
-$noov = "-noov";
-$sort_key = "score";
-## oligo-analysis options
-$min_oligo_len = 6;
-$max_oligo_len = 6;
-## dyad-analysis options
-$monad_length = 3;
-$min_sp = 0;
-$max_sp = 20;
-
-## consensus options
-$matrix_width = 10;
-$expected_sites_per_gene = 2;
-$seed = undef;
-
-## Comparison between discovered and known motifs
-$known_site_file = "";
-$known_sites_provided = 0;
-$min_matching_score = 4;
-
-## misc
-$start_date = `date`;
-$verbose = 0;
-
-#### data export options
-$schema = "multifam";
-$host="localhost";
-$user = getlogin();
-$password="";
-
-################################################################
-### MAIN
-
-#### Read arguments
-&ReadArguments();
-
-#### Check parameters
-&CheckParameters();
+ require "RSA.lib";
+ require "RSA.seq.lib";
+ require "RSA.help.pl";
+ require "RSA.cgi.lib";
+ require "RSA.classes";
+ push @INC, "$RSA/perl-scripts/parsers/";
+ require "lib/load_classes.pl";
+ require "lib/util.pl";
+ require "lib/parsing_util.pl";
+ require "$RSA/perl-scripts/lib/RSA.classes";
 
 
-################################################################
-## Read data
-&ReadKnownSites($known_site_file);
-#&ReadSiteLibrary("known_sites.tab");
+ ################################################################
+ ## initialisations	    
+ $skip=0;
+ $sliding_window_size = 0;
+ $die_on_error = 1;
+ $analyze_purged_sequences = 1;
+ $repetitions=10000; ### Repetitions for the calibN
+ %dir = ();
+ $dir{main} = `pwd`;
+ $dir{calib1} = "calibrations_1gene"; 
+ chomp($dir{main});
 
-if ($sequence_file_list) {
-    $task{upstream} = 0; 
-    &ReadSequenceList();
-} else {
-    
-    ### read gene name and identifiers
-    warn "; Reading ORF information ...\n" 
-	if ($verbose >= 1);
-    &ReadFeatures($organism_name);
-    &ReadSynonyms($organism_name);
+ @supported_tasks = qw (upstream purge calibrate oligos merge_oligos oligo_maps dyad_maps maps dyads merge_patterns slide synthesis sql clean all report consensus gibbs MotifSampler);
+ foreach my $task (@supported_tasks) {
+     $supported_task{$task} = 1;
+ }
+ $supported_tasks = join ",", @supported_tasks;
 
-    ### Read family file
-    %family = &ReadClasses($family_file, 1);
-    @families = sort keys %family;
+ %supported_sort_key = (
+			 "score"=>1,
+			 "name"=>1
+			 );
+ $supported_sort_keys  = join ",", sort keys %supported_sort_key;
 
-}
+ %supported_background = (
+			 "intergenic"=>1,
+			 "upstream"=>1,
+			 "upstreamL"=>1,
+			 "upstream-noorf"=>1,
+			 "calib1"=>1,
+			 "calibN"=>1,
+			 );
+ $supported_background  = join ",", sort keys %supported_background;
 
-### write composition of the families in the separated directories
-&SetFileNames();
+ ## input files
+ $family_file = "";
+ $sequene_file_list = "";
 
-&CheckOutDir($dir{output});
-chdir($dir{output});
+ ## feature-map options
+ $htmaps=0;
+ $draw_maps=1;
+ $scalestep = 100; 
 
-&MakeDirectories();
+ ## retrieve-seq options
+ $noorf = 1; 
+ $seq_format = "fasta";
+ $seq_dir = "";
+ $seq_ext = "fasta";
 
-#### verbose
-$verbose_message = &Verbose() if ($verbose >= 1);
+ ## pattern discovery options
+ $background = "upstream-noorf";
+ $noov = "-noov";
+ $sort_key = "score";
+ ## oligo-analysis options
+ $min_oligo_len = 6;
+ $max_oligo_len = 6;
+ ## dyad-analysis options
+ $monad_length = 3;
+ $min_sp = 0;
+ $max_sp = 20;
 
+ ## consensus options
+ $matrix_width = 10;
+ $expected_sites_per_gene = 2;
+ $seed = undef;
 
-### perform analysis
-&AnalyzeFamilies();
-&MDCreport() if ($task{report});
-&ExportSQL() if ($task{sql});
-&SyntheticTable() if ($task{synthesis});
+ ## MotifSampler
+ $bg_order = 0;
 
-### Warn output dir and files
-if ($main::verbose >= 1) {
-    warn "; Results are stored in directory\t".$dir{output}."\n";
-    warn "; synthetic table\t", $dir{output}."/".$outfile{table}, "\n";
-    if ($task{report}) {
-	warn "; results\t", $dir{output}."/".$outfile{results}, "\n";
-	warn "; parameters\t", $dir{output}."/".$outfile{parameters}, "\n";
-    }
-}
+ ## Comparison between discovered and known motifs
+ $known_site_file = "";
+ $known_sites_provided = 0;
+ $min_matching_score = 4;
 
-#### report execution time 
-if ($verbose >= 1) {
-  $done_date = `date`;
-  print ";Job started\t$start_date";
-  print ";Job done\t", `date`;
-}
+ ## misc
+ $start_date = `date`;
+ $verbose = 0;
 
-exit(0);
+ #### data export options
+ $schema = "multifam";
+ $host="localhost";
+ $user = getlogin();
+ $password="";
 
+ ################################################################
+ ### MAIN
 
-################################################################
-#
-#                 SUBROUTINE DEFINITION
-#
-################################################################
+ #### Read arguments
+ &ReadArguments();
 
-#### set the file names as a function of parameters
-sub SetFileNames {
-    $sp = "$min_sp-$max_sp";
-    $dyad_options = "-v ";
-    $dyad_options .= " -sort ";
-    $dyad_options .= " ".$strands;
-    $dyad_options .= " -type ".$dyad_type;
-    $dyad_options .= " ".$noov;
-    $dyad_options .= " -l ".$monad_length;
-    $dyad_options .= " -thosig $thosig ";
-    $dyad_options .= " -sp ".$sp;
-    
-    $dyad_suffix = "_dyads";
-    if ($markov) {
-	$dyad_suffix .= "_monad"; ### TEMP
-    } elsif ($background) {
-	$dyad_suffix .= "_bg_".$background; ### TEMP
-    }
-    $dyad_suffix .= "_l".$monad_length;
-    $dyad_suffix .= "_sp".$sp;
-    $dyad_suffix .= $strands;
-    $dyad_suffix .= "_".$dyad_type;
-    $dyad_suffix .= "_sig".$thosig;
-    $dyad_suffix .= $noov;
-
-    #### expected frequency model
-    if ($markov) {
-	## do nothing. Expected dyad frequencies will be calculated on the basis of monad frequencies
-    } elsif ($exp_freq_file{dyads}) {
-	$dyad_options .= " -expfreq $exp_freq_file{dyads}";
-    } elsif ($background) {
-	$dyad_options .= " -bg $background ";
-	$dyad_options .= " -org $organism_name ";
-#      $dyad_suffix .= "_ncf";
-    } elsif ($background eq "mncf") {
-	$dyad_options .= " -mncf ";
-	$dyad_options .= " -org $organism_name ";
-	$dyad_suffix .= "_mncf";
-    }
-#  $dyad_suffix .= "_ncf" if ($background); ### TEMP
-
-    #### suffix for the oligo-analysis file
-    $noorf_string = "_noorf" if ($noorf);
-    $oligo_suffix = "_oligos";
-    if ($markov) {
-	$oligo_suffix .= "_mkv".$markov_order;
-    } elsif ($background) {
-	$oligo_suffix .= "_bg_".$background;
-    }
-    $oligo_suffix .= "_".$min_oligo_len."-".$max_oligo_len."nt";
-    $oligo_suffix .= "$strands";
-    $oligo_suffix .= "_sig".$thosig;
-    $oligo_suffix .= $noov;
-
-    foreach my $family_name (@families) {
-	$family{$family_name}->{family_file} = "$family_name/${family_name}.fam";
-	$family{$family_name}->{known_site_file} = "$family_name/${family_name}_known_sites";
-	$family{$family_name}->{file_prefix} = "${family_name}";
-	$family{$family_name}->{file_prefix} .= "_up".$seq_length unless ($sequence_file_list);
-	$family{$family_name}->{file_prefix} .= "${noorf_string}"; 
-	unless ($sequence_file_list) {
-	    $family{$family_name}->{seq_file} = $family_name."/".$family{$family_name}->{file_prefix}.".${seq_format}";
-	    $family{$family_name}->{seq_file_purged} = $family_name."/".$family{$family_name}->{file_prefix}."_purged.${seq_format}";
-	}
-	if ($analyze_purged_sequences) {
-	    $family{$family_name}->{input_seq_file} = $family{$family_name}->{seq_file_purged};
-	} else {
-	    $family{$family_name}->{input_seq_file} = $family{$family_name}->{seq_file};
-	}
-	$family{$family_name}->{seq_len_file} = $family_name."/".$family{$family_name}->{file_prefix}."_seq_len.tab";
-#      $family{$family_name}->{oligo_file} =  "${family_name}/oligos_${family_name}/".$family{$family_name}->{file_prefix}."_oligos_${min_oligo_len}-${max_oligo_len}nt$strands_sig${thosig}${noov}";
-	$family{$family_name}->{oligo_file} =  "${family_name}/oligos_${family_name}/".$family{$family_name}->{file_prefix}.$oligo_suffix; ## TEMP
-	$family{$family_name}->{oligo_assembly_file} = $family{$family_name}->{oligo_file}."_contigs";
-	$family{$family_name}->{oligo_selection} = $family{$family_name}->{oligo_file}."_selection";
-	$family{$family_name}->{oligo_ft_prefix} = $family{$family_name}->{oligo_file};
-#	$family{$family_name}->{selection_ft_prefix} = $family{$family_name}->{oligo_ft_prefix}."_report";
-	$family{$family_name}->{oligo_ft_file} = $family{$family_name}->{oligo_ft_prefix}.".ft";
-	
-	$family{$family_name}->{dyad_file} = "$family_name/dyads_${family_name}/".$family{$family_name}->{file_prefix}.$dyad_suffix;
-	$family{$family_name}->{dyad_assembly_file} = $family{$family_name}->{dyad_file}."_contigs";
-	$family{$family_name}->{dyad_ft_prefix} = $family{$family_name}->{dyad_file};
-	$family{$family_name}->{dyad_ft_file} = $family{$family_name}->{dyad_ft_prefix}.".ft";
-
-	$family{$family_name}->{fmap_file} = $family{$family_name}->{dyad_file}.".${IMG_FORMAT}";
-	$family{$family_name}->{htmap_file} = $family{$family_name}->{dyad_file}.".html";
-
-	$family{$family_name}->{merged_file} =  "${family_name}/merged_${family_name}/".$family{$family_name}->{file_prefix}.$oligo_suffix.$dyad_suffix;
-	$family{$family_name}->{merged_ft_file} = $family{$family_name}->{merged_file}.".ft";
+ #### Check parameters
+ &CheckParameters();
 
 
-	################################################################
-	## Gibbs options and files
-	my $gibbs_options = "";
-	my $gibbs_suffix = "";
+ ################################################################
+ ## Read data
+ &ReadKnownSites($known_site_file);
+ #&ReadSiteLibrary("known_sites.tab");
 
-	## input file
-	$family{$family_name}->{gibbs_input_seq_file} = $family{$family_name}->{input_seq_file}.".gibbs";
-	$gibbs_options .= " ".$family{$family_name}->{gibbs_input_seq_file};
+ if ($sequence_file_list) {
+     $task{upstream} = 0; 
+     &ReadSequenceList();
+ } else {
 
-	## Matrix width
-	$gibbs_options .= " ".$matrix_width;
-	$gibbs_suffix .= "-L".$matrix_width;
+     ### read gene name and identifiers
+     warn "; Reading ORF information ...\n" 
+	 if ($verbose >= 1);
+     &ReadFeatures($organism_name);
+     &ReadSynonyms($organism_name);
 
-	## Expected number of sites
-	my $gene_nb = scalar(@{$family{$family_name}->{members}});
-	warn join ("\t", "Number of genes", $family_name, $gene_nb), "\n";
-	$expected_sites = $gene_nb*$expected_sites_per_gene;	
-	$gibbs_options .= " ".$expected_sites;
-	$gibbs_suffix .= "-n".$expected_sites; 
+     ### Read family file
+     %family = &ReadClasses($family_file, 1);
+     @families = sort keys %family;
 
-	## DON'T use fragmentation (i.e., column sampler)	
-	$gibbs_options .= " -d";
-	$gibbs_suffix .= "-d";
+ }
 
-	## Use nucleic acid alphabet
-	$gibbs_options .= " -n";
-	$gibbs_suffix .= "-n";
+ ### write composition of the families in the separated directories
+ &SetFileNames();
 
-	## Random seed
-	if (defined($seed)) {
-	    $gibbs_options .= " -s".$seed;
-	    $gibbs_suffix .= "-s".$seed;
-	}
+ &CheckOutDir($dir{output});
+ chdir($dir{output});
 
-	## Assign gibbs options to the family
-	$family{$family_name}->{gibbs_suffix} = $gibbs_suffix;
-	$family{$family_name}->{gibbs_options} = $gibbs_options;
-	$family{$family_name}->{gibbs_dir} = "${family_name}/gibbs_${family_name}";
-	$family{$family_name}->{gibbs_file} = $family{$family_name}->{gibbs_dir}."/".$family{$family_name}->{file_prefix}.$gibbs_suffix;
-	
-	################################################################
+ &MakeDirectories();
+
+ #### verbose
+ $verbose_message = &Verbose() if ($verbose >= 1);
+
+
+ ### perform analysis
+ &AnalyzeFamilies();
+ &MDCreport() if ($task{report});
+ &ExportSQL() if ($task{sql});
+ &SyntheticTable() if ($task{synthesis});
+
+ ### Warn output dir and files
+ if ($main::verbose >= 1) {
+     warn "; Results are stored in directory\t".$dir{output}."\n";
+     warn "; synthetic table\t", $dir{output}."/".$outfile{table}, "\n";
+     if ($task{report}) {
+	 warn "; results\t", $dir{output}."/".$outfile{results}, "\n";
+	 warn "; parameters\t", $dir{output}."/".$outfile{parameters}, "\n";
+     }
+ }
+
+ #### report execution time 
+ if ($verbose >= 1) {
+   $done_date = `date`;
+   print ";Job started\t$start_date";
+   print ";Job done\t", `date`;
+ }
+
+ exit(0);
+
+
+ ################################################################
+ #
+ #                 SUBROUTINE DEFINITION
+ #
+ ################################################################
+
+ #### set the file names as a function of parameters
+ sub SetFileNames {
+     $sp = "$min_sp-$max_sp";
+     $dyad_options = "-v ";
+     $dyad_options .= " -sort ";
+     $dyad_options .= " ".$strands;
+     $dyad_options .= " -type ".$dyad_type;
+     $dyad_options .= " ".$noov;
+     $dyad_options .= " -l ".$monad_length;
+     $dyad_options .= " -thosig $thosig ";
+     $dyad_options .= " -sp ".$sp;
+
+     $dyad_suffix = "_dyads";
+     if ($markov) {
+	 $dyad_suffix .= "_monad"; ### TEMP
+     } elsif ($background) {
+	 $dyad_suffix .= "_bg_".$background; ### TEMP
+     }
+     $dyad_suffix .= "_l".$monad_length;
+     $dyad_suffix .= "_sp".$sp;
+     $dyad_suffix .= $strands;
+     $dyad_suffix .= "_".$dyad_type;
+     $dyad_suffix .= "_sig".$thosig;
+     $dyad_suffix .= $noov;
+
+     #### expected frequency model
+     if ($markov) {
+	 ## do nothing. Expected dyad frequencies will be calculated on the basis of monad frequencies
+     } elsif ($exp_freq_file{dyads}) {
+	 $dyad_options .= " -expfreq $exp_freq_file{dyads}";
+     } elsif ($background) {
+	 $dyad_options .= " -bg $background ";
+	 $dyad_options .= " -org $organism_name ";
+ #      $dyad_suffix .= "_ncf";
+     } elsif ($background eq "mncf") {
+	 $dyad_options .= " -mncf ";
+	 $dyad_options .= " -org $organism_name ";
+	 $dyad_suffix .= "_mncf";
+     }
+ #  $dyad_suffix .= "_ncf" if ($background); ### TEMP
+
+     #### suffix for the oligo-analysis file
+     $noorf_string = "_noorf" if ($noorf);
+     $oligo_suffix = "_oligos";
+     if ($markov) {
+	 $oligo_suffix .= "_mkv".$markov_order;
+     } elsif ($background) {
+	 $oligo_suffix .= "_bg_".$background;
+     }
+     $oligo_suffix .= "_".$min_oligo_len."-".$max_oligo_len."nt";
+     $oligo_suffix .= "$strands";
+     $oligo_suffix .= "_sig".$thosig;
+     $oligo_suffix .= $noov;
+
+     foreach my $family_name (@families) {
+	 $family{$family_name}->{family_file} = "$family_name/${family_name}.fam";
+	 $family{$family_name}->{known_site_file} = "$family_name/${family_name}_known_sites";
+	 $family{$family_name}->{file_prefix} = "${family_name}";
+	 $family{$family_name}->{file_prefix} .= "_up".$seq_length unless ($sequence_file_list);
+	 $family{$family_name}->{file_prefix} .= "${noorf_string}"; 
+	 unless ($sequence_file_list) {
+	     $family{$family_name}->{seq_file} = $family_name."/".$family{$family_name}->{file_prefix}.".${seq_format}";
+	     $family{$family_name}->{seq_file_purged} = $family_name."/".$family{$family_name}->{file_prefix}."_purged.${seq_format}";
+	 }
+	 if ($analyze_purged_sequences) {
+	     $family{$family_name}->{input_seq_file} = $family{$family_name}->{seq_file_purged};
+	 } else {
+	     $family{$family_name}->{input_seq_file} = $family{$family_name}->{seq_file};
+	 }
+	 $family{$family_name}->{seq_len_file} = $family_name."/".$family{$family_name}->{file_prefix}."_seq_len.tab";
+ #      $family{$family_name}->{oligo_file} =  "${family_name}/oligos_${family_name}/".$family{$family_name}->{file_prefix}."_oligos_${min_oligo_len}-${max_oligo_len}nt$strands_sig${thosig}${noov}";
+	 $family{$family_name}->{oligo_file} =  "${family_name}/oligos_${family_name}/".$family{$family_name}->{file_prefix}.$oligo_suffix; ## TEMP
+	 $family{$family_name}->{oligo_assembly_file} = $family{$family_name}->{oligo_file}."_contigs";
+	 $family{$family_name}->{oligo_selection} = $family{$family_name}->{oligo_file}."_selection";
+	 $family{$family_name}->{oligo_ft_prefix} = $family{$family_name}->{oligo_file};
+ #	$family{$family_name}->{selection_ft_prefix} = $family{$family_name}->{oligo_ft_prefix}."_report";
+	 $family{$family_name}->{oligo_ft_file} = $family{$family_name}->{oligo_ft_prefix}.".ft";
+
+	 $family{$family_name}->{dyad_file} = "$family_name/dyads_${family_name}/".$family{$family_name}->{file_prefix}.$dyad_suffix;
+	 $family{$family_name}->{dyad_assembly_file} = $family{$family_name}->{dyad_file}."_contigs";
+	 $family{$family_name}->{dyad_ft_prefix} = $family{$family_name}->{dyad_file};
+	 $family{$family_name}->{dyad_ft_file} = $family{$family_name}->{dyad_ft_prefix}.".ft";
+
+	 $family{$family_name}->{fmap_file} = $family{$family_name}->{dyad_file}.".${IMG_FORMAT}";
+	 $family{$family_name}->{htmap_file} = $family{$family_name}->{dyad_file}.".html";
+
+	 $family{$family_name}->{merged_file} =  "${family_name}/merged_${family_name}/".$family{$family_name}->{file_prefix}.$oligo_suffix.$dyad_suffix;
+	 $family{$family_name}->{merged_ft_file} = $family{$family_name}->{merged_file}.".ft";
+
+
+	 ################################################################
+	 ## Andrew Neuwald's Gibbs options and files
+	 my $gibbs_options = "";
+	 my $gibbs_suffix = "";
+
+	 ## input file
+	 $family{$family_name}->{gibbs_input_seq_file} = $family{$family_name}->{input_seq_file}.".gibbs";
+	 $gibbs_options .= " ".$family{$family_name}->{gibbs_input_seq_file};
+
+	 ## Matrix width
+	 $gibbs_options .= " ".$matrix_width;
+	 $gibbs_suffix .= "-L".$matrix_width;
+
+	 ## Expected number of sites
+	 my $gene_nb = scalar(@{$family{$family_name}->{members}});
+	 warn join ("\t", "Number of genes", $family_name, $gene_nb), "\n";
+	 $expected_sites = $gene_nb*$expected_sites_per_gene;	
+	 $gibbs_options .= " ".$expected_sites;
+	 $gibbs_suffix .= "-n".$expected_sites; 
+
+	 ## DON'T use fragmentation (i.e., column sampler)	
+	 $gibbs_options .= " -d";
+	 $gibbs_suffix .= "-d";
+
+	 ## Use nucleic acid alphabet
+	 $gibbs_options .= " -n";
+	 $gibbs_suffix .= "-n";
+
+	 ## Random seed
+	 if (defined($seed)) {
+	     $gibbs_options .= " -s".$seed;
+	     $gibbs_suffix .= "-s".$seed;
+	 }
+
+	 ## Assign gibbs options to the family
+	 $family{$family_name}->{gibbs_suffix} = $gibbs_suffix;
+	 $family{$family_name}->{gibbs_options} = $gibbs_options;
+	 $family{$family_name}->{gibbs_dir} = "${family_name}/gibbs_${family_name}";
+	 $family{$family_name}->{gibbs_file} = $family{$family_name}->{gibbs_dir}."/".$family{$family_name}->{file_prefix}.$gibbs_suffix;
+
+	 ################################################################
+	 ## Gert Thijs' MoifSampler options and files
+	 my $MotifSampler_options = "";
+	 my $MotifSampler_suffix = "";
+
+	 ## input file
+	 $MotifSampler_options = " -f ".$family{$family_name}->{input_seq_file};
+
+	 ## background model
+	 if ($MotifSampler_background) {
+	     $MotifSampler_options = " -b ".$MotifSampler_background;
+	 } else {
+	     warn "; Creating background model for the input sequence\torder ".$bg_order."\n" 
+		 if ($main::verbose >= 1);
+	     ## create background model
+	     my $allup_file = $dir{output}."/allup.fasta";
+ #	    my $command = "retrieve-seq -org ".$organism_name;
+ #	    $command .= " -all -from -".$calib_length." -to -1 -o ".$allup_file;
+	     $family{$family_name}->{MotifSamplerBackground} = $family{$family_name}->{input_seq_file}."bg".$bg_order;
+	     $command .= " CreateBackgroundModel -f ".$family{$family_name}->{input_seq_file};
+	     $command .= " -b ".$family{$family_name}->{MotifSamplerBackground};
+	     $command .= " -o ".$bg_order;
+	     &doit($command);
+
+	     $MotifSampler_options = " -b ".$family{$family_name}->{MotifSamplerBackground};
+	 }
+
+	 ## strand
+	 if ($strand eq "-1str") {
+	     $MotifSampler_options .= " -s 0";
+	     $MotifSampler_suffix .= "-s0";
+	 } else {
+	     $MotifSampler_options .= " -s 1";
+	     $MotifSampler_suffix .= "-s1";
+	 }
+	 
+	 ## prior
+	 $MotifSampler_options .= " -p 0.2";
+	 $MotifSampler_suffix .= "-p0.2";	 
+
+	 ## Maximal number of motif instances per sequence. (default unset = 0)
+	 $MotifSampler_options .= " -M 0";
+	 $MotifSampler_suffix .= "-M0";	 
+	 
+	 ## Sets number of different motifs to search for (default 4).
+	 $MotifSampler_options .= " -n 1";
+	 $MotifSampler_suffix .= "-n1";	 
+
+	 ## Sets length of the motif (default 8).
+	 $MotifSampler_options .= " -w ".$width;
+	 $MotifSampler_suffix .= "-w".$width;	 
+
+	 ## Sets allowed overlap between different motifs. (default 1)
+	 $MotifSampler_options .= " -x ".1;
+	 $MotifSampler_suffix .= "-x".1;	 
+
+	 ## Set number of times the MotifSampler should be repeated
+	 $MotifSampler_options .= " -r ".1;
+	 $MotifSampler_suffix .= "-r".1;	 
+
+	 ## Assign MotifSampler options to the family
+	 $family{$family_name}->{MotifSampler_suffix} = $MotifSampler_suffix;
+	 $family{$family_name}->{MotifSampler_options} = $MotifSampler_options;
+	 $family{$family_name}->{MotifSampler_dir} = "${family_name}/MotifSampler_${family_name}";
+	 $family{$family_name}->{MotifSampler_file} = $family{$family_name}->{MotifSampler_dir}."/".$family{$family_name}->{file_prefix}.$MotifSampler_suffix;
+	 
+	 ################################################################
 	## Consensus options and files
 	my $consensus_options = "";
 	my $consensus_suffix = "";
@@ -898,9 +967,9 @@ sub SyntheticTable {
 	#### Index results from oligo-analysis
 #	open OLIGOS, "$family{$family_name}->{oligo_assembly_file}";
         if ($htmaps) {
-	    $map_link = "<a href=../$family{$family_name}->{oligo_file}.html>\n";
+	    $map_link = "../$family{$family_name}->{oligo_file}.html";
         } else {
-	    $map_link = "<a href=../$family{$family_name}->{oligo_file}.${IMG_FORMAT}>\n";
+	    $map_link = "../$family{$family_name}->{oligo_file}.${IMG_FORMAT}";
         }
         my $pattern_file = $family{$family_name}->{oligo_assembly_file};
         &IndexPatterns($family_name, $pattern_file, $map_link, $row{oligos}, $col, assembly=>1);
@@ -908,9 +977,9 @@ sub SyntheticTable {
         ################################################################
 	### index results of dyad analysis
         if ($htmaps) {
-	    $map_link = "<a href=../$family{$family_name}->{dyad_file}.html>\n";
+	    $map_link = "../$family{$family_name}->{dyad_file}.html";
         } else {
-	    $map_link = "<a href=../$family{$family_name}->{dyad_file}.${IMG_FORMAT}>\n";
+	    $map_link = "../$family{$family_name}->{dyad_file}.${IMG_FORMAT}";
         }
         my $pattern_file = $family{$family_name}->{dyad_assembly_file};
         &IndexPatterns($family_name, $pattern_file, $map_link, $row{dyads}, $col, assembly=>1);
@@ -919,9 +988,9 @@ sub SyntheticTable {
 	### index results of manual pattern selection
 	if ($task{report}) {
 	    if ($htmaps) {
-		$map_link = "<a href=../$family{$family_name}->{oligo_selection}.html>\n";
+		$map_link = "../$family{$family_name}->{oligo_selection}.html";
 	    } else {
-		$map_link = "<a href=../$family{$family_name}->{oligo_selection}.${IMG_FORMAT}>\n";
+		$map_link = "../$family{$family_name}->{oligo_selection}.${IMG_FORMAT}";
 	    }
 	    my $pattern_file = $family{$family_name}->{oligo_selection};
 	    &IndexPatterns($family_name, $pattern_file, $map_link, $row{selection}, $col, assembly=>0);
@@ -929,20 +998,22 @@ sub SyntheticTable {
 
 	################################################################
 	#### Index results of consensus
-	if ($htmaps) {
-	    $map_link = "<a href=../$family{$family_name}->{oligo_selection}.html>\n";
-	} else {
-	    $map_link = "<a href=../$family{$family_name}->{oligo_selection}.${IMG_FORMAT}>\n";
-	}
+#	if ($htmaps) {
+#	    $map_link = "../$family{$family_name}->{consensus_file}.html";
+#	} else {
+#	    $map_link = "../$family{$family_name}->{consensus_file}.${IMG_FORMAT}";
+#	}
+	$map_link = "../$family{$family_name}->{consensus_file}\n";
 	&IndexConsensus($family_name,  $family{$family_name}->{consensus_file}, $map_link, $row{consensus}, $col);
 
 	################################################################
 	#### Index results of gibbs
-	if ($htmaps) {
-	    $map_link = "<a href=../$family{$family_name}->{oligo_selection}.html>\n";
-	} else {
-	    $map_link = "<a href=../$family{$family_name}->{oligo_selection}.${IMG_FORMAT}>\n";
-	}
+#	if ($htmaps) {
+#	    $map_link = "../$family{$family_name}->{gibbs_file}.html";
+#	} else {
+#	    $map_link = "../$family{$family_name}->{gibbs_file}.${IMG_FORMAT}";
+#	}
+	$map_link = "../$family{$family_name}->{gibbs_file}";
 	&IndexGibbs($family_name,  $family{$family_name}->{gibbs_file}, $map_link, $row{gibbs}, $col);
     }
     
@@ -1060,7 +1131,8 @@ sub IndexMatrix {
     warn join ("\t", "; Indexing $format matrix for family", $family_name, $consensus_file, $row, $col), "\n" if ($verbose >= 2);
     my $matrix = new RSA::matrix();
     $matrix->readFromFile($consensus_file, $format);
-    $table[$row][$col] = "<table cellpadding=3>\n";
+    $table[$row][$col] = "<a href=".$map_link.">Results</a>\n";
+    $table[$row][$col] .= "<table cellpadding=3>\n";
     $table[$row][$col] .= "<TR>\n";
     $table[$row][$col] .= "<td colspan=2><pre>".$matrix->toString(" ", 4)."</pre></td>\n";
     $table[$row][$col] .= "</TR>\n";
@@ -1116,6 +1188,7 @@ sub IndexPatterns {
 	    @patterns = &ReadPatterns(pattern_file=>$pattern_file);
 	}
     } else {
+	$table[$row][$col] = "<font color=red>File not found</font>\n";
 	$pwd = `pwd`;
 	&Warning(join ( "\t", 
 			$pwd,
@@ -1124,14 +1197,15 @@ sub IndexPatterns {
 			$pattern_file, 
 			" does not exist. Skipped.",
 			));
-	
+	return;
     }
     
     if ($error) {
 	$table[$row][$col] = "<font color=red>$error</font>\n";
     } else {
 	@sorted_patterns = sort { $score{$b} <=> $score{$a} } @patterns;
-	$table[$row][$col] = "<table>\n";
+	$table[$row][$col] = "<table><tr><td align=right>Max score</td><td>".$max_score{$family_name}."</td></tr></table>\n";
+	$table[$row][$col] .= "<table>\n";
 	$table[$row][$col] .= "<TR>\n";
 	
 	### print oligo sequence
@@ -1164,8 +1238,8 @@ sub IndexPatterns {
 	    $table[$row][$col] .= "</TD>\n";
 	}
 	
-	### print oligo score
-	    $table[$row][$col] .= "<TD>$map_link\n";
+	### print pattern scores
+	$table[$row][$col] .= "<TD><a target=_blank href=".$map_link.">\n";
 	for $p (@sorted_patterns) {
 	    $table[$row][$col] .= "<B>" if ($p->get_attribute("score") >= 1);
 	    $table[$row][$col] .= $p->get_attribute("score");
@@ -1173,6 +1247,8 @@ sub IndexPatterns {
 	    $table[$row][$col] .= "<BR>" unless ($p == $#sorted_patterns);
 	}
 	$table[$row][$col] .= "</A></TD>\n";
+
+	
 	
 	### print matching patterns
 	if ($known_sites_provided) {
@@ -1195,6 +1271,10 @@ sub IndexPatterns {
 	
 	$table[$row][$col] .= "</TR>\n";
 	$table[$row][$col] .= "</TABLE>\n";
+
+
+
+
 #	    close $olig;
     }
 }
