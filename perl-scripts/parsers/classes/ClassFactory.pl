@@ -701,6 +701,15 @@ use Data::Dumper;
   ###		            prefix=>"prefix_");
   sub generate_sql {
       my ($class_holder,%args) = @_;
+      foreach my $dbms (keys %main::supported_dbms) {
+	  warn "Exporting SQL scripts for $dbms\n";
+	  $class_holder->generate_sql_one_dbms(%args, dbms=>$dbms,
+					       dir=>$main::dir{output}."/sql_scripts/".$dbms);
+      }
+  }
+
+  sub generate_sql_one_dbms {
+      my ($class_holder,%args) = @_;
       my $object_type = $class_holder->get_object_type();
       (my $short_class = $object_type) =~ s/.*:://g;
       my $table_prefix = $short_class;
@@ -711,12 +720,20 @@ use Data::Dumper;
 
       $max_col_length = 255;
 
-      warn (";\n; ", &main::AlphaDate, 
-	    " Generating SQL scripts for class ", $class_holder->get_object_type(),
-	    "\n") if ($main::verbose >= 1);
-
+     #### Database management system
+      my $dbms = $args{dbms} || $main::default{dbms};
+      my $host = $args{host} || $main::default{host};
+      my $user = $args{user} || $main::default{user};
+      my $password = $args{password} || $main::default{password};
+      my $schema = $args{schema} || $main::default{schema};
+      my $sql_dir = $args{dir} || $main::dir{output}."/sql_scripts/$dbms";
+      
+      warn join ("\t", ";\n;", &main::AlphaDate(), 
+		 " Generating SQL scripts for class ", $class_holder->get_object_type(),
+		 "sql_dir: $sql_dir"),
+		 "\n" if ($main::verbose >= 1);
+      
       #### create SQL export directory if required
-      my $sql_dir = $args{dir} || $main::dir{output}."/sql_scripts";
       unless (-d $sql_dir) {
 	  warn "; Creating SQL dir $sql_dir" if ($main::verbose > 1);
 	  system "mkdir -p $sql_dir";
@@ -724,13 +741,6 @@ use Data::Dumper;
 	      die "Error: cannot create directory $sql_dir for exporting SQL scripts\n";
 	  }
       }
-
-     #### Database management system
-      my $dbms = $args{dbms} || $main::default{dbms};
-      my $host = $args{host} || $main::default{host};
-      my $user = $args{user} || $main::default{user};
-      my $password = $args{password} || $main::default{password};
-      my $schema = $args{schema} || $main::default{schema};
 
       my $comment_symbol = "--";
 
@@ -944,7 +954,7 @@ use Data::Dumper;
 	  print_sql_header ("Table loading scripts for class $table_prefix");
 	  print_sql_header ("Main table - $table_prefix");
 	  print SQL "LOAD DATA", "\n";
-	  print SQL "INFILE '", "../${short_class}.tab", "'\n";
+	  print SQL "INFILE '", "../../${short_class}.tab", "'\n";
 	  print SQL "APPEND INTO TABLE $table_prefix", "\n";
 	  print SQL "REENABLE DISABLED_CONSTRAINTS", "\n";
 	  print SQL "FIELDS TERMINATED BY X'09'", "\n";
@@ -984,7 +994,7 @@ use Data::Dumper;
 	      print_sql_header ("Table loading scripts for class $table_prefix");
 	      print_sql_header ("Multivalue attribute - $table_name");
 	      print SQL "LOAD DATA", "\n";
-	      print SQL "INFILE '", "../${short_class}_${field}.tab", "'\n";
+	      print SQL "INFILE '", "../../${short_class}_${field}.tab", "'\n";
 	      print SQL "APPEND INTO TABLE $table_name", "\n";
 	      print SQL "REENABLE DISABLED_CONSTRAINTS", "\n";
 	      print SQL "FIELDS TERMINATED BY X'09'", "\n";
@@ -1043,7 +1053,7 @@ use Data::Dumper;
 	      print_sql_header ("Table loading scripts for class $table_prefix");
 	      print_sql_header ("Multivalue attribute - $table_name");
 	      print SQL "LOAD DATA", "\n";
-	      print SQL "INFILE '", "../${short_class}_${field}.tab", "'\n";
+	      print SQL "INFILE '", "../../${short_class}_${field}.tab", "'\n";
 	      print SQL "APPEND INTO TABLE $table_name", "\n";
 	      print SQL "REENABLE DISABLED_CONSTRAINTS", "\n";
 	      print SQL "FIELDS TERMINATED BY X'09'", "\n";
@@ -1097,7 +1107,7 @@ use Data::Dumper;
 	  print_sql_header ("Table loading scripts for class $table_prefix");
 	  print SQL "use ", $schema, ";\n\n";
 	  print_sql_header ("Main table - $table_prefix");
-	  print SQL "LOAD DATA LOCAL INFILE \"../${short_class}_filtered.tab\" INTO TABLE $table_name;\n";
+	  print SQL "LOAD DATA LOCAL INFILE \"../../${short_class}_filtered.tab\" INTO TABLE $table_name;\n";
 	  close SQL;
 
 	  
@@ -1110,7 +1120,7 @@ use Data::Dumper;
 	      print_sql_header ("Table loading scripts for class $table_prefix");
 	      print SQL "use ", $schema, ";\n\n";
 	      print_sql_header ("Multivalue attribute - $table_name");
-	      print SQL "LOAD DATA LOCAL INFILE \"../${short_class}_${field}_filtered.tab\" INTO TABLE $table_name;\n";
+	      print SQL "LOAD DATA LOCAL INFILE \"../../${short_class}_${field}_filtered.tab\" INTO TABLE $table_name;\n";
 	      close SQL;
 	  }
 	  
@@ -1196,11 +1206,11 @@ use Data::Dumper;
 
       #### uncompression
       print MK "\nuncompress:\n";
-      print MK "\tgunzip -f ../${short_class}*.tab.gz\n";
+      print MK "\tgunzip -f ../../${short_class}*.tab.gz\n";
 
       #### recompression
       print MK "\nrecompress:\n";
-      print MK "\tgzip -f ../${short_class}*.tab\n";
+      print MK "\tgzip -f ../../${short_class}*.tab\n";
 
       #### table creation
       print MK "\ncreate:\n";
@@ -1228,12 +1238,12 @@ use Data::Dumper;
 	     print MK "\t", '${SQLLOADER} control=', ${load_file}, " skip=",$skip_lines,"\n";
          }
       } elsif ($dbms eq "postgresql") {
-         my $table_file = "../${short_class}.tab";
+         my $table_file = "../../${short_class}.tab";
 	 print MK "\t", "grep -v '^$comment_symbol' ${table_file} | psql -f ", $load_file;
          print MK " -d ", $schema if ($schema);
          print MK "\n";
 	 foreach $field (@array_fields,@expanded_fields) {
-             my $table_file = "../${short_class}_${field}.tab";
+             my $table_file = "../../${short_class}_${field}.tab";
 	     my $load_file = "${table_prefix}_${field}_table_load.ctl";
 	     my $skip_lines=4;
 	     print MK "\t", "grep -v '^$comment_symbol' ${table_file} | psql -f ", $load_file;
@@ -1241,14 +1251,14 @@ use Data::Dumper;
              print MK "\n";
          }
      } elsif ($dbms eq "mysql") {
-	 print MK "\tgrep -v '^$comment_symbol' ../${short_class}.tab > ../${short_class}_filtered.tab\n";
+	 print MK "\tgrep -v '^$comment_symbol' ../../${short_class}.tab > ../../${short_class}_filtered.tab\n";
 	 print MK "\tcat $load_file | \${MYSQL}\n";
-	 print MK "\trm ../${short_class}_filtered.tab\n";
+	 print MK "\trm ../../${short_class}_filtered.tab\n";
 	 foreach $field (@array_fields,@expanded_fields) {
 	     my $load_file = "${table_prefix}_${field}_table_load.ctl";
-	     print MK "\tgrep -v '^$comment_symbol' ../${short_class}_${field}.tab > ../${short_class}_${field}_filtered.tab\n";
+	     print MK "\tgrep -v '^$comment_symbol' ../../${short_class}_${field}.tab > ../../${short_class}_${field}_filtered.tab\n";
 	     print MK "\tcat ${load_file} | \${MYSQL}\n";
-	     print MK "\trm ../${short_class}_${field}_filtered.tab\n";
+	     print MK "\trm ../../${short_class}_${field}_filtered.tab\n";
          }
       }
 
@@ -1271,5 +1281,8 @@ use Data::Dumper;
   }
   
 }
+
+
+
 
 return 1;
