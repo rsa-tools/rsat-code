@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: retrieve-seq,v 1.12 2001/05/29 21:13:40 jvanheld Exp $
+# $Id: retrieve-seq,v 1.13 2001/06/19 20:40:28 jvanheld Exp $
 #
-# Time-stamp: <2001-05-26 12:44:30 jvanheld>
+# Time-stamp: <2001-06-19 22:40:06 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -29,8 +29,6 @@ my %chomosome = ();
 my $chrom = "";
 $seq_label = "gene";  
 $sequence_type = "upstream";
-$default{from} = -400;
-$default{to} = -1;
 @queries = ();
 $out_format = "fasta";
 $line_width = 60;
@@ -45,6 +43,24 @@ $line_width = 60;
 
 #### organism
 &CheckOrganism($organism_name);
+    
+#### default boundaries
+if ($sequence_type eq "upstream") {
+    if ($organism_name eq "yeast") {
+	$default{from} = -800;
+	$default{to} = -1;
+    } elsif (($organism_name eq "droso") ||
+	     ($organism_name eq "c.elegans")){
+	$default{from} = -2000;
+	$default{to} = -1;
+    } else { #### bacteria
+	$default{from} = -400;
+	$default{to} = -1;
+    }
+} elsif ($sequence_type eq "downstream") {
+    $default{from} = 1;
+    $default{to} = 200;
+}
 
 #### check output format ####
 &CheckOutputSeqFormat($out_format);
@@ -235,7 +251,6 @@ foreach $query (@queries) {
 	"\n"
 	)
       if ($warn_level >= 2); 
-  
   $current_seq = $chromosome_seq{$chrom}->get_sequence($reg_left,$reg_right,$orf_strand);
   
   
@@ -445,8 +460,6 @@ sub ReadArguments {
 
       } elsif ($ARGV[$a+1] =~ /^down/i) {
 	$sequence_type = "downstream";
-	$default{from} = 1;
-	$default{to} = 200;
 
       } elsif ($ARGV[$a+1] =~ /^orf/i) {
 	$sequence_type = "orf";
