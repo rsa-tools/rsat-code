@@ -68,11 +68,11 @@ while (<$in>) {
 }
 $row_nb = $row;
 
-$chi_square = &ChiSquare($test, $row_nb, $col_nb, @values);
+($chi_square, $df) = &ChiSquare($test, $row_nb, $col_nb, @values);
 
 #### print output ####
-print $out $chi_square, "\n";
-
+print $out "chi2\t", $chi_square, "\n";
+print $out "df\t", $df, "\n";
 
 ###### verbose ######
 if ($verbose) {
