@@ -129,15 +129,19 @@ $latin{16} = 'XVI';
 ##################### PERL SUBROUTINE DEFINITION ###########################
 ############################################################################
 
-### open input file ###
+################################################################
+#### Open an input stream
+#### If a file name is specified, open this file. If not, read input from the STDIN
+#### if the input file has extension .gz, or .Z, it is decopmpressed on the flight. 
+#### usage 
+####    ($in,$input_dir) = &OpenInputFile($filename);
+#### returns a file handle
 sub OpenInputFile {
-    #### usage 
-    ####    ($in,$input_dir) = &OpenInputFile($filename);
-    #### returns a file handle
-    my $filename = $_[0];
-#    print "BOUM $filename";
-    my $input_stream = STDIN; ### default is standard input
-    my ($short_file_name, $input_dir) = ();
+    my ($filename) = @_;
+#    warn "BOUM $filename";
+    my $input_stream;
+#    my ($short_file_name, $input_dir) = &ShortFileName($filename);
+    my ($input_dir, $short_file_name) = &SplitFileName($filename);
     warn join ("\t", "; Opening input stream", $filename, $short_file_name, $input_dir), "\n" 
 	if ($verbose >= 2);
 
@@ -145,20 +149,26 @@ sub OpenInputFile {
 	unless (-e $filename) {
 	    if (-e "${filename}.gz") {
 		$filename .= ".gz";
+	    } elsif (-e "${filename}.Z") {
+		$filename .= ".Z";
 	    } else {
-		&FatalError("File $filename does not exist.");
+		&FatalError("OpenInputFile: File $filename does not exist.");
 	    }
 	}
 	if ($filename =~ /\.gz$/) { ### gzip file -> decompress it on the fly
 	    $filename = "gunzip -c $filename |";
+	} elsif ($filename =~ /\.Z$/) { ### gzip file -> decompress it on the fly
+	    $filename = "uncompress -c $filename |";
 	}
 	unless (open(INPUT, $filename)) {
 	    print "\tError : cannot read input file $filename\n";
 	    exit;
 	}
 	$input_stream = INPUT;
-	($input_dir, $short_file_name) = &SplitFileName($filename);
-    } 
+    } else {
+	$input_stream = STDIN; ### default is standard input
+
+    }
     return ($input_stream, $input_dir);
 }
 
@@ -314,20 +324,24 @@ sub ReadExpectedFrequencies {
     
 }
 
-sub CurrentTime {
+
+
+################################################################
 ### returns current time
 ### usage
 ### $time = &CurrentTime;
+sub CurrentTime {
     my $current_time = `date '+%H:%M:%S'`;
     $current_time =~ chomp $current_time;
     return $current_time;
 }
 
-sub IsNatural {
+################################################################
 ### returns 1 if the first argument is a natural number,
 ###         0 otherwise
 ### usage
 ### if (IsNatural($my_number) { 
+sub IsNatural {
     if ($_[0] =~ /^ *\d+ *$/) {
 	return 1;
     } else {
@@ -335,11 +349,12 @@ sub IsNatural {
     }
 }
 
-sub IsInteger {
+################################################################
 ### returns 1 if the first argument is an integer number,
 ###         0 otherwise
 ### usage
 ### if (IsInteger($my_number) { 
+sub IsInteger {
     if ($_[0] =~ /^ *[\+\-]{0,1}\d+ *$/) {
 	return 1;
     } else {
@@ -347,11 +362,12 @@ sub IsInteger {
     }
 }
 
-sub IsReal {
+################################################################
 ### returns 1 if the first argument is a real number,
 ###         0 otherwise
 ### usage
 ### if (number($my_number) { 
+sub IsReal {
     if (($_[0] =~ /^ *[\+\-]{0,1}\d+(\.\d*){0,1} *$/) || 
         ($_[0] =~ /^ *[\+\-]{0,1}\d+(\.\d*){0,1}e[\+\-]{0,1}\d+ *$/i)) {
 	return 1;
@@ -361,10 +377,11 @@ sub IsReal {
 }
 
 
-sub round {
+################################################################
 #### returns the closest integer value from a real number
 #### usage:
 #### $my_int = &round($my_real);
+sub round {
     my $my_real = $_[0];
     my $my_int;
     if (abs(($my_real - int($my_real))) < 0.5) {
@@ -376,6 +393,8 @@ sub round {
     }
 }
 
+################################################################
+#### suppress space characters at the start and the end of a string
 sub trim {
     my ($string) = @_;
     $string =~ s/^\s+//;
@@ -384,30 +403,13 @@ sub trim {
 }
 
 
-sub ListParameters {
-  my $cgi_query = $_[0];
-  @param = $query->param;
-  print "<H3>Parameter values</H3>";
-  print "<UL><TABLE>\n";
-  foreach $key (@param) {
-    print "<TR>";
-    print "<TD VALIGN=TOP><B>$key</B></TD>";
-    $value = $query->param($key);
-    $value =~ s/\n/<BR>/g;
-    print "<TD VALIGN=TOP>$value</TD>";
-    print "</TR>\n";
-  }
-  print "</TABLE></UL>\n";
 
-}
-
-
-
-sub AlphaDate {
+################################################################
 ### returns a date in the inverted form, so that 
 ### the choromological and alphabetical sorting ar identical.
 ### Usage:
 ###      $alpha_date = &AlphaDate;
+sub AlphaDate {
     my $my_date = "";
     my ($sec, $min, $hour,$day,$month,$year) = localtime(time);
 
@@ -417,7 +419,8 @@ sub AlphaDate {
     return $my_date;
 }
 
-
+################################################################
+#### increment the counter file for monitoring web access
 sub UpdateCounterFile {
   my $nb_visitors = 1;
   if (!(-e $counter_file)) {
@@ -445,11 +448,12 @@ sub UpdateCounterFile {
 }
 
 
-sub UpdateLogFile {
-### stores info into a log file in a conveninent way for 
+################################################################
+### store info into a log file in a conveninent way for 
 ### subsequent login statistics
 ### Usage:
 ###     &UpdateLogFile;
+sub UpdateLogFile {
   if (open LOG, ">>$log_file") {
     flock(LOG,2);
     $date = &AlphaDate;
@@ -470,10 +474,11 @@ sub UpdateLogFile {
   chmod 0777, $log_file;
 }
 
-sub SplitFileName {
+################################################################
 #### splits a full file name into directory and short file name
 #### usage:
 ####     my ($dir, $short_file_name) = &SplitFileName($full_file_name);
+sub SplitFileName {
     my $full_file_name = $_[0];
     my $short_file_name = $full_file_name;
     my $dir = "";
@@ -485,21 +490,23 @@ sub SplitFileName {
     return ($dir, $short_file_name);
 }
 
-sub ShortFileName {
+################################################################
 #### removes the directory from a full file name, and returns the short file name
 #### usage:
 #### $file_name = &ShortFileName($full_file_name);
+sub ShortFileName {
     my $full_file_name = $_[0];
     my ($dir, $short_file_name) = &SplitFileName($full_file_name);
     return $short_file_name;
 }
 
 
-sub ExtractPath {
+################################################################
 ### returns the path from a file name
 ### usage 
 ### path = &ExtractPath($long_file_name);
 ###
+sub ExtractPath {
     my $l_file_name = $_[0];
     my $l_path = "";
     while ($l_file_name =~ /\/(.*)/) {
@@ -510,11 +517,12 @@ sub ExtractPath {
 }
 
 
-sub DelayedRemoval {
+################################################################
 #### send a unix command to remove a file the next day
 #### Usage:
 #### &DelayedRemoval($file_to_remove);
 ####
+sub DelayedRemoval {
     unless ($config_site eq "alize") { ### at est foireux au DBM
 	local ($file_to_remove) = $_[0];
 	open REMOVE, "| at now + 1 day";
@@ -525,8 +533,9 @@ sub DelayedRemoval {
 
 
 
-sub PrintList {
+################################################################
 ### prints a list of elements, one per line
+sub PrintList {
     my $spacer = "\n";
     foreach $element (@_) {
 	print $element;
@@ -535,9 +544,10 @@ sub PrintList {
 
 }
 
+################################################################
+#### print the command-line arguments
 sub PrintArguments {
   my $local_out = $_[0];
-
   unless ($local_out)  {
     $local_out = STDOUT;
   }
@@ -562,29 +572,48 @@ sub PrintArguments {
 ################################################################
 #### Check if an organism is supported on the current installation,
 #### and open streams to read its genome sequence.
+####
+#### Usage
+#### -----
+#### Automatic selection of genome and feature file : 
+####    &CheckOrganism($organism_name); 
+####
+#### Manual specification of input files :
+#### &CheckOrganism($organism_name, 
+####                $feature_table_file, 
+####                $input_sequence_file,  
+####                $input_sequence_format);
 sub CheckOrganism {
-    my ($organism_name, $feature_table_file) = @_;
+    my ($organism_name, $feature_table_file, $input_sequence_file, $input_sequence_format) = @_;
     my $organism_object = new RSA::Organism;
 
-    &Warning("checking organism\t$organism_name") if ($verbose >= 2);
-
-    &FatalError("You should specify an organism.", 
-		"Supported organisms\n".&ListSupportedOrganisms)
-	unless ($organism_name);
-    
-    unless ($supported_organism{$organism_name}) {
-	&FatalError("Organism $organism_name is not supported.",
-		    "Supported on this site : \n".&ListSupportedOrganisms());
+    #### check input sequence file and format
+    if ($input_sequence_file) {
+	$genome_file = $input_sequence_file;
+	$genome_seq_format = $input_sequence_format;  
+    } else {
+	$genome_file = $supported_organism{$organism_name}->{'genome'};
+	$genome_seq_format = $supported_organism{$organism_name}->{'seq_format'};
+	&Warning("checking organism\t$organism_name") if ($verbose >= 2);
+	
+	&FatalError("You should specify an organism.", 
+		    "Supported organisms\n".&ListSupportedOrganisms)
+	    unless ($organism_name);
+	
+	unless ($supported_organism{$organism_name}) {
+	    &FatalError("Organism $organism_name is not supported.",
+			"Supported on this site : \n".&ListSupportedOrganisms());
+	}
     }
 
-#    die ($organism_name, $supported_organism{$organism_name}->{genome_file});
+
+#    die join( "\t", $organism_name, $feature_table_file, $genome_file, $genome_seq_format), "\n";
     
+    #### check feature file
     unless ($feature_table_file) {
 	$feature_table_file = $supported_organism{$organism_name}->{'features'};
     }	
     &Warning("Feature table\t$feature_table_file") if ($verbose >= 2);
-    $genome_file = $supported_organism{$organism_name}->{'genome'};
-    $genome_seq_format = $supported_organism{$organism_name}->{'seq_format'};
     
     if ($genome_seq_format eq "raw") {
 	### open a direct read access to the genome file
@@ -628,6 +657,27 @@ sub CheckOrganism {
 #		warn join "\t", $seq_file, $chr, $chromosome_seq{$chr}->get_attribute("filename"), "\n";
 	}
 	close FILES;
+    } elsif ($accepted_input_seq{$genome_seq_format}) {
+	unless (-e $genome_file) {
+	    &FatalError("Genome file $genome_file does not exist.");
+	}
+	my ($in, $input_dir) = &OpenInputFile($genome_file, $genome_seq_format);
+
+	while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $genome_seq_format, $input_dir)) &&
+	       (($current_seq) || ($current_id))) {
+	    $chr = $current_id;
+	    $chromosome_seq{$chr} = new RSA::Sequence (
+						       id=>        $chr,
+						       sequence=>  $current_seq,
+						       organism=>  $organism_name);
+	    $chromosome{$chr} = new RSA::Chromosome();
+	    $chromosome{$chr}->set_name($chr);
+	    $chromosome{$chr}->set_sequence($chromosome_seq{$chr});
+	    $chromosome{$chr}->set_organism($organism_name);
+	    $organism_object->add_chromosome($chromosome{$chr});
+#	    warn join ("\t", $current_id, $chr), "\n";
+
+	}
     } else {
 	&FatalError("Unsupported genome sequence format $genome_seq_format");
     }
@@ -694,7 +744,8 @@ sub ReadOrfPositions {
     ### usage
     ### &ReadOrfPositions($organism_name);
     my ($organism_name, 
-	$feature_table_file)= @_;;
+	$feature_table_file,
+	$warn)= @_;;
     
     unless ($feature_table_file) {
 	$feature_table_file = $supported_organism{$organism_name}->{'features'};
@@ -765,29 +816,31 @@ sub ReadOrfPositions {
 	
 	#### check mandatory attributes
 	unless ($orf_id) {
-	    warn "; WARNING: invalid orf identifier specification in the feature table line $linenb\n;\t",join "\t", @fields, "\n";
+	    warn "; WARNING: invalid orf identifier specification in the feature table line $linenb\n;\t",join "\t", @fields, "\n" if ($warn);
 	    next;
 	}
 	unless ($chr) {
-	    warn "; WARNING: invalid chromosome specification in the feature table line $linenb\n;\t",join "\t", @fields, "\n";
+	    warn "; WARNING: invalid chromosome specification in the feature table line $linenb\n;\t",join "\t", @fields, "\n" if ($warn);
 	    next;
 	}
 	unless ($left) {
-	    warn "; WARNING: invalid left position specification in the feature table line $linenb\n;\t",join "\t", @fields, "\n";
+	    warn "; WARNING: invalid left position specification in the feature table line $linenb\n;\t",join "\t", @fields, "\n" if ($warn);
 	    next;
 	}
 	unless ($right) {
-	    warn "; WARNING: invalid right position specification in the feature table line $linenb\n;\t",join "\t", @fields, "\n";
+	    warn "; WARNING: invalid right position specification in the feature table line $linenb\n;\t",join "\t", @fields, "\n" if ($warn);
 	    next;
 	}
 	unless ($strand) {
-	    warn "; WARNING: invalid strand specification in the feature table line $linenb\n;\t",join "\t", @fields, "\n";
+	    warn "; WARNING: invalid strand specification in the feature table line $linenb\n;\t",join "\t", @fields, "\n" if ($warn);
 	    next;
 	}
 	unless ($left < $right) {
-	    warn "; WARNING: left should be smaller than right position specification in in  feature table line $linenb\n;\t",join "\t", @fields, "\n";
+	    warn "; WARNING: left should be smaller than right position specification in in  feature table line $linenb\n;\t",join "\t", @fields, "\n" if ($warn);
 	    next;
 	}
+	
+	#### make sure the strand format is correct
 	$strand = &ConvertStrand($strand);
 	
 	### assign attributes to the gene
@@ -811,9 +864,16 @@ sub ReadOrfPositions {
 	    $chromosome{$chr}->set_organism($organism_name);
 	}
 	$chromosome{$chr}->add_gene($orf_id);
-	#print "$orf_id\t$chr\t$strand\t$left\t$right\t", $chromosome{$chr}->count_genes(), "\n";
+# 	warn join( "\t",
+# 		   $orf_id,
+# 		   $chr,
+# 		   $strand,
+# 		   $left,
+# 		   $right,
+# 		   $descr{$orf_id},
+# 		   $chromosome{$chr}->count_genes()), "\n";
     }
-    close $orfs;
+    close $orfs if ($feature_table_file);
 }
 
 
@@ -867,7 +927,7 @@ sub ReadSynonyms {
 	    }
 	}
     }
-    close $syn;
+    close $syn if ($supported_organism{$organism_name}->{'synonyms'});
 } ### ReadSynonyms
 
 
@@ -1107,6 +1167,71 @@ sub cgiMessage {
 	    "</blockquote>",
 	    "<BR><HR SIZE=3>";
 }
+
+
+################################################################
+#### read  family file
+sub ReadFamilies {
+    my ($family_file, $get_orf_id) = @_;
+    warn "; Reading family file\t$family_file\n" 
+	if ($verbose >=2);
+
+    my %family = ();
+    my ($fam) = &OpenInputFile($family_file);
+
+    my $line = 0;
+    while (<$fam>) {
+	$line++;
+	next if (/^;/);
+	next if (/^\#/);
+	next unless (/\S/);
+	chomp;
+##	my @fields = split /\s+/;
+	my @fields = split /\t/;
+	
+	### family member
+	$member_name = uc($fields[0]);
+	unless ($member_name =~ /\S/) {
+	    warn ("Error family file $family_file line $line\t",
+		  "gene not specified\n");
+	    next;
+	}
+	### family name
+	$family_name = $fields[1];
+	unless ($family_name =~ /\S/) {
+	    warn ("Error family file $family_file line $line\t",
+		  "family not specified\n");
+	    next;
+	}
+
+	#### create a new family if required
+	unless ($family{$family_name}) {
+	    $family{$family_name} = new RSA::family(name=>$family_name);
+	}
+
+	
+	my $member_key = "";
+	if ($get_orf_id) {
+	    ### identify the gene on the basis of its name
+	    $member_key = $orf_id{$member_name};
+	} else {
+	    $member_key = $member_name;
+	}
+	if ($member_key) {
+#	    push @{$family{$family_name}->{members}}, $member_key;
+	    $family{$family_name}->new_member($member_key);
+#	    warn join ("\t",  "; \t$family_name","$member_name","$member_key","$name{$id}"), "\n" 
+#		if ($verbose >= 0);
+	} else {
+	    &Warning (";\tWARNING ! $member unknown gene name \n");
+	}
+	
+    }
+    close $fam if ($family_file);
+    return %family;
+}
+
+
 
 
 #### end of the library #####
