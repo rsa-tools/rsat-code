@@ -84,9 +84,15 @@ multi:
 
 
 SERVER=merlin.ulb.ac.be
+LOGIN=jvanheld
+SERVER_DIR=regulons/
+SERVER_LOCATION=${LOGIN}@${SERVER}:${SERVER_DIR}
 TO_SYNC=results
-to_merlin:
-	${RSYNC} ${TO_SYNC} jvanheld@${SERVER}:regulons/
+to_server:
+	${RSYNC} ${TO_SYNC} ${SERVER_LOCATION}
+
+from_server:
+	${RSYNC} ${SERVER_LOCATION}${TO_SYNC} . 
 
 CRITERIA=ln.exp exp ln.Pval Pval unadjusted.information adjusted.information MAP model.map betaprior.map
 compare:
