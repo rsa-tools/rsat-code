@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: consensus.cgi,v 1.5 2001/07/18 11:25:00 jvanheld Exp $
+# $Id: consensus.cgi,v 1.6 2003/04/17 20:41:21 jvanheld Exp $
 #
-# Time-stamp: <2001-07-18 13:23:48 jvanheld>
+# Time-stamp: <2003-04-17 22:40:48 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -12,10 +12,20 @@ if ($0 =~ /([^(\/)]+)$/) {
 
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
+#### redirect error log to a file
+BEGIN {
+    $ERR_LOG = "/dev/null";
+#    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
+    use CGI::Carp qw(carpout);
+    open (LOG, ">> $ERR_LOG")
+	|| die "Unable to redirect log\n";
+    carpout(*LOG);
+}
 require "RSA.lib";
 require "RSA.cgi.lib";
+$ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
-$consensus_command = "$BIN/consensus";
+$command = "$BIN/consensus";
 $matrix_from_consensus_command = "$SCRIPTS/matrix-from-consensus";
 $convert_seq_command = "$SCRIPTS/convert-seq";
 $tmp_file_name = sprintf "consensus.%s", &AlphaDate;
@@ -39,8 +49,13 @@ $query = new CGI;
 ($sequence_file,$sequence_format) = &GetSequenceFile("wconsensus", 1, 0);
 $parameters .= " -f $sequence_file ";
 
-### strands ###
-if ($query->param('strands') =~ /ignore/i) {
+
+
+
+### strands and pattern symmetry 
+if ($query->param('symmetrical')) {
+    $parameters .= " -c3 ";
+} elsif ($query->param('strands') =~ /ignore/i) {
     $parameters .= " -c0 ";
 } elsif ($query->param('strands') =~ /separate/i) {
     $parameters .= " -c1 ";
@@ -61,17 +76,28 @@ if ($query->param('prior_freq') eq "on") {
     $parameters .= " -d ";
 }
 
-  ### seed with first sequence and proceed linearly ###
-if ($query->param('seed') eq "on") {
-    $parameters .= " -l ";
-} elsif (&IsNatural($query->param('repeats'))) {
-    ### expected matches ###
-    if ($query->param('one_per_seq') eq "on") {
-	  $parameters .= " -n ".$query->param('repeats');
-      } else {
-	  $parameters .= " -N ".$query->param('repeats');
-      }
+
+$seed_ok = 1; #### for option compatibility
+
+### expected matches ###
+if (&IsNatural($query->param('repeats'))) {
+    if ($query->param('one_per_seq')) {
+	$parameters .= " -N ".$query->param('repeats');
+    } else {
+	$parameters .= " -n ".$query->param('repeats');
+	$seed_ok = 0;
+    }
 }
+
+### seed with first sequence and proceed linearly ###
+if ($query->param('seed') eq "on") {
+    if ($seed_ok) {
+	$parameters .= " -l ";
+    } else {
+	&cgiWarning("Seed option will be ignored because it requires at least one match within each sequence. ");
+    }
+}
+
 
 ### result file
 #  $result_file = "$TMP/$tmp_file_name.res";
@@ -80,12 +106,12 @@ if ($query->param('seed') eq "on") {
 
 
 ### print the header
-print <<End_Header;
-<HEADER>
-<TITLE>CONSENSUS result</TITLE>
-</HEADER><BODY BGCOLOR="#FFFFFF">
-<H3 ALIGN=CENTER>Matrix extraction (consensus) result $query->param('set_name')</H3>
-End_Header
+#  print <<End_Header;
+#  <HEADER>
+#  <TITLE>CONSENSUS result</TITLE>
+#  </HEADER><BODY BGCOLOR="#FFFFFF">
+#  <H3 ALIGN=CENTER>Matrix extraction (consensus) result $query->param('set_name')</H3>
+#  End_Header
 
 
 
@@ -97,21 +123,21 @@ if ($query->param('output') eq "display") {
     &DelayedRemoval($result_file);
     &DelayedRemoval($matrix_file);
 #    print "<PRE>";
-#    print "$consensus_command $parameters | ", "\n";
+#    print "$command $parameters | ", "\n";
 #    print "$matrix_from_consensus_command -i $result_file -o $matrix_file";
 #    print "</PRE>";
-    open RESULT, "$consensus_command $parameters | ";
+    open RESULT, "$command $parameters | ";
     open RES_FILE, ">$result_file";
     
-    #print "<PRE><B>Command:</B> $consensus_command $parameters </PRE>";
+    #print "<PRE><B>Command:</B> $command $parameters </PRE>";
     
     ### prepare data for piping
 #	$title = $query->param('title');
 #	$title =~ s/\"/\'/g;
-    print &PipingWarning();
+    &PipingWarning();
     
     ### Print result on the web page
-    print '<H4>Result</H4>';
+    print '<H3>Result</H3>';
     print "<PRE>";
     while (<RESULT>) {
 	print $_;
@@ -124,25 +150,14 @@ if ($query->param('output') eq "display") {
     &PipingForm();
     
     system "$matrix_from_consensus_command -i $result_file -o $matrix_file";
-    
+    print "<HR SIZE = 3>";
+
+} elsif ($query->param('output') =~ /server/i) {
+    &ServerOutput("$command $parameters", $query->param('user_email'));
 } else {
-    ### send an e-mail with the result ###
-    if ($query->param('user_email') =~ /(\S+\@\S+)/) {
-	$address = $1;
-	print "<B>Result will be sent to your e-mail address: <P>";
-	print "$address</B><P>";
-	system "$consensus_command $parameters | $mail_command $address &";
-    } else {
-	if ($query->param('user_email') eq "") {
-	    print "<B>ERROR: you did not enter your e-mail address<P>";
-	} else {
-	    print "<B>ERROR: the e-mail address you entered is not valid<P>";
-	    print $query->param('user_email')."</B><P>";      
-	}
-    } 
+    &EmailTheResult("$command $parameters", $query->param('user_email'));
 }
 
-print "<HR SIZE = 3>";
 print $query->end_html;
 exit(0);
 
@@ -156,7 +171,7 @@ sub PipingForm {
 <TABLE>
 <TR>
 <TD>
-<H4>Next step</H4>
+<H3>Next step</H3>
 </TD>
 <TD>
 <FORM METHOD="POST" ACTION="patser_form.cgi">
