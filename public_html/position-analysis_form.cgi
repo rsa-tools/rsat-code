@@ -22,7 +22,7 @@ $default{class_interval} = 20;
 $default{strand} = "single strand";
 $default{noov} = 'checked';
 $default{grouprc} = 'checked';
-$default{purge} = 'checked';
+$default{purge} = '';
 $default{origin} = "-0";
 
 #### return values
@@ -86,14 +86,14 @@ print $query->table({-border=>0,-cellpadding=>3,-cellspacing=>0},
 
 		 );
 
-#### purge sequences
-print $query->checkbox(-name=>'purge',
-		       -checked=>$default{purge},
-		       -label=>'');
-print "&nbsp;<A HREF='help.position-analysis.html#purge'><B>purge sequences (highly recommended)</B></A>";
-print "<BR>";
+#  #### purge sequences
+#  print $query->checkbox(-name=>'purge',
+#  		       -checked=>$default{purge},
+#  		       -label=>'');
+#  print "&nbsp;<A HREF='help.position-analysis.html#purge'><B>purge sequences (highly recommended)</B></A>";
+#  print "<BR>";
 
-print "<HR width=550 align=left>\n";
+#  print "<HR width=550 align=left>\n";
 
 
 ### oligo size
@@ -246,7 +246,7 @@ print $query->hidden(-name=>'output',-default=>'display');
 print $query->hidden(-name=>'oligo_length',-default=>3);
 print $query->hidden(-name=>'organism',-default=>'Saccharomyces cerevisiae');
 print $query->hidden(-name=>'class_interval',-default=>'3');
-print $query->hidden(-name=>'origin',-default=>'-3');
+print $query->hidden(-name=>'origin',-default=>'-30');
 print $query->hidden(-name=>'chi',-default=>'50');
 #print $query->hidden(-name=>'filter',-default=>'checked');
 print $query->hidden(-name=>'strand',-default=>'single strand');
