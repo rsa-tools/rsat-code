@@ -7,6 +7,7 @@ use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
 require "RSA.cgi.lib";
+$output_context = "cgi";
 
 ### Read the CGI query
 $query = new CGI;
@@ -17,10 +18,13 @@ $default{title} = "";
 $default{sequence} = "";
 $default{sequence_format} = "fasta";
 $default{sequence_file} = "";
+$default{exp_freq_file} = "";
 $default{sequence_type} = "dna";
 $default{oligo_size} = 6;
+$default{markov_order} = 2;
 $default{strand} = "both strands";
-$default{noov} = "checked";
+$default{noov} = '';
+$default{grouprc} = 'checked';
 $default{freq_estimate} = "Oligo frequencies from all non-coding regions";
 $default{occ} = 'checked';
 $default{proba} = 'checked';
@@ -38,6 +42,8 @@ $default{occ_significance_threshold} = "0";
 print "<CENTER>";
 print "Analysis of oligonucleotide representation in a set of DNA sequences<P>\n";
 print "</CENTER>";
+print "<HR>";
+print "<blockquote>";
 
 #&ListParameters;
 
@@ -50,26 +56,38 @@ foreach $key (keys %default) {
 
 print $query->start_multipart_form(-action=>"oligo-analysis.cgi");
 
-&OrganismPopUp;
-
 ### Title
-print "<B><A HREF='help.oligo-analysis.html#title'>Title</A></B>&nbsp;\n";
-print $query->textfield(-name=>'title',
-			-default=>$default{title},
-			-size=>50);
+#print "<B><A HREF='help.oligo-analysis.html#title'>Title</A></B>&nbsp;\n";
+#print $query->textfield(-name=>'title',
+#			-default=>$default{title},
+#			-size=>50);
+#print "<BR>\n";
+#print "<HR width=550 align=left>\n";
 
-print "<BR>\n";
+print $query->table({-border=>0,-cellpadding=>3,-cellspacing=>0},
+	       $query->Tr({-align=>left,-valign=>TOP},
+		       [
+		      $query->td([&SequenceChoice()])
+			]),
+	       $query->Tr({-align=>left,-valign=>TOP},
+		       [
+		      $query->td(["<B><A HREF='help.oligo-analysis.html#sequence_type'>Sequence type</A></B>".
+			       $query->popup_menu(-name=>'sequence_type',
+						  -Values=>["dna","protein","other"],
+						  -default=>$default{sequence_type})
+			       ])
+			])
 
+		 );
 
-
-&DisplaySequenceChoice;
+print "<HR width=550 align=left>\n";
 
 ### sequence type
-print "<B><A HREF='help.oligo-analysis.html#sequence_type'>Sequence type</A>&nbsp;</B>\n";
-print $query->popup_menu(-name=>'sequence_type',
-			 -Values=>["dna","protein","other"],
-			 -default=>$default{sequence_type});
-print "<BR>\n";
+#print "<B><A HREF='help.oligo-analysis.html#sequence_type'>Sequence type</A>&nbsp;</B>\n";
+#print $query->popup_menu(-name=>'sequence_type',
+#			 -Values=>["dna","protein","other"],
+#			 -default=>$default{sequence_type});
+#print "<BR>\n";
 
 ### oligo size
 print "<B><A HREF='help.oligo-analysis.html#oligo_size'>Oligonucleotide size</A>&nbsp;</B>\n";
@@ -77,49 +95,76 @@ print $query->popup_menu(-name=>'oligo_size',
 			 -Values=>[1,2,3,4,5,6,7,8],
 			 -default=>$default{oligo_size});
 
+### prevent overlapping matches of the same pattern
+print $query->checkbox(-name=>'noov',
+		       -checked=>$default{noov},
+		       -label=>'');
+print "&nbsp;<A HREF='help.oligo-analysis.html#noov'><B>prevent overlapping matches</B></A>";
+print "<BR>\n";
+
 ### strand ###
-print "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
 print "<B><A HREF='help.oligo-analysis.html#count_strands'>Count on</A>&nbsp;</B>\n";
 print $query->popup_menu(-name=>'strand',
 			 -Values=>['single strand',
 				  'both strands'],
 			 -default=>$default{strand});
-#print "<BR>";
 
-
-### prevent overlapping matches of the same pattern
-print $query->checkbox(-name=>'noov',
-		       -checked=>$default{noov},
+print $query->checkbox(-name=>'grouprc',
+		       -checked=>$default{grouprc},
 		       -label=>'');
-print "&nbsp;<A HREF='help.oligo-analysis.html#noov'><B>
-prevent overlapping matches
-</B></A>";
-print "<BR>\n";
+print "&nbsp;<A HREF='help.oligo-analysis.html#grouprc'><B>return reverse complements together in the output</B></A>";
+print "<BR>";
 
+
+
+print "<HR width=550 align=left>\n";
 
 ### expected frequency calculation
-print "<A HREF='help.oligo-analysis.html#exp_freq'><B>Expected frequency</B></A>&nbsp;";
-print $query->popup_menu(-name=>'freq_estimate',
-			 -Values=>['Equiprobable residues',
-				   'Residue frequencies from input sequence',
-				   'Markov Chain (higher order dependencies)',
-				   'Lexicon partitioning',
-				   'Oligo frequencies from all non-coding regions'],
-			 -default=>$default{freq_estimate});
-print "<BR>";
+print $query->table({-border=>0,-cellpadding=>3,-cellspacing=>0},
+		    $query->Tr($query->td("<A HREF='help.oligo-analysis.html#exp_freq'><B>Expected frequency calibration</B></A>&nbsp;<BR>")),
+		    $query->Tr($query->td(["<INPUT TYPE='radio' NAME='freq_estimate' VALUE='Oligo frequencies from all non-coding regions' CHECKED>Oligo frequencies from all non-coding regions<BR>",
+					   &OrganismPopUpString])),
+		    $query->Tr($query->td([
+					   "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='Markov Chain (higher order dependencies)'>Markov Chain (higher order dependencies)<BR>",
+					   "Markov order &nbsp;".$query->textfield(-name=>'markov_order',
+										   -default=>$default{markov_order},
+										   -size=>5),
+					   ])),
+		    $query->Tr($query->td("<INPUT TYPE='radio' NAME='freq_estimate' VALUE='Lexicon partitioning'>Lexicon partitioning<BR>")),
+		    $query->Tr($query->td("<INPUT TYPE='radio' NAME='freq_estimate' VALUE='Residue frequencies from input sequence'>Residue frequencies from input sequence<BR>")),
+		    $query->Tr($query->td("<INPUT TYPE='radio' NAME='freq_estimate' VALUE='Equiprobable residues'>Equiprobable residues<BR>"))
+		    );
+
+print "<HR width=550 align=left>\n";
+
+
+
+
+
+
+#print "<A HREF='help.oligo-analysis.html#exp_freq'><B>Expected frequency</B></A>&nbsp;";
+#print $query->radio_group(-name=>'freq_estimate',
+#			  -Values=>['Equiprobable residues',
+#				    'Residue frequencies from input sequence',
+#				    'Markov Chain (higher order dependencies)',
+#				    'Lexicon partitioning',
+#				    'Oligo frequencies from all non-coding regions'],
+#			  -default=>$default{freq_estimate});
+#print "<BR>";
+
 
 
 #### table with all the statistics and thresholds
 print "<BLOCKQUOTE>\n";
-print CGI::table({-border=>3,-cellpadding=>0,-cellspacing=>0},
-		 CGI::Tr({-align=>left,-valign=>TOP},
+print $query->table({-border=>1,-cellpadding=>0,-cellspacing=>0},
+		    $query->Tr({-align=>left,-valign=>TOP},
 			 [
-			  CGI::th([" <A HREF='help.oligo-analysis.html#return'>Return</A> ",
+			  $query->th([" <A HREF='help.oligo-analysis.html#return'>Return</A> ",
 				   " <A HREF='help.oligo-analysis.html#thresholds'>Lower<BR>Threshold</A> ",
 				   " <A HREF='help.oligo-analysis.html#thresholds'>Upper<BR>Threshold</A> "]),
 
 			  ### occurrences
-			  CGI::td([$query->checkbox(-name=>'occ',
+			  $query->td([$query->checkbox(-name=>'occ',
 						    -checked=>$default{occ},
 						    -label=>' Occurrences '),
 				   $query->textfield(-name=>'occurrence_threshold',
@@ -128,7 +173,7 @@ print CGI::table({-border=>3,-cellpadding=>0,-cellspacing=>0},
 				   '']),
 
 			  ### binomial proba
-			  CGI::td([$query->checkbox(-name=>'proba',
+			  $query->td([$query->checkbox(-name=>'proba',
 						    -checked=>$default{proba},
 						    -label=>' Binomial proba '),
 				   '',
@@ -137,7 +182,7 @@ print CGI::table({-border=>3,-cellpadding=>0,-cellspacing=>0},
 						     -size=>5)]),
 
 			  ### significance index
-			  CGI::td([$query->checkbox(-name=>'proba',
+			  $query->td([$query->checkbox(-name=>'proba',
 						    -checked=>$default{proba},
 						    -label=>' Significance '),
 				   $query->textfield(-name=>'occ_significance_threshold',
@@ -146,21 +191,21 @@ print CGI::table({-border=>3,-cellpadding=>0,-cellspacing=>0},
 				   '']),
 
 			  ### Z-scores
-			  CGI::td([$query->checkbox(-name=>'zscore',
+			  $query->td([$query->checkbox(-name=>'zscore',
 						    -checked=>$default{zscore},
 						    -label=>' Z-scores '),
 				   '',
 				   '']),
 
 			  ### frequencies
-			  CGI::td([$query->checkbox(-name=>'freq',
+			  $query->td([$query->checkbox(-name=>'freq',
 						    -checked=>$default{freq},
 						    -label=>' Frequencies '),
 				   '',
 				   '']),
 
 			  ### matching sequences
-			  CGI::td([$query->checkbox(-name=>'mseq',
+			  $query->td([$query->checkbox(-name=>'mseq',
 						    -checked=>$default{mseq},
 						    -label=>' Matching sequences '),
 				   $query->textfield(-name=>'ms_threshold',
@@ -169,14 +214,14 @@ print CGI::table({-border=>3,-cellpadding=>0,-cellspacing=>0},
 				   '']),
 
 			  ### ratio
-			  CGI::td([$query->checkbox(-name=>'ratio',
+			  $query->td([$query->checkbox(-name=>'ratio',
 						    -checked=>$default{ratio},
 						    -label=>' Obs/exp ratio '),
 				   '',
 				   '']),
 
 			  ### rank
-			  CGI::td([$query->checkbox(-name=>'rank',
+			  $query->td([$query->checkbox(-name=>'rank',
 						    -checked=>$default{rank},
 						    -label=>' Rank '),
 				   '',
@@ -188,6 +233,8 @@ print CGI::table({-border=>3,-cellpadding=>0,-cellspacing=>0},
 		);
 print "</BLOCKQUOTE>\n";
 
+
+print "<HR width=550 align=left>\n";
 
 ### send results by e-mail or display on the browser
 &SelectOutput;
@@ -294,6 +341,8 @@ print "<TD><B><A HREF='mailto:jvanheld\@ucmb.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
 print "</FONT>\n";
+print "</blockquote>";
+print "<HR>";
 
 print $query->end_html;
 
