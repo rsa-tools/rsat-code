@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.9 2001/12/24 02:33:41 jvanheld Exp $
+# $Id: install-organism,v 1.10 2002/03/20 22:40:25 jvanheld Exp $
 #
-# Time-stamp: <2001-12-24 03:22:53 jvanheld>
+# Time-stamp: <2002-03-20 23:39:42 jvanheld>
 #
 ############################################################
 
@@ -54,8 +54,9 @@ unless ($organism_short_name) {
 }
 
 unless ($organism_full_name) {
-    if ($organism_short_name =~ /^(\w+)\_(\w+)$/) {
-	$organism_full_name = "$1 $2";
+    if ($organism_short_name =~ /^[\_\w]+$/) {
+	$organism_full_name = $organism_short_name;
+	$organism_full_name =~ s/\_/ /g;
     } else {
 	print "Enter organism full name : ";
 	$organism_full_name = <STDIN>;
@@ -94,9 +95,9 @@ unless (-d $oligo_dir) {
 #$outfile{features} = "$genome_dir/${organism_short_name}_features.tab";
 #$outfile{synonyms} = "$genome_dir/${organism_short_name}_synonyms.tab";
 
-$outfile{genome} = "$genome_dir/Chromosomes_${organism_short_name}.txt";
-$outfile{features} = "$genome_dir/Gene_${organism_short_name}.tab";
-$outfile{synonyms} = "$genome_dir/Gene_names_${organism_short_name}.tab";
+$outfile{genome} = "$genome_dir/Chromosomes_${organism_short_name}.txt" unless ($outfile{genome});
+$outfile{features} = "$genome_dir/Feature_${organism_short_name}.tab" unless ($outfile{features});
+$outfile{synonyms} = "$genome_dir/Feature_names_${organism_short_name}.tab" unless ($outfile{synonyms});
 
 
 &Verbose() if ($verbose);
@@ -225,7 +226,8 @@ sub UpdateConfig {
     if ($local_config) {
 	$config_to_update = $ENV{'RSA_LOCAL_CONFIG'} ;
     } else {
-	$config_to_update = $config_file;
+#	$config_to_update = $config_file;
+	$config_to_update = "$RSA/data/supported_organisms.pl";
     }
 
     if (defined($supported_organism{$organism_short_name}->{'genome'})) {
@@ -248,13 +250,13 @@ sub UpdateConfig {
 	    || die "Error: cannot write config file $config_to_update\n";
 	print CONFIG $previous_config;
 	print CONFIG "\n#### $organism_short_name\t$organism_full_name\n";
-	print CONFIG "\$supported_organism{'$organism_short_name'}->{'name'} = '$organism_full_name';\n";
-	print CONFIG "\$supported_organism{'$organism_short_name'}->{'data'} = '$install_dir';\n";
-	print CONFIG "\$supported_organism{'$organism_short_name'}->{'features'} = '$outfile{features}';\n";
-	print CONFIG "\$supported_organism{'$organism_short_name'}->{'genome'} = '$outfile{genome}';\n";
-	print CONFIG "\$supported_organism{'$organism_short_name'}->{'seq_format'} = 'filelist';\n";
+	print CONFIG "\$supported_organism{'$organism_short_name'}->{'name'} = \"$organism_full_name\";\n";
+	print CONFIG "\$supported_organism{'$organism_short_name'}->{'data'} = \"$install_dir\";\n";
+	print CONFIG "\$supported_organism{'$organism_short_name'}->{'features'} = \"$outfile{features}\";\n";
+	print CONFIG "\$supported_organism{'$organism_short_name'}->{'genome'} = \"$outfile{genome}\";\n";
+	print CONFIG "\$supported_organism{'$organism_short_name'}->{'seq_format'} = \"filelist\";\n";
 	if (defined($outfile{synonyms})) {
-	    print CONFIG "\$supported_organism{'$organism_short_name'}->{'synonyms'} =  '$outfile{synonyms}';\n";
+	    print CONFIG "\$supported_organism{'$organism_short_name'}->{'synonyms'} = \"$outfile{synonyms}\";\n";
 	}
 	print CONFIG "\nreturn 1;\n";
 	close CONFIG;
@@ -317,12 +319,11 @@ sub NonCodingSegments {
     &doit;
 
     #### purge non-coding segments
-    $command = "purge-sequence -i $seq_file -format wc -ml 100 -mis 3 -2str -o $purged_seq_file";
+    $command = "purge-sequence -i $seq_file -format wc -ml 300 -mis 9 -2str -o $purged_seq_file";
     &doit;
 
     #### compress intergenic sequence file
-    $command = "gzip -f $seq_file";
-    $command = "gzip -f $purged_seq_file";
+    $command = "gzip -f $seq_file $purged_seq_file";
     &doit;
 
     chdir "../";
@@ -613,12 +614,14 @@ sub ReadArguments {
 	    #### genome
 	} elsif ($ARGV[$a] eq "-genome") {
 	    $infile{genome} = $ARGV[$a+1];
+	    $outfile{genome} = $ARGV[$a+1];
 	} elsif ($ARGV[$a] eq "-format") {
 	    $seq_format = $ARGV[$a+1];
 
 	    #### feature table
 	} elsif ($ARGV[$a] =~ /-feat/) {
 	    $infile{features} = $ARGV[$a+1];
+	    $outfile{features} = $ARGV[$a+1];
 
 	    ### feature table from NCBI
 	} elsif ($ARGV[$a] =~ /-ptt/) {
