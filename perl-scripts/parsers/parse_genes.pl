@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genes.pl,v 1.21 2002/07/04 14:00:08 jvanheld Exp $
+# $Id: parse_genes.pl,v 1.22 2002/07/04 14:00:26 jvanheld Exp $
 #
-# Time-stamp: <2002-07-04 16:00:05 jvanheld>
+# Time-stamp: <2002-07-04 16:00:19 jvanheld>
 #
 ############################################################
 
@@ -115,14 +115,6 @@ package main ;
     $dir{output} = $parsed_data."/kegg_genes/".$delivery_date;
     &CheckOutputDir();
 
-#      unless (-d $dir{output}) {
-#  	warn "Creating output dir $dir{output}\n";
-#  	mkdir $dir{output}, 0775 || die "Error: cannot create directory $dir\n";
-#      }
-#      chdir $dir{output};
-#      if ($clean) {
-#  	system "\\rm -f $dir{output}/*";
-#      }
     $out_file{error} = "$dir{output}/gene.errors.txt";
     $out_file{stats} = "$dir{output}/gene.stats.txt";
     $out_file{genes} = "$dir{output}/gene.obj" if ($export{obj});
