@@ -1,9 +1,9 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: parse-embl.pl,v 1.2 2002/06/06 11:23:37 jvanheld Exp $
+# $Id: parse-embl.pl,v 1.3 2003/10/20 23:18:06 jvanheld Exp $
 #
-# Time-stamp: <2002-06-06 13:23:32 jvanheld>
+# Time-stamp: <2003-10-21 01:17:49 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -68,14 +68,7 @@ unless (defined($dir{output})) {
     $dir{output} = "$RSA/data/$org/genome";
     warn "; Auto selection of output dir\t$dir{output}\n" if ($verbose >= 1);
 }
-unless (-d $dir{output}) {
-    #### create output directory if necessary
-    warn "; Creating output dir $dir{output}\n" if ($verbose >= 1);
-    system "mkdir -p $dir{output}";
-    unless (-d $dir{output}) {
-	&FatalError("Could not create output directory $dir{output}\n");
-    }
-}
+&CheckOutputDir($dir{output});
 
 #### verbose ####
 &Verbose if ($verbose);
