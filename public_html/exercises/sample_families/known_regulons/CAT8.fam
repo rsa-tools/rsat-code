@@ -1,0 +1,17 @@
+; Source : Rimini 99, poster 03-06
+; Bojunga, N., Kotter, P., Plummer, A., Haase, J., Hofmann, A., Schuller, 
+; M.A., and Entian, K.-D. (1999). 
+; Current Genetics Eukaryotes 35(3-4):236
+; The succinate/fumarate transporter ACR1p of Saccharomyces cerevisiae is part 
+; of the gluconeogenic pathway and its expression is regulated by the gene 
+; activator CATp.
+; e-mail: entian@em.uni-frankfurt.de
+YJR095W	S0003856	ACR1	X	609464	610432	0	1-969	protein related to mitochondrial carriers
+YER065C	S0000867	ICL1	V	286912	285239	0	1-1674	isocitrate lyase
+YNL117W	S0005061	MLS1	XIV	406357	408021	0	1-1665	carbon-catabolite sensitive malate synthase
+YKR097W	S0001805	pck1	XI	630785	632434	0	1-1650	phosphoenolpyruvate carboxylkinase
+YLR377C	S0004369	FBP1	XII	874790	873744	0	1-1047	fructose-1,6-bisphosphatase
+
+;NOTE : in poster 03.23, they mention two additional trgets of CAT8. None of these targets however contain a CAT8 site. Check the source of this information.Is there any experimental support for this ?
+;YLR174W	S0004164	IDP2	XII	504593	505831	0	1-1239	Cytosolic form of NADP-dependent isocitrate dehydrogenase
+;YKL217W	S0001700	JEN1	XI	22234	24084	0	1-1851	carboxylic acid transporter protein homolog

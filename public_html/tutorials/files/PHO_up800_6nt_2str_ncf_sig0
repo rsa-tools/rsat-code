@@ -1,0 +1,47 @@
+; oligo-analysis -i PHO_up800.fasta -format fasta -v -l 6 -2str -return occ,proba -thosig 0 -ncf -org yeast -sort -o PHO_up800_6nt_2str_ncf_sig0
+; Oligomer length              	6
+; Input file                   	PHO_up800.fasta
+; Input format                 	fasta
+; Method                       	Frequency file
+; Expected frequency file      	/home/jvanheld/rsa-tools/data/yeast/oligo-frequencies/6nt_non-coding_yeast.freq
+; Output file                  	PHO_up800_6nt_2str_ncf_sig0
+; Count overlapping matches
+; Counted on both strands
+; 	grouped by pairs of reverse complements
+; Sequence type                	DNA
+; Nb of sequences              	5
+; Sum of sequence lengths      	4000
+; nb possible positions        	7950
+; discarded occurrences        	0	 (contain other letters than ACGT)
+; total oligo occurrences      	7950
+; alphabet size                	4
+; nb possible oligomers        	2080
+; threshold on occ sig         	0
+; threshold on occ proba       	0.000480769230769231
+; Sequences:
+;	PHO5	800
+;	PHO8	800
+;	PHO11	800
+;	PHO81	800
+;	PHO84	800
+;
+; column headers
+;	1	seq            	oligomer sequence
+;	2	identifier     	oligomer identifier
+;	3	expected_freq  	expected relative frequency
+;	4	occ            	observed occurrences
+;	5	exp_occ        	expected occurrences
+;	6	occ_prb        	occurrence probability (binomial)
+;	7	occ_sig        	occurrence significance (binomial)
+;seq	identifier	expected_freq	occ	exp_occ	occ_prb	occ_sig
+acgtgc	acgtgc|gcacgt	0.0001046951092	10	0.83	2.1e-08	4.37
+acgtgg	acgtgg|ccacgt	0.0000869250765	8	0.69	7e-07	2.84
+tgccaa	tgccaa|ttggca	0.0002502612935	12	1.99	1.3e-06	2.57
+cacgtg	cacgtg|cacgtg	0.0001131358747	12	0.90	7.8e-06	1.79
+ctgcac	ctgcac|gtgcag	0.0001217247238	8	0.97	8.1e-06	1.77
+cgcacg	cgcacg|cgtgcg	0.0000638240340	6	0.51	1.5e-05	1.50
+aaacgt	aaacgt|acgttt	0.0003235626783	11	2.57	7.9e-05	0.79
+cccacg	cccacg|cgtggg	0.0000626393652	5	0.50	0.00017	0.45
+aacgtg	aacgtg|cacgtt	0.0001545992843	7	1.23	0.00029	0.22
+; Job started 09/04/01 02:21:20 CEST
+; Job done    09/04/01 02:21:21 CEST

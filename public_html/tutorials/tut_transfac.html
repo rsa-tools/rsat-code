@@ -1,0 +1,165 @@
+<html>
+<head>
+   <title>RSA-tools - tutorials - TRANSFAC</title>
+</head>
+<body text="#000000" bgcolor="#ffffff" link="#0000ee" vlink="#55008b" alink="#ff0000">
+<blockquote>
+
+<hr size=6 width="100%">
+<center>
+<h2><a href="../RSA_home.cgi">RSA-tools</A> - 
+<a href="tutorials.html">Tutorials</a> - 
+<a href="../TRANSFAC_form.cgi">TRANSFAC</a> 
+</h2>
+</center>
+
+<hr size=6 width="100%">
+
+<h2>Contents</h2>
+
+<p>
+<ol>
+<li><a href=#intro>Introduction</a>
+<li><a href=#example>Example of utilization</a>
+<li><a href=#interpret>Interpreting the result</a>
+<li><a href=#exercises>Additional exercises</a>
+</ol>
+
+<a name=intro><h2>Introduction</h2>
+<ul>
+
+<a href="http://www.gene-regulation.com/pub/databases.html#transfac" TARGET=_blank>
+TRANSFAC</a> is a database of transcription factors. It
+contains a collection of binding sites for transcription factors of
+many prokaryotes and eukaryotes.
+
+
+<P>
+TRANSFAC is equipped with query tools allowing to perform differnet tasks.
+<ul>
+
+<li>browse the data through a <a target=_blank
+href=http://www.gene-regulation.com/pub/databases/transfac/cl.html>classification
+of transcription factors</a>
+
+<li><a
+href=http://www.gene-regulation.com/cgi-bin/pub/databases/transfac/search.cgi
+target=_blank>perform basic search</a> (e.g. search by factor name)
+
+<li><a href=http://transfac.gbf.de/cgi-bin/matSearch/matsearch.pl
+target=_blank>MatSearch</a> - match a given sequence against a collection of
+position-specific scoring matrices.
+
+<li><a href="http://transfac.gbf.de/cgi-bin/patSearch/patsearch.pl"
+TARGET=_blank>PatternSearch</a> - match a given sequence against a
+collection of consensus (string-based representation).
+
+</ul>
+
+<P>
+RSAT and TRANSFAC are offer complementary services. The niformation
+about trnscription binding sites stored in TRANSFAC can be used as
+input for various tools in RSAT (e.g. genome-scake pattern
+matching). Reciprocally, promoter sequences can be retrieved from RSAT
+and then submitted to TRANSFAC for detecting putatuve binding sites
+for known factors. We will illustrate and discuss those approaches. 
+
+
+<P>
+We will test the matching tools with some genes for which we already
+know something about trnscriptional regulation, and compare the
+results of library matching with our prior knowledge. We will then use
+the same tool with random sequences and compare the results.
+
+</ul>
+<a name=example><h2>Example of utilization</h2>
+<ul>
+
+<P><ol>
+
+<li>Retrieve the upstream sequence of the gene PHO5 (as you have seen
+in the <a href="tut_retrieve-seq.html">tutorial on sequence
+retrieval</a>). Once the reult is dispayed, select the sequence and
+copy it.
+
+<li>Open the MatSearch form (<a
+href=http://transfac.gbf.de/cgi-bin/matSearch/matsearch.pl
+target=_blank>http://transfac.gbf.de/cgi-bin/matSearch/matsearch.pl</a>). Paste
+PHO5 upstream sequence in the appropriate box. 
+
+<li>Specify that you want and output sorted by <b>quality</b>. 
+
+<li><b>Submit</b> your query.
+
+<li>Select <b>Fungi</b> for the <b>Matrix group</b>.
+
+</ol>
+
+<P>Analyze the result. 
+<ul>
+<li>How many binding sites were predicted ? For how many distinct
+transcription factors ?
+<li>How many matrices were matched against your sequence ? 
+</ul>
+
+<P>We will now analyze different types of random sequences, in order
+to estimate the rate of spurious matches.
+
+
+<P><ol>
+
+<li>In RSAT, open the form random-sequences. 
+
+<li>Specify a length of 800bp, and a single sequence (in order to
+anlayze the same length as the PHO5 promoter analyzed above).
+
+<li>Leave all parameters unchanged, and click <b>GO</b>.
+
+<li>Copy the sequence, and paste it in <a href=http://transfac.gbf.de/cgi-bin/matSearch/matsearch.pl
+target=_blank>another MatSearch form</a>. 
+
+<li>Use the same settings as above, and submit the query.
+</ol>
+
+<P>Analyze the result obtained with a randoms sequence. Note that this
+random sequence was generated with a Markov model of order 5,
+calibrated on yeast intergenic regions. Thus, although it is a random sequence, it has the 
+
+</ul>
+<a name=interpret><h2>Interpreting the results</h2>
+<ul>
+
+<P>
+The principal problem with whole-library matching is that any
+sequence is expected to contain matches for some of the motifs by
+chance. Results are thus not easy to evaluate. 
+
+<P>In addition, the PSSM stored in TRANSFAC represent binding sites of
+varying widths and information content. Thus, short motifs will tend
+to be found in any sequences, and they will be reported frequently,
+but the confidence in these predictions will be quite poor.
+
+<P>
+
+</ul>
+<a name=exercises><h2>Additional exercises</h2>
+<ul>
+
+</ul>
+
+<p>
+You can now come back to the <a href=tutorials.html>tutorial main
+page</a> and follow the next tutorials.
+
+</ul>
+<hr width="100%">
+<center>
+<address>
+For suggestions or information request, please contact <a
+href="mailto:jvanheld@ucmb.ulb.ac.be">Jacques van Helden
+(jvanheld@ucmb.ulb.ac.be)</a>
+</address></center>
+
+</blockquote>
+</body>
+</html>

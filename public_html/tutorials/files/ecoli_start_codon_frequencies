@@ -1,0 +1,29 @@
+; oligo-analysis -i ecoli_start_codons.wc -format wc -l 3 -1str -return occ,freq -v -o ecoli_start_codon_frequencies
+; Oligomer length              	3
+; Input file                   	ecoli_start_codons.wc
+; Input format                 	wc
+; Output file                  	ecoli_start_codon_frequencies
+; Count overlapping matches
+; Counted on a single strand
+; Sequence type                	DNA
+; Nb of sequences              	4289
+; Sum of sequence lengths      	12867
+; nb possible positions        	4289
+; discarded occurrences        	0	 (contain other letters than ACGT)
+; total oligo occurrences      	4289
+; alphabet size                	4
+; nb possible oligomers        	64
+;
+; column headers
+;	1	seq            	oligomer sequence
+;	2	id             	oligomer identifier
+;	3	observed_freq  	observed relative frequency
+;	4	occ            	observed occurrences
+;seq	id	observed_freq	occ
+atg	atg	0.8262998367918	3544
+att	att	0.0002331545815	1
+ctg	ctg	0.0002331545815	1
+gtg	gtg	0.1429237584519	613
+ttg	ttg	0.0303100955934	130
+; Job started 09/04/01 02:15:11 CEST
+; Job done    09/04/01 02:15:12 CEST

@@ -1,0 +1,235 @@
+<html>
+<head>
+<title>Pattern discovery and pattern matching in non-coding sequences</title>
+</head>
+
+<body bgcolor=#FFFFFF>
+
+<blockquote>
+
+<font face=helvetica size=-1>
+
+<h1 align=center>
+<font color=#660000>
+Practical<br>
+Pattern discovery and pattern matching in non-coding sequences
+</font>
+</h1>
+
+
+<h2>Web sites</h2>
+
+<ul>
+
+<h3>This tutorial</h3>
+
+<ul>
+
+<a href="http://bioicrs1.chem.uva.nl/rsa-tools/doc/practicals/amsterdam_2000/" target=tutorial>
+http://bioicrs1.chem.uva.nl/rsa-tools/doc/practicals/amsterdam_2000/</a>
+</ul>
+
+<h3>Regulatory Sequence Analysis tools</h3>
+
+
+<ul>
+
+<li><B>temporary site (for the hands-on):</b>
+<a href="http://bioicrs1.chem.uva.nl/rsa-tools/" target="rsa">
+http://bioicrs1.chem.uva.nl/rsa-tools/</a>
+
+<li><b>permanent site:</b>
+<a href="http://www.ucmb.ulb.ac.be/bioinformatics/rsa-tools/" target="rsa">
+http://www.ucmb.ulb.ac.be/bioinformatics/rsa-tools/</a>
+</ul>
+
+</ul>
+
+<h2>Sample families</h2>
+<ul>
+<a href="http://bioicrs1.chem.uva.nl/rsa-tools/doc/practicals/amsterdam_2000/sample_families/" target=families>
+http://bioicrs1.chem.uva.nl/rsa-tools/doc/practicals/amsterdam_2000/sample_families/</a>
+<ul>
+<li>
+<a href="sample_families/known_regulons/" target="families">
+Known regulons</a>
+
+<li>
+<a href="sample_families/dna_chip_clusters/" target="families">
+Gene clusters from DNA chip experiments</a>
+
+<li>
+<a href="sample_families/random_sequences/" target="families">
+Random sequences
+</a>
+
+
+</ul>
+</ul>
+
+<h2>Exercises</h2>
+<ol>
+
+<li>
+Click on one of the "Regulatory Sequence Analsysis" web sites above. 
+This will open a separate window for the Regulatory Sequence Analysis tools. 
+The left frame contains a menu with the list of available programs. 
+You can now switch between the "practical" and the "tools" window.   
+
+
+<li><b>Sequence retrieval</b>
+
+<ul>
+<li>
+Click on the link "known regulons" above. This open a third window
+where you will be able to select the gene families.  
+
+<li>Click on the PHO family and select all the
+genes. Copy it with the command "Edit-Copy".  
+
+<li>Come back to the RSA-tools window and click on the link "upstream
+sequence" in the left frame.  Paste your gene family in the box, and
+retrieve the upstream sequences.  Notice the list of buttons at the
+top of the result page. Each button allows you to send the upstream
+sequences you just retrieved towards another program.
+
+<li>Among these buttons, click on "oligo-analysis".<br>
+<ul>
+<b>Beware:</b> do not click on the link "oligo-analysis" in the left
+frame, this would open an empty form for oligo-analysis. 
+</ul>
+
+</ul>
+
+
+<li><b>oligo-analysis</b>
+<ul>
+
+<li>Perform the analysis with the default options. 
+<ul>
+<li>How many patterns were selected ? 
+<li>How many would you have expected at random ?
+<li>What is the most significant pattern ?
+<li>How large is the largest pattern contig ?
+<li>Look at the tables in the article on dyad-detection. 
+How do the patterns you discovered compare with the known patterns ?
+</ul>
+
+<li>Click on the "Back" icon to come back to the oligo-analysis
+form. <br> 
+
+Redo the analysis of the same family with an equiprobable nucleotide
+model.  Answer the same questions as above
+
+<li>Redo the analysis, using input alphabet frequencies for
+oligonucleotide calibration.
+
+<li>Try to justify thhe differences between the results obtained with
+the respective probabilistic models.
+
+</ul>
+
+
+<li><b>gibbs sampler</b>
+<ul>
+<li>In the known regulons, select the MET family.
+<li>Retrieve upstream sequences and pipe them to the gibbs sampler. 
+<li>Run the program with the default parameters.
+<li>Compare the result with the know motif. Which motifs did you find ?
+<li>Repeat the analysis a few times. At each trial, take note of the value of "informatin per parameter". 
+This is the significance of the profile matrix.
+<ul>
+<li>How does it fluctuate ? 
+<li>Are the patterns extracted always the same ? 
+</ul>
+</ul>
+
+<li><b>dyad-detector</b>
+
+<ul>
+<li>Select a set of genes from the sample families.
+<li>Retrieve upstream sequences.
+<li>Perform dyad-analysis with the default options (this will take 1-2
+minuts, it is a good opportunity to take a coffee).
+</ul>
+
+<li><b>clusters from gene expression data</b>
+<ul>
+<li>In the sample families, open the folder "dna_chip_clusters". 
+<li>Select some family
+<li>Retrieve upstream sequences
+<li>Try to discover regulatory patterns with the methods of your choice
+<li>Compare the results with the known motifs (see the paper on dyad-analysis).
+</ul>
+
+</ol>
+
+<h2>Suggested readings</h2>
+<ul>
+
+<h4>String-based approaches</h4>
+
+<ul>
+
+<li>
+van Helden J, Rios AF, Collado-Vides J.  
+Discovering regulatory elements in non-coding sequences by analysis of
+spaced dyads.  Nucleic Acids Res. 2000 Apr 15;28(8):1808-1818.
+<a href="http://www.ncbi.nlm.nih.gov:80/entrez/query.fcgi?cmd=Retrieve&db=PubMed&list_uids=10734201&dopt=Abstract">
+PMID:10734201</a><br>
+
+
+<LI>
+van Helden, J., Andr&eacute;, B., and Collado-Vides,
+J. (1998). Extracting regulatory sites from the upstream region of yeast
+genes by computational analysis of oligonucleotide frequencies. 
+<A HREF="http://www.ncbi.nlm.nih.gov/htbin-post/Entrez/query?uid=9719638&form=6&db=m&Dopt=b">
+J. Mol.Biol. <B>281</B>:827-842.
+</A>
+
+<LI>van Helden, J., Andr&eacute;, B., and Collado-Vides, J. (1999).A web site for the computational analysis of yeast regulatory sequences. Yeast, <I>in press</I>.
+
+<LI>van Helden, J. , del Olmo, M., and P&eacute;rez-Ort&iacute;n, J.E.Genomic computational analysis of yeast downstream sequences reveals putative polyadenylation efficiency elements. <I>submitted</I>.
+
+<LI>van Helden, J., Rios, A., Collado-Vides, J. Extracting cis-acting regulatory elements from yeast non-coding sequences by analysis of spaced dyads. <I>in prep</I>
+
+</ul>
+
+<h4>Gibbs sampling</h4>
+
+<ul>
+<li>
+Hughes JD, Estep PW, Tavazoie S, Church GM. 
+       Computational identification of cis-regulatory elements associated with groups of functionally related genes in saccharomyces cerevisiae.
+       J Mol Biol. 2000 Mar 10;296(5):1205-14.
+       PMID: 10698627; UI: 20198293
+<a href="http://www.ncbi.nlm.nih.gov:80/entrez/query.fcgi?cmd=Retrieve&db=PubMed&list_uids=10698627&dopt=Abstract">
+PMID:10698627</a><br>
+
+<li>
+Roth FP, Hughes JD, Estep PW, Church GM. 
+                              Finding DNA regulatory motifs within unaligned noncoding sequences clustered by whole-genome mRNA quantitation.
+                              Nat Biotechnol. 1998 Oct;16(10):939-45.
+                              PMID: 9788350; UI: 99002399<br>
+
+<li>
+Tavazoie S, Hughes JD, Campbell MJ, Cho RJ, Church GM. 
+                              Systematic determination of genetic network architecture.
+                              Nat Genet. 1999 Jul;22(3):281-5.
+                              PMID: 10391217; UI: 99318101<br>
+
+<li>
+Lawrence CE, Altschul SF, Boguski MS, Liu JS, Neuwald AF, Wootton JC. 
+                              Detecting subtle sequence signals: a Gibbs sampling strategy for multiple alignment.
+                              Science. 1993 Oct 8;262(5131):208-14.
+                              PMID: 8211139; UI: 94023958<br>
+Comment: first application of the gibbs sampler to discover motifs in protein sequences<p>
+
+</ul>
+
+</ul>
+</font>
+</blockquote>
+
+</body>
+</html>

@@ -1,0 +1,12 @@
+hhf1	S	histone
+hhf2	S	histone
+hho1	S	histone
+htb1	S	histone
+htb2	S	histone
+
+; genes discarded from the original cluster
+;hht1	S	histone shares its upstreal sequence with HHF1
+;hht2	S	histone  shares its upstreal sequence with HHF2
+;hta1	S	histone shares its upstreal sequence with HTB1
+;hta2	S	histone shares its upstreal sequence with HTB2
+

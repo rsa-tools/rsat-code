@@ -1,0 +1,41 @@
+; pattern-assembly  -v -i PHO_up800_6nt_2str_ncf_sig0 -sc 7 -subst 1 -2str -o PHO_up800_6nt_2str_ncf_sig0.assemb
+;Input file	PHO_up800_6nt_2str_ncf_sig0
+;Output file	PHO_up800_6nt_2str_ncf_sig0.assemb
+;score column	7
+;strand insensitive assembly
+;score column	7
+;max flanking bases	1
+;max substitutions	0
+;number of patterns	9
+
+;cluster # 1	seed: acgtgc	11 words	length 10
+;   alignt	   rev_cpl	score
+cgcacg....	....cgtgcg	1.50
+cccacg....	....cgtggg	0.45
+.gcacgt...	...acgtgc.	4.37
+.ccacgt...	...acgtgg.	2.84
+..cacgtg..	..cacgtg..	1.79
+..aacgtg..	..cacgtt..	0.22
+..cacgtt..	..aacgtg..	0.22
+...acgtgc.	.gcacgt...	4.37
+...acgtgg.	.ccacgt...	2.84
+....cgtgcg	cgcacg....	1.50
+....cgtggg	cccacg....	0.45
+cgcacgtgcg	cgcacgtgcg	4.37	contig
+
+;cluster # 2	seed: aaacgt	7 words	length 9
+;  alignt	  rev_cpl	score
+aaacgt...	...acgttt	0.79
+.cacgtg..	..cacgtg.	1.79
+.aacgtg..	..cacgtt.	0.22
+..acgtgc.	.gcacgt..	4.37
+..acgtgg.	.ccacgt..	2.84
+...cgtgcg	cgcacg...	1.50
+...cgtggg	cccacg...	0.45
+aaacgtgcg	cgcacgttt	4.37	contig
+
+; Isolated patterns: 2
+tgccaa	ttggca	2.57	isol
+ctgcac	gtgcag	1.77	isol
+;Job started 09/04/01 02:51:37 CEST
+;Job done    09/04/01 02:51:37 CEST
