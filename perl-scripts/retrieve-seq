@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: retrieve-seq,v 1.28 2002/09/25 03:30:14 jvanheld Exp $
+# $Id: retrieve-seq,v 1.29 2003/01/06 14:30:14 jvanheld Exp $
 #
-# Time-stamp: <2002-09-24 22:30:12 jvanheld>
+# Time-stamp: <2003-01-06 08:27:08 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -39,6 +39,7 @@ $line_width = 60;
 $default{from} = -800;
 $default{to} = -1;
 $input_sequence_format = "filelist";
+$prefix = "";
 
 &ReadArguments();
 
@@ -65,8 +66,16 @@ unless ($feature_table_file) {
 
 #### default boundaries
 if ($sequence_type eq "upstream") {
-    $default{to} = -1;
-    if (($organism_name eq "yeast") || 
+    
+    if (defined($supported_organism{$organism_name}->{'up_to'})) {
+	$default{from} = $supported_organism{$organism_name}->{'up_to'};
+    } else {
+	$default{to} = -1;
+    }
+
+    if (defined($supported_organism{$organism_name}->{'up_from'})) {
+	$default{from} = $supported_organism{$organism_name}->{'up_from'};
+    } elsif (($organism_name eq "yeast") || 
 	($organism_name =~ /Schizosaccharomyces/) ||
 	($organism_name =~ /Saccharomyces/)) {
 	$default{from} = -800;
@@ -280,16 +289,17 @@ foreach my  $query (@queries) {
     $reg_size =  $reg_right - $reg_left + 1;
     
     ###  sequence ID 
+    my $current_id = $prefix;
     if ($sequence_type eq "random fragments") {
-	$current_id = $query = "rand_".$q;
+	$current_id .= $query = "rand_".$q;
     } elsif ($seq_label eq "orf") {
-	$current_id = $orf_id;
+	$current_id .= $orf_id;
     } elsif ($seq_label eq "gene") {
-	$current_id = $name;
+	$current_id .= $name;
     } elsif ($seq_label eq "orf_gene") {
-	$current_id = join "_", $orf_id, $name;
+	$current_id .= join "_", $orf_id, $name;
     } else {
-	$current_id = join("_", 
+	$current_id .= join("_", 
 			   $orf_id,
 			   $name,
 			   $sequence_type,
@@ -391,7 +401,8 @@ $supported_organisms
 		Specify the input sequence file. See INPUT FORMAT
 		below.
 	-informat	input sequence format
-
+	-prefix
+		prefix for sequence identifier
 	-type	sequence type
 		Currently supported sequence types
 			upstream (default)
@@ -520,7 +531,8 @@ retrieve-seq options
 --------------------
 -org		organism
 -seq		sequence file (alternative to organism)
--informat		input sequence format
+-informat	input sequence format
+-prefix		prefix for sequence identifiers
 -type		upstream | downstream | orf | random
 -n		number of sequences (only with -type random)
 -randsels #	random selection of # ORFs.
@@ -617,6 +629,10 @@ sub ReadArguments {
 	    #### input sequence format
 	} elsif ($ARGV[$a] eq "-informat") {
 	    $input_sequence_format =$ARGV[$a+1];
+
+	    #### prefix
+	} elsif ($ARGV[$a] eq "-prefix") {
+	    $prefix =$ARGV[$a+1];
 
 	    #### number of random segments tor eturn
 	} elsif ($ARGV[$a] eq "-n") {
