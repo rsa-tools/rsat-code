@@ -1,7 +1,7 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: parse-embl.pl,v 1.6 2003/12/02 13:59:43 oly Exp $
+# $Id: parse-embl.pl,v 1.7 2003/12/03 08:53:20 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:17:49 jvanheld>
 #
@@ -182,7 +182,8 @@ package main;
 			      locus_tag
 			      sub_strain
 			      bound_moiety
-			      
+			
+			      db_xref_exp
 			      ); 
     $features->set_out_fields(@feature_out_fields);
 
@@ -202,8 +203,6 @@ package main;
     $wd = `pwd`;
     chomp($wd);
     
-
-
     &ReadArguments();
     
     ################################################################
@@ -234,7 +233,6 @@ package main;
     } else {
 	warn "; EMBL files\n;\t", join("\n;\t", @embl_files), "\n" if ($verbose >= 1);
     }
-
     #### come back to the starting directory
     chdir($wd);
 
@@ -249,6 +247,9 @@ package main;
     &CheckOutputDir($dir{output});
     chdir $dir{output};
     open ERR, ">$outfile{errors}";
+
+    #### come back to the starting directory
+    chdir($wd);
 
     #### verbose ####
     &Verbose() if ($verbose);
@@ -339,6 +340,24 @@ package main;
 	    }
             $feature->set_attribute("description",$description);
         }
+	
+	
+	#### parse cross-references
+	my @xrefs = $feature->get_attribute("db_xref");
+	$features->set_attribute_header("db_xref_exp", "xref_db", "xref_id");
+	my $gi = "";
+	foreach my $xref (@xrefs) {
+	    if ($xref =~ /:/) {
+		my $xref_db = $`;
+		my $xref_id = $';
+		$feature->push_expanded_attribute("db_xref_exp", $xref_db, $xref_id);
+	    } else {
+		&ErrorMessage(join ("\t", 
+				    "Invalid cross reference", 
+				    $feature->get_attribute("id"), 
+				    $xref), "\n");
+	    }
+	}
 	
 
 #  	#### use GI as feature identifier
