@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.31 2003/11/02 00:25:29 jvanheld Exp $
+# $Id: install-organism,v 1.32 2003/11/06 12:33:46 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -15,6 +15,7 @@ require "RSA.lib";
 
 
 #### initialisation
+$img_format = $IMG_FORMAT || "png";
 $noov="";
 $strands="-1str";
 $purged_frequencies = 0; #### temporarily inactivated because for human genome it suppresses almost all sequences !!!!
@@ -453,7 +454,7 @@ sub SeqLengthDistribution {
     $command .= " -yleg1 'frequency'";
     $command .= " -title1 '$organism_full_name'";
     $command .= " -title2 'length distribution of ${seq_type} sequences'";
-    $command .= " -o  ${organism_short_name}_${seq_type}_segments_lengths.gif";
+    $command .= " -o  ${organism_short_name}_${seq_type}_segments_lengths.${img_format}";
     &doit($command, $dry_run);
 }
 
