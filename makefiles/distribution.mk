@@ -10,7 +10,8 @@ MAKE = make -sk -f ${MAKEFILE}
 
 ## Archive file
 DATE=`date +%Y%m%d`
-ARCHIVE=rsa-tools/rsa-tools_${DATE}
+ARCHIVE_PREFIX=rsa-tools_${DATE}
+ARCHIVE=rsa-tools/${ARCHIVE_PREFIX}
 
 ## Archive with tar
 #TAR_EXCLUDE=-X CVS '*~' 
@@ -60,3 +61,10 @@ tar_archive:
 zip_archive:
 	${MAKE} fill_archive ARCHIVE_CMD='${ZIP}' POST_CMD='${ZIP_EXCLUDE}'
 
+
+PUB_LOGIN=jvanheld
+PUB_SERVER=rsat.scmbb.ulb.ac.be
+PUB_DIR=/home/jvanheld/public_html/rsat_distrib/
+PUB_FORMAT=zip
+publish:
+	rsync -ruptvl -e ssh ${ARCHIVE_PREFIX}.${PUB_FORMAT} ${PUB_LOGIN}@${PUB_SERVER}:${PUB_DIR}

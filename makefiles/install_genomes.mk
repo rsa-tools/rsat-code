@@ -1,16 +1,17 @@
 ############################################################
 #
-# $Id: install_genomes.mk,v 1.4 2004/06/12 17:33:36 jvanheld Exp $
+# $Id: install_genomes.mk,v 1.5 2004/06/17 06:51:24 jvanheld Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
 ############################################################
 
+include ${RSAT}/makefiles/util.mk
+
 DATE = `date +%Y%m%d_%H%M%S`
 
 ################################################################
 #### Directories
-RSAT=${HOME}/rsa-tools/
 GENBANK_DIR=${RSAT}/downloads/ftp.ncbi.nih.gov/genbank/genomes
 NCBI_DIR=${RSAT}/downloads/ftp.ncbi.nih.gov/genomes
 
@@ -19,7 +20,7 @@ NCBI_DIR=${RSAT}/downloads/ftp.ncbi.nih.gov/genomes
 
 WGET = wget -np -rNL 
 MAKEFILE=${RSAT}/makefiles/install_genomes.mk
-MAKE=nice -n 19 make -s -f ${MAKEFILE}
+#MAKE=nice -n 19 make -f ${MAKEFILE}
 RSYNC_OPT = -ruptvl ${OPT}
 SSH=-e 'ssh -x'
 RSYNC = rsync ${RSYNC_OPT} ${SSH}
@@ -29,11 +30,16 @@ V=1
 ################################################################
 ### Targets
 
-#### list the supported tasks
-usage:
-	@echo "usage: make [-OPT='options'] target"
-	@echo "implemented targets"
-	@perl -ne 'if (/^(\S+):/){ print "\t$$1\n"}' ${MAKEFILE}
+### Install one organism
+ORGANISM=Arabidopsis_thaliana
+ORGANISM_DIR=${NCBI_DIR}/${ORGANISM}
+INSTALL_TASK=allup,clean,config,dyads,ncf,intergenic_freq,oligos,parse,start_stop,upstream_freq
+install_one_organism:
+	@echo "install log	${INSTALL_LOG}"
+	@echo "Parsing organism ${ORGANISM}" 
+	install-organism -v ${V}								\
+		-org ${ORGANISM}							\
+		-task  ${INSTALL_TASK}
 
 #BACTERIA = `cat TO_INSTALL.txt| sort -ru | xargs `
 #BACTERIA =					\
@@ -61,12 +67,13 @@ install_all_bacteria:
 install_one_bacteria:
 	@echo
 	@echo "${DATE}	Installing bacteria ${BACT}"
-	@${MAKE} install_organism ORGANISM=${BACT}		\
+	@${MAKE} install_one_organism ORGANISM=${BACT}		\
 		ORGANISM_DIR=${NCBI_DIR}/Bacteria/${BACT}
 
 ### Parse one organism
 parse_organism:
-	@${MAKE} install_organism INSTALL_TASK=parse
+	@echo "Parsing organism ${ORGANISM}"
+	${MAKE} install_one_organism INSTALL_TASK=parse
 
 ################################################################
 #### Install all eukaryote genomes
@@ -85,18 +92,7 @@ EUKARYOTES=					\
 	Saccharomyces_cerevisiae		\
 	Schizosaccharomyces_pombe 
 install_all_eukaryotes:
-	for org in ${EUKARYOTES} ; do				\
-		${MAKE} install_one_organism ORGANISM=$${org} ;	\
-	done
+	for org in ${EUKARYOTES} ; do ${MAKE} install_one_organism	\
+		ORGANISM=$${org} ; done
 
-### Install one organism
-ORGANISM=Arabidopsis_thaliana
-ORGANISM_DIR=${NCBI_DIR}/${ORGANISM}
-INSTALL_TASK=allup,clean,config,dyads,ncf,intergenic_freq,oligos,parse,start_stop,upstream_freq
-install_organism:
-	@echo "install log	${INSTALL_LOG}"
-	@echo "Parsing organism ${ORGANISM}" 
-	install-organism -v ${V}								\
-		-org ${ORGANISM}							\
-		-task  ${INSTALL_TASK}
 
