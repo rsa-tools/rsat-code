@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: patser.cgi,v 1.16 2003/05/14 21:25:06 jvanheld Exp $
+# $Id: patser.cgi,v 1.17 2003/06/03 20:37:20 jvanheld Exp $
 #
-# Time-stamp: <2003-05-14 23:22:58 jvanheld>
+# Time-stamp: <2003-06-03 22:35:27 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -52,9 +52,9 @@ $query = new CGI;
 
 #### read parameters ####
 
-################################################################
-### alphabet ###
-$parameters .= " -A ".$query->param('alphabet');
+#### alphabet
+my $alphabet = $query->param('alphabet') || " a:t c:g ";
+$patser_parameters = " -A $alphabet";
 
 
 ################################################################
@@ -78,46 +78,46 @@ if ($matrix_format =~ /transfac/i) {
 print MAT $query->param('matrix');
 close MAT;
 &DelayedRemoval($matrix_file);
-$parameters .= " -m $matrix_file";
+$patser_parameters .= " -m $matrix_file";
 
 #### [-w <Matrix is a weight matrix>]
 if ($query->param('matrix_is_weight')) {
-    $parameters .= " -w";
+    $patser_parameters .= " -w";
 } else {
     #### pseudo-counts and weights are mutually exclusive
     if (&IsReal($query->param('pseudo_counts'))) {
-	$parameters .= " -b ".$query->param('pseudo_counts');
+	$patser_parameters .= " -b ".$query->param('pseudo_counts');
     }
 
 }
 
 #### [-v <Vertical matrix---rows correspond to positions>]
 if ($query->param('matrix_is_vertical')) {
-    $parameters .= " -v";
+    $patser_parameters .= " -v";
 }
 
 
 ################################################################
 #### sequence file
 ($sequence_file,$sequence_format) = &GetSequenceFile("wconsensus", 1);
-$parameters .= " -f $sequence_file";
+$patser_parameters .= " -f $sequence_file";
 
 ################################################################
 #### strands 
 if ($query->param('strands') =~ /both/i) {
-    $parameters .= " -c";
+    $patser_parameters .= " -c";
 }
 
 ################################################################
 ### return top values
 if ($query->param('return') =~ /top/i) {
-    $parameters .= " -t";
+    $patser_parameters .= " -t";
     $top_scores = $query->param('top_scores');
     if (&IsNatural($query->param('top_scores'))) {
 	if ($top_scores == 0) {
 	    &FatalError("number of top scores must be >= 1");
 	} else {
-	    $parameters .= " $top_scores";
+	    $patser_parameters .= " $top_scores";
 	}
     } else {
 	&FatalError("Number of top scores must be a strictly positive integer");
@@ -127,47 +127,56 @@ if ($query->param('return') =~ /top/i) {
 ################################################################
 #### case sensitivity
 if ($query->param('case') eq "sensitive") {
-    $parameters .= ' -CS'; #### [-CS <Ascii alphabet is case sensitive (default: ascii alphabets are case insensitive)>]
+    $patser_parameters .= ' -CS'; #### [-CS <Ascii alphabet is case sensitive (default: ascii alphabets are case insensitive)>]
 } elsif ($query->param('case') =~ /mark/) {
-    $parameters .= ' -CM'; #### [-CM <Ascii alphabet is case insensitive, but mark the location of lowercase letters>]
+    $patser_parameters .= ' -CM'; #### [-CM <Ascii alphabet is case insensitive, but mark the location of lowercase letters>]
 }
 
 ################################################################
 #### unrecognized characters
 if ($query->param('unrecognized') eq "errors") {
-    $parameters .= " -d0";
+    $patser_parameters .= " -d0";
 } elsif ($query->param('unrecognized') =~ /no warning/) {
-    $parameters .= " -d2";
+    $patser_parameters .= " -d2";
 } else {
-    $parameters .= " -d1";
+    $patser_parameters .= " -d1";
 }
 
 ################################################################
 ### thresholds ###
+
+#### lower threshold on the weight
 if ($query->param('lthreshold_method') =~ /weight/) {
     if (&IsReal($query->param('lthreshold'))) {
-	$parameters .= " -ls ".$query->param('lthreshold');
-
-	
+	$patser_parameters .= " -ls ".$query->param('lthreshold');
+    } elsif ($query->param('lthreshold') eq 'none') {
+	### no lower threshold
     } else {
-	&FatalError ("Lower threshold value must ne a real number");
+	&Warning("Lower threshold ignored (not a real value)");
     }
+    
+#### lower threshold on P-value
 } elsif  ($query->param('lthreshold_method') =~ /p\-value/) {
    ### [-lp <Determine lower-threshold score from a maximum ln(p-value)>]
     if (&IsReal($query->param('lthreshold'))) {
-	$parameters .= " -lp ".$query->param('lthreshold');
+	$patser_parameters .= " -lp ".$query->param('lthreshold');
+    } elsif ($query->param('lthreshold') eq 'none') {
+	### no lower threshold
     } else {
-	&FatalError ("Lower threshold value must ne a real number");
+	&FatalError ("Lower threshold value must be a real number");
     }
+
+#### automatic threshold on the basis of adjusted information content
 } elsif  ($query->param('lthreshold_method') =~ /adjusted information content/) {
-   ### [-li <Determine lower-threshold score from adjusted information content>]
-    $parameters .= ' -li';
+    ### [-li <Determine lower-threshold score from adjusted information content>]
+    $patser_parameters .= ' -li';
 } else {
     &FatalError("Unknown method for estimating lower threshold");
 }
 
+#### upper threshold
 if (&IsReal($query->param('uthreshold'))) {
-    $parameters .= " -u ".$query->param('uthreshold');
+    $patser_parameters .= " -u ".$query->param('uthreshold');
 }
 
 
@@ -175,7 +184,7 @@ if (&IsReal($query->param('uthreshold'))) {
 ################################################################
 #### minimum score for calculating the P-value
 # if (&IsReal($query->param('min_calc_P'))) {
-#     $parameters .= " -M ".$query->param('min_calc_P');
+#     $patser_parameters .= " -M ".$query->param('min_calc_P');
 # } else {
 #     &FatalError("Minimum score for calculating P-value must e a real number");
 # }
@@ -183,37 +192,57 @@ if (&IsReal($query->param('uthreshold'))) {
 ################################################################
 ### vertically print the matrix
 if ($query->param('vertically_print')){
-    $parameters .= " -p";
+    $patser_parameters .= " -p";
 }
 
+$command .= " $patser_parameters";
+
+################################################################
+### parameters for the piping to the feature map ###
+#$feature_file =  "$TMP/$tmp_file_name.ft";
+$features_from_patser_cmd .= " -seq $sequence_file ";
+#### origin 
+if ($query->param('origin') =~ /end/i) {
+    $features_from_patser_cmd .= " -origin -0";
+}
+
+#### flanking residues for the matching sequences
+if ($query->param('flanking') =~ /^\d+$/) {
+    $features_from_patser_cmd .= " -N ".$query->param('flanking');
+}
+$features_from_patser_cmd .= " -origin -0";
+#$features_from_patser_cmd .= " -o $feature_file";
+
+$command .= "| $features_from_patser_cmd";
 
 ################################################################
 #### echo the command (for debugging)
-print "<pre>$command $parameters</pre>" if ($ECHO);
+print "<pre>$command</pre>" if ($ECHO >= 1);
 
 ################################################################
 ### execute the command ###
 if ($query->param('output') eq "display") {
-    ### parameters for the piping to the feature map ###
-    $feature_file =  "$TMP/$tmp_file_name.ft";
-    $features_from_patser_cmd .= " -seq $sequence_file";
-    $features_from_patser_cmd .= " -o $feature_file";
 
     &PipingWarning();
 
     ### Print the result on Web page
-    open RESULT, "$command $parameters & |";
-    open FEATURES, "| $features_from_patser_cmd";
+    $result_file =  "$TMP/$tmp_file_name.ft";
+    open RESULT, "$command |";
+#    open FEATURES, "| $features_from_patser_cmd";
     
 
+
+
     print "<PRE>";
-    while (<RESULT>) {
-	s|$RSA/||g;
-	print;
-	print FEATURES;
-    }
-    close FEATURES;
-    close RESULT;
+    &PrintHtmlTable(RESULT, $result_file, true);
+    
+#    while (<RESULT>) {
+#	s|$RSA/||g;
+#	print;
+#	print FEATURES;
+#    }
+#    close FEATURES;
+#    close RESULT;
     print "</PRE>";
 
     &PipingForm();
@@ -221,10 +250,11 @@ if ($query->param('output') eq "display") {
     print "<HR SIZE = 3>";
     
 } elsif ($query->param('output') =~ /server/i) {
-    &ServerOutput("$command $parameters", $query->param('user_email'));
+    &ServerOutput("$command $patser_parameters", $query->param('user_email'));
 } else {
-    &EmailTheResult("$command $parameters", $query->param('user_email'));
+    &EmailTheResult("$command $patser_parameters", $query->param('user_email'));
 }
+
 
 print $query->end_html;
 
@@ -234,7 +264,6 @@ exit(0);
 sub PipingForm {
     ### prepare data for piping
     print <<End_of_form;
-<HR SIZE = 3>
 <CENTER>
 <TABLE>
 <TR>
@@ -243,7 +272,7 @@ sub PipingForm {
   </TD>
   <TD>
     <FORM METHOD="POST" ACTION="feature-map_form.cgi">
-    <INPUT type="hidden" NAME="feature_file" VALUE="$feature_file">
+    <INPUT type="hidden" NAME="feature_file" VALUE="$result_file">
     <INPUT type="hidden" NAME="format" VALUE="feature-map">
     <INPUT type="hidden" NAME="handle" VALUE="none">
     <INPUT type="hidden" NAME="fill_form" VALUE="on">
