@@ -5,6 +5,7 @@ require "RSA.seq.lib";
 require "RSA.stat.lib";
 umask 0022;
 
+
 ############################################################################
 ############################################################################
 ############################################################################
@@ -187,6 +188,9 @@ sub OpenOutputFile {
 ## exist, create it
 sub CheckOutDir {
     my ($output_dir, $umask) = @_;
+
+    next unless $output_dir;
+
     $umask = 0002 unless ($umask);
     umask($umask);
 
@@ -194,7 +198,7 @@ sub CheckOutDir {
 	unless (-d $output_dir) {
 	    warn "Creating directory $output_dir\n" if ($main::verbose >= 1);
 	}
-	mkdir $output_dir;
+	mkdir ($output_dir, 0755);
 	unless (-d $output_dir) {
 	    warn "Creating directory with all parents $output_dir\n" if ($main::verbose >= 1);
 	    system "mkdir -p $output_dir"; ## create output directory with all parents
