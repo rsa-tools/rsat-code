@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: server.mk,v 1.10 2004/08/18 05:21:51 jvanheld Exp $
+# $Id: server.mk,v 1.11 2004/09/23 18:12:29 jvanheld Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -35,12 +35,6 @@ CIFN = jvanheld@itzamna.cifn.unam.mx:rsa-tools
 GIN = jvanheld@gin.univ-mrs.fr:rsa-tools
 LIV = jvanheld@liv.bmc.uu.se:rsa-tools
 MIRROR_SERVERS = ${NEW_PAULUS} ${MERLIN} ${LIV} ${FLYCHIP} ${GIN} ${CIFN}
-
-## installation on other machines
-PAULUS = jvanheld@paulus.ulb.ac.be:rsa-tools
-MERLIN = jvanheld@164.15.109.32:rsa-tools
-#NODE1 = jvanheld@node1.ulb.ac.be:rsa-tools
-MIRRORS = ${MIRROR_SERVERS} ${PAULUS} ${MERLIN}
 
 ## distribution
 MEDICEL = root@grimsel.co.helsinki.fi:/work/programs/rsa-tools
