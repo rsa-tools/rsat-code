@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.61 2004/02/01 03:27:50 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.62 2004/02/01 15:52:07 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -2221,6 +2221,12 @@ sub MDCreport {
 	warn "Family $family_name\tParameters\t", $parameters_text, "\n" if ($main::verbose >= 2);
 	warn "Family $family_name\tPostprocessing\t", $postprocessing_text, "\n" if ($main::verbose >= 2);
 	warn "Matching options\t", $matching_options, "\n" if ($main::verbose >= 0);
+
+	## Make sure there is a carriage return after postprocessing and parameters
+	chomp($parameter_text);
+	$parameter_text .= "\n";
+	chomp($postprocessing_text);
+	$postprocessing_text .= "\n";
 
 	## Write parameters and postprocessing
 	print $parameters ">data set\n";
