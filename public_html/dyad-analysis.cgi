@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.8 2001/09/21 06:14:23 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.9 2001/09/21 06:17:25 jvanheld Exp $
 #
-# Time-stamp: <2001-09-21 08:14:16 jvanheld>
+# Time-stamp: <2001-09-21 08:16:23 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -129,7 +129,7 @@ if ($query->param('output') eq "display") {
 	} else {
 	    $fragment_assembly_command .= " -2str";
 	}
-	$fragment_assembly_command .= "-maxfl 2 ";
+	$fragment_assembly_command .= "-maxfl 2 -subst 0 ";
 	
 	print "<H3>Pattern assembly</H3>\n";
 	open CLUSTERS, "$fragment_assembly_command -i $result_file |";
