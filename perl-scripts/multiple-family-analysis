@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.69 2004/02/05 01:44:40 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.70 2004/02/05 02:08:30 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -1233,7 +1233,9 @@ sub IndexPatterns {
 	$table[$row][$col] = "<font color=red>$error</font>\n";
    } else {
 	@sorted_patterns = sort { $score{$b} <=> $score{$a} } @patterns;
-	$table[$row][$col] = "<table><tr><td align=right>Max score</td><td>".$max_score{$family_name}."</td></tr></table>\n";
+	$table[$row][$col] = "<table>\n";
+	$table[$row][$col] .="<tr><td align=right>max.score</td><td>".$max_score{$family_name}."</td></tr>\n";
+	$table[$row][$col] .="</table>\n";
 	$table[$row][$col] .= "<table>\n";
 	$table[$row][$col] .= "<TR>\n";
 	
