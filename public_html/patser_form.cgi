@@ -26,19 +26,25 @@ $default{alphabet} = "a:t 0.3 c:g 0.2"; ### [-A <Ascii alphabet information>]
 $default{case} = "insensitive"; ### [-CS <Ascii alphabet is case sensitive (default: ascii alphabets are case insensitive)>]
 $default{strands} = "both"; ### [-c <Score the complementary strand>]
 
-$default{lthreshold_method} = "adjusted information content";
-$default{lthreshold} = "0"; ### [-ls <Lower-threshold score, inclusive (formerly the -l option)>]
+$default{lthreshold_method} = "adjusted information content (auto)";
+$default{lthreshold} = "auto"; ### [-ls <Lower-threshold score, inclusive (formerly the -l option)>]
 $default{uthreshold} = "none"; ### [-u <Upper-threshold score, exclusive>]
 
 
-$default{return} = "all matching positions";
+$default{return} = "all matches";
 $default{top_scores} = "1"; ### [-t <Print only the top scores>]
+$default{positions} = "checked"; ### convert the result into a score table
+$default{table} = ""; ### convert the result into a score table
 $default{sort} = "checked"; ### [-ds <Print top scores in order of decreasing score (default: print in order of position)>]
 
 $default{unrecognized} = "discontinuities (with warning)"; ### [-d1 <Treat unrecognized characters as discontinuities, but print warning (the default)>]
 
 $default{vertically_print} = "checked"; ### [-p <Vertically print the weight matrix>]
 $default{min_calc_P} = 0; # [-M <Set the minimum score for calculating the p-value of scores (default: 0)>]
+
+#### additional options
+$default{origin} = "end";
+$default{flanking} = "4";
 
 
 ################################################################
@@ -135,22 +141,40 @@ print $query->popup_menu(-name=>'strands',
 ################################################################
 ### return value
 print "<BR>\n";
+print "<table border=0>\n";
+print "<tr><td>\n";
 print "<A HREF='help.patser.html#return'><B>Return</B></A>&nbsp;\n";
+print "</td><td>\n";
 print $query->radio_group(-name=>'return',
-			  -Values=>[ 'all matching positions'],
+			  -Values=>[ 'all matches'],
 			  -default=>$default{return});
 
-print "&nbsp;"x6;
+print "</td><td>\n";
 print $query->radio_group(-name=>'return',
 			  -Values=>['top values for each sequence'],
 			  -labels=>{'top values for each sequence'=>''},
 			  -default=>$default{return});
-print "&nbsp;";
 print $query->textfield(-name=>top_scores,
 			-default=>$default{top_scores},
 			-size=>3
 			);
 print "&nbsp;top value(s) for each sequence";
+
+print "</td></tr><tr><td>\n";
+print "&nbsp;";
+print "</td><td>\n";
+print $query->checkbox(-name=>'positions',
+		       -label=>' matching positions',
+		       -checked=>$default{positions});
+
+print "</td><td>\n";
+print $query->checkbox(-name=>'table',
+		       -label=>' score table',
+		       -checked=>$default{table});
+
+print "</td></tr>\n";
+print "</table>\n";
+
 
 ################################################################
 ### pseudo-counts
@@ -176,7 +200,7 @@ print $query->textfield(-name=>'pseudo_counts',
 print "<br>\n";
 print "<A HREF='help.patser.html#lthreshold'><B>Lower threshold estimation</B></A>";
 print $query->popup_menu(-name=>'lthreshold_method',
-			 -Values=>['maximum weight', 'maximum ln(p-value)', , 'adjusted information content'],
+			 -Values=>['weight', 'maximum ln(p-value)', , 'adjusted information content (auto)'],
 			 -default=>$default{lthreshold_method});
 
 print $query->textfield(-name=>'lthreshold',
@@ -228,6 +252,24 @@ print $query->checkbox(-name=>'vertically_print',
 		       -label=>' print the weight matrix',
 		       -checked=>$default{vertically_print});
 print "</a>";
+
+################################################################
+#### origin for calculating position
+print "<BR>";
+print "<A HREF='help.dna-pattern.html#origin'><B>Origin</B></A>\n";
+print $query->popup_menu(-name=>'origin',
+			 -Values=>['start',
+				   'end'],
+			 -default=>$default{origin});
+
+################################################################
+#### flanking residues for the matching sequences
+print "&nbsp;"x10;
+print "<A HREF='help.all-upstream-search.html#flanking'><B> flanking</B></A>\n";
+print $query->textfield(-name=>'flanking',
+			-default=>$default{flanking},
+			-size=>2);
+
 
 ################################################################
 ### send results by e-mail or display on the browser
@@ -337,8 +379,8 @@ print "</B></TD>\n";
 print $query->end_form;
 
 
-#print "<TD><B><A HREF='demo.patser.html'>DEMO</A></B></TD>\n";
 print "<TD><B><A HREF='help.patser.html'>MANUAL</A></B></TD>\n";
+print "<TD><B><A HREF='tutorials/tut_patser.html'>TUTORIAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:jvanheld\@ucmb.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
