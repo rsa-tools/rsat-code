@@ -1,7 +1,8 @@
 #!/usr/bin/perl
+
 ############################################################
 #
-# $Id: dna-pattern,v 1.36 2004/08/18 05:27:12 jvanheld Exp $
+# $Id: dna-pattern,v 1.37 2005/03/13 10:22:28 jvanheld Exp $
 #
 # Time-stamp: <2003-08-13 12:16:03 jvanheld>
 #
@@ -10,7 +11,8 @@ if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
 require "RSA.lib";
-require "RSA.classes";
+require RSAT::pattern;
+require RSAT::match;
 
 $start_date = &AlphaDate();
 
@@ -46,15 +48,15 @@ unless (defined(%return)) {
 
 #### top scores only valid with sliding window
 if (($return{top} ) && !($search_method eq "sliding window")) {
-    &FatalError("The option -top is only vlid with the option -window\n");
+    &RSAT::error::FatalError("The option -top is only vlid with the option -window\n");
 }
 if (($sort ) && !($return{top})) {
-    &FatalError("The option -sort is only vlid with the option -top\n");
+    &RSAT::error::FatalError("The option -sort is only vlid with the option -top\n");
 }
 
 #### check allowed substitutions ####
 unless (($allowed_subst eq "") || (&IsNatural($allowed_subst))) {
-    &FatalError("Invalid number of allowed substitutions.\n");
+    &RSAT::error::FatalError("Invalid number of allowed substitutions.\n");
 }
 
 ### check input format 
@@ -104,11 +106,11 @@ if ($search_method eq "sliding window") {
 	
 	#### check pattern length
 #	if (length($pattern_seq) != $pattern_length) {
-#	    &FatalError("With the sliding window option, all patterns must have the same length");
+#	    &RSAT::error::FatalError("With the sliding window option, all patterns must have the same length");
 #	}
 	
 	#### check non-degeneracy
-	if ($pattern_seq =~ /[^acgt]/i) { &FatalError("With the sliding window option, only non-degenerate DNA alphabet is supported [ACGT]\n") };
+	if ($pattern_seq =~ /[^acgt]/i) { &RSAT::error::FatalError("With the sliding window option, only non-degenerate DNA alphabet is supported [ACGT]\n") };
 
 	#### index pattern score
 	my $pattern_score = $pattern->get_attribute("score");
@@ -126,11 +128,11 @@ if ($search_method eq "sliding window") {
     }
 
     #### create an object for the composite pattern
-    $pattern = new RSA::pattern(id => "composite",
-				sequence => "*composite*",
-				score => $pattern_score,
-				min_length=>&min(keys(%pattern_lengths)),
-				max_length=>&max(keys(%pattern_lengths)),
+    $pattern = new RSAT::pattern(id => "composite",
+				 sequence => "*composite*",
+				 score => $pattern_score,
+				 min_length=>&min(keys(%pattern_lengths)),
+				 max_length=>&max(keys(%pattern_lengths)),
 				);
 
 }
@@ -309,7 +311,7 @@ sub RegExpSearch {
 		$end_pos = $start_pos + $matching_seq_length - 1;
 		$mismatches = $pat_hash{$regular_pattern};
 		
-		my $match = new RSA::match();
+		my $match = new RSAT::match();
 		$match->set_attribute("type", "regexp");
 		$match->set_attribute("pattern_id", $pattern->get_attribute("id"));
 		$match->set_attribute("pattern_seq", $pattern->get_attribute("sequence"));
@@ -362,7 +364,7 @@ sub IUPACsearch {
 		$start_pos = $match_pos -$orig_pos;
 		$end_pos = $start_pos + $pattern_len -1;
 		
-		my $match = new RSA::match();
+		my $match = new RSAT::match();
 		$match->set_attribute("pattern_id", $pattern->get_attribute("id"));	
 		$match->set_attribute("pattern_seq", $pattern->get_attribute("sequence"));
 		$match->set_attribute("expression", $IUPAC_pattern);
@@ -692,7 +694,7 @@ sub ReadArguments {
 	    # read name of file containing the list of patterns and open it
 	    if ($ARGV[$a+1] =~ /(\S+)/) {
 		$pattern_file = $1;
-		&FatalError("Cannot read pattern file '$pattern_file'.") 
+		&RSAT::error::FatalError("Cannot read pattern file '$pattern_file'.") 
 		    unless (-r $pattern_file);
 	    } 
 
@@ -740,7 +742,7 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-th") {
 	    $threshold = $ARGV[$a+1];
 	    unless (&IsReal($threshold)) {
-		&FatalError("Threshold must have a real value");
+		&RSAT::error::FatalError("Threshold must have a real value");
 	    }
 
 	    #### merge matches
@@ -806,10 +808,10 @@ sub ReadArguments {
 	    $search_method = "sliding window";
 	    $sliding_window_size = $ARGV[$a+1];
 	    unless (&IsNatural($sliding_window_size)) {
-		&FatalError( "Sliding window size must be a natural number");
+		&RSAT::error::FatalError( "Sliding window size must be a natural number");
 	    }
 	    unless ($sliding_window_size > 0) {
-		&FatalError( "Sliding window size must be > 0");
+		&RSAT::error::FatalError( "Sliding window size must be > 0");
 	    }
 
 	    #### top score
@@ -1386,28 +1388,28 @@ EndOfHelp
 sub PrintSequenceLimits {
     my ($sequence_id, $sequence_length, $orig_pos) = @_;
 
-    my $seq_start = new RSA::pattern(
-				     sequence_id => $sequence_id,
-				     pattern_id=>"SEQ_START",
-				     strand => "DR",
-				     start_pos => -$orig_pos,
-				     end_pos => -$orig_pos,
-				     pattern_seq => "-",
-				     matching_seq => "-",
-				     score=>0,
-				     );
+    my $seq_start = new RSAT::pattern(
+	sequence_id => $sequence_id,
+	pattern_id=>"SEQ_START",
+	strand => "DR",
+	start_pos => -$orig_pos,
+	end_pos => -$orig_pos,
+	pattern_seq => "-",
+	matching_seq => "-",
+	score=>0,
+    );
     &PrintMatchLocation($seq_start);
-
-    my $seq_end = new RSA::pattern(
-				   sequence_id => $sequence_id,
-				   pattern_id=>"SEQ_END",
-				   strand => "DR",
-				   start_pos => $sequence_length - $orig_pos,
-				   end_pos => $sequence_length - $orig_pos,
-				   pattern_seq => "-",
-				   matching_seq => "-",
-				   score=>0,
-				   );
+    
+    my $seq_end = new RSAT::pattern(
+	sequence_id => $sequence_id,
+	pattern_id=>"SEQ_END",
+	strand => "DR",
+	start_pos => $sequence_length - $orig_pos,
+	end_pos => $sequence_length - $orig_pos,
+	pattern_seq => "-",
+	matching_seq => "-",
+	score=>0,
+    );
     &PrintMatchLocation($seq_end);
 }
 
