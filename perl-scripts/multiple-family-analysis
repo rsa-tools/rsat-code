@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.39 2003/12/29 23:50:05 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.40 2004/01/22 00:12:52 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -23,11 +23,12 @@ require "$RSA/perl-scripts/lib/RSA.classes";
 
 ################################################################
 ## initialisations	    
+$die_on_error = 1;
 %dir = ();
 $dir{main} = `pwd`;
 chomp($dir{main});
 
-@supported_tasks = qw (upstream purge oligos maps dyads synthesis sql clean all);
+@supported_tasks = qw (upstream purge oligos maps dyads merge slide synthesis sql clean all);
 foreach my $task (@supported_tasks) {
     $supported_task{$task} = 1;
 }
@@ -120,7 +121,8 @@ if ($sequence_file_list) {
 ### write composition of the families in the separated directories
 &SetFileNames();
 
-&CheckOutputDirectory();
+&CheckOutDir($dir{output});
+chdir($dir{output});
 
 &MakeDirectories();
 
@@ -219,11 +221,16 @@ sub SetFileNames {
 	$family{$family_name}->{oligo_assembly_file} = $family{$family_name}->{oligo_file}."_contigs";
 	$family{$family_name}->{oligo_ft_file} = $family{$family_name}->{oligo_file}.".ft";
 	
+
 	$family{$family_name}->{dyad_file} = "$family_name/dyads_${family_name}/".$family{$family_name}->{file_prefix}.$dyad_suffix;
 	$family{$family_name}->{dyad_assembly_file} = $family{$family_name}->{dyad_file}."_contigs";
 	$family{$family_name}->{dyad_ft_file} = $family{$family_name}->{dyad_file}.".ft";
+
 	$family{$family_name}->{fmap_file} = $family{$family_name}->{dyad_file}.".${IMG_FORMAT}";
 	$family{$family_name}->{htmap_file} = $family{$family_name}->{dyad_file}.".html";
+
+	$family{$family_name}->{merged_file} =  "${family_name}/merged_${family_name}/".$family{$family_name}->{file_prefix}.$oligo_suffix.$dyad_suffix;
+	$family{$family_name}->{merged_ft_file} = $family{$family_name}->{merged_file}.".ft";
     }  
 
     if ($family_file) {
@@ -268,7 +275,7 @@ sub UpstreamSequences {
     $command .= " -label orf_gene ";
     $command .= " -feattype $feature_types " if ($feature_types);
     $command .= " -format $seq_format";
-    &doit($command);
+    &doit($command,$dry_run, $die_on_error);
 }
 
 ################################################################
@@ -278,7 +285,7 @@ sub PurgeSequences {
     $command = "purge-sequence -ml 40 -mis 3";
     $command .= " -i $family{$family_name}->{seq_file}";
     $command .= " > $family{$family_name}->{seq_file_purged}";
-    &doit($command);
+    &doit($command,$dry_run, $die_on_error);
 }
 
 
@@ -289,12 +296,13 @@ sub OligoAnalysis {
 	       ";\tAnalyzing oligonucleotides for family $family_name",
 	       "min len: $min_oligo_length",
 	       "max len: $max_oligo_length"), "\n" if ($verbose >= 1);
-    $dir = "${family_name}/oligos_${family_name}";
-    &CheckOutputDir($dir);
+    my $dir = "${family_name}/oligos_${family_name}";
+
+    &CheckOutDir($dir);
     die "Error : cannot read file $family{$family_name}->{seq_file_purged}\n" unless (-r $family{$family_name}->{seq_file_purged});
     
-    
-    system "echo '' > $family{$family_name}->{oligo_file}" if ($verbose >=1);
+    ## initialize the oligo file
+    system "echo '' > $family{$family_name}->{oligo_file}"; # if ($verbose >=1);
     
     for $oligo_length ($min_oligo_length..$max_oligo_length) {
 	$oligo_options = "-v ";
@@ -323,17 +331,17 @@ sub OligoAnalysis {
 	$oligo_file = "$family_name/oligos_${family_name}/".$family{$family_name}->{file_prefix}.$oligo_suffix;    
 	$command = "oligo-analysis -i $family{$family_name}->{seq_file_purged} -format $seq_format -o $oligo_file $oligo_options";
 	
-	&doit($command);
+	&doit($command,$dry_run, $die_on_error);
 	system "cat $oligo_file >> $family{$family_name}->{oligo_file}";
     }
     
     ### fragment assembly
     $command = "pattern-assembly -i $family{$family_name}->{oligo_file} -${strands} -v -o $family{$family_name}->{oligo_assembly_file} -maxfl 1 -maxpat 200 -subst 1";
     
-    &doit($command);
-    
-
+    &doit($command,$dry_run, $die_on_error);
 }
+
+
 
 ################################################################
 #### draw feature-map for the result of oligo-analysis
@@ -354,7 +362,7 @@ sub DrawOligoFeatureMap {
 	$command .= " -htmap > $htmap_file ";
     };
     
-    &doit($command);
+    &doit($command,$dry_run, $die_on_error);
 }
 
 ################################################################
@@ -367,19 +375,69 @@ sub DyadAnalysis {
 	       "max_sp: $max_sp",
 	       ), "\n" if ($verbose >= 1);
     $dir = "${family_name}/dyads_${family_name}";
-    &CheckOutputDir($dir);
-#    unless (-d $dir) {
-#	mkdir $dir, 0755 || die "Error: cannot create directory $dir\n";
-#    }
+    &CheckOutDir($dir);
     die "Error : cannot read file $family{$family_name}->{seq_file_purged}\n" unless (-r $family{$family_name}->{seq_file_purged});
     $command = "dyad-analysis -return occ,proba,rank -i $family{$family_name}->{seq_file_purged} -format $seq_format -o $family{$family_name}->{dyad_file} $dyad_options";
     
-    &doit($command);
+    &doit($command,$dry_run, $die_on_error);
     
     ### fragment assembly
     $command = "pattern-assembly -v -i $family{$family_name}->{dyad_file} -o $family{$family_name}->{dyad_assembly_file} -$strands -maxfl 1 -maxpat 200 ";
     
+    &doit($command,$dry_run, $die_on_error);
+    
+}
+
+
+################################################################
+## Merge patterns detected by oligo-analysis and dyad-analysis
+sub MergePatterns {
+    warn join ("\t", 
+	       ";\tMerging oligonucleotides and dyads for family ",
+	       $family_name,
+	       $family{$family_name}->{merged_file}
+	       ), "\n" if ($verbose >= 1);
+
+    my $dir = "${family_name}/merged_${family_name}";
+    &CheckOutDir($dir);
+    my $command = "cat $family{$family_name}->{oligo_file}";
+    $command .= " | grep -v '^;'";
+    $command .= " > $family{$family_name}->{merged_file};";
+    $command .= " cat $family{$family_name}->{dyad_file}";
+    $command .= " | grep -v '^;'";
+    $command .= " | perl -pe s/n\{0\}//g";
+    $command .= " >> $family{$family_name}->{merged_file};";
+    $command .= " wc $family{$family_name}->{merged_file}";
     &doit($command);
+    &DrawMergedFeatureMap();
+}
+
+
+################################################################
+#### draw feature-map for the result of merged oligonucleotides and dyads
+sub DrawMergedFeatureMap {
+    warn ";\tDrawing feature-map with results of merged oligonucleotides and dyads for family $family_name\n" if ($verbose >= 1);
+    ### feature-map for merged
+    die "Error : cannot read file $family{$family_name}->{seq_file}\n" unless (-r $family{$family_name}->{seq_file});
+    $fmap_file = $family{$family_name}->{merged_file}.".${IMG_FORMAT}";
+    $htmap_file = $family{$family_name}->{merged_file}.".html";
+    $origin = "-0";
+    $command = "dna-pattern -i $family{$family_name}->{seq_file} -format $seq_format -pl $family{$family_name}->{merged_file} -origin $origin -N 4 ";
+    $command .= " | features-from-dnapat -o $family{$family_name}->{merged_ft_file} ";
+    $command .= " ; feature-map -i $family{$family_name}->{merged_ft_file} -scalebar -scalestep $scalestep -legend ";
+    $command .= " -from $from" if (defined($from));
+    $command .= " -to $to" if (defined($to));
+    $command .= " -o $fmap_file -scorethick ";
+    if ($htmaps) {
+	$command .= " -htmap > $htmap_file ";
+    };
+    
+    &doit($command,$dry_run, 0);
+}
+
+## ##############################################################
+## Scan merged patterns with a sliding window (dna-pattern)
+sub SlidingWindow {
     
 }
 
@@ -804,7 +862,7 @@ sub DrawDyadFeatureMap {
     }
     #  $command .= " ;  xv -o $family{$family_name}->{fmap_file} &";
 
-    &doit($command);
+    &doit($command,$dry_run, $die_on_error);
 }
 
 
@@ -902,6 +960,12 @@ sub AnalyzeFamilies {
 	### dyad feature-maps
 	&DrawDyadFeatureMap() if ($task{maps});
 	
+	### merge oligo-analysis and dyad-analysis results
+	&MergePatterns() if ($task{merge});
+
+	### Match all patterns together with a sliding window
+	&SlidingWindow() if ($task{slide});
+		
 	### delete upstream sequence file
 	if ($task{clean}) {
 	    warn ";\tCleaning files from the hard drive for family $family_name\n" if ($verbose >=1);
@@ -920,11 +984,11 @@ sub AnalyzeFamilies {
 
 ################################################################
 ## Execute a command, with optional echo
-sub doit {
-    my ($command) = @_;
-    print "\n$command\n" if ($verbose >= 2);
-    system $command unless $dry_run;
-}
+#sub doit {
+#    my ($command) = @_;
+#    print "\n$command\n" if ($verbose >= 2);
+#    system $command unless $dry_run;
+#}
 
 
 ########################## subroutine definition ############################
@@ -1377,25 +1441,6 @@ sub MakeDirectories {
 }
 
 
-
-
-################################################################
-#### check output directory
-#### output directory
-sub CheckOutputDirectory {
-    if ($dir{output}) {
-	unless (-d $dir{output}) {
-	    `mkdir -p $dir{output}`;
-	    unless (-d $dir{output}) {
-		&FatalError("Cannot create output directory $dir{output}");
-	    }
-	}
-	chdir ($dir{output});
-    }
-}
-
-
-
 ################################################################
 ### Generate tab files and SQL scripts for storing the results in a
 ### relational database
@@ -1414,8 +1459,8 @@ sub ExportSQL {
 							   prefix=>$time_prefix);
 
     #### output directory
-    $dir{output} = "sql_export";
-    &CheckOutputDir();
+    $dir{sql} = "sql_export";
+    &CheckOutDir($dir{sql});
 
     my $table_file = $dir."/".$table_suffix;
 
@@ -1553,11 +1598,9 @@ sub ExportSQL {
 
 }
 
-
-
-
+## ##############################################################
+## The input is a list of sequence files instead of a family file
 sub ReadSequenceList {
-    ## The input is a list of sequence files
     ($dir{sequences}, $short_sequence_file_list) = &SplitFileName($sequence_file_list);
 
     ## Convert relative to absolute directory
@@ -1634,6 +1677,5 @@ sub ReadSequenceList {
         close $in;
     }
 }
-
 
 
