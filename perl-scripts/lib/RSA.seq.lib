@@ -27,136 +27,136 @@ $accepted_output_seq{'filelist'} = 1;
 
 
 sub InitMatchScores {
-  ### based on the IUPAC code for partly specified nucleotides
-  ###	A			(Adenine)
-  ###	C			(Cytosine)
-  ###	G			(Guanine)
-  ###	T			(Thymine)
-  ###	R	= A or G        (puRines)
-  ###	Y	= C or T        (pYrimidines)
-  ###	W	= A or T        (Weak hydrogen bonding)
-  ###	S	= G or C        (Strong hydrogen bonding)
-  ###	M	= A or C        (aMino group at common position)
-  ###	K	= G or T        (Keto group at common position)
-  ###	H	= A, C or T     (not G)
-  ###	B	= G, C or T     (not A)
-  ###	V	= G, A, C       (not T)
-  ###	D	= G, A or T     (not C)
-  ###	N	= G, A, C or T  (aNy)
-  $match{A}{A} = 1/4;
-  $match{C}{C} = 1/4;
-  $match{G}{G} = 1/4;
-  $match{T}{T} = 1/4;
-  
-  $match{R}{A} = 1/2;
-  $match{R}{G} = 1/2;
-  $match{S}{C} = 1/2;
-  $match{S}{G} = 1/2;
-  $match{W}{T} = 1/2;
-  $match{W}{A} = 1/2;
-  $match{Y}{C} = 1/2;
-  $match{Y}{T} = 1/2;
-  $match{B}{C} = 3/4;
-  $match{B}{G} = 3/4;
-  $match{B}{T} = 3/4;
-  $match{D}{A} = 3/4;
-  $match{D}{G} = 3/4;
-  $match{D}{T} = 3/4;
-  $match{H}{A} = 3/4;
-  $match{H}{C} = 3/4;
-  $match{H}{T} = 3/4;
-  $match{V}{A} = 3/4;
-  $match{V}{C} = 3/4;
-  $match{V}{G} = 3/4;
-  $match{N}{A} = 1;
-  $match{N}{C} = 1;
-  $match{N}{G} = 1;
-  $match{N}{T} = 1;
-  
-  $match{A}{R} = 1/2;
-  $match{G}{R} = 1/2;
-  $match{C}{S} = 1/2;
-  $match{G}{S} = 1/2;
-  $match{T}{W} = 1/2;
-  $match{A}{W} = 1/2;
-  $match{C}{Y} = 1/2;
-  $match{T}{Y} = 1/2;
-  $match{C}{B} = 3/4;
-  $match{G}{B} = 3/4;
-  $match{T}{B} = 3/4;
-  $match{A}{D} = 3/4;
-  $match{G}{D} = 3/4;
-  $match{T}{D} = 3/4;
-  $match{A}{H} = 3/4;
-  $match{C}{H} = 3/4;
-  $match{T}{H} = 3/4;
-  $match{A}{V} = 3/4;
-  $match{C}{V} = 3/4;
-  $match{G}{V} = 3/4;
-  $match{A}{N} = 1;
-  $match{C}{N} = 1;
-  $match{G}{N} = 1;
-  $match{T}{N} = 1;
-  
-  $match{N}{N} = 1;
+    ### based on the IUPAC code for partly specified nucleotides
+    ###	A			(Adenine)
+    ###	C			(Cytosine)
+    ###	G			(Guanine)
+    ###	T			(Thymine)
+    ###	R	= A or G        (puRines)
+    ###	Y	= C or T        (pYrimidines)
+    ###	W	= A or T        (Weak hydrogen bonding)
+    ###	S	= G or C        (Strong hydrogen bonding)
+    ###	M	= A or C        (aMino group at common position)
+    ###	K	= G or T        (Keto group at common position)
+    ###	H	= A, C or T     (not G)
+    ###	B	= G, C or T     (not A)
+    ###	V	= G, A, C       (not T)
+    ###	D	= G, A or T     (not C)
+    ###	N	= G, A, C or T  (aNy)
+    $match{A}{A} = 1/4;
+    $match{C}{C} = 1/4;
+    $match{G}{G} = 1/4;
+    $match{T}{T} = 1/4;
+    
+    $match{R}{A} = 1/2;
+    $match{R}{G} = 1/2;
+    $match{S}{C} = 1/2;
+    $match{S}{G} = 1/2;
+    $match{W}{T} = 1/2;
+    $match{W}{A} = 1/2;
+    $match{Y}{C} = 1/2;
+    $match{Y}{T} = 1/2;
+    $match{B}{C} = 3/4;
+    $match{B}{G} = 3/4;
+    $match{B}{T} = 3/4;
+    $match{D}{A} = 3/4;
+    $match{D}{G} = 3/4;
+    $match{D}{T} = 3/4;
+    $match{H}{A} = 3/4;
+    $match{H}{C} = 3/4;
+    $match{H}{T} = 3/4;
+    $match{V}{A} = 3/4;
+    $match{V}{C} = 3/4;
+    $match{V}{G} = 3/4;
+    $match{N}{A} = 1;
+    $match{N}{C} = 1;
+    $match{N}{G} = 1;
+    $match{N}{T} = 1;
+    
+    $match{A}{R} = 1/2;
+    $match{G}{R} = 1/2;
+    $match{C}{S} = 1/2;
+    $match{G}{S} = 1/2;
+    $match{T}{W} = 1/2;
+    $match{A}{W} = 1/2;
+    $match{C}{Y} = 1/2;
+    $match{T}{Y} = 1/2;
+    $match{C}{B} = 3/4;
+    $match{G}{B} = 3/4;
+    $match{T}{B} = 3/4;
+    $match{A}{D} = 3/4;
+    $match{G}{D} = 3/4;
+    $match{T}{D} = 3/4;
+    $match{A}{H} = 3/4;
+    $match{C}{H} = 3/4;
+    $match{T}{H} = 3/4;
+    $match{A}{V} = 3/4;
+    $match{C}{V} = 3/4;
+    $match{G}{V} = 3/4;
+    $match{A}{N} = 1;
+    $match{C}{N} = 1;
+    $match{G}{N} = 1;
+    $match{T}{N} = 1;
+    
+    $match{N}{N} = 1;
 }
 
 sub CountMatches {
-  ### returns the number of matching positions between two sequences 
-  ### of same length
-  ### usage:
-  ###    ($matches,$score) = &CountMatches($seq1,$seq2);
-  ### accepts IUPAC degenrate codes as first or second argument
-  ### the score is in base units, i.e. 
-  ### each unit correspond to one perfectly specified base
-  ### it is calculated from the matching probability:
-  ###       score = -log4(proba)
-  my $seq1 = $_[0];
-  my $seq2 = $_[1];
-  my $matches = 0;
-  my $proba = 1;
-  my $seq_len = length($seq1);
-  my $score = "inf";
+    ### returns the number of matching positions between two sequences 
+    ### of same length
+    ### usage:
+    ###    ($matches,$score) = &CountMatches($seq1,$seq2);
+    ### accepts IUPAC degenrate codes as first or second argument
+    ### the score is in base units, i.e. 
+    ### each unit correspond to one perfectly specified base
+    ### it is calculated from the matching probability:
+    ###       score = -log4(proba)
+    my $seq1 = $_[0];
+    my $seq2 = $_[1];
+    my $matches = 0;
+    my $proba = 1;
+    my $seq_len = length($seq1);
+    my $score = "inf";
 
-  foreach my $pos (0..$seq_len-1) {
-    my $base1 = uc(substr($seq1,$pos,1));
-    my $base2 = uc(substr($seq2,$pos,1));
-    if ($match{$base1}{$base2}) {
-      $matches++;
-      $proba *= $match{$base1}{$base2};
+    foreach my $pos (0..$seq_len-1) {
+	my $base1 = uc(substr($seq1,$pos,1));
+	my $base2 = uc(substr($seq2,$pos,1));
+	if ($match{$base1}{$base2}) {
+	    $matches++;
+	    $proba *= $match{$base1}{$base2};
+	}
     }
-  }
-  if ($proba > 0) {
-    $score = abs(log($proba))/log(4);
-  } 
-  return ($matches, $score);
+    if ($proba > 0) {
+	$score = abs(log($proba))/log(4);
+    } 
+    return ($matches, $score);
 } ### CountMatches
 
 
 sub CountMismatches {
-  ### returns the number of non-matching positions between two sequences 
-  ### of same length, up to the maximum allowed value $max.
-  ### usage:
-  ###    $mismatches = &CountMismatches($seq1,$seq2,$max);
-  ### accepts IUPAC degenerate codes as first or second argument
-  my $seq1 = $_[0];
-  my $seq2 = $_[1];
-  my $max = $_[2];
-  my $mismatches = 0;
-  
-  my $seq_len = length($seq1);
-  
-  foreach my $pos (0..$seq_len-1) {
-    my $base1 = uc(substr($seq1,$pos,1));
-    my $base2 = uc(substr($seq2,$pos,1));
-    unless ($match{$base1}{$base2}){
-      $mismatches++;
-      if ($mismatches > $max) {
-	return $mismatches;
-      }
+    ### returns the number of non-matching positions between two sequences 
+    ### of same length, up to the maximum allowed value $max.
+    ### usage:
+    ###    $mismatches = &CountMismatches($seq1,$seq2,$max);
+    ### accepts IUPAC degenerate codes as first or second argument
+    my $seq1 = $_[0];
+    my $seq2 = $_[1];
+    my $max = $_[2];
+    my $mismatches = 0;
+    
+    my $seq_len = length($seq1);
+    
+    foreach my $pos (0..$seq_len-1) {
+	my $base1 = uc(substr($seq1,$pos,1));
+	my $base2 = uc(substr($seq2,$pos,1));
+	unless ($match{$base1}{$base2}){
+	    $mismatches++;
+	    if ($mismatches > $max) {
+		return $mismatches;
+	    }
+	}
     }
-  }
-  return $mismatches;
+    return $mismatches;
 } ### CountMismatches
 
 
@@ -290,6 +290,58 @@ sub Substitute {
 }
 
 
+sub degenerate_nucleotide {
+#### From a list of nucleotides, return the corresponding IUPAC degenerate 
+### based on the IUPAC code for partly specified nucleotides
+###	A			(Adenine)
+###	C			(Cytosine)
+###	G			(Guanine)
+###	T			(Thymine)
+###	R	= A or G        (puRines)
+###	Y	= C or T        (pYrimidines)
+###	W	= A or T        (Weak hydrogen bonding)
+###	S	= G or C        (Strong hydrogen bonding)
+###	M	= A or C        (aMino group at common position)
+###	K	= G or T        (Keto group at common position)
+###	H	= A, C or T     (not G)
+###	B	= G, C or T     (not A)
+###	V	= G, A, C       (not T)
+###	D	= G, A or T     (not C)
+###	N	= G, A, C or T  (aNy)
+#### usage:
+#### $deg_nucl = &degererate_nucleotide(@nucleotides);
+#### input nucleotides can themslve be compltely or partly spcified 
+    my @nucleotides = lc(@_);
+    my $deg_nucl;
+    my %signature = ();
+    @{$signature{a}} = ('a');
+    @{$signature{c}} = ('c');
+    @{$signature{g}} = ('g');
+    @{$signature{t}} = ('t');
+    @{$signature{r}} = ('a','g');
+    @{$signature{y}} = ('c','t');
+    @{$signature{w}} = ('a','c');
+    @{$signature{s}} = ('c','g');
+    @{$signature{m}} = ('a','c');
+    @{$signature{k}} = ('g','t');
+    @{$signature{h}} = ('a','c','t');
+    @{$signature{b}} = ('c','g','t');
+    @{$signature{v}} = ('a','c','g');
+    @{$signature{d}} = ('a','g','t');
+    @{$signature{n}} = ('a','c','g','t');
+    my %pure_nucleotides = ();
+
+#    foreach my $i (@nucelotides) {
+#	foreach $pure @{$signature{$l}} {
+#	    #
+#	}
+#    }
+
+    
+    return $deg_nucl;
+}
+
+
 sub Insert {
 ### usage 
 ### %ins_hash = Insert($pattern, $allowed_ins, $IUPAC_output)
@@ -399,41 +451,41 @@ sub compress_pattern {
 ### $compressed_pattern = compress_pattern($expanded_pattern,@letters_to_compress);
 ### example: $compressed = &compress_pattern("aaannnnnnnccc","n");
 ### returns aaan{7}ccc
-  my ($expanded_pattern,@letters_to_compress) = @_;
-  my $compressed_pattern = "";
-  my $epl = length($expanded_pattern);
-  my $last_letter = "";
-  my $current_letter = "";
-  my $count = 0;
-  my $letter = "";
-  my %to_compress;
-  
-  $expanded_pattern = lc($expanded_pattern);
-  if ($#letters_to_compress > -1) {
-    foreach $letter (@letters_to_compress) {
-      $to_compress{lc($letter)} = 1;
-    }
-  } else {
-    $compress_all = 1;
-  }
-  
-  foreach $pos (0..$epl) {
-    $current_letter = substr($expanded_pattern,$pos,1);
-    if (($current_letter eq $last_letter) && 
-	(($to_compress{$current_letter}) ||
-	 ($compress_all))) {
-      $count++;
-    } elsif ($count > 0) {
-      $count++;
-      $compressed_pattern .= "{$count}";
-      $count = 0;
-      $compressed_pattern .= uc($current_letter);
+    my ($expanded_pattern,@letters_to_compress) = @_;
+    my $compressed_pattern = "";
+    my $epl = length($expanded_pattern);
+    my $last_letter = "";
+    my $current_letter = "";
+    my $count = 0;
+    my $letter = "";
+    my %to_compress;
+    
+    $expanded_pattern = lc($expanded_pattern);
+    if ($#letters_to_compress > -1) {
+	foreach $letter (@letters_to_compress) {
+	    $to_compress{lc($letter)} = 1;
+	}
     } else {
-      $compressed_pattern .= uc($current_letter);
+	$compress_all = 1;
     }
-    $last_letter = $current_letter;
-  }
-  return($compressed_pattern);
+    
+    foreach $pos (0..$epl) {
+	$current_letter = substr($expanded_pattern,$pos,1);
+	if (($current_letter eq $last_letter) && 
+	    (($to_compress{$current_letter}) ||
+	     ($compress_all))) {
+	    $count++;
+	} elsif ($count > 0) {
+	    $count++;
+	    $compressed_pattern .= "{$count}";
+	    $count = 0;
+	    $compressed_pattern .= uc($current_letter);
+	} else {
+	    $compressed_pattern .= uc($current_letter);
+	}
+	$last_letter = $current_letter;
+    }
+    return($compressed_pattern);
 }
 
 
@@ -622,7 +674,8 @@ sub Palindromic {
 	    print $OUTFILE $sequence;
 	    print $OUTFILE "1\n";
 	} elsif ($out_format eq "fasta") {  #### fastA format
-	    print $OUTFILE  ">$seq_id\t$comments[0]\n";
+	    my $first_comment = $comments[0] || "";
+	    print $OUTFILE  ">$seq_id\t${first_comment}\n";
 	    print $OUTFILE $sequence;
 	    print $OUTFILE "\n";
 	} elsif (($out_format eq "wc") || ($out_format eq "wconsensus")) {     #### wconsensus format
@@ -738,7 +791,7 @@ sub ReadNextSequence {
 	}
 	&CheckFormat($sequence, $sequence_format);
 	if ($sequence) {
-	    &FoldSequence($sequence, 0);
+	    $sequence = &FoldSequence($sequence, 0);
 	    return ($sequence, $seq_id, @comments);
 	} else {
 	    return ("","");
@@ -759,7 +812,7 @@ sub ReadNextSequence {
 	    next if ($sequence =~ /^;/);
 	    $gotit = 1;
 	    &CheckFormat($sequence, $sequence_format);
-	    FoldSequence($sequence, 0);
+	    $sequence = &FoldSequence($sequence, 0);
 	    return ($sequence, $seq_id, @comments);
 	} 
 	return ("","") unless $gotit;
@@ -777,7 +830,7 @@ sub ReadNextSequence {
 	    }
 	} 
 	
-print STDERR join "\t", $next_file, $input_dir, "$input_dir/$next_file", "\n";
+#print STDERR join "\t", $next_file, $input_dir, "$input_dir/$next_file", "\n";
 	unless (-e $next_file) {
 	    if (-e "$input_dir/$next_file") {
 		$next_file = "$input_dir/$next_file";
@@ -796,7 +849,7 @@ print STDERR join "\t", $next_file, $input_dir, "$input_dir/$next_file", "\n";
 	    }
 	    close NEXT_SEQ;
 	    &CheckFormat($sequence, $sequence_format);
-	    FoldSequence($sequence, 0);
+	    $sequence = &FoldSequence($sequence, 0);
 	    return ($sequence, $seq_id, @comments);
 	} else {
 	    die "\tError: cannot open sequence file $next_file\n";
@@ -811,7 +864,7 @@ print STDERR join "\t", $next_file, $input_dir, "$input_dir/$next_file", "\n";
 		$seq_id = $1;
 	    } elsif (/(.*)[12]/) {	### end of the current sequence
 		$sequence .= $1;
-		FoldSequence($sequence, 0);
+		$sequence = &FoldSequence($sequence, 0);
 		return ($sequence, $seq_id, @comments);
 	    } else {
 		$sequence .= $_;
@@ -846,7 +899,7 @@ print STDERR join "\t", $next_file, $input_dir, "$input_dir/$next_file", "\n";
 			}
 		    } until ($end_of_seq);
 		}
-		FoldSequence($sequence, 0);
+		$sequence = &FoldSequence($sequence, 0);
 		return ($sequence, $seq_id, @comments);
 	    }
 	}
@@ -863,7 +916,7 @@ print STDERR join "\t", $next_file, $input_dir, "$input_dir/$next_file", "\n";
 			($current_seq_id ne "")) { ###  first id from the seq file
 		    $current_seq_id = $1;
 		} else  {
-		    &FoldSequence($sequence, 0);
+		    $sequence = &FoldSequence($sequence, 0);
 		    $done_seq_id = $current_seq_id;
 		    $current_seq_id = $1;
 		    return ($sequence, $done_seq_id, @comments);
@@ -876,7 +929,7 @@ print STDERR join "\t", $next_file, $input_dir, "$input_dir/$next_file", "\n";
 	unless ($current_seq_id) {
 	    return ("","");		### when input file has been totally read
 	} else {
-	    FoldSequence($sequence, 0);
+	    $sequence = &FoldSequence($sequence, 0);
 	    $done_seq_id = $current_seq_id;
 	    $current_seq_id = "";
 	    return ($sequence, $done_seq_id, @comments);
@@ -892,7 +945,7 @@ print STDERR join "\t", $next_file, $input_dir, "$input_dir/$next_file", "\n";
 	
 	while (<$SEQ>) {
 	    if (/^\/\/$/) {		### end of record
-		&FoldSequence($sequence, 0);
+		$sequence = &FoldSequence($sequence, 0);
 		return ($sequence, $seq_id, @comments);
 	    } elsif (/^\s*(\S+).+\.\.\s*$/) {	### dividing line
 		$seq_id = $1;
@@ -909,7 +962,7 @@ print STDERR join "\t", $next_file, $input_dir, "$input_dir/$next_file", "\n";
 	    }
 	}
 	
-	FoldSequence($sequence, 0);
+	$sequence = &FoldSequence($sequence, 0);
 	return ($sequence, $seq_id, @comments);
 	
 	### NCBI/GENBANK format ###
@@ -923,7 +976,7 @@ print STDERR join "\t", $next_file, $input_dir, "$input_dir/$next_file", "\n";
 	while (<$SEQ>) {
 	    chomp;
 	    if (/^\/\/$/) {		### end of record
-		FoldSequence($sequence, 0);
+		$sequence = &FoldSequence($sequence, 0);
 		return ($sequence, $seq_id, @comments);
 	    } elsif (/^ACCESSION\s+(\S+)/) {	### dividing line
 		$seq_id = $1;
@@ -940,7 +993,7 @@ print STDERR join "\t", $next_file, $input_dir, "$input_dir/$next_file", "\n";
 	    } 
 	}
 	
-	FoldSequence($sequence, 0);
+	$sequence = &FoldSequence($sequence, 0);
 	return ($sequence, $seq_id, @comments);
 	
 	### EMBL format ###
@@ -953,7 +1006,7 @@ print STDERR join "\t", $next_file, $input_dir, "$input_dir/$next_file", "\n";
 	while (<$SEQ>) {
 	    chomp;
 	    if (/^\/\/$/) {		### end of record
-		FoldSequence($sequence, 0);
+		$sequence = &FoldSequence($sequence, 0);
 		return ($sequence, $seq_id, @comments);
 	    } elsif (/^AC\s+(\S+);/) {	### accession number
 		$seq_id = $1;
@@ -970,7 +1023,7 @@ print STDERR join "\t", $next_file, $input_dir, "$input_dir/$next_file", "\n";
 	    } 
 	}
 	
-	FoldSequence($sequence, 0);
+	$sequence = &FoldSequence($sequence, 0);
 	return ($sequence, $seq_id, @comments);
 	
 	### end of sequence file ###
@@ -1010,13 +1063,13 @@ sub ReadMSF {
 
 ####### fold sequence ##########
 sub FoldSequence {
-### usage FoldSequence($sequence, $line_width)
+### usage &FoldSequence($sequence, $line_width)
 ### remove all blank spaces from a sequence, 
 ### and insert return carriages every $l characters
 ### no carriage return is inserted if $l = 0
-    local ($in_seq) = $_[0];
-    local ($lw) = $_[1];
-    local ($out_seq);
+    my ($in_seq, $lw) = @_;
+    my $out_seq = "";
+
     $in_seq =~ s/\s//g;  ### remove blank spaces, tabs and newlines
     #### insert newline characters for output ####
     if ($lw > 0) {
@@ -1032,67 +1085,82 @@ sub FoldSequence {
     return $out_seq;
 }
 
-sub EditDistance {
-  use strict;
-  ### usage : $dist = EditDistance($string1,$string2);
-  ### usage : $dist = EditDistance($string1,$string2,1); 
-  ### $main::hyperverbose -> print matrix
-  my ($string1,$string2,$hyperverbose) = @_;
-  my @dist = ();
-  my $len1 = length($string1);
-  my $len2 = length($string2);
-  my %weight = ();
-  my $i = 0;
-  my $j = 0;
-  
-  my @l1 = split "", $string1;
-  my @l2 = split "", $string2;
-  my @prev_line = ();
-  my @current_line = ();
-  
-  ### initialization
-  $weight{substitution} = 1; 
-  $weight{insertion} = 1; 
-  $weight{deletion} = 1; 
-  $weight{end_space} = 0; ### Gusfield p 228-229
-  
-  $current_line[0] = 0;
-  for $j (1..$len2) {
-    $current_line[$j] = $current_line[$j-1] + $weight{end_space};
-  }
-  
-  if ($hyperverbose) {
-    warn "- - ", join(" ",@l2), "\n";
-    warn "- ", join(" ",@current_line), "\n";
-  }
-  
-  ### run trhough the array and calculate distance
-  for $i (1..$len1) {
-    @prev_line = @current_line;
-    @current_line = (); ### empty current line
+####### fold sequence ##########
+sub CleanDNA {
+### usage &CleanDNA($sequence)
+### replaces all non-acgt characters by "."
+    my ($_sequence) = @_;
 
-    $current_line[0] = $prev_line[0] + $weight{end_space};
-    for $j (1..$len2) {
-      my $match = $prev_line[$j-1];
-      
-      $match += $weight{substitution} unless ($l1[$i-1] eq $l2[$j-1]);
-      
-      ($current_line[$j]) = sort { 
-	$a <=> $b } (
-		     $prev_line[$j] + $weight{insertion},
-		     $current_line[$j-1] + $weight{deletion},
-		     $match
-		    );
-    }
-    warn ($l1[$i-1], " ", join(" ",@current_line), "\n")
-      if ($hyperverbose);
-  }
-  
-  return $current_line[$len2]; ### this is the edit distance
+    $_sequence =~ s/\s//g;  ### remove blank spaces, tabs and newlines
+    $_sequence =~ s/[^acgt]/./ig;  ### remove blank spaces, tabs and newlines
+
+    return $_sequence;
 }
+
+sub EditDistance {
+    use strict;
+    ### usage : $dist = EditDistance($string1,$string2);
+    ### usage : $dist = EditDistance($string1,$string2,1); 
+    ### $main::hyperverbose -> print matrix
+    my ($string1,$string2,$hyperverbose) = @_;
+    my @dist = ();
+    my $len1 = length($string1);
+    my $len2 = length($string2);
+    my %weight = ();
+    my $i = 0;
+    my $j = 0;
+    
+    my @l1 = split "", $string1;
+    my @l2 = split "", $string2;
+    my @prev_line = ();
+    my @current_line = ();
+    
+    ### initialization
+    $weight{substitution} = 1; 
+    $weight{insertion} = 1; 
+    $weight{deletion} = 1; 
+    $weight{end_space} = 0; ### Gusfield p 228-229
+    
+    $current_line[0] = 0;
+    for $j (1..$len2) {
+	$current_line[$j] = $current_line[$j-1] + $weight{end_space};
+    }
+    
+    if ($hyperverbose) {
+	warn "- - ", join(" ",@l2), "\n";
+	warn "- ", join(" ",@current_line), "\n";
+    }
+    
+    ### run trhough the array and calculate distance
+    for $i (1..$len1) {
+	@prev_line = @current_line;
+	@current_line = (); ### empty current line
+
+	$current_line[0] = $prev_line[0] + $weight{end_space};
+	for $j (1..$len2) {
+	    my $match = $prev_line[$j-1];
+	    
+	    $match += $weight{substitution} unless ($l1[$i-1] eq $l2[$j-1]);
+	    
+	    ($current_line[$j]) = sort { 
+		$a <=> $b } (
+			     $prev_line[$j] + $weight{insertion},
+			     $current_line[$j-1] + $weight{deletion},
+			     $match
+			     );
+	}
+	warn ($l1[$i-1], " ", join(" ",@current_line), "\n")
+	    if ($hyperverbose);
+    }
+    
+    return $current_line[$len2]; ### this is the edit distance
+}
+
+
 
 sub all_oligos {
     #### usage : all_oligos($length)
+    #### returns an array with all possible oligonucleotids of the specified length.
     my $len = $_[0];
     my @alphabet = ("a", "c", "g", "t");
     my @oligos = ();
@@ -1107,6 +1175,5 @@ sub all_oligos {
     }
     return @oligos;
 }
-
 
 1;
