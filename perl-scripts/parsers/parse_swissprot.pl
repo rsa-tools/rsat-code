@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_swissprot.pl,v 1.23 2002/08/15 12:05:59 jvanheld Exp $
+# $Id: parse_swissprot.pl,v 1.24 2002/09/24 21:34:45 jvanheld Exp $
 #
-# Time-stamp: <2002-08-15 07:03:49 jvanheld>
+# Time-stamp: <2002-09-24 16:31:37 jvanheld>
 #
 ############################################################
 
@@ -12,7 +12,7 @@ BEGIN {
     if ($0 =~ /([^(\/)]+)$/) {
 	$script_dir = $` || ".";
 	push @INC, "$script_dir";
-	push @INC, "$script_dir/perllib/";
+	push @INC, "$script_dir/perllib";
     }
 }
 require "PFBP_config.pl";
@@ -40,7 +40,6 @@ package main;
 		      swissprot_acs
 		      swissprot_ids
 		      ECs
-		      sequence
 		      );
 
     #### organism selection
@@ -217,6 +216,7 @@ package main;
 
     #### special field formats for SQL
     $special_field_size{features} = 2047;
+    $special_field_size{bioseqs} = 2047;
 
     ### generate SQL scripts for loading the data
     $polypeptides->generate_sql(schema=>$schema, 
@@ -313,8 +313,8 @@ OPTIONS
 	-fields
 		Fields to be exported. Several fields can be provided,
 		separated by commas. Example:
-			  -fields id,names,gene,ECs,swissprot_ids
-	-seq    return polypeptide sequences
+			  -fields id,names,ene,ECs,swissprot_ids
+	-seq    return polypeptide bioseqs
 	-dbms	database management system
 		supported: oracle, postgresql
 	-db	database schema
@@ -398,7 +398,7 @@ sub ReadArguments {
 
 	    #### output fields
 	} elsif ($ARGV[$a] =~ /^-seq/) {
-	    $main::out_fields{sequence} = 1;
+	    $main::out_fields{bioseq} = 1;
 
 	}
 
@@ -463,6 +463,7 @@ sub ParseSwissprot {
 	#### initialize the export flag
 	my $export = 0;
 	my @organisms = $object_entry->OSs->elements;
+#	my @tax_ids = $object_entry->OXs->elements;
 
 	#### check whether the accession number was specified for export 
 	if ($in_file{acs}) {
@@ -518,7 +519,7 @@ sub ParseSwissprot {
 	    $ec_number = $1;
 	    $ec_number =~ s/^ //g;
 	    $ec_number =~ s/ $//g;
-	    $tmp = $';
+	    $tmp = "$'";
 	    if ($ec_number =~ /^\S+\.\S+\.\S+\.\S+$/ ) {
 		push @ECs, $ec_number;
 	    } else {
@@ -572,10 +573,11 @@ sub ParseSwissprot {
 	$polypeptide->set_attribute("description", $descr);
 
 
-        if ($out_fields{sequence}) {
-  	  my $sequence = $object_entry->SQs->seq;
-	  $polypeptide->set_attribute("sequence", $sequence);
-       }
+        if ($out_fields{bioseq}) {
+	    my $bioseq = $object_entry->SQs->seq;
+	    $polypeptide->set_attribute("bioseq", $bioseq);
+#	    die join "\t",  $polypeptide->get_attribute("id"), $polypeptide->get_attribute("bioseq"), "\n";
+	}
 
 	my $pp_id = $polypeptide->get_id();
 	foreach my $ec (@ECs) {
