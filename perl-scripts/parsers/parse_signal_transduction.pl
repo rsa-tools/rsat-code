@@ -556,26 +556,38 @@ sub ReadInteractions {
 	}
 
 	#### compare state and location before and after the interaction
-	if ($state_before eq $state_after) {
-	    if ($location_before eq $location_after) {
-		$inter_object->push_expanded_attribute("outputs",$ent_id, $subunit, $state, $stoichiometry, $location_before);
-	    } else {
-		$inter_object->push_expanded_attribute("outputs",$ent_id, $subunit, $state, $stoichiometry, $location_before);
-		#### TEMPORARY: not specific treatment yet
-		&ErrorMessage ("Untreated location modification for interaction output", 
-			       "\t", $inter_object->get_attribute("type"),
-			       "\t", $location_before, 
-			       "\t", $location_after, 
-			       "\n", $line, "\n");
-	    }
-	} else {
-	    #### TEMPORARY: not specific treatment yet
+	if (($state_before eq $state_after) && ($location_before eq $location_after)) {
 	    $inter_object->push_expanded_attribute("outputs",$ent_id, $subunit, $state, $stoichiometry, $location);
-	    &ErrorMessage ("Untreated state modification for interaction output", 
-			   "\t", $inter_object->get_attribute("type"),
-			   "\t", $state_before, 
-			   "\t", $state_after, 
-			   "\n", $line, "\n");
+	} else {
+	    #### before remains input but after becomes output
+	    $inter_object->push_expanded_attribute("inputs",$ent_id, $subunit, $state_before, $stoichiometry, $location_before);
+	    $inter_object->push_expanded_attribute("outputs",$ent_id, $subunit, $state_after, $stoichiometry, $location_after);
+
+	    #### check the reason why location before and after differ
+	    unless ($location_before eq $location_after) {
+		if ($inter_object->get_attribute("type") eq "HELLO") {
+		} else {
+		    #### report unexpected cases
+		    &ErrorMessage ("Unknown location modification for interaction output", 
+				   "\t", $inter_object->get_attribute("type"),
+				   "\t", $location_before, 
+				   "\t", $location_after, 
+				   "\n", $line, "\n");
+		}
+	    }
+
+	    #### check the reason why state before and after differ
+	    unless ($state_before eq $state_after) {
+		if ($inter_object->get_attribute("type") eq "HELLO") {
+		} else {
+		    #### report unexpected cases
+		    &ErrorMessage ("Unknown state modification for interaction output", 
+				   "\t", $inter_object->get_attribute("type"),
+				   "\t", $state_before, 
+				   "\t", $state_after, 
+				   "\n", $line, "\n");
+		}
+	    }
 	}
     }
     close OUTPUT;
@@ -1012,7 +1024,10 @@ sub PathwayToDiagram {
     my @interaction_ids = $pathway->get_attribute("interactions");
     my @subpathway_ids = $pathway->get_attribute("subpathways");
     my $name = $pathway->get_name();
-    my $diagram_file = $dir{diagrams}."/".$pathway->get_attribute("id").".tdd";
+
+    my $filename = &my_trim($pathway->get_name());
+    $filename =~ s/ /_/g;
+    my $diagram_file = $dir{diagrams}."/$filename.tdd";
 
     warn ("; ",join ("\t", 
 		     "entities", $#entity_ids+1,
@@ -1097,8 +1112,24 @@ sub PathwayToDiagram {
 	my $type = $interaction->get_attribute("type");
 
 	#### create a node for the entity
-	$node = $diagram->add_node(id=>$int_id);
-	$node->set_attribute("label", $type."_".$int_id);
+	$abbrev{association} = "asm";
+	$abbrev{phosphorylation} = "pho";
+	$abbrev{dephosphorylation} = "dpho";
+	$abbrev{inhibition} = "inh";
+	$abbrev{activation} = "atc";
+	$abbrev{transactivation} = "trac";
+	$abbrev{transrepression} = "trep";
+
+	my $node = $diagram->add_node(id=>$int_id);
+	my $label = "";
+	if ($abbrev{$type}) {
+	    $label = $abbrev{$type};
+	} else {
+	    $label = $type;
+	}
+	$label .= $int_id;
+	$node->set_attribute("label", $label);
+#	$node->set_attribute("label", substr($label,0,3));
 	$node->set_attribute("type", $type);
 	$node->set_attribute("xpos", int(rand $xsize));
 	$node->set_attribute("ypos", int(rand $ysize));
