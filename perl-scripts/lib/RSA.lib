@@ -329,7 +329,7 @@ sub ReadCalibration {
 sub ReadExpectedFrequencies {
     my ($exp_freq_file, $sum_rc, $rescale_freq) = @_;
     
-    ($exp) = &OpenInputFile($exp_freq_file);
+    my ($exp) = &OpenInputFile($exp_freq_file);
     my $l=0;
     while (<$exp>) {
 	$l++;
@@ -339,8 +339,9 @@ sub ReadExpectedFrequencies {
 
 	my @fields =  split /\s+/;
 	$pattern_seq = lc($fields[0]);
+	next unless $pattern_seq;
 
-#	warn join "\t", "fields", $fields[0], "\n";
+	warn join "\t", "fields", join ("\t", @fields), "\n" if ($main::verbose >= 10);
 
 	#### check the format and extract expected frequency
 	if (&IsReal($fields[1])) {
@@ -372,6 +373,7 @@ sub ReadExpectedFrequencies {
     }
     close $exp if ($exp_freq_file);
     
+
     #### check if reverse complements were included in the expected freq file;
     #### if not, infer them from the direct strand 
     foreach my $pattern_seq (sort keys %patterns) {
@@ -382,6 +384,7 @@ sub ReadExpectedFrequencies {
 	    #print STDERR join "\t", $pattern_seq,  $patterns{$pattern_seq}->{exp_freq}, $rc, $patterns{$rc}->{exp_freq}, "\n";
   	}
     }
+
 
     #### sum expected frequencies by reverse complements
     if (($sum_rc) && ($file_type eq "1str")) {
@@ -412,7 +415,8 @@ sub ReadExpectedFrequencies {
 ## Sum expected frequencies
 ##
 sub SumExpectedFrequencies {
-    %patterns = @_;
+    my (%patterns) = @_;
+    my %freq_2str = ();
     foreach my $pattern_seq (sort keys %patterns) {
 	my $rc = lc(&SmartRC($pattern_seq));
 	if ($rc eq $pattern_seq) {
@@ -431,10 +435,13 @@ sub SumExpectedFrequencies {
 		   $freq_2str{$rc},
 		   ), "\n" if ($verbose >= 5);
     }
-    
+
     foreach my $pattern_seq (sort keys %patterns) {
-	$patterns{$pattern_seq}->{exp_freq} = $patterns{$rc}->{exp_freq} = $freq_2str{$pattern_seq};
+	my $rc = &SmartRC($pattern_seq);
+	$patterns{$pattern_seq}->{exp_freq} = $freq_2str{$pattern_seq};
+	$patterns{$rc}->{exp_freq} = $freq_2str{$pattern_seq};
     }
+
 }
 
 
@@ -1523,7 +1530,7 @@ sub ReadFamilies {
 #	    push @{$family{$family_name}->{members}}, $member_key;
 	    $family{$family_name}->new_member($member_key);
 #	    warn join ("\t",  "; \t$family_name","$member_name","$member_key","$name{$id}"), "\n" 
-#		if ($verbose >= 0);
+#		if ($verbose >= 10);
 	} else {
 	    &Warning ("$member_name unknown gene name");
 	}
