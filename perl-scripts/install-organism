@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.11 2002/03/25 02:51:18 jvanheld Exp $
+# $Id: install-organism,v 1.12 2002/03/29 11:27:51 jvanheld Exp $
 #
-# Time-stamp: <2002-03-25 03:34:39 jvanheld>
+# Time-stamp: <2002-03-29 12:26:42 jvanheld>
 #
 ############################################################
 
@@ -24,6 +24,7 @@ $supported_for_installation{"raw"} = 1;
 		    oligos=>1,
 		    dyads=>1
 		   );
+$supported_steps = join ",", keys %supported_steps;
 %install_steps = ();
 
 ################################################################
@@ -112,8 +113,7 @@ if ($install_steps{features}) {
 &UpdateConfig() if ($install_steps{config});
 &StartAndStopCodons() if ($install_steps{start_stop});
 &NonCodingSegments() if ($install_steps{ncf});
-&OligoFrequencies() if ($install_steps{oligos});
-&DyadFrequencies() if ($install_steps{dyads});
+&CalcFrequencies() if (($install_steps{oligos}) || ($install_steps{dyads}));
 
 
 exit(0);
@@ -333,57 +333,80 @@ sub NonCodingSegments {
     chdir "../";
 }
 
-### calculate oligo frequencies in non-coding sequences
-sub OligoFrequencies { 
-    chdir $oligo_dir;
-    pwd;
-    
-    $type = "non-coding";
-    $seq = "${organism_short_name}_non_coding_segments_purged.fasta";
+################################################################
+### calculate oligo and dyad frequencies in intergenic and genomic
+### sequences
+sub CalcFrequencies { 
+    my $purged_frequencies = 0; #### temporarily inactivte because for human genome it suppresses almost all sequences !!!!
+    my ($seq_file, $seq_format, $seq_type) = ();
 
-    ### calculate oligont frequencies in all non-coding sequences
-    foreach $oligo_length (1..8) {
-	$oligo_freq = "${oligo_length}nt_${type}_${organism_short_name}.freq";
-	$command = "$SCRIPTS/oligo-analysis -i $genome_dir/$seq -format fasta ";
-	$command .= "-l ${oligo_length} -type dna ";
-	$command .= "-return freq,occ -nogrouprc ";
-	$command .= "| cut -f1,3,4 ";
-	$command .= "> $oligo_freq ";
-	&doit;  
+    chdir $oligo_dir;
+
+    ################################################################
+    # calculate oligont frequencies in all intergenic sequences
+    $seq_type = "non-coding";
+    if ($purged_frequencies) {
+	$seq_file = "${organism_short_name}_non_coding_segments_purged.fasta";
+	$seq_format = "fasta";
+    } else {
+	$seq_file = "${organism_short_name}_non_coding_segments.wc";
+	$seq_format = "wc";
     }
+    &CalcOligoFreq($genome_dir."/".$seq_file, $seq_format, $seq_type) if ($install_steps{oligos});
+    &CalcDyadFreq($genome_dir."/".$seq_file, $seq_format, $seq_type) if ($install_steps{dyads});
+
+    ################################################################
+    # calculate oligo-frequencies in full genome
+    $seq_type = "genomic";
+    $seq_format = $supported_organism{$organism_short_name}->{'seq_format'};
+    $seq_file = $supported_organism{$organism_short_name}->{'genome'};
+    &CalcOligoFreq($seq_file, $seq_format, $seq_type) if ($install_steps{oligos});
+    &CalcDyadFreq($seq_file, $seq_format, $seq_type) if ($install_steps{dyads});
+     
     chdir '../';
 }
 
-sub DyadFrequencies {
-    chdir $oligo_dir;
-    pwd;
-    
-    $type = "non-coding";
-    $seq = "${organism_short_name}_non_coding_segments_purged.fasta";
-    ### calculate dyad frequencies in all non-coding sequences
-    $oligo_length = 3;
+sub CalcOligoFreq {
+    my ($seq_file,$seq_format,$seq_type) = @_;
+    foreach $oligo_length (1..8) {
+	$out_file = "$oligo_dir/${oligo_length}nt_${seq_type}_${organism_short_name}.freq";
+	$command = "$SCRIPTS/oligo-analysis -i $seq_file -format $seq_format ";
+	$command .= "-l ${oligo_length} -type dna ";
+	$command .= "-return freq,occ -nogrouprc ";
+	$command .= "| cut -f1,3,4 ";
+	$command .= "> $out_file ";
+	&doit;  
+    }
+}
+
+
+
+sub CalcDyadFreq {
+    my ($seq_file,$seq_format,$seq_type) = @_;
     $min_spacing = 0;
     $max_spacing = 20;
     $noov = 1;
-    $dyad_file = "dyads_${oligo_length}nt_sp${min_spacing}-${max_spacing}_${type}_${organism_short_name}";
-    $dyad_file .= "_noov" if ($noov);
-    $dyad_file .= ".freq";
-    $command = "$SCRIPTS/dyad-analysis -i $genome_dir/$seq -format fasta";
-    $command .= " -timeout 150000 ";
-    $command .= " -type any -seqtype dna";
-    $command .= " -2str";
-    $command .= " -noov" if ($noov);
-    $command .= " -sp ${min_spacing}-${max_spacing}";
-    $command .= " -l $oligo_length";
-    $command .= " -return freq,occ";
-    $command .= " -nogrouprc";
-#  $command .= " | grep -v ';'";
-#    $command .= " | perl -ne 'print if /^[acgt]{3}n\{.*\}[acgt]{3}/'"; #### remove degenerate dyads
-    $command .= " | cut -f1,3,4";
-    $command .= " > $dyad_file";
-    &doit;
-    chdir '../';
-}    
+
+    foreach $oligo_length (1..3) {
+	$dyad_file = "dyads_${oligo_length}nt_sp${min_spacing}-${max_spacing}_${seq_type}_${organism_short_name}";
+	$dyad_file .= "_noov" if ($noov);
+	$dyad_file .= ".freq";
+	$command = "$SCRIPTS/dyad-analysis -i $seq_file -format $seq_format";
+	$command .= " -timeout 150000 ";
+	$command .= " -type any -seqtype dna";
+	$command .= " -2str";
+	$command .= " -noov" if ($noov);
+	$command .= " -sp ${min_spacing}-${max_spacing}";
+	$command .= " -l $oligo_length";
+	$command .= " -return freq,occ";
+	$command .= " -nogrouprc";
+	$command .= " | cut -f1,3,4";
+	$command .= " > $dyad_file";
+	&doit;
+    }
+
+}
+
 
 #### probably obsolete ####
 sub GenerateFeatureTable {
@@ -541,14 +564,7 @@ OPTIONS
 	-step	specification of a single installation step
 		    e.g.
 			install-organism -step dyads
-		supported suboptions:
-			  genome
-			  features
-			  config
-			  start_stop
-			  ncf
-			  oligos
-			  dyads
+		supported steps: $supported_steps
 End_of_help
     close HELP;
     exit(0);
@@ -574,7 +590,7 @@ install_organism options
 -dir		absolut path of the installation directory
 -local		update local config file 
 		(specified by the environment variable RSA_LOCAL_CONFIG)
--step		specification of a single installation step
+-step		installation step ($supported_steps)
 End_short_help
   close HELP;
   exit;
@@ -646,7 +662,7 @@ sub ReadArguments {
 		$install_steps{$step} = 1;
 	    } else {
 		&FatalError("Invalid step option. Supported options: ", 
-			    join(",", keys %supported_steps));
+			    join(",", $supported_steps));
 	    }
 
 	    #### installation dir
