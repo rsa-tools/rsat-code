@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: downloads.mk,v 1.5 2003/11/16 01:04:24 jvanheld Exp $
+# $Id: downloads.mk,v 1.6 2003/11/30 20:35:30 jvanheld Exp $
 #
 # Time-stamp: <2003-10-09 14:02:21 jvanheld>
 #
@@ -35,7 +35,7 @@ all:
 EBI_GENOMES=ftp://ftp.ebi.ac.uk/pub/databases/genomes/
 ebi_genomes:
 	@echo importing genomes from EBI
-	${WGET} --accept=embl.Z,con,fasta.Z ${EBI_GENOMES}
+	${WGET} --accept=.embl.Z --accept .con --accept .prot ${EBI_GENOMES}
 
 
 ################################################################
