@@ -1,3 +1,5 @@
+.SUFFIXES: _distrib.tab _poisson.tab _negbin.tab
+
 ################################################################
 ## makefile for getting info for the motif discovery competition
 
@@ -35,6 +37,10 @@ SYNC_DIR=results
 SERVER_LOCATION=merlin.ulb.ac.be:motif_discovery_competition_2003/
 EXCLUDE=--exclude '*~' --exclude oligos --exclude '*.wc' --exclude random_genes.tab
 publish:
+	${MAKE} publish_one_dir SYNC_DIR=TASK_LIST.html
+	${MAKE} publish_one_dir SYNC_DIR=results
+
+publish_one_dir:
 	${RSYNC} ${EXCLUDE} ${SYNC_DIR} ${SERVER_LOCATION}
 
 update_from_server:
@@ -332,14 +338,25 @@ give_access:
 ## Fit all previously calculated distributions with a Poisson and a
 ## negbin, respectively
 DISTRIB_FILES=`find ${RES_DIR} -name '*_distrib.tab'` 
+GOOD_DISTRIB_FILES=`find ${RES_DIR} -name '*_distrib.tab' -exec wc {} \; | awk '$$1 >= 2000 {print $$4}'`
 find_distrib_files:
 	@echo ${DISTRIB_FILES}
 
-check_distrib_files:
+check_distrib_files: good_distrib_files bad_distrib_files
+
+bad_distrib_files:
+	@echo
+	@echo "Bad distrib files"
 	@find ${RES_DIR} -name '*_distrib.tab' -exec wc {} \; | awk '$$1 < 2000'
 
+good_distrib_files:
+	@echo
+	@echo "Good distrib files"
+	@find ${RES_DIR} -name '*_distrib.tab' -exec wc {} \; | awk '$$1 >= 2000'
+
 all_fittings:
-	@for file in ${DISTRIB_FILES} ; do			\
+	@echo  ${GOOD_DISTRIB_FILES}
+	@for file in ${GOOD_DISTRIB_FILES} ; do			\
 		${MAKE} one_fitting DISTRIB_FILE=$${file} ;	\
 	done
 
@@ -354,4 +371,10 @@ one_fitting_one_law:
 	@echo "Fitting ${DISTRIB_LAW}	${FITTING_FILE}"
 	@fit-distribution -v 1 -distrib ${DISTRIB_LAW} -i ${DISTRIB_FILE} -o ${FITTING_FILE} 
 #	@head -50 ${DISTRIB_FILE}| fit-distribution -v 1 -distrib ${DISTRIB_LAW}  -o ${FITTING_FILE} 
+
+_distrib.tab_poisson.tab:
+	@fit-distribution -v 1 -distrib poisson -i $< -o $@
+
+_distrib.tab_negbin.tab:
+	@fit-distribution -v 1 -distrib negbin -i $< -o $@
 
