@@ -317,37 +317,80 @@ sub poisson {
 	$log_poi += $log_lambda - log($i);
     }
     return exp($log_poi);
-    
 }
 
+sub sum_of_poisson {
+### usage poisson($successes,$expected)
+### note: on our sun station, this algorithm works only for m < 746
+### direct calculation would be                  
+###    p(x) = lambda^x exp(-lambda)/x!
+### We use a recursive formula 
+###    p(x) = p(x-1) * lambda / x
 
-sub old_sum_of_poissons {
-    ### usage sum_of_poissons($successes,$expected,$tail_side)
-    ### supported values for $tail_side :
-    ### "boe"   bigger or equal
-    ### "soe"   smaller or equal
-    my ($s,$m,$tail_side) = @_;
-    my $result;
-    my $precision_limit = 1.0e-15;
+    my ($lambda,$from,$to) = @_;
+    my $poi;
+    my $log_lambda = log($lambda);
 
-    if ($tail_side eq "boe") {
-	$result = 1;
-	for my $j (0..$s-1) {
-	    $result -= &poisson($j,$m);
-	    last if ($result <=0);
-	}
-    } elsif ($tail_side eq "soe") {
-	$result = 0;
-	for my $j (0..$s) {
-	    $result += &poisson($j,$m);
-	    last if ($result >=1);
-	}
+    my $log_poi;
+    my $sum_of_poi;
+    my $start;
+
+    $sum_of_poi = exp(-$lambda) if ($from ==0);
+
+    if ($to ==0) {
+	$log_poi = -$lambda;
     } else {
-	die "Error: unsupported value for tail side $tail_side\n";
+	$log_poi = -$lambda + $log_lambda;
+	$sum_of_poi += exp($log_poi) if ($from <= 1);
     }
-    $result = ("ND") if ($result < $precision_limit); #### precision limit
-    return $result;
+
+
+    if ($from <= 1) {
+	$start = 2;
+    } else {
+	$start = $from;
+	for my $i (2..$start-1) {
+	    $log_poi += $log_lambda - log($i);
+	}
+    }
+
+    for my $i ($start..$to) {
+	$log_poi += $log_lambda - log($i);
+	$sum_of_poi += exp($log_poi);
+	last if (($i > $lambda) && ($sum_of_poi <= $prev_value));
+	$prev_value = $sum_of_poi;
+    }
+    return $sum_of_poi;
 }
+
+
+#  sub old_sum_of_poissons {
+#      ### usage sum_of_poissons($successes,$expected,$tail_side)
+#      ### supported values for $tail_side :
+#      ### "boe"   bigger or equal
+#      ### "soe"   smaller or equal
+#      my ($s,$m,$tail_side) = @_;
+#      my $result;
+#      my $precision_limit = 1.0e-15;
+
+#      if ($tail_side eq "boe") {
+#  	$result = 1;
+#  	for my $j (0..$s-1) {
+#  	    $result -= &poisson($j,$m);
+#  	    last if ($result <=0);
+#  	}
+#      } elsif ($tail_side eq "soe") {
+#  	$result = 0;
+#  	for my $j (0..$s) {
+#  	    $result += &poisson($j,$m);
+#  	    last if ($result >=1);
+#  	}
+#      } else {
+#  	die "Error: unsupported value for tail side $tail_side\n";
+#      }
+#      $result = ("ND") if ($result < $precision_limit); #### precision limit
+#      return $result;
+#  }
 
 sub factorial {
 ### usage: &factorial($n)
