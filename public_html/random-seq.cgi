@@ -10,7 +10,7 @@ require "RSA.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $random_seq_command = "$SCRIPTS/random-seq";
 
-$size_limit = 1000000;
+$size_limit = 5e+6;
 
 ### Read the CGI query
 $query = new CGI;
@@ -58,19 +58,34 @@ if ($query->param('proba') eq "alphabet") {
 	&FatalError("Invalid residue frequencies");
     }
     $parameters .= " -a a:t $at_freq c:g $cg_freq ";
-} elsif ($query->param('proba') eq "expfreq") {
-    $oligo_length = $query->param('oligo_size');
-    $freq_file = "${oligo_length}nt";
-    
-    if ($query->param('seq_type') eq "genomic") {
-	$freq_file .= ".genomic.freq";
-    } elsif ($query->param('seq_type') eq "coding") {
-	$freq_file .= ".coding.freq";
-    } elsif ($query->param('seq_type') eq "non coding") {
-	$freq_file .= ".non-coding.freq";
+#### expected frequency estimation ####
+} elsif ($query->param('proba') =~ /ncf/i) {
+    ### check organism
+    unless ($organism = $query->param('organism')) {
+	&cgiError("You should specify an organism to use non-coding frequency calibration");
     }
-    
-    $parameters .= " -expfreq $RSA/data/yeast/oligo-frequencies/$freq_file ";
+    unless (defined(%{$supported_organism{$organism}})) {
+	&cgiError("Organism $org is not supported on this site");
+    }
+    $oligo_size = $query->param("oligo_size");
+    unless (&IsNatural($oligo_size)) {
+	&cgiError("Invalid oligonucleotide length $oligo_size");
+    }
+    $parameters .= " -ncf -org $organism -ol $oligo_size";
+
+#} elsif ($query->param('proba') eq "expfreq") {
+#    $oligo_size = $query->param('oligo_size');
+#    $freq_file = "${oligo_size}nt";
+#    
+#    if ($query->param('seq_type') eq "genomic") {
+#	$freq_file .= ".genomic.freq";
+#    } elsif ($query->param('seq_type') eq "coding") {
+#	$freq_file .= ".coding.freq";
+#    } elsif ($query->param('seq_type') eq "non coding") {
+#	$freq_file .= ".non-coding.freq";
+#    }
+#    
+#    $parameters .= " -expfreq $RSA/data/yeast/oligo-frequencies/$freq_file ";
 } 
 
 print "<PRE>command: $random_seq_command $parameters<P>\n</PRE>" if $ECHO;
@@ -112,28 +127,20 @@ if ($query->param('output') eq "display") {
 #      close RESULT;
 #      ### prepare data for piping
 #      &PipingForm();
+    print "<HR SIZE = 3>";
 
 } else {
-    ### send an e-mail with the result ###
-    if ($query->param('user_email') =~ /(\S+\@\S+)/) {
-	$address = $1;
-	print "<B>Result will be sent to your account: <P>";
-	print "$address</B><P>";
-	system "$random_seq_command $parameters | $mail_command $address &";
-    } else {
-	if ($query->param('user_email') eq "") {
-	    print "<B>ERROR: you did not enter your e-mail address<P>";
-	} else {
-	    print "<B>ERROR: the e-mail address you entered is not valid<P>";
-	    print $query->param('user_email')."</B><P>";      
-	}
-    } 
+    &EmailTheResult("$random_seq_command $parameters", $query->param('user_email'));
 }
-print "<HR SIZE = 3>";
 print $query->end_html;
 
 exit(0);
 
+
+################################################################
+#
+# Pipe the result to other commands
+#
 sub PipingForm {
   print <<End_of_form;
 <HR SIZE = 3>
