@@ -10,7 +10,7 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 ### intialization
 $feature_map_command = "$SCRIPTS/feature-map";
-$tmp_file_name = sprintf "feature-map.%s", &AlphaDate;
+$tmp_file_name = sprintf "feature-map.%s", &AlphaDate();
 
 $features_from_swissprot_cmd = "$SCRIPTS/features-from-swissprot";
 $features_from_msf_cmd = "$SCRIPTS/features-from-msf";
@@ -32,6 +32,7 @@ $query = new CGI;
 $default{title} = "";
 $default{data} = "";
 $default{format} = 'feature map';
+$default{img_format} = $IMG_FORMAT || "jpg";
 $default{from} = 'auto';
 $default{to} = 'auto';
 $default{handle} = 'none';
@@ -245,6 +246,14 @@ print "&nbsp;&nbsp;&nbsp;";
 print $query->checkbox(-name=>'label_score',
 		       -label=>' score ');
 print "&nbsp;&nbsp;&nbsp;";
+
+
+## Image format
+print "<BR>\n";
+print "<B><A HREF='help.feature-map.html#img_format'>Image format</A></B>&nbsp;&nbsp;&nbsp;&nbsp";
+print $query->popup_menu(-name=>'img_format',
+			 -Values=>['jpg','png','ps'],
+			 -default=>$default{img_format});
 
 
 print "<P>";

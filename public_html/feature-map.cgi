@@ -17,9 +17,10 @@ require "RSA.lib";
 require "RSA.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
+$ECHO=1;
+
 ### intialization
-$image_format = $IMG_FORMAT || "png";
-$feature_map_command = "$SCRIPTS/feature-map -format $image_format ";
+$feature_map_command = "$SCRIPTS/feature-map ";
 $tmp_file_name = sprintf "feature-map.%s", &AlphaDate;
 
 $features_from_swissprot_cmd = "$SCRIPTS/features-from-swissprot";
@@ -49,8 +50,6 @@ $title = "feature-map result";
 
 #### update log file ####
 &UpdateLogFile();
-
-&ListParameters() if ($ECHO >= 2);
 
 #### read parameters ####
 $parameters = "";
@@ -136,6 +135,14 @@ if (lc($query->param('handle')) =~ /dot/) {
 } elsif (lc($query->param('handle')) =~ /symbol/) {
     $parameters .= " -symbol ";
 }
+
+### image format
+if ($query->param('img_format')) {
+    $image_format = $query->param('img_format');
+} else {
+    $image_format = $IMG_FORMAT || "png";
+}
+$parameters .= " -format ".$image_format;
 
 ### palette
 if (lc($query->param('palette')) =~ /mono/i) {
@@ -254,6 +261,8 @@ $parameters .= " -o $TMP/$map_file > $TMP/$html_file";
 if ($ECHO >= 2) {
     print $query->header();
     print $query->start_html;
+    &ListParameters();
+
     print "<PRE>command = $feature_map_command $parameters \n</PRE>";
     print $query->end_html;
     exit(0)
@@ -265,7 +274,8 @@ system "$feature_map_command $parameters ";
 &DelayedRemoval("$TMP/$html_file");
 
 ### display the result ###
-if (lc($query->param('htmap')) eq "on") {
+if (($image_format ne 'ps') 
+    && (lc($query->param('htmap')) eq "on")) {
     $location = "$WWW_RSA/tmp/$html_file";
 } else {
     $location = "$WWW_RSA/tmp/$map_file";
