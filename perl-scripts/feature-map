@@ -20,7 +20,8 @@ $start_time = `date`;
 ##################################################################
 %supported_format = ();
 
-if ($config_site eq "rsa") {
+if ($IMG_FORMAT eq "jpg") {
+# if ($config_site eq "rsa") {
     $supported_format{"jpeg"} = 1;
     $out_format = "jpeg";
 } else {
@@ -97,11 +98,11 @@ if ($#label_keys >= 0) {
 
 #### Read Data #####
 ($in, $input_dir) = &OpenInputFile($inputfile);
-&ReadMapData;
+&ReadMapData();
 &ReadSequenceLengths($sequence_file, $sequence_format) if ($sequence_file);
 
 #### Calculate map dimensions ###
-&CalcDimensions;
+&CalcDimensions();
 
 
 ########################### OUTPUT ######################################
@@ -205,20 +206,20 @@ if ($HTML_map) {
 }
 
 ##### Image Initialization ####
-&OpenFeatureMap;
+&OpenFeatureMap();
 $image->fill(1,1,$bg_color);
 
 #### Title ####
-&DrawTitle;
+&DrawTitle();
 
 ###### legend #######
 if ($legend) {
-  &DrawLegend;
+  &DrawLegend();
 }
 
 ###### scale bar #######
 if ($scalebar) {
-  &DrawScaleBar;
+  &DrawScaleBar();
 }
 
 
@@ -227,7 +228,7 @@ foreach $m (0..$#map_list) {
   $map = $map_list[$m];
   
   if (($labels) || ($draw_symbols) || ($draw_dots)) {
-    &CalcLabelPos;
+    &CalcLabelPos();
   }
   
   ### fill background ###
@@ -829,8 +830,27 @@ sub DrawSymbol {
 }
 
 
+################################################################
+#### calculate the maximum score associated to each feature ID
+sub MaxScorePerID {
+    %max_score_per_id = ();
+    foreach my $map (keys %features) {
+	foreach my $f (@{$features{$map}}) {
+	    my $id = $f->{id};
+	    my $score = $f->{score};
+	    $max_score_per_id{$id} = &max ($max_score_per_id{$id}, $score);
+	    warn join "\t", $id, $score, $max_score_per_id{$id}, "\n";
+	}
+    }
+}
+
+################################################################
 #### Legend Initialization ####
 sub InitLegend {
+    #### calculate the max score for each feature ID
+    &MaxScorePerID();
+
+    #### calculate the limits of the legend box
     $legend_spacing = 4;
     if ($horizontal_map) {
 	$legend_top = $y_border;
@@ -844,9 +864,9 @@ sub InitLegend {
     $legend_border = 4;
     $max_id_length = 0;
     foreach $id (@id_list) {
-	if ($max_id_length < length($id)) {
-	    $max_id_length = length($id);
-	}
+	$legend_text{$id} = $id." ".$max_score_per_id{$id};
+	$max_id_length = &max ($max_id_length, length($legend_text{$id}));
+
     }
     $legend_width = $max_id_length * $small_font_width + 3*$legend_border + $max_feature_thick;
     $legend_width  = &max ($legend_width, 6*$small_font_width + 2*$legend_border);
@@ -856,8 +876,11 @@ sub InitLegend {
 }
 
 
-#### Legend drawing ####
+################################################################
+#### draw the legen
 sub DrawLegend {
+
+    #### calculate limits of the legend box
     $legend_right = $graph_x_size - $x_border;
     $legend_left = $legend_right - $legend_width;
 
@@ -867,6 +890,7 @@ sub DrawLegend {
     $rect_right = $rect_left + $max_feature_thick;
 
     if ($draw_handles) {
+	#### draw the feature handle associated to each ID
 	$handle_left = $rect_right + $handle_bar_length + 1;
 	$handle_right = $handle_left + $handle_thick -1;
 	$legend_x = $handle_right + $legend_border + 1;
@@ -889,6 +913,7 @@ sub DrawLegend {
 	    $rect_color = $color_list[$i%($#color_list+1)];
 	}
 	if ($id eq "ORF") {
+	    #### a specific symbol for ORFs (empty box)
 	    $image->rectangle($rect_left, $rect_top, $rect_right, $rect_bottom, $rect_color);
 	} else {
 	    $image->filledRectangle($rect_left, $rect_top, $rect_right, $rect_bottom, $rect_color);
@@ -909,8 +934,8 @@ sub DrawLegend {
 	    }
 	}
 
-
-	$image->string(gdSmallFont, $legend_x, $legend_y,$id, $text_color);
+	
+	$image->string(gdSmallFont, $legend_x, $legend_y,$legend_text{$id}, $text_color);
 	$legend_y += $small_font_height + $legend_spacing;
     }
 }
@@ -1009,98 +1034,98 @@ sub DrawScaleBar {
 
 ##### Read data ####
 sub ReadMapData {
-  while ($new_data_line = <$in>) {
-    next if ($new_data_line =~ /^;/); ### skip comment lines
-    next unless ($new_data_line =~ /\S/); # skip empty lines
-    $new_data_line =~ s/\r//g;
-    chomp($new_data_line);
-    unless ($new_data_line =~ /\t/) {   # if there are no tabs,
-      $new_data_line =~ s/ +/\t/g; # single or multiple spaces are considered as a single tab
-    }
-    #    $new_data_line =~ s/\n//;
-    #print "$new_data_line\n";
-    $new_data_line =~ s/^ *//; ### suppress white spaces at the beginning af the line
-      @input_fields = split(/\t/, $new_data_line);
-    
-    foreach $key (keys %col) {
-      $temp_features{$key} = $input_fields[$col{$key}];
-    }
-    
-    
-    #### map name ####
-    $temp_features{map} =~ s/\'/_/g;
-    $current_map = $temp_features{map};
-    unless (defined $map_hash{$current_map}) {
-      push @map_list, $current_map;
-      $map_hash{$current_map} = 1;
-    }
-    
-    ### max score
-    if (defined($fixed_max_score)) {
-      $max_score = $fixed_max_score;
-    } else {
-      $max_score = &max($max_score, $temp_features{score});
-    }
-
-    ### min score
-    if (defined($fixed_min_score)) {
-      $min_score = $fixed_min_score;
-    } else {
-      $min_score = &min($min_score, $temp_features{score});
-    }
-
-    #### feature type ####
-    if (lc($temp_features{feature_type}) eq "end") {   ### map end position
-      $map_end{$current_map} = $temp_features{start_pos};
-    } elsif (lc($temp_features{feature_type}) eq "start") {   ### map start position
-      $map_start{$current_map} = $temp_features{start_pos};
-    } elsif (lc($temp_features{feature_type}) eq "origin") {   ### map origin position
-      $map_origin{$current_map} = $temp_features{start_pos};
-    } else 	{ ### new feature for the map
-      #### feature identifier ####
-      if ($id_number{$temp_features{id}} eq "") {
-	push (@id_list, $temp_features{id});
-	@id_number{$temp_features{id}} = $#id_list;
-      }
-      next if (($id_selection) && ($selected{$temp_features{id}} <1));
-      
-      #### feature strand ####
-      $temp_features{strand} = uc($temp_features{strand});
-      $temp_features{strand} =~ s/W/D/i;
-      $temp_features{strand} =~ s/C/R/i;
-      $temp_features{strand} =~ s/\+/D/i;
-      $temp_features{strand} =~ s/F/D/i;
-      $temp_features{strand} =~ s/\-/R/i;
-      if ($temp_features{strand} =~ /D/i) {
-	$features_on_D_strand = 1;
-      } elsif ($temp_features{strand} =~ /R/i) {
-	$features_on_R_strand = 1;
-      } else {
-	$temp_features{strand} ="DR";
-	$features_on_D_strand = 1;
-      }
-      
-      #### start and end positions ####
-      if (&IsReal($temp_features{start_pos})) {
-	unless (&IsReal($temp_features{end_pos})) {
-	  $temp_features{end_pos} = $temp_features{start_pos};
+    while ($new_data_line = <$in>) {
+	next if ($new_data_line =~ /^;/); ### skip comment lines
+	next unless ($new_data_line =~ /\S/); # skip empty lines
+	$new_data_line =~ s/\r//g;
+	chomp($new_data_line);
+	unless ($new_data_line =~ /\t/) {   # if there are no tabs,
+	    $new_data_line =~ s/ +/\t/g; # single or multiple spaces are considered as a single tab
 	}
-	if  ($temp_features{start_pos} > $temp_features{end_pos}) {
-	  $tmp = $temp_features{end_pos};
-	  $temp_features{end_pos} = $temp_features{start_pos};
-	  $temp_features{start_pos} = $tmp;
-	}
-	$temp_features{end_pos} -= $origin;
-	$temp_features{start_pos} -= $origin;
+	#    $new_data_line =~ s/\n//;
+	#print "$new_data_line\n";
+	$new_data_line =~ s/^ *//; ### suppress white spaces at the beginning af the line
+	@input_fields = split(/\t/, $new_data_line);
 	
-	### store new record in the feature list
-	$f = $#{$features{$current_map}} + 1;
-	foreach $key (@keys) {
-	  $features{$current_map}[$f]{$key} = $temp_features{$key};
+	foreach $key (keys %col) {
+	    $temp_features{$key} = $input_fields[$col{$key}];
 	}
-      }
+	
+	
+	#### map name ####
+	$temp_features{map} =~ s/\'/_/g;
+	$current_map = $temp_features{map};
+	unless (defined $map_hash{$current_map}) {
+	    push @map_list, $current_map;
+	    $map_hash{$current_map} = 1;
+	}
+	
+	### max score
+	if (defined($fixed_max_score)) {
+	    $max_score = $fixed_max_score;
+	} else {
+	    $max_score = &max($max_score, $temp_features{score});
+	}
+
+	### min score
+	if (defined($fixed_min_score)) {
+	    $min_score = $fixed_min_score;
+	} else {
+	    $min_score = &min($min_score, $temp_features{score});
+	}
+
+	#### feature type ####
+	if (lc($temp_features{feature_type}) eq "end") {   ### map end position
+	    $map_end{$current_map} = $temp_features{start_pos};
+	} elsif (lc($temp_features{feature_type}) eq "start") {   ### map start position
+	    $map_start{$current_map} = $temp_features{start_pos};
+	} elsif (lc($temp_features{feature_type}) eq "origin") {   ### map origin position
+	    $map_origin{$current_map} = $temp_features{start_pos};
+	} else 	{ ### new feature for the map
+	    #### feature identifier ####
+	    if ($id_number{$temp_features{id}} eq "") {
+		push (@id_list, $temp_features{id});
+		@id_number{$temp_features{id}} = $#id_list;
+	    }
+	    next if (($id_selection) && ($selected{$temp_features{id}} <1));
+	    
+	    #### feature strand ####
+	    $temp_features{strand} = uc($temp_features{strand});
+	    $temp_features{strand} =~ s/W/D/i;
+	    $temp_features{strand} =~ s/C/R/i;
+	    $temp_features{strand} =~ s/\+/D/i;
+	    $temp_features{strand} =~ s/F/D/i;
+	    $temp_features{strand} =~ s/\-/R/i;
+	    if ($temp_features{strand} =~ /D/i) {
+		$features_on_D_strand = 1;
+	    } elsif ($temp_features{strand} =~ /R/i) {
+		$features_on_R_strand = 1;
+	    } else {
+		$temp_features{strand} ="DR";
+		$features_on_D_strand = 1;
+	    }
+	    
+	    #### start and end positions ####
+	    if (&IsReal($temp_features{start_pos})) {
+		unless (&IsReal($temp_features{end_pos})) {
+		    $temp_features{end_pos} = $temp_features{start_pos};
+		}
+		if  ($temp_features{start_pos} > $temp_features{end_pos}) {
+		    $tmp = $temp_features{end_pos};
+		    $temp_features{end_pos} = $temp_features{start_pos};
+		    $temp_features{start_pos} = $tmp;
+		}
+		$temp_features{end_pos} -= $origin;
+		$temp_features{start_pos} -= $origin;
+		
+		### store new record in the feature list
+		$f = $#{$features{$current_map}} + 1;
+		foreach $key (@keys) {
+		    $features{$current_map}[$f]{$key} = $temp_features{$key};
+		}
+	    }
+	}
     }
-  }
 }
 
 ################################################################
