@@ -1,15 +1,16 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.22 2002/09/14 15:45:39 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.23 2002/09/24 21:55:19 jvanheld Exp $
 #
-# Time-stamp: <2002-09-14 10:45:29 jvanheld>
+# Time-stamp: <2002-09-24 16:54:24 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
   push (@INC, "$`lib/");
 }
 require "RSA.lib";
+require "RSA.help.pl";
 require "RSA.cgi.lib";
 require "RSA.classes";
 
@@ -26,6 +27,13 @@ foreach my $task (@supported_tasks) {
     $supported_task{$task} = 1;
 }
 $supported_tasks = join ",", @supported_tasks;
+
+%supported_sort_key = (
+			"score"=>1,
+			"name"=>1
+			);
+$supported_sort_keys  = join ",", sort keys %supported_sort_key;
+
 $noorf = 0;
 $default{from} = -800;
 $default{to} = 0;
@@ -42,6 +50,7 @@ $min_sp = 0;
 $max_sp = 20;
 $start_date = `date`;
 $maps=1;
+$sort_key = "score";
 
 &ReadArguments();
 
@@ -59,15 +68,16 @@ warn "; Reading ORF information ...\n"
 # read data
 &ReadKnownSites();
 &ReadSiteLibrary();
-&ReadFamilies();
+%family = &ReadFamilies($family_file, 1);
+@families = sort keys %family;
 
 #### verbose
 if ($verbose >= 1) {
     print "; multiple-family-analysis ";
     &PrintArguments($out);
     printf "; families     \t%d\n", $#families + 1;
-    foreach $family (@families) {
-	printf ";\t%s\n", $family;
+    foreach my $family_name (@families) {
+	printf ";\t%s\t%d elements\n", $family_name, $family{$family_name}->get_size();
     }
     printf "; family file\t%s\n", $family_file;
     printf "; upstream region\n";
@@ -101,7 +111,7 @@ foreach $family_name(@families) {
   }
   open FAM, ">$family{$family_name}->{family_file}" ||
       die "Error: cannot write family file $family{$family_name}->{family_file}\n";
-  foreach $id (@{$family{$family_name}->{members}}) {
+  foreach $id ($family{$family_name}->get_members()) {
     print FAM "$id\t$name{$id}\n";
     
   }
@@ -140,6 +150,7 @@ sub SetFileNames {
   $dyad_options .= " -sp $sp ";
   
   $dyad_suffix = "_dyads";
+  $dyad_suffix .= "_bg_${background}" if ($background);
   $dyad_suffix .= "_l${monad_length}";
   $dyad_suffix .= "_sp${sp}";
   $dyad_suffix .= "_${strands}";
@@ -157,23 +168,30 @@ sub SetFileNames {
   } elsif ($background eq "intergenic") {
     $dyad_options .= " -ncf ";
     $dyad_options .= " -org $organism_name ";
-    $dyad_suffix .= "_ncf";
+#    $dyad_suffix .= "_ncf";
   } elsif ($background eq "mncf") {
     $dyad_options .= " -mncf ";
     $dyad_options .= " -org $organism_name ";
     $dyad_suffix .= "_mncf";
   }
 
+  #### suffix for the oligo-analysis file
   $noorf_string = "_noorf" if ($noorf);
   $noov_string = "_noov" if ($noov);
+  $oligo_suffix = "_oligos";
+  $dyad_suffix .= "_bg_${background}" if ($background);
+  $oligo_suffix = "_${min_oligo_length}-${max_oligo_length}nt";
+  $oligo_suffix = "_${strands}";
+  $oligo_suffix = "_sig${th}${noov_string}";
+
   foreach my $family_name (@families) {
       $family{$family_name}->{family_file} = "$family_name/${family_name}.fam";
       $family{$family_name}->{known_site_file} = "$family_name/${family_name}_known_sites";
       $family{$family_name}->{file_prefix} = "${family_name}_up${seq_length}${noorf_string}"; 
       $family{$family_name}->{seq_file} = $family_name."/".$family{$family_name}->{file_prefix}.".${seq_format}";
       $family{$family_name}->{seq_file_purged} = $family_name."/".$family{$family_name}->{file_prefix}."_purged.${seq_format}";
-      
-      $family{$family_name}->{oligo_file} =  "${family_name}/oligos_${family_name}/".$family{$family_name}->{file_prefix}."_oligos_${min_oligo_length}-${max_oligo_length}nt_${strands}_sig${th}${noov_string}";
+#      $family{$family_name}->{oligo_file} =  "${family_name}/oligos_${family_name}/".$family{$family_name}->{file_prefix}."_oligos_${min_oligo_length}-${max_oligo_length}nt_${strands}_sig${th}${noov_string}";
+      $family{$family_name}->{oligo_file} =  "${family_name}/oligos_${family_name}/".$family{$family_name}->{file_prefix}.$oligo_suffix;
       $family{$family_name}->{oligo_assembly_file} = $family{$family_name}->{oligo_file}."_contigs";
       $family{$family_name}->{oligo_ft_file} = $family{$family_name}->{oligo_file}.".ft";
       
@@ -184,7 +202,10 @@ sub SetFileNames {
       $family{$family_name}->{htmap_file} = $family{$family_name}->{dyad_file}.".html";
   }  
 
-  $table_suffix = $family_file."_up_".$from."_".$to.$noorf_string.$noov_string;
+  $table_suffix = $family_file;
+  $table_suffix .= "_bg_${background}" if ($background);
+  $table_suffix .= "_up".$from."_".$to.$noorf_string;
+  $table_suffix .= $noov_string;
   $table_suffix = `basename $table_suffix`;
   chomp $table_suffix;
 }
@@ -360,11 +381,12 @@ sub ReadSiteLibrary {
 ################################################################
 ### build a synthetic table ###
 sub SyntheticTable {
-    warn "; Generating synthetic table $table_file\n" if ($verbose);
-    $dir = "synthetic_tables";
+    my $dir = "synthetic_tables";
     
-    $table_file = $dir."/".$table_suffix;
+    my $table_file = $dir."/".$table_suffix;
     $table_file .= "_tr" if ($transpose);
+
+    warn "; Generating synthetic table $table_file\n" if ($verbose);
     
     unless (-d $dir) {
 	mkdir $dir, 0755 || die "Error: cannot create directory $dir\n";
@@ -386,9 +408,13 @@ sub SyntheticTable {
 	$table[$row][0] = "<B>$header</B>";
     }
     my $col = 0;
+
     foreach $family_name (@families) {
 	$col++;
 	
+	#### remember which column is associated to each family
+	$column{$family_name} = $col;
+
 	### check directory
 	$dir = "${family_name}/dyads_${family_name}";
 	unless (-d $dir) {
@@ -441,7 +467,7 @@ sub SyntheticTable {
 		$rc{$pattern} = uc(&ReverseComplement($pattern->get_attribute("sequence")));
 		$score{$pattern} = $fields[2];
 		$type{$pattern} = $fields[3];
-		$max_score{$family} = &max($max_score{$family}, $score{$pattern});
+		$max_score{$family_name} = &max($max_score{$family_name}, $score{$pattern});
 	    }
 	}
 	@sorted_patterns = sort { $score{$b} <=> $score{$a} } @patterns;
@@ -595,7 +621,19 @@ sub SyntheticTable {
     
     print TABLE "<TABLE BORDER=1>\n";
 
-    @sorted_families = sort {$max_score{$a} <=> $max_score{$b}} @families;
+    if ($sort_key eq "score") {
+	#### sort families by score
+	#### decreasing order
+	@sorted_families = sort {$max_score{$b} <=> $max_score{$a}} @families; 
+	foreach my $f (@sorted_families) {
+	    warn join "\t", $f, $max_score{$f}, "\n";
+	}
+
+#	die "HELLO";
+    } else {
+	#### sort families by family name
+	@sorted_families = sort @families;
+    }
     
     if ($transpose) {
 	foreach $r (0..$row_num) {
@@ -606,7 +644,11 @@ sub SyntheticTable {
 	    print TABLE "</TR>\n";
 	}
     } else {
-	foreach $c (0..$col) {
+
+	    
+	foreach $f (@sorted_families) {
+	    my $c = $column{$f};
+#	foreach $c (0..$col) {
 	    print TABLE "<TR>\n";
 	    foreach $r (0..$row_num) {
 		print TABLE "<TD>", $table[$r][$c], "</TD>\n";
@@ -738,8 +780,9 @@ sub doit {
 
 sub PrintHelp {
 #### display full help message #####
-  open HELP, "| more";
-  print HELP <<End_of_help;
+    $HELP_FAMILY_FILE = &help_message("family file");
+    open HELP, "| more";
+    print HELP <<End_of_help;
 NAME
 	multiple-family-analysis
 
@@ -782,6 +825,10 @@ OPTIONS
 	-monad  monad length for dyad-analysis
 	-minsp	maximum spacing for dyad-analysis
 	-maxsp	maximum spacing for dyad-analysis
+	-transp	transpose synthetic result table (columns become rows)
+	-sort sort_key
+	        sort key for the synthetic table
+		Supported: $supported_sort_keys
 	-task selected_task
 		Select the tasks to be performed.
 		Supported tasks: $supported_tasks
@@ -807,23 +854,7 @@ OPTIONS
 	-nomap	do not draw feature maps (for saving time and hard disk space)
 
 FILE FORMAT
-    FAMILY FILE
-	The family file specifies the co;position of several gene families.
-	It is a text file containing 2 tab-separated columns.
-	col 1:	gene name (or ID)
-	col 2: family name
-	
-	Lines starting with a semicolumn (;) are ignored, allowing to
-	document the family files with comments..
-	
-	Example
-		; genes responding to Phosphate stress
-		pho5	PHO
-		pho8	PHO
-		; genes responding to nitrogen starvation
-		DAL5    NIT
-		GAP1    NIT
-		...
+    $HELP_FAMILY_FILE
 HOW TO PROCEED
     1) create a directory for the set of families
 
@@ -870,6 +901,7 @@ multiple-family-analysis options
 -n      	dry run: print commands without executing them
 -exp		expected frequency file
 -transp		transpose synthetic result table (columns become rows)
+-sort		sort key (supported: $supported_sort_keys)
 -task		selected task (supported: $supported_tasks)
 -dyad_exp_freq	expected frequencies for dyad-analysis
 -oligo_exp_freq	expected frequencies for oligo-analysis
@@ -961,6 +993,13 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] =~ /^-transp/) {
 	    $transpose = 1;
 
+	    #### sort key
+	} elsif ($ARGV[$a] =~ /^-sort/) {
+	    $sort_key = $ARGV[$a+1];
+	    unless ($supported_sort_key{$sort_key}) {
+		&FatalError("$sort_key is not supported as sort key");
+	    }
+
 	    #### clip upstream ORFs fom upstream regions
 	} elsif ($ARGV[$a] =~ /^-noorf/) {
 	    $noorf = 1;
@@ -1011,58 +1050,4 @@ sub ReadArguments {
     }
 }
 
-
-
-################################################################
-#### read gene families
-sub ReadFamilies {
-    warn "\n; Reading family file\t$family_file\n" 
-	if ($verbose >=1);
-    unless (-r $family_file) {
-	die "Error : cannot read family file $family_file\n";
-    }
-    
-    open FAM, $family_file || 
-	die "Error : cannot read file $family{$family_name}->{family_file}\n" ;
-    $line = 0;
-    while (<FAM>) {
-	$line++;
-	next if (/^;/);
-	next if (/^\#/);
-	next unless (/\S/);
-	chomp;
-	@fields = split /\s+/;
-	
-	### family name
-#    $family_name = uc($fields[1]);
-	$family_name = $fields[1];
-	unless ($family_name =~ /\S/) {
-	    warn ("Error family file $family_file line $line\t",
-	    "family not specified\n");
-	    next;
-	}
-	
-	### gene name or ID
-	$query = uc($fields[0]);
-	unless ($query =~ /\S/) {
-	    warn ("Error family file $family_file line $line\t",
-		  "gene not specified\n");
-	    next;
-	}
-	
-	### identify the gene
-	$id = $orf_id{$query};
-	if ($id eq "") {
-	    &Warning (";\tWARNING ! $query unknown gene name \n");
-	} else {
-	    push @{$family{$family_name}->{members}}, $id;
-	    warn "\t$family_name\t$query\t$id\t$name{$id}\n" 
-		if ($verbose >= 2);
-	}
-	
-    }
-    close FAM;
-    
-    @families = sort keys %family;
-}
 
