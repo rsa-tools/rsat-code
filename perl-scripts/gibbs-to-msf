@@ -2,7 +2,7 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
+require "RSA.lib";
 
 
 
@@ -23,6 +23,11 @@ DESCRIPTION
 	and exports them in a multiple file sequence format. See GCG manual
 	(http://www.gcg.com) for a description of the msf format.
 	
+CATEGORY
+	util
+	conversion
+	sequences
+
 OPTIONS
         -h      (must be first argument) display full help message
         -help   (must be first argument) display options
@@ -96,7 +101,7 @@ foreach $a (0..$#ARGV) {
 
 
 ### open input file ###
-$in = &OpenInputFile($inputfile);
+($in, $input_dir) = &OpenInputFile($inputfile);
 
 ### open output file ###
 $out = &OpenOutputFile($outputfile);
