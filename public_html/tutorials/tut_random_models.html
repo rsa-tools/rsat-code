@@ -1,0 +1,73 @@
+<html>
+<head>
+   <title>RSA-tools - tutorials - Random models</title>
+</head>
+<body text="#000000" bgcolor="#ffffff" link="#0000ee" vlink="#55008b" alink="#ff0000">
+<blockquote>
+
+<hr size=6 width="100%">
+<center>
+<h2><a href="../RSA_home.cgi">RSA-tools</A> - 
+<a href="tutorials.html">Tutorials</a> - 
+Random models
+</h2>
+</center>
+
+<hr size=6 width="100%">
+
+
+<p>The Regulatory Sequence Analysis Tools include two tools that probably
+fit your needs :
+
+
+<ol>
+
+<li><a href=../random-seq_form.cgi><b>random sequence</b></a>.  This
+program generates random sequences on the basis of various
+probabilistic background. One interesting model is to use Markov chain
+models, calibrated on the complete set off upstream sequences of an
+organism. This means that the generated sequences does not exist as a
+biological sequences, but it has the same oligonucleotide composition
+as the chosen background. 
+
+<li><a href=../random-genes_form.cgi><b>random genes</b></a>. This
+program selects a random set of gene identifiers in the selected
+genome. The selected genes can then be piped to the program
+retrieve-seq, which will retrieve the upstream sequences of the
+randomly selected genes. In this case, you will analyze real
+biological sequences, contrarily to the program random-sequences. The
+analysis of random gene sets is very useful to evaluate the rate of
+false positives of pattern discovery programs.
+
+</ol>
+
+<p>The analysis of random gene selections gives more realistic (and
+more severe) conditions than the randomly generated sequences, which
+rely on a quite strong assumption about the model underlying sequence
+composition (e.g. Markov chain: which order is the most appropriate ?
+Do biological sequences really resemble to the result of a Markov
+process ? ...).
+
+<h3>Next tutorials</h3>
+
+<ol>
+<li><a href=tut_random-seq.html>Random sequence generation</a>
+<li><a href=tut_random-genes.html>Random gene selections</a>
+</ol>
+
+<p>
+You can now come back to the <a href=tutorials.html>tutorial main
+page</a> and follow the next tutorials.
+
+</ul>
+<hr width="100%">
+<center>
+<address>
+For suggestions or information request, please contact <a
+href="mailto:jvanheld@ucmb.ulb.ac.be">Jacques van Helden
+(jvanheld@ucmb.ulb.ac.be)</a>
+</address></center>
+
+</blockquote>
+</body>
+</html>
