@@ -4,13 +4,6 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 require "RSA.lib";
 
-## CVS
-## - Added proba as return field
-## - improved Countmatches (matches between 2 ambiguous codes are supported)
-## - improved the output 
-## - implemented &BestMatch(), which slides seq2 along seq1 and returns the match with the highest weight
-## - added the options -lth and -uth
-
 ################################################################
 #### initialise parameters
 my $start_time = &AlphaDate();
