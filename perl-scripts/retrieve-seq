@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: retrieve-seq,v 1.5 2000/08/02 22:57:43 jvanheld Exp $
+# $Id: retrieve-seq,v 1.6 2000/08/03 01:28:02 jvanheld Exp $
 #
-# Time-stamp: <2000-08-03 00:56:40 jvanheld>
+# Time-stamp: <2000-08-03 02:16:40 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -25,21 +25,12 @@ if ($ARGV[0] eq "-help") {
 #### initialize parameters
 my $start_time = &AlphaDate;
 
-#  my %col = ();
-#  $col{'id'} = 0;
-#  $col{'kind'} = 1;
-#  $col{'name'} = 2;
-#  $col{'chrom'} = 3;
-#  $col{'left'} = 4;
-#  $col{'right'} = 5;
-#  $col{'strand'} = 6;
-#  $col{'descr'} = 8;
-
 my %chomosome = ();
 my $chrom = "";
-
 $seq_label = "full";  
 $sequence_type = "upstream";
+$default{from} = -400;
+$default{to} = -1;
 @queries = ();
 $out_format = "fasta";
 $line_width = 60;
@@ -56,14 +47,43 @@ $line_width = 60;
 ### organism ###
 if ($organism eq "") {
   die "Error: you should specify an organism\n$supported_organisms\n";  
+
 } elsif ($organism eq "yeast") {
-  $args = join " ", @ARGV;
-  if ($sequence_type eq "upstream") {
-    system "$SCRIPTS/upstream-region-yeast $args";
-  } elsif ($sequence_type eq "downstream") {
-    system "$SCRIPTS/downstream-region-yeast $args";
+#    $args = join " ", @ARGV;
+#    if ($sequence_type eq "upstream") {
+#      system "$SCRIPTS/upstream-region-yeast $args";
+#    } elsif ($sequence_type eq "downstream") {
+#      system "$SCRIPTS/downstream-region-yeast $args";
+#    }
+#    exit(0);
+
+  $feature_table_file = "$RSA/data/yeast/orfs/ORF_table.txt";
+  foreach my $chrom ("I",
+		     "II",
+		     "III",
+		     "IV",
+		     "V",
+		     "VI",
+		     "VII",
+		     "VIII",
+		     "IX",
+		     "V",
+		     "X",
+		     "XI",
+		     "XII",
+		     "XIII",
+		     "XIV",
+		     "XV",
+		     "XVI"
+		     ) {
+    my $chromosome_file = "$RSA/data/yeast/sequences/$chrom";
+    $chromosome{$chrom} = new RSA::SequenceOnDisk (filename=>  $chromosome_file,
+						   id=>        $chrom,
+						   circular=>  0, ### for bacterial genomes
+						   organism=>  $organism);
   }
-  exit(0);
+
+
 } elsif ($supported_organism{$organism}) {
   $feature_table_file = $supported_organism{$organism}->{'features'};
   $genome_file = $supported_organism{$organism}->{'genome'};
@@ -163,7 +183,6 @@ if ($warn_level) {
 #### retrieve the sequences ####
 QUERYLOOP: foreach $query (@queries) {
 
-
   unless (defined($orf_id{uc($query)})) {
     print $out ";WARNING\tinvalid query $query\n";
     next;
@@ -175,11 +194,11 @@ QUERYLOOP: foreach $query (@queries) {
   } else {
     $name = $orf_id;
   }
+  $chrom = $chr{$orf_id};
   $orf_left = $left{$orf_id};
   $orf_right = $right{$orf_id};
   $orf_strand = $strand{$orf_id};
   
-
   $current_from = $from;
   $current_to = $to;
   
@@ -245,6 +264,7 @@ QUERYLOOP: foreach $query (@queries) {
 	";",
 	$query, 
 	$orf_id, 
+	$chrom, 
 	$orf_left, 
 	$orf_right, 
 	$orf_strand,
@@ -257,7 +277,6 @@ QUERYLOOP: foreach $query (@queries) {
 	)
       if ($warn_level >= 2); 
  
-  
   $current_seq = $chromosome{$chrom}->get_sequence($reg_left,$reg_right,$orf_strand);
   
   
@@ -438,7 +457,7 @@ sub ReadArguments {
     } elsif (($ARGV[$a] eq "-w") &&
 	     (&IsNatural($ARGV[$a+1]))){
       $warn_level = $ARGV[$a+1];
-      
+
       #### new query
     } elsif ($ARGV[$a] eq "-q") {
       @queries = (@queries, $ARGV[$a+1]);
