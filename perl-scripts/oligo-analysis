@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.39 2002/03/06 18:51:16 jvanheld Exp $
+# $Id: oligo-analysis,v 1.40 2002/03/29 09:45:50 jvanheld Exp $
 #
-# Time-stamp: <2002-03-06 19:49:38 jvanheld>
+# Time-stamp: <2002-03-29 10:45:33 jvanheld>
 #
 ############################################################
 
@@ -167,7 +167,7 @@ if (($method eq "Frequency file") &&
 }
 
 ### open sequence file ###
-$in = &OpenInputFile($inputfile);
+($in, $input_dir) = &OpenInputFile($inputfile);
 
 $out = &OpenOutputFile($outputfile);
 
@@ -227,7 +227,7 @@ sub CountOligo {
 	}
 	print $out "\n";
     }
-    while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format)) &&
+    while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir)) &&
 	   (($current_seq) || ($current_id))) {
 	
 	### remove tabs and blank spaces ###    
@@ -818,12 +818,18 @@ sub CalcExpected {
 	    $avg_seq_length = $sum_seq_length/$sequence_number;
 	    $pos_per_seq = $avg_seq_length - $oligo_length + 1;
 	    $pos_per_seq *=2 if ($sum_strands);
-	    $one_seq_match_proba =  1 - (1-$patterns{$pattern_seq}->{exp_freq})**$pos_per_seq;
+	    
+	    $exp_freq_est = $patterns{$pattern_seq}->{exp_freq};
+	    
+	    $one_seq_match_proba =  1 - (1-$exp_freq_est)**$pos_per_seq;
+#	    $one_seq_match_proba =  &sum_of_binomials($exp_freq_est, $pos_per_seq, 1, $pos_per_seq);
 	    $patterns{$pattern_seq}->{exp_ms} =  $one_seq_match_proba*$sequence_number;
-
-	    $one_seq_match_proba =  1 - (1-$patterns{$pattern_seq}->{exp_freq}/$patterns{$pattern_seq}->{ovlp})**$pos_per_seq;
-	    $patterns{$pattern_seq}->{ems_cor} =  $one_seq_match_proba*$sequence_number;
-
+	    
+	    unless ($noov) {
+		$exp_freq_est = $patterns{$pattern_seq}->{exp_freq}/$patterns{$pattern_seq}->{ovlp};
+		$one_seq_match_proba =  1 - (1-$exp_freq_est)**$pos_per_seq;
+		$patterns{$pattern_seq}->{ems_cor} =  $one_seq_match_proba*$sequence_number;
+	    }
 	}
     }	
     
@@ -1028,7 +1034,9 @@ sub PrintResult {
     
     ### verbose ###
     if ($verbose >= 1) {
-	print $out "; oligo-analysis ", join(" ", @ARGV), "\n";
+	print $out "; oligo-analysis ";
+	&PrintArguments($out);
+	printf $out "; %s\n", "Citation: van Helden et al. (1998). J Mol Biol 281(5), 827-42. ";
 	if ($return{proba}) {
 	    if ($under_represented) {
 		printf $out "; %s\n", "Detection of under-represented words";
