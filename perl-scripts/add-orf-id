@@ -1,4 +1,12 @@
 #!/usr/bin/perl
+############################################################
+#
+# $Id: add-orf-id,v 1.2 2001/03/11 10:33:43 jvanheld Exp $
+#
+# Time-stamp: <2001-03-11 08:06:49 jvanheld>
+#
+############################################################
+
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
@@ -8,10 +16,6 @@ require "RSA.classes.pl";
 $start_time = $date = `date '+%d/%m/%y %H:%M:%S %Z'`;
 
 #### initialise parameters ####
-$orf_col = 0;
-$locus_col = 2;
-$exact = 0;
-$no_query = 0;
 
 &ReadArguments;
 
@@ -29,69 +33,30 @@ $out = &OpenOutputFile($outputfile);
 
 #### $verbose #####
 if ($verbose) {
-    print $out ";orf-info result\n";
+    print $out ";add-orf-id result\n";
     printf $out "; %-14s\t%s\n", "organism", $organism_name;
     if ($inputfile) {
 	print $out ";Query file	$inputfile\n";
-    } else {
-	print $out "; queries\n;\t";
-	print $out join ("\n;\t",@queries);
-	print $out "\n";
     }
     if ($outputfile) {
 	print $out ";Output file	$outputfile\n";
     }
 }
 
-
-
 #### read queries file ######
-if (($inputfile) || ($#queries == -1)) {
-    $in = &OpenInputFile($inputfile);
-    while (<$in>) {
-	next if (/^;/);
-	next unless (/\S/);
-	if  (/^\s*(\S+)/) {
-	    push(@queries, $1);
-	}
+$in = &OpenInputFile($inputfile);
+while (my $line = <$in>) {
+    next if ($line =~ /^;/);
+    next unless ($line =~ /\S/);
+    if  ($line =~ /^\s*(\S+)/) {
+#	my $query = $1;
+#	if (defined($orf_id{uc($query)})) {
+#	    print $out $orf_id{uc($query)}), "\t", $line;
+#	} else {
+#	    print $out ";WARNING: no orf for query $query\t", $line;
+#	}
     }
-    close $in if ($inputfile ne "");
-} elsif ($#queries == -1) {
-    @queries = $ARGV[0];
 }
-
-
-
-
-
-#### search orf info for all queries ####
-&Header;
-foreach $query (@queries) {
-    $query =~ tr/a-z/A-Z/;
-
-    $found = 0;
-
-    if ($exact) {
-	if (defined($orf_id{uc($query)})) {
-	    $found = 1;
-	    &PrintInfo($query,$orf_id{uc($query)});
-	}
-    } else {
-	foreach $key (keys %orf_id) {
-	    if ($key =~ /^$query$/i) {
-		$found = 1;
-		&PrintInfo($query, $orf_id{$key});
-		
-	    }
-	}
-    }
-
-    unless ($found) {
-	&PrintWarning($query);
-    }
-
-}
-
 
 
 if ($verbose) {
@@ -107,63 +72,20 @@ close $out unless ($outputfile eq "");
 exit(0);
 
 ########################## subroutine definition ############################
-sub Header {
-    if ($no_query) {
-	print $out ";";
-    } else {
-	print $out ";query";
-    }
-    print $out "\t", join ("\t", 
-			   "orf_id",
-			   "name",
-			   "chr",
-			   "strand",
-			   "left",
-			   "right",
-			   "description [synonyms]",
-#		     		     "\n", $orf_info{$orf_id}
-			   ), "\n";
-}
-
-sub PrintInfo {
-    my ($query, $orf_id) = @_;
-    unless ($no_query) {
-	print $out $query, "\t",
-    }    print $out join ("\t", 
-		     $orf_id,
-		     $preferred_name{$orf_id},
-		     $chr{$orf_id},
-		     $strand{$orf_id},
-		     $left{$orf_id},
-		     $right{$orf_id},
-		     $descr{$orf_id},
-#		     		     "\n", $orf_info{$orf_id}
-		     );
-    if (defined(@{$synonyms{$orf_id}})) {
-	print $out " [", join (";", @{$synonyms{$orf_id}}), "]";
-    }
-    print $out "\n";
-}
-
-sub PrintWarning {
-    my ($query) = @_;
-    print $out join ("\t", 
-		     ";WARNING",
-		     $query,
-		     "no info"), "\n";
-}
 
 
 sub PrintHelp {
   open HELP, "| more ";
-  print HELP "
+  print HELP <<End_of_help;
 USAGE
-	orf-info -org organism -q query
-	orf-info -org organism -q query1 -q query2 -q query3 ...
-	orf-info --org organism i query_file
+	add-orf-id -org organism i query_file
 
-	returns the information about ORFs specified either by their
-	ORF identifier, or by any supported synonym.
+DESCRIPTION
+
+	Taking as input a file where each line starts with a gene name
+	(or any supoprted synonym), adds a column in frot of it,
+	giving the ORF identifer. 
+
 
 OPTIONS
 	-h	display full help message
@@ -172,45 +94,10 @@ OPTIONS
 	-org	organism
 		Supported organisms :
 $supported_organisms
-	-q	query. can be reiterated within the same command line
-	-i	query file
+	-i	input file
 	-o	output file
-	-exact	exact match only (no substring matching)
-	-noquery	
-		do not print the query at the beginning of each line
 
-QUERY
-	The simplest way to enter a query is with the -q option :
-	    the query can be a ORF identifier 
-		orf-info -org yeast -q YML115C
-	    or a gene name
-		orf-info -org yeast -q arg81
-		
-	Regular expressions can be used in the query. In this case, it is safer to 
-	quote the query
-		orf-info -org yeast -q 'arg.*'
-		orf-info -org yeast -q '.*4'
-		
-	The search is case insensitive.
-	
-	Several queries can be combined on the command line by
-	iterative use of the -q command :
-		orf-info -org yeast -q pho5 -q pho81 -q pho11
-
-	Alternatively, a list of queries can be provided in a text
-	file. The first word of each line is considered as a new
-	query.
-		orf-info -org yeast -i query_file.txt
-
-SYNONYMS
-	It often happens that a gene bears several names. 
-	orf-info will look for all synonyms of the query.
-		orf-info -org yeast -q nil1 
-	will provide the information about its synonym GAT1.
-
-WEB VERSION
-	http://www.ucmb.ulb.ac.be/bioinformatics/rsa-tools/
-";
+End_of_help
   close HELP;
   exit(0);
 }
@@ -219,19 +106,16 @@ sub PrintOptions {
 #### display short help message #####
   open HELP, "| more";
   print HELP <<End_short_help;
-orf-info options
-----------------
+add-orf-id options
+------------------
 -h		display full help message
 -help		display options
 -v		verbose
 -org		organism
 	Supported organisms :
 $supported_organisms
--i		query file
+-i		input file
 -o		output file
--q		query (can be reiterated on the same command line)
--exact		exact match only (no substring matching)
--noquery	do not print the query at the beginning of each line
 
 End_short_help
   close HELP;
@@ -257,21 +141,9 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-org") {
 	    $organism_name =$ARGV[$a+1];
 	    
-	    #### exact match only
-	} elsif ($ARGV[$a] eq "-exact") {
-	    $exact = 1;
-	    
-	    #### don't print the query in output
-	} elsif ($ARGV[$a] eq "-noquery") {
-	    $no_query = 1;
-	    
 	    ### input file ###
 	} elsif ($ARGV[$a] eq "-i") {
 	    $inputfile = $ARGV[$a+1];
-	    
-	    ### query ###
-	} elsif ($ARGV[$a] eq "-q") {
-	    push(@queries, $ARGV[$a+1]);
 	    
 	    ### output file ###
 	} elsif ($ARGV[$a] eq "-o") {
