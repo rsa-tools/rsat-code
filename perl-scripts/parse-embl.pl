@@ -1,7 +1,7 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: parse-embl.pl,v 1.4 2003/11/30 07:45:45 jvanheld Exp $
+# $Id: parse-embl.pl,v 1.5 2003/11/30 22:23:07 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:17:49 jvanheld>
 #
@@ -104,13 +104,14 @@ package main;
     local %infile = ();
     local %outfile = ();
     $outfile{stats} = "embl_stats.txt";
-
+    $outfile{errors} = "embl_errors.txt";
     local $verbose = 0;
     local $in = STDIN;
     local $out = STDOUT;
     local $test_lines = 1000;
     local $feature_count = 0;
-    
+    %feature_out_fields = (); #### index of feature out fields, for checking extra fields
+    %feature_extra_fields = (); #### index of feature out fields, for checking extra fields
 
     #### SQL options
     $host= $default{'host'};
@@ -149,36 +150,48 @@ package main;
     
     #### Features
     my $features = classes::ClassFactory->new_class(object_type=>"EMBL::Feature",prefix=>"ft_");
-    $features->set_out_fields(qw( id
-				  type
-				  name
-				  contig
-				  start
-				  end
-				  strand
-				  description
-				  organism
-				  chromosome
-				  position
-				  names
-				  db_xref
-				  introns
-				  exons
-				  
-				  EC_number
-				  
-				  function
-				  isolate
-				  mol_type
-				  note
-				  product
-				  translation
-				  strain
-				  locus_tag
-				  sub_strain
-				  bound_moiety
-				  
-				  ));
+    @feature_out_fields = qw( id
+			      type
+			      name
+			      contig
+			      start
+			      end
+			      strand
+			      description
+			      organism
+			      chromosome
+			      position
+			      names
+			      db_xref
+			      introns
+			      exons
+			      
+			      EC_number
+
+			      codon_start
+			      gene
+			      protein_id
+			      transl_table
+			      function
+			      isolate
+			      mol_type
+			      note
+			      product
+			      translation
+			      strain
+			      locus_tag
+			      sub_strain
+			      bound_moiety
+			      
+			      ); 
+    $features->set_out_fields(@feature_out_fields);
+
+    #### index feature out fields for later checking
+    foreach my $field (@feature_out_fields) {
+	$feature_out_fields{$field}++;
+    }
+#die join "'\n'", keys %feature_out_fields, "\n";
+
     #### classes
     @classes = qw ( EMBL::Feature
 		  EMBL::Contig
@@ -234,6 +247,8 @@ package main;
 	warn "; Auto selection of output dir\t$dir{output}\n" if ($verbose >= 1);
     }
     &CheckOutputDir($dir{output});
+    chdir $dir{output};
+    open ERR, ">$outfile{errors}";
 
     #### verbose ####
     &Verbose() if ($verbose);
@@ -260,7 +275,7 @@ package main;
     #### Postprocessing : we interpret the features to extract more information
     #### check some feature attributes (name, description, ...)
 
-    warn "Processing features\n" if ($verbose >= 1);
+    warn "; Processing features\n" if ($verbose >= 1);
     my $organism_name = $org; #### first guess
     my $chromosome = "";
     foreach $feature ($features->get_objects()) {
@@ -269,19 +284,45 @@ package main;
 	if ($feature->get_attribute("type") eq "source") {
             $organism_name = $feature->get_attribute("organism");
             $chromosome = $feature->get_attribute("chromosome");
-            unless ($chromosome) {
+            if (($chromosome eq "") || ($chromosome eq $null)) {
 		$chromosome = $feature->get_attribute("contig");
-            }
-# die "HELLO $chromosome";
+		$feature->set_attribute("chromosome", $chromosome);
+	    }
         } else {
            $feature->set_attribute("organism", $organism_name);
-           $feature->set_attribute("chromosome", $chromosome);
+	   $feature->set_attribute("chromosome", $chromosome);
         }
 	
-#	foreach my $name ($feature->get_attribute("feature")) {
-#	    $feature->push_attribute("names",$name);
-#	};
+        ### use gene attribute as name
+	foreach my $name ($feature->get_attribute("gene")) {
+	    if ($feature->get_attribute("type") eq "CDS") {
+		$feature->push_attribute("names",$name);
+	    } else {
+		$feature->push_attribute("names",$name." ".$feature->get_attribute("type"));
+	    }
+	}
+
+	### add protein_id as valid name
+	@protein_ids = $feature->get_attribute("protein_id");
+	if ($#protein_ids >= 0) {
+#	    $feature->force_attribute("id", $protein_ids[0]); #### Use protein ID as ID for the CDS
+	    foreach my $id (@protein_ids) {
+		$feature->push_attribute("names",$id);
+	    }
+	}
 	
+
+	#### add SWISS-PROT ID as valid name
+	my @xrefs = $feature->get_attribute("db_xref");
+	my $gi = "";
+	foreach my $xref (@xrefs) {
+	    if (($xref =~ /SWISS-PROT:/) ||
+		($xref =~ /SPTREMBL:/)) {
+		my $name = $';
+		$feature->push_attribute("names",$name);		
+	    } 
+	}
+
 	### define a single name  (take the first value in the name list)
 	if ($name = $feature->get_name()) {
 	    $feature->set_attribute("name",$name);
@@ -299,20 +340,21 @@ package main;
             $feature->set_attribute("description",$description);
         }
 	
-	#### use GI as feature identifier
-	my @xrefs = $feature->get_attribute("db_xref");
-	my $gi = "";
-	foreach my $xref (@xrefs) {
-	    if ($xref =~ /GI:/) {
-		$gi = $';
-		last;
-	    } 
-	}
-	if ($gi) {
-	    $feature->force_attribute("id",$gi);
-	} else {
-	    &ErrorMessage("; Error\tfeature ".$feature->get_attribute("id")." has no GI.\n"); 
-	}
+
+#  	#### use GI as feature identifier
+#  	my @xrefs = $feature->get_attribute("db_xref");
+#  	my $gi = "";
+#  	foreach my $xref (@xrefs) {
+#  	    if ($xref =~ /GI:/) {
+#  		$gi = $';
+#  		last;
+#  	    } 
+#  	}
+#  	if ($gi) {
+#  	    $feature->force_attribute("id",$gi);
+#  	} else {
+#  	    &Warning("feature\t".$feature->get_attribute("id")."\thas no GI.\n") if ($verbose >= 2); 
+#  	}
 	
 #  	#### use embl name as chromosome name
 #  	my $source = $feature->get_attribute("source");
@@ -338,6 +380,16 @@ package main;
     &ExportMakefile(@classes);
     &PrintStats($outfile{stats}, @classes);
 
+    #### document the ffields which were parsed but not exported
+    chdir($dir{output});
+    open STATS, ">>$outfile{stats}";
+    print STATS "; \n; Fields parsed but not exported\n";
+    foreach my $key (sort keys %feature_extra_fields) {
+	my $value = $feature_extra_fields{$key};
+	printf STATS ";\t%-20s\t%d\n", $key, $value;
+    }
+    close STATS;
+
     ###### verbose ######
     if ($verbose) {
 	my $done_time = &AlphaDate();
@@ -345,10 +397,10 @@ package main;
 	print $out "; Job done    $done_time\n";
     }
 
-
     ###### close output file ######
     close $out if ($outfile{output});
-    
+    close ERR;
+
     warn "; Results exported in directory\t", $dir{output}, "\n" if ($verbose >= 1);
 
     exit(0);
@@ -460,6 +512,17 @@ OUTPUT
 	tables, with a foreign key to the feature ID.
 
 
+	The program also exports a file embl_stats.txt, with
+	statistics about the number of objects parsed for each calss,
+	and the number of attribute allocations. The stats file also
+	contains a list of attributes which were found in the original
+	EMBL file, but not exported because they were not part of the
+	predefined list of attributes to export
+	(\@feature_out_fields). This allows to complete this list when
+	some features are annotated in some organisms, which were not
+	identified in the organisms used for the development of this
+	program.
+
 End_of_help
   close HELP;
   exit;
@@ -485,7 +548,7 @@ parse-embl options
 -password	database password (default: $password)
 End_short_help
   close HELP;
-  exit;
+  exit();
 }
 
 ################################################################
@@ -502,11 +565,11 @@ sub ReadArguments {
 	    
 	    ### detailed help
 	} elsif ($ARGV[$a] eq "-h") {
-	    &PrintHelp;
+	    &PrintHelp();
 	    
 	    ### list of options
-	} elsif ($ARGV[0] eq "-help") {
-	    &PrintOptions;
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions();
 	    
 	    ### quick test
 	} elsif ($ARGV[$a] eq "-test") {
@@ -633,7 +696,7 @@ sub ParseEMBLFile {
 	    $contig = $contigs->new_object(id=>$1);
 	    my $contig_description = $';
 	    $contig->set_attribute("description",$contig_description);
-	    $contig->set_attribute("file",$file);
+	    $contig->set_attribute("file",$input_file);
 
 	    #### contig length
 	    if ($contig_description =~ /(\d+)\s+BP\./i) {
@@ -712,9 +775,9 @@ sub ParseEMBLFile {
 		    $l++;
 		    chomp($line);
 		    if (($line =~ /^FT   (\S+)\s+(.*)/) ||
-			($line =~ /^FT    \s+\/(\S+)\=\"/)) {
+			($line =~ /^FT    \s+\/(\S+)\=/)) {
 			last;
-		    } elsif ($line =~ /^FT    \s+[^\/](\S+)/) {
+		    } elsif ($line =~ /^FT    \s+([^\/]\S+)/) {
 			$position .= $1;
 		    } else {
 			die "Error: feature position started at line $start_line not properly terminated at line $l\n";
@@ -750,29 +813,40 @@ sub ParseEMBLFile {
 
 
 	#### new feature attribute
-	if ($line =~ /^FT    \s+\/(\S+)\=\"/) {
+	if ($line =~ /^FT    \s+\/(\S+)\=/) {
 	    my $key = $1;
+	    #### check that this attribute is part of the exported ones
+	    unless ($feature_out_fields{$key}) {
+		$feature_extra_fields{$key}++;
+	    }
+
 	    my $value = $';
 	    my $start_l = $l;
 
-	    if  ($value =~ /\"\s*$/) {
-		#### value terminates on the first line
-		$value = $`;
-	    } else {
-		#### collect following lines until value is terminated
-		while ($line = <$file>) {
-		    chomp $line;
-		    $l++;
-		    if  ($line =~ /^FT\s+/) {
-			#### value is included in the first line
-			$value .= " ".$';
-			if  ($value =~ /\"\s*$/) {
-			    #### value is terminated
-			    $value = $`;
-			    last;
+	    #### If the attribute starts with a quote, make sure to
+	    #### have the closing quote, and trim the quotes
+	    if  ($value =~ /^\"/) {
+		$value = $'; #### trim the leading quote
+
+		if ($value =~ /\"\s*$/) {
+		    #### value terminates on the first line
+		    $value = $`; #### retain what precedes the closing quote
+		} else {
+		    #### collect following lines until value is terminated
+		    while ($line = <$file>) {
+			chomp $line;
+			$l++;
+			if  ($line =~ /^FT\s+/) {
+			    #### value is included in the first line
+			    $value .= " ".$';
+			    if  ($value =~ /\"\s*$/) {
+				#### value is terminated
+				$value = $`;
+				last;
+			    }
+			} else  {
+			    die "Error: feature attribute started at line $start_l is not terminated at line $l\n";
 			}
-		    } else  {
-			die "Error: feature attribute started at line $start_l is not terminated at line $l\n";
 		    }
 		}
 	    }
@@ -782,6 +856,8 @@ sub ParseEMBLFile {
 		$value =~ s/\s//g;
 	    }
 
+
+	    #### add the new attribtue to the feature
 	    $current_feature->new_attribute_value($key, $value);
 	    warn join ("\t", "; attribute", $feature_count, $start_l, $l, $key, $value), "\n" if ($verbose >= 4);
 
@@ -853,8 +929,14 @@ sub ParsePositionEMBL {
 	}
     }
 
-    $current_feature->set_attribute("start",$exon_starts[0]);
-    $current_feature->set_attribute("end",$exon_ends[$#exon_ends]);
+    if ($#exon_starts >= 0) {
+	$current_feature->set_attribute("start",$exon_starts[0]);
+	$current_feature->set_attribute("end",$exon_ends[$#exon_ends]);
+    } else {
+	$current_feature->set_attribute("start",$null);
+	$current_feature->set_attribute("end",$null);
+	&ErrorMessage(join ("\t", "Invalid position for feature", $feature_counts, $feature->get_attribute("id")), "\n");
+    }
     $current_feature->set_attribute("strand",$strand);
 
 
