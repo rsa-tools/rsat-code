@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.8 2005/03/13 10:27:51 jvanheld Exp $
+# $Id: convert-matrix,v 1.9 2005/03/22 23:12:10 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -28,12 +28,13 @@ local %outfile = ();
 #local $infile{input} = "";
 #local $outfile{output} = "";
 local $input_format = "";
+local $output_format = "patser";
 local $verbose = 0;
 local $out = STDOUT;
 
-## Return formats
-@return_formats = ();
-%supported_return_format = (
+## Return type(s)
+@return_types = ();
+%supported_return_type = (
 			    "profile"=>1,
 			    "counts"=>1,
 			    "frequencies"=>1,
@@ -43,7 +44,7 @@ local $out = STDOUT;
 			    "consensus"=>1,
 			    "margins"=>1
 			    );
-$supported_return_formats = join ",", sort keys %supported_return_format;
+$supported_return_types = join ",", sort keys %supported_return_type;
 
 ## input formats
 %supported_input_format = ('consensus'=>1,
@@ -52,6 +53,11 @@ $supported_return_formats = join ",", sort keys %supported_return_format;
 			   'gibbs'=> 1,
 			   'clustal'=>1);
 $supported_input_formats = join ",", sort keys %supported_input_format;
+
+## output formats
+%supported_output_format = ('patser'=>1,
+			    "MotifSampler"=>1);
+$supported_output_formats = join ",", sort keys %supported_output_format;
 
 &ReadArguments();
 
@@ -64,14 +70,14 @@ unless ($input_format) {
     &RSAT::error::FatalError("You should specify the input matrix format.");
 }
 
-## return formats
-local %return_formats = ();
-&RSAT::error::FatalError("You should define at least one return format") unless (@return_formats);
-foreach my $format (@return_formats) {
-    if ($supported_return_format{$format}) {
+## return type(s)
+local %return_types = ();
+&RSAT::error::FatalError("You should define at least one return type") unless (@return_types);
+foreach my $format (@return_types) {
+    if ($supported_return_type{$format}) {
 	$return{$format}++;
     } else {
-	&RSAT::error::FatalError("Invalid return format $format. Supported: ".$supported_return_formats);
+	&RSAT::error::FatalError("Invalid return type $format. Supported: ".$supported_return_types);
     }
 }
 
@@ -114,7 +120,8 @@ $current_matrix->force_attribute("margins", $return{margins});
 ## Print the profile matrix
 if ($return{profile}) {
     print $out $current_matrix->toString(sep=>"\t",
-					 type=>"profile"
+					 type=>"profile",
+					 format=>$output_format,
 					 );
 }
 
@@ -122,7 +129,8 @@ if ($return{profile}) {
 ## Print the counts matrix
 if ($return{counts}) {
     print $out $current_matrix->toString(sep=>"\t",
-					 type=>"counts"
+					 type=>"counts",
+					 format=>$output_format,
 					 );
 }
 
@@ -131,7 +139,8 @@ if ($return{frequencies}) {
     $current_matrix->calcFrequencies();
     print $out $current_matrix->toString(col_width=>($decimals+4), 
 					 decimals=>$decimals, 
-					 type=>"frequencies");
+					 type=>"frequencies",
+					 format=>$output_format);
 }
 
 ## Calculate weight matrix
@@ -139,7 +148,8 @@ if ($return{weights}) {
     $current_matrix->calcWeights();
     print $out $current_matrix->toString(col_width=>($decimals+4), 
 					 decimals=>$decimals, 
-					 type=>"weights");
+					 type=>"weights",
+					 format=>$output_format);
 }
 
 ## Calculate information content matrix
@@ -147,7 +157,8 @@ if ($return{information}) {
     $current_matrix->calcInformation();
     print $out $current_matrix->toString(col_width=>($decimals+4), 
 					 decimals=>$decimals, 
-					 type=>"information");
+					 type=>"information",
+					 format=>$output_format);
 }
 
 
@@ -240,11 +251,45 @@ OPTIONS
 		file does not contain any indication of prior
 		frequencies, equal priors are assumed.
 
-	-format	input matrix format
+	-in_format	
+		input matrix format
 		Supported: $supported_input_formats
 
-	-return	return formats
-		Supported: $supported_return_formats
+	-return	return type
+		Supported: $supported_return_types
+
+		convert-matrix allows to perform various conversions, starting
+		from an input occurrence matrix, in order to obtain various
+		statistics such as frequencies, weights, information contents,
+		.... The supported return types are described in detail below.
+
+	-out_format	
+		output matrix format. 
+		Supported: $supported_output_formats
+
+		The option -out_format allows to export the matrix in
+		different formats in order to use it as input for various
+		pattern matching programs (e.g. patser, MotifScanner, ...).
+
+		The option -return allows to specify the matrix content, the
+		option -out_format its format. 
+
+		Beware: each of these programs expectes to find a specific
+		type of information in the matrix. For instance, patser uses a
+		matrix of counts (or optionnally weights), whereas
+		MotifScanner uses a frequency matrix. 
+		
+		In order to use a matrix as input for another program, the
+		verbosity should be set to 0, in order to avoid comment lines
+		(which would be misinterpreted by other programs).
+		
+		Recommended combinations of parameters
+		
+		Input for patser
+		      -return counts -out_format patser -v 0
+		
+		Input for MotifScanner
+		      -return frequencies -out_format MotifScanner -v 0
 
 	-pseudo	
 		pseudo-weight used for the calculation of the weight
@@ -422,8 +467,9 @@ convert-matrix options
 -i		input file
 -o		output file
 -v		verbose
--format		input matrix format. Supported: $supported_input_formats
--return		return formats. Supported: $supported_return_formats
+-in_format	input matrix format. Supported: $supported_input_formats
+-out_format	output matrix format. Supported: $supported_output_formats
+-return		return type(s). Supported: $supported_return_types
 -prior 		prior frequency file
 -pseudo		pseudo-weight (default: $pseudo_weight)
 -decimals	number of decimals digits to print for real matrices
@@ -466,17 +512,24 @@ sub ReadArguments {
     } elsif ($ARGV[$a] eq "-o") {
       $outfile{output} = $ARGV[$a+1];
       
-      ### return formats
+      ### return type(s)
     } elsif ($ARGV[$a] eq "-return") {
-      my $return_formats = $ARGV[$a+1];
-      push @return_formats, split(",", $return_formats);
+      my $return_types = $ARGV[$a+1];
+      push @return_types, split(",", $return_types);
 
 
       ### input format 
-    } elsif ($ARGV[$a] eq "-format") {
+    } elsif ($ARGV[$a] eq "-in_format") {
       $input_format = $ARGV[$a+1];
       unless ($supported_input_format{$input_format}) {
 	  &RSAT::error::FatalError("$input_format\tInvalid format for input matrix\tSupported: $supported_input_formats");
+      }
+
+      ### output format 
+    } elsif ($ARGV[$a] eq "-out_format") {
+      $output_format = $ARGV[$a+1];
+      unless ($supported_output_format{$output_format}) {
+	  &RSAT::error::FatalError("$output_format\tInvalid format for output matrix\tSupported: $supported_output_formats");
       }
 
       ### pseudo-weight
