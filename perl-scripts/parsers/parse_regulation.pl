@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_regulation.pl,v 1.3 2001/10/16 08:12:26 jvanheld Exp $
+# $Id: parse_regulation.pl,v 1.4 2002/11/25 17:45:21 jvanheld Exp $
 #
-# Time-stamp: <2001-10-16 10:11:34 jvanheld>
+# Time-stamp: <2002-11-25 11:44:45 jvanheld>
 #
 ############################################################
 ### parse_regulation.plt
@@ -18,10 +18,14 @@ require "PFBP_config.pl";
 require "PFBP_util.pl";
 require "PFBP_parsing_util.pl";
 
+################################################################
+#
+# Main program
+#
 package main;
 {
     ### default parameters
-    $warn_level = 0;
+    $verbose = 0;
     $debug = 0;
     $clean = 0;
 
@@ -35,7 +39,7 @@ package main;
     $dir{output} = "$parsed_data/regulation_parsed/$delivery_date";
     $dir{delivery} = "/win/amaze/amaze_programs/amaze_oracle_data";
     unless (-d $dir{output}) {
-	warn "Creating output dir $dir{output}\n"  if ($warn_level >= 1);
+	warn "Creating output dir $dir{output}\n"  if ($verbose >= 1);
 	`mkdir -p $dir{output}`;
 	die "Error: cannot create directory $dir\n" 
 	    unless (-d $dir{output});
@@ -49,11 +53,11 @@ package main;
 
 
 
-    &ReadArguments;
+    &ReadArguments();
 
     #### remove all files from the output directory
     if ($clean) {
-	warn "; Cleaning output directory $dir{output}\n" if ($warn_level >=1);
+	warn "; Cleaning output directory $dir{output}\n" if ($verbose >=1);
 	system "\\rm -f $dir{output}/*.tab.gz  $dir{output}/*.txt.gz $dir{output}/*.obj.gz" ;
 	system "\\rm -f $dir{output}/*.tab  $dir{output}/*.txt $dir{output}/*.obj" ;
     }
@@ -64,13 +68,13 @@ package main;
 
     ### testing mode
     if ($test) {
-	warn ";TEST\n" if ($warn_level >= 1);
+	warn ";TEST\n" if ($verbose >= 1);
 	### fast partial parsing for debugging
 	$in_file{metabolic_regulation} .= " head -10 |";
     }
 
     ### default verbose message
-    &DefaultVerbose if ($warn_level >= 1);
+    &DefaultVerbose if ($verbose >= 1);
 
     #### class factories
     $controlOfControls = PFBP::ClassFactory->new_class(object_type=>"PFBP::ControlOfControl",
@@ -130,7 +134,6 @@ package main;
     &ParseRegulation($in_file{metabolic_regulation});
     &IdentifyInputsOutputs();
 
-
     ### print result
     $transcriptionalRegulations->dump_tables();
     #$controlOfControls->dump_tables();
@@ -146,7 +149,7 @@ package main;
     &PrintStats($out_file{stats}, @classes);
 
     ### report execution time
-    if ($warn_level >= 1) {
+    if ($verbose >= 1) {
 	$done_time = `date +%Y-%m-%d.%H%M%S`;
 	warn ";\n";
 	warn "; job started $start_time";
@@ -173,29 +176,9 @@ package main;
 # SUBROUTINES
 #
 
-#### copy the required files to the delivery directory
-sub deliver {
-    warn "; Delivering parsed data to directory $dir{delivery}.\n" if ($warn_level >=1); 
-    my @files_to_deliver = qw (
-			       TranscriptionalRegulation.tab
-			       );
-    foreach my $file (@files_to_deliver) {
-	unless (-d $dir{delivery}) {
-	    die "Error: the delivery directory $dir{delivery} does not exist\n.";
-	}
-	$source_file = "$dir{output}/$file";
-	if (-e $source_file) {
-	    system "cp $source_file $dir{delivery}/";
-#	    } elsif (-e "${source_file}.gz") {
-#		system "cp ${source_file}.gz $dir{delivery}/; gunzip $dir{delivery}/${file}.gz";
-	} else {
-	    die "Error: cannot deliver the file $source_file\n.";
-	}
-    }
-}
 
+################################################################
 ### print the help message 
-### when the program is called with the -h or -help option
 sub PrintHelp {
   open HELP, "| more";
   print <<EndHelp;
@@ -211,24 +194,16 @@ AUTHOR
 	Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)  
 
 SYNOPSIS	
-	parse_regulation.pl [-h] [-help] [-test] [-w #] 
+	parse_regulation.pl [-h] [-help] [-test] [-v #] 
 		[-i infile] [-o outfile]
 
 OPTIONS	
-	-h	detailed help
-	-help	short list of options
-	-test	fast parsing of partial data, for debugging
+$generic_option_message
 	-d	debug
 		export additional info for debugging (e.g. indexes
-	-clean remove all files from the outpu directory before
-	       parsing.
 	-deliver 
 		copy the relevant files in the delivery directory,
 		for loading in the aMAZE database. 
-	-w #	warn level
-		Warn level 1 corresponds to a restricted verbose
-		Warn level 2 reports all polypeptide instantiations
-		Warn level 3 reports failing get_attribute()
 	-i	input file
 		If ommited, STDIN is used
 		This allows to insert the program within a unix pipe
@@ -242,7 +217,7 @@ EndHelp
   
 
 
-
+################################################################
 ### read arguments from the command line
 sub ReadArguments {
     my $a = 0;
@@ -250,9 +225,9 @@ sub ReadArguments {
 #    for $a (0..$#ARGV) {
 
 	### warn level
-	if (($ARGV[$a] eq "-w" ) && 
+	if (($ARGV[$a] eq "-v" ) && 
 	    ($ARGV[$a+1] =~ /^\d+$/)){
-	    $main::warn_level = $ARGV[$a+1];
+	    $main::verbose = $ARGV[$a+1];
 	    $a++;
 
 	    ### fast test
@@ -304,7 +279,11 @@ sub ReadArguments {
     }
 }
 
- 
+################################################################
+#
+# Parse the tab-delimited file containing the description of the
+# regulatory interactions
+#
 sub ParseRegulation {
     my ($input_file) = @_;
     my $filename = `basename $input_file`;
@@ -403,7 +382,7 @@ sub ParseRegulation {
 		       $key, 
 		       $value,
 		       $field{$key}
-		       ), "\n" if ($warn_level >=4);
+		       ), "\n" if ($verbose >=4);
 	}
 	unless (defined($class_holder{$field{controlType}})) {
 	    &ErrorMessage(join ("\t", 
@@ -427,7 +406,7 @@ sub ParseRegulation {
 	warn ($field{controlledFrom}, "\t",
 	      $#control_outputs + 1, "\t",
 	      join ("\t", @control_outputs), "\n" )
-	    if ($warn_level >=4);
+	    if ($verbose >=4);
 
 	foreach my $control_output (@control_outputs) {
 	    $field{controlledFrom} = $control_output;
@@ -446,7 +425,7 @@ sub ParseRegulation {
 	    
 	    #### change the names of attributes to have an uniform source
 	    $current_control->set_attribute("biblio_source", $current_control->get_attribute("source"));
-	    $current_control->set_attribute("source", $filename); #### for error report
+	    $current_control->force_attribute("source", $filename); #### for error report
 	    $current_control->set_attribute("line", $l);        #### for error report
 	    $current_control->set_attribute("is_positive", $is_positive{$field{controlType}});
 
@@ -467,30 +446,35 @@ sub ParseRegulation {
     close $in if ($input_file);
 }
 
+
+################################################################
+#
+# Load index files
+#
 sub LoadIndexes {
     #### load indexes
     warn ("; Loading index files\n") 
-	if ($warn_level >= 1);
+	if ($verbose >= 1);
 
     #### gene expressions (WARNING : these are unstable ObjectIDs)
 #    $index{gene_expression} = PFBP::Index->new();
 #    warn ("; ", &AlphaDate(), "\tgene_expression index from file ", $dir{amaze_export}."/gene_expression.tab","\n") 
-#	if ($warn_level >= 1);
+#	if ($verbose >= 1);
 #    $index{gene_expression}->load($dir{amaze_export}."/gene_expression.tab", 1, 1);
 
     #### polypeptide names from amaze export
 #    $index{polypeptides} = PFBP::Index->new();
 #    $polypeptide_index_file = $dir{amaze_export}."/polypeptides.tab";
 #    warn ("; ", &AlphaDate(), "\tpolypeptide index ...\n") 
-#	if ($warn_level >= 1);
+#	if ($verbose >= 1);
 #    $index{polypeptides}->load($polypeptide_index_file, 1, 1);
 
     #### gene names
     $index{name_gene} = PFBP::Index->new();
     $gene_name_index_file = "gunzip -c /win/amaze/amaze_data/parsed_data/kegg_parsed/20001213/Gene_names.tab.gz | grep -v '^--' | grep -v 'H.sapiens' | ";
     warn ("; ", &AlphaDate(), "\tgene name index ...\n") 
-	if ($warn_level >= 1);
-    $index{name_gene}->load($gene_name_index_file, 0, 1, reverse=>1);
+	if ($verbose >= 1);
+    $index{name_gene}->load($gene_name_index_file, 1, 0, reverse=>1);
 
     #### gene organism
     $index{gene_organism} = PFBP::Index->new();
@@ -501,7 +485,7 @@ sub LoadIndexes {
     $gene_organism_index_file .= " grep -v 'H.sapiens' |";
 #    $gene_organism_index_file .= " perl -pe 's|H.sapiens|Homo sapiens|' |";
     warn ("; ", &AlphaDate(), "\tgene organism index ...\n") 
-	if ($warn_level >= 1);
+	if ($verbose >= 1);
     $index{gene_organism}->load($gene_organism_index_file, 0, 0);
 
 
@@ -509,18 +493,18 @@ sub LoadIndexes {
     $index{name_polypeptide} = PFBP::Index->new();
     $polypeptide_name_index_file = "gunzip -c /win/amaze/amaze_data/parsed_data/swissprot_parsed/20001212/Polypeptide_names.tab.gz  | grep -v '^--' |";
     warn ("; ", &AlphaDate(), "\tpolypeptide name index ...\n") 
-	if ($warn_level >= 1);
-    $index{name_polypeptide}->load($polypeptide_name_index_file, 0, 1, reverse=>1);
+	if ($verbose >= 1);
+    $index{name_polypeptide}->load($polypeptide_name_index_file, 1, 0, reverse=>1);
 
     #### polypeptide organisms from swissprot
     $index{polypeptide_organism} = PFBP::Index->new();
     $polypeptide_organism_index_file = "gunzip -c /win/amaze/amaze_data/parsed_data/swissprot_parsed/20001212/Polypeptide_organisms.tab.gz  | grep -v '^--'|";
     warn ("; ", &AlphaDate(), "\tpolypeptide organism index ...\n") 
-	if ($warn_level >= 1);
+	if ($verbose >= 1);
     $index{polypeptide_organism}->load($polypeptide_organism_index_file, 0, 1);
 
     #### report index sizes
-    if ($warn_level >=1) {
+    if ($verbose >=1) {
 	warn ("; Index sizes\n");
 	foreach $key (keys %index) {
 	    warn (";\t", 
@@ -539,12 +523,19 @@ sub LoadIndexes {
 }
 
 
+
+
+################################################################
+#
+# Check whether factor-coding genes and target genes have an ID in
+# KEGG
+#
 sub IdentifyInputsOutputs {
     foreach my $trreg ($transcriptionalRegulations->get_objects()) {
-
+	
 	#### matching factors
 	my $factor_name = $trreg->get_attribute("input");
-	$trreg->set_attribute("factor_id", "<NULL>");
+	$trreg->set_attribute("factor_id", $null);
 	$trreg->set_attribute("factor_name", $factor_name);
 	my @matching_factors = $index{name_polypeptide}->get_values(&standardize($factor_name));
 	
@@ -565,14 +556,14 @@ sub IdentifyInputsOutputs {
 	    
 	    foreach my $factor_id (@matching_factors) {
 		warn ("adding polypeptide $factor_id as input for $trreg\n") 
-		    if ($warn_level >=3);
+		    if ($verbose >=3);
 		$trreg->new_attribute_value("input_ids", $factor_id);
 	    }
 	}
 
 	#### matching genes
 	my $gene_name = $trreg->get_attribute("controlledFrom");
-	$trreg->set_attribute("gene_id", "<NULL>");
+	$trreg->set_attribute("gene_id", $null);
 	$trreg->set_attribute("gene_name", $gene_name);
 	my @matching_genes = $index{name_gene}->get_values(&standardize($gene_name));
 
@@ -593,7 +584,7 @@ sub IdentifyInputsOutputs {
 	    
 	    foreach my $gene_id (@matching_genes) {
 		warn ("adding polypeptide $gene_id as output for $trreg\n") 
-		    if ($warn_level >=3);
+		    if ($verbose >=3);
 		$trreg->new_attribute_value("output_ids", $gene_id);
 	    }
 	}
@@ -603,25 +594,5 @@ sub IdentifyInputsOutputs {
 	$description .= " ".$trreg->get_attribute("controlType");
 	$description .= " ".$gene_name;
 	$trreg->set_attribute("description", $description);
-
-	#### matching_expressions
-#	my @matching_expressions = $index{gene_expression}->get_values(&standardize($gene_name));
-#	if ($#matching_expressions < 0) {
-#	    &ErrorMessage("Error : cannot identify the expression for gene $gene_name.\n");	    
-#	} elsif ($#matching_expressions > 0) {
-#	    &ErrorMessage("Error : several matching expressions for gene $gene_name :\t", 
-#			  join (",", @matching_expressions), "\n");	    
-#	} else {
-#	    $trreg ->set_attribute("output_id", $matching_expressions[0]);
-#	}
-#	warn join ("\t", 
-#		   $factor_name,
-#		   $#matching_factors + 1,
-#		   join(",", @matching_factors),
-#		   $gene_name,
-#		   $#matching_expressions + 1,
-#		   join(",", @matching_expressions),
-#		   ), "\n"
-#		       if ($warn_level >= 2);
     }
 }
