@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dna-pattern,v 1.15 2002/02/12 00:36:56 jvanheld Exp $
+# $Id: dna-pattern,v 1.16 2002/02/12 02:16:57 jvanheld Exp $
 #
-# Time-stamp: <2001-12-05 00:04:48 jvanheld>
+# Time-stamp: <2002-02-12 03:03:37 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -62,23 +62,53 @@ unless (($allowed_subst eq "") || (&IsNatural($allowed_subst))) {
 			  pattern_id=>$pattern_id,
 			  pattern_seq=>$pattern_seq);
 
-### no pattern specified
-&Warning("There is not a single pattern.") if ($#patterns < 0);
+#### check patterns
 
+### no pattern specified
+if ($#patterns < 0) {
+    &Warning("There is not a single pattern.") ;
+    exit(0);
+}
+
+#### prepar pattern hash for sliding window 
+%pattern_scores = ();
+if ($search_method eq "sliding window") {
+    #### calculate pattern length
+    my $first_pattern_seq =  $patterns[0]->get_attribute("sequence");
+    $pattern_length = length($first_pattern_seq);
+
+    foreach my $pattern (@patterns) {
+	my $pattern_seq = lc($pattern->get_attribute("sequence"));
+	#### check pattern length
+	if (length($pattern_seq) != $pattern_length) {
+	    &FatalError("With the sliding window option, all patterns must have the same length");
+	}
+	#### check non-degeneracy
+	if ($pattern_seq =~ /[^acgt]/i) { &FatalError("With the sliding window option, only non-degenerate DNA alphabet is supported [ACGT]\n") };
+	#### index pattern score
+	my $pattern_score = $pattern->get_attribute("score");
+	$pattern_scores{$pattern_seq} = $pattern_score;
+    }
+
+    #### two strand search
+    if ($strands_to_search eq "DR") {
+	foreach my $pattern_seq (keys %pattern_scores) {
+	    $pattern_scores{lc(&ReverseComplement($pattern_seq))} = $pattern_scores{$pattern_seq};
+	}
+	$strand = "DR";
+    } else {
+	$strand = "D";
+    }
+
+    #### crate an object for the composite pattern
+    $pattern = new RSA::pattern(id => "composite",
+				sequence => "*composite*",
+				score => $pattern_score);
+
+}
 
 ### open output file ###
 $out = &OpenOutputFile($outputfile);
-#if ($outputfile) {
-#  unless (open(OUTPUT, ">$outputfile")) {
-#    print "\tcannot open output file\n";
-#    print "\ttype seq_oligofreq -h for help\n";
-#    exit;
-#  }
-#  $out = OUTPUT;
-#} else {
-#  $out = STDOUT;
-#}
-
 
 #### verbose ####
 if ($verbose) {
@@ -92,6 +122,12 @@ if ($verbose) {
     printf $out "; %-21s\t%s\n", "Output file", $outputfile if ($outputfile);
     printf $out "; %-21s\t%s\n", "Pattern file", $pattern_file if ($pattern_file);
     printf $out "; %-21s\t%s\n", "Search method", $search_method;
+    if ($search_method eq "sliding window") {
+	printf $out "; %-21s\t%s\n", "Sliding window", $sliding_window_size;
+	printf $out "; %-21s\t%s\n", "Pattern length", $pattern_length;
+    }
+    
+    printf $out "; %-21s\t%g\n", "Threshold", $threshold;
     printf $out "; %-21s\t%d\n", "Allowed substitutions", $allowed_subst;
     if (defined(%return)) {
 	foreach $key (keys %return) {
@@ -109,7 +145,7 @@ if ($verbose) {
 		    "\n");
     }
     print $out "; \n";
-    
+
     if ($return{match_positions}) {
 	print $out "; Matching positions\n";
 	print $out "; PatID";
@@ -123,7 +159,6 @@ if ($verbose) {
 	print $out "\n";
     }
 }
-
 
 #### search ###
 ### open sequence file ###
@@ -139,63 +174,67 @@ while ((($current_seq, $sequence_id, @comments) = &ReadNextSequence($in, $in_for
     $current_seq = &FoldSequence($current_seq, 0);
     
     $sequence_length = length($current_seq);
-    
+
     if (($origin <  0) || ($origin eq "-0")) {
 	$orig_pos = $sequence_length + $origin + 1; 
     } else {
 	$orig_pos = $origin;
     }
     
-    foreach $pattern (@patterns) {
-	$expression = $pattern->get_attribute("sequence");
-	$expression =~ tr/a-z/A-Z/;
-	$pattern_length = length($expression);
-	$D_regular_expression = &IUPAC_to_regular($expression);
-	$R_regular_expression = &ReverseComplement($D_regular_expression);
-	$RC_pattern = &ReverseComplement($expression);
-	
-	$match_count = 0;
-	#### palindromic patterns are searched only  on one strand 
-	if (($expression eq ReverseComplement($expression)) && 
-	    ($strands_to_search eq "DR")) {
-	    $regular_expression = $D_regular_expression;
-	    $strand = "DR";
-	    if ($search_method eq "regexp") {
-		&RegExpSearch;
-	    } else {
-		&IUPACsearch;
-	    }
-	} else { 
-	    #### search on direct strand
-	    if ($strands_to_search =~ /D/) {
+    if ($search_method eq "sliding window") {
+	&SlidingWindowSearch();
+    } else {
+	foreach $pattern (@patterns) {
+	    $expression = $pattern->get_attribute("sequence");
+	    $expression =~ tr/a-z/A-Z/;
+	    $pattern_length = length($expression);
+	    $D_regular_expression = &IUPAC_to_regular($expression);
+	    $R_regular_expression = &ReverseComplement($D_regular_expression);
+	    $RC_pattern = &ReverseComplement($expression);
+	    
+	    $match_count = 0;
+	    #### palindromic patterns are searched only  on one strand 
+	    if (($expression eq ReverseComplement($expression)) && 
+		($strands_to_search eq "DR")) {
 		$regular_expression = $D_regular_expression;
-		$strand = "D";
+		$strand = "DR";
 		if ($search_method eq "regexp") {
-		    &RegExpSearch;
+		    &RegExpSearch();
 		} else {
-		    &IUPACsearch;
+		    &IUPACsearch();
+		}
+	    } else { 
+		#### search on direct strand
+		if ($strands_to_search =~ /D/) {
+		    $regular_expression = $D_regular_expression;
+		    $strand = "D";
+		    if ($search_method eq "regexp") {
+			&RegExpSearch();
+		    } else {
+			&IUPACsearch();
+		    }
+		}
+		#### search on reverse complement strand
+		if ($strands_to_search =~ /R/) {
+		    $regular_expression = $R_regular_expression;
+		    $strand = "R";
+		    if ($search_method eq "regexp") {
+			&RegExpSearch();
+		    } else {
+			&IUPACsearch();
+		    }
 		}
 	    }
-	    #### search on reverse complement strand
-	    if ($strands_to_search =~ /R/) {
-		$regular_expression = $R_regular_expression;
-		$strand = "R";
-		if ($search_method eq "regexp") {
-		    &RegExpSearch;
-		} else {
-		    &IUPACsearch;
-		}
+	    
+	    #### increment the total counter for the pattern
+	    $sum_per_pattern{$pattern} += $match_count;
+	    $sum_per_sequence{$sequence_id} += $match_count;
+	    $total_sum += $match_count;
+	    
+	    #### store match count if requested
+	    if ($calc{match_counts}) {
+		$match_count{$sequence_id}{$pattern} = $match_count;
 	    }
-	}
-	
-	#### increment the total counter for the pattern
-	$sum_per_pattern{$pattern} += $match_count;
-	$sum_per_sequence{$sequence_id} += $match_count;
-	$total_sum += $match_count;
-	
-	#### store match count if requested
-	if ($calc{match_counts}) {
-	    $match_count{$sequence_id}{$pattern} = $match_count;
 	}
     }
 }
@@ -379,7 +418,7 @@ sub RegExpSearch {
 		$start_pos = $sequence_length - $offset - $orig_pos;
 		$end_pos = $start_pos + $matching_word_length - 1;
 		$mismatches = $pat_hash{$reg_pat};
-		&PrintMatch;
+		&PrintMatch();
 	    }
 	    if ($no_overlap) {
 		$seq_to_crop = $remaining_seq;
@@ -390,12 +429,8 @@ sub RegExpSearch {
     }
 } # RegExpSearch
 
-###### search a IUPAC pattern ######
+###### search a IUPAC pattern
 sub IUPACsearch {
-#  print STDERR ("$sequence_id"
-#		"\t", $pattern->get_attribute("sequence"),
-#		"\t", $regular_expression,
-#		"\n");
     $offset = 0;
     $match_pos = 0;
     
@@ -420,7 +455,7 @@ sub IUPACsearch {
 		} 
 		$start_pos = $match_pos -$orig_pos;
 		$end_pos = $start_pos + $pattern_len -1;
-		&PrintMatch;
+		&PrintMatch();
 	    }
 	    if ($no_overlap) {
 		$offset = $match_pos + $pattern_len;
@@ -553,6 +588,13 @@ ARGUMENTS
                 origin. The matching positions are then negative values, 
                 providing the distance between the match and the end of the 
                 sequence.
+	-window #	
+		Sliding window size. The score at each position is
+		calculated by summing the scores of all patterns
+		encountered within a sliding window of size #. This
+		option automatically returns matching positions. 
+		A threshold can be specified to specify the minimal
+		matching score to be returned.
 
 PATTERN FORMATS
 	PATTERN SEQUENCE FORMAT
@@ -705,6 +747,7 @@ dna-pattern options
 -rowsum	return total occ per pattern in the count table
 -total	return total occ per sequence and per pattern in the count table
 -stats	return matching statistics
+-window	sliding window size
 -th     threshold
 -ct	return total count in all sequences
 -N #	return matching sequences with # flanking nucleotides
@@ -806,6 +849,9 @@ sub ReadArguments {
 	    #### threshold
 	} elsif ($ARGV[$a] eq "-th") {
 	    $threshold = $ARGV[$a+1];
+	    unless (&IsReal($threshold)) {
+		&FatalError("Threshold must have a real value");
+	    }
 
 	    #### no overlap
 	} elsif ($ARGV[$a] eq "-noov") {
@@ -852,6 +898,17 @@ sub ReadArguments {
 	    $calc{row_sum} = 1;
 	    $return{stats} = 1;
 
+	    #### sliding window
+	} elsif ($ARGV[$a] =~ /-win/) {
+	    $search_method = "sliding window";
+	    $sliding_window_size = $ARGV[$a+1];
+	    unless (&IsNatural($sliding_window_size)) {
+		&FatalError( "Sliding window size must be a natural number");
+	    }
+	    unless ($sliding_window_size > 0) {
+		&FatalError( "Sliding window size must be > 0");
+	    }
+
 	    #### neighborhood (return flanking residues)
 	} elsif (($ARGV[$a] eq "-N") && (&IsNatural($ARGV[$a+1]))) {
 	    $left_neighborhood = $ARGV[$a+1];
@@ -865,11 +922,12 @@ sub ReadArguments {
     }
 }
 
-sub ReadPatterns {
+
 ##
 # Reads patterns from a file (or from the standard input) 
 # and returns a list of RSA::Pattern objects. 
 ##
+sub ReadPatterns {
     my (%args) = @_;
     my @patterns = ();
     my $pattern_file = $args{pattern_file};
@@ -878,14 +936,12 @@ sub ReadPatterns {
     my $pattern_id = $args{pattern_id};
     my $pattern_score = $args{pattern_score};
     my $pattern_seq = $args{pattern_seq};
-
+    
     if ($pattern_file) {
 	### read patterns from a file
 	my $pattern_stream = &OpenInputFile($pattern_file);
-#	open PATTERNS, $pattern_file || &FatalError"Cannot open pattern file";
 	while (<$pattern_stream>) {
 	    if (/^;/) {
-
 		#### for piping with oligo-analysis and dyad-analysis
 		#### take occ_sig as the score column
 		if (!(defined($score_column)) &&
@@ -931,3 +987,51 @@ sub ReadPatterns {
 
     return @patterns;
 }
+
+
+#### scan the sequence with a sliding window
+sub SlidingWindowSearch {
+    $last_pos = $sequence_length - $pattern_length;
+
+    return if ($last_pos < $sliding_window_size);
+
+    $current_seq = lc($current_seq);
+    my @scores = ();
+    my $current_score = 0;
+    my $previous_score = 0;
+    my $score_sum = 0;
+
+    #### initialize score vector
+    for my $pos (0..($sliding_window_size-2)) {
+	my $subseq = substr($current_seq, $pos, $pattern_length);
+	my $current_score = $pattern_scores{$subseq};
+	push @scores, $current_score;
+	$score_sum += $current_score;
+    }
+    for my $pos (($sliding_window_size-1)..$last_pos) {
+	my $subseq = substr($current_seq, $pos, $pattern_length);
+	my $current_score = $pattern_scores{$subseq};
+	push @scores, $current_score;
+	$score_sum += $current_score;
+
+	if ($score_sum > $threshold) {
+	    $pattern->set_attribute("score", $score_sum);
+	    $end_pos = $pos - $orig_pos + $pattern_length ;
+	    $start_pos = $pos - $orig_pos - $sliding_window_size +2;
+	    $matching_word = substr($current_seq, $start_pos, $sliding_window_size + $pattern_length - 1);
+	    &PrintMatch() ;
+	}
+
+	$previous_score = shift @scores;
+	$score_sum -= $previous_score;
+    }
+
+}
+
+
+
+
+
+
+
+
