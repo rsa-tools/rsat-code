@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: fit-distribution,v 1.1 2004/01/05 11:21:26 jvanheld Exp $
+# $Id: fit-distribution,v 1.2 2004/01/05 13:18:21 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -70,23 +70,64 @@ print $out ";", join ("\t", @out_fields), "\n";
 
 ## Open the file with count distributions
 ($in) = &OpenInputFile($infile{input});
-
+local $p;
+local $k;
 my $pattern_count = 0;
+my $header_done = 0;
+my $header_OK = 1;
+my @values = ();
 while (<$in>) {
     next unless (/\S/);
-    next if (/^;/);
     chomp();
+    
+    ## Read the header to catch the values of the distribution
+    if (/^;/) {
+	$last_comment = $_;
+	next;
+    }
+    unless ($header_done) {
+	@values = split( "\t", $last_comment);
+	### temporary
+	$values[0] =~ s/^;\s+//;
+	if ($values[0] =~ /pattern/) {
+	    shift @values;
+	}
+	$header_done = 1;
+	## Check that al header fields are integer
+	foreach my $value (@values) {
+	    unless (&IsInteger($value)) {
+		&Warning("Header contains non-integer values. Values are inferred from the number of columns");
+		$header_OK=0;
+		last;
+	    }
+	}
+    }
+    
     $pattern_count++;
+
+    local $min_occ;
+    if ($header_OK) {
+	$min_occ = $values[0];
+	$max_occ = $values[$#values];
+    } else {	
+	$min_occ = 0;
+	$max_occ = $#counts;
+	@values = $min_occ..$max_occ;
+    }
+
+
+    ## Read the distribution
     local @counts = split "\t";
     local $pattern = shift @counts;
-    local $max_occ = $#counts;
     local $sum = 0;
     local $ssq = 0;
     local $repet = 0;
-    for my $occ (0..$max_occ) {
+    for my $i (0..$#counts) {
+	my $occ = $values[$i];
 	$repet += $counts[$occ];
 	$sum += $occ*$counts[$occ];
 	$ssq += $occ*$occ*$counts[$occ];
+#	warn join ("\t", $i, $occ, $repet, $sum, $ssq), "\n" if ($main::verbose >= 10);
     }
     local $avg = $sum/$repet;
     local $var = $ssq/$repet - $avg*$avg;
@@ -94,8 +135,6 @@ while (<$in>) {
     
     ## Fit a poisson distribution and calculate the goodness of fit
     local @expected;
-    local $p;
-    local $k;
     local $fitted_distrib = $distrib;
     if ($distrib eq "poisson")  {
 	@expected = &poisson($max_occ, $avg, 1); 
@@ -135,7 +174,7 @@ while (<$in>) {
 	       $right_group),
 	"\n" if ($verbose >= 3);
     
-    local  @out_values = ();
+    my  @out_values = ();
     foreach my $field (@out_fields) {
 	push @out_values, $$field;
     }
