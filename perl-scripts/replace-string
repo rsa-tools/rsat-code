@@ -2,7 +2,7 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
+require "RSA.lib";
 
 
 
@@ -21,7 +21,10 @@ USAGE
 DESCRIPTION
         looks for all occurrences of a query string within the input 
         file and replaces them by another string.
-	
+
+CATEGORY
+	util
+
 OPTIONS
         -h      (must be first argument) display full help message
         -help   (must be first argument) display options

@@ -2,7 +2,7 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
+require "RSA.lib";
 
 if ($ARGV[0] eq "-h") {
 #### display full help message #####
@@ -19,6 +19,10 @@ DESCRIPTION
 	Creates a nucleotide frequency matrix from a set of aligned 
 	sequences.
 	
+CATEGORY
+	util
+	sequences
+
 OPTIONS
         -h      (must be first argument) display full help message
         -help   (must be first argument) display options
@@ -95,7 +99,7 @@ if ($in_format eq "") {
 }
 
 ### open input file ###
-$in = &OpenInputFile($inputfile);
+($in, $input_dir) = &OpenInputFile($inputfile);
 
 ### open output file ###
 $out = &OpenOutputFile($outputfile);
@@ -103,7 +107,7 @@ $out = &OpenOutputFile($outputfile);
 
 ###### execute the command #########
 $seq_nb = 0;
-while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format)) &&
+while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir)) &&
        (($current_seq ne "") || ($current_id ne ""))) {
   $current_seq = &FoldSequence($current_seq,0);
   chomp($current_seq);

@@ -2,7 +2,7 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
+require "RSA.lib";
 
 
 
@@ -21,6 +21,11 @@ USAGE
 DESCRIPTION
 	Converts the output file from contrast into a matrix that can 
 	be read by PHYLIP.
+	
+CATEGORY
+	util
+	conversion
+	sequences
 
 OPTIONS
         -h      (must be first argument) display full help message
@@ -97,7 +102,7 @@ foreach $a (0..$#ARGV) {
 
 
 ### open input file ###
-$in = &OpenInputFile($inputfile);
+($in, $input_dir) = &OpenInputFile($inputfile);
 
 ### open output file ###
 $out = &OpenOutputFile($outputfile);

@@ -3,9 +3,9 @@
 if ($0 =~ /([^(\/)]+)$/) {
   push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
-require "RSA.classes.pl";
-require "RSA.seq.lib.pl";
+require "RSA.lib";
+require "RSA.classes";
+require "RSA.seq.lib";
 
   #### initialise parameters ####
 my $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
@@ -29,8 +29,8 @@ my $seq_count = 0;
 my $out = &OpenOutputFile($outputfile);
 
 ##### read sequences #####
-my $in = &OpenInputFile($inputfile);
-while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $seq_format)) &&
+my ($in, $input_dir) = &OpenInputFile($inputfile);
+while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $seq_format, $input_dir)) &&
        (($current_seq) || ($current_id))) {
   $seq_count++;
   $seq[$seq_count] = new RSA::Sequence(
@@ -87,8 +87,8 @@ for my $s1 (1..$seq_count-1) {
     ### calculate edit distance
     my $distance = &EditDistance(
 				 $seq[$s1]->get_sequence(),
-				   $seq[$s2]->get_sequence()
-				  );
+				 $seq[$s2]->get_sequence()
+				 );
 
     ### edit distance with reverse complement
     if ($both_strands) {
@@ -142,12 +142,18 @@ NAME
 
         1999 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
 	
+DESCRIPTION
+	Calculates the edit distance between sequences from the input
+	file (note: this implementation is very inefficient, it is
+	just for a quick test).
+
+CATEGORY
+	sequences
+
 USAGE
         seq-distances [-i inputfile] [-o outputfile] 
 		[-format seq_format] [-v] [-2str|-1str]
 
-DESCRIPTION
-	
 OPTIONS
 	-h	(must be first argument) display full help message
 	-help	(must be first argument) display options

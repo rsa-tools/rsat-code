@@ -1,9 +1,9 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: parse-genbank.pl,v 1.3 2002/05/10 21:03:28 jvanheld Exp $
+# $Id: parse-genbank.pl,v 1.4 2002/06/06 11:23:51 jvanheld Exp $
 #
-# Time-stamp: <2002-05-10 23:03:14 jvanheld>
+# Time-stamp: <2002-06-06 13:23:49 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -239,6 +239,9 @@ DESCRIPTION
 	
 	Genbank genomes can be retrieved by anonymous ftp :
 		ftp://ftp.ncbi.nlm.nih.gov/genbank/genomes
+
+CATEGORY
+	parser
 
 OPTIONS
 	-h	(must be first argument) display full help message

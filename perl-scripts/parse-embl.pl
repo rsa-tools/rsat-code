@@ -1,9 +1,9 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: parse-embl.pl,v 1.1 2002/01/07 00:30:08 jvanheld Exp $
+# $Id: parse-embl.pl,v 1.2 2002/06/06 11:23:37 jvanheld Exp $
 #
-# Time-stamp: <2002-01-07 01:25:17 jvanheld>
+# Time-stamp: <2002-06-06 13:23:32 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -27,7 +27,7 @@ local $out = STDOUT;
 
 my $genes = PFBP::ClassFactory->new_class(object_type=>"PFBP::Gene",
 					  prefix=>"gene_");
-$genes->set_out_fields(qw( id type name chromosome start end strand description position names db_xref introns exons gene label ));
+$genes->set_out_fields(qw( id type name chromosome start end strand description position names db_xref introns exons ));
 
 #### working directory
 $wd = `pwd`;
@@ -81,7 +81,7 @@ unless (-d $dir{output}) {
 &Verbose if ($verbose);
 
 #### parse the embl files
-$chrom = &OpenOutputFile("$dir{output}/Chromosomes_${org}.txt"); # file with chromosome IDs
+$chrom = &OpenOutputFile("$dir{output}/Contigs_${org}.txt"); # file with chromosome IDs
 foreach my $file (@embl_files) {
     my $contig = `basename $file .contig`;
     chomp($contig);
@@ -181,6 +181,9 @@ USAGE
 DESCRIPTION
 	Parse one or sveral EMBL files for extracting genome
 	information.
+
+CATEGORY
+	parser
 
 OPTIONS
 	-h	(must be first argument) display full help message
@@ -303,8 +306,8 @@ sub ParseEMBLFile {
 	    $in_featuress = 0;
 	    $in_sequence = 1;
 	    while (my $line = <$embl>) {
-		if ($line =~ /^\s+(.+)\d+\s*$/) {
-		    $sequence .= $1;
+		if ($line =~ /\d+\s*$/) {
+		    $sequence .= $`;
 		} elsif ($line =~ /^\/\/$/) {
 		    $in_sequence = 0;
 		}

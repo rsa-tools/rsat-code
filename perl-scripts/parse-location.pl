@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: parse-location.pl,v 1.3 2002/01/27 00:46:05 jvanheld Exp $
+# $Id: parse-location.pl,v 1.4 2002/06/06 11:25:48 jvanheld Exp $
 #
-# Time-stamp: <2002-01-27 01:45:03 jvanheld>
+# Time-stamp: <2002-06-06 13:25:33 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -32,7 +32,7 @@ $out = &OpenOutputFile($outfile{output});
 print $out join ("\t", ";ORF", "EXON"), "\n";
 
 ##### read input #####
-$in = &OpenInputFile($infile{input});
+($in) = &OpenInputFile($infile{input});
 while (<$in>) {
     chomp;
     next if (/^;/);
@@ -106,13 +106,18 @@ USAGE
         parse-location [-i inputfile] [-o outputfile] [-v]
 
 DESCRIPTION
-	Parse ORFS locations and generates one file with introns 
+	Parse ORF locations and generates one file with introns 
 	and one with exons.
-INPUT FORMAT
 
-	A tab-delimited text file with 2 columns. the first column
+CATEGORY
+	parser
+
+INPUT/OUPUT FORMATS
+
+	Tab-delimited text files with 2 columns. the first column
 	contains the ORF identifier, and the second the ORF location.
-	ORF location converted from the format
+
+	ORF location converts from the format
 
 	    YDR424c	1319830-1319806,1319709-1319687,1319606-1319379
 

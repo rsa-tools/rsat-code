@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: parse-RNAfold,v 1.2 2001/12/17 13:20:49 jvanheld Exp $
+# $Id: parse-RNAfold,v 1.3 2002/06/06 11:23:15 jvanheld Exp $
 #
-# Time-stamp: <2001-12-17 13:56:44 jvanheld>
+# Time-stamp: <2002-06-06 13:23:08 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -22,11 +22,15 @@ local %outfile = ();
 local $verbose = 0;
 local $in = STDIN;
 local $out = STDOUT;
+$out_format = "fasta";
+$stem = 0;
 
 &ReadArguments;
 
 
 #### check argument values ####
+&CheckOutputSeqFormat($out_format);
+
 
 #### verbose ####
 &Verbose if ($verbose);
@@ -36,7 +40,7 @@ local $out = STDOUT;
 $out = &OpenOutputFile($outfile{output});
 
 ##### read input #####
-$in = &OpenInputFile($infile{input});
+($in) = &OpenInputFile($infile{input});
 my $l = 0;
 my $seq_id;
 my $sequence;
@@ -52,6 +56,8 @@ while (my $line = <$in>) {
 	warn "; treating sequence\t$seq_id\n" if ($verbose >= 1);
     } elsif (($prev_item eq "id") && ($line =~ /^[augc]+$/i)) {
 	$sequence = $line;
+	$sequence =~ s/u/t/g;
+	$sequence =~ s/U/T/g;
 	$prev_item = "seq";
     } elsif (($prev_item eq "seq") && ($line =~ /^([\.\(\)]*)\s+\(\s*(\S+)\)$/))  {
 	$fold = $1;
@@ -101,11 +107,18 @@ NAME
 
         2001 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
 	
+DESCRIPTION
+	Parses the result of RNAfold, and extracts the sequences of
+	the loops (in the future, it will also allow to extract other
+	sub-structures, like stem-loops.
+
+CATEGORY
+	parser
+	sequences
+
 USAGE
         parse-RNAfold [-i inputfile] [-o outputfile] [-v]
 
-DESCRIPTION
-	
 OPTIONS
 	-h	(must be first argument) display full help message
 	-help	(must be first argument) display options
@@ -166,7 +179,10 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-o") {
 	    $outfile{output} = $ARGV[$a+1];
 	    
-	    
+	    #### output sequence format
+	} elsif ($ARGV[$a] eq "-format") {
+	    $out_format = lc($ARGV[$a+1]);
+
 	}
     }
 }
@@ -186,41 +202,64 @@ sub Verbose {
 	    print $out ";\t$key\t$value\n";
 	}
     }
+    print ";Output format\t$out_format\n";
 }
 
 sub extract_loops {
     my ($seq_id, $sequence, $fold) = @_;
     my @loop_sequences = ();
-    my $offset = 0;
-    while ($fold =~ /\(\.+\)/) {
+    my $offset = 1;
+    my $pattern ="";
+
+    if ($stem) {
+	$pattern = '\(+\.+\)+'; #### extract loop + stem 
+    } else {
+	$pattern = '\(\.+\)'; #### extract loop only
+    }
+    while ($fold =~ /$pattern/) { 
 	my $loop_start = length($`)+1;
 	my $loop_len = length($&)-2;
 	my $loop_seq = substr($sequence, $loop_start, $loop_len);
-	my $loop_id = join "_", $seq_id,  $loop_start + $offset, $loop_len;
+	my $loop_id = join ("_", 
+			    $seq_id,  
+			    $loop_start + $offset, 
+			    $loop_start + $offset + $loop_len -1, 
+			    $loop_len);
 
-	warn "$sequence\n$fold\n" if ($verbose >= 3);
 	if ($verbose >= 3) {
 	    warn ("$sequence\n",
 		  "$fold\n",
-		  &print_meter(length($sequence)), "\n"
+		  &print_meter(length($sequence),1), "\n"
 		  );
 	}
 	
-	warn "$seq_id\t$loop_start\t$loop_len\t\t$loop_id\t$loop_seq\n" if ($verbose >= 2);
+	warn "; Loop\t$seq_id\t$loop_start\t$loop_len\t\t$loop_id\t$loop_seq\n" if ($verbose >= 2);
 	push @loop_sequences, $loop_seq;
 	$fold = substr($fold, $loop_start+$loop_len);
 	$sequence = substr($sequence, $loop_start+$loop_len);
 	$offset += $loop_start+$loop_len;
+	&PrintNextSequence($out, $out_format, 0, $loop_seq, $loop_id);
     }
     return @loop_sequences;
 }
 
 sub print_meter {
-    my ($len) = @_;
-    my $c = 0;
+    my ($len, $levels) = @_;
     my $meter;
     for my $p (1..$len) {
 	$meter .= $p%10;
+    }
+
+    for my $l (1..$levels) {
+	my $chunk = 10**$l;
+	$meter .= "\n";
+	for my $p (1..$len) {
+	    if ($p%${chunk} == 0) {
+		$meter .= sprintf int($p/$chunk)%10;
+	    } else {
+		$meter .= ".";
+	    }
+	}
     }
     return $meter;
 }

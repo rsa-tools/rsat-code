@@ -2,7 +2,7 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
+require "RSA.lib";
 
 ### initialization
 $start_time = `date`;
@@ -56,7 +56,7 @@ for $chr (1..16) {
 
 #### read queries ####
 unless ($input_as_arg)  {
-    $in = &OpenInputFile($inputfile);
+    ($in, $input_dir) = &OpenInputFile($inputfile);
     $count = -1;
     while (<$in>) {
 	if ((/^\s*$/) || (/^;/)) {
@@ -351,6 +351,9 @@ DESCRIPTION
 	returns the closest ORFS on left and right side from a given 
 	chromosomal coordinate.
 	
+CATEGORY
+	genomics
+
 OPTIONS
         -h      (must be first argument) display full help message
         -help   (must be first argument) display options

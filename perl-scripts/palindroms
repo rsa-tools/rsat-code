@@ -7,10 +7,14 @@ NAME
 	palindroms
 	
 	8 July 1997 by Jacques van Helden
-USAGE
-	detect complement-palindromic sequences 
-        (i.e. sequences which are identical to their reverse-complement).
-	
+
+DESCRIPTION
+	Detects complement-palindromic sequences (i.e. sequences which
+        are identical to their reverse-complement).
+
+CATEGORY
+	sequences
+
 OPTIONS
 	-v	verbose.
 	-i inputfile

@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.16 2002/04/26 02:24:57 jvanheld Exp $
+# $Id: install-organism,v 1.17 2002/06/06 11:11:54 jvanheld Exp $
 #
-# Time-stamp: <2002-04-26 04:24:40 jvanheld>
+# Time-stamp: <2002-06-06 13:11:49 jvanheld>
 #
 ############################################################
 
@@ -14,6 +14,8 @@ require "RSA.lib";
 
 
 #### initialisation
+$noov="";
+$strands="-1str";
 $purged_frequencies = 0; #### temporarily inactivte because for human genome it suppresses almost all sequences !!!!
 $supported_for_installation{"fasta"} = 1;
 $supported_for_installation{"raw"} = 1;
@@ -23,6 +25,8 @@ $supported_for_installation{"raw"} = 1;
 		    start_stop=>1,
 		    ncf=>1,
 		    oligos=>1,
+#		    coding_freq=>1,
+#		    genome_freq=>1,
 		    dyads=>1
 		   );
 $supported_steps = join ",", keys %supported_steps;
@@ -355,14 +359,6 @@ sub CalcFrequencies {
     chdir $oligo_dir;
 
     ################################################################
-    # calculate oligo-frequencies in full genome
-    $seq_type = "genomic";
-    $seq_format = "filelist";
-    $seq_file = $outfile{'genome'};
-    &CalcOligoFreq($seq_file, $seq_format, $seq_type) if ($install_steps{oligos});
-    &CalcDyadFreq($seq_file, $seq_format, $seq_type) if ($install_steps{dyads});
-     
-    ################################################################
     # calculate oligont frequencies in all intergenic sequences
     $seq_type = "non-coding";
     if ($purged_frequencies) {
@@ -376,29 +372,42 @@ sub CalcFrequencies {
     &CalcDyadFreq($genome_dir."/".$seq_file, $seq_format, $seq_type) if ($install_steps{dyads});
 
     ################################################################
-    # calculate oligont frequencies in all intergenic sequences
-#      $seq_type = "coding";
-#      if ($purged_frequencies) {
-#  	$seq_file = "${organism_short_name}_coding_segments_purged.fasta";
-#  	$seq_format = "fasta";
-#      } else {
-#  	$seq_file = "${organism_short_name}_coding_segments.wc";
-#  	$seq_format = "wc";
-#      }
-#      &CalcOligoFreq($genome_dir."/".$seq_file, $seq_format, $seq_type) if ($install_steps{oligos});
-#      &CalcDyadFreq($genome_dir."/".$seq_file, $seq_format, $seq_type) if ($install_steps{dyads});
+    # calculate oligo-frequencies in full genome
+    if ($install_steps{genome_freq}) {
+	$seq_type = "genomic";
+	$seq_format = "filelist";
+	$seq_file = $outfile{'genome'};
+	&CalcOligoFreq($seq_file, $seq_format, $seq_type) if ($install_steps{oligos});
+	&CalcDyadFreq($seq_file, $seq_format, $seq_type) if ($install_steps{dyads});
+    }
 
+    ################################################################
+    # calculate oligont frequencies in all intergenic sequences
+    if ($install_steps{coding_freq}) {
+	$seq_type = "coding";
+	if ($purged_frequencies) {
+	    $seq_file = "${organism_short_name}_coding_segments_purged.fasta";
+	    $seq_format = "fasta";
+	} else {
+	    $seq_file = "${organism_short_name}_coding_segments.wc";
+	    $seq_format = "wc";
+	}
+	&CalcOligoFreq($genome_dir."/".$seq_file, $seq_format, $seq_type) if ($install_steps{oligos});
+	&CalcDyadFreq($genome_dir."/".$seq_file, $seq_format, $seq_type) if ($install_steps{dyads});
+    }
     chdir '../';
 }
 
 sub CalcOligoFreq {
     my ($seq_file,$seq_format,$seq_type) = @_;
-    foreach $oligo_length (1..8) {
-	$out_file = "$oligo_dir/${oligo_length}nt_${seq_type}_${organism_short_name}.freq";
-	$command = "$SCRIPTS/oligo-analysis -i $seq_file -format $seq_format ";
+    foreach $oligo_length (1..3) {
+	$out_file = "$oligo_dir/${oligo_length}nt_${seq_type}_${organism_short_name}${noov}${strands}.freq";
+	$command = "$SCRIPTS/oligo-analysis ${strands} -i $seq_file -format $seq_format ";
+	$command .= " $strands";
+	$command .= " $noov";
 	$command .= "-l ${oligo_length} -type dna ";
 	$command .= "-return freq,occ -nogrouprc ";
-	$command .= "| cut -f1,3,4 ";
+#	$command .= "| cut -f1,3,4 ";
 	$command .= "> $out_file ";
 	$command .= "; gzip -f $out_file ";
 	&doit;  
@@ -411,19 +420,18 @@ sub CalcDyadFreq {
     my ($seq_file,$seq_format,$seq_type) = @_;
     $min_spacing = 0;
     $max_spacing = 20;
-    $noov = 0;
+    @monad_lengths = (3,2,1);
 
-    foreach $oligo_length (1..3) {
-	$dyad_file = "dyads_${oligo_length}nt_sp${min_spacing}-${max_spacing}_${seq_type}_${organism_short_name}";
-	$dyad_file .= "_noov" if ($noov);
+    foreach $monad_length (@monad_lengths) {
+	$dyad_file = "dyads_${monad_length}nt_sp${min_spacing}-${max_spacing}_${seq_type}_${organism_short_name}${noov}${strands}";
 	$dyad_file .= ".freq";
 	$command = "$SCRIPTS/dyad-analysis -i $seq_file -format $seq_format";
 	$command .= " -timeout 240000 ";
 	$command .= " -type any -seqtype dna";
-	$command .= " -2str";
-	$command .= " -noov" if ($noov);
+	$command .= " $strands";
+	$command .= " $noov";
 	$command .= " -sp ${min_spacing}-${max_spacing}";
-	$command .= " -l $oligo_length";
+	$command .= " -l $monad_length";
 	$command .= " -return freq,occ";
 	$command .= " -nogrouprc";
 	$command .= " | cut -f1,3,4";
@@ -533,6 +541,9 @@ DESCRIPTION
 
 	This program performs a series of installation tasks, by
 	calling other programs in RSA-Tools.
+
+CATEGORY
+	adminstration
 	
 OPTIONS
 	-h	(must be first argument) display full help message

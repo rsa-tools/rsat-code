@@ -2,7 +2,7 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
+require "RSA.lib";
 
 
 
@@ -22,7 +22,10 @@ USAGE
 
 DESCRIPTION
 	Provides a list of synonyms for a query yeast gene name.
-	
+
+CATEGORY
+	genomics
+
 OPTIONS
         -h      (must be first argument) display full help message
         -help   (must be first argument) display options
@@ -97,7 +100,7 @@ if ($#query_list < 0) {
     if ($inputfile eq "") {
 	@query_list = ($ARGV[$#ARGV]);
     } else {
-	$in = &OpenInputFile($inputfile);
+	($in, $input_dir) = &OpenInputFile($inputfile);
 	while (<$in>) {
 	    next if (/^;/); # comment line
 	    if (/^\s*(\S+)/) { # take first word of the line

@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: retrieve-seq,v 1.22 2002/04/25 00:35:15 jvanheld Exp $
+# $Id: retrieve-seq,v 1.23 2002/06/06 11:36:56 jvanheld Exp $
 #
-# Time-stamp: <2002-04-25 02:34:39 jvanheld>
+# Time-stamp: <2002-06-06 13:36:54 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -151,6 +151,15 @@ if ($random_orfs > 0) {
 	warn ";", join ("\t", "Selected ORF", $selected, $remaining_orfs), "\n" if ($warn_level >= 0);
 	push @queries, splice(@orfs, $selected, 1);
     }
+} elsif ($length_file) {
+    ($len_handle, $input_dir) = &OpenInputFile($length_file);
+#    open LEN, $length_file;
+    while (<$len_handle>) {
+	my @fields = split "\t";
+	push @queries, $fields[1];
+    }
+    close $len_handle;
+
 } elsif ($num_rand_sel) {
     for $i (1..$num_rand_sel) {
 	push @queries, $seq_length;
@@ -389,10 +398,14 @@ USAGE
 	retrieve-seq -type type -org organism	
 			[-from] [-to] [-format seqformat] [-lw line_width] 
 			[-o outpufile] -q query_orf | -i query file | -all
-	
+DESCRIPTION	
 	Returns upstream or downstream sequences for list of query
 	genes.
-	
+
+CATEGORY
+	genomics
+	sequences
+
 OPTIONS
 	-org organism
 	     supported organisms : 
@@ -463,6 +476,15 @@ $supported_organisms
 	-randsels #	
 		Return the sequences (specified by the option -type)
 		for a random selection of # ORFs.
+	-lf	length file 
+		(only with the option '-type random')
+		Allows to generate rndom sequences with the same
+		lengths as a set of reference sequences. The sequence
+		length file can be obtained with the command
+			sequence-lengths
+		The length file contains two columns : 
+		    - sequence ID (ignored)
+		    - sequence length
 	-features	
 		alternate feature table. This option allows to speify
 		an alternate file where the ORF locations are found. 
@@ -517,6 +539,7 @@ $supported_organisms
 -type		upstream | downstream | orf | random
 -n		number of sequences (only with -type random)
 -randsels #	random selection of # ORFs.
+-lf		length file 
 -i		query file. This option is incompatible with -q.
 -q		query
 -all		returns all genomic upstream regions
@@ -579,6 +602,11 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-i") {
 	    $query_file =$ARGV[$a+1];
 	    
+	    #### specific input file for random selections (one sequence length per line)
+	} elsif ($ARGV[$a] eq "-lf") {
+	    $length_file =$ARGV[$a+1];
+#	    die "HELLO\t$length_file";
+
 	    #### random selection of ORFs
 	} elsif ($ARGV[$a] =~ /-randsel/) {
 	    $random_orfs =$ARGV[$a+1];
@@ -597,7 +625,7 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-org") {
 	    $organism_name =$ARGV[$a+1];
 
-	    #### organism
+	    #### number of random segments tor eturn
 	} elsif ($ARGV[$a] eq "-n") {
 	    $num_rand_sel =$ARGV[$a+1];
 	    unless (&IsNatural($num_rand_sel)) {

@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence,v 1.17 2002/03/29 00:46:10 jvanheld Exp $
+# $Id: purge-sequence,v 1.18 2002/06/06 11:35:55 jvanheld Exp $
 #
-# Time-stamp: <2002-03-29 01:44:10 jvanheld>
+# Time-stamp: <2002-06-06 13:35:53 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -55,6 +55,7 @@ if ($inputfile) {
     chdir $dirname;
     $dir{input} = `pwd`;
     chomp($dir{input});
+#    warn join "\t", $dirname, $dir{input}, $basename, "\n"
 } else {
     $dirname = ".";
     $basename = $start_time;
@@ -154,7 +155,10 @@ DESCRIPTION
 	conserved and the second deleted. By default, the program also
 	searches similarities between the direct and reverse
 	complement strand.
-	
+
+CATEGORY
+	sequences
+
 OPTIONS
 	-h	(must be first argument) display full help message
 	-help	(must be first argument) display options

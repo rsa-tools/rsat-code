@@ -17,6 +17,9 @@ NAME
 DESCRIPTION
 	Calculates Poisson probabilities. 
 
+CATEGORY
+	statistics
+
 USAGE
 	poisson -m exp_nb_success -s nb_success [-v] [-boe]
 		

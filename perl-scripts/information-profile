@@ -10,8 +10,13 @@ NAME
 	
 	v1.0 by Jacques van Helden, 19 October 1997
 	
-	draws the information profile, as described in 
-        Claverie & Bougueleret (1986),Nucleic Acids Res. 14(1): 179-196.
+DESCRIPTION
+	Draws the information profile, as described in Claverie &
+        Bougueleret (1986),Nucleic Acids Res. 14(1): 179-196.
+
+CATEGORY
+	statistics
+	sequences
 
 USAGE
 	information-profile -i inputfile -o outputfile -l length 
@@ -38,7 +43,6 @@ ARGUMENTS
                 where # is a positive integer indicating the width of the 
                 smoothing window.
 	
-
 End_of_help
   close HELP;
   exit(0);

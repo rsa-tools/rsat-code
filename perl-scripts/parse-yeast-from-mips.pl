@@ -1,9 +1,9 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: parse-yeast-from-mips.pl,v 1.1 2002/04/23 20:26:24 jvanheld Exp $
+# $Id: parse-yeast-from-mips.pl,v 1.2 2002/06/06 11:27:28 jvanheld Exp $
 #
-# Time-stamp: <2002-04-23 22:25:19 jvanheld>
+# Time-stamp: <2002-06-06 13:27:26 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -133,6 +133,9 @@ DESCRIPTION
 	Data source:
 		ftp://ftpmips.gsf.de/yeast/
 	
+CATEGORY
+	parser
+
 OPTIONS
 	-h	(must be first argument) display full help message
 	-help	(must be first argument) display options

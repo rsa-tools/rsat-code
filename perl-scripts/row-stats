@@ -1,16 +1,16 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: row-stats,v 1.2 2001/07/05 15:13:23 jvanheld Exp $
+# $Id: row-stats,v 1.3 2002/06/06 11:37:29 jvanheld Exp $
 #
-# Time-stamp: <2001-05-28 16:42:41 jvanheld>
+# Time-stamp: <2002-06-06 13:37:27 jvanheld>
 #
 ############################################################
 #use strict;;
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
+require "RSA.lib";
 
 
 #### initialise parameters ####
@@ -35,7 +35,7 @@ $out = &OpenOutputFile($outfile{output});
 &PrintRowHeader();
 
 ##### read input #####
-$in = &OpenInputFile($infile{input});
+($in, $input_dir) = &OpenInputFile($infile{input});
 $line_nb = 0;
 while (<$in>) {
     $line_nb++;
@@ -112,7 +112,10 @@ DESCRIPTION
 
 	Calculate basic statistics (min, max, avg, ...) on each row of
 	a tab-delimited input file.
-	
+
+CATEGORY
+	statistics
+
 OPTIONS
 	-h	(must be first argument) display full help message
 	-help	(must be first argument) display options

@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: orf-info,v 1.9 2001/09/21 03:17:11 jvanheld Exp $
+# $Id: orf-info,v 1.10 2002/06/06 11:20:42 jvanheld Exp $
 #
-# Time-stamp: <2001-09-21 05:17:01 jvanheld>
+# Time-stamp: <2002-06-06 13:20:39 jvanheld>
 #
 ############################################################
 
@@ -53,11 +53,13 @@ if ($verbose) {
 
 
 
-#### read queries file ######
+#### read query file
 if (($inputfile) || ($#queries == -1)) {
-    $in = &OpenInputFile($inputfile);
+    ($in, $input_dir) = &OpenInputFile($inputfile);
     while (<$in>) {
 	next if (/^;/);
+	next if (/^--/);
+	next if (/^\#/);
 	next unless (/\S/);
 	if  (/^\s*(\S+)/) {
 	    push(@queries, $1);
@@ -75,7 +77,7 @@ if (($inputfile) || ($#queries == -1)) {
 #### search orf info for all queries ####
 &Header;
 foreach $query (@queries) {
-    $query =~ tr/a-z/A-Z/;
+#    $query =~ tr/a-z/A-Z/;
 
     $found = 0;
 
@@ -169,14 +171,21 @@ sub PrintWarning {
 
 sub PrintHelp {
   open HELP, "| more ";
-  print HELP "
+  print HELP <<EnfOfHelp;
+NAME
+	orf-info
+
 USAGE
 	orf-info -org organism -q query
 	orf-info -org organism -q query1 -q query2 -q query3 ...
 	orf-info -org organism i query_file
 
-	returns the information about ORFs specified either by their
+DESCRIPTION
+	Returns the information about ORFs specified either by their
 	ORF identifier, or by any supported synonym.
+
+CATEGORY
+	genomics
 
 OPTIONS
 	-h	display full help message
@@ -223,7 +232,7 @@ SYNONYMS
 
 WEB VERSION
 	http://www.ucmb.ulb.ac.be/bioinformatics/rsa-tools/
-";
+EnfOfHelp
   close HELP;
   exit(0);
 }

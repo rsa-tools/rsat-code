@@ -2,7 +2,7 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
+require "RSA.lib";
 
 if ($ARGV[0] eq "-h") {
 #### display full help message #####
@@ -20,6 +20,9 @@ DESCRIPTION
 	Reads a login file and returns statistics about the 
 	client domains and the scripts that have been requested. 
 	
+CATEGORY
+	administration
+
 OPTIONS
         -h      (must be first argument) display full help message
         -help   (must be first argument) display options
@@ -108,7 +111,7 @@ foreach $a (0..$#ARGV) {
 
 
 ### open input file ###
-$in = &OpenInputFile($inputfile);
+($in, $input_dir) = &OpenInputFile($inputfile);
 
 ### open output file ###
 $out = &OpenOutputFile($outputfile);

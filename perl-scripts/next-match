@@ -2,7 +2,7 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
+require "RSA.lib";
 
 
 
@@ -23,6 +23,10 @@ DESCRIPTION
 	in the sequence, allowing subst substitutions, and starting with a 
 	given offset (0 is the first base of the input sequence).
 	
+CATEGORY
+	sequence
+	pattern matching
+
 OPTIONS
         -h      (must be first argument) display full help message
         -help   (must be first argument) display options

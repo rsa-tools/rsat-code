@@ -2,7 +2,7 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
+require "RSA.lib";
 
 
 
@@ -12,9 +12,14 @@ if (($ARGV[0] eq "-h") || ($ARGV[0] eq "-help")) {
 NAME
 	insertions
 
-	returns a list of sequences matching a DNA pattern 
-        with a given number of insertions
+DESCRIPTION
+	Returns a list of sequences matching a DNA pattern 
+        with a given number of insertions.
 	
+CATEGORY
+	util
+	sequences
+
 USAGE
         insertions -p pattern [-o outputfile] [-v] -ins #
 	

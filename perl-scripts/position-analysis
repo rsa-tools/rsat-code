@@ -572,6 +572,10 @@ DESCRIPTION
 	are compared to those expected under a flat distribution hypothesis, i.e. if
 	the frequency of each word was constant along the sequences. 
 		
+CATEGORY
+	sequences
+	pattern-discovery
+
 USAGE
 	position-analysis [-i inputfile]  [-format input_format]
                 [-o outputfile] -l length -ci class_interval

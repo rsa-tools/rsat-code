@@ -7,9 +7,13 @@ NAME
 	overlaps
 	
 	8 July 1997 by Jacques van Helden
-USAGE
-	detect self-overlapping sequences.
-	
+
+DESCRIPTION
+	Detects self-overlapping sequences.
+
+CATEGORY
+	sequences
+
 OPTIONS
 	-v	verbose.
 	-i inputfile

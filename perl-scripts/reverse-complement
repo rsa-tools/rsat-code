@@ -2,7 +2,7 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
+require "RSA.lib";
 
 
 
@@ -13,11 +13,15 @@ NAME
 	reverse-complement
 	by Jacques van Helden, 26 June 1997
 
+DESCRIPTION
+	Returns the reverse complement of an input DNA sequence.
+
+CATEGORY
+	sequences
+
 USAGE
 	reverse-complement 'input_sequence'
 	
-	returns the reverse complement of an input DNA sequence.
-
 INPUT
 	The standard degenerate nucleotide code of the IUPAC-IUB commission 
 	is supported. The pattern sequence should thus only contain the 

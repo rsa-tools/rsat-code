@@ -6,12 +6,17 @@ if (($ARGV[0] eq "-h") || ($ARGV[0] eq "-help")) {
 NAME
 	mismatches
 
+DESCRIPTION
 	returns a list of sequences matching a DNA pattern 
         with a given number of mismatches
 	
 USAGE
         mismatches -p pattern [-o outputfile] [-v] -mis #
 	
+CATEGORY
+	util
+	sequences
+
 OPTIONS
 	-v	verbose.
 	-p pattern
@@ -139,7 +144,8 @@ for $mis (0..$allowed_mis) {
 	    foreach $pat($to_delete) {
 		for $ins(0..$mis-$subst-$del) {
 		    foreach $pat (@to_insert) {
-			@inserted = keys Insert($pat,$ins,$IUPAC_output);
+			%inserted = &InsertPattern($pat,$ins,$IUPAC_output);
+			@inserted = keys %inserted;
 		    }
 		}
 	    }
@@ -180,9 +186,9 @@ exit(0);
 
 ########################## subroutine definition ############################
 
-sub Insert {
+sub InsertPattern {
 ### usage 
-### %ins_hash = Insert($pattern, $allowed_ins, $IUPAC_output)
+### %ins_hash = InsertPattern($pattern, $allowed_ins, $IUPAC_output)
 ### returns a hash of DNA sequences matching $pattern 
 ### with >= $allowed_ins insertions
 ### the keys of the hash are the matching patterns,

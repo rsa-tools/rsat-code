@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.48 2002/05/08 12:29:47 jvanheld Exp $
+# $Id: oligo-analysis,v 1.49 2002/06/06 11:17:52 jvanheld Exp $
 #
-# Time-stamp: <2002-05-08 12:37:33 jvanheld>
+# Time-stamp: <2002-06-06 13:17:48 jvanheld>
 #
 ############################################################
 
@@ -156,65 +156,13 @@ if (($alphabet) && !($input_alphabet)) {
 #### Read expected frequencies from a file
 if (($method eq "Frequency file") && 
     ($return{'exp_freq'})) {    #### expected frequencies ####
-
-    ($exp) = &OpenInputFile($exp_freq_file);
-    my $l=0;
-    while (<$exp>) {
-	$l++;
-	next if (/^;/);
-	next unless (/\S/);
-	my @fields =  split "\t";
-	$pattern_seq = lc($fields[0]);
-	if (&IsReal($fields[1])) {
-	    $patterns{$pattern_seq}->{exp_freq} = $fields[1];
-	} elsif (($fields[1] =~ /(\S+)\|(\S+)/) &&(&IsReal($fields[2]))) {
-	    $rc = lc($2);
-	    $fw = lc($1);
-	    $patterns{$rc}->{exp_freq} = $fields[2];
-	    $patterns{$fw}->{exp_freq} = $fields[2];
-	} else {
-	    &FatalError("Invalid expected frequency at line $l\n");
-	}
-
-	if ($patterns{$pattern_seq}->{exp_freq} < 0) {
-	    &FatalError("Expected frequency cannot be negative\t$pattern_seq\t".$patterns{$pattern_seq}->{exp_freq});
-	}
-    }
-    close $exp if ($exp_freq_file);
-    
-    #### make sure that the sum of frequencies is positive
-    my $freq_sum = 0;
-    foreach my $pattern_seq (keys %patterns) {
-	$freq_sum += $patterns{$pattern_seq}->{exp_freq};
-    }
-    if ($freq_sum <= 0) {
-	&FatalError("Error with the expected frequency file : the sum must be strictly positive\t$freq_sum");
-    }
-    
-    #### rescale expected frequencies to have a sum of 1
-    if ($rescale_freq) {
-	print $out "; Rescaling expected frequencies\n" if ($verbsoe >=1);
-	foreach my $pattern_seq (keys %patterns) {
-	    $patterns{$pattern_seq}->{exp_freq} /= $freq_sum;
-	}
-    }
-    
-    #### check if reverse complements were included in the expected freq file;
-    #### if not, infer them from the direct strand 
-    foreach my $pattern_seq (sort keys %patterns) {
-  	my $rc = lc(&SmartRC($pattern_seq));
-  	if (($patterns{$rc}->{exp_freq} <= 0) &&
-  	    ($patterns{$pattern_seq}->{exp_freq})) {
-  	    $patterns{$rc}->{exp_freq} = $patterns{$pattern_seq}->{exp_freq};
-	    #print STDERR join "\t", $pattern_seq,  $patterns{$pattern_seq}->{exp_freq}, $rc, $patterns{$rc}->{exp_freq}, "\n";
-  	}
-    }
-
+    &ReadExpectedFrequencies($exp_freq_file);
 }
 
-### open sequence file ###
+#### open sequence stream
 ($in, $input_dir) = &OpenInputFile($inputfile);
 
+#### open output stream
 $out = &OpenOutputFile($outputfile);
 
 &CountOligo();
@@ -222,8 +170,7 @@ $out = &OpenOutputFile($outputfile);
 &CalcSubWordFrequencies() if (($method eq "Markov chain") || ($method eq "lexicon"));
 &CalcAlphabet() if (($input_alphabet) || ($return{'zscore'}));
 &Degenerate() if ($one_var_position);
-&SumSmartRCs() if ($sum_rc);
-#&SubstractOverlap() if ($noov);
+&SumReverseComplements() if ($sum_rc);
 &CalcFrequencies() if (($return{'freq'}) || ($verbose >= 1) || ($method eq "Markov chain"));
 #&GroupRc() if ($group_rc);
 &OccurrenceThreshold() if ($occurrence_threshold > 0);
@@ -432,7 +379,7 @@ sub CountOligo {
 
 ################################################################
 ### sum occurrences of reverse complement patterns
-sub SumSmartRCs {
+sub SumReverseComplements {
     if ($verbose >= 2) {
 	&Warning(&AlphaDate()."\tSumming occurrences for pairs of reverse complements");
     }
@@ -994,9 +941,12 @@ sub CalcProba {
     ### calculate oligo probabilities
     foreach $pattern_seq (sort keys %patterns) {
 	if ($verbose >= 4) {
-	    printf ("oligo-analysis\t". &AlphaDate()."\tcalculating proba $pattern_seq obs %7d exp %7.1f\n", 
+	    printf ("oligo-analysis\t". &AlphaDate()."\tcalculating proba $pattern_seq occ %7d exp_occ %7.1f\texp_freq %g\tpos %g\n", 
 		    $patterns{$pattern_seq}->{occ}, 
-		    $patterns{$pattern_seq}->{exp_occ});
+		    $patterns{$pattern_seq}->{exp_occ},
+		    $patterns{$pattern_seq}->{exp_freq},
+		    $patterns{$pattern_seq}->{nb_possible_pos}
+		    );
 	}
 	
 #	$rc = uc(&SmartRC($pattern_seq));
@@ -1024,6 +974,8 @@ sub CalcProba {
 #								   $patterns{$pattern_seq}->{occ}/2);
 #		$patterns{$pattern_seq}->{remark} = "\tpalindrome";
 #	    } else {
+
+	    
 	    $patterns{$pattern_seq}->{occ_pro} = &binomial_boe($patterns{$pattern_seq}->{exp_freq},
 							       $patterns{$pattern_seq}->{nb_possible_pos},
 							       $patterns{$pattern_seq}->{occ});
@@ -1775,6 +1727,10 @@ NAME
 DESCRIPTION
 	calculates oligomer frequencies in a set of sequences,
         and detects overrepresented oligomers.
+
+CATEGORY
+	sequence
+	pattern discovery
 
 USAGE
 	oligo-analysis -l length [-i inputfile]  [-format input_format]

@@ -8,7 +8,7 @@ require "RSA.seq.lib";
 #### initialise parameters ####
 $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
 $max_flanking = 1;
-$max_subst = 1;
+$max_subst = 0;
 $strand_insensitive = 1;
 $max_pattern_nb = 100;
 
@@ -36,7 +36,7 @@ if ($verbose) {
 }
 
 #### read input ####
-$in = &OpenInputFile($inputfile);
+($in, $input_dir) = &OpenInputFile($inputfile);
 while (<$in>) {
     next unless (/\S/);
     next if (/^;/);
@@ -169,6 +169,7 @@ while ($#to_assemble > -1) {
 if ($#singletons >=0) {
     printf $out "\n; Isolated patterns: %d\n", $#singletons+1;
     foreach $word (@singletons) {
+	$word = &ExpandSeq($word);
 	print $out "$word";
 	if ($strand_insensitive) {
 	    $rc = lc(&ReverseComplement($word));
@@ -477,7 +478,10 @@ USAGE
 DESCRIPTION
 	Assemble a set of oligonucleotides into clusters of overlapping 
 	patterns (the assembly).
-	
+
+CATEGORY
+	sequences
+
 OPTIONS
         -h      (must be first argument) display full help message
         -help   (must be first argument) display options

@@ -1,17 +1,17 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-consensus,v 1.1 2000/12/29 21:20:57 jvanheld Exp $
+# $Id: matrix-from-consensus,v 1.2 2002/06/06 11:14:18 jvanheld Exp $
 #
-# Time-stamp: <2000-11-14 02:15:48 jvanheld>
+# Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
 ############################################################
 #use strict;;
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
-require "RSA.classes.pl";
+require "RSA.lib";
+require "RSA.classes";
 
 
 
@@ -35,21 +35,27 @@ local $out = STDOUT;
 $out = &OpenOutputFile($outfile{output});
 
 ##### read input #####
-$in = &OpenInputFile($infile{input});
+($in) = &OpenInputFile($infile{input});
 
+my @matrix = ();
 while (<$in>) {
     next unless (/\S/);
     if (/MATRIX\s(\d+)/) {
 	$current_matrix_nb = $1;
+	if ($current_matrix_nb == 1) {
+	    @matrix = (); #### initialize the matrix
+	}
 	next;
     } elsif ((/^\s*(\S)\s+\|/) && 
 	     ($current_matrix_nb == 1)) {
-	print $out $_;
+	push @matrix, $_;
+#	print $out $_;
     }
 }
 
 close $in if ($infile{input});
 
+print $out @matrix;
 
 
 #### verbose ####
@@ -90,10 +96,15 @@ USAGE
         matrix-from-consensus [-i inputfile] [-o outputfile] [-v]
 
 DESCRIPTION
-	Extracts position weight matrix from the output of the consensus
-	sampler (Neuwald et al, 1995) and returns it in a format that
-	can be used by consensus (Hertz et al, 1999).
+	Extracts position weight matrix from the output of the program
+	consensus (Neuwald et al, 1995) and returns it in a format
+	that can be used by consensus (Hertz et al, 1999).
 	
+CATEGORY
+	util
+	conversion
+	sequences
+
 OPTIONS
 	-h	(must be first argument) display full help message
 	-help	(must be first argument) display options

@@ -344,8 +344,13 @@ NAME
 USAGE
 	random-seq -l seqlength [-v] [-o outputfile]
 	
-	Generate a random sequence of length seqlength.
-	
+DESCRIPTION
+	Generates random sequences according to different
+	probabilistic models, including Markov chains.
+
+CATEGORY
+	sequences
+
 OPTIONS
     OUTPUT OPTIONS
 	-l	sequence length
