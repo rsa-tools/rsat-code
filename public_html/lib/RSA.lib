@@ -70,7 +70,7 @@ if ($REMOTE_SERVER) {
 	$NICE = "nice +5";
 	$RSH = "rsh -l jvanheld ${REMOTE_SERVER} $NICE";
 	$SCRIPTS = "$RSH /home/rsa/rsa-tools/perl-scripts";
-	$BIN = "$RSH /home/rsa/rsa-tools/perl-scripts";
+	$BIN = "$RSH /home/rsa/rsa-tools/bin";
     }
 }
 
@@ -135,6 +135,7 @@ sub OpenInputFile {
     ####    ($in,$input_dir) = &OpenInputFile($filename);
     #### returns a file handle
     my $filename = $_[0];
+#    print "BOUM $filename";
     my $input_stream = STDIN; ### default is standard input
     my ($short_file_name, $input_dir) = ();
     if ($filename) {
@@ -182,6 +183,97 @@ sub OpenOutputFile {
 }
 
 
+################################################################
+# Read pattern expected frequencies from a file
+#
+sub ReadExpectedFrequencies {
+    my ($exp_freq_file, $sum_rc) = @_;
+    
+    ($exp) = &OpenInputFile($exp_freq_file);
+    my $l=0;
+    while (<$exp>) {
+	$l++;
+	next if (/^;/);
+	next unless (/\S/);
+	my @fields =  split "\t";
+	$pattern_seq = lc($fields[0]);
+	if (&IsReal($fields[1])) {
+	    $patterns{$pattern_seq}->{exp_freq} = $fields[1];
+	    $file_type="undef";
+  	} elsif (($fields[1] =~ /(\S+)\|(\S+)/) && (&IsReal($fields[2]))) {
+	    $file_type = "2str";
+  	    $fw = lc($1);
+  	    $rc = lc($2);
+  	    $patterns{$rc}->{exp_freq} = $fields[2];
+  	    $patterns{$fw}->{exp_freq} = $fields[2];
+  	} elsif	(($fields[1] eq $fields[0]) &&(&IsReal($fields[2]))) {
+	    $file_type = "1str";
+  	    $patterns{$fields[0]}->{exp_freq} = $fields[2];
+	} else {
+	    &FatalError("Invalid expected frequency in file $exp_freq_file at line $l\n");
+	}
+	
+	if ($patterns{$pattern_seq}->{exp_freq} < 0) {
+	    &FatalError("Expected frequency cannot be negative\t$pattern_seq\t".$patterns{$pattern_seq}->{exp_freq});
+	}
+    }
+    close $exp if ($exp_freq_file);
+    
+    #### check if reverse complements were included in the expected freq file;
+    #### if not, infer them from the direct strand 
+    foreach my $pattern_seq (sort keys %patterns) {
+  	my $rc = lc(&SmartRC($pattern_seq));
+  	if (($patterns{$rc}->{exp_freq} <= 0) &&
+  	    ($patterns{$pattern_seq}->{exp_freq})) {
+  	    $patterns{$rc}->{exp_freq} = $patterns{$pattern_seq}->{exp_freq};
+	    #print STDERR join "\t", $pattern_seq,  $patterns{$pattern_seq}->{exp_freq}, $rc, $patterns{$rc}->{exp_freq}, "\n";
+  	}
+    }
+
+    #### sum expected frequencies by reverse complements
+    if (($sum_rc) && ($file_type eq "1str")) {
+	foreach my $pattern_seq (sort keys %patterns) {
+	    my $rc = lc(&SmartRC($pattern_seq));
+	    if ($rc eq $pattern_seq) {
+		#### palindromic sequence
+		$freq_2str{$pattern_seq} =   $patterns{$pattern_seq}->{exp_freq};
+	    } else {
+		#### non-palindromic sequence : the expected frequency is the sum of the sequence + its reverse complement 
+		$freq_2str{$pattern_seq} =  $freq_2str{$rc} = $patterns{$rc}->{exp_freq} + $patterns{$pattern_seq}->{exp_freq};
+	    }
+	    warn join ("\t", 
+		       $pattern_seq,  
+		       $patterns{$pattern_seq}->{exp_freq}, 
+		       $freq_2str{$pattern_seq},
+		       $rc, 
+		       $patterns{$rc}->{exp_freq}, 
+		       $freq_2str{$rc},
+		       ), "\n" if ($verbose >= 5);
+	}
+	
+	foreach my $pattern_seq (sort keys %patterns) {
+	    $patterns{$pattern_seq}->{exp_freq} = $patterns{$rc}->{exp_freq} = $freq_2str{$pattern_seq};
+	}
+    }
+
+    #### make sure that the sum of frequencies is positive
+    my $freq_sum = 0;
+    foreach my $pattern_seq (keys %patterns) {
+	$freq_sum += $patterns{$pattern_seq}->{exp_freq};
+    }
+    if ($freq_sum <= 0) {
+	&FatalError("Error with the expected frequency file : the sum must be strictly positive\t$freq_sum");
+    }
+    
+    #### rescale expected frequencies to have a sum of 1
+    if ($rescale_freq) {
+	print $out "; Rescaling expected frequencies\n" if ($verbose >=1);
+	foreach my $pattern_seq (keys %patterns) {
+	    $patterns{$pattern_seq}->{exp_freq} /= $freq_sum;
+	}
+    }
+    
+}
 
 sub CurrentTime {
 ### returns current time
@@ -245,12 +337,12 @@ sub round {
     }
 }
 
-#  sub trim {
-#      my ($string) = @_;
-#      $string =~ s/^\s+//;
-#      $string =~ s/\s+$//;
-#      return $string
-#  }
+sub trim {
+    my ($string) = @_;
+    $string =~ s/^\s+//;
+    $string =~ s/\s+$//;
+    return $string;
+}
 
 
 sub ListParameters {
@@ -953,7 +1045,8 @@ sub cgiError {
 sub Warning {
     my @warning_message = @_;
     my $message = join "\n\t", @warning_message;
-    if ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi") {
+    if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
+	($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
 	$message =~ s/\n/<br>\n/g;
 	&cgiWarning($message);
     } else {
