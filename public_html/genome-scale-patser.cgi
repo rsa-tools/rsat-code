@@ -95,7 +95,7 @@ if (&IsReal($query->param('pseudo_counts'))) {
 
 
 ### parameters for the piping to the feature map ###
-#$feature_file =  "$TMP/$tmp_file_name.ft";
+$feature_file =  "$TMP/$tmp_file_name.ft";
 #$features_from_patser_cmd .= " -seq $sequence_file";
 #$features_from_patser_cmd .= " -o $feature_file";
 
@@ -115,47 +115,23 @@ if ($query->param("output") =~ /display/i) {
 #    print "<PRE>$command</PRE>";
 #    print "<PRE>$features_from_patser_cmd</PRE>";
     open RESULT, "$command & |";
+#    open FEATURES, "| $features_from_patser_cmd";
+
+#    &PipingWarning();
 
     ### Print the result on Web page
-#    open RESULT, "$patser_command $parameters & |";
-#    open FEATURES, "| $features_from_patser_cmd";
-#    open FEATURES, "> $feature_file";
-    
-    ### prepare data for piping
-#      print <<End_of_form;
-#  <CENTER>
-#  <TABLE>
-#  <TR>
-#    <TD>
-#      <H3>Next step</H3>
-#    </TD>
-#    <TD>
-#      <FORM METHOD="POST" ACTION="feature-map_form.cgi">
-#      <INPUT type="hidden" NAME="feature_file" VALUE="$feature_file">
-#      <INPUT type="hidden" NAME="format" VALUE="feature-map">
-#      <INPUT type="hidden" NAME="handle" VALUE="none">
-#      <INPUT type="hidden" NAME="fill_form" VALUE="on">
-#      <INPUT type="submit" value="feature map">
-#      </FORM>
-#    </TD>
-#  </TR>
-#  </TABLE>
-#  </CENTER>
-#  End_of_form
-
     print "<PRE>";
     while (<RESULT>) {
+	s|$RSA/||g;
 	print;
 #	print FEATURES;
     }
 #    close FEATURES;
     close RESULT;
     print "</PRE>";
-    print "<HR SIZE=3>\n";
     
-    
-#    &PipingForm if ($query->param('return') =~ /positions/);
-#    
+#    &PipingForm();
+
 #    ### Print the result on Web page
 #    &PrintHtmlTable(RESULT, $result_file);
 #    close RESULT;
@@ -176,8 +152,9 @@ if ($query->param("output") =~ /display/i) {
 	    print "$query->param('user_email')</B><P>";      
 	}
     } 
-    print "<HR SIZE = 3>";
 }
+
+print "<HR SIZE = 3>";
 
 print $query->end_html;
 
