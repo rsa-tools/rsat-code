@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: patser.cgi,v 1.8 2001/10/07 22:53:07 jvanheld Exp $
+# $Id: patser.cgi,v 1.9 2001/11/13 23:39:21 jvanheld Exp $
 #
-# Time-stamp: <2001-10-08 00:53:05 jvanheld>
+# Time-stamp: <2001-11-14 00:17:19 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -42,7 +42,11 @@ $query = new CGI;
 #
 
 #### read parameters ####
-$parameters = " -A a:t c:g ";
+
+### alphabet ###
+$parameters .= " -A ".$query->param('alphabet');
+
+#$parameters = " -A a:t c:g ";
 
 ### matrix ####
 unless ($query->param('matrix') =~ /\S/) { ### empty matrix
@@ -84,10 +88,14 @@ if ($query->param('return') =~ /top/i) {
 if (&IsReal($query->param('lthreshold'))) {
     $parameters .= " -ls ".$query->param('lthreshold');
     $parameters .= " -M ".$query->param('lthreshold');
-} 
-
+}
 if (&IsReal($query->param('uthreshold'))) {
     $parameters .= " -u ".$query->param('uthreshold');
+}
+
+#### pseudo-counts
+if (&IsReal($query->param('pseudo_counts'))) {
+    $parameters .= " -b ".$query->param('pseudo_counts');
 }
 
 ### execute the command ###

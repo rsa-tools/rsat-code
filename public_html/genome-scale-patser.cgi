@@ -83,10 +83,16 @@ if (&IsReal($query->param('lthreshold'))) {
     $patser_parameters .= " -ls ".$query->param('lthreshold');
     $patser_parameters .= " -M ".$query->param('lthreshold');
 } 
-
 if (&IsReal($query->param('uthreshold'))) {
     $patser_parameters .= " -u ".$query->param('uthreshold');
 }
+
+
+#### pseudo-counts
+if (&IsReal($query->param('pseudo_counts'))) {
+    $parameters .= " -b ".$query->param('pseudo_counts');
+}
+
 
 ### parameters for the piping to the feature map ###
 #$feature_file =  "$TMP/$tmp_file_name.ft";
