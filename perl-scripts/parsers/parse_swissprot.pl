@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_swissprot.pl,v 1.1 2000/11/26 09:12:03 jvanheld Exp $
+# $Id: parse_swissprot.pl,v 1.2 2000/11/29 14:00:48 jvanheld Exp $
 #
-# Time-stamp: <2000-11-26 10:01:40 jvanheld>
+# Time-stamp: <2000-11-29 10:39:55 jvanheld>
 #
 ############################################################
 
@@ -44,14 +44,14 @@ package main;
   
   ### export classes
   @classes = qw( PFBP::Polypeptide PFBP::Catalysis );
-  @{$out_fields{'PFBP::Polypeptide'}} = qw( id name description organisms swissprot_acs swissprot_ids names );
+  @{$out_fields{'PFBP::Polypeptide'}} = qw( id name description gene organisms swissprot_acs swissprot_ids names );
   @{$out_fields{'PFBP::Catalysis'}} = qw( id catalyst catalyzed source );
   
   &ReadArguments;
   
   #### output directory
   $out_format = "obj";
-  $dir = $parsed_data."/swissprot";
+  $dir = $parsed_data."/swissprot_parsed";
   unless (-d $dir) {
       warn "Creating output dir $dir", "\n";
       mkdir $dir, 0775 || die "Error: cannot create directory $dir\n";
@@ -402,6 +402,12 @@ sub ParseSwissprot {
 	    if ($warn_level >= 2); 
 	my $polypeptide = $polypeptides->new_object(id=>$swissprot_ac,
 						    source=>$source);
+	if (defined($geneNames[0])) {
+	    $polypeptide->set_attribute("gene",$geneNames[0]);
+	} else {
+	    $polypeptide->set_attribute("gene","<NULL>");
+	}
+
 	foreach my $name (@names) {
 	    $polypeptide->push_attribute("names",$name);
 	}
@@ -414,10 +420,12 @@ sub ParseSwissprot {
 	    $polypeptide->push_attribute("names",$ac);
 	}
 	$polypeptide->set_attribute("description", $descr);
-	foreach my $EC (@ECs) {
+
+	my $pp_id = $polypeptide->get_id();
+	foreach my $ec (@ECs) {
 	    my $catalysis = $catalyses->new_object(source=>      $source,
-						catalyst=>    $pp_id,
-						catalyzed=>   $ec);
+						   catalyst=>    $pp_id,
+						   catalyzed=>   $ec);
 #	    $polypeptide->push_attribute("ECs",$EC);
 	}
 	foreach my $organism (@organisms) {

@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genes.pl,v 1.10 2000/11/26 04:54:51 jvanheld Exp $
+# $Id: parse_genes.pl,v 1.11 2000/11/29 14:00:48 jvanheld Exp $
 #
-# Time-stamp: <2000-11-23 21:34:22 jvanheld>
+# Time-stamp: <2000-11-29 13:11:53 jvanheld>
 #
 ############################################################
 
@@ -77,7 +77,7 @@ if ($export{all}) {
 }
 $suffix .= "_test" if ($test);
 
-$dir{output} = $parsed_data."/kegg/".$delivery_date;
+$dir{output} = $parsed_data."/kegg_parsed/".$delivery_date;
 unless (-d $dir{output}) {
     warn "Creating output dir $dir{output}";
     mkdir $dir{output}, 0775 || die "Error: cannot create directory $dir\n";
@@ -123,6 +123,17 @@ foreach $org (@selected_organisms) {
 $genes->index_names();
 
 &ParsePositions();
+
+foreach $gene ($genes->get_objects()) {
+    ### define a primary name (take the first value in the name list)
+    if ($name = $gene->get_name()) {
+	$gene->set_attribute("primary_name",$name);
+    }
+    #### check for genes without definition
+    if ($gene->get_attribute("definition") eq "<UNDEF>") {
+	$gene->set_attribute("definition",$gene->get_name());
+    }
+}
 
 
 ### print result
@@ -264,7 +275,13 @@ sub ParsePositions {
 	    next;
 	}
 	my $position = $gene->get_attribute("position");
-	unless (defined($position)) {
+
+	if ($position eq "<UNDEF>") {
+	    $gene->set_attribute("position","<NULL>");
+	    $gene->set_attribute("chromosome", "<NULL>");
+	    $gene->set_attribute("strand","<NULL>");
+	    $gene->set_attribute("start","<NULL>");
+	    $gene->set_attribute("end","<NULL>");
 	    &ErrorMessage("Error: gene ", $gene->get_attribute("id"), " has no position attribute\n");
 	    next;
 	}
@@ -289,6 +306,10 @@ sub ParsePositions {
 		next;
 	    }
 	} elsif ($organism eq "Homo sapiens") {
+	    $gene->set_attribute("chromosome", "<NULL>");
+	    $gene->set_attribute("strand","<NULL>");
+	    $gene->set_attribute("start","<NULL>");
+	    $gene->set_attribute("end","<NULL>");
 	    next;
 	}
 	
