@@ -57,6 +57,8 @@ unless ($dir{output}) {
 }
 &CheckOutDir($dir{output});
 chdir($dir{output});
+warn join ("\t", "; Output directory", $dir{output}) if ($main::verbose >= 1);
+
 
 ## log file
 open $log, ">".$outfile{log} || die "cannot open error log file".$outfile{log}."\n";
@@ -92,17 +94,19 @@ warn join ("\t", "; Adaptor", $slice_adaptor), "\n" if ($main::verbose >= 3);
 
     
 ## Get one chromosome object
+warn ("\t", "; Getting slice", $slice_type, $chromname), "\n" if ($main::verbose >= 1);
 my $slice = $slice_adaptor->fetch_by_region('chromosome', $chromname);
 warn join ("\t", "; Slice", $slice), "\n" if ($main::verbose >= 3);
 
 ## Get all Gene objects
+warn join("\t", "; Getting al genes"), "\n" if ($main::verbose >= 1);
 foreach my $gene (@{$slice->get_all_Genes()}) {
-    warn join("\t", "gene", $gene), "\n" if ($main::verbose >= 5);
+    warn join("\t", "gene", $gene), "\n" if ($main::verbose >= 3);
     @feature = &get_feature($gene);
     print $FT_TABLE join("\t", @feature), "\n";
     print_DBEntries($gene->get_all_DBLinks());
 
-## Get all Transcript objects
+    ## Get all Transcript objects
     foreach my $trans (@{$gene->get_all_Transcripts()}) {
         warn join("\t", "transcript", $trans), "\n" if ($main::verbose >= 5);
         my @feature = &get_feature($trans);
@@ -110,8 +114,8 @@ foreach my $gene (@{$slice->get_all_Genes()}) {
         print $FT_TABLE join("\t", @feature), "\n";
         $transcriptID = $feature[0];
 
-## Get CDS ID and coordinates (relative to chromosome) - there is a strand trick (see API doc)
-## Problem: corrdinates are strange
+	## Get CDS ID and coordinates (relative to chromosome) - there is a strand trick (see API doc)
+	## Problem: corrdinates are strange
         my $coding_region_start = $trans->coding_region_start;
         my $coding_region_end = $trans->coding_region_end;
         if($trans->translation()) {
@@ -135,13 +139,13 @@ foreach my $gene (@{$slice->get_all_Genes()}) {
 #        print $feature[0], " : ", ($fiv_utr) ? $fiv_utr->seq() : 'No 5 prime UTR', "\n";
 #        print $feature[0], " : ", ($thr_utr) ? $thr_utr->seq() : 'No 3 prime UTR', "\n";
 
-## Get all Exon objects
+	## Get all Exon objects
         foreach my $exon (@{$trans->get_all_Exons()}) {
             my @exonfeature = &get_exonfeature($exon);
             print $FT_TABLE join("\t", @exonfeature), "\n";
         }
 
-## Get all Intron objects
+	## Get all Intron objects
         foreach my $intron (@{$trans->get_all_Introns()}) {
             my @intronfeature = &get_intronfeature($intron);
             $intronfeature[0] = "Trnscrpt - ".$transcriptID;
