@@ -9,8 +9,8 @@ require "RSA.lib.pl";
 #### initialise parameters ####
 my $start_time = &AlphaDate;
 
-local $inputfile = "";
-local $outputfile = "";
+local $infile{input} = "";
+local $outfile{output} = "";
 
 local $verbose = 0;
 local $in = STDIN;
@@ -23,27 +23,18 @@ local $out = STDOUT;
 
 
 ### open output file ###
-$out = &OpenOutputFile($outputfile);
+$out = &OpenOutputFile($outfile{output});
 
 ##### read input #####
-$in = &OpenInputFile($inputfile);
+$in = &OpenInputFile($infile{input});
 while (<$in>) {
 
 }
 
-close $in if ($inputfile);
+close $in if ($infile{input});
 
 #### verbose ####
-if ($verbose) {
-  print $out "; template ";
-  &PrintArguments($out);
-  if ($inputfile ne "") {
-    print $out "; Input file	$inputfile\n";
-  }
-  if ($outputfile ne "") {
-    print $out "; Output file	$outputfile\n";
-  }
-}
+&Verbose if ($verbose);
 
 ###### execute the command #########
 
@@ -60,7 +51,7 @@ if ($verbose) {
 
 
 ###### close output file ######
-close $out if ($outputfile);
+close $out if ($outfile{output});
 
 
 exit(0);
@@ -120,8 +111,12 @@ sub ReadArguments {
   foreach my $a (0..$#ARGV) {
     ### verbose ###
     if ($ARGV[$a] eq "-v") {
-      $verbose = 1;
-    
+      if (&IsNatural($ARGV[$a+1])) {
+	$verbose = $ARGV[$a+1];
+      } else {
+	$verbose = 1;
+      }
+      
       ### detailed help
     } elsif ($ARGV[$a] eq "-h") {
       &PrintHelp;
@@ -132,13 +127,38 @@ sub ReadArguments {
       
       ### input file ###
     } elsif ($ARGV[$a] eq "-i") {
-      $inputfile = $ARGV[$a+1];
+      $infile{input} = $ARGV[$a+1];
       
       ### output file ###
     } elsif ($ARGV[$a] eq "-o") {
-      $outputfile = $ARGV[$a+1];
+      $outfile{output} = $ARGV[$a+1];
+      
+      ### organism
+    } elsif ($ARGV[$a] eq "-org") {
+      $organism = $ARGV[$a+1];
+      unless (defined($supported_organism{$organism})) {
+	  die ("Error: organism '$organism' is not supported on this site",
+	       $supported_organisms,
+	       "\n");
+      }
       
     }
   }
 }
 
+sub Verbose {
+  print $out "; template ";
+  &PrintArguments($out);
+  if (defined(%infile)) {
+    print $out "; Input files\n";
+    while (($key,$value) = each %infile) {
+      print $out ";\t$key\t$value\n";
+    }
+  }
+  if (defined(%outfile)) {
+    print $out "; Output files\n";
+    while (($key,$value) = each %outfile) {
+      print $out ";\t$key\t$value\n";
+    }
+  }
+}
