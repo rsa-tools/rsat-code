@@ -74,28 +74,27 @@ The input format is a tab-delimited text file with two columns, providing respec
 An example of cluster file is displayed in Table
 \ref{table:cluster_file}. This file describes 3 yeast regulons, each
 responding to some specific environmental condition: the NIT family
-contains 7 genes expressed under nitrogen depletion, the PHO fmily 5
+contains 7 genes expressed under nitrogen depletion, the PHO family 5
 genes expressed under phosphate stress, and the MET family 11 genes
 expressed when methionine is absent fom the culture medium.
-
 
 \begin{table}
 \begin{center}
 \begin{tabular}{ll}
 \hline
 ; gene & cluster \\
-YGR121C & NIT \\
-YJR152W & NIT \\
-YKR034W & NIT \\
-YKR039W & NIT \\
-YNL142W & NIT \\
-YOR348C & NIT \\
-YPR138C & NIT \\
-YAR071W & PHO \\
-YBR093C & PHO \\
-YDR481C & PHO \\
-YGR233C & PHO \\
-YML123C & PHO \\
+DAL5 & NIT \\
+GAP1 & NIT \\
+MEP1 & NIT \\
+MEP2 & NIT \\
+MEP3 & NIT \\
+PUT4 & NIT \\
+DAL80 & NIT \\
+PHO5 & PHO \\
+PHO11 & PHO \\
+PHO8 & PHO \\
+PHO84 & PHO \\
+PHO81 & PHO \\
 YDR502C & MET \\
 YER091C & MET \\
 YHL036W & MET \\
@@ -110,9 +109,15 @@ YNL277W & MET \\
 \hline
 \end{tabular}
 \end{center}
-\caption{\label{table:cluster_file} Example of cluster file.}
+\caption{\label{table:cluster_file} Example of family file.}
 \end{table}
 
+\textbf{Beware:} the columns must be separate by tabulations, spaces
+are not valid separators.
+
+Note that genes can be specified either by their name (as for the NIT
+and PHO families in Table \ref{table:cluster_file}), or by their
+systematic identifier (MET family in Table \ref{table:cluster_file}).
 
 
 \subsection{Example of utilization}
@@ -120,13 +125,13 @@ YNL277W & MET \\
 Let us assume that the file displayed in Table
 \ref{table:cluster_file} has been saved under the name
 \file{test.fam}. The following command will automatically perform all
-the analyses. 
+the analyses.
 
 \begin{verbatim}
 multiple-family-analysis  -i test.fam -v 1 \
     -org Saccharomyces_cerevisiae \
     -2str -noorf -noov \
-    -task upstream,oligos,maps,synthesis,sql,clean,all \
+    -task upstream,purge,oligos,oligo_maps,synthesis,sql,clean \
     -outdir test_fam_results
 \end{verbatim}
 
@@ -176,3 +181,30 @@ This requires the existence of a database space 'multifam' in your
 \concept{RDBMS}. If you are not familar with relational databases, you
 probably need to contact your system administrator to create this
 space for you.
+
+
+\subsection{Comparing programs}
+
+The program \program{multiple-family-analysis} allows you to compare
+the results obtained by different pattern discovery programs. Two of
+these programs are part of the \RSAT distribution :
+\program{oligo-analysis} and \program{dyad-analysis}. The other
+programs have been developed by other teams, and can be downloaded
+from their original site. The command below assumes that these
+programs were installed and included in your path.
+
+\begin{verbatim}
+multiple-family-analysis  -i test.fam -v 1 \
+    -org Saccharomyces_cerevisiae \
+    -2str -noorf -noov \
+    -task upstream,purge,oligos,oligo_maps \
+    -task dyads,dyad_maps,consensus,gibbs \
+    -task meme,synthesis,sql,clean \
+    -outdir test_fam_results
+\end{verbatim}
+
+Note that you can define multipe tasks either with a single call to
+the option \option{-task}, or by insering iteratively the option in
+the command line.
+
+

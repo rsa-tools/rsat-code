@@ -130,7 +130,7 @@ Try the following command:
 \begin{verbatim} 
 oligo-analysis -i PHO_up800.fasta -format fasta      \
     -v -l 6 -2str                                    \
-    -return occ,proba -thosig 0 -bg upstream \
+    -return occ,proba -lth occ_sig 0 -bg upstream \
     -org Saccharomyces_cerevisiae -sort              \
     -o PHO_up800_6nt_2str_ncf_sig0 
 \end{verbatim}
@@ -228,7 +228,7 @@ apper on the screen.
 \begin{verbatim} 
 oligo-analysis -i PHO_up800.fasta -format fasta \ 
     -v -l 6 -2str \
-    -return occ,proba -thosig 0 -sort 
+    -return occ,proba -lth occ_sig 0 -sort 
 \end{verbatim}
 
 Note that
@@ -247,7 +247,7 @@ command, by using the pipe character as below.
 
 \begin{verbatim}
 oligo-analysis -i PHO_up800.fasta -format fasta -v \
-    -l 6 -2str  -return occ,proba -thosig 0 -sort \
+    -l 6 -2str  -return occ,proba -lth occ_sig 0 -sort \
     | pattern-assembly -2str -sc 7 -subst 1 -v
 \end{verbatim}
 
@@ -275,32 +275,32 @@ sequenced), markov chains can provide an interesting approach.
 \begin{verbatim}
 oligo-analysis -markov 0 \
     -i PHO_up800.fasta -format fasta \
-    -l 6 -thosig 0 -sort \
+    -l 6 -lth occ_sig 0 -sort \
     -2str -return occ,proba \
     | pattern-assembly -2str -sc 7 -subst 1 -v
 
 oligo-analysis -markov 1 \
     -i PHO_up800.fasta -format fasta \
     -2str -return occ,proba \
-    -l 6 -thosig 0 -sort \
+    -l 6 -lth occ_sig 0 -sort \
     | pattern-assembly -2str -sc 7 -subst 1 -v
 	
 oligo-analysis -markov 2 \
     -i PHO_up800.fasta -format fasta \
     -2str -return occ,proba \
-    -l 6 -thosig 0 -sort \
+    -l 6 -lth occ_sig 0 -sort \
     | pattern-assembly -2str -sc 7 -subst 1 -v
 	
 oligo-analysis -markov 3 \
     -i PHO_up800.fasta -format fasta \
     -2str -return occ,proba \
-    -l 6 -thosig 0 -sort \
+    -l 6 -lth occ_sig 0 -sort \
     | pattern-assembly -2str -sc 7 -subst 1 -v
 	
 oligo-analysis -markov 4 \
     -i PHO_up800.fasta -format fasta \
     -2str -return occ,proba \
-    -l 6 -thosig 0 -sort \
+    -l 6 -lth occ_sig 0 -sort \
     | pattern-assembly -2str -sc 7 -subst 1 -v
 \end{verbatim}
 

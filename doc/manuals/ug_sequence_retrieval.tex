@@ -46,6 +46,8 @@ retrieve-seq -org Escherichia_coli_K12 \
     -from -200 -to 49 -q metA -q metB -q metC
 \end{verbatim}
 
+
+
 \subsubsection{Retrieving many upstream sequences}
 
 If you have to retrieve a large number of sequences, it might become
@@ -131,6 +133,73 @@ Check the result:
 \begin{verbatim}
 more Escherichia_coli_K12_start_codons.wc
 \end{verbatim}
+
+\subsubsection{Preventing the inclusion of upstream ORFs}
+
+With the command above, we retrieved sequences covering precisely 200
+bp upstream the start codon of the selected genes. Intergenic regions
+are sometimes shorter than this size. In particular, in bacteria, many
+genes are organized in operons, and the intergenic distance is very
+short (typically between 0 and 50 bp). If your gene selection contains
+many intra-operon genes, the sequences will be mainly composed of
+coding sequences (more precisely ORF, open reading frame), which will
+bias subsequent analyses.
+
+The option \texttt{-noorf} of \textit{retrieve-seq} indicates that, if
+the upstream gene is closer than the specified limit, the sequence
+should be clipped in order to return only intergenic regions.
+
+As an example, we will store the list of hitidin genes in a file and
+compare the results obtained with and without the option
+\texttt{-noorf}.
+
+Create a text file named \texttt{his\_genes.txt} with the following
+genes.
+
+\begin{verbatim}
+hisL
+hisG
+hisD
+hisC
+hisH
+hisA
+hisF
+hisI
+hisP
+hisM
+hisQ
+hisJ
+hisS
+hisR
+\end{verbatim}
+
+The default behaviour will return 200bp for each gene. 
+
+\begin{verbatim}
+retrieve-seq -type upstream -org Escherichia_coli_K12 \
+    -i his\_genes.txt -from -200 -to -1
+\end{verbatim}
+
+With the option \texttt{-noorf}, sequences are clipped depending on
+the position of the closest upstream neighbour.
+
+\begin{verbatim}
+retrieve-seq -type upstream -org Escherichia_coli_K12 \
+    -i his\_genes.txt -from -200 -to -1 -noorf \
+    -o his\_up200\_noorf.fasta
+
+more his\_up200\_noorf.fasta
+\end{verbatim}
+
+You can measure the length of the resulting sequences with the program
+\textit{sequence-lengths}.
+
+\begin{verbatim}
+sequence-lengths -i his\_up200\_noorf.fasta
+\end{verbatim}
+
+Notice that some genes have very short upstream sequences (no more
+than a few bp).
 
 \subsubsection{Retrieving downstream sequences}
 

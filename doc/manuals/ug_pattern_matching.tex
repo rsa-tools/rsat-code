@@ -61,7 +61,7 @@ medium affinity binding site (\texttt{CACGTT}) in this sequence set.
 Try the following command:
 
 \begin{verbatim}
-dna-pattern -i PHO_up800.fasta -format fasta \ 
+dna-pattern -v 1 -i PHO_up800.fasta -format fasta \ 
     -1str -p cacgtt -id 'Pho4p_site'
 \end{verbatim}
 
@@ -84,7 +84,7 @@ information:
 
 To perform the search on both strands, type:
 \begin{verbatim}
-dna-pattern -i PHO_up800.fasta -format fasta \ 
+dna-pattern -v 1 -i PHO_up800.fasta -format fasta \ 
     -2str -p cacgtt -id 'Pho4p_site'
 \end{verbatim}
 
@@ -350,11 +350,27 @@ To avoid manual editing, RSAT contains a program
 various file formats, including consensus.
 
 \begin{verbatim}
-convert-matrix -format consensus -i PHO_consensus -o PHO_matrix 
+convert-matrix -format consensus -i PHO_consensus \
+    -return counts -o PHO_matrix 
 
 more PHO_matrix
 \end{verbatim}
 
+Note that the program \textit{convert-matrix} includes many other
+output options, fo example you can obtain the degenerate consensus
+from a matrix with the following options.
+
+\begin{verbatim}
+convert-matrix -format consensus -i PHO_consensus \
+    -return consensus
+\end{verbatim}
+
+Additional information can be otbained with the on-line help for
+\textit{convert-matrix}.
+
+\begin{verbatim}
+convert-matrix -h
+\end{verbatim}
 
 \subsubsection{Detecting Pho4p sites in the PHO genes}
 
@@ -376,12 +392,19 @@ yeast upstream regions, and save the result in a file, which will then
 be used as input by \textit{patser}. To avoid occupying too much space
 on the disk, we could combine both tasks in a single command, and
 immediately redirect the output of \textit{retrieve-seq} as input for
-\textit{patser}. This can be done with the pipe character as below. 
+\textit{patser}. This can be done with the pipe character | as
+below.
 
+\textit{patser} result can be redirected to a file with the unix
+``greater than'' (>) symbol. We will store the result of the
+genome-scale search in a file \file{PHO\_matrix\_matches\_allup.txt}.
 
 \begin{verbatim}
 retrieve-seq -type upstream -from -1 -to -800  \
     -org Saccharomyces_cerevisiae \
     -all -format wc -label gene  \
-    | patser -m PHO_matrix -l 9 -A a:t c:g
+    | patser -m PHO_matrix -ls 9 -A a:t c:g \
+    > PHO_matrix_matches_allup.txt
+
+more PHO_matrix_matches_allup.txt
 \end{verbatim}

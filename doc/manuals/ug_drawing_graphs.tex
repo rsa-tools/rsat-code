@@ -13,7 +13,7 @@ positions of regulatory motifs detected by pattern matching programs
 such \program{dna-pattern} (string-based matching) or \program{patser}
 (matrix-based matching).
 
-\subsubsection{Converting pattern matches into features}
+\subsubsection{Converting \textit{dna-pattern} matches into features}
 
 We will analyze the same PHO family as in the tutorial on pattern
 discovery. We will use successively \program{oligo-analysis},
@@ -30,7 +30,7 @@ genes.
 \begin{verbatim} 
 oligo-analysis -i PHO_up800.fasta -format fasta      \
     -v -l 6 -2str                                    \
-    -return occ,proba -thosig 0 -bg upstream         \
+    -return occ,proba -lth occ_sig 0 -bg upstream         \
     -org Saccharomyces_cerevisiae -sort              \
     -o PHO_up800_6nt_2str_ncf_sig0 
 \end{verbatim}
@@ -40,7 +40,7 @@ the upstream sequences.
 
 \begin{verbatim} 
 dna-pattern -i PHO_up800.fasta -format fasta    \
-    -pl PHO_up800_6nt_2str_ncf_sig0             \
+    -pl PHO_up800_6nt_2str_ncf_sig0 -origin -0  \
     -o  PHO_up800_6nt_2str_ncf_sig0_matches.tab
 \end{verbatim}
 
@@ -81,11 +81,10 @@ feature map.
 \begin{verbatim}
 feature-map -format jpg                        \
     -i PHO_up800_6nt_2str_ncf_sig0_matches.ft  \
-    -o PHO_up800_6nt_2str_ncf_sig0_matches.jpg \
     -legend -scalebar -scalestep 50            \
-    -from 0 -to 800 -origin 801                \
-    -scorethick  \
-    -title 'Over-represented 6nt in PHO upstream sequences' 
+    -from -800 -to 0 -scorethick               \
+    -title 'Over-represented 6nt in PHO upstream sequences' \
+    -o PHO_up800_6nt_2str_ncf_sig0_matches.jpg
 \end{verbatim}
 
 This example illustrates some capabilities of \program{feature-map}:
@@ -113,11 +112,11 @@ from expanding over each other.
 \begin{verbatim}
 feature-map -format jpg                        \
     -i PHO_up800_6nt_2str_ncf_sig0_matches.ft  \
-    -o PHO_up800_6nt_2str_ncf_sig0_matches.jpg \
     -legend -scalebar -scalestep 50            \
-    -from 0 -to 800 -origin 801                \
+    -from -800 -to 0                           \
     -vertical -symbol -label pos               \
-    -title 'Over-represented 6nt in PHO upstream sequences' 
+    -title 'Over-represented 6nt in PHO upstream sequences'  \
+    -o PHO_up800_6nt_2str_ncf_sig0_matches.jpg 
 \end{verbatim}
 
 In this representation, a \concept{label} is written besides each
@@ -132,20 +131,22 @@ option \option{-format}.
 
 \begin{description}
 
-\item[jpg] (default) The \concept{jpg} format (also called \concept{jpeg})
-is a bitmap format recognized by all the web browsers and most drawing
-applications. The jpg standard includes a compression protocol, so
-that the resulting images occupy a reasonable space on the hard disk.
+\item[jpg] (default) The \concept{jpg} format (also called
+  \concept{jpeg}) is a bitmap format recognized by all the web
+  browsers and most drawing applications. The jpg standard includes a
+  compression protocol, so that the resulting images occupy a
+  reasonable space on the hard disk.
 
-\item[png] The \concept{png} format is a bitmap format which gives a 
-better color rendering than jpg. It is not compressed, and requires
-more space for storage. It is recognized by most browsers.
+\item[png] The \concept{png} format is a bitmap format which gives a
+  better color rendering than jpg. It is not compressed, and requires
+  more space for storage. It is recognized by most browsers.
 
-\item[ps] The \concept{postscript} (\concept{ps}) format is a vectorial format, which
-ensures a high quality result on printing devices. Postscript files
-can be opened with specific applications, depending on the operating
-system (ghostview, ghostscript). This format is recommended for
-drawing graphs to be included in publications.
+\item[ps] The \concept{postscript} (\concept{ps}) format is a
+  vectorial format, which ensures a high quality result on printing
+  devices. Postscript files can be opened with specific applications,
+  depending on the operating system (ghostview, ghostscript). This
+  format is recommended for drawing graphs to be included in
+  publications.
 
 \end{description}
 
@@ -159,11 +160,11 @@ bar.
 \begin{verbatim}
 feature-map -format jpg                        \
     -i PHO_up800_6nt_2str_ncf_sig0_matches.ft  \
-    -o PHO_up800_6nt_2str_ncf_sig0_matches.jpg \
     -legend -scalebar -scalestep 50            \
-    -from 0 -to 800 -origin 801                \
+    -from -800 -to 0                           \
     -scorethick  -dots                         \
     -title 'Over-represented 6nt in PHO upstream sequences' \
+    -o PHO_up800_6nt_2str_ncf_sig0_matches.jpg \
     -htmap > PHO_up800_6nt_2str_ncf_sig0_matches.html
 \end{verbatim}
 
@@ -219,7 +220,7 @@ motif sampler, developed by Andrew Neuwald.
 \item[features-from-msf] converts a multiple alignment file from 
 format \file{msf} for features. 
 
-\item[features-from-patser] extact features from the result of the 
+\item[features-from-patser] extract features from the result of the 
 matrix-based pattern matching \program{patser}, developed by Jerry Hertz. 
 
 \item[features-from-sigscan] extract features from the results of the
@@ -250,3 +251,12 @@ one column per attribute.
 
 The program \program{XYgraph} is a simple utility which plots graphs
 from a series of (x,y) coordinates.
+
+\subsubsection{Exercise: drawing features from patser}
+
+In the section on pattern-matching, we scanned all yeast upstream
+sequences with the PHO matrix and stored the result in a file
+(\texttt{PHO\_matrix\_matches\_allup.txt}).
+
+With the programs \textit{features-from-patser} and
+\textit{feature-map}, draw a map of the sites found in this analysis.
