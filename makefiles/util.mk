@@ -31,14 +31,14 @@ my_command:
 	${MAKE} command_${WHEN}
 
 JOB_DIR=jobs
-JOB=`mktemp ${JOB_DIR}/job.XXXXXX`
+JOB=${JOB_PREFIX}`mktemp ${JOB_DIR}/job.XXXXXX`
 command_queue:
 	@mkdir -p ${JOB_DIR}
 	@for job in ${JOB} ; do						\
 		echo "Job $${job}" ;					\
 		echo "echo running on node "'$$HOST' > $${job}; \
 		echo "${MY_COMMAND}" >> $${job} ;		\
-		qsub -m e -q rsa@merlin.ulb.ac.be -N $${job} -j oe	\
+		qsub -m e -q rsa@merlin.scmbb.ulb.ac.be -N $${job} -j oe	\
 			-o $${job}.log $${job} ;	\
 	done
 
