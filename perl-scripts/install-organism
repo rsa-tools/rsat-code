@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.42 2005/01/14 12:52:18 jvanheld Exp $
+# $Id: install-organism,v 1.43 2005/01/15 20:36:38 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -843,7 +843,8 @@ sub ReadArguments {
 #### retrieve start and stop codons and calculate word occurrences
 #### (for checking)
 sub StartAndStopCodons {
-    my $label =  "id,ctg,reg_left,reg_right,orf_strand";
+    my $label =  "orf";
+#    my $label =  "id,ctg,reg_left,reg_right,orf_strand";
     my $prefix = $dir{genome}."/".${organism_short_name};
     my $command = "retrieve-seq -v -org ${organism_short_name} -all  \ ";
     $command .= "-type upstream -feattype CDS -from 0 -to 2  \ ";
