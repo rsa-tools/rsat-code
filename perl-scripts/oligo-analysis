@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.58 2003/03/11 07:35:00 jvanheld Exp $
+# $Id: oligo-analysis,v 1.59 2003/04/09 07:16:57 jvanheld Exp $
 #
-# Time-stamp: <2003-03-11 08:34:58 jvanheld>
+# Time-stamp: <2003-04-09 09:12:58 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -91,7 +91,10 @@ if ($method eq "Markov chain") {
 	    $markov_order = $oligo_length + $markov_order;
 	}
     }
-    if ($markov_order > $oligo_length -2) {
+
+    
+    if (($markov_order > $oligo_length -2) && 
+	($markov_order > 0)){ 
 	&FatalError("Markov order ($markov_order) cannot be higher than word length - 2 ($oligo_length -2)"); 
     } elsif ($markov_order < 0) {
 	&FatalError("invalid markov order $markov_order");
@@ -186,14 +189,15 @@ $out = &OpenOutputFile($outputfile);
 &CalcRatio() if ($return{'ratio'});
 &CalcProba() if ($return{'proba'}) ;
 
-&PrintResult;
+&PrintResult() unless ($return{'table'});
 
-
-if ($verbose >= 2) {
-    &Warning( "oligo-analysis\t". &AlphaDate()."\tDone\n");
+if ($verbose >= 1) {
+    $done_time  = `date '+%d/%m/%y %H:%M:%S %Z'`;
+    print $out "; Job started $start_time";
+    print $out "; Job done    $done_time";
 }
 
-
+close $out unless ($outputfile eq "");
 
 exit(0);
 
@@ -212,12 +216,16 @@ sub CountOligo {
     }
     
     if ($return{'table'}) {
+
 	if ($seq_type eq "DNA") {
 	    @possible_oligos = &all_oligos($oligo_length);
 	} else {
 	    @possible_oligos = sort keys %patterns;
 	}
-	print $out $current_id;
+	#### print verbose
+	&Verbose() if ($verbose >= 1);
+
+	print $out "; seq_ID";
 	foreach my $pattern_seq (@possible_oligos) {
 	    print $out "\t", $pattern_seq;
 	}
@@ -356,7 +364,6 @@ sub CountOligo {
     undef $current_seq; ### release the memory occupied
     close $in;
     
-    exit(0) if $return{'table'};
 
     #### filter out undefined residues for DNA sequences
     if ($seq_type eq "DNA") {
@@ -1182,30 +1189,13 @@ sub Verbose {
 	printf $out "; %-29s\t%s\n", "Oligomer length", $oligo_length;
 	printf $out "; %-29s\t%s\n", "Input file",	$inputfile if ($inputfile);
 	printf $out "; %-29s\t%s\n", "Input format", $in_format;
-	printf $out "; %-29s\t%s\n", "Background model", $background_model if ($background_model);
-	printf $out "; %-29s\t%s\n", "Organism", $organism_name if ($organism_name);
-	printf $out "; %-29s\t%s\n", "Method", $method;
-	printf $out "; %-29s\t%s\n", "Expected frequency file", $exp_freq_file if ($exp_freq_file);
-	printf $out "; %-29s\n", "\trescaled to 1" if ($rescale_freq);
-	printf $out "; %-29s\t%s\n", "Markov chain order", $markov_order if ($method eq "Markov chain");
-	printf $out "; %-29s\t%s\n", "Alphabet frequency file", $alphabet_file if ($alphabet_file);
-	if (($alphabet) || ($method eq "alphabet")){
-	    print $out "; Alphabet\n";
-	    foreach $key (sort keys %residue_proba) {
-		print $out ";\t$key\t$residue_proba{$key}\n";
+
+	    printf $out "; %-29s\t%s\n", "Output file", $outputfile if ($outputfile);
+	    if ($noov) {
+		print $out "; Discard overlapping matches\n";
+	    } else {
+		print $out "; Count overlapping matches\n";
 	    }
-	}
-	if ($pseudo_weight) {
-	    printf $out "; %-29s\t%s\n", "Pseudo weight", $pseudo_weight;
-	    printf $out "; %-29s\t%s\n", "Pseudo frequency", $pseudo_frequency;
-	}
-	
-	printf $out "; %-29s\t%s\n", "Output file", $outputfile if ($outputfile);
-	if ($noov) {
-	    print $out "; Discard overlapping matches\n";
-	} else {
-	    print $out "; Count overlapping matches\n";
-	}
 	if ($sum_rc) {
 	    print $out "; Counted on both strands\n";
 #	    if ($group_rc) {
@@ -1221,34 +1211,56 @@ sub Verbose {
 	    }
 	    print $out "\n"; 
 	}
-	printf $out "; %-29s\t%s\n", "Sequence type", $seq_type;
-	printf $out "; %-29s\t%s\n", "Nb of sequences", $sequence_number;
-	printf $out "; %-29s\t%s\n", "Sum of sequence lengths", $sum_seq_length;
-	if ($seq_type eq "DNA") {
-	    printf $out "; %-29s\t%d\t%s\n", "discarded occurrences", $discarded_occurrences, " (contain other letters than ACGT)";
-	}
-	printf $out "; %-29s\t%s\n", "nb possible positions",$nb_possible_pos;
-	printf $out "; %-29s\t%s\n", "total oligo occurrences", $sum_occurrences;
-	if ($noov) {
-	    printf $out "; %-29s\t%s\n", "total overlapping occurrences", $sum_overlaps;
-	    printf $out "; %-29s\t%s\n", "total non overlapping occ", $sum_noov;
-	}
-	printf $out "; %-29s\t%s\n", "alphabet size", $alphabet_size;
-	printf $out "; %-29s\t%s\n", "nb possible oligomers", $nb_possible_oligo;
-	printf $out "; %-29s\t%s\n", "threshold on occurrences", $occurrence_threshold if ($occurrence_threshold > 0);
-	printf $out "; %-29s\t%s\n", "threshold on occ sig", $occ_significance_threshold if (defined($occ_significance_threshold));
-	printf $out "; %-29s\t%s\n", "threshold on matching seq sig", $mseq_significance_threshold if (defined($mseq_significance_threshold));
-	printf $out "; %-29s\t%s\n", "threshold on matching seq.", $mseq_threshold if ($mseq_threshold > 0);
-	printf $out "; %-29s\t%s\n", "threshold on occ proba", $proba_occ_threshold if ($proba_occ_threshold < 1);
-	printf $out "; %-29s\t%s\n", "threshold on occ ratio", $ratio_threshold if ($ratio_threshold > 0);
-	printf $out "; %-29s\t%s\n", "threshold on match. seq proba", $proba_mseq_threshold if ($proba_mseq_threshold < 1);
-	unless ($sequence_number > $max_seq_verbose) {
-	    print $out "; Sequences:\n";
-	    foreach $s (1..$sequence_number) {
-		print $out ";\t$id_list[$s]\t$seq_length[$s]\n";
+
+	unless ($return{'table'}) {
+	    
+	    printf $out "; %-29s\t%s\n", "Background model", $background_model if ($background_model);
+	    printf $out "; %-29s\t%s\n", "Organism", $organism_name if ($organism_name);
+	    printf $out "; %-29s\t%s\n", "Method", $method;
+	    printf $out "; %-29s\t%s\n", "Expected frequency file", $exp_freq_file if ($exp_freq_file);
+	    printf $out "; %-29s\n", "\trescaled to 1" if ($rescale_freq);
+	    printf $out "; %-29s\t%s\n", "Markov chain order", $markov_order if ($method eq "Markov chain");
+	    printf $out "; %-29s\t%s\n", "Alphabet frequency file", $alphabet_file if ($alphabet_file);
+	    if (($alphabet) || ($method eq "alphabet")){
+		print $out "; Alphabet\n";
+		foreach $key (sort keys %residue_proba) {
+		    print $out ";\t$key\t$residue_proba{$key}\n";
+		}
 	    }
+	    if ($pseudo_weight) {
+		printf $out "; %-29s\t%s\n", "Pseudo weight", $pseudo_weight;
+		printf $out "; %-29s\t%s\n", "Pseudo frequency", $pseudo_frequency;
+	    }
+	    
+	    printf $out "; %-29s\t%s\n", "Sequence type", $seq_type;
+	    printf $out "; %-29s\t%s\n", "Nb of sequences", $sequence_number;
+	    printf $out "; %-29s\t%s\n", "Sum of sequence lengths", $sum_seq_length;
+	    if ($seq_type eq "DNA") {
+		printf $out "; %-29s\t%d\t%s\n", "discarded occurrences", $discarded_occurrences, " (contain other letters than ACGT)";
+	    }
+	    printf $out "; %-29s\t%s\n", "nb possible positions",$nb_possible_pos;
+	    printf $out "; %-29s\t%s\n", "total oligo occurrences", $sum_occurrences;
+	    if ($noov) {
+		printf $out "; %-29s\t%s\n", "total overlapping occurrences", $sum_overlaps;
+		printf $out "; %-29s\t%s\n", "total non overlapping occ", $sum_noov;
+	    }
+	    printf $out "; %-29s\t%s\n", "alphabet size", $alphabet_size;
+	    printf $out "; %-29s\t%s\n", "nb possible oligomers", $nb_possible_oligo;
+	    printf $out "; %-29s\t%s\n", "threshold on occurrences", $occurrence_threshold if ($occurrence_threshold > 0);
+	    printf $out "; %-29s\t%s\n", "threshold on occ sig", $occ_significance_threshold if (defined($occ_significance_threshold));
+	    printf $out "; %-29s\t%s\n", "threshold on matching seq sig", $mseq_significance_threshold if (defined($mseq_significance_threshold));
+	    printf $out "; %-29s\t%s\n", "threshold on matching seq.", $mseq_threshold if ($mseq_threshold > 0);
+	    printf $out "; %-29s\t%s\n", "threshold on occ proba", $proba_occ_threshold if ($proba_occ_threshold < 1);
+	    printf $out "; %-29s\t%s\n", "threshold on occ ratio", $ratio_threshold if ($ratio_threshold > 0);
+	    printf $out "; %-29s\t%s\n", "threshold on match. seq proba", $proba_mseq_threshold if ($proba_mseq_threshold < 1);
+	    unless ($sequence_number > $max_seq_verbose) {
+		print $out "; Sequences:\n";
+		foreach $s (1..$sequence_number) {
+		    print $out ";\t$id_list[$s]\t$seq_length[$s]\n";
+		}
+	    }
+	    print $out ";\n";
 	}
-	print $out ";\n";
     }
 }
 
@@ -1262,7 +1274,7 @@ sub PrintResult {
     }
 
     #### print verbose
-    &Verbose if ($verbose >= 1);
+    &Verbose() if ($verbose >= 1);
 
     ### sort oligomers in function of significance or alphabetically
     if ($sort_result) {
@@ -1429,15 +1441,6 @@ sub PrintResult {
 	print $out "\n";
     }
     
-    
-    if ($verbose >= 1) {
-	$done_time  = `date '+%d/%m/%y %H:%M:%S %Z'`;
-	print $out "; Job started $start_time";
-	print $out "; Job done    $done_time";
-	
-    }
-    
-    close $out unless ($outputfile eq "");
     
 }
 
