@@ -29,6 +29,7 @@ use Bio::EnsEMBL::DBSQL::SliceAdaptor;
 #### initialise parameters
 my $start_time = &AlphaDate();
 
+my $chromname = 'Y';
 
 local %dir = ();
 
@@ -54,7 +55,7 @@ my $dbname = 'homo_sapiens_core_28_35a';
 ################################################################
 ### open output streams
 unless ($dir{output}) {
-    $dir{output} = "ENSEMBL_one_chrom".$dbname;
+    $dir{output} = "ENSEMBL_chrom".$chromname."-".$dbname;
 }
 &CheckOutDir($dir{output});
 chdir($dir{output});
@@ -90,7 +91,7 @@ warn join ("\t", "; Adaptor", $slice_adaptor), "\n" if ($main::verbose >= 3);
 
     
 ## Get one chromosome object
-my $slice = $slice_adaptor->fetch_by_region('chromosome', '22');
+my $slice = $slice_adaptor->fetch_by_region('chromosome', $chromname);
 warn join ("\t", "; Slice", $slice), "\n" if ($main::verbose >= 3);
     
 foreach my $gene (@{$slice->get_all_Genes()}) {
@@ -156,6 +157,7 @@ OPTIONS
 	-help	display options
 	-v	verbose
 	-outdir output directory
+        -chrom  chromosome name
 
    Connection to the ENSEMBL MYSQL server
    	-user	username (default: $user)
@@ -180,6 +182,7 @@ get-ensembl-genome.pl options
 -i		input file
 -outdir		output directory
 -v		verbose
+-chrom  chromosome name
 -user		username (default: $user)
 -host		host (default: $host)
 -dbname		database name (default: $dbname)
@@ -212,6 +215,10 @@ sub ReadArguments {
 	    ### output dir  
 	} elsif ($ARGV[$a] eq "-outdir") {
 	    $dir{output} = $ARGV[$a+1];
+
+            ### chromosome name
+        } elsif ($ARGV[$a] eq "-chrom") {
+            $chromname = $ARGV[$a+1];
 	    
 	    ### DB user
 	} elsif ($ARGV[$a] eq "-user") {
