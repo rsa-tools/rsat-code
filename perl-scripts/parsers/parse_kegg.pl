@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_kegg.pl,v 1.9 2002/01/24 16:03:41 jvanheld Exp $
+# $Id: parse_kegg.pl,v 1.10 2002/04/17 13:52:29 jvanheld Exp $
 #
-# Time-stamp: <2002-01-24 16:56:32 jvanheld>
+# Time-stamp: <2002-04-17 15:51:49 jvanheld>
 #
 ############################################################
 
@@ -78,22 +78,8 @@ $data_file{reaction} = $dir{KEGG}."/ligand/reaction.lst";
 $data_file{reaction_name} = $dir{KEGG}."/ligand/reaction_name.lst";
 $data_file{ec} = $dir{KEGG}."/ligand/ECtable";
 
-
-foreach $key (keys %data_file) {
-    if (-e $data_file{$key}) {
-	$in_file{$key} = $data_file{$key};
-    } elsif (-e "$data_file{$key}.gz") {
-	$in_file{$key} = "gunzip -c $data_file{$key}.gz | ";
-    } elsif (-e "$data_file{$key}.Z") {
-	$in_file{$key} = "uncompress -c $data_file{$key}.Z | ";
-    } else {
-	die "Error: $key data file $data_file{$key} does not exist\n";
-    }
-}
-$in_file{reaction2ec} = "uncompress -c ".$dir{KEGG}."/molecules/ligand/reaction.tar.Z | tar -xpOf - | cut -d ':' -f 1,2 | sort -u |";
-
 #### pathways
-$dir{pathway_reactions} = $dir{KEGG}."/molecules/ligand/reaction.main/";
+$dir{pathway_reactions} = $dir{KEGG}."/ligand/reaction.main/";
 $dir{eco} = $dir{KEGG}."/pathways/eco/";
 $dir{sce} = $dir{KEGG}."/pathways/sce/";
 $dir{hsa} = $dir{KEGG}."/pathways/hsa/";
@@ -104,15 +90,6 @@ $in_file{pathway_names} = $dir{KEGG}."/pathways/map_title.tab";
 # output files
 #
 $dir{output} = "$parsed_data/kegg_parsed/$delivery_date";
-unless (-d $dir{output}) {
-    warn "Creating output dir $dir{output}";
-    mkdir $dir{output}, 0775 || die "Error: cannot create directory $dir\n";
-}
-chdir $dir{output};
-$out_file{kegg} = "$dir{output}/kegg.obj";
-$out_file{connectivity} = "$dir{output}/kegg.connectivity.txt";
-$out_file{stats} = "$dir{output}/kegg.stats.txt";
-$out_file{errors} = "$dir{output}/kegg.errors.txt";
 
 open ERR, ">$out_file{errors}" || die "Error: cannot write error report fle $$out_file{errors}\n";
 
@@ -133,15 +110,46 @@ push @classes, ("PFBP::GenericPathway");
 
 &ReadArguments;
 
-### testing mode
-if ($test) {
-    warn ";TEST\n" if ($warn_level >= 1);
-    ### fast partial parsing for debugging
-    $in_file{compound} .= " head -5000 |";
-    $in_file{reaction} .= " head -50 |";
-    $in_file{ec} .= " head -20 |";
-    $in_file{reaction2ec} .= " head -200 |";
+#### output directory
+unless (-d $dir{output}) {
+    warn "Creating output dir $dir{output}";
+    mkdir $dir{output}, 0775 || die "Error: cannot create directory $dir\n";
 }
+chdir $dir{output};
+if ($clean) {
+    system "\\rm -rf $dir{output}/sql_scripts";
+    system "\\rm -f $dir{output}/*";
+}
+
+#### output files
+$out_file{kegg} = "$dir{output}/kegg.obj";
+$out_file{connectivity} = "$dir{output}/kegg.connectivity.txt";
+$out_file{stats} = "$dir{output}/kegg.stats.txt";
+$out_file{errors} = "$dir{output}/kegg.errors.txt";
+
+#### check input files
+foreach $key (keys %data_file) {
+    if (-e $data_file{$key}) {
+	$in_file{$key} = $data_file{$key};
+	if ($test) {
+	    $in_file{$key} = "head -500 $in_file{$key} | ";
+	}
+    } elsif (-e "$data_file{$key}.gz") {
+	$in_file{$key} = "gunzip -c $data_file{$key}.gz | ";
+	if ($test) {
+	    $in_file{$key} = "| head -500 ";
+	}
+    } elsif (-e "$data_file{$key}.Z") {
+	$in_file{$key} = "uncompress -c $data_file{$key}.Z | ";
+	if ($test) {
+	    $in_file{$key} = "| head -500 ";
+	}
+    } else {
+	die "Error: $key data file $data_file{$key} does not exist\n";
+    }
+}
+$in_file{reaction2ec} = "uncompress -c ".$dir{KEGG}."/ligand/reaction.tar.Z | tar -xpOf - | cut -d ':' -f 1,2 | sort -u |";
+
 
 ### default verbose message
 &DefaultVerbose if ($warn_level >= 1);
@@ -168,7 +176,7 @@ $ecs->set_out_fields(qw( id names parent ));
 $pathways->set_out_fields(qw( id parent organism source names reactions ECs genes ));
 $genericPathways->set_out_fields(qw( id source names reactions ECs ));
 
-$genericPathways->set_attribute_header("reactions", join ("\t", "id", "direction") );
+$genericPathways->set_attribute_header("reactions", join ("\t", "id", "direction", "reaction") );
 
 
 #### parse compounds
@@ -198,12 +206,31 @@ foreach $compound ($compounds->get_objects()) {
 
 
 ### print result
-$compounds->dump_tables();
-$reactions->dump_tables();
-$reactants->dump_tables();
-$ecs->dump_tables();
-$pathways->dump_tables();
-$genericPathways->dump_tables();
+#  $compounds->dump_tables();
+#  $reactions->dump_tables();
+#  $reactants->dump_tables();
+#  $ecs->dump_tables();
+#  $pathways->dump_tables();
+#  $genericPathways->dump_tables();
+
+@class_factories = qw (
+		       compounds
+		       reactions
+		       reactants
+		       ecs
+		       pathways
+		       genericPathways
+		       );
+foreach $class_factory (@class_factories) {
+    
+    $$class_factory->dump_tables();
+    $$class_factory->generate_sql(schema=>"jvanheld", 
+				  grant=>"p3", 
+				  dir=>"$dir{output}/sql_scripts", 
+				  makefile=>"k_${class_factory}.mk", 
+				  prefix=>"k_$class_factory_");
+}
+
 &ExportClasses($out_file{kegg}, $out_format, @classes) if ($export{obj});
 
 
@@ -259,6 +286,8 @@ OPTIONS
 	-obj	export data in object format (.obj file)
 		which is human-readable (with some patience and
 		a good cup of coffee)
+	-clean	remove all files from the output directory before
+		parsing
 EndHelp
   close HELP;
 }
@@ -277,7 +306,11 @@ sub ReadArguments {
 	    ($ARGV[$a+1] =~ /^\d+$/)){
 	    $main::warn_level = $ARGV[$a+1];
 	    
-	    ### fast test
+	    ### clean
+	} elsif ($ARGV[$a] eq "-clean") {
+	    $main::clean = 1;
+	    
+	    ### quick test
 	} elsif ($ARGV[$a] eq "-test") {
 	    $test = 1;
 
@@ -335,10 +368,10 @@ sub ParseReactions {
     }
 
     ### read reactions
-    die "Error: reaction file $input_file does not exist\n" 
-	unless (-e $input_file); 
-    die "Error: cannot read reaction file $input_file\n" 
-	unless (-r $input_file); 
+#    die "Error: reaction file $input_file does not exist\n" 
+#	unless (-e $input_file); 
+#    die "Error: cannot read reaction file $input_file\n" 
+#	unless (-r $input_file); 
     open RXN, $input_file 
 	|| die "Error: cannot read $input_file\n";
     while (<RXN>) {
@@ -390,10 +423,10 @@ sub ParseReactions {
     close RXN;
 
     ### read reaction equations by name
-    die "Error: equationfile $equation_file does not exist\n" 
-	unless (-e $equation_file); 
-    die "Error: cannot read equation file $equation_file\n" 
-	unless (-r $equation_file); 
+#    die "Error: equation file $equation_file does not exist\n" 
+#	unless (-e $equation_file); 
+#    die "Error: cannot read equation file $equation_file\n" 
+#	unless (-r $equation_file); 
     open EQUATIONS, $equation_file 
 	|| die "Error: cannot read $equation_file\n";
     while (<EQUATIONS>) {
@@ -690,19 +723,21 @@ sub ParseKeggPathways {
     
     
     ### input files
+    warn "; Getting generic pathways from $dir{pathway_reactions}" if ($warn_level >= 1);
     @in_files = glob($dir{pathway_reactions}."/map*.rea*");
-    if ($test) {
-	warn ";TEST\n" if ($warn_level >= 1);
-	### fast partial parsing for debugging
-	@in_files = shift @in_files;
-    }
+    warn ";\tSelected pathway files\n;\t\t", join("\n;\t\t", @in_files), "\n" if ($warn_level >= 1);
+#    if ($test) {
+#	warn ";TEST\n" if ($warn_level >= 1);
+#	### fast partial parsing for debugging
+#	@in_files = shift @in_files;
+#    }
     
     ################################################################
     # parse generic pathways (lists of reactions and ECs)
     #
     foreach $filename (@in_files) {
 	$short_file_name = $filename;
-	$short_file_name =~ s|.*/||g;
+	$short_file_name =~ s|\.*/||g;
 	if ($short_file_name =~ /(map\d+)\.rea/) {
 	    $map_id = $1;
 	}
@@ -717,6 +752,7 @@ sub ParseKeggPathways {
 	}
 	
 	warn ("; reading reactions",
+	      "\tfile: ", $filename,
 	      "\tfile: ", $short_file_name,
 	      "\tid: ", $pathway->get_attribute("id"),
 	      "\tname: ", $pathway->get_name(),
