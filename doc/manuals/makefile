@@ -1,9 +1,9 @@
 
-.SUFFIXES: .tex .dvi .log .aux .toc .pdf .ps .view .xdvi
+.SUFFIXES: .tex .dvi .log .aux .toc .pdf .ps .view .xdvi .html
 
 ############################################################
 #
-# $Id: makefile,v 1.3 2004/03/11 09:13:32 jvanheld Exp $
+# $Id: makefile,v 1.4 2004/03/29 13:53:32 jvanheld Exp $
 #
 # Time-stamp: <2003-10-02 15:13:34 jvanheld>
 #
@@ -47,6 +47,10 @@ it:
 
 ug:
 	${MAKE} tutorial_shell_rsat.pdf
+	${MAKE} tex_clean
+
+ig:
+	${MAKE} install_guide.pdf
 	${MAKE} tex_clean
 
 _publish:
@@ -96,6 +100,10 @@ fullclean:
 #
 # Rules
 #
+
+SPLIT=4
+.tex.html:
+	latex2html -split ${SPLIT} $<
 
 .tex.dvi:
 	latex $< 
