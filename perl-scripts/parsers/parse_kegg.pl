@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_kegg.pl,v 1.4 2001/08/24 09:24:52 jvanheld Exp $
+# $Id: parse_kegg.pl,v 1.5 2001/08/24 09:27:54 jvanheld Exp $
 #
-# Time-stamp: <2001-08-24 11:24:14 jvanheld>
+# Time-stamp: <2001-08-24 11:27:33 jvanheld>
 #
 ############################################################
 
@@ -382,6 +382,7 @@ sub ParseEC {
     $ec_object = $ecs->new_object(%args);
     $ec_object->push_attribute("names", "non-enzymatic or not clearly enzymatic");
     $ec_object->push_attribute("names", "0.0.0.0");
+    $ec_object->set_attribute("ec", "0.0.0.0");
     $ec_object->set_attribute("parent","<NULL>");
 
     ### create the class for -.-.-.-
@@ -389,6 +390,7 @@ sub ParseEC {
     $ec_object = $ecs->new_object(%args);
     $ec_object->push_attribute("names", "non-assigned EC number");
     $ec_object->push_attribute("names", "-.-.-.-");
+    $ec_object->set_attribute("ec", "-.-.-.-");
     $ec_object->set_attribute("parent","<NULL>");
 
     ### open the input stream
@@ -415,6 +417,7 @@ sub ParseEC {
 	    foreach $name (@names) {
 		$ec_object->push_attribute("names",$name);
 		$ec_object->push_attribute("names",$ec_number);
+		$ec_object->set_attribute("ec",$ec_number);
 	    }
 	    
 	    ### partially specified ecs
