@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.34 2004/01/14 22:12:22 jvanheld Exp $
+# $Id: install-organism,v 1.35 2004/01/14 22:42:29 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -156,7 +156,11 @@ $out = &OpenOutputFile($outputfile);
 
 &AllUpstream() if ($task{allup});
 
-&CalcFrequencies() if (($task{oligos}) || ($task{distrib}) || ($task{dyads}));
+for $noov ("", "-noov") {
+    for $strands ("-1str", "-2str") {
+	&CalcFrequencies() if (($task{oligos}) || ($task{distrib}) || ($task{dyads}));
+    }
+}
 
 &CleanUp if ($task{clean});
 
@@ -514,27 +518,26 @@ sub CalcOligoFreq {
 sub CalcOligoDistrib {
     my ($seq_file,$seq_format,$seq_type) = @_;
     foreach my $oligo_length (1..1) {
-#    foreach my $oligo_length (1..8) {
 	#### Calculate occurrence distributions in the sequence file
 	my $distrib_file = "$dir{oligos}/${oligo_length}nt_${seq_type}_${organism_short_name}${noov}${strands}_distrib.tab";
 	my $command = "$SCRIPTS/oligo-analysis -v 1 ${strands} -i $seq_file -format $seq_format ";
-	$command .= " ".$strands;
+		$command .= " ".$strands;
 	$command .= " ".$noov;
-	$command .= "-l ".$oligo_length." -type dna ";
-	$command .= "-return occ -distrib -nogrouprc ";
-	$command .= "-o ".$distrib_file;
-#	$command = " ; gzip -f ".$distrib_file;
+	$command .= " -l ".$oligo_length." -type dna";
+	$command .= " -return occ -distrib -nogrouprc";
+	$command .= " -o ".$distrib_file;
+	$command .= " ; gzip -f ".$distrib_file;
 	&doit($command, $dry_run);  
-
+	
 	#### Fit a Poisson and a negbin on occurrence distribution
 	foreach my $theor ("negbin", "poisson") {
 	    my $fitting_file = "$dir{oligos}/${oligo_length}nt_${seq_type}_${organism_short_name}${noov}${strands}_${theor}.tab";
 	    $command = "fit-distribution -v 1 -i ".$distrib_file;
 	    $command .= " -o ".$fitting_file;
 	    $command .= " -distrib ".$theor;
-#	    $command .= " ; gzip -f ".$fitting_file;
+	    $command .= " ; gzip -f ".$fitting_file;
 	    &doit($command, $dry_run);  
-	}
+		}
     }
 }
 
