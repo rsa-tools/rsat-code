@@ -3,23 +3,23 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Utilities}
 
-\subsection{orf-info}
+\subsection{gene-info}
 
-\textbf{orf-info} allows you to get information on ORFs, given a series of
-query words. Queries are matched against ORF identifiers and ORF
-names. Imperfect matches can be specified by using regular
-expressions.
+\textbf{gene-info} allows you to get information on one or 
+several genes, given a series of query words. Queries are matched
+against gene identifiers and gene names. Imperfect matches can be
+specified by using regular expressions.
 
 For example, to get all info about the yeast gene GAT1:
 
 \begin{verbatim}
-orf-info -org Saccharomyces_cerevisiae -q GAT1
+gene-info -org Saccharomyces_cerevisiae -q GAT1
 \end{verbatim}
 
 And to get all the purine genes from \textit{Escherichia coli}, type: 
 
 \begin{verbatim}
-orf-info -org Escherichia_coli_K12 -q 'pur.*'
+gene-info -org Escherichia_coli_K12 -q 'pur.*'
 \end{verbatim}
 
 Note the use of quotes, which is necessary whenever the query contains
@@ -29,7 +29,7 @@ You can also combine several queries on the same command line, by
 using reiteratively the -q option:
 
 \begin{verbatim}
-orf-info -org Escherichia_coli_K12 \
+gene-info -org Escherichia_coli_K12 \
     -q 'met.*' -q 'thr.*' -q 'lys.*'
 \end{verbatim}
 

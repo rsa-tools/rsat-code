@@ -16,18 +16,17 @@ Installation guide}
 
 \author{
 	Jacques van Helden \\
-	\email{jvanheld@ucmb.ulb.ac.be} \\
+	\email{jvanheld@scmbb.ulb.ac.be} \\
+	\url{http://www.scmbb.ulb.ac.be/$\tilde{\hspace{0.4em}}$jvanheld/} \\
 	\scmb 
 }
 
 
-%\address{\scmb}
-
 \maketitle
 
-%\newpage
-%\tableofcontents
-%\newpage
+\newpage
+\tableofcontents
+\newpage
 
 \section{Description}
 
@@ -57,19 +56,29 @@ calls to unix system commands.
 
 \subsection{perl}
 
-Almost all the programs in \RSAT are written in perl version 5.0 or
-later.
+The programs in \RSAT are written in perl. Version 5.1 or
+later is recommended.
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Installation
 \section{Installation}
 
 \RSAT can be distributed either as a compressed archive, or via the CVS
 server. The CVS distribution greatly facilitates updates.
 
+\textbf{Note} The CVS distribution will soon be available for external
+users, but we still need to configure the CVS server to accept a guest
+login. For the time being, the CVS distribution is still restricted to
+the people from the lab. Inbetween, the only distribution mode for
+external users is the compressed archive.
+
 \subsection{Installation from the CVS repository}
+
 
 Before being able to retrieve \RSAT from the CVS repository, you need
 an account on our server. For this, please contact Jacques van Helden
-(\email{jvanheld@ucmb.ulb.ac.be}).
+(\email{jvanheld@scmbb.ulb.ac.be}).
 
 \subsubsection{First installation}
 
@@ -95,18 +104,30 @@ cd rsa-tools
 cvs update .
 \end{verbatim}
 
-\subsection{Installation from a compresed archive}
+\subsection{Installation from a compressed archive}
 
-\begin{enumerate}
+Uncompress the archive containing the programs. The archive is
+distributed in \texttt{zip} or \texttt{tar} format.
 
-\item Uncompress the archive containing the programs. 
+The \texttt{.zip} files can be uncompressed with the command
+\program{unzip}.
+
 \begin{verbatim}
-tar -xpzf rsat_yyyymmdd.tgz
+unzip rsat_yyyymmdd.zip
 \end{verbatim}
-
 where yyyymmdd stands for the version number (delivery date).
 
-\end{enumerate}
+If the \program{unzip} command is not supported on your system, you
+can uncompress the \texttt{.tar.gz} archive with the \program{gunzip}
+and \program{tar} commands, which are part of the default unix
+installation.
+
+\begin{verbatim}
+gunzip rsat_yyyymmdd.tar.gz
+tar -xpf rsat_yyyymmdd.tar
+\end{verbatim}
+
+
 
 \section{Adding \RSAT to your path}
 
@@ -130,11 +151,26 @@ export PATH=${PATH}:${RSAT}/perl-scripts
 
 \end{enumerate}
 
+If you are using a different shell than bash, the specification of
+environment variables is slightly different (for example, in tcsh, you
+need to use \program{setenv} instead of \program{export}). In case of
+doubt, ask your system administrator how to configure your environment
+variables and your path.
+
+The specification of the environment variables and paths are required
+each time you want to use \RSAT. You can add these specification to
+your personal profile (e.g. the \file{.bashrc} file if your shell is
+bash). If you don't know how to proceed, ask your system
+administrator.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Directories
 
 \section{Initializing the directories}
 
 In addition to the programs, the installation of rsa-tools requires
-the creation of a few directories for storing data, access logs (forr
+the creation of a few directories for storing data, access logs (for
 the web server), and temporary files.  
 
 The distribution includes a series of make scripts which will
@@ -147,36 +183,61 @@ make -f makefiles/init_RSAT.mk init
 \end{verbatim}
 
 
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Genome installation
 \section{Installing genomes}
 
 Genomes are distributed via the HTTP server. 
 
+\begin{quote}
 \url{http://rsat.ulb.ac.be/rsat/data/genomes/}
+\end{quote}
 
-Download the genomes you need and store them in the directory
+Download the genomes you need and store them in your local \RSAT
+genome directory
 
-\file{rsa-tools/public\_html/data/genomes}
+\begin{quote}
+\file{/home/myaccount/rsa-tools/public\_html/data/genomes}
+\end{quote}
 
 You also need the file which provides the list of supported genomes.
 
+\begin{quote}
 \url{http://rsat.ulb.ac.be/rsat/data/supported\_organisms.pl}
+\end{quote}
 
-This file must be stored in your directory
+This file must be stored in your \RSAT data directory
 
-\file{rsa-tools/public\_html/data/}
+\begin{quote}
+\file{/home/myaccount/rsa-tools/public\_html/data/}
+\end{quote}
+
+If you only downloaded some genomes, it is better to edit the file
+\file{supported\_organisms.pl} in order to delete the specification of
+other genomes. 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Config file
+\section{Configuring \RSAT for utilization on the command line}
+
+The \RSAT distribution comes with a template configuration file named
+\file{RSA.config.default} and located in the \file{rsa-tools}
+directory.
+
+Copy this file to create your own config file \file{RSA.config}.
+
+\begin{verbatim}
+cp RSA.config.default RSA.config
+\end{verbatim}
+
+In principle, this default configuration file is sufficient to run the
+tools on the command-line. You only need to edit it if you want to
+install a web server of the tools.
 
 
-\section{Configuring \RSAT}
-
-The \RSAT distribution comes with a template configuration file.
-
-\file{rsa-tools/RSA.config}
-
-Open this file with a text editor, and edit the first variables
-according to your local configuration.
-
-\section{Testing the installation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Tests for the command line tools
+\section{Testing the command-line tools}
 
 \subsection{Testing the access to perl scripts}
 
@@ -202,6 +263,19 @@ We will now testif the genomes are correctly installed. You will
 obtain the list of supported organisms with the command:
 
 \begin{verbatim}
+supported-organisms
+\end{verbatim}
+
+If this command returns no result, it means that genomes were either
+not installed, or not correctly configured. In such a case, check the
+directories in the \file{data/genomes} directory, and check that the
+file \file{data/supported\_organisms.pl}.
+
+Once you can obtain the list of installed organisms, try to retrieve
+some upstream sequences. You can first read the list of options for the
+\program{retrieve-seq} program.
+
+\begin{verbatim}
 retrieve-seq -help
 \end{verbatim}
 
@@ -220,16 +294,117 @@ This should return a set of 3 bp sequences, mostly ATG (in the case of
 \subsection{Testing the graphical scripts}
 
 \RSAT includes two graphical tools, \program{feature-map} and
-\program{XYgraph}. These tools require the perl library GD.pm. To test
-if this library has been installed on your machine, type.
+\program{XYgraph}. These tools require the following  perl modules: 
+
+\begin{description}
+\item[GD.pm] Interface to Gd Graphics Library.
+\item[PostScript::Simple]  Produce PostScript files from Perl.
+\end{description}
+
+
+To test if these modules are available on your machine, type.
 
 \begin{verbatim}
 feature-map -help
 \end{verbatim}
 
 If you receive the correct help message, it means that the library is
-intalled.
+intalled. If this is not the case, ask your system administrator to
+install the missing perl modules.
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Web server
+
+\section{Installing a local web server}
+
+The Regulatory Sequence Analysis Tools include a web server, which
+offers a user-friendly interface for biologists. The main server is
+available for academic users at \url{http://rsat.ulb.ac.be/rsat/}. A
+few additional mirrors have been installed in different countries.
+
+\subsection{Web server pages}
+
+The web pages are located in the directory
+\file{rsa-tools/public\_html}. This directory contains both the HTML
+pages, and the CGI scripts.
+
+\subsection{Configuration of the Apache server}
+
+In order to provide web access to the rsa-tools, you need to adapt the
+configuration of your web server. This requires root privileges
+(system administrator). 
+
+
+The detailed settings depend on your web server program. We provide
+here an example of typical settings for the Apache server (the most
+widely used web server).
+
+In summary, the configuration includes the following steps.
+
+\begin{enumerate}
+\item Open the apache configuration file \file{/etc/httpd/httpd.conf}
+
+\item Specify an alias for rsa-tools in the appropriate section.
+
+\begin{verbatim}
+Alias /rsa-tools "/home/myaccount/rsa-tools/public_html/"
+\end{verbatim}
+
+\item Give authorization to execute CGI scripts in the rsa-tools directory
+
+\begin{verbatim}
+ScriptAlias /cgi-bin/ "/home/myaccount/rsa-tools/public_html/
+\end{verbatim}
+
+\item Specify the access options for the rsa-tools directory.
+
+\begin{verbatim}
+<Directory "/home/myaccount/rsa-tools/public_html">
+   AllowOverride None
+   Options ExecCGI Indexes
+   Order allow,deny
+   Allow from all
+</Directory>
+\end{verbatim}
+
+\end{enumerate}
+
+These are the basic steps to configure the web access to
+\RSAT. Depending on your operating system, you probably need to
+specify some additional settings. For example, on the Max OSX version
+of Apache server allows to define a user-specific configuration in the
+directory \file{/etc/httpd/users}.
+
+Note that you need to restart the werb server for these changes to
+take effect.
+
+\subsection{Editing the configuration file for the server}
+
+If you want to install a web server, you need to edit two variables on
+the file \file{RSA.config}. Open this file with a text editor, and
+specify the variables \texttt{\$config\_site} and \texttt{\$WWW\_RSA}
+according to your local configuration.
+
+\subsection{testing the web server}
+
+To test the werb server, open a web browser and connect the URL
+\url{http://www.myserver/rsa-tools/} (you of course need to adapt the
+ URL according to your IP address).
+
+If you can obtain a connection, try to execute the demonstration of
+the following pages.
+
+\begin{description}
+\item[\program{retrieve-seq}] to test the correct installation of genomes. 
+
+\item[\program{oligo-analysis}] to test the correct installation of
+background oligonucleotide frequencies.
+
+\item[\program{feature-map}] to test the correct installation of the
+graphical librairies.
+
+\end{description}
 
 \section{Further steps}
 

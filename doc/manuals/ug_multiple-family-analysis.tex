@@ -1,7 +1,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% MULTIPLE FAMILY ANALYSIS
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Automatized analysis of multiple gene clusters}
+\section{Complete analysis of multiple gene clusters}
 
 The main interest of using \RSAT from the shell is that it allows to
 automatize the analysis of multiple data sets. The different programs
@@ -33,6 +33,15 @@ detect over-represented oligonucleotides. \program{dna-pattern} and
 \program{feature-map} are used to draw a feature map of the
 significant patterns.
 
+\item[other pattern discovery programs] several matrix-based pattern
+discovery programs developed by other teams can be managed by 
+\program{multiple-family-analysis}. These programs have to be installed 
+separately they are not part of the \RSAT distribution). 
+
+\item[feature map drawing] The patterns discovered by the different 
+programs are matched against the  upsteram sequences, and the result 
+is displayed as a feature map.
+
 \end{description}
 
 In addition to this cluster-per-cluster analysis, results are
@@ -49,9 +58,9 @@ cluster are compiled in a single result table (a tab-delimited text
 file), with one row per pattern and cluster, and one column per
 criterion (pattern type, occurrences, significance, ...). 
 
- The program also automatically exports SQL scripts which allow to
-create the appropriate table and load the data in a relational
-database management system (RDBMS).
+The program also automatically exports SQL scripts which allow to
+create the appropriate table in a relational database management
+system (RDBMS) and load the data.
 \end{description}
 
 \subsection{Input format}

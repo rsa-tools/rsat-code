@@ -128,11 +128,11 @@ columns, ...
 Try the following command:
 
 \begin{verbatim} 
-oligo-analysis -i PHO_up800.fasta -format fasta \
-    -v -l 6 -2str \
-    -return occ,proba -thosig 0 -ncf \
-    -org Saccharomyces_cerevisiae -sort -o \
-    PHO_up800_6nt_2str_ncf_sig0 
+oligo-analysis -i PHO_up800.fasta -format fasta      \
+    -v -l 6 -2str                                    \
+    -return occ,proba -thosig 0 -bg upstream \
+    -org Saccharomyces_cerevisiae -sort              \
+    -o PHO_up800_6nt_2str_ncf_sig0 
 \end{verbatim}
 
 Call the on-line help to understand the meaning of the parameters.
@@ -144,9 +144,9 @@ oligo-analysis -h
 Note that we used pre-calibrated tables as estimators of expected word
 frequencies. these tables have been previously calculated (with
 oligo-analysis) by counting hexanucleotide frequencies in the whole
-set of yeast non-coding (intergenic) regions. Our experience is that
-these frequencies are the optimal estimator for discovering regulatory
-elements in non-coding sequences. 
+set of yeast upstream regions. Our experience is that these
+frequencies are the optimal estimator for discovering regulatory
+elements in upstream sequences of co-regulated genes.
 
 Look the result file:
 
@@ -220,9 +220,10 @@ they affect the quality of the results.
 \textit{\textbf{Equiprobable oligonucleotides}}
 
 Let us try the simplest approach: each word is considered
-equiprobable. For this, we simply suppress the options \texttt{-ncf -org
-yeast} fom the above commands. We also ommit to specify the output
-file, so results will immediately apper on the screen.
+equiprobable. For this, we simply suppress the options
+\texttt{-bg upstream -org yeast} fom the above commands. We
+also omit to specify the output file, so results will immediately
+apper on the screen.
 
 \begin{verbatim} 
 oligo-analysis -i PHO_up800.fasta -format fasta \ 
@@ -260,16 +261,16 @@ Note that the most significant patterns are associated to the poly-A
 choice of expected frequencies (all hexanucleotides were considered
 equiprobable here), regulatory sites were lost within a majority of
 false positive, and their description is much less accurate than with
-the option \texttt{-ncf}.
+the option \texttt{-bg upstream}.
 
 \textit{\textbf{Markov chains}}
 
 Another possibility is to use Markov chain models to estimate expected
 word frequencies. Try the following commands and compare the
-results. None is as good as the \texttt{-ncf} option, but in case one
-would not have the pre-calibrated non-coding frequencies (for instance
-if the organism has not been completely sequenced), markov chains can
-provide an interesting approach.
+results. None is as good as the option \texttt{-bg upstream},
+but in case one would not have the pre-calibrated non-coding
+frequencies (for instance if the organism has not been completely
+sequenced), markov chains can provide an interesting approach.
 
 \begin{verbatim}
 oligo-analysis -markov 0 \
