@@ -2,11 +2,11 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-#require "cgi-lib.pl";
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
-require "RSA.lib.pl";
-require "RSA.cgi.lib.pl";
+require "RSA.lib";
+require "RSA.cgi.lib";
+$ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 $dna_pattern_command = "$SCRIPTS/dna-pattern";
 $tmp_file_name = sprintf "dna-pattern.%s", &AlphaDate;
@@ -52,7 +52,6 @@ if ($query->param('return') =~ /count/i) {
     $parameters .= " -th ".$query->param('threshold');
   }
 
-
 ### return match count table
 } elsif ($query->param('return') =~ /table/i) {
   $parameters .= " -table";
@@ -60,6 +59,10 @@ if ($query->param('return') =~ /count/i) {
   if (lc($query->param('total')) eq "on") {
     $parameters .= " -total";
   }
+  
+### return match statistics
+} elsif ($query->param('return') =~ /stats/i) {
+  $parameters .= " -stats";
   
 ### return matching positions
 } elsif ($query->param('return') =~ /positions/) { 
@@ -94,17 +97,18 @@ if ($query->param('subst') =~ /^\d+$/) {
 
 ### execute the command ###
 if ($query->param("output") =~ /display/i) {
-
-  ### execute the command ###
-  $result_file = "$TMP/$tmp_file_name.res";
-  open RESULT, "$dna_pattern_command $parameters & |";
+    
+    ### execute the command ###
+    &PipingWarning() if ($query->param('return') =~ /positions/);
+    
+    $result_file = "$TMP/$tmp_file_name.res";
+    open RESULT, "$dna_pattern_command $parameters & |";
   
-  &PipingForm if ($query->param('return') =~ /positions/);
-  
-  ### Print the result on Web page
-  PrintHtmlTable(RESULT, $result_file);
-  close RESULT;
-  
+    ### Print the result on Web page
+    print "<H3>Result</H3>";
+    PrintHtmlTable(RESULT, $result_file);
+    close RESULT;
+    &PipingForm if ($query->param('return') =~ /positions/);
   
 } else {
   ### send an e-mail with the result ###
@@ -121,24 +125,25 @@ if ($query->param("output") =~ /display/i) {
       print "$query->param('user_email')</B><P>";      
     }
   } 
-  print "<HR SIZE = 3>";
 }
 
+print "<HR SIZE = 3>";
 print $query->end_html;
 
 
 exit(0);
 
 sub PipingForm {
-  ### prepare data for piping
-  $title = $query->param("title");
-  $title =~ s/\"/'/g;
-  print <<End_of_form;
+
+    ### prepare data for piping
+    $title = $query->param("title");
+    $title =~ s/\"/\'/g;
+    print <<End_of_form;
+<HR SIZE = 3>
 <CENTER>
 <TABLE>
-<TR>
-<TD>
-<H4>Next step</H4>
+<TR><TD>
+<H3>Next step</H3>
 </TD>
 <TD>
 <FORM METHOD="POST" ACTION="feature-map_form.cgi">

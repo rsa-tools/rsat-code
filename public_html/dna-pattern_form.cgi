@@ -5,8 +5,9 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
-require "RSA.lib.pl";
-require "RSA.cgi.lib.pl";
+require "RSA.lib";
+require "RSA.cgi.lib";
+$ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 ### Read the CGI query
 $query = new CGI;
@@ -118,6 +119,13 @@ print CGI::table({-border=>0,-cellpadding=>3,-cellspacing=>0},
 			       $query->checkbox(-name=>'total',
 						-checked=>'checked',
 						-label=>'totals'),
+			       ""
+			       ]),
+		      CGI::td({-align=>left,-valign=>MIDDLE},
+			      [
+			       '',
+			       "<INPUT TYPE=RADIO NAME='return' VALUE='stats'>matching statistics",
+			       "",
 			       ""
 			       ])
 			])
