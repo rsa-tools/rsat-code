@@ -122,7 +122,7 @@ print $query->end_form;
 
 
 print "<TD><B><A HREF='help.convert-matrix.html'>MANUAL</A></B></TD>\n";
-#print "<TD><B><A HREF='tutorials/tut_convert-matrix.html'>TUTORIAL</A></B></TD>\n";
+print "<TD><B><A HREF='tutorials/tut_PSSM.html'>TUTORIAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:jvanheld\@scmbb.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
