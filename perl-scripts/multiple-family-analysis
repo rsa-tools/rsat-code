@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.11 2002/03/07 14:53:31 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.12 2002/03/13 11:40:41 jvanheld Exp $
 #
-# Time-stamp: <2002-03-07 15:10:54 jvanheld>
+# Time-stamp: <2002-03-13 12:29:47 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -142,7 +142,9 @@ sub SetFileNames {
   $dyad_options .= "-l $dyad_element_length ";
   $dyad_options .= "-thosig $th ";
   $dyad_options .= "-sp $sp ";
-  if ($exp eq "ncf") {
+  if ($exp_freq_file{dyads}) {
+    $dyad_options .= "-expfreq $exp_freq_file{dyads}";
+  } elsif ($exp eq "ncf") {
     $dyad_options .= "-ncf ";
     $dyad_options .= "-org $organism_name ";
   } elsif ($exp eq "mncf") {
@@ -227,8 +229,12 @@ sub OligoAnalysis {
     $oligo_options .= "-${strands} ";
     $oligo_options .= "-l $oligo_length ";
     $oligo_options .= "-thosig $th ";
-    $oligo_options .= "-org $organism_name ";
-    $oligo_options .= "-ncf ";
+    if ($exp_freq_file{oligos}) {
+	$oligo_options .= "-expfreq $exp_freq_file{oligos} ";
+    } else {
+	$oligo_options .= "-org $organism_name ";
+	$oligo_options .= "-ncf ";
+      }
     $oligo_options .= "-return occ,proba,zscore ";
     $oligo_options .= "-noov " if ($noov);
     
@@ -726,6 +732,12 @@ OPTIONS
 		    -task upstream -task oligos -task synthesis
 		For a full analysis, simply type 
 		    -task all
+	-dyad_exp_freq
+		name of a file containing the expected frequencies for
+		dyad-analysis.
+	-oligo_exp_freq
+		name of a file containing the expected frequencies for
+		oligo-analysis.
 
 FILE FORMAT
     FAMILY FILE
@@ -781,20 +793,22 @@ sub PrintOptions {
   print HELP <<End_short_help;
 multiple-family-analysis options
 --------------------------------
--h	(must be first argument) display full help message
--help	(must be first argument) display options
--v	verbose
--vv hyperverbose
--fam	family file
--org	organism
--from	upstream region left limit
--to	upstream region right limit
--1str   strand-sensitive analysis
--2str   strand-insensitive analysis
--n      dry run: print commands without executing them
--exp	expected frequency file
--transp	transpose synthetic result table (columns become rows)
--task	selected task (supported: $supported_tasks)
+-h		(must be first argument) display full help message
+-help		(must be first argument) display options
+-v		verbose
+-vv 		hyperverbose
+-fam		family file
+-org		organism
+-from		upstream region left limit
+-to		upstream region right limit
+-1str   	strand-sensitive analysis
+-2str   	strand-insensitive analysis
+-n      	dry run: print commands without executing them
+-exp		expected frequency file
+-transp		transpose synthetic result table (columns become rows)
+-task		selected task (supported: $supported_tasks)
+-dyad_exp_freq	expected frequencies for dyad-analysis
+-oligo_exp_freq	expected frequencies for oligo-analysis
 End_short_help
   close HELP;
   exit;
@@ -854,26 +868,6 @@ sub ReadArguments {
 		&FatalError("This task is not supported. Supported: $supported_tasks");
 	    }
 
-#  	    #### inactivate some tasks
-#  	    ### inactivate upstream sequence retrieval
-#  	} elsif ($ARGV[$a] eq "-noup") {
-#  	    $no_up = 1;
-
-#  	    ### inactivate synthetic table
-#  	} elsif ($ARGV[$a] eq "-nosynt") {
-#  	    $no_synt = 1;
-
-#  	    ### inactivate calculations
-#  	} elsif ($ARGV[$a] eq "-nocalc") {
-#  	    $no_calc = 1;
-
-#  	    ### inactivate oligo-analysis
-#  	} elsif ($ARGV[$a] =~ /-nooligo/) {
-#  	    $no_oligo = 1;
-
-#  	    ### inactivate dyad-analysis
-#  	} elsif ($ARGV[$a] =~ /-nodyads/) {
-#  	    $no_dyads = 1;
 
 	    #### transpose synthetic table
 	} elsif ($ARGV[$a] =~ /^-transp/) {
@@ -886,6 +880,14 @@ sub ReadArguments {
 	    #### dyad type
 	} elsif ($ARGV[$a] =~ /^-type/) {
 	    $force{type} = $ARGV[$a+1];
+
+	    #### expected frequency file for dyad-analysis 
+	} elsif ($ARGV[$a] =~ /^-dyad_exp_freq/) {
+	    $exp_freq_file{dyads} = $ARGV[$a+1];
+
+	    #### expected frequency file for oligo-analysis 
+	} elsif ($ARGV[$a] =~ /^-oligo_exp_freq/) {
+	    $exp_freq_file{oligos} = $ARGV[$a+1];
 
 	} elsif ($ARGV[$a] =~ /^-exp/) {
 	    $force{exp} = $ARGV[$a+1];
