@@ -265,7 +265,7 @@ sub ExpectedFreqFile {
 	&FatalError("Cannot find expected frequency file $exp_freq_file");
     }
 
-    warn "; Expected frequency file\t", $exp_freq_file, "\n" if ($main::verbose >= 0);
+    warn "; Expected frequency file\t", $exp_freq_file, "\n" if ($main::verbose >= 2);
     return $exp_freq_file;
 }
 
@@ -804,7 +804,6 @@ sub CheckOrganismName {
 ####                $feature_table_file, 
 ####                $input_sequence_file,  
 ####                $input_sequence_format);
-
 sub CheckOrganism {
     my ($organism_name, $feature_table_file, $input_sequence_file, $input_sequence_format) = @_;
     my $organism_object = new RSA::Organism;
