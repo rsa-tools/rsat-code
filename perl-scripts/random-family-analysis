@@ -26,7 +26,7 @@ $resultfile = "random-family-analysis.${oligo_length}nt.${genes_per_family}g.${r
 srand (time);
 
 for $r (1..$repetitions) {
-    open ANALYSIS, "| upstream-region | oligo-analysis -format IG -expfreq $RSA/data/yeast/oligo-frequencies//${oligo_length}nt.non-coding.freq -l $oligo_length -thsig 0 -occ -proba -v >> $resultfile";
+    open ANALYSIS, "| retrieve-seq -type upstream | oligo-analysis -format IG -expfreq $RSA/data/yeast/oligo-frequencies//${oligo_length}nt.non-coding.freq -l $oligo_length -thsig 0 -occ -proba -v >> $resultfile";
 
     for $g (1..$genes_per_family) {
 	$line[$g] = int rand($orf_nb);
