@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.74 2004/02/28 17:07:49 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.75 2004/03/08 14:16:44 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -1031,6 +1031,7 @@ sub SyntheticTable {
    $row{selection} = $row++ if ($task{report});
    $row{consensus} = $row++;
    $row{gibbs} = $row++;
+   $row{meme} = $row++;
    $row_num = $row-1;
    while (($header,$row) = each %row) {
 	$table[$row][0] = "<B>$header</B>";
@@ -1128,6 +1129,16 @@ sub SyntheticTable {
 #	}
 	$map_link = "../$family{$family_name}->{gibbs_file}";
 	&IndexGibbs($family_name,  $family{$family_name}->{gibbs_file}, $map_link, $row{gibbs}, $col);
+
+	################################################################
+	#### Index results of meme
+#	if ($htmaps) {
+#	    $map_link = "../$family{$family_name}->{meme_file}.html";
+#	} else {
+#	    $map_link = "../$family{$family_name}->{meme_file}.${IMG_FORMAT}";
+#	}
+	$map_link = "../$family{$family_name}->{meme_file}";
+	&IndexMEME($family_name,  $family{$family_name}->{meme_file}, $map_link, $row{meme}, $col);
    }
    
 
@@ -1291,7 +1302,11 @@ sub IndexGibbs {
 #      $table[$row][$col] .= "</table>\n";
 }
 
-
+################################################################
+## Index the matrix from a meme file
+sub IndexMEME {
+   &IndexMatrix(@_, format=>"meme");
+}
 
 
 ################################################################

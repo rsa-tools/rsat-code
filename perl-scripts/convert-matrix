@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-matrix,v 1.2 2004/02/29 23:03:15 jvanheld Exp $
+# $Id: convert-matrix,v 1.3 2004/03/08 14:16:36 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -43,6 +43,7 @@ $supported_return_formats = join ",", sort keys %supported_return_format;
 
 ## input formats
 %supported_input_format = ('consensus'=>1,
+			   'meme'=>1,
 			   'gibbs'=> 1);
 $supported_input_formats = join ",", sort keys %supported_input_format;
 
