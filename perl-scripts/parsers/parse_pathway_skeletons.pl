@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_pathway_skeletons.pl,v 1.10 2002/11/15 19:37:51 jvanheld Exp $
+# $Id: parse_pathway_skeletons.pl,v 1.11 2002/11/15 20:22:45 jvanheld Exp $
 #
-# Time-stamp: <2002-11-15 13:37:11 jvanheld>
+# Time-stamp: <2002-11-15 14:19:03 jvanheld>
 #
 ############################################################
 
@@ -210,16 +210,32 @@ sub GenerateECSeeds {
     
     #### export one seed file per pathway
     foreach $process ($processes->get_objects()) {
-	my $file = $process->get_attribute("parsed_file");
 	my $organism_prefix = $process->get_attribute("organism");
 	$organism_prefix =~ s/\s/_/g;
-	my $basename = `basename $file .txt`;
-	$basename =~ s/\.tab$//;
-	chomp $basename;
+
+	#### check the existence of the directory for exporting seed files
+	my $export_dir = join "/", $dir{seed_files}, $organism_prefix;
+	unless (-d $export_dir) {
+	    `mkdir -p  $export_dir`;
+	    unless (-d $export_dir) {
+		die "Cannot create seed directory $export_dir";
+	    }
+	}
+
+#	my $file = $process->get_attribute("parsed_file");
+#	my $filename = `basename $file .txt`;
+#	$filename =~ s/\.tab$//;
+#	chomp $filename;
+	my @names =  $process->get_attribute("names");
+	my $filename = $names[0];
+	die join ("\t", "Pathway has no name ", 
+		  $process->get_attribute("parsed_file")),"\n" 
+		      unless $filename;
+
+	$filename =~ s/\s/_/g;
+	my $export_file = join "/", $export_dir, $filename;
 
 	#### export EC number as seeds for pathway reconstruction
-	my $export_file = $dir{seed_files};
-	$export_file .= "/".$organism_prefix."_".$basename;
 #	$export_file .= ".".$process->get_attribute("complete");
 	open ECS, ">$export_file.ecs";
 	foreach my $ec_ref ($process->get_attribute(ECs)) {
@@ -232,7 +248,8 @@ sub GenerateECSeeds {
 	#### export reaction IDs for validation
 	#### only export reaction for pathways where all 
 	#### reactions are identified in an unequivocal way.
-	next unless ($process->get_attribute("status") eq "OK");
+
+#	next unless ($process->get_attribute("status") eq "OK");
 	open REACTIONS, ">$export_file.reactions";
 	foreach my $reaction_ref ($process->get_attribute(reactions)) {
 	    my ($reaction, $step) = @{$reaction_ref};
