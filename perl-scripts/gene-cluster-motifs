@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.16 2002/04/27 11:55:56 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.17 2002/04/28 05:32:52 jvanheld Exp $
 #
-# Time-stamp: <2002-04-27 13:47:14 jvanheld>
+# Time-stamp: <2002-04-28 07:32:31 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -60,20 +60,20 @@ warn "; Reading ORF information ...\n"
 &ReadFamilies();
 
 ### some verbose
-if ($verbose) {
-  print "; multiple-family analysis\n";
-  printf "; families     \t%d\n", $#families + 1;
-  foreach $family (@families) {
-    printf ";\t%s\n", $family;
-  }
-  printf "; upstream region\n";
-  printf ";\tstrands\t%s\n", $strands;
-  printf ";\tfrom\t%d\n", $from;
-  printf ";\tto\t%d\n", $to;
-  printf ";\tsize\t%d\n", $size;
-  printf "; sig threshold\t%.1f\n", $th;
-  printf "; dyad type    \t%s\n", $type;
-  printf "; exp freq     \t%s\n", $exp;
+if ($verbose >= 1) {
+    print "; multiple-family analysis\n";
+    printf "; families     \t%d\n", $#families + 1;
+    foreach $family (@families) {
+	printf ";\t%s\n", $family;
+    }
+    printf "; upstream region\n";
+    printf ";\tstrands\t%s\n", $strands;
+    printf ";\tfrom\t%d\n", $from;
+    printf ";\tto\t%d\n", $to;
+    printf ";\tsize\t%d\n", $size;
+    printf "; sig threshold\t%.1f\n", $th;
+    printf "; dyad type    \t%s\n", $type;
+    printf "; exp freq     \t%s\n", $exp;
 }
 
 ### write composition of the families in the separated directories
@@ -182,7 +182,7 @@ sub SetFileNames {
 
 #### retrieve upstream sequences
 sub UpstreamSequences {
-  warn "; Generating upstream sequences for family $family_name\n" if ($verbose);
+  warn ";\tGenerating upstream sequences for family $family_name\n" if ($verbose >= 1);
   $command = "retrieve-seq -type upstream -org $organism_name";
   $command .= " -noorf " if ($noorf);
   $command .= " -i $family{$family_name}->{family_file}";
@@ -202,6 +202,7 @@ sub UpstreamSequences {
 
 ### oligo-analysis
 sub OligoAnalysis {
+  warn ";\tAnalyzing oligonucleotides for family $family_name\n" if ($verbose >= 1);
   $dir = "${family_name}/oligos_${family_name}";
   unless (-d $dir) {
     mkdir $dir, 0755 || die "Error: cannot create directory $dir\n";
@@ -260,6 +261,7 @@ sub OligoAnalysis {
 
 ### dyad analysis
 sub DyadAnalysis {
+  warn ";\tAnalyzing dyads for family $family_name\n" if ($verbose >= 1);
   $dir = "${family_name}/dyads_${family_name}";
   unless (-d $dir) {
     mkdir $dir, 0755 || die "Error: cannot create directory $dir\n";
@@ -329,12 +331,12 @@ sub ReadSiteLibrary {
   
 ### build a synthetic table ###
 sub SyntheticTable {
+  warn ";\tGenerating synthetic table $table_file\n" if ($verbose);
   $dir = "synthetic_tables";
   
   $table_file = $dir."/".$table_suffix;
   $table_file .= "_tr" if ($transpose);
 
-  print "; Generating synthetic table $table_file\n" if ($verbose);
   unless (-d $dir) {
     mkdir $dir, 0755 || die "Error: cannot create directory $dir\n";
   }
@@ -360,7 +362,7 @@ sub SyntheticTable {
     ### check directory
     $dir = "${family_name}/dyads_${family_name}";
     unless (-d $dir) {
-      print "Error: cannot find directory $dir\n";
+	&Warning ("Cannot find directory $dir\n");
     }
     
     ### family number
@@ -387,7 +389,7 @@ sub SyntheticTable {
     #### oligo-analysis
     open OLIGOS, "$family{$family_name}->{oligo_assembly_file}";
     $map_link = "<A HREF=../$family{$family_name}->{oligo_file}.html>\n";
-    print "extracting info from\t$family{$family_name}->{oligo_assembly_file}\n" if ($verbose);
+    warn ";\t\tExtracting info from\t$family{$family_name}->{oligo_assembly_file}\n" if ($verbose >= 1);
     undef @patterns;
     undef @sorted_patterns;
     undef %rc;
@@ -467,7 +469,7 @@ sub SyntheticTable {
     ### dyad analysis
     open DYADS, "$family{$family_name}->{dyad_assembly_file}";
     $map_link = "<A HREF=../$family{$family_name}->{dyad_file}.html>\n";
-    print "extracting info from\t$family{$family_name}->{dyad_assembly_file}\n" if ($verbose);
+    warn ";\t\tExtracting info from\t$family{$family_name}->{dyad_assembly_file}\n" if ($verbose >= 2);
     undef @patterns;
     undef @sorted_patterns;
     undef %rc;
@@ -600,8 +602,6 @@ sub DrawFeatureMaps {
   #  $command .= " ;  xv -o $family{$family_name}->{fmap_file} &";
 
   &doit($command);
-#  print "\n$command\n" if ($verbose);
-#  system $command;
 }
 
 
@@ -657,30 +657,34 @@ sub CheckParameters {
 
     
 sub AnalyzeFamilies {
-  foreach $family_name (@families) {
-    print "\n; Treating family $family_name\t", `date` if ($verbose);
-
-    ### retrieve upstream sequences
-    &UpstreamSequences if ($task{upstream});
-    
-    ### oligo-analysis
-    &OligoAnalysis if ($task{oligos});
-
-    ### dyad analysis
-    &DyadAnalysis if ($task{dyads});
-
-    ### delete upstream sequence file
-    if ($task{clean}) {
-	system "rm $family{$family_name}->{seq_file}" ;
-	system "rm $family{$family_name}->{seq_file_purged}" ;
+    my $fam_count=0;
+    my $fam_nb = $#families+1;
+    foreach $family_name (@families) {
+	$fam_count++;
+	warn "\n; Treating family $family_name ($fam_count of $fam_nb)\t", `date` if ($verbose >=1);
+	
+	### retrieve upstream sequences
+	&UpstreamSequences if ($task{upstream});
+	
+	### oligo-analysis
+	&OligoAnalysis if ($task{oligos});
+	
+	### dyad analysis
+	&DyadAnalysis if ($task{dyads});
+	
+	### delete upstream sequence file
+	if ($task{clean}) {
+	    warn ";\tRemoving sequences from the hard drive for family $family_name\n" if ($verbose >=1);
+	    system "rm $family{$family_name}->{seq_file}" ;
+	    system "rm $family{$family_name}->{seq_file_purged}" ;
+	}
+	
     }
-
-  }
 }
 
 sub doit {
     my ($command) = @_;
-    print "\n$command\n" if ($verbose >=1);
+    print "\n$command\n" if ($verbose >=2);
     system $command unless $dry_run;
 }
 
@@ -931,55 +935,52 @@ sub OldReadFamilies {
 
 
 sub ReadFamilies {
-  print "\n; Reading family file\t$family_file\n" 
-      if ($verbose);
-  unless (-r $family_file) {
-    die "Error : cannot read family file $family_file\n";
-  }
-  
-  open FAM, $family_file || 
-      die "Error : cannot read file $family{$family_name}->{family_file}\n" ;
-  $line = 0;
-  while (<FAM>) {
-    $line++;
-    next if (/^;/);
-    next unless (/\S/);
-    chomp;
-    @fields = split /\s+/;
-
-    ### family name
+    warn "\n; Reading family file\t$family_file\n" 
+	if ($verbose >=1);
+    unless (-r $family_file) {
+	die "Error : cannot read family file $family_file\n";
+    }
+    
+    open FAM, $family_file || 
+	die "Error : cannot read file $family{$family_name}->{family_file}\n" ;
+    $line = 0;
+    while (<FAM>) {
+	$line++;
+	next if (/^;/);
+	next unless (/\S/);
+	chomp;
+	@fields = split /\s+/;
+	
+	### family name
 #    $family_name = uc($fields[1]);
-    $family_name = $fields[1];
-    unless ($family_name =~ /\S/) {
-      warn ("Error family file $family_file line $line\t",
+	$family_name = $fields[1];
+	unless ($family_name =~ /\S/) {
+	    warn ("Error family file $family_file line $line\t",
 	    "family not specified\n");
-      next;
+	    next;
+	}
+	
+	### gene name or ID
+	$query = uc($fields[0]);
+	unless ($query =~ /\S/) {
+	    warn ("Error family file $family_file line $line\t",
+		  "gene not specified\n");
+	    next;
+	}
+	
+	### identify the gene
+	$id = $orf_id{$query};
+	if ($id eq "") {
+	    &Warning ";\tWARNING ! $query unknown gene name \n";
+	} else {
+	    push @{$family{$family_name}->{members}}, $id;
+	    warn "\t$family_name\t$query\t$id\t$name{$id}\n" 
+		if ($verbose >= 2);
+	}
+	
     }
+    close FAM;
     
-    ### gene name or ID
-    $query = uc($fields[0]);
-    unless ($query =~ /\S/) {
-      warn ("Error family file $family_file line $line\t",
-	    "gene not specified\n");
-      next;
-    }
-
-#    while (($key,$value) = each %orf_id) {
-#      print "$key\t$value\n";
-#    }
-    ### identify the gene
-    $id = $orf_id{$query};
-    if ($id eq "") {
-      print STDERR "\t;WARNING ! $query unknown gene name \n";
-    } else {
-      push @{$family{$family_name}->{members}}, $id;
-      print "\t$family_name\t$query\t$id\t$name{$id}\n" 
-	  if ($verbose > 1);
-    }
-    
-  }
-  close FAM;
-
-  @families = keys %family;
+    @families = sort keys %family;
 }
 
