@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_kegg.pl,v 1.3 2000/12/28 23:52:39 jvanheld Exp $
+# $Id: parse_kegg.pl,v 1.4 2001/08/24 09:24:52 jvanheld Exp $
 #
-# Time-stamp: <2000-12-29 00:51:51 jvanheld>
+# Time-stamp: <2001-08-24 11:24:14 jvanheld>
 #
 ############################################################
 
@@ -378,13 +378,17 @@ sub ParseEC {
 	if ($warn_level >= 1);
     
     ### create the class for 0.0.0.0
-    $ec_object = $ecs->new_object(%args,id=>"0.0.0.0");
+#    $ec_object = $ecs->new_object(%args,id=>"0.0.0.0");
+    $ec_object = $ecs->new_object(%args);
     $ec_object->push_attribute("names", "non-enzymatic or not clearly enzymatic");
+    $ec_object->push_attribute("names", "0.0.0.0");
     $ec_object->set_attribute("parent","<NULL>");
 
     ### create the class for -.-.-.-
-    $ec_object = $ecs->new_object(%args,id=>"-.-.-.-");
+#    $ec_object = $ecs->new_object(%args,id=>"-.-.-.-");
+    $ec_object = $ecs->new_object(%args);
     $ec_object->push_attribute("names", "non-assigned EC number");
+    $ec_object->push_attribute("names", "-.-.-.-");
     $ec_object->set_attribute("parent","<NULL>");
 
     ### open the input stream
@@ -406,9 +410,11 @@ sub ParseEC {
 	    $ec_number =~ s/\.$//; ### suppress the trailing dot from the ec number
 	    @names = split /\; /, $names;
 	    
-	    $ec_object = $ecs->new_object(%args,id=>$ec_number);
+#	    $ec_object = $ecs->new_object(%args,id=>$ec_number);
+	    $ec_object = $ecs->new_object(%args);
 	    foreach $name (@names) {
 		$ec_object->push_attribute("names",$name);
+		$ec_object->push_attribute("names",$ec_number);
 	    }
 	    
 	    ### partially specified ecs
