@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: position-analysis,v 1.24 2005/03/13 10:19:11 jvanheld Exp $
+# $Id: position-analysis,v 1.25 2005/03/13 10:19:40 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -12,8 +12,6 @@ if ($0 =~ /([^(\/)]+)$/) {
 require "RSA.lib";
 require RSAT::util;
 use POSIX qw(sysconf _PC_CHOWN_RESTRICTED);
-
-## CVS: require RSAT::util
 
 ################################################################
 ###### default values for parameters
