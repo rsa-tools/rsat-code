@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: position-analysis,v 1.19 2003/11/06 12:33:22 jvanheld Exp $
+# $Id: position-analysis,v 1.20 2003/12/28 19:51:20 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -550,7 +550,7 @@ sub CalcChi {
 	foreach $class ($min_calc_class..$max_calc_class) {
 	    push @chi_values, $exp_occ{$oligo_seq}{$class};
 	}
-	$chi_square{$oligo_seq} = &ChiSquare("goodfit", 2, $calc_class_nb, @chi_values);
+	($chi_square{$oligo_seq}, $df{$oligo_seq}) = &ChiSquare("goodfit", 2, $calc_class_nb, @chi_values);
 	
 
 	#### chek or not the applicability condition for the chi2
@@ -1003,8 +1003,13 @@ sub PrintResult {
     push @out_col, 'id'; push @col_descriptions, 'pattern identifier';
     push @out_col, 'occ'; push @col_descriptions, 'pattern occurrences';
     if ($no_overlaps) {push @out_col, "over"; push @col_descriptions, 'overlapping occurrences (discarded)';}
-    if ($return{'chi'}) {push @out_col, "chi2" ; push @col_descriptions, 'observed chi-square';}
-    if ($return{'rank'}) {push @out_col, "rank"; push @col_descriptions, 'rank of the pattern according to sorting criterion';}
+    if ($return{'chi'}) {
+	push @out_col, "chi2" ; push @col_descriptions, 'observed chi-square';
+	push @out_col, "df" ; push @col_descriptions, 'degrees of freedom';
+    }
+    if ($return{'rank'}) {
+	push @out_col, "rank"; push @col_descriptions, 'rank of the pattern according to sorting criterion';
+    }
     if ($return{'distrib'}) {
 	for $class ($min_calc_class..$max_calc_class) {
 	    push @out_col, $class_center{$class}; push @col_descriptions, 'observed class occurrences';
@@ -1015,14 +1020,14 @@ sub PrintResult {
 	    }
 	}
     }
-
+    
     if ($verbose >= 1) {
 	print $out "; column headers\n";
 	foreach $c (0..$#out_col) {
 	    printf $out ";\t%d\t%-15s\t%s\n", $c+1, $out_col[$c], $col_descriptions[$c];
 	}
     }
-
+    
     ### header 
     $date = `date '+%H:%M:%S'`;
     chomp $date;
@@ -1039,20 +1044,23 @@ sub PrintResult {
 	    print $out "|", lc(ReverseComplement($oligo_seq));
 	}
 	
-	### occurrences ###
+	### Occurrences
 	print $out "\t$in_bound_occurrences{$oligo_seq}";
 	print $out "\t$overlaps{$oligo_seq}" if ($no_overlaps);
 	
-	### chi-square value ###
+	### chi-square value
 	print $out "\t$chi_square{$oligo_seq}" if ($return{'chi'});
 
-	#### rank
+	### Degrees of freedom
+	print $out "\t$chi_square{$oligo_seq}" if ($return{'chi'});
+
+	#### Rank
 	if ($return{'rank'}) {
 	    $rank++;
 	    print $out "\t$rank";
 	}
 	
-	### position distribution
+	### Position distribution
 	if ($return{'distrib'}) {
 	    for $class ($min_calc_class..$max_calc_class) {
 		print $out "\t$class_freq{$oligo_seq}{$class}";
