@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: mirror.mk,v 1.3 2003/12/19 08:50:54 jvanheld Exp $
+# $Id: mirror.mk,v 1.4 2003/12/19 15:13:45 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 12:05:45 jvanheld>
 #
@@ -17,7 +17,8 @@ DATE = `date +%Y%m%d_%H%M%S`
 #################################################################
 # programs
 OPT=
-MAKE=make -sk
+MAKEFILE=${RSAT}/makefiles/mirror.mk
+MAKE=make -sk -f ${MAKEFILE}
 RSYNC_OPT = -ruptvl ${OPT} --exclude '*~'
 SSH=-e ssh
 RSYNC = rsync ${RSYNC_OPT} ${SSH}
@@ -31,18 +32,17 @@ PAULUS = ${RSA_LOGIN}@paulus.ulb.ac.be:rsa-tools/
 RUBENS = ${RSA_LOGIN}@rubens.ulb.ac.be:rsa-tools/
 #UCMB = /rubens/dsk4/${RSA_LOGIN}/rsa-tools
 UPPSALA = ${RSA_LOGIN}@bioinformatics.bmc.uu.se:rsa-tools
-RSAT = ${RSA_LOGIN}@rsat.ulb.ac.be:/home/rsa/rsa-tools
+RSAT_SERVER = ${RSA_LOGIN}@rsat.ulb.ac.be:/home/rsa/rsa-tools
 MEDICEL = root@grimsel.co.helsinki.fi:/work/programs/rsa-tools
-SERVERS = ${RSAT} ${PAULUS} ${CIFN} ${UPPSALA} 
+SERVERS = ${RSAT_SERVER} ${PAULUS} ${CIFN} ${UPPSALA} 
 
-#SERVER=${RSAT}
-SERVER=${RSAT}
+SERVER=${RSAT_SERVER}
 
 ### tags
 usage:
 	@echo "usage: make [-OPT='options'] target"
 	@echo "implemented targets"
-	@perl -ne 'if (/^(\S+):/){ print "\t$$1\n" }' makefile
+	@perl -ne 'if (/^(\S+):/){ print "\t$$1\n" }' ${MAKEFILE}
 
 ################################################################
 #### from local machine to servers
@@ -159,10 +159,10 @@ from_rsat:
 	${MAKE} data_from_rsat
 
 dir_from_rsat:
-	${RSYNC} ${EXCLUDED} ${RSAT}/${DIR} .
+	${RSYNC} ${EXCLUDED} ${RSAT_SERVER}/${DIR} .
 
 data_from_rsat:
-	${RSYNC} --exclude Homo_sapiens* --exclude Mus_musculus --exclude Oryza_sativa ${RSAT}/public_html/data public_html/ 
+	${RSYNC} --exclude Homo_sapiens* --exclude Mus_musculus --exclude Oryza_sativa ${RSAT_SERVER}/public_html/data public_html/ 
 
 SRC=perl-scripts
 COMPIL=compil/
