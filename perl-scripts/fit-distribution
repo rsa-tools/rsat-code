@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: fit-distribution,v 1.11 2004/05/07 07:11:43 jvanheld Exp $
+# $Id: fit-distribution,v 1.12 2004/08/02 22:16:19 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -19,7 +19,7 @@ my $start_time = &AlphaDate();
 local %infile = ();
 local %outfile = ();
 
-local $verbose = 0;
+$verbose = 0;
 local $in = STDIN;
 local $out = STDOUT;
 local $last_repet = 0; 
@@ -143,11 +143,21 @@ while (<$in>) {
     local $repet = 0;
 
     for my $i (0..$#counts) {
-	my $occ = $values[$i];
+	my $occ = $values[$i] || 0;
+	&FatalError(join "\t", "Invalid number of occurrences (must be integer)", 
+		    "pattern=".$pattern, 
+		    "i=".$i, 
+		    "occ=".$occ, 
+		    "repet=".$repet) unless (&IsInteger($occ));
 	$repet += $counts[$i];
+	&FatalError(join "\t", "Invalid number of repetitions (must be integer)", 
+		    "pattern=".$pattern, 
+		    "i=".$i, 
+		    "occ=".$occ, 
+		    "repet=".$repet) unless (&IsInteger($repet));
 	$sum += $occ*$counts[$i];
 	$ssq += $occ*$occ*$counts[$i];
-#	warn join ("\t", $i, $occ, $repet, $sum, $ssq), "\n" if ($main::verbose >= 10);
+	warn join ("\t", "pattern=".$pattern, "i=".$i, "occ=".$occ, "repet=".$repet, "sum=".$sum, "ssq=".$ssq), "\n" if ($main::verbose >= 0);
     }
     
     local $avg = undef;
