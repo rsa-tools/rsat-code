@@ -374,6 +374,29 @@ sub negbin {
 }
 
 ################################################################
+## Calculate negbin with mean and variance as parameters
+sub sum_of_negbin2 {
+    my ($mean, $variance, $from, $to) = @_;
+    
+    ### Check parameters
+    &FatalError("negbin2: the mean should be strictly positive") if ($mean <= 0);
+    &FatalError("negbin2: the variance should be positive") if ($variance < 0);
+    &FatalError("negbin2: the variance should be greater than the mean") if ($variance <= $mean);
+
+    ### Convert mean and variance to p and k
+    my $p = $variance/$mean -1;
+    my $k = $mean/$p;
+    warn ("; Calculating p and k from mean and variance\n",
+	  ";\tp = ", $p, "\n",
+	  ";\tk = ", $k, "\n"
+	  ) if ($main::verbose >= 5);
+
+    ### Calculate the negbin
+    my $sum_of_negbin = &sum_of_negbin($p, $k, $from, $to);
+    return ($p, $k, $sum_of_negbin);
+    
+}
+################################################################
 ## sum_of_negbin($lambda, $from, $to)
 ## Calculates the Negbin probability for a given interval of values
 sub sum_of_negbin {
@@ -393,7 +416,7 @@ sub sum_of_negbin {
 	  ";\tk = ", $k, "\n",
 	  ";\tfrom = ", $from, "\n",
 	  ";\tto = ", $to, "\n",
-	  ) if ($main::verbose >= 0);
+	  ) if ($main::verbose >= 10);
 
     
 
@@ -409,7 +432,7 @@ sub sum_of_negbin {
 	    $sum_of_negbin += &LogToEng($log_negbin);
 	}
 	warn join ("\t", $i, $log_negbin, &LogToEng($log_negbin), $sum_of_negbin), "\n" 
-	    if ($main::verbose >= 0);
+	    if ($main::verbose >= 10);
 	last if (($sum_of_negbin > 0) && ($prev_sum == $sum_of_negbin));
     }
 
@@ -617,7 +640,7 @@ sub hypergeometric {
 
 
     
-# 	$Id: RSA.stat.lib,v 1.19 2004/01/14 01:21:53 jvanheld Exp $	
+# 	$Id: RSA.stat.lib,v 1.20 2004/01/14 04:15:26 jvanheld Exp $	
 
     #### initialization
     if (defined($args{previous_value})) {
@@ -1076,7 +1099,10 @@ sub ChiSquare {
 
 	#### Group tails to fulfill the condition of applicability
 	if ($group_tails) {
-
+	    warn  ("Before grouping", 
+		   "\n\texpected\t", join(":", @expected), 
+		   "\n\tobserved\t", join(":", @observed), "\n")
+		if ($main::verbose >= 10);
 	    ## Group left tail
 	    do {
 		$left_group++;
@@ -1104,12 +1130,23 @@ sub ChiSquare {
 	    ## recalculate the number of columns after left grouping
 	    $col_nb = scalar(@expected);
 	    
+	    warn ("After left grouping", 
+		  "\n\texpected\t", join(":", @expected), 
+		  "\n\tobserved\t", join(":", @observed), "\n")
+		if ($main::verbose >= 10);
+
 	    ## group right tail
 	    do {
 		$right_group++;
 		$right_sum += $expected[$col_nb -$right_group];
+		warn join ("\t", "Right group",
+			   $right_group, 
+			   $right_sum, 
+			   $col_nb, 
+			   $col_nb -$right_group, 
+			   $expected[$col_nb -$right_group]), "\n" if ($verbose >= 10);
 	    } until (($right_group >= $col_nb) || 
-		     (($expected[$col_nb -$right_group -1] >= 5) && ($right_group >= $col_nb)));
+		     (($expected[$col_nb -$right_group -1] >= 5) && ($right_sum >= 5)));
 #	    } until ((($expected[$col_nb -$right_group -1] >= 5) || ($right_group >= $col_nb)) &&
 #		     (($right_sum >= 5) || ($right_group >= $col_nb)));
 	    if ($right_group > 1) {
@@ -1118,7 +1155,7 @@ sub ChiSquare {
 		for my $col (1..($right_group-1)) {
 		    $right_obs += pop @observed;
 		    $right_exp += pop @expected;
-#		    warn join ("\t", "Grouping right tail", $right_group, $col, $right_obs, $right_exp), "\n" if ($verbose >= 10);
+		    warn join ("\t", "Grouping right tail", $right_group, $col, $right_obs, $right_exp), "\n" if ($verbose >= 10);
 		}
 		$observed[$#observed] += $right_obs;
 		$expected[$#expected] += $right_exp;
@@ -1130,6 +1167,12 @@ sub ChiSquare {
 	    }
 	    ## recalculate the number of columns after right grouping
 	    $col_nb = scalar(@expected);
+
+	    warn ("After right grouping", 
+		  "\n\texpected\t", join(":", @expected), 
+		  "\n\tobserved\t", join(":", @observed), "\n")
+		if ($main::verbose >= 10);
+
 	    
 	    @values = (@observed, @expected);
 	}

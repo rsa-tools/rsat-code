@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.66 2004/01/13 23:54:18 jvanheld Exp $
+# $Id: oligo-analysis,v 1.67 2004/01/14 04:15:26 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -10,8 +10,8 @@ if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
 require "RSA.lib";
+require "RSA.seq.lib";
 require "RSA.classes";
-
 
 ################################################################
 ###### initialize parameters ##########
@@ -63,7 +63,12 @@ if (@output_fields == ()) { #default output is occurrence numbers
 } elsif (($return{'proba'}) || 
 	 ($return{'like'}) || 
 	 ($return{'ratio'})) {
-    $return{'exp_freq'} = 1;
+    $return{'exp_freq'};
+}
+if ($method eq "Calibration file") {
+    $return{'exp_occ'} = 1;
+    $return{'exp_var'} = 1;
+    $return{'fitted'} = 1;
 }
 
 #### conditions which require the calculateion of the overlap coefficient
@@ -117,11 +122,11 @@ if ($background_model) {
     ### localize dyad non-coding frequency file
     $method = "Frequency file";
     
-    $exp_freq_file = &ExpectedFreqFile($organism_name, $oligo_length, $background_model);
+    $infile{expected_freq} = &ExpectedFreqFile($organism_name, $oligo_length, $background_model);
 
 #### read alphabet from a file
-} elsif ($alphabet_file) {
-    ($alpha) = &OpenInputFile($alphabet_file);
+} elsif ($infile{alphabet}) {
+    ($alpha) = &OpenInputFile($infile{alphabet});
     while (<$alpha>) {
 	next if (/^;/);
 	next unless (/\S/);
@@ -161,10 +166,16 @@ if (($alphabet) && !($input_alphabet)) {
 
 ################################################################
 #### Read expected frequencies from a file
-
 if (($method eq "Frequency file") && 
     ($return{'exp_freq'})) {    #### expected frequencies ####
-    &ReadExpectedFrequencies($exp_freq_file, $sum_rc);
+    &ReadExpectedFrequencies($infile{expected_freq}, $sum_rc, $rescale_freq);
+}
+
+################################################################
+#### Read calibration from a file
+if ($method eq "Calibration file") {
+    &ReadCalibration($infile{calibration});
+#    die $patterns{'aaaaaa'}->{exp_occ};
 }
 
 #### open sequence stream
@@ -190,6 +201,7 @@ $out = &OpenOutputFile($outputfile);
 &CalcZscore() if ($return{'zscore'});
 &CalcLikelihood() if ($return{'like'});
 &CalcRatio() if ($return{'ratio'});
+&GroupRc(); #### remove the duplicate pattern (only retain the first by alphabetical order) 
 &CalcProba() if ($return{'proba'}) ;
 
 if ($return{'table'}) {
@@ -727,8 +739,6 @@ sub NbPossibleOligo {
     }
 }
 
-
-
 ################################################################
 #### expected oligomer frequencies
 sub CalcExpected {
@@ -736,6 +746,12 @@ sub CalcExpected {
 	&Warning(&AlphaDate()."\tCalculating probabilities");
     }
     
+    #### Calcualte the number of possible positions for each pattern
+    foreach $pattern_seq (sort keys %patterns) {
+	$patterns{$pattern_seq}->{nb_possible_pos} += $nb_possible_pos;
+    }
+
+
     ### expected frequency file
     if ($method eq "Frequency file") {    
 	if ($one_var_position) {
@@ -762,6 +778,23 @@ sub CalcExpected {
 		    $patterns{$pattern_seq}->{exp_freq} /= $sub_word[$markov_order]{$subseq}->{freq};
 		}
 	    }
+	}
+
+    } elsif ($method eq "Calibration file") {  ### Markov chain
+	### calculate expected frequencies from the expected occurrences
+	foreach $pattern_seq (sort keys %patterns) {
+	    if ($patterns{$pattern_seq}->{nb_possible_pos} > 0) {
+		$patterns{$pattern_seq}->{exp_freq} = $patterns{$pattern_seq}->{exp_occ}/$patterns{$pattern_seq}->{nb_possible_pos};
+	    } else {
+		$patterns{$pattern_seq}->{exp_freq} = "NA";
+	    }
+#  	    warn join ("\t", "HELLO", 
+#  		       $pattern_seq, 
+#  		       $patterns{$pattern_seq}->{exp_occ}, 
+#  		       $patterns{$pattern_seq}->{exp_var},
+#  		       $patterns{$pattern_seq}->{nb_possible_pos},
+#  		       $patterns{$pattern_seq}->{exp_freq},
+#  		       );
 	}
 
     } elsif ($method eq "lexicon") {  ### Markov chain
@@ -878,12 +911,9 @@ sub CalcExpected {
     ################################################################
     #### expected number of occurrences and matching sequences ####
     foreach $pattern_seq (sort keys %patterns) {
-#	if ($noov) {
-#	    $patterns{$pattern_seq}->{nb_possible_pos} = $nb_possible_pos - ($patterns{$pattern_seq}->{occ} * ($oligo_length -1));
-#	} else {
-	$patterns{$pattern_seq}->{nb_possible_pos} += $nb_possible_pos;
-#	}
-	$patterns{$pattern_seq}->{exp_occ} = $patterns{$pattern_seq}->{exp_freq} * $patterns{$pattern_seq}->{nb_possible_pos}; 
+	unless ($method eq "Calibration file") {
+	    $patterns{$pattern_seq}->{exp_occ} = $patterns{$pattern_seq}->{exp_freq} * $patterns{$pattern_seq}->{nb_possible_pos}; 
+	}
 	if ($return{'mseq'}) {
 	    ### expected number of matching sequences ###
 	    $avg_seq_length = $sum_seq_length/$sequence_number;
@@ -931,16 +961,24 @@ sub CalcZscore {
     #### z-scores ####
     if ($return{'occ'}) {
 	foreach $pattern_seq (keys %patterns) {
-	    if ($noov) {
-		$patterns{$pattern_seq}->{est_var} = $patterns{$pattern_seq}->{exp_occ};
-	    } else {
-#		$patterns{$pattern_seq}->{ovlp} = &OverlapCoeff($pattern_seq);
-		$patterns{$pattern_seq}->{est_var} = $patterns{$pattern_seq}->{nb_possible_pos} * $patterns{$pattern_seq}->{exp_freq}*(2*$patterns{$pattern_seq}->{ovlp} - 1 - (2*$oligo_length+1)*$patterns{$pattern_seq}->{exp_freq});
 
-#       	$patterns{$pattern_seq}->{est_var} = $patterns{$pattern_seq}->{nb_possible_pos} * $patterns{$pattern_seq}->{exp_freq}*(1 - $patterns{$pattern_seq}->{exp_freq});
+	    #### Calculate expected variance
+	    unless ($method eq  "Calibration file") {
+		if ($noov) {
+		    ### With the option -noov, there is no problem of overlap
+		    ### The expected variance thus equals the expected occurrences
+		    $patterns{$pattern_seq}->{exp_var} = $patterns{$pattern_seq}->{exp_occ};
+		} else {
+		    ### Correction for self-overlapping patterns
+#		$patterns{$pattern_seq}->{ovlp} = &OverlapCoeff($pattern_seq);
+		    $patterns{$pattern_seq}->{exp_var} = $patterns{$pattern_seq}->{nb_possible_pos} * $patterns{$pattern_seq}->{exp_freq}*(2*$patterns{$pattern_seq}->{ovlp} - 1 - (2*$oligo_length+1)*$patterns{$pattern_seq}->{exp_freq});
+		    
+#       	$patterns{$pattern_seq}->{exp_var} = $patterns{$pattern_seq}->{nb_possible_pos} * $patterns{$pattern_seq}->{exp_freq}*(1 - $patterns{$pattern_seq}->{exp_freq});
+		}
 	    }
-	    if ($patterns{$pattern_seq}->{est_var} > 0) {
-		$stdev = sqrt($patterns{$pattern_seq}->{est_var});
+
+	    if ($patterns{$pattern_seq}->{exp_var} > 0) {
+		$stdev = sqrt($patterns{$pattern_seq}->{exp_var});
 		$patterns{$pattern_seq}->{zscore} = ($patterns{$pattern_seq}->{occ} - $patterns{$pattern_seq}->{exp_occ})/$stdev;
 	    } else {
 		$stdev = "NA";
@@ -954,8 +992,8 @@ sub CalcZscore {
 #  			       $patterns{$pattern_seq}->{exp_freq},
 #  			       1-$patterns{$pattern_seq}->{exp_freq},
 #  			       $patterns{$pattern_seq}->{ovlp},
-#  			       $patterns{$pattern_seq}->{est_var},
-#  			       sqrt($patterns{$pattern_seq}->{est_var}),
+#  			       $patterns{$pattern_seq}->{exp_var},
+#  			       sqrt($patterns{$pattern_seq}->{exp_var}),
 #  			       $patterns{$pattern_seq}->{zscore}
 #  			       ), "\n";
 	}
@@ -1061,10 +1099,28 @@ sub CalcProba {
 #								 $patterns{$pattern_seq}->{occ}/2-1);
 #		$patterns{$pattern_seq}->{remark} = "\tpalindrome";
 #	    } else {
-	    $patterns{$pattern_seq}->{occ_pro} = &sum_of_binomials($patterns{$pattern_seq}->{exp_freq},
-								   $patterns{$pattern_seq}->{nb_possible_pos},
-								   0,
-								   $patterns{$pattern_seq}->{occ}-1);
+
+	    if ($method eq "Calibration file") {
+		if ($patterns{$pattern_seq}->{exp_occ} < $patterns{$pattern_seq}->{exp_var}) {
+		    #### Fit a negative binomial
+		    ($p, $k, $patterns{$pattern_seq}->{occ_pro}) = &sum_of_negbin2($patterns{$pattern_seq}->{exp_occ},
+										   $patterns{$pattern_seq}->{exp_var},
+									      0,
+										   $patterns{$pattern_seq}->{occ}-1);
+		    $patterns{$pattern_seq}->{fitted} = "negbin";
+		} else {
+		    #### Fit a Poisson
+		    $patterns{$pattern_seq}->{occ_pro} = &sum_of_poisson($patterns{$pattern_seq}->{exp_occ},
+									 0,
+									 $patterns{$pattern_seq}->{occ}-1);
+		    $patterns{$pattern_seq}->{fitted} = "Poisson";
+		}
+	    } else {
+		$patterns{$pattern_seq}->{occ_pro} = &sum_of_binomials($patterns{$pattern_seq}->{exp_freq},
+								       $patterns{$pattern_seq}->{nb_possible_pos},
+								       0,
+								       $patterns{$pattern_seq}->{occ}-1);
+	    }
 #	    }
 	} else {
 	    ### probability of observing at least the observed number of occurrences ####
@@ -1074,12 +1130,34 @@ sub CalcProba {
 #								   $patterns{$pattern_seq}->{occ}/2);
 #		$patterns{$pattern_seq}->{remark} = "\tpalindrome";
 #	    } else {
-
-	    
-	    $patterns{$pattern_seq}->{occ_pro} = &binomial_boe($patterns{$pattern_seq}->{exp_freq},
-							       $patterns{$pattern_seq}->{nb_possible_pos},
-							       $patterns{$pattern_seq}->{occ});
-
+	    if ($method eq "Calibration file") {
+		if ($patterns{$pattern_seq}->{exp_occ} < $patterns{$pattern_seq}->{exp_var}) {
+		    #### Fit a negative binomial
+		    ($p, $k, $patterns{$pattern_seq}->{occ_pro}) = &sum_of_negbin2($patterns{$pattern_seq}->{exp_occ},
+										   $patterns{$pattern_seq}->{exp_var},
+										   $patterns{$pattern_seq}->{occ},
+										   $patterns{$pattern_seq}->{nb_possible_pos},
+										   );
+		    $patterns{$pattern_seq}->{fitted} = "negbin";
+		} else {
+		    #### Fit a Poisson
+#		    warn join( "\t", "HELLO", $pattern_seq, 
+#			      $patterns{$pattern_seq}->{exp_occ},
+#			      $patterns{$pattern_seq}->{occ},
+#			      $patterns{$pattern_seq}->{nb_possible_pos},
+#			      "\n");
+		    $patterns{$pattern_seq}->{occ_pro} = &sum_of_poisson($patterns{$pattern_seq}->{exp_occ},
+									  $patterns{$pattern_seq}->{occ},
+									  $patterns{$pattern_seq}->{nb_possible_pos},
+									  );
+		    
+		    $patterns{$pattern_seq}->{fitted} = "Poisson";
+		}
+	    } else {
+		$patterns{$pattern_seq}->{occ_pro} = &binomial_boe($patterns{$pattern_seq}->{exp_freq},
+								   $patterns{$pattern_seq}->{nb_possible_pos},
+								   $patterns{$pattern_seq}->{occ});
+	    }
 #  	    warn join( "\t", "HELLO", 
 #  			       $pattern_seq, 
 #  			       $patterns{$pattern_seq}->{occ},  
@@ -1165,7 +1243,8 @@ sub PrintHeaderLine {
     $col_description{"rank"} = "rank"; 
     $col_description{"positions"} = "matching positions"; 
     $col_description{"ovlp"} = "overlap coefficient"; 
-    $col_description{"est_var"} = "estimation of the variance on occurrences"; 
+    $col_description{"exp_var"} = "estimation of the variance on occurrences"; 
+    $col_description{"fitted"} = "fitted distribution"; 
     $col_description{"remark"} = "remark"; 
     $col_description{"segments"} = "word segmentation"; 
     @out_col = ();
@@ -1198,7 +1277,6 @@ sub PrintHeaderLine {
 	push(@out_col,"zscore") if ($return{'zscore'});
 	push(@out_col,"occ_lkh") if ($return{'like'});
 	push(@out_col,"ovl_occ") if ($noov);
-	#    push(@out_col,"est_var") if ($return{'zscore'});
     }
     push(@out_col,"ratio") if ($return{'ratio'});
     
@@ -1226,7 +1304,8 @@ sub PrintHeaderLine {
     
     ### miscellaneous
     push(@out_col,"ovlp") if ($return{'ovlp'});
-    push(@out_col,"est_var") if ($return{'est_var'});
+    push(@out_col,"exp_var") if ($return{'exp_var'});
+    push(@out_col,"fitted") if ($return{'fitted'});
     push(@out_col,"remark") if ($return{'remark'});
     push(@out_col,"segments") if ($return{'segments'});
 
@@ -1290,10 +1369,11 @@ sub Verbose {
 	    printf $out "; %-29s\t%s\n", "Background model", $background_model if ($background_model);
 	    printf $out "; %-29s\t%s\n", "Organism", $organism_name if ($organism_name);
 	    printf $out "; %-29s\t%s\n", "Method", $method;
-	    printf $out "; %-29s\t%s\n", "Expected frequency file", $exp_freq_file if ($exp_freq_file);
+	    printf $out "; %-29s\t%s\n", "Expected frequency file", $infile{expected_freq} if ($infile{expected_freq});
 	    printf $out "; %-29s\n", "\trescaled to 1" if ($rescale_freq);
+	    printf $out "; %-29s\t%s\n", "Calibration file", $infile{calibration} if ($infile{calibration});
 	    printf $out "; %-29s\t%s\n", "Markov chain order", $markov_order if ($method eq "Markov chain");
-	    printf $out "; %-29s\t%s\n", "Alphabet frequency file", $alphabet_file if ($alphabet_file);
+	    printf $out "; %-29s\t%s\n", "Alphabet frequency file", $infile{alphabet} if ($infile{alphabet});
 	    if (($alphabet) || ($method eq "alphabet")){
 		print $out "; Alphabet\n";
 		foreach $key (sort keys %residue_proba) {
@@ -1450,7 +1530,6 @@ sub PrintResult {
 		} else {
 		    printf $out "\t%s", $patterns{$pattern_seq}->{zscore};
 		}
-		#			printf $out "\t%.1f", $patterns{$pattern_seq}->{est_var};
 	    }
 	    
 	    ### log likelihood of occurrences
@@ -1505,7 +1584,8 @@ sub PrintResult {
 	
 	### miscellaneous info
 	printf $out "\t%.5f", $patterns{$pattern_seq}->{ovlp} if ($return{'ovlp'});
-	printf $out "\t%.3f", $patterns{$pattern_seq}->{est_var} if ($return{'est_var'});
+	printf $out "\t%.3f", $patterns{$pattern_seq}->{exp_var} if ($return{'exp_var'});
+	printf $out "\t%s", $patterns{$pattern_seq}->{fitted} if ($return{'fitted'});
 	printf $out "\t%s", $patterns{$pattern_seq}->{remark} if ($return{'remark'});
 	printf $out "\t%s", $patterns{$pattern_seq}->{segments} if ($return{'segments'});
 	
@@ -1631,7 +1711,12 @@ sub ReadArguments {
 	    #### expected frequency file
 	} elsif ($ARGV[$a] eq "-expfreq") {
 	    $method = "Frequency file";
-	    $exp_freq_file = $ARGV[$a+1];
+	    $infile{expected_freq} = $ARGV[$a+1];
+
+	    #### calibration file
+	} elsif ($ARGV[$a] eq "-calib") {
+	    $method = "Calibration file";
+	    $infile{calibration} = $ARGV[$a+1];
 
 	    #### rescale expected frequencies to have a sum of 1
 	} elsif ($ARGV[$a] eq "-rescale") {
@@ -1679,7 +1764,7 @@ sub ReadArguments {
 	    #### fiel with alphabet utilization
 	} elsif ($ARGV[$a] eq "-afile") {
 	    $alphabet = 1;
-	    $alphabet_file = $ARGV[$a+1];
+	    $infile{alphabet} = $ARGV[$a+1];
 
 	    #### alphabet
 	} elsif ($ARGV[$a] eq "-a") {
@@ -1807,8 +1892,8 @@ sub ReadArguments {
 		    push(@output_fields, "ovlp");
 		    
 		} elsif ($field eq "var") {
-		    $return{'est_var'} = 1;
-		    push(@output_fields, "est_var");
+		    $return{'exp_var'} = 1;
+		    push(@output_fields, "exp_var");
 		    
 		} else {
 		    &FatalError("Invalid return field $field");
@@ -1876,7 +1961,7 @@ USAGE
 	oligo-analysis -l length [-i inputfile]  [-format input_format]
 		[-o outputfile] 
 		[-return occ,freq,ratio,mseq,proba,zscore,like,rank]
-		[-expfreq exp_freq_file | -a alphabet | -markov #]
+		[-expfreq exp_freq_file | -calib calibration_file | -a alphabet | -markov #]
 		[-1str | -2str] [-seqtype dna|prot|other][-grouprc | -nogrouprc]
 		[-tho #][-thpo #][-thosig #][-thratio #][-thms #]
 		[-thpms #][-thmssig #] [-oneN | -onedeg][-v]
@@ -1908,17 +1993,21 @@ ARGUMENTS
                 -a input
                         use the alphabet of the input sequence
 	-expfreq
+		(mutually exclusive with -calib and -a)
 		file containing the estimations for expected oligomer 
 		frequencies. This can be for instance the olignonucleotide 
 		frequency measured in the whole genome, or in all intergenic 
 		regions, or in all coding regions. 
 		This information is used for the calculation of probabilities.
-		If omitted, expected frequencies are calculated on basis of
-		an equiprobable nucleotide utilization.
-	-rescale
-		rescale expected frequencies to obtain a sum of 1.
-		This allows to use absolute occurrences (rather than
-		relative frequencies).
+	-calib
+		(mutually exclusive with -expfreq and -a) File
+		containing the estimations for the mean and variance
+		of oligomer occurrences. This calibration can be
+		performed with the script calibrate-oligos.
+		Calibration file contains (among other informations)
+		the occurrence means and variances of the simulation,
+		which is used for the calculation of probabilities, on
+		the basis of a negative binomial model.
 	-ncf	(deprecated, use "-bg intergenic" instead)
 		use intergenic frequencies as background frequencies
 	-bg	background model
@@ -2433,7 +2522,7 @@ oligo-analysis options
 -a yeast        use yeast genomic alphabet
 -a input        use alphabet from input sequence
 -expfreq        file with expected frequency table
--rescale	rescale expected frequencies to obtain a sum of 1
+-calib		file with calibration table
 -ncf		(deprecated, use '-bg intergenic' instead) 
 -bg		background model (supported: $supported_bg)
 -org		organism 

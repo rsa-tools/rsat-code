@@ -117,11 +117,12 @@ sub OpenInputFile {
 #    warn "BOUM $filename";
     my $input_stream;
 #    my ($short_file_name, $input_dir) = &ShortFileName($filename);
-    my ($input_dir, $short_file_name) = &SplitFileName($filename);
     warn join ("\t", "; Opening input stream", $filename, $short_file_name, $input_dir), "\n" 
 	if ($verbose >= 2);
-
+    my $input_dir = "";
+    my $short_file_name = "";
     if ($filename) {
+	($input_dir, $short_file_name) = &SplitFileName($filename);
 	unless (-e $filename) {
 	    if (-e "${filename}.gz") {
 		$filename .= ".gz";
@@ -232,11 +233,53 @@ sub ExpectedFreqFile {
     return $exp_freq_file;
 }
 
+
+################################################################
+# Read expected occurrences and variance from a calibration file
+sub ReadCalibration {
+    my ($calibration_file, $sum_rc) = @_;
+    
+    my ($cal) = &OpenInputFile($calibration_file);
+    my $l=0;
+    while (<$cal>) {
+	$l++;
+	chomp();
+	next if (/^;/);
+	next unless (/\S/);
+	my @fields =  split /\s+/;
+	my $pattern_seq = lc($fields[0]);
+
+	## Expected occurrences
+	my $exp_occ = $fields[1];
+	&FatalError("Invalid expected occurrences") unless ((&IsReal($exp_occ)) && ($exp_occ >= 0));
+	$patterns{$pattern_seq}->{exp_occ} = $exp_occ;
+
+	## Expected variance
+	my $exp_var = $fields[3];
+	&FatalError("Invalid expected variance") unless ((&IsReal($exp_var)) && ($exp_ocvar >= 0));
+	$patterns{$pattern_seq}->{exp_var} = $exp_var;
+
+    }
+    close $cal if ($calibration_file);
+    
+    #### check if reverse complements were included in the expected freq file;
+    #### if not, infer them from the direct strand 
+    foreach my $pattern_seq (sort keys %patterns) {
+  	my $rc = lc(&SmartRC($pattern_seq));
+  	if (($patterns{$rc}->{exp_occ} <= 0) &&
+  	    ($patterns{$pattern_seq}->{exp_occ})) {
+  	    $patterns{$rc}->{exp_occ} = $patterns{$pattern_seq}->{exp_occ};
+	    #print STDERR join "\t", $pattern_seq,  $patterns{$pattern_seq}->{exp_freq}, $rc, $patterns{$rc}->{exp_freq}, "\n";
+  	}
+    }
+}
+
+
 ################################################################
 # Read pattern expected frequencies from a file
 #
 sub ReadExpectedFrequencies {
-    my ($exp_freq_file, $sum_rc) = @_;
+    my ($exp_freq_file, $sum_rc, $rescale_freq) = @_;
     
     ($exp) = &OpenInputFile($exp_freq_file);
     my $l=0;
@@ -245,7 +288,6 @@ sub ReadExpectedFrequencies {
 	chomp();
 	next if (/^;/);
 	next unless (/\S/);
-
 
 	my @fields =  split /\s+/;
 	$pattern_seq = lc($fields[0]);
