@@ -1,5 +1,17 @@
 #!/usr/bin/perl
 use CGI;
+use CGI::Carp;
+
+#### redirect error log to a file
+BEGIN {
+    $ERR_LOG = "/dev/null";
+#    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
+    use CGI::Carp qw(carpout);
+    open (LOG, ">> $ERR_LOG")
+	|| die "Unable to redirect log\n";
+    carpout(*LOG);
+}
+
 
 ### for debugging
 sub ListParameters {
@@ -17,6 +29,26 @@ sub ListParameters {
   }
   print "</TABLE></UL>\n";
 }
+
+# ################################################################
+# #### list parameters from a CGI query
+# sub ListParameters {
+#   my $cgi_query = $_[0];
+#   @param = $query->param;
+#   print "<H3>Parameter values</H3>";
+#   print "<UL><TABLE>\n";
+#   foreach $key (@param) {
+#     print "<TR>";
+#     print "<TD VALIGN=TOP><B>$key</B></TD>";
+#     $value = $query->param($key);
+#     $value =~ s/\n/<BR>/g;
+#     print "<TD VALIGN=TOP>$value</TD>";
+#     print "</TR>\n";
+#   }
+#   print "</TABLE></UL>\n";
+
+# }
+
 
 
 sub RSA_header {
@@ -359,8 +391,8 @@ sub EmailTheResult {
     my ($command_to_email, $email_address) = @_;
     if ($email_address =~ /(\S+\@\S+)/) {
 	$address = $1;
-	&Info ("Result will be sent to your e-mail address: $address");
-	system "$command | $mail_command $address &"; 
+	&Info ("Result will be sent to your e-mail address: $email_address");
+	system "$command_to_email | $mail_command $email_address &"; 
     } else {
 	if ($email_address eq "") {
 	    &FatalError ("You did not enter your e-mail address");
