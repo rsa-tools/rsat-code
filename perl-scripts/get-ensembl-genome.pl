@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-ensembl-genome.pl,v 1.6 2005/02/24 10:00:05 oly Exp $
+# $Id: get-ensembl-genome.pl,v 1.7 2005/02/24 10:56:39 oly Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -115,12 +115,11 @@ foreach my $slice (@slices) {
 	    print_DBEntries($gene->get_all_DBLinks());
     }
     
-    print $feature[3],"\n";
-# 	my $sequence = $slice->seq();
-# 	$outfile{sequence} = "$feature[3].raw";
-#    open $SEQ, ">".$outfile{sequence} || die "cannot open error log file".$outfile{sequence}."\n";
-# 	print $SEQ $sequence;
-#    close $SEQ if ($outfile{sequence});
+ 	my $sequence = $slice->seq();
+ 	$outfile{sequence} = "$feature[3].raw";
+    open $SEQ, ">".$outfile{sequence} || die "cannot open error log file".$outfile{sequence}."\n";
+ 	print $SEQ $sequence;
+    close $SEQ if ($outfile{sequence});
 }
 
 
