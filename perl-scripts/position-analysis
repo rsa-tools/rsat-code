@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: position-analysis,v 1.20 2003/12/28 19:51:20 jvanheld Exp $
+# $Id: position-analysis,v 1.21 2004/01/13 23:54:18 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -213,11 +213,11 @@ if ($return{'graph'}) {
 }
 
 
-
+## end of job message
 if ($verbose >= 1) {
   $done_time  = `date '+%d/%m/%y %H:%M:%S %Z'`;
-  print $out ";Job started $start_time";
-  print $out ";Job done    $done_time";
+  print $out ";Job started ".$start_time."\n";
+  print $out ";Job done    ".$done_time;
   
 }
 
@@ -250,7 +250,7 @@ sub SumStrands {
       if ($rc_oligo_seq eq $oligo_seq) {
 	$m_pos_bothstrands{$oligo_seq}{$class} = $class_freq{$oligo_seq}{$class};
       } else {
-	$m_pos_bothstrands{$oligo_seq}{$class} = $class_freq{$oligo_seq}{$class} + $class_freq{$rc_oligo_seq}[$spos_class];;
+	$m_pos_bothstrands{$oligo_seq}{$class} = $class_freq{$oligo_seq}{$class} + $class_freq{$rc_oligo_seq}{$class};
       }	  
     }
     foreach $oligo_seq (sort keys %occurrences) {
@@ -789,9 +789,13 @@ sub ReadArguments {
 	    ### strands
 	} elsif ($ARGV[$a] eq "-1str") {
 	    $strands = "1str";
+	    $sum_rc = 0;
 	    $group_rc = 0;
+
 	} elsif ($ARGV[$a] eq "-2str") {
 	    $strands = "2str";
+	    $sum_rc = 1;
+	    $group_rc = 1;
 	    
 	    ### grouping of reverse complements
 	} elsif ($ARGV[$a] eq "-grouprc") {
@@ -1038,22 +1042,24 @@ sub PrintResult {
     ### pattern distributions
     my $rank = 0;
     foreach $oligo_seq (@sorted_keys) {
-	print $out "$oligo_seq";
-	print $out "\t$oligo_seq";
-	if ($group_rc) {
-	    print $out "|", lc(ReverseComplement($oligo_seq));
-	}
+	print $out "$oligo_seq"; ### Pattern sequence
+	print $out "\t", &PatternID($oligo_seq, $sum_rc); ### Pattern ID
+#	print $out "\t$oligo_seq"; ### Pattern ID
+#	if ($group_rc) {
+#	    print $out "|", lc(ReverseComplement($oligo_seq));
+#	}
 	
 	### Occurrences
 	print $out "\t$in_bound_occurrences{$oligo_seq}";
 	print $out "\t$overlaps{$oligo_seq}" if ($no_overlaps);
 	
 	### chi-square value
-	print $out "\t$chi_square{$oligo_seq}" if ($return{'chi'});
-
-	### Degrees of freedom
-	print $out "\t$chi_square{$oligo_seq}" if ($return{'chi'});
-
+	if ($return{'chi'}) {
+	    print $out "\t$chi_square{$oligo_seq}" ;
+	    ### Degrees of freedom
+	    print $out "\t$df{$oligo_seq}" if ($return{'chi'});
+	}
+	
 	#### Rank
 	if ($return{'rank'}) {
 	    $rank++;
