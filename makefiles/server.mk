@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: server.mk,v 1.1 2003/11/14 11:27:18 jvanheld Exp $
+# $Id: server.mk,v 1.2 2003/11/19 20:03:46 jvanheld Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -18,7 +18,7 @@ DATE = `date +%Y%m%d_%H%M%S`
 # programs
 
 WGET = wget -np -rNL 
-MAKE=nice -n 19 make -s
+MAKE=nice -n 19 make -s -f ${RSAT}/server.mk
 RSYNC_OPT = -ruptvl ${OPT}
 SSH=-e 'ssh -x'
 RSYNC = rsync ${RSYNC_OPT} ${SSH}

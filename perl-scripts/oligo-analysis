@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.61 2003/10/29 09:04:12 jvanheld Exp $
+# $Id: oligo-analysis,v 1.62 2003/11/19 20:06:23 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -183,7 +183,7 @@ $out = &OpenOutputFile($outputfile);
 &OccurrenceThreshold() if ($occurrence_threshold > 0);
 &MatchingSeqThreshold() if ($mseq_threshold > 0); 
 &NbPossibleOligo();
-&CalcOverlapCoefficient() if ($return{'ovlp'});
+&CalcOverlapCoefficient();# if ($return{'ovlp'});
 &CalcExpected() if ($return{'exp_freq'});
 &CalcZscore() if ($return{'zscore'});
 &CalcLikelihood() if ($return{'like'});
@@ -592,9 +592,7 @@ sub CalcFrequencies {
 ### residue frequencies from input sequences
 sub CalcAlphabet {
     %residue_proba = ();
-    if ($verbose >= 0) {
-	&Warning(&AlphaDate()."\tCalculating residue frequencies from input sequences");
-    }
+    &Warning(&AlphaDate()."\tCalculating residue frequencies from input sequences") if ($verbose >= 2);
     
     foreach $key (sort keys %residue_occ) {
 	$residue_total += $residue_occ{$key};
@@ -851,14 +849,24 @@ sub CalcExpected {
 	    $patterns{$pattern_seq}->{exp_ms} =  $one_seq_match_proba*$sequence_number;
 	    
 	    unless ($noov) {
+		## Mireille Regnier's Correction on expected
+		## frequencies to calculate the probability of
+		## first occurrences for self-overlapping patterns
+		unless (defined($patterns{$pattern_seq}->{ovlp})) {
+		    $patterns{$pattern_seq}->{ovlp} = $patterns{&SmartRC($pattern_seq)}->{ovlp}
+		} 
 		$exp_freq_est = $patterns{$pattern_seq}->{exp_freq}/$patterns{$pattern_seq}->{ovlp};
 		$one_seq_match_proba =  1 - (1-$exp_freq_est)**$pos_per_seq;
 		$patterns{$pattern_seq}->{ems_cor} =  $one_seq_match_proba*$sequence_number;
+		warn join ( "\t", $pattern_seq, 
+			    "overlap: $patterns{$pattern_seq}->{ovlp}",
+			    "exp_freq: $patterns{$pattern_seq}->{exp_freq}",
+			    "exp_freq_est: $exp_freq_est", 
+			    "ems_cor", $patterns{$pattern_seq}->{ems_cor}
+			    ), "\n" if ($verbose >= 4);
 	    }
 	}
     }	
-
-
 } # CalcExpected
 
 
@@ -867,6 +875,7 @@ sub CalcExpected {
 sub CalcOverlapCoefficient {
     foreach $pattern_seq (keys %patterns) {
 	$patterns{$pattern_seq}->{ovlp} = &OverlapCoeff($pattern_seq, %residue_proba);
+	warn join ( "\t", "overlap", $pattern_seq, $patterns{$pattern_seq}->{ovlp}), "\n" if ($verbose >= 4);
     }
 }
 
@@ -1033,8 +1042,6 @@ sub CalcProba {
 
 #	    }
 	}
-
-#	die join "\t", $pattern_seq, $rc, "HELLO\n";
 
 	#### check threshold on occurrence probability ####
 	if ($patterns{$pattern_seq}->{occ_pro} > $proba_occ_threshold) {

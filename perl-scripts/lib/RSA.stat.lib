@@ -83,12 +83,13 @@ sub checked_avg {
 ### usage:
 ###     &binomial($proba,$trials,$successes)
 ### this routine uses the recursive formula for the calculation of binomial:
-### We calculate everything in logarithms, and make a custom exp conversion
-### to overcome the limitation of the Perl exp(x) function
 ###
 ###           P(x) * p(r-x)
 ###  P(x+1) = -------------
 ###              q(x+1)
+###
+### We calculate everything in logarithms, and make a custom exp conversion
+### to overcome the limitation of the Perl exp(x) function
 ###
 sub binomial {
     my($proba, $trials, $succ) = @_;
@@ -445,7 +446,7 @@ sub hypergeometric {
 
 
     
-# 	$Id: RSA.stat.lib,v 1.10 2003/10/29 09:04:12 jvanheld Exp $	
+# 	$Id: RSA.stat.lib,v 1.11 2003/11/19 20:06:23 jvanheld Exp $	
 
     #### initialization
     if (defined($args{previous_value})) {
