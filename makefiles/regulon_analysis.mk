@@ -69,55 +69,45 @@ after_queue:
 ## Data
 ################################################################
 
-REGULONS=regulons_TF_aMAZE.fam
 ALL_RANDOM=random_selection1.fam random_selection2.fam random_selection3.fam random_selection4.fam random_selection5.fam	\
 random_selection6.fam random_selection7.fam random_selection8.fam random_selection9.fam random_selection10.fam
-
-REGULONS_FILE=data/${REGULONS}
-RAND_FAM=random_selection1.fam
-RAND_FAM_FILE=data/${RAND_FAM}
-
 
 ################################################################
 ### generate random gene selection
 ################################################################
-<<<<<<< regulon_analysis.mk
-=======
 ## Generate random gene selections
+
 REGULONS=regulons_TF_aMAZE
-RAND_FAM=random_selection
 REGULONS_FILE=data/${REGULONS}.fam
+#RAND_FAM=random_selection1
+RAND_FAM=random_selection
 RAND_FAM_FILE=data/${RAND_FAM}.fam
+#REGULONS=regulons_TF_aMAZE
+#RAND_FAM=random_selection
+#REGULONS_FILE=data/${REGULONS}.fam
+#RAND_FAM_FILE=data/${RAND_FAM}.fam
 rand_fam:
 	random-genes -fam ${REGULONS_FILE} -o ${RAND_FAM_FILE}	\
 		 -features data/Feature_nomito.tab -org ${ORG}
->>>>>>> 1.8
 
-generate_random:
-	random-genes -fam ${REGULONS_FILE} -o data/${RAND_FAM_FILE} -features data/Feature_nomito.tab -org ${ORG};
+generate_random: rand_fam
+
+#	random-genes -fam ${REGULONS_FILE} -o data/${RAND_FAM_FILE} -features data/Feature_nomito.tab -org ${ORG};
 
 ################################################################
 #### Parameters for pattern discovery (oligo-analysis and
 #### dyad-analysis)
 FAM=${REGULONS}
-<<<<<<< regulon_analysis.mk
-FAM_FILE=data/${FAMS}
-=======
+#FAM_FILE=data/${FAMS}
 FAM_FILE=${WORK_DIR}/data/${FAM}.fam
->>>>>>> 1.8
 
-MULTI_INPUT=-i ${FAM}
+MULTI_INPUT=-i ${FAM_FILE}
 ORG=Saccharomyces_cerevisiae
 STR=-2str
 THOSIG=0
 NOOV=-noov
-<<<<<<< regulon_analysis.mk
-MULTI_TASK=upstream,purge,oligos,merge_oligos,oligo_maps,dyads,dyad_maps,consensus,gibbs,MotifSampler,meme,synthesis,sql
-MULTI_BG=upstream-noorf
-=======
 MULTI_TASK=upstream,purge,oligos,merge_oligos,oligo_maps,dyads,dyad_maps,consensus,gibbs,MotifSampler,meme,synthesis,sql
 MULTI_BG=upstream
->>>>>>> 1.8
 MULTI_EXP=-bg ${MULTI_BG}
 PURGE=-purge
 RES_DIR=${WORK_DIR}/results
@@ -365,8 +355,6 @@ get_matrix_scores:
 	done
 
 select_rsat_best_scores:
-
-<<<<<<< regulon_analysis.mk
 	 echo ${NFAM}"	"`grep -v '^;' ${MULTI_DIR}/${NFAM}/oligos_${NFAM}/${NFAM}_up800_noorf_oligos_bg_upstream-noorf_${MIN_OL}-${MAX_OL}nt${STR}_sig${THOSIG}${NOOV} | \
 	 cut -f 8 | sort -gu | tail -1` >> ${MULTI_DIR}/synthetic_tables/oligos_up800_noorf_bg_upstream-noorf_${MIN_OL}-${MAX_OL}nt${STR}_sig${THOSIG}${NOOV}_best.scores
 	 echo ${NFAM}"	"`grep -v '^;' ${MULTI_DIR}/${NFAM}/dyads_${NFAM}/${NFAM}_up800_noorf_dyads_bg_upstream-noorf_l3_sp${MIN_SP}-${MAX_SP}${STR}_any_sig${THOSIG}${NOOV} | \
@@ -628,7 +616,10 @@ compare_matrix:
 		-i ${COMP_DIR_NS}/consensus_L${MATRIX_WIDTH}_${REGULONS}_lnPval_classfreq.tab \
 		-i ${COMP_DIR_NS}/consensus_L${MATRIX_WIDTH}_${RAND_SET}_lnPval_classfreq.tab \
 		-numeric > ${COMP_DIR_NS}/consensus_L${MATRIX_WIDTH}_lnPval_${COMP_ID}.tab
-=======
+
+
+################################################################
+## Compare families with catalogs (GO)
 CATALOG=GO
 CATALOG_DIR=${RSAT}/public_html/data/genomes/${ORG}/catalogs/
 CATALOG_FILE=${CATALOG_DIR}/${CATALOG}.tab
@@ -657,5 +648,4 @@ compare_catalogs:
 	@for cat in ${CATALOGS}; do				\
 		${MAKE} compare_one_catalog CATALOG=$${cat} ;	\
 	done
->>>>>>> 1.8
 

@@ -6,6 +6,7 @@ V=1
 
 ################################################################
 ### commands
+MAKEFILE=makefile
 MAKE=make -s -f ${MAKEFILE}
 
 SSH_OPT = -e ssh 
