@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gibbs.cgi,v 1.7 2002/09/05 09:50:53 jvanheld Exp $
+# $Id: gibbs.cgi,v 1.8 2003/04/17 20:42:46 jvanheld Exp $
 #
-# Time-stamp: <2002-09-05 04:50:51 jvanheld>
+# Time-stamp: <2003-04-17 22:42:20 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -12,11 +12,20 @@ if ($0 =~ /([^(\/)]+)$/) {
 
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
+#### redirect error log to a file
+BEGIN {
+    $ERR_LOG = "/dev/null";
+#    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
+    use CGI::Carp qw(carpout);
+    open (LOG, ">> $ERR_LOG")
+	|| die "Unable to redirect log\n";
+    carpout(*LOG);
+}
 require "RSA.lib";
 require "RSA.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
-$gibbs_command = "$BIN/gibbs";
+$command = "$BIN/gibbs";
 $matrix_from_gibbs_command = "$SCRIPTS/matrix-from-gibbs";
 $convert_seq_command = "$SCRIPTS/convert-seq";
 $tmp_file_name = sprintf "gibbs.%s", &AlphaDate;
@@ -77,9 +86,9 @@ if ($query->param('output') eq "display") {
     &DelayedRemoval($result_file);
     &DelayedRemoval($matrix_file);
     
-    system "$gibbs_command $parameters > $result_file";
+    system "$command $parameters > $result_file";
     system "$matrix_from_gibbs_command -i $result_file -o $matrix_file";
-    print "<PRE><B>Command:</B> $gibbs_command $parameters </PRE>" if ($ECHO);
+    print "<PRE><B>Command:</B> $command $parameters </PRE>" if ($ECHO);
     
     ### Print result on the web page
     print '<H4>Result</H4>';
@@ -89,26 +98,13 @@ if ($query->param('output') eq "display") {
     
     &PipingForm();
   
+    print "<HR SIZE = 3>";
+} elsif ($query->param('output') =~ /server/i) {
+    &ServerOutput("$command $parameters", $query->param('user_email'));
 } else {
-    &EmailTheResult("$gibbs_command $parameters", $query->param('user_email'));
-
-  #### send e-mail with the result
-#   if ($query->param('user_email') =~ /(\S+\@\S+)/) {
-#     $address = $1;
-#     print "<B>Result will be sent to your e-mail address: <P>";
-#     print "$address</B><P>";
-#     system "$gibbs_command $parameters | $mail_command $address &"; 
-#   } else {
-#     if ($query->param('user_email') eq "") {
-#       print "<B>ERROR: you did not enter your e-mail address<P>";
-#     } else {
-#       print "<B>ERROR: the e-mail address you entered is not valid<P>";
-#       print "$query->param('user_email')</B><P>";      
-#     }
-#     }
+    &EmailTheResult("$command $parameters", $query->param('user_email'));
 }
 
-print "<HR SIZE = 3>";
 print $query->end_html;
 exit(0);
 

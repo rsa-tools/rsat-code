@@ -4,11 +4,20 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
+#### redirect error log to a file
+BEGIN {
+    $ERR_LOG = "/dev/null";
+#    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
+    use CGI::Carp qw(carpout);
+    open (LOG, ">> $ERR_LOG")
+	|| die "Unable to redirect log\n";
+    carpout(*LOG);
+}
 require "RSA.lib";
 require "RSA.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
-$dna_pattern_command = "$SCRIPTS/dna-pattern";
+$command = "$SCRIPTS/dna-pattern";
 $tmp_file_name = sprintf "dna-pattern.%s", &AlphaDate;
 
 ### Read the CGI query
@@ -106,8 +115,8 @@ if ($query->param("output") =~ /display/i) {
     &PipingWarning() if ($query->param('match_positions'));
     
     $result_file = "$TMP/$tmp_file_name.res";
-    open RESULT, "$dna_pattern_command $parameters |";
-    print "<PRE>$dna_pattern_command $parameters </b>" if ($ECHO);
+    open RESULT, "$command $parameters |";
+    print "<PRE>$command $parameters </b>" if ($ECHO);
   
     ### Print the result on Web page
     print "<H3>Result</H3>";
@@ -116,22 +125,10 @@ if ($query->param("output") =~ /display/i) {
     &PipingForm if ($query->param('match_positions'));
     print "<HR SIZE = 3>";
 
+} elsif ($query->param('output') =~ /server/i) {
+    &ServerOutput("$command $parameters", $query->param('user_email'));
 } else {
-    &EmailTheResult("$dna_pattern_command $parameters", $query->param('user_email'));
-#   ### send an e-mail with the result ###
-#     if ($query->param('user_email') =~ /(\S+\@\S+)/) {
-# 	$address = $1;
-# 	print "<B>Result will be sent to your e-mail address: <P>";
-# 	print "$address</B><P>";
-# 	system "$dna_pattern_command $parameters | $mail_command $address &";
-#     } else {
-# 	if ($query->param('user_email') eq "") {
-# 	    print "<B>ERROR: you did not enter your e-mail address<P>";
-# 	} else {
-# 	    print "<B>ERROR: the e-mail address you entered is not valid<P>";
-# 	    print "$query->param('user_email')</B><P>";      
-# 	}
-#     } 
+    &EmailTheResult("$command $parameters", $query->param('user_email'));
 }
 
 print $query->end_html;
