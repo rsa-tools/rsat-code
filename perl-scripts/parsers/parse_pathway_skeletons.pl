@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_pathway_skeletons.pl,v 1.2 2001/11/12 14:44:41 jvanheld Exp $
+# $Id: parse_pathway_skeletons.pl,v 1.3 2002/02/07 02:31:47 jvanheld Exp $
 #
-# Time-stamp: <2001-11-12 15:10:56 jvanheld>
+# Time-stamp: <2002-02-07 03:31:39 jvanheld>
 #
 ############################################################
 
@@ -23,8 +23,6 @@ package main;
     
     $reverse = 0;
     $forward = 1;
-    $unknown = "<NULL>";
-    
     
     $dir{amaze_export} = "/win/amaze/amaze_data/exported_2001_0719";
 #    $dir{georges_export} = "/win/amaze/amaze_team/for_georges";
@@ -110,7 +108,7 @@ package main;
 				     complete
 				     steps
 				     matching_reactions
-				     problematic_reactions
+				     problems
 				     no_match_reactions
 				     duplicate_reactions
 				     multi_match_reactions
@@ -382,8 +380,8 @@ sub ReadProcesses {
 	$organism =~ s/_/ /g;
 
 	$process = $processes->new_object();
+	$process->set_attribute("source","amaze");
 	$process->set_attribute("complete",1);
-	$process->set_attribute("source","gaurab");
 	$process->set_attribute("organism",$organism);
 	$process->set_attribute("description","$organism - $process_name");
 	$process->set_attribute("parsed_file",$file);
@@ -394,7 +392,12 @@ sub ReadProcesses {
 	$process->set_attribute("no_match_reactions",0);
 	$process->set_attribute("duplicate_reactions",0);
 	$process->new_attribute_value("names",$process_name);
-	
+	if ($organism =~ /coli/) {
+	    $process->set_attribute("annotator", "Gaurab");
+	} elsif ($organism =~ /cerevisiae/) {
+	    $process->set_attribute("annotator", "Georges Cohen");
+	}
+
 	my $product_index = PFBP::Index->new();
 	my $substrate_index = PFBP::Index->new();
 
@@ -735,7 +738,7 @@ sub ReadProcesses {
 				next;
 
 			    } else {
-				$is_direct{$reaction} = $unknown;
+				$is_direct{$reaction} = $null;
 				$process->force_attribute("complete", 0);
 				warn join ("\t", "Cannot identify direction for reaction", $reaction, $kegg_id, $is_direct{$reaction}), "\n" if ($verbose >=3);
 				warn join ("\t", 
@@ -751,7 +754,7 @@ sub ReadProcesses {
 			}
 			
 			$process->force_attribute("missing_direction", $process->get_attribute("missing_direction") + 1) ; #if ($debug);
-			$is_direct{$reaction} = $unknown;
+			$is_direct{$reaction} = $null;
 			$process->force_attribute("complete", 0);
 
 			warn join ("\t", $reaction, $is_direct{$reaction}), "\n" if ($verbose >=3);
@@ -855,7 +858,7 @@ sub ReadProcesses {
 		    }
 		    
 		    #### check if the direction is known
-		    if ($is_direct{$reaction} eq $unknown) {
+		    if ($is_direct{$reaction} eq $null) {
 			next;
 		    }
 
@@ -908,7 +911,7 @@ sub ReadProcesses {
 	warn ("; Reactions\n",
 	      ";\t", 
 	      join ("\n;\t", @reactions), 
-	      "\n") if ($verbose >= 0);
+	      "\n") if ($verbose >= 3);
 	for my $i (0..$#reactions -1) {
 	    if ($reactions[$i] eq $reactions[$i+1]) {
 		&ErrorMessage (join ("\t", $file, "Duplicate reaction", $reactions[$i]), "\n");
@@ -921,7 +924,7 @@ sub ReadProcesses {
 	$process->set_attribute("steps", $step) ;
 	
 	#### count the number of problematic reactions
-	$process->set_attribute("problematic_reactions", 
+	$process->set_attribute("problems", 
 				$process->get_attribute("multi_match_reactions") 
 				+ $process->get_attribute("no_match_reactions")
 				+ $process->get_attribute("duplicate_reactions")
