@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_swissprot.pl,v 1.20 2002/07/02 14:05:33 jvanheld Exp $
+# $Id: parse_swissprot.pl,v 1.21 2002/07/02 17:52:12 jvanheld Exp $
 #
-# Time-stamp: <2002-07-02 16:05:31 jvanheld>
+# Time-stamp: <2002-07-02 19:45:40 jvanheld>
 #
 ############################################################
 
@@ -47,8 +47,6 @@ package main;
     $full_name{yeast} = "Saccharomyces cerevisiae (Baker's yeast)";
     $full_name{ecoli} = "Escherichia coli";
     $full_name{human} = "Homo sapiens (Human)";
-
-    $dir{delivery} = "/rubens/dsk3/genomics/delivery/internal/swissprot";
 
     #### input directories and files
     $dir{input} = "$Databases/ftp.expasy.org/databases/sp_tr_nrdb";
@@ -173,7 +171,7 @@ package main;
 						  prefix=>"spp_");
     $polypeptides->set_out_fields(@out_fields);
     $polypeptides->set_attribute_header("features", join ("\t", "Feature_key", "start_pos", "end_pos", "description") );
-    $polypeptides->set_attribute_header("comments", join ("\t", "topic", "comment") );
+    $polypeptides->set_attribute_header("comments", join ("\t", "topic", "comments") );
 
     #### testing mode
     if ($test) {
@@ -215,6 +213,11 @@ package main;
     #### print the result
     &PrintStats($out_file{stats}, @classes);
     $polypeptides->dump_tables($suffix, 0, $dir{output});
+
+    #### special field formats for SQL
+    $special_field_size{features} = 2047;
+
+    ### generate SQL scripts for loading the data
     $polypeptides->generate_sql(schema=>$schema, 
 				dir=>"$dir{output}/sql_scripts",
 				prefix=>"s_",
