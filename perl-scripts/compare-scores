@@ -162,6 +162,8 @@ OPTIONS
 		The input files each contain a table with several columns,
 		separated by tabulations (\t). 
 		The first column of each input file contains the key.
+	-files	list of files
+		All following arguments are considered as input file
 	-o outputfile
 		if not specified, the standard output is used.
 		This allows to place the command within a pipe.
@@ -200,6 +202,7 @@ compare-scores options
 -h      (must be first argument) display full help message
 -help   (must be first argument) display options
 -i      input file (use recursively to indicate several input files)
+-files	input files (all following arguments are used as input file)
 -o      output file
 -v      verbose
 -sc	score column
@@ -230,6 +233,11 @@ sub ReadArguments {
 	    ### input file ###
 	} elsif ($ARGV[$a] eq "-i") {
 	    push @input_files, $ARGV[$a+1];
+	    
+	    ### multiple input files
+	} elsif ($ARGV[$a] eq "-files") {
+	    push @input_files, @ARGV[$a+1..$#ARGV];
+	    last;
 	    
 	    ### output file ###
 	} elsif ($ARGV[$a] eq "-o") {
