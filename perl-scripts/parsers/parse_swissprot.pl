@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_swissprot.pl,v 1.2 2000/11/29 14:00:48 jvanheld Exp $
+# $Id: parse_swissprot.pl,v 1.3 2000/12/04 02:55:38 jvanheld Exp $
 #
-# Time-stamp: <2000-11-29 10:39:55 jvanheld>
+# Time-stamp: <2000-12-04 03:43:39 jvanheld>
 #
 ############################################################
 
@@ -153,7 +153,7 @@ package main;
   
   ### parse data from original files
   foreach $source (keys %files_to_parse) {
-      &ParseSwissprot($in_file{$source}, $source);
+      &ParseSwissprot($in_file{$source}, "SWISSPROT:".$source);
   }
 #  &CreateCatalyses;
 
@@ -192,7 +192,7 @@ package main;
 	    "; job done    $done_time\n")
       }
   
-  &CloseIndex("ECSet");
+#  &CloseIndex("ECSet");
   close ERR;
   
   system "gzip -f $dir{output}/*.tab $dir{output}/*.obj $dir{output}/*.txt";
@@ -381,14 +381,21 @@ sub ParseSwissprot {
 	} else {
 	    push @names, lc($descr);
 	}
-	push @names, @geneNames;
 	
 	### extract ECs from description
 	my @ECs = ();
 	my $tmp = $descr;
 	while ($tmp =~ /\(EC ([^\(]+)\)/) {
-	    push @ECs, $1;
+	    $ec_number = $1;
 	    $tmp = $';
+	    if ($ec_number =~ /^\S+\.\S+\.\S+\.\S+$/ ) {
+		push @ECs, $ec_number;
+	    } else {
+		&ErrorMessage("Error: $swissprot_ac invalid EC number $ec_number\n");
+		if ($ec_number =~ /^(\S+\.\S+\.\S+\.\S+)/ ) { #### try to recuperate th EC number if it is credible
+		    push @ECs, $1;
+		}
+	    }
 	}
 	if (($export{enzymes})  &&
 	    ($#ECs >= 0)){
@@ -408,16 +415,19 @@ sub ParseSwissprot {
 	    $polypeptide->set_attribute("gene","<NULL>");
 	}
 
-	foreach my $name (@names) {
-	    $polypeptide->push_attribute("names",$name);
+	my %already_assigned = ();
+	foreach my $name (@names, @geneNames, @swissprot_ids, @swissprot_acs) {
+	    $polypeptide->push_attribute("names",$name) 
+		unless $already_assigned{uc($name)};
+	    $already_assigned{uc($name)}++;  #### prevent assigning twice the same name
 	}
+
+
 	foreach my $id (@swissprot_ids) {
 	    $polypeptide->push_attribute("swissprot_ids",$id);
-	    $polypeptide->push_attribute("names",$id);
 	}
 	foreach my $ac (@swissprot_acs) {
 	    $polypeptide->push_attribute("swissprot_acs",$ac);
-	    $polypeptide->push_attribute("names",$ac);
 	}
 	$polypeptide->set_attribute("description", $descr);
 
@@ -436,7 +446,7 @@ sub ParseSwissprot {
     }
     close DATA;
     
-    $polypeptides->index_names();
+#    $polypeptides->index_names();
     return 1;
 }
 

@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genes.pl,v 1.11 2000/11/29 14:00:48 jvanheld Exp $
+# $Id: parse_genes.pl,v 1.12 2000/12/04 02:55:38 jvanheld Exp $
 #
-# Time-stamp: <2000-11-29 13:11:53 jvanheld>
+# Time-stamp: <2000-12-04 01:42:40 jvanheld>
 #
 ############################################################
 
@@ -26,12 +26,12 @@ package main;
 ### files to parse
 @selected_organisms= ();
 
-$species_name{yeast} = "S.cerevisiae";
-$species_name{human} = "H.sapiens";
-$species_name{ecoli} = "E.coli";
+$kegg_file{yeast} = "S.cerevisiae.ent";
+$kegg_file{human} = "H.sapiens.ent";
+$kegg_file{ecoli} = "E.coli.ent";
 
-foreach $org (keys %species_name) {
-    my $data_file = $dir{KEGG}."/genomes/genes/".$species_name{$org}.".ent";
+foreach $org (keys %kegg_file) {
+    my $data_file = $dir{KEGG}."/genomes/genes/".$kegg_file{$org};
     if (-e $data_file) {
 	$in_file{$org} = "cat ${data_file} | ";
     } elsif (-e "${data_file}.gz") {
@@ -45,7 +45,6 @@ foreach $org (keys %species_name) {
 $organism{yeast}->{name} = "Saccharomyces cerevisiae";
 $organism{ecoli}->{name} = "Escherichia coli";
 $organism{human}->{name} = "Homo sapiens";
-
 
 $warn_level = 0;
 $out_format = "obj";
@@ -115,10 +114,10 @@ warn "; Selected organisms\n;\t", join("\n;\t", @selected_organisms), "\n"
 
 ### parse data from original files
 foreach $org (@selected_organisms) {
-  &ParseKeggFile($in_file{$org}, 
-		 $genes, 
-		 source=>"KEGG", 
-		 organism=>$organism{$org}->{name});
+    &ParseKeggFile($in_file{$org}, 
+		   $genes, 
+		   source=>"KEGG:".$kegg_file{$org}, 
+		   organism=>$organism{$org}->{name});
 }
 $genes->index_names();
 
@@ -126,9 +125,10 @@ $genes->index_names();
 
 foreach $gene ($genes->get_objects()) {
     ### define a primary name (take the first value in the name list)
-    if ($name = $gene->get_name()) {
-	$gene->set_attribute("primary_name",$name);
-    }
+#    if ($name = $gene->get_name()) {
+#	$gene->set_attribute("primary_name",$name);
+#    }
+
     #### check for genes without definition
     if ($gene->get_attribute("definition") eq "<UNDEF>") {
 	$gene->set_attribute("definition",$gene->get_name());
@@ -339,7 +339,7 @@ sub ParsePositions {
 	    &ErrorMessage("Error : gene ",$gene->get_attribute("id"),"\tinvalid gene coordinate $coord\n");
 	    next;
 	}
-	$gene->set_attribute("chromosome", "genome");
+	$gene->set_attribute("chromosome", $chromosome);
 	$gene->set_attribute("strand",$strand);
 	$gene->set_attribute("start",$start);
 	$gene->set_attribute("end",$end);
