@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank_lib.pl,v 1.10 2004/07/06 17:48:54 jvanheld Exp $
+# $Id: parse_genbank_lib.pl,v 1.11 2005/01/13 02:20:11 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -143,14 +143,20 @@ sub ParseGenbankFile {
 		$current_contig_value =~ s/\.\s*$//;
 		if ($contig_keys{$current_contig_key}) {
 		    warn "parsing\t$current_contig_key\t$current_contig_value\n" if ($verbose >= 4);
-		    $current_contig->set_attribute(lc($current_contig_key), $current_contig_value);
+		    $current_contig->push_attribute(lc($current_contig_key), $current_contig_value);
 		}
 		
+		## Use ACCESSION number as ID
+		if (lc($current_contig_key) eq "accession") {
+		    $current_contig->force_attribute("id", $current_contig_value);
+		}
+
+
 	    } elsif ($line =~ /^ {12}/) {
 		### suite of the current contig key
-		$current_contig_value .= " ".$';
+		$current_contig_value .= " ".$'; ##'
 		warn "parsing\t$current_contig_key\t$current_contig_value\n" if ($verbose >= 4);
-		$current_contig->force_attribute(lc($current_contig_key), $current_contig_value);
+		$current_contig->append_attribute(lc($current_contig_key), $current_contig_value);
 	    }
 	    
 	    if ($line =~ /^FEATURES/) {
@@ -166,13 +172,14 @@ sub ParseGenbankFile {
 	    #### new contig
 	    @fields = split /\s+/, $line;
 	    warn join ("\t", "; New contig", $line), "\n" if ($main::verbose >= 1);
-	    my $contig_id = $fields[1];
+	    my $contig_name = $fields[1];
 	    my $length = $fields[2];
 	    my $type = $fields[4];      #### DNA or peptide
 	    my $form = $fields[5];      #### circular or linear
 	    my $taxo_group = $fields[6];      #### short taxonomic group
 	    my $contig_date = $fields[7];      #### date of the contig 
-	    $current_contig = $contigs->new_object(id=>$contig_id);
+	    $current_contig = $contigs->new_object();
+	    $current_contig->push_attribute("names",$contig_name);
 	    if ($input_file =~ /[^\/]+\.gbk/) {
 		$current_contig->set_attribute("genbank_file", $&);
 	    }
@@ -204,6 +211,7 @@ sub ParseGenbankFile {
 		#### save the whole contig sequence in a file
 	    } elsif ($args{seq_dir}) {
 		my $seq_file = $current_contig->get_attribute("id").".raw";
+		$seq_file =~ s/:/_/g;
 		$current_contig->set_attribute("seq_dir", $args{seq_dir});
 		$current_contig->set_attribute("file", $seq_file);
 		
@@ -380,20 +388,21 @@ sub ParseGenbankFile {
 		    if (($attribute_type eq "db_xref") && ($attribute_value =~ /taxon:(\d+)/)){
 			$taxid = $1;
 			$current_contig->force_attribute("taxid", $taxid);
+			$current_contig->force_attribute("taxid", $taxid);
 			$organism->force_attribute("id", $taxid);
-			foreach my $classs ($contigs,
-						  $features, 
-						  $genes, 
-						  $mRNAs, 
-						  $scRNAs, 
-						  $tRNAs, 
-						  $rRNAs, 
-						  $misc_RNAs, 
-						  $misc_features, 
-						  $CDSs, 
-						  $sources, 
-						  $organisms) {
-			    $classs->set_prefix($taxid);
+			foreach my $class ($contigs,
+					   $features, 
+					   $genes, 
+					   $mRNAs, 
+					   $scRNAs, 
+					   $tRNAs, 
+					   $rRNAs, 
+					   $misc_RNAs, 
+					   $misc_features, 
+					   $CDSs, 
+					   $sources, 
+					   $organisms) {
+			    $class->set_prefix($taxid);
 			}
 		    }
 		}
