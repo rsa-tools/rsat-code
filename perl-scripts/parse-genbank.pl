@@ -1,7 +1,7 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: parse-genbank.pl,v 1.12 2003/11/30 07:47:04 jvanheld Exp $
+# $Id: parse-genbank.pl,v 1.13 2003/12/01 15:27:28 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -148,7 +148,7 @@ package main;
 	|| die "Error: cannot write error file $out_file{error}\n";
 
     #### verbose ####
-    &Verbose if ($verbose);
+    &Verbose() if ($verbose);
 
     ################################################################
     #### parse the genbank files
