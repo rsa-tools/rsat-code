@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: convert-seq,v 1.7 2001/05/17 18:58:15 jvanheld Exp $
+# $Id: convert-seq,v 1.8 2001/06/14 17:36:50 jvanheld Exp $
 #
-# Time-stamp: <2001-05-17 20:58:00 jvanheld>
+# Time-stamp: <2001-06-14 19:33:27 jvanheld>
 #
 ############################################################
 
@@ -12,20 +12,14 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 require "RSA.lib.pl";
 
-
-if ($ARGV[0] eq "-h") {
-    &PrintHelp();
-}
-
-if ($ARGV[0] eq "-help") {
-    &PrintOptions();
-}
-
-
 $start_time = `date`;
 $line_width = 60;
 
 #### initialise parameters ####
+$accepted_input_string = "\n\t\t\t";
+$accepted_input_string .= join "\n\t\t\t", keys %accepted_input_seq;
+$accepted_output_string = "\n\t\t\t";
+$accepted_output_string .= join "\n\t\t\t", keys %accepted_output_seq; 
 
 &ReadArguments();
 
@@ -81,13 +75,23 @@ while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_form
     } elsif ($uppercases) {
         $current_seq = uc($current_seq);
     } 
+    if ($in_format eq "raw") {
+	$current_id =~ s/\.raw$//;
+    }
+
     if ($out_format eq "filelist") {
 	#$current_id = `basename $current_id .$in_format`;
 	#if ($current_id =~ /\.$in_format/) {
 	#    $current_id = $';
 	#}
 
+	#### ensure that the id is a valid filename
 	chomp $current_id;
+	$current_id =~ s/\|/_/g;
+	$current_id =~ s/\;/_/g;
+	$current_id =~ s/\&/_/g;
+
+
 	$one_seq_file .= "$current_id.raw";
 	open RAW, "> ${output_dir}/$one_seq_file"
 	    || die "Error: cannot write file ${output_dir}/$one_seq_file\n";
@@ -147,11 +151,6 @@ exit(0);
 
 
 sub PrintHelp {
-
-    $accepted_input_string = "\n\t\t\t";
-    $accepted_input_string .= join "\n\t\t\t", keys %accepted_input_seq;
-    $accepted_output_string = "\n\t\t\t";
-    $accepted_output_string .= join "\n\t\t\t", keys %accepted_output_seq; 
     open HELP, "| more";
     print HELP <<End_of_help;
 NAME
@@ -187,20 +186,10 @@ OPTIONS
 	-uc	lowercase. the sequence is printed in uppercase.
 
 
-INPUT - OUTPUT FORMATS
-        raw     raw sequence format. 
-                No comments, no identifier.
-                The file contains a single sequence.
-                Spaces, tabs and carriage return are ignored.
-        filelist (only valid as input format)
-                the input file contains a list of sequence files, each 
-                written in raw format (see above).
-        multi   several raw sequences within a single file. 
-                Sequences are separated by newlines. 
-                Spaces and tabs are ignored.
-        IG      IntelliGenetics
-        FASTA   FASTA
-        WC      Wconsensus format
+SUPPORTED FORMATS
+    INPUT $accepted_input_string
+	
+    OUTPUT $accepted_output_string
 	
 EXAMPLES
 	convert-seq -i myseq.IG -from IG -to FASTA -o myseq.FASTA
@@ -227,17 +216,13 @@ consvert-seq options
 -lc	lowercase
 -uc	uppsercase
 
-Input-output formats
---------------------
-raw     a single sequence in a file
-filelist (only valid as input format)
-multi   several raw sequences within a single file. 
-IG      IntelliGenetics
-FASTA   FASTA
-WC      Wconsensus format
+SUPPORTED FORMATS
+    INPUT $accepted_input_string
+	
+    OUTPUT $accepted_output_string
 End_shorthelp
   close HELP;
-  exit;
+  exit(0);
 }
 
 
@@ -249,6 +234,14 @@ sub ReadArguments {
 	if ($ARGV[$a] eq "-v") {
 	    $verbose = 1;
 	    
+      ### detailed help
+    } elsif ($ARGV[$a] eq "-h") {
+      &PrintHelp;
+      
+      ### list of options
+    } elsif ($ARGV[0] eq "-help") {
+      &PrintOptions;
+      
 	} elsif ($ARGV[$a] eq "-i") {
 	    $inputfile = $ARGV[$a+1];
 	    
