@@ -1,4 +1,4 @@
-<html>
+<html >
 <head>
    <title>RSA-tools - tutorials - random-seq</title>
 </head>
@@ -29,22 +29,95 @@
 <a name=prerequisite><h2>Prerequisite</h2>
 <ul>
 
-</ul>
-<a name=intro><h2>Introduction</h2>
+This tutorial does not require any prior knowledge, but in order to
+take the maximal benefit of it, you should first follow the tutorials
+on 
+<a href=tut_retrieve-seq.html>sequence retrieval</a> and 
+<a href=tut_oligo-analysis.html>oligo-analysis</a>.
+
+</ul><a name=intro><h2>Introduction</h2><ul>
+
+Random sequences are commonly used in bioinformatics to test the rate
+of false positive returned by a given pattern dicovery program. 
+
+<p>
+The program <i><b>random-sequence</b></i> generates random sequences
+on the basis of different probabilistic models. This tutorial
+describes the different ways to generate random sequences, following
+either a Bernouilli or a Markov chain process.
+
+</ul><a name=example><h2>Examples of utilization</h2><ul>
+
+<h3>Independent and equiprobable nucleotides</h3>
+
+<p>We will start this tutorial by generating a random sequence
+according to the simplest possible model: <i>independent and
+equiprobable nucleotides</i>. 
+
+<p><i><b>Independent</b></i> means that, at each position of the
+sequence, a nucleotide is added without taking into account its
+context, i.e. the precedin and following
+nucleotides. <i><b>Equiprobable</b></i> means that each nucleotide has
+the same probability, 0.25, to occur at any position. Note that this
+is a very poor model to simulate biological sequences. Indeed, in most
+biological sequences, there is a bias in the A/T versus G/C
+composition. This option is only supported for the sale of comparison
+with more realistic models.
+
+<ol>
+<li>In the left frame, click on <i><b>random sequence</b></i>.
+
+<p><li>Select the option <i><b>Independent and equiprobable
+nucleotides</b></i>.
+
+<p><li>Click <i><b>GO</b></i>.
+
+<p>The program generates a set of 10 random sequences of length 1000
+each. We will now
+use <i><b>oligo-analysis</b></i> to check the nucleotide composition
+of these sequences.</p>
+
+<li>At the bottom of the result page, a series of buttons allow you to
+send these sequences to various
+programs. Click <i><b>oligo-analysis</b></i>.
+
+<p><li>In the <i><b>oligo-analysis</b></i> form, we need to inactivate
+some of the default options, in order to calculate nucleotide
+frequencies.
+
 <ul>
 
-</ul>
-<a name=example><h2>Example of utilization</h2>
-<ul>
+<li>Select an <i>oligonucleotide size</i> of 1 (single nucleotides).
+
+<li><i>Count on </i> single strand. 
+
+<li>In the <i><b>Return</b></i> table, uncheck the boxes <i>Binomial
+proba</i> and <i>Significance</i>, and check the
+box <i>Frequencies</i>
+
+<li>Click <i><b>GO</b></i>.
+
 
 </ul>
-<a name=interpret><h2>Interpreting the results</h2>
-<ul>
+
+<p>After a few seconds, the result appears. Do the frequencies
+correspond to your expectation ?
+
+</ol>
+
+<h3>Independent nucleotides with distinct probabilities</h3>
 
 
-</ul>
-<a name=exercises><h2>Additional exercises</h2>
-<ul>
+<p>A slightly more elaborate random model allows you to assign a
+specific expected frequency to each nucleotide
+
+<p>As an exercise, generate a random sequence with 90% of A/T and 10% of
+G/C. Check the frequencies of nucleotides with <i>oligo-analysis</i>.
+
+<!--</ul><a name=interpret><h2>Interpreting the results</h2><ul>-->
+
+</ul><a name=exercises><h2>Additional exercises</h2><ul>
+
 
 </ul>
 

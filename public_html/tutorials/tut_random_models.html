@@ -16,13 +16,26 @@ Random models
 <hr size=6 width="100%">
 
 
-<p>The Regulatory Sequence Analysis Tools include two tools that probably
-fit your needs :
+<p>The prediction of regulatory elements includes a risk of false
+predictions. A good pattern discovery program includes some
+statistical parameters (E-value, information content, significance
+index, ...) to estimate the reliability of each prediction. These
+statistical estimators may however be more or less adequate, depending
+on the adequation between the underlying statistical model and the
+type of biological sequences analyzed. 
 
+<p>A practical way to test the rate of false positive returned by
+pattern discovery programs is to submit sequences which are <i>not</i>
+supposed to be co-regulated. In such case, a good program should be
+able to return a negative answer, i.e. no pattern at all. 
+
+<p>This web site offers two tools for generating random sequence sets,
+in order to estimate the rates of false positive obtained with
+different programs: <i>random-sequence</i> and <i>random-genes</i>.
 
 <ol>
 
-<li><a href=../random-seq_form.cgi><b>random sequence</b></a>.  This
+<p><li><a href=../random-seq_form.cgi><b>random sequence</b></a>.  This
 program generates random sequences on the basis of various
 probabilistic background. One interesting model is to use Markov chain
 models, calibrated on the complete set off upstream sequences of an
@@ -30,7 +43,7 @@ organism. This means that the generated sequences does not exist as a
 biological sequences, but it has the same oligonucleotide composition
 as the chosen background. 
 
-<li><a href=../random-genes_form.cgi><b>random genes</b></a>. This
+<p><li><a href=../random-genes_form.cgi><b>random genes</b></a>. This
 program selects a random set of gene identifiers in the selected
 genome. The selected genes can then be piped to the program
 retrieve-seq, which will retrieve the upstream sequences of the

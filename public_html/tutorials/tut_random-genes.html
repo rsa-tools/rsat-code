@@ -39,21 +39,21 @@ on
 <a name=intro><h2>Introduction</h2>
 <ul>
 
-<p>In the context of transcriptome analysis, we are facing with huge
-amounts of data, which can be processed in different ways to obtain
-clusters of co-expressed genes. A routine approach is to apply some
-clustering algorithm to gene expression profiles, and to predict
-regulatory elements in the promoter sequences of each cluster, with a
-pattern discovery program.
+<p>In the context of transcriptome analysis, we are confronted with
+huge amounts of data, which can be processed in different ways to
+obtain clusters of co-expressed genes. A routine approach perform
+clustering on gene expression profiles, and to use a pattern discovery
+program to each cluster of genes, in order to predict their specific
+regulatory elements.
 
 <p>It is well knwon that microarray data is noisy, and, in addition,
 there are dozens of ways to post-process this data (choice of a
 normalization method, fitering of , clustering algorithm, distance
 metrics, other clustering options, ...). It is thus expected that many
-of our supposedly "co-expressed" genes will result from all the
-possible biases of these treatments, and will actually not correspond
-to a set of co-regulated genes (i.e. direct targeets of a same
-transcription factor).
+of our supposedly "co-expressed" genes will be artifactual, resulting
+from all the possible biases of the data treatments, and will actually
+not correspond to a set of co-regulated genes (i.e. direct targeets of
+a same transcription factor).
 
 
 <p>The selection of a random set of genes is a very simple but very
@@ -64,10 +64,11 @@ discovery programs.
 <a name=example><h2>Example of utilization</h2>
 <ul>
 
-We will use the tool random-genes to select a randdom selection of 20
+We will use the tool <i><b>random-genes</b></i> to select a randdom selection of 20
 genes in the yeast genome, and submit their promoters to
 oligo-analysis. 
 
+<p>
 <ol>
 
 <li>In the left frame, click on the link <b><i>random gene
@@ -77,9 +78,8 @@ selection</i></b>.
 
 <li>Set the number of genes to 20. 
 
-<li>Leave the number of groups to 1 (this option is used by programs
-for the automatic analysis of multiple gene clusters which are
-currently not supported on the web server).
+<li>Leave the number of groups to 1 (this option is used for
+generating multiple random gene clusters).
 
 <li>Select <b>CDS</b> as feature type.
 
@@ -90,7 +90,7 @@ currently not supported on the web server).
 The result is a list of gene identifiers. 
 
 <p>You can now send this list to the program
-<b><i>retrieve-seq</i></b>, to retrieve their upstream sequences, and
+<i><b>retrieve-seq</b></i>, to retrieve their upstream sequences, and
 then to different pattern discovery programs
 (<b><i>oligo-analysis</i></b>, <b><i>consensus</i></b>,
 <b><i>gibbs</i></b>, ...) in order to test the response of these
@@ -110,44 +110,45 @@ highly significant motifs should appear very exceptionally.
 <p>More precisely, if we repeat the experiment a large number of
 times, we expect to find more or less
 <ul>
-<li>one motif with E-value <= 1 (i.e. sig >= 1) per gene family;
-<li>a motif with E-value <= 0.1 (sig >= 1) every 10 gene families;
-<li>a motif with E-value <= 0.01 (sig >= 2) every 100 gene families;
+<li>one motif with E-value <= 1 (i.e. sig >= 1) per gene selection;
+<li>a motif with E-value <= 0.1 (sig >= 1) every 10 gene selections;
+<li>a motif with E-value <= 0.01 (sig >= 2) every 100 gene selections;
 <li>... and so on.
 </ul>
 
 <p>The analysis of random gene selections is thus a very practical way
 to estimate the rate of false positives of pattern discovery programs,
-on the baiss of real biological sequences.
+on the basis of real biological sequences.
 
 </ul>
 <a name=exercises><h2>Additional exercises</h2>
-<ul>
-
 <ol>
 
 <li>In order to check the rate of false positive of a program, you
 need to repeat the random control several times, and see how often a
 motif is selected by chance when there is supposedly no co-regulation.
 
+<p>
+
 <ul>
+
 <li>Repeat the test a few times. 
 
-<li>At each trial, take note of the top scoring motif, annd of the
+<li>At each trial, take note of the top scoring motif, and of the
 score associated to it.
 
-<li>Analyze the results of the successive trials, anc check if the
+<li>Analyze the results of the successive trials, and check if the
 behaviour more or less corresponds to the theoretical expectation.
 </ul>
 
 <p>
 <li>Perform the same test as above, with human genes. How does it
-compare with the yeast, in term of false positives ?
+compare with the yeast, in terms of false positives ?
 
 <p>
 <li>You can also use the upstream sequences of random gene selections
-to test other programs on the web (see the <a target=_blank
-href=../links.html>link page</a>).
+to test other pattern discovery programs available on the web (see the
+<a target=_blank href=../links.html#pattern_disco>link page</a>).
 
 </ol>
 
