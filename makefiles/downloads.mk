@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: downloads.mk,v 1.12 2004/05/17 15:06:46 jvanheld Exp $
+# $Id: downloads.mk,v 1.13 2004/06/12 19:00:23 jvanheld Exp $
 #
 # Time-stamp: <2003-10-09 14:02:21 jvanheld>
 #
@@ -41,9 +41,10 @@ ebi_genomes:
 # Genbank genome repository
 #
 GENBANK_DIRS =					\
-	genomes					\
-	genbank/genomes				\
-	refseq 
+	genomes					
+
+#	genbank/genomes				\
+#	refseq 
 
 
 GENBANK_GENOMES=ftp://ftp.ncbi.nih.gov
