@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.24 2001/05/06 12:58:58 jvanheld Exp $
+# $Id: oligo-analysis,v 1.25 2001/05/12 11:48:05 jvanheld Exp $
 #
-# Time-stamp: <2001-05-06 14:57:50 jvanheld>
+# Time-stamp: <2001-05-12 13:46:21 jvanheld>
 #
 ############################################################
 
@@ -117,8 +117,8 @@ if (($method eq "Frequency file") &&
     while (<$exp>) {
 	next if (/^;/);
 	if (/(\S+)\t(\S+)/i) {
-	    $oligo_seq = lc($1);
-	    $oligo{$oligo_seq}->{exp_freq} = $2;
+	    $pattern_seq = lc($1);
+	    $patterns{$pattern_seq}->{exp_freq} = $2;
 	}
     }
     close $exp if ($exp_freq_file);
@@ -179,8 +179,8 @@ sub CountOligo {
     if ($return{'table'}) {
 	@possible_oligos = &all_oligos($oligo_length);
 	print $out $current_id;
-	foreach my $oligo_seq (@possible_oligos) {
-	    print $out "\t", $oligo_seq;
+	foreach my $pattern_seq (@possible_oligos) {
+	    print $out "\t", $pattern_seq;
 	}
 	print $out "\n";
     }
@@ -213,7 +213,7 @@ sub CountOligo {
 	}
 	$last_pos = $seq_length[$sequence_number] - $oligo_length;	
 	
-	### if requested, calculate alphabet from input sequence ####
+	### calculate alphabet from input sequence ####
 #    if (($input_alphabet) || ($return{'zscore'}) || ($method eq "Markov chain")) {
 	for $pos (0..$seq_length[$sequence_number]-1) {
 	    $letter = lc(substr($current_seq,$pos,1));
@@ -231,56 +231,57 @@ sub CountOligo {
 	
 	#### count oligomers ####
 	$offset = 0;
-	$current_pos = $last_pos;
+	my $current_pos = $last_pos;
+	my $chunk=100000;
 	
 	while ($current_pos >=0) {
-	    if ($hyperverbose && (($current_pos%100000) == 0) && ($current_pos > 0)) {
+	    if ($hyperverbose && (($current_pos%$chunk) == 0) && ($current_pos > 0)) {
 		$current_length = length($current_seq);
 		warn "\t$current_id\tremain to read: $current_pos\n";
 	    }
 	    
 	    ### occurrences
-	    $oligo_seq = lc(substr($current_seq,$current_pos,$oligo_length));
+	    $pattern_seq = lc(substr($current_seq,$current_pos,$oligo_length));
 	    chop $current_seq;  ### eat the tail to release memory
 	    if ($noov) {
-		if ((&IsNatural($last_pos{$oligo_seq})) && 
-		    ($last_pos{$oligo_seq} - $current_pos < $min_overlap_dist)) {
-		    $oligo{$oligo_seq}->{overlaps}++;
+		if ((&IsNatural($last_pos{$pattern_seq})) && 
+		    ($last_pos{$pattern_seq} - $current_pos < $min_overlap_dist)) {
+		    $patterns{$pattern_seq}->{overlaps}++;
 		    $current_pos--;
 		    next;
 		}
 		if ($sum_strands) {
-		    $rc = lc(&ReverseComplement($oligo_seq));
+		    $rc = lc(&ReverseComplement($pattern_seq));
 		    if ((&IsNatural($last_pos{$rc})) && 
 			($last_pos{$rc} - $current_pos < $min_overlap_dist)) {
-			$oligo{$rc}->{overlaps}++;
+			$patterns{$rc}->{overlaps}++;
 			$current_pos--;
 			next;
 		    }
 		}
 	    }
-	    $oligo{$oligo_seq}->{occ}++;
-	    $last_pos{$oligo_seq} = $current_pos;
+	    $patterns{$pattern_seq}->{occ}++;
+	    $last_pos{$pattern_seq} = $current_pos;
 	    if ($return{'pos'}) {
-		push(@{$match_pos{$oligo_seq}[$sequence_number]}, $current_pos+1);
+		push(@{$match_pos{$pattern_seq}[$sequence_number]}, $current_pos+1);
 	    }
 	    
 	    ### matching sequences
 	    if ($return{'mseq'}) {
-		if (($sum_strands == 0) || ($current_mseq{lc(&ReverseComplement($oligo_seq))} < 1)) {
-		    $current_mseq{$oligo_seq} = 1;
+		if (($sum_strands == 0) || ($current_mseq{lc(&ReverseComplement($pattern_seq))} < 1)) {
+		    $current_mseq{$pattern_seq} = 1;
 		}
 	    }
 	    $current_pos--;
 	}
 	
 	if ($return{'mseq'}) {
-	    foreach $oligo_seq (keys %current_mseq) {
-		$oligo{$oligo_seq}->{mseq} += 1;
+	    foreach $pattern_seq (keys %current_mseq) {
+		$patterns{$pattern_seq}->{mseq} += 1;
 		if ($sum_strands) {
-		    $rc = lc(&ReverseComplement($oligo_seq));
-		    unless ($rc eq $oligo_seq) { ### palindroms
-			$oligo{$rc}->{mseq} += 1;
+		    $rc = lc(&ReverseComplement($pattern_seq));
+		    unless ($rc eq $pattern_seq) { ### palindroms
+			$patterns{$rc}->{mseq} += 1;
 		    }
 		}
 	    }
@@ -291,15 +292,15 @@ sub CountOligo {
 	
 	if ($return{'table'}) {
 	    print $out $current_id;
-	    foreach my $oligo_seq (@possible_oligos) {
-		if ($oligo{$oligo_seq}->{occ} > 0 ) {
-		    print $out "\t", $oligo{$oligo_seq}->{occ};
+	    foreach my $pattern_seq (@possible_oligos) {
+		if ($patterns{$pattern_seq}->{occ} > 0 ) {
+		    print $out "\t", $patterns{$pattern_seq}->{occ};
 		} else {
 		    print $out "\t", 0;
 		}
 	    }
 	    print $out "\n";
-	    undef(%oligo);
+	    undef(%patterns);
 	}
 	
     }
@@ -309,10 +310,10 @@ sub CountOligo {
 
     #### filter out undefined residues for DNA sequences
     if ($seq_type eq "DNA") {
-	foreach $oligo_seq (keys %oligo) {
-	    if ($oligo_seq =~ /[^atcg]/i) {
-		$discarded_occurrences += $oligo{$oligo_seq}->{occ};
-		delete $oligo{$oligo_seq};
+	foreach $pattern_seq (keys %patterns) {
+	    if ($pattern_seq =~ /[^atcg]/i) {
+		$discarded_occurrences += $patterns{$pattern_seq}->{occ};
+		delete $patterns{$pattern_seq};
 	    }
 	}
 	foreach $letter (keys %residue_occ) {
@@ -329,11 +330,11 @@ sub CountOligo {
 
 #### if requested, group results by pairs of reverse complements ####
 sub GroupRc {
-    foreach $oligo_seq (keys %oligo) {
-	$rc_oligo_seq = lc(&ReverseComplement($oligo_seq));
-	if ($rc_oligo_seq gt $oligo_seq) { ### only suppress one oligo from the dyad 
+    foreach $pattern_seq (keys %patterns) {
+	$rc_pattern_seq = lc(&ReverseComplement($pattern_seq));
+	if ($rc_pattern_seq gt $pattern_seq) { ### only suppress one oligo from the dyad 
 	    
-	    delete $oligo{$rc_oligo_seq};
+	    delete $patterns{$rc_pattern_seq};
 	}
     }
 }
@@ -347,9 +348,9 @@ sub OccurrenceThreshold {
     warn "oligo-analysis\t$current_time\tThreshold on occurrences\n";
   }
   
-  foreach $oligo_seq (keys %oligo) {
-    if ($oligo{$oligo_seq}->{occ} < $occurrence_threshold) {
-      delete $oligo{$oligo_seq};
+  foreach $pattern_seq (keys %patterns) {
+    if ($patterns{$pattern_seq}->{occ} < $occurrence_threshold) {
+      delete $patterns{$pattern_seq};
     }
   }  
 }
@@ -361,9 +362,9 @@ sub MatchingSeqThreshold {
     chomp($current_time);
     warn "oligo-analysis\t$current_time\tThreshold on matching sequences\n";
   }
-  foreach $oligo_seq (keys %oligo) {
-    if ($oligo{$oligo_seq}->{mseq} < $mseq_threshold) {
-      delete $oligo{$oligo_seq};
+  foreach $pattern_seq (keys %patterns) {
+    if ($patterns{$pattern_seq}->{mseq} < $mseq_threshold) {
+      delete $patterns{$pattern_seq};
     }
   }  
 }
@@ -379,19 +380,19 @@ sub CalcSubWordFrequencies {
 	warn "oligo-analysis\t$current_time\tCalculating subword frequencies\n";
     }
     
-    foreach $oligo_seq (keys %oligo) {
+    foreach $pattern_seq (keys %patterns) {
 	### w-1 word occurrences
 	$w = $oligo_length-1;
-	$subseq = substr($oligo_seq,0,$w);
-	$sub_word[$w]{$subseq}->{occ} += $oligo{$oligo_seq}->{occ} + $oligo{$oligo_seq}->{overlaps};
+	$subseq = substr($pattern_seq,0,$w);
+	$sub_word[$w]{$subseq}->{occ} += $patterns{$pattern_seq}->{occ} + $patterns{$pattern_seq}->{overlaps};
     }
     
     ### occurrences of words with length from w-2 to 1
     for $k (2..$oligo_length-1) {
 	$w = $oligo_length - $k;
-	foreach $oligo_seq (keys %{$sub_word[$w+1]}) {
-	    $subseq = substr($oligo_seq,0,$w);
-	    $sub_word[$w]{$subseq}->{occ} += $sub_word[$w+1]{$oligo_seq}->{occ} ;
+	foreach $pattern_seq (keys %{$sub_word[$w+1]}) {
+	    $subseq = substr($pattern_seq,0,$w);
+	    $sub_word[$w]{$subseq}->{occ} += $sub_word[$w+1]{$pattern_seq}->{occ} ;
 	}
     }
   
@@ -423,8 +424,8 @@ sub CalcSubWordFrequencies {
     
     if ($hyperverbose) {
 	for $w (1..$oligo_length-1) {
-	    foreach $oligo_seq (sort keys %{$sub_word[$w]}) {
-		printf ";\tsubword_freq\t$w\t$occ_sum[$w]\t$oligo_seq\t%15.13f\n", $sub_word[$w]{$oligo_seq}->{freq};
+	    foreach $pattern_seq (sort keys %{$sub_word[$w]}) {
+		printf ";\tsubword_freq\t$w\t$occ_sum[$w]\t$pattern_seq\t%15.13f\n", $sub_word[$w]{$pattern_seq}->{freq};
 	    }
 	}
     }
@@ -441,19 +442,19 @@ sub CalcFrequencies {
   $sum_overlaps = 0;
   $sum_noov = 0;
   $sum_occurrences = 0;
-  foreach $oligo_seq (keys %oligo) {
-    $sum_occurrences += $oligo{$oligo_seq}->{occ} + $oligo{$oligo_seq}->{overlaps};
-    $sum_overlaps += $oligo{$oligo_seq}->{overlaps};
-    $sum_noov += $oligo{$oligo_seq}->{occ};
+  foreach $pattern_seq (keys %patterns) {
+    $sum_occurrences += $patterns{$pattern_seq}->{occ} + $patterns{$pattern_seq}->{overlaps};
+    $sum_overlaps += $patterns{$pattern_seq}->{overlaps};
+    $sum_noov += $patterns{$pattern_seq}->{occ};
   }
   if ($return{'freq'}) {
-    foreach $oligo_seq (keys %oligo) {
-      $oligo{$oligo_seq}->{freq} = $oligo{$oligo_seq}->{occ}/$sum_occurrences;
+    foreach $pattern_seq (keys %patterns) {
+      $patterns{$pattern_seq}->{freq} = $patterns{$pattern_seq}->{occ}/$sum_occurrences;
     }
   }
   if (($return{'mseq'}) && ($return{'freq'})) {
-    foreach $oligo_seq (keys %oligo) {
-      $oligo{$oligo_seq}->{ms_freq} = $oligo{$oligo_seq}->{mseq}/$sequence_number;
+    foreach $pattern_seq (keys %patterns) {
+      $patterns{$pattern_seq}->{ms_freq} = $patterns{$pattern_seq}->{mseq}/$sequence_number;
     }
   }
 }
@@ -490,12 +491,12 @@ sub CalcAlphabet {
 #		chomp($current_time);
 #		warn "oligo-analysis\t$current_time\tCalculating input alphabet\n";
 #    }
-#    foreach $oligo_seq (sort keys %oligo) {
+#    foreach $pattern_seq (sort keys %patterns) {
 #        for $seq (1..$sequence_number) {
-#			for $p (0..$#{$match_pos{$oligo_seq}[$seq]}-1) {
-#				if (abs($match_pos{$oligo_seq}[$seq][$p + 1] - $match_pos{$oligo_seq}[$seq][$p]) < $min_overlap_dist) {
-#					$oligo{$oligo_seq}->{occ}--;
-#					$oligo{$oligo_seq}->{overlaps}++;
+#			for $p (0..$#{$match_pos{$pattern_seq}[$seq]}-1) {
+#				if (abs($match_pos{$pattern_seq}[$seq][$p + 1] - $match_pos{$pattern_seq}[$seq][$p]) < $min_overlap_dist) {
+#					$patterns{$pattern_seq}->{occ}--;
+#					$patterns{$pattern_seq}->{overlaps}++;
 #				}
 #			}
 #        }
@@ -513,12 +514,12 @@ sub SumStrands {
     if ($seq_type eq "DNA") {
 	$discarded_occurrences *=2;
     }
-    foreach my $oligo_seq (keys %oligo) {
-	my $rc_oligo_seq = lc(&ReverseComplement($oligo_seq));
-	$occurrences_2strands{$rc_oligo_seq} = $occurrences_2strands{$oligo_seq} = $oligo{$oligo_seq}->{occ} + $oligo{$rc_oligo_seq}->{occ};
+    foreach my $pattern_seq (keys %patterns) {
+	my $rc_pattern_seq = lc(&ReverseComplement($pattern_seq));
+	$occurrences_2strands{$rc_pattern_seq} = $occurrences_2strands{$pattern_seq} = $patterns{$pattern_seq}->{occ} + $patterns{$rc_pattern_seq}->{occ};
     }
-    foreach my $oligo_seq (keys %occurrences_2strands) {
-	$oligo{$oligo_seq}->{occ} = $occurrences_2strands{$oligo_seq};
+    foreach my $pattern_seq (keys %occurrences_2strands) {
+	$patterns{$pattern_seq}->{occ} = $occurrences_2strands{$pattern_seq};
     }
     undef %occurrences_2strands;
     
@@ -535,18 +536,18 @@ sub SumStrands {
     ### positions ###
     if (($return{'pos'}) || ($noov)) {
 	for $seq (1..$sequence_number) {
-	    foreach $oligo_seq (sort keys %oligo) {
-		$rc_oligo_seq = lc(&ReverseComplement($oligo_seq));
-		if ($rc_oligo_seq eq $oligo_seq) {
-		    @{$m_pos_bothstrands{$oligo_seq}[$seq]} = @{$match_pos{$oligo_seq}[$seq]};
+	    foreach $pattern_seq (sort keys %patterns) {
+		$rc_pattern_seq = lc(&ReverseComplement($pattern_seq));
+		if ($rc_pattern_seq eq $pattern_seq) {
+		    @{$m_pos_bothstrands{$pattern_seq}[$seq]} = @{$match_pos{$pattern_seq}[$seq]};
 		} else {
-		    @{$m_pos_bothstrands{$oligo_seq}[$seq]} = (@{$match_pos{$oligo_seq}[$seq]},@{$match_pos{$rc_oligo_seq}[$seq]});
+		    @{$m_pos_bothstrands{$pattern_seq}[$seq]} = (@{$match_pos{$pattern_seq}[$seq]},@{$match_pos{$rc_pattern_seq}[$seq]});
 		}	  
 	    }
-	    foreach $oligo_seq (sort keys %oligo) {
-		@{$match_pos{$oligo_seq}[$seq]} = @{$m_pos_bothstrands{$oligo_seq}[$seq]};
-		@{$match_pos{$oligo_seq}[$seq]}= sort {$a <=> $b} @{$match_pos{$oligo_seq}[$seq]};
-		undef @{$m_pos_bothstrands{$oligo_seq}[$seq]};
+	    foreach $pattern_seq (sort keys %patterns) {
+		@{$match_pos{$pattern_seq}[$seq]} = @{$m_pos_bothstrands{$pattern_seq}[$seq]};
+		@{$match_pos{$pattern_seq}[$seq]}= sort {$a <=> $b} @{$match_pos{$pattern_seq}[$seq]};
+		undef @{$m_pos_bothstrands{$pattern_seq}[$seq]};
 	    }   
 	}
     }
@@ -567,26 +568,26 @@ sub Degenerate {
     }
   }
   
-  foreach $oligo_seq (keys %oligo) {
-    for $l (1..length($oligo_seq)) {
-      $n = substr($oligo_seq,$l-1,1);
+  foreach $pattern_seq (keys %patterns) {
+    for $l (1..length($pattern_seq)) {
+      $n = substr($pattern_seq,$l-1,1);
       foreach $neighb (@{$nucl_neighb{$n}}) {
-	$deg = substr($oligo_seq,0,$l-1);
+	$deg = substr($pattern_seq,0,$l-1);
 	$deg .= $neighb;
-	$deg .= substr($oligo_seq,$l);
-	$deg_occurrences{$deg} += $oligo{$oligo_seq}->{occ};
+	$deg .= substr($pattern_seq,$l);
+	$deg_occurrences{$deg} += $patterns{$pattern_seq}->{occ};
 	if ($return{'mseq'}) {
-	  $deg_mseq{$deg} += $oligo{$oligo_seq}->{mseq};
+	  $deg_mseq{$deg} += $patterns{$pattern_seq}->{mseq};
 	}
       }
     }
   }  
   
-  %oligo = %deg_occurrences;
+  %patterns = %deg_occurrences;
   undef %deg_occurrences;
   if ($return{'mseq'}) {
-    foreach $oligo_seq (sort keys %deg_mseq) {
-      $oligo{$oligo_seq}->{mseq} = $deg_mseq{$oligo_seq};
+    foreach $pattern_seq (sort keys %deg_mseq) {
+      $patterns{$pattern_seq}->{mseq} = $deg_mseq{$pattern_seq};
       undef %deg_occurrences;
     }
   }
@@ -596,26 +597,32 @@ sub Degenerate {
 #### calculate number of possible oligomers
 sub NbPossibleOligo {
     @alphabet = keys %residue_occ;
-    $alphabet_size = &max(4,$#alphabet + 1);
-    if ($one_var_position) {
-	$nb_possible_oligo = $oligo_length * ($#degenerate_code+1) * $alphabet_size**($oligo_length-1);      
+    if ($seq_type eq "DNA") {
+	$alphabet_size = 4;
     } elsif ($seq_type eq "protein") {
-	@residues = sort keys %residue_occ;
-	$nb_possible_oligo = ($#residues + 1)**$oligo_length;
-	#    $nb_possible_oligo = 20**$oligo_length;
+	$alphabet_size = 20;
     } else {
-	$nb_possible_oligo = $alphabet_size**$oligo_length;      
+	$alphabet_size = $#alphabet + 1;
     }
-    if ($sum_strands) {  
-	if ($oligo_length%2 == 0) {
-	    ### take into account the fact that palindromes have not to be grouped by pairs
-	    $nb_possible_palindroms = $alphabet_size**($oligo_length/2);
-	} else {
-	    $nb_possible_palindroms = 0;
+
+    $nb_possible_oligo = $alphabet_size**$oligo_length;      
+
+    if ($seq_type eq "DNA") {
+	if ($one_var_position) {
+	    $nb_possible_oligo = $oligo_length * ($#degenerate_code+1) * $alphabet_size**($oligo_length-1);      
 	}
-	$nb_possible_oligo -= ($nb_possible_oligo - $nb_possible_palindroms)/2;
+	if ($sum_strands) {  
+	    if ($oligo_length%2 == 0) {
+		### take into account the fact that palindromes have not to be grouped by pairs
+		$nb_possible_palindroms = $alphabet_size**($oligo_length/2);
+	    } else {
+		$nb_possible_palindroms = 0;
+	    }
+	    $nb_possible_oligo -= ($nb_possible_oligo - $nb_possible_palindroms)/2;
+	}
     }
 }
+
 
 
 #### expected oligomer frequencies #####
@@ -629,11 +636,11 @@ sub CalcExpected {
     ### expected frequency file
     if ($method eq "Frequency file") {    
 	if ($one_var_position) {
-	    foreach $deg_oligo_seq (sort keys %oligo) {
-		$pattern = IUPAC_to_regular($deg_oligo_seq);
+	    foreach $deg_pattern_seq (sort keys %patterns) {
+		$pattern = IUPAC_to_regular($deg_pattern_seq);
 		@matching_exp_freq = grep /$pattern/i, keys(%exp_freq);
 		foreach $m  (@matching_exp_freq) {
-		    $deg_exp_freq{$deg_oligo_seq} += $exp_freq{$m};
+		    $deg_exp_freq{$deg_pattern_seq} += $exp_freq{$m};
 		}
 	    }
 	    %exp_freq = %deg_exp_freq;
@@ -642,42 +649,42 @@ sub CalcExpected {
 	
     } elsif ($method eq "Markov chain") {  ### Markov chain
 	### expected frequency according to Markov chain model
-	foreach $oligo_seq (sort keys %oligo) {
-	    $oligo{$oligo_seq}->{exp_freq} = 1;
+	foreach $pattern_seq (sort keys %patterns) {
+	    $patterns{$pattern_seq}->{exp_freq} = 1;
 	    for $offset (0..($oligo_length - $markov_order -1)) {
-		$subseq = substr($oligo_seq,$offset,$markov_order+1);
-		$oligo{$oligo_seq}->{exp_freq} *= $sub_word[$markov_order+1]{$subseq}->{freq};
+		$subseq = substr($pattern_seq,$offset,$markov_order+1);
+		$patterns{$pattern_seq}->{exp_freq} *= $sub_word[$markov_order+1]{$subseq}->{freq};
 		if (($markov_order > 0) && ($offset > 0)) {
-		    $subseq = substr($oligo_seq,$offset,$markov_order);
-		    $oligo{$oligo_seq}->{exp_freq} /= $sub_word[$markov_order]{$subseq}->{freq};
+		    $subseq = substr($pattern_seq,$offset,$markov_order);
+		    $patterns{$pattern_seq}->{exp_freq} /= $sub_word[$markov_order]{$subseq}->{freq};
 		}
 	    }
 	}
 
     } elsif ($method eq "lexicon") {  ### Markov chain
 	my $l  = 1;
-	foreach $oligo_seq (@alphabet ) {
-#	    print join "\t", $l, $oligo_seq, $sub_word[$l]{$oligo_seq}->{freq}, $sub_word[$l]{$oligo_seq}->{occ}, "\n";
-	    $sub_word[$l]{$oligo_seq}->{max_freq} = $sub_word[$l]{$oligo_seq}->{freq};
+	foreach $pattern_seq (@alphabet ) {
+#	    print join "\t", $l, $pattern_seq, $sub_word[$l]{$pattern_seq}->{freq}, $sub_word[$l]{$pattern_seq}->{occ}, "\n";
+	    $sub_word[$l]{$pattern_seq}->{max_freq} = $sub_word[$l]{$pattern_seq}->{freq};
 	}
 	for $l (2..$oligo_length - 1) {
-	    foreach $oligo_seq (keys %{$sub_word[$l]}) {
-		$sub_word[$l]{$oligo_seq}->{exp_freq} = 0;
-		$sub_word[$l]{$oligo_seq}->{max_freq} = $sub_word[$l]{$oligo_seq}->{freq};
+	    foreach $pattern_seq (keys %{$sub_word[$l]}) {
+		$sub_word[$l]{$pattern_seq}->{exp_freq} = 0;
+		$sub_word[$l]{$pattern_seq}->{max_freq} = $sub_word[$l]{$pattern_seq}->{freq};
 		
 		#### all possible segmentations of the word
 		for $s (1..$l-1) {
-		    $head = substr($oligo_seq,0,$s);
-		    $tail = substr($oligo_seq,$s);
+		    $head = substr($pattern_seq,0,$s);
+		    $tail = substr($pattern_seq,$s);
 		    $segmentation_freq = $sub_word[$s]{$head}->{max_freq} * $sub_word[$l-$s]{$tail}->{max_freq};
-		    if ($segmentation_freq > $sub_word[$l]{$oligo_seq}->{exp_freq}) {
-			$sub_word[$l]{$oligo_seq}->{exp_freq} = $segmentation_freq;
-			$sub_word[$l]{$oligo_seq}->{max_freq} = &max($sub_word[$l]{$oligo_seq}->{max_freq},
-								     $sub_word[$l]{$oligo_seq}->{exp_freq});
+		    if ($segmentation_freq > $sub_word[$l]{$pattern_seq}->{exp_freq}) {
+			$sub_word[$l]{$pattern_seq}->{exp_freq} = $segmentation_freq;
+			$sub_word[$l]{$pattern_seq}->{max_freq} = &max($sub_word[$l]{$pattern_seq}->{max_freq},
+								     $sub_word[$l]{$pattern_seq}->{exp_freq});
 		    }
-#		    print join ("\t", $l, $oligo_seq, 
-#				$sub_word[$l]{$oligo_seq}->{freq}, 
-#				$sub_word[$l]{$oligo_seq}->{exp_freq}, 
+#		    print join ("\t", $l, $pattern_seq, 
+#				$sub_word[$l]{$pattern_seq}->{freq}, 
+#				$sub_word[$l]{$pattern_seq}->{exp_freq}, 
 #				$head, $sub_word[$s]{$head}->{max_freq},
 #				$tail, $sub_word[$l-$s]{$tail}->{max_freq},
 #				$sub_word[$s]{$head}->{max_freq}* $sub_word[$l-$s]{$tail}->{max_freq},
@@ -686,25 +693,25 @@ sub CalcExpected {
 	    }
 	}
 	$l = $oligo_length;
-	foreach $oligo_seq (keys %oligo) {
-	    $oligo{$oligo_seq}->{exp_freq} = 0;
+	foreach $pattern_seq (keys %patterns) {
+	    $patterns{$pattern_seq}->{exp_freq} = 0;
 	    #### all possible segmentations of the word
 	    for $s (1..$l-1) {
-		$head = substr($oligo_seq,0,$s);
-		$tail = substr($oligo_seq,$s);
+		$head = substr($pattern_seq,0,$s);
+		$tail = substr($pattern_seq,$s);
 		$segmentation_freq = $sub_word[$s]{$head}->{max_freq} * $sub_word[$l-$s]{$tail}->{max_freq};
-		if ($segmentation_freq > $oligo{$oligo_seq}->{exp_freq}) {		
-		    $oligo{$oligo_seq}->{exp_freq} = $segmentation_freq;
-		    $oligo{$oligo_seq}->{segments} = join (" ", 
+		if ($segmentation_freq > $patterns{$pattern_seq}->{exp_freq}) {		
+		    $patterns{$pattern_seq}->{exp_freq} = $segmentation_freq;
+		    $patterns{$pattern_seq}->{segments} = join (" ", 
 							   $head,
 							   $tail,
 							   $sub_word[$s]{$head}->{max_freq},
 							   $sub_word[$l-$s]{$tail}->{max_freq},
 							   $sub_word[$s]{$head}->{max_freq} * $sub_word[$l-$s]{$tail}->{max_freq}
 							   );
-#		    print join ("\t", $l, $oligo_seq, 
-#				$oligo{$oligo_seq}->{freq}, 
-#				$oligo{$oligo_seq}->{exp_freq}, 
+#		    print join ("\t", $l, $pattern_seq, 
+#				$patterns{$pattern_seq}->{freq}, 
+#				$patterns{$pattern_seq}->{exp_freq}, 
 #				$head, $sub_word[$s]{$head}->{max_freq},
 #				$tail, $sub_word[$l-$s]{$tail}->{max_freq},
 #				$sub_word[$s]{$head}->{max_freq}* $sub_word[$l-$s]{$tail}->{max_freq},
@@ -718,7 +725,7 @@ sub CalcExpected {
 	### calculate the expected oligo frequency with 
 	#### independent nucleotide probabilities 
 	#### calculate probability for ambiguous nucleotide codes  ####
-	unless ($seq_type eq "protein") {
+	if ($seq_type eq "DNA") {
 	    $residue_proba{'r'} = $residue_proba{'a'}+$residue_proba{'g'};
 	    $residue_proba{'y'} = $residue_proba{'c'}+$residue_proba{'t'};
 	    $residue_proba{'w'} = $residue_proba{'a'}+$residue_proba{'t'};
@@ -732,11 +739,11 @@ sub CalcExpected {
 	    $residue_proba{'n'} = 1;
 	}
 	
-	foreach $oligo_seq (keys %oligo) {
-	    $oligo{$oligo_seq}->{exp_freq} = 1;
-	    foreach $l (0..length($oligo_seq)-1) {
-		$nt = substr($oligo_seq, $l, 1);
-		$oligo{$oligo_seq}->{exp_freq} *= $residue_proba{$nt};
+	foreach $pattern_seq (keys %patterns) {
+	    $patterns{$pattern_seq}->{exp_freq} = 1;
+	    foreach $l (0..length($pattern_seq)-1) {
+		$nt = substr($pattern_seq, $l, 1);
+		$patterns{$pattern_seq}->{exp_freq} *= $residue_proba{$nt};
 	    }
 	}  
     } 
@@ -744,27 +751,27 @@ sub CalcExpected {
     #### correct expected frequencies with pseudo weight
     if ($pseudo_weight > 0) {
 	$pseudo_frequency = $pseudo_weight/$nb_possible_oligo;
-	foreach $oligo_seq (keys %oligo) {
-	    $oligo{$oligo_seq}->{exp_freq} *= 1 - $pseudo_weight;
-	    $oligo{$oligo_seq}->{exp_freq} += $pseudo_frequency;;
+	foreach $pattern_seq (keys %patterns) {
+	    $patterns{$pattern_seq}->{exp_freq} *= 1 - $pseudo_weight;
+	    $patterns{$pattern_seq}->{exp_freq} += $pseudo_frequency;;
 	}
     }
 
     #### expected number of occurrences and matching sequences ####
-    foreach $oligo_seq (sort keys %oligo) {
+    foreach $pattern_seq (sort keys %patterns) {
 	if ($noov) {
-	    $oligo{$oligo_seq}->{nb_possible_pos} = $nb_possible_pos - ($oligo{$oligo_seq}->{occ} * ($oligo_length -1));
+	    $patterns{$pattern_seq}->{nb_possible_pos} = $nb_possible_pos - ($patterns{$pattern_seq}->{occ} * ($oligo_length -1));
 	} else {
-	    $oligo{$oligo_seq}->{nb_possible_pos} = $nb_possible_pos;
+	    $patterns{$pattern_seq}->{nb_possible_pos} = $nb_possible_pos;
 	}
-	$oligo{$oligo_seq}->{exp_occ} = $oligo{$oligo_seq}->{exp_freq} * $oligo{$oligo_seq}->{nb_possible_pos}; 
+	$patterns{$pattern_seq}->{exp_occ} = $patterns{$pattern_seq}->{exp_freq} * $patterns{$pattern_seq}->{nb_possible_pos}; 
 	if ($return{'mseq'}) {
 	    ### expected number of matching sequences ###
 	    $avg_seq_length = $sum_seq_length/$sequence_number;
 	    $pos_per_seq = $avg_seq_length - $oligo_length + 1;
 	    $pos_per_seq *=2 if ($sum_strands);
-	    $one_seq_match_proba =  1 - (1-$oligo{$oligo_seq}->{exp_freq})**$pos_per_seq;
-	    $oligo{$oligo_seq}->{exp_ms} =  $one_seq_match_proba*$sequence_number;
+	    $one_seq_match_proba =  1 - (1-$patterns{$pattern_seq}->{exp_freq})**$pos_per_seq;
+	    $patterns{$pattern_seq}->{exp_ms} =  $one_seq_match_proba*$sequence_number;
 	}
     }	
     
@@ -775,21 +782,21 @@ sub CalcExpected {
 sub CalcZscore {
     #### z-scores ####
     if ($return{'occ'}) {
-	foreach $oligo_seq (keys %oligo) {
+	foreach $pattern_seq (keys %patterns) {
 	    if ($noov) {
-		$oligo{$oligo_seq}->{ovlp} = 1;
-		$oligo{$oligo_seq}->{est_var} = $oligo{$oligo_seq}->{exp_occ};
+		$patterns{$pattern_seq}->{ovlp} = 1;
+		$patterns{$pattern_seq}->{est_var} = $patterns{$pattern_seq}->{exp_occ};
 	    } else {
-		$oligo{$oligo_seq}->{ovlp} = &OverlapCoeff($oligo_seq);
-		$oligo{$oligo_seq}->{est_var} = $oligo{$oligo_seq}->{nb_possible_pos} * $oligo{$oligo_seq}->{exp_freq}*(2*$oligo{$oligo_seq}->{ovlp} - 1 - (2*$oligo_length+1)*$oligo{$oligo_seq}->{exp_freq});
-#       	$oligo{$oligo_seq}->{est_var} = $oligo{$oligo_seq}->{nb_possible_pos} * $oligo{$oligo_seq}->{exp_freq}*(1 - $oligo{$oligo_seq}->{exp_freq});
+		$patterns{$pattern_seq}->{ovlp} = &OverlapCoeff($pattern_seq);
+		$patterns{$pattern_seq}->{est_var} = $patterns{$pattern_seq}->{nb_possible_pos} * $patterns{$pattern_seq}->{exp_freq}*(2*$patterns{$pattern_seq}->{ovlp} - 1 - (2*$oligo_length+1)*$patterns{$pattern_seq}->{exp_freq});
+#       	$patterns{$pattern_seq}->{est_var} = $patterns{$pattern_seq}->{nb_possible_pos} * $patterns{$pattern_seq}->{exp_freq}*(1 - $patterns{$pattern_seq}->{exp_freq});
 	    }
-	    if ($oligo{$oligo_seq}->{est_var} > 0) {
-		$stdev = sqrt($oligo{$oligo_seq}->{est_var});
-		$oligo{$oligo_seq}->{zscore} = ($oligo{$oligo_seq}->{occ} - $oligo{$oligo_seq}->{exp_occ})/$stdev;
+	    if ($patterns{$pattern_seq}->{est_var} > 0) {
+		$stdev = sqrt($patterns{$pattern_seq}->{est_var});
+		$patterns{$pattern_seq}->{zscore} = ($patterns{$pattern_seq}->{occ} - $patterns{$pattern_seq}->{exp_occ})/$stdev;
 	    } else {
 		$stdev = "NA";
-		$oligo{$oligo_seq}->{zscore} = "NA";
+		$patterns{$pattern_seq}->{zscore} = "NA";
 	    }
 	}
     }
@@ -800,20 +807,20 @@ sub CalcZscore {
 sub CalcLikelihood {
 ### log likelihood ###
   if ($return{'occ'}) {
-    foreach $oligo_seq (keys %oligo) {
-      if (($oligo{$oligo_seq}->{exp_freq} > 0) && ($oligo{$oligo_seq}->{freq} > 0)) {
-	$oligo{$oligo_seq}->{occ_lkh} = $oligo{$oligo_seq}->{freq} * log($oligo{$oligo_seq}->{freq}/$oligo{$oligo_seq}->{exp_freq});
+    foreach $pattern_seq (keys %patterns) {
+      if (($patterns{$pattern_seq}->{exp_freq} > 0) && ($patterns{$pattern_seq}->{freq} > 0)) {
+	$patterns{$pattern_seq}->{occ_lkh} = $patterns{$pattern_seq}->{freq} * log($patterns{$pattern_seq}->{freq}/$patterns{$pattern_seq}->{exp_freq});
       } else {
-	$oligo{$oligo_seq}->{occ_lkh} = "NA";
+	$patterns{$pattern_seq}->{occ_lkh} = "NA";
       }
     }
   }
   if ($return{'mseq'}) {
-    foreach $oligo_seq (keys %oligo) {
-      if (($oligo{$oligo_seq}->{exp_ms} > 0) && ($oligo{$oligo_seq}->{mseq} > 0)) {
-	$oligo{$oligo_seq}->{ms_lkh} = $oligo{$oligo_seq}->{mseq} * log($oligo{$oligo_seq}->{mseq}/$oligo{$oligo_seq}->{exp_ms}) / $sequence_number;
+    foreach $pattern_seq (keys %patterns) {
+      if (($patterns{$pattern_seq}->{exp_ms} > 0) && ($patterns{$pattern_seq}->{mseq} > 0)) {
+	$patterns{$pattern_seq}->{ms_lkh} = $patterns{$pattern_seq}->{mseq} * log($patterns{$pattern_seq}->{mseq}/$patterns{$pattern_seq}->{exp_ms}) / $sequence_number;
       } else {
-	$oligo{$oligo_seq}->{ms_lkh} = "NA";
+	$patterns{$pattern_seq}->{ms_lkh} = "NA";
       }
     }
   }
@@ -823,28 +830,28 @@ sub CalcLikelihood {
 #### observed/expected ratio ####
 sub CalcRatio {
   if ($return{'freq'}) {
-    foreach $oligo_seq (sort keys %oligo) {
-      if ($oligo{$oligo_seq}->{exp_freq} == 0) {
-	$oligo{$oligo_seq}->{ratio} = 0;
+    foreach $pattern_seq (sort keys %patterns) {
+      if ($patterns{$pattern_seq}->{exp_freq} == 0) {
+	$patterns{$pattern_seq}->{ratio} = 0;
       } else {
-	$oligo{$oligo_seq}->{ratio} =  $oligo{$oligo_seq}->{freq}/$oligo{$oligo_seq}->{exp_freq};
+	$patterns{$pattern_seq}->{ratio} =  $patterns{$pattern_seq}->{freq}/$patterns{$pattern_seq}->{exp_freq};
       }
       #### check threshold on occurrence probability ####
-      if ($oligo{$oligo_seq}->{ratio} < $ratio_threshold) {
-	delete $oligo{$oligo_seq};
+      if ($patterns{$pattern_seq}->{ratio} < $ratio_threshold) {
+	delete $patterns{$pattern_seq};
       }
     }
   } elsif ($return{'occ'}) {
-    foreach $oligo_seq (sort keys %oligo) {
-      if ($oligo{$oligo_seq}->{exp_occ} == 0) {
-	$oligo{$oligo_seq}->{ratio} = 0;
+    foreach $pattern_seq (sort keys %patterns) {
+      if ($patterns{$pattern_seq}->{exp_occ} == 0) {
+	$patterns{$pattern_seq}->{ratio} = 0;
       } else {
-	$oligo{$oligo_seq}->{ratio} =  $oligo{$oligo_seq}->{occ}/$oligo{$oligo_seq}->{exp_occ};
+	$patterns{$pattern_seq}->{ratio} =  $patterns{$pattern_seq}->{occ}/$patterns{$pattern_seq}->{exp_occ};
       }
       
       #### check threshold on occurrence probability ####
-      if ($oligo{$oligo_seq}->{ratio} < $ratio_threshold) {
-	delete $oligo{$oligo_seq};
+      if ($patterns{$pattern_seq}->{ratio} < $ratio_threshold) {
+	delete $patterns{$pattern_seq};
       }
     }
   }
@@ -869,49 +876,49 @@ sub CalcProba {
 
     
     ### calculate oligo probabilities
-    foreach $oligo_seq (sort keys %oligo) {
+    foreach $pattern_seq (sort keys %patterns) {
 	if ($hyperverbose) {
 	    $current_time = `date '+%H:%M:%S'`;
 	    chomp($current_time);
-	    printf ("oligo-analysis\t$current_time\tcalculating proba $oligo_seq obs %7d exp %7.1f\n", 
-		    $oligo{$oligo_seq}->{occ}, 
-		    $oligo{$oligo_seq}->{exp_occ});
+	    printf ("oligo-analysis\t$current_time\tcalculating proba $pattern_seq obs %7d exp %7.1f\n", 
+		    $patterns{$pattern_seq}->{occ}, 
+		    $patterns{$pattern_seq}->{exp_occ});
 	}
 	
 	### probability of the observed number of occurrences ####
-	$rev_compl = uc(&ReverseComplement($oligo_seq));
-	if (($sum_strands) && (uc($oligo_seq) eq $rev_compl)) {
-	    $oligo{$oligo_seq}->{occ_pro} = &sum_of_binomials($oligo{$oligo_seq}->{exp_freq},
-							      $oligo{$oligo_seq}->{nb_possible_pos}/2,
-							      $oligo{$oligo_seq}->{occ}/2);
-	    $oligo{$oligo_seq}->{remark} = "\tpalindrome";
+	$rev_compl = uc(&ReverseComplement($pattern_seq));
+	if (($sum_strands) && (uc($pattern_seq) eq $rev_compl)) {
+	    $patterns{$pattern_seq}->{occ_pro} = &sum_of_binomials($patterns{$pattern_seq}->{exp_freq},
+							      $patterns{$pattern_seq}->{nb_possible_pos}/2,
+							      $patterns{$pattern_seq}->{occ}/2);
+	    $patterns{$pattern_seq}->{remark} = "\tpalindrome";
 	} else {
-	    $oligo{$oligo_seq}->{occ_pro} = &sum_of_binomials($oligo{$oligo_seq}->{exp_freq},
-							      $oligo{$oligo_seq}->{nb_possible_pos} - $oligo{$oligo_seq}->{overlaps},
-							      $oligo{$oligo_seq}->{occ});
+	    $patterns{$pattern_seq}->{occ_pro} = &sum_of_binomials($patterns{$pattern_seq}->{exp_freq},
+							      $patterns{$pattern_seq}->{nb_possible_pos} - $patterns{$pattern_seq}->{overlaps},
+							      $patterns{$pattern_seq}->{occ});
 	}
 
 	#### check threshold on occurrence probability ####
-	if ($oligo{$oligo_seq}->{occ_pro} > $proba_occ_threshold) {
-	    delete $oligo{$oligo_seq};
+	if ($patterns{$pattern_seq}->{occ_pro} > $proba_occ_threshold) {
+	    delete $patterns{$pattern_seq};
 	    next;
 	}
 	
 #	    print (join ("\t", 
 #			 "HELLO",  
-#			 $oligo_seq, 
-#			 $oligo{$oligo_seq}->{exp_freq},
-#			 $oligo{$oligo_seq}->{nb_possible_pos} - $oligo{$oligo_seq}->{overlaps},
-#			 $oligo{$oligo_seq}->{occ},
-#			 $oligo{$oligo_seq}->{occ_pro}), 
+#			 $pattern_seq, 
+#			 $patterns{$pattern_seq}->{exp_freq},
+#			 $patterns{$pattern_seq}->{nb_possible_pos} - $patterns{$pattern_seq}->{overlaps},
+#			 $patterns{$pattern_seq}->{occ},
+#			 $patterns{$pattern_seq}->{occ_pro}), 
 #		   "\n");
 	
 	### Significance index for occurrence number
 	if ($nb_possible_oligo > 0) {
-	    if ($oligo{$oligo_seq}->{occ_pro} > 0) {
-		$oligo{$oligo_seq}->{occ_sig} = -log($nb_possible_oligo*$oligo{$oligo_seq}->{occ_pro})/log(10);
+	    if ($patterns{$pattern_seq}->{occ_pro} > 0) {
+		$patterns{$pattern_seq}->{occ_sig} = -log($nb_possible_oligo*$patterns{$pattern_seq}->{occ_pro})/log(10);
 	    } else {
-		$oligo{$oligo_seq}->{occ_sig} = 20;
+		$patterns{$pattern_seq}->{occ_sig} = 20;
 	    }
 	}
 	
@@ -919,21 +926,21 @@ sub CalcProba {
 	#### matching seq probability
 	if ($return{'mseq'}) {	    
 	    ### probability of the observed number of matching sequences ####
-	    $avg_mseq_proba = $oligo{$oligo_seq}->{exp_ms}/$sequence_number;
-	    $oligo{$oligo_seq}->{ms_pro} = &sum_of_binomials($avg_mseq_proba, $sequence_number, $oligo{$oligo_seq}->{mseq});    
+	    $avg_mseq_proba = $patterns{$pattern_seq}->{exp_ms}/$sequence_number;
+	    $patterns{$pattern_seq}->{ms_pro} = &sum_of_binomials($avg_mseq_proba, $sequence_number, $patterns{$pattern_seq}->{mseq});    
 	    
 	    #### check threshold on mseq probability ####
-	    if ($oligo{$oligo_seq}->{ms_pro} > $proba_mseq_threshold) {
-		delete $oligo{$oligo_seq};
+	    if ($patterns{$pattern_seq}->{ms_pro} > $proba_mseq_threshold) {
+		delete $patterns{$pattern_seq};
 		next;
 	    }
 	    
 	    ### Significance index for number of matching sequences
 	    if ($nb_possible_oligo > 0) {
-		if ($oligo{$oligo_seq}->{ms_pro} > 0) {
-		    $oligo{$oligo_seq}->{ms_sig} = -log($nb_possible_oligo*$oligo{$oligo_seq}->{ms_pro})/log(10);
+		if ($patterns{$pattern_seq}->{ms_pro} > 0) {
+		    $patterns{$pattern_seq}->{ms_sig} = -log($nb_possible_oligo*$patterns{$pattern_seq}->{ms_pro})/log(10);
 		} else {
-		    $oligo{$oligo_seq}->{ms_sig} = 20;
+		    $patterns{$pattern_seq}->{ms_sig} = 20;
 		}
 	    }
 	}
@@ -1030,10 +1037,10 @@ sub PrintResult {
     ### in priority, sort mby matching sequence results
     if ($return{'mseq'}) {
       if ($return{'proba'}) {
-	@sorted_keys = sort {$oligo{$b}->{ms_sig} <=>  $oligo{$a}->{ms_sig}} keys %oligo;
+	@sorted_keys = sort {$patterns{$b}->{ms_sig} <=>  $patterns{$a}->{ms_sig}} keys %patterns;
 	$sorted = 1;
       } elsif($return{'like'}) {
-	@sorted_keys = sort {$oligo{$b}->{ms_lkh} <=>  $oligo{$a}->{ms_lkh}} keys %oligo;
+	@sorted_keys = sort {$patterns{$b}->{ms_lkh} <=>  $patterns{$a}->{ms_lkh}} keys %patterns;
 	$sorted = 1;
       }
       ### if no matching sequence request, sort by statistics on occurrences
@@ -1041,115 +1048,115 @@ sub PrintResult {
       ### preferred fields for sorting are the most generally reliable
       if ($return{'zscore'}){
 	  if ($return{'proba'}) { #### two-criteria sorting, sig is prioritary, but zscore is useful when the proba reaches calculation limits
-	      @sorted_keys = sort { $oligo{$b}->{occ_sig} <=>  $oligo{$a}->{occ_sig} || 
-					$oligo{$b}->{zscore} <=>  $oligo{$a}->{zscore} } keys %oligo;
+	      @sorted_keys = sort { $patterns{$b}->{occ_sig} <=>  $patterns{$a}->{occ_sig} || 
+					$patterns{$b}->{zscore} <=>  $patterns{$a}->{zscore} } keys %patterns;
 	  } else {
-	      @sorted_keys = sort {$oligo{$b}->{zscore} <=>  $oligo{$a}->{zscore}} keys %oligo;
+	      @sorted_keys = sort {$patterns{$b}->{zscore} <=>  $patterns{$a}->{zscore}} keys %patterns;
 	  }
 	$sorted = 1;
       } elsif ($return{'proba'}) {
-	@sorted_keys = sort {$oligo{$b}->{occ_sig} <=> $oligo{$a}->{occ_sig}} keys %oligo;
+	@sorted_keys = sort {$patterns{$b}->{occ_sig} <=> $patterns{$a}->{occ_sig}} keys %patterns;
 	$sorted = 1;
       } elsif ($return{'like'}) {
-	@sorted_keys = sort {$oligo{$b}->{occ_lkh} <=> $oligo{$a}->{occ_lkh}} keys %oligo;
+	@sorted_keys = sort {$patterns{$b}->{occ_lkh} <=> $patterns{$a}->{occ_lkh}} keys %patterns;
 	$sorted = 1;
       } elsif ($return{'ratio'}) {
-	@sorted_keys = sort {$oligo{$b}->{ratio} <=> $oligo{$a}->{ratio}} keys %oligo;
+	@sorted_keys = sort {$patterns{$b}->{ratio} <=> $patterns{$a}->{ratio}} keys %patterns;
 	$sorted = 1;
       } else {
-	@sorted_keys = sort {$oligo{$b}->{occ} <=> $oligo{$a}->{occ}} keys %oligo;
+	@sorted_keys = sort {$patterns{$b}->{occ} <=> $patterns{$a}->{occ}} keys %patterns;
 	$sorted = 1;
       }
     } elsif ($return{'freq'}) {
-	@sorted_keys = sort {$oligo{$b}->{freq} <=> $oligo{$a}->{freq}} keys %oligo;
+	@sorted_keys = sort {$patterns{$b}->{freq} <=> $patterns{$a}->{freq}} keys %patterns;
 	$sorted = 1;
     }    
 
   } 
   
   ### in all the other cases, sort by sequence
-  @sorted_keys = sort keys %oligo unless ($sorted);
+  @sorted_keys = sort keys %patterns unless ($sorted);
 
   &PrintHeaderLine();
   
   ### print result ###
-  foreach $oligo_seq (@sorted_keys) {
+  foreach $pattern_seq (@sorted_keys) {
     ### oligo sequence and identifier
-    print $out "$oligo_seq";
+    print $out "$pattern_seq";
     if ($group_rc) {
-      print $out "\t$oligo_seq|", lc(ReverseComplement($oligo_seq));
+      print $out "\t$pattern_seq|", lc(ReverseComplement($pattern_seq));
     } else {
-      print $out "\t$oligo_seq";
+      print $out "\t$pattern_seq";
     }
     
     ### relative frequencies
-    printf $out "\t%15.13f", $oligo{$oligo_seq}->{freq} if ($return{'freq'});	
-    printf $out "\t%15.13f", $oligo{$oligo_seq}->{exp_freq} if ($return{'exp_freq'});
+    printf $out "\t%15.13f", $patterns{$pattern_seq}->{freq} if ($return{'freq'});	
+    printf $out "\t%15.13f", $patterns{$pattern_seq}->{exp_freq} if ($return{'exp_freq'});
     
     ### occurrences ###
     if ($return{'occ'}) {
-      print $out "\t", $oligo{$oligo_seq}->{occ};
+      print $out "\t", $patterns{$pattern_seq}->{occ};
       
       ### expected frequency
       if ($return{'exp_freq'}) {
-	if ($oligo{$oligo_seq}->{exp_occ} >= 0.01) {
-	  printf $out "\t%.2f", $oligo{$oligo_seq}->{exp_occ};
+	if ($patterns{$pattern_seq}->{exp_occ} >= 0.01) {
+	  printf $out "\t%.2f", $patterns{$pattern_seq}->{exp_occ};
 	} else {
-	  printf $out "\t%.2g", $oligo{$oligo_seq}->{exp_occ};
+	  printf $out "\t%.2g", $patterns{$pattern_seq}->{exp_occ};
 	}
       }
       
       ### occurrence probability
       if ($return{'proba'}) {
-	if ($oligo{$oligo_seq}->{occ_pro} >= 0.0001) {
-	  printf $out "\t%.5f", $oligo{$oligo_seq}->{occ_pro};
+	if ($patterns{$pattern_seq}->{occ_pro} >= 0.0001) {
+	  printf $out "\t%.5f", $patterns{$pattern_seq}->{occ_pro};
 	} else {
-	  printf $out "\t%.2g", $oligo{$oligo_seq}->{occ_pro};
+	  printf $out "\t%.2g", $patterns{$pattern_seq}->{occ_pro};
 	}
-	printf $out "\t%.2f", $oligo{$oligo_seq}->{occ_sig};
+	printf $out "\t%.2f", $patterns{$pattern_seq}->{occ_sig};
       }
       
       
       ### zscore
       if ($return{'zscore'}) {
-	  if (&IsReal($oligo{$oligo_seq}->{zscore})) {
-	      printf $out "\t%.2f", $oligo{$oligo_seq}->{zscore};
+	  if (&IsReal($patterns{$pattern_seq}->{zscore})) {
+	      printf $out "\t%.2f", $patterns{$pattern_seq}->{zscore};
 	  } else {
-	      printf $out "\t%s", $oligo{$oligo_seq}->{zscore};
+	      printf $out "\t%s", $patterns{$pattern_seq}->{zscore};
 	  }
-	#			printf $out "\t%.1f", $oligo{$oligo_seq}->{est_var};
+	#			printf $out "\t%.1f", $patterns{$pattern_seq}->{est_var};
       }
       
       ### log likelihood of occurrences
-      printf $out "\t%7.5f", $oligo{$oligo_seq}->{occ_lkh} if ($return{'like'});
+      printf $out "\t%7.5f", $patterns{$pattern_seq}->{occ_lkh} if ($return{'like'});
       
       ### overlapping occurrences
       if ($noov) {
-	$oligo{$oligo_seq}->{overlaps} = 0 if ($oligo{$oligo_seq}->{overlaps} eq "");
-	print $out "\t", $oligo{$oligo_seq}->{overlaps};
+	$patterns{$pattern_seq}->{overlaps} = 0 if ($patterns{$pattern_seq}->{overlaps} eq "");
+	print $out "\t", $patterns{$pattern_seq}->{overlaps};
       }
     }
     ### obs/exp ratio
     if ($return{'ratio'}) {
-      printf $out "\t%.2f", $oligo{$oligo_seq}->{ratio};
+      printf $out "\t%.2f", $patterns{$pattern_seq}->{ratio};
     }
     
     ### matching sequences ###
     if ($return{'mseq'}) {
-      print $out "\t", $oligo{$oligo_seq}->{mseq};
+      print $out "\t", $patterns{$pattern_seq}->{mseq};
       if ($return{'proba'}) {
-	printf $out "\t%.2f", $oligo{$oligo_seq}->{exp_ms};
-	if ($oligo{$oligo_seq}->{ms_pro} >= 0.0001) {
-	  printf $out "\t%.5f", $oligo{$oligo_seq}->{ms_pro};     
+	printf $out "\t%.2f", $patterns{$pattern_seq}->{exp_ms};
+	if ($patterns{$pattern_seq}->{ms_pro} >= 0.0001) {
+	  printf $out "\t%.5f", $patterns{$pattern_seq}->{ms_pro};     
 	} else {
-	  printf $out "\t%.2g", $oligo{$oligo_seq}->{ms_pro};   
+	  printf $out "\t%.2g", $patterns{$pattern_seq}->{ms_pro};   
 	}
-	printf $out "\t%.1f", $oligo{$oligo_seq}->{ms_sig};
+	printf $out "\t%.1f", $patterns{$pattern_seq}->{ms_sig};
       }
-      printf $out "\t%7.5f", $oligo{$oligo_seq}->{ms_freq} if ($return{'freq'});
-      printf $out "\t%7.5f", $oligo{$oligo_seq}->{exp_ms}/$sequence_number if ($return{'exp_freq'});
-      printf $out "\t%7.5f", $oligo{$oligo_seq}->{mseq}/$oligo{$oligo_seq}->{exp_ms} if (($return{'ratio'}) && ($oligo{$oligo_seq}->{exp_ms} > 0));
-      printf $out "\t%7.5f", $oligo{$oligo_seq}->{ms_lkh} if ($return{'like'});
+      printf $out "\t%7.5f", $patterns{$pattern_seq}->{ms_freq} if ($return{'freq'});
+      printf $out "\t%7.5f", $patterns{$pattern_seq}->{exp_ms}/$sequence_number if ($return{'exp_freq'});
+      printf $out "\t%7.5f", $patterns{$pattern_seq}->{mseq}/$patterns{$pattern_seq}->{exp_ms} if (($return{'ratio'}) && ($patterns{$pattern_seq}->{exp_ms} > 0));
+      printf $out "\t%7.5f", $patterns{$pattern_seq}->{ms_lkh} if ($return{'like'});
       
     }
     
@@ -1157,17 +1164,17 @@ sub PrintResult {
     if ($return{'pos'}) {
       print $out "\t";
       for $seq (1..$sequence_number) {
-	for $p (0..$#{$match_pos{$oligo_seq}[$seq]}) {
-	  print $out "$seq:$match_pos{$oligo_seq}[$seq][$p] ";	
+	for $p (0..$#{$match_pos{$pattern_seq}[$seq]}) {
+	  print $out "$seq:$match_pos{$pattern_seq}[$seq][$p] ";	
 	}
       }
     }
     
     ### miscellaneous info
-    printf $out "\t%.3f", $oligo{$oligo_seq}->{ovlp} if ($return{'ovlp'});
-    printf $out "\t%.3f", $oligo{$oligo_seq}->{est_var} if ($return{'est_var'});
-    printf $out "\t%s", $oligo{$oligo_seq}->{remark} if ($return{'remark'});
-    printf $out "\t%s", $oligo{$oligo_seq}->{segments} if ($return{'segments'});
+    printf $out "\t%.3f", $patterns{$pattern_seq}->{ovlp} if ($return{'ovlp'});
+    printf $out "\t%.3f", $patterns{$pattern_seq}->{est_var} if ($return{'est_var'});
+    printf $out "\t%s", $patterns{$pattern_seq}->{remark} if ($return{'remark'});
+    printf $out "\t%s", $patterns{$pattern_seq}->{segments} if ($return{'segments'});
     
     ### next line
     print $out "\n";
