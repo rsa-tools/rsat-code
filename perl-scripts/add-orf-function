@@ -102,8 +102,6 @@ foreach $a (0..$#ARGV) {
 
 }
 
-#### input file ####
-($in, $input_dir) = &OpenInputFile($query_file);
 
 #### output file ####
 $out = &OpenOutputFile($outputfile);
@@ -118,40 +116,22 @@ $out = &OpenOutputFile($outputfile);
 
 #### verbose ####
 if ($verbose) {
-  print ";add-orf-function result\n";
-  if ($inputfile ne "") {
-    print ";Input file	$inputfile\n";
-  }
-  if ($outputfile ne "") {
-    print ";Output file	$outputfile\n";
-  }
+  print $out "; add-orf-function ";
+  &PrintArguments($out);
+  print $out "; Input file	$inputfile\n" if ($inputfile);
+  print $out "; Output file	$outputfile\n" if ($outputfile);
+
 }
 
 
-#### open ORF function file ###
-#  unless (open ORF_FUNCTION, $ORF_function_file) {
-#      print "\tcannot open ORF function table $ORF_function_file\n";
-#      print "\ttype add-orf-function -h for help\n";
-#      exit;
-#  }
-
-#  while (<ORF_FUNCTION>) {
-#      if (/(\S+)\s+(.+)/) {
-#  	$ORF_id = $1;
-#  	$ORF_function = $2;
-#  	$ORF_function =~ s/ {2,}/; /g;
-#  	$ORF_function =~ s/\n//;
-#      }
-#      $function{uc($ORF_id)} =  $ORF_function;
-#  }
-#  close  ORF_FUNCTION;
-
+#### input file ####
+($in) = &OpenInputFile($inputfile);
 ###### execute the command #########
 while ($current_line = <$in>) {
     if (!($current_line =~ /\S/) || 
 	($current_line =~ /^;/)
 	) {
-	print $current_line;
+	print $out $current_line;
 	next;
     }
     $current_line =~ s/\r//g;
@@ -190,20 +170,15 @@ while ($current_line = <$in>) {
 ###### verbose ######
 if ($verbose) {
   $done_time = `date`;
-  print ";Job started $start_time";
-  print ";Job done    $done_time";
+  print $out ";Job started $start_time";
+  print $out ";Job done    $done_time";
 }
 
 
-###### close input file ######
-if ($inputfile ne "") {
-  close $in;
-}
+###### close input/output files
+close $in if $inputfile;
+close $out if $outputfile;
 
-###### close output file ######
-if ($outputfile ne "") {
-  close $out;
-}
 
 
 exit(0);
