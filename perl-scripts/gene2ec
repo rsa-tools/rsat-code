@@ -3,35 +3,49 @@ if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
 require "RSA.lib";
+require "RSA.classes";
 
 ### initialization
-$ec_file = "$RSA/data/Saccharomyces_cerevisiae/gene_ec.tab";
+$start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+
+#### default parameters
 $col{'ec'} = 1;
 $col{'gene'} = 0;
 
 &ReadArguments();
 
-#### initialise parameters ####
-$start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+################################################################
+#### check arguments
+
+#### selected organism
+&FatalError ("You should specify an organism\n")
+    unless ($organism_name);
+
+#### EC file
+$ec_file = "$RSA/data/${organism_name}/genome/Feature_EC_number_${organism_name}.tab";
+&FatalError("EC file does not exist for organism $organism_name\t$ec_file\n")
+    unless (-e $ec_file);
+
+#### load organism data
+#### organism
+warn "; Checking organism $organism_name\n" if ($verbose >= 1);
+&CheckOrganism($organism_name, $feature_table_file);
+
+unless ($feature_table_file) {
+    $feature_table_file = $supported_organism{$organism_name}->{'features'};
+}
+warn "; Reading ORF table for $organism_name\n" if ($verbose >= 1);
+&ReadOrfPositions($organism_name, $feature_table_file);
+warn "; Reading synonyms for $organism_name\n" if ($verbose >= 1);
+&ReadSynonyms($organism_name);
 
 
 
 ### open output file ###
 $out = &OpenOutputFile($outputfile);
 
-##### read input #####
-($in, $input_dir) = &OpenInputFile($inputfile);
-while (<$in>) {
-    next if (/^;/);
-    next unless (/\S/);
-    chomp;
-    @fields = split /\s+/;
-    $gene = $fields[0];
-    push @genes, $gene;
-    $query{lc($gene)} = 1;
-}
-close $in unless ($inputfile eq "");
 
+################################################################
 #### verbose ####
 if ($verbose) {
     print $out "; gene2ec ";
@@ -42,15 +56,12 @@ if ($verbose) {
     if ($outputfile ne "") {
 	print $out ";Output file	$outputfile\n";
     }
-    print $out ";Organism\t$sel_org\t$selected_organism\n";
-    print $out ";Query genes\n";
-    foreach $gene (@genes) {
-	print $out ";\t$gene\n";
-    }
+    print $out "; Organism\t$organism_name\t$selected_organism\n";
+    print $out "; EC file\t${ec_file}\n";
 }
 
-
-###### execute the command #########
+################################################################
+###### read EC numbers
 ($ecs) = &OpenInputFile($ec_file);
 while (<$ecs>) {
     next if (/^;/);
@@ -61,18 +72,37 @@ while (<$ecs>) {
 
     @fields = split "\t";
     $ec = $fields[$col{'ec'}];
-    $gene = $fields[$col{'gene'}];
+    $orf_id = uc($fields[$col{'gene'}]);
     
-#    print join "\t", "HELLO", $ec, $gene, "\n";
-
-    ### treat synonyms
-    if ($query{lc($gene)}) {
-	print $out "$ec";
-	print $out "\t$gene";
-	print $out "\n";
-    }
+    push @{$ecs{$orf_id}}, $ec;
 }
 close $ecs if $ec_file;
+
+################################################################
+##### read query file
+($in, $input_dir) = &OpenInputFile($inputfile);
+my @queries = ();
+while (<$in>) {
+    next if (/^;/);
+    next unless (/\S/);
+    chomp;
+    my @fields = split /\s+/;
+    my $query = $fields[0];
+    push @queries, $query;
+    my $orf_id = $orf_id{uc($query)};
+    if ($orf_id) {
+	&Warning("Query $query\t$orf_id") if ($verbose >=2);
+	$query{uc($orf_id)} = 1;
+	foreach $ec (@{$ecs{$orf_id}}) {
+	    print $out join ("\t", $ec, @fields), "\n";
+	}
+
+    } else {
+	&Warning("Cannot identify gene with name $query") if ($verbose >=1);
+    }
+}
+close $in unless ($inputfile eq "");
+
 
 ###### print output ######
 
@@ -94,9 +124,6 @@ exit(0);
 
 ########################## subroutine definition ############################
 
-sub ReadArguments {
-
-}
 
 sub PrintHelp {
 #### display full help message #####
@@ -194,9 +221,9 @@ sub ReadArguments {
 	    
 	    ### organism ###
 	} elsif ($ARGV[$a] eq "-org") {
-	    $sel_org = $ARGV[$a+1];
-	    if ($supported_organism{$sel_org}) {
-		$selected_organism = $supported_organism{$sel_org}->{'name'};
+	    $organism_name = $ARGV[$a+1];
+	    if ($supported_organism{$organism_name}) {
+		$selected_organism = $supported_organism{$organism_name}->{'name'};
 	    } else {
 		die "Error: organism $org is not supported\n$supported_organisms\n";
 	    }
