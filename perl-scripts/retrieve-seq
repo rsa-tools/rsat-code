@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: retrieve-seq,v 1.30 2003/06/06 10:15:26 jvanheld Exp $
+# $Id: retrieve-seq,v 1.31 2003/07/06 18:37:53 jvanheld Exp $
 #
-# Time-stamp: <2003-06-06 12:14:37 jvanheld>
+# Time-stamp: <2003-07-06 20:24:37 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -20,13 +20,6 @@ my $start_time = &AlphaDate;
 
 my %chomosome = ();
 my $chrom = "";
-
-@supported_feature_types = qw (CDS mRNA);
-%supported_feature_types = ();
-foreach my $type (@supported_feature_types) {
-    $supported_feature_types{lc($type)} = 1;
-}
-$supported_feature_types = join ",", @supported_feature_types;
 
 
 
@@ -52,17 +45,18 @@ $prefix = "";
 unless (defined %accepted_feature_types) {
     $accepted_feature_types{cds} = 1;
 }
+$feature_types = join ",", keys (%accepted_feature_types);
 
 #### selection of genome and feature file
 if ($input_sequence_file) {
     #### manually specified input sequence
     $organism_name = $organism_name || "input sequence";
-    warn "; Manually specified input sequence file\t$input_sequence_file\n" if ($verbose >= 1);
+    warn "; ", &AlphaDate(), "\tManually specified input sequence file\t$input_sequence_file\n" if ($verbose >= 1);
     &CheckOrganism($organism_name, $feature_table_file, $input_sequence_file, $input_sequence_format);
     
 } else {
     #### automatic selection of genome file (and feature file)
-    warn "; Checking organism $organism_name\n" if ($verbose >= 1);
+    warn "; ", &AlphaDate(), "\tChecking organism $organism_name\n" if ($verbose >= 1);
     &CheckOrganism($organism_name, $feature_table_file);
 }
 unless ($feature_table_file) {
@@ -80,15 +74,15 @@ if ($sequence_type eq "upstream") {
 
     if (defined($supported_organism{$organism_name}->{'up_from'})) {
 	$default{from} = $supported_organism{$organism_name}->{'up_from'};
-    } elsif (($organism_name eq "yeast") || 
-	($organism_name =~ /Schizosaccharomyces/) ||
-	($organism_name =~ /Saccharomyces/)) {
-	$default{from} = -800;
-    } elsif (($organism_name =~ /Caenorhabditis/) ||
-	     ($organism_name =~ /Arabidopsis/) ||
-	     ($organism_name =~ /Plasmodium/) ||
-	     ($organism_name =~ /Drosophila/)) {
-	$default{from} = -2000;
+#    } elsif (($organism_name eq "yeast") || 
+#	($organism_name =~ /Schizosaccharomyces/) ||
+#	($organism_name =~ /Saccharomyces/)) {
+#	$default{from} = -800;
+#    } elsif (($organism_name =~ /Caenorhabditis/) ||
+#	     ($organism_name =~ /Arabidopsis/) ||
+#	     ($organism_name =~ /Plasmodium/) ||
+#	     ($organism_name =~ /Drosophila/)) {
+#	$default{from} = -2000;
     } else { #### bacteria
 	$default{from} = -400;
     }
@@ -142,15 +136,20 @@ if ($sequence_type eq "random fragments") {
 	if ($verbose >= 2);
     
 } else {
-    warn "; Reading ORF table for $organism_name\n" if ($verbose >= 1);
-    &ReadOrfPositions($organism_name, $feature_table_file);
-    warn "; Reading synonyms for $organism_name\n" if ($verbose >= 1);
-    &ReadSynonyms($organism_name);
+    ### read feature attributes (position, description, ...)
+    warn "; ", &AlphaDate(), "\tReading ORF table for $organism_name\n" if ($verbose >= 1);
+    &ReadFeatures($organism_name, $feature_table_file);
+
+    #### read synonyms
+    unless ($return_all) {
+	warn "; ", &AlphaDate(), "\tReading synonyms for $organism_name\n" if ($verbose >= 1);
+	&ReadSynonyms($organism_name);
+    }
 }
 
 #### no overlapping with upstream orfs
 if ($noorf) {
-    warn "; Calculating neighbour ORF limits\n" if ($verbose >= 1);
+    warn "; ", &AlphaDate(), "\tCalculating neighbour ORF limits\n" if ($verbose >= 1);
     &CalcNeighbourLimits();
 }
 
@@ -193,23 +192,24 @@ if ($random_orfs > 0) {
     close $in;
 }
 if ($#queries <0) {
-    print "Error: you should enter at least one valid query\n";
-    print "type retrieve-seq -help for info\n";
-    exit;
+    &FatalError("You should enter at least one valid query.");
 }
 
 #### output file ####
 $out = &OpenOutputFile($outputfile);
 
 #### verbose
-&Verbose if ($verbose);
+&Verbose() if ($verbose);
 
 ################################################################
 #### retrieve the sequences ####
 my $q = 0;
-
+warn "; ", &AlphaDate(), "\tRetrieving sequences\n" if ($verbose >= 1);
 foreach my  $query (@queries) {
     $q++;
+
+    $query = &trim($query); ### make sure there are no leading or trailing spaces
+
 
     #### check the validity of the query
     unless (($sequence_type eq "random fragments") ||
@@ -517,14 +517,13 @@ INPUT FORMATS
 		8	descr	short description (optional)
 
 EXAMPLES
-	retrieve-seq -type upstream -org coli -q metJ -from +59 -to -200
+	retrieve-seq -type upstream -org Escherichia_coli_K12 \\
+		     -q metJ -q meta -q metb		      \\
+		     -from +59 -to -200 -noorf
 	
 	will return the sequence of 260 nucleotides, 200of which 
 	extracted upstream the start codon, and the 60 following being 
 	the beginning of the coding sequence.
-
-WEB VERSION
-	http://www.ucmb.ulb.ac.be/bioinformatics/rsa-tools
 
 End_help
     close HELP;
@@ -542,7 +541,7 @@ retrieve-seq options
 -seq		sequence file (alternative to organism)
 -informat	input sequence format
 -prefix		prefix for sequence identifiers
--feattype	Feature type. Supported: $supported_feature_types
+-feattype	accepted feature types. Supported: $supported_feature_types
 -type		upstream | downstream | orf | random
 -n		number of sequences (only with -type random)
 -randsels #	random selection of # ORFs.
@@ -559,7 +558,6 @@ retrieve-seq options
 -nowarn		prevents warning when a gene can not be identified
 -nocom		do not print related information (start, end position, ...)
 -features	alternate feature table
--feattype	accepted feature types. Supported: $supported_feature_types
 End_short_help
   close HELP;
   exit;
@@ -658,12 +656,12 @@ sub ReadArguments {
 
 	    #### feature types
 	} elsif ($ARGV[$a] eq "-feattype") {
-	    my @types = split ",", $ARGV[$a+1];
-	    foreach my $type (@types) {
-		if ($supported_feature_types{lc($type)}) {
-		    $accepted_feature_types{lc($type)}++;
+	    my @feature_types = split ",", $ARGV[$a+1];
+	    foreach my $feature_type (@feature_types) {
+		if ($supported_feature_types{lc($feature_type)}) {
+		    $accepted_feature_types{lc($feature_type)}++;
 		} else {
-		    &FatalError("$type invalid feature type. Supported: $supported_feature_types");
+		    &FatalError("$feature_type invalid feature type. Supported: $supported_feature_types");
 		}
 	    }
 
@@ -744,6 +742,7 @@ sub Verbose {
     &PrintArguments($out);
     printf $out "; %-14s\t%s\n", "organism", $organism_name;
     printf $out "; %-14s\t%s\n", "sequence type", $sequence_type;
+    printf $out "; %-14s\t%s\n", "feature type", $feature_types;
     if ($input_sequence_file) {
 	printf $out "; %-14s\t%s\n", "input sequence file", $input_sequence_file;
 	printf $out "; %-14s\t%s\n", "input sequence format", $input_sequence_format;
