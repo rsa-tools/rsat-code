@@ -30,15 +30,12 @@ $parameters .= " -sort";
 #### purge sequence option
 $purge = $query->param('purge');
 
-#### TEMPOPRARY: INACTIVATE PURGE BECAUSE THERE IS A PROBLEM
-$purge = "";;
-
 ### sequence file
 ($sequence_file,$sequence_format) = &GetSequenceFile();
 if ($purge) {
     $command= "$convert_seq_command -i $sequence_file -from $sequence_format -to fasta | $purge_sequence_command | $oligo_analysis_command -format fasta ";
 } else {
-    $command= "$oligo_analysis_command -i $sequence_file -from $sequence_format ";
+    $command= "$oligo_analysis_command -i $sequence_file  ";
 }
 
 
