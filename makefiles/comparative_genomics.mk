@@ -1,9 +1,8 @@
 ###############################################################
 # Comparative genomics with Saccharomyces downstream sequences
 
-MAKEFILE=${RSAT}/makefiles/comparative_genomics.mk
 include ${RSAT}/makefiles/util.mk
-
+MAKEFILE=${RSAT}/makefiles/comparative_genomics.mk
 
 ################################################################
 ## Variables
