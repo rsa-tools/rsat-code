@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.28 2002/12/09 22:14:25 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.29 2002/12/09 22:38:35 jvanheld Exp $
 #
-# Time-stamp: <2002-12-09 16:14:14 jvanheld>
+# Time-stamp: <2002-12-09 16:38:22 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -42,12 +42,12 @@ $supported_sort_keys  = join ",", sort keys %supported_sort_key;
 			);
 $supported_background  = join ",", sort keys %supported_background;
 
-$noorf = 0;
+$noorf = 1;
 $default{from} = -800;
 $default{to} = 0;
 $known_site_file = "known-consensus";
 $known_sites_provided = 0;
-$background = "intergenic";
+$background = "upstream-noorf";
 $seq_format = "fasta";
 $min_oligo_length = 6;
 $max_oligo_length = 6;
@@ -75,7 +75,7 @@ warn "; Reading ORF information ...\n"
 ################################################################
 #
 # read data
-&ReadKnownSites();
+&ReadKnownSites($known_site_file);
 &ReadSiteLibrary();
 %family = &ReadFamilies($family_file, 1);
 @families = sort keys %family;
@@ -83,9 +83,9 @@ warn "; Reading ORF information ...\n"
 ### write composition of the families in the separated directories
 &SetFileNames();
 
-&MakeDirectories();
-
 &CheckOutputDirectory();
+
+&MakeDirectories();
 
 #### verbose
 &Verbose() if ($verbose >= 1);
@@ -320,6 +320,7 @@ sub DyadAnalysis {
 
 ### read known known_site for each family
 sub ReadKnownSites {
+    my ($known_site_file) = @_;
     %known_site = ();
     %known_site_source = ();
     if (-e $known_site_file) {
@@ -332,8 +333,8 @@ sub ReadKnownSites {
 	    chomp;
 	    @fields = split "\t";
 	    $family_name = $fields[0];
-	    $source = $fields[2];
 	    $known_site = uc($fields[1]);
+	    $source = $fields[2];
 	    #$known_site = uc(&compress_pattern($known_site,"n"));
 	    $known_site =~ s/N/n/g;
 	    push @{$known_site{$family_name}}, $known_site;
@@ -882,6 +883,18 @@ OPTIONS
 		frequencies.
 		
 		Supported: $supported_background
+	-known	known_site_file
+		A file containing a list of known sites/motifs for
+		each of the gene families. These known sites are NOT
+		used during the pattern discovery. They are simply
+		displayed besides the discovered patterns, for the
+		sake of comparison.
+		
+		Format: the known site file is a tab-delimited text
+		files, with the collofing column content :
+		       1) family
+		       2) site/motif
+		       3) source (optional)
 
 FILE FORMAT
     $HELP_FAMILY_FILE
@@ -941,6 +954,7 @@ multiple-family-analysis options
 -pseudo		pseudo-weight (see oligo-analysis manual)
 -nomap		do not draw feature maps (for saving time and hard disk space)
 -bg		background frequency modelEnd_short_help
+-known		file containing a list of known sites/motifs
 End_short_help
   close HELP;
   exit;
@@ -1008,6 +1022,9 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-org") {
 	    $organism_name = $ARGV[$a+1];
 
+	    ### file with a collection of known motifs, for comparison between discovered and known motifs
+	} elsif ($ARGV[$a] eq "-known") {
+	    $known_site_file = $ARGV[$a+1];
 
 	    #### task selection
 	} elsif ($ARGV[$a] eq "-task") {
