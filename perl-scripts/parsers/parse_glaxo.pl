@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_glaxo.pl,v 1.2 2001/05/30 08:46:16 jvanheld Exp $
+# $Id: parse_glaxo.pl,v 1.3 2001/05/30 08:54:55 jvanheld Exp $
 #
-# Time-stamp: <2001-05-30 10:43:46 jvanheld>
+# Time-stamp: <2001-05-30 10:51:30 jvanheld>
 #
 ############################################################
 ### parse_ligand.plt
@@ -182,50 +182,48 @@ sub PrintHelp {
     NAME
         parse_ligand.pl
 
-	    DESCRIPTION
-		Parse smiles from Glaxo
-		    The daylight file is parsed in two separate files
-			Smiles
-			    one object per SMILES entry in the Glaxo file
-				Compounds    
-				    one object per "BRENDA name" entry in the Glaxo file
+    DESCRIPTION
 
-					I think that BRENDA names are nothing else than synonyms for
-					    the compound associated to each SMILES. If this happens to be
-						true, all attributes of a BRENDA name should become attributes
-						    of the parent SMILES. This needs to be checked with
-							Ceara. inbetween, I prefer to create separate objects. It will
-							    be easy to merge separate objects than to split a composite
-								object.
+	Parse smiles from Glaxo.  The daylight file is parsed in two
+	separate files Smiles one object per SMILES entry in the Glaxo
+	file Compounds one object per "BRENDA name" entry in the Glaxo
+	file
 
-								    AUTHOR
-									Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)  
+					
+	I think that BRENDA names are nothing else than synonyms for
+	the compound associated to each SMILES. If this happens to be
+	true, all attributes of a BRENDA name should become attributes
+	of the parent SMILES. This needs to be checked with
+	Ceara. inbetween, I prefer to create separate objects. It will
+	be easy to merge separate objects than to split a composite
+	object.
 
-									    VERSION
-										0.01
-										    Created		2000/10/25
-											Last modified	2000/10/25
-											    
-											    SYNOPSIS	
-												parse_ligand.pl [-v] [-vv] [-i infile] [-format output_format]
-												    [-o outfile]
+    AUTHOR
+	Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)  
 
-													OPTIONS	
-													    -h	detailed help
-														-help	short list of options
-														    -test	fast parsing of partial data, for debugging
-															-w #	warn level
-															    Warn level 1 corresponds to a restricted verbose
-																Warn level 2 reports all polypeptide instantiations
-																    Warn level 3 reports failing get_attribute()
-																	-i	input file
-																	    If ommited, STDIN is used
-																		This allows to insert the program within a unix pipe
-																		    -o	output file
-																			If ommited, STDOUT is used. 
-																			    This allows to insert the program within a unix pipe
-																				EndHelp
-																				    close HELP;
+    VERSION
+	0.01
+	Created		2000/10/25
+	Last modified	2000/10/25
+
+    SYNOPSIS	
+	parse_ligand.pl [-v] [-vv] [-i infile] [-format output_format]
+	    [-o outfile]
+
+    OPTIONS	
+	-h	detailed help
+	-help	short list of options
+	-test	fast parsing of partial data, for debugging
+	-w #	warn level
+		Warn level 1 corresponds to a restricted verbose
+		Warn level 2 reports all polypeptide instantiations
+		Warn level 3 reports failing get_attribute()
+	-i	input file
+		If ommited, the defult file is used (specified in the
+		initialization of the code).
+	-o	output file
+EndHelp
+    close HELP;
 }
 
 
