@@ -24,12 +24,6 @@ Calculates oligonucleotide occurrences in a set of sequences, and detects overre
 <H4>Options</H4>
 <UL>
 
-<A NAME="title"><B>Title</B></A>
-(facultative)<BR>
-
-Title of the data set. This information is returned as title of the
-result page.
-
 <P>
 <A NAME="sequence">
 <B>Input sequence:</B></A><BR>
@@ -145,13 +139,32 @@ Note that Z-score introduce a correction for self-overlapping patterns (see van 
 
 Various probabilistic models can be used to estimate the expected
 frequency of each oligonucleotide. <BR>
+
 <UL>
+
+<P>
+
+<B>Attention !</B> 
+
+The results will be dramatically affected by the choice of expected
+frequency, which is the main specificity of this program. It has been
+shown that for the detection of regulatory sites in yeast upstream
+sequences, the best choice is to estimate the expected oligonucleotide
+frequencies on basis of the frequencies observed in the set of all
+non-coding sequences from the genome. For the same purpose, choosing
+"equiprobable residues" would be totally inefficient, and "Residue
+frequencies from input sequence" works poorly.
+
+
+<P>
 
 <LI><B>Oligo frequencies from all non-coding regions :</B>
 pre-calculted tables are used to estimate expected oligonucleotide
-frequencies. These tables were calculated for each supported organism,
-by selecting all the intergenic regions and counting the
-oligonucleotide frequencies for all sizes between 1 and 8. 
+frequencies (background frequencies). These tables were calculated for
+each supported organism, by selecting all the intergenic regions (the
+background sequences) and counting the oligonucleotide frequencies for
+all sizes between 1 and 8.
+
 
 <P>
 <LI><B>Markov chain :</B> expected word (oligonucleotide) frequencies
@@ -211,44 +224,96 @@ optimal for hexanucleotides.
 equivalent to a markov chain with order 0).
 
 <P>
+<a name='equiprobable'>
 <LI><B>Equiprobable residues:</B> This option gives very poor
 results and should never be used in practice. I leave it there only
 for didactic purposes (to allow anyone to test how bad it performs).
 
+<P>
+<a name='upload_freq_file'>
+<LI><B>Upload your own expected frequency file:</B> You can upload
+your own table of expected frequency file. This option can be useful
+if you are working with an organism which is not supported on the web
+server.
 
-</UL>
+<ul>
+<b>File format:</b> The expected frequency file must be a
+tab-delimited text file, with one row per oligonucleotide. The first
+column contains the oligonucleotide, the second column the expected
+frequency. Oligonucleotides must be of the size selected for the
+analysis.  <a
+href='data/Saccharomyces_cerevisiae/oligo-frequencies'>Examples</a>
+can be found in the <a href='data/'>Data folder</a>.  
+
+<P>Expected frequency files can be generated with oligo-analysis
+itself : 
+<ul>
+<li>Enter your background sequence file with the <i>sequence file upload</i> option. 
+
+<li>Select the appropriate oligonucleotide size.
+
+<li>Uncheck the option <i>return reverse complements together in the
+output</i>. This is important, because if not, half of the patterns
+will be ignored.
+
+<li>In the <i>return</i> option,  select "Frequencies", and
+deselect all other options (especifically the probabilities. 
+
+</ul>
+
+The resulting file has to be processed (with excel for example) to
+remove the second column, which contains the pattern ID.
+</ul>
 
 <P>
-<UL>
 
-<B>Attention !</B> 
+</ul>
+<A NAME="pseudo">
+<B>Pseudo-weight</B></A><BR>
+<ul>
 
-The results will be dramatically affected by the choice of expected
-frequency, which is the main specificity of this program. It has been
-shown that for the detection of regulatory sites in yeast upstream
-sequences, the best choice is to estimate the expected oligonucleotide
-frequencies on basis of the frequencies observed in the set of all
-non-coding sequences from the genome. For the same purpose, choosing
-"equiprobable residues" would be totally inefficient, and "Residue
-frequencies from input sequence" works poorly.
 <P>
-</UL>
+When the background frequencies are based on a small sequence set,
+there is a risk to observe in the test sequences some oligomers which
+were totally absent from the background sequences. This would make a
+problem since these words are considered to have a 0 probability. </P>
 
+<P>
+To circumvent this problem, a pseudo-weight can be defined, which must
+be a number between 0 and 1. Expected frequencies are then corrected by a
+pseudo-frequency, which is the pseudo-weight divided by the number of
+possible patterns.</P>
+
+
+</UL>
 <A NAME="return">
 <B>Return:</B></A><BR>
 Various measures of oligonucleotide distribution can be returned/
 <UL>
 
-<LI><B>Occurrences:</B> a simple count of the number of ocurrences of each oligonucleotide. Overlapping matches are detected and summed in the counting. 
+<LI><B>Occurrences:</B> a simple count of the number of ocurrences of
+each oligonucleotide. Overlapping matches are detected and summed in
+the counting.
 
-<LI><B>Frequencies:</B> relative frequencies, i.e. the number of ocurrence of the oligonucleotides divided by the sum of occurrencesfor all oligonucleotides.
+<LI><B>Frequencies:</B> relative frequencies, i.e. the number of
+ocurrence of the oligonucleotides divided by the sum of occurrencesfor
+all oligonucleotides.
 
-<LI><B>Matching sequences:</B> the number of sequences from the input set which contain at least one ocurrence of the oligonucleotide. 
+<LI><B>Matching sequences:</B> the number of sequences from the input
+set which contain at least one ocurrence of the oligonucleotide.
 
-<LI><B>Ratio:</B> observed/expected occurence ratio. This ratio can be used as a rough indicator of over-representation, but it has the weakness to overestimate the patterns with a very weak number of expected occurrences. For instance, observing 1 occurrence when expecting 0.1 will have a very high index of 10 while it is quite likely to occur at random (proba ~10%). For comparison, observing 20 occurences when expecting 10 has a probability of ~0.3%, although the ratio is only 2!
+<LI><B>Ratio:</B> observed/expected occurence ratio. This ratio can be
+used as a rough indicator of over-representation, but it has the
+weakness to overestimate the patterns with a very weak number of
+expected occurrences. For instance, observing 1 occurrence when
+expecting 0.1 will have a very high index of 10 while it is quite
+likely to occur at random (proba ~10%). For comparison, observing 20
+occurences when expecting 10 has a probability of ~0.3%, although the
+ratio is only 2!
 
 
-<LI><B>Proba:</B> probabilities. Different statistics are calculated (see below for <A HREF="#proba">details of calculation</A>). 
+<LI><B>Proba:</B> probabilities. Different statistics are calculated
+(see below for <A HREF="#proba">details of calculation</A>).
 
 <UL>
 	
@@ -283,6 +348,7 @@ overrepresentation.
 <P>
 <A NAME="thresholds">
 <B>Thresholds:</B></A><BR>
+<ul>
 
 Thresholds can be imposed to select the most significantly
 overrepresented patterns. When acting on probabilities, upper
