@@ -370,7 +370,11 @@ use Data::Dumper;
 			  }
 			  if (my @values = $object->get_attribute($attribute)) {
 
-			      ### special treatment for names : add a column with primary label
+
+			      ### special treatment for names : add a
+			      ### column with name qualifier. The
+			      ### first name is labeled 'primary', the
+			      ### next names 'alternate'
 			      if ($attribute eq "names") {
 				  $tables{$table_name} .= join("\t",
 							       $id,
