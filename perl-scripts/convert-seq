@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: convert-seq,v 1.6 2001/05/07 10:24:44 jvanheld Exp $
+# $Id: convert-seq,v 1.7 2001/05/17 18:58:15 jvanheld Exp $
 #
-# Time-stamp: <2001-05-07 12:24:41 jvanheld>
+# Time-stamp: <2001-05-17 20:58:00 jvanheld>
 #
 ############################################################
 
@@ -82,7 +82,11 @@ while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_form
         $current_seq = uc($current_seq);
     } 
     if ($out_format eq "filelist") {
-	$current_id = `basename $current_id .$in_format`;
+	#$current_id = `basename $current_id .$in_format`;
+	#if ($current_id =~ /\.$in_format/) {
+	#    $current_id = $';
+	#}
+
 	chomp $current_id;
 	$one_seq_file .= "$current_id.raw";
 	open RAW, "> ${output_dir}/$one_seq_file"
