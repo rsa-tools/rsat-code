@@ -14,8 +14,6 @@
 </H2>
 </CENTER>
 
-<UL>
-
 
 <P>
 DNA-pattern is a program that allows to match known patterns (motifs)
@@ -28,20 +26,19 @@ recognition of regulatory motifs in DNA sequences, in short :
 <li>Motifs can automatically be searched on both strands of the
 sequences.
 
-<li>Motifs can contain letters from the degenerate nucleotide alphabet
-(e.g. N for "any nucleotide", W for "A or T", ..., see the <a
-href=../help.dna-pattern.html>manual page</a> for the complete list).
 
 <li>Patterns can contain spacers of fixed length
 (e.g. <tt>CGGn{11}CCG</tt>) or variable length
 (e.g. <tt>GATAAGn{0,60}GATAAG</tt>).
 
+<!--
 <li>It is possible to detect imperfect matches by specifying a number
 of allowed substitutions. The program will only consider
 substitutions, and not deletions or insertions. This is important
 because many transcription factors allow some degeneracy, but
 insertions and deletions usually prevent the factor from recognizing a
 site.
+-->
 
 <li>Several patterns can be entered in the query box (the first word
 of each row is considere as a distinct pattern), all of them will be
@@ -50,13 +47,22 @@ matched against the sequences.
 <li>Several sequences can be entered in the sequence box, patterns
 will be matched against all of them.
 
+<li>Motifs can contain letters from the degenerate nucleotide alphabet
+(e.g. N for "any nucleotide", W for "A or T", ..., see the <a
+href=../help.dna-pattern.html>manual page</a> for the complete list).
+
+<li>Regular expressions are supported, allowing to search for complex
+motifs including spacers (e.g.<tt>GATAAn{0,10}GATAA</tt>).
+
 </ol>
 
-<P>
-Let us suppose that you are searching the positions of putative GATA
-boxes and Hap sites within the upstream regions of the genes from the GDH
-family (GDH1, GDH2, and GDH3). We will first retrieve the sequences upstream
-from your genes.
+
+<h2>Searching pattern positions</h2>
+
+<P> Let us suppose that you are searching the positions of putative
+GATA boxes and Hap sites within the upstream regions of a selection of
+nitrogen-responding genes. We will first retrieve the sequences
+upstream from your genes.
 
 </UL>
 <P>
@@ -69,9 +75,13 @@ genes (as you have seen in the <a
 href="tut_retrieve-seq.html">tutorial on sequence retrieval</a>)
 
 <PRE>
-GDH1
-GDH2
-GDH3
+DAL5
+GAP1
+MEP1
+MEP2
+MEP3
+PUT4
+DAL80
 </PRE>
 
 <P>Now we have the upstream sequences, we will scan them with the
@@ -89,22 +99,23 @@ additional box for entering your own sequences.
 
 <P><LI> In the <B>Query pattern(s)</B> box, we will enter the patterns
 to be searched for. Eah pattern must come on a separate line. The
-first word of each line is the string to search for, the second word
-is an identifier for this pattern. Type the following text in the
-Query pattern(s) box:</LI>
+first word of each line is the string description of the pattern, the
+second word is an identifier for this pattern. Type the following text
+in the Query pattern(s) box:</LI>
 
-<PRE>GATWA&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Gata_box
-CCAAY&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Hap_site</PRE>
+<PRE>
+GATAAG	Gata_box
+CCAAY	Hap_site
+</PRE>
 Note the use of degenerate IUPAC degenerate code: the W from GATWA on the
 first line means "either A or T", the Y from CCAAY on the second line means
 "either C or T".
 <P><LI>
 &nbsp;click <B>GO</B>.</LI>
 
-<P>
-You see now the positions of all matches with the patterns you entered
-within the upstream sequence of GDH1, GDH2 and GDH3. Each line shows a
-single match, and the different columns indicate respectively:
+<P> You see now the positions of all matches with the patterns you
+entered within the upstream sequences of the selected genes. Each line
+shows a single match, and the different columns indicate respectively:
 
 <UL>
 <LI>
@@ -202,16 +213,68 @@ the cursor to another site and check that the information is well
 updated. If you are using Internet Explorer, make sure to activate the
 <B>status bar</B> (in the <B>View</B> menu).
 
-<P><LI> Just for the fun, note the nice association of Hap and Gata
-sites in the upstream sequence of GDH1.
 
 </UL>
-</UL>
+
+<h2>Searching for complex motifs</h2>
+
+We will now show an example of search for motifs containing spacings.
+
+<P>
+Another characteristics of GATA boxes is that they often come
+clustered in the upstream region: nitrogen-responding genes usually
+have a pair of GATA boxes, separated by 0 t 60 base
+pairs. <i>dna-pattern</i> allows to search for spaced motifs by using
+a notation called <i>regular expressions</i>. For example :
+
+<ul>
+
+<li>a repetition is specified by a number within curly brackets
+(e.g. <tt>A{6}</tt> is equivalent to <tt>AAAAAA</tt>)
+
+<li>this can be combined with the IUPAC notation to specify a fixed
+spacing (e.g. <tt>n{30}</tt> means a spacing of exactly 30 nucleotides)
+
+<li>variable number of repeats can be specified by enterin two
+numbers, separated by a comma, in the curly brackets
+(e.g. <tt>n{0,60}</tt> means "between 0 and 60 nucleotides")
+</ul>
+
+<P>
+Run the tutorial as above, but enter the following patterns.
+
+<PRE>
+GATAAGn{0,60}GATAAG	Gata_tandem
+CTTATCn{0,60}GATAAG	Gata_inv1
+GATAAGn{0,60}CTTATC	Gata_inv2
+GATAA	Gata_box
+GATAAG	Gata_box_strict
+</PRE>
+
+
+<h2>Counting multiple patterns in multiple sequences</h2>
+
+A charcteristics of yeast GATA boxes is that they act in a synergic
+way, i.e. nitrogen-responsive generally genes contain multiple GATA
+boxes in their upstream sequences. Thus, for this particular
+regulation, one might be interested in counting the number of matches,
+rather than returning their precise positions. This can be done with
+<i><b>dna-pattern</b></i>.
+
+<ol>
+<li>Retrieve the nitrogen-responding genes, and click on the
+dna-pattern button as above.
+<li>Enter the same list of motifs as before.
+<li>deselected the checkbox <b>match positions</b>
+<li>select the checkbox <b>match count table</b>
+<li><b>GO</b>
+</ol>
 
 
 <P>
 You can now come back to the <a href=tutorials.html>tutorial main
 page</a> and try the next tutorial.
+
 
 <HR WIDTH="100%">
 <CENTER>
