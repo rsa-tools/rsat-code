@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: mirror.mk,v 1.6 2004/04/21 07:05:17 jvanheld Exp $
+# $Id: mirror.mk,v 1.7 2004/04/21 07:13:21 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 12:05:45 jvanheld>
 #
@@ -122,6 +122,7 @@ EXCLUDED=					\
 		--exclude Mus_musculus		\
 		--exclude Rattus_norvegicus	\
 		--exclude Homo_sapiens*		\
+		--exclude embl_genomes		\
 		--exclude comparative_genomics
 data_from_server:
 	${RSYNC} ${EXCLUDED}							\
