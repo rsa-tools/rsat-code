@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSA_home.cgi,v 1.6 2001/02/08 13:01:51 jvanheld Exp $
+# $Id: RSA_home.cgi,v 1.7 2001/05/21 16:02:03 jvanheld Exp $
 #
-# Time-stamp: <2001-02-08 14:01:46 jvanheld>
+# Time-stamp: <2001-05-21 18:01:57 jvanheld>
 #
 ############################################################
 #### this cgi script fills the HTML form for the program dna-pattern
@@ -30,8 +30,9 @@ print <<EndText;
   <TR>
   <TD VALIGN=TOP WIDTH="160">
   <CENTER>
-  <A HREF="http://www.cifn.unam.mx/Computational_Biology/" target=_blank>
-  <IMG SRC="lablogo.gif" ALT="lab logo" BORDER=0 HEIGHT=48 WIDTH=75></A>
+  <A HREF="http://embnet.cifn.unam.mx/"
+  target=_blank> <IMG SRC="lablogo.gif" ALT="lab logo" BORDER=0
+  HEIGHT=48 WIDTH=75></A>
   <BR>
   <FONT COLOR="#006600" SIZE=-2>
   LABORATORIO DE BIOLOGIA COMPUTACIONAL
@@ -86,32 +87,25 @@ print <<EndText;
   </TABLE>
   
   
-  <FONT SIZE=-1>
-  
   <P>
-  Welcome to Regulatory Sequence Analysis Tools. This site provides a
-  series of modular computer programs specifically designed for the
-  detection of regulatory signals in non-coding sequences.
-  
-  
+  Welcome to Regulatory Sequence Analysis Tools (<B>RSAT</B>). This
+  site provides a series of modular computer programs specifically
+  designed for the detection of regulatory signals in non-coding
+  sequences.  <P>
 
-  <P> Initially devoted to the yeast <I>Saccharomyces cerevisiae</I>,
-  Regulatory Sequence Analysis tools have now been extended to 16
-  completely sequences bacterial genomes.  Most tools present now a
-  menu allowing to select the organism on which the analysis will be
-  performed. The extension is ready for most tools, but some still
-  have to be updated (ORF-info, neighbour-orfs, downstream sequence).
+  <P> An increasing number of organisms are supported on this web
+  site. We installed a few eukaryotes (<i>Saccharomyces
+  cerevisiae</i>, <i>Drosophila melanogaster</i>, <i>Caenorhabditis
+  elegans</i>) and 50 bacteria. Bacterial genomes are periodically
+  synchronized from Genbank/NCBI data. We are willing to install
+  additional organisms provided their genome has been fully sequenced
+  and is publicly available. If you would like to add such an
+  organism, please contact <a target=_top
+  href="http://www.ucmb.ulb.ac.be/~jvanheld/">Jacques van Helden</a>.
 
-
-  <P>Basically, the same tools can be used for bacteria as for
-  yeast. For pattern discovery in bacteria, we strongly recommend the
-  <A HREF="dyad-analysis_form.cgi">dyad-analysis</A>, which has been
-  specifically designed for the detection of HTH-like sites. The
-  dyad-analysis is also recommended for yeast, where it allows to
-  detect the sites bound by Zn cluster-containing factors.
-
-  <P> This web site is freely available for academic users. For users
-  from commercial companies, please read our <A
+  <P>
+  This web site is freely available for academic users. For users from
+  commercial companies, please read our <A
   HREF="disclaimer.html">disclaimer</A>.
 
   <P>
@@ -121,19 +115,19 @@ print <<EndText;
   <TR ALIGN=CENTER VALIGN=BOTTOM>
 
   <TD>
-  <A HREF="http://www.ucmb.ulb.ac.be/bioinformatics/rsa-tools/" target="_blank">
+  <A HREF="http://www.ucmb.ulb.ac.be/bioinformatics/rsa-tools/" target="_top">
   <B>Belgium</B><BR>
   <IMG SRC="manneken_pis.jpg" HEIGHT=80 WIDTH=53 BORDER=0><BR>
   <FONT SIZE=-2>
- http://www.ucmb.ulb.ac.be/bioinformatics/rsa-tools/</A>
+  http://www.ucmb.ulb.ac.be/bioinformatics/rsa-tools/</A>
   </FONT>
   </TD>
 
   <TD ALIGN=CENTER>
-  <A HREF="http://www.cifn.unam.mx/~jvanheld/rsa-tools/" target="_blank">
+  <A HREF="http://embnet.cifn.unam.mx/rsa-tools/" target="_top">
   <B>Mexico</B><BR>
   <IMG SRC="zapata.jpg" HEIGHT=80 WIDTH=89 BORDER=0><BR>
-  <FONT SIZE=-2>http://itzamna.cifn.unam.mx/~jvanheld/rsa-tools</A>
+  <FONT SIZE=-2>http://embnet.cifn.unam.mx/rsa-tools/</A>
   </FONT>
   </TD>
   
@@ -143,7 +137,7 @@ print <<EndText;
 EndText
 
 
-print "<H4>Organisms supported on <A HREF='$WWW_RSA' target=_blank>",$WWW_RSA,"</A></H4>\n";
+print "<H4>Organisms supported on <A HREF='$WWW_RSA' target=_top>",$WWW_RSA,"</A></H4>\n";
 print &ListSupportedOrganisms("html_list");
 
 &UpdateLogFile;
