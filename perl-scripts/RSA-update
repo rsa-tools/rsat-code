@@ -2,30 +2,32 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
+require "RSA.lib";
  
 
 #### initialise parameters ####
 $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+
+&ReadArguments;
 
 print "\tStarting update ...\n";
 
 chdir "$RSA/new_version";
 print "\tUncompressing archives ...\n";
 
-#unless (-e "perl-scripts_*.tar.gz") {
-#  $pwd = `pwd`;
-#  die "\tError: cannot find file perl-scripts_*.tar.gz in directory $pwd\n";
-#}
-#unless (-e "public_html_*.tar.gz") {
-#  $pwd = `pwd`;
-#  die "\tError: cannot find file public_html_*.tar.gz in directory $pwd\n";
-#}
 system "gunzip *.gz";
 system "tar -xpf perl-scripts_*.tar";
-#system "tar -xpf cgi-bin*.tar";
 system "tar -xpf public_html_*.tar";
 system "gzip *.tar";
+
+unless (-d perl-scripts) {
+    &FatalError("Directory 'perl-scripts' is missing in ", `pwd`);
+}
+
+unless (-d public_html) {
+    &FatalError("Directory 'public_html' is missing in ", `pwd`);
+}
+
 
 print "\tSaving archive in the archive/ directory ...\n";
 system "mv *.gz ../archives";
@@ -34,16 +36,13 @@ chdir $RSA;
 print "\tSaving old version in the old_version/ directory ...\n";
 system "unalias rm";
 system "rm -rf old_version/perl-scripts";
-#system "rm -rf old_version/cgi-bin";
 system "rm -rf old_version/public_html";
 
 system "mv -f perl-scripts old_version/";
-#system "mv -f cgi-bin old_version/";
 system "mv -f public_html old_version/";
 
 print "\tInstalling the new version ...\n";
 system "mv new_version/perl-scripts .";
-#system "mv new_version/cgi-bin .";
 system "mv new_version/public_html .";
 
 $done_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
@@ -51,3 +50,74 @@ print ";Job started $start_time";
 print ";Job done    $done_time";
 
 exit(0);
+
+########################## subroutine definition ############################
+
+sub PrintHelp {
+#### display full help message #####
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	RSA-update
+
+USAGE
+        RSA-update
+
+DESCRIPTION
+
+	Updates rsa-tools programs. The whole directories perl-script
+	and public_html are replaced by a new version, extracted from
+	a tar.gz archive.
+
+	The new versions must have been placed in the directory
+	$RSA/new_version.
+
+	The previous versions are saved in 
+	$RSA/old_version.
+	
+OPTIONS
+	-h	(must be first argument) display full help message
+	-help	(must be first argument) display options
+	-v	verbose
+End_of_help
+  close HELP;
+  exit;
+}
+
+sub PrintOptions {
+#### display short help message #####
+  open HELP, "| more";
+  print HELP <<End_short_help;
+template options
+----------------
+-h	(must be first argument) display full help message
+-help	(must be first argument) display options
+-v	verbose
+End_short_help
+  close HELP;
+  exit;
+}
+
+sub ReadArguments {
+#### read arguments ####
+    foreach my $a (0..$#ARGV) {
+	### verbose ###
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+	    
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp;
+	    
+	    ### list of options
+	} elsif ($ARGV[0] eq "-help") {
+	    &PrintOptions;
+	    
+	    
+	}
+    }
+}
