@@ -176,13 +176,16 @@ sub OpenOutputFile {
 ## Check for the existence of an output directory, and, if it does not
 ## exist, create it
 sub CheckOutputDir {
-    my ($output_dir) = @_;
+    my ($output_dir, $umask) = @_;
+
+    $umask = 0002 unless ($umask);
+    umask($umask);
 
     if ($output_dir) {
 	unless (-d $output_dir) {
 	    warn "Creating directory $output_dir\n";
 	}
-	mkdir $output_dir, 0755;
+	mkdir $output_dir;
 	unless (-d $output_dir) {
 	    system "mkdir -p $output_dir"; ## create output directory with all parents
 	}
