@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: fit-distribution,v 1.8 2004/01/14 22:11:36 jvanheld Exp $
+# $Id: fit-distribution,v 1.9 2004/01/23 23:13:24 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -77,7 +77,9 @@ my $pattern_count = 0;
 my $header_done = 0;
 my $header_OK = 0;
 my @values = ();
+my $l = 0;
 while (<$in>) {
+    $l++;
     next unless (/\S/);
     chomp();
     
@@ -133,10 +135,19 @@ while (<$in>) {
 	$ssq += $occ*$occ*$counts[$i];
 #	warn join ("\t", $i, $occ, $repet, $sum, $ssq), "\n" if ($main::verbose >= 10);
     }
-
-    local $avg = $sum/$repet;
-    local $var = $ssq/$repet - $avg*$avg;
-    local $std = sqrt($var);
+    
+    local $avg = undef;
+    local $var = undef;
+    local $std = undef;
+    local $repet_is_zero = 0;
+    if ($repet > 0) {
+	$avg = $sum/$repet;
+	$var = $ssq/$repet - $avg*$avg;
+	$std = sqrt($var);
+    } else {
+	$repet_is_zero = 1;
+	warn "Error: Line $l\tpattern $pattern\tsum of values is 0\n";
+    }
     local $last_repet = $repet;
 
     ## Fit a poisson distribution and calculate the goodness of fit
@@ -154,14 +165,13 @@ while (<$in>) {
 	    $fitted_distrib = "negbin";
 	    ($p, $k, @expected) = &negbin2($max_occ, $avg, $var, 1);
 	}
-    };
-
+    }
     
     if ($min_occ > 0) {
 	@expected = @expected[$min_occ..$#expected];
     }
     
-
+    
     local $exp_sum = 0;
     foreach my $i (0..$#expected) {
 	$expected[$i] *= $repet;
@@ -169,31 +179,31 @@ while (<$in>) {
     }
     
     warn join( "\t", 
-	      "header ".$header_done, 
-	      "OK ".$header_OK, 
-	      "\n".$pattern,
-	      "repet ".$repet,
-	      "sum ".$sum,
-	      "ssq ".$ssq,
-	      "avg ".$avg,
-	      "var ".$var,
-	      "std ".$std,
-	      "values ".scalar(@values),  
-	      "counts ".scalar(@counts), 
-	      "expected ".scalar(@expected), 
-	      join( ":", @values),
-	      join( ":", @counts),
-	      join( ":", @expected),
-	      ), "\n" if ($main::verbose >= 10);
-
+	       "header ".$header_done, 
+	       "OK ".$header_OK, 
+	       "\n".$pattern,
+	       "repet ".$repet,
+	       "sum ".$sum,
+	       "ssq ".$ssq,
+	       "avg ".$avg,
+	       "var ".$var,
+	       "std ".$std,
+	       "values ".scalar(@values),  
+	       "counts ".scalar(@counts), 
+	       "expected ".scalar(@expected), 
+	       join( ":", @values),
+	       join( ":", @counts),
+	       join( ":", @expected),
+	       ), "\n" if ($main::verbose >= 10);
+    
     ## Perform a chi-square test
     local ($chi2, $df, $left_group, $right_group, $obs_ref, $exp_ref) = &ChiSquare("goodness", 2, scalar(@counts), @counts, @expected);
-
+    
     local $obs_grouped;
     $obs_grouped = join ":", @{$obs_ref};
     local $exp_grouped;
     $exp_grouped = join ":", @{$exp_ref};
-
+    
     ## Discard cases where applicability conditions are not met
 #    unless (&IsReal($chi2)) {
 #	$chi2 = "NA";
@@ -211,8 +221,8 @@ while (<$in>) {
 	       $df,
 	       $left_group,
 	       $right_group),
-	"\n" if ($verbose >= 3);
-    
+    "\n" if ($verbose >= 3);
+
     my  @out_values = ();
     foreach my $field (@out_fields) {
 	push @out_values, $$field;
