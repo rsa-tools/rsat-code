@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.79 2004/08/02 22:13:46 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.80 2004/08/18 20:47:45 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -461,9 +461,9 @@ sub SetFileNames {
 	}
 	
 	## Background frequencies
-	$meme_path = $RSA."/bin/meme/";
-#	$meme_path = "~nicolas/meme.3.0.4";
-	$meme_bg_file = $meme_path."/tests/yeast.nc.6.freq";
+	$meme_dir = $ENV{MEME_DIR} || $RSA."/bin/meme/";
+#	$meme_dir = "~nicolas/meme.3.0.4";
+	$meme_bg_file = $meme_dir."/tests/yeast.nc.6.freq";
 	$meme_options .= " -bfile ".$meme_bg_file;
 
 	## Output type
