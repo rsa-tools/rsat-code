@@ -427,18 +427,18 @@ sub UpdateCounterFile {
     ### read previous counter value
     if (-e $counter_file) {
 	open(COUNTER, "<$counter_file");
-	flock(COUNTER, 2);
+	#flock(COUNTER, 2);
 	$nb_visitors = <COUNTER>;
-	flock(COUNTER,8);
+	#flock(COUNTER,8);
 	close(COUNTER);
 	$nb_visitors++;
     }
     
     ### save new counter value
     open(COUNTER, ">$counter_file");
-    flock(COUNTER,2);
+    #flock(COUNTER,2);
     print COUNTER $nb_visitors;
-    flock(COUNTER,8);
+    #flock(COUNTER,8);
     close(COUNTER);
     
     return $nb_visitors;
@@ -452,7 +452,7 @@ sub UpdateCounterFile {
 ###     &UpdateLogFile;
 sub UpdateLogFile {
   if (open LOG, ">>$log_file") {
-    flock(LOG,2);
+    #flock(LOG,2);
     $date = &AlphaDate;
     #$date = `date '+%y%m%d.%H%M%S'`;
     $date =~ s/\n//;
@@ -463,7 +463,7 @@ sub UpdateLogFile {
 		    $script_name,
 		    $query->param('user_email')
 		    ), "\n";
-    flock(LOG,8);
+    #flock(LOG,8);
     close LOG;
   }
   chmod 0777, $log_file;
@@ -538,7 +538,7 @@ sub DelayedRemoval {
     print REMOVE "rm -f $file_to_remove \n";
     close REMOVE;
 
-    &MessageToAdmin("DelayedRemoval: file $file_to_remove will be removed in $delay") if ($ECHO >= 0);
+    &MessageToAdmin("DelayedRemoval: file $file_to_remove will be removed in $delay") if ($ECHO >= 2);
 
 }
 
