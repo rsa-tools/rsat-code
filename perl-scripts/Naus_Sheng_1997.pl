@@ -8,6 +8,9 @@ NAME
 	
 	July 1997 by Jacques van Helden
 
+CATEGORY
+    statistics
+
 DESCRIPTION
 	This scripts calculates the approximations according to 
 	   Naus, J.I. and Sheng, K. (1997). 

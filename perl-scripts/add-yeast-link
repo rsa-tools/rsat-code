@@ -22,6 +22,17 @@ $supported_db = join ",", @supported_db;
 
 &ReadArguments();
 
+################################################################
+## Check argument values
+
+#### accepted feature types
+unless (defined %accepted_feature_types) {
+    ## By default, accept all feature types
+    %accepted_feature_types = %supported_feature_types;
+#	$accepted_feature_types{cds} = 1;
+}
+$feature_types = join ",", keys (%accepted_feature_types);
+
 #### databases
 if ($#databases <= 0) {
     @databases = @supported_db;
@@ -32,7 +43,7 @@ warn "; Checking organism $organism_name\n" if ($verbose >= 1);
 &CheckOrganism($organism_name, $feature_table_file);
 
 warn "; Reading ORF table for $organism_name\n" if ($verbose >= 1);
-&ReadFeatures($organism_name, $feature_table_file);
+&ReadFeatures($organism_name, $feature_table_file, $feature_types);
 warn "; Reading synonyms for $organism_name\n" if ($verbose >= 1);
 &ReadSynonyms($organism_name);
 

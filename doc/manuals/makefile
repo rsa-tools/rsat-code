@@ -3,7 +3,7 @@
 
 ############################################################
 #
-# $Id: makefile,v 1.4 2004/03/29 13:53:32 jvanheld Exp $
+# $Id: makefile,v 1.5 2004/05/17 15:33:28 jvanheld Exp $
 #
 # Time-stamp: <2003-10-02 15:13:34 jvanheld>
 #
@@ -14,6 +14,7 @@ RM=rm -f
 
 TEX_FILES = \
 	test.tex \
+	rsat_web_server.tex \
 	install_guide.tex \
 	tutorial_shell_rsat.tex
 
@@ -51,6 +52,10 @@ ug:
 
 ig:
 	${MAKE} install_guide.pdf
+	${MAKE} tex_clean
+
+wg:
+	${MAKE} rsat_web_server.pdf
 	${MAKE} tex_clean
 
 _publish:

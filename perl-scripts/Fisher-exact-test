@@ -18,6 +18,9 @@ NAME
 USAGE
         Fisher-exact-test [-i inputfile] [-o outputfile] [-v]
 
+CATEGORY
+	statistics
+
 DESCRIPTION
 	Calculates the value of probability for Fisher's exact test,
 	for a given table of numerical values.

@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.39 2004/03/29 12:39:22 jvanheld Exp $
+# $Id: install-organism,v 1.40 2004/05/17 15:35:48 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -350,7 +350,7 @@ sub IntergenicSegments {
     my $command = "coding-or-not ";
     $command .= "-v " if ($verbose >= 1);
     $command .= "-org $organism_short_name -return ncs,seq,cs \n\n";
-    &doit($command, $dry_run, $die_one_error, $verbose);
+    &doit($command, $dry_run, $die_on_error, $verbose);
 
     my @types = ();
     push @types, "gene";
@@ -364,7 +364,7 @@ sub IntergenicSegments {
 	
 	#### compress sequence file
 	$command = "gzip -f $seq_file";
-	&doit($command, $dry_run, $die_one_error, $verbose);
+	&doit($command, $dry_run, $die_on_error, $verbose);
 
 	#### purge sequences
 	&PurgeSequences($seq_file) if ($purged_frequencies);
@@ -390,14 +390,14 @@ sub AllUpstream {
 	my $command = "retrieve-seq ${noorf} -format $format";
 	$command .= " -type upstream -all -org $organism_short_name ";
 	$command .= " -all -o $seq_file\n\n";
-	&doit($command, $dry_run, $die_one_error, $verbose);
+	&doit($command, $dry_run, $die_on_error, $verbose);
 	
 	#### draw sequence length distributions
 	&SeqLengthDistribution($seq_file, $format, $seq_type, 50) if ($noorf);
 	
 	#### compress sequence file
 	$command = "gzip -f $seq_file";
-	&doit($command, $dry_run, $die_one_error, $verbose);
+	&doit($command, $dry_run, $die_on_error, $verbose);
 	
 	#### purge sequences
 	&PurgeSequences($seq_file) if ($purged_frequencies);
@@ -425,7 +425,7 @@ sub SeqLengthDistribution {
     $command .= " -title1 '$organism_full_name'";
     $command .= " -title2 'length distribution of ${seq_type} sequences'";
     $command .= " -o  ${organism_short_name}_${seq_type}_segments_lengths.${img_format}";
-    &doit($command, $dry_run, $die_one_error, $verbose);
+    &doit($command, $dry_run, $die_on_error, $verbose);
 }
 
 ################################################################
@@ -436,10 +436,10 @@ sub PurgeSequences {
     my $purged_seq_file = `basename $seq_file $format`;
     $purged_seq_file .= "_purged.$format";
     my $command = "purge-sequence -i $seq_file -format wc -ml 300 -mis 9 -2str -o $purged_seq_file";
-    &doit($command, $dry_run, $die_one_error, $verbose);
+    &doit($command, $dry_run, $die_on_error, $verbose);
     #### compress purged sequence file
     $command = "gzip -f $purged_seq_file";
-    &doit($command, $dry_run, $die_one_error, $verbose);
+    &doit($command, $dry_run, $die_on_error, $verbose);
 }
 
 ################################################################
@@ -536,7 +536,7 @@ sub CalcOligoFreq {
 	$command .= " -return freq,occ -nogrouprc ";
 	$command .= " -o ".$out_file;
 	$command .= "; gzip -f ".$out_file;
-	&doit($command, $dry_run, $die_one_error, $verbose);  
+	&doit($command, $dry_run, $die_on_error, $verbose);  
     }
 }
 
@@ -555,7 +555,7 @@ sub CalcOligoDistrib {
 	$command .= " -return occ -distrib -nogrouprc";
 	$command .= " -o ".$distrib_file;
 	$command .= " ; gzip -f ".$distrib_file;
-	&doit($command, $dry_run, $die_one_error, $verbose);  
+	&doit($command, $dry_run, $die_on_error, $verbose);  
 	
 	#### Fit a Poisson and a negbin on occurrence distribution
 	foreach my $theor ("negbin", "poisson") {
@@ -564,7 +564,7 @@ sub CalcOligoDistrib {
 	    $command .= " -o ".$fitting_file;
 	    $command .= " -distrib ".$theor;
 	    $command .= " ; gzip -f ".$fitting_file;
-	    &doit($command, $dry_run, $die_one_error, $verbose);  
+	    &doit($command, $dry_run, $die_on_error, $verbose);  
 		}
     }
 }
@@ -594,7 +594,7 @@ sub CalcDyadFreq {
 	$command .= " -nogrouprc";
 	$command .= " -o $dyad_file";
 	$command .= "; gzip -f $dyad_file ";
-	&doit($command, $dry_run, $die_one_error, $verbose);
+	&doit($command, $dry_run, $die_on_error, $verbose);
     }
 }
 
@@ -608,7 +608,7 @@ sub PrintHelp {
 NAME
 	install-organism
 
-        2001 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
+        2001 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
 	
 USAGE
         install-organism -org organism_name
@@ -848,14 +848,14 @@ sub StartAndStopCodons {
     $command .= "-format wc -nocomment -label orf \ ";
     $command .= " | oligo-analysis -type dna -l 3 -return occ,freq -v -format wc -1str -sort \ ";
     $command .= " -o $dir{genome}/${organism_short_name}_stop_codon_frequencies";
-    &doit($command, $dry_run, $die_one_error, $verbose);
+    &doit($command, $dry_run, $die_on_error, $verbose);
 
     $command = "retrieve-seq -v -org ${organism_short_name} -all  \ ";
     $command .= "-type upstream -from 0 -to 2  \ ";
     $command .= "-format wc -nocomment -label orf \ ";
     $command .= " | oligo-analysis -type dna -l 3 -return occ,freq -v -format wc -1str -sort \ ";
     $command .= " -o $dir{genome}/${organism_short_name}_start_codon_frequencies";
-    &doit($command, $dry_run, $die_one_error, $verbose);
+    &doit($command, $dry_run, $die_on_error, $verbose);
 }
 
 
@@ -1188,7 +1188,7 @@ sub ParseGenome {
 	&FatalError("Cannot find a directory $organism_short_name in genbank dir $dir{genbank}" );
     }
     my $command = "$RSA/perl-scripts/parse-genbank.pl -v 1 -i $dir{source}";
-    &doit($command, $dry_run, $die_one_error, $verbose);
+    &doit($command, $dry_run, $die_on_error, $verbose);
 }
 
 ################################################################
@@ -1214,7 +1214,7 @@ sub CleanUp {
     }
     foreach my $file (@files) {
 	my $command = "rm -f $file";
-	&doit($command, $dry_run, $die_one_error, $verbose);
+	&doit($command, $dry_run, $die_on_error, $verbose);
     }
 }
 

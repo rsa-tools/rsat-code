@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.77 2004/05/07 07:11:43 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.78 2004/05/17 15:35:48 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -573,6 +573,7 @@ sub CalcOligoOptions {
    $oligo_options .= " ".$strands;
    $oligo_options .= " -l ".$oligo_len;
    $oligo_options .= " -thosig ".$thosig;
+   $oligo_options .= " -thmsf ".$thmsf if (defined($thmsf));
    
    if ($markov) {
 	### Markov chain model
@@ -628,13 +629,14 @@ sub CalcOligoOptions {
 	$oligo_options .= " -bg ".$background;
 	
    }
-   $oligo_options .= " -return occ,proba,mseq,rank";
+   $oligo_options .= " -return occ,mseq,freq,proba,rank";
    $oligo_options .= " ".$noov;
    
    $oligo_suffix = "_oligos";
    $oligo_suffix .= "_${oligo_len}nt";
    $oligo_suffix .= $strands;
-   $oligo_suffix .= "_sig${thosig}";
+   $oligo_suffix .= "_sig".$thosig;
+   $oligo_suffix .= "_thmsf".$thmsf if (defined($thmsf));
    $oligo_suffix .= $noov;
    
    $oligo_file = "$family_name/oligos_${family_name}/".$family{$family_name}->{file_prefix}.$oligo_suffix;    
@@ -1637,7 +1639,7 @@ sub AnalyzeFamilies {
 
 sub PrintHelp {
 #### display full help message #####
-   $HELP_FAMILY_FILE = &help_message("family file");
+   $HELP_FAMILY_FILE = &help_message("class file");
    open HELP, "| more";
    print HELP <<End_of_help;
 NAME
@@ -1712,6 +1714,12 @@ OPTIONS
 		from the conditions (seq lengths, seq number, ...)
 	-thosig threshold on occurrence significance
 
+
+   oligo-analysis specific options
+	-thmsf threshold on frequency of matching sequences (propotion
+	        of sequences with at least one occurrence of the
+	        pattern)
+
    oligo-analysis options
 	-maxol	maximum oligonucleotide length
 	-minol	minimum oligonucleotide length
@@ -1732,8 +1740,8 @@ OPTIONS
 		dyad-analysis.
 
    Matrix-based pattern discovery options (consensus, gibbs, meme)
-       -width  matrix width
-	-sps	expected number of sites per sequence
+       -width  matrix width (default $matrix_width)
+       -sps	expected number of sites per sequence
 		(default $expected_sites_per_gene)
 
    Gibbs sampler (Neuwald, 1995)
@@ -1890,9 +1898,10 @@ multiple-family-analysis options
 -ovlp		allow overlapping matches for self-overlapping patterms
 -pseudo		pseudo-weight (see oligo-analysis manual)
 -nomap		do not draw feature maps (for saving time and hard disk space)
--bg		background frequency modelEnd_short_help
+-bg		background frequency model
 -calib_dir	calibration directory
 -thosig         threshold on occurrence significance
+-thmsf		threshold on frequency of matching sequences 
 -markov #	exp. freq. calcualted with Markov chain model of order #
 -known		file containing a list of known sites/motifs
 -schema		database schema (default: $schema)
@@ -1900,7 +1909,7 @@ multiple-family-analysis options
 -user		database user (default: $user)
 -password	database password (default: $password)
 ## Matrix-based pattern dscovery
--width		matrix width
+-width		matrix width (default $matrix_width)
 -sps		expected number of sites per sequence (default $expected_sites_per_gene)
 ## Gibbs sampler
 -seed		seed number for the random generator
@@ -2045,6 +2054,10 @@ sub ReadArguments {
 	    #### threshold
 	} elsif ($ARGV[$a] =~ /^-thosig/) {
 	    $force{th} = $ARGV[$a+1];
+
+	    #### threshold on mseq frequency
+	} elsif ($ARGV[$a] =~ /^-thmsf/) {
+	    $thmsf = $ARGV[$a+1];
 
 	    #### dyad type
 	} elsif ($ARGV[$a] =~ /^-type/) {

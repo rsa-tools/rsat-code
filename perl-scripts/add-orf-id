@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: add-orf-id,v 1.5 2003/10/29 09:04:12 jvanheld Exp $
+# $Id: add-orf-id,v 1.6 2004/05/17 15:35:48 jvanheld Exp $
 #
 # Time-stamp: <2003-07-06 20:15:40 jvanheld>
 #
@@ -21,11 +21,17 @@ $start_time = $date = `date '+%d/%m/%y %H:%M:%S %Z'`;
 
 #### check parameter values
 
+#### accepted feature types
+unless (defined %accepted_feature_types) {
+    %accepted_feature_types = %supported_feature_types;
+}
+$feature_types = join ",", keys (%accepted_feature_types);
+
 #### organism
 &CheckOrganism($organism_name);
 
 ### read ORF information
-&ReadFeatures($organism_name);
+&ReadFeatures($organism_name,"",$feature_types);
 &ReadSynonyms($organism_name);
 
 ### open output file ###

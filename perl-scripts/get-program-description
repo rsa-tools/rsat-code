@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-program-description,v 1.8 2004/05/07 07:11:43 jvanheld Exp $
+# $Id: get-program-description,v 1.9 2004/05/17 15:35:48 jvanheld Exp $
 #
 # Time-stamp: <2003-06-26 17:17:06 jvanheld>
 #
@@ -39,6 +39,8 @@ if ($all) {
     $exclude{test_scripts} = 1;
     $exclude{util} = 1;
     $exclude{RCS} = 1;
+    $exclude{CVS} = 1;
+    $exclude{parsers} = 1;
 
     if (defined($RSA)) {
 	@listing = glob("$RSA/perl-scripts/*");
@@ -46,9 +48,10 @@ if ($all) {
 	foreach $file (@listing) {
 	    $program = `basename $file`;
 	    chomp $program;
-	    unless ($exclude{$program}) {
-		push @program_names, $program; 
-	    }
+	    
+	    next if ($exclude{$program});
+	    next if ($program =~ /\~/);
+	    push @program_names, $program; 
 	}
     } 
 
@@ -147,27 +150,29 @@ DESCRIPTION
 CATEGORY
 	util
 
-OPTIONS
-	-h	(must be first argument) display full help message
-	-help	(must be first argument) display options
-	-v	verbose
-	-i inputfile
-		if not specified, the standard input is used.
-		This allows to place the command within a pipe.
+OPTIONS 
+
+	-h	display full help message 
+	-help	display options 
+	-v	verbose 
+	-i	inputfile 
+		If not specified, the standard input is used.  This
+		allows to place the command within a pipe.  
+
 		The input file should contain a list of program
 		names. Each program name should come as the first word
 		of a new line (any text following the first owrd of a
 		line is ignored).
-	-p program
-		name of th program for which the descrition is
+
+	-p	program 
+		Name of the program for which the descrition is
 		requested. This argument can be used iteratively on
 		the same command line to get a description for several
 		programs.
-	-o outputfile
-		if not specified, the standard output is used.
-		This allows to place the command within a pipe.
-	-all
-		get description for all RSA-tools programs. 
+	-o	outputfile
+		If not specified, the standard output is used.  This
+		allows to place the command within a pipe.
+	-all	get description for all RSA-tools programs.
 
 EXAMPLE
 	get-program-description -p dna-pattern -p oligo-analysis
@@ -177,8 +182,8 @@ End_of_help
   exit;
 }
 
-sub PrintOptions {
 #### display short help message #####
+sub PrintOptions {
   open HELP, "| more";
   print HELP <<End_short_help;
 get-program-description options
@@ -196,8 +201,8 @@ End_short_help
 }
 
 
-sub ReadArguments {
 #### read arguments ####
+sub ReadArguments {
     foreach my $a (0..$#ARGV) {
 	### verbose ###
 	if ($ARGV[$a] eq "-v") {

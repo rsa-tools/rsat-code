@@ -13,7 +13,14 @@ $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
 
 
 
-&ReadArguments;
+&ReadArguments();
+
+
+#### accepted feature types
+unless (defined %accepted_feature_types) {
+    %accepted_feature_types = %supported_feature_types;
+}
+$feature_types = join ",", keys (%accepted_feature_types);
 
 #### default : return sequences of all types
 unless (defined(%return)) {
@@ -29,7 +36,7 @@ unless (defined(%return)) {
    
 #### organism
 $organism = &CheckOrganism($organism_name);
-&ReadFeatures($organism_name);
+&ReadFeatures($organism_name,"",$feature_types);
 
  
 #&OldReadOrganism();
@@ -176,7 +183,7 @@ sub PrintHelp {
 NAME
 	coding-or-not 
 
-	1997,1998 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be).
+	1997,1998 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be).
 
 DESCRIPTION
 	Starting from a complete assembled genome, generate

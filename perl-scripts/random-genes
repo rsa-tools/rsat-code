@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-genes,v 1.8 2004/05/07 06:58:38 jvanheld Exp $
+# $Id: random-genes,v 1.9 2004/05/17 15:35:49 jvanheld Exp $
 #
 # Time-stamp: <2003-09-10 23:21:27 jvanheld>
 #
@@ -133,7 +133,7 @@ exit(0);
 
 #### display full help message #
 sub PrintHelp {
-    $HELP_FAMILY_FILE = &help_message("family file");
+    $HELP_FAMILY_FILE = &help_message("class file");
     open HELP, "| more";
     print HELP <<End_of_help;
 NAME

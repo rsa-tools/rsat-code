@@ -110,7 +110,8 @@ $out = &OpenOutputFile($outputfile);
 &CheckOrganism($organism_name);
 
 #### read data
-&ReadFeatures($organism_name);
+$feature_types = sort keys %supported_feature_types;
+&ReadFeatures($organism_name,"",$feature_types);
 &ReadSynonyms($organism_name);
 
 
