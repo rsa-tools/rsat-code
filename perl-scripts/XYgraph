@@ -243,7 +243,7 @@ if ($x_grid_step1 > 0) {
 	$grid_pos = $left + ($g-$x_axis_min)*$x_scale;
 	if ($xlog) {
 	    next unless (&IsInteger($g));
-	    $grid_value = exp($g);
+	    $grid_value = $x_log_base^$g;
 	    $grid_text = sprintf("%g^%-6g", $x_log_base, $g);
 	} else {
 	    $grid_value = $g;
@@ -259,7 +259,7 @@ if ($y_grid_step1 > 0) {
     for ($g = $y_axis_min; $g <= $y_axis_max; $g += $y_grid_step1) {
 	if ($ylog) {
 	    next unless (&IsInteger($g));
-	    $grid_value = exp($g);
+	    $grid_value = $y_log_base^$g;
 	    $grid_text = sprintf("%g^%-6g", $y_log_base, $g);
 	} else {
 	    $grid_value = $g;
