@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.51 2002/06/21 12:01:20 jvanheld Exp $
+# $Id: oligo-analysis,v 1.52 2002/09/03 18:56:37 jvanheld Exp $
 #
-# Time-stamp: <2002-06-21 13:53:56 jvanheld>
+# Time-stamp: <2002-09-03 13:54:41 jvanheld>
 #
 ############################################################
 
@@ -853,6 +853,7 @@ sub CalcZscore {
 	    } else {
 #		$patterns{$pattern_seq}->{ovlp} = &OverlapCoeff($pattern_seq);
 		$patterns{$pattern_seq}->{est_var} = $patterns{$pattern_seq}->{nb_possible_pos} * $patterns{$pattern_seq}->{exp_freq}*(2*$patterns{$pattern_seq}->{ovlp} - 1 - (2*$oligo_length+1)*$patterns{$pattern_seq}->{exp_freq});
+
 #       	$patterns{$pattern_seq}->{est_var} = $patterns{$pattern_seq}->{nb_possible_pos} * $patterns{$pattern_seq}->{exp_freq}*(1 - $patterns{$pattern_seq}->{exp_freq});
 	    }
 	    if ($patterns{$pattern_seq}->{est_var} > 0) {
@@ -862,6 +863,18 @@ sub CalcZscore {
 		$stdev = "NA";
 		$patterns{$pattern_seq}->{zscore} = "NA";
 	    }
+#  	    print STDERR join ("\t", 
+#  			       $pattern_seq,
+#  			       $patterns{$pattern_seq}->{occ},
+#  			       $patterns{$pattern_seq}->{exp_occ},
+#  			       $patterns{$pattern_seq}->{nb_possible_pos},
+#  			       $patterns{$pattern_seq}->{exp_freq},
+#  			       1-$patterns{$pattern_seq}->{exp_freq},
+#  			       $patterns{$pattern_seq}->{ovlp},
+#  			       $patterns{$pattern_seq}->{est_var},
+#  			       sqrt($patterns{$pattern_seq}->{est_var}),
+#  			       $patterns{$pattern_seq}->{zscore}
+#  			       ), "\n";
 	}
     }
 }
@@ -1005,8 +1018,9 @@ sub CalcProba {
 	
 	### Significance index for occurrence number
 	if ($nb_possible_oligo > 0) {
+	    $patterns{$pattern_seq}->{occ_E} = $nb_possible_oligo*$patterns{$pattern_seq}->{occ_pro};
 	    if ($patterns{$pattern_seq}->{occ_pro} > 0) {
-		$patterns{$pattern_seq}->{occ_sig} = -log($nb_possible_oligo*$patterns{$pattern_seq}->{occ_pro})/log(10);
+		$patterns{$pattern_seq}->{occ_sig} = -log($patterns{$pattern_seq}->{occ_E})/log(10);
 	    } else {
 		$patterns{$pattern_seq}->{occ_sig} = 999; ### arbitrary number to indicate we are over the precision limit
 	    }
@@ -1027,10 +1041,11 @@ sub CalcProba {
 	    
 	    ### Significance index for number of matching sequences
 	    if ($nb_possible_oligo > 0) {
+		$patterns{$pattern_seq}->{ms_E} = $nb_possible_oligo*$patterns{$pattern_seq}->{ms_pro};
 		if ($patterns{$pattern_seq}->{ms_pro} > 0) {
-		    $patterns{$pattern_seq}->{ms_sig} = -log($nb_possible_oligo*$patterns{$pattern_seq}->{ms_pro})/log(10);
+		    $patterns{$pattern_seq}->{ms_sig} = -log($patterns{$pattern_seq}->{ms_E})/log(10);
 		} else {
-		    $patterns{$pattern_seq}->{ms_sig} = 20;
+		    $patterns{$pattern_seq}->{ms_sig} = 999;
 		}
 	    }
 	}
@@ -1050,6 +1065,7 @@ sub PrintHeaderLine {
     $col_description{"occ"} = "observed occurrences";
     $col_description{"exp_occ"} = "expected occurrences"; 
     $col_description{"occ_prb"} = "occurrence probability (binomial)";
+    $col_description{"occ_E"} = "E-value for occurrences (binomial)";
     $col_description{"occ_sig"} = "occurrence significance (binomial)";
     $col_description{"zscore"} = "z-score (normal)"; 
     $col_description{"occ_lkh"} = "occurrence likelihood"; 
@@ -1060,6 +1076,7 @@ sub PrintHeaderLine {
     $col_description{"ems_cor"} = "expected number of matching sequences, corrected for autocorrelation (Poisson approx)";
     $col_description{"ms_prb"} = "matching sequence probability (binomial)";
     $col_description{"ms_sig"} = "matching sequenc significance (binomial)";
+    $col_description{"ms_E"} = "E-value for matching sequences (binomial)";
     $col_description{"ms_freq"} = "observed matching sequence frequency"; 
     $col_description{"exp_msf"} = "expected matching sequence frequency"; 
     $col_description{"ms_rati"} = "observed/expected matching seqyences"; 
@@ -1094,6 +1111,7 @@ sub PrintHeaderLine {
 	push(@out_col,"exp_occ") if ($return{'exp_freq'});
 	if ($return{'proba'}) {
 	    push(@out_col,"occ_prb");
+	    push(@out_col,"occ_E");
 	    push(@out_col,"occ_sig");
 	}
 	push(@out_col,"zscore") if ($return{'zscore'});
@@ -1110,6 +1128,7 @@ sub PrintHeaderLine {
 	    push(@out_col,"exp_ms");
 	    push(@out_col,"ems_cor") unless ($noov);
 	    push(@out_col,"ms_prb");
+	    push(@out_col,"ms_E");
 	    push(@out_col,"ms_sig");
 	}
 	push(@out_col,"ms_freq") if ($return{'freq'});
@@ -1326,6 +1345,7 @@ sub PrintResult {
 		} else {
 		    printf $out "\t%.2g", $patterns{$pattern_seq}->{occ_pro};
 		}
+		printf $out "\t%.1e", $patterns{$pattern_seq}->{occ_E};
 		printf $out "\t%.2f", $patterns{$pattern_seq}->{occ_sig};
 	    }
 	    
@@ -1365,6 +1385,7 @@ sub PrintResult {
 		} else {
 		    printf $out "\t%.2g", $patterns{$pattern_seq}->{ms_pro};   
 		}
+		printf $out "\t%.2g", $patterns{$pattern_seq}->{ms_E};
 		printf $out "\t%.1f", $patterns{$pattern_seq}->{ms_sig};
 	    }
 	    printf $out "\t%7.5f", $patterns{$pattern_seq}->{ms_freq} if ($return{'freq'});
