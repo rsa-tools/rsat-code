@@ -1,7 +1,7 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: parse-genbank.pl,v 1.13 2003/12/01 15:27:28 jvanheld Exp $
+# $Id: parse-genbank.pl,v 1.14 2003/12/17 18:09:18 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -123,6 +123,8 @@ package main;
     chdir ($dir{input});
     push @genbank_files, glob("*.gbk");
     push @genbank_files, glob("*.gbk.gz");
+    push @genbank_files, glob("*.genomic.gbff");
+    push @genbank_files, glob("*.genomic.gbff.gz");
     if ($#genbank_files < 0) {
 	&FatalError("There is no genbank file in the input directory $dir{input}\n");
     } else {
@@ -134,8 +136,13 @@ package main;
 
     #### output directory
     unless (defined($dir{output})) {
-	$dir{output} = "$RSA/data/genomes/".$org."/genome";
-	warn "; Auto selection of output dir\t$dir{output}\n" if ($verbose >= 1);
+	if ($dir{input} =~ /refseq/) {
+	    $dir{output} = $parsed_data."/refseq/gbff/".$delivery_date;
+	    warn "; Auto selection of output dir\t$dir{output}\n" if ($verbose >= 1);
+	} else {
+	    $dir{output} = "$RSA/data/genomes/".$org."/genome";
+	    warn "; Auto selection of output dir\t$dir{output}\n" if ($verbose >= 1);
+	}
     }
     &CheckOutputDir();
     chdir $dir{main};
