@@ -244,8 +244,12 @@ PURGE_MIS=3
 PURGE_ML=100
 purge_one_orf:
 	@mkdir -p ${PURGED_DIR}
-	purge-sequence -1str -ml ${PURGE_ML} -mis ${PURGE_MIS}		\
-		-i ${COLLECT_FILE} -o ${PURGED_FILE}
+	purge-sequence -1str -ml ${PURGE_ML} -mis ${PURGE_MIS}	\
+		-i ${COLLECT_FILE}				\
+		| convert-seq -from fasta -to wc		\
+		| grep -vE '\\n+\\'				\
+		| convert-seq -from wc -to fasta		\
+		> ${PURGED_FILE}
 	@echo "Purged orthologs for ORF ${ORF}	${PURGED_FILE}"
 
 ################################################################
