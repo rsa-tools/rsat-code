@@ -105,14 +105,22 @@ if ($query->param('return') =~ /count/i) {
   
 ### return matching positions
 } elsif ($query->param('return') =~ /positions/) { 
-  ### origin ###
-  if ($query->param('origin') =~ /end/i) {
-    $parameters_dna_pattern .= " -origin -0";
-  }
-  
-  if ($query->param('flanking') =~ /^\d+$/) {
-    $parameters_dna_pattern .= " -N ".$query->param('flanking');
-  }
+    $parameters .= " -pos";
+    
+    ### origin ###
+    if ($query->param('origin') =~ /end/i) {
+	$parameters_dna_pattern .= " -origin -0";
+    }
+    
+    if ($query->param('flanking') =~ /^\d+$/) {
+	$parameters_dna_pattern .= " -N ".$query->param('flanking');
+    }
+    
+    
+    #### match format
+    if ($query->param('match_format') eq "fasta") {
+	$parameters .= " -match_format fasta";
+    }
 }
 
 ### prevent overlapping matches
@@ -159,7 +167,7 @@ unless ($query->param("sequence_type") =~ /chromosome/) {
     }
 }
 
-print "<PRE>$command</PRE>" if ($ECHO);
+print "<PRE>$command</PRE>" if ($ECHO >= 1);
 
 ################################################################
 ### execute the command ###
@@ -174,8 +182,10 @@ if ($query->param("output") =~ /display/i) {
     &PrintHtmlTable(RESULT, $result_file);
     close RESULT;
     
-    system "grep -v '^;' $result_file | cut -f $orf_col | sort -u > $result_file.genes";
+    my $gene_file = "$result_file.genes";
+    system "grep -v '^;' $result_file | cut -f $orf_col | sort -u > $gene_file";
     $export_genes = `cat $result_file.genes`;
+    &DelayedRemoval($gene_file);
 
 #    if ($export_genes =~ /\S/) {
 	&PipingForm () ;

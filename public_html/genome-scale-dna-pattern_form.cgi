@@ -23,6 +23,7 @@ $default{flanking} = "4";
 $default{threshold} = "0";
 $default{subst} = "0";
 $default{origin} = "end";
+$default{match_format} = "table";
 
 
 ### replace defaults by parameters from the cgi call, if defined
@@ -160,7 +161,13 @@ print CGI::table({-border=>0,-cellpadding=>3,-cellspacing=>0},
 			       $query->popup_menu(-name=>'origin',
 						  -Values=>['start',
 							    'end'],
-						  -default=>$default{origin})
+						  -default=>$default{origin}),
+			       "<A HREF='help.dna-pattern.html#match_format'><B>Format</B></A>",
+			       $query->popup_menu(-name=>'match_format',
+						  -Values=>['table',
+							    'fasta'],
+						  -default=>$default{match_format})
+
 			       ]),
 		      CGI::td({-align=>left,-valign=>MIDDLE},
 			      [
@@ -190,17 +197,25 @@ print "<BR>\n";
 
 ### substitutions
 print "<B><A HREF='help.dna-pattern.html#subst'>Substitutions </A></B>&nbsp;\n";
-print $query->textfield(-name=>'subst',
-			-default=>$default{subst},
-			-size=>2);
+print $query->popup_menu(-name=>'subst',
+			 -Values=>[0..1],
+			 -default=>$default{subst});
+#print "<B><A HREF='help.dna-pattern.html#subst'>Substitutions </A></B>&nbsp;\n";
+#print $query->textfield(-name=>'subst',
+#			-default=>$default{subst},
+#			-size=>2);
 
 
 print "<BR>\n";
 
 
 
-### send results by e-mail or display on the browser
+### send results by email or display on the browser
 &SelectOutput;
+
+
+print "<font color=red><B>Warning ! genome-scale searches can be time-consuming. If you don't obtain any result after 5 minuts,  we recommend email output.</b></font><BR>\n";
+
 
 ### action buttons
 print "<UL><UL><TABLE>\n";
