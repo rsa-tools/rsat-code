@@ -13,6 +13,7 @@ my $start_time = &AlphaDate();
 local %infile = ();
 local %outfile = ();
 
+local $both_strands=0;
 local $verbose = 0;
 local $in = STDIN;
 local $out = STDOUT;
@@ -49,6 +50,7 @@ $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
 			      id
 			      length
 			      offset
+			      strand
 			      );
 foreach my $field (@supported_return_fields) {
     $supported_return_field{$field} = 1;
@@ -58,7 +60,6 @@ $supported_return_fields = join (",", @supported_return_fields);
 my %field_format = (match=>"%d",
 		    weight=>"%.2f",
 		    proba=>"%.2g",
-		    seq1=>"%s",
 		    seq2=>"%s",		
 		    id1=>"%s",
 		    id2=>"%s",		
@@ -67,6 +68,7 @@ my %field_format = (match=>"%d",
 		    mlen=>"%d",
 		    tlen=>"%d",
 		    offset=>"%g",
+		    strand=>"%s",		
    );
 
 &ReadArguments();
@@ -129,60 +131,10 @@ if ($verbose >= 1) {
 
 ## Count matches for each pair of input sequences	
 foreach $pattern1 (@pattern1) {
-    $seq1 = $pattern1->get_attribute("sequence");
-    $id1 =  $pattern1->get_attribute("id");
     foreach $pattern2 (@pattern2) {
-	$seq2 = $pattern2->get_attribute("sequence");
-	$id2 =  $pattern2->get_attribute("id");
-	local @result = ();
-	local $match;
-	local $weight;
-	local $proba;
-	local $offset;
-	local $len1;
-	local $len2;
-	local $mlen;
-	local $tlen;
-
-	## Check input sequences
-	&FatalError("You must specify a first sequence") unless ($seq1);
-	&FatalError("You must specify a second sequence") unless ($seq2);
-	
-	################################################################
-	## Count the matches
-	if ($slide) {
-	    ($match, $weight, $proba, $mlen, $offset) = &BestMatch($seq1,$seq2);
-	} else {
-	    ($match, $weight, $proba, $mlen) = &CountMatches($seq1,$seq2);
-	}
-	if ($return_field{length}) {
-	    $len1 = length($seq1);
-	    $len2 = length($seq2);
-	    $tlen = $len1 + $len2 - $mlen; ## total length of the alignment
-	}
- 	
-	################################################################
-	## Print the result for this comparison
-	my $to_print = 1;
-	foreach my $field (@return_fields) {
-	    my $result = $$field;
-
-	    ## Check thresholds on this field
-	    if ((defined($lth{$field})) && ($result < $lth{$field})) {
-		$to_print = 0;
-		last
-	    }
-	    if ((defined($uth{$field})) && ($result > $uth{$field})) {
-		$to_print = 0;
-		last
-	    }
-
-	    ## Format the field
-	    push @result, sprintf $field_format{$field}, $result;
-	    warn join "\t", ";", $field, $result, "\n" if ($verbose >= 3);
-	}
-	if ($to_print) {
-	    print $out join ("\t", @result), "\n";
+	&OneMatch($pattern1, $pattern2, 0);
+	if ($both_strands) {
+	    &OneMatch($pattern1, $pattern2, 1);
 	}
     }
 }
@@ -193,6 +145,74 @@ exit(0);
 ################### subroutine definition ######################
 ################################################################
 
+################################################################
+## Match one pattern against another one
+sub OneMatch {
+    my ($pattern1, $pattern2, $reverse) = @_;
+    $seq1 = $pattern1->get_attribute("sequence");
+    $id1 =  $pattern1->get_attribute("id");
+
+    ## Match direct or reverse complement
+    $strand = "D";
+    if ($reverse) {
+	$seq1 = &ReverseComplement($seq1);
+	$strand = "R";
+#	$id1 .= "_rev";
+    }
+    
+    $seq2 = $pattern2->get_attribute("sequence");
+    $id2 =  $pattern2->get_attribute("id");
+    local @result = ();
+    local $match;
+    local $weight;
+    local $proba;
+    local $offset;
+    local $len1;
+    local $len2;
+    local $mlen;
+    local $tlen;
+
+    ## Check input sequences
+    &FatalError("You must specify a first sequence") unless ($seq1);
+    &FatalError("You must specify a second sequence") unless ($seq2);
+    
+    ################################################################
+    ## Count the matches
+    if ($slide) {
+	($match, $weight, $proba, $mlen, $offset) = &BestMatch($seq1,$seq2);
+    } else {
+	($match, $weight, $proba, $mlen) = &CountMatches($seq1,$seq2);
+    }
+    if ($return_field{length}) {
+	$len1 = length($seq1);
+	$len2 = length($seq2);
+	$tlen = $len1 + $len2 - $mlen; ## total length of the alignment
+    }
+    
+    ################################################################
+    ## Print the result for this comparison
+    my $to_print = 1;
+    foreach my $field (@return_fields) {
+	my $result = $$field;
+
+	## Check thresholds on this field
+	if ((defined($lth{$field})) && ($result < $lth{$field})) {
+	    $to_print = 0;
+	    last
+	    }
+	if ((defined($uth{$field})) && ($result > $uth{$field})) {
+	    $to_print = 0;
+	    last
+	    }
+
+	## Format the field
+	push @result, sprintf $field_format{$field}, $result;
+	warn join "\t", ";", $field, $result, "\n" if ($verbose >= 3);
+    }
+    if ($to_print) {
+	print $out join ("\t", @result), "\n";
+    }
+}
 
 ################################################################
 #### display full help message 
@@ -254,6 +274,12 @@ OPTIONS
 		shift seq1 in order to obtain the best scoring
 		alignment. Negative values represent a shit of seq2 to
 		the left side, positive values ot the right side.
+
+	-2str 	Match on both strands 
+		In addition to the direct matching (strand = D), the
+		reverse complement of each pattern of group 1
+		(specified by -seq1 or -file1) is matched against each
+		pattern of group2.
 
 INPUT FORMAT
     PATTERNS
@@ -377,6 +403,7 @@ count-matches options
 -lth            lower threshold on a given field
 -uth            upper threshold on a given field
 -slide	      	find best match by sliding seq2 along seq1
+-2str		match on both strands
 End_short_help
   close HELP;
   exit;
@@ -452,6 +479,10 @@ sub ReadArguments {
 	    ### slide sequences 
 	} elsif ($ARGV[$a] eq "-slide") {
 	    $slide = 1;
+	    
+	    ### strands
+	} elsif ($ARGV[$a] eq "-2str") {
+	    $both_strands = 1;
 	    
 	}
     }
