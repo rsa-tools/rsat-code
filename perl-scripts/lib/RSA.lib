@@ -1,6 +1,8 @@
 #!/usr/bin/perl
 use CGI;
 #require "cgi-lib.pl";
+
+local $verbose = 0;
 require "RSA.seq.lib";
 require "RSA.stat.lib";
 umask 0022;
