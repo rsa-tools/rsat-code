@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: patser.cgi,v 1.12 2002/09/16 16:12:58 jvanheld Exp $
+# $Id: patser.cgi,v 1.13 2002/09/16 16:32:24 jvanheld Exp $
 #
-# Time-stamp: <2002-09-16 11:12:19 jvanheld>
+# Time-stamp: <2002-09-16 11:28:51 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -124,6 +124,16 @@ if ($query->param('case') eq "sensitive") {
 }
 
 ################################################################
+#### unrecognized characters
+if ($query->param('unrecognized') eq "errors") {
+    $parameters .= " -d0";
+} elsif ($query->param('unrecognized') =~ /no warning/) {
+    $parameters .= " -d2";
+} else {
+    $parameters .= " -d1";
+}
+
+################################################################
 ### thresholds ###
 if (&IsReal($query->param('lthreshold'))) {
     $parameters .= " -ls ".$query->param('lthreshold');
@@ -133,7 +143,18 @@ if (&IsReal($query->param('uthreshold'))) {
     $parameters .= " -u ".$query->param('uthreshold');
 }
 
+################################################################
+### vertically print the matrix
+if ($query->param('vertically_print')){
+    $parameters .= " -p";
+}
+
+
+################################################################
+#### echo the command (for debugging)
 print "<pre>$patser_command $parameters</pre>" if ($ECHO);
+
+################################################################
 ### execute the command ###
 if ($query->param('output') eq "display") {
     ### parameters for the piping to the feature map ###
