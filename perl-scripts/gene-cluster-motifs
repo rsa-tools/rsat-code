@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.81 2004/08/18 20:52:22 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.82 2004/08/19 22:47:31 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -988,46 +988,18 @@ sub ReadKnownSites {
 	    chomp;
 	    @fields = split "\t";
 	    $family_name = &trim($fields[0]);
-	    $known_site = &trim($fields[1]);
-	    next if (length($known_site) > $known_site_max_len);
+	    $site_sequence = &trim($fields[1]);
+	    next if (length($site_sequence) > $known_site_max_len);
 	    $source = &trim($fields[2]);
-	    #$known_site = &compress_pattern($known_site,"n");
-	    $known_site =~ s/N/n/g;
-	    push @{$known_site{$family_name}}, $known_site;
+	    #$site_sequence = &compress_pattern($site_sequence,"n");
+	    $site_sequence =~ s/N/n/g;
+	    push @{$known_site{$family_name}}, $site_sequence;
 	    push @{$known_site_source{$family_name}}, $source;
+	    warn join ("\t", "; known site", $family_name, $site_sequence, $source), "\n" if ($main::verbose >= 2);
 	}
 	close KNOWN_SITE;
    }
 }
-
-
-#  ################################################################
-#  ## Read known sites from a tab-delimited file
-#  ## Obsolete : has been replaced by ReadKnownSites
-#  sub ReadSiteLibrary {
-#      my ($library_file) = @_;
-#      @site_library = ();
-#      if (-e $library_file) {
-#  	open LIBRARY, $library_file;
-#  	while (<LIBRARY>) {
-#  	    next if (/^;/);
-#  	    next if (/^\#/);
-#  	    next unless (/\S/);
-#  	    chomp;
-#  	    my @fields = split "\t";
-#  	    my $source = $fields[2] || $library_file;
-#  	    my $id = uc($fields[1]);
-#  	    my $sequence = uc($fields[0]);
-#  	    $sequence =~ s/N/n/g;
-	    
-#  	    $pattern = RSAT::pattern->new(id=>$id,
-#  					 sequence=>$sequence,
-#  					 source=>source);
-#  	    push @site_library, $pattern;
-#  	}
-#  	close LIBRARY;
-#      }
-#  }
 
 
 ################################################################
@@ -1275,7 +1247,7 @@ sub IndexConsensus {
 ################################################################
 ## Index a matrix
 sub IndexMatrix {
-   my ($family_name, $consensus_file, $map_link, $row, $col, %args) = @_;
+   my ($family_name, $matrix_file, $map_link, $row, $col, %args) = @_;
    my $format = $args{format};
    my @attributes = ();
 #     if ($format eq "consensus") {
@@ -1296,7 +1268,7 @@ sub IndexMatrix {
 #     } else {
 #         &FatalError("Invalid format for a matrix $format");
 #     }
-   warn join ("\t", "; Indexing $format matrix for family", $family_name, $consensus_file, $row, $col), "\n" if ($verbose >= 2);
+   warn join ("\t", "; Indexing $format matrix for family", $family_name, $matrix_file, $row, $col), "\n" if ($verbose >= 2);
    my $matrix = new RSAT::matrix();
    my $matrix_result = "";
 
@@ -1304,7 +1276,7 @@ sub IndexMatrix {
    ## error, if the output file does not contain any matrix. This is
    ## the case for some output files of consensus, due to a bug.
    eval {
-       $matrix->readFromFile($consensus_file, $format);
+       $matrix->readFromFile($matrix_file, $format);
        $matrix->calcConsensus();
        $matrix->calcInformation();
        $matrix_result = $matrix->toString(sep=>" ", col_width=>4, type=>"alignment");
@@ -1312,7 +1284,7 @@ sub IndexMatrix {
    };
    if ($@) {
        $matrix_result = "<font color=red>No matrix could be found in the output file</font>";
-       &Warning("No matrix found. Skipped.");
+       &Warning(join ("\t", "No matrix found. Skipped.", $format, $matrix_file));
    }
    $table[$row][$col] = "<a href=".$map_link.">Results</a>\n";
    $table[$row][$col] .= "<table cellpadding=3>\n";

@@ -18,5 +18,5 @@ and
 and
 	bf.factor_ac = f.id
 and
-	f.organism = 'human, Homo sapiens'
+	f.organism = 'fruit fly, Drosophila melanogaster'
 ;

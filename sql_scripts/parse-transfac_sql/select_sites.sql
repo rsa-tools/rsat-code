@@ -2,28 +2,28 @@
 -- select sites for a selected organism
 -- export columns in the appropriate order for feature-map
 select 
-     site.gene_name,
+     s.gene_name,
      'site',
-     site_binding_factors_expanded.factor_name,
+     bf.factor_name,
      'DR',
-     site.position_first,
-     site.position_last,
-     site.site_sequence,
+     s.position_first,
+     s.position_last,
+     s.site_sequence,
      '',
-     site.id,
-     site.gene_ac,
-     site_binding_factors_expanded.factor_ac,
-     site.organism
+     s.id,
+     s.gene_ac,
+     bf.factor_ac,
+     s.organism
 from 
-     site,
-     site_binding_factors_expanded
+     site s,
+     site_binding_factors_expanded bf
 where 
-     site.organism = 'fruit fly, Drosophila melanogaster'
-and
-	site.id = site_binding_factors_expanded.id
+     s.organism = 'fruit fly, Drosophila melanogaster'
+and  s.id = bf.id
+-- and  bf.factor_name like '%Prd%'
 into outfile
-      'transfac_sites_Drosophila_melanogaster.tab'
---      '/Users/jvanheld/rsa-tools/public_html/tmp/transfac_sites_Drosophila_melanogaster.tab'
+     'transfac_sites_Drosophila_melanogaster.tab'
+--     '/Users/jvanheld/rsa-tools/public_html/tmp/transfac_sites_Drosophila_melanogaster.tab'
 ;
 
 
