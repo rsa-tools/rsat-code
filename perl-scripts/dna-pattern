@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dna-pattern,v 1.31 2004/03/29 10:58:38 jvanheld Exp $
+# $Id: dna-pattern,v 1.32 2004/04/02 22:05:02 jvanheld Exp $
 #
 # Time-stamp: <2003-08-13 12:16:03 jvanheld>
 #
@@ -31,7 +31,7 @@ if ($HelpRequested) {
 }
 
 
-&ReadArguments;
+&ReadArguments();
 
 ################################################################
 #
@@ -69,6 +69,7 @@ unless (($allowed_subst eq "") || (&IsNatural($allowed_subst))) {
 			  pattern_seq=>$pattern_seq,
 			  );
 @patterns = sort {$b->get_attribute("score") <=> $a->get_attribute("score")} @patterns;
+
 
 #### check patterns
 if ($main::verbose >= 2) {
@@ -154,6 +155,7 @@ while ((($current_seq, $sequence_id, @comments) = &ReadNextSequence($in, $in_for
     
     $sequence_length = length($current_seq);
 
+
     #### verbose
     warn "; Scanning sequence\t$sequence_id\t$sequence_length\n" if ($verbose >= 2);
 
@@ -163,6 +165,9 @@ while ((($current_seq, $sequence_id, @comments) = &ReadNextSequence($in, $in_for
 	$orig_pos = $origin;
     }
     
+    ## Print sequence limits
+    &PrintSequenceLimits($sequence_id, $sequence_length, $orig_pos);
+
     if ($search_method eq "sliding window") {
 	&SlidingWindowSearch();
 	
@@ -536,6 +541,7 @@ sub PrintMatchLocations {
 sub PrintMatchLocation {
     my ($match) = @_;
     my $matching_seq = uc($match->get_attribute("matching_seq"));
+
     my $strand = $match->get_attribute("strand");
     
     if ($match->get_attribute("type") eq "regexp") {
@@ -1363,3 +1369,36 @@ EndOfHelp
     close HELP;
     exit(0);
 }
+
+
+################################################################
+## Print the start and end positions of the sequence
+sub PrintSequenceLimits {
+    my ($sequence_id, $sequence_length, $orig_pos) = @_;
+
+    my $seq_start = new RSA::pattern(
+				     sequence_id => $sequence_id,
+				     pattern_id=>"SEQ_START",
+				     strand => "DR",
+				     start_pos => -$orig_pos,
+				     end_pos => -$orig_pos,
+				     pattern_seq => "-",
+				     matching_seq => "-",
+				     score=>0,
+				     );
+    &PrintMatchLocation($seq_start);
+
+    my $seq_end = new RSA::pattern(
+				   sequence_id => $sequence_id,
+				   pattern_id=>"SEQ_END",
+				   strand => "DR",
+				   start_pos => $sequence_length - $orig_pos,
+				   end_pos => $sequence_length - $orig_pos,
+				   pattern_seq => "-",
+				   matching_seq => "-",
+				   score=>0,
+				   );
+    &PrintMatchLocation($seq_end);
+}
+
+

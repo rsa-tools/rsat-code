@@ -73,7 +73,7 @@ $col{score} = 7;
 $sequence_format = "fasta";
 
 ## Read arguments
-&ReadArguments ();
+&ReadArguments();
 
 ################################################################
 #### check argument values
@@ -523,7 +523,7 @@ sub DrawScaleBar {
 	while ($pos <= $view_to) {
 	    $text = sprintf "%d", $pos;
 	    $y = $sb_y - 8 - $small_font_height;
-	    $x = (PixelPos($pos) + PixelPos($pos+1) -1)/2;
+	    $x = (PixelPos($pos) + &PixelPos($pos+1) -1)/2;
 	    $image->string($small_font, $x - length($text)/2*$small_font_width, $y, $text, $text_color);
 	    $image->line($x, $sb_y - 2, $x, $sb_y + 2, $black);
 	    $pos += $scale_bar_step;
@@ -544,7 +544,7 @@ sub DrawScaleBar {
 	while ($pos <= $view_to) {
 	    $text = sprintf "%d", $pos;
 	    $x = $sb_x - 8 - length($text) * $small_font_width;
-	    $y = (PixelPos($pos) + PixelPos($pos+1) -1)/2;
+	    $y = (PixelPos($pos) + &PixelPos($pos+1) -1)/2;
 	    $image->string($small_font, $x, $y - ($small_font_height/2), $text, $text_color);
 	    $image->line($sb_x - 2, $y, $sb_x + 2, $y, $black);
 	    $pos += $scale_bar_step;
@@ -559,8 +559,8 @@ sub ReadMapData {
 
     while ($new_data_line = <$in>) {
 	next if ($new_data_line =~ /^;/); ### skip comment lines
-	next unless ($new_data_line =~ /\S/); # skip empty lines
-	$new_data_line =~ s/\r//g;
+	next unless ($new_data_line =~ /\S/); ## skip empty lines
+	$new_data_line =~ s/\r//g; ## Remove DOS-specific carriage return
 	chomp($new_data_line);
 	unless ($new_data_line =~ /\t/) {   # if there are no tabs,
 	    $new_data_line =~ s/ +/\t/g; # single or multiple spaces are considered as a single tab
@@ -598,11 +598,11 @@ sub ReadMapData {
 	}
 
 	#### feature type ####
-	if (lc($temp_features{feature_type}) eq "end") {   ### map end position
+	if (lc($temp_features{id}) eq "seq_end") {   ### map end position
 	    $map_end{$current_map} = $temp_features{start_pos};
-	} elsif (lc($temp_features{feature_type}) eq "start") {   ### map start position
+	} elsif (lc($temp_features{id}) eq "seq_start") {   ### map start position
 	    $map_start{$current_map} = $temp_features{start_pos};
-	} elsif (lc($temp_features{feature_type}) eq "origin") {   ### map origin position
+	} elsif (lc($temp_features{feature_type}) eq "seq_origin") {   ### map origin position
 	    $map_origin{$current_map} = $temp_features{start_pos};
 	} else 	{ ### new feature for the map
 	    #### feature identifier ####
@@ -834,28 +834,28 @@ sub CalcDimensions {
     
     
     #### min and max positions ####
-    unless (IsReal($view_from) && (IsReal($view_to))) {
+    unless (&IsReal($view_from) && (&IsReal($view_to))) {
 	foreach $map (@map_list) {
 	    foreach $f (@{$features{$map}}) {
-		push(@pos_list, $f->{start_pos}) if (IsReal( $f->{start_pos}));
-		push(@pos_list, $f->{end_pos}) if (IsReal( $f->{end_pos}));
+		push(@pos_list, $f->{start_pos}) if (&IsReal( $f->{start_pos}));
+		push(@pos_list, $f->{end_pos}) if (&IsReal( $f->{end_pos}));
 	    }
-	    if (IsReal($map_start{$map})) {
+	    if (&IsReal($map_start{$map})) {
 		push(@pos_list,$map_start{$map});
 	    }
-	    if (IsReal($map_end{$map})) {
+	    if (&IsReal($map_end{$map})) {
 		push(@pos_list,$map_end{$map});
 	    }
 	}
 	$min_pos = &min(@pos_list);
 	$max_pos = &max(@pos_list);
     }
-    if (IsReal($view_from)) {
+    if (&IsReal($view_from)) {
 	$view_from -= $origin;
     } else {
 	$view_from = $min_pos;
     }
-    if (IsReal($view_to)) {
+    if (&IsReal($view_to)) {
 	$view_to -= $origin;
     } else {
 	$view_to = $max_pos;
@@ -1552,8 +1552,8 @@ OPTIONS
 
 SUPPORTED FEATURE TYPES
 	A few special types are defined
-	- START		downstream limit of the features to draw
-	- END		upstream limit of the features to draw
+	- SEQSTART     	starting position for the curent map
+	- SEQEND	ending position for the current map
 	- ORIGIN	map-specific origin (all coordinates of the map
 			are recalculated relative to this value)
 
@@ -1869,8 +1869,8 @@ sub DrawFeatureBox {
     ################################################################
     ### calculate position of the corners of the feature box 
     if ($horizontal_map) {
-	$feature_left = PixelPos($start);
-	$feature_right = PixelPos($end +1) -1;
+	$feature_left = &PixelPos($start);
+	$feature_right = &PixelPos($end +1) -1;
 	if (($strand =~ /^DR$/i) || ($strand =~ /^RD$/i)) {
 	    $feature_bottom = $backbone_pos + $feature_thick;
 	    $feature_top = $backbone_pos  - $feature_thick;
@@ -1886,8 +1886,8 @@ sub DrawFeatureBox {
 	}
 	$feature_mid_pos = ($feature_left + $feature_right)/2;
     } else { 
-	$feature_top = PixelPos($start);
-	$feature_bottom = PixelPos($end +1) -1;
+	$feature_top = &PixelPos($start);
+	$feature_bottom = &PixelPos($end +1) -1;
 	if (($strand =~ /^DR$/i) || ($strand =~ /^RD$/i)) {
 	    $feature_right = $backbone_pos + $feature_thick;
 	    $feature_left = $backbone_pos  - $feature_thick;
@@ -2100,12 +2100,12 @@ sub DrawMapBackbone {
     }
     if ((defined($map_start{$map})) && ($map_start{$map}>=$view_from) && ($map_start{$map}<=$view_to)) {
 	$map_start{$map} =~ s/\s//g;
-	$backbone_start = PixelPos($map_start{$map});
+	$backbone_start = &PixelPos($map_start{$map});
     } else {
 	$backbone_start = $map_start;
     }
     if ((defined($map_end{$map})) && ($map_end{$map} >= $view_from) && ($map_end{$map} <= $view_to)) {
-	$backbone_end = PixelPos($map_end{$map} + 1) -1;
+	$backbone_end = &PixelPos($map_end{$map} + 1) -1;
     } else {
 	$backbone_end = $map_end -1;
     }
@@ -2125,13 +2125,13 @@ sub DrawMapBackbone {
 	#### scale on the backbone
 	if (($scalebar) && ($scale_bar_step > 0)) {
 	    $pos = $grid_min;
-	    $x = (PixelPos($pos) + PixelPos($pos+1) -1)/2;
+	    $x = (PixelPos($pos) + &PixelPos($pos+1) -1)/2;
 	    while ($x <= $backbone_end) {
 		if ($x >= $backbone_start) {
 		    $image->line($x, $backbone_pos - 2, $x, $backbone_pos + 2,  $black);
 		}
 		$pos += $scale_bar_step;
-		$x = (PixelPos($pos) + PixelPos($pos+1) -1)/2;
+		$x = (PixelPos($pos) + &PixelPos($pos+1) -1)/2;
 	    }
 	}
 
@@ -2146,13 +2146,13 @@ sub DrawMapBackbone {
 	#### scale on the backbone
 	if (($scalebar) && ($scale_bar_step > 0)) {
 	    $pos = $grid_min;
-	    $y = (PixelPos($pos) + PixelPos($pos+1) -1)/2;
+	    $y = (PixelPos($pos) + &PixelPos($pos+1) -1)/2;
 	    while ($y <= $backbone_end) {
 		if ($y >= $backbone_start) {
 		    $image->line($backbone_pos - 2, $y, $backbone_pos + 2, $y, $black);
 		}
 		$pos += $scale_bar_step;
-		$y = (PixelPos($pos) + PixelPos($pos+1) -1)/2;
+		$y = (PixelPos($pos) + &PixelPos($pos+1) -1)/2;
 	    }
 	}
     }

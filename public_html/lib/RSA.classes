@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: RSA.classes,v 1.7 2004/02/28 17:09:11 jvanheld Exp $
+# $Id: RSA.classes,v 1.8 2004/04/02 22:05:02 jvanheld Exp $
 #
 # Time-stamp: <2003-10-02 17:58:27 jvanheld>
 #
@@ -560,6 +560,10 @@ package RSA::pattern;
 	    description=>$args{description},
 	    score=>$args{score},
 	}, $class;
+
+	foreach my $key (keys %args) {
+	    $object->set_attribute($key, $args{$key});
+	}
 	return $object;
     }
 
