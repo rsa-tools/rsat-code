@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-matrix,v 1.6 2004/06/10 05:07:36 jvanheld Exp $
+# $Id: convert-matrix,v 1.7 2004/08/02 22:12:32 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -187,7 +187,22 @@ DESCRIPTION
 	Read a position-specific scoring matrix (PSSM) from different
 	formats, and exports it in a format that can be used by the
 	matrix matching program patser (Hertz et al, 1999).
-	
+
+	The program also converts the original matrix to provide
+	different position-specific scores (weight, frequencies,
+	information contents), general statistics (E-value, total
+	information content), and synthetic descriptions (consensus).
+
+	PSSM can be used to represent the binding specificity of a
+	transcription factor or the conserved residues of a protein
+	domain.
+
+	Each row of the matrix corresponds to one residue (nucleotide
+	or amino-acid depending on the sequence type).  Each column
+	corresponds to one position in the alignment.  The value
+	within each cell represents the frequency of each residue at
+	each position.
+
 CATEGORY
 	util
 	conversion
@@ -272,15 +287,19 @@ OUTPUT FORMATS
 
         I\'ij = F\'ij*ln(F\'ij/Pi)
 
+	One advantage of the corrected information content is that it
+	assigns finite values when Fij=0.
+
     margins
 	Calculate marginal values (column and row sum, min, max) for each 
         matrix. 
 
     parameters
-        Returns a series of parameters associated to the matrix. The list of
-        parameters to be exported depends on the input formats (each pattern
-        discovery program returns specific parameters, which are more or
-        less related to each others but not identical).
+        Returns a series of parameters associated to the matrix. The
+        list of parameters to be exported depends on the input formats
+        (each pattern discovery program returns specific parameters,
+        which are more or less related to each others but not
+        identical).
 
         Some additional parameters are optionally calculated
 
@@ -290,13 +309,37 @@ OUTPUT FORMATS
             Contrarily to most applications, this consensus is thus weighted
             by prior residue frequencies: a residue with a high frequency
             might not be represented in the consensus if this frequency does
-            not significantly exceed the expected frequency.
+            not significantly exceed the expected frequency. Uppercases are
+            used to highlight weights >= 1.
+
+            The consensus is exported as regular expression, and with the
+            IUPAC code for ambiguous nucleotides
+            (http://www.chem.qmw.ac.uk/iupac/misc/naseq.html).
+
+                    A                       (Adenine) 
+                    C                       (Cytosine)
+                    G                       (Guanine)
+                    T                       (Thymine)
+                    R       = A or G        (puRines)
+                    Y       = C or T        (pYrimidines)
+                    W       = A or T        (Weak hydrogen bonding)
+                    S       = G or C        (Strong hydrogen bonding)
+                    M       = A or C        (aMino group at common position)
+                    K       = G or T        (Keto group at common position)
+                    H       = A, C or T     (not G)
+                    B       = G, C or T     (not A)
+                    V       = G, A, C       (not T)
+                    D       = G, A or T     (not C)
+                    N       = G, A, C or T  (aNy)
+
+            The strict consensus indicates, at each position, the residue
+            with the highest positive weight.
 
         information
-            The total information is calculated by summing the information
-            content of all the cells of the matrix. This parameters is
-            already returned by the program consensus (Hertz), but not by
-            other programs.
+            The total information is calculated by summing the
+            information content of all the cells of the matrix. This
+            parameters is already returned by the program consensus
+            (Hertz), but not by other programs.
 
 End_of_help
   close HELP;
