@@ -1,8 +1,8 @@
 ############################################################
 #
-# $Id: makefile,v 1.1 2000/11/21 08:29:42 jvanheld Exp $
+# $Id: makefile,v 1.2 2000/11/26 09:12:03 jvanheld Exp $
 #
-# Time-stamp: <2000-11-21 09:29:18 jvanheld>
+# Time-stamp: <2000-11-26 06:07:23 jvanheld>
 #
 ############################################################
 
@@ -27,6 +27,13 @@ all:
 	make rsync_to_bach
 	make rsync_to_rubens
 
+swissprot:
+	perl parse_swissprot.pl -w 1 -test
+
+kegg:
+	make ligand
+	make genes
+
 ligand:
 	perl parse_ligand.pl -w 1
 
@@ -40,8 +47,8 @@ gaurab:
 	perl parse_gaurab.pl -w 1
 
 rsync_to_bach:
-	rsync -avl -e ssh ${PARSER} ${BACH_DIR}/programs/parsing/amaze_parsers
-	rsync -avl --delete -e ssh ${PARSED_DATA} ${BACH_DIR}
+	rsync -ruptvl --delete -e ssh ${PARSER} ${BACH_DIR}/programs/parsing/amaze_parsers
+	rsync -ruptvl --delete -e ssh ${PARSED_DATA} ${BACH_DIR}
 
 rsync_to_spica:
 	rsync -avl --delete -e ssh ${PARSED_DATA} ${SPICA_DIR}
