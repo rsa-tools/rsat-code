@@ -138,6 +138,9 @@ sub OpenInputFile {
 #    print "BOUM $filename";
     my $input_stream = STDIN; ### default is standard input
     my ($short_file_name, $input_dir) = ();
+    warn join ("\t", "; Opening input stream", $filename, $short_file_name, $input_dir), "\n" 
+	if ($verbose >= 2);
+
     if ($filename) {
 	unless (-e $filename) {
 	    if (-e "${filename}.gz") {
@@ -156,7 +159,6 @@ sub OpenInputFile {
 	$input_stream = INPUT;
 	($input_dir, $short_file_name) = &SplitFileName($filename);
     } 
-#    warn join "\t", $input_dir, $short_file_name, "\n";
     return ($input_stream, $input_dir);
 }
 
@@ -172,7 +174,9 @@ sub OpenOutputFile {
 	} else {
 	    $to_open = ">$filename";
 	}
-	unless (open(OUTPUT, "$to_open")) {
+#	print `pwd`;
+#	die  "$to_open";
+	unless (open OUTPUT, "$to_open") {
 	    &FatalError ("\tError : cannot write output file $filename\n");
 	}
 	$output_stream = OUTPUT;
@@ -184,11 +188,11 @@ sub OpenOutputFile {
 
 
 ################################################################
-# Name of the expected frequency file, 
-# given the organism and oiligo length
-#
+## Name of the expected frequency file, 
+## given the organism, oligo length and background model
+##
 sub ExpectedFreqFile {
-    my ($organism_name, $oligo_length) = @_;
+    my ($organism_name, $oligo_length, $background) = @_;
 
     #### organism
     &CheckOrganism($organism_name);
@@ -198,22 +202,22 @@ sub ExpectedFreqFile {
 	&FatalError("Invalid oligonucleotide length : must be a natural number");
     }
 
-    if ($oligo_length <= 0) {
-	&FatalError("Invalid oligonucleotide length : must be a >= 1");
+    if ($oligo_length < 1) {
+	&FatalError("Invalid oligonucleotide length : must be >= 1");
     }
-    if ($oligo_length >= 8) {
-	&FatalError("Invalid oligonucleotide length : must be a <= 8");
+    if ($oligo_length > 8) {
+	&FatalError("Invalid oligonucleotide length : must be <= 8");
     }
 
 
 
     #### build the name of the expected frequency file 
-    if ((-e "$data_dir/oligo-frequencies/${oligo_length}nt_non-coding_${organism_name}-1str.freq") || 
-	(-e "$data_dir/oligo-frequencies/${oligo_length}nt_non-coding_${organism_name}-1str.freq.gz")) {
-	$exp_freq_file = "$data_dir/oligo-frequencies/${oligo_length}nt_non-coding_${organism_name}-1str.freq";
+    if ((-e "$data_dir/oligo-frequencies/${oligo_length}nt_${background}_${organism_name}-1str.freq") || 
+	(-e "$data_dir/oligo-frequencies/${oligo_length}nt_${background}_${organism_name}-1str.freq.gz")) {
+	$exp_freq_file = "$data_dir/oligo-frequencies/${oligo_length}nt_${background}_${organism_name}-1str.freq";
     } else {
 	#### TEMPORARYL the previous format is still supported
-	$exp_freq_file = "$data_dir/oligo-frequencies/${oligo_length}nt_non-coding_${organism_name}.freq";
+	$exp_freq_file = "$data_dir/oligo-frequencies/${oligo_length}nt_${background}_${organism_name}.freq";
     }
     return $exp_freq_file;
 }
@@ -506,15 +510,6 @@ sub ExtractPath {
 }
 
 
-#sub PrintEnv {
-#### prints environment variables
-#### usage:
-#### &PrintEnv;
-#    foreach $key (sort keys %ENV) {
-#	print ";$key\t$ENV{$key}\n";
-#    }
-#}
-
 sub DelayedRemoval {
 #### send a unix command to remove a file the next day
 #### Usage:
@@ -563,26 +558,31 @@ sub PrintArguments {
 ###############  Genome data ###############################
 ############################################################
 
-### organism ###
+
+################################################################
+#### Check if an organism is supported on the current installation,
+#### and open streams to read its genome sequence.
 sub CheckOrganism {
     my ($organism_name, $feature_table_file) = @_;
     my $organism_object = new RSA::Organism;
 
-    &Warning("checking organism\t$organism_name") if ($warn_level >= 2);
+    &Warning("checking organism\t$organism_name") if ($verbose >= 2);
 
     &FatalError("You should specify an organism.", 
 		"Supported organisms\n".&ListSupportedOrganisms)
 	unless ($organism_name);
     
     unless ($supported_organism{$organism_name}) {
-	&FatalError("Unsupported organism $organism_name.",
+	&FatalError("Organism $organism_name is not supported.",
 		    "Supported on this site : \n".&ListSupportedOrganisms());
     }
+
+#    die ($organism_name, $supported_organism{$organism_name}->{genome_file});
     
     unless ($feature_table_file) {
 	$feature_table_file = $supported_organism{$organism_name}->{'features'};
     }	
-    &Warning("Feature table\t$feature_table_file") if ($warn_level >= 2);
+    &Warning("Feature table\t$feature_table_file") if ($verbose >= 2);
     $genome_file = $supported_organism{$organism_name}->{'genome'};
     $genome_seq_format = $supported_organism{$organism_name}->{'seq_format'};
     
@@ -634,9 +634,45 @@ sub CheckOrganism {
     return $organism_object;
 }
 
+
+################################################################
+#### return a random ORF selection
+#### usage 
+####      @random_orfs = &SelectRandomORFs($n, $replace);
+#### requires prior loading of an organism [see &LoadOrganism()]
+sub SelectRandomORFs {  
+  my ($rand_orf_nb, $replace, $init, $seed) = @_;
+  my @random_orfs = ();
+
+  #### initalize the random generator
+  if ($init) {
+      if ($seed) { ### defined seed
+	  srand($seed);
+      } else {
+	  srand (time); ### current time
+      }
+  }
+
+  my @orfs = keys %chr;
+  for my $i (1..$rand_orf_nb) {
+    my $remaining_orfs = $#orfs+1;
+    my $selected = int(rand($remaining_orfs));
+    warn ";", join ("\t", "Selected ORF", $selected, $remaining_orfs), "\n" if ($verbose >= 2);
+    if ($replace) {
+	push @random_orfs, $orfs[$selected];
+    } else {
+	push @random_orfs, splice(@orfs, $selected, 1);
+    }
+  }
+  return @random_orfs;
+}
+
+
+################################################################
+#### convert different strand formats into
+#### "D" (direct) and "R" (reverse)
 sub ConvertStrand {
     my ($strand_to_convert) = @_;
-    ### we adopt Madison notation: orientation is ">" or "<" 
     ### Heli's notation: F (forward) or R (reverse)
     $strand_to_convert =~ s/F/D/;
     $strand_to_convert =~ s/R/R/;
@@ -651,7 +687,9 @@ sub ConvertStrand {
     return $strand_to_convert;
 }
 
-### note: this version takes an organism as input
+################################################################
+#### read ORF positions for a given organism
+#### usage: &ReadOrfPositions($organism_name)
 sub ReadOrfPositions {
     ### usage
     ### &ReadOrfPositions($organism_name);
@@ -779,63 +817,12 @@ sub ReadOrfPositions {
 }
 
 
-### note: this version is valid for yeast only
-#  sub ReadYeastOrfPositions {
-#      $feature_table_file = $supported_organism{$organism_name}->{'features'};
-#      ($orfs) = &OpenInputFile($feature_table_file);
-#      while (<$orfs>) {
-#  	next if ((/^;/) || (/^\#/) || (/^--/));
-#  	next unless (/\S/);
-#  	chomp;
-#  	@fields = split("\t");
-#  	my $orf_id = uc($fields[0]);
-#  	my $name = uc($fields[2]);
-#  	my $chr = $fields[3];
-#  	my $start = $fields[4];
-#  	my $end = $fields[5];
-#  	my $descr = $fields[8];
-
-#  	$orf_id{uc($orf_id)} = $orf_id;
-#  	$orf_id{uc($name)} = $orf_id if ($name =~ /\S/);
-#  	if ($name eq "") {
-#  	    $name{$orf_id} = $orf_id;
-#  	} else {
-#  	    $name{$orf_id} = $name;
-#  	}
-#  	$orf_info{$orf_id} = $_;
-#  	$chr{$orf_id} = $chr;
-#  	$start{$orf_id} = $start;
-#  	$end{$orf_id} = $end;
-#  	$descr{$orf_id} = $descr;
-#  	$left{$orf_id} = &min($start{$orf_id},$end{$orf_id});
-#  	$right{$orf_id} = &max($start{$orf_id},$end{$orf_id});
-	
-#  	if ($end{$orf_id} > $start{$orf_id}) {
-#  	    $strand = "W";
-#  	} else {
-#  	    $strand = "C";
-#  	}
-#  	$strand = &ConvertStrand($strand);
-#  	$strand{$orf_id} = $strand;
-	
-#  	unless (defined @{$synonyms{$orf_id}}) {
-#  	    push @{$synonyms{$orf_id}}, $orf_id;
-#  	}
-	
-#  	unless (defined($chromosome{$chr})) {
-#  	    $chromosome{$chr} = new RSA::Chromosome(id=>$chr);
-#  	    $chromosome{$chr}->set_organism("Saccharomyces cerevisiae");
-#  	}
-#  	$chromosome{$chr}->add_gene($orf_id);
-#      } 
-#      close $orfs;
-    
-#  } ## ReadYeastOrfPositions
-
+################################################################
+#### read a list of synonyms for gene names, given an organism name
 sub ReadSynonyms {  
     #### read synonym file ###
     ### usage : &ReadSynonyms($organism_name);
-    $organism_name = $_[0];
+    my ($organism_name) = @_;
 
     unless ( $supported_organism{$organism_name}->{'synonyms'}) {
 	return;
@@ -884,9 +871,9 @@ sub ReadSynonyms {
 } ### ReadSynonyms
 
 
-####
-#### calculate the limits of the non-coding region on both sides of each gene
-####
+################################################################
+#### Calculate the limits of the non-coding region on both sides of
+#### each gene
 sub CalcNeighbourLimits {
     foreach my $chr (sort keys %chromosome) {
 	my @genes = sort { $left{$a} <=> $left{$b} } $chromosome{$chr}->get_genes();
@@ -1059,7 +1046,8 @@ sub FatalError {
     my @error_message = @_;
     my $message = join "\n\t", @error_message;
     $ENV{RSA_ERROR} = "1";
-    if ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi") {
+    my $context = $ENV{RSA_OUTPUT_CONTEXT} || "screen";
+    if ($context eq "cgi") {
 	$message =~ s/\n\t/ /g;
 	$message =~ s/\t/ /g;
 	&cgiError($message);
@@ -1090,7 +1078,7 @@ sub Warning {
 }
 
 sub cgiWarning {
-    my $warning_message = join "", @_;
+    my $warning_message = join "<P>", @_;
     my $warning_color = "#aa0000";
     &cgiMessage($warning_message, "Warning", $warning_color);
 }
