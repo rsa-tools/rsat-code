@@ -67,11 +67,13 @@ print "<BR>\n";
 
 ################################################################
 #### feature type
-print "<B><A HREF='help.gene-info.html#feattype'>Feature type</A></B>&nbsp;";
+#### feature type
+print "<B><A HREF='help.retrieve-seq.html#feattype'>Feature type</A></B>&nbsp;";
 print $query->radio_group(-name=>'feattype',
-			  -values=>['CDS','mRNA (only supported for some organisms)'],
+			  -values=>[@supported_feature_types],
 			  -default=>$default{feattype});
-print "<P>\n";
+print "<BR>\n";
+
 
 ################################################################
 ### full match
@@ -117,7 +119,7 @@ print $query->end_form;
 
 print "<TD><B><A HREF='help.gene-info.html'>MANUAL</A></B></TD>\n";
 #print "<TD><B><A HREF='tutorials/tut_gene-info.html'>TUTORIAL</A></B></TD>\n";
-print "<TD><B><A HREF='mailto:jvanheld\@ucmb.ulb.ac.be'>MAIL</A></B></TD>\n";
+print "<TD><B><A HREF='mailto:jvanheld\@scmbb.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
 print "</BLOCKQUOTE>\n";

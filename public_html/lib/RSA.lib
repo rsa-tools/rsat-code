@@ -127,7 +127,7 @@ sub OpenInputFile {
 #    warn "BOUM $filename";
     my $input_stream;
 #    my ($short_file_name, $input_dir) = &ShortFileName($filename);
-    warn join ("\t", "; Opening input stream", $filename, $short_file_name, $input_dir), "\n" 
+    warn join ("\t", "; Opening input stream", $filename), "\n" 
 	if ($verbose >= 2);
     my $input_dir = "";
     my $short_file_name = "";
@@ -189,7 +189,10 @@ sub OpenOutputFile {
 sub CheckOutDir {
     my ($output_dir, $umask) = @_;
 
-    next unless $output_dir;
+    unless ($output_dir) {
+	warn "; CheckOutDir\tNo directory has been specified\n" if ($main::verbose >= 1);
+	return;
+    }
 
     $umask = 0002 unless ($umask);
     umask($umask);
@@ -772,7 +775,7 @@ sub PrintArguments {
 ###############  Genome data ###############################
 ############################################################
 
-@supported_feature_types = qw (CDS mRNA tRNA rRNA);
+@supported_feature_types = qw (CDS mRNA tRNA rRNA scRNA);
 %supported_feature_types = ();
 foreach my $type (@supported_feature_types) {
     $supported_feature_types{lc($type)} = 1;
@@ -833,6 +836,9 @@ sub CheckOrganism {
 	$feature_table_file = $supported_organism{$organism_name}->{'features'};
     }	
     &Warning("Feature table\t$feature_table_file") if ($verbose >= 2);
+
+
+    warn join ("\t", $organism_name, $genome_file, $genome_seq_format, $feature_table_file) if ($main::verbose >= 0);
     
     if ($genome_seq_format eq "raw") {
 	### open a direct read access to the genome file
@@ -987,24 +993,27 @@ sub ReadFeatures {
 	$feature_table_file,
 	$feature_types)= @_;
 
-#      my @feature_types = ();
-#      my %accepted_feature_types = ();
-#      if ($feature_types) {
-#  	@feature_types = split ",", $feature_types;
-#      } else {
-#  	@feature_types = qw (cds);
-#      }
-#      foreach my $feature_type (@feature_types) {
-#  	$accepted_feature_type{$features_type}++;
-#      }
-
-    unless (defined (%accepted_feature_types)) {
-	%accepted_feature_types = (cds=>1,
-#				   mrna=>1,
-#				   trna=>1,
-#				   rrna=>1,
-				   );
+    my @feature_types = ();
+    my %accepted_feature_types = ();
+    if ($feature_types) {
+	@feature_types = split ",", $feature_types;
+    } else {
+  	@feature_types = qw (cds);
     }
+    foreach my $feature_type (@feature_types) {
+	warn join ("\t", "accepting feature type", $feature_type), "\n" if ($main::verbose >= 2);
+  	$accepted_feature_types{$feature_type}++;
+    }
+
+    warn join ("\t", "; Accepted feature types", join( ",", keys %accepted_feature_types)), "\n" if ($main::verbose >= 2);
+
+#      unless (defined (%accepted_feature_types)) {
+#  	%accepted_feature_types = (cds=>1,
+#  #				   mrna=>1,
+#  #				   trna=>1,
+#  #				   rrna=>1,
+#  				   );
+#      }
     
 
     unless ($feature_table_file) {
@@ -1030,42 +1039,18 @@ sub ReadFeatures {
 	next if ((/^;/) || (/^\#/) || (/^--/));
 	next if (/^--/);
 	chomp;
+
+	## Split the columns of the input row
 	@fields = split "\t";
+	foreach $f (keys %col) {
+	    $$f = $fields[$col{$f}];
+	}
 
-	if ($organism_name eq "yeast") {
-	    $orf_id = uc($fields[0]);
-	    $name = uc($fields[2]);
-	    $chr = $fields[3];
-	    $start = $fields[4];
-	    $end = $fields[5];
-	    $descr = $fields[8];
-	    
-	    $orf_id{uc($orf_id)} = $orf_id;
-	    $orf_id{uc($name)} = $orf_id if ($name =~ /\S/);
-
-	    if ($name eq "") {
-		$name{$orf_id} = $orf_id;
-	    } else {
-		$name{$orf_id} = $name;
-	    }
-	    $left = &min($start,$end);
-	    $right = &max($start,$end);
-	    
-	    if ($end > $start) {
-		$strand = "W";
-	    } else {
-		$strand = "C";
-	    }
-	    $strand = &ConvertStrand($strand);
-	} else {
-	    
-	    foreach $f (keys %col) {
-		$$f = $fields[$col{$f}];
-	    }
-
-
-#	    print join "\t", "HELLO", $name, $type, "\n";
-	    next unless ($accepted_feature_types{lc($type)});
+	## Check if the type of this feature is accepted
+	unless ($accepted_feature_types{lc($type)}) {
+	    warn join( "\t","skipping feature", $orf_id, "Non-selected feature type",$type), "\n" 
+		if ($main::verbose >= 5);
+	    next;
 	}
 	
 	#### check mandatory attributes
@@ -1128,16 +1113,21 @@ sub ReadFeatures {
 	    $chromosome{$chr}->set_organism($organism_name);
 	}
 	$chromosome{$chr}->add_gene($orf_id);
-# 	warn join( "\t",
-# 		   $orf_id,
-# 		   $chr,
-# 		   $strand,
-# 		   $left,
-# 		   $right,
-# 		   $descr{$orf_id},
-# 		   $chromosome{$chr}->count_genes()), "\n";
+	warn join( "\t",
+		   $orf_id,
+		   $chr,
+		   $strand,
+		   $left,
+		   $right,
+		   $descr{$orf_id},
+		   $chromosome{$chr}->count_genes()), "\n" if ($main::verbose >= 10);
     }
     close $orfs if ($feature_table_file);
+    
+    ## Check the number of features
+    if (scalar(keys(%orf_id)) < 1) {
+	&FatalError("There is no annotated feature of type ".$feature_types." in the genome of ".$organism_name);
+    }
 }
 
 

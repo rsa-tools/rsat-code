@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gene-info,v 1.2 2004/03/29 10:57:27 jvanheld Exp $
+# $Id: gene-info,v 1.3 2004/05/07 06:58:38 jvanheld Exp $
 #
 # Time-stamp: <2003-07-06 20:30:09 jvanheld>
 #
@@ -29,7 +29,7 @@ $match_description = 0;
 
 #### accepted feature types
 unless (defined %accepted_feature_types) {
-    $accepted_feature_types{cds} = 1;
+    %accepted_feature_types = %supported_feature_types;
 }
 $feature_types = join ",", keys (%accepted_feature_types);
 
@@ -43,7 +43,7 @@ $out = &OpenOutputFile($outputfile);
 &Verbose();
 
 ### read ORF information
-&ReadFeatures($organism_name);
+&ReadFeatures($organism_name,"",$feature_types); ## All supported feature types are accepted
 &ReadSynonyms($organism_name);
 
 
@@ -255,7 +255,7 @@ SYNONYMS
 	will provide the information about its synonym GAT1.
 
 WEB VERSION
-	http://www.ucmb.ulb.ac.be/bioinformatics/rsa-tools/
+	http://www.scmbb.ulb.ac.be/bioinformatics/rsa-tools/
 EnfOfHelp
   close HELP;
   exit(0);

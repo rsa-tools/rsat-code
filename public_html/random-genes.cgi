@@ -61,6 +61,14 @@ if (defined(%{$supported_organism{$organism}})) {
     &FatalError("Organism $organism is not supported on this site");
 }
 
+### feature type
+my ($feattype) = split " ", $query->param('feattype'); ### take the first word
+if ($feattype) {
+    $parameters .= " -feattype ".$feattype;
+}
+
+
+### Replacement
 if ($query->param('replacement')) {
     $parameters .= " -rep ";
 }
@@ -118,6 +126,7 @@ sub PipingForm {
 <INPUT type="hidden" NAME="organism" VALUE="$organism">
 <INPUT type="hidden" NAME="genes" VALUE="selection">
 <INPUT type="hidden" NAME="gene_selection" VALUE="$genes">
+<INPUT type="hidden" NAME="feattype" VALUE="$feattype">
 <INPUT type="submit" value="retrieve sequences">
 </FORM>
 </TD>

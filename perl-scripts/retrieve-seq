@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: retrieve-seq,v 1.33 2004/05/06 15:43:49 jvanheld Exp $
+# $Id: retrieve-seq,v 1.34 2004/05/07 06:58:38 jvanheld Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -12,8 +12,6 @@ if ($0 =~ /([^(\/)]+)$/) {
 require "RSA.lib";
 require "RSA.classes";
 require "RSA.seq.lib";
-
-# warn "Starting" if ($verbose >= 1);
 
 #### initialize parameters
 my $start_time = &AlphaDate;
@@ -138,7 +136,7 @@ if ($sequence_type eq "random fragments") {
 } else {
     ### read feature attributes (position, description, ...)
     warn "; ", &AlphaDate(), "\tReading ORF table for $organism_name\n" if ($verbose >= 1);
-    &ReadFeatures($organism_name, $feature_table_file);
+    &ReadFeatures($organism_name, $feature_table_file, $feature_types);
 
     #### read synonyms
     unless ($return_all) {
@@ -159,7 +157,10 @@ if ($noorf) {
 
 #### retrieve all
 if ($return_all) {
-    $query_file = $feature_table_file;
+    @queries = keys %orf_id;
+#      if (scalar(@queries) < 1) {
+#  	&FatalError("There is not a single feature of type ".$feature_types." in the genome of ".$organism_name);
+#      }
 } 
 
 #### select random ORFs
@@ -759,9 +760,11 @@ sub Verbose {
     if (defined($query_file)) {
 	printf $out "; %-14s\t%s\n", "Query file", $query_file;
     } else {
-	print $out "; Queries:\n";
-	foreach $q (@queries) {
-	    print $out ";	$q\n";
+	printf $out "; %-14s\t%d\n", "Queries", scalar(@queries);
+	unless ($return_all) {
+	    foreach $q (@queries) {
+		print $out ";	$q\n";
+	    }
 	}
     }
     print $out ";\n";

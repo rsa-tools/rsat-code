@@ -17,6 +17,7 @@ $default{organism} = "Saccharomyces cerevisiae";
 $default{gene_nb} = 20;
 $default{group_nb} = 1;
 $default{replacement} = "";
+$default{feattype} = "CDS";
 
 
 ### replace defaults by parameters from the cgi call, if defined
@@ -52,7 +53,7 @@ print $query->textfield(-name=>'group_nb',
 			-default=>$default{group_nb},
 			-size=>5);
 
-#### organism
+#### replacement
 print "&nbsp;&nbsp;&nbsp;\n";
 print $query->checkbox(-name=>'replacement',
 		       -checked=>$default{'replacement'},
@@ -61,14 +62,16 @@ print $query->checkbox(-name=>'replacement',
 print "&nbsp;<a href=help.random-genes.html#replacement>With replacement</a>";
 
 
-
- 
-
-
 #### organism
 print "<P>\n";
 &OrganismPopUp();
 
+#### feature type
+print "<B><A HREF='help.retrieve-seq.html#feattype'>Feature type</A></B>&nbsp;";
+print $query->radio_group(-name=>'feattype',
+			  -values=>[@supported_feature_types],
+			  -default=>$default{feattype});
+print "<BR>\n";
 
 
 ### send results by email or display on the browser
@@ -85,7 +88,7 @@ print $query->end_form;
 
 print "<TD><B><A HREF='help.random-genes.html'>MANUAL</A></B></TD>\n";
 print "<TD><B><A HREF='tutorials/tut_random-genes.html'>TUTORIAL</A></B></TD>\n";
-print "<TD><B><A HREF='mailto:jvanheld\@ucmb.ulb.ac.be'>MAIL</A></B></TD>\n";
+print "<TD><B><A HREF='mailto:jvanheld\@scmbb.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
 print "</FONT>\n";

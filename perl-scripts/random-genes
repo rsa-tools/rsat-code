@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-genes,v 1.7 2004/03/29 12:47:52 jvanheld Exp $
+# $Id: random-genes,v 1.8 2004/05/07 06:58:38 jvanheld Exp $
 #
 # Time-stamp: <2003-09-10 23:21:27 jvanheld>
 #
@@ -33,12 +33,22 @@ local $pairs = 0;
 &ReadArguments();
 
 
+################################################################
 #### check argument values 
+
+#### accepted feature types
+unless (defined %accepted_feature_types) {
+    $accepted_feature_types{cds} = 1;
+}
+$feature_types = join ",", keys (%accepted_feature_types);
+
+## Organism
 unless ($organism) {
     &FatalError("You should select an organism.");
 }
 &CheckOrganism($organism, $feature_table_file);
-&ReadFeatures($organism, $feature_table_file);
+&ReadFeatures($organism, $feature_table_file, $feature_types);
+
 
 ### open output file ###
 $out = &OpenOutputFile($outfile{output});
@@ -71,7 +81,6 @@ if ($infile{family}) {
 
 #### verbose 
 &Verbose if ($verbose);
-
 
 ###### initialize the random seed
 if ($seed) { ### defined seed
@@ -130,7 +139,7 @@ sub PrintHelp {
 NAME
 	random-genes
 
-        2002 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
+        2002 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
 	
 DESCRIPTION
 	Returns a random selection of genes for the specified
@@ -170,6 +179,9 @@ OPTIONS
 		alternate feature table. This option allows to speify
 		an alternate file where the ORF locations are found. 
 		See below for a description of the feature file format.
+	-feattype
+		Feature type.
+		Supported: $supported_feature_types
 	-rep	random selection with replacement
 		(a same ORF might appear several times in the output)
 	-n #	number of random genes to return
@@ -203,6 +215,7 @@ random-genes options
 -v		verbose
 -org		organism
 -features	alternate feature table
+-feattype	accepted feature types. Supported: $supported_feature_types
 -rep		random selection with replacement
 -n		number of genes
 -r #		repetitions (number of random families).
@@ -242,9 +255,20 @@ sub ReadArguments {
 	    $organism = $ARGV[$a+1];
 
 	    #### alternative feature file
-	} elsif ($ARGV[$a] =~ /^-feat/i) {
+	} elsif ($ARGV[$a] =~ /^-features/i) {
 	    $feature_table_file = $ARGV[$a+1];
 	    
+	    #### feature types
+	} elsif ($ARGV[$a] eq "-feattype") {
+	    my @feature_types = split ",", $ARGV[$a+1];
+	    foreach my $feature_type (@feature_types) {
+		if ($supported_feature_types{lc($feature_type)}) {
+		    $accepted_feature_types{lc($feature_type)}++;
+		} else {
+		    &FatalError("$feature_type invalid feature type. Supported: $supported_feature_types");
+		}
+	    }
+
 	    ### random selection with replacement
 	} elsif ($ARGV[$a] =~ /^-rep/) {
 	    $replace = 1;
