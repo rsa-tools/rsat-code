@@ -23,12 +23,12 @@ $supported_db = join ",", @supported_db;
 &ReadArguments();
 
 #### organism
-warn "; Checking organism $organism_name\n" if ($warn_level >= 1);
+warn "; Checking organism $organism_name\n" if ($verbose >= 1);
 &CheckOrganism($organism_name, $feature_table_file);
 
-warn "; Reading ORF table for $organism_name\n" if ($warn_level >= 1);
+warn "; Reading ORF table for $organism_name\n" if ($verbose >= 1);
 &ReadOrfPositions($organism_name, $feature_table_file);
-warn "; Reading synonyms for $organism_name\n" if ($warn_level >= 1);
+warn "; Reading synonyms for $organism_name\n" if ($verbose >= 1);
 &ReadSynonyms($organism_name);
 
 ### open input file ###
@@ -72,11 +72,16 @@ $link_end{'ymgv'} = "\">";
 
 
 while ($line = <$in>) {
+    if ($line =~ /^;/) {
+	#### comment lines are printed as such
+	print $line;
+	next;
+    }
     chomp($line);
     my @links = ();
     @fields = split "\t", $line;
     $name = $fields[$orf_col -1];
-    $orf = $orf_id{$name};
+    $orf = $orf_id{uc($name)};
     unless ($orf =~ /^;/) {
 	foreach my $database (@databases) {
 	    push @links, "[".$link_start{$database}.$orf.$link_end{$database}.$database."<\/a>]";
