@@ -68,8 +68,9 @@ if (&IsInteger($query->param('to'))) {
     $parameters .= " -to ".$query->param('to');
 }
 
-### orf overlap ###
-unless (lc($query->param('orf_overlap')) eq "on") {
+
+### prevent orf overlap ###
+if (lc($query->param('noorf')) eq "on") {
     $noorf = 1;
     $parameters .= " -noorf ";
 }
@@ -179,7 +180,7 @@ sub PipingForm {
 	    $background = "upstream";
 	}
     } else {
-	$background = "non-coding";
+	$background = "intergenic";
     }
 
   print <<End_of_form;

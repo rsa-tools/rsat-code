@@ -57,9 +57,15 @@ information is ignored. <P>
 <ul>
 Currentlly supported:
 <ul>
-<li><B>Upstream</B> sequences located upstream the coding region. The origin is at the start codon. 
-<li><B>Downstream</B> sequences located downstream the coding region. The origin is at the stop codon. 
-<li><B>ORF</B> DNA sequences located between the start and stop codons. WARNING: introns are not spliced out (this will be implemented in further versions)
+<li><B>Upstream</B> sequences located upstream the coding region. The
+origin is at the start codon.
+
+<li><B>Downstream</B> sequences located downstream the coding
+region. The origin is at the stop codon.
+
+<li><B>Unspliced ORF</B> DNA sequences located between the start and
+stop codons. WARNING: introns are not spliced out (this will be
+implemented in further versions)
 
 </ul>
 </ul>
@@ -101,21 +107,27 @@ good guess is from -200 to +50.  <LI>Binding sites for
 </ul>
 
 <A NAME="noorf"></A>
-<h4>Allow overlap with upstream ORFs:</h4>
+<h4>Prevent overlap with upstream ORFs:</h4>
 <ul>
 It is quite frequent to find a predicted ORF in close proximity
 upstream from a query ORF. If you want to discard these sequences from
-your analysis, inactivate this option, and the size of the upstream
-region will automatically be shortened when a predicted ORF is located
-within the range defined by the option <I>from</I>. The actual size
-selected for the upstream sequence is indicated in the sequence
-comments if you select the IG sequence format. 
+your analysis, you should make sure this option is active. 
+
+<P>
+When the option is checked, upstream sequences are automatically
+clipped when a predicted ORF is located within the range defined by
+the option <I>from</I>. The actual size retainedfor the upstream
+sequence is indicated in the sequence comments.
 
 <P> Note that in some cases a known regulatory element is located
 upstream or within a predicted ORF. This means either that the
 predited ORF is an artifact, or that the same sequence is bifunctional
-(coding and regulatory). For this reason, this option is activated by
-default. 
+(coding and regulatory). 
+
+<P>
+It is particularly important to activate this option when working with
+bacteria, since many genes are located in operons, and have a very
+close upstream neighbour.
 
 <!--
 <P> Note that the distance to the closest upstream neighbour can be

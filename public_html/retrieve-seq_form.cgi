@@ -16,6 +16,7 @@ $query = new CGI;
 $default{sequence_format} = "fasta";
 $default{seq_label} = "gene name";
 $default{organism} = "Saccharomyces cerevisiae";
+$default{noorf} = "checked";
 $default{from} = "default";
 $default{to} = "default";
 $default{genes} = "selection";
@@ -88,11 +89,11 @@ print $query->textfield(-name=>'to',
 			-size=>10);
 print "<BR>\n";
 
-### allow ORF overlap
-print $query->checkbox(-name=>'orf_overlap',
-  		       -checked=>'checked',
+### prevent ORF overlap
+print $query->checkbox(-name=>'noorf',
+  		       -checked=>$default{noorf},
   		       -label=>'');
-print "&nbsp;<A HREF='help.retrieve-seq.html#noorf'><B>allow overlap with upstream ORFs</B></A>";
+print "&nbsp;<A HREF='help.retrieve-seq.html#noorf'><B>Prevent overlap with upstream ORFs</B></A>";
 print "<BR>\n";
 
 
