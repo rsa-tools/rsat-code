@@ -1804,7 +1804,7 @@ sub calcConsensus {
     $self->set_parameter("consensus.regexp", $consensus);
 
     ## Remember that the consensus has been calculated
-    $self->set_parameter("consensus_calculated", 1);
+    $self->force_attribute("consensus_calculated", 1);
 
 }
 
