@@ -1,6 +1,9 @@
 #!/usr/bin/perl
 use CGI;
 
+$ECHO = 0; ### set to 1 for debigging: list parameters and echo the unix commands on the web interface
+    
+
 ### for debugging
 sub ListParameters {
   my($cgi_query) = $_[0];
@@ -22,9 +25,11 @@ sub ListParameters {
 sub RSA_header {
   ### usage &RSA_header($program_name)
   my ($title) = @_;
+  $title =~ s/\"//g;
+  $title =~ s/\'//g;
   print $query->header;
   ### print the header of the result page
-  print $query->start_html(-title=>'RSA-tools : $title',
+  print $query->start_html(-title=>"RSA-tools : $title",
                          -author=>'jvanheld@ucmb.ulb.ac.be',
                          -BGCOLOR=>'#FFFFFF');
 
@@ -275,6 +280,9 @@ sub PrintHtmlTable {
   
   print "<PRE>";
   while (<$FILE>) {
+#      if ($ENV{RSA_ERROR}) {
+#	  print "</PRE>HELLO";
+#      }
       s|$RSA/||g; #### avoid exposing the full path through the web interface
       if ($mirror) {
 	  print MIRROR $_

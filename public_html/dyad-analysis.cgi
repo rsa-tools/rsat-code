@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.13 2001/12/24 01:44:48 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.14 2001/12/24 01:51:14 jvanheld Exp $
 #
-# Time-stamp: <2001-12-24 02:44:39 jvanheld>
+# Time-stamp: <2001-12-24 02:50:31 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -40,9 +40,9 @@ $purge = $query->param('purge');
 ### sequence file
 ($sequence_file,$sequence_format) = &GetSequenceFile();
 if ($purge) {
-    $command= "$convert_seq_command -i $sequence_file -from $sequence_format -to fasta | $purge_sequence_command | $dyad_analysis_command -format fasta ";
+    $command= "$convert_seq_command -i $sequence_file -from $sequence_format -to fasta | $purge_sequence_command | $dyad_analysis_command ";
 } else {
-    $command= "$dyad_analysis_command -i $sequence_file -from $sequence_format ";
+    $command= "$dyad_analysis_command -i $sequence_file  ";
 }
 
 ### sequence file
