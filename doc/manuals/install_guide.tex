@@ -38,71 +38,95 @@ package \textbf{Regulatory Sequence Analysis Tools} (\RSAT).
 \subsection{Operating system}
 
 \RSAT is a unix-based package. It has been installed successfully on
-the following unix systems.
+the following operating systems.
 
 \begin{enumerate}
 \item Linux
+
 \item Mac OSX
+
 \item Sun Solaris
+
 \item Dec Alpha
-\item cygwin (under MS Windows 98)
+
+\item cygwin (under MS Windows 98) (except for the graphical
+librairies, because I did not find a cygwin version of GD.pm)
+
 \end{enumerate}
 
-\RSAT is not compatible with any version of Microsoft Windows and we
+\RSAT is not compatible with any version of Microsoft Windows and I
 have no intention to make it compatible in a foreseeable future. Since
 most programs are written in perl, part of them might run under
 windows, but some others will certainly not, because they include
 calls to unix system commands.
 
-\subsection{perl}
+\subsection{Perl language}
 
 The programs in \RSAT are written in perl. Version 5.1 or
 later is recommended.
+
+\subsection{Perl modules}
+
+Two perl modules are required for the graphical tools of \RSAT.
+
+\begin{description}
+\item[GD.pm] Interface to Gd Graphics Library.
+\item[PostScript::Simple]  Produce PostScript files from Perl.
+\end{description}
+
+These modules can be found in the Comprehensive Perl Archive Network
+(\url{http://www.cpan.org/}).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Installation
 \section{Installation}
 
-\RSAT can be distributed either as a compressed archive, or via the CVS
-server. The CVS distribution greatly facilitates updates.
-
-\textbf{Note} The CVS distribution will soon be available for external
-users, but we still need to configure the CVS server to accept a guest
-login. For the time being, the CVS distribution is still restricted to
-the people from the lab. Inbetween, the only distribution mode for
-external users is the compressed archive.
-
-\subsection{Installation from the CVS repository}
+For the time being, \RSAT is distributed as a compressed archive. In a
+near future, we will also distribute it via a CVS server, which will
+greatly facilitate the updates.
 
 
-Before being able to retrieve \RSAT from the CVS repository, you need
-an account on our server. For this, please contact Jacques van Helden
-(\email{jvanheld@scmbb.ulb.ac.be}).
+% \RSAT can be distributed either as a compressed archive, or via the CVS
+% server. The CVS distribution greatly facilitates updates.
 
-\subsubsection{First installation}
+% \textbf{Note} The CVS distribution will soon be available for external
+% users, but we still need to configure the CVS server to accept a guest
+% login. For the time being, the CVS distribution is still restricted to
+% the people from the lab. Inbetween, the only distribution mode for
+% external users is the compressed archive.
 
-The following command should be used the first time you retrieve the
-tools from the server:
-\begin{verbatim}
-cvs -d mylogin@rubens.ulb.ac.be:/rubens/dsk2/cvs co rsa-tools
-\end{verbatim}
+% \subsection{Installation from the CVS repository}
 
-This will create a directory \file{rsa-tools} on your computer, and
-store the programs in it. Note that at this stage the programs are not
-yet functional, because you still need to install genomes, which are
-not included in the CVS distribution.
 
-\subsubsection{Updates}
+% Before being able to retrieve \RSAT from the CVS repository, you need
+% an account on our server. For this, please contact Jacques van Helden
+% (\email{jvanheld@scmbb.ulb.ac.be}).
 
-Once the tools have been retrieved, you can obtain updates very
-easily. For this, you need to change your directory to the rsa-tools
-directory, and use the \texttt{cvs} command in the following way.
+% \subsubsection{First installation}
 
-\begin{verbatim}
-cd rsa-tools
-cvs update .
-\end{verbatim}
+% The following command should be used the first time you retrieve the
+% tools from the server:
+% \begin{verbatim}
+% cvs -d mylogin@rubens.ulb.ac.be:/rubens/dsk2/cvs co rsa-tools
+% \end{verbatim}
+
+% This will create a directory \file{rsa-tools} on your computer, and
+% store the programs in it. Note that at this stage the programs are not
+% yet functional, because you still need to install genomes, which are
+% not included in the CVS distribution.
+
+% \subsubsection{Updates}
+
+% Once the tools have been retrieved, you can obtain updates very
+% easily. For this, you need to change your directory to the rsa-tools
+% directory, and use the \texttt{cvs} command in the following way.
+
+% \begin{verbatim}
+% cd rsa-tools
+% cvs update .
+% \end{verbatim}
+
 
 \subsection{Installation from a compressed archive}
 
@@ -113,21 +137,19 @@ The \texttt{.zip} files can be uncompressed with the command
 \program{unzip}.
 
 \begin{verbatim}
-unzip rsat_yyyymmdd.zip
+unzip rsa-tools_yyyymmdd.zip
 \end{verbatim}
 where yyyymmdd stands for the version number (delivery date).
 
 If the \program{unzip} command is not supported on your system, you
-can uncompress the \texttt{.tar.gz} archive with the \program{gunzip}
-and \program{tar} commands, which are part of the default unix
+can uncompress the \texttt{.tar.gz} archive with the commands
+\program{gunzip} and \program{tar}, which are part of the default unix
 installation.
 
 \begin{verbatim}
-gunzip rsat_yyyymmdd.tar.gz
-tar -xpf rsat_yyyymmdd.tar
+gunzip rsa-tools_yyyymmdd.tar.gz
+tar -xpf rsa-tools_yyyymmdd.tar
 \end{verbatim}
-
-
 
 \section{Adding \RSAT to your path}
 
@@ -212,9 +234,9 @@ This file must be stored in your \RSAT data directory
 \file{/home/myaccount/rsa-tools/public\_html/data/}
 \end{quote}
 
-If you only downloaded some genomes, it is better to edit the file
-\file{supported\_organisms.pl} in order to delete the specification of
-other genomes. 
+If you only downloaded a subset of genomes, you will need to to edit
+the file \file{supported\_organisms.pl}, in order to delete the
+specification of other genomes.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Config file
@@ -231,8 +253,11 @@ cp RSA.config.default RSA.config
 \end{verbatim}
 
 In principle, this default configuration file is sufficient to run the
-tools on the command-line. You only need to edit it if you want to
-install a web server of the tools.
+tools on the command-line. 
+
+You only need to edit it if you want to install a web server of the
+tools, or if you want to specify custom settings (for example the
+installation of additional genomes on a separate hard drive).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -301,110 +326,16 @@ This should return a set of 3 bp sequences, mostly ATG (in the case of
 \item[PostScript::Simple]  Produce PostScript files from Perl.
 \end{description}
 
-
 To test if these modules are available on your machine, type.
 
 \begin{verbatim}
 feature-map -help
 \end{verbatim}
 
-If you receive the correct help message, it means that the library is
-intalled. If this is not the case, ask your system administrator to
-install the missing perl modules.
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Web server
-
-\section{Installing a local web server}
-
-The Regulatory Sequence Analysis Tools include a web server, which
-offers a user-friendly interface for biologists. The main server is
-available for academic users at \url{http://rsat.ulb.ac.be/rsat/}. A
-few additional mirrors have been installed in different countries.
-
-\subsection{Web server pages}
-
-The web pages are located in the directory
-\file{rsa-tools/public\_html}. This directory contains both the HTML
-pages, and the CGI scripts.
-
-\subsection{Configuration of the Apache server}
-
-In order to provide web access to the rsa-tools, you need to adapt the
-configuration of your web server. This requires root privileges
-(system administrator). 
-
-
-The detailed settings depend on your web server program. We provide
-here an example of typical settings for the Apache server (the most
-widely used web server).
-
-In summary, the configuration includes the following steps.
-
-\begin{enumerate}
-\item Open the apache configuration file \file{/etc/httpd/httpd.conf}
-
-\item Specify an alias for rsa-tools in the appropriate section.
-
-\begin{verbatim}
-Alias /rsa-tools "/home/myaccount/rsa-tools/public_html/"
-\end{verbatim}
-
-\item Give authorization to execute CGI scripts in the rsa-tools directory
-
-\begin{verbatim}
-ScriptAlias /cgi-bin/ "/home/myaccount/rsa-tools/public_html/
-\end{verbatim}
-
-\item Specify the access options for the rsa-tools directory.
-
-\begin{verbatim}
-<Directory "/home/myaccount/rsa-tools/public_html">
-   AllowOverride None
-   Options ExecCGI Indexes
-   Order allow,deny
-   Allow from all
-</Directory>
-\end{verbatim}
-
-\end{enumerate}
-
-These are the basic steps to configure the web access to
-\RSAT. Depending on your operating system, you probably need to
-specify some additional settings. For example, on the Max OSX version
-of Apache server allows to define a user-specific configuration in the
-directory \file{/etc/httpd/users}.
-
-Note that you need to restart the werb server for these changes to
-take effect.
-
-\subsection{Editing the configuration file for the server}
-
-If you want to install a web server, you need to edit two variables on
-the file \file{RSA.config}. Open this file with a text editor, and
-specify the variables \texttt{\$config\_site} and \texttt{\$WWW\_RSA}
-according to your local configuration.
-
-\subsection{testing the web server}
-
-To test the werb server, open a web browser and connect the URL
-\url{http://www.myserver/rsa-tools/} (you of course need to adapt the
- URL according to your IP address).
-
-If you can obtain a connection, try to execute the demonstration of
-the following pages.
-
-\begin{description}
-\item[\program{retrieve-seq}] to test the correct installation of genomes. 
-
-\item[\program{oligo-analysis}] to test the correct installation of
-background oligonucleotide frequencies.
-
-\item[\program{feature-map}] to test the correct installation of the
-graphical librairies.
-
-\end{description}
+If the modules are available, you should see the help message of the
+program feature-map. If not, you will see an error message complaining
+about the missing librairies. In such a case, ask your system
+administrator to install the missing modules.
 
 \section{Further steps}
 
