@@ -374,7 +374,7 @@ sub getPrior() {
 	%prior = $self->get_attribute("prior");
     } else {
 	if (scalar(keys %prior) <= 0) {
-	    &main::Warning( "No prior defined: using equiprobable residues");
+	    &main::Warning( "No prior defined: using equiprobable residues") if ($main::verbose >= 2);
 	    my @alphabet = $self->getAlphabet();
 	    my $alphabet_size = scalar(@alphabet);
 	    foreach my $letter (@alphabet) {
@@ -792,7 +792,7 @@ sub _readFromConsensusFile {
 	next unless (/\S/);
 	chomp();
 	if (/COMMAND LINE: /) {
-	    $command = $';
+	    $command = $'; # '
 	    $self->set_parameter("command", $command);
 	} elsif (/MATRIX\s(\d+)/) {
 	    $current_matrix_nb = $1;
@@ -1705,7 +1705,7 @@ sub calcFrequencies {
     ## Get or calculate prior residue probabilities
     my %prior = $self->get_attribute("prior");
     if (scalar(keys %prior) <= 0) {
-	&main::Warning( "No prior defined: using equiprobable residues");
+	&main::Warning( "No prior defined: using equiprobable residues") if ($main::verbose >= 2);
 	my $alphabet_size = scalar(@alphabet);
 	foreach my $letter (@alphabet) {
 	    $prior{$letter} = 1/$alphabet_size;
@@ -1786,7 +1786,7 @@ sub calcProbabilities {
     ## Get or calculate prior residue probabilities
     my %prior = $self->get_attribute("prior");
     if (scalar(keys %prior) <= 0) {
-	&main::Warning( "No prior defined: using equiprobable residues");
+	&main::Warning( "No prior defined: using equiprobable residues") if ($main::verbose >= 2);
 	my $alphabet_size = scalar(@alphabet);
 	foreach my $letter (@alphabet) {
 	    $prior{$letter} = 1/$alphabet_size;
