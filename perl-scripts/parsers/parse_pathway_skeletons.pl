@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_pathway_skeletons.pl,v 1.5 2002/05/28 14:24:55 jvanheld Exp $
+# $Id: parse_pathway_skeletons.pl,v 1.6 2002/10/25 17:56:05 jvanheld Exp $
 #
-# Time-stamp: <2002-05-28 16:10:58 jvanheld>
+# Time-stamp: <2002-10-25 11:54:57 jvanheld>
 #
 ############################################################
 
@@ -16,6 +16,11 @@ require "PFBP_loading_util.pl";
 package main;
 {
     #### default parameters
+
+    $schema="annotator";
+    $user="annotator";
+    $password="annotator";
+
     $fast_index = 1;
     $debug = 0;
     $clean = 0;
@@ -24,13 +29,13 @@ package main;
     $reverse = 0;
     $forward = 1;
     
-    $dir{amaze_export} = "/win/amaze/amaze_data/exported_2001_0719";
+#    $dir{amaze_export} = "/win/amaze/amaze_data/exported_2001_0719";
+    $dir{skeletons} = "/win/amaze/amaze_data/pathway_skeletons/";
 #    $dir{georges_export} = "/win/amaze/amaze_team/for_georges";
 #    $dir{skeletons} = "/win/amaze/amaze_team/gaurab/excel_tables/Pathway_ECno/Amino_acids/Amino_acid_biosyn";
 #    $dir{skeletons} = "/win/amaze/amaze_team/gaurab/2001_07/Pathway_ECno/";
 #    $dir{skeletons} = "/win/amaze/amaze_team/gaurab/excel_tables/Pathway_ECno/";
-    $dir{kegg_parsed} = "/win/amaze/amaze_data/parsed_data/kegg_parsed/20010925";
-    $dir{skeletons} = "/win/amaze/amaze_data/pathway_skeletons/";
+    $dir{kegg_parsed} = "$parsed_data/kegg_ligand/20020709";
 
     $in_file{georges_identified_compounds} = "/win/amaze/amaze_team/georges_cohen/excel_files_georges/unidentified_compounds/identified_compounds_2001_1007.tab";
 
@@ -145,10 +150,11 @@ package main;
     $processes->dump_tables();
     $leaves->dump_tables();
     foreach $class_holder ($processes, $leaves) {
-	$class_holder->generate_sql(schema=>"jvanheld", 
-				    grant=>"p3", 
+	$class_holder->generate_sql(schema=>$schema, 
+				    user=>$user,
+				    password=>$password,
 				    dir=>"$dir{output}/sql_scripts", 
-				    prefix=>"skel_");
+				    prefix=>"");
     }
     &ExportClasses($out_file{process_skeleton}, $out_format, @classes) if ($export{obj});
     &PrintStats($out_file{stats}, @classes);
@@ -249,6 +255,40 @@ OPTIONS
 		identified or not.
 	-clean remove all files from the outpu directory before
 	       parsing.
+	-skel  skeleton directory
+	       Directory with the input files. See below for a
+	       description of directory organization and file formats.
+
+FILES AND DIRECTORIES
+
+	The skeleton directory should contain one sudirectory per
+	organism (the name of the subdirectory is the name of
+	organism, wich spaces replaced by underscores).
+
+	Within each organism subdirectory, there is one file per
+	pathway.
+
+INPUT FORMAT
+        
+	Each pathway skeleton comes in a separate tab-delimited file.
+
+	Column  contents
+	----------------
+	1	reaction
+	2	EC number
+	3	gene
+	4	from_comp
+	5	to_comp
+	6	Reaction
+
+	(in George Cohen's files, there are some additional columns,
+	which are currently ignored)
+	7	Name of enzyme
+	8	Coenzyme
+	9	Remarks
+	10	Chromosome
+	11	Systematic deletion
+	12	pubmedID
 EndHelp
   close HELP;
 }
@@ -282,6 +322,10 @@ sub ReadArguments {
 	    ### clean
 	} elsif ($ARGV[$a] eq "-clean") {
 	    $main::clean = 1;
+
+	    ### skeleton directory
+	} elsif ($ARGV[$a] eq "-skel") {
+	    $main::dir{skeletons} = $ARGV[$a+1];
 
 	    ### ec seeds
 	} elsif ($ARGV[$a] eq "-seeds") {
@@ -332,9 +376,9 @@ sub LoadIndexes {
 
     #### amaze_id <-> kegg_id
     warn ("\tindexing reaction amaze_id <-> kegg_id ...\n") if ($verbose >=1);
-    $index{amaze_kegg} = PFBP::Index->new();
-    $index{amaze_kegg}->load("$dir{amaze_export}/amaze_kegg_reactions.tab", 0 , 0);
-    $index{kegg_amaze} = $index{amaze_kegg}->reverse();
+#    $index{amaze_kegg} = PFBP::Index->new();
+#    $index{amaze_kegg}->load("$dir{amaze_export}/amaze_kegg_reactions.tab", 0 , 0);
+#    $index{kegg_amaze} = $index{amaze_kegg}->reverse();
 
     #### patches on compound names
     warn ("\tindexing wrong_name <-> kegg_name ...\n") if ($verbose >=1);
@@ -435,6 +479,7 @@ sub ReadProcesses {
 	while (my $line = <FILE>) {
 	    $l++;
 	    chomp $line;
+	    next unless ($line =~ /\S/);
 	    $line =~ s/\r//;
 	    my @fields = split "\t", $line;
 	    warn "line\t$line\n" if ($verbose >=3);
@@ -708,20 +753,20 @@ sub ReadProcesses {
 			my $kegg_id = "";
 
 			#### try to identify the kegg reaction ID
-			if ($reaction =~ /aMAZE/) {
-			    #### convert amaze_id into kegg_id
-			    $kegg_id = $index{amaze_kegg}->get_first_value($reaction);
-			    if (defined($is_direct{$kegg_id})) {
-				$is_direct{$reaction} = $is_direct{$kegg_id};
-				warn join ("\t", 
-					   $reaction, 
-					   $is_direct{$reaction}, 
-					   "identified the direction\t$reaction\t$kegg_id\n"), 
-				"\n" if ($verbose >=3);
-				next;
-			    }
-			} elsif ($reaction =~ /R0/) {
+			if ($reaction =~ /R0/) {
 			    $kegg_id = $reaction;
+#			} elsif ($reaction =~ /aMAZE/) {
+#			    #### convert amaze_id into kegg_id
+#			    $kegg_id = $index{amaze_kegg}->get_first_value($reaction);
+#			    if (defined($is_direct{$kegg_id})) {
+#				$is_direct{$reaction} = $is_direct{$kegg_id};
+#				warn join ("\t", 
+#					   $reaction, 
+#					   $is_direct{$reaction}, 
+#					   "identified the direction\t$reaction\t$kegg_id\n"), 
+#				"\n" if ($verbose >=3);
+#				next;
+#'			    }
 			}
 			
 			#### try to match any kegg substrate or product with the provided substrates/products
@@ -863,11 +908,11 @@ sub ReadProcesses {
 		    my $reaction = $matching_reactions[0];
 		    my $kegg_id = "ERROR";
 		    if ($reaction =~ /aMAZEReaction/) {
-			if ( $index{amaze_kegg}->contains($reaction)) {
-			    $kegg_id = $index{amaze_kegg}->get_first_value($reaction);
-			} else {
+#			if ( $index{amaze_kegg}->contains($reaction)) {
+#			    $kegg_id = $index{amaze_kegg}->get_first_value($reaction);
+#			} else {
 			    &ErrorMessage(join ("\t", $file, $l, "cannot_map_amaze_id_to_kegg_id", $reaction), "\n");
-			}
+#			}
 		    } elsif ($reaction =~ /R0/) {
 			$kegg_id = $reaction;
 		    } else {
