@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: calibrate-oligos,v 1.1 2004/01/14 00:19:21 jvanheld Exp $
+# $Id: calibrate-oligos,v 1.2 2004/01/14 01:23:08 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -30,7 +30,7 @@ my $end = undef;
 $seq_file = "";
 $family_file = "";
 
-@supported_tasks = qw (all upstream random oligos distrib stats fit clean_seq clean_oligos);
+@supported_tasks = qw (all upstream random oligos distrib fit clean_seq clean_oligos);
 foreach my $task (@supported_tasks) {
     $supported_task{$task} = 1;
 }
@@ -109,7 +109,7 @@ if ($task{upstream}) {
 ##### Random gene families
 $family_file = "random_genes.tab";
 if ($task{random}) {
-    warn "; ", &AlphaDate(), "\tSelecting random gene families\n" if ($verbose >= 1);
+    warn "; ", &AlphaDate(), "\tSelecting random gene families\t".$family_file."\n" if ($verbose >= 1);
     $command = "random-genes -org ".$organism_name;
     $command .= " -r ".$repet;
     $command .= " -n ".$seq_nb;
@@ -440,9 +440,9 @@ sub Verbose {
     }
 }
 
+################################################################
+###### finish verbose
 sub CloseVerbose {
-    ################################################################
-    ###### finish verbose
     my $done_time = &AlphaDate();
     print $out "; Job started $start_time\n";
     print $out "; Job done    $done_time\n";
@@ -453,7 +453,13 @@ sub CloseVerbose {
 ################################################################
 ### Fit a theoretical distribution on the observed distribution
 sub FitDistribution {
-
+    for my $theor ("negbin", "poisson") {
+	my $command = "fit-distribution -v 1";
+	$command .= " -distrib ". $theor;
+	$command .= " -i ".$outfile{distrib};
+	$command .= " -o ".$outfile{$theor};
+	&doit($command);
+    }
 }
 
 ################################################################
