@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: RSA.classes,v 1.2 2002/09/25 03:15:30 jvanheld Exp $
+# $Id: RSA.classes,v 1.3 2003/10/02 15:58:54 jvanheld Exp $
 #
-# Time-stamp: <2002-09-24 22:11:19 jvanheld>
+# Time-stamp: <2003-10-02 17:58:27 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -182,8 +182,9 @@ package RSA::Chromosome;
 
     #### sequence
     sub get_sequence {
-	return $object->{sequence};
+	return $object->get_attribute("sequence");
     }
+
     sub set_sequence {
 	my ($object, $new_sequence) = @_;
 	$object->{sequence} = $new_sequence;
@@ -306,6 +307,13 @@ package RSA::Sequence;
 	  }
 	  my $fragment_length = $to - $from + 1;
 	  my $fragment = substr($object->{sequence}, $from-1, $fragment_length);
+
+	  if ($strand eq "R") { ### reverse complement
+	      return (&main::ReverseComplement($fragment));
+	  } else {
+	      return $fragment;
+	  }
+
       } else {
 	  return $object->{sequence};
       }
@@ -732,6 +740,43 @@ package RSA::family;
 	
 }
 
+#die "\nHELLO";
+
+package RSAT::Family; 
+{
+  @ISA = qw ( classes::DatabaseObject );
+  ### class attributes
+  $_count = 0;
+  $_prefix = "ctg_";
+  @_objects = ();
+  %_name_index = ();
+  %_id_index = ();
+  %_attribute_count = ();
+  %_attribute_cardinality = (id=>"SCALAR",
+			     name=>"SCALAR",
+			     organism=>"SCALAR",
+			     size=>"SCALAR"
+			     );
+}
+
+
+package RSAT::Pattern; 
+{
+  @ISA = qw ( classes::DatabaseObject );
+  ### class attributes
+  $_count = 0;
+  $_prefix = "ctg_";
+  @_objects = ();
+  %_name_index = ();
+  %_id_index = ();
+  %_attribute_count = ();
+  %_attribute_cardinality = (id=>"SCALAR",
+			     family=>"SCALAR",
+			     sequence=>"SCALAR",
+			     score=>"SCALAR",
+			     type=>"SCALAR"
+			     );
+}
 
 
 1;
