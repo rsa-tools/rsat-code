@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.11 2001/10/07 22:51:59 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.12 2001/11/30 13:54:30 jvanheld Exp $
 #
-# Time-stamp: <2001-10-08 00:51:55 jvanheld>
+# Time-stamp: <2001-11-30 14:51:24 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -36,6 +36,9 @@ $parameters = "-v -sort -return proba,rank -timeout 3600 ";
 
 #### purge sequence option
 $purge = $query->param('purge');
+
+#### TEMPOPRARY: INACTIVATE PURGE BECAUSE THERE IS A PROBLEM
+$purge = "";
 
 ### sequence file
 ($sequence_file,$sequence_format) = &GetSequenceFile();

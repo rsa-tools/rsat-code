@@ -6,7 +6,7 @@ use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
 require "RSA.cgi.lib";
-$output_context = "cgi";
+$ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 $oligo_analysis_command = "$SCRIPTS/oligo-analysis";
 $convert_seq_command = "$SCRIPTS/convert-seq";
@@ -29,6 +29,9 @@ $parameters .= " -sort";
 
 #### purge sequence option
 $purge = $query->param('purge');
+
+#### TEMPOPRARY: INACTIVATE PURGE BECAUSE THERE IS A PROBLEM
+$purge = "";;
 
 ### sequence file
 ($sequence_file,$sequence_format) = &GetSequenceFile();
@@ -165,6 +168,17 @@ if ($query->param('freq_estimate') =~ /oligo freq.* non-coding regions/i) {
 } 
 $parameters .= "$freq_option";
 
+#### pseudo weight
+if (&IsReal($query->param('pseudo_weight'))) {
+    my $pseudo = $query->param('pseudo_weight');
+#    if ($pseudo > 1) {
+#	&cgiError("Pseudo-weight must be <= 1.");
+#    } elsif ($pseudo < 0) {
+#	&cgiError("Pseudo-weight must be >= 0.");
+#    } 
+    $parameters .= " -pseudo $pseudo";
+}
+
 #### neighborhood ####
 if ($query->param('neighborhood') =~ /N at one position/i) {
   $parameters .= " -oneN";
@@ -196,15 +210,17 @@ if ($query->param('output') =~ /display/i) {
 	} else {
 	    $fragment_assembly_command .= " -2str";
 	}
-	
-	print "<H2>Fragment assembly</H2>\n";
-	open CLUSTERS, "$fragment_assembly_command -i $result_file |";
-	print "<PRE>\n";
-	while (<CLUSTERS>) {
-	    print;
-    }
-	print "</PRE>\n";
-	close(CLUSTERS);
+
+	unless ($ENV{RSA_ERROR}) {
+	    print "<H2>Fragment assembly</H2>\n";
+	    open CLUSTERS, "$fragment_assembly_command -i $result_file |";
+	    print "<PRE>\n";
+	    while (<CLUSTERS>) {
+		print;
+	    }
+	    print "</PRE>\n";
+	    close(CLUSTERS);
+	}
     }
 
     &PipingForm();

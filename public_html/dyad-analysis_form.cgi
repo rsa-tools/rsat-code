@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis_form.cgi,v 1.4 2001/10/07 22:51:53 jvanheld Exp $
+# $Id: dyad-analysis_form.cgi,v 1.5 2001/11/30 13:54:39 jvanheld Exp $
 #
-# Time-stamp: <2001-10-08 00:51:50 jvanheld>
+# Time-stamp: <2001-11-30 14:49:08 jvanheld>
 #
 ############################################################
 #### this cgi script fills the HTML form for the program dyad-analysis
@@ -31,7 +31,8 @@ $default{spacing_from} = 0;
 $default{spacing_to} = 20;
 $default{strand} = "both strands";
 $default{noov} = '';
-$default{purge} = 'checked';
+#$default{purge} = 'checked';
+$default{purge} = '';
 $default{dyad_type} = "any dyad";
 $default{exp_freq} = "dyad freq in non-coding sequences";
 $default{occ_significance_threshold} = "0";
@@ -67,14 +68,18 @@ print $query->start_multipart_form(-action=>"dyad-analysis.cgi");
 
 &DisplaySequenceChoice;
 
-#### purge sequences
-print $query->checkbox(-name=>'purge',
-		       -checked=>$default{purge},
-		       -label=>'');
-print "&nbsp;<A HREF='help.oligo-analysis.html#purge'><B>purge sequences (highly recommended)</B></A>";
-print "<BR>";
 
-print "<HR width=550 align=left>\n";
+################################################################
+#### TEMPORARY: INACTIVATE PURGE BECAUSE THERE ARE PROBLEMS
+
+#### purge sequences
+#  print $query->checkbox(-name=>'purge',
+#  		       -checked=>$default{purge},
+#  		       -label=>'');
+#  print "&nbsp;<A HREF='help.oligo-analysis.html#purge'><B>purge sequences (highly recommended)</B></A>";
+#  print "<BR>";
+
+#  print "<HR width=550 align=left>\n";
 
 ### oligo size
 print "<B><A HREF='help.dyad-analysis.html#oligo_size'>Oligonucleotide size</A>&nbsp;</B>\n";
