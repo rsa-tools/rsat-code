@@ -1,7 +1,7 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: parse-embl.pl,v 1.7 2003/12/03 08:53:20 jvanheld Exp $
+# $Id: parse-embl.pl,v 1.8 2004/03/22 22:57:07 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:17:49 jvanheld>
 #
@@ -101,10 +101,12 @@ package main;
     #### initialise parameters ####
     my $start_time = &AlphaDate();
 
+    ### initial directory
+    $dir{main} = `pwd`; #### remember working directory
+    chomp($dir{main});
+
     local %infile = ();
     local %outfile = ();
-    $outfile{stats} = "embl_stats.txt";
-    $outfile{errors} = "embl_errors.txt";
     local $verbose = 0;
     local $in = STDIN;
     local $out = STDOUT;
@@ -246,7 +248,9 @@ package main;
     }
     &CheckOutputDir($dir{output});
     chdir $dir{output};
-    open ERR, ">$outfile{errors}";
+    $out_file{error} = "$dir{output}/genbank.errors.txt";
+    $out_file{stats} = "$dir{output}/genbank.stats.txt";
+    open ERR, ">$outfile{error}";
 
     #### come back to the starting directory
     chdir($wd);
@@ -262,12 +266,15 @@ package main;
 				      $contigs,
 				      $features, 
 				      source=>$file);
-	my $seq_file = $contig->get_attribute("id");
-	$seq_file .= ".raw";
-	open RAW, ">$dir{output}/$seq_file";
-	&PrintNextSequence(RAW, "raw", 0, $sequence, $contig);
-	close RAW;
-	print $contig_handle $seq_file, "\t", $contig->get_attribute("id"), "\n";
+
+	unless ($noseq) {
+	    my $seq_file = $contig->get_attribute("id");
+	    $seq_file .= ".raw";
+	    open RAW, ">$dir{output}/$seq_file";
+	    &PrintNextSequence(RAW, "raw", 0, $sequence, $contig);
+	    close RAW;
+	    print $contig_handle $seq_file, "\t", $contig->get_attribute("id"), "\n";
+	}
     }
     close $contig_handle;
 
@@ -385,8 +392,10 @@ package main;
 #  	}
     }
     
-    ### print result
-    chdir $dir{output};
+    ################################################################
+    ### Save result in tab files
+    chdir $dir{main};
+#    chdir $dir{output};
     foreach $class_factory ($organisms, $contigs, $features) {
 	$class_factory->dump_tables();
 	$class_factory->generate_sql(dir=>"$dir{output}/sql_scripts",
@@ -460,6 +469,7 @@ OPTIONS
 		The parsing result will be saved in this directory. If
 		the directory does not exist, it will be created.
 	-org	organism name
+	-noseq  do not export sequences in .raw files
 
    Options for the automaticaly generated SQL scripts
 	-schema database schema (default: $schema)
@@ -565,6 +575,7 @@ parse-embl options
 -host	database host (default: $host)
 -user	database user (default: $user)
 -password	database password (default: $password)
+-noseq  do not export sequences in .raw files
 End_short_help
   close HELP;
   exit();
@@ -610,6 +621,9 @@ sub ReadArguments {
 	    $org = $ARGV[$a+1];
 	    $org =~ s/\s+/_/g;
 
+	    ### do not export sequences
+	} elsif ($ARGV[$a] eq "-noseq") {
+	    $noseq = 1;
 
 	    ################################################################
 	    #### SQL database parameters
