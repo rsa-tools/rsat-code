@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-features,v 1.1 2004/05/21 09:26:36 jvanheld Exp $
+# $Id: convert-features,v 1.2 2004/08/02 22:09:29 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -28,23 +28,21 @@ local $in = STDIN;
 local $out = STDOUT;
 local $output_format = "ft";
 local $null = "";
-local %comment_char = (ft=>'; ',
-		       gft=>'; ',
-		       gff=>'## ');
-
 %supported_input_format =(
-#			  "ft"=>1,
-			   "gft"=>1,
-#			   "gff"=>1,
-#			   "dnapat"=>1
-			  );
-$supported_input_formats = join (",", keys %supported_input_formats);
+    ft=>1,
+    gft=>1,
+    gff=>1,
+    dnapat=>1,
+);
+$supported_input_formats = join (",", keys %supported_input_format);
 
 %supported_output_format =(
-			   ft=>1,
-			   gff=>1
-			   );
-$supported_output_formats = join (",", keys %supported_output_formats);
+    ft=>1,
+    gft=>1,
+    gff=>1,
+    dnapat=>1
+);
+$supported_output_formats = join (",", keys %supported_output_format);
 
 
 &ReadArguments();
@@ -56,13 +54,10 @@ unless ($input_format) {
 }
 
 
-$comment_char = $comment_char{$output_format};
-
 ################################################################
 ### open output stream
 $out = &OpenOutputFile($outfile{output});
-
-print $out $comment_char, RSAT::feature->header($output_format);
+print $out RSAT::feature->header($output_format);
 
 ################################################################
 ##### read input
@@ -161,6 +156,16 @@ FORMAT DESCRIPTIONS
        the contents of their column slightly differs. However, the
        main information is similar, and the differing columns can be
        easily extrapolated or skipped.  
+
+       ft: RSAT feature-map
+		col 1   map label (eg gene name)
+		col 2 	feature type
+		col 3 	feature identifier (ex: GATAbox, Abf1_site)
+		col 4 	strand (D for Direct, R for Reverse),
+		col 5 	feature start position
+		col 6 	feature end position
+		col 7 	(optional) description 
+		col 8 	(optional) score
 
        gft: RSAT Genome features (file Feature.tab in the directory data/genomes)
 		col 1	id
