@@ -5,10 +5,19 @@ if ($0 =~ /([^(\/)]+)$/) {
 #require "cgi-lib.pl";
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
+#### redirect error log to a file
+BEGIN {
+    $ERR_LOG = "/dev/null";
+#    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
+    use CGI::Carp qw(carpout);
+    open (LOG, ">> $ERR_LOG")
+	|| die "Unable to redirect log\n";
+    carpout(*LOG);
+}
 require "RSA.lib";
 require "RSA.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
-$random_seq_command = "$SCRIPTS/random-seq";
+$command = "$SCRIPTS/random-seq";
 
 $size_limit = 5e+6;
 
@@ -86,38 +95,38 @@ if ($query->param('proba') eq "alphabet") {
     $parameters .= " -ncf -org $organism -ol $oligo_size";
 }
 
-print "<PRE>command: $random_seq_command $parameters<P>\n</PRE>" if ($ECHO >= 1);
+print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ECHO >= 1);
 
 
 ### execute the command ###
-    if ($query->param('output') eq "display") {
-	open RESULT, "$random_seq_command $parameters |";
-	
-	### open the mirror file ###
-	$mirror_file = "$TMP/$tmp_file_name.res";
-	if (open MIRROR, ">$mirror_file") {
-	    $mirror = 1;
-	    &DelayedRemoval($mirror_file);
-	}
-	
-	
-	### print the result ### 
-	&PipingWarning();
-	print '<H3>Result</H3>';
-	print "<PRE>";
-	while (<RESULT>) {
-	    print "$_";
-	    print MIRROR $_ if ($mirror);
-	}
-	print "</PRE>";
-	close RESULT;
-	
-	### prepare data for piping
-	&PipingForm();
+if ($query->param('output') eq "display") {
+    open RESULT, "$command $parameters |";
+    
+    ### open the mirror file ###
+    $mirror_file = "$TMP/$tmp_file_name.res";
+    if (open MIRROR, ">$mirror_file") {
+	$mirror = 1;
+	&DelayedRemoval($mirror_file);
+    }
+    
+    
+    ### print the result ### 
+    &PipingWarning();
+    print '<H3>Result</H3>';
+    print "<PRE>";
+    while (<RESULT>) {
+	print "$_";
+	print MIRROR $_ if ($mirror);
+    }
+    print "</PRE>";
+    close RESULT;
+    
+    ### prepare data for piping
+    &PipingForm();
 
 #      &PipingWarning();
 #      ### Print the result on Web page
-#      open RESULT, "$random_seq_command $parameters  & |";
+#      open RESULT, "$command $parameters  & |";
 #      print "<PRE>";
 #      while (<RESULT>) {
 #  	print "$_";
@@ -126,14 +135,16 @@ print "<PRE>command: $random_seq_command $parameters<P>\n</PRE>" if ($ECHO >= 1)
 #      close RESULT;
 #      ### prepare data for piping
 #      &PipingForm();
-	print "<HR SIZE = 3>";
+    print "<HR SIZE = 3>";
 
-    } else {
-	&EmailTheResult("$random_seq_command $parameters", $query->param('user_email'));
-    }
-    print $query->end_html;
+} elsif ($query->param('output') =~ /server/i) {
+    &ServerOutput("$command $parameters", $query->param('user_email'));
+} else {
+    &EmailTheResult("$command $parameters", $query->param('user_email'));
+}
+print $query->end_html;
 
-    exit(0);
+exit(0);
 
 
 ################################################################
