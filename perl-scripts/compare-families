@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-families,v 1.12 2002/10/19 05:07:57 jvanheld Exp $
+# $Id: compare-families,v 1.13 2003/01/17 16:26:25 jvanheld Exp $
 #
-# Time-stamp: <2002-10-18 23:01:39 jvanheld>
+# Time-stamp: <2002-10-19 04:12:01 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -31,7 +31,7 @@ $sort_key = "name";
 $supported_return_fields = join ",", keys %supported_return_fields;
 
 
-%supported_matrix_fields = (
+%supported_matrix_keys = (
 			    ref_percent=>1,
 			    query_percent=>1,
 			    occ=>1,
@@ -39,7 +39,7 @@ $supported_return_fields = join ",", keys %supported_return_fields;
 			    E_val=>1,
 			    sig=>1
                             );
-$supported_matrix_fields = join ",", keys %supported_matrix_fields;
+$supported_matrix_keys = join ",", keys %supported_matrix_keys;
 
 
 %supported_sort_keys = (
@@ -476,6 +476,7 @@ OPTIONS
                 and each cell contains a comparison between the two
                 families. The next argument indicates which statistics
                 has to be returne in the matrix (default = sig).
+		Supported : $supported_matrix_keys
 
 PROBABILITIES
         P-VALUE
@@ -668,7 +669,7 @@ sub ReadArguments {
         } elsif ($ARGV[$a] eq "-matrix") {
             $return{matrix} = 1;
 	    my $possible_key = $ARGV[$a+1];
-	    if ($supported_matrix_fields{$possible_key}) {
+	    if ($supported_matrix_keys{$possible_key}) {
 		$matrix_key = $possible_key;
 	    }
 
@@ -725,12 +726,12 @@ sub Verbose {
     }
     print $out "; Query families\t$nb_query_families\n";
     foreach my $f (keys %query_families) {
-        printf $out ";\t%s\t%d\n", $query_families{$f}->get_name(), $query_families{$f}->get_size();
+        printf $out ";\t%d\t%s\n", $query_families{$f}->get_size(), $query_families{$f}->get_name();
     }
 
     print $out "; Reference families\t$nb_ref_families\n";
     foreach my $f (keys %ref_families) {
-        printf $out ";\t%s\t%d\n", $ref_families{$f}->get_name(), $ref_families{$f}->get_size();
+        printf $out ";\t%d\t%s\n", $ref_families{$f}->get_size(), $ref_families{$f}->get_name();
     }
     printf $out "; %-21s\t%d\n", "Population size", $population_size;
     printf $out "; %-21s\t%s\n", "Sort key", $sort_key if ($sort_key);
@@ -754,6 +755,9 @@ sub Verbose {
         print $out "\n";
     }
 
+    if ($return{matrix}) {
+	print $out "; matrix\t$matrix_key\n";
+    }
 
     if (defined(%outfile)) {
         print $out "; Output files\n";
