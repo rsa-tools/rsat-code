@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: util.pl,v 1.1 2003/10/28 23:12:29 jvanheld Exp $
+# $Id: util.pl,v 1.2 2003/11/16 00:17:38 jvanheld Exp $
 #
 # Time-stamp: <2003-07-10 11:46:32 jvanheld>
 #
@@ -242,6 +242,5 @@ sub PrologString {
   $string =~ s/\"//g;
   return "'$string'";
 }
-
 
 return 1;
