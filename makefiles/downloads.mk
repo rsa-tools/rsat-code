@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: downloads.mk,v 1.18 2005/01/11 19:51:54 jvanheld Exp $
+# $Id: downloads.mk,v 1.19 2005/01/13 20:17:06 jvanheld Exp $
 #
 # Time-stamp: <2003-10-09 14:02:21 jvanheld>
 #
@@ -291,24 +291,6 @@ scpd:
 
 ################################################################
 #
-# Homo sapiens from ENSEMBL
-
-HUMAN_ENSEMBL=ftp://ftp.ensembl.org/pub/current_human/data/
-human_from_ensembl:
-	${WGET} ${HUMAN_ENSEMBL}/mysql
-	${WGET} ${HUMAN_ENSEMBL}/flatfiles/genbank
-
-ENSEMBL_DIRS=						\
-	ftp://ftp.ensembl.org/pub/current_mouse/data/	\
-	ftp://ftp.ensembl.org/pub/current_human/data/
-ensembl:
-	@for dir in ${ENSEMBL_DIRS} ; do				\
-		echo "downloading directory $${dir} from ENSEMBL";	\
-		${WGET} $${dir} ;					\
-	done
-
-################################################################
-#
 # Homo sapiens from UCSC
 
 HUMAN_UCSC=ftp://genome.ucsc.edu/goldenPath/14nov2002/
@@ -447,7 +429,35 @@ jaspar:
 	@echo "${DATE}	updated dir	${JASPAR}"
 
 ################################################################
+#
+# Homo sapiens from ENSEMBL
+
+HUMAN_ENSEMBL=ftp://ftp.ensembl.org/pub/current_human/data/
+human_from_ensembl:
+	${WGET} ${HUMAN_ENSEMBL}/mysql
+	${WGET} ${HUMAN_ENSEMBL}/flatfiles/genbank
+
+ENSEMBL_DIRS=					\
+	current_mouse/data/mysql		\
+	current_mouse/data/flatfiles/genbank	\
+	current_human/data/mysql		\
+	current_human/data/flatfiles/genbank
+ensembl:
+	@for dir in ${ENSEMBL_DIRS} ; do				\
+		echo "downloading directory $${dir} from ENSEMBL";	\
+		${MAKE} one_ensembl_dir ENSEMBL_DIR=$${dir} ; 		\
+	done
+
+################################################################
+#
+# ENSEMBL
+#
+ENSEMBL_BASE=ftp://ftp.ensembl.org/pub/
+ENSEMBL_DIR=current_celegans/data/flatfiles/genbank/
+one_ensembl_dir:
+	${WGET} ${ENSEMBL_BASE}/${ENSEMBL_DIR}
+
+################################################################
 ## Anopheles 
-ANOPHELES=ftp://ftp.ensembl.org/pub/current_mosquito/data/flatfiles/genbank/
 anopheles:
-	${WGET} ${ANOPHELES}
+	${MAKE} one_ensembl_dir ENSEMBL_DIR=current_mosquito/data/flatfiles/genbank/
