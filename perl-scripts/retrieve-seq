@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: retrieve-seq,v 1.6 2000/08/03 01:28:02 jvanheld Exp $
+# $Id: retrieve-seq,v 1.7 2000/08/11 21:29:08 jvanheld Exp $
 #
-# Time-stamp: <2000-08-03 02:16:40 jvanheld>
+# Time-stamp: <2000-08-11 23:28:55 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -49,13 +49,6 @@ if ($organism eq "") {
   die "Error: you should specify an organism\n$supported_organisms\n";  
 
 } elsif ($organism eq "yeast") {
-#    $args = join " ", @ARGV;
-#    if ($sequence_type eq "upstream") {
-#      system "$SCRIPTS/upstream-region-yeast $args";
-#    } elsif ($sequence_type eq "downstream") {
-#      system "$SCRIPTS/downstream-region-yeast $args";
-#    }
-#    exit(0);
 
   $feature_table_file = "$RSA/data/yeast/orfs/ORF_table.txt";
   foreach my $chrom ("I",
@@ -82,7 +75,10 @@ if ($organism eq "") {
 						   circular=>  0, ### for bacterial genomes
 						   organism=>  $organism);
   }
-
+  if ($sequence_type eq "upstream") {
+    $default{from} = -800;
+    $default{to} = -1;
+  }
 
 } elsif ($supported_organism{$organism}) {
   $feature_table_file = $supported_organism{$organism}->{'features'};
@@ -229,7 +225,13 @@ QUERYLOOP: foreach $query (@queries) {
       $reg_right = $orf_left - $current_from;
       $reg_left = $orf_left - $current_to;
     }
+
+      ### ORF (wargning: this does not splice out introns
+  } elsif ($sequence_type eq "orf") {
+    $reg_left = $orf_left;
+    $reg_right = $orf_right;
   }
+
 
   $reg_size =  $reg_right - $reg_left + 1;
   if ($reg_size <= 0) {
@@ -242,13 +244,19 @@ QUERYLOOP: foreach $query (@queries) {
     $current_id = $orf_id;
   } elsif ($seq_label eq "gene") {
     $current_id = $name;
+  } elsif ($seq_label eq "orf_gene") {
+    $current_id = join "_", $orf_id, $name;
   } else {
     $current_id = join("_", 
 		       $orf_id,
 		       $name,
 		       $sequence_type,
 		       $current_from,
-		       $current_to
+		       $current_to,
+		       $chrom,
+		       $orf_strand,
+		       $reg_left,
+		       $reg_right
 		       );
   }
   
@@ -277,6 +285,7 @@ QUERYLOOP: foreach $query (@queries) {
 	)
       if ($warn_level >= 2); 
  
+#    die "HELLo";
   $current_seq = $chromosome{$chrom}->get_sequence($reg_left,$reg_right,$orf_strand);
   
   
@@ -318,8 +327,9 @@ $supported_organisms
 	-type	sequence type
 		Currently supported sequence types
 			upstream (default)
-		To implement in the future
 			downstream
+			orf (warning: introns are not spliced out)
+		To implement in the future
 			introns
 			coding
 	-q query
@@ -354,6 +364,8 @@ $supported_organisms
 			orf	ORF identifier
 			gene	gene name
 				(if the gene has no name, ORF identifier is used instead).
+			orf_gene
+				concatenate ORF id and gene name
 			full	label is a concatenation of ORF identifier,
 				gene name, sequence type and limits
 
@@ -417,7 +429,7 @@ $supported_organisms
 -from #1 -to #2	limits of the region to extract, relative to orf start 
 -format		output sequence format. accepted: IG, raw, WC
 -lw ##		Line width. -lw 0 will prevent newline insertion.
--label orf|gene|full	rule for naming sequences
+-label orf|gene|orf_gene|full	rule for naming sequences
 -noorf		the upstream sequence can only contain non-coding sequence.
 -nocom		do not print related information (start, end position, ...)
 End_short_help
@@ -486,6 +498,11 @@ sub ReadArguments {
 	$default{from} = 1;
 	$default{to} = 200;
 
+      } elsif ($ARGV[$a+1] =~ /^orf/i) {
+	$sequence_type = "orf";
+	$default{from} = "start";
+	$default{to} = "stop";
+
       } else {
 	die "Error: unsupported sequence type: '$ARGV[$a+1]'\n";
       }
@@ -501,6 +518,8 @@ sub ReadArguments {
 	$seq_label = "orf";
       } elsif ((lc($ARGV[$a+1]) eq "gene")) {
 	$seq_label = "gene";
+      } elsif ((lc($ARGV[$a+1]) eq "orf_gene")) {
+	$seq_label = "orf_gene";
       } elsif ((lc($ARGV[$a+1]) eq "full")) {
 	$seq_label = "full";
       } else {
