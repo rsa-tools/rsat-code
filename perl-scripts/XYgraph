@@ -240,7 +240,7 @@ if ($y_grid_step2 > 0) {
 ### first X grid
 if ($x_grid_step1 > 0) {
     for ($g = $x_axis_min; $g <= $x_axis_max; $g += $x_grid_step1) {
-	$grid_pos = $left + ($g-$x_axis_min)*$x_scale;
+#	$grid_pos = $left + ($g-$x_axis_min)*$x_scale;
 	if ($xlog) {
 	    next unless (&IsInteger($g));
 	    $grid_value = $x_log_base^$g;
@@ -249,6 +249,7 @@ if ($x_grid_step1 > 0) {
 	    $grid_value = $g;
 	    $grid_text = sprintf("%6g", $grid_value);
 	}
+	$grid_pos = &XPixelPos($g);
 	$image->line($grid_pos, $bottom, $grid_pos, $top, $grid1_color);
 	$image->string(gdSmallFont, $grid_pos - $small_font_width*length($grid_text)/2, $bottom + 5, $grid_text, $text_color);
     }
@@ -265,7 +266,7 @@ if ($y_grid_step1 > 0) {
 	    $grid_value = $g;
 	    $grid_text = sprintf("%6g", $grid_value);
 	}
-	$grid_pos = YPixelPos($g);
+	$grid_pos = &YPixelPos($g);
 	$image->line($left, $grid_pos, $right, $grid_pos, $grid1_color);
 	$image->string(gdSmallFont, $left - $small_font_width * length($grid_text) - 5, $grid_pos - $small_font_height/2, $grid_text, $text_color);
     }
@@ -284,103 +285,105 @@ unless ($hbox_left eq ""){
 
 #### draw dots ####
 for $series (0..$#y_col_list) {
-  $prev_x = "ND";
-  $prev_y = "ND";
-  $current_color = $color_list[$series%($#color_list+1)];
-  $current_symbol =  $symbol_list[$series%($#symbol_list+1)];
+    $prev_x = "ND";
+    $prev_y = "ND";
+    $current_color = $color_list[$series%($#color_list+1)];
+    $current_symbol =  $symbol_list[$series%($#symbol_list+1)];
 
-  for $p (0..$#X_values) {
-    if (($X_values[$p] eq "ND") || ($Y_values[$series][$p] eq "ND")) {
-      $bar_left = "ND";
-      $bar_right = "ND";
-      $x = "ND";
-      $y = "ND";
-    } else {
-    
-      ### position of the next point ###
-      if ($histogram) {
-        if ($p == 0) {
-          $bar_left = $left;
-        } else {
-          $bar_left = XPixelPos(($X_values[$p] + $X_values[$p-1])/2);
-        }
-        if ($p == $#X_values-1) {
-          $bar_right = $right;
-        } else {
-          $bar_right = &XPixelPos(($X_values[$p] + $X_values[$p+1])/2);
-        }
-      } else {
-        $x = XPixelPos($X_values[$p]);
-      }
-      $y = YPixelPos($Y_values[$series][$p]);
+    for $p (0..$#X_values) {
+	if (($X_values[$p] eq "ND") || ($Y_values[$series][$p] eq "ND")) {
+	    $bar_left = "ND";
+	    $bar_right = "ND";
+	    $x = "ND";
+	    $y = "ND";
+	} else {
+	    
+	    ### position of the next point ###
+	    if ($histogram) {
+		if ($p == 0) {
+#		    $bar_left = $left;
+		    $bar_left = &XPixelPos($X_values[$p]);
+		} else {
+		    $bar_left = $prev_bar_right;
+#		    $bar_left = &XPixelPos(($X_values[$p] + $X_values[$p-1])/2);
+		}
+		if ($p == $#X_values) {
+		    $bar_right = $right;
+		} else {
+		    $bar_right = &XPixelPos(($X_values[$p] + $X_values[$p+1])/2);
+		}
+	    } else {
+		$x = &XPixelPos($X_values[$p]);
+	    }
+	    $y = &YPixelPos($Y_values[$series][$p]);
 
-      ### check whether next point lies in the highlight box ###
-      if (($hbox_left ne "") && 
-            ($x >= $hbox_left) &&
-            ($x <= $hbox_right) &&
-            ($y >= $hbox_top) &&
-            ($y <= $hbox_bottom))  {
-        $current_color = $hilight_color;
-        print "$data_lines[$p]";
-      }
-      
-      ### draw the point (and the line if required) ###
-      if ($histogram) {
-        if (($bar_left ne "ND") && ($bar_right ne "ND")) {
-          $image->line($bar_left, $y, $bar_right, $y, $current_color);
-          if (($prev_bar_right ne "ND") && ($prev_y ne "ND")) {
-             $image->line($prev_bar_right, $prev_y, $bar_left, $y, $current_color);
-           }
-         }
-      } else {
-        if (($x ne "ND") && ($y ne "ND")) {
-	    DrawSymbol($current_symbol,$x-$point_size/2,$y-$point_size/2,$x+$point_size/2,$y+$point_size/2,$current_color);
+	    ### check whether next point lies in the highlight box ###
+	    if (($hbox_left ne "") && 
+		($x >= $hbox_left) &&
+		($x <= $hbox_right) &&
+		($y >= $hbox_top) &&
+		($y <= $hbox_bottom))  {
+		$current_color = $hilight_color;
+		print "$data_lines[$p]";
+	    }
+	    
+	    ### draw the point (and the line if required) ###
+	    if ($histogram) {
+		if (($bar_left ne "ND") && ($bar_right ne "ND")) {
+		    $image->line($bar_left, $y, $bar_right, $y, $current_color);
+		    if (($prev_bar_right ne "ND") && ($prev_y ne "ND")) {
+			$image->line($prev_bar_right, $prev_y, $bar_left, $y, $current_color);
+		    }
+		}
+	    } else {
+		if (($x ne "ND") && ($y ne "ND")) {
+		    DrawSymbol($current_symbol,$x-$point_size/2,$y-$point_size/2,$x+$point_size/2,$y+$point_size/2,$current_color);
 #          $image->arc($x,$y,$point_size,$point_size,0,360,$current_color);
-	    if (($HTML_map) && ($p < $max_map_elements)) {
-	      my $series_legend = $legend_fields[$y_col_list[$series]];
-	      
-	      my $point_label = $data_lines[$p];
-	      $point_label =~ s/\'/prime/g;	      
-	      $point_label =~ s/\t/    /g;	      
-	      $point_label =~ s/\n/ /g;	      
-
-	      my $coord = sprintf "($X_values[$p],$Y_values[$series][$p])";
-
-	      my $map_message = "$series_legend\t$p\t$coord\t$point_label";
-
-	      #### area over the point
-	      print "\t<area ";
-	      print "href=\"$href\" ";
-	      print "onMouseOver=\"window.status=\'$map_message\' ;return true\" ";
-	      print "shape=rect ";
-	      print "coords=\"",int($x-$point_size/2) , ",", int($y-$point_size/2), ",",int($x+$point_size/2), ",",int($y+$point_size/2), "\">\n";
-	    }
-	    if ((($lines) || ($lines[$y_col_list[$series]])) 
-		&& ($prev_x ne "ND") && ($prev_y ne "ND")) {
-	      $image->line($prev_x, $prev_y, $x, $y, $current_color);
-	    }
-	  } 
-      } #if historgram
-    } # values are determined
-    
-    if ($histogram) {
-      $prev_bar_right = $bar_right;
-    } else {
-      $prev_x = $x;
-    }
-    $prev_y = $y;
-  } # for p
+		    if (($HTML_map) && ($p < $max_map_elements)) {
+			my $series_legend = $legend_fields[$y_col_list[$series]];
+			
+			my $point_label = $data_lines[$p];
+			$point_label =~ s/\'/prime/g;	      
+			$point_label =~ s/\t/    /g;	      
+			$point_label =~ s/\n/ /g;	      
+			
+			my $coord = sprintf "($X_values[$p],$Y_values[$series][$p])";
+			
+			my $map_message = "$series_legend\t$p\t$coord\t$point_label";
+			
+			#### area over the point
+			print "\t<area ";
+			print "href=\"$href\" ";
+			print "onMouseOver=\"window.status=\'$map_message\' ;return true\" ";
+			print "shape=rect ";
+			print "coords=\"",int($x-$point_size/2) , ",", int($y-$point_size/2), ",",int($x+$point_size/2), ",",int($y+$point_size/2), "\">\n";
+		    }
+		    if ((($lines) || ($lines[$y_col_list[$series]])) 
+			&& ($prev_x ne "ND") && ($prev_y ne "ND")) {
+			$image->line($prev_x, $prev_y, $x, $y, $current_color);
+		    }
+		} 
+	    } #if historgram
+	} # values are determined
+	
+	if ($histogram) {
+	    $prev_bar_right = $bar_right;
+	} else {
+	    $prev_x = $x;
+	}
+	$prev_y = $y;
+    } # for p
 } # for series
 
 #### draw graph legends and titles ####
 $title1_x_pos = ($graph_x_size - $large_font_width * length($title1))/2;
 if ($title1_x_pos < 0) {
-  $title1_x_pos = 0;
+    $title1_x_pos = 0;
 }
 $title1_y_pos = $border;
 $title2_x_pos = ($graph_x_size - $large_font_width * length($title2))/2;
 if ($title2_x_pos < 0) {
-  $title2_x_pos = 0;
+    $title2_x_pos = 0;
 }
 $title2_y_pos = $title1_y_pos + $large_font_height + 2;
 $x_legend1_x_pos = $left + ($x_axis_size - length($x_legend1) * $small_font_width)/2;
