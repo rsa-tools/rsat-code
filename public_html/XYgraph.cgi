@@ -117,7 +117,7 @@ MAIN:
   } else {
       unless ($input{'data'} =~ /\S/) {
 	print &PrintHeader;
-	&cgiError("Error: the data box should not be empty.");
+	&cgiError("The data box should not be empty.");
       }
       $data_file = "$tmp_file_name.data";
       open DATA, ">$TMP/$data_file";

@@ -27,8 +27,9 @@ if (defined($supported_organism{$query->param('organism')})) {
   $organism = $supported_organism{$query->param('organism')}->{'name'};
   $parameters .= " -org ".$query->param('organism');
 } else {
-  $organism = "Saccharomyces cerevisiae"; ### default organism
-  $parameters .= " -org yeast";
+    &cgiError("Organism '",
+	      $query->param('organism'),
+	      "' is not supported on this web site.");
 }
 
 ### sequence type
@@ -54,7 +55,7 @@ if (($seq_label =~ /gene/) &&
 } elsif ($seq_label =~ /full/) {
   $parameters .= " -label full";
 } else {
-  &cgiError("Error: invalid option for sequence label '$seq_label'");
+  &cgiError("Invalid option for sequence label '$seq_label'");
 }
 
 ### limits ###
@@ -82,7 +83,7 @@ if ($query->param('genes') eq "all") {
     }
     $type = $query->uploadInfo($upload_file)->{'Content-Type'};
     open SEQ, ">$gene_list_file" ||
-	&cgiError("Error: cannot store gene list file in temporary directory");
+	&cgiError("Cannot store gene list file in temporary directory");
     while (<$upload_file>) {
 	print SEQ;
     }
@@ -92,7 +93,7 @@ if ($query->param('genes') eq "all") {
 } else {
   $gene_selection = $query->param('gene_selection');
   unless ($gene_selection =~ /\S/) {
-    &cgiError("Error: you should enter at least one gene identifier in the query box. <P>Read the on-line manual for more information.");
+    &cgiError("You should enter at least one gene identifier in the query box. <P>Read the on-line manual for more information.");
   }
   $gene_selection .= "\n";			### make sure there is a carriage return at the end
   

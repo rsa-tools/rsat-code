@@ -62,7 +62,7 @@ if (($seq_label =~ /gene/) &&
 } elsif ($seq_label =~ /full/) {
   $retrieve_seq_parameters .= " -label full";
 } else {
-  &cgiError("Error: invalid option for sequence label '$seq_label'");
+  &cgiError("Invalid option for sequence label '$seq_label'");
 }
 
 ### limits ###
@@ -91,7 +91,7 @@ $parameters_dna_pattern .= " -format ".$query->param('sequence_format');
 
 ### pattern file ####
 unless ($query->param('patterns') =~ /\S/) {
-  &cgiError("Error: the pattern box should not be empty.<P>Read on-line manual for more information.");
+  &cgiError("The pattern box should not be empty.<P>Read on-line manual for more information.");
 }
 $pattern_file = "$TMP/$tmp_file_name.pat";
 if (open PAT, ">$pattern_file") {

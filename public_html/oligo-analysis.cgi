@@ -86,7 +86,7 @@ if ($query->param('pos')) {
 $return_fields =~ s/,$//;
 
 if ($return_fields eq "") {
-  &cgiError("Error: you should select at least one option in the \"Return\" box.");
+  &cgiError("You should select at least one option in the \"Return\" box.");
 } else {
   $parameters .= " -return $return_fields";
 }
@@ -124,10 +124,10 @@ if ($query->param('freq_estimate') =~ /oligo freq.* in non-coding regions/i) {
 	
 	### check organism
 	unless ($organism = $query->param('organism')) {
-	    &cgiError("Error : you should specify an organism to use non-coding frequency calibration");
+	    &cgiError("You should specify an organism to use non-coding frequency calibration");
 	}
 	unless (defined(%{$supported_organism{$organism}})) {
-	    &cgiError("Error: organism $org is not supported on this site");
+	    &cgiError("Organism $org is not supported on this site");
 	}
 	$freq_option = " -ncf -org $organism";
     }
@@ -136,7 +136,7 @@ if ($query->param('freq_estimate') =~ /oligo freq.* in non-coding regions/i) {
 #    $freq_file .= "/oligo-frequencies";
 #    $freq_file .= "/${oligo_length}nt_non-coding_${organism}.freq";
 #  #  unless (-r $freq_file) {
-#  #    &cgiError("Error: cannot read expected frequency file $freq_file");
+#  #    &cgiError(" cannot read expected frequency file $freq_file");
 #  #  }
 #    $freq_option = " -expfreq $freq_file";
 } elsif ($query->param('freq_estimate') eq "alphabet from input sequence") {
@@ -220,9 +220,9 @@ End_of_form
     system "$oligo_analysis_command $parameters | $mail_command $address &"; 
   } else {
     if ($query->param('user_email') eq "") {
-      &cgiError("ERROR: you did not enter your e-mail address");
+      &cgiError("You did not enter your e-mail address");
     } else {
-      &cgiError("ERROR: the e-mail address you entered is not valid");
+      &cgiError("The e-mail address you entered is not valid");
       print $query->param('user_email')."</B><P>";      
     }
   }

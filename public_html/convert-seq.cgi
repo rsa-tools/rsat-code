@@ -41,7 +41,7 @@ MAIN:
 
   ##### input sequence file #####
   unless ($input{'sequence'} =~ /\S/) {
-      &cgiError("Error: the sequence box should not be empty.<P>Read on-line manual for more information.");
+      &cgiError("The sequence box should not be empty.");
   }
   open INSEQ, ">$TMP/$tmp_file_name";
   print INSEQ $input{'sequence'};

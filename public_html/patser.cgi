@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: patser.cgi,v 1.5 2001/02/23 07:07:46 jvanheld Exp $
+# $Id: patser.cgi,v 1.6 2001/05/17 00:27:23 jvanheld Exp $
 #
-# Time-stamp: <2001-02-23 08:07:43 jvanheld>
+# Time-stamp: <2001-05-17 02:27:12 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -45,7 +45,7 @@ $parameters = " -A a:t c:g ";
 
 ### matrix ####
 unless ($query->param('matrix') =~ /\S/) { ### empty matrix
-    &cgiError("Error: you did not enter the matrix");
+    &cgiError("You did not enter the matrix");
 }
 
 $matrix_file = "$TMP/$tmp_file_name.matrix";
@@ -58,7 +58,7 @@ if ($matrix_format =~ /transfac/i) {
 } elsif ($matrix_format =~ /consensus/i) {
     open MAT, "> $matrix_file";
 } else {
-    &cgiError("Error: invalid matrix format");
+    &cgiError("Invalid matrix format.");
 }
 print MAT $query->param('matrix');
 close MAT;

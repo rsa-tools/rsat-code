@@ -29,7 +29,7 @@ $parameters .= " -v";
 
 ### pattern file ####
 unless ($query->param('patterns') =~ /\S/) {
-  &cgiError("Error: the pattern box should not be empty.<P>Read on-line manual for more information.");
+  &cgiError("The pattern box should not be empty.");
 }
 $pattern_file = "$TMP/$tmp_file_name.pat";
 if (open PAT, ">$pattern_file") {

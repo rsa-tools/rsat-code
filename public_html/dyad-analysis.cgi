@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.4 2001/02/23 06:54:58 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.5 2001/05/17 00:25:34 jvanheld Exp $
 #
-# Time-stamp: <2001-02-23 07:45:09 jvanheld>
+# Time-stamp: <2001-05-17 02:25:29 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -77,7 +77,7 @@ $parameters .= " -l $oligo_length";
 
 #### spacing ####
 unless ((&IsNatural($query->param('spacing_from'))) && (&IsNatural($query->param('spacing_from'))))  {
-  &cgiError("Error: invalid spacing specification");    
+  &cgiError("Invalid spacing specification.");    
 }
 if ($query->param('spacing_from') >$query->param('spacing_to')) {
   $spacing = $query->param('spacing_to')."-".$query->param('spacing_from') ;   

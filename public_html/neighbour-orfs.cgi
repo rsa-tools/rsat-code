@@ -43,7 +43,7 @@ MAIN:
 
   #### queries ####
   unless ($input{'query'} =~ /\S/) {
-      &cgiError("Error: the query box should not be empty.<P>Read on-line manual for more information.");
+      &cgiError("The query box should not be empty.<P>Read on-line manual for more information.");
   }
   open QUERY, ">$TMP/$tmp_file_name";
   print QUERY $input{'query'};
