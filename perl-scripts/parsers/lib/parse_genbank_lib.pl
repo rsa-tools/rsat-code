@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank_lib.pl,v 1.14 2005/03/13 10:41:02 jvanheld Exp $
+# $Id: parse_genbank_lib.pl,v 1.15 2005/03/22 23:14:50 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -555,6 +555,26 @@ sub ParseFeatureNames {
 		    ## A single-word note is usually (but not always, I guess) a synonym
 		    $feature->push_attribute("names", $note);
 		    
+		} elsif ($org eq "Plasmodium_falciparum") {
+		    my @notes = $feature->get_attribute("note");
+		    foreach my $note (@notes) {
+			next if ($note =~/score/);
+			my @names = split /\;\s*/, $note;
+			foreach my $name (@names) {
+			    $name = &RSAT::util::trim($name);
+			    if (($name =~ /^(PF\S+)/) || ($name =~ /^(MAL\S+)/)) {
+				$feature->push_attribute("names", $1);
+# 				warn join ("\t", 
+# 					   "Plasmodium_falciparum", 
+# 					   $feature->get_attribute("contig"), 
+# 					   $feature->get_attribute("id"), 
+# 					   $feature->get_attribute("type"), 
+# 					   , "adding name", $1, "from note", $note), "\n" if ($main::verbose >= 10);
+			    }
+			}
+		    }
+#		    die "Specific treatment for Plasmodium_falciparum";
+
 		} elsif (
 #		($note =~ /^locus_tag\: ([\w_\-\.]+)/i)  ||
 			 ($note =~ /^locus_tag\: (\S+)/i)  ||
@@ -708,7 +728,6 @@ sub CreateGenbankFeatures {
 	    next if ($gene_id eq $main::null);
 	    $gene = $genes->get_object($gene_id);
 
-
 	    ## Add parent gene names to the current feature
 	    if ($gene) {
 		warn join ("\t", "feature parent gene", $created_feature->get_attribute("id"),
@@ -724,6 +743,7 @@ sub CreateGenbankFeatures {
 		foreach my $name ($gene->get_attribute("names")) {
 		    $created_feature->push_attribute("names",$name) unless ($names{$name});
 		}
+		
 	    } else {
 		&ErrorMessage( "Cannot identify gene $gene_id for feature ", $parsed_feature, "\n");
 	    }
