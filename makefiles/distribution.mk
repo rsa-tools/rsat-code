@@ -33,6 +33,7 @@ POST_CMD=
 DISTRIB_FILES= rsa-tools/perl-scripts					\
 	rsa-tools/RSA.config.default					\
 	rsa-tools/public_html/data/supported_organisms_template.txt	\
+	rsa-tools/public_html/data/supported_organisms.pl		\
 	rsa-tools/makefiles						\
 	rsa-tools/doc/manuals/*.pdf
 fill_archive:
