@@ -1,22 +1,21 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.6 2001/07/05 15:07:23 jvanheld Exp $
+# $Id: install-organism,v 1.7 2001/10/09 07:10:21 jvanheld Exp $
 #
-# Time-stamp: <2001-05-28 17:39:46 jvanheld>
+# Time-stamp: <2001-10-09 09:06:23 jvanheld>
 #
 ############################################################
 
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
+require "RSA.lib";
 
 
 #### initialisation
 $supported_for_installation{"fasta"} = 1;
 $supported_for_installation{"raw"} = 1;
-
 
 ################################################################
 ############################ arguments #########################
@@ -331,7 +330,7 @@ sub DyadFrequencies {
     $dyad_file .= "_noov" if ($noov);
     $dyad_file .= ".freq";
     $command = "$SCRIPTS/dyad-analysis -i $genome_dir/$seq -format wc";
-    $command .= " -v 3 -timeout 36000 ";
+    $command .= " -v 3 -vv -timeout 100000 ";
     $command .= " -type any -seqtype dna";
     $command .= " -2str";
     $command .= " -noov" if ($noov);
