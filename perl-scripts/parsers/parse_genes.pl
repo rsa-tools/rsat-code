@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genes.pl,v 1.17 2000/12/29 01:42:38 jvanheld Exp $
+# $Id: parse_genes.pl,v 1.18 2000/12/29 21:12:58 jvanheld Exp $
 #
-# Time-stamp: <2000-12-29 02:31:14 jvanheld>
+# Time-stamp: <2000-12-29 22:12:07 jvanheld>
 #
 ############################################################
 
@@ -21,11 +21,13 @@ require "PFBP_loading_util.pl"; ### for converting polypeptide IDs into ACs
 require "PFBP_parsing_util.pl";
 
 
+
 package main;
 
 ### files to parse
 @selected_organisms= ();
 
+$dir{output} = $parsed_data."/kegg_parsed/".$delivery_date;
 #$dir{genes} = $dir{KEGG}."/genomes/previous_genes/";
 $dir{genes} = $dir{KEGG}."/genomes/genes/";
 
@@ -87,7 +89,6 @@ unless (defined($suffix)) {
     $suffix .= "_test" if ($test);
 }
 
-$dir{output} = $parsed_data."/kegg_parsed/".$delivery_date;
 unless (-d $dir{output}) {
     warn "Creating output dir $dir{output}\n";
     mkdir $dir{output}, 0775 || die "Error: cannot create directory $dir\n";
@@ -95,7 +96,7 @@ unless (-d $dir{output}) {
 chdir $dir{output};
 $out_file{error} = "$dir{output}/Gene".$suffix.".errors.txt";
 $out_file{stats} = "$dir{output}/Gene".$suffix.".stats.txt";
-$out_file{genes} = "$dir{output}/Gene".$suffix.".obj";
+$out_file{genes} = "$dir{output}/Gene".$suffix.".obj" if ($export{obj});
 
 ### open error report file
 open ERR, ">$out_file{error}" || die "Error: cannot write error file $out_file{error}\n";
@@ -222,6 +223,7 @@ OPTIONS
 	-h	detailed help
 	-help	short list of options
 	-test	fast parsing of partial data, for debugging
+	-outdir output directory
 	-w #	warn level
 		Warn level 1 corresponds to a restricted verbose
 		Warn level 2 reports all polypeptide instantiations
@@ -241,6 +243,7 @@ OPTIONS
 	-name
 		exports a name as single value attribute in
 		the main table (this is redundant but can be useful)
+
 EndHelp
   close HELP;
 }
@@ -275,6 +278,11 @@ sub ReadArguments {
       $a++;
       $main::suffix = $ARGV[$a];
       
+      ### output dir
+    } elsif ($ARGV[$a] eq "-outdir") {
+      $a++;
+      $main::dir{output} = $ARGV[$a];
+      
       ### help
     } elsif (($ARGV[$a] eq "-h") ||
 	     ($ARGV[$a] eq "-help")) {
@@ -306,7 +314,9 @@ sub ReadArguments {
 
 sub ParsePositions {
 ### clean up positions
-    warn ("; parsing gene positions\n")
+    warn ("; ",
+	  &AlphaDate(),
+	  "\tparsing gene positions\n")
 	if ($warn_level >= 1);
 
     foreach my $gene ($genes->get_objects()) {
@@ -321,16 +331,13 @@ sub ParsePositions {
 	    &ErrorMessage("Warning: gene ", $gene->get_attribute("id"), " has no position attribute\n");
 	    next;
 	}
-	my $coord;
-	my $chomosome;
-	my $chrom_pos;
-	my $strand;
-	my $start;
-	my $end;
-#	if ($organism eq "Escherichia coli") {
-#	    $chromosome = "genome";
-#	    $chrom_pos = $position;
-#	} elsif ($organism eq "Saccharomyces cerevisiae") {
+	my $coord = "<NULL>";
+	my $chomosome = "<NULL>";
+	my $chrom_pos = "<NULL>";
+	my $strand = "<NULL>";
+	my $start = "<NULL>";
+	my $end = "<NULL>";
+
 	if ($position =~ /^(\S+)\:(.*)/) {
 	    $chromosome = $1;
 	    $chrom_pos = $2;
@@ -378,14 +385,8 @@ sub ParsePositions {
 	    }
 	    
 	    #### gene start and end 
-	    $start = $exon_starts[0];
-	    $end = $exon_ends[$#exons];
-#	    if ($exons[0] =~ /^(\d+)\.\.(\d+)$/) {
-#		$start = $1;
-#	    }
-#	    if ($exons[$#exons] =~ /^(\d+)\.\.(\d+)$/) {
-#		$end = $2;
-#	    }
+	    $start = $exon_starts[0] || "<NULL>";
+	    $end = $exon_ends[$#exons] || "<NULL>";
 
 	    #### introns
 	    my @introns = ();
