@@ -19,10 +19,15 @@ V=1
 STR=-1str
 NOOV=-noov
 
+### Default upstream sequence length
+#UP_LEN=1000
+UP_LEN=800
+
 #### organisms
 #ORG=Mycoplasma_genitalium
 #ORG=Homo_sapiens
-ORG=Saccharomyces_cerevisiae_no_mito
+ORG=Saccharomyces_cerevisiae
+#ORG=Saccharomyces_cerevisiae_no_mito
 ORGANISMS=					\
 	Saccharomyces_cerevisiae_no_mito	\
 	Homo_sapiens				\
@@ -43,17 +48,19 @@ RESULT=results
 ORG_DIR=${RESULT}/${ORG}
 POS_DIR=${ORG_DIR}/position_analysis
 OLIGO_DIR=${ORG_DIR}/oligo-frequencies
+MS_MARKOV_DIR=${ORG_DIR}/MS_Markov_models
 RAND_FAM_DIR=${ORG_DIR}/random_gene_families
 RAND_MULTI_DIR=${RAND_FAM_DIR}/rand_r${R}_n${N}
 
-UP_LEN=1000
 SEQ_PREFIX=${ORG}_allup${UP_LEN}${NOORF}
-SEQ_FILE=${ORG_DIR}/${SEQ_PREFIX}.fta${COMPRESS}
+SEQ_FILE_UNCOMPRESSED=${ORG_DIR}/${SEQ_PREFIX}.fta
+SEQ_FILE=${SEQ_FILE_UNCOMPRESSED}${COMPRESS}
 
 dirs:
 	mkdir -p ${ORG_DIR}
 	mkdir -p ${POS_DIR}
 	mkdir -p ${OLIGO_DIR}
+	mkdir -p ${MS_MARKOV_DIR}
 	mkdir -p ${OLIGO_DISTRIB_DIR}
 	mkdir -p ${RAND_MULTI_DIR}
 
@@ -101,10 +108,12 @@ iterate_seq_lengths:
 
 ################################################################
 #### retrieve upstream sequences
-#NOORF=-noorf
-NOORF=
+NOORF=-noorf
+#NOORF=
+RETRIEVE_CMD=retrieve-seq -org ${ORG} -all -o ${SEQ_FILE} ${NOORF} -from -1 -to -${UP_LEN}
 seqs: dirs
-	retrieve-seq -org ${ORG} -all -o ${SEQ_FILE} ${NOORF} -from -1 -to -${UP_LEN}
+	@echo "Retrieving upstream sequences	${RETRIEVE_CMD}"
+	${RETRIEVE_CMD}
 
 clean_seqs:
 	\rm -f ${SEQ_FILE}
@@ -410,3 +419,22 @@ plasmodium:
 	${MAKE} oligo_distrib UP_LEN=1000 ORG=Plasmodium_falciparum V=3
 
 
+################################################################
+## Create background models for MotifSampler
+MARKOV_ORDERS=0 1 2 3 4 5
+MS_markov_models:
+	${MAKE} seqs COMPRESS=''
+	@for m in ${MARKOV_ORDERS} ;do		\
+		${MAKE} MS_one_markov_model MKV=$${m} COMPRESS='';	\
+	done 
+	rm -f ${SEQ_FILE_UNCOMPRESSED}
+
+MS_MARKOV_FILE=${MS_MARKOV_DIR}/MS_mkv${MKV}_${SEQ_PREFIX}.txt
+MS_one_markov_model: dirs
+	CreateBackgroundModel -n ${ORG} -f ${SEQ_FILE} -o ${MKV} -b ${MS_MARKOV_FILE}
+
+
+################################################################
+## Create background models for MEME
+
+## TO BE DONE
