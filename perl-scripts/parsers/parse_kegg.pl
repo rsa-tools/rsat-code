@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_kegg.pl,v 1.8 2001/09/25 19:27:54 jvanheld Exp $
+# $Id: parse_kegg.pl,v 1.9 2002/01/24 16:03:41 jvanheld Exp $
 #
-# Time-stamp: <2001-09-25 21:26:10 jvanheld>
+# Time-stamp: <2002-01-24 16:56:32 jvanheld>
 #
 ############################################################
 
@@ -65,10 +65,19 @@ package main;
 #
 
 #### ligand
-$data_file{compound} = $dir{KEGG}."/molecules/ligand/compound";
-$data_file{reaction} = $dir{KEGG}."/molecules/ligand/reaction.lst";
-$data_file{reaction_name} = $dir{KEGG}."/molecules/ligand/reaction_name.lst";
-$data_file{ec} = $dir{KEGG}."/molecules/ligand/ECtable";
+#$dir{KEGG} = "${Databases}/kegg.genome.ad.jp/pub";
+#$dir{KEGG} = "/win/databases/downloads/kegg.genome.ad.jp/pub";
+#$data_file{compound} = $dir{KEGG}."/molecules/ligand/compound";
+#$data_file{reaction} = $dir{KEGG}."/molecules/ligand/reaction.lst";
+#$data_file{reaction_name} = $dir{KEGG}."/molecules/ligand/reaction_name.lst";
+#$data_file{ec} = $dir{KEGG}."/molecules/ligand/ECtable";
+
+$dir{KEGG} = "/win/databases/downloads/ftp.genome.ad.jp/pub/kegg";
+$data_file{compound} = $dir{KEGG}."/ligand/compound";
+$data_file{reaction} = $dir{KEGG}."/ligand/reaction.lst";
+$data_file{reaction_name} = $dir{KEGG}."/ligand/reaction_name.lst";
+$data_file{ec} = $dir{KEGG}."/ligand/ECtable";
+
 
 foreach $key (keys %data_file) {
     if (-e $data_file{$key}) {
@@ -181,8 +190,8 @@ foreach $compound ($compounds->get_objects()) {
 #	$compound->set_attribute("primary_name",$name);
 #    }
     #### check for compounds without formula
-    if ($compound->get_attribute("formula") eq "<UNDEF>") {
-	$compound->set_attribute("formula","<NULL>");
+    if ($compound->get_attribute("formula") eq $null) {
+	$compound->set_attribute("formula",$null);
     }
 }
 
@@ -398,7 +407,7 @@ sub ParseReactions {
 		&ErrorMessage ("Error: equation $reaction_id found in file $equation_file but not in $input_file.\n");
 		next;
 	    }
-	    $reaction->set_attribute("equation",$equation);
+	    $reaction->force_attribute("equation",$equation);
 	}
     }
     close EQUATIONS; 
@@ -417,16 +426,16 @@ sub ParseEC {
 #    $ec_object = $ecs->new_object(%args);
     $ec_object->push_attribute("names", "0.0.0.0");
     $ec_object->push_attribute("names", "non-enzymatic or not clearly enzymatic");
-    $ec_object->set_attribute("ec", "0.0.0.0");
-    $ec_object->set_attribute("parent","<NULL>");
+#    $ec_object->set_attribute("ec", "0.0.0.0");
+    $ec_object->set_attribute("parent",$null);
 
     ### create the class for -.-.-.-
     $ec_object = $ecs->new_object(%args,id=>"-.-.-.-");
 #    $ec_object = $ecs->new_object(%args);
     $ec_object->push_attribute("names", "-.-.-.-");
     $ec_object->push_attribute("names", "non-assigned EC number");
-    $ec_object->set_attribute("ec", "-.-.-.-");
-    $ec_object->set_attribute("parent","<NULL>");
+#    $ec_object->set_attribute("ec", "-.-.-.-");
+    $ec_object->set_attribute("parent",$null);
 
     ### open the input stream
     if ($file) {
@@ -452,7 +461,7 @@ sub ParseEC {
 	    foreach $name (@names) {
 		$ec_object->push_attribute("names",$ec_number);
 		$ec_object->push_attribute("names",$name);
-		$ec_object->set_attribute("ec",$ec_number);
+#		$ec_object->force_attribute("ec",$ec_number);
 	    }
 	    
 	    ### partially specified ecs
@@ -490,7 +499,7 @@ sub ParseEC {
     ### create taxonomic relationships between EC numbersc
     #my %objects = $class->get_id_index();
     foreach my $ec_object ($ecs->get_objects()) {
-	if (my $ec_number = $ec_object->get_attribute("ec")) {
+	if (my $ec_number = $ec_object->get_attribute("id")) {
 	    if ($ec_number =~ /\.\d+$/) {
 		$parent_ec = $`;
 		if ($parent_object = $ecs->get_object($parent_ec)) {
@@ -500,7 +509,7 @@ sub ParseEC {
 		    &ErrorMessage("Error: parent $parent_ec not defined for child $ec_number\n");
 		}
 	    } elsif ($ec_number =~ /^\d+$/) {
-		    $ec_object->set_attribute("parent","<NULL>");
+		    $ec_object->set_attribute("parent",$null);
 	    }
 	}
     }
@@ -703,7 +712,7 @@ sub ParseKeggPathways {
 	if (defined($pathway_names{$map_id})) {
 	    $pathway->new_attribute_value("names",$pathway_names{$map_id});
 	} else {
-	    $pathway->new_attribute_value("names",<NULL>);
+	    $pathway->new_attribute_value("names",$null);
 	    &ErrorMessage("WARNING: no name for pathway $map_id\n");
 	}
 	
@@ -740,14 +749,14 @@ sub ParseKeggPathways {
 		$pathway->set_attribute("parent", $parent_id);
 	    } else {
 		&ErrorMessage("Cannot identify generic pathway for id $map_id\n");
-		$pathway->set_attribute("parent","<NULL>");
+		$pathway->set_attribute("parent",$null);
 	    }
 
 	    ### pathway name
 	    if (defined($pathway_names{$map_id})) {
 		$pathway->new_attribute_value("names",$pathway_names{$map_id});
 	    } else {
-		$pathway->new_attribute_value("names","<NULL>");
+		$pathway->new_attribute_value("names",$null);
 		&ErrorMessage("WARNING: no name for pathway $map_id\n");
 	    }
 	    $pathway->new_attribute_value("organism",$organism);
@@ -778,7 +787,7 @@ sub ParsePathwayReactions {
     my %pathway_reaction = ();
     my %pathway_ec = ();
     while ($line = <PATH_REACT>) {
-	my $reaction_direction = "<UNDEF>";
+	my $reaction_direction = $null;
 	chomp $line;
 	my ($reaction_id, $ec_id, $equation)  = split ":", $line;
 	$ec_id = &trim($ec_id);
