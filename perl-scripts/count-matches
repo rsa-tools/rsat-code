@@ -33,6 +33,8 @@ local @pattern2 = ();
 			      mlen
 			      tlen
 			      offset
+			      max_w
+			      rel_w
 			      );
 foreach my $field (@supported_threshold_fields) {
     $supported_threshold_field{$field} = 1;
@@ -51,6 +53,9 @@ $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
 			      length
 			      offset
 			      strand
+			      max_w
+			      rel_w
+			      top_s
 			      );
 foreach my $field (@supported_return_fields) {
     $supported_return_field{$field} = 1;
@@ -70,7 +75,15 @@ my %field_format = (match=>"%d",
 		    tlen=>"%d",
 		    offset=>"%g",
 		    strand=>"%s",		
-   );
+		    max_w=>"%.2f",
+		    max_w1=>"%.2f",
+		    max_w2=>"%.2f",
+		    rel_w=>"%.3f",
+		    rel_w1=>"%.3f",
+		    rel_w2=>"%.3f",
+		    top_s1=>"%s",
+		    top_s2=>"%s",
+		    );
 
 &ReadArguments();
 
@@ -95,6 +108,12 @@ foreach my $field (@temp_return_fields) {
 	push @return_fields, "seq1", "seq2";
     } elsif ($field eq "id") {
 	push @return_fields, "id1", "id2";
+    } elsif ($field eq "max_w") {
+	push @return_fields, "max_w", "max_w1", "max_w2";
+    } elsif ($field eq "rel_w") {
+	push @return_fields, "rel_w", "rel_w1", "rel_w2";
+    } elsif ($field eq "top_s") {
+	push @return_fields, "top_s1", "top_s2";
     } elsif ($field eq "length") {
 	push @return_fields, "len1", "len2", "mlen", "tlen";
     } else {
@@ -195,6 +214,34 @@ sub OneMatch {
 	$len2 = length($seq2);
 	$tlen = $len1 + $len2 - $mlen; ## total length of the alignment
     }
+
+    ################################################################
+    ## Calculate max matching weights
+    ($max_w1, $top_s1) = &MaxMatchingWeight($seq1);
+    ($max_w2, $top_s2) = &MaxMatchingWeight($seq2);
+    $max_w = &min($max_w1, $max_w2);
+
+    ################################################################
+    ## Calculate relative weights
+    if ($max_w1 > 0) {
+	$rel_w1 = $weight/$max_w1;
+    } else {
+	$rel_w1 = "NA";
+    }
+    
+    if ($max_w2 > 0) {
+	$rel_w2 = $weight/$max_w2;
+    } else {
+	$rel_w2 = "NA";
+    }
+    
+    if ($max_w > 0) {
+	$rel_w = $weight/$max_w;
+    } else {
+	$rel_w = "NA";
+    }
+    
+
     
     ################################################################
     ## Print the result for this comparison
@@ -346,6 +393,20 @@ RETURN FIELDS
 		For an alignment between non-ambigous nucleotides, the
 		weight is maximal, and its value is the number of
 		matching residues.
+
+	max weight
+		Maximal weight for the match with a given pattern.
+		max_w1	maximal weight for pattern 1
+		max_w2	maximal weight for pattern 2
+		max_w maximal weight between pattern 1 and pattern2
+		      max_w = min(max_w1, max_w1)
+
+	relative weight
+		The relative weight is the ratio between matching weight and
+		maximal weight.
+		   rel_w1 = weight/max_w1
+		   rel_w2 = weight/max_w2
+		   rel_w = weight/max_w
 
 	length	lengths 
 		This option returns 4 length values

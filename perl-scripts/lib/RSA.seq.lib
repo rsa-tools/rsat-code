@@ -97,17 +97,11 @@ sub InitMatchScores {
 	    R1: foreach my $r1 (@match1) {
 		R2: foreach my $r2 (@match2) {
 		    if ($r1 eq $r2) {
-#<<<<<<< RSA.seq.lib
-#			$match{$d2}{$d1} = $match{$d1}{$d2} = &max($match1, $match2)/4;
-##			warn join("\t", "match", $d1, $r1, $d2, $r2, $match{$d2}{$d1}, $match{$d2}{$d1}), "\n" if ($main::verbose >= 10);
-#=======
 			my $max_match = &max($match1, $match2);
 			my $min_match = &min($match1, $match2);
-#			$match{$d2}{$d1} = $match{$d1}{$d2} = $max_match/4;
 			$match{$d2}{$d1} = $match{$d1}{$d2} = &sum_of_hypergeometrics($match1, 4, $match2, 1, $min_match);
 
 			warn join("\t", "match", $d1, $r1, $d2, $r2, $max_match, $min_match, $match{$d2}{$d1}, $match{$d2}{$d1}), "\n" if ($main::verbose >= 10);
-#>>>>>>> 1.22
 			last R1;
 		    }
 		}
@@ -115,81 +109,51 @@ sub InitMatchScores {
 	}
     }
 
-    ## Check (debug)
-#    if ($main::verbose >= 10) {
-#	foreach my $d1 (@IUPAC) {
-#	    foreach my $d2 (@IUPAC) {
-#		warn join("\t", 
-#			  "d1:$d1", join ("", @match1), $match1,
-#			  "d2:$d2", join ("", @match2), $match2,
-#		      $match{$d1}{$d2},
-#			  $match{$d2}{$d1},
-#			 ), "\n";
-#	    }
-#	}
-#    }
-
-#     $match{A}{A} = 1/4;
-#     $match{C}{C} = 1/4;
-#     $match{G}{G} = 1/4;
-#     $match{T}{T} = 1/4;
-    
-#     $match{R}{A} = 1/2;
-#     $match{R}{G} = 1/2;
-#     $match{S}{C} = 1/2;
-#     $match{S}{G} = 1/2;
-#     $match{W}{T} = 1/2;
-#     $match{W}{A} = 1/2;
-#     $match{Y}{C} = 1/2;
-#     $match{Y}{T} = 1/2;
-#     $match{B}{C} = 3/4;
-#     $match{B}{G} = 3/4;
-#     $match{B}{T} = 3/4;
-#     $match{D}{A} = 3/4;
-#     $match{D}{G} = 3/4;
-#     $match{D}{T} = 3/4;
-#     $match{H}{A} = 3/4;
-#     $match{H}{C} = 3/4;
-#     $match{H}{T} = 3/4;
-#     $match{V}{A} = 3/4;
-#     $match{V}{C} = 3/4;
-#     $match{V}{G} = 3/4;
-#     $match{N}{A} = 1;
-#     $match{N}{C} = 1;
-#     $match{N}{G} = 1;
-#     $match{N}{T} = 1;
-    
-#     $match{A}{R} = 1/2;
-#     $match{G}{R} = 1/2;
-#     $match{C}{S} = 1/2;
-#     $match{G}{S} = 1/2;
-#     $match{T}{W} = 1/2;
-#     $match{A}{W} = 1/2;
-#     $match{C}{Y} = 1/2;
-#     $match{T}{Y} = 1/2;
-#     $match{C}{B} = 3/4;
-#     $match{G}{B} = 3/4;
-#     $match{T}{B} = 3/4;
-#     $match{A}{D} = 3/4;
-#     $match{G}{D} = 3/4;
-#     $match{T}{D} = 3/4;
-#     $match{A}{H} = 3/4;
-#     $match{C}{H} = 3/4;
-#     $match{T}{H} = 3/4;
-#     $match{A}{V} = 3/4;
-#     $match{C}{V} = 3/4;
-#     $match{G}{V} = 3/4;
-#     $match{A}{N} = 1;
-#     $match{C}{N} = 1;
-#     $match{G}{N} = 1;
-#     $match{T}{N} = 1;
-#     $match{N}{N} = 1;
 
     return %match;
 }
 
+################################################################
+=pod
+
+=item MaxMatchingWeight
+
+Calculate the maximal matching weight returned by CountMatches() for a
+given pattern
+
+usage:
+   ($max_weight, $top_matching_seq) = &MaxMatchingWeight($seq1);
+
+=cut
+
+sub MaxMatchingWeight {
+    my ($seq) = @_;
+    my %IUPAC = &IUPAC();
+    my $top_matching_seq = "";
+    my $len = length($seq);
+    foreach my $offset (0..$len-1) {
+	my $base = uc(substr($seq,$offset,1));
+	
+	my @match = @{$IUPAC{$base}}; ## set of matching residues
+
+	## For the time begin, I just take the first matching residue In a
+	## later version, I will use the residue with the lowest prior
+	## probability
+	$top_matching_seq .= $match[0];
+#	warn (";base: ",$base," matches: ",@match, "\t", $top_matching_seq,"\n");
+	
+    }
+
+    #warn (";seq: ",$seq," top_seq: ",$top_matching_seq,"\n");
+    my ($matches,$max_weight, $proba, $length) = &CountMatches($seq,$top_matching_seq);
+    #warn join"\t",";CountMatches() results",$matches,$max_weight, $proba, $length,"\n";
+    return ($max_weight,$top_matching_seq);
+}
+
+
 
 ################################################################
+
 =pod
 
 =item CountMatches($seq1, $seq2)
@@ -233,8 +197,6 @@ sub CountMatches {
     } 
     return ($matches, $weight, $proba, $length);
 }
-
-
 
 ################################################################
 =pod 
