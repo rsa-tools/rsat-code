@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.46 2004/01/23 00:24:58 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.47 2004/01/23 22:36:25 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -1829,9 +1829,9 @@ sub CalibrateOligos {
     ### Analyse upstream occurrence distributions for each sequence length
     &CheckOutDir($dir{calib});
     warn "; Calculating oligonucleotide distributions in all upstream sequences\n" if ($verbose >= 1);
-    foreach my $calib_length (@calib_lengths) {
+    foreach my $calib_length (sort {$a <=> $b} @calib_lengths) {
 	## retrieve all upstream sequence
-	my $allup = $dir{calib}."/tmp_all_up_${len}.fasta";
+	my $allup = $dir{calib}."/tmp_all_up_".$calib_length.".fasta";
 	my $command = "retrieve-seq -org $organism_name -all -from -$calib_length -to -1 -o $allup";
 	warn ";\tRetrieving all upstream sequences\t", $allup, "\n" if ($main::verbose >= 0);
 	&doit($command, $dry_run, $die_on_error);
@@ -1842,7 +1842,7 @@ sub CalibrateOligos {
 
 	    ## Calculate occurrence distributions
 	    my $distrib_file = $calib_prefix."_distrib.tab";
-	    $command = "oligo-analysis -v 1 -l $oligo_len $noov $strands  -i $allup -return occ -distrib -o $distrib_file";
+	    $command = "oligo-analysis -v 3 -l $oligo_len $noov $strands  -i $allup -return occ -distrib -o $distrib_file";
 	    warn ";\tAnalysing ",$oligo_len,"nt distributions\t",$distrib_file, "\n" if ($main::verbose >= 0);
 	    &doit($command, $dry_run, 0);
 	    
