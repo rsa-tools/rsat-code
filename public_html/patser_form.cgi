@@ -52,7 +52,7 @@ if (($matrix_file = $query->param("matrix_file")) &&
 print "<CENTER>";
 print "Scan a DNA sequence with a profile matrix<BR>\n";
 print "Program developed by <A HREF='mailto:hertz\@colorado.edu (Jerry Hertz)'>Jerry Hertz</A><BR>";
-print "Web interface by <A HREF='mailto:jvanheld\@ucmb.ulb.ac.be'>Jacques van Helden</A><P>";
+print "Web interface by <A HREF='mailto:jvanheld\@scmbb.ulb.ac.be'>Jacques van Helden</A><P>";
 
 print "</CENTER>";
 
@@ -196,7 +196,7 @@ print $query->end_form;
 
 print "<TD><B><A HREF='help.patser.html'>MANUAL</A></B></TD>\n";
 print "<TD><B><A HREF='tutorials/tut_patser.html'>TUTORIAL</A></B></TD>\n";
-print "<TD><B><A HREF='mailto:jvanheld\@ucmb.ulb.ac.be'>MAIL</A></B></TD>\n";
+print "<TD><B><A HREF='mailto:jvanheld\@scmbb.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
 print "</FONT>\n";
