@@ -379,6 +379,7 @@ sub sum_of_negbin2 {
     my ($mean, $variance, $from, $to) = @_;
     
     ### Check parameters
+    &Warning("Cannot calculate negbin with mean <= 0 and x >0") if (($mean <= 0) && ($to > 0));
     &FatalError("negbin2: the mean should be strictly positive") if ($mean <= 0);
     &FatalError("negbin2: the variance should be positive") if ($variance < 0);
     &FatalError("negbin2: the variance should be greater than the mean") if ($variance <= $mean);
@@ -493,6 +494,10 @@ sub poisson {
 sub sum_of_poisson {
     my ($lambda,$from,$to) = @_;
     my $poi;
+    if (($lambda <= 0) && (($from > 0) || ($to > 0))){
+	&Warning( "sum_of_poisson($lambda, $from, $to). Cannot calculate Poisson probability with lambda <= 0 and x > 0");
+	return("NA");
+    }
     my $log_lambda = log($lambda);
 
     my $log_poi;
@@ -640,7 +645,7 @@ sub hypergeometric {
 
 
     
-# 	$Id: RSA.stat.lib,v 1.21 2004/01/14 22:11:36 jvanheld Exp $	
+# 	$Id: RSA.stat.lib,v 1.22 2004/02/01 10:49:03 jvanheld Exp $	
 
     #### initialization
     if (defined($args{previous_value})) {

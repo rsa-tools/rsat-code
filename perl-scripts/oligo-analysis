@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.74 2004/02/01 03:27:51 jvanheld Exp $
+# $Id: oligo-analysis,v 1.75 2004/02/01 10:49:03 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -792,7 +792,7 @@ sub NbPossibleOligo {
 #### expected oligomer frequencies
 sub CalcExpected {
     if ($verbose >= 2) {
-	&TimeWarn("Calculating probabilities");
+	&TimeWarn("Calculating expected frequencies");
     }
     
     #### Calcualte the number of possible positions for each pattern
@@ -1127,12 +1127,20 @@ sub CalcProba {
     
     ### calculate oligo probabilities
     foreach $pattern_seq (sort keys %patterns) {
-	&TimeWarn ("calculating proba $pattern_seq occ %7d exp_occ %7.1f\texp_freq %g\tpos %g\n", 
-		      $patterns{$pattern_seq}->{occ}, 
-		      $patterns{$pattern_seq}->{exp_occ},
-		      $patterns{$pattern_seq}->{exp_freq},
-		      $patterns{$pattern_seq}->{nb_possible_pos}
-		      ) if ($verbose >= 4);
+	warn sprintf("calculating proba $pattern_seq occ %7d exp_occ %7.1f\texp_freq %g\tpos %g\n", 
+		     $patterns{$pattern_seq}->{occ}, 
+		     $patterns{$pattern_seq}->{exp_occ},
+		     $patterns{$pattern_seq}->{exp_freq},
+		     $patterns{$pattern_seq}->{nb_possible_pos}
+		     ) if ($verbose >= 4);
+
+	if ($patterns{$pattern_seq}->{exp_freq} <= 0) {
+	    &Warning(join "\t", "Cannot calculate probability for pattern", $pattern_seq, 
+		     "Invalid expected frequency",
+		     $patterns{$pattern_seq}->{exp_freq});
+	    $patterns{$pattern_seq}->{exp_occ} = "NA";
+	    next;
+	}
 	
 #	$rc = uc(&SmartRC($pattern_seq));
 	
