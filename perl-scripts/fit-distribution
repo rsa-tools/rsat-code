@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: fit-distribution,v 1.7 2004/01/14 04:17:09 jvanheld Exp $
+# $Id: fit-distribution,v 1.8 2004/01/14 22:11:36 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -40,9 +40,9 @@ local @out_fields = qw (pattern
 			);
 
 %supported_distrib = ("poisson"=>1,
-			    "negbin"=>1,
-			    "binomial"=>1,
-			    );
+		      "negbin"=>1,
+#		      "binomial"=>1,
+		      );
 $supported_distrib = join ", ", sort keys %supported_distrib;
 
 &ReadArguments();
@@ -118,25 +118,27 @@ while (<$in>) {
 	@values = $min_occ..$max_occ;
     }
 
-
+    
     ## Read the distribution
     local @counts = split "\t";
     local $pattern = shift @counts;
     local $sum = 0;
     local $ssq = 0;
     local $repet = 0;
+
     for my $i (0..$#counts) {
 	my $occ = $values[$i];
-	$repet += $counts[$occ];
-	$sum += $occ*$counts[$occ];
-	$ssq += $occ*$occ*$counts[$occ];
+	$repet += $counts[$i];
+	$sum += $occ*$counts[$i];
+	$ssq += $occ*$occ*$counts[$i];
 #	warn join ("\t", $i, $occ, $repet, $sum, $ssq), "\n" if ($main::verbose >= 10);
     }
+
     local $avg = $sum/$repet;
     local $var = $ssq/$repet - $avg*$avg;
     local $std = sqrt($var);
     local $last_repet = $repet;
-    
+
     ## Fit a poisson distribution and calculate the goodness of fit
     local @expected;
     local $p = "NA";
@@ -154,14 +156,38 @@ while (<$in>) {
 	}
     };
 
+    
+    if ($min_occ > 0) {
+	@expected = @expected[$min_occ..$#expected];
+    }
+    
+
     local $exp_sum = 0;
     foreach my $i (0..$#expected) {
 	$expected[$i] *= $repet;
 	$exp_sum += $expected[$i];
     }
     
+    warn join( "\t", 
+	      "header ".$header_done, 
+	      "OK ".$header_OK, 
+	      "\n".$pattern,
+	      "repet ".$repet,
+	      "sum ".$sum,
+	      "ssq ".$ssq,
+	      "avg ".$avg,
+	      "var ".$var,
+	      "std ".$std,
+	      "values ".scalar(@values),  
+	      "counts ".scalar(@counts), 
+	      "expected ".scalar(@expected), 
+	      join( ":", @values),
+	      join( ":", @counts),
+	      join( ":", @expected),
+	      ), "\n" if ($main::verbose >= 10);
+
     ## Perform a chi-square test
-    local ($chi2, $df, $left_group, $right_group, $obs_ref, $exp_ref) = &ChiSquare("goodness", 2, $max_occ+1, @counts, @expected);
+    local ($chi2, $df, $left_group, $right_group, $obs_ref, $exp_ref) = &ChiSquare("goodness", 2, scalar(@counts), @counts, @expected);
 
     local $obs_grouped;
     $obs_grouped = join ":", @{$obs_ref};
@@ -223,7 +249,7 @@ sub PrintHelp {
   open HELP, "| more";
   print HELP <<End_of_help;
 NAME
-	fit-distribution.pl
+	fit-distribution
 
         2002 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
 	
@@ -235,7 +261,7 @@ CATEGORY
 	util
 
 USAGE
-        fit-distribution.pl [-i inputfile] [-o outputfile] [-v]
+        fit-distribution [-i inputfile] [-o outputfile] [-v]
 
 OPTIONS
 	-h	(must be first argument) display full help message
@@ -298,7 +324,7 @@ End_of_help
 sub PrintOptions {
   open HELP, "| more";
   print HELP <<End_short_help;
-fit-distribution.pl options
+fit-distribution options
 ----------------
 -h		(must be first argument) display full help message
 -help		(must be first argument) display options
@@ -342,8 +368,8 @@ sub ReadArguments {
 	    
 	    ### distribution  
 	} elsif ($ARGV[$a] eq "-distrib") {
-	    $distrib = $ARGV[$a+1];
-	    &FatalError("Invalid distribution '$distrib'. Supported") 
+	    $distrib = lc($ARGV[$a+1]);
+	    &FatalError("Invalid distribution '$distrib'. Supported $supported_distrib") 
 		unless ($supported_distrib{$distrib});
 
 	}
@@ -353,7 +379,7 @@ sub ReadArguments {
 ################################################################
 #### verbose message
 sub Verbose {
-    print $out "; fit-distribution.pl ";
+    print $out "; fit-distribution ";
     &PrintArguments($out);
     if (defined(%infile)) {
 	print $out "; Input files\n";

@@ -640,7 +640,7 @@ sub hypergeometric {
 
 
     
-# 	$Id: RSA.stat.lib,v 1.20 2004/01/14 04:15:26 jvanheld Exp $	
+# 	$Id: RSA.stat.lib,v 1.21 2004/01/14 22:11:36 jvanheld Exp $	
 
     #### initialization
     if (defined($args{previous_value})) {
@@ -868,10 +868,13 @@ sub FisherExactTest {
     
     ## Check parameters
     if (($row_nb < 2) || ($col_nb < 2)) {
-	return ";Error: at least 2 rows and 2 columns are required"; # too few rows or columns
+	&FatalError( ";ChiSquare: at least 2 rows and 2 columns are required for the chi2 test"); # too few rows or columns
     }
     unless ($val_nb == $row_nb * $col_nb) {
-	return ";Error: invalid number of numeric values"; # inappropriate number of values provided
+	&FatalError( ";ChiSquare: invalid number of numeric values",
+		     "\t".$row_nb." rows",
+		     "\t".$col_nb." columns",
+		     "\t".$val_nb." values");
     }
     foreach $v (@values) {
 	return ";Error: $v is not a natural number" unless &IsNatural($v); # invalid values
@@ -1035,9 +1038,15 @@ sub ChiSquare {
     if (($row_nb < 2) || ($col_nb < 2)) {
 	&FatalError("At least 2 rows and 2 columns are required"); # too few rows or columns
     }
+
+    ## values = columns*rows
     unless ($val_nb == $row_nb * $col_nb) {
-	&FatalError("Invalid number of numeric values"); # inappropriate number of values provided
+	&FatalError( ";ChiSquare: invalid number of numeric values",
+		     "\t".$row_nb." rows",
+		     "\t".$col_nb." columns",
+		     "\t".$val_nb." values");
     }
+
     ### all values must be real numbers
     foreach $val (@values) {
 	&FatalError("Invalid values: $val is not a real number") unless &IsReal($val); # invalid values
