@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.59 2003/04/09 07:16:57 jvanheld Exp $
+# $Id: oligo-analysis,v 1.60 2003/10/20 23:10:58 jvanheld Exp $
 #
-# Time-stamp: <2003-04-09 09:12:58 jvanheld>
+# Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -159,6 +159,7 @@ if (($alphabet) && !($input_alphabet)) {
 
 ################################################################
 #### Read expected frequencies from a file
+
 if (($method eq "Frequency file") && 
     ($return{'exp_freq'})) {    #### expected frequencies ####
     &ReadExpectedFrequencies($exp_freq_file, $sum_rc);
@@ -175,8 +176,8 @@ $out = &OpenOutputFile($outputfile);
 &CalcSubWordFrequencies() if (($method eq "Markov chain") || ($method eq "lexicon"));
 &CalcAlphabet() if (($input_alphabet) || ($return{'zscore'}));
 &Degenerate() if ($one_var_position);
-&SumReverseComplements() if ($sum_rc);
 &CalcFrequencies() if (($return{'freq'}) || ($verbose >= 1) || ($method eq "Markov chain"));
+&SumReverseComplements() if ($sum_rc);
 #&GroupRc() if ($group_rc);
 &SelectPalindroms() if ($palindroms);
 &OccurrenceThreshold() if ($occurrence_threshold > 0);
@@ -231,7 +232,7 @@ sub CountOligo {
 	}
 	print $out "\n";
     }
-    while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir)) &&
+    while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir, $seq_type)) &&
 	   (($current_seq) || ($current_id))) {
 	
 	### remove tabs and blank spaces ###    
@@ -324,7 +325,7 @@ sub CountOligo {
 	    
 	    ### matching sequences (only count first occurrence per sequence)
 	    if ($return{'mseq'}) {
-		if (($sum_rc == 0) || ($current_mseq{lc(&SmartRC($pattern_seq))} < 1)) {
+		if (($sum_rc==0) || ($current_mseq{lc(&SmartRC($pattern_seq))} < 1)) {
 		    $current_mseq{$pattern_seq} = 1;
 		}
 	    }
@@ -800,7 +801,7 @@ sub CalcExpected {
 		$nt = substr($pattern_seq, $l, 1);
 		$patterns{$pattern_seq}->{exp_freq} *= $residue_proba{$nt};
 	    }
-	}  
+	}
     } 
     
     #### correct expected frequencies with pseudo weight
@@ -812,6 +813,21 @@ sub CalcExpected {
 	}
     }
 
+
+    ################################################################
+    ### sum expected frequencies for pairs of reverse complements
+    if (($sum_rc) &&
+	($method ne "Frequency file")) {    #### this has alrady been treated when reading expected frequency file
+	foreach $pattern_seq (sort keys %patterns) {
+	    $rc = lc(&SmartRC($pattern_seq));
+	    unless (defined($patterns{$rc}->{exp_freq})) {
+		$patterns{$rc}->{exp_freq} = $patterns{$pattern_seq}->{exp_freq};
+	    }
+	}
+	&SumExpectedFrequencies(%patterns);
+    }
+
+    ################################################################
     #### expected number of occurrences and matching sequences ####
     foreach $pattern_seq (sort keys %patterns) {
 #	if ($noov) {
@@ -839,7 +855,7 @@ sub CalcExpected {
 	    }
 	}
     }	
-    
+
 
 } # CalcExpected
 
@@ -1329,7 +1345,9 @@ sub PrintResult {
     &PrintHeaderLine();
     
     ### print result ###
+    my $rank = 0;
     foreach $p (0..$#sorted_keys) {
+	$rank++;
 	my $pattern_seq = $sorted_keys[$p];
 	### oligo sequence and identifier
 	print $out "$pattern_seq";
