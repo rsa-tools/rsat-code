@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_swissprot.pl,v 1.8 2002/01/21 17:01:02 jvanheld Exp $
+# $Id: parse_swissprot.pl,v 1.9 2002/01/21 17:12:21 jvanheld Exp $
 #
-# Time-stamp: <2002-01-21 17:59:21 jvanheld>
+# Time-stamp: <2002-01-21 18:10:11 jvanheld>
 #
 ############################################################
 
@@ -34,18 +34,20 @@ package main;
     
     ### input directories and files
 #    $dir{input} = "/win/databases/downloads/ftp.ebi.ac.uk/pub/databases/";
-    $dir{input} = "/win/databases/downloads/ftp.expasy.org/databases";
+    $dir{input} = "/win/databases/downloads/ftp.expasy.org/databases/sp_tr_nrdb";
 
-    $dir{swissprot} = $dir{input}."/sp_tr_nrdb/";
+    $dir{swissprot} = $dir{input};
     $source{swissprot} = "sprot";
 
 #    $dir{swissprot} = $dir{input}."/swiss-prot/release_compressed";
 #    $source{swissprot} = "sprot40";
     
-    $dir{trembl} = $dir{input}."/trembl";
-    $source{yeast} = "sptrembl/fun";
-    $source{human} = "sptrembl/hum";
-    $source{ecoli} = "sptrembl/pro";
+    $dir{trembl} = $dir{input};
+    $source{trembl} = "trembl";
+    $source{trembl_new} = "trembl_new";
+#    $source{yeast} = "sptrembl/fun";
+#    $source{human} = "sptrembl/hum";
+#    $source{ecoli} = "sptrembl/pro";
 #  &OpenIndex("ECSet");
     
     ### export classes
@@ -121,10 +123,12 @@ package main;
 	$files_to_parse{$source{swissprot}} = 1;
     }
     if ($data_sources{trembl}) {
-	foreach $organism (@selected_organisms) {
-	    $in_file{${source{$organism}}} = "uncompress -c ".$dir{trembl}."/".$source{$organism}.".dat.Z | ";
-	    $files_to_parse{$source{$organism}} = 1;
-        }
+	$in_file{$source{trembl}} = "gunzip -c ".$dir{trembl}."/".$source{trembl}.".dat.gz | ";
+	$files_to_parse{$source{trembl}} = 1;
+#	foreach $organism (@selected_organisms) {
+#	    $in_file{${source{$organism}}} = "uncompress -c ".$dir{trembl}."/".$source{$organism}.".dat.Z | ";
+#	    $files_to_parse{$source{$organism}} = 1;
+#        }
     }
 
     ### create class holders
@@ -242,11 +246,8 @@ OPTIONS
 	-test	fast parsing of partial data, for debugging
 	-indir	input directory. 
 		This directory should contain a download of the
-		expasy ftp sites :
-		       ftp://ftp.expasy.org/databases/
-		The following subdirectories are required :
-		    sp_tr_nrdb
-		    swiss-prot/release_compressed
+		non-redundant swiss-prot/trembl ftp site :
+		       ftp://ftp.expasy.org/databases/sp_tr_nrdb
 	-outdir	output directory.
 		The parsed data will be stored in this directory.
 	-w #	warn level
@@ -263,10 +264,11 @@ OPTIONS
 			yeast
 		by default, these three organisms are selected
 	-allorg export all organisms
-	-data	select and organism for exportation
+	-data	databases to be parsed (coma-separated)
 		   Valid data sources:
 			swissprot
 			trembl
+			trembl_new
 
 		by default, both sources are selected
 	-obj	export data in object format (.obj file)
@@ -301,6 +303,14 @@ sub ReadArguments {
 	     ($ARGV[$a] eq "-help")) {
       &PrintHelp;
       exit(0);
+
+      ### input directory
+    } elsif ($ARGV[$a] =~ /^-indir/) {
+      $dir{input} = $ARGV[$a+1];
+
+      ### output directory
+    } elsif ($ARGV[$a] =~ /^-outdir/) {
+      $dir{output} = $ARGV[$a+1];
 
       ### select organisms for exportation
     } elsif ($ARGV[$a] =~ /^-org/) {
