@@ -1,7 +1,8 @@
 #!/usr/bin/perl
+
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.84 2005/01/20 21:38:57 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.85 2005/03/13 10:25:46 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -14,15 +15,17 @@ BEGIN {
     require "RSA.seq.lib";
     require "RSA.help.pl";
     require "RSA.cgi.lib";
-    require "RSA.classes";
     push @INC, "$RSA/perl-scripts/parsers/";
     require "lib/load_classes.pl";
     require "lib/util.pl";
     require "lib/parsing_util.pl";
     require "$RSA/perl-scripts/lib/RSA.classes";
 }
-    
-use RSAT::matrix;
+require RSAT::util;
+require RSAT::matrix;
+require RSAT::pattern;
+require RSAT::Analysis;
+require RSAT::Family;
 
 ################################################################
 ## initialisations	    
@@ -168,15 +171,27 @@ if ($sequence_file_list) {
     ### read gene name and identifiers
     warn "; Reading ORF information ...\n" 
 	 if ($verbose >= 1);
-    &ReadFeatures($organism_name,"",$feature_types);
-    &ReadSynonyms($organism_name);
+    $organism = new RSAT::organism();
+    
+    #### Check organism name
+    if ($organism_name) {
+	$organism->check_name($organism_name);
+    } else {
+	&RSAT::error::FatalError("You must either specify an organism (-org), or an input sequence file (-seq)");
+    }
+    $organism->set_attribute("name", $organism_name);
+
+    $organism->LoadFeatures($annotation_table, $feature_types);
+    $organism->LoadSynonyms();
+
+#    &ReadFeatures($organism_name,"",$feature_types);
+#    &ReadSynonyms($organism_name);
 
     ### Read family file
-    %family = &ReadClasses($family_file, 1);
+    %family = &ReadClasses($family_file, 1, $organism);
     @families = sort keys %family;
 
 }
-
 
 ## Check minimum number of genes
 foreach my $family_name (@families) {    
@@ -192,17 +207,15 @@ foreach my $family_name (@families) {
 @families = sort keys %family;
 warn "Remaining families after filtering\t", scalar(@families), "\n";
 
-### write composition of the families in the separated directories
 &SetFileNames();
 
-&CheckOutDir($dir{output});
+&RSAT::util::CheckOutDir($dir{output});
 chdir($dir{output});
 
 &MakeDirectories();
 
 #### verbose
 $verbose_message = &Verbose() if ($verbose >= 1);
-
 
 ### perform analysis
 &AnalyzeFamilies();
@@ -569,7 +582,7 @@ sub UpstreamSequences {
    $command .= " -o $family{$family_name}->{seq_file}";
    $command .= " -from $from" if (defined($from));
    $command .= " -to $to " if (defined($to));
-   $command .= " -label orf_gene ";
+   $command .= " -label id,name ";
    $command .= " -feattype $feature_types " if ($feature_types);
    $command .= " -format $seq_format";
    &doit($command, $dry_run, $die_on_error, $verbose);
@@ -614,7 +627,7 @@ sub CalcOligoOptions {
 	$calib_file .= "_negbin.tab";
 	### Check whether the calibration file exists
 	unless ((-e $calib_file) || (-e $calib_file.".gz")) {
-	    &FatalError ("Calibration file not found\t".$calib.file);
+	    &RSAT::error::FatalError ("Calibration file not found\t".$calib.file);
 	}
 	$oligo_options .= " -calib1 ".$calib_file;
 	warn join ("\t", "; Oligonucleotide calibration", $calib_length, $calib_file), "\n" if ($main::verbose >= 3);
@@ -639,7 +652,7 @@ sub CalcOligoOptions {
 		    &Warning("Using calibration with 1000 repetitions\t".$calib_file);
 		    
 		} else {
-		    &FatalError ("Calibration file not found\t".$calib_file);
+		    &RSAT::error::FatalError ("Calibration file not found\t".$calib_file);
 		}
 	    }
 	}
@@ -679,7 +692,7 @@ sub OligoAnalysis {
 	       "max len: $max_oligo_len"), "\n" if ($verbose >= 1);
    my $dir = "${family_name}/oligos_${family_name}";
    
-   &CheckOutDir($dir);
+   &RSAT::util::CheckOutDir($dir);
    die "Error : cannot read file $family{$family_name}->{input_seq_file}\n" unless (-r $family{$family_name}->{input_seq_file});
    
    ## initialize the oligo file
@@ -706,7 +719,7 @@ sub MergeOligoLengths {
 	       $family{$family_name}->{oligo_file}), "\n" if ($verbose >= 1);
    my $dir = "${family_name}/oligos_${family_name}";
 
-   &CheckOutDir($dir);
+   &RSAT::util::CheckOutDir($dir);
    die "Error : cannot read file $family{$family_name}->{input_seq_file}\n" unless (-r $family{$family_name}->{input_seq_file});
    
    ## initialize the oligo file
@@ -809,7 +822,7 @@ sub DyadAnalysis {
 	       "max_sp: $max_sp",
 	       ), "\n" if ($verbose >= 1);
    $dir = "${family_name}/dyads_${family_name}";
-   &CheckOutDir($dir);
+   &RSAT::util::CheckOutDir($dir);
    die "Error : cannot read file $family{$family_name}->{input_seq_file}\n" unless (-r $family{$family_name}->{input_seq_file});
    $command = "dyad-analysis -return occ,proba,rank -i $family{$family_name}->{input_seq_file} -format $seq_format -o $family{$family_name}->{dyad_file} $dyad_options";
    
@@ -834,7 +847,7 @@ sub MergePatterns {
 	       ), "\n" if ($verbose >= 1);
 
    my $dir = "${family_name}/merged_${family_name}";
-   &CheckOutDir($dir);
+   &RSAT::util::CheckOutDir($dir);
    my $command = "cat $family{$family_name}->{oligo_file}";
 #    $command .= " | grep -v '^;'";
    $command .= " > $family{$family_name}->{merged_file};";
@@ -893,7 +906,7 @@ sub MotifSampler {
    warn join ("; Running MotifSampler for family $family_name") if ($main::verbose >= 1);
    ## Check output directory
    my $dir = $family{$family_name}->{MotifSampler_dir};
-   &CheckOutDir($dir);
+   &RSAT::util::CheckOutDir($dir);
 
    chdir($dir{output});
 
@@ -923,7 +936,7 @@ sub MotifSampler {
 ## Run Andrew Neuwald's gibbs program 
 sub Gibbs {
    chdir($dir{output});
-   &CheckOutDir($family{$family_name}->{gibbs_dir});
+   &RSAT::util::CheckOutDir($family{$family_name}->{gibbs_dir});
 
 
    if ($strand = "-2str") {
@@ -948,7 +961,7 @@ sub Gibbs {
 ################################################################
 ## Run MEME program 
 sub MEME {
-   &CheckOutDir($family{$family_name}->{meme_dir});
+   &RSAT::util::CheckOutDir($family{$family_name}->{meme_dir});
    chdir($dir{output});
 
    ## run the command
@@ -960,7 +973,7 @@ sub MEME {
 ## Run Jerry Hertz' consensus program 
 sub Consensus {
    chdir($dir{output});
-   &CheckOutDir($family{$family_name}->{consensus_dir});
+   &RSAT::util::CheckOutDir($family{$family_name}->{consensus_dir});
 
    ## input file has to be converted to consensus format
    $consensus_command = "convert-seq -dna -from fasta -to wc -i ".$family{$family_name}->{input_seq_file};
@@ -1265,7 +1278,7 @@ sub IndexMatrix {
 #  			     seed
 #  			     );
 #     } else {
-#         &FatalError("Invalid format for a matrix $format");
+#         &RSAT::error::FatalError("Invalid format for a matrix $format");
 #     }
    warn join ("\t", "; Indexing $format matrix for family", $family_name, $matrix_file, $row, $col), "\n" if ($verbose >= 2);
    my $matrix = new RSAT::matrix();
@@ -1481,7 +1494,7 @@ sub CheckParameters {
 
    #### check selected tasks
    unless (defined(%task)) {
-	&FatalError("You should select at least one task.");
+	&RSAT::error::FatalError("You should select at least one task.");
    }
    if ($task{all}) {
 	foreach my $t (@supported_tasks) {
@@ -1700,7 +1713,11 @@ OPTIONS
 	-help	(must be first argument) display options
 	-v	verbose
 	-i	family file (incompatible with -seq)
-	-seq	sequence file (incompatible with -i)
+	-seq	input sequences (incompatible with -i)
+		This option allows to specify a file containing a list
+		of sequence files. The first word of each line must
+		specify the path of a sequence file. Each sequence
+		file must be in fasta format.
 	-skip # skip the forst # data sets when performing the
 		analyses (this si useful when the program has been
 		interrupted after a considerable amount of work).
@@ -2006,7 +2023,7 @@ sub ReadArguments {
 	    ### skip some data sets
 	} elsif ($ARGV[$a] eq "-skip") {
 	    $skip = $ARGV[$a+1];
-	    &FatalError("Invalid number with option -skip\t$skip") unless &IsNatural($skip);
+	    &RSAT::error::FatalError("Invalid number with option -skip\t$skip") unless &IsNatural($skip);
 	    
 	    ### sequence file list
 	} elsif ($ARGV[$a] eq "-seq") {
@@ -2085,7 +2102,7 @@ sub ReadArguments {
 		if ($supported_task{$task}) {
 		    $task{$task} = 1;
 		} else {
-		    &FatalError("Unsupported task '$task'. \n\tSupported: $supported_tasks");
+		    &RSAT::error::FatalError("Unsupported task '$task'. \n\tSupported: $supported_tasks");
 		}
 	    }
 
@@ -2097,7 +2114,7 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] =~ /^-sort/) {
 	    $sort_key = $ARGV[$a+1];
 	    unless ($supported_sort_key{$sort_key}) {
-		&FatalError("$sort_key is not supported as sort key");
+		&RSAT::error::FatalError("$sort_key is not supported as sort key");
 	    }
 
 	    #### clip upstream ORFs fom upstream regions
@@ -2127,7 +2144,7 @@ sub ReadArguments {
 		if ($supported_feature_types{lc($type)}) {
 		    $accepted_feature_types{lc($type)}++;
 		} else {
-		    &FatalError("$type invalid feature type. Supported: $supported_feature_types");
+		    &RSAT::error::FatalError("$type invalid feature type. Supported: $supported_feature_types");
 		}
 	    }
 
@@ -2152,7 +2169,7 @@ sub ReadArguments {
 	    $background =~ s/^ncf$/intergenic/;
 
 	    unless ($supported_background{$background}) {
-		&FatalError("$background\tInvalid value for background. Supported : $supported_background");
+		&RSAT::error::FatalError("$background\tInvalid value for background. Supported : $supported_background");
 	    }
 
 	    #### Markov chain estimation of expected oligo frequencies
@@ -2181,7 +2198,7 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] =~ /^-pseudo/) {
 	    $pseudo = $ARGV[$a+1];
 	    unless ((&IsReal($pseudo)) && ($pseudo > 0)) {
-		&FatalError("pseudo-weight must be a positive real number");
+		&RSAT::error::FatalError("pseudo-weight must be a positive real number");
 	    }
 
 	    #### Optoins for the SQL scripts
@@ -2278,7 +2295,7 @@ sub MakeDirectories {
 ### relational database
 sub ExportSQL {
    warn "; Generating SQL\n" if ($verbose >= 1);
-   my $test = new RSAT::Family;
+#   my $test = new RSAT::Family;
 
    ## Unique prefix for each analysis, to allow merging them in a database
    my $run_prefix = `mktemp XXXX`;
@@ -2288,6 +2305,9 @@ sub ExportSQL {
    ## Class holder for the analysis
    local $analysis_factory = classes::ClassFactory->new_class(object_type=>"RSAT::Analysis");
    $current_analysis = $analysis_factory->new_object(id=>$run_prefix);
+
+   &RSAT::message::debug($current_analysis, $current_analysis->get_attribute("id")) if ($main::verbose >= 10);
+
    $current_analysis->set_attribute("date", $run_date);
    $current_analysis->set_attribute("family_file", $family_file);
    $current_analysis->set_attribute("organism", $organism_name);
@@ -2305,7 +2325,7 @@ sub ExportSQL {
 							 prefix=>$run_prefix."_");
    
    ## Class holder for patterns
-   my $pattern_factory = classes::ClassFactory->new_class(object_type=>"RSAT::Pattern",
+   my $pattern_factory = classes::ClassFactory->new_class(object_type=>"RSAT::pattern",
 							  prefix=>$run_prefix."_");
    
    my %export_columns = ();
@@ -2360,7 +2380,7 @@ sub ExportSQL {
 		}
 		warn join ("\t", ";", "specifying sequence", $sequence), "\n" if ($main::verbose >= 5);
 		$oligo_object->force_attribute("sequence", $sequence);
-		$oligo_object->set_attribute("type", "oligo");
+		$oligo_object->force_attribute("type", "oligo");
 		$oligo_object->set_attribute("family_id", $family_id);
 		$oligo_object->set_attribute("family", $family_name);
 		if ($strands eq "-2str") {
@@ -2404,7 +2424,7 @@ sub ExportSQL {
 		}
 		warn join ("\t", ";", "specifying sequence", $sequence), "\n" if ($main::verbose >= 5);
 		$dyad_object->force_attribute("sequence", $sequence);
-		$dyad_object->set_attribute("type", "dyad");
+		$dyad_object->force_attribute("type", "dyad");
 		$dyad_object->set_attribute("family_id", $family_id);
 		$dyad_object->set_attribute("family", $family_name);
 		if ($strands eq "-2str") {
@@ -2440,7 +2460,7 @@ sub ExportSQL {
 
    #### export directory
    $dir{sql} = "sql_export";
-   &CheckOutDir($dir{sql});
+   &RSAT::util::CheckOutDir($dir{sql});
 
    ### temporary output directory
    $dir{output_bk} = $dir{output};
@@ -2568,7 +2588,7 @@ sub CalcCalibrationLengths {
 	    ## check that all sequences of one family have the same length
 	    if (defined($family{$family_name}->{calib_length})) {
 		unless ($family{$family_name}->{calib_length} == $current_len) {
-		    &FatalError("Sequences of family $family_name have different lengths.\nThis is not incompatible with the option calibrate");
+		    &RSAT::error::FatalError("Sequences of family $family_name have different lengths.\nThis is not incompatible with the option calibrate");
 		}
 	    } else {
 		$family{$family_name}->{calib_length} = $current_len;
@@ -2591,7 +2611,7 @@ sub CalibrateOligos {
    warn ";\n; Calibrating oligonucleotide occurrences\n" if ($verbose >=1);
 
    ### Analyse upstream occurrence distributions for each sequence length
-   &CheckOutDir($dir{calib1});
+   &RSAT::util::CheckOutDir($dir{calib1});
    warn "; Calculating oligonucleotide distributions in all upstream sequences\n" if ($verbose >= 1);
    foreach my $calib_length (sort {$a <=> $b} @calib_lengths) {
 
@@ -2697,7 +2717,7 @@ sub CalibrationPrefix {
 ################################################################
 ## Generate report fiels for the motif disovery competition 2004
 sub MDCreport {
-   &CheckOutDir($dir{mdc_report});
+   &RSAT::util::CheckOutDir($dir{mdc_report});
    warn ";\n; Generating report\t", $outfile{results}, "\n" if ($verbose >=1);
    
    ################################################################
@@ -2866,7 +2886,7 @@ sub ReadAssemblyFile {
 	    my $pattern_seq = &trim(shift (@fields));
 	    $pattern_seq =~ s/^\.+//g;
 	    $pattern_seq =~ s/\.+$//g;
-	    $pattern = new RSA::pattern();
+	    $pattern = new RSAT::pattern();
 	    $pattern->set_attribute("sequence", $pattern_seq);
 	    push @assembled_patterns, $pattern;
 	    if ($strands eq "-2str") {
@@ -2880,7 +2900,7 @@ sub ReadAssemblyFile {
 #	    $score{$pattern} = $score; ## index pattern scores for sorting
 	    
 	    my $type = shift @fields;
-	    $pattern->set_attribute("type", $type);
+	    $pattern->force_attribute("type", $type);
 	    $max_score{$family_name} = &max($max_score{$family_name}, $score{$pattern});
 	    $max_score{$pattern_type}{$family_name} = &max($max_score{$pattern_type}{$family_name}, $score{$pattern});
 	    warn "Pattern\t", $_, "\n", join("\t", $family_name, 
