@@ -1,7 +1,7 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: parse-embl.pl,v 1.5 2003/11/30 22:23:07 jvanheld Exp $
+# $Id: parse-embl.pl,v 1.6 2003/12/02 13:59:43 oly Exp $
 #
 # Time-stamp: <2003-10-21 01:17:49 jvanheld>
 #
@@ -44,8 +44,8 @@ package EMBL::Feature;
 			     position=>"SCALAR",
 			     chromosome=>"SCALAR",
 			     strand=>"SCALAR",
-			     start=>"SCALAR",
-			     end=>"SCALAR",
+			     start_pos=>"SCALAR",
+			     end_pos=>"SCALAR",
 			     xrefs=>"EXPANDED"
 			     );
 }
@@ -154,8 +154,8 @@ package main;
 			      type
 			      name
 			      contig
-			      start
-			      end
+			      start_pos
+			      end_pos
 			      strand
 			      description
 			      organism
@@ -875,8 +875,8 @@ sub ParsePositionEMBL {
     my ($current_feature) = @_;
     my $position = $current_feature->get_attribute("position");
     my $complete_position = $position;
-    my $start = $null;
-    my $end = $null;
+    my $start_pos = $null;
+    my $end_pos = $null;
     my $strand = $null;
 
     #### strand
@@ -930,11 +930,11 @@ sub ParsePositionEMBL {
     }
 
     if ($#exon_starts >= 0) {
-	$current_feature->set_attribute("start",$exon_starts[0]);
-	$current_feature->set_attribute("end",$exon_ends[$#exon_ends]);
+	$current_feature->set_attribute("start_pos",$exon_starts[0]);
+	$current_feature->set_attribute("end_pos",$exon_ends[$#exon_ends]);
     } else {
-	$current_feature->set_attribute("start",$null);
-	$current_feature->set_attribute("end",$null);
+	$current_feature->set_attribute("start_pos",$null);
+	$current_feature->set_attribute("end_pos",$null);
 	&ErrorMessage(join ("\t", "Invalid position for feature", $feature_counts, $feature->get_attribute("id")), "\n");
     }
     $current_feature->set_attribute("strand",$strand);
