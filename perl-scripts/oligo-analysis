@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.7 2000/12/29 21:20:35 jvanheld Exp $
+# $Id: oligo-analysis,v 1.8 2001/01/24 23:01:04 jvanheld Exp $
 #
-# Time-stamp: <2000-11-22 00:12:09 jvanheld>
+# Time-stamp: <2001-01-25 00:00:26 jvanheld>
 #
 ############################################################
 
@@ -12,7 +12,1470 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 require "RSA.lib.pl";
 
-if ($ARGV[0] eq "-h") {
+
+###### initialize parameters ##########
+$start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+
+$in_format = "fasta";
+@output_fields = ();
+$sum_strands = 1;
+$group_rc = 1;
+$proba_occ_threshold = 1;
+$proba_mseq_threshold = 1;
+
+$markov_order = -1;
+$sequence_number = 0;
+$nb_possible_pos = 0;
+$nb_possible_oligo = 0;
+$sum_seq_length = 0;
+
+
+### default residue probabilities      
+$residue_proba{'a'} = 0.25;
+$residue_proba{'c'} = 0.25;
+$residue_proba{'g'} = 0.25;
+$residue_proba{'t'} = 0.25;
+
+
+
+#### read arguments ####
+&ReadArguments();
+   
+##############################
+### check parameter values ###
+##############################
+
+if (($return{'proba'}) || ($return{'ratio'})) {
+  $return{'exp_freq'} = 1;
+}
+
+### check oligomer length
+unless ($oligo_length > 0) {
+  warn "\tYou should specify an oligomer length > 0.\n";
+  warn "\tType oligo-analysis -h for more info..\n";
+  exit;
+}
+if ($noov) {
+  $min_overlap_dist = $oligo_length;
+}
+
+### markov_order
+if (($markov) && ($markov_order < 0)){
+  $markov_order = $oligo_length + $markov_order;
+}
+if (($markov) && ($markov_order < 0)) {
+  die "Error: invalid markov order $markov_order\n";
+} elsif ($markov_order > $oligo_length -2) {
+  die "Error: Markov order ($markov_order) cannot be higher than word length - 2 ($oligo_length -2)\n"; 
+}
+
+
+### check output fields
+if (@output_fields == ()) { #default output is occurrence numbers
+  @output_fields = ("occurrences");
+  $return{'occ'} = 1;
+}
+
+### check input format 
+&CheckInputSeqFormat($in_format);
+
+
+### check pre-defined frequency tables
+### non-coding frequency calibration
+if ($ncf) {
+  ### check organism first
+  unless ($organism) {
+    die ";Error: you should specify an organism for using non-coding frequency calibration\n";
+  }
+  unless ($supported_organism{$organism}) {
+    die ";Error: organism $organism is not supported on this site\n";
+  }
+  
+  $data_dir = $supported_organism{$organism}->{'data'};
+
+  ### localize dyad non-coding frequency file
+  $exp_freq_file = "$data_dir/oligo-frequencies/${oligo_length}nt_non-coding_${organism}.freq";
+  
+  #### TEMPORARY / ACCEPT OVERLAPS IN CALIBRATED FREQS
+  unless (-r $exp_freq_file) {
+    $exp_freq_file = "$data_dir/oligo-frequencies/dyads_3nt_sp0-16_non-coding_${organism}.freq";
+  }
+  
+  die "Error: cannot read expected frequency file $exp_freq_file\n" unless (-r  $exp_freq_file);
+}
+
+### read expected frequencies
+if (($exp_freq_file) && 
+    ($return{'exp_freq'})) {    #### expected frequencies ####
+    unless (open EXPECTED, $exp_freq_file) {
+	warn "	cannot open frequency file \"$exp_freq_file\"\n";
+	exit;
+    }
+    while (<EXPECTED>) {
+	next if (/^;/);
+	if (/(\S+)\t(\S+)/i) {
+	    $oligo_seq = lc($1);
+	    $oligo{$oligo_seq}->{exp_freq} = $2;
+	}
+    }
+    close EXPECTED;
+}
+
+### open sequence file ###
+$in = &OpenInputFile($inputfile);
+
+
+
+
+if ($hyperverbose) {
+  $current_time = `date '+%H:%M:%S'`;
+  chomp($current_time);
+  warn "oligo-analysis\t$current_time\tReading sequences\n";
+}
+
+$out = &OpenOutputFile($outputfile);
+
+&CountOligo;
+
+&CalcSubWordFrequencies if ($markov);
+&CalcAplhabet if (($input_alphabet) || ($return{'zscore'}));
+&Degenerate if ($one_var_position);
+&SumStrands if ($sum_strands);
+#&SubstractOverlap if ($noov);
+&CalcFrequencies if (($return{'freq'}) || ($verbose) || ($markov));
+&GroupRc if ($group_rc);
+&OccurrenceThreshold if ($occurrence_threshold > 0);
+&MatchingSeqThreshold ($mseq_threshold > 0); 
+&NbPossibleOligo();
+&CalcExpected if ($return{'exp_freq'});
+&CalcZscore if ($return{'zscore'});
+&CalcLikelihood if ($return{'like'});
+&CalcRatio if ($return{'ratio'});
+&CalcProba if ($return{'proba'}) ;
+
+
+&PrintResult;
+
+
+if ($hyperverbose) {
+  $current_time = `date '+%H:%M:%S'`;
+  chomp($current_time);
+  warn "oligo-analysis\t$current_time\tDone\n";
+}
+
+
+
+exit(0);
+
+
+########################################################################################
+################################### SUBROUTINE DEFINITION ##############################
+########################################################################################
+
+
+
+#### Read input sequences and count oligomers ####
+sub CountOligo {
+    if ($return{'table'}) {
+	@possible_oligos = &all_oligos($oligo_length);
+	print $out $current_id;
+	foreach my $oligo_seq (@possible_oligos) {
+	    print $out "\t", $oligo_seq;
+	}
+	print $out "\n";
+    }
+  while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format)) &&
+	 (($current_seq ne "") || ($current_id ne ""))) {
+    
+    ### remove tabs and blank spaces ###    
+    $current_seq = &FoldSequence($current_seq,0);
+    
+    ### statistics about sequences ###
+    $sequence_number++;  
+    $id_list[$sequence_number] = $current_id;
+    $seq_length[$sequence_number] = length($current_seq);
+    
+    if ($hyperverbose) {
+      $current_time = `date '+%H:%M:%S'`;
+      chomp($current_time);
+      warn "oligo-analysis\t$curent_time\t$current_id\t$seq_length[$sequence_number]\n";
+    }
+    
+    $sum_seq_length += $seq_length[$sequence_number];
+    if ($seq_length[$sequence_number] < $oligo_length) {
+	next;
+    } else {
+      if ($sum_strands) {
+	$nb_possible_pos += 2*($seq_length[$sequence_number] + 1 - $oligo_length);
+      } else {
+	$nb_possible_pos += $seq_length[$sequence_number] + 1 - $oligo_length;
+      }
+    }
+    $last_pos = $seq_length[$sequence_number] - $oligo_length;	
+    
+    ### if requested, calculate alphabet from input sequence ####
+    if (($input_alphabet) || ($return{'zscore'})) {
+      for $pos (0..$seq_length[$sequence_number]-1) {
+	$letter = lc(substr($current_seq,$pos,1));
+	$residue_occ{$letter}++;
+      }
+    }
+    
+    #### for markov chains, count trailing oligomers of length shorter than $oligo_length ####
+    if ($markov) {
+      for $w (1..$oligo_length - 1) {
+	$subseq = lc(substr($current_seq,$seq_length[$sequence_number]-$w,$w));
+	$sub_freq[$w]{$subseq}++;
+      }
+    }
+    
+    #### count oligomers ####
+    $offset = 0;
+    $current_pos = $last_pos;
+    
+    while ($current_pos >=0) {
+      if ($hyperverbose && (($current_pos%100000) == 0) && ($current_pos > 0)) {
+	$current_length = length($current_seq);
+	warn "\t$current_id\tremain to read: $current_pos\n";
+      }
+      
+      ### occurrences
+      $oligo_seq = lc(substr($current_seq,$current_pos,$oligo_length));
+      chop $current_seq;  ### eat the tail to release memory
+      if ($noov) {
+	if ((&IsNatural($last_pos{$oligo_seq})) && 
+	    ($last_pos{$oligo_seq} - $current_pos < $min_overlap_dist)) {
+	  $oligo{$oligo_seq}->{overlaps}++;
+	  $current_pos--;
+	  next;
+	}
+	if ($sum_strands) {
+	  $rc = lc(&ReverseComplement($oligo_seq));
+	  if ((&IsNatural($last_pos{$rc})) && 
+	      ($last_pos{$rc} - $current_pos < $min_overlap_dist)) {
+	    $oligo{$rc}->{overlaps}++;
+	    $current_pos--;
+	    next;
+	  }
+	}
+      }
+      $oligo{$oligo_seq}->{occ}++;
+      $last_pos{$oligo_seq} = $current_pos;
+      if ($return{'pos'}) {
+	push(@{$match_pos{$oligo_seq}[$sequence_number]}, $current_pos+1);
+      }
+      
+      ### matching sequences
+      if ($return{'mseq'}) {
+	if (($sum_strands == 0) || ($current_mseq{lc(&ReverseComplement($oligo_seq))} < 1)) {
+	  $current_mseq{$oligo_seq} = 1;
+	}
+      }
+      $current_pos--;
+    }
+    
+    if ($return{'mseq'}) {
+      foreach $oligo_seq (keys %current_mseq) {
+	$oligo{$oligo_seq}->{mseq} += 1;
+	if ($sum_strands) {
+	  $rc = lc(&ReverseComplement($oligo_seq));
+	  unless ($rc eq $oligo_seq) { ### palindroms
+	    $oligo{$rc}->{mseq} += 1;
+	  }
+	}
+      }
+      undef %current_mseq;
+    }
+
+    undef %last_pos;
+    
+    if ($return{'table'}) {
+	print $out $current_id;
+	foreach my $oligo_seq (@possible_oligos) {
+	    if ($oligo{$oligo_seq}->{occ} > 0 ) {
+		print $out "\t", $oligo{$oligo_seq}->{occ};
+	    } else {
+		print $out "\t", 0;
+	    }
+	}
+	print $out "\n";
+	undef(%oligo);
+    }
+    
+  }
+  undef $current_seq; ### release the memory occupied
+  close $in;
+    exit(0) if $return{'table'};
+}
+
+
+
+#### if requested, group results by pairs of reverse complements ####
+sub GroupRc {
+  foreach $oligo_seq (keys %oligo) {
+    $rc_oligo_seq = lc(&ReverseComplement($oligo_seq));
+    if ($rc_oligo_seq gt $oligo_seq) { ### only suppress one oligo from the dyad 
+      delete $oligo{$rc_oligo_seq};
+    }
+  }
+}
+
+
+### occurrence threshold ###
+sub OccurrenceThreshold {
+  if ($hyperverbose) {
+    $current_time = `date '+%H:%M:%S'`;
+    chomp($current_time);
+    warn "oligo-analysis\t$current_time\tThreshold on occurrences\n";
+  }
+  
+  foreach $oligo_seq (keys %oligo) {
+    if ($oligo{$oligo_seq}->{occ} < $occurrence_threshold) {
+      delete $oligo{$oligo_seq};
+    }
+  }  
+}
+
+### matching sequence threshold ###
+sub MatchingSeqThreshold {
+  if ($hyperverbose) {
+    $current_time = `date '+%H:%M:%S'`;
+    chomp($current_time);
+    warn "oligo-analysis\t$current_time\tThreshold on matching sequences\n";
+  }
+  foreach $oligo_seq (keys %oligo) {
+    if ($oligo{$oligo_seq}->{mseq} < $mseq_threshold) {
+      delete $oligo{$oligo_seq};
+    }
+  }  
+}
+
+
+
+
+### Calculate subword frequencies
+sub CalcSubWordFrequencies {
+  if ($hyperverbose) {
+    $current_time = `date '+%H:%M:%S'`;
+    chomp($current_time);
+    warn "oligo-analysis\t$current_time\tCalculating subword frequencies (Markov)\n";
+  }
+  
+  foreach $oligo_seq (keys %oligo) {
+    ### w-1 word occurrences
+    $w = $oligo_length-1;
+    $subseq = substr($oligo_seq,0,$w);
+    $sub_freq[$w]{$subseq} += ($oligo{$oligo_seq}->{occ} + $oligo{$oligo_seq}->{overlaps});
+  }
+  
+  ### occurrences of words with length from w-2 to 1
+  for $k (2..$oligo_length-1) {
+    $w = $oligo_length - $k;
+    foreach $oligo_seq (keys %{$sub_freq[$w+1]}) {
+      $subseq = substr($oligo_seq,0,$w);
+      $sub_freq[$w]{$subseq} += $sub_freq[$w+1]{$oligo_seq} ;
+    }
+  }
+  
+  ### sum occurrences on both strands if requested
+  if ($sum_strands) {
+    for $w (1..$oligo_length-1) {
+      foreach $subseq (sort keys %{$sub_freq[$w]}) {
+	$rc = lc(&ReverseComplement($subseq));
+	$sub_freq_2str[$w]{$subseq} = $sub_freq_2str[$w]{$rc} = $sub_freq[$w]{$subseq} + $sub_freq[$w]{$rc};
+      }
+      %{$sub_freq[$w]} = %{$sub_freq_2str[$w]};
+      undef  %sub_freq_2str;
+    }
+  }
+  
+  ### calculates relative frequencies from occurrences
+  for $w (1..$oligo_length-1) {
+    $occ_sum[$w] = 0;
+    foreach $subseq (keys %{$sub_freq[$w]}) {
+      $occ_sum[$w] += $sub_freq[$w]{$subseq};
+    }
+    foreach $subseq (keys %{$sub_freq[$w]}) {
+      $sub_freq[$w]{$subseq} /= $occ_sum[$w];
+    }
+  }	
+  
+  if ($hyperverbose) {
+    for $w (1..$oligo_length-1) {
+      foreach $oligo_seq (sort keys %{$sub_freq[$w]}) {
+	printf ";\tsubword_freq\t$w\t$occ_sum[$w]\t$oligo_seq\t%15.13f\n", $sub_freq[$w]{$oligo_seq};
+      }
+    }
+  }
+}
+
+
+
+### calculate relative frequencies if requested ###
+sub CalcFrequencies {
+  if ($hyperverbose) {
+    $current_time = `date '+%H:%M:%S'`;
+    chomp($current_time);
+    warn "oligo-analysis\t$current_time\tCalculating relative frequencies\n";
+  }
+  
+  $sum_overlaps = 0;
+  $sum_noov = 0;
+  $sum_occurrences = 0;
+  foreach $oligo_seq (keys %oligo) {
+    $sum_occurrences += $oligo{$oligo_seq}->{occ} + $oligo{$oligo_seq}->{overlaps};
+    $sum_overlaps += $oligo{$oligo_seq}->{overlaps};
+    $sum_noov += $oligo{$oligo_seq}->{occ};
+  }
+  if ($return{'freq'}) {
+    foreach $oligo_seq (keys %oligo) {
+      $oligo{$oligo_seq}->{freq} = $oligo{$oligo_seq}->{occ}/$sum_occurrences;
+    }
+  }
+  if (($return{'mseq'}) && ($return{'freq'})) {
+    foreach $oligo_seq (keys %oligo) {
+      $oligo{$oligo_seq}->{ms_freq} = $oligo{$oligo_seq}->{mseq}/$sequence_number;
+    }
+  }
+}
+
+
+
+### input alphabet ###
+sub CalcAplhabet {
+  if ($hyperverbose) {
+    $current_time = `date '+%H:%M:%S'`;
+    chomp($current_time);
+    warn "oligo-analysis\t$current_time\tCalculating input alphabet\n";
+  }
+  
+  foreach $key (sort keys %residue_occ) {
+    $residue_total += $residue_occ{$key};
+  }
+  if ($residue_total > 0) {
+    foreach $key (sort keys %residue_occ) {
+      if ($sum_strands) {
+	$residue_proba{$key} = ($residue_occ{$key} + $residue_occ{lc(ReverseComplement($key))})/(2*$residue_total);
+      } else {
+	$residue_proba{$key} = $residue_occ{$key}/$residue_total;
+      }
+    }
+  }
+}
+
+
+### substract the occurrences beyond the minimal overlap distance
+#sub SubstractOverlap {
+#	if ($hyperverbose) {
+#		$current_time = `date '+%H:%M:%S'`;
+#		chomp($current_time);
+#		warn "oligo-analysis\t$current_time\tCalculating input alphabet\n";
+#    }
+#    foreach $oligo_seq (sort keys %oligo) {
+#        for $seq (1..$sequence_number) {
+#			for $p (0..$#{$match_pos{$oligo_seq}[$seq]}-1) {
+#				if (abs($match_pos{$oligo_seq}[$seq][$p + 1] - $match_pos{$oligo_seq}[$seq][$p]) < $min_overlap_dist) {
+#					$oligo{$oligo_seq}->{occ}--;
+#					$oligo{$oligo_seq}->{overlaps}++;
+#				}
+#			}
+#        }
+#    }
+#}
+
+
+
+### sum occurrences on both strands ###
+sub SumStrands {
+  if ($hyperverbose) {
+    $current_time = `date '+%H:%M:%S'`;
+    chomp($current_time);
+    warn "oligo-analysis\t$current_time\tSumming occurrences for pairs of reverse complements\n";
+  }
+  foreach $oligo_seq (keys %oligo) {
+    $rc_oligo_seq = lc(&ReverseComplement($oligo_seq));
+    $occurrences_2strands{$oligo_seq} = $oligo{$oligo_seq}->{occ} + $oligo{$rc_oligo_seq}->{occ};
+    $occurrences_2strands{$rc_oligo_seq} = $occurrences_2strands{$oligo_seq};
+  }
+  foreach $oligo_seq (keys %occurrences_2strands) {
+    $oligo{$oligo_seq}->{occ} = $occurrences_2strands{$oligo_seq};
+  }
+  undef %occurrences_2strands;
+  
+  ### positions ###
+  if (($return{'pos'}) || ($noov)) {
+    for $seq (1..$sequence_number) {
+      foreach $oligo_seq (sort keys %oligo) {
+	$rc_oligo_seq = lc(&ReverseComplement($oligo_seq));
+	if ($rc_oligo_seq eq $oligo_seq) {
+	  @{$m_pos_bothstrands{$oligo_seq}[$seq]} = @{$match_pos{$oligo_seq}[$seq]};
+	} else {
+	  @{$m_pos_bothstrands{$oligo_seq}[$seq]} = (@{$match_pos{$oligo_seq}[$seq]},@{$match_pos{$rc_oligo_seq}[$seq]});
+	}	  
+      }
+      foreach $oligo_seq (sort keys %oligo) {
+	@{$match_pos{$oligo_seq}[$seq]} = @{$m_pos_bothstrands{$oligo_seq}[$seq]};
+	@{$match_pos{$oligo_seq}[$seq]}= sort {$a <=> $b} @{$match_pos{$oligo_seq}[$seq]};
+	undef @{$m_pos_bothstrands{$oligo_seq}[$seq]};
+      }   
+    }
+  }
+}
+
+
+### calculate occurrences with 1 degenerated position ###
+sub Degenerate {
+  if ($hyperverbose) {
+    $current_time = `date '+%H:%M:%S'`;
+    chomp($current_time);
+    warn "oligo-analysis\t$current_time\tNeighborhood\n";
+  }
+  
+  foreach $d (@degenerate_code) {  
+    foreach $n (@{$IUPAC{$d}}) {
+      push(@{$nucl_neighb{$n}}, $d);
+    }
+  }
+  
+  foreach $oligo_seq (keys %oligo) {
+    for $l (1..length($oligo_seq)) {
+      $n = substr($oligo_seq,$l-1,1);
+      foreach $neighb (@{$nucl_neighb{$n}}) {
+	$deg = substr($oligo_seq,0,$l-1);
+	$deg .= $neighb;
+	$deg .= substr($oligo_seq,$l);
+	$deg_occurrences{$deg} += $oligo{$oligo_seq}->{occ};
+	if ($return{'mseq'}) {
+	  $deg_mseq{$deg} += $oligo{$oligo_seq}->{mseq};
+	}
+      }
+    }
+  }  
+  
+  %oligo = %deg_occurrences;
+  undef %deg_occurrences;
+  if ($return{'mseq'}) {
+    foreach $oligo_seq (sort keys %deg_mseq) {
+      $oligo{$oligo_seq}->{mseq} = $deg_mseq{$oligo_seq};
+      undef %deg_occurrences;
+    }
+  }
+}
+
+
+#### calculate number of possible oligomers
+sub NbPossibleOligo {
+    if ($one_var_position) {
+	$nb_possible_oligo = $oligo_length * ($#degenerate_code+1) * 4**($oligo_length-1);      
+    } elsif ($proteic) {
+	
+	@residues = sort keys %residue_occ;
+	$nb_possible_oligo = ($#residues + 1)**$oligo_length;
+	#    $nb_possible_oligo = 20**$oligo_length;
+    } else {
+	$nb_possible_oligo = 4**$oligo_length;      
+    }
+    if ($sum_strands) {  
+	if ($oligo_length%2 == 0) {
+	    ### take into account the fact that palindromes have not to be grouped by pairs
+	    $nb_possible_palindroms = 4**($oligo_length/2);
+	} else {
+	    $nb_possible_palindroms = 0;
+	}
+    $nb_possible_oligo -= ($nb_possible_oligo - $nb_possible_palindroms)/2;
+    }
+}
+
+
+#### expected oligomer frequencies #####
+sub CalcExpected {
+    if ($hyperverbose) {
+	$current_time = `date '+%H:%M:%S'`;
+	chomp($current_time);
+	warn "oligo-analysis\t$current_time\tCalculating probabilities\n";
+    }
+  
+    ### expected frequency file
+    if ($exp_freq_file ne "") {    
+	if ($one_var_position) {
+	    foreach $deg_oligo_seq (sort keys %oligo) {
+		$pattern = IUPAC_to_regular($deg_oligo_seq);
+		@matching_exp_freq = grep /$pattern/i, keys(%exp_freq);
+		foreach $m  (@matching_exp_freq) {
+		    $deg_exp_freq{$deg_oligo_seq} += $exp_freq{$m};
+		}
+	    }
+	    %exp_freq = %deg_exp_freq;
+	    undef %deg_exp_freq;
+	}
+	
+    } elsif ($markov) {  ### Markov chain
+	### expected frequency according to Markov chain model
+	foreach $oligo_seq (sort keys %oligo) {
+	    $oligo{$oligo_seq}->{exp_freq} = 1;
+	    for $offset (0..($oligo_length - $markov_order -1)) {
+		$subseq = substr($oligo_seq,$offset,$markov_order+1);
+		$oligo{$oligo_seq}->{exp_freq} *= $sub_freq[$markov_order+1]{$subseq};
+		if (($markov_order > 0) && ($offset > 0)) {
+		    $subseq = substr($oligo_seq,$offset,$markov_order);
+		    $oligo{$oligo_seq}->{exp_freq} /= $sub_freq[$markov_order]{$subseq};
+		}
+	    }
+	}
+
+#	foreach $oligo_seq (sort keys %oligo) {
+#	    $subseq = substr($oligo_seq,0,$markov_order+1);
+#	    $oligo{$oligo_seq}->{exp_freq} = $sub_freq[$markov_order+1]{$subseq};
+#	    for $offset (1..($oligo_length - $markov_order-1)) {
+#		$subseq = substr($oligo_seq,$offset,$markov_order+1);
+#		$oligo{$oligo_seq}->{exp_freq} *= $sub_freq[$markov_order+1]{$subseq};
+#		if ($markov_order > 0) {
+#		    $subseq = substr($oligo_seq,$offset,$markov_order);
+#		    $oligo{$oligo_seq}->{exp_freq} /= $sub_freq[$markov_order]{$subseq};
+#		}
+#	    }
+#	}
+    
+    } else {    
+	### calculate the expected oligo frequency with 
+	#### independent nucleotide probabilities 
+	#### calculate probability for ambiguous nucleotide codes  ####
+	unless ($proteic) {
+	    $residue_proba{'r'} = $residue_proba{'a'}+$residue_proba{'g'};
+	    $residue_proba{'y'} = $residue_proba{'c'}+$residue_proba{'t'};
+	    $residue_proba{'w'} = $residue_proba{'a'}+$residue_proba{'t'};
+	    $residue_proba{'s'} = $residue_proba{'g'}+$residue_proba{'c'};
+	    $residue_proba{'m'} = $residue_proba{'a'}+$residue_proba{'c'};
+	    $residue_proba{'k'} = $residue_proba{'g'}+$residue_proba{'t'};
+	    $residue_proba{'h'} = $residue_proba{'a'}+$residue_proba{'c'}+$residue_proba{'t'};
+	    $residue_proba{'b'} = $residue_proba{'c'}+$residue_proba{'g'}+$residue_proba{'t'};
+	    $residue_proba{'v'} = $residue_proba{'a'}+$residue_proba{'c'}+$residue_proba{'g'};
+	    $residue_proba{'d'} = $residue_proba{'a'}+$residue_proba{'g'}+$residue_proba{'t'};
+	    $residue_proba{'n'} = 1;
+	}
+	
+	foreach $oligo_seq (keys %oligo) {
+	    $oligo{$oligo_seq}->{exp_freq} = 1;
+	    foreach $l (0..length($oligo_seq)-1) {
+		$nt = substr($oligo_seq, $l, 1);
+		$oligo{$oligo_seq}->{exp_freq} *= $residue_proba{$nt};
+	    }
+	}  
+    } 
+    
+    #### correct expected frequencies with pseudo weight
+    if ($pseudo_weight > 0) {
+	$pseudo_frequency = $pseudo_weight/$nb_possible_oligo;
+	foreach $oligo_seq (keys %oligo) {
+	    $oligo{$oligo_seq}->{exp_freq} *= 1 - $pseudo_weight;
+	    $oligo{$oligo_seq}->{exp_freq} += $pseudo_frequency;;
+	}
+    }
+
+    #### expected number of occurrences and matching sequences ####
+    foreach $oligo_seq (sort keys %oligo) {
+	if ($noov) {
+	    $oligo{$oligo_seq}->{nb_possible_pos} = $nb_possible_pos - ($oligo{$oligo_seq}->{occ} * ($oligo_length -1));
+	} else {
+	    $oligo{$oligo_seq}->{nb_possible_pos} = $nb_possible_pos;
+	}
+	$oligo{$oligo_seq}->{exp_occ} = $oligo{$oligo_seq}->{exp_freq} * $oligo{$oligo_seq}->{nb_possible_pos}; 
+	if ($return{'mseq'}) {
+	    ### expected number of matching sequences ###
+	    $avg_seq_length = $sum_seq_length/$sequence_number;
+	    $pos_per_seq = $avg_seq_length - $oligo_length + 1;
+	    $pos_per_seq *=2 if ($sum_strands);
+	    $one_seq_match_proba =  1 - (1-$oligo{$oligo_seq}->{exp_freq})**$pos_per_seq;
+	    $oligo{$oligo_seq}->{exp_ms} =  $one_seq_match_proba*$sequence_number;
+	}
+    }	
+    
+
+} # CalcExpected
+
+
+sub CalcZscore {
+  #### z-scores ####
+  if ($return{'occ'}) {
+    foreach $oligo_seq (keys %oligo) {
+      if ($noov) {
+	$oligo{$oligo_seq}->{ovlp} = 1;
+	$oligo{$oligo_seq}->{est_var} = $oligo{$oligo_seq}->{exp_occ};
+      } else {
+	$oligo{$oligo_seq}->{ovlp} = &OverlapCoeff($oligo_seq);
+	$oligo{$oligo_seq}->{est_var} = $oligo{$oligo_seq}->{nb_possible_pos} * $oligo{$oligo_seq}->{exp_freq}*(2*$oligo{$oligo_seq}->{ovlp} - 1 - (2*$oligo_length+1)*$oligo{$oligo_seq}->{exp_freq});
+#       	$oligo{$oligo_seq}->{est_var} = $oligo{$oligo_seq}->{nb_possible_pos} * $oligo{$oligo_seq}->{exp_freq}*(1 - $oligo{$oligo_seq}->{exp_freq});
+      }
+      if ($oligo{$oligo_seq}->{est_var} > 0) {
+	$stdev = sqrt($oligo{$oligo_seq}->{est_var});
+	$oligo{$oligo_seq}->{zscore} = ($oligo{$oligo_seq}->{occ} - $oligo{$oligo_seq}->{exp_occ})/$stdev;
+      } else {
+	$stdev = "NA";
+	$oligo{$oligo_seq}->{zscore} = "NA";
+      }
+    }
+  }
+}
+
+
+
+sub CalcLikelihood {
+### log likelihood ###
+  if ($return{'occ'}) {
+    foreach $oligo_seq (keys %oligo) {
+      if (($oligo{$oligo_seq}->{exp_freq} > 0) && ($oligo{$oligo_seq}->{freq} > 0)) {
+	$oligo{$oligo_seq}->{occ_lkh} = $oligo{$oligo_seq}->{freq} * log($oligo{$oligo_seq}->{freq}/$oligo{$oligo_seq}->{exp_freq});
+      } else {
+	$oligo{$oligo_seq}->{occ_lkh} = "NA";
+      }
+    }
+  }
+  if ($return{'mseq'}) {
+    foreach $oligo_seq (keys %oligo) {
+      if (($oligo{$oligo_seq}->{exp_ms} > 0) && ($oligo{$oligo_seq}->{mseq} > 0)) {
+	$oligo{$oligo_seq}->{ms_lkh} = $oligo{$oligo_seq}->{mseq} * log($oligo{$oligo_seq}->{mseq}/$oligo{$oligo_seq}->{exp_ms}) / $sequence_number;
+      } else {
+	$oligo{$oligo_seq}->{ms_lkh} = "NA";
+      }
+    }
+  }
+}  ### CalcLikelihood
+
+
+#### observed/expected ratio ####
+sub CalcRatio {
+  if ($return{'freq'}) {
+    foreach $oligo_seq (sort keys %oligo) {
+      if ($oligo{$oligo_seq}->{exp_freq} == 0) {
+	$oligo{$oligo_seq}->{ratio} = 0;
+      } else {
+	$oligo{$oligo_seq}->{ratio} =  $oligo{$oligo_seq}->{freq}/$oligo{$oligo_seq}->{exp_freq};
+      }
+      #### check threshold on occurrence probability ####
+      if ($oligo{$oligo_seq}->{ratio} < $ratio_threshold) {
+	delete $oligo{$oligo_seq};
+      }
+    }
+  } elsif ($return{'occ'}) {
+    foreach $oligo_seq (sort keys %oligo) {
+      if ($oligo{$oligo_seq}->{exp_occ} == 0) {
+	$oligo{$oligo_seq}->{ratio} = 0;
+      } else {
+	$oligo{$oligo_seq}->{ratio} =  $oligo{$oligo_seq}->{occ}/$oligo{$oligo_seq}->{exp_occ};
+      }
+      
+      #### check threshold on occurrence probability ####
+      if ($oligo{$oligo_seq}->{ratio} < $ratio_threshold) {
+	delete $oligo{$oligo_seq};
+      }
+    }
+  }
+} ### CalcRatio
+
+
+
+#### probabilities ####
+sub CalcProba {
+  #### converts threshold on occurence significance index into a 
+  #### threshold on occurrence probability
+  if ($occ_significance_threshold ne "") {
+    $proba_occ_threshold = exp(-$occ_significance_threshold*log(10))/$nb_possible_oligo;
+  }
+  
+  
+  #### converts threshold on mseq significance index into a 
+  #### threshold on mseq probability
+  if ($mseq_significance_threshold ne "") {
+    $proba_mseq_threshold = exp(-$mseq_significance_threshold*log(10))/$nb_possible_oligo;
+  }
+  
+  
+  ### calculate oligo probabilities
+  foreach $oligo_seq (sort keys %oligo) {
+    if ($hyperverbose) {
+      $current_time = `date '+%H:%M:%S'`;
+      chomp($current_time);
+      printf ("oligo-analysis\t$current_time\tcalculating proba $oligo_seq obs %7d exp %7.1f\n", 
+	      $oligo{$oligo_seq}->{occ}, 
+	      $oligo{$oligo_seq}->{exp_occ});
+    }
+    
+    ### probability of the observed number of occurrences ####
+    $rev_compl = uc(&ReverseComplement($oligo_seq));
+    if (($sum_strands) && (uc($oligo_seq) eq $rev_compl)) {
+      $oligo{$oligo_seq}->{occ_pro} = &sum_of_binomials($oligo{$oligo_seq}->{exp_freq},$oligo{$oligo_seq}->{nb_possible_pos}/2,$oligo{$oligo_seq}->{occ}/2);
+      $oligo{$oligo_seq}->{remark} = "\tpalindrome";
+    } else {
+      $oligo{$oligo_seq}->{occ_pro} = &sum_of_binomials($oligo{$oligo_seq}->{exp_freq},$oligo{$oligo_seq}->{nb_possible_pos} - $oligo{$oligo_seq}->{overlaps},$oligo{$oligo_seq}->{occ});
+    }
+    
+    #### check threshold on occurrence probability ####
+    if ($oligo{$oligo_seq}->{occ_pro} > $proba_occ_threshold) {
+      delete $oligo{$oligo_seq};
+      next;
+    }
+    
+    
+    ### Significance index for occurrence number
+    if ($nb_possible_oligo > 0) {
+      if ($oligo{$oligo_seq}->{occ_pro} > 0) {
+	$oligo{$oligo_seq}->{occ_sig} = -log($nb_possible_oligo*$oligo{$oligo_seq}->{occ_pro})/log(10);
+      } else {
+	$oligo{$oligo_seq}->{occ_sig} = 20;
+      }
+    }
+    
+    
+    #### matching seq probability
+    if ($return{'mseq'}) {	    
+      ### probability of the observed number of matching sequences ####
+      $avg_mseq_proba = $oligo{$oligo_seq}->{exp_ms}/$sequence_number;
+      $oligo{$oligo_seq}->{ms_pro} = &sum_of_binomials($avg_mseq_proba, $sequence_number, $oligo{$oligo_seq}->{mseq});    
+      
+      #### check threshold on mseq probability ####
+      if ($oligo{$oligo_seq}->{ms_pro} > $proba_mseq_threshold) {
+	delete $oligo{$oligo_seq};
+	next;
+      }
+      
+      ### Significance index for number of matching sequences
+      if ($nb_possible_oligo > 0) {
+	if ($oligo{$oligo_seq}->{ms_pro} > 0) {
+	  $oligo{$oligo_seq}->{ms_sig} = -log($nb_possible_oligo*$oligo{$oligo_seq}->{ms_pro})/log(10);
+	} else {
+	  $oligo{$oligo_seq}->{ms_sig} = 20;
+	}
+      }
+    }
+  }  
+} ### CalcProba
+
+
+
+
+### print the result file
+sub PrintResult {
+  ### open output file ###
+  if ($hyperverbose) {
+    $current_time = `date '+%H:%M:%S'`;
+    chomp($current_time);
+    warn "oligo-analysis\t$current_time\tPrinting output file\n";
+  }
+  
+  ### verbose ###
+  if ($verbose) {
+    print $out "; oligo-analysis";
+    foreach $a (@ARGV) {
+      print $out " $a";
+    }
+    print $out "\n";
+    print $out "; Input file	$inputfile\n" if ($inputfile ne "");
+    print $out "; Input format	$in_format\n";
+    print $out "; Expected frequency file	$exp_freq_file\n" if ($exp_freq_file ne "");
+    print $out "; Markov chain order	$markov_order\n" if ($markov);
+    if ($alphabet) {
+      print $out "; Alphabet\n";
+      foreach $key (sort keys %residue_proba) {
+	print $out ";\t$key\t$residue_proba{$key}\n";
+      }
+    }
+    if ($pseudo_weight) {
+	print $out "; Pseudo weight\t", $pseudo_weight, "\n";
+	print $out "; Pseudo frequency\t", $pseudo_frequency, "\n";
+    }
+    
+    print $out "; Output file	$outputfile\n" if ($outputfile ne "");
+    print $out "; Oligomer length	$oligo_length\n";
+    if ($noov) {
+      print $out "; Discard overlapping matches\n";
+    } else {
+      print $out "; Count overlapping matches\n";
+    }
+    if ($sum_strands) {
+      print $out "; Counted on both strands\n";
+      if ($group_rc) {
+	print $out "; \tgrouped by pairs of reverse complements\n";
+      }
+    } else {
+      print $out "; Counted on a single strand\n";
+    }
+    if ($one_var_position) {
+      print $out "; Neighborhood: one variable position\t";
+      foreach $d (@degenerate_code) {
+	print $out "; $d "; 
+      }
+      print $out "\n"; 
+    }
+    print $out "; Nb of sequences		$sequence_number\n";
+    print $out "; Sum of sequence lengthes\t$sum_seq_length\n";
+    if ($noov) {
+      print $out "; total overlaps		$sum_overlaps\n";
+      print $out "; total non overlapping occ	$sum_noov\n";
+    }
+    print $out "; total oligo occurrences         $sum_occurrences\n";
+    print $out "; nb possible positions\t\t",$nb_possible_pos ,"\n";
+    print $out "; nb possible oligomers\t$nb_possible_oligo\n";
+    print $out "; threshold on occurrence #	$occurrence_threshold\n" if ($occurrence_threshold > 0);
+    print $out "; threshold on occ signif. index	$occ_significance_threshold\n" if ($occ_significance_threshold ne "");
+    print $out "; threshold on matching seq #	$mseq_threshold\n" if ($mseq_threshold > 0);
+    print $out "; threshold on occurrence proba	$proba_occ_threshold\n" if ($proba_occ_threshold < 1);
+    print $out "; threshold on obs/exp occ ratio	$ratio_threshold\n" if ($ratio_threshold > 0);
+    print $out "; thresh. on match. seq proba	$proba_mseq_threshold\n" if ($proba_mseq_threshold < 1);
+    unless ($sequence_number > 1000) {
+      print $out "; Sequences:\n";
+      foreach $s (1..$sequence_number) {
+	print $out ";\t$id_list[$s]\t$seq_length[$s]\n";
+      }
+    }
+    print $out ";\n";
+  }
+  
+  
+  ### result ####
+  ### sort oligomers in function of significance or alphabetically
+  if ($sort_result) {
+    ### in priority, sort mby matching sequence results
+    if ($return{'mseq'}) {
+      if ($return{'proba'}) {
+	@sorted_keys = sort {$oligo{$b}->{ms_sig} <=>  $oligo{$a}->{ms_sig}} keys %oligo;
+	$sorted = 1;
+      } elsif($return{'like'}) {
+	@sorted_keys = sort {$oligo{$b}->{ms_lkh} <=>  $oligo{$a}->{ms_lkh}} keys %oligo;
+	$sorted = 1;
+      }
+      ### if no matching sequence request, sort by statistics on occurrences
+    } elsif ($return{'occ'}) {
+      ### preferred fields for sorting are the most generally reliable
+      if ($return{'zscore'}){
+	@sorted_keys = sort {$oligo{$b}->{zscore} <=>  $oligo{$a}->{zscore}} keys %oligo;
+	$sorted = 1;
+      } elsif ($return{'proba'}) {
+	@sorted_keys = sort {$oligo{$b}->{occ_sig} <=> $oligo{$a}->{occ_sig}} keys %oligo;
+	$sorted = 1;
+      } elsif ($return{'like'}) {
+	@sorted_keys = sort {$oligo{$b}->{occ_lkh} <=> $oligo{$a}->{occ_lkh}} keys %oligo;
+	$sorted = 1;
+      } elsif ($return{'ratio'}) {
+	@sorted_keys = sort {$oligo{$b}->{ratio} <=> $oligo{$a}->{ratio}} keys %oligo;
+	$sorted = 1;
+      } else {
+	@sorted_keys = sort {$oligo{$b}->{occ} <=> $oligo{$a}->{occ}} keys %oligo;
+	$sorted = 1;
+      }
+    } elsif ($return{'freq'}) {
+	@sorted_keys = sort {$oligo{$b}->{freq} <=> $oligo{$a}->{freq}} keys %oligo;
+	$sorted = 1;
+    }    
+
+  } 
+  
+  ### in all the other cases, sort by sequence
+  @sorted_keys = sort keys %oligo unless ($sorted);
+
+  &PrintHeaderLine();
+  
+  ### print result ###
+  foreach $oligo_seq (@sorted_keys) {
+    ### oligo sequence and identifier
+    print $out "$oligo_seq";
+    if ($group_rc) {
+      print $out "\t$oligo_seq|", lc(ReverseComplement($oligo_seq));
+    } else {
+      print $out "\t$oligo_seq";
+    }
+    
+    ### relative frequencies
+    printf $out "\t%15.13f", $oligo{$oligo_seq}->{freq} if ($return{'freq'});	
+    printf $out "\t%15.13f", $oligo{$oligo_seq}->{exp_freq} if ($return{'exp_freq'});
+    
+    ### occurrences ###
+    if ($return{'occ'}) {
+      print $out "\t", $oligo{$oligo_seq}->{occ};
+      
+      ### expected frequency
+      if ($return{'exp_freq'}) {
+	if ($oligo{$oligo_seq}->{exp_occ} >= 0.01) {
+	  printf $out "\t%.2f", $oligo{$oligo_seq}->{exp_occ};
+	} else {
+	  printf $out "\t%.2g", $oligo{$oligo_seq}->{exp_occ};
+	}
+      }
+      
+      ### occurrence probability
+      if ($return{'proba'}) {
+	if ($oligo{$oligo_seq}->{occ_pro} >= 0.0001) {
+	  printf $out "\t%.5f", $oligo{$oligo_seq}->{occ_pro};
+	} else {
+	  printf $out "\t%.2g", $oligo{$oligo_seq}->{occ_pro};
+	}
+	printf $out "\t%.2f", $oligo{$oligo_seq}->{occ_sig};
+      }
+      
+      
+      ### zscore
+      if ($return{'zscore'}) {
+	printf $out "\t%.2f", $oligo{$oligo_seq}->{zscore};
+	#			printf $out "\t%.1f", $oligo{$oligo_seq}->{est_var};
+      }
+      
+      ### log likelihood of occurrences
+      printf $out "\t%7.5f", $oligo{$oligo_seq}->{occ_lkh} if ($return{'like'});
+      
+      ### overlapping occurrences
+      if ($noov) {
+	$oligo{$oligo_seq}->{overlaps} = 0 if ($oligo{$oligo_seq}->{overlaps} eq "");
+	print $out "\t", $oligo{$oligo_seq}->{overlaps};
+      }
+    }
+    ### obs/exp ratio
+    if ($return{'ratio'}) {
+      printf $out "\t%.2f", $oligo{$oligo_seq}->{ratio};
+    }
+    
+    ### matching sequences ###
+    if ($return{'mseq'}) {
+      print $out "\t", $oligo{$oligo_seq}->{mseq};
+      if ($return{'proba'}) {
+	printf $out "\t%.2f", $oligo{$oligo_seq}->{exp_ms};
+	if ($oligo{$oligo_seq}->{ms_pro} >= 0.0001) {
+	  printf $out "\t%.5f", $oligo{$oligo_seq}->{ms_pro};     
+	} else {
+	  printf $out "\t%.2g", $oligo{$oligo_seq}->{ms_pro};   
+	}
+	printf $out "\t%.1f", $oligo{$oligo_seq}->{ms_sig};
+      }
+      printf $out "\t%7.5f", $oligo{$oligo_seq}->{ms_freq} if ($return{'freq'});
+      printf $out "\t%7.5f", $oligo{$oligo_seq}->{exp_ms}/$sequence_number if ($return{'exp_freq'});
+      printf $out "\t%7.5f", $oligo{$oligo_seq}->{mseq}/$oligo{$oligo_seq}->{exp_ms} if (($return{'ratio'}) && ($oligo{$oligo_seq}->{exp_ms} > 0));
+      printf $out "\t%7.5f", $oligo{$oligo_seq}->{ms_lkh} if ($return{'like'});
+      
+    }
+    
+    ### positions ###
+    if ($return{'pos'}) {
+      print $out "\t";
+      for $seq (1..$sequence_number) {
+	for $p (0..$#{$match_pos{$oligo_seq}[$seq]}) {
+	  print $out "$seq:$match_pos{$oligo_seq}[$seq][$p] ";	
+	}
+      }
+    }
+    
+    ### miscellaneous info
+    printf $out "\t%.3f", $oligo{$oligo_seq}->{ovlp} if ($return{'ovlp'});
+    printf $out "\t%.3f", $oligo{$oligo_seq}->{est_var} if ($return{'est_var'});
+    print $out $oligo{$oligo_seq}->{remark} if ($return{'remark'});
+    
+    ### next line
+    print $out "\n";
+  }
+  
+  
+  if ($verbose) {
+    $done_time  = `date '+%d/%m/%y %H:%M:%S %Z'`;
+    print $out "; Job started $start_time";
+    print $out "; Job done    $done_time";
+    
+  }
+  
+  close $out unless ($outputfile eq "");
+  
+}				### PrintResult
+
+
+
+
+sub PrintHeaderLine {
+
+    $col_description{"seq"} = "oligomer sequence";
+    $col_description{"sequence"} = "oligomer sequence";
+    $col_description{"identifier"} = "oligomer identifier";
+    $col_description{"id"} = "oligomer identifier";
+    $col_description{"observed_freq"} = "observed relative frequency"; 
+    $col_description{"expected_freq"} = "expected relative frequency"; 
+    $col_description{"occ"} = "observed occurrences";
+    $col_description{"exp_occ"} = "expected occurrences"; 
+    $col_description{"occ_prb"} = "occurrence probability (binomial)";
+    $col_description{"occ_sig"} = "occurrence significance (binomial)";
+    $col_description{"zscore"} = "z-score (normal)"; 
+    $col_description{"occ_lkh"} = "occurrence likelihood"; 
+    $col_description{"ovlaps"} = "number of overlapping occurrences"; 
+    $col_description{"ratio"} = "observed/expected ratio"; 
+    $col_description{"ms"} = "number of matching sequences";
+    $col_description{"exp_ms"} = "expected number of matching sequences";
+    $col_description{"ms_prb"} = "matching sequence probability (binomial)";
+    $col_description{"ms_sig"} = "matching sequenc significance (binomial)";
+    $col_description{"ms_freq"} = "observed matching sequence frequency"; 
+    $col_description{"exp_msf"} = "expected matching sequence frequency"; 
+    $col_description{"ms_rati"} = "observed/expected matching seqyences"; 
+    $col_description{"ms_lkh"} = "matching sequence likelihood"; 
+    $col_description{"positions"} = "matching positions"; 
+    $col_description{"ovlp"} = "overlap coefficient"; 
+    $col_description{"est_var"} = "estimation of the variance on occurrences"; 
+    $col_description{"remark"} = "remark"; 
+    @out_col = ();
+    ### print header line ###
+    if ($oligo_length < 8) {
+	push(@out_col,"seq");
+    } else {
+	push(@out_col,"sequence");
+    }
+    if (($oligo_length > 8) ||
+	(($oligo_length > 5) && ($sum_strands))) {   
+	push(@out_col,"identifier");
+    } else {
+	push(@out_col,"id");
+    }
+    
+    ### occurrence frequencies
+    push(@out_col,"observed_freq") if ($return{'freq'});
+    push(@out_col,"expected_freq") if ($return{'exp_freq'});
+    
+    ### occurrences
+    if ($return{'occ'}) {
+	push(@out_col,"occ");
+	push(@out_col,"exp_occ") if ($return{'exp_freq'});
+	if ($return{'proba'}) {
+	    push(@out_col,"occ_prb");
+	    push(@out_col,"occ_sig");
+	}
+	push(@out_col,"zscore") if ($return{'zscore'});
+	push(@out_col,"occ_lkh") if ($return{'like'});
+	push(@out_col,"ovlaps") if ($noov);
+	#    push(@out_col,"est_var") if ($return{'zscore'});
+    }
+    push(@out_col,"ratio") if ($return{'ratio'});
+    
+    ### matching sequences
+    if ($return{'mseq'}) {
+	push(@out_col,"ms");
+	if ($return{'proba'}) {
+	    push(@out_col,"exp_ms");
+	    push(@out_col,"ms_prb");
+	    push(@out_col,"ms_sig");
+	}
+	push(@out_col,"ms_freq") if ($return{'freq'});
+	push(@out_col,"exp_msf") if ($return{'exp_freq'});
+	push(@out_col,"ms_rati") if ($return{'ratio'});
+	push(@out_col,"ms_lkh") if ($return{'like'});
+    }
+    
+    ### positions
+    push(@out_col,"positions") if ($return{'pos'});
+    
+    ### miscellaneous
+    push(@out_col,"ovlp") if ($return{'ovlp'});
+    push(@out_col,"est_var") if ($return{'est_var'});
+    push(@out_col,"remark") if ($return{'remark'});
+
+    if ($verbose) {
+	print $out "; column headers\n";
+	foreach $c (0..$#out_col) {
+	    printf $out ";\t%d\t%-15s\t%s\n", $c+1, $out_col[$c], $col_description{$out_col[$c]};
+	}
+    }
+
+    print $out ";";
+    print $out join("\t",@out_col);
+    print $out "\n";
+
+}
+
+
+
+
+sub ReadArguments {
+    $a = 0;
+    while ($a <= $#ARGV) {
+	
+	#### verbose
+	if ($ARGV[$a] eq "-v") {
+	    $verbose = 1;
+	    
+	} elsif ($ARGV[$a] eq "-vv") {
+	    $verbose = 1;
+	    $hyperverbose = 1;
+	    
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp;
+	    
+	    ### list of options
+	} elsif ($ARGV[0] eq "-help") {
+	    &PrintOptions;
+
+	    #### input file
+	} elsif ($ARGV[$a] eq "-i") {
+	    $inputfile = $ARGV[$a+1];
+	    
+	} elsif ($ARGV[$a] eq "-format") {
+	    $in_format = lc($ARGV[$a+1]);
+	    
+	    #### protein sequences
+	} elsif ($ARGV[$a] =~ /^-prot/i) {
+	    $sum_strands = 0;
+	    $group_rc = 0;
+	    $proteic = 1;
+	    
+	    #### output file
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outputfile = $ARGV[$a+1];
+	    
+	    ### organism (for selecting the appropriate expected frequencies)
+	} elsif ($ARGV[$a] =~ /^-org/i) {
+	    $organism = $ARGV[$a+1];
+	    
+
+	    ################################################################ 
+	    #### oligonucleotide counting options
+
+	    #### oligonucleotide length
+	} elsif ($ARGV[$a] eq "-l") {
+	    $oligo_length = $ARGV[$a+1];
+	    
+	    #### strands
+	} elsif ($ARGV[$a] eq "-1str") {
+	    $sum_strands = 0;
+	    $group_rc = 0;
+	    
+	} elsif ($ARGV[$a] eq "-2str") {
+	    $sum_strands = 1;
+	    
+	    #### reverse complement grouping or not
+	} elsif ($ARGV[$a] eq "-grouprc") {
+	    $sum_strands = 1;
+	    $group_rc = 1;
+	    
+	} elsif ($ARGV[$a] eq "-nogrouprc") {
+	    $group_rc = 0;
+	    
+	    #### overlapping matches
+	} elsif ($ARGV[$a] =~ /^-noov/) {
+	    $noov = 1;
+	    
+	    #### degenerate code: one N at any position
+	} elsif ($ARGV[$a] eq "-oneN") {
+	    $one_var_position = 1;
+	    @degenerate_code = ('n');
+	    
+	    #### degenerate code: one degenerate at any position in each pattern
+	} elsif ($ARGV[$a] eq "-onedeg") {
+	    $one_var_position = 1;
+	    @degenerate_code = ('r','y','w','s','m','k','h','b','v','d','n');
+	    
+	    ################################################################
+	    #### expected frequency calibration
+	    ####
+	    
+	    #### expected frequency file
+	} elsif ($ARGV[$a] eq "-expfreq") {
+	    $exp_freq_file = $ARGV[$a+1];
+	    
+	    ### use oligo non-coding frequencies as expected frequencies
+	} elsif ($ARGV[$a] =~ /^-ncf/i) {
+	    $ncf = 1;
+	    
+	    #### markov chain
+	} elsif ($ARGV[$a] =~ /^-markov/i) { ### Markov chains
+	    $markov = 1;
+	    if (&IsInteger($ARGV[$a+1])) {
+		$a++;
+		$markov_order = $ARGV[$a];
+	    } 
+	    
+	    #### markov chain
+	} elsif ($ARGV[$a] =~ /^-pseudo/i) { ### Markov chains
+	    $pseudo_weight = $ARGV[++$a];
+	    unless ( (&IsReal($pseudo_weight)) &&
+		     ($pseudo_weight <= 1) &&
+		     ($pseudo_weight >= 0)) {
+		die ("Error: invalid value for pseudo frequency\t", $pseudo_weight, "\n",
+		     "Pseudo frequency must be a real value between 0 and 1\n");
+	    }
+	    
+	    #### alphabet
+	} elsif ($ARGV[$a] eq "-a") {
+	    $alphabet = 1;
+	    if ($ARGV[$a+1] eq "yeast") {
+		$residue_proba{'a'} = $residue_proba{'t'} = 0.308512197555054;
+		$residue_proba{'c'} = $residue_proba{'g'} = 0.191487802444946;
+	    } elsif ($ARGV[$a+1] eq "input") {
+		$input_alphabet = 1;
+	    } elsif (("$ARGV[$a+1] $ARGV[$a+2] $ARGV[$a+3] $ARGV[$a+4]" =~ /a:t (\S+) c:g (\S+)/i) && ($1 >=0) && ($2 >=0) && ($1 + $2 > 0)) {
+		$residue_proba{'a'} = $residue_proba{'t'} = $1/(2*($1+$2));
+		$residue_proba{'c'} = $residue_proba{'g'} = $2/(2*($1+$2));
+	    } else {
+		$residue_proba{'a'} = 0.25;
+		$residue_proba{'c'} = 0.25;
+		$residue_proba{'g'} = 0.25;
+		$residue_proba{'t'} = 0.25;
+	    }
+	    
+	    
+	    ### statistics to return
+#  } elsif ($ARGV[$a] eq "-occ") {
+#    $return{'occ'} = 1;
+#    push(@output_fields, "occurrences");
+#    
+#  } elsif ($ARGV[$a] eq "-mseq") {
+#    $return{'mseq'} = 1;
+#    push(@output_fields, "mseq");
+#    
+#  } elsif ($ARGV[$a] eq "-proba") {
+#    $return{'exp_freq'} = 1;
+#    $return{'proba'} = 1;
+#    push(@output_fields, "proba");
+#    
+#  } elsif ($ARGV[$a] eq "-ratio") {
+#    $return{'exp_freq'} = 1;
+#    $return{'ratio'} = 1;
+#    push(@output_fields, "ratio");
+#    
+#  } elsif ($ARGV[$a] =~ /^-zsc/i) {
+#    $return{'exp_freq'} = 1;
+#    $return{'zscore'} = 1;
+#    push(@output_fields, "zscore");
+#    
+#  } elsif ($ARGV[$a] eq "-pos") {
+#    $return{'pos'} = 1;
+#    push(@output_fields, "positions");
+#    
+#  } elsif ($ARGV[$a] eq "-freq") {
+#    $return{'freq'} = 1;
+#    push(@output_fields, "frequency");
+#    
+
+	    ################################################################
+	    #### thresholds
+	    
+	    #### threshold on matching sequences
+	} elsif (($ARGV[$a] eq "-thms") && 
+		 (&IsInteger($ARGV[$a+1]))) {
+	    $mseq_threshold = $ARGV[$a+1];
+	    
+	    #### threshold on occurrences
+	} elsif (($ARGV[$a] eq "-tho") && 
+		 (&IsInteger($ARGV[$a+1]))) {
+	    $occurrence_threshold = $ARGV[$a+1];
+	    
+	    #### threshold on occurrence probability
+	} elsif (($ARGV[$a] eq "-thpo") && 
+		 (&IsReal($ARGV[$a+1]))
+		 && ($ARGV[$a+1] >= 0) && ($ARGV[$a+1] <= 1)) {
+	    $proba_occ_threshold = $ARGV[$a+1];
+	    $return{'proba'} = 1;
+	    
+	    #### threshold on obs/exp ratio
+	} elsif (($ARGV[$a] =~ /^-thrat/i) && 
+		 (&IsReal($ARGV[$a+1]))
+		 && ($ARGV[$a+1] >= 0)) {
+	    $ratio_threshold = $ARGV[$a+1];
+	    $return{'exp_freq'} = 1;
+	    $return{'ratio'} = 1;
+	    
+	    #### threshold on matching sequence probability
+	} elsif (($ARGV[$a] eq "-thpms") &&  
+		 (&IsReal($ARGV[$a+1]))
+		 && ($ARGV[$a+1] >= 0) && ($ARGV[$a+1] <= 1)) {
+	    $proba_mseq_threshold = $ARGV[$a+1];
+	    $return{'proba'} = 1;
+	    
+	    
+	    #### threshold on occurrence significance
+	} elsif (($ARGV[$a] eq "-thosig") && (&IsReal($ARGV[$a+1]))) {
+	    $occ_significance_threshold = $ARGV[$a+1];
+	    $return{'proba'} = 1;
+	    
+	    #### threshold on matching sequence significance
+	} elsif (($ARGV[$a] eq "-thmssig") && (&IsReal($ARGV[$a+1]))) {
+	    $mseq_significance_threshold = $ARGV[$a+1];
+	    $return{'proba'} = 1;
+	    
+	    
+	    ################################################################
+	    #### statistics to return
+	} elsif ($ARGV[$a] eq "-return") {
+	    chomp($ARGV[$a+1]);
+	    @fields_to_return = split ",", $ARGV[$a+1];
+	    foreach $field (@fields_to_return) {
+		if ($field eq "occ") {
+		    $return{'occ'} = 1;
+		    push(@output_fields, "occurrences");
+		    
+		} elsif ($field eq "mseq") {
+		    $return{'mseq'} = 1;
+		    push(@output_fields, "mseq");
+		    
+		} elsif ($field eq "proba") {
+		    $return{'exp_freq'} = 1;
+		    $return{'proba'} = 1;
+		    push(@output_fields, "exp");
+		    push(@output_fields, "proba");
+		    
+		} elsif ($field eq "ratio") {
+		    $return{'exp_freq'} = 1;
+		    $return{'ratio'} = 1;
+		    push(@output_fields, "exp");
+		    push(@output_fields, "ratio");
+		    
+		} elsif ($field =~ /^zsc/i) {
+		    $return{'exp_freq'} = 1;
+		    $return{'zscore'} = 1;
+		    push(@output_fields, "exp");
+		    push(@output_fields, "zscore");
+		    
+		} elsif ($field =~ /^like/i) { ### log likelihood
+		    $return{'exp_freq'} = 1;
+		    $return{'like'} = 1;
+		    $return{'freq'} = 1;
+		    push(@output_fields, "exp");
+		    push(@output_fields, "like");
+		    push(@output_fields, "frequency");
+	
+		} elsif ($field eq "pos") {
+		    $return{'pos'} = 1;
+		    push(@output_fields, "positions");
+		    
+		} elsif ($field eq "freq") {
+		    $return{'freq'} = 1;
+		    push(@output_fields, "frequency");
+		    
+		} elsif ($field =~ /^over/) {
+		    $return{'ovlp'} = 1;
+		    push(@output_fields, "ovlp");
+		    
+		} elsif ($field eq "var") {
+		    $return{'est_var'} = 1;
+		    push(@output_fields, "est_var");
+		    
+		    
+		}
+		
+	    }
+	} elsif ($ARGV[$a] eq "-table") {
+	    $return{'table'} = 1;
+	    push(@output_fields, "occ");
+	    
+	    
+	    ################################################################
+	    #### sorting
+	} elsif ($ARGV[$a] eq "-sort") {
+	    $sort_result = 1;
+	    
+	}
+	$a++;
+    }
+    
+    if ($hyperverbose) {
+	$current_time = `date '+%H:%M:%S'`;
+	chomp($current_time);
+	warn "oligo-analysis\t$current_time\tStarting\n";
+    }
+}
+ 
+
+sub PrintHelp {
+#if ($ARGV[0] eq "-h") {
   open HELP, "| more";
   print HELP <<End_of_help; 
 NAME
@@ -95,6 +1558,19 @@ ARGUMENTS
 		              obs(GATAA) x obs(ATAAG)
 		exp(GATAAG) = -----------------------
 		                   obs(ATAA)
+
+	-pseudo #
+		 pseudo-weight
+		 # must be a real value between 0 and 1. 
+		 This allows to circumvent the problem that the
+		 expected frequency file muight be incomplete (due to
+		 a too small reference sequence set), in which case
+		 some oligonucleotides might have an observed
+		 frequency > 0, whereas the expected frequency is 0
+		 (leading to an impossible event). The expected
+		 frequency is corrected by a pseudo-frequency, which
+		 is the pseudo-weight divided by the number of
+		 possible patterns.
 
     COUNTING OPTIONS
 	-noov	no overlapping. 
@@ -415,7 +1891,7 @@ EXAMPLE
 	
 WEB VERSION
 	oligo-analysis can be used via internet at the following site:
-	http://www.cifn.unam.mx/Computational_Biology/yeast-tools/
+	http://www.ucmb.ulb.ac.be/bioinformatics/rsa-tools/
 
 HISTORY
 	1997	June	starting the oligo-analysis project
@@ -428,7 +1904,8 @@ End_of_help
   exit(0);
 }
 
-if ($ARGV[0] eq "-help") {
+sub PrintOptions {
+#if ($ARGV[0] eq "-help") {
   open HELP, "| more";
   print HELP <<End_of_help; 
 oligo-analysis options
@@ -449,6 +1926,7 @@ oligo-analysis options
 -org		organism 
 -markov	#	calculate expected frequencies according to
 		Markov chains of order #
+-pseudo	#	pseudo-weight (# between 0 and 1)
 -return		fields to return, among: 
 			occ,proba,freq,mseq,ratio,zscore,like,pos
 -table		return a table sequences (rows)/oligo occurrences (cols)
@@ -472,1384 +1950,3 @@ End_of_help
     close HELP;
     exit(0);
 }
-
-
-
-###### initialize parameters ##########
-$start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
-
-$in_format = "fasta";
-@output_fields = ();
-$sum_strands = 1;
-$group_rc = 1;
-$proba_occ_threshold = 1;
-$proba_mseq_threshold = 1;
-$group_inv_pairs = 1;
-
-$markov_order = -1;
-$sequence_number = 0;
-$nb_possible_pos = 0;
-$sum_seq_length = 0;
-
-
-### default residue probabilities      
-$residue_proba{'a'} = 0.25;
-$residue_proba{'c'} = 0.25;
-$residue_proba{'g'} = 0.25;
-$residue_proba{'t'} = 0.25;
-
-
-
-#### read arguments ####
-$a = 0;
-while ($a <= $#ARGV) {
-  if ($ARGV[$a] eq "-i") {
-    $inputfile = $ARGV[$a+1];
-    
-  } elsif ($ARGV[$a] eq "-o") {
-    $outputfile = $ARGV[$a+1];
-    
-  } elsif ($ARGV[$a] eq "-expfreq") {
-    $exp_freq_file = $ARGV[$a+1];
-    
-    ### organism (for selecting the appropriate expected frequencies)
-  } elsif ($ARGV[$a] =~ /^-org/i) {
-    $organism = $ARGV[$a+1];
-    
-    ### use oligo non-coding frequencies as expected frequencies
-  } elsif ($ARGV[$a] =~ /^-ncf/i) {
-    $ncf = 1;
-
-  } elsif ($ARGV[$a] =~ /-markov/i) { ### Markov chains
-    $markov = 1;
-    if (&IsInteger($ARGV[$a+1])) {
-      $a++;
-      $markov_order = $ARGV[$a];
-    }
-    
-  } elsif ($ARGV[$a] eq "-l") {
-    $oligo_length = $ARGV[$a+1];
-    
-  } elsif ($ARGV[$a] eq "-format") {
-    $in_format = lc($ARGV[$a+1]);
-    
-  } elsif ($ARGV[$a] eq "-v") {
-    $verbose = 1;
-    
-  } elsif ($ARGV[$a] eq "-vv") {
-    $verbose = 1;
-    $hyperverbose = 1;
-    
-  } elsif ($ARGV[$a] =~ /^-noov/) {
-    $noov = 1;
-    
-  } elsif ($ARGV[$a] eq "-1str") {
-    $sum_strands = 0;
-    $group_rc = 0;
-    
-  } elsif ($ARGV[$a] =~ /^-prot/i) {
-    $sum_strands = 0;
-    $group_rc = 0;
-    $proteic = 1;
-    
-  } elsif ($ARGV[$a] eq "-oneN") {
-    $one_var_position = 1;
-    @degenerate_code = ('n');
-    
-  } elsif ($ARGV[$a] eq "-onedeg") {
-    $one_var_position = 1;
-    @degenerate_code = ('r','y','w','s','m','k','h','b','v','d','n');
-    
-  } elsif ($ARGV[$a] eq "-2str") {
-    $sum_strands = 1;
-    
-  } elsif ($ARGV[$a] eq "-grouprc") {
-    $sum_strands = 1;
-    $group_rc = 1;
-  
-  } elsif ($ARGV[$a] eq "-nogrouprc") {
-    $group_rc = 0;
-    
-  } elsif ($ARGV[$a] eq "-a") {
-    $alphabet = 1;
-    if ($ARGV[$a+1] eq "yeast") {
-      $residue_proba{'a'} = $residue_proba{'t'} = 0.308512197555054;
-      $residue_proba{'c'} = $residue_proba{'g'} = 0.191487802444946;
-    } elsif ($ARGV[$a+1] eq "input") {
-      $input_alphabet = 1;
-    } elsif (("$ARGV[$a+1] $ARGV[$a+2] $ARGV[$a+3] $ARGV[$a+4]" =~ /a:t (\S+) c:g (\S+)/i) && ($1 >=0) && ($2 >=0) && ($1 + $2 > 0)) {
-      $residue_proba{'a'} = $residue_proba{'t'} = $1/(2*($1+$2));
-      $residue_proba{'c'} = $residue_proba{'g'} = $2/(2*($1+$2));
-    } else {
-      $residue_proba{'a'} = 0.25;
-      $residue_proba{'c'} = 0.25;
-      $residue_proba{'g'} = 0.25;
-      $residue_proba{'t'} = 0.25;
-    }
-    
-  } elsif ($ARGV[$a] eq "-table") {
-    $return{'table'} = 1;
-    push(@output_fields, "occ");
-    
-    ### statistics to return
-  } elsif ($ARGV[$a] eq "-occ") {
-    $return{'occ'} = 1;
-    push(@output_fields, "occurrences");
-    
-  } elsif ($ARGV[$a] eq "-mseq") {
-    $return{'mseq'} = 1;
-    push(@output_fields, "mseq");
-    
-  } elsif ($ARGV[$a] eq "-proba") {
-    $return{'exp_freq'} = 1;
-    $return{'proba'} = 1;
-    push(@output_fields, "proba");
-    
-  } elsif ($ARGV[$a] eq "-ratio") {
-    $return{'exp_freq'} = 1;
-    $return{'ratio'} = 1;
-    push(@output_fields, "ratio");
-    
-  } elsif ($ARGV[$a] =~ /^-zsc/i) {
-    $return{'exp_freq'} = 1;
-    $return{'zscore'} = 1;
-    push(@output_fields, "zscore");
-    
-  } elsif ($ARGV[$a] eq "-pos") {
-    $return{'pos'} = 1;
-    push(@output_fields, "positions");
-    
-  } elsif ($ARGV[$a] eq "-freq") {
-    $return{'freq'} = 1;
-    push(@output_fields, "frequency");
-    
-  } elsif (($ARGV[$a] eq "-thms") && 
-	   (&IsInteger($ARGV[$a+1]))) {
-    $mseq_threshold = $ARGV[$a+1];
-    
-  } elsif (($ARGV[$a] eq "-tho") && 
-	   (&IsInteger($ARGV[$a+1]))) {
-    $occurrence_threshold = $ARGV[$a+1];
-    
-  } elsif (($ARGV[$a] eq "-thpo") && 
-	   (&IsReal($ARGV[$a+1]))
-	   && ($ARGV[$a+1] >= 0) && ($ARGV[$a+1] <= 1)) {
-    $proba_occ_threshold = $ARGV[$a+1];
-    $return{'proba'} = 1;
-    
-  } elsif (($ARGV[$a] =~ /^-thrat/i) && 
-	   (&IsReal($ARGV[$a+1]))
-	   && ($ARGV[$a+1] >= 0)) {
-    $ratio_threshold = $ARGV[$a+1];
-    $return{'exp_freq'} = 1;
-    $return{'ratio'} = 1;
-    
-  } elsif (($ARGV[$a] eq "-thpms") &&  
-	   (&IsReal($ARGV[$a+1]))
-	   && ($ARGV[$a+1] >= 0) && ($ARGV[$a+1] <= 1)) {
-    $proba_mseq_threshold = $ARGV[$a+1];
-    $return{'proba'} = 1;
-    
-  } elsif (($ARGV[$a] eq "-thosig") && (&IsReal($ARGV[$a+1]))) {
-    $occ_significance_threshold = $ARGV[$a+1];
-    $return{'proba'} = 1;
-    
-  } elsif (($ARGV[$a] eq "-thmssig") && (&IsReal($ARGV[$a+1]))) {
-    $mseq_significance_threshold = $ARGV[$a+1];
-    $return{'proba'} = 1;
-    
-  } elsif ($ARGV[$a] eq "-groupinvpairs") {
-    $group_inv_pairs = 1;
-    
-  } elsif ($ARGV[$a] eq "-nogroupinvpairs") {
-    $group_inv_pairs = 0;
-    
-  } elsif ($ARGV[$a] eq "-sort") {
-    $sort_result = 1;
-    
-  } elsif (($ARGV[$a] eq "-dist") && 
-	   (($ARGV[$a+1] =~ /(\d+),(\d+)/) || ($ARGV[$a+1] =~ /(\d+)/))) {
-    $pair_min_dist = $1;
-    $pair_max_dist = $2;
-    unless ($pair_max_dist =~ /\d+/) {
-      $pair_max_dist = $pair_min_dist;
-    }
-    
-    ### statistics to return
-  } elsif ($ARGV[$a] eq "-return") {
-    chomp($ARGV[$a+1]);
-    @fields_to_return = split ",", $ARGV[$a+1];
-    foreach $field (@fields_to_return) {
-      if ($field eq "occ") {
-	$return{'occ'} = 1;
-	push(@output_fields, "occurrences");
-	
-      } elsif ($field eq "mseq") {
-	$return{'mseq'} = 1;
-	push(@output_fields, "mseq");
-	
-      } elsif ($field eq "proba") {
-	$return{'exp_freq'} = 1;
-	$return{'proba'} = 1;
-	push(@output_fields, "exp");
-	push(@output_fields, "proba");
-	
-      } elsif ($field eq "ratio") {
-	$return{'exp_freq'} = 1;
-	$return{'ratio'} = 1;
-	push(@output_fields, "exp");
-	push(@output_fields, "ratio");
-	
-      } elsif ($field =~ /^zsc/i) {
-	$return{'exp_freq'} = 1;
-	$return{'zscore'} = 1;
-	push(@output_fields, "exp");
-	push(@output_fields, "zscore");
-	
-      } elsif ($field =~ /^like/i) { ### log likelihood
-	$return{'exp_freq'} = 1;
-	$return{'like'} = 1;
-	$return{'freq'} = 1;
-	push(@output_fields, "exp");
-	push(@output_fields, "like");
-	push(@output_fields, "frequency");
-	
-      } elsif ($field eq "pos") {
-	$return{'pos'} = 1;
-	push(@output_fields, "positions");
-	
-      } elsif ($field eq "freq") {
-	$return{'freq'} = 1;
-	push(@output_fields, "frequency");
-	
-      } elsif ($field =~ /^over/) {
-	$return{'ov_coeff'} = 1;
-	push(@output_fields, "frequency");
-	
-      }
-    }
-  }
-  $a++;
-}
-
-if ($hyperverbose) {
-  $current_time = `date '+%H:%M:%S'`;
-  chomp($current_time);
-  warn "oligo-analysis\t$current_time\tStarting\n";
-}
-
-
-##############################
-### check parameter values ###
-##############################
-
-if (($return{'proba'}) || ($return{'ratio'})) {
-  $return{'exp_freq'} = 1;
-}
-
-### check oligomer length
-unless ($oligo_length > 0) {
-  warn "\tYou should specify an oligomer length > 0.\n";
-  warn "\tType oligo-analysis -h for more info..\n";
-  exit;
-}
-if ($noov) {
-  $min_overlap_dist = $oligo_length;
-}
-
-### markov_order
-if (($markov) && ($markov_order <0)){
-  $markov_order = $oligo_length + $markov_order;
-}
-if (($markov) && ($markov_order < 1)) {
-  die "Error: invalid markov order $markov_order\n";
-} elsif ($markov_order > $oligo_length -1) {
-  die "Error: Markov order ($markov_order) cannot be higher than word length ($oligo_length)\n"; 
-}
-
-
-### check output fields
-if (@output_fields == ()) { #default output is occurrence numbers
-  @output_fields = ("occurrences");
-  $return{'occ'} = 1;
-}
-
-### check input format 
-&CheckInputSeqFormat($in_format);
-
-
-### check pre-defined frequency tables
-### non-coding frequency calibration
-if ($ncf) {
-  ### check organism first
-  unless ($organism) {
-    die ";Error: you should specify an organism for using non-coding frequency calibration\n";
-  }
-  unless ($supported_organism{$organism}) {
-    die ";Error: organism $organism is not supported on this site\n";
-  }
-  
-  $data_dir = $supported_organism{$organism}->{'data'};
-
-  ### localize dyad non-coding frequency file
-  $exp_freq_file = "$data_dir/oligo-frequencies/${oligo_length}nt_non-coding_${organism}.freq";
-  
-  #### TEMPORARY / ACCEPT OVERLAPS IN CALIBRATED FREQS
-  unless (-r $exp_freq_file) {
-    $exp_freq_file = "$data_dir/oligo-frequencies/dyads_3nt_sp0-16_non-coding_${organism}.freq";
-  }
-  
-  die "Error: cannot read expected frequency file $exp_freq_file\n" unless (-r  $exp_freq_file);
-}
-
-### read expected frequencies
-if ($exp_freq_file ne "") {    #### expected frequencies ####
-  unless (open EXPECTED, $exp_freq_file) {
-    warn "	cannot open frequency file \"$exp_freq_file\"\n";
-    exit;
-  }
-  while (<EXPECTED>) {
-    next if (/^;/);
-    if (/(\S+)\t(\S+)/i) {
-      $oligo_seq = lc($1);
-      $oligo{$oligo_seq}->{exp_freq} = $2;
-    }
-  }
-  close EXPECTED;
-}
-
-### open sequence file ###
-$in = &OpenInputFile($inputfile);
-
-
-
-
-if ($hyperverbose) {
-  $current_time = `date '+%H:%M:%S'`;
-  chomp($current_time);
-  warn "oligo-analysis\t$current_time\tReading sequences\n";
-}
-
-$out = &OpenOutputFile($outputfile);
-
-&CountOligo;
-
-&CalcSubWordFrequencies if ($markov);
-&CalcAplhabet if (($input_alphabet) || ($return{'zscore'}));
-&Degenerate if ($one_var_position);
-&SumStrands if ($sum_strands);
-#&SubstractOverlap if ($noov);
-&CalcFrequencies if (($return{'freq'}) || ($verbose) || ($markov));
-&GroupRc if ($group_rc);
-&OccurrenceThreshold if ($occurrence_threshold > 0);
-&MatchingSeqThreshold ($mseq_threshold > 0); 
-&CalcExpected if ($return{'exp_freq'});
-&CalcZscore if ($return{'zscore'});
-&CalcLikelihood if ($return{'like'});
-&CalcRatio if ($return{'ratio'});
-&CalcProba if ($return{'proba'}) ;
-
-
-&PrintResult;
-
-
-if ($hyperverbose) {
-  $current_time = `date '+%H:%M:%S'`;
-  chomp($current_time);
-  warn "oligo-analysis\t$current_time\tDone\n";
-}
-
-
-
-exit(0);
-
-
-########################################################################################
-################################### SUBROUTINE DEFINITION ##############################
-########################################################################################
-
-
-
-#### Read input sequences and count oligomers ####
-sub CountOligo {
-    if ($return{'table'}) {
-	@possible_oligos = &all_oligos($oligo_length);
-	print $out $current_id;
-	foreach my $oligo_seq (@possible_oligos) {
-	    print $out "\t", $oligo_seq;
-	}
-	print $out "\n";
-    }
-  while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format)) &&
-	 (($current_seq ne "") || ($current_id ne ""))) {
-    
-    ### remove tabs and blank spaces ###    
-    $current_seq = &FoldSequence($current_seq,0);
-    
-    ### statistics about sequences ###
-    $sequence_number++;  
-    $id_list[$sequence_number] = $current_id;
-    $seq_length[$sequence_number] = length($current_seq);
-    
-    if ($hyperverbose) {
-      $current_time = `date '+%H:%M:%S'`;
-      chomp($current_time);
-      warn "oligo-analysis\t$curent_time\t$current_id\t$seq_length[$sequence_number]\n";
-    }
-    
-    $sum_seq_length += $seq_length[$sequence_number];
-    if ($seq_length[$sequence_number] < $oligo_length) {
-	next;
-    } else {
-      if ($sum_strands) {
-	$nb_possible_pos += 2*($seq_length[$sequence_number] + 1 - $oligo_length);
-      } else {
-	$nb_possible_pos += $seq_length[$sequence_number] + 1 - $oligo_length;
-      }
-    }
-    $last_pos = $seq_length[$sequence_number] - $oligo_length;	
-    
-    ### if requested, calculate alphabet from input sequence ####
-    if (($input_alphabet) || ($return{'zscore'})) {
-      for $pos (0..$seq_length[$sequence_number]-1) {
-	$letter = lc(substr($current_seq,$pos,1));
-	$residue_occ{$letter}++;
-      }
-    }
-    
-    #### for markov chains, count trailing oligomers of length shorter than $oligo_length ####
-    if ($markov) {
-      for $w (1..$oligo_length - 1) {
-	$subseq = lc(substr($current_seq,$seq_length[$sequence_number]-$w,$w));
-	$sub_freq[$w]{$subseq}++;
-      }
-    }
-    
-    #### count oligomers ####
-    $offset = 0;
-    $current_pos = $last_pos;
-    
-    while ($current_pos >=0) {
-      if ($hyperverbose && (($current_pos%100000) == 0) && ($current_pos > 0)) {
-	$current_length = length($current_seq);
-	warn "\t$current_id\tremain to read: $current_pos\n";
-      }
-      
-      ### occurrences
-      $oligo_seq = lc(substr($current_seq,$current_pos,$oligo_length));
-      chop $current_seq;  ### eat the tail to release memory
-      if ($noov) {
-	if ((&IsNatural($last_pos{$oligo_seq})) && 
-	    ($last_pos{$oligo_seq} - $current_pos < $min_overlap_dist)) {
-	  $oligo{$oligo_seq}->{overlaps}++;
-	  $current_pos--;
-	  next;
-	}
-	if ($sum_strands) {
-	  $rc = lc(&ReverseComplement($oligo_seq));
-	  if ((&IsNatural($last_pos{$rc})) && 
-	      ($last_pos{$rc} - $current_pos < $min_overlap_dist)) {
-	    $oligo{$rc}->{overlaps}++;
-	    $current_pos--;
-	    next;
-	  }
-	}
-      }
-      $oligo{$oligo_seq}->{occ}++;
-      $last_pos{$oligo_seq} = $current_pos;
-      if ($return{'pos'}) {
-	push(@{$match_pos{$oligo_seq}[$sequence_number]}, $current_pos+1);
-      }
-      
-      ### matching sequences
-      if ($return{'mseq'}) {
-	if (($sum_strands == 0) || ($current_mseq{lc(&ReverseComplement($oligo_seq))} < 1)) {
-	  $current_mseq{$oligo_seq} = 1;
-	}
-      }
-      $current_pos--;
-    }
-    
-    if ($return{'mseq'}) {
-      foreach $oligo_seq (keys %current_mseq) {
-	$oligo{$oligo_seq}->{mseq} += 1;
-	if ($sum_strands) {
-	  $rc = lc(&ReverseComplement($oligo_seq));
-	  unless ($rc eq $oligo_seq) { ### palindroms
-	    $oligo{$rc}->{mseq} += 1;
-	  }
-	}
-      }
-      undef %current_mseq;
-    }
-
-    undef %last_pos;
-    
-    if ($return{'table'}) {
-	print $out $current_id;
-	foreach my $oligo_seq (@possible_oligos) {
-	    if ($oligo{$oligo_seq}->{occ} > 0 ) {
-		print $out "\t", $oligo{$oligo_seq}->{occ};
-	    } else {
-		print $out "\t", 0;
-	    }
-	}
-	print $out "\n";
-	undef(%oligo);
-    }
-    
-  }
-  undef $current_seq; ### release the memory occupied
-  close $in;
-    exit(0) if $return{'table'};
-}
-
-
-
-#### if requested, group results by pairs of reverse complements ####
-sub GroupRc {
-  foreach $oligo_seq (keys %oligo) {
-    $rc_oligo_seq = lc(&ReverseComplement($oligo_seq));
-    if ($rc_oligo_seq gt $oligo_seq) { ### only suppress one oligo from the dyad 
-      delete $oligo{$rc_oligo_seq};
-    }
-  }
-}
-
-
-### occurrence threshold ###
-sub OccurrenceThreshold {
-  if ($hyperverbose) {
-    $current_time = `date '+%H:%M:%S'`;
-    chomp($current_time);
-    warn "oligo-analysis\t$current_time\tThreshold on occurrences\n";
-  }
-  
-  foreach $oligo_seq (keys %oligo) {
-    if ($oligo{$oligo_seq}->{occ} < $occurrence_threshold) {
-      delete $oligo{$oligo_seq};
-    }
-  }  
-}
-
-### matching sequence threshold ###
-sub MatchingSeqThreshold {
-  if ($hyperverbose) {
-    $current_time = `date '+%H:%M:%S'`;
-    chomp($current_time);
-    warn "oligo-analysis\t$current_time\tThreshold on matching sequences\n";
-  }
-  foreach $oligo_seq (keys %oligo) {
-    if ($oligo{$oligo_seq}->{mseq} < $mseq_threshold) {
-      delete $oligo{$oligo_seq};
-    }
-  }  
-}
-
-
-
-
-### Calculate subword frequencies
-sub CalcSubWordFrequencies {
-  if ($hyperverbose) {
-    $current_time = `date '+%H:%M:%S'`;
-    chomp($current_time);
-    warn "oligo-analysis\t$current_time\tCalculating subword frequencies (Markov)\n";
-  }
-  
-  foreach $oligo_seq (keys %oligo) {
-    
-    ### w-1 word occurrences
-    $w = $oligo_length-1;
-    $subseq = substr($oligo_seq,0,$w);
-    $sub_freq[$w]{$subseq} += ($oligo{$oligo_seq}->{occ} + $oligo{$oligo_seq}->{overlaps});
-    
-    ### w-1 word occurrences
-    #    $subseq = substr($oligo_seq,0,$w);
-    #    $sub_freq{$subseq} += ($oligo{$oligo_seq}->{occ} + $oligo{$oligo_seq}->{overlaps});
-    
-    ### w-2 word occurrences
-    #    $subsubseq = substr($oligo_seq,1,$oligo_length -2);
-    #    $subsub_freq{$subsubseq} += ($oligo{$oligo_seq}->{occ} + $oligo{$oligo_seq}->{overlaps});
-  }
-  
-  ### occurrences of words with length from w-2 to 1
-  for $k (2..$oligo_length-1) {
-    $w = $oligo_length - $k;
-    foreach $oligo_seq (keys %{$sub_freq[$w+1]}) {
-      $subseq = substr($oligo_seq,0,$w);
-      $sub_freq[$w]{$subseq} += $sub_freq[$w+1]{$oligo_seq} ;
-    }
-  }
-  
-  ### sum occurrences on both strands if requested
-  if ($sum_strands) {
-    for $w (1..$oligo_length-1) {
-      foreach $subseq (sort keys %{$sub_freq[$w]}) {
-	$rc = lc(&ReverseComplement($subseq));
-	$sub_freq_2str[$w]{$subseq} = $sub_freq_2str[$w]{$rc} = $sub_freq[$w]{$subseq} + $sub_freq[$w]{$rc};
-      }
-      %{$sub_freq[$w]} = %{$sub_freq_2str[$w]};
-      undef  %sub_freq_2str;
-    }
-  }
-  
-  ### calculates relative frequencies from occurrences
-  for $w (1..$oligo_length-1) {
-    $occ_sum[$w] = 0;
-    foreach $subseq (keys %{$sub_freq[$w]}) {
-      $occ_sum[$w] += $sub_freq[$w]{$subseq};
-    }
-    foreach $subseq (keys %{$sub_freq[$w]}) {
-      $sub_freq[$w]{$subseq} /= $occ_sum[$w];
-    }
-  }	
-  
-  if ($hyperverbose) {
-    for $w (1..$oligo_length-1) {
-      foreach $oligo_seq (sort keys %{$sub_freq[$w]}) {
-	printf ";\tsubword_freq\t$w\t$occ_sum[$w]\t$oligo_seq\t%15.13f\n", $sub_freq[$w]{$oligo_seq};
-      }
-    }
-  }
-}
-
-
-
-### calculate relative frequencies if requested ###
-sub CalcFrequencies {
-  if ($hyperverbose) {
-    $current_time = `date '+%H:%M:%S'`;
-    chomp($current_time);
-    warn "oligo-analysis\t$current_time\tCalculating relative frequencies\n";
-  }
-  
-  $sum_overlaps = 0;
-  $sum_noov = 0;
-  $sum_occurrences = 0;
-  foreach $oligo_seq (keys %oligo) {
-    $sum_occurrences += $oligo{$oligo_seq}->{occ} + $oligo{$oligo_seq}->{overlaps};
-    $sum_overlaps += $oligo{$oligo_seq}->{overlaps};
-    $sum_noov += $oligo{$oligo_seq}->{occ};
-  }
-  if ($return{'freq'}) {
-    foreach $oligo_seq (keys %oligo) {
-      $oligo{$oligo_seq}->{freq} = $oligo{$oligo_seq}->{occ}/$sum_occurrences;
-    }
-  }
-  if (($return{'mseq'}) && ($return{'freq'})) {
-    foreach $oligo_seq (keys %oligo) {
-      $oligo{$oligo_seq}->{ms_freq} = $oligo{$oligo_seq}->{mseq}/$sequence_number;
-    }
-  }
-}
-
-
-
-### input alphabet ###
-sub CalcAplhabet {
-  if ($hyperverbose) {
-    $current_time = `date '+%H:%M:%S'`;
-    chomp($current_time);
-    warn "oligo-analysis\t$current_time\tCalculating input alphabet\n";
-  }
-  
-  foreach $key (sort keys %residue_occ) {
-    $residue_total += $residue_occ{$key};
-  }
-  if ($residue_total > 0) {
-    foreach $key (sort keys %residue_occ) {
-      if ($sum_strands) {
-	$residue_proba{$key} = ($residue_occ{$key} + $residue_occ{lc(ReverseComplement($key))})/(2*$residue_total);
-      } else {
-	$residue_proba{$key} = $residue_occ{$key}/$residue_total;
-      }
-    }
-  }
-}
-
-
-### substract the occurrences beyond the minimal overlap distance
-#sub SubstractOverlap {
-#	if ($hyperverbose) {
-#		$current_time = `date '+%H:%M:%S'`;
-#		chomp($current_time);
-#		warn "oligo-analysis\t$current_time\tCalculating input alphabet\n";
-#    }
-#    foreach $oligo_seq (sort keys %oligo) {
-#        for $seq (1..$sequence_number) {
-#			for $p (0..$#{$match_pos{$oligo_seq}[$seq]}-1) {
-#				if (abs($match_pos{$oligo_seq}[$seq][$p + 1] - $match_pos{$oligo_seq}[$seq][$p]) < $min_overlap_dist) {
-#					$oligo{$oligo_seq}->{occ}--;
-#					$oligo{$oligo_seq}->{overlaps}++;
-#				}
-#			}
-#        }
-#    }
-#}
-
-
-
-### sum occurrences on both strands ###
-sub SumStrands {
-  if ($hyperverbose) {
-    $current_time = `date '+%H:%M:%S'`;
-    chomp($current_time);
-    warn "oligo-analysis\t$current_time\tSumming occurrences for pairs of reverse complements\n";
-  }
-  foreach $oligo_seq (keys %oligo) {
-    $rc_oligo_seq = lc(&ReverseComplement($oligo_seq));
-    $occurrences_2strands{$oligo_seq} = $oligo{$oligo_seq}->{occ} + $oligo{$rc_oligo_seq}->{occ};
-    $occurrences_2strands{$rc_oligo_seq} = $occurrences_2strands{$oligo_seq};
-  }
-  foreach $oligo_seq (keys %occurrences_2strands) {
-    $oligo{$oligo_seq}->{occ} = $occurrences_2strands{$oligo_seq};
-  }
-  undef %occurrences_2strands;
-  
-  ### positions ###
-  if (($return{'pos'}) || ($noov)) {
-    for $seq (1..$sequence_number) {
-      foreach $oligo_seq (sort keys %oligo) {
-	$rc_oligo_seq = lc(&ReverseComplement($oligo_seq));
-	if ($rc_oligo_seq eq $oligo_seq) {
-	  @{$m_pos_bothstrands{$oligo_seq}[$seq]} = @{$match_pos{$oligo_seq}[$seq]};
-	} else {
-	  @{$m_pos_bothstrands{$oligo_seq}[$seq]} = (@{$match_pos{$oligo_seq}[$seq]},@{$match_pos{$rc_oligo_seq}[$seq]});
-	}	  
-      }
-      foreach $oligo_seq (sort keys %oligo) {
-	@{$match_pos{$oligo_seq}[$seq]} = @{$m_pos_bothstrands{$oligo_seq}[$seq]};
-	@{$match_pos{$oligo_seq}[$seq]}= sort {$a <=> $b} @{$match_pos{$oligo_seq}[$seq]};
-	undef @{$m_pos_bothstrands{$oligo_seq}[$seq]};
-      }   
-    }
-  }
-}
-
-
-### calculate occurrences with 1 degenerated position ###
-sub Degenerate {
-  if ($hyperverbose) {
-    $current_time = `date '+%H:%M:%S'`;
-    chomp($current_time);
-    warn "oligo-analysis\t$current_time\tNeighborhood\n";
-  }
-  
-  foreach $d (@degenerate_code) {  
-    foreach $n (@{$IUPAC{$d}}) {
-      push(@{$nucl_neighb{$n}}, $d);
-    }
-  }
-  
-  foreach $oligo_seq (keys %oligo) {
-    for $l (1..length($oligo_seq)) {
-      $n = substr($oligo_seq,$l-1,1);
-      foreach $neighb (@{$nucl_neighb{$n}}) {
-	$deg = substr($oligo_seq,0,$l-1);
-	$deg .= $neighb;
-	$deg .= substr($oligo_seq,$l);
-	$deg_occurrences{$deg} += $oligo{$oligo_seq}->{occ};
-	if ($return{'mseq'}) {
-	  $deg_mseq{$deg} += $oligo{$oligo_seq}->{mseq};
-	}
-      }
-    }
-  }  
-  
-  %oligo = %deg_occurrences;
-  undef %deg_occurrences;
-  if ($return{'mseq'}) {
-    foreach $oligo_seq (sort keys %deg_mseq) {
-      $oligo{$oligo_seq}->{mseq} = $deg_mseq{$oligo_seq};
-      undef %deg_occurrences;
-    }
-  }
-}
-
-
-
-#### expected oligomer frequencies #####
-sub CalcExpected {
-  if ($hyperverbose) {
-    $current_time = `date '+%H:%M:%S'`;
-    chomp($current_time);
-    warn "oligo-analysis\t$current_time\tCalculating probabilities\n";
-  }
-  
-  ### expected frequency file
-  if ($exp_freq_file ne "") {    
-    if ($one_var_position) {
-      foreach $deg_oligo_seq (sort keys %oligo) {
-	$pattern = IUPAC_to_regular($deg_oligo_seq);
-	@matching_exp_freq = grep /$pattern/i, keys(%exp_freq);
-	foreach $m  (@matching_exp_freq) {
-	  $deg_exp_freq{$deg_oligo_seq} += $exp_freq{$m};
-	}
-      }
-      %exp_freq = %deg_exp_freq;
-      undef %deg_exp_freq;
-    }
-    
-  } elsif ($markov) {  ### Markov chain
-    ### expected frequency according to Markov chain model
-    foreach $oligo_seq (sort keys %oligo) {
-      $subseq = substr($oligo_seq,0,$markov_order);
-      $oligo{$oligo_seq}->{exp_freq} = $sub_freq[$markov_order]{$subseq};
-      for $offset (1..$oligo_length - $markov_order) {
-	$subseq = substr($oligo_seq,$offset,$markov_order);
-	$oligo{$oligo_seq}->{exp_freq} *= $sub_freq[$markov_order]{$subseq};
-	if ($markov_order > 1) {
-	  $subseq = substr($oligo_seq,$offset,$markov_order-1);
-	  $oligo{$oligo_seq}->{exp_freq} /= $sub_freq[$markov_order-1]{$subseq};
-	}
-      }
-    }
-    
-  } else {    
-    ### calculate the expected oligo frequency with 
-    #### independent nucleotide probabilities 
-    #### calculate probability for ambiguous nucleotide codes  ####
-    unless ($proteic) {
-      $residue_proba{'r'} = $residue_proba{'a'}+$residue_proba{'g'};
-      $residue_proba{'y'} = $residue_proba{'c'}+$residue_proba{'t'};
-      $residue_proba{'w'} = $residue_proba{'a'}+$residue_proba{'t'};
-      $residue_proba{'s'} = $residue_proba{'g'}+$residue_proba{'c'};
-      $residue_proba{'m'} = $residue_proba{'a'}+$residue_proba{'c'};
-      $residue_proba{'k'} = $residue_proba{'g'}+$residue_proba{'t'};
-      $residue_proba{'h'} = $residue_proba{'a'}+$residue_proba{'c'}+$residue_proba{'t'};
-      $residue_proba{'b'} = $residue_proba{'c'}+$residue_proba{'g'}+$residue_proba{'t'};
-      $residue_proba{'v'} = $residue_proba{'a'}+$residue_proba{'c'}+$residue_proba{'g'};
-      $residue_proba{'d'} = $residue_proba{'a'}+$residue_proba{'g'}+$residue_proba{'t'};
-      $residue_proba{'n'} = 1;
-    }
-    
-    foreach $oligo_seq (keys %oligo) {
-      $oligo{$oligo_seq}->{exp_freq} = 1;
-      foreach $l (0..length($oligo_seq)-1) {
-	$nt = substr($oligo_seq, $l, 1);
-	$oligo{$oligo_seq}->{exp_freq} *= $residue_proba{$nt};
-      }
-    }  
-  } 
-  
-  #### expected number of occurrences and matching sequences ####
-  foreach $oligo_seq (sort keys %oligo) {
-    if ($noov) {
-      $oligo{$oligo_seq}->{nb_possible_pos} = $nb_possible_pos - ($oligo{$oligo_seq}->{occ} * ($oligo_length -1));
-    } else {
-      $oligo{$oligo_seq}->{nb_possible_pos} = $nb_possible_pos;
-    }
-    $oligo{$oligo_seq}->{exp_occ} = $oligo{$oligo_seq}->{exp_freq} * $oligo{$oligo_seq}->{nb_possible_pos}; 
-    if ($return{'mseq'}) {
-      ### expected number of matching sequences ###
-      $avg_seq_length = $sum_seq_length/$sequence_number;
-      $pos_per_seq = $avg_seq_length - $oligo_length + 1;
-      $pos_per_seq *=2 if ($sum_strands);
-      $one_seq_match_proba =  1 - (1-$oligo{$oligo_seq}->{exp_freq})**$pos_per_seq;
-      $oligo{$oligo_seq}->{exp_ms} =  $one_seq_match_proba*$sequence_number;
-    }
-  }	
-} # CalcExpect
-
-
-sub CalcZscore {
-  #### z-scores ####
-  if ($return{'occ'}) {
-    foreach $oligo_seq (keys %oligo) {
-      if ($noov) {
-	$oligo{$oligo_seq}->{ovcoeff} = 1;
-	$oligo{$oligo_seq}->{est_var} = $oligo{$oligo_seq}->{exp_occ};
-      } else {
-	$oligo{$oligo_seq}->{ovcoeff} = &OverlapCoeff($oligo_seq);
-	$oligo{$oligo_seq}->{est_var} = $oligo{$oligo_seq}->{nb_possible_pos} * $oligo{$oligo_seq}->{exp_freq}*(2*$oligo{$oligo_seq}->{ovcoeff} - 1 - (2*$oligo_length+1)*$oligo{$oligo_seq}->{exp_freq});
-	#	$oligo{$oligo_seq}->{est_var} = $oligo{$oligo_seq}->{nb_possible_pos} * $oligo{$oligo_seq}->{exp_freq}*(1 - $oligo{$oligo_seq}->{exp_freq});
-      }
-      if ($oligo{$oligo_seq}->{est_var} > 0) {
-	$stdev = sqrt($oligo{$oligo_seq}->{est_var});
-	$oligo{$oligo_seq}->{zscore} = ($oligo{$oligo_seq}->{occ} - $oligo{$oligo_seq}->{exp_occ})/$stdev;
-      } else {
-	$stdev = "NA";
-	$oligo{$oligo_seq}->{zscore} = "NA";
-      }
-    }
-  }
-}
-
-
-
-sub CalcLikelihood {
-### log likelihood ###
-  if ($return{'occ'}) {
-    foreach $oligo_seq (keys %oligo) {
-      if (($oligo{$oligo_seq}->{exp_freq} > 0) && ($oligo{$oligo_seq}->{freq} > 0)) {
-	$oligo{$oligo_seq}->{occ_lkh} = $oligo{$oligo_seq}->{freq} * log($oligo{$oligo_seq}->{freq}/$oligo{$oligo_seq}->{exp_freq});
-      } else {
-	$oligo{$oligo_seq}->{occ_lkh} = "NA";
-      }
-    }
-  }
-  if ($return{'mseq'}) {
-    foreach $oligo_seq (keys %oligo) {
-      if (($oligo{$oligo_seq}->{exp_ms} > 0) && ($oligo{$oligo_seq}->{mseq} > 0)) {
-	$oligo{$oligo_seq}->{ms_lkh} = $oligo{$oligo_seq}->{mseq} * log($oligo{$oligo_seq}->{mseq}/$oligo{$oligo_seq}->{exp_ms}) / $sequence_number;
-      } else {
-	$oligo{$oligo_seq}->{ms_lkh} = "NA";
-      }
-    }
-  }
-}  ### CalcLikelihood
-
-
-#### observed/expected ratio ####
-sub CalcRatio {
-  if ($return{'freq'}) {
-    foreach $oligo_seq (sort keys %oligo) {
-      if ($oligo{$oligo_seq}->{exp_freq} == 0) {
-	$oligo{$oligo_seq}->{ratio} = 0;
-      } else {
-	$oligo{$oligo_seq}->{ratio} =  $oligo{$oligo_seq}->{freq}/$oligo{$oligo_seq}->{exp_freq};
-      }
-      #### check threshold on occurrence probability ####
-      if ($oligo{$oligo_seq}->{ratio} < $ratio_threshold) {
-	delete $oligo{$oligo_seq};
-      }
-    }
-  } elsif ($return{'occ'}) {
-    foreach $oligo_seq (sort keys %oligo) {
-      if ($oligo{$oligo_seq}->{exp_occ} == 0) {
-	$oligo{$oligo_seq}->{ratio} = 0;
-      } else {
-	$oligo{$oligo_seq}->{ratio} =  $oligo{$oligo_seq}->{occ}/$oligo{$oligo_seq}->{exp_occ};
-      }
-      
-      #### check threshold on occurrence probability ####
-      if ($oligo{$oligo_seq}->{ratio} < $ratio_threshold) {
-	delete $oligo{$oligo_seq};
-      }
-    }
-  }
-} ### CalcRatio
-
-
-
-#### probabilities ####
-sub CalcProba {
-  #### calculate number of possible oligomers
-  if ($one_var_position) {
-    $nb_possible_oligo = $oligo_length * ($#degenerate_code+1) * 4**($oligo_length-1);      
-  } elsif ($proteic) {
-    
-    @residues = sort keys %residue_occ;
-    $nb_possible_oligo = ($#residues + 1)**$oligo_length;
-    #    $nb_possible_oligo = 20**$oligo_length;
-  } else {
-    $nb_possible_oligo = 4**$oligo_length;      
-  }
-  if ($sum_strands) {  
-    if ($oligo_length%2 == 0) {
-      ### take into account the fact that palindromes have not to be grouped by pairs
-      $nb_possible_palindroms = 4**($oligo_length/2);
-    } else {
-      $nb_possible_palindroms = 0;
-    }
-    $nb_possible_oligo -= ($nb_possible_oligo - $nb_possible_palindroms)/2;
-  }
-  
-  #### converts threshold on occurence significance index into a 
-  #### threshold on occurrence probability
-  if ($occ_significance_threshold ne "") {
-    $proba_occ_threshold = exp(-$occ_significance_threshold*log(10))/$nb_possible_oligo;
-  }
-  
-  
-  #### converts threshold on mseq significance index into a 
-  #### threshold on mseq probability
-  if ($mseq_significance_threshold ne "") {
-    $proba_mseq_threshold = exp(-$mseq_significance_threshold*log(10))/$nb_possible_oligo;
-  }
-  
-  
-  ### calculate oligo probabilities
-  foreach $oligo_seq (sort keys %oligo) {
-    if ($hyperverbose) {
-      $current_time = `date '+%H:%M:%S'`;
-      chomp($current_time);
-      printf "oligo-analysis\t$current_time\tcalculating proba $oligo_seq obs %7d exp %7.1f\n", $oligo{$oligo_seq}->{occ}, $oligo{$oligo_seq}->{exp_occ};
-    }
-    
-    ### probability of the observed number of occurrences ####
-    $rev_compl = uc(&ReverseComplement($oligo_seq));
-    if (($sum_strands) && (uc($oligo_seq) eq $rev_compl)) {
-      $oligo{$oligo_seq}->{occ_pro} = &sum_of_binomials($oligo{$oligo_seq}->{exp_freq},$oligo{$oligo_seq}->{nb_possible_pos}/2,$oligo{$oligo_seq}->{occ}/2);
-      $oligo{$oligo_seq}->{remark} = "\tpalindrome";
-    } else {
-      $oligo{$oligo_seq}->{occ_pro} = &sum_of_binomials($oligo{$oligo_seq}->{exp_freq},$oligo{$oligo_seq}->{nb_possible_pos} - $oligo{$oligo_seq}->{overlaps},$oligo{$oligo_seq}->{occ});
-    }
-    
-    #### check threshold on occurrence probability ####
-    if ($oligo{$oligo_seq}->{occ_pro} > $proba_occ_threshold) {
-      delete $oligo{$oligo_seq};
-      next;
-    }
-    
-    
-    ### Significance index for occurrence number
-    if ($nb_possible_oligo > 0) {
-      if ($oligo{$oligo_seq}->{occ_pro} > 0) {
-	$oligo{$oligo_seq}->{occ_sig} = -log($nb_possible_oligo*$oligo{$oligo_seq}->{occ_pro})/log(10);
-      } else {
-	$oligo{$oligo_seq}->{occ_sig} = 20;
-      }
-    }
-    
-    
-    #### matching seq probability
-    if ($return{'mseq'}) {	    
-      ### probability of the observed number of matching sequences ####
-      $avg_mseq_proba = $oligo{$oligo_seq}->{exp_ms}/$sequence_number;
-      $oligo{$oligo_seq}->{ms_pro} = &sum_of_binomials($avg_mseq_proba, $sequence_number, $oligo{$oligo_seq}->{mseq});    
-      
-      #### check threshold on mseq probability ####
-      if ($oligo{$oligo_seq}->{ms_pro} > $proba_mseq_threshold) {
-	delete $oligo{$oligo_seq};
-	next;
-      }
-      
-      ### Significance index for number of matching sequences
-      if ($nb_possible_oligo > 0) {
-	if ($oligo{$oligo_seq}->{ms_pro} > 0) {
-	  $oligo{$oligo_seq}->{ms_sig} = -log($nb_possible_oligo*$oligo{$oligo_seq}->{ms_pro})/log(10);
-	} else {
-	  $oligo{$oligo_seq}->{ms_sig} = 20;
-	}
-      }
-    }
-  }  
-} ### CalcProba
-
-
-
-
-### print the result file
-sub PrintResult {
-  ### open output file ###
-  if ($hyperverbose) {
-    $current_time = `date '+%H:%M:%S'`;
-    chomp($current_time);
-    warn "oligo-analysis\t$current_time\tPrinting output file\n";
-  }
-  
-  ### verbose ###
-  if ($verbose) {
-    print $out "; oligo-analysis";
-    foreach $a (@ARGV) {
-      print $out " $a";
-    }
-    print $out "\n";
-    print $out "; Input file	$inputfile\n" if ($inputfile ne "");
-    print $out "; Input format	$in_format\n";
-    print $out "; Expected frequency file	$exp_freq_file\n" if ($exp_freq_file ne "");
-    print $out "; Markov chain order	$markov_order\n" if ($markov);
-    if ($alphabet) {
-      print $out "; Alphabet\n";
-      foreach $key (sort keys %residue_proba) {
-	print $out "; \t$key\t$residue_proba{$key}\n";
-      }
-    }
-    
-    print $out "; Output file	$outputfile\n" if ($outputfile ne "");
-    print $out "; Oligomer length	$oligo_length\n";
-    if ($noov) {
-      print $out "; Discard overlapping matches\n";
-    } else {
-      print $out "; Count overlapping matches\n";
-    }
-    if ($sum_strands) {
-      print $out "; Counted on both strands\n";
-      if ($group_rc) {
-	print $out "; \tgrouped by pairs of reverse complements\n";
-      }
-    } else {
-      print $out "; Counted on a single strand\n";
-    }
-    if ($one_var_position) {
-      print $out "; Neighborhood: one variable position\t";
-      foreach $d (@degenerate_code) {
-	print $out "; $d "; 
-      }
-      print $out "\n"; 
-    }
-    print $out "; Nb of sequences		$sequence_number\n";
-    print $out "; Sum of sequence lengthes\t$sum_seq_length\n";
-    if ($noov) {
-      print $out "; total overlaps		$sum_overlaps\n";
-      print $out "; total non overlapping occ	$sum_noov\n";
-    }
-    print $out "; total oligo occurrences         $sum_occurrences\n";
-    print $out "; nb possible positions\t\t",$nb_possible_pos ,"\n";
-    print $out "; nb possible oligomers\t$nb_possible_oligo\n";
-    print $out "; threshold on occurrence #	$occurrence_threshold\n" if ($occurrence_threshold > 0);
-    print $out "; threshold on occ signif. index	$occ_significance_threshold\n" if ($occ_significance_threshold ne "");
-    print $out "; threshold on matching seq #	$mseq_threshold\n" if ($mseq_threshold > 0);
-    print $out "; threshold on occurrence proba	$proba_occ_threshold\n" if ($proba_occ_threshold < 1);
-    print $out "; threshold on obs/exp occ ratio	$ratio_threshold\n" if ($ratio_threshold > 0);
-    print $out "; thresh. on match. seq proba	$proba_mseq_threshold\n" if ($proba_mseq_threshold < 1);
-    unless ($sequence_number > 1000) {
-      print $out "; Sequences:\n";
-      foreach $s (1..$sequence_number) {
-	print $out ";\t$id_list[$s]\t$seq_length[$s]\n";
-      }
-    }
-    print $out ";\n";
-  }
-  
-  
-  ### result ####
-  ### sort oligomers in function of significance or alphabetically
-  if ($sort_result) {
-    ### in priority, sort mby matching sequence results
-    if ($return{'mseq'}) {
-      if ($return{'proba'}) {
-	@sorted_keys = sort {$oligo{$b}->{ms_sig} <=>  $oligo{$a}->{ms_sig}} keys %oligo;
-	$sorted = 1;
-      } elsif($return{'like'}) {
-	@sorted_keys = sort {$oligo{$b}->{ms_lkh} <=>  $oligo{$a}->{ms_lkh}} keys %oligo;
-	$sorted = 1;
-      }
-      ### if no matching sequence request, sort by statistics on occurrences
-    } elsif ($return{'occ'}) {
-      ### preferred fields for sorting are the most generally reliable
-      if ($return{'zscore'}){
-	@sorted_keys = sort {$oligo{$b}->{zscore} <=>  $oligo{$a}->{zscore}} keys %oligo;
-	$sorted = 1;
-      } elsif ($return{'proba'}) {
-	@sorted_keys = sort {$oligo{$b}->{occ_sig} <=> $oligo{$a}->{occ_sig}} keys %oligo;
-	$sorted = 1;
-      } elsif ($return{'like'}) {
-	@sorted_keys = sort {$oligo{$b}->{occ_lkh} <=> $oligo{$a}->{occ_lkh}} keys %oligo;
-	$sorted = 1;
-      } elsif ($return{'ratio'}) {
-	@sorted_keys = sort {$oligo{$b}->{ratio} <=> $oligo{$a}->{ratio}} keys %oligo;
-	$sorted = 1;
-      } else {
-	@sorted_keys = sort {$oligo{$b}->{occ} <=> $oligo{$a}->{occ}} keys %oligo;
-	$sorted = 1;
-      }
-    } elsif ($return{'freq'}) {
-	@sorted_keys = sort {$oligo{$b}->{freq} <=> $oligo{$a}->{freq}} keys %oligo;
-	$sorted = 1;
-    }    
-
-  } 
-  
-  ### in all the other cases, sort by sequence
-  @sorted_keys = sort keys %oligo unless ($sorted);
-
-  &PrintHeaderLine();
-  
-  ### print result ###
-  foreach $oligo_seq (@sorted_keys) {
-    ### oligo sequence and identifier
-    print $out "$oligo_seq";
-    if ($group_rc) {
-      print $out "\t$oligo_seq|", lc(ReverseComplement($oligo_seq));
-    } else {
-      print $out "\t$oligo_seq";
-    }
-    
-    ### relative frequencies
-    printf $out "\t%15.13f", $oligo{$oligo_seq}->{freq} if ($return{'freq'});	
-    printf $out "\t%.2g", $oligo{$oligo_seq}->{exp_freq} if ($return{'exp_freq'});
-    
-    ### occurrences ###
-    if ($return{'occ'}) {
-      print $out "\t", $oligo{$oligo_seq}->{occ};
-      
-      ### expected frequency
-      if ($return{'exp_freq'}) {
-	if ($oligo{$oligo_seq}->{exp_occ} >= 0.01) {
-	  printf $out "\t%.2f", $oligo{$oligo_seq}->{exp_occ};
-	} else {
-	  printf $out "\t%.2g", $oligo{$oligo_seq}->{exp_occ};
-	}
-      }
-      
-      ### occurrence probability
-      if ($return{'proba'}) {
-	if ($oligo{$oligo_seq}->{occ_pro} >= 0.0001) {
-	  printf $out "\t%.5f", $oligo{$oligo_seq}->{occ_pro};
-	} else {
-	  printf $out "\t%.2g", $oligo{$oligo_seq}->{occ_pro};
-	}
-	printf $out "\t%.2f", $oligo{$oligo_seq}->{occ_sig};
-      }
-      
-      
-      ### zscore
-      if ($return{'zscore'}) {
-	printf $out "\t%.2f", $oligo{$oligo_seq}->{zscore};
-	#			printf $out "\t%.1f", $oligo{$oligo_seq}->{est_var};
-      }
-      
-      ### log likelihood of occurrences
-      printf $out "\t%7.5f", $oligo{$oligo_seq}->{occ_lkh} if ($return{'like'});
-      
-      ### overlapping occurrences
-      if ($noov) {
-	$oligo{$oligo_seq}->{overlaps} = 0 if ($oligo{$oligo_seq}->{overlaps} eq "");
-	print $out "\t", $oligo{$oligo_seq}->{overlaps};
-      }
-    }
-    ### obs/exp ratio
-    if ($return{'ratio'}) {
-      printf $out "\t%.2f", $oligo{$oligo_seq}->{ratio};
-    }
-    
-    ### matching sequences ###
-    if ($return{'mseq'}) {
-      print $out "\t", $oligo{$oligo_seq}->{mseq};
-      if ($return{'proba'}) {
-	printf $out "\t%.2f", $oligo{$oligo_seq}->{exp_ms};
-	if ($oligo{$oligo_seq}->{ms_pro} >= 0.0001) {
-	  printf $out "\t%.5f", $oligo{$oligo_seq}->{ms_pro};     
-	} else {
-	  printf $out "\t%.2g", $oligo{$oligo_seq}->{ms_pro};   
-	}
-	printf $out "\t%.1f", $oligo{$oligo_seq}->{ms_sig};
-      }
-      printf $out "\t%7.5f", $oligo{$oligo_seq}->{ms_freq} if ($return{'freq'});
-      printf $out "\t%7.5f", $oligo{$oligo_seq}->{exp_ms}/$sequence_number if ($return{'exp_freq'});
-      printf $out "\t%7.5f", $oligo{$oligo_seq}->{mseq}/$oligo{$oligo_seq}->{exp_ms} if (($return{'ratio'}) && ($oligo{$oligo_seq}->{exp_ms} > 0));
-      printf $out "\t%7.5f", $oligo{$oligo_seq}->{ms_lkh} if ($return{'like'});
-      
-    }
-    
-    ### positions ###
-    if ($return{'pos'}) {
-      print $out "\t";
-      for $seq (1..$sequence_number) {
-	for $p (0..$#{$match_pos{$oligo_seq}[$seq]}) {
-	  print $out "$seq:$match_pos{$oligo_seq}[$seq][$p] ";	
-	}
-      }
-    }
-    
-    ### miscellaneous info
-    printf $out "\t%.3f", $oligo{$oligo_seq}->{ovcoeff} if ($return{'ov_coef'});
-    print $out $oligo{$oligo_seq}->{remark} if ($return{'remark'});
-    
-    ### next line
-    print $out "\n";
-  }
-  
-  
-  if ($verbose) {
-    $done_time  = `date '+%d/%m/%y %H:%M:%S %Z'`;
-    print $out "; Job started $start_time";
-    print $out "; Job done    $done_time";
-    
-  }
-  
-  close $out unless ($outputfile eq "");
-  
-}				### PrintResult
-
-
-
-
-sub PrintHeaderLine {
-
-    $col_description{"seq"} = "oligomer sequence";
-    $col_description{"sequence"} = "oligomer sequence";
-    $col_description{"identifier"} = "oligomer identifier";
-    $col_description{"id"} = "oligomer identifier";
-    $col_description{"observed_freq"} = "observed relative frequency"; 
-    $col_description{"exp_frq"} = "expected relative frequency"; 
-    $col_description{"occ"} = "observed occurrences";
-    $col_description{"exp_occ"} = "expected occurrences"; 
-    $col_description{"occ_prb"} = "occurrence probability (binomial)";
-    $col_description{"occ_sig"} = "occurrence significance (binomial)";
-    $col_description{"zscore"} = "z-score (normal)"; 
-    $col_description{"occ_lkh"} = "occurrence likelihood"; 
-    $col_description{"ovlaps"} = "number of overlapping occurrences"; 
-    $col_description{"ratio"} = "observed/expected ratio"; 
-    $col_description{"ms"} = "number of matching sequences";
-    $col_description{"exp_ms"} = "expected number of matching sequences";
-    $col_description{"ms_prb"} = "matching sequence probability (binomial)";
-    $col_description{"ms_sig"} = "matching sequenc significance (binomial)";
-    $col_description{"ms_freq"} = "observed matching sequence frequency"; 
-    $col_description{"exp_msf"} = "expected matching sequence frequency"; 
-    $col_description{"ms_rati"} = "observed/expected matching seqyences"; 
-    $col_description{"ms_lkh"} = "matching sequence likelihood"; 
-    $col_description{"positions"} = "matching positions"; 
-    $col_description{"ov_coef"} = "overlap coefficient"; 
-    $col_description{"remark"} = "remark"; 
-    @out_col = ();
-    ### print header line ###
-    if ($oligo_length < 8) {
-	push(@out_col,"seq");
-    } else {
-	push(@out_col,"sequence");
-    }
-    if (($oligo_length > 8) ||
-	(($oligo_length > 5) && ($sum_strands))) {   
-	push(@out_col,"identifier");
-    } else {
-	push(@out_col,"id");
-    }
-    
-    ### occurrence frequencies
-    push(@out_col,"observed_freq") if ($return{'freq'});
-    push(@out_col,"exp_frq") if ($return{'exp_freq'});
-    
-    ### occurrences
-    if ($return{'occ'}) {
-	push(@out_col,"occ");
-	push(@out_col,"exp_occ") if ($return{'exp_freq'});
-	if ($return{'proba'}) {
-	    push(@out_col,"occ_prb");
-	    push(@out_col,"occ_sig");
-	}
-	push(@out_col,"zscore") if ($return{'zscore'});
-	push(@out_col,"occ_lkh") if ($return{'like'});
-	push(@out_col,"ovlaps") if ($noov);
-	#    push(@out_col,"est_var") if ($return{'zscore'});
-    }
-    push(@out_col,"ratio") if ($return{'ratio'});
-    
-    ### matching sequences
-    if ($return{'mseq'}) {
-	push(@out_col,"ms");
-	if ($return{'proba'}) {
-	    push(@out_col,"exp_ms");
-	    push(@out_col,"ms_prb");
-	    push(@out_col,"ms_sig");
-	}
-	push(@out_col,"ms_freq") if ($return{'freq'});
-	push(@out_col,"exp_msf") if ($return{'exp_freq'});
-	push(@out_col,"ms_rati") if ($return{'ratio'});
-	push(@out_col,"ms_lkh") if ($return{'like'});
-    }
-    
-    ### positions
-    push(@out_col,"positions") if ($return{'pos'});
-    
-    ### miscellaneous
-    push(@out_col,"ov_coef") if ($return{'ov_coef'});
-    push(@out_col,"remark") if ($return{'remark'});
-
-    if ($verbose) {
-	print $out "; column headers\n";
-	foreach $c (0..$#out_col) {
-	    printf $out ";\t%d\t%-15s\t%s\n", $c+1, $out_col[$c], $col_description{$out_col[$c]};
-	}
-    }
-
-    print $out "\n;";
-    print $out join("\t",@out_col);
-    print $out "\n";
-
-}
-
-
