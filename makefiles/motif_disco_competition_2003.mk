@@ -277,7 +277,9 @@ NOOV=-noov
 MULTI_TASK=purge,oligos,maps,synthesis
 MULTI_BG=upstream
 MULTI_EXP=-bg ${MULTI_BG}
-MULTI_DIR=${ORG_DIR}/multi/${MULTI_BG}_bg
+#PURGE=-purge
+PURGE=-nopurge
+MULTI_DIR=${ORG_DIR}/multi/${MULTI_BG}_bg${PURGE}
 MIN_OL=5
 MAX_OL=8
 MIN_SP=0
@@ -285,6 +287,7 @@ MAX_SP=20
 SORT=score
 MULTI_OPT=
 MULTI_CMD=multiple-family-analysis -v ${V}				\
+		${PURGE}						\
 		-org ${ORG}						\
 		-seq ${SEQ_LIST_FILE}					\
 		-outdir ${MULTI_DIR}					\
