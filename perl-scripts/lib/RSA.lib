@@ -1478,7 +1478,7 @@ sub cgiMessage {
 #### - element (e.g. a gene ID)
 #### - class (e.g. a functional class, or a regulon, or a clustering result)
 #### additional columns are allowed, but they are ignored
-sub ReadFamilies {
+sub ReadClasses {
     my ($family_file, $get_orf_id) = @_;
     warn "; Reading family file\t$family_file\n" 
 	if ($verbose >=2);
@@ -1540,8 +1540,8 @@ sub ReadFamilies {
     return %family;
 }
 
-sub ReadClasses {
-    ReadFamilies(@_);
+sub ReadFamilies {
+    &ReadClasses(@_);
 }
 
 
