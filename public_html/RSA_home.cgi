@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSA_home.cgi,v 1.19 2004/07/06 17:43:20 jvanheld Exp $
+# $Id: RSA_home.cgi,v 1.20 2004/07/06 20:38:25 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -173,7 +173,8 @@ print <<EndText;
   </FONT>
   </TD>
 
-<!--  <TD ALIGN=CENTER>
+<!--  TEMPORARILY INACTIVATED
+<TD ALIGN=CENTER>
   <A HREF="http://rsat.ccb.sickkids.ca/" target="_top">
   <B>Toronto - Canada</B><BR>
   <IMG SRC="images/toronto.jpg" HEIGHT=80 BORDER=0><BR>
