@@ -346,11 +346,12 @@ of additional information. One possibility is to copy-paste the matrix
 of interest to a separate file.
 
 To avoid manual editing, RSAT contains a program
-\textit{matrix-from-consensus}, which automaticaly extacts the first
-matrix from a consensus output.
+\textit{convert-matrix}, which automaticaly extacts a matrix from
+various file formats, including consensus.
 
 \begin{verbatim}
-matrix-from-consensus -i PHO_consensus -o PHO_matrix
+convert-matrix -format consensus -i PHO_consensus -o PHO_matrix 
+
 more PHO_matrix
 \end{verbatim}
 
@@ -361,7 +362,7 @@ After having extracted the matrix, we can match it against the PHO
 sequences to detect putative regulatory sites.
 
 \begin{verbatim}
-patser -m PHO_matrix -f PHO_up800.wc -A a:t c:g -c -l 9
+patser -m PHO_matrix -f PHO_up800.wc -A a:t c:g -c -ls 9
 \end{verbatim}
 
 \subsubsection{Detecting Pho4p sites in all upstream regions}
@@ -380,7 +381,7 @@ immediately redirect the output of \textit{retrieve-seq} as input for
 
 \begin{verbatim}
 retrieve-seq -type upstream -from -1 -to -800  \
-    -org Saccharomyces_cerevisie \
+    -org Saccharomyces_cerevisiae \
     -all -format wc -label gene  \
     | patser -m PHO_matrix -l 9 -A a:t c:g
 \end{verbatim}

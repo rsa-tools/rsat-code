@@ -86,7 +86,7 @@ This file can now be used as input to indicate the list of genes.
 
 \begin{verbatim}
 retrieve-seq -type upstream -i PHO_genes.txt \
-    -org Saccharomyces_cerevisie \
+    -org Saccharomyces_cerevisiae \
     -from -800 -to -1 -label orf
 \end{verbatim} 
 
@@ -95,7 +95,7 @@ sequence will be stored.
 
 \begin{verbatim}
 retrieve-seq -type upstream -i PHO_genes.txt \
-    -org Saccharomyces_cerevisie \
+    -org Saccharomyces_cerevisiae \
     -from -800 -to -1 -label gene \
     -o PHO_up800.fasta
 \end{verbatim} 
@@ -144,7 +144,7 @@ For example, the following command returns all the stop codons for
 \organism{Escherichia coli}.
 
 \begin{verbatim}
-retrieve-seq -type upstream -org Escherichia_coli_K12 \
+retrieve-seq -type downstream -org Escherichia_coli_K12 \
     -from -2 -to 0 \
     -all -format wc -nocomments -label orf_gene \
     -o Escherichia_coli_K12_stop_codons.wc
