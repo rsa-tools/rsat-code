@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_kegg.pl,v 1.2 2000/12/14 20:55:49 jvanheld Exp $
+# $Id: parse_kegg.pl,v 1.3 2000/12/28 23:52:39 jvanheld Exp $
 #
-# Time-stamp: <2000-12-14 12:44:45 jvanheld>
+# Time-stamp: <2000-12-29 00:51:51 jvanheld>
 #
 ############################################################
 
@@ -102,13 +102,12 @@ push @classes, ("PFBP::Reactant");
 push @classes, ("PFBP::ECSet");
 push @classes, ("PFBP::KeggPathway");
 
-### default output fields for each class
-@{$out_fields{'PFBP::Compound'}} = qw( id names formula source );
-@{$out_fields{'PFBP::Reaction'}} = qw( id  source);
-@{$out_fields{'PFBP::Reactant'}} = qw( id reactant_type reaction_id compound_id stoichio valid_interm );
-@{$out_fields{'PFBP::ECSet'}} = qw( id names parent reactions );
-@{$out_fields{'PFBP::Pathway'}} = qw( id parent organism source names reactions ECs genes );
-@{$out_fields{'PFBP::GenericPathway'}} = qw( id source names reactions ECs );
+#@{$out_fields{'PFBP::Compound'}} = qw( id names formula source );
+#@{$out_fields{'PFBP::Reaction'}} = qw( id  source);
+#@{$out_fields{'PFBP::Reactant'}} = qw( id reactant_type reaction_id compound_id stoichio valid_interm );
+#@{$out_fields{'PFBP::ECSet'}} = qw( id names parent reactions );
+#@{$out_fields{'PFBP::Pathway'}} = qw( id parent organism source names reactions ECs genes );
+#@{$out_fields{'PFBP::GenericPathway'}} = qw( id source names reactions ECs );
 
 &ReadArguments;
 
@@ -138,6 +137,14 @@ $pathways = PFBP::ClassFactory->new_class(object_type=>"PFBP::Pathway",
 					  prefix=>"pthw_");
 $genericPathways = PFBP::ClassFactory->new_class(object_type=>"PFBP::GenericPathway",
 						 prefix=>"gptw_");
+
+### default output fields for each class
+$compounds->set_out_fields(qw( id names formula source ));
+$reactions->set_out_fields(qw( id  source));
+$reactants->set_out_fields(qw( id reactant_type reaction_id compound_id stoichio valid_interm ));
+$ecs->set_out_fields(qw( id names parent reactions ));
+$pathways->set_out_fields(qw( id parent organism source names reactions ECs genes ));
+$genericPathways->set_out_fields(qw( id source names reactions ECs ));
 
 #### parse compounds
 &ParseKeggFile($in_file{compounds}, $compounds, source=>'KEGG:compound');
