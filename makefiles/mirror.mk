@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: mirror.mk,v 1.5 2004/01/05 11:19:14 jvanheld Exp $
+# $Id: mirror.mk,v 1.6 2004/04/21 07:05:17 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 12:05:45 jvanheld>
 #
@@ -115,13 +115,14 @@ pub_from_server:
 		--exclude tmp							\
 		${RSA_LOGIN}@${RSA_SERVER}:${RSA_SERVER_DIR}/public_html ${RSA}/
 
-EXCLUDED=						\
-		--exclude previous_version		\
-		--exclude tmp				\
-		--exclude upstream_calibrations		\
-		--exclude Mus_musculus			\
-		--exclude Rattus_norvegicus		\
-		--exclude Homo_sapiens*		
+EXCLUDED=					\
+		--exclude previous_version	\
+		--exclude tmp			\
+		--exclude upstream_calibrations	\
+		--exclude Mus_musculus		\
+		--exclude Rattus_norvegicus	\
+		--exclude Homo_sapiens*		\
+		--exclude comparative_genomics
 data_from_server:
 	${RSYNC} ${EXCLUDED}							\
 		${RSA_LOGIN}@${RSA_SERVER}:${RSA_SERVER_DIR}/public_html/data/*	\
