@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.35 2003/10/20 23:18:52 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.36 2003/10/20 23:19:15 jvanheld Exp $
 #
-# Time-stamp: <2003-10-21 01:18:40 jvanheld>
+# Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -241,9 +241,10 @@ sub OligoAnalysis {
 	       "min len: $min_oligo_length",
 	       "max len: $max_oligo_length"), "\n" if ($verbose >= 1);
     $dir = "${family_name}/oligos_${family_name}";
-    unless (-d $dir) {
-	mkdir $dir, 0755 || die "Error: cannot create directory $dir\n";
-    }
+    &CheckOutputDir($dir);
+#    unless (-d $dir) {
+#	mkdir $dir, 0755 || die "Error: cannot create directory $dir\n";
+#    }
     die "Error : cannot read file $family{$family_name}->{seq_file_purged}\n" unless (-r $family{$family_name}->{seq_file_purged});
     
     
