@@ -158,9 +158,9 @@ sub AssembleFragments {
     return $assembled;
 }
 
-sub BaseAnd {
     ### usage 
     ###        $base_and = &BaseAnd($base1,$base2);
+sub BaseAnd {
     local($base1) = $_[0];
     local($base2) = $_[1];
     local($base_and) = "";
@@ -178,11 +178,11 @@ sub BaseAnd {
 }
 
 
+#### finds the best offset for aligning two sequences without mismatches
+#### usage 
+####     ($best_offset,$flanking_length,$assembly_score) = &BestOffset($word1,$word2,$max_flanking);
+####
 sub BestOffset {
-    #### finds the best offset for aligning two sequences without mismatches
-    #### usage 
-    ####     ($best_offset,$flanking_length,$assembly_score) = &BestOffset($word1,$word2,$max_flanking);
-    ####
     local($word1) = $_[0];
     local($word2) = $_[1];
     if (&IsNatural($_[2])) {
@@ -198,6 +198,8 @@ sub BestOffset {
     local($flanking_length) = 0;
     local($max_mismatches) = 0;
     local($assembly_score) = 0;
+
+    my %match = &InitMatchScores();
     
     while ($offset < $l1) {
 	$mis = 0;
@@ -207,6 +209,8 @@ sub BestOffset {
 	$left_limit = &max(0,$offset);
 	$right_limit = $l2-1 + $offset;
 	$right_limit = $l1-1 if ($right_limit > $l1-1);
+
+
 	for $pos1 ($left_limit..$right_limit) {
 	    $pos2 = $pos1 - $offset;
 	    $base1 = uc(substr($word1,$pos1,1));
@@ -320,12 +324,12 @@ sub PrintCluster {
 
 
 
+### returns a score for the matching between two bases
+### the score reflects the probability for the match to be obtained at random
+###
+### Usage:
+###	$score = &MatchScore($base1,$base2);
 sub MatchScore {
-    ### returns a score for the matching between two bases
-    ### the score reflects the probability for the match to be obtained at random
-    ###
-    ### Usage:
-    ###	$score = &MatchScore($base1,$base2);
     local($base1) = uc($_[0]);
     local($base2) = uc($_[1]);
     local($match_score) = 0;
