@@ -1,0 +1,319 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: fit-distribution,v 1.1 2004/01/05 11:21:26 jvanheld Exp $
+#
+# Time-stamp: <2003-07-04 12:48:55 jvanheld>
+#
+############################################################
+#use strict;;
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+################################################################
+#### initialise parameters
+my $start_time = &AlphaDate();
+
+local %infile = ();
+local %outfile = ();
+
+local $verbose = 0;
+local $in = STDIN;
+local $out = STDOUT;
+
+local $distrib = "poisson";
+local @out_fields = qw (pattern
+			avg
+			std
+			var
+			repet
+			sum
+			fitted_distrib
+			chi2
+			df
+			left_group 
+			right_group);
+
+%supported_distrib = ("poisson"=>1,
+			    "negbin"=>1,
+			    "binomial"=>1,
+			    );
+$supported_distrib = join ", ", sort keys %supported_distrib;
+
+&ReadArguments();
+
+################################################################
+#### check argument values
+if ($distrib eq "negbin") {
+    push @out_fields, qw (p k);
+}
+
+
+################################################################
+### open output stream
+$out = &OpenOutputFile($outfile{output});
+
+
+################################################################
+#### print verbose
+&Verbose() if ($verbose);
+
+## Print the header
+print $out ";", join ("\t", @out_fields), "\n";
+
+################################################################
+###### execute the command
+
+#### print the header
+
+## Open the file with count distributions
+($in) = &OpenInputFile($infile{input});
+
+my $pattern_count = 0;
+while (<$in>) {
+    next unless (/\S/);
+    next if (/^;/);
+    chomp();
+    $pattern_count++;
+    local @counts = split "\t";
+    local $pattern = shift @counts;
+    local $max_occ = $#counts;
+    local $sum = 0;
+    local $ssq = 0;
+    local $repet = 0;
+    for my $occ (0..$max_occ) {
+	$repet += $counts[$occ];
+	$sum += $occ*$counts[$occ];
+	$ssq += $occ*$occ*$counts[$occ];
+    }
+    local $avg = $sum/$repet;
+    local $var = $ssq/$repet - $avg*$avg;
+    local $std = sqrt($var);
+    
+    ## Fit a poisson distribution and calculate the goodness of fit
+    local @expected;
+    local $p;
+    local $k;
+    local $fitted_distrib = $distrib;
+    if ($distrib eq "poisson")  {
+	@expected = &poisson($max_occ, $avg, 1); 
+    } elsif ($distrib eq "negbin") {
+	if ($avg >= $var) {
+	    @expected = &poisson($max_occ, $avg, 1); 
+	    $fitted_distrib = "negbin";
+	} else {
+	    ($p, $k, @expected) = &negbin2($max_occ, $avg, $var, 1);}
+    };
+
+    local $exp_sum = 0;
+    foreach my $i (0..$#expected) {
+	$expected[$i] *= $repet;
+	$exp_sum += $expected[$i];
+    }
+    
+    ## Perform a chi-square test
+    local ($chi2, $df, $left_group, $right_group) = &ChiSquare("goodness", 2, $max_occ+1, @counts, @expected);
+    
+    ## Discard cases where applicability conditions are not met
+    unless (&IsReal($chi2)) {
+	$chi2 = "NA";
+    }
+    
+    warn join ("\t", 
+	       $pattern, 
+	       $avg,
+	       $std,
+	       $var,
+	       $sum, 
+	       $ssq,
+	       $exp_sum,
+	       $chi2,
+	       $df,
+	       $left_group,
+	       $right_group),
+	"\n" if ($verbose >= 3);
+    
+    local  @out_values = ();
+    foreach my $field (@out_fields) {
+	push @out_values, $$field;
+    }
+    print $out join("\t", @out_values), "\n";
+}
+
+
+################################################################
+###### finish verbose
+if ($verbose >= 1) {
+    my $done_time = &AlphaDate();
+    print $out "; Job started $start_time\n";
+    print $out "; Job done    $done_time\n";
+}
+
+
+################################################################
+###### close output stream
+close $out if ($outfile{output});
+
+
+exit(0);
+
+
+################################################################
+################### subroutine definition ######################
+################################################################
+
+
+################################################################
+#### display full help message 
+sub PrintHelp {
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	fit-distribution.pl
+
+        2002 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
+	
+DESCRIPTION
+	Fit a theoretical distribution on observed distributions, and
+	estimate the goodness of fit with a chi2 test.
+
+CATEGORY
+	util
+
+USAGE
+        fit-distribution.pl [-i inputfile] [-o outputfile] [-v]
+
+OPTIONS
+	-h	(must be first argument) display full help message
+	-help	(must be first argument) display options
+	-v	verbose
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+	-distrib distribution
+		Theoretical distribution to be fitted on the observed
+		distributions.
+		Supported distributions: $supported_distrib
+
+INPUT FORMAT
+
+      Input file is a distribution file, such as those generated by
+      oligo-analysis with the option -distrib.
+
+      A distribution file contains a table with one row per
+      distribution, one column per value. The last comment row
+      (starting with a ';') contins the column headers, which
+      indicates the values associated to each column. Each following
+      row contains the description of a distribution (for example the
+      distribution of occurrences of a given pattern, as returned by
+      oligo-analysis). The program takes each row in turn, and fits a
+      theoretical distribution on the observed distribution.
+
+OUTPUT FORMAT
+      
+      The output file is a table with one row per distribution (for
+      example pattern occurrences), and several columns providing the
+      following statistics.
+	id	row identifier (for example the pattern)
+	sum	weighted sum of occurrences
+	        = SUM (value*occ)
+	avg	weighted mean of occurrences
+		=SUM(value*occ)/SUM(occ)
+	var	variance
+	std	standard deviation
+	chi2	observed chi-squared statistics
+	df	degrees of freedom
+	Lgroup  left grouping (number of classes regrouped on the left
+	        tail of the distribution, in order to fill the
+	        applicability condition for the chi2 test: the
+	        expected frequency of each class should be >= 5.
+	Rgroup  right grouping (number of classes regrouped on the
+	        right tail of the distribution, in order to fill the
+	        applicability condition for the chi2 test: the
+	        expected frequency of each class should be >= 5.
+End_of_help
+  close HELP;
+  exit;
+}
+
+################################################################
+#### display short help message
+sub PrintOptions {
+  open HELP, "| more";
+  print HELP <<End_short_help;
+fit-distribution.pl options
+----------------
+-h		(must be first argument) display full help message
+-help		(must be first argument) display options
+-i		input file
+-o		output file
+-v		verbose
+-distrib	distribution. Supported: $supported_distrib
+End_short_help
+  close HELP;
+  exit;
+}
+
+
+################################################################
+#### read arguments 
+sub ReadArguments {
+    foreach my $a (0..$#ARGV) {
+	### verbose  
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+	    
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp();
+	    
+	    ### list of options
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions();
+	    
+	    ### input file  
+	} elsif ($ARGV[$a] eq "-i") {
+	    $infile{input} = $ARGV[$a+1];
+	    
+	    ### output file  
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outfile{output} = $ARGV[$a+1];
+	    
+	    ### distribution  
+	} elsif ($ARGV[$a] eq "-distrib") {
+	    $distrib = $ARGV[$a+1];
+	    &FatalError("Invalid distribution '$distrib'. Supported") 
+		unless ($supported_distrib{$distrib});
+
+	}
+    }
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $out "; fit-distribution.pl ";
+    &PrintArguments($out);
+    if (defined(%infile)) {
+	print $out "; Input files\n";
+	while (($key,$value) = each %infile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+    if (defined(%outfile)) {
+	print $out "; Output files\n";
+	while (($key,$value) = each %outfile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+}
+
