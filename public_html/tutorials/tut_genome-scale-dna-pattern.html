@@ -1,39 +1,45 @@
-<HTML>
-<HEAD>
-   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <TITLE>RSA-tools - tutorials</TITLE>
-</HEAD>
-<BODY TEXT="#000000" BGCOLOR="#FFFFFF" LINK="#0000EE" VLINK="#55008B" ALINK="#FF0000">
+<html>
+<head>
+   <meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <title>RSA-tools - tutorials</title>
+</head>
+<body text="#000000" bgcolor="#ffffff" link="#0000ee" vlink="#55008b" alink="#ff0000">
 <blockquote>
 
-<HR SIZE=6 WIDTH="100%">
-<CENTER>
-<H2><A HREF="../RSA_home.cgi">RSA-tools</A> - 
+<hr size=6 width="100%">
+<center>
+<h2><a href="../RSA_home.cgi">RSA-tools</A> - 
 <a href="tutorials.html">Tutorials</a> - 
 <a href="../genome-scale-dna-pattern_form.cgi">genome-scale dna-pattern</a>
-</H2>
-</CENTER>
+</h2>
+</center>
 
-<HR SIZE=6 WIDTH="100%">
+<hr size=6 width="100%">
 
-We are now considering the case where we know the binding
-specificity for a given transcription factor, and we are looking for
-all the genes potentially regulated by this factor. We will use the
-Nitrogen regulation as an example.  Response to nitrogen is mediated
-by the so-called GATA-box, whose most common motif is GATAAG. An
-interesting property is that a single GATA-box is insufficient to
-affect the transcription. All genes effectively controlled by these
-elements possess at least one group of 2 to 4 closely associated
-GATA-boxes. 
+<h2>Introduction</h2>
+<ul>
 
+<p>
+We are now considering the case where we know the binding specificity
+for a given transcription factor, and we are looking for all the genes
+potentially regulated by this factor. We will use the Nitrogen
+regulation as an example.  Response to nitrogen is mediated by the
+so-called GATA-box, whose consensus is GATAAG. An interesting property
+is that a single GATA-box is insufficient to affect the
+transcription. All genes effectively controlled by these elements
+possess at least one group of 2 to 4 closely associated GATA-boxes.
 
-<P>We will use <B>dna-pattern</B> to select all genes having 3 or more
+</ul>
+<h2>Selecting genes on the basis of pattern counts</h2>
+<ul>
+
+<p>We will use <b>dna-pattern</b> to select all genes having 3 or more
 occurrences of the GATA box in their 500 bp upstream region.
 
-<P>
-<OL>
-<LI>
-On the left pannel, click <B>genome-scale dna-pattern (strings)</B>.
+<p>
+<ol>
+<li>
+On the left pannel, click <b>genome-scale dna-pattern (strings)</b>.
 
 <li>In the Sequence retrieval options, make sure that the selected
 <b>organism</b> is <b>Saccharomyces cerevisiae</b>, and that <b>Sequence
@@ -41,38 +47,111 @@ type</b> is set to upstream.
 
 <li>Specify the sequence limits <b>from</b> -500 <b>to</b> -1.
 
-<LI>In the <B>Query pattern(s)</B> box, type</LI>
+<li>In the <b>Query pattern(s)</b> box, type
 
 <PRE>GATAAG</PRE>
 
-<LI>In the <B>Return </B>option, select <B>match counts</B>.</LI>
+<li>In the <b>Return </b>option, select <b>match counts</b>.
 
-<LI>Change the <B>Threshold </B>to 3.</LI>
+<li>Change the <b>Threshold </b>to 3.
 
-<LI>
-Click <B>GO</B></LI>
-</OL>
+<li>
+Click <b>GO</b>
+</ol>
 
-<P>
-After a few seconds you will see a list of the genes with 3 or more
-occurrences of the GATAAG pattern in their 500 bp upstream
-sequence. Each ORF identifier appears as a hyperlink, which is
+<p>
+After a few seconds you will see a list of all the yeast genes having
+3 or more occurrences of the GATAAG pattern in their 500 bp upstream
+sequence. This list contains some genes of completely unknown
+function, some other genes with a weak similarity to other protein,
+and some genes of known function (generally, those having a 3-letter +
+1-number name).
+
+<p>
+Notice that, despite the rudimentary criterion used in this search (3
+ocurrences of a single hexanucleotide), most of the genes with known
+function are associated to nitrogen metabolism (actually, this is one
+of the very rare cases where a single pattern count returns decent
+results, see remarks below). The genes with unknown function are good
+candidates for testing response to Nitrogen, and might be used for
+further experimental characterization.
+
+</ul>
+<h2>Links to external databases</h2>
+<ul>
+
+<p>
+Each ORF identifier appears as a hyperlink, which is
 connected to the information on this ORF in the yeast genome
 database.
 
+<p>
+The right column of the result table links each gene to various
+databases. By clicking on a link, you will see the information on that
+particular gene in the selected database.
 
-<P>
+<p>
+At the bottom of the page, you should see two butons, which allow to
+send the gene selection as a whole as query to KEGG, the pathway
+database, or yMGV, the yeast gene expression database. Beware, the
+link to yMVG can take a bit of time, because profiles drawing are
+generated on the fly, and there is one profile per gene and per
+microarrya publication. 
+
+<ol>
+<p><li>Send your results to <b>yMGV transcription profiles</b>, and wait
+for the answer. Try to detect conditions under which most of the
+selected genes are either activated or repressed. Are these conditions
+associated to modifications of nitrogen supply in the culture medium ?
+
+<p><li>Come bck to the result page. Send now the results to <b>KEGG
+pathway coloring </b>. Are the selected genes associated to some
+specific pathway ?
+</ol>
+
+
+</ul>
+<h2>Remarks</h2>
+<ul>
+
+<p>
+Selecting genes on the basis of a single pattern count in their
+upstream reagions is a very poor way to predict their regulatory
+properties. For this tutorial, we applied a very stringent criterion
+(at least 3 GATA boxes in a region restricted to 500bp), which
+returned a good selection, but selectivity is at the cost of coverage,
+and it is obvious that we missed many of the genes regulated by
+GATA-boxes.
+
+<p>
+When the attern is relatively large and degenerated (which is not the
+case for GATA boxes), matrix-based pattern genome-scale matching (with
+patser) provides better results than string-based pattern
+counts. However, even in such a case, there is a trade between
+sensitivity and coverage.
+
+<p>
+We are currently working on more complex approaches, based on
+combinations of motifs, which return more accurate results. These
+appproaches ar time costly, and are currently not supported on the web
+server, but we will soon dvelop a web interface for them.
+
+
+
+
+<p>
 You can now come back to the <a href=tutorials.html>tutorial main
-page</a> and try the next tutorial.
+page</a> and follow the next tutorials.
 
-
-<HR WIDTH="100%">
-<CENTER>
-<ADDRESS>
-For suggestions or information request, please contact :</ADDRESS></CENTER>
-
-<CENTER><A HREF="mailto:jvanheld@ucmb.ulb.ac.be">Jacques van Helden (jvanheld@ucmb.ulb.ac.be)</A></CENTER>
+</ul>
+<hr width="100%">
+<center>
+<address>
+For suggestions or information request, please contact <a
+href="mailto:jvanheld@ucmb.ulb.ac.be">Jacques van Helden
+(jvanheld@ucmb.ulb.ac.be)</a>
+</address></center>
 
 </blockquote>
-</BODY>
-</HTML>
+</body>
+</html>
