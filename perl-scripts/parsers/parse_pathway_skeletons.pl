@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_pathway_skeletons.pl,v 1.12 2002/11/15 20:45:21 jvanheld Exp $
+# $Id: parse_pathway_skeletons.pl,v 1.13 2002/11/15 21:01:21 jvanheld Exp $
 #
-# Time-stamp: <2002-11-15 14:41:33 jvanheld>
+# Time-stamp: <2002-11-15 14:59:54 jvanheld>
 #
 ############################################################
 
@@ -561,6 +561,13 @@ sub ReadProcesses {
 	    my $reverse_equation = "";
 	    my $provided_reaction = &trim($fields[$col{equation}]);
 
+	    ################################################################
+	    #### fix a problem with previoous annotation, where AmazeIDs were used to specify the reaciotn
+	    if ($provided_reaction =~ /amazereaction/i) {
+		$provided_reaction = "";
+		$fields[$col{equation}] = "";
+	    }
+
 
 
 	    ################################################################
@@ -569,6 +576,13 @@ sub ReadProcesses {
 	    #### reaction provided in the form of a KEGG ID
 	    my $provided_kegg_id = &trim($fields[$col{kegg_id}]); 
 	    
+	    #### fix a problem with some remarks which are in this column where reaction IDs are supposed to be found
+	    unless ($provided_kegg_id =~ /R0/) {
+		$provided_kegg_id = "";
+		$fields[$col{kegg_id}] = "";
+	    }
+
+
 	    #### KEGG id provided in the equation column
 	    if (!($provided_kegg_id) && ($provided_reaction =~ /^R0/)) {
 		$provided_kegg_id = $provided_reaction;
