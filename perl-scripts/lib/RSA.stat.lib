@@ -120,8 +120,8 @@ sub binomial {
 #     return($bin);
 
 
-    my $proba = &LogToEng($logbin);
-    return ($proba);
+    my $bin = &LogToEng($logbin);
+    return ($bin);
 }
 
 
@@ -158,7 +158,7 @@ sub sum_of_binomials {
 	print join ("\t", "sum_of_binomials", "p=$proba", "t=$trials", "from=$from", "to=$to"), "\n";
     }
 
-    my $precision_limit = 1.0e-06;
+#    my $precision_limit = 1.0e-06;
     my $expected = $trials*$proba;
 
     if ($proba <=0) {
@@ -204,12 +204,12 @@ sub sum_of_binomials {
 
 
 
+### usage:
+###     &binomial_boe($proba,$trials,$successes)
+### Calculates the probability of observing >=s successes with a
+### probability $p and $r repeats, with the sum of binomials for j
+### varying from s to r.
 sub binomial_boe {
-    ### usage:
-    ###     &binomial_boe($proba,$trials,$successes)
-    ### Calculates the probability of observing >=s successes with a
-    ### probability $p and $r repeats, with the sum of binomials for j
-    ### varying from s to r.
     my ($proba, $trials, $succ) = @_;
     
     if ($verbose >=5) {
@@ -221,10 +221,10 @@ sub binomial_boe {
 
 
 
-sub binomial_approx {
 ### usage: &binomial_approx($proba,$trials,$successes)
 ### this is the entropy approximation for the sum of binomials
 ### note that the approximation is only valid for s/r > p 
+sub binomial_approx {
     my ($proba, $trials, $successes) = @_;
     my $beta = $successes/$trials;
     my $alpha = $proba;
@@ -240,13 +240,13 @@ sub binomial_approx {
 }
 
 
-sub poisson {
 ### usage poisson($successes,$expected)
 ### note: on our sun station, this algorithm works only for m < 746
 ### direct calculation would be                  
 ###    p(x) = lambda^x exp(-lambda)/x!
 ### We use a recursive formula 
 ###    p(x) = p(x-1) * lambda / x
+sub poisson {
 
     my ($x,$lambda) = @_;
     my $poi;
@@ -266,13 +266,13 @@ sub poisson {
     return exp($log_poi);
 }
 
-sub sum_of_poisson {
 ### usage poisson($successes,$expected)
 ### note: on our sun station, this algorithm works only for m < 746
 ### direct calculation would be                  
 ###    p(x) = lambda^x exp(-lambda)/x!
 ### We use a recursive formula 
 ###    p(x) = p(x-1) * lambda / x
+sub sum_of_poisson {
 
     my ($lambda,$from,$to) = @_;
     my $poi;
@@ -311,73 +311,59 @@ sub sum_of_poisson {
 }
 
 
-#  sub old_sum_of_poissons {
-#      ### usage sum_of_poissons($successes,$expected,$tail_side)
-#      ### supported values for $tail_side :
-#      ### "boe"   bigger or equal
-#      ### "soe"   smaller or equal
-#      my ($s,$m,$tail_side) = @_;
-#      my $result;
-#      my $precision_limit = 1.0e-15;
-
-#      if ($tail_side eq "boe") {
-#  	$result = 1;
-#  	for my $j (0..$s-1) {
-#  	    $result -= &poisson($j,$m);
-#  	    last if ($result <=0);
-#  	}
-#      } elsif ($tail_side eq "soe") {
-#  	$result = 0;
-#  	for my $j (0..$s) {
-#  	    $result += &poisson($j,$m);
-#  	    last if ($result >=1);
-#  	}
-#      } else {
-#  	die "Error: unsupported value for tail side $tail_side\n";
-#      }
-#      $result = ("ND") if ($result < $precision_limit); #### precision limit
-#      return $result;
-#  }
-
-
-
-### usage:
-###     &hypergeometric($x, $m, $n, $k)
-### this routine uses the recurrent formula for the calculation of hypergeometric:
+################################################################
+### This routine uses the recurrent formula for the calculation of hypergeometric:
 ###
-### We calculate everything in logarithms, and make a custom exp conversion
-### to overcome the limitation of the Perl exp(x) function
+### Usage:
+###     &hypergeometric($x, $m, $n, $k)
+###
+### The hypergeometric is calculated with the recursive formula. 
 ###
 ###                       (m - x + 1) (k - x + 1)
 ###  P(X = x) = P(X=x-1) ------------------------
 ###                         x ( n - m - k + x)
 ###
+###
+### Instead of a product, calculations are performmed with sums of
+### logarithms. Then, we make a custom exp conversion to overcome the
+### limitation of the Perl exp(x) function.
+###
+### This gives a precision of the order of e-300.
+###
 sub hypergeometric {
-    my($x, $m, $n, $k) = @_;
+    my($m, $n, $k, $x, %args) = @_;
 
     warn join ( "\t", 
 		"Hypergeometric", 
-		"x=$x",
 		"m=$m",
 		"n=$n",
 		"k=$k",
+		"x=$x",
 		), "\n";
     #### check parameter values
     if ($x < 0) {
 	&FatalError( "Error : number of successes must be strictly positive\n");
     }
 
-    #### calculate value for 0 successes
-    $log_proba = 0;
-    for my $i (($n-$m-$k+1)..($n-$m)) {
-	$log_proba += log($i);
-    }
-    for my $i (($n-$k+1)..$n) {
-	$log_proba -= log($i);
+    if (defined($args{previous_value})) {
+	#### a single recursion is sufficient
+	die;
+	$start = $x-1;
+    } else {
+	#### initialization
+	#### calculate value for 0 successes
+	$log_proba = 0;
+	for my $i (($n-$m-$k+1)..($n-$m)) {
+	    $log_proba += log($i);
+	}
+	for my $i (($n-$k+1)..$n) {
+	    $log_proba -= log($i);
+	}
+	$start = 1;
     }
 
     #### recursively calculate value
-    for my $i (1..$x) {
+    for my $i ($start..$x) {
 	$log_proba += log($m - $i + 1);
 	$log_proba -= log($i);
 	$log_proba += log($k - $i + 1);
@@ -389,67 +375,67 @@ sub hypergeometric {
     return($proba);
 }
 
+################################################################
+## usage:
+##     &sum_of_hypergeometrics($proba,$trials,$from,$to)
+## Calculates the sum of hypergeometric probabilities between two values.
+##
+## This routine uses the recurrent formula for the calculation of
+## hypergeometric. The calculation time is thus linear.
+##
+sub sum_of_hypergeometrics {
+    my($m, $n, $k, $from, $to, %args) = @_;
+#    my ($proba, $trials, $from, $to) = @_;
 
-# ### usage:
-# ###     &sum_of_hypergeometrics($proba,$trials,$from,$to)
-# ### Calculates the sum of hypergeometric probabilities between two values.
-# ###
-# ### This routine uses the recurrent formula for the calculation of
-# ### hypergeometric:
-# ###           P(x) * p(r-x)
-# ###  P(x+1) = -------------
-# ###              q(x+1)
-# ###
-# sub sum_of_hypergeometrics {
-#     my ($proba, $trials, $from, $to) = @_;
+    if ($verbose >= 5) {
+	print join ("\t", "sum_of_hypergeometrics", "m=$m", "n=$n", "k=$k", "from=$from", "to=$to"), "\n";
+    }
 
-#     if ($verbose >= 5) {
-# 	print join ("\t", "sum_of_hypergeometrics", "p=$proba", "t=$trials", "from=$from", "to=$to"), "\n";
-#     }
+#    my $precision_limit = 1.0e-06;
+#    my $expected = $trials*$proba;
 
-#     my $precision_limit = 1.0e-06;
-#     my $expected = $trials*$proba;
+#    if ($proba <=0) {
+#	 &FatalError("Error: invalid probability $proba (must be a positive value)\n");
+#    }
+    
+    #### make sure that "from" is smaller than "to"
+    ($from,$to) = sort {$a <=> $b} ($from, $to);
+    if ($to > $n) {
+	&FatalError( "Error: successes ($to) cannot be higher than trials ($trials)\n");
+    }
+    my $q = 1 - $proba;
+    my $logproba = log($proba);
+    my $logq = log($q);
 
-#     if ($proba <=0) {
-# 	 &FatalError("Error: invalid probability $proba (must be a positive value)\n");
-#     }
-#     ($from,$to) = sort {$a <=> $b} ($from, $to);
-#     if ($to > $trials) {
-# 	&FatalError( "Error: successes ($to) cannot be higher than trials ($trials)\n");
-#     }
-#     my $q = 1 - $proba;
-#     my $logproba = log($proba);
-#     my $logq = log($q);
+    my $sum_of_bin = 0;
+    my $x = 0;
+    my $logbin;
+    my $prev_value = -1;
 
-#     my $sum_of_bin = 0;
-#     my $x = 0;
-#     my $logbin;
-#     my $prev_value = -1;
+    #### initialize
+    $x = 0;
+    $logbin = $trials * log($q);
+    if ($from == 0) {
+	$sum_of_bin = exp($logbin);
+	$loop_start = 1;
+    } else {
+	$loop_start = $from;
+	for $x (1..$from-1) {
+	    $logbin += log($trials - $x + 1) - log($x) + $logproba - $logq;
+	}
+    }
 
-#     #### initialize
-#     $x = 0;
-#     $logbin = $trials * log($q);
-#     if ($from == 0) {
-# 	$sum_of_bin = exp($logbin);
-# 	$loop_start = 1;
-#     } else {
-# 	$loop_start = $from;
-# 	for $x (1..$from-1) {
-# 	    $logbin += log($trials - $x + 1) - log($x) + $logproba - $logq;
-# 	}
-#     }
+    for $x ($loop_start..$to) {
+	$logbin += log($trials - $x + 1) - log($x) + $logproba - $logq;
+	$sum_of_bin += exp($logbin);
+	last if (($x > $expected) && ($sum_of_bin <= $prev_value)); ### limit of precision
+	$prev_value = $sum_of_bin;
+    }
 
-#     for $x ($loop_start..$to) {
-# 	$logbin += log($trials - $x + 1) - log($x) + $logproba - $logq;
-# 	$sum_of_bin += exp($logbin);
-# 	last if (($x > $expected) && ($sum_of_bin <= $prev_value)); ### limit of precision
-# 	$prev_value = $sum_of_bin;
-#     }
-
-#     $sum_of_bin = 1 if ($sum_of_bin > 1);
-#     $sum_of_bin = "ND0" if ($sum_of_bin < 0);
-#     return($sum_of_bin);
-# }
+    $sum_of_bin = 1 if ($sum_of_bin > 1);
+    $sum_of_bin = "ND0" if ($sum_of_bin < 0);
+    return($sum_of_bin);
+}
 
 
 
