@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_swissprot.pl,v 1.11 2002/03/19 12:05:00 jvanheld Exp $
+# $Id: parse_swissprot.pl,v 1.12 2002/03/19 12:13:09 jvanheld Exp $
 #
-# Time-stamp: <2002-03-19 13:04:44 jvanheld>
+# Time-stamp: <2002-03-19 13:12:07 jvanheld>
 #
 ############################################################
 
@@ -50,6 +50,28 @@ package main;
 	die "Error: options -acs and -org are incompatible\n";
     }
 
+    #### read a list of selected ACCESSION NUMBERS
+    if ($in_file{acs}) {
+	warn "; Reading Accession Number list from file $in_file{acs}\n" 
+	    if ($warn_level >=1);
+	unless (-e $in_file{acs}) {
+	    die "Accession number file $in_file{acs} does not exist.\n";
+	}
+	unless (-r $in_file{acs}) {
+	    die "Cannot read aSccession number file $in_file{acs}\n";
+	}
+	open ACS, $in_file{acs} || die 
+	    "Error: cannot open file $in_file{acs}\n";
+	while (<ACS>) {
+	    chomp;
+	    my @fields = split /\s+/;
+	    my $ac = $fields[0];
+	    $selected_acs{$ac}++;
+	}
+	close ACS;
+	warn "; Selected ACs\n;\t",  join ("\n;\t", keys %selected_acs), "\n" if ($warn_level >= 0);
+    }
+
     #### output directory
     $out_format = "obj";
     unless (defined($dir{output})) {
@@ -65,15 +87,22 @@ package main;
 	mkdir $dir{output}, 0775 || die "Error: cannot create directory $dir\n";
     }
     die unless chdir $dir{output};
-    if ($clean) {
-	system "\\rm -f $dir{output}/*";
-    }
 
     #### output file names
     $out_file{polypeptides} = $dir{output}."/Polypeptide".$suffix.".obj";
     $out_file{errors} = $dir{output}."/swissprot".$suffix.".errors.txt";
     $out_file{stats} = $dir{output}."/swissprot".$suffix.".stats.txt";
     
+    #### clean output directory
+    if ($clean) {
+	system "\\rm -f $dir{output}/Polypeptide*.tab";
+	system "\\rm -f $dir{output}/Polypeptide*.tab.gz";
+	system "\\rm -f $dir{output}/Polypeptide*.gz";
+	system "\\rm -f $dir{output}/Polypeptide*.obj.gz";
+	system "\\rm -f $out_file{stats}";
+	system "\\rm -f $out_file{errors}";
+    }
+
     #### open error report file
     open ERR, ">$out_file{errors}" || 
 	die "Error: cannot write error file $out_file{errors}\n";
@@ -96,28 +125,6 @@ package main;
 	push @regexps, qr /$regexp/; #### list of regular expressions
     }
     
-
-    #### read a list of selected ACCESSION NUMBERS
-    if ($in_file{acs}) {
-	warn "; Reading Accession Number list from file $in_file{acs}\n" 
-	    if ($warn_level >=1);
-	unless (-e $in_file{acs}) {
-	    die "Accession number file $in_file{acs} does not exist.\n";
-	}
-	unless (-r $in_file{acs}) {
-	    die "Cannot read aSccession number file $in_file{acs}\n";
-	}
-	open ACS, $in_file{acs} || die 
-	    "Error: cannot open file $in_file{acs}\n";
-	while (<ACS>) {
-	    chomp;
-	    my @fields = split /\s+/;
-	    my $ac = $fields[0];
-	    $selected_acs{$ac}++;
-	}
-	close ACS;
-	warn "; Selected ACs\n;\t",  join ("\n;\t", keys %selected_acs), "\n" if ($warn_level >= 0);
-    }
 
     #### by default, parse swissprot only
     unless (defined(%data_sources)) {
