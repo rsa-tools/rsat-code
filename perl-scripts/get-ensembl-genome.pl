@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-ensembl-genome.pl,v 1.12 2005/03/17 15:07:49 jvanheld Exp $
+# $Id: get-ensembl-genome.pl,v 1.13 2005/03/31 15:18:32 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -406,6 +406,7 @@ package main;
 		$transcript_name .= ".".$tr;
 		$rsat_transcript->force_attribute("name", $transcript_name);
 		$rsat_transcript->push_attribute("names", $rsat_gene->get_attribute("name"));
+		$rsat_transcript->push_attribute("names", $rsat_gene->get_attribute("id"));
 		$rsat_transcript->push_attribute("names", $transcript_name);
 		$rsat_transcript->set_attribute("gene", $rsat_gene->get_attribute("id"));
 		unless($rsat_transcript->get_attribute("description")) {
@@ -434,8 +435,10 @@ package main;
 		    $rsat_cds->set_attribute("organism", $rsat_transcript->get_attribute("organism"));
 		    $rsat_cds->set_attribute("transcript",  $rsat_transcript->get_attribute("id"));
 		    $rsat_cds->push_attribute("names", $rsat_gene->get_attribute("name"));
+		    $rsat_cds->push_attribute("names", $rsat_gene->get_attribute("id"));
 		    $rsat_cds->push_attribute("names", $rsat_transcript->get_attribute("name"));
 
+		    ## VERIFIER SI CECI EST TOUJOURS UTILE
 		    $feature[0] =  $ensembl_translation->stable_id();
 		    $feature[1] = "CDS";
 		    if ($feature[6] eq 'D') {
@@ -448,7 +451,7 @@ package main;
 		    print $FT_TABLE join ("\t", @feature), "\n"; 
 		}
 
-## Tests to make sure a transcripts includes UTRs (are also in first and last exons!)
+		## Tests to make sure a transcripts includes UTRs (are also in first and last exons!)
 #        print $feature[0], " : ", $trans->spliced_seq(), "\n";
 #        print $feature[0], " : ", $trans->translateable_seq(), "\n";
 #        my $fiv_utr = $trans->five_prime_utr();
