@@ -7,7 +7,7 @@ require "RSA.lib.pl";
 
 
 #### initialise parameters ####
-my $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+my $start_time = &AlphaDate;
 
 local $inputfile = "";
 local $outputfile = "";
@@ -53,9 +53,9 @@ if ($verbose) {
 
 ###### verbose ######
 if ($verbose) {
-  my $done_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
-  print $out "; Job started $start_time";
-  print $out "; Job done    $done_time";
+  my $done_time = &AlphaDate;
+  print $out "; Job started $start_time\n";
+  print $out "; Job done    $done_time\n";
 }
 
 
