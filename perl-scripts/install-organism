@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.13 2002/04/12 11:05:10 jvanheld Exp $
+# $Id: install-organism,v 1.14 2002/04/23 20:27:02 jvanheld Exp $
 #
-# Time-stamp: <2002-04-12 12:58:38 jvanheld>
+# Time-stamp: <2002-04-23 22:21:28 jvanheld>
 #
 ############################################################
 
@@ -227,7 +227,6 @@ sub UpdateConfig {
     if ($local_config) {
 	$config_to_update = $ENV{'RSA_LOCAL_CONFIG'} ;
     } else {
-#	$config_to_update = $config_file;
 	$config_to_update = "$RSA/data/supported_organisms.pl";
     }
 
@@ -351,8 +350,8 @@ sub CalcFrequencies {
     ################################################################
     # calculate oligo-frequencies in full genome
     $seq_type = "genomic";
-    $seq_format = $supported_organism{$organism_short_name}->{'seq_format'};
-    $seq_file = $supported_organism{$organism_short_name}->{'genome'};
+    $seq_format = "filelist";
+    $seq_file = $outfile{'genome'};
     &CalcOligoFreq($seq_file, $seq_format, $seq_type) if ($install_steps{oligos});
     &CalcDyadFreq($seq_file, $seq_format, $seq_type) if ($install_steps{dyads});
      
@@ -404,14 +403,14 @@ sub CalcDyadFreq {
     my ($seq_file,$seq_format,$seq_type) = @_;
     $min_spacing = 0;
     $max_spacing = 20;
-    $noov = 1;
+    $noov = 0;
 
     foreach $oligo_length (1..3) {
 	$dyad_file = "dyads_${oligo_length}nt_sp${min_spacing}-${max_spacing}_${seq_type}_${organism_short_name}";
 	$dyad_file .= "_noov" if ($noov);
 	$dyad_file .= ".freq";
 	$command = "$SCRIPTS/dyad-analysis -i $seq_file -format $seq_format";
-	$command .= " -timeout 150000 ";
+	$command .= " -timeout 240000 ";
 	$command .= " -type any -seqtype dna";
 	$command .= " -2str";
 	$command .= " -noov" if ($noov);
@@ -715,7 +714,11 @@ sub StartAndStopCodons {
 
 sub doit {
     warn "\n", &AlphaDate, "\t$command\n" if ($verbose);
-    system $command unless $dry_run;
+    unless ($dry_run) {
+	my $error = system "$command";
+	die "Error whilst executing the following command\n$command\n"
+	    if ($error);
+    }
 }
 
 
