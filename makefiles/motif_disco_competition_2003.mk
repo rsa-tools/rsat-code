@@ -324,7 +324,8 @@ calibrate_oligos_test:
 
 
 give_access:
-	chmod -R g+w *
+	dinf . -type d -exec chmod 775 {} \;
+	dinf . -type f -exec chmod 664 {} \;
 
 
 ## ##############################################################
