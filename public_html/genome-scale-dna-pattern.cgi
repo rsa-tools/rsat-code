@@ -10,8 +10,9 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 require "$RSA/public_html/genome-scale.lib.pl";
 
 $dna_pattern_command = "$SCRIPTS/dna-pattern";
+$add_linenb_command = "$SCRIPTS/add-linenb";
 $add_orf_function_command = "$SCRIPTS/add-orf-function";
-$link_command = "$SCRIPTS/add-yeast-link";
+$link_command = "$SCRIPTS/add-yeast-link -db all ";
 $tmp_file_name = sprintf "genome-scale-dna-pattern.%s", &AlphaDate;
 
 ### Read the CGI query
@@ -49,7 +50,6 @@ if (open PAT, ">$pattern_file") {
   &DelayedRemoval($pattern_file);
 }
 $parameters_dna_pattern .= " -pl $pattern_file";
-
 
 ### return match count ###
 if ($query->param('return') =~ /count/i) {
@@ -100,8 +100,9 @@ if ($query->param('subst') =~ /^\d+$/) {
 
 $command = "$retrieve_seq_command $retrieve_seq_parameters ";
 $command .= "| $dna_pattern_command $parameters_dna_pattern ";
-if ($org eq "yeast") { #### not yet supported for other organisms
-    $command .= "| $add_orf_function_command  ";
+$command .= "| $add_orf_function_command -org $org ";
+$command .= "| $add_linenb_command ";
+if ($org eq "Saccharomyces_cerevisiae") { #### not yet supported for other organisms
     $command .= "| $link_command  ";
 }
 
@@ -110,14 +111,16 @@ if ($query->param("output") =~ /display/i) {
 
     ### execute the command ###
     $result_file = "$TMP/$tmp_file_name.res";
-#  print "<PRE>$command</PRE>";
+    print "<PRE>$command</PRE>" if ($ECHO);
     open RESULT, "$command & |";
     
-    &PipingForm if ($query->param('return') =~ /positions/);
-    
     ### Print the result on Web page
-    &PrintHtmlTable(RESULT, $result_file);
+    &PrintHtmlTable(RESULT, $result_file,,,,1);
     close RESULT;
+    
+    $export_genes = `grep -v '^;' $result_file | cut -f 1 | sort -u '`;
+    
+    &PipingForm () ;
     
     
 } else {
@@ -146,15 +149,23 @@ exit(0);
 sub PipingForm {
   ### prepare data for piping
   $title = $query->param("title");
-  $title =~ s/\"/'/g;
+  $title =~ s/\"/\'/g;
+  $organism = $org;
+  $organism =~ s/_/ /g;
+## if ($query->param('return') =~ /positions/) {
+## if ($org eq "Saccharomyces_cerevisiae") {
+
   print <<End_of_form;
 <HR SIZE = 3>
 <CENTER>
 <TABLE>
+
 <TR>
+
 <TD>
 <H3>Next step</H3>
 </TD>
+
 <TD>
 <FORM METHOD="POST" ACTION="feature-map_form.cgi">
 <INPUT type="hidden" NAME="title" VALUE="$title">
@@ -164,7 +175,47 @@ sub PipingForm {
 <INPUT type="submit" VALUE="feature map">
 </FORM>
 </TD>
+
+<TD>
+</TD>
+
 </TR>
+
+
+<TR>
+
+<TR>
+<TD colpsan=2>
+<h3>External servers</h3>
+</TD>
+</tr>
+
+<tr>
+<TD>
+<a href="http://www.biologie.ens.fr/fr/genetiqu/puces/publications/ymgv_NARdb2002/index.html" target=_blank>yMGV transcription profiles</a>
+</TD><td>
+<FORM METHOD="POST" ACTION="http://www.transcriptome.ens.fr/ymgv/list_signatures.php3" target=_blank>
+<INPUT type="hidden" NAME="generequest" VALUE="$export_genes">
+<INPUT type="submit" VALUE="Send">
+</FORM>
+</TD>
+</tr>
+
+<!--
+<tr>
+<TD>
+<a href="http://www.genome.ad.jp/kegg/kegg2.html#pathway" target=_blank>KEGG pathway coloring</a>
+</TD><td>
+<FORM METHOD="POST" ACTION="http://www.genome.ad.jp/kegg-bin/search_pathway_multi_www" target=_blank>
+<INPUT type="hidden" NAME="org_name" VALUE="$organism">
+<INPUT type="hidden" NAME="unclassified" VALUE="$export_genes">
+<INPUT type="submit" VALUE="Send">
+</FORM>
+</TD>
+</TR>
+-->
+
+
 </TABLE>
 </CENTER>
 End_of_form
