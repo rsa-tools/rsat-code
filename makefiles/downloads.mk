@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: downloads.mk,v 1.20 2005/01/14 12:54:46 jvanheld Exp $
+# $Id: downloads.mk,v 1.21 2005/03/17 01:21:26 jvanheld Exp $
 #
 # Time-stamp: <2003-10-09 14:02:21 jvanheld>
 #
@@ -456,6 +456,7 @@ ensembl:
 ENSEMBL_BASE=ftp://ftp.ensembl.org/pub/
 ENSEMBL_DIR=current_celegans/data/flatfiles/genbank/
 one_ensembl_dir:
+	@echo "Getting ENSEMBL dir" ${ENSEMBL_DIR} ${LOG_FILE}
 	${WGET} ${ENSEMBL_BASE}/${ENSEMBL_DIR}
 
 ################################################################
