@@ -1,26 +1,28 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.73 2004/02/09 00:53:56 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.74 2004/02/28 17:07:49 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
 ############################################################
-if ($0 =~ /([^(\/)]+)$/) {
-  push (@INC, "$`lib/");
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+    require "RSA.lib";
+    require "RSA.seq.lib";
+    require "RSA.help.pl";
+    require "RSA.cgi.lib";
+    require "RSA.classes";
+    push @INC, "$RSA/perl-scripts/parsers/";
+    require "lib/load_classes.pl";
+    require "lib/util.pl";
+    require "lib/parsing_util.pl";
+    require "$RSA/perl-scripts/lib/RSA.classes";
 }
-
-require "RSA.lib";
-require "RSA.seq.lib";
-require "RSA.help.pl";
-require "RSA.cgi.lib";
-require "RSA.classes";
-push @INC, "$RSA/perl-scripts/parsers/";
-require "lib/load_classes.pl";
-require "lib/util.pl";
-require "lib/parsing_util.pl";
-require "$RSA/perl-scripts/lib/RSA.classes";
-
+    
+use RSAT::matrix;
 
 ################################################################
 ## initialisations	    
@@ -34,18 +36,41 @@ $dir{main} = `pwd`;
 $dir{calib1} = "calibrations_1gene"; 
 chomp($dir{main});
 
-@supported_tasks = qw (upstream purge calibrate oligos merge_oligos oligo_maps dyad_maps maps dyads merge_patterns slide synthesis sql clean all report consensus gibbs MotifSampler meme);
+## Supported tasks
+@supported_tasks = qw (upstream
+		       purge
+		       calibrate
+		       oligos
+		       merge_oligos
+		       oligo_maps
+		       dyad_maps
+		       maps
+		       dyads
+		       merge_patterns
+		       slide
+		       synthesis
+		       sql
+		       clean
+		       all
+		       report
+		       consensus
+		       gibbs
+		       MotifSampler
+		       meme);
 foreach my $task (@supported_tasks) {
     $supported_task{$task} = 1;
 }
 $supported_tasks = join ",", @supported_tasks;
 
+## Keys for sorting the results in the summary table
 %supported_sort_key = (
 			 "score"=>1,
 			 "name"=>1
 			 );
 $supported_sort_keys  = join ",", sort keys %supported_sort_key;
 
+
+## Background models for string-based pattern discovery
 %supported_background = (
 			 "intergenic"=>1,
 			 "upstream"=>1,
@@ -88,7 +113,7 @@ $matrix_width = 10;
 $expected_sites_per_gene = 2;
 $seed = undef;
 
-## MotifSampler
+## MotifSampler options
 $MS_bg_order = 0;
 $MS_b = "/home/nicolas/motifsampler/background_models/yeast_up800_nomit_noorf_o3.bg"; ### TEMPORARY
 $MS_p = 0.2;
@@ -103,7 +128,7 @@ $known_site_file = "";
 $known_sites_provided = 0;
 $min_matching_score = 4;
 
-## misc
+## miscellaneous
 $start_date = `date`;
 $verbose = 0;
 
@@ -165,11 +190,11 @@ $verbose_message = &Verbose() if ($verbose >= 1);
 
 ### Warn output dir and files
 if ($main::verbose >= 1) {
-    warn "; Results are stored in directory\t".$dir{output}."\n";
-    warn "; synthetic table\t", $dir{output}."/".$outfile{table}, "\n";
+    warn "; Results were stored in directory\t".$dir{output}."\n";
+    warn "; Synthetic table\t", $dir{output}."/".$outfile{table}, "\n";
     if ($task{report}) {
-	 warn "; results\t", $dir{output}."/".$outfile{results}, "\n";
-	 warn "; parameters\t", $dir{output}."/".$outfile{parameters}, "\n";
+	 warn "; Result report (MDC 2004)\t", $dir{output}."/".$outfile{results}, "\n";
+	 warn "; Parameter report (MDC 2004)\t", $dir{output}."/".$outfile{parameters}, "\n";
     }
 }
 
@@ -411,8 +436,8 @@ sub SetFileNames {
 	}
 	
 	## Background frequencies
-#	$meme_path = "/Users/jvanheld/installers/MEME/meme.3.0.4";
-	$meme_path = "~nicolas/meme.3.0.4";
+	$meme_path = "/Users/jvanheld/installers/MEME/meme.3.0.4";
+#	$meme_path = "~nicolas/meme.3.0.4";
 	$meme_bg_file = $meme_path."/tests/yeast.nc.3.freq";
 	$meme_options .= " -bfile ".$meme_bg_file;
 
@@ -916,7 +941,7 @@ sub Consensus {
    ## run the command
    $consensus_command .= " | consensus ".$family{$family_name}->{consensus_options};
    $consensus_command .= " > ".$family{$family_name}->{consensus_file};
-   &doit($consensus_command, $dry_run, $die_on_error);
+   &doit($consensus_command, $dry_run, 0);
 }
 
 ################################################################
@@ -966,7 +991,7 @@ sub ReadKnownSites {
 #  	    my $sequence = uc($fields[0]);
 #  	    $sequence =~ s/N/n/g;
 	    
-#  	    $pattern = RSA::pattern->new(id=>$id,
+#  	    $pattern = RSAT::pattern->new(id=>$id,
 #  					 sequence=>$sequence,
 #  					 source=>source);
 #  	    push @site_library, $pattern;
@@ -1198,35 +1223,49 @@ sub IndexMatrix {
    my ($family_name, $consensus_file, $map_link, $row, $col, %args) = @_;
    my $format = $args{format};
    my @attributes = ();
-   if ($format eq "consensus") {
-	push @attributes, qw (unadjusted.information
-			      adjusted.information
-			      Pval
-			      ln.Pval
-			      exp
-			      ln.exp
-			      );
-   } elsif ($format eq "gibbs") {
-	push @attributes, qw (
-			      model.map
-			      betaprior.map
-			      MAP
-			      seed
-			      );
-   } else {
-	&FatalError("Invalid format for a matrix $format");
-   }
+#     if ($format eq "consensus") {
+#         push @attributes, qw (unadjusted.information
+#  			     adjusted.information
+#  			     Pval
+#  			     ln.Pval
+#  			     exp
+#  			     ln.exp
+#  			     );
+#     } elsif ($format eq "gibbs") {
+#         push @attributes, qw (
+#  			     model.map
+#  			     betaprior.map
+#  			     MAP
+#  			     seed
+#  			     );
+#     } else {
+#         &FatalError("Invalid format for a matrix $format");
+#     }
    warn join ("\t", "; Indexing $format matrix for family", $family_name, $consensus_file, $row, $col), "\n" if ($verbose >= 2);
-   my $matrix = new RSA::matrix();
-   $matrix->readFromFile($consensus_file, $format);
+   my $matrix = new RSAT::matrix();
+   my $matrix_result = "";
+
+   ## This piece of code has to be evaluated because it can raise an
+   ## error, if the output file does not contain any matrix. This is
+   ## the case for some output files of consensus, due to a bug.
+   eval {
+       $matrix->readFromFile($consensus_file, $format);
+       $matrix->calcConsensus();
+       $matrix->calcInformation();
+       $matrix_result = $matrix->toString(sep=>" ", col_width=>4, type=>"alignment");
+       $matrix_result .= $matrix->toString(sep=>" ", col_width=>4, type=>"parameters");
+   };
+   if ($@) {
+       $matrix_result = "<font color=red>No matrix could be found in the output file</font>";
+       &Warning("No matrix found. Skipped.");
+   }
    $table[$row][$col] = "<a href=".$map_link.">Results</a>\n";
    $table[$row][$col] .= "<table cellpadding=3>\n";
    $table[$row][$col] .= "<TR>\n";
-   $table[$row][$col] .= "<td colspan=2><pre>".$matrix->toString(" ", 4)."</pre></td>\n";
+   $table[$row][$col] .= "<td colspan=2><pre>";
+   $table[$row][$col] .= $matrix_result;
+   $table[$row][$col] .= "</pre></td>\n";
    $table[$row][$col] .= "</TR>\n";
-   for my $attr (@attributes) {
-	$table[$row][$col] .= "<tr><td align=right>".$attr."</td><td>".$matrix->get_attribute($attr)."</td></tr>\n";
-   }
    $table[$row][$col] .= "</table>\n";
 }
 
@@ -1236,7 +1275,7 @@ sub IndexGibbs {
    &IndexMatrix(@_, format=>"gibbs");
 #      my ($family_name, $gibbs_file, $map_link, $row, $col, %args) = @_;
 #      warn join ("\t", "; Indexing gibbs matrix for family", $family_name, $gibbs_file, $row, $col), "\n" if ($verbose >= 2);
-#      my $matrix = new RSA::matrix();
+#      my $matrix = new RSAT::matrix();
 #      $matrix->readFromFile($gibbs_file, "gibbs");
 #      $table[$row][$col] = "<table cellpadding=3>\n";
 #      $table[$row][$col] .= "<TR>\n";
@@ -2344,7 +2383,7 @@ sub ReadSequenceList {
 
 	#### create a new family if required
 	unless ($family{$family_name}) {
-	    $family{$family_name} = new RSA::family(name=>$family_name);
+	    $family{$family_name} = new RSAT::family(name=>$family_name);
 	}
 
        #### Sequence file

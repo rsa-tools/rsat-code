@@ -1,22 +1,26 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-consensus,v 1.4 2004/02/04 14:07:11 jvanheld Exp $
+# $Id: matrix-from-consensus,v 1.5 2004/02/28 17:07:49 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
 ############################################################
 #use strict;;
-if ($0 =~ /([^(\/)]+)$/) {
-    push (@INC, "$`lib/");
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+    require "RSA.lib";
+    require "RSA.classes";
 }
-require "RSA.lib";
-require "RSA.classes";
+use RSAT::matrix;
 
+warn "\nTHIS PROGRAM IS OBSOLETE - YOU SHOULD USE convert-matrix\n\n";
 
 
 #### initialise parameters ####
-my $start_time = &AlphaDate;
+my $start_time = &AlphaDate();
 
 local $infile{input} = "";
 local $outfile{output} = "";
@@ -24,7 +28,7 @@ local $outfile{output} = "";
 local $verbose = 0;
 local $out = STDOUT;
 
-&ReadArguments;
+&ReadArguments();
 
 
 #### check argument values ####
@@ -37,7 +41,7 @@ $out = &OpenOutputFile($outfile{output});
 
 my @residues = ();
 my @matrix = ();
-my $current_matrix = new RSA::matrix();
+my $current_matrix = new RSAT::matrix();
 $current_matrix->readFromFile($infile{input}, "consensus");
 
 ##### print output ######
