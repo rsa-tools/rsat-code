@@ -1,0 +1,167 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+#### initialise parameters ####
+$boe = 0;
+$soe = 0;
+
+&ReadArguments();
+
+#### check argument values ####
+
+if ($verbose) {
+    if ($from_to) {
+	print "P($from<=s<=$to | r=$r,p=$p) = ";
+    } else {
+	if ($boe) {
+	    print "P(s>=$s | r=$r,p=$p) = ";
+	} elsif ($soe) {
+	    print "P(s<=$s | r=$r,p=$p) = ";
+	} else {
+	    print "P(s=$s | r=$r,p=$p) = ";
+	}
+    }
+}
+
+
+if ($boe) {
+    $h = &hypergeometric_boe($m, $n, $k, $x);
+} elsif ($soe) {
+    $h = &sum_of_hypergeometrics($m, $n, $k, 0, $x);
+} elsif (defined($from) && (defined($to))) {
+    $h = &sum_of_hypergeometrics($m, $n, $k, $x, $k);
+} else {
+    $h = &hypergeometric($m, $n, $k, $x);
+}
+
+
+if ($h < 0) {
+### this can happen when using boe or soe options,
+### due to the precision limit
+  $h = 0;
+}
+#if ($h >= 0.0001) {
+#    printf "%.7f\n", $h;
+#} else {
+#    printf "%.7g\n", $h;
+#}
+
+print $h, "\n";
+
+exit(0);
+
+
+
+#### read arguments ####
+sub ReadArguments {
+    foreach $a (0..$#ARGV) {
+	
+	if ($ARGV[$a] eq "-x") {
+	    $x = $ARGV[$a+1];
+	    
+	} elsif ($ARGV[$a] eq "-m") {
+	    $m = $ARGV[$a+1];
+	    
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp();
+
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions();
+	    
+	} elsif ($ARGV[$a] eq "-n") {
+	    $n = $ARGV[$a+1];
+
+	} elsif ($ARGV[$a] eq "-k") {
+	    $k = $ARGV[$a+1];
+	    
+	} elsif ($ARGV[$a] eq "-v") {
+	    $verbose = 1;
+	    
+	} elsif ($ARGV[$a] eq "-boe") {
+	    $boe = 1;
+	    
+	} elsif ($ARGV[$a] eq "-soe") {
+	    $soe = 1;
+
+	} elsif ($ARGV[$a] eq "-from") {
+	    $from_to = 1;
+	    $from = $ARGV[$a+1];
+
+	} elsif ($ARGV[$a] eq "-to") {
+	    $from_to = 1;
+	    $to = $ARGV[$a+1];
+	    
+	} elsif ($ARGV[$a] eq "-approx") {
+	    $boe = 1;
+	    $approx = 1;
+	}
+    }
+}
+
+sub PrintOptions {
+  open HELP, "| more";
+  print HELP <<End_short_help;
+hypergeometric options
+----------------
+-n #m		total number of balls in the urn
+-m #m		number of black balls in the urn
+-k #k		number of balls in the sample
+-x #x		number of black balls in the sample
+-v		verbose
+-boe		bigger or equal. 
+-soe		smaller or equal. 
+-approx		only valid in combination with -boe
+-from # -to #	sum of hypergeometric between two values (inclusive)   
+End_short_help
+    close HELP;
+  exit;
+}
+
+sub PrintHelp {
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	hypergeometric
+	
+	v1.0 by Jacques van Helden, 2002
+	
+DESCRIPTION
+
+	Given an urn with m black balls and n-m white balls, calculate
+	the probability to observe x black balls in a random sample of
+	k balls (without replacement).
+
+CATEGORY
+	statistics
+
+USAGE
+	hypergeometric  -m black_balls -n total_balls 
+		-k sample_size -x black_in_sample [-v] [-boe]
+
+FORMULA 
+
+
+        With the option -boe, calculates the probability to observe at
+  	least s successes.
+
+OPTIONS
+	-x #x	number of successes
+	-m #m	number of black balls in the urn
+	-n #m	total number of balls in the urn
+	-k #k	size of the sample
+	-v	verbose
+	-boe	bigger or equal. 
+		Calculate the probability of >= -s successes.
+	-soe	smaller or equal. 
+		Calculate the probability of <= -s successes.
+	-from # -to #
+		calculates the sum of hypergeometrics between two values 
+		(inclusive).
+	
+End_of_help
+    close HELP;
+  exit;
+}
