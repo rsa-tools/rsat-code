@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: RSA.classes,v 1.8 2004/04/02 22:05:02 jvanheld Exp $
+# $Id: RSA.classes,v 1.9 2004/06/10 05:09:00 jvanheld Exp $
 #
 # Time-stamp: <2003-10-02 17:58:27 jvanheld>
 #
@@ -379,14 +379,17 @@ package RSA::SequenceOnDisk;
 	unless (-e $filename);
       die "Error: cannot read file $filename\n"
 	unless (-r $filename);
+
       ### open a stream to the file
-      open FILE, $filename ||
-	die "Error: cannot open file ", $filename, "\n";
-      #    no strict;
-      my $filehandle = FILE;
-      $object->set_attribute("filehandle", $filehandle);
-      
-      return $filehandle;
+## TO DEBUG: this does not work !
+
+#      open FILE, $filename ||
+#	die "Error: cannot open file ", $filename, "\n";
+#      #    no strict;
+#      my $filehandle = FILE;
+#      $object->set_attribute("filehandle", $filehandle);      
+#      return $filehandle;
+
     } else { 
       &FatalError("A file name has to be specified");
     }
@@ -394,10 +397,11 @@ package RSA::SequenceOnDisk;
 
   sub DESTROY {
     my ($object) = @_;
-    my $filehandle =  $object->get_attribute("filehandle");
-    my $filename =  $object->get_attribute("filename");
-    close $filehandle ||
-	die "Error: cannot close file $filename\n";;
+### TO DEBUG: THIS DOES NOT WORK !
+#    my $filehandle =  $object->get_attribute("filehandle");
+#    my $filename =  $object->get_attribute("filename");
+#    close $filehandle ||
+#	die "Error: cannot close file $filename\n";;
   }
 
   sub get_length() {
@@ -500,18 +504,30 @@ package RSA::SequenceOnDisk;
       my $offset = $from -1;
       
       ### open a stream to the file
-      my $filename = $object->get_attribute("filename");
-      open FH, $filename ||
-	  die "Error: cannot open file ", $filename, "\n";
-      my $filehandle = FH;
+### TO DEBUG: there is a problem with file hndles: I cannot attach a file handle to the object, I don't understand why
+
+#      $filehandle =  $object->get_attribute("filehandle");
+#      unless ($filehandle) {
+	  warn "Opening file handle\n" if ($main::verbose >= 5);
+	  my $filename = $object->get_attribute("filename");
+	  open FH, $filename ||
+	      die "Error: cannot open file ", $filename, "\n";
+	  $filehandle = FH;
+#	  $object->set_attribute("filehandle", FH);
+#	  $object->set_attribute("filehandle", $filehandle);
+#      }
       
-      sysseek($filehandle, $offset, 0) &&
-	  sysread($filehandle, $sequence, $len);
-      close $filehandle;
+#      sysseek($filehandle, $offset, 0) &&
+#	  sysread($filehandle, $sequence, $len);
+#      close $filehandle;
+
+      sysseek(FH, $offset, 0) &&
+	  sysread(FH, $sequence, $len);
+      close FH;
 
       warn (join "\t",
 	    "; get_sequence",
-	    $filehandle,
+	    FH,
 	    $from,
 	    $to,
 	    $len,
