@@ -1,6 +1,6 @@
 #!/usr/bin/perl 
 #############################################################
-# $Id: parse-genbank.pl,v 1.19 2004/04/02 00:26:15 jvanheld Exp $
+# $Id: parse-genbank.pl,v 1.20 2004/05/04 15:01:52 rekins Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -119,7 +119,7 @@ package main;
     
     #### organism name
     unless ($org) {
-	$org = `basename $dir{input}`;
+	$org = `basename "$dir{input}"`;
 	chomp($org);
 	warn "; Auto selection of organism name\t$org\n" if ($verbose >= 1);
     }
