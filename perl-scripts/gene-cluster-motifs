@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.56 2004/01/29 15:28:06 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.57 2004/01/30 10:21:52 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -24,7 +24,7 @@ require "$RSA/perl-scripts/lib/RSA.classes";
 ################################################################
 ## initialisations	    
 $skip=0;
-$sliding_window_size = 3;
+$sliding_window_size = 1;
 $die_on_error = 1;
 $analyze_purged_sequences = 1;
 $repetitions=10000; ### Repetitions for the calibN
@@ -170,25 +170,25 @@ sub SetFileNames {
     $sp = "$min_sp-$max_sp";
     $dyad_options = "-v ";
     $dyad_options .= " -sort ";
-    $dyad_options .= " ${strands} ";
-    $dyad_options .= " -type $dyad_type ";
-    $dyad_options .= " ${noov}" ;
-    $dyad_options .= " -l $monad_length ";
-    $dyad_options .= " -thosig $th ";
-    $dyad_options .= " -sp $sp ";
+    $dyad_options .= " ".$strands;
+    $dyad_options .= " -type ".$dyad_type;
+    $dyad_options .= " ".$noov;
+    $dyad_options .= " -l ".$monad_length;
+    $dyad_options .= " -thosig $thosig ";
+    $dyad_options .= " -sp ".$sp;
     
     $dyad_suffix = "_dyads";
     if ($markov) {
 	$dyad_suffix .= "_monad"; ### TEMP
     } elsif ($background) {
-	$dyad_suffix .= "_bg_${background}"; ### TEMP
+	$dyad_suffix .= "_bg_".$background; ### TEMP
     }
-    $dyad_suffix .= "_l${monad_length}";
-    $dyad_suffix .= "_sp${sp}";
-    $dyad_suffix .= "$strands";
-    $dyad_suffix .= "_${dyad_type}";
-    $dyad_suffix .= "_sig${th}";
-    $dyad_suffix .= "${noov}";
+    $dyad_suffix .= "_l".$monad_length;
+    $dyad_suffix .= "_sp".$sp;
+    $dyad_suffix .= $strands;
+    $dyad_suffix .= "_".$dyad_type;
+    $dyad_suffix .= $noov;
+    $dyad_suffix .= "_sig".$thosig;
 
     #### expected frequency model
     if ($markov) {
@@ -210,13 +210,14 @@ sub SetFileNames {
     $noorf_string = "_noorf" if ($noorf);
     $oligo_suffix = "_oligos";
     if ($markov) {
-	$oligo_suffix .= "_mkv${markov_order}";
+	$oligo_suffix .= "_mkv".$markov_order;
     } elsif ($background) {
-	$oligo_suffix .= "_bg_${background}";
+	$oligo_suffix .= "_bg_".$background;
     }
-    $oligo_suffix .= "_${min_oligo_len}-${max_oligo_len}nt";
+    $oligo_suffix .= "_".$min_oligo_len."-".$max_oligo_len."nt";
     $oligo_suffix .= "$strands";
-    $oligo_suffix .= "_sig${th}${noov_string}";
+    $oligo_suffix .= "_sig".$thosig;
+    $oligo_suffix .= $noov;
 
     foreach my $family_name (@families) {
 	$family{$family_name}->{family_file} = "$family_name/${family_name}.fam";
@@ -234,7 +235,7 @@ sub SetFileNames {
 	    $family{$family_name}->{input_seq_file} = $family{$family_name}->{seq_file};
 	}
 	$family{$family_name}->{seq_len_file} = $family_name."/".$family{$family_name}->{file_prefix}."_seq_len.tab";
-#      $family{$family_name}->{oligo_file} =  "${family_name}/oligos_${family_name}/".$family{$family_name}->{file_prefix}."_oligos_${min_oligo_len}-${max_oligo_len}nt$strands_sig${th}${noov_string}";
+#      $family{$family_name}->{oligo_file} =  "${family_name}/oligos_${family_name}/".$family{$family_name}->{file_prefix}."_oligos_${min_oligo_len}-${max_oligo_len}nt$strands_sig${thosig}${noov}";
 	$family{$family_name}->{oligo_file} =  "${family_name}/oligos_${family_name}/".$family{$family_name}->{file_prefix}.$oligo_suffix; ## TEMP
 	$family{$family_name}->{oligo_assembly_file} = $family{$family_name}->{oligo_file}."_contigs";
 	$family{$family_name}->{oligo_ft_prefix} = $family{$family_name}->{oligo_file};
@@ -282,6 +283,7 @@ sub SetFileNames {
     $table_suffix .= "_".$max_oligo_len."nt";
     $table_suffix .= $noov;
     $table_suffix .= $strands;
+    $table_suffix .= "_sig".$thosig;
     $table_suffix = `basename $table_suffix`;
     chomp $table_suffix;
 }
@@ -326,7 +328,7 @@ sub CalcOligoOptions {
     $oligo_options .= " -sort ";
     $oligo_options .= " ".$strands;
     $oligo_options .= " -l ".$oligo_len;
-    $oligo_options .= " -thosig ".$th;
+    $oligo_options .= " -thosig ".$thosig;
     
     if ($markov) {
 	### Markov chain model
@@ -362,7 +364,14 @@ sub CalcOligoOptions {
 	    if ((-e $calib_file) || (-e $calib_file.".gz")) {
 		&Warning("Using calibration with 1000 repetitions\t".$calib_file);
 	    } else {
-		&FatalError ("Calibration file not found\t".$calib_file);
+		### temporary: if there is no R1000 file, try R100
+		$calib_file =~ s/1000/100/g;
+		if ((-e $calib_file) || (-e $calib_file.".gz")) {
+		    &Warning("Using calibration with 1000 repetitions\t".$calib_file);
+		    
+		} else {
+		    &FatalError ("Calibration file not found\t".$calib_file);
+		}
 	    }
 	}
 	
@@ -381,7 +390,7 @@ sub CalcOligoOptions {
     $oligo_suffix = "_oligos";
     $oligo_suffix .= "_${oligo_len}nt";
     $oligo_suffix .= $strands;
-    $oligo_suffix .= "_sig${th}";
+    $oligo_suffix .= "_sig${thosig}";
     $oligo_suffix .= $noov;
     
     $oligo_file = "$family_name/oligos_${family_name}/".$family{$family_name}->{file_prefix}.$oligo_suffix;    
@@ -1089,11 +1098,11 @@ sub CheckParameters {
 	$exp = $force{exp}; ### force
     }
     if (&IsReal($force{th})) {
-	$th = $force{th}; ### force
+	$thosig = $force{th}; ### force
     } elsif ($#families > 0) {
-	$th = &round(10*abs(log($#families + 1)/log(10)))/10;
+	$thosig = &round(10*abs(log($#families + 1)/log(10)))/10;
     } else {
-	$th = 0;
+	$thosig = 0;
     } 
 }
 
@@ -1264,6 +1273,7 @@ OPTIONS
 		Directory containing the calibration files. The
 		calibration file name is then calculated automatically
 		from the conditions (seq lengths, seq number, ...)
+	-thosig threshold on occurrence significance
 
     oligo-analysis options
 	-maxol	maximum oligonucleotide length
@@ -1429,6 +1439,7 @@ multiple-family-analysis options
 -nomap		do not draw feature maps (for saving time and hard disk space)
 -bg		background frequency modelEnd_short_help
 -calib_dir	calibration directory
+-thosig         threshold on occurrence significance
 -markov #	exp. freq. calcualted with Markov chain model of order #
 -known		file containing a list of known sites/motifs
 -schema		database schema (default: $schema)
@@ -1553,7 +1564,7 @@ sub ReadArguments {
 	    $noorf = 1;
 
 	    #### threshold
-	} elsif ($ARGV[$a] =~ /^-th/) {
+	} elsif ($ARGV[$a] =~ /^-thosig/) {
 	    $force{th} = $ARGV[$a+1];
 
 	    #### dyad type
@@ -1674,7 +1685,7 @@ sub Verbose {
 	$verbose_message .= sprintf ";\t%-22s\t%d\n", "min spacing", $min_sp;
 	$verbose_message .= sprintf ";\t%-22s\t%d\n", "max spacing", $max_sp;
 	$verbose_message .= sprintf ";\t%-22s\t%s\n", "dyad type", $dyad_type;
-	$verbose_message .= sprintf ";\t%-22s\t%g\n", "sig threshold", $th;
+	$verbose_message .= sprintf ";\t%-22s\t%g\n", "sig threshold", $thosig;
     }
 
     if ($markov) {
