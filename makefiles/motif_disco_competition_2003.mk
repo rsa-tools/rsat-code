@@ -616,22 +616,27 @@ discard_oldies:
 	rsync -ruptvl results/Mycoplasma_genitalium old_results/
 	rm -rf results/Mycoplasma_genitalium
 
-mv_seq_lengths:
+mv_seq_lengths: mv_seq_lengths_mouse mv_seq_lengths_human mv_seq_lengths_fly mv_seq_lengths_yeast
+
+mv_seq_lengths_mouse:
 	mkdir -p results/Mus_musculus/sequence_lengths
-	mv results/Mus_musculus/mus*/*_lengths.txt results/Mus_musculus/sequence_lengths
-	rmdir results/Mus_musculus/mus*
+	rsync -ruptvl results/Mus_musculus/mus*/*_lengths.txt results/Mus_musculus/sequence_lengths/
+	rm -rf results/Mus_musculus/mus*
 
+mv_seq_lengths_yeast:
 	mkdir -p results/Saccharomyces_cerevisiae/sequence_lengths
-	mv results/Saccharomyces_cerevisiae/yst*/*_lengths.txt results/Saccharomyces_cerevisiae/sequence_lengths
-	rmdir results/Saccharomyces_cerevisiae/yst*
+	rsync -ruptv results/Saccharomyces_cerevisiae/yst*/*_lengths.txt results/Saccharomyces_cerevisiae/sequence_lengths/
+	rm -rf results/Saccharomyces_cerevisiae/yst*
 
+mv_seq_lengths_human:
 	mkdir -p results/Homo_sapiens/sequence_lengths
-	mv results/Homo_sapiens/hm*/*_lengths.txt results/Homo_sapiens/sequence_lengths
-	rmdir results/Homo_sapiens/hm*
+	rsync -ruptv results/Homo_sapiens/hm*/*_lengths.txt results/Homo_sapiens/sequence_lengths/
+	rm -rf results/Homo_sapiens/hm*
 
+mv_seq_lengths_fly:
 	mkdir -p results/Drosophila_melanogaster/sequence_lengths
-	mv results/Drosophila_melanogaster/dm*/*_lengths.txt results/Drosophila_melanogaster/sequence_lengths
-	rmdir results/Drosophila_melanogaster/dm*
+	rsync -ruptv results/Drosophila_melanogaster/dm*/*_lengths.txt results/Drosophila_melanogaster/sequence_lengths/
+	rm -rf results/Drosophila_melanogaster/dm*
 
 mv_background_dirs:
 	${MAKE} iterate_organisms ORG_TASK=mv_background_dir_one_org
