@@ -1,3 +1,6 @@
+################################################################
+### DATABASE MANAGEMENT
+
 package PFBP::DatabaseManagement;
 {
   ### convert a query into a key for PFBP indexes
