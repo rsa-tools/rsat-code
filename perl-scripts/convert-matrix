@@ -1,0 +1,370 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: convert-matrix,v 1.1 2004/02/28 17:05:44 jvanheld Exp $
+#
+# Time-stamp: <2002-06-06 13:14:17 jvanheld>
+#
+############################################################
+#use strict;;
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+    require "RSA.lib";
+    require "RSA.classes";
+}
+use RSAT::matrix;
+
+#### initialise parameters ####
+my $start_time = &AlphaDate();
+$decimals = 4;
+$pseudo_weight = 1;
+
+local %infile = ();
+local %outfile = ();
+#local $infile{input} = "";
+#local $outfile{output} = "";
+local $input_format = "";
+local $verbose = 0;
+local $out = STDOUT;
+
+## Return formats
+@return_formats = ();
+%supported_return_format = (
+			   "alignment"=>1,
+			   "frequencies"=>1,
+			   "weights"=>1,
+			   "information"=>1,
+			   "parameters"=>1,
+			   "consensus"=>1
+			   );
+$supported_return_formats = join ",", sort keys %supported_return_format;
+
+## input formats
+%supported_input_format = ('consensus'=>1,
+			   'gibbs'=> 1);
+$supported_input_formats = join ",", sort keys %supported_input_format;
+
+&ReadArguments();
+
+################################################################
+#### check argument values ####
+
+
+## Input format
+unless ($input_format) {
+    &FatalError("You should specify the input matrix format.");
+}
+
+## return formats
+local %return_formats = ();
+foreach my $format (@return_formats) {
+    if ($supported_return_format{$format}) {
+	$return{$format}++;
+    } else {
+	&FatalError("Invalid return format $format. Supported: ".$supported_return_formats);
+    }
+}
+
+## Default return format
+
+
+################################################################
+#### Perform the conversion
+
+
+### open output file ###
+$out = &OpenOutputFile($outfile{output});
+
+#### verbose ####
+my @residues = ();
+my @matrix = ();
+my $current_matrix = new RSAT::matrix();
+$current_matrix->readFromFile($infile{input}, $input_format);
+$current_matrix->set_attribute("pseudo", $pseudo_weight);
+$current_matrix->push_attribute("parameters", "pseudo");
+
+##### print output ######
+&Verbose if ($verbose);
+
+## Print the alignment matrix
+if ($return{alignment}) {
+    print  $current_matrix->toString(sep=>"\t");
+}
+
+## Calculate frequency matrix
+if ($return{frequencies}) {
+    $current_matrix->calcFrequencies();
+    print $out $current_matrix->toString(col_width=>($decimals+4), 
+					 decimals=>$decimals, 
+					 type=>"frequencies");
+}
+
+## Calculate weight matrix
+if ($return{weights}) {
+    $current_matrix->calcWeights();
+    print $out $current_matrix->toString(col_width=>($decimals+4), 
+					 decimals=>$decimals, 
+					 type=>"weights");
+}
+
+## Calculate information content matrix
+if ($return{information}) {
+    $current_matrix->calcInformation();
+    print $out $current_matrix->toString(col_width=>($decimals+4), 
+					 decimals=>$decimals, 
+					 type=>"information");
+}
+
+
+## Calculate consensus
+if ($return{consensus}) {
+    $current_matrix->calcConsensus();
+    print $out "; consensus\t", $current_matrix->get_attribute("consensus"), "\n";
+}
+
+## Return parameters
+if ($return{parameters}) {
+    $current_matrix->calcConsensus();
+    print $out $current_matrix->toString(type=>"parameters");
+}
+
+##### closing verbose
+if ($verbose) {
+  my $done_time = &AlphaDate;
+  print $out "; Job started $start_time\n";
+  print $out "; Job done    $done_time\n";
+}
+
+
+##### close output file
+close $out if ($outfile{output});
+
+
+exit(0);
+
+################################################################
+#################### subroutine definition #####################
+################################################################
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	convert-matrix
+
+        1999 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
+	
+USAGE
+        convert-matrix [-i inputfile] [-o outputfile] [-v]
+
+DESCRIPTION
+
+	Read a position-specific scoring matrix (PSSM) from different
+	formats, and exports it in a format that can be used by the
+	matrix matching program patser (Hertz et al, 1999).
+	
+CATEGORY
+	util
+	conversion
+	sequences
+
+OPTIONS
+	-h	display full help message
+	-help	display options
+	-v	verbose
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+	-format	input matrix format
+		Suppported: $supported_input_formats
+	-return	return formats
+		Suppported: $supported_return_formats
+	-pseudo	
+		pseudo-weight used for the calculation of the weight
+		matrix (default: $pseudo_weight)
+	-decimals
+		number of decimals to print for real matrices
+		(frequencies, weights, information)
+
+OUTPUT FORMATS
+    alignment
+        Each cell of the matrix indicates the number of occurrences of the
+        residue at a given position of the alignment.
+
+    crude frequencies
+        Relative frequencies are calculated as the counts of residues
+        divided by the total count of the column.
+
+        Fij=Cij/SUMi(Cij)
+
+        where
+
+        Cij is the absolute frequency (counts) of residue i at position j of
+            the alignment
+
+        Fij is the relative frequency of residue i at position j of the
+            alignment
+
+    frequencies corrected with pseudo-weights
+        Relative frequencies can be corrected by a pseudo-weight (b) to
+        reduce the bias due to the small number of observations.
+
+        F'ij=Cij+b*Pi/[SUMi(Cij)+b]
+
+        where
+
+        Pi  is the prior frequency for residue i
+
+        b   is the pseudo-weight, which is "shared" between residues
+            according to their prior frequencies.
+
+    weights
+        Weights are calculated according to the formula from Hertz (1999),
+        as the natural logarithm of the ratio between the relative frequency
+        (corrected for pseudo-weights) and the prior residue probability.
+
+        Wij=ln(F'ij/Pi)
+
+    information
+        The crude information content is calculated according to the formula
+        from Hertz (1999).
+
+        Iij = Fij*ln(Fij/Pi)
+
+        In addition, we calculate a "corrected" information content which
+        takes pseudo-weights into account.
+
+        I'ij = F'ij*ln(F'ij/Pi)
+
+    parameters
+        Returns a series of parameters associated to the matrix. The list of
+        parameters to be exported depends on the input formats (each pattern
+        discovery program returns specific parameters, which are more or
+        less related to each others but not identical).
+
+        Some additional parameters are optionally calculated
+
+        consensus
+            The degenerate consensus is calculated by collecting, at each
+            position, the list of residues with a positive weight.
+            Contrarily to most applications, this consensus is thus weighted
+            by prior residue frequencies: a residue with a high frequency
+            might not be represented in the consensus if this frequency does
+            not significantly exceed the expected frequency.
+
+        information
+            The total information is calculated by summing the information
+            content of all the cells of the matrix. This parameters is
+            already returned by the program consensus (Hertz), but not by
+            other programs.
+
+End_of_help
+  close HELP;
+  exit(0);
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+  open HELP, "| more";
+  print HELP <<End_short_help;
+convert-matrix options
+----------------
+-h		(must be first argument) display full help message
+-help		(must be first argument) display options
+-i		input file
+-o		output file
+-v		verbose
+-format		input matrix format. Suppported: $supported_input_formats
+-return		return formats. Suppported: $supported_return_formats
+-pseudo		pseudo-weight (default: $pseudo_weight)
+-decimals	number of decimals digits to print for real matrices
+End_short_help
+  close HELP;
+  exit(0);
+}
+
+
+################################################################
+## Read arguments
+sub ReadArguments {
+  foreach my $a (0..$#ARGV) {
+    ### verbose ###
+    if ($ARGV[$a] eq "-v") {
+      if (&IsNatural($ARGV[$a+1])) {
+	$verbose = $ARGV[$a+1];
+      } else {
+	$verbose = 1;
+      }
+      
+      ### detailed help
+    } elsif ($ARGV[$a] eq "-h") {
+      &PrintHelp();
+      
+      ### list of options
+    } elsif ($ARGV[$a] eq "-help") {
+      &PrintOptions();
+      
+      ### input file 
+    } elsif ($ARGV[$a] eq "-i") {
+      $infile{input} = $ARGV[$a+1];
+      
+      ### output file 
+    } elsif ($ARGV[$a] eq "-o") {
+      $outfile{output} = $ARGV[$a+1];
+      
+      ### return formats
+    } elsif ($ARGV[$a] eq "-return") {
+      my $return_formats = $ARGV[$a+1];
+      push @return_formats, split(",", $return_formats);
+
+      ### input format 
+    } elsif ($ARGV[$a] eq "-format") {
+      $input_format = $ARGV[$a+1];
+      unless ($supported_input_format{$input_format}) {
+	  &FatalError("$input_format\tInvalid format for input matrix\tSupported: $supported_input_formats");
+      }
+
+      ### pseudo-weight
+    } elsif ($ARGV[$a] eq "-pseudo") {
+      $pseudo_weight = $ARGV[$a+1];
+      unless (&IsReal($pseudo_weight)) {
+	  &FatalError("Invalid pseudo-weight $pseudo_weight. Must be a real value");
+      }
+
+      ### decimals
+    } elsif ($ARGV[$a] eq "-decimals") {
+      $decimals = $ARGV[$a+1];
+      unless (&IsNatural($decimals)) {
+	  &FatalError("Invalid decimals $decimals. Must be a natural value");
+      }
+
+    }
+  }
+}
+
+################################################################
+## Print verbosity
+sub Verbose {
+  print $out "; convert-matrix ";
+  &PrintArguments($out);
+  if (defined(%infile)) {
+    print $out "; Input files\n";
+    while (($key,$value) = each %infile) {
+      print $out ";\t$key\t$value\n";
+    }
+  }
+  if (defined(%outfile)) {
+    print $out "; Output files\n";
+    while (($key,$value) = each %outfile) {
+      print $out ";\t$key\t$value\n";
+    }
+  }
+}

@@ -1,4 +1,5 @@
 ################################################################
+## Prepare a release version of rsa-tools
 ## distribution.mk makefile
 ## Usage: make -f distribution.mk
 

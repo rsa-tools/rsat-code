@@ -5,8 +5,9 @@ include ${RSAT}/makefiles/util.mk
 
 WHEN=now
 MAKEFILE=${RSAT}/makefiles/regulon_analysis.mk
-
+V=1
 WORK_DIR=`pwd`
+
 ################################################################
 ## queue tasks on merlin
 QUEUE_TASKS = oligos oligo_maps gibbs consensus MotifSampler dyads dyad_maps
@@ -16,22 +17,22 @@ queue_all:
 #	done
 	for task in ${QUEUE_TASKS}; do							\
 		for family in ${REGULONS} ${RAND_FAM}; do				\
-			${MAKE} multi MULTI_TASK=$${task} FAM=${WORK_DIR}/$${family} WHEN=queue;	\
+			${MAKE} multi MULTI_TASK=$${task} FAM=$${family} WHEN=queue;	\
 		done;									\
 	done
 
 after_queue:
 	for family in ${REGULONS} ${RAND_FAM}; do					\
-		${MAKE} multi MULTI_TASK=clean,synthesis,sql FAM=${WORK_DIR}/$${family} WHEN=now;	\
+		${MAKE} multi MULTI_TASK=clean,synthesis,sql FAM=$${family} WHEN=now;	\
 	done
 
 
 ################################################################
 ## Generate random gene selections
-REGULONS=regulons_TF_aMAZE.fam
-RAND_FAM=random_selection.fam
-REGULONS_FILE=data/${REGULONS}
-RAND_FAM_FILE=data/${RAND_FAM}
+REGULONS=regulons_TF_aMAZE
+RAND_FAM=random_selection
+REGULONS_FILE=data/${REGULONS}.fam
+RAND_FAM_FILE=data/${RAND_FAM}.fam
 rand_fam:
 	random-genes -fam ${REGULONS_FILE} -o ${RAND_FAM_FILE}	\
 		 -features data/Feature_nomito.tab -org ${ORG}
@@ -40,9 +41,9 @@ rand_fam:
 #### Parameters for pattern discovery (oligo-analysis and
 #### dyad-analysis)
 FAM=${REGULONS}
-FAM_FILE=data/${FAMS}
+FAM_FILE=${WORK_DIR}/data/${FAM}.fam
 
-MULTI_INPUT=-i ${FAM}
+MULTI_INPUT=-i ${FAM_FILE}
 ORG=Saccharomyces_cerevisiae
 STR=-2str
 THOSIG=0
@@ -51,7 +52,7 @@ MULTI_TASK=upstream,purge,oligos,merge_oligos,oligo_maps,dyads,dyad_maps,consens
 MULTI_BG=upstream
 MULTI_EXP=-bg ${MULTI_BG}
 PURGE=-purge
-RES_DIR=`pwd`/results
+RES_DIR=${WORK_DIR}/results
 ORG_DIR=${RES_DIR}/${ORG}
 MULTI_DIR=${ORG_DIR}/${FAM}/multi/${MULTI_BG}_bg${PURGE}
 MIN_OL=6
@@ -77,6 +78,12 @@ MULTI_CMD=multiple-family-analysis -v ${V}					\
 		-sort ${SORT} -task ${MULTI_TASK}				\
 		${NOOV} ${MULTI_OPT}						\
 		${SKIP}							
+
+list_directories:
+	@echo working	${WORK_DIR}
+	@echo results	${RES_DIR}
+	@echo organism	${ORG_DIR}
+	@echo multi	${MULTI_DIR}
 
 ## call multiple-family-analysis
 multi:
@@ -192,4 +199,34 @@ compare_one_criterion:
 		-title2 'Comparison between annotated regulons and random gene selections'	\
 		-xleg1 "random selections"							\
 		 -legend -lines -xsize 800 -ysize 400
+
+
+CATALOG=GO
+CATALOG_DIR=${RSAT}/public_html/data/genomes/${ORG}/catalogs/
+CATALOG_FILE=${CATALOG_DIR}/${CATALOG}.tab
+COMPA_DIR=${ORG_DIR}/catalog_comparison
+COMPA_FILE=${COMPA_DIR}/${FAM}_vs_${CATALOG}
+COMPARE_CMD=compare-classes -v ${V} -q ${FAM_FILE}	\
+		-r ${CATALOG_FILE}			\
+		-lth occ 2 -lth sig 0			\
+		-sort sig				\
+		-return occ,percent,proba,members	\
+		-o ${COMPA_FILE}.tab			\
+		-dot ${COMPA_FILE}.dot 
+
+compare_one_catalog:
+	@mkdir -p ${COMPA_DIR}
+	@echo ${COMPARE_CMD}
+	@${COMPARE_CMD}
+	text-to-html -i ${COMPA_FILE}.tab -o ${COMPA_FILE}.html -font variable
+
+self_compare:
+	${MAKE} compare_one_catalog CATALOG=${FAM} CATALOG_FILE=${FAM_FILE}
+
+CATALOGS=cellzome_complexes TF_targets MIPS GO ms_complexes 
+compare_catalogs:
+	@${MAKE} self_compare
+	@for cat in ${CATALOGS}; do				\
+		${MAKE} compare_one_catalog CATALOG=$${cat} ;	\
+	done
 
