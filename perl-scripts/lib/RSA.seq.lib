@@ -1249,10 +1249,19 @@ sub ReadPatterns {
 	    } else {
 		$pattern_score = 1; #### default score
 	    }
+	    #### expand pattern sequence
+	    if ($args{expand}) {
+		$pattern_seq = &ExpandSeq($pattern_seq);
+	    }
 	    push @patterns, new RSA::pattern(id => $pattern_id,
 					     sequence => $pattern_seq,
 					     score => $pattern_score,
 					     description => $line);
+	    warn join ("\t", 
+			"; read pattern", 
+			$pattern_id, 
+		       $pattern_seq, 
+		       $pattern_score), "\n" if ($verbose >=3);
 	}
 	close $pattern_stream;
 	
