@@ -19,6 +19,8 @@ $default{matrix} = "";
 $default{sequence} = "";
 $default{sequence_format} = "fasta";
 $default{sequence_file} = "";
+$default{alphabet} = "a:t 0.3 c:g 0.2";
+$default{pseudo_counts} = 1;
 $default{strands} = "both";
 $default{return} = "all matching positions";
 $default{lthreshold} = "0";
@@ -92,14 +94,18 @@ print $query->popup_menu(-name=>'return',
 				   'all matching positions'],
 			 -default=>$default{return});
 
-### thresholds
+### pseudo-counts and thresholds
 print "<BR>\n";
 print CGI::table({-border=>0,-cellpadding=>3,-cellspacing=>0},
 	       CGI::Tr({-align=>left,-valign=>MIDDLE},
 		       [
 		      CGI::td({-align=>left,-valign=>MIDDLE},
 			      [
-			       "<b>Thresholds</b>",
+			       "<B><A HREF='help.patser.html#pseudo_counts'>Pseudo-counts</A>\n",
+			       $query->textfield(-name=>'pseudo_counts',
+						       -default=>$default{pseudo_counts},
+						       -size=>2),
+			       "&nbsp;&nbsp;<b>Thresholds</b>",
 			       "<A HREF='help.patser.html#lthreshold'><B> lower</B></A>",
 			       $query->textfield(-name=>'lthreshold',
 						 -default=>$default{lthreshold},
@@ -108,13 +114,18 @@ print CGI::table({-border=>0,-cellpadding=>3,-cellspacing=>0},
 			       $query->textfield(-name=>'uthreshold',
 						 -default=>$default{uthreshold},
 						 -size=>2)
-			       
 			       ]),
 			])
 		 );
+
+### alphabet
+print "<B><A HREF='help.patser.html#alphabet'>\n";
+print "Alphabet</A>\n";
+print $query->textfield(-name=>'alphabet',
+			-default=>$default{alphabet},
+			-size=>50);
+
 print "<BR>\n";
-
-
 
 ### send results by e-mail or display on the browser
 &SelectOutput;
@@ -214,6 +225,7 @@ print "<TD><B>";
 print $query->hidden(-name=>'matrix',-default=>$demo_matrix);
 print $query->hidden(-name=>'sequence',-default=>$demo_sequence);
 print $query->hidden(-name=>'sequence_format',-default=>$default{sequence_format});
+print $query->hidden(-name=>'alphabet',-default=>"a:t 0.325 c:g 0.175");
 print $query->hidden(-name=>'set_name',-default=>'upstream sequences from the yeast PHO genes');
 print $query->submit(-label=>"DEMO");
 print "</B></TD>\n";
