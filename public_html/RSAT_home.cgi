@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.3 2005/01/26 11:50:33 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.4 2005/03/13 15:59:39 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -29,6 +29,24 @@ print <<EndText;
   
   <TABLE CELLPADDING=10 ALIGN=CENTER>
   <TR>
+
+  
+  <TD VALIGN=TOP WIDTH="160">
+  <CENTER>
+  <IMG SRC="images/ULB_Blue_215.gif" ALT="ULB_Blue_215.gif" BORDER=0 HEIGHT=75 WIDTH=75>
+  <BR>
+  <FONT COLOR="#0000dd" SIZE=-2>
+  <A HREF="http://www.scmbb.ulb.ac.be" TARGET=_blank>SCMBB</a> - <A HREF="http://www.ulb.ac.be" TARGET=_blank>ULB</a>
+  </FONT>
+  </CENTER>
+  </TD>
+
+  <TD ALIGN=CENTER VALIGN=CENTER>
+  <FONT FACE="Helvetica,Arial" SIZE=+1><B>
+  Regulatory Sequence Analysis Tools</B></FONT>
+  </TD>
+  
+  
   <TD VALIGN=TOP WIDTH="160">
   <CENTER>
   <A HREF="http://www.ccg.unam.mx/Computational_Genomics/"
@@ -41,24 +59,6 @@ print <<EndText;
   </CENTER>
   </TD>
   
-  <TD ALIGN=CENTER VALIGN=CENTER>
-  <FONT FACE="Helvetica,Arial" SIZE=+1><B>
-  Regulatory Sequence Analysis Tools</B></FONT>
-  </TD>
-  
-  
-  
-  <TD VALIGN=TOP WIDTH="160">
-  <CENTER>
-  <A HREF="http://www.scmbb.ulb.ac.be" TARGET=_blank>
-  <IMG SRC="images/ULB_Blue_215.gif" ALT="ULB_Blue_215.gif" BORDER=0 HEIGHT=75 WIDTH=75>
-  <BR>
-  <FONT COLOR="#0000dd" SIZE=-2>
-  SCMB-ULB
-  </FONT>
-  </A>
-  </CENTER>
-  </TD>
   </TR>
   </TABLE>
   
@@ -68,6 +68,9 @@ print <<EndText;
   <TR>
   <TD><FONT FACE="Helvetica" SIZE=-1><A HREF="intro.html"><B>
   Introduction</B></A></FONT></TD>
+  
+  <TD><FONT FACE="Helvetica" SIZE=-1><A HREF="FAQ.html"><B>
+  FAQ</B></A></FONT></TD>
   
   <TD><FONT FACE="Helvetica" SIZE=-1><A HREF="tutorials/tutorials.html"><B>
   Tutorials</B></A></FONT></TD>
