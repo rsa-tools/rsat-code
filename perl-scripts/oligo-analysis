@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.8 2001/01/24 23:01:04 jvanheld Exp $
+# $Id: oligo-analysis,v 1.9 2001/01/26 22:54:58 jvanheld Exp $
 #
-# Time-stamp: <2001-01-25 00:00:26 jvanheld>
+# Time-stamp: <2001-01-26 22:32:01 jvanheld>
 #
 ############################################################
 
@@ -23,7 +23,7 @@ $group_rc = 1;
 $proba_occ_threshold = 1;
 $proba_mseq_threshold = 1;
 
-$markov_order = -1;
+$markov_order = -2;
 $sequence_number = 0;
 $nb_possible_pos = 0;
 $nb_possible_oligo = 0;
@@ -35,8 +35,6 @@ $residue_proba{'a'} = 0.25;
 $residue_proba{'c'} = 0.25;
 $residue_proba{'g'} = 0.25;
 $residue_proba{'t'} = 0.25;
-
-
 
 #### read arguments ####
 &ReadArguments();
@@ -60,13 +58,17 @@ if ($noov) {
 }
 
 ### markov_order
-if (($markov) && ($markov_order < 0)){
-  $markov_order = $oligo_length + $markov_order;
-}
-if (($markov) && ($markov_order < 0)) {
-  die "Error: invalid markov order $markov_order\n";
-} elsif ($markov_order > $oligo_length -2) {
-  die "Error: Markov order ($markov_order) cannot be higher than word length - 2 ($oligo_length -2)\n"; 
+if ($markov) {
+    if ($markov_order < 0){
+	$markov_order = $oligo_length + $markov_order;
+	$markov_order = 0 
+	    if ($oligo_length == 1);
+	die "Error: invalid markov order $markov_order\n"
+	    if ($markov_order < 0);
+    }
+    if ($markov_order > $oligo_length -2) {
+	die "Error: Markov order ($markov_order) cannot be higher than word length - 2 ($oligo_length -2)\n"; 
+    }
 }
 
 
@@ -138,7 +140,7 @@ $out = &OpenOutputFile($outputfile);
 &CountOligo;
 
 &CalcSubWordFrequencies if ($markov);
-&CalcAplhabet if (($input_alphabet) || ($return{'zscore'}));
+&CalcAlphabet if (($input_alphabet) || ($return{'zscore'}));
 &Degenerate if ($one_var_position);
 &SumStrands if ($sum_strands);
 #&SubstractOverlap if ($noov);
@@ -214,12 +216,12 @@ sub CountOligo {
     $last_pos = $seq_length[$sequence_number] - $oligo_length;	
     
     ### if requested, calculate alphabet from input sequence ####
-    if (($input_alphabet) || ($return{'zscore'})) {
+#    if (($input_alphabet) || ($return{'zscore'}) || ($markov)) {
       for $pos (0..$seq_length[$sequence_number]-1) {
 	$letter = lc(substr($current_seq,$pos,1));
 	$residue_occ{$letter}++;
       }
-    }
+#    }
     
     #### for markov chains, count trailing oligomers of length shorter than $oligo_length ####
     if ($markov) {
@@ -442,7 +444,7 @@ sub CalcFrequencies {
 
 
 ### input alphabet ###
-sub CalcAplhabet {
+sub CalcAlphabet {
   if ($hyperverbose) {
     $current_time = `date '+%H:%M:%S'`;
     chomp($current_time);
@@ -565,20 +567,22 @@ sub Degenerate {
 
 #### calculate number of possible oligomers
 sub NbPossibleOligo {
+    @alphabet = keys %residue_occ;
+    $alphabet_size = &max(4,$#alphabet + 1);
     if ($one_var_position) {
-	$nb_possible_oligo = $oligo_length * ($#degenerate_code+1) * 4**($oligo_length-1);      
+	$nb_possible_oligo = $oligo_length * ($#degenerate_code+1) * $alphabet_size**($oligo_length-1);      
     } elsif ($proteic) {
 	
 	@residues = sort keys %residue_occ;
 	$nb_possible_oligo = ($#residues + 1)**$oligo_length;
 	#    $nb_possible_oligo = 20**$oligo_length;
     } else {
-	$nb_possible_oligo = 4**$oligo_length;      
+	$nb_possible_oligo = $alphabet_size**$oligo_length;      
     }
     if ($sum_strands) {  
 	if ($oligo_length%2 == 0) {
 	    ### take into account the fact that palindromes have not to be grouped by pairs
-	    $nb_possible_palindroms = 4**($oligo_length/2);
+	    $nb_possible_palindroms = $alphabet_size**($oligo_length/2);
 	} else {
 	    $nb_possible_palindroms = 0;
 	}
@@ -914,6 +918,7 @@ sub PrintResult {
     }
     print $out "; total oligo occurrences         $sum_occurrences\n";
     print $out "; nb possible positions\t\t",$nb_possible_pos ,"\n";
+    print $out "; alphabet size\t", $alphabet_size, "\n";
     print $out "; nb possible oligomers\t$nb_possible_oligo\n";
     print $out "; threshold on occurrence #	$occurrence_threshold\n" if ($occurrence_threshold > 0);
     print $out "; threshold on occ signif. index	$occ_significance_threshold\n" if ($occ_significance_threshold ne "");
@@ -1539,22 +1544,22 @@ ARGUMENTS
 		which frequency file has to be sued for expected
 		frequency calibration.
 	-markov #
-		Markov chain: the frequency expected for each n-tuple is 
-		calculated on basis of the #-1 and #-2-tuple frequencies 
-		observed in the input set. 
+		Markov chain: the frequency expected for each word is 
+		calculated on basis of subword frequencies observed in the 
+		input set. 
 		
 		The number # indicates the order of the Markov chain. 
 		If negative, # is substracted to word length 
 		e.g:
-			-l 6 -markov -1
+			-l 6 -markov -2
 		is equivalent to
 			-l 6 -markov 5
 		
-		Order 1 is equivalent to using single nucleotide frequencies
+		Order 0 is equivalent to using single nucleotide frequencies
 		(-a input).
 			
 		Ex: calculation of expected 6nt frequencies on basis 
-		of a Markov chain of order 5 :
+		of a Markov chain of order 4 :
 		              obs(GATAA) x obs(ATAAG)
 		exp(GATAAG) = -----------------------
 		                   obs(ATAA)
