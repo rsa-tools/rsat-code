@@ -3,7 +3,6 @@ if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
 require "RSA.lib";
-require "RSA.classes";
 
 ### initialization
 $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
@@ -19,13 +18,13 @@ $col{'gene'} = 0;
 #### check arguments
 
 #### selected organism
-&FatalError ("You should specify an organism\n")
+&RSAT::error::FatalError ("You should specify an organism\n")
     unless ($organism_name);
 
 #### EC file
 $ec_file = $supported_organism{$organism_name}->{'data'}."/genome/Feature_EC_number_${organism_name}.tab";
 #$ec_file = "$RSA/data/${organism_name}/genome/Feature_EC_number_${organism_name}.tab";
-&FatalError("EC file does not exist for organism $organism_name\t$ec_file\n")
+&RSAT::error::FatalError("EC file does not exist for organism $organism_name\t$ec_file\n")
     unless (-e $ec_file);
 
 #### load organism data

@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.82 2004/08/02 21:14:33 jvanheld Exp $
+# $Id: oligo-analysis,v 1.83 2005/03/13 10:34:39 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -11,7 +11,6 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 require "RSA.lib";
 require "RSA.seq.lib";
-require "RSA.classes";
 
 ################################################################
 ###### initialize parameters ##########
@@ -121,9 +120,9 @@ if ($return{'mseq'} && $return{'proba'} && !($noov)) {
 }
 
 ### check oligomer length
-&FatalError("You should specify an oligomer length.") unless (defined($oligo_length));
-&FatalError("Oligomer length should be a natural number.") unless (&IsNatural($oligo_length));
-&FatalError("Oligomer length should be strictly positive.") unless ($oligo_length > 0);
+&RSAT::error::FatalError("You should specify an oligomer length.") unless (defined($oligo_length));
+&RSAT::error::FatalError("Oligomer length should be a natural number.") unless (&IsNatural($oligo_length));
+&RSAT::error::FatalError("Oligomer length should be strictly positive.") unless ($oligo_length > 0);
 
 ## minimum overlap distance
 if ($noov) {
@@ -143,9 +142,9 @@ if ($method eq "Markov chain") {
     
     if (($markov_order > $oligo_length -2) && 
 	($markov_order > 0)){ 
-	&FatalError("Markov order ($markov_order) cannot be higher than word length - 2 ($oligo_length -2)"); 
+	&RSAT::error::FatalError("Markov order ($markov_order) cannot be higher than word length - 2 ($oligo_length -2)"); 
     } elsif ($markov_order < 0) {
-	&FatalError("invalid markov order $markov_order");
+	&RSAT::error::FatalError("invalid markov order $markov_order");
     }
 }
 
@@ -175,10 +174,10 @@ if ($background_model) {
 	    my $residue = $1;
 	    my $freq = $2;
 	    unless (&IsReal($freq)) {
-		&FatalError("Invalid value for frequency: $freq. Must be a real number.");
+		&RSAT::error::FatalError("Invalid value for frequency: $freq. Must be a real number.");
 	    }
 	    unless ($freq >= 0) {
-		&FatalError("Invalid value for frequency: $freq. Must be >=0.");
+		&RSAT::error::FatalError("Invalid value for frequency: $freq. Must be >=0.");
 	    }
 	    $residue_proba{$residue} = $freq;
 
@@ -196,7 +195,7 @@ if (($alphabet) && !($input_alphabet)) {
 	$proba_sum += $residue_proba{$r};
     }
     if ($proba_sum == 0 ) {
-	&FatalError("Sum of residue probabilities must be > 0");
+	&RSAT::error::FatalError("Sum of residue probabilities must be > 0");
     }
     unless ($proba_sum ==1) {
 	foreach my $r (keys %residue_proba) {
@@ -215,7 +214,7 @@ if (($method eq "Frequency file") &&
 ################################################################
 #### Read calibration from a file
 if ($method =~ /calibration/i) {
-    &TimeWarn( "; Reading calibration file\t",$infile{calibration},"\n") if ($main::verbose >= 1);
+    &RSAT::message::TimeWarn( "; Reading calibration file\t",$infile{calibration},"\n") if ($main::verbose >= 1);
     &ReadCalibration($infile{calibration});
 }
 
@@ -291,7 +290,7 @@ exit(0);
 #### Read input sequences and count oligomers ####
 sub CountOligo {
     if ($verbose >= 2) {
-	&TimeWarn("Counting oligo frequencies");
+	&RSAT::message::TimeWarn("Counting oligo frequencies");
     }
     
     if ($return{'table'}) {
@@ -324,7 +323,7 @@ sub CountOligo {
 	$id_list[$sequence_number] = $current_id;
 	$seq_length[$sequence_number] = length($current_seq);
 	
-	&TimeWarn(join "\t", $sequence_number,  $current_id, $seq_length[$sequence_number]) if ($main::verbose >= 3);
+	&RSAT::message::TimeWarn(join "\t", $sequence_number,  $current_id, $seq_length[$sequence_number]) if ($main::verbose >= 3);
 	
 	$sum_seq_length += $seq_length[$sequence_number];
 	if ($seq_length[$sequence_number] < $oligo_length) {
@@ -336,7 +335,7 @@ sub CountOligo {
 	
 	### calculate alphabet from input sequence ####
 #    if (($input_alphabet) || ($return{'zscore'}) || ($method eq "Markov chain")) {
-	&TimeWarn("$current_id\tcalculating alphabet") if ($verbose >= 4);
+	&RSAT::message::TimeWarn("$current_id\tcalculating alphabet") if ($verbose >= 4);
 	
 	for $pos (0..$seq_length[$sequence_number]-1) {
 	    $letter = lc(substr($current_seq,$pos,1));
@@ -361,7 +360,7 @@ sub CountOligo {
 	while ($current_pos >=0) {
 	    if ($verbose >= 3 && (($current_pos%$chunk) == 0) && ($current_pos > 0)) {
 		$current_length = length($current_seq);
-		&TimeWarn("$current_id\tremain to read: $current_pos");
+		&RSAT::message::TimeWarn("$current_id\tremain to read: $current_pos");
 	    }
 	    
 	    ### occurrences
@@ -494,7 +493,7 @@ sub CountOligo {
     }
 
     if ($sequence_number < 1) {
-	&FatalError("The input contained no readable sequence. The file might be empty or be wronlgy formatted."); 
+	&RSAT::error::FatalError("The input contained no readable sequence. The file might be empty or be wronlgy formatted."); 
     }
 
 }
@@ -514,7 +513,7 @@ sub PrintTableHeader {
 ################################################################
 ### sum occurrences of reverse complement patterns
 sub SumReverseComplements {
-    &TimeWarn("Summing occurrences for pairs of reverse complements") if ($verbose >= 2);
+    &RSAT::message::TimeWarn("Summing occurrences for pairs of reverse complements") if ($verbose >= 2);
 
     foreach my $pattern_seq (keys %patterns) {
 	my $rc_pattern_seq = &SmartRC($pattern_seq);
@@ -580,7 +579,7 @@ sub SumReverseComplements {
 ################################################################
 ### sum occurrence distribution of reverse complement patterns
 sub SumReverseComplementsDistrib {
-    &TimeWarn("Summing occurrence distributions for pairs of reverse complements") if ($verbose >= 2);
+    &RSAT::message::TimeWarn("Summing occurrence distributions for pairs of reverse complements") if ($verbose >= 2);
 
     foreach my $pattern_seq (keys %distrib) {
 	my $rc_pattern_seq = &SmartRC($pattern_seq);
@@ -646,7 +645,7 @@ sub CheckThresholds {
   ## Lower threshold
   if (defined($lth{$parameter})) {
       if ($verbose >= 2) {
-	  &TimeWarn("Lower threshold on $parameter\t$lth{$parameter}");
+	  &RSAT::message::TimeWarn("Lower threshold on $parameter\t$lth{$parameter}");
       }
       foreach $pattern_seq (keys %patterns) {
 	  if ($patterns{$pattern_seq}->{$parameter} < $lth{$parameter}) {
@@ -658,7 +657,7 @@ sub CheckThresholds {
   ## Upper threshold
   if (defined($uth{$parameter})) {
       if ($verbose >= 2) {
-	  &TimeWarn("Upper threshold on $parameter\t$uth{$parameter}");
+	  &RSAT::message::TimeWarn("Upper threshold on $parameter\t$uth{$parameter}");
       }
       foreach $pattern_seq (keys %patterns) {
 	  if ($patterns{$pattern_seq}->{$parameter} > $uth{$parameter}) {
@@ -676,7 +675,7 @@ sub CheckPatternThresholds {
   ## Lower threshold
   if (defined($lth{$parameter})) {
       if ($verbose >= 4) {
-	  &TimeWarn("Lower threshold on $parameter\t$lth{$parameter}");
+	  &RSAT::message::TimeWarn("Lower threshold on $parameter\t$lth{$parameter}");
       }
       if ($patterns{$pattern_seq}->{$parameter} < $lth{$parameter}) {
 	  delete $patterns{$pattern_seq};
@@ -687,7 +686,7 @@ sub CheckPatternThresholds {
   ## Upper threshold
   if (defined($uth{$parameter})) {
       if ($verbose >= 4) {
-	  &TimeWarn("Upper threshold on $parameter\t$uth{$parameter}");
+	  &RSAT::message::TimeWarn("Upper threshold on $parameter\t$uth{$parameter}");
       }
       if ($patterns{$pattern_seq}->{$parameter} > $uth{$parameter}) {
 	  delete $patterns{$pattern_seq};
@@ -699,7 +698,7 @@ sub CheckPatternThresholds {
 #### check threshold on matching sequences
 # sub MatchingSeqThreshold {
 #   if ($verbose >= 2) {
-#     &TimeWarn("Threshold on matching sequences");
+#     &RSAT::message::TimeWarn("Threshold on matching sequences");
 #   }
 #   foreach $pattern_seq (keys %patterns) {
 #     if ($patterns{$pattern_seq}->{mseq} < $lth{mseq}) {
@@ -712,7 +711,7 @@ sub CheckPatternThresholds {
 ### Calculate subword frequencies
 sub CalcSubWordFrequencies {
     if ($verbose >= 2) {
-	&TimeWarn("Calculating subword frequencies");
+	&RSAT::message::TimeWarn("Calculating subword frequencies");
     }
     
     foreach $pattern_seq (keys %patterns) {
@@ -778,7 +777,7 @@ sub CalcSubWordFrequencies {
 #### calculate relative frequencies if requested
 sub CalcFrequencies {
     if ($verbose >= 2) {
-	&TimeWarn("Calculating relative frequencies");
+	&RSAT::message::TimeWarn("Calculating relative frequencies");
     }
     
     #### sum of occurrences
@@ -813,7 +812,7 @@ sub CalcFrequencies {
 ### residue frequencies from input sequences
 sub CalcAlphabet {
     %residue_proba = ();
-    &TimeWarn("Calculating residue frequencies from input sequences") if ($verbose >= 2);
+    &RSAT::message::TimeWarn("Calculating residue frequencies from input sequences") if ($verbose >= 2);
     
     foreach $key (sort keys %residue_occ) {
 	$residue_total += $residue_occ{$key};
@@ -835,7 +834,7 @@ sub CalcAlphabet {
 ### calculate occurrences with 1 degenerated position 
 sub Degenerate {
   if ($verbose >= 2) {
-    &TimeWarn("Neighborhood");
+    &RSAT::message::TimeWarn("Neighborhood");
   }
   
   foreach $d (@degenerate_code) {  
@@ -904,7 +903,7 @@ sub NbPossibleOligo {
 #### expected oligomer frequencies
 sub CalcExpected {
     if ($verbose >= 2) {
-	&TimeWarn("Calculating expected frequencies");
+	&RSAT::message::TimeWarn("Calculating expected frequencies");
     }
     
     #### Calcualte the number of possible positions for each pattern
@@ -1122,7 +1121,7 @@ sub CalcOverlapCoefficient {
 ################################################################
 ## Calculate z-scores
 sub CalcZscore {
-    &TimeWarn( "; Calculating z-scores\n") if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn( "; Calculating z-scores\n") if ($main::verbose >= 2);
     if ($return{'occ'}) {
 	foreach $pattern_seq (keys %patterns) {
 
@@ -1590,7 +1589,7 @@ sub Verbose {
 sub PrintResult {
     ### open output file ###
     if ($verbose >= 2) {
-	&TimeWarn("Printing output file\t$outputfile");
+	&RSAT::message::TimeWarn("Printing output file\t$outputfile");
     }
 
     #### print verbose
@@ -1841,7 +1840,7 @@ sub ReadArguments {
 		$seq_type = "other";
 
 	    } else {
-		&FatalError( "\tError: sequence type '$ARGV[$a]' is not supported");
+		&RSAT::error::FatalError( "\tError: sequence type '$ARGV[$a]' is not supported");
 	    }
 
 	    #### output file
@@ -1929,7 +1928,7 @@ sub ReadArguments {
 	    $background_model = $ARGV[$a+1];
 	    $background_model =~ s/ncf/intergenic/;
 	    unless ($supported_bg{$background_model}) {
-		&FatalError("Invalid background model\t$background_model\tsupported: $supported_bg");
+		&RSAT::error::FatalError("Invalid background model\t$background_model\tsupported: $supported_bg");
 	    }
 
 	    #### lexicon
@@ -1953,7 +1952,7 @@ sub ReadArguments {
 	    unless ( (&IsReal($pseudo_weight)) &&
 		     ($pseudo_weight <= 1) &&
 		     ($pseudo_weight >= 0)) {
-		&FatalError ("Error: $pseudo_weight is not a valid value for pseudo frequency.",
+		&RSAT::error::FatalError ("Error: $pseudo_weight is not a valid value for pseudo frequency.",
 			     "Pseudo frequency must be a real value between 0 and 1.");
 	    }
 	    
@@ -1988,7 +1987,7 @@ sub ReadArguments {
 	    my $thr_field = $ARGV[$a+1];
 	    my $thr_value =  $ARGV[$a+2];
 	    unless ($supported_threshold{$thr_field}) {
-		&FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
+		&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
 	    }
 	    $lth{$thr_field} = $thr_value;
 
@@ -1997,7 +1996,7 @@ sub ReadArguments {
 	    my $thr_field = $ARGV[$a+1];
 	    my $thr_value =  $ARGV[$a+2];
 	    unless ($supported_threshold{$thr_field}) {
-		&FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
+		&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
 	    }
 	    $uth{$thr_field} = $thr_value;
 
@@ -2045,7 +2044,7 @@ sub ReadArguments {
 	    
 	    #### threshold on occurrence significance
 	} elsif ($ARGV[$a] eq "-thosig") {
-	    &FatalError( "Error : significance threshold should be a real number\n") unless (&IsReal($ARGV[$a+1]));
+	    &RSAT::error::FatalError( "Error : significance threshold should be a real number\n") unless (&IsReal($ARGV[$a+1]));
 	    $lth{occ_sig} = $ARGV[$a+1];
 	    $return{'occ'} = 1;
 	    $return{'proba'} = 1;
@@ -2128,7 +2127,7 @@ sub ReadArguments {
 		    push(@output_fields, "remark");
 		    
 		} else {
-		    &FatalError("Invalid return field $field. Supported: $supported_return_fields");
+		    &RSAT::error::FatalError("Invalid return field $field. Supported: $supported_return_fields");
 		}
 
 	    }
@@ -2137,7 +2136,7 @@ sub ReadArguments {
 	    ## Return a table with one row per sequence and one column per pattern
 	} elsif ($ARGV[$a] eq "-table") {
 	    if ($return{'distrib'}) {
-		&FatalError("The options -table and -distrib are mutually incompatible");
+		&RSAT::error::FatalError("The options -table and -distrib are mutually incompatible");
 	    }
 	    $return{'table'} = 1;
 	    push(@output_fields, "occ");
@@ -2147,7 +2146,7 @@ sub ReadArguments {
 	    ## Return a table with one row per pattern and one column per occurrence value
 	} elsif ($ARGV[$a] eq "-distrib") {
 	    if ($return{'table'}) {
-		&FatalError("The options -table and -distrib are mutually incompatible");
+		&RSAT::error::FatalError("The options -table and -distrib are mutually incompatible");
 	    }
 	    $return{'distrib'} = 1;
 	    push(@output_fields, "occ");
@@ -2166,7 +2165,7 @@ sub ReadArguments {
     }
     
     if ($verbose >= 2) {
-	&TimeWarn("Starting");
+	&RSAT::message::TimeWarn("Starting");
     }
 }
  

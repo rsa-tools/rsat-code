@@ -1,7 +1,8 @@
 #!/usr/bin/perl 
+
 ############################################################
 #
-# $Id: compare-classes,v 1.6 2004/10/25 22:34:34 jvanheld Exp $
+# $Id: compare-classes,v 1.7 2005/03/13 10:31:33 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -11,8 +12,8 @@ if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
 require "RSA.lib";
-require "RSA.classes";
 require "RSA.help.pl";
+require "RSA.classes";
 
 ################################################################
 #### initialise parameters
@@ -89,19 +90,19 @@ $population_size = 0;
 ################################################################
 #### check argument values
 unless ($infile{query_classes}) {
-    &FatalError("You must specify a file containing query classes");
+    &RSAT::error::FatalError("You must specify a file containing query classes");
 }
 
 if ($catalog) {
     if ($organism_name) {
 	$infile{ref_classes} = $supported_organism{$organism_name}->{'data'}."/catalogs/${organism_name}_${catalog}.tab";
     } else {
-	&FatalError("The option -cat requires to specify an organism");
+	&RSAT::error::FatalError("The option -cat requires to specify an organism");
     }
 } 
 
 unless ($infile{ref_classes}) {
-    &FatalError("You must specify a file containing reference classes");
+    &RSAT::error::FatalError("You must specify a file containing reference classes");
 }
 
 
@@ -118,6 +119,7 @@ $nb_query_classes = scalar(keys %query_classes);
 
 ## Read ref class names
 if ($infile{rnames}) {
+    &RSAT::message::Info("Reading reference names\t".$infile{rnames}) if ($main::verbose >= 2);
     my ($in) = &OpenInputFile($infile{rnames});
     while (<$in>) {
 	chomp();
@@ -135,6 +137,7 @@ if ($infile{rnames}) {
 
 ## Read query class names
 if ($infile{qnames}) {
+    &RSAT::message::Info("Reading query names\t".$infile{qnames}) if ($main::verbose >= 2);
     my ($in) = &OpenInputFile($infile{qnames});
     while (<$in>) {
 	chomp;
@@ -150,6 +153,7 @@ if ($infile{qnames}) {
     }
 }
 
+################################################################
 #### unless specified, calculate population size from the lists of
 #### reference and query members
 unless ($population_size > 0 ) {
@@ -300,6 +304,15 @@ OPTIONS
         -distinct
                 Prevent to compare each class with itself (when the
                 reference and query files contain the same classes).
+
+    	-triangle
+		(ony valid if query file and reference file are the same)
+		Do not perform the reciprocal comparisons: if
+		reference A has already been compared to query B, then
+		reference B does not need to be compared to query A. .
+		With matrix output, this returns only the lower
+		triangle fo the matrix.
+
         -matrix [key]
                 Return a pairwise matrix, where each row corresponds
                 to a reference class, each column to a query class,
@@ -449,6 +462,7 @@ compare-classes options
 hyergeometric)
 -sym            symmetric comparison (only with -rep, see detailed help)
 -distinct       prevent to compare each class with itself
+-triangle	do not perform reciprocal comparison
 -matrix [key]   return a similarity matrix
 -cat		catalog (supported: $supported_catalogs)
 -org		organism
@@ -499,7 +513,7 @@ sub ReadArguments {
         } elsif ($ARGV[$a] eq "-cat") {
             $catalog = $ARGV[$a+1];
 	    unless ($supported_catalogs{$catalog}) {
-		&FatalError("$catalog is not a valid catalog. Supported: $supported_catalogs");
+		&RSAT::error::FatalError("$catalog is not a valid catalog. Supported: $supported_catalogs");
 	    }
 
 	    #### organism
@@ -528,7 +542,7 @@ sub ReadArguments {
         } elsif ($ARGV[$a] eq "-sort") {
             $sort_key = $ARGV[$a+1];
             unless ($supported_sort_keys{$sort_key}) {
-                &FatalError ("Invalid sort key $sort_key. Supported: $supported_sort_keys" );
+                &RSAT::error::FatalError ("Invalid sort key $sort_key. Supported: $supported_sort_keys" );
             }
 
             ### export a distance matrix
@@ -547,14 +561,18 @@ sub ReadArguments {
         } elsif ($ARGV[$a] eq "-distinct") {
             $distinct = 1;
 
+            ### do not perform reciprocal comparisons
+        } elsif ($ARGV[$a] eq "-triangle") {
+            $triangle = 1;
+
             ### population size
         } elsif ($ARGV[$a] eq "-pop") {
             $population_size = $ARGV[$a+1];
             unless (&IsNatural($population_size)) {
-                &FatalError("Population size must be a natural number");
+                &RSAT::error::FatalError("Population size must be a natural number");
             }
             unless ($population_size > 0) {
-                &FatalError("Population size must be strictly positive.");
+                &RSAT::error::FatalError("Population size must be strictly positive.");
             }
 
             #### threshold values
@@ -575,7 +593,7 @@ sub ReadArguments {
                 if ($supported_return_fields{$field}) {
                     $return_fields{$field} = 1;
                 } else {
-                    &FatalError("Invalid return field $field");
+                    &RSAT::error::FatalError("Invalid return field $field");
                 }
             }
         }
@@ -655,10 +673,16 @@ sub Verbose {
 ################################################################
 #### compare reference and query classes
 sub CompareClasses {
+    my $reference_classes = scalar(keys(%ref_classes));
+    my $rn = 0;
     foreach my $r (keys %ref_classes) {
+	$rn++;
+	
 	my %ref_member = ();
 	my %not_query = ();
 
+
+	&RSAT::message::TimeWarn(join ("\t", "Treating reference class" ,$rn, "of", $reference_classes , $r)) if ($main::verbose >= 3);
 
 	################################################################
 	#### number fo common members 
@@ -678,8 +702,10 @@ sub CompareClasses {
 	#### query classes
 	foreach my $q (keys %query_classes) {
 	    
+	    &RSAT::message::TimeWarn("Treating query class $q") if ($main::verbose >= 4);
+	    
 	    next if (($distinct) && ($r eq $q));
-	    next if (($infile{ref_classes} eq $infile{query_classes} ) && ($r gt $q));
+	    next if (($infile{ref_classes} eq $infile{query_classes} ) && ($r lt $q)) && $triangle;
 
 	    my $compa_key = $r."__VERSUS__".$q;
 
@@ -743,7 +769,7 @@ sub CompareClasses {
 	    ################################################################	
 	    #### calculate percentages
 	    if ($return_fields{percent}) {
-		warn "; calculating percentages for ", $compa_key, "\n" if ($verbose >= 4);
+		warn "; calculating percentages for ", $compa_key, "\n" if ($verbose >= 5);
 		my $n_q = $query_classes{$q}->get_size(); ### number of elements in query class
 		my $n_r = $ref_classes{$r}->get_size(); ### number of elements in the reference class
 		my $c = $compa{$compa_key}->{occ}; ### number of common elements
@@ -795,31 +821,31 @@ sub CompareClasses {
 		#### check population size
 		my $n = $population_size;
 		if ($n <= 0) {
-		    &FatalError("Cannot calculate probabilities if reference population is empty");
+		    &RSAT::error::FatalError("Cannot calculate probabilities if reference population is empty");
 		}
 
 		#### calculate probabilities of matches
-		warn "; calculating proba for ", $compa_key, "\n" if ($verbose >= 3);
+		warn "; calculating proba for ", $compa_key, "\n" if ($verbose >= 5);
 		my $n_q = $query_classes{$q}->get_size(); ### number of elements in query class
 		my $n_r = $ref_classes{$r}->get_size(); ### number of elements in the reference class
 		my $c = $compa{$compa_key}->{occ}; ### number of common elements
 		
 		#### check number of elements in the reference class
 		if ($n_r > $n) {
-		    &FatalError("Number of elements in the reference class ($n_r) cannot be higher than population size ($n)");
+		    &RSAT::error::FatalError("Number of elements in the reference class ($n_r) cannot be higher than population size ($n)");
 		}
 		
 		#### check number of elements in the query class
 		if ($n_q > $n) {
-		    &FatalError("Number of elements in the query class ($n_q) cannot be higher than population size ($n)");
+		    &RSAT::error::FatalError("Number of elements in the query class ($n_q) cannot be higher than population size ($n)");
 		}
 		
 		#### check number of common elements
 		if ($c > $n_q) {
-		    &FatalError("Number of common elements ($c) cannot be higher than query size ($n_q)");
+		    &RSAT::error::FatalError("Number of common elements ($c) cannot be higher than query size ($n_q)");
 		}
 		if ($c > $n_r) {
-		    &FatalError("Number of common elements ($c) cannot be higher than reference size ($n_r)");
+		    &RSAT::error::FatalError("Number of common elements ($c) cannot be higher than reference size ($n_r)");
 		}
 		
 		

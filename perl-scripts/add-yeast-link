@@ -1,9 +1,9 @@
 #!/usr/bin/perl
+
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
 require "RSA.lib";
-require "RSA.classes";
 
 $start_time = `date`;
 
@@ -40,10 +40,10 @@ if ($#databases <= 0) {
 
 #### organism
 warn "; Checking organism $organism_name\n" if ($verbose >= 1);
-&CheckOrganism($organism_name, $feature_table_file);
+&CheckOrganism($organism_name, $annotation_table);
 
 warn "; Reading ORF table for $organism_name\n" if ($verbose >= 1);
-&ReadFeatures($organism_name, $feature_table_file, $feature_types);
+&ReadFeatures($organism_name, $annotation_table, $feature_types);
 warn "; Reading synonyms for $organism_name\n" if ($verbose >= 1);
 &ReadSynonyms($organism_name);
 
@@ -243,7 +243,7 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-col") {
 	    $orf_col = $ARGV[$a+1];
 	    unless ((&IsNatural($orf_col)) && ($orf_col >=1)) {
-		&FatalError("ORF column must be a natural number >= 1\n");
+		&RSAT::error::FatalError("ORF column must be a natural number >= 1\n");
 	    }
 	    
 	    #### database
@@ -252,7 +252,7 @@ sub ReadArguments {
 	    if ($database eq "all") {
 		push @databases, @supported_db;
 	    } elsif  (!$supported_db{$database}) {
-		&FatalError("Database $database is not supported (Supported: $supported_db)\n");
+		&RSAT::error::FatalError("Database $database is not supported (Supported: $supported_db)\n");
 	    } else {
 		push @databases, $database;
 	    }

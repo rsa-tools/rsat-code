@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-features,v 1.3 2004/08/18 05:28:52 jvanheld Exp $
+# $Id: convert-features,v 1.4 2005/03/13 10:34:08 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -12,7 +12,6 @@ BEGIN {
 	push (@INC, "$`lib/");
     }
     require "RSA.lib";
-    require "RSA.classes";
 }
 use RSAT::feature;
 
@@ -50,7 +49,7 @@ $supported_output_formats = join (",", keys %supported_output_format);
 ################################################################
 #### check argument values
 unless ($input_format) {
-    &FatalError("You should defined the input format");
+    &RSAT::error::FatalError("You should defined the input format");
 }
 
 
@@ -248,13 +247,13 @@ sub ReadArguments {
 	    ### input format  
 	} elsif ($ARGV[$a] eq "-from") {
 	    $input_format = $ARGV[$a+1];
-	    &FatalError("$input_format\tInvalid input format. Supoprted: $supported_input_formats")
+	    &RSAT::error::FatalError("$input_format\tInvalid input format. Supoprted: $supported_input_formats")
 		unless ($supported_input_format{$input_format});
 
 	    ### output format  
 	} elsif ($ARGV[$a] eq "-to") {
 	    $output_format = $ARGV[$a+1];
-	    &FatalError("$output_format\tInvalid output format. Supoprted: $supported_output_formats")
+	    &RSAT::error::FatalError("$output_format\tInvalid output format. Supoprted: $supported_output_formats")
 		unless ($supported_output_format{$output_format});
 	}
     }
