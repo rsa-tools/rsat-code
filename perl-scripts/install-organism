@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.20 2002/06/10 08:26:09 jvanheld Exp $
+# $Id: install-organism,v 1.21 2002/09/14 14:53:58 jvanheld Exp $
 #
-# Time-stamp: <2002-06-10 10:23:24 jvanheld>
+# Time-stamp: <2002-09-14 09:52:44 jvanheld>
 #
 ############################################################
 
@@ -19,19 +19,24 @@ $strands="-1str";
 $purged_frequencies = 0; #### temporarily inactivte because for human genome it suppresses almost all sequences !!!!
 $supported_for_installation{"fasta"} = 1;
 $supported_for_installation{"raw"} = 1;
-%supported_steps = (genome=>1,
-		    features=>1,
-		    config=>1,
-		    start_stop=>1,
-		    ncf=>1,
-		    oligos=>1,
+$supported_for_installation{"filelist"} = 1;
+%supported_task = (
+#		   genome=>1, 
+#		   features=>1, 
+		   config=>1,
+		   start_stop=>1,
+		   ncf=>1,
+		   allup=>1,
+		   oligos=>1,
 #		    coding_freq=>1,
-#		    genome_freq=>1,
-		    dyads=>1,
-		    clean=>1
+		   genome_freq=>1,
+		   intergenic_freq=>1,
+		   dyads=>1,
+		   clean=>1,
+		   all=>1
 		   );
-$supported_steps = join ",", keys %supported_steps;
-%install_steps = ();
+$supported_tasks = join ",", keys %supported_task;
+%task = ();
 
 ################################################################
 ############################ arguments #########################
@@ -39,9 +44,12 @@ $supported_steps = join ",", keys %supported_steps;
 
 &ReadArguments;
 
-@install_steps = keys %install_steps;
-if ($#install_steps == -1) {
-    %install_steps = %supported_steps;
+@task = keys %task;
+if ($#task == -1) {
+    &FatalError("You should specify at least one task.\nSupported tasks\n\t$supported_tasks\n");
+}
+if ($task{all}) {
+    %task = %supported_task;
 }
 
 
@@ -111,17 +119,18 @@ $outfile{synonyms} = "$genome_dir/Feature_names_${organism_short_name}.tab" unle
 ################################################################
 ###################### start installation ######################
 ################################################################
-&InstallGenome() if ($install_steps{genome});
-if ($install_steps{features}) {
+&InstallGenome() if ($task{genome});
+if ($task{features}) {
     &GenerateFeatureTable() if ($infile{ptt});
     &InstallFeatureTable();
 }
-&UpdateConfig() if ($install_steps{config});
-&StartAndStopCodons() if ($install_steps{start_stop});
-&NonCodingSegments() if ($install_steps{ncf});
-&CalcFrequencies() if (($install_steps{oligos}) || ($install_steps{dyads}));
+&UpdateConfig() if ($task{config});
+&StartAndStopCodons() if ($task{start_stop});
+&NonCodingSegments() if ($task{ncf});
+&AllUpstream() if ($task{allup});
+&CalcFrequencies() if (($task{oligos}) || ($task{dyads}));
 
-&CleanUp if ($install_steps{clean});
+&CleanUp if ($task{clean});
 
 exit(0);
 
@@ -140,6 +149,11 @@ sub trim {
 sub Verbose {
     print "; Installing organism\n";
     print "; -------------------\n";
+
+    print ";\n; Tasks:\n";
+    foreach my $task (keys %task) {
+	print ";\t$task\n";
+    }
 
     print ";\n; Input parameters:\n";
     printf ";    %-25s\t%s\n", "data source", $source;
@@ -280,41 +294,13 @@ sub UpdateConfig {
 
 }
 
-#### obsolete ####
-sub AllUpstream {
-    $set = 1;
-    $from[$set] = "-400";
-    $to[$set] = "+49";
-    
-    $set = 2;
-    $from[$set] = "-200";
-    $to[$set] = "+49";
-    
-    $set = 3;
-    $from[$set] = "-600";
-    $to[$set] = "-1";
-    
-    $set = 4;
-    $from[$set] = "-800";
-    $to[$set] = "-1";
-
-    for $s (0..$set) {
-	$from = $from[$s];
-	$to = $to[$s];
-	$format = "wc";
-	$up_file = "${organism_short_name}_all_up_${from}_${to}.${format}";
-	
-	chdir "$genome_dir";
-	$command = "retrieve-seq -type upstream -all -org $organism_short_name -from $from -to $to -format $format -nocomment -lw 0 -o $up_file";
-	&doit();  }
-
-    chdir "../";
-}
-
 ################################################################
 ### extract the non-redudant set of intergenic and coding sequences
 sub NonCodingSegments {
+
     chdir $genome_dir;
+
+    #### retrieve intergenic sequences
     $command = "coding-or-not ";
     $command .= "-v " if ($verbose);
     $command .= "-org $organism_short_name -return ncs,seq,cs \n\n";
@@ -322,74 +308,148 @@ sub NonCodingSegments {
 
     my @types = ();
     push @type, "coding";
-    push @types, "non_coding" if ($install_steps{coding_freq});
+    push @types, "non_coding" if ($task{coding_freq});
 	    
-    foreach my $type (@types) {
+    foreach my $seq_type (@types) {
 	
-	my $seq_file = "${genome_dir}/${organism_short_name}_${type}_segments.wc";
-	my $purged_seq_file = "${genome_dir}/${organism_short_name}_${type}_segments_purged.fasta";
+	my $seq_file = "${genome_dir}/${organism_short_name}_${seq_type}_segments.wc";
+
+	#### draw sequence length distributions
+	&SeqLengthDistribution($seq_file, "wc", $seq_type, 50);
 	
-	#### histogram of intergenic segment lengths
-	$command = "sequence-lengths -i $seq_file";
-	$command .= " -format wc | cut -f 2 | classfreq -ci 100 -v -from 0 -to 2000";
-	$command .= " | XYgraph -xcol 3 -ycol 7,8,9 -lines -xmin 0 -xmax 2000";
-	$command .= " -ymin 0 -ymax 1  -xsize 600 -ysize 400 -legend";
-	$command .= " -xgstep1 100 -xgstep2 250 -ygstep1 0.1";
-	$command .= " -xleg1 'sequence length (bp)'";
-	$command .= " -yleg1 'frequency'";
-	$command .= " -title1 '$organism_full_name'";
-	$command .= " -title2 'length distribution of intergenic segments'";
-	$command .= " -o  ${organism_short_name}_${type}_segments_lengths.gif";
+	#### compress sequence file
+	$command = "gzip -f $seq_file";
 	&doit();
-	
+
 	#### purge sequences
-	if ($purged_frequencies) {
-	    $command = "purge-sequence -i $seq_file -format wc -ml 300 -mis 9 -2str -o $purged_seq_file";
-	    &doit();
-	    #### compress intergenic sequence file
-	    $command = "gzip -f $seq_file $purged_seq_file";
-	    &doit();
-	}
+	&PurgeSequences($seq_file) if ($purged_frequencies);
 	
     }
 
     chdir "../";
 }
 
+
 ################################################################
-### calculate oligo and dyad frequencies in intergenic and genomic
-### sequences
+### extract the complete set of upstream sequences
+sub AllUpstream {
+    warn "; Retrieving all upstream sequences\n" if ($verbose >= 1);
+    chdir $genome_dir;
+
+    foreach my $noorf ("", "-noorf") {
+	my $seq_type = "upstream${noorf}";
+	my $seq_file = "${genome_dir}/${organism_short_name}_${seq_type}.fasta";
+	my $format = "fasta";
+    
+	#### retrieve intergenic sequences
+	$command = "retrieve-seq ${noorf} -format $format";
+	$command .= " -type upstream -all -org $organism_short_name ";
+	$command .= " -all -o $seq_file\n\n";
+	&doit();
+	
+	#### draw sequence length distributions
+	&SeqLengthDistribution($seq_file, $format, $seq_type, 50) if ($noorf);
+	
+	#### compress sequence file
+	$command = "gzip -f $seq_file";
+	&doit();
+	
+	#### purge sequences
+	&PurgeSequences($seq_file) if ($purged_frequencies);
+    }
+	
+    chdir "../";
+}
+    
+################################################################
+#### draw an histogram of sequence lengths
+sub SeqLengthDistribution {
+    my ($seq_file, $format, $seq_type, $ci) = @_;
+    $ci = 50 unless $ci;
+    $format = "fasta" unless $format;
+    my $from = 0;
+
+    $command = "sequence-lengths -i $seq_file";
+    $command .= " -format $format | cut -f 2 | classfreq -ci $ci -v -from $from";
+    $command .= " | XYgraph -xcol 3 -ycol 7,8,9 -lines -xmin $from";
+    $command .= " -ymin 0 -ymax 1  -xsize 600 -ysize 400 -legend";
+    $command .= " -xgtask1 100 -xgtask2 250 -ygtask1 0.1";
+    $command .= " -xleg1 'sequence length (bp)'";
+    $command .= " -yleg1 'frequency'";
+    $command .= " -title1 '$organism_full_name'";
+    $command .= " -title2 'length distribution of ${seq_type} sequences'";
+    $command .= " -o  ${organism_short_name}_${seq_type}_segments_lengths.gif";
+    &doit();
+}
+
+################################################################
+#### purge sequences
+sub PurgeSequences {
+    my ($seq_file, $format) = @_;
+    $format = "fasta" unless ($format);
+    my $purged_seq_file = `basename $seq_file $format`;
+    $purged_seq_file .= "_purged.$format";
+    $command = "purge-sequence -i $seq_file -format wc -ml 300 -mis 9 -2str -o $purged_seq_file";
+    &doit();
+    #### compress purged sequence file
+    $command = "gzip -f $purged_seq_file";
+    &doit();
+}
+
+################################################################
+### calculate oligo and dyad frequencies in different sequence types :
+### - intergenic
+### - upstream
+### - genomic
+### 
 sub CalcFrequencies { 
     my ($seq_file, $seq_format, $seq_type) = ();
 
     chdir $oligo_dir;
 
     ################################################################
-    # calculate oligont frequencies in all intergenic sequences
-    $seq_type = "non-coding";
-    if ($purged_frequencies) {
-	$seq_file = "${organism_short_name}_non_coding_segments_purged.fasta";
-	$seq_format = "fasta";
-    } else {
-	$seq_file = "${organism_short_name}_non_coding_segments.wc";
-	$seq_format = "wc";
+    # calculate oligont frequencies in all upstream sequences
+    foreach my $noorf ("", "-noorf") {
+	$seq_type = "upstream${noorf}";
+	if ($purged_frequencies) {
+	    $seq_file = "${organism_short_name}_${seq_type}_purged.fasta";
+	    $seq_format = "fasta";
+	} else {
+	    $seq_file = "${organism_short_name}_${seq_type}.fasta";
+	    $seq_format = "fasta";
+	}
+	&CalcOligoFreq($genome_dir."/".$seq_file, $seq_format, $seq_type) if ($task{oligos});
+	&CalcDyadFreq($genome_dir."/".$seq_file, $seq_format, $seq_type) if ($task{dyads});
     }
-    &CalcOligoFreq($genome_dir."/".$seq_file, $seq_format, $seq_type) if ($install_steps{oligos});
-    &CalcDyadFreq($genome_dir."/".$seq_file, $seq_format, $seq_type) if ($install_steps{dyads});
+
+    ################################################################
+    # calculate oligont frequencies in all intergenic sequences
+    if ($task{intergenic_freq}) {
+	$seq_type = "non-coding";
+	if ($purged_frequencies) {
+	    $seq_file = "${organism_short_name}_non_coding_segments_purged.fasta";
+	    $seq_format = "fasta";
+	} else {
+	    $seq_file = "${organism_short_name}_non_coding_segments.wc";
+	    $seq_format = "wc";
+	}
+	&CalcOligoFreq($genome_dir."/".$seq_file, $seq_format, $seq_type) if ($task{oligos});
+	&CalcDyadFreq($genome_dir."/".$seq_file, $seq_format, $seq_type) if ($task{dyads});
+    }
 
     ################################################################
     # calculate oligo-frequencies in full genome
-    if ($install_steps{genome_freq}) {
+    if ($task{genome_freq}) {
 	$seq_type = "genomic";
 	$seq_format = "filelist";
 	$seq_file = $outfile{'genome'};
-	&CalcOligoFreq($seq_file, $seq_format, $seq_type) if ($install_steps{oligos});
-	&CalcDyadFreq($seq_file, $seq_format, $seq_type) if ($install_steps{dyads});
+	&CalcOligoFreq($seq_file, $seq_format, $seq_type) if ($task{oligos});
+	&CalcDyadFreq($seq_file, $seq_format, $seq_type) if ($task{dyads});
     }
 
     ################################################################
     # calculate oligont frequencies in all coding sequences
-    if ($install_steps{coding_freq}) {
+    if ($task{coding_freq}) {
 	$seq_type = "coding";
 	if ($purged_frequencies) {
 	    $seq_file = "${organism_short_name}_coding_segments_purged.fasta";
@@ -398,8 +458,8 @@ sub CalcFrequencies {
 	    $seq_file = "${organism_short_name}_coding_segments.wc";
 	    $seq_format = "wc";
 	}
-	&CalcOligoFreq($genome_dir."/".$seq_file, $seq_format, $seq_type) if ($install_steps{oligos});
-	&CalcDyadFreq($genome_dir."/".$seq_file, $seq_format, $seq_type) if ($install_steps{dyads});
+	&CalcOligoFreq($genome_dir."/".$seq_file, $seq_format, $seq_type) if ($task{oligos});
+	&CalcDyadFreq($genome_dir."/".$seq_file, $seq_format, $seq_type) if ($task{dyads});
     }
 
     chdir '../';
@@ -604,10 +664,43 @@ OPTIONS
 		of the RSA-formatted feature table. It will be
 		converted.
 
-	-step	specification of a single installation step
+	-task	specification of a single installation task
 		    e.g.
-			install-organism -step dyads
-		supported steps: $supported_steps
+			install-organism -task dyads
+		supported tasks: $supported_tasks
+
+		Description of the tasks
+		------------------------
+		genome	     format genome sequence
+			     (obsolete)
+
+		features     prepare feature table
+			     (obsolete)
+
+		config	     update configuration file
+
+		start_stop   
+			     calculate start and stop codon
+			     frequencies
+
+		ncf	     retrieve non-coding fragments
+
+		allup	     retrieve all upstream sequences
+
+		oligos	     calculate oligonucleotide frequencies
+
+		dyads	     calculate dyad frequencies
+
+		genome_freq  
+			     calculate oligo and dyad frequencies from
+			     genome sequences
+
+		intergenic_freq
+			     calculate oligo and dyad frequencies from
+			     intergenic sequences
+
+		clean	     remove intergenic sequence files
+
 End_of_help
     close HELP;
     exit(0);
@@ -633,7 +726,7 @@ install_organism options
 -dir		absolut path of the installation directory
 -local		update local config file 
 		(specified by the environment variable RSA_LOCAL_CONFIG)
--step		installation step ($supported_steps)
+-task		installation task ($supported_tasks)
 End_short_help
   close HELP;
   exit;
@@ -698,14 +791,17 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] =~ /^-dir/) {
 	    $install_dir = $ARGV[$a+1];
 
-	    #### installation step
-	} elsif ($ARGV[$a] =~ /^-step/) {
-	    my $step = $ARGV[$a+1];
-	    if ($supported_steps{$step}) {
-		$install_steps{$step} = 1;
-	    } else {
-		&FatalError("Invalid step option. Supported options: ", 
-			    join(",", $supported_steps));
+	    #### task selection
+	} elsif (($ARGV[$a] =~ /^-task/) 
+		 || ($ARGV[$a] =~ /^-step/)) {
+	    my @requested_tasks = split ",", $ARGV[$a+1];
+	    foreach my $task (@requested_tasks) {
+		next unless $task;
+		if ($supported_task{$task}) {
+		    $task{$task} = 1;
+		} else {
+		    &FatalError("Unsupported task '$task'. \n\tSupported: $supported_tasks");
+		}
 	    }
 
 	    #### installation dir
@@ -1071,17 +1167,22 @@ sub ParseNCBIFeatures {
 sub CleanUp {
     chdir $genome_dir;
 
-    #### non-coding segments
+    #### delete files with non-coding and coding segment sequences
     my @files = ();
-    push @files, "${organism_short_name}_non_coding_segments.wc";
-    push @files, "${organism_short_name}_non_coding_segments_purged.fasta";
-    push @files, "${organism_short_name}_coding_segments.wc";
-    push @files, "${organism_short_name}_coding_segments_purged.fasta";
-
-    push @files, "${organism_short_name}_non_coding_segments.wc.gz";
-    push @files, "${organism_short_name}_non_coding_segments_purged.fasta.gz";
-    push @files, "${organism_short_name}_coding_segments.wc.gz";
-    push @files, "${organism_short_name}_coding_segments_purged.fasta.gz";
+    foreach my $seq_type qw(non_coding coding upstream upstream-noorf) {
+	foreach my $format qw(wc fasta) {
+	    foreach my $extension ("", ".gz") {
+		foreach my $segments ("", "_segments") {
+		    foreach my $purged ("", "_purged") {
+			my $file = "${organism_short_name}_${seq_type}${segments}${purged}.${format}${extension}";
+			if (-e $file) {
+			    push @files, $file;
+			}
+		    }
+		}
+	    }
+	}
+    }
     foreach my $file (@files) {
 	$command = "rm -f $file";
 	&doit();
