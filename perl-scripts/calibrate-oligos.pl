@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: calibrate-oligos.pl,v 1.2 2003/12/25 19:52:18 jvanheld Exp $
+# $Id: calibrate-oligos.pl,v 1.3 2003/12/28 19:48:22 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -25,11 +25,12 @@ my $ov="-noov";
 my $organism_name = "Saccharomyces_cerevisiae";
 my %dir = ();
 my $start = 1;
+my $end = undef;
 
 $seq_file = "";
 $family_file = "";
 
-@supported_tasks = qw (all upstream random oligos distrib clean_seq clean_oligos);
+@supported_tasks = qw (all upstream random oligos distrib stats clean_seq clean_oligos);
 foreach my $task (@supported_tasks) {
     $supported_task{$task} = 1;
 }
@@ -38,7 +39,7 @@ $supported_tasks = join ",", @supported_tasks;
 local %infile = ();
 local %outfile = ();
 
-local $verbose = 0;
+$verbose = 0;
 
 &ReadArguments();
 
@@ -52,7 +53,7 @@ unless (defined(%task)) {
 }
 if ($task{all}) {
     foreach my $t (@supported_tasks) {
-	next if ($t =~ /^clean/); ## clean must be actively requested
+	next if ($t eq "clean_oligos"); ## clean must be actively requested
 	$task{$t} = 1;
     }
 }
@@ -77,11 +78,11 @@ $outfile{distrib} = $organism_name."_".$oligo_len."nt_".$str.$ov."_n".$seq_nb."_
 $outfile{stats} = $organism_name."_".$oligo_len."nt_".$str.$ov."_n".$seq_nb."_l".$seq_len."_r".$repet."_stats.tab";
 if ($task{distrib}) {
     $out = &OpenOutputFile($outfile{distrib});
+    ################################################################
+    #### print verbose
+    &Verbose() if ($verbose);
 }
 
-################################################################
-#### print verbose
-&Verbose() if ($verbose);
 
 ################################################################
 #### Retrieve all upstream sequences in wc format. This will allow to
@@ -116,7 +117,10 @@ if ($task{random}) {
 ################################################################
 #### oligo-analysis
 if ($task{oligos}) {
-    for my $r ($start..$repet) {
+    unless (defined($end)) {
+	$end = $repet;
+    }
+    for my $r ($start..$end) {
 	warn "; ", &AlphaDate(), "\toligo-analysis\trepetition\t",$r,"\n" if ($verbose >= 1);
 	
 	#### select one gene family
@@ -154,8 +158,6 @@ local $max_occ = 0;
 local %counts = ();
 local %count_sum = ();
 local %overlaps = ();
-local %sum = ();
-local %ssq = ();
 if ($task{distrib}) {
     warn "; ", &AlphaDate(), "\toligo count distribution\t",$outfile{distrib},"\n" if ($verbose >= 1);
     for my $r (1..$repet) {
@@ -188,11 +190,10 @@ if ($task{distrib}) {
 		$counts{$pattern}{$occ} = 0;
 	    }
 	    printf $out "\t%d", $counts{$pattern}{$occ};
-	    $sum{$pattern} += $occ*$counts{$pattern}{$occ};
-	    $ssq{$pattern} += $occ*$occ*$counts{$pattern}{$occ};
 	}
 	print $out "\n";
     }
+    &CloseVerbose();
 }
 
 ################################################################
@@ -211,51 +212,90 @@ if ($task{clean_oligos}) {
 }
 
 ################################################################
-###### finish verbose
-if ($verbose) {
-    my $done_time = &AlphaDate();
-    print $out "; Job started $start_time\n";
-    print $out "; Job done    $done_time\n";
-}
-
-################################################################
 #### Calculate statistics on each pattern count distribution
-if ($task{distrib}) {
+if ($task{stats}) {
     warn "; ", &AlphaDate(), "\toligo count statistics\t",$outfile{stats},"\n" if ($verbose >= 1);
-    $stats = &OpenOutputFile($outfile{stats});
+    $out = &OpenOutputFile($outfile{stats});
+    &Verbose();
 
     #### header
-    print $stats join ("\t", 
-		       "; pattern",
-		       "sum",
-		       "ssq",
-		       "avg",
-		       "var",
-		       "std",
-		       ), "\n";
+    print $out join ("\t", 
+		     "; pattern",
+		     "sum",
+#		       "ssq",
+		     "avg",
+		     "var",
+		     "std",
+		     "chi2",
+		     "df",
+		     "Lgroup",
+		     "Rgroup",
+		     ), "\n";
 
-    ## Pattern count statistics
-    foreach my $pattern (sort keys %count_sum) {
-	my $avg = $sum{$pattern}/$repet;
-	my $var = $ssq{$pattern}/$repet - $avg*$avg;
+
+    ## Open the file with count distributions
+    ($distrib) = &OpenInputFile($outfile{distrib});
+
+    my $pattern_count = 0;
+    while (<$distrib>) {
+	next unless (/\S/);
+	next if (/^;/);
+	chomp();
+	$pattern_count++;
+	my @counts = split "\t";
+	my $pattern = shift @counts;
+	my $max_occ = $#counts;
+	my $sum = 0;
+	my $ssq = 0;
+	for my $occ (0..$max_occ) {
+	    $sum += $occ*$counts[$occ];
+	    $ssq += $occ*$occ*$counts[$occ];
+	}
+	my $avg = $sum/$repet;
+	my $var = $ssq/$repet - $avg*$avg;
 	my $std = sqrt($var);
-	print $stats join ("\t", 
-			   $pattern,
-			   $sum{$pattern},
-			   $ssq{$pattern},
-			   $avg,
-			   $var,
-			   $std,
-			   ), "\n";
+
+	## Fit a poisson distribution and calculate the goodness of fit
+	my @expected = poisson($max_occ, $avg, 1); 
+	my $exp_sum = 0;
+	foreach my $i (0..$#expected) {
+	    $expected[$i] *= $repet;
+	    $exp_sum += $expected[$i];
+	}
+
+	## Perform a chi-square test
+	my ($chi2, $df, $left_group, $right_group) = &ChiSquare("goodness", 2, $max_occ+1, @counts, @expected);
+	
+	## Discard cases where applicability conditions are not met
+	unless (&IsReal($chi2)) {
+	    $chi2 = "NA";
+	}
+
+	warn join ("\t", $pattern, $sum, $ssq, $avg, $var, $std, $exp_sum, $chi2, $df, $left_group, $right_group), "\n" if ($verbose >= 3);
+
+	print $out join ("\t", 
+			 $pattern,
+			 $sum,
+#			 $ssq,
+			 $avg,
+			 $var,
+			 $std,
+			 $chi2,
+			 $df,
+			 $left_group, 
+			 $right_group,
+#			 @counts, 
+#			 @expected,
+			 ), "\n";
+#	die "HELLO" if ($pattern_count == 2);
+
     }
+
+    &CloseVerbose();
+
 }
 
 warn "; Result stored in directory\t", $dir{output}, "\n";
-
-################################################################
-#### Close output streams
-close $out;
-close $stats;
 
 
 
@@ -310,7 +350,9 @@ OPTIONS
 		    -task all
     Repetitions
 	-r #	repetitions
-	-start #	starting iteration (to pursue an interrupted test)
+	-start #	
+	        starting iteration (to pursue an interrupted test)
+	-end #	ending iteration (to pursue an interrupted test)
 
     Upstream sequences
 	-org organism
@@ -343,6 +385,7 @@ calibrate-oligos.pl options
 -task		selected task (supported: $supported_tasks)
 -r #		repetitions
 -start #	starting iteration (to pursue an interrupted test)E
+-end #  	ending iteration (to pursue an interrupted test)E
 -org		organism
 -sl		sequence length
 -sn		sequence number
@@ -411,8 +454,6 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-ovlp") {
 	    $noov = 0;
 
-	    #### prevent feature-map drawing
-
 	    ### output directory  
 	} elsif ($ARGV[$a] eq "-outdir") {
 	    $dir{output} = $ARGV[$a+1];
@@ -420,6 +461,10 @@ sub ReadArguments {
 	    ### starting iteration
 	} elsif ($ARGV[$a] eq "-start") {
 	    $start = $ARGV[$a+1];
+	    
+	    ### ending iteration
+	} elsif ($ARGV[$a] eq "-end") {
+	    $end = $ARGV[$a+1];
 	    
 	    #### task selection
 	} elsif ($ARGV[$a] eq "-task") {
@@ -466,4 +511,13 @@ sub Verbose {
 	    print $out ";\t$key\t$value\n";
 	}
     }
+}
+
+sub CloseVerbose {
+    ################################################################
+    ###### finish verbose
+    my $done_time = &AlphaDate();
+    print $out "; Job started $start_time\n";
+    print $out "; Job done    $done_time\n";
+    close $out;
 }

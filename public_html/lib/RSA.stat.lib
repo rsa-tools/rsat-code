@@ -158,7 +158,7 @@ sub LogToEng {
 sub sum_of_binomials {
     my ($proba, $trials, $from, $to) = @_;
 
-    if ($verbose >= 5) {
+    if ($main::verbose >= 5) {
 	print join ("\t", "sum_of_binomials", "p=$proba", "t=$trials", "from=$from", "to=$to"), "\n";
     }
 
@@ -236,7 +236,7 @@ sub sum_of_binomials {
 sub binomial_boe {
     my ($proba, $trials, $succ) = @_;
     
-    if ($verbose >=5) {
+    if ($main::verbose >=5) {
 	print join ("\t", "binomial_boe", "p=$proba", "t=$trials", "s=$succ"), "\n";
     }
     
@@ -403,7 +403,7 @@ sub hypergeometric {
  		"k=$k",
  		"x=$x",
 		 "depth=$args{depth}"
- 		), "\n" if ($verbose >= 5);
+ 		), "\n" if ($main::verbose >= 5);
 
     ### error if too high recursion depth
     my $max_depth = 10; 
@@ -464,14 +464,14 @@ sub hypergeometric {
 
 
     
-# 	$Id: RSA.stat.lib,v 1.13 2003/12/27 02:06:40 jvanheld Exp $	
+# 	$Id: RSA.stat.lib,v 1.14 2003/12/28 19:48:22 jvanheld Exp $	
 
     #### initialization
     if (defined($args{previous_value})) {
 	#### a single recursion is sufficient
 #	die;
 	$log_proba = log($args{previous_value});
-	warn "Previous value\t", $log_proba, "\n" if ($verbose >= 4);
+	warn "Previous value\t", $log_proba, "\n" if ($main::verbose >= 4);
 	$start = $x;
 
     } elsif ($w < $k) {
@@ -550,7 +550,7 @@ sub hypergeometric {
 		    "to=$to",
 		    "depth=$args{depth}",
 		    "last_proba=$proba"
-		    ), "\n" if ($verbose >= 5);
+		    ), "\n" if ($main::verbose >= 5);
 	$log_proba += log($m - $i + 1);
 	$log_proba -= log($i);
 	$log_proba += log($k - $i + 1);
@@ -567,7 +567,7 @@ sub hypergeometric {
 		    "depth=$args{depth}",
 		    "log(p)=$log_proba",
 		    "proba=$proba"
-		    ), "\n" if ($verbose >= 5);
+		    ), "\n" if ($main::verbose >= 5);
 	last if (($proba == $last_proba) && ($proba >0)); ### beyond precision limit, it is worthless adding more elements
     }
 
@@ -584,7 +584,7 @@ sub hypergeometric {
 		    "depth=$args{depth}",
 		    "log(p)=$log_proba",
 		    "proba=$proba"		    
-		    ), "\n" if ($verbose >= 4);
+		    ), "\n" if ($main::verbose >= 4);
 
 #    my $proba = exp($log_proba);
     return($proba);
@@ -620,7 +620,7 @@ sub sum_of_hypergeometrics {
     $to = &min($to,$m);
 
     
-    warn join( "\t", "sum_of_hypergeometrics", "m=$m", "n=$n", "k=$k", "from=$from", "to=$to", "min_x=$min_x"), "\n" if ($verbose >= 4);
+    warn join( "\t", "sum_of_hypergeometrics", "m=$m", "n=$n", "k=$k", "from=$from", "to=$to", "min_x=$min_x"), "\n" if ($main::verbose >= 4);
     
     if ($min_x > $to) {
 	return(0);
@@ -685,6 +685,10 @@ sub FisherExactTest {
     my $log_proba;
     my $log10_proba;
     my $val_nb = $#values + 1;
+    my $left_group = 0;
+    my $left_sum = 0;
+    my $right_group = 0;
+    my $right_sum = 0;
     
     ## Check parameters
     if (($row_nb < 2) || ($col_nb < 2)) {
@@ -841,6 +845,12 @@ sub ChiSquare {
     my $exp;
     my $not_valid = 0;
     my $group_tails = 1;
+    my $left_group = 0;
+    my $left_sum = 0;
+    my $right_group = 0;
+    my $right_sum = 0;
+    my @observed = ();
+    my @expected = ();
 
     ### check parameter values ###
     unless (($test =~ /^indep/i) || ($test =~ /^good/i) || ($test =~ /^homog/i)) {
@@ -904,49 +914,61 @@ sub ChiSquare {
 	    return ";Error: test of goodness of fit requires esactly two lines";
 	}
 	$chi_square = 0;
-	my @observed = @values[0..$col_nb-1];
-	my @expected = @values[$col_nb..2*$col_nb-1];
+	@observed = @values[0..$col_nb-1];
+	@expected = @values[$col_nb..2*$col_nb-1];
+
+#  	if ($main::verbose >= 10) {
+#  	    warn "Observed\t", join( " ", @observed), "\n" ;
+#  	    warn "Expected\t", join( " ", @expected), "\n";
+#  	}
 
 	#### Group tails to fulfill the condition of applicability
 	if ($group_tails) {
 
 	    ## Group left tail
-	    my $left_group = 0;
-	    my $left_sum = 0;
 	    do {
 		$left_group++;
 		$left_sum += $expected[$left_group-1];
 	    } until (($left_sum >= 5) || ($left_group >= $col_nb));
 	    if ($left_group > 1) {
-		warn "Grouping $left_group left classes\tsum=$left_sum\n" if ($verbose >= 2); 
 		my $left_obs = 0;
 		my $left_exp = 0;
-		for my $col (0..($left_group-2)) {
+		for my $col (1..($left_group-1)) {
 		    $left_obs += shift @observed;
 		    $left_exp += shift @expected;
+#		    warn join ("\t", "Grouping left tail", $left_group, $col, $left_obs, $left_exp), "\n" if ($verbose >= 10);
 		}
 		$observed[0] += $left_obs;
 		$expected[0] += $left_exp;
+		warn join ("\t", "Grouped $left_group left classes",
+			   "sum=$left_sum",
+			   $observed[0],
+			   $expected[0],
+			   ), "\n" if ($main::verbose >= 5); 
 	    }
 	    ## recalculate the number of columns after left grouping
 	    $col_nb = scalar(@expected);
 	    
 	    ## group right tail
-	    $right_group = 0;
 	    do {
 		$right_group++;
 		$right_sum += $expected[$col_nb -$right_group];
 	    } until (($right_sum >= 5) || ($right_group >= $col_nb));
 	    if ($right_group > 1) {
-		warn "Grouping $right_group right classes\tsum=$right_sum\n" if ($verbose >= 2); 
 		my $right_obs = 0;
 		my $right_exp = 0;
-		for my $col (0..($right_group-2)) {
+		for my $col (1..($right_group-1)) {
 		    $right_obs += pop @observed;
 		    $right_exp += pop @expected;
+#		    warn join ("\t", "Grouping right tail", $right_group, $col, $right_obs, $right_exp), "\n" if ($verbose >= 10);
 		}
 		$observed[$#observed] += $right_obs;
 		$expected[$#expected] += $right_exp;
+		warn join ("\t", "Grouped $right_group right classes",
+			   "sum=$right_sum",
+			   $observed[$#observed],
+			   $expected[$#expected],
+			   ), "\n" if ($main::verbose >= 5); 
 	    }
 	    ## recalculate the number of columns after right grouping
 	    $col_nb = scalar(@expected);
@@ -965,7 +987,7 @@ sub ChiSquare {
 	    } else {
 		$chi_square +=   (($obs - $exp)**2)/$exp;
 	    }
-#	    warn join ("\t", $obs, $exp, $not_valid, $chi_square), "\n" if ($verbose >= 10);
+	    warn join ("\t", $obs, $exp, $not_valid, $chi_square), "\n" if ($main::verbose >= 10);
 	}
     }
 
@@ -980,7 +1002,7 @@ sub ChiSquare {
 	print $out ";Test of $test\n";
 	print $out ";$deg_freedom degrees of freedom\n";
 	print $out ";DATA REPORT\n";
-	if (($not_valid) && ($verbose >= 2)) {
+	if (($not_valid) && ($main::verbose >= 2)) {
 	    print $out "; WARNING: data do not conform to the applicability conditions \n; (some classes have less than 5 expected observations).\n";
 	}
 	print $out ";";
@@ -1022,7 +1044,16 @@ sub ChiSquare {
     } else {
 	$answer = sprintf "%.5f", $chi_square;
     }
-    return ($answer, $deg_freedom);
+    warn join("\t", 
+	      $answer, 
+	      $deg_freedom, 
+	      $left_group, 
+	      $right_group,
+	      $#expected,
+	      $expected[0],
+	      $expected[$#expected],
+	      ), "\n" if ($main::verbose >= 4);
+    return ($answer, $deg_freedom, $left_group, $right_group);
 } ### end ChiSquare
 
 

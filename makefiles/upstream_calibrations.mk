@@ -140,7 +140,7 @@ OL=6
 OLIGO_FILE=${OLIGO_DIR}/${ORG}_allup${NOORF}_${OL}nt_mkv${MKV}${STR}${NOOV}${COMPRESS}
 MKV=3
 OLIGO_ANALYSIS_CMD=						\
-	oligo-analysis -v 4 -i ${SEQ_FILE} -o ${OLIGO_FILE}		\
+	oligo-analysis -v ${V} -i ${SEQ_FILE} -o ${OLIGO_FILE}		\
 		${NOORF} ${STR} ${NOOV} -l ${OL} -markov ${MKV}	\
 		-return occ,freq,proba,zscore,mseq,rank -sort
 one_markov: dirs
@@ -255,13 +255,15 @@ calibrate_oligos_yeast:
 	${MAKE} calibrate_oligos ORG=Saccharomyces_cerevisiae SEQ_LEN=1000 N=16 STR=-2str STR=-2str NOOV=-noov
 	${MAKE} calibrate_oligos ORG=Saccharomyces_cerevisiae SEQ_LEN=1000 N=4 STR=-2str STR=-2str NOOV=-noov
 
-SEQ_LENGTHS_HUMAN=1000 1500 2000 3000 
-# SEQ_LENGTHS_HUMAN=500 1000 1500 2000 2500 3000 
-calibrate_oligos_human:
+done:
 	${MAKE} calibrate_oligos ORG=Homo_sapiens N=1 SEQ_LEN=1000 STR=-2str NOOV=-noov
 	${MAKE} calibrate_oligos ORG=Homo_sapiens N=1 SEQ_LEN=500 STR=-2str NOOV=-noov
 	${MAKE} calibrate_oligos ORG=Homo_sapiens N=10 SEQ_LEN=500 STR=-2str NOOV=-noov
 	${MAKE} calibrate_oligos ORG=Homo_sapiens N=12 SEQ_LEN=2000 STR=-2str NOOV=-noov
+
+SEQ_LENGTHS_HUMAN=1000 1500 2000 3000 
+# SEQ_LENGTHS_HUMAN=500 1000 1500 2000 2500 3000 
+calibrate_oligos_human:
 	${MAKE} calibrate_oligos ORG=Homo_sapiens N=14 SEQ_LEN=500 STR=-2str NOOV=-noov
 	${MAKE} calibrate_oligos ORG=Homo_sapiens N=17 SEQ_LEN=2000 STR=-2str NOOV=-noov
 	${MAKE} calibrate_oligos ORG=Homo_sapiens N=2 SEQ_LEN=1000 STR=-2str NOOV=-noov
@@ -285,18 +287,23 @@ calibrate_oligos_human:
 
 SEQ_LEN=500
 #OLIGO_DISTRIB_DIR=${ORG_DIR}/rand_gene_selections/N${N}_R${R}_L${SEQ_LEN}
-CALIB_TASK=all,clean_seq
+CALIB_TASK=all
 START=1
-CALIBRATE_CMD= \
-	calibrate-oligos.pl -v 1				\
+CALIBRATE_CMD=							\
+	calibrate-oligos.pl -v ${V}				\
 		-r ${R} -sn ${N} -l ${OL} -sl ${SEQ_LEN}	\
 		-task ${CALIB_TASK}				\
 		-start ${START}					\
+		${END}						\
 		${STR} ${NOOV}					\
 		-org ${ORG}
 
 WHEN=now
 calibrate_oligos: calibrate_oligos_${WHEN}
+
+## A quick test for calibrate_oligos
+calibrate_oligos_test:
+	${MAKE} calibrate_oligos ORG=Mycoplasma_genitalium N=10 SEQ_LEN=200 STR=-1str NOOV=-ovlp R=100
 
 calibrate_oligos_now:
 #	mkdir -p ${OLIGO_DISTRIB_DIR}
