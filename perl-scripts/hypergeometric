@@ -14,42 +14,34 @@ $soe = 0;
 
 if ($verbose) {
     if ($from_to) {
-	print "P($from<=s<=$to | r=$r,p=$p) = ";
+	print "P($from \<= X \<= $to) = ";
     } else {
 	if ($boe) {
-	    print "P(s>=$s | r=$r,p=$p) = ";
+	    print "P(X \>= $x) = ";
 	} elsif ($soe) {
-	    print "P(s<=$s | r=$r,p=$p) = ";
+	    print "P(C \<= $x) = ";
 	} else {
-	    print "P(s=$s | r=$r,p=$p) = ";
+	    print "P(X=$x) = ";
 	}
     }
 }
 
 
-if ($boe) {
-    $h = &hypergeometric_boe($m, $n, $k, $x);
+my $format = "%.6e\n";
+if ($series) {
+    for my $x ($from..$to) {
+	print $x, "\t",  sprintf($format, &hypergeometric($m, $n, $k, $x));
+    }
+} elsif ($boe) {
+    printf $format, &sum_of_hypergeometrics($m, $n, $k, $x, $k); 
 } elsif ($soe) {
-    $h = &sum_of_hypergeometrics($m, $n, $k, 0, $x);
+    printf $format, &sum_of_hypergeometrics($m, $n, $k, 0, $x); 
 } elsif (defined($from) && (defined($to))) {
-    $h = &sum_of_hypergeometrics($m, $n, $k, $x, $k);
+    printf $format, &sum_of_hypergeometrics($m, $n, $k, $from, $to); 
 } else {
-    $h = &hypergeometric($m, $n, $k, $x);
+    printf $format, &hypergeometric($m, $n, $k, $x); 
 }
 
-
-if ($h < 0) {
-### this can happen when using boe or soe options,
-### due to the precision limit
-  $h = 0;
-}
-#if ($h >= 0.0001) {
-#    printf "%.7f\n", $h;
-#} else {
-#    printf "%.7g\n", $h;
-#}
-
-print $h, "\n";
 
 exit(0);
 
@@ -78,11 +70,18 @@ sub ReadArguments {
 	    $k = $ARGV[$a+1];
 	    
 	} elsif ($ARGV[$a] eq "-v") {
-	    $verbose = 1;
-	    
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+
 	} elsif ($ARGV[$a] eq "-boe") {
 	    $boe = 1;
 	    
+	} elsif ($ARGV[$a] eq "-series") {
+	    $series = 1;
+
 	} elsif ($ARGV[$a] eq "-soe") {
 	    $soe = 1;
 
@@ -106,8 +105,8 @@ sub PrintOptions {
   print HELP <<End_short_help;
 hypergeometric options
 ----------------
--n #m		total number of balls in the urn
 -m #m		number of black balls in the urn
+-n #m		total number of balls in the urn
 -k #k		number of balls in the sample
 -x #x		number of black balls in the sample
 -v		verbose
