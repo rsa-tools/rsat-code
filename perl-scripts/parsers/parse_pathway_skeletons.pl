@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_pathway_skeletons.pl,v 1.8 2002/11/09 00:00:03 jvanheld Exp $
+# $Id: parse_pathway_skeletons.pl,v 1.9 2002/11/14 19:43:38 jvanheld Exp $
 #
-# Time-stamp: <2002-11-08 17:45:19 jvanheld>
+# Time-stamp: <2002-11-14 12:05:11 jvanheld>
 #
 ############################################################
 
@@ -52,7 +52,7 @@ package main;
     $processes = PFBP::ClassFactory->new_class(object_type=>"PFBP::Process",
 					       prefix=>"proc_");
     $leaves = PFBP::ClassFactory->new_class(object_type=>"PFBP::ProcessLeaf",
-						    prefix=>"leaf_");
+					    prefix=>"leaf_");
 
 
     push @classes, ("PFBP::Process");
@@ -114,7 +114,7 @@ package main;
 				 names
 				 nodes
 				 arcs
-				     
+				 
 				 reactions
 				 ECs
 				 genes
@@ -154,7 +154,7 @@ package main;
     
     ### default verbose message
     if ($verbose >=1) {
-	&DefaultVerbose;
+	&DefaultVerbose();
 	warn "; Files to parse\n\t", join (";\n\t", @files_to_parse), "\n";
     }
 
@@ -188,15 +188,15 @@ package main;
 	}
 
     #### compress result files
-    system "gzip -f $dir{output}/*.tab $dir{output}/*.txt";
+#    system "gzip -f $dir{output}/*.tab $dir{output}/*.txt";
     system "gzip -f $dir{output}/*.obj" if ($export{obj});
 
     exit(0);
 }
 
+
 ################################################################
-#### export data in a special format for pathway reconstruction
-################################################################
+#### export lists of EC numbers for the pathway builder
 sub GenerateECSeeds {
     warn "; Generating EC seeds for pathway reconstruction\n"
 	if ($verbose >=1);
@@ -352,8 +352,10 @@ sub ReadArguments {
     }
 }
 
+################################################################
+#### load indexes for reference reactions and compounds (these should
+#### have been previously parsed from KEG)
 sub LoadIndexes {
-    #### load indexes
     warn ("Loading index files\n") if ($verbose >=1);
 
     #### compound names
@@ -456,6 +458,7 @@ sub ReadProcesses {
 	$organism =~ s/_/ /g;
 	$organism =~ s|/||g;
 
+	#### initialize a new process
 	$process = $processes->new_object();
 	$process->set_attribute("source","amaze");
 	$process->set_attribute("complete",1);
@@ -491,43 +494,10 @@ sub ReadProcesses {
 		
 	    }
 
-	    	    #### create a control file for viewing the mirror file as a form in emacs
-	    my $control_file = "$dir/${process_name}.fctl";
-	    $control_file =~ s/\s/_/g;
-	    my $mirror_file_short = $process_name.".tab";
-	    $mirror_file_short =~ s/\s+/_/g;
+	    #### create a control file for viewing the mirror file as a form in emacs
+	    &PrintControlFile($dir, $process_name) ;
 
-	    open FCTL, ">$control_file";
-	    print FCTL<<EndForm;
-(setq forms-file \"$mirror_file_short\")
-(setq forms-number-of-fields 17)
-;; (setq forms-read-only t)                 ; to make sure
-(setq forms-field-sep \"\t\")
-;;(setq forms-multi-line nil)               ; Don\'t allow multi-line fields.
-(setq forms-read-only nil)
-(setq forms-format-list (list
-        \"\# 1-step        \# \" 1
-        \"\\n\# 2-EC          \# \" 2
-        \"\\n\# 3-gene        \# \" 3
-        \"\\n\# 4-substrate   \# \" 4
-        \"\\n\# 5-product     \# \" 5
-        \"\\n\# 6-reaction    \# \" 6
-        \"\\n\# 7-reaction id \# \" 7
-        \"\\n\# 8-direction   \# \" 8
-        \"\\n\# 9-status      \# \" 9
-        \"\\n\# 10-remark     \# \" 10
-        \"\\n\# 11            \# \" 11
-        \"\\n\# 12            \# \" 12
-        \"\\n\# 13            \# \" 13
-        \"\\n\# 14            \# \" 14
-        \"\\n\# 15            \# \" 15
-        \"\\n\# 16            \# \" 16
-        \"\\n\# 17            \# \" 17))
-EndForm
-
-    close FCTL;
-
-	    
+	    #### open mirror file
 	    my $mirror_file = "$dir/${process_name}.tab";
 	    $mirror_file =~ s/ /_/g;
 	    warn "; Mirror file\t$mirror_file\n" if ($verbose >=1);
@@ -540,7 +510,7 @@ EndForm
 	#### opening the data file
         warn "; Parsing file\t$dir{skeletons}/$file\n" if ($verbose >=1);
         die "Error: file $dir{skeletons}/$file does not exist\n"
-        unless (-e "$dir{skeletons}/$file");
+	    unless (-e "$dir{skeletons}/$file");
         open FILE, "$dir{skeletons}/$file"
 	    || die "Error: cannot read file $dir{skeletons}/$file\n";
 
@@ -565,12 +535,10 @@ EndForm
 
 	    my @matching_reactions = ();
 	    my %is_direct = ();
-	    my $provided_reaction = &trim($fields[$col{equation}]);
 #	    my $provided_amaze_id = "";
-	    my $provided_kegg_id = &trim($fields[$col{kegg_id}]); 
 	    my $provided_equation = "";
 	    my $reverse_equation = "";
-	    my $multi_allowed = 0;
+	    my $provided_reaction = &trim($fields[$col{equation}]);
 
 
 
@@ -578,16 +546,29 @@ EndForm
 	    #### Identify the reaction
 
 	    #### reaction provided in the form of a KEGG ID
-	    if ($provided_kegg_id =~ /^R0/) {
+	    my $provided_kegg_id = &trim($fields[$col{kegg_id}]); 
+	    if ($provided_kegg_id) {
 		warn ("provided_kegg_id\tin column ", 
 		      $col{kegg_id} + 1, 
-		      "\t", $provided_kegg_id, "\n") if ($verbose >=1);
+		      "\t", $provided_kegg_id, "\n") if ($verbose >=2);
+		@provided_reactions = split '\|', $provided_kegg_id;
+		if ($#provided_reactions > 0) {
+		    warn join ("\t", $file, $l, "Multiple reactions are provided", $provided_kegg_id), "\n" 
+			if ($verbose >=2);
+		}
+
+		foreach my $reaction_id (@provided_reactions) {
+		    if ($provided_kegg_id=~ /^R0/) {
+			push @matching_reactions, $reaction_id;
+		    } else {
+			&ErrorMessage (join ("\t", $file, $l, "Invalid KEGG ID for a reaction", $provided_kegg_id), "\n");
+		    }		}
 
 	    } elsif ($provided_reaction =~ /^R0/) {
 		$provided_kegg_id = $provided_reaction;
 		warn ("provided_kegg_id\tin column ", 
 		      $col{equation} + 1, 
-		      "\t", $provided_kegg_id, "\n") if ($verbose >=1);
+		      "\t", $provided_kegg_id, "\n") if ($verbose >=2);
 
 #		#### reaction provided in the form of an aMAZE ID
 #	    } elsif ($provided_reaction =~ /aMAZEReaction/) {
@@ -598,37 +579,10 @@ EndForm
 	    } elsif (($provided_reaction =~ /=/) || 
 		     ($provided_reaction =~ /->/) || 
 		     ($provided_reaction =~ /<-/)) {
+		($provided_equation, $reverse_equation) = &CleanAndReverseEquation($provided_reaction);
+		warn join ("\t", $file, $l, "provided equation", $provided_equation), "\n" 
+		    if ($verbose >=2);
 
-		#### clean the provided equation
-		$provided_reaction =~ s/\=/\<\=\>/; #### fix cases where the < and > were forgotten
-		$provided_reaction =~ s/\<\<\=\>\>/\<\=\>/;#### fix cases where the < and > were forgotten
-		$provided_reaction =~ s/\<\=\>/ \<\=\> /;
-		$provided_reaction =~ s/\-\>/ \-\> /;
-		$provided_reaction =~ s/\<\-/ \<\- /;
-		$provided_reaction =~ s/ +/ /g;
-		$provided_equation = &standardize($provided_reaction);
-		warn ("provided_equation\t", $provided_equation, "\n") if ($verbose >=3);
-
-		#### calculate the reverse reaction
-		my $separator = "";
-		my @reaction_sides = ();
-		if (($provided_reaction =~ /(\<\=\>)/) || 
-		    ($provided_reaction =~ /(\-\>)/) || 
-		    ($provided_reaction =~ /(\<\-)/)) {
-		    $separator = $1;
-		    @reaction_sides = split $separator, $provided_reaction;
-		}
-		warn join ("\t", "Reaction separator", $separator), "\n" if ($verbose >=4);
-		warn join ("\t", "Reaction sides", @reaction_sides), "\n" if ($verbose >=4);
-		if ($#reaction_sides == 1) {
-		    $reverse_equation = &trim($reaction_sides[1]);
-		    $reverse_equation .= " ".$separator." ";
-		    $reverse_equation .= &trim($reaction_sides[0]);
-		    $reverse_equation = &standardize($reverse_equation);
-		    warn ("reverse_equation\t", $reverse_equation, "\n") if ($verbose >=3);
-		} else {
-		    &ErrorMessage (join ("\t", $file, $l, "Cannot reverse equation", $provided_equation), "\n");
-		}
 	    } 
 	    #### initialize the reaction direction
 	    $is_direct{$reaction} = "NA";
@@ -638,6 +592,8 @@ EndForm
 	    #### Parse  and check EC number
 	    my $ec = &trim($fields[$col{ec}]);
 	    if ($ec) {
+		warn join ("\t", $file, $l, "EC number", $ec), "\n" 
+		    if ($verbose >=3);
 		if ($ec =~ /^[\d\-\.]+$/) {
 		    $process->push_expanded_attribute("ECs", $ec, $step); 
 		} else {
@@ -649,17 +605,19 @@ EndForm
 				  "\n");
 		}
 	    }
-	    
+
 	    ################################################################
 	    #### parse gene names
 	    my $gene_string = &trim($fields[$col{gene}]);
 	    if ($gene_string) {
 		my @genes = split '\|', $gene_string;
 		foreach $gene (@genes) {
+		    warn join ("\t", $file, $l, "gene", $gene), "\n" 
+			if ($verbose >=3);
 		    $process->push_expanded_attribute("genes", $gene, $step);
 		}
 	    }
-	    
+
 	    ################################################################
 	    #### main substrates
 	    my $substrate_string = &unquote($fields[$col{substrates}]);
@@ -680,7 +638,7 @@ EndForm
 		    $process->push_expanded_attribute("substrates", $substrate_name, $step); #if ($debug);
 		} else {
 		    $process->force_attribute("unidentified_compounds", 
-					    $process->get_attribute("unidentified_compounds") + 1) ; #if ($debug);
+					      $process->get_attribute("unidentified_compounds") + 1) ; #if ($debug);
 		    &ErrorMessage(join ("\t", $file, $l, "unidentified_compound", $substrate_name), "\n");
 		}
 	    }
@@ -707,7 +665,7 @@ EndForm
 		    $process->push_expanded_attribute("products", $product_name, $step); 
 		} else {
 		    $process->force_attribute("unidentified_compounds", 
-					    $process->get_attribute("unidentified_compounds") + 1) ;
+					      $process->get_attribute("unidentified_compounds") + 1) ;
 		    &ErrorMessage(join("\t", $file, $l, "unidentified_compound", $product_name), "\n");
 		}
 	    }
@@ -716,19 +674,7 @@ EndForm
 		warn "products\t", join ("|", @products), "\n" ;
 	    }
 
-#  	    unless ($substrates[0]) {
-#  		&ErrorMessage("$file\t$l\t", "row without substrate\t", "$line\n"); 
-#  		$process->force_attribute("unidentified_compounds", $process->get_attribute("unidentified_compounds") + 1) ; #if ($debug);
-#  #		$process->force_attribute("complete", 0);
-#  	    }
 
-#  	    unless ($products[0]) {
-#  		&ErrorMessage("$file\t$l\t", "row without product\t", "$line\n"); 
-#  		$process->force_attribute("unidentified_compounds", $process->get_attribute("unidentified_compounds") + 1) ; #if ($debug);	
-#  #		$process->force_attribute("complete", 0);
-#  	    }
-
-	    
 	    ################################################################
 	    #### match forward reactions
 	    my @matching_substrates_fwd = ();
@@ -749,14 +695,14 @@ EndForm
 		}
 		warn "matching_products_fwd\t", join ("\|", @matching_products_fwd), "\n" if ($verbose >=3); 
 	    }
-
+	    
 	    my @matching_reactions_fwd = &intersection(\@matching_substrates_fwd, \@matching_products_fwd);
 	    foreach my $reaction (@matching_substrates_fwd, @matching_products_fwd) {
 		$is_direct{$reaction} = $forward;
 	    }
 	    warn "matching_reactions_fwd\t", join ("\|", @matching_reactions_fwd), "\n" if ($verbose >=3); 
 	    
-
+	    ################################################################
 	    #### match reverse reactions
 	    my @matching_substrates_rev = ();
 	    if ($substrates[0]) {
@@ -776,59 +722,44 @@ EndForm
 		}
 		warn "matching_products_rev\t", join ("\|", @matching_products_rev), "\n" if ($verbose >=3); 
 	    }
-
+	    
 	    my @matching_reactions_rev = &intersection(\@matching_substrates_rev, \@matching_products_rev);
 	    foreach my $reaction (@matching_substrates_rev, @matching_products_rev) {
 		$is_direct{$reaction} = $reverse;
 	    }
 	    warn "matching_reactions_rev\t", join ("\|", @matching_reactions_rev), "\n" if ($verbose >=3); 
+	    
+	    unless ($provided_kegg_id) {
+		#### matching reactions in both directions
+		push @matching_reactions, @matching_reactions_fwd;
+		push @matching_reactions, @matching_reactions_rev;
 
-	    #### matching reactions in both directions
-	    push @matching_reactions, @matching_reactions_fwd;
-	    push @matching_reactions, @matching_reactions_rev;
-
-	    #### restrict the list by imposing constraint on  EC number
-	    if (($#matching_reactions > 0) && ($ec)) {
-		my @matching_ecs = $index{ec_reaction}->get_values($ec);
-		warn "matching_ecs\t", join ("\|", @matching_ecs), "\n" if ($verbose >=3); 
-		@matching_reactions = &intersection(\@matching_reactions, \@matching_ecs);
+		#### restrict the list by imposing constraint on  EC number
+		if (($#matching_reactions > 0) && ($ec)) {
+		    my @matching_ecs = $index{ec_reaction}->get_values($ec);
+		    warn "matching_ecs\t", join ("\|", @matching_ecs), "\n" if ($verbose >=3); 
+		    @matching_reactions = &intersection(\@matching_reactions, \@matching_ecs);
+		}
+		
 	    }
-	    
-	    
 
-	    #### in case of doubt, use provided reaction column
+	    #### in case of doubt, use provided equation
 	    if ($#matching_reactions != 0) {
 		warn join ("\t", "Trying other columns", 
 			   $provided_kegg_id || $provided_equation ), "\n" if ($verbose >=3);
-
-		if ($provided_kegg_id =~ /R0/) {
-		    @matching_reactions = split '\|', $provided_kegg_id;
-		    $multi_allowed = 1;
-
-		    warn join ("\t", $file, $l, "provided_kegg_id", $provided_kegg_id), "\n" if ($verbose >=3);
-
-#		#### aMAZE ID provided directly in the file
-#		} elsif ($provided_amaze_id =~ /aMAZEReaction/) {
-#		    @matching_reactions = split '\|', $provided_amaze_id;
-#		    $multi_allowed = 1;
-#		    warn join ("\t", $file, $l, "provided_amaze_id", $provided_amaze_id), "\n" if ($verbose >=3);
-		    
-		}
-
-		#### reaction equation provided by Georges Cohen
-		#warn join ("\t", "provided_equation", $provided_equation), "\n" if ($verbose >=3);
-		#warn join ("\t", "reverse_equation", $reverse_equation), "\n" if ($verbose >=3);
+		
+		#### reaction equation provided in the reaction column
 		if ($provided_equation =~ /\S/) {
+		    warn join ("\t", "provided_equation", $provided_equation), "\n" if ($verbose >=3);
+		    warn join ("\t", "reverse_equation", $reverse_equation), "\n" if ($verbose >=3);
 		    if ($index{equation_reaction}->contains($provided_equation)) {
 			my $kegg_reaction_id = $index{equation_reaction}->get_first_value($provided_equation);
 			@matching_reactions = ($kegg_reaction_id);
-
 			warn join ("\t", $file, $l, "identified_equation", $kegg_reaction_id, $provided_equation), "\n" if ($verbose >=3);
 		    } elsif ($index{equation_reaction}->contains($reverse_equation)) {
 			my $kegg_reaction_id = $index{equation_reaction}->get_first_value($reverse_equation);
 			$is_direct{$kegg_reaction_id} = $reverse;
 			@matching_reactions = ($kegg_reaction_id);
-
 			warn join ("\t", $file, $l, "identified_reverse_equation", $kegg_reaction_id, $reverse_equation), "\n" if ($verbose >=3);
 		    } else {
 			&ErrorMessage(join ("\t", $file, $l, "unidentified_equation", $provided_equation), "\n");
@@ -836,82 +767,68 @@ EndForm
 		    }
 		}
 
-		################################################################
-		#### determine the direction of the reaction (forward or reverse) in each step
-		foreach my $reaction (@matching_reactions) {
-		    unless (defined($is_direct{$reaction})) {
-			my $kegg_id = "";
+	    }
 
-			#### try to identify the kegg reaction ID
-			if ($reaction =~ /R0/) {
-			    $kegg_id = $reaction;
-#			} elsif ($reaction =~ /aMAZE/) {
-#			    #### convert amaze_id into kegg_id
-#			    $kegg_id = $index{amaze_kegg}->get_first_value($reaction);
-#			    if (defined($is_direct{$kegg_id})) {
-#				$is_direct{$reaction} = $is_direct{$kegg_id};
-#				warn join ("\t", 
-#					   $reaction, 
-#					   $is_direct{$reaction}, 
-#					   "identified the direction\t$reaction\t$kegg_id\n"), 
-#				"\n" if ($verbose >=3);
-#				next;
-#'			    }
-			}
+	    ################################################################
+	    #### determine the direction of the reaction (forward or reverse) in each step
+	    foreach my $reaction (@matching_reactions) {
+		unless (defined($is_direct{$reaction})) {
+		    my $kegg_id = "";
+		    
+		    ################################################################
+		    #### try to match any kegg substrate or product with the provided substrates/products
+		    if ($reaction =~ /R0/) {
 			
-			#### try to match any kegg substrate or product with the provided substrates/products
-			if ($kegg_id) {
-			    my @kegg_substrates = $index{reaction_substrate}->get_values($kegg_id);
-			    my @kegg_products = $index{reaction_product}->get_values($kegg_id);
+			my @kegg_substrates = $index{reaction_substrate}->get_values($kegg_id);
+			my @kegg_products = $index{reaction_product}->get_values($kegg_id);
+			
+			warn join ("\t", "kegg_reactants", join ("|", @kegg_substrates), join ("|", @kegg_products)), "\n" if ($verbose >=3);
+			warn join ("\t", 
+				   "provided_reactants", 
+				   join ("|", @substrates), 
+				   join ("|", @substrate_names), 
+				   join ("|", @products),
+				   join ("|", @product_names)), "\n" if ($verbose >=3);
+			
+			my @fwd_matches = ();
+			push @fwd_matches, &intersection(\@kegg_substrates, \@substrates);
+			push @fwd_matches, &intersection(\@kegg_products, \@products);
+			
+			my @rev_matches = ();
+			push @rev_matches, &intersection(\@kegg_substrates, \@products);
+			push @rev_matches, &intersection(\@kegg_products, \@substrates);
+			
+			if ($#fwd_matches >=0) {
+			    $is_direct{$reaction} = $forward;
+			    warn join ("\t", "Identified direction for reaction", $reaction, $kegg_id, $is_direct{$reaction}), "\n";
+			    next;
+			} elsif ($#rev_matches >=0) {
+			    $is_direct{$reaction} = $reverse;
+			    warn join ("\t", "Identified direction for reaction", $reaction, $kegg_id, $is_direct{$reaction}), "\n";
+			    next;
 			    
-			    warn join ("\t", "kegg_reactants", join ("|", @kegg_substrates), join ("|", @kegg_products)), "\n" if ($verbose >=3);
+			} else {
+			    $is_direct{$reaction} = $null;
+			    $process->force_attribute("complete", 0);
+			    warn join ("\t", "Cannot identify direction for reaction", $reaction, $kegg_id, $is_direct{$reaction}), "\n" if ($verbose >=3);
 			    warn join ("\t", 
-				       "provided_reactants", 
-				       join ("|", @substrates), 
-				       join ("|", @substrate_names), 
+				       "substr",
+				       join ("|", @substrates),
+				       "prod",
 				       join ("|", @products),
-				       join ("|", @product_names)), "\n" if ($verbose >=3);
-
-			    my @fwd_matches = ();
-			    push @fwd_matches, &intersection(\@kegg_substrates, \@substrates);
-			    push @fwd_matches, &intersection(\@kegg_products, \@products);
-
-			    my @rev_matches = ();
-			    push @rev_matches, &intersection(\@kegg_substrates, \@products);
-			    push @rev_matches, &intersection(\@kegg_products, \@substrates);
-			    
-			    if ($#fwd_matches >=0) {
-				$is_direct{$reaction} = $forward;
-				warn join ("\t", "Identified direction for reaction", $reaction, $kegg_id, $is_direct{$reaction}), "\n";
-				next;
-			    } elsif ($#rev_matches >=0) {
-				$is_direct{$reaction} = $reverse;
-				warn join ("\t", "Identified direction for reaction", $reaction, $kegg_id, $is_direct{$reaction}), "\n";
-				next;
-
-			    } else {
-				$is_direct{$reaction} = $null;
-				$process->force_attribute("complete", 0);
-				warn join ("\t", "Cannot identify direction for reaction", $reaction, $kegg_id, $is_direct{$reaction}), "\n" if ($verbose >=3);
-				warn join ("\t", 
-					   "substr",
-					   join ("|", @substrates),
-					   "prod",
-					   join ("|", @products),
-					   "equat",
-					   $index{reaction_equation}->get_first_value($kegg_id)
-					   ), "\n" if ($verbose >=3);
-				&ErrorMessage (join ("\t", $file, $l, "unidentified_direction", $reaction, $kegg_id), "\n");
-			    }
+				       "equat",
+				       $index{reaction_equation}->get_first_value($kegg_id)
+				       ), "\n" if ($verbose >=3);
+			    &ErrorMessage (join ("\t", $file, $l, "unidentified_direction", $reaction, $kegg_id), "\n");
 			}
-			
-			$process->force_attribute("missing_direction", $process->get_attribute("missing_direction") + 1) ; #if ($debug);
-			$is_direct{$reaction} = $null;
-			$process->force_attribute("complete", 0);
-
-			warn join ("\t", $reaction, $is_direct{$reaction}), "\n" if ($verbose >=3);
-			&ErrorMessage(join ( "\t", $file, $l, "arbitrarily_defining_reaction_direction", $reaction), "\n");
 		    }
+		    
+		    $process->force_attribute("missing_direction", $process->get_attribute("missing_direction") + 1) ; #if ($debug);
+		    $is_direct{$reaction} = $null;
+		    $process->force_attribute("complete", 0);
+		    
+		    warn join ("\t", $reaction, $is_direct{$reaction}), "\n" if ($verbose >=3);
+		    &ErrorMessage(join ( "\t", $file, $l, "arbitrarily_defining_reaction_direction", $reaction), "\n");
 		}
 	    }
 
@@ -935,14 +852,14 @@ EndForm
 
 	    ################################################################
 	    #### report multiple matches
-	    if (!($multi_allowed) && ($#matching_reactions > 0)) {
-
+	    if ($#matching_reactions > 0) {
+		
 		#### several matching reactions
 		$process->force_attribute("multi_match_reactions", $process->get_attribute("multi_match_reactions") + 1) ; #if ($debug);
 		$process->force_attribute("complete", 0);
 		print MIRROR join ("\t", $mirror_line, "", "",  "MULTI", join ("\|", @matching_reactions)), "\n" if ($mirror);
 		
-
+		
 		#### report error
 		&ErrorMessage (join ("\t",
 				     "several matching reactions", 
@@ -967,18 +884,16 @@ EndForm
 					 "multiple_matches", 
 					 $r++,
 					 $reaction,
-					 $index{reaction_equation}->get_values($reaction)
+					 $index{reaction_equation_names}->get_values($reaction)
 					 ), "\n");
 		}
-	    }
-
-	    if ($#matching_reactions == -1) {
+	    } elsif ($#matching_reactions == -1) {
+		
 		#### no reaction matchs the line
 		$process->force_attribute("no_match_reactions", $process->get_attribute("no_match_reactions") + 1) ; #if ($debug);
 		$process->force_attribute("complete", 0);
 		print MIRROR join ("\t", $mirror_line, "", "",  "NO MATCHING REACTION"), "\n" if ($mirror);
 		
-
 		#### report error
 		&ErrorMessage (join ("\t",
 				     $file,
@@ -992,59 +907,49 @@ EndForm
 		#### unequivocal way, create a process step
 
 		$process->force_attribute("matching_reactions", 
-					$process->get_attribute("matching_reactions") + 1) ; #if ($debug);
+					  $process->get_attribute("matching_reactions") + 1) ; #if ($debug);
 		
-		$max_reactions = 0; ### TEMPORARY: do not allow more than one reaction per step, to avoid layout problems. 
-
-		foreach my $r (0..$max_reactions) {
-		    my $reaction = $matching_reactions[$r];
-		    print MIRROR join ("\t", $mirror_line, $reaction, $is_direct{$reaction}, "OK", 
-				       $index{reaction_equation_names}->get_values($reaction)), "\n" if ($mirror);
-		    my $reaction = $matching_reactions[0];
-		    my $kegg_id = "ERROR";
-		    if ($reaction =~ /R0/) {
-			$kegg_id = $reaction;
-#		    } elsif ($reaction =~ /aMAZEReaction/) {
-#			if ( $index{amaze_kegg}->contains($reaction)) {
-#			    $kegg_id = $index{amaze_kegg}->get_first_value($reaction);
-#			} else {
-#			    &ErrorMessage(join ("\t", $file, $l, "cannot_map_amaze_id_to_kegg_id", $reaction), "\n");
-#			}
-		    } else {
-			&ErrorMessage(join ("\t", $file, $l, "invalid_reaction_identifier", $reaction), "\n");		
-		    }
-		    
-		    #### check if the direction is known
-		    if ($is_direct{$reaction} eq $null) {
-			next;
-		    }
-
-		    $leaf = $leaves->new_object();
-		    $leaf->set_attribute("interaction", $kegg_id);
-		    $leaf->set_attribute("is_direct", $is_direct{$reaction});
-		    $leaf->set_attribute("step", $step);
-#		    $process->new_attribute_value("nodes",$leaf->get_id());
-		    $process->push_expanded_attribute("nodes",$leaf->get_id(), $step);
-#		    $process->new_attribute_value("reactions", $reaction); #if ($debug);
-		    $process->push_expanded_attribute("reactions", $reaction, $step); #if ($debug);
-		    warn ("OK", 
-			  "\t",$reaction, 
-			  "\t", $index{reaction_equation}->get_values($reaction), 
-			  "\n")
-			if ($verbose >= 2);
-		    
-		    #### index product names for connection with next reactions
-		    foreach my $p (@products) {
-			$product_index->add_value($p, $leaf->get_attribute("id"));
-		    }
-		    #### index substrate names for connection with next reactions
-		    foreach my $s (@substrates) {
-			$substrate_index->add_value($s, $leaf->get_attribute("id"));
-		    }
+		my $reaction = $matching_reactions[$r];
+		print MIRROR join ("\t", $mirror_line, $reaction, $is_direct{$reaction}, "OK", 
+				   $index{reaction_equation_names}->get_values($reaction)), "\n" if ($mirror);
+		my $reaction = $matching_reactions[0];
+		my $kegg_id = "ERROR";
+		if ($reaction =~ /R0/) {
+		    $kegg_id = $reaction;
+		} else {
+		    &ErrorMessage(join ("\t", $file, $l, "invalid_reaction_identifier", $reaction), "\n");		
+		}
+		
+		#### check if the direction is known
+		if ($is_direct{$reaction} eq $null) {
+		    next;
+		}
+		
+		$leaf = $leaves->new_object();
+		$leaf->set_attribute("interaction", $kegg_id);
+		$leaf->set_attribute("is_direct", $is_direct{$reaction});
+		$leaf->set_attribute("step", $step);
+		$process->push_expanded_attribute("nodes",$leaf->get_id(), $step);
+		$process->push_expanded_attribute("reactions", $reaction, $step); #if ($debug);
+		warn ("OK", 
+		      "\t",$reaction, 
+		      "\t", $index{reaction_equation}->get_values($reaction), 
+		      "\n")
+		    if ($verbose >= 2);
+		
+		#### index product names for connection with next reactions
+		foreach my $p (@products) {
+		    $product_index->add_value($p, $leaf->get_attribute("id"));
+		}
+		#### index substrate names for connection with next reactions
+		foreach my $s (@substrates) {
+		    $substrate_index->add_value($s, $leaf->get_attribute("id"));
 		}
 	    }
 	}
 
+
+	################################################################
 	#### create process arcs
 	@indexed_products = $product_index->get_keys();
 	foreach my $compound (@indexed_products) {
@@ -1065,6 +970,7 @@ EndForm
 	    }
 	}
 
+	################################################################
 	#### check that there is no duplicate reaction
 	my @reactions = sort($process->get_attribute("reactions"));
 	warn ("; Reactions\n",
@@ -1079,9 +985,11 @@ EndForm
 	    }
 	}
 
+	################################################################
 	#### report the number of steps in the process
 	$process->set_attribute("steps", $step) ;
 	
+	################################################################
 	#### count the number of problematic reactions
 	$process->set_attribute("problems", 
 				$process->get_attribute("multi_match_reactions") 
@@ -1099,3 +1007,86 @@ EndForm
     }   
 }
 
+
+
+################################################################
+#### print a control file for displaying each mirror file as a form
+#### with emacs
+sub PrintControlFile {
+    my ($dir, $process_name) = @_;
+    my $control_file = "$dir/${process_name}.fctl";
+    $control_file =~ s/\s/_/g;
+    my $mirror_file_short = $process_name.".tab";
+    $mirror_file_short =~ s/\s+/_/g;
+    open FCTL, ">$control_file";
+    print FCTL<<EndForm;
+(setq forms-file \"$mirror_file_short\")
+(setq forms-number-of-fields 17)
+;; (setq forms-read-only t)                 ; to make sure
+(setq forms-field-sep \"\t\")
+;;(setq forms-multi-line nil)               ; Don\'t allow multi-line fields.
+(setq forms-read-only nil)
+(setq forms-format-list (list
+        \"\# 1-step        \# \" 1
+        \"\\n\# 2-EC          \# \" 2
+        \"\\n\# 3-gene        \# \" 3
+        \"\\n\# 4-substrate   \# \" 4
+        \"\\n\# 5-product     \# \" 5
+        \"\\n\# 6-reaction    \# \" 6
+        \"\\n\# 7-reaction id \# \" 7
+        \"\\n\# 8-direction   \# \" 8
+        \"\\n\# 9-status      \# \" 9
+        \"\\n\# 10-remark     \# \" 10
+        \"\\n\# 11            \# \" 11
+        \"\\n\# 12            \# \" 12
+        \"\\n\# 13            \# \" 13
+        \"\\n\# 14            \# \" 14
+        \"\\n\# 15            \# \" 15
+        \"\\n\# 16            \# \" 16
+        \"\\n\# 17            \# \" 17))
+EndForm
+    close FCTL;
+}
+
+
+################################################################
+#### clean and reverse provided equation for matching it against KEGG index
+sub CleanAndReverseEquation {
+    my ($provided_reaction) = @_;
+
+    my $direct_equation = $provided_reaction;
+    my $reverse_equation = "";
+
+    #### clean the provided equation
+    $direct_equation =~ s/\=/\<\=\>/; #### fix cases where the < and > were forgotten
+    $direct_equation =~ s/\<\<\=\>\>/\<\=\>/; #### fix cases where the < and > were forgotten
+    $direct_equation =~ s/\<\=\>/ \<\=\> /;
+    $direct_equation =~ s/\-\>/ \-\> /;
+    $direct_equation =~ s/\<\-/ \<\- /;
+    $direct_equation =~ s/ +/ /g;
+    my $provided_equation = &standardize($direct_equation);
+    warn ("provided_equation\t", $provided_equation, "\n") if ($verbose >=3);
+
+    #### calculate the reverse reaction
+    my $separator = "";
+    my @reaction_sides = ();
+    if (($direct_equation =~ /(\<\=\>)/) || 
+	($direct_equation =~ /(\-\>)/) || 
+	($direct_equation =~ /(\<\-)/)) {
+	$separator = $1;
+	@reaction_sides = split $separator, $direct_equation;
+    }
+    warn join ("\t", "Reaction separator", $separator), "\n" if ($verbose >=4);
+    warn join ("\t", "Reaction sides", @reaction_sides), "\n" if ($verbose >=4);
+    if ($#reaction_sides == 1) {
+	$reverse_equation = &trim($reaction_sides[1]);
+	$reverse_equation .= " ".$separator." ";
+	$reverse_equation .= &trim($reaction_sides[0]);
+	$reverse_equation = &standardize($reverse_equation);
+	warn ("reverse_equation\t", $reverse_equation, "\n") if ($verbose >=3);
+    } else {
+	&ErrorMessage (join ("\t", $file, $l, "Cannot reverse equation", $provided_equation), "\n");
+    }
+
+    return ($provided_equation, $reverse_equation);
+}
