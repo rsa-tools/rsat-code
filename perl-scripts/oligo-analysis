@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.33 2001/06/29 21:25:27 jvanheld Exp $
+# $Id: oligo-analysis,v 1.34 2001/07/05 12:43:40 jvanheld Exp $
 #
-# Time-stamp: <2001-06-29 23:24:45 jvanheld>
+# Time-stamp: <2001-07-05 14:42:12 jvanheld>
 #
 ############################################################
 
@@ -973,6 +973,13 @@ sub PrintResult {
     ### verbose ###
     if ($verbose >= 1) {
 	print $out "; oligo-analysis ", join(" ", @ARGV), "\n";
+	if ($return{proba}) {
+	    if ($under_represented) {
+		printf $out "; %s\n", "Detection of under-represented words";
+	    } else {
+		printf $out "; %s\n", "Detection of over-represented words";
+	    }
+	}
 	printf $out "; %-29s\t%s\n", "Oligomer length", $oligo_length;
 	printf $out "; %-29s\t%s\n", "Input file",	$inputfile if ($inputfile);
 	printf $out "; %-29s\t%s\n", "Input format", $in_format;
@@ -1848,7 +1855,8 @@ ARGUMENTS
 		- binomial significance
 		- occurrence number
 
-	-under	detect under-represented instead of over-represented words 
+	-under	detect under-represented instead of over-represented words
+		(see below for details). 
 
 
     THRESHOLDS
@@ -1971,21 +1979,6 @@ PROBABILITIES
 	with the same abbreviations as above
 	
     
-    PROBABILITY OF THE OBSERVED NUMBER OF MATCHING SEQUENCES (BINOMIAL)
-	
-	The probability to observe obs or more occurrences in the whole family
-  	of sequences is calculated by the sum of binomials:
-	
-	                n                 j     n-i
-	    P(>=ms) =  SUM        n!     q (1-q)
-	               i=ms   -----------
-	                      i! * (n-i)! 
-	
-	where	q   is the probability to find one or more matches in a single 
-		    sequence
-		ms  is the observed number of matching sequences
-		n   is the number of sequences in the set
-
     PROBABILITY OF THE OBSERVED NUMBER OF OCCURRENCES (BINOMIAL)
 	
 	The probability to observe exactly obs occurrences in the whole family
@@ -2004,9 +1997,30 @@ PROBABILITIES
 	The probability to observe obs or more occurrences in the whole family
   	of sequences is calculated by the sum of binomials:
 	
-	                    obs-1
-	    P(>=obs) =  1 - SUM P(j)
-	                    j=0
+	                 T             obs-1
+	    P(>=obs) =  SUM P(i) =  1 - SUM P(i)
+	               i=obs            i=0
+
+    OVER/UNDER-REPRESENTATION
+
+		By default, the program calculates probability to have
+		at least obs occurrences:
+
+			                 T
+			    P(>=occ) =  SUM P(i)
+			               i=occ
+
+		With the option -under, the program calculates the
+		probability of having less than obs occurrences : 
+
+			               occ-1
+			    P(<=occ) =  SUM P(i)
+			                i=0
+
+		The option -under does not affect the other statistics
+		(zscore, loglikelihood). For z-score, the negative
+		values can be used to asses word under-representation.
+
 	                        
     SIGNIFICANCE INDEXES
         Significance indexes are conversions of the probabilities of occurence 
