@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: downloads.mk,v 1.7 2003/12/17 14:40:39 jvanheld Exp $
+# $Id: downloads.mk,v 1.8 2003/12/23 15:49:47 jvanheld Exp $
 #
 # Time-stamp: <2003-10-09 14:02:21 jvanheld>
 #
@@ -124,16 +124,6 @@ expasy:
 		${WGET} ${EXPASY}/$${dir} ;	\
 	done
 
-################################################################
-#
-# Gene ontology
-#
-################################################################
-
-
-GO=http://www.godatabase.org/dev/database/archive/latest/
-go:
-	${WGET} ${GO}
 
 ################################################################
 #
@@ -146,14 +136,15 @@ dbtbs:
 
 ################################################################
 #
-# Saccharomyces cerevisiae database
-#
-SGD=ftp://genome-ftp.stanford.edu/pub/yeast/data_download/
+#   SGD database
+
+SGD_FTP=ftp://genome-ftp.stanford.edu
+SGD_dir=/pub/yeast/data_download
+SGD_excl=${SGD_dir}/obsolete_files/,${SGD_dir}/sequence/,${SGD_dir}/chromosomal_feature/archive/,${SGD_dir}/gene_registry/archive/,${SGD_dir}/literature_curation/archive/,${SGD_dir}/oracle_schema/archive/,${SGD_dir}/protein_info/archive/,${SGD_dir}/sequence_similarity/archive/,${SGD_dir}/systematic_results/archive/,${SGD_dir}/systematic_results/SAGE/archive/
 sgd:
-	${WGET} --exclude-directories obsolete_files ${SGD}
-#	${WGET} ${SGD}/genome_seq/
-#	${WGET} ${SGD}/tables/ORF_Locations/ORF_table.txt.gz
-#	${WGET} ${SGD}/tables/ORF_Descriptions
+	@mkdir -p logs
+	${WGET} -X ${SGD_excl} ${SGD_FTP}${SGD_dir}/
+
 
 
 ################################################################
@@ -374,3 +365,37 @@ spellman_cell_cycle:
 TAXONOMY=ftp://ftp.ncbi.nih.gov/pub/taxonomy/
 taxonomy:
 	${WGET} ${TAXONOMY}
+
+#########################################
+#  BIND database
+#########################################
+BIND_URL=ftp.blueprint.org
+BIND_FTP=ftp://${BIND_URL}
+BIND_dir=/pub/BIND/current
+BIND_excl=${BIND_dir}/MMDBBIND
+bind:
+	@mkdir -p logs
+	${WGET} -X ${BIND_excl} ${BIND_FTP}${BIND_dir}/
+	chmod -R g+w ${BIND_URL}
+
+#########################################
+#   PROSITE database
+#########################################
+PROS_URL=ftp.expasy.org
+PROS_FTP=ftp://${PROS_URL}
+PROS_DIR=/databases/prosite
+PROS_excl=""
+prosite:
+	@mkdir -p logs
+	${WGET} -X ${PROS_excl} ${PROS_FTP}${PROS_DIR}/
+	chmod -R g+w ${PROS_URL}${PROS_DIR}
+
+#########################################
+#   Gene Ontology database
+#########################################
+GO_URL=www.godatabase.org/dev/database/archive/latest/
+GO_HTTP=http://${GO_URL}
+go:
+	@mkdir -p logs
+	wget -np -r -l 1 -N ${GO_HTTP}
+	chmod -R g+w ${GO_URL}
