@@ -1,0 +1,1012 @@
+#!/usr/bin/perl 
+############################################################
+#
+# $Id: compare-classes,v 1.1 2003/09/10 21:20:10 jvanheld Exp $
+#
+# Time-stamp: <2003-09-10 23:20:08 jvanheld>
+#
+############################################################
+#use strict;;
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+require "RSA.classes";
+require "RSA.help.pl";
+
+################################################################
+#### initialise parameters
+my $start_time = &AlphaDate;
+local $replacement = 0;
+local $symmetric = 0;
+local $distinct = 0;
+local $matrix_key = "sig"; ### key to export as similarity index (option -matrix)
+local $dot_file = "";
+
+%common = (); ### elements common to query and reference classes
+%ref_only = (); ### elements found in reference but not in query
+%query_only = (); ### elements found in query but not in reference
+
+$sort_key = "name";
+
+%supported_return_fields = (
+                            proba=>1,
+                            percent=>1,
+                            members=>1
+                            );
+$supported_return_fields = join ",", keys %supported_return_fields;
+
+
+%supported_matrix_keys = (
+			    ref_percent=>1,
+			    query_percent=>1,
+			    occ=>1,
+			    P_val=>1,
+			    E_val=>1,
+			    sig=>1
+                            );
+$supported_matrix_keys = join ",", keys %supported_matrix_keys;
+
+
+%supported_sort_keys = (
+                        name=>1,
+			ref_percent=>1,
+			query_percent=>1,
+                        occ=>1,
+                        P_val=>1,
+                        E_val=>1,
+                        sig=>1
+                        );
+$supported_sort_keys = join ",", sort (keys %supported_sort_keys);
+
+%supported_catalogs = (
+		       MIPS=>1,
+		       GO=>1,
+		       ms_complexes=>1,
+		       TF_targets=>1,
+		       regulons=>1
+		       );
+$supported_catalogs = join ",", keys %supported_catalogs;
+
+
+local %infile = ();
+local %outfile = ();
+
+local $verbose = 0;
+# local $in = STDIN;
+local $out = STDOUT;
+
+%return_fields = ();
+
+%lth = ();
+%uth = ();
+
+$population_size = 0;
+
+&ReadArguments();
+
+################################################################
+#### check argument values
+unless ($infile{query_classes}) {
+    &FatalError("You must specify a file containing query classes");
+}
+
+if ($catalog) {
+    if ($organism_name) {
+	$infile{ref_classes} = $supported_organism{$organism_name}->{'data'}."/catalogs/${organism_name}_${catalog}.tab";
+    } else {
+	&FatalError("The option -cat requires to specify an organism");
+    }
+} 
+
+unless ($infile{ref_classes}) {
+    &FatalError("You must specify a file containing reference classes");
+}
+
+
+################################################################
+### open output stream
+$out = &OpenOutputFile($outfile{output});
+
+################################################################
+###### read class files
+%query_classes = &ReadClasses($infile{query_classes});
+%ref_classes = &ReadClasses($infile{ref_classes});
+$nb_ref_classes = scalar(keys %ref_classes);
+$nb_query_classes = scalar(keys %query_classes);
+
+#### unless specified, calculate population size from the lists of
+#### reference and query members
+unless ($population_size > 0 ) {
+    %member_index = ();
+    foreach my $r (keys %ref_classes) {
+        foreach $m ( $ref_classes{$r}->get_members()) {
+            $member_index{$m}++;
+        }
+    }
+    foreach my $q (keys %query_classes) {
+        foreach $m ( $query_classes{$q}->get_members()) {
+            $member_index{$m}++;
+        }
+    }
+
+#    die keys %member_index;
+    $population_size = scalar(keys %member_index);
+}
+
+################################################################
+#### print verbose
+&Verbose() if ($verbose);
+
+
+&CompareClasses();
+# die;
+
+&PrintResult();
+
+################################################################
+###### finish verbose
+if ($verbose) {
+    my $done_time = &AlphaDate;
+    print $out "; Job started $start_time\n";
+    print $out "; Job done    $done_time\n";
+}
+
+################################################################
+###### close output stream
+close $out if ($outfile{output});
+
+
+&ExportDotFile($dot_file) if ($dot_file);
+
+exit(0);
+
+################################################################
+################### subroutine definition ######################
+################################################################
+
+################################################################
+#### display full help message
+sub PrintHelp {
+    my $HELP_CLASS_FILE = &help_message("class file");
+    open HELP, "| more";
+    print HELP <<End_of_help;
+NAME
+        compare-classes
+
+        2002 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
+
+DESCRIPTION
+        Compare two class files (the query file and the reference
+        file). Each class of the query file is compared to each
+        class of the reference file. The number of common elements is
+        reported, as well as the probability to observe at least this
+        number of common elements by chance alone.
+
+CATEGORY
+        util,stat
+
+USAGE
+        compare-classes -r ref_classes -q query_classes
+                [-o outputfile] [-v]
+
+OPTIONS
+        -h      (must be first argument) display full help message
+        -help   (must be first argument) display options
+        -v      verbose
+        -r ref_classes
+                A tab-delimited text file containing the dscription of
+                reference classes (see format description below).
+        -q query_classes
+                A tab-delimited text file containing the dscription of
+                query classes (see format description below).
+        -i input_file
+                This file will be used as both reference and query. 
+		This is equivalent to 
+		    -q input_file -r input_file
+        -o outputfile
+                if not specified, the standard output is used.
+                This allows to place the command within a pipe.
+	-cat catalog
+		Compare the query file to pre-defined catalogs
+		(e.g. GO, MIPS functional classes, ...). These
+		catalogs associate each gene of a genome to one or
+		several classes.  The organism must be specified
+		(option -org).
+		
+		Supported catalogs:
+		$supported_catalogs
+
+		This option is currently supported for Saccharomyces
+		cerevisiae.
+	-org organism (for pre-defined catalogs)	
+        -return return_fields
+                List of fields to return. Supported field :
+                $supported_return_fields
+        -uth field #
+                upper threshold value for a given field
+                Supported_fields:
+                        occ, P_val, E_val, sig, ref_percent, query_percent
+        -lth field #
+                lower threshold value for a given field
+                (same fields as -uth)
+        -pop #
+                Population size. If not specified, the population size
+                is estimated as the number of distinct elemenst in the
+                whole set of referenc classes.
+        -sort key
+                sort on the basis of the specified key.
+                Supported keys: $supported_sort_keys
+        -rep    replacement
+                Sampling was performed with replacement, i.e. a given
+                element can appear several times in the same class.
+
+                In this case, the binomial distribution is used
+                instead of the hypergeometric.
+
+        -sym    symmetric comparison
+                (only useful when -rep is activated, because th
+                hypergeometric is by definition symmetric)
+
+        -distinct
+                Prevent to compare each class with itself (when the
+                reference and query files contain the same classes).
+        -matrix [key]
+                Return a pairwise matrix, where each row corresponds
+                to a reference class, each column to a query class,
+                and each cell contains a comparison between the two
+                classes. The next argument indicates which statistics
+                has to be returne in the matrix (default = sig).
+		Supported : $supported_matrix_keys
+	-dot dot_file
+		Export a graph with the associations in a dot
+		files. Dot files can be visualized and motified with
+		the GraphViz package (http://www.graphviz.com/), which
+		contains several methods of automatic layout.
+
+PROBABILITIES
+        P-VALUE
+
+                The P-value is the probability to observe at least c
+                common elements between a given query class and a
+                given reference class. It can be calculated with
+                different formulae, depending on the underlying random
+                model.
+
+                Let us assume that we have :
+                        q       size of the query class
+                        r       size of the reference class
+                        c       number of common elements
+                        n       population size
+
+                HYPERGEOMETRIC
+                                       q     i  q-i     q
+                P_value = P(X >= c) = SUM ( C  C     / C  )
+                                      i=c    r  n-r     n
+
+                BINOMIAL
+
+                When the option -rep (replacement) is active,
+                probabilities are calculated on the basis of the
+                binomial distribution instead of the hypergeometric.
+
+
+                The binomial formula is applied with
+                        p_r = r/n probability of success at each trial
+                        nb of trials = q
+                        nb of successes = c
+
+                                       q
+                P_value = P(X >= c) = SUM (binom(i,q,p_r))
+                                      i=c
+
+                Beware: the binomial gives an assymmetric result,
+                i.e. the fact to swap query and reference classes
+                changes the probability. This can be circumvented by
+                using the option -sym, described below.
+
+                SYMMETRICAL COMPARISON WITH THE BINOMIAL
+
+                When the comparison is assumed to be symmetrical, the
+                program calculates the joint probability fo at least c
+                elements to belong to both the query set and the
+                reference set.
+
+                In this case, the binomial is applied with :
+                        p_qr = q/n * r/n
+                          = proba of success at each trial
+                        nb of trials = n
+                        nb of successes = c
+
+                                       q
+                P_value = P(X >= c) = SUM (binom(i,n,p_qr))
+                                      i=c
+
+        E-VALUE
+
+                Assuming that there are x query classes and y
+                reference classes, each analysis consists in x*y
+                comparisons. Thus, thhe P-value can be misleading,
+                because even low P-values are expected to emerge by
+                chance alone when the number of query and/or reference
+                classes is very high. The E-value reflects better the
+                degree of exceptionality.
+
+                E_val = P_Val * nb_tests
+                      = P_val * x * y
+
+                      where x = number of query classes
+                            y = number of reference classes
+
+        SIG
+                The significance index is the minus log of the
+                E-value. It is calculated in base 10.
+
+                sig = -log10(E_val)
+
+                This index gives an intuitive perception of the
+                exceptionality of the common elements : a negative sig
+                indicates that the common matches are likely to come by
+                chanc alone, a ositive value that they are
+                significant. Higher sig values indicate a higher
+                significance.
+
+OUTPUT FORMAT
+
+        The program returns a tabdelimited file with one row per
+        combination of reference-query class, and one column per
+        return field.
+
+        Default return fields:
+                1) ref      reference class
+                2) query    query class
+                3) ref#     number of members in the ref class
+                4) query#   number of members in the query class
+                5) common   number of elements in common between the
+                            query and reference class
+
+        Additional return values are optionally returned, and can be
+        specified with the -return option.
+
+FILE FORMATS
+    $HELP_CLASS_FILE
+End_of_help
+    close HELP;
+    exit(0);
+}
+
+################################################################
+#### display short help message
+sub PrintOptions {
+  open HELP, "| more";
+  print HELP <<End_short_help;
+compare-classes options
+----------------
+-h              (must be first argument) display full help message
+-help           (must be first argument) display options
+-r              reference classes
+-q              query classes
+-i		single input file (used as query and reference)
+-o              output file
+-v              verbose
+-return         return fields (supported $supported_return_fields)
+-lth            threshold on a given field
+-uth            threshold on a given field
+-pop            population size
+-sort           sort key (supported keys: occ, sig)
+-rep            sampling with replacement (use binomial instead of
+hyergeometric)
+-sym            symmetric comparison (only with -rep, see detailed help)
+-distinct       prevent to compare each class with itself
+-matrix [key]   return a similarity matrix
+-cat		catalog (supported: $supported_catalogs)
+-org		organism
+-dot		dot file
+End_short_help
+  close HELP;
+  exit(0);
+}
+
+################################################################
+#### read arguments
+sub ReadArguments {
+    foreach my $a (0..$#ARGV) {
+
+        ### verbose
+        if ($ARGV[$a] eq "-v") {
+            if (&IsNatural($ARGV[$a+1])) {
+                $verbose = $ARGV[$a+1];
+            } else {
+                $verbose = 1;
+            }
+
+            ### detailed help
+        } elsif ($ARGV[$a] eq "-h") {
+            &PrintHelp();
+
+            ### list of options
+        } elsif ($ARGV[$a] eq "-help") {
+            &PrintOptions();
+
+            ### query file
+        } elsif ($ARGV[$a] eq "-q") {
+            $infile{query_classes} = $ARGV[$a+1];
+	    
+            ### reference file
+        } elsif ($ARGV[$a] eq "-r") {
+            $infile{ref_classes} = $ARGV[$a+1];
+	    
+            ### catalog
+        } elsif ($ARGV[$a] eq "-cat") {
+            $catalog = $ARGV[$a+1];
+	    unless ($supported_catalogs{$catalog}) {
+		&FatalError("$catalog is not a valid catalog. Supported: $supported_catalogs");
+	    }
+
+	    #### organism
+	} elsif ($ARGV[$a] eq "-org") {	    
+	    $organism_name =$ARGV[$a+1];
+	    &CheckOrganismName($organism_name);
+
+            ### input file (both reference and query)
+        } elsif ($ARGV[$a] eq "-i") {
+            $infile{ref_classes} = $ARGV[$a+1];
+            $infile{query_classes} = $ARGV[$a+1];
+
+            ### replacement
+        } elsif ($ARGV[$a] eq "-rep") {
+            $replacement = 1;
+
+            ### symmetric (for binomial distrib only)
+        } elsif ($ARGV[$a] eq "-sym") {
+            $symmetric = 1;
+
+            ### output file
+        } elsif ($ARGV[$a] eq "-o") {
+            $outfile{output} = $ARGV[$a+1];
+
+            ### sort key
+        } elsif ($ARGV[$a] eq "-sort") {
+            $sort_key = $ARGV[$a+1];
+            unless ($supported_sort_keys{$sort_key}) {
+                &FatalError ("Invalid sort key $sort_key. Supported: $supported_sort_keys" );
+            }
+
+            ### export a distance matrix
+        } elsif ($ARGV[$a] eq "-matrix") {
+            $return{matrix} = 1;
+	    my $possible_key = $ARGV[$a+1];
+	    if ($supported_matrix_keys{$possible_key}) {
+		$matrix_key = $possible_key;
+	    }
+
+            ### dot file
+        } elsif ($ARGV[$a] eq "-dot") {
+            $dot_file = $ARGV[$a+1];
+
+            ### prevent to compare each class with itself
+        } elsif ($ARGV[$a] eq "-distinct") {
+            $distinct = 1;
+
+            ### population size
+        } elsif ($ARGV[$a] eq "-pop") {
+            $population_size = $ARGV[$a+1];
+            unless (&IsNatural($population_size)) {
+                &FatalError("Population size must be a natural number");
+            }
+            unless ($population_size > 0) {
+                &FatalError("Population size must be strictly positive.");
+            }
+
+            #### threshold values
+        } elsif ($ARGV[$a] eq "-lth") {
+            my $field = $ARGV[$a+1];
+            my $value = $ARGV[$a+2];
+            $lth{$field} = $value;
+        } elsif ($ARGV[$a] eq "-uth") {
+            my $field = $ARGV[$a+1];
+            my $value = $ARGV[$a+2];
+            $uth{$field} = $value;
+
+            #### return fields
+        } elsif ($ARGV[$a] eq "-return") {
+            chomp($ARGV[$a+1]);
+            my @fields_to_return = split ",", $ARGV[$a+1];
+            foreach $field (@fields_to_return) {
+                if ($supported_return_fields{$field}) {
+                    $return_fields{$field} = 1;
+                } else {
+                    &FatalError("Invalid return field $field");
+                }
+            }
+        }
+
+    }
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $out "; compare-classes ";
+    &PrintArguments($out);
+    if (defined(%infile)) {
+        print $out "; Input files\n";
+        while (($key,$value) = each %infile) {
+            print $out ";\t$key\t$value\n";
+        }
+    }
+    print $out "; Query classes\t$nb_query_classes\n";
+    if ($verbose >= 2) {
+	foreach my $f (keys %query_classes) {
+	    printf $out ";\t%d\t%s\n", $query_classes{$f}->get_size(), $query_classes{$f}->get_name();
+	}
+    }
+    print $out "; Reference classes\t$nb_ref_classes\n";
+    if ($verbose >= 2) {
+	foreach my $f (keys %ref_classes) {
+	    printf $out ";\t%d\t%s\n", $ref_classes{$f}->get_size(), $ref_classes{$f}->get_name();
+	}
+    }
+    printf $out "; %-21s\t%d\n", "Population size", $population_size;
+    printf $out "; %-21s\t%s\n", "Sort key", $sort_key if ($sort_key);
+
+    print $out "; Sampling with replacement (binommial proba)\n" if ($replacement);
+    print $out "; Symmetric comparison\n" if ($symmetric);
+
+    print $out "; Thresholds\tlower\tupper\n";
+    foreach $f (qw(occ sig)) {
+        print $out ";\t$f";
+        if (defined($lth{$f})) {
+            printf $out "\t%-5g", $lth{$f};
+        } else {
+            print $out "\tNA";
+        }
+        if (defined($uth{$f})) {
+            printf $out "\t%-5g", $uth{$f};
+        } else {
+            print $out "\tNA";
+        }
+        print $out "\n";
+    }
+
+    if ($return{matrix}) {
+	print $out "; matrix\t$matrix_key\n";
+    }
+
+    if (defined(%outfile)) {
+        print $out "; Output files\n";
+        while (($key,$value) = each %outfile) {
+            print $out ";\t$key\t$value\n";
+        }
+    }
+}
+
+################################################################
+#### read class file
+
+################################################################
+##### read input
+#($ref) = &OpenInputFile($infile{ref_classes});
+#while (<$ref>) {
+#    warn $_;
+#}
+#close $ref if ($infile{ref_classes});
+
+
+################################################################
+#### compare reference and query classes
+sub CompareClasses {
+    foreach my $r (keys %ref_classes) {
+	my %ref_member = ();
+	my %not_query = ();
+
+
+	################################################################
+	#### number fo common members 
+
+	#### collect members of the reference class
+	my @ref_members = $ref_classes{$r}->get_members();
+
+	#### check if the number of ref members is above the threshold    
+	next if ((defined($lth{occ})) && ($#ref_members + 1 < $lth{occ}));
+	
+	#### index members of the reference class
+	foreach $m (@ref_members) {
+	    $ref_member{$m} = 1;
+	}
+
+
+	#### query classes
+	foreach my $q (keys %query_classes) {
+	    
+	    next if (($distinct) && ($r eq $q));
+	    next if (($infile{ref_classes} eq $infile{query_classes} ) && ($r ge $q));
+
+	    my $compa_key = $r."__VERSUS__".$q;
+
+	    #### initialize comparison structures
+	    @{$common{$compa_key}} = ();
+	    @{$ref_only{$compa_key}} = ();
+	    @{$query_only{$compa_key}} = ();
+
+	    #### collect members of the query class
+	    my @query_members = $query_classes{$q}->get_members();
+
+	    #### check if the number of ref members is above the threshold    
+	    next if ((defined($lth{occ})) && ($#query_members +1 < $lth{occ}));
+
+	    #### compare query and reference classes
+	    foreach my $m (@query_members) {
+		if ($ref_member{$m}) {
+		    push @{$common{$compa_key}}, $m; ### elements common to reference and query class
+		    $matching_elements->{$compa_key}->{$m}++;
+		} else {
+		    push @{$query_only{$compa_key}}, $m; ### elements found in the query fmily only
+		}
+	    }
+
+	    #### identify elements found in the reference class only
+	    if ($return_fields{members}) {
+		foreach $m (sort( $ref_classes{$r}->get_members())) {
+		    unless ($matching_elements->{$compa_key}->{$m}) {
+			push @{$ref_only{$compa_key}}, $m;
+		    }
+		}
+	    }
+
+	    $compa{$compa_key}->{occ} = scalar(keys %{$matching_elements->{$compa_key}});
+
+	    ### clear memory if members are not required
+	    unless ($return_fields{members}) {
+		undef @{$common{$compa_key}};
+		undef @{$ref_only{$compa_key}};
+		undef @{$query_only{$compa_key}};
+		undef $matching_elements->{$compa_key};
+	    }
+
+	    #### check thresholds for number of common members
+	    if ((defined($lth{occ})) &&
+		($compa{$compa_key}->{occ}< $lth{occ})) {
+		delete $compa{$compa_key};
+		undef @{$common{$compa_key}};
+		undef @{$ref_only{$compa_key}};
+		undef @{$query_only{$compa_key}};
+		next;
+	    } elsif ((defined($uth{occ})) &&
+		     ($compa{$compa_key}->{occ} > $uth{occ})) {
+		delete $compa{$compa_key};
+		undef @{$common{$compa_key}};
+		undef @{$ref_only{$compa_key}};
+		undef @{$query_only{$compa_key}};
+		next;
+	    }
+	    
+	    ################################################################	
+	    #### calculate percentages
+	    if ($return_fields{percent}) {
+		warn "; calculating percentages for ", $compa_key, "\n" if ($verbose >= 4);
+		my $n_q = $query_classes{$q}->get_size(); ### number of elements in query class
+		my $n_r = $ref_classes{$r}->get_size(); ### number of elements in the reference class
+		my $c = $compa{$compa_key}->{occ}; ### number of common elements
+		$compa{$compa_key}->{ref_percent} = 100*$c/$n_r;
+		$compa{$compa_key}->{query_percent} = 100*$c/$n_q;
+
+		#### check thresholds for query percent
+		if ((defined($lth{"query_percent"})) &&
+		    ($compa{$compa_key}->{"query_percent"}< $lth{"query_percent"})) {
+		    delete $compa{$compa_key};
+		    undef @{$common{$compa_key}};
+		    undef @{$ref_only{$compa_key}};
+		    undef @{$query_only{$compa_key}};
+		    next;
+		} elsif ((defined($uth{"query_percent"})) &&
+			 ($compa{$compa_key}->{"query_percent"} > $uth{"query_percent"})) {
+		    delete $compa{$compa_key};
+		    undef @{$common{$compa_key}};
+		    undef @{$ref_only{$compa_key}};
+		    undef @{$query_only{$compa_key}};
+		    next;
+		}
+
+		#### check thresholds for reference percent
+		if ((defined($lth{"ref_percent"})) &&
+		    ($compa{$compa_key}->{"ref_percent"}< $lth{"ref_percent"})) {
+		    delete $compa{$compa_key};
+		    undef @{$common{$compa_key}};
+		    undef @{$ref_only{$compa_key}};
+		    undef @{$query_only{$compa_key}};
+		    next;
+		} elsif ((defined($uth{"ref_percent"})) &&
+			 ($compa{$compa_key}->{"ref_percent"} > $uth{"ref_percent"})) {
+		    delete $compa{$compa_key};
+		    undef @{$common{$compa_key}};
+		    undef @{$ref_only{$compa_key}};
+		    undef @{$query_only{$compa_key}};
+		    next;
+		}
+
+	    }
+
+	    ################################################################
+	    #### calculate probabilities
+	    if ($return_fields{proba}) {
+		$log_base = 10;
+		$ref_log = log($log_base);
+
+		#### check population size
+		my $n = $population_size;
+		if ($n <= 0) {
+		    &FatalError("Cannot calculate probabilities if reference population is empty");
+		}
+
+		#### calculate probabilities of matches
+		warn "; calculating proba for ", $compa_key, "\n" if ($verbose >= 3);
+		my $n_q = $query_classes{$q}->get_size(); ### number of elements in query class
+		my $n_r = $ref_classes{$r}->get_size(); ### number of elements in the reference class
+		my $c = $compa{$compa_key}->{occ}; ### number of common elements
+		
+		#### check number of elements in the reference class
+		if ($n_r > $n) {
+		    &FatalError("Number of elements in the reference class ($n_r) cannot be higher than population size ($n)");
+		}
+		
+		#### check number of elements in the query class
+		if ($n_q > $n) {
+		    &FatalError("Number of elements in the query class ($n_q) cannot be higher than population size ($n)");
+		}
+		
+		#### check number of common elements
+		if ($c > $n_q) {
+		    &FatalError("Number of common elements ($c) cannot be higher than query size ($n_q)");
+		}
+		if ($c > $n_r) {
+		    &FatalError("Number of common elements ($c) cannot be higher than reference size ($n_r)");
+		}
+		
+		
+		if ($replacement) {
+		    #### use binomial distribution of there are replacements
+		    
+		    if ($symmetric) {
+			#### test the joint probability to belong to both
+			#### query and reference classes, for each element of
+			#### the population
+			my $p = $n_r/$n * $n_q/$n;
+			$compa{$compa_key}->{P_val} = &sum_of_binomials($p,$n,$c,$n);
+		    } else {
+			#### test the probability to belong to the reference class, for each element of the query class
+			my $p = $n_r/$n;
+			$compa{$compa_key}->{P_val} = &sum_of_binomials($p,$n_q,$c,$n_q);
+		    }
+		    
+		} else{
+		    #### use hypergeometric distribution
+		    $compa{$compa_key}->{P_val} = &sum_of_hypergeometrics($n_r, $n, $n_q, $c, &min($n_r, $n_q));
+		    
+		}
+		
+#	$nb_tests = $nb_ref_classes * $nb_query_classes;
+		$nb_tests = $nb_ref_classes;
+		$compa{$compa_key}->{E_val} = $compa{$compa_key}->{P_val} * $nb_tests;
+		$compa{$compa_key}->{sig} = -log($compa{$compa_key}->{E_val})/$ref_log;
+		
+		#### check thresholds on probabilities
+		foreach my $key (qw(P_val E_val sig)) {
+		    if ((defined($lth{$key})) &&
+			($compa{$compa_key}->{$key}< $lth{$key})) {
+			delete $compa{$compa_key};
+			undef @{$common{$compa_key}};
+			undef @{$ref_only{$compa_key}};
+			undef @{$query_only{$compa_key}};
+		    } elsif ((defined($uth{$key})) &&
+			     ($compa{$compa_key}->{$key} > $uth{$key})) {
+			delete $compa{$compa_key};
+			undef @{$common{$compa_key}};
+			undef @{$ref_only{$compa_key}};
+			undef @{$query_only{$compa_key}};
+		    }
+		}
+	    }
+	}
+    }
+}
+
+
+################################################################
+###### print result
+sub PrintResult {
+    if ($return{matrix}) {
+	#### print a smilarity matrix
+	my $header = ";fam\t";
+	$header .= join "\t", (sort keys %query_classes);
+	$header .= "\n";
+	print $out $header;
+
+	#### print the result
+	foreach my $r (sort keys %ref_classes ) {
+	    print $out $r;
+	    foreach my $q (sort keys %query_classes ) {
+		my $compa_key = $r."__VERSUS__".$q;
+		if (defined($compa{$compa_key}->{$matrix_key})) {
+		    print $out "\t",  $compa{$compa_key}->{$matrix_key};
+		} else {
+		    print $out "\t", "NA";
+		}
+	    }
+	    print $out "\n";
+	}
+
+
+    } else {
+	#### header
+	my @header_fields = (
+			     "; ref",
+			     "query",
+			     "ref#",
+			     "query#",
+			     "common#");
+
+	if ($return_fields{percent}) {
+	    push @header_fields, "ref_%" ;
+	    push @header_fields, "query_%" ;
+	}
+	if ($return_fields{proba}) {
+	    push @header_fields, "P_val" ;
+	    push @header_fields, "E_val";
+	    push @header_fields, "sig";
+	}
+
+	if ($return_fields{members}) {
+#       push @header_fields, "ref_members";
+#       push @header_fields, "query_members";
+	    push @header_fields, "ref_only";
+	    push @header_fields, "query_only";
+	    push @header_fields, "common_members";
+	}
+	print $out join("\t", @header_fields), "\n";
+
+	#### sort class comparisons
+	if ($sort_key eq "name") {
+	    @sorted_keys = sort (keys %compa); ### alphabetical order
+	} else {
+	    @sorted_keys = sort {$compa{$b}->{$sort_key} <=> $compa{$a}->{$sort_key}} (keys %compa);
+	}
+
+	#### class combinations
+	foreach my $compa_key (@sorted_keys) {
+	    my ($r, $q) = split "__VERSUS__", $compa_key;
+
+	    #### counts
+	    print $out join "\t", ($r,
+				   $q,
+				   $ref_classes{$r}->get_size(),
+				   $query_classes{$q}->get_size(),
+				   $compa{$compa_key}->{occ});
+
+	    #### percentages
+	    if ($return_fields{percent}) {
+		printf $out "\t%7.4f", $compa{$compa_key}->{ref_percent};
+		printf $out "\t%7.4f", $compa{$compa_key}->{query_percent};
+	    }
+
+	    #### probabilities
+	    if ($return_fields{proba}) {
+		if ($compa{$compa_key}->{P_val} >= 0.0001) {
+		    printf $out "\t%.5f", $compa{$compa_key}->{P_val};
+		} else {
+		    printf $out "\t%.2g", $compa{$compa_key}->{P_val};
+		}
+
+		if ($compa{$compa_key}->{E_val} >= 1) {
+		    printf $out "\t%7.3f", $compa{$compa_key}->{E_val};
+		} elsif ($compa{$compa_key}->{E_val} >= 0.0001) {
+		    printf $out "\t%7.4f", $compa{$compa_key}->{E_val};
+		} else {
+		    printf $out "\t%.2g", $compa{$compa_key}->{E_val};
+		}
+		printf $out ( "\t%.2f", $compa{$compa_key}->{sig});
+	    }
+
+	    #### members of the intersection
+	    if ($return_fields{members}) {
+#           print $out "\t", join( " ", $ref_classes{$r}->get_members()) ;
+#           print $out "\t", join( " ", $query_classes{$q}->get_members())
+		;
+		print $out "\t", join( " ", @{$ref_only{$compa_key}}) ;
+		print $out "\t", join( " ", @{$query_only{$compa_key}}) ;
+		print $out "\t", join( " ", @{$common{$compa_key}}) ;
+	    }
+
+	    print $out "\n";
+	}
+    }
+}
+
+################################################################
+#### Export dot file
+sub ExportDotFile {
+    my ($file) = @_;
+
+    my %color = ();
+    $color{'ref_node'} = "blue";
+    $color{'query_node'} = "red";
+    $color{'arc'} = "black";
+    
+    my %shape = ();
+    $shape{'ref_node'} = "box";
+    $shape{'query_node'} = "ellipse";
+
+    $dot = &OpenOutputFile($file);
+
+    #### header
+    print $dot "graph G {\n";
+    print $dot "overlap=scale;\n";
+    print $dot "size=\"7,10\";\n";
+
+
+    #### class combinations
+    my %ref_nodes = ();
+    my %query_nodes = ();
+    my $arcs = "";
+    my %ref_id = ();
+    my %query_id = ();
+    foreach my $compa_key (keys %compa) {
+        my ($r, $q) = split "__VERSUS__", $compa_key;
+	my $arc_label = $compa{$compa_key}->{occ};
+
+	$ref_nodes{$r}++;
+	if ($infile{ref_classes} eq $infile{query_classes}) {
+	    #### ref and query set are identical
+	    $ref_id{$r} = $r;
+	    $ref_id{$q} = $q;
+	    $query_id{$q} = $q;
+	    $ref_nodes{$q}++; 
+	} else {
+	    #### distinct ID prefixes for references and queries
+	    $ref_id{$r} = "r_".$r;
+	    $query_id{$q} = "q_".$q;
+	    $query_nodes{$q}++;
+	}
+	$arcs .=  join ("", "\"", $query_id{$q}, "\" -- \"", $ref_id{$r}, "\" [label=", $arc_label,"]", "\n");
+
+    }
+
+    #### draw nodes for reference classes
+    foreach $n (sort keys %ref_nodes) {
+	my @members = $ref_classes{$n}->get_members();
+	my $node_label = $n." (".scalar(@members).")";
+	print $dot ("\"", $ref_id{$n}, "\"",  
+		    " [color=",$color{'ref_node'},
+		    ",fontsize=18",
+		    ",fontcolor=", $color{'ref_node'},
+		    ",shape=",$shape{'ref_node'},
+		    ",label=\"", $node_label, 
+		    "\"]",
+		    "\n");
+	
+    }
+
+    #### draw nodes for query classes
+    foreach $n (sort keys %query_nodes) {
+	my @members = $query_classes{$n}->get_members();
+	my $node_label = $n." (".scalar(@members).")";
+	print $dot ("\"", $query_id{$n}, "\"",  
+		    " [color=",$color{'query_node'},
+		    ",fontsize=18",
+		    ",fontcolor=", $color{'query_node'},
+		    ",shape=",$shape{'query_node'},
+		    ",label=\"", $node_label, 
+		    "\"]",
+		    "\n");
+	
+    }
+
+    #### draw arcs
+    print $dot $arcs;
+    
+    #### close the graph in the dot file
+    print $dot "}\n";
+
+    close ($dot);
+}
+
