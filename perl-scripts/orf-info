@@ -38,11 +38,10 @@ SYNONYMS
 		will provide the information about its synonym GAT1.
 
 WEB VERSION
-	http://copan.cifn.unam.mx/~yeast/
-
+	http://www.ucmb.ulb.ac.be/bioinformatics/rsa-tools/
 ";
   close HELP;
-  exit;
+  exit(0);
 }
 
 if ($ARGV[0] eq "-help") {
