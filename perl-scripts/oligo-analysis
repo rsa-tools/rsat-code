@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.15 2001/02/08 14:42:38 jvanheld Exp $
+# $Id: oligo-analysis,v 1.16 2001/02/20 00:54:58 jvanheld Exp $
 #
-# Time-stamp: <2001-02-08 15:26:01 jvanheld>
+# Time-stamp: <2001-02-20 01:54:30 jvanheld>
 #
 ############################################################
 
@@ -88,14 +88,14 @@ if (@output_fields == ()) { #default output is occurrence numbers
 ### non-coding frequency calibration
 if ($ncf) {
   ### check organism first
-  unless ($organism) {
+  unless ($organism_name) {
     die ";Error: you should specify an organism for using non-coding frequency calibration\n";
   }
-  unless ($supported_organism{$organism}) {
-    die ";Error: organism $organism is not supported on this site\n";
+  unless ($supported_organism{$organism_name}) {
+    die ";Error: organism $organism_name is not supported on this site\n";
   }
   
-  $data_dir = $supported_organism{$organism}->{'data'};
+  $data_dir = $supported_organism{$organism_name}->{'data'};
 
   ### localize dyad non-coding frequency file
   $method = "Frequency file";
@@ -1283,7 +1283,7 @@ sub ReadArguments {
 	    
 	    ### organism (for selecting the appropriate expected frequencies)
 	} elsif ($ARGV[$a] =~ /^-org/i) {
-	    $organism = $ARGV[$a+1];
+	    $organism_name = $ARGV[$a+1];
 	    
 
 	    ################################################################ 
