@@ -1552,13 +1552,10 @@ OPTIONS
 
 SUPPORTED FEATURE TYPES
 	A few special types are defined
-	- SEQSTART     	starting position for the curent map
-	- SEQEND	ending position for the current map
+	- SEQ_START     	starting position for the curent map
+	- SEQ_END	ending position for the current map
 	- ORIGIN	map-specific origin (all coordinates of the map
 			are recalculated relative to this value)
-
-	Any other word is just ignored and the effect is to draw a 
-	color box on the backbone to represent the feature. 
 
 OUTPUT FORMAT
         The output is a GIF file, which can be opened by most graphical 
