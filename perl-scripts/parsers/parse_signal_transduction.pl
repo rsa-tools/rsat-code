@@ -14,25 +14,78 @@ require "PFBP_parsing_util.pl";
 #no strict "refs";
 #no strict "vars";
 
+package PFBP::MoleculeInState;
+{
+    @ISA = qw ( PFBP::BiochemicalEntity );
+    %_attribute_cardinality = (state=>"SCALAR",
+			       parent=>"SCALAR");
+}
+
+package PFBP::Interaction;
+{
+    @ISA = qw ( PFBP::DatabaseObject );
+    %_attribute_cardinality = (
+			       id=>"SCALAR",
+			       type=>"SCALAR",
+			       description=>"SCALAR",
+			       inputes=>"EXPANDED",
+			       outputs=>"EXPANDED"
+			       );
+
+    #### collect IDs of the input objects  by taking the first field of the inputs expanded attribute
+    sub get_input_IDs {
+	my ($self) = @_;
+	my @objects = ();
+	my @reactants = $self->get_attribute("inputs");
+	foreach my $r (0..$#reactants) {
+	    @reactant = @{$reactants[$r]};
+	    push @objects, @reactant[0];
+	}
+	return @objects;
+    }
+
+    #### collect IDs of the output objects  by taking the first field of the outputs expanded attribute
+    sub get_output_IDs {
+	my ($self) = @_;
+	my @objects = ();
+	my @reactants = $self->get_attribute("outputs");
+	foreach my $r (0..$#reactants) {
+	    @reactant = @{$reactants[$r]};
+	    push @objects, @reactant[0];
+	}
+	return @objects;
+    }
+}
+
+
 package main;
 {
 
     ### initialization
+    $null = "<NULL>";
     $start_time = `date +%Y-%m-%d.%H%M%S`;
     $clean = 1;
     
     $out_format = "obj";
-    @classes = qw( PFBP::BiochemicalEntity PFBP::BiochemicalActivity PFBP::Pathway );
+    @classes = qw( PFBP::BiochemicalEntity PFBP::MoleculeInState PFBP::Interaction PFBP::Pathway );
     
     #### class factory for entities
     $entities = PFBP::ClassFactory->new_class(object_type=>"PFBP::BiochemicalEntity",
 					      prefix=>"ent_");
-    $entities->set_out_fields(qw( id type primary_name names state location ));
+    $entities->set_out_fields(qw( id type primary_name names states ));
+
+    #### class for entities in state
+    $entities_in_state = PFBP::ClassFactory->new_class(object_type=>"PFBP::MoleculeInState",
+						       prefix=>"ens_");
+    $entities_in_state->set_out_fields(qw( id type primary_name names state location parent ));
 
     #### class factory for interactions
-    $interactions = PFBP::ClassFactory->new_class(object_type=>"PFBP::BiochemicalActivity",
+    $interactions = PFBP::ClassFactory->new_class(object_type=>"PFBP::Interaction",
 						  prefix=>"int_");
+    $interactions->set_attribute_header("inputs", "object\tsubunit\tstate\tstoichiometry\tlocation" );
+    $interactions->set_attribute_header("outputs", "object\tsubunit\tstate\tstoichiometry\tlocation" );
     $interactions->set_out_fields(qw( id type description inputs outputs  ));
+
 
     #### class factory  for pathways
     $pathways = PFBP::ClassFactory->new_class(object_type=>"PFBP::Pathway",
@@ -55,12 +108,13 @@ package main;
 
     ### entities (entities)
     $in_file{entities} = $dir{input}."/description_of_molecules.txt";
+    $in_file{molecule_state} = $dir{input}."/molecule_state.txt";
     $in_file{synonyms} = $dir{input}."/synonyms.txt";
 
     ### interactions (interactions)
     $in_file{interactions} = $dir{input}."/description_of_interactions.txt";
-    $in_file{interaction_source} = $dir{input}."/interaction_source.txt";
-    $in_file{interaction_target} = $dir{input}."/interaction_target.txt";
+    $in_file{interaction_input} = $dir{input}."/interaction_source.txt";
+    $in_file{interaction_output} = $dir{input}."/interaction_target.txt";
 
     ### pathways
     $in_file{pathway_description} = $dir{input}."/pathway_description.txt";
@@ -69,8 +123,8 @@ package main;
     $in_file{pathway_entity} = $dir{input}."/pathway_molecule.txt";
 
     #### check for the existence of all the input files
-    foreach my $file (keys %infile) {
-	&checkfile($file);
+    foreach my $file (keys %in_file) {
+	&checkfile($in_file{$file});
     }
 
     ### output dir
@@ -112,6 +166,7 @@ package main;
     open ERR, "> $out_file{errors}" || die "Error : cannot write file $out_file{errors}\n";
 
     &ReadEntities();
+    &ReadMoleculeStates();
     &ReadInteractions();
     &CheckInteractions();
     &ReadPathways();
@@ -125,6 +180,7 @@ package main;
     ### print objects ###
     #####################
     $entities->dump_tables();
+    $entities_in_state->dump_tables();
     $interactions->dump_tables();
     $pathways->dump_tables();
 
@@ -161,7 +217,7 @@ sub ReadEntities {
     $line_nb = 0;
     while (<ENT>) {
 	$line_nb++;
-	&MySplit;
+	my @fields = &MySplit;
 	warn "$_\n" if ($warn_level >= 4);
 
 	### read the fields ###
@@ -213,12 +269,13 @@ sub ReadEntities {
     undef %col;
     $col{name} = 0;
     $col{altName} = 1;
-    open NAMES, "$in_file{synonyms}"  || print "Warning : cannot read file $MolAltNameFile\n";
+    open NAMES, "$in_file{synonyms}"  || 
+	die "Eannot read file $MolAltNameFile\n";
     $header = <NAMES>;
     $line_nb = 0;
     while (<NAMES>) {
 	$line_nb++;
-	&MySplit;
+	my @fields = &MySplit;
 	
 	$name = $fields[$col{name}];
 	$altName = $fields[$col{altName}];
@@ -232,6 +289,35 @@ sub ReadEntities {
 
     }
     close NAMES;
+}
+
+#### import molecule states
+sub ReadMoleculeStates {
+    my $l = 0;
+    open STATES, $in_file{molecule_state} ||
+	die "Error: cannot read molecule state file $in_file{molecule_state}\n";
+    my $header = <STATES>;
+    while (<STATES>) {
+	$l++;
+	my @fields = &MySplit();
+	my $molecule = $fields[0];
+	my $state = $fields[1];
+	warn ";\tMolecule state\t$molecule\t$state\n" if ($warn_level >= 2);
+	if (my $entity = $entities->get_object($molecule)) {
+#	    $entity->push_attribute("states", $state);
+  	    unless (my $entity_in_state = $entities_in_state->get_object("$state $molecule")) {
+  		my $entity_in_state = $entities_in_state->new_object();
+  		$entity_in_state->push_attribute("names","$state $molecule");
+  		$entity_in_state->push_attribute("names","$molecule");
+  		$entity_in_state->set_attribute("state", $state);
+  		$entity_in_state->set_attribute("parent", $entity->get_attribute("id"));
+  	    }
+	} else {
+	    &ErrorMessage("$in_file{molecule_state}\t$l\tundefined molecule\t$molecule\n");
+	}
+    }
+    close STATES
+
 }
 
 
@@ -249,7 +335,7 @@ sub CheckInteractions {
 				"has no input"), "\n");
 	}
 
-	my @outputs = $interaction->get_attribute("outputs");
+	my @outputs = $interaction->get_output_IDs();
 	my $id = $interaction->get_attribute("id");
 	my $output_nb = $#outputs +1;
 	if ($output_nb < 1) {
@@ -282,7 +368,8 @@ sub ReadInteractions {
     $line_nb = 0;
     while (<INTERACT>) {
 	$line_nb++;
-	&MySplit;  
+	my $line = $_;
+	my @fields = &MySplit;  
 	
 	$assoc_nb++;
 	$ac = $fields[$col{ac}];
@@ -299,8 +386,8 @@ sub ReadInteractions {
 	
 	$name = "$type";
 	$description = $fields[$col{descr}];
-	$source = "";
-	$target = "";
+	$input = "";
+	$output = "";
 	
 	my $interaction = $interactions->new_object(id=>$ac);
 	$interaction->set_attribute("type",$type);
@@ -312,7 +399,7 @@ sub ReadInteractions {
 	    if ($warn_level >= 2);
 	
 
-	&CreateAssociation($ac,$type,$name,$description,$source,$target);
+	&CreateAssociation($ac,$type,$name,$description,$input,$output);
     }
     close INTERACT;
 
@@ -321,8 +408,8 @@ sub ReadInteractions {
     $interactions->index_names();
 
 
-    ### read interaction sources
-    warn "; Reading interaction sources\n" if ($warn_level >= 1);
+    ### read interaction inputs
+    warn "; Reading interaction inputs\n" if ($warn_level >= 1);
 
     ### initialisation
     undef %col;
@@ -332,134 +419,218 @@ sub ReadInteractions {
     $col{state_before} = 3;
     $col{state_after} = 4;
     $col{stoeichiometry} = 5;
-    $col{location_before} = 5;
-    $col{location_after} = 5;
+    $col{location_before} = 6;
+    $col{location_after} = 7;
 
-    open SOURCE, "$in_file{interaction_source}"   || die "Error : cannot read file $in_file{interaction_source}\n";
-    $header = <SOURCE>;
+    open INPUT, "$in_file{interaction_input}"   || die "Error : cannot read file $in_file{interaction_input}\n";
+    $header = <INPUT>;
     $line_nb = 0;
-    while (<SOURCE>) {
+    while (<INPUT>) {
 	$line_nb++;
-	&MySplit;  
-
+	my @fields = &MySplit;  
+	$line = $_;
+	
+	my $inter = $fields[$col{inter}];
+	my $molec = $fields[$col{molec}];
+	my $subunit = $fields[$col{subunit}] || $null;
+	my $state_before = $fields[$col{state_before}] || $null;
+	my $state_after = $fields[$col{state_after}] || $null;
+	my $location_before = $fields[$col{location_before}] || $null;
+	my $location_after = $fields[$col{location_after}] || $null;
+	
 	### identify the interaction
-	$inter = $fields[$col{inter}];
-	unless ($inter_object = $interactions->get_object($inter)) {
+	my $inter_object = $interactions->get_object($inter);
+	unless ($inter_object) {
 	    #unless (defined($association{$inter})) {
-	    &ErrorMessage( "Error in $in_file{interaction_source} line $line_nb: $inter has not been defined in $InteractionFile\n");
+	    &ErrorMessage( "$in_file{interaction_input} line $line_nb: $inter has not been defined in $InteractionFile\n");
 	    &ErrorMessage( "\t$_\n");
 	    next;
 	}
 
 	### identify the entity
-	$molec = $fields[$col{molec}];
 	if ($entity_object = $entities->get_object($molec)) {
 	    $ent_id = $entity_object->get_attribute("id");
 	} else {
-	    &ErrorMessage( "Error in $in_file{interaction_source} line $line_nb: $molecAC has not been defined in $in_file{entities}\n");
+	    &ErrorMessage( "$in_file{interaction_input} line $line_nb: $molecAC has not been defined in $in_file{entities}\n");
 	    &ErrorMessage( "\t$_\n");
 	    next;
 	}
-	
-	### additional attributes
-	$subunit = $fields[$col{subunit}];
-	$state_before = $fields[$col{state_before}];
-	$state_after = $fields[$col{state_after}];
-	
-	$inter_object->push_attribute("inputs",$ent_id);
-	
-    }
-    close SOURCE;
 
-    ### interaction targets
-    warn "; Reading interaction targets\n" if ($warn_level >= 1);
-    open TARGET, "$in_file{interaction_target}"   || die "Error : cannot read file $in_file{interaction_target}\n";
-    $header = <TARGET>;
+
+	#### TEMPORARY : for the time being, if before or after is missing, replace it by after or before resp.
+	if (($state_before ne $null) && ($state_after eq $null)) {
+	    $state_after = $state_before;
+	} elsif (($state_after ne $null) && ($state_before eq $null)) {
+	    $state_before = $state_after;
+	}
+	if (($location_before ne $null) && ($location_after eq $null)) {
+	    $location_after = $location_before;
+	} elsif (($location_after ne $null) && ($location_before eq $null)) {
+	    $location_before = $location_after;
+	}
+
+	#### compare state and location before and after the interaction
+	if (($state_before eq $state_after) && ($location_before eq $location_after)) {
+	    $inter_object->push_expanded_attribute("inputs",$ent_id, $subunit, $state, $stoichiometry, $location);
+	} else {
+	    #### before remains input but after becomes output
+	    $inter_object->push_expanded_attribute("inputs",$ent_id, $subunit, $state_before, $stoichiometry, $location_before);
+	    $inter_object->push_expanded_attribute("outputs",$ent_id, $subunit, $state_after, $stoichiometry, $location_after);
+
+	    #### check the reason why location before and after differ
+	    unless ($location_before eq $location_after) {
+		if ($inter_object->get_attribute("type") eq "translocation") {
+		    #### specific treatment for translocations : there is no "target" attribute, but the output is in the "location_after" of the "source"
+		    warn "Translocation treated\n" if ($warn_level >= 2);
+		} else {
+		    #### report unexpected cases
+		    &ErrorMessage ("Unknown location modification for interaction input", 
+				   "\t", $inter_object->get_attribute("type"),
+				   "\t", $location_before, 
+				   "\t", $location_after, 
+				   "\n", $line, "\n");
+		}
+	    }
+
+	    #### check the reason why state before and after differ
+	    unless ($state_before eq $state_after) {
+		if ($inter_object->get_attribute("type") eq "HELLO") {
+		} else {
+		    #### report unexpected cases
+		    &ErrorMessage ("Unknown state modification for interaction input", 
+				   "\t", $inter_object->get_attribute("type"),
+				   "\t", $state_before, 
+				   "\t", $state_after, 
+				   "\n", $line, "\n");
+		}
+	    }
+	}
+    }
+    close INPUT;
+
+    open OUTPUT, "$in_file{interaction_output}"   || die "Error : cannot read file $in_file{interaction_output}\n";
+    $header = <OUTPUT>;
     $line_nb = 0;
-    while (<TARGET>) {
+    while (<OUTPUT>) {
 	$line_nb++;
-	&MySplit;  
+	my @fields = &MySplit;  
+	$line = $_;
 	
+	my $inter = $fields[$col{inter}];
+	my $molec = $fields[$col{molec}];
+	my $subunit = $fields[$col{subunit}] || $null;
+	my $state_before = $fields[$col{state_before}] || $null;
+	my $state_after = $fields[$col{state_after}] || $null;
+	my $location_before = $fields[$col{location_before}] || $null;
+	my $location_after = $fields[$col{location_after}] || $null;
 	
 	### identify the interaction
-	$inter = $fields[$col{inter}];
-	unless ($inter_object = $interactions->get_object($inter)) {
+	my $inter_object = $interactions->get_object($inter);
+	unless ($inter_object) {
 	    #unless (defined($association{$inter})) {
-	    &ErrorMessage( "Error in $in_file{interaction_source} line $line_nb: $inter has not been defined in $InteractionFile\n");
+	    &ErrorMessage( "$in_file{interaction_output} line $line_nb: $inter has not been defined in $InteractionFile\n");
 	    &ErrorMessage( "\t$_\n");
 	    next;
 	}
-	
+
 	### identify the entity
-	$molec = $fields[$col{molec}];
 	if ($entity_object = $entities->get_object($molec)) {
 	    $ent_id = $entity_object->get_attribute("id");
 	} else {
-	    &ErrorMessage( "Error in $in_file{interaction_source} line $line_nb: $molecAC has not been defined in $in_file{entities}\n");
+	    &ErrorMessage( "$in_file{interaction_output} line $line_nb: $molecAC has not been defined in $in_file{entities}\n");
 	    &ErrorMessage( "\t$_\n");
 	    next;
 	}
-	
-	### additional attributes
-	$subunit = $fields[$col{subunit}];
-	$state_before = $fields[$col{state_before}];
-	$state_after = $fields[$col{state_after}];
-	
-	$inter_object->push_attribute("outputs",$ent_id);
 
+
+	#### TEMPORARY : for the time being, if before or after is missing, replace it by after or before resp.
+	if (($state_before ne $null) && ($state_after eq $null)) {
+	    $state_after = $state_before;
+	} elsif (($state_after ne $null) && ($state_before eq $null)) {
+	    $state_before = $state_after;
+	}
+	if (($location_before ne $null) && ($location_after eq $null)) {
+	    $location_after = $location_before;
+	} elsif (($location_after ne $null) && ($location_before eq $null)) {
+	    $location_before = $location_after;
+	}
+
+	#### compare state and location before and after the interaction
+	if ($state_before eq $state_after) {
+	    if ($location_before eq $location_after) {
+		$inter_object->push_expanded_attribute("outputs",$ent_id, $subunit, $state, $stoichiometry, $location_before);
+	    } else {
+		$inter_object->push_expanded_attribute("outputs",$ent_id, $subunit, $state, $stoichiometry, $location_before);
+		#### TEMPORARY: not specific treatment yet
+		&ErrorMessage ("Untreated location modification for interaction output", 
+			       "\t", $inter_object->get_attribute("type"),
+			       "\t", $location_before, 
+			       "\t", $location_after, 
+			       "\n", $line, "\n");
+	    }
+	} else {
+	    #### TEMPORARY: not specific treatment yet
+	    $inter_object->push_expanded_attribute("outputs",$ent_id, $subunit, $state, $stoichiometry, $location);
+	    &ErrorMessage ("Untreated state modification for interaction output", 
+			   "\t", $inter_object->get_attribute("type"),
+			   "\t", $state_before, 
+			   "\t", $state_after, 
+			   "\n", $line, "\n");
+	}
     }
-    close TARGET;
+    close OUTPUT;
 
-    ### locations (temporary)
-    undef %col;
-    $col{molec} = 0;
-    $col{inter} = 1;
-    $col{location_before} = 2;
-    $col{location_after} = 3;
+
+#      ### locations (temporary)
+#      undef %col;
+#      $col{molec} = 0;
+#      $col{inter} = 1;
+#      $col{location_before} = 2;
+#      $col{location_after} = 3;
     
-    open LOCATIONS, "$LocationFile";
-    $header = <LOCATIONS>;
-    $line_nb = 0;
-    while (<LOCATIONS>) {
-	$line_nb++;
-	&MySplit;  
-	$inter = $fields[$col{inter}];
-	unless (defined($association{$inter})) {
-	    &ErrorMessage( "Error in $LocationFile line $line_nb: $inter has not been defined in $InteractionFile\n");
-	    &ErrorMessage( "\t$_\n");
-	    next;
-	}
+#      open LOCATIONS, "$LocationFile";
+#      $header = <LOCATIONS>;
+#      $line_nb = 0;
+#      while (<LOCATIONS>) {
+#  	$line_nb++;
+#  	my @fields = &MySplit;  
+#  	$inter = $fields[$col{inter}];
+#  	unless (defined($association{$inter})) {
+#  	    &ErrorMessage( "Error in $LocationFile line $line_nb: $inter has not been defined in $InteractionFile\n");
+#  	    &ErrorMessage( "\t$_\n");
+#  	    next;
+#  	}
 	
-	$molec = &PrologString($fields[$col{molec}]);
-	$lc_molec = lc($molec);
-	if (defined ($AC{$lc_molec})) {
-	    $molecAC = $AC{$lc_molec};
-	} else {
-	    &ErrorMessage( "Error in $LocationFile line $line_nb: $molec has not been defined in $in_file{entities}\n");
-	    &ErrorMessage( "\t$_\n");
-	    next;
-	}
-	$OK = 0;
-	if (defined(@{$source_records{$inter}{$molecAC}})) {
-	    foreach $line_nb (@{$source_records{$inter}{$molecAC}}) {
-		${$source_attributes}[$line_nb]->{location_before} = $fields[$col{location_before}];
-	    ${$source_attributes}[$line_nb]->{location_after} = $fields[$col{location_after}];
-	$OK = 1;
-    }
-}
-if (defined(@{$target_records{$inter}{$molecAC}})) {
-    foreach $line_nb (@{$target_records{$inter}{$molecAC}}) {
-	${$target_attributes}[$line_nb]->{location_before} = $fields[$col{location_before}];
-    ${$target_attributes}[$line_nb]->{location_after} = $fields[$col{location_after}];
-$OK = 1;
-}
-}
-unless ($OK) {
-    &ErrorMessage( "Error in $LocationFile line $line_nb: ");
-    &ErrorMessage( "$molec has not been defined as source or target for interaction $inter\n");
-}
-}
-close LOCATIONS;
+#  	$molec = &PrologString($fields[$col{molec}]);
+#  	$lc_molec = lc($molec);
+#  	if (defined ($AC{$lc_molec})) {
+#  	    $molecAC = $AC{$lc_molec};
+#  	} else {
+#  	    &ErrorMessage( "Error in $LocationFile line $line_nb: $molec has not been defined in $in_file{entities}\n");
+#  	    &ErrorMessage( "\t$_\n");
+#  	    next;
+#  	}
+#  	$OK = 0;
+#  	if (defined(@{$input_records{$inter}{$molecAC}})) {
+#  	    foreach $line_nb (@{$input_records{$inter}{$molecAC}}) {
+#  		${$input_attributes}[$line_nb]->{location_before} = $fields[$col{location_before}];
+#      	        ${$input_attributes}[$line_nb]->{location_after} = $fields[$col{location_after}];
+#  	        $OK = 1;
+#              }
+#          }
+#          if (defined(@{$output_records{$inter}{$molecAC}})) {
+#              foreach $line_nb (@{$output_records{$inter}{$molecAC}}) {
+#  	        ${$output_attributes}[$line_nb]->{location_before} = $fields[$col{location_before}];
+#                  ${$output_attributes}[$line_nb]->{location_after} = $fields[$col{location_after}];
+#                  $OK = 1;
+#              }
+#          }
+#          unless ($OK) {
+#              &ErrorMessage( "Error in $LocationFile line $line_nb: ");
+#              &ErrorMessage( "$molec has not been defined as input or output for interaction $inter\n");
+#          }
+#      }
+#      close LOCATIONS;
 }
 
 
@@ -473,7 +644,7 @@ sub ReadPathways {
     open PATH_DESC, $in_file{pathway_description} || die ";Error: cannot read pathway description file $in_file{pathway_description}\n";
     $header = <PATH_DESC>; ### skip header line
     while (<PATH_DESC>) {
-	&MySplit;
+	my @fields = &MySplit;
 	my $name = $fields[0];
 	my $description = $fields[1];
 	
@@ -500,7 +671,7 @@ sub ReadPathways {
     my $line_count = 1;
     while (<PATH_ENT>) {
 	$line_count++;
-	&MySplit;
+	my @fields = &MySplit;
 	my $path_id = $fields[0];
 	my $entity = $fields[1];
 	warn ";\t$path_id\t$entity\n" if ($warn_level >= 2);
@@ -531,7 +702,7 @@ sub ReadPathways {
     my $line_count = 1;
     while (<PATH_INT>) {
 	$line_count++;
-	&MySplit;
+	my @fields = &MySplit;
 	my $path_id = $fields[0];
 	my $interaction = $fields[1];
 	warn ";\t$path_id\t$interaction\n" if ($warn_level >= 2);
@@ -562,7 +733,7 @@ sub ReadPathways {
     my $line_count = 1;
     while (<PATH_INT>) {
 	$line_count++;
-	&MySplit;
+	my @fields = &MySplit;
 	my $path_id = $fields[0];
 	my $subpathway = $fields[1];
 	warn ";\t$path_id\t$subpathway\n" if ($warn_level >= 2);
@@ -643,15 +814,15 @@ sub CreateAssociation {
     local($ltype) = $_[1];
     local($lname) = $_[2];
     local($ldescription) = $_[3];
-    local($lsource) = $_[4];
-    local($ltarget) = $_[5];
+    local($linput) = $_[4];
+    local($loutput) = $_[5];
 
     $association{$lac}->{ac} = $lac;
     $association{$lac}->{type} = $ltype;
     $association{$lac}->{name} = $lname;
     $association{$lac}->{description} = $ldescription;
-    $association{$lac}->{source} = $lsource;
-    $association{$lac}->{target} = $ltarget;
+    $association{$lac}->{input} = $linput;
+    $association{$lac}->{output} = $loutput;
     $assoc_count{$ltype}++;
 }
 
@@ -707,37 +878,37 @@ sub PrintAssociations {
 	$type = lc($association{$ac}->{type});
 	$label = $association{$ac}->{type};
 	
-	$sources = "";
-	foreach $source (@{$association{$ac}->{sources}}) {
-	    $sources .= $source.",";
+	$inputs = "";
+	foreach $input (@{$association{$ac}->{inputs}}) {
+	    $inputs .= $input.",";
 	}
-	$sources =~ s/,$//;
+	$inputs =~ s/,$//;
 	
-	$targets = "";
-	foreach $target (@{$association{$ac}->{targets}}) {
-	    $targets .= $target.",";
+	$outputs = "";
+	foreach $output (@{$association{$ac}->{outputs}}) {
+	    $outputs .= $output.",";
 	}
-	$targets =~ s/,$//;
+	$outputs =~ s/,$//;
 	
-	print ASSOC "association($type,$ac,\[$sources\],\[$targets\],$label).\n";
+	print ASSOC "association($type,$ac,\[$inputs\],\[$outputs\],$label).\n";
 
 	### node-arc format
-	### export only associations that have at least one source and one target
+	### export only associations that have at least one input and one output
 	$to_export = 1;
-	if ($#{$association{$ac}->{sources}} < 0) {
-	    &ErrorMessage( "Error: association $ac has no source\n");
+	if ($#{$association{$ac}->{inputs}} < 0) {
+	    &ErrorMessage( "Error: association $ac has no input\n");
 	    $to_export = 0;
 	}
-	if ($#{$association{$ac}->{targets}} < 0) {
-	    &ErrorMessage( "Error: association $ac has no target\n");
+	if ($#{$association{$ac}->{outputs}} < 0) {
+	    &ErrorMessage( "Error: association $ac has no output\n");
 	    $to_export = 0;
 	}
 	if ($to_export) {
-	    foreach $source (@{$association{$ac}->{sources}}) {
-		print NODEARC "arc($source,$ac,+,'${label}_source').\n";
+	    foreach $input (@{$association{$ac}->{inputs}}) {
+		print NODEARC "arc($input,$ac,+,'${label}_input').\n";
 	    }
-	    foreach $target (@{$association{$ac}->{targets}}) {
-		print NODEARC "arc($ac,$target,+,'${label}_target').\n";
+	    foreach $output (@{$association{$ac}->{outputs}}) {
+		print NODEARC "arc($ac,$output,+,'${label}_output').\n";
 	    }
 	    print NODEARC "node($ac, $type, '${label}_$ac').\n";
 	}
@@ -746,8 +917,8 @@ sub PrintAssociations {
     close ASSOC;
 }
 
-sub PrintSourcesTargets {
-### just temporary : reprint source and target attributes
+sub PrintInputsOutputs {
+### just temporary : reprint input and output attributes
 ### and merge the info from the location table
     undef @col;
     $col[0] = inter;
@@ -759,35 +930,35 @@ sub PrintSourcesTargets {
     $col[6] = location_before;
     $col[7] = location_after;
 
-    open UPDATED_SOURCES, "> $Updatedin_file{interaction_source}" || die "Error: cannot write file $Updatedin_file{interaction_source}\n";
-    print UPDATED_SOURCES $col[0];
+    open UPDATED_INPUTS, "> $Updatedin_file{interaction_input}" || die "Error: cannot write file $Updatedin_file{interaction_input}\n";
+    print UPDATED_INPUTS $col[0];
     foreach $c (1..$#col) {
-	print UPDATED_SOURCES "\t", $col[$c];
+	print UPDATED_INPUTS "\t", $col[$c];
     }
-    print UPDATED_SOURCES "\n";
-    foreach $line_nb (1..$#{$source_attributes}) {
-	print UPDATED_SOURCES ${$source_attributes}[$line_nb]->{$col[0]};
+    print UPDATED_INPUTS "\n";
+    foreach $line_nb (1..$#{$input_attributes}) {
+	print UPDATED_INPUTS ${$input_attributes}[$line_nb]->{$col[0]};
     foreach $c (1..$#col) {
-	print UPDATED_SOURCES "\t", ${$source_attributes}[$line_nb]->{$col[$c]};
+	print UPDATED_INPUTS "\t", ${$input_attributes}[$line_nb]->{$col[$c]};
 }
-print UPDATED_SOURCES "\n";
+print UPDATED_INPUTS "\n";
 }
-close UPDATED_SOURCES;
+close UPDATED_INPUTS;
 
-open UPDATED_TARGETS, "> $Updatedin_file{interaction_target}" || die "Error: cannot write file $Updatedin_file{interaction_target}\n";
-print UPDATED_TARGETS $col[0];
+open UPDATED_OUTPUTS, "> $Updatedin_file{interaction_output}" || die "Error: cannot write file $Updatedin_file{interaction_output}\n";
+print UPDATED_OUTPUTS $col[0];
 foreach $c (1..$#col) {
-    print UPDATED_TARGETS "\t", $col[$c];
+    print UPDATED_OUTPUTS "\t", $col[$c];
 }
-print UPDATED_TARGETS "\n";
-foreach $line_nb (1..$#{$target_attributes}) {
-    print UPDATED_TARGETS ${$target_attributes}[$line_nb]->{$col[0]};
+print UPDATED_OUTPUTS "\n";
+foreach $line_nb (1..$#{$output_attributes}) {
+    print UPDATED_OUTPUTS ${$output_attributes}[$line_nb]->{$col[0]};
 foreach $c (1..$#col) {
-    print UPDATED_TARGETS "\t", ${$target_attributes}[$line_nb]->{$col[$c]};
+    print UPDATED_OUTPUTS "\t", ${$output_attributes}[$line_nb]->{$col[$c]};
 }
-print UPDATED_TARGETS "\n";
+print UPDATED_OUTPUTS "\n";
 }
-close UPDATED_TARGETS;
+close UPDATED_OUTPUTS;
 }
 
 
@@ -859,10 +1030,10 @@ sub PathwayToDiagram {
     foreach my $interaction_id (@interaction_ids) {
 	#### identify the interaction
 	if ($interaction = $interactions->get_object($interaction_id)) {
-	    foreach my $input ($interaction->get_attribute("inputs")) {
+	    foreach my $input ($interaction->get_input_IDs()) {
 		$linked_entities{$input}++;
 	    }
-	    foreach my $output ($interaction->get_attribute("outputs")) {
+	    foreach my $output ($interaction->get_output_IDs()) {
 		$linked_entities{$output}++;
 	    }
 	}
@@ -888,14 +1059,18 @@ sub PathwayToDiagram {
     foreach my $ent_id (keys %linked_entities) {
 	$entity = $entities->get_object($ent_id);
 
+	if ($entity) {
 #	warn join("\t", "getting node", $ent_id, $diagram->get_node($ent_id), "\n");
-	unless ($diagram->get_node($ent_id)) {
-	    #### create a node for the entity if necessary
-	    my $node = $diagram->add_node(id=>$ent_id);
-	    $node->set_attribute("label", $entity->get_name());
-	    $node->set_attribute("type", $entity->get_attribute("type"));
-	    $node->set_attribute("xpos", int(rand $xsize));
-	    $node->set_attribute("ypos", int(rand $ysize));
+	    unless ($diagram->get_node($ent_id)) {
+		#### create a node for the entity if necessary
+		my $node = $diagram->add_node(id=>$ent_id);
+		$node->set_attribute("label", $entity->get_name());
+		$node->set_attribute("type", $entity->get_attribute("type"));
+		$node->set_attribute("xpos", int(rand $xsize));
+		$node->set_attribute("ypos", int(rand $ysize));
+	    }
+	} else {
+	    &ErrorMessage("Cannot identify entity\t$ent_id\n");
 	}
     }
     
@@ -929,7 +1104,7 @@ sub PathwayToDiagram {
 	$node->set_attribute("ypos", int(rand $ysize));
 	
 	### print arc between the interaction node and each input
-	foreach my $input ($interaction->get_attribute("inputs")) {
+	foreach my $input ($interaction->get_input_IDs()) {
 	    my $from = $input;
 	    my $to = $int_id; #### interaction id
 
@@ -939,7 +1114,7 @@ sub PathwayToDiagram {
 	}
 
 	### print arc between the interaction node and each output
-	foreach my $output ($interaction->get_attribute("outputs")) {
+	foreach my $output ($interaction->get_output_IDs()) {
 	    my $from = $int_id; #### interaction id
 	    my $to = $output; 
 
@@ -982,10 +1157,10 @@ sub PathwayToDiagram {
 
 #      ### collect inputs and outputs for each interaction
 #      foreach my $interaction (@interactions) {
-#  	foreach $input ($interaction->get_attribute("inputs")) {
+#  	foreach $input ($interaction->get_input_IDs()) {
 #  	    $linked_entities{$input}++;
 #  	}
-#  	foreach $output ($interaction->get_attribute("outputs")) {
+#  	foreach $output ($interaction->get_output_IDs()) {
 #  	    $linked_entities{$output}++;
 #  	}
 #      }
@@ -1012,7 +1187,7 @@ sub PathwayToDiagram {
 #  	&PrintNode;
 
 #  	### print arc between the interaction node and each input
-#  	foreach $input ($interaction->get_attribute("inputs")) {
+#  	foreach $input ($interaction->get_input_IDs()) {
 #  	    $arc_id = "arc_".$arc_count++;
 #  	    $from = $input;
 #  	    $to = $id; #### interaction id
@@ -1021,7 +1196,7 @@ sub PathwayToDiagram {
 #  	}
 
 #  	### print arc between the interaction node and each output
-#  	foreach $output ($interaction->get_attribute("outputs")) {
+#  	foreach $output ($interaction->get_output_IDs()) {
 #  	    $arc_id = "arc_".$arc_count++;
 #  	    $from = $id; #### interaction id
 #  	    $to = $output; 
@@ -1072,10 +1247,10 @@ sub LinkEntities {
     foreach my $interaction ($interactions->get_objects()) {
 	my $in = 0;
 	my $out = 0;
-	foreach $input ($interaction->get_attribute("inputs")) {
+	foreach $input ($interaction->get_input_IDs()) {
 	    $in++ if ($seed{uc($input)});
 	}
-	foreach $output ($interaction->get_attribute("outputs")) {
+	foreach $output ($interaction->get_output_IDs()) {
 	    $out++ if ($seed{uc($output)});
 	}
 	if (($in) and ($out)) {
