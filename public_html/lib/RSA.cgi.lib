@@ -215,9 +215,6 @@ sub PipingWarning {
 }
 
 
-
-
-
 ### display a pop-up menu with a selection of organism
 ### on the basis of the configuration found in RSA.config
 sub OrganismPopUp {
@@ -227,7 +224,7 @@ sub OrganismPopUpString {
     my $popUpString = "";
     $popupString .=  "<B>Organism</B>&nbsp;";
     $popupString .=  "<SELECT NAME='organism'>\n";
-    foreach $key (sort keys %supported_organism) {
+    foreach $key (&ListSupportedOrganisms("keys")) {
 	$name = $supported_organism{$key}->{'name'};
 	if ((lc($key) eq lc($default{organism})) ||
 	    (lc($name) eq lc($default{organism}))) {
