@@ -1,0 +1,366 @@
+#!/usr/bin/perl
+use CGI;
+
+### for debugging
+sub ListParameters {
+  my($cgi_query) = $_[0];
+  @param = $query->param;
+  print "<H3>Parameter values</H3>";
+  print "<UL><TABLE>\n";
+  foreach $key (@param) {
+    print "<TR>";
+    print "<TD VALIGN=TOP><B>$key</B></TD>";
+    $value = $query->param($key);
+    $value =~ s/\n/<BR>/g;
+    print "<TD VALIGN=TOP>$value</TD>";
+    print "</TR>\n";
+  }
+  print "</TABLE></UL>\n";
+}
+
+
+sub RSA_header {
+  ### usage &RSA_header($program_name)
+  my ($title) = @_;
+  print $query->header;
+  ### print the header of the result page
+  print $query->start_html(-title=>'RSA-tools : $title',
+                         -author=>'jvanheld@ucmb.ulb.ac.be',
+                         -BGCOLOR=>'#FFFFFF');
+
+  print "<H3 ALIGN='center'><A HREF='$WWW_RSA/RSA_home.cgi'>RSA-tools</A> - $title</H3>";
+
+}
+
+### send results by e-mail or display on the browser
+sub SelectOutput {
+  print "<B>Output</B>&nbsp;";
+  print $query->radio_group(-name=>'output',
+			    -values=>['display','e-mail'],
+			    -default=>'display');
+  print $query->textfield(-name=>'user_email',
+			  -size=>30);
+  print "<BR>\n";
+  print "<BR>\n";
+}
+
+
+
+### print a selection between diferent modes of sequence entry 
+### in a HTML form
+### - sequences copy-pasted in a textarea
+### - sequences uploaded from a file on the client side
+### - sequences piped from a previous script, and stored on the server
+###   (typically  in a temporary dir)
+sub DisplaySequenceChoice {
+  print "<B>Sequence</B>";
+  #print "<UL>\n";
+  
+  if ($sequence_file = $query->param(sequence_file)) {
+    ### sequence file is already on the server machine 
+    ### (piped from a previous script)
+      $sequence_url = $sequence_file;
+      $sequence_url =~ s|$RSA/public_html|$WWW_RSA|;
+      print "<a href=$sequence_url>";
+      print " transferred from previous query<BR>\n";
+      print "</a>";
+      $sequence_format = $query->param(sequence_format);
+      print "<INPUT type='hidden' NAME='sequence_format' VALUE='$sequence_format'>\n";
+      print "<INPUT type='hidden' NAME='sequence_file' VALUE='$sequence_file'>\n";
+  } else {
+      #### sequence format (pop-up menu)
+      print "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
+      print "<B><A HREF='help.formats.html'>Format</A></B>&nbsp;";
+      print $query->popup_menu(-name=>'sequence_format',
+			       -Values=>['fasta', 
+					 'ig',
+					 'wconsensus',
+					 'raw',
+					 'ncbi',
+					 'multi'],
+			       -default=>$sequence_format);
+      print "<BR>\n";
+      ### text area to copy-paste the sequence
+      print "Paste your sequence in the box below<BR>\n";
+      print $query->textarea(-name=>'sequence',
+			     -default=>$default{sequence},
+			     -rows=>4,
+			     -columns=>55);
+      print "<BR>\n";
+    
+    ### option to upload the sequence file from the client machine 
+    print "Or select a file to upload<BR>\n";
+    print $query->filefield(-name=>'uploaded_file',
+			    -default=>'starting value',
+			    -size=>45,
+			    -maxlength=>200);
+  }
+  print "<BR>\n";
+  #print "</UL>\n";
+}
+
+
+### input sequence ####
+sub GetSequenceFile {
+    #### usage : 
+    ####    ($sequence_file,$sequence_format) = &GetSequenceFile();
+    ####    ($sequence_file,$sequence_format) = &GetSequenceFile($required_format, $add_rc);
+    my ($required_format, $no_format, $add_rc) = @_;
+#    my ($required_format, $add_rc) = @_;
+    
+    ### sequence file format
+    my $sequence_format = lc($query->param(sequence_format));
+    if ($accepted_input_seq{$sequence_format}) {
+	$parameters .= " -format $sequence_format" unless ($no_format);
+	#$parameters .= " -format $sequence_format";
+    } else {
+	&cgiError("Invalid sequene format : '$sequence_format'.");
+    }
+    
+    
+    unless ($sequence_file = $query->param(sequence_file)) { ### sequence file already on the server side
+	$sequence_file = "$TMP/$tmp_file_name.seq"; ### create a new temporary sequence file
+    
+	### upload sequence file from the client side
+	$upload_file = $query->param('uploaded_file');
+	if ($upload_file) {
+	    if ($upload_file =~ /\.gz$/) {
+		$sequence_file .= ".gz";
+	    }
+	    $type = $query->uploadInfo($upload_file)->{'Content-Type'};
+	    open SEQ, ">$sequence_file" ||
+		&cgiError("Cannot store sequence file in temp dir.");
+	    while (<$upload_file>) {
+		print SEQ;
+	    }
+	    close SEQ;
+	    
+	    ### read sequence from the textarea "sequence"
+	} elsif ($query->param('sequence') =~ /\S/) {
+	    if (open SEQ, ">$sequence_file") {
+		print SEQ $query->param('sequence');
+		close SEQ;
+	    }
+	} else {
+	    &cgiError("The sequence box should not be empty.");
+	}
+    }
+
+    #### convert-seq
+    if (($add_rc) ||
+	((defined($required_format)) && (lc($sequence_format) ne lc($required_format)))
+	) {
+	unless ($accepted_output_seq{$required_format}) {  ### use convert-seq
+	    &cgiError("Invalid sequence format : ${required_format}.");
+	}
+	my $converted_seq_file = $sequence_file.".".$required_format;
+	my $convert_seq_command = "$SCRIPTS/convert-seq ";
+	$convert_seq_command .= " -i $sequence_file -o $converted_seq_file ";
+	$convert_seq_command .= " -from  $sequence_format -to $required_format ";
+	
+	if ($add_rc) {
+	    $convert_seq_command .= "-addrc ";
+	}
+	system $convert_seq_command;
+	
+	#print "<PRE>$convert_seq_command</PRE>\n";
+	&DelayedRemoval($sequence_file);
+	$sequence_file = $converted_seq_file;
+	$sequence_format = $required_format;
+    }
+    
+    &DelayedRemoval($sequence_file);
+    
+    return($sequence_file, $sequence_format);
+}
+
+
+### input pattern ####
+#sub GetPatternFile {
+#  ### usage : $pattern_file = &GetPatternFile;
+#  unless ($pattern_file = $query->param(pattern_file)) { ### pattern file already on the server side
+#    $pattern_file = "$TMP/$tmp_file_name.pat"; ### create a new temporary pattern file
+#    
+#    ### read pattern from the textarea "patterns"
+#    if ($query->param('patterns') =~ /\S/) {
+#      if (open SEQ, ">$pattern_file") {
+#	print SEQ $query->param('patterns');
+#	close SEQ;
+#      }
+#    } else {
+#      &cgiError("The pattern box should not be empty.");
+#    }
+#  }
+#  &DelayedRemoval("$pattern_file"); ### remove the file after one hour
+#  return($pattern_file);
+#}
+
+
+
+### general routine to report errors and interrupt the cgi
+sub cgiError {
+    my $error_message = join "", @_;
+    print ("<HR SIZE=3>",
+	   "<h2>Error</h2>",
+	   "<FONT SIZE=+1 color=#bb0000><blockquote><B>",
+	   $error_message,
+	   "</B><//blockquote></FONT>",
+	   "<P><HR SIZE=3>",
+	   &HtmlBot);
+    exit(0);
+}
+
+
+### display a pop-up menu with a selection of organism
+### on the basis of the configuration found in RSA.config
+sub OrganismPopUp {
+  print "<B>Organism</B>&nbsp;";
+  print "<SELECT NAME='organism'>\n";
+  foreach $key (sort keys %supported_organism) {
+    $name = $supported_organism{$key}->{'name'};
+    if ((lc($key) eq lc($default{organism})) ||
+	(lc($name) eq lc($default{organism}))) {
+      print "<OPTION SELECTED VALUE='$key'>$name\n";
+    } else {
+      print "<OPTION VALUE='$key'>$name\n";
+    }
+  }
+  print "</SELECT>";
+  print "<BR>\n";
+}
+
+
+
+sub PrintHtmlTable {
+  #### prints a text table in html format
+  ####
+  #### usage
+  ####   PrintHtmlTable(FILE_HANDLE,$mirror_file)
+  #### reads the content of FILEHANDLE and displays 
+  #### it in the form of a HTML table.
+  #### if $mirror_file is specified, a copy of the input text (without HTML formatting)  
+  #### is saved on the hard drive
+  ####
+  #### global variables
+  #### ================
+  #### The fixed font type can be switched off 
+  #### by specifiying a global variable 
+  ####       $font{variable} = 1;
+  my ($FILE, $mirror_file, $mirror_verbose) = @_;
+  my $chunk = 50;
+  my $line_count = 0;
+  my $last_line = "";
+  my $header_line = "";
+  
+  unless ($font{variable}) {
+    $font_spec_start = "<TT>";
+    $font_spec_end = "</TT>";
+  }
+  
+  if ($mirror_file ne "") {
+    if (open MIRROR, ">$mirror_file") {
+      $mirror = 1;
+      &DelayedRemoval($mirror_file);
+    } else {
+      print ";WARNING: Could not open the mirror file $mirror_file<P>\n";
+    }
+  }
+  
+  print "<PRE>";
+  while (<$FILE>) {
+      if ($mirror) {
+	  print MIRROR $_
+	      unless ((/^;/) && !($mirror_verbose)); 
+      }
+
+      if (/^\s*$/) {		#nothing on the line
+      } elsif (/^;/) {		# comment line
+	  if ($table_opened) {
+	      print "<\/TABLE><PRE>\n";
+	      $table_opened = 0;
+	  } 
+	  print $last_line;
+      $last_line = $_;
+      
+    } elsif (!($table_opened)) { # first line of the table
+      $table_opened = 1;
+      print "</PRE><TABLE CELLSPACING=3>\n";
+      
+      # print the header line
+      chomp($last_line);
+      $last_line =~ s/;//;
+      $last_line =~ s/\t/ <\/TT><\/B><\/TD><TD><B>$font_spec_start/g;
+      $header_line = "<TR><TD><B>".$font_spec_start.$last_line.$font_spec_end."</B></TD></TR>\n";
+      print $header_line;
+      $last_line = "";
+      
+      ### print the first result line
+      chomp;
+      s/\t/ <\/TT><\/TD><TD>$font_spec_start/g;
+      print "<TR><TD>".$font_spec_start;
+      print $_;
+      print $font_spec_end."</TD></TR>\n";
+      
+    } else {			# other line of the table
+      $line_count++;
+      if ($line_count%$chunk == 0) {
+	### avoid HTML tables with too many rows
+	print "</TABLE><TABLE>";
+	print $header_line;
+      }
+      chomp;
+      s/\t/ <\/TT><\/TD><TD>$font_spec_start/g;
+      print "<TR><TD>".$font_spec_start.$_.$font_spec_end."</TD></TR>\n";
+    }
+  }
+  if ($table_opened) {
+    print "<\/TABLE><PRE>\n";
+    $table_opened = 0;
+  }
+  print $last_line;
+  print "</PRE>";
+  if ($mirror_file ne "") {
+    close MIRROR;
+  }
+}
+
+sub Print_CGI_Input {
+### returns all the fields of the %input hash
+    print "<PRE>";
+    foreach $key (sort keys %input) {
+	print "$key\t$input{$key}\n";
+    }
+    print "</PRE>";
+
+    print "Parameters: $parameters<P><P>\n";
+}
+
+
+
+sub SelectFormat {
+    my($in_format) = lc($_[0]);
+
+    #### update the sequence format in a web form
+    $form =~  s/ selected>Wconsensus/>Wconsensus/i; 
+    $form =~  s/ selected>Fasta/>Fasta/i; 
+    $form =~  s/ selected>NCBI/>NCBI/i; 
+    $form =~  s/ selected>IG/>IG/i; 
+    $form =~  s/ selected>raw/>raw/i; 
+    $form =~  s/ selected>multi/>multi/i; 
+    if ($in_format =~ /fasta/i) {
+	$form =~  s/\>Fasta/ SELECTED\>Fasta/i; 
+    } elsif ($in_format =~ /multi/i) {
+	$form =~  s/\>multi/ SELECTED\>multi/i; 
+    } elsif ($in_format =~ /raw/i) {
+	$form =~  s/\>raw/ SELECTED\>raw/i; 
+    } elsif ($in_format =~ /^wc/i) {
+	$form =~  s/\>Wconsensus/ SELECTED\>Wconsensus/i; 
+    } elsif ($in_format =~ /ig/i) {
+	$form =~  s/\>IG/ SELECTED\>IG/i; 
+    }    
+}
+
+
+
+1; # return true
+
