@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parsing_util.pl,v 1.15 2005/01/27 20:22:40 jvanheld Exp $
+# $Id: parsing_util.pl,v 1.16 2005/01/27 20:40:14 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -524,8 +524,8 @@ sub ParsePositions {
 	    }
 	    
 	    #### feature start and end 
-	    $start_pos = $exon_starts[0] || $null;
-	    $end_pos = $exon_ends[$#exons] || $null;
+	    $start_pos = &min(@exon_starts) || $null;
+	    $end_pos = &max(@exon_ends) || $null;
 
 	    #### introns
 	    my @introns = ();
