@@ -4,6 +4,13 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 require "RSA.lib";
 
+## CVS
+## - Added proba as return field
+## - improved Countmatches (matches between 2 ambiguous codes are supported)
+## - improved the output 
+## - implemented &BestMatch(), which slides seq2 along seq1 and returns the match with the highest weight
+## - added the options -lth and -uth
+
 ################################################################
 #### initialise parameters
 my $start_time = &AlphaDate();
@@ -14,19 +21,53 @@ local %outfile = ();
 local $verbose = 0;
 local $in = STDIN;
 local $out = STDOUT;
+$slide = 0;
+
+## lower and upper thresholds
+%lth = ();
+%uth = ();
+@supported_threshold_fields = qw(
+			      match
+			      proba
+			      weight
+			      len1
+			      len2
+			      mlen
+			      tlen
+			      offset
+			      );
+foreach my $field (@supported_threshold_fields) {
+    $supported_threshold_field{$field} = 1;
+}
+$supported_threshold_fields = join (",", @supported_threshold_fields);
+
 
 #### initialise parameters ####
 $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
 @supported_return_fields = qw(
 			      match
+			      proba
 			      weight
 			      seq
 			      length
+			      offset
 			      );
 foreach my $field (@supported_return_fields) {
     $supported_return_field{$field} = 1;
 }
 $supported_return_fields = join (",", @supported_return_fields);
+
+my %field_format = (match=>"%d",
+		    weight=>"%.2f",
+		    proba=>"%.2g",
+		    seq1=>"%s",
+		    seq2=>"%s",		
+		    len1=>"%d",
+		    len2=>"%d",
+		    mlen=>"%d",
+		    tlen=>"%d",
+		    offset=>"%g",
+   );
 
 &ReadArguments();
 
@@ -50,12 +91,11 @@ foreach my $field (@temp_return_fields) {
     if ($field eq "seq") {
 	push @return_fields, "seq1", "seq2";
     } elsif ($field eq "length") {
-	push @return_fields, "len1", "len2";
+	push @return_fields, "len1", "len2", "mlen", "tlen";
     } else {
 	push @return_fields, $field;
     }
 }
-
 
 ## Check input sequences
 &FatalError("You must specify at least one first sequence") unless (scalar(@seq1) > 0);
@@ -78,30 +118,56 @@ if ($verbose >= 1) {
 ## Count matches for each pair of input sequences	
 foreach $seq1 (@seq1) {
     foreach $seq2 (@seq2) {
-	my @result = ();
-	
+	local @result = ();
+	local $match;
+	local $weight;
+	local $proba;
+	local $offset;
+	local $len1;
+	local $len2;
+	local $mlen;
+	local $tlen;
+
 	## Check input sequences
 	&FatalError("You must specify a first sequence") unless ($seq1);
 	&FatalError("You must specify a second sequence") unless ($seq2);
 	
 	################################################################
 	## Count the matches
-	($match, $weight) = &CountMatches($seq1,$seq2);
-	
+	if ($slide) {
+	    ($match, $weight, $proba, $mlen, $offset) = &BestMatch($seq1,$seq2);
+	} else {
+	    ($match, $weight, $proba, $mlen) = &CountMatches($seq1,$seq2);
+	}
 	if ($return_field{length}) {
 	    $len1 = length($seq1);
 	    $len2 = length($seq2);
-	    #$max_len = &max($len1, $len2);
-	    #$min_len = &min($len1, $len2);
+	    $tlen = $len1 + $len2 - $mlen; ## total length of the alignment
 	}
  	
+	################################################################
 	## Print the result for this comparison
+	my $to_print = 1;
 	foreach my $field (@return_fields) {
 	    my $result = $$field;
-	    push @result, $result;
+
+	    ## Check thresholds on this field
+	    if ((defined($lth{$field})) && ($result < $lth{$field})) {
+		$to_print = 0;
+		last
+	    }
+	    if ((defined($uth{$field})) && ($result > $uth{$field})) {
+		$to_print = 0;
+		last
+	    }
+
+	    ## Format the field
+	    push @result, sprintf $field_format{$field}, $result;
 	    warn join "\t", ";", $field, $result, "\n" if ($verbose >= 3);
 	}
-	print $out join ("\t", @result), "\n";
+	if ($to_print) {
+	    print $out join ("\t", @result), "\n";
+	}
     }
 }
 
@@ -139,6 +205,7 @@ OPTIONS
 	-help   (must be first argument) display options
 	-v	verbose
 	-seq1	first sequence for the comparison
+
 	-seq2	second sequence for the comparison
 		-seq1 and -seq2 can be used iteratively to specify
 		multiple patterns. Each sequence of group 1 is then
@@ -147,6 +214,21 @@ OPTIONS
 	-return	return fields
 		Each selected field is returned in a separate column.
 		Supported: $supported_return_fields
+
+        -uth field #
+                upper threshold value for a given field
+                Supported_fields: $supported_thresold_fields
+
+        -lth field #
+                lower threshold value for a given field
+                (same fields as -uth)
+
+	-slide	find best match by sliding seq2 along seq1
+		When this option is used, the best offset is also
+		returned. The offset is the number of positions to
+		shift seq1 in order to obtain the best scoring
+		alignment. Negative values represent a shit of seq2 to
+		the left side, positive values ot the right side.
 
 INPUT FORMAT
       seq1 and seq2 must be DNA sequences (not peptidic). 
@@ -158,32 +240,51 @@ OUTPUT FORMAT
 
 RETURN FIELDS
        match	number of matching positions
-       weight   number of matching positions, with a lower weight for
-		matches between partially specified nucleotides (IUPAC
-		codes). The letter N has a weright of 0, since it
-		matches any character. For the other IUPAC letters,
-		the weight is inversely proportional to the number of
-		nucleotides they encompass.
 
-	code	nucleotides	weight	mnemonics
+       proba 	probability to observe a random match. The probability of
+                an alignment is the product of probabilities of
+                matching pairs of residues.
+
+		If one assumes equiprobable nucleotides, the
+		probability of random match is estimated as follows
+		for non-ambiguous and ambiguous nucleotides.
+
+	code	nucleotides	proba	mnemonics
 	---------------------------------------------------------------
-	A			1	(Adenine)
-	C			1	(Cytosine)
-	G			1	(Guanine)
-	T			1	(Thymine)
+	A			1/4	(Adenine)
+	C			1/4	(Cytosine)
+	G			1/4	(Guanine)
+	T			1/4	(Thymine)
 	R	= A or G	1/2	(puRines)
 	Y	= C or T	1/2	(pYrimidines)
 	W	= A or T	1/2	(Weak hydrogen bonding)
 	S	= G or C	1/2	(Strong hydrogen bonding)
 	M	= A or C	1/2	(aMino group at common position)
 	K	= G or T	1/2	(Keto group at common position)
-	H	= A, C or T	1/3	(not G)
-	B	= G, C or T	1/3	(not A)
-	V	= G, A, C	1/3	(not T)
-	D	= G, A or T	1/3	(not C)
-	N	= G, A, C or T	0	(aNy)
+	H	= A, C or T	3/4	(not G)
+	B	= G, C or T	3/4	(not A)
+	V	= G, A, C	3/4	(not T)
+	D	= G, A or T	3/4	(not C)
+	N	= G, A, C or T	1	(aNy)
 
-	length	lengths of the two sequences
+	weight 	the weight reflects the number of matching positions,
+                with a lower weight for matches between partially
+                specified nucleotides (IUPAC codes).
+
+		The weight is calculated as
+		    -log4(proba)
+
+		For an alignment between non-ambigous nucleotides, the
+		weight is maximal, and its value is the number of
+		matching residues.
+
+	length	lengths 
+		This option returns 4 length values
+		     len1   length of sequence 1
+		     len2   length of sequence 2
+		     mlen   length of the match
+		     tlen   total length of the alignment
+		     	    tlen = len1 + len2 - mlen
 
 	seq	sequences to be compared
 
@@ -199,14 +300,24 @@ EXAMPLES
 	Multiple pairs of sequences
 	---------------------------
 
-	count-matches  -seq1 GATAAT				\
-		       -seq2 GATWAG				\
-		       -seq2 GATNNS				\
-		       -seq2 NNNNNN				\
-		       -v 1 -return match,weight,length,seq
+	count-matches -seq1 GATAAG -seq2 GATWAG -seq2 GATAAG \
+	    -seq2 GATAAT -seq2 gatha -seq2 gatnns -seq2 NNNNNN \
+	    -v 1 -return match,weight,proba,length,seq
 
         Compares the firsts sequence with each sequence of group 2.
         Notice the difference between the columns match and weight.
+
+	Sliding sequences
+	-----------------
+	count-matches -v 1 -seq1 gatasg -seq2 twagtt -slide \
+	    -return match,weight,proba,seq,length
+
+        Thresholds
+	----------
+	count-matches -v 1 -seq1 gatasg -seq2 twagtt -seq2 ccccga \
+	    -slide -return match,weight,proba,seq,length -lth mlen 3
+
+	This options sets a lower threshold of 3 on matching length.
 
 End_of_help
   close HELP;
@@ -220,11 +331,14 @@ sub PrintOptions {
   print HELP <<End_short_help;
 count-matches options
 ----------------
--h      (must be first argument) display full help message
--help   (must be first argument) display options
--seq1	first sequence for the comparison
--seq2	second sequence for the comparison
--return	return fields. Supported: $supported_return_fields
+-h		display full help message
+-help   	display options
+-seq1		first sequence for the comparison
+-seq2		second sequence for the comparison
+-return		return fields. Supported: $supported_return_fields
+-lth            lower threshold on a given field
+-uth            upper threshold on a given field
+-slide	      	find best match by sliding seq2 along seq1
 End_short_help
   close HELP;
   exit;
@@ -270,6 +384,24 @@ sub ReadArguments {
 	    ### return fields
 	} elsif ($ARGV[$a] eq "-return") {
 	    push @return_fields, split ",", $ARGV[$a+1];
+	    
+            #### threshold values
+        } elsif ($ARGV[$a] eq "-lth") {
+            my $field = $ARGV[$a+1];
+            my $value = $ARGV[$a+2];
+	    &FatalError("Invalid threshold crierion\t".$field)
+		unless ($supported_threshold_field{$field});
+            $lth{$field} = $value;
+        } elsif ($ARGV[$a] eq "-uth") {
+            my $field = $ARGV[$a+1];
+            my $value = $ARGV[$a+2];
+	    &FatalError("Invalid threshold crierion\t".$field)
+		unless ($supported_threshold_field{$field});
+            $uth{$field} = $value;
+
+	    ### slide sequences 
+	} elsif ($ARGV[$a] eq "-slide") {
+	    $slide = 1;
 	    
 	}
     }
