@@ -262,7 +262,7 @@ OPTIONS
 
         -uth field #
                 upper threshold value for a given field
-                Supported_fields: $supported_thresold_fields
+                Supported_fields: $supported_threshold_fields
 
         -lth field #
                 lower threshold value for a given field
