@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.18 2002/04/28 05:40:40 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.19 2002/06/06 11:16:19 jvanheld Exp $
 #
-# Time-stamp: <2002-04-28 07:40:36 jvanheld>
+# Time-stamp: <2002-06-06 13:16:13 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -227,7 +227,7 @@ sub OligoAnalysis {
 	    $oligo_options .= "-org $organism_name ";
 	    $oligo_options .= "-ncf ";
 	}
-	$oligo_options .= "-return occ,proba,zscore ";
+	$oligo_options .= "-return occ,proba,mseq,rank ";
 	$oligo_options .= "-noov " if ($noov);
 	
 	$oligo_suffix = "_oligos";
@@ -269,7 +269,7 @@ sub DyadAnalysis {
 	mkdir $dir, 0755 || die "Error: cannot create directory $dir\n";
     }
     die "Error : cannot read file $family{$family_name}->{seq_file_purged}\n" unless (-r $family{$family_name}->{seq_file_purged});
-    $command = "dyad-analysis -i $family{$family_name}->{seq_file_purged} -format $seq_format -o $family{$family_name}->{dyad_file} $dyad_options";
+    $command = "dyad-analysis -return occ,proba,rank -i $family{$family_name}->{seq_file_purged} -format $seq_format -o $family{$family_name}->{dyad_file} $dyad_options";
     
     &doit($command);
     
@@ -292,6 +292,7 @@ sub ReadKnownSites {
 	open KNOWN_SITE, $known_site_file;
 	while (<KNOWN_SITE>) {
 	    next if (/^;/);
+	    next if (/^\#/);
 	    next unless (/\S/);
 	    chomp;
 	    @fields = split "\t";
@@ -313,19 +314,20 @@ sub ReadSiteLibrary {
   if (-e $library_file) {
     open LIBRARY, $library_file;
     while (<LIBRARY>) {
-      next if (/^;/);
-      next unless (/\S/);
-      chomp;
-      my @fields = split "\t";
-      my $source = $fields[2] || $library_file;
-      my $id = uc($fields[1]);
-      my $sequence = uc($fields[0]);
-      $sequence =~ s/N/n/g;
-      
-      $pattern = RSA::pattern->new(id=>$id,
-				   sequence=>$sequence,
-				   source=>source);
-      push @site_library, $pattern;
+	next if (/^\#/);
+	next if (/^;/);
+	next unless (/\S/);
+	chomp;
+	my @fields = split "\t";
+	my $source = $fields[2] || $library_file;
+	my $id = uc($fields[1]);
+	my $sequence = uc($fields[0]);
+	$sequence =~ s/N/n/g;
+	
+	$pattern = RSA::pattern->new(id=>$id,
+				     sequence=>$sequence,
+				     source=>source);
+	push @site_library, $pattern;
     }
     close LIBRARY;
   }
@@ -333,7 +335,7 @@ sub ReadSiteLibrary {
   
 ### build a synthetic table ###
 sub SyntheticTable {
-  warn ";\tGenerating synthetic table $table_file\n" if ($verbose);
+  warn "; Generating synthetic table $table_file\n" if ($verbose);
   $dir = "synthetic_tables";
   
   $table_file = $dir."/".$table_suffix;
@@ -391,7 +393,7 @@ sub SyntheticTable {
     #### oligo-analysis
     open OLIGOS, "$family{$family_name}->{oligo_assembly_file}";
     $map_link = "<A HREF=../$family{$family_name}->{oligo_file}.html>\n";
-    warn ";\t\tExtracting info from\t$family{$family_name}->{oligo_assembly_file}\n" if ($verbose >= 1);
+    warn ";\tExtracting info from\t$family{$family_name}->{oligo_assembly_file}\n" if ($verbose >= 2);
     undef @patterns;
     undef @sorted_patterns;
     undef %rc;
@@ -400,6 +402,7 @@ sub SyntheticTable {
     while (<OLIGOS>) {
       chomp;
       next if (/^;/);
+      next if (/^\#/);
       next unless (/\S/);
       if ((/contig/) || (/consensus/) || (/isol/)) {
 	@fields = split "\t";
@@ -471,7 +474,7 @@ sub SyntheticTable {
     ### dyad analysis
     open DYADS, "$family{$family_name}->{dyad_assembly_file}";
     $map_link = "<A HREF=../$family{$family_name}->{dyad_file}.html>\n";
-    warn ";\t\tExtracting info from\t$family{$family_name}->{dyad_assembly_file}\n" if ($verbose >= 2);
+    warn ";\tExtracting info from\t$family{$family_name}->{dyad_assembly_file}\n" if ($verbose >= 2);
     undef @patterns;
     undef @sorted_patterns;
     undef %rc;
@@ -480,6 +483,7 @@ sub SyntheticTable {
     while (<DYADS>) {
       chomp;
       next if (/^;/);
+      next if (/^\#/);
       next unless (/\S/);
       if ((/contig/) || (/consensus/) || (/isol/)) {
 	@fields = split "\t";
@@ -663,7 +667,7 @@ sub AnalyzeFamilies {
     my $fam_nb = $#families+1;
     foreach $family_name (@families) {
 	$fam_count++;
-	warn "\n; Treating family $family_name ($fam_count of $fam_nb)\t", `date` if ($verbose >=1);
+	warn ";\n; Treating family $family_name ($fam_count of $fam_nb)\t", `date` if ($verbose >=1);
 	
 	### retrieve upstream sequences
 	&UpstreamSequences if ($task{upstream});
@@ -720,6 +724,10 @@ DESCRIPTION
 	Results are subdifided in directories created on the fly, one
 	directory per family plus one summary directory.
 	
+CATEGORY
+	sequences
+	pattern discovery
+
 OPTIONS
 	-h	(must be first argument) display full help message
 	-help	(must be first argument) display options
@@ -925,6 +933,7 @@ sub OldReadFamilies {
   open FAM, "$family_file" || die "Error: cannot open family file $family_file\n";
   while (<FAM>) {
     next if (/^;/);
+    next if (/^\#/);
     next unless (/\S/);
     chomp;
     @fields = split;
@@ -949,6 +958,7 @@ sub ReadFamilies {
     while (<FAM>) {
 	$line++;
 	next if (/^;/);
+	next if (/^\#/);
 	next unless (/\S/);
 	chomp;
 	@fields = split /\s+/;
