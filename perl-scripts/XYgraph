@@ -1509,7 +1509,7 @@ OPTIONS
 		this column contains the label associated to each point
 		(this info is used when the -htmap option is active).
 WEB VERSION
-	http://copan.cifn.unam.mx/~yeast/XYgraph.html
+	http://www.ucmb.ulb.ac.be/bioinformatics/rsa-tools/
 
 End_of_Help
   close HELP;
