@@ -15,158 +15,143 @@ require "PFBP_parsing_util.pl";
 #no strict "vars";
 
 package main;
+{
 
-### initialization
-$start_time = `date +%Y-%m-%d.%H%M%S`;
+    ### initialization
+    $start_time = `date +%Y-%m-%d.%H%M%S`;
+    $clean = 1;
+    
+    $out_format = "obj";
+    @classes = qw( PFBP::BiochemicalEntity PFBP::BiochemicalActivity PFBP::Pathway );
+    
+    #### class factory for entities
+    $entities = PFBP::ClassFactory->new_class(object_type=>"PFBP::BiochemicalEntity",
+					      prefix=>"ent_");
+    $entities->set_out_fields(qw( id type names ));
 
-$out_format = "obj";
-@classes = qw( PFBP::BiochemicalEntity PFBP::BiochemicalActivity );
+    #### class factory for interactions
+    $interactions = PFBP::ClassFactory->new_class(object_type=>"PFBP::BiochemicalActivity",
+						  prefix=>"int_");
+    $interactions->set_out_fields(qw( id type description inputs outputs ));
 
-### default output fields for each class
-@{$out_fields{'PFBP::BiochemicalEntity'}} = qw( id type names );
-@{$out_fields{'PFBP::BiochemicalActivity'}} = qw( id type description inputs outputs );
-@{$out_fields{'PFBP::Pathway'}} = qw( id names description entities );
+    #### class factory  for pathways
+    $pathways = PFBP::ClassFactory->new_class(object_type=>"PFBP::Pathway",
+					      prefix=>"pth_");
+    $pathways->set_out_fields(qw( id names description entities ));
 
-### old initialisation
-$path_element_count = 0;
-$Step = 0;
+    #### class factory  for diagrams
+    $diagrams = PFBP::ClassFactory->new_class(object_type=>"PFBP::PathwayDiagram",
+					     prefix=>"dgm_");
 
-### directory containing the input files ###
-$dir{input} = "/win/amaze/amaze_team/Sandra/export";
-#$dir{input} = "/home/jvanheld/Databases/Roche/roche_991118/tab_export/";
-unless (-e $dir{input}) {
-    die "Error : cannot open input dir $dir{input}\n";
-}
+    ### old initialisation
+    $path_element_count = 0;
+    $Step = 0;
 
-### molecules (entities)
-$in_file{molecules} = $dir{input}."/description_of_molecules.txt";
-$in_file{synonyms} = $dir{input}."/synonyms.txt";
-
-### interactions (activities)
-$in_file{interactions} = $dir{input}."/description_of_interactions.txt";
-$in_file{interaction_source} = $dir{input}."/interaction_source.txt";
-$in_file{interaction_target} = $dir{input}."/interaction_target.txt";
-
-### pathways
-$in_file{pathway_description} = $dir{input}."/pathway_description.txt";
-$in_file{pathway_molecule} = $dir{input}."/pathway_molecule.txt";
-
-#$PathwayFile = $dir{input}."/pathway_description.txt";
-#$PathwayInteractionFile = $dir{input}."/pathway_interaction.txt";
-#$PathwayMoleculeFile = $dir{input}."/pathway_molecule.txt";
-#$PathwaySubPathwayFile = $dir{input}."/pathway_subpathway.txt";
-
-#$LocationFile = $dir{input}."/location.txt";
-#$PathwayFile = $dir{input}."/pathway_description.txt";
-
-### output dir
-$dir{output} = "${parsed_data}/signal_transduction/$delivery_date";
-unless (-d $dir{output}) {
-    warn "Creating output dir $dir{output}\n"  if ($warn_level >= 1);
-    `mkdir -p $dir{output}`;
-    die "Error: cannot create directory $dir\n" 
-	unless (-d $dir{output});
-}
-chdir $dir{output};
-
-### object files
-$out_file{entities} = $dir{output}."/sigtrans_entities";
-$out_file{activities} = $dir{output}."/sigtrans_activities";
-$out_file{pathways} = $dir{output}."/sigtrans_pathways";
-$out_file{graph} = $dir{output}."/sigtrans_graph.tdf";
-$out_file{stats} = $dir{output}."/sigtrans_parsing_stats";
-
-### reports
-$out_file{parsing_errors} = $dir{output}."/sigtrans_parsing_errors.txt";
-#$out_file{parsing_report} = $dir{output}."/sigtrans_parsing_report.txt";
-
-### prolog files
-#$EntityFile = $dir{output}."/db_sigtrans_entity.pl";
-#$AssocFile = $dir{output}."/db_sigtrans_assoc.pl";
-#$PathwayElementFile = $dir{output}."/path_sigtrans_pathel.pl";
-#$NodeArcFile = $dir{output}."/int_sigtrans.pl";
-#$Updatedin_file{interaction_target} = $dir{output}."/updated_targets.txt";
-#$Updatedin_file{interaction_source} = $dir{output}."/updated_sources.txt";
-
-
-&ReadArguments;
-
-### actualize parameters
-if ($test) {
-    warn ";TEST\n" if ($verbose);
-    ### fast partial parsing for debugging
-    $in_file{molecules} = " head -20 $in_file{molecules} |";
-}
-
-&DefaultVerbose();
-if ($verbose) {
-    print "; input dir\t$dir{input}\n";
-    print "; result dir\t$dir{output}\n";
-    print "; input files\n";
-    while (($key, $file) = each (%in_file)) {
-	print ";\t$key\t$file\n";
+    ### directory containing the input files ###
+    $dir{input} = "/win/amaze/amaze_team/Sandra/export";
+    unless (-e $dir{input}) {
+	die "Error : cannot open input dir $dir{input}\n";
     }
-    print "; output files\n";
-    while (($key, $file) = each (%out_file)) {
-	print ";\t$key\t$file\n";
+
+    ### entities (entities)
+    $in_file{entities} = $dir{input}."/description_of_molecules.txt";
+    $in_file{synonyms} = $dir{input}."/synonyms.txt";
+
+    ### interactions (interactions)
+    $in_file{interactions} = $dir{input}."/description_of_interactions.txt";
+    $in_file{interaction_source} = $dir{input}."/interaction_source.txt";
+    $in_file{interaction_target} = $dir{input}."/interaction_target.txt";
+
+    ### pathways
+    $in_file{pathway_description} = $dir{input}."/pathway_description.txt";
+    $in_file{pathway_entity} = $dir{input}."/pathway_entity.txt";
+
+    ### output dir
+    $dir{output} = "${parsed_data}/signal_transduction/$delivery_date";
+    unless (-d $dir{output}) {
+	warn "Creating output dir $dir{output}\n"  if ($warn_level >= 1);
+	`mkdir -p $dir{output}`;
+	die "Error: cannot create directory $dir\n" 
+	    unless (-d $dir{output});
     }
+    if ($clean) {
+	warn "Cleaning output directory\n" if ($verbose >= 1);
+#	die "HELLO";
+	system "\\rm -rf $dir{output}/*";
+    }
+
+    ### diagram dir
+    $dir{diagrams} = $dir{output}."/diagrams";
+    unless (-d $dir{diagrams}) {
+	warn "Creating diagram dir $dir{diagrams}\n"  if ($warn_level >= 1);
+	`mkdir -p $dir{diagrams}`;
+	die "Error: cannot create directory $dir\n" 
+	    unless (-d $dir{diagrams});
+    }
+
+    chdir $dir{output};
+
+    ### object files
+    $out_file{signal_transduction} = $dir{output}."/signal_transduction.obj";
+    $out_file{graph} = $dir{diagrams}."/sigtrans_graph.tdd";
+    $out_file{stats} = $dir{output}."/sigtrans_parsing_stats";
+
+    ### reports
+    $out_file{errors} = $dir{output}."/sigtrans_parsing_errors.txt";
+
+    &ReadArguments;
+
+    &DefaultVerbose() if ($verbose >= 1);
+
+    open ERR, "> $out_file{errors}" || die "Error : cannot write file $out_file{errors}\n";
+
+    &ReadEntities();
+    &ReadInteractions();
+    &ReadPathways();
+
+    ### print the complete graph of interactions
+    &ExportDiagram($out_file{graph}, "Signal transduction pathways", $interactions->get_objects());
+
+    ### print each pathway in a separate file
+    foreach $pathway ($pathways->get_objects()) {
+#	my @entities = $pathway->get_attribute("entities");
+#	my @interactions = &LinkEntities(@entities);
+	my @interactions = $pathway->get_attribute("interactions");
+	my $graph_file = $dir{diagrams}."/pathway_".$pathway->get_attribute("id").".tdd";
+	warn ("; ",join ("\t", 
+			 "entities", $#entities,
+			 "interactions", $#interactions,
+			 "pathway", $pathway->get_attribute("names")
+			 ), "\n") if ($verbose >= 1);
+	&ExportDiagram($graph_file, $pathway->get_attribute("names"), @interactions);
+    }
+
+    #####################
+    ### print objects ###
+    #####################
+    $entities->dump_tables();
+    $interactions->dump_tables();
+    $pathways->dump_tables();
+
+    &ExportClasses($out_file{signal_transduction}, $out_format, @classes)  if ($export{obj});
+
+    ###################
+    ### print stats ###
+    ###################
+    &PrintStats($out_file{stats}, @classes);
+
+    warn "; Done\t", `date` if ($verbose >= 1);
+
+    close ERR;
+    exit(0);
 }
 
-
-
-#open REPORT, "> $out_file{parsing_report}"  || die "Error : cannot write file $out_file{parsing_report}";;
-open ERR, "> $out_file{parsing_errors}" || die "Error : cannot write file $out_file{parsing_errors}\n";
-#open NODEARC, "> $NodeArcFile" || die "Error : cannot write file $NodeArcFile\n";
-
-&ReadMolecules;
-&ReadInteractions;
-&ReadPathways;
-
-#&PrintEntities;
-#&PrintAssociations;
-#&PrintSourcesTargets;
-#&PrintReport;
-
-### print the complete graph of interactions
-&PrintGraph($out_file{graph},PFBP::BiochemicalActivity->get_objects());
-
-### print each pathway in a separate file
-foreach $pathway (PFBP::Pathway->get_objects()) {
-    my @entities = $pathway->get_attribute("entities");
-    my @activities = &LinkEntities(@entities);
-    my $out_file = "pathway_".$pathway->get_attribute("id").".tdf";
-    warn ";",$#entities," entities\n";
-    warn ";",$#activities," activities\n";
-    &PrintGraph($out_file,@activities);
-}
-
-close ERR;
-#close REPORT;
-#close NODEARC;
-
-#####################
-### print objects ###
-#####################
-
-#&ExportClasses($out_file{entities}, $out_format,"PFBP::BiochemicalEntity");
-#&ExportClasses($out_file{activities}, $out_format,"PFBP::BiochemicalActivity");
-#&ExportClasses($out_file{pathways}, $out_format,"PFBP::Pathway");
-
-###################
-### print stats ###
-###################
-&PrintStats($out_file{stats});
-
-
-warn "; done\t", `date` if ($verbose);
-
-exit(0);
 
 ############# SUBROUTINE DEFINITION ################
 
-### read molecule information
-sub ReadMolecules {
-    warn "; reading molecules\n" if ($verbose);
+### read entity information
+sub ReadEntities {
+    warn "; Reading entities\n" if ($verbose >= 1);
     undef %col;
     $col{swissprot_ac} = 0;
     $col{swissprot_id} = 1;
@@ -174,40 +159,49 @@ sub ReadMolecules {
     $col{type} = 3;
     $col{descr} = 4;
     $entity_nb = -1;
-    $class = "PFBP::BiochemicalEntity";  
 
-    ### read molecule description
-    open MOL, "$in_file{molecules}" || die "Error : cannot read file $in_file{molecules}\n";
-    $header = <MOL>;
+    ### read entity description
+    unless (-e $in_file{entities}) {
+	die "Error: file '".$in_file{entities}."' does not exist\n";
+    }
+    open ENT, "$in_file{entities}" || die "Error : cannot read file $in_file{entities}\n";
+    $header = <ENT>;
     $line_nb = 0;
-    while (<MOL>) {
+    while (<ENT>) {
 	$line_nb++;
 	&MySplit;
-	
+	warn "$_\n" if ($verbose >= 4);
+
 	### read the fields ###
-	$entity_nb++;
-	$ac = sprintf "ent%5d", $entity_nb;
-	$ac =~ s/ /0/g;
+#	$entity_nb++;
+#	$ac = sprintf "ent%5d", $entity_nb;
+#	$ac =~ s/ /0/g;
 	$name = $fields[$col{name}];
 	$description = $fields[$col{descr}];
 	
-	### check molecule type ###
+	### check entity type ###
 	if ($fields[$col{type}] =~ /\S/) {
 	    $type = lc($fields[$col{type}]);
 	    $type =~ s/ /_/g;
 	} else {
 	    $type = "undef";
-	    print ERR ";Error in $in_file{molecules}, line $line_nb: molecule $entity{$ac}->{name} has no type\n";
+	    print ERR ";Error in $in_file{entities}, line $line_nb: entity $name has no type\n";
 	    print ERR "\t$_\n";
 	}
-	$moleculeType{$type} = 1;
+	$entityType{$type} = 1;
 	
 	### instantiate a new BiochemicalEntity
-	my $BiochemicalEntity = new $class(id=>$ac);
-	warn "new entity\t$ac\t$BiochemicalEntity\n" if ($hyperverbose);
-	$BiochemicalEntity->push_attribute("names",$name);
-	$BiochemicalEntity->set_attribute("description",$description);
-	$BiochemicalEntity->set_attribute("type",$type);
+	my $entity = $entities->new_object();
+	$ac = $entity->get_attribute("id");
+	$entity->push_attribute("names",$name);
+	$entity->set_attribute("description",$description);
+	$entity->set_attribute("type",$type);
+	warn (join ("\t", "new entity",
+		    $entity->get_attribute("id"),
+		    $entity->get_attribute("type"),
+		    $entity->get_attribute("names")
+		   ), "\n")
+	    if ($verbose >= 2);
 	
 	### old routine to export in prolog
 	&CreateEntity($ac,&PrologString($type),&PrologString($name),&PrologString($description));
@@ -218,12 +212,11 @@ sub ReadMolecules {
 	$AC{$lc_name} = $ac;
 #print "$ac\t$lc_name\n";
     } 
-    close MOL;
+    close ENT;
     
     ### create indexes
-    $class->index_ids();
-    $class->index_names();
-    
+    $entities->index_ids();
+    $entities->index_names();
 
     ### read alternative names
     undef %col;
@@ -243,14 +236,14 @@ sub ReadMolecules {
 	#  $AC{lc($altName)} =  $AC{$lc_name};
 	#  push @{$altName{$name}}, $altName; 
 	#} else {
-	#  print  ERR ";Error in $in_file{synonyms} line $line_nb: $name had not been previously declared in $in_file{molecules}\n";
+	#  print  ERR ";Error in $in_file{synonyms} line $line_nb: $name had not been previously declared in $in_file{entities}\n";
 	#}
 
 	### add new name to the object
-	if ($object = $class->get_object($name)) {
+	if ($object = $entities->get_object($name)) {
 	    $object->push_attribute("names", $altName);
 	} else {      
-	    print  ERR ";Error in $in_file{synonyms} line $line_nb: $name had not been previously declared in $in_file{molecules}\n";
+	    print  ERR ";Error in $in_file{synonyms} line $line_nb: $name had not been previously declared in $in_file{entities}\n";
 	}
 
     }
@@ -259,15 +252,13 @@ sub ReadMolecules {
 
 ### read description of interact<ion ###
 sub ReadInteractions {
-    warn "; reading interactions\n" if ($verbose);
+    warn "; Reading interactions\n" if ($verbose >= 1);
     undef %col;
     $col{ac} = 0;
     $col{type} = 1;
     $col{descr} = 2;
     $assoc_nb = -1;
 
-    $class = "PFBP::BiochemicalActivity";
-    
     open INTERACT, "$in_file{interactions}"  || die "Error : cannot read file $in_file{interactions}\n";
     $header = <INTERACT>;
     $line_nb = 0;
@@ -293,21 +284,27 @@ sub ReadInteractions {
 	$source = "";
 	$target = "";
 	
-	my $BiochemicalActivity = new $class(id=>$ac);
-	$BiochemicalActivity->set_attribute("type",$type);
-	$BiochemicalActivity->set_attribute("description",$description);
+	my $interaction = $interactions->new_object(id=>$ac);
+	$interaction->set_attribute("type",$type);
+	$interaction->set_attribute("description",$description);
+ 	warn (join ("\t", "new interaction",
+		    $interaction->get_attribute("id"),
+		    $interaction->get_attribute("type")
+		   ), "\n")
+	    if ($verbose >= 2);
+	
 
 	&CreateAssociation($ac,$type,$name,$description,$source,$target);
     }
     close INTERACT;
 
     ### create indexes
-    $class->index_ids();
-    $class->index_names();
+    $interactions->index_ids();
+    $interactions->index_names();
 
 
     ### read interaction sources
-    warn "; reading interaction sources\n" if ($verbose);
+    warn "; Reading interaction sources\n" if ($verbose >= 1);
 
     ### initialisation
     undef %col;
@@ -327,19 +324,19 @@ sub ReadInteractions {
 
 	### identify the interaction
 	$inter = $fields[$col{inter}];
-	unless ($inter_object = $class->get_object($inter)) {
+	unless ($activ_object = $interactions->get_object($inter)) {
 	    #unless (defined($association{$inter})) {
 	    print ERR "Error in $in_file{interaction_source} line $line_nb: $inter has not been defined in $InteractionFile\n";
 	    print ERR "\t$_\n";
 	    next;
 	}
 
-	### identify the molecule
+	### identify the entity
 	$molec = $fields[$col{molec}];
-	if ($molec_object = PFBP::BiochemicalEntity->get_object($molec)) {
+	if ($molec_object = $entities->get_object($molec)) {
 	    $molec_id = $molec_object->get_attribute("id");
 	} else {
-	    print ERR "Error in $in_file{interaction_source} line $line_nb: $molecAC has not been defined in $in_file{molecules}\n";
+	    print ERR "Error in $in_file{interaction_source} line $line_nb: $molecAC has not been defined in $in_file{entities}\n";
 	    print ERR "\t$_\n";
 	    next;
 	}
@@ -349,13 +346,13 @@ sub ReadInteractions {
 	$state_before = $fields[$col{state_before}];
 	$state_after = $fields[$col{state_after}];
 	
-	$inter_object->push_attribute("inputs",$molec_id);
+	$activ_object->push_attribute("inputs",$molec_id);
 	
 	#$lc_molec = lc($molec);
 	#if (defined ($AC{$lc_molec})) {
 	#  $molecAC = $AC{$lc_molec};
 	#} else {
-	#  print ERR "Error in $in_file{interaction_source} line $line_nb: $molecAC has not been defined in $in_file{molecules}\n";
+	#  print ERR "Error in $in_file{interaction_source} line $line_nb: $molecAC has not been defined in $in_file{entities}\n";
 	#  print ERR "\t$_\n";
 #   #   next;
 	#}
@@ -370,7 +367,7 @@ sub ReadInteractions {
     close SOURCE;
 
     ### interaction targets
-    warn "; reading interaction targets\n" if ($verbose);
+    warn "; Reading interaction targets\n" if ($verbose >= 1);
     open TARGET, "$in_file{interaction_target}"   || die "Error : cannot read file $in_file{interaction_target}\n";
     $header = <TARGET>;
     $line_nb = 0;
@@ -381,19 +378,19 @@ sub ReadInteractions {
 	
 	### identify the interaction
 	$inter = $fields[$col{inter}];
-	unless ($inter_object = $class->get_object($inter)) {
+	unless ($activ_object = $interactions->get_object($inter)) {
 	    #unless (defined($association{$inter})) {
 	    print ERR "Error in $in_file{interaction_source} line $line_nb: $inter has not been defined in $InteractionFile\n";
 	    print ERR "\t$_\n";
 	    next;
 	}
 	
-	### identify the molecule
+	### identify the entity
 	$molec = $fields[$col{molec}];
-	if ($molec_object = PFBP::BiochemicalEntity->get_object($molec)) {
+	if ($molec_object = $entities->get_object($molec)) {
 	    $molec_id = $molec_object->get_attribute("id");
 	} else {
-	    print ERR "Error in $in_file{interaction_source} line $line_nb: $molecAC has not been defined in $in_file{molecules}\n";
+	    print ERR "Error in $in_file{interaction_source} line $line_nb: $molecAC has not been defined in $in_file{entities}\n";
 	    print ERR "\t$_\n";
 	    next;
 	}
@@ -403,8 +400,8 @@ sub ReadInteractions {
 	$state_before = $fields[$col{state_before}];
 	$state_after = $fields[$col{state_after}];
 	
-	$inter_object->push_attribute("outputs",$molec_id);
-	
+	$activ_object->push_attribute("outputs",$molec_id);
+
 
 	#$inter = $fields[$col{inter}];
 	#unless (defined($association{$inter})) {
@@ -417,7 +414,7 @@ sub ReadInteractions {
 	#if (defined ($AC{$lc_molec})) {
 	#  $molecAC = $AC{$lc_molec};
 	#} else {
-	#  print ERR "Error in $in_file{interaction_target} line $line_nb: $molecAC has not been defined in $in_file{molecules}\n";
+	#  print ERR "Error in $in_file{interaction_target} line $line_nb: $molecAC has not been defined in $in_file{entities}\n";
 	#  print ERR "\t$_\n";
 	#  next;
 	#}
@@ -459,7 +456,7 @@ sub ReadInteractions {
 	if (defined ($AC{$lc_molec})) {
 	    $molecAC = $AC{$lc_molec};
 	} else {
-	    print ERR "Error in $LocationFile line $line_nb: $molec has not been defined in $in_file{molecules}\n";
+	    print ERR "Error in $LocationFile line $line_nb: $molec has not been defined in $in_file{entities}\n";
 	    print ERR "\t$_\n";
 	    next;
 	}
@@ -496,25 +493,34 @@ sub ReadPathways {
 	&MySplit;
 	my $name = $fields[0];
 	my $description = $fields[1];
-	my $id = $name;
-	$id =~ s/^\'//g;
-	$id =~ s/\'$//g;
-	$id =~ s/\'/prime/g;
-	$id =~ s/\s/_/g;
-	$id =~ s/\-/_/g;
-	$id = "path_".$id;
-	unless ($pathway = PFBP::Pathway->new(id=>$id)) {
-	    print ERR ";ERROR: could not create pathway $id\n";
+#  	my $id = $name;
+#  	$id =~ s/^\'//g;
+#  	$id =~ s/\'$//g;
+#  	$id =~ s/\'/prime/g;
+#  	$id =~ s/\s/_/g;
+#  	$id =~ s/\-/_/g;
+#  	$id = "path_".$id;
+	
+	my $pathway = $pathways->new_object(names=>$name);
+#	$pathway->push_attribute("names", $name);
+	if ($description) {
+	    $pathway->set_attribute("description", $description);
+	} else {
+	    $pathway->set_attribute("description", $name);
 	}
-	$pathway->set_attribute("description", $description);
-	$pathway->push_attribute("names", $name);
+	warn (join ("\t", "new pathway",
+		    $pathway->get_attribute("id"),
+		    $pathway->get_attribute("names")
+		   ), "\n")
+	    if ($verbose >= 2);
+	
     }
     close PATH_DESC;
-  PFBP::Pathway->index_ids();
-  PFBP::Pathway->index_names();
+    $pathways->index_ids();
+    $pathways->index_names();
 
     ### read pathway entities
-    open PATH_ENT, $in_file{pathway_molecule} || die ";Error: cannot read pathway molecule file $in_file{pathway_molecule}\n";
+    open PATH_ENT, $in_file{pathway_entity} || die ";Error: cannot read pathway entity file $in_file{pathway_entity}\n";
     $header = <PATH_ENT>; ### skip header line
     my $line_count = 1;
     while (<PATH_ENT>) {
@@ -523,8 +529,8 @@ sub ReadPathways {
 	my $path_id = $fields[0];
 	my $entity = $fields[1];
 	warn "\t$path_id\t$entity\n";
-	unless ($pathway = PFBP::Pathway->get_object($path_id)) {
-	    print ERR ";ERROR: file $in_file{pathway_molecule} line $line_count: pathway $path_id has not been found in pathway description file\n";
+	unless ($pathway = $pathways->get_object($path_id)) {
+	    print ERR ";ERROR: file $in_file{pathway_entity} line $line_count: pathway $path_id has not been found in pathway description file\n";
 	    next;
 	}
 	$pathway->push_attribute("entities",$entity);
@@ -532,66 +538,61 @@ sub ReadPathways {
     close PATH_ENT;
 }
 
-sub oldReadPathways {
-    open PATHEL, "> $PathwayElementFile" || die  "Error: cannot write pathway element file $PathwayElementFile\n";
-
-    open PATH, "$PathwayFile" || die "Error: cannot read pathway file $PathwayFile\n";
-    while (<PATH>) {
-	&MySplit;
-	### pathway name
-	$PathwayName = $fields[0];
-	$PathwayName = "undef" if ($PathwayName eq "");
-
-	### pathway accession number
-	$PathwayAC = "$PathwayName";
-	$PathwayAC =~ s/^\'//g;
-	$PathwayAC =~ s/\'$//g;
-	$PathwayAC =~ s/\'/prime/g;
-	$PathwayAC =~ s/\s/_/g;
-	$PathwayAC =~ s/\-/_/g;
-	$PathwayAC = "path_".$PathwayAC;
-
-	$pathway{$PathwayAC}->{ac} = $PathwayAC;
-	$pathway{$PathwayAC}->{name} = $PathwayName;
-
-	### entities
-	$EntityName = $fields[1];
-	$lc_name = lc($EntityName);
-	if ($AC{$lc_name} ne "") {
-	    $EntityAC = $AC{$lc_name};
-	    $Type = $entity{$EntityAC}->{type};
-	} else {
-	    print  ERR ";Error in $PathwayFile: $name had not been previously declared in $in_file{molecules}\n";
-	}
-	&CreatePathwayEntity($PathwayAC,$EntityAC,$Type,$EntityName);
-    }
-    close PATH;
-
-    ### convert associations into pathway elements
-    foreach $AssocAC (keys %association) {
-	$AssocAC = $association{$AssocAC}->{ac};
-	$AssocType = $association{$AssocAC}->{type};
-	$Label = $association{$AssocAC}->{name};
-	$source = $association{$AssocAC}->{source};
-	$target = $association{$AssocAC}->{target};
-	foreach $PathwayAC (keys %pathway) {
-	    next if ($PathwayAC eq "path_undef");
-	    if (($member{$source}{$PathwayAC}) && ($member{$target}{$PathwayAC})) {
-		$PwelAC = &GetNextPwelAC;
-		$FromAC = $member{$source}{$PathwayAC};
-		$ToAC = $member{$target}{$PathwayAC};
-		print PATHEL "pathway_element($PwelAC,$PathwayAC,$Step,association,$AssocType,$AssocAC,$FromAC,$ToAC,$Label,_,_).\n";
-	    }
-	}
-    }
-    close PATHEL;
-    ### split pathway_element by pathway
-    foreach $PathwayAC (keys %pathway) {
-	next if ($PathwayAC eq "path_undef");
-	$command = "grep $PathwayAC $PathwayElementFile > ${PathwayAC}.pl";
-	system $command;
-    }
-}
+#  sub oldReadPathways {
+#      open PATHEL, "> $PathwayElementFile" || die  "Error: cannot write pathway element file $PathwayElementFile\n";
+#      open PATH, "$PathwayFile" || die "Error: cannot read pathway file $PathwayFile\n";
+#      while (<PATH>) {
+#  	&MySplit;
+#  	### pathway name
+#  	$PathwayName = $fields[0];
+#  	$PathwayName = "undef" if ($PathwayName eq "");
+#  	### pathway accession number
+#  	$PathwayAC = "$PathwayName";
+#  	$PathwayAC =~ s/^\'//g;
+#  	$PathwayAC =~ s/\'$//g;
+#  	$PathwayAC =~ s/\'/prime/g;
+#  	$PathwayAC =~ s/\s/_/g;
+#  	$PathwayAC =~ s/\-/_/g;
+#  	$PathwayAC = "path_".$PathwayAC;
+#  	$pathway{$PathwayAC}->{ac} = $PathwayAC;
+#  	$pathway{$PathwayAC}->{name} = $PathwayName;
+#  	### entities
+#  	$EntityName = $fields[1];
+#  	$lc_name = lc($EntityName);
+#  	if ($AC{$lc_name} ne "") {
+#  	    $EntityAC = $AC{$lc_name};
+#  	    $Type = $entity{$EntityAC}->{type};
+#  	} else {
+#  	    print  ERR ";Error in $PathwayFile: $name had not been previously declared in $in_file{entities}\n";
+#  	}
+#  	&CreatePathwayEntity($PathwayAC,$EntityAC,$Type,$EntityName);
+#      }
+#      close PATH;
+#      ### convert associations into pathway elements
+#      foreach $AssocAC (keys %association) {
+#  	$AssocAC = $association{$AssocAC}->{ac};
+#  	$AssocType = $association{$AssocAC}->{type};
+#  	$Label = $association{$AssocAC}->{name};
+#  	$source = $association{$AssocAC}->{source};
+#  	$target = $association{$AssocAC}->{target};
+#  	foreach $PathwayAC (keys %pathway) {
+#  	    next if ($PathwayAC eq "path_undef");
+#  	    if (($member{$source}{$PathwayAC}) && ($member{$target}{$PathwayAC})) {
+#  		$PwelAC = &GetNextPwelAC;
+#  		$FromAC = $member{$source}{$PathwayAC};
+#  		$ToAC = $member{$target}{$PathwayAC};
+#  		print PATHEL "pathway_element($PwelAC,$PathwayAC,$Step,association,$AssocType,$AssocAC,$FromAC,$ToAC,$Label,_,_).\n";
+#  	    }
+#  	}
+#      }
+#      close PATHEL;
+#      ### split pathway_element by pathway
+#      foreach $PathwayAC (keys %pathway) {
+#  	next if ($PathwayAC eq "path_undef");
+#  	$command = "grep $PathwayAC $PathwayElementFile > ${PathwayAC}.pl";
+#  	system $command;
+#      }
+#  }
 
 sub GetNextPwelAC {
     $path_element_count++;
@@ -691,9 +692,9 @@ sub PrintEntities {
 sub PrintReport {
     @entity_list = sort keys %entity;
     $entity_nb = $#entity_list +1;
-    print REPORT "$entity_nb Molecules\n";
-    print REPORT "\tTypes of Molecules\n";
-    foreach $type (sort keys %moleculeType) {
+    print REPORT "$entity_nb Entities\n";
+    print REPORT "\tTypes of Entities\n";
+    foreach $type (sort keys %entityType) {
 	print REPORT "\t\t",$entity_count{$type},"\t$type\n";
     }
 
@@ -804,109 +805,193 @@ close UPDATED_TARGETS;
 sub ReadArguments {
     my $a = "";
     for $a (0..$#ARGV) {
-	if ($ARGV[$a] eq "-v") {
-	    $verbose = 1;
-	} elsif ($ARGV[$a] eq "-vv") {
-	    $verbose = 1;
-	    $hyperverbose = 1;
-	} elsif ($ARGV[$a] eq "-test") {
-	    $test = 1;
-#    } elsif ($ARGV[$a] eq "-o") {
-#      $a++;
-#      $output_file = $ARGV[$a];
-	} elsif ($ARGV[$a] eq "-format") {
+
+	### warn level
+	if (($ARGV[$a] eq "-v" ) && 
+	    ($ARGV[$a+1] =~ /^\d+$/)){
+	    $main::verbose = $ARGV[$a+1];
 	    $a++;
-	    $out_format = $ARGV[$a];
-	} elsif ($ARGV[$a] eq "-return") {
-	    $a++;
-	    @out_fields = split ",", $ARGV[$a];
+
+	    ### clean
+	} elsif ($ARGV[$a] eq "-clean") {
+	    $main::clean = 1;
 	    
+
+	    ### output file
+ 	} elsif ($ARGV[$a] eq "-obj") {
+	    $a++;
+	    $main::export{obj} = 1;
+
+	    #### help
 	} elsif (($ARGV[$a] eq "-h") ||
 		 ($ARGV[$a] eq "-help")) {
 	    &PrintHelp;
 	    exit(0);
+	    
 	}
     }
 }
 
 
-### print entities and activities in the tabular format for diagram description
-sub PrintGraph {
-    ### usage : &PrintGraph($graph_file, @activities);
-    ### collects all inputs and outputs of these activities
-    ### and prints the graphs in .tdf format
-    my ($graph_file, @activities) = @_;
-    my $title = "Roche T cell signalling data";
-    my $xsize = 600;
-    my $ysize = 600;
+### export a pathway diagram
+sub ExportDiagram {
+    ### usage : &ExportDiagram($graph_file, $title, @interactions);
+    ### collects all inputs and outputs of these interactions
+    ### and prints the diagramin text format
+    my ($diagram_file, $title, @interactions) = @_;
     my $arc_count = 0;
     my %linked_entities = ();
+
+    my $xsize = 600;
+    my $ysize = 600;
     srand (time);
     
-    warn "; printing graph\t$graph_file\n" if ($verbose);
-    
-    open GRAPH, ">$graph_file" 
-	|| die "Error: cannot write $out_file{graph}\n";
-    
-    print GRAPH "ftype\ttfd\n";
-    print GRAPH "title\t$title\n";
-    print GRAPH "xsize\t$xsize\n";
-    print GRAPH "ysize\t$ysize\n";
-    print GRAPH "creator\troche_parser\n";
-    print GRAPH "cdate\t", `date`;
+    warn "; Creating diagram\t$title\n" if ($verbose >= 1); 
+    $diagram = $diagrams->new_object();
+    $diagram->push_attribute("names", $title);
+    $diagram->set_attribute("description", "Saccharomyces cerevisiae - $title");
+    $diagram->set_attribute("type", "signal transduction");
 
-    ### collect inputs and outputs for each activity
-    foreach my $activity (@activities) {
-	foreach $input ($activity->get_attribute("inputs")) {
+    ### collect inputs and outputs for each interaction
+    foreach my $interaction (@interactions) {
+	foreach my $input ($interaction->get_attribute("inputs")) {
 	    $linked_entities{$input}++;
 	}
-	foreach $output ($activity->get_attribute("outputs")) {
+	foreach my $output ($interaction->get_attribute("outputs")) {
 	    $linked_entities{$output}++;
 	}
     }
 
     ### print nodes corresponding to these entities
-    foreach $id (keys %linked_entities) {
-	$entity = PFBP::BiochemicalEntity->get_object($id);
-	$xpos = int(rand $xsize);
-	$ypos = int(rand $ysize);
-	$label = $entity->get_name;
-	$type = $entity->get_attribute("type");
+    foreach my $ent_id (keys %linked_entities) {
+	$entity = $entities->get_object($ent_id);
 
-	&PrintNode;
+	unless ($diagram->get_node("ent_id")) {
+	    #### create a node for the entity if necessary
+	    my $node = $diagram->add_node(id=>$ent_id);
+	    $node->set_attribute("label", $entity->get_name());
+	    $node->set_attribute("type", $entity->get_attribute("type"));
+	    $node->set_attribute("xpos", int(rand $xsize));
+	    $node->set_attribute("ypos", int(rand $ysize));
+	}
     }
     
-    ### print a node for each activity
-    foreach my $activity (@activities) {
-	$id = $activity->get_attribute("id");
-	$xpos = int(rand $xsize);
-	$ypos = int(rand $ysize);
-	$type = $activity->get_attribute("type");
-	$label = $type."_".$id;
-	
-	&PrintNode;
+    ### print a node for each interaction
+    foreach my $interaction (@interactions) {
+	my $int_id = $interaction->get_attribute("id");
+	my $type = $interaction->get_attribute("type");
 
-	### print arc between the activity node and each input
-	foreach $input ($activity->get_attribute("inputs")) {
-	    $arc_id = "arc_".$arc_count++;
-	    $from = $input;
-	    $to = $id; #### activity id
-	    $label = $type = "input";
-	    &PrintArc;
+	#### create a node for the entity
+	$node = $diagram->add_node(id=>$int_id);
+	$node->set_attribute("label", $type."_".$int_id);
+	$node->set_attribute("type", $type);
+	$node->set_attribute("xpos", int(rand $xsize));
+	$node->set_attribute("ypos", int(rand $ysize));
+	
+	### print arc between the interaction node and each input
+	foreach my $input ($interaction->get_attribute("inputs")) {
+	    my $from = $input;
+	    my $to = $int_id; #### interaction id
+
+	    #### create a new arc
+	    my $arc = $diagram->add_arc(from=>$from, to=>$to);
+	    $arc->set_attribute("type", $interaction->get_attribute("type")."_input");
 	}
 
-	### print arc between the activity node and each output
-	foreach $output ($activity->get_attribute("outputs")) {
-	    $arc_id = "arc_".$arc_count++;
-	    $from = $id; #### activity id
-	    $to = $output; 
-	    $label = $type = "output";
-	    &PrintArc;
+	### print arc between the interaction node and each output
+	foreach my $output ($interaction->get_attribute("outputs")) {
+	    my $from = $int_id; #### interaction id
+	    my $to = $output; 
+
+	    #### create a new arc
+	    my $arc = $diagram->add_arc(from=>$from, to=>$to);
+	    $arc->set_attribute("type", $interaction->get_attribute("type")."_output");
 	}
     }
 
-    close GRAPH;
+    #### export the diagram in text format
+    warn "; Exporting diagram\t$diagram_file\n" if ($verbose >= 1);
+    $diagram->print("tdd", $diagram_file);
 }
+
+
+#  ### print entities and interactions in the tabular format for diagram description
+#  sub PrintGraph {
+#      ### usage : &PrintGraph($graph_file, @interactions);
+#      ### collects all inputs and outputs of these interactions
+#      ### and prints the graphs in .tdf format
+#      my ($graph_file, @interactions) = @_;
+#      my $title = "Roche T cell signalling data";
+#      my $xsize = 600;
+#      my $ysize = 600;
+#      my $arc_count = 0;
+#      my %linked_entities = ();
+#      srand (time);
+    
+#      warn "; Printing graph\t$graph_file\n" if ($verbose >= 1);
+    
+#      open GRAPH, ">$graph_file" 
+#  	|| die "Error: cannot write $out_file{graph}\n";
+    
+#      print GRAPH "ftype\ttfd\n";
+#      print GRAPH "title\t$title\n";
+#      print GRAPH "xsize\t$xsize\n";
+#      print GRAPH "ysize\t$ysize\n";
+#      print GRAPH "creator\troche_parser\n";
+#      print GRAPH "cdate\t", `date`;
+
+#      ### collect inputs and outputs for each interaction
+#      foreach my $interaction (@interactions) {
+#  	foreach $input ($interaction->get_attribute("inputs")) {
+#  	    $linked_entities{$input}++;
+#  	}
+#  	foreach $output ($interaction->get_attribute("outputs")) {
+#  	    $linked_entities{$output}++;
+#  	}
+#      }
+
+#      ### print nodes corresponding to these entities
+#      foreach $id (keys %linked_entities) {
+#  	$entity = $entities->get_object($id);
+#  	$xpos = int(rand $xsize);
+#  	$ypos = int(rand $ysize);
+#  	$label = $entity->get_name;
+#  	$type = $entity->get_attribute("type");
+
+#  	&PrintNode;
+#      }
+    
+#      ### print a node for each interaction
+#      foreach my $interaction (@interactions) {
+#  	$id = $interaction->get_attribute("id");
+#  	$xpos = int(rand $xsize);
+#  	$ypos = int(rand $ysize);
+#  	$type = $interaction->get_attribute("type");
+#  	$label = $type."_".$id;
+	
+#  	&PrintNode;
+
+#  	### print arc between the interaction node and each input
+#  	foreach $input ($interaction->get_attribute("inputs")) {
+#  	    $arc_id = "arc_".$arc_count++;
+#  	    $from = $input;
+#  	    $to = $id; #### interaction id
+#  	    $label = $type = "input";
+#  	    &PrintArc;
+#  	}
+
+#  	### print arc between the interaction node and each output
+#  	foreach $output ($interaction->get_attribute("outputs")) {
+#  	    $arc_id = "arc_".$arc_count++;
+#  	    $from = $id; #### interaction id
+#  	    $to = $output; 
+#  	    $label = $type = "output";
+#  	    &PrintArc;
+#  	}
+#      }
+
+#      close GRAPH;
+#  }
 
 sub PrintArc {
     print GRAPH "arc";
@@ -931,11 +1016,11 @@ sub PrintNode {
 
 sub LinkEntities {
     ### usage : @activites = &LinkEntities(@entities);
-    ### given a set of entities, return all activities 
+    ### given a set of entities, return all interactions 
     ### that have at one of these as input and one as output
     ### this is a subgraph extraction with a maximum link length of 1 arc
     my @entities = @_;  ### a list of entity IDs
-    my @link_activities = ();
+    my @link_interactions = ();
     my %seed = ();
 
     ### put entity ids in a hash
@@ -943,20 +1028,53 @@ sub LinkEntities {
 	$seed{uc($entity)} = 1;
     }
 
-    #### collect activities
-    foreach my $activity (PFBP::BiochemicalActivity->get_objects()) {
+    #### collect interactions
+    foreach my $interaction ($interactions->get_objects()) {
 	my $in = 0;
 	my $out = 0;
-	foreach $input ($activity->get_attribute("inputs")) {
+	foreach $input ($interaction->get_attribute("inputs")) {
 	    $in++ if ($seed{uc($input)});
 	}
-	foreach $output ($activity->get_attribute("outputs")) {
+	foreach $output ($interaction->get_attribute("outputs")) {
 	    $out++ if ($seed{uc($output)});
 	}
 	if (($in) and ($out)) {
-	    push @link_activities, $activity;
+	    push @link_interactions, $interaction;
 	}
     }
 
-    return @link_activities;
+    return @link_interactions;
 }
+
+### print the help message 
+### when the program is called with the -h or -help option
+sub PrintHelp {
+  open HELP, "| more";
+  print <<EndHelp;
+NAME
+        parse_signal_transduction.pl
+
+DESCRIPTION
+
+	Parse signal transduction data, exported in tab-delimited
+	format from the Access database.
+
+AUTHOR
+	Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)  
+
+OPTIONS	
+	-h	detailed help
+	-help	short list of options
+	-v #	warn level
+		Warn level 1 corresponds to a restricted verbose
+		Warn level 2 reports all polypeptide instantiations
+		Warn level 3 reports failing get_attribute()
+	-obj	export the data in .obj format
+	-clean	remove all files from the output directory before
+		parsing
+EndHelp
+  close HELP;
+}
+
+  
+
