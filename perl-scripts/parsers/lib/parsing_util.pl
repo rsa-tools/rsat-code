@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parsing_util.pl,v 1.12 2004/07/06 17:49:47 jvanheld Exp $
+# $Id: parsing_util.pl,v 1.13 2005/01/27 08:57:34 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -10,7 +10,6 @@
 require "lib/load_classes.pl";
 require "lib/util.pl";
 require Data::Dumper;
-
 
 =pod
 
@@ -493,6 +492,8 @@ sub ParsePositions {
 	    next;
 	}
 
+#	die (join ("\t", "DEBUG", "position", $position, , $chrom_pos, "\n")) if ($main::verbose >= 0);
+
 	################################################################
 	#### direct or reverse strand
 	if ($chrom_pos =~ /complement\((.*)\)/) {
@@ -620,7 +621,7 @@ sub segment_limits {
 	$segment_start = $1;
 	$segment_end = $1;
     } else {
-	&ErrorMessage ("Invalid segment format\t$segment");
+	&ErrorMessage ("Invalid segment format\t$segment\n");
     }
     return ($segment_start, $segment_end);
 }

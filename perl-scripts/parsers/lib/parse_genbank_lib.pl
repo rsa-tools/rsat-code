@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank_lib.pl,v 1.11 2005/01/13 02:20:11 jvanheld Exp $
+# $Id: parse_genbank_lib.pl,v 1.12 2005/01/27 08:57:34 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -355,7 +355,7 @@ sub ParseGenbankFile {
 		
 		## Other feature types are currently ignored
 	    } else {
-		warn join "\t", $l, "ignoring ft", $feature_type, $position, "\n" if ($main::verbose >= 2);
+		warn join "\t", $l, "ignoring feature", $feature_type, $position, "\n" if ($main::verbose >= 2);
 		undef($current_feature);
 	    }
 	    
@@ -421,12 +421,14 @@ sub ParseGenbankFile {
     ################################################################
     #### this only applies to mRNA and CDS because the other features
     #### (gene, tRNA, rRNA, misc_RNA, misc_feature) have no IDs in Genbank flat files !!!!
-    foreach my $object ($mRNAs->get_objects(),
-			$CDSs->get_objects()
-			) {
-	$object->UseGenbankGIasID();
+    
+    if ($main::data_source eq "NCBI") {
+	foreach my $object ($mRNAs->get_objects(),
+			    $CDSs->get_objects()
+			   ) {
+	    $object->UseGenbankGIasID();
+	}
     }
-
     &ParseFeatureNames($genes, $mRNAs, $scRNAs, $CDSs);
     &ParseFeatureNames($CDSs);
     &ParseGO($CDSs);

@@ -1,6 +1,6 @@
 #!/usr/bin/perl 
 #############################################################
-# $Id: parse-genbank.pl,v 1.21 2004/05/21 09:23:19 jvanheld Exp $
+# $Id: parse-genbank.pl,v 1.22 2005/01/27 08:57:34 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -20,6 +20,7 @@ require "classes/Genbank_classes.pl";
 
 ################################################################
 #### initialization
+$data_source = "NCBI";
 $ext = "gbk";
 $data_type = "genbank";
 $no_suffix=1;
@@ -35,7 +36,7 @@ $test_lines = 10000;
 package main;
 {
     #### initialise parameters ####
-    my $start_time = &AlphaDate;
+    my $start_time = &AlphaDate();
     
     local %infile = ();
     local %outfile = ();
@@ -357,8 +358,11 @@ CATEGORY
 
 OPTIONS
 	-h	(must be first argument) display full help message
+
 	-help	(must be first argument) display options
+
 	-v	verbose
+
 	-f      input file (mutually exclusive with -i)
 		Specify one file to be parsed.
 		Can be used iteratively to specify several files.
@@ -368,8 +372,10 @@ OPTIONS
 		input directory. This directory must contain one or
 		several genbank files (extension .gbk by default). 
 
-	-ext    extension to be found in the director specified 
-	        with the option -i. 
+	-source	data source (default: $data_source).
+
+	-ext    extension to be found in the directory specified 
+	        with the option -i. Default: $ext
 
 	-org    organism name (you should replace spaces by
 		underscores to avoid problems)
@@ -413,20 +419,21 @@ sub PrintOptions {
   print HELP <<End_short_help;
 parse-genbank options
 ----------------
--h	(must be first argument) display full help message
--help	(must be first argument) display options
--f	input file
--i	input dir
--ext    extension of the input files
--org	organism name (you should replace spaces by underscores)
--refseq	input files are refseq entries
--noseq  do not export sequences in .raw files
--o	output dir
--v	verbose
--test #	quick test (for debugging)
--schema database schema (default: $schema)
--host	database host (default: $host)
--user	database user (default: $user)
+-h		(must be first argument) display full help message
+-help		(must be first argument) display options
+-f		input file
+-i		input dir
+-source		data source (default: $data_source).
+-ext    	extension of the input files (default: $ext).
+-org		organism name (you should replace spaces by underscores)
+-refseq		input files are refseq entries
+-noseq  	do not export sequences in .raw files
+-o		output dir
+-v		verbose
+-test #		quick test (for debugging)
+-schema 	database schema (default: $schema)
+-host		database host (default: $host)
+-user		database user (default: $user)
 -password	database password (default: $password)
 End_short_help
   close HELP;
@@ -467,6 +474,10 @@ sub ReadArguments {
 	    ### extension to be searched in the input directory
 	} elsif ($ARGV[$a] eq "-ext") {
 	    $ext = $ARGV[$a+1];
+
+	    ### extension to be searched in the input directory
+	} elsif ($ARGV[$a] eq "-source") {
+	    $data_source = $ARGV[$a+1];
 
 	    ### organism name
 	} elsif ($ARGV[$a] eq "-org") {
