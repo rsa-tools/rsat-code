@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_kegg.pl,v 1.11 2002/04/17 16:58:48 jvanheld Exp $
+# $Id: parse_kegg.pl,v 1.12 2002/04/18 14:26:50 jvanheld Exp $
 #
-# Time-stamp: <2002-04-17 15:55:24 jvanheld>
+# Time-stamp: <2002-04-18 16:26:27 jvanheld>
 #
 ############################################################
 
@@ -60,18 +60,28 @@ package PFBP::Pathway;
 package main;
 
 ################################################################
+# initialisation
+
+$supported_dbms{oracle} = 1;
+$supported_dbms{postgresql} = 1;
+#$dbms = "postgresql";
+$dbms = "oracle";
+$schema = "";
+
+################################################################
 #
 # files to parse
 #
 
 #### ligand
-$dir{KEGG} = "/win/databases/downloads/ftp.genome.ad.jp/pub/kegg";
+$dir{KEGG} = "${Databases}/ftp.genome.ad.jp/pub/kegg";
 $data_file{compound} = $dir{KEGG}."/ligand/compound";
 $data_file{reaction} = $dir{KEGG}."/ligand/reaction.lst";
 $data_file{reaction_name} = $dir{KEGG}."/ligand/reaction_name.lst";
 $data_file{ec} = $dir{KEGG}."/ligand/ECtable";
 
 #### pathways
+system "cd $dir{KEGG}./ligand/; tar -xZf reaction.main.tar.Z";
 $dir{pathway_reactions} = $dir{KEGG}."/ligand/reaction.main/";
 $dir{eco} = $dir{KEGG}."/pathways/eco/";
 $dir{sce} = $dir{KEGG}."/pathways/sce/";
@@ -97,15 +107,7 @@ push @classes, ("PFBP::GenericPathway");
 &ReadArguments;
 
 #### output directory
-unless (-d $dir{output}) {
-    warn "Creating output dir $dir{output}";
-    mkdir $dir{output}, 0775 || die "Error: cannot create directory $dir\n";
-}
-chdir $dir{output};
-if ($clean) {
-    system "\\rm -rf $dir{output}/sql_scripts";
-    system "\\rm -f $dir{output}/*";
-}
+&CheckOutputDir();
 
 #### output files
 $out_file{kegg} = "$dir{output}/kegg.obj";
@@ -210,11 +212,11 @@ foreach $compound ($compounds->get_objects()) {
 foreach $class_factory (@class_factories) {
     
     $$class_factory->dump_tables();
-    $$class_factory->generate_sql(schema=>"jvanheld", 
-				  grant=>"p3", 
-				  dir=>"$dir{output}/sql_scripts", 
-				  makefile=>"k_${class_factory}.mk", 
-				  prefix=>"k_$class_factory_");
+    $$class_factory->generate_sql(schema=>$schema, 
+				  dir=>"$dir{output}/sql_scripts",
+				  prefix=>"k_$class_factory_",
+				  dbms=>$dbms
+				  );
 }
 
 &ExportClasses($out_file{kegg}, $out_format, @classes) if ($export{obj});
@@ -274,6 +276,12 @@ OPTIONS
 		a good cup of coffee)
 	-clean	remove all files from the output directory before
 		parsing
+	-dbms	database management system
+		supported: oracle, postgresql
+	-db	database schema
+EXAMPLE
+	perl parse_kegg.pl -w 1 -clean -test  -dbms postgresql -schema atest
+
 EndHelp
   close HELP;
 }
@@ -292,6 +300,17 @@ sub ReadArguments {
 	    ($ARGV[$a+1] =~ /^\d+$/)){
 	    $main::warn_level = $ARGV[$a+1];
 	    
+	    ### dbms
+	} elsif ($ARGV[$a] eq "-dbms") {
+	    $main::dbms = $ARGV[$a+1];
+	    unless ($supported_dbms{$main::dbms}) {
+		die "Error: this dbms is not supported\n";
+	    }
+
+	    ### database schema
+	} elsif ($ARGV[$a] eq "-schema") {
+	    $main::schema = $ARGV[$a+1];
+
 	    ### clean
 	} elsif ($ARGV[$a] eq "-clean") {
 	    $main::clean = 1;
