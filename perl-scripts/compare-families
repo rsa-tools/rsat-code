@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-families,v 1.11 2002/10/15 06:15:40 jvanheld Exp $
+# $Id: compare-families,v 1.12 2002/10/19 05:07:57 jvanheld Exp $
 #
-# Time-stamp: <2002-10-15 00:09:23 jvanheld>
+# Time-stamp: <2002-10-18 23:01:39 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -20,7 +20,7 @@ my $start_time = &AlphaDate;
 local $replacement = 0;
 local $symmetric = 0;
 local $distinct = 0;
-local $simkey = "sig"; ### key to export as similarity index (option -matrix)
+local $matrix_key = "sig"; ### key to export as similarity index (option -matrix)
 $sort_key = "name";
 
 %supported_return_fields = (
@@ -29,6 +29,18 @@ $sort_key = "name";
                             members=>1
                             );
 $supported_return_fields = join ",", keys %supported_return_fields;
+
+
+%supported_matrix_fields = (
+			    ref_percent=>1,
+			    query_percent=>1,
+			    occ=>1,
+			    P_val=>1,
+			    E_val=>1,
+			    sig=>1
+                            );
+$supported_matrix_fields = join ",", keys %supported_matrix_fields;
+
 
 %supported_sort_keys = (
                         name=>1,
@@ -241,7 +253,8 @@ if ($return_fields{proba}) {
 
         }
 
-        $nb_tests = $nb_ref_families * $nb_query_families;
+#	$nb_tests = $nb_ref_families * $nb_query_families;
+	$nb_tests = $nb_ref_families;
         $compa{$compa_key}->{E_val} = $compa{$compa_key}->{P_val} * $nb_tests;
         $compa{$compa_key}->{sig} = -log($compa{$compa_key}->{E_val})/$ref_log;
 
@@ -272,12 +285,12 @@ if ($return{matrix}) {
     print $out $header;
 
     #### print the result
-    foreach my $q (sort keys %query_families ) {
-        print $out $q;
-        foreach my $r (sort keys %ref_families ) {
-            my $compa_key = $r."__VERSUS__".$q;
-            if (defined($compa{$compa_key}->{$simkey})) {
-                print $out "\t",  $compa{$compa_key}->{$simkey};
+    foreach my $r (sort keys %ref_families ) {
+        print $out $r;
+	foreach my $q (sort keys %query_families ) {
+	    my $compa_key = $r."__VERSUS__".$q;
+            if (defined($compa{$compa_key}->{$matrix_key})) {
+                print $out "\t",  $compa{$compa_key}->{$matrix_key};
             } else {
                 print $out "\t", "NA";
             }
@@ -457,11 +470,12 @@ OPTIONS
         -distinct
                 Prevent to compare each family with itself (when the
                 reference and query files contain the same families).
-        -matrix
-                Return a distance matrix, where each row corresponds
+        -matrix [key]
+                Return a pairwise matrix, where each row corresponds
                 to a reference family, each column to a query family,
-                and each cell contains a similarity index. By default,
-                the sig index is used as similarity index.
+                and each cell contains a comparison between the two
+                families. The next argument indicates which statistics
+                has to be returne in the matrix (default = sig).
 
 PROBABILITIES
         P-VALUE
@@ -596,7 +610,7 @@ compare-families options
 hyergeometric)
 -sym            symmetric comparison (only with -rep, see detailed help)
 -distinct       prevent to compare each family with itself
--matrix         return a similarity matrix
+-matrix [key]   return a similarity matrix
 End_short_help
   close HELP;
   exit(0);
@@ -653,7 +667,10 @@ sub ReadArguments {
             ### export a distance matrix
         } elsif ($ARGV[$a] eq "-matrix") {
             $return{matrix} = 1;
-            $return_fields{proba} = 1;
+	    my $possible_key = $ARGV[$a+1];
+	    if ($supported_matrix_fields{$possible_key}) {
+		$matrix_key = $possible_key;
+	    }
 
             ### prevent to compare each family with itself
         } elsif ($ARGV[$a] eq "-distinct") {
@@ -706,8 +723,12 @@ sub Verbose {
             print $out ";\t$key\t$value\n";
         }
     }
+    print $out "; Query families\t$nb_query_families\n";
+    foreach my $f (keys %query_families) {
+        printf $out ";\t%s\t%d\n", $query_families{$f}->get_name(), $query_families{$f}->get_size();
+    }
 
-    print $out "; Reference families\n";
+    print $out "; Reference families\t$nb_ref_families\n";
     foreach my $f (keys %ref_families) {
         printf $out ";\t%s\t%d\n", $ref_families{$f}->get_name(), $ref_families{$f}->get_size();
     }
@@ -733,10 +754,6 @@ sub Verbose {
         print $out "\n";
     }
 
-    print $out "; Query families\n";
-    foreach my $f (keys %query_families) {
-        printf $out ";\t%s\t%d\n", $query_families{$f}->get_name(), $query_families{$f}->get_size();
-    }
 
     if (defined(%outfile)) {
         print $out "; Output files\n";
