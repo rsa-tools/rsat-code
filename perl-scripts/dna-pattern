@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dna-pattern,v 1.16 2002/02/12 02:16:57 jvanheld Exp $
+# $Id: dna-pattern,v 1.17 2002/04/02 00:11:48 jvanheld Exp $
 #
-# Time-stamp: <2002-02-12 03:03:37 jvanheld>
+# Time-stamp: <2002-04-02 02:11:43 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -20,6 +20,7 @@ require "RSA.classes";
 $start_date = &AlphaDate;
 
 #### init variables ####
+$threshold = 1.0e-12; #### this is a tricky way to circumvent a Perl floating-point imprecision 
 $pattern_score = 1;
 $noid = 0;
 $strands_to_search = "DR";
@@ -35,9 +36,10 @@ if ($HelpRequested) {
 
 &ReadArguments;
 
-##############################
-### check parameter values ###
-##############################
+################################################################
+#
+# check parameter values 
+#
 
 #### return values
 unless (defined(%return)) {
@@ -67,10 +69,9 @@ unless (($allowed_subst eq "") || (&IsNatural($allowed_subst))) {
 ### no pattern specified
 if ($#patterns < 0) {
     &Warning("There is not a single pattern.") ;
-    exit(0);
 }
 
-#### prepar pattern hash for sliding window 
+#### prepare pattern hash for sliding window 
 %pattern_scores = ();
 if ($search_method eq "sliding window") {
     #### calculate pattern length
@@ -110,62 +111,14 @@ if ($search_method eq "sliding window") {
 ### open output file ###
 $out = &OpenOutputFile($outputfile);
 
-#### verbose ####
-if ($verbose) {
-    print $out "; dna-pattern";
-    foreach $a (@ARGV) {
-	print $out " $a";
-    }
-    print $out "\n";
-    printf $out "; %-21s\t%s\n", "Input file", $inputfile if ($inputfile);
-    printf $out "; %-21s\t%s\n", "Input format", $in_format; 
-    printf $out "; %-21s\t%s\n", "Output file", $outputfile if ($outputfile);
-    printf $out "; %-21s\t%s\n", "Pattern file", $pattern_file if ($pattern_file);
-    printf $out "; %-21s\t%s\n", "Search method", $search_method;
-    if ($search_method eq "sliding window") {
-	printf $out "; %-21s\t%s\n", "Sliding window", $sliding_window_size;
-	printf $out "; %-21s\t%s\n", "Pattern length", $pattern_length;
-    }
-    
-    printf $out "; %-21s\t%g\n", "Threshold", $threshold;
-    printf $out "; %-21s\t%d\n", "Allowed substitutions", $allowed_subst;
-    if (defined(%return)) {
-	foreach $key (keys %return) {
-	    printf $out "; %-21s\t%s\n", "return", $key 
-		if ($return{$key});
-	}
-    }
-    print $out "; Patterns\n";
-    print $out "; \tseq\tid\tscore\n";
-    foreach my $pattern (@patterns) {
-	print $out ("; ", 
-		    "\t", $pattern->get_attribute("sequence"),
-		    "\t", $pattern->get_attribute("id"),
-		    "\t", $pattern->get_attribute("score"),
-		    "\n");
-    }
-    print $out "; \n";
-
-    if ($return{match_positions}) {
-	print $out "; Matching positions\n";
-	print $out "; PatID";
-	print $out "\tStrand";
-	print $out "\tPattern";
-	print $out "\tSeqID";
-	print $out "\tStart";
-	print $out "\tEnd";
-	print $out "\tMatching_word";
-	print $out "\tScore";
-	print $out "\n";
-    }
-}
+&Verbose if ($verbose >=1);
 
 #### search ###
 ### open sequence file ###
-$in = &OpenInputFile($inputfile);
+($in, $input_dir) = &OpenInputFile($inputfile);
 
 ### read input sequences
-while ((($current_seq, $sequence_id, @comments) = &ReadNextSequence($in, $in_format)) &&
+while ((($current_seq, $sequence_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir)) &&
        (($current_seq) || ($sequence_id))) {
     
     push @sequence_ids, $sequence_id;
@@ -487,8 +440,8 @@ sub PrintMatch {
 
 ############ HELP message ####################
 sub Help	{
-open HELP, "|more";
-print HELP "
+    open HELP, "|more";
+    print HELP "
 NAME
 	dna-pattern
 	perl script v1.1 by Jacques van Helden, 30 July 1997.
@@ -715,14 +668,14 @@ EXAMPLES
 WEB VERSION
 	http://www.ucmb.ulb.ac.be/bioinformatics/rsa-tools/
 ";
-  close HELP;
-  exit(0);
+    close HELP;
+    exit(0);
 }
 
 
 sub ShortHelp	{
-open HELP, "|more";
-print HELP "
+    open HELP, "|more";
+    print HELP "
 dna-pattern options
 -------------------
 -h	complete help message
@@ -756,8 +709,8 @@ dna-pattern options
 -v	verbose
 -origin origin (position 0)
 ";
-  close HELP;
-  exit(0);
+    close HELP;
+    exit(0);
 }
 
 
@@ -939,7 +892,7 @@ sub ReadPatterns {
     
     if ($pattern_file) {
 	### read patterns from a file
-	my $pattern_stream = &OpenInputFile($pattern_file);
+	my ($pattern_stream) = &OpenInputFile($pattern_file);
 	while (<$pattern_stream>) {
 	    if (/^;/) {
 		#### for piping with oligo-analysis and dyad-analysis
@@ -1019,6 +972,7 @@ sub SlidingWindowSearch {
 	    $end_pos = $pos - $orig_pos + $pattern_length ;
 	    $start_pos = $pos - $orig_pos - $sliding_window_size +2;
 	    $matching_word = substr($current_seq, $start_pos, $sliding_window_size + $pattern_length - 1);
+#	    print "HELLO\t$score_sum";
 	    &PrintMatch() ;
 	}
 
@@ -1030,8 +984,52 @@ sub SlidingWindowSearch {
 
 
 
+################################################################
+#
+# Report parameters
+sub Verbose {
+    print $out "; dna-pattern ";
+    &PrintArguments($out);
+    print $out "; Citation: van Helden et al. (2000). Yeast 16(2), 177-187.\n";
+    printf $out "; %-21s\t%s\n", "Input file", $inputfile if ($inputfile);
+    printf $out "; %-21s\t%s\n", "Input format", $in_format; 
+    printf $out "; %-21s\t%s\n", "Output file", $outputfile if ($outputfile);
+    printf $out "; %-21s\t%s\n", "Pattern file", $pattern_file if ($pattern_file);
+    printf $out "; %-21s\t%s\n", "Search method", $search_method;
+    if ($search_method eq "sliding window") {
+	printf $out "; %-21s\t%s\n", "Sliding window", $sliding_window_size;
+	printf $out "; %-21s\t%s\n", "Pattern length", $pattern_length;
+    }
+    
+    printf $out "; %-21s\t%g\n", "Threshold", $threshold;
+    printf $out "; %-21s\t%d\n", "Allowed substitutions", $allowed_subst;
+    if (defined(%return)) {
+	foreach $key (keys %return) {
+	    printf $out "; %-21s\t%s\n", "return", $key 
+		if ($return{$key});
+	}
+    }
+    print $out "; Patterns\n";
+    print $out "; \tseq\tid\tscore\n";
+    foreach my $pattern (@patterns) {
+	print $out ("; ", 
+		    "\t", $pattern->get_attribute("sequence"),
+		    "\t", $pattern->get_attribute("id"),
+		    "\t", $pattern->get_attribute("score"),
+		    "\n");
+    }
+    print $out "; \n";
 
-
-
-
-
+    if ($return{match_positions}) {
+	print $out "; Matching positions\n";
+	print $out "; PatID";
+	print $out "\tStrand";
+	print $out "\tPattern";
+	print $out "\tSeqID";
+	print $out "\tStart";
+	print $out "\tEnd";
+	print $out "\tMatching_word";
+	print $out "\tScore";
+	print $out "\n";
+    }
+}
