@@ -1,4 +1,8 @@
 #!/usr/bin/perl
+
+## CVS
+## added the possibility to specify the expected frequency for each nucleotide separately
+
 #### this cgi script fills the HTML form for the program random-seq
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
@@ -18,8 +22,12 @@ $default{length} = 1000;
 $default{repet} = 10;
 $default{lw} = 50;
 
-$default{ATfreq} = 0.325;
-$default{CGfreq} = 0.175;
+#$default{ATfreq} = 0.325;
+#$default{CGfreq} = 0.175;
+$default{Afreq} = 0.325;
+$default{Tfreq} = 0.325;
+$default{Cfreq} = 0.175;
+$default{Gfreq} = 0.175;
 
 $default{organism} = "Saccharomyces cerevisiae";
 $default{oligo_size} = 6;
@@ -97,19 +105,44 @@ print "<font size=-1><b>Note:</b> Markov order = oligonucleotide length minus 1<
 
 print "</UL>";
 
+
+################################################################
+## Independent nucleotides with distrinct probabilities
 print "<INPUT TYPE='radio' NAME='proba' VALUE='alphabet'>Independent nucleotides with distinct probabilities<BR>";
 
 print "<UL>";
-print "<B>A:T</B>&nbsp;\n";
+print $query->table({-border=>0,-cellpadding=>3,-cellspacing=>0},
+		    $query->Tr({-align=>left,-valign=>TOP},
+			       [
+				$query->td(["<B>A</B>",
+					    $query->textfield(-name=>'Afreq',
+							      -default=>$default{Afreq},
+							      -size=>6),
+					    "<B>T</B>",
+					    $query->textfield(-name=>'Tfreq',
+							      -default=>$default{Tfreq},
+							      -size=>6)]),
+				$query->td(["<B>C</B>",
+					    $query->textfield(-name=>'Cfreq',
+							      -default=>$default{Cfreq},
+							      -size=>6),
+					    "<B>G</B>",
+					    $query->textfield(-name=>'Gfreq',
+							      -default=>$default{Gfreq},
+							      -size=>6)]),
+				
+			       ]));
 
-print $query->textfield(-name=>'ATfreq',
-			-default=>$default{ATfreq},
-			-size=>10);
 
-print "<B>&nbsp;C:G</B>&nbsp;\n";
-print $query->textfield(-name=>'CGfreq',
-			-default=>$default{CGfreq},
-			-size=>10);
+# print "<B>A:T</B>&nbsp;\n";
+# print $query->textfield(-name=>'ATfreq',
+# 			-default=>$default{ATfreq},
+# 			-size=>6);
+
+# print "<B>&nbsp;C:G</B>&nbsp;\n";
+# print $query->textfield(-name=>'CGfreq',
+# 			-default=>$default{CGfreq},
+# 			-size=>6);
 
 print "</UL>";
 

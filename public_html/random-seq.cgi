@@ -1,4 +1,8 @@
 #!/usr/bin/perl
+
+## CVS
+## added the possibility to specify the expected frequency for each nucleotide separately
+
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
@@ -30,6 +34,7 @@ $query = new CGI;
 
 #### update log file ####
 &UpdateLogFile();
+
 
 &ListParameters() if ($ECHO >= 2);
 
@@ -73,12 +78,35 @@ $parameters .= " -format $out_format ";
 
 #### alphabet
 if ($query->param('proba') eq "alphabet") {
-    $at_freq = $query->param('ATfreq');
-    $cg_freq = $query->param('CGfreq');
-    unless ((&IsReal($at_freq))  && (&IsReal($cg_freq))) {
-	&FatalError("Invalid residue frequencies");
+
+    $freq{A} = $query->param('Afreq');
+    $freq{C} = $query->param('Cfreq');
+    $freq{T} = $query->param('Tfreq');
+    $freq{G} = $query->param('Gfreq');
+    
+    ## Check the values 
+    foreach my $letter (keys %freq) {
+	unless (&IsReal($freq{$letter})) {
+	    &FatalError("Invalid frequency value ".$freq{$letter}." for residue ".$letter);
+	}
     }
-    $parameters .= " -a a:t $at_freq c:g $cg_freq ";
+
+    ## Print residue frequencies in a file
+    $alphabet_file = $TMP."/".$tmp_file_name.".alphabet";
+    open ALPHA, ">".$alphabet_file;
+    foreach my $letter (keys %freq) {
+	print ALPHA $letter, "\t", $freq{$letter}, "\n";
+    }
+    close ALPHA;
+    $parameters .= " -expfreq ".$alphabet_file;
+    &DelayedRemoval($alphabet_file);
+
+#    $at_freq = $query->param('ATfreq');
+#    $cg_freq = $query->param('CGfreq');
+#    unless ((&IsReal($at_freq))  && (&IsReal($cg_freq))) {
+#	&FatalError("Invalid residue frequencies");
+#    }
+#    $parameters .= " -a a:t $at_freq c:g $cg_freq ";
 
 #### expected frequency estimation ####
 } elsif ($query->param('proba') =~ /ncf/i) {
