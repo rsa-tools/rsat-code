@@ -1,0 +1,218 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib.pl";
+
+
+
+if ($ARGV[0] eq "-h") {
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	convert-seq
+
+        v1.0, 1997 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
+	
+USAGE
+        consvert-seq [-i inputfile] [-o outputfile] [-v] 
+                  -from inputformat -to outputformat
+                  [-lw line_width]
+	
+OPTIONS
+	-v	verbose.
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+	-from   input format (see below for accepted formats)
+        -to     output format (see below for accepted formats)
+        -lw #   line width. A carriage return is inserted every # 
+                characters within the output sequence.
+                Default is 60. A 0 value indicates that no carriage 
+                return must be inserted.
+        -addrc  adds the reverse complement of each input sequence
+                to the output file. This is usefull for programs that 
+                cannot handle reverse complement (like the Gibbs Sampler).
+	-lc	lowercase. the sequence is printed in lowercase.
+	-uc	lowercase. the sequence is printed in uppercase.
+
+
+INPUT - OUTPUT FORMATS
+        raw     raw sequence format. 
+                No comments, no identifier.
+                The file contains a single sequence.
+                Spaces, tabs and carriage return are ignored.
+        filelist (only valid as input format)
+                the input file contains a list of sequence files, each 
+                written in raw format (see above).
+        multi   several raw sequences within a single file. 
+                Sequences are separated by newlines. 
+                Spaces and tabs are ignored.
+        IG      IntelliGenetics
+        FASTA   FASTA
+        WC      Wconsensus format
+	
+EXAMPLES
+	convert-seq -i myseq.IG -from IG -to FASTA -o myseq.FASTA
+
+End_of_help
+  close HELP;
+  exit;
+}
+
+if ($ARGV[0] eq "-help") {
+  open HELP, "| more";
+  print HELP <<End_shorthelp;
+consvert-seq options
+--------------------
+-h      detailed help message
+-help   short help message (shows the present message)
+-v	verbose.
+-i      inputfile
+-o      outputfile
+-from   input format (see below for accepted formats)
+-to     output format (see below for accepted formats)
+-lw #   line width. 
+-addrc  adds the reverse complement of each input sequence
+-lc	lowercase
+-uc	uppsercase
+
+Input-output formats
+--------------------
+raw     a single sequence in a file
+filelist (only valid as input format)
+multi   several raw sequences within a single file. 
+IG      IntelliGenetics
+FASTA   FASTA
+WC      Wconsensus format
+End_shorthelp
+  close HELP;
+  exit;
+}
+
+$start_time = `date`;
+$line_width = 60;
+
+#### initialise parameters ####
+
+#### read arguments ####
+foreach $a (0..$#ARGV) {
+
+  if ($ARGV[$a] eq "-v") {
+    $verbose = 1;
+    
+  } elsif ($ARGV[$a] eq "-i") {
+    $inputfile = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] eq "-o") {
+    $outputfile = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] eq "-from") {
+    $in_format = lc($ARGV[$a+1]);
+
+  } elsif ($ARGV[$a] eq "-to") {
+    $out_format = lc($ARGV[$a+1]);
+
+  } elsif ($ARGV[$a] eq "-lw") {
+    $line_width = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] eq "-lc") {
+    $uppercases = 0;
+    $lowercases = 1;
+
+  } elsif ($ARGV[$a] eq "-uc") {
+    $uppercases = 1;
+    $lowercases = 0;
+
+  } elsif ($ARGV[$a] eq "-addrc") {
+    $add_RC = 1;
+
+  }
+}
+
+
+#### check argument values ####
+unless ($line_width >= 0) {
+    print "\tinvalid line width\n";
+    print "\ttype convert-seq -h for help\n";
+    exit;
+
+}
+&CheckInputSeqFormat($in_format);
+&CheckOutputSeqFormat($out_format);
+
+if ($out_format eq "wc") {
+    $line_width = 0;
+}
+if ($out_format eq "multi") {
+    $line_width = 0;
+}
+
+### open input file ###
+$in = &OpenInputFile($inputfile);
+
+### open output file ###
+$out = &OpenOutputFile($outputfile);
+
+#### verbose ####
+if ($verbose) {
+  print ";convert-seq result\n";
+  if ($inputfile ne "") {
+    print ";Input file	$inputfile\n";
+  }
+  if ($outputfile ne "") {
+    print ";Output file	$outputfile\n";
+  }
+  print ";Input format\t$in_format\n";
+  print ";Output format\t$out_format\n";
+}
+
+###### execute the command #########
+
+while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format)) &&
+(($current_seq ne "") || ($current_id ne ""))) {
+    if ($lowercases) {
+        $current_seq = lc($current_seq);
+    } elsif ($uppercases) {
+        $current_seq = uc($current_seq);
+    } 
+    &PrintNextSequence($out, $out_format, $line_width, $current_seq, $current_id, @comments);
+    if ($add_RC) {
+	$current_id .= "_reverse_complement";
+	@comments = ();
+	$rev_seq = &ReverseComplement($current_seq);
+	if ($lowercases) {
+	    $rev_seq = lc($rev_seq);
+	} elsif ($uppercases) {
+	    $rev_seq = uc($rev_seq);
+	} 
+	&PrintNextSequence($out, $out_format, $line_width, $rev_seq, $current_id, @comments);
+    }
+}
+
+###### verbose ######
+if ($verbose) {
+    $done_time = `date`;
+  print ";Job started $start_time";
+  print ";Job done    $done_time";
+}
+
+
+###### close input file ######
+if ($inputfile ne "") {
+  close $in;
+}
+
+###### close output file ######
+if ($outputfile ne "") {
+  close $out;
+}
+
+
+exit(0);
+
+
+

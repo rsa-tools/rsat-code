@@ -1,0 +1,287 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib.pl";
+
+
+
+if ($ARGV[0] eq "-h") {
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	binomial
+	
+	v1.0 by Jacques van Helden, July 1997
+	
+USAGE
+	binomial -p single_proba -r repetitions -s nb_success 
+		[-v] [-boe]
+	
+	calculates the probability that an event with probability p 
+	challenged r times successes s times, according to the binomial 
+	formulae:
+	
+	              (r!)       s      (r-s)
+	P(s|r;p) = ---------- (p)  (1-p)
+	           (n!)(r-n)!
+  	
+  	With the -boe option, calculates the probability of >= -s 
+  	successes.
+  	
+  	              r                 s-1
+  	P(>=s|r;p) = SUM P(j|r;p) = 1 - SUM P(j|r;p) 
+  	             j=s                j=0
+  	           
+  	 With the -approx, the entropy formula is used to approximate 
+  	 the probability of >= -s successes.
+  	 
+  	 P(>=s|r;p) = exp(-r * H(p,b))
+  	 
+  	 with	H(p,b) = b*log(b/p) + (1-b)*log((1-b)/(1-p))
+  	 	where b = s/r
+  	 Important note: this formula is valid only when
+  	 	 p <= b = s/r < 1
+
+  	         
+	
+OPTIONS
+	-p #p	probability of success of the event at each trial. 
+		#p is a real such that 0 <= #p <= 1.
+	-r #r	number of repetitions of the trial. #r mmust be an integer		
+	-s #s	number of succesful trials
+		#s must be an integer such that 0 <= s <= r.
+	-v	verbose
+	-boe	bigger or equal. 
+		Calculate the probability of >= -s successes.
+	-soe	smaller or equal. 
+		Calculate the probability of <= -s successes.
+	-approx	only valid in combination with -boe
+		Uses the entropy formulae instead of the exact binomial
+		for the calculation of Proba(r repetitions, success >= s).
+		This can be necessary if r is very high and s is very 
+		far from both r and 0 (ex: r=1000, s=500).
+
+	
+End_of_help
+    close HELP;
+  exit;
+}
+
+if ($ARGV[0] eq "-help") {
+  open HELP, "| more";
+  print HELP <<End_short_help;
+binomial options
+----------------
+-p #p	probability of success of the event at each trial. 
+-r #r	number of repetitions of the trial. #r mmust be an integer
+-s #s	number of succesful trials
+-v	verbose
+-boe	bigger or equal. 
+-soe	smaller or equal. 
+-approx	only valid in combination with -boe
+End_short_help
+    close HELP;
+  exit;
+}
+
+#### initialise parameters ####
+$soe = 0;
+$approx = 0;
+
+#### read arguments ####
+foreach $a (0..$#ARGV) {
+
+  if ($ARGV[$a] eq "-p") {
+    $p = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] eq "-r") {
+    $r = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] eq "-s") {
+    $s = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] eq "-v") {
+    $verbose = 1;
+    
+  } elsif ($ARGV[$a] eq "-boe") {
+    $boe = 1;
+
+  } elsif ($ARGV[$a] eq "-soe") {
+    $soe = 1;
+
+  } elsif ($ARGV[$a] eq "-approx") {
+    $boe = 1;
+    $approx = 1;
+  }
+}
+
+
+#### check argument values ####
+if ($p eq "") {
+  print "	Error: p was not specified.\n";
+  print "	Type binomial -h for more information\n";
+  exit;
+} elsif (($p > 1) || ($p < 0)) {
+  print "	Error: p should be comprised between 0 and 1.\n";
+  print "	Type binomial -h for more information\n";
+  exit;
+}
+
+if ($r eq "") {
+  print "	Error: r was not specified.\n";
+  print "	Type binomial -h for more information\n";
+  exit;
+} elsif ($r < 1) {
+  print "	Error: r should be an integer >= 1.\n";
+  print "	Type binomial -h for more information\n";
+  exit;
+}
+
+if ($s eq "") {
+  print "	Error: s was not specified.\n";
+  print "	Type binomial -h for more information\n";
+  exit;
+} elsif (($s < 0) || ($s > $r)) {
+  print "	Error: s should be an integer >= 0 and <= r.\n";
+  print "	Type binomial -h for more information\n";
+  exit;
+}
+
+
+if ($verbose) {
+  print "p= $p	r=$r	s= $s	b= ";
+  if ($boe) {
+    print "P(>=s,r) = ";
+  } elsif ($soe) {
+    print "P(<=s,m) = ";
+  } else {
+    print "P(s,r) = ";
+  }
+}
+
+
+if ($approx) {
+    $b = &binomial_approx($p, $r, $s);
+} elsif ($boe) {
+    $b = &sum_of_binomials($p, $r, $s);
+#    printf "old\t%s\t",  &old_sum_of_binomials($p, $r, $s);
+} elsif ($soe) {
+    $b = 1 - &sum_of_binomials($p, $r, $s+1);
+#    printf "old\t%s\t",  1 - &old_sum_of_binomials($p, $r, $s+1);
+} else {
+    $b = &binomial($p, $r, $s);
+#    printf "old\t%s\t",  &old_binomial($p, $r, $s);
+}
+
+
+if ($b < 0) {
+### this can happen when using boe or soe options,
+### due to the precision limit
+  $b = 0;
+}
+print "$b\n";
+
+exit(0);
+
+##### subroutine definition #####
+
+sub RecurrentBinomial {
+### usage: 
+###     &RecurrentBinomial($proba,$repetitions,$successes)
+### this routine uses the recurrent formula for the calculation of binomial:
+### We calculate everything in logarithms, and make a custom exp conversion
+### to overcome the limitation of the per exp(x) function
+###
+###           P(x) * p(r-x)
+###  P(x+1) = -------------
+###              q(x+1)
+###
+    local($proba) = $_[0];
+    local($repet) = $_[1];
+    local($succ) = $_[2];
+    local($q) = 1 - $p;
+
+    local($logproba) = log($proba);
+    local($logq) = log($q);
+
+    local($x) = 0;
+    local($logbin) = log($q)*($repet-$x);
+
+    for $x (0..$succ-1) {
+	$logbin += $logproba + log($repet - $x) - $logq - log($x+1);
+    }
+    $logbin /= log(10);
+    $bin = 10**(1+$logbin - int($logbin));
+    $bin .= "e";
+    if (int($logbin)-1 > 0) {
+	$bin .= "+";
+    }
+    $bin .= int($logbin)-1;
+    return($bin);
+}
+
+
+sub RecurrentSumOfBinomials {
+### usage: 
+###     &RecurrentSumOfBinomial($proba,$repetitions,$successes)
+### calculates the sum of binomials for j varying from s to r
+### this routine uses the recurrent formula for the calculation of binomial:
+###           P(x) * p(r-x)
+###  P(x+1) = -------------
+###              q(x+1)
+###
+    local($proba) = $_[0];
+    local($repet) = $_[1];
+    local($succ) = $_[2];
+
+    local($q) = 1 - $p;
+    local($logproba) = log($proba);
+    local($logq) = log($q);
+
+    local($sum_of_bin);
+    local($x);
+    local($logbin);
+
+    if ($succ < ($repet - $succ)) {
+	$x = 0;
+	$sum_of_bin = 1;
+
+	if ($succ > 0) {
+	    $logbin = $logq*($repet-$x);
+	    $sum_of_bin -= exp($logbin);
+	    $x++;
+	    while ($x < $succ) {
+		$logbin += $logproba + log($repet - $x+1) - $logq - log($x);
+		$sum_of_bin -= exp($logbin);
+		$x++;
+	    }
+	}
+
+   } else {
+	$sum_of_bin = 0;
+	$x = $repet;
+	$logbin = $x*$logproba;
+	$sum_of_bin += exp($logbin);
+	$x--;
+
+	while ($x >= $succ) {
+	    $logbin += -$logproba - log($repet - $x) + $logq + log($x+1);
+	    $sum_of_bin += exp($logbin);
+	    $x--;
+	}
+
+
+
+    }
+    $sum_of_bin = 1 if ($sum_of_bin > 1);
+    $sum_of_bin = 0 if ($sum_of_bin < 0);
+    return($sum_of_bin);
+}
+
+
+
+
+
+
+

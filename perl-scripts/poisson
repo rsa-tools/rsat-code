@@ -1,0 +1,192 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib.pl";
+
+
+
+if ($ARGV[0] eq "-h") {
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	poisson
+	
+	v1.0 by Jacques van Helden, July 1997
+	
+USAGE
+	poisson -m exp_nb_success -s nb_success [-v] [-boe]
+		
+		or
+
+	poisson -p single_proba -r repetitions -s nb_success [-v] [-boe]
+	
+		
+	calculates the probability that an event with probability p 
+	challenged r times successes s times, according to the Poisson 
+	formulae:
+	
+  	                       -m s
+  	                      e  m
+  	 P(s,m) = P(s|r;p) = ---
+  	                      s! 
+  	             
+  	 where	s is the number of successful trials,
+  	 	r is the total number fo trials
+  	 	p is the probability of success at each trial
+  	 	m = p*r is the expected number of successes
+  	
+  	With the -boe option, calculates the probability of >= -s 
+  	successes.
+  	
+  	           
+  	           infinite           s-1
+  	P(>=s,m) =   SUM P(j,m) = 1 - SUM P(j,m)
+  	             j=s              j=0
+
+  	         
+  	With the -soe option, calculates the probability of <= -s 
+  	successes.
+  	
+  	            s        
+  	P(<=s,m) = SUM P(j,m) 
+  	           j=0        
+
+	
+OPTIONS
+	-p #p	probability of success of the event at each trial. 
+		#p is a real such that 0 <= #p <= 1.
+	-r #r	number of repetitions of the trial. #r mmust be an integer		
+	-s #s	number of succesful trials
+		#s must be an integer such that 0 <= s <= r.
+	-m #m	where #m is a real representing the expected number of 
+		successes
+	-v	verbose
+	-boe	bigger or equal. 
+		Calculate the probability of >= -s successes.
+	-soe	smaller or equal. 
+		Calculate the probability of <= -s successes.
+End_of_help
+  close HELP;
+  exit(0);
+}
+
+if ($ARGV[0] eq "-help") {
+  open HELP, "| more";
+  print HELP <<End_short_help;
+poisson options
+---------------
+-p #p	probability of success of the event at each trial. 
+-r #r	number of repetitions of the trial. #r mmust be an integer
+-s #s	number of succesful trials
+-m #m	expected number of successes
+-v	verbose
+-boe	bigger or equal. 
+-soe	smaller or equal. 
+End_short_help
+  close HELP;
+  exit;
+}
+
+#### initialise parameters ####
+$soe = 0;
+$approx = 0;
+
+#### read arguments ####
+foreach $a (0..$#ARGV) {
+
+  if ($ARGV[$a] eq "-p") {
+    $p = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] eq "-r") {
+    $r = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] eq "-s") {
+    $s = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] eq "-m") {
+    $m = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] eq "-v") {
+    $verbose = 1;
+    
+  } elsif ($ARGV[$a] eq "-boe") {
+    $boe = 1;
+
+  } elsif ($ARGV[$a] eq "-soe") {
+    $soe = 1;
+
+  } elsif ($ARGV[$a] eq "-approx") {
+    $boe = 1;
+    $approx = 1;
+  }
+}
+
+
+#### check argument values ####
+if ($s eq "") {
+  print "	Error: s was not specified.\n";
+  print "	Type poisson -h for more information\n";
+  exit;
+} elsif ($s < 0) {
+  print "	Error: s should be an integer >= 0 and <= r.\n";
+  print "	Type poisson -h for more information\n";
+  exit;
+}
+
+
+if ($m eq "") {
+  if (($r eq "") || ($s eq "")) {
+    print "	Error: m should be specified.\n";
+    print "	Type poisson -h for more information\n";
+    exit;
+  } elsif ($r < 1) {
+    print "	Error: r should be an integer >= 1.\n";
+    print "	Type poisson -h for more information\n";
+    exit;
+  } elsif (($p > 1) || ($p < 0)) {
+    print "	Error: p should be comprised between 0 and 1.\n";
+    print "	Type poisson -h for more information\n";
+    exit;
+  } else {
+    $m = $p*$r;
+  }
+} 
+
+if ($verbose) {
+  print "s= $s	m=$m\n";
+  if ($boe) {
+    print "P(>=s,m) = ";
+  } elsif ($soe) {
+    print "P(<=s,m) = ";
+  }else {
+    print "P(s,m) = ";
+  }
+}
+
+if ($boe) {
+  $result = 1;
+  for $j (0..$s-1) {
+    $result -= poisson($j,$m);
+    last if ($result <=0);
+  }
+} elsif ($soe) {
+  $result = 0;
+  for $j (0..$s) {
+    $result += poisson($j,$m);
+    last if ($result >=1);
+  }
+} else {
+  $result = poisson($s,$m);
+}
+
+$result = 0 if ($result < 0);
+$result = 1 if ($result > 1);
+### this can happen when usin boe or soe options,
+### due to the precision limit
+
+print $result, "\n";
+
+exit(0);
+
+##### subroutine definition #####

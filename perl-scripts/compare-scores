@@ -1,0 +1,197 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib.pl";
+
+if ($ARGV[0] eq "-h") {
+#### display full help message #####
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	compare-scores
+
+        1998 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
+	
+USAGE
+        compare-scores -i inputfile_1 -i inputfile_2 [-i inputfile_n] [-o outputfile] [-v] -sc #
+
+DESCRIPTION
+	compares the score associated to patterns in different input files
+
+OPTIONS
+        -h      (must be first argument) display full help message
+        -help   (must be first argument) display options
+	-v	verbose
+	-i input_file (use recursively to indicate several input files)
+		input file. 
+		At least 2 different input files must be specified.
+		The input files each contain a table with several columns,
+		separated by tabulations (\t). 
+		The first column of each input file contains the pattern.
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+		
+	-sc	score column. 
+		The score column must be >=2.
+	-sc#	score column for the #th file
+
+INPUT FORMAT
+	each line of the input file provides the score for a single pattern. 
+	The first word of each line must be the pattern sequence.
+	The score can be located in any column, which will be indicated with the parameter -sc.
+	Lines beginning with a semicolumn (;) are ignored.
+	
+OUTPUT FORMAT
+	One line per pattern. The first column is the pattern sequence, followed by 1 column for 
+	the score associated to that pattern in each of the input files specified.
+	
+EXAMPLES
+       compare-scores -v -i data_file_1 -i data_file_2 -sc 4  -o myresult
+	
+End_of_help
+  close HELP;
+  exit;
+}
+
+if ($ARGV[0] eq "-help") {
+#### display short help message #####
+  open HELP, "| more";
+  print HELP <<End_short_help;
+compare-scores options
+----------------
+-h      (must be first argument) display full help message
+-help   (must be first argument) display options
+-i      input file (use recursively to indicate several input files)
+-o      output file
+-v      verbose
+-sc	score column
+-sc#	score column for the #th file
+End_short_help
+  close HELP;
+  exit;
+}
+
+#### initialise parameters ####
+$start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+
+
+#### read arguments ####
+foreach $a (0..$#ARGV) {
+    ### verbose ###
+    if ($ARGV[$a] eq "-v") {
+	$verbose = 1;
+    ### input file ###
+    } elsif ($ARGV[$a] eq "-i") {
+	push @input_files, $ARGV[$a+1];
+
+    ### output file ###
+    } elsif ($ARGV[$a] eq "-o") {
+	$outputfile = $ARGV[$a+1];
+
+    ### score column
+    } elsif (($ARGV[$a] eq "-sc") && (&IsNatural($ARGV[$a+1]))) {
+	$default_sc = $ARGV[$a+1];
+
+    } elsif (($ARGV[$a] =~ /^-sc(\d+)/) && (&IsNatural($ARGV[$a+1]))) {
+	$sc[$1-1] = $ARGV[$a+1]; ### substract 1 from the index
+
+    }
+}
+
+
+
+### open input file ###
+foreach $i (0..$#input_files) {
+  unless (defined ($sc[$i])) {
+    $sc[$i] = $default_sc;
+  }
+  #### check score column ####
+  if ($sc[$i] < 2) {
+    print "Error: $sc[$i] invalid score column specification.\n";
+    print "score column must be >= 2\n";
+    exit;
+  }  
+  
+  $inputfile = $input_files[$i];
+  
+  $in = &OpenInputFile($inputfile);
+  while (<$in>) {
+    next unless (/\S/);
+    next if (/^;/);
+    chomp;
+    @fields = split;
+    $pat = lc($fields[0]);
+    $patterns{$pat} = 1;
+    $score{$pat}[$i] = $fields[$sc[$i]-1];
+  }
+  close $in;
+}
+
+### open output file ###
+$out = &OpenOutputFile($outputfile);
+print $out ";pattern";
+foreach $file (@input_files) {
+    print $out "\t$file";
+}
+print $out "\n";
+
+foreach $pat (sort keys %patterns) {
+    print $out "$pat";
+    for $i (0..$#input_files) {
+      $score = $score{$pat}[$i];
+      if ($score eq "") {
+	print $out "\t-";
+      } else {
+	print $out "\t$score";
+      }
+    }
+    print $out "\n";
+}
+
+#### verbose ####
+if ($verbose) {
+    print $out "; compare-scores";
+    foreach $a (@ARGV) {
+        if (($a =~ /\S+\s+\S+/) || ($a !~ /\S/)){
+            print $out " '$a'";
+        } else {
+            print $out " $a";
+        }
+    }
+    print $out "\n";
+
+    print $out ";Input files :\n";
+    for $i (0..$#input_files) {
+	print $out ";\t$input_files[$i]\t$sc[i]\n";
+    }
+    if ($outputfile ne "") {
+	print $out ";Output file	$outputfile\n";
+    }
+}
+
+
+
+###### print output ######
+
+
+
+
+###### verbose ######
+if ($verbose) {
+    $done_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+    print $out ";Job started $start_time";
+    print $out ";Job done    $done_time";
+}
+
+
+###### close output file ######
+close $out unless ($outputfile eq "");
+
+
+exit(0);
+
+
+########################## subroutine definition ############################
+

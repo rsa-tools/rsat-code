@@ -1,0 +1,186 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib.pl";
+
+
+
+if ($ARGV[0] eq "-h") {
+#### display full help message #####
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	add-orf-function
+
+        v1.0, 1997 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
+	
+USAGE
+        add-orf-function [-i inputfile] [-o outputfile] [-v] 
+        [-col orf_column]
+	
+OPTIONS
+        -h      (must be first argument) display full help message
+        -help   (must be first argument) display options
+	-v	verbose
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+	-col #  Indicate the column containing the ORF identifier.
+                If not provided, all words looking like an ORF identifier
+                are interpreted.
+	
+INPUT FORMAT
+	Any text file containing yeats ORF identifiers.
+	
+OUTPUT FORMAT
+	After each line containing reference to an ORF, a 
+        column with ORF function is added. 
+	
+End_of_help
+  close HELP;
+  exit;
+}
+
+if ($ARGV[0] eq "-help") {
+#### display short help message #####
+  open HELP, "| more";
+  print HELP <<End_short_help;
+add-orf-function options
+----------------
+-h      (must be first argument) display full help message
+-help   (must be first argument) display options
+-i      input file
+-o      output file
+-v      verbose
+-col #  ORF column
+End_short_help
+  close HELP;
+  exit;
+}
+
+$start_time = `date`;
+
+#### initialise parameters ####
+$ORF_function_file = "$RSA/data/yeast/orfs/MIPS.orf_function";
+
+
+#### read arguments ####
+foreach $a (0..$#ARGV) {
+
+  if ($ARGV[$a] eq "-v") {
+    $verbose = 1;
+    
+  } elsif ($ARGV[$a] eq "-i") {
+    $inputfile = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] eq "-o") {
+    $outputfile = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] eq "-col") {
+    $ORF_column = $ARGV[$a+1];
+
+  }
+}
+
+
+### open input file ###
+if ($inputfile ne "") {
+  unless (open(INPUT, $inputfile)) {
+    print "\tcannot open input file\n";
+    print "\ttype add-orf-function -h for help\n";
+    exit;
+  }
+  $in = INPUT;
+} else {
+  $in = STDIN;
+}
+
+
+### open output file ###
+if ($outputfile ne "") {
+  unless (open(OUTPUT, ">$outputfile")) {
+    print "\tcannot open output file\n";
+    print "\ttype add-orf-function -h for help\n";
+    exit;
+  }
+  $out = OUTPUT;
+} else {
+  $out = STDOUT;
+}
+
+
+#### verbose ####
+if ($verbose) {
+  print ";add-orf-function result\n";
+  if ($inputfile ne "") {
+    print ";Input file	$inputfile\n";
+  }
+  if ($outputfile ne "") {
+    print ";Output file	$outputfile\n";
+  }
+}
+
+
+#### open ORF function file ###
+unless (open ORF_FUNCTION, $ORF_function_file) {
+    print "\tcannot open ORF function table $ORF_function_file\n";
+    print "\ttype add-orf-function -h for help\n";
+    exit;
+}
+
+while (<ORF_FUNCTION>) {
+    if (/(\S+)\s+(.+)/) {
+	$ORF_id = $1;
+	$ORF_function = $2;
+	$ORF_function =~ s/ {2,}/; /g;
+	$ORF_function =~ s/\n//;
+    }
+    $function{uc($ORF_id)} =  $ORF_function;
+}
+close  ORF_FUNCTION;
+
+###### execute the command #########
+while ($current_line = <$in>) {
+    $ORF_id = "";
+    $current_line =~ s/\n//;
+    if ($ORF_column > 0) {
+	@columns = split("\t", $current_line);
+	if ($columns[$ORF_column+1] =~ /(y[a-p][rl]\S+)/i) {
+	    $ORF_id = $1;
+	}
+    } elsif ($current_line =~ /(y[a-p][rl]\S+)/i) {
+	$ORF_id = $1;
+    }
+    print $out "$current_line\t";
+    print $out "$function{uc($ORF_id)}\n";
+}
+
+
+###### verbose ######
+if ($verbose) {
+  $done_time = `date`;
+  print ";Job started $start_time";
+  print ";Job done    $done_time";
+}
+
+
+###### close input file ######
+if ($inputfile ne "") {
+  close $in;
+}
+
+###### close output file ######
+if ($outputfile ne "") {
+  close $out;
+}
+
+
+exit(0);
+
+
+########################## subtroutine definition ############################
+

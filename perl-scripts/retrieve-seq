@@ -1,0 +1,135 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib.pl";
+
+
+
+### Initialisation ###
+$format = "raw";
+$line_width = 0;
+
+
+### read arguments ###
+for $a (0..$#ARGV) {
+  if ($ARGV[$a] eq "-c") {
+    $rev_compl = 1;
+    
+  } elsif ($ARGV[$a] eq "-v") {
+    $verbose = 1;
+
+  } elsif ($ARGV[$a] eq "-format") {
+    $format = $ARGV[$a+1];
+
+  } elsif ($ARGV[$a] eq "-id") {
+      $id = $ARGV[$a+1];
+
+  } elsif (($ARGV[$a] eq "-lw") && (&IsNatural($ARGV[$a+1]))){
+      $line_width = $ARGV[$a+1];
+
+  }
+}
+
+$position = "$ARGV[$#ARGV-2] $ARGV[$#ARGV-1] $ARGV[$#ARGV]";
+
+if ($position =~ /^(chr)*(\w+)(.raw)*\s+(-{0,1}\d+)\s*(.*)/) {
+  $chromosome = $2;
+  $startposition = $4;
+  $therest = $5;
+  if ($therest =~ /^(\d+)/) {
+    $endposition = $1;
+  } else {
+    $endposition = $startposition;
+  }
+} else {
+  print "Usage: retrieve-seq #chromosome #startposition [#endposition]\n";
+  exit;
+}
+
+
+### check parameter values ###
+if ($chromosome =~ /[IVX]+/i) {
+    $chromosome = $arab{uc($chromosome)};
+}
+
+if (($chromosome < 1) || ($chromosome > 16)) {
+  print "First argument (chromosome) should be comprised between 1 and 16.\n";
+  exit;
+}
+	
+if ($startposition < 1) {
+  $startposition = 1;
+}
+
+if ($endposition < 1) {
+  $endposition = 1;
+}
+### verbose ###
+if ($verbose) {
+  print "retrieve-seq
+	chromosome	${chromosome}
+	start position	${startposition}
+	end position	${endposition}
+	
+";
+}
+
+### if the first coord is higher than the second, the reverse complement 
+### will be extracted
+if ($startposition > $endposition) {
+  if ($verbose) {
+    print "You entered a start position bigger than the end position.\n";
+  }
+  $temp = $startposition;
+  $startposition = $endposition;
+  $endposition = $temp;
+  $rev_compl = 1;
+}
+
+### extract the sequence ###
+$chromosome_file = $latin{$chromosome};
+$chromosome_sequence = "";
+open(SEQ_FILE, "$RSA/data/yeast/sequences/$chromosome_file");
+while(<SEQ_FILE>) {
+  $chromosome_sequence .= $_;
+}
+$chromosome_sequence =~ s/\s//g;
+$requested_sequence = substr($chromosome_sequence, $startposition - 1, $endposition - $startposition + 1);
+
+if ($rev_compl) {
+  &ComplementSegment;
+  if ($verbose) {
+    print "This is the reverse complement of the sequence in the database.\n\n";
+  }
+}
+
+
+
+### print the output ###
+&PrintNextSequence(STDOUT, $format, $line_width,$requested_sequence, $id);
+#if ($format eq "IG") {
+#  print "; retrieve-seq result
+#; sequence from the genome of Saccharomyces cerevisiae
+#; coordinates $chromosome $startposition $endposition
+#${chromosome}_${startposition}_${endposition}
+#$requested_sequence
+#1
+#";
+
+#} else {
+#  print "$requested_sequence\n";
+#xs}
+
+
+sub ComplementSegment {
+  $complement = reverse $requested_sequence;
+  $complement =~ tr/a-z/A-Z/;
+  $complement =~ s/A/t/g;
+  $complement =~ s/T/a/g;
+  $complement =~ s/C/g/g;
+  $complement =~ s/G/c/g;
+  $complement =~ tr/a-z/A-Z/;
+  $requested_sequence = $complement;
+}# ComplementPattern
+

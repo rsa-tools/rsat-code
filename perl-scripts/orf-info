@@ -1,0 +1,170 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib.pl";
+
+
+$start_time = $date = `date '+%d/%m/%y %H:%M:%S %Z'`;
+
+if ($ARGV[0] eq "-h") {
+  open HELP, "| more ";
+  print HELP "
+USAGE
+	orf-info -q query
+	orf-info -q query1 -q query2 -q query3 ...
+	orf-info -i query_file
+
+	returns the information about ORFS from the yeast Saccharomyces 
+	cerevisiae matching the query.
+
+QUERY
+	query can be a ORF identifier 
+		ex: orf-info YML115C
+	or a locus name
+		ex: orf-info arg81
+		
+	Uncompletely specified queries can be entered with *, but in ths case 
+	should be embraced in quotes:
+		ex: orf-info 'arg*'
+		ex: orf-info '*50*'
+		
+	The search is case insensitive.
+	
+SYNONYMS
+	It often happens that a yeast gene bears several names. 
+	orf-info will look for all synonyms of the query.
+		ex: orf-info nil1 
+		will provide the information about its synonym GAT1.
+
+WEB VERSION
+	http://copan.cifn.unam.mx/~yeast/
+
+";
+  close HELP;
+  exit;
+}
+
+if ($ARGV[0] eq "-help") {
+#### display short help message #####
+  open HELP, "| more";
+  print HELP <<End_short_help;
+orf-info options
+----------------
+-h      (must be first argument) display full help message
+-help   (must be first argument) display options
+-i $	query file
+-o      output file
+-v      verbose
+-q $	query. can be reiterated within the same command line
+End_short_help
+  close HELP;
+  exit;
+}
+
+
+#### initialise parameters ####
+$orf_col = 0;
+$locus_col = 2;
+
+#### read arguments ####
+foreach $a (0..$#ARGV) {
+    ### verbose ###
+    if ($ARGV[$a] eq "-v") {
+	$verbose = 1;
+
+    ### input file ###
+    } elsif ($ARGV[$a] eq "-i") {
+	$inputfile = $ARGV[$a+1];
+
+    ### query ###
+    } elsif ($ARGV[$a] eq "-q") {
+	push(@query_list, $ARGV[$a+1]);
+
+    ### output file ###
+    } elsif ($ARGV[$a] eq "-o") {
+	$outputfile = $ARGV[$a+1];
+
+    }
+}
+
+
+### open output file ###
+$out = &OpenOutputFile($outputfile);
+
+#### $verbose #####
+if ($verbose) {
+    print $out ";orf-info result\n";
+    if ($inputfile ne "") {
+	print $out ";Query file	$inputfile\n";
+    }
+    if ($outputfile ne "") {
+	print $out ";Output file	$outputfile\n";
+    }
+}
+
+
+
+#### read queries file ######
+if (($inputfile ne "") || ($#ARGV == -1)) {
+    $in = &OpenInputFile($inputfile);
+    while (<$in>) {
+	next if (/^;/);
+	next unless (/\S/);
+	if  (/^\s*(\S+)/) {
+	    push(@query_list, $1);
+	}
+    }
+    close $in if ($inputfile ne "");
+} elsif ($#query_list == -1) {
+    @query_list = $ARGV[0];
+}
+
+
+
+### read ORF position file ####
+&ReadOrfPositions;
+
+#### read synonym file ###
+&ReadSynonyms;
+
+
+
+#### search orf info for all queries ####
+foreach $orf_query (@query_list) {
+    $orf_query =~ s/\*/\.\*/g;
+    
+    $found = 0;
+    if ($orf_info{$orf_query}) {
+	$found = 1;
+	print $out $orf_info{$orf_query};
+    } else {
+	foreach $key (keys %orf_id) {
+	    if ($key =~ /^$orf_query$/i) {
+		$found = 1;
+		$orf_id = $orf_id{$key};
+		print $out $orf_info{$orf_id};
+	    }
+	}
+    }
+
+    unless ($found) {
+	print $out "; WARNING! $orf_query not found\n";
+    }
+
+}
+
+
+if ($verbose) {
+    $done_time = $date = `date '+%d/%m/%y %H:%M:%S %Z'`;
+    print $out ";Job started $start_time";
+    print $out ";Job done    $done_time";
+}
+
+###### close output file ######
+close $out unless ($outputfile eq "");
+
+
+exit(0);
+
+########################## subroutine definition ############################

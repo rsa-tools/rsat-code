@@ -1,0 +1,658 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib.pl";
+
+# for more info type:
+#            dna-pattern -help
+#
+# help content at the end of this file
+
+$start_date = `date`;
+
+#### init variables ####
+$strands_to_search = "DR";
+$in_format = "ig";
+#$search_type = "IUPAC";
+$search_type = "regexp";
+
+
+#### read arguments ####
+
+if ($ARGV[0] eq "-h") {
+    &Help;
+} elsif  ($ARGV[0] eq "-help") {
+    &ShortHelp;
+}
+
+foreach $a (0..$#ARGV) {
+  if ($ARGV[$a] eq "-v") {
+    $verbose = 1;
+    
+  } elsif ($ARGV[$a] =~ /^-ori/) {
+    $origin = $ARGV[$a+1];
+    
+  } elsif (($ARGV[$a] eq "-subst") && (&IsNatural($ARGV[$a+1]))){
+    $allowed_subst = $ARGV[$a+1];
+    if ($allowed_subst > 0) {
+	$search_type = "IUPAC";
+    }
+    
+  } elsif ($ARGV[$a] eq "-o") {
+    $outputfile = $ARGV[$a+1];
+    
+  } elsif ($ARGV[$a] eq "-id") {
+    # read identifier
+    if ($ARGV[$a+1] =~ /(\S+)/) {
+      $pattern_id = ($1);
+    }
+    
+  } elsif ($ARGV[$a] eq "-p") {
+    # directly read pattern sequence
+    $patterns[0] = $ARGV[$a+1];
+    
+  } elsif ($ARGV[$a] eq "-pl") {
+    #read name of file containing the list of patterns and open it
+    if ($ARGV[$a+1] =~ /(\S+)/) {
+      $pattern_file = $1;
+    } 
+    
+  } elsif ($ARGV[$a] eq "-i") {
+    # read input file name
+    $inputfile = $ARGV[$a+1];
+    
+  } elsif ($ARGV[$a] eq "-format") {
+    # read input format
+    $in_format = lc($ARGV[$a+1]);
+    
+  } elsif (($ARGV[$a] eq "-D") ||($ARGV[$a] eq "-W") || ($ARGV[$a] eq "-1str")) {
+    $strands_to_search = "D";
+    
+  } elsif (($ARGV[$a] eq "-R") ||($ARGV[$a] eq "-C")) {
+    $strands_to_search = "R";
+    
+  } elsif (($ARGV[$a] eq "-DR") || 
+	   ($ARGV[$a] eq "-RD") ||
+	   ($ARGV[$a] eq "-CW") ||
+	   ($ARGV[$a] eq "-CW") ||
+	   ($ARGV[$a] eq "2str")
+	  ) {
+    $strands_to_search = "DR";
+    
+  } elsif ($ARGV[$a] eq "-c") {
+    $count_matches = 1;
+    
+  } elsif ($ARGV[$a] eq "-th") {
+    $threshold = $ARGV[$a+1];
+    
+  } elsif ($ARGV[$a] eq "-ct") {
+    $count_matches = 1;
+    $sum_only = 1;
+    
+  } elsif ($ARGV[$a] eq "-noid") {
+    $noid = 1;
+    
+  } elsif ($ARGV[$a] eq "-noov") {
+    $no_overlap = 1;
+    
+  } elsif (($ARGV[$a] eq "-N") && (&IsNatural($ARGV[$a+1]))) {
+    $left_neighborhood = $ARGV[$a+1];
+    $right_neighborhood = $ARGV[$a+1];
+    
+  } elsif (($ARGV[$a] eq "-NL") && (&IsNatural($ARGV[$a+1]))) {
+    $left_neighborhood = $ARGV[$a+1];
+    
+  } elsif (($ARGV[$a] eq "-NR") && (&IsNatural($ARGV[$a+1]))) {
+    $right_neighborhood = $ARGV[$a+1];
+    
+  } elsif (($ARGV[$a] eq "-sc") && (&IsNatural($ARGV[$a+1])) && ($ARGV[$a+1] > 1)) {
+    $score_column = $ARGV[$a+1];
+
+  }
+}
+
+
+if ($HelpRequested) {
+  &Help;
+  exit;
+}
+
+##############################
+### check parameter values ###
+##############################
+
+#### check allowed substitutions ####
+unless (($allowed_subst eq "") || (&IsNatural($allowed_subst))) {
+  print "	Error: invalid number of allowed substitutions.\n";
+  print "	Type dna-pattern -help for more info.\n";
+  exit;
+}
+
+### check input format 
+&CheckInputSeqFormat($in_format);
+
+
+
+#### Patterns ####
+if ($pattern_file eq "") {
+  ### pattern specified on the command line
+  unless ($patterns[0] =~ /\S/) {
+    die "Error: you did not specify the pattern\n";
+  }
+  if ($pattern_id ne "") {
+    $pattern_id{$patterns[0]} = $pattern_id;
+  } else {
+    $pattern_id{$patterns[0]} = $patterns[0];
+  }
+} else {
+  ### read patterns from a file
+  open PATTERNS, $pattern_file || die "Error: cannot open pattern file";
+  while (<PATTERNS>) {
+    next if (/^;/); #comment lines are ignored    
+    chomp;
+    @fields = split, /\t/;
+    next unless ($fields[0] =~ /\S/);
+    $pattern = $fields[0];
+    push @patterns, $pattern;
+    if (($noid) || ($fields[1] eq "")) {
+      $pattern_id{$pattern} = $pattern;
+    } else {
+      $pattern_id{$pattern} = $fields[1];		
+    }
+    if ($score_column >= 1) {
+      $score{$pattern} = $fields[$score_column - 1];
+    }
+  }
+  close PATTERNS;
+}
+
+### open output file ###
+if ($outputfile ne "") {
+  unless (open(OUTPUT, ">$outputfile")) {
+    print "\tcannot open output file\n";
+    print "\ttype seq_oligofreq -h for help\n";
+    exit;
+  }
+  $out = OUTPUT;
+} else {
+  $out = STDOUT;
+}
+
+
+#### verbose ####
+if ($verbose) {
+  print $out ";dna-pattern";
+  foreach $a (@ARGV) {
+    print $out " $a";
+  }
+  print $out "\n";
+  print $out ";Input file	$inputfile\n" unless ($inputfile eq "");
+  print $out ";Input format	$in_format\n";
+  print $out ";Output file	$outputfile\n" unless ($outputfile eq "");
+  print $out ";Pattern file	$pattern_file\n" unless ($pattern_file eq "");
+  print $out ";Search method	$search_type\n";
+  print $out ";\n";
+  
+  if ($count_matches) {
+    print $out ";Seq_ID\tId\tPattern\tMatches\n";
+  } else {
+    print $out ";Id";
+    print $out "\tStrand";
+    print $out "\tPattern";
+    print $out "\tSeq_ID";
+    print $out "\tStart";
+    print $out "\tEnd";
+    print $out "\tMatching_word";
+    print $out "\tScore";
+    print $out "\n";
+  }
+}
+
+
+#### search ###
+foreach $pattern (@patterns) {
+  $pattern_id = $pattern_id{$pattern};
+  #    $pattern =~ tr/a-z/A-Z/;
+  $pattern_length = length($pattern);
+  $sum_match_count = 0;
+  $D_regular_pattern = &IUPAC_to_regular($pattern);
+  $R_regular_pattern = &ReverseComplement($D_regular_pattern);
+  
+  $RC_pattern = &ReverseComplement($pattern);
+  
+  ### open sequence file ###
+  $in = &OpenInputFile($inputfile);
+  
+  ### read input sequences
+  while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format)) &&
+	 (($current_seq ne "") || ($current_id ne ""))) {
+    
+    ### remove tabs and blank spaces ###    
+    $current_seq = &FoldSequence($current_seq,0);
+    
+    $sequence_length = length($current_seq);
+    
+    if (($origin <  0) || ($origin eq "-0")) {
+      $orig_pos = $sequence_length + $origin + 1; 
+    } else {
+      $orig_pos = $origin;
+    }
+    
+    $match_count = 0;
+    ### palindromic patterns are searched only  on one strand 
+    if (($pattern eq ReverseComplement($pattern))&&($strands_to_search eq "DR")) {
+      $regular_pattern = $D_regular_pattern;
+      $strand = "DR";
+      if ($search_type eq "regexp") {
+	&RegExpSearch;
+      } else {
+	&IUPACsearch;
+      }
+    } else { 
+      ### search on direct strand
+      if ($strands_to_search =~ /D/) {
+	$regular_pattern = $D_regular_pattern;
+	$strand = "D";
+	if ($search_type eq "regexp") {
+	  &RegExpSearch;
+	} else {
+	  &IUPACsearch;
+	}
+      }
+      ### search on reverse complement strand
+      if ($strands_to_search =~ /R/) {
+	$regular_pattern = $R_regular_pattern;
+	$strand = "R";
+	if ($search_type eq "regexp") {
+	  &RegExpSearch;
+	} else {
+	  &IUPACsearch;
+	}
+      }
+    }
+    $sum_match_count += $match_count;
+    
+    ### return match count if requested
+    if (($count_matches) && (!$sum_only) && ($match_count >= $threshold)){
+      print $out "$current_id\t";
+      print $out "$pattern_id\t";
+      print $out "$pattern\t";
+      print $out "$match_count\n";
+    }
+  }
+  if ($count_matches) {
+    print $out ";$pattern_id\t$pattern\ttotal\t$sum_match_count\n";
+  } 
+}
+
+if ($verbose) {
+  print $out ";Job started ", $start_date;
+  print $out ";Job done    ", `date`;
+}
+
+if ($outputfile ne "") {
+  close ($out);
+}
+
+
+############################# subroutine definition ############################
+
+
+
+###### search with regular expression ######
+sub RegExpSearch {
+    local(%pat_hash) = Substitute($regular_pattern,$allowed_subst,0);
+    @keys = sort {($pat_hash{$a} > $pat_hash{$b}) or (($pat_hash{$a} == $pat_hash{$b}) and (lc($a) cmp lc($b)))} keys %pat_hash;
+    foreach $reg_pat (@keys) {
+      $seq_to_crop = $current_seq;
+      while ($seq_to_crop =~ /($reg_pat)(.*)/i) {
+	$match_count++;
+	if ($strand eq "DR") {
+	    $match_count++;
+	}
+	$matching_word = $1;
+	$matching_word_length = length($matching_word);
+	$remaining_seq = $2;
+	$offset = $matching_word_length + length($remaining_seq)-1;
+	unless ($count_matches) {
+	  if ($strand eq "R") {
+	    $matching_word = &ReverseComplement($matching_word);
+	    $up_neighborhood = $right_neighborhood;
+	    $down_neighborhood = $left_neighborhood;
+	  } else {
+	    $up_neighborhood = $left_neighborhood;
+	    $down_neighborhood = $right_neighborhood;
+  	  }
+	  if (($left_neighborhood) || ($right_neighborhood)){
+	    $up_neighb = substr($current_seq,-$offset-$up_neighborhood-1,$up_neighborhood);
+	    $down_neighb = substr($current_seq,-$offset+$matching_word_length-1,$down_neighborhood);
+	    if ($strand eq "R") {
+	      $up_neighb = &ReverseComplement($up_neighb);
+	      $down_neighb = &ReverseComplement($down_neighb);
+	      $matching_word = lc($down_neighb).uc($matching_word).lc($up_neighb);
+	    } else {
+	      $matching_word = lc($up_neighb).uc($matching_word).lc($down_neighb);
+	    }
+	  }
+	  $start_pos = $sequence_length - $offset - $orig_pos;
+	  $end_pos = $start_pos + $matching_word_length - 1;
+	  $mismatches = $pat_hash{$reg_pat};
+	  &PrintMatch;
+	}
+	if ($no_overlap) {
+	  $seq_to_crop = $remaining_seq;
+	} else {
+	  $seq_to_crop = substr($seq_to_crop,-$offset);
+	}
+      }
+  }
+} # RegExpSearch
+
+###### search a IUPAC pattern ######
+sub IUPACsearch {
+  $offset = 0;
+  $match_pos = 0;
+  
+  if ($strand eq "R") {
+    $IUPAC_pattern = &ExpandSeq($RC_pattern);
+  } else {
+    $IUPAC_pattern = &ExpandSeq($pattern);
+  }
+  $pattern_len = length($IUPAC_pattern);
+  
+  do {
+    ($match_pos,$matching_word,$mismatches) = &NextMatch($current_seq, $IUPAC_pattern, $allowed_subst, $offset);
+    unless ($match_pos == -1) {
+      $match_count++;
+      if ($strand eq "DR") {
+	$match_count++;
+      }
+      
+      unless ($count_matches) {
+	if ($strand eq "R") {
+	  $matching_word = &ReverseComplement($matching_word);
+	} 
+	$start_pos = $match_pos -$orig_pos;
+	$end_pos = $start_pos + $pattern_len -1;
+	&PrintMatch;
+      }
+      if ($no_overlap) {
+	$offset = $match_pos + $pattern_len;
+      } else {
+	$offset = $match_pos;
+      }
+    } ###unless
+  } until ($match_pos == -1);
+} # IUPACsearch
+
+
+sub PrintMatch {
+	if ($score_column > 0) {
+		$score = $score{$pattern};
+	} else {
+		$match_length = length($matching_word);
+		$score = ($match_length - $mismatches)/$match_length;
+	}
+    print $out "$pattern_id";
+    print $out "\t$strand";
+    print $out "\t$pattern";
+    print $out "\t$current_id";
+    print $out "\t$start_pos";
+    print $out "\t$end_pos";
+    print $out "\t$matching_word";
+    printf $out "\t%.2f", $score;
+    print $out "\n";
+}
+
+############ HELP message ####################
+sub Help	{
+open HELP, "|more";
+print HELP "
+NAME
+	dna-pattern
+	perl script v1.1 by Jacques van Helden, 30 July 1997.
+
+	Searches all occurrences of a pattern within DNA sequences.
+        The pattern can be entered as a simple nucleotide sequence, 
+        but can also include degenerate nucleotide codes, or regular 
+        expressions. 
+
+USAGE
+	(get help)
+	dna-pattern -h
+
+	(directly enter the sequence to search)
+	dna-pattern  -i sequencefile -format seq_format -p pattern [-id identifier] 
+			[-D|-R|-DR] [-c|-ct] [-noov]
+			[-N neighborhood] [-v]
+
+	(read a list of patterns from a file)
+	dna-pattern -i sequencefile -format seq_format -pl pattern_file 
+   			[-D|-R|-DR] [-c|-ct]  [-noov] 
+   			[-N neighborhood] [-v]
+
+ARGUMENTS
+	-h	help (displays the current message)
+	-help	short help message
+	-i	input sequence file. This file contains the sequences where the pattern(s)
+		will be searched for. 
+		Various format are accepted
+		If omitted, standard input (eg keyboard) will be used. 
+		This allows to use the program within a pipe.
+	-format	input sequence format. The accepted formats are
+		fasta	       FastA format
+		IG	       IntelliGenetics format
+		raw	       a single sequence in a file
+		multi	       each new line is a new sequence
+		filelist       a list of files containing each 
+			       a single raw sequence
+	-o	output file.
+		If omitted, standard output (eg screen) will be used. 
+		This allows to use the program within a pipe.
+	-p	pattern entered directly after -p. 
+		Alternatively use -pl.
+	-pl	name of the file containing the patterns to search .
+		each line of this file should contain an identifier and the 
+		corresponding pattern, separated by a single tab.
+		Alternatively use -p.
+	-subst #
+        allow # substitutions. 
+	-sc #	
+		score column
+		the #th column of the pattern file contains a number indicating 
+		the score for a match of this pattern. This option allows to 
+		weight the matches according to a user-defined scheme.
+	-noid	
+		do not search pattern identifier in the second column of 
+		pattern file. instead the id takes the same content as the
+		pattern sequence.
+	-noov	
+		prevents detection of overlapping pattern
+	-DR	search matches on both strands (direct and reverse complement)
+	-D	search matches only on the direct strand.
+	-R 	search matches only on the reverse complement strand.
+	-id	pattern identifier (one word). 
+		Use this option combined with -p.
+	-c	return the count of matches rather than the list of
+		positions and matching words. 
+		If a list of sequence files is given (-sl), the count of 
+                matches within each file is returned, as well as the 
+                cumulative count.
+        -th #   Threshold. 
+                Return match count only for sequences with >= # matches.
+                Only valid in combination with -c.
+	-ct	same as c, except that it returns the sum of matches in all 
+		the files of the sequence file list, instead of the count 
+		within each separate file. 
+	-N #	return matching sequences with # flanking nucleotides
+	-NL #	return matching sequences with # left flanking nucleotides
+	-NR #	return matching sequences with # right flanking nucleotides
+	-v	verbose.
+        -origin #
+                define # as the origin for the calculation of positions.
+                -origin -0 defines the end of each sequence as the 
+                origin. The matching positions are then negative values, 
+                providing the distance between the match and the end of the 
+                sequence.
+
+PATTERN FORMATS
+	PATTERN SEQUENCE FORMAT
+	The standard degenerate nucleotide code of the IUPAC-IUB commission 
+	is supported (see http://www.chem.qmw.ac.uk/iupac/misc/naseq.html for 
+	complete information).
+	The pattern sequence should thus only contain the following characters:
+		A			(Adenine)
+		C			(Cytosine)
+		G			(Guanine)
+		T			(Thymine)
+		R	= A or G        (puRines)
+		Y	= C or T        (pYrimidines)
+		W	= A or T        (Weak hydrogen bonding)
+		S	= G or C        (Strong hydrogen bonding)
+		M	= A or C        (aMino group at common position)
+		K	= G or T        (Keto group at common position)
+		H	= A, C or T     (not G)
+		B	= G, C or T     (not A)
+		V	= G, A, C       (not T)
+		D	= G, A or T     (not C)
+		N	= G, A, C or T  (aNy)
+	Upper and lower case are considered equivalent.
+	
+	Patterns can be either entered directly by the user, or listed in a 
+	file.
+
+        The pattern can also contain regular expression elements:
+        - GAT\[TA\]AG means \"GATAAG or GATTAG\" (equivalent to GATWAG).
+        - CGGN{11}CCG means CGG followed by 10 N followed by CCG.
+        - GATAAGN{0,30}GATAAG means two GATAAG spaced by 0 to 30 
+          nucleotides.
+
+	DIRECT PATTERN INPUT
+	Type the -p option directly followed by a pattern sequence. 
+	An optional identifier can be further entered after the -id option.
+
+	PATTERN FILE 
+	Each line contains a single pattern, for which two informations can 
+	be provided: 
+	- the pattern sequence (mandatory)
+	- a pattern identifier (optional)
+	Identifier and sequence must be separated by a single tab 
+	character (\\t). 
+
+SEQUENCE FILE FORMAT
+        3 formats are supported:
+        - raw
+        - filelist
+        - IG (intelligenetics)
+
+	raw	The input file must contain raw sequences without any 
+                comment or other text. Tabs (\\t), blank spaces and newline 
+                characters (\\n) are accepted (they will be automatically 
+                removed before analysis). The sequence must be terminated by 
+                a newline character.
+	
+	filelist	
+		file list. Each line of the input file contains the 
+		name of a file containing a single sequence in raw format.
+
+	IG	IntelliGenetics format. 	
+ 		The first non-comment line must be the sequence identifier 
+		(a single word without spaces). 
+		The sequence follows the identifier line identifier. It can 
+                include spaces, tabs or newlines, that will be removed for 
+                sequence analysis.
+                The end of one sequence is indicated by termination character:
+		1 for linear, 2 for circular sequences. 
+		A single file may contain several sequences. 
+
+		EXAMPLE of IG suite:
+
+		; sequence of the region upstream from NIL1
+	        ; Locus GAT1
+ 	        ; ORF YFL021W  coord:   6 95964 97496
+ 	        ; upstream region size: 100
+ 	        ; upstream region coord:        6 95864 95963
+ 	        GAT1
+ 	        ACAGAGCAACAATAATAACAGCACTATGAGTCGCACACTT
+  	        GCGGTGCCCGGCCCAGCCACATATATATAGGTGTGTGCCA
+  	        CTCCCGGCCCCGGTATTAGC
+  	        1
+ 	        ; sequence of the region upstream from PUT4
+                ; Locus PUT4
+                ; ORF YOR348C  coord:   15 988773 986890
+                ; upstream region size: 100
+                ; upstream region coord:        15 988873 988774
+                PUT4
+                GGGTTTGTGTTCCTCTTCCTTTCCTTTTTTTTTCTCTCTT
+                CCCTTCCAGTTTCTTTTATTCTTTGCTGTTTCGAAGAATC
+                ACACCATCAATGAATAAATC
+                1	
+
+OUTPUT
+	The output file contains columns separated by tabs (\\t), 
+	providing respectively:
+	- query pattern identifier word
+	- match found on direct (D) or reverse complement (R) strand
+	- pattern sequence
+	- sequence file name
+	- start position of the match
+	- end position of the match
+	- matching sequence
+	- the matching score
+
+	If the -c option is entered, output file provides :
+	- query pattern identifier word
+	- query pattern sequence
+	- sequence file name
+	- number of matches for the current pattern in the current file
+
+EXAMPLES
+	dna-pattern -i GATA -p GATWA -s $RSAGENOME/chr1.raw -c
+	
+	will count all occurences of the strings 'GATAA' and 'GATTA' present 
+	in the file $RSAGENOME/chr1.raw.
+WEB VERSION
+	http://www.cifn.unam.mx/Computational_Biology/yeast/dna-pattern.html
+
+
+";
+  close HELP;
+  exit(0);
+}
+
+
+sub ShortHelp	{
+open HELP, "|more";
+print HELP "
+dna-pattern options
+-------------------
+-h	complete help message
+-help   short help message
+-p	pattern
+-pl	pattern list file
+-s	sequence file. 
+-subst  allowed substitutions
+-sc	score column
+-o	output file.
+-format	input format (raw, filelist or IG)
+-id	pattern identifier (one word). 
+-noid	use pattern sequence as id
+-noov	prevent detection of overlapping pattern
+-DR	search matches on both strands (default)
+-D	search matches on the Direct strand only
+-R 	search matches on the Reverse complementary strand only
+-c	return the count of matches for each pattern in each sequence
+-th     threshold
+-ct	return total count in all sequences
+-N #	return matching sequences with # flanking nucleotides
+-NL #	return matching sequences with # left flanking nucleotides
+-NR #	return matching sequences with # right flanking nucleotides
+-v	verbose
+-origin origin (position 0)
+";
+  close HELP;
+  exit(0);
+}
+
+

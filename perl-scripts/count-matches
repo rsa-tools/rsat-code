@@ -1,0 +1,71 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib.pl";
+
+
+
+if ($ARGV[0] eq "-h") {
+#### display full help message #####
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	count-matches
+
+        1998 by Jacques van Helden (jacques\@ucmb.ulb.ac.be)
+	
+USAGE
+        count-matches seq1 seq2
+
+DESCRIPTION
+	
+OPTIONS
+        -h      (must be first argument) display full help message
+        -help   (must be first argument) display options
+	-v	verbose
+		
+	
+INPUT FORMAT
+	seq1 and seq2 must be DNA sequence (not proteic). 
+	IUPAC degenerate code is accepted in seq1 as well as seq2.
+
+EXAMPLES
+       count-matches GATAAT GATWAG
+       should return the value 5
+	
+End_of_help
+  close HELP;
+  exit;
+}
+
+if ($ARGV[0] eq "-help") {
+#### display short help message #####
+  open HELP, "| more";
+  print HELP <<End_short_help;
+count-matches options
+----------------
+usage:
+	count-matches seq1 seq2
+
+-h      (must be first argument) display full help message
+-help   (must be first argument) display options
+End_short_help
+  close HELP;
+  exit;
+}
+
+#### initialise parameters ####
+$start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+
+
+#### read arguments ####
+$seq1 = $ARGV[0];
+$seq2 = $ARGV[1];
+
+$matches = &CountMatches($seq1,$seq2);
+
+print "$matches\n";
+
+exit(0);
+

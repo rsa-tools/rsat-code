@@ -1,0 +1,231 @@
+#!/usr/bin/perl
+#use strict;
+if ($0 =~ /([^(\/)]+)$/) {
+  push (@INC, "$`lib/");
+}
+require "RSA.lib.pl";
+require "RSA.classes.pl";
+require "RSA.seq.lib.pl";
+
+  #### initialise parameters ####
+my $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+
+local $seq_format = "fasta";	### default sequence format
+local $inputfile = "";
+local $outputfile = "";
+
+local $verbose = 0;
+local $hyperverbose = 0;
+local $both_strands = 1; ### by default, consider both direct and rev. compl.
+	
+my $seq_count = 0;
+
+&ReadArguments;
+
+#### check argument values ####
+
+
+### open output file ###
+my $out = &OpenOutputFile($outputfile);
+
+##### read sequences #####
+my $in = &OpenInputFile($inputfile);
+while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $seq_format)) &&
+       (($current_seq) || ($current_id))) {
+  $seq_count++;
+  $seq[$seq_count] = new RSA::sequence(
+				       id=>$current_id, 
+				       sequence=>$current_seq,
+				       description=>$comments[0],
+				       type=>"dna"
+				      );
+  if ($hyperverbose) {
+    print STDERR "; $seq_count";
+    print STDERR "\t", $seq[$seq_count]->get_id();
+    print STDERR "\t", $seq[$seq_count]->get_length();
+    print STDERR "\n";
+  }
+  
+}
+close $in if ($inputfile);
+
+#### verbose ####
+if ($verbose) {
+  print $out "; seq-distances ";
+  &PrintArguments($out);
+  printf $out "; %13s\t%s\n", "seq format", $seq_format;
+  printf $out "; %13s\t%s\n", "input file", $inputfile if ($inputfile);
+  printf $out "; %13s\t%s\n", "output file", $outputfile if ($outputfile);
+  if ($both_strands) {
+    printf $out "; %13s\t%d\n", "strands", 2;
+  } else {
+    printf $out "; %13s\t%d\n", "strands", 1;
+  }
+  printf $out "; %13s\t%d\n", "nb seq", $seq_count;
+  if ($seq_count <= 100) {
+    for $s (1..$seq_count) {
+      printf $out "; \t%s\t%d\n", $seq[$s]->get_id(), $seq[$s]->get_length();
+    }
+  }
+}
+
+###### execute the command #########
+### calculate distances
+if ($verbose) {
+  print $out ";seq1\tseq2\tdist\n";
+}
+for my $s1 (1..$seq_count-1) {
+  for my $s2 ($s1+1..$seq_count) {
+
+    if ($hyperverbose) {
+      print STDERR $s1;
+      print STDERR "\t", $s2;
+      print STDERR "\t", $seq[$s1]->get_id();
+      print STDERR "\t", $seq[$s2]->get_id();
+    } 
+
+    ### calculate edit distance
+    my $distance = &EditDistance(
+				 $seq[$s1]->get_sequence(),
+				   $seq[$s2]->get_sequence()
+				  );
+
+    ### edit distance with reverse complement
+    if ($both_strands) {
+      my $rc_dist = &EditDistance(
+				  $seq[$s1]->get_sequence(),
+				  &ReverseComplement($seq[$s2]->get_sequence())				 );
+      $distance = &min($distance,$rc_dist); 
+    }
+
+    #### print result line
+    print $out $seq[$s1]->get_id();
+    print $out "\t", $seq[$s2]->get_id();
+    print $out "\t", $distance;
+    print $out "\n";
+
+    if ($hyperverbose) {
+      print STDERR "\t$distance";
+      print STDERR "\t", &AlphaDate;
+      print STDERR "\n";
+    }
+  }
+}
+
+
+
+###### print output ######
+
+
+###### verbose ######
+if ($verbose) {
+  my $done_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+  print $out "; Job started $start_time";
+  print $out "; Job done    $done_time";
+}
+
+
+###### close output file ######
+close $out if ($outputfile);
+
+
+exit(0);
+
+########################## subroutine definition ############################
+
+sub PrintHelp {
+  #### display full help message #####
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	seq-distances
+
+        1999 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
+	
+USAGE
+        seq-distances [-i inputfile] [-o outputfile] 
+		[-format seq_format] [-v] [-2str|-1str]
+
+DESCRIPTION
+	
+OPTIONS
+	-h	(must be first argument) display full help message
+	-help	(must be first argument) display options
+	-v	verbose
+	-vv	hyperverbose
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+	-format seq_format
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+	-1str	calculate distance between direct strand only
+	-2str	calculate the min distance between both direct and
+		reverse complement strands (default)
+End_of_help
+  close HELP;
+  exit;
+}
+
+sub PrintOptions {
+#### display short help message #####
+  open HELP, "| more";
+  print HELP <<End_short_help;
+seq-distances options
+---------------------
+-h	(must be first argument) display full help message
+-help	(must be first argument) display options
+-i	input file
+-format seq_format
+-o	output file
+-v	verbose
+-vv	hyperverbose
+End_short_help
+  close HELP;
+  exit;
+}
+
+
+sub ReadArguments {
+#### read arguments ####
+  foreach my $a (0..$#ARGV) {
+    ### verbose ###
+    if ($ARGV[$a] eq "-v") {
+      $verbose = 1;
+    } elsif ($ARGV[$a] eq "-vv") {
+      $verbose = 1;
+      $hyperverbose = 1;
+      
+      ### strands
+    } elsif ($ARGV[$a] eq "-1str") {
+      $both_strands = 0;
+    } elsif ($ARGV[$a] eq "-2str") {
+      $both_strands = 1;
+      
+      ### detailed help
+    } elsif ($ARGV[$a] eq "-h") {
+      &PrintHelp;
+      
+      ### list of options
+    } elsif ($ARGV[0] eq "-help") {
+      &PrintOptions;
+      
+      ### input file ###
+    } elsif ($ARGV[$a] eq "-i") {
+      $inputfile = $ARGV[$a+1];
+      
+      ### sequence format
+    } elsif ($ARGV[$a] eq "-format") {
+      $seq_format = lc($ARGV[$a+1]);
+      die "Error: $seq_format is not supported sequence format\n" 
+	unless $accepted_input_seq{$seq_format};
+      
+      ### output file ###
+    } elsif ($ARGV[$a] eq "-o") {
+      $outputfile = $ARGV[$a+1];
+      
+    }
+  }
+}
+

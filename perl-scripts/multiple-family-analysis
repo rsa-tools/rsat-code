@@ -1,0 +1,628 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+  push (@INC, "$`lib/");
+}
+require "RSA.lib.pl";
+require "RSA_cgi_lib.pl";
+require "RSA.classes.pl";
+
+###read parameters
+if ($#ARGV < 0) {
+  print "Usage : multiple-family-analysis [-calc] [-synt]\n";
+  exit(0);
+}
+foreach $a (0..$#ARGV) {
+  if ($ARGV[$a] =~ /^-synt/) {
+    $synt = 1;
+  } elsif ($ARGV[$a] =~ /^-calc/) {
+    $calc = 1;
+  } elsif ($ARGV[$a] eq "-v") {
+    $verbose = 1;
+  } elsif ($ARGV[$a] =~ /^-transp/) {
+    $transpose = 1;
+  } elsif ($ARGV[$a] =~ /^-th/) {
+    $force{th} = $ARGV[$a+1];
+  } elsif ($ARGV[$a] =~ /^-type/) {
+    $force{type} = $ARGV[$a+1];
+  } elsif ($ARGV[$a] =~ /^-exp/) {
+    $force{exp} = $ARGV[$a+1];
+  }
+}
+
+### read family list
+$family_file = "families";
+open FAM, "$family_file" || die "Error: cannot open family file $family_file\n";
+while (<FAM>) {
+  next if (/^;/);
+  next unless (/\S/);
+  chomp;
+  @fields = split;
+  $family_name = shift @fields;
+  push @families, $family_name;
+  @{$member{$family_name}} = @fields;
+}
+close FAM;
+
+&InitParameters;
+
+if ($verbose) {
+  print "; multiple-family analysis\n";
+  printf "; families     \t%d\n", $#families + 1;
+  printf "; sig threshold\t%.1f\n", $th;
+  printf "; dyad type    \t%s\n", $type;
+  printf "; exp freq     \t%s\n", $exp;
+}
+
+### read gene name and identifiers
+print "; Reading ORF information ...\n" if ($verbose);
+&ReadOrfPositions;
+
+&ReadKnownSites;
+&ReadSiteLibrary;
+
+
+### perform analysis
+&SetFileNames;
+&AnalyzeFamily if $calc;
+&SyntheticTable if ($synt);
+
+if ($verbose) {
+  $done_date = `date`;
+  print ";Job started\t$start_date";
+  print ";Job done\t", `date`;
+}
+exit(0);
+
+sub SetFileNames {
+  $sp = "0-$max_sp";
+  $dyad_options = "-v ";
+  $dyad_options .= "-sort ";
+  $dyad_options .= "-${strand} ";
+  $dyad_options .= "-type $type ";
+  $dyad_options .= "-noov " if ($noov);
+  $dyad_options .= "-l $dyad_element_length ";
+  $dyad_options .= "-thosig $th ";
+  $dyad_options .= "-sp $sp ";
+  if ($exp eq "ncf") {
+    $dyad_options .= "-ncf ";
+    $dyad_options .= "-org $organism ";
+  } elsif ($exp eq "mncf") {
+    $dyad_options .= "-mncf ";
+    $dyad_options .= "-org $organism ";
+  }
+  
+  $dyad_suffix = "_dyads";
+  $dyad_suffix .= "_up${seq_length}";
+  $dyad_suffix .= "_l${dyad_element_length}";
+  $dyad_suffix .= "_sp${sp}";
+  $dyad_suffix .= "_${strand}";
+  $dyad_suffix .= "_${type}";
+  $dyad_suffix .= "_sig${th}";
+  if ($noov) {
+    $dyad_suffix .= "_noov";
+  } else {
+    $dyad_suffix .= "_ov";
+  }
+  if ($exp eq "ncf") {
+    $dyad_suffix .= "_ncf";
+  } elsif ($exp eq "mncf") {
+    $dyad_suffix .= "_mncf";
+  }
+
+  foreach $family_name (@families) {
+    $family{$family_name}->{family_file} = "$family_name/${family_name}.fam";
+    $family{$family_name}->{known_site_file} = "$family_name/${family_name}_known_sites";
+    $family{$family_name}->{seq_file} = "$family_name/${family_name}_up${seq_length}.wc";
+    
+    $family{$family_name}->{oligo_file} =  "${family_name}/oligos_${family_name}/${family_name}_oligos_up${seq_length}_${min_oligo_length}-${max_oligo_length}nt_${strand}_sig${th}";
+    $family{$family_name}->{oligo_file} .= "_noov" if ($noov);
+  $family{$family_name}->{oligo_assembly_file} = $family{$family_name}->{oligo_file}."_contigs";
+    
+    
+    $family{$family_name}->{dyad_file} = "$family_name/dyads_${family_name}/$family_name".$dyad_suffix;
+    $family{$family_name}->{dyad_assembly_file} = $family{$family_name}->{dyad_file}."_contigs";
+  $family{$family_name}->{ft_file} = $family{$family_name}->{dyad_file}.".ft";
+    $family{$family_name}->{fmap_file} = $family{$family_name}->{dyad_file}.".gif";
+    $family{$family_name}->{htmap_file} = $family{$family_name}->{dyad_file}.".html";
+  }  
+}
+
+################### SUBROUTINE DEFINITION ###################"
+
+sub ReadFamily {
+  print "\n; Reading family\t$family_name\n" if ($verbose);
+  unless (-r $family{$family_name}->{family_file}) {
+    die "Error : family $family_name: cannot read family file '$family{$family_name}->{family_file}'\n";
+  }
+  
+  @{$member{$family_name}} = ();
+
+  open FAM, $family{$family_name}->{family_file} || die "Error : cannot read file $family{$family_name}->{family_file}\n" ;
+  while (<FAM>) {
+    next if (/^;/);
+    next unless (/\S/);
+    chomp;
+    @fields = split /\s+/;
+    $query = uc($fields[0]);
+    $id = $orf_id{$query};
+    if ($id eq "") {
+      print STDERR "\t;WARNING ! $query unknown gene name \n";
+    } else {
+      push @{$member{$family_name}}, $id;
+      print "\t$query\t$id\t$preferred_name{$id}\n" if ($verbose);
+    }
+  }
+  close FAM;
+  
+}
+
+sub UpstreamSequences {
+  print "; Generating upstream sequences for family $family_name\n" if (verbose);
+  $dir = "${family_name}/";
+  unless (-d $dir) {
+    mkdir $dir, 0755 || die "Error: cannot create directory $dir\n";
+  }
+  #  unless (-e  $family{$family_name}->{seq_file}) {
+  system "rm -f $family{$family_name}->{seq_file} "; 
+  foreach $id ( @{$member{$family_name}}) {
+    print "\t$id\t$preferred_name{$id}\n" if ($verbose);
+    $command =  "grep -i $id $upstream_sequence_file | replace-string -query '$id' -by '$preferred_name{$id}' >> $family{$family_name}->{seq_file}";
+    system $command;
+  }
+}
+
+
+### oligo-analysis
+sub OligoAnalysis {
+  $dir = "${family_name}/oligos_${family_name}";
+  unless (-d $dir) {
+    mkdir $dir, 0755 || die "Error: cannot create directory $dir\n";
+  }
+  die "Error : cannot read file $family{$family_name}->{seq_file}\n" unless (-r $family{$family_name}->{seq_file});
+  
+  
+  system "echo '' > $family{$family_name}->{oligo_file}";
+  
+  for $oligo_length ($min_oligo_length..$max_oligo_length) {
+    $oligo_options = "-v ";
+    $oligo_options .= "-sort ";
+    $oligo_options .= "-${strand} ";
+    $oligo_options .= "-l $oligo_length ";
+    $oligo_options .= "-thosig $th ";
+    $oligo_options .= "-expfreq $RSA/data/yeast/oligo-frequencies/${oligo_length}nt.non-coding.freq ";
+    $oligo_options .= "-return occ,proba,zscore ";
+    $oligo_options .= "-noov " if ($noov);
+    
+    $oligo_suffix = "_oligos";
+    $oligo_suffix .= "_up${seq_length}";
+    $oligo_suffix .= "_${oligo_length}nt";
+    $oligo_suffix .= "_${strand}";
+    $oligo_suffix .= "_sig${th}";
+    $oligo_suffix .= "_noov" if ($noov);
+    
+    $oligo_file = "$family_name/oligos_${family_name}/$family_name".$oligo_suffix;    
+    $command = "oligo-analysis -i $family{$family_name}->{seq_file} -format $seq_format -o $oligo_file $oligo_options";
+    
+    print "\n$command\n" if ($verbose);
+    system $command;
+    
+    system "cat $oligo_file | grep -v ';' >> $family{$family_name}->{oligo_file}";
+  }
+  ### fragment assembly
+  $fmap_file = $family{$family_name}->{oligo_file}.".gif";
+  $htmap_file = $family{$family_name}->{oligo_file}.".html";
+  
+  $command = "pattern-assembly -i $family{$family_name}->{oligo_file} -sc 7 -${strand} -v -o $family{$family_name}->{oligo_assembly_file} -maxfl 1 -maxpat 200 ";
+  print "\n$command\n" if ($verbose);
+  system $command;
+  
+  ### feature-map for oligo-analysis
+  $origin = $seq_length+1;
+  $command = "dna-pattern -i $family{$family_name}->{seq_file} -format $seq_format -pl $family{$family_name}->{oligo_file} -origin $origin -sc 7 -N 4 ";
+  $command .= " | features-from-dnapat ";
+  $command .= " | feature-map -scalebar -scalestep 50 -legend -from -${seq_length} -to 0 -o $fmap_file -scorethick -htmap > $htmap_file ";
+  
+  print "\n$command\n" if ($verbose);
+  system $command;
+}
+
+### dyad detector
+sub DyadAnalysis {
+  $dir = "${family_name}/dyads_${family_name}";
+  unless (-d $dir) {
+    mkdir $dir, 0755 || die "Error: cannot create directory $dir\n";
+  }
+  die "Error : cannot read file $family{$family_name}->{seq_file}\n" unless (-r $family{$family_name}->{seq_file});
+  $command = "dyad-detector -i $family{$family_name}->{seq_file} -format $seq_format -o $family{$family_name}->{dyad_file} $dyad_options";
+  print "\n$command\n" if ($verbose);
+  system $command;
+  
+  ### fragment assembly
+  $command = "pattern-assembly -v -i $family{$family_name}->{dyad_file} -o $family{$family_name}->{dyad_assembly_file} -$strand -maxfl 2 -sc 7 -maxpat 200 ";
+  print "\n$command\n" if ($verbose);
+  system $command;
+
+  ### feature-maps
+  &DrawFeatureMaps;
+}
+
+### read known known_site for each family
+sub ReadKnownSites {
+  %known_site = ();
+  %known_site_source = ();
+  $known_site_file = "known-consensus";
+  if (-e $known_site_file) {
+    open KNOWN_SITE, $known_site_file;
+    while (<KNOWN_SITE>) {
+      next if (/^;/);
+      next unless (/\S/);
+      chomp;
+      @fields = split "\t";
+      $family_name = $fields[0];
+      $source = $fields[2];
+      $known_site = uc($fields[1]);
+      #$known_site = uc(&compress_pattern($known_site,"n"));
+      $known_site =~ s/N/n/g;
+      push @{$known_site{$family_name}}, $known_site;
+      push @{$known_site_source{$family_name}}, $source;
+    }
+    close KNOWN_SITE;
+  }
+}
+  
+sub ReadSiteLibrary {
+  @site_library = ();
+  $library_file = "known_sites.tab";
+  if (-e $library_file) {
+    open LIBRARY, $library_file;
+    while (<LIBRARY>) {
+      next if (/^;/);
+      next unless (/\S/);
+      chomp;
+      my @fields = split "\t";
+      my $source = $fields[2] || $library_file;
+      my $id = uc($fields[1]);
+      my $sequence = uc($fields[0]);
+      $sequence =~ s/N/n/g;
+      
+      $pattern = RSA::pattern->new(id=>$id,
+				   sequence=>$sequence,
+				   source=>source);
+      push @site_library, $pattern;
+    }
+    close LIBRARY;
+  }
+}
+  
+### build a synthetic table ###
+sub SyntheticTable {
+  print "; Generating synthetic table\n" if ($verbose);
+  $dir = "synthetic_tables";
+  unless (-d $dir) {
+    mkdir $dir, 0755 || die "Error: cannot create directory $dir\n";
+  }  
+  
+  ### synthesize the results of all families into a single file
+  
+  ### headers
+  $row = 0;
+  $row{family} = $row++;
+  $row{genes} = $row++;
+  $row{known} = $row++;
+  $row{oligo} = $row++;
+  #$row{oligo_rev} = $row++;
+  #$row{oligo_sc} = $row++;
+  $row{dyad} = $row++;
+  #$row{dyad_rev} = $row++;
+  #$row{dyad_sc} = $row++;
+  while (($header,$row) = each %row) {
+    $table[$row][0] = "<B>$header</B>";
+  }
+  $col = 0;
+
+  #$table[$r][$c] = "family";
+  #$table[$r][$c] = "genes";
+  #$table[$r][$c] = "known sites (experimental)";
+  #$table[$r][$c] = "oligo";
+  #$table[$r][$c] = "reverse oligo";
+  #$table[$r][$c] = "oligo score";
+  #$table[$r][$c] = "dyad";
+  #$table[$r][$c] = "reverse dyad";
+  #$table[$r][$c] = "dyad score";
+
+  foreach $family_name (@families) {
+    $col++;
+    &ReadFamily;
+    
+    ### check directory
+    $dir = "${family_name}/dyads_${family_name}";
+    unless (-d $dir) {
+      print "Error: cannot find directory $dir\n";
+    }
+    
+    ### family name
+    $table[$row{family}][$col] = "<B>$family_name</B>";
+
+    ### list of genes
+    $table[$row{genes}][$col] = join " ", @{$member{$family_name}};
+    
+    ### known patterns
+    $table[$row{known}][$col] = "";
+    for $c (0..$#{$known_site{$family_name}}) {
+      $table[$row{known}][$col] .= ${known_site{$family_name}}[$c];
+      $table[$row{known}][$col] .= "<BR>(".${known_site_source{$family_name}}[$c].")" if (${known_site_source{$family_name}}[$c]);
+      $table[$row{known}][$col] .= "<P>";
+    }
+    
+    #### oligo-analysis
+    open OLIGOS, "$family{$family_name}->{oligo_assembly_file}";
+    print "extracting info from\t$family{$family_name}->{oligo_assembly_file}\n" if ($verbose);
+    undef @patterns;
+    undef @sorted_patterns;
+    undef %rc;
+    undef %score;
+    undef %type;
+    while (<OLIGOS>) {
+      chomp;
+      next if (/^;/);
+      next unless (/\S/);
+      if ((/contig/) || (/isol/)) {
+	@fields = split "\t";
+	my $sequence = uc($fields[0]);
+	$pattern = new RSA::pattern(sequence=>$sequence);
+	push @patterns, $pattern;
+	$rc{$pattern} = uc(&ReverseComplement($pattern->get_sequence()));
+	$score{$pattern} = $fields[2];
+	$type{$pattern} = $fields[3];
+      }
+    }
+    @sorted_patterns = sort { $score{$b} <=> $score{$a} } @patterns;
+    $table[$row{oligo}][$col] = "<TABLE>\n";
+    $table[$row{oligo}][$col] .= "<TR>\n";
+
+    ### print oligo sequence
+    $table[$row{oligo}][$col] .= "<TD>\n";
+    for $p (0..$#sorted_patterns) {
+      $table[$row{oligo}][$col] .= "<B>" if ($score{$sorted_patterns[$p]} >= 1);
+      $table[$row{oligo}][$col] .= uc($sorted_patterns[$p]->get_sequence()); 
+      $table[$row{oligo}][$col] .= "</B>" if ($score{$sorted_patterns[$p]} >= 1);
+      $table[$row{oligo}][$col] .= "<BR>" unless ($p == $#sorted_patterns);
+    }
+    $table[$row{oligo}][$col] .= "</TD>\n";
+
+    ### print reverse complementary oligo
+    $table[$row{oligo}][$col] .= "<TD>\n";
+    for $p (0..$#sorted_patterns) {
+      $table[$row{oligo}][$col] .= "<B>" if ($score{$sorted_patterns[$p]} >= 1);
+      $table[$row{oligo}][$col] .= uc($rc{$sorted_patterns[$p]});
+      $table[$row{oligo}][$col] .= "</B>" if ($score{$sorted_patterns[$p]} >= 1);
+      $table[$row{oligo}][$col] .= "<BR>" unless ($p == $#sorted_patterns);
+    }
+    $table[$row{oligo}][$col] .= "</TD>\n";
+
+    ### print oligo score
+    $table[$row{oligo}][$col] .= "<TD>\n";
+    for $p (0..$#sorted_patterns) {
+      $table[$row{oligo}][$col] .= "<B>" if ($score{$sorted_patterns[$p]} >= 1);
+      $table[$row{oligo}][$col] .= "$score{$sorted_patterns[$p]}";
+      $table[$row{oligo}][$col] .= "</B>" if ($score{$sorted_patterns[$p]} >= 1);
+      $table[$row{oligo}][$col] .= "<BR>" unless ($p == $#sorted_patterns);
+    }
+    $table[$row{oligo}][$col] .= "</TD>\n";
+
+    ### print matching patterns
+    $table[$row{oligo}][$col] .= "<TD>\n";
+    for $p (0..$#sorted_patterns) {
+      my @matches = ();
+      foreach $site (@site_library) {
+	if (($sorted_patterns[$p]->contains($site, min_score=>$min_matching_score)) ||
+	    ($site->contains($sorted_patterns[$p], min_score=>$min_matching_score))) {
+	  #my $match = $site->get_sequence();
+	  my $match = $site->get_id();
+	  push @matches, $match;
+	}
+      }
+      $table[$row{oligo}][$col] .= join(";",@matches);
+      #$table[$row{oligo}][$col] .= "hello";
+      $table[$row{oligo}][$col] .= "<BR>" unless ($p == $#sorted_patterns);
+    }
+    $table[$row{oligo}][$col] .= "</TD>\n";
+    
+    $table[$row{oligo}][$col] .= "</TR>\n";
+    $table[$row{oligo}][$col] .= "</TABLE>\n";
+    close OLIGOS;
+
+    ### dyad detector
+    open DYADS, "$family{$family_name}->{dyad_assembly_file}";
+    print "extracting info from\t$family{$family_name}->{dyad_assembly_file}\n" if ($verbose);
+    undef @patterns;
+    undef @sorted_patterns;
+    undef %rc;
+    undef %score;
+    undef %type;
+    while (<DYADS>) {
+      chomp;
+      next if (/^;/);
+      next unless (/\S/);
+      if ((/contig/) || (/isol/)) {
+	@fields = split "\t";
+	my $sequence = $fields[0];
+	$pattern = new RSA::pattern(sequence=>$sequence);
+	push @patterns, $pattern;
+	$rc{$pattern} = uc(&ReverseComplement($pattern->get_sequence()));
+	$score{$pattern} = $fields[2];
+	$type{$pattern} = $fields[3];
+      }
+    }
+    @sorted_patterns = sort {$score{$b} <=> $score{$a}} @patterns;
+    $table[$row{dyad}][$col] = "<TABLE>\n";
+    $table[$row{dyad}][$col] .= "<TR>\n";
+
+    ### print dyad sequence
+    $table[$row{dyad}][$col] .= "<TD>\n";
+    for $p (0..$#sorted_patterns) {
+      $table[$row{dyad}][$col] .= "<B>" if ($score{$sorted_patterns[$p]} >= 1);
+      $sequence = $sorted_patterns[$p]->get_sequence();
+      $compressed = uc(&compress_pattern($sequence, "n"));
+      $compressed =~ s/N/n/g;
+      $table[$row{dyad}][$col] .= $compressed;
+      $table[$row{dyad}][$col] .= "</B>" if ($score{$sorted_patterns[$p]} >= 1);
+      $table[$row{dyad}][$col] .= "<BR>" unless ($p == $#sorted_patterns);
+    }
+    $table[$row{dyad}][$col] .= "</TD>\n";
+
+    ### reverse complementary dyad
+    $table[$row{dyad}][$col] .= "<TD>\n";
+    for $p (0..$#sorted_patterns) {
+      $table[$row{dyad}][$col] .= "<B>" if ($score{$sorted_patterns[$p]} >= 1);
+      $compressed = uc(&compress_pattern($rc{$sorted_patterns[$p]},"n"));
+      $compressed =~ s/N/n/g;
+      $table[$row{dyad}][$col] .= $compressed;
+      $table[$row{dyad}][$col] .= "</B>" if ($score{$sorted_patterns[$p]} >= 1);
+      $table[$row{dyad}][$col] .= "<BR>" unless ($p == $#sorted_patterns);
+    }
+    $table[$row{dyad}][$col] .= "</TD>\n";
+
+    ### dyad scores
+    $table[$row{dyad}][$col] .= "<TD>\n";
+    for $p (0..$#sorted_patterns) {
+      $table[$row{dyad}][$col] .= "<B>" if ($score{$sorted_patterns[$p]} >= 1);
+      $table[$row{dyad}][$col] .= "$score{$sorted_patterns[$p]}";
+      $table[$row{dyad}][$col] .= "</B>" if ($score{$sorted_patterns[$p]} >= 1);
+      $table[$row{dyad}][$col] .= "<BR>" unless ($p == $#sorted_patterns);
+    }
+    $table[$row{dyad}][$col] .= "</TD>\n";
+
+    ### print matching patterns
+    $table[$row{dyad}][$col] .= "<TD>\n";
+    for $p (0..$#sorted_patterns) {
+      my @matches = ();
+      foreach $site (@site_library) {
+	if (($sorted_patterns[$p]->contains($site, min_score=>$min_matching_score)) ||
+	    ($site->contains($sorted_patterns[$p], min_score=>$min_matching_score))) {
+	  #my $match = $site->get_sequence();
+	  my $match = $site->get_id();
+	  push @matches, $match;
+	}
+      }
+      $table[$row{dyad}][$col] .= join(";",@matches);
+      $table[$row{dyad}][$col] .= "<BR>" unless ($p == $#sorted_patterns);
+    }
+    $table[$row{dyad}][$col] .= "</TD>\n";
+    
+    $table[$row{dyad}][$col] .= "</TR>\n";
+    $table[$row{dyad}][$col] .= "</TABLE>\n";
+    close DYADS;
+  }
+  
+  $table_file = "synthetic_tables/table".$dyad_suffix;
+  $table_file .= "_tr" if ($transpose);
+  open TABLE, "> ${table_file}.html";
+  print TABLE "<HTML><BODY>\n";
+  print TABLE "<H1>$table_file</H1>\n";
+    
+  print TABLE "<TABLE BORDER=1>\n";
+
+  if ($transpose) {
+    foreach $r (0..8) {
+      print TABLE "<TR>\n";
+      foreach $c (0..$col) {
+	print TABLE "<TD>", $table[$r][$c], "</TD>\n";
+      }
+      print TABLE "</TR>\n";
+    }
+  } else {
+    foreach $c (0..$col) {
+      print TABLE "<TR>\n";
+      foreach $r (0..8) {
+	print TABLE "<TD>", $table[$r][$c], "</TD>\n";
+      }
+      print TABLE "</TR>\n";
+    }
+  }
+
+  print TABLE "</TABLE>\n";
+  print TABLE "<HR>", &AlphaDate;
+  print TABLE "</BODY>\n";
+  print TABLE "</HTML>\n";
+  close TABLE;
+  chdir "synthetic_tables";
+  system "html_dir.csh > index.html";
+  chdir "../";
+}
+
+sub DrawFeatureMaps {
+  $origin = $seq_length+1;
+  $command = "dna-pattern -pl $family{$family_name}->{dyad_file} -format $seq_format -i $family{$family_name}->{seq_file}  -sc 7 -origin $origin -N 4 ";
+  $command .= "| features-from-dnapat -o $family{$family_name}->{ft_file} ";
+  $command .= "; feature-map -i $family{$family_name}->{ft_file} -o $family{$family_name}->{fmap_file} ";;
+  $command .= "-from -${seq_length} -to 0 ";
+  $command .= "-legend ";
+  $command .= "-scalebar -scalestep 50 ";
+  $command .= "-scorethick ";
+  $command .= "-mlen 520 ";
+  $command .= "-title '${family_name}$dyad_suffix' ";
+  $command .= "-htmap >  $family{$family_name}->{htmap_file}";
+  #  $command .= " ;  xv -o $family{$family_name}->{fmap_file} &";
+  print "\n$command\n" if ($verbose);
+  system $command;
+}
+
+
+#### initialization
+sub InitParameters {
+  $seq_length = 800;
+  $upstream_sequence_file = "$RSA//data/yeast/sequences/all_up${seq_length}.wc";
+  $seq_format = "wc";
+  
+  $min_oligo_length = 6;
+  $max_oligo_length = 6;
+  $min_matching_score = 4;
+  
+  $dyad_element_length = 3;
+  
+  if (defined($force{type})) {
+    $type = $force{type}; ### force
+  } else {
+    $type = "any";
+  }
+  if (defined($force{exp})) {
+    $exp = $force{exp}; ### force
+  } else {
+    $exp = "ncf";
+  }
+  $strand = "2str";
+  if (&IsReal($force{th})) {
+    $th = $force{th}; ### force
+  } elsif ($#families > 0) {
+    $th = &round(10*abs(log($#families + 1)/log(10)))/10;
+  } else {
+    $th = 0;
+  } 
+  $noov = 1;
+  $organism = "yeast";
+
+  $max_sp = 16;
+  $start_date = `date`;
+
+}
+
+    
+sub AnalyzeFamily {
+  print "; Analyzing family $family_name\t", `date` if ($verbose);
+  foreach $family_name (@families) {
+    &ReadFamily;
+    
+    ### retrieve upstream sequences
+    &UpstreamSequences;
+    
+    ### oligo-analysis
+    &OligoAnalysis;
+
+    ### dyad analysis
+    &DyadAnalysis;
+
+    ### delete upstream sequence file
+    system "rm $family{$family_name}->{seq_file}";
+  }
+}

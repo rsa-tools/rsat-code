@@ -1,0 +1,53 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib.pl";
+ 
+
+#### initialise parameters ####
+$start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+
+print "\tStarting update ...\n";
+
+chdir "$RSA/new_version";
+print "\tUncompressing archives ...\n";
+
+#unless (-e "perl-scripts_*.tar.gz") {
+#  $pwd = `pwd`;
+#  die "\tError: cannot find file perl-scripts_*.tar.gz in directory $pwd\n";
+#}
+#unless (-e "public_html_*.tar.gz") {
+#  $pwd = `pwd`;
+#  die "\tError: cannot find file public_html_*.tar.gz in directory $pwd\n";
+#}
+system "gunzip *.gz";
+system "tar -xpf perl-scripts_*.tar";
+#system "tar -xpf cgi-bin*.tar";
+system "tar -xpf public_html_*.tar";
+system "gzip *.tar";
+
+print "\tSaving archive in the archive/ directory ...\n";
+system "mv *.gz ../archives";
+
+chdir $RSA;
+print "\tSaving old version in the old_version/ directory ...\n";
+system "unalias rm";
+system "rm -rf old_version/perl-scripts";
+#system "rm -rf old_version/cgi-bin";
+system "rm -rf old_version/public_html";
+
+system "mv -f perl-scripts old_version/";
+#system "mv -f cgi-bin old_version/";
+system "mv -f public_html old_version/";
+
+print "\tInstalling the new version ...\n";
+system "mv new_version/perl-scripts .";
+#system "mv new_version/cgi-bin .";
+system "mv new_version/public_html .";
+
+$done_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+print ";Job started $start_time";
+print ";Job done    $done_time";
+
+exit(0);

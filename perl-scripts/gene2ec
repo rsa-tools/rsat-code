@@ -1,0 +1,186 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib.pl";
+
+### initialization
+$ec_file = "$RSA/data/enzymes/enzymes.tab";
+$col{'ec'} = 6;
+$col{'gene'} = 3;
+$col{'org'} = 4;
+
+if ($ARGV[0] eq "-h") {
+#### display full help message #####
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	gene2ec
+
+        1999 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
+	
+USAGE
+        gene2ec -org organism [-i inputfile] [-o outputfile] [-v]
+
+DESCRIPTION
+	Takes as input a list of genes, and returns the list 
+	of reactions (EC numbers) catalyzed by their products in 
+	the selected organism.
+
+OPTIONS
+	-h	(must be first argument) display full help message
+	-help	(must be first argument) display options
+	-v	verbose
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+	-org organism
+		supported organisms :
+$supported_organisms
+	
+INPUT FORMAT
+	Each query gene must come as the first 
+	word of a new line. 
+
+	Lines starting with a semicolumn (;) are considered
+	as comments and skipped. 
+	
+End_of_help
+  close HELP;
+  exit;
+}
+
+if ($ARGV[0] eq "-help") {
+#### display short help message #####
+  open HELP, "| more";
+  print HELP <<End_short_help;
+gene2ec options
+----------------
+-h	(must be first argument) display full help message
+-help	(must be first argument) display options
+-i	input file
+-o	output file
+-v	verbose
+-org	organism
+
+Supported:
+$supported_organisms
+End_short_help
+  close HELP;
+  exit;
+}
+
+#### initialise parameters ####
+$start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+
+
+#### read arguments ####
+foreach $a (0..$#ARGV) {
+  ### verbose ###
+  if ($ARGV[$a] eq "-v") {
+    $verbose = 1;
+    
+    ### input file ###
+  } elsif ($ARGV[$a] eq "-i") {
+    $inputfile = $ARGV[$a+1];
+    
+    ### output file ###
+  } elsif ($ARGV[$a] eq "-o") {
+    $outputfile = $ARGV[$a+1];
+    
+    ### organism ###
+  } elsif ($ARGV[$a] eq "-org") {
+    $sel_org = $ARGV[$a+1];
+    if ($supported_organism{$sel_org}) {
+      $selected_organism = $supported_organism{$sel_org}->{'name'};
+    } else {
+      die "Error: organism $org is not supported\n$supported_organisms\n";
+    }
+    
+  }
+}
+
+#### check argument values ####
+unless (defined($selected_organism)) {
+  die "Error : you should select an organism\n";
+}
+
+### open output file ###
+$out = &OpenOutputFile($outputfile);
+
+##### read input #####
+$in = &OpenInputFile($inputfile);
+while (<$in>) {
+  next if (/^;/);
+  next unless (/\S/);
+  chomp;
+  @fields = split /\s+/;
+  $gene = $fields[0];
+  push @genes, $gene;
+  $query{lc($gene)} = 1;
+}
+close $in unless ($inputfile eq "");
+
+#### verbose ####
+if ($verbose) {
+  print $out "; gene2ec ";
+  &PrintArguments;
+  if ($inputfile ne "") {
+    print $out ";Input file	$inputfile\n";
+  }
+  if ($outputfile ne "") {
+    print $out ";Output file	$outputfile\n";
+  }
+  print $out ";Organism\t$sel_org\t$selected_organism\n";
+  print $out ";Query genes\n";
+  foreach $gene (@genes) {
+    print $out ";\t$gene\n";
+  }
+}
+
+
+###### execute the command #########
+open EC, $ec_file || die "Error: cannot read EC file $ec_file\n";
+while (<EC>) {
+  next if (/^;/);
+  next unless (/\S/);
+  chomp;
+  @fields = split "\t";
+  $ec = $fields[$col{'ec'}];
+  $gene_names = lc($fields[$col{'gene'}]);
+  $org = $fields[$col{'org'}];
+  ### treat synonyms
+  @genes = split /\|/, $gene_names;
+  foreach $gene (@genes) {
+    if (($query{$gene}) && ($org =~ /$selected_organism/i)) {
+      print $out "$ec";
+      print $out "\t$gene";
+      print $out "\t$selected_organism";
+      print $out "\n";
+    }
+  }
+}
+
+###### print output ######
+
+
+###### verbose ######
+if ($verbose) {
+  $done_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+  print $out ";Job started $start_time";
+  print $out ";Job done    $done_time";
+}
+
+
+###### close output file ######
+close $out unless ($outputfile eq "");
+
+
+exit(0);
+
+
+########################## subroutine definition ############################
+

@@ -1,0 +1,68 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib.pl";
+
+
+
+if (($ARGV[0] eq "-h") || ($ARGV[0] eq "-help")) {
+  open HELP, "| more";
+  print HELP "
+NAME
+	reverse-complement
+	by Jacques van Helden, 26 June 1997
+
+USAGE
+	reverse-complement 'input_sequence'
+	
+	returns the reverse complement of an input DNA sequence.
+
+INPUT
+	The standard degenerate nucleotide code of the IUPAC-IUB commission 
+	is supported. The pattern sequence should thus only contain the 
+	following characters:
+		A, T, G, C	single nucleotide codes
+		R	= A or G
+		Y	= C or T
+		M	= A or C
+		K	= G or T
+		S	= G or C
+		W	= A or T
+		B	= all except A
+		D	= all except C
+		H	= all except G
+		V	= all except T
+		N	= any nucleotide
+	Upper and lower case are considered equivalent.
+	
+	The multiplier (ex: A{5} = AAAAA,  T{5,10} = any combination of 5 to 10 
+	Ts) can be used, but in this case the input sequence must be embraced 
+	in single quotes (ex: 'CCCN{8}GGG'). 
+	
+	Alternatively to the degenerate code, brackets can be used 
+	(ex: [AG] means A or G).
+	
+EXAMPLES
+	reverse-complement GATAAC	returns GTTATC
+	reverse-complement TTTRTT	returns AAYAAA
+	reverse-complement 'GAT[TA]A'	returns T[TA]ATC
+	reverse-complement 'CCCN{8,10}AAA' returns TTTN{8,10}GGG";
+  close HELP;
+  exit(0);
+}
+
+if ($#ARGV < 0) {
+    while (<STDIN>) {
+	$direct .= $_;
+    }
+} else {
+    $direct = $ARGV[$#ARGV];
+}
+
+$rev_compl =  &ReverseComplement($direct);
+print "$rev_compl\n";
+exit(0);
+
+
+

@@ -1,0 +1,28 @@
+#!/usr/bin/perl
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib.pl";
+
+
+
+#### initialise parameters ####
+$start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+
+$alpha_date = &AlphaDate;
+
+chdir $RSA;
+
+for $folder ("perl-scripts","public_html") {
+    $tar_file = "${folder}_${config_site}_${alpha_date}.tar";
+    $command = "tar -cvpf $tar_file $folder; gzip $tar_file";
+
+    print "$command\n";
+    system $command;
+}
+
+$done_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+print ";Job started $start_time";
+print ";Job done    $done_time";
+
+exit(0);
