@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dna-pattern,v 1.24 2004/01/28 15:51:21 jvanheld Exp $
+# $Id: dna-pattern,v 1.25 2004/01/29 12:47:32 jvanheld Exp $
 #
 # Time-stamp: <2003-08-13 12:16:03 jvanheld>
 #
@@ -17,7 +17,7 @@ require "RSA.classes";
 #
 # help content at the end of this file
 
-$start_date = &AlphaDate;
+$start_date = &AlphaDate();
 
 #### init variables ####
 $threshold = 1.0e-12; #### this is a tricky way to circumvent a Perl floating-point imprecision 
@@ -83,6 +83,7 @@ if ($#patterns < 0) {
 
 #### prepare pattern hash for sliding window 
 %pattern_scores = ();
+%pattern_lengths = ();
 if ($search_method eq "sliding window") {
     #### calculate pattern length
     my $first_pattern_seq =  $patterns[0]->get_attribute("sequence");
@@ -90,12 +91,18 @@ if ($search_method eq "sliding window") {
 
     foreach my $pattern (@patterns) {
 	my $pattern_seq = lc($pattern->get_attribute("sequence"));
+
+	#### index pattern length
+	$pattern_lengths{length($pattern_seq)}++;
+
 	#### check pattern length
-	if (length($pattern_seq) != $pattern_length) {
-	    &FatalError("With the sliding window option, all patterns must have the same length");
-	}
+#	if (length($pattern_seq) != $pattern_length) {
+#	    &FatalError("With the sliding window option, all patterns must have the same length");
+#	}
+
 	#### check non-degeneracy
 	if ($pattern_seq =~ /[^acgt]/i) { &FatalError("With the sliding window option, only non-degenerate DNA alphabet is supported [ACGT]\n") };
+
 	#### index pattern score
 	my $pattern_score = $pattern->get_attribute("score");
 	$pattern_scores{$pattern_seq} = $pattern_score;
@@ -111,10 +118,13 @@ if ($search_method eq "sliding window") {
 	$strand = "D";
     }
 
-    #### crate an object for the composite pattern
+    #### create an object for the composite pattern
     $pattern = new RSA::pattern(id => "composite",
 				sequence => "*composite*",
-				score => $pattern_score);
+				score => $pattern_score,
+				min_length=>&min(keys(%pattern_lengths)),
+				max_length=>&max(keys(%pattern_lengths)),
+				);
 
 }
 
@@ -603,7 +613,11 @@ sub ReadArguments {
 ################################################################
 # scan the sequence with a sliding window
 sub SlidingWindowSearch {
-    $last_pos = $sequence_length - $pattern_length;
+    my @pattern_lengths = keys(%pattern_lengths);
+    my $min_pattern_length = &min(@pattern_lengths);
+    my $max_pattern_length = &max(@pattern_lengths);
+
+    $last_pos = $sequence_length - $min_pattern_length;
 
     return if ($last_pos < $sliding_window_size);
 
@@ -616,8 +630,12 @@ sub SlidingWindowSearch {
 
     #### initialize score vector
     for my $pos (0..($sliding_window_size-2)) {
-	my $subseq = substr($current_seq, $pos, $pattern_length);
-	my $current_score = $pattern_scores{$subseq};
+	my @current_position_scores = ();
+	for my $pattern_length (@pattern_length) {
+	    my $subseq = substr($current_seq, $pos, $pattern_length);
+	    push @current_position_scores, $current_score, $pattern_scores{$subseq};
+	}
+	my $current_score = &checked_max(@current_position_scores);
 	push @scores, $current_score;
 	$score_sum += $current_score;
     }
