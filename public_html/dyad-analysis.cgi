@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.7 2001/07/18 12:09:46 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.8 2001/09/21 06:14:23 jvanheld Exp $
 #
-# Time-stamp: <2001-07-18 14:09:30 jvanheld>
+# Time-stamp: <2001-09-21 08:14:16 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -14,8 +14,11 @@ use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
 require "RSA.cgi.lib";
+$output_context = "cgi";
 
 $dyad_analysis_command = "$SCRIPTS/dyad-analysis";
+$convert_seq_command = "$SCRIPTS/convert-seq";
+$purge_sequence_command = "$SCRIPTS/purge-sequence";
 $tmp_file_name = sprintf "dyad-analysis.%s", &AlphaDate;
 
 ### Read the CGI query
@@ -29,11 +32,22 @@ $query = new CGI;
 &UpdateLogFile;
 
 #### read parameters ####
-$parameters = "-v -sort -return proba -timeout 3600 ";
+$parameters = "-v -sort -return proba,rank -timeout 3600 ";
+
+#### purge sequence option
+$purge = $query->param('purge');
 
 ### sequence file
 ($sequence_file,$sequence_format) = &GetSequenceFile();
-$parameters .= " -i $sequence_file -format $sequence_format";
+if ($purge) {
+    $command= "$convert_seq_command -i $sequence_file -from $sequence_format -to fasta | $purge_sequence_command | $dyad_analysis_command -format fasta ";
+} else {
+    $command= "$dyad_analysis_command -i $sequence_file -from $sequence_format ";
+}
+
+### sequence file
+#($sequence_file,$sequence_format) = &GetSequenceFile();
+#$parameters .= " -i $sequence_file -format $sequence_format";
 
 ### dyad type
 if ($query->param('dyad_type') =~ /invert/) {
@@ -91,14 +105,15 @@ if ($query->param('exp_freq') =~ /non\-coding/i) {
   $parameters .= " -ncf";
 } 
 
+print "<PRE><B>Command:</B> $command $parameters </PRE>" if $ECHO;
+
 if ($query->param('output') eq "display") {  
 
-    print &PipingWarning();
+    &PipingWarning();
 
     ### execute the command ###
     $result_file = "$TMP/$tmp_file_name.res";
-    open RESULT, "$dyad_analysis_command $parameters | ";
-    #print "<PRE><B>Command:</B> $dyad_analysis_command $parameters </PRE>";
+    open RESULT, "$command $parameters | ";
 
 
     ### Print result on the web page
@@ -162,7 +177,7 @@ sub PipingForm {
 <TABLE>
 <TR>
 <TD>
-<H4>Next step</H4>
+<H3>Next step</H3>
 </TD>
 <TD>
 <FORM METHOD="POST" ACTION="dna-pattern_form.cgi">

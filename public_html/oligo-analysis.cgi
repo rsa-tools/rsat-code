@@ -9,6 +9,8 @@ require "RSA.cgi.lib";
 $output_context = "cgi";
 
 $oligo_analysis_command = "$SCRIPTS/oligo-analysis";
+$convert_seq_command = "$SCRIPTS/convert-seq";
+$purge_sequence_command = "$SCRIPTS/purge-sequence";
 $tmp_file_name = sprintf "oligo-analysis.%s", &AlphaDate;
 
 ### Read the CGI query
@@ -25,9 +27,16 @@ $query = new CGI;
 $parameters = "";
 $parameters .= " -sort";
 
+#### purge sequence option
+$purge = $query->param('purge');
+
 ### sequence file
 ($sequence_file,$sequence_format) = &GetSequenceFile();
-$parameters .= " -i $sequence_file -format $sequence_format";
+if ($purge) {
+    $command= "$convert_seq_command -i $sequence_file -from $sequence_format -to fasta | $purge_sequence_command | $oligo_analysis_command -format fasta ";
+} else {
+    $command= "$oligo_analysis_command -i $sequence_file -from $sequence_format ";
+}
 
 
 ### fields to return
@@ -164,9 +173,7 @@ if ($query->param('neighborhood') =~ /N at one position/i) {
 }
 
 
-
-#print "<PRE>command: $oligo_analysis_command $parameters<P>\n</PRE>";
-  
+print "<PRE>command: $command $parameters<P>\n</PRE>" if $ECHO;
 
 if ($query->param('output') =~ /display/i) {
 
@@ -174,13 +181,11 @@ if ($query->param('output') =~ /display/i) {
     
     ### execute the command ###
     $result_file = "$TMP/$tmp_file_name.res";
-    open RESULT, "$oligo_analysis_command $parameters |";
-    
-    
+    open RESULT, "$command $parameters |";
     
     ### Print result on the web page
     print '<H2>Result</H2>';
-    PrintHtmlTable(RESULT, $result_file, true);
+    &PrintHtmlTable(RESULT, $result_file, true);
     close(RESULT);
     
     #### oligonucleotide assembly ####
@@ -210,7 +215,7 @@ if ($query->param('output') =~ /display/i) {
     $address = $1;
     print "<B>Result will be sent to your account: <P>";
     print "$address</B><P>";
-    system "$oligo_analysis_command $parameters | $mail_command $address &"; 
+    system "$command $parameters | $mail_command $address &"; 
   } else {
     if ($query->param('user_email') eq "") {
       &cgiError("You did not enter your e-mail address");
@@ -252,3 +257,6 @@ sub PipingForm {
 End_of_form
 
 }
+
+
+
