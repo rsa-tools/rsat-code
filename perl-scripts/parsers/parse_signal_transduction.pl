@@ -632,7 +632,7 @@ sub ReadInteractions {
 	    }
 
 	    #### set the expression as output for the interaction
-	    $inter_object->push_expanded_attribute("outputs",$expression->get_attribute("id"), $subunit, $state_before, $stoeichiometry, $location_before);
+	    $inter_object->push_expanded_attribute("outputs",$expression->get_attribute("id"), $subunit, $state_after, $stoeichiometry, $location_after);
 	    next;
 	}
 
@@ -881,6 +881,7 @@ sub ReadPathwayInteractions {
 			  $output_object->get_attribute("description"), 
 			  "\tto the pathway\n") if ($warn_level >= 3);
 		    $pathway->push_attribute("interactions",$output_object->get_attribute("id"));
+		    $complete_pathway->push_attribute("interactions",$output_object->get_attribute("id"));
 		}
 	    }
 
@@ -1283,7 +1284,7 @@ sub PathwayToDiagram {
 	$abbrev{inhibition} = "inh";
 	$abbrev{indirect} = "ind";
 	$abbrev{inactivation} = "inac";
-	$abbrev{activation} = "atc";
+	$abbrev{activation} = "act";
 	$abbrev{transactivation} = "trac";
 	$abbrev{transrepression} = "trep";
 
@@ -1336,7 +1337,7 @@ sub PathwayToDiagram {
 	$classpath .= ":/win/amaze/amaze_programs/amaze_manuals/programming_examples";
 	my $command = "java -classpath $classpath  DiagramConverterApp ${diagram_file}.tdd $diagram_file";
 	warn $command, "\n" if ($warn_level >= 1);
-#	system $command;
+	system $command;
     }
 }
 
