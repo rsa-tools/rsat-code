@@ -2,7 +2,6 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-#require "cgi-lib.pl";
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib.pl";

@@ -32,6 +32,16 @@ foreach $key (keys %default) {
   }
 } 
 
+### print the form ###
+&RSA_header("dna-pattern");
+
+### head
+print "<CENTER>";
+print "Search a pattern (string description) within a DNA sequence<P>\n";
+print "</CENTER>";
+
+print $query->start_multipart_form(-action=>"dna-pattern.cgi");
+
 ### if a pattern file is specified in the query,
 ### read patterns from this file
 if (($pattern_file = $query->param("pattern_file")) &&
@@ -43,22 +53,12 @@ if (($pattern_file = $query->param("pattern_file")) &&
   close PAT;
 }
 
-### print the form ###
-&RSA_header("dna-pattern");
-
-### head
-print "<CENTER>";
-print "search a pattern (string description) within a DNA sequence<P>\n";
-print "</CENTER>";
-
-print $query->start_multipart_form(-action=>"dna-pattern.cgi");
-
 ### text area to enter the patterns
 print "<A HREF='help.dna-pattern.html#patterns'><B>\n";
 print "Query pattern(s)</B></A><BR>\n";
 print $query->textarea(-name=>'patterns',
 		       -default=>$default{patterns},
-		       -rows=>2,
+		       -rows=>5,
 		       -columns=>60);
 print "<BR>\n";
 
@@ -115,7 +115,9 @@ print CGI::table({-border=>0,-cellpadding=>3,-cellspacing=>0},
 			      [
 			       '',
 			       "<INPUT TYPE=RADIO NAME='return' VALUE='table'>match count table",
-			       "",
+			       $query->checkbox(-name=>'total',
+						-checked=>'checked',
+						-label=>'totals'),
 			       ""
 			       ])
 			])
@@ -237,6 +239,7 @@ print $query->end_form;
 
 #print "<TD><B><A HREF='demo.dna-pattern.html'>DEMO</A></B></TD>\n";
 print "<TD><B><A HREF='help.dna-pattern.html'>MANUAL</A></B></TD>\n";
+print "<TD><B><A HREF='tutorials/tut_dna-pattern.html'>TUTORIAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:jvanheld\@ucmb.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
