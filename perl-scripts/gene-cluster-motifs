@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.15 2002/04/27 11:34:11 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.16 2002/04/27 11:55:56 jvanheld Exp $
 #
-# Time-stamp: <2002-04-27 13:29:50 jvanheld>
+# Time-stamp: <2002-04-27 13:47:14 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -343,6 +343,7 @@ sub SyntheticTable {
   
   ### headers
   $row = 0;
+  $row{f} = $row++;
   $row{family} = $row++;
   $row{genes} = $row++;
   $row{known} = $row++ if ($known_sites_provided);
@@ -352,17 +353,19 @@ sub SyntheticTable {
   while (($header,$row) = each %row) {
     $table[$row][0] = "<B>$header</B>";
   }
-  $col = 0;
-
+  my $col = 0;
   foreach $family_name (@families) {
     $col++;
-    
+
     ### check directory
     $dir = "${family_name}/dyads_${family_name}";
     unless (-d $dir) {
       print "Error: cannot find directory $dir\n";
     }
     
+    ### family number
+    $table[$row{f}][$col] = "<B>$col</B>";
+
     ### family name
     $table[$row{family}][$col] = "<B><a href='../$family_name'>$family_name</a></B>";
 
@@ -980,41 +983,3 @@ sub ReadFamilies {
   @families = keys %family;
 }
 
-#### obsolete routines
-#  sub OldReadFamily {
-#    print "\n; Reading family\t$family_name\n" if ($verbose);
-#    unless (-r $family{$family_name}->{family_file}) {
-#      die "Error : family $family_name: cannot read family file '$family{$family_name}->{family_file}'\n";
-#    }
-  
-#    @{$family{$family_name}->{members}} = {};
-#  #  @{$member{$family_name}} = ();
-#    open FAM, $family{$family_name}->{family_file} || die "Error : cannot read file $family{$family_name}->{family_file}\n" ;
-#    while (<FAM>) {
-#      next if (/^;/);
-#      next unless (/\S/);
-#      chomp;
-#      @fields = split /\s+/;
-#      $query = uc($fields[0]);
-#      $id = $orf_id{$query};
-#      if ($id eq "") {
-#        print STDERR "\t;WARNING ! $query unknown gene name \n";
-#      } else {
-#        push @{$family{$family_name}->{members}}, $id;
-#  #      push @{$member{$family_name}}, $id;
-#        print "\t$query\t$id\t$name{$id}\n" if ($verbose);
-#      }
-#    }
-#    close FAM;
-#  }
-
-#  sub OldUpstreamSequences {
-#    warn "\n; Generating upstream sequences for family $family_name\n" if ($verbose);
-#    #  unless (-e  $family{$family_name}->{seq_file}) {
-#    system "rm -f $family{$family_name}->{seq_file} "; 
-#    foreach $id ( @{$family{$family_name}->{members}}) {
-#      print "\t$id\t$name{$id}\n" if ($verbose);
-#      $command =  "grep -i $id $upstream_sequence_file | replace-string -query '$id' -by '$name{$id}' >> $family{$family_name}->{seq_file}";
-#      system $command;
-#    }
-#  }
