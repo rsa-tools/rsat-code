@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.53 2002/09/14 14:07:29 jvanheld Exp $
+# $Id: oligo-analysis,v 1.54 2002/09/14 15:46:29 jvanheld Exp $
 #
-# Time-stamp: <2002-09-14 09:06:32 jvanheld>
+# Time-stamp: <2002-09-14 10:46:17 jvanheld>
 #
 ############################################################
 
@@ -1558,7 +1558,7 @@ sub ReadArguments {
 	    ### specify a background model for estimating expected frequencies
 	} elsif ($ARGV[$a] =~ /^-bg/i) {
 	    $background_model = $ARGV[$a+1];
-	    $background_model =~ s/ncf/non-coding/;
+	    $background_model =~ s/ncf/intergenic/;
 	    
 	    #### lexicon
 	} elsif ($ARGV[$a] =~ /^-lex/i) { ### Markov chains
@@ -1802,7 +1802,7 @@ ARGUMENTS
 	-expfreq
 		file containing the estimations for expected oligomer 
 		frequencies. This can be for instance the olignonucleotide 
-		frequency measured in the whole genome, or in all non-coding 
+		frequency measured in the whole genome, or in all intergenic 
 		regions, or in all coding regions. 
 		This information is used for the calculation of probabilities.
 		If omitted, expected frequencies are calculated on basis of
@@ -1812,7 +1812,7 @@ ARGUMENTS
 		This allows to use absolute occurrences (rather than
 		relative frequencies).
 	-ncf	(deprecated, use "-bg ncf" instead)
-		use non-coding frequencies as background frequencies
+		use intergenic frequencies as background frequencies
 	-bg	background model
 		Type of sequences used as background model for
 		estimating expected oligonucleotide frequencies.
@@ -1826,7 +1826,7 @@ ARGUMENTS
 			  all upstream sequences, preventing overlap
 			  with upstream ORFs
 
-		-bg ncf  non-coding frequencies 
+		-bg ncf  intergenic frequencies 
 			 Whole set of intergenic regions, including
 			 upstream and downstream sequences
 
@@ -2067,7 +2067,7 @@ PROBABILITIES
 	
 	where	p  = probability of the pattern
 		     in our case, a good estimate for this value is the 
-		     frequence observed for this pattern in all non-coding 
+		     frequence observed for this pattern in all intergenic 
 		     genomic regions.
 		n  = number of regulatory regions considered 
 		     (members of the family)
@@ -2273,7 +2273,7 @@ oligo-analysis options
 -a input        use alphabet from input sequence
 -expfreq        file with expected frequency table
 -rescale	recale expected frequencies to obtain a sum of 1
--ncf		use dyad non-coding frequencies as expected frequencies
+-ncf		use intergenic frequencies as expected frequencies
 -org		organism 
 -markov	#	calculate expected frequencies according to
 		Markov chains of order #
