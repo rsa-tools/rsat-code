@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_genomes.mk,v 1.8 2005/01/18 15:08:23 jvanheld Exp $
+# $Id: install_genomes.mk,v 1.9 2005/01/18 15:25:08 jvanheld Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -99,23 +99,47 @@ install_all_eukaryotes:
 
 ################################################################
 #
+# Clean obsolete genome files (those with uppercases)
+ORGANISMS=`ls -d1 data/genomes/*_* | xargs basename | xargs`
+clean_genomes:
+	${MAKE} iterate_organisms ORG_TASK=clean_one_genome
+
+ORG=Mycoplasma_genitalium
+clean_one_genome:
+	@echo "Cleaning genome ${ORG}"
+	@echo "Before cleaning"
+	ls -ltr ${RSAT}/data/genomes/${ORG}/genome/
+	rm -f ${RSAT}/data/genomes/${ORG}/genome/Feature*
+	rm -f ${RSAT}/data/genomes/${ORG}/genome/Gene*
+	rm -f ${RSAT}/data/genomes/${ORG}/genome/CDS*.ctl
+	rm -f ${RSAT}/data/genomes/${ORG}/genome/CDS*
+	rm -f ${RSAT}/data/genomes/${ORG}/genome/mRNA*
+	rm -f ${RSAT}/data/genomes/${ORG}/genome/tRNA*.ctl
+	rm -f ${RSAT}/data/genomes/${ORG}/genome/tRNA*
+	rm -f ${RSAT}/data/genomes/${ORG}/genome/rRNA*
+	rm -f ${RSAT}/data/genomes/${ORG}/genome/*RNA*
+	rm -f ${RSAT}/data/genomes/${ORG}/genome/Organism*
+	rm -f ${RSAT}/data/genomes/${ORG}/genome/Contig*
+	rm -f ${RSAT}/data/genomes/${ORG}/genome/misc_RNA*
+	rm -f ${RSAT}/data/genomes/${ORG}/genome/Source*
+	rm -f ${RSAT}/data/genomes/${ORG}/genome/*.wc
+	rm -f ${RSAT}/data/genomes/${ORG}/genome/*.wc.gz
+	@echo "After cleaning"
+	ls -ltr ${RSAT}/data/genomes/${ORG}/genome/
+	${MAKE} clean_sql
+
+################################################################
 # Clean obsolete SQL files (before splitting into subfolders for
 # mysql, postgresql and oracle)
-#
 clean_sql:
-	ls -ltr ${RSAT}/data/genomes/Escherichia_coli_K12/genome/sql_scripts/
-	rm -f ${RSAT}/data/genomes/*/genome/sql_scripts/feature*
-	rm -f ${RSAT}/data/genomes/*/genome/sql_scripts/gene*
-	rm -f ${RSAT}/data/genomes/*/genome/sql_scripts/cds*.ctl
-	rm -f ${RSAT}/data/genomes/*/genome/sql_scripts/cds*
-	rm -f ${RSAT}/data/genomes/*/genome/sql_scripts/mrna*
-	rm -f ${RSAT}/data/genomes/*/genome/sql_scripts/trna*.ctl
-	rm -f ${RSAT}/data/genomes/*/genome/sql_scripts/trna*
-	rm -f ${RSAT}/data/genomes/*/genome/sql_scripts/rrna*
-	rm -f ${RSAT}/data/genomes/*/genome/sql_scripts/*rna*
-	rm -f ${RSAT}/data/genomes/*/genome/sql_scripts/organism*
-	rm -f ${RSAT}/data/genomes/*/genome/sql_scripts/contig*
-	rm -f ${RSAT}/data/genomes/*/genome/sql_scripts/misc*
-	rm -f ${RSAT}/data/genomes/*/genome/sql_scripts/source*
-	rm -f ${RSAT}/data/genomes/*/genome/sql_scripts/*
-	ls -ltr ${RSAT}/data/genomes/Escherichia_coli_K12/genome/sql_scripts/
+	@echo "Cleaning SQL files ${ORG}"
+	@echo "Before cleaning"
+	ls -ltr ${RSAT}/data/genomes/${ORG}/genome/sql_scripts/
+	rm -f ${RSAT}/data/genomes/${ORG}/genome/sql_scripts/makefile
+	rm -f ${RSAT}/data/genomes/${ORG}/genome/sql_scripts/*.sql
+	rm -f ${RSAT}/data/genomes/${ORG}/genome/sql_scripts/*.ctl
+	rm -f ${RSAT}/data/genomes/${ORG}/genome/sql_scripts/*.mk
+	@echo "After cleaning"
+	ls -ltr ${RSAT}/data/genomes/${ORG}/genome/sql_scripts/
+
+
