@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_kegg.pl,v 1.7 2001/09/23 22:34:59 jvanheld Exp $
+# $Id: parse_kegg.pl,v 1.8 2001/09/25 19:27:54 jvanheld Exp $
 #
-# Time-stamp: <2001-09-24 00:28:51 jvanheld>
+# Time-stamp: <2001-09-25 21:26:10 jvanheld>
 #
 ############################################################
 
@@ -153,9 +153,9 @@ $genericPathways = PFBP::ClassFactory->new_class(object_type=>"PFBP::GenericPath
 
 ### default output fields for each class
 $compounds->set_out_fields(qw( id names formula source ));
-$reactions->set_out_fields(qw( id  source equation));
+$reactions->set_out_fields(qw( id  source equation ecs));
 $reactants->set_out_fields(qw( id reactant_type reaction_id compound_id stoichio valid_interm ));
-$ecs->set_out_fields(qw( id names parent reactions ));
+$ecs->set_out_fields(qw( id names parent ));
 $pathways->set_out_fields(qw( id parent organism source names reactions ECs genes ));
 $genericPathways->set_out_fields(qw( id source names reactions ECs ));
 
@@ -315,16 +315,14 @@ sub ParseReactions {
     &TrivialCompounds;
     
     if ($warn_level >= 1) {
-	warn (";\n; ", 
-	      &AlphaDate, 
-	      "\tparsing class ", 
-	      $class_holder->get_object_type(),
-	      " from ");
-	if ($input_file) {
-	    warn "$input_file\n";
-	} else {
-	    warn "STDIN\n";
-	}
+	my $message = 
+	    warn (";\n; ", 
+		  &AlphaDate, 
+		  "\tparsing class ", 
+		  $class_holder->get_object_type(),
+		  " from ",
+		  $input_file,
+		  "\n");
     }
 
     ### read reactions
@@ -532,7 +530,8 @@ sub ParseReactionEC {
 		next;
 	    }
 	    if ($ec_object = $ecs->get_object($ec_number)) {
-		$ec_object->push_attribute("elements",$reaction_id);
+		$reaction_object->push_attribute("ecs", $ec_number);
+		$ec_object->push_attribute("reactions",$reaction_id);
 	    } else {
 		&ErrorMessage(";WARNING: could not identify the set '$ec_number' for reaction '$reaction_id'\n");
 	    }
