@@ -1125,9 +1125,13 @@ sub ReadClasses {
 				 $line, "member not specified") if ($main::verbose >= 1);
 	    next;
 	}
+
 	### family name
 	$family_name = &trim($fields[1]);
-	$family_name =~ s/ +/_/g;
+	$subst_char = ".";
+	$family_name =~ s/ +/${subst_char}/g; ## spaces create problems with file names in Unix
+	$family_name =~ s/\//${subst_char}/g; ## spaces create problems with file names in Unix
+	$family_name =~ s/\:/${subst_char}/g; ## spaces create problems with file names in Unix
 	unless ($family_name =~ /\S/) {
 	    &RSAT::message::Warning("Error family file", 
 				 $family_file,  "line", 
