@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-ensembl-genome.pl,v 1.9 2005/03/13 09:37:59 jvanheld Exp $
+# $Id: get-ensembl-genome.pl,v 1.10 2005/03/13 10:05:23 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -26,8 +26,10 @@ use Bio::EnsEMBL::DBSQL::DBAdaptor;
 use Bio::EnsEMBL::DBSQL::SliceAdaptor;
 
 ## TO DO
-## Add an argument -org to specify the organism, and see how to obtain the current version
-## (not sure it is possible; dbname seems mandatory)
+## Add an argument -org to specify the organism, and see how to obtain
+## the current version (not sure it is possible; dbname seems
+## mandatory). Yes but is there a method to get a list of available
+## dbnames ?
 ## Get intron positions ? (we have transcripts and exons)
 ## Get the name of the organism. The method $db->species() return a string "DEFAULT".
 ## Add the taxonomy ancestors (mammal,primate,... of the organism.
@@ -38,35 +40,35 @@ use Bio::EnsEMBL::DBSQL::SliceAdaptor;
 ## Check why there are 109 human chromosomes. How to select only the complete chromosomes ?
 ## Check the start and stop codons of Anopheles. Half of them are false.
 ## Add cross-references to the RSAT objects ($rsat__gene, $rsat_transcript, $rsat_cds, ...)
-
-## DONE
-## Export masked sequences (repeats masked) and unmasked sequences.
+## Export masked sequences (repeats masked). The method returns a hash
+## table. Try to get the keys of this hash table, in order to extract
+## the real sequence.
 
 
 ################################################################
 #### Class for EMBL feature
 package EMBL::Feature;
 {
-  @ISA = qw ( classes::DatabaseObject );
-  ### class attributes
-  $_count = 0;
-  $_prefix = "ft_";
-  @_objects = ();
-  %_name_index = ();
-  %_id_index = ();
-  %_attribute_count = ();
-  %_attribute_cardinality = (id=>"SCALAR",
-			     names=>"ARRAY",
-			     organism=>"SCALAR",
-			     type=>"SCALAR",
-			     description=>"SCALAR",
-			     position=>"SCALAR",
-			     contig=>"SCALAR",
-			     strand=>"SCALAR",
-			     start_pos=>"SCALAR",
-			     end_pos=>"SCALAR",
-			     xrefs=>"EXPANDED"
-			     );
+    @ISA = qw ( classes::DatabaseObject );
+    ### class attributes
+    $_count = 0;
+    $_prefix = "ft_";
+    @_objects = ();
+    %_name_index = ();
+    %_id_index = ();
+    %_attribute_count = ();
+    %_attribute_cardinality = (id=>"SCALAR",
+			       names=>"ARRAY",
+			       organism=>"SCALAR",
+			       type=>"SCALAR",
+			       description=>"SCALAR",
+			       position=>"SCALAR",
+			       contig=>"SCALAR",
+			       strand=>"SCALAR",
+			       start_pos=>"SCALAR",
+			       end_pos=>"SCALAR",
+			       xrefs=>"EXPANDED"
+			      );
 }
 
 
@@ -74,76 +76,74 @@ package EMBL::Feature;
 #### Class for Gene
 package EMBL::Gene;
 {
-  @ISA = qw ( classes::DatabaseObject );
-  ### class attributes
-  $_count = 0;
-  $_prefix = "ft_";
-  @_objects = ();
-  %_name_index = ();
-  %_id_index = ();
-  %_attribute_count = ();
-  %_attribute_cardinality = (id=>"SCALAR",
-			     names=>"ARRAY",
-			     );
+    @ISA = qw ( classes::DatabaseObject );
+    ### class attributes
+    $_count = 0;
+    $_prefix = "ft_";
+    @_objects = ();
+    %_name_index = ();
+    %_id_index = ();
+    %_attribute_count = ();
+    %_attribute_cardinality = (id=>"SCALAR",
+			       names=>"ARRAY",
+			      );
 }
 
 ################################################################
 #### Class for Gene
 package EMBL::Transcript;
 {
-  @ISA = qw ( classes::DatabaseObject );
-  ### class attributes
-  $_count = 0;
-  $_prefix = "ft_";
-  @_objects = ();
-  %_name_index = ();
-  %_id_index = ();
-  %_attribute_count = ();
-  %_attribute_cardinality = (id=>"SCALAR",
-			     names=>"ARRAY",
-			     );
+    @ISA = qw ( classes::DatabaseObject );
+    ### class attributes
+    $_count = 0;
+    $_prefix = "ft_";
+    @_objects = ();
+    %_name_index = ();
+    %_id_index = ();
+    %_attribute_count = ();
+    %_attribute_cardinality = (id=>"SCALAR",
+			       names=>"ARRAY",
+			      );
 }
 
 ################################################################
 #### Class for EMBL organism
 package EMBL::Organism;
 {
-  @ISA = qw ( classes::DatabaseObject );
-  ### class attributes
-  $_count = 0;
-  $_prefix = "ft_";
-  @_objects = ();
-  %_name_index = ();
-  %_id_index = ();
-  %_attribute_count = ();
-  %_attribute_cardinality = (id=>"SCALAR",
-			     names=>"ARRAY",
-			     taxonomy=>"SCALAR",
-			     );
+    @ISA = qw ( classes::DatabaseObject );
+    ### class attributes
+    $_count = 0;
+    $_prefix = "ft_";
+    @_objects = ();
+    %_name_index = ();
+    %_id_index = ();
+    %_attribute_count = ();
+    %_attribute_cardinality = (id=>"SCALAR",
+			       names=>"ARRAY",
+			       taxonomy=>"SCALAR",
+			      );
 }
 
 ################################################################
 #### Class for EMBL contig
 package EMBL::Contig;
 {
-  @ISA = qw ( classes::DatabaseObject );
-  ### class attributes
-  $_count = 0;
-  $_prefix = "ft_";
-  @_objects = ();
-  %_name_index = ();
-  %_id_index = ();
-  %_attribute_count = ();
-  %_attribute_cardinality = (id=>"SCALAR",
-			     accession=>"SCALAR",
-			     version=>"SCALAR",
-			     type=>"SCALAR",
-			     length=>"SCALAR",
-			     description=>"SCALAR",
-			     );
+    @ISA = qw ( classes::DatabaseObject );
+    ### class attributes
+    $_count = 0;
+    $_prefix = "ft_";
+    @_objects = ();
+    %_name_index = ();
+    %_id_index = ();
+    %_attribute_count = ();
+    %_attribute_cardinality = (id=>"SCALAR",
+			       accession=>"SCALAR",
+			       version=>"SCALAR",
+			       type=>"SCALAR",
+			       length=>"SCALAR",
+			       description=>"SCALAR",
+			      );
 }
-
-
 
 
 ################################################################
@@ -159,7 +159,8 @@ package main;
     
     local $slice_type = "chromosome";
     local @chromnames = ();
-    local $noseq = 0;
+    local $no_seq = 0;
+    local $no_masked = 0;
     local $test = 0;
     local $test_number=20;
 
@@ -177,7 +178,6 @@ package main;
     $outfile{feature} = "prev_feature.tab";
     $outfile{xreference} = "prev_xreference.tab";
     $outfile{ft_name} = "prev_feature_name.tab";
-
     local $verbose = 0;
     
     ## Connection to the ENSEMBL MYSQL database
@@ -271,7 +271,7 @@ package main;
     }
     &RSAT::util::CheckOutDir($dir{output});
     chdir($dir{output});
- 
+    
     ## log file
     open $log, ">".$outfile{log} || die "cannot open error log file".$outfile{log}."\n";
 
@@ -330,10 +330,10 @@ package main;
 	$s++;
 
 	&RSAT::message::TimeWarn("Slice", $slice_type, 
-		  $s."/".scalar(@slices), 
-		  "name:".$slice->name(), 
-		  "seq_region_name:".$slice->seq_region_name(), 
-		  $slice->name()) if ($main::verbose >= 2);
+				 $s."/".scalar(@slices), 
+				 "name:".$slice->name(), 
+				 "seq_region_name:".$slice->seq_region_name(), 
+				 $slice->name()) if ($main::verbose >= 2);
 
 	my $rsat_contig = $contigs->new_object();
 	my $slice_name = $slice->name();
@@ -454,7 +454,7 @@ package main;
 	my $masked_seq_file = $seq_file;
 	$masked_seq_file =~ s/\.raw$/_masked.raw/;
 	print CTG join ("\t", $seq_file,  $rsat_contig->get_attribute("id")), "\n";
-	unless ($noseq) {
+	unless ($no_seq) {
 	    ## Export slice sequence (unmasked)
 	    &RSAT::message::TimeWarn("Getting sequence for slice", $s."/".scalar(@slices), 
 				     $slice_type, $slice->seq_region_name(), $slice_name) if ($main::verbose >= 1);
@@ -463,13 +463,19 @@ package main;
 	    print SEQ $sequence;
 	    close SEQ;
 
-	    ## Export slice sequence (hard masked)
-	    &RSAT::message::TimeWarn("Getting masked sequence for slice", $s."/".scalar(@slices), 
-				     $slice_type, $slice->seq_region_name(), $slice_name) if ($main::verbose >= 1);
-	    $sequence = $slice->get_repeatmasked_seq();
-	    open MASKED_SEQ, ">".$masked_seq_file || die "cannot open error log file".$masked_seq_file."\n";
-	    print MASKED_SEQ $sequence;
-	    close MASKED_SEQ;
+	    ## Export slice sequence (hard masked) STILL NOT WORKING
+	    ## It exports a reference to a hash table
+	    ## TO DO: see the fields of this hash table (keys), and
+	    ## identify which one contains the sequence
+	    $no_masked = 1; ## Temporarily inactivated
+	    unless ($no_masked) {
+		&RSAT::message::TimeWarn("Getting masked sequence for slice", $s."/".scalar(@slices), 
+					 $slice_type, $slice->seq_region_name(), $slice_name) if ($main::verbose >= 1);
+		$sequence = $slice->get_repeatmasked_seq();
+		open MASKED_SEQ, ">".$masked_seq_file || die "cannot open error log file".$masked_seq_file."\n";
+		print MASKED_SEQ $sequence;
+		close MASKED_SEQ;
+	    }
 	}
     }
 
@@ -514,7 +520,6 @@ package main;
     close $FT_TABLE if ($outfile{feature});
     close $XREF_TABLE if ($outfile{xreference});
     close $FT_NAME_TABLE if ($outfile{ft_name});
-
 
     ################################################################
     ## Report the output directory
@@ -693,11 +698,11 @@ sub ReadArguments {
 	    ### schema
 	} elsif ($ARGV[$a] eq "-schema") {
 	    $schema = $ARGV[$a+1];
-	    
+
 	    ### host
 	} elsif ($ARGV[$a] eq "-host") {
 	    $host = $ARGV[$a+1];
-	    
+
 	    ### user
 	} elsif ($ARGV[$a] eq "-user") {
 	    $user = $ARGV[$a+1];
@@ -708,8 +713,12 @@ sub ReadArguments {
 
 	    ### do not export the sequence
 	} elsif ($ARGV[$a] eq "-noseq") {
-	    $noseq=1;
-	    
+	    $no_seq=1;
+
+	    ### do not export the masked sequence
+	} elsif ($ARGV[$a] eq "-nomask") {
+	    $no_masked = 1;
+
 	    ### quick test
 	} elsif ($ARGV[$a] eq "-test") {
 	    $test=1;
