@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_pathway_skeletons.pl,v 1.11 2002/11/15 20:22:45 jvanheld Exp $
+# $Id: parse_pathway_skeletons.pl,v 1.12 2002/11/15 20:45:21 jvanheld Exp $
 #
-# Time-stamp: <2002-11-15 14:19:03 jvanheld>
+# Time-stamp: <2002-11-15 14:41:33 jvanheld>
 #
 ############################################################
 
@@ -374,6 +374,10 @@ sub ReadArguments {
 #### have been previously parsed from KEG)
 sub LoadIndexes {
     warn ("Loading index files\n") if ($verbose >=1);
+
+    unless (-d $dir{kegg_parsed}) {
+	die "Error: cannot find KEGG directory\t$dir{kegg_parsed}\n";
+    }
 
     #### compound names
     warn ("\tindexing compound names ...\n") if ($verbose >=1);
