@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.58 2004/01/30 17:08:25 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.59 2004/01/31 17:45:21 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -143,10 +143,14 @@ $verbose_message = &Verbose() if ($verbose >= 1);
 &ExportSQL() if ($task{sql});
 &SyntheticTable() if ($task{synthesis});
 
-### Remind output dir
+### Warn output dir and files
 if ($main::verbose >= 1) {
-    warn "; Results are stored in directory\t$dir{output}\n";
-    warn "; synthetic table\t$table_file\n";
+    warn "; Results are stored in directory\t".$dir{output}."\n";
+    warn "; synthetic table\t", $dir{output}."/".$outfile{table}, "\n";
+    if ($task{report}) {
+	warn "; results\t", $dir{output}."/".$outfile{results}, "\n";
+	warn "; parameters\t", $dir{output}."/".$outfile{parameters}, "\n";
+    }
 }
 
 #### report execution time 
@@ -256,6 +260,9 @@ sub SetFileNames {
 	$family{$family_name}->{merged_ft_file} = $family{$family_name}->{merged_file}.".ft";
     }  
 
+
+    ################################################################
+    ## Suffix for the synthetic table
     if ($family_file) {
 	$table_suffix = $family_file;
     } elsif ($sequence_file_list) {
@@ -288,6 +295,12 @@ sub SetFileNames {
     $table_suffix .= "_sig".$thosig;
     $table_suffix = `basename $table_suffix`;
     chomp $table_suffix;
+
+    ################################################################
+    ## Name of the report for the Motif Discovery Competition 2004
+    $dir{mdc_report} = "mdc_report";
+    $outfile{results} = $dir{mdc_report}."/".$table_suffix."_results.txt";
+    $outfile{parameters} = $dir{mdc_report}."/".$table_suffix."_parameters.txt";
 }
 
 ################### SUBROUTINE DEFINITION ###################"
@@ -483,7 +496,7 @@ sub MatchPatterns {
     $command .= $options;
     $command .= " | features-from-dnapat -o ".$feature_file;
 
-    warn "HELLO", $command, "\n";
+    warn "HELLO\t", $command, "\n";
 
     ## Check if pattern matching is OK (sometimes there are no patterns)
     my $error = &doit($command,$dry_run, 0);
@@ -686,10 +699,11 @@ sub ReadKnownSites {
 sub SyntheticTable {
     my $dir = "synthetic_tables";
     
-    $table_file = $dir."/".$table_suffix;
-    $table_file .= "_tr" if ($transpose);
+    $outfile{table} = $dir."/".$table_suffix;
+    $outfile{table} .= "_tr" if ($transpose);
+    $outfile{table} .= ".html";
 
-    warn "; Generating synthetic table $table_file\n" if ($verbose >= 1);
+    warn "; Generating synthetic table ", $outfile{table}, "\n" if ($verbose >= 1);
     
     unless (-d $dir) {
 	mkdir $dir, 0755 || die "Error: cannot create directory $dir\n";
@@ -713,13 +727,13 @@ sub SyntheticTable {
 	$table[$row][0] = "<B>$header</B>";
     }
     my $col = 0;
-
+    
     foreach $family_name (@families) {
 	$col++;
 	
-	#### remember which column is associated to each family
+	#### Index columns associated to each family
 	$column{$family_name} = $col;
-
+	
 	### check directory
 	$dir = "${family_name}/dyads_${family_name}";
 	unless (-d $dir) {
@@ -730,14 +744,14 @@ sub SyntheticTable {
 	$table[$row{f}][$col] = "<B>$col</B>";
 	
 	### family name
-	$table[$row{family}][$col] = "<B><a href='../$family_name'>$family_name</a></B>";
+	$table[$row{family}][$col] = "<B><a href='../".$family_name."'>".$family_name."</a></B>";
 	
 	#### number of genes
 	$table[$row{size}][$col] = scalar(@{$family{$family_name}->{members}});
-
+	
 	#### sequence length
 	$table[$row{total_length}][$col] = $family{$family_name}->{total_length} if ($seq_length_calculated);
-
+	
 	### list of genes
 	$table[$row{genes}][$col] = "<a href='../".$family{$family_name}->{family_file}."'>";
 	$table[$row{genes}][$col] .= join " ", @{$family{$family_name}->{members}};
@@ -747,8 +761,8 @@ sub SyntheticTable {
 	if ($known_sites_provided) {
 	    $table[$row{known}][$col] = "";
 	    for $c (0..$#{$known_site{$family_name}}) {
-		$table[$row{known}][$col] .= ${known_site{$family_name}}[$c];
-		$table[$row{known}][$col] .= "<BR>(".${known_site_source{$family_name}}[$c].")" if (${known_site_source{$family_name}}[$c]);
+		$table[$row{known}][$col] .= "${known_site{$family_name}}[$c]";
+		$table[$row{known}][$col] .= "<BR>("."${known_site_source{$family_name}}[$c]".")" if ("${known_site_source{$family_name}}[$c]");
 		$table[$row{known}][$col] .= "<P>";
 	    }
 	} 
@@ -757,185 +771,111 @@ sub SyntheticTable {
 	#### Index results from oligo-analysis
 #	open OLIGOS, "$family{$family_name}->{oligo_assembly_file}";
         if ($htmaps) {
-          $map_link = "<A HREF=../$family{$family_name}->{oligo_file}.html>\n";
+	    $map_link = "<a href=../$family{$family_name}->{oligo_file}.html>\n";
         } else {
-	  $map_link = "<A HREF=../$family{$family_name}->{oligo_file}.${IMG_FORMAT}>\n";
+	    $map_link = "<a href=../$family{$family_name}->{oligo_file}.${IMG_FORMAT}>\n";
         }
         my $pattern_file = $family{$family_name}->{oligo_assembly_file};
         &IndexPatterns($family_name, $pattern_file, $map_link, $row{oligos}, $col, assembly=>1);
-
+	
         ################################################################
 	### index results of dyad analysis
         if ($htmaps) {
-	  $map_link = "<A HREF=../$family{$family_name}->{dyad_file}.html>\n";
+	    $map_link = "<a href=../$family{$family_name}->{dyad_file}.html>\n";
         } else {
-	  $map_link = "<A HREF=../$family{$family_name}->{dyad_file}.${IMG_FORMAT}>\n";
+	    $map_link = "<a href=../$family{$family_name}->{dyad_file}.${IMG_FORMAT}>\n";
         }
         my $pattern_file = $family{$family_name}->{dyad_assembly_file};
         &IndexPatterns($family_name, $pattern_file, $map_link, $row{dyads}, $col, assembly=>1);
-
+	
         ################################################################
 	### index results of manual pattern selection
         if ($htmaps) {
-	  $map_link = "<A HREF=../$family{$family_name}->{oligo_selection}.html>\n";
+	    $map_link = "<a href=../$family{$family_name}->{oligo_selection}.html>\n";
         } else {
-	  $map_link = "<A HREF=../$family{$family_name}->{oligo_selection}.${IMG_FORMAT}>\n";
+	    $map_link = "<a href=../$family{$family_name}->{oligo_selection}.${IMG_FORMAT}>\n";
         }
         my $pattern_file = $family{$family_name}->{oligo_selection};
         &IndexPatterns($family_name, $pattern_file, $map_link, $row{selection}, $col, assembly=>0);
-
-#  	warn ";\tExtracting info from\t$family{$family_name}->{dyad_assembly_file}\n" if ($verbose >= 2);
-#          undef($error);
-#          undef @patterns;
-#  	undef @sorted_patterns;
-#  	undef %rc;
-#  	undef %score;
-#  	undef %type;
-
-#  	if (-e $family{$family_name}->{dyad_assembly_file}) {
-#             ($error, @patterns) = (&ReadAssemblyFile($family{$family_name}->{dyad_assembly_file}));
-#          } else {
-#  	   &Warning(join( "\t", 
-#  			  "Family $family_name", 
-#  			  "dyad-analysis file ", $family{$family_name}->{dyad_assembly_file}, 
-#  			  " does not exist. Skipped."));
-#          }
-#          if ($error) {
-#  	    $table[$row{dyads}][$col] = "<font color=red>$error</font>\n";
-#  	} else {
-#  	    @sorted_patterns = sort {$score{$b} <=> $score{$a}} @patterns;
-#  	    $table[$row{dyads}][$col] = "<TABLE>\n";
-#  	    $table[$row{dyads}][$col] .= "<TR>\n";
-	    
-#  	    ### print dyad sequence
-#  	    $table[$row{dyads}][$col] .= "<TD>\n";
-#  	    for $p (@sorted_patterns) {
-#  		$table[$row{dyads}][$col] .= "<B>" if ($p->get_attribute("score") >= 1);
-#  		$sequence = $p->get_attribute("sequence");
-#  		$compressed = &compress_pattern($sequence, "n");
-#  		$compressed =~ s/N/n/g;
-#  		$table[$row{dyads}][$col] .= $compressed;
-#  		$table[$row{dyads}][$col] .= "</B>" if ($p->get_attribute("score") >= 1);
-#  		$table[$row{dyads}][$col] .= "<BR>" unless ($p == $#sorted_patterns);
-#  	    }
-#  	    $table[$row{dyads}][$col] .= "</TD>\n";
-	    
-#  	    ### reverse complementary dyad
-#  	    if ($strands eq "-2str") {
-#  		$table[$row{dyads}][$col] .= "<TD>\n";
-#  		for $p (@sorted_patterns) {
-#  		    $table[$row{dyads}][$col] .= "<B>" if ($p->get_attribute("score") >= 1);
-#  		    $compressed = &compress_pattern($p->get_attribute("rc"),"n");
-#  		    $compressed =~ s/N/n/g;
-#  		    $table[$row{dyads}][$col] .= $compressed;
-#  		    $table[$row{dyads}][$col] .= "</B>" if ($p->get_attribute("score") >= 1);
-#  		    $table[$row{dyads}][$col] .= "<BR>" unless ($p == $#sorted_patterns);
-#  		}
-#  		$table[$row{dyads}][$col] .= "</TD>\n";
-#  	    }
-
-#  	    ### dyad scores
-#  	    $table[$row{dyads}][$col] .= "<TD>$map_link\n";
-#  	    for $p (@sorted_patterns) {
-#  		$table[$row{dyads}][$col] .= "<B>" if ($p->get_attribute("score") >= 1);
-#  		$table[$row{dyads}][$col] .= $p->get_attribute("score");
-#  		$table[$row{dyads}][$col] .= "</B>" if ($p->get_attribute("score") >= 1);
-#  		$table[$row{dyads}][$col] .= "<BR>" unless ($p == $#sorted_patterns);
-#  	    }
-#  	    $table[$row{dyads}][$col] .= "</A></TD>\n";
-	    
-#  	    ### print matching patterns
-#  	    if ($known_sites_providde) {
-#  		$table[$row{dyads}][$col] .= "<TD>\n";
-#  		for $p (@sorted_patterns) {
-#  		    my @matches = ();
-#  		    foreach $site (@site_library) {
-#  			if (($p->contains($site, min_score=>$min_matching_score)) ||
-#  			    ($site->contains($p->get_attribute("sequence"), min_score=>$min_matching_score))) {
-#  			    #my $match = $site->@get_attribute("sequence");
-#  			    my $match = $site->get_id();
-#  			    push @matches, $match;
-#  			}
-#  		    } 
-#  		    $table[$row{dyads}][$col] .= join(";",@matches);
-#  		    $table[$row{dyads}][$col] .= "<BR>" unless ($p == $#sorted_patterns);
-#  		}
-#  		$table[$row{dyads}][$col] .= "</TD>\n";
-#  	    }
-	    
-#  	    $table[$row{dyads}][$col] .= "</TR>\n";
-#  	    $table[$row{dyads}][$col] .= "</TABLE>\n";
-#  	    close $dyadhandle;
-#  	}
+	
     }
     
-    open TABLE, "> ${table_file}.html" 
-	|| die "Error: cannot write file $table_file\n";
-    print TABLE "<HTML>\n";
-    print TABLE "<TITLE>",${table_file}, "</TITLE>","\n";
-    print TABLE "<BODY>\n";
-    print TABLE "<H1>$table_file</H1>\n";
+
+    ###############################################################
+    ## Print the header of the  synthetic table
+    $syn = &OpenOutputFile($outfile{table});
+    print $syn "<html>\n";
+    print $syn "<title>",$table_suffix, "</title>","\n";
+    print $syn "<body>\n";
+    print $syn "<h1>".$table_suffix."</h1>\n";
     
-    print TABLE join( "\n",
-		      "<PRE>",
+    print $syn join( "\n",
+		      "<pre>",
 		      $verbose_message,
-		      "</PRE>"
+		      "</pre>"
 		      ), "\n";
-
-
-    print TABLE "<TABLE BORDER=1>\n";
     
+    
+    print $syn "<table border=1>\n";
 
+    ################################################################
+    ## Add a link to the MDC report files
+#    if ($task{report}) {
+	print $syn "<h4>Reports for the motif discovery competition</h4>";
+	print $syn "<ul>";
+	print $syn "<li><a href=../".$outfile{results}.">Results</a></li>";
+	print $syn "<li><a href=../".$outfile{parameters}.">Parameters</a></li>";
+	print $syn "</ul>";
+#    }
+
+
+    ################################################################
+    ## Sort families according to the selected criterion
     if ($sort_key eq "score") {
 	#### sort families by score
 	#### decreasing order
 	@sorted_families = sort {$max_score{$b} <=> $max_score{$a}} @families; 
-# 	foreach my $f (@sorted_families) {
-# 	    warn join "\t", $f, $max_score{$f}, "\n";
-# 	}
 
     } else {
 	#### sort families by family name
 	@sorted_families = sort @families;
     }
-    
+
+
+    ################################################################
+    ## Transpose the result table
     if ($transpose) {
 	foreach $r (0..$row_num) {
-	    print TABLE "<TR>\n";
-#		foreach $c (0..$col) {
+	    print $syn "<tr>\n";
 	    foreach $f (@sorted_families) {
 		my $c = $column{$f};
-		print TABLE "<TD>", $table[$r][$c], "</TD>\n";
+		print $syn "<td>", $table[$r][$c], "</td>\n";
 	    }
-	    print TABLE "</TR>\n";
+	    print $syn "</tr>\n";
 	}
     } else {
-	
-	
 	#### print table header
 	foreach $r (0..$row_num) {
-	    print TABLE "<TH>", $table[$r][0], "</TH>\n";
+	    print $syn "<th>", $table[$r][0], "</th>\n";
 	}
 	#### print table content
-#	foreach $c (0..$col) {
 	foreach $f (@sorted_families) {
 	    my $c = $column{$f};
-	    print TABLE "<TR>\n";
+	    print $syn "<tr>\n";
 	    foreach $r (0..$row_num) {
-		print TABLE "<TD>", $table[$r][$c], "</TD>\n";
+		print $syn "<td>", $table[$r][$c], "</td>\n";
 	    }
-	    print TABLE "</TR>\n";
+	    print $syn "</tr>\n";
 	}
     }
     
-    print TABLE "</TABLE>\n";
-    print TABLE "<HR>", &AlphaDate;
-    print TABLE "</BODY>\n";
-    print TABLE "</HTML>\n";
-    close TABLE;
-    chdir "synthetic_tables";
-#  system "html_dir.csh > index.html";
-    chdir "../";
+    print $syn "</table>\n";
+    print $syn "<hr>", &AlphaDate;
+    print $syn "</body>\n";
+    print $syn "</html>\n";
+    close $syn;
+#    chdir "synthetic_tables";
+#    chdir "../";
 }
 
 
@@ -943,7 +883,7 @@ sub SyntheticTable {
 ## Index the patterns discovered for the HTML synthetic table
 sub IndexPatterns {
     my ($family_name, $pattern_file, $map_link, $row, $col, %args) = @_;
-    warn join ("\t", "; Indexing patterns for family", $family_name, $pattern_file), "\n" if ($verbose >= 0);
+    warn join ("\t", "; Indexing patterns for family", $family_name, $pattern_file), "\n" if ($verbose >= 2);
     undef @patterns;
     undef @sorted_patterns;
     undef %rc;
@@ -975,7 +915,7 @@ sub IndexPatterns {
 	$table[$row][$col] = "<font color=red>$error</font>\n";
     } else {
 	@sorted_patterns = sort { $score{$b} <=> $score{$a} } @patterns;
-	$table[$row][$col] = "<TABLE>\n";
+	$table[$row][$col] = "<table>\n";
 	$table[$row][$col] .= "<TR>\n";
 	
 	### print oligo sequence
@@ -1768,7 +1708,7 @@ sub MakeDirectories {
 ### Generate tab files and SQL scripts for storing the results in a
 ### relational database
 sub ExportSQL {
-    warn "; Generating SQL $table_file\n" if ($verbose >= 1);
+    warn "; Generating SQL\n" if ($verbose >= 1);
     my $test = new RSAT::Family;
     my $time_prefix = time();
     my $family_factory = classes::ClassFactory->new_class(object_type=>"RSAT::Family",
@@ -1778,12 +1718,11 @@ sub ExportSQL {
 #    my $pattern_prefix = "pat_".&AlphaDate()."_";
     my $pattern_factory = classes::ClassFactory->new_class(object_type=>"RSAT::Pattern",
 							   prefix=>$time_prefix);
-    my $table_file = $dir."/".$table_suffix;
-
+    
     my %export_columns = ();
-
+    
     foreach my $family_name (@families) {
-
+	
 	#### general family attributes
 	my $family_object = $family_factory->new_object(id=>$family_name);
 	my $family_id = $family_object->get_attribute("id");
@@ -1791,7 +1730,7 @@ sub ExportSQL {
 	$family_object->set_attribute("size", scalar(@{$family{$family_name}->{members}}));
 	$family_object->set_attribute("organism", $organism_name);
 	$family_object->set_attribute("suffix", $table_suffix);
-
+	
 	warn join ("\t", ";\tSQL export for family", $family_name, $organism_name), "\n" if ($main::verbose >= 2);
 	
 	#### family members
@@ -1799,7 +1738,7 @@ sub ExportSQL {
 	foreach my $m (@members) {
 	    $family_object->push_attribute("genes", $m);
 	}
-
+	
 	#### discovered oligos
 	my $oligo_file = $family{$family_name}->{oligo_file};
 	if (-e $oligo_file) {
@@ -2067,10 +2006,10 @@ sub CalibrateOligos {
 	## retrieve all upstream sequence if required
 	my $allup_file = $dir{calib1}."/tmp_all_up_".$calib_length.".fasta";
 	if (-e $allup_file) {
-	    warn ";\tAll upstream sequence file already exists. Skipping retrieval\t", $allup_file, "\n" if ($main::verbose >= 0);
+	    warn ";\tAll upstream sequence file already exists. Skipping retrieval\t", $allup_file, "\n" if ($main::verbose >= 1);
 	} else {
 	    $command = "retrieve-seq -org $organism_name -all -from -$calib_length -to -1 -o $allup_file";
-	    warn ";\tRetrieving all upstream sequences\t", $allup_file, "\n" if ($main::verbose >= 0);
+	    warn ";\tRetrieving all upstream sequences\t", $allup_file, "\n" if ($main::verbose >= 1);
 	    &doit($command, $dry_run, $die_on_error);
 	}
 
@@ -2092,7 +2031,7 @@ sub CalibrateOligos {
 
 	    ## Calculate occurrence distributions
 	    $command = "oligo-analysis -v 3 -l $oligo_len $noov $strands  -i $allup_file -return occ -distrib -o $distrib_file";
-	    warn ";\tAnalysing ",$oligo_len,"nt distributions\t",$distrib_file, "\n" if ($main::verbose >= 0);
+	    warn ";\tAnalysing ",$oligo_len,"nt distributions\t",$distrib_file, "\n" if ($main::verbose >= 1);
 	    &doit($command, $dry_run, 0);
 	    
 	    ## Calculate stats and fit negbin on the distributions
@@ -2106,7 +2045,7 @@ sub CalibrateOligos {
 
 	## Delete the file with all upstream sequences
 	$command = "rm -f $allup_file";
-	warn ":\tCleaning all upstream sequences\t", $allup_file, "\n" if ($main::verbose >= 0);
+	warn ":\tCleaning all upstream sequences\t", $allup_file, "\n" if ($main::verbose >= 1);
 	&doit($command, $dry_run, 0);
     }
 
@@ -2217,21 +2156,34 @@ sub ReadAssemblyFile {
 ################################################################
 ## Generate report fiels for the motif disovery competition 2004
 sub MDCreport {
-    $dir{mdc_report} = "mdc_report";
     &CheckOutDir($dir{mdc_report});
-    my $report_file = $dir{mdc_report}."/".$table_suffix."_report.txt";
-    
-    warn ";\n; Generating report\t", $report_file, "\n" if ($verbose >=1);
-    ($report) = &OpenOutputFile($report_file);
-    print $report join ("\n", 
+    warn ";\n; Generating report\t", $outfile{results}, "\n" if ($verbose >=1);
+
+    ################################################################
+    ## Print the header ot the result file
+    ($results) = &OpenOutputFile($outfile{results});
+    print $results join ("\n", 
 			">name of contact",
 			"Jacques van Helden",
 			">email",
 			"jvanheld\@scmbb.ulb.ac.be",
 			">program name",
 			"multiple-family-analyis"), "\n";
-    close $report;
+    close $results;
 
+    ################################################################
+    ## Print the header ot the result file
+    ($parameters) = &OpenOutputFile($outfile{parameters});
+    print $parameters join ("\n", 
+			">name of contact",
+			"Jacques van Helden",
+			">email",
+			"jvanheld\@scmbb.ulb.ac.be",
+			">program name",
+			"multiple-family-analyis"), "\n";
+
+    ################################################################
+    ## Generate the report for each family
     my $command = "";
     foreach $family_name (@families) {
 	$fam_count++;
@@ -2245,7 +2197,7 @@ sub MDCreport {
 	    $selection_file = $family{$family_name}->{oligo_file};
 	    &Warning("No manual selection: using default file $selection_file") if ($main::verbose >= 0);
 	}
-	warn ("; Pattern file for the report $selection_file\n") if ($main::verbose >= 0);
+	warn ("; Pattern file for the report $selection_file\n") if ($main::verbose >= 1);
 
 	my $selection_ft_prefix =  $family{$family_name}->{oligo_selection};
 	my $feature_file = $selection_ft_prefix.".ft";
@@ -2270,13 +2222,21 @@ sub MDCreport {
 	}
 	$matching_options .= " -th ".$threshold;
 
+
+
+	################################################################
+	## initialize postprocessing and parameter description
+	my $postprocessing_text = ">postprocessing\n";
+	my $parameters_text = ">parameters\n";
+	my $multi_params = join " ", @ARGV;
+	$multi_params =~ s/\ -/\n-/g;
+	$parameters_text .= $multi_params."\n";
+
 	### Read the pattern file in order to select
 	### manually-specified parameters threshold
 	($in) = &OpenInputFile($selection_file);
 	my $parameters_started = 0;
 	my $postprocessing_started = 0;
-	my $parameters_text = ">parameters\n";
-	my $postprocessing_text = ">postprocessing\n";
 	while ($line = <$in>) {
 	    if ($line =~ />parameters/) {
 		$parameters_started = 1;
@@ -2290,25 +2250,26 @@ sub MDCreport {
 	    next unless ($parameters_started);
 	    $line =~ s/^;\s*//;
 	    if ($postprocessing_started) {
-		$postprocessing_text .= " ".$line;
+		$postprocessing_text .= $line;
 	    } elsif ($parameters_started) {
-		$parameters_text .= " ".$line;
+		$parameters_text .= $line;
 		$matching_options .= " ".$line;
-		warn "manually specified parameter $line\n" if ($main::verbose >= 0);
+		warn "manually specified parameter $line\n" if ($main::verbose >= 3);
 	    }
 	}
 	close($in);
 	$matching_options =~ s/\n/ /g;
 	$matching_options =~ s/\r/ /g;
 
-	warn "Parameters\t", $parameters_text, "\n" if ($main::verbose >= 0);
+	warn "Family $family_name\tParameters\t", $parameters_text, "\n" if ($main::verbose >= 2);
+	warn "Family $family_name\tPostprocessing\t", $postprocessing_text, "\n" if ($main::verbose >= 2);
 	warn "Matching options\t", $matching_options, "\n" if ($main::verbose >= 0);
 
 	## Write parameters and postprocessing
-	open $report, ">>$report_file";
-	print $report $parameters_text;
-	print $report $postprocessing_text;
-	close $report;
+	print $parameters ">data set\n";
+	print $parameters $family_name, "\n";
+	print $parameters $parameters_text;
+	print $parameters $postprocessing_text;
 	
 	## Draw the feature map of the selected oligos
 	&MatchPatterns($selection_file, $selection_ft_prefix,  $matching_options);
@@ -2318,10 +2279,13 @@ sub MDCreport {
 	warn ";\tReporting\t",$feature_file, "\n" if ($verbose >=2);
 	$command = "MDCreport-from-dnapat -d ".$family_name;
 	$command .= " -i ".$feature_file;
-	$command .= ">> $report_file" if ($report_file);
+	$command .= ">> ".$outfile{results} if ($outfile{results});
 	&doit($command);
     }    
-    warn ";\n; Generated report\t", $report_file, "\n" if ($verbose >=1);
+
+    close $parameters;
+
+    warn ";\n; Generated report\t", $outfile{results}, "\n" if ($verbose >=1);
 }
 
 
