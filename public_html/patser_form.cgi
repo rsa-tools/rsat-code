@@ -26,9 +26,7 @@ $default{alphabet} = "a:t 0.3 c:g 0.2"; ### [-A <Ascii alphabet information>]
 $default{case} = "insensitive"; ### [-CS <Ascii alphabet is case sensitive (default: ascii alphabets are case insensitive)>]
 $default{strands} = "both"; ### [-c <Score the complementary strand>]
 
-$default{lthreshold_method} = "manual";
-### [-li <Determine lower-threshold score from adjusted information content>]
-### [-lp <Determine lower-threshold score from a maximum ln(p-value)>]
+$default{lthreshold_method} = "adjusted information content";
 $default{lthreshold} = "0"; ### [-ls <Lower-threshold score, inclusive (formerly the -l option)>]
 $default{uthreshold} = "none"; ### [-u <Upper-threshold score, exclusive>]
 
@@ -40,13 +38,12 @@ $default{sort} = "checked"; ### [-ds <Print top scores in order of decreasing sc
 $default{unrecognized} = "discontinuities (with warning)"; ### [-d1 <Treat unrecognized characters as discontinuities, but print warning (the default)>]
 
 $default{vertically_print} = "checked"; ### [-p <Vertically print the weight matrix>]
-
+$default{min_calc_P} = 0; # [-M <Set the minimum score for calculating the p-value of scores (default: 0)>]
 
 
 ################################################################
 #### STILL TO BE TREATED
 # [-R <Set the range for approximating a weight matrix with integers (default: 10000)>]
-# [-M <Set the minimum score for calculating the p-value of scores (default: 0)>]
 # [-e <Small difference for considering 2 scores equal (default: 0.000001)>]
 # [-li <Determine lower-threshold score from adjusted information content>]
 # [-lp <Determine lower-threshold score from a maximum ln(p-value)>]
@@ -120,11 +117,13 @@ print $query->textarea(-name=>'matrix',
 		       -rows=>4,
 		       -columns=>60);
 
+################################################################
 #### sequence
 print "<BR>\n";
 &DisplaySequenceChoice;
 
 
+################################################################
 ### strands
 print "<BR>\n";
 print "<A HREF='help.patser.html#strands'><B>Search strands</B></A>&nbsp;\n";
@@ -133,7 +132,8 @@ print $query->popup_menu(-name=>'strands',
 				   'both'],
 			 -default=>$default{strands});
 
-### return
+################################################################
+### return value
 print "<BR>\n";
 print "<A HREF='help.patser.html#return'><B>Return</B></A>&nbsp;\n";
 print $query->radio_group(-name=>'return',
@@ -152,30 +152,46 @@ print $query->textfield(-name=>top_scores,
 			);
 print "&nbsp;top value(s) for each sequence";
 
-### pseudo-counts and thresholds
+################################################################
+### pseudo-counts
 print "<BR>\n";
-print CGI::table({-border=>0,-cellpadding=>3,-cellspacing=>0},
-	       CGI::Tr({-align=>left,-valign=>MIDDLE},
-		       [
-		      CGI::td({-align=>left,-valign=>MIDDLE},
-			      [
-			       "<B><A HREF='help.patser.html#pseudo_counts'>Pseudo-counts</A>\n",
-			       $query->textfield(-name=>'pseudo_counts',
-						       -default=>$default{pseudo_counts},
-						       -size=>2),
-			       "&nbsp;&nbsp;<b>Thresholds</b>",
-			       "<A HREF='help.patser.html#lthreshold'><B> lower</B></A>",
-			       $query->textfield(-name=>'lthreshold',
-						 -default=>$default{lthreshold},
-						 -size=>2),
-			       "<A HREF='help.patser.html#uthreshold'><B> upper</B></A>",
-			       $query->textfield(-name=>'uthreshold',
-						 -default=>$default{uthreshold},
-						 -size=>2)
-			       ]),
-			])
-		 );
+print "<B><A HREF='help.patser.html#pseudo_counts'>Pseudo-counts</A>\n";
+print $query->textfield(-name=>'pseudo_counts',
+			-default=>$default{pseudo_counts},
+			-size=>2);
 
+#### TEMPORARILY DISACTIVATED, BECAUSE INTERFERES WITH ADJUSTED INFO THRESHOLD
+################################################################
+### [-M <Set the minimum score for calculating the p-value of scores (default: 0)>]
+# print "<BR>\n";
+# print "<B><A HREF='help.patser.html#min_calc_P'>Minimum score for calculating the p-value</A>\n";
+# print $query->textfield(-name=>'min_calc_P',
+# 			-default=>$default{min_calc_P},
+# 			-size=>5);
+
+################################################################
+#### Thresholds
+
+#### lower threshold
+print "<br>\n";
+print "<A HREF='help.patser.html#lthreshold'><B>Lower threshold estimation</B></A>";
+print $query->popup_menu(-name=>'lthreshold_method',
+			 -Values=>['maximum weight', 'maximum ln(p-value)', , 'adjusted information content'],
+			 -default=>$default{lthreshold_method});
+
+print $query->textfield(-name=>'lthreshold',
+			-default=>$default{lthreshold},
+			-size=>6);
+
+
+#### upper threshold
+print "<br>\n";
+print "<A HREF='help.patser.html#uthreshold'><B>Upper threshold</B></A>", "&nbsp"x6;
+print $query->textfield(-name=>'uthreshold',
+			-default=>$default{uthreshold},
+			-size=>6);
+
+################################################################
 ### alphabet
 print "<BR>\n";
 print "<B><A HREF='help.patser.html#alphabet'>\n";
@@ -184,6 +200,7 @@ print $query->textfield(-name=>'alphabet',
 			-default=>$default{alphabet},
 			-size=>50);
 
+################################################################
 #### case sensitivity
 print "<BR>\n";
 print "<B><A HREF='help.patser.html#case'>\n";
@@ -193,7 +210,8 @@ print $query->popup_menu(-name=>'case',
 			 -Values=>[ "sensitive", "insensitive","insensitive, but mark lowercases"],
 			 -default=>$default{case});
 
-#### unrecignized characters
+################################################################
+#### unrecognized characters
 print "<BR>\n";
 print "<B><A HREF='help.patser.html#unrecognized'>\n";
 print "Treat unrecognized characters as</A></b>\n";
@@ -202,16 +220,21 @@ print $query->popup_menu(-name=>'unrecognized',
 			 -Values=>[ "errors", "discontinuities (with warning)","discontinuities (no warning)"],
 			 -default=>$default{unrecognized});
 
+################################################################
 #### vertically print the matrix
 print "<BR>\n";
+print "<a href=help.patser.html#vertically_print>";
 print $query->checkbox(-name=>'vertically_print',
-		       -label=>" print the weight matrix",
+		       -label=>' print the weight matrix',
 		       -checked=>$default{vertically_print});
+print "</a>";
 
+################################################################
 ### send results by e-mail or display on the browser
 print "<BR>\n";
 &SelectOutput;
 
+################################################################
 ### action buttons
 print "<UL><UL><TABLE>\n";
 print "<TR VALIGN=MIDDLE>\n";
@@ -219,6 +242,7 @@ print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
 print "<TD>", $query->reset, "</TD>\n";
 print $query->end_form;
 
+################################################################
 ### data for the demo 
 print $query->start_multipart_form(-action=>"patser_form.cgi");
 

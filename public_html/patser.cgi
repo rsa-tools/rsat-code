@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: patser.cgi,v 1.13 2002/09/16 16:32:24 jvanheld Exp $
+# $Id: patser.cgi,v 1.14 2002/09/16 17:04:20 jvanheld Exp $
 #
-# Time-stamp: <2002-09-16 11:28:51 jvanheld>
+# Time-stamp: <2002-09-16 12:02:41 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -135,13 +135,41 @@ if ($query->param('unrecognized') eq "errors") {
 
 ################################################################
 ### thresholds ###
-if (&IsReal($query->param('lthreshold'))) {
-    $parameters .= " -ls ".$query->param('lthreshold');
-    $parameters .= " -M ".$query->param('lthreshold');
+if ($query->param('lthreshold_method') =~ /weight/) {
+    if (&IsReal($query->param('lthreshold'))) {
+	$parameters .= " -ls ".$query->param('lthreshold');
+
+	
+    } else {
+	&FatalError ("Lower threshold value must ne a real number");
+    }
+} elsif  ($query->param('lthreshold_method') =~ /p\-value/) {
+   ### [-lp <Determine lower-threshold score from a maximum ln(p-value)>]
+    if (&IsReal($query->param('lthreshold'))) {
+	$parameters .= " -lp ".$query->param('lthreshold');
+    } else {
+	&FatalError ("Lower threshold value must ne a real number");
+    }
+} elsif  ($query->param('lthreshold_method') =~ /adjusted information content/) {
+   ### [-li <Determine lower-threshold score from adjusted information content>]
+    $parameters .= ' -li';
+} else {
+    &FatalError("Unknown method for estimating lower threshold");
 }
+
 if (&IsReal($query->param('uthreshold'))) {
     $parameters .= " -u ".$query->param('uthreshold');
 }
+
+
+#### TEMPORARILY DISACTIVATED, BECAUSE INTERFERES WITH ADJUSTED INFO THRESHOLD
+################################################################
+#### minimum score for calculating the P-value
+# if (&IsReal($query->param('min_calc_P'))) {
+#     $parameters .= " -M ".$query->param('min_calc_P');
+# } else {
+#     &FatalError("Minimum score for calculating P-value must e a real number");
+# }
 
 ################################################################
 ### vertically print the matrix
