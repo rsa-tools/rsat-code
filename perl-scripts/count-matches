@@ -3,6 +3,8 @@ if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
 require "RSA.lib";
+require "RSA.classes";
+require "RSA.seq.lib";
 
 ################################################################
 #### initialise parameters
@@ -15,6 +17,8 @@ local $verbose = 0;
 local $in = STDIN;
 local $out = STDOUT;
 $slide = 0;
+local @pattern1 = ();
+local @pattern2 = ();
 
 ## lower and upper thresholds
 %lth = ();
@@ -42,6 +46,7 @@ $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
 			      proba
 			      weight
 			      seq
+			      id
 			      length
 			      offset
 			      );
@@ -55,6 +60,8 @@ my %field_format = (match=>"%d",
 		    proba=>"%.2g",
 		    seq1=>"%s",
 		    seq2=>"%s",		
+		    id1=>"%s",
+		    id2=>"%s",		
 		    len1=>"%d",
 		    len2=>"%d",
 		    mlen=>"%d",
@@ -69,7 +76,7 @@ my %field_format = (match=>"%d",
 
 ## return fields
 if (scalar(@return_fields) < 1) {
-    @return_fields = ("match");
+    @return_fields = ("seq", "weight");
 }
 
 my @temp_return_fields = @return_fields;
@@ -83,6 +90,8 @@ foreach my $field (@temp_return_fields) {
 #    warn "; Adding field\t", $field, "\n" if ($verbose >= 5);
     if ($field eq "seq") {
 	push @return_fields, "seq1", "seq2";
+    } elsif ($field eq "id") {
+	push @return_fields, "id1", "id2";
     } elsif ($field eq "length") {
 	push @return_fields, "len1", "len2", "mlen", "tlen";
     } else {
@@ -90,9 +99,19 @@ foreach my $field (@temp_return_fields) {
     }
 }
 
-## Check input sequences
-&FatalError("You must specify at least one first sequence") unless (scalar(@seq1) > 0);
-&FatalError("You must specify at least one second sequence") unless (scalar(@seq2) > 0);
+################################################################
+## Read input patterns from file
+if ($pattern_file1) {
+    push @pattern1, &ReadPatterns(pattern_file=>$pattern_file1);
+}
+if ($pattern_file2) {
+    push @pattern2, &ReadPatterns(pattern_file=>$pattern_file1);
+}
+
+
+## Check input patterns
+&FatalError("You must specify at least one first sequence") unless (scalar(@pattern1) > 0);
+&FatalError("You must specify at least one second sequence") unless (scalar(@pattern2) > 0);
 
 
 ################################################################
@@ -109,8 +128,12 @@ if ($verbose >= 1) {
 }
 
 ## Count matches for each pair of input sequences	
-foreach $seq1 (@seq1) {
-    foreach $seq2 (@seq2) {
+foreach $pattern1 (@pattern1) {
+    $seq1 = $pattern1->get_attribute("sequence");
+    $id1 =  $pattern1->get_attribute("id");
+    foreach $pattern2 (@pattern2) {
+	$seq2 = $pattern2->get_attribute("sequence");
+	$id2 =  $pattern2->get_attribute("id");
 	local @result = ();
 	local $match;
 	local $weight;
@@ -198,12 +221,21 @@ OPTIONS
 	-help   (must be first argument) display options
 	-v	verbose
 	-seq1	first sequence for the comparison
-
+		This argument can be repeated on the same command line
+		to enter multiple patterns.
 	-seq2	second sequence for the comparison
-		-seq1 and -seq2 can be used iteratively to specify
-		multiple patterns. Each sequence of group 1 is then
-		compared t each sequence of group 2.
 
+		The options -seq1 and -seq2 can be used iteratively to
+		specify multiple sequence patterns. Each sequence of
+		group 1 is then compared to each sequence of group 2.
+		   ex: -seq1 gataag -seq1 gattag -seq1 gataah 
+		       -seq2 agataata -seq2 gtttag
+		 Note that when many patterns have to be entered, the
+		 options -file1 and -file2 are more convenient.
+	-file1 	file containing a list of patterns to be used as first
+         	sequences for the comparison (see format below). 
+	-file2 	file containing a list of patterns to be used as second
+         	sequences for the comparison (see format below). 
 	-return	return fields
 		Each selected field is returned in a separate column.
 		Supported: $supported_return_fields
@@ -224,8 +256,19 @@ OPTIONS
 		the left side, positive values ot the right side.
 
 INPUT FORMAT
-      seq1 and seq2 must be DNA sequences (not peptidic). 
-      IUPAC degenerate code is accepted in seq1 as well as seq2.
+    PATTERNS
+	seq1 and seq2 must be DNA sequences (not peptidic). 
+        IUPAC degenerate code is accepted in seq1 as well as seq2.
+
+    PATTERN FILE
+	A pattern file is a tab-delimited text file. Each row contains
+	the description of one pattern. Column content:
+	  1) Pattern sequence. This is the only mandatory column.
+	  2) Pattern ID (optional).
+	Additional columns can be used to specify other pattern
+	attributes (description, score, ...), but they are by default
+	ignored by the program. The option -sc allows to specify a
+	score column.
 
 OUTPUT FORMAT
        The output consists in a tab-separated text table, with one row
@@ -328,6 +371,8 @@ count-matches options
 -help   	display options
 -seq1		first sequence for the comparison
 -seq2		second sequence for the comparison
+-file1		file containing a first list of sequences 
+-file1		file containing a second list of sequences 
 -return		return fields. Supported: $supported_return_fields
 -lth            lower threshold on a given field
 -uth            upper threshold on a given field
@@ -368,11 +413,23 @@ sub ReadArguments {
 	    
 	    ### first sequence  
 	} elsif ($ARGV[$a] eq "-seq1") {
-	    push @seq1, $ARGV[$a+1];
+#	    push @pattern1, $ARGV[$a+1];
+	    push @pattern1, new RSA::pattern(sequence=>$ARGV[$a+1],
+					     id=>$ARGV[$a+1]);
 	    
 	    ### second sequence  
 	} elsif ($ARGV[$a] eq "-seq2") {
-	    push @seq2, $ARGV[$a+1];
+#	    push @pattern2, $ARGV[$a+1];
+	    push @pattern2, new RSA::pattern(sequence=>$ARGV[$a+1],
+					     id=>$ARGV[$a+1]);
+
+	    ### first sequence   file
+	} elsif ($ARGV[$a] eq "-file1") {
+	    $pattern_file1 = $ARGV[$a+1];
+
+	    ### second sequence   file
+	} elsif ($ARGV[$a] eq "-file1") {
+	    $pattern_file2 = $ARGV[$a+1];
 
 	    ### return fields
 	} elsif ($ARGV[$a] eq "-return") {
