@@ -477,6 +477,7 @@ sub get_id_index {
     return %{$class."::_id_index"};
 }
 
+
 ################################################################
 ## Return the headers of all expanded attributes 
 sub get_attribute_headers {
@@ -500,6 +501,14 @@ sub get_attribute_header {
 sub get_attribute_cardinalities {
     my $class = ref($_[0]) || $_[0];
     return %{$class."::_attribute_cardinality"};
+}
+
+################################################################
+## Get attribute names
+sub get_attribute_names {
+    my $class = ref($_[0]) || $_[0];
+    my %card = $class->get_attribute_cardinalities();
+    return keys %card; 
 }
 
 ################################################################
