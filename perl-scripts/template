@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: template,v 1.14 2004/01/05 11:22:11 jvanheld Exp $
+# $Id: template,v 1.15 2004/02/28 17:16:16 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -95,8 +95,8 @@ USAGE
         template [-i inputfile] [-o outputfile] [-v]
 
 OPTIONS
-	-h	(must be first argument) display full help message
-	-help	(must be first argument) display options
+	-h	display full help message
+	-help	display options
 	-v	verbose
 	-i inputfile
 		if not specified, the standard input is used.
