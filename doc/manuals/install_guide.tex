@@ -32,13 +32,69 @@ Installation guide}
 \section{Description}
 
 This documents contain the installation guide for the package
-\textbf{Regulatory Sequence Analysis Tools (RSAT)}.
+\textbf{Regulatory Sequence Analysis Tools} (\RSAT).
 
 In the current release, the version is limited to the perl scripts,
 and does not contain the web interface.
 
 
+\section{Requirements}
+
+\subsection{Operating system}
+
+\RSAT is a unix-based package. It has been installed successfully on
+the following unix systems.
+
+\begin{enumerate}
+\item Sun Solaris
+\item Mac OSX
+\item cygwin (under MS Windows 98)
+\end{enumerate}
+
+\RSAT is not compatible with any version of Microsoft Windows and we
+have no intention to make it compatible. Since most programs are
+writtent in perl, it is not impossible that some scripts will run
+under windows, but some other will certainly not, because they include
+calls to unix system commands.
+
+\subsection{perl}
+
+Almost all the programs in \RSAT are written in perl version 5.0. 
+
 \section{Installation}
+
+\RSAT can be distributed either as a compressed archive, or via the CVS
+server. The CVS distribution greatly facilitates updates.
+
+\subsection{Installation from the CVS repository}
+
+Before being able to retrieve \RSAT from the CVS repository, you need
+an account on our server. For this, please contact Jacques van Helden
+(\email{jvanheld@ucmb.ulb.ac.be}).
+
+\subsubsection{First installation}
+
+The following command should be used the first time you retrieve the
+tools from the server:
+\begin{verbatim}
+cvs -d mylogin@rubens.ulb.ac.be:/rubens/dsk2/cvs co rsa-tools
+\end{verbatim}
+
+This will create a directory \file{rsa-tools} on your computer, and
+store the rsa-tools in it.
+
+\subsubsection{Updates}
+
+Once the tools have been retrieved, you can obtain updates very
+easily. For this, you need to change your directory to the rsa-tools
+directory, and use the \command{cvs} command in the following way.
+
+\begin{verbatim}
+cd rsa-tools
+cvs update .
+\end{verbatim}
+
+\subsection{Installation from a compresed archive}
 
 \begin{enumerate}
 
@@ -51,21 +107,25 @@ where yyyymmdd stands for the version number (delivery date).
 
 \end{enumerate}
 
-\section{Adding rsa-tools to your path}
+\section{Configuring \RSAT}
+
+\section{Adding \RSAT to your path}
 
 \begin{enumerate}
 
 \item Create an environment variable named RSAT and containing the
-path of rsa-tools. For example, assuming rsa-tools have been installed
-in the directory \texttt{/usr/local/rsa-tools}, and your shell is bash
-:
+path of rsa-tools. For example, assuming \RSAT have been installed
+in the directory \texttt{/home/myaccount/rsa-tools}, and your shell is
+bash:
 
 \begin{verbatim}
-export RSAT=/usr/local/rsa-tools
+export RSAT=/home/myaccount/rsa-tools
 \end{verbatim}
 
-\item add the path of rsa-tools/perl-scripts to your path.
+\item add the path of rsa-tools/perl-scripts and binaries to your path.
+
 \begin{verbatim}
+export PATH=${PATH}:${RSAT}/bin
 export PATH=${PATH}:${RSAT}/perl-scripts
 \end{verbatim}
 
