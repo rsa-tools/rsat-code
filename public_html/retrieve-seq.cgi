@@ -68,7 +68,6 @@ if (&IsInteger($query->param('to'))) {
     $parameters .= " -to ".$query->param('to');
 }
 
-
 ### prevent orf overlap ###
 if (lc($query->param('noorf')) eq "on") {
     $noorf = 1;

@@ -205,10 +205,10 @@ relative to the star codon (position 0 is the A from the start ATG).
 <h4>Combining upstream and coding sequence</h4>
 <P>
 For coli genes, regulatory signals sometimes overlap the 5' side of
-the coding sequence. By doing so, they exert a repression effect by
-preventing RNA-polymerase from binding DNA. <tt>retrieve-seq</tt>
-allows you to extract a sequence that combines an upstream and a
-coding segment. Try :
+the coding sequence. This is often ssociated to a repression effect:
+the bound transcription factor prevents RNA-polymerase from binding
+DNA. <tt>retrieve-seq</tt> allows you to extract a sequence that
+combines an upstream and a coding segment. Try :
 
 <ul><pre>
 retrieve-seq -type upstream -org ecoli -q metA -from -200 -to 49
@@ -286,7 +286,7 @@ more PHO_up800.fasta
 <h4>Retrieving all upstream sequences</h4>
 
 For genome-scale analyses, it is convenient to retrieve upstream
-sequenes for all the genes of a given genome, without having to
+sequences for all the genes of a given genome, without having to
 specify the complete list of names. Fr this, simply use the option
 <TT>-all</TT>.
 
