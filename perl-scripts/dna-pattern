@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dna-pattern,v 1.33 2004/05/07 07:11:44 jvanheld Exp $
+# $Id: dna-pattern,v 1.34 2004/08/02 22:08:09 jvanheld Exp $
 #
 # Time-stamp: <2003-08-13 12:16:03 jvanheld>
 #
@@ -59,7 +59,6 @@ unless (($allowed_subst eq "") || (&IsNatural($allowed_subst))) {
 
 ### check input format 
 &CheckInputSeqFormat($in_format);
-
 
 
 @patterns = &ReadPatterns(pattern_file=>$pattern_file, 
@@ -1348,22 +1347,26 @@ SEQUENCE FILE FORMAT
                 1	
 
 OUTPUT
-	The output file contains columns separated by tabs (\\t), 
-	providing respectively:
-	- query pattern identifier word
-	- match found on direct (D) or reverse complement (R) strand
-	- pattern sequence
-	- sequence file name
-	- start position of the match
-	- end position of the match
-	- matching sequence
-	- the matching score
+	The output file contains columns separated by tabs (\\t).
 
-	If the -c option is entered, output file provides :
-	- query pattern identifier word
-	- query pattern sequence
-	- sequence file name
-	- number of matches for the current pattern in the current file
+	Column contents:
+
+	1- pattern identifier
+	2- matching strand : direct (D) or reverse complement (R)
+	3- pattern sequence
+	4- name of the sequence matching the pattern
+	5- start position of the match
+	6- end position of the match
+	7- match sequence
+	8- matching score
+
+	If the -c option is entered, output file returns the following
+	columns :
+
+	1- query pattern identifier word
+	2- query pattern sequence
+	3- sequence file name
+	4- number of matches for the current pattern in the current file
 
 EXAMPLES
 	dna-pattern -i GATA -p GATWA -s $RSAGENOME/chr1.raw -c
