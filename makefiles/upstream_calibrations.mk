@@ -156,14 +156,14 @@ markov:
 FROM=-1
 TO=-250
 OLIGO_TABLE=${OLIGO_DIR}/upstream_${FROM}_${TO}_per_gene_${OL}nt${STR}${NOOV}.tab${COMPRESS}
-OLIGO_TABLE_CMD=						\
-	sub-sequence -i ${SEQ_FILE} -from ${FROM} -to ${TO}	\
-		| oligo-analysis -v ${V}				\
-		-format fasta -table -l ${OL} ${STR} ${NOOV}	\
-		-o ${OLIGO_TABLE}
 
-one_oligo_table: dirs
-	@echo ${DATE}	${OLIGO_TABLE_CMD}
+OLIGO_TABLE_CMD=sub-sequence -i ${SEQ_FILE} -from ${FROM} -to ${TO} | oligo-analysis -v ${V} -format fasta -table -l ${OL} ${STR} ${NOOV} -o ${OLIGO_TABLE}
+
+one_oligo_table:
+	mkdir -p ${OLIGO_DIR}
+	@echo
+	@echo ${DATE}
+	@echo "${OLIGO_TABLE_CMD}"
 	@${OLIGO_TABLE_CMD}
 
 oligo_windows:
