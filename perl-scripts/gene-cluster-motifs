@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.53 2004/01/29 12:52:21 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.54 2004/01/29 13:47:48 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -464,7 +464,7 @@ sub DrawFeatureMap {
     
 
     ## feature-map drawing
-    if (($background eq "calib1") || ($background eq "calibN")){
+    if ($family{$family_name}->{calib_length}) {
 	$from = -$family{$family_name}->{calib_length};
 	$to = -1;
     }
@@ -552,7 +552,7 @@ sub DrawMergedFeatureMap {
     }
 
     ## feature-map drawing
-    if (($background eq "calib1") || ($background eq "calib1")){
+    if  ($family{$family_name}->{calib_length}) {
 	$from =  $family{$family_name}->{calib_length};
 	$to = -1;
     }
