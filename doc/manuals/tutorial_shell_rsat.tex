@@ -1,6 +1,6 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
-% Tutorials for the command-line utilization of
+% Tutorials for theset pa command-line utilization of
 % the Regulatory Sequence Analysis Tools
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -62,11 +62,10 @@ programs presented here were written by Jacques van Helden.
 
 \section{Accessing the programs}
 
-In order to use the shell version of \RSAT, you first need an
-account on a unix machine where \RSAT is installed, and you should
-know the directory where \RSAT have been installed.
-
-If this is not your case, ask your system adminstrator.
+In order to use the shell version of \RSAT, you first need an account
+on a unix machine where \RSAT is installed, and you should know the
+directory where \RSAT have been installed. (if you don't know, ask
+assistance to your system administrator).
 
 For this tutorial, let us assume that \RSAT is installed in the
 directory \texttt{/usr/local/rsa-tools}
@@ -80,8 +79,8 @@ commands.
 
 \begin{verbatim}
 set RSAT=/usr/local/rsa-tools
-set PATH=(${RSAT}/perl-scripts/ $PATH)
-set PATH=(${RSAT}/bin/ $PATH)
+set path=($path $RSAT/perl-scripts)
+set PATH=($path $RSAT/bin/)
 rehash
 \end{verbatim}
 
@@ -131,6 +130,9 @@ retrieve-seq -help
 which is convenient to remind the precise formulation of arguments for
 a given progam.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Sequence retrieval
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Retrieving sequences}
 
 The program \texttt{retrieve-seq} allows you to retrieve sequences
@@ -240,8 +242,14 @@ more PHO_up800.fasta
 
 For genome-scale analyses, it is convenient to retrieve upstream
 sequences for all the genes of a given genome, without having to
-specify the complete list of names. Fr this, simply use the option
+specify the complete list of names. For this, simply use the option
 \texttt{-all}.
+
+As an illustration, we will use \command{retrieve-seq} to retrieve all
+the start codons from \organism{Escherichia coli}. As we saw before,
+negative coordinates specify upstream positions, 0 being the first
+base of the coding sequence. Thus, by specifying positions 0 to 2, we
+will extract the three first coding bases, i.e. the start codon. 
 
 \begin{verbatim}
 retrieve-seq -type upstream -org Escherichia_coli_K12 \
@@ -715,6 +723,9 @@ more PHO_consensus
 \end{verbatim}
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% PATTERN MATCHING
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Pattern matching}
 
 In a pattern matching problem, you start from one or several
@@ -1099,6 +1110,9 @@ retrieve-seq -type upstream -from -1 -to -800  \
     | patser -m PHO_matrix -l 9 -A a:t c:g
 \end{verbatim}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% DRAWING GRAPHS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Drawing graphs}
 
 \subsection{Accessing graphs in your account from the web}
@@ -1108,6 +1122,9 @@ retrieve-seq -type upstream -from -1 -to -800  \
 \subsection{XYgraph}
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% UTILITIES
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Utilities}
 
 \subsection{orf-info}
@@ -1140,8 +1157,114 @@ orf-info -org Escherichia_coli_K12 \
     -q 'met.*' -q 'thr.*' -q 'lys.*'
 \end{verbatim}
 
+\subsection{On-the-fly compression/uncompression}
+All programs from \RSAT support automatic compression and
+uncompression of gzip files. This can be very convenient when dealing
+with big sequence files.
+
+To compress the result of a query, simply add the extension
+\texttt{.gz} to the output file name.
+
+\begin{verbatim}
+retrieve-seq -all -org Saccharomyces_cerevisiae \
+        -from -1 -to -200 -noorf -format fasta \
+        -o all_up200.fta.gz
+\end{verbatim}
+
+The result file is a compressed archive. Check its size with the
+command 
+\begin{verbatim}
+ls -l
+\end{verbatim}
+
+Uncompress the file with the command 
+\begin{verbatim}
+gunzip all_up200.fta.gz
+\end{verbatim}
+
+The file has now lost the \texttt{.gz} extension. Check the size of the
+uncompressed file.
+
+Recompress the file with the command
+\begin{verbatim}
+gzip all_up200.fta
+\end{verbatim}
+
+Similarly, you can directly use a compressed archive as input for
+\RSAT, it will be uncompressed on the fly, without occupying space on
+the hard drive. For example :
+
+\begin{verbatim}
+dna-pattern -i all_up200.fta.gz -p GATAAG -c -th 3
+\end{verbatim}
+
+will return all the genes hacing at least three occurrences f the
+motif \texttt{GATAAG} in their 200 bp upstream region.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% EXERCISES
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Exercises}
+
+As an exercise, we will now combine the different tools described
+above to analyse the full set of promoters from \organism{Arabidopsis
+thaliana}. We define ourselves the following goals :
+\begin{enumerate}
+\item Discover motifs which are over-represented in the complete set
+of upstream sequences for the selected organism. 
+\item Try different parameters for this pattern discovery, and compare
+the results.
+\item Use these over-represented patterns to scan full chromosomes
+with a sliding window, to evaluate if we can predict promoter
+locations on the sole basis of pattern occurrences. find optimal
+parameters for the prediction of promoter locations.
+\end{enumerate}
+
+\subsection{Some hints}
+
+\subsubsection{Sequence retrieval}
+
+The first step will be to retrieve the full complement of upstream
+sequences. Since we have no precise idea about the best sequence size,
+we will try several reasonable ranges, each roughly corresponding to a
+given functionality.
+
+\begin{description}
+\item[from -1 to -200] this regions is likey to contain mostly 5'UTR.
+\item[from -1 to -400] this region is likely to contain the 5' UTR and
+the proximal promoter.
+\item[from -1 to -1000] this region is likely to include the 5'UTR,
+as well as the proxima and distal promoters. 
+\item[from -1 to -2000] an even larger range, which probably contains
+most of the upstream cis-acting elements in \organism{A. thaliana}.
+\end{description}
+
+In all cases, we will clip upstream ORFs, because they would bias the
+oligonucleotide composition.
+
+Write the commands which will retrieve all upstream sequences over the
+specified range. Beware, the sequence files may occupy a large space
+on the disk, it is probably wise to directly compress them by adding
+the extension \texttt{.gz} to the output file.
+
+\subsubsection{Detection of over-represented motifs}
+
+In a first step, we will restrict our analysis to
+hexanucleotides. Once all the subsequent steps (full chromosome
+scanning) will be accomplished, we will redo the complete analysis
+with different oligonucleotide lengths, and compare the efficiency of
+promoter prediction.
+
+Detect over-represented oligo-nucleotides with different estimators of
+expected frequencies: Markov chains of different orders, non-coding
+frequencies. 
+
+Do not forget to prevent counting self-overlapping matches.
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Bibliographic references
 \section{References}
 
 \begin{enumerate}
@@ -1167,6 +1290,11 @@ analysis of spaced dyads. Nucleic Acids Res. 28(8):1808-18.
 S. (2001). Applications of regulatory sequence analysis and metabolic
 network analysis to the interpretation of gene expression
 data. Lecture Notes in Computer Sciences 2066: 155-172. 
+
+\item van Helden, J. (2002). Prediction of transcriptional regulation
+by analysis of the non-coding genome. Current Genomics \textit{in
+press}.
+
 
 \end{enumerate}
 
