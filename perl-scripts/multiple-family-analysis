@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.29 2002/12/09 22:38:35 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.30 2002/12/09 22:50:14 jvanheld Exp $
 #
-# Time-stamp: <2002-12-09 16:38:22 jvanheld>
+# Time-stamp: <2002-12-09 16:49:29 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -42,6 +42,7 @@ $supported_sort_keys  = join ",", sort keys %supported_sort_key;
 			);
 $supported_background  = join ",", sort keys %supported_background;
 
+$scalestep = 100;
 $noorf = 1;
 $default{from} = -800;
 $default{to} = 0;
@@ -143,8 +144,8 @@ sub SetFileNames {
 	## do nothing. Expected dyad frequencies will be calculated on the basis of monad frequencies
     } elsif ($exp_freq_file{dyads}) {
 	$dyad_options .= " -expfreq $exp_freq_file{dyads}";
-    } elsif ($background eq "intergenic") {
-	$dyad_options .= " -ncf ";
+    } elsif ($background) {
+	$dyad_options .= " -bg $background ";
 	$dyad_options .= " -org $organism_name ";
 #      $dyad_suffix .= "_ncf";
     } elsif ($background eq "mncf") {
@@ -288,7 +289,7 @@ sub DrawOligoFeatureMap {
     $origin = "-0";
     $command = "dna-pattern -i $family{$family_name}->{seq_file} -format $seq_format -pl $family{$family_name}->{oligo_file} -origin $origin -N 4 ";
     $command .= " | features-from-dnapat -o $family{$family_name}->{oligo_ft_file} ";
-    $command .= " ; feature-map -i $family{$family_name}->{oligo_ft_file} -scalebar -scalestep 50 -legend -from $from -to $to -o $fmap_file -scorethick -htmap > $htmap_file ";
+    $command .= " ; feature-map -i $family{$family_name}->{oligo_ft_file} -scalebar -scalestep $scalestep -legend -from $from -to $to -o $fmap_file -scorethick -htmap > $htmap_file ";
     
     &doit($command);
 }
@@ -696,7 +697,7 @@ sub DrawDyadFeatureMap {
     $command .= "; feature-map -i $family{$family_name}->{dyad_ft_file} -o $family{$family_name}->{fmap_file} ";;
     $command .= "-from $from -to $to ";
     $command .= "-legend ";
-    $command .= "-scalebar -scalestep 50 ";
+    $command .= "-scalebar -scalestep $scalestep ";
     $command .= "-scorethick ";
     $command .= "-mlen 520 ";
     $command .= "-title '${family_name}$dyad_suffix' ";
