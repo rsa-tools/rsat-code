@@ -4,55 +4,23 @@
 
 \section{Installing additional organisms}
 
-The easiest way to install an organism in \RSAT is to download the
-complete genome files from the NCBI
-\urlref{ftp://ftp.ncbi.nih.gov/genomes/}, and to parse it with the
-program \program{parse-genbank.pl}.
+\RSAT includes a series of tools to install and maintain the latest
+version of genomes.
 
-We will illustrate the procedure with some examples. 
+\subsection{Data sources}
 
-\subsection{Downloading genomes from NCBI/Genbank}
+Genomes can be obtained from various sources:
+\begin{itemize}
+\item NCBI/Genbank (\url{ftp://ftp.ncbi.nih.gov/genomes/})
 
-\RSAT includes a makefile to download genomes from different sources.
-We provide hereafter a protocol to create a download directory in your
-account, and download genomes in this directory. Beware, genomes
-require a lot of disk space, especially for those of higher
-organisms. To avoid filling up your hard drive, we illustrate the protocol
-with the smallest procaryote genome to date: \textit{Mycoplasma
-  genitamlium}.
+\item ENSEMBL (\url{http://www.ensembl.org/})
 
-The script \file{\$RSAT/makefiles/downloads.mk} relies on the
-application \program{wget}, which is part of linux
-distribution. \program{wget} is a ``web aspirator'', which allows to
-downlaod whole directories from ftp and http sites. You can check if
-the program is installed on your machine.
+\item The EBI genome directory (\url{ftp://ftp.ebi.ac.uk/pub/databases/genomes/Eukaryota/})
 
-\begin{verbatim}
-wgget -help
-\end{verbatim}
+\end{itemize}
 
-This command should return the help pages for \program{wget}.  If you
-obtain an error message (``command not found''), you need to ask your
-system administrator to install it.
-
-\begin{verbatim}
-## Creating a directory for downloading genomes in your home account
-cd $HOME
-mkdir -p downloads
-cd downloads
-
-## Creating a link to the makefile which allows you to dowload genomes
-ln -s ${RSAT}/makefiles/downloads.mk ./makefile
-\end{verbatim}
-
-We will now download a small genome from NCBI/Genbank. 
-
-\begin{verbatim}
-## Downloading one directory from NCBI Genbank
-cd $HOME/downloads/
-make one\_genbank\_dir GB\_DIR=genomes/Bacteria/Mycoplasma\_genitalium
-\end{verbatim}
-
+Other genomes can also be found on the web site of a diversity of
+genome-sequencing centers.
 
 
 \subsection{The genome files}
@@ -118,7 +86,7 @@ the same ID in the first column.
 \subsubsection{Example}
 
 \begin{verbatim}
-cd \$RSAT/data/genomes/Saccharomyces\_cerevisiae/genome/
+cd $RSAT/data/genomes/Saccharomyces_cerevisiae/genome/
 
 ## The list of sequence files
 cat contigs.txt
@@ -130,20 +98,220 @@ ls -l *.raw
 head -30 feature.tab
 
 ## The gene names/synonyms
-head -30 feature\_names.tab
+head -30 feature_names.tab
 
 \end{verbatim}
 
-\subsubsection{Manual installation of a genome}
 
-If you are not lucky, the genome you want to work with is not
-available in Genbank format. If this is the case, you can still try a
-manual installation. This is a bit tricky, but basically you will need
-three informations described above. 
+\subsection{Parsing genomes from NCBI/Genbank}
+
+The easiest way to install an organism in \RSAT is to download the
+complete genome files from the NCBI
+\urlref{ftp://ftp.ncbi.nih.gov/genomes/}, and to parse it with the
+program \program{parse-genbank.pl}.
+
+\subsubsection{Downloading genomes from NCBI/Genbank}
+
+\RSAT includes a makefile to download genomes from different sources.
+We provide hereafter a protocol to create a download directory in your
+account, and download genomes in this directory. Beware, genomes
+require a lot of disk space, especially for those of higher
+organisms. To avoid filling up your hard drive, we illustrate the protocol
+with the smallest procaryote genome to date: \textit{Mycoplasma
+  genitamlium}.
+
+The script \file{\$RSAT/makefiles/downloads.mk} relies on the
+application \program{wget}, which is part of linux
+distribution. \program{wget} is a ``web aspirator'', which allows to
+downlaod whole directories from ftp and http sites. You can check if
+the program is installed on your machine.
+
+\begin{verbatim}
+wgget -help
+\end{verbatim}
+
+This command should return the help pages for \program{wget}.  If you
+obtain an error message (``command not found''), you need to ask your
+system administrator to install it.
+
+\begin{verbatim}
+## Creating a directory for downloading genomes in your home account
+cd $HOME
+mkdir -p downloads
+cd downloads
+
+## Creating a link to the makefile which allows you to dowload genomes
+ln -s $RSAT/makefiles/downloads.mk ./makefile
+\end{verbatim}
+
+We will now download a small genome from NCBI/Genbank. 
+
+\begin{verbatim}
+## Downloading one directory from NCBI Genbank
+cd $HOME/downloads/
+make one_genbank_dir GB_DIR=genomes/Bacteria/Mycoplasma_genitalium
+\end{verbatim}
+
+
+\subsubsection{Parsing genomes from NCBI/Genbank}
+
+The program \program{parse-genbank.pl} extract genome information
+(sequence, gene location, ...) from Genbank flat files, and exports
+the result in a set of tab-delimited files.
+
+\begin{verbatim}
+
+
+
+\end{verbatim}
+
+
+\subsection{Parsing genomes from EMBL files}
+
+The program \program{parse-embl.pl} reads flat files in EMBL format,
+and exports genome sequences and features (CDS, tRNA, ...) in
+different files.
+
+As an example, we can parse a yeast genome sequenced by the
+``Genolevures'' project
+\urlref{http://natchaug.labri.u-bordeaux.fr/Genolevures/download.php}.
+
+Let us assume that you want to parse the genome of the species
+\textit{Debaryomyces hansenii}.
+
+Before parsing, you need to download the files in your account, 
+
+\begin{itemize}
+\item Create a directory for storing the EMBL files. The last level of
+  the directory should be the name of the organism, where spaces are
+  replaced by underscores. Let us assume that you store them in
+  the directory \file{\$HOME/downloads/Debaryomyces\_hansenii}.
+
+\item Download all the EMBL file for the selected organism. Save each
+  name under its original name (the contig ID), followed by the
+  extension \texttt{.embl})
+
+\end{itemize}
+
+We will check the content of this directory.
+
+\begin{verbatim}
+ls -1 $HOME/downloads/Debaryomyces_hansenii
+\end{verbatim}
+
+On my computer, it gives the following result
+
+\begin{verbatim}
+CR382133.embl
+CR382134.embl
+CR382135.embl
+CR382136.embl
+CR382137.embl
+CR382138.embl
+CR382139.embl
+\end{verbatim}
+
+The following instruction will parse this genome.
+
+\begin{verbatim}
+parse-embl.pl -v 1 -i  $HOME/downloads/Debaryomyces_hansenii
+\end{verbatim}
+
+If you do not specify the output directory, a directory is
+automatically created by combining the current date and the organism
+name.  The verbose messages will indicate you the path of this
+directory, something like
+\file{\$HOME/parsed\_data/embl/20050309/Debaryomyces\_hanseni}.
+
 
 \subsubsection{Installing a genome in the main \RSAT directory}
 
-%%%%%%%%%%%%%%%% to be written %%%%%%%%%%%%%%%%
+Once the genome has been parsed, the simplest way to make it available
+ for all the users is to install it in the \RSAT genome directory. You
+ can already check the genomes installed in this directory.
+
+\begin{verbatim}
+ls -1 $RSAT/data/genomes/
+\end{verbatim}
+
+There is one subdirectory per organism. For example, the yeast data is
+ in \file{\$RSAT/data/genomes/Saccharomyces\_cerevisiae/}. This
+ directory is further subdivided in folders: \file{genome} and
+ \file{oligo-frequencies}.
+
+We will now create a directory to store data about
+ Debaryomyces\_hansenii, and transfer the newly parsed genome in this
+ directory.
+
+\begin{verbatim}
+## Create the directory
+mkdir -p $RSAT/data/genomes/Debaryomyces_hansenii/genome
+
+## Transfer the data in this directory
+mv $HOME/parsed_data/embl/20050309/Debaryomyces_hanseni/* \
+  $RSAT/data/genomes/Debaryomyces_hansenii/genome
+
+## Check the transfer
+ls -ltr $RSAT/data/genomes/Debaryomyces_hansenii/genome
+\end{verbatim}
+
+\subsubsection{Updating the configuration file}
+
+\begin{verbatim}
+install-organism -v 1 -org Debaryomyces_hansenii -task config
+\end{verbatim}
+
+\subsubsection{Checking the start codons}
+
+As soon as the configuration file has been updated, we should be in
+state to retrieve sequences for the newly installed genome. We will
+check this by retrieving a the start codons.
+
+\begin{verbatim}
+retrieve-seq -org Debaryomyces_hansenii -all -from 0 -to 2
+\end{verbatim}
+
+We can now analyze the trinucleotide composition of the start
+ codons. In principle, al of them should be ATG for an eucaryote
+ organism.
+
+\begin{verbatim}
+retrieve-seq -org Debaryomyces_hansenii -all -from 0 -to 2 \
+    | oligo-analysis -l 3 -1str -v 1 -return occ,freq -sort
+\end{verbatim}
+
+\subsubsection{Checking the start and stop codons with \program{install-organisms}}
+
+The program \program{install-organisms} includes an option to
+automatically check all the start and stop codons from a parsed
+organism.
+
+\begin{verbatim}
+install-organism -v 1 -org Debaryomyces_hansenii -task start_stop
+\end{verbatim}
+
+You can then check the composition of the start and stop codons.
+
+\begin{verbatim}
+cd $RSAT/data/genomes/Debaryomyces_hansenii/genome/
+more Debaryomyces_hansenii_start_codon_frequencies
+more Debaryomyces_hansenii_stop_codon_frequencies
+\end{verbatim}
+
+The stop codons should be TAA, TAG or TGA, for any organism. For
+eucaryotes, all start codons should be ATG. For some procaryotes,
+alternative start codons (GTG, TGG) are frequent.
+
+\subsubsection{Calibrating oligonucleotide and dyad frequencies with \program{install-organisms}}
+
+The programs \program{oligo-analysis} and \program{dyad-analysis}
+  require calibrated frequencies for the background models. These
+  frequencies are calculated automatically with
+  \program{install-organism}.
+
+\textbf{Warning: } this task requires several hours of computation (a
+few hours for small bacterial genomes, and several days for the human
+genome).
 
 \subsubsection{Installing a genome in your own account}
 
@@ -159,7 +327,7 @@ First, prepare a directory where you will store the data for your
 organism. For example:
 
 \begin{verbatim}
-mkdir -p ${HOME}/rsat-add/data/Mygenus_myspecies/
+mkdir -p $HOME/rsat-add/data/Mygenus_myspecies/
 \end{verbatim}
 
 
