@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.29 2003/04/29 20:08:32 jvanheld Exp $
+# $Id: install-organism,v 1.30 2003/10/20 23:20:42 jvanheld Exp $
 #
-# Time-stamp: <2003-04-29 22:06:43 jvanheld>
+# Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
 ############################################################
 
@@ -93,30 +93,38 @@ umask 0002;
 unless ($install_dir) {
     $install_dir = $RSA."/data/genomes/".$organism_short_name;
 }
-unless (-d $install_dir) {
-    warn "\tCreating installation directory $install_dir\n" if ($verbose >= 1);
-    mkdir $install_dir, 0775;
-}
+
+&CheckOutputDir($install_dir);
+#unless (-d $install_dir) {
+#    warn "\tCreating installation directory $install_dir\n" if ($verbose >= 1);
+#    mkdir $install_dir, 0775;
+#}
 
 $genome_dir = "$install_dir/genome";
-unless (-d $genome_dir) {
-    warn "\tCreating genome directory $genome_dir\n" if ($verbose >= 1);
-    mkdir $genome_dir, 0775;
-}
+&CheckOutputDir($genome_dir);
+#unless (-d $genome_dir) {
+#    warn "\tCreating genome directory $genome_dir\n" if ($verbose >= 1);
+#    mkdir $genome_dir, 0775;
+#}
 
 $oligo_dir = "$install_dir/oligo-frequencies";
-unless (-d $oligo_dir) {
-    print "Creating dir $oligo_dir\n";
-    mkdir $oligo_dir, 0775;
-}
+&CheckOutputDir($oligo_dir);
+#unless (-d $oligo_dir) {
+#    print "Creating dir $oligo_dir\n";
+#    mkdir $oligo_dir, 0775;
+#}
 
 #$outfile{genome} = "$genome_dir/${organism_short_name}_chromosomes.txt";
 #$outfile{features} = "$genome_dir/${organism_short_name}_features.tab";
 #$outfile{synonyms} = "$genome_dir/${organism_short_name}_synonyms.tab";
 
-$outfile{genome} = "$genome_dir/Contigs_${organism_short_name}.txt" unless ($outfile{genome});
-$outfile{features} = "$genome_dir/Feature_${organism_short_name}.tab" unless ($outfile{features});
-$outfile{synonyms} = "$genome_dir/Feature_names_${organism_short_name}.tab" unless ($outfile{synonyms});
+#$outfile{genome} = "$genome_dir/Contigs_${organism_short_name}.txt" unless ($outfile{genome});
+#$outfile{features} = "$genome_dir/Feature_${organism_short_name}.tab" unless ($outfile{features});
+#$outfile{synonyms} = "$genome_dir/Feature_names_${organism_short_name}.tab" unless ($outfile{synonyms});
+
+$outfile{features} = "$genome_dir/Feature.tab" unless ($outfile{features});
+$outfile{synonyms} = "$genome_dir/Feature_names.tab" unless ($outfile{synonyms});
+$outfile{genome} = "$genome_dir/Contigs.txt" unless ($outfile{genome});
 
 
 ################################################################
@@ -268,7 +276,11 @@ sub UpdateConfig {
     }
 
     ### read taxonomy from the parsing result
-    $organism_table = $install_dir."/genome/${organism_short_name}.tab";
+    $organism_table = $install_dir."/genome/Organism.tab";
+    unless (-e $organism_table) {
+	$organism_table = $install_dir."/genome/Organism_${organism_short_name}.tab";
+    }
+
     ($org_handle) = &OpenInputFile($organism_table);
     while (<$org_handle>) {
 	chomp;

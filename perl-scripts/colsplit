@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: colsplit,v 1.6 2002/10/07 16:00:26 jvanheld Exp $
+# $Id: colsplit,v 1.7 2003/10/20 23:21:16 jvanheld Exp $
 #
-# Time-stamp: <2002-10-07 09:56:06 jvanheld>
+# Time-stamp: <2003-10-21 01:21:08 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -39,12 +39,13 @@ local $separator = "\t";
 #### check argument 
 
 #### check existence of output dir
-unless (-d $output_dir) {
-    `mkdir -p $output_dir`;
-    unless (-d $output_dir) {
-	&FatalError("Cannot create output directory $output_dir");
-    }
-}
+&CheckOutputDir($output_dir);
+#unless (-d $output_dir) {
+#    `mkdir -p $output_dir`;
+#    unless (-d $output_dir) {
+#	&FatalError("Cannot create output directory $output_dir");
+#    }
+#}
 
 ##### read input
 ($in) = &OpenInputFile($infile{input});
