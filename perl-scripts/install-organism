@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.10 2002/03/20 22:40:25 jvanheld Exp $
+# $Id: install-organism,v 1.11 2002/03/25 02:51:18 jvanheld Exp $
 #
-# Time-stamp: <2002-03-20 23:39:42 jvanheld>
+# Time-stamp: <2002-03-25 03:34:39 jvanheld>
 #
 ############################################################
 
@@ -95,7 +95,7 @@ unless (-d $oligo_dir) {
 #$outfile{features} = "$genome_dir/${organism_short_name}_features.tab";
 #$outfile{synonyms} = "$genome_dir/${organism_short_name}_synonyms.tab";
 
-$outfile{genome} = "$genome_dir/Chromosomes_${organism_short_name}.txt" unless ($outfile{genome});
+$outfile{genome} = "$genome_dir/Contigs_${organism_short_name}.txt" unless ($outfile{genome});
 $outfile{features} = "$genome_dir/Feature_${organism_short_name}.tab" unless ($outfile{features});
 $outfile{synonyms} = "$genome_dir/Feature_names_${organism_short_name}.tab" unless ($outfile{synonyms});
 
@@ -249,15 +249,19 @@ sub UpdateConfig {
 	open CONFIG, ">$config_to_update" 
 	    || die "Error: cannot write config file $config_to_update\n";
 	print CONFIG $previous_config;
-	print CONFIG "\n#### $organism_short_name\t$organism_full_name\n";
-	print CONFIG "\$supported_organism{'$organism_short_name'}->{'name'} = \"$organism_full_name\";\n";
-	print CONFIG "\$supported_organism{'$organism_short_name'}->{'data'} = \"$install_dir\";\n";
-	print CONFIG "\$supported_organism{'$organism_short_name'}->{'features'} = \"$outfile{features}\";\n";
-	print CONFIG "\$supported_organism{'$organism_short_name'}->{'genome'} = \"$outfile{genome}\";\n";
-	print CONFIG "\$supported_organism{'$organism_short_name'}->{'seq_format'} = \"filelist\";\n";
+
+	my $new_org_config = 	 "\n#### $organism_short_name\t$organism_full_name\n";
+	$new_org_config .= "\$supported_organism{'$organism_short_name'}->{'name'} = \"$organism_full_name\";\n";
+	$new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'data'} = \"$install_dir\";\n";
+	$new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'features'} = \"$outfile{features}\";\n";
+	$new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'genome'} = \"$outfile{genome}\";\n";
+	$new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'seq_format'} = \"filelist\";\n";
 	if (defined($outfile{synonyms})) {
-	    print CONFIG "\$supported_organism{'$organism_short_name'}->{'synonyms'} = \"$outfile{synonyms}\";\n";
+	    $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'synonyms'} = \"$outfile{synonyms}\";\n";
 	}
+	$new_org_config =~ s|$RSA/|\$RSA/|g;
+
+	print CONFIG $new_org_config;
 	print CONFIG "\nreturn 1;\n";
 	close CONFIG;
     }
