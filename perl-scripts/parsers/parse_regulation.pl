@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_regulation.pl,v 1.6 2002/11/28 07:43:06 jvanheld Exp $
+# $Id: parse_regulation.pl,v 1.7 2002/11/28 07:58:08 jvanheld Exp $
 #
-# Time-stamp: <2002-11-28 01:41:57 jvanheld>
+# Time-stamp: <2002-11-28 01:56:46 jvanheld>
 #
 ############################################################
 ### parse_regulation.plt
@@ -467,6 +467,8 @@ sub ParseRegulation {
 		       ), "\n" if ($verbose >=4);
 	}
 
+
+	#### check the controlType
 	unless (defined($class_holder{$field{controlType}})) {
 	    push @current_errors, "unknown control type";
 	    &ErrorMessage(join ("\t", 
@@ -478,6 +480,7 @@ sub ParseRegulation {
 	    next;
 	}
 	
+	#### select the class for the new interaction
 	my $class_holder = $class_holder{$field{controlType}};
 	
 	if (($class_holder == $transcriptionalRegulations) && 
@@ -493,6 +496,24 @@ sub ParseRegulation {
 	    next;
 	}
 
+	#### merge the remarks (Georges annotated them in 4 columns)
+	if ($field{remark2} =~ /\S/) {
+	    warn join "\t", $l, "merging remark2\n" if ($verbose >= 0);
+	    $field{remark} .= "|".$field{remark2};
+	}
+	if ($field{remark3} =~ /\S/) {
+	    warn join "\t", $l, "merging remark3\n" if ($verbose >= 0);
+	    $field{remark} .= "|".$field{remark3};
+	}
+	if ($field{remark4} =~ /\S/) {	
+	    warn join "\t", $l, "merging remark4\n" if ($verbose >= 0);
+	    $field{remark} .= "|".$field{remark4};
+	}
+	if ($field{'remark 4'} =~ /\S/) {
+	    warn join "\t", $l, "merging remark 4\n" if ($verbose >= 0);
+	    $field{remark} .= "|".$field{'remark 4'};
+	}
+	
 	#### when there are multiple outputs, create one regulation per output
 	my @control_outputs = split /\|/, $field{controlledFrom};
 
