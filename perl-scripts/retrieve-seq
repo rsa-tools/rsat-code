@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: retrieve-seq,v 1.4 2000/08/02 16:42:07 jvanheld Exp $
+# $Id: retrieve-seq,v 1.5 2000/08/02 22:57:43 jvanheld Exp $
 #
-# Time-stamp: <2000-08-02 18:39:32 jvanheld>
+# Time-stamp: <2000-08-03 00:56:40 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -39,7 +39,7 @@ my %chomosome = ();
 my $chrom = "";
 
 $seq_label = "full";  
-$sequence_type = "up";
+$sequence_type = "upstream";
 @queries = ();
 $out_format = "fasta";
 $line_width = 60;
@@ -58,9 +58,9 @@ if ($organism eq "") {
   die "Error: you should specify an organism\n$supported_organisms\n";  
 } elsif ($organism eq "yeast") {
   $args = join " ", @ARGV;
-  if ($sequence_type eq "up") {
+  if ($sequence_type eq "upstream") {
     system "$SCRIPTS/upstream-region-yeast $args";
-  } elsif ($sequence_type eq "down") {
+  } elsif ($sequence_type eq "downstream") {
     system "$SCRIPTS/downstream-region-yeast $args";
   }
   exit(0);
@@ -184,7 +184,7 @@ QUERYLOOP: foreach $query (@queries) {
   $current_to = $to;
   
   ### upstream region
-  if ($sequence_type eq "up") {
+  if ($sequence_type eq "upstream") {
     if ($no_orf) {
       $current_from = &max(-$up_dist{$orf_id} + 1, $from);
     } 
@@ -198,7 +198,7 @@ QUERYLOOP: foreach $query (@queries) {
     }
     
     ### downstream region
-  } elsif ($sequence_type eq "down") {
+  } elsif ($sequence_type eq "downstream") {
     if ($no_orf) {
       $current_to = &min($down_dist{$orf_id} - 1, $to);
     } 
@@ -234,7 +234,7 @@ QUERYLOOP: foreach $query (@queries) {
   }
   
   unless ($no_comments) {
-    @comments = ("$query upstream sequence, from $current_from to $current_to, size $reg_size");
+    @comments = ("$query $sequence_type sequence, from $current_from to $current_to, size $reg_size");
     @comments = (@comments, "upstream region size: $reg_size; upstream region location: $reg_left $reg_right $orf_strand");
     @comments = (@comments, "Gene: $name; ID: $orf_id; gene location: $orf_left $orf_right $orf_strand");
   }
@@ -457,13 +457,13 @@ sub ReadArguments {
       
       #### type
     } elsif ($ARGV[$a] eq "-type") {
-      if ($ARGV[$a+1] =~ /^up/) {
-	$sequence_type = "up";
+      if ($ARGV[$a+1] =~ /^up/i) {
+	$sequence_type = "upstream";
 	$default{from} = -400;
 	$default{to} = -1;
 
-      } elsif ($ARGV[$a+1] =~ /^down/) {
-	$sequence_type = "down";
+      } elsif ($ARGV[$a+1] =~ /^down/i) {
+	$sequence_type = "downstream";
 	$default{from} = 1;
 	$default{to} = 200;
 
@@ -483,7 +483,7 @@ sub ReadArguments {
       } elsif ((lc($ARGV[$a+1]) eq "gene")) {
 	$seq_label = "gene";
       } elsif ((lc($ARGV[$a+1]) eq "full")) {
-	$seq_label = "gene";
+	$seq_label = "full";
       } else {
 	die "Error: invalid sequence label";
       }
