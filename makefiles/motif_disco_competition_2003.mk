@@ -101,7 +101,8 @@ CURRENT_SET=yst01
 SEQ_FILE=${DATA}/${ORG}/${CURRENT_SET}.fasta
 
 RES_DIR=results
-CURRENT_RES_DIR=${RES_DIR}/${ORG}/${CURRENT_SET}
+#CURRENT_RES_DIR=${RES_DIR}/${ORG}/${CURRENT_SET}
+SEQ_LEN_DIR=${RES_DIR}/${ORG}/${CURRENT_SET}
 ################################################################
 #### Create the result directory for the current set
 current_dir:
@@ -199,23 +200,23 @@ pattern_disco: oligos dyads
 
 ################################################################
 #### Detect over-represented oligonucleotides
-OLIGO_DIR=${CURRENT_RES_DIR}/oligos
-MODEL=-expfreq ${BG_OLIGO_FILE}
-MODEL_SUFFIX=allup
-OLIGO_FILE=${OLIGO_DIR}/oligos_${CURRENT_SET}_${OLIGO_LEN}nt${STR}${NOOV}_sig${THOSIG}_${MODEL_SUFFIX}
-OLIGO_FILE_HTML=${OLIGO_FILE}.html
-oligos:
-	@echo "${ORG}	${CURRENT_SET}	Detecting over-represented oligonucleotides	${OLIGO_FILE}"
-	@mkdir -p ${OLIGO_DIR}
-	oligo-analysis -v ${V}			\
-		-i ${SEQ_FILE}			\
-		${MODEL}			\
-		-l ${OLIGO_LEN} ${NOOV}		\
-		-return occ,freq,proba,rank	\
-		-sort -thosig ${THOSIG}		\
-		-seqtype dna			\
-		-o ${OLIGO_FILE}
-	text-to-html -i ${OLIGO_FILE} -o ${OLIGO_FILE_HTML}
+#OLIGO_DIR=${CURRENT_RES_DIR}/oligos
+#MODEL=-expfreq ${BG_OLIGO_FILE}
+#MODEL_SUFFIX=allup
+#OLIGO_FILE=${OLIGO_DIR}/oligos_${CURRENT_SET}_${OLIGO_LEN}nt${STR}${NOOV}_sig${THOSIG}_${MODEL_SUFFIX}
+#OLIGO_FILE_HTML=${OLIGO_FILE}.html
+#oligos:
+#	@echo "${ORG}	${CURRENT_SET}	Detecting over-represented oligonucleotides	${OLIGO_FILE}"
+#	@mkdir -p ${OLIGO_DIR}
+#	oligo-analysis -v ${V}			\
+#		-i ${SEQ_FILE}			\
+#		${MODEL}			\
+#		-l ${OLIGO_LEN} ${NOOV}		\
+#		-return occ,freq,proba,rank	\
+#		-sort -thosig ${THOSIG}		\
+#		-seqtype dna			\
+#		-o ${OLIGO_FILE}
+#	text-to-html -i ${OLIGO_FILE} -o ${OLIGO_FILE_HTML}
 
 ################################################################
 #### synthezise the results
@@ -344,7 +345,7 @@ CALIB_TASK=all,clean_oligos
 START=1
 REPET=10000
 WORK_DIR=`pwd`
-CALIB_DIR=${WORK_DIR}/${RES_DIR}/${ORG}/${RAND_DIR}/${OLIGO_LEN}nt${STR}${NOOV}_N${N}_L${SEQ_LEN}_R${REPET}
+CALIBN_DIR=${WORK_DIR}/${RES_DIR}/${ORG}/${RAND_DIR}/${OLIGO_LEN}nt${STR}${NOOV}_N${N}_L${SEQ_LEN}_R${REPET}
 CALIBRATE_CMD=								\
 	calibrate-oligos -v ${V}					\
 		-r ${REPET} -sn ${N} -ol ${OLIGO_LEN} -sl ${SEQ_LEN}	\
@@ -352,7 +353,7 @@ CALIBRATE_CMD=								\
 		-start ${START}						\
 		${END}							\
 		${STR} ${NOOV}						\
-		-outdir ${CALIB_DIR}					\
+		-outdir ${CALIBN_DIR}					\
 		-org ${ORG}
 
 ## Run the program immediately (WHEN=now) or submit it to a queue (WHEN=queue)
@@ -391,10 +392,10 @@ give_access:
 
 ## ##############################################################
 ## oligo-analysis with a calibration file
-CURRENT_CALIB_DIR=${WORK_DIR}/${RES_DIR}/${ORG}/${RAND_DIR}/${OLIGO_LEN}nt${STR}${NOOV}_N${SEQ_NB}_L${CURRENT_SEQ_LEN}_R${REPET}
-CURRENT_CALIB_FILE=${CURRENT_CALIB_DIR}/${ORG}_${OLIGO_LEN}nt_${STR}${NOOV}_n${SEQ_NB}_l${CURRENT_SEQ_LEN}_r${REPET}_negbin.tab
+CURRENT_CALIBN_DIR=${WORK_DIR}/${RES_DIR}/${ORG}/${RAND_DIR}/${OLIGO_LEN}nt${STR}${NOOV}_N${SEQ_NB}_L${CURRENT_SEQ_LEN}_R${REPET}
+CURRENT_CALIB_FILE=${CURRENT_CALIBN_DIR}/${ORG}_${OLIGO_LEN}nt_${STR}${NOOV}_n${SEQ_NB}_l${CURRENT_SEQ_LEN}_r${REPET}_negbin.tab
 oligos_with_calibration:
-	@echo "calibration directory ${CURRENT_CALIB_DIR}"
+	@echo "calibration directory ${CURRENT_CALIBN_DIR}"
 	@echo "calibration file ${CURRENT_CALIB_FILE}"
 	${MAKE} oligos MODEL="-calib ${CURRENT_CALIB_FILE}" MODEL_SUFFIX=calib
 
@@ -538,3 +539,65 @@ PUBLISH_SITE=jvanheld@www.scmbb.ulb.ac.be:public_html/motif_discovery_competitio
 PUBLISH_DIR=evaluation
 publish:
 	${RSYNC} --exclude '*~' ${PUBLISH_DIR} ${PUBLISH_SITE}
+
+
+BACKGROUND=calibN
+OLD_BG_DIR=results/multi/${BACKGROUND}_bg
+OLD_DIR=${OLD_BG_DIR}/${ORG}
+NEW_DIR=results/${ORG}/multi/${BACKGROUND}_bg/
+
+reorganize: rm_junk organize_all_bg mv_calib1 discard_oldies mv_seq_lengths
+
+rm_junk:
+	find . -name .DS_Store -exec rm {} \;
+
+organize_all_bg:
+	rm -rf results/multi/upstream_bg/Saccharomyces_cerevisiae_bk
+	for bg in calibN calib1 upstream; do		\
+		${MAKE} organize_one_bg BACKGROUND=$${bg};	\
+	done
+
+organize_one_bg:
+	${MAKE} iterate_organisms ORG_TASK=organize_one_dir
+	rmdir ${OLD_BG_DIR}
+
+organize_one_dir:
+	@echo "Old dir	${OLD_DIR}"
+	@echo "New dir	${NEW_DIR}"
+	@mkdir -p ${NEW_DIR}
+	rsync -ruptvl ${OLD_DIR}/* ${NEW_DIR}/
+	rm -rf ${OLD_DIR}
+
+mv_calib1:
+	${MAKE} iterate_organisms ORG_TASK=mv_calib1_one_org
+
+mv_calib1_one_org:
+	results/${ORG}/calibrations_1gene/
+	rsync -ruptvl results/${ORG}/multi/calib1_bg/calibrations/* results/${ORG}/calibrations_1gene/
+	rm -rf results/${ORG}/multi/calib1_bg/calibrations
+
+discard_oldies:
+	mkdir -p old_results
+	rsync -ruptvl results/multi old_results/
+	rm -rf results/multi
+	rsync -ruptvl results/Mycoplasma_genitalium old_results/
+	rm -rf results/Mycoplasma_genitalium
+
+mv_seq_lengths:
+	mkdir -p results/Mus_musculus/sequence_lengths
+	mv results/Mus_musculus/mus*/*_lengths.txt results/Mus_musculus/sequence_lengths
+	rmdir results/Mus_musculus/mus*
+
+	mkdir -p results/Saccharomyces_cerevisiae/sequence_lengths
+	mv results/Saccharomyces_cerevisiae/yst*/*_lengths.txt results/Saccharomyces_cerevisiae/sequence_lengths
+	rmdir results/Saccharomyces_cerevisiae/yst*
+
+	mkdir -p results/Homo_sapiens/sequence_lengths
+	mv results/Homo_sapiens/hm*/*_lengths.txt results/Homo_sapiens/sequence_lengths
+	rmdir results/Homo_sapiens/hm*
+
+	mkdir -p results/Drosophila_melanogaster/sequence_lengths
+	mv results/Drosophila_melanogaster/dm*/*_lengths.txt results/Drosophila_melanogaster/sequence_lengths
+	rmdir results/Drosophila_melanogaster/dm*
+
+
