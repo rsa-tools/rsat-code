@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.80 2004/08/18 20:47:45 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.81 2004/08/18 20:52:22 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -133,6 +133,7 @@ $MEME_maxw = 25;
 $known_site_file = "";
 $known_sites_provided = 0;
 $min_matching_score = 4;
+$known_site_max_len=30; ## ignore known sites larger than 30bp
 
 ## miscellaneous
 $start_date = `date`;
@@ -986,10 +987,11 @@ sub ReadKnownSites {
 	    next unless (/\S/);
 	    chomp;
 	    @fields = split "\t";
-	    $family_name = $fields[0];
-	    $known_site = uc($fields[1]);
-	    $source = $fields[2];
-	    #$known_site = uc(&compress_pattern($known_site,"n"));
+	    $family_name = &trim($fields[0]);
+	    $known_site = &trim($fields[1]);
+	    next if (length($known_site) > $known_site_max_len);
+	    $source = &trim($fields[2]);
+	    #$known_site = &compress_pattern($known_site,"n");
 	    $known_site =~ s/N/n/g;
 	    push @{$known_site{$family_name}}, $known_site;
 	    push @{$known_site_source{$family_name}}, $source;
@@ -1109,9 +1111,12 @@ sub SyntheticTable {
 	### known patterns
 	if ($known_sites_provided) {
 	    $table[$row{known}][$col] = "";
-	    for $c (0..$#{$known_site{$family_name}}) {
-		$table[$row{known}][$col] .= "${known_site{$family_name}}[$c]";
-		$table[$row{known}][$col] .= "<BR>("."${known_site_source{$family_name}}[$c]".")" if ("${known_site_source{$family_name}}[$c]");
+	    my @fam_known_site = @{$known_site{$family_name}};
+	    my @fam_known_site_source = @{$known_site_source{$family_name}};
+	    for $c (0..$#fam_known_site) {
+#		$table[$row{known}][$col] .= ${known_site{$family_name}}[$c];
+		$table[$row{known}][$col] .= $fam_known_site[$c];
+		$table[$row{known}][$col] .= "<BR>(".$fam_known_site_source[$c].")" if ($fam_known_site_source[$c]);
 		$table[$row{known}][$col] .= "<P>";
 	    }
 	} 
@@ -1852,6 +1857,10 @@ OPTIONS
 		       1) family
 		       2) site/motif
 		       3) source (optional)
+    	-known_max_len #
+		maximal length for using known sites. This allows to
+		filter out some sites with large sequences annotated in
+		TRANSFAC (default: $known_site_max_len)
 
 FILE FORMAT
    $HELP_FAMILY_FILE
@@ -1963,6 +1972,7 @@ multiple-family-analysis options
 -thmsf		threshold on frequency of matching sequences 
 -markov #	exp. freq. calcualted with Markov chain model of order #
 -known		file containing a list of known sites/motifs
+-known_max_len 	maximal length for using known sites (default: $known_site_max_len)
 -schema		database schema (default: $schema)
 -host		database host (default: $host)
 -user		database user (default: $user)
@@ -2092,6 +2102,8 @@ sub ReadArguments {
 	    ### file with a collection of known motifs, for comparison between discovered and known motifs
 	} elsif ($ARGV[$a] eq "-known") {
 	    $known_site_file = $ARGV[$a+1];
+	} elsif ($ARGV[$a] eq "-known_max_len") {
+	    $known_site_max_len = $ARGV[$a+1];
 
 	    #### task selection
 	} elsif ($ARGV[$a] eq "-task") {
