@@ -55,10 +55,83 @@ reason, their genome annotations (and in particular gene names) are
 not. It is frequent that some genes are annotated at Genbank, whilst
 some other at EMBL (fortunately, there is <i>some</i> overlap).
 
+</ul><h3>Sequence purging</h3><ul>
+
+<h4>Question</h4>
+<i>I am working on finding common motifs located in upstream of co-regulated
+genes in bacteria. Some software (and YOU) recommends masking or filtering
+repeated sequences before pattern discovering. I am worry about losing some
+binding sites by filtering.  I may not understand the meaning of repeated
+sequences. So could please explain me this point or recommend some lectures
+illustrated with examples. Thanks for your help. </i>
+
+<h4>Answer</h4>
+
+<p>Redundant sequences can occur for different reasons. Some examples:
+<ul>
+<li>50% of the human genomes is made of repetitive sequences (e.g. Alu, SINE, ...) which are probably not involved in regulation
+<li> in yeast, telomeric regions contain many recent duplications, where a gene can be found in several almost identicak copies, including its promoter
+<li>when you have two neighbour genes in opposite and divergent directions (one on the direct, one on the reversee strand), they sharee the same promoter
 </ul>
 
+<p>For this type of reasons, your set of upstream sequences could
+contain large duplicated fragments.
 
-<hr size=3>
+<p>If this is the case, every single word of these duplicated segments
+will be found in several copies, not because it is involved in
+regulation but because the data set is redundant (the same sequence
+has been taken multiple times). Thus, the pattern discovery programs
+will over-estimate its significance, and you will obtain a lot of
+false positives in your motifs.
+
+<p>My recommendation (and the default options of the web site)  is
+<ul>
+<li>for pattern discovery, use the "purge" function, which masks all the duplicated segments
+<li>for pattern matching, use the non-masked sequences, because you want to see he regulatory motifs in all the promoters, even if they are at the same position. 
+</ul>
+
+<p>As an exampe, you could try the following cluster (Y', from Spellman 1998)
+<pre>
+YBL112C
+YBL113C
+YEL073C
+YEL075C
+YEL077C
+YFL046C
+YFL066C
+YFL067W
+YGR296W
+YLL067C
+YLR446W
+YLR463C
+YPR202W
+YBL111C
+YEL076C-A
+YER189W
+YER190W
+YFL065C
+YHL049C
+YHL050C
+YHR218W
+YHR219W
+YIL177C
+YJL225C
+YLL066C
+YLR462W
+YLR464W
+YLR467W
+YNL339C
+YPR203W
+YPR204W
+</pre>
+
+<p>Try oligo-analysis with the upstream sequences, with and without purging respectively. 
+<ul>
+<li>without purging, you get a lot of motifs, which cover almost all the sequences (see the feature-map). These motifs are artifactual: they do not reflect regulation but redundancy of whole sequences in the data set
+<li>without purging, you get no motif (apparently this group contains no significant motif).  
+</ul>
+
+</ul><hr size=3>
 </blockquote>
 </body>
 </html>
