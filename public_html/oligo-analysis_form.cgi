@@ -172,6 +172,13 @@ print CGI::table({-border=>3,-cellpadding=>0,-cellspacing=>0},
 						    -checked=>$default{ratio},
 						    -label=>' Obs/exp ratio '),
 				   '',
+				   '']),
+
+			  ### rank
+			  CGI::td([$query->checkbox(-name=>'rank',
+						    -checked=>$default{rank},
+						    -label=>' Rank '),
+				   '',
 				   ''])
 
 

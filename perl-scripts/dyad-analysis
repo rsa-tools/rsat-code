@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis,v 1.12 2001/05/27 08:37:58 jvanheld Exp $
+# $Id: dyad-analysis,v 1.13 2001/06/25 19:28:26 jvanheld Exp $
 #
-# Time-stamp: <2001-05-27 10:36:44 jvanheld>
+# Time-stamp: <2001-06-25 21:24:40 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -288,19 +288,20 @@ sub PrintResult {
     #### sort dyads according to significance ####
     if ($sort_results) {
 	if ($return{proba}) { ### sort by decreasing order of significance
-	    @pattern_list = sort { $patterns{$b}->{occ_sig} <=> $patterns{$a}->{occ_sig}} keys %patterns;
+	    @sorted_patterns = sort { $patterns{$b}->{occ_sig} <=> $patterns{$a}->{occ_sig}} keys %patterns;
 	} elsif ($return{zscore}) { ### sort by decreasing order of zscore
-	    @pattern_list = sort {$patterns{$b}->{zscore} <=> $patterns{$a}->{zscore}} keys %patterns;
+	    @sorted_patterns = sort {$patterns{$b}->{zscore} <=> $patterns{$a}->{zscore}} keys %patterns;
 	} else { ### sort by decreasing order of occurrences
-	    @pattern_list = sort {$patterns{$b}->{obs_occ} <=> $patterns{$a}->{obs_occ}} keys %patterns;
+	    @sorted_patterns = sort {$patterns{$b}->{obs_occ} <=> $patterns{$a}->{obs_occ}} keys %patterns;
 	}
     }
-    unless (defined(@pattern_list)) {
-	@pattern_list = sort keys %patterns;
+    unless (defined(@sorted_patterns)) {
+	@sorted_patterns = sort keys %patterns;
     }
     
     ### print values for each dyad
-    foreach $pattern_seq (@pattern_list) {
+    foreach $p (0..$#sorted_patterns) {
+	my $pattern_seq = $sorted_patterns[$p];
 	next unless (defined($patterns{$pattern_seq}->{obs_occ}));
 	print $out "$pattern_seq";
 	print $out "\t$pattern_seq";
@@ -328,6 +329,7 @@ sub PrintResult {
 	    printf $out "\t%d", $patterns{$pattern_seq}->{overlaps};
 	    printf $out "\t%d", $patterns{$pattern_seq}->{overlaps} + $patterns{$pattern_seq}->{obs_occ};
 	}
+	printf $out "\t%d", $p+1 if ($return{rank});
 	if (($return{proba}) || ($return{zscore})) {
 	    printf $out "\t%.3f", $overlap_coeff{$pattern_seq};
 	    print $out "\t", $patterns{$pattern_seq}->{remark};
@@ -368,8 +370,10 @@ sub CalcExpectedFreq {
 	    @fields = split;
 	    $pattern_seq = lc($fields[0]);
 	    $freq = $fields[1];
-	    if ((&IsReal($freq)) && (defined($patterns{$pattern_seq}))) {
+	    if (&IsReal($freq)) {
 		$patterns{$pattern_seq}->{exp_freq} = $freq;
+	    } else {
+		warn "WARNING: invalid frequency specification\t", join(" ", @fields), "\n";
 	    }
 	}
 	close $exp;
@@ -697,6 +701,8 @@ sub ReadArguments {
 	  $return{exp_freq} = 1;
 	} elsif  ($field =~ /^occ/i) {
 	  $return{occ} = 1;
+	} elsif  ($field =~ /^rank/i) {
+	  $return{rank} = 1;
 	}
       }
       
@@ -828,6 +834,7 @@ OPTIONS
 			occ
 			proba (binomial probability)
 			zscore
+			rank
 		the fields have to be separated by commas
 		By default, only occurrences are returned.
 	-noov	do not allow overlapping matches of the same word
@@ -970,7 +977,7 @@ dyad-analysis options
 -1str		count occurrences on a direct strand only
 -2str		count occurrences on both strands
 -prot		input sequence is proteic
--return		occ,freq,proba,zscore
+-return		occ,freq,proba,zscore,rank
 -noov		do not allow overlapping matches of the same word
 -timeout #	timeout (seconds). Default = 3600.
 End_short_help

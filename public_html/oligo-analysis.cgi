@@ -60,6 +60,11 @@ if ($query->param('ratio')) {
   $return_fields .= "ratio,";
 } 
 
+### rank
+if ($query->param('rank')) {
+  $return_fields .= "rank,";
+} 
+
 ### z-score
 if ($query->param('zscore')) {
   $return_fields .= "zscore,";
