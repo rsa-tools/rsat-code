@@ -64,14 +64,93 @@ discovery programs.
 <a name=example><h2>Example of utilization</h2>
 <ul>
 
+We will use the tool random-genes to select a randdom selection of 20
+genes in the yeast genome, and submit their promoters to
+oligo-analysis. 
+
+<ol>
+
+<li>In the left frame, click on the link <b><i>random gene
+selection</i></b>.
+
+<li>Select as organism <i>Saccharomyces cerevisiae</i>
+
+<li>Set the number of genes to 20. 
+
+<li>Leave the number of groups to 1 (this option is used by programs
+for the automatic analysis of multiple gene clusters which are
+currently not supported on the web server).
+
+<li>Select <b>CDS</b> as feature type.
+
+<li>Click <b>GO</b>
+
+</ol>
+
+The result is a list of gene identifiers. 
+
+<p>You can now send this list to the program
+<b><i>retrieve-seq</i></b>, to retrieve their upstream sequences, and
+then to different pattern discovery programs
+(<b><i>oligo-analysis</i></b>, <b><i>consensus</i></b>,
+<b><i>gibbs</i></b>, ...) in order to test the response of these
+programs when the genes are not supposed to be co-regulated.
+
+
+
 </ul>
 <a name=interpret><h2>Interpreting the results</h2>
 <ul>
 
+<p>In principle, we expect for the program to return, most of the
+time, a negative answer, i.e. not a single significant motif. In some
+cases, a motif witth slight significance should emerge by chance, and
+highly significant motifs should appear very exceptionally. 
+
+<p>More precisely, if we repeat the experiment a large number of
+times, we expect to find more or less
+<ul>
+<li>one motif with E-value <= 1 (i.e. sig >= 1) per gene family;
+<li>a motif with E-value <= 0.1 (sig >= 1) every 10 gene families;
+<li>a motif with E-value <= 0.01 (sig >= 2) every 100 gene families;
+<li>... and so on.
+</ul>
+
+<p>The analysis of random gene selections is thus a very practical way
+to estimate the rate of false positives of pattern discovery programs,
+on the baiss of real biological sequences.
 
 </ul>
 <a name=exercises><h2>Additional exercises</h2>
 <ul>
+
+<ol>
+
+<li>In order to check the rate of false positive of a program, you
+need to repeat the random control several times, and see how often a
+motif is selected by chance when there is supposedly no co-regulation.
+
+<ul>
+<li>Repeat the test a few times. 
+
+<li>At each trial, take note of the top scoring motif, annd of the
+score associated to it.
+
+<li>Analyze the results of the successive trials, anc check if the
+behaviour more or less corresponds to the theoretical expectation.
+</ul>
+
+<p>
+<li>Perform the same test as above, with human genes. How does it
+compare with the yeast, in term of false positives ?
+
+<p>
+<li>You can also use the upstream sequences of random gene selections
+to test other programs on the web (see the <a target=_blank
+href=../links.html>link page</a>).
+
+</ol>
+
 
 </ul>
 
