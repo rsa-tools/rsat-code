@@ -1,0 +1,50 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% Accessing the programs
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Accessing the programs}
+
+In order to use the shell version of \RSAT, you first need an account
+on a unix machine where \RSAT is installed, and you should know the
+directory where \RSAT have been installed. (if you don't know, ask
+assistance to your system administrator).
+
+For this tutorial, let us assume that \RSAT is installed in the
+directory \texttt{/usr/local/rsa-tools}
+
+\begin{enumerate}
+
+\item Open a telnet or ssh session to your account.
+
+\item If your default shell is \textbf{tcsh}, type the following
+commands.
+
+\begin{verbatim}
+set RSAT=/usr/local/rsa-tools
+set path=($path $RSAT/perl-scripts)
+set PATH=($path $RSAT/bin/)
+rehash
+\end{verbatim}
+
+If you are using a different shell (e.g. bash), you might need a
+slightly different command to obtain the same result. See you system
+manager in case of doubt.
+
+\item The previous step should have included all the \RSAT programs in
+your path.  To check if it worked, just type:
+
+\begin{verbatim}
+random-seq -l 350
+\end{verbatim}
+
+If your configuration is correct, this command should return a random
+sequence of 350 nucleotides.
+
+\end{enumerate}
+
+You are now able to use any program from the \RSAT package, untill you
+quit your telnet session. It is however not very convenient to set the
+path manually each time you open a new connection. You can modify your
+defaul configuration by including the above commands in the file
+\texttt{.personal-cshrc} in the root of your home directory. If you
+don't know how to modify this file, see the system adiministrator.
