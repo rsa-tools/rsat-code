@@ -128,10 +128,7 @@ print "<HR width=550 align=left>\n";
 print $query->table({-border=>0,-cellpadding=>3,-cellspacing=>0},
 		    $query->Tr($query->td("<A HREF='help.oligo-analysis.html#exp_freq'><B>Expected frequency calibration</B></A>&nbsp;<BR>")),
 		    $query->Tr($query->td(["<INPUT TYPE='radio' NAME='freq_estimate' VALUE='Oligo frequencies from all non-coding regions' CHECKED>Oligo frequencies from all non-coding regions<BR>",
-					   &OrganismPopUpString,
-					   "Pseudo-weight &nbsp;".$query->textfield(-name=>'pseudo_weight',
-										    -default=>$default{pseudo_weight},
-										    -size=>5),
+					   &OrganismPopUpString
 					   ])),
 		    $query->Tr($query->td([
 					   "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='Markov Chain (higher order dependencies)'>Markov Chain (higher order dependencies)<BR>",
@@ -141,12 +138,23 @@ print $query->table({-border=>0,-cellpadding=>3,-cellspacing=>0},
 					   ])),
 		    $query->Tr($query->td("<INPUT TYPE='radio' NAME='freq_estimate' VALUE='Lexicon partitioning'>Lexicon partitioning<BR>")),
 		    $query->Tr($query->td("<INPUT TYPE='radio' NAME='freq_estimate' VALUE='Residue frequencies from input sequence'>Residue frequencies from input sequence<BR>")),
-		    $query->Tr($query->td("<INPUT TYPE='radio' NAME='freq_estimate' VALUE='Equiprobable residues'>Equiprobable residues<BR>"))
+		    $query->Tr($query->td("<INPUT TYPE='radio' NAME='freq_estimate' VALUE='Equiprobable residues'>Equiprobable residues (<A HREF='help.oligo-analysis.html#equiprobable'>usually NOT recommended</a>)<BR>")),
+		    $query->Tr($query->td("<INPUT TYPE='radio' NAME='freq_estimate' VALUE='file_upload'><a href='help.oligo-analysis.html#upload_freq_file'>Upload your own expected frequency file</a><BR>"),
+			       $query->td($query->filefield(-name=>'upload_freq_file',
+							    -default=>'starting value',
+							    -size=>30,
+							    -maxlength=>200)
+					  )
+			       ),
 		    );
 
+print ("<a href=help.oligo-analysis.html#pseudo>Pseudo-weight</a> &nbsp;",
+       $query->textfield(-name=>'pseudo_weight',
+			 -default=>$default{pseudo_weight},
+			 -size=>5));
+
+
 print "<HR width=550 align=left>\n";
-
-
 
 
 

@@ -8,6 +8,8 @@ require "RSA.lib";
 require "RSA.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
+#### TEMPORARY
+
 $oligo_analysis_command = "$SCRIPTS/oligo-analysis";
 $convert_seq_command = "$SCRIPTS/convert-seq";
 $purge_sequence_command = "$SCRIPTS/purge-sequence";
@@ -33,7 +35,8 @@ $purge = $query->param('purge');
 ### sequence file
 ($sequence_file,$sequence_format) = &GetSequenceFile();
 if ($purge) {
-    $command= "$purge_sequence_command -i $sequence_file -format $sequence_format | $oligo_analysis_command  ";
+    $command= "$purge_sequence_command -i $sequence_file -format $sequence_format |  $oligo_analysis_command ";
+#    $command= "$purge_sequence_command -i $sequence_file -format $sequence_format -o ${sequence_file}.purged;  $oligo_analysis_command -i ${sequence_file}.purged  ";
 } else {
     $command= "$oligo_analysis_command -i $sequence_file  ";
 }
@@ -151,6 +154,27 @@ if ($query->param('freq_estimate') =~ /oligo freq.* non-coding regions/i) {
 	}
 	$freq_option = " -ncf -org $organism";
     }
+
+} elsif ($query->param('freq_estimate') =~ /upload/i) {
+    ### TO IMPLEMENT
+    $exp_freq_file = "${TMP}/$tmp_file_name.expfreq";
+    $upload_freq_file = $query->param('upload_freq_file');
+    if ($upload_freq_file) {
+	if ($upload_file =~ /\.gz$/) {
+	    $exp_freq_file .= ".gz";
+	}
+	$type = $query->uploadInfo($upload_freq_file)->{'Content-Type'};
+	open FREQ, ">$exp_freq_file" ||
+	    &cgiError("Cannot store expected frequency file in temp dir.");
+	while (<$upload_freq_file>) {
+	    print FREQ;
+	}
+	close FREQ;
+	$freq_option = " -expfreq $exp_freq_file";
+    } else {
+	&FatalError ("If you want to upload an expected frequency file, you should specify the location of this file on your hard drive with the Browse button");
+    }
+
 } elsif ($query->param('freq_estimate') =~ /residue frequenc/i) {
   $freq_option = " -a input";
 } elsif ($query->param('freq_estimate') =~ /markov/i) {
@@ -201,7 +225,7 @@ if ($query->param('output') =~ /display/i) {
     
     #### oligonucleotide assembly ####
     if (&IsReal($query->param('occ_significance_threshold'))) {
-	$fragment_assembly_command = "$SCRIPTS/pattern-assembly -v";
+	$fragment_assembly_command = "$SCRIPTS/pattern-assembly -v 1 -subst 1";
 	if ($query->param('strand') =~ /single/) {
 	    $fragment_assembly_command .= " -1str";
 	} else {
