@@ -20,7 +20,7 @@ $query = new CGI;
 
 ### print the result page
 &RSA_header("oligo-analysis result");
-#&ListParameters;
+&ListParameters if ($ECHO >=2);
 
 #### update log file ####
 &UpdateLogFile;
@@ -139,21 +139,32 @@ if ($query->param('oligo_size') =~ /\d/) {
 $parameters .= " -l $oligo_length";
 
 #### expected frequency estimation ####
-if ($query->param('freq_estimate') =~ /oligo freq.* non-coding regions/i) {
-    if (($query->param("proba")) ||
-	($query->param("ratio")) ||
-	($query->param("zscore"))
-	) {
+if ($query->param('freq_estimate') =~ /background/i) {
+    %supported_background = (
+			      "upstream"=>1,
+			      "upstream-noorf"=>1,
+			      "intergenic"=>1
+			      );
+
+#     if (($query->param("proba")) ||
+# 	($query->param("ratio")) ||
+# 	($query->param("zscore"))
+# 	) {
 	
 	### check organism
 	unless ($organism = $query->param('organism')) {
-	    &cgiError("You should specify an organism to use non-coding frequency calibration");
+	    &cgiError("You should specify an organism to use intergenic frequency calibration");
 	}
 	unless (defined(%{$supported_organism{$organism}})) {
 	    &cgiError("Organism $org is not supported on this site");
 	}
-	$freq_option = " -ncf -org $organism";
-    }
+	my $background = $query->param("background");
+	unless ($supported_background{$background}) {
+	    &cgiError("$background is not supported as background model");
+	}
+
+	$freq_option = " -bg $background -org $organism";
+#    }
 
 } elsif ($query->param('freq_estimate') =~ /upload/i) {
     ### TO IMPLEMENT
@@ -203,7 +214,7 @@ if ($query->param('neighborhood') =~ /N at one position/i) {
 }
 
 
-print "<PRE>command: $command $parameters<P>\n</PRE>" if $ECHO;
+print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ECHO >=1);
 
 if ($query->param('output') =~ /display/i) {
 
