@@ -1,0 +1,891 @@
+#!/usr/bin/perl
+use CGI;
+#require "cgi-lib.pl";
+require "RSA.seq.lib";
+require "RSA.stat.lib";
+umask 0022;
+
+############################################################################
+############################################################################
+############################################################################
+############################################################################
+############################################################################
+####                                                                    ####
+####                            RSAlib.perl                             ####
+####                                                                    ####
+############################################################################
+############################################################################
+############################################################################
+############################################################################
+############################################################################
+
+#### Regulatory Sequence Analysis Tools (RSA-tools)
+####  1997-99 by Jacques van Helden (jacques@ucmb.ulb.ac.be)
+####  a Perl library with diverse procedures
+####  used by rsa-tools perl scripts
+
+
+############################################################################
+########################## PATHWAY DEFINITION ##############################
+############################################################################
+
+
+#### read config files #####
+if ($0 =~ /([^(\/)]+)$/) {
+    $config_file = "$`../RSA.config";
+    require $config_file;
+    if ($ENV{'RSA_LOCAL_CONFIG'}) {
+	if (-e $ENV{'RSA_LOCAL_CONFIG'}) {
+	    if (-r $ENV{'RSA_LOCAL_CONFIG'}) {
+		require $ENV{'RSA_LOCAL_CONFIG'};
+	    } else {
+		warn (";WARNING: cannot read local config file ", 
+		      $ENV{'RSA_LOCAL_CONFIG'}, 
+		      "\n"), 
+	    }
+	} else {
+	    warn (";WARNING: local config file ", 
+		  $ENV{'RSA_LOCAL_CONFIG'}, 
+		  " does not exist\n"), 
+	}
+    }
+} else {
+    print "Error: problem when opening config file\n";
+    print "Please contact jvanheld\@ucmb.ulb.ac.be\n";
+    exit;
+}
+
+
+
+$BIN = "$RSA/bin";
+$LIB = "$RSA/lib";
+
+$TMP = "$RSA/public_html/tmp";
+$LOGS = "$RSA/logs";
+$SCRIPTS = "$RSA/perl-scripts";
+$HTML = "$RSA/public_html";
+$WWW_TMP = "$WWW_RSA/tmp";
+$ENV{SERVER_ADMIN} = "jvanheld\@ucmb.ulb.ac.be";
+    
+$counter_file = "$LOGS/count-file";
+($sec, $min, $hour,$day,$month,$year) = localtime(time);
+$log_file = sprintf "$LOGS/log-file_${config_site}_%04d_%02d", $year+1900,$month+1;
+
+$script_name = &ShortFileName($0);
+
+$date = &AlphaDate();
+$mail_command = "mail -s \'RSA-tools - $script_name - $date\'";
+
+############################################################################
+############################ GLOBAL VARIABLES ##############################
+############################################################################
+$arab{I} = 1;
+$arab{II} = 2;
+$arab{III} = 3;
+$arab{IV} = 4;
+$arab{V} = 5;
+$arab{VI} = 6;
+$arab{VII} = 7;
+$arab{VIII} = 8;
+$arab{IX} = 9;
+$arab{X} = 10;
+$arab{XI} = 11;
+$arab{XII} = 12;
+$arab{XIII} = 13;
+$arab{XIV} = 14;
+$arab{XV} = 15;
+$arab{XVI} = 16;
+
+$latin{1} = 'I';
+$latin{2} = 'II';
+$latin{3} = 'III';
+$latin{4} = 'IV';
+$latin{5} = 'V';
+$latin{6} = 'VI';
+$latin{7} = 'VII';
+$latin{8} = 'VIII';
+$latin{9} = 'IX';
+$latin{10} = 'X';
+$latin{11} = 'XI';
+$latin{12} = 'XII';
+$latin{13} = 'XIII';
+$latin{14} = 'XIV';
+$latin{15} = 'XV';
+$latin{16} = 'XVI';
+
+
+############################################################################
+##################### PERL SUBROUTINE DEFINITION ###########################
+############################################################################
+
+### open input file ###
+sub OpenInputFile {
+    #### usage 
+    ####    $in = &OpenInputFile($filename);
+    #### returns a file handle
+    my $filename = $_[0];
+    my $input_stream = STDIN; ### default is standard input
+    
+    if ($filename) {
+	unless (-e $filename) {
+	    if (-e "${filename}.gz") {
+		$filename .= ".gz";
+	    } else {
+		&FatalError("File $filename does not exist.");
+	    }
+	}
+	if ($filename =~ /\.gz$/) { ### gzip file -> decompress it on the fly
+	    $filename = "gunzip -c $filename |";
+	}
+	unless (open(INPUT, $filename)) {
+	    print "\tError : cannot read input file $filename\n";
+	    exit;
+	}
+	$input_stream = INPUT;
+    } 
+    return $input_stream;
+}
+
+### open output file ###
+sub OpenOutputFile {
+    ### usage $output_stream = &OpenOutputFile($filename);
+    my ($filename) = @_;
+    my $to_open = "";
+    
+    if ($filename) {
+	if ($filename =~ /\.gz$/) { ### gzip file -> decompress it on the fly
+	    $to_open = "| gzip -c > $filename";
+	} else {
+	    $to_open = ">$filename";
+	}
+	unless (open(OUTPUT, "$to_open")) {
+	    print "\tError : cannot write output file $filename\n";
+	    exit;
+	}
+	$output_stream = OUTPUT;
+    } else {
+	$output_stream = STDOUT;
+    }
+    return $output_stream;
+}
+
+
+
+sub CurrentTime {
+### returns current time
+### usage
+### $time = &CurrentTime;
+    my $current_time = `date '+%H:%M:%S'`;
+    $current_time =~ chomp $current_time;
+    return $current_time;
+}
+
+sub IsNatural {
+### returns 1 if the first argument is a natural number,
+###         0 otherwise
+### usage
+### if (IsNatural($my_number) { 
+    if ($_[0] =~ /^ *\d+ *$/) {
+	return 1;
+    } else {
+	return 0;
+    }
+}
+
+sub IsInteger {
+### returns 1 if the first argument is an integer number,
+###         0 otherwise
+### usage
+### if (IsInteger($my_number) { 
+    if ($_[0] =~ /^ *[\+\-]{0,1}\d+ *$/) {
+	return 1;
+    } else {
+	return 0;
+    }
+}
+
+sub IsReal {
+### returns 1 if the first argument is a real number,
+###         0 otherwise
+### usage
+### if (number($my_number) { 
+    if (($_[0] =~ /^ *[\+\-]{0,1}\d+(\.\d*){0,1} *$/) || 
+        ($_[0] =~ /^ *[\+\-]{0,1}\d+(\.\d*){0,1}e[\+\-]{0,1}\d+ *$/i)) {
+	return 1;
+    } else {
+	return 0;
+    }
+}
+
+
+sub round {
+#### returns the closest integer value from a real number
+#### usage:
+#### $my_int = &round($my_real);
+    my $my_real = $_[0];
+    my $my_int;
+    if (abs(($my_real - int($my_real))) < 0.5) {
+	return int($my_real);
+    } elsif ($my_real < 0) {
+	return int($my_real) - 1;
+    } else {
+	return int($my_real) + 1;
+    }
+}
+
+
+
+sub ListParameters {
+  my $cgi_query = $_[0];
+  @param = $query->param;
+  print "<H3>Parameter values</H3>";
+  print "<UL><TABLE>\n";
+  foreach $key (@param) {
+    print "<TR>";
+    print "<TD VALIGN=TOP><B>$key</B></TD>";
+    $value = $query->param($key);
+    $value =~ s/\n/<BR>/g;
+    print "<TD VALIGN=TOP>$value</TD>";
+    print "</TR>\n";
+  }
+  print "</TABLE></UL>\n";
+
+}
+
+
+
+sub AlphaDate {
+### returns a date in the inverted form, so that 
+### the choromological and alphabetical sorting ar identical.
+### Usage:
+###      $alpha_date = &AlphaDate;
+    my $my_date = "";
+    my ($sec, $min, $hour,$day,$month,$year) = localtime(time);
+
+    ###$my_date = sprintf("%02d%02d%02d.%02d%02d%02d", $year,$month+1,$day,$hour, $min, $sec);
+    $my_date = `date +%Y_%m_%d.%H%M%S`;
+    chomp $my_date;
+    return $my_date;
+}
+
+
+sub UpdateCounterFile {
+  my $nb_visitors = 1;
+  if (!(-e $counter_file)) {
+    if (open(COUNTER, ">$counter_file")) {
+      flock(COUNTER,2);
+      print COUNTER $nb_visitors;
+      flock(COUNTER, 8);
+      close(COUNTER);
+    }
+  } else {
+    open(COUNTER, "<$counter_file");
+    flock(COUNTER, 2);
+    $nb_visitors = <COUNTER>;
+    flock(COUNTER,8);
+    close(COUNTER);
+    
+    $nb_visitors++;
+    open(COUNTER, ">$counter_file");
+    flock(COUNTER,2);
+    print COUNTER $nb_visitors;
+    flock(COUNTER,8);
+    close(COUNTER);
+  }
+  return $nb_visitors;
+}
+
+
+sub UpdateLogFile {
+### stores info into a log file in a conveninent way for 
+### subsequent login statistics
+### Usage:
+###     &UpdateLogFile;
+  if (open LOG, ">>$log_file") {
+    flock(LOG,2);
+    $date = &AlphaDate;
+    #$date = `date '+%y%m%d.%H%M%S'`;
+    $date =~ s/\n//;
+    print LOG "$date\t";
+    print LOG "$config_site\t";
+    print LOG "$ENV{'REMOTE_USER'}\@$ENV{'REMOTE_ADDR'} ($ENV{'REMOTE_HOST'})";
+    print LOG "\t$script_name";
+    print LOG "\t$input{'user_email'}";
+    unless ($input{'user_name'} eq "") {
+      print LOG " ($input{'user_name'})";
+    }
+    print LOG "\n";
+    flock(LOG,8);
+    close LOG;
+  }
+  chmod 0777, $log_file;
+}
+
+sub SplitFileName {
+#### splits a full file name into directory and short file name
+#### usage:
+####     my ($dir, $short_file_name) = &SplitFileName($full_file_name);
+    my $full_file_name = $_[0];
+    my $short_file_name = $full_file_name;
+    my $dir = "";
+    if ($full_file_name =~ /[^(\/)]+$/) {
+	$dir = $`;
+	$short_file_name = $&;
+    }
+    return ($dir, $short_file_name);
+}
+
+sub ShortFileName {
+#### removes the directory from a full file name, and returns the short file name
+#### usage:
+#### $file_name = &ShortFileName($full_file_name);
+    my $full_file_name = $_[0];
+    my ($dir, $short_file_name) = &SplitFileName($full_file_name);
+    return $short_file_name;
+}
+
+
+sub ExtractPath {
+### returns the path from a file name
+### usage 
+### path = &ExtractPath($long_file_name);
+###
+    my $l_file_name = $_[0];
+    my $l_path = "";
+    while ($l_file_name =~ /\/(.*)/) {
+	$l_path .= "$`\/";
+	$l_file_name = $1;
+    }
+    return $l_path;
+}
+
+
+#sub PrintEnv {
+#### prints environment variables
+#### usage:
+#### &PrintEnv;
+#    foreach $key (sort keys %ENV) {
+#	print ";$key\t$ENV{$key}\n";
+#    }
+#}
+
+sub DelayedRemoval {
+#### send a unix command to remove a file the next day
+#### Usage:
+#### &DelayedRemoval($file_to_remove);
+####
+    unless ($config_site eq "alize") { ### at est foireux au DBM
+	local ($file_to_remove) = $_[0];
+	open REMOVE, "| at now + 1 day";
+	print REMOVE "rm -f $file_to_remove \n";
+	close REMOVE;
+    }
+}
+
+
+
+sub PrintList {
+### prints a list of elements, one per line
+    my $spacer = "\n";
+    foreach $element (@_) {
+	print $element;
+	print $spacer;
+    }
+
+}
+
+sub PrintArguments {
+  my $local_out = $_[0];
+
+  unless ($local_out)  {
+    $local_out = STDOUT;
+  }
+  foreach my $a (@main::ARGV) {
+    if (($a =~ /\s+/)  ||
+	($a !~ /\S+/) ||
+	($a =~ /[\(\)\>\<\&]/)) {
+      print $local_out " '$a'";
+    } else {
+      print $local_out " $a";
+    }
+  }
+  print $local_out "\n";
+}
+
+
+############################################################
+###############  Genome data ###############################
+############################################################
+
+### organism ###
+sub CheckOrganism {
+
+    my ($organism_name) = @_;
+    my $organism_object = new RSA::Organism;
+
+    &FatalError("You should specify an organism.", 
+		"Supported organisms\n".&ListSupportedOrganisms)
+	unless ($organism_name);
+
+    if ($supported_organism{$organism_name}) {
+	$feature_table_file = $supported_organism{$organism_name}->{'features'};
+	$genome_file = $supported_organism{$organism_name}->{'genome'};
+	$genome_seq_format = $supported_organism{$organism_name}->{'seq_format'};
+	
+	if ($genome_seq_format eq "raw") {
+	    ### open a direct read access to the genome file
+#	    $chrom = "genome";
+	    $chr = $organism_name;
+	    $genome_file =~ s/\.fna$/\.raw/;
+	    $chromosome_seq{$chr} = new RSA::SequenceOnDisk (filename=>  $genome_file,
+							       id=>        $chr,
+							       circular=>  1, ### for bacterial genomes
+							       organism=>  $organism_name);
+	    $chromosome{$chr} = new RSA::Chromosome();
+	    $chromosome{$chr}->set_name($chr);
+	    $chromosome{$chr}->set_sequence($chromosome_seq{$chr});
+	    $chromosome{$chr}->set_organism($organism_name);
+	    $organism_object->add_chromosome($chromosome{$chr});
+
+	} elsif ($genome_seq_format eq "filelist") {
+	    my ($seq_dir, $seq_list) = &SplitFileName($genome_file);
+	    unless (-e $genome_file) {
+		&FatalError("Genome file $genome_file does not exist.");
+	    }
+	    open FILES, $genome_file || 
+		&Fatalrror("Cannot open genome file $genome_file for reading.");
+	    while (<FILES>) {
+		chomp;
+		($seq_file, $chr) = split "\t";
+		$chr = $seq_file unless ($chr);
+		$chromosome_seq{$chr} = new RSA::SequenceOnDisk (filename=>  $seq_dir.$seq_file,
+								   id=>        $chr,
+								   circular=>  0, ### chromosomes are not circular
+								   organism=>  $organism_name);
+		$chromosome{$chr} = new RSA::Chromosome();
+		$chromosome{$chr}->set_name($chr);
+		$chromosome{$chr}->set_sequence($chromosome_seq{$chr});
+		$chromosome{$chr}->set_organism($organism_name);
+		$organism_object->add_chromosome($chromosome{$chr});
+#		warn join "\t", $seq_file, $chr, $chromosome_seq{$chr}->get_attribute("filename"), "\n";
+	    }
+	    close FILES;
+	} else {
+	}
+    } else {
+	&FatalError("Unsupported organism $organism_name.",
+	     "Supported on this site : \n".&ListSupportedOrganisms());
+
+    }
+    return $organism_object;
+}
+
+sub ConvertStrand {
+    my ($strand_to_convert) = @_;
+    ### we adopt Madison notation: orientation is ">" or "<" 
+    ### Heli's notation: F (forward) or R (reverse)
+    $strand_to_convert =~ s/F/D/;
+    $strand_to_convert =~ s/R/R/;
+    
+    ### > OR <
+    $strand_to_convert =~ s/>/D/;
+    $strand_to_convert =~ s/</R/;
+    
+    ### Yeast notation: W (Watson) or C (Crick)
+    $strand_to_convert =~ s/W/D/;
+    $strand_to_convert =~ s/C/R/;
+    return $strand_to_convert;
+}
+
+### note: this version takes an organism as input
+sub ReadOrfPositions {
+    ### usage
+    ### &ReadOrfPositions($organism_name);
+    my $organism_name = $_[0];
+    
+#    if ($organism_name eq "yeast") {
+#	&ReadYeastOrfPositions;
+#	return;
+#    }
+    
+    
+    my $feature_table_file = $supported_organism{$organism_name}->{'features'};
+    $col{'orf_id'} = 0;
+    $col{'kind'} = 1;
+    $col{'name'} = 2;
+    $col{'chr'} = 3;
+    $col{'left'} = 4;
+    $col{'right'} = 5;
+    $col{'strand'} = 6;
+    $col{'descr'} = 7;
+    $col{'location'} = 8;
+#  my $chr = "genome";
+    
+    
+    ### read ORF positions
+    my $orfs = &OpenInputFile($feature_table_file);
+    my $linenb = 0;
+    while (<$orfs>) {
+	$linenb++;
+	next unless (/\S/);
+	next if (/^;/);
+	next if (/^--/);
+	chomp;
+	@fields = split "\t";
+
+	if ($organism_name eq "yeast") {
+	    $orf_id = uc($fields[0]);
+	    $name = uc($fields[2]);
+	    $chr = $fields[3];
+	    $start = $fields[4];
+	    $end = $fields[5];
+	    $descr = $fields[8];
+	    
+	    $orf_id{uc($orf_id)} = $orf_id;
+	    $orf_id{uc($name)} = $orf_id if ($name =~ /\S/);
+	    if ($name eq "") {
+		$name{$orf_id} = $orf_id;
+	    } else {
+		$name{$orf_id} = $name;
+	    }
+#	    $orf_info{$orf_id} = $_;
+#	    $chr{$orf_id} = $chr;
+#	    $start{$orf_id} = $start;
+#	    $end{$orf_id} = $end;
+#	    $descr{$orf_id} = $descr;
+	    $left = &min($start,$end);
+	    $right = &max($start,$end);
+	    
+	    if ($end > $start) {
+		$strand = "W";
+	    } else {
+		$strand = "C";
+	    }
+	    $strand = &ConvertStrand($strand);
+	} else {
+	    
+	    foreach $f (keys %col) {
+		$$f = $fields[$col{$f}];
+	    }
+	    next unless (($kind =~ /^cds$/i) || 
+			 ($kind =~ /^orf$/i) || 
+			 ($kind =~ /^rrna$/i) || 
+			 ($kind =~ /^trna$/i) || 
+			 ($kind =~ /^gene$/i));
+	}
+	
+	#### check mandatory attributes
+	unless ($orf_id) {
+	    warn "; WARNING: invalid orf identifier specification in the feature table line $linenb\n;\t",join "\t", @fields, "\n";
+	    next;
+	}
+	unless ($chr) {
+	    warn "; WARNING: invalid chromosome specification in the feature table line $linenb\n;\t",join "\t", @fields, "\n";
+	    next;
+	}
+	unless ($left) {
+	    warn "; WARNING: invalid left position specification in the feature table line $linenb\n;\t",join "\t", @fields, "\n";
+	    next;
+	}
+	unless ($right) {
+	    warn "; WARNING: invalid right position specification in the feature table line $linenb\n;\t",join "\t", @fields, "\n";
+	    next;
+	}
+	unless ($strand) {
+	    warn "; WARNING: invalid strand specification in the feature table line $linenb\n;\t",join "\t", @fields, "\n";
+	    next;
+	}
+	unless ($left < $right) {
+	    warn "; WARNING: left should be smaller than right position specification in in  feature table line $linenb\n;\t",join "\t", @fields, "\n";
+	    next;
+	}
+	$strand = &ConvertStrand($strand);
+	
+	### assign attributes to the gene
+	$left{$orf_id} = $left;
+	$right{$orf_id} = $right;
+	$strand{$orf_id} = $strand;
+	$chr{$orf_id} = $chr;
+	$kind{$orf_id} = $kind;
+	$descr{$orf_id} = $descr;
+	$orf_id{uc($orf_id)} = $orf_id;
+	$orf_id{uc($name)} = $orf_id if ($name =~ /\S/);
+	$orf_info{$orf_id} = $_;
+	#$name{$orf_id} = $name;
+	if ($name eq "") {
+	    $name{$orf_id} = $orf_id;
+	} else {
+	    $name{$orf_id} = $name;
+	}
+	unless (defined($chromosome{$chr})) {
+	    $chromosome{$chr} = new RSA::Chromosome(id=>$chr);
+	    $chromosome{$chr}->set_organism($organism_name);
+	}
+	$chromosome{$chr}->add_gene($orf_id);
+	#print "$orf_id\t$chr\t$strand\t$left\t$right\t", $chromosome{$chr}->count_genes(), "\n";
+    }
+    close $orfs;
+}
+
+
+### note: this version is valid for yeast only
+#  sub ReadYeastOrfPositions {
+#      $feature_table_file = $supported_organism{$organism_name}->{'features'};
+#      $orfs = &OpenInputFile($feature_table_file);
+#      while (<$orfs>) {
+#  	next if (/^;/);
+#  	next unless (/\S/);
+#  	chomp;
+#  	@fields = split("\t");
+#  	my $orf_id = uc($fields[0]);
+#  	my $name = uc($fields[2]);
+#  	my $chr = $fields[3];
+#  	my $start = $fields[4];
+#  	my $end = $fields[5];
+#  	my $descr = $fields[8];
+
+#  	$orf_id{uc($orf_id)} = $orf_id;
+#  	$orf_id{uc($name)} = $orf_id if ($name =~ /\S/);
+#  	if ($name eq "") {
+#  	    $name{$orf_id} = $orf_id;
+#  	} else {
+#  	    $name{$orf_id} = $name;
+#  	}
+#  	$orf_info{$orf_id} = $_;
+#  	$chr{$orf_id} = $chr;
+#  	$start{$orf_id} = $start;
+#  	$end{$orf_id} = $end;
+#  	$descr{$orf_id} = $descr;
+#  	$left{$orf_id} = &min($start{$orf_id},$end{$orf_id});
+#  	$right{$orf_id} = &max($start{$orf_id},$end{$orf_id});
+	
+#  	if ($end{$orf_id} > $start{$orf_id}) {
+#  	    $strand = "W";
+#  	} else {
+#  	    $strand = "C";
+#  	}
+#  	$strand = &ConvertStrand($strand);
+#  	$strand{$orf_id} = $strand;
+	
+#  	unless (defined @{$synonyms{$orf_id}}) {
+#  	    push @{$synonyms{$orf_id}}, $orf_id;
+#  	}
+	
+#  	unless (defined($chromosome{$chr})) {
+#  	    $chromosome{$chr} = new RSA::Chromosome(id=>$chr);
+#  	    $chromosome{$chr}->set_organism("Saccharomyces cerevisiae");
+#  	}
+#  	$chromosome{$chr}->add_gene($orf_id);
+#      } 
+#      close $orfs;
+    
+#  } ## ReadYeastOrfPositions
+
+sub ReadSynonyms {  
+    #### read synonym file ###
+    ### usage : &ReadSynonyms($organism_name);
+    $organism_name = $_[0];
+    $synonym_file = $supported_organism{$organism_name}->{'synonyms'};
+    $syn = &OpenInputFile($synonym_file);
+    if (($organism_name eq "") || 
+	($organism_name eq "yeast")){
+	$syn = &OpenInputFile($synonym_file);
+	while(<$syn>) {
+	    chomp;
+	    tr/a-z/A-Z/;
+	    @fields = split;
+	    if ((defined($orf_id{$fields[0]})) &&
+		($orf_info{$orf_id{$fields[0]}})) {
+		$orf_id = $orf_id{$fields[0]};
+		unless (($fields[1] eq  $orf_id) || ($orf_info{$fields[1]})) {
+		    $orf_id{$fields[1]} = $orf_id;
+		    push @{$synonyms{$orf_id}}, $fields[1] if ($fields[1] =~ /\S/);
+		}
+	    } elsif ((defined($orf_id{$fields[1]})) &&
+		     ($orf_info{$orf_id{$fields[1]}})) {
+		$orf_id = $orf_id{$fields[1]};
+		unless (($fields[0] eq  $orf_id) ||($orf_info{$fields[0]})) {
+		    $orf_id{$fields[0]} = $orf_id;
+		    push @{$synonyms{$orf_id}}, $fields[0] if ($fields[0] =~ /\S/);
+		}
+	    }
+	}
+    } else {
+	while(<$syn>) {
+	    next if (/^;/);
+	    next unless (/\S/);
+	    chomp;
+	    @fields = split "\t";
+	    $id = uc($fields[0]);
+	    $name = $fields[1];
+	    if (defined($orf_id{$id})) {
+		$orf_id{uc($name)} = $orf_id{$id};
+	    }
+	}
+    }
+    close $syn;
+} ### ReadSynonyms
+
+
+####
+#### calculate the limits of the non-coding region on both sides of each gene
+####
+sub CalcNeighbourLimits {
+    foreach my $chr (sort keys %chromosome) {
+	my @genes = sort { $left{$a} <=> $left{$b} } $chromosome{$chr}->get_genes();
+	@chrom_lefts = sort {$a <=> $b} @left{@genes};
+	@chrom_rights = sort {$a <=> $b} @right{@genes};
+	
+	for my $g (0..$#genes) {
+	    my $gene = $genes[$g];
+	    my $ln = $g -1; ### first guess
+	    my $rn = $g +1; ### first guess
+	    my $found = 0;
+
+	    #### calculate left upstream limit 
+	    do {
+		if ($chrom_rights[$ln] > $left{$gene}) {
+		    $ln--;
+		} elsif ($chrom_rights[$ln+1] < $left{$gene}) {
+		    $ln++;
+		} else {
+		    $found = 1;
+		}
+	    } until (($found) || ($ln < 0) || ($ln > $#chrom_rights));
+	    if ($found) {
+		$neighb_left_limit{$gene} = $chrom_rights[$ln]; 
+	    } elsif ($ln < 0) {
+		$neighb_left_limit{$gene} = 0; 
+	    } elsif ($ln > $#chrom_rights) {
+		$neighb_left_limit{$gene} = undef; 
+	    }
+	    $neighb_left_size{$gene} = $left{$gene} - $neighb_left_limit{$gene} -1;
+
+	    #### calculate right upstream limit 
+	    $found = 0;
+	    do {
+		if ($chrom_lefts[$rn] < $right{$gene}) {
+		    $rn++;
+		} elsif ($chrom_lefts[$rn-1] > $right{$gene}) {
+		    $rn--;
+		} else {
+		    $found = 1;
+		}
+	    } until (($found) || ($rn < 0) || ($rn > $#chrom_lefts));
+	    if ($found) {
+		$neighb_right_limit{$gene} = $chrom_lefts[$rn];
+	    } elsif ($rn < 0) {
+		$neighb_right_limit{$gene} = undef; 
+	    } elsif ($rn > $#chrom_lefts) {
+		$neighb_right_limit{$gene} = $chromosome_seq{$chr}->get_length() + 1; 
+	    }
+	    $neighb_right_size{$gene} = $neighb_right_limit{$gene} - $right{$gene} -1;
+	    
+	    if ($strand{$gene} eq "R") {
+		$upstr_limit{$gene} = $neighb_right_limit{$gene};
+		$upstr_size{$gene} = $neighb_right_size{$gene};
+		$downstr_limit{$gene} = $neighb_left_limit{$gene};
+		$downstr_size{$gene} = $neighb_left_size{$gene};
+	    } else {
+		$upstr_limit{$gene} = $neighb_left_limit{$gene};
+		$upstr_size{$gene} = $neighb_left_size{$gene};
+		$downstr_limit{$gene} = $neighb_right_limit{$gene};
+		$downstr_size{$gene} = $neighb_right_size{$gene};
+	    }    
+	}
+	
+    }
+}
+
+sub ListSupportedOrganisms {
+  ### usage : &ListSupportedOrganisms($format);
+  ### $supp =  &ListSupportedOrganisms("text");
+  ### $supp =  &ListSupportedOrganisms("html_list");
+  ### $supp =  &ListSupportedOrganisms("html_table");
+  ### @names =  &ListSupportedOrganisms("array");
+  my $out_format = $_[0] || "text";
+
+  foreach my $key (keys %main::supported_organism) {
+      $names{$key} = $main::supported_organism{$key}->{name};
+  }
+  @sorted_names = sort values %names;
+  @sorted_keys  = sort {$names{$a} ge $names{$b}} keys %names;
+  
+  if ($out_format eq "html_list") {
+      my $result = "<UL>\n";
+      foreach my $name (@sorted_names) {
+	  $result .= "<LI>";
+	  $result .= $name;
+	  $result .= "\n";
+      }
+      $result .= "</UL>\n";
+      return $result;
+  } elsif ($out_format eq "html_table") {
+      my $result = "<TABLE>\n";
+      foreach my $key (@sorted_keys) {
+	  $result .= "<TR>\n";
+	  $result .= "<TD>$key</TD>\n";
+	  $result .= "<TD>";
+	  $result .= $names{$key};
+	  $result .= "</TD>\n";
+	  $result .= "</TR>\n";
+      }
+      $result .= "</TABLE>\n";
+      return $result;
+  } elsif ($out_format eq "array") {
+      my @result = ();
+      foreach my $name (@sorted_names) {
+	  push @result, $name;
+      }
+      return @result;
+  }else {
+      my $result = "";
+      foreach $key (@sorted_keys) {
+	  $result .= sprintf "\t\t%-30s", $key;
+	  $result .= "\t";
+	  $result .= $names{$key};
+	  $result .= "\n";
+      }
+      return $result;
+  }
+}
+
+$supported_organisms .= &ListSupportedOrganisms();
+
+
+#foreach $key (sort keys %supported_organism) {
+#  $supported_organisms .= sprintf "\t\t%-12s\t", $key;
+#  $supported_organisms .= $supported_organism{$key}->{'name'};
+#  $supported_organisms .= "\n";
+#}
+
+
+
+sub FatalError {
+  @messages = @_;
+  warn(join("\n\t", 
+	    "Error:", 
+	    @messages), 
+       "\n\n");
+  &PrintHelp;
+  exit(1);
+}
+
+sub FatalError {
+    my @error_message = @_;
+    my $message = join "\n\t", @error_message;
+    if ($output_context eq "cgi") {
+	$message =~ s/\n/<br>\n/g;
+	&cgiError($error_message);
+    } else {
+	die ("Error\n\t", $message, "\n");
+    }
+}
+
+
+#### end of the library #####
+
+1; # return true
+
+
+
