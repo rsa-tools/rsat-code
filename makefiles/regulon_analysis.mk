@@ -4,7 +4,25 @@
 include ${RSAT}/makefiles/util.mk
 
 WHEN=now
-MAKEFILE=makefile
+MAKEFILE=${RSAT}/makefiles/regulon_analysis.mk
+
+################################################################
+## queue tasks on merlin
+QUEUE_TASKS = oligos oligo_maps gibbs consensus MotifSampler dyads dyad_maps
+queue_all:
+	for family in ${REGULONS} ${RAND_FAM}; do				\
+		${MAKE} multi MULTI_TASK=upstream FAM=$${family} WHEN=now;	\
+	done
+	for task in ${QUEUE_TASKS}; do							\
+		for family in ${REGULONS} ${RAND_FAM}; do				\
+			${MAKE} multi MULTI_TASK=$${task} FAM=$${family} WHEN=queue;	\
+		done;									\
+	done
+
+after_queue:
+	for family in ${REGULONS} ${RAND_FAM}; do					\
+		${MAKE} multi MULTI_TASK=clean,synthesis,sql FAM=$${family} WHEN=now;	\
+	done
 
 
 ################################################################
