@@ -35,7 +35,7 @@ if (defined($supported_organism{$query->param('organism')})) {
 
 ### sequence type
 if ($query->param('sequence_type')) {
-    my ($seq_type) = split " ", $query->param('sequence_type'); ### take the first word
+    ($seq_type) = split " ", $query->param('sequence_type'); ### take the first word
     $parameters .= " -type ".$seq_type;
 }
 
@@ -70,6 +70,7 @@ if (&IsInteger($query->param('to'))) {
 
 ### orf overlap ###
 unless (lc($query->param('orf_overlap')) eq "on") {
+    $noorf = 1;
     $parameters .= " -noorf ";
 }
 
@@ -111,7 +112,7 @@ if ($query->param('genes') eq "all") {
     }
 }
 
-print  "<PRE><B>Command :</B> $retrieve_seq_command $parameters</PRE><P>" if $ECHO;
+print  "<PRE><B>Command :</B> $retrieve_seq_command $parameters</PRE><P>" if ($ECHO >= 1);
 
 #### execute the command #####
 if ($query->param('output') =~ /display/i) {
@@ -170,6 +171,17 @@ exit(0);
 # Pipe the result to another command
 #
 sub PipingForm {
+    #### choose background model for oligo-analysis
+    if ($seq_type =~ /upstream/) {
+	if ($noorf) {
+	    $background = "upstream-noorf";
+	} else {
+	    $background = "upstream";
+	}
+    } else {
+	$background = "non-coding";
+    }
+
   print <<End_of_form;
 <HR SIZE = 3>
 <TABLE CELLSPACING=0 CELLPADDING=10 BORDER=0 NOWRAP BGCOLOR= #FFEEDD>
@@ -195,6 +207,7 @@ sub PipingForm {
 	<INPUT type="hidden" NAME="to" VALUE="$to">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
+	<INPUT type="hidden" NAME="background" VALUE="$background">
 	<INPUT type="submit" value="oligonucleotide analysis">
 	</FORM>
     </TD>
@@ -206,6 +219,7 @@ sub PipingForm {
 	<INPUT type="hidden" NAME="to" VALUE="$to">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
+	<INPUT type="hidden" NAME="background" VALUE="$background">
 	<INPUT type="submit" value="dyad analysis">
 	</FORM>
     </TD>
