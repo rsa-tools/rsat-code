@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: util.pl,v 1.5 2003/12/23 17:22:32 jvanheld Exp $
+# $Id: util.pl,v 1.6 2005/03/10 15:55:30 jvanheld Exp $
 #
 # Time-stamp: <2003-07-10 11:46:32 jvanheld>
 #
@@ -21,7 +21,7 @@ foreach my $k (keys %main::default) {
 
 ################################################################
 #### read generic options
-$generic_option_message ="	-h	detailed help
+$generic_option_message = "	-h	detailed help
 	-help	short list of options
 	-test	fast parsing of partial data, for debugging
 	-outdir output directory

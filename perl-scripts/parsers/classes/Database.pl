@@ -5,7 +5,7 @@
 #### because I don't have this module on my machine anymore.
 package classes::Database;
 {
-  my $data_dir = $parsed_data;
+  my $data_dir = $parsed_data || $ENV{HOME}."parsed_data";
   my $mldbm_dir = "$data_dir/mldbm/";
   
   my %name_index_file = ();

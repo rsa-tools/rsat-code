@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parsing_util.pl,v 1.16 2005/01/27 20:40:14 jvanheld Exp $
+# $Id: parsing_util.pl,v 1.17 2005/03/10 15:55:30 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -418,7 +418,6 @@ sub SplitReactants {
   my @reactants = split / \+ /, $_[0];
   my %reactants;
   my $stoichio = "";
-  my $compound = "";
   my $compound = "";
   
   foreach $reactant (@reactants) {

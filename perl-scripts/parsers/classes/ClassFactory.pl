@@ -413,7 +413,7 @@ use Data::Dumper;
 				  #### check the size of the array of values
 				  if ($#array_values < $#expanded_fields) {
 				      for $f ($#array_values+1..$#expanded_fields) {
-					  @array_values[$f] = $main::null;
+					  $array_values[$f] = $main::null;
 				      }
 				  } elsif ($#array_values > $#expanded_fields) {
 				      &main::ErrorMessage(join "\t", "Too many values for attribute", 
@@ -901,7 +901,7 @@ use Data::Dumper;
 	  push @field_defs, sprintf "\t\t%-33s\t%s", $field, $field_format;
       }
       print SQL join (",\n", @field_defs), "\n";
-      if ($dbms eq mysql) {
+      if ($dbms eq "mysql") {
 	  print SQL "\t) TYPE=INNODB", "\n", ";", "\n";
       } else {
 	  print SQL "\t)", "\n", ";", "\n";
@@ -944,7 +944,7 @@ use Data::Dumper;
 #			  "INDEX(id)",
 #			  "FOREIGN KEY (id) REFERENCES ${main_table_name}(id) ON DELETE CASCADE",
 			  ), "\n";
-	  if ($dbms eq mysql) {
+	  if ($dbms eq "mysql") {
 	      print SQL "\t) TYPE=INNODB", "\n", ";", "\n";
 	  } else {
 	      print SQL "\t)", "\n", ";", "\n";
@@ -996,7 +996,7 @@ use Data::Dumper;
 #			  "INDEX(id)",
 #			  "FOREIGN KEY (id) REFERENCES ${main_table_name}(id) ON DELETE CASCADE",
 			  ), "\n";
-	  if ($dbms eq mysql) {
+	  if ($dbms eq "mysql") {
 	      print SQL "\t) TYPE=INNODB", "\n", ";", "\n";
 	  } else {
 	      print SQL "\t)", "\n", ";", "\n";
