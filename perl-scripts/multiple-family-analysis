@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.78 2004/05/17 15:35:48 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.79 2004/08/02 22:13:46 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -27,6 +27,7 @@ use RSAT::matrix;
 ################################################################
 ## initialisations	    
 $skip=0;
+$min_genes = 1;
 $sliding_window_size = 0;
 $die_on_error = 1;
 $analyze_purged_sequences = 1;
@@ -35,6 +36,7 @@ $repetitions=10000; ### Repetitions for the calibN
 $dir{main} = `pwd`;
 $dir{calib1} = "calibrations_1gene"; 
 chomp($dir{main});
+%max_score = ();
 
 ## Supported tasks
 @supported_tasks = qw (upstream
@@ -91,7 +93,7 @@ $draw_maps=1;
 $scalestep = 100; 
 
 ## retrieve-seq options
-$noorf = 1; 
+$noorf = "-noorf"; 
 $seq_format = "fasta";
 $seq_dir = "";
 $seq_ext = "fasta";
@@ -122,6 +124,10 @@ $MS_n = 4;
 $MS_w = $matrix_width;
 $MS_x = 1;
 $MS_r = 5;
+
+## MEME options
+$MEME_minw = 6;
+$MEME_maxw = 25;
 
 ## Comparison between discovered and known motifs
 $known_site_file = "";
@@ -169,6 +175,21 @@ if ($sequence_file_list) {
     @families = sort keys %family;
 
 }
+
+
+## Check minimum number of genes
+foreach my $family_name (@families) {    
+    my $gene_nb = scalar(@{$family{$family_name}->{members}});
+    if ($gene_nb < $min_genes) {
+	warn join ("\t", "; Removing family", 
+		   $fam_count, $family_name,
+		   $gene_nb." genes",
+		   "< min = ".$min_genes), "\n" if ($main::verbose >= 1);
+	delete $family{$family_name};
+    }
+}
+@families = sort keys %family;
+warn "Remaining families after filtering\t", scalar(@families), "\n";
 
 ### write composition of the families in the separated directories
 &SetFileNames();
@@ -270,7 +291,7 @@ sub SetFileNames {
 
     foreach my $family_name (@families) {
 	my $gene_nb = scalar(@{$family{$family_name}->{members}});
-	warn join ("\t", "Number of genes", $family_name, $gene_nb), "\n";
+#	warn join ("\t", "Number of genes", $family_name, $gene_nb), "\n";
 
 	$expected_sites = $gene_nb*$expected_sites_per_gene;	
 	$family{$family_name}->{family_file} = "$family_name/${family_name}.fam";
@@ -323,7 +344,7 @@ sub SetFileNames {
 
 	## Expected number of sites
 	my $gene_nb = scalar(@{$family{$family_name}->{members}});
-	warn join ("\t", "Number of genes", $family_name, $gene_nb), "\n";
+#	warn join ("\t", "Number of genes", $family_name, $gene_nb), "\n";
 	$expected_sites = $gene_nb*$expected_sites_per_gene;	
 	$gibbs_options .= " ".$expected_sites;
 	$gibbs_suffix .= "-n".$expected_sites; 
@@ -426,8 +447,12 @@ sub SetFileNames {
 	$meme_suffix .= "_tcm";
 
 	## Matrix width
-	$meme_options .= " -w ".$matrix_width;
-	$meme_suffix .= "-w".$matrix_width;
+#	$meme_options .= " -w ".$matrix_width;
+#	$meme_suffix .= "-w".$matrix_width;
+	$meme_options .= " -minw ".$MEME_minw;
+	$meme_options .= " -maxw ".$MEME_maxw;
+	$meme_suffix .= "-minw".$MEME_minw;
+	$meme_suffix .= "-maxw".$MEME_maxw;
 
 	## strands
 	$meme_suffix .= $strands;
@@ -436,9 +461,9 @@ sub SetFileNames {
 	}
 	
 	## Background frequencies
-	$meme_path = "/Users/jvanheld/installers/MEME/meme.3.0.4";
+	$meme_path = $RSA."/bin/meme/";
 #	$meme_path = "~nicolas/meme.3.0.4";
-	$meme_bg_file = $meme_path."/tests/yeast.nc.3.freq";
+	$meme_bg_file = $meme_path."/tests/yeast.nc.6.freq";
 	$meme_options .= " -bfile ".$meme_bg_file;
 
 	## Output type
@@ -572,7 +597,7 @@ sub CalcOligoOptions {
    $oligo_options .= " -sort ";
    $oligo_options .= " ".$strands;
    $oligo_options .= " -l ".$oligo_len;
-   $oligo_options .= " -thosig ".$thosig;
+   $oligo_options .= " -lth occ_sig ".$thosig;
    $oligo_options .= " -thmsf ".$thmsf if (defined($thmsf));
    
    if ($markov) {
@@ -1040,7 +1065,19 @@ sub SyntheticTable {
    }
    my $col = 0;
    
-   foreach $family_name (@families) {
+   foreach my $family_name (@families) {
+	my @members = @{$family{$family_name}->{members}};
+	$gene_nb = scalar(@members);
+
+	## Check minimum number of genes
+	if ($gene_nb < $min_genes) {
+	    warn join ("\t", "; Skipping family", 
+		       $fam_count, $family_name,
+		       $gene_nb." genes",
+		       "< min = ".$min_genes), "\n" if ($main::verbose >= 1);
+	    next;
+	}
+
 	$col++;
 	
 	#### Index columns associated to each family
@@ -1088,7 +1125,7 @@ sub SyntheticTable {
 	    $map_link = "../$family{$family_name}->{oligo_file}.${IMG_FORMAT}";
        }
        my $pattern_file = $family{$family_name}->{oligo_assembly_file};
-       &IndexPatterns($family_name, $pattern_file, $map_link, $row{oligos}, $col, assembly=>1);
+       &IndexPatterns($family_name, $pattern_file, $map_link, $row{oligos}, $col, type=>"oligos");
 	
        ################################################################
 	### index results of dyad analysis
@@ -1098,7 +1135,7 @@ sub SyntheticTable {
 	    $map_link = "../$family{$family_name}->{dyad_file}.${IMG_FORMAT}";
        }
        my $pattern_file = $family{$family_name}->{dyad_assembly_file};
-       &IndexPatterns($family_name, $pattern_file, $map_link, $row{dyads}, $col, assembly=>1);
+       &IndexPatterns($family_name, $pattern_file, $map_link, $row{dyads}, $col, type=>"dyads");
 	
        ################################################################
 	### index results of manual pattern selection
@@ -1109,7 +1146,7 @@ sub SyntheticTable {
 		$map_link = "../$family{$family_name}->{oligo_selection}.${IMG_FORMAT}";
 	    }
 	    my $pattern_file = $family{$family_name}->{oligo_selection};
-	    &IndexPatterns($family_name, $pattern_file, $map_link, $row{selection}, $col, assembly=>0);
+	    &IndexPatterns($family_name, $pattern_file, $map_link, $row{selection}, $col, type=>"manual");
 	}
 
 	################################################################
@@ -1324,13 +1361,14 @@ sub IndexPatterns {
 
    ## read the patterns
    if (-e $pattern_file) {
-	if ($args{assembly}) {
-	    ## Parse an assembly file (only retain contigs and isolated)
-	    ($error, @patterns) = &ReadAssemblyFile($pattern_file);
-	} else {
-	    ## Parse a pattern file (retain all patterns)
-	    @patterns = &ReadPatterns(pattern_file=>$pattern_file);
-	}
+       if (($args{type} eq "dyads") ||
+	   ($args{type} eq "oligos")) {
+	   ## Parse an assembly file (only retain contigs and isolated)
+	   ($error, @patterns) = &ReadAssemblyFile($family_name, $pattern_file, $args{type});
+       } else {
+	   ## Parse a pattern file (retain all patterns)
+	   @patterns = &ReadPatterns(pattern_file=>$pattern_file);
+       }
    } else {
 	$table[$row][$col] = "<font color=red>File not found</font>\n";
 	$pwd = `pwd`;
@@ -1349,7 +1387,7 @@ sub IndexPatterns {
    } else {
 	@sorted_patterns = sort { $score{$b} <=> $score{$a} } @patterns;
 	$table[$row][$col] = "<table>\n";
-	$table[$row][$col] .="<tr><td align=right>max.score</td><td>".$max_score{$family_name}."</td></tr>\n";
+	$table[$row][$col] .="<tr><td align=right>max.score</td><td>".$max_score{$args{type}}{$family_name}."</td></tr>\n";
 	$table[$row][$col] .="</table>\n";
 	$table[$row][$col] .= "<table>\n";
 	$table[$row][$col] .= "<TR>\n";
@@ -1384,7 +1422,7 @@ sub IndexPatterns {
 	}
 	
 	### print pattern scores
-	$table[$row][$col] .= "<TD><a target=_blank href=".$map_link.">\n";
+	$table[$row][$col] .= "<TD><a href=".$map_link.">\n";
 	for $p (@sorted_patterns) {
 	    $table[$row][$col] .= "<B>" if ($p->get_attribute("score") >= 1);
 	    $table[$row][$col] .= $p->get_attribute("score");
@@ -1416,11 +1454,6 @@ sub IndexPatterns {
 	
 	$table[$row][$col] .= "</TR>\n";
 	$table[$row][$col] .= "</TABLE>\n";
-
-
-
-
-#	    close $olig;
    }
 }
 
@@ -1555,12 +1588,29 @@ sub AnalyzeFamilies {
 
    foreach $family_name (@families) {
 	$fam_count++;
+	my @members = @{$family{$family_name}->{members}};
+	$gene_nb = scalar(@members);
+
+	## Skip initial families if specified with -skip option
 	if ($fam_count <= $skip) {
-	    warn "; Skipping family\t$fam_count\t$family_name\n" if ($main::verbose >= 1);
+	    warn join ("\t", "; Skipping family", 
+		       $fam_count, $family_name,
+		       $gene_nb." genes",
+		       "\t(skip ".$skip. ")",
+		       ), "\n" if ($main::verbose >= 1);
 	    next;
 	}
 
-	warn ";\n; Treating family $family_name ($fam_count of $fam_nb)\t", `date` if ($verbose >=1);
+	## Check minimum number of genes
+	if ($gene_nb < $min_genes) {
+	    warn join ("\t", "; Skipping family", 
+		       $fam_count, $family_name,
+		       $gene_nb." genes",
+		       "< min = ".$min_genes), "\n" if ($main::verbose >= 1);
+	    next;
+	}
+
+	warn ";\n; Treating family ", $family_name," (",$fam_count," of ",$fam_nb, ")\t", $gene_nb, " genes\t",`date` if ($verbose >=1);
 	
 	### retrieve upstream sequences of the family
 	&UpstreamSequences() if ($task{upstream});
@@ -1679,11 +1729,14 @@ OPTIONS
 		analyses (this si useful when the program has been
 		interrupted after a considerable amount of work).
 	-outdir	output directory
-
+	-mingenes #
+		minimal number of genes per family. Families with less
+		than this number are skiped.
 
    Sequence retrieval options
 	-org	organism
 	-noorf	exclude upstream ORFs from upstream sequences
+	-orfov  do not exclude upstream ORFs from upstream sequences
 	-from	upstream region left limit
 	-to	upstream region right limit
        -feattype
@@ -1754,6 +1807,10 @@ OPTIONS
 	-MS_n	number of different motifs to search for (default $MS_n).
 	-MS_x	allowed overlap between different motifs. (default $MS_x)
 	-MS_r	number of times the MotifSampler should be repeated (default = $MS_r).
+
+   MEME options (Bailey)
+   	-MEME_minw	minimum motif width (default $MEME_minw)
+   	-MEME_maxw	maximum motif widht (default $MEME_maxw)
 
    Output options
 	-transp	transpose synthetic result table (columns become rows)
@@ -1874,10 +1931,12 @@ multiple-family-analysis options
 -purge		use purged sequences for pattern discovery (default)
 -nopurge	use non-purged sequences for pattern discovery
 -outdir		output directory
+-mingenes	minimal number of genes per family
 -org		organism
 -from		upstream region left limit
 -to		upstream region right limit
 -noorf		exclude upstream ORFs from upstream sequences
+-orfov		do not exclude upstream ORFs from upstream sequences
 -feattype	feature type for sequence retrieval (e.g. CDS, mRNA)
 -1str   	strand-sensitive analysis
 -2str   	strand-insensitive analysis
@@ -1920,6 +1979,9 @@ multiple-family-analysis options
 -MS_n		number of different motifs to search for (default $MS_n).
 -MS_x		allowed overlap between different motifs. (default $MS_x)
 -MS_r		number of times the MotifSampler should be repeated (default = $MS_r).
+## MEME options (Bailey)
+-MEME_minw	minimum motif width (default $MEME_minw)
+-MEME_maxw	maximum motif width (default $MEME_maxw)
 End_short_help
  close HELP;
  exit;
@@ -1973,6 +2035,10 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-outdir") {
 	    $dir{output} = $ARGV[$a+1];
 
+	    ### min number of genes
+	} elsif ($ARGV[$a] eq "-mingenes") {
+	    $min_genes = $ARGV[$a+1];
+
 	    ### upstream sequence lmits
 	} elsif (($ARGV[$a] eq "-from") &&
 		 (&IsInteger($ARGV[$a+1]))) {
@@ -2015,6 +2081,10 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] =~ /-(MS_\S)/) {
 	    $$1 =  $ARGV[$a+1];
 
+	    ### MEME options
+	} elsif ($ARGV[$a] =~ /-(MEME_\S)/) {
+	    $$1 =  $ARGV[$a+1];
+
 	    ### organism
 	} elsif ($ARGV[$a] eq "-org") {
 	    $organism_name = $ARGV[$a+1];
@@ -2049,7 +2119,11 @@ sub ReadArguments {
 
 	    #### clip upstream ORFs fom upstream regions
 	} elsif ($ARGV[$a] =~ /^-noorf/) {
-	    $noorf = 1;
+	    $noorf = "-noorf";
+
+	    #### do not clip upstream ORFs fom upstream regions
+	} elsif ($ARGV[$a] =~ /^-orfov/) {
+	    $noorf = "";
 
 	    #### threshold
 	} elsif ($ARGV[$a] =~ /^-thosig/) {
@@ -2222,26 +2296,49 @@ sub MakeDirectories {
 sub ExportSQL {
    warn "; Generating SQL\n" if ($verbose >= 1);
    my $test = new RSAT::Family;
-   my $time_prefix = time();
+
+   ## Unique prefix for each analysis, to allow merging them in a database
+   my $run_prefix = `mktemp XXXX`;
+   chomp($run_prefix);
+   my $run_date = &AlphaDate();
+
+   ## Class holder for the analysis
+   local $analysis_factory = classes::ClassFactory->new_class(object_type=>"RSAT::Analysis");
+   $current_analysis = $analysis_factory->new_object(id=>$run_prefix);
+   $current_analysis->set_attribute("date", $run_date);
+   $current_analysis->set_attribute("family_file", $family_file);
+   $current_analysis->set_attribute("organism", $organism_name);
+   $current_analysis->set_attribute("background", $background);
+   $current_analysis->set_attribute("up_from", $from);
+   $current_analysis->set_attribute("up_to", $to);
+   $current_analysis->set_attribute("orf_ovlp", $noorf);
+   $current_analysis->set_attribute("pattern_ovlp", $noov);
+   $current_analysis->set_attribute("strands", $strands);
+   $current_analysis->set_attribute("thosig", $thosig);
+   $current_analysis->set_attribute("suffix", $table_suffix);
+
+   ## Class holder for families
    my $family_factory = classes::ClassFactory->new_class(object_type=>"RSAT::Family",
-							  prefix=>$time_prefix);
+							 prefix=>$run_prefix."_");
    
-   
-#    my $pattern_prefix = "pat_".&AlphaDate()."_";
+   ## Class holder for patterns
    my $pattern_factory = classes::ClassFactory->new_class(object_type=>"RSAT::Pattern",
-							   prefix=>$time_prefix);
+							  prefix=>$run_prefix."_");
    
    my %export_columns = ();
    
    foreach my $family_name (@families) {
 	
 	#### general family attributes
-	my $family_object = $family_factory->new_object(id=>$family_name);
+	my $family_object = $family_factory->new_object(id=>$run_prefix."_".$family_name);
 	my $family_id = $family_object->get_attribute("id");
+
+	$current_analysis->push_attribute("families",$family_id);
+
+	$family_object->set_attribute("analysis", $run_prefix);
 	$family_object->set_attribute("name", $family_name);
 	$family_object->set_attribute("size", scalar(@{$family{$family_name}->{members}}));
 	$family_object->set_attribute("organism", $organism_name);
-	$family_object->set_attribute("suffix", $table_suffix);
 	
 	warn join ("\t", ";\tSQL export for family", $family_name, $organism_name), "\n" if ($main::verbose >= 2);
 	
@@ -2342,7 +2439,7 @@ sub ExportSQL {
    }
 
    ## Specify output fields
-   $family_factory->set_out_fields(qw(id organism size name suffix genes));
+   $family_factory->set_out_fields(qw(id analysis organism size name  genes));
    @pattern_out_fields = qw(id
 			     family_id
 			     family 
@@ -2369,14 +2466,14 @@ sub ExportSQL {
    chomp $pwd;
    warn join ("\t", $pwd , $dir{output}, $dir{output_bk}), "\n";
    #### export the result tables
-   foreach my $factory ($family_factory, $pattern_factory) {
+   foreach my $factory ($analysis_factory, $family_factory, $pattern_factory) {
 	$factory->dump_tables();
 	$factory->generate_sql(schema=>$schema, 
 			       host=>$host, 
 			       password=>$password, 
 			       user=>$user);
    }
-   &ExportMakefile("family", "pattern");
+   &ExportMakefile("analysis", "family", "pattern");
 #    $dir{output} = $dir{output_bk};
 #    chdir($dir{output});
 }
@@ -2762,10 +2859,11 @@ sub MDCreport {
 ################################################################
 ## Extract contigs and isolated patterns from an assembly file
 sub ReadAssemblyFile {
-   my ($assembly_file) = @_;
+   my ($family_name, $assembly_file, $pattern_type) = @_;
    my ($pattern_handle, $input_dir) = &OpenInputFile($assembly_file);
    my @assembled_patterns = ();
    my $error = "";
+   my %score = ();
 
    while (<$pattern_handle>) {
 	chomp;
@@ -2794,19 +2892,21 @@ sub ReadAssemblyFile {
 		$pattern->set_attribute("rc", $rc);
 #			$rc{$pattern} = uc(&ReverseComplement($pattern->get_attribute("sequence")));
 	    }
-	    my $score = shift @fields;
-	    $pattern->set_attribute("score", $score);
-	    $score{$pattern} = $score; ## index pattern scores for sorting
+	    $score{$pattern} = shift @fields;
+	    $pattern->set_attribute("score", $score{$pattern});
+#	    $score{$pattern} = $score; ## index pattern scores for sorting
 	    
 	    my $type = shift @fields;
 	    $pattern->set_attribute("type", $type);
 	    $max_score{$family_name} = &max($max_score{$family_name}, $score{$pattern});
+	    $max_score{$pattern_type}{$family_name} = &max($max_score{$pattern_type}{$family_name}, $score{$pattern});
 	    warn "Pattern\t", $_, "\n", join("\t", $family_name, 
 					     $pattern->get_attribute('sequence'),
 					     $pattern->get_attribute('rc'),
 					     $pattern->get_attribute('score'),
 					     $pattern->get_attribute('type'),
 					     $score{$pattern},
+					     $max_score{$family_name},
 					     ), "\n" if ($main::verbose >= 10);
 	}
    }
