@@ -149,7 +149,8 @@ exit(0);
 ## Match one pattern against another one
 sub OneMatch {
     my ($pattern1, $pattern2, $reverse) = @_;
-    $seq1 = $pattern1->get_attribute("sequence");
+    $seq1 = &ExpandSeq($pattern1->get_attribute("sequence"));
+
     $id1 =  $pattern1->get_attribute("id");
 
     ## Match direct or reverse complement
@@ -160,7 +161,7 @@ sub OneMatch {
 #	$id1 .= "_rev";
     }
     
-    $seq2 = $pattern2->get_attribute("sequence");
+    $seq2 = &ExpandSeq($pattern2->get_attribute("sequence"));
     $id2 =  $pattern2->get_attribute("id");
     local @result = ();
     local $match;
