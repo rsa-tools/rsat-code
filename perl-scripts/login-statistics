@@ -125,7 +125,8 @@ while ($line = <$in>) {
     next unless ($line =~ /\S/);
     chomp($line);
     @fields = split /\s+/, $line;
-    if ($fields[0] =~ /^\d{6}\.\d{6}$/) { ### new login format (&AlphaDate)
+    if (($fields[0] =~ /^\d{6}\.\d{6}$/) ||
+        ($fields[0] =~ /^\d{4}_\d{2}_\d{2}\.\d{6}$/)) { ### new login format (&AlphaDate)
 #print "$line\n";
         $alpha_date = $fields[0];
         $server_name = $fields[1];
@@ -162,7 +163,12 @@ while ($line = <$in>) {
     next if ($forget_IP{$client_IP});
 
     #### extract year and month from date
-    if ($alpha_date =~ /^(\d{2})(\d{2})/) {
+    if ($alpha_date =~ /^(\d{2})(\d{2})_(\d{2})/) {
+        $month_nb = 12*$2 + $3;
+        $month{$month_nb} = "$3/$2";
+        $min_month = &min($month_nb,$min_month);
+        $max_month = &max($month_nb,$max_month);
+    } elsif ($alpha_date =~ /^(\d{2})(\d{2})/) {
         $month_nb = 12*$1 + $2;
         $month{$month_nb} = "$2/$1";
         $min_month = &min($month_nb,$min_month);
