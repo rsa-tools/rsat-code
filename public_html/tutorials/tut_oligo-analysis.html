@@ -1,0 +1,140 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <TITLE>RSA-tools - tutorials</TITLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF" LINK="#0000EE" VLINK="#55008B" ALINK="#FF0000">
+<blockquote>
+
+<HR SIZE=6 WIDTH="100%">
+<CENTER>
+<H2><A HREF="../RSA_home.cgi">RSA-tools</A> - Tutorials - Pattern discovery</H2></CENTER>
+
+<HR SIZE=6 WIDTH="100%">
+
+<UL>Starting from the simple knowledge that a set of genes share some
+regulatory behaviour, one can suppose that some elements are shared by
+their upstream region, and one would like to detect such elements. We
+implemented a simple and fast method to extract such elements, based
+on a detection of over-represented oligonucleotides. This method has
+been described in detail in
+<A HREF="http://www.ncbi.nlm.nih.gov/htbin-post/Entrez/query?uid=9719638&form=6&db=m&Dopt=b">
+J.Mol. Biol. (1998) 281, 827-842</A>.
+
+<P>We will illustrate this approach with a set of genes for which the
+regulatory sites is well known : the Nitrogen-responsive genes. The
+pattern discovery program will of course not receive any indication
+about these known regulatory motifs. We will only use them <I>a
+posteriori</I> to compare the discovered modifs and those documented
+in the literature.
+
+<OL>
+<P><LI>
+
+Retrieve upstream sequences from -800 to -1 for the following yeast
+genes (as you have seen in the <a
+href="tut_sequence_retrieval.html">tutorial on sequence retrieval</a>)
+
+In the menu from the left frame, click on <B>retrieve sequence</B>.</LI>
+
+<PRE>DAL5
+GAP1
+MEP1
+MEP2
+MEP3
+PUT4
+DAL80
+</PRE>
+
+<P><LI>
+After a few seconds, the upstream sequences from the 7 Nitrogen sensitive
+genes are displayed. At the top of the response, click the button labelled
+<B>oligonucleotide analysis</B>.</LI>
+
+<P><LI>
+a new form appears. In the title box, type</LI>
+
+<PRE>Nitrogen sensitive genes</PRE>
+
+<P><LI>
+Leave all other parameters unchanged and click <B>GO</B>.</LI>
+
+<P><LI>
+The results of the analysis are now displayed in columns, showing respectively</LI>
+
+<OL>
+<P><LI>
+the oligonucleotide sequence</LI>
+
+<P><LI>
+the same followed by its reverse complement</LI>
+
+<P><LI>
+the expected frequency for this specific oligonucleotide</LI>
+
+<P><LI>
+the total number of occurrences observed in the set of upstream regions</LI>
+
+<P><LI>
+the number of occurrences expected at random</LI>
+
+<P><LI>
+the probability to observe as much or more occurrences</LI>
+
+<P><LI>
+the significance of the observed number of occurrences</LI>
+</OL>
+
+<P>
+Note the particularly high significance index (20.00) for the <TT>cttatc|gataag</TT>
+oligonucleotide. This corresponds to the GATA box consensus, which is in
+fact the regulatory site characteristic for the Nitrogen sensitive genes.
+
+<P>Notice that the value of 20.00 is the maximum possible significance
+(actually this value is shown when the the probability is too low to
+be calculated precisely : we reached the floating point limitation of
+the computer).
+
+<P><LI>
+In the top of the result page, click on the button <B>Pattern search</B>.
+The same form as in the part 1 is displayed, but the <B>Query pattern</B>
+box is now filled with the result of oligonucleotide analysis. Do not change
+anything to the form and click <B>GO</B>.</LI>
+
+<P><LI>
+the list of positions of the over-represented oligonucleotides is displayed.
+On the bottom of the result page, click the <B>Feature map</B> button.</LI>
+
+<P><LI>
+The feature map form appears. Note that the title box is already filled.</LI>
+
+<P><LI>
+Fill</LI>
+
+<UL>
+<P><LI>
+the from<B> </B>box with -600,</LI>
+
+<P><LI>
+the <B>max </B>box with 0</LI>
+</UL>
+
+<P><LI>
+click <B>GO</B>.</LI>
+
+<P><LI>
+On the feature map, note the high number of CTTATC (=GATAAG) sites.</LI>
+</UL>
+</UL>
+-->
+
+<HR WIDTH="100%">
+<CENTER>
+<ADDRESS>
+For suggestions or information request, please contact :</ADDRESS></CENTER>
+
+<CENTER><A HREF="mailto:jvanheld@ucmb.ulb.ac.be">Jacques van Helden (jvanheld@ucmb.ulb.ac.be)</A></CENTER>
+
+</blockquote>
+</BODY>
+</HTML>
