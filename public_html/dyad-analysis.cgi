@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.17 2002/11/16 14:11:37 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.18 2003/07/07 22:16:50 jvanheld Exp $
 #
-# Time-stamp: <2002-11-16 07:46:24 jvanheld>
+# Time-stamp: <2003-07-08 00:16:34 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -12,6 +12,15 @@ if ($0 =~ /([^(\/)]+)$/) {
 
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
+#### redirect error log to a file
+BEGIN {
+    $ERR_LOG = "/dev/null";
+#    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
+    use CGI::Carp qw(carpout);
+    open (LOG, ">> $ERR_LOG")
+	|| die "Unable to redirect log\n";
+    carpout(*LOG);
+}
 require "RSA.lib";
 require "RSA.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
@@ -103,6 +112,25 @@ $parameters .= " -spacing $spacing";
 #### expected frequency estimation ####
 if ($query->param('freq_estimate') eq 'background') {
     $parameters .= " -bg ".$query->param('background');
+} elsif ($query->param('freq_estimate') =~ /upload/i) {
+    $exp_freq_file = "${TMP}/$tmp_file_name.expfreq";
+    $upload_freq_file = $query->param('upload_freq_file');
+    if ($upload_freq_file) {
+	if ($upload_file =~ /\.gz$/) {
+	    $exp_freq_file .= ".gz";
+	}
+	$type = $query->uploadInfo($upload_freq_file)->{'Content-Type'};
+	open FREQ, ">$exp_freq_file" ||
+	    &cgiError("Cannot store expected frequency file in temp dir.");
+	while (<$upload_freq_file>) {
+	    print FREQ;
+	}
+	close FREQ;
+	$parameters .= " -expfreq $exp_freq_file";
+    } else {
+	&FatalError ("If you want to upload an expected frequency file, you should specify the location of this file on your hard drive with the Browse button");
+    }
+
 } else {
     unless ($query->param('freq_estimate') eq 'monads') {
 	&FatalError("Invalid expected frequency calibration");
@@ -133,7 +161,7 @@ if ($query->param('output') eq "display") {
 	} else {
 	    $pattern_assembly_command .= " -2str";
 	}
-	$pattern_assembly_command .= " -maxfl 2 -subst 0 ";
+	$pattern_assembly_command .= " -maxfl 1 -subst 0 ";
 	
 	print "<H4>Pattern assembly</H4>\n";
 	open CLUSTERS, "$pattern_assembly_command -i $result_file |";
@@ -148,6 +176,8 @@ if ($query->param('output') eq "display") {
 
     &PipingForm();
     
+} elsif ($query->param('output') =~ /server/i) {
+    &ServerOutput("$command $parameters", $query->param('user_email'));
 } else {
     &EmailTheResult("$command $parameters", $query->param('user_email'));
 }
