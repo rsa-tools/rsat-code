@@ -7,8 +7,12 @@ require "RSA.lib.pl";
 
 
 if ($ARGV[0] eq "-h") {
-  open HELP, "| more";
-  print HELP <<End_of_help;
+    $accepted_input_string = "\n\t\t\t";
+    $accepted_input_string .= join "\n\t\t\t", keys %accepted_input_seq;
+    $accepted_output_string = "\n\t\t\t";
+    $accepted_output_string .= join "\n\t\t\t", keys %accepted_output_seq; 
+    open HELP, "| more";
+    print HELP <<End_of_help;
 NAME
 	convert-seq
 
@@ -27,8 +31,10 @@ OPTIONS
 	-o outputfile
 		if not specified, the standard output is used.
 		This allows to place the command within a pipe.
-	-from   input format (see below for accepted formats)
-        -to     output format (see below for accepted formats)
+	-from   input format 
+		    Supported input formats : $accepted_input_string
+        -to     output format
+		    Supported output formats : $accepted_output_string
         -lw #   line width. A carriage return is inserted every # 
                 characters within the output sequence.
                 Default is 60. A 0 value indicates that no carriage 
