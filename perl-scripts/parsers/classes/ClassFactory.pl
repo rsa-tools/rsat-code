@@ -300,13 +300,16 @@ use Data::Dumper;
       my ($class_holder,$format,$outfile) = @_;
       my $object_type = $class_holder->get_object_type();
       (my $short_class = $object_type) =~ s/.*:://g;
+      $short_class = lc($short_class);
 
 #      if ($main::dbms eq "mysql") {
 #	  $comment_symbol = "#";
 #      } else {
 	  $comment_symbol = "--";
 #      }
-      
+
+      ################################################################
+      #### export the data in tab-delimited format
       if ($format eq "tab") {
 	  my %tables = ();
 	  my %attribute_cardinalities = $object_type->get_attribute_cardinalities();
@@ -358,7 +361,7 @@ use Data::Dumper;
 			  
 		      #### ARRAY attribute
 		      } elsif ($cardinality eq "ARRAY") {
-			  my $table_name = $short_class."_".$attribute;
+			  my $table_name = lc($short_class."_".$attribute);
 			  unless (defined($tables{$table_name})) {
 			      $tables{$table_name} = "$comment_symbol id\t".$header."\n";
 			  }
@@ -392,7 +395,7 @@ use Data::Dumper;
 			  
 			  #### EXPANDED attribute
 		      } elsif ($cardinality eq "EXPANDED") {
-			  my $table_name = $short_class."_".$attribute;
+			  my $table_name = lc($short_class."_".$attribute);
 			  unless (defined($tables{$table_name})) {
 			      $tables{$table_name} = "$comment_symbol id\t".$header."\n";
 			  }
@@ -588,7 +591,8 @@ use Data::Dumper;
       my ($class_holder,$file_suffix, $export_indexes) = @_;
       my $object_type = $class_holder->get_object_type();
       (my $short_class = $object_type) =~ s/.*:://g;
-      
+      $short_class = lc($short_class);
+
       my $pwd = `pwd`;
 
       warn (";\n; ", &main::AlphaDate, " dumping class ", $class_holder->get_object_type(),
@@ -622,7 +626,7 @@ use Data::Dumper;
 	  ### referred to by the same name
 	  ### e.g.: a holder for BiochemicalEntities can contain 
 	  ### a polypeptide and the gene coding for it that have the same name
-	  my $file_name = $short_class.$file_suffix."__name_index.tab";
+	  my $file_name = lc($short_class.$file_suffix."__name_index.tab");
 	  
 	  warn "; dumping $object_type name index in file $file_name\n"
 	      if ($main::verbose >= 1);
@@ -640,7 +644,7 @@ use Data::Dumper;
 	  ### dump a separate table with the input_index index
 	  if (($object_type->isa("classes::BiochemicalActivity")) &&
 	      (defined( $class_holder->{_input_index}))){
-	      my $file_name = $short_class.$file_suffix."__input_index.tab";
+	      my $file_name = lc($short_class.$file_suffix."__input_index.tab");
 	      warn "; dumping $object_type input index in file $file_name\n"
 		  if ($main::verbose >= 1);
 	      open INDEX, ">$file_name" || 
@@ -658,7 +662,7 @@ use Data::Dumper;
 	  ### dump a separate table with the output index
 	  if (($object_type->isa("classes::BiochemicalActivity")) &&
 	      (defined( $class_holder->{_output_index}))){
-	      my $file_name = $short_class.$file_suffix."__output_index.tab";
+	      my $file_name = lc($short_class.$file_suffix."__output_index.tab");
 	      warn "; dumping $object_type output index in file $file_name\n"
 		  if ($main::verbose >= 1);
 	      open INDEX, ">$file_name" || 
@@ -715,6 +719,7 @@ use Data::Dumper;
       my ($class_holder,%args) = @_;
       my $object_type = $class_holder->get_object_type();
       (my $short_class = $object_type) =~ s/.*:://g;
+      $short_class = lc($short_class);
       my $table_prefix = $short_class;
       if ($args{prefix}) {
 	  $table_prefix = $args{prefix}.$table_prefix;
@@ -854,6 +859,7 @@ use Data::Dumper;
       my @field_defs = ();
       push @field_defs, sprintf "\t\t%-33s\t%s\t%s", "id", "VARCHAR($default_id_size)", "NOT NULL PRIMARY KEY";
       foreach my $field (@scalar_fields) {
+	  $field = lc($field);
 	  my $field_size = $main::special_field_size{$field} || $default_field_size;
 	  my $field_format;
 	  if ($field_size <= $max_col_length) {
@@ -881,6 +887,7 @@ use Data::Dumper;
 
       #### multivalue attributes
       foreach my $field (@array_fields) {
+	  $field = lc($field);
 	  my $table_path = my $table_name = $table_prefix."_".$field;
 	  if ($dbms eq "postgresql") {
 	      $table_path = $schema.".".$table_name; 
@@ -925,6 +932,7 @@ use Data::Dumper;
 
       #### expanded attributes
       foreach my $field (@expanded_fields) {
+	  $field = lc($field);
 	  my $header = $object_type->get_attribute_header($field) || $field;
 	  my @fields = split "\t", $header;
 #	  shift @fields;
@@ -954,6 +962,7 @@ use Data::Dumper;
 #			     $field_size,
 #			     $field_format), "\n";
 	  foreach my $field (@fields) {
+	      $field = lc($field);
 	      push @field_defs, sprintf "\t\t%-33s\t%s", $field, $field_format;
 	  }
 	  print SQL join (",\n", @field_defs, 
@@ -1006,6 +1015,7 @@ use Data::Dumper;
 	  my @load_defs = ();
 	  push @load_defs, sprintf "\t%-33s\t%s", "id", "CHAR($default_id_size)";
 	  foreach my $field (@scalar_fields) {
+	      $field = lc($field);
 	      my $field_size = $main::special_field_size{$field} || $default_field_size;
 	      my $load_field_format;
 	      if ($field_size <= $max_col_length) {
@@ -1028,7 +1038,8 @@ use Data::Dumper;
 	  close SQL;
 	  
 	  #### load multivalue attributes
-	  foreach $field (@array_fields) {
+	  foreach my $field (@array_fields) {
+	      $field = lc($field);
 	      my $table_path = my $table_name = $table_prefix."_".$field;
 	      if ($dbms eq "postgresql") {
 		  $table_path = $schema.".".$table_name;
@@ -1064,6 +1075,7 @@ use Data::Dumper;
 		  @fields = ($field);
 	      }
 	      foreach my $field (@fields) {
+		  $field = lc($field);
 		  if ($main::null) {
 		      push @load_defs, sprintf "\t%-33s\t%s\tNULLIF %s=\"%s\"", $field, $load_field_format, $field, $main::null;
 		  } else {
@@ -1079,6 +1091,7 @@ use Data::Dumper;
 	  
 	  #### load expanded attributes
 	  foreach $field (@expanded_fields) {
+	      $field = lc($field);
 	      my $table_path = my $table_name = $table_prefix."_".$field;
 	      if ($dbms eq "postgresql") {
 		  $table_path = $schema.".".$table_name;
@@ -1111,6 +1124,7 @@ use Data::Dumper;
 	      my @load_defs = ();
 	      push @load_defs, sprintf "\t%-33s\t%s", "id", "CHAR($default_id_size)";
 	      foreach my $field (@fields) {
+		  $field = lc($field);
 		  if ($main::null) {
 		      push @load_defs, sprintf "\t%-33s\t%s\tNULLIF %s=\"%s\"", $field, $load_field_format, $field, $main::null;
 		  } else {
@@ -1141,6 +1155,7 @@ use Data::Dumper;
 	  close SQL;
 	  
 	  foreach $field (@array_fields, @expanded_fields) {
+	      $field = lc($field);
 	      my $table_path = my $table_name = $table_prefix."_".$field;
 	      if ($dbms eq "postgresql") {
 		  $table_path = $schema.".".$table_name;
@@ -1174,6 +1189,7 @@ use Data::Dumper;
 
 	  
 	  foreach $field (@array_fields, @expanded_fields) {
+	      $field = lc($field);
 	      my $table_path = my $table_name = $table_prefix."_".$field;
 	      if ($dbms eq "postgresql") {
 		  $table_path = $schema.".".$table_name;
@@ -1223,6 +1239,7 @@ use Data::Dumper;
       #### multivalue attributes
       print_sql_header ("Multivalue attributes - $table_prefix");
       foreach $field (@array_fields) {
+	  $field = lc($field);
 	  my $table_path = my $table_name = $table_prefix."_".$field;
 	  if ($dbms eq "postgresql") {
 	      $table_path = $schema.".".$table_name;
@@ -1233,6 +1250,7 @@ use Data::Dumper;
       #### expanded attributes
       print_sql_header ("Expanded attributes - $table_prefix");
       foreach $field (@expanded_fields) {
+	  $field = lc($field);
 	  my $table_path = my $table_name = $table_prefix."_".$field;
 	  if ($dbms eq "postgresql") {
 	      $table_path = $schema.".".$table_name;
@@ -1308,17 +1326,19 @@ use Data::Dumper;
       if ($dbms eq "oracle") {
 	 print MK "\t", '${SQLLOADER} control=', $load_file, " skip=",$skip_lines,"\n";
 	 foreach $field (@array_fields,@expanded_fields) {
+	     $field = lc($field);
 	     my $load_file = "${table_prefix}_${field}_table_load.ctl";
 	     my $skip_lines=4;
 	     print MK "\t", '${SQLLOADER} control=', ${load_file}, " skip=",$skip_lines,"\n";
          }
       } elsif ($dbms eq "postgresql") {
-         my $table_file = "../../${short_class}.tab";
+         my $table_file = "../../".$short_class.".tab";
 	 print MK "\t", "grep -v '^$comment_symbol' ${table_file} | psql -f ", $load_file;
          print MK " -d ", $schema if ($schema);
          print MK "\n";
 	 foreach $field (@array_fields,@expanded_fields) {
-             my $table_file = "../../${short_class}_${field}.tab";
+	     $field = lc($field);
+             my $table_file = lc("../../".$short_class."_".$field.".tab");
 	     my $load_file = "${table_prefix}_${field}_table_load.ctl";
 	     my $skip_lines=4;
 	     print MK "\t", "grep -v '^$comment_symbol' ${table_file} | psql -f ", $load_file;
@@ -1330,6 +1350,7 @@ use Data::Dumper;
 	 print MK "\tcat $load_file | \${MYSQL}\n";
 	 print MK "\trm ../../${short_class}_filtered.tab\n";
 	 foreach $field (@array_fields,@expanded_fields) {
+	     $field = lc($field);
 	     my $load_file = "${table_prefix}_${field}_table_load.ctl";
 	     print MK "\tgrep -v '^$comment_symbol' ../../${short_class}_${field}.tab > ../../${short_class}_${field}_filtered.tab\n";
 	     print MK "\tcat ${load_file} | \${MYSQL}\n";
