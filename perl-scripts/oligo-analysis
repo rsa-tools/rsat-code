@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.2 2000/03/06 12:54:25 jvanheld Exp $
+# $Id: oligo-analysis,v 1.3 2000/04/11 23:16:36 jvanheld Exp $
 #
-# Time-stamp: <2000-03-06 13:54:00 jvanheld>
+# Time-stamp: <2000-04-06 03:43:47 jvanheld>
 #
 ############################################################
 
@@ -486,6 +486,12 @@ $sequence_number = 0;
 $nb_possible_pos = 0;
 $sum_seq_length = 0;
 
+
+### default residue probabilities      
+$residue_proba{'a'} = 0.25;
+$residue_proba{'c'} = 0.25;
+$residue_proba{'g'} = 0.25;
+$residue_proba{'t'} = 0.25;
 
 #### read arguments ####
 $a = 0;
@@ -1467,61 +1473,61 @@ sub PrintResult {
   
   ### verbose ###
   if ($verbose) {
-    print $out ";oligo-analysis";
+    print $out "; oligo-analysis";
     foreach $a (@ARGV) {
       print $out " $a";
     }
     print $out "\n";
-    print $out ";Input file	$inputfile\n" if ($inputfile ne "");
-    print $out ";Input format	$in_format\n";
-    print $out ";Expected frequency file	$freq_file\n" if ($freq_file ne "");
-    print $out ";Markov chain order	$markov_order\n" if ($markov);
+    print $out "; Input file	$inputfile\n" if ($inputfile ne "");
+    print $out "; Input format	$in_format\n";
+    print $out "; Expected frequency file	$freq_file\n" if ($freq_file ne "");
+    print $out "; Markov chain order	$markov_order\n" if ($markov);
     if ($alphabet) {
-      print $out ";Alphabet\n";
+      print $out "; Alphabet\n";
       foreach $key (sort keys %residue_proba) {
-	print $out ";\t$key\t$residue_proba{$key}\n";
+	print $out "; \t$key\t$residue_proba{$key}\n";
       }
     }
     
-    print $out ";Output file	$outputfile\n" if ($outputfile ne "");
-    print $out ";Oligomer length	$oligo_length\n";
+    print $out "; Output file	$outputfile\n" if ($outputfile ne "");
+    print $out "; Oligomer length	$oligo_length\n";
     if ($noov) {
-      print $out ";Discard overlapping matches\n";
+      print $out "; Discard overlapping matches\n";
     } else {
-      print $out ";Count overlapping matches\n";
+      print $out "; Count overlapping matches\n";
     }
     if ($sum_strands) {
-      print $out ";Counted on both strands\n";
+      print $out "; Counted on both strands\n";
       if ($group_rc) {
-	print $out ";\tgrouped by pairs of reverse complements\n";
+	print $out "; \tgrouped by pairs of reverse complements\n";
       }
     } else {
-      print $out ";Counted on a single strand\n";
+      print $out "; Counted on a single strand\n";
     }
     if ($one_var_position) {
-      print $out ";Neighborhood: one variable position\t";
+      print $out "; Neighborhood: one variable position\t";
       foreach $d (@degenerate_code) {
-	print $out ";$d ";
+	print $out "; $d "; 
       }
       print $out "\n"; 
     }
-    print $out ";Nb of sequences		$sequence_number\n";
-    print $out ";Sum of sequence lengthes\t$sum_seq_length\n";
+    print $out "; Nb of sequences		$sequence_number\n";
+    print $out "; Sum of sequence lengthes\t$sum_seq_length\n";
     if ($noov) {
-      print $out ";total overlaps		$sum_overlaps\n";
-      print $out ";total non overlapping occ	$sum_noov\n";
+      print $out "; total overlaps		$sum_overlaps\n";
+      print $out "; total non overlapping occ	$sum_noov\n";
     }
-    print $out ";total oligo occurrences         $sum_occurrences\n";
-    print $out ";nb possible positions\t\t",$nb_possible_pos ,"\n";
-    print $out ";nb possible oligomers\t$nb_possible_oligo\n";
-    print $out ";threshold on occurrence #	$occurrence_threshold\n" if ($occurrence_threshold > 0);
-    print $out ";threshold on occ signif. index	$occ_significance_threshold\n" if ($occ_significance_threshold ne "");
-    print $out ";threshold on matching seq #	$mseq_threshold\n" if ($mseq_threshold > 0);
-    print $out ";threshold on occurrence proba	$proba_occ_threshold\n" if ($proba_occ_threshold < 1);
-    print $out ";threshold on obs/exp occ ratio	$ratio_threshold\n" if ($ratio_threshold > 0);
-    print $out ";thresh. on match. seq proba	$proba_mseq_threshold\n" if ($proba_mseq_threshold < 1);
+    print $out "; total oligo occurrences         $sum_occurrences\n";
+    print $out "; nb possible positions\t\t",$nb_possible_pos ,"\n";
+    print $out "; nb possible oligomers\t$nb_possible_oligo\n";
+    print $out "; threshold on occurrence #	$occurrence_threshold\n" if ($occurrence_threshold > 0);
+    print $out "; threshold on occ signif. index	$occ_significance_threshold\n" if ($occ_significance_threshold ne "");
+    print $out "; threshold on matching seq #	$mseq_threshold\n" if ($mseq_threshold > 0);
+    print $out "; threshold on occurrence proba	$proba_occ_threshold\n" if ($proba_occ_threshold < 1);
+    print $out "; threshold on obs/exp occ ratio	$ratio_threshold\n" if ($ratio_threshold > 0);
+    print $out "; thresh. on match. seq proba	$proba_mseq_threshold\n" if ($proba_mseq_threshold < 1);
     unless ($sequence_number > 1000) {
-      print $out ";Sequences:\n";
+      print $out "; Sequences:\n";
       foreach $s (1..$sequence_number) {
 	print $out ";\t$id_list[$s]\t$seq_length[$s]\n";
       }
@@ -1531,9 +1537,9 @@ sub PrintResult {
   
   ### print header line ###
   if ($oligo_length < 8) {
-    print $out ";seq";
+    print $out "; seq";
   } else {
-    print $out ";sequence";
+    print $out "; sequence";
   }
   if (($oligo_length > 8) ||
       (($oligo_length > 5) && ($sum_strands))) {   
@@ -1716,8 +1722,8 @@ sub PrintResult {
   
   if ($verbose) {
     $done_time  = `date '+%d/%m/%y %H:%M:%S %Z'`;
-    print $out ";Job started $start_time";
-    print $out ";Job done    $done_time";
+    print $out "; Job started $start_time";
+    print $out "; Job done    $done_time";
     
   }
   
