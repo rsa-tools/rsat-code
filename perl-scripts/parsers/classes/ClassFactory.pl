@@ -1085,7 +1085,8 @@ use Data::Dumper;
 	  open SQL, "> $sql_dir/$load_file" || die "Error: cannot write file $load_file\n";
 	  print_sql_header ("Table loading scripts for class $table_prefix");
 	  print_sql_header ("Main table - $table_prefix");
-	  print SQL "\\copy $table_prefix from stdin with null as '", $main::null, "'\n";
+#	  print SQL "copy $table_prefix from ../../${short_class}.tab with null as '", $main::null, "'\n";
+	  print SQL "copy $table_prefix from stdin with null as '", $main::null, "'\n";
 	  close SQL;
 	  
 	  foreach $field (@array_fields, @expanded_fields) {
@@ -1096,7 +1097,8 @@ use Data::Dumper;
 	      open SQL, "> $sql_dir/$load_file" || die "Error: cannot write file $load_file\n";
 	      print_sql_header ("Table loading scripts for class $table_prefix");
 	      print_sql_header ("Multivalue attribute - $table_name");
-	      print SQL "\\copy $table_name from stdin with null as '", $main::null, "'\n";
+#	      print SQL "copy $table_name from ../../${short_class}_${field}.tab with null as '", $main::null, "'\n";
+	      print SQL "copy $table_name from stdin with null as '", $main::null, "'\n";
 	      close SQL;
 	  }
 	  
