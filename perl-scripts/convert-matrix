@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.9 2005/03/22 23:12:10 jvanheld Exp $
+# $Id: convert-matrix,v 1.10 2005/03/30 05:51:29 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -524,6 +524,14 @@ sub ReadArguments {
       unless ($supported_input_format{$input_format}) {
 	  &RSAT::error::FatalError("$input_format\tInvalid format for input matrix\tSupported: $supported_input_formats");
       }
+
+      ### Obsolete option for the input format 
+    } elsif ($ARGV[$a] eq "-format") {
+	&RSAT::message::Warning("Option -format is obsolete. Use -in_format instead.");
+	$input_format = $ARGV[$a+1];
+	unless ($supported_input_format{$input_format}) {
+	    &RSAT::error::FatalError("$input_format\tInvalid format for input matrix\tSupported: $supported_input_formats");
+	}
 
       ### output format 
     } elsif ($ARGV[$a] eq "-out_format") {
