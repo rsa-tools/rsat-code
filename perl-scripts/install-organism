@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.24 2002/09/15 02:15:48 jvanheld Exp $
+# $Id: install-organism,v 1.25 2002/09/15 05:34:00 jvanheld Exp $
 #
-# Time-stamp: <2002-09-14 21:15:30 jvanheld>
+# Time-stamp: <2002-09-15 00:05:00 jvanheld>
 #
 ############################################################
 
@@ -379,7 +379,7 @@ sub SeqLengthDistribution {
     $command .= " | XYgraph -xcol 3 -ycol 7,8,9 -lines -xmin $from";
     $command .= " -ymin 0 -ymax 1  -xsize 600 -ysize 400 -legend";
     $command .= " -xgtask1 100 -xgtask2 250 -ygtask1 0.1";
-    $command .= " -xlog" if( ($seq_type eq "intergenic") || ($seq_type eq "gene"));
+    $command .= " -xlog 2" if( ($seq_type eq "intergenic") || ($seq_type eq "gene"));
     $command .= " -xleg1 'sequence length (bp)'";
     $command .= " -yleg1 'frequency'";
     $command .= " -title1 '$organism_full_name'";
