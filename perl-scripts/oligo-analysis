@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.28 2001/06/21 11:27:45 jvanheld Exp $
+# $Id: oligo-analysis,v 1.29 2001/06/21 20:01:54 jvanheld Exp $
 #
-# Time-stamp: <2001-06-21 12:39:49 jvanheld>
+# Time-stamp: <2001-06-21 22:01:48 jvanheld>
 #
 ############################################################
 
@@ -702,8 +702,8 @@ sub CalcExpected {
 							   $head,
 							   $tail,
 							   $sub_word[$s]{$head}->{max_freq},
-							   $sub_word[$l-$s]{$tail}->{max_freq},
-							   $sub_word[$s]{$head}->{max_freq} * $sub_word[$l-$s]{$tail}->{max_freq}
+							   $sub_word[$l-$s]{$tail}->{max_freq}
+								#,$sub_word[$s]{$head}->{max_freq} * $sub_word[$l-$s]{$tail}->{max_freq}
 							   );
 #		    print join ("\t", $l, $pattern_seq, 
 #				$patterns{$pattern_seq}->{freq}, 
