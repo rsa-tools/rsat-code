@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dna-pattern,v 1.12 2001/10/11 20:25:29 jvanheld Exp $
+# $Id: dna-pattern,v 1.13 2001/10/11 20:52:48 jvanheld Exp $
 #
-# Time-stamp: <2001-10-11 22:24:37 jvanheld>
+# Time-stamp: <2001-10-11 22:51:36 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -266,13 +266,23 @@ if ($return{stats}) {
     my $nb_patterns = $#patterns + 1;
     my $matching_patterns = 0;
     my $matching_patterns_pct = 0;
+    my $max_matching_score_pct = 0;
+    my $max_matching_score;
+    my $max_score;
     foreach my $pattern (@patterns) {
-	$matching_patterns++ if ($sum_per_pattern{$pattern} > 0);
+	$max_score = &max($max_score, $pattern->get_attribute("score"));
+	if ($sum_per_pattern{$pattern} > 0) {
+	    $matching_patterns++ ;
+	    $max_matching_score = &max($max_matching_score, $pattern->get_attribute("score"));
+	}
     }
     if ($nb_patterns > 0) {
 	$matching_patterns_pct =  100*$matching_patterns/$nb_patterns;
     }
 
+    if ($max_score > 0) {
+	$max_matching_score_pct =  100*$max_matching_score/$max_score;
+    }
 
     my $matched_sequences = 0;
     my $matched_sequences_pct = 0;
@@ -287,15 +297,21 @@ if ($return{stats}) {
 
     printf $out ( "%-21s\t%s\t%s\t%s\n", 
 		  "; statistics",
-		  "total",
+		  "max",
 		  "matched",
 		  "percent"
 		  ), "\n";
     printf $out ( "%-21s\t%d\t%d\t%.1f\n", 
-		  "pattern statistics",
+		  "matches per pattern",
 		  $nb_patterns,
 		  $matching_patterns,
 		  $matching_patterns_pct
+		  );
+    printf $out ( "%-21s\t%.2f\t%.2f\t%.1f\n", 
+		  "matching scores",
+		  $max_score,
+		  $max_matching_score,
+		  $max_matching_score_pct
 		  );
     printf $out ( "%-21s\t%d\t%d\t%.1f\n", 
 		  "sequence statistics",
@@ -892,7 +908,6 @@ sub ReadPatterns {
 	    } else {
 		$pattern_score = 1; #### default score
 	    }
-	    
 	    push @patterns, new RSA::pattern(id => $pattern_id,
 					     sequence => $pattern_seq,
 					     score => $pattern_score);
