@@ -170,21 +170,21 @@ calib_scripts:
 calib_scripts_one_org:
 	@mkdir -p ${MAKE_DIR}
 	@echo "Generating calibration script for organism ${ORG}"
-	@echo "include ${RSAT}/makefiles/upstream_calibrations.mk" > ${CALIB_SCRIPT}
+	@echo 'include $${RSAT}/makefiles/upstream_calibrations.mk' > ${CALIB_SCRIPT}
 	@echo "ORG=${ORG}" >> ${CALIB_SCRIPT}
 	@echo "calibrate:" >> ${CALIB_SCRIPT}
 	@${MAKE} iterate_sets TASK=one_calib_script
 	@echo "Script saved in file ${CALIB_SCRIPT}"
 
 one_calib_script:
-	@echo "	${MAKE} calibrate_oligos ORG=${ORG} SEQ_LEN=${CURRENT_SEQ_LEN} N=${SEQ_NB} STR=-2str STR=-2str NOOV=-noov" >> ${CALIB_SCRIPT}
+	@echo "	make -s -f $${RSAT}/makefiles/motif_disco_competition_2003.mk calibrate_oligos ORG=${ORG} SEQ_LEN=${CURRENT_SEQ_LEN} N=${SEQ_NB} STR=-2str STR=-2str NOOV=-noov" >> ${CALIB_SCRIPT}
 
 
 ################################################################
 #### retrieve all upstream sequences of the same length as in the
 #### current set
-ALL_UP_FILE=${UPSTREAML_DIR}/${ORG}_allup${SEQ_LEN}.fasta.gz
-ALL_UP_FILE_PURGED_UNCOMP=${UPSTREAML_DIR}/${ORG}_allup${SEQ_LEN}_purged.fasta
+ALL_UP_FILE=${ORG_DIR}/${ORG}_allup${SEQ_LEN}.fasta.gz
+ALL_UP_FILE_PURGED_UNCOMP=${ORG_DIR}/${ORG}_allup${SEQ_LEN}_purged.fasta
 ALL_UP_FILE_PURGED=${ALL_UP_FILE_PURGED_UNCOMP}.gz
 all_up:
 	@echo "${ORG}	${CURRENT_SET}	Retrieving all upstream sequences for bakground model"
@@ -287,6 +287,7 @@ MIN_SP=0
 MAX_SP=20
 SORT=score
 MULTI_OPT=
+SKIP=
 MULTI_CMD=multiple-family-analysis -v ${V}				\
 		${PURGE}						\
 		-org ${ORG}						\
@@ -298,6 +299,7 @@ MULTI_CMD=multiple-family-analysis -v ${V}				\
 		${MULTI_EXP}						\
 		-sort ${SORT} -task ${MULTI_TASK}			\
 		${NOOV} ${MULTI_OPT}					\
+		${SKIP}							\
 		-user jvanheld -password jvanheld -schema multifam
 
 
@@ -318,7 +320,7 @@ multi_upstream:
 #	${MAKE} multi MULTI_DIR=${ORG_DIR}/multi/upstreamL_bg MULTI_EXP='-oligo_exp_freq ${BG_OLIGO_FILE}' MIN_OL=6 MAX_OL=6
 
 multi_calibN:
-	${MAKE} multi MULTI_BG=calibN MULTI_OPT="-calib_dir ${CALIBN_DIR}" MIN_OL=6 MAX_OL=6
+	${MAKE} multi MULTI_BG=calibN MULTI_OPT="-calib_dir ${CALIBN_DIR}" 
 
 CALIBRATE_TASK=-task calibrate
 CALIB1_DIR=${ORG_DIR}/calibrations_1gene
