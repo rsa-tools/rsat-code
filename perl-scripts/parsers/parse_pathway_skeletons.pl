@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_pathway_skeletons.pl,v 1.3 2002/02/07 02:31:47 jvanheld Exp $
+# $Id: parse_pathway_skeletons.pl,v 1.4 2002/05/28 09:17:59 jvanheld Exp $
 #
-# Time-stamp: <2002-02-07 03:31:39 jvanheld>
+# Time-stamp: <2002-05-28 11:17:01 jvanheld>
 #
 ############################################################
 
@@ -31,7 +31,6 @@ package main;
 #    $dir{skeletons} = "/win/amaze/amaze_team/gaurab/excel_tables/Pathway_ECno/";
     $dir{kegg_parsed} = "/win/amaze/amaze_data/parsed_data/kegg_parsed/20010925";
     $dir{skeletons} = "/win/amaze/amaze_data/pathway_skeletons/";
-    $dir{seed_files} = "/win/amaze/amaze_programs/amaze_graph_analysis/seed_files";
 
     $in_file{georges_identified_compounds} = "/win/amaze/amaze_team/georges_cohen/excel_files_georges/unidentified_compounds/identified_compounds_2001_1007.tab";
 
@@ -40,13 +39,18 @@ package main;
     $files_to_parse =~ s/$dir{skeletons}//g;
     @files_to_parse = split " ", $files_to_parse;
 
-    $dir{output} = "$parsed_data/gaurab_parsed/$delivery_date";
-    unless (-d $dir{output}) {
-	warn "Creating output dir $dir{output}\n"  if ($verbose >=1);
-	mkdir $dir{output}, 0775 || 
-	    die "Error: cannot create output directory $dir{output}\n";
-    }
-    chdir $dir{output};
+    &CheckOutputDir();
+#      $dir{output} = "$parsed_data/pathway_skeletons/$delivery_date";
+#      unless (-d $dir{output}) {
+#  	warn "Creating output dir $dir{output}\n"  if ($verbose >=1);
+#  	`mkdir -p $dir{output}`;
+#  	die "Error: cannot create output directory $dir{output}\n"
+#  	    	unless (-d $dir{output});
+#      }
+#      chdir $dir{output};
+
+    $dir{seed_files} = "$dir{output}/amaze_pathway_seeds";
+#    $dir{seed_files} = "/win/amaze/amaze_programs/amaze_graph_analysis/amaze_pathway_seeds";
 
     $out_file{process_skeleton} = "$dir{output}/process_skeleton.obj";
     $out_file{stats} = "$dir{output}/process_skeleton.stats.txt";
@@ -66,20 +70,21 @@ package main;
 
     &ReadArguments;
 
-    if ($mirror) {
-	$dir{mirror} = $dir{output}."/mirror";
-	unless (-d $dir{mirror}) {
-	    warn "Creating output dir $dir{output}\n"  if ($verbose >=1);
-	    mkdir $dir{mirror}, 0775 || 
-		die "Error: cannot create mirror directory $dir{mirror}\n";
-	}
-    }
-
     if ($clean) {
 	warn "Cleaning output directory $dir{output}\n" if ($verbose >=1);
 	system "\\rm -f $dir{output}/*.tab.gz $dir{output}/*.txt.gz $dir{output}/*.obj.gz" ;
 	system "\\rm -rf $dir{output}/mirror";
     }
+
+    if ($mirror) {
+	$dir{mirror} = $dir{output}."/mirror";
+	unless (-d $dir{mirror}) {
+	    warn "Creating mirror dir $dir{mirror}\n"  if ($verbose >=1);
+	    `mkdir -p $dir{mirror}`;
+	    die "Error: cannot create mirror directory $dir{mirror}\n" unless (-d $dir{mirror});
+	}
+    }
+
 
     open ERR, ">$out_file{errors}" || die "Error: cannot write error report fle $$out_file{errors}\n";
     
@@ -146,10 +151,12 @@ package main;
     
     $processes->dump_tables();
     $leaves->dump_tables();
+    $processes->generate_sql();
+    $leaves->generate_sql();
     &ExportClasses($out_file{process_skeleton}, $out_format, @classes) if ($export{obj});
     &PrintStats($out_file{stats}, @classes);
 
-    &GenerateECSeeds();
+    &GenerateECSeeds() if ($seeds);
     close ERR;
 
 
@@ -176,20 +183,24 @@ sub GenerateECSeeds {
 	if ($verbose >=1);
     unless (-d $dir{seed_files}) {
 	warn "Creating seed_files dir $dir{seed_files}\n"  if ($verbose >=1);
-	mkdir $dir{seed_files}, 0775 || 
-	    die "Error: cannot create directory $dir{seed_files}\n";
+	`mkdir -p  $dir{seed_files}`;
+	die "Error: cannot create directory $dir{seed_files}\n" unless (-d $dir{seed_files});
     }
     foreach $process ($processes->get_objects()) {
 	my $file = $process->get_attribute("parsed_file");
+	my $organism_prefix = $process->get_attribute("organism");
+	$organism_prefix =~ s/\s/_/g;
 	my $basename = `basename $file .txt`;
 	chomp $basename;
 
-	#### expotr EC number as seeds for pathway reconstruction
-	my $export_file = $dir{seed_files}."/".$basename;
+	#### export EC number as seeds for pathway reconstruction
+	my $export_file = $dir{seed_files};
+	$export_file .= "/".$organism_prefix."_".$basename;
 #	$export_file .= ".".$process->get_attribute("complete");
 	open ECS, ">$export_file.ecs";
 	foreach $ec ($process->get_attribute(ECs)) {
 	    print ECS "$ec\n";
+	    print ECS "${ec}*\n"; #### for acccepting the reverse reaction
 	}
 	close ECS;
 	
@@ -274,6 +285,10 @@ sub ReadArguments {
 	    ### clean
 	} elsif ($ARGV[$a] eq "-clean") {
 	    $main::clean = 1;
+
+	    ### ec seeds
+	} elsif ($ARGV[$a] eq "-seeds") {
+	    $main::seeds = 1;
 
 	    ### help
 	} elsif (($ARGV[$a] eq "-h") ||
