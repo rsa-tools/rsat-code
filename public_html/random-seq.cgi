@@ -21,7 +21,7 @@ $query = new CGI;
 #### update log file ####
 &UpdateLogFile;
 
-&ListParameters() if ($ECHO);
+&ListParameters() if ($ECHO >= 2);
 
 #### read parameters ####
 $parameters = "";
@@ -47,8 +47,9 @@ if ($repet*$length > $size_limit) {
 if (&IsNatural($query->param('lw'))) {
     $parameters .= " -lw ".$query->param('lw');
 }
-&CheckInputSeqFormat($query->param('format'));
-$parameters .= " -format ".$query->param('format');
+$out_format = $query->param('format');
+&CheckInputSeqFormat($out_format);
+$parameters .= " -format $out_format ";
 
 if ($query->param('proba') eq "alphabet") {
     $at_freq = $query->param('ATfreq');
@@ -76,14 +77,41 @@ print "<PRE>command: $random_seq_command $parameters<P>\n</PRE>" if $ECHO;
 
 ### execute the command ###
 if ($query->param('output') eq "display") {
-    ### Print the result on Web page
-    open RESULT, "$random_seq_command $parameters  & |";
+    open RESULT, "$random_seq_command $parameters |";
+    
+    ### open the mirror file ###
+    $mirror_file = "$TMP/$tmp_file_name.res";
+    if (open MIRROR, ">$mirror_file") {
+	$mirror = 1;
+	&DelayedRemoval($mirror_file);
+    }
+    
+    
+    ### print the result ### 
+    &PipingWarning();
+    print '<H3>Result</H3>';
     print "<PRE>";
     while (<RESULT>) {
 	print "$_";
+	print MIRROR $_ if ($mirror);
     }
     print "</PRE>";
     close RESULT;
+    
+    ### prepare data for piping
+    &PipingForm();
+
+#      &PipingWarning();
+#      ### Print the result on Web page
+#      open RESULT, "$random_seq_command $parameters  & |";
+#      print "<PRE>";
+#      while (<RESULT>) {
+#  	print "$_";
+#      }
+#      print "</PRE>";
+#      close RESULT;
+#      ### prepare data for piping
+#      &PipingForm();
 
 } else {
     ### send an e-mail with the result ###
