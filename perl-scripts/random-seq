@@ -44,15 +44,11 @@ if (defined(%alphabet)) {
 
 #### check argument values ####
 unless (&IsNatural($seq_length)) {
-    warn "	You should specify the sequence length.\n";
-    warn "	Type random-seq -h for more info.\n";
-    exit;
+    &FatalError ("You should specify the sequence length");
 } 
 
 unless ($repetitions >=1) {
-    warn "	Number of repetitions should be >=1.\n";
-    warn "	Type random-seq -h for more info.\n";
-    exit;
+    &FatalError( "Number of repetitions should be >=1");
 }
 
 &CheckOutputSeqFormat($out_format);
@@ -168,9 +164,7 @@ if ($exp_freq_file) {
 	$cum_letter_freq[$l] = $cum_letter_freq[$l-1]+$freq{$letters[$l]};
     }
     unless ($cum_letter_freq[$#letters] > 0) {
-	warn "	Error: invalid alphabet specification.\n";
-	warn "	Type random-seq -h for more info.\n";
-	exit;
+	&FatalError( "Invalid alphabet specification.");
     }
     for $l (0..$#letters) {
 	$freq{$letters[$l]} /= $cum_letter_freq[$#letters];
@@ -251,8 +245,9 @@ for $r (1..$repetitions) {
 	#### first work selection should be improved
 	$subword = $subword_keys[$rand];
 	$sequence .= uc($subword);
+	
 
-	for $i ($oligo_length..$seq_length) {
+	for $i ((length($sequence)+1)..$seq_length) {
 #	    @cum_letter_freq = @{$cum_letter_freq{$subword}};
 	    $rand = rand;
 	    $l = 0;
@@ -265,7 +260,7 @@ for $r (1..$repetitions) {
 		}
 	    }
 	    $next_letter = $letters[$l];
-	    warn join "\t", $subword, $rand, $l, $next_letter, $cum_letter_freq{$subword}[$l] , "\n";
+#	    warn join "\t", $subword, $rand, $l, $next_letter, $cum_letter_freq{$subword}[$l] , "\n";
 	    $sequence .= $next_letter;
 	    $subword = lc(substr($subword.$next_letter,1));
 	}
