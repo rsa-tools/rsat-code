@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: consensus.cgi,v 1.4 2001/02/23 06:54:42 jvanheld Exp $
+# $Id: consensus.cgi,v 1.5 2001/07/18 11:25:00 jvanheld Exp $
 #
-# Time-stamp: <2001-02-23 07:42:38 jvanheld>
+# Time-stamp: <2001-07-18 13:23:48 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -12,8 +12,8 @@ if ($0 =~ /([^(\/)]+)$/) {
 
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
-require "RSA.lib.pl";
-require "RSA.cgi.lib.pl";
+require "RSA.lib";
+require "RSA.cgi.lib";
 
 $consensus_command = "$BIN/consensus";
 $matrix_from_consensus_command = "$SCRIPTS/matrix-from-consensus";
@@ -76,7 +76,7 @@ if ($query->param('seed') eq "on") {
 ### result file
 #  $result_file = "$TMP/$tmp_file_name.res";
 #  $matrix_file = "$TMP/$tmp_file_name.matrix";
-$error_file  = "$TMP/$tmp_file_name.err";
+#$error_file  = "$TMP/$tmp_file_name.err";
 
 
 ### print the header
@@ -94,6 +94,8 @@ if ($query->param('output') eq "display") {
     
     $result_file = "$TMP/$tmp_file_name.res";
     $matrix_file = "$TMP/$tmp_file_name.matrix";
+    &DelayedRemoval($result_file);
+    &DelayedRemoval($matrix_file);
 #    print "<PRE>";
 #    print "$consensus_command $parameters | ", "\n";
 #    print "$matrix_from_consensus_command -i $result_file -o $matrix_file";
@@ -106,26 +108,8 @@ if ($query->param('output') eq "display") {
     ### prepare data for piping
 #	$title = $query->param('title');
 #	$title =~ s/\"/\'/g;
-    print <<End_of_form;
-<TABLE>
-<TR>
-<TD>
-<H4>Next step</H4>
-</TD>
-<TD>
-<FORM METHOD="POST" ACTION="patser_form.cgi">
-<INPUT type="hidden" NAME="title" VALUE="$title">
-<INPUT type="hidden" NAME="matrix_file" VALUE="$matrix_file">
-<INPUT type="hidden" NAME="matrix_format" VALUE="consensus">
-<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
-<INPUT type="hidden" NAME="sequence_format" VALUE="wconsensus">
-<INPUT type="submit" value="pattern matching (patser)">
-</FORM>
-</TD>
-</TR>
-</TABLE>
-End_of_form
-  
+    print &PipingWarning();
+    
     ### Print result on the web page
     print '<H4>Result</H4>';
     print "<PRE>";
@@ -137,6 +121,7 @@ End_of_form
     close(RESULT);
     close(RES_FILE);
     
+    &PipingForm();
     
     system "$matrix_from_consensus_command -i $result_file -o $matrix_file";
     
@@ -166,3 +151,25 @@ exit(0);
 
 
 
+sub PipingForm {
+    print <<End_of_form;
+<TABLE>
+<TR>
+<TD>
+<H4>Next step</H4>
+</TD>
+<TD>
+<FORM METHOD="POST" ACTION="patser_form.cgi">
+<INPUT type="hidden" NAME="title" VALUE="$title">
+<INPUT type="hidden" NAME="matrix_file" VALUE="$matrix_file">
+<INPUT type="hidden" NAME="matrix_format" VALUE="consensus">
+<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
+<INPUT type="hidden" NAME="sequence_format" VALUE="wconsensus">
+<INPUT type="submit" value="pattern matching (patser)">
+</FORM>
+</TD>
+</TR>
+</TABLE>
+End_of_form
+  
+}
