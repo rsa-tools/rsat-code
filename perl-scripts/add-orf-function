@@ -2,7 +2,8 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
+require "RSA.lib";
+require "RSA.classes";
 
 
 
@@ -17,7 +18,7 @@ NAME
 	
 USAGE
         add-orf-function [-i inputfile] [-o outputfile] [-v] 
-        [-col orf_column]
+        [-col orf_column] -org organism
 	
 OPTIONS
         -h      (must be first argument) display full help message
@@ -32,6 +33,9 @@ OPTIONS
 	-col #  Indicate the column containing the ORF identifier.
                 If not provided, all words looking like an ORF identifier
                 are interpreted.
+	-org organism
+	     supported organisms : 
+$supported_organisms
 	
 INPUT FORMAT
 	Any text file containing yeats ORF identifiers.
@@ -57,15 +61,17 @@ add-orf-function options
 -o      output file
 -v      verbose
 -col #  ORF column
+-org		organism
 End_short_help
   close HELP;
   exit;
 }
 
 $start_time = `date`;
+$ORF_column = 1;
 
 #### initialise parameters ####
-$ORF_function_file = "$RSA/data/yeast/orfs/MIPS.orf_function";
+#$ORF_function_file = "$RSA/data/yeast/genome/MIPS.orf_function";
 
 
 #### read arguments ####
@@ -83,34 +89,25 @@ foreach $a (0..$#ARGV) {
   } elsif ($ARGV[$a] eq "-col") {
     $ORF_column = $ARGV[$a+1];
 
+    #### organism
+  } elsif ($ARGV[$a] eq "-org") {
+      $organism_name =$ARGV[$a+1];
   }
+
 }
 
+#### input file ####
+$in = &OpenInputFile($query_file);
 
-### open input file ###
-if ($inputfile ne "") {
-  unless (open(INPUT, $inputfile)) {
-    print "\tcannot open input file\n";
-    print "\ttype add-orf-function -h for help\n";
-    exit;
-  }
-  $in = INPUT;
-} else {
-  $in = STDIN;
-}
+#### output file ####
+$out = &OpenOutputFile($outputfile);
 
+#### organism
+&CheckOrganism($organism_name);
 
-### open output file ###
-if ($outputfile ne "") {
-  unless (open(OUTPUT, ">$outputfile")) {
-    print "\tcannot open output file\n";
-    print "\ttype add-orf-function -h for help\n";
-    exit;
-  }
-  $out = OUTPUT;
-} else {
-  $out = STDOUT;
-}
+#### read data
+&ReadOrfPositions($organism_name);
+&ReadSynonyms($organism_name);
 
 
 #### verbose ####
@@ -126,37 +123,61 @@ if ($verbose) {
 
 
 #### open ORF function file ###
-unless (open ORF_FUNCTION, $ORF_function_file) {
-    print "\tcannot open ORF function table $ORF_function_file\n";
-    print "\ttype add-orf-function -h for help\n";
-    exit;
-}
+#  unless (open ORF_FUNCTION, $ORF_function_file) {
+#      print "\tcannot open ORF function table $ORF_function_file\n";
+#      print "\ttype add-orf-function -h for help\n";
+#      exit;
+#  }
 
-while (<ORF_FUNCTION>) {
-    if (/(\S+)\s+(.+)/) {
-	$ORF_id = $1;
-	$ORF_function = $2;
-	$ORF_function =~ s/ {2,}/; /g;
-	$ORF_function =~ s/\n//;
-    }
-    $function{uc($ORF_id)} =  $ORF_function;
-}
-close  ORF_FUNCTION;
+#  while (<ORF_FUNCTION>) {
+#      if (/(\S+)\s+(.+)/) {
+#  	$ORF_id = $1;
+#  	$ORF_function = $2;
+#  	$ORF_function =~ s/ {2,}/; /g;
+#  	$ORF_function =~ s/\n//;
+#      }
+#      $function{uc($ORF_id)} =  $ORF_function;
+#  }
+#  close  ORF_FUNCTION;
 
 ###### execute the command #########
 while ($current_line = <$in>) {
-    $ORF_id = "";
-    $current_line =~ s/\n//;
+    if (!($current_line =~ /\S/) || 
+	($current_line =~ /^;/)
+	) {
+	print $current_line;
+	next;
+    }
+    $current_line =~ s/\r//g;
+    chomp($current_line);
     if ($ORF_column > 0) {
 	@columns = split("\t", $current_line);
-	if ($columns[$ORF_column+1] =~ /(y[a-p][rl]\S+)/i) {
-	    $ORF_id = $1;
+	$query = uc($columns[$ORF_column - 1]);
+	my $orf_id = "";
+	my $name = "";
+	my $descr = "";
+	my $synonyms = "";
+	if (defined($orf_id{$query})) {
+	    $orf_id = $orf_id{$query};
+	    $name = $name{$orf_id};
+	    $descr = $descr{$orf_id};
+	    @synonyms = @{$synonyms{$orf_id}};
+	    if (@synonyms) {
+		$synonyms = "[";
+		$synonyms .= join (";", @synonyms);
+		$synonyms .= "]";
+	    }
 	}
-    } elsif ($current_line =~ /(y[a-p][rl]\S+)/i) {
-	$ORF_id = $1;
+	print join ("\t", $current_line, $descr, $synonyms), "\n";
+#	print join "\t", "HELLO", $current_line, $query, $orf_id, $descr, "\n";
+#	if ($columns[$ORF_column+1] =~ /(y[a-p][rl]\S+)/i) {
+#	    $ORF_id = $1;
+#	}
+#    } elsif ($current_line =~ /(y[a-p][rl]\S+)/i) {
+#	$ORF_id = $1;
     }
-    print $out "$current_line\t";
-    print $out "$function{uc($ORF_id)}\n";
+#    print $out "$current_line\t";
+#    print $out "$function{uc($ORF_id)}\n";
 }
 
 
