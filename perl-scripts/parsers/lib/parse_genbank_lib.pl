@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank_lib.pl,v 1.5 2004/05/12 21:58:16 jvanheld Exp $
+# $Id: parse_genbank_lib.pl,v 1.6 2004/05/12 22:01:58 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -437,7 +437,6 @@ Extract GO identifiers from the feature notes
 
 sub ParseGO {
     my ($CDSs) = @_;
-    warn "ParseGO: TO BE IMPLEMENTED";
     foreach my $cds ($CDSs->get_objects()) {
 	foreach my $note ($cds->get_attribute("note")) {
 	    if ($note =~ /\[goid GO\:(\d+)\]/) {
