@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-matrix,v 1.5 2004/05/21 09:28:56 jvanheld Exp $
+# $Id: convert-matrix,v 1.6 2004/06/10 05:07:36 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -20,7 +20,6 @@ use RSAT::matrix;
 my $start_time = &AlphaDate();
 $decimals = 4;
 $pseudo_weight = 1;
-$margins = 0;
 $max_profile = 10;
 $sep="\t";
 
@@ -41,7 +40,8 @@ local $out = STDOUT;
 			    "weights"=>1,
 			    "information"=>1,
 			    "parameters"=>1,
-			    "consensus"=>1
+			    "consensus"=>1,
+			    "margins"=>1
 			    );
 $supported_return_formats = join ",", sort keys %supported_return_format;
 
@@ -94,7 +94,7 @@ $current_matrix->force_attribute("decimals", $decimals);
 $current_matrix->force_attribute("max_profile", $max_profile);
 $current_matrix->force_attribute("sep", $sep);
 # $current_matrix->force_attribute("col_width", $col_width);
-$current_matrix->force_attribute("margins", $margins);
+$current_matrix->force_attribute("margins", $return{margins});
 
 ##### print output ######
 &Verbose if ($verbose);
@@ -204,18 +204,15 @@ OPTIONS
 		if not specified, the standard output is used.
 		This allows to place the command within a pipe.
 	-format	input matrix format
-		Suppported: $supported_input_formats
+		Supported: $supported_input_formats
 	-return	return formats
-		Suppported: $supported_return_formats
+		Supported: $supported_return_formats
 	-pseudo	
 		pseudo-weight used for the calculation of the weight
 		matrix (default: $pseudo_weight)
 	-decimals
 		number of decimals to print for real matrices
 		(frequencies, weights, information)
-	-margins
-		Calculate marginal values (column and row sum, min,
-		max)
 	-max_profile
 		Maximal width of the profile histogram (units = number
 		of characters).
@@ -275,6 +272,10 @@ OUTPUT FORMATS
 
         I\'ij = F\'ij*ln(F\'ij/Pi)
 
+    margins
+	Calculate marginal values (column and row sum, min, max) for each 
+        matrix. 
+
     parameters
         Returns a series of parameters associated to the matrix. The list of
         parameters to be exported depends on the input formats (each pattern
@@ -314,12 +315,11 @@ convert-matrix options
 -i		input file
 -o		output file
 -v		verbose
--format		input matrix format. Suppported: $supported_input_formats
--return		return formats. Suppported: $supported_return_formats
+-format		input matrix format. Supported: $supported_input_formats
+-return		return formats. Supported: $supported_return_formats
 -pseudo		pseudo-weight (default: $pseudo_weight)
 -decimals	number of decimals digits to print for real matrices
 -max_profile	Maximal width of the profile histogram 
--margins	Calculate marginal values (column and row sum, min, max)
 End_short_help
   close HELP;
   exit(0);
@@ -386,10 +386,6 @@ sub ReadArguments {
       unless (&IsNatural($max_profile)) {
 	  &FatalError("Invalid max_profile $max_profile. Must be a natural value");
       }
-
-      ### margins
-    } elsif ($ARGV[$a] eq "-margins") {
-      $margins = 1;
 
     }
   }
