@@ -44,85 +44,121 @@ which must contain the following information: </P>
 <LI>- start position (may be negative)</LI>
 <LI>- end position (may be negative)</LI>
 <LI>- (optional) sequence (ex: AAGATAAGCG) </LI>
+<LI>- (optional) score (a real value) </LI>
 </OL>
-These topics must be provided in this order, separated by tabs. <P>
+Fields must be provided in this order, separated by tabs. <P>
 
-Feature map also imports result files from some other programs or databases:
+Feature map also imports result files from some other programs or
+databases:
 <UL>
-<LI><A HREF="dna-pattern.html"><B>dna-pattern</B></A> a program which localizes the occurrences of your query patterns within your sequences. 
-<LI><A HREF="http://transfac.gbf.de/cgi-bin/matSearch/matsearch.pl"><B>Matinspector</B></A>, a program that scans a sequence with a library of matrices for regulatory sites. 
-<LI><A HREF="http://bimas.dcrt.nih.gov/molbio/signal/"><B>SignalScan</B></A>, a program which scans your sequences with a librairy of consensus for regulatory sites.
+<LI><A HREF="dna-pattern.html"><B>dna-pattern</B></A> a program which
+localizes the occurrences of your query patterns within your
+sequences.  <LI><A
+HREF="http://transfac.gbf.de/cgi-bin/matSearch/matsearch.pl"><B>Matinspector</B></A>,
+a program that scans a sequence with a library of matrices for
+regulatory sites.  <LI><A
+HREF="http://bimas.dcrt.nih.gov/molbio/signal/"><B>SignalScan</B></A>,
+a program which scans your sequences with a librairy of consensus for
+regulatory sites.
 </UL>
-These files are converted into feature-map proprietary format before the map is drawn.
+These files are converted into the custom feature-map format before
+the map is drawn.
 </P>
 
 <A NAME="title">
-<B>Title</B><BR>
-The title appears in large fonts at the top of the image. A single line of title is allowed. Its maximal length depends on the image width. 
+<B>Title</B><BR> The title appears in large fonts at the top of the
+image. A single line of title is allowed. Its maximal length depends
+on the image width.
 <P>
 
 
 <A NAME="legend">
-<B>Legend</B><BR>
-The legend is drawn at the left top of the image. It indicates the color (and optionally symbol) associated to each feature identifier.
+<B>Legend</B><BR> The legend is drawn at the left top of the image. It
+indicates the color (and optionally symbol) associated to each feature
+identifier.
 <P>
 
 <A NAME="scalebar">
-<B>Scale bar</B><BR>
-The scale bar appears either under the title (horizontal map) or at the left side of the image (vertical map). It indicates the coordinates. The step is calculated automatically but can also be specified manually.
+<B>Scale bar</B><BR> The scale bar appears either under the title
+(horizontal map) or at the left side of the image (vertical map). It
+indicates the coordinates. The step is calculated automatically but
+can also be specified manually.
 <P>
 
 <A NAME="orientation">
-<B>Orientation</B><BR>
-The maps can either be drawn horizontally or vertically. 
+<B>Orientation</B><BR> The maps can either be drawn horizontally or
+vertically.
 <P>
 
 
 <A NAME="limits">
-<B>Display limits</B><BR>
-The options <B>from</B> and <B>to</B> define the maximum and minimum coordinated displayed in the map. This allows to zoom on a given part of the graph. If no value are entered, the min and max feature positions are used as limits.
+<B>Display limits</B><BR> The options <B>from</B> and <B>to</B> define
+the maximum and minimum coordinated displayed in the map. This allows
+to zoom on a given part of the graph. If no value are entered, the min
+and max feature positions are used as limits.
 <P>
 
 <A NAME="origin">
-<B>Origin</B><BR>
-All coordinates are recalculated relative to this value).
+<B>Origin</B><BR> All coordinates are recalculated relative to this
+value).
 <P>
 
 <A NAME="dimensions">
-<B>Map dimensions</B><BR>
-All dimensions are in pixels. <BR>
+<B>Map dimensions</B><BR> All dimensions are in pixels. <BR>
 <UL>
-<LI>Map <B>length</B> refers to either width (horizontal map) or height (vertical map). It is the dimension of the map axis (the sequence backbone).
-<LI>Map <B>thick</B>refers to either height (horizontal map) or with (vertical map). It is calculated automatically according to the content of the map (handles, labels). It can also be adjusted manually. 
-<LI>Map spacing refers to a margin between maps, which is displayed in the same color as the background. 
+<LI>Map <B>length</B> refers to either width (horizontal map) or
+height (vertical map). It is the dimension of the map axis (the
+sequence backbone).
+
+<LI>Map <B>thick</B>refers to either height (horizontal map) or with
+(vertical map). It is calculated automatically according to the
+content of the map (handles, labels). It can also be adjusted
+manually.
+
+<LI>Map spacing refers to a margin between maps, which is displayed in
+the same color as the background.
 </UL>
-<B>Warning !</B> the bigger the surface of the map, the more time is required for its transfer to your client browser. 
+
+<B>Warning !</B> the bigger the surface of the map, the more time is
+required for its transfer to your client browser.
 <P>
 
 
 
 <A NAME="handle">
-<B>Feature handle</B><BR>
-A color dot or a symbol can be associated to each feature. This is particularly convenient to discernate overlapping features, because the handle are shifted in order to avoid overlap. Black symbols are conveninent to distinguish features on a black and white printing.
+<B>Feature handle</B><BR> A color dot or a symbol can be associated to
+each feature. This is particularly convenient to discernate
+overlapping features, because the handle are shifted in order to avoid
+overlap. Black symbols are conveninent to distinguish features on a
+black and white printing.
 <P>
 
 <A NAME="htmap">
-<B>Dynamic map</B><BR>
-This option requires a recent browser (Netscape 3 or later). When the mous is placed for a second on a given feature, a specific message appears at the bottom of the window, providing all characteristics of this feature (type, position, identifier, description).
+<B>Dynamic map</B><BR> This option requires a recent browser (Netscape
+3 or later). When the mous is placed for a second on a given feature,
+a specific message appears at the bottom of the window, providing all
+characteristics of this feature (type, position, identifier,
+description).
 <P>
 
 
 <A NAME="keys">
-<P><B>Label keys:</B><BR>
-A label can be written nearby each feature, providing one or several of the following data:
+<P><B>Label keys</B><BR> A label can be written nearby each feature,
+providing one or several of the following data:
 <UL>
 <LI>strand
 <LI>position (start and end coordinates), 
 <LI>identifier
 <LI>description
 </UL>
-Note that this option gives a better effect with vertical maps, where the labels have less tendency to overlap with each other. 
+Note that this option gives a better effect with vertical maps, where
+the labels have less tendency to overlap with each other.
 </P>
+
+<A NAME="scorethick">
+<P><B>Proportional to score</B><BR> Feature box thickness reflects the
+score given in the eight column of the input.
+
 
 </FONT>
 </UL>
@@ -130,10 +166,17 @@ Note that this option gives a better effect with vertical maps, where the labels
 <H4>Credits</H4>
 <UL>
 <P>
-<B>feature-map</B> has been written by Jacques van Helden (<A HREF="mailto:jvanheld@ucmb.ulb.ac.be (Jacques van Helden)">jvanheld@ucmb.ulb.ac.be</A>). This program can be used freely by academic users via its web interface. For commercial users, please read or <A HREF="disclaimer.html">disclaimer</A>.
+
+<B>feature-map</B> has been written by Jacques van Helden (<A
+HREF="mailto:jvanheld@ucmb.ulb.ac.be (Jacques van
+Helden)">jvanheld@ucmb.ulb.ac.be</A>). This program can be used freely
+by academic users via its web interface. For commercial users, please
+read or <A HREF="disclaimer.html">disclaimer</A>.
 
 <P>
-feature-map uses the graphical library GD, developed by Thomas Boutell (<A HREF="mailto:boutell@boutell.com (Thomas Boutell)">(boutell@boutell.com)</A>. 
+feature-map uses the graphical library GD, developed by Thomas Boutell
+(<A HREF="mailto:boutell@boutell.com (Thomas
+Boutell)">(boutell@boutell.com)</A>.
 
 <P>Copyright statement for the graphical library GD:
 	<PRE>
