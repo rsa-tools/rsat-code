@@ -71,6 +71,15 @@ if ($pattern_file ne "") {
   }
 }
 
+#### check threshold on occurrences
+if (&IsNatural($low_thr{'occ'})) {
+    foreach $oligo_seq (sort keys %occurrences) {
+	if ($occurrences{$oligo_seq} < $low_thr{'occ'}) {
+	    delete $occurrences{$oligo_seq};
+	}
+    }
+}
+
 &CalcExpected;
 
 &CalcChi;
@@ -91,6 +100,7 @@ if ($verbose) {
   print $out ";\tOutput file	$outputfile\n" if ($outputfile ne "");
   print $out ";\tOligonucleotide length	$oligo_length\n";
   print $out ";\tchi threshold (lower)\t$low_thr{'chi'}\n" if (&IsReal($low_thr{'chi'}));
+  print $out ";\toccurrence threshold (lower)\t$low_thr{'occ'}\n" if (&IsNatural($low_thr{'occ'}));
   if ($sum_strands) {
     print $out ";\tCounted on both strands\n";
     if ($group_rc) {
@@ -584,6 +594,8 @@ OPTIONS
 			several fields can be entered, separated by commas
 	-lth #	lower threshold on chi2
 		return only words with a chi2 value > #
+	-oth #	lower threshold on occurrences
+		return only words with a number of occurrences > #
 	-pl pattern_file
 		a file containing a selection of patterns. 
 		The analysis is then restricted to these patterns.
@@ -637,6 +649,7 @@ position-analysis options
 -sort		sort oligonucleotides according to the bias in distribution profile
 -return		chi,distrib,exp,graph
 -lth		lower threshold on chi2
+-oth		lower threshold on occurrences
 -pl		pattern list
 -sc		score column
 -minpos		minimal position for chi-square calculation
@@ -709,9 +722,19 @@ sub ReadArguments {
 	    $no_overlap = 1;
 	    
 	    ### lower threshold on chi square
-	} elsif (($ARGV[$a] =~ /^-lth/) && (&IsReal($ARGV[$a+1]))) {
+	} elsif ($ARGV[$a] =~ /^-lth/) { 
 	    $low_thr{'chi'} = $ARGV[$a+1];
 	    $return{'chi'} = 1;
+	    unless (($low_thr{'chi'} >= 0) && (&IsReal($low_thr{'chi'}))) {
+		&FatalError("Threshold on chi2 must be a positive number") ;
+	    }
+	    
+	    ### lower threshold on occurrences
+	} elsif ($ARGV[$a] =~ /^-oth/) { 
+	    $low_thr{'occ'} = $ARGV[$a+1];
+	    unless (&IsNatural($low_thr{'occ'})) {
+		&FatalError("Threshold on occurrences must be a natural number") ;
+	    }
 	    
 	    ### return values
 	} elsif ($ARGV[$a] eq "-return") {
