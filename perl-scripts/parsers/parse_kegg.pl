@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_kegg.pl,v 1.10 2002/04/17 13:52:29 jvanheld Exp $
+# $Id: parse_kegg.pl,v 1.11 2002/04/17 16:58:48 jvanheld Exp $
 #
-# Time-stamp: <2002-04-17 15:51:49 jvanheld>
+# Time-stamp: <2002-04-17 15:55:24 jvanheld>
 #
 ############################################################
 
@@ -65,13 +65,6 @@ package main;
 #
 
 #### ligand
-#$dir{KEGG} = "${Databases}/kegg.genome.ad.jp/pub";
-#$dir{KEGG} = "/win/databases/downloads/kegg.genome.ad.jp/pub";
-#$data_file{compound} = $dir{KEGG}."/molecules/ligand/compound";
-#$data_file{reaction} = $dir{KEGG}."/molecules/ligand/reaction.lst";
-#$data_file{reaction_name} = $dir{KEGG}."/molecules/ligand/reaction_name.lst";
-#$data_file{ec} = $dir{KEGG}."/molecules/ligand/ECtable";
-
 $dir{KEGG} = "/win/databases/downloads/ftp.genome.ad.jp/pub/kegg";
 $data_file{compound} = $dir{KEGG}."/ligand/compound";
 $data_file{reaction} = $dir{KEGG}."/ligand/reaction.lst";
@@ -100,13 +93,6 @@ push @classes, ("PFBP::Reaction");
 push @classes, ("PFBP::Reactant");
 push @classes, ("PFBP::ECSet");
 push @classes, ("PFBP::GenericPathway");
-
-#@{$out_fields{'PFBP::Compound'}} = qw( id names formula source );
-#@{$out_fields{'PFBP::Reaction'}} = qw( id  source);
-#@{$out_fields{'PFBP::Reactant'}} = qw( id reactant_type reaction_id compound_id stoichio valid_interm );
-#@{$out_fields{'PFBP::ECSet'}} = qw( id names parent reactions );
-#@{$out_fields{'PFBP::Pathway'}} = qw( id parent organism source names reactions ECs genes );
-#@{$out_fields{'PFBP::GenericPathway'}} = qw( id source names reactions ECs );
 
 &ReadArguments;
 
@@ -176,7 +162,7 @@ $ecs->set_out_fields(qw( id names parent ));
 $pathways->set_out_fields(qw( id parent organism source names reactions ECs genes ));
 $genericPathways->set_out_fields(qw( id source names reactions ECs ));
 
-$genericPathways->set_attribute_header("reactions", join ("\t", "id", "direction", "reaction") );
+$genericPathways->set_attribute_header("reactions", join ("\t", "reaction", "direction") );
 
 
 #### parse compounds
@@ -725,12 +711,12 @@ sub ParseKeggPathways {
     ### input files
     warn "; Getting generic pathways from $dir{pathway_reactions}" if ($warn_level >= 1);
     @in_files = glob($dir{pathway_reactions}."/map*.rea*");
+    if ($test) {
+	warn ";TEST\n" if ($warn_level >= 1);
+	### fast partial parsing for debugging
+	@in_files = ($in_files[0], $in_files[1], $in_files[2]);
+    }
     warn ";\tSelected pathway files\n;\t\t", join("\n;\t\t", @in_files), "\n" if ($warn_level >= 1);
-#    if ($test) {
-#	warn ";TEST\n" if ($warn_level >= 1);
-#	### fast partial parsing for debugging
-#	@in_files = shift @in_files;
-#    }
     
     ################################################################
     # parse generic pathways (lists of reactions and ECs)
