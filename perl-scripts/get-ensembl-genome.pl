@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-ensembl-genome.pl,v 1.11 2005/03/16 07:50:16 jvanheld Exp $
+# $Id: get-ensembl-genome.pl,v 1.12 2005/03/17 15:07:49 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -32,9 +32,6 @@ use Bio::EnsEMBL::DBSQL::SliceAdaptor;
 ## Test with other genomes (Anopheles)
 ## Check the start and stop codons of Anopheles. Half of them are false.
 ## Add cross-references to the RSAT objects ($rsat__gene, $rsat_transcript, $rsat_cds, ...)
-## Export masked sequences (repeats masked). The method returns a hash
-## table. Try to get the keys of this hash table, in order to extract
-## the real sequence.
 
 
 ################################################################
@@ -483,6 +480,14 @@ package main;
 	$masked_seq_file =~ s/\.raw$/_masked.raw/;
 	print CTG join ("\t", $seq_file,  $rsat_contig->get_attribute("id")), "\n";
 	unless ($no_seq) {
+
+	    ## Export slice sequence (unmasked)
+	    &RSAT::message::TimeWarn("Getting sequence for slice", $s."/".scalar(@slices), 
+				     $slice_type, $slice->seq_region_name(), $slice_name) if ($main::verbose >= 1);
+	    open SEQ, ">".$seq_file || die "cannot open error log file".$seq_file."\n";
+	    print SEQ $slice->seq();
+	    close SEQ;
+
 	    ## Export slice sequence (hard masked)
 	    unless ($no_masked) {
 		&RSAT::message::TimeWarn("Getting masked sequence for slice", $s."/".scalar(@slices), 
@@ -492,14 +497,6 @@ package main;
 		print MASKED_SEQ $masked_sequence_slice->seq();
 		close MASKED_SEQ;
 	    }
-
-	    ## Export slice sequence (unmasked)
-	    &RSAT::message::TimeWarn("Getting sequence for slice", $s."/".scalar(@slices), 
-				     $slice_type, $slice->seq_region_name(), $slice_name) if ($main::verbose >= 1);
-	    open SEQ, ">".$seq_file || die "cannot open error log file".$seq_file."\n";
-	    print SEQ $slice->seq();
-	    close SEQ;
-
 	}
     }
 
