@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.56 2002/10/15 05:55:04 jvanheld Exp $
+# $Id: oligo-analysis,v 1.57 2002/11/16 13:14:05 jvanheld Exp $
 #
-# Time-stamp: <2002-10-14 23:54:43 jvanheld>
+# Time-stamp: <2002-11-16 07:11:52 jvanheld>
 #
 ############################################################
 
@@ -18,6 +18,13 @@ require "RSA.classes";
 ###### initialize parameters ##########
 $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
 
+%supported_bg = ('upstream'=>1,
+		 'upstream-noorf'=>1,
+		 'intergenic'=>1
+		 );
+$supported_bg = join ",", sort keys %supported_bg;
+    
+$palindroms = 0;
 $in_format = "fasta";
 @output_fields = ();
 $sum_rc = 1;
@@ -39,9 +46,6 @@ $residue_proba{'a'} = 0.25;
 $residue_proba{'c'} = 0.25;
 $residue_proba{'g'} = 0.25;
 $residue_proba{'t'} = 0.25;
-
-#### include score in pattern ID
-#$score_in_id = 1;
 
 #### read arguments ####
 &ReadArguments();
@@ -171,6 +175,7 @@ $out = &OpenOutputFile($outputfile);
 &SumReverseComplements() if ($sum_rc);
 &CalcFrequencies() if (($return{'freq'}) || ($verbose >= 1) || ($method eq "Markov chain"));
 #&GroupRc() if ($group_rc);
+&SelectPalindroms() if ($palindroms);
 &OccurrenceThreshold() if ($occurrence_threshold > 0);
 &MatchingSeqThreshold() if ($mseq_threshold > 0); 
 &NbPossibleOligo();
@@ -180,12 +185,6 @@ $out = &OpenOutputFile($outputfile);
 &CalcLikelihood() if ($return{'like'});
 &CalcRatio() if ($return{'ratio'});
 &CalcProba() if ($return{'proba'}) ;
-
-# if ($score_in_id) {
-#     foreach my $pattern_seq (keys %patterns) {
-#     	printf $out "\t%15.13f", $patterns{$pattern_seq}->{freq} if ($return{'freq'});	
-#     }
-# }
 
 &PrintResult;
 
@@ -1276,8 +1275,8 @@ sub PrintResult {
 		    #### two-criteria sorting, sig is prioritary, but
 		    #### zscore is useful when the proba reaches
 		    #### calculation limits
-		    @sorted_keys = sort { $patterns{$b}->{occ_sig} <=>  $patterns{$a}->{occ_sig}
-					  || $patterns{$b}->{zscore} <=>  $patterns{$a}->{zscore} 
+		    @sorted_keys = sort {  $patterns{$b}->{zscore} <=>  $patterns{$a}->{zscore} || 
+					       $patterns{$b}->{occ_sig} <=>  $patterns{$a}->{occ_sig}
 				      } keys %patterns;
 		} else {
 		    @sorted_keys = sort {$patterns{$b}->{zscore} <=>  $patterns{$a}->{zscore}} keys %patterns;
@@ -1536,6 +1535,10 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] =~ /^-noov/) {
 	    $noov = 1;
 	    
+	    #### return reverse palindroms only
+	} elsif ($ARGV[$a] =~ /^-pal/) {
+	    $palindroms = 1;
+	    
 	    #### degenerate code: one N at any position
 	} elsif ($ARGV[$a] eq "-oneN") {
 	    $one_var_position = 1;
@@ -1561,14 +1564,18 @@ sub ReadArguments {
 
 	    ### use oligo non-coding frequencies as expected frequencies
 	} elsif ($ARGV[$a] =~ /^-ncf/i) {
-	    $background_model = "non-coding";
+	    &Warning ("option -ncf is deprecated, use '-bg intergenic' instead");
+	    $background_model = "intergenic";
 #	    $rescale_freq = 1;
 
 	    ### specify a background model for estimating expected frequencies
 	} elsif ($ARGV[$a] =~ /^-bg/i) {
 	    $background_model = $ARGV[$a+1];
 	    $background_model =~ s/ncf/intergenic/;
-	    
+	    unless ($supported_bg{$background_model}) {
+		&FatalError("Invalid background model\t$background_model\tsupported: $supported_bg");
+	    }
+
 	    #### lexicon
 	} elsif ($ARGV[$a] =~ /^-lex/i) { ### Markov chains
 	    $method = "lexicon";
@@ -1821,27 +1828,28 @@ ARGUMENTS
 		rescale expected frequencies to obtain a sum of 1.
 		This allows to use absolute occurrences (rather than
 		relative frequencies).
-	-ncf	(deprecated, use "-bg ncf" instead)
+	-ncf	(deprecated, use "-bg intergenic" instead)
 		use intergenic frequencies as background frequencies
 	-bg	background model
 		Type of sequences used as background model for
 		estimating expected oligonucleotide frequencies.
 		
 		Supported models: 
-		-bg allup 
+		-bg upstream 
 			 all upstream sequences, allowing overlap with
 		         upstream ORFs
 
-		-bg allup-noorf
+		-bg upstream-noorf
 			  all upstream sequences, preventing overlap
 			  with upstream ORFs
 
-		-bg ncf  intergenic frequencies 
+		-bg intergenic
+		         intergenic frequencies 
 			 Whole set of intergenic regions, including
 			 upstream and downstream sequences
 
 	-org	organism 
-		This is necessary with the option -ncf, to determine
+		This is necessary with the option -bg, to determine
 		which frequency file has to be sued for expected
 		frequency calibration.
 	-markov #
@@ -1955,6 +1963,8 @@ ARGUMENTS
 				criterion
 		ex: -return freq,occ,zscore	
 
+	-pal
+		only return reverse palindroms
 	-table
 		return a table where rows represents input sequences,
 		and columns the counts of occurrences for each
@@ -2332,7 +2342,8 @@ oligo-analysis options
 -a input        use alphabet from input sequence
 -expfreq        file with expected frequency table
 -rescale	recale expected frequencies to obtain a sum of 1
--ncf		use intergenic frequencies as expected frequencies
+-ncf		(deprecated, use '-bg intergenic' instead) 
+-bg		background model (supported: $supported_bg)
 -org		organism 
 -markov	#	calculate expected frequencies according to
 		Markov chains of order #
@@ -2357,7 +2368,27 @@ oligo-analysis options
 -onedeg         one degenerate position		
 -sort		sort oligomers by overrepresentation
 -under		detect under-represented instead of over-represented words 
+-pal		only return reverse palindroms
 End_of_help
     close HELP;
     exit(0);
+}
+
+
+
+################################################################
+#
+# Select reverse palindromic patterns (delete all other patterns)
+#
+sub SelectPalindroms {
+  if ($verbose >= 2) {
+    &Warning(&AlphaDate()."\tSelcting reverse palindroms");
+  }
+  
+  foreach $pattern_seq (keys %patterns) {
+      my $rc = lc(&SmartRC($pattern_seq));
+      unless ($rc eq $pattern_seq) { ### palindroms
+	  delete $patterns{$pattern_seq};
+      }
+  }
 }
