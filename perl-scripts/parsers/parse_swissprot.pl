@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_swissprot.pl,v 1.31 2003/12/19 15:13:09 jvanheld Exp $
+# $Id: parse_swissprot.pl,v 1.32 2003/12/19 16:34:04 jvanheld Exp $
 #
 # Time-stamp: <2003-07-10 11:52:54 jvanheld>
 #
@@ -235,6 +235,7 @@ package main;
 				prefix=>"",
 				host=>$main::host,
 				);
+    &ExportMakefile(@classes);
     &ExportClasses($out_file{polypeptides}, $out_format,classes::Polypeptide) if ($export{obj});
 
 #    &CompressParsedData();
