@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.36 2003/10/20 23:19:15 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.37 2003/12/29 15:59:03 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -9,20 +9,24 @@
 if ($0 =~ /([^(\/)]+)$/) {
   push (@INC, "$`lib/");
 }
+
 require "RSA.lib";
 require "RSA.help.pl";
 require "RSA.cgi.lib";
 require "RSA.classes";
 
 
+################################################################
+## initialisations	    
+%dir = ();
+$dir{main} = `pwd`;
+chomp($dir{main});
 
-#### initialisations	    
-@supported_tasks = qw (upstream oligos maps dyads synthesis sql clean all);
+@supported_tasks = qw (upstream purge oligos maps dyads synthesis sql clean all);
 foreach my $task (@supported_tasks) {
     $supported_task{$task} = 1;
 }
 $supported_tasks = join ",", @supported_tasks;
-
 
 %supported_sort_key = (
 			"score"=>1,
@@ -37,54 +41,76 @@ $supported_sort_keys  = join ",", sort keys %supported_sort_key;
 			);
 $supported_background  = join ",", sort keys %supported_background;
 
-$scalestep = 100;
-$noorf = 1;
-#$default{from} = -800;
-#$default{to} = 0;
-$known_site_file = "known-consensus";
-$known_sites_provided = 0;
-$background = "upstream-noorf";
+## input files
+$family_file = "";
+$sequene_file_list = "";
+
+## feature-map options
+$htmaps=0;
+$draw_maps=1;
+$scalestep = 100; 
+
+## retrieve-seq options
+$noorf = 1; 
 $seq_format = "fasta";
+$seq_dir = "";
+$seq_ext = "fasta";
+
+## pattern discovery options
+$background = "upstream-noorf";
 $min_oligo_length = 6;
 $max_oligo_length = 6;
-$min_matching_score = 4;
 $monad_length = 3;
 $noov = 1;
 $min_sp = 0;
 $max_sp = 20;
-$start_date = `date`;
-$htmaps=0;
-$draw_maps=1;
 $sort_key = "score";
+
+## Comparison between discovered and known motifs
+$known_site_file = "";
+$known_sites_provided = 0;
+$min_matching_score = 4;
+
+## misc
+$start_date = `date`;
 $verbose = 0;
 
 #### data export options
-%supported_dbms = (mysql=>1,
-		   oracle=>1,
-		   postgresql=>1);
-$supported_dbms = join ",", @supported_dbms;
-$dbms = "mysql";
 $schema = "multifam";
+$host="localhost";
+$login = getlogin();
+$passwordd="";
 
+################################################################
+### MAIN
 
+#### Read arguments
 &ReadArguments();
 
+#### Check parameters
 &CheckParameters();
-
-### read gene name and identifiers
-warn "; Reading ORF information ...\n" 
-    if ($verbose >= 1);
-&ReadFeatures($organism_name);
-&ReadSynonyms($organism_name);
 
 
 ################################################################
-#
-# read data
+## Read data
 &ReadKnownSites($known_site_file);
-&ReadSiteLibrary();
-%family = &ReadClasses($family_file, 1);
-@families = sort keys %family;
+#&ReadSiteLibrary("known_sites.tab");
+
+if ($sequence_file_list) {
+    $task{upstream} = 0; 
+    &ReadSequenceList();
+} else {
+    
+    ### Read family file
+    %family = &ReadClasses($family_file, 1);
+    @families = sort keys %family;
+
+    ### read gene name and identifiers
+    warn "; Reading ORF information ...\n" 
+	if ($verbose >= 1);
+    &ReadFeatures($organism_name);
+    &ReadSynonyms($organism_name);
+}
 
 ### write composition of the families in the separated directories
 &SetFileNames();
@@ -95,6 +121,7 @@ warn "; Reading ORF information ...\n"
 
 #### verbose
 $verbose_message = &Verbose() if ($verbose >= 1);
+
 
 ### perform analysis
 &AnalyzeFamilies();
@@ -178,8 +205,10 @@ sub SetFileNames {
 	$family{$family_name}->{family_file} = "$family_name/${family_name}.fam";
 	$family{$family_name}->{known_site_file} = "$family_name/${family_name}_known_sites";
 	$family{$family_name}->{file_prefix} = "${family_name}_up${seq_length}${noorf_string}"; 
-	$family{$family_name}->{seq_file} = $family_name."/".$family{$family_name}->{file_prefix}.".${seq_format}";
-	$family{$family_name}->{seq_file_purged} = $family_name."/".$family{$family_name}->{file_prefix}."_purged.${seq_format}";
+	unless ($sequence_file_list) {
+	    $family{$family_name}->{seq_file} = $family_name."/".$family{$family_name}->{file_prefix}.".${seq_format}";
+	    $family{$family_name}->{seq_file_purged} = $family_name."/".$family{$family_name}->{file_prefix}."_purged.${seq_format}";
+	}
 #      $family{$family_name}->{oligo_file} =  "${family_name}/oligos_${family_name}/".$family{$family_name}->{file_prefix}."_oligos_${min_oligo_length}-${max_oligo_length}nt_${strands}_sig${th}${noov_string}";
 	$family{$family_name}->{oligo_file} =  "${family_name}/oligos_${family_name}/".$family{$family_name}->{file_prefix}.$oligo_suffix; ## TEMP
 	$family{$family_name}->{oligo_assembly_file} = $family{$family_name}->{oligo_file}."_contigs";
@@ -211,7 +240,7 @@ sub SetFileNames {
 ################### SUBROUTINE DEFINITION ###################"
 
 
-
+################################################################
 #### retrieve upstream sequences
 sub UpstreamSequences {
     warn ";\tRetrieving upstream sequences for family $family_name\n" if ($verbose >= 1);
@@ -225,7 +254,12 @@ sub UpstreamSequences {
     $command .= " -feattype $feature_types " if ($feature_types);
     $command .= " -format $seq_format";
     &doit($command);
+}
 
+################################################################
+#### Purge input sequences
+sub PurgeSequences {
+    warn ";\tPurging sequences for family $family_name\n" if ($verbose >= 1);
     $command = "purge-sequence -ml 40 -mis 3";
     $command .= " -i $family{$family_name}->{seq_file}";
     $command .= " > $family{$family_name}->{seq_file_purged}";
@@ -233,7 +267,7 @@ sub UpstreamSequences {
 }
 
 
-
+################################################################
 ### oligo-analysis
 sub OligoAnalysis {
     warn join ("\t", 
@@ -242,9 +276,6 @@ sub OligoAnalysis {
 	       "max len: $max_oligo_length"), "\n" if ($verbose >= 1);
     $dir = "${family_name}/oligos_${family_name}";
     &CheckOutputDir($dir);
-#    unless (-d $dir) {
-#	mkdir $dir, 0755 || die "Error: cannot create directory $dir\n";
-#    }
     die "Error : cannot read file $family{$family_name}->{seq_file_purged}\n" unless (-r $family{$family_name}->{seq_file_purged});
     
     
@@ -337,7 +368,8 @@ sub DyadAnalysis {
     
 }
 
-### read known known_site for each family
+################################################################
+### Read known known_site for each family
 sub ReadKnownSites {
     my ($known_site_file) = @_;
     %known_site = ();
@@ -363,34 +395,38 @@ sub ReadKnownSites {
     }
 }
 
-sub ReadSiteLibrary {
-    @site_library = ();
-    $library_file = "known_sites.tab";
-    if (-e $library_file) {
-	open LIBRARY, $library_file;
-	while (<LIBRARY>) {
-	    next if (/^;/);
-	    next if (/^\#/);
-	    next unless (/\S/);
-	    chomp;
-	    my @fields = split "\t";
-	    my $source = $fields[2] || $library_file;
-	    my $id = uc($fields[1]);
-	    my $sequence = uc($fields[0]);
-	    $sequence =~ s/N/n/g;
+
+#  ################################################################
+#  ## Read known sites from a tab-delimited file
+#  ## Obsolete : has been replaced by ReadKnownSites
+#  sub ReadSiteLibrary {
+#      my ($library_file) = @_;
+#      @site_library = ();
+#      if (-e $library_file) {
+#  	open LIBRARY, $library_file;
+#  	while (<LIBRARY>) {
+#  	    next if (/^;/);
+#  	    next if (/^\#/);
+#  	    next unless (/\S/);
+#  	    chomp;
+#  	    my @fields = split "\t";
+#  	    my $source = $fields[2] || $library_file;
+#  	    my $id = uc($fields[1]);
+#  	    my $sequence = uc($fields[0]);
+#  	    $sequence =~ s/N/n/g;
 	    
-	    $pattern = RSA::pattern->new(id=>$id,
-					 sequence=>$sequence,
-					 source=>source);
-	    push @site_library, $pattern;
-	}
-	close LIBRARY;
-    }
-}
+#  	    $pattern = RSA::pattern->new(id=>$id,
+#  					 sequence=>$sequence,
+#  					 source=>source);
+#  	    push @site_library, $pattern;
+#  	}
+#  	close LIBRARY;
+#      }
+#  }
 
 
 ################################################################
-### build a synthetic table ###
+### Generate a synthetic table
 sub SyntheticTable {
     my $dir = "synthetic_tables";
     
@@ -733,7 +769,7 @@ sub SyntheticTable {
 
 
 ################################################################
-#### draw feature maps
+#### Draw feature maps
 sub DrawDyadFeatureMap {
     warn ";\tDrawing feature-map with results of dyad-analysis for family $family_name\n" if ($verbose >= 1);
     die "Error : cannot read file $family{$family_name}->{seq_file}\n" unless (-r $family{$family_name}->{seq_file});
@@ -757,7 +793,8 @@ sub DrawDyadFeatureMap {
 }
 
 
-############################### check parameters ###############################
+################################################################
+#### check parameters
 sub CheckParameters {
 
     #### accepted feature types
@@ -781,12 +818,12 @@ sub CheckParameters {
     }
     
     ### family file ###
-    if ($family_file eq "") {
-	die "Error: you should specify a family file\n";  
+    unless (($family_file) || ($sequence_file_list)) {
+	die "Error: you should specify either a family file or a sequence file list\n";  
     } 
     
     ### organism ###
-    if ($organism_name eq "") {
+    unless ($organism_name) {
 	die "Error: you should specify an organism\n$supported_organisms\n";  
     } 
     unless ($supported_organism{$organism_name}) {
@@ -821,28 +858,34 @@ sub CheckParameters {
     } 
 }
 
-    
+
+################################################################
+## Analyze all the families    
 sub AnalyzeFamilies {
     my $fam_count=0;
     my $fam_nb = $#families+1;
+
+
     foreach $family_name (@families) {
 	$fam_count++;
 	warn ";\n; Treating family $family_name ($fam_count of $fam_nb)\t", `date` if ($verbose >=1);
 	
 	### retrieve upstream sequences
-	&UpstreamSequences if ($task{upstream});
+	&UpstreamSequences() if ($task{upstream});
+
+	&PurgeSequences() if ($task{purge});
 	
 	### oligo-analysis
-	&OligoAnalysis if ($task{oligos});
+	&OligoAnalysis() if ($task{oligos});
 	
 	### dyad feature-maps
-	&DrawOligoFeatureMap if ($task{maps});
+	&DrawOligoFeatureMap() if ($task{maps});
 
 	### dyad analysis
-	&DyadAnalysis if ($task{dyads});
+	&DyadAnalysis() if ($task{dyads});
 
 	### dyad feature-maps
-	&DrawDyadFeatureMap if ($task{maps});
+	&DrawDyadFeatureMap() if ($task{maps});
 	
 	### delete upstream sequence file
 	if ($task{clean}) {
@@ -860,6 +903,8 @@ sub AnalyzeFamilies {
     }
 }
 
+################################################################
+## Execute a command, with optional echo
 sub doit {
     my ($command) = @_;
     print "\n$command\n" if ($verbose >= 2);
@@ -905,7 +950,8 @@ OPTIONS
 	-h	(must be first argument) display full help message
 	-help	(must be first argument) display options
 	-v	verbose
-	-i	family file
+	-i	family file (incompatible with -seq)
+	-seq	sequence file (incompatible with -i)
 	-outdir	output directory
 
     Sequence retrieval options
@@ -957,6 +1003,13 @@ OPTIONS
 	        sort key for the synthetic table
 		Supported: $supported_sort_keys
 
+   Options for the automaticaly generated SQL scripts
+	-schema database schema (default: $schema)
+	-host	database host (default: $host)
+	-user	database user (default: $user)
+	-password	
+		database password (default: $password)
+
     Other options
 	-task selected_task
 		Select the tasks to be performed.
@@ -1006,8 +1059,9 @@ End_of_help
   exit;
 }
 
+################################################################
+#### display short help message
 sub PrintOptions {
-#### display short help message #####
   open HELP, "| more";
   print HELP <<End_short_help;
 multiple-family-analysis options
@@ -1015,7 +1069,8 @@ multiple-family-analysis options
 -h		(must be first argument) display full help message
 -help		(must be first argument) display options
 -v		verbose
--i		family file
+-i		family file (incompatible with -seq)
+-seq		sequence file (incompatible with -i)
 -outdir		output directory
 -org		organism
 -from		upstream region left limit
@@ -1044,14 +1099,18 @@ multiple-family-analysis options
 -bg		background frequency modelEnd_short_help
 -markov #	exp. freq. calcualted with Markov chain model of order #
 -known		file containing a list of known sites/motifs
+-schema		database schema (default: $schema)
+-host		database host (default: $host)
+-user		database user (default: $user)
+-password	database password (default: $password)
 End_short_help
   close HELP;
   exit;
 }
 
-
+################################################################
+#### Read arguments
 sub ReadArguments {
-#### read arguments ####
     foreach my $a (0..$#ARGV) {
 	### verbose ###
 	if ($ARGV[$a] eq "-v") {
@@ -1077,6 +1136,10 @@ sub ReadArguments {
 		 ($ARGV[$a] eq "-fam") # for compatibility with previous versions
 		 ) {
 	    $family_file = $ARGV[$a+1];
+
+	    ### sequence file list
+	} elsif ($ARGV[$a] eq "-seq") {
+	    $sequence_file_list = $ARGV[$a+1];
 
 	    ### output directory
 	} elsif ($ARGV[$a] eq "-outdir") {
@@ -1214,18 +1277,15 @@ sub ReadArguments {
 		&FatalError("pseudo-weight must be a positive real number");
 	    }
 
-
-	    
-	    ################################################################
-	    #### options for the data export
-	} elsif ($ARGV[$a] eq "-dbms") {
-	    $dbms = $ARGV[$a+1];
-	    unless ($supported_dbms{$dbms}) {
-		&FatalError("$dbms\tInvalid DBMS\tsupported: $supported_dbms");
-	    }
-
+	    #### Optoins for the SQL scripts
 	} elsif ($ARGV[$a] eq "-schema") {
 	    $schema = $ARGV[$a+1];
+	} elsif ($ARGV[$a] eq "-host") {
+	    $host = $ARGV[$a+1];
+	} elsif ($ARGV[$a] eq "-user") {
+	    $user = $ARGV[$a+1];
+	} elsif ($ARGV[$a] eq "-password") {
+	    $password = $ARGV[$a+1];
 
 	}
     }
@@ -1244,13 +1304,16 @@ sub Verbose {
     foreach my $family_name (@families) {
 	printf ";\t%s\t%d elements\n", $family_name, $family{$family_name}->get_size();
     }
-    $verbose_message .= sprintf "; family file\t%s\n", $family_file;
-    $verbose_message .= sprintf "; upstream region\n";
-    $verbose_message .= sprintf ";\t%-22s\t%d\n", "strands", $strands;
-    $verbose_message .= sprintf ";\t%-22s\t%d\n", "from", $from;
-    $verbose_message .= sprintf ";\t%-22s\t%d\n", "to", $to;
-
-    $verbose_message .= sprintf "; %-13s\t%s\n", "organism", $organism_name;
+    if ($family_file) {
+	$verbose_message .= sprintf "; Family file\t%s\n", $family_file ;
+	$verbose_message .= sprintf "; Upstream regions\n";
+	$verbose_message .= sprintf ";\t%-22s\t%d\n", "Strands", $strands;
+	$verbose_message .= sprintf ";\t%-22s\t%d\n", "From", $from;
+	$verbose_message .= sprintf ";\t%-22s\t%d\n", "To", $to;
+    } elsif ($sequence_file_list) {
+	$verbose_message .= sprintf "; Sequence file list\t%s\n", $sequence_file_list;
+    }
+    $verbose_message .= sprintf "; %-13s\t%s\n", "Organism", $organism_name;
 
     if ($task{oligos}) {
 	$verbose_message .= sprintf "; oligo-analysis\n";
@@ -1292,7 +1355,7 @@ sub MakeDirectories {
 	    die "Error: cannot write family file $family{$family_name}->{family_file}\n";
 	foreach $id ($family{$family_name}->get_members()) {
 	    print FAM "$id\t$name{$id}\n";
-    
+	    
 	}
 	close FAM;
     }
@@ -1468,8 +1531,93 @@ sub ExportSQL {
     $pattern_factory->set_out_fields(@pattern_out_fields);
     foreach my $factory ($family_factory, $pattern_factory) {
 	$factory->dump_tables();
-	$factory->generate_sql(dbms=>$dbms, schema=>$schema);
+	$factory->generate_sql(schema=>$schema);
     }
     &ExportMakefile("family", "pattern");
 
 }
+
+
+
+
+sub ReadSequenceList {
+    ## The input is a list of sequence files
+    ($dir{sequences}, $short_sequence_file_list) = &SplitFileName($sequence_file_list);
+
+    ## Convert relative to absolute directory
+    if ($dir{main}) {
+	$dir{sequences} = $dir{main}."/".$dir{sequences};
+    }
+
+#    die $dir{sequences};
+
+    warn "; Reading sequence file list\t", $sequence_file_list, "\n" if ($verbose >= 1);
+    my ($files) = &OpenInputFile($sequence_file_list);
+    my $f = 0;
+    while (<$files>) {
+	next if (/^;/);
+	next unless (/\S/);
+	chomp;
+	$f++;
+	my @fields = split /\s+/;
+	my $sequence_file = shift @fields; ## the first word of each row is a file
+	my $short_file = &ShortFileName($sequence_file);
+	my $family_name = $short_file;
+	$family_name =~ s|\.${seq_ext}$||;
+        my $comment = join "; ", @fields;
+	
+#	push @families, $family_name;
+#	push @sequence_files, $sequence_file;
+
+	#### create a new family if required
+	unless ($family{$family_name}) {
+	    $family{$family_name} = new RSA::family(name=>$family_name);
+	}
+
+        #### Sequence file
+	if ($dir{sequences}) {
+	    $family{$family_name}->{seq_file} = $dir{sequences}."/".$sequence_file;
+	} else {
+	    $family{$family_name}->{seq_file} = $sequence_file;
+	}
+	$family{$family_name}->{seq_file_purged} = $family{$family_name}->{seq_file};
+	$family{$family_name}->{seq_file_purged} =~ s/\.${seq_ext}$//;
+	$family{$family_name}->{seq_file_purged} .= "_purged.".${seq_ext};
+         
+        #### Comment
+        $family{$family_name}->{comment} = $comment;
+
+	warn join ("\t", "; File $f", 
+		   $sequence_file, 
+		   $short_file, 
+		   $family_name, 
+		   $comment, 
+#		   "\n", $family{$family_name}->{seq_file},
+#		   "\n", $family{$family_name}->{seq_file_purged}
+		   ), "\n" if ($verbose >= 2); 
+	
+	push @comments, $comment;
+    }
+    close $files;
+
+    @families = sort keys %family;
+
+
+    #### Family members are read from the sequence file (sequence IDs are used as member IDs)
+    foreach my $family_name (@families) {
+        my ($in, $input_dir) =  &OpenInputFile($family{$family_name}->{seq_file});
+        my $seq_type = "dna";
+        while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $seq_format, $input_dir, $seq_type)) &&
+	   (($current_seq) || ($current_id))) {
+            $family{$family_name}->new_member($current_id);
+            warn join ("\t", 
+		       ";\tFile", $family{$family_name}->{seq_file}, 
+		       "Family", $family_name, 
+		       "member", $current_id), "\n" if ($main::verbose >= 2);
+        }
+        close $in;
+    }
+}
+
+
+
