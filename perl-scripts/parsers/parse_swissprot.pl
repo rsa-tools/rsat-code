@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_swissprot.pl,v 1.9 2002/01/21 17:12:21 jvanheld Exp $
+# $Id: parse_swissprot.pl,v 1.10 2002/03/19 11:43:38 jvanheld Exp $
 #
-# Time-stamp: <2002-01-21 18:10:11 jvanheld>
+# Time-stamp: <2002-03-19 12:41:45 jvanheld>
 #
 ############################################################
 
@@ -31,20 +31,20 @@ package main;
     $full_name{yeast} = "Saccharomyces cerevisiae (Baker's yeast)";
     $full_name{ecoli} = "Escherichia coli";
     $full_name{human} = "Homo sapiens (Human)";
-    
+
+    $dir{delivery} = "/rubens/dsk3/genomics/delivery/internal/swissprot_parsed";
+
     ### input directories and files
 #    $dir{input} = "/win/databases/downloads/ftp.ebi.ac.uk/pub/databases/";
     $dir{input} = "/win/databases/downloads/ftp.expasy.org/databases/sp_tr_nrdb";
-
-    $dir{swissprot} = $dir{input};
-    $source{swissprot} = "sprot";
-
+#    $dir{swissprot} = $dir{input};
 #    $dir{swissprot} = $dir{input}."/swiss-prot/release_compressed";
-#    $source{swissprot} = "sprot40";
-    
-    $dir{trembl} = $dir{input};
+#    $dir{trembl} = $dir{input};
+
+    $source{swissprot} = "sprot";
     $source{trembl} = "trembl";
     $source{trembl_new} = "trembl_new";
+#    $source{swissprot} = "sprot40";
 #    $source{yeast} = "sptrembl/fun";
 #    $source{human} = "sptrembl/hum";
 #    $source{ecoli} = "sptrembl/pro";
@@ -71,7 +71,10 @@ package main;
 	mkdir $dir{output}, 0775 || die "Error: cannot create directory $dir\n";
     }
     die unless chdir $dir{output};
-    
+    if ($clean) {
+	system "\\rm -f $dir{output}/*";
+    }
+
     #### output file names depend on the organisms to parse and source 
     #### -> defined after reading arguments
 #  $suffix = "";
@@ -110,25 +113,46 @@ package main;
 	$regexp = $` if ($regexp =~ /\)/);
 	$regexp = $` if ($regexp =~ /\'/);
 	$selected_organism{uc($full_name{$organism})} = $regexp;
-	push @regexps, qr /$regexp/; ### list of precompiled regular expressions
+	push @regexps, qr /$regexp/; ### list of regular expressions
     }
     
+
+    #### read a list of selected ACCESSION NUMBERS
+    if ($in_file{acs}) {
+	warn "; Reading Accession Number list from file $in_file{acs}\n" 
+	    if ($warn_level >=1);
+	unless (-e $in_file{acs}) {
+	    die "Accession number file $in_file{acs} does not exist.\n";
+	}
+	unless (-r $in_file{acs}) {
+	    die "Cannot read aSccession number file $in_file{acs}\n";
+	}
+	open ACS, $in_file{acs} || die 
+	    "Error: cannot open file $in_file{acs}\n";
+	while (<ACS>) {
+	    chomp;
+	    my @fields = split /\s+/;
+	    my $ac = $fields[0];
+	    $selected_acs{$ac}++;
+	}
+	close ACS;
+	warn "; Selected ACs\n;\t",  join ("\n;\t", keys %selected_acs), "\n" if ($warn_level >= 0);
+    }
 
     ### by default, parse swissprot only
     unless (defined(%data_sources)) {
 	$data_sources{swissprot} = 1;
     }
-    if ($data_sources{swissprot}) {
-	$in_file{$source{swissprot}} = "gunzip -c ".$dir{swissprot}."/".$source{swissprot}.".dat.gz | ";
-	$files_to_parse{$source{swissprot}} = 1;
-    }
-    if ($data_sources{trembl}) {
-	$in_file{$source{trembl}} = "gunzip -c ".$dir{trembl}."/".$source{trembl}.".dat.gz | ";
-	$files_to_parse{$source{trembl}} = 1;
-#	foreach $organism (@selected_organisms) {
-#	    $in_file{${source{$organism}}} = "uncompress -c ".$dir{trembl}."/".$source{$organism}.".dat.Z | ";
-#	    $files_to_parse{$source{$organism}} = 1;
-#        }
+#    if ($data_sources{swissprot}) {
+#	$in_file{$source{swissprot}} = "gunzip -c ".$dir{swissprot}."/".$source{swissprot}.".dat.gz | ";
+#	$files_to_parse{$source{swissprot}} = 1;
+#    }
+    foreach $db (keys %data_sources) {
+	if ($data_sources{$db}) {
+	    $in_file{$source{$db}} = "gunzip -c ".$dir{input}."/".$source{$db}.".dat.gz | ";
+	    $files_to_parse{$source{$db}} = 1;
+	}
+	warn $db, "\t", $source{$db}, "\t", $in_file{$source{$db}}, "\n";
     }
 
     ### create class holders
@@ -155,6 +179,7 @@ package main;
 	warn ";TEST\n" if ($warn_level >= 1);
 	### fast partial parsing for debugging
 	foreach $key (keys %in_file) {
+	    next if ($key eq 'acs');
 	    $in_file{$key} .= " head -20000 |";
 	}
     }
@@ -264,16 +289,24 @@ OPTIONS
 			yeast
 		by default, these three organisms are selected
 	-allorg export all organisms
-	-data	databases to be parsed (coma-separated)
+	-data	database to be parsed.
 		   Valid data sources:
-			swissprot
+			swissprot (default)
 			trembl
 			trembl_new
-
-		by default, both sources are selected
+		This argument can be used iteratively to parse several
+		databases. E.g.
+			   -data swissprot -data trembl
 	-obj	export data in object format (.obj file)
 		which are human-readable (with some patience 
 		and a good cup of coffee)
+	-acs	accession file
+		The parsing will be restricted to the swissprot
+		accession numbers (AC field) specified in the
+		file. Each accession number must come as the first
+		word of a new line (all subsequent words are ignored).
+	-clean	remove all files from the output directory before
+		parsing
 EXAMPLE
 	parse_polypeptides.pl -w 2 -org ecoli -data swissprot -enz
 EndHelp
@@ -282,55 +315,63 @@ EndHelp
 
 ### read arguments from the command line
 sub ReadArguments {
-  for my $a (0..$#ARGV) {
-    
-    ### warn level
-    if (($ARGV[$a] eq "-w" ) && 
-	($ARGV[$a+1] =~ /^\d+$/)){
-      $main::warn_level = $ARGV[$a+1];
-      
-      ### test run
-    } elsif ($ARGV[$a] eq "-test") {
-      $main::test = 1;
-      
-      ### output file
-    } elsif ($ARGV[$a] eq "-obj") {
-      $a++;
-      $main::export{obj} = 1;
-      
-      ### help
-    } elsif (($ARGV[$a] eq "-h") ||
-	     ($ARGV[$a] eq "-help")) {
-      &PrintHelp;
-      exit(0);
+    for my $a (0..$#ARGV) {
+	
+	### warn level
+	if (($ARGV[$a] eq "-w" ) && 
+	    ($ARGV[$a+1] =~ /^\d+$/)){
+	    $main::warn_level = $ARGV[$a+1];
+	    
+	    ### test run
+	} elsif ($ARGV[$a] eq "-test") {
+	    $main::test = 1;
+	    
+	    ### clean
+	} elsif ($ARGV[$a] eq "-clean") {
+	    $main::clean = 1;
+	    
+	    ### output file
+	} elsif ($ARGV[$a] eq "-obj") {
+	    $a++;
+	    $main::export{obj} = 1;
+	    
+	    ### help
+	} elsif (($ARGV[$a] eq "-h") ||
+		 ($ARGV[$a] eq "-help")) {
+	    &PrintHelp;
+	    exit(0);
 
-      ### input directory
-    } elsif ($ARGV[$a] =~ /^-indir/) {
-      $dir{input} = $ARGV[$a+1];
+	    ### input directory
+	} elsif ($ARGV[$a] =~ /^-indir/) {
+	    $dir{input} = $ARGV[$a+1];
 
-      ### output directory
-    } elsif ($ARGV[$a] =~ /^-outdir/) {
-      $dir{output} = $ARGV[$a+1];
+	    ### input file with a list of Swissprot AC
+	} elsif ($ARGV[$a] =~ /^-acs/) {
+	    $in_file{acs} = $ARGV[$a+1];
 
-      ### select organisms for exportation
-    } elsif ($ARGV[$a] =~ /^-org/) {
-      push @selected_organisms, lc($ARGV[$a+1]);
-      #### export all organisms
-    } elsif ($ARGV[$a] =~ /^-allorg/) {
-	$main::export{allorg} = 1;
+	    ### output directory
+	} elsif ($ARGV[$a] =~ /^-outdir/) {
+	    $dir{output} = $ARGV[$a+1];
 
-      ### select enzymes for exportation
-    } elsif ($ARGV[$a] =~ /^-data/) {
-      $data_sources{lc($ARGV[$a+1])} = 1;
+	    ### select organisms for exportation
+	} elsif ($ARGV[$a] =~ /^-org/) {
+	    push @selected_organisms, lc($ARGV[$a+1]);
+	    #### export all organisms
+	} elsif ($ARGV[$a] =~ /^-allorg/) {
+	    $main::export{allorg} = 1;
+	    
+	    ### select enzymes for exportation
+	} elsif ($ARGV[$a] =~ /^-data/) {
+	    $data_sources{lc($ARGV[$a+1])} = 1;
+	    
+
+	    ### select enzymes for exportation
+	} elsif ($ARGV[$a] =~ /^-enz/) {
+	    $main::export{enzymes} = 1;
+	}
 
 
-      ### select enzymes for exportation
-    } elsif ($ARGV[$a] =~ /^-enz/) {
-      $main::export{enzymes} = 1;
     }
-
-
-  }
 
 }
 
@@ -389,11 +430,15 @@ sub ParseSwissprot {
 		    last;
 		}
 	    }
-	    next unless $export;
 	}
 	
-	# get the polypeptide attributes
+	# get the polypeptide accession number
 	my $swissprot_ac = $object_entry->AC;
+
+	#### check whether the accession number was specified for export 
+	$export = 1 if ($selected_acs{$swissprot_ac});
+	
+	next unless $export;
 	my @swissprot_ids = $object_entry->IDs->elements;
 	my @swissprot_acs = $object_entry->ACs->elements;
 	my $descr = $object_entry->DEs->text;
