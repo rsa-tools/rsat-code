@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.54 2004/01/29 13:47:48 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.55 2004/01/29 14:57:05 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -32,7 +32,7 @@ $dir{main} = `pwd`;
 $dir{calib1} = "calibrations_1gene"; 
 chomp($dir{main});
 
-@supported_tasks = qw (upstream purge calibrate oligos maps dyads merge slide synthesis sql clean all report);
+@supported_tasks = qw (upstream purge calibrate oligos merge_oligos oligo_maps dyad_maps maps dyads merge_patterns slide synthesis sql clean all report);
 foreach my $task (@supported_tasks) {
     $supported_task{$task} = 1;
 }
@@ -316,6 +316,81 @@ sub PurgeSequences {
 
 
 ################################################################
+### Calculate options and file names according to the selected
+### parameters
+sub CalcOligoOptions {
+    my ($oligo_len) = @_;
+    $oligo_options = "-v ";
+    $oligo_options .= " -pseudo ".$pseudo if ($pseudo);
+    $oligo_options .= " -sort ";
+    $oligo_options .= " ".$strands;
+    $oligo_options .= " -l ".$oligo_len;
+    $oligo_options .= " -thosig ".$th;
+    
+    if ($markov) {
+	### Markov chain model
+	$oligo_options .= " -markov ".$markov_order;
+	
+    } elsif ($exp_freq_file{oligos}) {
+	### Manually specified calibrated frequencies
+	$oligo_options .= " -expfreq ".$exp_freq_file{oligos};
+	
+    } elsif ($background eq "calib1") {
+	### Single-sequence based calibrated occurrences (mean and var per sequence)
+	my $calib_length = $family{$family_name}->{calib_length};
+	my $calib_file = &CalibrationPrefix($calib_length, $oligo_len);
+	$calib_file .= "_negbin.tab";
+	### Check whether the calibration file exists
+	unless ((-e $calib_file) || (-e $calib_file.".gz")) {
+	    &FatalError ("Calibration file not found\t".$calib.file);
+	}
+	$oligo_options .= " -calib1 ".$calib_file;
+	warn join ("\t", "; Oligonucleotide calibration", $calib_length, $calib_file), "\n" if ($main::verbose >= 3);
+	
+    } elsif ($background eq "calibN") {
+	### Set-based calibrated occurrences (mean and var per set of N sequences)
+	my $calib_length = $family{$family_name}->{calib_length};
+	my $N = scalar(@{$family{$family_name}->{members}});
+	my $calib_file = &CalibrationPrefix($calib_length, $oligo_len, $N);
+	$calib_file .= "_negbin.tab";
+	
+	### Check whether the calibration file exists
+	unless ((-e $calib_file) || (-e $calib_file.".gz")) {
+	    ### temporary: if there is no R10000 file, try R1000
+	    $calib_file =~ s/10000/1000/g;
+	    if ((-e $calib_file) || (-e $calib_file.".gz")) {
+		&Warning("Using calibration with 1000 repetitions\t".$calib_file);
+	    } else {
+		&FatalError ("Calibration file not found\t".$calib_file);
+	    }
+	}
+	
+	$oligo_options .= " -calibN ".$calib_file;
+	warn join ("\t", "; Oligonucleotide calibration", $calib_length, $calib_file), "\n" if ($main::verbose >= 3);
+	
+    } else {
+	### Pre-calculated expected frequenccy files
+	$oligo_options .= " -org ".$organism_name;
+	$oligo_options .= " -bg ".$background;
+	
+    }
+    $oligo_options .= " -return occ,proba,mseq,rank";
+    $oligo_options .= " ".$noov;
+    
+    $oligo_suffix = "_oligos";
+    $oligo_suffix .= "_${oligo_len}nt";
+    $oligo_suffix .= $strands;
+    $oligo_suffix .= "_sig${th}";
+    $oligo_suffix .= $noov;
+    
+    $oligo_file = "$family_name/oligos_${family_name}/".$family{$family_name}->{file_prefix}.$oligo_suffix;    
+    $command = "oligo-analysis -i $family{$family_name}->{input_seq_file} -format $seq_format -o $oligo_file $oligo_options";
+
+    return ($command, $oligo_file, $oligo_suffix, $oligo_options);
+}
+
+
+################################################################
 ### oligo-analysis
 sub OligoAnalysis {
     warn join ("\t", 
@@ -328,76 +403,36 @@ sub OligoAnalysis {
     die "Error : cannot read file $family{$family_name}->{input_seq_file}\n" unless (-r $family{$family_name}->{input_seq_file});
     
     ## initialize the oligo file
-    system "echo '' > $family{$family_name}->{oligo_file}"; # if ($verbose >=1);
+#    system "echo '' > $family{$family_name}->{oligo_file}"; # if ($verbose >=1);
     
+    ## Analyze all oligo lengths
     for $oligo_len ($min_oligo_len..$max_oligo_len) {
-	$oligo_options = "-v ";
-	$oligo_options .= " -pseudo ".$pseudo if ($pseudo);
-	$oligo_options .= " -sort ";
-	$oligo_options .= " ".$strands;
-	$oligo_options .= " -l ".$oligo_len;
-	$oligo_options .= " -thosig ".$th;
-
-	if ($markov) {
-	    ### Markov chain model
-	    $oligo_options .= " -markov ".$markov_order;
-
-	} elsif ($exp_freq_file{oligos}) {
-	    ### Manually specified calibrated frequencies
-	    $oligo_options .= " -expfreq ".$exp_freq_file{oligos};
-
-	} elsif ($background eq "calib1") {
-	    ### Single-sequence based calibrated occurrences (mean and var per sequence)
-	    my $calib_length = $family{$family_name}->{calib_length};
-	    my $calib_file = &CalibrationPrefix($calib_length, $oligo_len);
-	    $calib_file .= "_negbin.tab";
-	    ### Check whether the calibration file exists
-	    unless ((-e $calib_file) || (-e $calib_file.".gz")) {
-		&FatalError ("Calibration file not found\t".$calib.file);
-	    }
-	    $oligo_options .= " -calib1 ".$calib_file;
-	    warn join ("\t", "; Oligonucleotide calibration", $calib_length, $calib_file), "\n" if ($main::verbose >= 3);
-
-	} elsif ($background eq "calibN") {
-	    ### Set-based calibrated occurrences (mean and var per set of N sequences)
-	    my $calib_length = $family{$family_name}->{calib_length};
-	    my $N = scalar(@{$family{$family_name}->{members}});
-	    my $calib_file = &CalibrationPrefix($calib_length, $oligo_len, $N);
-	    $calib_file .= "_negbin.tab";
-
-	    ### Check whether the calibration file exists
-	    unless ((-e $calib_file) || (-e $calib_file.".gz")) {
-		### temporary: if there is no R10000 file, try R1000
-		$calib_file =~ s/10000/1000/g;
-		if ((-e $calib_file) || (-e $calib_file.".gz")) {
-		    &Warning("Using calibration with 1000 repetitions\t".$calib_file);
-		} else {
-		    &FatalError ("Calibration file not found\t".$calib_file);
-		}
-	    }
-	    
-	    $oligo_options .= " -calibN ".$calib_file;
-	    warn join ("\t", "; Oligonucleotide calibration", $calib_length, $calib_file), "\n" if ($main::verbose >= 3);
-
-	} else {
-	    ### Pre-calculated expected frequenccy files
-	    $oligo_options .= " -org ".$organism_name;
-	    $oligo_options .= " -bg ".$background;
-
-	}
-	$oligo_options .= " -return occ,proba,mseq,rank";
-	$oligo_options .= " ".${noov};
-	
-	$oligo_suffix = "_oligos";
-	$oligo_suffix .= "_${oligo_len}nt";
-	$oligo_suffix .= $strands;
-	$oligo_suffix .= "_sig${th}";
-	$oligo_suffix .= $noov;
-	
-	$oligo_file = "$family_name/oligos_${family_name}/".$family{$family_name}->{file_prefix}.$oligo_suffix;    
-	$command = "oligo-analysis -i $family{$family_name}->{input_seq_file} -format $seq_format -o $oligo_file $oligo_options";
-	
+	&CalcOligoOptions($oligo_len);
 	&doit($command,$dry_run, $die_on_error);
+#	system "cat $oligo_file >> $family{$family_name}->{oligo_file}";
+    }
+
+    ## Merge the results obtained with diffferent oligo lengths
+    &MergeOligoLengths();
+}
+
+################################################################
+### Merge the results of oligo-analysis for different oligo lengths
+sub MergeOligoLengths {
+    warn join ("\t", 
+	       ";\tMerging oligonucleotides for family ".$family_name,
+	       "min len: ".$min_oligo_len,
+	       "max len:".$max_oligo_len,
+	       $family{$family_name}->{oligo_file}), "\n" if ($verbose >= 1);
+    my $dir = "${family_name}/oligos_${family_name}";
+
+    &CheckOutDir($dir);
+    die "Error : cannot read file $family{$family_name}->{input_seq_file}\n" unless (-r $family{$family_name}->{input_seq_file});
+    
+    ## initialize the oligo file
+    system "echo '' > $family{$family_name}->{oligo_file}"; # if ($verbose >=1);    
+    for $oligo_len ($min_oligo_len..$max_oligo_len) {
+	($command, $oligo_file) = &CalcOligoOptions($oligo_len);
 	system "cat $oligo_file >> $family{$family_name}->{oligo_file}";
     }
     
@@ -1010,8 +1045,15 @@ sub CheckParameters {
 	}
 	unless ($draw_maps) {
 	    $task{maps} = 0;
+	    $task{oligo_maps} = 0;
+	    $task{dyad_maps} = 0;
 	}
     }
+    if ($task{maps}) {
+	$task{oligo_maps} = 1;
+	$task{dyad_maps} = 1;
+    }
+    
     
     ### family file ###
     unless (($family_file) || ($sequence_file_list)) {
@@ -1092,10 +1134,14 @@ sub AnalyzeFamilies {
 	&PurgeSequences() if ($task{purge});
 	
 	### oligo-analysis
-	&OligoAnalysis() if ($task{oligos});
-	
+	if ($task{oligos}) {
+	    &OligoAnalysis();
+	} elsif ($task{merge_oligos}) {
+	    &MergeOligoLengths();
+	}
+
 	### oligo feature-maps
-	if ($task{maps}) {
+	if ($task{oligo_maps}) {
 	    &MatchPatterns();
 	    &DrawFeatureMap();
 	}
@@ -1104,16 +1150,16 @@ sub AnalyzeFamilies {
 	&DyadAnalysis() if ($task{dyads});
 
 	### dyad feature-maps
-	&DrawDyadFeatureMap() if ($task{maps});
+	&DrawDyadFeatureMap() if ($task{dyad_maps});
 	
-	### merge oligo-analysis and dyad-analysis results
-	&MergePatterns() if ($task{merge});
+#	### merge oligo-analysis and dyad-analysis results
+#	&MergePatterns() if ($task{merge_patterns});
 
-	### dyad feature-maps
-	&DrawFeatureMap() if ($task{maps});
+#	### dyad feature-maps
+#	&DrawFeatureMap() if ($task{maps});
 
-	### Match all patterns together with a sliding window
-	&SlidingWindow() if ($task{slide});
+#	### Match all patterns together with a sliding window
+#	&SlidingWindow() if ($task{slide});
 		
 	### delete upstream sequence file
 	if ($task{clean}) {
