@@ -728,35 +728,32 @@ sub CheckOutputSeqFormat {
 }
 
 sub CheckFormat {
-### checks that a sequence is written in the expected format
+### checks that a sequence only contains letters from a to z
 ### usage 
-###    CheckFormat($sequence,$expected_format);
-### where $expected_format may be any of the following:
-###        wconsensus
-###        fasta
-###        IntelliGenetics
-###        raw
+###    CheckFormat($sequence,$current_id);
   local($l_sequence) = $_[0];
-  local($expected_format) = lc($_[1]);
+  local($current_id) = lc($_[1]);
   $expected_format = "wconsensus" if ($expected_format eq "wc");
   $expected_format = "raw" if ($expected_format eq "multi");
   $expected_format = "raw" if ($expected_format eq "filelist");
   local($apparent_format) = "";
   
-  
-  if ($l_sequence =~ /\\/) {
-    $apparent_format = "wconsensus";
-  } elsif ($l_sequence =~ />/) {
-    $apparent_format = "fasta";
-  } elsif ($sequence =~ /[12]/)  {
-    $apparent_format = "IntelliGenetics";
-  } else {
-    $apparent_format = "raw";
-  }
-  unless ($apparent_format eq $expected_format) {
-    print ";\tERROR: input sequence is not in the expected format $expected_format.\n";
-    print ";\tIt seems to be in $apparent_format format\n";
-    exit;
+  if ($l_sequence =~ /([^a-z])/i) {
+      $apparent_format = "unknown";
+      $problem = $1;
+      $position = length($`);
+      
+      if ($l_sequence =~ /\\/) {
+	  $apparent_format = "wconsensus";
+      } elsif ($l_sequence =~ />/) {
+	  $apparent_format = "fasta";
+      } elsif ($sequence =~ /[12]$/)  {
+	  $apparent_format = "IntelliGenetics";
+      }
+      &FatalError("Input sequence $current_id is not in the expected format", 
+		  "Invalid character '$problem' at position $position",
+		  "It seems to be in $apparent_format format.");
+      exit;
   }
   return;
 }
@@ -867,6 +864,7 @@ sub ReadNextSequence {
 	    } elsif (/(.*)[12]/) {	### end of the current sequence
 		$sequence .= $1;
 		$sequence = &FoldSequence($sequence, 0);
+		&CheckFormat($sequence, "raw");
 		return ($sequence, $seq_id, @comments);
 	    } else {
 		$sequence .= $_;
@@ -911,6 +909,7 @@ sub ReadNextSequence {
 	### FastA format ###
     } elsif ($sequence_format eq "fasta") {
 	while (<$SEQ>) {
+#	    die $_;
 	    next if ((/^;/) || (/^\#/) || (/^--/));
 	    if (/^\s*>\s*(\S+)\s*(.*)/) { ### new identifier
 		@comment = ($2);
@@ -921,6 +920,7 @@ sub ReadNextSequence {
 		    $sequence = &FoldSequence($sequence, 0);
 		    $done_seq_id = $current_seq_id;
 		    $current_seq_id = $1;
+		    &CheckFormat($sequence, "raw");
 		    return ($sequence, $done_seq_id, @comments);
 		}
 		
