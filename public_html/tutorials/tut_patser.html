@@ -179,8 +179,30 @@ the selection of the threshold.
 
 <P>
 Collect all known binding sites for Pho4p from <a
-href="http://cgsigma.cshl.org/jian" TARGET=_blank>SCPD</a> and apply
-the strategy described above to define an appropriate threshold :
+href="http://cgsigma.cshl.org/jian" TARGET=_blank>SCPD</a>. These are
+available via the link <a
+href=http://cgsigma.cshl.org/cgi-bin/jz/getfactorlist>Regulatory
+elements and transcriptional factors</a>.
+
+
+<p><b>Warning</b>: For some reason, the site sequences in SCPD do not
+comply to the fasta format. 
+<ul>
+
+<li>Normally, the row starting with a "<b>&gt;</b>" character contains
+the ID and optional comments, and the sequence only starts at the next
+row.
+
+<li>In SCPD, the sequence is on the same row as the ID. If you copy it
+as it is, the programs will consider the sequence as a comment.
+
+<li>To avoid this problem,m you need to insert a carriage return
+before each sequence before performing the next steps.
+
+</ul>
+
+<p>Apply the strategy described above to define an appropriate
+threshold :
 
 <ol>
 
