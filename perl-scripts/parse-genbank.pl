@@ -1,9 +1,9 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: parse-genbank.pl,v 1.5 2003/04/28 11:32:21 jvanheld Exp $
+# $Id: parse-genbank.pl,v 1.6 2003/06/05 22:08:18 jvanheld Exp $
 #
-# Time-stamp: <2003-04-28 13:24:52 jvanheld>
+# Time-stamp: <2003-06-05 01:14:53 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -13,70 +13,17 @@ if ($0 =~ /([^(\/)]+)$/) {
 require "RSA.lib";
 push @INC, $ENV{PARSER};
 require "PFBP_classes.pl";
+require "Genbank_classes.pl";
 require "PFBP_parsing_util.pl";
 
 
-package Genbank::Organism; ### for parsing genbank files
-{
-  @ISA = qw ( PFBP::DatabaseObject );
-  ### class attributes
-  $_count = 0;
-  $_prefix = "ctg_";
-  @_objects = ();
-  %_name_index = ();
-  %_id_index = ();
-  %_attribute_count = ();
-  %_attribute_cardinality = (id=>"SCALAR",
-			     names=>"ARRAY",
-			     taxonomy=>"SCALAR"
-			     );
-}
+################################################################
+#### initialization
+$dbms = "mysql";
 
 
-package Genbank::Contig; ### for parsing genbank files
-{
-  @ISA = qw ( PFBP::DatabaseObject );
-  ### class attributes
-  $_count = 0;
-  $_prefix = "ctg_";
-  @_objects = ();
-  %_name_index = ();
-  %_id_index = ();
-  %_attribute_count = ();
-  %_attribute_cardinality = (id=>"SCALAR",
-			     names=>"ARRAY",
-			     organism=>"SCALAR",
-			     type=>"SCALAR",
-			     xrefs=>"EXPANDED"
-			     );
-}
-
-package Genbank::Feature;
-{
-  @ISA = qw ( PFBP::DatabaseObject );
-  ### class attributes
-  $_count = 0;
-  $_prefix = "ft_";
-  @_objects = ();
-  %_name_index = ();
-  %_id_index = ();
-  %_attribute_count = ();
-  %_attribute_cardinality = (id=>"SCALAR",
-			     names=>"ARRAY",
-			     organism=>"SCALAR",
-			     type=>"SCALAR",
-			     description=>"SCALAR",
-			     position=>"SCALAR",
-			     chromosome=>"SCALAR",
-			     strand=>"SCALAR",
-			     start=>"SCALAR",
-			     end=>"SCALAR",
-			     source=>"SCALAR",
-			     xrefs=>"EXPANDED"
-			     );
-}
-
-
+################################################################
+#### main package
 package main;
 {
     #### initialise parameters ####
@@ -88,12 +35,40 @@ package main;
     local $verbose = 0;
     local $in = STDIN;
     local $out = STDOUT;
+
+    local $single_name = 1;
     
-    my $features = PFBP::ClassFactory->new_class(object_type=>"Genbank::Feature",
+    $features = PFBP::ClassFactory->new_class(object_type=>"Genbank::Feature",
 						 prefix=>"ft_");
-    my $contigs = PFBP::ClassFactory->new_class(object_type=>"Genbank::Contig",
+
+    $genes = PFBP::ClassFactory->new_class(object_type=>"Genbank::Gene",
+					   prefix=>"gn_");
+
+    $mRNAs = PFBP::ClassFactory->new_class(object_type=>"Genbank::mRNA",
+					   prefix=>"mRNA_");
+
+    $CDSs = PFBP::ClassFactory->new_class(object_type=>"Genbank::CDS",
+					   prefix=>"CDS_");
+
+    $contigs = PFBP::ClassFactory->new_class(object_type=>"Genbank::Contig",
 					     prefix=>"ctg_");
-    $features->set_out_fields(qw( id type name contig start_pos end_pos strand description chrom_position names db_xref introns exons EC_number));
+    $features->set_out_fields(qw(id 
+				 type
+				 name
+				 contig
+				 start_pos
+				 end_pos
+				 strand
+				 description
+				 chrom_position
+
+				 names
+				 db_xref
+				 introns
+				 exons
+				 EC_number
+				 ));
+    
     $organisms = PFBP::ClassFactory->new_class(object_type=>"Genbank::Organism",
 					  prefix=>"org_");
     @classes = qw( Genbank::Feature Genbank::Contig Genbank::Organism );
@@ -160,10 +135,14 @@ package main;
 	    $file{input} .= " head -10000 | ";
 	}
 	&ParseGenbankFile($file{input}, 
-			  $features, 
+			  $features,
+			  $genes,
+			  $mRNAs,
+			  $CDSs,
 			  $contigs, 
 			  $organisms, 
-			  source=>$contig, 
+			  source=>"Genbank", 
+#			  source=>$contig, 
 			  seq_dir=>$dir{output});
     }
 
@@ -180,28 +159,66 @@ package main;
     #### parse feature positions
 #    die "HELLO\t$ENV{PARSER}\t$0\t@INC\n";   
 
+    #### parse chromosomal poitions
     &ParsePositions($features);
-
+#    &ParsePositions($genes);
+#    &ParsePositions($mRNAs);
+#    &ParsePositions($CDSs);
 
     #### check feature names, description, cross-references
-    &CheckGenbankFeatures($features);
+#    &CheckGenbankFeatures($features);
+    &CheckGenbankFeatures($features, $genes, $mRNAs, $CDSs);
 #    &GuessSynonyms($features);
 
 
-    #### print result
+    ################################################################
+    ### export result in various formats
     chdir $dir{output};
-    #&PrintStats($out_file{stats}, @classes);
-    $features->dump_tables("_$org");
-    $contigs->dump_tables("_$org");
-    $organisms->dump_tables("_$org");
+    &PrintStats($out_file{stats}, @classes);
 
-#    $features->generate_sql();
-#    $contigs->generate_sql();
-    #&ExportClasses($out_file{features}, $out_format, Genbank::Feature) if $export{obj};
+    @class_factories = qw (organisms contigs features genes mRNAs CDSs);
+
+    foreach my $factory_name (@class_factories) {
+	my $class_factory = $$factory_name;
+	warn "; Dumping class $factory_name $class_factory\n" if ($verbose >= 1);
+	if ($factory_name eq "features") {
+	    $suffix = "_$org";
+	} else {
+	    $suffix = "";
+	}
+	$class_factory->dump_tables($suffix);
+	$class_factory->generate_sql(schema=>$schema,
+				     dir=>"$dir{output}/sql_scripts",
+				     prefix=>"$class_factory_",
+				     dbms=>$dbms
+				     );
+    }
+    &ExportClasses($out_file{features}, $out_format, @classes) if $export{obj};
+
+
+
+#      #### print result
+#      chdir $dir{output};
+#      #&PrintStats($out_file{stats}, @classes);
+#      $features->dump_tables("_$org");
+#      $genes->dump_tables("_$org");
+#      $mRNAs->dump_tables("_$org");
+#      $CDSs->dump_tables("_$org");
+#      $contigs->dump_tables("_$org");
+#      $organisms->dump_tables("_$org");
+
+#      $features->generate_sql();
+#      $genes->generate_sql("_$org");
+#      $mRNAs->generate_sql("_$org");
+#      $CDSs->generate_sql("_$org");
+#      $contigs->generate_sql("_$org");
+#      $organisms->generate_sql("_$org");
+
+#      #&ExportClasses($out_file{features}, $out_format, Genbank::Feature) if $export{obj};
     
     ###### verbose ######
     if ($verbose) {
-	my $done_time = &AlphaDate;
+	my $done_time = &AlphaDate();
 	print $out "; Job started $start_time\n";
 	print $out "; Job done    $done_time\n";
     }
@@ -214,10 +231,14 @@ package main;
     exit(0);
 }
 
-########################## subroutine definition ############################
 
-sub PrintHelp {
+################################################################
+#################### subroutine definition #####################
+################################################################
+
+################################################################
 #### display full help message #####
+sub PrintHelp {
   open HELP, "| more";
   print HELP <<End_of_help;
 NAME
@@ -233,7 +254,7 @@ DESCRIPTION
 	information.
 	
 	Genbank genomes can be retrieved by anonymous ftp :
-		ftp://ftp.ncbi.nlm.nih.gov/genbank/genomes
+		ftp://ftp.ncbi.nlm.nih.gov/genomes
 
 CATEGORY
 	parser
@@ -253,8 +274,10 @@ End_of_help
   exit;
 }
 
-sub PrintOptions {
+
+################################################################
 #### display short help message #####
+sub PrintOptions {
   open HELP, "| more";
   print HELP <<End_short_help;
 parse-genbank options
@@ -270,8 +293,9 @@ End_short_help
 }
 
 
+################################################################
+#### read arguments 
 sub ReadArguments {
-#### read arguments ####
     foreach my $a (0..$#ARGV) {
 	### verbose ###
 	if ($ARGV[$a] eq "-v") {
@@ -297,7 +321,7 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-o") {
 	    $dir{output} = $ARGV[$a+1];
 
-	    ### output file ###
+	    ### quick test
 	} elsif ($ARGV[$a] eq "-test") {
 	    $test = 1;
 	    
@@ -305,6 +329,9 @@ sub ReadArguments {
     }
 }
 
+
+################################################################
+#### report parameters
 sub Verbose {
     print $out "; parse-genbank ";
     &PrintArguments($out);
