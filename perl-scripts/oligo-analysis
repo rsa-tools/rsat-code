@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.26 2001/05/18 08:32:53 jvanheld Exp $
+# $Id: oligo-analysis,v 1.27 2001/06/16 12:52:32 jvanheld Exp $
 #
-# Time-stamp: <2001-05-18 10:32:49 jvanheld>
+# Time-stamp: <2001-06-16 14:35:26 jvanheld>
 #
 ############################################################
 
@@ -109,11 +109,7 @@ if ($ncf) {
 ### read expected frequencies
 if (($method eq "Frequency file") && 
     ($return{'exp_freq'})) {    #### expected frequencies ####
-    
     $exp = &OpenInputFile($exp_freq_file);
-#    open EXPECTED, $exp_freq_file ||
-#	die "	cannot open frequency file \"$exp_freq_file\"\n";
-    
     while (<$exp>) {
 	next if (/^;/);
 	if (/(\S+)\t(\S+)/i) {
@@ -918,7 +914,7 @@ sub CalcProba {
 	    if ($patterns{$pattern_seq}->{occ_pro} > 0) {
 		$patterns{$pattern_seq}->{occ_sig} = -log($nb_possible_oligo*$patterns{$pattern_seq}->{occ_pro})/log(10);
 	    } else {
-		$patterns{$pattern_seq}->{occ_sig} = 20;
+		$patterns{$pattern_seq}->{occ_sig} = 999; ### arbitrary number to indicate we are over the precision limit
 	    }
 	}
 	
@@ -2087,6 +2083,7 @@ oligo-analysis options
 -help           display this list of options
 -i              input file
 -format         input format. Accepted: fasta (default), wconsensus, IG, raw, filelist
+-seqtype       	sequence type (dna|prot|other)
 -o              output file
 -v              verbose
 -vv		hyperverbose (monitor processes during execution).
@@ -2105,7 +2102,6 @@ oligo-analysis options
 			occ,proba,freq,mseq,ratio,zscore,like,pos
 -table		return a table sequences (rows)/oligo occurrences (cols)
 -noov		no overlapping
--seqtype       	sequence type (dna|prot|other)
 -1str		inactivate summation of occ on both strands
 -2str		sum occurences on both strands (default)
 -prot		input sequences are proteic (oligopeptide analysis)
