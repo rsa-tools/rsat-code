@@ -27,12 +27,12 @@ package main;
     #### class factory for entities
     $entities = PFBP::ClassFactory->new_class(object_type=>"PFBP::BiochemicalEntity",
 					      prefix=>"ent_");
-    $entities->set_out_fields(qw( id type primary_name names ));
+    $entities->set_out_fields(qw( id type primary_name names state location ));
 
     #### class factory for interactions
     $interactions = PFBP::ClassFactory->new_class(object_type=>"PFBP::BiochemicalActivity",
 						  prefix=>"int_");
-    $interactions->set_out_fields(qw( id type description inputs outputs ));
+    $interactions->set_out_fields(qw( id type description inputs outputs  ));
 
     #### class factory  for pathways
     $pathways = PFBP::ClassFactory->new_class(object_type=>"PFBP::Pathway",
@@ -176,7 +176,7 @@ sub ReadEntities {
 	    $type = ucfirst($type);
 	} else {
 	    $type = "undef";
-	    print ERR ";Error in $in_file{entities}, line $line_nb: entity $name has no type\n";
+	    print ERR "$in_file{entities}, line $line_nb: entity $name has no type\n";
 	    print ERR "\t$_\n";
 	}
 	$entityType{$type} = 1;
@@ -227,7 +227,7 @@ sub ReadEntities {
 	if ($object = $entities->get_object($name)) {
 	    $object->push_attribute("names", $altName);
 	} else {      
-	    print  ERR ";Error in $in_file{synonyms} line $line_nb: $name had not been previously declared in $in_file{entities}\n";
+	    print  ERR "$in_file{synonyms} line $line_nb: $name had not been previously declared in $in_file{entities}\n";
 	}
 
     }
@@ -243,7 +243,7 @@ sub CheckInteractions {
 	my $input_nb = $#inputs +1;
 	if ($input_nb < 1) {
 	    &ErrorMessage(join ("\t", 
-				";Error in $in_file{interactions}",
+				"$in_file{interactions}",
 				"interaction", 
 				$id,
 				"has no input"), "\n");
@@ -254,7 +254,7 @@ sub CheckInteractions {
 	my $output_nb = $#outputs +1;
 	if ($output_nb < 1) {
 	    &ErrorMessage(join ("\t", 
-				";Error in $in_file{interactions}",
+				"$in_file{interactions}",
 				"interaction", 
 				$id,
 				"has no output"), "\n");
@@ -292,7 +292,7 @@ sub ReadInteractions {
 	$type =~ s/ /_/g;
 	unless ($type =~ /\S/) {
 	    $type = "undef";
-	    &ErrorMessage( ";Error in $in_file{interactions} line $line_nb: interaction type is not specified\n");
+	    &ErrorMessage( "$in_file{interactions} line $line_nb: interaction type is not specified\n");
 	    &ErrorMessage( "\t$_\n");
 	}
 	#$interactionType{$type} = 1;
@@ -332,6 +332,8 @@ sub ReadInteractions {
     $col{state_before} = 3;
     $col{state_after} = 4;
     $col{stoeichiometry} = 5;
+    $col{location_before} = 5;
+    $col{location_after} = 5;
 
     open SOURCE, "$in_file{interaction_source}"   || die "Error : cannot read file $in_file{interaction_source}\n";
     $header = <SOURCE>;
@@ -342,7 +344,7 @@ sub ReadInteractions {
 
 	### identify the interaction
 	$inter = $fields[$col{inter}];
-	unless ($activ_object = $interactions->get_object($inter)) {
+	unless ($inter_object = $interactions->get_object($inter)) {
 	    #unless (defined($association{$inter})) {
 	    &ErrorMessage( "Error in $in_file{interaction_source} line $line_nb: $inter has not been defined in $InteractionFile\n");
 	    &ErrorMessage( "\t$_\n");
@@ -364,7 +366,7 @@ sub ReadInteractions {
 	$state_before = $fields[$col{state_before}];
 	$state_after = $fields[$col{state_after}];
 	
-	$activ_object->push_attribute("inputs",$ent_id);
+	$inter_object->push_attribute("inputs",$ent_id);
 	
     }
     close SOURCE;
@@ -381,7 +383,7 @@ sub ReadInteractions {
 	
 	### identify the interaction
 	$inter = $fields[$col{inter}];
-	unless ($activ_object = $interactions->get_object($inter)) {
+	unless ($inter_object = $interactions->get_object($inter)) {
 	    #unless (defined($association{$inter})) {
 	    &ErrorMessage( "Error in $in_file{interaction_source} line $line_nb: $inter has not been defined in $InteractionFile\n");
 	    &ErrorMessage( "\t$_\n");
@@ -403,7 +405,7 @@ sub ReadInteractions {
 	$state_before = $fields[$col{state_before}];
 	$state_after = $fields[$col{state_after}];
 	
-	$activ_object->push_attribute("outputs",$ent_id);
+	$inter_object->push_attribute("outputs",$ent_id);
 
     }
     close TARGET;
@@ -1053,7 +1055,7 @@ sub PathwayToDiagram {
 
 
 sub LinkEntities {
-    ### usage : @activites = &LinkEntities(@entities);
+    ### usage : @interactions = &LinkEntities(@entities);
     ### given a set of entities, return all interactions 
     ### that have at one of these as input and one as output
     ### this is a subgraph extraction with a maximum link length of 1 arc
