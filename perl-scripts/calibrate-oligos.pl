@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: calibrate-oligos.pl,v 1.4 2003/12/29 13:56:07 jvanheld Exp $
+# $Id: calibrate-oligos.pl,v 1.5 2004/01/05 13:17:55 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -180,7 +180,7 @@ if ($task{distrib}) {
     
     #### print the distribution in the output file
     print $out "; oligo count distribution\n";
-    print $out "; ", join ("\t", 0..$max_occ), "\n";
+    print $out "; ", join ("\t", "pattern", 0..$max_occ), "\n";
     foreach my $pattern (sort keys %count_sum) {
 	## calculate number of families without any occurrence of this pattern
 	$counts{$pattern}{0} = $repet - $count_sum{$pattern}; 
@@ -215,6 +215,7 @@ if ($task{clean_oligos}) {
 #### Calculate statistics on each pattern count distribution
 if ($task{stats}) {
     warn "; ", &AlphaDate(), "\toligo count statistics\t",$outfile{stats},"\n" if ($verbose >= 1);
+
     $out = &OpenOutputFile($outfile{stats});
     &Verbose();
 
@@ -222,7 +223,7 @@ if ($task{stats}) {
     print $out join ("\t", 
 		     "; pattern",
 		     "sum",
-#		       "ssq",
+#		     "ssq",
 		     "avg",
 		     "var",
 		     "std",
