@@ -195,6 +195,8 @@ all_up:
 	@echo ${ALL_UP_FILE}
 	@mkdir -p ${UPSTREAML_DIR}
 	retrieve-seq -all -org ${ORG} -from -1 -to -${SEQ_LEN} -o ${ALL_UP_FILE}
+
+all_up_purge:
 	@echo "Purging all upstream sequences"
 	@echo ${ALL_UP_FILE_PURGED}
 	purge-sequence -i ${ALL_UP_FILE} -o ${ALL_UP_FILE_PURGED_UNCOMP}
@@ -203,17 +205,27 @@ all_up:
 
 ################################################################
 #### calculate background oligo frequencies for the current set
-BG_OLIGO_FILE=${UPSTREAML_DIR}/${ORG}_allup${SEQ_LEN}_${OLIGO_LEN}nt_1str${NOOV}_freq.tab
-BG_OLIGO_FILE_PURGED=${UPSTREAML_DIR}/${ORG}_allup${SEQ_LEN}_${OLIGO_LEN}nt_1str${NOOV}_purged_freq.tab
+BG_OLIGO_FILE=${UPSTREAML_DIR}/${ORG}_allup${SEQ_LEN}_${OLIGO_LEN}nt${STR}${NOOV}_freq.tab
+BG_OLIGO_FILE_PURGED=${UPSTREAML_DIR}/${ORG}_allup${SEQ_LEN}_${OLIGO_LEN}nt${STR}${NOOV}_purged_freq.tab
 OLIGO_LEN=6
 bg_oligos:
-	${MAKE} iterate_oligo_lengths OL_TASK=bg_oligos
+	${MAKE} iterate_oligo_lengths OL_TASK=bg_oligos_one_ol_nopurge
 
-bg_oligos_one_ol:
+## Calculate oligo frequencies in all upstream sequences
+bg_oligos_one_ol: bg_oligos_one_ol_nopurge bg_oligos_one_ol_purge  bg_oligos_one_ol_purged_vs_not
 	@echo "${ORG}	${CURRENT_SET}	Calculating background oligo frequencies"
 	@echo ${BG_OLIGO_FILE}
-	oligo-analysis ${NOOV} -i ${ALL_UP_FILE} -l ${OLIGO_LEN} -v ${V} -1str -o ${BG_OLIGO_FILE} -return occ,freq
-	oligo-analysis ${NOOV} -i ${ALL_UP_FILE_PURGED} -l ${OLIGO_LEN} -v ${V} -1str -o ${BG_OLIGO_FILE_PURGED} -return occ,freq
+
+## Calculate oligo frequencies in all upstream sequences, non purged
+bg_oligos_one_ol_nopurge:
+	oligo-analysis ${NOOV} -i ${ALL_UP_FILE} -l ${OLIGO_LEN} -v ${V} ${STR} -o ${BG_OLIGO_FILE} -return occ,freq
+
+## Calculate oligo frequencies in all upstream sequences, purged
+bg_oligos_one_ol_purge:
+	oligo-analysis ${NOOV} -i ${ALL_UP_FILE_PURGED} -l ${OLIGO_LEN} -v ${V} ${STR} -o ${BG_OLIGO_FILE_PURGED} -return occ,freq
+
+## Compare oligo frequencies between purged and not purged upstream sequences
+bg_oligos_one_ol_purged_vs_not:
 	compare-scores											\
 		-i ${BG_OLIGO_FILE_PURGED}								\
 		-i $ ${BG_OLIGO_FILE}  -sc 3								\
@@ -279,7 +291,7 @@ THOSIG=0
 NOOV=-noov
 #NOOV=-ovlp
 #MULTI_TASK=purge,oligos,dyads,merge,slide,maps,synthesis,sql
-MULTI_TASK=purge,oligos,maps,synthesis,sql
+MULTI_TASK=purge,oligos,oligo_maps,synthesis,sql
 MULTI_BG=upstream
 MULTI_EXP=-bg ${MULTI_BG}
 PURGE=-purge
@@ -319,7 +331,7 @@ multi_upstream:
 
 ## For the time being, we run dyad-anaysis only with the default
 ## upstream background
-DYAD_TASK=-task dyads
+DYAD_TASK=-task dyads,dyad_maps
 multi_upstream_dyads: 
 	${MAKE} multi MULTI_OPT='${DYAD_TASK}'
 
@@ -441,8 +453,19 @@ calibrate_oligos_queue:
 	done
 
 ## A quick test for calibrate_oligos
-calibrate_oligos_test:
-	${MAKE} calibrate_oligos ORG=Mycoplasma_genitalium N=10 SEQ_LEN=200 STR=-1str NOOV=-ovlp R=10
+test: calibN_test all_up_test bg_oligos_test
+
+calib1_test:
+	${MAKE} calibrate_oligos ORG=Mycoplasma_genitalium N=1 SEQ_LEN=100 REPET=100 OLIGO_LEN=4
+
+calibN_test:
+	${MAKE} calibrate_oligos ORG=Mycoplasma_genitalium N=1 SEQ_LEN=100 REPET=100 OLIGO_LEN=4
+
+all_up_test:
+	${MAKE} all_up ORG=Mycoplasma_genitalium SEQ_LEN=100 MIN_OL=6 MAX_OL=4
+
+bg_oligos_test:
+	${MAKE} bg_oligos_one_ol_nopurge ORG=Mycoplasma_genitalium SEQ_LEN=100 OLIGO_LEN=4 V=3
 
 
 ACCESS=results
@@ -657,8 +680,85 @@ mv_background_dirs:
 mv_background_dir_one_org:
 	mv results/${ORG}/background_frequencies results/${ORG}/upstreamL_frequencies 
 
-to_do:
+
+################################################################
+## Check the difference between different calibrations
+## WARNING: there is an obvious problem with the files calib1: the
+## frequency and variance is twice lower than with other calibration
+## systems
+COMPARISON_DIR=results/${ORG}/calib_comparisons
+COMPARISON_PREFIX=${OLIGO_LEN}nt_${ORG}_L${SEQ_LEN}${STR}${NOOV}_R${REPET}_comparison
+COMPARISON_FILE = ${COMPARISON_DIR}/${COMPARISON_PREFIX}
+CALIB1_PREFIX=${OLIGO_LEN}nt_upstream_L${SEQ_LEN}_${ORG}${NOOV}${STR}
+CALIB1_FILE=${CALIB1_DIR}/${CALIB1_PREFIX}_negbin.tab
+CALIBN_PREFIX=${ORG}_${OLIGO_LEN}nt_${STR}${NOOV}_n1_l${SEQ_LEN}_r${REPET}
+CALIBN_FILE= results/${ORG}/rand_gene_selections/${OLIGO_LEN}nt${STR}${NOOV}_N1_L${SEQ_LEN}_R${REPET}/${CALIBN_PREFIX}_negbin.tab
+compare_calibrations:
+	mkdir -p ${COMPARISON_DIR}
+	compare-scores -sc1 5 -sc2 4			\
+		-i ${CALIB1_FILE}			\
+		-i ${CALIBN_FILE}			\
+		-o ${COMPARISON_FILE}_variance.tab
+
+	XYgraph -i ${COMPARISON_FILE}_variance.tab		\
+		-size 600					\
+		-xcol 2 -ycol 3					\
+		-title1 "${COMPARISON_PREFIX}"			\
+		-xleg1 "Single-gene calibration (variance)"	\
+		-xleg2 "${CALIB1_PREFIX}"			\
+		-yleg1 "Random selection, 1 gene (variance)"	\
+		-yleg2 "${CALIBN_PREFIX}"			\
+		-o ${COMPARISON_FILE}_variance.jpg
+
+	compare-scores -sc1 3 -sc2 2 -sc3 3	\
+		-i ${CALIB1_FILE}		\
+		-i ${CALIBN_FILE}		\
+		-i ${BG_OLIGO_FILE}		\
+		-o ${COMPARISON_FILE}_mean.tab
+
+	XYgraph -i ${COMPARISON_FILE}_mean.tab			\
+		-size 600					\
+		-xcol 2 -ycol 3					\
+		-title1 "${COMPARISON_PREFIX}"			\
+		-xleg1 "Single-gene calibration (mean)"		\
+		-xleg2 "${CALIB1_PREFIX}"			\
+		-yleg1 "Random selection, 1 gene (mean)"	\
+		-yleg2 "${CALIBN_PREFIX}"			\
+		-o ${COMPARISON_FILE}_mean.jpg
+
+
+some_comparisons:
+	make compare_calibrations ORG=Saccharomyces_cerevisiae SEQ_LEN=500 OLIGO_LEN=6
+	make compare_calibrations ORG=Drosophila_melanogaster SEQ_LEN=2000 OLIGO_LEN=7
+
+# oligo-analysis  -v 3 -l 7 -noov -2str -i calibrations/tmp_all_up_2000.fasta -return occ -distrib
+
+
+################################################################
+## Last minut task list
+to_clean:
 	rm -rf results/Mus_musculus/rand_gene_selections/6nt-2str-noov_N0_L_R10000
 	rm -rf results/*/multi/calib1_bg
 	rm -rf results/*/multi/calibN_bg
 	rm -rf results/*/multi/upstream_bg
+done:
+	make iterate_organisms ORG_TASK=multi_calibN MIN_OL=6 MAX_OL=6
+	make iterate_organisms ORG_TASK=multi_calibN MIN_OL=7 MAX_OL=7
+
+running_on_liv:
+	make -f makefiles/calibrate_Drosophila_melanogaster_sorted.mk calibrate OLIGO_LEN=5 >& calib_Drosophila_melanogaster_5nt_log.txt &
+
+running_on_brol:
+	make iterate_organisms ORG_TASK=multi_upstream_dyads MIN_OL=5 MAX_OL=8
+
+queued_on_merlin:
+	make -f makefiles/calibrate_Drosophila_melanogaster_sorted.mk calibrate OLIGO_LEN=5 >& calib_Drosophila_melanogaster_5nt_log.txt WHEN=queue &
+	make -sk iterate_organisms ORG_TASK=multi_calibN MIN_OL=5 MAX_OL=5 WHEN=queue
+	make -sk iterate_organisms ORG_TASK=multi_calibN MIN_OL=8 MAX_OL=8 WHEN=queue
+
+to_run:
+	make iterate_organisms ORG_TASK=multi_calib1 MIN_OL=6 MAX_OL=6
+	make iterate_organisms ORG_TASK=multi_calib1 MIN_OL=5 MAX_OL=5 WHEN=queue
+	make iterate_organisms ORG_TASK=multi_calib1 MIN_OL=7 MAX_OL=7 WHEN=queue
+	make iterate_organisms ORG_TASK=multi_calib1 MIN_OL=8 MAX_OL=8 WHEN=queue
+
