@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genes.pl,v 1.9 2000/11/21 08:29:42 jvanheld Exp $
+# $Id: parse_genes.pl,v 1.10 2000/11/26 04:54:51 jvanheld Exp $
 #
-# Time-stamp: <2000-11-20 23:43:39 jvanheld>
+# Time-stamp: <2000-11-23 21:34:22 jvanheld>
 #
 ############################################################
 
@@ -22,9 +22,6 @@ require "PFBP_parsing_util.pl";
 
 
 package main;
-
-### initialization
-$start_time = &AlphaDate;
 
 ### files to parse
 @selected_organisms= ();
@@ -80,7 +77,7 @@ if ($export{all}) {
 }
 $suffix .= "_test" if ($test);
 
-$dir{output} = $parsed_data."/kegg";
+$dir{output} = $parsed_data."/kegg/".$delivery_date;
 unless (-d $dir{output}) {
     warn "Creating output dir $dir{output}";
     mkdir $dir{output}, 0775 || die "Error: cannot create directory $dir\n";
