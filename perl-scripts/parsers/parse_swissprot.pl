@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_swissprot.pl,v 1.6 2001/01/15 12:28:08 jvanheld Exp $
+# $Id: parse_swissprot.pl,v 1.7 2001/01/15 17:37:42 jvanheld Exp $
 #
-# Time-stamp: <2001-01-15 13:19:39 jvanheld>
+# Time-stamp: <2001-01-15 18:17:31 jvanheld>
 #
 ############################################################
 
@@ -68,9 +68,7 @@ package main;
 #  foreach $organism (@selected_organisms) {
 #      $suffix .= "_$organism";
 #  }
-#  if ($export{all}) {
-#      $suffix .= "_all";
-#  } elsif ($export{enzymes}) {
+#  if ($export{enzymes}) {
 #      $suffix .= "_enz";
 #  }
 #  $suffix .= "_test" if ($test);
@@ -120,15 +118,24 @@ package main;
         }
     }
 
-    ### select all polypeptide if no specific class was selected (-enz)
-    unless (defined(%export)) {
-	$export{all} = 1;
-    }
-
     ### create class holders
     $polypeptides = PFBP::ClassFactory->new_class(object_type=>"PFBP::Polypeptide",
 						  prefix=>"spp_");
-    $polypeptides->set_out_fields( qw( id name description gene organisms swissprot_acs swissprot_ids names ));
+    $polypeptides->set_out_fields( qw( id 
+				       source
+#				       name 
+				       description
+				       gene
+				       names
+				       organisms
+				       features
+				       comments
+				       swissprot_acs
+				       swissprot_ids
+				       ECs
+				       ));
+    $polypeptides->set_attribute_header("features", join ("\t", "Feature_key", "from", "to", "description") );
+    $polypeptides->set_attribute_header("comments", join ("\t", "topic", "comment") );
 
     ### testing mode
     if ($test) {
@@ -237,6 +244,7 @@ OPTIONS
 			human
 			yeast
 		by default, all organisms are selected
+	-allorg export all organisms
 	-data	select and organism for exportation
 		   Valid data sources:
 			swissprot
@@ -276,9 +284,12 @@ sub ReadArguments {
       &PrintHelp;
       exit(0);
 
-      ### select enzymes for exportation
+      ### select organisms for exportation
     } elsif ($ARGV[$a] =~ /^-org/) {
       push @selected_organisms, lc($ARGV[$a+1]);
+      #### export all organisms
+    } elsif ($ARGV[$a] =~ /^-allorg/) {
+	$main::export{allorg} = 1;
 
       ### select enzymes for exportation
     } elsif ($ARGV[$a] =~ /^-data/) {
@@ -288,8 +299,6 @@ sub ReadArguments {
       ### select enzymes for exportation
     } elsif ($ARGV[$a] =~ /^-enz/) {
       $main::export{enzymes} = 1;
-    } elsif ($ARGV[$a] =~ /^-all/) {
-      $main::export{all} = 1;
     }
 
 
@@ -301,12 +310,14 @@ sub ReadArguments {
 sub ParseSwissprot {
     my ($input_file, $source) = @_;
     $source = $input_file unless ($source);
-    my %attrib_keys = (
-		       id=>"ID",
-		       ac=>"AC",
-		       gn=>"Gene"
-		       );
-    my $class = PFBP::Polypeptide;
+#    my %attrib_keys = (
+#		       id=>"ID",
+#		       ac=>"AC",
+#		       gn=>"Gene",
+#		       ft=>"Features",
+#		       cc=>"Comments"
+#		       );
+#    my $class = PFBP::Polypeptide;
     
     warn (";\n; ", &AlphaDate,  " parsing polypeptides from $input_file\n")
 	if ($warn_level >= 1);
@@ -340,16 +351,15 @@ sub ParseSwissprot {
 	### check whether the polypeptide organism(s)
 	### match the organism selection
 	my @organisms = $object_entry->OSs->elements;
-	foreach $organism (@organisms) {
-	    if ($selected_organism{uc($organism)}) {
-		$export = 1;
-		last;
+	unless ($export{allorg}) {
+	    foreach $organism (@organisms) {
+		if ($selected_organism{uc($organism)}) {
+		    $export = 1;
+		    last;
+		}
 	    }
+	    next unless $export;
 	}
-	next unless $export;
-	
-	### resets the export flag to 0
-	$export = 0 unless ($export{all});
 	
 	# get the polypeptide attributes
 	my $swissprot_ac = $object_entry->AC;
@@ -368,6 +378,7 @@ sub ParseSwissprot {
 	    push @names, lc($descr);
 	}
 	
+
 	### extract ECs from description
 	my @ECs = ();
 	my $tmp = $descr;
@@ -386,11 +397,9 @@ sub ParseSwissprot {
 	    }
 	}
 	if (($export{enzymes})  &&
-	    ($#ECs >= 0)){
-	    $export = 1; ### select enzyme for export
+	    ($#ECs < 0)){
+	    next;
 	}
-	
-	next unless ($export);
 	
 	### create a new polypeptide
 	warn "$source\tentry $entries\t$swissprot_ids[0]\t$names[0]\n"
@@ -404,14 +413,25 @@ sub ParseSwissprot {
 	}
 
 	my %already_assigned = ();
-	foreach my $name (@names, @geneNames, @swissprot_ids, @swissprot_acs) {
+#	foreach my $name (@names, @geneNames, @swissprot_ids, @swissprot_acs) {
+	foreach my $name (@names, @geneNames) {
 	    $polypeptide->push_attribute("names",$name) 
 		unless $already_assigned{uc($name)};
 	    $already_assigned{uc($name)}++;  #### prevent assigning twice the same name
 	}
 
+	
+	my @features = $object_entry->FTs->elements;
+	foreach my $ft (@features) {
+	    $polypeptide->push_expanded_attribute("features", @{$ft});
+	}
+	my @comments = $object_entry->CCs->elements;
+	foreach my $cc (@comments) {
+	    $polypeptide->push_expanded_attribute("comments", @{$cc});
+	}
 
 	foreach my $id (@swissprot_ids) {
+#print STDERR "id\t$id\n";
 	    $polypeptide->push_attribute("swissprot_ids",$id);
 	}
 	foreach my $ac (@swissprot_acs) {
