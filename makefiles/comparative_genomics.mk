@@ -430,19 +430,19 @@ open_index:
 	@echo "<html><body><table border=1 cellpadding=3 cellspacing=3>" > ${INDEX_FILE}
 
 	@echo "<th>Sensu lato<br>5'</th>" >> ${INDEX_FILE}
-	@echo "<th></th>" >> ${INDEX_FILE}
+#	@echo "<th></th>" >> ${INDEX_FILE}
 
 	@echo "<th>Sensu stricto<br>5'</th>" >> ${INDEX_FILE}
-	@echo "<th></th>" >> ${INDEX_FILE}
+#	@echo "<th></th>" >> ${INDEX_FILE}
 
 	@echo "<th>ORF</th>" >> ${INDEX_FILE}
-	@echo "<th></th>" >> ${INDEX_FILE}
+#	@echo "<th></th>" >> ${INDEX_FILE}
 
 	@echo "<th>Sensu stricto<br>3'</th>" >> ${INDEX_FILE}
-	@echo "<th></th>" >> ${INDEX_FILE}
+#	@echo "<th></th>" >> ${INDEX_FILE}
 
 	@echo "<th>Sensu lato<br>3'</th>" >> ${INDEX_FILE}
-	@echo "<th></th>" >> ${INDEX_FILE}
+#	@echo "<th></th>" >> ${INDEX_FILE}
 
 	@echo "<th>Description</th>" >> ${INDEX_FILE}
 
@@ -463,7 +463,8 @@ index_one_orf:
 
 	@${MAKE} index_one_orf_one_group PROXIMITY=lato UTR_FILES='${LATO}' SIDE=5 SEQ_LEN=2000 SIDE_NAME=utr5 CELL_BG='#CCCCFF'
 	@${MAKE} index_one_orf_one_group PROXIMITY=stricto UTR_FILES='${STRICTO}' SIDE=5 SEQ_LEN=2000 SIDE_NAME=utr5 CELL_BG='#AAAAFF'
-	@echo "<th BGCOLOR='#FFDDDD'><tt>${ORF}</tt></th><td></td>" >> ${INDEX_FILE}
+	@echo "<th BGCOLOR='#FFDDDD'><tt>${ORF}</tt></th>" >> ${INDEX_FILE}
+#	@echo "<td></td>" >> ${INDEX_FILE}
 	@${MAKE} index_one_orf_one_group PROXIMITY=stricto UTR_FILES='${STRICTO}' SIDE=3 SEQ_LEN=500 SIDE_NAME=utr3 CELL_BG='#AAFFAA'
 	@${MAKE} index_one_orf_one_group PROXIMITY=lato UTR_FILES='${LATO}' SIDE=3 SEQ_LEN=500 SIDE_NAME=utr3 CELL_BG='#CCFFCC'
 
@@ -481,7 +482,7 @@ index_one_orf_one_group:
 	${MAKE} link_one_file FILE_TO_LINK=${PROFILE_FILE} LINK_TEXT=profile
 	${MAKE} link_one_file FILE_TO_LINK=${ORF_OLIGO_FILE} LINK_TEXT=oligos
 	@echo "</font></td>" >> ${INDEX_FILE}
-	@echo "<td></td>" >> ${INDEX_FILE}
+#	@echo "<td></td>" >> ${INDEX_FILE}
 
 link_one_file:
 	if [ -f "${FILE_TO_LINK}" ] ; then						\
