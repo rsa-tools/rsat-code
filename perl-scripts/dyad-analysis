@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis,v 1.8 2001/03/24 16:59:40 jvanheld Exp $
+# $Id: dyad-analysis,v 1.9 2001/05/07 10:24:50 jvanheld Exp $
 #
-# Time-stamp: <2001-03-24 17:58:52 jvanheld>
+# Time-stamp: <2001-03-24 18:05:58 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -39,7 +39,7 @@ $input_format = "fasta";
 &ReadArguments;
 
 #### timeout control
-$SIG{ALRM} = sub { die "timeout" };
+$SIG{ALRM} = sub {die "timeout" };
 #$ENV{SERVER_ADMIN} = "jvanheld\@localhost.localdomain";
 eval {
     alarm($timeout);
@@ -186,6 +186,7 @@ sub PrintHeaderLine {
     $col_description{"dyad_seq"} = "dyad sequence";
     $col_description{"dyad_sequence"} = "dyad sequence";
     $col_description{"dyad_identifier"} = "dyad identifier";
+    $col_description{"dyad_identifier       "} = "dyad identifier";
     $col_description{"dyad_id"} = "dyad identifier";
     $col_description{"observed_freq"} = "observed relative frequency"; 
     $col_description{"obs_frq"} = "expected relative frequency"; 
@@ -208,7 +209,11 @@ sub PrintHeaderLine {
     ### print header line ###
     if ($sum_strands) {
 	push @out_col, "dyad_sequence";
-	push @out_col, "dyad_identifier";
+	if ($sum_strands) {
+	    push @out_col, "dyad_identifier";
+	} else {
+	    push @out_col, "dyad_identifier       ";
+	}
     } else {
 	push @out_col, "dyad_seque";
 	push @out_col, "dyad_ident";    

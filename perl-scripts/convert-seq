@@ -1,4 +1,12 @@
 #!/usr/bin/perl
+############################################################
+#
+# $Id: convert-seq,v 1.6 2001/05/07 10:24:44 jvanheld Exp $
+#
+# Time-stamp: <2001-05-07 12:24:41 jvanheld>
+#
+############################################################
+
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
@@ -74,15 +82,14 @@ while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_form
         $current_seq = uc($current_seq);
     } 
     if ($out_format eq "filelist") {
-	$one_seq_file = `basename $current_id .$in_format`;
-	chomp $one_seq_file;
-	$one_seq_file .= ".raw";
-	$one_seq_file = "${output_dir}/".$one_seq_file;
-	open RAW, "> $one_seq_file"
-	    || die "Error: cannot write file $one_seq_file\n";
+	$current_id = `basename $current_id .$in_format`;
+	chomp $current_id;
+	$one_seq_file .= "$current_id.raw";
+	open RAW, "> ${output_dir}/$one_seq_file"
+	    || die "Error: cannot write file ${output_dir}/$one_seq_file\n";
 	&PrintNextSequence(RAW, "raw", 0, $current_seq, $current_id);
 	close RAW;
-	print $out "$one_seq_file\n";
+	print $out "$one_seq_file\t$current_id\n";
     } else {
 	&PrintNextSequence($out, $out_format, $line_width, $current_seq, $current_id, @comments);
     }

@@ -214,8 +214,8 @@ sub ReadArguments {
 	    ### score column
 	} elsif ($ARGV[$a] eq "-sc") {
 	    $default_sc = $ARGV[$a+1];
-	    unless ((&IsNatural($default_sc)) && ($default_sc >= 2)) {
-		warn "Error : score column must be an integer and > 2\n";
+	    unless ((&IsNatural($default_sc)) && ($default_sc >= 1)) {
+		warn "Error : score column must be an integer >= 1\n";
 		&PrintHelp;
 	    }
 	    
