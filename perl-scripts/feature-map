@@ -1,216 +1,33 @@
 #!/usr/bin/perl
-if ($config_site eq "dbm") {
-    use lib '/a/YRT/lib', '/a/YRT/lib/arch';
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push @INC, "$`lib/";
+    }
+    require "RSA.lib";
+    push @INC, "$RSA/extlib/arch/";
+#    if ($config_site eq "uppsala") {
+#	use lib ('/home/jvanheld/rsa-tools/perl-scripts/lib',  
+#		 '/home/jvanheld/rsa-tools/perl-scripts/lib/arch');
+#    }
 }
-if ($config_site eq "ebi") {
-    use lib '/homes/jvanheld/rsa-tools/perl-scripts/lib',  
-            '/homes/jvanheld/rsa-tools/perl-scripts/lib/arch';
-}
-if ($0 =~ /([^(\/)]+)$/) {
-    push (@INC, "$`lib/");
-}
-require "RSA.lib.pl";
 use GD;
 
 $start_time = `date`;
-
-if ($ARGV[0] eq "-h") {
-  open HELP, "| more";
-  print HELP <<End_of_Help;
-NAME
-	feature-map
-	
-	1997-98 by Jacques van Helden
-
-DESCRIPTION
-        draws a graphical map of regulatory features in a series of 
-        DNA sequences.
-
-OPTIONS
-	-i inputfile    The input file contains a list of features 
-			(ORFs, regulatory sites).
-			Each feature is represented by a single line, which 
-			should provide the following information:
-			Input file columns:
-			1. map label (eg gene name)
-			2. feature type
-			3. feature identifier (ex: GATAbox, Abf1_site)
-			4. strand (D for Direct, R for Reverse),
-			5. feature start position
-			6. feature end position
-			7. (optional) description 
-			8. (optional) score
-			The standard input format assumes that these topics 
-			are provided in this order, separated by tabs. 
-			Start and end positions can be positive or negative.
-			If no input file is specified, the data are taken 
-			from the standard input (keyboard).
-			Lines beginning with ";" are ignored.
-	-o outpufile    The name under which the graph will be saved, in the 
-			form of a GIF document. 
-			If no output file is specified, the result is sent 
-			to the standard output (screen).
-	-from #		lower limit of the positions represented on the graph
-	-to #		upper limit of the positions represented on the graph
-	-title		Generic Title for the feature map.
-	-label	keylist	define the info to display for each feature. 
-			valid keys are 
-			- id,
-			- strand,
-			- descr (feature description),
-			- pos (feature start and end positions).
-			Several keys can be entered separated by commas 
-			without space.
-			ex: -label pos,id.
-			Default is id.
-	-boxlabels	writes the label within the feature box 
-			(by default, the label is written outside of this box).
- 	-symbol		associates a graphical symbol (i.e. rectangle, circle, 
-			buterfly, ...) to each feature. 
-			This is convenient to distinguish the 
-			features on black and white printings.
-			Mutually exclusive with the -dot option
-	-dot		a color dot is associated to each feature. 
-			This allows to distinguish overlapping structures on a 
-			color screen.
-			Mutually exclusive with the -symbol option.
-	-mlen	#	map length (in pixels). Default is 600.
-			Length refers to either height (for vertical maps)
-			of width (for horizontal maps).
-	-mapthick	#	map thickness. 
-			Thickness refers to either width (for vertical maps) 
-			or height (horizintal maps). 
-			This parameter allows to change the thickness
-			allocated to each map. This is useful when labels 
-			are too large. Default is 150.
-	-mspacing #	map spacing.
-			The size of the border between maps (in pixel).
-	-origin #	all coordinates are recalculated relative to #.
-			This allows to display all coordinates with respect to
-			the ORF start or transcription start site
-        -legend  Draws a legend on the graph, showing the symbol associated to 
-                 each distinct feature.
-
-        -scalebar
-                 Draws a scale bar on the left of the graph
-        -scalestep #
-                 Step between annotations of the scale bar.
-                 If not specified, a reasonable stp is calculated on basis of 
-                 the scale bar range.
-	-scorethick
-		each feature is displayed with a thickness proportional to 
-		its score. Only positive scores are represented.
-	-maxscore # (only valid when -scorethick is active)
-		maximal allowed score value. Higher score values are clipped for 
-		the drawing. 
-	-minscore # (only valid when -scorethick is active)
-		minimal allowed score value. Features with smaller score are not
-		displayed. 
-	-maxfthick #
-		max feature thickness
-	-minfthick #
-		min feature thickness
-	-htmap	HTML map
-		An HTML document is automatically generated, which includes 
-		the feature map GIF file as an HTML map. In other words,
-		this document displays a figure with sensitive areas. 
-		Each time the mouse is positioned above a feature, 
-		information about this particuliar feature is displayed 
-		at the bottom of the browser window.
-	-mono	monochrome palette (for printing on black/white printer)
-	-aacolors
-		amino acid specific colors. 
-		See the following reference for their definition:
-		Taylor (1997). Protein Engeneering 10 (7): 743-746.
-	-horiz	horizontal map (default).
-	-vertic	vertical map (default is horizontal).
-	-select id_list
-		only display the features whose ID is in id_list.
-		the id_list contains one or several IDs, separated by commas.
-		IDs may be embraced in single quotes to allow multiple words
-		within the IDs. Commas and single quotes are not allowed 
-		within an ID.
-		Example:
-			-select 'gataag','gattag'
-		only displays features identified by gataag or gattag.
-
-SUPPORTED FEATURE TYPES
-	A few special types are defined
-	- START		downstream limit of the features to draw
-	- END		upstream limit of the features to draw
-	- ORIGIN	map-specific origin (all coordinates of the map
-			are recalculated relative to this value)
-
-	Any other word is just ignored and the effect is to draw a 
-	color box on the backbone to represent the feature. 
-
-OUTPUT FORMAT
-        The output is a GIF file, which can be opened by most graphical 
-        applications, and by web browsers.
-
-WEB VERSION
-	http://www.ucmb.ulb.ac.be/bioinformatics/rsa-tools/
-	
-End_of_Help
-  close HELP;
-  exit(0);
-}
-
-if ($ARGV[0] eq "-help") {
-  open HELP, "| more";
-  print HELP <<End_short_Help;
-feature-map options
--------------------
--help		(first argument) displays the current message
--h		(first argument) long help message
--v		verbose
--data   	report data
--htmap		HTML map
--i 		inputfile
--o 		outpufile 
--from #		lower limit of the positions represented
--to #		upper limit of the positions represented
--title		Generic Title for the feature map.
--label	keylist	accepted keys: id,strand,descr,pos
--boxlabels	writes the label within the feature box 
--symbol		attach symbol to each feature (exclusive with -dot)
--dot		attach dot to each feature (exclusive with -symbol)
--mlen	#	map length (in pixels). Default is 600.
--mapthick #	map thickness
--mspacing	map spacing
--origin #	all coordinates are recalculated relative to #.
--legend		Draws a legend
--scalebar	Draws a scale bar
--scalestep #	step of the scale bar
--scorethick	each feature is displayed with a thickness proportional to its score. 
--maxscore #	maximal allowed score value
--minscore #	minimal allowed score value
--maxfthick #	max feature thickness
--minfthick #	min feature thickness
--mono		monochrome palette (for printing on black/white printer)
--aacolors	amino acid specific colors
--horiz		horizontal map (default).
--vertic		vertical map (default is horizontal).
--select id_list	only display features with an ID included in id_list
-
-Input file columns:
-	1. map label (eg gene name)
-	2. feature type
-	3. feature identifier (ex: GATAbox, Abf1_site)
-	4. strand (D for Direct, R for Reverse),
-	5. feature start position
-	6. feature end position
-	7. (optional) description 
-	8. (optional) score
-End_short_Help
-  close HELP;
-  exit(0);
-}
 
 
 ##################################################################
 ##################### DEFAULT PARAMETERS #########################
 ##################################################################
+%supported_format = ();
+
+if ($config_site eq "rsa") {
+    $supported_format{"jpeg"} = 1;
+    $out_format = "jpeg";
+} else {
+    $supported_format{"gif"} = 1;
+    $out_format = "gif";
+}
+$supported_formats = join (";", keys %supported_format); 
 
 #### font sizes ####
 $small_font_width = 6;
@@ -253,123 +70,13 @@ $col{score} = 7;
 @label_keys = ();
 @id_list = ();
 
+#### for reading sequence lengths
+$sequence_format = "fasta";
+
 ########################################################################
-########################## read arguments ##############################
-########################################################################
-
-foreach $a (0..$#ARGV) {
-  ### input, output files ###
-  if ($ARGV[$a] eq "-i") {
-    $inputfile = $ARGV[$a+1];
-  } elsif ($ARGV[$a] eq "-o") {
-    $outputfile = $ARGV[$a+1];
-    
-    ### verbose ###
-  } elsif ($ARGV[$a] eq "-v") {
-    $verbose = 1;
-    
-    ### data report ###
-  } elsif ($ARGV[$a] eq "-data") {
-    $data_report = 1;
-    
-    ### HTML map ###
-  } elsif ($ARGV[$a] eq "-htmap") {
-    $HTML_map = 1;
-    
-    ### amino acid specific colors ###
-  } elsif ($ARGV[$a] eq "-aacolors") {
-    $aa_colors = 1;
-    
-    ### monochrome palette ###
-  } elsif ($ARGV[$a] =~ /^-mono/) {
-    $monochrome = 1;
-    
-    ### map orientation
-  } elsif  ($ARGV[$a] =~ /^-horiz/) {
-    $horizontal_map = 1;
-  } elsif  ($ARGV[$a] =~ /^-vertic/) {
-    $horizontal_map = 0;
-    
-    ### title ###
-  } elsif ($ARGV[$a] eq "-title") {
-    $title = $ARGV[$a+1];
-    
-    ### legend ###
-  } elsif ($ARGV[$a] eq "-legend") {
-    $legend = 1;
-    
-    ### scale bar ###
-  } elsif ($ARGV[$a] eq "-scalebar") {
-    $scalebar = 1;
-    ### scale bar step ###
-  } elsif ($ARGV[$a] eq "-scalestep") {
-    $scale_bar_step = $ARGV[$a+1];
-    
-    ### label keys ###
-  } elsif ($ARGV[$a] eq "-label") {
-    @label_keys = split(/,/, $ARGV[$a+1]);
-  }elsif ($ARGV[$a] =~ /^-boxlabel/) {
-    $box_labels = 1;
-    
-    ### ID selection ###
-  } elsif ($ARGV[$a] eq "-select") {
-    $id_selection = 1;
-    @selected_ids = split(/,/, $ARGV[$a+1]);
-    foreach $id (@selected_ids) {
-      $id =~ s/\'//g;
-      $id =~ s/\s//g;
-      $selected{$id} = 1;
-    }
-    
-    ### feature handle ###
-  } elsif ($ARGV[$a] =~ /^-symbol/) {
-    $draw_symbols = 1;
-    $draw_dots = 0;
-    $draw_handles = 1;
-    $handle_thick = $symbol_thick;
-    $handle_length = $symbol_length;
-    
-  } elsif ($ARGV[$a] =~ /^-dot/) {
-    $draw_dots = 1;
-    $draw_symbols = 0;
-    $draw_handles = 1;
-    $handle_thick = $dot_thick;
-    $handle_length = $dot_length;
-    
-    ### from, to coordinates and origin ###
-  } elsif (($ARGV[$a] eq "-origin") && (&IsReal($ARGV[$a+1]))){
-    $origin = $ARGV[$a+1];
-  } elsif (($ARGV[$a] eq "-from") && (&IsReal($ARGV[$a+1]))){
-    $view_from = $ARGV[$a+1];
-  } elsif (($ARGV[$a] eq "-to") &&  (&IsReal($ARGV[$a+1]))){
-    $view_to = $ARGV[$a+1];
-    
-    ### thickness proportional to score
-  } elsif ($ARGV[$a] =~ /^-score/) {
-    $score_thick = 1;
-
-    ### max and min score values
-  } elsif (($ARGV[$a] =~ /^-maxscore/) && (&IsReal($ARGV[$a+1]))) {
-    $fixed_max_score = $ARGV[$a+1];
-  } elsif (($ARGV[$a] =~ /^-minscore/) && (&IsReal($ARGV[$a+1]))) {
-    $fixed_min_score = $ARGV[$a+1];
-
-    ### max and min feature thickness
-  } elsif (($ARGV[$a] =~ /^-maxfthick/) && (&IsNatural($ARGV[$a+1]))) {
-    $max_feature_thick = $ARGV[$a+1];
-  } elsif (($ARGV[$a] =~ /^-minfthick/) && (&IsNatural($ARGV[$a+1]))) {
-    $min_feature_thick = $ARGV[$a+1];
-
-    ### axis size (in pixels) ###
-  } elsif (($ARGV[$a] eq "-mlen") && (&IsNatural($ARGV[$a+1]))){
-    $map_length = $ARGV[$a+1];
-  } elsif (($ARGV[$a] eq "-mapthick") && (&IsNatural($ARGV[$a+1]))){
-    $map_thick = $ARGV[$a+1];
-  } elsif (($ARGV[$a] eq "-mspacing") && (&IsNatural($ARGV[$a+1]))){
-    $map_spacing = $ARGV[$a+1];
-  }
-}
-
+# read arguments
+#
+&ReadArguments ();
 
 #### check argument values
 if ($view_from > $view_to) {
@@ -389,8 +96,9 @@ if ($#label_keys >= 0) {
 }
 
 #### Read Data #####
-$in = &OpenInputFile($inputfile);
+($in, $input_dir) = &OpenInputFile($inputfile);
 &ReadMapData;
+&ReadSequenceLengths($sequence_file, $sequence_format) if ($sequence_file);
 
 #### Calculate map dimensions ###
 &CalcDimensions;
@@ -887,12 +595,17 @@ foreach $m (0..$#map_list) {
 
 
 #### write the gif file ####
-if ($outputfile) {
-  print $out $image->gif;
-  close $out;
+if ($out_format eq "gif") {
+    print $out $image->gif;
+} elsif ($out_format eq "jpeg") {
+    print $out $image->jpeg;
+} elsif ($out_format eq "png") {
+    print $out $image->png;
 } else {
-  print $image->gif;
+    &FatalError("Error: ormat $out_format is not supported\n");
 }
+
+close $out if ($outputfile);
 
 ##### HTML map #####
 if ($HTML_map) {
@@ -1390,6 +1103,28 @@ sub ReadMapData {
   }
 }
 
+################################################################
+#
+# Read the lengths of the reference sequences, for calculating 
+# the length of the backbones
+#
+sub ReadSequenceLengths {
+    my ($seq_file, $seq_format) = @_;
+
+    open LEN,  "sequence-lengths -i $seq_file -format $seq_format |";
+    while (<LEN>) {
+	next if (/^;/);
+	@fields = split;
+	$seq_id = $fields[0];
+	$seq_len = $fields[1];
+	if (&IsNatural($seq_len)) {
+	    warn "$seq_id\t$seq_len\n" if ($verbose >= 2);
+	    $map_end{$seq_id} = $seq_len;
+	}
+    }
+#    $map_end{$current_map};
+#    die join "\t", $seq_file, $seq_format, "\n";;
+}
 
 sub OpenFeatureMap {
 
@@ -2008,4 +1743,347 @@ sub GrayScalePalette {
 }
 
 
+
+sub ReadArguments {
+
+    foreach $a (0..$#ARGV) {
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+	    
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp;
+	    
+	    ### list of options
+	} elsif ($ARGV[0] eq "-help") {
+	    &PrintOptions;
+	    
+	    ### input, output files ###
+	} elsif ($ARGV[$a] eq "-i") {
+	    $inputfile = $ARGV[$a+1];
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outputfile = $ARGV[$a+1];
+
+	    ### output format
+	} elsif ($ARGV[$a] eq "-format") {
+	    $out_format = lc($ARGV[$a+1]);
+	    unless ($supported_format{$out_format}) {
+		&FatalError("Format $out_format is not supported (supported: $supported_formats)");
+	    }
+	    
+	    ### data report ###
+	} elsif ($ARGV[$a] eq "-data") {
+	    $data_report = 1;
+	    
+	    ### HTML map ###
+	} elsif ($ARGV[$a] eq "-htmap") {
+	    $HTML_map = 1;
+	    
+	    ### reference sequence file (for calculating backbone lengths)
+	} elsif ($ARGV[$a] eq "-seq") {
+	    $sequence_file = $ARGV[$a+1];
+	} elsif ($ARGV[$a] eq "-seqformat") {
+	    $sequence_format = $ARGV[$a+1];
+	    
+	    ### amino acid specific colors ###
+	} elsif ($ARGV[$a] eq "-aacolors") {
+	    $aa_colors = 1;
+	    
+	    ### monochrome palette ###
+	} elsif ($ARGV[$a] =~ /^-mono/) {
+	    $monochrome = 1;
+	    
+	    ### map orientation
+	} elsif  ($ARGV[$a] =~ /^-horiz/) {
+	    $horizontal_map = 1;
+	} elsif  ($ARGV[$a] =~ /^-vertic/) {
+	    $horizontal_map = 0;
+	    
+	    ### title ###
+	} elsif ($ARGV[$a] eq "-title") {
+	    $title = $ARGV[$a+1];
+	    
+	    ### legend ###
+	} elsif ($ARGV[$a] eq "-legend") {
+	    $legend = 1;
+	    
+	    ### scale bar ###
+	} elsif ($ARGV[$a] eq "-scalebar") {
+	    $scalebar = 1;
+	    ### scale bar step ###
+	} elsif ($ARGV[$a] eq "-scalestep") {
+	    $scale_bar_step = $ARGV[$a+1];
+	    
+	    ### label keys ###
+	} elsif ($ARGV[$a] eq "-label") {
+	    @label_keys = split(/,/, $ARGV[$a+1]);
+	}elsif ($ARGV[$a] =~ /^-boxlabel/) {
+	    $box_labels = 1;
+	    
+	    ### ID selection ###
+	} elsif ($ARGV[$a] eq "-select") {
+	    $id_selection = 1;
+	    @selected_ids = split(/,/, $ARGV[$a+1]);
+	    foreach $id (@selected_ids) {
+		$id =~ s/\'//g;
+		$id =~ s/\s//g;
+		$selected{$id} = 1;
+	    }
+	    
+	    ### feature handle ###
+	} elsif ($ARGV[$a] =~ /^-symbol/) {
+	    $draw_symbols = 1;
+	    $draw_dots = 0;
+	    $draw_handles = 1;
+	    $handle_thick = $symbol_thick;
+	    $handle_length = $symbol_length;
+	    
+	} elsif ($ARGV[$a] =~ /^-dot/) {
+	    $draw_dots = 1;
+	    $draw_symbols = 0;
+	    $draw_handles = 1;
+	    $handle_thick = $dot_thick;
+	    $handle_length = $dot_length;
+	    
+	    ### from, to coordinates and origin ###
+	} elsif (($ARGV[$a] eq "-origin") && (&IsReal($ARGV[$a+1]))){
+	    $origin = $ARGV[$a+1];
+	} elsif (($ARGV[$a] eq "-from") && (&IsReal($ARGV[$a+1]))){
+	    $view_from = $ARGV[$a+1];
+	} elsif (($ARGV[$a] eq "-to") &&  (&IsReal($ARGV[$a+1]))){
+	    $view_to = $ARGV[$a+1];
+	    
+	    ### thickness proportional to score
+	} elsif ($ARGV[$a] =~ /^-score/) {
+	    $score_thick = 1;
+
+	    ### max and min score values
+	} elsif (($ARGV[$a] =~ /^-maxscore/) && (&IsReal($ARGV[$a+1]))) {
+	    $fixed_max_score = $ARGV[$a+1];
+	} elsif (($ARGV[$a] =~ /^-minscore/) && (&IsReal($ARGV[$a+1]))) {
+	    $fixed_min_score = $ARGV[$a+1];
+
+	    ### max and min feature thickness
+	} elsif (($ARGV[$a] =~ /^-maxfthick/) && (&IsNatural($ARGV[$a+1]))) {
+	    $max_feature_thick = $ARGV[$a+1];
+	} elsif (($ARGV[$a] =~ /^-minfthick/) && (&IsNatural($ARGV[$a+1]))) {
+	    $min_feature_thick = $ARGV[$a+1];
+
+	    ### axis size (in pixels) ###
+	} elsif (($ARGV[$a] eq "-mlen") && (&IsNatural($ARGV[$a+1]))){
+	    $map_length = $ARGV[$a+1];
+	} elsif (($ARGV[$a] eq "-mapthick") && (&IsNatural($ARGV[$a+1]))){
+	    $map_thick = $ARGV[$a+1];
+	} elsif (($ARGV[$a] eq "-mspacing") && (&IsNatural($ARGV[$a+1]))){
+	    $map_spacing = $ARGV[$a+1];
+	}
+    }
+
+}
+sub PrintHelp {
+  open HELP, "| more";
+  print HELP <<End_of_Help;
+NAME
+	feature-map
+	
+	1997-98 by Jacques van Helden
+
+DESCRIPTION
+        draws a graphical map of regulatory features in a series of 
+        DNA sequences.
+
+OPTIONS
+	-i inputfile    The input file contains a list of features 
+			(ORFs, regulatory sites).
+			Each feature is represented by a single line, which 
+			should provide the following information:
+			Input file columns:
+			1. map label (eg gene name)
+			2. feature type
+			3. feature identifier (ex: GATAbox, Abf1_site)
+			4. strand (D for Direct, R for Reverse),
+			5. feature start position
+			6. feature end position
+			7. (optional) description 
+			8. (optional) score
+			The standard input format assumes that these topics 
+			are provided in this order, separated by tabs. 
+			Start and end positions can be positive or negative.
+			If no input file is specified, the data are taken 
+			from the standard input (keyboard).
+			Lines beginning with ";" are ignored.
+	-o outpufile    The name under which the graph will be saved, in the 
+			form of a GIF document. 
+			If no output file is specified, the result is sent 
+			to the standard output (screen).
+	-format		output format
+			Supported: $supported_formats
+			Default: $out_format
+	-from #		lower limit of the positions represented on the graph
+	-to #		upper limit of the positions represented on the graph
+	-title		Generic Title for the feature map.
+	-label	keylist	define the info to display for each feature. 
+			valid keys are 
+			- id,
+			- strand,
+			- descr (feature description),
+			- pos (feature start and end positions).
+			Several keys can be entered separated by commas 
+			without space.
+			ex: -label pos,id.
+			Default is id.
+	-boxlabels	writes the label within the feature box 
+			(by default, the label is written outside of this box).
+ 	-symbol		associates a graphical symbol (i.e. rectangle, circle, 
+			buterfly, ...) to each feature. 
+			This is convenient to distinguish the 
+			features on black and white printings.
+			Mutually exclusive with the -dot option
+	-dot		a color dot is associated to each feature. 
+			This allows to distinguish overlapping structures on a 
+			color screen.
+			Mutually exclusive with the -symbol option.
+	-mlen	#	map length (in pixels). Default is 600.
+			Length refers to either height (for vertical maps)
+			of width (for horizontal maps).
+	-mapthick	#	map thickness. 
+			Thickness refers to either width (for vertical maps) 
+			or height (horizintal maps). 
+			This parameter allows to change the thickness
+			allocated to each map. This is useful when labels 
+			are too large. Default is 150.
+	-mspacing #	map spacing.
+			The size of the border between maps (in pixel).
+	-origin #	all coordinates are recalculated relative to #.
+			This allows to display all coordinates with respect to
+			the ORF start or transcription start site
+        -legend  Draws a legend on the graph, showing the symbol associated to 
+                 each distinct feature.
+
+        -scalebar
+                 Draws a scale bar on the left of the graph
+        -scalestep #
+                 Step between annotations of the scale bar.
+                 If not specified, a reasonable stp is calculated on basis of 
+                 the scale bar range.
+	-scorethick
+		each feature is displayed with a thickness proportional to 
+		its score. Only positive scores are represented.
+	-maxscore # (only valid when -scorethick is active)
+		maximal allowed score value. Higher score values are clipped for 
+		the drawing. 
+	-minscore # (only valid when -scorethick is active)
+		minimal allowed score value. Features with smaller score are not
+		displayed. 
+	-maxfthick #
+		max feature thickness
+	-minfthick #
+		min feature thickness
+	-htmap	HTML map
+		An HTML document is automatically generated, which includes 
+		the feature map GIF file as an HTML map. In other words,
+		this document displays a figure with sensitive areas. 
+		Each time the mouse is positioned above a feature, 
+		information about this particuliar feature is displayed 
+		at the bottom of the browser window.
+	-mono	monochrome palette (for printing on black/white printer)
+	-aacolors
+		amino acid specific colors. 
+		See the following reference for their definition:
+		Taylor (1997). Protein Engeneering 10 (7): 743-746.
+	-horiz	horizontal map (default).
+	-vertic	vertical map (default is horizontal).
+	-select id_list
+		only display the features whose ID is in id_list.
+		the id_list contains one or several IDs, separated by commas.
+		IDs may be embraced in single quotes to allow multiple words
+		within the IDs. Commas and single quotes are not allowed 
+		within an ID.
+		Example:
+			-select 'gataag','gattag'
+		only displays features identified by gataag or gattag.
+	-seq	reference sequence file
+		This file is used for calculating the sequence
+		length. Each backbone (the black line) has a length that reflects the lengths of the sequence.
+	-seqformat
+		format of the reference sequence file. 
+
+SUPPORTED FEATURE TYPES
+	A few special types are defined
+	- START		downstream limit of the features to draw
+	- END		upstream limit of the features to draw
+	- ORIGIN	map-specific origin (all coordinates of the map
+			are recalculated relative to this value)
+
+	Any other word is just ignored and the effect is to draw a 
+	color box on the backbone to represent the feature. 
+
+OUTPUT FORMAT
+        The output is a GIF file, which can be opened by most graphical 
+        applications, and by web browsers.
+
+WEB VERSION
+	http://www.ucmb.ulb.ac.be/bioinformatics/rsa-tools/
+	
+End_of_Help
+  close HELP;
+  exit(0);
+}
+
+sub PrintOptions {
+  open HELP, "| more";
+  print HELP <<End_short_Help;
+feature-map options
+-------------------
+-help		(first argument) displays the current message
+-h		(first argument) long help message
+-v		verbose
+-data   	report data
+-htmap		HTML map
+-i 		inputfile
+-o 		outpufile 
+-format		output format (default $out_format)
+-from #		lower limit of the positions represented
+-to #		upper limit of the positions represented
+-title		Generic Title for the feature map.
+-label	keylist	accepted keys: id,strand,descr,pos
+-boxlabels	writes the label within the feature box 
+-symbol		attach symbol to each feature (exclusive with -dot)
+-dot		attach dot to each feature (exclusive with -symbol)
+-mlen	#	map length (in pixels). Default is 600.
+-mapthick #	map thickness
+-mspacing	map spacing
+-origin #	all coordinates are recalculated relative to #.
+-legend		Draws a legend
+-scalebar	Draws a scale bar
+-scalestep #	step of the scale bar
+-scorethick	each feature is displayed with a thickness proportional to its score. 
+-maxscore #	maximal allowed score value
+-minscore #	minimal allowed score value
+-maxfthick #	max feature thickness
+-minfthick #	min feature thickness
+-mono		monochrome palette (for printing on black/white printer)
+-aacolors	amino acid specific colors
+-horiz		horizontal map (default).
+-vertic		vertical map (default is horizontal).
+-select id_list	only display features with an ID included in id_list
+-seq		reference sequence file
+-seqformat	format of the reference sequence file
+Input file columns:
+	1. map label (eg gene name)
+	2. feature type
+	3. feature identifier (ex: GATAbox, Abf1_site)
+	4. strand (D for Direct, R for Reverse),
+	5. feature start position
+	6. feature end position
+	7. (optional) description 
+	8. (optional) score
+End_short_Help
+  close HELP;
+  exit(0);
+}
 
