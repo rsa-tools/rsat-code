@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.1 2001/05/17 19:10:30 jvanheld Exp $
+# $Id: install-organism,v 1.2 2001/05/18 21:50:34 jvanheld Exp $
 #
-# Time-stamp: <2001-05-17 21:01:02 jvanheld>
+# Time-stamp: <2001-05-18 23:26:22 jvanheld>
 #
 ############################################################
 
@@ -16,11 +16,6 @@ require "RSA.lib.pl";
 #### initialisation
 $supported_for_installation{"fasta"} = 1;
 $supported_for_installation{"raw"} = 1;
-
-
-$syn_col{'ecoli'} = 1;
-$syn_col{'mtub'} = 1;
-
 
 
 ################################################################
@@ -46,11 +41,15 @@ unless ($organism_short_name) {
 }
 
 unless ($organism_full_name) {
-    print "Enter organism full name : ";
-    $organism_full_name = <STDIN>;
-    $organism_full_name = &trim($organism_full_name);
-    die "\n\tError: you should specify a full name for the organism\n\n"
-	unless ($organism_full_name =~ /\S/);
+    if ($organism_short_name =~ /^(\w+)\_(\w+)$/) {
+	$organism_full_name = "$1 $2";
+    } else {
+	print "Enter organism full name : ";
+	$organism_full_name = <STDIN>;
+	$organism_full_name = &trim($organism_full_name);
+	die "\n\tError: you should specify a full name for the organism\n\n"
+	    unless ($organism_full_name =~ /\S/);
+    }
 }
 
 ################################################################
@@ -83,18 +82,19 @@ $outfile{features} = "$genome_dir/${organism_short_name}_features.tab";
 $outfile{synonyms} = "$genome_dir/${organism_short_name}_synonyms.tab";
 
 
-&Verbose();
+&Verbose() if ($verbose);
 ################################################################
 ###################### start installation ######################
 ################################################################
 
-&GenerateFeatureTable() if ($infile{ptt});
 &InstallGenome();
+&GenerateFeatureTable() if ($infile{ptt});
+&InstallFeatureTable();
 &UpdateConfig();
-&NonCodingSegments();
 &StartAndStopCodons();
+&NonCodingSegments();
 &OligoFrequencies();
-#######&AllUpstream();
+#&DyadFrequencies();
 
 exit(0);
 
@@ -158,7 +158,6 @@ sub InstallGenome {
 	die "\n\tError: you should specify the sequence format\n\n"
 	    unless ($seq_format =~ /\S/);
     }
-
     unless ($supported_for_installation{$seq_format}) {
 	die ("\n\tError: invalid sequence format $seq_format",
 	     "\n\tSupported formats : ", 
@@ -166,12 +165,15 @@ sub InstallGenome {
 	     "\n\n");
     }
 
-    warn "Installing genome from file $infile{genome} (format $seq_format) \n\tto file $outfile{genome}\n";
-
+    #### convert the genome file
+    warn "Installing genome from file $infile{genome} (format $seq_format) \n\tto file $outfile{genome}\n"
+	if ($verbose);
     $command = "convert-seq -i $infile{genome} -from $seq_format -to filelist -o $outfile{genome}";
     &doit;
+}
 
-    #### feature table
+#### install the feature table
+sub InstallFeatureTable {
     if (($infile{ptt})) {
 	#### do nothing
     } elsif ($infile{features}) {
@@ -184,18 +186,16 @@ sub InstallGenome {
 	die "\n\tError: you should specify the feature table\n\n"
 	    unless ($infile{features} =~ /\S/);
     }
-
-    
     if ($infile{synonyms}) {
 	$command = "cp $infile{synonyms} $outfile{synonyms}"; 
 	&doit;
     }
 }
 
-
+#### update configuration file
 sub UpdateConfig {
     if (defined($supported_organism{$organism_short_name}->{'genome'})) {
-	warn ("\n\tError : organism $organism_short_name already defined in the config file",
+	warn ("\n\tWARNING : organism $organism_short_name already defined in the config file",
 	     "\n\tConflicts may result",
 	     "\n\tChoose another short name or edit manually the config file to solve conflict\n\n", 
 	     "Supported organisms\n", $supported_organisms, "\n");
@@ -220,7 +220,7 @@ sub UpdateConfig {
 	print CONFIG "\$supported_organism{'$organism_short_name'}->{'genome'} = '$outfile{genome}';\n";
 	print CONFIG "\$supported_organism{'$organism_short_name'}->{'seq_format'} = 'filelist';\n";
 	if (defined($outfile{synonyms})) {
-	    print CONFIG "\$supported_organism{'$organism_short_name'}->{'synonyms'} =  $outfile{synonyms};\n";
+	    print CONFIG "\$supported_organism{'$organism_short_name'}->{'synonyms'} =  '$outfile{synonyms}';\n";
 	}
 	print CONFIG "\nreturn 1\n";
 	close CONFIG;
@@ -261,17 +261,20 @@ sub AllUpstream {
 ### extract the non-redudant set of all non-coding sequences
 sub NonCodingSegments {
     chdir $genome_dir;
-    $command = "coding-or-not -org $organism_short_name -return ncs,seq \n\n";
+    $command = "coding-or-not ";
+    $command .= "-v " if ($verbose);
+    $command .= "-org $organism_short_name -return ncs,seq \n\n";
     &doit;
 
     $command = "sequence-lengths -i ${genome_dir}/${organism_short_name}_non_coding_segments.wc";
-    $command .= " -format wc | cut -f 2 | classfreq -ci 250 -v";
-    $command .= " | XYgraph -xcol 3 -ycol 7,8,9 -lines -xmax 10000";
-    $command .= " -ymin 0 -ymax 1  -xsize 1000 -ysize 800 -legend";
-    $command .= " -xgstep1 1000 -xgstep2 250 -ygstep1 0.1";
+    $command .= " -format wc | cut -f 2 | classfreq -ci 100 -v -from 0 -to 2000";
+    $command .= " | XYgraph -xcol 3 -ycol 7,8,9 -lines -xmin 0 -xmax 2000";
+    $command .= " -ymin 0 -ymax 1  -xsize 600 -ysize 400 -legend";
+    $command .= " -xgstep1 100 -xgstep2 250 -ygstep1 0.1";
     $command .= " -xleg1 'sequence length (bp)'";
     $command .= " -yleg1 'frequency'";
-    $command .= " -title 'length distribution of intergenic segments for $organism_short_name ($organism_full_name)'";
+    $command .= " -title1 '$organism_full_name'";
+    $command .= " -title2 'length distribution of intergenic segments'";
     $command .= " -o  ${organism_short_name}_non_coding_segments_lengths.gif";
     &doit;
     chdir "../";
@@ -290,12 +293,14 @@ sub OligoFrequencies {
 	$oligo_freq = "${oligo_length}nt_${type}_${organism_short_name}.freq";
 	$command = "$SCRIPTS/oligo-analysis -i $genome_dir/$seq -format wc ";
 	$command .= "-l ${oligo_length} -type dna ";
-	$command .= "-return freq -nogrouprc ";
-	$command .= "| cut -f1,3 ";
+	$command .= "-return freq,occ -nogrouprc ";
+	$command .= "| cut -f1,3,4 ";
 	$command .= "> $oligo_freq ";
 	&doit;  
     }
+}
 
+sub DyadFrequencies {
     ### calculate dyad frequencies in all non-coding sequences
     $oligo_length = 3;
     $min_spacing = 0;
@@ -305,17 +310,17 @@ sub OligoFrequencies {
     $dyad_file .= "_noov" if ($noov);
     $dyad_file .= ".freq";
     $command = "$SCRIPTS/dyad-analysis -i $genome_dir/$seq -format wc";
-    $command .= " -v";
-    $command .= " -type any";
+    $command .= " -v 3 -timeout 36000 ";
+    $command .= " -type any -seqtype dna";
     $command .= " -2str";
     $command .= " -noov" if ($noov);
     $command .= " -sp ${min_spacing}-${max_spacing}";
     $command .= " -l $oligo_length";
-    $command .= " -return freq";
+    $command .= " -return freq,occ";
     $command .= " -nogrouprc";
 #  $command .= " | grep -v ';'";
-    $command .= " | perl -ne 'print if /^[acgt]{3}n\{.*\}[acgt]{3}/'"; #### remove degenerate dyads
-    $command .= " | cut -f1,3";
+#    $command .= " | perl -ne 'print if /^[acgt]{3}n\{.*\}[acgt]{3}/'"; #### remove degenerate dyads
+    $command .= " | cut -f1,3,4";
     $command .= " > $dyad_file";
     &doit;
     chdir '../';
@@ -529,7 +534,7 @@ sub ParseNcbiFeatures {
     print FTT ";ID";
     print FTT "\tTYPE";
     print FTT "\tNAME";
-    print FTT "\tCHROM";
+    print FTT "\tCHROMOSOME";
     print FTT "\tLEFT";
     print FTT "\tRIGHT";
     print FTT "\tSTRAND";
@@ -585,7 +590,17 @@ sub ParseNcbiFeatures {
 		print SYNONYMS "$id\t$synonym\n";
 	    }
 	    
-	    $chrom = $organism_short_name;
+	    #### get the chromosome sequence identifier for bacteria
+	    open CHROM, $outfile{genome} ||
+		die "Error: cannot open chromosome list file $outfile{genome}\n";
+	    while (<CHROM>) {
+		chomp;
+		@fields = split "\t";
+		$chom = $fields[1];
+
+	    }
+	    close CHROM;
+	    #$chrom = $organism_short_name;
 	    $type = "CDS";
 	    print FTT "$id";
 	    print FTT "\t$type";
@@ -677,6 +692,16 @@ sub ParseNcbiFeatures {
 		print SYNONYMS "$id\t$synonym\n";
 	    }
 	    
+	    #### get the chromosome sequence identifier for bacteria
+	    open CHROM, $outfile{genome} ||
+		die "Error: cannot open chromosome list file $outfile{genome}\n";
+	    while (<CHROM>) {
+		chomp;
+		@fields = split "\t";
+		$chom = $fields[1];
+
+	    }
+	    close CHROM;
 	    $chrom = $organism_short_name;
 	    $type = "CDS";
 	    print FTT "$id";
@@ -780,7 +805,17 @@ sub ParseGenbankFeatures {
 	$descr = join " ", @fields;
 
 	
-	$chrom = "genome";
+	#### get the chromosome sequence identifier for bacteria
+	open CHROM, $outfile{genome} ||
+	    die "Error: cannot open chromosome list file $outfile{genome}\n";
+	while (<CHROM>) {
+	    chomp;
+	    @fields = split "\t";
+	    $chrom = $fields[1];
+	    
+	}
+	close CHROM;
+
 	$type = "CDS";
 
 	print FTT "$id";
