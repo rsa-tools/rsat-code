@@ -106,13 +106,25 @@ with other programs.
 <P>
 <A NAME="noov">
 <B>Prevent overlapping matches</B></A><BR> 
-Periodic pattern (e.g. AAAAAA, ATATAT) have an aggregative tendency, i.e. each occurrence of such a pattern strongly favours additional occurrences in its immediate vicinity. This introduces a bias to most statistics (binomial, log-likelihood). A simple way to correct for this bias is to prevent counting twice mutually overlapping occurrences. <BR>
+
+Periodic patterns (e.g. AAAAAA, ATATAT) have an aggregative tendency,
+i.e. each occurrence of such a pattern strongly favours additional
+occurrences in its immediate vicinity. This introduces a bias to most
+statistics (binomial, log-likelihood). A simple way to correct for
+this bias is to prevent counting twice mutually overlapping
+occurrences. <BR>
+
 For example, <TT>TATATATATATA</TT> would represent
 <UL>
 <LI>2 occurrences of <TT>TATATA</TT> when self-overlap is prevented
 <LI>5 occurrences of <TT>TATATA</TT> when self-overlap is allowed
 </UL>
-Note that Z-score introduce a correction for self-overlapping patterns (see van Helden et al., 1999), but Z-scores are only valid for very large sequences (for example a set of 6000 downstream sequences), and are not appropriate for small gene clusters such as those extracted from DNA chip experiment. 
+
+Note that Z-score introduces a correction for self-overlapping patterns
+(see van Helden et al., 1999), but Z-scores are only valid for very
+large sequences (for example a set of 6000 downstream sequences), and
+are not appropriate for small gene clusters such as those extracted
+from DNA chip experiment.
 
 <P>
 <A NAME="exp_freq">
@@ -142,10 +154,15 @@ frequencies from input sequence" works poorly.
 
 <p><li><B>Predefined background frequencies :</B>
 
+
+Compare oligo frequencies observed in the query sequence to those of a
+reference sequence (the background model).
+
+<P>
 Pre-calculted tables are used to estimate expected oligonucleotide
-frequencies (background frequencies). These tables were calculated by
-calculating all oligonucleotide frequencies (from size 1 to 8) in
-different sequence types, and this for each organism :
+frequencies (background frequencies). These tables were obtained by
+counting all oligonucleotide frequencies (from size 1 to 8) in
+different sequence types, and this for each organism.
 
 <ul>
 <li><b>upstream</b>: all upstream regions, allowing overlap with
@@ -219,38 +236,68 @@ results and should never be used in practice. I leave it there only
 for didactic purposes (to allow anyone to test how bad it performs).
 
 <a name='upload_freq_file'>
-<p><li><B>Upload your own expected frequency file:</B> You can upload
-your own table of expected frequency file. This option can be useful
-if you are working with an organism which is not supported on the web
-server.
+<p><li><B>Upload your own expected frequency file:</B> 
+
 
 <ul>
+
+<P>You can upload your own table of expected frequencies. This option
+can be useful if you are working with an organism which is not
+supported on the web server.
+
+<P>
 <b>File format:</b> The expected frequency file must be a
 tab-delimited text file, with one row per oligonucleotide. The first
 column contains the oligonucleotide, the second column the expected
 frequency. Oligonucleotides must be of the size selected for the
 analysis.  <a
-href='data/Saccharomyces_cerevisiae/oligo-frequencies'>Examples</a>
+href='data/genomes/Saccharomyces_cerevisiae/oligo-frequencies'>Examples</a>
 can be found in the <a href='data/'>Data folder</a>.  
 
-<P>Expected frequency files can be generated with oligo-analysis
-itself : 
+
+<P><b>How to generate an expected frequency file ?</b>
+
+<br>
+An expected frequency file can be generated with oligo-analysis
+itself.
+
 <ul>
-<li>Enter your background sequence file with the <i>sequence file upload</i> option. 
 
-<li>Select the appropriate oligonucleotide size.
+<li>Enter your background sequence file with the <i>sequence file
+upload</i> option.
 
-<li>Uncheck the option <i>return reverse complements together in the
-output</i>. This is important, because if not, half of the patterns
-will be ignored.
+<li>Select the appropriate <i>oligonucleotide size</i>.
+
+<li>Select the option <i><b>Count on single strand</b></i>. This
+option has to be selected, even if you count on both strands for the
+subsequent analyses. The expected frequency files must only contain
+the single-strand counts, and when required, oligo-analysis calculates
+double-strand frequencies by summing expected frequencies for each
+pair of reverse complements.
+
 
 <li>In the <i>return</i> option,  select "Frequencies", and
-deselect all other options (especifically the probabilities. 
+<b>deselect</b> all other options (especifically the probabilities).
+
+<li>In the <i>return</i> options, set the threshold on significance to
+"none" (instead of the default value 0).
+
+<li>Select email output and enter your email address.
+
+<li>Run the analysis. 
+
+<li>When the result arrives in your mailbox, save the result as a text
+file on your hard drive.
+
+
+<li>Check the format of the expected frequency file (you probably need
+to edit the file in order to remove the email header)).
 
 </ul>
 
-The resulting file has to be processed (with excel for example) to
-remove the second column, which contains the pattern ID.
+You can now use this file to specify your own expected frequencies for
+the analysis of other sequences.
+
 </ul>
 
 <P>
