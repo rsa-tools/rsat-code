@@ -42,6 +42,12 @@ them in different formats.
 Each cell of the matrix indicates the number of occurrences of the
 residue at a given position of the alignment.
 
+=item profile
+
+The matrix is printed vertically (each matrix column becomes a row in
+the output text). Additional parameters (consensus, information) are
+indicated besides each position, and a histogram is drawed.
+
 =item crude frequencies
 
 Relative frequencies are calculated as the counts of residues divided
@@ -162,6 +168,129 @@ sub new {
 	}, $class;
     return $matrix;
 }
+
+################################################################
+=pod 
+
+=item set_parameter()
+
+Sets an attribute and add it to the list of parameters to export.
+
+=cut
+sub set_parameter {
+    my ($self, $key, $value) = @_;
+    $self->force_attribute($key, $value);
+    $self->push_attribute("parameters", $key);
+}
+
+################################################################
+=pod
+
+=item transpose($nrow, $ncol, @matrix)
+
+transpose a matrix (rows become columns and reciprocally)
+
+=cut
+sub transpose {
+    my ($nrow, $ncol, @matrix) = @_;
+    my @transposed = ();
+    for my $c (1..$ncol) {
+	for my $r (1..$nrow) {
+	    $transposed[$r][$c] = $matrix[$c][$r];
+	}
+    }    
+    return @transposed;
+}
+
+
+################################################################
+=pod 
+
+col_max($nrow, $ncol, @matrix)
+
+Calculate the max of each column of a matrix (is applied to the
+different types of matrix used in this class).
+
+Return a vector of the same length as the matrix width.
+
+=cut
+sub col_max {
+    my ($nrow, $ncol, @matrix) = @_;
+
+    warn join("\t", "; Calculating max per column",$nrow, $ncol),"\n"
+	if ($main::verbose > 3);
+
+    my @col_max = ();
+    for my $c (0..($ncol-1)) {
+	my @col_values = ();
+	for my $r (0..($nrow-1)) {
+	    push @col_values, $matrix[$c][$r];
+	}
+	my $col_max = &main::checked_max(@col_values);
+	push @col_max, $col_max;
+    }
+    return(@col_max);
+}
+
+
+################################################################
+=pod 
+
+col_min($nrow, $ncol, @matrix)
+
+Calculate the min of each column of a matrix (is applied to the
+different types of matrix used in this class).
+
+Return a vector of the same length as the matrix width.
+
+=cut
+sub col_min {
+    my ($nrow, $ncol, @matrix) = @_;
+
+    warn join("\t", "; Calculating min per column",$nrow, $ncol),"\n"
+	if ($main::verbose > 3);
+
+    my @col_min = ();
+    for my $c (0..($ncol-1)) {
+	my @col_values = ();
+	for my $r (0..($nrow-1)) {
+	    push @col_values, $matrix[$c][$r];
+	}
+	my $col_min = &main::checked_min(@col_values);
+	push @col_min, $col_min;
+    }
+    return(@col_min);
+}
+
+
+################################################################
+=pod 
+
+col_sum($nrow, $ncol, @matrix)
+
+Calculate the sum of each column of a matrix (is applied to the
+different types of matrix used in this class).
+
+Return a vector of the same length as the matrix width.
+
+=cut
+sub col_sum {
+    my ($nrow, $ncol, @matrix) = @_;
+
+    warn join("\t", "; Calculating sum per column",$nrow, $ncol),"\n"
+	if ($main::verbose > 3);
+
+    my @col_sum = ();
+    for my $c (0..($ncol-1)) {
+	my $col_sum = 0;
+	for my $r (0..($nrow-1)) {
+	    $col_sum += $matrix[$c][$r];
+	}
+	push @col_sum, $col_sum;
+    }
+    return(@col_sum);
+}
+
 
 ################################################################
 =pod
@@ -293,6 +422,43 @@ sub addColumn {
     for my $r (0..$#new_col) {
 	${$self->{matrix}}[$ncol-1][$r] = $new_col[$r];
     }
+}
+
+
+################################################################
+=pod
+
+=item get_row($row_nb, $ncol, @matrix)
+
+Return a row of the matrix as a list.
+
+=cut
+sub get_row {
+    my ($row_nb, $ncol, @matrix) = @_;
+    my @row = ();
+
+    for my $c (0..($ncol-1)) {
+	push @row, $matrix[$c][$row_nb];
+    }
+    return @row;
+}
+
+################################################################
+=pod
+
+=item get_column($col_nb, $nrow, @matrix)
+
+Return a column of the matrix as a list.
+
+=cut
+sub get_column {
+    my ($col_nb, $nrow, @matrix) = @_;
+    my @col = ();
+
+    for my $r (0..($nrow-1)) {
+	push @col, $matrix[$col_nb][$r];
+    }
+    return @col;
 }
 
 ################################################################
@@ -472,6 +638,8 @@ sub readFromFile {
 	$self->_readFromMotifSamplerFile($file);
     } elsif ($format =~ /meme/i) {
 	$self->_readFromMEMEFile($file);
+    } elsif ($format =~ /clustal/i) {
+	$self->_readFromClustalFile($file);
     } else {
 	&main::FatalError("Invalid format for reading matrix\t$format");
     }
@@ -483,7 +651,6 @@ sub readFromFile {
 		  "ncol = ".$self->ncol(),
 		  ), "\n" if ($main::verbose >= 2);
     } else {
-#	&main::Warning("The file $file does not seem to contain a matrix in format $format. Please check the file format and contents.");
 	&main::FatalError("The file $file does not seem to contain a matrix in format $format. Please check the file format and contents.");
     }
 }
@@ -538,19 +705,14 @@ sub _readFromGibbsFile {
 	    @alphabet = @header[1..$#header-1];
 #		$self->setAlphabet(@alphabet);
 	} elsif (/model map = (\S+); betaprior map = (\S+)/) {
-	    $self->set_attribute("model.map", $1);
-	    $self->push_attribute("parameters", "model.map");
-	    $self->set_attribute("betaprior.map", $2);
-	    $self->push_attribute("parameters", "betaprior.map");
+	    $self->set_parameter("model.map", $1);
+	    $self->set_parameter("betaprior.map", $2);
 	} elsif (/MAP = (\S+)/) {
-	    $self->force_attribute("MAP", $1);
-	    $self->push_attribute("parameters", "MAP");
+	    $self->set_parameter("MAP", $1);
 	} elsif (/seed: (\S+)/) {
-	    $self->force_attribute("seed", $1);
-	    $self->push_attribute("parameters", "seed");
+	    $self->set_parameter("seed", $1);
 	} elsif (/^gibbs /) {
-	    $self->set_attribute("command", $_);
-	    $self->push_attribute("parameters", "command", "STRING");
+	    $self->set_parameter("command", $_);
 	} elsif ($in_matrix) {
 	    ## Add a column to the matrix (gibbs rows correspond to our columns)
 	    chomp;
@@ -589,7 +751,6 @@ sub _readFromConsensusFile {
     
 #	($in, $dir) = &main::OpenInputFile($file);
 #
-#	die "HELLO\t", $in, "\t", $dir;
     
     ## open input stream
     my $in = STDIN;
@@ -603,15 +764,13 @@ sub _readFromConsensusFile {
 	chomp();
 	if (/COMMAND LINE: /) {
 	    $command = $';
-	    $self->set_attribute("command", $command);
-	    $self->push_attribute("parameters", "command", "STRING");
+	    $self->set_parameter("command", $command);
 	} elsif (/MATRIX\s(\d+)/) {
 	    $current_matrix_nb = $1;
 	    next;
 	} elsif (/letter\s+\d:\s+(\S).+prior frequency =\s+(\S+)/) {
 	    my $letter = $1;
 	    my $prior = $2;
-#		die join "\t", "HELLO", $letter, $prior, "\n";
 	    $self->add_hash_attribute("prior",$letter, $prior);
 	    $self->force_attribute("prior_specified", 1);
 	} elsif  ($current_matrix_nb == 1) {
@@ -626,24 +785,17 @@ sub _readFromConsensusFile {
 		$self->addIndexedRow($residue, @fields);
 		
 	    } elsif (/number of sequences = (\d+)/) {
-		$self->set_attribute("nb.sequences", $1); 
-		$self->push_attribute("parameters", "nb.sequences");
+		$self->set_parameter("nb.sequences", $1); 
 	    } elsif (/unadjusted information = (\S+)/) {
-		$self->set_attribute("unadjusted.information", $1); 
-		$self->push_attribute("parameters", "unadjusted.information");
+		$self->set_parameter("unadjusted.information", $1); 
 	    } elsif (/sample size adjusted information = (\S+)/) {
-		$self->set_attribute("adjusted.information", $1); 
-		$self->push_attribute("parameters", "adjusted.information");
+		$self->set_parameter("adjusted.information", $1); 
 	    } elsif (/ln\(p\-value\) = (\S+)   p\-value = (\S+)/) {
-		$self->set_attribute("ln.Pval", $1); 
-		$self->push_attribute("parameters", "ln.Pval");
-		$self->set_attribute("Pval", $2); 
-		$self->push_attribute("parameters", "Pval");
+		$self->set_parameter("ln.Pval", $1); 
+		$self->set_parameter("Pval", $2); 
 	    } elsif (/ln\(expected frequency\) = (\S+)   expected frequency = (\S+)/) {
-		$self->set_attribute("ln.exp", $1); 
-		$self->push_attribute("parameters", "ln.exp");
-		$self->set_attribute("exp", $2); 
-		$self->push_attribute("parameters", "exp");
+		$self->set_parameter("ln.exp", $1); 
+		$self->set_parameter("exp", $2); 
 	    }
 	}
     }
@@ -717,17 +869,12 @@ sub _readFromMEMEFile {
 	    $current_matrix_number = $1;
 	    $width_to_parse = $2;
 	    $self->set_attribute("ncol", $2);
-	    $self->set_attribute("sites", $3);
-	    $self->push_attribute("parameters", "sites");
-	    $self->set_attribute("llr", $4);
-	    $self->push_attribute("parameters", "llr");
-	    $self->set_attribute("E-value", $5);
-	    $self->push_attribute("parameters", "E-value");
+	    $self->set_parameter("sites", $3);
+	    $self->set_parameter("llr", $4);
+	    $self->set_parameter("E-value", $5);
 	    
 	    $self->init();
 #	    @matrix = $self->getMatrix();
-
-#	    warn $self->toString() if ($main::verbose >= 0);
 
 	    ## Parse alphabet
 	} elsif (/Letter frequencies in dataset/) {
@@ -781,7 +928,7 @@ sub _readFromMEMEFile {
 #	} elsif (/Motif (\d+) position-specific probability matrix/) {
 #	    $current_matrix_number = $1;
 #	    $in_proba_matrix = 1;
-#	    warn ("; Parsing motif $current_matrix_number\n") if ($main::verbose >= 0);
+#	    warn ("; Parsing motif $current_matrix_number\n") if ($main::verbose >= 10);
 #	    next;
 #	}
 #	if (/letter-probability matrix: alength= (\d+) w= (\d+) n= (\d+) E= (\S+)/) {
@@ -793,14 +940,12 @@ sub _readFromMEMEFile {
 #		       ), "\n" if ($main::verbose >= 1);
 #	    $self->force_attribute("nrow", $1);
 #	    $width_to_parse = $2;
-#	    $self->set_attribute("n", $3);
-#	    $self->push_attribute("parameters", "n");
-#	    $self->set_attribute("E", $4);
-#	    $self->push_attribute("parameters", "E");
+#	    $self->set_parameter("n", $3);
+#	    $self->set_parameter("E", $4);
 #	} elsif ($in_proba_matrix) {
 #	    $current_col++;
 #	    my @fields = split /\s+/;
-#	    warn (join "\t", @fields, "\n") if ($main::verbose >= 0);
+#	    warn (join "\t", @fields, "\n") if ($main::verbose >= 10);
 #	    
 #	    foreach my $r (0..$#fields) {
 #		$frequencies[$current_col-1][$r] = $fields[$r];
@@ -808,7 +953,7 @@ sub _readFromMEMEFile {
 #	    
 #	    ## Terminate the reading of this matrix
 #	    if ($current_col == $width_to_parse) {
-#		warn "; Read ".$current_col." columns\n" if ($main::verbose >= 0);
+#		warn "; Read ".$current_col." columns\n" if ($main::verbose >= 10);
 #		$in_proba_matrix = 0;
 #		$self->setFrequencies(@frequencies);
 #	    }
@@ -833,33 +978,169 @@ sub _readFromMotifSamplerFile {
     &FatalError("The MotifSampler format is not yet supported in this version of the program.");
 }
 
+
+
+
 ################################################################
 =pod
 
-=item _addSeparator($sep, $col_width, $type, $ncol, $to_print)
+=item _readFromClustalFile($file)
+
+Read a matrix from a miltiple alignment in clustal format (extension
+ .aln).  This method is called by the method C<readFromFile($file,
+ "clustal")>.
+
+=cut
+sub _readFromClustalFile {
+    my ($self, $file) = @_;
+    
+    ## open input stream
+    my $in = STDIN;
+    if ($file) {
+	open INPUT, $file;
+	$in = INPUT;
+    }
+
+    ## Check the header
+    my $header = <$in>;
+    unless ($header =~ /clustal/i) {
+	&main::Warning("This file does not contain the clustal header");
+    }
+
+    ## Read the sequences
+    my %sequences = ();
+    warn "; Reading sequences\n" if ($main::verbose >= 3);
+    while (<$in>) {
+	next unless (/\S/);
+	chomp();
+	if (/^\s*(\S+)\s+(.+)$/) {
+	    my $seq_id = $1;
+	    next if ($seq_id eq "*"); ## asterisks are used to mark conservation
+	    my $new_seq = $2;
+	    
+	    ## index the new sequence
+	    $sequences{$seq_id} .= $new_seq;
+	    warn join ("\t", ";", "Sequence", $seq_id, 
+		       length($new_seq), length($sequences{$seq_id}),
+		       ),"\n" if ($main::verbose >= 5);
+	}
+    }
+    
+    ## Calculate alignment matrix
+    my %matrix = ();
+    my %prior = ();
+    my $ncol = 0;
+    my $nrow = 0;
+    warn "; Calculating profile matrix from sequences\n" if ($main::verbose >= 3);
+    foreach my $seq_id (sort keys %sequences) {
+	my $sequence = $sequences{$seq_id};
+	$sequence =~ s/\s+//g;
+
+	################################################################
+	## Distinguish between insertions and leading/trailing gaps
+	$terminal_gap_char = ".";
+
+	## Substitute leading gaps
+	if ($sequence =~ /^(\-+)/) {
+	    $leading_gap_len = length($1);
+	    my $leading_gap = ${terminal_gap_char}x$leading_gap_len;
+	    $sequence =~ s|^(\-+)|${leading_gap}|;
+	}
+	## Substitute trailing gaps
+	if ($sequence =~ /(\-+)$/) {
+	    $trailing_gap_len = length($1);
+	    my $trailing_gap = ${terminal_gap_char}x$trailing_gap_len;
+	    $sequence =~ s|(\-+)$|${trailing_gap}|;
+	}
+	warn join ("\t",";", $seq_id,$sequence), "\n" if ($main::verbose >= 5);
+	    
+	$ncol = &main::max($ncol, length($sequence));
+	warn join ("\t", ";", "Sequence", $seq_id, length($sequence)),"\n" if ($main::verbose >= 5);
+	my @sequence = split '|', $sequence;
+	foreach my $i (0..$#sequence) {
+	    my $res = uc($sequence[$i]);
+	    next if ($res eq "N"); ## BEWARE: THIS IS FOR DNA ONLY
+#	    next if ($res eq "-");
+	    next if ($res eq "."); ## leading and trailing gaps
+	    next if ($res eq "*");
+	    $prior{$res}++;
+	    $matrix{$res}->[$i] += 1;
+	}
+    }
+    $self->set_attribute("ncol", $ncol);
+
+    ## Define prior probabilities, alphabet, and matrix size
+    my @alphabet = sort keys %prior;
+    my $alpha_sum = 0;
+    foreach my $res (@alphabet) {
+	$alpha_sum += $prior{$res};
+    }
+    foreach my $res (@alphabet) {
+	if ($alpha_sum > 0) {
+	    $prior{$res} /= $alpha_sum;
+	} else {
+	    $prior{$res} = 0;
+	}
+#	warn join "\t", $res, $alpha_sum, $prior{$res};
+    }
+    $self->setPrior(%prior);
+
+    ## Store the matrix
+    my @matrix = ();
+    foreach my $r (0..$#alphabet) {
+	my $res = $alphabet[$r];
+	my @row = @{$matrix{$res}};
+	$nrow++;
+	foreach $i (0..($ncol-1)) {
+	    $row[$i] = 0 unless (defined($row[$i]));
+	}
+	$self->addRow(@row);
+	warn join ("\t", "Adding row", $r, $res, join ":", @row, "\n"), "\n" if ($main::verbose >= 4); 
+    }
+    $self->setAlphabet(@alphabet);
+    $self->force_attribute("ncol", $ncol);
+    $self->force_attribute("nrow", $nrow);
+
+    warn join ("\t", "; Matrix size",  
+	       $nrow,
+	       $ncol,
+	       $self->nrow(), 
+	       $self->ncol()), "\n" 
+		  if ($main::verbose >= 3);
+    close $in if ($file);
+}
+
+################################################################
+=pod
+
+=item _printSeparator($ncol)
 
 Print a separator between header/footer and matrix
 
 =cut
 
-sub _addSeparator {
-    my ($self, $sep, $col_width, $type, $ncol, $to_print) = @_;
+sub _printSeparator {
+    my ($self, $ncol) = @_;
+    my $sep = $self->get_attribute("sep") || "\t";
+    my $col_width = $self->get_attribute("col_width");
+    my $separator = "";
+
     if (($col_width) && ($col_width < 6)){
-	$to_print .= ";-";
+	$separator .= ";-";
     } else {
-	$to_print .= "; -----";
+	$separator .= "; -----";
     }
-    $to_print .= $sep."|-";
+    $separator .= $sep."|-";
     for $c (0..($ncol-1)) {
 	if ($col_width) {
-	    $to_print .= "-"x($col_width-1);
+	    $separator .= "-"x($col_width-1);
 	} else {
-	    $to_print .= "-"x7;
+	    $separator .= "-"x7;
 	}
-	$to_print .= "|";
+	$separator .= "|";
     }
-    $to_print .= "\n";
-    return $to_print;
+    $separator .= "\n";
+    return $separator;
 }
 
 ################################################################
@@ -879,7 +1160,8 @@ sub toString {
     ## Matrix type
     $type = $args{type} || "alignment";
 
-    %supported_types = (alignment=>1,
+    %supported_types = (profile=>1,
+			alignment=>1,
 			frequencies=>1,
 			weights=>1,
 			information=>1,
@@ -887,18 +1169,29 @@ sub toString {
 			);
     &main::FatalError("Invalid matrix type $type") unless $supported_types{$type};
 
+    ## Set formatting parameters provided in arguments as matrix attribute
+    foreach my $key ("sep", "col_width", "decimals") {
+	if (defined($args{$key})) {
+	    $self->force_attribute($key, $args{$key});
+	}
+    }
+
     ## Format for the matrix entries
-    my $sep = $args{sep} || "\t";
-    my $col_width = $args{col_width};
+    my $sep = $self->get_attribute("sep") || "\t";
+    my $col_width = $self->get_attribute("col_width");
+    my $decimals = $self->get_attribute("decimals");
+
+    ## Calculate number width
     my $number_width = 0;
     if ($col_width) {
 	$number_width = $col_width - 1;
     }
-    my $decimals = $args{decimals};
-    unless ($decimals) {
-	if ($type eq "alignment") {
-	    $decimals = 0;
-	} else {
+
+    if ($type eq "alignment") {
+	$decimals = 0;
+    } else {
+	
+	unless ($decimals) {
 	    $decimals = $number_width - 2;
 	}
     }
@@ -941,8 +1234,80 @@ sub toString {
 		}
 	    }
 	}
+
+	################################################################
+	## Print a vertical matrix with consensus besides
+    } elsif ($type eq "profile") {
+	@matrix = @{$self->{matrix}};
+	my @alphabet = $self->getAlphabet();
+	my $ncol = $self->ncol();
+	my $nrow = $self->nrow();
+	my $max_profile = $self->get_attribute("max_profile");
+	my $comment_char = "|";
+
+	$to_print .= "; Profile matrix\n";
 	
+	## Get the consensus
+	$self->calcConsensus();
+	my @consensus_strict = split "|", $self->get_attribute("consensus.strict");
+	my @consensus_IUPAC = split "|", $self->get_attribute("consensus.IUPAC");
+
+	## Get the information per column
+	my @information = $self->getInformation();
+	my @info_sum = &col_sum($nrow, $ncol, @information);
+
+	## profile header
+	$to_print .= $self->_printMatrixRow("pos", 
+					    @alphabet, 
+					    $comment_char,
+					    "sum",
+					    "max",
+					    "max/sum",
+					    "min",
+					    "strict",
+					    "IUPAC",
+					    "inf_sum",
+					    "="x$max_profile
+					    );
+
+	$to_print .= $self->_printSeparator(scalar(@alphabet)+1);
+
+	## print each matrix column as a row in the output
+	my $matrix_max = &main::checked_max(&col_max($nrow, $ncol, @matrix));
+	my $scale = $max_profile/$matrix_max;
+#	die join ("\t", $max_), "\n";
+	
+
+	for my $c (0..($ncol-1)) {
+	    my @row = &get_column($c, $nrow, @matrix);
+	    my $sum = &main::sum(@row);
+	    my $max = &main::checked_max(@row);
+	    my $min = &main::checked_min(@row);
+	    my $profile = &main::round($max*$scale);
+	    if ($sum <= 0) {
+		$rel_max = "NA";
+	    } else {
+		$rel_max = sprintf("%5.2f", $max/$sum);
+	    }
+	    $to_print .= $self->_printMatrixRow($c, 
+						@row, 
+						$comment_char,
+						$sum,
+						$max,
+						$rel_max,
+						$min,
+						$consensus_strict[$c],
+						$consensus_IUPAC[$c],
+						sprintf("%5.2f",$info_sum[$c]),
+						"*"x$profile
+						);
+
+	}
+
     } else {
+
+	################################################################
+	## Print a matrix
 	my @matrix = ();
 	if ($type eq "alignment") {
 	    @matrix = @{$self->{matrix}};
@@ -974,56 +1339,61 @@ sub toString {
 	    }
 	    $to_print .= "\n";
 
-	    $to_print = $self->_addSeparator($sep, $col_width, $type, $ncol, $to_print);
+	    $to_print .= $self->_printSeparator($ncol, $to_print);
 	}
 
 	## Print the matrix
 	for $a (0..$#alphabet) {
-	    $to_print .= $alphabet[$a];
-	    $to_print .= $sep."|";
-	    for $c (0..($ncol-1)) {
-		my $value = $matrix[$c][$a];
-		if ($col_width) {
-		    my $value_format = "%${number_width}s";
-		    if (&main::IsReal($value)){
-			if ($type eq "alignment") {
-			    $value_format = "%${number_width}d";
-			} else {
-			    $value_format= "%${number_width}.${decimals}f";
-			}
-		    }
-		    $to_print .= sprintf " ${value_format}", $value;
-		} else {
-		    $to_print .= $sep.$value;
-		}
-	    }
-	    $to_print .= "\n";
+	    my @row = &get_row($a, $ncol, @matrix);
+ 	    $to_print .= $self->_printMatrixRow($alphabet[$a], @row);
 	}
 
-	## Print information per column
-	if (($type eq "information") && ($main::verbose >= 1)){
-	    $to_print = $self->_addSeparator($sep, $col_width, $type, $ncol, $to_print);
-	    my @column_information = $self->get_attribute("column.information");
-	    $to_print .= ";I";
-	    $to_print .= $sep."|";
-	    for my $c (0..($ncol-1)) {
-		my $value = $column_information[$c];
-		if ($col_width) {
-		    my $value_format = "%${number_width}s";
-		    if (&main::IsReal($value)){
-			if ($type eq "alignment") {
-			    $value_format = "%${number_width}d";
-			} else {
-			    $value_format= "%${number_width}.${decimals}f";
-			}
-		    }
-		    $to_print .= sprintf " ${value_format}", $value;
-		} else {
-		    $to_print .= $sep.$value;
-		}
-	    }
-	    $to_print .= "\n";
+	################################################################
+	##Print column statistics
+	if ($self->get_attribute("margins")) {
+	    $prefix_letter = substr($type, 0, 1);
+	    $to_print .= $self->_printSeparator($ncol, $to_print);
+	    
+	    ## Sum per column
+	    my @col_sum = &col_sum($nrow, $ncol, @matrix);
+	    push @col_sum, &main::sum(@col_sum);
+	    $to_print .= $self->_printMatrixRow("; ".$prefix_letter.".sum", @col_sum);
+	    
+	    ## Maximum per column
+	    my @col_max = &col_max($nrow, $ncol, @matrix);
+	    push @col_max, &main::max(@col_max);
+	    $to_print .= $self->_printMatrixRow("; ".$prefix_letter.".max", @col_max);
+	    
+	    ## Minimum per column
+	    my @col_min = &col_min($nrow, $ncol, @matrix);
+	    push @col_min, &main::min(@col_min);
+	    $to_print .= $self->_printMatrixRow("; ".$prefix_letter.".min", @col_min);
 	}
+
+#  	## Print information per column
+#  	if (($type eq "information") && ($main::verbose >= 1)){
+#  	    $to_print .= $self->_printSeparator($ncol, $to_print);
+#  	    my @column_information = $self->get_attribute("column.information");
+#  	    $to_print .= ";I";
+#  	    $to_print .= $sep."|";
+#  	    for my $c (0..($ncol-1)) {
+#  		my $value = $column_information[$c];
+#  		if ($col_width) {
+#  		    my $value_format = "%${number_width}s";
+#  		    if (&main::IsReal($value)){
+#  			if ($type eq "alignment") {
+#  			    $value_format = "%${number_width}d";
+#  			} else {
+#  			    $value_format= "%${number_width}.${decimals}f";
+#  			}
+#  		    }
+#  		    $to_print .= sprintf " ${value_format}", $value;
+#  		} else {
+#  		    $to_print .= $sep.$value;
+#  		}
+#  	    }
+#  	    $to_print .= "\n";
+#  	}
     }
     return $to_print;
 }
@@ -1119,6 +1489,9 @@ Return the information content matrix.
 =cut
 sub getInformation {
     my ($self) = @_;
+
+    $self->calcInformation();
+
     return @{$self->{information}};
 }
 
@@ -1145,9 +1518,18 @@ sub setInformation {
 
 Calculate information content from the weight matrix.
 
+Caching: if already calculated, do not calculate anymore.
+attribute "force": force calculaton even if aready calculated.
+
 =cut
 sub calcInformation {
-    my ($self) = @_;
+    my ($self, $force) = @_;
+
+    ## Caching
+    if (($self->get_attribute("information_calculated")) && !($force)) {
+	warn "Information already calculated before\n" if ($main::verbose >= 2);
+	return;
+    }
 
     ## Calculate frequencies if required
     unless ($self->get_attribute("frequencies_specified")) {
@@ -1195,9 +1577,11 @@ sub calcInformation {
     $self->push_attribute("column.information", @column_information);
 
     ## Total information for the matrix
-    $self->force_attribute("total.information", $total_information);
-    $self->push_attribute("parameters", "total.information");
+    $self->set_parameter("total.information", $total_information);
+    $self->set_parameter("information.per.column", $total_information/$self->ncol());
 
+    ## Remember that info was calculated once
+    $self->set_attribute("information_calculate", 1);
 }
 
 
@@ -1308,6 +1692,8 @@ sub calcFrequencies {
     ## Calculate the frequencies
     my @frequencies = ();
     my @crude_frequencies = ();
+#    my @col_sum = &col_sum(@matrix);
+    
     for my $c (0..($ncol-1)) {
 	my $col_sum = 0;
 	for my $r (0..($nrow-1)) {
@@ -1319,7 +1705,11 @@ sub calcFrequencies {
 	    warn join "\t", "freq", $r, $c, $letter, $prior, $pseudo, $occ, $col_sum, "\n" if ($main::verbose >= 10);
 	}
 	for my $r (0..($nrow-1)) {
-	    $crude_frequencies[$c][$r] = $matrix[$c][$r]/$col_sum;
+	    if ($col_sum eq 0) {
+		$crude_frequencies[$c][$r] = 0;
+	    } else {
+		$crude_frequencies[$c][$r] = $matrix[$c][$r]/$col_sum;
+	    }
 	    $frequencies[$c][$r] /= ($col_sum + $pseudo);
 	    warn join( "\t", "freq", $r, $c, $pseudo, 
 		       $col_sum, 
@@ -1334,11 +1724,26 @@ sub calcFrequencies {
     $self->setCrudeFrequencies($nrow,$ncol,@crude_frequencies);
 }
 
+
 ################################################################
-## Calculate the consensus
+=pod
+
+=item &calcConsensus($force)
+
+Calculate the consensus. 
+
+Caching: if already calculated, do not calculate anymore.
+attribute "force": force calculaton even if aready calculated.
+
+=cut
 sub calcConsensus {
-    my ($self) = @_;
-#    my $consensus_type = $args{type} || "degenerate";
+    my ($self, $force) = @_;
+
+    ## Caching
+    if (($self->get_attribute("consensus_calculated")) && !($force)) {
+	warn "Consensus already calculated before\n" if ($main::verbose >= 2);
+	return;
+    }
 
     ## Calculate weight only if required
     unless ($self->get_attribute("weight_specified")) {
@@ -1387,26 +1792,147 @@ sub calcConsensus {
 	    $consensus .= lc($regular);
 	}
     }
-
-    
+    my $consensus_IUPAC = &main::regular_to_IUPAC($consensus);
 
     ## Strict consensus 
-    $self->force_attribute("consensus.strict", $consensus_strict);
-    $self->push_attribute("parameters","consensus.strict");
-
-    ## Degenerate consensus in regexp format
-    $self->force_attribute("consensus.regexp", $consensus);
-    $self->push_attribute("parameters","consensus.regexp");
+    $self->set_parameter("consensus.strict", $consensus_strict);
 
     ## Degenerate consensus in IUPAC format
-    my $consensus_IUPAC = &main::regular_to_IUPAC($consensus);
-    $self->force_attribute("consensus.IUPAC", $consensus_IUPAC);
-    $self->push_attribute("parameters","consensus.IUPAC");
+    $self->set_parameter("consensus.IUPAC", $consensus_IUPAC);
+
+    ## Degenerate consensus in regexp format
+    $self->set_parameter("consensus.regexp", $consensus);
+
+    ## Remember that the consensus has been calculated
+    $self->set_parameter("consensus_calculated", 1);
 
 }
 
 
+################################################################
+=pod
 
+=_printMatrixRow($row_name, @values)
+
+Print a row for the matrix output.
+
+=cut
+sub _printMatrixRow {
+    my ($self, $row_name, @values) = @_;
+    my $row_string = $row_name;
+    my $ncol = scalar(@values);
+
+#      my ($decimals, $sep, $col_width, $number_width) = $self->_get_format;
+    
+    my $decimals = $self->get_attribute("decimals");
+    unless ($decimals) {
+	if ($type eq "alignment") {
+  	    $decimals = 0;
+  	} else {
+  	    $decimals = $number_width - 2;
+  	}
+    }
+    my $sep = $self->get_attribute("sep") || "\t";
+    my $col_width = $self->get_attribute("col_width");
+    
+    ## Format for the matrix entries
+    my $number_width = 0;
+    if ($col_width) {
+  	$number_width = $col_width - 1;
+    }
+    
+    ## Print the matrix row
+    $row_string .= $sep."|";
+    for $c (0..($ncol-1)) {
+	my $value = $values[$c];
+	if ($col_width) {
+	    my $value_format = "%${number_width}s";
+	    if (&main::IsReal($value)){
+		if ($type eq "alignment") {
+		    $value_format = "%${number_width}d";
+		} else {
+		    $value_format= "%${number_width}.${decimals}f";
+		}
+	    }
+	    $row_string .= sprintf " ${value_format}", $value;
+	} else {
+	    $row_string .= $sep.$value;
+	}
+    }
+    $row_string .= "\n";
+    return $row_string
+}
+
+
+#  ################################################################
+#  =pod
+
+#  =_printMatrixColumn($column_name, @values)
+
+#  Print a column for the matrix output (the column is converted to a
+#  text row).
+
+#  =cut
+#  sub _printMatrixColumn {
+#      my ($self, $column_name, @values) = @_;
+#      my $column_string = $column_name;
+#      my $nrow = scalar(@values);
+
+#      my ($decimals, $sep, $col_width, $number_width) = $self->_get_format;
+
+#      ## Print the matrix column
+#      $column_string .= $sep."|";
+#      for $r (0..($nrow-1)) {
+#  	my $value = $values[$c];
+#  	if ($col_width) {
+#  	    my $value_format = "%${number_width}s";
+#  	    if (&main::IsReal($value)){
+#  		if ($type eq "alignment") {
+#  		    $value_format = "%${number_width}d";
+#  		} else {
+#  		    $value_format= "%${number_width}.${decimals}f";
+#  		}
+#  	    }
+#  	    $column_string .= sprintf " ${value_format}", $value;
+#  	} else {
+#  	    $column_string .= $sep.$value;
+#  	}
+#      }
+#      $column_string .= "\n";
+#      die $column_string;
+#      return $column_string
+#  }
+
+################################################################
+=pod
+
+=item _get_format()
+
+Return the parameters for formatting output columns.
+
+Usage:  my ($decimals, $sep, $col_width, $number_width) = $self->_get_format;
+
+=cut
+sub _get_format {
+    my ($self) = @_;
+    my $decimals = $self->get_attribute("decimals");
+    unless ($decimals) {
+	if ($type eq "alignment") {
+	    $decimals = 0;
+	} else {
+	    $decimals = $number_width - 2;
+	}
+    }
+    my $sep = $self->get_attribute("sep") || "\t";
+    my $col_width = $self->get_attribute("col_width");
+
+    ## Format for the matrix entries
+    my $number_width = 0;
+    if ($col_width) {
+	$number_width = $col_width - 1;
+    }
+    return ($decimals, $sep, $col_width, $number_width);
+}
 return 1;
 
 
@@ -1415,3 +1941,4 @@ __END__
 =pod
 
 =back
+
