@@ -168,9 +168,9 @@ use Data::Dumper;
 
   #### set the multi-column header for expanded attributes. The $heade string should contain \t as field separator 
   sub set_attribute_header {
-    my ($class_holder, $attr, $header) = @_;
-    my $object_type = $class_holder->get_object_type();
-    $object_type->_set_attribute_header($attr,$header);
+      my ($class_holder, $attr, $header) = @_;
+      my $object_type = $class_holder->get_object_type();
+      $object_type->_set_attribute_header($attr,$header);
   }
 
 #  sub get_objects_by_name {
