@@ -4,9 +4,6 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 require "RSA.lib";
 
-
-
-
 $start_time = $date = `date '+%d/%m/%y %H:%M:%S %Z'`;
 
 #### initialise parameters ####
@@ -14,13 +11,21 @@ $type="site";
 $id = "patser";
 $matrix_length = 1;
 $seq_format = "wconsensus";
-#### read arguments ####
+$flank_len = 0;
 
+%supported= ();
+$supported{table} = 1;
+$supported{matches} = 1;
+
+#### read arguments ####
 &ReadArguments();
 
+unless (defined(%return)) {
+    $return{matches} = 1;
+}
 
-### origin file
-if ($origin_file ne "") {
+#### origin file
+if ($origin_file) {
     unless (open ORIG, $origin_file) {
 	print "Error: could not open the oirigin file\n";
 	exit;
@@ -35,11 +40,11 @@ if ($origin_file ne "") {
 
 
 
-##### read the sequences #####
+#### read the sequences
 if ($sequence_file) {
     ($seq, $seq_dir) = &OpenInputFile($sequence_file);
     while ((($current_seq, $current_id) = &ReadNextSequence($seq, $seq_format, $seq_dir)) &&
-	   (($current_seq ne "") || ($current_id ne ""))) {
+	   (($current_seq) || ($current_id))) {
 	$current_seq =~s/\s//g;
 	$sequence{$current_id} = $current_seq;
     }
@@ -56,11 +61,11 @@ $out = &OpenOutputFile($outputfile);
 #### verbose ####
 if ($verbose) {
     print $out ";features-from-patser ";
-    &PrintArguments;
+    &PrintArguments();
     print $out "\n";
-    print $out ";Input file	$inputfile\n" unless ($inputfile eq "");
-    print $out ";Output file	$outputfile\n" unless ($outputfile eq "");
-    if ($sequence_file ne "") {
+    print $out ";Input file	$inputfile\n" if ($inputfile);
+    print $out ";Output file	$outputfile\n" if ($outputfile);
+    if ($sequence_file) {
 	print $out ";Sequence file\t$sequence_file\n";
 	print $out ";\tsequence id\tlength\n";
 	foreach $id (sort keys %sequence) {
@@ -70,75 +75,106 @@ if ($verbose) {
     }
 }
 
-###### execute the command #########
+#### read and parse patser file
 $header_printed=0;
 while (<$in>) {
     if (($matrix_length == 1) && (/width of the alignment matrix\:\s+(\d+)/)) {
-         $matrix_length = $1;
-	 print $out "; $_";
+	$matrix_length = $1;
+	print $out "; $_";
 
     } elsif (/^\s*(\S+)\s+position=\s+(\d+)([c\s])\s+score=\s+(\S+)(.*)/i) {
-	unless ($header_printed) {
-	    print $out $map;
-	    print $out join ("\t", 
-			     "; map", 
-			     "type", 
-			     "id", 
-			     "strand", 
-			     "start", 
-			     "end", 
-			     "sequence", 
-			     "score",
-			     "ln(P)",
-			     ), "\n";
-	    $header_printed=1;
-	}
+	
+	#### parse the match
 	$map = $1;
 	$position = $2;
 	$strand = $3;
 	$score = $4;
+	
+	#### P-value
 	if ($5 =~ /ln\(p-value\)=\s+(\S+)/) {
 	    $lnP = $1;
 	}
 	
-
-	#### get the sub sequence
-	$flank_len = 5;
-        my $sub_sequence = uc(substr($sequence{$map}, $position -1, $matrix_length));
-	my $left_flank =  lc(substr($sequence{$map}, $position -1 - $flank_len, $flank_len));
-	my $right_flank =  lc(substr($sequence{$map}, $position + $matrix_length -1, $flank_len));
-	if ($strand eq "C") {
-	    $sub_sequence = &ReverseComplement($sub_sequence);
-	    $left_flank = lc(&ReverseComplement($left_flank));
-	    $right_flank = lc(&ReverseComplement($right_flank));
-	    $sub_sequence = $right_flank.$sub_sequence.$left_flank;
-	} else {
-	    $sub_sequence = $left_flank.$sub_sequence.$right_flank;
+	#### store scores for the score table
+	if ($return{table}) {
+	    push @{$scores{$map}}, $score;
+	    $max_scores_per_map = &max($max_scores_per_map, $#{$scores{$map}}+1);
 	}
+
 	
-	unless ($fixed_origin) {
-	    $origin = $origin{$1};
-	}
-	if ($origin eq "-0") {
-	    $start = $position - length($sequence{$map}) - 1;
-	} else {
-	    $start = $position - $origin;
-	}
-	$end = $start + $matrix_length -1;
+	#### parse information about the match
+	if ($return{matches}) {
 
-	unless ($force_strand) {
-	    if  ($strand =~ /^c$/i) {
-		$strand = "R";
-	    } else {
-		$strand = "D";
+	    #### adapt coordinates to the selected origin
+	    unless ($fixed_origin) {
+		$origin = $origin{$1};
 	    }
+	    if ($origin eq "-0") {
+		$start = $position - length($sequence{$map}) - 1;
+	    } else {
+		$start = $position - $origin;
+	    }
+	    $end = $start + $matrix_length -1;
+
+	    #### strand
+	    unless ($force_strand) {
+		if  ($strand =~ /^c$/i) {
+		    $strand = "R";
+		} else {
+		    $strand = "D";
+		}
+	    }
+
+	    #### get the sub sequence
+	    if ($sequence_file) {
+		my $sub_sequence = uc(sub_sequence($sequence{$map}, $position -1, $matrix_length));
+		my $left_flank =  lc(sub_sequence($sequence{$map}, $position -1 - $flank_len, $flank_len));
+		my $right_flank =  lc(sub_sequence($sequence{$map}, $position + $matrix_length -1, $flank_len));
+		if ($strand eq "C") {
+		    $sub_sequence = &ReverseComplement($sub_sequence);
+		    $left_flank = lc(&ReverseComplement($left_flank));
+		    $right_flank = lc(&ReverseComplement($right_flank));
+		    $sub_sequence = $right_flank.$sub_sequence.$left_flank;
+		} else {
+		    $sub_sequence = $left_flank.$sub_sequence.$right_flank;
+		}
+		
+
+		#### description
+		$descr = "${sub_sequence}";
+	    }
+
+	    ### print the header line if it has not yet been done
+	    unless ($header_printed) {
+		print $out join ("\t", 
+				 "; map", 
+				 "type", 
+				 "id", 
+				 "strand", 
+				 "start", 
+				 "end", 
+				 "sequence", 
+				 "score",
+				 "ln(P)",
+				 ), "\n";
+		$header_printed=1;
+	    }
+
+	    #### print the match
+	    &PrintFeature();
 	}
-
-	$descr = "${sub_sequence}";
-
-	&PrintFeature();
     } else {
 	print $out "; $_";
+    }
+}
+
+#### print score table
+if ($return{table}) {
+    print $out "; Score table\n" if ($verbose >= 1);
+    print $out join ("\t", "; rank", 1..$max_scores_per_map), "\n";
+    foreach my $map (sort keys %scores) {
+	print $out join "\t", $map, (sort {$b <=> $a} @{$scores{$map}});
+	print $out "\n";
     }
 }
 
@@ -224,16 +260,36 @@ OPTIONS
 	-seq seq_file
 		indicates the sequence file which had been used as 
 		input for patser. This file must be in wconsensus format.
+	-N #	return matching sequences with # flanking nucleotides
+		(only valid with the -seq option)
+	-return
+		Information to return. Supported: matches,table
+
+		matches (Default) the output file contains one row per
+		match, with the same information as in the patser
+		file.
+
+	        table: the program returns a table with one row per
+		sequence and one column per match. Matches are sorted
+		by significance. Beware: this format is not supported
+		by feature-map.
 		
 INPUT FORMAT
+	The input file should be the result of patser.
 	
 	
 OUTPUT FORMAT
-	
+	By default, the program returns a table with one row per
+	match, in feature-map format.
+
+	The option -table motifies the behaviour, and a table is
+	returned with one row per sequence and one column per match. 
 	
 EXAMPLES
-       features-from-patser -v -i mydata -o myresult
-	
+
+       features-from-patser -v -i mydata -o myresult \
+	    -return matches,table
+
 End_of_help
   close HELP;
   exit;
@@ -257,8 +313,10 @@ features-from-patser options
 -mlen #		matrix length
 -strand		D, R or DR. Strand on which to draw the feature
 -origin #	origin
+-N #		return matching sequences with # flanking nucleotides
 -origfile	origin file
 -seq		sequencefile
+-return		information to return (Supported: matches,table)
 End_short_help
   close HELP;
   exit;
@@ -299,6 +357,10 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-id") {
 	    $id = $ARGV[$a+1];
 
+	    #### neighborhood (return flanking residues)
+	} elsif (($ARGV[$a] eq "-N") && (&IsNatural($ARGV[$a+1]))) {
+	    $flank_len = $ARGV[$a+1];
+
 	} elsif (($ARGV[$a] =~ /^-orig/i) &&
 		 ((&IsInteger($ARGV[$a+1]) || ($ARGV[$a+1] eq "-0")))) {
 	    $fixed_origin = 1;
@@ -310,9 +372,19 @@ sub ReadArguments {
 	} elsif (($ARGV[$a] =~ /^-mlen/i) && (&IsNatural($ARGV[$a+1]))) {
 	    $matrix_length = $ARGV[$a+1];
 
-	    ### sequence file ###
+	    ### sequence file 
 	} elsif ($ARGV[$a] =~ /^-seq/) {
 	    $sequence_file = $ARGV[$a+1];
+
+	    ### return a table
+	} elsif ($ARGV[$a] eq "-return") {
+	    @to_return = split ",", $ARGV[$a+1];
+	    foreach $format (@to_return) {
+		unless ($supported{$format}) {
+		    &FatalError("$format is not a supported return format");
+		}
+		$return{$format} = 1;
+	    }
 
 	}
     }
