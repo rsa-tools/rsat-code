@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: orf-info,v 1.8 2001/09/21 03:09:41 jvanheld Exp $
+# $Id: orf-info,v 1.9 2001/09/21 03:17:11 jvanheld Exp $
 #
-# Time-stamp: <2001-09-21 05:08:53 jvanheld>
+# Time-stamp: <2001-09-21 05:17:01 jvanheld>
 #
 ############################################################
 
@@ -18,7 +18,7 @@ $start_time = $date = `date '+%d/%m/%y %H:%M:%S %Z'`;
 #### initialise parameters ####
 $orf_col = 0;
 $locus_col = 2;
-$exact = 0;
+$full = 0;
 $no_query = 0;
 
 &ReadArguments;
@@ -79,7 +79,7 @@ foreach $query (@queries) {
 
     $found = 0;
 
-    if ($exact) {
+    if ($full) {
 	foreach $key (keys %orf_id) {
 	    if ($key =~ /^$query$/i) {
 		$found = 1;
@@ -188,7 +188,7 @@ $supported_organisms
 	-q	query. can be reiterated within the same command line
 	-i	query file
 	-o	output file
-	-exact	exact match only (no substring matching)
+	-full	full match only (no substring matching)
 	-noquery	
 		do not print the query at the beginning of each line
 
@@ -243,7 +243,7 @@ $supported_organisms
 -i		query file
 -o		output file
 -q		query (can be reiterated on the same command line)
--exact		exact match only (no substring matching)
+-full		full match only (no substring matching)
 -noquery	do not print the query at the beginning of each line
 
 End_short_help
@@ -270,9 +270,9 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-org") {
 	    $organism_name =$ARGV[$a+1];
 	    
-	    #### exact match only
-	} elsif ($ARGV[$a] eq "-exact") {
-	    $exact = 1;
+	    #### full match only
+	} elsif ($ARGV[$a] eq "-full") {
+	    $full = 1;
 	    
 	    #### don't print the query in output
 	} elsif ($ARGV[$a] eq "-noquery") {
