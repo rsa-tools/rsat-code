@@ -32,7 +32,7 @@ $default{uthreshold} = "none"; ### [-u <Upper-threshold score, exclusive>]
 
 
 $default{return} = "all matches";
-$default{top_scores} = "1"; ### [-t <Print only the top scores>]
+$default{top_scores} = "3"; ### [-t <Print only the top scores>]
 $default{positions} = "checked"; ### convert the result into a score table
 $default{table} = ""; ### convert the result into a score table
 $default{sort} = "checked"; ### [-ds <Print top scores in order of decreasing score (default: print in order of position)>]
@@ -200,7 +200,7 @@ print $query->textfield(-name=>'pseudo_counts',
 print "<br>\n";
 print "<A HREF='help.patser.html#lthreshold'><B>Lower threshold estimation</B></A>";
 print $query->popup_menu(-name=>'lthreshold_method',
-			 -Values=>['weight', 'maximum ln(p-value)', , 'adjusted information content (auto)'],
+			 -Values=>['weight', 'maximum ln(p-value)', , 'adjusted information content (auto)', 'none'],
 			 -default=>$default{lthreshold_method});
 
 print $query->textfield(-name=>'lthreshold',
