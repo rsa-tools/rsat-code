@@ -333,7 +333,7 @@ print $query->hidden(-name=>'htmap',-default=>'checked');
 print $query->hidden(-name=>'legend',-default=>'checked');
 
 print $query->hidden(-name=>'xcol',-default=>'6');
-print $query->hidden(-name=>'xleg1',-default=>'positional bis');
+print $query->hidden(-name=>'xleg1',-default=>'positional bias');
 print $query->hidden(-name=>'xleg2',-default=>'(chi-square value)');
 print $query->hidden(-name=>'xmin',-default=>'0');
 print $query->hidden(-name=>'xmax',-default=>'auto');
