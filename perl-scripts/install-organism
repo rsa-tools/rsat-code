@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.18 2002/06/10 01:10:44 jvanheld Exp $
+# $Id: install-organism,v 1.19 2002/06/10 01:40:07 jvanheld Exp $
 #
-# Time-stamp: <2002-06-10 03:09:59 jvanheld>
+# Time-stamp: <2002-06-10 03:38:57 jvanheld>
 #
 ############################################################
 
@@ -382,7 +382,7 @@ sub CalcFrequencies {
     }
 
     ################################################################
-    # calculate oligont frequencies in all intergenic sequences
+    # calculate oligont frequencies in all coding sequences
     if ($install_steps{coding_freq}) {
 	$seq_type = "coding";
 	if ($purged_frequencies) {
@@ -395,7 +395,14 @@ sub CalcFrequencies {
 	&CalcOligoFreq($genome_dir."/".$seq_file, $seq_format, $seq_type) if ($install_steps{oligos});
 	&CalcDyadFreq($genome_dir."/".$seq_file, $seq_format, $seq_type) if ($install_steps{dyads});
     }
+
+    if ($purged_frequencies) {
+	`\rm -f ${organism_short_name}_coding_segments_purged.fasta`;
+    }
+    `\rm -f ${organism_short_name}_coding_segments.fasta`;
+
     chdir '../';
+    
 }
 
 sub CalcOligoFreq {
