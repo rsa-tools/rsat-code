@@ -1,0 +1,162 @@
+<HTML>
+<HEAD>
+   <TITLE>RSA-tools: retrieve-seq manual</TITLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFEEDD" LINK="#0000EE" VLINK="#55008B" ALINK="#FF0000">
+
+<H2 ALIGN=CENTER><A HREF="RSA_home.cgi">RSA-tools</A> - retrieve-seq manual</H2>
+
+<H3>Name</H3>
+<UL>
+retrieve-seq<P>
+1997-98 by <a HREF="mailto:Jacques van Helden <jvanheld@ucmb.ulb.ac.be>">Jacques van Helden (jvanheld@ucmb.ulb.ac.be)</A>.
+</UL>
+
+<H3>Description</H3>
+
+<UL>
+Returns upstream, downstream or ORF sequences for one or several genes. <P>
+</UL>
+
+<H3>Options</H3>
+
+<UL>
+
+<A NAME="Organism"></A>
+<h4>Organism</h4>
+<ul>
+A pop-up menu shows the list of organisms supported on this web site. 
+</ul>
+
+<A NAME="genes"></A>
+<h4>Genes</h4>
+<ul>
+Two options are proposed
+<ul>
+<li><b>All</b>: all genes of the selected organism are considered
+<li><b>Selection</b>: user-specified list of genes 
+<UL>
+<li>gene list typed directly in the text area.
+<li><B>Upload</B>: select a text file on your computer that contains
+the list of genes
+</UL>
+
+</ul>
+<P>
+Valid queries are ORF identifiers (eg: YFL021W) or gene names (eg:
+GAL4, NIL1). Synonyms are accepted (eg: NIL1 = GAT1), but only one
+gene name is returned as sequence identifier (GAT1 in this case). <BR>
+Several queries can be entered simultaneously, separated by carriage
+returns. The first word of each line is the query; any following
+information is ignored. <P>
+
+</ul>
+
+<A NAME="sequence_type"></A>
+<h4>Sequence type</h4>
+<ul>
+Currentlly supported:
+<ul>
+<li><B>Upstream</B> sequences located upstream the coding region. The origin is at the start codon. 
+<li><B>Downstream</B> sequences located downstream the coding region. The origin is at the stop codon. 
+<li><B>ORF</B> DNA sequences located between the start and stop codons. WARNING: introns are not spliced out (this will be implemented in further versions)
+
+</ul>
+</ul>
+
+<A NAME="from_to"></A>
+<h4>From, to:</h4>
+<ul>
+Limits of the region to retrieve. Coordintates are calculated relative to the ORF start. 
+<UL>
+<B>Sign</B> 
+  <UL>
+    <LI><B><FONT COLOR="#DD0000">negative</FONT></B> 
+           values return sequence located <B><FONT COLOR="#DD0000">upstream</FONT></B> the origin 
+    <LI><B><FONT COLOR="#00AA00">positive</FONT></B> 
+           values return sequences <B><FONT COLOR="#00AA00">downstream</FONT></B> the origin 
+<br>
+	   The origin itself depends on the sequence type, see above)
+ </UL>
+		   <P>
+
+<h4>Suggested values for upstream sequence retrieval</B>
+<UL>
+
+<LI>For <B>yeast</B>, we generally obtain good results with upstream
+regions from -800 to -1. About 99% of the known upstream elements are
+comprized between these limits (source: Transfac).<BR> <LI>For
+<B>bacteria</B>, the distribution of regulatory sites depends on the
+mode of regulation :
+<UL>
+<LI><B>transcriptional repressors</B> generally bind proximally, and
+may overlap the transcription start or even be located downstream. A
+good guess is from -200 to +50.  <LI>Binding sites for
+<B>transcriptional activators</B> have a more distal distribution
+(-400 to -1). <P>
+</UL>
+</UL>
+</UL>
+
+</ul>
+
+<A NAME="noorf"></A>
+<h4>Allow overlap with upstream ORFs:</h4>
+<ul>
+It is quite frequent to find a predicted ORF in close proximity
+upstream from a query ORF. If you want to discard these sequences from
+your analysis, inactivate this option, and the size of the upstream
+region will automatically be shortened when a predicted ORF is located
+within the range defined by the option <I>from</I>. The actual size
+selected for the upstream sequence is indicated in the sequence
+comments if you select the IG sequence format. <P> Note that in some
+cases a known regulatory element is located upstream or within a
+predicted ORF. This means either that the predited ORF is an artifact,
+or that the same sequence is bifunctional (coding and regulatory). For
+this reason, this option is activated by default. <P> Note that the
+distance to the closest upstream neighbour can be checked with the
+program <A HREF="neighbour-orfs.html"><B>neighbour-orfs</B></A>.
+<P>
+</ul>
+
+<A NAME="formats"></A>
+<h4>Output sequence format:</h4>
+<ul>
+The result can be displayed in various sequence formats (click on the links for more details). 
+<UL>
+<LI><A HREF="help.formats.html#raw"><B>raw</B></A>: the raw sequence without any identifier or comment.
+<LI><A HREF="help.formats.html#multi"><B>multi</B></A>: several raw sequences concatenated.
+<LI><A HREF="help.formats.html#ig"><B>IG</B></A>: IntelliGenetics format.
+<LI><A HREF="help.formats.html#fasta"><B>FastA</B></A>: the sequence format used by FastA, BLAST, Gibbs sampler and a lot of other bioinformatic programs.
+<LI><A HREF="help.formats.html#wconsensus"><B>Wconsensus</B></A>: the format defined by Jerry Hertz for his programs (patser, consensus, wconsensus).
+</UL>
+</UL>
+
+<A NAME="seq_label"></A>
+<h4>Sequence label</h4>
+<ul>
+Sequences can be labeled (named) in different ways:
+<ul>
+<li><b>ORF identifier</b>
+<li><b>gene name</b>
+<li><b>ORF id + gene name</b>
+<li><b>full</b>: a concatenation of ORF identifier, gene name, sequence type, from, to and strand. This option gives a full description of the conditions of sequence retrieval
+</ul> 
+</ul>
+
+</ul>
+
+<H3>Availability</H3>
+<UL>
+The program can be used through its web interface at:
+<A HREF="http://ucmb.ulb.ac.be/bioinformatics/rsa-tools/" target=_blank>
+http://ucmb.ulb.ac.be/bioinformatics/rsa-tools/</A> <BR>
+
+retrieve-seq is a perl script running on unix machines (SUN, SGI
+have been tested). The web interface is a perl-cgi script.
+</UL>
+
+<HR SIZE=3>
+
+</BODY>
+</HTML>
