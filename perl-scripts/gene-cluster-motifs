@@ -1,12 +1,12 @@
- #!/usr/bin/perl
+#!/usr/bin/perl
  ############################################################
  #
- # $Id: gene-cluster-motifs,v 1.67 2004/02/04 16:49:59 jvanheld Exp $
+ # $Id: gene-cluster-motifs,v 1.68 2004/02/05 00:55:17 jvanheld Exp $
  #
  # Time-stamp: <2003-10-21 01:19:12 jvanheld>
  #
  ############################################################
- if ($0 =~ /([^(\/)]+)$/) {
+if ($0 =~ /([^(\/)]+)$/) {
    push (@INC, "$`lib/");
  }
 
@@ -317,6 +317,8 @@
 	 my $MotifSampler_options = "";
 	 my $MotifSampler_suffix = "";
 
+	 $family{$family_name}->{MotifSampler_dir} = "${family_name}/MotifSampler_${family_name}";
+
 	 ## input file
 	 $MotifSampler_options = " -f ".$family{$family_name}->{input_seq_file};
 
@@ -324,18 +326,7 @@
 	 if ($MotifSampler_background) {
 	     $MotifSampler_options = " -b ".$MotifSampler_background;
 	 } else {
-	     warn "; Creating background model for the input sequence\torder ".$bg_order."\n" 
-		 if ($main::verbose >= 1);
-	     ## create background model
-	     my $allup_file = $dir{output}."/allup.fasta";
- #	    my $command = "retrieve-seq -org ".$organism_name;
- #	    $command .= " -all -from -".$calib_length." -to -1 -o ".$allup_file;
-	     $family{$family_name}->{MotifSamplerBackground} = $family{$family_name}->{input_seq_file}."bg".$bg_order;
-	     $command .= " CreateBackgroundModel -f ".$family{$family_name}->{input_seq_file};
-	     $command .= " -b ".$family{$family_name}->{MotifSamplerBackground};
-	     $command .= " -o ".$bg_order;
-	     &doit($command);
-
+	     $family{$family_name}->{MotifSamplerBackground} = $family{$family_name}->{input_seq_file}."_MotifSampler_bg".$bg_order;
 	     $MotifSampler_options = " -b ".$family{$family_name}->{MotifSamplerBackground};
 	 }
 
@@ -375,7 +366,6 @@
 	 ## Assign MotifSampler options to the family
 	 $family{$family_name}->{MotifSampler_suffix} = $MotifSampler_suffix;
 	 $family{$family_name}->{MotifSampler_options} = $MotifSampler_options;
-	 $family{$family_name}->{MotifSampler_dir} = "${family_name}/MotifSampler_${family_name}";
 	 $family{$family_name}->{MotifSampler_file} = $family{$family_name}->{MotifSampler_dir}."/".$family{$family_name}->{file_prefix}.$MotifSampler_suffix;
 	 
 	 ################################################################
@@ -791,7 +781,32 @@ sub DrawMergedFeatureMap {
 
 
 ################################################################
-## Run Jerry Hertz' consensus program 
+## Run Gert Thijs' MotifSampler
+sub MotifSampler {
+    warn join ("; Running MotifSampler for family $family_name") if ($main::verbose >= 1);
+    ## Check output directory
+    my $dir = $family{$family_name}->{MotifSampler_dir};
+    &CheckOutDir($dir);
+
+    chdir($dir{output});
+
+    warn  "HELLO\t", `pwd`;
+
+    ## Create ackground model if required
+    unless ($MotifSampler_background) {
+	warn "; Creating background model for the input sequence\torder ".$bg_order."\n" 
+	    if ($main::verbose >= 1);
+	## create bacakground model
+	my $command = " CreateBackgroundModel -f ".$family{$family_name}->{input_seq_file};
+	$command .= " -b ".$family{$family_name}->{MotifSamplerBackground};
+	$command .= " -o ".$bg_order;
+	&doit($command,$dry_run, $die_on_error);
+    }
+}
+
+
+################################################################
+## Run Andrew Neuwald's gibbs program 
 sub Gibbs {
     chdir($dir{output});
     &CheckOutDir($family{$family_name}->{gibbs_dir});
@@ -1447,6 +1462,9 @@ sub AnalyzeFamilies {
 	
 	### Andrew Neuwald's gibbs
 	&Gibbs() if ($task{gibbs});
+	
+	### Gert Thijs' MotifSampler
+	&MotifSampler() if ($task{MotifSampler});
 	
 #	### merge oligo-analysis and dyad-analysis results
 #	&MergePatterns() if ($task{merge_patterns});
