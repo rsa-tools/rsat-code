@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-families,v 1.6 2002/09/26 17:08:14 jvanheld Exp $
+# $Id: compare-families,v 1.7 2002/09/26 17:40:02 jvanheld Exp $
 #
-# Time-stamp: <2002-09-26 12:07:19 jvanheld>
+# Time-stamp: <2002-09-26 12:31:01 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -17,8 +17,9 @@ require "RSA.help.pl";
 ################################################################
 #### initialise parameters
 my $start_time = &AlphaDate;
-local $replacement = 0;
-local $symmetric = 0;
+local $replacement = 1;
+local $symmetric = 1;
+local $distinct = 0;
 
 %supported_return_fields = (
 			    proba=>1,
@@ -95,6 +96,7 @@ foreach my $r (keys %ref_families) {
 	$ref_member{$m} = 1;
     }
     foreach my $q (keys %query_families) {
+	next if (($distinct) && ($r eq $q));
 	my $compa_key = $r."__VERSUS__".$q;
 	@{$common{$compa_key}} = ();
 	my @query_members = $query_families{$q}->get_members();
@@ -357,6 +359,9 @@ OPTIONS
 		(only useful when -rep is activated, because th
 		hypergeometric is by definition symmetric)
 		
+	-distinct
+		Prevent to compare each family with itself (when the
+		reference and query files contain the same families).
 
 PROBABILITIES
 	P-VALUE
@@ -478,19 +483,20 @@ sub PrintOptions {
   print HELP <<End_short_help;
 compare-families options
 ----------------
--h	(must be first argument) display full help message
--help	(must be first argument) display options
--r	reference families
--q	query families
--o	output file
--v	verbose
--return	return fields (supported $supported_return_fields)
--lth	threshold on a given field
--uth	threshold on a given field
--pop	population size
--sort   sort key (supported keys: occ, sig)
--rep	sampling with replacement (use binomial instead of hyergeometric)
--sym	symmetric comparison (only with -rep, see detailed help)
+-h		(must be first argument) display full help message
+-help		(must be first argument) display options
+-r		reference families
+-q		query families
+-o		output file
+-v		verbose
+-return		return fields (supported $supported_return_fields)
+-lth		threshold on a given field
+-uth		threshold on a given field
+-pop		population size
+-sort		sort key (supported keys: occ, sig)
+-rep		sampling with replacement (use binomial instead of hyergeometric)
+-sym		symmetric comparison (only with -rep, see detailed help)
+-distinct	prevent to compare each family with itself
 End_short_help
   close HELP;
   exit(0);
@@ -541,6 +547,10 @@ sub ReadArguments {
 	    ### sort key
 	} elsif ($ARGV[$a] eq "-sort") {
 	    $sort_key = $ARGV[$a+1];
+
+	    ### prevent to compare each family with itself
+	} elsif ($ARGV[$a] eq "-distinct") {
+	    $distinct = 1;
 
 	    ### population size
 	} elsif ($ARGV[$a] eq "-pop") {
