@@ -1,4 +1,4 @@
-.SUFFIXES: _distrib.tab _poisson.tab _negbin.tab
+.Suffixes: _distrib.tab _poisson.tab _negbin.tab
 
 ################################################################
 ## makefile for getting info for the motif discovery competition
@@ -39,16 +39,19 @@ test:
 ################################################################
 #### Synchronization between different machines
 
-#### publish
+#### rsync
 TO_SYNC=results
 #SERVER_LOCATION=rubens.ulb.ac.be:/rubens/dsk3/genomics/motif_discovery_competition/
-SERVER_LOCATION=merlin.ulb.ac.be:motif_discovery_competition_2003/
+USER=jvanheld
+SERVER_LOCATION=${USER}@${SERVER}:${SERVER_DIR}
+SERVER_DIR=motif_discovery_competition_2003/
+SERVER=merlin.ulb.ac.be
 EXCLUDE=--exclude '*~' --exclude oligos --exclude '*.wc' --exclude random_genes.tab --exclude '*.fasta' --exclude '*.fasta.gz' --exclude '*.wc.gz'
-publish:
-	${MAKE} publish_one_dir TO_SYNC=TASK_LIST.html
-	${MAKE} publish_one_dir TO_SYNC=results
+rsync:
+	${MAKE} rsync_one_dir TO_SYNC=TASK_LIST.html
+	${MAKE} rsync_one_dir TO_SYNC=results
 
-publish_one_dir:
+rsync_one_dir:
 	${RSYNC} ${EXCLUDE} ${TO_SYNC} ${SERVER_LOCATION}
 
 update_from_server:
@@ -56,16 +59,18 @@ update_from_server:
 
 ## Synchronize calibrations from merlin
 from_merlin:
-	${MAKE} update_from_server SERVER_LOCATION=jvanheld@merlin.ulb.ac.be:motif_discovery_competition_2003/ TO_SYNC='*.xls'
-	${MAKE} update_from_server SERVER_LOCATION=jvanheld@merlin.ulb.ac.be:motif_discovery_competition_2003/ TO_SYNC='*.tab'
-	${MAKE} update_from_server SERVER_LOCATION=jvanheld@merlin.ulb.ac.be:motif_discovery_competition_2003/ TO_SYNC=my_calibrate-oligos.R
-	${MAKE} update_from_server SERVER_LOCATION=jvanheld@merlin.ulb.ac.be:motif_discovery_competition_2003/
+	${MAKE} update_from_server SERVER_DIR=motif_discovery_competition_2003/ TO_SYNC=results
+	${MAKE} update_from_server SERVER_DIR=./ TO_SYNC=results
+
 # Temporary
-	${MAKE} update_from_server SERVER_LOCATION=jvanheld@merlin.ulb.ac.be:motif_discovery_competition_2003/makefiles/ TO_SYNC=results
+#	${MAKE} update_from_server SERVER_DIR=makefiles/ TO_SYNC=results
+#	${MAKE} update_from_server TO_SYNC='*.xls'
+#	${MAKE} update_from_server TO_SYNC='*.tab'
+#	${MAKE} update_from_server TO_SYNC=my_calibrate-oligos.R
 
 
 from_liv:
-	${MAKE} update_from_server SERVER_LOCATION=jvanheld@liv.bmc.uu.se:/Users/jvanheld/motif_discovery_competition_2003/
+	${MAKE} update_from_server SERVER=liv.bmc.uu.se ${SERVER_DIR}=motif_discovery_competition_2003/
 
 
 ################################################################
@@ -240,12 +245,12 @@ list_fasta_files:
 	${FASTA_FILES} > ${SEQ_LIST_FILE}
 
 #MULTI_TASK=purge,oligos,dyads,merge,slide,maps,synthesis,sql
-MULTI_TASK=purge,oligos,dyads,maps,synthesis
+MULTI_TASK=purge,oligos,maps,synthesis
 MULTI_CALIB_TASK=${MULTI_TASK},calibrate
 MULTI_BG=upstream
 MULTI_DIR=${RES_DIR}/multi/${MULTI_BG}_bg/${ORG}
-MIN_OL=5
-MAX_OL=8
+MIN_OL=6
+MAX_OL=6
 MIN_SP=0
 MAX_SP=20
 SORT=score
@@ -263,15 +268,18 @@ MULTI_CMD=multiple-family-analysis -v ${V}				\
 multi:
 	${MAKE} my_command MY_COMMAND="${MULTI_CMD}"
 
-multi_calib:
-	${MAKE} multi MULTI_BG=calib MULTI_TASK=${MULTI_CALIB_TASK}
+multi_calib1:
+	${MAKE} multi MULTI_BG=calib1 MULTI_TASK=${MULTI_CALIB_TASK}
 
-multi_calib_all:
-	@for org in ${ORGANISMS} ; do							\
-		for ol in 5 6 7 8 ; do							\
-			${MAKE} multi_calib ORG=$${org} MIN_OL=$${ol} MAX_OL===$${ol};	\
-		done ;									\
-	done
+multi_calibN:
+	${MAKE} multi MULTI_BG=calibN MULTI_TASK=${MULTI_TASK}
+
+#multi_calib1_all:
+#	@for org in ${ORGANISMS} ; do							\
+#		for ol in 5 6 7 8 ; do							\
+#			${MAKE} multi_calib1 ORG=$${org} MIN_OL=$${ol} MAX_OL===$${ol};	\
+#		done ;									\
+#	done
 
 ################################################################
 ## Calculate the effect of the number of sequences on mean and variance
@@ -522,3 +530,11 @@ command_queue:
 command_now:
 	${MY_COMMAND}
 
+
+## ##############################################################
+## publish some directory on the web site
+
+PUBLISH_SITE=jvanheld@www.scmbb.ulb.ac.be:public_html/motif_discovery_competition_2003/
+PUBLISH_DIR=evaluation
+publish:
+	${RSYNC} --exclude '*~' ${PUBLISH_DIR} ${PUBLISH_SITE}
