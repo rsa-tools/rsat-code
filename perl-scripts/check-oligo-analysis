@@ -1,0 +1,260 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: check-oligo-analysis,v 1.1 2003/10/21 00:19:43 jvanheld Exp $
+#
+# Time-stamp: <2003-10-21 02:19:07 jvanheld>
+#
+############################################################
+#use strict;;
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+################################################################
+#### initialise parameters
+my $start_time = &AlphaDate;
+
+local %infile = ();
+local %outfile = ();
+
+local $verbose = 0;
+
+$oligo_len = 6;
+$str = "-1str";
+$seq_len=800;
+$seq_nb=10;
+$noov="-noov";
+$thosig = -2;
+$repetitions = 1000;
+
+
+&ReadArguments();
+
+################################################################
+#### check argument values
+unless (defined($dir{output})) {
+    $dir{output} = "oligo_check_results";
+}
+&CheckOutputDir($dir{output});
+
+
+################################################################
+### open output stream
+$out = &OpenOutputFile($outfile{output});
+
+################################################################
+#### print verbose
+&Verbose if ($verbose);
+
+foreach $noov ("-noov", "-ovlp") {
+    foreach $str ("-1str", "-2str") {
+	$result_dir=$dir{output}."/RAND_L${seq_len}_N${seq_nb}${str}${noov}";
+	&AllJobs();
+	&SummarizeResults();
+    }
+}
+
+################################################################
+###### finish verbose
+if ($verbose) {
+    my $done_time = &AlphaDate;
+    print $out "; Job started $start_time\n";
+    print $out "; Job done    $done_time\n";
+}
+
+################################################################
+###### close output stream
+close $out if ($outfile{output});
+
+
+exit(0);
+
+################################################################
+################### subroutine definition ######################
+################################################################
+
+################################################################
+## Calculate score distributions
+sub SummarizeResults {
+    $score_col=9;
+    $synthesis_dir=$dir{output}."/synthesis";
+    &CheckOutputDir($synthesis_dir);
+    $synthesis_file = ${synthesis_dir}."/oligos_${oligo_len}nt${str}${noov}_sig${thosig}_distrib.tab";
+    $command =  "echo ';Jobs' `ls ${result_dir}/oligos_*_${oligo_len}nt${str}${noov}_sig${thosig}.tab | wc --lines` > ${synthesis_file}; ";
+    $command .=  " cat ${result_dir}/oligos_*_${oligo_len}nt${str}${noov}_sig${thosig}.tab";
+    $command .= " | grep -v ';'" ;
+    $command .= " | cut -f ${score_col}";
+    $command .= " | classfreq -ci 1 -v 1 -min ${thosig}";
+    $command .= " >> ${synthesis_file}";
+    &doit ($command);
+    warn "\n; Synthesis file\t", ${synthesis_file}, "\n\n" if ($verbose >= 1);
+}
+
+sub AllJobs {
+    for $job (1..$repetitions) {
+	&OneJob($job);
+    }
+}
+
+sub OneJob {
+    my ($job) = @_;
+
+    ################################################################
+    ### compose the command
+    my $result_file=${result_dir}."/oligos_r${job}_${oligo_len}nt${str}${noov}_sig${thosig}.tab";
+    &CheckOutputDir($result_dir);
+    $command = "random-seq -l ${seq_len} -r ${seq_nb} ";
+    $command .= " | oligo-analysis -return occ,freq,proba,rank -sort "; 
+    $command .= " -l $oligo_len";
+    $command .= " $str";
+    $command .= " $noov";
+    $command .= " -thosig ${thosig}";
+    $command .= " -o ${result_file}";
+    
+    ################################################################
+    ###### execute the command
+    &doit($command);
+    warn "$result_file\n" if ($verbose >= 1);
+}
+
+
+sub doit {
+    my ($command) = @_;
+    warn "$command\n" if ($verbose >= 2);
+    system $command;
+}
+
+################################################################
+#### display full help message 
+sub PrintHelp {
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	check-oligo-analysis
+
+        2002 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
+	
+DESCRIPTION
+	Check the program oligo-analysis by generatin random
+	sequences, and calculating oligo occurrences, P-value, E-value
+	and significance.
+
+CATEGORY
+	util
+
+USAGE
+        check-oligo-analysis [-i inputfile] [-o outputfile] [-v]
+
+OPTIONS
+	-h	(must be first argument) display full help message
+	-help	(must be first argument) display options
+	-v	verbose
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+	-outdir outputdir
+	-r	repetitions
+	-sl	sequence length
+	-sn	sequence number
+	-ol	oligo length
+	-thosig occurrence significance
+End_of_help
+  close HELP;
+  exit;
+}
+
+################################################################
+#### display short help message
+sub PrintOptions {
+  open HELP, "| more";
+  print HELP <<End_short_help;
+check-oligo-analysis options
+----------------
+-h		(must be first argument) display full help message
+-help		(must be first argument) display options
+-o		output file
+-outdir		output dir
+-v		verbose
+-r		repetitions
+-sl		sequence length
+-sn		sequence number
+-ol		oligo length
+-thosig		occurrence significance
+End_short_help
+  close HELP;
+  exit;
+}
+
+
+################################################################
+#### read arguments 
+sub ReadArguments {
+    foreach my $a (0..$#ARGV) {
+	### verbose  
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+	    
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp();
+	    
+	    ### list of options
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions();
+	    
+	    ### output file  
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outfile{output} = $ARGV[$a+1];
+
+	    ### output file  
+	} elsif ($ARGV[$a] eq "-outdir") {
+	    $dir{output} = $ARGV[$a+1];
+	    	
+	    ### repetitions
+	} elsif ($ARGV[$a] eq "-r") {
+	    $repetitions = $ARGV[$a+1];
+	    
+	    ### sequence length
+	} elsif ($ARGV[$a] eq "-sl") {
+	    $seq_len = $ARGV[$a+1];
+	    
+	    ### sequence number
+	} elsif ($ARGV[$a] eq "-sn") {
+	    $seq_nb = $ARGV[$a+1];
+	    
+	    ### oligo length
+	} elsif ($ARGV[$a] eq "-ol") {
+	    $oligo_len = $ARGV[$a+1];
+	    
+	    ### threshold on oligo significance
+	} elsif ($ARGV[$a] eq "-thosig") {
+	    $thosig = $ARGV[$a+1];
+	    
+	}
+    }
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $out "; check-oligo-analysis ";
+    &PrintArguments($out);
+    if (defined(%infile)) {
+	print $out "; Input files\n";
+	while (($key,$value) = each %infile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+    if (defined(%outfile)) {
+	print $out "; Output files\n";
+	while (($key,$value) = each %outfile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+}
