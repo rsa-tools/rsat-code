@@ -94,36 +94,31 @@ while (<$in>) {
 	if ($5 =~ /ln\(p-value\)=\s+(\S+)/) {
 	    $lnP = $1;
 	}
-	
-	#### store scores for the score table
-	if ($return{table}) {
-	    push @{$scores{$map}}, $score;
-	    $max_scores_per_map = &max($max_scores_per_map, $#{$scores{$map}}+1);
-	}
 
+	
+	
+	#### adapt coordinates to the selected origin
+	unless ($fixed_origin) {
+	    $origin = $origin{$1};
+	}
+	if ($origin eq "-0") {
+	    $start = $position - length($sequence{$map}) - 1;
+	} else {
+	    $start = $position - $origin;
+	}
+	$end = $start + $matrix_length -1;
+	
+	#### strand
+	unless ($force_strand) {
+	    if  ($strand =~ /^c$/i) {
+		$strand = "R";
+	    } else {
+		$strand = "D";
+	    }
+	}
 	
 	#### parse information about the match
 	if ($return{matches}) {
-
-	    #### adapt coordinates to the selected origin
-	    unless ($fixed_origin) {
-		$origin = $origin{$1};
-	    }
-	    if ($origin eq "-0") {
-		$start = $position - length($sequence{$map}) - 1;
-	    } else {
-		$start = $position - $origin;
-	    }
-	    $end = $start + $matrix_length -1;
-
-	    #### strand
-	    unless ($force_strand) {
-		if  ($strand =~ /^c$/i) {
-		    $strand = "R";
-		} else {
-		    $strand = "D";
-		}
-	    }
 
 	    #### get the sub sequence
 	    if ($sequence_file) {
@@ -144,6 +139,9 @@ while (<$in>) {
 		$descr = "${sub_sequence}";
 	    }
 
+
+
+	    ################################################################
 	    ### print the header line if it has not yet been done
 	    unless ($header_printed) {
 		print $out join ("\t", 
@@ -163,6 +161,17 @@ while (<$in>) {
 	    #### print the match
 	    &PrintFeature();
 	}
+
+	#### store scores for the score table
+	if ($return{table}) {
+	    push @{$scores{$map}}, $score;
+	    push @{$starts{$map}},  $start;
+	    push @{$strands{$map}},  $strand;
+	    push @{$positions{$map}},  join ("", $start,"..",$end,$strand); #$position;
+	    $max_scores_per_map = &max($max_scores_per_map, $#{$scores{$map}}+1);
+	}
+	
+
     } else {
 	print $out "; $_";
     }
@@ -171,9 +180,39 @@ while (<$in>) {
 #### print score table
 if ($return{table}) {
     print $out "; Score table\n" if ($verbose >= 1);
-    print $out join ("\t", "; rank", 1..$max_scores_per_map), "\n";
+
+    #### header
+#    print $out join ("\t", "; seq_id", 1..$max_scores_per_map), "\n";
+    print $out "; seq_id";
+    for my $i (1..$max_scores_per_map) {
+	print $out "\tscore.${i}";
+    }
+    for my $i (1..$max_scores_per_map) {
+	print $out "\tstart.${i}";
+    }
+    for my $i (1..$max_scores_per_map) {
+	print $out "\tstrand.${i}";
+    }
+    for my $i (1..$max_scores_per_map) {
+	print $out "\tposition.${i}";
+    }
+    print $out "\n";
+
+    #### print matche and positions
     foreach my $map (sort keys %scores) {
-	print $out join "\t", $map, (sort {$b <=> $a} @{$scores{$map}});
+
+	for my $i ($#{$scores{$map}}..$max_scores_per_map-2) {
+	    push @{$scores{$map}}, "";
+	    push @{$starts{$map}}, "";
+	    push @{$strands{$map}}, "";
+	    push @{$positions{$map}}, "";
+	}
+	print $out join ("\t", $map, 
+			 (sort {$b <=> $a} @{$scores{$map}}), 
+			 (sort {$scores{$b} <=> $scores{$a}} @{$starts{$map}}),
+			 (sort {$scores{$b} <=> $scores{$a}} @{$strands{$map}}),
+			 (sort {$scores{$b} <=> $scores{$a}} @{$positions{$map}})
+			 );
 	print $out "\n";
     }
 }
