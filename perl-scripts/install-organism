@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.46 2005/03/13 10:30:28 jvanheld Exp $
+# $Id: install-organism,v 1.47 2005/03/17 04:05:18 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -814,6 +814,7 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-up_from") {
 	    $up_from = $ARGV[$a+1];
 	    &FatalError(join ("\t", $up_from, "Invalid value for the up_from parameter (must be integer)")) unless (&IsInteger($up_from));
+	    &FatalError(join ("\t", $up_from, "Invalid value for the up_from parameter (must be negative)")) if ($up_from >= 0);
 
 	} elsif ($ARGV[$a] eq "-up_to") {
 	    $up_to = $ARGV[$a+1];
