@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: patser.cgi,v 1.19 2003/06/03 22:18:33 jvanheld Exp $
+# $Id: patser.cgi,v 1.18 2003/06/03 22:14:20 jvanheld Exp $
 #
-# Time-stamp: <2003-06-04 00:18:03 jvanheld>
+# Time-stamp: <2003-06-04 00:12:08 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -234,9 +234,7 @@ print "<pre>$command</pre>" if ($ECHO >= 1);
 ### execute the command ###
 if ($query->param('output') eq "display") {
 
-    unless ($query->param('table')) {
-	&PipingWarning();
-    }
+    &PipingWarning();
 
     ### Print the result on Web page
     $result_file =  "$TMP/$tmp_file_name.ft";
@@ -258,9 +256,7 @@ if ($query->param('output') eq "display") {
 #    close RESULT;
     print "</PRE>";
 
-    unless ($query->param('table')) {
-	&PipingForm();
-    }
+    &PipingForm();
 
     print "<HR SIZE = 3>";
     
