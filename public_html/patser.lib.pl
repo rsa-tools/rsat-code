@@ -176,7 +176,7 @@ sub DisplayPatserOptions {
     print "<br>\n";
     print "<A HREF='help.patser.html#lthreshold'><B>Lower threshold estimation</B></A>";
     print $query->popup_menu(-name=>'lthreshold_method',
-			     -Values=>['weight', 'maximum ln(p-value)', , 'adjusted information content (auto)', 'none'],
+			     -Values=>['weight score', 'maximum ln(p-value)', , 'adjusted information content (auto)', 'none'],
 			     -default=>$default{lthreshold_method});
     
     print $query->textfield(-name=>'lthreshold',
@@ -326,7 +326,7 @@ sub ReadPatserParameters {
     #### thresholds ###
 
     #### lower threshold on the weight
-    if ($query->param('lthreshold_method') =~ /weight/) {
+    if ($query->param('lthreshold_method') =~ /weight score/) {
 	if (&IsReal($query->param('lthreshold'))) {
 	    $patser_parameters .= " -ls ".$query->param('lthreshold');
 	} elsif ($query->param('lthreshold') eq 'none') {

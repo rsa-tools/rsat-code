@@ -152,7 +152,7 @@ print CGI::table({-border=>0,-cellpadding=>3,-cellspacing=>0},
 			       "<INPUT TYPE=RADIO NAME='return' VALUE='positions' " .
 			       "CHECKED"x$default{return}=~/position/ .
 			       "> match positions",
-			       "<A HREF='help.all-upstream-search.html#flanking'><B> flanking</B></A>",
+			       "<A HREF='help.all-upstream-search.html#flanking'><B> flanking residues</B></A>",
 			       $query->textfield(-name=>'flanking',
 						 -default=>$default{flanking},
 						 -size=>2),
@@ -175,7 +175,7 @@ print CGI::table({-border=>0,-cellpadding=>3,-cellspacing=>0},
 			       "<INPUT TYPE=RADIO NAME='return' VALUE='counts' " .
 			       "CHECKED"x$default{return}=~/count/ .
 			       ">match counts",
-			       "<A HREF='help.all-upstream-search.html#threshold'><B> threshold</B></A>",
+			       "<A HREF='help.all-upstream-search.html#threshold'><B> threshold on match counts</B></A>",
 			       $query->textfield(-name=>'threshold',
 						 -default=>$default{threshold},
 						 -size=>2)
