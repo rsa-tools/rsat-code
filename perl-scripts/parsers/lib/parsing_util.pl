@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parsing_util.pl,v 1.5 2003/11/16 00:15:12 jvanheld Exp $
+# $Id: parsing_util.pl,v 1.6 2003/11/16 00:17:10 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -80,6 +80,34 @@ sub ExportClasses {
   return 1;
 }
 
+
+
+
+################################################################
+## Export a makefile which will call other makefiles for the loading
+###    &ExportMakefile(@classes);
+sub ExportMakefile {
+    my @classes = @_;
+
+    ## data loading
+    foreach my $dbms (keys %main::supported_dbms) {
+	my $makefile=$dir{output}."/sql_scripts/".$dbms."/makefile";
+	warn "Exporting makefile for $dbms in file $makefile\n";
+	open MAKEFILE, ">$makefile" || die "Cannot write makefile in dir $dir\n";
+	#### usage
+	print MAKEFILE "\nusage:\n";
+	print MAKEFILE "\t", '@perl -ne \'if (/^([a-z]\S+):/){ print "\t$$1\n";  }\' ', "makefile\n";
+        foreach my $target ("create", "uncompress", "load", "recompress", "all", "drop") {
+	    print MAKEFILE "${target}:\n";
+	    my $usage_done = 0;
+	    for my $class (@classes) {
+		(my $short_class = $class) =~ s/.*:://g;
+		print MAKEFILE "\tmake -i -f ${short_class}.mk ${target}\n";
+	    }
+	}
+	close MAKEFILE;
+    }
+}
 
 
 ################################################################
