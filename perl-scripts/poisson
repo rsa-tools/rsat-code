@@ -165,17 +165,18 @@ if ($verbose) {
 }
 
 if ($boe) {
-  $result = 1;
-  for $j (0..$s-1) {
-    $result -= poisson($j,$m);
-    last if ($result <=0);
-  }
+  $result = &sum_of_poissons($s,$m,"boe");
+#  for $j (0..$s-1) {
+#    $result -= poisson($j,$m);
+#    last if ($result <=0);
+#  }
 } elsif ($soe) {
-  $result = 0;
-  for $j (0..$s) {
-    $result += poisson($j,$m);
-    last if ($result >=1);
-  }
+  $result = &sum_of_poissons($s,$m,"soe");
+#  $result = 0;
+#  for $j (0..$s) {
+#    $result += poisson($j,$m);
+#    last if ($result >=1);
+#  }
 } else {
   $result = poisson($s,$m);
 }

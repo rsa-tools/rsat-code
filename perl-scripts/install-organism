@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.5 2001/05/28 10:05:58 jvanheld Exp $
+# $Id: install-organism,v 1.6 2001/07/05 15:07:23 jvanheld Exp $
 #
-# Time-stamp: <2001-05-28 12:02:48 jvanheld>
+# Time-stamp: <2001-05-28 17:39:46 jvanheld>
 #
 ############################################################
 
@@ -87,14 +87,14 @@ $outfile{synonyms} = "$genome_dir/${organism_short_name}_synonyms.tab";
 ###################### start installation ######################
 ################################################################
 
-#&InstallGenome();
-#&GenerateFeatureTable() if ($infile{ptt});
-#&InstallFeatureTable();
+&InstallGenome();
+&GenerateFeatureTable() if ($infile{ptt});
+&InstallFeatureTable();
 &UpdateConfig();
 &StartAndStopCodons();
-#&NonCodingSegments();
-#&OligoFrequencies();
-#&DyadFrequencies();
+&NonCodingSegments();
+&OligoFrequencies();
+&DyadFrequencies();
 
 exit(0);
 

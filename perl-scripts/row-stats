@@ -1,9 +1,9 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
 ############################################################
 #
-# $Id: row-stats,v 1.1 2001/05/28 14:07:49 jvanheld Exp $
+# $Id: row-stats,v 1.2 2001/07/05 15:13:23 jvanheld Exp $
 #
-# Time-stamp: <2001-05-08 08:42:38 jvanheld>
+# Time-stamp: <2001-05-28 16:42:41 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -22,6 +22,7 @@ local %outfile = ();
 local $verbose = 0;
 local $in = STDIN;
 local $out = STDOUT;
+local $number_format = "%g";
 
 &ReadArguments;
 
@@ -31,11 +32,18 @@ local $out = STDOUT;
 
 ### open output file ###
 $out = &OpenOutputFile($outfile{output});
+&PrintRowHeader();
 
 ##### read input #####
 $in = &OpenInputFile($infile{input});
+$line_nb = 0;
 while (<$in>) {
-
+    $line_nb++;
+    next if (/^;/);
+    next unless (/\S/);
+    chomp;
+    @fields = split "\t";
+    &PrintRowStats(@fields);
 }
 
 close $in if ($infile{input});
@@ -63,6 +71,28 @@ close $out if ($outfile{output});
 
 exit(0);
 
+sub PrintRowHeader {
+    print $out join ("\t", 
+		     ";ID",
+		     "min",
+		     "max",
+		     "sum",
+		     "avg"
+		     );
+    print $out "\n";
+
+}
+
+sub PrintRowStats {
+    my ($id, @values) = @_;
+    print $out $id;
+    printf $out "\t${number_format}", &checked_min(@values);
+    printf $out "\t${number_format}", &checked_max(@values);
+    printf $out "\t${number_format}", &checked_sum(@values);
+    printf $out "\t${number_format}", &checked_avg(@values);
+    print $out "\n";
+}
+
 
 ########################## subroutine definition ############################
 
@@ -71,14 +101,17 @@ sub PrintHelp {
   open HELP, "| more";
   print HELP <<End_of_help;
 NAME
-	template
+	row-stats
 
         2001 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
 	
 USAGE
-        template [-i inputfile] [-o outputfile] [-v]
+        row-stats [-i inputfile] [-o outputfile] [-v]
 
 DESCRIPTION
+
+	Calculate basic statistics (min, max, avg, ...) on each row of
+	a tab-delimited input file.
 	
 OPTIONS
 	-h	(must be first argument) display full help message
@@ -90,6 +123,26 @@ OPTIONS
 	-o outputfile
 		if not specified, the standard output is used.
 		This allows to place the command within a pipe.
+	-nf	number format
+		Any format specification that is compliant with the
+		perl printf function is supported (e.g. '%7.4f')
+
+INPUT FORMAT
+
+      The input file is a tab-delimited text file. Each row
+      corresponds to a new object, and each column to an attribute of
+      this object. The first column must contain the ID of the
+      object. The remaning columns are supposed to contain a series
+      numbers, on which the statistics will be calculated.
+
+OUTPUT FORMAT
+
+       The output file is a tab-delimited text file. Each row
+       corresponds to an object (thos from the input file). The first
+       column reports the object ID, and the collowing columns contain
+       the requested statistics. The header indicates which statistics
+       is contained in which column.
+
 
 End_of_help
   close HELP;
@@ -100,13 +153,14 @@ sub PrintOptions {
 #### display short help message #####
   open HELP, "| more";
   print HELP <<End_short_help;
-template options
+row-stats options
 ----------------
 -h	(must be first argument) display full help message
 -help	(must be first argument) display options
 -i	input file
 -o	output file
 -v	verbose
+-nf	number format (e.g. '%7.4f')
 End_short_help
   close HELP;
   exit;
@@ -115,46 +169,42 @@ End_short_help
 
 sub ReadArguments {
 #### read arguments ####
-  foreach my $a (0..$#ARGV) {
-    ### verbose ###
-    if ($ARGV[$a] eq "-v") {
-      if (&IsNatural($ARGV[$a+1])) {
-	$verbose = $ARGV[$a+1];
-      } else {
-	$verbose = 1;
-      }
-      
-      ### detailed help
-    } elsif ($ARGV[$a] eq "-h") {
-      &PrintHelp;
-      
-      ### list of options
-    } elsif ($ARGV[0] eq "-help") {
-      &PrintOptions;
-      
-      ### input file ###
-    } elsif ($ARGV[$a] eq "-i") {
-      $infile{input} = $ARGV[$a+1];
-      
-      ### output file ###
-    } elsif ($ARGV[$a] eq "-o") {
-      $outfile{output} = $ARGV[$a+1];
-      
-      ### organism
-    } elsif ($ARGV[$a] eq "-org") {
-      $organism_name = $ARGV[$a+1];
-      unless (defined($supported_organism{$organism_name})) {
-	  die ("Error: organism '$organism_name' is not supported on this site",
-	       $supported_organisms,
-	       "\n");
-      }
-      
+    foreach my $a (0..$#ARGV) {
+	### verbose ###
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+	    
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp;
+	    
+	    ### list of options
+	} elsif ($ARGV[0] eq "-help") {
+	    &PrintOptions;
+	    
+	    ### input file ###
+	} elsif ($ARGV[$a] eq "-i") {
+	    $infile{input} = $ARGV[$a+1];
+	    
+	    ### output file ###
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outfile{output} = $ARGV[$a+1];
+	    
+	    ### input file ###
+	} elsif ($ARGV[$a] eq "-nf") {
+	    $number_format = $ARGV[$a+1];
+	    
+	    
+	}
     }
-  }
 }
 
 sub Verbose {
-  print $out "; template ";
+  print $out "; row-stats ";
   &PrintArguments($out);
   if (defined(%infile)) {
     print $out "; Input files\n";

@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: orf-info,v 1.6 2001/04/01 23:32:54 jvanheld Exp $
+# $Id: orf-info,v 1.7 2001/07/05 15:10:15 jvanheld Exp $
 #
-# Time-stamp: <2001-04-02 01:32:41 jvanheld>
+# Time-stamp: <2001-05-26 09:46:56 jvanheld>
 #
 ############################################################
 
@@ -116,40 +116,38 @@ exit(0);
 
 ########################## subroutine definition ############################
 sub Header {
-    if ($no_query) {
-	print $out ";";
-    } else {
-	print $out ";query";
+    print $out ";", join ("\t", 
+			  "orf_id",
+			  "name",
+			  "chr",
+			  "strand",
+			  "left",
+			  "right",
+			  "description [synonyms]"
+			  );
+    unless ($no_query) {
+	print $out "\tquery";
     }
-    print $out "\t", join ("\t", 
-			   "orf_id",
-			   "name",
-			   "chr",
-			   "strand",
-			   "left",
-			   "right",
-			   "description [synonyms]",
-#		     		     "\n", $orf_info{$orf_id}
-			   ), "\n";
+    print $out "\n";
 }
 
 sub PrintInfo {
     my ($query, $orf_id) = @_;
-    unless ($no_query) {
-	print $out $query, "\t",
-    }    print $out join ("\t", 
+    print $out join ("\t", 
 		     $orf_id,
 		     $name{$orf_id},
 		     $chr{$orf_id},
 		     $strand{$orf_id},
 		     $left{$orf_id},
 		     $right{$orf_id},
-		     $descr{$orf_id},
-#		     		     "\n", $orf_info{$orf_id}
+		     $descr{$orf_id}
 		     );
     if (defined(@{$synonyms{$orf_id}})) {
 	print $out " [", join (";", @{$synonyms{$orf_id}}), "]";
     }
+    unless ($no_query) {
+	print $out "\t$query";
+    }    
     print $out "\n";
 }
 

@@ -17,10 +17,10 @@ USAGE
         profile-distance [-i inputfile] [-o outputfile] [-v]
 
 DESCRIPTION
-	Calculates pairwise distances between a the elements of 
+	Calculates pairwise distances between the elements of 
 	set of class frequency distributions.
 	Application: 
-	the frequency distributions can for example be temporal 
+	The frequency distributions can for example be temporal 
 	profiles of gene expression (cf Eisen et al. 1995, PNAS 
 	95:14863-8), or word position distributions.
 

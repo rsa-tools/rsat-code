@@ -21,20 +21,20 @@ sub ListSupportedOrganisms {
 
   if ($out_format eq "html_list") {
     my $result = "<UL>\n";
-    foreach my $organism (sort keys %main::supported_organism) {
+    foreach my $organism_name (sort keys %main::supported_organism) {
       $result .= "<LI>";
-      $result .= $main::supported_organism{$organism}->{name};
+      $result .= $main::supported_organism{$organism_name}->{name};
       $result .= "\n";
     }
     $result .= "</UL>\n";
     return $result;
   } elsif ($out_format eq "html_table") {
     my $result = "<TABLE>\n";
-    foreach my $organism (sort keys %main::supported_organism) {
+    foreach my $organism_name (sort keys %main::supported_organism) {
       $result .= "<TR>\n";
-      $result .= "<TD>$organism</TD>\n";
+      $result .= "<TD>$organism_name</TD>\n";
       $result .= "<TD>";
-      $result .= $main::supported_organism{$organism}->{name};
+      $result .= $main::supported_organism{$organism_name}->{name};
       $result .= "</TD>\n";
       $result .= "</TR>\n";
     }
@@ -42,18 +42,17 @@ sub ListSupportedOrganisms {
     return $result;
   } elsif ($out_format eq "array") {
     my @result = ();
-    foreach my $organism (sort keys %main::supported_organism) {
-      push @result, $main::supported_organism{$organism}->{name};
+    foreach my $organism_name (sort keys %main::supported_organism) {
+      push @result, $main::supported_organism{$organism_name}->{name};
     }
     return @result;
   }else {
-    my $result = "";
-    foreach my $organism (sort keys %main::supported_organism) {
-      $result .= $organism;
-      $result .= "\t";
-      $result .= $main::supported_organism{$organism}->{name};
-      $result .= "\n";
-    }
-    return $result;
+#      foreach my $organism_name (sort keys %main::supported_organism) {
+#        $result .= $organism_name;
+#        $result .= "\t";
+#        $result .= $main::supported_organism{$organism_name}->{name};
+#        $result .= "\n";
+#      }
+    return $main::supported_organisms; 
   }
 }
