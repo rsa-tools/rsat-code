@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: patser.cgi,v 1.6 2001/05/17 00:27:23 jvanheld Exp $
+# $Id: patser.cgi,v 1.7 2001/07/18 11:56:47 jvanheld Exp $
 #
-# Time-stamp: <2001-05-17 02:27:12 jvanheld>
+# Time-stamp: <2001-07-18 13:55:14 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -12,8 +12,8 @@ if ($0 =~ /([^(\/)]+)$/) {
 
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
-require "RSA.lib.pl";
-require "RSA.cgi.lib.pl";
+require "RSA.lib";
+require "RSA.cgi.lib";
 
 $patser_command = "$BIN/patser";
 $matrix_from_transfac_command = "$SCRIPTS/matrix-from-transfac";
@@ -81,7 +81,7 @@ if ($query->param('return') =~ /top/i) {
 
 ### thresholds ###
 if (&IsReal($query->param('lthreshold'))) {
-    $parameters .= " -l ".$query->param('lthreshold');
+    $parameters .= " -ls ".$query->param('lthreshold');
     $parameters .= " -M ".$query->param('lthreshold');
 } 
 
@@ -89,39 +89,19 @@ if (&IsReal($query->param('uthreshold'))) {
     $parameters .= " -u ".$query->param('uthreshold');
 }
 
-
-### parameters for the piping to the feature map ###
-$feature_file =  "$TMP/$tmp_file_name.ft";
-$features_from_patser_cmd .= " -seq $sequence_file";
-$features_from_patser_cmd .= " -o $feature_file";
-
 ### execute the command ###
 if ($query->param('output') eq "display") {
+    ### parameters for the piping to the feature map ###
+    $feature_file =  "$TMP/$tmp_file_name.ft";
+    $features_from_patser_cmd .= " -seq $sequence_file";
+    $features_from_patser_cmd .= " -o $feature_file";
+
+    print &PipingWarning();
+
     ### Print the result on Web page
     open RESULT, "$patser_command $parameters & |";
     open FEATURES, "| $features_from_patser_cmd";
     
-    ### prepare data for piping
-    print <<End_of_form;
-<CENTER>
-<TABLE>
-<TR>
-  <TD>
-    <H4>Next step</H4>
-  </TD>
-  <TD>
-    <FORM METHOD="POST" ACTION="feature-map_form.cgi">
-    <INPUT type="hidden" NAME="feature_file" VALUE="$feature_file">
-    <INPUT type="hidden" NAME="format" VALUE="feature-map">
-    <INPUT type="hidden" NAME="handle" VALUE="none">
-    <INPUT type="hidden" NAME="fill_form" VALUE="on">
-    <INPUT type="submit" value="feature map">
-    </FORM>
-  </TD>
-</TR>
-</TABLE>
-</CENTER>
-End_of_form
 
     print "<PRE>";
     while (<RESULT>) {
@@ -132,6 +112,8 @@ End_of_form
     close RESULT;
     print "</PRE>";
     print "<HR SIZE=3>\n";
+
+    &PipingForm();
     
 } else {
     ### send an e-mail with the result ###
@@ -154,3 +136,28 @@ print "<HR SIZE = 3>";
 print $query->end_html;
 
 exit(0);
+
+
+sub PipingForm {
+    ### prepare data for piping
+    print <<End_of_form;
+<CENTER>
+<TABLE>
+<TR>
+  <TD>
+    <H4>Next step</H4>
+  </TD>
+  <TD>
+    <FORM METHOD="POST" ACTION="feature-map_form.cgi">
+    <INPUT type="hidden" NAME="feature_file" VALUE="$feature_file">
+    <INPUT type="hidden" NAME="format" VALUE="feature-map">
+    <INPUT type="hidden" NAME="handle" VALUE="none">
+    <INPUT type="hidden" NAME="fill_form" VALUE="on">
+    <INPUT type="submit" value="feature map">
+    </FORM>
+  </TD>
+</TR>
+</TABLE>
+</CENTER>
+End_of_form
+}

@@ -121,7 +121,7 @@ if ($query->param('oligo_size') =~ /\d/) {
 $parameters .= " -l $oligo_length";
 
 #### expected frequency estimation ####
-if ($query->param('freq_estimate') =~ /oligo freq.* in non-coding regions/i) {
+if ($query->param('freq_estimate') =~ /oligo freq.* non-coding regions/i) {
     if (($query->param("proba")) ||
 	($query->param("ratio")) ||
 	($query->param("zscore"))
@@ -164,60 +164,44 @@ if ($query->param('neighborhood') =~ /N at one position/i) {
 
 
 
+print "<PRE>command: $oligo_analysis_command $parameters<P>\n</PRE>";
+  
 
 if ($query->param('output') =~ /display/i) {
-  ### execute the command ###
-  $result_file = "$TMP/$tmp_file_name.res";
-  open RESULT, "$oligo_analysis_command $parameters |";
-  
-#  print "<PRE>command: oligo-analysis $parameters<P>\n</PRE>";
-  
-  ### prepare data for piping
-  $title = $query->param('title');
-  $title =~ s/\"/\'/g;
-  print <<End_of_form;
-<TABLE>
-<TR>
-<TD>
-<H4>Next step</H4>
-</TD>
-<TD>
-<FORM METHOD="POST" ACTION="dna-pattern_form.cgi">
-<INPUT type="hidden" NAME="title" VALUE="$title">
-<INPUT type="hidden" NAME="pattern_file" VALUE="$result_file">
-<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
-<INPUT type="hidden" NAME="sequence_format" VALUE="$sequence_format">
-<INPUT type="submit" value="pattern matching (dna-pattern)">
-</FORM>
-</TD>
-</TR>
-</TABLE>
-End_of_form
-  
-  ### Print result on the web page
-  print '<H2>Result</H2>';
-  PrintHtmlTable(RESULT, $result_file, true);
-  close(RESULT);
-  
-  #### oligonucleotide assembly ####
-  if (&IsReal($query->param('occ_significance_threshold'))) {
-#) && ($query->param('occ_significance_threshold')>= -1)) {
-    $fragment_assembly_command = "$SCRIPTS/pattern-assembly -v";
-    if ($query->param('strand') =~ /single/) {
-      $fragment_assembly_command .= " -1str";
-    } else {
-      $fragment_assembly_command .= " -2str";
-    }
+
+    print &PipingWarning();
     
-    print "<H2>Fragment assembly</H2>\n";
-    open CLUSTERS, "$fragment_assembly_command -i $result_file |";
-    print "<PRE>\n";
-    while (<CLUSTERS>) {
-      print;
+    ### execute the command ###
+    $result_file = "$TMP/$tmp_file_name.res";
+    open RESULT, "$oligo_analysis_command $parameters |";
+    
+    
+    
+    ### Print result on the web page
+    print '<H2>Result</H2>';
+    PrintHtmlTable(RESULT, $result_file, true);
+    close(RESULT);
+    
+    #### oligonucleotide assembly ####
+    if (&IsReal($query->param('occ_significance_threshold'))) {
+	$fragment_assembly_command = "$SCRIPTS/pattern-assembly -v";
+	if ($query->param('strand') =~ /single/) {
+	    $fragment_assembly_command .= " -1str";
+	} else {
+	    $fragment_assembly_command .= " -2str";
+	}
+	
+	print "<H2>Fragment assembly</H2>\n";
+	open CLUSTERS, "$fragment_assembly_command -i $result_file |";
+	print "<PRE>\n";
+	while (<CLUSTERS>) {
+	    print;
     }
-    print "</PRE>\n";
-    close(CLUSTERS);
-  }
+	print "</PRE>\n";
+	close(CLUSTERS);
+    }
+
+    &PipingForm();
   
 } else {
   #### send e-mail with the result
@@ -241,3 +225,28 @@ print $query->end_html;
 
 exit(0);
 
+
+sub PipingForm {
+  ### prepare data for piping
+  $title = $query->param('title');
+  $title =~ s/\"/\'/g;
+  print <<End_of_form;
+<TABLE>
+<TR>
+<TD>
+<H4>Next step</H4>
+</TD>
+<TD>
+<FORM METHOD="POST" ACTION="dna-pattern_form.cgi">
+<INPUT type="hidden" NAME="title" VALUE="$title">
+<INPUT type="hidden" NAME="pattern_file" VALUE="$result_file">
+<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
+<INPUT type="hidden" NAME="sequence_format" VALUE="$sequence_format">
+<INPUT type="submit" value="pattern matching (dna-pattern)">
+</FORM>
+</TD>
+</TR>
+</TABLE>
+End_of_form
+
+}

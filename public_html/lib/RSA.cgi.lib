@@ -109,12 +109,12 @@ sub GetSequenceFile {
 #    my ($required_format, $add_rc) = @_;
     
     ### sequence file format
-    my $sequence_format = lc($query->param(sequence_format));
+    my $sequence_format = lc($query->param("sequence_format"));
     if ($accepted_input_seq{$sequence_format}) {
 	$parameters .= " -format $sequence_format" unless ($no_format);
 	#$parameters .= " -format $sequence_format";
     } else {
-	&cgiError("Invalid sequene format : '$sequence_format'.");
+	&cgiError("Invalid sequence format : '$sequence_format'.");
     }
     
     
@@ -196,19 +196,36 @@ sub GetSequenceFile {
 #}
 
 
+#### warn the users to wait for complete result before clicking on piping buttons
+sub PipingWarning {
+    my $warning_message = join ("\n", "<font color=#660000>",
+				"<blockquote>",
+				"<center>",
+				"<B>",
+				"ONe or several button(s) will appear at the bottom of this page, allowing you to send the result as input for a subsequent query.",
+				"</B>",
+				"</center>",
+				"</blockquote>",
+				"</font>");
+    return $warning_message;
+}
+
 
 ### general routine to report errors and interrupt the cgi
 sub cgiError {
     my $error_message = join "", @_;
-    print ("<HR SIZE=3>",
+    print ("<blockquote>",
+	   "<HR SIZE=3>",
 	   "<h2>Error</h2>",
 	   "<FONT SIZE=+1 color=#bb0000><blockquote><B>",
 	   $error_message,
-	   "</B><//blockquote></FONT>",
+	   "</B></blockquote></FONT>",
 	   "<P><HR SIZE=3>",
-	   &HtmlBot);
+	   "</body></html>"
+	   );
     exit(0);
 }
+
 
 
 ### display a pop-up menu with a selection of organism
