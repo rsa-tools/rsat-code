@@ -34,6 +34,8 @@ EXCLUDED=					\
 	--exclude logs				\
 	--exclude auto				\
 	--exclude papers			\
+	--exclude '*.pdf'			\
+	--exclude '*.ps'			\
 	--exclude '*~'
 
 
