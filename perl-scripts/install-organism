@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.23 2002/09/15 01:51:47 jvanheld Exp $
+# $Id: install-organism,v 1.24 2002/09/15 02:15:48 jvanheld Exp $
 #
-# Time-stamp: <2002-09-14 20:51:36 jvanheld>
+# Time-stamp: <2002-09-14 21:15:30 jvanheld>
 #
 ############################################################
 
@@ -90,7 +90,7 @@ unless ($organism_full_name) {
 umask 0002;
 
 unless ($install_dir) {
-    $install_dir = $RSA."/data/".$organism_short_name;
+    $install_dir = $RSA."/data/genomes/".$organism_short_name;
 }
 unless (-d $install_dir) {
     warn "\tCreating installation directory $install_dir\n" if ($verbose);
