@@ -4,6 +4,15 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
+#### redirect error log to a file
+BEGIN {
+    $ERR_LOG = "/dev/null";
+#    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
+    use CGI::Carp qw(carpout);
+    open (LOG, ">> $ERR_LOG")
+	|| die "Unable to redirect log\n";
+    carpout(*LOG);
+}
 require "RSA.lib";
 require "RSA.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
@@ -67,6 +76,7 @@ if (&IsInteger($query->param('from'))) {
 if (&IsInteger($query->param('to'))) {
     $parameters .= " -to ".$query->param('to');
 }
+
 
 ### prevent orf overlap ###
 if (lc($query->param('noorf')) eq "on") {
@@ -143,23 +153,10 @@ if ($query->param('output') =~ /display/i) {
     
     print "<HR SIZE = 3>";
 
+} elsif ($query->param('output') =~ /server/i) {
+    &ServerOutput("$retrieve_seq_command $parameters");
 } else {
     &EmailTheResult("$retrieve_seq_command $parameters", $query->param('user_email'));
-
-#     ### send an e-mail with the result ###
-#     if ($query->param('user_email') =~ /(\S+\@\S+)/) {
-# 	$address = $1;
-# 	print "<B>Result will be sent to your account: <P>";
-# 	print "$address</B><P>";
-# 	system "$retrieve_seq_command $parameters | $mail_command $address";
-#     } else {
-# 	if ($query->param('user_email') eq "") {
-# 	    print "<B>ERROR: you did not enter your e-mail address<P>";
-# 	} else {
-# 	    print "<B>ERROR: the e-mail address you entered is not valid<P>";
-# 	    print "$query->param('user_email')</B><P>";      
-# 	}
-#     } 
 }
 
 print $query->end_html;
