@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.60 2004/01/31 17:52:33 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.61 2004/02/01 03:27:50 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -11,6 +11,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 
 require "RSA.lib";
+require "RSA.seq.lib";
 require "RSA.help.pl";
 require "RSA.cgi.lib";
 require "RSA.classes";
@@ -492,11 +493,10 @@ sub MatchPatterns {
     $command .= " -format ".$seq_format;
     $command .= " -pl ".$oligo_file;
     $command .= " -origin ".$origin;
-    $command .= " -N 4 ";
     $command .= $options;
     $command .= " | features-from-dnapat -o ".$feature_file;
 
-    warn "HELLO\t", $command, "\n";
+#    warn "HELLO\t", $command, "\n";
 
     ## Check if pattern matching is OK (sometimes there are no patterns)
     my $error = &doit($command,$dry_run, 0);
@@ -509,7 +509,7 @@ sub MatchPatterns {
 ################################################################
 #### draw feature-map for the result of oligo-analysis
 sub DrawFeatureMap {
-    my ($fmap_prefix, $title) = @_;
+    my ($fmap_prefix, $title, $options) = @_;
 
     ## check file names
     $fmap_prefix = $family{$family_name}->{oligo_ft_prefix} unless ($fmap_prefix);
@@ -537,6 +537,7 @@ sub DrawFeatureMap {
     $command .= " -from $from" if (defined($from));
     $command .= " -to $to" if (defined($to));
     $command .= " -o $fmap_file -scorethick ";
+    $command .= " ".$options;
     if ($htmaps) {
 	$command .= " -htmap > $htmap_file ";
     };
@@ -925,6 +926,7 @@ sub IndexPatterns {
 	    my $sequence = $p->get_attribute("sequence"); 
 	    $compressed = &compress_pattern($sequence, "n");
 	    $compressed =~ s/N/n/g;
+#	    die join "\t", "HELLO", $family_name, $p, $sequence, $compressed, "\n";
 	    $table[$row][$col] .= $compressed;
 	    $table[$row][$col] .= "</B>" if ($p->get_attribute("score") >= 1);
 	    $table[$row][$col] .= "<BR>" unless ($p == $#sorted_patterns);
@@ -936,8 +938,9 @@ sub IndexPatterns {
 	    $table[$row][$col] .= "<TD>\n";
 	    for $p (@sorted_patterns) {
 		$table[$row][$col] .= "<B>" if ($p->get_attribute("score") >= 1);
-		my $sequence =  $p->get_attribute("rc");
-		$compressed = &compress_pattern($sequence, "n");
+#		my $sequence =  $p->get_attribute("rc");
+		my $rc =  &SmartRC($p->get_attribute("sequence"));
+		$compressed = &compress_pattern($rc, "n");
 		$compressed =~ s/N/n/g;
 		$table[$row][$col] .= $compressed;
 		$table[$row][$col] .= "</B>" if ($p->get_attribute("score") >= 1);
@@ -1132,7 +1135,9 @@ sub AnalyzeFamilies {
 
 	### oligo feature-maps
 	if ($task{oligo_maps}) {
-	    &MatchPatterns();
+	    &MatchPatterns($family{$family_name}->{oligo_file},  
+			   $family{$family_name}->{oligo_file},
+			   " -N 4");
 	    &DrawFeatureMap();
 	}
 
@@ -2101,57 +2106,6 @@ sub CalibrationPrefix {
 }
 
 
-################################################################
-## Extract ccontigs and isolated patterns from an assembly file
-sub ReadAssemblyFile {
-    my ($assembly_file) = @_;
-    my ($pattern_handle, $input_dir) = &OpenInputFile($assembly_file);
-    my @assembled_patterns = ();
-    my $error = "";
-
-    while (<$pattern_handle>) {
-	chomp;
-	if (/Too many patterns to assemble/i) {
-	    $error = $_;
-	    while (<$pattern_handle>) {
-		$error .= "\n", $_;
-	    } 
-	    return($error);
-	}
-	next if (/^;/);
-	next if (/^\#/);
-	next unless (/\S/);
-	
-	if ((/contig/) || (/consensus/) || (/isol/)) {
-	    @fields = split "\t";
-	    my $sequence = &trim(shift (@fields));
-	    $pattern = new RSA::pattern();
-	    $pattern->set_attribute("sequence", $sequence);
-	    push @assembled_patterns, $pattern;
-	    if ($strands eq "-2str") {
-		my $rc = &trim(shift @fields);
-			$pattern->set_attribute("rc", $rc);
-#			$rc{$pattern} = uc(&ReverseComplement($pattern->get_attribute("sequence")));
-		    }
-	    my $score = shift @fields;
-	    $pattern->set_attribute("score", $score);
-	    $score{$pattern} = $score; ## index pattern scores for sorting
-	    
-	    my $type = shift @fields;
-	    $pattern->set_attribute("type", $type);
-	    $max_score{$family_name} = &max($max_score{$family_name}, $score{$pattern});
-	    warn "HELLO\t", $_, "\n", join("\t", $family_name, 
-					   $pattern->get_attribute('sequence'),
-					   $pattern->get_attribute('rc'),
-					   $pattern->get_attribute('score'),
-					   $pattern->get_attribute('type'),
-					   $score{$pattern},
-					   ), "\n" if ($main::verbose >= 10);
-	}
-    }
-    close $pattern_handle;
-    return ($error, @assembled_patterns);
-}
 
 ################################################################
 ## Generate report fiels for the motif disovery competition 2004
@@ -2203,26 +2157,27 @@ sub MDCreport {
 
 	my $selection_ft_prefix =  $family{$family_name}->{oligo_selection};
 	my $feature_file = $selection_ft_prefix.".ft";
+  	my $matching_options = " -N 0"; ## Make sure flanking sequences are not considered
+	$matching_options = " -merge"; ## merge overlapping matches
 
-	## Threshold for reporting a match
-	my $threshold = 0;
-	my $matching_options = " -N 0";
+#  	## Threshold for reporting a match
+#  	my $threshold = 0;
 
-	### Sliding window options
-	if ($sliding_window_size >= 1) {
-	    my @patterns = &ReadPatterns(pattern_file=>$selection_file);
-	    my @scores = ();
-	    foreach my $pattern (@patterns) {
-		push @scores, $pattern->get_attribute("score");
-	    }
-	    if (scalar(@patterns) >= 1) {
-		$threshold = &max(@scores) + 0.01;
-	    } elsif (scalar(@patterns) == 1) {
-		$threshold = &max(@scores);
-	    }
-	    $matching_options .= " -window ".$sliding_window_size;
-	}
-	$matching_options .= " -th ".$threshold;
+#  	### Sliding window options
+#  	if ($sliding_window_size >= 1) {
+#  	    my @patterns = &ReadPatterns(pattern_file=>$selection_file);
+#  	    my @scores = ();
+#  	    foreach my $pattern (@patterns) {
+#  		push @scores, $pattern->get_attribute("score");
+#  	    }
+#  	    if (scalar(@patterns) >= 1) {
+#  		$threshold = &max(@scores) + 0.01;
+#  	    } elsif (scalar(@patterns) == 1) {
+#  		$threshold = &max(@scores);
+#  	    }
+#  	    $matching_options .= " -window ".$sliding_window_size;
+#  	}
+#  	$matching_options .= " -th ".$threshold;
 
 
 
@@ -2275,7 +2230,7 @@ sub MDCreport {
 	
 	## Draw the feature map of the selected oligos
 	&MatchPatterns($selection_file, $selection_ft_prefix,  $matching_options);
-	&DrawFeatureMap($selection_ft_prefix);
+	&DrawFeatureMap($selection_ft_prefix, $selection_ft_prefix, " -minfthick 2");
 
 	## Convert the features in MDC format
 	warn ";\tReporting\t",$feature_file, "\n" if ($verbose >=2);
@@ -2291,3 +2246,57 @@ sub MDCreport {
 }
 
 
+################################################################
+## Extract contigs and isolated patterns from an assembly file
+sub ReadAssemblyFile {
+    my ($assembly_file) = @_;
+    my ($pattern_handle, $input_dir) = &OpenInputFile($assembly_file);
+    my @assembled_patterns = ();
+    my $error = "";
+
+    while (<$pattern_handle>) {
+	chomp;
+	if (/Too many patterns to assemble/i) {
+	    $error = $_;
+	    while (<$pattern_handle>) {
+		$error .= "\n", $_;
+	    } 
+	    return($error);
+	}
+	next if (/^;/);
+	next if (/^\#/);
+	next unless (/\S/);
+	
+	if ((/contig/) || (/consensus/) || (/isol/)) {
+	    @fields = split "\t";
+	    my $pattern_seq = &trim(shift (@fields));
+	    $pattern_seq =~ s/^\.+//g;
+	    $pattern_seq =~ s/\.+$//g;
+	    $pattern = new RSA::pattern();
+	    $pattern->set_attribute("sequence", $pattern_seq);
+	    push @assembled_patterns, $pattern;
+	    if ($strands eq "-2str") {
+#		my $rc = &SmartRC($pattern_seq);
+		my $rc = &trim(shift @fields);
+		$pattern->set_attribute("rc", $rc);
+#			$rc{$pattern} = uc(&ReverseComplement($pattern->get_attribute("sequence")));
+	    }
+	    my $score = shift @fields;
+	    $pattern->set_attribute("score", $score);
+	    $score{$pattern} = $score; ## index pattern scores for sorting
+	    
+	    my $type = shift @fields;
+	    $pattern->set_attribute("type", $type);
+	    $max_score{$family_name} = &max($max_score{$family_name}, $score{$pattern});
+	    warn "Pattern\t", $_, "\n", join("\t", $family_name, 
+					     $pattern->get_attribute('sequence'),
+					     $pattern->get_attribute('rc'),
+					     $pattern->get_attribute('score'),
+					     $pattern->get_attribute('type'),
+					     $score{$pattern},
+					     ), "\n" if ($main::verbose >= 10);
+	}
+    }
+    close $pattern_handle;
+    return ($error, @assembled_patterns);
+}

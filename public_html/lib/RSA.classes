@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: RSA.classes,v 1.3 2003/10/02 15:58:54 jvanheld Exp $
+# $Id: RSA.classes,v 1.4 2004/02/01 03:27:51 jvanheld Exp $
 #
 # Time-stamp: <2003-10-02 17:58:27 jvanheld>
 #
@@ -17,92 +17,96 @@ require "RSA.seq.lib";
 package RSA::Object;
 {
 #  use strict;
-
-  #### class variables
-  my $_count = 0;
-  my $_prefix = "obj_";
-
-  #### creator
-  sub new { 
-      my ($class, %args) = @_;
-      my $object = bless {
-	  id=>$args{id} || $class->auto_id(),
-      }, $class;
-      $class->incr_count();
-      $object->init() if $object->can("init");
-      return $object;
-  }
-
-  #### automatic ID assignation
-  sub auto_id {
-    my ($object) = @_;
-    my $class = ref($object) || $object;
-    my $id = $class->get_prefix();
-    my $count = $class->get_count() || 0; 
-    my $pretty_count = sprintf ("%6s", $count);
-    $id .= $pretty_count;
-    $id =~ s/ /0/g;
-    return $id;
-  }
-
-  #### class accessors
-  sub get_count {
-      my ($object) = @_;
-      $class = ref($object) || $object;
-      return $class->{_count};
-  }
-  sub incr_count {
-      my ($object) = @_;
-      my $class = ref($object) || $object;
-      $class->{_count}++;
-  }
-  sub get_prefix {
-      my ($object) = @_;
-      my $class = ref($object) || $object;
-      return $_prefix;
-  }
-
-  #### instance accessors
-  sub get_id {
-      my ($object) = @_;
-      return $object->{id};
-  }
-  sub set_id {
-      my ($object, $new_id) = @_;
-      $object->{id} = $new_id;
-  }
-
-  #### names
-  sub get_name {
-      my ($object) = @_;
-      return ${$object->{names}}[0];
-  }
-  sub set_name {
-      my ($object, $new_name) = @_;
-      ${$object->{names}}[0] = $new_name;
-  }
-  sub add_name {
-      my ($object, $new_name) = @_;
-      push @{$object->{names}}, $new_name;
-  }
-
-  ### general accessors
-  sub set_attribute {
-    my ($object,$key,$value) = @_;
-    $object->{$key} = $value;
-    return $object->{$key};
-  }
-
-  #### get attribute value
-  sub get_attribute {
-    my ($object,$key) = @_;
-    my $class = ref($object);
-    unless (defined($object->{$key})) {
-      warn("WARNING: object $object of class $class has no attribute named '$key'\n"); 
-      return undef;
+    
+    #### class variables
+    my $_count = 0;
+    my $_prefix = "obj_";
+    
+    #### creator
+    sub new { 
+	my ($class, %args) = @_;
+	my $object = bless {
+	    id=>$args{id} || $class->auto_id(),
+	}, $class;
+	$class->incr_count();
+	$object->init() if $object->can("init");
+	return $object;
     }
-    return $object->{$key};
-  }
+
+    #### automatic ID assignation
+    sub auto_id {
+	my ($object) = @_;
+	my $class = ref($object) || $object;
+	my $id = $class->get_prefix();
+	my $count = $class->get_count() || 0; 
+	my $pretty_count = sprintf ("%6s", $count);
+	$id .= $pretty_count;
+	$id =~ s/ /0/g;
+	return $id;
+    }
+
+    #### class accessors
+    sub get_count {
+	my ($object) = @_;
+	$class = ref($object) || $object;
+	return $class->{_count};
+    }
+
+    #### Increment the object counter
+    sub incr_count {
+	my ($object) = @_;
+	my $class = ref($object) || $object;
+	$class->{_count}++;
+    }
+
+    ### Get class prefix
+    sub get_prefix {
+	my ($object) = @_;
+	my $class = ref($object) || $object;
+	return $_prefix;
+    }
+
+    #### instance accessors
+    sub get_id {
+	my ($object) = @_;
+	return $object->{id};
+    }
+    sub set_id {
+	my ($object, $new_id) = @_;
+	$object->{id} = $new_id;
+    }
+
+    #### names
+    sub get_name {
+	my ($object) = @_;
+	return ${$object->{names}}[0];
+    }
+    sub set_name {
+	my ($object, $new_name) = @_;
+	${$object->{names}}[0] = $new_name;
+    }
+    sub add_name {
+	my ($object, $new_name) = @_;
+	push @{$object->{names}}, $new_name;
+    }
+
+    ### general accessors
+    sub set_attribute {
+	my ($object,$key,$value) = @_;
+	$object->{$key} = $value;
+	return $object->{$key};
+    }
+
+    #### get attribute value
+    sub get_attribute {
+	my ($object,$key) = @_;
+	my $class = ref($object);
+	unless (defined($object->{$key})) {
+	    warn("WARNING: object $object of class $class has no attribute named '$key'\n"); 
+	    return undef;
+	}
+	return $object->{$key};
+    }
 
 }
 
@@ -538,37 +542,37 @@ package RSA::pattern;
 @RSA::pattern::ISA = qw( RSA::Sequence );
 {
 #  use strict;
-  
-  ### creator
-  sub new {
-    my ($class, %args) = @_;
-    my $object = bless {
-			id=>$args{id} || $args{seq},
-			type=>"pattern",
-			sequence=>$args{sequence},
-			source=>$args{source},
-			description=>$args{description},
-			score=>$args{score},
-		       }, $class;
-    return $object;
-  }
-
-  ### accessors
-  sub set_attribute {
-    my ($object,$key,$value) = @_;
-    $object->{$key} = $value;
-    return $object->{$key};
-  }
-
-  sub get_attribute {
-    my ($object,$key) = @_;
-    my $class = ref($object);
-    unless (defined($object->{$key})) {
-      warn("WARNING: object $object of class $class has no attribute named '$key'\n"); 
-      return undef;
+    
+    ### creator
+    sub new {
+	my ($class, %args) = @_;
+	my $object = bless {
+	    id=>$args{id} || $args{seq},
+	    type=>"pattern",
+	    sequence=>$args{sequence},
+	    source=>$args{source},
+	    description=>$args{description},
+	    score=>$args{score},
+	}, $class;
+	return $object;
     }
-    return $object->{$key};
-  }
+
+#    ### accessors
+#    sub set_attribute {
+#      my ($object,$key,$value) = @_;
+#      $object->{$key} = $value;
+#      return $object->{$key};
+#    }
+
+#    sub get_attribute {
+#      my ($object,$key) = @_;
+#      my $class = ref($object);
+#      unless (defined($object->{$key})) {
+#        warn("WARNING: object $object of class $class has no attribute named '$key'\n"); 
+#        return undef;
+#      }
+#      return $object->{$key};
+#    }
 
   ################################################################
   ### pattern comparison method
@@ -614,6 +618,36 @@ package RSA::pattern;
     }
     return 0;
   }
+}
+
+################################################################
+### Match of a pattern against a sequence
+package RSA::match;
+@RSA::match::ISA = qw( RSA::Sequence );
+{
+#  use strict;
+    
+    ### creator
+    sub new {
+	my ($class, %args) = @_;
+	my $object = bless {
+	    id=>$args{id} || $args{seq},
+	    start_pos=>$args{start_pos},
+	    end_pos=>$args{end_pos},
+	    strand=>$args{strand},
+	    sequence=>$args{sequence},
+	    score=>$args{score},
+	}, $class;
+	return $object;
+    }
+
+    ## Calculate match length from start and end positions
+    sub get_length {
+	my ($self) = @_;
+	my $length = abs($self->get_attribute("end_pos") - $self->get_attribute("start_pos") + 1);
+	return $length;
+    }
+
 }
 
 

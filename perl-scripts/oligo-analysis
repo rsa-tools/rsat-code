@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.73 2004/01/27 12:02:11 jvanheld Exp $
+# $Id: oligo-analysis,v 1.74 2004/02/01 03:27:51 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -456,14 +456,17 @@ sub SumReverseComplements {
 
     foreach my $pattern_seq (keys %patterns) {
 	my $rc_pattern_seq = &SmartRC($pattern_seq);
+	warn ("; Summing occurrences\t", $pattern_seq, "\t", $rc_pattern_seq, "\n") if ($verbose >= 4);
 	if ($rc_pattern_seq eq $pattern_seq) {
 	    #### don't count twice the reverse palindroms !!!!!!!
 	    $occ_2strands{$pattern_seq} = $patterns{$pattern_seq}->{occ};
 	    $overlaps_2strands{$pattern_seq} = $patterns{$pattern_seq}->{overlaps};
 	} else {
 	    #### sum occurrences of each pattern with its reverse complement
-	    $occ_2strands{$rc_pattern_seq} = $occ_2strands{$pattern_seq} = $patterns{$pattern_seq}->{occ} + $patterns{$rc_pattern_seq}->{occ};
-	    $overlaps_2strands{$rc_pattern_seq} = $overlaps_2strands{$pattern_seq} = $patterns{$pattern_seq}->{overlaps} + $patterns{$rc_pattern_seq}->{overlaps};
+	    $occ_2strands{$rc_pattern_seq} = $occ_2strands{$pattern_seq} = 
+		$patterns{$pattern_seq}->{occ} + $patterns{$rc_pattern_seq}->{occ};
+	    $overlaps_2strands{$rc_pattern_seq} = $overlaps_2strands{$pattern_seq} = 
+		$patterns{$pattern_seq}->{overlaps} + $patterns{$rc_pattern_seq}->{overlaps};
 	}
 #	warn join( "\t", "HELLO", $pattern_seq, $rc_pattern_seq,  
 #			   $occ_2strands{$pattern_seq} ,  $occ_2strands{$rc_pattern_seq},
@@ -477,6 +480,7 @@ sub SumReverseComplements {
     undef %overlaps_2strands;
     
     ### residue occurrences
+    warn ("; Summing residue occurrences", "\n") if ($verbose >= 2);
     foreach my $residue (keys %residue_occ) {
 	my $rc_residue =&SmartRC($residue);
 	$occ_2str{$rc_residue} = $occ_2str{$residue} = $residue_occ{$residue} + $residue_occ{$rc_residue};
@@ -487,9 +491,11 @@ sub SumReverseComplements {
     undef %occ_2str;
 
     ### positions ###
-    if (($return{'pos'}) || ($noov)) {
+    if ($return{'pos'}) {
+	warn ("; Summing positions for reverse complementary pairs", "\n") if ($verbose >= 2);
 	for $seq (1..$sequence_number) {
 	    foreach $pattern_seq (sort keys %patterns) {
+		warn ("; Summing position\t", $pattern_seq, "\t", $rc_pattern_seq, "\n") if ($verbose >= 4);
 		$rc_pattern_seq = &SmartRC($pattern_seq);
 		if ($rc_pattern_seq eq $pattern_seq) {
 		    @{$m_pos_bothstrands{$pattern_seq}[$seq]} = @{$match_pos{$pattern_seq}[$seq]};
@@ -557,8 +563,10 @@ sub SumReverseComplementsDistrib {
 #### when grouping occurrences with their reverse complement, 
 #### only retain one of each pair. 
 sub GroupRc {
+    warn ("; Grouping pairs of reverse complements\n"), "\n" if ($verbose >= 2);
     foreach $pattern_seq (keys %patterns) {
 	$rc_pattern_seq = &SmartRC($pattern_seq);
+	warn ("; Grouping reverse complements\t", $pattern_seq, "\t", $rc_pattern_seq, "\n") if ($verbose >= 4);
 	if ($rc_pattern_seq gt $pattern_seq) { ### only suppress one oligo from the pair
 	    delete $patterns{$rc_pattern_seq};
 	}
@@ -1463,7 +1471,7 @@ sub Verbose {
 sub PrintResult {
     ### open output file ###
     if ($verbose >= 2) {
-	&TimeWarn("Printing output file");
+	&TimeWarn("Printing output file\t$outputfile");
     }
 
     #### print verbose

@@ -350,8 +350,11 @@ foreach $m (0..$#map_list) {
     $feature_type = $features{$map}[$f]{feature_type};
     $description = $features{$map}[$f]{description};
     $score =  $features{$map}[$f]{score};
+
     next if ($score < $min_score);
     
+#    die join ("\t", $score, $min_score, $max_score), "\n";
+
     ### special choice of colors for amino acids
     if ($aa_colors)  {
       $feature_color = $aa_color{$id};
@@ -366,7 +369,7 @@ foreach $m (0..$#map_list) {
 	$feature_thick = $feature_thick{uc($feature_type)};
       } elsif (($score_thick) &&  ### thick propotional to feature score
 	       (&IsReal($score)) && 
-	       ($max_score > 0) &&
+#	       ($max_score > 0) &&
 	       ($max_score > $min_score)) {
 	$feature_thick = $max_feature_thick * ($score - $min_score)/($max_score - $min_score);
 	$feature_thick = &min($max_feature_thick, $feature_thick);
@@ -833,7 +836,12 @@ sub MaxScorePerID {
 	foreach my $f (@{$features{$map}}) {
 	    my $id = $f->{id};
 	    my $score = $f->{score};
-	    $max_score_per_id{$id} = &max ($max_score_per_id{$id}, $score);
+#	    warn join "\t", "HELLO", $f->{id},  $f->{score}, "\n";
+	    if (defined($max_score_per_id{$id})) {
+		$max_score_per_id{$id} = &max ($max_score_per_id{$id}, $score);
+	    } else {
+		$max_score_per_id{$id} = $score;
+	    }
 	}
     }
 }
