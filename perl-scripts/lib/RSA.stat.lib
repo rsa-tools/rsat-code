@@ -6,6 +6,19 @@
 ###
 ################################################################
 
+#### returns the simi of a list of numeric values
+#### usage:
+#### $sum = &sum(@value_list);
+sub sum {
+    my (@values) = @_;
+    my $sum = 0;
+    foreach my $value (@values) {
+	$sum += $value;
+    }
+    return $sum;
+}
+
+
 #### returns the maximum of a list of numeric values
 #### usage:
 #### $max_value = &max(@value_list);
@@ -645,7 +658,7 @@ sub hypergeometric {
 
 
     
-# 	$Id: RSA.stat.lib,v 1.22 2004/02/01 10:49:03 jvanheld Exp $	
+# 	$Id: RSA.stat.lib,v 1.23 2004/04/01 22:19:11 jvanheld Exp $	
 
     #### initialization
     if (defined($args{previous_value})) {
