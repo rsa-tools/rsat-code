@@ -43,21 +43,21 @@ descriptions:
 SOURCE=WashU
 UTR_DIR=data/utr${SIDE}
 SEQ_DIR=${UTR_DIR}/sequences
-UTR_WC=${SEQ_DIR}/${ORG}_${SOURCE}_utr${SIDE}_${SEQ_LEN}.wc
+UTR_WC=${SEQ_DIR}/${ORG}_${SOURCE}_utr${SIDE}_${SEQ_LEN}.wc.gz
 STRICTO=								\
-	${SEQ_DIR}/S_cerevisiae*_utr${SIDE}_${SEQ_LEN}.wc		\
-	${SEQ_DIR}/S_paradoxus*_utr${SIDE}_${SEQ_LEN}.wc		\
-	${SEQ_DIR}/S_mikatae*_utr${SIDE}_${SEQ_LEN}.wc		\
-	${SEQ_DIR}/S_kudriavzevii*_utr${SIDE}_${SEQ_LEN}.wc		\
-	${SEQ_DIR}/S_bayanus*_utr${SIDE}_${SEQ_LEN}.wc	
+	${SEQ_DIR}/S_cerevisiae*_utr${SIDE}_${SEQ_LEN}.wc.gz		\
+	${SEQ_DIR}/S_paradoxus*_utr${SIDE}_${SEQ_LEN}.wc.gz		\
+	${SEQ_DIR}/S_mikatae*_utr${SIDE}_${SEQ_LEN}.wc.gz		\
+	${SEQ_DIR}/S_kudriavzevii*_utr${SIDE}_${SEQ_LEN}.wc.gz		\
+	${SEQ_DIR}/S_bayanus*_utr${SIDE}_${SEQ_LEN}.wc.gz	
 
-LATO=							\
-	${STRICTO}						\
-	${SEQ_DIR}/S_kluyveri*_utr${SIDE}_${SEQ_LEN}.wc		\
-	${SEQ_DIR}/S_castellii*_utr${SIDE}_${SEQ_LEN}.wc	
+LATO=									\
+	${STRICTO}							\
+	${SEQ_DIR}/S_kluyveri*_utr${SIDE}_${SEQ_LEN}.wc.gz		\
+	${SEQ_DIR}/S_castellii*_utr${SIDE}_${SEQ_LEN}.wc.gz	
 
-UTR_FILES=${STRICTO}
-PROXIMITY=stricto
+UTR_FILES=${LATO}
+PROXIMITY=lato
 
 list_utr_files:
 	@echo ${UTR_FILES}
@@ -75,7 +75,7 @@ utr2wc_one_org:
 
 ################################################################
 ## Collect non-coding sequences from Saccharomyces cerevisiae
-SCE_UTR_FILE=${SEQ_DIR}/S_cerevisiae_SGD_utr${SIDE}_${SEQ_LEN}.wc
+SCE_UTR_FILE=${SEQ_DIR}/S_cerevisiae_SGD_utr${SIDE}_${SEQ_LEN}.wc.gz
 SIDE_NAME=downstream
 MAKE_UP=${MAKE}   SIDE=5 SIDE_NAME=upstream SEQ_LEN=2000 FROM=-2000 TO=-1 SUB_SEQ_LEN=800 SUB_FROM=-800 SUB_TO=-1 
 MAKE_DOWN=${MAKE} SIDE=3 SIDE_NAME=downstream SEQ_LEN=500 FROM=1 TO=500 SUB_SEQ_LEN=200 SUB_FROM=1 SUB_TO=200
@@ -129,9 +129,9 @@ SUB_FROM=1
 SUB_TO=200
 SUB_SEQ_LEN=200
 SUB_UTR_WC_PREFIX=${SEQ_DIR}/${ORG}_utr${SIDE}_${SUB_SEQ_LEN}
-SUB_UTR_WC=${SUB_UTR_WC_PREFIX}.wc
-SUB_UTR_WC_PURGED=${SUB_UTR_WC_PREFIX}_purged.wc
-BIG_UTR_WC=`ls -1 ${SEQ_DIR}/${ORG}_*_utr${SIDE}_${SEQ_LEN}.wc`
+SUB_UTR_WC=${SUB_UTR_WC_PREFIX}.wc.gz
+SUB_UTR_WC_PURGED=${SUB_UTR_WC_PREFIX}_purged.wc.gz
+BIG_UTR_WC=`ls -1 ${SEQ_DIR}/${ORG}_*_utr${SIDE}_${SEQ_LEN}.wc.gz`
 sub_seq_one_org:
 	@echo "sub-sequence	${ORG}	${BIG_UTR_WC}	${SUB_FROM}	${SUB_TO}	${SUB_UTR_WC}"
 	sub-sequence -format wc -i ${BIG_UTR_WC} -from ${SUB_FROM} -to ${SUB_TO} -o ${SUB_UTR_WC}
@@ -159,9 +159,9 @@ merge_sources:
 ################################################################
 ## Merge the sequences from MIT and WashU for a given organism
 ORG_TO_MERGE=S_bayanus
-MERGED_FILE=${SEQ_DIR}/${ORG_TO_MERGE}_WASHU-MIT_utr${SIDE}_${SEQ_LEN}.wc
-MIT_FILE=${ORG_TO_MERGE}_MIT_utr${SIDE}_${SEQ_LEN}.wc		
-WASHU_FILE=${ORG_TO_MERGE}_WashU_utr${SIDE}_${SEQ_LEN}.wc 
+MERGED_FILE=${SEQ_DIR}/${ORG_TO_MERGE}_WASHU-MIT_utr${SIDE}_${SEQ_LEN}.wc.gz
+MIT_FILE=${ORG_TO_MERGE}_MIT_utr${SIDE}_${SEQ_LEN}.wc.gz		
+WASHU_FILE=${ORG_TO_MERGE}_WashU_utr${SIDE}_${SEQ_LEN}.wc.gz 
 MERGE_ML=200
 REDUNDANT_DIR=${SEQ_DIR}/redundant
 discard_redundant_files:
@@ -235,7 +235,7 @@ collect_one_orf:
 	@mkdir -p ${COLLECT_DIR}
 	zgrep -i ${ORF} ${UTR_FILES}					\
 		| perl -pe 's|${UTR_DIR}/||'				\
-		| perl -pe 's|_utr${SIDE}_${SEQ_LEN}.wc||'			\
+		| perl -pe 's|_utr${SIDE}_${SEQ_LEN}.wc.gz||'		\
 		| perl -pe 's|.*:||'					\
 		| convert-seq -from wc -to fasta -o ${COLLECT_FILE}
 	@echo "Collected orthologs for ORF ${ORF}	${COLLECT_FILE}"
@@ -428,20 +428,23 @@ index: open_index index_all_orfs close_index
 open_index:
 	@echo "Opening index file ${INDEX_FILE}"
 	@echo "<html><body><table border=1 cellpadding=3 cellspacing=3>" > ${INDEX_FILE}
-	@echo "<th>ORF</th>" >> ${INDEX_FILE}
+
+	@echo "<th>Sensu lato<br>5'</th>" >> ${INDEX_FILE}
 	@echo "<th></th>" >> ${INDEX_FILE}
+
 	@echo "<th>Sensu stricto<br>5'</th>" >> ${INDEX_FILE}
 	@echo "<th></th>" >> ${INDEX_FILE}
+
+	@echo "<th>ORF</th>" >> ${INDEX_FILE}
+	@echo "<th></th>" >> ${INDEX_FILE}
+
 	@echo "<th>Sensu stricto<br>3'</th>" >> ${INDEX_FILE}
 	@echo "<th></th>" >> ${INDEX_FILE}
-#	@echo "<th>Sensu lato<br>5'</th>" >> ${INDEX_FILE}
-#	@echo "<th></th>" >> ${INDEX_FILE}
-#	@echo "<th>Sensu lato<br>3'</th>" >> ${INDEX_FILE}
-#	@echo "<th></th>" >> ${INDEX_FILE}
+
+	@echo "<th>Sensu lato<br>3'</th>" >> ${INDEX_FILE}
+	@echo "<th></th>" >> ${INDEX_FILE}
+
 	@echo "<th>Description</th>" >> ${INDEX_FILE}
-	@echo "<th></th>" >> ${INDEX_FILE}
-	@echo "<th></th>" >> ${INDEX_FILE}
-	@echo "<th></th>" >> ${INDEX_FILE}
 
 close_index:
 	@echo "Closing index file ${INDEX_FILE}"
@@ -450,51 +453,41 @@ close_index:
 index_all_orfs:
 	@${MAKE} iterate_orfs ORF_TASK=index_one_orf
 
-ORF_DESCR=`grep ";${ORF};" ${DESCR_FILE}`
+ORF_DESCR=`grep -E "[;\[]${ORF};" ${DESCR_FILE}`
 description_one_orf:
 	@echo ${DESCR_FILE}	${ORF}	${ORF_DESCR}
 
 index_one_orf:
 	@echo "Indexing ORF ${ORF}"
 	@echo "<tr>" >> ${INDEX_FILE}
-	@echo "<th><tt>${ORF}</tt></th>" >> ${INDEX_FILE}
 
-#	@echo "<th>stricto</th>" >> ${INDEX_FILE}
-	@${MAKE} index_one_orf_one_group PROXIMITY=stricto UTR_FILES='${STRICTO}' SIDE=5 SEQ_LEN=2000 SIDE_NAME=upstream
-	@${MAKE} index_one_orf_one_group PROXIMITY=stricto UTR_FILES='${STRICTO}' SIDE=3 SEQ_LEN=500 SIDE_NAME=downstream
+	@${MAKE} index_one_orf_one_group PROXIMITY=lato UTR_FILES='${LATO}' SIDE=5 SEQ_LEN=2000 SIDE_NAME=utr5 CELL_BG='#CCCCFF'
+	@${MAKE} index_one_orf_one_group PROXIMITY=stricto UTR_FILES='${STRICTO}' SIDE=5 SEQ_LEN=2000 SIDE_NAME=utr5 CELL_BG='#AAAAFF'
+	@echo "<th BGCOLOR='#FFDDDD'><tt>${ORF}</tt></th><td></td>" >> ${INDEX_FILE}
+	@${MAKE} index_one_orf_one_group PROXIMITY=stricto UTR_FILES='${STRICTO}' SIDE=3 SEQ_LEN=500 SIDE_NAME=utr3 CELL_BG='#AAFFAA'
+	@${MAKE} index_one_orf_one_group PROXIMITY=lato UTR_FILES='${LATO}' SIDE=3 SEQ_LEN=500 SIDE_NAME=utr3 CELL_BG='#CCFFCC'
 
-#	@echo "<td></td>" >> ${INDEX_FILE}
-#	@echo "<th>lato</th>" >> ${INDEX_FILE}
-#	@${MAKE} index_one_orf_one_group PROXIMITY=lato UTR_FILES='${LATO}' SIDE=5 SEQ_LEN=2000 SIDE_NAME=upstream
-#	@${MAKE} index_one_orf_one_group PROXIMITY=lato UTR_FILES='${LATO}' SIDE=3 SEQ_LEN=500 SIDE_NAME=downstream
-
-	@echo "<td></td>" >> ${INDEX_FILE}
-	@echo "<td WIDTH=400>${ORF_DESCR}</td>" >> ${INDEX_FILE}
+	@echo "<td WIDTH=400 BGCOLOR='#FFDDDD'>${ORF_DESCR}</td>" >> ${INDEX_FILE}
 	@echo "</tr>" >> ${INDEX_FILE}
 	@echo "" >> ${INDEX_FILE}
 
 index_one_orf_one_group:
-	@echo "<td></td>" >> ${INDEX_FILE}
-	@echo "<td>" >> ${INDEX_FILE}
+	@echo "<td bgcolor=${CELL_BG}>" >> ${INDEX_FILE}
 	@echo "<font size=-1>" >> ${INDEX_FILE}
-	if [ -f "${COLLECT_FILE}" ] ; then					\
-		echo "[<a href=${COLLECT_FILE}>raw</a>]"  >> ${INDEX_FILE};	\
-	fi
-	if [ -f "${PURGED_FILE}" ] ; then					\
-		echo "[<a href=${PURGED_FILE}>purged</a>]"  >> ${INDEX_FILE};	\
-	fi
-	if [ -f "${ALIGN_FILE}" ] ; then					\
-		echo "[<a href=${ALIGN_FILE}>aligned</a>]"  >> ${INDEX_FILE};	\
-	fi
-	if [ -f "${TREE_FILE}" ] ; then					\
-		echo "[<a href=${TREE_FILE}>tree</a>]"  >> ${INDEX_FILE};	\
-	fi
-	if [ -f "${PROFILE_FILE}" ] ; then					\
-		echo "[<a href=${PROFILE_FILE}>profile</a>]"  >> ${INDEX_FILE};	\
-	fi
-	if [ -f "${ORF_OLIGO_FILE}" ] ; then					\
-		echo "[<a href=${ORF_OLIGO_FILE}>oligos</a>]"  >> ${INDEX_FILE};	\
-	fi
+	${MAKE} link_one_file FILE_TO_LINK=${COLLECT_FILE} LINK_TEXT=raw
+	${MAKE} link_one_file FILE_TO_LINK=${PURGED_FILE} LINK_TEXT=purged
+	${MAKE} link_one_file FILE_TO_LINK=${ALIGN_FILE} LINK_TEXT=align
+	${MAKE} link_one_file FILE_TO_LINK=${TREE_FILE} LINK_TEXT=tree
+	${MAKE} link_one_file FILE_TO_LINK=${PROFILE_FILE} LINK_TEXT=profile
+	${MAKE} link_one_file FILE_TO_LINK=${ORF_OLIGO_FILE} LINK_TEXT=oligos
 	@echo "</font></td>" >> ${INDEX_FILE}
+	@echo "<td></td>" >> ${INDEX_FILE}
 
+link_one_file:
+	if [ -f "${FILE_TO_LINK}" ] ; then						\
+		echo "[<a href=${FILE_TO_LINK}>${LINK_TEXT}</a>]"  >> ${INDEX_FILE};	\
+	fi
+	if [ -f "${FILE_TO_LINK}.gz" ] ; then						\
+		echo "[<a href=${FILE_TO_LINK}.gz>${LINK_TEXT}</a>]"  >> ${INDEX_FILE};	\
+	fi
 
