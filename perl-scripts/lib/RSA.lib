@@ -20,7 +20,7 @@ umask 0022;
 ############################################################################
 
 #### Regulatory Sequence Analysis Tools (RSA-tools)
-####  1997-99 by Jacques van Helden (jacques@ucmb.ulb.ac.be)
+####  Project started in 1997 by Jacques van Helden (jvanheld@ucmb.ulb.ac.be)
 ####  a Perl library with diverse procedures
 ####  used by rsa-tools perl scripts
 
@@ -75,7 +75,8 @@ if ($REMOTE_SERVER) {
 }
 
 
-$HTML = "$RSA/public_html"; $WWW_TMP = "$WWW_RSA/tmp";
+$HTML = "$RSA/public_html"; 
+$WWW_TMP = "$WWW_RSA/tmp";
 $ENV{SERVER_ADMIN} = "jvanheld\@ucmb.ulb.ac.be";
 
 $counter_file = "$LOGS/count-file";
@@ -85,7 +86,6 @@ $log_file = sprintf "$LOGS/log-file_${config_site}_%04d_%02d", $year+1900,$month
 $script_name = &ShortFileName($0);
 
 $date = &AlphaDate();
-$mail_command = "mail -s \'RSA-tools - $script_name - $date\'";
 
 ############################################################################
 ############################ GLOBAL VARIABLES ##############################
@@ -422,29 +422,26 @@ sub AlphaDate {
 ################################################################
 #### increment the counter file for monitoring web access
 sub UpdateCounterFile {
-  my $nb_visitors = 1;
-  if (!(-e $counter_file)) {
-    if (open(COUNTER, ">$counter_file")) {
-      flock(COUNTER,2);
-      print COUNTER $nb_visitors;
-      flock(COUNTER, 8);
-      close(COUNTER);
+    my $nb_visitors = 1;
+
+    ### read previous counter value
+    if (-e $counter_file) {
+	open(COUNTER, "<$counter_file");
+	flock(COUNTER, 2);
+	$nb_visitors = <COUNTER>;
+	flock(COUNTER,8);
+	close(COUNTER);
+	$nb_visitors++;
     }
-  } else {
-    open(COUNTER, "<$counter_file");
-    flock(COUNTER, 2);
-    $nb_visitors = <COUNTER>;
-    flock(COUNTER,8);
-    close(COUNTER);
     
-    $nb_visitors++;
+    ### save new counter value
     open(COUNTER, ">$counter_file");
     flock(COUNTER,2);
     print COUNTER $nb_visitors;
     flock(COUNTER,8);
     close(COUNTER);
-  }
-  return $nb_visitors;
+    
+    return $nb_visitors;
 }
 
 
@@ -459,15 +456,13 @@ sub UpdateLogFile {
     $date = &AlphaDate;
     #$date = `date '+%y%m%d.%H%M%S'`;
     $date =~ s/\n//;
-    print LOG "$date\t";
-    print LOG "$config_site\t";
-    print LOG "$ENV{'REMOTE_USER'}\@$ENV{'REMOTE_ADDR'} ($ENV{'REMOTE_HOST'})";
-    print LOG "\t$script_name";
-    print LOG "\t$input{'user_email'}";
-    unless ($input{'user_name'} eq "") {
-      print LOG " ($input{'user_name'})";
-    }
-    print LOG "\n";
+    print LOG join ("\t", 
+		    $date,
+		    $config_site, 
+		    "$ENV{'REMOTE_USER'}\@$ENV{'REMOTE_ADDR'} ($ENV{'REMOTE_HOST'})",
+		    $script_name,
+		    $query->param('user_email')
+		    ), "\n";
     flock(LOG,8);
     close LOG;
   }
@@ -520,15 +515,31 @@ sub ExtractPath {
 ################################################################
 #### send a unix command to remove a file the next day
 #### Usage:
-#### &DelayedRemoval($file_to_remove);
+#### &DelayedRemoval($file_to_remove, $delay);
 ####
 sub DelayedRemoval {
-    unless ($config_site eq "alize") { ### at est foireux au DBM
-	local ($file_to_remove) = $_[0];
-	open REMOVE, "| at now + 1 day";
-	print REMOVE "rm -f $file_to_remove \n";
-	close REMOVE;
+    my ($file_to_remove, $delay) = @_;
+    $delay = "60 minutes" unless ($delay);
+
+    unless (-e $file_to_remove) {
+	&MessageToAdmin("DelayedRemoval: file $file_to_remove does not exist");
+	return();
     }
+    unless (-r $file_to_remove) {
+	&MessageToAdmin("DelayedRemoval: file $file_to_remove is not readable");
+	return();
+    }
+    unless (-w $file_to_remove) {
+	&MessageToAdmin("DelayedRemoval: file $file_to_remove is not writable");
+	return();
+    }
+
+    open REMOVE, "| at now + $delay";
+    print REMOVE "rm -f $file_to_remove \n";
+    close REMOVE;
+
+    &MessageToAdmin("DelayedRemoval: file $file_to_remove will be removed in $delay") if ($ECHO >= 0);
+
 }
 
 
@@ -547,20 +558,23 @@ sub PrintList {
 ################################################################
 #### print the command-line arguments
 sub PrintArguments {
-  my $local_out = $_[0];
-  unless ($local_out)  {
-    $local_out = STDOUT;
-  }
-  foreach my $a (@main::ARGV) {
-    if (($a =~ /\s+/)  ||
-	($a !~ /\S+/) ||
-	($a =~ /[\(\)\>\<\&]/)) {
-      print $local_out " '$a'";
-    } else {
-      print $local_out " $a";
+    my $local_out = $_[0];
+    unless ($local_out)  {
+	$local_out = STDOUT;
     }
-  }
-  print $local_out "\n";
+    my $argument_string = "";
+
+    foreach my $a (@main::ARGV) {
+	if (($a =~ /\s+/)  ||
+	    ($a !~ /\S+/) ||
+	    ($a =~ /[\(\)\>\<\&]/)) {
+	    $argument_string .= " '$a'";
+	} else {
+	    $argument_string .= " $a";
+	}
+    }
+    print $local_out $argument_string, "\n";
+    return $argument_string;
 }
 
 
@@ -583,27 +597,35 @@ sub PrintArguments {
 ####                $feature_table_file, 
 ####                $input_sequence_file,  
 ####                $input_sequence_format);
+
+sub CheckOrganismName {
+    my ($organism_name) = @_;
+     unless ($supported_organism{$organism_name}) {
+	&FatalError("Organism $organism_name is not supported.",
+		    "Supported on this site : \n".&ListSupportedOrganisms());
+    }
+}
+
+
 sub CheckOrganism {
     my ($organism_name, $feature_table_file, $input_sequence_file, $input_sequence_format) = @_;
     my $organism_object = new RSA::Organism;
+
+#    die $organism_name;
 
     #### check input sequence file and format
     if ($input_sequence_file) {
 	$genome_file = $input_sequence_file;
 	$genome_seq_format = $input_sequence_format;  
+	
     } else {
+	&CheckOrganismName($organism_name);
 	$genome_file = $supported_organism{$organism_name}->{'genome'};
 	$genome_seq_format = $supported_organism{$organism_name}->{'seq_format'};
 	&Warning("checking organism\t$organism_name") if ($verbose >= 2);
-	
 	&FatalError("You should specify an organism.", 
 		    "Supported organisms\n".&ListSupportedOrganisms)
 	    unless ($organism_name);
-	
-	unless ($supported_organism{$organism_name}) {
-	    &FatalError("Organism $organism_name is not supported.",
-			"Supported on this site : \n".&ListSupportedOrganisms());
-	}
     }
 
 
@@ -628,9 +650,12 @@ sub CheckOrganism {
 	$chromosome{$chr}->set_sequence($chromosome_seq{$chr});
 	$chromosome{$chr}->set_organism($organism_name);
 	$organism_object->add_chromosome($chromosome{$chr});
-	
+
     } elsif ($genome_seq_format eq "filelist") {
 	my ($seq_dir, $seq_list) = &SplitFileName($genome_file);
+	
+	&Warning("Genome file\t$genome_file") if ($verbose >= 2);
+
 	unless (-e $genome_file) {
 	    &FatalError("Genome file $genome_file does not exist.");
 	}
@@ -648,13 +673,29 @@ sub CheckOrganism {
 	    $chromosome_seq{$chr} = new RSA::SequenceOnDisk (filename=>  $seq_dir.$seq_file,
 							     id=>        $chr,
 							     circular=>  $circular, 
-							     organism=>  $organism_name);
+							     organism=>  $organism_name);	    
 	    $chromosome{$chr} = new RSA::Chromosome();
 	    $chromosome{$chr}->set_name($chr);
 	    $chromosome{$chr}->set_sequence($chromosome_seq{$chr});
 	    $chromosome{$chr}->set_organism($organism_name);
 	    $organism_object->add_chromosome($chromosome{$chr});
-#		warn join "\t", $seq_file, $chr, $chromosome_seq{$chr}->get_attribute("filename"), "\n";
+
+# 	    warn join ("\t","CHROMOSOME", 
+# 		       $seq_file,
+# 		       $chr, 
+# 		       $chromosome{$chr},
+# 		       $chromosome{$chr}->get_attribute("sequence"),
+# 		       $chromosome{$chr}->get_attribute("sequence")->get_length()
+# 		       ), "\n";
+	    
+# 	    warn join ("\t", "SEQUENCE", 
+# 		       $chromosome_seq{$chr},
+# 		       $chromosome_seq{$chr}->get_attribute("filename"),
+# 		       $chromosome_seq{$chr}->get_length(),
+# 		       $chromosome_seq{$chr}->get_attribute("circular"),
+# 		       $chromosome_seq{$chr}->get_sequence(1,12,"D")
+# 		       ), "\n";
+
 	}
 	close FILES;
     } elsif ($accepted_input_seq{$genome_seq_format}) {
@@ -745,7 +786,7 @@ sub ReadOrfPositions {
     ### &ReadOrfPositions($organism_name);
     my ($organism_name, 
 	$feature_table_file,
-	$warn)= @_;;
+	$warn)= @_;
     
     unless ($feature_table_file) {
 	$feature_table_file = $supported_organism{$organism_name}->{'features'};
@@ -788,11 +829,6 @@ sub ReadOrfPositions {
 	    } else {
 		$name{$orf_id} = $name;
 	    }
-#	    $orf_info{$orf_id} = $_;
-#	    $chr{$orf_id} = $chr;
-#	    $start{$orf_id} = $start;
-#	    $end{$orf_id} = $end;
-#	    $descr{$orf_id} = $descr;
 	    $left = &min($start,$end);
 	    $right = &max($start,$end);
 	    
@@ -824,13 +860,23 @@ sub ReadOrfPositions {
 	    next;
 	}
 	unless ($left) {
-	    warn "; WARNING: invalid left position specification in the feature table line $linenb\n;\t",join "\t", @fields, "\n" if ($warn);
+	    warn "; WARNING: left position not specified in the feature table line $linenb\n;\t",join "\t", @fields, "\n" if ($warn);
 	    next;
 	}
 	unless ($right) {
+	    warn "; WARNING:right position not specified in the feature table line $linenb\n;\t",join "\t", @fields, "\n" if ($warn);
+	    next;
+	}
+	
+	unless (&IsNatural($left) ) {
+	    warn "; WARNING: invalid left position specification in the feature table line $linenb\n;\t",join "\t", @fields, "\n" if ($warn);
+	    next;
+	}
+	unless (&IsNatural($right) ) {
 	    warn "; WARNING: invalid right position specification in the feature table line $linenb\n;\t",join "\t", @fields, "\n" if ($warn);
 	    next;
 	}
+	
 	unless ($strand) {
 	    warn "; WARNING: invalid strand specification in the feature table line $linenb\n;\t",join "\t", @fields, "\n" if ($warn);
 	    next;
@@ -1030,17 +1076,9 @@ sub ListSupportedOrganisms {
       $names{$key} = $main::supported_organism{$key}->{'name'};
 #      print "HELLO $key\t",$main::supported_organism{$key}->{'name'}, "\t", $names{$key}, "\n";;
   }
-#  @keys = keys %names;
-#  @names = values %names;
   @sorted_names = sort values %names;
-#  @sorted_keys  = sort {lc($a) ge lc($b)} @keys; ### this DOES NOT WORK
   @sorted_keys = sort keys %supported_organism;
 
-#    warn join ("'\n\t'", "keys", @keys), "\n";
-#    warn join ("'\n\t'", "sorted keys", @sorted_keys), "\n";
-#    warn join ("'\n\t'", "names", @names), "\n";
-#    warn join ("'\n\t'", "sorted names", @sorted_names), "\n";
-  
   if ($out_format eq "html_list") {
       my $result = "<UL>\n";
       foreach my $name (@sorted_names) {
@@ -1073,6 +1111,35 @@ sub ListSupportedOrganisms {
 	  $result{$key} = $main::supported_organism{$key}->{name};
       }
       return %result;
+  } elsif ($out_format eq "sizes") {
+      #### collect the default limits for each organism
+      my $result = sprintf ";\t%-35s\t%7s\t%7s\t%s\n", "Organism", "upstream from", "upstream to", "taxonomy";
+      foreach my $key (sort @sorted_keys) {
+	  $result .= sprintf ("\t%-35s\t%7s\t%7s\t%s\n", 
+			      $key, 
+			      $supported_organism{$key}->{'up_from'},
+			      $supported_organism{$key}->{'up_to'}
+			      );
+      }
+      return $result;
+  } elsif ($out_format eq "full") {
+      #### collect the default limits for each organism
+      my $result = join ("\t", 
+			 "; organism",
+			 "taxonomy", 
+			 "last update", 
+			 "upstream from", 
+			 "upstream to")."\n";
+      foreach my $key (sort @sorted_keys) {
+	  $result .= join ("\t", 
+			   $key,  
+			   $supported_organism{$key}->{'taxonomy'},
+			   $supported_organism{$key}->{'last_update'},
+			   $supported_organism{$key}->{'up_from'},
+			   $supported_organism{$key}->{'up_to'}
+			   )."\n";
+      }
+      return $result;
   } else {
       my $result = "";
       foreach $key (@sorted_keys) {
@@ -1085,7 +1152,7 @@ sub ListSupportedOrganisms {
   }
 }
 
-$supported_organisms .= &ListSupportedOrganisms();
+$supported_organisms = &ListSupportedOrganisms();
 
 
 #foreach $key (sort keys %supported_organism) {
@@ -1100,6 +1167,15 @@ $supported_organisms .= &ListSupportedOrganisms();
 ################################################################
 #### Treatment of errors
 ################################################################
+
+################################################################
+#### report an error by sending an email to RSAT administrator
+sub MessageToAdmin {
+    my ($message) = @_;
+    $mail_command = "mail -s \'RSA-tools - $script_name - $date\'";
+    system "echo \"$message\" | $mail_command $ENV{SERVER_ADMIN} &"; 
+}
+
 
 ### report fatal errors 
 sub FatalError {
@@ -1186,18 +1262,20 @@ sub ReadFamilies {
 	next if (/^\#/);
 	next unless (/\S/);
 	chomp;
+	s/\r$//;
 ##	my @fields = split /\s+/;
 	my @fields = split /\t/;
 	
 	### family member
-	$member_name = uc($fields[0]);
+	$member_name = &trim(uc($fields[0]));
 	unless ($member_name =~ /\S/) {
 	    warn ("Error family file $family_file line $line\t",
 		  "gene not specified\n");
 	    next;
 	}
 	### family name
-	$family_name = $fields[1];
+	$family_name = &trim($fields[1]);
+	$family_name =~ s/ +/_/g;
 	unless ($family_name =~ /\S/) {
 	    warn ("Error family file $family_file line $line\t",
 		  "family not specified\n");
@@ -1223,7 +1301,7 @@ sub ReadFamilies {
 #	    warn join ("\t",  "; \t$family_name","$member_name","$member_key","$name{$id}"), "\n" 
 #		if ($verbose >= 0);
 	} else {
-	    &Warning (";\tWARNING ! $member unknown gene name \n");
+	    &Warning ("$member_name unknown gene name");
 	}
 	
     }
