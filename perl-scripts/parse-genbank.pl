@@ -1,6 +1,6 @@
 #!/usr/bin/perl 
 #############################################################
-# $Id: parse-genbank.pl,v 1.15 2004/01/23 16:04:15 oly Exp $
+# $Id: parse-genbank.pl,v 1.16 2004/01/30 13:07:11 oly Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -513,7 +513,10 @@ sub RefseqPostProcessing {
     foreach my $protein ($contigs->get_objects()) {
 	my $id = $protein->get_attribute("id");
 	my $version = $protein->get_attribute("version");
+	my $comment = $protein->get_attribute("comment");
 	my ($version_id,$gi) = split /\s+/, $version;
+	my ($comment_1, $comment_2) = split /The reference sequence was derived from /, $comment;
+	my ($embl_xref, $comment_3) = split /\./, $comment_2;
 	if ($gi =~ /^GI:/) {
 	    $gi = $';
 	} else {
@@ -522,9 +525,10 @@ sub RefseqPostProcessing {
 	
 	$protein->set_attribute("GI", $gi);
 	$protein->set_attribute("version_id", $version_id);
+	$protein->set_attribute("EMBl_XRef", $embl_xref);
 	warn join ("\t", $protein->get_attribute('id'),$version,
 		  $version_id,
-		  $gi), "\n" if ($main::verbose >= 1);
+		  $gi, $embl_xref), "\n" if ($main::verbose >= 1);
     }
 
 }
