@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: patser.cgi,v 1.10 2002/09/05 09:58:07 jvanheld Exp $
+# $Id: patser.cgi,v 1.11 2002/09/16 16:02:50 jvanheld Exp $
 #
-# Time-stamp: <2002-09-05 04:58:00 jvanheld>
+# Time-stamp: <2002-09-16 11:02:07 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -31,7 +31,7 @@ $query = new CGI;
 
 ### print the result page
 &RSA_header("patser result");
-#&ListParameters;
+&ListParameters if ($ECHO >=2);
 
 #### update log file ####
 &UpdateLogFile;
@@ -82,6 +82,16 @@ if ($query->param('strands') =~ /both/i) {
 ### top value only ###
 if ($query->param('return') =~ /top/i) {
     $parameters .= " -t";
+    $top_scores = $query->param('top_scores');
+    if (&IsNatural($query->param('top_scores'))) {
+	if ($top_scores == 0) {
+	    &FatalError("number of top scores must be >= 1");
+	} else {
+	    $parameters .= " $top_scores";
+	}
+    } else {
+	&FatalError("Number of top scores must be a strictly positive integer");
+    }
 }
 
 ### thresholds ###
@@ -98,6 +108,7 @@ if (&IsReal($query->param('pseudo_counts'))) {
     $parameters .= " -b ".$query->param('pseudo_counts');
 }
 
+print "<pre>$patser_command $parameters</pre>" if ($ECHO);
 ### execute the command ###
 if ($query->param('output') eq "display") {
     ### parameters for the piping to the feature map ###
@@ -108,7 +119,6 @@ if ($query->param('output') eq "display") {
     &PipingWarning();
 
     ### Print the result on Web page
-    print "$patser_command $parameters" if ($ECHO);
     open RESULT, "$patser_command $parameters & |";
     open FEATURES, "| $features_from_patser_cmd";
     
