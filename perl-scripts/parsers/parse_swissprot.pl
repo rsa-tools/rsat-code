@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_swissprot.pl,v 1.18 2002/04/23 11:32:18 jvanheld Exp $
+# $Id: parse_swissprot.pl,v 1.19 2002/07/02 13:56:55 jvanheld Exp $
 #
-# Time-stamp: <2002-04-23 13:19:35 jvanheld>
+# Time-stamp: <2002-07-02 15:56:06 jvanheld>
 #
 ############################################################
 
@@ -51,7 +51,7 @@ package main;
     $dir{delivery} = "/rubens/dsk3/genomics/delivery/internal/swissprot_parsed";
 
     #### input directories and files
-    $dir{input} = "/win/databases/downloads/ftp.expasy.org/databases/sp_tr_nrdb";
+    $dir{input} = "$Databases/ftp.expasy.org/databases/sp_tr_nrdb";
     $source{swissprot} = "sprot";
     $source{trembl} = "trembl";
     $source{trembl_new} = "trembl_new";
@@ -69,7 +69,7 @@ package main;
     #### read a list of selected ACCESSION NUMBERS
     if ($in_file{acs}) {
 	warn "; Reading Accession Number list from file $in_file{acs}\n" 
-	    if ($warn_level >=1);
+	    if ($verbose >=1);
 	unless (-e $in_file{acs}) {
 	    die "Accession number file $in_file{acs} does not exist.\n";
 	}
@@ -86,7 +86,7 @@ package main;
 	    $selected_acs{uc($ac)}++; #### case-insensitive
 	}
 	close ACS;
-	warn "; Selected ACs\n;\t",  join ("\n;\t", sort (keys %selected_acs)), "\n" if ($warn_level >= 0);
+	warn "; Selected ACs\n;\t",  join ("\n;\t", sort (keys %selected_acs)), "\n" if ($verbose >= 0);
     }
 
     #### output directory
@@ -165,19 +165,19 @@ package main;
 	    }
 	    $files_to_parse{$source{$db}} = 1;
 	}
-	warn ";\tdata source\t", $db, "\t", $in_file{$source{$db}}, "\n" if ($warn_level >= 2);
+	warn ";\tdata source\t", $db, "\t", $in_file{$source{$db}}, "\n" if ($verbose >= 2);
     }
 
     #### create class holders
     $polypeptides = PFBP::ClassFactory->new_class(object_type=>"PFBP::Polypeptide",
 						  prefix=>"spp_");
     $polypeptides->set_out_fields(@out_fields);
-    $polypeptides->set_attribute_header("features", join ("\t", "Feature_key", "from", "to", "description") );
+    $polypeptides->set_attribute_header("features", join ("\t", "Feature_key", "start_pos", "end_pos", "description") );
     $polypeptides->set_attribute_header("comments", join ("\t", "topic", "comment") );
 
     #### testing mode
     if ($test) {
-	warn ";TEST\n" if ($warn_level >= 1);
+	warn ";TEST\n" if ($verbose >= 1);
 	### fast partial parsing for debugging
 	foreach $key (keys %in_file) {
 	    next if ($key eq 'acs');
@@ -187,7 +187,7 @@ package main;
 
 
     #### default verbose message
-    if ($warn_level >= 1) {
+    if ($verbose >= 1) {
 	warn "; Selected organisms\n;\t", join("\n;\t", @selected_organisms), "\n";
 	warn "; Polypeptide classes\n;\t", join("\n;\t", keys %export), "\n";
 	warn "; Data sources\n;\t", join("\n;\t",  keys %data_sources), "\n";
@@ -227,7 +227,7 @@ package main;
     system "gzip -f $dir{output}/*.obj" if ($export{obj});
 
     ### report execution time
-    if ($warn_level >= 1) {
+    if ($verbose >= 1) {
 	$done_time = &AlphaDate;
 	warn (";\n",
 	      "; job started $start_time",
@@ -270,7 +270,7 @@ OPTIONS
 		       ftp://ftp.expasy.org/databases/sp_tr_nrdb
 	-outdir	output directory.
 		The parsed data will be stored in this directory.
-	-w #	warn level
+	-v #	warn level
 		Warn level 1 corresponds to a restricted verbose
 		Warn level 2 reports all polypeptide instantiations
 		Warn level 3 reports failing get_attribute()
@@ -313,7 +313,7 @@ OPTIONS
 	-db	database schema
 
 EXAMPLE
-	parse_polypeptides.pl -w 2 -org ecoli -data swissprot -enz
+	parse_polypeptides.pl -v 2 -org ecoli -data swissprot -enz
 EndHelp
   close HELP;
 }
@@ -323,9 +323,9 @@ sub ReadArguments {
     for my $a (0..$#ARGV) {
 	
 	### warn level
-	if (($ARGV[$a] eq "-w" ) && 
+	if (($ARGV[$a] eq "-v" ) && 
 	    ($ARGV[$a+1] =~ /^\d+$/)){
-	    $main::warn_level = $ARGV[$a+1];
+	    $main::verbose = $ARGV[$a+1];
 	    
 	    #### test run
 	} elsif ($ARGV[$a] eq "-test") {
@@ -401,7 +401,7 @@ sub ParseSwissprot {
     $source = $input_file unless ($source);
     
     warn (";\n; ", &AlphaDate,  " parsing polypeptides from $input_file\n")
-	if ($warn_level >= 1);
+	if ($verbose >= 1);
     
     open DATA, $input_file || 
 	die "Error: cannot open data file $input_file\n";
@@ -437,7 +437,7 @@ sub ParseSwissprot {
 	}
 	next unless $parse;
 
-	warn ";\tParsing object\n" if ($warn_level >=3);
+	warn ";\tParsing object\n" if ($verbose >=3);
 
 	#### convert the entry into an object
 	my $object_entry = SWISS::Entry->fromText($text_entry);
@@ -446,7 +446,7 @@ sub ParseSwissprot {
 	my $swissprot_ac = $object_entry->AC;
 	my $swissprot_id = $object_entry->ID;
 
-	warn ";\tParsed polypeptide $swissprot_ac\t$swissprot_id\n" if ($warn_level >= 3);
+	warn ";\tParsed polypeptide $swissprot_ac\t$swissprot_id\n" if ($verbose >= 3);
 
 	#### initialize the export flag
 	my $export = 0;
@@ -481,7 +481,7 @@ sub ParseSwissprot {
 	
 	next unless $export;
 
-	warn ";\tExporting polypeptide $swissprot_ac\t$swissprot_id\n" if ($warn_level >= 3);
+	warn ";\tExporting polypeptide $swissprot_ac\t$swissprot_id\n" if ($verbose >= 3);
 
 	my @swissprot_ids = $object_entry->IDs->elements;
 	my @swissprot_acs = $object_entry->ACs->elements;
@@ -523,7 +523,7 @@ sub ParseSwissprot {
 	
 	### create a new polypeptide
 	warn "$source\tentry $entries\t$swissprot_ids[0]\t$names[0]\n"
-	    if ($warn_level >= 3); 
+	    if ($verbose >= 3); 
 	my $polypeptide = $polypeptides->new_object(id=>$swissprot_ac,
 						    source=>$source);
 	if (defined($geneNames[0])) {
@@ -610,7 +610,7 @@ sub ParseSwissprot {
 	#### check how many polypeptides remain to be found
 	if ($in_file{acs}) {
 	    my $remaining = scalar(keys %selected_acs);
-	    warn ";\tfound\t$swissprot_ac\t$swissprot_id\tremaning ACs\t$remaining\n" if ($warn_level >= 2);
+	    warn ";\tfound\t$swissprot_ac\t$swissprot_id\tremaning ACs\t$remaining\n" if ($verbose >= 2);
 	    last if ($remaining == 0);
 	}
 	
