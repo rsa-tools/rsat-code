@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-ensembl-genome.pl,v 1.2 2005/02/21 17:03:23 jvanheld Exp $
+# $Id: get-ensembl-genome.pl,v 1.3 2005/02/21 17:21:26 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -19,13 +19,22 @@ use Bio::EnsEMBL::DBSQL::DBAdaptor;
 use Bio::EnsEMBL::DBSQL::DBConnection;
 use Bio::EnsEMBL::DBSQL::SliceAdaptor;
 
+## TO DO
+## The error and log files are empty 
+## Loop over all chromosomes
+## Get the contig 
+## Gte as much names as possible
+
 ################################################################
 #### initialise parameters
 my $start_time = &AlphaDate();
 
 
 local %dir = ();
+
 local %outfile = ();
+$outfile{output}="get-ensembl-genome_log.txt";
+$outfile{errors}="get-ensembl-genome_err.txt";
 $outfile{feature} = "feature.tab";
 
 local $verbose = 0;
@@ -43,9 +52,17 @@ my $dbname = 'homo_sapiens_core_28_35a';
 
 ################################################################
 ### open output streams
+unless ($dir{output}) {
+    $dir{output} = "ENSEMBL_".$dbname;
+}
+&CheckOutDir($dir{output});
+chdir($dir{output});
 
 ## log file
 $out = &OpenOutputFile($outfile{output});
+
+## error file
+$err = &OpenOutputFile($outfile{errors});
 
 ## feature file
 $FT_TABLE =  &OpenOutputFile($outfile{feature});
@@ -60,19 +77,19 @@ $FT_TABLE =  &OpenOutputFile($outfile{feature});
 
 ## Connect to database:
 my $db = new Bio::EnsEMBL::DBSQL::DBAdaptor(-host => $host, -user => $user, -dbname => $dbname);
-warn join ("\t", "db", $db), "\n" if ($main::verbose >= 0);
+warn join ("\t", "db", $db), "\n" if ($main::verbose >= 3);
 
 my $slice_adaptor = $db->get_SliceAdaptor();
-warn join ("\t", "adaptor", $slice_adaptor), "\n" if ($main::verbose >= 0);
+warn join ("\t", "adaptor", $slice_adaptor), "\n" if ($main::verbose >= 3);
 
 ## Get one chromosome object
 my $slice = $slice_adaptor->fetch_by_region('chromosome', 'X');
-warn join ("\t", "slice", $slice), "\n" if ($main::verbose >= 0);
+warn join ("\t", "slice", $slice), "\n" if ($main::verbose >= 3);
 
 foreach my $gene (@{$slice->get_all_Genes()}) {
-    warn join("\t", "gene", $gene), "\n" if ($main::verbose >= 0);
+    warn join("\t", "gene", $gene), "\n" if ($main::verbose >= 5);
     my @feature = &get_feature($gene);
-    print join("\t", @feature), "\n";
+    print $FT_TABLE join("\t", @feature), "\n";
 }
 
 
@@ -92,6 +109,7 @@ if ($verbose >= 1) {
 ################################################################
 ###### close output stream
 close $out if ($outfile{output});
+close $err if ($outfile{errors});
 close $FT_TABLE if ($outfile{feature});
 
 
@@ -226,18 +244,31 @@ sub get_feature {
     my ($gene) = @_;
     my @feature = ();
    
-    push @feature, $gene->stable_id(); ## ID
+    ## ID
+    my $id = $gene->stable_id(); 
+    push @feature, $id;
     push @feature, "CDS"; ## We need here the feature type 
     push @feature, $gene->slice->seq_region_name(); ## Chromosome name. Actually we need the contig ID
     push @feature, $gene->start(); ## Start position
     push @feature, $gene->end(); ## End position
+
+    ## Strand
     my $strand = "D";
     unless ($gene->strand()) {
 	$strand =  "R";
     }
-    push @feature, $strand; ## Strand
-    push @feature, $gene->description(); ## Description
-    push @feature, $gene->external_name();
+    push @feature, $strand; 
+
+    ## Description
+    my $description = $gene->description();
+    if ($description) {
+	push @feature, $description; 
+    } else {
+	push @feature, "";
+	print $main::err join ("\t", "No description for gene", $id), "\n";
+    }
+
+#    push @feature, $gene->external_name();
     
     return @feature;
 }
