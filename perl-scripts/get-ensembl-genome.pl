@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-ensembl-genome.pl,v 1.5 2005/02/23 21:07:39 oly Exp $
+# $Id: get-ensembl-genome.pl,v 1.6 2005/02/24 10:00:05 oly Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -39,8 +39,7 @@ local %outfile = ();
 $outfile{log}="get-ensembl-genome_log.txt";
 $outfile{err}="get-ensembl-genome_err.txt";
 $outfile{feature} = "feature.tab";
-$outfile{xref} = "xref.tab";
-$outfile{seq} = "sequence.raw";
+$outfile{xreference} = "xreference.tab";
 
 local $verbose = 0;
 
@@ -74,10 +73,8 @@ $FT_TABLE =  &OpenOutputFile($outfile{feature});
 &PrintFtHeader();
 
 ## xref file
-# $XREF_TABLE = &OpenOutputFile($outfile{xref});
+open $XREF_TABLE, ">".$outfile{xreference} || die "cannot open error log file".$outfile{xreference}."\n";
 
-## sequence files???
-# $SEQ = &OpenOutputFile($outfile{seq});
 
 ################################################################
 #### print verbose
@@ -110,16 +107,20 @@ warn join ("\t", "; Adaptor", $slice_adaptor), "\n" if ($main::verbose >= 3);
 ## Get all chromosome objects
 my @slices = @{$slice_adaptor->fetch_all('chromosome')};
   
-foreach $slice (@slices) {    
-    
+foreach my $slice (@slices) {    
     foreach my $gene (@{$slice->get_all_Genes()}) {
 	    warn join("\t", "gene", $gene), "\n" if ($main::verbose >= 5);
-	    my @feature = &get_feature($gene);
+	    @feature = &get_feature($gene);
 	    print $FT_TABLE join("\t", @feature), "\n";
-	    # print_DBEntries($gene->get_all_DBLinks());
+	    print_DBEntries($gene->get_all_DBLinks());
     }
-#	my $sequence = $slice->seq();
-#	print $SEQ "$sequence";  ## TO DO: will need to print each sequence to a different file
+    
+    print $feature[3],"\n";
+# 	my $sequence = $slice->seq();
+# 	$outfile{sequence} = "$feature[3].raw";
+#    open $SEQ, ">".$outfile{sequence} || die "cannot open error log file".$outfile{sequence}."\n";
+# 	print $SEQ $sequence;
+#    close $SEQ if ($outfile{sequence});
 }
 
 
@@ -137,8 +138,7 @@ if ($verbose >= 1) {
 close $log if ($outfile{log});
 close ERR if ($outfile{err});
 close $FT_TABLE if ($outfile{feature});
-# close $XREF_TABLE if ($outfile{xref});
-# close $SEQ if ($outfile{seq});
+close $XREF_TABLE if ($outfile{xreference});
 
 
 exit(0);
@@ -279,7 +279,6 @@ sub get_feature {
     ## Type
     push @feature, $gene->type();
 
-
     ## Gene name
     my $name = $gene->external_name();
     unless ($name) {
@@ -318,13 +317,13 @@ sub get_feature {
 
 
 ################################################################
-# Print cross-references !!!Problem = need to add feature id!!!
-# sub print_DBEntries {
-#        my $db_entries = shift;
-#        foreach my $dbe (@$db_entries) {
-#			print $XREF_TABLE $dbe->dbname(),"\t",$dbe->display_id(),"\n";
-#        }
-#}
+# Print cross-references
+sub print_DBEntries {
+    my $db_entries = shift;
+    foreach my $dbe (@$db_entries) {
+	    print $XREF_TABLE $feature[0],"\t",$dbe->dbname(),"\t",$dbe->display_id(),"\n";
+    }
+}
 
 
 ################################################################
