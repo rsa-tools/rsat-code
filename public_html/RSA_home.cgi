@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSA_home.cgi,v 1.16 2004/05/14 05:17:48 jvanheld Exp $
+# $Id: RSA_home.cgi,v 1.17 2004/06/25 07:36:11 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -170,6 +170,15 @@ print <<EndText;
   <B>Cambridge - UK</B><BR>
   <IMG SRC="images/cambridge.jpg" HEIGHT=80 BORDER=0><BR>
   <FONT SIZE=-1>http://www.flychip.org.uk/rsa-tools/</A>
+  </FONT>
+  </TD>
+
+  <TD>
+  <A HREF="http://rsat.ccb.sickkids.ca/" target="_top">
+  <B>Toronto - Canada</B><BR>
+  <IMG SRC="" HEIGHT=80 WIDTH=53 BORDER=0><BR>
+  <FONT SIZE=-1>
+  http://rsat.ccb.sickkids.ca/</A>
   </FONT>
   </TD>
 
