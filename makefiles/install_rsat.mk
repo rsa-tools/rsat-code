@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.2 2003/11/10 21:20:21 jvanheld Exp $
+# $Id: install_rsat.mk,v 1.3 2003/11/14 08:30:21 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -146,8 +146,7 @@ compile:
 		(cd ${COMPIL}/bin; pwd; perlcc $${pgm}.pl && rm -f $${pgm}.pl); \
 	dgone
 
-#BACTERIA = `ls -1 ${NCBI_DIR}/Bacteria | grep -v Mesorhizobium_loti | grep _ | tail -37 | xargs `
-BACTERIA = `ls -1 ${NCBI_DIR}/Bacteria | grep _ | sort -ru | grep -v bacteria | xargs `
+BACTERIA = `ls -1 ${NCBI_DIR}/Bacteria | grep _ | sort -u | grep -v bacteria | xargs `
 BACT=Mycoplasma_genitalium
 
 list_bacteria:
