@@ -293,40 +293,35 @@ sub binomial_approx {
 }
 
 
-
 sub poisson {
 ### usage poisson($successes,$expected)
 ### note: on our sun station, this algorithm works only for m < 746
-    my $l_s = $_[0];
-    my $l_m = $_[1];
+### direct calculation would be                  
+###    p(x) = lambda^x exp(-lambda)/x!
+### We use a recursive formula 
+###    p(x) = p(x-1) * lambda / x
+
+    my ($x,$lambda) = @_;
     my $poi;
+    my $log_lambda = log($lambda);
+
     my $log_poi;
-    if (($l_s>=0) && ($l_m>0)) {
-### direct calculation would be
-###    $poi = exp(-$l_m) * $l_m**$l_s / factorial($l_s);
-### we make all calculations in log transforms
-### in order to avoid out-of-bound values for the factorial
-### and exponential terms
-	
-	$log_poi = -$l_m;
-	$log_poi += $l_s*log($l_m);
-	for $i (1..$l_s) {
-	    $log_poi -= log($i);
-	}
-	$log_poi /= log(10);
-	$poi = 10**(1+$log_poi - int($log_poi));
-	$poi .= "e";
-	if (int($log_poi)-1 > 0) {
-	    $poi .= "+";
-	}
-	$poi .= int($log_poi)-1;
+
+    if ($x ==0) {
+	$log_poi = -$lambda;
     } else {
-	$poi = 0;
+	$log_poi = -$lambda + $log_lambda;
     }
-    return $poi;
+    
+    for my $i (2..$x) {
+	$log_poi += $log_lambda - log($i);
+    }
+    return exp($log_poi);
+    
 }
 
-sub sum_of_poissons {
+
+sub old_sum_of_poissons {
     ### usage sum_of_poissons($successes,$expected,$tail_side)
     ### supported values for $tail_side :
     ### "boe"   bigger or equal
