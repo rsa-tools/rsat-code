@@ -17,8 +17,14 @@ $query = new CGI;
 $default{matrix_format} = "consensus";
 $default{matrix} = "";
 $default{strands} = "both";
-$default{return} = "all matching positions";
-$default{lthreshold} = "0";
+
+$default{return} = "all matches";
+$default{top_scores} = "1"; ### [-t <Print only the top scores>]
+$default{positions} = "checked"; ### convert the result into a score table
+$default{table} = ""; ### convert the result into a score table
+$default{sort} = ""; ### [-ds <Print top scores in order of decreasing score (default: print in order of position)>]
+
+$default{lthreshold} = "auto";
 $default{uthreshold} = "none";
 $default{alphabet} = "a:t 0.3 c:g 0.2";
 $default{pseudo_counts} = 1;
@@ -96,11 +102,49 @@ print $query->popup_menu(-name=>'strands',
 			 -default=>$default{strands});
 
 ### return
+################################################################
+### return value
+print "<BR>\n";
+print "<table border=0>\n";
+print "<tr><td>\n";
 print "<A HREF='help.patser.html#return'><B>Return</B></A>&nbsp;\n";
-print $query->popup_menu(-name=>'return',
-			 -Values=>['top value for each sequence',
-				   'all matching positions'],
-			 -default=>$default{return});
+print "</td><td>\n";
+print $query->radio_group(-name=>'return',
+			  -Values=>[ 'all matches'],
+			  -default=>$default{return});
+
+print "</td><td>\n";
+print $query->radio_group(-name=>'return',
+			  -Values=>['top values for each sequence'],
+			  -labels=>{'top values for each sequence'=>''},
+			  -default=>$default{return});
+print $query->textfield(-name=>top_scores,
+			-default=>$default{top_scores},
+			-size=>3
+			);
+print "&nbsp;top value(s) for each sequence";
+
+print "</td></tr><tr><td>\n";
+print "&nbsp;";
+print "</td><td>\n";
+print $query->checkbox(-name=>'positions',
+		       -label=>' matching positions',
+		       -checked=>$default{positions});
+
+print "</td><td>\n";
+print $query->checkbox(-name=>'table',
+		       -label=>' score table',
+		       -checked=>$default{table});
+
+print "</td></tr>\n";
+print "</table>\n";
+
+
+#print "<A HREF='help.patser.html#return'><B>Return</B></A>&nbsp;\n";
+#print $query->popup_menu(-name=>'return',
+#			 -Values=>['top value for each sequence',
+#				   'all matching positions'],
+#			 -default=>$default{return});
 
 ### thresholds
 print "<BR>\n";
@@ -117,11 +161,11 @@ print CGI::table({-border=>0,-cellpadding=>3,-cellspacing=>0},
 			       "<A HREF='help.patser.html#lthreshold'><B> lower</B></A>",
 			       $query->textfield(-name=>'lthreshold',
 						 -default=>$default{lthreshold},
-						 -size=>2),
+						 -size=>4),
 			       "<A HREF='help.patser.html#uthreshold'><B> upper</B></A>",
 			       $query->textfield(-name=>'uthreshold',
 						 -default=>$default{uthreshold},
-						 -size=>2)
+						 -size=>4)
 			       
 			       ]),
 			])
@@ -160,13 +204,14 @@ print $query->hidden(-name=>'sequence',-default=>$demo_sequence);
 print $query->hidden(-name=>'lthreshold',-default=>9);
 print $query->hidden(-name=>'alphabet',-default=>"a:t 0.325 c:g 0.175");
 print $query->hidden(-name=>'sequence_format',-default=>$default{sequence_format});
+print $query->hidden(-name=>'organism',-default=>'Saccharomyces_cerevisiae');
 print $query->hidden(-name=>'set_name',-default=>'upstream sequences from the yeast PHO genes');
 print $query->submit(-label=>"DEMO");
 print "</B></TD>\n";
 print $query->end_form;
 
 print "<TD><B><A HREF='help.patser.html'>MANUAL</A></B></TD>\n";
-#print "<TD><B><A HREF='tutorials/tut_genome-scale-patser.html'>TUTORIAL</A></B></TD>\n";
+print "<TD><B><A HREF='tutorials/tut_genome-scale-patser.html'>TUTORIAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:jvanheld\@ucmb.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
