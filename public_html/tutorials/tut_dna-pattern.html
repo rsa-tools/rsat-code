@@ -1,29 +1,31 @@
-<HTML>
-<HEAD>
-   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <TITLE>RSA-tools - tutorials</TITLE>
-</HEAD>
-<BODY TEXT="#000000" BGCOLOR="#FFFFFF" LINK="#0000EE" VLINK="#55008B" ALINK="#FF0000">
+<html>
+<head>
+   <meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <title>RSA-tools - tutorials</title>
+</head>
+<body text="#000000" bgcolor="#ffffff" link="#0000ee" vlink="#55008b" alink="#ff0000">
 <blockquote>
 
-<HR SIZE=6 WIDTH="100%">
-<CENTER>
-<H2><A HREF="../RSA_home.cgi">RSA-tools</A> - 
+<hr size=6 width="100%">
+<center>
+<h1><a href="../RSA_home.cgi">RSA-tools</a> - 
 <a href="tutorials.html">Tutorials</a> - 
 <a href="../dna-pattern_form.cgi">dna-pattern</a>
-</H2>
-</CENTER>
+</h1>
+</center>
 
+<h2>Introduction</h2>
+<ul>
 
-<P>
-DNA-pattern is a program that allows to match known patterns (motifs)
-against a sequence set. Patterns are described as strings. The program
-has some features that make it particularly well suited for the
-recognition of regulatory motifs in DNA sequences, in short :
-<P>
+<p>
+DNA-pattern is a program that allows to match known patterns against a
+sequence set. Patterns are described as strings. The program has some
+features that make it particularly well suited for the recognition of
+regulatory motifs in DNA sequences, in short :
+<p>
 <ol>
 
-<li>Motifs can automatically be searched on both strands of the
+<li>Patterns can automatically be searched on both strands of the
 sequences.
 
 
@@ -47,29 +49,30 @@ matched against the sequences.
 <li>Several sequences can be entered in the sequence box, patterns
 will be matched against all of them.
 
-<li>Motifs can contain letters from the degenerate nucleotide alphabet
+<li>Patterns can contain letters from the degenerate nucleotide alphabet
 (e.g. N for "any nucleotide", W for "A or T", ..., see the <a
 href=../help.dna-pattern.html>manual page</a> for the complete list).
 
 <li>Regular expressions are supported, allowing to search for complex
-motifs including spacers (e.g.<tt>GATAAn{0,10}GATAA</tt>).
+patterns including spacers (e.g.<tt>GATAAn{0,10}GATAA</tt>).
 
 </ol>
 
-
+</ul>
 <h2>Searching pattern positions</h2>
+<ul>
 
-<P> Let us suppose that you are searching the positions of putative
+<p> Let us suppose that you are searching the positions of putative
 GATA boxes and Hap sites within the upstream regions of a selection of
 nitrogen-responding genes. We will first retrieve the sequences
 upstream from your genes.
 
-</UL>
-<P>
+</ul>
+<p>
 
 <OL>
 <OL>
-<P><LI>
+<p><li>
 Retrieve upstream sequences from -800 to -1 for the following yeast
 genes (as you have seen in the <a
 href="tut_retrieve-seq.html">tutorial on sequence retrieval</a>)
@@ -84,20 +87,24 @@ PUT4
 DAL80
 </PRE>
 
-<P>Now we have the upstream sequences, we will scan them with the
+<p><li>Since you are working with an eukaryote, make sure to
+<b>inactivate</b> the option <b>Prevent overlap with upstream
+ORFs</b>. Check that all your sequences have 800bp.
+
+<p>Now we have the upstream sequences, we will scan them with the
 consensi for GATA boxes and HAP sites. At the bottom of the sequences,
 a series of buttons are presented. These buttons allow you to send
 your sequence to a selection of sequence analysis programs. Click on
 <B>dna-pattern (IUPAC)</B>.  A new form appears.
 
-<P>
+<p>
 Note that the search will automatically be performed on the sequences
 you just retrieved (<i>sequence transferred from your previous
 query</I>). This differs from the form you would receive by clicking
-on "dna-pattern" in the left panel, and which would contain an
-additional box for entering your own sequences.
+on "dna-pattern" in the left panel, and which would contain an empty
+box for entering your own sequences.
 
-<P><LI> In the <B>Query pattern(s)</B> box, we will enter the patterns
+<p><li> In the <B>Query pattern(s)</B> box, we will enter the patterns
 to be searched for. Eah pattern must come on a separate line. The
 first word of each line is the string description of the pattern, the
 second word is an identifier for this pattern. Type the following text
@@ -107,105 +114,99 @@ in the Query pattern(s) box:</LI>
 GATAAG	Gata_box
 CCAAY	Hap_site
 </PRE>
-Note the use of degenerate IUPAC degenerate code: the W from GATWA on the
-first line means "either A or T", the Y from CCAAY on the second line means
-"either C or T".
-<P><LI>
+Note the use of degenerate IUPAC degenerate code: the Y from CCAAY on
+the second line means "either C or T".
+<p><li>
 &nbsp;click <B>GO</B>.</LI>
 
-<P> You see now the positions of all matches with the patterns you
+<p> You see now the positions of all matches with the patterns you
 entered within the upstream sequences of the selected genes. Each line
 shows a single match, and the different columns indicate respectively:
 
-<UL>
-<LI>
-pattern identifier</LI>
+<ul>
 
-<LI>
-strand on which the match was found (D for direct, R for Reverse)</LI>
+<li>pattern identifier</LI>
 
-<LI>
-pattern searched for (i.e. the consensus you provided)</LI>
+<li>strand on which the match was found (D for direct, R for
+Reverse)</LI>
 
-<LI>
-sequence in which it was found</LI>
+<li>pattern searched for (i.e. the query strings you provided)</LI>
 
-<LI>
-starting position of the match</LI>
+<li>name of the sequence in which it was found</LI>
 
-<LI>
-end position of the match</LI>
+<li>starting position of the match</LI>
 
-<LI>
-matching sequence. The matching bases are indicated in UPPERCASES.
+<li>end position of the match</LI>
+
+<li>match sequence. The matching bases are indicated in UPPERCASES.
 The 4 flanking bases at left and right are in lowercases.</LI>
 
-<LI>
+<li>
 matching score. In this case all scores equal 1, but we will see later
 how to use this column.
 
-</UL>
+</ul>
 
-<P>Notice that positions are returned in negative coordinates, relative
+<p>Notice that positions are returned in negative coordinates, relative
 to the end of the sequence (the last nucleotide has position -1). This
 behaviour was selected with the "Origin" option in the dna-pattern
 form (Origin=end). This option is particularly useful for analyzing
 regulatory sequences, but it can be inactivated in other cases.
 
-</UL>
+</ul>
 
-<P>
+<p>
 We will now display the same results graphically.
 
 <OL>
-<P><LI> Click on the <B>Feature map</B> button on the bottom of the
+<p><li> Click on the <B>Feature map</B> button on the bottom of the
 result page.</LI>
 
-<P><LI>
+<p><li>
 In the <B>Title </B>box, type</LI>
 
-<PRE>Gata boxes and Hap sites in the upstream regions from GDH genes</PRE>
+<PRE>Gata boxes and Hap sites in the upstream regions of NIT genes</PRE>
 
-<P><LI>
+<p><li>
 after the title <B>Display limits</B>, fill</LI>
 
-<UL>
-<P><LI>
+<ul>
+<p><li>
 the <B>from </B>box with -800,</LI>
 
-<P><LI>
+<p><li>
 the <B>to </B>box with 0</LI>
-</UL>
+</ul>
 
-<P><LI>
+<p><li>
 In the pop-up menu "<B>feature handle</B>", select <B>symbol</B></LI>
 
-<P><LI>
+<p><li>
 make sure the <B>Dynamic map</B> option is checked.</LI>
 
-<P><LI>
+<p><li>
 Leave other parameters unchanged and click <B>GO</B>.</LI>
 </OL>
 
-<P>
+<p>
 After a few seconds, the feature map should appear. A few comments:
-<UL>
-<P><LI>
+<ul>
+<p><li>
 Gata boxes appear in blue, Hap sites in red</LI>
 
-<P><LI>
+<p><li>
 A specific symbol is associated to each pattern, allowing to distinguish
 them when the feature map is printed in black and white</LI>
 
-<P><LI> Color boxes are either above or below the horizontal black
-lines, accordingly to the strand of the match.</LI>
+<p><li> Color boxes are displayed either above or below the horizontal
+black lines, accordingly to the strand of the match.</LI>
 
-<P><LI> Coordinates are provided with reference to the ORF starting
+<p><li> Coordinates are provided with reference to the ORF starting
 position, negative values indicate an upstream position, and positive
 coordinates are within the coding sequences (0 corresponds to the
 first nucleotide ot the start codon).
 
-<P><LI> If your browser is recent, the map is dynamic. With your
+<p><li> If your browser is recent, the map is dynamic. With your
 mouse, position the cursor just above one of the sites in the
 sequences. Look now at the status bar (at the bottom) of your browser
 window. The complete information about this site is displayed. Move
@@ -214,13 +215,13 @@ updated. If you are using Internet Explorer, make sure to activate the
 <B>status bar</B> (in the <B>View</B> menu).
 
 
-</UL>
+</ul>
+<h2>Searching for complex patterns</h2>
+<ul>
 
-<h2>Searching for complex motifs</h2>
+We will now show an example of search for patterns containing spacings.
 
-We will now show an example of search for motifs containing spacings.
-
-<P>
+<p>
 Another characteristics of GATA boxes is that they often come
 clustered in the upstream region: nitrogen-responding genes usually
 have a pair of GATA boxes, separated by 0 t 60 base
@@ -235,12 +236,12 @@ a notation called <i>regular expressions</i>. For example :
 <li>this can be combined with the IUPAC notation to specify a fixed
 spacing (e.g. <tt>n{30}</tt> means a spacing of exactly 30 nucleotides)
 
-<li>variable number of repeats can be specified by enterin two
+<li>variable number of repeats can be specified by entering two
 numbers, separated by a comma, in the curly brackets
 (e.g. <tt>n{0,60}</tt> means "between 0 and 60 nucleotides")
 </ul>
 
-<P>
+<p>
 Run the tutorial as above, but enter the following patterns.
 
 <PRE>
@@ -251,8 +252,9 @@ Run the tutorial as above, but enter the following patterns.
 	GATAAG			Gata_box_strict
 </PRE>
 
-
+</ul>
 <h2>Counting multiple patterns in multiple sequences</h2>
+<ul>
 
 A charcteristics of yeast GATA boxes is that they act in a synergic
 way, i.e. nitrogen-responsive generally genes contain multiple GATA
@@ -261,31 +263,33 @@ regulation, one might be interested in counting the number of matches,
 rather than returning their precise positions. This can be done with
 <i><b>dna-pattern</b></i>.
 
+<p>
 <ol>
-<li>Retrieve the nitrogen-responding genes, and click on the
-dna-pattern button as above.
-<li>Enter the same list of motifs as before.
-<li>deselected the checkbox <b>match positions</b>
-<li>select the checkbox <b>match count table</b>
+<li>Come back to the <b>dna-pattern</b> form. 
+<li>Enter the same list of patterns as before.
+<li>Deselect the checkbox <b>match positions</b>
+<li>Select the checkbox <b>match count table</b>
 <li><b>GO</b>
 </ol>
 
+<p>
 The program returns a table, where each row represents a sequence and
 each column a pattern. Totals per row and per columns are optionally
 included.
 
-<P>
+<p>
 You can now come back to the <a href=tutorials.html>tutorial main
-page</a> and try the next tutorial.
+page</a> and follow the next tutorials.
 
-
-<HR WIDTH="100%">
-<CENTER>
-<ADDRESS>
-For suggestions or information request, please contact :</ADDRESS></CENTER>
-
-<CENTER><A HREF="mailto:jvanheld@ucmb.ulb.ac.be">Jacques van Helden (jvanheld@ucmb.ulb.ac.be)</A></CENTER>
+</ul>
+<hr width="100%">
+<center>
+<address>
+For suggestions or information request, please contact <a
+href="mailto:jvanheld@ucmb.ulb.ac.be">Jacques van Helden
+(jvanheld@ucmb.ulb.ac.be)</a>
+</address></center>
 
 </blockquote>
-</BODY>
-</HTML>
+</body>
+</html>
