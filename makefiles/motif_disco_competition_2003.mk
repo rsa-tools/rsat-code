@@ -230,10 +230,15 @@ list_fasta_files:
 	${FASTA_FILES}
 	${FASTA_FILES} > ${SEQ_LIST_FILE}
 
-MULTI_TASK=purge,oligos,dyads,maps,synthesis,sql
-MULTI_DIR=${RES_DIR}/multi/${ORG}
-MIN_OL=5
-MAX_OL=8
+#MULTI_TASK=purge,oligos,dyads,merge,slide,maps,synthesis,sql
+MULTI_TASK=purge,oligos,dyads,maps,synthesis
+MULTI_CALIB_TASK=${MULTI_TASK},calibrate
+MULTI_BG=upstream
+MULTI_DIR=${RES_DIR}/multi/${MULTI_BG}_bg/${ORG}
+MIN_OL=6
+MAX_OL=6
+MIN_SP=0
+MAX_SP=20
 NOOV=-noov
 SORT=score
 multi:
@@ -241,11 +246,15 @@ multi:
 		-org ${ORG}						\
 		-seq ${SEQ_LIST_FILE}					\
 		-outdir ${MULTI_DIR}					\
-		-2str -minol ${MIN_OL} -maxol ${MAX_OL}			\
-		-bg upstream -sort ${SORT} -task ${MULTI_TASK}		\
+		-2str \
+		-minol ${MIN_OL} -maxol ${MAX_OL}			\
+		-minsp ${MIN_SP} -maxsp ${MAX_SP}			\
+		-bg ${MULTI_BG} -sort ${SORT} -task ${MULTI_TASK}		\
 		${NOOV} 						\
 		-user jvanheld -password jvanheld -schema multifam
 
+multi_calib:
+	${MAKE} multi MULTI_BG=calib MULTI_TASK=${MULTI_CALIB_TASK}
 
 ################################################################
 ## Calculate the effect of the number of sequences on mean and variance
