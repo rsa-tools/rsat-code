@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.11 2001/01/29 06:26:31 jvanheld Exp $
+# $Id: oligo-analysis,v 1.12 2001/01/29 07:07:38 jvanheld Exp $
 #
-# Time-stamp: <2001-01-29 07:21:33 jvanheld>
+# Time-stamp: <2001-01-29 08:04:46 jvanheld>
 #
 ############################################################
 
@@ -226,7 +226,7 @@ sub CountOligo {
     if ($method eq "Markov chain") {
       for $w (1..$oligo_length - 1) {
 	$subseq = lc(substr($current_seq,$seq_length[$sequence_number]-$w,$w));
-	$sub_occ[$w]{$subseq}++;
+	$sub_word[$w]{$subseq}->{occ}++;
       }
     }
     
@@ -627,16 +627,54 @@ sub CalcExpected {
 	}
 
     } elsif ($method eq "lexicon") {  ### Markov chain
-	$l  = 1;
+	my $l  = 1;
 	foreach $oligo_seq (@alphabet ) {
-		print join "\t", $l, $oligo_seq, $sub_word[$l]{$oligo_seq}->{freq}, $sub_word[$l]{$oligo_seq}->{occ}, "\n";
+#	    print join "\t", $l, $oligo_seq, $sub_word[$l]{$oligo_seq}->{freq}, $sub_word[$l]{$oligo_seq}->{occ}, "\n";
+	    $sub_word[$l]{$oligo_seq}->{max_freq} = $sub_word[$l]{$oligo_seq}->{freq};
 	}
 	for $l (2..$oligo_length - 1) {
 	    foreach $oligo_seq (keys %{$sub_word[$l]}) {
-		print join "\t", $l, $oligo_seq, $sub_word[$l]{$oligo_seq}->{freq}, $sub_word[$l]{$oligo_seq}->{occ}, "\n";
+		$sub_word[$l]{$oligo_seq}->{exp_freq} = 0;
+#		print join "\t", $l, $oligo_seq, $sub_word[$l]{$oligo_seq}->{freq}, $sub_word[$l]{$oligo_seq}->{occ}, "\n";
+		#### all possible segmentations of the word
+		for $s (1..$l-1) {
+		    $head = substr($oligo_seq,0,$s);
+		    $tail = substr($oligo_seq,$s);
+		    $sub_word[$l]{$oligo_seq}->{exp_freq} = &max($sub_word[$l]{$oligo_seq}->{exp_freq},
+								 $sub_word[$s]{$head}->{max_freq}* $sub_word[$l-$s]{$tail}->{max_freq});
+		    $sub_word[$l]{$oligo_seq}->{max_freq} = &max($sub_word[$l]{$oligo_seq}->{freq},
+								 $sub_word[$l]{$oligo_seq}->{exp_freq});
+#		    print join ("\t", $l, $oligo_seq, 
+#				$sub_word[$l]{$oligo_seq}->{freq}, 
+#				$sub_word[$l]{$oligo_seq}->{exp_freq}, 
+#				$head, $sub_word[$s]{$head}->{max_freq},
+#				$tail, $sub_word[$l-$s]{$tail}->{max_freq},
+#				$sub_word[$s]{$head}->{max_freq}* $sub_word[$l-$s]{$tail}->{max_freq},
+#				"\n");
+		}
 	    }
 	}
-	die
+	$l = $oligo_length;
+	foreach $oligo_seq (keys %oligo) {
+		$oligo{$oligo_seq}->{exp_freq} = 0;
+#		print join "\t", $l, $oligo_seq, $sub_word[$l]{$oligo_seq}->{freq}, $sub_word[$l]{$oligo_seq}->{occ}, "\n";
+		#### all possible segmentations of the word
+		for $s (1..$l-1) {
+		    $head = substr($oligo_seq,0,$s);
+		    $tail = substr($oligo_seq,$s);
+		    $oligo{$oligo_seq}->{exp_freq} = &max($oligo{$oligo_seq}->{exp_freq},
+							  $sub_word[$s]{$head}->{max_freq}* $sub_word[$l-$s]{$tail}->{max_freq});
+#		    print join ("\t", $l, $oligo_seq, 
+#				$oligo{$oligo_seq}->{freq}, 
+#				$oligo{$oligo_seq}->{exp_freq}, 
+#				$head, $sub_word[$s]{$head}->{max_freq},
+#				$tail, $sub_word[$l-$s]{$tail}->{max_freq},
+#				$sub_word[$s]{$head}->{max_freq}* $sub_word[$l-$s]{$tail}->{max_freq},
+#				"\n");
+		}
+	    
+	}
+#	die
 
     } else {    
 	### calculate the expected oligo frequency with 
