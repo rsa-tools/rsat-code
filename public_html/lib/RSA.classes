@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: RSA.classes,v 1.4 2004/02/01 03:27:51 jvanheld Exp $
+# $Id: RSA.classes,v 1.5 2004/02/04 02:18:38 jvanheld Exp $
 #
 # Time-stamp: <2003-10-02 17:58:27 jvanheld>
 #
@@ -9,6 +9,7 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
+require "RSA.lib";
 require "RSA.seq.lib";
 
 
@@ -656,8 +657,8 @@ package RSA::match;
 #
 # matrix manipulation
 #
-
 package RSA::matrix;
+@RSA::matrix::ISA = qw( RSA::Object );
 ################################################################
 # Main class for manipuating profile matrices (alignment
 # matrices, position-weight matrices). 
@@ -673,45 +674,168 @@ package RSA::matrix;
 # at each position.
 
 {
-    #### Creates an empty matrix
+    #### Create an empty matrix
     sub new {
 	my ($class, %args) = @_;
 	my $matrix = bless {
-	}, $class;
-	$matrix->setAlphabet("A","C","G","T");   # default nucletodide alphabet
+	    nrow=>0,
+	    ncol=>0
+	    }, $class;
 	return $matrix;
     }
 
-    #### Sets the list of valid letters for the matrix.
+    #### Set the list of valid letters for the matrix.
     sub setAlphabet {
 	my ($self, @new_alphabet) = @_;
-	@{$self->{alphabet}} = @new_alphabet;
+	@{$self->{alphabet}} = @new_alphabet;	
+	## update the number of columns
+	$self->set_attribute("nrow", scalar(@alphabet));
     } 
 
-    #### Returns the list of valid letters for the matrix.
+    #### Return the list of valid letters for the matrix.
     sub getAlphabet {
 	my ($self) = @_;
 	return @{$self->{alphabet}};
     }
 
-    #### Adds a new column to the matrix.
+    #### Add a new column to the matrix.
     sub addColumn {
 	my ($self,@new_col) = @_;
 	push @{$self->{columns}}, [@new_col];
+	
+	## Update number of columns
+	$self->set_attribute("ncol", $self->ncol() + 1);
+	warn ("Matrix: updating number of columns\t", $self->ncol(), "\n") if ($main::verbose >= 5);
+	
+	## update number of rows
+	my $column_size = scalar(@new_col);
+	if ($column_size >= $self->nrow()) {
+	    warn ("Matrix: updating number of rows\t", $column_size, "\n") if ($main::verbose >= 5);
+	    $self->set_attribute("nrow", scalar(@new_col));
+	}
     }
 
-    #### returns the whole matrix as a list of columns. 
+    #### Add a new row to the matrix.
+    sub addRow {
+	my ($self,@new_row) = @_;
+
+	## Update number of rows
+	my $nrow = $self->nrow()+1;
+	$self->set_attribute("nrow", $nrow);
+	warn ("Matrix: updating number of rows\t", $self->nrow(), "\n") if ($main::verbose >= 5);
+	
+	## update number of colmuns
+	my $row_size = scalar(@new_row);
+	if ($row_size >= $self->ncol()) {
+	    warn ("Matrix: updating number of columns\t", $row_size, "\n") if ($main::verbose >= 5);
+	    $self->set_attribute("ncol", scalar(@new_row));
+	}
+	
+	## update matrix content
+	for my $c (0..$#new_row) {
+	     ${$self->{columns}}[$c][$nrow-1] = $new_row[$c];
+	}
+    }
+
+    #### Add a new row and append its symbol to the alphabet
+    sub addIndexedRow {
+	my ($self, $index, @new_row) = @_;
+	$self->addRow(@new_row);
+	push @{$self->{alphabet}}, $index;
+    }
+
+    #### Return number of columns
+    sub ncol {
+	my ($self) = @_;
+	return $self->get_attribute("ncol");
+    }
+
+    #### Return number of rows
+    sub nrow {
+	my ($self) = @_;
+	return $self->get_attribute("nrow");
+    }
+
+    #### Return matrix size
+    sub size {
+	my ($self) = @_;
+	return ($self->nrow(), $self->ncol());
+    }
+
+    #### Return the whole matrix as a list of columns. 
     sub getMatrix {
 	my ($self,$col_nb) = @_;
 	return @{$self->{columns}};
     }
 
-    #### returns a string description of the matrix
-    #### in the same format as Jerry Hertz' programs
-    sub getString {
-	my ($self) = @_;
-	my @matrix = @{$self->{columns}};
+    ################################################################
+    #### Read a matrix from a file
+    sub readFromFile {
+	my ($self, $file, $format) = @_;
+	if (($format =~ /consensus/) || ($format =~ /^wc/i)) {
+	    $self->readFromConsensusFile($file);
+	} else {
+	    &main::FatalError("Invalid format for matrix\t$format");
+	}
+    }
+
+
+    ################################################################
+    #### read matrix from a consensus file
+    sub readFromConsensusFile {
+	my ($self, $file) = @_;
+	warn ("; Reading matrix from consensus file\t",$file, "\n") if ($main::verbose >= 2);
+
+#	($in, $dir) = &main::OpenInputFile($file);
+#
+#	die "HELLO\t", $in, "\t", $dir;
 	
+	open INPUT, "$file";
+	my $current_matrix_nb = 0;
+	while (<INPUT>) {
+	    chomp;
+	    next unless (/\S/);
+	    if (/MATRIX\s(\d+)/) {
+		$current_matrix_nb = $1;
+		next;
+	    } elsif  ($current_matrix_nb == 1) {
+		if (/^\s*(\S)\s+\|/) {
+		    my @fields = split / +/, $_;
+		    ## residue associated to the row
+		    my $residue = shift @fields;
+		    
+		    ## skip the | between residue and numbers
+		    shift @fields unless &main::IsReal($fields[0]);	
+		    
+		    $self->addIndexedRow($residue, @fields);
+
+		} elsif (/number of sequences = (\d+)/) {
+		    $self->set_attribute("nb.sequences", $1); 
+		} elsif (/unadjusted information = (\S+)/) {
+		    $self->set_attribute("unadjusted.information", $1); 
+		} elsif (/sample size adjusted information = (\S+)/) {
+		    $self->set_attribute("adjusted.information", $1); 
+		} elsif (/ln\(p\-value\) = (\S+)   p\-value = (\S+)/) {
+		    $self->set_attribute("ln.Pval", $1); 
+		    $self->set_attribute("Pval", $2); 
+		} elsif (/ln\(expected frequency\) = (\S+)   expected frequency = (\S+)/) {
+		    $self->set_attribute("ln.exp", $1); 
+		    $self->set_attribute("exp", $2); 
+		}
+	    }
+	}
+	close INPUT if ($file);
+    }
+ 
+
+    #### Return a string description of the matrix
+    #### in the same format as Jerry Hertz' programs
+    sub toString {
+	my ($self, $sep, $col_width) = @_;
+	
+	$sep = $sep || "\t";
+	
+	my @matrix = @{$self->{columns}};	
 	my @alphabet = $self->getAlphabet();
 	my $col_nb = $#matrix;
 	my $to_print = "";
@@ -720,7 +844,11 @@ package RSA::matrix;
 	    $to_print .= $alphabet[$a];
 	    $to_print .= "\t|";
 	    for $c (0..$col_nb) {
-		$to_print .= "\t$matrix[$c][$a]";
+		if ($col_width) {
+		    $to_print .= sprintf "%${col_width}s", $matrix[$c][$a];
+		} else {
+		    $to_print .= $sep.$matrix[$c][$a];
+		}
 	    }
 	    $to_print .= "\n";
 	}

@@ -656,7 +656,7 @@ sub Palindromic {
 }
 
 ###### print next sequence #####
-    sub PrintNextSequence {
+sub PrintNextSequence {
 ##### prints DNA sequence in various formats 
 ##### See the hash %accepted_output_seq for a list of accepted formats
 ##### Usage: 
@@ -673,46 +673,49 @@ sub Palindromic {
 #####       @comments is a list of comments (one element per line)
 #####                 comments are only supported for some formats such as
 #####                 IG or Wconsensus 
-	local($OUTFILE) =  shift;
-	local($out_format) = lc(shift);
-	local($line_width) = shift;
-	local($sequence) = shift;
-	local($seq_id) = shift;
-	local(@comments) = @_;
+    local($OUTFILE) =  shift;
+    local($out_format) = lc(shift);
+    local($line_width) = shift;
+    local($sequence) = shift;
+    local($seq_id) = shift;
+    local(@comments) = @_;
 
-	### insert the carriage returns
+    ### insert the carriage returns
 #	if (($out_format eq "wc") || ($out_format eq "wconsensus") || ($out_format eq "multi")) {
-	if ($out_format eq "multi") {
-	    $line_width = 0;
-	}
-	$sequence = &FoldSequence($sequence,$line_width);
-
-	if ($out_format eq "ig") {          #### IntelliGenetics format
-	    foreach $line (@comments) {
-		print $OUTFILE ";$line\n";
-	    }
-	    print $OUTFILE "$seq_id\n";
-	    print $OUTFILE $sequence;
-	    print $OUTFILE "1\n";
-	} elsif ($out_format eq "fasta") {  #### fastA format
-	    my $first_comment = $comments[0] || "";
-	    print $OUTFILE  ">$seq_id\t${first_comment}\n";
-	    print $OUTFILE $sequence;
-	    print $OUTFILE "\n";
-	} elsif (($out_format eq "wc") || ($out_format eq "wconsensus")) {     #### wconsensus format
-	    foreach $line (@comments) {
-		print $OUTFILE ";$line\n";
-	    }
-	    print $OUTFILE $seq_id;
-	    print $OUTFILE "\t";
-	    print $OUTFILE "\\$sequence\\";
-	    print $OUTFILE "\n";
-	} elsif ($out_format eq "raw") {
-	    print $OUTFILE "$sequence\n";
-	} elsif ($out_format eq "multi") {
-	    print $OUTFILE "$sequence\n";
-	}
+    if ($out_format eq "multi") {
+	$line_width = 0;
     }
+    $sequence = &FoldSequence($sequence,$line_width);
+
+    if ($out_format eq "ig") {          #### IntelliGenetics format
+	foreach $line (@comments) {
+	    print $OUTFILE ";$line\n";
+	}
+	print $OUTFILE "$seq_id\n";
+	print $OUTFILE $sequence;
+	print $OUTFILE "1\n";
+    } elsif ($out_format eq "fasta") {  #### fastA format
+	my $first_comment = $comments[0] || "";
+	print $OUTFILE  ">$seq_id\t${first_comment}\n";
+	print $OUTFILE $sequence;
+	print $OUTFILE "\n";
+    } elsif (($out_format eq "wc") || ($out_format eq "wconsensus")) {     #### wconsensus format
+	foreach $line (@comments) {
+	    print $OUTFILE ";$line\n";
+	}
+	print $OUTFILE $seq_id;
+	print $OUTFILE "\t";
+	if ($dna_alphabet) {
+	    $sequence =~ s/n/./gi;
+	}
+	print $OUTFILE "\\$sequence\\";
+	print $OUTFILE "\n";
+    } elsif ($out_format eq "raw") {
+	print $OUTFILE "$sequence\n";
+    } elsif ($out_format eq "multi") {
+	print $OUTFILE "$sequence\n";
+    }
+}
 
 
 

@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-gibbs,v 1.3 2002/06/06 11:14:38 jvanheld Exp $
+# $Id: matrix-from-gibbs,v 1.4 2004/02/04 02:18:37 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:36 jvanheld>
 #
@@ -43,6 +43,7 @@ while (<$in>) {
     if (/Information \(relative entropy\) contribution in tenth bits\:/) {
 	$in_matrix = 1;
 	$current_matrix = new RSA::matrix();
+	$current_matrix->setAlphabet("A","C","G","T");   # default nucletodide alphabet
 	next;
     } elsif (/site/) {
 	$in_matrix = 0;
@@ -77,7 +78,7 @@ close $in if ($infile{input});
 
 
 ###### print output ######
-print $out $last_matrix->getString();
+print $out $last_matrix->toString();
 
 ###### verbose ######
 if ($verbose) {

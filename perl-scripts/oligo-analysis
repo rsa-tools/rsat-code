@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.75 2004/02/01 10:49:03 jvanheld Exp $
+# $Id: oligo-analysis,v 1.76 2004/02/04 02:18:37 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -19,6 +19,7 @@ $start_time = &AlphaDate();
 
 #### background models
 %supported_bg = ('upstream'=>1,
+		 'upstreamL'=>1,
 		 'upstream-noorf'=>1,
 		 'intergenic'=>1
 		 );
@@ -1789,7 +1790,7 @@ sub ReadArguments {
 #	    $rescale_freq = 1;
 
 	    ### specify a background model for estimating expected frequencies
-	} elsif ($ARGV[$a] =~ /^-bg/i) {
+	} elsif ($ARGV[$a] eq "-bg") {
 	    $background_model = $ARGV[$a+1];
 	    $background_model =~ s/ncf/intergenic/;
 	    unless ($supported_bg{$background_model}) {
@@ -2081,7 +2082,13 @@ ARGUMENTS
 		Supported models: 
 		-bg upstream 
 			 all upstream sequences, allowing overlap with
-		         upstream ORFs
+		         upstream ORFs. Calibrations with a single
+		         size per genome.
+
+		-bg upstreamL 
+			 all upstream sequences, allowing overlap with
+		         upstream ORFs. Length-specific calibration
+		         sets.
 
 		-bg upstream-noorf
 			  all upstream sequences, preventing overlap

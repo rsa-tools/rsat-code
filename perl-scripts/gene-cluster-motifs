@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.64 2004/02/02 07:45:46 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.65 2004/02/04 02:18:37 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -49,6 +49,7 @@ $supported_sort_keys  = join ",", sort keys %supported_sort_key;
 %supported_background = (
 			"intergenic"=>1,
 			"upstream"=>1,
+			"upstreamL"=>1,
 			"upstream-noorf"=>1,
 			"calib1"=>1,
 			"calibN"=>1,
@@ -72,13 +73,19 @@ $seq_ext = "fasta";
 
 ## pattern discovery options
 $background = "upstream-noorf";
+$noov = "-noov";
+$sort_key = "score";
+## oligo-analysis options
 $min_oligo_len = 6;
 $max_oligo_len = 6;
+## dyad-analysis options
 $monad_length = 3;
-$noov = "-noov";
 $min_sp = 0;
 $max_sp = 20;
-$sort_key = "score";
+
+## consensus options
+$matrix_width = 10;
+$expected_sites_per_gene = 2;
 
 ## Comparison between discovered and known motifs
 $known_site_file = "";
@@ -115,15 +122,16 @@ if ($sequence_file_list) {
     &ReadSequenceList();
 } else {
     
-    ### Read family file
-    %family = &ReadClasses($family_file, 1);
-    @families = sort keys %family;
-
     ### read gene name and identifiers
     warn "; Reading ORF information ...\n" 
 	if ($verbose >= 1);
     &ReadFeatures($organism_name);
     &ReadSynonyms($organism_name);
+
+    ### Read family file
+    %family = &ReadClasses($family_file, 1);
+    @families = sort keys %family;
+
 }
 
 ### write composition of the families in the separated directories
@@ -259,8 +267,45 @@ sub SetFileNames {
 	$family{$family_name}->{merged_file} =  "${family_name}/merged_${family_name}/".$family{$family_name}->{file_prefix}.$oligo_suffix.$dyad_suffix;
 	$family{$family_name}->{merged_ft_file} = $family{$family_name}->{merged_file}.".ft";
 
-	$family{$family_name}->{consensus_dir} = "$family_name/consensus_${family_name}/".$family{$family_name}->{file_prefix}.$consensus_suffix;
+#	$family{$family_name}->{consensus_file} = "$family_name/consensus_${family_name}/".$family{$family_name}->{file_prefix}.$consensus_suffix;
 
+
+	################################################################
+	## Consensus options and files
+	## strands
+	my $consensus_options = "";
+	my $consensus_suffix = "";
+	if ($strands eq "-1str") {
+	    $consensus_options .= " -c0"; ## Single-strand search
+	    $consensus_suffix .= "-c0";
+	} else {
+	    $consensus_options .= " -c2"; ## Double-strand search
+	    $consensus_suffix .= "-c2";
+	}
+	
+	## Matrix width
+	$consensus_options .= " -L ".$matrix_width;
+	$consensus_suffix .= "-L".$matrix_width;
+	
+	## alphabet
+	$consensus_options .= " -A a:t 0.325 c:g 0.175";
+	
+	## Use designated prior frequencies
+#    $consensus_options .= " -d"; 
+	
+	## Expected number of sites
+	my $gene_nb = scalar(@{$family{$family_name}->{members}});
+	warn join ("\t", "Number of genes", $family_name, $gene_nb), "\n";
+	$expected_sites = $gene_nb*$expected_sites_per_gene;	
+	$consensus_options .= " -n ".$expected_sites;
+	$consensus_suffix .= "-n".$expected_sites; 
+	
+	$family{$family_name}->{consensus_suffix} = $consensus_suffix;
+	$family{$family_name}->{consensus_options} = $consensus_options;
+	$family{$family_name}->{consensus_dir} = "${family_name}/consensus_${family_name}";
+	$family{$family_name}->{consensus_file} = $family{$family_name}->{consensus_dir}."/".$family{$family_name}->{file_prefix}.$consensus_suffix;
+	
+	
     }  
 
 
@@ -426,7 +471,7 @@ sub OligoAnalysis {
 	       "min len: $min_oligo_len",
 	       "max len: $max_oligo_len"), "\n" if ($verbose >= 1);
     my $dir = "${family_name}/oligos_${family_name}";
-
+    
     &CheckOutDir($dir);
     die "Error : cannot read file $family{$family_name}->{input_seq_file}\n" unless (-r $family{$family_name}->{input_seq_file});
     
@@ -635,10 +680,22 @@ sub DrawMergedFeatureMap {
     &doit($command,$dry_run, 0);
 }
 
-## ##############################################################
-## Scan merged patterns with a sliding window (dna-pattern)
-sub SlidingWindow {
-    
+
+################################################################
+## Run Jerry Hertz' consensus program 
+sub Consensus {
+    chdir($dir{output});
+    &CheckOutDir($family{$family_name}->{consensus_dir});
+
+    ## input file has to be converted to consensus format
+    $convert_command = "convert-seq -dna -from fasta -to wc -i ".$family{$family_name}->{input_seq_file};
+
+
+    ## run the command
+    my $command = $convert_command;
+    $command .= " | consensus ".$family{$family_name}->{consensus_options};
+    $command .= " > ".$family{$family_name}->{consensus_file};
+    &doit($command);
 }
 
 ################################################################
@@ -725,7 +782,8 @@ sub SyntheticTable {
     $row{known} = $row++ if ($known_sites_provided);
     $row{oligos} = $row++;
     $row{dyads} = $row++;
-    $row{selection} = $row++;
+    $row{selection} = $row++ if ($task{report});
+    $row{consensus} = $row++;
     $row_num = $row-1;
     while (($header,$row) = each %row) {
 	$table[$row][0] = "<B>$header</B>";
@@ -794,14 +852,24 @@ sub SyntheticTable {
 	
         ################################################################
 	### index results of manual pattern selection
-        if ($htmaps) {
+	if ($task{report}) {
+	    if ($htmaps) {
+		$map_link = "<a href=../$family{$family_name}->{oligo_selection}.html>\n";
+	    } else {
+		$map_link = "<a href=../$family{$family_name}->{oligo_selection}.${IMG_FORMAT}>\n";
+	    }
+	    my $pattern_file = $family{$family_name}->{oligo_selection};
+	    &IndexPatterns($family_name, $pattern_file, $map_link, $row{selection}, $col, assembly=>0);
+	}
+
+	################################################################
+	#### Index results of consensus
+	if ($htmaps) {
 	    $map_link = "<a href=../$family{$family_name}->{oligo_selection}.html>\n";
-        } else {
+	} else {
 	    $map_link = "<a href=../$family{$family_name}->{oligo_selection}.${IMG_FORMAT}>\n";
-        }
-        my $pattern_file = $family{$family_name}->{oligo_selection};
-        &IndexPatterns($family_name, $pattern_file, $map_link, $row{selection}, $col, assembly=>0);
-	
+	}
+	&IndexConsensus($family_name,  $family{$family_name}->{consensus_file}, $map_link, $row{consensus}, $col);
     }
     
 
@@ -881,6 +949,30 @@ sub SyntheticTable {
 #    chdir "synthetic_tables";
 #    chdir "../";
 }
+
+
+################################################################
+## Index the matrix from a consensus file
+sub IndexConsensus {
+    my ($family_name, $consensus_file, $map_link, $row, $col, %args) = @_;
+    warn join ("\t", "; Indexing consensus matrix for family", $family_name, $consensus_file, $row, $col), "\n" if ($verbose >= 2);
+    my $matrix = new RSA::matrix();
+    $matrix->readFromFile($consensus_file, "consensus");
+    $table[$row][$col] = "<table cellpadding=3>\n";
+    $table[$row][$col] .= "<TR>\n";
+    $table[$row][$col] .= "<td colspan=2><pre>".$matrix->toString(" ", 4)."</pre></td>\n";
+    $table[$row][$col] .= "</TR>\n";
+
+    $table[$row][$col] .= "<tr><td align=right>unadjusted.information</td><td>".$matrix->get_attribute("unadjusted.information")."</td></tr>\n";
+    $table[$row][$col] .= "<tr><td align=right>adjusted.information</td><td>".$matrix->get_attribute("adjusted.information")."</td></tr>\n";
+    $table[$row][$col] .= "<tr><td align=right>Pval</td><td>".$matrix->get_attribute("Pval")."</td></tr>\n";
+    $table[$row][$col] .= "<tr><td align=right>ln.Pval</td><td>".$matrix->get_attribute("ln.Pval")."</td></tr>\n";
+    $table[$row][$col] .= "<tr><td align=right>exp</td><td>".$matrix->get_attribute("exp")."</td></tr>\n";
+    $table[$row][$col] .= "<tr><td align=right>ln.exp</td><td>".$matrix->get_attribute("ln.exp")."</td></tr>\n";
+    $table[$row][$col] .= "</table>\n";
+}
+
+
 
 
 ################################################################
@@ -1285,6 +1377,11 @@ OPTIONS
 		name of a file containing the expected frequencies for
 		dyad-analysis.
 
+    Matrix-based pattern discovery options (consensus, gibbs, meme)
+        -width  matrix width
+	-sps	expected number of sites per sequence
+		(default $expected_sites_per_gene)
+
     Output options
 	-transp	transpose synthetic result table (columns become rows)
 	-sort sort_key
@@ -1416,6 +1513,8 @@ multiple-family-analysis options
 -monad		monad length for dyad-analysis
 -minsp		maximum spacing for dyad-analysis
 -maxsp		maximum spacing for dyad-analysis
+-width		matrix width
+-sps		expected number of sites per sequence (default $expected_sites_per_gene)
 -n      	dry run: print commands without executing them
 -exp		expected frequency file
 -transp		transpose synthetic result table (columns become rows)
@@ -1517,6 +1616,12 @@ sub ReadArguments {
 	    $min_sp = $ARGV[$a+1];;
 	} elsif ($ARGV[$a] eq "-maxsp") {
 	    $max_sp = $ARGV[$a+1];;
+
+	    ### matrix-based pattern discovery
+	} elsif ($ARGV[$a] eq "-width") {
+	    $matrix_width = $ARGV[$a+1];
+	} elsif ($ARGV[$a] eq "-sps") {
+	    $expected_sites_per_gene = $ARGV[$a+1];
 
 	    ### organism
 	} elsif ($ARGV[$a] eq "-org") {
@@ -2312,3 +2417,4 @@ sub ReadAssemblyFile {
     close $pattern_handle;
     return ($error, @assembled_patterns);
 }
+
