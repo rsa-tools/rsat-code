@@ -253,17 +253,19 @@ sub ReadArguments {
 	    $seed = $ARGV[$a+1];
 
 	} elsif ($ARGV[$a] eq "-a") {
-	    if (("$ARGV[$a+1] $ARGV[$a+2]" =~ /a:t (\S+)/i) && ($1 <=1) && ($1 >=0)){
-		$alphabet{'A'} = $alphabet{'T'} = $1;
-	    }
-	    if (("$ARGV[$a+3] $ARGV[$a+4]" =~ /c:g (\S+)/i) && ($1 <=1) && ($1 >=0)){
-		$alphabet{'C'} = $alphabet{'G'} = $1;
-	    }
-	    
 	    if ($ARGV[$a+1] eq "yeast") {
 		$alphabet{'A'} = $alphabet{'T'} = 0.308512197555054;
 		$alphabet{'C'} = $alphabet{'G'} = 0.191487802444946;
 	    }
+	    elsif (("$ARGV[$a+1] $ARGV[$a+2]" =~ /a:t (\S+)/i) && ($1 <=1) && ($1 >=0)){
+		$alphabet{'A'} = $alphabet{'T'} = $1;
+		if (("$ARGV[$a+3] $ARGV[$a+4]" =~ /c:g (\S+)/i) && ($1 <=1) && ($1 >=0)){
+		    $alphabet{'C'} = $alphabet{'G'} = $1;
+		}
+	    } else {
+		&FatalError("Invalid alphabet specification");
+	    }
+	    
 
 	    ### use oligo intergenic frequencies as expected frequencies
 	} elsif ($ARGV[$a] =~ /^-ncf/i) {
