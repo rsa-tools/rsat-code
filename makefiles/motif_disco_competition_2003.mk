@@ -297,7 +297,7 @@ MULTI_EXP=-bg ${MULTI_BG}
 PURGE=-purge
 #PURGE=-nopurge
 MULTI_DIR=${ORG_DIR}/multi/${MULTI_BG}_bg${PURGE}
-MIN_OL=5
+MIN_OL=6
 MAX_OL=8
 MIN_SP=0
 MAX_SP=20
@@ -316,9 +316,7 @@ MULTI_CMD=multiple-family-analysis -v ${V}				\
 		${MULTI_EXP}						\
 		-sort ${SORT} -task ${MULTI_TASK}			\
 		${NOOV} ${MULTI_OPT}					\
-		${SKIP}							\
-		-user jvanheld -password jvanheld -schema multifam
-
+		${SKIP}							
 
 ## generic call for multiple-family-analysis
 multi:
@@ -736,14 +734,18 @@ some_comparisons:
 ################################################################
 ## Archive the reports
 DATE=`date +%Y%m%d_%H%M%S`
+ARCHIVE_DIR=archives/
 archive:
-	${MAKE} archive_report REPORT="report_${DATE}.zip"
+	mkdir -p ${ARCHIVE_DIR}
+	${MAKE} archive_report REPORT="${ARCHIVE_DIR}/report_${DATE}.zip"
 
 archive_report:
 	@echo ${REPORT}
-	zip -ry ${REPORT} file_index.html
+	find results/*/multi -name '*_results.txt' -exec zip -ry ${REPORT} {} \;
+	find results/*/multi -name '*_parameters.txt' -exec zip -ry ${REPORT} {} \;
 	zip -ry -n '*~' ${REPORT} results/reports
-	find results/*/multi -name '*_selection*' -exec zip -ry ${REPORT} {} \;
+	find results/*/multi -name '*_selection' -exec zip -ry ${REPORT} {} \;
+	zip -ry ${REPORT} file_index.html
 	@echo report archived in ${REPORT}
 
 # oligo-analysis  -v 3 -l 7 -noov -2str -i calibrations/tmp_all_up_2000.fasta -return occ -distrib
