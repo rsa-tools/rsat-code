@@ -100,7 +100,7 @@ $date = &AlphaDate();
 ## echo a command and send it to the system
 sub doit {
     my ($command, $dry) = @_;
-    warn "\n$command\n" if ($main::verbose >= 1);
+    warn "\n", &AlphaDate(), "\t", $command, "\n" if ($main::verbose >= 1);
     system $command unless ($dry);
 }
 
