@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-families,v 1.1 2002/09/18 13:49:13 jvanheld Exp $
+# $Id: compare-families,v 1.2 2002/09/18 20:50:17 jvanheld Exp $
 #
-# Time-stamp: <2002-09-18 08:49:09 jvanheld>
+# Time-stamp: <2002-09-18 15:49:20 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -11,48 +11,173 @@ if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
 require "RSA.lib";
+require "RSA.classes";
 require "RSA.help.pl";
 
 ################################################################
 #### initialise parameters
 my $start_time = &AlphaDate;
 
+%supported_return_fields = (
+			    proba=>1,
+			    members=>1
+			    );
+$supported_return_fields = join ",", keys %supported_return_fields;
 local %infile = ();
 local %outfile = ();
 
 local $verbose = 0;
-local $in = STDIN;
+# local $in = STDIN;
 local $out = STDOUT;
+
+%return_fields = ();
+
+%lth = ();
+%uth = ();
 
 &ReadArguments;
 
 ################################################################
 #### check argument values
-
+unless ($infile{ref_families}) {
+    &FatalError("You must specify a file containing reference families");
+}
+unless ($infile{query_families}) {
+    &FatalError("You must specify a file containing query families");
+}
 
 ################################################################
 ### open output stream
 $out = &OpenOutputFile($outfile{output});
 
+
 ################################################################
-##### read input
-($in) = &OpenInputFile($infile{input});
-while (<$in>) {
-
-}
-
-close $in if ($infile{input});
+###### read family files
+%query_families = &ReadFamilies($infile{query_families});
+%ref_families = &ReadFamilies($infile{ref_families});
+$nb_ref_families = scalar(keys %ref_families);
+$nb_query_families = scalar(keys %query_families);
 
 ################################################################
 #### print verbose
 &Verbose if ($verbose);
 
 ################################################################
-###### execute the command
+#### compare reference and query families
+%common = ();
+%ref_population = ();
+foreach my $r (keys %ref_families) {
+    my %ref_members = ();
+    foreach $m ( $ref_families{$r}->get_members()) {
+	$ref_member{$m} = 1;
+	$ref_population{$m} = 1;
+    }
+    foreach my $q (keys %query_families) {
+	@{$common{$r."__VERSUS__".$q}} = ();
+	my @query_members = $query_families{$q}->get_members();
+	foreach my $m (@query_members) {
+	    if ($ref_member{$m}) {
+		push @{$common{$r."__VERSUS__".$q}}, $m;
+	    }
+	}
+	$compa{$r."__VERSUS__".$q}->{occ} = scalar(@{$common{$r."__VERSUS__".$q}});
+
+	#### check thresholds for number of common members
+	if ((defined($lth{occ})) && 
+	    ($compa{$r."__VERSUS__".$q}->{occ}< $lth{occ})) {
+	    delete $compa{$r."__VERSUS__".$q};
+	    undef @{$common{$r."__VERSUS__".$q}};
+	}
+	if ((defined($uth{occ})) && 
+	    ($compa{$r."__VERSUS__".$q}->{occ} > $uth{occ})) {
+	    delete $compa{$r."__VERSUS__".$q};
+	    undef @{$common{$r."__VERSUS__".$q}};
+	}
+    }
+}
 
 ################################################################
-###### print output
+#### calculate probabilities
+if ($return_fields{proba}) {
+    $log_base = 10;
+    $ref_log = log($log_base);
+    foreach my $c (keys %compa) {
+	my ($r, $q) = split "__VERSUS__", $c;
+	my $t = $query_families{$q}->get_size(); ### number of trials
+	my $s = $compa{$r."__VERSUS__".$q}->{occ}; ### number of successes
+	
+	my $b = $ref_families{$r}->get_size(); ### number of black balls in the urn
+	my $n = scalar(keys %ref_population);
+	my $p = 0;
+	
+	if ($n > 0) {
+	    $p = $b/$n;
+	} else {
+	    &FatalError("Cannot calculate probabilities if reference population is empty");
+	}
+	$compa{$r."__VERSUS__".$q}->{P_val} = &sum_of_binomials($p,$t,$s,$t);
+	$nb_tests = $nb_ref_families * $nb_query_families;
+	$compa{$r."__VERSUS__".$q}->{E_val} = $compa{$r."__VERSUS__".$q}->{P_val} * $nb_tests;
+	$compa{$r."__VERSUS__".$q}->{sig} = -log($compa{$r."__VERSUS__".$q}->{E_val})/$ref_log;
 
+	#### check thresholds for number of common members
+	foreach my $key qw(P_val, E_val, sig) {
+	    if ((defined($lth{$key})) && 
+		($compa{$r."__VERSUS__".$q}->{$key}< $lth{$key})) {
+		delete $compa{$r."__VERSUS__".$q};
+		undef @{$common{$r."__VERSUS__".$q}};
+	    } elsif ((defined($uth{$key})) && 
+		($compa{$r."__VERSUS__".$q}->{$key} > $uth{$key})) {
+		delete $compa{$r."__VERSUS__".$q};
+		undef @{$common{$r."__VERSUS__".$q}};
+	    }
+	}
+    }
+}
+
+################################################################
+###### print result
+################################################################
+
+#### header
+@header_fields = (
+		  "; ref", 
+		  "query",
+		  "ref#",
+		  "query#",
+		  "common#");
+push @header_fields, "P_val" if $return_fields{proba};
+push @header_fields, "E_val" if $return_fields{proba};
+push @header_fields, "sig" if $return_fields{proba};
+push @header_fields, "members" if $return_fields{members};
+print $out join("\t", @header_fields), "\n";
+
+#### family combinations
+foreach my $c (keys %compa) {
+    my ($r, $q) = split "__VERSUS__", $c;
+    print $out join "\t", ($r, 
+			   $q, 
+			   $ref_families{$r}->get_size(),
+			   $query_families{$q}->get_size(),
+			   $compa{$r."__VERSUS__".$q}->{occ});
+    print $out join( ";", @{$common{$r."__VERSUS__".$q}}) if $return_fields{members};
+    
+    if ($return_fields{proba}) {
+	if ($compa{$r."__VERSUS__".$q}->{P_val} >= 0.0001) {
+	    printf $out "\t%.5f", $compa{$r."__VERSUS__".$q}->{P_val};
+	} else {
+	    printf $out "\t%.2g", $compa{$r."__VERSUS__".$q}->{P_val};
+	}
+	if ($compa{$r."__VERSUS__".$q}->{E_val} >= 0.0001) {
+	    printf $out "\t%.5f", $compa{$r."__VERSUS__".$q}->{E_val};
+	} else {
+	    printf $out "\t%.2g", $compa{$r."__VERSUS__".$q}->{E_val};
+	}
+	printf $out ( "\t%.2f", $compa{$r."__VERSUS__".$q}->{sig});
+    }
+    print $out "\n";
+
+}
 
 ################################################################
 ###### finish verbose
@@ -88,13 +213,17 @@ NAME
         2002 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
 	
 DESCRIPTION
-	Compare-Families for writing new perl scripts
+	Compare two family files (the query file and the reference
+	file). Each family of the query file is compared to each
+	family of the reference file. The number of common elements is
+	reported, as well as the probability to observe at least this
+	number of common elements by chance alone.
 
 CATEGORY
-	util
+	util,stat
 
 USAGE
-        compare-families -r ref_families [-q query_families]
+        compare-families -r ref_families -q query_families
 		[-o outputfile] [-v]
 
 OPTIONS
@@ -110,12 +239,39 @@ OPTIONS
 	-o outputfile
 		if not specified, the standard output is used.
 		This allows to place the command within a pipe.
+	-return	return_fields
+		List of fields to return. Supported field :
+		$supported_return_fields
+	-uth field #
+		upper threshold value for a given field
+		Supported_fields:
+			occ, P_val, E_val, sig
+	-lth field #
+		lower threshold value for a given field 
+		(same fields as -uth)
+
+OUTPUT FORMAT
+
+	The program returns a tabdelimited file with one row per
+	combination of reference-query family, and one column per
+	return field.
+
+	Default return fields:
+		1) ref      reference family
+		2) query    query family
+		3) ref#	    number of members in the ref family
+		4) query#   number of members in the query family
+		5) common   number of elements in common between the
+			    query and reference family
+
+	Additional return values are optionally returned, and can be
+	specified with the -return option.
 
 FILE FORMATS
     $HELP_FAMILY_FILE
 End_of_help
     close HELP;
-    exit;
+    exit(0);
 }
 
 ################################################################
@@ -131,9 +287,12 @@ compare-families options
 -q	query families
 -o	output file
 -v	verbose
+-return	return fields (supported $supported_return_fields)
+-lth	threshold on a given field
+-uth	threshold on a given field
 End_short_help
   close HELP;
-  exit;
+  exit(0);
 }
 
 
@@ -141,6 +300,7 @@ End_short_help
 #### read arguments 
 sub ReadArguments {
     foreach my $a (0..$#ARGV) {
+
 	### verbose  
 	if ($ARGV[$a] eq "-v") {
 	    if (&IsNatural($ARGV[$a+1])) {
@@ -148,27 +308,48 @@ sub ReadArguments {
 	    } else {
 		$verbose = 1;
 	    }
-	    
+
 	    ### detailed help
 	} elsif ($ARGV[$a] eq "-h") {
-	    &PrintHelp;
-	    
+	    &PrintHelp();
+
 	    ### list of options
-	} elsif ($ARGV[0] eq "-help") {
-	    &PrintOptions;
-	    
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions();
+
 	    ### reference file  
 	} elsif ($ARGV[$a] eq "-r") {
 	    $infile{ref_families} = $ARGV[$a+1];
-	    
+
 	    ### query file  
 	} elsif ($ARGV[$a] eq "-q") {
 	    $infile{query_families} = $ARGV[$a+1];
-	    
+
 	    ### output file  
 	} elsif ($ARGV[$a] eq "-o") {
 	    $outfile{output} = $ARGV[$a+1];
-	    
+
+	    #### threshold values
+	} elsif ($ARGV[$a] eq "-lth") {
+	    my $field = $ARGV[$a+1];
+	    my $value = $ARGV[$a+2];
+	    $lth{$field} = $value;
+	} elsif ($ARGV[$a] eq "-uth") {
+	    my $field = $ARGV[$a+1];
+	    my $value = $ARGV[$a+2];
+	    $uth{$field} = $value;
+
+	    #### return fields
+	} elsif ($ARGV[$a] eq "-return") {
+	    chomp($ARGV[$a+1]);		 
+	    my @fields_to_return = split ",", $ARGV[$a+1];
+	    foreach $field (@fields_to_return) {
+		if ($supported_return_fields{$field}) {
+		    $return_fields{$field} = 1;
+		} else {
+		    &FatalError("Invalid return field $field");
+		}
+	    }
 	}
     }
 }
@@ -184,6 +365,16 @@ sub Verbose {
 	    print $out ";\t$key\t$value\n";
 	}
     }
+
+    print $out "; Reference families\n";
+    foreach my $f (keys %ref_families) {
+	printf $out ";\t%s\t%d\n", $ref_families{$f}->get_name(), $ref_families{$f}->get_size();
+    }
+    print $out "; Query families\n";
+    foreach my $f (keys %query_families) {
+	printf $out ";\t%s\t%d\n", $query_families{$f}->get_name(), $query_families{$f}->get_size();
+    }
+    
     if (defined(%outfile)) {
 	print $out "; Output files\n";
 	while (($key,$value) = each %outfile) {
@@ -191,3 +382,15 @@ sub Verbose {
 	}
     }
 }
+
+
+################################################################
+#### read family file
+
+################################################################
+##### read input
+($ref) = &OpenInputFile($infile{ref_families});
+while (<$ref>) {
+    warn $_;
+}
+close $ref if ($infile{ref_families});
