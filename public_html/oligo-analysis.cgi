@@ -142,14 +142,6 @@ if ($query->param('freq_estimate') =~ /oligo freq.* non-coding regions/i) {
 	}
 	$freq_option = " -ncf -org $organism";
     }
-#    ### select expected frequency file for that organism
-#    $freq_file = $supported_organism{$organism}->{'data'};
-#    $freq_file .= "/oligo-frequencies";
-#    $freq_file .= "/${oligo_length}nt_non-coding_${organism}.freq";
-#  #  unless (-r $freq_file) {
-#  #    &cgiError(" cannot read expected frequency file $freq_file");
-#  #  }
-#    $freq_option = " -expfreq $freq_file";
 } elsif ($query->param('freq_estimate') =~ /residue frequenc/i) {
   $freq_option = " -a input";
 } elsif ($query->param('freq_estimate') =~ /markov/i) {
