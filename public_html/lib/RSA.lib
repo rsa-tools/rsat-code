@@ -66,6 +66,8 @@ $SCRIPTS = "$RSA/perl-scripts";
 $HTML = "$RSA/public_html";
 $WWW_TMP = "$WWW_RSA/tmp";
 $ENV{SERVER_ADMIN} = "jvanheld\@ucmb.ulb.ac.be";
+
+$ECHO = 0; ### set to 1 for debigging: list parameters and echo the unix commands on the web interface
     
 $counter_file = "$LOGS/count-file";
 ($sec, $min, $hour,$day,$month,$year) = localtime(time);
@@ -760,7 +762,7 @@ sub CalcNeighbourLimits {
 		$neighb_left_limit{$gene} = undef; 
 	    }
 	    $neighb_left_size{$gene} = $left{$gene} - $neighb_left_limit{$gene} -1;
-
+	    
 	    #### calculate right upstream limit 
 	    $found = 0;
 	    do {
@@ -860,26 +862,72 @@ $supported_organisms .= &ListSupportedOrganisms();
 #}
 
 
+################################################################
+#### Treatment of errors
+################################################################
 
-sub FatalError {
-  @messages = @_;
-  warn(join("\n\t", 
-	    "Error:", 
-	    @messages), 
-       "\n\n");
-  &PrintHelp;
-  exit(1);
-}
-
+### report fatal errors 
 sub FatalError {
     my @error_message = @_;
     my $message = join "\n\t", @error_message;
     if ($output_context eq "cgi") {
 	$message =~ s/\n/<br>\n/g;
-	&cgiError($error_message);
+	&cgiError($message);
     } else {
-	die ("Error\n\t", $message, "\n");
+	die("Error\n\t", $message, "\n");
     }
+}
+
+sub cgiError {
+    my $error_message = join "", @_;
+    my $error_color = "#FF0000";
+    &cgiMessage($error_message, "Error", $error_color);
+    print "</body></html>\n";
+    exit(1);
+}
+
+### report a warning
+sub Warning {
+    my @warning_message = @_;
+    my $message = join "\n\t", @warning_message;
+    if ($output_context eq "cgi") {
+	$message =~ s/\n/<br>\n/g;
+	&cgiWarning($message);
+    } else {
+	warn("Warning\n\t", $message, "\n");
+    }
+}
+sub cgiWarning {
+    my $warning_message = join "", @_;
+    my $warning_color = "#aa0000";
+    &cgiMessage($warning_message, "Warning", $warning_color);
+}
+
+### information message
+sub Info {
+    my @info_message = @_;
+    my $message = join "\n\t", @info_message;
+    if ($output_context eq "cgi") {
+	$message =~ s/\n/<br>\n/g;
+	&cgiMessage($message);
+    } else {
+	warn("Info\n\t", $message, "\n");
+    }
+}
+
+#### report a message in HTML format
+sub cgiMessage {
+    my ($message, $message_type, $color) = @_;
+    $color = "#00BB00" unless ($color);
+    print (
+	  "<h3>$message_type</h3>",
+	   "<blockquote>",
+	   "<FONT SIZE=+1 color=$color><B>",
+	   $message,
+	   "</B></FONT>",
+	   "</blockquote>",
+	   "<BR><HR SIZE=3>"
+	   );
 }
 
 
