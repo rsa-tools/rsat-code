@@ -1,23 +1,25 @@
 ############################################################
 #
-# $Id: makefile,v 1.5 2000/12/14 20:55:03 jvanheld Exp $
+# $Id: makefile,v 1.6 2002/07/02 13:27:10 jvanheld Exp $
 #
-# Time-stamp: <2000-12-14 12:55:14 jvanheld>
+# Time-stamp: <2002-07-02 15:24:44 jvanheld>
 #
 ############################################################
+
+RSYNC_OPT=-e ssh
+RSYNC = rsync -ruptvl ${RSYNC_OPT}
 
 PARSER		= .
 PARSED_DATA	= /win/amaze/amaze_data/parsed_data/
 
 SPICA		= 193.62.198.80
-BACH_DIR	= jvanheld@bach.ebi.ac.uk:aMAZE_team/jvanheld/
+MOZART_DIR	= jvanheld@mozart.ebi.ac.uk:aMAZE_team/jvanheld/
 SPICA_DIR	= jvanheld@${SPICA}:~/
 
-RUBENS_DELIVERY	= jvanheld@rubens.ulb.ac.be:/rubens/dsk3/genomics/delivery/internal/
-RUBENS_PARSER	= jvanheld@rubens.ulb.ac.be:/rubens/dsk3/genomics/amaze/aMAZE_team/jvanheld/programs/parsing/amaze_parsers
-RUBENS_PARSED_DATA	= jvanheld@rubens.ulb.ac.be:/rubens/dsk3/genomics/amaze/aMAZE_team/jvanheld/parsed_data
+RUBENS_DELIVERY	= jvanheld@rubens.ulb.ac.be:/rubens/dsk4/jvanheld/amaze/parsed_data
+RUBENS_PARSER	= jvanheld@rubens.ulb.ac.be:/rubens/dsk4/jvanheld/amaze/amaze_programs/amaze_parser
 
-OPT	= -w 1
+OPT	= -v 1
 
 usage:
 	@echo "usage: make [-OPT='options'] target"
@@ -30,7 +32,7 @@ all:
 	make swissprot
 	make glaxo
 	make gaurab
-	make rsync_to_bach
+	make rsync_to_mozart
 	make rsync_to_rubens
 
 swissprot:
@@ -48,15 +50,22 @@ glaxo:
 gaurab:
 	perl parse_gaurab.pl ${OPT}
 
-rsync_to_bach:
-	rsync -ruptvl --delete -e ssh ${PARSER} ${BACH_DIR}/programs/parsing/amaze_parsers
-	rsync -ruptvl --delete -e ssh ${PARSED_DATA} ${BACH_DIR}
+skeletons:
+	perl parse_pathway_skeleton.pl ${OPT}
+
+rsync_to_mozart:
+	${RSYNC} --delete ${PARSER} ${MOZART_DIR}/programs/parsing/amaze_parsers
 
 rsync_to_rubens:
-	rsync -avl -e ssh ${PARSER} ${RUBENS_PARSER}
-	rsync -avl -e ssh ${PARSED_DATA} ${RUBENS_PARSED_DATA}
+	${RSYNC} ${PARSER} ${RUBENS_PARSER}
 
+#DELIVERY_DIR=glaxo_parsed
+#DELIVERY_DIR=gaurab_parsed
+DELIVERY_DIR=kegg_parsed
+DELIVERY_DATE=`date +%Y%m%d`
 deliver:
-	rsync -ruptvln -e ssh ${PARSED_DATA}/kegg_parsed/20001212 ${RUBENS_DELIVERY}/kegg_parsed
-	rsync -ruptvln -e ssh ${PARSED_DATA}/swissprot_parsed/20001212 ${RUBENS_DELIVERY}/swissprot_parsed
+	${RSYNC} --delete ${PARSED_DATA}/${DELIVERY_DIR}/${DELIVERY_DATE} ${RUBENS_DELIVERY}/${DELIVERY_DIR}
 
+#### TEMPORARY ####
+aliases:
+	alias stats='zgrep field Process.tab.gz; for col in 6 7 8 9 10 11 12; do echo $${col} `gunzip -c Process.tab.gz | grep -v "^--" | cut -f $${col} | classfreq -ci 1 -v | grep sum`; done'
