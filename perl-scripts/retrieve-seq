@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: retrieve-seq,v 1.27 2002/09/25 03:27:49 jvanheld Exp $
+# $Id: retrieve-seq,v 1.28 2002/09/25 03:30:14 jvanheld Exp $
 #
-# Time-stamp: <2002-09-24 22:25:45 jvanheld>
+# Time-stamp: <2002-09-24 22:30:12 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -273,30 +273,11 @@ foreach my  $query (@queries) {
 	    $orf_strand = "R";
 	};
 
-	if ($reg_left < 0) {
-	    die join("\t", $chrom, $reg_left, $reg_right, $orf_strand, $seq_length, $chr_length, $position, $max_pos), "\n" if ($verbose >= 0);
-	}
+	warn join("\t", $chrom, $reg_left, $reg_right, $orf_strand, $seq_length, $chr_length, $position, $max_pos), "\n" if ($verbose >= 3);
 
-
-#  	#### random fragments
-#      } elsif ($sequence_type eq "random fragments") {
-#  	my $chr_length = $chromosome_seq{$chrom}->get_length();
-#  	my $max_pos = $chr_length - $seq_length +1;
-#  	$reg_left = int(rand($max_pos));
-#  	$reg_right = $reg_left + $seq_length -1;
-#  	if (int(rand(2))) {
-#  	    $orf_strand = "D";
-#  	} else {
-#  	    $orf_strand = "R";
-#  	};
-#  	warn join("\t", $chrom, $chr_length, $seq_length, $max_pos, $reg_left, $reg_right, $orf_strand), "\n" if ($verbose >= 3);
     }
     
-    
     $reg_size =  $reg_right - $reg_left + 1;
-#    if ($reg_size <= 0) {
-#	$reg_size = 0;
-#    }
     
     ###  sequence ID 
     if ($sequence_type eq "random fragments") {
