@@ -204,7 +204,7 @@ list_fasta_files:
 	${FASTA_FILES}
 	${FASTA_FILES} > ${SEQ_LIST_FILE}
 
-MULTI_TASK=oligos
+MULTI_TASK=purge,oligos,maps,synthesis,sql
 MULTI_DIR=${RES_DIR}/multi/${ORG}
 MIN_OL=6
 MAX_OL=6
@@ -218,4 +218,111 @@ multi:
 		-bg upstream -sort name -task ${MULTI_TASK}		\
 		${NOOV}							\
 		-user jvanheld -password jvanheld -schema multifam
+
+
+# ################################################################
+# ## Calibrate oligonucleotide frequencies with random gene selections
+# ## of the same sizes as in the test sets (motif discovery competition 2003)
+# calibrate_oligos_all_orgs: calibrate_oligos_yeast calibrate_oligos_human
+
+# SEQ_LENGTHS_MOUSE=
+# calibrate_oligos_mouse:
+# 	${MAKE} calibrate_oligos ORG=Mus_musculus SEQ_LEN=1500 N=3 STR=-2str STR=-2str NOOV=-noov
+
+# SEQ_LENGTHS_FLY=1500 2000 2500 3000
+# calibrate_oligos_fly:
+# 	${MAKE} calibrate_oligos ORG=Drosophila_melanogaster SEQ_LEN=1500 N=3 STR=-2str STR=-2str NOOV=-noov
+# 	${MAKE} calibrate_oligos ORG=Drosophila_melanogaster SEQ_LEN=1500 N=4 STR=-2str STR=-2str NOOV=-noov
+# 	${MAKE} calibrate_oligos ORG=Drosophila_melanogaster SEQ_LEN=2000 N=1 STR=-2str STR=-2str NOOV=-noov
+# 	${MAKE} calibrate_oligos ORG=Drosophila_melanogaster SEQ_LEN=2000 N=3 STR=-2str STR=-2str NOOV=-noov
+# 	${MAKE} calibrate_oligos ORG=Drosophila_melanogaster SEQ_LEN=2000 N=4 STR=-2str STR=-2str NOOV=-noov
+# 	${MAKE} calibrate_oligos ORG=Drosophila_melanogaster SEQ_LEN=2500 N=3 STR=-2str STR=-2str NOOV=-noov
+# 	${MAKE} calibrate_oligos ORG=Drosophila_melanogaster SEQ_LEN=3000 N=1 STR=-2str STR=-2str NOOV=-noov
+
+# SEQ_LENGTHS_YEAST=500 800 1000
+# calibrate_oligos_yeast:
+# 	${MAKE} calibrate_oligos ORG=Saccharomyces_cerevisiae SEQ_LEN=1000 N=9 STR=-2str STR=-2str NOOV=-noov
+# 	${MAKE} calibrate_oligos ORG=Saccharomyces_cerevisiae SEQ_LEN=500 N=4 STR=-2str STR=-2str NOOV=-noov
+# 	${MAKE} calibrate_oligos ORG=Saccharomyces_cerevisiae SEQ_LEN=500 N=8 STR=-2str STR=-2str NOOV=-noov
+# 	${MAKE} calibrate_oligos ORG=Saccharomyces_cerevisiae SEQ_LEN=1000 N=6 STR=-2str STR=-2str NOOV=-noov
+# 	${MAKE} calibrate_oligos ORG=Saccharomyces_cerevisiae SEQ_LEN=500 N=3 STR=-2str STR=-2str NOOV=-noov
+# 	${MAKE} calibrate_oligos ORG=Saccharomyces_cerevisiae SEQ_LEN=500 N=7 STR=-2str STR=-2str NOOV=-noov
+# 	${MAKE} calibrate_oligos ORG=Saccharomyces_cerevisiae SEQ_LEN=500 N=6 STR=-2str STR=-2str NOOV=-noov
+# 	${MAKE} calibrate_oligos ORG=Saccharomyces_cerevisiae SEQ_LEN=1000 N=11 STR=-2str STR=-2str NOOV=-noov
+# 	${MAKE} calibrate_oligos ORG=Saccharomyces_cerevisiae SEQ_LEN=1000 N=16 STR=-2str STR=-2str NOOV=-noov
+# 	${MAKE} calibrate_oligos ORG=Saccharomyces_cerevisiae SEQ_LEN=1000 N=4 STR=-2str STR=-2str NOOV=-noov
+
+# done:
+# 	${MAKE} calibrate_oligos ORG=Homo_sapiens N=1 SEQ_LEN=1000 STR=-2str NOOV=-noov
+# 	${MAKE} calibrate_oligos ORG=Homo_sapiens N=1 SEQ_LEN=500 STR=-2str NOOV=-noov
+# 	${MAKE} calibrate_oligos ORG=Homo_sapiens N=10 SEQ_LEN=500 STR=-2str NOOV=-noov
+# 	${MAKE} calibrate_oligos ORG=Homo_sapiens N=12 SEQ_LEN=2000 STR=-2str NOOV=-noov
+
+# SEQ_LENGTHS_HUMAN=1000 1500 2000 3000 
+# # SEQ_LENGTHS_HUMAN=500 1000 1500 2000 2500 3000 
+# calibrate_oligos_human:
+# 	${MAKE} calibrate_oligos ORG=Homo_sapiens N=14 SEQ_LEN=500 STR=-2str NOOV=-noov
+# 	${MAKE} calibrate_oligos ORG=Homo_sapiens N=17 SEQ_LEN=2000 STR=-2str NOOV=-noov
+# 	${MAKE} calibrate_oligos ORG=Homo_sapiens N=2 SEQ_LEN=1000 STR=-2str NOOV=-noov
+# 	${MAKE} calibrate_oligos ORG=Homo_sapiens N=3 SEQ_LEN=2000 STR=-2str NOOV=-noov
+# 	${MAKE} calibrate_oligos ORG=Homo_sapiens N=3 SEQ_LEN=500 STR=-2str NOOV=-noov
+# 	${MAKE} calibrate_oligos ORG=Homo_sapiens N=35 SEQ_LEN=2000 STR=-2str NOOV=-noov
+# 	${MAKE} calibrate_oligos ORG=Homo_sapiens N=4 SEQ_LEN=1000 STR=-2str NOOV=-noov
+# 	${MAKE} calibrate_oligos ORG=Homo_sapiens N=4 SEQ_LEN=3000 STR=-2str NOOV=-noov
+# 	${MAKE} calibrate_oligos ORG=Homo_sapiens N=4 SEQ_LEN=500 STR=-2str NOOV=-noov
+# 	${MAKE} calibrate_oligos ORG=Homo_sapiens N=5 SEQ_LEN=1000 STR=-2str NOOV=-noov
+# 	${MAKE} calibrate_oligos ORG=Homo_sapiens N=5 SEQ_LEN=500 STR=-2str NOOV=-noov
+# 	${MAKE} calibrate_oligos ORG=Homo_sapiens N=6 SEQ_LEN=3000 STR=-2str NOOV=-noov
+# 	${MAKE} calibrate_oligos ORG=Homo_sapiens N=7 SEQ_LEN=1000 STR=-2str NOOV=-noov
+# 	${MAKE} calibrate_oligos ORG=Homo_sapiens N=7 SEQ_LEN=500 STR=-2str NOOV=-noov
+# 	${MAKE} calibrate_oligos ORG=Homo_sapiens N=8 SEQ_LEN=1000 STR=-2str NOOV=-noov
+# 	${MAKE} calibrate_oligos ORG=Homo_sapiens N=8 SEQ_LEN=500 STR=-2str NOOV=-noov
+# 	${MAKE} calibrate_oligos ORG=Homo_sapiens N=9 SEQ_LEN=500 STR=-2str NOOV=-noov
+# #/Users/jvanheld/motif_discovery_competition_2003/data/Homo_sapiens/hm07.fasta
+# #Error
+# #        Input sequence seq_1 is not in the expected format, or contains invalid characters for a sequence of type .
+
+
+################################################################
+## Calculate oligonucleotide distributions of occurrences for random
+## gene selections
+SEQ_LEN=500
+CALIB_TASK=all
+START=1
+CALIBRATE_CMD=							\
+	calibrate-oligos.pl -v ${V}				\
+		-r ${R} -sn ${N} -l ${OL} -sl ${SEQ_LEN}	\
+		-task ${CALIB_TASK}				\
+		-start ${START}					\
+		${END}						\
+		${STR} ${NOOV}					\
+		-org ${ORG}
+
+## Run the program immetiately (WHEN=now) or submit it to a queue (WHEN=queue)
+WHEN=now
+calibrate_oligos: calibrate_oligos_${WHEN}
+
+## Run the program immediately
+calibrate_oligos_now:
+	${CALIBRATE_CMD}
+
+## Submit the program to a queue
+JOB_DIR=jobs
+JOB=`mktemp job.XXXXXX`
+calibrate_oligos_queue:
+	mkdir -p ${JOB_DIR}
+	for job in ${JOB} ; do											\
+		echo "Job $${job}" ;										\
+		echo "${CALIBRATE_CMD}" > ${JOB_DIR}/$${job} ;							\
+		qsub -m e -q rsa@merlin.ulb.ac.be -N $${job} -j oe -o ${JOB_DIR}/$${job}.log ${JOB_DIR}/$${job} ;	\
+	done
+
+## A quick test for calibrate_oligos
+calibrate_oligos_test:
+	${MAKE} calibrate_oligos ORG=Mycoplasma_genitalium N=10 SEQ_LEN=200 STR=-1str NOOV=-ovlp R=10
+
+
+## Synchronize calibrations from merlin
+from_merlin:
+	rsync -e ssh -ruptvlz --exclude oligos --exclude '*.wc'  jvanheld@merlin.ulb.ac.be:results . 
 
