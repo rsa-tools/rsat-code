@@ -166,34 +166,65 @@ tar -xpf rsa-tools_yyyymmdd.tar
 \begin{enumerate}
 
 \item Create an environment variable named RSAT and containing the
-path of rsa-tools. For example, assuming \RSAT have been installed in
-the directory \texttt{/home/myaccount/rsa-tools}, and your shell is
-bash:
+  path of rsa-tools. 
 
+The precise command depends on your shell. To know you shell, you can
+type
+\begin{verbatim}
+echo $SHELL
+\end{verbatim}
+
+Now, if we assume that \RSAT have been installed in the directory
+
+\begin{verbatim}
+/home/myaccount/rsa-tools
+\end{verbatim}
+
+you should type the following command.
+
+If your shell is bash:
 \begin{verbatim}
 export RSAT=/home/myaccount/rsa-tools
 \end{verbatim}
 
-\item add the path of rsa-tools/perl-scripts and binaries to your path.
+If your shell is csh or tcsh:
+\begin{verbatim}
+setenv RSAT /home/myaccount/rsa-tools
+\end{verbatim}
 
+
+
+\item Add the path of the \RSAT perl scripts and binaries to your
+  path.
+
+If your shell is bash:
 \begin{verbatim}
 export PATH=${PATH}:${RSAT}/bin
 export PATH=${PATH}:${RSAT}/perl-scripts
 \end{verbatim}
 
+If your shell is csh or tcsh:
+\begin{verbatim}
+set path=($path $RSAT/bin)
+set path=($path $RSAT/perl-scritps)
+rehash
+\end{verbatim}
+
+(the \texttt{rehash} command updates the list of executable programs)
+
 \end{enumerate}
 
-If you are using a different shell than bash, the specification of
-environment variables is slightly different (for example, in tcsh, you
-need to use \program{setenv} instead of \program{export}). In case of
-doubt, ask your system administrator how to configure your environment
-variables and your path.
+If you are using a different shell than bash, csh or tcsh, the
+specification of environment variables is slightly different.  In case
+of doubt, ask your system administrator how to configure your
+environment variables and your path.
 
 The specification of the environment variables and paths are required
 each time you want to use \RSAT. You can add these specification to
-your personal profile (e.g. the \file{.bashrc} file if your shell is
-bash). If you don't know how to proceed, ask your system
-administrator.
+your personal profile.  This file is normally found at the root of
+your personal account, in the file \file{.bashrc} if your shell is
+bash, or \file{.cshrc} if your shell is csh or tcsh. If you don't know
+how to proceed, ask your system administrator.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
