@@ -6,7 +6,7 @@
 </HEAD>
 <BODY TEXT="#000000" BGCOLOR="#FFEEDD" LINK="#0000EE" VLINK="#55008B" ALINK="#FF0000">
 
-<H3 ALIGN=CENTER><A HREF="RSA_home.cgi">RSA-tools</A> - oligonucleotide analysis manual</H3>
+<H3 ALIGN=CENTER><A HREF="RSA_home.cgi">RSA-tools</A> - <a href=oligo-analysis_form.cgi>oligonucleotide analysis</a> manual</H3>
 
 <H4>Name</H4>
 <UL>
@@ -29,35 +29,14 @@ Calculates oligonucleotide occurrences in a set of sequences, and detects overre
 <B>Input sequence:</B></A><BR>
 
 The sequence that will be analyzed. Multiple sequences can be entered
-at once with most sequence formats (see below).
+at once with several <a href=help.formats.html>sequence formats</a>.
 
 <P>
 <A NAME="sequence_format">
 <B>Format:</B></A><BR>
 
-Input sequence format. Various standards are supported (click on the
-links for more details):
-
-<UL>
-
-<LI><A HREF="help.formats.html#raw"><B>raw</B></A>: 
-
-the raw sequence without any identifier or comment.  
-
-<LI><A HREF="help.formats.html#multi"><B>multi</B></A>: several raw
-sequences concatenated.  
-
-<LI><A HREF="help.formats.html#ig"><B>IG</B></A>: IntelliGenetics
-format.
-
-<LI><A HREF="help.formats.html#fasta"><B>FastA</B></A>: the sequence
-format used by FastA, BLAST, Gibbs sampler and a lot of other
-bioinformatic programs.  
-
-<LI><A HREF="help.formats.html#wconsensus"><B>Wconsensus</B></A>: the
-format defined by Jerry Hertz for his programs (patser, consensus,
-wconsensus).
-</UL>
+Input sequence format. <a href=help.formats.html>Various standards</a>
+are supported.
 
 
 <P>
@@ -153,7 +132,7 @@ frequency, which is the main specificity of this program. It has been
 shown that for the detection of regulatory sites in yeast upstream
 sequences, the best choice is to estimate the expected oligonucleotide
 frequencies on basis of the frequencies observed in the set of all
-non-coding sequences from the genome. For the same purpose, choosing
+intergenic sequences from the genome. For the same purpose, choosing
 "equiprobable residues" would be totally inefficient, and "Residue
 frequencies from input sequence" works poorly.
 
@@ -176,7 +155,7 @@ upstream ORFs.
 with upstream ORFs (sequences are clipped to discard upstream ORF
 sequences).
 
-<li><b>non-coding</b>: all the intergenic regions, including upstream
+<li><b>intergenic</b>: all the intergenic regions, including upstream
 and downstream sequences.
 </ul>
 
@@ -384,24 +363,24 @@ occurrences is calculated and compared to the observed number of
 occurrences. The significance of the observed number of occurrences is
 calculated with the binomial formulae.  
 
-<PRE> EXPECTED OCCURRENCES :
-      Exp_occ = p * 2 * SUM (Lj + 1 - w) = p * T j=1
+<P>
+<PRE>
+    EXPECTED OCCURRENCES
+	                          S
+	   Exp_occ = p * T = p * SUM (Lj + 1 - k)
+	                         j=1
 	
 	where	p  = probability of the pattern
-		     in our case, a good estimate for this value is the 
-		     frequence observed for this pattern in all non-coding 
-		     genomic regions.
-		n  = number of regulatory regions considered 
-		     (members of the family)
+		     Severay models are supported for estimating the
+		     prior probability (see options -a, -expfreq and
+		     -bg).
+		S  = number of sequences in the sequence set. 
 		Lj = length of the jth regulatory region
-		l  = length of the pattern
+		k  = length of oligomer
                 T = the number of possible matching positions.
 		
-		the factor 2 stands for the fact that patterns are searched 
-		on both strands (it is omitted when the option -1str 
-                is active).
-	
-	
+
+
     PROBABILITY OF SEQUENCE MATCHING
 	The probability to find at least one occurrence of the pattern within
 	a single sequence is :
@@ -410,32 +389,25 @@ calculated with the binomial formulae.
 	    q = 1 - (1-p)
 	    
 	with the same abbreviations as above
-	
+
 
     EXPECTED NUMBER OF MATCHING SEQUENCES
-	             n
-	   Exp_ms = SUM (1 - (1 - p)^T)
-	            j=1
+
+	In this counting mode, only the first occurrence of each
+	sequence is taken into connsideration. We have thus to
+	calculate a probability of first occurrence.
+
+	   Exp_ms = n (1 - (1 - p)^T)
 	
 	with the same abbreviations as above
 	
+	Correction for autocorrelation (from Mireille Regnier)
+		Exp_ms_corrected = n (1 - (1 - p/a)^T)
+	   Where 
+		 a is the coefficient of autocorrelation
+		
     
-    PROBABILITY OF THE OBSERVED NUMBER OF MATCHING SEQUENCES
-	
-	The probability to observe obs or more occurrences in the whole family
-  	of sequences is calculated by the sum of binomials:
-	
-	                n                 j     n-i
-	    P(>=ms) =  SUM        n!     q (1-q)
-	               i=ms   -----------
-	                      i! * (n-i)! 
-	
-	where	q   is the probability to find one or more matches in a single 
-		    sequence
-		ms  is the observed number of matching sequences
-		n   is the number of sequences in the set
-
-    PROBABILITY OF THE OBSERVED NUMBER OF OCCURRENCES
+    PROBABILITY OF THE OBSERVED NUMBER OF OCCURRENCES (BINOMIAL)
 	
 	The probability to observe exactly obs occurrences in the whole family
   	of sequences is calculated by the binomial
@@ -453,26 +425,165 @@ calculated with the binomial formulae.
 	The probability to observe obs or more occurrences in the whole family
   	of sequences is calculated by the sum of binomials:
 	
-	                    obs-1
-	    P(>=obs) =  1 - SUM P(j)
-	                    j=0
+	                 T              obs-1
+	    P(>=obs) =  SUM P(i) =  1 -  SUM  P(i)
+	               i=obs             i=0
+
+    OVER/UNDER-REPRESENTATION
+
+		By default, the program calculates probability to have
+		at least obs occurrences:
+
+			                 T
+			    P(>=occ) =  SUM P(i)
+			               i=occ
+
+		With the option -under, the program calculates the
+		probability of having less than obs occurrences : 
+
+			               occ-1
+			    P(<=occ) =  SUM P(i)
+			                i=0
+
+		The option -under does not affect the other statistics
+		(zscore, loglikelihood). For z-score, the negative
+		values can be used to asses word under-representation.
+
 	                        
+    SPECIFIC TREATMENT FOR DOUBLE STRAND COUNTS
+
+	When occurrences are counted on both strands, each pattern is
+	grouped with its erverse complement. 
+
+	For reverse-palindromic patterns, probabilities are calculated
+	on the basis of the single strand count, since the occurrence
+	on the reverse complement strand is completely dependent on
+	that on the direct strand. 
+
+        A more biological justification for this is that, although the
+        word is foudn on both strands in a string representation of
+        the sequences, at the structural level, there is a single
+        binding site for the factor. 
+
+
+	On the contrary, for non-palindrommic patterns, occurrences on
+        the direct and reverse complement strand represent distinct
+        binding sites. Thus, 
+
+		 Obs_occ(W|Wr) = Obs_occ(W) + Obs_occ(Wr)
+		 Exp_freq(W|Wr) = Exp_freq(W) + Exp_freq(Wr)
+
+	   where
+		 W     is a given word
+		 Wr    is the reverse complement of W
+
+	Probabilities are then calculated as above, on the basis of
+	the event W|Wr instead of simply W.
+
+    E-VALUE
+
+	The probability of occurrence by itself is not fully
+	informative, because the threshold must be adapted depending
+	on the number of patterns considered. Indeed, a simple
+	hexanucleotide analysis amounts to consider 4096
+	hypotheses. 
+
+	The E-value represented the expected number of patterns which
+	would be returned at random for a given P-value (probability).
+
+	      E-value = NPO * P(>=obs)
+
+	where	NPO	 is the number of possible oligomers of the 
+	                 chosen length (eg 4096 for hexanucleotides). 
+
+        Note that when searches are performed on both strands, NPO is
+        corrected for the fact that non-palindromic patterns are
+        grouped by pairs (for example, there are 2080 patterns when
+        hexanucleotides are counted on both strands).
+
+
     SIGNIFICANCE INDEXES
-        Significance indexes are conversions of the probabilities of occurrence 
-        and matching sequences.
+
+        The significance index is simply a negative logarithm
+        conversion of the E-value (in base 10).
+
 
 	The significance indexes are calculated as follows:
 	
-	      Sig_occ = -log10(NPO * P(>=obs));
-	      Sig_ms  = -log10(NPO * P(>=ms));
+	      Sig_occ = -log10(E-value);
 
-	where	NPO	is the number of possible oligonucleotides of the 
-			chosen length (eg 4096 for hexanucleotides). Note 
-			that  when searches are performed on both strands, 
-			NPO is  corrected for the fact that each 
-			non-palindromic pattern will become dependent of its 
-			reverse complement (thus in this case there will be 
-			2080 independent  pentanucleotides).		
+	This index is very convenient to interpret : highest values
+	correspond to the most exceptional patterns.
+
+
+    OVERLAP COEFFICIENT
+        overlap coefficient is calculated as follows 
+        (after Pevzner et al.(1989). J. Biomol. Struct & Dynamics 
+        5:1013-1026):
+
+	           l    
+            Kov = SUM kj (1/4)^j
+                  j=1
+
+        where l  is the pattern length. 
+              j  is the overlap position, comprised between 0 and l.
+              kj takes the value 1 if there is an overlap at pos j,
+                 0 otherwise.
+
+        When counts are performed on both strands, overlaps between
+        the pattern and its reverse complement are also taken into account
+        into the same formula.			
+
+    Z-SCORE
+	The Z-score is calculated in the following way
+
+		Zsc = (obs_occ - exp_occ)/var_occ
+	where
+		obs_occ	is the observed number of occurrences
+		exp_occ	is the expected number of occurrences
+		var_occ	is the estimate for the variance on occurrences
+
+	The estimation of the variance is derived from Pevzner et al.(1989). 
+	J Biomol Struct & Dynamics 5:1013-1026):
+		var_occ = exp_occ(2*Kov - 1 - (2*w-1)*exp_occ)
+
+	In random sequences, Z-scores are normally distributed. The probability 
+	to observe a given number of occurrences can thus be read in the 
+	normal table from any book of statistics.
+
+	Advantages of the Z-score:
+	- Z-score corrects the bias due to self-overlapping of a word, which 
+	  often leads to overestimate the overrepresentation of such words
+	  (eg AAAAAA, TATATA). 
+	- its calculation is very fast. 
+	  This is especially critical when analyzing 
+	  very big sequences (whole genomes), where the expected oligont 
+	  occurrences are very high (and binomial calculation very slow).
+	- Z-score provides a way to detect both over- and under-represented 
+	  patterns. 
+
+	Disadvantages:	
+	- the use of Z-score assumes that the sequences are infinite
+
+	Recommended thresholds:
+	=======================
+	strand	w	P(>=oc)	z-score
+	-------------------------------
+	1str	3	0.98437	2.155
+	1str	4	0.00609	2.66
+	1str	5	0.99902	3.095
+	1str	6	0.99976	3.49	
+	1str	7	0.99994	3.83
+	1str	8	0.99998	4.1
+
+	2str	3
+	2str	4
+	2str	5
+	2str	6	0.99952	3.30
+	2str	7	
+	2str	8
+
+
 </PRE>
 </UL>
 
