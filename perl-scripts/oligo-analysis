@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.42 2002/04/26 00:33:54 jvanheld Exp $
+# $Id: oligo-analysis,v 1.43 2002/04/27 12:29:28 jvanheld Exp $
 #
-# Time-stamp: <2002-04-26 02:18:50 jvanheld>
+# Time-stamp: <2002-04-27 14:28:17 jvanheld>
 #
 ############################################################
 
@@ -161,20 +161,41 @@ if (($method eq "Frequency file") &&
 	if (/(\S+)\t(\S+)/i) {
 	    $pattern_seq = lc($1);
 	    $patterns{$pattern_seq}->{exp_freq} = $2;
+	    if ($patterns{$pattern_seq}->{exp_freq} < 0) {
+		&FatalError("Expected frequency cannot be negative\t$pattern_seq\t".$patterns{$pattern_seq}->{exp_freq});
+	    }
 	}
     }
     close $exp if ($exp_freq_file);
 
-      #### check if reverse complements were included in the expected freq file;
-      #### if not, infer them from the direct strand sequences
-      foreach my $pattern_seq (sort keys %patterns) {
+    #### make sure that the sum of frequencies is positive
+    my $freq_sum = 0;
+    foreach my $pattern_seq (keys %patterns) {
+	$freq_sum += $patterns{$pattern_seq}->{exp_freq};
+    }
+    if ($freq_sum <= 0) {
+	&FatalError("Error with the expected frequency file : the sum must be strictly positive\t$freq_sum\n");
+    }
+
+    #### rescale expected frequencies to have a sum of 1
+    if ($rescale_freq) {
+	print $out "; Rescaling expected frequencies\n" if ($verbsoe >=1);
+	foreach my $pattern_seq (keys %patterns) {
+	     $patterns{$pattern_seq}->{exp_freq} /= $freq_sum;
+#	     print join "\t", $pattern, $freq_sum, $patterns{$pattern_seq}->{exp_freq}, $patterns{$pattern_seq}->{exp_freq}, "\n";
+	}
+    }
+    
+    #### check if reverse complements were included in the expected freq file;
+    #### if not, infer them from the direct strand sequences
+    foreach my $pattern_seq (sort keys %patterns) {
   	my $rc = lc(&ReverseComplement($pattern_seq));
   	if (($patterns{$rc}->{exp_freq} <= 0) &&
   	    ($patterns{$pattern_seq}->{exp_freq})) {
   	    $patterns{$rc}->{exp_freq} = $patterns{$pattern_seq}->{exp_freq};
 	    #print STDERR join "\t", $pattern_seq,  $patterns{$pattern_seq}->{exp_freq}, $rc, $patterns{$rc}->{exp_freq}, "\n";
   	}
-      }
+    }
 }
 
 ### open sequence file ###
@@ -1518,10 +1539,15 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-expfreq") {
 	    $method = "Frequency file";
 	    $exp_freq_file = $ARGV[$a+1];
-	    
+
+	    #### rescale expected frequencies to have a sum of 1
+	} elsif ($ARGV[$a] eq "-rescale") {
+	    $rescale_freq = 1;
+
 	    ### use oligo non-coding frequencies as expected frequencies
 	} elsif ($ARGV[$a] =~ /^-ncf/i) {
 	    $ncf = 1;
+	    $rescale_freq = 1;
 	    
 	    #### lexicon
 	} elsif ($ARGV[$a] =~ /^-lex/i) { ### Markov chains
@@ -1804,6 +1830,10 @@ ARGUMENTS
 		This information is used for the calculation of probabilities.
 		If omitted, expected frequencies are calculated on basis of
 		an equiprobable nucleotide utilization.
+	-rescale
+		rescale expected frequencies to obtain a sum of 1.
+		This allows to use absolute occurrences (rather than
+		relative frequencies).
 	-ncf	use non-coding frequencies as expected frequencies
 	-org	organism 
 		This is necessary with the option -ncf, to determine
@@ -2244,6 +2274,7 @@ oligo-analysis options
 -a yeast        use yeast genomic alphabet
 -a input        use alphabet from input sequence
 -expfreq        file with expected frequency table
+-rescale	recale expected frequencies to obtain a sum of 1
 -ncf		use dyad non-coding frequencies as expected frequencies
 -org		organism 
 -markov	#	calculate expected frequencies according to
