@@ -9,15 +9,19 @@ MAKEFILE=makefile
 
 ################################################################
 ## Generate random gene selections
-REGULONS=data/regulons_TF_aMAZE.fam
-RAND_FAM=data/random_selection.fam
+REGULONS=regulons_TF_aMAZE.fam
+RAND_FAM=random_selection.fam
+REGULONS_FILE=data/${REGULONS}
+RAND_FAM_FILE=data/${RAND_FAM}
 rand_fam:
-	random-genes -fam ${REGULONS} -o ${RAND_FAM} -features data/Feature_nomito.tab -org ${ORG}
+	random-genes -fam ${REGULONS_FILE} -o ${RAND_FAM_FILE}	\
+		 -features data/Feature_nomito.tab -org ${ORG}
 
 ################################################################
 #### Parameters for pattern discovery (oligo-analysis and
 #### dyad-analysis)
 FAM=${REGULONS}
+FAM_FILE=data/${FAMS}
 
 MULTI_INPUT=-i ${FAM}
 ORG=Saccharomyces_cerevisiae
@@ -141,7 +145,7 @@ compare_one_criterion:
 		-format jpg -xcol 2 -ycol 3							\
 		-ymin 0 -ymax 1									\
 		-ygstep1 0.1 -ygstep2 0.02							\
-		-xgstep2 ${XGSTEP2}								\
+		-xgstep1 0.1 -xgstep2 0.02								\
 		-title1 "${PROGRAM} ${CRITERION}"						\
 		-xleg1 "regulons"								\
 		-title2 'Comparison between annotated regulons and random gene selections'	\
