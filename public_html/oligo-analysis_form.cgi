@@ -26,8 +26,8 @@ $default{pseudo_weight} = "0.00";
 $default{strand} = "both strands";
 $default{noov} = '';
 $default{grouprc} = 'checked';
-#$default{purge} = 'checked';
-$default{purge} = '';
+$default{purge} = 'checked';
+#$default{purge} = '';
 $default{rank} = 'checked';
 $default{freq_estimate} = "Oligo frequencies from all non-coding regions";
 $default{occ} = 'checked';
@@ -84,24 +84,15 @@ print $query->table({-border=>0,-cellpadding=>3,-cellspacing=>0},
 
 		 );
 
-################################################################
-#### TEMPORARY: INACTIVATE PURGE BECAUSE OF PROBLEM
-
 #### purge sequences
-#print $query->checkbox(-name=>'purge',
-#		       -checked=>$default{purge},
-#		       -label=>'');
-#print "&nbsp;<A HREF='help.oligo-analysis.html#purge'><B>purge sequences (highly recommended)</B></A>";
-#print "<BR>";
-#
-#print "<HR width=550 align=left>\n";
+print $query->checkbox(-name=>'purge',
+		       -checked=>$default{purge},
+		       -label=>'');
+print "&nbsp;<A HREF='help.oligo-analysis.html#purge'><B>purge sequences (highly recommended)</B></A>";
+print "<BR>";
 
-### sequence type
-#print "<B><A HREF='help.oligo-analysis.html#sequence_type'>Sequence type</A>&nbsp;</B>\n";
-#print $query->popup_menu(-name=>'sequence_type',
-#			 -Values=>["dna","protein","other"],
-#			 -default=>$default{sequence_type});
-#print "<BR>\n";
+print "<HR width=550 align=left>\n";
+
 
 ### oligo size
 print "<B><A HREF='help.oligo-analysis.html#oligo_size'>Oligonucleotide size</A>&nbsp;</B>\n";
