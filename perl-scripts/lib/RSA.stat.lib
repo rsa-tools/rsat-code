@@ -313,60 +313,18 @@ sub sum_of_poisson {
     }
     return $sum_of_poi;
 }
-### usage:
-###     &hypergeometric($x, $m, $n, $k)
-### this routine uses the recursive formula for the calculation of hypergeometric:
-###
-### We calculate everything in logarithms, and make a custom exp conversion
-### to overcome the limitation of the Perl exp(x) function
-###
-###                       (m - x + 1) (k - x + 1)
-###  P(X = x) = P(X=x-1) ------------------------
-###                         x ( n - m - k + x)
-###
-sub hypergeometric {
-    my($x, $m, $n, $k) = @_;
-
-    warn join ( "\t", 
-		"Hypergeometric", 
-		"x=$x",
-		"m=$m",
-		"n=$n",
-		"k=$k",
-		), "\n";
-    #### check parameter values
-    if ($x < 0) {
-	&FatalError( "Error : number of successes must be strictly positive\n");
-    }
-
-    #### calculate value for 0 successes
-    $log_proba = 0;
-    for my $i (($n-$m-$k+1)..($n-$m)) {
-	$log_proba += log($i);
-    }
-    for my $i (($n-$k+1)..$n) {
-	$log_proba -= log($i);
-    }
-
-    #### recursively calculate value
-    for my $i (1..$x) {
-	$log_proba += log($m - $i + 1);
-	$log_proba -= log($i);
-	$log_proba += log($k - $i + 1);
-	$log_proba -= log($n - $m - $k + $i);
-    }
-
-#    my $proba = exp($log_proba);
-    my $proba = &LogToEng($log_proba);
-    return($proba);
-}
 
 
 ################################################################
 ### Hypergeometric formula. 
 ###
 ### Usage:
-###     &hypergeometric($x, $m, $n, $k)
+###     $p = &hypergeometric($m, $n, $k, $x)
+### where
+###   $m = number of black balls in the urn
+###   $n = total number of balls in the urn
+###   $k = number of balls in the sample
+###   $x = number of black balls in the sample
 ###
 ### The hypergeometric is calculated with the recursive formula. 
 ###
@@ -381,16 +339,30 @@ sub hypergeometric {
 ###
 ### This gives a precision of the order of e-300.
 ###
+### This routine also calculates the sum of hypergeometrics, when an
+### argument 'to' is added.
+###   $p = &hypergeometric($m, $n, $k, $from, to=>$to);
+###
 sub hypergeometric {
     my($m, $n, $k, $x, %args) = @_;
     
-    warn join ( "\t", 
-		"Hypergeometric", 
-		"m=$m",
-		"n=$n",
-		"k=$k",
-		"x=$x"
-		), "\n";
+#     warn join ( "\t", 
+# 		"Hypergeometric", 
+# 		"m=$m",
+# 		"n=$n",
+# 		"k=$k",
+# 		"x=$x"
+# 		), "\n";
+
+    my $to;
+    my $proba = 0;
+
+    #### sum of hypergeometrics
+    if (defined($args{to})) {
+	$to = $args{to};
+    } else {
+	$to = $x;
+    }
 
     #### check parameter values
     unless ($args{nocheck}) {
@@ -410,12 +382,15 @@ sub hypergeometric {
 	    &FatalError("Number of black balls in the sample ($x) cannot be larged than sample size ($k)");	
 	}
     }
+# 	$Id: RSA.stat.lib,v 1.7 2002/09/27 05:43:06 jvanheld Exp $	
 
     #### initialization
     if (defined($args{previous_value})) {
 	#### a single recursion is sufficient
-	die;
-	$start = $x-1;
+#	die;
+	$log_proba = log($args{previous_value});
+	warn "Previous value\t", $log_proba, "\n";
+	$start = $x;
     } else {
 	#### calculate value for 0 successes
 	$log_proba = 0;
@@ -436,8 +411,18 @@ sub hypergeometric {
 	$log_proba -= log($n - $m - $k + $i);
     }
 
+    $proba = &LogToEng($log_proba);
+
+    #### recursive calculation
+    for my $i ($x + 1..$to) {
+	$log_proba += log($m - $i + 1);
+	$log_proba -= log($i);
+	$log_proba += log($k - $i + 1);
+	$log_proba -= log($n - $m - $k + $i);
+	$proba += &LogToEng($log_proba);
+    }
+
 #    my $proba = exp($log_proba);
-    my $proba = &LogToEng($log_proba);
     return($proba);
 }
 
@@ -448,13 +433,7 @@ sub hypergeometric {
 sub sum_of_hypergeometrics {
     my ($m, $n, $k, $from, $to) = @_;
 
-    my $sum_proba = 0;
-    for my $i ($from..$to) {
-	$prev_sum = $sum_proba;
-	$sum_proba += &hypergeometric($m, $n, $k, $i);
-	last if ($sum_proba == $prev_sum);
-    }
-    return $sum_proba;
+    return (&hypergeometric($m,$n,$k,$from,to=>$to));
 }
 
 
