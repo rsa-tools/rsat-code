@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.37 2003/12/29 15:59:03 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.38 2003/12/29 23:08:18 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -14,6 +14,11 @@ require "RSA.lib";
 require "RSA.help.pl";
 require "RSA.cgi.lib";
 require "RSA.classes";
+push @INC, "$RSA/perl-scripts/parsers/";
+require "lib/load_classes.pl";
+require "lib/util.pl";
+require "lib/parsing_util.pl";
+require "$RSA/perl-scripts/lib/RSA.classes";
 
 
 ################################################################
@@ -78,8 +83,8 @@ $verbose = 0;
 #### data export options
 $schema = "multifam";
 $host="localhost";
-$login = getlogin();
-$passwordd="";
+$user = getlogin();
+$password="";
 
 ################################################################
 ### MAIN
@@ -1385,12 +1390,6 @@ sub CheckOutputDirectory {
 ### Generate tab files and SQL scripts for storing the results in a
 ### relational database
 sub ExportSQL {
-    push @INC, "$RSA/perl-scripts/parsers/";
-    require "lib/load_classes.pl";
-    require "lib/util.pl";
-    require "lib/parsing_util.pl";
-    require "$RSA/perl-scripts/lib/RSA.classes";
-    
     warn "; Generating SQL $table_file\n" if ($verbose >= 1);
     
     my $test = new RSAT::Family;
@@ -1403,7 +1402,6 @@ sub ExportSQL {
     my $pattern_factory = classes::ClassFactory->new_class(object_type=>"RSAT::Pattern",
 							   prefix=>"pat_");
 
-
     #### output directory
     $dir{output} = "sql_export";
     &CheckOutputDir();
@@ -1411,9 +1409,9 @@ sub ExportSQL {
     my $table_file = $dir."/".$table_suffix;
 
     my %export_columns = ();
-    
+
     foreach my $family_name (@families) {
-	
+
 	#### general family attributes
 	my $family_object = $family_factory->new_object(id=>$family_name);
 	my $family_id = $family_object->get_attribute("id");
@@ -1422,6 +1420,8 @@ sub ExportSQL {
 	$family_object->set_attribute("organism", $organism_name);
 	$family_object->set_attribute("suffix", $table_suffix);
 
+	warn join ("\t", ";\tSQL export for family", $family_name, $organism_name), "\n" if ($main::verbose >= 0);
+	
 	#### family members
 	my @members = @{$family{$family_name}->{members}};
 	foreach my $m (@members) {
@@ -1512,7 +1512,8 @@ sub ExportSQL {
 	
     }
 
-    #### export the result tables
+    ## Specify the output fields
+    $family_factory->set_out_fields(qw(id organism size name suffix genes));
     @pattern_out_fields = qw(id
 			     family_id
 			     family 
@@ -1527,11 +1528,28 @@ sub ExportSQL {
 			     rank
 			     );
 #    push @pattern_out_fields, sort keys %export_columns;
-    $family_factory->set_out_fields(qw(id organism size name suffix genes));
     $pattern_factory->set_out_fields(@pattern_out_fields);
+
+
+    my @fam_obj = $family_factory->get_objects();
+    foreach $fam (@fam_obj) {
+	warn join ("\t",
+		   "CONTROL",
+		   $fam->get_attribute("id"),
+		   $fam->get_attribute("name"),
+		   $fam->get_attribute("size"),
+		   $fam->get_attribute("organism"),
+		   $fam->get_attribute("suffix"),
+		   ), "\n";
+    }
+
+    #### export the result tables
     foreach my $factory ($family_factory, $pattern_factory) {
 	$factory->dump_tables();
-	$factory->generate_sql(schema=>$schema);
+	$factory->generate_sql(schema=>$schema, 
+			       host=>$host, 
+			       password=>$password, 
+			       user=>$user);
     }
     &ExportMakefile("family", "pattern");
 
