@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dna-pattern,v 1.14 2001/10/11 21:11:52 jvanheld Exp $
+# $Id: dna-pattern,v 1.15 2002/02/12 00:36:56 jvanheld Exp $
 #
-# Time-stamp: <2001-10-11 23:09:36 jvanheld>
+# Time-stamp: <2001-12-05 00:04:48 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -234,7 +234,7 @@ if ($return{match_counts}) {
 
 ### print the matching table (patterns/sequences)
 if ($return{table}) {
-    print $out "; Match count table\n";
+#    print $out "; Match count table\n";
     print $out ";seq";
     foreach my $pattern (@patterns) {
 	print $out "\t", $pattern->get_attribute("id");
@@ -536,6 +536,7 @@ ARGUMENTS
 		prints an extra column with the total occurrences per sequence
 		and an extra row with total occurrences per pattern.
 		(amounts to combine -colsum and -rowsum)
+	-stats	return matching statistics
         -th #   Threshold. 
                 Return match count only for sequences with >= # matches.
                 Only valid in combination with -c.
@@ -703,6 +704,7 @@ dna-pattern options
 -colsum	return total occ per sequence in the count table
 -rowsum	return total occ per pattern in the count table
 -total	return total occ per sequence and per pattern in the count table
+-stats	return matching statistics
 -th     threshold
 -ct	return total count in all sequences
 -N #	return matching sequences with # flanking nucleotides
