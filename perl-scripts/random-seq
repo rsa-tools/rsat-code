@@ -67,6 +67,13 @@ if ($ncf) {
     
     &FatalError("cannot read expected frequency file $exp_freq_file\n") unless (-r  $exp_freq_file);
 } 
+#  if ($genomic_segments) {
+#      #### organism
+#      &CheckOrganism($organism_name);
+#      &ReadOrfPositions($organism_name);
+#      foreach $chr (values %chomosome) {
+#      }
+#  }
 
 ### expected frequency file
 if ($exp_freq_file) {
@@ -318,6 +325,10 @@ sub ReadArguments {
 	    #### oligonucleotide length
 	} elsif ($ARGV[$a] eq "-ol") {
 	    $oligo_length = $ARGV[$a+1];
+	    
+#  	    ### genomic segments
+#  	} elsif ($ARGV[$a] =~ /^-gen/i) {
+#  	    $genomic_segments = 1;
 	    
 	}
 	    
