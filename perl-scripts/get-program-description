@@ -1,0 +1,209 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: get-program-description,v 1.1 2002/05/23 10:41:08 jvanheld Exp $
+#
+# Time-stamp: <2002-05-23 12:40:56 jvanheld>
+#
+############################################################
+#use strict;;
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+
+
+#### initialise parameters ####
+my $start_time = &AlphaDate;
+
+local %infile = ();
+local %outfile = ();
+
+local $verbose = 0;
+local $in = STDIN;
+local $out = STDOUT;
+
+&ReadArguments;
+
+
+#### check argument values ####
+
+
+### open output file ###
+$out = &OpenOutputFile($outfile{output});
+
+##### read input #####
+unless ($#program_names >= 0) {
+    ($in) = &OpenInputFile($infile{input});
+    while (<$in>) {
+	next if (/^;/);
+	next if (/^\#/);
+	next unless (/\S/);
+    $_ = &trim($_);
+	my @fields = split /\s/;
+	push @program_names, &trim($fields[0]);
+	
+    }
+}
+
+close $in if ($infile{input});
+
+#### verbose ####
+&Verbose if ($verbose);
+
+###### execute the command #########
+
+foreach my $program (@program_names) {
+    my $description = "";
+    open HELP, "$program -h | ";
+    while (<HELP>) {
+	if (/^DESCRIPTION/) {
+	    $in_description = 1;
+	} elsif ($in_description) {
+	    if (/^\S/) {
+		$in_description = 0;
+		break;
+	    } else {
+		$description .= $_;
+	    }
+	}
+
+    }
+    close HELP;
+    $description =~ s/\s+/ /g;
+    $description{$program} = $description;
+    
+}
+
+###### print output ######
+
+foreach my $program (@program_names) {
+    print $out join ("\t", $program, $description{$program}), "\n";
+}
+
+
+###### verbose ######
+if ($verbose) {
+    my $done_time = &AlphaDate;
+    print $out "; Job started $start_time\n";
+    print $out "; Job done    $done_time\n";
+}
+
+
+###### close output file ######
+close $out if ($outfile{output});
+
+
+exit(0);
+
+
+########################## subroutine definition ############################
+
+sub PrintHelp {
+#### display full help message #####
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	get-program-description
+
+        2002 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
+	
+USAGE
+        get-program-description [-i inputfile] [-o outputfile] [-v]
+
+DESCRIPTION
+	Returns the description of one or several programs from the
+	rsa-tool package. 
+	
+OPTIONS
+	-h	(must be first argument) display full help message
+	-help	(must be first argument) display options
+	-v	verbose
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+		The input file should contain a list of program
+		names. Each program name should come as the first word
+		of a new line (any text following the first owrd of a
+		line is ignored).
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+
+
+End_of_help
+  close HELP;
+  exit;
+}
+
+sub PrintOptions {
+#### display short help message #####
+  open HELP, "| more";
+  print HELP <<End_short_help;
+get-program-description options
+----------------
+-h	(must be first argument) display full help message
+-help	(must be first argument) display options
+-i	input file
+-o	output file
+-v	verbose
+-p	program name
+End_short_help
+  close HELP;
+  exit;
+}
+
+
+sub ReadArguments {
+#### read arguments ####
+    foreach my $a (0..$#ARGV) {
+	### verbose ###
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+	    
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp;
+	    
+	    ### list of options
+	} elsif ($ARGV[0] eq "-help") {
+	    &PrintOptions;
+	    
+	    ### input file ###
+	} elsif ($ARGV[$a] eq "-i") {
+	    $infile{input} = $ARGV[$a+1];
+	    
+	    ### program name ###
+	} elsif ($ARGV[$a] eq "-p") {
+	    push @program_names, $ARGV[$a+1];
+	    
+	    ### output file ###
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outfile{output} = $ARGV[$a+1];
+	    
+	}
+    }
+}
+
+sub Verbose {
+    print $out "; get-program-description ";
+    &PrintArguments($out);
+    if (defined(%infile)) {
+	print $out "; Input files\n";
+	while (($key,$value) = each %infile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+    print $out join ("\n;\t", ";Program names", @program_names), "\n";
+
+    if (defined(%outfile)) {
+	print $out "; Output files\n";
+	while (($key,$value) = each %outfile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+}
