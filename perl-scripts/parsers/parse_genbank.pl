@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank.pl,v 1.11 2004/03/29 12:47:15 jvanheld Exp $
+# $Id: parse_genbank.pl,v 1.12 2004/04/02 00:26:15 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 15:41:54 jvanheld>
 #
@@ -58,6 +58,8 @@ package main;
 
     $mRNAs = classes::ClassFactory->new_class(object_type=>"Genbank::mRNA", prefix=>"mRNA_");
 
+    $scRNAs = classes::ClassFactory->new_class(object_type=>"Genbank::scRNA", prefix=>"scRNA_");
+
     $tRNAs = classes::ClassFactory->new_class(object_type=>"Genbank::tRNA", prefix=>"tRNA_");
     
     $rRNAs = classes::ClassFactory->new_class(object_type=>"Genbank::rRNA", prefix=>"rRNA");
@@ -92,7 +94,7 @@ package main;
 #     $organisms = classes::ClassFactory->new_class(object_type=>"Genbank::Organism",
 # 					  prefix=>"org_");
 
-    @classes = qw( Genbank::Feature Genbank::Contig Genbank::Organism Genbank::Gene Genbank::CDS Genbank::mRNA);
+    @classes = qw( Genbank::Feature Genbank::Contig Genbank::Organism Genbank::Gene Genbank::CDS Genbank::mRNA Genbank::scRNA);
 
     #### read command arguments
     &ReadArguments();
@@ -245,6 +247,7 @@ package main;
 			  $features,
 			  $genes,
 			  $mRNAs,
+			  $scRNAs,
 			  $tRNAs,
 			  $rRNAs,
 			  $misc_RNAs,
@@ -260,6 +263,7 @@ package main;
 #  			      $features,
 #  			      $genes,
 #  			      $mRNAs,
+#  			      $scRNAs,
 #  			      $CDSs,
 #  			      $contigs, 
 #  			      $organisms, 
@@ -282,6 +286,7 @@ package main;
     $features->index_names();
     $genes->index_names();
     $mRNAs->index_names();
+    $scRNAs->index_names();
     $CDSs->index_names();
 
 
@@ -289,10 +294,11 @@ package main;
     &ParsePositions($features);
     &ParsePositions($genes);
     &ParsePositions($mRNAs);
+    &ParsePositions($scRNAs);
     &ParsePositions($CDSs);
     
     #### Create features from CDSs and mRNAs
-    &CreateGenbankFeatures($features, $genes, $mRNAs, $CDSs);
+    &CreateGenbankFeatures($features, $genes, $mRNAs, $scRNAs, $CDSs);
 
 
     ################################################################
@@ -308,6 +314,7 @@ package main;
 			   features
 			   genes
 			   mRNAs
+			   scRNAs
 			   CDSs
 			   );
 

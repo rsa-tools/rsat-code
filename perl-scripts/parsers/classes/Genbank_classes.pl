@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: Genbank_classes.pl,v 1.3 2004/03/29 10:57:57 jvanheld Exp $
+# $Id: Genbank_classes.pl,v 1.4 2004/04/02 00:26:16 jvanheld Exp $
 #
 # Time-stamp: <2003-08-09 00:37:11 jvanheld>
 #
@@ -206,6 +206,33 @@ package Genbank::Gene;
 #### Messenger RNA
 #### one gene can be associated to one or several mRNAs
 package Genbank::mRNA;
+{
+  @ISA = qw ( Genbank::Feature );
+  ### class attributes
+  $_count = 0;
+  $_prefix = "ft_";
+  @_objects = ();
+  %_name_index = ();
+  %_id_index = ();
+  %_attribute_count = ();
+  %_attribute_cardinality = (id=>"SCALAR",
+			     gene_id=>"SCALAR",
+
+			     ### raw info found in Genbank flat files
+			     chrom_position=>"SCALAR",
+			     note=>"ARRAY",
+			     gene=>"SCALAR",
+			     product=>"SCALAR",
+			     transcript_id=>"SCALAR",
+			     db_xref=>"ARRAY"
+			     );
+}
+
+
+################################################################
+#### Micro RNA
+#### one gene can be associated to one or several scRNAs
+package Genbank::scRNA;
 {
   @ISA = qw ( Genbank::Feature );
   ### class attributes

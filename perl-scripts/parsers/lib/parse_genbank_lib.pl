@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank_lib.pl,v 1.2 2004/04/01 22:14:42 jvanheld Exp $
+# $Id: parse_genbank_lib.pl,v 1.3 2004/04/02 00:26:15 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -47,6 +47,7 @@ sub ParseGenbankFile {
 	$features, 
 	$genes, 
 	$mRNAs, 
+	$scRNAs, 
 	$tRNAs, 
 	$rRNAs, 
 	$misc_RNAs, 
@@ -60,6 +61,7 @@ sub ParseGenbankFile {
     my %features_to_parse = (CDS=>1,
 			     source=>1,
 			     mRNA=>1,
+			     scRNA=>1,
 			     tRNA=>1,
 			     rRNA=>1,
 			     misc_RNA=>1,
@@ -274,6 +276,8 @@ sub ParseGenbankFile {
 		    $holder = $genes;
 		} elsif ($feature_type eq "mRNA") {
 		    $holder = $mRNAs;
+		} elsif ($feature_type eq "scRNA") {
+		    $holder = $scRNAs;
  		} elsif ($feature_type eq "tRNA") {
  		    $holder = $tRNAs;
  		} elsif ($feature_type eq "rRNA") {
@@ -312,6 +316,7 @@ sub ParseGenbankFile {
 		    #### corresponding gene.
 		} elsif (($feature_type eq 'CDS') ||
 			 ($feature_type eq 'mRNA') ||
+			 ($feature_type eq 'scRNA') ||
 			 ($feature_type eq 'tRNA') ||
 			 ($feature_type eq 'rRNA') ||
 			 ($feature_type eq 'misc_RNA')) {
@@ -380,6 +385,7 @@ sub ParseGenbankFile {
 						  $features, 
 						  $genes, 
 						  $mRNAs, 
+						  $scRNAs, 
 						  $tRNAs, 
 						  $rRNAs, 
 						  $misc_RNAs, 
@@ -412,7 +418,7 @@ sub ParseGenbankFile {
 	$object->UseGenbankGIasID();
     }
 
-    &ParseFeatureNames($genes, $mRNAs, $CDSs);
+    &ParseFeatureNames($genes, $mRNAs, $scRNAs, $CDSs);
     &ParseFeatureNames($CDSs);
     
     return ($file_description, $sequence);
@@ -554,7 +560,7 @@ summarizes information (only retins selected fields) and reformats it
 
 =cut
 sub CreateGenbankFeatures {
-    my ($features, $genes, $mRNAs, $tRNAs, $rRNAs, $misc_RNAs, $misc_features, $CDSs, $sources) = @_;
+    my ($features, $genes, $mRNAs, $scRNA, $tRNAs, $rRNAs, $misc_RNAs, $misc_features, $CDSs, $sources) = @_;
 
 
 
@@ -578,6 +584,7 @@ sub CreateGenbankFeatures {
     warn "; Creating features from CDS and RNAs\n" if ($verbose >= 1);
     foreach my $parsed_feature ($CDSs->get_objects(),
 				$mRNAs->get_objects(),
+				$scRNAs->get_objects(),
 				$tRNAs->get_objects(),
 				$rRNAs->get_objects(),
 				$misc_RNAs->get_objects(),
@@ -765,7 +772,7 @@ sub CreateGenbankFeatures {
     }
 
     ## Check object for all the parsed features, before building the RSAT features from it
-    &CheckObjectNames($features, $genes, $mRNAs, $tRNAs, $rRNAs, $misc_RNAs, $misc_features, $CDSs);
+    &CheckObjectNames($features, $genes, $mRNAs, $scRNAs, $tRNAs, $rRNAs, $misc_RNAs, $misc_features, $CDSs);
 
 }
 
@@ -781,7 +788,7 @@ same object.
 
 =cut
 sub CheckObjectNames {
-    my ($feature, $genes, $mRNAs, $tRNAs, $rRNAs, $misc_RNAs, $misc_features, $CDSs) = @_;
+    my ($feature, $genes, $mRNAs, $scRNAs, $tRNAs, $rRNAs, $misc_RNAs, $misc_features, $CDSs) = @_;
 
 
     ## Each feature inherits the names of its parent gene
@@ -789,6 +796,7 @@ sub CheckObjectNames {
     foreach my $object (
 			$genes->get_objects(),
 			$mRNAs->get_objects(),
+			$scRNAs->get_objects(),
 			$tRNAs->get_objects(),
 			$rRNAs->get_objects(),
 			$misc_RNAs->get_objects(),

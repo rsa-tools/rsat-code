@@ -1,6 +1,6 @@
 #!/usr/bin/perl 
 #############################################################
-# $Id: parse-genbank.pl,v 1.18 2004/03/29 12:42:41 jvanheld Exp $
+# $Id: parse-genbank.pl,v 1.19 2004/04/02 00:26:15 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -52,6 +52,8 @@ package main;
 
     $mRNAs = classes::ClassFactory->new_class(object_type=>"Genbank::mRNA", prefix=>"mRNA_");
 
+    $scRNAs = classes::ClassFactory->new_class(object_type=>"Genbank::scRNA", prefix=>"scRNA_");
+
     $tRNAs = classes::ClassFactory->new_class(object_type=>"Genbank::tRNA", prefix=>"tRNA_");
     
     $rRNAs = classes::ClassFactory->new_class(object_type=>"Genbank::rRNA", prefix=>"rRNA");
@@ -93,6 +95,7 @@ package main;
 		   Genbank::Gene
 		   Genbank::CDS
 		   Genbank::mRNA 
+		   Genbank::scRNA 
 		   Genbank::tRNA 
 		   Genbank::rRNA 
 		   Genbank::misc_RNA 
@@ -190,6 +193,7 @@ package main;
 			  $features,
 			  $genes,
 			  $mRNAs,
+			  $scRNAs,
 			  $tRNAs,
 			  $rRNAs,
 			  $misc_RNAs,
@@ -220,6 +224,7 @@ package main;
     $features->index_names();
     $genes->index_names();
     $mRNAs->index_names();
+    $scRNAs->index_names();
     $tRNAs->index_names();
     $rRNAs->index_names();
     $misc_RNAs->index_names();
@@ -231,13 +236,14 @@ package main;
 	&RefseqPostProcessing();
     } else {
 	#### Create features from CDSs and RNAs
-	&CreateGenbankFeatures($features, $genes, $mRNAs, $tRNAs, $rRNAs, $misc_RNAs, $misc_features, $CDSs, $sources);
+	&CreateGenbankFeatures($features, $genes, $mRNAs, $scRNAs, $tRNAs, $rRNAs, $misc_RNAs, $misc_features, $CDSs, $sources);
     }
 
     #### parse chromosomal positions
     &ParsePositions($features);
     &ParsePositions($genes);
     &ParsePositions($mRNAs);
+    &ParsePositions($scRNAs);
     &ParsePositions($tRNAs);
     &ParsePositions($rRNAs);
     &ParsePositions($misc_RNAs);
@@ -257,6 +263,7 @@ package main;
 			   features
 			   genes
 			   mRNAs
+			   scRNAs
 			   tRNAs
 			   rRNAs
 			   misc_RNAs
