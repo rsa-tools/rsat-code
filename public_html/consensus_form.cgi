@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: consensus_form.cgi,v 1.1 2001/10/04 20:34:15 jvanheld Exp $
+# $Id: consensus_form.cgi,v 1.2 2001/10/04 20:36:40 jvanheld Exp $
 #
-# Time-stamp: <2001-10-04 22:34:12 jvanheld>
+# Time-stamp: <2001-10-04 22:35:57 jvanheld>
 #
 ############################################################
 #### this cgi script fills the HTML form for the program consensus
@@ -62,7 +62,7 @@ print "&nbsp";
 print $query->checkbox(-name=>'seed',
 		       -checked=>$default{seed},
 		       -label=>'');
-print "<A HREF='help.gibbs.html#seed'><B>\n";
+print "<A HREF='help.consensus.html#seed'><B>\n";
 print " seed with first sequence\n";
 print "</B></A>\n";
 print "<BR>\n";
@@ -87,7 +87,7 @@ print "&nbsp";
 print $query->checkbox(-name=>'symmetrical',
 		       -checked=>$default{symmetrical},
 		       -label=>'');
-print "<A HREF='help.gibbs.html#symmetrical'><B>\n";
+print "<A HREF='help.consensus.html#symmetrical'><B>\n";
 print " Assume that the pattern is symmetrical\n";
 print "</B></A>\n";
 print "<BR>\n";
@@ -107,7 +107,7 @@ print "&nbsp";
 print $query->checkbox(-name=>'one_per_seq',
 		       -checked=>$default{one_per_seq},
 		       -label=>'');
-print "<A HREF='help.gibbs.html#one_per_seq'><B>\n";
+print "<A HREF='help.consensus.html#one_per_seq'><B>\n";
 print " at least one match within each sequence\n";
 print "</B></A>\n";
 print "<BR>\n";
@@ -124,7 +124,7 @@ print "<BR>\n";
 print $query->checkbox(-name=>'prior_freq',
 		       -checked=>$default{prior_freq},
 		       -label=>'');
-print "<A HREF='help.gibbs.html#prior_freq'><B>\n";
+print "<A HREF='help.consensus.html#prior_freq'><B>\n";
 print " use the designated prior frequencies\n";
 print "</B></A>\n";
 print "<BR>\n";
