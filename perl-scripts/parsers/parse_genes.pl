@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genes.pl,v 1.3 2000/03/10 14:22:59 jvanheld Exp $
+# $Id: parse_genes.pl,v 1.4 2000/03/27 23:07:08 jvanheld Exp $
 #
-# Time-stamp: <2000-03-10 02:17:58 jvanheld>
+# Time-stamp: <2000-03-28 00:55:55 jvanheld>
 #
 ############################################################
 
@@ -51,17 +51,12 @@ $genes = PFBP::ClassFactory->new_class(object_type=>"PFBP::Gene",
 $expressions = PFBP::ClassFactory->new_class(object_type=>"PFBP::Expression",
 					     prefix=>"expr_");
 
-
-### open error report file
-open ERR, ">$out_file{error}" || die "Error: cannot write error file $out_file{error}\n";
-
 ### default output fields for each class
-@{$out_fields{'PFBP::Gene'}} = qw( id organism names position definition source);
+@{$out_fields{'PFBP::Gene'}} = qw( id organism names position chromosome strand start end exons definition source);
 
 @{$out_fields{'PFBP::Expression'}} = qw( id gene_id polypeptide_id );
 
 &ReadArguments;
-
 
 ### outfile names
 $suffix = "";
@@ -80,8 +75,13 @@ $out_file{stats} = "Gene".$suffix.".stats.txt";
 $out_file{genes} = "Gene".$suffix.".obj";
 $out_file{synonyms} = "Gene".$suffix.".synonyms.tab";
 $out_file{mldbm_genes} = "Gene".$suffix.".mldbm";
+$out_file{mldbm_gene_index} = "Gene".$suffix."__name_index.mldbm";
 $out_file{expressions} = "Expression".$suffix.".obj";
 $out_file{mldbm_expressions} = "Expression".$suffix.".mldbm";
+
+### open error report file
+open ERR, ">$out_file{error}" || die "Error: cannot write error file $out_file{error}\n";
+
 
 ### select all organisms if none was selected (-org)
 unless ($#selected_organisms >= 0) {
@@ -96,7 +96,7 @@ warn "; Selected organisms\n;\t", join("\n;\t", @selected_organisms), "\n"
 
 ### actualize parameters
 if ($test) {
-  print STDERR ";TEST\n" if ($warn_level >= 1);
+  warn ";TEST\n" if ($warn_level >= 1);
   ### fast partial parsing for debugging
   foreach $key (keys %in_file) {
     $in_file{$key} .= " head -3000 |";
@@ -114,6 +114,75 @@ foreach $org (@selected_organisms) {
 $genes->index_names();
 
 
+### clean up positions
+warn ("; parsing gene positions\n")
+    if ($warn_level >= 1);
+foreach my $gene ($genes->get_objects()) {
+  my $organism = $gene->get_attribute("organism");
+  unless (defined($organism)) {
+    &ErrorMessage("Error: gene ", $gene->get_attribute("id"), " has no organism attribute\n");
+    next;
+  }
+  my $position = $gene->get_attribute("position");
+  unless (defined($position)) {
+    &ErrorMessage("Error: gene ", $gene->get_attribute("id"), " has no position attribute\n");
+    next;
+  }
+  my $coord;
+  my $chomosome;
+  my $chrom_pos;
+  my $strand;
+  my $start;
+  my $end;
+  if ($organism eq "Escherichia coli") {
+    $chromosome = "genome";
+    $chom_pos = $position;
+  } elsif ($organism eq "Saccharomyces cerevisiae") {
+    if ($position =~ /^(\d+)\:(.*)/) {
+      $chromosome = $1;
+      $chrom_pos = $2;
+    } elsif ($position =~ /^mit\:(.*)/) {
+      $chromosome = "mitochondrial";
+      $chrom_pos = $1;
+    } else {
+      &ErrorMessage("Error in gene ",$gene->get_attribute("id"),"\tinvalid position\t$position\n");
+      next;
+    }
+  } elsif ($organism eq "Homo sapiens") {
+    
+  }
+  
+  if ($chrom_pos =~ /complement\((.*)\)/) {
+    $strand = "R";
+    $coord = $1;
+  } else {
+    $strand = "D";
+    $coord = $chrom_pos;
+  }
+  if ($coord =~ /^(\d+)\.\.(\d+)$/) {
+    $start = $1;
+    $end = $2;
+  } elsif ($coord =~ /^join\((.*)\)$/) { ### exons
+    @exons = split ",", $1;
+    foreach $exon (@exons) {
+      $gene->push_attribute("exons", $exon);
+    }
+    if ($exons[0] =~ /^(\d+)\.\.(\d+)$/) {
+      $start = $1;
+    }
+    if ($exons[$#exons] =~ /^(\d+)\.\.(\d+)$/) {
+      $end = $2;
+    }
+  } else {
+    &ErrorMessage("Error : gene ",$gene->get_attribute("id"),"\tinvalid gene coordinade $coord\n");
+    next;
+  }
+  $gene->set_attribute("chromosome", "genome");
+  $gene->set_attribute("strand",$strand);
+  $gene->set_attribute("start",$start);
+  $gene->set_attribute("end",$end);
+}
+
 &CreateExpression;
 $expressions->index_names();
 
@@ -126,6 +195,7 @@ $genes->dump_tables($suffix);
 $expressions->dump_tables($suffix);
 
 $genes->export('MLDBM',$out_file{mldbm_genes});
+$genes->export_name_index("MLDBM",$out_file{mldbm_gene_index});
 $expressions->export('MLDBM',$out_file{mldbm_expressions});
 
 &PrintStats($out_file{stats}, @classes);
@@ -133,9 +203,9 @@ $expressions->export('MLDBM',$out_file{mldbm_expressions});
 ### report execution time
 if ($warn_level >= 1) {
   $done_time = &AlphaDate;
-  print STDERR ";\n";
-  print STDERR "; job started $start_time\n";
-  print STDERR "; job done    $done_time\n";
+  warn ";\n";
+  warn "; job started $start_time\n";
+  warn "; job done    $done_time\n";
 }
 
 close ERR;
@@ -256,14 +326,17 @@ sub CreateExpression {
 #  $class_holder{polypeptides} = &ImportClass("$data_dir/polypeptides/Polypeptide.mldbm", "PFBP::Polypeptide");
  
   
-  $infile{polypeptide_index} = "$mldbm_dir/Polypeptide".$suffix."__name_index.mldbm";
-  warn "; opening polpeptide index $infile{polypeptide_index}\n"
-      if ($warn_level >= 1);
+#  $infile{polypeptide_index} = "$mldbm_dir/Polypeptide".$suffix."__name_index.mldbm";
+#  warn "; opening polpeptide index $infile{polypeptide_index}\n"
+#      if ($warn_level >= 1);
 
   ### open the persistent polypeptide index
-  tie %index, 'MLDBM', $infile{polypeptide_index} ||
-      die "Error: cannot tie file $infile{polypeptide_index}";
-  
+#  tie %index, 'MLDBM', $infile{polypeptide_index} ||
+#      die "Error: cannot tie file $infile{polypeptide_index}";
+  $database = new PFBP::Database;
+  $database->open_class("PFBP::Polypeptide");
+
+
   foreach my $gene (PFBP::Gene->get_objects()) {
     my $gene_id = $gene->get_attribute("id");
     if (my $definition = join(" ", $gene->get_attribute("definition"))) {
@@ -274,21 +347,21 @@ sub CreateExpression {
 	  my $swissprot_id = $1;
 	  my $polypeptide = undef;
 	  my $polypeptide_id = undef;
-	  
-	  if (exists $index{uc($swissprot_id)}) {
-	    $id_table = $index{uc($swissprot_id)};
-	    $polypeptide_id = $$id_table[0];
+	
+	  if ($id = $database->get_id("PFBP::Polypeptide::$swissprot_id")) {
+	    $polypeptide_id = $id;
+#	  if (exists $index{uc($swissprot_id)}) {
+#	    $id_table = $index{uc($swissprot_id)};
+#	    $polypeptide_id = $$id_table[0];
 	  } else {
-	    $error_message = "ERROR : could not identify polypeptide $swissprot_id\n";
-	    print ERR $error_message;
-	    warn  $error_message if ($warn_level >= 2);
+	    &ErrorMessage("ERROR : could not identify polypeptide $swissprot_id\n");
 	    next;
 	  }
 	  
 	  $expr_id = "expr_".$gene_id."_".$polypeptide_id;
 	  if (my $expression = $expressions->new_object(id=>$expr_id,
 							source=>"KEGG")) {
-	    print STDERR "created expression from gene $gene_id to polypeptide $polypeptide_id\n" 
+	    warn "created expression from gene $gene_id to polypeptide $polypeptide_id\n" 
 		if ($warn_level >= 2);
 	    $expression->set_attribute("gene_id",$gene_id);
 	    $expression->set_attribute("polypeptide_id",$polypeptide_id);
@@ -297,13 +370,11 @@ sub CreateExpression {
 	  }
 	}
       } else {
-	$error_message =  "WARNING: gene $gene_id could not be linked to swissprot\n";
-	$error_message .= "\tdefinition\t$definition\n";
-	print ERR $error_message;
-	warn $error_message if ($warn_level >= 3);
+	&ErrorMessage ("WARNING: gene $gene_id could not be linked to swissprot\n",
+		       "\tdefinition\t$definition\n");
       }
     } else {
-      print ERR "WARNING: gene $gene_id has no definition field\n";
+      &ErrorMessage("WARNING: gene $gene_id has no definition field\n");
     }
     
     untie %polypeptides_name_index ||
