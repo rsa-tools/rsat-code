@@ -26,6 +26,26 @@ $accepted_output_seq{'filelist'} = 1;
 &InitMatchScores;
 
 
+################################################################
+#### extracts a substring but checks limits
+sub sub_sequence {
+    my ($sequence, $offset, $len) = @_;
+    
+    my $seq_len = length($sequence);
+
+    if ($offset > $seq_len -1) {
+	return "";
+    }
+
+    if ($offset < 0) {
+	$offset = 0;
+    } elsif ($offset + $len > $seq_len - 1) {
+	$len = $seq_len -1 - $offset;
+    }
+    my $result = substr($sequence, $offset, $len);
+    return ($result);
+}
+
 sub InitMatchScores {
     ### based on the IUPAC code for partly specified nucleotides
     ###	A			(Adenine)
@@ -438,7 +458,7 @@ sub ExpandSeq {
 	for $i (1..$2) {
 	    $exp_seq .= $1;
 	}
-	$seq = $';
+	$seq = "$'";
     }
     $exp_seq .= $seq;
     return($exp_seq);
@@ -738,7 +758,7 @@ sub CheckFormat {
   $expected_format = "raw" if ($expected_format eq "filelist");
   local($apparent_format) = "";
   
-  if ($l_sequence =~ /([^a-z])/i) {
+  if ($l_sequence =~ /([^a-z\s])/i) {
       $apparent_format = "unknown";
       $problem = $1;
       $position = length($`);
@@ -753,7 +773,7 @@ sub CheckFormat {
       &FatalError("Input sequence $current_id is not in the expected format", 
 		  "Invalid character '$problem' at position $position",
 		  "It seems to be in $apparent_format format.");
-      exit;
+      exit();
   }
   return;
 }
@@ -787,9 +807,9 @@ sub ReadNextSequence {
 	    next if ((/^;/) || (/^\#/) || (/^--/));
 	    $sequence .= $_;
 	}
-	&CheckFormat($sequence, $sequence_format);
 	if ($sequence) {
 	    $sequence = &FoldSequence($sequence, 0);
+	    &CheckFormat($sequence, $sequence_format);
 	    return ($sequence, $seq_id, @comments);
 	} else {
 	    return ("","");
@@ -809,8 +829,8 @@ sub ReadNextSequence {
 	while ((defined($SEQ)) && ($sequence = <$SEQ>) && !($gotit)) {
 	    next if ($sequence =~ /^;/);
 	    $gotit = 1;
-	    &CheckFormat($sequence, $sequence_format);
 	    $sequence = &FoldSequence($sequence, 0);
+	    &CheckFormat($sequence, $sequence_format);
 	    return ($sequence, $seq_id, @comments);
 	} 
 	return ("","") unless $gotit;
@@ -1230,11 +1250,15 @@ sub ReadPatterns {
 		#### for piping with oligo-analysis and dyad-analysis
 		#### take occ_sig as the score column
 		if (!(defined($score_column)) &&
-		    ($line =~ /^;\s+(\d+)\s+occ_sig\s+/)) {
+		    (($line =~ /^;\s+(\d+)\s+occ_sig\s+/) ||
+		     ($line =~ /^;\s+(\d+)\s+chi2\s+/)
+		     )
+		    ) {
 		    $score_column = $1;
 		}
 		next;
 	    }
+	    $line = &trim($line); ### remove leading and trailing spaces
 	    my @fields = split /\s+/, $line;
 	    next unless ($fields[0] =~ /\S/);
 	    $pattern_seq = $fields[0];
