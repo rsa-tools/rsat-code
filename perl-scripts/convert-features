@@ -1,0 +1,276 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: convert-features,v 1.1 2004/05/21 09:26:36 jvanheld Exp $
+#
+# Time-stamp: <2003-07-04 12:48:55 jvanheld>
+#
+############################################################
+#use strict;;
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+    require "RSA.lib";
+    require "RSA.classes";
+}
+use RSAT::feature;
+
+################################################################
+#### initialise parameters
+my $start_time = &AlphaDate();
+
+local %infile = ();
+local %outfile = ();
+
+local $verbose = 0;
+local $in = STDIN;
+local $out = STDOUT;
+local $output_format = "ft";
+local $null = "";
+local %comment_char = (ft=>'; ',
+		       gft=>'; ',
+		       gff=>'## ');
+
+%supported_input_format =(
+#			  "ft"=>1,
+			   "gft"=>1,
+#			   "gff"=>1,
+#			   "dnapat"=>1
+			  );
+$supported_input_formats = join (",", keys %supported_input_formats);
+
+%supported_output_format =(
+			   ft=>1,
+			   gff=>1
+			   );
+$supported_output_formats = join (",", keys %supported_output_formats);
+
+
+&ReadArguments();
+
+################################################################
+#### check argument values
+unless ($input_format) {
+    &FatalError("You should defined the input format");
+}
+
+
+$comment_char = $comment_char{$output_format};
+
+################################################################
+### open output stream
+$out = &OpenOutputFile($outfile{output});
+
+print $out $comment_char, RSAT::feature->header($output_format);
+
+################################################################
+##### read input
+($in) = &OpenInputFile($infile{input});
+while (<$in>) {
+    ## Comment lines
+    if ((/^;\s+(.*)/) || (/^--\s+(.*)/)) {
+	next;
+    }
+    next unless (/\S/);
+    chomp;
+    my $feature = new RSAT::feature();
+
+    $feature->parse_from_row($_, $input_format);
+    print $out $feature->to_text($output_format, $null);
+}
+
+close $in if ($infile{input});
+
+################################################################
+#### print verbose
+&Verbose() if ($verbose);
+
+################################################################
+###### finish verbose
+if ($verbose >= 1) {
+    my $done_time = &AlphaDate();
+    print $out "; Job started $start_time\n";
+    print $out "; Job done    $done_time\n";
+}
+
+
+################################################################
+###### close output stream
+close $out if ($outfile{output});
+
+
+exit(0);
+
+
+################################################################
+################### subroutine definition ######################
+################################################################
+
+
+################################################################
+#### display full help message 
+sub PrintHelp {
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	convert-features
+
+        2002 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
+	
+DESCRIPTION
+
+	Interconversions between various formats of feature
+	description.
+
+CATEGORY
+	util
+
+USAGE
+        convert-features [-i inputfile] [-o outputfile] [-v]
+
+OPTIONS
+	-h	display full help message
+	-help	display options
+	-v	verbose
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+	-from	input format (Supported: $supported_input_formats)
+	-to	output format (Supported: $supported_output_formats)
+
+INPUT FORMATS
+       gft: RSAT Genome features (file Feature.tab in the directory data/genomes)
+       ft: RSAT feature-map (extension .ft)
+       dnapat: RSAT dna-pattern (extension .tab)
+       gff: Sanger general feature file (extension .gff)
+
+OUTPUT FORMATS
+       ft: RSAT feature-map (extension .ft)
+       gff: Sanger general feature file (extension .gff)
+
+FORMAT DESCRIPTIONS
+
+       Feature formats are generally tab-delimited files. For
+       historical reasons, different formats have been used at
+       different sites. Originally, these formats were conceived to
+       represent different types of information, and, for this reason,
+       the contents of their column slightly differs. However, the
+       main information is similar, and the differing columns can be
+       easily extrapolated or skipped.  
+
+       gft: RSAT Genome features (file Feature.tab in the directory data/genomes)
+		col 1	id
+		col 2	type
+		col 3	name
+		col 4	contig
+		col 5	start
+		col 6	end
+		col 7	strand
+		col 8	description
+		col 9	chrom_position
+		col 10	organism
+
+       gff: Sanger general feature file (extension .gff)
+           Information: http://www.sanger.ac.uk/Software/formats/GFF/GFF_Spec.shtml
+		col 1	seqname (contig or sequence ID)
+		col 2	source
+		col 3	feature (the deature type name)
+		col 4	start
+		col 5	end
+		col 6	score
+		col 7	strand (+, - or .)
+		col 8	frame (0, 1, 2 or .)
+		col 9	attribute
+
+End_of_help
+  close HELP;
+  exit;
+}
+
+
+################################################################
+#### display short help message
+sub PrintOptions {
+  open HELP, "| more";
+  print HELP <<End_short_help;
+convert-features options
+----------------
+-h		(must be first argument) display full help message
+-help		(must be first argument) display options
+-i		input file
+-o		output file
+-v		verbose
+-from		input format (Supported: $supported_input_formats)
+-to		output format (Supported: $supported_output_formats)
+End_short_help
+  close HELP;
+  exit;
+}
+
+################################################################
+#### read arguments 
+sub ReadArguments {
+    foreach my $a (0..$#ARGV) {
+	### verbose  
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+	    
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp();
+	    
+	    ### list of options
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions();
+	    
+	    ### input file  
+	} elsif ($ARGV[$a] eq "-i") {
+	    $infile{input} = $ARGV[$a+1];
+	    
+	    ### output file  
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outfile{output} = $ARGV[$a+1];
+	    
+	    ### input format  
+	} elsif ($ARGV[$a] eq "-from") {
+	    $input_format = $ARGV[$a+1];
+	    &FatalError("$input_format\tInvalid input format. Supoprted: $supported_input_formats")
+		unless ($supported_input_format{$input_format});
+
+	    ### output format  
+	} elsif ($ARGV[$a] eq "-to") {
+	    $output_format = $ARGV[$a+1];
+	    &FatalError("$output_format\tInvalid output format. Supoprted: $supported_output_formats")
+		unless ($supported_output_format{$output_format});
+	}
+    }
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $out "; convert-features ";
+    &PrintArguments($out);
+    if (defined(%infile)) {
+	print $out "; Input files\n";
+	while (($key,$value) = each %infile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+    if (defined(%outfile)) {
+	print $out "; Output files\n";
+	while (($key,$value) = each %outfile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+    print $out "; Input format\t", $input_format, "\n";
+    print $out "; Output format\t", $output_format, "\n";
+}
