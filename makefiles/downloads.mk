@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: downloads.mk,v 1.3 2003/11/10 12:39:35 jvanheld Exp $
+# $Id: downloads.mk,v 1.4 2003/11/14 08:13:06 jvanheld Exp $
 #
 # Time-stamp: <2003-10-09 14:02:21 jvanheld>
 #
@@ -56,8 +56,10 @@ one_genbank_dir:
 	${WGET}							\
 		--exclude-directories 'Bacteria.OLD'		\
 		--exclude-directories ARCHIVE			\
-		--accept=gbk,README,gbff,gaa,faa		\
-		--accept=gbk.gz,README.gz,gbff.gz,gaa.gz,faa.gz	\
+		--accept=gbk --accept=README --accept=gbff	\
+		--accept=gaa --accept=faa --accept=gbk.gz	\
+		--accept=README.gz --accept=gbff.gz		\
+		--accept=gaa.gz --accept=faa.gz			\
 		"${GENBANK_GENOMES}/${GB_DIR}" 
 	@echo "${DATE}	updated dir	$${GB_DIR}" >> wget_updates.txt
 
