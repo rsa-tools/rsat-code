@@ -3,46 +3,193 @@ if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
 require "RSA.lib.pl";
+require "RSA.classes.pl";
 
 
 #### configuration #####
 $line_width = 0;
 $out_format = "wc";
 
+
+
+&ReadArguments;
+
+unless (defined(%return)) {
+  $return{'ncs'} = 1;
+  $return{'cs'} = 1;
+  $return{'div'} = 1;
+  $return{'conv'} = 1;
+  $return{'tandem'} = 1;
+  $return{'orf'} = 1;
+}
+   
+#### organism
+&CheckOrganism($organism);
+
+ 
+#&OldReadOrganism;
+
+&ReadOrfPositions($organism);
+
+#&OldReadOrfpositions;
+
+
+&PrintVerbose;
+
+### open all output files
+open NC_LOCATIONS, ">${organism}_non_coding_segments.coord" if ($return{'ncs'});
+open NC_SEQ, ">${organism}_non_coding_segments.$out_format" if ($return{'ncs'});
+
+open DIVERGENT_NC_SEQ, ">${organism}_non_coding_segments_divergent.$out_format" if ($return{'div'});
+open CONVERGENT_NC_SEQ, ">${organism}_non_coding_segments_convergent.$out_format" if ($return{'conv'});
+open TANDEM_NC_SEQ, ">${organism}_non_coding_segments_tandem.$out_format" if ($return{'tandem'});
+
+open C_LOCATIONS, ">${organism}_coding_segments.coord" if ($return{'cs'});
+open C_SEQ, ">${organism}_coding_segments.$out_format" if ($return{'cs'});
+open ORF_SEQ, ">${organism}ORF_sequences.$out_format" if ($return{'orf'});
+
+### print headers
+print NC_LOCATIONS ";segm_type_nb\tchr\tstart\tend\tleft\tright\n"  if ($return{'ncs'});
+print C_LOCATIONS ";segm_type_nb\tORFs\tchr\tstart\tend\tleft\tright\n"  if ($return{'cs'});
+
+foreach $chr (@chr_list) {
+    ### read chromosomal sequence
+    $seq_file = $seq_file{$chr};
+
+    open SEQ, $seq_file || die "Error: cannot open sequence file $seq_file\n";
+    ($sequence, $seq_id, @seq_comments) = &ReadNextSequence(SEQ, $seq_format);
+    close SEQ;
+    $sequence = &FoldSequence($sequence, 0);
+    $chr_length{$chr} = length($sequence);
+
+    ### sort ORF from current chromosome
+    $ORF_nb{$chr} = $#{$ids{$chr}}+1;;
+    print ";$seq_file\t$chr\t$chr_length{$chr}\t$ORF_nb{$chr}\n";
+
+    @sorted_orfs = sort {
+	(($left{$a} <=> $left{$b}) || (($left{$a} == $left{$b}) && ($right{$a} <=> $right{$b})))
+	} @{$ids{$chr}};
+
+    ### print ORF sequences
+    foreach $id (@sorted_orfs) {
+	$seq_id = "${id}_${chr}_${start{$id}}_${end{$id}}_${strand{$id}}";
+	$current_seq = substr($sequence,$left{$id}-1,$right{$id}-$left{$id}+1);
+	if ($strand{$id} eq "R") {
+	    $current_seq = &ReverseComplement($current_seq);
+	}
+	&PrintNextSequence(ORF_SEQ, $out_format,$line_width,$current_seq,$seq_id)  if ($return{'orf'});
+    }
+    
+    #### coding and non-coding segments
+    $coding_end = 0;
+    $end_reached = 0;
+    $orf_nb = 0;
+    $nc_left_ORF = "none";
+    
+    do {
+	### next non-coding segments
+	$nc_start = $coding_end+1;
+	$cluster++;
+	$orf_cluster = "$sorted_orfs[$orf_nb]";
+	$coding_start = $left{$sorted_orfs[$orf_nb]};
+	$nc_right_ORF = $sorted_orfs[$orf_nb];
+	$nc_end = $coding_start - 1;
+
+	@comments = ("non_coding_${cluster}\t$chr\t$nc_start\t$nc_end\t$nc_left_ORF\t$nc_right_ORF");
+	print NC_LOCATIONS "$comments[0]\n" if ($return{'ncs'});
+	$seq_id = "non_coding_${cluster}_${chr}_${nc_start}_${nc_end}_l${nc_left_ORF}_r${nc_right_ORF}";
+	$current_seq = substr($sequence,$nc_start-1,$nc_end-$nc_start+1);
+	&PrintNextSequence(NC_SEQ, $out_format,$line_width,$current_seq,$seq_id) if ($return{'ncs'});
+	if ($strand{$nc_left_ORF} eq $strand{$nc_right_ORF}) {
+	    &PrintNextSequence(TANDEM_NC_SEQ, $out_format,$line_width,$current_seq,$seq_id) if ($return{'tandem'});
+	} elsif (($strand{$nc_left_ORF} eq "R") && ($strand{$nc_right_ORF} eq "D")) {
+	    &PrintNextSequence(DIVERGENT_NC_SEQ, $out_format,$line_width,$current_seq,$seq_id)  if ($return{'div'});
+	} elsif (($strand{$nc_left_ORF} eq "D") && ($strand{$nc_right_ORF} eq "R")) {
+	    &PrintNextSequence(CONVERGENT_NC_SEQ, $out_format,$line_width,$current_seq,$seq_id)  if ($return{'conv'});
+	}
+
+	### next coding segment
+	$coding_end = $right{$sorted_orfs[$orf_nb]};
+	$nc_left_ORF = "";
+
+        #### look for next ORF whose left limit is at right
+	while (($orf_nb < $#sorted_orfs) && 
+	       ($left{$sorted_orfs[$orf_nb+1]} <= $coding_end)) { 
+	    $orf_nb++;
+	    $orf_cluster .= ";$sorted_orfs[$orf_nb]";
+	    $nc_left_ORF = $sorted_orfs[$orf_nb] unless ($coding_end > $right{$sorted_orfs[$orf_nb]});
+	    $coding_end = &max($coding_end, $right{$sorted_orfs[$orf_nb]});
+	}
+
+	@comments = ("coding_${cluster}\t$orf_cluster\t$chr\t$coding_start\t$coding_end");
+	print C_LOCATIONS "$comments[0]\n"  if ($return{'cs'});
+	$seq_id = "coding_${cluster}_${chr}_${coding_start}_${coding_end}";
+	$current_seq = substr($sequence,$coding_start-1,$coding_end-$coding_start+1);
+	&PrintNextSequence(C_SEQ, $out_format,$line_width,$current_seq,$seq_id)  if ($return{'cs'});
+
+	$nc_left_ORF = $sorted_orfs[$orf_nb] unless ($coding_end > $right{$sorted_orfs[$orf_nb]});
+	$orf_nb++;
+
+	### last non-coding segment
+	if ($orf_nb > $#sorted_orfs) {
+	    $end_reached = 1;
+	    $nc_start = $coding_end+1;
+	    $nc_end = $chr_length{$chr};
+
+	    @comments = ("non_coding_${cluster}\t$chr\t$nc_start\t$nc_end");
+	    print NC_LOCATIONS "$comments[0]\n"  if ($return{'ncs'});
+	    $seq_id = "non_coding_${cluster}_${chr}_${nc_start}_${nc_end}";
+	    $current_seq = substr($sequence,$nc_start-1,$nc_end-$nc_start+1);
+	    &PrintNextSequence(NC_SEQ, $out_format,$line_width,$current_seq,$seq_id, @comments)  if ($return{'ncs'});
+
+	}
+    } until $end_reached;
+}
+
+close NC_SEQ;
+close DIVERGENT_NC_SEQ;
+close CONVERGENT_NC_SEQ;
+close TANDEM_NC_SEQ;
+close NC_LOCATIONS;
+close C_SEQ;
+close C_LOCATIONS;
+close ORF_SEQ;
+
+exit(0);
+
 ### help ###
-if (($ARGV[0] eq "-h") || ($ARGV[0] eq "-help")) {
-open HELP, "| more ";
-  print HELP "
+sub PrintHelp {
+    open HELP, "| more ";
+    print HELP "
 NAME
 	coding_or_not 
 
 	1997,1998 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be).
 
 DESCRIPTION
-	separates coding from non coding sequences in the genome of 
-	Saccharomyces cerevisiae, on base of the predicted ORF 
-	locations.
+	Starting from a complete assembled genome, generate
+	non-redundant sets of sequences, partitioned into different
+	sequence types (see options).
 
 USAGE
 	coding_or_not -org organism
 
 OPTIONS
 	-org	organism. Currently supported:
-		- coli
-		- yeast
-
+$supported_organisms
 	-return	type of sequences to return. 
 		The following options are available
 		ncs	non-coding segments
 			These sequences are further separated into 3 
 			subsets, corresponding to the options div, conv 
-			and par
+			and tandem
 		div	non-coding sequences separating two genes
 			transcribed in divergent directions
 		conv	non-coding sequences separating two genes
 			transcribed in convergent directions
-		par	non-coding sequences separating two genes
-			transcribed in parallel directions
+		tandem  non-coding sequences separating two genes
+			transcribed in the same direction (tandem
+			genes)
 		cs	coding segments
 			Warning : 
 			- in case of gene overlap, a single segment
@@ -68,277 +215,163 @@ OUTPUT
 	non coding sequences are stored in another file named 
 		${organism}_non_coding_segments.seq
 ";
-  exit(0);
+    close HELP;
+    exit(0);
 }
 
+
+sub ReadArguments {
 ##### read parameters ###
-for $a (0..$#ARGV) {
-  if ($ARGV[$a] eq "-org") {
-    $organism = $ARGV[$a+1];
-  } elsif ($ARGV[$a] eq "-return") {
-    chomp($ARGV[$a+1]);
-    @fields_to_return = split ",", $ARGV[$a+1];
-    foreach $field (@fields_to_return) {
-      if ($field eq "ncs") {
-	$return{'ncs'} = 1;
-      } elsif ($field eq "cs") {
-	$return{'cs'} = 1;
-      } elsif ($field eq "div") {
-	$return{'div'} = 1;
-      } elsif ($field eq "conv") {
-	$return{'conv'} = 1;
-      } elsif ($field =~ /^par/) {
-	$return{'par'} = 1;
-      } elsif ($field =~ /^orf/) {
-	$return{'orf'} = 1;
-      } else {
-	print ";Error : unrecognized request: $field\n";
-      }	
-      
+    for $a (0..$#ARGV) {
+	if ($ARGV[$a] eq "-org") {
+	    $organism = $ARGV[$a+1];
+	} elsif (($ARGV[$a] eq "-help") || 
+		 ($ARGV[$a] eq "-h")) {
+	    &PrintHelp;
+	} elsif ($ARGV[$a] eq "-return") {
+	    chomp($ARGV[$a+1]);
+	    @fields_to_return = split ",", $ARGV[$a+1];
+	    foreach $field (@fields_to_return) {
+		if ($field eq "ncs") {
+		    $return{'ncs'} = 1;
+		} elsif ($field eq "cs") {
+		    $return{'cs'} = 1;
+		} elsif ($field eq "div") {
+		    $return{'div'} = 1;
+		} elsif ($field eq "conv") {
+		    $return{'conv'} = 1;
+		} elsif (($field =~ /^par/) || 
+			 ($field =~ /^tandem/)) {
+		    $return{'tandem'} = 1;
+		} elsif ($field =~ /^orf/) {
+		    $return{'orf'} = 1;
+		} else {
+		    print ";Error : unrecognized request: $field\n";
+		}	
+		
+	    }
+	}
     }
-  }
 }
 
-unless (defined(%return)) {
-  $return{'ncs'} = 1;
-  $return{'cs'} = 1;
-  $return{'div'} = 1;
-  $return{'conv'} = 1;
-  $return{'par'} = 1;
-  $return{'orf'} = 1;
-}
-    
+
+sub OldReadOrganism {
 #### initialize parameters according to organism ####
-if ($organism eq "yeast") {
-    $feature_file = "$RSA/data/yeast/orfs/ORF_table.txt";
-    $id_column = 0;
-    $type_column = -1;
-    $gene_column = 2;
-    $chr_column = 3;
-    $start_column = 4;
-    $end_column = 5;
-    $strand_column = -1; ### there is no such column in the ORF file; 
-                         ### strand C is indicated by the fact that start coord > end coord
-
-    push @chr_list, 'I';
-    push @chr_list, 'II';
-    push @chr_list, 'III';
-    push @chr_list, 'IV';
-    push @chr_list, 'V';
-    push @chr_list, 'VI';
-    push @chr_list, 'VII';
-    push @chr_list, 'VIII';
-    push @chr_list, 'IX';
-    push @chr_list, 'X';
-    push @chr_list, 'XI';
-    push @chr_list, 'XII';
-    push @chr_list, 'XIII';
-    push @chr_list, 'XIV';
-    push @chr_list, 'XV';
-    push @chr_list, 'XVI';
-
-    foreach $chr (@chr_list) {
-	$seq_file{$chr} = "$RSA/data/yeast/sequences/$chr";
-    }
-    $seq_format = "raw";
-} elsif ($organism eq "coli") {
-    $feature_file = "$RSA/data/coli/sequences/CDS_table.txt";
-    $id_column = 0;
-    $type_column = 1;
-    $gene_column = 2;
-    $chr_column = -1;
-    $start_column = 3;
-    $end_column = 4;
-    $strand_column = 5;
-
-    push @chr_list, 'genome';
-    $seq_file{$chr_list[0]} = "$RSA/data/coli/sequences/$chr_list[$0]";
-    $seq_format = "fasta";
-} elsif ($supported_organism{$organism}) {
-    $feature_file = $supported_organism{$organism}->{'features'};
-    $id_column = 0;
-    $type_column = 1;
-    $gene_column = 2;
-    $chr_column = 3;
-    $start_column = 4;
-    $end_column = 5;
-    $strand_column = 6;
-
-    push @chr_list, $organism;
-    $seq_file{$chr_list[0]} = $supported_organism{$organism}->{'genome'};
-    $seq_format =$supported_organism{$organism}->{'seq_format'};
-} else {
-    die "Error: you did not specify the organism\n";
-}
-
-#### read all ORF positions ####
-unless (open ORFS, $feature_file) {
-  die "	Cannot open ORF location file $feature_file\n";
-}
-while (<ORFS>) {
-    next if (/^;/);
-    next unless (/\S/);
-    s/\t\t/\t-\t/;
-    chomp;
-    @fields = split, /\t/;
-
-    ### only take into consideration the CDS features
-    if (($type_column >= 0) && ($fields[$type_column] ne "CDS")) {
-	next;
-    }
-
-    $orf_count++;
-    $id = $fields[$id_column];
-    if ($chr_column < 0) {
-	$chr{$id} = "genome";
-    } else {
-	$chr{$id} = $fields[$chr_column];
-    }
-    push @{$ids{$chr{$id}}}, $id;
-    $start{$id} = $fields[$start_column];
-    $end{$id} = $fields[$end_column];
-    $left{$id} = &min($start{$id},$end{$id});
-    $right{$id} = &max($start{$id},$end{$id});
     if ($organism eq "yeast") {
-      if ($start{$id} > $end{$id}) {
-	$strand{$id} = "R";
-      } else {
-	$strand{$id} = "D";
-      }
+#	$feature_file = "$RSA/data/yeast/orfs/ORF_table.txt";
+	$id_column = 0;
+	$type_column = -1;
+	$gene_column = 2;
+	$chr_column = 3;
+	$start_column = 4;
+	$end_column = 5;
+	$strand_column = -1; ### there is no such column in the ORF file; 
+	### strand C is indicated by the fact that start coord > end coord
+	
+	push @chr_list, 'I';
+	push @chr_list, 'II';
+	push @chr_list, 'III';
+	push @chr_list, 'IV';
+	push @chr_list, 'V';
+	push @chr_list, 'VI';
+	push @chr_list, 'VII';
+	push @chr_list, 'VIII';
+	push @chr_list, 'IX';
+	push @chr_list, 'X';
+	push @chr_list, 'XI';
+	push @chr_list, 'XII';
+	push @chr_list, 'XIII';
+	push @chr_list, 'XIV';
+	push @chr_list, 'XV';
+	push @chr_list, 'XVI';
+	
+	foreach $chr (@chr_list) {
+	    $seq_file{$chr} = "$RSA/data/yeast/sequences/$chr";
+	}
+	$seq_format = "raw";
+    } elsif ($organism eq "coli") {
+#	$feature_file = "$RSA/data/coli/sequences/CDS_table.txt";
+	$id_column = 0;
+	$type_column = 1;
+	$gene_column = 2;
+	$chr_column = -1;
+	$start_column = 3;
+	$end_column = 4;
+	$strand_column = 5;
+	
+	push @chr_list, 'genome';
+	$seq_file{$chr_list[0]} = "$RSA/data/coli/sequences/$chr_list[$0]";
+	$seq_format = "fasta";
+    } elsif ($supported_organism{$organism}) {
+#	$feature_file = $supported_organism{$organism}->{'features'};
+	$id_column = 0;
+	$type_column = 1;
+	$gene_column = 2;
+	$chr_column = 3;
+	$start_column = 4;
+	$end_column = 5;
+	$strand_column = 6;
+	
+	push @chr_list, $organism;
+	$seq_file{$chr_list[0]} = $supported_organism{$organism}->{'genome'};
+	$seq_format =$supported_organism{$organism}->{'seq_format'};
     } else {
-      $strand{$id} = $fields[$strand_column];
+	die "Error: you did not specify the organism\n";
     }
+}
+
+
+sub OldReadOrfpositions {
+    
+#### read all ORF positions ####
+    unless (open ORFS, $supported_organism{$organism}->{'features'}) {
+	die "	Cannot open ORF location file ", $supported_organism{$organism}->{'features'}, "\n";
+    }
+    while (<ORFS>) {
+	next if (/^;/);
+	next unless (/\S/);
+	s/\t\t/\t-\t/;
+	chomp;
+	@fields = split, /\t/;
+	
+	### only take into consideration the CDS features
+	if (($type_column >= 0) && ($fields[$type_column] ne "CDS")) {
+	    next;
+	}
+	
+	$orf_count++;
+	$id = $fields[$id_column];
+	if ($chr_column < 0) {
+	    $chr{$id} = "genome";
+	} else {
+	    $chr{$id} = $fields[$chr_column];
+	}
+	push @{$ids{$chr{$id}}}, $id;
+	$start{$id} = $fields[$start_column];
+	$end{$id} = $fields[$end_column];
+	$left{$id} = &min($start{$id},$end{$id});
+	$right{$id} = &max($start{$id},$end{$id});
+	if ($organism eq "yeast") {
+	    if ($start{$id} > $end{$id}) {
+		$strand{$id} = "R";
+	    } else {
+		$strand{$id} = "D";
+	    }
+	} else {
+	    $strand{$id} = $fields[$strand_column];
+	}
 #print "$id\t$chr{$id}\t$left{$id}\t$right{$id}\t$strand{$id}\n";
-}
-close ORFS;
-
-
-print ";Organism : $organism";
-print "\t", $supported_organism{$organism}->{'name'}, "\n";
-print ";feature file\t$feature_file\n";
-print ";sequence file(s)\n";
-for $chr (0..$#chr_list) {
-    print ";\t", $seq_file{$chr_list[$chr]}, "\n";
-}
-print ";ORFs in total\t$orf_count\n";
-print ";chr\tlength\torfs\n";
-
-### open all output files
-open NC_LOCATIONS, ">${organism}_non_coding_segments.coord" if ($return{'ncs'});
-open NC_SEQ, ">${organism}_non_coding_segments.$out_format" if ($return{'ncs'});
-
-open DIVERGENT_NC_SEQ, ">${organism}_non_coding_segments_divergent.$out_format" if ($return{'div'});
-open CONVERGENT_NC_SEQ, ">${organism}_non_coding_segments_convergent.$out_format" if ($return{'conv'});
-open PARALLEL_NC_SEQ, ">${organism}_non_coding_segments_parallel.$out_format" if ($return{'par'});
-
-open C_LOCATIONS, ">${organism}_coding_segments.coord" if ($return{'cs'});
-open C_SEQ, ">${organism}_coding_segments.$out_format" if ($return{'cs'});
-open ORF_SEQ, ">${organism}ORF_sequences.$out_format" if ($return{'orf'});
-
-### print headers
-print NC_LOCATIONS ";segm_type_nb\tchr\tstart\tend\tleft\tright\n"  if ($return{'ncs'});
-print C_LOCATIONS ";segm_type_nb\tORFs\tchr\tstart\tend\tleft\tright\n"  if ($return{'cs'});
-
-foreach $chr (@chr_list) {
-    ### read chromosomal sequence
-    $seq_file = $seq_file{$chr};
-
-    open SEQ, $seq_file || die "Error: cannot open sequence file $seq_file\n";
-    ($sequence, $seq_id, @seq_comments) = &ReadNextSequence(SEQ, $seq_format);
-    close SEQ;
-    $sequence = &FoldSequence($sequence, 0);
-    $chr_length{$chr} = length($sequence);
-
-    ### sort ORF from current chromosome
-    $ORF_nb{$chr} = $#{$ids{$chr}}+1;;
-    print ";$seq_file\t$chr\t$chr_length{$chr}\t$ORF_nb{$chr}\n";
-    @sorted_orfs = sort {
-	(($left{$a} <=> $left{$b}) || (($left{$a} == $left{$b}) && ($right{$a} <=> $right{$b})))
-	} @{$ids{$chr}};
-
-    ### print ORF sequences
-    foreach $id (@sorted_orfs) {
-	$seq_id = "${id}_${chr}_${start{$id}}_${end{$id}}_${strand{$id}}";
-	$current_seq = substr($sequence,$left{$id}-1,$right{$id}-$left{$id}+1);
-	if ($strand{$id} eq "R") {
-	    $current_seq = &ReverseComplement($current_seq);
-	}
-	&PrintNextSequence(ORF_SEQ, $out_format,$line_width,$current_seq,$seq_id)  if ($return{'orf'});
     }
-
-    #### coding and non-coding segments
-    $coding_end = 0;
-    $end_reached = 0;
-    $orf_nb = 0;
-    $nc_left_ORF = "none";
-
-    do {
-	### next non-coding segments
-	$nc_start = $coding_end+1;
-	$cluster++;
-	$orf_cluster = "$sorted_orfs[$orf_nb]";
-	$coding_start = $left{$sorted_orfs[$orf_nb]};
-	$nc_right_ORF = $sorted_orfs[$orf_nb];
-	$nc_end = $coding_start - 1;
-
-	@comments = ("non_coding_segment_${cluster}\t$chr\t$nc_start\t$nc_end\t$nc_left_ORF\t$nc_right_ORF");
-	print NC_LOCATIONS "$comments[0]\n" if ($return{'ncs'});
-	$seq_id = "non_coding_${cluster}_${chr}_${nc_start}_${nc_end}_l${nc_left_ORF}_r${nc_right_ORF}";
-	$current_seq = substr($sequence,$nc_start-1,$nc_end-$nc_start+1);
-	&PrintNextSequence(NC_SEQ, $out_format,$line_width,$current_seq,$seq_id) if ($return{'ncs'});
-	if ($strand{$nc_left_ORF} eq $strand{$nc_right_ORF}) {
-	    &PrintNextSequence(PARALLEL_NC_SEQ, $out_format,$line_width,$current_seq,$seq_id) if ($return{'par'});
-	} elsif (($strand{$nc_left_ORF} eq "R") && ($strand{$nc_right_ORF} eq "D")) {
-	    &PrintNextSequence(DIVERGENT_NC_SEQ, $out_format,$line_width,$current_seq,$seq_id)  if ($return{'div'});
-	} elsif (($strand{$nc_left_ORF} eq "D") && ($strand{$nc_right_ORF} eq "R")) {
-	    &PrintNextSequence(CONVERGENT_NC_SEQ, $out_format,$line_width,$current_seq,$seq_id)  if ($return{'conv'});
-	}
-
-	### next coding segment
-	$coding_end = $right{$sorted_orfs[$orf_nb]};
-	$nc_left_ORF = "";
-
-        #### look for next ORF whose left limit is at right
-	while (($orf_nb < $#sorted_orfs) && 
-	       ($left{$sorted_orfs[$orf_nb+1]} <= $coding_end)) { 
-	    $orf_nb++;
-	    $orf_cluster .= ";$sorted_orfs[$orf_nb]";
-	    $nc_left_ORF = $sorted_orfs[$orf_nb] unless ($coding_end > $right{$sorted_orfs[$orf_nb]});
-	    $coding_end = &max($coding_end, $right{$sorted_orfs[$orf_nb]});
-	}
-
-	@comments = ("coding_segment_${cluster}\t$orf_cluster\t$chr\t$coding_start\t$coding_end");
-	print C_LOCATIONS "$comments[0]\n"  if ($return{'cs'});
-	$seq_id = "coding_${cluster}_${chr}_${coding_start}_${coding_end}";
-	$current_seq = substr($sequence,$coding_start-1,$coding_end-$coding_start+1);
-	&PrintNextSequence(C_SEQ, $out_format,$line_width,$current_seq,$seq_id)  if ($return{'cs'});
-
-	$nc_left_ORF = $sorted_orfs[$orf_nb] unless ($coding_end > $right{$sorted_orfs[$orf_nb]});
-	$orf_nb++;
-
-	### last non-coding segment
-	if ($orf_nb > $#sorted_orfs) {
-	    $end_reached = 1;
-	    $nc_start = $coding_end+1;
-	    $nc_end = $chr_length{$chr};
-
-	    @comments = ("non_coding_segment_${cluster}\t$chr\t$nc_start\t$nc_end");
-	    print NC_LOCATIONS "$comments[0]\n"  if ($return{'ncs'});
-	    $seq_id = "non_coding_${cluster}_${chr}_${nc_start}_${nc_end}";
-	    $current_seq = substr($sequence,$nc_start-1,$nc_end-$nc_start+1);
-	    &PrintNextSequence(NC_SEQ, $out_format,$line_width,$current_seq,$seq_id, @comments)  if ($return{'ncs'});
-
-	}
-    } until $end_reached;
+    close ORFS;
 }
 
-close NC_SEQ;
-close DIVERGENT_NC_SEQ;
-close CONVERGENT_NC_SEQ;
-close PARALLEL_NC_SEQ;
-close NC_LOCATIONS;
-close C_SEQ;
-close C_LOCATIONS;
-close ORF_SEQ;
-
-exit(0);
+sub PrintVerbose {
+    printf "; %-16s\t%s\n", "Organism", $supported_organism{$organism}->{'name'};
+    printf "; %-16s\t%-12s\t%s\n", "feature file", $supported_organism{$organism}->{'features'};
+    printf "; sequence file(s)\n";
+    foreach $chrom (sort keys %chromosome_seq) {
+	print ";\t", $chromosome_seq{$chrom}->get_attribute("filename"), "\n";
+    }
+    printf "; %-16s\t%-12s\t%s\n", , "ORFs in total", $orf_count;
+    printf ";chr\tlength\torfs\n";
+}
