@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: position-analysis,v 1.23 2004/05/07 07:07:05 jvanheld Exp $
+# $Id: position-analysis,v 1.24 2005/03/13 10:19:11 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -10,7 +10,10 @@ if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
 require "RSA.lib";
+require RSAT::util;
 use POSIX qw(sysconf _PC_CHOWN_RESTRICTED);
+
+## CVS: require RSAT::util
 
 ################################################################
 ###### default values for parameters
@@ -57,7 +60,7 @@ unless ($oligo_length > 0) {
 #### min and max classes to take into account for chi-square calculation
 if ((&IsInteger($min_pos)) && (&IsInteger($max_pos))) {
     if ($max_pos < $min_pos) {
-	&FatalError( "min position should be smaller than max position");
+	&RSAT::error::FatalError( "min position should be smaller than max position");
     }
 }
 
@@ -71,7 +74,7 @@ if ($outputfile) {
     $dir{output} =`dirname $outputfile`; 
     chomp $dir{output};
 }
-&CheckOutDir($dir{output});
+&RSAT::util::CheckOutDir($dir{output});
 $out = &OpenOutputFile($outputfile);
 
 ### open sequence file ###
@@ -141,12 +144,12 @@ if ($return{'graph'}) {
 
     $dir{graphs} = $dir{output}."/".$rel_dir{graphs};
     mkdir $dir{graphs}, 0755 
-	|| &FatalError("Could not create directory $dir{graphs}");
+	|| &RSAT::error::FatalError("Could not create directory $dir{graphs}");
     unless (-d $dir{graphs}) {
 	warn "Creating directory $dir{graphs}\n" if ($verbose >= 1);
 	mkdir $dir{graphs}, 0755;
 	unless (-d $dir{graphs}) {
-	    &FatalError("Cannot create graph directory $dir{gtaph}");
+	    &RSAT::error::FatalError("Cannot create graph directory $dir{gtaph}");
 	}
     }
 
@@ -817,14 +820,14 @@ sub ReadArguments {
 	    $low_thr{'chi'} = $ARGV[$a+1];
 	    $return{'chi'} = 1;
 	    unless (($low_thr{'chi'} >= 0) && (&IsReal($low_thr{'chi'}))) {
-		&FatalError("Threshold on chi2 must be a positive number") ;
+		&RSAT::error::FatalError("Threshold on chi2 must be a positive number") ;
 	    }
 	    
 	    ### lower threshold on occurrences
 	} elsif ($ARGV[$a] =~ /^-oth/) { 
 	    $low_thr{'occ'} = $ARGV[$a+1];
 	    unless (&IsNatural($low_thr{'occ'})) {
-		&FatalError("Threshold on occurrences must be a natural number") ;
+		&RSAT::error::FatalError("Threshold on occurrences must be a natural number") ;
 	    }
 	    
 	    ### return values
@@ -852,7 +855,7 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] =~ /^-seqtype/i) {
 	    $seq_type = $ARGV[$a+1];
 	    unless ($supported_seq_type{$seq_type}) {
-		&FatalError("$seq_type is not a supported sequence type. Supported: $supported_seq_types");
+		&RSAT::error::FatalError("$seq_type is not a supported sequence type. Supported: $supported_seq_types");
 	    }
 
 	    ### do not check applicability condition for the chi2
@@ -872,14 +875,14 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-sc") {
 	    $score_column = $ARGV[$a+1];
 	    unless (&IsNatural($score_column)) {
-		&FatalError( "Score column must be a natural number\n");
+		&RSAT::error::FatalError( "Score column must be a natural number\n");
 	    }
 	    
 	    ### score column
 	} elsif ($ARGV[$a] =~ /^-orig/) {
 	    $origin = $ARGV[$a+1];
 	    unless (&IsInteger($origin)) {
-		&FatalError( "Invalid value $origin\tOrigin must be an integer number\n");
+		&RSAT::error::FatalError( "Invalid value $origin\tOrigin must be an integer number\n");
 	    }
 	    
 	    ### min and max positions
