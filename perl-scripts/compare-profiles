@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: compare-profiles,v 1.1 2005/03/13 10:41:01 jvanheld Exp $
+# $Id: compare-profiles,v 1.2 2005/03/22 17:21:15 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -13,7 +13,7 @@
 ## - add a return option
 ## - in verbosity: size of the table
 ## In verbosity : average probability over columns and rows
-
+## - add the possibility to put a threshold on either 
 BEGIN {
     if ($0 =~ /([^(\/)]+)$/) {
 	push (@INC, "$`lib/");
@@ -58,10 +58,10 @@ significantly similar profiles (e.g. co-exising genes), or on the
 contrary those which have mutually exclusive profiles. 
 
 Genes with significantly similar profiles can be selected with an
-upper threshold on Pval_r (e.g. -uth Pval_r 1e-6).
+upper threshold on Pval_R (e.g. -uth Pval_R 1e-6).
 
 Genes with significantly different profiles (mutually exclusive) can
-be selected with an upper threshold on Pval_l (e.g. -uth Pval_l 1e-6).
+be selected with an upper threshold on Pval_L (e.g. -uth Pval_L 1e-6).
 
 =item B<Significance threshold>
 
@@ -242,10 +242,10 @@ Uncertainty of B given A.
 
 U(B|A) = I(A;B)/U(B)
 
-=item B<Pval_r> 
+=item B<Pval_R> 
 
 P-value P(X >= N{AB}) calcualted with the right tail of the
-hypergeometric distibution. Small Pval_r values indicate that the
+hypergeometric distibution. Small Pval_R values indicate that the
 overlap between two profiles is significantly large.
 
                        q     i  q-i     q
@@ -253,10 +253,10 @@ P_value = P(X >= c) = SUM ( C  C     / C  )
                       i=c    r  n-r     n
 
 
-=item B<Pval_l>
+=item B<Pval_L>
 
 P-value P(X <= N{AB}) calcualted with the left tail of the
-hypergeometric distibution. Small Pval_r values indicate that the
+hypergeometric distibution. Small Pval_R values indicate that the
 overlap between two profiles is significantly small.
 
 
@@ -278,7 +278,7 @@ local $base=exp(1); ## Base for the logarithms
 ## Threshold parameters
 %lth = (); # lower threshold values
 %uth = (); # upper threshold values
-@supported_thresholds = qw( A B AB Pval_r Pval_l );
+@supported_thresholds = qw( A B AB Pval_R Pval_L );
 $supported_thresholds = join ",", @supported_thresholds;
 %supported_threshold = ();
 foreach my $thr (@supported_thresholds) {
@@ -406,7 +406,7 @@ $profiles->set_array_attribute("row_H", @row_H);
 
 ## Print header for pairwise statistics
 print $out join ("\t", 
-		 "; ID A",
+		 "ID A",
 		 "ID B",
 		 "name A",
 		 "name B",
@@ -423,11 +423,13 @@ print $out join ("\t",
 		 "H(B|A)", ## Conditional entropy
 #		 "D(A||B)", ## Relative entropy (=Kullback-Leiber distance)
 #		 "D(B||A)", ## Relative entropy (=Kullback-Leiber distance)
-		 "I(A;B)", ## Mutual information
+		 "I(A,B)", ## Mutual information
 		 "U(A|B)", ## Uncertainty coefficient (Bowers et al., 2004)
 		 "U(B|A)", ## Uncertainty coefficient (Bowers et al., 2004)
-		 "Pval_r", ## Hypergeometric probability, right tail
-		 "Pval_l", ## Hypergeometric probability, left tail
+		 "Pval_R", ## Hypergeometric probability, right tail
+		 "Pval_L", ## Hypergeometric probability, left tail
+		 "sigR", ## Hypergeometric significance, right tail
+		 "sigL", ## Hypergeometric significance, left tail
 		), "\n";
 for my $r1 (1..$nrow) {
     
@@ -450,7 +452,7 @@ for my $r1 (1..$nrow) {
     };
     my @row1 = $profiles->get_row($r1);
     
-    for my $r2 (($r1+1)..$nrow) {
+    for my $r2 ($r1..$nrow) {
 	## IDentifier for the second row
 	my $ID_B = $row_names[$r2-1];
 	if (defined($row_names{lc($ID_B)})) {
@@ -499,21 +501,29 @@ for my $r1 (1..$nrow) {
 	}
 
 	## Hypergeometric P-value for P(X>=N{AB})
-	$Pval_r = &cache_sum_of_hypergeometrics($N_A, $ncol, $N_B, $N{AB}, &min($N_A, $N_B));
-	## check thresholds on Pval_r
-	if ((defined($uth{Pval_r}) && ($Pval_r > $uth{Pval_r}))
-	    || ((defined($lth{Pval_r})) && ($Pval_r < $lth{Pval_r}))) {
-	    warn join ("\t", "threshold skipped", $ID_A, $ID_B, "Pval_r", $Pval_r), "\n" if ($main::verbose >= 4);
+	$Pval_R = &cache_sum_of_hypergeometrics($N_A, $ncol, $N_B, $N{AB}, &min($N_A, $N_B));
+	$sigR = -log($Pval_R)/log(10);
+	## check thresholds on Pval_R
+	if ((defined($uth{Pval_R}) && ($Pval_R > $uth{Pval_R}))
+	    || ((defined($lth{Pval_R})) && ($Pval_R < $lth{Pval_R}))) {
+	    warn join ("\t", "threshold skipped", $ID_A, $ID_B, "Pval_R", $Pval_R), "\n" if ($main::verbose >= 4);
 	    next;	    
+	}
+	if ($outfile{table_sigR}) {
+	    $table_sigR[$r1][$r2] = $sigR;
 	}
 
 	## Hypergeometric P-value for P(X<=N{AB})
-	$Pval_l = &cache_sum_of_hypergeometrics($N_A, $ncol, $N_B, 0, $N{AB});
-	## check thresholds on Pval_l
-	if ((defined($uth{Pval_l}) && ($Pval_l > $uth{Pval_l}))
-		 || ((defined($lth{Pval_l})) && ($Pval_l < $lth{Pval_l}))) {
-	    warn join ("\t", "threshold skipped", $ID_A, $ID_B, "Pval_l", $Pval_l), "\n" if ($main::verbose >= 4);
+	$Pval_L = &cache_sum_of_hypergeometrics($N_A, $ncol, $N_B, 0, $N{AB});
+	$sigL = -log($Pval_L)/log(10);
+	## check thresholds on Pval_L
+	if ((defined($uth{Pval_L}) && ($Pval_L > $uth{Pval_L}))
+		 || ((defined($lth{Pval_L})) && ($Pval_L < $lth{Pval_L}))) {
+	    warn join ("\t", "threshold skipped", $ID_A, $ID_B, "Pval_L", $Pval_L), "\n" if ($main::verbose >= 4);
 	    next;
+	}
+	if ($outfile{table_sigL}) {
+	    $table_sigL[$r1][$r2] = $sigR;
 	}
 
 
@@ -538,6 +548,9 @@ for my $r1 (1..$nrow) {
 	
 	## Mutual information
 	my $I = $H_A + $H_B  - $H_join;
+	if ($outfile{table_info}) {
+	    $table_info[$r1][$r2] = $I;
+	}
 
 	## Uncertainty coefficient (as defined by Bowers et al, 2004)
 	my $U_AgivenB = 0;
@@ -571,8 +584,10 @@ for my $r1 (1..$nrow) {
 			 sprintf($entropy_format, $I),
 			 sprintf($entropy_format, $U_AgivenB),
 			 sprintf($entropy_format, $U_BgivenA),
-			 sprintf("%-.2g", $Pval_r),
-			 sprintf("%-.2g", $Pval_l),
+			 sprintf("%-.2g", $Pval_R),
+			 sprintf("%-.2g", $Pval_L),
+			 sprintf("%-.2g", $sigR),
+			 sprintf("%-.2g", $sigL),
 			), "\n";
     }
 }
@@ -591,6 +606,77 @@ if ($verbose >= 1) {
 ################################################################
 ###### close output stream
 close $out if ($outfile{output});
+
+################################################################
+## Export tables
+if ($outfile{table_info}) {
+    &RSAT::message::TimeWarn(join ("\t", "Exporting Information table", $outfile{table_info})) if ($main::verbose >= 1);
+    my $TABLE_INFO = &OpenOutputFile($outfile{table_info});
+    print $TABLE_INFO join("\t", "ID", @row_names), "\n";
+
+    for my $r1 (1..$nrow) {
+	push @header, $ID_A;
+	my $ID_A = $row_names[$r1-1];
+	print $TABLE_INFO $ID_A;
+	for my $r2 (1..$nrow) {
+	    if (defined($table_info[$r1][$r2])) {
+		print $TABLE_INFO "\t", $table_info[$r1][$r2];
+	    } elsif (defined($table_info[$r2][$r1])) {
+		print $TABLE_INFO "\t", $table_info[$r2][$r1];
+	    } else {
+		print $TABLE_INFO "\tNA";
+	    }
+	}
+	print $TABLE_INFO "\n";
+    }
+    close $TABLE_INFO;
+}
+
+if ($outfile{table_sigR}) {
+    &RSAT::message::TimeWarn(join ("\t", "Exporting sigR table", $outfile{table_sigR})) if ($main::verbose >= 1);
+    my $TABLE_SIGR = &OpenOutputFile($outfile{table_sigR});
+    print $TABLE_SIGR join("\t", "ID", @row_names), "\n";
+
+    for my $r1 (1..$nrow) {
+	push @header, $ID_A;
+	my $ID_A = $row_names[$r1-1];
+	print $TABLE_SIGR $ID_A;
+	for my $r2 (1..$nrow) {
+	    if (defined($table_sigR[$r1][$r2])) {
+		print $TABLE_SIGR "\t", $table_sigR[$r1][$r2];
+	    } elsif (defined($table_sigR[$r2][$r1])) {
+		print $TABLE_SIGR "\t", $table_sigR[$r2][$r1];
+	    } else {
+		print $TABLE_SIGR "\tNA";
+	    }
+	}
+	print $TABLE_SIGR "\n";
+    }
+    close $TABLE_SIGR;
+}
+
+if ($outfile{table_sigL}) {
+    &RSAT::message::TimeWarn(join ("\t", "Exporting sigL table", $outfile{table_sigL})) if ($main::verbose >= 1);
+    my $TABLE_SIGR = &OpenOutputFile($outfile{table_sigL});
+    print $TABLE_SIGR join("\t", "ID", @row_names), "\n";
+
+    for my $r1 (1..$nrow) {
+	push @header, $ID_A;
+	my $ID_A = $row_names[$r1-1];
+	print $TABLE_SIGR $ID_A;
+	for my $r2 (1..$nrow) {
+	    if (defined($table_sigL[$r1][$r2])) {
+		print $TABLE_SIGR "\t", $table_sigL[$r1][$r2];
+	    } elsif (defined($table_sigL[$r2][$r1])) {
+		print $TABLE_SIGR "\t", $table_sigL[$r2][$r1];
+	    } else {
+		print $TABLE_SIGR "\tNA";
+	    }
+	}
+	print $TABLE_SIGR "\n";
+    }
+    close $TABLE_SIGR;
+}
 
 
 exit(0);
@@ -686,6 +772,41 @@ allows to use the command within a pipe.
 	} elsif ($ARGV[$a] eq "-o") {
 	    $outfile{output} = $ARGV[$a+1];
 	    
+	    ## Export information table
+=pod
+
+=item	B<-table_info table_file>
+
+Export a table with the mutual information.
+
+=cut
+	} elsif ($ARGV[$a] eq "-table_info") {
+	    $outfile{table_info} = $ARGV[$a+1];
+
+	    ## Export  table with sigR
+=pod
+
+=item	B<-table_sigR table_file>
+
+Export a table with the significance of the right tail of the
+hypergeometric distribution.
+
+=cut
+	} elsif ($ARGV[$a] eq "-table_sigR") {
+	    $outfile{table_sigR} = $ARGV[$a+1];
+	    
+	    ## Export  table with sigL
+=pod
+
+=item	B<-table_sigR table_file>
+
+Export a table with the significance of the right tail of the
+hypergeometric distribution.
+
+=cut
+	} elsif ($ARGV[$a] eq "-table_sigL") {
+	    $outfile{table_sigL} = $ARGV[$a+1];
+	    
 	    ## base for the logarihtms
 =pod
 
@@ -716,9 +837,9 @@ Supported paramaters:
 
 =item B<AB> number of common elements between two profiles
 
-=item B<Pval_r> P-value (right tail of the hypergeometric distribution)
+=item B<Pval_R> P-value (right tail of the hypergeometric distribution)
 
-=item B<Pval_r> P-value (left tail of the hypergeometric distribution)
+=item B<Pval_R> P-value (left tail of the hypergeometric distribution)
 
 =back
 
