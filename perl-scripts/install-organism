@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.25 2002/09/15 05:34:00 jvanheld Exp $
+# $Id: install-organism,v 1.26 2002/11/13 07:37:46 jvanheld Exp $
 #
-# Time-stamp: <2002-09-15 00:05:00 jvanheld>
+# Time-stamp: <2002-09-15 08:29:56 jvanheld>
 #
 ############################################################
 
@@ -28,8 +28,8 @@ $supported_for_installation{"filelist"} = 1;
 		   ncf=>1,
 		   allup=>1,
 		   oligos=>1,
-		   gene_freq=>1,
-		   genome_freq=>1,
+#		   gene_freq=>1,
+#		   genome_freq=>1,
 		   intergenic_freq=>1,
 		   dyads=>1,
 		   clean=>1,
@@ -159,25 +159,26 @@ sub Verbose {
 	print ";\t$task\n";
     }
 
-    print ";\n; Input parameters:\n";
-    printf ";    %-25s\t%s\n", "data source", $source;
+    print ";\n; Config files:", $rsa_config,"\n";
+    printf ";    %-25s\t%s\n", "RSA config", $config_file;
+    printf ";    %-25s\t%s\n", "\$RSA_LOCAL_CONFIG", $ENV{'RSA_LOCAL_CONFIG'} if ($ENV{'RSA_LOCAL_CONFIG'});
+
+    print ";\n; Directories and files:\n";
+    if ($task{genome}) {
+	printf ";    %-25s\t%s\n", "data source", $source;
+	printf ";    %-25s\t%s\n", "genome sequence format", $seq_format;
+	printf ";    %-25s\t%s\n", "genome sequence file", $infile{genome};
+    }
     printf ";    %-25s\t%s\n", "organism short name", $organism_short_name;
     printf ";    %-25s\t%s\n", "organism full name", $organism_full_name;
-    printf ";    %-25s\t%s\n", "genome sequence format", $seq_format;
-    printf ";    %-25s\t%s\n", "genome sequence file", $infile{genome};
     printf ";    %-25s\t%s\n", "feature table", $infile{features} if ($infile{features} );;
     printf ";    %-25s\t%s\n", "feature file", $infile{ptt} if ($infile{ptt} );
     printf ";    %-25s\t%s\n", "synonyms", $infile{synonyms} if ($infile{synonyms});
-
-    print ";\n; Output parameters:\n";
     printf ";    %-25s\t%s\n", "installation dir", $install_dir;
     printf ";    %-25s\t%s\n", "genome sequence file", $outfile{genome};
     printf ";    %-25s\t%s\n", "feature table", $outfile{features};
     printf ";    %-25s\t%s\n", "synonyms", $outfile{synonyms};
 
-    print ";\n; Config files:", $rsa_config,"\n";
-    printf ";    %-25s\t%s\n", "RSA config", $config_file;
-    printf ";    %-25s\t%s\n", "\$RSA_LOCAL_CONFIG", $ENV{'RSA_LOCAL_CONFIG'} if ($ENV{'RSA_LOCAL_CONFIG'});
     if ($local_config) {
 	printf ";    %-25s\t%s\n", "file to update", $ENV{'RSA_LOCAL_CONFIG'} ;
     } else {
@@ -493,7 +494,8 @@ sub CalcDyadFreq {
     my ($seq_file,$seq_format,$seq_type) = @_;
     $min_spacing = 0;
     $max_spacing = 20;
-    @monad_lengths = (3,2,1);
+#    @monad_lengths = (3,2,1);
+    @monad_lengths = (3);
 
     foreach $monad_length (@monad_lengths) {
 	$dyad_file = "dyads_${monad_length}nt_sp${min_spacing}-${max_spacing}_${seq_type}_${organism_short_name}${noov}${strands}";
