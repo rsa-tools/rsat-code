@@ -2,122 +2,7 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
-
-if ($ARGV[0] eq "-h") {
-  open HELP, "| more";
-  print HELP <<End_of_help; 
-NAME
-	position-analysis
-	
-        1998 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
-	
-DESCRIPTION
-	Detection of oligonucleotides with a biased distribution in a sequence set. 
-	The program begins by detecting all positions where each possible 
-	oligonucleotide is found in the input sequence. 
-	Positions are then grouped into class frequencies, and the class frequencies are 
-	are compared to those expected under a flat distribution hypothesis, i.e. if
-	the frequency of each word was constant along the sequences. 
-		
-USAGE
-	position-analysis [-i inputfile]  [-format input_format]
-                [-o outputfile] -l length -ci class_interval
-                [-1str | -2str] [-grouprc | -nogrouprc]
-
-	position-analysis [-h | -help]
-		provides a detailed or synthetic documentation
-
-
-OPTIONS
-	-i file	inputfile. This file should contain the sequences.
-	-format	input file format. Must be followed by one of the 
-		following options:
-		   fasta (default)
-		   wconsensus
-		   IG
-		   filelist
-		   raw
-		See below for the description of these formats.
-	-o file	outputfile. Returns a list of the oligonucleotides 
-		encountered in the sequences, with their frequencies.
-	-v	verbose. 
-	-vv	hyperverbose
-		same as verbose but returns additional info (sequence lengthes)
-	-l	oligonucleotide length.
-	-ci	class interval (default 20 bases). 
-		The width of the position classes (in number of bases)
-	-grouprc        group reverse complement pairs
-	-nogrouprc      do not group reverse complement pairs
-	-sort		sort oligonucleotides according to the bias in distribution profile
-	-1str	
-		inactivates the summation of occurrences on both strands.	
-	-2str
-		oligonucleotide occurrences found on both stands are summed. 
-	-noov	no overlap
-			overlapping occurrences of the same pattern are 
-			only taken into account once
-	-return	fields_to_return
-			supported fields:
-				distrib	occurrences found in each position class
-				exp	expected occurrences for each class
-				graph	a rgaph file per oligont profile
-				chi	chi-square value
-			several fields can be entered, separated by commas
-	-lth #	lower threshold on chi2
-		return only words with a chi2 value > #
-	-pl pattern_file
-		a file containing a selection of patterns. 
-		The analysis is then restricted to these patterns.
-		The first word of each new line is considered as a new pattern.
-		A score can be associated to each pattern with the option -sc.
-	-sc #	score column
-		(only valid whith the option -pl)
-		the column containing a score value for each pattern of the 
-		pattern file
-	-minpos #
-		minimal position to take into account for the chi-square calculation
-		This value must be a multiple of the class interval.
-	-maxpos #
-		maximal position to take into account for the chi-square calculation
-		This value must be a multiple of the class interval.
-End_of_help
-  close HELP;
-  exit(0);
-}
-
-if ($ARGV[0] eq "-help") {
-  open HELP, "| more";
-  print HELP <<End_of_help; 
-position-analysis options
-----------------------
--h		display complete help message
--help		display this list of options
--i		input file
--format		input format. Accepted: fasta (default), wconsensus, IG, raw, filelist
--o 		output file
--v		verbose
--vv		hyperverbose
--l		oligonucleotide length
--ci		class interval (default 20 bases). 
--1str		inactivate summation of occ on both strands
--2str		sum occurences on both strands (default)
--grouprc	group reverse complement pairs (default)
--nogrouprc	do not group reverse complement pairs
--noov		no overlap
--sort		sort oligonucleotides according to the bias in distribution profile
--return		chi,distrib,exp,graph
--lth		lower threshold on chi2
--pl		pattern list
--sc		score column
--minpos		minimal position for chi-square calculation
--maxpos		maximal position for chi-square calculation
-End_of_help
-    close HELP;
-    exit(0);
-}
-
-
+require "RSA.lib";
 
 ###### initialize parameters ##########
 $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
@@ -127,88 +12,7 @@ $sum_strands = 0;
 $group_rc = 0;
 $XYgraph_command = "$SCRIPTS/XYgraph";
 
-#### read arguments ####
-foreach $a (0..$#ARGV) {
-  if ($ARGV[$a] eq "-i") {
-    $inputfile = $ARGV[$a+1];
-    
-  } elsif ($ARGV[$a] eq "-o") {
-    $outputfile = $ARGV[$a+1];
-    
-    
-  } elsif (($ARGV[$a] eq "-l") && (&IsNatural($ARGV[$a+1]))) {
-    $oligo_length = $ARGV[$a+1];
-    
-  } elsif (($ARGV[$a] eq "-ci") && (&IsNatural($ARGV[$a+1]))) {
-    $class_interval = $ARGV[$a+1];
-    
-  } elsif ($ARGV[$a] eq "-format") {
-    $in_format = lc($ARGV[$a+1]);
-    
-  } elsif ($ARGV[$a] eq "-v") {
-    $verbose = 1;
-    
-  } elsif ($ARGV[$a] eq "-vv") {
-    $verbose = 1;
-    $hyperverbose = 1;
-    
-  } elsif ($ARGV[$a] eq "-1str") {
-    $sum_strands = 0;
-    $group_rc = 0;
-    
-  } elsif ($ARGV[$a] eq "-2str") {
-    $sum_strands = 1;
-    
-  } elsif ($ARGV[$a] eq "-grouprc") {
-    $sum_strands = 1;
-    $group_rc = 1;
-    
-  } elsif ($ARGV[$a] eq "-nogrouprc") {
-    $group_rc = 0;
-    
-  } elsif ($ARGV[$a] eq "-sort") {
-    $sort_result = 1;
-    
-  } elsif ($ARGV[$a] eq "-noov") {
-    $no_overlap = 1;
-    
-  } elsif (($ARGV[$a] =~ /^-lth/) && (&IsReal($ARGV[$a+1]))) {
-    $low_thr{'chi'} = $ARGV[$a+1];
-    $return{'chi'} = 1;
-    
-  } elsif ($ARGV[$a] eq "-return") {
-    @fields_to_return = split ",", $ARGV[$a+1];
-    foreach $field (@fields_to_return) {
-      if ($field =~ /dist/) {
-	$return{'distrib'} = 1;
-	
-      } elsif ($field =~ /chi/) {
-	$return{'chi'} = 1;
-	
-      } elsif ($field =~ /exp/) {
-	$return{'exp'} = 1;
-	
-      } elsif ($field =~ /graph/) {
-	$return{'graph'} = 1;
-	
-      }
-    }
-    
-  } elsif ($ARGV[$a] =~ /-pl/) {
-    $pattern_file = $ARGV[$a+1];
-    
-  } elsif (($ARGV[$a] eq "-sc") && (&IsNatural($ARGV[$a+1]))) {
-    $score_column = $ARGV[$a+1];
-    
-  } elsif (($ARGV[$a] eq "-minpos") && (&IsNatural($ARGV[$a+1]))) {
-    $min_pos = $ARGV[$a+1];
-    
-  } elsif (($ARGV[$a] eq "-maxpos") && (&IsNatural($ARGV[$a+1]))) {
-    $max_pos = $ARGV[$a+1];
-    
-  }
-}
-
+&ReadArguments();
 
 ##############################
 ### check parameter values ###
@@ -687,26 +491,270 @@ sub CalcExpected {
 }
 
 sub CalcChi {
-  ### calculate chi2 to compare the position distribution with a flat line
-  if ($return{'chi'}) {
-    $date = `date '+%H:%M:%S'`;
-    chomp $date;
-    print ";$date\tcalculating chi values ...\n" if ($hyperverbose);
-    foreach $oligo_seq (sort keys %occurrences) {
-      @chi_values = ();
-      foreach $class ($min_calc_class..$max_calc_class) {
-	push @chi_values, $class_freq{$oligo_seq}[$class];
-      }
-      foreach $class ($min_calc_class..$max_calc_class) {
-	push @chi_values, $exp_occ{$oligo_seq}[$class];
-      }
-      $chi_square{$oligo_seq} = &ChiSquare("goodfit", 2, $calc_class_nb, @chi_values);
-      if ((&IsReal($low_thr{'chi'})) && 
-	  ($chi_square{$oligo_seq} < $low_thr{'chi'})) {	
-	#print "$oligo_seq\t$chi_square{$oligo_seq}\t< $low_thr{'chi'}\n";
-	delete $occurrences{$oligo_seq};
-	delete $chi_square{$oligo_seq};
-      }
+    ### calculate chi2 to compare the position distribution with a flat line
+    if ($return{'chi'}) {
+	$date = `date '+%H:%M:%S'`;
+	chomp $date;
+	print ";$date\tcalculating chi values ...\n" if ($hyperverbose);
+	foreach $oligo_seq (sort keys %occurrences) {
+	    @chi_values = ();
+	    foreach $class ($min_calc_class..$max_calc_class) {
+		push @chi_values, $class_freq{$oligo_seq}[$class];
+	    }
+	    foreach $class ($min_calc_class..$max_calc_class) {
+		push @chi_values, $exp_occ{$oligo_seq}[$class];
+	    }
+	    $chi_square{$oligo_seq} = &ChiSquare("goodfit", 2, $calc_class_nb, @chi_values);
+
+	    #### suppress the checking of applicability condition on the chi-square
+	    if ($no_check) {
+		$chi_square{$oligo_seq} =~ s/\(//;
+		$chi_square{$oligo_seq} =~ s/\)//;
+	    }
+
+	    #### check the threshold on chi-square
+	    if ((&IsReal($low_thr{'chi'})) && 
+		($chi_square{$oligo_seq} < $low_thr{'chi'})) {	
+		delete $occurrences{$oligo_seq};
+		delete $chi_square{$oligo_seq};
+	    }
+	}
     }
-  }
+}
+
+sub PrintHelp {
+  open HELP, "| more";
+  print HELP <<End_of_help; 
+NAME
+	position-analysis
+	
+        1998 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
+	
+DESCRIPTION
+	Detection of oligonucleotides with a biased distribution in a sequence set. 
+	The program begins by detecting all positions where each possible 
+	oligonucleotide is found in the input sequence. 
+	Positions are then grouped into class frequencies, and the class frequencies are 
+	are compared to those expected under a flat distribution hypothesis, i.e. if
+	the frequency of each word was constant along the sequences. 
+		
+USAGE
+	position-analysis [-i inputfile]  [-format input_format]
+                [-o outputfile] -l length -ci class_interval
+                [-1str | -2str] [-grouprc | -nogrouprc]
+
+	position-analysis [-h | -help]
+		provides a detailed or synthetic documentation
+
+
+OPTIONS
+	-i file	inputfile. This file should contain the sequences.
+	-format	input file format. Must be followed by one of the 
+		following options:
+		   fasta (default)
+		   wconsensus
+		   IG
+		   filelist
+		   raw
+		See below for the description of these formats.
+	-o file	outputfile. Returns a list of the oligonucleotides 
+		encountered in the sequences, with their frequencies.
+	-v	verbose. 
+	-vv	hyperverbose
+		same as verbose but returns additional info (sequence lengthes)
+	-l	oligonucleotide length.
+	-ci	class interval (default 20 bases). 
+		The width of the position classes (in number of bases)
+	-grouprc        group reverse complement pairs
+	-nogrouprc      do not group reverse complement pairs
+	-sort		sort oligonucleotides according to the bias in distribution profile
+	-1str	
+		inactivates the summation of occurrences on both strands.	
+	-2str
+		oligonucleotide occurrences found on both stands are summed. 
+	-noov	no overlap
+			overlapping occurrences of the same pattern are 
+			only taken into account once
+	-return	fields_to_return
+			supported fields:
+				distrib	occurrences found in each position class
+				exp	expected occurrences for each class
+				graph	a rgaph file per oligont profile
+				chi	chi-square value
+			several fields can be entered, separated by commas
+	-lth #	lower threshold on chi2
+		return only words with a chi2 value > #
+	-pl pattern_file
+		a file containing a selection of patterns. 
+		The analysis is then restricted to these patterns.
+		The first word of each new line is considered as a new pattern.
+		A score can be associated to each pattern with the option -sc.
+	-sc #	score column
+		(only valid whith the option -pl)
+		the column containing a score value for each pattern of the 
+		pattern file
+	-minpos #
+		minimal position to take into account for the chi-square calculation
+		This value must be a multiple of the class interval.
+	-maxpos #
+		maximal position to take into account for the chi-square calculation
+		This value must be a multiple of the class interval.
+	-nocheck
+		do not check the applicability condition on the
+		chi-square. By default, the program checks that each
+		class has at least 5 observations. The chi-square is
+		bracketed for words which do not fill this
+		conditions. It is now recognized that this condition
+		is too restrictive, and that the chi2 is still valid
+		with smaller clas effective. We allow to suppress the
+		checking, but the responsibility is left to the user,
+		to decide whether the chi2 is or not significant.
+
+End_of_help
+  close HELP;
+  exit(0);
+}
+
+sub PrintOptions {
+  open HELP, "| more";
+  print HELP <<End_of_help; 
+position-analysis options
+----------------------
+-h		display complete help message
+-help		display this list of options
+-i		input file
+-format		input format. Accepted: fasta (default), wconsensus, IG, raw, filelist
+-o 		output file
+-v		verbose
+-vv		hyperverbose
+-l		oligonucleotide length
+-ci		class interval (default 20 bases). 
+-1str		inactivate summation of occ on both strands
+-2str		sum occurences on both strands (default)
+-grouprc	group reverse complement pairs (default)
+-nogrouprc	do not group reverse complement pairs
+-noov		no overlap
+-sort		sort oligonucleotides according to the bias in distribution profile
+-return		chi,distrib,exp,graph
+-lth		lower threshold on chi2
+-pl		pattern list
+-sc		score column
+-minpos		minimal position for chi-square calculation
+-maxpos		maximal position for chi-square calculation
+-nocheck	do not check applicability condition for the chi2
+End_of_help
+    close HELP;
+    exit(0);
+}
+
+sub ReadArguments {
+#### read arguments ####
+    foreach $a (0..$#ARGV) {
+	### verbose ###
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+	    
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp();
+	    
+	    ### list of options
+	} elsif ($ARGV[0] eq "-help") {
+	    &PrintOptions();
+	    
+	    ### input file
+	} elsif ($ARGV[$a] eq "-i") {
+	    $inputfile = $ARGV[$a+1];
+	    
+	    ### output file
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outputfile = $ARGV[$a+1];
+	    
+	    ### oligomer length
+	} elsif (($ARGV[$a] eq "-l") && (&IsNatural($ARGV[$a+1]))) {
+	    $oligo_length = $ARGV[$a+1];
+	    
+	    ### class interval
+	} elsif (($ARGV[$a] eq "-ci") && (&IsNatural($ARGV[$a+1]))) {
+	    $class_interval = $ARGV[$a+1];
+	    
+	    ### sequence format
+	} elsif ($ARGV[$a] eq "-format") {
+	    $in_format = lc($ARGV[$a+1]);
+	    
+	    ### strands
+	} elsif ($ARGV[$a] eq "-1str") {
+	    $sum_strands = 0;
+	    $group_rc = 0;
+	} elsif ($ARGV[$a] eq "-2str") {
+	    $sum_strands = 1;
+	    
+	    ### grouping of reverse complements
+	} elsif ($ARGV[$a] eq "-grouprc") {
+	    $sum_strands = 1;
+	    $group_rc = 1;
+	} elsif ($ARGV[$a] eq "-nogrouprc") {
+	    $group_rc = 0;
+	    
+	    ### sort the result according to significance
+	} elsif ($ARGV[$a] eq "-sort") {
+	    $sort_result = 1;
+	    
+	    ### no overlap between successive matches
+	} elsif ($ARGV[$a] eq "-noov") {
+	    $no_overlap = 1;
+	    
+	    ### lower threshold on chi square
+	} elsif (($ARGV[$a] =~ /^-lth/) && (&IsReal($ARGV[$a+1]))) {
+	    $low_thr{'chi'} = $ARGV[$a+1];
+	    $return{'chi'} = 1;
+	    
+	    ### return values
+	} elsif ($ARGV[$a] eq "-return") {
+	    @fields_to_return = split ",", $ARGV[$a+1];
+	    foreach $field (@fields_to_return) {
+		if ($field =~ /dist/) {
+		    $return{'distrib'} = 1;
+		    
+		} elsif ($field =~ /chi/) {
+		    $return{'chi'} = 1;
+		    
+		} elsif ($field =~ /exp/) {
+		    $return{'exp'} = 1;
+		    
+		} elsif ($field =~ /graph/) {
+		    $return{'graph'} = 1;
+		    
+		}
+	    }
+	    
+	    ### do not check applicability condition for the chi2
+	} elsif ($ARGV[$a] eq "-nocheck") {
+	    $no_check = 1;
+	    
+	    ### predefined pattern list
+	} elsif ($ARGV[$a] =~ /-pl/) {
+	    $pattern_file = $ARGV[$a+1];
+	    
+	    ### score column
+	} elsif (($ARGV[$a] eq "-sc") && (&IsNatural($ARGV[$a+1]))) {
+	    $score_column = $ARGV[$a+1];
+	    
+	    ### min and max positions
+	} elsif (($ARGV[$a] eq "-minpos") && (&IsNatural($ARGV[$a+1]))) {
+	    $min_pos = $ARGV[$a+1];
+	} elsif (($ARGV[$a] eq "-maxpos") && (&IsNatural($ARGV[$a+1]))) {
+	    $max_pos = $ARGV[$a+1];
+	    
+
+
+	}
+
+
+    }
+
 }
