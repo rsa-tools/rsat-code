@@ -79,7 +79,7 @@ $default{schema} = "rsat";
 $default{user} = "rsat";
 $default{password} = "rsat";
 
-### input directory. This directory must contain the mirror of the databases to be p
+### input directory. This directory must contain the mirror of the databases to be parsed
 $Databases = $RSA."/downloads"; 
 
 ### main output directory: the result is exported to subdirectories of  this directory
