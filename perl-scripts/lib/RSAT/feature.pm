@@ -14,6 +14,34 @@ package RSAT::feature;
 	    score =>0
 	    );
 
+# RSAT feature-map format
+@{$columns{ft}} = qw (
+		       seq_name
+		       ft_type
+                       feature_name
+		       strand
+		       start
+		       end
+		       description
+                       score
+		       );
+@{$strands{ft}} = ("D", "R", "DR");
+$comment_char{ft} = "; ";
+
+# RSAT dna-pattern format
+@{$columns{dnapat}} = qw (
+                       feature_name
+		       strand
+                       pattern_sequence
+		       seq_name
+		       start
+		       end
+		       description
+                       score
+		       );
+@{$strands{dnapat}} = ("D", "R", "DR");
+$comment_char{dnapat} = "; ";
+
 # RSAT Genome feature format
 @{$columns{gft}} = qw (ft_id
 		       ft_type
@@ -24,9 +52,8 @@ package RSAT::feature;
 		       strand
 		       description
 		       );
-
-
- @{$strands{gft}} = ("D", "R", "DR");
+@{$strands{gft}} = ("D", "R", "DR");
+$comment_char{gft} = "; ";
 
 # Sanger general feature format
 @{$columns{gff}} = qw (seq_name
@@ -40,6 +67,7 @@ package RSAT::feature;
 		       attribute
 		       );
 @{$strands{gff}} = ("+", "-", ".");
+$comment_char{gff} = "## ";
 
 require "RSA.seq.lib";
 
@@ -175,6 +203,13 @@ sub parse_from_row {
     $strand =~ s/\-/R/;
     $strand =~ s/\./DR/;
     $self->force_attribute("strand", $strand);
+
+    ## Format-specific conversions
+
+    ## dna-pattern
+    if ($format eq "dnapat") {
+	$self->force_attribute("type", "dnapat");
+    }
 }
 
 ################################################################
@@ -216,11 +251,14 @@ sub to_text {
     }
 
     ## Format-specific features
+
+    ## GFF 
     if ($format eq "gff") {
 	my $attribute = "gene \"".$self->get_attribute("feature_name")."\"";
 	$attribute .= "; note \"".$self->get_attribute("description")."\"";
 	$fields[$col_index{attribute}] = $attribute;
     }
+
 
     ## Specific treatment for the strand
     my @strands = @{$strands{$format}};
@@ -253,9 +291,10 @@ sub header {
 
     my @cols = @{$columns{$format}};
 
-    my $header = join ("\t", @cols);
-$header .= "\n";
-return $header;
+    my $header = $comment_char{$format};
+    $header .= join ("\t", @cols);
+    $header .= "\n";
+    return $header;
 }
 
 return 1;
