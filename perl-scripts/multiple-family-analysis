@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.47 2004/01/23 22:36:25 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.48 2004/01/23 23:14:19 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -1849,6 +1849,10 @@ sub CalibrateOligos {
 	    ## Calculate stats and fit negbin on the distributions
 	    my $fitting_file = $calib_prefix."_negbin.tab";
 	    $command = "fit-distribution -v 1 -i $distrib_file -distrib negbin -o $fitting_file";
+	    &doit($command, $dry_run, $die_on_error);
+
+	    ## Compress distrib and fitting file
+	    $command = "gzip -f $distrib_file $fitting_file";
 	    &doit($command, $dry_run, $die_on_error);
 	}
 
