@@ -192,11 +192,6 @@ $parameters .= "$freq_option";
 #### pseudo weight
 if (&IsReal($query->param('pseudo_weight'))) {
     my $pseudo = $query->param('pseudo_weight');
-#    if ($pseudo > 1) {
-#	&cgiError("Pseudo-weight must be <= 1.");
-#    } elsif ($pseudo < 0) {
-#	&cgiError("Pseudo-weight must be >= 0.");
-#    } 
     $parameters .= " -pseudo $pseudo";
 }
 
@@ -225,18 +220,19 @@ if ($query->param('output') =~ /display/i) {
     
     #### oligonucleotide assembly ####
     if (&IsReal($query->param('occ_significance_threshold'))) {
-	$fragment_assembly_command = "$SCRIPTS/pattern-assembly -v 1 -subst 1";
+	$pattern_assembly_command = "$SCRIPTS/pattern-assembly -v 1 -subst 1";
 	if ($query->param('strand') =~ /single/) {
-	    $fragment_assembly_command .= " -1str";
+	    $pattern_assembly_command .= " -1str";
 	} else {
-	    $fragment_assembly_command .= " -2str";
+	    $pattern_assembly_command .= " -2str";
 	}
 
 	unless ($ENV{RSA_ERROR}) {
-	    print "<H2>Fragment assembly</H2>\n";
-	    open CLUSTERS, "$fragment_assembly_command -i $result_file |";
+	    print "<H2>Pattern assembly</H2>\n";
+	    open CLUSTERS, "$pattern_assembly_command -i $result_file |";
 	    print "<PRE>\n";
 	    while (<CLUSTERS>) {
+		s|$RSA/||g;
 		print;
 	    }
 	    print "</PRE>\n";
@@ -245,23 +241,25 @@ if ($query->param('output') =~ /display/i) {
     }
 
     &PipingForm();
+    print '<HR SIZE=3>';
   
 } else {
-  #### send e-mail with the result
-  if ($query->param('user_email') =~ /(\S+\@\S+)/) {
-    $address = $1;
-    print "<B>Result will be sent to your account: <P>";
-    print "$address</B><P>";
-    system "$command $parameters | $mail_command $address &"; 
-  } else {
-    if ($query->param('user_email') eq "") {
-      &cgiError("You did not enter your e-mail address");
-    } else {
-      &cgiError("The e-mail address you entered is not valid");
-      print $query->param('user_email')."</B><P>";      
-    }
-  }
-  print '<HR SIZE=3>';
+
+    &EmailTheResult("$command $parameters", $query->param('user_email'));
+#     #### send e-mail with the result
+#     if ($query->param('user_email') =~ /(\S+\@\S+)/) {
+# 	$address = $1;
+# 	print "<B>Result will be sent to your account: <P>";
+# 	print "$address</B><P>";
+# 	system "$command $parameters | $mail_command $address &"; 
+#     } else {
+# 	if ($query->param('user_email') eq "") {
+# 	    &cgiError("You did not enter your e-mail address");
+# 	} else {
+# 	    &cgiError("The e-mail address you entered is not valid");
+# 	    print $query->param('user_email')."</B><P>";      
+# 	}
+#     }
 }
 
 print $query->end_html;

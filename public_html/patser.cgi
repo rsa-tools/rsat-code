@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: patser.cgi,v 1.9 2001/11/13 23:39:21 jvanheld Exp $
+# $Id: patser.cgi,v 1.10 2002/09/05 09:58:07 jvanheld Exp $
 #
-# Time-stamp: <2001-11-14 00:17:19 jvanheld>
+# Time-stamp: <2002-09-05 04:58:00 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -108,6 +108,7 @@ if ($query->param('output') eq "display") {
     &PipingWarning();
 
     ### Print the result on Web page
+    print "$patser_command $parameters" if ($ECHO);
     open RESULT, "$patser_command $parameters & |";
     open FEATURES, "| $features_from_patser_cmd";
     
@@ -123,25 +124,29 @@ if ($query->param('output') eq "display") {
     print "</PRE>";
 
     &PipingForm();
+
+    print "<HR SIZE = 3>";
     
 } else {
+
+    &EmailTheResult("$patser_command $parameters", $query->param('user_email'));
+
     ### send an e-mail with the result ###
-    if ($query->param('user_email') =~ /(\S+\@\S+)/) {
-	$address = $1;
-	print "<B>Result will be sent to your account: <P>";
-	print "$address</B><P>";
-	system "$patser_command $parameters | $mail_command $address &";
-    } else {
-	if ($query->param('user_email') eq "") {
-	    print "<B>ERROR: you did not enter your e-mail address<P>";
-	} else {
-	    print "<B>ERROR: the e-mail address you entered is not valid<P>";
-	    print $query->param('user_email')."</B><P>";      
-	}
-    } 
+#     if ($query->param('user_email') =~ /(\S+\@\S+)/) {
+# 	$address = $1;
+# 	print "<B>Result will be sent to your account: <P>";
+# 	print "$address</B><P>";
+# 	system "$patser_command $parameters | $mail_command $address &";
+#     } else {
+# 	if ($query->param('user_email') eq "") {
+# 	    print "<B>ERROR: you did not enter your e-mail address<P>";
+# 	} else {
+# 	    print "<B>ERROR: the e-mail address you entered is not valid<P>";
+# 	    print $query->param('user_email')."</B><P>";      
+# 	}
+#     } 
 }
 
-print "<HR SIZE = 3>";
 print $query->end_html;
 
 exit(0);

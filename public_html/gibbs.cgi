@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gibbs.cgi,v 1.6 2001/10/07 22:51:17 jvanheld Exp $
+# $Id: gibbs.cgi,v 1.7 2002/09/05 09:50:53 jvanheld Exp $
 #
-# Time-stamp: <2001-10-08 00:51:11 jvanheld>
+# Time-stamp: <2002-09-05 04:50:51 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -16,7 +16,7 @@ require "RSA.lib";
 require "RSA.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
-$gibbs_command = "nice -n 30 $BIN/gibbs";
+$gibbs_command = "$BIN/gibbs";
 $matrix_from_gibbs_command = "$SCRIPTS/matrix-from-gibbs";
 $convert_seq_command = "$SCRIPTS/convert-seq";
 $tmp_file_name = sprintf "gibbs.%s", &AlphaDate;
@@ -79,7 +79,7 @@ if ($query->param('output') eq "display") {
     
     system "$gibbs_command $parameters > $result_file";
     system "$matrix_from_gibbs_command -i $result_file -o $matrix_file";
-    print "<PRE><B>Command:</B> $gibbs_command $parameters </PRE>";
+    print "<PRE><B>Command:</B> $gibbs_command $parameters </PRE>" if ($ECHO);
     
     ### Print result on the web page
     print '<H4>Result</H4>';
@@ -90,21 +90,22 @@ if ($query->param('output') eq "display") {
     &PipingForm();
   
 } else {
+    &EmailTheResult("$gibbs_command $parameters", $query->param('user_email'));
+
   #### send e-mail with the result
-  if ($query->param('user_email') =~ /(\S+\@\S+)/) {
-    $address = $1;
-    print "<B>Result will be sent to your e-mail address: <P>";
-    print "$address</B><P>";
-    system "$gibbs_command $parameters | $mail_command $address &"; 
-  } else {
-    if ($query->param('user_email') eq "") {
-      print "<B>ERROR: you did not enter your e-mail address<P>";
-    } else {
-      print "<B>ERROR: the e-mail address you entered is not valid<P>";
-      print "$query->param('user_email')</B><P>";      
-    }
-    }
-  print '<HR SIZE=3>';
+#   if ($query->param('user_email') =~ /(\S+\@\S+)/) {
+#     $address = $1;
+#     print "<B>Result will be sent to your e-mail address: <P>";
+#     print "$address</B><P>";
+#     system "$gibbs_command $parameters | $mail_command $address &"; 
+#   } else {
+#     if ($query->param('user_email') eq "") {
+#       print "<B>ERROR: you did not enter your e-mail address<P>";
+#     } else {
+#       print "<B>ERROR: the e-mail address you entered is not valid<P>";
+#       print "$query->param('user_email')</B><P>";      
+#     }
+#     }
 }
 
 print "<HR SIZE = 3>";

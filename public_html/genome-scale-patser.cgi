@@ -26,7 +26,7 @@ $query = new CGI;
 ### print the header of the result page
 &RSA_header("patser result ".$query->param("title"));
 
-#&ListParameters;
+#&ListParameters if ($ECHO);
 
 
 #### update log file ####
@@ -101,18 +101,19 @@ $feature_file =  "$TMP/$tmp_file_name.ft";
 
 $command = "$retrieve_seq_command $retrieve_seq_parameters ";
 $command .= "| $patser_command $patser_parameters ";
+#$command .= "| $add_orf_function_command -org $org ";
 
-if ($org eq "yeast") { #### not yet supported for other organisms
-    $command .= "| $add_orf_function_command  ";
-    $command .= "| $link_command  ";
-}
 
 ### execute the command ###
 if ($query->param("output") =~ /display/i) {
 
+#    if ($org eq "Saccharomyces_cerevisiae") { #### not yet supported for other organisms
+#	$command .= "| $link_command  ";
+#    }
+
     ### execute the command ###
     $result_file = "$TMP/$tmp_file_name.res";
-#    print "<PRE>$command</PRE>";
+    print "<PRE>$command</PRE>" if ($ECHO);
 #    print "<PRE>$features_from_patser_cmd</PRE>";
     open RESULT, "$command & |";
 #    open FEATURES, "| $features_from_patser_cmd";
@@ -136,25 +137,28 @@ if ($query->param("output") =~ /display/i) {
 #    &PrintHtmlTable(RESULT, $result_file);
 #    close RESULT;
     
+    print "<HR SIZE = 3>";
     
 } else {
-    ### send an e-mail with the result ###
-    if ($query->param('user_email') =~ /(\S+\@\S+)/) {
-	$address = $1;
-	print "<B>Result will be sent to your e-mail address: <P>";
-	print "$address</B><P>";
-	system "$command | $mail_command $address &";
-    } else {
-	if ($query->param('user_email') eq "") {
-	    print "<B>ERROR: you did not enter your e-mail address<P>";
-	} else {
-	    print "<B>ERROR: the e-mail address you entered is not valid<P>";
-	    print "$query->param('user_email')</B><P>";      
-	}
-    } 
+
+    &EmailTheResult($command, $query->param('user_email'));
+
+#     ### send an e-mail with the result ###
+#     if ($query->param('user_email') =~ /(\S+\@\S+)/) {
+# 	$address = $1;
+# 	print "<B>Result will be sent to your e-mail address: <P>";
+# 	print "$address</B><P>";
+# 	system "$command | $mail_command $address &";
+#     } else {
+# 	if ($query->param('user_email') eq "") {
+# 	    print "<B>ERROR: you did not enter your e-mail address<P>";
+# 	} else {
+# 	    print "<B>ERROR: the e-mail address you entered is not valid<P>";
+# 	    print "$query->param('user_email')</B><P>";      
+# 	}
+#     } 
 }
 
-print "<HR SIZE = 3>";
 
 print $query->end_html;
 

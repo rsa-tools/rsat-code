@@ -125,12 +125,6 @@ if ($query->param('subst') =~ /^\d+$/) {
 }
 
 
-#### linking to external databases
-if ($query->param('return') =~ /positions/) {
-    $orf_col = 4;
-} else {
-    $orf_col = 1;
-}
 
 #### pattern matching parameters
 &ReadRetrieveSeqParams();
@@ -141,10 +135,17 @@ $command .= " $parameters_dna_pattern ";
 #
 # Additional information
 #
+if ($query->param('return') =~ /positions/) {
+    $orf_col = 4;
+} else {
+    $orf_col = 1;
+}
 unless ($query->param("sequence_type") =~ /chromosome/) {
     $command .= "| $add_orf_function_command -org $org ";
     $command .= "| $add_linenb_command ";
-    if ($org eq "Saccharomyces_cerevisiae") { #### not yet supported for other organisms
+#### linking to external databases
+    if ( ($query->param("output") =~ /display/i) &&
+	 ($org eq "Saccharomyces_cerevisiae")) { #### not yet supported for other organisms
 	$command .= "| $link_command -col $orf_col  ";
     }
 }
@@ -154,6 +155,7 @@ print "<PRE>$command</PRE>" if ($ECHO);
 ################################################################
 ### execute the command ###
 if ($query->param("output") =~ /display/i) {
+
 
     ### execute the command ###
     $result_file = "$TMP/$tmp_file_name.res";
