@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: position-analysis,v
+# $Id: position-analysis,v 1.12 2002/11/04 16:45:32 jvanheld Exp $
 #
-# Time-stamp: <2002-11-04 09:42:32 jvanheld>
+# Time-stamp: <2002-11-04 10:45:12 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -26,7 +26,13 @@ $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
 $sequence_number = 0;
 $nb_possible_pos = 0;
 $sum_seq_length = 0;
+$no_check = 0;
+$no_filter = 0;
 
+%supported_seq_type = ("DNA"=>1,
+		       "any"=>1);
+$supported_seq_types = sort keys %supported_seq_type;
+$seq_type = "any";
 
 &ReadArguments();
 
@@ -81,6 +87,8 @@ $out = &OpenOutputFile($outputfile);
 #die "POUET\t$pattern_file\n" if ($pattern_file);
 &LocalReadPatterns() if ($pattern_file);
 &ReadSequence();
+
+&CheckDNA() if ($seq_type == "dna");
 
 &CalcClasses();
 
@@ -391,29 +399,29 @@ sub ReadSequence {
 ################################################################
 #### calculate class intervals
 sub CalcClasses {
-  ### class definition
-  $max_class = int(($max_last_pos-1)/$class_interval);
-  $class_nb = $max_class + 1;
-  for $class (0..$max_class) {
-    $class_min[$class] = $class*$class_interval + 1;
-    $class_max[$class] = ($class+1)*$class_interval;
-    $class_center[$class] = ($class_min[$class] + $class_max[$class])/2;
-  }
-  if (&IsNatural($min_pos)) {
-    $min_calc_class = int(($min_pos-1)/$class_interval);
-  } else {
-    $min_calc_class = 0;
-  }
-  if (&IsNatural($max_pos)) {
-    $max_calc_class = int(($max_pos-1)/$class_interval);
-  } else {
-    $max_calc_class = $max_class;
-  }
-  $calc_class_nb = $max_calc_class - $min_calc_class + 1;
-  $sum_pos_per_class  = 0;
-  for $class ($min_calc_class..$max_calc_class) {
-    $sum_pos_per_class += $pos_per_class[$class];
-  }
+    ### class definition
+    $max_class = int(($max_last_pos-1)/$class_interval);
+    $class_nb = $max_class + 1;
+    for $class (0..$max_class) {
+	$class_min[$class] = $class*$class_interval + 1;
+	$class_max[$class] = ($class+1)*$class_interval;
+	$class_center[$class] = ($class_min[$class] + $class_max[$class])/2;
+    }
+    if (&IsNatural($min_pos)) {
+	$min_calc_class = int(($min_pos-1)/$class_interval);
+    } else {
+	$min_calc_class = 0;
+    }
+    if (&IsNatural($max_pos)) {
+	$max_calc_class = int(($max_pos-1)/$class_interval);
+    } else {
+	$max_calc_class = $max_class;
+    }
+    $calc_class_nb = $max_calc_class - $min_calc_class + 1;
+    $sum_pos_per_class  = 0;
+    for $class ($min_calc_class..$max_calc_class) {
+	$sum_pos_per_class += $pos_per_class[$class];
+    }
 }
 
 
@@ -474,10 +482,14 @@ sub CalcChi {
 	    $chi_square{$oligo_seq} =~ s/\)//;
 	} else {
 	    unless (&IsReal($chi_square{$oligo_seq})) {
-		print $out "; WARNING: $oligo_seq $chi_square{$oligo_seq} discarded because does not fit conditions for the chi-square\n" 
+		print $out "; WARNING: $oligo_seq $chi_square{$oligo_seq}  does not fit conditions for the chi-square\n" 
 		    if ($verbose >= 2);
-		delete $occurrences{$oligo_seq};
-		delete $chi_square{$oligo_seq};
+		unless ($no_filter) {
+		    print $out "; WARNING: $oligo_seq discarded\n" 
+			if ($verbose >= 3);
+		    delete $occurrences{$oligo_seq};
+		    delete $chi_square{$oligo_seq};
+		}
 	    }
 	}
 	
@@ -488,6 +500,9 @@ sub CalcChi {
 	#### check the threshold on chi-square
 	if ((&IsReal($low_thr{'chi'})) && 
 	    ($chi_square{$oligo_seq} < $low_thr{'chi'})) {	
+	    print $out "; WARNING: $oligo_seq below the chi threshold $chi_square{$oligo_seq} < $low_thr{'chi'}\n" 
+		if ($verbose >= 3);
+
 	    delete $occurrences{$oligo_seq};
 	    delete $chi_square{$oligo_seq};
 	}
@@ -506,7 +521,6 @@ NAME
         1998 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
 	
 DESCRIPTION
-
 	Calculates the positional distribution of oligonucleotides in
 	a set of sequences, and detects those which significantly
 	discard from a homogeneous distribution.
@@ -542,40 +556,47 @@ OPTIONS
 		The width of the position classes (in number of bases)
 	-grouprc        group reverse complement pairs
 	-nogrouprc      do not group reverse complement pairs
-	-sort		sort oligonucleotides according to the bias in distribution profile
+	-sort		
+		sort oligonucleotides according to the bias in
+		distribution profile
 	-1str	
-		inactivates the summation of occurrences on both strands.	
+		inactivates the summation of occurrences on both
+		strands.
 	-2str
-		oligonucleotide occurrences found on both stands are summed. 
+		oligonucleotide occurrences found on both stands are
+		summed.
 	-noov	no overlap
 			overlapping occurrences of the same pattern are 
 			only taken into account once
 	-return	fields_to_return
-			supported fields:
-				distrib	occurrences found in each position class
-				exp	expected occurrences for each class
-				graph	a rgaph file per oligont profile
-				chi	chi-square value
-			several fields can be entered, separated by commas
+		supported fields:
+			distrib	occurrences found in each position class
+			exp	expected occurrences for each class
+			graph	a rgaph file per oligont profile
+			chi	chi-square value
+		several fields can be entered, separated by commas
 	-lth #	lower threshold on chi2
 		return only words with a chi2 value > #
 	-oth #	lower threshold on occurrences
 		return only words with a number of occurrences > #
 	-pl pattern_file
-		a file containing a selection of patterns. 
-		The analysis is then restricted to these patterns.
-		The first word of each new line is considered as a new pattern.
-		A score can be associated to each pattern with the option -sc.
+		A file containing a selection of patterns.  The
+		analysis is then restricted to these patterns.  The
+		first word of each new line is considered as a new
+		pattern.  A score can be associated to each pattern
+		with the option -sc.
 	-sc #	score column
 		(only valid whith the option -pl)
-		the column containing a score value for each pattern of the 
-		pattern file
+		The column containing a score value for each pattern
+		of the pattern file
 	-minpos #
-		minimal position to take into account for the chi-square calculation
-		This value must be a multiple of the class interval.
+		minimal position to take into account for the
+		chi-square calculation This value must be a multiple
+		of the class interval.
 	-maxpos #
-		maximal position to take into account for the chi-square calculation
-		This value must be a multiple of the class interval.
+		maximal position to take into account for the
+		chi-square calculation This value must be a multiple
+		of the class interval.
 	-nocheck
 		do not check the applicability condition on the
 		chi-square. By default, the program checks that each
@@ -586,12 +607,17 @@ OPTIONS
 		with smaller clas effective. We allow to suppress the
 		checking, but the responsibility is left to the user,
 		to decide whether the chi2 is or not significant.
+	-nofilter
+		Do not discard oligos which do not fit the condition
+		of applicability. Instead, mark them by including the
+		chi2 value in curly brackets.
 	-origin
 		reference for calculating positions. 
 
-		If a negative value, coordinates are calculated with
-		respect to the specified position relative to rather
-		than the start of the sequence.
+		If a negative value is specified, coordinates are
+		calculated with respect to the specified position
+		relative to the end rather than the start of the
+		sequences.
 
 		To calculate the positions relative to sequence end,
 		use the option:
@@ -611,7 +637,7 @@ position-analysis options
 -h		display complete help message
 -help		display this list of options
 -i		input file
--format		input format. Accepted: fasta (default), wconsensus, IG, raw, filelist
+-format		input sequence format
 -o 		output file
 -v \#		verbose level
 -l		oligonucleotide length
@@ -621,16 +647,17 @@ position-analysis options
 -grouprc	group reverse complement pairs (default)
 -nogrouprc	do not group reverse complement pairs
 -noov		no overlap
--sort		sort oligonucleotides according to the bias in distribution profile
+-sort		sort oligonucleotides according to the score
 -return		chi,distrib,exp,graph
 -lth		lower threshold on chi2
 -oth		lower threshold on occurrences
 -pl		pattern list
--pl		origin (-0 to calculatre positions relative to the end of the sequence)
+-origin		origin (-0 to calculate positions relative to  sequence end)
 -sc		score column
 -minpos		minimal position for chi-square calculation
 -maxpos		maximal position for chi-square calculation
 -nocheck	do not check applicability condition for the chi2
+-nofilter	don\'t discard oligos which do not fit applicability condition
 End_of_help
     close HELP;
     exit(0);
@@ -731,9 +758,20 @@ sub ReadArguments {
 		}
 	    }
 	    
+	    #### sequence type
+	} elsif ($ARGV[$a] =~ /^-seqtype/i) {
+	    $seq_type = $ARGV[$a+1];
+	    unless ($supported_seq_type{$seq_type}) {
+		&FatalError("$seq_type is not a supported sequence type. Supported: $supported_seq_types");
+	    }
+
 	    ### do not check applicability condition for the chi2
 	} elsif ($ARGV[$a] eq "-nocheck") {
 	    $no_check = 1;
+
+	    ### do not discard oligos which do not fit the applicability condition
+	} elsif ($ARGV[$a] eq "-nofilter") {
+	    $no_filter = 1;
 	    
 	    ### predefined pattern list
 	} elsif ($ARGV[$a] =~ /-pl/) {
@@ -772,29 +810,30 @@ sub Verbose {
 	print $out " $a";
     }
     print $out "\n";
-    print $out ";Input parameters\n";
-    print $out ";\tInput file	$inputfile\n" if ($inputfile ne "");
-    print $out ";\tInput format	$in_format\n";
-    print $out ";\tOutput file	$outputfile\n" if ($outputfile ne "");
-    print $out ";\tOligonucleotide length	$oligo_length\n";
-    print $out ";\tchi threshold (lower)\t$low_thr{'chi'}\n" if (&IsReal($low_thr{'chi'}));
-    print $out ";\toccurrence threshold (lower)\t$low_thr{'occ'}\n" if (&IsNatural($low_thr{'occ'}));
+    printf $out "; %-29s\t%s\n", "Sequence file", $inputfile if ($inputfile);
+    printf $out "; %-29s\t%s\n", "Sequence format", $in_format;
+    printf $out "; %-29s\t%s\n", "Sequence type", $seq_type;
+    printf $out "; %-29s\t%s\n", "Output file", $outputfile if ($outputfile);
+    printf $out "; %-29s\t%d\n", "Oligo length", $oligo_length;
+    printf $out "; %-29s\t%f\n", "Lower threshold on chi", $low_thr{'chi'} if (&IsReal($low_thr{'chi'}));
+    printf $out "; %-29s\t%d\n", "Lower threshold on occurrences", $low_thr{'occ'} if (&IsNatural($low_thr{'occ'}));
     if ($strands eq "2str") {
-	print $out ";\tCounted on both strands\n";
+	printf $out "; %-29s\n", "Occurrences counted  on both strands";
 	if ($group_rc) {
-	    print $out ";\tgrouped by pairs of reverse complements\n";
+	    printf $out "; %-29s\n", "grouped by pairs of reverse complements";
 	}
     } else {
-	print $out ";\tCounted on a single strand\n";
+	printf $out "; %-29s\n", "Occurrences counted  on a single  strands";
     }
-    print $out ";\tthreshold on occurrence #	$occurrence_threshold\n" if ($occurrence_threshold > 0);
-	
-	print $out ";Sequence statistics:\n";
-    print $out ";\tNb of sequences		$sequence_number\n";
-    print $out ";\tSum of sequence lengthes\t$sum_seq_length\n";
-    print $out ";\tmax sequence length	$max_seq_length\n";
-    print $out ";\tavg sequence length	", $sum_seq_length/$sequence_number ,"\n" if ($sequence_number > 0);
-    print $out ";\tnb possible positions\t\t",$nb_possible_pos ,"\n";
+    print $out "; Conditions of applicability not checked !\n" if $no_check;
+    print $out "; Oligos which do not fit conditions of applicability are not discarded !\n" if $no_filter;
+
+    print $out ";Sequence statistics:\n";
+    printf $out ";\t%-29s\t%d\n", "Nb of sequences", $sequence_number;
+    printf $out ";\t%-29s\t%d\n", "Sum of sequence lengths", $sum_seq_length;
+    printf $out ";\t%-29s\t%d\n", "Max sequence length", $max_seq_length;
+    printf $out ";\t%-29s\t%d\n", "Average sequence length", $sum_seq_length/$sequence_number ,"\n" if ($sequence_number > 0);
+    printf $out ";\t%-29s\t%d\n", "Possible positions", $nb_possible_pos;
     unless ($sequence_number > 1000) {
 	print $out ";Sequences:\n";
 	print $out ";\t#\tlength\tID\n";
@@ -808,18 +847,26 @@ sub Verbose {
     }
     
     print $out ";Class parameters:\n";
-    print $out ";\tmin position\t$min_pos\n" if (&IsNatural($min_pos));
-    print $out ";\tmax position\t$max_pos\n" if (&IsNatural($max_pos));
-    print $out ";\tclass interval	$class_interval\n";
-    print $out ";\tmin class\t$min_calc_class\n" if (&IsNatural($min_pos));
-    print $out ";\tmax class\t$max_calc_class\n" if (&IsNatural($max_pos));
-    print $out ";\ttotal positions\t$sum_pos_per_class\n";
-    print $out ";\tnumber of classes	$calc_class_nb\n";
-    print $out ";\tdegrees of freedom for chi2	", $calc_class_nb-1, "\n";
+
+    printf $out ";\t%-21s\t%d\n", "Class interval", $class_interval;
+    printf $out ";\t%-21s\t%d\n", "Min position", $min_pos if (&IsNatural($min_pos));
+    printf $out ";\t%-21s\t%d\n", "Max position", $max_pos if (&IsNatural($max_pos));
+    printf $out ";\t%-21s\t%d\n", "Min class", $min_calc_class if (&IsNatural($min_calc_class));
+    printf $out ";\t%-21s\t%d\n", "Max class", $max_calc_class if (&IsNatural($max_calc_class));
+    printf $out ";\t%-21s\t%d\n", "Number of classes", $calc_class_nb;
+    printf $out ";\t%-21s\t%d\n", "Total positions", $sum_pos_per_class;
+    printf $out ";\t%-21s\t%d\n", "Degrees of freedom", $calc_class_nb - 1;
+
     print $out ";\tSequences per class:\n";
-    print $out ";\t\tclass\t\[min\tmax\]\tseq\tpos\n";
+    print $out join ("\t", ";\t", "class", "\[min", "max\]", "mid", "seq", "pos"), "\n";
     for $class ($min_calc_class..$max_calc_class) {
-	print $out ";\t\t$class\t\[$class_min[$class]\t$class_max[$class]\]\t$seq_per_class[$class]\t$pos_per_class[$class]\n";
+	print $out join ("\t",  ";\t", 
+			 $class, 
+			 "\[".$class_min[$class], 
+			 $class_max[$class]."\]", 
+			 $class_center[$class], 
+			 $seq_per_class[$class], 
+			 $pos_per_class[$class]), "\n";
     }
     
     print $out ";Oligonucleotide statistics:\n";	
@@ -871,7 +918,8 @@ sub PrintResult {
     print $out "\tchi2";
     if ($return{'distrib'}) {
 	for $class ($min_calc_class..$max_calc_class) {
-	    print $out "\t\[$class_min[$class]-$class_max[$class]\]";
+	    print $out "\t", $class_center[$class];
+#	    print $out "\t\[$class_min[$class]-$class_max[$class]\]";
 	    #		print $out " (exp)" if ($return{'exp'});
 	}
     }
@@ -921,3 +969,17 @@ sub PrintResult {
 	}
     }
 }
+
+
+################################################################
+#
+# Filter out all oligos with non-canonical alphabet
+
+sub CheckDNA {
+    foreach $oligo_seq (sort keys %occurrences) {
+	if ($oligo_seq =~ /[^atcg]/i) {
+	    delete $occurrences{$oligo_seq};
+	}
+    }
+}
+
