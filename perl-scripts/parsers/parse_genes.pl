@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genes.pl,v 1.4 2000/03/27 23:07:08 jvanheld Exp $
+# $Id: parse_genes.pl,v 1.5 2000/03/28 12:34:44 jvanheld Exp $
 #
-# Time-stamp: <2000-03-28 00:55:55 jvanheld>
+# Time-stamp: <2000-03-28 12:55:39 jvanheld>
 #
 ############################################################
 
@@ -136,7 +136,7 @@ foreach my $gene ($genes->get_objects()) {
   my $end;
   if ($organism eq "Escherichia coli") {
     $chromosome = "genome";
-    $chom_pos = $position;
+    $chrom_pos = $position;
   } elsif ($organism eq "Saccharomyces cerevisiae") {
     if ($position =~ /^(\d+)\:(.*)/) {
       $chromosome = $1;
@@ -159,6 +159,7 @@ foreach my $gene ($genes->get_objects()) {
     $strand = "D";
     $coord = $chrom_pos;
   }
+  
   if ($coord =~ /^(\d+)\.\.(\d+)$/) {
     $start = $1;
     $end = $2;
