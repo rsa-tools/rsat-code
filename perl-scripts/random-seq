@@ -2,7 +2,8 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
+require "RSA.lib";
+require "RSA.classes";
 
 
 
@@ -53,10 +54,24 @@ unless ($repetitions >=1) {
 &CheckOutputSeqFormat($out_format);
 
 
-### oligomer frequencies ###
-if ($freq_file) {
+#### non-coding frequencies
+if ($ncf) {
+    #### organism
+    &CheckOrganism($organism_name);
+  
+    $data_dir = $supported_organism{$organism_name}->{'data'};
+    
+    ### localize dyad non-coding frequency file
+    $method = "Frequency file";
+    $exp_freq_file = "$data_dir/oligo-frequencies/${oligo_length}nt_non-coding_${organism_name}.freq";
+    
+    &FatalError("cannot read expected frequency file $exp_freq_file\n") unless (-r  $exp_freq_file);
+} 
+
+### expected frequency file
+if ($exp_freq_file) {
     die "	cannot open frequency file\n"
-	unless (open EXPECTED, $freq_file);
+	unless (open EXPECTED, $exp_freq_file);
     
     while (<EXPECTED>) {
 	chomp;
@@ -109,6 +124,7 @@ if ($freq_file) {
     }
     @subword_keys = sort keys %subword_freq;
 	    
+
 } else {
 ### calculate cumulated frequencies ###
 ### for individual residues ###
@@ -144,10 +160,10 @@ if ($verbose) {
 	print $out "; Output file	$outputfile\n";
     }
     print $out "; residue frequencies: \n";
-    if ($freq_file) {
+    if ($exp_freq_file) {
 	print $out "; Calibrated oligomer frequencies\n";
 	print $out "; 	oligomer length:         $oligo_length\n";
-	print $out "; 	expected frequency file: $freq_file\n";
+	print $out "; 	expected frequency file: $exp_freq_file\n";
 	print $out "; oligomer frequencies\n";
 #	foreach $key (sort keys %expected_freq) {
 #	    printf $out ";\t%s\t%f\n", $key, $expected_freq{$key};
@@ -195,7 +211,7 @@ for $r (1..$repetitions) {
 	push (@comments, "repetition nb $r of $repetitions");
     }
     
-    if ($freq_file) {
+    if ($exp_freq_file) {
 	$rand = int (rand $#subword_keys);
 	#### first work selection should be improved
 	$subword = $subword_keys[$rand];
@@ -270,7 +286,7 @@ sub ReadArguments {
 	    $repetitions = $ARGV[$a+1];
 
 	} elsif ($ARGV[$a] eq "-expfreq") {
-	    $freq_file = $ARGV[$a+1];
+	    $exp_freq_file = $ARGV[$a+1];
 
 	} elsif ($ARGV[$a] eq "-lw") {
 	    $line_width = $ARGV[$a+1];
@@ -291,7 +307,20 @@ sub ReadArguments {
 		$alphabet{'C'} = $alphabet{'G'} = 0.191487802444946;
 	    }
 
+	    ### use oligo non-coding frequencies as expected frequencies
+	} elsif ($ARGV[$a] =~ /^-ncf/i) {
+	    $ncf = 1;
+
+	    ### organism (for selecting the appropriate expected frequencies)
+	} elsif ($ARGV[$a] =~ /^-org/i) {
+	    $organism_name = $ARGV[$a+1];
+	    
+	    #### oligonucleotide length
+	} elsif ($ARGV[$a] eq "-ol") {
+	    $oligo_length = $ARGV[$a+1];
+	    
 	}
+	    
     }
 }
 
@@ -356,6 +385,14 @@ OPTIONS
 				positions j-3 and j-1
 			Wj-3,j	is the same word with the character B 
 				concatenated at its end
+	-ncf	use non-coding frequencies as expected frequencies
+	-org	organism 
+		This is necessary with the option -ncf, to determine
+		which frequency file has to be sued for expected
+		frequency calibration.
+	-ol	oligo-length
+		This is necessary with the option -ncf, to determine
+		the oligonucleotide length for the Markov chain model.
 WEB VERSION
 	http://ucmb.ulb.ac.be/bioinformatics/rsa-tools/
 
@@ -380,6 +417,9 @@ random-seq options
 -expfreq	file containing expected oligomer frequencies
 -type   protein|DNA
 -seed #	seed for the random generator
+-ncf		use dyad non-coding frequencies as expected frequencies
+-org		organism 
+-ol		oligo-length
 End_short_help
     close HELP;
     exit(0);
