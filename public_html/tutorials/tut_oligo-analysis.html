@@ -1,7 +1,6 @@
 <html>
 <head>
-   <meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <title>RSA-tools - tutorials</title>
+   <title>RSA-tools - tutorials - oligo-analysis</title>
 </head>
 <body text="#000000" bgcolor="#ffffff" link="#0000ee" vlink="#55008b" alink="#ff0000">
 <blockquote>
@@ -16,7 +15,18 @@
 
 <hr size=6 width="100%">
 
-<h2>Introduction</h2>
+<h2>Contents</h2>
+
+<p>
+<ol>
+<li><a href=#intro>Introduction</a>
+<li><a href=#example>Example of utilization</a>
+<li><a href=#interpret>Interpreting the results</a>
+<li><a href=#map>Drawing a feature-map with the discovered patterns</a>
+<li><a href=#exercises>Additional exercises</a>
+</ol>
+
+<a name=intro><h2>Introduction</h2>
 <ul>
 
 Starting from the observation that a set of genes are
@@ -30,7 +40,7 @@ J.Mol. Biol. (1998) 281, 827-842</A>.
 
 
 </ul>
-<h2>Pattern discovery with a small gene family</h2>
+<a name=example><h2>Example of utilization</h2>
 <ul>
 
 <p>
@@ -86,7 +96,7 @@ depends on the return parameters selected in the oligo-analysis form.
 </ol>
 
 </ul>
-<h2>Interpreting the results</h2>
+<a name=interpret><h2>Interpreting the results</h2>
 <ul>
 
 
@@ -122,9 +132,9 @@ An even more intuitive statistics is provided by the significance
 index (column occ_sig), which is the minus log transform (in base 10)
 of the E-value. The higher values are associated to the most
 significant patterns. On the average, a significance higher than 0
-would be expected by chance alone once per family. A score higher than
-1 every ten families, a score higher than 2 every 100 families, and a
-score higher than 6 every 10<sup>6</sup> families.
+would be expected by chance alone once per trial (sequence set). A
+score higher than 1 every ten trials, a score higher than 2 every 100
+trials, and a score higher than 6 every 10<sup>6</sup> trials.
 
 <p>
 The default parameters were chosen to return no more than one pattern
@@ -179,7 +189,7 @@ and to ignore isolated patterns which have a low significance index.
 
 
 </ul>
-<h2>Piping the discovered patterns to dna-pattern</h2>
+<a name=map><h2>Drawing a feature-map with the discovered patterns</h2>
 <ul>
 
 <ol>
@@ -251,7 +261,70 @@ sites. Notice that these also appear as clusters of mutually
 overlapping boxes, which emphazises the conserved octanucleotide
 AAACTGTG.
 
+
 </ul>
+<a name=exercises><h2>Additional exercises</h2>
+<ul>
+<p>
+<ol>
+<p><li>Use oligo-analysis to predict cis-acting elements with the
+following family of phosphate-responding genes.
+
+<pre>
+PHO5
+PHO8
+PHO11
+PHO81
+PHO84
+</pre>
+
+<p><li>Compare the discovered motifs with the known consensus
+(CACGTGggg or CACGTTtt) for Pho4p, the transcription factor mediating
+response to phosphate stress.
+
+<p><li>Compare the results obtained with the same family when the
+option <b>Prevent overlap with upstream matches</b> is activated and
+inactivated respectively, during sequence retrieval. Explain the
+difference.
+
+<p><li>Select a family of 10 random genes with the program <b>random
+gene selection</b> (in the left frame), and analyze their upstream
+region with oligo-analysis. Try this a few times, with different
+numbers of genes (e.g. 5, 10, 20, 50). How many patterns are predicted
+as significant ?
+
+<p><li>Use oligo-analysis to rpedict cis-acting elements involved in
+galactose utilization, on the basis of the following genes.
+
+<pre>
+GAL1
+GAL2
+GAL3
+GAL5
+GAL6
+GAL7
+GAL10
+GAL80
+GCY1
+</pre>
+
+How do you interpret the result ? o you obtain patterns with a high
+significance ? Come back to this exercise after the practivcal on
+<b>dyad-analysis</b>.
+
+<p><li>Use retrieve-seq and oligo-analysis to count the frequencies of
+the different stop codons in the complete yeast genomes. <b>Tips</b>
+<ol>
+<li>you will need to inactivate the threshold on significance, by
+replacing its default value (0) by "none".
+<li>the count should be performed on a single strand. 
+</ol>
+
+<p><li>Use the same procedure to check the start codons in all genes from
+the yeast genome.
+
+</ul>
+
 <p>
 You can now come back to the <a href=tutorials.html>tutorial main
 page</a> and follow the next tutorials.
