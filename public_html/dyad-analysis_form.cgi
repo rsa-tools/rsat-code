@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis_form.cgi,v 1.6 2001/12/24 01:45:19 jvanheld Exp $
+# $Id: dyad-analysis_form.cgi,v 1.7 2002/11/16 14:11:15 jvanheld Exp $
 #
-# Time-stamp: <2001-12-24 02:45:11 jvanheld>
+# Time-stamp: <2002-11-16 08:10:59 jvanheld>
 #
 ############################################################
 #### this cgi script fills the HTML form for the program dyad-analysis
@@ -30,10 +30,11 @@ $default{oligo_size} = 3;
 $default{spacing_from} = 0;
 $default{spacing_to} = 20;
 $default{strand} = "both strands";
-$default{noov} = '';
+$default{noov} = 'checked';
 $default{purge} = 'checked';
 $default{dyad_type} = "any dyad";
-$default{exp_freq} = "dyad freq in non-coding sequences";
+$default{exp_freq} = "background";
+$default{background} = "upstream-noorf";
 $default{occ_significance_threshold} = "0";
 
 ### replace defaults by parameters from the cgi call, if defined
@@ -65,21 +66,21 @@ print $query->start_multipart_form(-action=>"dyad-analysis.cgi");
 
 
 
-&DisplaySequenceChoice;
+&DisplaySequenceChoice();
 
 
 #### purge sequences
 print $query->checkbox(-name=>'purge',
   		       -checked=>$default{purge},
   		       -label=>'');
-print "&nbsp;<A HREF='help.oligo-analysis.html#purge'><B>purge sequences (highly recommended)</B></A>";
+print "&nbsp;<A HREF='help.dyad-analysis.html#purge'><B>purge sequences (highly recommended)</B></A>";
 print "<BR>";
 print "<HR width=550 align=left>\n";
 
 ### oligo size
 print "<B><A HREF='help.dyad-analysis.html#oligo_size'>Oligonucleotide size</A>&nbsp;</B>\n";
 print $query->popup_menu(-name=>'oligo_size',
-			 -Values=>[1..4],
+			 -Values=>[3..3],
 			 -default=>$default{oligo_size});
 
 ### spacing
@@ -128,26 +129,35 @@ print "<HR width=550 align=left>\n";
 
 
 ### expected frequency calculation
-print $query->table({-border=>0,-cellpadding=>3,-cellspacing=>0},
-		    $query->Tr($query->td("<A HREF='help.oligo-analysis.html#exp_freq'><B>Expected frequency calibration</B></A>&nbsp;<BR>")),
-		    $query->Tr($query->td(["<INPUT TYPE='radio' NAME='exp_freq' VALUE='dyad freq in non-coding sequences' CHECKED>Dyad frequencies from all non-coding regions<BR>",
-					   &OrganismPopUpString])),
-		    $query->Tr($query->td([
-					   "<INPUT TYPE='radio' NAME='exp_freq' VALUE='monad (word) freq in the input sequences.'>Monad (word) frequencies from the input sequences<BR>",
-					   ])),
-		    );
+print "<A HREF='help.dyad-analysis.html#exp_freq'><B>Expected frequency calibration</B></A>&nbsp;<p>";
+
+print ( "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='background' CHECKED>", 
+	"Background model");
+print "<ul>";
+print ( "<a href='help.dyad-analysis.html#background'>Sequence type</a> &nbsp;&nbsp;&nbsp;&nbsp;", 
+	$query->popup_menu(-name=>'background',
+			   -Values=>["upstream","upstream-noorf","intergenic"],
+			   -default=>$default{background}));
+
+print "<br>", &OrganismPopUpString();
+print "</ul>";
+
+print ( "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='monads'>", 
+	"Monad frequencies in the input sequence");
+
+print "<BR>\n";
+
+
+# print $query->table({-border=>0,-cellpadding=>3,-cellspacing=>0},
+# 		    $query->Tr($query->td("<A HREF='help.dyad-analysis.html#exp_freq'><B>Expected frequency calibration</B></A>&nbsp;<BR>")),
+# 		    $query->Tr($query->td(["<INPUT TYPE='radio' NAME='exp_freq' VALUE='dyad freq from intergenic sequences' CHECKED>Dyad frequencies from all intergenic regions<BR>",
+# 					   &OrganismPopUpString])),
+# 		    $query->Tr($query->td([
+# 					   "<INPUT TYPE='radio' NAME='exp_freq' VALUE='monad (word) freq in the input sequences.'>Monad (word) frequencies from the input sequences<BR>",
+# 					   ])),
+# 		    );
 
 print "<HR width=550 align=left>\n";
-
-### expected frequency calculation
-#print "<A HREF='help.dyad-analysis.html#exp_freq'><B>Expected frequency</B></A>&nbsp;";
-#print $query->popup_menu(-name=>'exp_freq',
-#			 -values=>['dyad freq in non-coding sequences',
-#				   'monad (word) freq in the input sequences'],
-#			 -default=>$default{exp_freq});
-#
-#print "<BR>\n";
-
 
 ### significance threshold
 print "<B><A HREF='help.dyad-analysis.html#threshold'>\n";
@@ -162,7 +172,7 @@ print "<BR>\n";
 ### send results by e-mail or display on the browser
 &SelectOutput;
 
-print "<B>Warning !</B> dyad-analysis is time-consuming, especially if you select a wide spacing range. We recommend e-mail output.<BR>\n";
+print "<font color=red><B>Warning !</B> dyad-analysis is time-consuming, especially if you select a wide spacing range. If you don't obain any result after 5 minuts, we recommend e-mail output.</font><BR>\n";
 
 ### action buttons
 print "<UL><UL><TABLE>\n";
@@ -268,6 +278,7 @@ print $query->hidden(-name=>'sequence',-default=>$demo_sequence);
 print $query->hidden(-name=>'sequence_format',-default=>"fasta");
 print $query->hidden(-name=>'spacing_from',-default=>"8");
 print $query->hidden(-name=>'spacing_to',-default=>"12");
+print $query->hidden(-name=>'background',-default=>"upstream");
 print $query->hidden(-name=>'organism',-default=>'Saccharomyces cerevisiae');
 #print $query->hidden(-name=>'title',-default=>'upstream sequences from the yeast GAL genes');
 print $query->submit(-label=>"DEMO");
