@@ -503,13 +503,17 @@ sub get_attribute_cardinalities {
     return %{$class."::_attribute_cardinality"};
 }
 
+
 ################################################################
-## Get attribute names
+## Get the names of all attributes
 sub get_attribute_names {
+    ### usage : @names = $class->get_attribute_names();
+    ### usage : @names = $object->get_attribute_names();
     my $class = ref($_[0]) || $_[0];
     my %card = $class->get_attribute_cardinalities();
     return keys %card; 
 }
+
 
 ################################################################
 ## get the cardinality of a specified attribute
@@ -526,17 +530,6 @@ sub get_attribute_cardinality {
 #      my $class = ref($self) || $self;
 #      return ${$class."::_attribute_type"}{$key};
 #  }
-
-
-################################################################
-## Get the names of all attributes
-sub get_attribute_names {
-    ### usage : @names = $class->get_attribute_names();
-    ### usage : @names = $object->get_attribute_names();
-    my $class = ref($_[0]) || $_[0];
-    return sort keys %{$class."::_attribute_count"};
-}
-
 
 
 
