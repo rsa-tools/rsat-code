@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: orf-info,v 1.5 2001/03/11 06:52:54 jvanheld Exp $
+# $Id: orf-info,v 1.6 2001/04/01 23:32:54 jvanheld Exp $
 #
-# Time-stamp: <2001-03-11 07:52:52 jvanheld>
+# Time-stamp: <2001-04-02 01:32:41 jvanheld>
 #
 ############################################################
 
@@ -139,7 +139,7 @@ sub PrintInfo {
 	print $out $query, "\t",
     }    print $out join ("\t", 
 		     $orf_id,
-		     $preferred_name{$orf_id},
+		     $name{$orf_id},
 		     $chr{$orf_id},
 		     $strand{$orf_id},
 		     $left{$orf_id},
