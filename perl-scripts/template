@@ -1,14 +1,43 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: template,v 1.17 2004/08/02 22:11:27 jvanheld Exp $
+# $Id: template,v 1.18 2005/02/27 13:34:25 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
 ############################################################
 #use strict;;
-if ($0 =~ /([^(\/)]+)$/) {
-    push (@INC, "$`lib/");
+
+=pod
+
+=head1 NAME
+
+template
+
+=head1 DESCRIPTION
+
+Template or writing new perl scripts.
+
+=head1 CATEGORY
+
+util
+
+=head1 USAGE
+    
+template [-i inputfile] [-o outputfile] [-v]
+
+=head1 INPUT FORMAT
+
+=head1 OUTPUT FORMAT
+
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
 }
 require "RSA.lib";
 
@@ -78,61 +107,34 @@ exit(0);
 ################################################################
 #### display full help message 
 sub PrintHelp {
-  open HELP, "| more";
-  print HELP <<End_of_help;
-NAME
-	template
-
-        2004 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
-	
-DESCRIPTION
-	Template for writing new perl scripts
-
-CATEGORY
-	util
-
-USAGE
-        template [-i inputfile] [-o outputfile] [-v]
-
-OPTIONS
-	-h	display full help message
-	-help	display options
-	-v	verbose
-	-i inputfile
-		if not specified, the standard input is used.
-		This allows to place the command within a pipe.
-	-o outputfile
-		if not specified, the standard output is used.
-		This allows to place the command within a pipe.
-
-End_of_help
-  close HELP;
-  exit;
+    system "pod2text -c $0";
+    exit()
 }
 
 ################################################################
 #### display short help message
 sub PrintOptions {
-  open HELP, "| more";
-  print HELP <<End_short_help;
-template options
-----------------
--h		(must be first argument) display full help message
--help		(must be first argument) display options
--i		input file
--o		output file
--v		verbose
-End_short_help
-  close HELP;
-  exit;
+    &PrintHelp();
 }
 
-
 ################################################################
-#### read arguments 
+#### Read arguments 
 sub ReadArguments {
     foreach my $a (0..$#ARGV) {
-	### verbose  
+
+	## Verbosity
+=pod
+
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
 	if ($ARGV[$a] eq "-v") {
 	    if (&IsNatural($ARGV[$a+1])) {
 		$verbose = $ARGV[$a+1];
@@ -140,24 +142,62 @@ sub ReadArguments {
 		$verbose = 1;
 	    }
 	    
-	    ### detailed help
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
 	} elsif ($ARGV[$a] eq "-h") {
 	    &PrintHelp();
 	    
-	    ### list of options
+	    ## List of options
+=pod
+
+=item B<-help>
+
+display options
+
+=cut
 	} elsif ($ARGV[$a] eq "-help") {
 	    &PrintOptions();
 	    
-	    ### input file  
+
+	    ## Input file
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
 	} elsif ($ARGV[$a] eq "-i") {
 	    $infile{input} = $ARGV[$a+1];
 	    
-	    ### output file  
+	    ## Output file
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
 	} elsif ($ARGV[$a] eq "-o") {
 	    $outfile{output} = $ARGV[$a+1];
 	    
 	}
     }
+
+=pod
+
+=back
+
+=cut
+
 }
 
 ################################################################
@@ -178,3 +218,12 @@ sub Verbose {
 	}
     }
 }
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=cut
