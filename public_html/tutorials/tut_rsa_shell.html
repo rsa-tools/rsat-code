@@ -38,7 +38,14 @@ analyzing regulatory sequences in a unix shell
 <li><a href=#dna_pattern>dna-pattern</a>
 <li><a href=#patser>patser</a>
 </ul>
-<li><a href=#feature_map>Drawing feature maps</a>
+
+<li><a href=#feature_map>Drawing graphs</a>
+<ul>
+<li><a href=#accesssing_graphs>Accessing graphs in your account from the web</a>
+<li><a href=#feature_map>feature-map</a>
+<li><a href=#xygraph>XYgraph</a>
+</ul>
+
 <li><a href=#references>References</a>
 </ul>
 
@@ -171,7 +178,7 @@ sequences located upstream the start codon of a series of genes, where
 regulatory elements are generally found, at least in microbial
 organisms.
 
-<h3><I>Retrieving a single upstream sequence</i></h3>
+<h3>Retrieving a single upstream sequence</h3>
 <P>
 First trial : we wll extract the upstream sequence for a single yeast
 gene. Try:
@@ -185,7 +192,7 @@ This command retrieves a 200 bp upstream sequence for the gene metA of
 upstream side. Also note that all coordinates are calculated starting
 relative to the star codon (position 0 is the A from the start ATG).
 
-<h3><I>Combining upstream and coding sequence</i></h3>
+<h3>Combining upstream and coding sequence</h3>
 <P>
 For coli genes, regulatory signals sometimes overlap the 5' side of
 the coding sequence. By doing so, they exert a repression effect by
@@ -197,7 +204,7 @@ coding segment. Try :
 retrieve-seq -type upstream -org ecoli -q metA -from -200 -to 49
 </pre></ul>
 
-<h3><I>Retrieving a few upstream sequences</i></h3>
+<h3>Retrieving a few upstream sequences</h3>
 
 The option <tt>-q</tt> can be used iteratively in a command to
 retrieve sequences for several genes.
@@ -206,7 +213,7 @@ retrieve sequences for several genes.
 retrieve-seq -org ecoli -from -200 -to 49  -q metA -q metB -q metC
 </pre></ul>
 
-<h3><I>Retrieving many upstream sequences</i></h3>
+<h3>Retrieving many upstream sequences</h3>
 
 If you have to retrieve a large number of sequences, it might become
 cumbersome to type each gene name on the command-line. A list of gene
@@ -266,7 +273,7 @@ Check the sequence file :
 more PHO_up800.fasta
 </pre></ul>
 
-<h3><I>Retrieving all upstream sequences</i></h3>
+<h3>Retrieving all upstream sequences</h3>
 
 For genome-scale analyses, it is convenient to retrieve upstream
 sequenes for all the genes of a given genome, without having to
@@ -285,7 +292,7 @@ Check the result :
 more ecoli_start_codons.wc
 </pre></ul>
 
-<h3><I>Retrieving downstream sequences</i></h3>
+<h3>Retrieving downstream sequences</h3>
 
 <tt>retrieve-seq</tt> can also be used to retrieve downstream
 sequences. in this case, the origin (position 0) is the third base of
@@ -345,7 +352,7 @@ are much more sensitive for pattern matching problems (see below). The
 ideal would thus be to combine string-based pattern disovery and
 matrix-based pattern matching.
 
-<h3><I>Requirements</i></h3>
+<h3>Requirements</h3>
 <P>
 This part of the tutorial assumes that you already performed the
 tutorial about sequence retrieval (above), and that you have the
@@ -364,7 +371,7 @@ ecoli_stop_codons.wc
 </pre></ul>
 
 <a name=oligo_analysis>
-<h3><I>oligo-analysis</i></h3>
+<h3>oligo-analysis</h3>
 
 The program <tt>oligo-analysis</tt> is the simplest pattern discovery
 program. It counts the number of occurrences of all oligonucleotides
@@ -627,18 +634,18 @@ patterns, and higher orders don't return any single significant word.
 </ul>
 
 <a name=dyad_analysis>
-<h3><I>dyad-analysis</i></h3>
+<h3>dyad-analysis</h3>
 
 
 
 <a name=gibbs>
-<h3><I>gibbs motif sampler (program developed by Andrew Neuwald)</i></h3>
+<h3>gibbs motif sampler (program developed by Andrew Neuwald)</h3>
 
 
 
 
 <a name=consensus>
-<h3><I>consensus (program developed by Jerry Hertz)</i></h3>
+<h3>consensus (program developed by Jerry Hertz)</h3>
 
 
 
@@ -648,23 +655,273 @@ patterns, and higher orders don't return any single significant word.
 <h2>Pattern matching</h2>
 <UL>
 
+In a pattern matching problem, you start from one or several
+predefined patterns, and you match this pattern against a sequence,
+i.e. you locate all occurrences of this pattern in the sequences.
+
+<P>
+Patterns can be represented as strings (with <i>dna-pattern</i>) or
+position-weight matrices (with <i>patser</i>). 
+
 <a name=dna_pattern>
-<h3><I>dna-pattern</i></h3>
+<h3>dna-pattern</h3>
+
+<P>
+<i>dna-pattern</i> is a string-based pattern matching program,
+specialized for searching patterns in DNA sequences. 
+
+<ul>
+
+<li>
+This specialization mainly consists in the ability to search on both
+the direct and reverse complement strands.
+
+<li>
+A single run can either search for a single pattern, or for a list
+of patterns.
+
+<li>
+multi-sequence file formats (fasta, filelist, wc, ig) are supported,
+allowing to match patterns against a list of sequences with a single
+run of the program.
+
+<li>
+String descriptions can be refined by using the 15-letters IUPAC code
+for uncompletely specified nucleotides, or by using regular
+expressions.
+
+<li>
+The program can either return a list of matching positions (default
+behaviour), or the count of occurrences of each pattern.
+
+<li>
+Imperfect matches can be searched by allowing
+substitutions. Insertions and deletions are not supported.  The reason
+is that, when a regulatory site presents variations, it is generally
+in the form of a tolerance for substitution at a specific position,
+rather than insertions or deletions. It is thus essential to be able
+distinguishing between these types of imperfect matches.
+
+</ul>
+
+
+<h4>Matching a single pattern</h4>
+
+We will start by searching all positions of a single pattern in a
+sequence set. The sequence is the set of upstream regions from the PHO
+genes, that was obtained in the tutorial on sequence retrieval. We
+will search all occurrences of the most conserved core of the Pho4p
+medium affinity binding site ("CACGTT") in this sequence set.
+
+<P>
+Try the following command :
+
+<ul><pre>
+dna-pattern -i PHO_up800.fasta -format fasta -1str -p cacgtt -id 'Pho4p_site'
+</pre></ul>
+
+You see a list of positions for all the occurrences of CACGTT in the sequence.
+
+Each row represents one match, and the columns provide the following
+information :
+<ol>
+<li>pattern identiifier
+<li>strand
+<li>pattern searched
+<li>sequence identifier
+<li>start position of the match
+<li>end position of the match
+<li>matched sequence
+<li>matching score
+</ol>
+
+<h4>Matching on both strands</h4>
+
+<P>To perform the search on both strands, type :
+<ul><pre>
+dna-pattern -i PHO_up800.fasta -format fasta -2str -p cacgtt -id 'Pho4p_site'
+</pre></ul>
+
+Notice that the strand colmn now contains two possible values : D for
+"direct" and R for "reverse complement".
+
+<h4>Allowing substitutions</h4>
+
+To allow one substitutions, type :
+<ul><pre>
+dna-pattern -i PHO_up800.fasta -format fasta -2str -p cacgtt -id 'Pho4p_site' -subst 1
+</pre></ul>
+
+Notice that the score column now contains 2 values : 1.00 for perfect
+matches, 0.83 (=5/6) for single substitutions. This si one possible
+use of the score column : when substitutions are allowed, the score
+indicates the percentage of matching nucleotides.
+
+<P>
+Actually, for regulatory patterns, allowing substitutions usually
+returns many false positive, and this option is usually avoided. We
+will not use it further in the tutorial.
+
+<h4>Extracting flanking sequences</h4>
+
+The matching positions can be extracted along with their flanking nucleotides. Try :
+
+<ul><pre>
+dna-pattern -i PHO_up800.fasta -format fasta -2str -p cacgtt \
+     -id  'Pho4p_site' -N 4
+</pre></ul>
+
+Notice the change in the matched sequence column : each matched
+sequence contains the pattern CACGTT in uppercase, and 4 lowercase
+letters on each side (the flanks).
+
+<h4>Changing the origin</h4>
+
+When working with upstream sequences, it is convenient to work with
+coordinates relative to the start codon (i.e. the right side of the
+sequence). Sequence matching programs (including dna-pattern) return
+the positions relative to the beginning (i.e. the left side) of the
+sequence. The reference (coordinate 0) can however be changed iwith
+the option <tt>-origin</tt>. In this case, we retrieved upstream
+sequences over 800bp. the start codon is thus located at position
+801. Try :
+
+<ul><pre>
+dna-pattern -i PHO_up800.fasta -format fasta -2str -p cacgtt \
+     -id  'Pho4p_site' -N 4 -origin 801
+</pre></ul>
+
+Notice the change in coordinates.
+
+<P>
+In some cases, a sequence file will contain a mixture of sequences of
+different length (for example if one clipped the sequences to avoid
+upstream coding sequences). The origin should thus vary from sequence
+to sequence. A convenient way to circumvent the problem is to use a
+egative value with the option <tt>origin</tt>. for example,
+<tt>-origin -100</tt> would take as origin the 100th neucleotide
+starting from the right of each sequence in the sequence file. But in
+our case we want to take as origin the position immediately after the
+last nucleotide. For this, there is a special convention : <tt>-origin
+-0</tt>.
+
+<ul><pre>
+dna-pattern -i PHO_up800.fasta -format fasta -2str -p cacgtt \
+     -id  'Pho4p_site' -N 4 -origin -0
+</pre></ul>
+
+In the current example, since all sequences have exactly 800bp length,
+the result is identical to the one obtained with <tt>-origin 801</tt>.
+
+<h4>Matching several patterns</h4>
+
+TO match a series of patterns, you first need to store these patterns
+in a file. Let create a pattern file :
+
+<ul><pre>
+cat > test_patterns.txt
+cacgtg	high
+cacgtt	medium
+</pre></ul>
+(then tpye Ctrl-d to close)
+
+<P>
+check the content of your pattern file.
+<ul><pre>
+more test_patterns.txt
+</pre></ul>
+
+There are two lines, each representing a pattern. The first word of
+each line contains the pattern, the second word the identifier for
+that pattern. This column can be left lank, in which case the pattern
+is used as identifier.
+
+<P>
+We can now use this file to search all matching psitions of both
+patterns in the PHO sequences.
+
+<ul><pre>
+dna-pattern -i PHO_up800.fasta -format fasta -2str \
+        -pl test_patterns.txt -N 4 -origin -0
+</pre></ul>
+
+<h4>Counting pattern matches</h4>
+
+In the previous examples, we were interested in matching positions. It
+is sometimes interesting to get a more synthetic information, in the
+form of a count of matching positions for each sequences. Try :
+
+<ul><pre>
+dna-pattern -i PHO_up800.fasta -format fasta -2str \
+        -pl test_patterns.txt -N 4 -origin -0 -c
+</pre></ul>
+
+With the option <tt>-c</tt>, the program returns the number of
+occurrences of each pattern in each sequence. The output format is
+different : there is one row for each combination pattern-sequence. Te
+columns indicate respectively
+<ol>
+<li>sequence identifier
+<li>pattern identifier
+<li>pattern sequence
+<li>match count
+</ol>
+
+<P>
+An even more synthetic result can be obtained with the option
+<tt>-ct</tt> (count total).
+
+<ul><pre>
+dna-pattern -i PHO_up800.fasta -format fasta -2str \
+        -pl test_patterns.txt -N 4 -origin -0 -ct
+</pre></ul>
+
+This time, only two rows are returned, one per pattern. 
+
+<h4>Getting a count table</h4>
+
+Anothe rway to display the count information is in the form of a
+table, where each row represents a gene and each column a pattern.
+
+<ul><pre>
+dna-pattern -i PHO_up800.fasta -format fasta -2str \
+        -pl test_patterns.txt -N 4 -origin -0 -table
+</pre></ul>
+
+<P>
+This representation is very convenient for aplying multivariate
+statistics on the results (e.g. classificatying genes according to the
+patterns found in their upstream sequences)
+
+<P>
+Last detail : we can add one column and one row for the totals per
+gene and per pattern.
+
+<ul><pre>
+dna-pattern -i PHO_up800.fasta -format fasta -2str \
+        -pl test_patterns.txt -N 4 -origin -0 -table -total
+</pre></ul>
+
 
 
 
 <a name=patser>
-<h3><I>patser (program developed by by Jerry Hertz)</i></h3>
-
-
+<h3>patser (program developed by by Jerry Hertz)</h3>
 
 
 </ul>
 <a name=feature_map>
-<h2>Drawing feature maps</h2>
+<h2>Drawing graphs</h2>
 <UL>
 
-<h3><I>feature-map</i></h3>
+<a name=accessing_graphs>
+<h3>Accessing graphs in your account from the web</h3>
+
+<a name=feature_map>
+<h3>feature-map</h3>
+
+<a name-xygraph>
+<h3>XYgraph</h3>
 
 
 </ul>
