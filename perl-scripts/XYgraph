@@ -1,8 +1,8 @@
 #!/usr/bin/perl
-if ($config_site eq "ebi") {
-    use lib '/homes/jvanheld/rsa-tools/perl-scripts/lib',  
-            '/homes/jvanheld/rsa-tools/perl-scripts/lib/arch';
-}
+#if ($config_site eq "ebi") {
+#    use lib '/homes/jvanheld/rsa-tools/perl-scripts/lib',  
+#            '/homes/jvanheld/rsa-tools/perl-scripts/lib/arch';
+#}
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
@@ -299,13 +299,11 @@ for $series (0..$#y_col_list) {
 	} else {
 	    
 	    ### position of the next point ###
-	    if ($histogram) {
+	    if (($histogram) || ($filled_histogram)) {
 		if ($p == 0) {
-#		    $bar_left = $left;
 		    $bar_left = &XPixelPos($X_values[$p]);
 		} else {
-		    $bar_left = $prev_bar_right;
-#		    $bar_left = &XPixelPos(($X_values[$p] + $X_values[$p-1])/2);
+		    $bar_left = &XPixelPos(($X_values[$p] + $X_values[$p-1])/2);
 		}
 		if ($p == $#X_values) {
 		    $bar_right = $right;
@@ -335,9 +333,18 @@ for $series (0..$#y_col_list) {
 			$image->line($prev_bar_right, $prev_y, $bar_left, $y, $current_color);
 		    }
 		}
+	    } elsif ($filled_histogram) {
+		if (($bar_left ne "ND") && ($bar_right ne "ND")) {
+		    $image->filledRectangle($bar_left, $y, $bar_right, $bottom, $current_color);
+		}
 	    } else {
 		if (($x ne "ND") && ($y ne "ND")) {
-		    DrawSymbol($current_symbol,$x-$point_size/2,$y-$point_size/2,$x+$point_size/2,$y+$point_size/2,$current_color);
+		    DrawSymbol($current_symbol,
+			       $x-$point_size/2,
+			       $y-$point_size/2,
+			       $x+$point_size/2,
+			       $y+$point_size/2,
+			       $current_color);
 #          $image->arc($x,$y,$point_size,$point_size,0,360,$current_color);
 		    if (($HTML_map) && ($p < $max_map_elements)) {
 			my $series_legend = $legend_fields[$y_col_list[$series]];
@@ -366,7 +373,7 @@ for $series (0..$#y_col_list) {
 	    } #if historgram
 	} # values are determined
 	
-	if ($histogram) {
+	if (($histogram) || ($filled_histogram)) {
 	    $prev_bar_right = $bar_right;
 	} else {
 	    $prev_x = $x;
@@ -1206,6 +1213,7 @@ XYgraph options
 -header		first line of the data file contains a column header 
 -legend		use the first line as legend for Y data.
 -histo		histogram. 
+-fhisto		filled histogram. 
 -hbox #,#,#.#   Highlight box. 
 -tbox #,#,#.#   Threshold box. 
 -bg		background color (white, blue, black or gray).
@@ -1233,7 +1241,7 @@ USAGE
 		[-xleg1 "legend"] [-xleg2 "legend"]
 		[-yleg1 "legend"] [-yleg2 "legend"]
 		[-xsize #][-ysize #] [-ycol #,#,#]
-		[-lines][-legend][-header] [-histo] 
+		[-lines][-legend][-header] [-histo|-fhisto] 
                 [-xgstep1 #][-ygstep1 #][-xgstep2 #][-ygstep2 #]
 		
 		
@@ -1319,6 +1327,7 @@ OPTIONS
 	-histo		histogram. The X data should in this case contain the 
 			middle position of ach class, and Y data the 
 			frequencies.
+	-fhisto		filled histogram. 
 	-hbox #,#,#.#   Highlight box. All points located within this box are 
 			highlighted, and the data corresponding to these 
 			points are are printed on the standard output 
@@ -1471,6 +1480,10 @@ sub ReadArguments {
 	    ### histogram ###
 	} elsif ($ARGV[$a] eq "-histo") {
 	    $histogram = 1;
+	    
+	    ### filled histogram ###
+	} elsif ($ARGV[$a] eq "-fhisto") {
+	    $filled_histogram = 1;
 	    
 	    ### join points by lines ###
 	} elsif ($ARGV[$a] eq "-lines") {
