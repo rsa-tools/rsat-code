@@ -439,6 +439,75 @@ sub SumExpectedFrequencies {
 
 
 ################################################################
+# Calculate conditional residue probabilities on the basis of specified
+# oligonucleotide frequencies
+sub CalcConditionalProbabilities {
+    my ($exp_freq_file) = @_;
+
+    &ReadExpectedFrequencies($exp_freq_file) ;
+    
+    warn "; Calculating conditional probabilities\n" if ($main::verbose >= 2);
+    
+    foreach my $pattern_seq (keys %patterns) {
+	$expected_freq{$pattern_seq} = $patterns{$pattern_seq}->{exp_freq};
+    }
+
+    #### calculate alphabet from expected frequency keys
+    foreach my $pattern_seq (keys %patterns) {
+	my @residues = split "|", $pattern_seq;
+	foreach my $r (@residues) {
+	    $letter{$r} = 1;
+	}
+    }
+    @letters = keys (%letter);
+
+    #### calculate subword frequencies
+    %subword_freq = ();
+    foreach my $oligo_seq (keys %expected_freq) {
+	my $subword = substr($oligo_seq,0,-1);
+	$subword_freq{$subword} += $expected_freq{$oligo_seq};
+    }
+
+    foreach $subword (keys %subword_freq) {
+	for $l (0..$#letters) {
+	    $word = lc($subword.$letters[$l]);
+	    if ($subword_freq{$subword} > 0) {
+		$conditional_proba{$subword}[$l] =  $expected_freq{$word}/$subword_freq{$subword};
+	    } else {
+		$conditional_proba{$subword}[$l] =  "NA";
+	    }
+	}
+    }
+
+    #### calculate cumulative conditional residue probabilities
+    foreach $subword (keys %subword_freq) {
+	$word = lc($subword.$letters[0]);
+	$cum_letter_freq{$subword}[0] = $expected_freq{$word};
+	$cum_letter_freq{$subword}[0]/=$subword_freq{$subword} if $expected_freq{$word};
+# 	warn (join ("\t", 
+# 		    $subword, 
+# 		    $subword_freq{$subword},
+# 		    $word, 
+# 		    $expected_freq{$word},
+# 		    $cum_letter_freq{$subword}[0]
+# 		    ), "\n");
+	for $l (1..$#letters) {
+	    $word = lc($subword.$letters[$l]);
+	    $cum_letter_freq{$subword}[$l] = $cum_letter_freq{$subword}[$l-1];
+	    $cum_letter_freq{$subword}[$l] += $expected_freq{$word}/$subword_freq{$subword} if $expected_freq{$word};
+#	    warn (join ("\t", 
+#			$subword, 
+#			$subword_freq{$subword},
+#			$word, 
+#			$expected_freq{$word},
+#			$cum_letter_freq{$subword}[$l]
+#			), "\n");
+	}
+    }
+    @subword_keys = sort keys %subword_freq;
+}
+
+################################################################
 ### returns current time
 ### usage
 ### $time = &CurrentTime;
@@ -771,7 +840,7 @@ sub CheckOrganism {
 							 circular=>  1, ### for bacterial genomes
 							 organism=>  $organism_name);
 	$chromosome{$chr} = new RSA::Chromosome();
-	$chromosome{$chr}->set_name($chr);
+	$chromosome{$chr}->push_attribute("names", $chr);
 	$chromosome{$chr}->set_sequence($chromosome_seq{$chr});
 	$chromosome{$chr}->set_organism($organism_name);
 	$organism_object->add_chromosome($chromosome{$chr});
@@ -803,7 +872,7 @@ sub CheckOrganism {
 							     circular=>  $circular, 
 							     organism=>  $organism_name);	    
 	    $chromosome{$chr} = new RSA::Chromosome();
-	    $chromosome{$chr}->set_name($chr);
+	    $chromosome{$chr}->push_attribute("names",$chr);
 	    $chromosome{$chr}->set_sequence($chromosome_seq{$chr});
 	    $chromosome{$chr}->set_organism($organism_name);
 	    $organism_object->add_chromosome($chromosome{$chr});
@@ -841,7 +910,7 @@ sub CheckOrganism {
 						       sequence=>  $current_seq,
 						       organism=>  $organism_name);
 	    $chromosome{$chr} = new RSA::Chromosome();
-	    $chromosome{$chr}->set_name($chr);
+	    $chromosome{$chr}->push_attribute("names",$chr);
 	    $chromosome{$chr}->set_sequence($chromosome_seq{$chr});
 	    $chromosome{$chr}->set_organism($organism_name);
 	    $organism_object->add_chromosome($chromosome{$chr});

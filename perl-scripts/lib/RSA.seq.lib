@@ -539,6 +539,38 @@ sub IUPAC_to_regular {
     return $regular;
 }
 
+
+################################################################
+### Convert a DNA sequence with regular expressions into IUPAC
+### ambiguous codes
+sub regular_to_IUPAC {
+    my ($regular) = @_;
+    $regular =~ s/\[AG\]/R/g;
+    $regular =~ s/\[CT\]/Y/g;
+    $regular =~ s/\[AC\]/M/g;
+    $regular =~ s/\[GT\]/K/g;
+    $regular =~ s/\[CG\]/S/g;
+    $regular =~ s/\[AT\]/W/g;
+    $regular =~ s/\[CGT\]/B/g;
+    $regular =~ s/\[AGT\]/D/g;
+    $regular =~ s/\[ACT\]/H/g;
+    $regular =~ s/\[ACG\]/V/g;
+    $regular =~ s/\[ACGT\]/N/g;
+
+    $regular =~ s/\[ag\]/r/g;
+    $regular =~ s/\[ct\]/y/g;
+    $regular =~ s/\[ac\]/m/g;
+    $regular =~ s/\[gt\]/k/g;
+    $regular =~ s/\[cg\]/s/g;
+    $regular =~ s/\[at\]/w/g;
+    $regular =~ s/\[cgt\]/b/g;
+    $regular =~ s/\[agt\]/d/g;
+    $regular =~ s/\[act\]/h/g;
+    $regular =~ s/\[acg\]/v/g;
+    $regular =~ s/\[acgt\]/n/g;
+    return $regular;
+}
+
 #### overlap coefficient ####
 sub OverlapCoeff {
 ### calculates the overlap coefficient, calculated following

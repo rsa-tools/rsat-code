@@ -1,113 +1,118 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: RSA.classes,v 1.6 2004/02/04 14:07:11 jvanheld Exp $
+# $Id: RSA.classes,v 1.7 2004/02/28 17:09:11 jvanheld Exp $
 #
 # Time-stamp: <2003-10-02 17:58:27 jvanheld>
 #
 ############################################################
-if ($0 =~ /([^(\/)]+)$/) {
-    push (@INC, "$`lib/");
-}
-require "RSA.lib";
-require "RSA.seq.lib";
 
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+    require "RSA.lib";
+    require "RSA.seq.lib";
+    push @INC, "$RSA/perl-scripts/parsers/";
+    require "classes/DatabaseObject.pl";
+}
 
 ################################################################
 #### generic RSA object, from which all other objects inherit
 package RSA::Object;
 {
-#  use strict;
+    @ISA = qw ( classes::DatabaseObject );
+#  #  use strict;
     
-    #### class variables
-    my $_count = 0;
-    my $_prefix = "obj_";
+#      #### class variables
+#      my $_count = 0;
+#      my $_prefix = "obj_";
     
-    #### creator
-    sub new { 
-	my ($class, %args) = @_;
-	my $object = bless {
-	    id=>$args{id} || $class->auto_id(),
-	}, $class;
-	$class->incr_count();
-	$object->init() if $object->can("init");
-	return $object;
-    }
+#      #### creator
+#      sub new { 
+#  	my ($class, %args) = @_;
+#  	my $object = bless {
+#  	    id=>$args{id} || $class->auto_id(),
+#  	}, $class;
+#  	$class->incr_count();
+#  	$object->init() if $object->can("init");
+#  	return $object;
+#      }
 
-    #### automatic ID assignation
-    sub auto_id {
-	my ($object) = @_;
-	my $class = ref($object) || $object;
-	my $id = $class->get_prefix();
-	my $count = $class->get_count() || 0; 
-	my $pretty_count = sprintf ("%6s", $count);
-	$id .= $pretty_count;
-	$id =~ s/ /0/g;
-	return $id;
-    }
+#      #### automatic ID assignation
+#      sub auto_id {
+#  	my ($object) = @_;
+#  	my $class = ref($object) || $object;
+#  	my $id = $class->get_prefix();
+#  	my $count = $class->get_count() || 0; 
+#  	my $pretty_count = sprintf ("%6s", $count);
+#  	$id .= $pretty_count;
+#  	$id =~ s/ /0/g;
+#  	return $id;
+#      }
 
-    #### class accessors
-    sub get_count {
-	my ($object) = @_;
-	$class = ref($object) || $object;
-	return $class->{_count};
-    }
+#      #### class accessors
+#      sub get_count {
+#  	my ($object) = @_;
+#  	$class = ref($object) || $object;
+#  	return $class->{_count};
+#      }
 
-    #### Increment the object counter
-    sub incr_count {
-	my ($object) = @_;
-	my $class = ref($object) || $object;
-	$class->{_count}++;
-    }
+#      #### Increment the object counter
+#      sub incr_count {
+#  	my ($object) = @_;
+#  	my $class = ref($object) || $object;
+#  	$class->{_count}++;
+#      }
 
-    ### Get class prefix
-    sub get_prefix {
-	my ($object) = @_;
-	my $class = ref($object) || $object;
-	return $_prefix;
-    }
+#      ### Get class prefix
+#      sub get_prefix {
+#  	my ($object) = @_;
+#  	my $class = ref($object) || $object;
+#  	return $_prefix;
+#      }
 
-    #### instance accessors
-    sub get_id {
-	my ($object) = @_;
-	return $object->{id};
-    }
-    sub set_id {
-	my ($object, $new_id) = @_;
-	$object->{id} = $new_id;
-    }
+#      #### instance accessors
+#      sub get_id {
+#  	my ($object) = @_;
+#  	return $object->{id};
+#      }
+#      sub set_id {
+#  	my ($object, $new_id) = @_;
+#  	$object->{id} = $new_id;
+#      }
 
-    #### names
-    sub get_name {
-	my ($object) = @_;
-	return ${$object->{names}}[0];
-    }
-    sub set_name {
-	my ($object, $new_name) = @_;
-	${$object->{names}}[0] = $new_name;
-    }
-    sub add_name {
-	my ($object, $new_name) = @_;
-	push @{$object->{names}}, $new_name;
-    }
+#      #### names
+#      sub get_name {
+#  	my ($object) = @_;
+#  	return ${$object->{names}}[0];
+#      }
+#      sub set_name {
+#  	my ($object, $new_name) = @_;
+#  	${$object->{names}}[0] = $new_name;
+#      }
+#      sub add_name {
+#  	my ($object, $new_name) = @_;
+#  	push @{$object->{names}}, $new_name;
+#      }
 
-    ### general accessors
-    sub set_attribute {
-	my ($object,$key,$value) = @_;
-	$object->{$key} = $value;
-	return $object->{$key};
-    }
+#      ### general accessors
+#      sub set_attribute {
+#  	my ($object,$key,$value) = @_;
+#  	$object->{$key} = $value;
+#  	return $object->{$key};
+#      }
 
-    #### get attribute value
-    sub get_attribute {
-	my ($object,$key) = @_;
-	my $class = ref($object);
-	unless (defined($object->{$key})) {
-	    warn("WARNING: object $object of class $class has no attribute named '$key'\n"); 
-	    return undef;
-	}
-	return $object->{$key};
-    }
+#      #### get attribute value
+#      sub get_attribute {
+#  	my ($object,$key) = @_;
+#  	my $class = ref($object);
+#  	unless (defined($object->{$key})) {
+#  	    warn("WARNING: object $object of class $class has no attribute named '$key'\n"); 
+#  	    return undef;
+#  	}
+#  	return $object->{$key};
+#      }
 
 }
 
@@ -540,7 +545,7 @@ package RSA::SequenceOnDisk;
 ################################################################
 ### string pattern
 package RSA::pattern;
-@RSA::pattern::ISA = qw( RSA::Sequence );
+@ISA = qw( RSA::Sequence );
 {
 #  use strict;
     
@@ -651,318 +656,6 @@ package RSA::match;
 
 }
 
-
-
-################################################################
-#
-# matrix manipulation
-#
-package RSA::matrix;
-@RSA::matrix::ISA = qw( RSA::Object );
-################################################################
-# Main class for manipuating profile matrices (alignment
-# matrices, position-weight matrices). 
-# 
-#
-# A profile matrix represents a (usually short) domain of a sequence
-# alignment.
-#
-# Each row corresponds to one residue
-# (nucleotide or amino-acid depending on the sequence type).
-# Each olumn corresponds to one position in the alignment.
-# The value within each cell represents the frequency of each residue
-# at each position.
-
-{
-    #### Create an empty matrix
-    sub new {
-	my ($class, %args) = @_;
-	my $matrix = bless {
-	    nrow=>0,
-	    ncol=>0
-	    }, $class;
-	return $matrix;
-    }
-
-    #### Set the list of valid letters for the matrix.
-    sub setAlphabet {
-	my ($self, @new_alphabet) = @_;
-	@{$self->{alphabet}} = @new_alphabet;	
-	## update the number of columns
-	$self->set_attribute("nrow", scalar(@alphabet));
-    } 
-
-    #### Reset the matrix to empty
-    sub reset {
-	my ($self) = @_;
-	warn "Resetting the matrix to empty\n" if ($main::verbose >= 5);
-	undef(@{$self->{alphabet}});
-	undef(@{$self->{matrix}});
-	$self->set_attribute("nrow", 0);
-	$self->set_attribute("ncol", 0);
-    }
-
-    #### Return the list of valid letters for the matrix.
-    sub getAlphabet {
-	my ($self) = @_;
-	return @{$self->{alphabet}};
-    }
-
-    #### Add a new column to the matrix.
-    sub addColumn {
-	my ($self,@new_col) = @_;
-#	push @{$self->{matrix}}, [@new_col];
-	
-
-	## Update number of columns
-	my $ncol = $self->ncol()+1;
-	$self->set_attribute("ncol", $ncol);
-	warn ("Matrix: updating number of columns\t", $self->ncol(), "\n") if ($main::verbose >= 5);
-	
-	## update number of rows
-	my $column_size = scalar(@new_col);
-	if ($column_size >= $self->nrow()) {
-	    warn ("Matrix: updating number of rows\t", $column_size, "\n") if ($main::verbose >= 5);
-	    $self->set_attribute("nrow", scalar(@new_col));
-	}
-
-	## update matrix content
-	for my $r (0..$#new_col) {
-	     ${$self->{matrix}}[$ncol-1][$r] = $new_col[$r];
-	}
-
-    }
-
-    #### Add a new row to the matrix.
-    sub addRow {
-	my ($self,@new_row) = @_;
-
-	## Update number of rows
-	my $nrow = $self->nrow()+1;
-	$self->set_attribute("nrow", $nrow);
-	warn ("Matrix: updating number of rows\t", $self->nrow(), "\n") if ($main::verbose >= 5);
-	
-	## update number of colmuns
-	my $row_size = scalar(@new_row);
-	if ($row_size >= $self->ncol()) {
-	    warn ("Matrix: updating number of columns\t", $row_size, "\n") if ($main::verbose >= 5);
-	    $self->set_attribute("ncol", scalar(@new_row));
-	}
-	
-	## update matrix content
-	for my $c (0..$#new_row) {
-	     ${$self->{matrix}}[$c][$nrow-1] = $new_row[$c];
-	}
-    }
-
-    #### Add a new row and append its symbol to the alphabet
-    sub addIndexedRow {
-	my ($self, $index, @new_row) = @_;
-	$self->addRow(@new_row);
-	push @{$self->{alphabet}}, $index;
-    }
-
-    #### Return number of columns
-    sub ncol {
-	my ($self) = @_;
-	return $self->get_attribute("ncol");
-    }
-
-    #### Return number of rows
-    sub nrow {
-	my ($self) = @_;
-	return $self->get_attribute("nrow");
-    }
-
-    #### Return matrix size
-    sub size {
-	my ($self) = @_;
-	return ($self->nrow(), $self->ncol());
-    }
-
-    #### Return the whole matrix as a list of columns. 
-    sub getMatrix {
-	my ($self,$col_nb) = @_;
-	return @{$self->{matrix}};
-    }
-
-    #### Return the whole matrix as a list of columns. 
-    sub setMatrix {
-	my ($self,$nrow, $ncol, @matrix) = @_;
-	$self->set_attribute("nrow", $nrow);
-	$self->set_attribute("ncol", $ncol);
-	@{$self->{matrix}} = @matrix;
-    }
-
-    ################################################################
-    #### Read a matrix from a file
-    sub readFromFile {
-	my ($self, $file, $format) = @_;
-	if (($format =~ /consensus/) || ($format =~ /^wc/i)) {
-	    $self->readFromConsensusFile($file);
-	} elsif ($format =~ /gibbs/) {
-	    $self->readFromGibbsFile($file);
-	} else {
-	    &main::FatalError("Invalid format for matrix\t$format");
-	}
-    }
-
-
-    ################################################################
-    #### Read a matrix from a gibbs file
-    sub readFromGibbsFile {
-	my ($self, $file) = @_;
-
-	## open input stream
-	my $in = STDIN;
-	if ($file) {
-	    open INPUT, $file;
-	    $in = INPUT;
-	}
-	$in_matrix = 0;
-
-	my @matrix = ();
-	my @alphabet = ();
-	my $ncol = 0;
-	my $nrow = 0;
-	while (<$in>) {
-	    next unless (/\S/);
-	    chomp();
-	    if (/Information \(relative entropy\) contribution in tenth bits\:/) {
-		$in_matrix = 1;
-		$self->setAlphabet("A","C","G","T");   # default nucletodide alphabet
-		next;
-	    } elsif (/site/) {
-		### Empty the previous matrix because it was not the definitive result
-		$in_matrix = 0;
-		@last_matrix = @matrix;
-		$last_nrow = $nrow;
-		$last_ncol = $ncol;
-		@matrix = ();
-		$nrow = 0;
-		$ncol = 0;
-#		$self->reset();
-		next;
-	    } elsif ((/^\s*POS/) && ($in_matrix)) {
-		chomp;
-		@header = split " +";
-		@alphabet = @header[1..$#header-1];
-#		$self->setAlphabet(@alphabet);
-	    } elsif (/model map = (\S+); betaprior map = (\S+)/) {
-		$self->set_attribute("model.map", $1);
-		$self->set_attribute("betaprior.map", $2);
-	    } elsif (/MAP = (\S+)/) {
-		$self->set_attribute("MAP", $1);
-	    } elsif (/seed: (\S+)/) {
-		$self->set_attribute("seed", $1);
-	    } elsif (/^gibbs /) {
-		$self->set_attribute("command", $_);
-	    } elsif ($in_matrix) {
-		## Add a column to the matrix (gibbs rows correspond to our columns)
-		chomp;
-		s/^\s+//;
-		@fields = split " +";
-		@values = @fields[1..$#header-1];
-		$nrow = scalar(@values);
-		foreach my $v (0..$#values) {
-		    $values[$v] =~ s/^\.$/0/;
-		    $matrix[$ncol][$v] = $values[$v];
-		}
-		$ncol++;
-	    }
-	}
-	close $in if ($file);
-
-	$self->setAlphabet (@alphabet);
-	$self->setMatrix ($last_nrow, $last_ncol, @last_matrix);
-    }
-
-    ################################################################
-    #### read matrix from a consensus file
-    sub readFromConsensusFile {
-	my ($self, $file) = @_;
-	warn ("; Reading matrix from consensus file\t",$file, "\n") if ($main::verbose >= 2);
-
-#	($in, $dir) = &main::OpenInputFile($file);
-#
-#	die "HELLO\t", $in, "\t", $dir;
-	
-	## open input stream
-	my $in = STDIN;
-	if ($file) {
-	    open INPUT, $file;
-	    $in = INPUT;
-	}
-	my $current_matrix_nb = 0;
-	while (<$in>) {
-	    next unless (/\S/);
-	    chomp();
-	    if (/COMMAND LINE: /) {
-		$command = $';
-		$self->set_attribute("command", $command);
-	    } elsif (/MATRIX\s(\d+)/) {
-		$current_matrix_nb = $1;
-		next;
-	    } elsif  ($current_matrix_nb == 1) {
-		if (/^\s*(\S)\s+\|/) {
-		    my @fields = split / +/, $_;
-		    ## residue associated to the row
-		    my $residue = shift @fields;
-		    
-		    ## skip the | between residue and numbers
-		    shift @fields unless &main::IsReal($fields[0]);	
-		    
-		    $self->addIndexedRow($residue, @fields);
-
-		} elsif (/number of sequences = (\d+)/) {
-		    $self->set_attribute("nb.sequences", $1); 
-		} elsif (/unadjusted information = (\S+)/) {
-		    $self->set_attribute("unadjusted.information", $1); 
-		} elsif (/sample size adjusted information = (\S+)/) {
-		    $self->set_attribute("adjusted.information", $1); 
-		} elsif (/ln\(p\-value\) = (\S+)   p\-value = (\S+)/) {
-		    $self->set_attribute("ln.Pval", $1); 
-		    $self->set_attribute("Pval", $2); 
-		} elsif (/ln\(expected frequency\) = (\S+)   expected frequency = (\S+)/) {
-		    $self->set_attribute("ln.exp", $1); 
-		    $self->set_attribute("exp", $2); 
-		}
-	    }
-	}
-	close $in if ($file);
-    }
- 
-
-    #### Return a string description of the matrix
-    #### in the same format as Jerry Hertz' programs
-    sub toString {
-	my ($self, $sep, $col_width) = @_;
-	
-	$sep = $sep || "\t";
-	
-	my @matrix = @{$self->{matrix}};	
-	my @alphabet = $self->getAlphabet();
-	my $col_nb = $#matrix;
-	my $to_print = "";
-	
-	for $a (0..$#alphabet) {
-	    $to_print .= $alphabet[$a];
-	    $to_print .= $sep."|";
-	    for $c (0..$col_nb) {
-		if ($col_width) {
-		    $to_print .= sprintf "%${col_width}s", $matrix[$c][$a];
-		} else {
-		    $to_print .= $sep.$matrix[$c][$a];
-		}
-	    }
-	    $to_print .= "\n";
-	}
-	return $to_print;
-    }
-
-}
-
-
 ################################################################
 #
 # Family manipulation
@@ -981,7 +674,7 @@ package RSA::family;
 	my $object = bless {
 	    id=>$args{id} || $args{seq}
 	}, $class;
-	$object->add_name($args{name});
+	$object->push_attribute("names",$args{name});
 	return $object;
     }
     
