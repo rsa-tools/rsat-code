@@ -1,9 +1,9 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: parse-genbank.pl,v 1.7 2003/08/08 22:13:37 jvanheld Exp $
+# $Id: parse-genbank.pl,v 1.8 2003/08/08 22:37:38 jvanheld Exp $
 #
-# Time-stamp: <2003-08-09 00:12:18 jvanheld>
+# Time-stamp: <2003-08-09 00:36:24 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -57,6 +57,8 @@ package main;
 
     $misc_RNAs = classes::ClassFactory->new_class(object_type=>"Genbank::misc_RNA", prefix=>"misc_RNA");
 
+    $misc_features = classes::ClassFactory->new_class(object_type=>"Genbank::misc_feature", prefix=>"misc_feature");
+
     $CDSs = classes::ClassFactory->new_class(object_type=>"Genbank::CDS", prefix=>"cds_");
 
     $sources = classes::ClassFactory->new_class(object_type=>"Genbank::Source", prefix=>"src_");
@@ -92,6 +94,7 @@ package main;
 		   Genbank::tRNA 
 		   Genbank::rRNA 
 		   Genbank::misc_RNA 
+		   Genbank::misc_feature 
 		   Genbank::Source);
     
     &ReadArguments();
@@ -173,6 +176,7 @@ package main;
 			  $tRNAs,
 			  $rRNAs,
 			  $misc_RNAs,
+			  $misc_features,
 			  $CDSs,
 			  $contigs, 
 			  $organisms, 
@@ -200,11 +204,12 @@ package main;
     $tRNAs->index_names();
     $rRNAs->index_names();
     $misc_RNAs->index_names();
+    $misc_features->index_names();
     $CDSs->index_names();
 
 
     #### Create features from CDSs and RNAs
-    &CreateGenbankFeatures($features, $genes, $mRNAs, $tRNAs, $rRNAs, $misc_RNAs, $CDSs, $sources);
+    &CreateGenbankFeatures($features, $genes, $mRNAs, $tRNAs, $rRNAs, $misc_RNAs, $misc_features, $CDSs, $sources);
 
     #### parse chromosomal positions
     &ParsePositions($features);
@@ -213,6 +218,7 @@ package main;
     &ParsePositions($tRNAs);
     &ParsePositions($rRNAs);
     &ParsePositions($misc_RNAs);
+    &ParsePositions($misc_features);
     &ParsePositions($CDSs);
 
     ################################################################
@@ -231,6 +237,7 @@ package main;
 			   tRNAs
 			   rRNAs
 			   misc_RNAs
+			   misc_features
 			   CDSs
 			   sources
 			   );

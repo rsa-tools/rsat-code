@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank.pl,v 1.6 2003/08/08 22:13:24 jvanheld Exp $
+# $Id: parse_genbank.pl,v 1.7 2003/08/08 22:37:28 jvanheld Exp $
 #
-# Time-stamp: <2003-08-09 00:13:09 jvanheld>
+# Time-stamp: <2003-08-09 00:36:48 jvanheld>
 #
 ############################################################
 
@@ -62,6 +62,8 @@ package main;
     $rRNAs = classes::ClassFactory->new_class(object_type=>"Genbank::rRNA", prefix=>"rRNA");
 
     $misc_RNAs = classes::ClassFactory->new_class(object_type=>"Genbank::misc_RNA", prefix=>"misc_RNA");
+
+    $misc_features = classes::ClassFactory->new_class(object_type=>"Genbank::misc_feature", prefix=>"misc_feature");
 
     $CDSs = classes::ClassFactory->new_class(object_type=>"Genbank::CDS", prefix=>"cds_");
 
@@ -236,6 +238,7 @@ package main;
 			  $tRNAs,
 			  $rRNAs,
 			  $misc_RNAs,
+			  $misc_features,
 			  $CDSs,
 			  $contigs, 
 			  $organisms, 
