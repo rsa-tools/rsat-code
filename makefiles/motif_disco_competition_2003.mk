@@ -823,7 +823,7 @@ publish_eval:
 	${RSYNC} --exclude '*~' ${PUBLISH_DIR} ${PUBLISH_SITE}
 
 TO_PUBLISH=file_index.html
-#PUBLISH_SERVER=jvanheld@rsat.ulb.ac.be:
+#PUBLISH_SERVER=jvanheld@rsat.scmbb.ulb.ac.be:
 PUBLISH_SITE=${PUBLISH_SERVER}${PUBLISH_DIR}
 PUBLISH_DIR=/home/jvanheld/rsa-tools/public_html/data/motif_discovery_competition
 publish:

@@ -1,13 +1,13 @@
 ############################################################
 #
-# $Id: mirror.mk,v 1.9 2004/05/06 15:31:06 jvanheld Exp $
+# $Id: mirror.mk,v 1.10 2004/08/18 17:06:09 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 12:05:45 jvanheld>
 #
 ############################################################
 
 RSA=${HOME}/rsa-tools
-RSA_SERVER=rsat.ulb.ac.be
+RSA_SERVER=rsat.scmbb.ulb.ac.be
 RSA_SERVER_DIR=rsa-tools
 RSA_LOGIN=jvanheld
 
@@ -32,7 +32,7 @@ PAULUS = ${RSA_LOGIN}@paulus.ulb.ac.be:rsa-tools/
 RUBENS = ${RSA_LOGIN}@rubens.ulb.ac.be:rsa-tools/
 #UCMB = /rubens/dsk4/${RSA_LOGIN}/rsa-tools
 UPPSALA = ${RSA_LOGIN}@bioinformatics.bmc.uu.se:rsa-tools
-RSAT_SERVER = ${RSA_LOGIN}@rsat.ulb.ac.be:/home/rsa/rsa-tools
+RSAT_SERVER = ${RSA_LOGIN}@rsat.scmbb.ulb.ac.be:/home/rsa/rsa-tools
 MEDICEL = root@grimsel.co.helsinki.fi:/work/programs/rsa-tools
 SERVERS = ${RSAT_SERVER} ${PAULUS} ${CIFN} ${UPPSALA} 
 
