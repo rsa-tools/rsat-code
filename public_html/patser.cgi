@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: patser.cgi,v 1.15 2003/04/17 20:45:42 jvanheld Exp $
+# $Id: patser.cgi,v 1.16 2003/05/14 21:25:06 jvanheld Exp $
 #
-# Time-stamp: <2003-04-17 22:45:12 jvanheld>
+# Time-stamp: <2003-05-14 23:22:58 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -98,12 +98,12 @@ if ($query->param('matrix_is_vertical')) {
 
 
 ################################################################
-### sequence file ####
+#### sequence file
 ($sequence_file,$sequence_format) = &GetSequenceFile("wconsensus", 1);
 $parameters .= " -f $sequence_file";
 
 ################################################################
-### strands ###
+#### strands 
 if ($query->param('strands') =~ /both/i) {
     $parameters .= " -c";
 }
