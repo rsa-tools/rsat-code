@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.8 2002/03/07 11:16:12 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.9 2002/03/07 11:46:22 jvanheld Exp $
 #
-# Time-stamp: <2002-03-07 12:15:12 jvanheld>
+# Time-stamp: <2002-03-07 12:45:08 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -18,8 +18,31 @@ if ($#ARGV < 0) {
   die ("Usage : multiple-family-analysis -org organism -fam family_file \n", 
        "\t[-noup] [-nocalc] [-nosynt] [-v]\n");
 }
+
+
+
+#### initialisations	    
+@supported_tasks = qw (upstream oligos dyads synthesis all);
+foreach my $task (@supported_tasks) {
+    $supported_task{$task} = 1;
+}
+$supported_tasks = join ",", @supported_tasks;
+
+$default{from} = -800;
+$default{to} = 0;
+
+
 &ReadArguments;
 
+#### check selected tasks
+unless (defined(%task)) {
+    &FatalError("You should select at least one task.");
+}
+if ($task{all}) {
+    foreach my $t (@supported_tasks) {
+	$task{$t} = 1;
+    }
+}
 
 ############################### check parameters ###############################
 
@@ -38,17 +61,19 @@ unless ($supported_organism{$organism_name}) {
 }
 &InitParameters;
 
-
 ### read gene name and identifiers
 warn "; Reading ORF information ...\n" 
     if ($verbose);
 &ReadOrfPositions($organism_name);
 &ReadSynonyms($organism_name);
 
-&ReadKnownSites;
-&ReadSiteLibrary;
 
-&ReadFamilies;
+################################################################
+#
+# read data
+&ReadKnownSites();
+&ReadSiteLibrary();
+&ReadFamilies();
 
 ### some verbose
 if ($verbose) {
@@ -68,7 +93,7 @@ if ($verbose) {
 }
 
 ### write composition of the families in the separated directories
-&SetFileNames;
+&SetFileNames();
 
 ### initialize one directory for each family
 foreach $family_name(@families) {
@@ -86,9 +111,10 @@ foreach $family_name(@families) {
 }
 
 ### perform analysis
-&AnalyzeFamilies unless ($no_calc);
-&SyntheticTable unless ($no_synt);
+&AnalyzeFamilies();
+&SyntheticTable if ($task{synthesis});
 
+#### report execution time 
 if ($verbose) {
   $done_date = `date`;
   print ";Job started\t$start_date";
@@ -96,6 +122,14 @@ if ($verbose) {
 }
 exit(0);
 
+
+################################################################
+#
+#                 SUBROUTINE DEFINITION
+#
+################################################################
+
+#### set the file names as a function of parameters
 sub SetFileNames {
   $sp = "0-$max_sp";
   $dyad_options = "-v ";
@@ -151,7 +185,6 @@ sub SetFileNames {
 }
 
 ################### SUBROUTINE DEFINITION ###################"
-
 sub OldReadFamily {
   print "\n; Reading family\t$family_name\n" if ($verbose);
   unless (-r $family{$family_name}->{family_file}) {
@@ -192,6 +225,7 @@ sub OldUpstreamSequences {
   }
 }
 
+#### retrieve upstream sequences
 sub UpstreamSequences {
   warn "; Generating upstream sequences for family $family_name\n" if ($verbose);
   $command = "retrieve-seq -type upstream -org $organism_name";
@@ -202,8 +236,6 @@ sub UpstreamSequences {
   $command .= " -format $seq_format";
 
   &doit($command);
-#  warn "$command\n" if ($verbose > 1);
-#  system $command;
 }
 
 
@@ -227,7 +259,6 @@ sub OligoAnalysis {
     $oligo_options .= "-thosig $th ";
     $oligo_options .= "-org $organism_name ";
     $oligo_options .= "-ncf ";
-#    $oligo_options .= "-expfreq $RSA/data/yeast/oligo-frequencies/${oligo_length}nt.non-coding.freq ";
     $oligo_options .= "-return occ,proba,zscore ";
     $oligo_options .= "-noov " if ($noov);
     
@@ -242,11 +273,9 @@ sub OligoAnalysis {
     $command = "oligo-analysis -i $family{$family_name}->{seq_file} -format $seq_format -o $oligo_file $oligo_options";
     
     &doit($command);
-#    warn "\n$command\n" if ($verbose > 1);
-#    system $command;
-    
     system "cat $oligo_file | grep -v ';' >> $family{$family_name}->{oligo_file}";
   }
+
   ### fragment assembly
   $fmap_file = $family{$family_name}->{oligo_file}.".gif";
   $htmap_file = $family{$family_name}->{oligo_file}.".html";
@@ -254,9 +283,7 @@ sub OligoAnalysis {
   $command = "pattern-assembly -i $family{$family_name}->{oligo_file} -sc 7 -${strands} -v -o $family{$family_name}->{oligo_assembly_file} -maxfl 1 -maxpat 200 ";
 
   &doit($command);
-#  print "\n$command\n" if ($verbose);
-#  system $command;
-  
+
   ### feature-map for oligo-analysis
   $origin = -$from + 1;
   $command = "dna-pattern -i $family{$family_name}->{seq_file} -format $seq_format -pl $family{$family_name}->{oligo_file} -origin $origin -sc 7 -N 4 ";
@@ -264,8 +291,6 @@ sub OligoAnalysis {
   $command .= " | feature-map -scalebar -scalestep 50 -legend -from $from -to $to -o $fmap_file -scorethick -htmap > $htmap_file ";
   
   &doit($command);
-#  print "\n$command\n" if ($verbose);
-#  system $command;
 }
 
 ### dyad analysis
@@ -278,15 +303,11 @@ sub DyadAnalysis {
   $command = "dyad-analysis -i $family{$family_name}->{seq_file} -format $seq_format -o $family{$family_name}->{dyad_file} $dyad_options";
 
   &doit($command);
-#  print "\n$command\n" if ($verbose);
-#  system $command;
   
   ### fragment assembly
   $command = "pattern-assembly -v -i $family{$family_name}->{dyad_file} -o $family{$family_name}->{dyad_assembly_file} -$strands -maxfl 2 -sc 7 -maxpat 200 ";
 
   &doit($command);
-#  print "\n$command\n" if ($verbose);
-#  system $command;
 
   ### feature-maps
   &DrawFeatureMaps;
@@ -619,8 +640,8 @@ sub DrawFeatureMaps {
 
 #### initialization
 sub InitParameters {
-  $from = -400 unless defined($from);
-  $to = 0 unless defined($to);
+  $from = $default{from} unless defined($from);
+  $to = $default{to} unless defined($to);
   $seq_length = abs($to - $from) + 1;
   $seq_format = "fasta";
 #  $upstream_sequence_file = "$RSA//data/yeast/sequences/all_up${seq_length}.${seq_format}";
@@ -667,13 +688,13 @@ sub AnalyzeFamilies {
 #    &ReadFamily;
     
     ### retrieve upstream sequences
-    &UpstreamSequences unless ($no_up);
+    &UpstreamSequences if ($task{upstream});
     
     ### oligo-analysis
-    &OligoAnalysis unless ($no_oligo);
+    &OligoAnalysis if ($task{oligos});
 
     ### dyad analysis
-    &DyadAnalysis unless ($no_dyads);
+    &DyadAnalysis if ($task{dyads});
 
     ### delete upstream sequence file
 #    system "rm $family{$family_name}->{seq_file}";
@@ -726,6 +747,18 @@ OPTIONS
 	-to	upstream region right limit
 	-1str   strand-sensitive analysis
 	-2str   strand-insensitive analysis
+	-task selected_task
+		Select the tasks to be performed.
+		Supported tasks: $supported_tasks
+
+		Can be used iteratively on the same command line to 
+		select multiple tasks.  
+
+		Example:
+		    -task upstream -task oligos -task synthesis
+		For a full analysis, simply type 
+		    -task all
+
 FILE FORMAT
     FAMILY FILE
 	The family file specifies the co;position of several gene families.
@@ -791,10 +824,9 @@ multiple-family-analysis options
 -1str   strand-sensitive analysis
 -2str   strand-insensitive analysis
 -n      dry run: print commands without executing them
-
--noup	do not generate upstream sequences
 -exp	expected frequency file
 -transp	transpose synthetic result table (columns become rows)
+-task	selected task (supported: $supported_tasks)
 End_short_help
   close HELP;
   exit;
@@ -844,27 +876,36 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-org") {
 	    $organism_name = $ARGV[$a+1];
 
-	    #### inactivate some tasks
-	    
-	    ### inactivate upstream sequence retrieval
-	} elsif ($ARGV[$a] eq "-noup") {
-	    $no_up = 1;
 
-	    ### inactivate synthetic table
-	} elsif ($ARGV[$a] eq "-nosynt") {
-	    $no_synt = 1;
+	    #### task selection
+	} elsif ($ARGV[$a] eq "-task") {
+	    $requested_task = $ARGV[$a+1];
+	    if ($supported_task{$requested_task}) {
+		$task{$requested_task} = 1;
+	    } else {
+		&FatalError("This task is not supported. Supported: $supported_tasks");
+	    }
 
-	    ### inactivate calculations
-	} elsif ($ARGV[$a] eq "-nocalc") {
-	    $no_calc = 1;
+#  	    #### inactivate some tasks
+#  	    ### inactivate upstream sequence retrieval
+#  	} elsif ($ARGV[$a] eq "-noup") {
+#  	    $no_up = 1;
 
-	    ### inactivate oligo-analysis
-	} elsif ($ARGV[$a] =~ /-nooligo/) {
-	    $no_oligo = 1;
+#  	    ### inactivate synthetic table
+#  	} elsif ($ARGV[$a] eq "-nosynt") {
+#  	    $no_synt = 1;
 
-	    ### inactivate dyad-analysis
-	} elsif ($ARGV[$a] =~ /-nodyads/) {
-	    $no_dyads = 1;
+#  	    ### inactivate calculations
+#  	} elsif ($ARGV[$a] eq "-nocalc") {
+#  	    $no_calc = 1;
+
+#  	    ### inactivate oligo-analysis
+#  	} elsif ($ARGV[$a] =~ /-nooligo/) {
+#  	    $no_oligo = 1;
+
+#  	    ### inactivate dyad-analysis
+#  	} elsif ($ARGV[$a] =~ /-nodyads/) {
+#  	    $no_dyads = 1;
 
 	    #### transpose synthetic table
 	} elsif ($ARGV[$a] =~ /^-transp/) {
