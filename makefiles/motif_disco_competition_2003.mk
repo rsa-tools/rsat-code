@@ -32,23 +32,29 @@ usage:
 #### Synchronization between different machines
 
 #### publish
-SYNC_DIR=results
+TO_SYNC=results
 #SERVER_LOCATION=rubens.ulb.ac.be:/rubens/dsk3/genomics/motif_discovery_competition/
 SERVER_LOCATION=merlin.ulb.ac.be:motif_discovery_competition_2003/
-EXCLUDE=--exclude '*~' --exclude oligos --exclude '*.wc' --exclude random_genes.tab
+EXCLUDE=--exclude '*~' --exclude oligos --exclude '*.wc' --exclude random_genes.tab --exclude '*.fasta' --exclude '*.fasta.gz' --exclude '*.wc.gz'
 publish:
-	${MAKE} publish_one_dir SYNC_DIR=TASK_LIST.html
-	${MAKE} publish_one_dir SYNC_DIR=results
+	${MAKE} publish_one_dir TO_SYNC=TASK_LIST.html
+	${MAKE} publish_one_dir TO_SYNC=results
 
 publish_one_dir:
-	${RSYNC} ${EXCLUDE} ${SYNC_DIR} ${SERVER_LOCATION}
+	${RSYNC} ${EXCLUDE} ${TO_SYNC} ${SERVER_LOCATION}
 
 update_from_server:
-	${RSYNC} ${EXCLUDE} ${SERVER_LOCATION}${SYNC_DIR} .
+	${RSYNC} ${EXCLUDE} ${SERVER_LOCATION}${TO_SYNC} .
 
 ## Synchronize calibrations from merlin
 from_merlin:
+	${MAKE} update_from_server SERVER_LOCATION=jvanheld@merlin.ulb.ac.be:motif_discovery_competition_2003/ TO_SYNC='*.xls'
+	${MAKE} update_from_server SERVER_LOCATION=jvanheld@merlin.ulb.ac.be:motif_discovery_competition_2003/ TO_SYNC='*.tab'
+	${MAKE} update_from_server SERVER_LOCATION=jvanheld@merlin.ulb.ac.be:motif_discovery_competition_2003/ TO_SYNC=my_calibrate-oligos.R
 	${MAKE} update_from_server SERVER_LOCATION=jvanheld@merlin.ulb.ac.be:motif_discovery_competition_2003/
+# Temporary
+	${MAKE} update_from_server SERVER_LOCATION=jvanheld@merlin.ulb.ac.be:motif_discovery_competition_2003/makefiles/ TO_SYNC=results
+
 
 from_liv:
 	${MAKE} update_from_server SERVER_LOCATION=jvanheld@liv.bmc.uu.se:/Users/jvanheld/motif_discovery_competition_2003/
@@ -226,17 +232,18 @@ list_fasta_files:
 
 MULTI_TASK=purge,oligos,dyads,maps,synthesis,sql
 MULTI_DIR=${RES_DIR}/multi/${ORG}
-MIN_OL=6
-MAX_OL=6
+MIN_OL=5
+MAX_OL=8
 NOOV=-noov
+SORT=score
 multi:
 	@multiple-family-analysis -v ${V}				\
 		-org ${ORG}						\
 		-seq ${SEQ_LIST_FILE}					\
 		-outdir ${MULTI_DIR}					\
 		-2str -minol ${MIN_OL} -maxol ${MAX_OL}			\
-		-bg upstream -sort name -task ${MULTI_TASK}		\
-		${NOOV}							\
+		-bg upstream -sort ${SORT} -task ${MULTI_TASK}		\
+		${NOOV} 						\
 		-user jvanheld -password jvanheld -schema multifam
 
 
