@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-genes,v 1.2 2002/07/12 21:34:12 jvanheld Exp $
+# $Id: random-genes,v 1.3 2002/09/13 14:31:50 jvanheld Exp $
 #
-# Time-stamp: <2002-07-12 16:33:50 jvanheld>
+# Time-stamp: <2002-09-13 09:31:28 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -34,8 +34,15 @@ local $pairs = 0;
 unless ($organism) {
     &FatalError("You should select an organism.");
 }
-&CheckOrganism($organism);
-&ReadOrfPositions($organism);
+&CheckOrganism($organism_name, $feature_table_file);
+unless ($feature_table_file) {
+    $feature_table_file = $supported_organism{$organism_name}->{'features'};
+}
+&ReadOrfPositions($organism_name, $feature_table_file);
+
+
+#&CheckOrganism($organism);
+#&ReadOrfPositions($organism);
 
 ### open output file ###
 $out = &OpenOutputFile($outfile{output});
@@ -138,6 +145,10 @@ OPTIONS
 		if not specified, the standard output is used.
 		This allows to place the command within a pipe.
 	-org	organism
+	-features	
+		alternate feature table. This option allows to speify
+		an alternate file where the ORF locations are found. 
+		See below for a description of the feature file format.
 	-rep	random selection with replacement
 		(a same ORF might appear several times in the output)
 	-n #	number of random genes to return
@@ -156,21 +167,22 @@ End_of_help
   exit;
 }
 
-#### display short help message #
+#### display short help message 
 sub PrintOptions {
   open HELP, "| more";
   print HELP <<End_short_help;
 random-genes options
 ----------------
--h	(must be first argument) display full help message
--help	(must be first argument) display options
--o	output file
--v	verbose
--org	organism
--rep	random selection with replacement
--n	number of genes
--pairs	number of pairs of genes
--fam	family file
+-h		(must be first argument) display full help message
+-help		(must be first argument) display options
+-o		output file
+-v		verbose
+-org		organism
+-features	alternate feature table
+-rep		random selection with replacement
+-n		number of genes
+-pairs		number of pairs of genes
+-fam		family file
 End_short_help
   close HELP;
   exit;
@@ -179,56 +191,60 @@ End_short_help
 
 #### read arguments 
 sub ReadArguments {
-  foreach my $a (0..$#ARGV) {
-    ### verbose ###
-    if ($ARGV[$a] eq "-v") {
-      if (&IsNatural($ARGV[$a+1])) {
-	$verbose = $ARGV[$a+1];
-      } else {
-	$verbose = 1;
-      }
-      
-      ### detailed help
-    } elsif ($ARGV[$a] eq "-h") {
-      &PrintHelp;
-      
-      ### list of options
-    } elsif ($ARGV[0] eq "-help") {
-      &PrintOptions;
-      
-      ### output file 
-    } elsif ($ARGV[$a] eq "-o") {
-      $outfile{output} = $ARGV[$a+1];
-      
-      ### organism
-    } elsif ($ARGV[$a] eq "-org") {
-      $organism = $ARGV[$a+1];
-      
-      ### random selection with replacement
-    } elsif ($ARGV[$a] =~ /^-rep/) {
-      $replace = 1;
-      
-      ### family file 
-    } elsif ($ARGV[$a] eq "-fam") {
-      $infile{family} = $ARGV[$a+1];
-      
-      ### number of genes
-    } elsif ($ARGV[$a] eq "-n") {
-      $n = $ARGV[$a+1];
-      unless (&IsNatural($n)) {
-	&FatalError("$n\tInvalid number of genes. Should be a natural number.");
-      }
-      
-      ### number of gene pairs
-    } elsif ($ARGV[$a] eq "-pairs") {
-      $pairs = $ARGV[$a+1];
-      unless (&IsNatural($pairs)) {
-	&FatalError("$pairs\tInvalid number of pairs. Should be a natural number.");
-      }
+    foreach my $a (0..$#ARGV) {
+	### verbose ###
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+	    
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp;
+	    
+	    ### list of options
+	} elsif ($ARGV[0] eq "-help") {
+	    &PrintOptions;
+	    
+	    ### output file 
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outfile{output} = $ARGV[$a+1];
+	    
+	    ### organism
+	} elsif ($ARGV[$a] eq "-org") {
+	    $organism = $ARGV[$a+1];
+
+	    #### alternative feature file
+	} elsif ($ARGV[$a] =~ /^-feat/i) {
+	    $feature_table_file = $ARGV[$a+1];
+	    
+	    ### random selection with replacement
+	} elsif ($ARGV[$a] =~ /^-rep/) {
+	    $replace = 1;
+	    
+	    ### family file 
+	} elsif ($ARGV[$a] eq "-fam") {
+	    $infile{family} = $ARGV[$a+1];
+	    
+	    ### number of genes
+	} elsif ($ARGV[$a] eq "-n") {
+	    $n = $ARGV[$a+1];
+	    unless (&IsNatural($n)) {
+		&FatalError("$n\tInvalid number of genes. Should be a natural number.");
+	    }
+	    
+	    ### number of gene pairs
+	} elsif ($ARGV[$a] eq "-pairs") {
+	    $pairs = $ARGV[$a+1];
+	    unless (&IsNatural($pairs)) {
+		&FatalError("$pairs\tInvalid number of pairs. Should be a natural number.");
+	    }
+	}
     }
-  }
 }
-  
+
 ################################################################
 #### verbose message
 sub Verbose {
