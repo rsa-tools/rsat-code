@@ -19,7 +19,7 @@ require "RSA.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 #### TEMPORARY
-#$ECHO=1;
+$ECHO=2;
 
 $position_analysis_command = "$SCRIPTS/position-analysis";
 $convert_seq_command = "$SCRIPTS/convert-seq";
@@ -38,9 +38,9 @@ $query = new CGI;
 
 #### read parameters ####
 $parameters = " -v ";
-$parameters = " -sort" if ($query->param('sort'));
-$parameters = " -nofilter" unless ($query->param('filter'));
-$parameters = " -nocheck" unless ($query->param('check'));
+$parameters .= " -sort" if ($query->param('sort'));
+$parameters .= " -nofilter" unless ($query->param('filter'));
+$parameters .= " -nocheck" unless ($query->param('check'));
 
 
 #### purge sequence option
