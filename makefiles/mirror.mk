@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: mirror.mk,v 1.16 2005/01/27 15:26:32 jvanheld Exp $
+# $Id: mirror.mk,v 1.17 2005/02/01 20:54:54 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 12:05:45 jvanheld>
 #
@@ -9,7 +9,7 @@
 RSA=${HOME}/rsa-tools
 RSA_SERVER=rsat.scmbb.ulb.ac.be
 RSA_SERVER_DIR=rsa-tools
-RSA_LOGIN=jvanheld
+RSA_SERVER_LOGIN=rsat
 
 DATE = `date +%Y%m%d_%H%M%S`
 
@@ -26,7 +26,7 @@ RSYNC = rsync ${RSYNC_OPT} ${SSH}
 ################################################################
 #
 # Server
-RSAT_SERVER = ${RSA_LOGIN}@rsat.scmbb.ulb.ac.be:/home/rsa/rsa-tools
+RSAT_SERVER = ${RSA_SERVER_LOGIN}@rsat.scmbb.ulb.ac.be:/home/rsa/rsa-tools
 
 SERVER=${RSAT_SERVER}
 
@@ -77,7 +77,7 @@ all_from_server: scripts_from_server pub_from_server data_from_server logs_from_
 
 DIR=doc
 TARGET_DIR=${RSA}/
-RSYNC_FROM_SERVER_CMD=${RSYNC} ${RSA_LOGIN}@${RSA_SERVER}:${RSA_SERVER_DIR}/${DIR} ${TARGET_DIR}
+RSYNC_FROM_SERVER_CMD=${RSYNC} ${RSA_SERVER_LOGIN}@${RSA_SERVER}:${RSA_SERVER_DIR}/${DIR} ${TARGET_DIR}
 dir_from_server:
 	@echo ${RSYNC_FROM_SERVER_CMD}
 	${RSYNC_FROM_SERVER_CMD}
@@ -96,7 +96,7 @@ pub_from_server:
 		--exclude data							\
 		--exclude logs							\
 		--exclude tmp							\
-		${RSA_LOGIN}@${RSA_SERVER}:${RSA_SERVER_DIR}/public_html ${RSA}/
+		${RSA_SERVER_LOGIN}@${RSA_SERVER}:${RSA_SERVER_DIR}/public_html ${RSA}/
 
 EXCLUDED_GENOMES=				\
 		--exclude Mus_musculus		\
@@ -122,7 +122,7 @@ EXCLUDED_DIRS=					\
 EXCLUDED=${EXCLUDED_GENOMES} ${EXCLUDED_DIRS} ${EXCLUDED_FILES}
 data_from_server:
 	${RSYNC} ${EXCLUDED}							\
-		${RSA_LOGIN}@${RSA_SERVER}:${RSA_SERVER_DIR}/public_html/data/*	\
+		${RSA_SERVER_LOGIN}@${RSA_SERVER}:${RSA_SERVER_DIR}/public_html/data/*	\
 		${RSA}/public_html/data/
 
 ################################################################
