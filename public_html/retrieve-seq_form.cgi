@@ -128,7 +128,7 @@ print "<BR>\n";
 
 
 ### send results by e-mail or display on the browser
-&SelectOutput();
+&SelectOutput("server");
 
 ### data for the demo 
 #@demo_genes = qw ( MET1 MET2 MET3 MET6 MET14 MET19 MET25 MET30 MUP3
