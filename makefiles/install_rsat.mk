@@ -1,15 +1,13 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.1 2003/10/29 00:35:14 jvanheld Exp $
+# $Id: install_rsat.mk,v 1.2 2003/11/10 21:20:21 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
 ############################################################
 
-RSA=${HOME}/rsa-tools/
-#RSA=${HOME}/rsa/rsa-tools/
-GENBANK_DIR=/home/rsa/downloads/ftp.ncbi.nih.gov/genbank/genomes
-NCBI_DIR=/home/rsa/downloads/ftp.ncbi.nih.gov/genomes
+GENBANK_DIR=${RSAT}/downloads/ftp.ncbi.nih.gov/genbank/genomes
+NCBI_DIR=${RSAT}/downloads/ftp.ncbi.nih.gov/genomes
 
 DATE = `date +%Y%m%d_%H%M%S`
 
@@ -18,7 +16,7 @@ DATE = `date +%Y%m%d_%H%M%S`
 # programs
 
 WGET = wget -np -rNL 
-MAKEFILE=${RSA}/makefiles/install_rsat.mk
+MAKEFILE=${RSAT}/makefiles/install_rsat.mk
 MAKE=nice -n 19 make -s -f ${MAKEFILE}
 RSYNC_OPT = -ruptvl ${OPT}
 SSH=-e 'ssh -x'
@@ -32,11 +30,11 @@ CIFN = jvanheld@embnet.cifn.unam.mx:rsa-tools/
 PAULUS = jvanheld@paulus.ulb.ac.be:rsa-tools/
 UPPSALA = jvanheld@bioinformatics.bmc.uu.se:rsa-tools
 LIV = jvanheld@liv.bmc.uu.se:rsa-tools
-RSAT = jvanheld@164.15.61.35:/home/rsa/rsa-tools
+RSAT_SERVER = jvanheld@164.15.61.35:${RSAT}
 MEDICEL = root@grimsel.co.helsinki.fi:/work/programs/rsa-tools
 SERVERS = ${CIFN} ${UPPSALA} ${LIV}
 
-#SERVER=${RSAT}
+#SERVER=${RSAT_SERVER}
 SERVER=${UPPSALA}
 
 ### tags
@@ -148,24 +146,22 @@ compile:
 		(cd ${COMPIL}/bin; pwd; perlcc $${pgm}.pl && rm -f $${pgm}.pl); \
 	dgone
 
-#BACTERIA = `ls -1 genbank/genomes/Bacteria/ | grep _ | xargs`
-#BACTERIAS = `ls -1 ${GENBANK_DIR}/Bacteria | grep -v Mesorhizobium_loti | grep _ | tail -37 | xargs `
-#BACTERIA = `ls -1 ${NCBI_DIR}/Bacteria | grep _ | sort -ru | xargs `
-BACTERIA = `cat TO_INSTALL.txt| sort -ru | xargs `
-#BACTERIAS = Ralstonia_solanacearum
-#BACTERIA =					\
-#	Clostridium_perfringens			\
-#	Pyrobaculum_aerophilum			\
-#	Pyrococcus_furiosus
+#BACTERIA = `ls -1 ${NCBI_DIR}/Bacteria | grep -v Mesorhizobium_loti | grep _ | tail -37 | xargs `
+BACTERIA = `ls -1 ${NCBI_DIR}/Bacteria | grep _ | sort -ru | grep -v bacteria | xargs `
 BACT=Mycoplasma_genitalium
 
 list_bacteria:
-	@echo "Bacteria to install	${BACTERIA}"
+	@echo "Bacteria to install"
+	@echo ${BACTERIA}
+
+TASK=install_one_bacteria
+iterate_all_bacteria:
+	@for bact in ${BACTERIA}; do				\
+		${MAKE} ${TASK} BACT=$${bact} ;	\
+	done
 
 install_all_bacteria:
-	@for bact in ${BACTERIA}; do				\
-		${MAKE} install_one_bacteria BACT=$${bact} ;	\
-	done
+	${MAKE} iterate_all_bacteria TASK=install_one_bacteria
 
 install_one_bacteria:
 	@echo
@@ -173,9 +169,11 @@ install_one_bacteria:
 	@${MAKE} install_organism ORGANISM=${BACT}		\
 		ORGANISM_DIR=${NCBI_DIR}/Bacteria/${BACT}
 
+
+
 #ORGANISM=Plasmodium_falciparum
 ORGANISM=Homo_sapiens
-ORGANISM_DIR=${GENBANK_DIR}/${ORGANISM}
+ORGANISM_DIR=${NCBI_DIR}/${ORGANISM}
 INSTALL_TASK=allup,clean,config,dyads,ncf,intergenic_freq,oligos,parse,start_stop,upstream_freq
 install_organism:
 	@echo "install log	${INSTALL_LOG}"
@@ -190,12 +188,30 @@ install_pombe:
 #	parse-embl.pl -i ${POMBE_DIR} -org 'Schizosaccharomyces pombe' -v 1
 	install-organism -v 1											\
 		-org Schizosaccharomyces_pombe									\
-		-features ${RSA}/data/Schizosaccharomyces_pombe/genome/Gene_Schizosaccharomyces_pombe.tab	\
-		-genome ${RSA}/data/genome/Contigs_Schizosaccharomyces_pombe.txt				\
+		-features ${RSAT}/data/Schizosaccharomyces_pombe/genome/Gene_Schizosaccharomyces_pombe.tab	\
+		-genome ${RSAT}/data/genome/Contigs_Schizosaccharomyces_pombe.txt				\
 		-format filelist										\
 		-source genbank											\
 		-step config -step start_stop -step ncf -step oligos -step dyads;
 
+################################################################
+#### parse a genome from the genbank genome release
+ORGANISM=Plasmodium_faciparum
+#ORGANISM=Homo_sapiens
+ORGANISM_DIR=${NCBI_DIR}/${ORGANISM}
+PARSE_COMMAND=parse-genbank.pl -v 1 -i ${ORGANISM_DIR} ${OPT}
+parse_organism:
+	${PARSE_COMMAND}
+
+parse_one_bacteria:
+	${MAKE} parse_organism ORGANISM=${BACT} NCBI_DIR=${NCBI_DIR}/Bacteria ${OPT}
+
+parse_all_bacteria:
+	${MAKE} iterate_all_bacteria TASK=parse_one_bacteria
+
+################################################################
+#### installation of the GD graphical library
+#### (obsolete)
 GD_DISTRIB_DIR=stein.cshl.org/WWW/software/GD/
 GD_DISTRIB= http://${GD_DISTRIB_DIR}/GD.pm.tar.gz
 get_gd:
@@ -212,17 +228,17 @@ uncompress_gd:
 install_gd:
 	(cd lib-sources/${GD_DISTRIB_DIR}/GD-${GD_VERSION} ;	\
 	perl Makefile.PL INSTALLDIRS=site			\
-		INSTALLSITELIB=${RSA}/extlib			\
-		INSTALLSITEARCH=${RSA}/extlib/arch ;		\
+		INSTALLSITELIB=${RSAT}/extlib			\
+		INSTALLSITEARCH=${RSAT}/extlib/arch ;		\
 	make ;							\
 	make install ;						\
 	)
 
 
-APP_DIR=${RSA}/applications
+APP_DIR=${RSAT}/applications
 PROGRAM=consensus
 PROGRAM_DIR=${APP_DIR}/${PROGRAM}
-PROGRAM_ARCHIVE=`ls -1t ${RSA}/app_sources/${PROGRAM}* | head -1`
+PROGRAM_ARCHIVE=`ls -1t ${RSAT}/app_sources/${PROGRAM}* | head -1`
 uncompress_program:
 	@echo installing ${PROGRAM_ARCHIVE} in dir ${PROGRAM_DIR}
 	@mkdir -p ${PROGRAM_DIR}
