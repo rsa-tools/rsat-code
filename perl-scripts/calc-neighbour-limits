@@ -1,9 +1,9 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl 
 ############################################################
 #
-# $Id: calc-neighbour-limits,v 1.1 2000/12/27 00:38:50 jvanheld Exp $
+# $Id: calc-neighbour-limits,v 1.2 2000/12/27 01:12:21 jvanheld Exp $
 #
-# Time-stamp: <2000-11-10 08:24:39 jvanheld>
+# Time-stamp: <2000-12-27 01:58:33 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -11,7 +11,7 @@ if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
 require "RSA.lib.pl";
-
+require "RSA.classes.pl";
 
 #### initialise parameters ####
 my $start_time = &AlphaDate;
@@ -27,27 +27,54 @@ local $out = STDOUT;
 
 
 #### check argument values ####
-
+die "Error: you should specify an organism\n$supported_organisms\n"
+    unless ($organism);
 
 ### open output file ###
 $out = &OpenOutputFile($outfile{output});
-
-##### read input #####
-$in = &OpenInputFile($infile{input});
-while (<$in>) {
-
-}
-
-close $in if ($infile{input});
 
 #### verbose ####
 &Verbose if ($verbose);
 
 ###### execute the command #########
-
+&CheckOrganism($organism);
+&ReadOrfPositions($organism);
+&CalcNeighbourLimits();
 
 ###### print output ######
 
+#### header
+print $out (join ("\t",
+		  ";ORF",
+		  "name",
+		  "chrom",
+		  "left",
+		  "right",
+		  "strand",
+		  "UP_limit",
+		  "UP_sze",
+		  "DWN_lim",
+		  "DWN_sze",
+		  "\n"
+		  ));
+foreach my $chr (sort keys %chromosome) {
+    my @orfs = sort { $left{$a} <=> $left{$b} } $chromosome{$chr}->get_genes();
+    foreach $orf (@orfs) {
+	print $out (join ("\t",
+			  $orf,
+			  $name{$orf},
+			  $chr,
+			  $left{$orf},
+			  $right{$orf},
+			  $strand{$orf},
+			  $upstr_limit{$orf},
+			  $upstr_size{$orf},
+			  $downstr_limit{$orf},
+			  $downstr_size{$orf},
+			  "\n"
+		      ));
+    }
+}
 
 ###### verbose ######
 if ($verbose) {
