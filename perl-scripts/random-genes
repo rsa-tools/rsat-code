@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-genes,v 1.1 2002/07/08 15:00:42 jvanheld Exp $
+# $Id: random-genes,v 1.2 2002/07/12 21:34:12 jvanheld Exp $
 #
-# Time-stamp: <2002-07-08 17:00:34 jvanheld>
+# Time-stamp: <2002-07-12 16:33:50 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -71,20 +71,20 @@ if ($infile{family}) {
 	my $count = $family_count{$fam};
 	$rand_family_name = "RAND";
 	$rand_family_name .= $f+1;
-	@random_orfs = &SelectRandomORFs($count);
+	@random_orfs = &SelectRandomORFs($count, $replace);
 	foreach $orf (@random_orfs) {
 	    print $out $orf, "\t", $rand_family_name. "\n";
 	}
     } 
 } elsif ($pairs) {
     $n = $pairs *2;
-    @random_orfs = &SelectRandomORFs($n);
+    @random_orfs = &SelectRandomORFs($n,$replace);
     for my $p (1..$pairs) {
 	print $out shift @random_orfs, "\t";
 	print $out shift @random_orfs, "\n";
     }
 } else {
-    @random_orfs = &SelectRandomORFs($n);
+    @random_orfs = &SelectRandomORFs($n, $replace);
     print $out join ("\n", @random_orfs), "\n";
 }
 
@@ -138,6 +138,8 @@ OPTIONS
 		if not specified, the standard output is used.
 		This allows to place the command within a pipe.
 	-org	organism
+	-rep	random selection with replacement
+		(a same ORF might appear several times in the output)
 	-n #	number of random genes to return
 	-pairs #
 		number of random pairs of genes to return. Each row of
@@ -165,6 +167,7 @@ random-genes options
 -o	output file
 -v	verbose
 -org	organism
+-rep	random selection with replacement
 -n	number of genes
 -pairs	number of pairs of genes
 -fam	family file
@@ -200,6 +203,10 @@ sub ReadArguments {
       ### organism
     } elsif ($ARGV[$a] eq "-org") {
       $organism = $ARGV[$a+1];
+      
+      ### random selection with replacement
+    } elsif ($ARGV[$a] =~ /^-rep/) {
+      $replace = 1;
       
       ### family file 
     } elsif ($ARGV[$a] eq "-fam") {
