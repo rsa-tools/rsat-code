@@ -64,25 +64,11 @@ $LOGS = "$RSA/logs";
 $SCRIPTS = "$RSA/perl-scripts";
 
 my $login = getlogin;
-
-if ($config_site eq "rubens_old") {
+#### redirect queries to a remote server
+if ($REMOTE_SERVER) {
     if (($login eq "webserv") || !($login)) {
-#	@remote_servers = qw ( 164.15.61.35 );
-	@remote_servers = qw ( bouts jordaens khnopff magritte paulus tytgat );
-#	push @remote_servers, "delvaux"; 
-	srand(time);
-	$s = int (rand $#remote_servers);
-	$remote_server = $remote_servers[$s];
 	$NICE = "nice +5";
-	$RSH = "rsh -l jvanheld ${remote_server} $NICE";
-	$SCRIPTS = "$RSH ~jvanheld/rsa-tools/perl-scripts";
-	$BIN = "$RSH ~jvanheld/rsa-tools/bin";
-    }	
-}  elsif ($config_site eq "rubens") {
-    if (($login eq "webserv") || !($login)) {
-	$remote_server = "164.15.61.35";
-	$NICE = "nice +5";
-	$RSH = "rsh -l jvanheld ${remote_server} $NICE";
+	$RSH = "rsh -l jvanheld ${REMOTE_SERVER} $NICE";
 	$SCRIPTS = "$RSH /home/rsa/rsa-tools/perl-scripts";
 	$BIN = "$RSH /home/rsa/rsa-tools/perl-scripts";
     }
@@ -151,7 +137,6 @@ sub OpenInputFile {
     my $filename = $_[0];
     my $input_stream = STDIN; ### default is standard input
     my ($short_file_name, $input_dir) = ();
-
     if ($filename) {
 	unless (-e $filename) {
 	    if (-e "${filename}.gz") {
