@@ -3,6 +3,7 @@ if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
 require "RSA.lib";
+require "RSA.classes";
 require "RSA.seq.lib";
 
 #### initialise parameters ####
@@ -22,38 +23,32 @@ $max_pattern_nb = 100;
 ### open output file ###
 $out = &OpenOutputFile($outputfile);
 
-#### verbose ####
-if ($verbose) {
-    print $out "; pattern-assembly ";
-    &PrintArguments($out);
-    print $out ";Input file	$inputfile\n" if $inputfile;
-    print $out ";Output file	$outputfile\n" if $outputfile;
-    print $out ";score column\t$score_col\n" if (&IsNatural($score_col));
-    print $out ";strand insensitive assembly\n" if ($strand_insensitive);
-    print $out ";score column\t$score_col\n" if (defined($score_col));
-    print $out ";max flanking bases\t$max_flanking\n";
-    print $out ";max substitutions\t$max_subst\n";
-}
 
-#### read input ####
-($in, $input_dir) = &OpenInputFile($inputfile);
-while (<$in>) {
-    next unless (/\S/);
-    next if (/^;/);
-    chomp;
-    @fields = split, /\s+/;
-    $pattern = shift @fields;
-    $word = &ExpandSeq($pattern);
-    $info{$word} = join "\t", @fields;
-    if ((&IsNatural($score_col-2)) && (&IsReal($fields[$score_col-2]))) {
-	$score{$word} = $fields[$score_col-2];
+#### read patterns
+@patterns = &ReadPatterns(pattern_file=>$inputfile, 
+			  score_column=>$score_column, 
+			  noid=>$noid,
+			  pattern_score=>$pattern_score,
+			  pattern_id=>$pattern_id,
+			  pattern_seq=>$pattern_seq);
+
+#### create a hash with pattern scores
+foreach $pattern (@patterns) {
+    my $word = $pattern->get_attribute("sequence"); 
+    my $score = $pattern->get_attribute("score");
+    my $description = $pattern->get_attribute("description");
+    if ($score_column >= 1) {
+	$info{$word} = $score;
+	$score{$word} = $score;
     } else {
+	$info{$word} = $description;
 	$score{$word} = "nd";
     }
+#    die join "\t", $info{$word}, $score{$word}, $description, "\n";
 }
-close $in unless ($inputfile eq "");
 
-###### align and group by clusters #########
+
+###### reverse complement
 %seed = %score;
 if ($strand_insensitive) {
     foreach $word (keys %seed) {
@@ -61,18 +56,55 @@ if ($strand_insensitive) {
     }
 }
 
-#delete($to_align{$to_assemble[0]});
-
-#### make a list of words remaining to cluster
+#### sort pattern according to their score
 @to_assemble = sort {$score{$b} <=> $score{$a}} keys %seed;
 $pattern_nb = $#to_assemble+1;
-print $out ";number of patterns\t$pattern_nb\n" if ($verbose);
+
+#### check that pattern number does not exceed the limit
 if($pattern_nb > $max_pattern_nb) {
     print "Too many patterns to assemble.\n";
     print "\tNumber of patterns\t$pattern_nb\n";
     print "\tmaximum nb allowed\t$max_pattern_nb\n";
     exit;
 }
+
+#### verbose ####
+if ($verbose) {
+    print $out "; pattern-assembly ";
+    &PrintArguments($out);
+    print $out "; Input file	$inputfile\n" if $inputfile;
+    print $out "; Output file	$outputfile\n" if $outputfile;
+    print $out "; score column\t$score_column\n" if (&IsNatural($score_column));
+    if ($strand_insensitive) {
+	print $out "; two strand assembly\n";
+    } else {
+	print $out "; single strand assembly\n";
+    }
+    print $out "; max flanking bases\t$max_flanking\n";
+    print $out "; max substitutions\t$max_subst\n";
+    print $out "; number of patterns\t$pattern_nb\n";
+}
+
+#  ($in, $input_dir) = &OpenInputFile($inputfile);
+#  while (<$in>) {
+#      next unless (/\S/);
+#      next if (/^;/);
+#      chomp;
+#      @fields = split, /\s+/;
+#      $pattern = shift @fields;
+#      $word = &ExpandSeq($pattern);
+#      $info{$word} = join "\t", @fields;
+#      if ((&IsNatural($score_column-2)) && (&IsReal($fields[$score_column-2]))) {
+#  	$score{$word} = $fields[$score_column-2];
+#      } else {
+#  	$score{$word} = "nd";
+#      }
+#  }
+#  close $in unless ($inputfile eq "");
+
+#delete($to_align{$to_assemble[0]});
+
+#### make a list of words remaining to cluster
 while ($#to_assemble > -1) {
     #### reinitialize variables
     undef %position;
@@ -175,7 +207,7 @@ if ($#singletons >=0) {
 	    $rc = lc(&ReverseComplement($word));
 	    printf $out "\t%s", $rc;
 	}
-	if (defined($score_col)) {
+	if (defined($score_column)) {
 	    print $out "\t", $score{$word} || $score{$rc};
 	} else {
 	    print $out "\t", $info{$word} || $info{$rc};
@@ -359,7 +391,7 @@ sub PrintCluster {
 	$l = $seed_length -1;
 	printf $out ";%${l}s", "alignt"; 
 	printf $out "\t%${seed_length}s","rev_cpl" if ($strand_insensitive);
-	if (&IsReal($score_col)) {
+	if (&IsReal($score_column)) {
 	    print $out "\tscore";
 	} else {
 	    print $out "\tinfo";
@@ -367,7 +399,7 @@ sub PrintCluster {
 	print $out "\n";
     }
     foreach $word (sort {($position{$a} <=> $position{$b}) || ($score{$b} <=> $score{$a})} keys %position) {
-	$cluster_score = &max($cluster_score, $score{$word}) if (&IsReal($score_col));
+	$cluster_score = &max($cluster_score, $score{$word}) if (&IsReal($score_column));
 	$position = $position{$word} - $min_pos;
 	
 	for $p (0..$position-1) {
@@ -390,7 +422,7 @@ sub PrintCluster {
 	    }
 	}
 	
-	if (defined($score_col)) {
+	if (defined($score_column)) {
 	    print $out "\t", $score{$word} || $score{$rc};
 	} else {
 	    print $out "\t", $info{$word} || $info{$rc};
@@ -400,7 +432,7 @@ sub PrintCluster {
     
     print $out "$seed";
     printf $out "\t%s", lc(&ReverseComplement($seed)) if ($strand_insensitive);
-    print $out "\t$cluster_score" if (&IsReal($score_col));
+    print $out "\t$cluster_score" if (&IsReal($score_column));
     print $out "\tconsensus\n";
 }
 
@@ -590,8 +622,8 @@ sub ReadArguments {
 	    
 	    ### score column
 	} elsif ($ARGV[$a] eq "-sc") {
-	    $score_col = $ARGV[$a+1];
-	    if (!(&IsNatural($score_col)) || ($score_col == 0)) {
+	    $score_column = $ARGV[$a+1];
+	    if (!(&IsNatural($score_column)) || ($score_column == 0)) {
 		print "Error: the score column must be a strictly positive integer\n";
 		exit;
 	    }
