@@ -1,12 +1,13 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-ensembl-genome.pl,v 1.10 2005/03/13 10:05:23 jvanheld Exp $
+# $Id: get-ensembl-genome.pl,v 1.11 2005/03/16 07:50:16 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
 ############################################################
 #use strict;
+use DBI();
 BEGIN {
     if ($0 =~ /([^(\/)]+)$/) {
 	push (@INC, "$`lib/");
@@ -21,23 +22,14 @@ push @INC, $RSA."/perl-scripts/parsers/" if ($RSA);
 require "lib/load_classes.pl";
 require "lib/parsing_util.pl";
 
-## ENSEMBL libraries
+## EnsEMBL libraries
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
 use Bio::EnsEMBL::DBSQL::SliceAdaptor;
 
 ## TO DO
-## Add an argument -org to specify the organism, and see how to obtain
-## the current version (not sure it is possible; dbname seems
-## mandatory). Yes but is there a method to get a list of available
-## dbnames ?
-## Get intron positions ? (we have transcripts and exons)
-## Get the name of the organism. The method $db->species() return a string "DEFAULT".
-## Add the taxonomy ancestors (mammal,primate,... of the organism.
-## Add the taxid of the organism.
 ## Introns and exons as transcript attributes
 ## Get CDS and check start/stop codons
 ## Test with other genomes (Anopheles)
-## Check why there are 109 human chromosomes. How to select only the complete chromosomes ?
 ## Check the start and stop codons of Anopheles. Half of them are false.
 ## Add cross-references to the RSAT objects ($rsat__gene, $rsat_transcript, $rsat_cds, ...)
 ## Export masked sequences (repeats masked). The method returns a hash
@@ -90,7 +82,7 @@ package EMBL::Gene;
 }
 
 ################################################################
-#### Class for Gene
+#### Class for Transcript
 package EMBL::Transcript;
 {
     @ISA = qw ( classes::DatabaseObject );
@@ -180,10 +172,11 @@ package main;
     $outfile{ft_name} = "prev_feature_name.tab";
     local $verbose = 0;
     
-    ## Connection to the ENSEMBL MYSQL database
+    ## Connection to the EnsEMBL MYSQL database
     $ensembl_host = 'ensembldb.ensembl.org';
     $ensembl_user = "anonymous";
     $dbname = 'homo_sapiens_core_28_35a';
+    $org = 'schtroumpf';
     
     #### Options for the exported SQL database
     $host= "localhost";
@@ -256,11 +249,27 @@ package main;
     ################################################################
     ## Read arguments
     &ReadArguments();
-    
+
+ 
+    ################################################################
+    ## Connect to ensembldb to get list of databases and pick the one corresponding to chosen organism
+    my $dbh = DBI->connect("DBI:mysql:host=$ensembl_host", "$ensembl_user", "", {'RaiseError' => 1});
+    my $sth = $dbh->prepare("SHOW DATABASES");
+    $sth->execute();
+    while (my $ref = $sth->fetchrow_hashref()) {
+        if ($ref->{'Database'} =~ /($org)_core/) {
+            $dbname = $ref->{'Database'};
+        }
+    }
+    warn "; dbname = ", $dbname, "\n" if ($main::verbose >= 1);
+    $sth->finish();
+    $dbh->disconnect();
+
+   
     ################################################################
     ### open output streams
     unless ($dir{output}) {
-	$dir{output} = join("_", "ENSEMBL", $dbname);
+	$dir{output} = join("_", "EnsEMBL", $dbname);
 	if (scalar(@chromnames) > 0) {
 	    $dir{output} .= "_chrom_";
 	    $dir{output} .= join("_", @chromnames);
@@ -295,15 +304,25 @@ package main;
     #### print verbose
     &Verbose() if ($verbose);
     
-    ## Connect to database:
+    ## Connect to EnsEMBL database
     my $db = new Bio::EnsEMBL::DBSQL::DBAdaptor(-host => $ensembl_host, -user => $ensembl_user, -dbname => $dbname);
-    my $organism_name = $db->species();
+
+    ## Get Species object
+    my $meta_container = $db->get_MetaContainer();
+    my $tax_id = $meta_container->get_taxonomy_id();
+    my $species = $meta_container->get_Species();
+    my $organism_name = $species->binomial();
+    my $common_name = $species->common_name();
+    my @classification = $species->classification();
+    warn join (":", "; Classification ", @classification),"\n" if ($main::verbose >= 1);
+    warn "; Organism = ", $organism_name, ", common name = ", $common_name, ", NCBI taxid = ", $tax_id, "\n" if ($main::verbose >= 1);
+
     ## The method species does not return the name of the organism !
-    ## TEMPORARY: I use a trick until we find the organism name in ENSEMBL API
-    if (($organism_name eq "") || ($organism_name eq "DEFAULT")) {
-	$organism_name = ucfirst($dbname);
-	$organism_name =~ s/_core.*//;
-    }
+    ## TEMPORARY: I use a trick until we find the organism name in EnsEMBL API
+    #if (($organism_name eq "") || ($organism_name eq "DEFAULT")) {
+    #   $organism_name = ucfirst($dbname);
+    #   $organism_name =~ s/_core.*//;
+    #}
 
     my $rsat_organism = $organisms->new_object(name=>$organism_name);
     $rsat_organism->push_attribute("names", $organism_name);
@@ -328,6 +347,14 @@ package main;
     my $s=0;
     foreach my $slice (@slices) {
 	$s++;
+	my $slice_id = $slice->id();
+	my $slice_name = $slice->name();
+
+	## TEMPORARY : a tricky fix for human genome, which contains 109 chromosome slices !
+	if ($slice_name =~ /_NT_/) {
+	    &RSAT::message::Warning(join "\t", "Skipping slice (fragment of chromosome)", $s."/".scalar(@slices), $slice_id, $slice_name) if ($main::verbose >= 1);
+	    next;
+	}
 
 	&RSAT::message::TimeWarn("Slice", $slice_type, 
 				 $s."/".scalar(@slices), 
@@ -335,9 +362,10 @@ package main;
 				 "seq_region_name:".$slice->seq_region_name(), 
 				 $slice->name()) if ($main::verbose >= 2);
 
+
 	my $rsat_contig = $contigs->new_object();
-	my $slice_name = $slice->name();
-	$rsat_contig->force_attribute("id", $slice->id());
+		
+	$rsat_contig->force_attribute("id", $slice_id);
 	$rsat_contig->set_attribute("name", $slice_name);
 	$rsat_contig->set_attribute("type", $slice_type);
 	$rsat_contig->set_attribute("accession", $slice->accession_number());
@@ -455,27 +483,23 @@ package main;
 	$masked_seq_file =~ s/\.raw$/_masked.raw/;
 	print CTG join ("\t", $seq_file,  $rsat_contig->get_attribute("id")), "\n";
 	unless ($no_seq) {
-	    ## Export slice sequence (unmasked)
-	    &RSAT::message::TimeWarn("Getting sequence for slice", $s."/".scalar(@slices), 
-				     $slice_type, $slice->seq_region_name(), $slice_name) if ($main::verbose >= 1);
-	    my $sequence = $slice->seq();
-	    open SEQ, ">".$seq_file || die "cannot open error log file".$seq_file."\n";
-	    print SEQ $sequence;
-	    close SEQ;
-
-	    ## Export slice sequence (hard masked) STILL NOT WORKING
-	    ## It exports a reference to a hash table
-	    ## TO DO: see the fields of this hash table (keys), and
-	    ## identify which one contains the sequence
-	    $no_masked = 1; ## Temporarily inactivated
+	    ## Export slice sequence (hard masked)
 	    unless ($no_masked) {
 		&RSAT::message::TimeWarn("Getting masked sequence for slice", $s."/".scalar(@slices), 
 					 $slice_type, $slice->seq_region_name(), $slice_name) if ($main::verbose >= 1);
-		$sequence = $slice->get_repeatmasked_seq();
+		my $masked_sequence_slice = $slice->get_repeatmasked_seq();
 		open MASKED_SEQ, ">".$masked_seq_file || die "cannot open error log file".$masked_seq_file."\n";
-		print MASKED_SEQ $sequence;
+		print MASKED_SEQ $masked_sequence_slice->seq();
 		close MASKED_SEQ;
 	    }
+
+	    ## Export slice sequence (unmasked)
+	    &RSAT::message::TimeWarn("Getting sequence for slice", $s."/".scalar(@slices), 
+				     $slice_type, $slice->seq_region_name(), $slice_name) if ($main::verbose >= 1);
+	    open SEQ, ">".$seq_file || die "cannot open error log file".$seq_file."\n";
+	    print SEQ $slice->seq();
+	    close SEQ;
+
 	}
     }
 
@@ -541,11 +565,16 @@ sub PrintHelp {
 NAME
 	get-ensembl-genome.pl
 
-        2004 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
+CREATION DATE
+        March 2005
+
+AUTHORS
+	Olivier Sand (oly\@scmbb.ulb.ac.be)
+	Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
 	
 DESCRIPTION
 
-	Retrieve information from ENSEMBL (http://www.ensembl.org) to
+	Retrieve information from EnsEMBL (http://www.ensembl.org) to
 	obtain the required data for installing it in RSAT.  
 
 CATEGORY
@@ -570,8 +599,9 @@ OPTIONS
 		commas
 			-chrom 21,22,X
 
-   Connection to the ENSEMBL MYSQL server
-	-dbname	ENSEMBL database name (default: $dbname)
+   Connection to the EnsEMBL MYSQL server
+        -org organism (default: $org) ; No caps, underscore separated
+	-dbname	EnsEMBL database name (default: $dbname)
 
    Options for the automaticaly generated SQL scripts
 	-schema database schema (default: $schema)
@@ -584,15 +614,15 @@ SUBSEQUENT STEPS
 	This program creates a directory where all the required
 	information will be stored (sequences, features, contigs). By
 	default, this directory corresponds to the dbname argument,
-	and indicates the organism name and its version in ENSEMBL.
+	and indicates the organism name and its version in EnsEMBL.
 	    genus_species_core_version
-	(for example ENSEMBL_homo_sapiens_core_28_35a)
+	(for example EnsEMBL_homo_sapiens_core_28_35a)
 
 	After this, the genome is still not installed in RSAT. For
 	this, you need to use the program install-organisms.
 
 	If you want to install the new genome in RSAT, after getting
-	the genome from ENSEMBL, you need to
+	the genome from EnsEMBL, you need to
 
 	1) Create a directory in RSAT
 
@@ -648,7 +678,8 @@ get-ensembl-genome.pl options
 -chrom  	import a selected chromosome
 -test #  	perform a test on # genes (default: $test_number)
 -v		verbose
--dbname		ENSEMBL database name (default: $dbname)
+-org		organism (default: $org) ; No caps, underscore separate
+-dbname		EnsEMBL database name (default: $dbname)
 -schema		database schema (default: $schema)
 -host		database host (default: $host)
 -user		database user (default: $user)
@@ -687,10 +718,13 @@ sub ReadArguments {
         } elsif ($ARGV[$a] eq "-chrom") {
             push @chromnames,  split(",", $ARGV[$a+1]);
 	    
-	    ### ENSEMBL database name
+	    ### EnsEMBL database name
 	} elsif ($ARGV[$a] eq "-dbname") {
 	    $dbname = $ARGV[$a+1];
 
+            ### organism
+        } elsif ($ARGV[$a] eq "-org") {
+            $org = $ARGV[$a+1]; 
 
 	    ################################################################
 	    #### SQL database parameters for the export
@@ -906,7 +940,7 @@ sub print_DBEntries {
 ## Print header for the feature table
 sub PrintFtHeader {
     print $FT_TABLE "-- dump date   	", &AlphaDate(), "\n";
-    print $FT_TABLE "-- class       	ENSEMBL feature", "\n";
+    print $FT_TABLE "-- class       	EnsEMBL feature", "\n";
     print $FT_TABLE "-- table       	feature", "\n";
     print $FT_TABLE "-- table       	main", "\n";
     print $FT_TABLE "-- field 1	id", "\n";
