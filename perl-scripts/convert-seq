@@ -1,16 +1,16 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: convert-seq,v 1.8 2001/06/14 17:36:50 jvanheld Exp $
+# $Id: convert-seq,v 1.9 2001/07/06 12:24:06 jvanheld Exp $
 #
-# Time-stamp: <2001-06-14 19:33:27 jvanheld>
+# Time-stamp: <2001-07-06 14:20:28 jvanheld>
 #
 ############################################################
 
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
+require "RSA.lib";
 
 $start_time = `date`;
 $line_width = 60;
@@ -43,6 +43,10 @@ if ($out_format eq "multi") {
 
 ### open input file ###
 $in = &OpenInputFile($inputfile);
+if ($inputfile) {
+    $input_dir = `dirname $inputfile`;
+    chomp $input_dir;
+}
 
 ### open output file ###
 $out = &OpenOutputFile($outputfile);
@@ -68,7 +72,7 @@ if ($verbose) {
 }
 
 ###### execute the command #########
-while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format)) &&
+while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir)) &&
        (($current_seq ne "") || ($current_id ne ""))) {
     if ($lowercases) {
         $current_seq = lc($current_seq);
