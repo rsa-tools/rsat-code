@@ -176,7 +176,10 @@ sub DisplayPatserOptions {
     print "<br>\n";
     print "<A HREF='help.patser.html#lthreshold'><B>Lower threshold estimation</B></A>";
     print $query->popup_menu(-name=>'lthreshold_method',
-			     -Values=>['weight score', 'maximum ln(p-value)', , 'adjusted information content (auto)', 'none'],
+			     -Values=>['weight score', 
+				       'maximum ln(p-value)', 
+				       'adjusted information content (auto)', 
+				       'none'],
 			     -default=>$default{lthreshold_method});
     
     print $query->textfield(-name=>'lthreshold',
@@ -354,7 +357,7 @@ sub ReadPatserParameters {
 	} elsif ($query->param('lthreshold') eq 'none') {
 	    ### no lower threshold
 	} else {
-	    &FatalError ("Invalid value for adjusted information content (supported: 'auto' or 'none')");
+	    &Warning ("Invalid value (".$query->param('lthreshold').") for adjusted information content (supported: 'auto' or 'none'). The value will be ignored");
 	}
 
 	#### no lower threshold
