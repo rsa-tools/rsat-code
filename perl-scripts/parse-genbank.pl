@@ -1,6 +1,6 @@
 #!/usr/bin/perl 
 #############################################################
-# $Id: parse-genbank.pl,v 1.23 2005/01/27 14:46:45 jvanheld Exp $
+# $Id: parse-genbank.pl,v 1.24 2005/02/21 20:05:31 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -154,8 +154,8 @@ package main;
 	    warn "; Auto selection of output dir\t$dir{output}\n" if ($verbose >= 1);
 	}
     }
-    &CheckOutputDir();
     chdir $dir{main};
+    &CheckOutputDir($dir{output});
     $out_file{features} = "$dir{output}/genbank.obj" if ($export{obj});
     $out_file{error} = "$dir{output}/genbank.errors.txt";
     $out_file{stats} = "$dir{output}/genbank.stats.txt";
