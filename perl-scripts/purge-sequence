@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence,v 1.14 2002/01/14 14:19:33 jvanheld Exp $
+# $Id: purge-sequence,v 1.15 2002/01/16 19:03:41 jvanheld Exp $
 #
-# Time-stamp: <2002-01-14 13:39:40 jvanheld>
+# Time-stamp: <2002-01-16 20:01:20 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -14,10 +14,6 @@ require "RSA.lib";
 
 
 my $skdir = "$RSA/bin";
-#my $skdir = "~jvanheld/applications/stefan_kurtz/virtual.distrib";
-#if ($config_site eq "rubens") {
-#    $skdir = "/rubens/dsk2/jvanheld/applications/stefan_kurtz/virtual.distrib";
-#}
 
 #### initialise parameters ####
 my $start_time = &AlphaDate();
@@ -109,11 +105,11 @@ $vmatch_options .= " | perl -pe 's| (\\d+) |_\$1_|'";
 $vmatch_options .= "> $outputfile" if ($outputfile);
 &doit("$skdir/vmatch $vmatch_options");
 foreach $ext  (@extensions) {
-#    &doit("rm -f ${tmp_file}.${ext}");
+    &doit("rm -f ${tmp_file}.${ext}");
 }
 
 #### remove the temp file
-#&doit("rm -f $tmp_file");
+&doit("rm -f $tmp_file");
 
 
 ###### verbose ######
