@@ -1,7 +1,7 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: parse-embl.pl,v 1.8 2004/03/22 22:57:07 jvanheld Exp $
+# $Id: parse-embl.pl,v 1.9 2004/03/29 12:41:47 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:17:49 jvanheld>
 #
@@ -259,7 +259,7 @@ package main;
     &Verbose() if ($verbose);
 
     #### parse the embl files
-    $contig_handle = &OpenOutputFile("$dir{output}/Contigs.txt"); # file with chromosome IDs
+    $contig_handle = &OpenOutputFile("$dir{output}/contigs.txt"); # file with chromosome IDs
     foreach my $file (@embl_files) {
 	my $sequence = &ParseEMBLFile("$dir{input}/$file", 
 				      $organisms, 
@@ -484,7 +484,7 @@ INPUT FILE
         found in the input directory. Each file is parsed and the
         results are exported in a single directory (the outpu
         directory). Features found in different files are merged in
-        the same output file (Features.tab). The idea is tha one
+        the same output file (features.tab). The idea is tha one
         parsing corresponds to one genome.
 
 OBJECT TYPES
@@ -536,7 +536,7 @@ OUTPUT
 	'bound_moiety' is assigned to feature type 'protein_bind',
 	which is annotated in some genomes like ecoli_K12, but absent
 	from most other genome annotations). Thus, having these fields
-	in the main table Feature.tab would result in columns almost
+	in the main table feature.tab would result in columns almost
 	full of <NULL>. To avoid this, I export these fields in side
 	tables, with a foreign key to the feature ID.
 
