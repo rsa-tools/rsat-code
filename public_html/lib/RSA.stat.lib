@@ -1,0 +1,808 @@
+#!/usr/bin/perl
+
+sub max {
+#### returns the maximum of a list of numeric values
+#### usage:
+#### $max_value = &max(@value_list);
+  my @sorted_values = sort {$a <=> $b} @_;
+  return $sorted_values[$#sorted_values];
+}
+
+
+sub min {
+  #### returns the minimum of a list of numeric values
+  #### usage:
+  #### $min_value = &min(@value_list);
+  my @sorted_values = sort {
+    $a <=> $b
+  } @_;
+  return $sorted_values[0];
+}
+
+sub checked_min {
+    #### returns the minimum of a list of numeric values
+    #### usage:
+    #### $min_value = &min(@value_list);
+    my @sorted_values = sort {
+	$a <=> $b
+	} @_;
+    my $c;
+    $c = -1;
+    do {
+	$c++;
+    } until (($c > $#sorted_values) || (&IsReal($sorted_values[$c])));
+    return $sorted_values[$c];
+}
+
+sub checked_max {
+    #### returns the minimum of a list of numeric values
+    #### usage:
+    #### $min_value = &min(@value_list);
+    my @sorted_values = sort {
+	$b <=> $a
+	} @_;
+    my $c;
+    $c = -1;
+    do {
+	$c++;
+    } until (($c > $#sorted_values) || (&IsReal($sorted_values[$c])));
+    return $sorted_values[$c];
+}
+
+sub checked_sum {
+    #### returns the sum of a list of numbers
+    #### ignore non-numeric values
+    my @values = @_;
+    my $sum = 0;
+    foreach $value (@values) {
+	$sum += $value if (&IsReal($value));
+    } 
+    return $sum;
+}
+
+sub checked_avg {
+    #### returns the sum of a list of numbers
+    #### ignore non-numeric values
+    my @values = @_;
+    my $sum = 0;
+    my $valid_values = 0;
+    foreach $value (@values) {
+	if (&IsReal($value)) {
+	    $valid_values++;
+	    $sum += $value;
+	}
+    } 
+    if ($valid_values > 0) {
+	return ($sum/$valid_values);
+    } else {
+	die "Error: cannot calculate average of an empty list\n";
+    }
+}
+
+
+sub binomial {
+### usage:
+###     &binomial($proba,$trials,$successes)
+### this routine uses the recurrent formula for the calculation of binomial:
+### We calculate everything in logarithms, and make a custom exp conversion
+### to overcome the limitation of the per exp(x) function
+###
+###           P(x) * p(r-x)
+###  P(x+1) = -------------
+###              q(x+1)
+###
+    my($proba) = $_[0];
+    my($trials) = $_[1];
+    my($succ) = $_[2];
+    my($q) = 1 - $proba;
+
+    if ($proba <=0) {
+	die "Error : invalid probability value $proba\n";
+    }
+
+    my($logproba) = log($proba);
+    my($logq) = log($q);
+
+    my($x) = 0;
+    my($logbin) = log($q)*($trials-$x);
+
+    for $x (0..$succ-1) {
+        $logbin += $logproba + log($trials - $x) - $logq - log($x+1);
+    }
+    $logbin /= log(10);
+    $bin = 10**(1+$logbin - int($logbin));
+    $bin .= "e";
+    if (int($logbin)-1 > 0) {
+        $bin .= "+";
+    }
+    $bin .= int($logbin)-1;
+    return($bin);
+}
+
+
+sub sum_of_binomials {
+### usage:
+###     &sum_of_binomials($proba,$trials,$from,$to)
+### Calculates the sum of binomial probabilities between two values.
+###
+### This routine uses the recurrent formula for the calculation of
+### binomial:
+###           P(x) * p(r-x)
+###  P(x+1) = -------------
+###              q(x+1)
+###
+    my ($proba, $trials, $from, $to) = @_;
+
+    my $precision_limit = 1.0e-06;
+    my $expected = $trials*$proba;
+
+    if ($proba <=0) {
+	die "Error: invalid probability $p (must be a positive value)\n";
+    }
+    ($from,$to) = sort {$a <=> $b} ($from, $to);
+    if ($to > $trials) {
+	die "Error: successes cannot be higher than trials\n";
+    }
+    my $q = 1 - $proba;
+    my $logproba = log($proba);
+    my $logq = log($q);
+
+    my $sum_of_bin = 0;
+    my $x = 0;
+    my $logbin;
+    my $prev_value = -1;
+
+    #### initialize
+    $x = 0;
+    $logbin = $trials * log($q);
+    if ($from == 0) {
+	$sum_of_bin = exp($logbin);
+	$loop_start = 1;
+    } else {
+	$loop_start = $from;
+	for $x (1..$from-1) {
+	    $logbin += log($trials - $x + 1) - log($x) + $logproba - $logq;
+	}
+    }
+
+    for $x ($loop_start..$to) {
+	$logbin += log($trials - $x + 1) - log($x) + $logproba - $logq;
+	$sum_of_bin += exp($logbin);
+	last if (($x > $expected) && ($sum_of_bin <= $prev_value)); ### limit of precision
+	$prev_value = $sum_of_bin;
+    }
+
+    $sum_of_bin = 1 if ($sum_of_bin > 1);
+    $sum_of_bin = "ND0" if ($sum_of_bin < 0);
+    return($sum_of_bin);
+}
+
+
+
+sub binomial_boe {
+    ### usage:
+    ###     &binomial_boe($proba,$trials,$successes)
+    ### Calculates the probability of observing >=s successes with a
+    ### probability $p and $r repeats, with the sum of binomials for j
+    ### varying from s to r.
+    my($proba) = $_[0];
+    my($trials) = $_[1];
+    my($succ) = $_[2];
+    
+    return (sum_of_binomials($proba,$trials,$succ,$trials));
+}
+
+#  sub binomial_boe {
+#  ### usage:
+#  ###     &binomial_boe($proba,$trials,$successes)
+#  ### Calculates the probability of observing >=s successes with a
+#  ### probability $p and $r repeats, with the sum of binomials for j
+#  ### varying from s to r.
+#  ### this routine uses the recurrent formula for the calculation of binomial:
+#  ###           P(x) * p(r-x)
+#  ###  P(x+1) = -------------
+#  ###              q(x+1)
+#  ###
+#      my($proba) = $_[0];
+#      my($trials) = $_[1];
+#      my($succ) = $_[2];
+#      my $precision_limit = 1.0e-06;
+
+#      my $expected = $trials*$proba;
+
+#      if ($proba <=0) {
+#  	die "Error: invalid probability $p (must be a positive value)\n";
+#      }
+
+#      my($q) = 1 - $proba;
+#      my($logproba) = log($proba);
+#      my($logq) = log($q);
+
+#      my($sum_of_bin);
+#      my($x);
+#      my($logbin);
+#      my $prev_value;
+
+
+#  #    if (0==0) {
+#      if (($succ < ($trials - $succ)) && (&binomial($proba,$trials,$succ) > $precision_limit)) {
+#          $x = 0;
+#          $sum_of_bin = 1;
+#          if ($succ > 0) {
+#              $logbin = $logq*($trials-$x);
+#              $sum_of_bin -= exp($logbin);
+#              $x++;
+#              while ($x < $succ) {
+#                  $logbin += $logproba + log($trials - $x+1) - $logq - log($x);
+#                  $sum_of_bin -= exp($logbin);
+#                  $x++;
+#              }
+#          }
+
+#      } else {
+#  	my $prev_value = -1;
+
+#  	#### initialize
+#  	$x = 0;
+#  	$logbin = log($q)*($trials-$x);
+#  	for $x (0..$succ-1) {
+#  	    $logbin += $logproba + log($trials - $x) - $logq - log($x+1);
+#  	}
+
+#  	$sum_of_bin = exp($logbin);
+#  #print "HELLO\t$x\t$succ\t$expected\t$logbin\t$sum_of_bin\n";
+#  	if (($sum_of_bin <= 0) && ($succ < $expected)) { #### limit of precision
+#  	    $sum_of_bin = 1;
+#  	} else {
+#  	    $x = $succ;
+#  	    while (($sum_of_bin > $prev_value) && ($x < $trials)) {
+#  		$logbin += $logproba + log($trials - $x) - $logq - log($x+1);
+#  		$prev_value = $sum_of_bin;
+#  		$sum_of_bin += exp($logbin);
+#  		$x++;
+#  #print "HI\t$x\t$logbin\t$sum_of_bin\n";
+#  	    }
+#  	}
+#      }
+
+#      $sum_of_bin = 1 if ($sum_of_bin > 1);
+#  #warn "HELLO\t$sum_of_bin\n";
+#      $sum_of_bin = "ND0" if ($sum_of_bin < 0);
+#      return($sum_of_bin);
+#  }
+
+
+
+
+sub binomial_approx {
+### usage: &binomial_approx($proba,$trials,$successes)
+### this is the entropy approximation for the sum of binomials
+### note that the approximation is only valid for s/r > p 
+    my ($proba, $trials, $successes) = @_;
+    my $beta = $successes/$trials;
+    my $alpha = $proba;
+
+    if (($beta >= $alpha) && 
+	($beta <1) && 
+	($beta > 0)) {
+	$b_approx = exp(-$trials*($beta*log(abs($beta/$alpha)) + (1-$beta)*log(abs((1-$beta)/(1-$alpha)))));
+    } else {
+	$b_approx = "ND";
+    }
+    $b_approx;
+}
+
+
+
+sub poisson {
+### usage poisson($successes,$expected)
+### note: on our sun station, this algorithm works only for m < 746
+    my $l_s = $_[0];
+    my $l_m = $_[1];
+    my $poi;
+    my $log_poi;
+    if (($l_s>=0) && ($l_m>0)) {
+### direct calculation would be
+###    $poi = exp(-$l_m) * $l_m**$l_s / factorial($l_s);
+### we make all calculations in log transforms
+### in order to avoid out-of-bound values for the factorial
+### and exponential terms
+	
+	$log_poi = -$l_m;
+	$log_poi += $l_s*log($l_m);
+	for $i (1..$l_s) {
+	    $log_poi -= log($i);
+	}
+	$log_poi /= log(10);
+	$poi = 10**(1+$log_poi - int($log_poi));
+	$poi .= "e";
+	if (int($log_poi)-1 > 0) {
+	    $poi .= "+";
+	}
+	$poi .= int($log_poi)-1;
+    } else {
+	$poi = 0;
+    }
+    return $poi;
+}
+
+sub sum_of_poissons {
+    ### usage sum_of_poissons($successes,$expected,$tail_side)
+    ### supported values for $tail_side :
+    ### "boe"   bigger or equal
+    ### "soe"   smaller or equal
+    my ($s,$m,$tail_side) = @_;
+    my $result;
+    my $precision_limit = 1.0e-15;
+
+    if ($tail_side eq "boe") {
+	$result = 1;
+	for my $j (0..$s-1) {
+	    $result -= &poisson($j,$m);
+	    last if ($result <=0);
+	}
+    } elsif ($tail_side eq "soe") {
+	$result = 0;
+	for my $j (0..$s) {
+	    $result += &poisson($j,$m);
+	    last if ($result >=1);
+	}
+    } else {
+	die "Error: unsupported value for tail side $tail_side\n";
+    }
+    $result = ("ND") if ($result < $precision_limit); #### precision limit
+    return $result;
+}
+
+sub factorial {
+### usage: &factorial($n)
+    my $n = $_[0];
+    my $fact_n = 1;
+
+    if ($n < 0) {
+	print "	Error: invalid entry for factorial calculation\n";
+	exit;
+    }
+    for my $j (1..$n) {
+	$fact_n *= $j;
+    }
+    return $fact_n;
+}
+
+sub FisherExactTest {
+#### calculates the probability according to Fisher's exact test
+#### Usage
+#### =====
+#### $proba = &FisherExactTest($row_nb, $col_nb, @values);
+####
+#### where
+####	$row_nb is the number of rows
+####	$col_nb is th number of columns
+####	@values is the list of values
+#### all values must be natural numbers (0,1,2, ...)
+#### the number of values must equal the product of col_nb by row_nb
+####
+#### the first step is to calculate the marginal sums:
+#### ni+ = sum of all values from the ith row
+#### n+j = sum of all values from the jth column
+#### N = sum of all values from the table
+####
+#### The probability is then calculated by:
+####
+####         PROD(ni+!)PROD(n+j!)
+#### proba = --------------------
+####          N!PROD(PROD(nij!))
+####
+#### the input data are reported together with all marginal sums
+#### by setting a global variable called $report_data to 1 
+
+    my($N);
+    my($row); 
+    my($col);
+    my(@col_sum);
+    my(@row_sum);
+    my($offset);
+    my($i);
+    my($proba);
+    my($log_proba);
+    my($log10_proba);
+    my($row_nb) = shift;
+    my($col_nb) = shift;
+    my(@values) = @_;
+    my($val_nb) = $#values + 1;
+
+    if (($row_nb < 2) || ($col_nb < 2)) {
+	return ";Error: at least 2 rows and 2 columns are required"; # too few rows or columns
+    }
+    unless ($val_nb == $row_nb * $col_nb) {
+	return ";Error: invalid number of numeric values"; # inappropriate number of values provided
+    }
+    foreach $v (@values) {
+	return ";Error: $v is not a natural number" unless &IsNatural($v); # invalid values
+    }
+
+
+    #### calculate marginal sums ni+, n+j, and N ###
+    $N = 0;
+    for $row (1..$row_nb) {
+	$col_sum[$row] = 0;
+	for $col (1..$col_nb) {
+	    $offset = ($row-1) * $col_nb + $col -1;
+	    $col_sum[$row] += $values[$offset];
+	}
+	$N += $col_sum[$row];
+    }
+    for $col (1..$col_nb) {
+	$row_sum[$col] = 0;
+	for $row (1..$row_nb) {
+	    $offset = ($row-1) * $col_nb + $col -1;
+	    $row_sum[$col] += $values[$offset];
+	}
+    }
+
+    #### calculate the probability ####
+    $log_proba = 0;
+    for $row (1..$row_nb) {
+
+	for $i (2..$col_sum[$row]) {
+	    $log_proba += log($i);
+	}
+    }
+    for $col (1..$col_nb) {
+	for $i (2..$row_sum[$col]) {
+	    $log_proba += log($i);
+	}
+    }
+    for $i (2..$N) {
+	$log_proba -= log($i);
+    }
+    for $row (1..$row_nb) {
+	for $col (1..$col_nb) {
+	    $offset = ($row-1) * $col_nb + $col -1;
+	    for $i (2..$values[$offset]) {
+		$log_proba -= log($i);
+	    }
+	}
+    }
+    $proba = exp($log_proba);
+    $log10_proba = $log_proba / log(10);
+
+    ### data report ###
+    if ($report_data) {
+	print $out ";Fisher's exact test with $row_nb rows and $col_nb col ($val_nb values)\n";
+	print $out ";DATA REPORT\n";
+	print $out ";";
+	for $col (1..$col_nb) {
+	    print $out "\tA$col";
+	}
+	print $out "\tni+\n";
+	for $row (1..$row_nb) {
+	    print $out ";B$row";
+	    for $col (1..$col_nb) {
+		$offset = ($row-1) * $col_nb + $col -1;
+		print $out "\t$values[$offset]";
+	    }
+	    print $out "\t$col_sum[$row]\n";
+	}
+	print $out ";n+j";
+	for $col (1..$col_nb) {
+	    print $out "\t$row_sum[$col]";
+	}
+	print $out "\t$N\n";
+    }
+    return $proba;
+} ### end FisherExactTest
+
+
+sub ChiSquare {
+#### calculates Pearson chi-square statistics for a table of numbers
+#### Usage
+#### =====
+#### $chi_square = &ChiSquare($test,$row_nb, $col_nb, @values);
+####
+#### where
+####	$test	indicates the kind of hypothesis to test:
+####		- independence
+####		- homogeneity
+####		- good fit
+####	$row_nb is the number of rows
+####	$col_nb is th number of columns
+####	@values is the list of values
+#### all values must be real numbers
+#### the number of values must equal the product of col_nb by row_nb
+####
+#### Good fit test
+#### =============
+#### In this case, there must be exactly two rows:
+#### - the first row contains the observed frequencies.
+#### - the second row contains the expected frequencies.
+####
+#### The chi-square value is calculated by:
+####
+####              (obs_j -exp_j)^2
+#### ChiSq = SUM  ----------------
+####          j      (exp_j)
+####
+#### where j is the index for columns.
+####
+#### Independence or homogeneity test:
+#### =================================
+#### the first step is to calculate the marginal sums:
+#### ni. = sum of all values from the ith row
+#### n.j = sum of all values from the jth column
+#### N = sum of all values from the table
+#### 
+#### The chi-square value is then calculated by:
+####
+####                   (nij - n.j*ni./N)^2
+#### ChiSq = SUM (SUM -----------------)
+####          j    i     (n.j*ni./N)
+####
+####
+#### the input data are reported together with all marginal sums
+#### by setting a global variable called $report_data to 1 
+####
+#### Applicability
+#### =============
+#### One condition of applicability for the chi-square test is that each 
+#### class should contain a "sufficient" number of expected observations. 
+#### One commonly takes 5 as the minimal number of expected observations per class.
+#### When the condition of acceptability is not met, our ChiSquare function
+#### returns the calculated value surrounded by parenthesis, in order to 
+#### warn the user that the chi2 value is not valid.
+
+    my($N);
+    my($row); 
+    my($col);
+    my(@col_sum);
+    my(@row_sum);
+    my($offset);
+    my($i);
+    my($chi_square);
+    my($test) = shift;
+    my($row_nb) = shift;
+    my($col_nb) = shift;
+    my(@values) = @_;
+    my($val_nb) = $#values + 1;
+    my($obs);
+    my($exp);
+    my($deg_freedom) = ($row_nb - 1)*($col_nb - 1);
+    my($not_valid) = 0;
+
+    ### check parameter values ###
+	unless (($test =~ /^indep/i) || ($test =~ /^good/i) || ($test =~ /^homog/i)) {
+		return ";Error: unknown test (supported: 'goodness of fit', 'homogeneity' and 'independence')"; # 
+    }
+	if (($row_nb < 2) || ($col_nb < 2)) {
+		return ";Error: at least 2 rows and 2 columns are required"; # too few rows or columns
+	}
+	unless ($val_nb == $row_nb * $col_nb) {
+		return ";Error: invalid number of numeric values"; # inappropriate number of values provided
+	}
+	### all values must be real numbers
+	foreach $val (@values) {
+		return ";Error: $val is not a real number" unless &IsReal($val); # invalid values
+	}
+
+	if (($test =~ /^indep/i) || ($test =~ /^homog/i)) {
+		#### calculate marginal sums ni+, n+j, and N ###
+		$N = 0;
+		for $row (1..$row_nb) {
+			$col_sum[$row] = 0;
+			for $col (1..$col_nb) {
+				$offset = ($row-1) * $col_nb + $col -1;
+				$col_sum[$row] += $values[$offset];
+			}
+			$N += $col_sum[$row];
+		}
+		for $col (1..$col_nb) {
+			$row_sum[$col] = 0;
+			for $row (1..$row_nb) {
+				$offset = ($row-1) * $col_nb + $col -1;
+				$row_sum[$col] += $values[$offset];
+			}
+		}
+
+		#### calculate the chi square value ####
+		$chi_square = 0;
+		for $row (1..$row_nb) {
+			for $col (1..$col_nb) {
+				$exp = $row_sum[$col] * $col_sum[$row] / $N;
+				$not_valid = 1 if ($exp < 5);   
+				$offset = ($row-1) * $col_nb + $col -1;
+				$obs = $values[$offset];
+				$chi_square += (($obs - $exp)**2)/$exp unless ($exp == 0);
+			}
+		}
+    } elsif ($test =~ /^good/i) {
+		unless ($row_nb == 2) {
+			return ";Error: test of goodness of fit requires esactly two lines";
+		}
+		$chi_square = 0;
+		for $col (1..$col_nb) {
+			$obs = $values[$col-1];
+			$exp = $values[$col_nb + $col-1];
+			$not_valid = 1 if ($exp < 5);
+			$chi_square +=   (($obs - $exp)**2)/$exp unless ($exp == 0);
+		}
+    }
+
+
+    ### data report ###
+	if ($report_data) {
+		print $out ";Pearson chi-square statistics with $row_nb rows and $col_nb col ($val_nb values)\n";
+		print $out ";Test of $test\n";
+		print $out ";$deg_freedom degrees of freedom\n";
+		print $out ";DATA REPORT\n";
+		if ($not_valid) {
+		    print $out "; WARNING: data do not conform to the applicability conditions\n";
+		    print $out "; WARNING: (each class must have at least 5 expected observations).\n";
+		}
+		print $out ";";
+		for $col (1..$col_nb) {
+			print $out "\tA$col";
+		}
+		if (($test =~ /^indep/i) || ($test =~ /^homog/i)) {
+			print $out "\tni+\n";
+			for $row (1..$row_nb) {
+				print $out ";B$row";
+				for $col (1..$col_nb) {
+					$offset = ($row-1) * $col_nb + $col -1;
+					print $out "\t$values[$offset]";
+				}
+				print $out "\t$col_sum[$row]\n";
+			}
+			print $out ";n+j";
+			for $col (1..$col_nb) {
+				print $out "\t$row_sum[$col]";
+			}
+			print $out "\t$N\n";
+		} else {
+			print $out "\n;obs";
+			for $col (1..$col_nb) {
+				print $out "\t$values[$col-1]";
+			}
+			print $out "\n;exp";
+			for $col (1..$col_nb) {
+				print $out "\t$values[$col_nb + $col-1]";
+			}
+			print $out "\n";
+		}
+	}
+	if ($not_valid) {
+		$answer = sprintf "(%.3f)", $chi_square;
+	} else {
+		$answer = sprintf "%.3f", $chi_square;
+	}
+	return $answer;
+} ### end ChiSquare
+
+
+
+sub LogLikelihood {
+#### calculates log-likelihood statistics for a table of numbers
+#### Usage
+#### =====
+#### $log_likelihood = &LogLikelihood($row_nb, $col_nb, @values);
+####
+#### where
+####	$row_nb is the number of rows
+####	$col_nb is th number of columns
+####	@values is the list of values
+#### all values must be real numbers
+#### the number of values must equal the product of col_nb by row_nb
+####
+#### the first step is to calculate the marginal sums:
+#### ni+ = sum of all values from the ith row
+#### n+j = sum of all values from the jth column
+#### N = sum of all values from the table
+#### 
+#### The log-likelihood value is then calculated by:
+####
+####                   
+#### LogLikelihood = N*log(N) + SUM SUM nij*log(nij)
+####                             i   j                    
+####
+####                          - SUM ni+*log(ni+) - SUM n+j*log(n+j)
+####                             i                  j
+####
+####
+#### the input data are reported together with all marginal sums
+#### by setting a global variable called $report_data to 1 
+
+    my($N);
+    my($row); 
+    my($col);
+    my(@col_sum);
+    my(@row_sum);
+    my($offset);
+    my($i);
+    my($log_likelihood);
+    my($row_nb) = shift;
+    my($col_nb) = shift;
+    my(@values) = @_;
+    my($val_nb) = $#values + 1;
+    my($obs);
+    my($deg_freedom) = ($row_nb - 1)*($col_nb - 1);
+
+    if (($row_nb < 2) || ($col_nb < 2)) {
+	return ";Error: at least 2 rows and 2 columns are required"; # too few rows or columns
+    }
+    unless ($val_nb == $row_nb * $col_nb) {
+	return ";Error: invalid number of numeric values"; # inappropriate number of values provided
+    }
+    foreach $v (@values) {
+	return ";Error: $v is not a real number" unless &IsReal($v); # invalid values
+    }
+
+#    foreach $v (@values) {
+#	return ";Error: ($v) all values must be strictly positive" unless ($v > 0); # invalid values
+#    }
+
+    #### calculate marginal sums ni+, n+j, and N ###
+    $N = 0;
+    for $row (1..$row_nb) {
+	$col_sum[$row] = 0;
+	for $col (1..$col_nb) {
+	    $offset = ($row-1) * $col_nb + $col -1;
+	    $col_sum[$row] += $values[$offset];
+	}
+	$N += $col_sum[$row];
+    }
+    for $col (1..$col_nb) {
+	$row_sum[$col] = 0;
+	for $row (1..$row_nb) {
+	    $offset = ($row-1) * $col_nb + $col -1;
+	    $row_sum[$col] += $values[$offset];
+	}
+    }
+
+    #### calculate the log likelihood value ####
+    $log_likelihood = - $N * log($N);
+    for $row (1..$row_nb) {
+        for $col (1..$col_nb) {
+	    $offset = ($row-1) * $col_nb + $col -1;
+	    $obs = $values[$offset];
+	    $log_likelihood -= $obs * log($obs) unless ($obs <= 0);
+        }
+    }
+    for $row (1..$row_nb) {
+	$log_likelihood += $col_sum[$row] * log($col_sum[$row]) unless ($col_sum[$row] <= 0);
+    }
+    for $col (1..$col_nb) {
+	$log_likelihood += $row_sum[$col] * log($row_sum[$col]) unless ($row_sum[$col] <= 0);;
+    }
+    $log_likelihood = 0 if ($log_likelihood > 0);
+
+    ### data report ###
+    if ($report_data) {
+	print $out ";Log-likelihood statistics with $row_nb rows and $col_nb col ($val_nb values)\n";
+	print $out ";DATA REPORT\n";
+	print $out ";";
+	for $col (1..$col_nb) {
+	    print $out "\tA$col";
+	}
+	print $out "\tni+\n";
+	for $row (1..$row_nb) {
+	    print $out ";B$row";
+	    for $col (1..$col_nb) {
+		$offset = ($row-1) * $col_nb + $col -1;
+		print $out "\t$values[$offset]";
+	    }
+	    print $out "\t$col_sum[$row]\n";
+	}
+	print $out ";n+j";
+	for $col (1..$col_nb) {
+	    print $out "\t$row_sum[$col]";
+	}
+	print $out "\t$N\n";
+	print $out ";$deg_freedom degrees of freedom\n";
+	print $out ";-2log(L) = ",-2*$log_likelihood,"\n";
+    }
+    return $log_likelihood;
+} ### end LogLikelihood
+
+
+
+
+1;
