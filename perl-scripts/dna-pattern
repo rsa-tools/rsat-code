@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dna-pattern,v 1.7 2001/07/19 01:06:31 jvanheld Exp $
+# $Id: dna-pattern,v 1.8 2001/09/09 21:40:55 jvanheld Exp $
 #
-# Time-stamp: <2001-07-19 03:06:17 jvanheld>
+# Time-stamp: <2001-09-09 23:40:14 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -20,6 +20,8 @@ require "RSA.classes";
 $start_date = &AlphaDate;
 
 #### init variables ####
+$pattern_score = 1;
+$noid = 0;
 $strands_to_search = "DR";
 $in_format = "fasta";
 #$search_method = "IUPAC";
@@ -48,7 +50,15 @@ unless (($allowed_subst eq "") || (&IsNatural($allowed_subst))) {
 &CheckInputSeqFormat($in_format);
 
 
-&ReadPatterns;
+@patterns = &ReadPatterns(pattern_file=>$pattern_file, 
+			  score_column=>$score_column, 
+			  noid=>$noid,
+			  pattern_score=>$pattern_score,
+			  pattern_id=>$pattern_id,
+			  pattern_seq=>$pattern_seq);
+
+### no pattern specified
+&FatalError("You did not specify any pattern.") if ($#patterns < 0);
 
 
 ### open output file ###
@@ -618,118 +628,154 @@ dna-pattern options
 
 #### read arguments ####
 sub ReadArguments {
-  if ($ARGV[0] eq "-h") {
-    &Help;
-  } elsif  ($ARGV[0] eq "-help") {
-    &ShortHelp;
-  }
-  
-  foreach $a (0..$#ARGV) {
-    if ($ARGV[$a] eq "-v") {
-      $verbose = 1;
-      
-    } elsif ($ARGV[$a] =~ /^-ori/) {
-      $origin = $ARGV[$a+1];
-      
-    } elsif (($ARGV[$a] eq "-subst") && (&IsNatural($ARGV[$a+1]))){
-      $allowed_subst = $ARGV[$a+1];
-      if ($allowed_subst > 0) {
-	$search_method = "IUPAC";
-      }
-      
-    } elsif ($ARGV[$a] eq "-o") {
-      $outputfile = $ARGV[$a+1];
-      
-    } elsif ($ARGV[$a] eq "-id") {
-      # read identifier
-      if ($ARGV[$a+1] =~ /(\S+)/) {
-	$pattern_id = $1;
-      }
-      
-    } elsif ($ARGV[$a] eq "-p") {
-      # directly read pattern sequence
-      $pattern_sequence = $ARGV[$a+1];
-      
-    } elsif ($ARGV[$a] eq "-pl") {
-      #read name of file containing the list of patterns and open it
-      if ($ARGV[$a+1] =~ /(\S+)/) {
-	$pattern_file = $1;
-	&FatalError("CCannot read pattern file '$pattern_file'.") 
-	    unless (-r $pattern_file);
-      } 
-      
-    } elsif ($ARGV[$a] eq "-i") {
-      # read input file name
-      $inputfile = $ARGV[$a+1];
-      
-    } elsif ($ARGV[$a] eq "-format") {
-      # read input format
-      $in_format = lc($ARGV[$a+1]);
-      
-    } elsif (($ARGV[$a] eq "-D") ||($ARGV[$a] eq "-W") || ($ARGV[$a] eq "-1str")) {
-      $strands_to_search = "D";
-      
-    } elsif (($ARGV[$a] eq "-R") ||($ARGV[$a] eq "-C")) {
-      $strands_to_search = "R";
-      
-    } elsif (($ARGV[$a] eq "-DR") || 
-	     ($ARGV[$a] eq "-RD") ||
-	     ($ARGV[$a] eq "-CW") ||
-	     ($ARGV[$a] eq "-CW") ||
-	     ($ARGV[$a] eq "2str")
-	     ) {
-      $strands_to_search = "DR";
-      
-    } elsif ($ARGV[$a] eq "-c") {
-      $count_matches = 1;
-      
-      ### return results in a sequence x pattern_count table
-    } elsif ($ARGV[$a] eq "-table") {
-      $count_matches = 1;
-      $sum_only = 0;
-      $table = 1;
+    foreach $a (0..$#ARGV) {
+	if ($ARGV[$a] eq "-h") {
+	    &Help;
+	} elsif  ($ARGV[$a] eq "-help") {
+	    &ShortHelp;
+	    
+	} elsif ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
 
-    } elsif ($ARGV[$a] eq "-total") {
-      $total = 1;
-      
-    } elsif ($ARGV[$a] eq "-th") {
-      $threshold = $ARGV[$a+1];
-      
-    } elsif ($ARGV[$a] eq "-ct") {
-      $count_matches = 1;
-      $sum_only = 1;
-      
-    } elsif ($ARGV[$a] eq "-noid") {
-      $noid = 1;
-      
-    } elsif ($ARGV[$a] eq "-noov") {
-      $no_overlap = 1;
-      
-    } elsif (($ARGV[$a] eq "-N") && (&IsNatural($ARGV[$a+1]))) {
-      $left_neighborhood = $ARGV[$a+1];
-      $right_neighborhood = $ARGV[$a+1];
-      
-    } elsif (($ARGV[$a] eq "-NL") && (&IsNatural($ARGV[$a+1]))) {
-      $left_neighborhood = $ARGV[$a+1];
-      
-    } elsif (($ARGV[$a] eq "-NR") && (&IsNatural($ARGV[$a+1]))) {
-      $right_neighborhood = $ARGV[$a+1];
-      
-    } elsif (($ARGV[$a] eq "-sc") && (&IsNatural($ARGV[$a+1])) && ($ARGV[$a+1] > 1)) {
-      $score_column = $ARGV[$a+1];
-      
+	} elsif ($ARGV[$a] =~ /^-ori/) {
+	    $origin = $ARGV[$a+1];
+	    
+	} elsif (($ARGV[$a] eq "-subst") && (&IsNatural($ARGV[$a+1]))){
+	    $allowed_subst = $ARGV[$a+1];
+	    if ($allowed_subst > 0) {
+		$search_method = "IUPAC";
+	    }
+	    
+	    ################################################################
+	    #### pattern specification
+	} elsif ($ARGV[$a] eq "-id") {
+	    # directly read pattern identifier from the command line
+	    if ($ARGV[$a+1] =~ /(\S+)/) {
+		$pattern_id = $1;
+	    }
+	    
+	} elsif ($ARGV[$a] eq "-p") {
+	    # directly read pattern sequence from the command line
+	    $pattern_seq = $ARGV[$a+1];
+	    warn ("; Pattern sequence\t", $pattern_seq, "\n") if ($verbose >=4);
+	    
+	} elsif ($ARGV[$a] eq "-pl") {
+	    # read name of file containing the list of patterns and open it
+	    if ($ARGV[$a+1] =~ /(\S+)/) {
+		$pattern_file = $1;
+		&FatalError("Cannot read pattern file '$pattern_file'.") 
+		    unless (-r $pattern_file);
+	    } 
+
+	    #### score column in the pattern file
+	} elsif (($ARGV[$a] eq "-sc") && (&IsNatural($ARGV[$a+1])) && ($ARGV[$a+1] > 1)) {
+	    $score_column = $ARGV[$a+1];
+	    
+	    #### the pattern file contains no identifier
+	} elsif ($ARGV[$a] eq "-noid") {
+	    $noid = 1;
+	    
+	    ################################################################
+	    #### sequence file
+	} elsif ($ARGV[$a] eq "-i") {
+	    # read input file name (sequence file)
+	    $inputfile = $ARGV[$a+1];
+	    
+	} elsif ($ARGV[$a] eq "-format") {
+	    # read input format (sequence format)
+	    $in_format = lc($ARGV[$a+1]);
+	    
+	    
+	    ################################################################
+	    #### output file
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outputfile = $ARGV[$a+1];
+
+	    ################################################################
+            #### matching options
+
+	    #### strands
+	} elsif (($ARGV[$a] eq "-D") ||($ARGV[$a] eq "-W") || ($ARGV[$a] eq "-1str")) {
+	    $strands_to_search = "D";
+	} elsif (($ARGV[$a] eq "-R") ||($ARGV[$a] eq "-C")) {
+	    $strands_to_search = "R";
+	} elsif (($ARGV[$a] eq "-DR") || 
+		 ($ARGV[$a] eq "-RD") ||
+		 ($ARGV[$a] eq "-CW") ||
+		 ($ARGV[$a] eq "-CW") ||
+		 ($ARGV[$a] eq "2str")
+		 ) {
+	    $strands_to_search = "DR";
+	    
+	    #### threshold
+	} elsif ($ARGV[$a] eq "-th") {
+	    $threshold = $ARGV[$a+1];
+
+	    #### no overlap
+	} elsif ($ARGV[$a] eq "-noov") {
+	    $no_overlap = 1;
+	    
+	    ################################################################
+            #### output type
+	    
+	    #### count matches
+	} elsif ($ARGV[$a] eq "-c") {
+	    $count_matches = 1;
+	    
+	    #### sum matches over all sequences
+	} elsif ($ARGV[$a] eq "-ct") {
+	    $count_matches = 1;
+	    $sum_only = 1;
+	    
+	    ### return results in a sequence x pattern_count table
+	} elsif ($ARGV[$a] eq "-table") {
+	    $count_matches = 1;
+	    $sum_only = 0;
+	    $table = 1;
+	    #### add a column and a row for totals to the table output
+	} elsif ($ARGV[$a] eq "-total") {
+	    $total = 1;
+
+	    #### neighborhood (return flanking residues)
+	} elsif (($ARGV[$a] eq "-N") && (&IsNatural($ARGV[$a+1]))) {
+	    $left_neighborhood = $ARGV[$a+1];
+	    $right_neighborhood = $ARGV[$a+1];
+	} elsif (($ARGV[$a] eq "-NL") && (&IsNatural($ARGV[$a+1]))) {
+	    $left_neighborhood = $ARGV[$a+1];
+	} elsif (($ARGV[$a] eq "-NR") && (&IsNatural($ARGV[$a+1]))) {
+	    $right_neighborhood = $ARGV[$a+1];
+	    
     }
   }
 }
 
-#### Patterns ####
 sub ReadPatterns {
+##
+# Reads patterns from a file (or from the standard input) 
+# and returns a list of RSA::Pattern objects. 
+##
+    my (%args) = @_;
+    my @patterns = ();
+    my $pattern_file = $args{pattern_file};
+    my $score_column = $args{score_column};
+    my $noid = $args{noid};
+    my $pattern_id = $args{pattern_id};
+    my $pattern_score = $args{pattern_score};
+    my $pattern_seq = $args{pattern_seq};
+
     if ($pattern_file) {
 	### read patterns from a file
-	$patterns = &OpenInputFile($pattern_file);
+	my $pattern_stream = &OpenInputFile($pattern_file);
 #	open PATTERNS, $pattern_file || &FatalError"Cannot open pattern file";
-	while (<$patterns>) {
+	while (<$pattern_stream>) {
 	    if (/^;/) {
+
+		#### for piping with oligo-analysis and dyad-analysis
+		#### take occ_sig as the score column
 		if (!(defined($score_column)) &&
 		    (/^;\s+(\d+)\s+occ_sig\s+/)) {
 		    $score_column = $1;
@@ -738,40 +784,38 @@ sub ReadPatterns {
 	    }
 	    next unless (/\S/);
 	    chomp;
-	    @fields = split, /\t/;
+	    my @fields = split, /\t/;
 	    next unless ($fields[0] =~ /\S/);
-	    $sequence = $fields[0];
+	    $pattern_seq = $fields[0];
 	    if (($noid) || ($fields[1] !~ /\S/)) {
-		$id = $sequence;
+		$pattern_id = $pattern_seq;
 	    } else {
-		$id = $fields[1];
+		$pattern_id = $fields[1];
 	    }
 	    if ($score_column >= 1) {
-		$score = $fields[$score_column - 1];
+		$pattern_score = $fields[$score_column - 1];
 	    } else {
-		$score = 1; ### default score
+		$pattern_score = 1; ### default score
 	    }
 	    
-	    push @patterns, new RSA::pattern(id => $id,
-					     sequence => $sequence,
-					     score => $score);
+	    push @patterns, new RSA::pattern(id => $pattern_id,
+					     sequence => $pattern_seq,
+					     score => $pattern_score);
 	}
-	close $patterns;
+	close $pattern_stream;
     
     ### pattern specified on the command line
-    } elsif ($pattern_sequence) {
+    } elsif ($pattern_seq) {
 	if ($pattern_id) {
-	    $id = $pattern_id;
+	    $pattern_id = $pattern_id;
 	} else {
-	    $id = $pattern_sequence;
+	    $pattern_id = $pattern_seq;
 	}
-	$score = 1;
-	push @patterns, new RSA::pattern(id=>$id,
-					 sequence=>$pattern_sequence,
-					 score=>$score);
+	push @patterns, new RSA::pattern(id=>$pattern_id,
+					 sequence=>$pattern_seq,
+					 score=>$pattern_score);
 	
-	### no pattern specified
-    } else {
-	&FatalError("You did not specify the pattern.");
     }
+
+    return @patterns;
 }
