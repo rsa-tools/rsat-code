@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_swissprot.pl,v 1.13 2002/03/19 14:15:15 jvanheld Exp $
+# $Id: parse_swissprot.pl,v 1.14 2002/03/19 14:16:38 jvanheld Exp $
 #
-# Time-stamp: <2002-03-19 15:12:49 jvanheld>
+# Time-stamp: <2002-03-19 15:16:34 jvanheld>
 #
 ############################################################
 
@@ -290,6 +290,11 @@ OPTIONS
 		(this option is incompatible with the option -org)
 	-clean	remove all files from the output directory before
 		parsing
+	-fields
+		Fields to be exported. Several fields can be provided,
+		separated by commas. Example:
+			  -fields id,names,gene,ECs,swissprot_ids
+
 EXAMPLE
 	parse_polypeptides.pl -w 2 -org ecoli -data swissprot -enz
 EndHelp
