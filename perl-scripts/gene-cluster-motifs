@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.20 2002/09/12 09:01:53 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.21 2002/09/13 15:04:38 jvanheld Exp $
 #
-# Time-stamp: <2002-09-12 04:00:47 jvanheld>
+# Time-stamp: <2002-09-13 10:02:28 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -41,6 +41,7 @@ $noov = 1;
 $min_sp = 0;
 $max_sp = 20;
 $start_date = `date`;
+$maps=1;
 
 &ReadArguments();
 
@@ -62,13 +63,13 @@ warn "; Reading ORF information ...\n"
 
 #### verbose
 if ($verbose >= 1) {
-    print "; multiple-family analysis ";
+    print "; multiple-family-analysis ";
     &PrintArguments($out);
     printf "; families     \t%d\n", $#families + 1;
     foreach $family (@families) {
 	printf ";\t%s\n", $family;
     }
-    printf "; family file", $family_file;
+    printf "; family file\t%s\n", $family_file;
     printf "; upstream region\n";
     printf ";\t%-22s\t%d\n", "strands", $strands;
     printf ";\t%-22s\t%d\n", "from", $from;
@@ -78,8 +79,11 @@ if ($verbose >= 1) {
     printf ";\t%-22s\t%d\n", "max oligo length", $max_oligo_length;
     printf ";\t%-22s\t%d\n", "min oligo length", $min_oligo_length;
     printf "; dyad-analysis\n";
-    printf "; \tdyad type    \t%s\n", $type;
-    printf "; sig threshold\t%.1f\n", $th;
+    printf ";\t%-22s\t%d\n", "monad length", $monad_length;
+    printf ";\t%-22s\t%d\n", "min spacing", $min_sp;
+    printf ";\t%-22s\t%d\n", "max spacing", $max_sp;
+    printf ";\t%-22s\t%s\n", "dyad type", $type;
+    printf ";\t%-22s\t%g\n", "sig threshold", $th;
     printf "; exp freq     \t%s\n", $exp;
 }
 
@@ -260,15 +264,18 @@ sub OligoAnalysis {
     
     &doit($command);
     
-    ### feature-map for oligo-analysis
-    die "Error : cannot read file $family{$family_name}->{seq_file}\n" unless (-r $family{$family_name}->{seq_file});
+
+    if ($maps) {
+	### feature-map for oligo-analysis
+	die "Error : cannot read file $family{$family_name}->{seq_file}\n" unless (-r $family{$family_name}->{seq_file});
 #    $origin = -$from + 1;
-    $origin = "-0";
-    $command = "dna-pattern -i $family{$family_name}->{seq_file} -format $seq_format -pl $family{$family_name}->{oligo_file} -origin $origin -sc 8 -N 4 ";
-    $command .= " | features-from-dnapat -o $family{$family_name}->{oligo_ft_file} ";
-    $command .= " ; feature-map -i $family{$family_name}->{oligo_ft_file} -scalebar -scalestep 50 -legend -from $from -to $to -o $fmap_file -scorethick -htmap > $htmap_file ";
-    
-    &doit($command);
+	$origin = "-0";
+	$command = "dna-pattern -i $family{$family_name}->{seq_file} -format $seq_format -pl $family{$family_name}->{oligo_file} -origin $origin -sc 8 -N 4 ";
+	$command .= " | features-from-dnapat -o $family{$family_name}->{oligo_ft_file} ";
+	$command .= " ; feature-map -i $family{$family_name}->{oligo_ft_file} -scalebar -scalestep 50 -legend -from $from -to $to -o $fmap_file -scorethick -htmap > $htmap_file ";
+	
+	&doit($command);
+    }
 }
 
 ### dyad analysis
@@ -276,8 +283,8 @@ sub DyadAnalysis {
     warn join( "\t", 
 	       ";\tAnalyzing dyads for family $family_name",
 	       "monad length: $monad_length",
-	       "min_sp", $min_sp,
-	       "max_sp", $max_sp,
+	       "min_sp: $min_sp",
+	       "max_sp: $max_sp",
 	       ), "\n" if ($verbose >= 1);
     $dir = "${family_name}/dyads_${family_name}";
     unless (-d $dir) {
@@ -295,7 +302,7 @@ sub DyadAnalysis {
     
     ### feature-maps
     die "Error : cannot read file $family{$family_name}->{seq_file}\n" unless (-r $family{$family_name}->{seq_file});
-    &DrawFeatureMaps;
+    &DrawFeatureMaps if ($maps);
 }
 
 ### read known known_site for each family
@@ -347,267 +354,276 @@ sub ReadSiteLibrary {
     close LIBRARY;
   }
 }
-  
+
+
+################################################################
 ### build a synthetic table ###
 sub SyntheticTable {
-  warn "; Generating synthetic table $table_file\n" if ($verbose);
-  $dir = "synthetic_tables";
-  
-  $table_file = $dir."/".$table_suffix;
-  $table_file .= "_tr" if ($transpose);
-
-  unless (-d $dir) {
-    mkdir $dir, 0755 || die "Error: cannot create directory $dir\n";
-  }
-  
-  ### synthesize the results of all families into a single file
-  
-  ### headers
-  $row = 0;
-  $row{f} = $row++;
-  $row{family} = $row++;
-  $row{genes} = $row++;
-  $row{known} = $row++ if ($known_sites_provided);
-  $row{oligo} = $row++;
-  $row{dyad} = $row++;
-  $row_num = $row-1;
-  while (($header,$row) = each %row) {
-    $table[$row][0] = "<B>$header</B>";
-  }
-  my $col = 0;
-  foreach $family_name (@families) {
-    $col++;
-
-    ### check directory
-    $dir = "${family_name}/dyads_${family_name}";
+    warn "; Generating synthetic table $table_file\n" if ($verbose);
+    $dir = "synthetic_tables";
+    
+    $table_file = $dir."/".$table_suffix;
+    $table_file .= "_tr" if ($transpose);
+    
     unless (-d $dir) {
-	&Warning ("Cannot find directory $dir\n");
+	mkdir $dir, 0755 || die "Error: cannot create directory $dir\n";
     }
     
-    ### family number
-    $table[$row{f}][$col] = "<B>$col</B>";
-
-    ### family name
-    $table[$row{family}][$col] = "<B><a href='../$family_name'>$family_name</a></B>";
-
-    ### list of genes
-    $table[$row{genes}][$col] = "<a href='../".$family{$family_name}->{family_file}."'>";
-    $table[$row{genes}][$col] .= join " ", @{$family{$family_name}->{members}};
-    $table[$row{genes}][$col] .= "</a>";
-
-    ### known patterns
-    if ($known_sites_provided) {
-	$table[$row{known}][$col] = "";
-	for $c (0..$#{$known_site{$family_name}}) {
-	    $table[$row{known}][$col] .= ${known_site{$family_name}}[$c];
-   	    $table[$row{known}][$col] .= "<BR>(".${known_site_source{$family_name}}[$c].")" if (${known_site_source{$family_name}}[$c]);
-            $table[$row{known}][$col] .= "<P>";
-        }
-    } 
+    ### synthesize the results of all families into a single file
     
-    #### oligo-analysis
-    open OLIGOS, "$family{$family_name}->{oligo_assembly_file}";
-    $map_link = "<A HREF=../$family{$family_name}->{oligo_file}.html>\n";
-    warn ";\tExtracting info from\t$family{$family_name}->{oligo_assembly_file}\n" if ($verbose >= 2);
-    undef @patterns;
-    undef @sorted_patterns;
-    undef %rc;
-    undef %score;
-    undef %type;
-    while (<OLIGOS>) {
-      chomp;
-      next if (/^;/);
-      next if (/^\#/);
-      next unless (/\S/);
-      if ((/contig/) || (/consensus/) || (/isol/)) {
-	@fields = split "\t";
-	my $sequence = uc($fields[0]);
-	$pattern = new RSA::pattern(sequence=>$sequence);
-	push @patterns, $pattern;
-	$rc{$pattern} = uc(&ReverseComplement($pattern->get_attribute("sequence")));
-	$score{$pattern} = $fields[2];
-	$type{$pattern} = $fields[3];
-      }
+    ### headers
+    $row = 0;
+    $row{f} = $row++;
+    $row{family} = $row++;
+    $row{size} = $row++;
+    $row{genes} = $row++;
+    $row{known} = $row++ if ($known_sites_provided);
+    $row{oligo} = $row++;
+    $row{dyad} = $row++;
+    $row_num = $row-1;
+    while (($header,$row) = each %row) {
+	$table[$row][0] = "<B>$header</B>";
     }
-    @sorted_patterns = sort { $score{$b} <=> $score{$a} } @patterns;
-    $table[$row{oligo}][$col] = "<TABLE>\n";
-    $table[$row{oligo}][$col] .= "<TR>\n";
+    my $col = 0;
+    foreach $family_name (@families) {
+	$col++;
+	
+	### check directory
+	$dir = "${family_name}/dyads_${family_name}";
+	unless (-d $dir) {
+	    &Warning ("Cannot find directory $dir\n");
+	}
+	
+	### family number
+	$table[$row{f}][$col] = "<B>$col</B>";
+	
+	### family name
+	$table[$row{family}][$col] = "<B><a href='../$family_name'>$family_name</a></B>";
+	
+	#### number of genes
+	$table[$row{size}][$col] = scalar(@{$family{$family_name}->{members}});
 
-    ### print oligo sequence
-    $table[$row{oligo}][$col] .= "<TD>\n";
-    for $p (0..$#sorted_patterns) {
-      $table[$row{oligo}][$col] .= "<B>" if ($score{$sorted_patterns[$p]} >= 1);
-      $table[$row{oligo}][$col] .= uc($sorted_patterns[$p]->get_attribute("sequence")); 
-      $table[$row{oligo}][$col] .= "</B>" if ($score{$sorted_patterns[$p]} >= 1);
-      $table[$row{oligo}][$col] .= "<BR>" unless ($p == $#sorted_patterns);
-    }
-    $table[$row{oligo}][$col] .= "</TD>\n";
-
-    ### print reverse complementary oligo
-    $table[$row{oligo}][$col] .= "<TD>\n";
-    for $p (0..$#sorted_patterns) {
-      $table[$row{oligo}][$col] .= "<B>" if ($score{$sorted_patterns[$p]} >= 1);
-      $table[$row{oligo}][$col] .= uc($rc{$sorted_patterns[$p]});
-      $table[$row{oligo}][$col] .= "</B>" if ($score{$sorted_patterns[$p]} >= 1);
-      $table[$row{oligo}][$col] .= "<BR>" unless ($p == $#sorted_patterns);
-    }
-    $table[$row{oligo}][$col] .= "</TD>\n";
-
-    ### print oligo score
-    $table[$row{oligo}][$col] .= "<TD>$map_link\n";
-    for $p (0..$#sorted_patterns) {
-      $table[$row{oligo}][$col] .= "<B>" if ($score{$sorted_patterns[$p]} >= 1);
-      $table[$row{oligo}][$col] .= "$score{$sorted_patterns[$p]}";
-      $table[$row{oligo}][$col] .= "</B>" if ($score{$sorted_patterns[$p]} >= 1);
-      $table[$row{oligo}][$col] .= "<BR>" unless ($p == $#sorted_patterns);
-    }
-    $table[$row{oligo}][$col] .= "</A></TD>\n";
-
-    ### print matching patterns
-    if ($known_sites_provided) {
-       $table[$row{oligo}][$col] .= "<TD>\n";
-       for $p (0..$#sorted_patterns) {
-         my @matches = ();
-         foreach $site (@site_library) {
-	   if (($sorted_patterns[$p]->contains($site, min_score=>$min_matching_score)) ||
-	       ($site->contains($sorted_patterns[$p], min_score=>$min_matching_score))) {
-	     #my $match = $site->get_attribute("sequence");
-	     my $match = $site->get_id();
-	     push @matches, $match;
-	   }
-        }
-        $table[$row{oligo}][$col] .= join(";",@matches);
-        $table[$row{oligo}][$col] .= "<BR>" unless ($p == $#sorted_patterns);
-      }
-      $table[$row{oligo}][$col] .= "</TD>\n";
+	### list of genes
+	$table[$row{genes}][$col] = "<a href='../".$family{$family_name}->{family_file}."'>";
+	$table[$row{genes}][$col] .= join " ", @{$family{$family_name}->{members}};
+	$table[$row{genes}][$col] .= "</a>";
+	
+	### known patterns
+	if ($known_sites_provided) {
+	    $table[$row{known}][$col] = "";
+	    for $c (0..$#{$known_site{$family_name}}) {
+		$table[$row{known}][$col] .= ${known_site{$family_name}}[$c];
+		$table[$row{known}][$col] .= "<BR>(".${known_site_source{$family_name}}[$c].")" if (${known_site_source{$family_name}}[$c]);
+		$table[$row{known}][$col] .= "<P>";
+	    }
+	} 
+	
+	#### oligo-analysis
+	open OLIGOS, "$family{$family_name}->{oligo_assembly_file}";
+	$map_link = "<A HREF=../$family{$family_name}->{oligo_file}.html>\n";
+	warn ";\tExtracting info from\t$family{$family_name}->{oligo_assembly_file}\n" if ($verbose >= 2);
+	undef @patterns;
+	undef @sorted_patterns;
+	undef %rc;
+	undef %score;
+	undef %type;
+	while (<OLIGOS>) {
+	    chomp;
+	    next if (/^;/);
+	    next if (/^\#/);
+	    next unless (/\S/);
+	    if ((/contig/) || (/consensus/) || (/isol/)) {
+		@fields = split "\t";
+		my $sequence = uc($fields[0]);
+		$pattern = new RSA::pattern(sequence=>$sequence);
+		push @patterns, $pattern;
+		$rc{$pattern} = uc(&ReverseComplement($pattern->get_attribute("sequence")));
+		$score{$pattern} = $fields[2];
+		$type{$pattern} = $fields[3];
+	    }
+	}
+	@sorted_patterns = sort { $score{$b} <=> $score{$a} } @patterns;
+	$table[$row{oligo}][$col] = "<TABLE>\n";
+	$table[$row{oligo}][$col] .= "<TR>\n";
+	
+	### print oligo sequence
+	$table[$row{oligo}][$col] .= "<TD>\n";
+	for $p (0..$#sorted_patterns) {
+	    $table[$row{oligo}][$col] .= "<B>" if ($score{$sorted_patterns[$p]} >= 1);
+	    $table[$row{oligo}][$col] .= uc($sorted_patterns[$p]->get_attribute("sequence")); 
+	    $table[$row{oligo}][$col] .= "</B>" if ($score{$sorted_patterns[$p]} >= 1);
+	    $table[$row{oligo}][$col] .= "<BR>" unless ($p == $#sorted_patterns);
+	}
+	$table[$row{oligo}][$col] .= "</TD>\n";
+	
+	### print reverse complementary oligo
+	$table[$row{oligo}][$col] .= "<TD>\n";
+	for $p (0..$#sorted_patterns) {
+	    $table[$row{oligo}][$col] .= "<B>" if ($score{$sorted_patterns[$p]} >= 1);
+	    $table[$row{oligo}][$col] .= uc($rc{$sorted_patterns[$p]});
+	    $table[$row{oligo}][$col] .= "</B>" if ($score{$sorted_patterns[$p]} >= 1);
+	    $table[$row{oligo}][$col] .= "<BR>" unless ($p == $#sorted_patterns);
+	}
+	$table[$row{oligo}][$col] .= "</TD>\n";
+	
+	### print oligo score
+	$table[$row{oligo}][$col] .= "<TD>$map_link\n";
+	for $p (0..$#sorted_patterns) {
+	    $table[$row{oligo}][$col] .= "<B>" if ($score{$sorted_patterns[$p]} >= 1);
+	    $table[$row{oligo}][$col] .= "$score{$sorted_patterns[$p]}";
+	    $table[$row{oligo}][$col] .= "</B>" if ($score{$sorted_patterns[$p]} >= 1);
+	    $table[$row{oligo}][$col] .= "<BR>" unless ($p == $#sorted_patterns);
+	}
+	$table[$row{oligo}][$col] .= "</A></TD>\n";
+	
+	### print matching patterns
+	if ($known_sites_provided) {
+	    $table[$row{oligo}][$col] .= "<TD>\n";
+	    for $p (0..$#sorted_patterns) {
+		my @matches = ();
+		foreach $site (@site_library) {
+		    if (($sorted_patterns[$p]->contains($site, min_score=>$min_matching_score)) ||
+			($site->contains($sorted_patterns[$p], min_score=>$min_matching_score))) {
+			#my $match = $site->get_attribute("sequence");
+			my $match = $site->get_id();
+			push @matches, $match;
+		    }
+		}
+		$table[$row{oligo}][$col] .= join(";",@matches);
+		$table[$row{oligo}][$col] .= "<BR>" unless ($p == $#sorted_patterns);
+	    }
+	    $table[$row{oligo}][$col] .= "</TD>\n";
+	}
+	
+	$table[$row{oligo}][$col] .= "</TR>\n";
+	$table[$row{oligo}][$col] .= "</TABLE>\n";
+	close OLIGOS;
+	
+	### dyad analysis
+	open DYADS, "$family{$family_name}->{dyad_assembly_file}";
+	$map_link = "<A HREF=../$family{$family_name}->{dyad_file}.html>\n";
+	warn ";\tExtracting info from\t$family{$family_name}->{dyad_assembly_file}\n" if ($verbose >= 2);
+	undef @patterns;
+	undef @sorted_patterns;
+	undef %rc;
+	undef %score;
+	undef %type;
+	while (<DYADS>) {
+	    chomp;
+	    next if (/^;/);
+	    next if (/^\#/);
+	    next unless (/\S/);
+	    if ((/contig/) || (/consensus/) || (/isol/)) {
+		@fields = split "\t";
+		my $sequence = $fields[0];
+		$pattern = new RSA::pattern(sequence=>$sequence);
+		push @patterns, $pattern;
+		$rc{$pattern} = uc(&ReverseComplement($pattern->get_attribute("sequence")));
+		$score{$pattern} = $fields[2];
+		$type{$pattern} = $fields[3];
+	    }
+	}
+	@sorted_patterns = sort {$score{$b} <=> $score{$a}} @patterns;
+	$table[$row{dyad}][$col] = "<TABLE>\n";
+	$table[$row{dyad}][$col] .= "<TR>\n";
+	
+	### print dyad sequence
+	$table[$row{dyad}][$col] .= "<TD>\n";
+	for $p (0..$#sorted_patterns) {
+	    $table[$row{dyad}][$col] .= "<B>" if ($score{$sorted_patterns[$p]} >= 1);
+	    $sequence = $sorted_patterns[$p]->get_attribute("sequence");
+	    $compressed = uc(&compress_pattern($sequence, "n"));
+	    $compressed =~ s/N/n/g;
+	    $table[$row{dyad}][$col] .= $compressed;
+	    $table[$row{dyad}][$col] .= "</B>" if ($score{$sorted_patterns[$p]} >= 1);
+	    $table[$row{dyad}][$col] .= "<BR>" unless ($p == $#sorted_patterns);
+	}
+	$table[$row{dyad}][$col] .= "</TD>\n";
+	
+	### reverse complementary dyad
+	$table[$row{dyad}][$col] .= "<TD>\n";
+	for $p (0..$#sorted_patterns) {
+	    $table[$row{dyad}][$col] .= "<B>" if ($score{$sorted_patterns[$p]} >= 1);
+	    $compressed = uc(&compress_pattern($rc{$sorted_patterns[$p]},"n"));
+	    $compressed =~ s/N/n/g;
+	    $table[$row{dyad}][$col] .= $compressed;
+	    $table[$row{dyad}][$col] .= "</B>" if ($score{$sorted_patterns[$p]} >= 1);
+	    $table[$row{dyad}][$col] .= "<BR>" unless ($p == $#sorted_patterns);
+	}
+	$table[$row{dyad}][$col] .= "</TD>\n";
+	
+	### dyad scores
+	$table[$row{dyad}][$col] .= "<TD>$map_link\n";
+	for $p (0..$#sorted_patterns) {
+	    $table[$row{dyad}][$col] .= "<B>" if ($score{$sorted_patterns[$p]} >= 1);
+	    $table[$row{dyad}][$col] .= "$score{$sorted_patterns[$p]}";
+	    $table[$row{dyad}][$col] .= "</B>" if ($score{$sorted_patterns[$p]} >= 1);
+	    $table[$row{dyad}][$col] .= "<BR>" unless ($p == $#sorted_patterns);
+	}
+	$table[$row{dyad}][$col] .= "</A></TD>\n";
+	
+	### print matching patterns
+	if ($known_sites_providde) {
+	    $table[$row{dyad}][$col] .= "<TD>\n";
+	    for $p (0..$#sorted_patterns) {
+		my @matches = ();
+		foreach $site (@site_library) {
+		    if (($sorted_patterns[$p]->contains($site, min_score=>$min_matching_score)) ||
+			($site->contains($sorted_patterns[$p], min_score=>$min_matching_score))) {
+			#my $match = $site->get_attribute("sequence");
+			my $match = $site->get_id();
+			push @matches, $match;
+		    }
+		} 
+		$table[$row{dyad}][$col] .= join(";",@matches);
+		$table[$row{dyad}][$col] .= "<BR>" unless ($p == $#sorted_patterns);
+	    }
+	    $table[$row{dyad}][$col] .= "</TD>\n";
+	}
+	
+	$table[$row{dyad}][$col] .= "</TR>\n";
+	$table[$row{dyad}][$col] .= "</TABLE>\n";
+	close DYADS;
     }
     
-    $table[$row{oligo}][$col] .= "</TR>\n";
-    $table[$row{oligo}][$col] .= "</TABLE>\n";
-    close OLIGOS;
-
-    ### dyad analysis
-    open DYADS, "$family{$family_name}->{dyad_assembly_file}";
-    $map_link = "<A HREF=../$family{$family_name}->{dyad_file}.html>\n";
-    warn ";\tExtracting info from\t$family{$family_name}->{dyad_assembly_file}\n" if ($verbose >= 2);
-    undef @patterns;
-    undef @sorted_patterns;
-    undef %rc;
-    undef %score;
-    undef %type;
-    while (<DYADS>) {
-      chomp;
-      next if (/^;/);
-      next if (/^\#/);
-      next unless (/\S/);
-      if ((/contig/) || (/consensus/) || (/isol/)) {
-	@fields = split "\t";
-	my $sequence = $fields[0];
-	$pattern = new RSA::pattern(sequence=>$sequence);
-	push @patterns, $pattern;
-	$rc{$pattern} = uc(&ReverseComplement($pattern->get_attribute("sequence")));
-	$score{$pattern} = $fields[2];
-	$type{$pattern} = $fields[3];
-      }
-    }
-    @sorted_patterns = sort {$score{$b} <=> $score{$a}} @patterns;
-    $table[$row{dyad}][$col] = "<TABLE>\n";
-    $table[$row{dyad}][$col] .= "<TR>\n";
-
-    ### print dyad sequence
-    $table[$row{dyad}][$col] .= "<TD>\n";
-    for $p (0..$#sorted_patterns) {
-      $table[$row{dyad}][$col] .= "<B>" if ($score{$sorted_patterns[$p]} >= 1);
-      $sequence = $sorted_patterns[$p]->get_attribute("sequence");
-      $compressed = uc(&compress_pattern($sequence, "n"));
-      $compressed =~ s/N/n/g;
-      $table[$row{dyad}][$col] .= $compressed;
-      $table[$row{dyad}][$col] .= "</B>" if ($score{$sorted_patterns[$p]} >= 1);
-      $table[$row{dyad}][$col] .= "<BR>" unless ($p == $#sorted_patterns);
-    }
-    $table[$row{dyad}][$col] .= "</TD>\n";
-
-    ### reverse complementary dyad
-    $table[$row{dyad}][$col] .= "<TD>\n";
-    for $p (0..$#sorted_patterns) {
-      $table[$row{dyad}][$col] .= "<B>" if ($score{$sorted_patterns[$p]} >= 1);
-      $compressed = uc(&compress_pattern($rc{$sorted_patterns[$p]},"n"));
-      $compressed =~ s/N/n/g;
-      $table[$row{dyad}][$col] .= $compressed;
-      $table[$row{dyad}][$col] .= "</B>" if ($score{$sorted_patterns[$p]} >= 1);
-      $table[$row{dyad}][$col] .= "<BR>" unless ($p == $#sorted_patterns);
-    }
-    $table[$row{dyad}][$col] .= "</TD>\n";
-
-    ### dyad scores
-    $table[$row{dyad}][$col] .= "<TD>$map_link\n";
-    for $p (0..$#sorted_patterns) {
-      $table[$row{dyad}][$col] .= "<B>" if ($score{$sorted_patterns[$p]} >= 1);
-      $table[$row{dyad}][$col] .= "$score{$sorted_patterns[$p]}";
-      $table[$row{dyad}][$col] .= "</B>" if ($score{$sorted_patterns[$p]} >= 1);
-      $table[$row{dyad}][$col] .= "<BR>" unless ($p == $#sorted_patterns);
-    }
-    $table[$row{dyad}][$col] .= "</A></TD>\n";
-
-    ### print matching patterns
-    if ($known_sites_providde) {
-      $table[$row{dyad}][$col] .= "<TD>\n";
-      for $p (0..$#sorted_patterns) {
-        my @matches = ();
-        foreach $site (@site_library) {
-	  if (($sorted_patterns[$p]->contains($site, min_score=>$min_matching_score)) ||
-	     ($site->contains($sorted_patterns[$p], min_score=>$min_matching_score))) {
-	    #my $match = $site->get_attribute("sequence");
- 	    my $match = $site->get_id();
- 	    push @matches, $match;
-	  }
-        } 
-        $table[$row{dyad}][$col] .= join(";",@matches);
-        $table[$row{dyad}][$col] .= "<BR>" unless ($p == $#sorted_patterns);
-      }
-      $table[$row{dyad}][$col] .= "</TD>\n";
-    }
-
-    $table[$row{dyad}][$col] .= "</TR>\n";
-    $table[$row{dyad}][$col] .= "</TABLE>\n";
-    close DYADS;
-  }
-  
-  open TABLE, "> ${table_file}.html" 
-    || die "Error: cannot write file $table_file\n";
-  print TABLE "<HTML><BODY>\n";
-  print TABLE "<H1>$table_file</H1>\n";
+    open TABLE, "> ${table_file}.html" 
+	|| die "Error: cannot write file $table_file\n";
+    print TABLE "<HTML><BODY>\n";
+    print TABLE "<H1>$table_file</H1>\n";
     
-  print TABLE "<TABLE BORDER=1>\n";
-
-  if ($transpose) {
-    foreach $r (0..$row_num) {
-      print TABLE "<TR>\n";
-      foreach $c (0..$col) {
-	print TABLE "<TD>", $table[$r][$c], "</TD>\n";
-      }
-      print TABLE "</TR>\n";
+    print TABLE "<TABLE BORDER=1>\n";
+    
+    if ($transpose) {
+	foreach $r (0..$row_num) {
+	    print TABLE "<TR>\n";
+	    foreach $c (0..$col) {
+		print TABLE "<TD>", $table[$r][$c], "</TD>\n";
+	    }
+	    print TABLE "</TR>\n";
+	}
+    } else {
+	foreach $c (0..$col) {
+	    print TABLE "<TR>\n";
+	    foreach $r (0..$row_num) {
+		print TABLE "<TD>", $table[$r][$c], "</TD>\n";
+	    }
+	    print TABLE "</TR>\n";
+	}
     }
-  } else {
-    foreach $c (0..$col) {
-      print TABLE "<TR>\n";
-      foreach $r (0..$row_num) {
-	print TABLE "<TD>", $table[$r][$c], "</TD>\n";
-      }
-      print TABLE "</TR>\n";
-    }
-  }
-
-  print TABLE "</TABLE>\n";
-  print TABLE "<HR>", &AlphaDate;
-  print TABLE "</BODY>\n";
-  print TABLE "</HTML>\n";
-  close TABLE;
-  chdir "synthetic_tables";
+    
+    print TABLE "</TABLE>\n";
+    print TABLE "<HR>", &AlphaDate;
+    print TABLE "</BODY>\n";
+    print TABLE "</HTML>\n";
+    close TABLE;
+    chdir "synthetic_tables";
 #  system "html_dir.csh > index.html";
-  chdir "../";
+    chdir "../";
 }
 
+
+################################################################
+#### draw feature maps
 sub DrawFeatureMaps {
 ##  $origin = -$from + 1;
     $origin = "-0";
@@ -787,6 +803,7 @@ OPTIONS
 		(default)
 	-ovlp	allow overlapping matches for self-overlapping patterms
 	-pseudo	pseudo-weight (see oligo-analysis manual)
+	-nomap	do not draw feature maps (for saving time and hard disk space)
 
 FILE FORMAT
     FAMILY FILE
@@ -815,21 +832,13 @@ HOW TO PROCEED
     3) run the command
 
        multiple-family-analysis -org organism -i family_file \
-           -v -from -200 -to 49
+           -v -from -200 -to 49 -task all
 
-    4) Open Netscape and locate the directory.  There is one folder
-       per family. 
-
-       Browse each folder, and pay a special attention to the files
-       with extension .html.  These files contain a dynamic
-       feature-map. By positioning the cursor above one feature, you
-       can see the corresponding information at the bottom of the
-       Netscape window.
-
-    5) There is also a folder with summary tables, one table for each
-       set of conditions that has been tested (threshold, upstream
-       region limits, ...).
-
+    4) With a web browser (e.g. Netscape), open the folder
+       'synthetic_tables'. There should be a HTML file with the name
+       of your family ile as prefix, and the suffix indicating the
+       other analysis parameters. Open this file and analyze the
+       result.
 
 End_of_help
   close HELP;
@@ -867,6 +876,7 @@ multiple-family-analysis options
 -noov		prevent overlapping matches for self-overlapping patterms
 -ovlp		allow overlapping matches for self-overlapping patterms
 -pseudo		pseudo-weight (see oligo-analysis manual)
+-nomap		do not draw feature maps (for saving time and hard disk space)
 End_short_help
   close HELP;
   exit;
@@ -921,6 +931,8 @@ sub ReadArguments {
 	    $max_oligo_length = $ARGV[$a+1];;
 	    
 	    ### dyad-analysis parameters
+	} elsif ($ARGV[$a] eq "-monad") {
+	    $monad_length = $ARGV[$a+1];;
 	} elsif ($ARGV[$a] eq "-minsp") {
 	    $min_sp = $ARGV[$a+1];;
 	} elsif ($ARGV[$a] eq "-maxsp") {
@@ -981,6 +993,10 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-ovlp") {
 	    $noov = 0;
 
+	    #### prevent feature-map drawing
+	} elsif ($ARGV[$a] eq "-nomap") {
+	    $maps = 0;
+
 	    #### pseudo-weight
 	} elsif ($ARGV[$a] =~ /^-pseudo/) {
 	    $pseudo = $ARGV[$a+1];
@@ -993,23 +1009,8 @@ sub ReadArguments {
 
 
 
-# sub OldReadFamilies {
-#   ### read family list
-#   open FAM, "$family_file" || die "Error: cannot open family file $family_file\n";
-#   while (<FAM>) {
-#     next if (/^;/);
-#     next if (/^\#/);
-#     next unless (/\S/);
-#     chomp;
-#     @fields = split;
-#     $family_name = shift @fields;
-#     push @families, $family_name;
-#     @{$family{$family_name}->{members}} = @fields;
-#   }
-#   close FAM;
-# }
-
-
+################################################################
+#### read gene families
 sub ReadFamilies {
     warn "\n; Reading family file\t$family_file\n" 
 	if ($verbose >=1);
