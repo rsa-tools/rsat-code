@@ -11,7 +11,7 @@ V=1
 ################################################################
 ### commands
 MAKEFILE=${RSAT}/makefiles/motif_disco_competition_2003.mk
-MAKE=make -f ${MAKEFILE}
+MAKE=make -s -f ${MAKEFILE}
 
 SSH_OPT = -e ssh 
 RSYNC_OPT= -ruptvl  ${SSH_OPT} 
@@ -296,12 +296,13 @@ multi:
 
 ################################################################
 ## Calculate the effect of the number of sequences on mean and variance
-SEQ_SERIES=1 2 3 4 5 6 7 8 9 10 15  20 30 40 50 60 70 80 90 100
+SEQ_NUMBER_SERIES=1 2 3 4 5 6 7 8 9 10 15  20 30 40 50 60 70 80 90 100
 seq_nb_series:
-	for nb in ${SEQ_SERIES} ; do			\
+	fo*r nb in ${SEQ_NUMBER_SERIES} ; do			\
 		${MAKE} calibrate_oligos N=$${nb};	\
 	done
 
+HUMAN_LENGTHS=500 1000 1500 2000 3000
 seq_nb_series_human:
 	${MAKE} seq_nb_series ORG=Homo_sapiens SEQ_LEN=1000 REPET=1000
 	${MAKE} seq_nb_series ORG=Homo_sapiens SEQ_LEN=2000 REPET=1000
@@ -310,6 +311,38 @@ seq_nb_series_yeast:
 	${MAKE} seq_nb_series ORG=Saccharomyces_cerevisiae SEQ_LEN=500 REPET=1000
 	${MAKE} seq_nb_series ORG=Saccharomyces_cerevisiae SEQ_LEN=1000 REPET=1000
 
+FLY_LENGTHS=1500 2000 2500 3000
+seq_nb_series_fly:
+	@for len in ${FLY_LENGTHS}; do							\
+		${MAKE} seq_nb_series ORG=Drosophila_melanogaster SEQ_LEN=$${len} REPET=1000 ;	\
+	done
+
+MOUSE_LENGTHS=500 1000 1500
+seq_nb_series_mouse:
+	@for len in ${MOUSE_LENGTHS}; do							\
+		${MAKE} seq_nb_series ORG=Mus_musculus SEQ_LEN=$${len} REPET=1000 ;	\
+	done
+
+################################################################
+## Effet of sequence length on mean and variance
+LENGTH_SERIES= 100 200 300 500 1000 1500 2000 2500 3000
+seq_length_series:
+	@for l in ${LENGTH_SERIES} ; do				\
+		${MAKE} calibrate_oligos SEQ_LEN=$${l} N=20;	\
+	done
+
+LENGTH_SERIES_YEAST=100 200 300 400 500 600 700 800 900 1000
+seq_len_series_yeast:
+	${MAKE} seq_length_series ORG=Saccharomyces_cerevisiae LENGTH_SERIES='${LENGTH_SERIES_YEAST}'
+
+seq_len_series_human:
+	${MAKE} seq_length_series ORG=Homo_sapiens
+
+seq_len_series_mouse:
+	${MAKE} seq_length_series ORG=Mus_musculus
+
+seq_len_series_fly:
+	${MAKE} seq_length_series ORG=Drosophila_melanogaster
 
 ################################################################
 ## Calculate oligonucleotide distributions of occurrences for random
@@ -339,8 +372,8 @@ calibrate_oligos_now:
 JOB_DIR=jobs
 JOB=`mktemp job.XXXXXX`
 calibrate_oligos_queue:
-	mkdir -p ${JOB_DIR}
-	for job in ${JOB} ; do											\
+	@mkdir -p ${JOB_DIR}
+	@for job in ${JOB} ; do											\
 		echo "Job $${job}" ;										\
 		echo "${CALIBRATE_CMD}" > ${JOB_DIR}/$${job} ;							\
 		qsub -m e -q rsa@merlin.ulb.ac.be -N $${job} -j oe -o ${JOB_DIR}/$${job}.log ${JOB_DIR}/$${job} ;	\
