@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_swissprot.pl,v 1.14 2002/03/19 14:16:38 jvanheld Exp $
+# $Id: parse_swissprot.pl,v 1.15 2002/03/19 17:24:37 jvanheld Exp $
 #
-# Time-stamp: <2002-03-19 15:16:34 jvanheld>
+# Time-stamp: <2002-03-19 18:23:49 jvanheld>
 #
 ############################################################
 
@@ -82,6 +82,7 @@ package main;
 	    chomp;
 	    my @fields = split /\s+/;
 	    my $ac = $fields[0];
+	    next unless ($ac);
 	    $selected_acs{$ac}++;
 	}
 	close ACS;
@@ -102,7 +103,7 @@ package main;
 	warn "Creating output dir $dir{output}\n";
 	mkdir $dir{output}, 0775 || die "Error: cannot create directory $dir\n";
     }
-    die unless chdir $dir{output};
+#    die unless chdir $dir{output};
 
     #### output file names
     $out_file{polypeptides} = $dir{output}."/Polypeptide".$suffix.".obj";
@@ -207,9 +208,13 @@ package main;
 
     #### print the result
     &PrintStats($out_file{stats}, @classes);
-    $polypeptides->dump_tables($suffix);
+    $polypeptides->dump_tables($suffix, 0, $dir{output});
+    system "gzip -f $dir{output}/*.tab $dir{output}/*.txt";
+    system "gzip -f $dir{output}/*.obj" if ($export{obj});
+
     &ExportClasses($out_file{polypeptides}, $out_format,PFBP::Polypeptide) if ($export{obj});
 
+    
     ### report execution time
     if ($warn_level >= 1) {
 	$done_time = &AlphaDate;
@@ -219,9 +224,6 @@ package main;
 	}
 
     close ERR;
-    
-    system "gzip -f $dir{output}/*.tab $dir{output}/*.txt";
-    system "gzip -f $dir{output}/*.obj" if ($export{obj});
     
     exit(0);
 }
@@ -284,10 +286,11 @@ OPTIONS
 		and a good cup of coffee)
 	-acs	accession file
 		The parsing will be restricted to the swissprot
-		accession numbers (AC field) specified in the
-		file. Each accession number must come as the first
-		word of a new line (all subsequent words are ignored).
-		(this option is incompatible with the option -org)
+		accession numbers (AC field) or identifers (ID)
+		specified in the file. Each accession number or
+		identifier must come as the first word of a new line
+		(all subsequent words are ignored).  
+		This option is incompatible with the option -org.
 	-clean	remove all files from the output directory before
 		parsing
 	-fields
@@ -398,19 +401,25 @@ sub ParseSwissprot {
 	    }
 	}
 	next unless $parse;
-	
+
+	warn ";\tParsing object\n" if ($warn_level >=3);
+
 	#### convert the entry into an object
 	my $object_entry = SWISS::Entry->fromText($text_entry);
+
+	#### get the polypeptide accession number
+	my $swissprot_ac = $object_entry->AC;
+	my $swissprot_id = $object_entry->ID;
+
+	warn ";\tParsed polypeptide $swissprot_ac\t$swissprot_id\n" if ($warn_level >=2);
 
 	#### initialize the export flag
 	my $export = 0;
 	
-	#### get the polypeptide accession number
-	my $swissprot_ac = $object_entry->AC;
-
 	#### check whether the accession number was specified for export 
 	if ($in_file{acs}) {
-	    $export = 1 if ($selected_acs{$swissprot_ac});
+	    $export = 1 if (($selected_acs{$swissprot_ac}) ||
+			    ($selected_acs{$swissprot_id}));
 	} elsif ($export{allorg}) {
 	    $export = 1;
 	} else {
@@ -426,6 +435,9 @@ sub ParseSwissprot {
 	}
 	
 	next unless $export;
+
+	warn ";\tExporting polypeptide $swissprot_ac\t$swissprot_id\n" if ($warn_level >=2);
+
 	my @swissprot_ids = $object_entry->IDs->elements;
 	my @swissprot_acs = $object_entry->ACs->elements;
 	my $descr = $object_entry->DEs->text;
