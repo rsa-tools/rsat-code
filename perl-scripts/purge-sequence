@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence,v 1.8 2001/09/21 06:07:34 jvanheld Exp $
+# $Id: purge-sequence,v 1.9 2001/09/21 06:10:34 jvanheld Exp $
 #
-# Time-stamp: <2001-09-21 08:07:07 jvanheld>
+# Time-stamp: <2001-09-21 08:09:38 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -25,7 +25,7 @@ my $convert_seq_command = "$SCRIPTS/convert-seq";
 local $inputfile = "";
 local $outputfile = "";
 local $verbose = 0;
-local $match_len = 50;
+local $match_len = 40;
 local $mismatches = 3;
 local $in_format = "fasta";
 
