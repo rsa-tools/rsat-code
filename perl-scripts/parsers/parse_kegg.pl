@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_kegg.pl,v 1.12 2002/04/18 14:26:50 jvanheld Exp $
+# $Id: parse_kegg.pl,v 1.13 2002/10/25 19:27:48 jvanheld Exp $
 #
-# Time-stamp: <2002-04-18 16:26:27 jvanheld>
+# Time-stamp: <2002-10-25 13:27:11 jvanheld>
 #
 ############################################################
 
@@ -62,11 +62,11 @@ package main;
 ################################################################
 # initialisation
 
-$supported_dbms{oracle} = 1;
-$supported_dbms{postgresql} = 1;
-#$dbms = "postgresql";
-$dbms = "oracle";
-$schema = "";
+#### oracle schema
+$schema = "kegg";
+$user = "kegg";
+$password = "kegg";
+
 
 ################################################################
 #
@@ -81,7 +81,6 @@ $data_file{reaction_name} = $dir{KEGG}."/ligand/reaction_name.lst";
 $data_file{ec} = $dir{KEGG}."/ligand/ECtable";
 
 #### pathways
-system "cd $dir{KEGG}./ligand/; tar -xZf reaction.main.tar.Z";
 $dir{pathway_reactions} = $dir{KEGG}."/ligand/reaction.main/";
 $dir{eco} = $dir{KEGG}."/pathways/eco/";
 $dir{sce} = $dir{KEGG}."/pathways/sce/";
@@ -92,7 +91,7 @@ $in_file{pathway_names} = $dir{KEGG}."/pathways/map_title.tab";
 #
 # output files
 #
-$dir{output} = "$parsed_data/kegg_parsed/$delivery_date";
+$dir{output} = "$parsed_data/kegg_ligand/$delivery_date";
 
 open ERR, ">$out_file{errors}" || die "Error: cannot write error report fle $$out_file{errors}\n";
 
@@ -105,6 +104,12 @@ push @classes, ("PFBP::ECSet");
 push @classes, ("PFBP::GenericPathway");
 
 &ReadArguments;
+
+#### input directories
+unless (-d $dir{pathway_reactions}) {
+    warn "Uncompressing reactions from KEGG archive\n";
+    system "cd $dir{KEGG}/ligand/; uncompress -c reaction.main.tar.Z | tar -xvf -";
+}
 
 #### output directory
 &CheckOutputDir();
@@ -140,7 +145,7 @@ $in_file{reaction2ec} = "uncompress -c ".$dir{KEGG}."/ligand/reaction.tar.Z | ta
 
 
 ### default verbose message
-&DefaultVerbose if ($warn_level >= 1);
+&DefaultVerbose if ($verbose >= 1);
 
 ### instantiate class factories
 $compounds = PFBP::ClassFactory->new_class(object_type=>"PFBP::Compound",
@@ -212,9 +217,11 @@ foreach $compound ($compounds->get_objects()) {
 foreach $class_factory (@class_factories) {
     
     $$class_factory->dump_tables();
-    $$class_factory->generate_sql(schema=>$schema, 
+    $$class_factory->generate_sql(schema=>$schema,
+				  user=>$user,
+				  password=>$password,
 				  dir=>"$dir{output}/sql_scripts",
-				  prefix=>"k_$class_factory_",
+				  prefix=>"$class_factory_",
 				  dbms=>$dbms
 				  );
 }
@@ -228,7 +235,7 @@ foreach $class_factory (@class_factories) {
 #&AppendECstats($out_file{stats});
 
 ### report execution time
-if ($warn_level >= 1) {
+if ($verbose >= 1) {
     $done_time = `date +%Y-%m-%d.%H%M%S`;
     warn ";\n";
     warn "; job started $start_time";
@@ -253,34 +260,15 @@ NAME
         parse_kegg.pl
 
 DESCRIPTION
-	Parse	compounds from KEGG (http://www.genome.ad.jp/kegg/). 
+	Parse compounds from KEGG (http://www.genome.ad.jp/kegg/). 
 	
 AUTHOR
 	Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)  
 
-VERSION
-	0.01
-	Created		1999/12/16
-	Last modified	2000/10/25
-	
 OPTIONS	
-	-h	detailed help
-	-help	short list of options
-	-test	fast parsing of partial data, for debugging
-	-w #	warn level
-		Warn level 1 corresponds to a restricted verbose
-		Warn level 2 reports all object instantiations
-		Warn level 3 reports failing get_attribute()
-	-obj	export data in object format (.obj file)
-		which is human-readable (with some patience and
-		a good cup of coffee)
-	-clean	remove all files from the output directory before
-		parsing
-	-dbms	database management system
-		supported: oracle, postgresql
-	-db	database schema
+$generic_option_message
 EXAMPLE
-	perl parse_kegg.pl -w 1 -clean -test  -dbms postgresql -schema atest
+	perl parse_kegg.pl -v 1 -clean -dbms postgresql -schema atest
 
 EndHelp
   close HELP;
@@ -289,51 +277,18 @@ EndHelp
   
 
 
-
+################################################################
 ### read arguments from the command line
 sub ReadArguments {
     my $a = "";
     for $a (0..$#ARGV) {
-
-	### warn level
-	if (($ARGV[$a] eq "-w" ) && 
-	    ($ARGV[$a+1] =~ /^\d+$/)){
-	    $main::warn_level = $ARGV[$a+1];
-	    
-	    ### dbms
-	} elsif ($ARGV[$a] eq "-dbms") {
-	    $main::dbms = $ARGV[$a+1];
-	    unless ($supported_dbms{$main::dbms}) {
-		die "Error: this dbms is not supported\n";
-	    }
-
-	    ### database schema
-	} elsif ($ARGV[$a] eq "-schema") {
-	    $main::schema = $ARGV[$a+1];
-
-	    ### clean
-	} elsif ($ARGV[$a] eq "-clean") {
-	    $main::clean = 1;
-	    
-	    ### quick test
-	} elsif ($ARGV[$a] eq "-test") {
-	    $test = 1;
-
-	    ### export .obj file
-	} elsif ($ARGV[$a] eq "-obj") {
-	    $export{obj} = 1;
-
-	    ### help
-	} elsif (($ARGV[$a] eq "-h") ||
-		 ($ARGV[$a] eq "-help")) {
-	    &PrintHelp;
-	    exit(0);
-	}
+	&ReadGenericOptions($a);
     }
 }
 
 
-
+################################################################
+#### define a list of compounds which cannot be used as intermediate between two reactions
 sub TrivialCompounds {
     $trivial{"C00001"} = 1; ## C00001	660	284	944	H2O
     $trivial{"C00002"} = 1; ## C00002	326	3	329	ATP
@@ -355,13 +310,15 @@ sub TrivialCompounds {
 }
 
 
+################################################################
+#### parse reactions
 sub ParseReactions {
     ### read the reaction file from KEGG
     my ($input_file, $class_holder, $equation_file) = @_;
 
     &TrivialCompounds;
     
-    if ($warn_level >= 1) {
+    if ($verbose >= 1) {
 	my $message = 
 	    warn (";\n; ", 
 		  &AlphaDate, 
@@ -452,12 +409,14 @@ sub ParseReactions {
 }
 
 
+################################################################
+#### Parse EC numbers
 sub ParseEC {
     my ($file, $class_holder, %args) = @_;
     warn (";\n; ", &AlphaDate, "; parsing class ",
 	  $class_holder->get_object_type(),
 	  " from $file\n")
-	if ($warn_level >= 1);
+	if ($verbose >= 1);
     
     ### create the class for 0.0.0.0
     $ec_object = $ecs->new_object(%args,id=>"0.0.0.0");
@@ -489,7 +448,7 @@ sub ParseEC {
 	chomp;
 	if (/^\s*((\d+\.*)+)\s+/) {
 	    $ec_number = $1;
-	    $names = $';
+	    $names = "$'";
 	    
 	    $ec_number =~ s/\.$//; ### suppress the trailing dot from the ec number
 	    @names = split /\; /, $names;
@@ -558,7 +517,7 @@ sub ParseReactionEC {
     my ($file) = @_;
     
     warn (";\n; ", &AlphaDate, " parsing reaction ECs from $file\n")
-	if ($warn_level >= 1);
+	if ($verbose >= 1);
     
     open EC_REACT, $file || die "Error: cannot read ec2reaction file $file\n";
     
@@ -591,12 +550,14 @@ sub ParseReactionEC {
     close EC_REACT;
 }
 
-#### calculate the number of reactions in which each compound is involved
-#### and the number of substrates/products for each reactions
+################################################################
+#### calculate the number of reactions in which each compound is
+#### involved and the number of substrates/products for each 
+#### reaction
 sub Connectivity {
     my ($file) = @_;
     warn (";\n; ", &AlphaDate, "; printing connectivity to file $file\n")
-	if ($warn_level >= 1);
+	if ($verbose >= 1);
 
     open CONNECTIVITY, ">$file" 
 	|| die "Error: cannot write file $file\n";
@@ -667,43 +628,8 @@ sub Connectivity {
 
 }
 
-#  sub AppendECstats {
-#      my ($file) = @_;
-#      my @roots = qw( 1 2 3 4 5 6 0.0.0.0 ); ### for tree expansion
-
-#      if ($file) {
-#  	open STDOUT, ">>$out_file{stats}" 
-#  	    || die "Error: cannot write $file\n";
-#      }
-    
-#      ### WARNING : there is a problem: I have more objects in 
-#      ### total than expected. TO CHECK
-#      if ($warn_level >= 1) {
-#  	warn (";\n; ", &AlphaDate, " writing statistics\n");
-#  	$total = 0;
-#  	foreach $root (@roots) {
-#  	    #warn "; root : $root\n";
-#  	    if ($object = PFBP::ECSet->get_object($root)) {
-#  		if ($count = $object->count_elements()) {
-#  		    printf STDERR "; ECset %10s\t%6s reactions\n", $root, $count;
-#  		    $total += $count;
-#  		}
-#  	    }
-#  	}
-#  	warn "; total\t$total\n";
-#      }
-    
-#      foreach $root (@roots) {
-#  	if ($object = PFBP::ECSet->get_object($root)) {
-#  	    $object->expand(count_elements=>1);
-#  	}
-	
-#  	close STDOUT if ($file);
-#      }
-#  }
-    
-    
-
+################################################################
+#### Parse pathways
 sub ParseKeggPathways {
     ### full names of organisms
     $full_name{eco} = "Escherichia coli";
@@ -727,93 +653,17 @@ sub ParseKeggPathways {
     }
     
     
-    ### input files
-    warn "; Getting generic pathways from $dir{pathway_reactions}" if ($warn_level >= 1);
-    @in_files = glob($dir{pathway_reactions}."/map*.rea*");
-    if ($test) {
-	warn ";TEST\n" if ($warn_level >= 1);
-	### fast partial parsing for debugging
-	@in_files = ($in_files[0], $in_files[1], $in_files[2]);
-    }
-    warn ";\tSelected pathway files\n;\t\t", join("\n;\t\t", @in_files), "\n" if ($warn_level >= 1);
     
-    ################################################################
-    # parse generic pathways (lists of reactions and ECs)
-    #
-    foreach $filename (@in_files) {
-	$short_file_name = $filename;
-	$short_file_name =~ s|\.*/||g;
-	if ($short_file_name =~ /(map\d+)\.rea/) {
-	    $map_id = $1;
-	}
-
-	$pathway = $genericPathways->new_object(id=>$map_id,
-						source=>"KEGG:$short_file_name");
-	if (defined($pathway_names{$map_id})) {
-	    $pathway->new_attribute_value("names",$pathway_names{$map_id});
-	} else {
-	    $pathway->new_attribute_value("names",$null);
-	    &ErrorMessage("WARNING: no name for pathway $map_id\n");
-	}
-	
-	warn ("; reading reactions",
-	      "\tfile: ", $filename,
-	      "\tfile: ", $short_file_name,
-	      "\tid: ", $pathway->get_attribute("id"),
-	      "\tname: ", $pathway->get_name(),
-	      "\n")
-	    if ($warn_level >= 1);
-	&ParsePathwayReactions($pathway,$filename);
-    }
+    #### generic pathways
+    &ParseGenericPathways();
     
-    ################################################################
-    # parse organism-specific pathways (lists of genes)
-    #
-    foreach $org (keys %full_name) {
-	$organism = $full_name{$org} || $org;
-	@in_files = glob($dir{$org}."/*.gene*");
-	@in_files = shift @in_files if ($test);
-	
-	foreach $filename (@in_files) {
-	    $short_file_name = $filename;
-	    $short_file_name =~ s|.*/||g;
-	    if ($short_file_name =~ /(\d+)\.gene/) {
-		$map_id = "map".$1;
-	    }
-	    
-	    $pathway = $pathways->new_object(id=>$short_file_name,
-					     source=>"KEGG:$short_file_name");
-	    
-	    ### include the generic pathway as a sub-pathway
-	    if ($sub_pathway = $genericPathways->get_object($map_id)) {
-		$parent_id = $sub_pathway->get_attribute("id");
-		$pathway->set_attribute("parent", $parent_id);
-	    } else {
-		&ErrorMessage("Cannot identify generic pathway for id $map_id\n");
-		$pathway->set_attribute("parent",$null);
-	    }
-
-	    ### pathway name
-	    if (defined($pathway_names{$map_id})) {
-		$pathway->new_attribute_value("names",$pathway_names{$map_id});
-	    } else {
-		$pathway->new_attribute_value("names",$null);
-		&ErrorMessage("WARNING: no name for pathway $map_id\n");
-	    }
-	    $pathway->new_attribute_value("organism",$organism);
-
-	    warn (";reading genes",
-		  "\tfile: ", $short_file_name,
-		  "\tid: ", $pathway->get_attribute("id"),
-		  "\tname: ", $pathway->get_name(),
-		  "\n")
-		if ($warn_level >= 1);
-	    &ParseGenes($pathway,$filename);
-	}
-	
-    }
+    #### organism-specific pathways
+    &ParseSpecificPathways(); 
+    
 }
 
+################################################################
+#### parse links between reactions and pathways
 sub ParsePathwayReactions {
     my ($pathway, $input_file) = @_;
     
@@ -869,7 +719,8 @@ sub ParsePathwayReactions {
     return;
 }
 
-
+################################################################
+#### parse links between genes
 sub ParseGenes {
     my ($pathway, $input_file) = @_;
     
@@ -906,4 +757,108 @@ sub ParseGenes {
 
     close PATH_REACT;
     return;
+}
+
+
+################################################################
+# parse organism-specific pathways (lists of genes)
+#
+sub ParseSpecificPathways {
+  foreach my $org (keys %full_name) {
+    warn "; Parsing specific pathways for organism $org\n" if ($verbose >=1); 
+    
+    unless (-d $dir{$org}) {
+      die "Error: directory $dir{$org} does not exist\n";
+    }
+    my $organism = $full_name{$org} || $org;
+    my @in_files = glob($dir{$org}."/*.gene*");
+    @in_files = shift @in_files if ($test);
+    
+    warn join ("\n;\t", "; List of files to parse", @in_files), "\n" if ($verbose >=2); 
+    
+    foreach my $filename (@in_files) {
+      my $short_file_name = $filename;
+      $short_file_name =~ s|.*/||g;
+      if ($short_file_name =~ /(\d+)\.gene/) {
+	$map_id = "map".$1;
+      }
+      
+      #### create a new pathway
+      $pathway = $pathways->new_object(id=>$short_file_name,
+				       source=>"KEGG:$short_file_name");
+      
+      ### include the generic pathway as a sub-pathway
+      if ($sub_pathway = $genericPathways->get_object($map_id)) {
+	$parent_id = $sub_pathway->get_attribute("id");
+	$pathway->set_attribute("parent", $parent_id);
+      } else {
+	&ErrorMessage("Cannot identify generic pathway for id $map_id\n");
+	$pathway->set_attribute("parent",$null);
+      }
+      
+      ### pathway name
+      if (defined($pathway_names{$map_id})) {
+	$pathway->new_attribute_value("names",$pathway_names{$map_id});
+      } else {
+	$pathway->new_attribute_value("names",$null);
+	&ErrorMessage("WARNING: no name for pathway $map_id\n");
+      }
+      $pathway->new_attribute_value("organism",$organism);
+      
+      warn ("; Reading genes",
+	    "\tfrom file: ", $short_file_name,
+	    "\tid: ", $pathway->get_attribute("id"),
+	    "\tname: ", $pathway->get_name(),
+	    "\n")
+	if ($verbose >= 1);
+      &ParseGenes($pathway,$filename);
+    }
+    
+  }
+}
+
+
+################################################################
+# parse generic pathways (lists of reactions and ECs)
+#
+sub ParseGenericPathways {
+    warn "; Parsing generic pathways\n" if ($verbose >= 1);
+    ### input files
+    warn "; Getting generic pathways from $dir{pathway_reactions}\n" if ($verbose >= 1);
+    @in_files = glob($dir{pathway_reactions}."/map*.rea*");
+    if ($#in_files < 0) {
+	die "Error: cannot find generic pathways in directory $dir{pathway_reactions}\n";
+    }
+    if ($test) {
+	warn ";TEST\n" if ($verbose >= 1);
+	### fast partial parsing for debugging
+	@in_files = ($in_files[0], $in_files[1], $in_files[2]);
+    }
+
+    warn join ("\n;\t", "; List of files to parse", @in_files), "\n" if ($verbose >=2);
+    foreach $filename (@in_files) {
+	$short_file_name = $filename;
+	$short_file_name =~ s|\.*/||g;
+	if ($short_file_name =~ /(map\d+)\.rea/) {
+	    $map_id = $1;
+	}
+	
+	$pathway = $genericPathways->new_object(id=>$map_id,
+						source=>"KEGG:$short_file_name");
+	if (defined($pathway_names{$map_id})) {
+	    $pathway->new_attribute_value("names",$pathway_names{$map_id});
+	} else {
+	    $pathway->new_attribute_value("names",$null);
+	    &ErrorMessage("WARNING: no name for pathway $map_id\n");
+	}
+	
+	warn ("; reading reactions",
+	      "\tfile: ", $filename,
+	      "\tfile: ", $short_file_name,
+	      "\tid: ", $pathway->get_attribute("id"),
+	      "\tname: ", $pathway->get_name(),
+	      "\n")
+	    if ($verbose >= 1);
+	&ParsePathwayReactions($pathway,$filename);
+    }
 }
