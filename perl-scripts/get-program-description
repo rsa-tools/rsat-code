@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-program-description,v 1.2 2002/06/06 10:29:39 jvanheld Exp $
+# $Id: get-program-description,v 1.3 2002/06/06 10:39:38 jvanheld Exp $
 #
-# Time-stamp: <2002-06-06 12:29:37 jvanheld>
+# Time-stamp: <2002-06-06 12:39:25 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -53,19 +53,21 @@ close $in if ($infile{input});
 
 ###### execute the command #########
 foreach my $program (@program_names) {
-
     warn ("Getting help for\t$program\n") if ($verbose >=1);
+    my @categories = ();
     my $description = "";
     open HELP, "$program -h | ";
     while (<HELP>) {
-	if (/^DESCRIPTION/) {
-	    $in_description = 1;
-	} elsif ($in_description) {
-	    if (/^\S/) {
-		$in_description = 0;
-	    } else {
-		$description .= $_;
-	    }
+	next unless (/\S/);
+	if (/^([A-Z]+)\s*$/) {
+	    $type = $1;
+##	    warn $type;
+	} elsif ($type eq "DESCRIPTION") {
+	    $description .= $_;
+
+	} elsif ($type eq "CATEGORY") {
+	    push @categories, &trim($_);
+
 	}
 
     }
@@ -74,14 +76,18 @@ foreach my $program (@program_names) {
     unless ($description) {
 	&Warning( "no description for program $program");
     }
+    unless ($#categories >= 0) {
+	&Warning( "no category for program $program");
+    }
     $description{$program} = $description;
+    @{$categories{$program}} = @categories;
 
 }
 
 ###### print output ######
-print $out ";program\tdescription\n";
+print $out ";program\tcategory\tdescription\n";
 foreach my $program (@program_names) {
-    print $out join ("\t", $program, $description{$program}), "\n";
+    print $out join ("\t", $program, join (";", @{$categories{$program}}), $description{$program}), "\n";
 }
 
 
