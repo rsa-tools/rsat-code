@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_swissprot.pl,v 1.30 2003/12/03 15:28:22 jvanheld Exp $
+# $Id: parse_swissprot.pl,v 1.31 2003/12/19 15:13:09 jvanheld Exp $
 #
 # Time-stamp: <2003-07-10 11:52:54 jvanheld>
 #
@@ -40,6 +40,7 @@ package main;
 		      swissprot_acs
 		      swissprot_ids
 		      ECs
+		      taxids
 		      );
 
     #### organism selection
@@ -47,6 +48,7 @@ package main;
     $full_name{yeast} = "Saccharomyces cerevisiae (Baker's yeast)";
     $full_name{ecoli} = "Escherichia coli";
     $full_name{human} = "Homo sapiens (Human)";
+    $full_name{mouse} = "Mus musculus";
 
     #### input directories and files
     $dir{input} = "$Databases/ftp.expasy.org/databases/sp_tr_nrdb";
@@ -133,6 +135,7 @@ package main;
 	    ($export{allorg})){
 	push @selected_organisms, "ecoli";
 	push @selected_organisms, "human";
+	push @selected_organisms, "mouse";
 	push @selected_organisms, "yeast";
     }
 
@@ -143,6 +146,7 @@ package main;
 	$regexp = $` if ($regexp =~ /\)/);
 	$regexp = $` if ($regexp =~ /\'/);
 	$selected_organism{uc($full_name{$organism})} = $regexp;
+	warn join ("\t", "; Regular expression for organism", $organism, $regexp), "\n" if ($verbose >= 2);
 	push @regexps, qr /$regexp/; #### list of regular expressions
     }
     
@@ -171,7 +175,7 @@ package main;
 
     #### create class holders
     $polypeptides = classes::ClassFactory->new_class(object_type=>"classes::Polypeptide",
-						  prefix=>"spp_");
+						     prefix=>"spp_");
     $polypeptides->set_out_fields(@out_fields);
     $polypeptides->set_attribute_header("features", join ("\t", "Feature_key", "start_pos", "end_pos", "description", "method", "f6", "f7", "f8") );
 #    $polypeptides->set_attribute_header("comments", join ("\t", "topic", "comments") );
@@ -230,7 +234,6 @@ package main;
 				dir=>"$dir{output}/sql_scripts",
 				prefix=>"",
 				host=>$main::host,
-				dbms=>$main::dbms
 				);
     &ExportClasses($out_file{polypeptides}, $out_format,classes::Polypeptide) if ($export{obj});
 
@@ -285,6 +288,7 @@ $generic_option_message
 		   Supported organisms :
 			ecoli
 			human
+			mouse
 			yeast
 		by default, these three organisms are selected
 	-allorg export all organisms
@@ -309,7 +313,7 @@ $generic_option_message
 			  -fields id,names,ene,ECs,swissprot_ids
 	-seq    return polypeptide bioseqs
 EXAMPLE
-	parse_polypeptides.pl -v 2 -org ecoli -data swissprot -enz
+	parse_swissprot.pl -v 2 -allorg -data swissprot 
 EndHelp
   close HELP;
 }
@@ -332,6 +336,7 @@ sub ReadArguments {
 	    #### select organisms for exportation
 	} elsif ($ARGV[$a] =~ /^-org/) {
 	    push @selected_organisms, lc($ARGV[$a+1]);
+
 	    #### export all organisms
 	} elsif ($ARGV[$a] =~ /^-allorg/) {
 	    $main::export{allorg} = 1;
@@ -360,11 +365,19 @@ sub ReadArguments {
 
 }
 
-#### this is the routine for actually parsing the swissprot or trembl file
+################################################################
+#### Parse one  swissprot or trembl file
 sub ParseSwissprot {
     my ($input_file, $source) = @_;
     $source = $input_file unless ($source);
-    
+
+    ### regular expression for matching organism names
+    my $regexp = "";
+    if ($#selected_organisms >= 0) {
+	$regexp = "(?:".join ("|", @regexps).")";
+	warn "; Selecting organisms with regular expression\n;\t", $regexp, "\n" if ($verbose >= 1);
+    }
+
     warn (";\n; ", &AlphaDate,  " parsing polypeptides from $input_file\n")
 	if ($verbose >= 1);
     
@@ -378,6 +391,7 @@ sub ParseSwissprot {
     while ($text_entry = <DATA>){
 	$entries++;
 	warn "; Entry\t$entries\n" if ($verbose >= 2);
+	warn "$text_entry\n" if ($verbose >= 4);
 	
 	my $parse = 1;
 
@@ -386,11 +400,6 @@ sub ParseSwissprot {
 	# Pre-parsing checks, to save memory and time
         #
 
-	### check that the entry matches organism name 
-	my $regexp = "";
-	if ($#selected_organisms >= 0) {
-	    $regexp = "(?:".join ("|", @regexps).")";
-	}
 
 	#### check that the entry contains a selected AC or ID before
 #	if ($in_file{acs}) {
@@ -399,16 +408,14 @@ sub ParseSwissprot {
 	if ($regexp) {
 	    unless ($text_entry =~ /$regexp/i) {
 		$parse = 0;
+		warn ";\tSkipping entry $entries (no match with selected organisms)\n" if ($verbose >= 3); 
+		next;
 	    }
 	}
-	next unless $parse;
-
-    
-	warn ";\tParsing object\n" if ($verbose >=3);
+	warn ";\tParsing entry $entries\n" if ($verbose >=3);
 
 	#### convert the entry into an object
 	my $object_entry = SWISS::Entry->fromText($text_entry);
-
 
 	#### get the polypeptide accession number
 	my $swissprot_ac = $object_entry->AC;
@@ -418,10 +425,14 @@ sub ParseSwissprot {
 
 	#### initialize the export flag
 	my $export = 0;
-	my @organisms = $object_entry->OSs->elements;
-#	my @tax_ids = $object_entry->OXs->elements;
 
-	
+	#### Organisms
+	my @organism_objects = $object_entry->OSs->elements();
+	my @organisms = ();
+	foreach my $organism_object (@organism_objects) {
+	    push @organisms, $organism_object->toText();
+	}
+	warn "; \tOrganisms\t", join ("; ", @organisms), "\n" if ($verbose >= 3);
 
 	#### check whether the accession number was specified for export 
 	if ($in_file{acs}) {
@@ -455,12 +466,21 @@ sub ParseSwissprot {
 	
 	warn ";\tExporting polypeptide $swissprot_ac\t$swissprot_id\n" if ($verbose >= 3);
 
+	#### Swissprot identifiers
 	my @swissprot_ids = $object_entry->IDs->elements;
+
+	#### Swissprot accession numbers
 	my @swissprot_acs = $object_entry->ACs->elements;
+
+
+	#### Description
 	my $descr = $object_entry->DEs->text;
+
+	#### Gene names
 	my $geneNames = $object_entry->GNs->text;
 	my @geneNames = split " OR ", $geneNames;
-	### extract name from description
+
+	### Extract polypeptide name from description
 	my @names = ();
 	if ($descr =~ / \(/) {
 	    push @names, lc($`);
@@ -469,7 +489,6 @@ sub ParseSwissprot {
 	} else {
 	    push @names, lc($descr);
 	}
-	
 
 	### extract ECs from description
 	my @ECs = ();
@@ -512,6 +531,7 @@ sub ParseSwissprot {
 	    $already_assigned{uc($name)}++;  #### prevent assigning twice the same name
 	}
 	
+	#### Features
 	my @features = $object_entry->FTs->elements;
 	foreach my $ft (@features) {
 	    warn join "'|'", "HELLO ft", $#{$ft}, @{$ft} , "'\n" if ($verbose >= 10);
@@ -522,16 +542,21 @@ sub ParseSwissprot {
 #	    $polypeptide->push_expanded_attribute("comments", @{$cc});
 #	}
 
+	#### Swissprot IDs
 	foreach my $id (@swissprot_ids) {
 #print STDERR "id\t$id\n";
 	    $polypeptide->push_attribute("swissprot_ids",$id);
 	}
+
+	#### Swissprot accession numbers
 	foreach my $ac (@swissprot_acs) {
 	    $polypeptide->push_attribute("swissprot_acs",$ac);
 	}
+
+	#### Description
 	$polypeptide->set_attribute("description", $descr);
 
-
+	#### Sequence
         if ($out_fields{bioseq}) {
 	    my $bioseq = $object_entry->SQs->seq;
 	    $polypeptide->set_attribute("bioseq", $bioseq);
@@ -539,12 +564,27 @@ sub ParseSwissprot {
 	}
 
 	my $pp_id = $polypeptide->get_id();
+
+	#### Taxids
+	my @taxid_objects = $object_entry->OXs->{NCBI_TaxID}->elements();
+	my @taxids = ();
+	foreach my $taxid_object (@taxid_objects) {
+	    my $taxid = $taxid_object->toText();
+	    push @taxids, $taxid;
+	    $polypeptide->push_attribute("taxids", $taxid);
+	}
+	warn "; \tTaxids\t", join ("; ", @taxids), "\n" if ($verbose >= 3);
+
+
+	#### EC numbers
 	foreach my $ec (@ECs) {
 #	    my $catalysis = $catalyses->new_object(source=>      $source,
 #						   catalyst=>    $pp_id,
 #						   catalyzed=>   $ec);
 	    $polypeptide->push_attribute("ECs",$ec);
 	}
+
+	#### Organisms
 	foreach my $organism (@organisms) {
 	    $polypeptide->push_attribute("organisms",$organism);
 	}
