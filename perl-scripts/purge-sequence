@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence,v 1.16 2002/01/18 11:43:35 jvanheld Exp $
+# $Id: purge-sequence,v 1.17 2002/03/29 00:46:10 jvanheld Exp $
 #
-# Time-stamp: <2002-01-18 12:42:57 jvanheld>
+# Time-stamp: <2002-03-29 01:44:10 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -35,6 +35,18 @@ $in_format = "fasta";
 
 $dir{execution} = `pwd`;
 chomp $dir{execution};
+
+if ($outputfile) {
+    $basename{out} = `basename ${outputfile}`;
+    $dirname{out} = `dirname ${outputfile}`;
+    chomp $dirname{out};
+    chdir $dirname{out};
+    $dir{output} = `pwd`;
+    chomp($dir{output});
+}
+
+chdir($dir{execution});
+
 if ($inputfile) {
     $basename = `basename ${inputfile}`;
     chomp $basename;
@@ -47,6 +59,7 @@ if ($inputfile) {
     $dirname = ".";
     $basename = $start_time;
 }
+
 
 
 #### create a temp file to filter out non-conform lines 
@@ -89,7 +102,7 @@ $vmatch_options .= " | grep -v '# args=' ";
 #$vmatch_options .= " | awk '\$1 ~ \"\>\" {print \$1 \"_\" \$2 \"_\" (\$2+\$3-1)}; \$1 !~ \"\>\" {print}'";
 $vmatch_options .= " | perl -pe 's| (\\d+) |_\$1_|'";
 
-$vmatch_options .= "> $outputfile" if ($outputfile);
+$vmatch_options .= "> $dir{output}/$basename{out}" if ($outputfile);
 &doit("cd $TMP ; $skdir/vmatch $vmatch_options");
 foreach $ext  (@extensions) {
     &doit("rm -f ${TMP}/${tmp_file}.${ext}");
