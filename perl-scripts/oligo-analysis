@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.38 2002/03/06 06:04:02 jvanheld Exp $
+# $Id: oligo-analysis,v 1.39 2002/03/06 18:51:16 jvanheld Exp $
 #
-# Time-stamp: <2002-03-06 06:58:38 jvanheld>
+# Time-stamp: <2002-03-06 19:49:38 jvanheld>
 #
 ############################################################
 
@@ -56,7 +56,11 @@ if (@output_fields == ()) { #default output is occurrence numbers
     $return{'exp_freq'} = 1;
 }
 
+#### conditions which require the calculateion of the overlap coefficient
 if ($return{'zscore'} && !($noov)) {
+    $return{'ovlp'} = 1;
+}
+if ($return{'mseq'} && $return{'proba'} && !($noov)) {
     $return{'ovlp'} = 1;
 }
 
@@ -179,8 +183,8 @@ $out = &OpenOutputFile($outputfile);
 &OccurrenceThreshold() if ($occurrence_threshold > 0);
 &MatchingSeqThreshold() if ($mseq_threshold > 0); 
 &NbPossibleOligo();
-&CalcExpected() if ($return{'exp_freq'});
 &CalcOverlapCoefficient() if ($return{'ovlp'});
+&CalcExpected() if ($return{'exp_freq'});
 &CalcZscore() if ($return{'zscore'});
 &CalcLikelihood() if ($return{'like'});
 &CalcRatio() if ($return{'ratio'});
@@ -816,6 +820,10 @@ sub CalcExpected {
 	    $pos_per_seq *=2 if ($sum_strands);
 	    $one_seq_match_proba =  1 - (1-$patterns{$pattern_seq}->{exp_freq})**$pos_per_seq;
 	    $patterns{$pattern_seq}->{exp_ms} =  $one_seq_match_proba*$sequence_number;
+
+	    $one_seq_match_proba =  1 - (1-$patterns{$pattern_seq}->{exp_freq}/$patterns{$pattern_seq}->{ovlp})**$pos_per_seq;
+	    $patterns{$pattern_seq}->{ems_cor} =  $one_seq_match_proba*$sequence_number;
+
 	}
     }	
     
@@ -824,6 +832,7 @@ sub CalcExpected {
 
 #### calculate overlap coefficient
 sub CalcOverlapCoefficient {
+#    die "HELLO";
     foreach $pattern_seq (keys %patterns) {
 	$patterns{$pattern_seq}->{ovlp} = &OverlapCoeff($pattern_seq, %residue_proba);
     }
@@ -1217,6 +1226,7 @@ sub PrintResult {
 	    print $out "\t", $patterns{$pattern_seq}->{mseq};
 	    if ($return{'proba'}) {
 		printf $out "\t%.2f", $patterns{$pattern_seq}->{exp_ms};
+		printf $out "\t%.2f", $patterns{$pattern_seq}->{ems_cor};
 		if ($patterns{$pattern_seq}->{ms_pro} >= 0.0001) {
 		    printf $out "\t%.5f", $patterns{$pattern_seq}->{ms_pro};     
 		} else {
@@ -1286,6 +1296,7 @@ sub PrintHeaderLine {
     $col_description{"ratio"} = "observed/expected ratio"; 
     $col_description{"ms"} = "number of matching sequences";
     $col_description{"exp_ms"} = "expected number of matching sequences";
+    $col_description{"ems_cor"} = "expected number of matching sequences, corrected for autocorrelation (Poisson approx)";
     $col_description{"ms_prb"} = "matching sequence probability (binomial)";
     $col_description{"ms_sig"} = "matching sequenc significance (binomial)";
     $col_description{"ms_freq"} = "observed matching sequence frequency"; 
@@ -1336,6 +1347,7 @@ sub PrintHeaderLine {
 	push(@out_col,"ms");
 	if ($return{'proba'}) {
 	    push(@out_col,"exp_ms");
+	    push(@out_col,"ems_cor");
 	    push(@out_col,"ms_prb");
 	    push(@out_col,"ms_sig");
 	}
@@ -2028,12 +2040,16 @@ PROBABILITIES
 	
 
     EXPECTED NUMBER OF MATCHING SEQUENCES
-	             n
-	   Exp_ms = SUM (1 - (1 - p)^T)
-	            j=1
+	             
+	   Exp_ms = n (1 - (1 - p)^T)
 	
 	with the same abbreviations as above
 	
+	Correction for autocorrelation (from Mireille Regnier)
+		Exp_ms_corrected = n (1 - (1 - p/a)^T)
+	   Where 
+		 a is the coefficient of autocorrelation
+		
     
     PROBABILITY OF THE OBSERVED NUMBER OF OCCURRENCES (BINOMIAL)
 	
