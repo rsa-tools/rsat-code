@@ -1,16 +1,16 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: binomial-series,v 1.4 2001/06/29 18:37:00 jvanheld Exp $
+# $Id: binomial-series,v 1.5 2001/07/05 18:23:46 jvanheld Exp $
 #
-# Time-stamp: <2001-06-29 20:36:58 jvanheld>
+# Time-stamp: <2001-07-05 20:20:57 jvanheld>
 #
 ############################################################
 #use strict;;
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
+require "RSA.lib";
 
 
 #### initialise parameters ####
@@ -42,8 +42,10 @@ $out = &OpenOutputFile($outfile{output});
 #### header
 print $out (join("\t", "; s", 
 		 "binomial    ",
+		 "binomial_soe",
 		 "binomial_boe",
 		 "poisson     ",
+		 "poisson_soe ",
 		 "poisson_boe ",
 		 "large_dev_est")
 	    ,"\n");
@@ -51,26 +53,24 @@ print $out (join("\t", "; s",
 #### result
 for ($s = $min_successes; $s <= $max_successes; $s += $step) {
     $expected_successes = $proba*$trials;
-    #$bin = `binomial -p $proba -r $trials -s $s`;
     $bin = &binomial($proba,$trials,$s);
-    #$bin_boe = `binomial -p $proba -r $trials -s $s -boe`;
+    $bin_soe = &sum_of_binomials($proba,$trials,0,$s);
     $bin_boe = &binomial_boe($proba,$trials,$s);
-    #$poisson = `poisson -p $proba -r $trials -s $s`;
     $poisson = &poisson($s, $expected_successes);
-    #$poisson_boe = `poisson -p $proba -r $trials -s $s -boe`;
-    $poisson_boe = &sum_of_poissons($s, $expected_successes, "boe");
-    #$bin_approx = `binomial -p $proba -r $trials -s $s -approx`;
+    $poisson_soe = &sum_of_poisson($expected_successes,0,$s,);
+    $poisson_boe = &sum_of_poisson($expected_successes,$s,$trials);
     $bin_approx = &binomial_approx($proba,$trials,$s);
-#    $bin =~ s/\n//;
-#    $bin_boe =~ s/\n//;
-#    $poisson =~ s/\n//;
-    $poisson_boe =~ s/\n//;
-#    $bin_approx =~ s/\n//;
+
     print $out "$s";
     if (&IsReal($bin)) {
 	printf $out "\t%e",  $bin;
     } else {
 	print $out "\t",  $bin;
+    }
+    if (&IsReal($bin_soe)) {
+	printf $out "\t%e",  $bin_soe;
+    } else {
+	print $out "\t",  $bin_soe;
     }
     if (&IsReal($bin_boe)) {
 	printf $out "\t%e",  $bin_boe;
@@ -81,6 +81,11 @@ for ($s = $min_successes; $s <= $max_successes; $s += $step) {
 	printf $out "\t%e",  $poisson;
     } else {
 	print $out "\t",  $poisson;
+    }
+    if (&IsReal($poisson_soe)) {
+	printf $out "\t%e",  $poisson_soe;
+    } else {
+	print $out "\t",  $poisson_soe;
     }
     if (&IsReal($poisson_boe)) {
 	printf $out "\t%e",  $poisson_boe;
