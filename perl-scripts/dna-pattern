@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dna-pattern,v 1.27 2004/01/30 17:05:33 jvanheld Exp $
+# $Id: dna-pattern,v 1.28 2004/02/01 01:58:27 jvanheld Exp $
 #
 # Time-stamp: <2003-08-13 12:16:03 jvanheld>
 #
@@ -12,15 +12,11 @@ if ($0 =~ /([^(\/)]+)$/) {
 require "RSA.lib";
 require "RSA.classes";
 
-# for more info type:
-#            dna-pattern -help
-#
-# help content at the end of this file
-
 $start_date = &AlphaDate();
 
 #### init variables ####
-$threshold = 1.0e-12; #### this is a tricky way to circumvent a Perl floating-point imprecision 
+@matches = (); ## Empty match list before analyzing the next sequence
+$merge_matches = 0;
 $pattern_score = 1;
 $noid = 0;
 $strands_to_search = "DR";
@@ -151,9 +147,7 @@ $out = &OpenOutputFile($outputfile);
 ### read input sequences
 while ((($current_seq, $sequence_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir)) &&
        (($current_seq) || ($sequence_id))) {
-    
     push @sequence_ids, $sequence_id;
-
 
     #### remove tabs and blank spaces ####    
     $current_seq = &FoldSequence($current_seq, 0);
@@ -226,6 +220,12 @@ while ((($current_seq, $sequence_id, @comments) = &ReadNextSequence($in, $in_for
 	    }
 	}
     }
+
+    if ($merge_matches) {
+	my @merged_matches = &MergeMatches(@matches);
+	&PrintMatchLocations(@merged_matches);
+	@matches = ()
+    }
 }
 
 &MatchProfiles() if ($return{match_profiles});
@@ -265,41 +265,59 @@ sub RegExpSearch {
 	    (($pat_hash{$a} == $pat_hash{$b}) and
 	     (lc($a) cmp lc($b)))
 	    } keys %pat_hash;
-    foreach my $reg_pat (@keys) {
+    foreach my $regular_pattern (@keys) {
 	my $seq_to_crop = $current_seq;
-	while ($seq_to_crop =~ /($reg_pat)(.*)/i) {
+	while ($seq_to_crop =~ /($regular_pattern)(.*)/i) {
 	    $match_count++;
 	    if ($strand eq "DR") {
 		$match_count++;
 	    }
-	    $matching_word = $1;
-	    $matching_word_length = length($matching_word);
+	    $matching_seq = $1;
+	    $matching_seq_length = length($matching_seq);
 	    $remaining_seq = $2;
-	    $offset = $matching_word_length + length($remaining_seq)-1;
+	    $offset = $matching_seq_length + length($remaining_seq)-1;
+	    $up_flank = "";
+	    $down_flank = "";
 	    if ($return{match_positions}) {
 		if ($strand eq "R") {
-		    $matching_word = &ReverseComplement($matching_word);
-		    $up_neighborhood = $right_neighborhood;
-		    $down_neighborhood = $left_neighborhood;
+#		    $matching_seq = &ReverseComplement($matching_seq);
+		    $up_flanking = $right_flanking;
+		    $down_flanking = $left_flanking;
 		} else {
-		    $up_neighborhood = $left_neighborhood;
-		    $down_neighborhood = $right_neighborhood;
+		    $up_flanking = $left_flanking;
+		    $down_flanking = $right_flanking;
 		}
-		if (($left_neighborhood) || ($right_neighborhood)){
-		    $up_neighb = substr($current_seq,-$offset-$up_neighborhood-1,$up_neighborhood);
-		    $down_neighb = substr($current_seq,-$offset+$matching_word_length-1,$down_neighborhood);
-		    if ($strand eq "R") {
-			$up_neighb = &ReverseComplement($up_neighb);
-			$down_neighb = &ReverseComplement($down_neighb);
-			$matching_word = lc($down_neighb).uc($matching_word).lc($up_neighb);
-		    } else {
-			$matching_word = lc($up_neighb).uc($matching_word).lc($down_neighb);
-		    }
+		if (($left_flanking) || ($right_flanking)){
+		    $up_flank = substr($current_seq,-$offset-$up_flanking-1,$up_flanking);
+		    $down_flank = substr($current_seq,-$offset+$matching_seq_length-1,$down_flanking);
+		    
+#		    if ($strand eq "R") {
+#			$up_flank = &ReverseComplement($up_flank);
+#			$down_flank = &ReverseComplement($down_flank);
+#			$matching_seq = lc($down_flank).uc($matching_seq).lc($up_flank);
+#		    } else {
+#			$matching_seq = lc($up_flank).uc($matching_seq).lc($down_flank);
+#		    }
+		    
 		}
 		$start_pos = $sequence_length - $offset - $orig_pos;
-		$end_pos = $start_pos + $matching_word_length - 1;
-		$mismatches = $pat_hash{$reg_pat};
-		&PrintMatchLocation();
+		$end_pos = $start_pos + $matching_seq_length - 1;
+		$mismatches = $pat_hash{$regular_pattern};
+		
+		my $match = new RSA::match();
+		$match->set_attribute("type", "regexp");
+		$match->set_attribute("pattern_id", $pattern->get_attribute("id"));
+		$match->set_attribute("pattern_seq", $pattern->get_attribute("sequence"));
+		$match->set_attribute("expression", $regular_pattern);
+		$match->set_attribute("sequence_id", $sequence_id);
+		$match->set_attribute("start_pos", $start_pos);
+		$match->set_attribute("end_pos", $end_pos);
+		$match->set_attribute("strand", $strand);
+		$match->set_attribute("matching_seq", $matching_seq);
+		$match->set_attribute("up_flank", $up_flank);
+		$match->set_attribute("down_flank", $down_flank);
+		$match->set_attribute("mismatches", $mismatches);
+		&TreatMatch($match);
 	    }
 	    if ($no_overlap) {
 		$seq_to_crop = $remaining_seq;
@@ -325,7 +343,7 @@ sub IUPACsearch {
     $pattern_len = length($IUPAC_pattern);
     
     do {
-	($match_pos,$matching_word,$mismatches) = &NextMatch($current_seq, $IUPAC_pattern, $allowed_subst, $offset);
+	($match_pos,$matching_seq,$mismatches) = &NextMatch($current_seq, $IUPAC_pattern, $allowed_subst, $offset);
 	unless ($match_pos == -1) {
 	    $match_count++;
 	    if ($strand eq "DR") {
@@ -334,64 +352,242 @@ sub IUPACsearch {
 	    
 	    unless ($return{match_counts}) {
 		if ($strand eq "R") {
-		    $matching_word = &ReverseComplement($matching_word);
+		    $matching_seq = &ReverseComplement($matching_seq);
 		} 
 		$start_pos = $match_pos -$orig_pos;
 		$end_pos = $start_pos + $pattern_len -1;
-		&PrintMatchLocation();
+		
+		my $match = new RSA::match();
+		$match->set_attribute("pattern_id", $pattern->get_attribute("id"));	
+		$match->set_attribute("pattern_seq", $pattern->get_attribute("sequence"));
+		$match->set_attribute("expression", $IUPAC_pattern);
+		$match->set_attribute("type", "IPUAC");
+		$match->set_attribute("sequence_id", $sequence_id);
+		$match->set_attribute("start_pos", $start_pos);
+		$match->set_attribute("end_pos", $end_pos);
+		$match->set_attribute("strand", $strand);
+		$match->set_attribute("mismatches", $mismatches);
+		$match->set_attribute("matching_seq", $matching_seq);
+		&TreatMatch($match);
 	    }
 	    if ($no_overlap) {
 		$offset = $match_pos + $pattern_len;
 	    } else {
 		$offset = $match_pos;
 	    }
-	} ###unless
+	} 
     } until ($match_pos == -1);
 } # IUPACsearch
 
 
 ################################################################
-# Print a single match location
-sub PrintMatchLocation {
+## Treat a new match: either print it or store it if merge option has
+## been activated
+sub TreatMatch {
+    my ($match) = @_;
+
+
+    ################################################################
+    ## Calculate match score
     if (($search_method eq "sliding window") ||
 	($score_column > 0)) {
 	$score = $pattern->get_attribute("score");
     } else {
-	$match_length = length($matching_word);
+	$match_length = length($matching_seq);
 	$score = ($match_length - $mismatches)/$match_length;
     }
+    $match->set_attribute("score", $score);
 
-    return if ($score < $threshold);
+    return if ((defined($threshold)) && ($score < $threshold));
+
+
+    ################################################################
+    ## Store or print depending on the merge option
+    if ($merge_matches) {
+	warn join ("\t", 
+		   "Storing new match", 
+		   $match->get_attribute("sequence_id"), 
+		   $match->get_attribute("pattern_id"), 
+		   $match->get_attribute("strand"), 
+		   $match->get_attribute("start_pos"), 
+		   $match->get_attribute("end_pos"), 
+		   $match->get_attribute("matching_seq"), 
+		   $score, 
+		   ), "\n" if ($main::verbose >= 5);
+	push @matches, $match;
+    } else {
+	&PrintMatchLocation($match);
+    }
+    
+}
+
+################################################################
+## Merge overlapping matches
+sub MergeMatches {
+    my (@matches) = @_;
+    my @merged_matches = ();
+
+    warn join "\t", "Merging matches", @matches, "\n" if ($main::verbose >= 5);
+
+    ## Check that there are at least two patterns
+    unless (scalar(@matches) >= 2) {
+	return @matches;
+    }
+    
+    ## index starting positions
+    my %start = ();
+    foreach my $match (@matches) {
+	$start{$match} = $match->get_attribute("start_pos");
+    }
+
+    ## Sort matches according to the start position
+    @matches = sort {$start{$a} <=> $start{$b}} @matches;
+    my $last_match = $matches[0];
+    for my $m (1..$#matches) {
+	$current_match = $matches[$m];
+	if ($current_match->get_attribute("start_pos") <= $last_match->get_attribute("end_pos")) {
+	    warn join( "\t", "Merging", 
+		       "last",
+		       $last_match->get_attribute("matching_seq"),
+		       $last_match->get_attribute("start_pos"),
+		       $last_match->get_attribute("end_pos"),
+		       "current",
+		       $current_match->get_attribute("matching_seq"),
+		       $current_match->get_attribute("start_pos"),
+		       $current_match->get_attribute("end_pos"),
+		       ), "\n" if ($main::verbose >= 0);
+
+	    ## Set the ID to "merged"
+	    $last_match->set_attribute("pattern_id", "merged");
+	    $last_match->set_attribute("pattern_seq", "merged");
+	    
+	    ## merged score is the maximum score
+	    $last_match->set_attribute("score", &max($last_match->get_attribute("score"),
+						     $current_match->get_attribute("score")));
+	    
+	    ## Merged strand is the sum of last and current strands
+	    unless ($last_match->get_attribute("strand") eq 
+		    $current_match->get_attribute("strand")) {
+		$last_match->set_attribute("strand", "DR");
+	    }
+	    
+	    ## calculate negative offset to take the end of the sequence
+	    my $offset = $last_match->get_attribute("end_pos") 
+		- $current_match->get_attribute("end_pos");
+
+	    ## If right match extends wider than left match, extend left match
+	    if ($offset < 0) {
+		
+		my $extension = substr($current_match->get_attribute("matching_seq"), $offset);
+		
+		## extend the sequence
+		my $merged_sequence = $last_match->get_attribute("matching_seq");
+		$merged_sequence .= $extension;
+		warn join( "\t", 
+			   "offset", 
+			   $offset, 
+			   "last",
+			   $last_match->get_attribute("matching_seq"), 
+			   $last_match->get_attribute("start_pos"), 
+			   $last_match->get_attribute("end_pos"), 
+			   "current",
+			   $current_match->get_attribute("matching_seq"), 
+			   $current_match->get_attribute("start_pos"), 
+			   $current_match->get_attribute("end_pos"), 
+			   $offset, 
+			   $extension, 
+			   $merged_sequence), "\n";
+		$last_match->set_attribute("matching_seq", $merged_sequence);
+
+		## position
+		$last_match->set_attribute("end_pos",$current_match->get_attribute("end_pos"));
+		
+		## downstream flank
+		$last_match->set_attribute("down_flank",$current_match->get_attribute("down_flank"));
+		
+	    }
+	    warn join( "\t", "Merged match", 
+		       $last_match,
+		       $last_match->get_attribute("matching_seq"),
+		       $last_match->get_attribute("start_pos"),
+		       $last_match->get_attribute("end_pos")),"\n" if ($main::verbose >= 0);
+	} else {
+	    push @merged_matches, $last_match;
+	    $last_match = $current_match;
+	}
+    }
+    push @merged_matches, $last_match;
+    
+    return @merged_matches;
+}
+
+
+################################################################
+## Print a list of matches
+sub PrintMatchLocations {
+    my @matches = @_;
+    foreach my $match (@matches) {
+	&PrintMatchLocation($match);
+    }
+}
+
+################################################################
+# Print a single match location
+sub PrintMatchLocation {
+    my ($match) = @_;
+    my $matching_seq = uc($match->get_attribute("matching_seq"));
+    my $strand = $match->get_attribute("strand");
+    
+    if ($match->get_attribute("type") eq "regexp") {
+	my $up_flank = $match->get_attribute("up_flank");
+	my $down_flank = $match->get_attribute("down_flank");
+	if ($strand eq "R") {
+	    $matching_seq = &SmartRC($matching_seq);
+	    $right_flank = &ReverseComplement($down_flank);
+	    $left_flank = &ReverseComplement($up_flank);
+	} else {
+	    $right_flank = $up_flank;
+	    $left_flank = $down_flank;
+	}
+	
+	## Append flanking
+	$matching_seq = join ("", lc($right_flank),
+			       uc($matching_seq),
+			       lc($left_flank),
+			       );
+    }
 
     if ($match_format eq "fasta") {
 	#### fasta identifier line
 	print $out ">";
 	print $out join ("_", 
-			 $sequence_id,
-			 $strand,
-			 $start_pos,
-			 $end_pos,
-			 $pattern->get_attribute("id")
+			 $match->get_attribute("sequence_id"),
+			 $match->get_attribute("strand"),
+			 $match->get_attribute("start_pos"),
+			 $match->get_attribute("end_pos"),
+			 $match->get_attribute("pattern_id"),
 			 );
 	printf $out (" score: %.2f", $score);
 	print $out " pattern: ", $pattern->get_attribute("sequence");
 	print $out "\n";
-	print $out $matching_word, "\n";
+	print $out $matching_seq, "\n";
     } else {
 	print $out join ("\t", 
-			 $pattern->get_attribute("id"),
-			 $strand,
-			 $pattern->get_attribute("sequence"),
-			 $sequence_id,
-			 $start_pos,
-			 $end_pos,
-			 $matching_word,
-			 sprintf ("%.2f", $score)), "\n";
+			 $match->get_attribute("pattern_id"),
+			 $match->get_attribute("strand"),
+			 $match->get_attribute("pattern_seq"),
+			 $match->get_attribute("sequence_id"),
+			 $match->get_attribute("start_pos"),
+			 $match->get_attribute("end_pos"),
+			 $matching_seq,
+			 sprintf ("%.2f", $match->get_attribute("score")),
+			 ), "\n";
     }
 }
 
 
-
+################################################################
+## Option list
 sub ShortHelp	{
     open HELP, "|more";
     print HELP <<EndShortHelp;
@@ -424,6 +620,7 @@ dna-pattern options
 -top		only return the top score
 -sort		sort sequences according to their top score
 -th		threshold
+-merge		merge mutually overlapping matches
 -ct		return total count in all sequences
 -N #		return matching sequences with # flanking nucleotides
 -NL #		return matching sequences with # left flanking nucleotides
@@ -536,6 +733,10 @@ sub ReadArguments {
 		&FatalError("Threshold must have a real value");
 	    }
 
+	    #### merge matches
+	} elsif ($ARGV[$a] eq "-merge") {
+	    $merge_matches = 1;
+	    
 	    #### no overlap
 	} elsif ($ARGV[$a] eq "-noov") {
 	    $no_overlap = 1;
@@ -608,14 +809,14 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-sort") {
 	    $sort = 1;
 
-	    #### neighborhood (return flanking residues)
+	    #### flanking (return flanking residues)
 	} elsif (($ARGV[$a] eq "-N") && (&IsNatural($ARGV[$a+1]))) {
-	    $left_neighborhood = $ARGV[$a+1];
-	    $right_neighborhood = $ARGV[$a+1];
+	    $left_flanking = $ARGV[$a+1];
+	    $right_flanking = $ARGV[$a+1];
 	} elsif (($ARGV[$a] eq "-NL") && (&IsNatural($ARGV[$a+1]))) {
-	    $left_neighborhood = $ARGV[$a+1];
+	    $left_flanking = $ARGV[$a+1];
 	} elsif (($ARGV[$a] eq "-NR") && (&IsNatural($ARGV[$a+1]))) {
-	    $right_neighborhood = $ARGV[$a+1];
+	    $right_flanking = $ARGV[$a+1];
 	    
 	}
     }
@@ -671,7 +872,7 @@ sub SlidingWindowSearch {
 	    $pattern->set_attribute("score", $score_sum);
 	    $end_pos = $pos - $orig_pos + $pattern_length ;
 	    $start_pos = $pos - $orig_pos - $sliding_window_size +2;
-	    $matching_word = substr($current_seq, $start_pos, $sliding_window_size + $pattern_length - 1);
+	    $matching_seq = substr($current_seq, $start_pos, $sliding_window_size + $pattern_length - 1);
 	    &PrintMatchLocation() if ($return{match_positions});
 	    $profile_score{$sequence_id}{$start_pos} = $score_sum if ($return{match_profiles});
 #	    die $profile_score{$sequence_id}{$start_pos};
@@ -768,7 +969,7 @@ sub Verbose {
 			     "SeqID",
 			     "Start",
 			     "End",
-			     "Matching_word",
+			     "matching_seq",
 			     "Score"), "\n";
 	}
     }
@@ -939,12 +1140,12 @@ USAGE
 	(directly enter the sequence to search)
 	dna-pattern  -i sequencefile -format seq_format -p pattern [-id identifier] 
 			[-D|-R|-DR] [-c|-ct] [-noov]
-			[-N neighborhood] [-v]
+			[-N flanking] [-v]
 
 	(read a list of patterns from a file)
 	dna-pattern -i sequencefile -format seq_format -pl pattern_file 
    			[-D|-R|-DR] [-c|-ct]  [-noov] 
-   			[-N neighborhood] [-v]
+   			[-N flanking] [-v]
 
 ARGUMENTS
 	-h	help (displays the current message)
@@ -1011,6 +1212,10 @@ ARGUMENTS
         -th #   Threshold. 
                 Return match count only for sequences with >= # matches.
                 Only valid in combination with -c.
+	-merge  merge mutually overlapping matches. When succesive
+		matches overlap, they are converted into a single
+		match. The merged match takes the ID "merged". The
+		score is the highest score of the matching patterns.
 	-ct	same as c, except that it returns the sum of matches in all 
 		the files of the sequence file list, instead of the count 
 		within each separate file. 
