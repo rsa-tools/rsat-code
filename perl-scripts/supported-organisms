@@ -7,63 +7,99 @@ require "RSA.lib";
 
 $out_format = "text";
 
-@formats = qw (html_list html_table array text keys names sizes full);
+@formats = qw (html_list html_table array text keys names sizes full tree);
 foreach $f (@formats) {
     $supported_format{$f} = 1;
 }
 $formats = join ",", @formats;
 
-&ReadArguments;
+&ReadArguments();
 
-print &ListSupportedOrganisms($out_format);
-
+if ($out_format eq "tree") {
+    &SupportedOrganismTree();
+} else {
+    print &ListSupportedOrganisms($out_format);
+}
 
 exit(0);
 
-# sub ListSupportedOrganisms {
-#   ### usage : &ListSupportedOrganisms($format);
-#   ### $supp =  &ListSupportedOrganisms("text");
-#   ### $supp =  &ListSupportedOrganisms("html_list");
-#   ### $supp =  &ListSupportedOrganisms("html_table");
-#   ### @names =  &ListSupportedOrganisms("array");
-#   my ($out_format) = @_;
+################################################################
+##################### SUBROUTINE DEFINITION ####################
+################################################################
 
-#   if ($out_format eq "html_list") {
-#     my $result = "<UL>\n";
-#     foreach my $organism_name (sort keys %supported_organism) {
-#       $result .= "<LI>";
-#       $result .= $supported_organism{$organism_name}->{name};
-#       $result .= "\n";
-#     }
-#     $result .= "</UL>\n";
-#     return $result;
-#   } elsif ($out_format eq "html_table") {
-#     my $result = "<TABLE>\n";
-#     foreach my $organism_name (sort keys %supported_organism) {
-#       $result .= "<TR>\n";
-#       $result .= "<TD>$organism_name</TD>\n";
-#       $result .= "<TD>";
-#       $result .= $supported_organism{$organism_name}->{name};
-#       $result .= "</TD>\n";
-#       $result .= "</TR>\n";
-#     }
-#     $result .= "</TABLE>\n";
-#     return $result;
-#   } elsif ($out_format eq "array") {
-#     my @result = ();
-#     foreach my $organism_name (sort keys %supported_organism) {
-#       push @result, $supported_organism{$organism_name}->{name};
-#     }
-#     return @result;
-#   }else {
-#     return $supported_organisms; 
-#   }
-# }
+################################################################
+##  Export the taxonomy of supported organisms in a tree (nexus)
+##  format
+sub SupportedOrganismTree {
+    use Bio::TreeIO;
 
-########################## subroutine definition ############################
+    my %nodes = (); # node index
 
+    ## Create a tree with the taxonomy
+    my $tree = new Bio::Tree::Tree();
+
+    ## Initiate the root of the taxonomy
+    my $root_node = new Bio::Tree::Node(-id=>"organism", -description=>"organism");
+    $nodes{organism} = $root_node;
+    $tree->set_root_node($root_node);
+
+    ## Iterate over all supported organisms
+    my $org_counter = 0;
+    foreach my $org (keys %supported_organism) {
+	$org_counter++;
+#	last if ($org_counter > 2);
+
+	my $org_node = new Bio::Tree::Node(-id=>$org, -description=>$org);
+	$nodes{$org} = $org_node; # index the new node
+	my $taxonomy = $supported_organism{$org}->{taxonomy};
+	$taxonomy =~ s|/|_|g; ## / are reserved in phylip format
+	my @taxonomy = split /\s*;\s*/, $taxonomy;
+
+	warn join ("\t", ";", $org_counter, $org, $taxonomy), "\n" if ($main::verbose >= 3);
+	
+	## Initiate child to the level of the organism
+	my $child = $org;
+	$child_node = $org_node; 
+	
+	## traverse the taxonomy bottom->up
+	for my $tr (0..$#taxonomy) {
+	    my $t = $#taxonomy -$tr;
+	    my $parent = $taxonomy[$t];
+	    if (defined $nodes{$parent}) {
+		$nodes{$parent}->add_Descendent($child_node);
+		warn join("\t", ";\t", "parent found", $t, $parent, $nodes{$parent}), "\n" if ($main::verbose >= 4);
+		$child_node = $nodes{$parent};
+		last;
+	    } else {
+		$parent_node = new Bio::Tree::Node(-id=>$parent, -description=>$parent);
+		$nodes{$parent} = $parent_node;
+		$nodes{$parent}->add_Descendent($child_node);
+		warn join("\t", ";\t", 
+			  "new parent", $t, $parent, 
+#			  $nodes{$parent}, 
+			  "child", $child_node->id(), 
+#			  $child_node,
+			 ), "\n" if ($main::verbose >= 4);
+
+		$child_node = $nodes{$parent};
+
+
+		## Attach the top node to the root
+		if ($t == 0) {
+		    $root_node->add_Descendent($child_node);
+		}
+	    }
+	}
+#	$tree->add_Descendent($org_node);
+    }
+    
+    my $out_tree = new Bio::TreeIO(-format => 'newick');
+    $out_tree->write_tree($tree)
+}
+
+################################################################
+#### Display full help message
 sub PrintHelp {
-#### display full help message #####
   open HELP, "| more";
   print HELP <<End_of_help;
 NAME
@@ -92,8 +128,9 @@ End_of_help
   exit;
 }
 
+################################################################
+#### Display short help message #####
 sub PrintOptions {
-#### display short help message #####
   open HELP, "| more";
   print HELP <<End_short_help;
 template options
@@ -110,8 +147,9 @@ End_short_help
 }
 
 
+################################################################
+#### Read arguments 
 sub ReadArguments {
-#### read arguments ####
     foreach my $a (0..$#ARGV) {
 	### verbose ###
 	if ($ARGV[$a] eq "-v") {
@@ -139,3 +177,4 @@ sub ReadArguments {
 	}
     }
 }
+
