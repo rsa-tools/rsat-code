@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: mirror.mk,v 1.15 2005/01/27 15:15:01 jvanheld Exp $
+# $Id: mirror.mk,v 1.16 2005/01/27 15:26:32 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 12:05:45 jvanheld>
 #
@@ -106,14 +106,20 @@ EXCLUDED_GENOMES=				\
 		--exclude Rattus_norvegicus	\
 		--exclude Homo_sapiens*
 
-EXCLUDED=${EXCLUDED_GENOMES}			\
+EXCLUDED_FILES=					\
 		--exclude '*.wc'		\
 		--exclude '*.wc.gz'		\
+		--exclude '*.fasta'		\
+		--exclude '*.fasta.gz'
+
+EXCLUDED_DIRS=					\
 		--exclude embl_genomes		\
 		--exclude previous_version	\
 		--exclude tmp			\
 		--exclude upstream_calibrations	\
 		--exclude comparative_genomics
+
+EXCLUDED=${EXCLUDED_GENOMES} ${EXCLUDED_DIRS} ${EXCLUDED_FILES}
 data_from_server:
 	${RSYNC} ${EXCLUDED}							\
 		${RSA_LOGIN}@${RSA_SERVER}:${RSA_SERVER_DIR}/public_html/data/*	\
