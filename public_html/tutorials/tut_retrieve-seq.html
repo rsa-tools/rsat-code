@@ -43,13 +43,38 @@ PHO81
 Pho84
 </PRE>
 
-<p><li>Inactivate the option <b>Prevent overlap with upstream
-ORFs</b>.
+<!--<p><li>Inactivate the option <b>Prevent overlap with upstream
+ORFs</b>.-->
 
 <p><li>Leave all other options unchanged and click on the button
 <b>GO</b>
 
 </OL>
+
+<p>
+After a few seconds, the result is displayed, in the form of a link to
+the sequences, followed by a series of Buttons.
+
+<P>
+Click on the link, to see the upstream sequence of the selected
+genes. Check the sizes of the sequences obtained. Click on the
+<b>Back</b> button to come back to the previous result page. 
+
+<p>The reason why sequences are not directly displayed is that users
+usually don't need to see them, since they are retrieved for
+subsequent analysis with other tools. The <i><b>server</b></i> option
+in the previous form specified that the sequence had to be stored on
+the server rather than transferred to your browser. This is
+particularly convenient to avoid transferring large amounts of data
+over the web when you are analyzing large sequence sets (e.g. several
+hundreds of genes).
+
+<p>
+Below the link, you can see a series of buttons, which
+will allow you to send the retrieved sequences to the next task (as we
+will see in the next tutorials). For the time being, do not click
+these buttons.
+
 
 <p><B>Remarks</B>
 <ul>
@@ -59,24 +84,15 @@ only the first word of each line is considered as a query.
 <li>Notice that gene names are case-insensitive. 
 
 <li>Genes can be specified either by the systematic ORF identifier or
-by a common name. Synonyms are supported.
+by a common name. Synonyms are supported: a gene can be associated to
+several names. For example, in <i>S.cerevisiae</i>, the ORF YFL021W is
+associated with the names GAT1, MEP80 and NIL1. The multipe names come
+from the fact that this gene was characterized in different
+laboratories independently, and people realized only later that they
+had isolated the same gene. The list of synonyms of each gene can be
+obtained with the tool <b>gene-information</b>.
+
 </ul>
-
-
-<p>
-After a few seconds, the result appears, in the form of a link to the
-sequences, followed by a series of Buttons. 
-
-<P>
-Click on the link, to see the upstream sequence of the selected
-genes. Check the sizes of the sequences obtained. Click on the
-<b>Back</b> button to come back to the previous result page.
-
-<p>
-Below the link, you can see a series of buttons, which
-will allow you to send the retrieved sequences to the next task (as we
-will see in the next tutorials). For the time being, do not click
-these buttons.
 
 
 </ul>
@@ -85,15 +101,14 @@ these buttons.
 
 <ol>
 <p><li>Come back to the <b>retrieve sequence</b> form. 
-<p><li>Perform the same operations as above, but this time, activate
+<p><li>Perform the same operations as above, but this time, inactivate
 the option <b>Prevent overlap with upstream ORFs</b>.
 <p><li>Compare the size of the sequences with the previous result. 
 </ol>
 
 </ul>
-<h3>Interpretation of the results</h3>
+<h4>Interpretation of the results</h4>
 <ul>
-
 
 <p>
 The default size for yeast upstream sequences is 800bp. The reason for
@@ -102,13 +117,12 @@ this choice is that 99% of the regulatory elements found in TRANSFAC
 relative to the start codon.
 
 <p>
-However, the median value for the distance between a gene and its
-upstream neighbour is 450 bp. Thus, with a distance of 800bp, most
-upstream regions would include a fragment of coding sequence from the
-upstream ORF, which might bias subsequent analyses.
+However, the median value for the distance between a yeast gene and
+its upstream neighbour is about 450 bp. Thus, with a distance of
+800bp, most upstream regions would include a fragment of coding
+sequence from the upstream ORF, which might bias subsequent analyses.
 
 <p>
-
 The situation is even worst in bacteria, due to the organization of
 genes into operons. In <i>Escherichia coli</i>, 25% of the genes have
 an upstream neighbour closer than 50bp. When this neighbour is on the
@@ -118,6 +132,7 @@ same operon.
 <p>
 It is thus usually preferible to prevent overlap with upstream ORFs. 
 
+<!--
 <p>A notable exception is the yeast <i>Saccharomyces
 cerevisiae</i>. We evaluated the results obtained when this option is
 activated and inactivated respectively, and it is clear that many
@@ -144,6 +159,7 @@ family, it is less likely for false ORFs to prevent detection of
 cis-acting elements. However, even in these cases, we noticed a loss
 in sensitivity when the option was activated.
 
+
 <p>
 <b>In summary</b>, we propose the following strategy :
 <ul>
@@ -159,7 +175,7 @@ shhould do some trials with some well characterized test cases
 (e.g. experimentally characterized regulons).
 
 </ul>
-
+-->
 
 </ul>
 <h3>Retrieving sequences for all the genes of a genome</h3>
@@ -195,8 +211,20 @@ label</B>
 
 </OL>
 
+<p>
+With the above parameters, you retrieved the 50bp located downstream
+of the stop codon, for each yeast gene. This sequence sets thus mostly
+contains the 3' untranslated region (UTR). In yeast, the 3' UTR is
+involved in various functions such as termination of transcription,
+RNA maturation (cleavage and poly-adenylation), mRNA stability, and
+translational efficiency. The analysis of these sequences allows to
+detect some signals involved in such functions (see <a
+href=http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=Retrieve&db=PubMed&list_uids=10648794&dopt=Abstract>van
+Helden, J., Olmo, M. & Perez-Ortin, J. E. (2000)</a> for an
+application).
+
 </ul>
-<h3>Remark about the reference position</H3>
+<h3>Reference position</H3>
 <ul>
 
 <p>
@@ -205,50 +233,75 @@ to be retrieved:
 <p>
 
 <ul>
+<p>
+<li>For <B>upstream sequences</B>:
 
-<li>For <B>upstream sequences</B>, the reference position is the ORF
-start, i.e. the first nucleotide of the start codon. Negative
-coordinates are used to indicate sequences located upstream the start
-codon, i.e. in the 5'end flank of the gene (e.g. from -1 to -800 for
-the yeast).
+<ul><pre>
+     UPSTREAM         ORF
+                    +--------> 
+                    |start
+--------------------------------
+...  T  C  A  A  G  A  T  G ...
+    -5 -4 -3 -2 -1  0  1  2
+</pre></ul>
 
-<li>On the contrary, when selecting <B>downstream sequences</B>, the
-reference position (position 0) is the ORF end, i.e. the last
-nucleotide of the stop codon. Positive coordinates are used to
-represent sequences located downstream the stop codon, i.e. the 3'end
-flank of the gene.
-
-</ul>
-
-</ul>
-<h3>Positive/negative coordinates</H3>
 <ul>
+<li>The reference position (coordinate 0) is the ORF start, i.e. the
+first nucleotide of the start codon.
+
+<li>The coordinate 0 corresponds to the first nucleotide of the coding
+sequences, i.e. the first letter of the start codon.
+
+<li>Negative coordinates are used to indicate sequences located
+upstream the start codon, i.e. in the 5'end flank of the gene
+(e.g. from -1 to -800 for the yeast).
+
+<li>Negative coordinates are indicate 5' non-coding flank of the gene,
+and positive coordinates the 5' side of the coding sequence.
+
+</ul>
+
+
 
 <p>
-Notice that selecting upstream sequences with positive coordinates
-amounts to pick coding sequences on the 5' side of the gene. So, for
-<b>upstream</b>sequences, the coordinate 0 corresponds to the first
-nucleotide of the coding sequences, i.e. the first lettter of the
-start codon.
+<li>On the contrary, when you select <B>downstream sequences</B>: 
 
-<ul>
-<li>As an exercise, try to extract all start codons for a given
-organism (say <i>Saccharomyces cerevisiae</i>). Check that the codons
-correspond to the expectation (ATG).
+<ul><pre>
+      ORF        DOWNSTREAM
+  ...------>
+        stop
+--------------------------------
+...  T  A  G  A  C  G  T ...
+    -2 -1  0  1  2  3  4
+</pre>
+
+<li>The reference point (coordinate 0) is the ORF end, i.e. the last
+letter of the stop codon.
+
+<li>Positive coordinates are used to specify sequences located
+downstream the stop codon, i.e. the (non-coding) 3'end flank of the gene.
+
+<li>Negative coordinates can be specified to retrieve the (coding) 3'
+side of the ORF.
+
+
 </ul>
+
+
+</ul>
+
+</ul>
+<h3>Exercises</H3>
+<ul>
+
+<ol>
+<li>On the basis of the above information, extract all start codons
+for a given organism (say <i>Saccharomyces cerevisiae</i>). Check that
+the codons correspond to the expectation (ATG).
 
 <p>
-Reciprocally, for downstream sequences, negative coordinates could be
-specified to retrieve coding sequences on the 3'end of the gene. The
-coordinate 0 corresponds to the last nucleotide of the coring
-sequence, i.e. the last letter of the stop codon.
-
-<ul>
-<li>
-As en exercise, try to extract all the stop codons for the same
-organism. Check that the stop codons correspond to the expectation
-(TAA, TAG or TGA).
-</ul>
+<li>Extract all the stop codons for the same organism. Check that the
+stop codons correspond to the expectation (TAA, TAG or TGA).  </ol>
 
 </ul>
 <p>

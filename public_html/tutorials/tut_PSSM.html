@@ -27,7 +27,7 @@ Position-specific scoring matrices
 <ul>
 
 Position-specific scoring matrices (PSSM) offer a sensitive way to
-represent the specificity of trnscription factor/DNA interfaces. PSSM
+represent the specificity of transcription factor/DNA interfaces. PSSM
 are built on the basis of a set of known binding sites for the factor
 of interest.  
 
@@ -67,18 +67,20 @@ two choices (e.g. G or T at position 8), and other position can
 contain any letter, but with different frequencies (e..g first and
 last position).
 
-<P>When the matrix will used to scan sequences for putative Pho4p
-binding sites, the more conserved positions will impose stronger
-constraints. This allows thus a more quantitative evaluation of the
-binding cappability than <a href=tut_strings.html>string-based
-representations</a>. 
+<P>When the matrix isused to scan sequences for putative Pho4p binding
+sites, the more conserved positions qimpose stronger constraints than
+those where any nucleotide can be found. This allows thus a more
+quantitative evaluation of the binding affinity than <a
+href=tut_strings.html>string-based representations</a>.
 
 <p>One weakness of these matrices is that they do not take into
 account higher order dependencie, i.e. influence between a residue and
 the successive ones. Thus, it is not possible to specify "either
 CACGTGGG or CACGTTTT" with a PSSM : if one builds a matrix where G and
 T are allowed at the 3 last positions, any combination of them will be
-allowed (e.g.  CACGTGTG, CACGTTGT).
+allowed (e.g.  CACGTGTG, CACGTTGT). Higher order dependencies can be
+represented with more elaborated methods, such as Hidden Markov Models
+(HMM), which are ou of scope for this tutorial.
 
 
 </ul>

@@ -29,7 +29,7 @@ $query = new CGI;
 &RSA_header("Random sequence result");
 
 #### update log file ####
-&UpdateLogFile;
+&UpdateLogFile();
 
 &ListParameters() if ($ECHO >= 2);
 
