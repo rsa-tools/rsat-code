@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gibbs.cgi,v 1.11 2004/02/29 23:31:32 jvanheld Exp $
+# $Id: gibbs.cgi,v 1.12 2004/06/10 04:42:45 jvanheld Exp $
 #
 # Time-stamp: <2003-05-13 11:30:48 jvanheld>
 #
@@ -117,8 +117,8 @@ exit(0);
 
 
 
+### prepare data for piping
 sub PipingForm {
-  ### prepare data for piping
   $title = $query->param('title');
   $title =~ s/\"/\'/g;
     print <<End_of_form;
@@ -136,6 +136,14 @@ sub PipingForm {
 <INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 <INPUT type="hidden" NAME="sequence_format" VALUE="$sequence_format">
 <INPUT type="submit" value="pattern matching (patser)">
+</FORM>
+</TD>
+<TD>
+<FORM METHOD="POST" ACTION="convert-matrix_form.cgi">
+<INPUT type="hidden" NAME="title" VALUE="$title">
+<INPUT type="hidden" NAME="matrix_file" VALUE="$result_file">
+<INPUT type="hidden" NAME="matrix_format" VALUE="gibbs">
+<INPUT type="submit" value="convert-matrix">
 </FORM>
 </TD>
 </TR>

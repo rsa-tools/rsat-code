@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: patser.cgi,v 1.21 2004/02/05 02:06:56 jvanheld Exp $
+# $Id: patser.cgi,v 1.22 2004/06/10 04:42:45 jvanheld Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -33,8 +33,7 @@ $convert_seq_command = "$SCRIPTS/convert-seq";
 $features_from_patser_cmd = "$SCRIPTS/features-from-patser -v 1";
 $add_orf_function_command = "$SCRIPTS/add-orf-function";
 $add_yeast_link_command = "$SCRIPTS/add-yeast-link";
-$tmp_file_name = sprintf "patser.%s", &AlphaDate;
-
+$tmp_file_name = sprintf "patser.%s", &AlphaDate();
 
 ### Read the CGI query
 $query = new CGI;

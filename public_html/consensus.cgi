@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: consensus.cgi,v 1.9 2004/02/29 23:03:15 jvanheld Exp $
+# $Id: consensus.cgi,v 1.10 2004/06/10 04:42:45 jvanheld Exp $
 #
 # Time-stamp: <2003-07-03 10:06:42 jvanheld>
 #
@@ -157,11 +157,13 @@ exit(0);
 
 
 
-
+################################################################
+## Piping form: to send the result as input for another tool
 
 sub PipingForm {
     print <<End_of_form;
 <TABLE>
+
 <TR>
 <TD>
 <H3>Next step</H3>
@@ -176,7 +178,16 @@ sub PipingForm {
 <INPUT type="submit" value="pattern matching (patser)">
 </FORM>
 </TD>
+<TD>
+<FORM METHOD="POST" ACTION="convert-matrix_form.cgi">
+<INPUT type="hidden" NAME="title" VALUE="$title">
+<INPUT type="hidden" NAME="matrix_file" VALUE="$result_file">
+<INPUT type="hidden" NAME="matrix_format" VALUE="consensus">
+<INPUT type="submit" value="convert-matrix">
+</FORM>
+</TD>
 </TR>
+
 </TABLE>
 End_of_form
   

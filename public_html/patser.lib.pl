@@ -424,6 +424,19 @@ sub ReadPatserTableOutputFields {
     }
 }
 
+################################################################
+### if a matrix file is specified in the query,
+### read matrix from this file
+sub ReadMatrixFromFile {
+    if (($matrix_file = $query->param("matrix_file")) &&
+	(-e $matrix_file)) {
+	open MATRIX, $matrix_file;
+	while (<MATRIX>) {
+	    $default{matrix} .= $_;
+	}
+	close MATRIX;
+    }
+}
 
 return 1;
 
