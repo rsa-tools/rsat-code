@@ -4,8 +4,9 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
-require "RSA.lib.pl";
-require "RSA.cgi.lib.pl";
+require "RSA.lib";
+require "RSA.cgi.lib";
+$output_context = "cgi";
 
 ### intialization
 $feature_map_command = "$SCRIPTS/feature-map";
