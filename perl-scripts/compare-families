@@ -1,9 +1,9 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl 
 ############################################################
 #
-# $Id: compare-families,v 1.13 2003/01/17 16:26:25 jvanheld Exp $
+# $Id: compare-families,v 1.14 2003/01/22 04:53:05 jvanheld Exp $
 #
-# Time-stamp: <2002-10-19 04:12:01 jvanheld>
+# Time-stamp: <2003-01-21 22:49:17 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -53,6 +53,14 @@ $supported_matrix_keys = join ",", keys %supported_matrix_keys;
                         );
 $supported_sort_keys = join ",", sort (keys %supported_sort_keys);
 
+%supported_catalogs = (
+		       MIPS=>1,
+		       GO=>1,
+		       ms_complexes=>1
+		       );
+$supported_catalogs = join ",", keys %supported_catalogs;
+
+
 local %infile = ();
 local %outfile = ();
 
@@ -67,16 +75,26 @@ local $out = STDOUT;
 
 $population_size = 0;
 
-&ReadArguments;
+&ReadArguments();
 
 ################################################################
 #### check argument values
-unless ($infile{ref_families}) {
-    &FatalError("You must specify a file containing reference families");
-}
 unless ($infile{query_families}) {
     &FatalError("You must specify a file containing query families");
 }
+
+if ($catalog) {
+    if ($organism_name) {
+	$infile{ref_families} = $supported_organism{$organism_name}->{'data'}."/catalogs/${organism_name}_${catalog}.tab";
+    } else {
+	&FatalError("The option -cat requires to specify an organism");
+    }
+} 
+
+unless ($infile{ref_families}) {
+    &FatalError("You must specify a file containing reference families");
+}
+
 
 ################################################################
 ### open output stream
@@ -110,7 +128,7 @@ unless ($population_size > 0 ) {
 
 ################################################################
 #### print verbose
-&Verbose if ($verbose);
+&Verbose() if ($verbose);
 
 ################################################################
 #### compare reference and query families
@@ -120,21 +138,45 @@ unless ($population_size > 0 ) {
 foreach my $r (keys %ref_families) {
     my %ref_member = ();
     my %not_query = ();
-    foreach $m ( $ref_families{$r}->get_members()) {
+
+
+    ################################################################
+    #### number fo common members 
+
+    #### collect members of the reference family
+    my @ref_members = $ref_families{$r}->get_members();
+
+    #### check if the number of ref members is above the threshold    
+    next if ((defined($lth{occ})) && ($#ref_members + 1 < $lth{occ}));
+    
+    #### index members of the reference family
+    foreach $m (@ref_members) {
         $ref_member{$m} = 1;
     }
+
+
+    #### query families
     foreach my $q (keys %query_families) {
+	
         next if (($distinct) && ($r eq $q));
+
         my $compa_key = $r."__VERSUS__".$q;
 
+	#### initialize comparison structures
         @{$common{$compa_key}} = ();
         @{$ref_only{$compa_key}} = ();
         @{$query_only{$compa_key}} = ();
 
-        my @query_members = $query_families{$q}->get_members();
+        #### collect members of the query family
+	my @query_members = $query_families{$q}->get_members();
+
+	#### check if the number of ref members is above the threshold    
+	next if ((defined($lth{occ})) && ($#query_members +1 < $lth{occ}));
+
+	#### compare query and reference families
         foreach my $m (@query_members) {
             if ($ref_member{$m}) {
-                push @{$common{$compa_key}}, $m; ### elements common to reference and query family
+		push @{$common{$compa_key}}, $m; ### elements common to reference and query family
                 $matching_elements->{$compa_key}->{$m}++;
             } else {
                 push @{$query_only{$compa_key}}, $m; ### elements found in the query fmily only
@@ -142,136 +184,281 @@ foreach my $r (keys %ref_families) {
         }
 
         #### identify elements found in the reference family only
-        foreach $m (sort( $ref_families{$r}->get_members())) {
-            unless ($matching_elements->{$compa_key}->{$m}) {
-                push @{$ref_only{$compa_key}}, $m;
-            }
-        }
+	if ($return_fields{members}) {
+	    foreach $m (sort( $ref_families{$r}->get_members())) {
+		unless ($matching_elements->{$compa_key}->{$m}) {
+		    push @{$ref_only{$compa_key}}, $m;
+		}
+	    }
+	}
 
         $compa{$compa_key}->{occ} = scalar(keys %{$matching_elements->{$compa_key}});
+
+	### clear memory if members are not required
+	unless ($return_fields{members}) {
+            undef @{$common{$compa_key}};
+            undef @{$ref_only{$compa_key}};
+            undef @{$query_only{$compa_key}};
+	    undef $matching_elements->{$compa_key};
+	}
 
         #### check thresholds for number of common members
         if ((defined($lth{occ})) &&
             ($compa{$compa_key}->{occ}< $lth{occ})) {
             delete $compa{$compa_key};
             undef @{$common{$compa_key}};
+            undef @{$ref_only{$compa_key}};
+            undef @{$query_only{$compa_key}};
+	    next;
         } elsif ((defined($uth{occ})) &&
             ($compa{$compa_key}->{occ} > $uth{occ})) {
             delete $compa{$compa_key};
             undef @{$common{$compa_key}};
+            undef @{$ref_only{$compa_key}};
+            undef @{$query_only{$compa_key}};
+	    next;
         }
+	
+        ################################################################	
+        #### calculate percentages
+	if ($return_fields{percent}) {
+	    warn "; calculating percentages for ", $compa_key, "\n" if ($verbose >= 4);
+	    my $n_q = $query_families{$q}->get_size(); ### number of elements in query family
+	    my $n_r = $ref_families{$r}->get_size(); ### number of elements in the reference family
+	    my $c = $compa{$compa_key}->{occ}; ### number of common elements
+	    $compa{$compa_key}->{ref_percent} = 100*$c/$n_r;
+	    $compa{$compa_key}->{query_percent} = 100*$c/$n_q;
+
+	    #### check thresholds for query percent
+	    if ((defined($lth{"query_percent"})) &&
+		($compa{$compa_key}->{"query_percent"}< $lth{"query_percent"})) {
+		delete $compa{$compa_key};
+		undef @{$common{$compa_key}};
+		undef @{$ref_only{$compa_key}};
+		undef @{$query_only{$compa_key}};
+		next;
+	    } elsif ((defined($uth{"query_percent"})) &&
+		     ($compa{$compa_key}->{"query_percent"} > $uth{"query_percent"})) {
+		delete $compa{$compa_key};
+		undef @{$common{$compa_key}};
+		undef @{$ref_only{$compa_key}};
+		undef @{$query_only{$compa_key}};
+		next;
+	    }
+
+	    #### check thresholds for reference percent
+	    if ((defined($lth{"ref_percent"})) &&
+		($compa{$compa_key}->{"ref_percent"}< $lth{"ref_percent"})) {
+		delete $compa{$compa_key};
+		undef @{$common{$compa_key}};
+		undef @{$ref_only{$compa_key}};
+		undef @{$query_only{$compa_key}};
+		next;
+	    } elsif ((defined($uth{"ref_percent"})) &&
+		     ($compa{$compa_key}->{"ref_percent"} > $uth{"ref_percent"})) {
+		delete $compa{$compa_key};
+		undef @{$common{$compa_key}};
+		undef @{$ref_only{$compa_key}};
+		undef @{$query_only{$compa_key}};
+		next;
+	    }
+
+	}
+
+        ################################################################
+        #### calculate probabilities
+	if ($return_fields{proba}) {
+	    $log_base = 10;
+	    $ref_log = log($log_base);
+
+	    #### check population size
+	    my $n = $population_size;
+	    if ($n <= 0) {
+		&FatalError("Cannot calculate probabilities if reference population is empty");
+	    }
+
+	    #### calculate probabilities of matches
+	    warn "; calculating proba for ", $compa_key, "\n" if ($verbose >= 3);
+	    my $n_q = $query_families{$q}->get_size(); ### number of elements in query family
+	    my $n_r = $ref_families{$r}->get_size(); ### number of elements in the reference family
+	    my $c = $compa{$compa_key}->{occ}; ### number of common elements
+	    
+	    #### check number of elements in the reference family
+	    if ($n_r > $n) {
+		&FatalError("Number of elements in the reference family ($n_r) cannot be higher than population size ($n)");
+	    }
+	    
+	    #### check number of elements in the query family
+	    if ($n_q > $n) {
+		&FatalError("Number of elements in the query family ($n_q) cannot be higher than population size ($n)");
+	    }
+	    
+	    #### check number of common elements
+	    if ($c > $n_q) {
+		&FatalError("Number of common elements ($c) cannot be higher than query size ($n_q)");
+	    }
+	    if ($c > $n_r) {
+		&FatalError("Number of common elements ($c) cannot be higher than reference size ($n_r)");
+	    }
+	    
+	    
+	    if ($replacement) {
+		#### use binomial distribution of there are replacements
+		
+		if ($symmetric) {
+		    #### test the joint probability to belong to both
+		    #### query and reference families, for each element of
+		    #### the population
+		    my $p = $n_r/$n * $n_q/$n;
+		    $compa{$compa_key}->{P_val} = &sum_of_binomials($p,$n,$c,$n);
+		} else {
+		    #### test the probability to belong to the reference family, for each element of the query family
+		    my $p = $n_r/$n;
+		    $compa{$compa_key}->{P_val} = &sum_of_binomials($p,$n_q,$c,$n_q);
+		}
+		
+	    } else{
+		#### use hypergeometric distribution
+		$compa{$compa_key}->{P_val} = &sum_of_hypergeometrics($n_r, $n, $n_q, $c, &min($n_r, $n_q));
+		
+	    }
+	    
+#	$nb_tests = $nb_ref_families * $nb_query_families;
+	    $nb_tests = $nb_ref_families;
+	    $compa{$compa_key}->{E_val} = $compa{$compa_key}->{P_val} * $nb_tests;
+	    $compa{$compa_key}->{sig} = -log($compa{$compa_key}->{E_val})/$ref_log;
+	    
+	    #### check thresholds on probabilities
+	    foreach my $key (qw(P_val E_val sig)) {
+		if ((defined($lth{$key})) &&
+		    ($compa{$compa_key}->{$key}< $lth{$key})) {
+		    delete $compa{$compa_key};
+		    undef @{$common{$compa_key}};
+		    undef @{$ref_only{$compa_key}};
+		    undef @{$query_only{$compa_key}};
+		} elsif ((defined($uth{$key})) &&
+			 ($compa{$compa_key}->{$key} > $uth{$key})) {
+		    delete $compa{$compa_key};
+		    undef @{$common{$compa_key}};
+		    undef @{$ref_only{$compa_key}};
+		    undef @{$query_only{$compa_key}};
+		}
+	    }
+	}
     }
+    
 }
+
 # die;
 
-################################################################
-#### percentages
-if ($return_fields{percent}) {
-    foreach my $compa_key (keys %compa) {
-        my ($r, $q) = split "__VERSUS__", $compa_key;
-        warn "; calculating percentages for ", $compa_key, "\n" if ($verbose >= 2);
-        my $n_q = $query_families{$q}->get_size(); ### number of elements in query family
-        my $n_r = $ref_families{$r}->get_size(); ### number of elements in the reference family
-        my $c = $compa{$compa_key}->{occ}; ### number of common elements
-        $compa{$compa_key}->{ref_percent} = 100*$c/$n_r;
-        $compa{$compa_key}->{query_percent} = 100*$c/$n_q;
+# ################################################################
+# #### percentages
+# if ($return_fields{percent}) {
+#     foreach my $compa_key (keys %compa) {
+#         my ($r, $q) = split "__VERSUS__", $compa_key;
+#         warn "; calculating percentages for ", $compa_key, "\n" if ($verbose >= 2);
+#         my $n_q = $query_families{$q}->get_size(); ### number of elements in query family
+#         my $n_r = $ref_families{$r}->get_size(); ### number of elements in the reference family
+#         my $c = $compa{$compa_key}->{occ}; ### number of common elements
+#         $compa{$compa_key}->{ref_percent} = 100*$c/$n_r;
+#         $compa{$compa_key}->{query_percent} = 100*$c/$n_q;
 
-        for my $key ("ref_percent", "query_percent") {
-            if ((defined($lth{$key})) &&
-                ($compa{$compa_key}->{$key}< $lth{$key})) {
-                delete $compa{$compa_key};
-                undef @{$common{$compa_key}};
-                last;
-            } elsif ((defined($uth{$key})) &&
-                     ($compa{$compa_key}->{$key} > $uth{$key})) {
-                delete $compa{$compa_key};
-                undef @{$common{$compa_key}};
-                last;
-            }
-        }
+#         for my $key ("ref_percent", "query_percent") {
+#             if ((defined($lth{$key})) &&
+#                 ($compa{$compa_key}->{$key}< $lth{$key})) {
+#                 delete $compa{$compa_key};
+#                 undef @{$common{$compa_key}};
+#                 last;
+#             } elsif ((defined($uth{$key})) &&
+#                      ($compa{$compa_key}->{$key} > $uth{$key})) {
+#                 delete $compa{$compa_key};
+#                 undef @{$common{$compa_key}};
+#                 last;
+#             }
+#         }
 
-    }
-}
+#     }
+# }
 
-################################################################
-#### calculate probabilities
-if ($return_fields{proba}) {
-    $log_base = 10;
-    $ref_log = log($log_base);
+# ################################################################
+# #### calculate probabilities
+# if ($return_fields{proba}) {
+#     $log_base = 10;
+#     $ref_log = log($log_base);
 
-    #### check population size
-    my $n = $population_size;
-    if ($n <= 0) {
-        &FatalError("Cannot calculate probabilities if reference population is empty");
-    }
+#     #### check population size
+#     my $n = $population_size;
+#     if ($n <= 0) {
+#         &FatalError("Cannot calculate probabilities if reference population is empty");
+#     }
 
-    #### calculate probabilities of matches
-    foreach my $compa_key (keys %compa) {
-        my ($r, $q) = split "__VERSUS__", $compa_key;
-        warn "; calculating proba for ", $compa_key, "\n" if ($verbose >= 2);
-        my $n_q = $query_families{$q}->get_size(); ### number of elements in query family
-        my $n_r = $ref_families{$r}->get_size(); ### number of elements in the reference family
-        my $c = $compa{$compa_key}->{occ}; ### number of common elements
+#     #### calculate probabilities of matches
+#     foreach my $compa_key (keys %compa) {
+#         my ($r, $q) = split "__VERSUS__", $compa_key;
+#         warn "; calculating proba for ", $compa_key, "\n" if ($verbose >= 2);
+#         my $n_q = $query_families{$q}->get_size(); ### number of elements in query family
+#         my $n_r = $ref_families{$r}->get_size(); ### number of elements in the reference family
+#         my $c = $compa{$compa_key}->{occ}; ### number of common elements
 
-        #### check number of elements in the reference family
-        if ($n_r > $n) {
-            &FatalError("Number of elements in the reference family ($n_r) cannot be higher than population size ($n)");
-        }
+#         #### check number of elements in the reference family
+#         if ($n_r > $n) {
+#             &FatalError("Number of elements in the reference family ($n_r) cannot be higher than population size ($n)");
+#         }
 
-        #### check number of elements in the query family
-        if ($n_q > $n) {
-            &FatalError("Number of elements in the query family ($n_q) cannot be higher than population size ($n)");
-        }
+#         #### check number of elements in the query family
+#         if ($n_q > $n) {
+#             &FatalError("Number of elements in the query family ($n_q) cannot be higher than population size ($n)");
+#         }
 
-        #### check number of common elements
-        if ($c > $n_q) {
-            &FatalError("Number of common elements ($c) cannot be higher than query size ($n_q)");
-        }
-        if ($c > $n_r) {
-            &FatalError("Number of common elements ($c) cannot be higher than reference size ($n_r)");
-        }
+#         #### check number of common elements
+#         if ($c > $n_q) {
+#             &FatalError("Number of common elements ($c) cannot be higher than query size ($n_q)");
+#         }
+#         if ($c > $n_r) {
+#             &FatalError("Number of common elements ($c) cannot be higher than reference size ($n_r)");
+#         }
 
 
-        if ($replacement) {
-            #### use binomial distribution of there are replacements
+#         if ($replacement) {
+#             #### use binomial distribution of there are replacements
 
-            if ($symmetric) {
-                #### test the joint probability to belong to both
-                #### query and reference families, for each element of
-                #### the population
-                my $p = $n_r/$n * $n_q/$n;
-                $compa{$compa_key}->{P_val} = &sum_of_binomials($p,$n,$c,$n);
-            } else {
-                #### test the probability to belong to the reference family, for each element of the query family
-                my $p = $n_r/$n;
-                $compa{$compa_key}->{P_val} = &sum_of_binomials($p,$n_q,$c,$n_q);
-            }
+#             if ($symmetric) {
+#                 #### test the joint probability to belong to both
+#                 #### query and reference families, for each element of
+#                 #### the population
+#                 my $p = $n_r/$n * $n_q/$n;
+#                 $compa{$compa_key}->{P_val} = &sum_of_binomials($p,$n,$c,$n);
+#             } else {
+#                 #### test the probability to belong to the reference family, for each element of the query family
+#                 my $p = $n_r/$n;
+#                 $compa{$compa_key}->{P_val} = &sum_of_binomials($p,$n_q,$c,$n_q);
+#             }
 
-        } else{
-            #### use hypergeometric distribution
-            $compa{$compa_key}->{P_val} = &sum_of_hypergeometrics($n_r, $n, $n_q, $c, &min($n_r, $n_q));
+#         } else{
+#             #### use hypergeometric distribution
+#             $compa{$compa_key}->{P_val} = &sum_of_hypergeometrics($n_r, $n, $n_q, $c, &min($n_r, $n_q));
 
-        }
+#         }
 
-#	$nb_tests = $nb_ref_families * $nb_query_families;
-	$nb_tests = $nb_ref_families;
-        $compa{$compa_key}->{E_val} = $compa{$compa_key}->{P_val} * $nb_tests;
-        $compa{$compa_key}->{sig} = -log($compa{$compa_key}->{E_val})/$ref_log;
+# #	$nb_tests = $nb_ref_families * $nb_query_families;
+# 	$nb_tests = $nb_ref_families;
+#         $compa{$compa_key}->{E_val} = $compa{$compa_key}->{P_val} * $nb_tests;
+#         $compa{$compa_key}->{sig} = -log($compa{$compa_key}->{E_val})/$ref_log;
 
-        #### check thresholds on probabilities
-        foreach my $key (qw(P_val E_val sig)) {
-            if ((defined($lth{$key})) &&
-                ($compa{$compa_key}->{$key}< $lth{$key})) {
-                delete $compa{$compa_key};
-                undef @{$common{$compa_key}};
-            } elsif ((defined($uth{$key})) &&
-                ($compa{$compa_key}->{$key} > $uth{$key})) {
-                delete $compa{$compa_key};
-                undef @{$common{$compa_key}};
-            }
-        }
-    }
-}
+#         #### check thresholds on probabilities
+#         foreach my $key (qw(P_val E_val sig)) {
+#             if ((defined($lth{$key})) &&
+#                 ($compa{$compa_key}->{$key}< $lth{$key})) {
+#                 delete $compa{$compa_key};
+#                 undef @{$common{$compa_key}};
+#             } elsif ((defined($uth{$key})) &&
+#                 ($compa{$compa_key}->{$key} > $uth{$key})) {
+#                 delete $compa{$compa_key};
+#                 undef @{$common{$compa_key}};
+#             }
+#         }
+#     }
+# }
 
 ################################################################
 ###### print result
@@ -436,9 +623,26 @@ OPTIONS
         -q query_families
                 A tab-delimited text file containing the dscription of
                 query families (see format description below).
+        -i input_file
+                This file will be used as both reference and query. 
+		This is equivalent to 
+		    -q input_file -r input_file
         -o outputfile
                 if not specified, the standard output is used.
                 This allows to place the command within a pipe.
+	-cat catalog
+		Compare the query file to pre-defined catalogs
+		(e.g. GO, MIPS functional classes, ...). These
+		catalogs associate each gene of a genome to one or
+		several classes.  The organism must be specified
+		(option -org).
+		
+		Supported catalogs:
+		$supported_catalogs
+
+		This option is currently supported for Saccharomyces
+		cerevisiae.
+	-org organism (for pre-defined catalogs)	
         -return return_fields
                 List of fields to return. Supported field :
                 $supported_return_fields
@@ -612,6 +816,8 @@ hyergeometric)
 -sym            symmetric comparison (only with -rep, see detailed help)
 -distinct       prevent to compare each family with itself
 -matrix [key]   return a similarity matrix
+-cat		catalog (supported: $supported_catalogs)
+-org		organism
 End_short_help
   close HELP;
   exit(0);
@@ -638,9 +844,30 @@ sub ReadArguments {
         } elsif ($ARGV[$a] eq "-help") {
             &PrintOptions();
 
+            ### query file
+        } elsif ($ARGV[$a] eq "-q") {
+            $infile{query_families} = $ARGV[$a+1];
+	    
             ### reference file
         } elsif ($ARGV[$a] eq "-r") {
             $infile{ref_families} = $ARGV[$a+1];
+	    
+            ### catalog
+        } elsif ($ARGV[$a] eq "-cat") {
+            $catalog = $ARGV[$a+1];
+	    unless ($supported_catalogs{$catalog}) {
+		&FatalError("$catalog is not a valid catalog. Supported: $supported_catalogs");
+	    }
+
+	    #### organism
+	} elsif ($ARGV[$a] eq "-org") {	    
+	    $organism_name =$ARGV[$a+1];
+	    &CheckOrganismName($organism_name);
+
+            ### input file (both reference and query)
+        } elsif ($ARGV[$a] eq "-i") {
+            $infile{ref_families} = $ARGV[$a+1];
+            $infile{query_families} = $ARGV[$a+1];
 
             ### replacement
         } elsif ($ARGV[$a] eq "-rep") {
@@ -649,10 +876,6 @@ sub ReadArguments {
             ### symmetric (for binomial distrib only)
         } elsif ($ARGV[$a] eq "-sym") {
             $symmetric = 1;
-
-            ### query file
-        } elsif ($ARGV[$a] eq "-q") {
-            $infile{query_families} = $ARGV[$a+1];
 
             ### output file
         } elsif ($ARGV[$a] eq "-o") {
@@ -725,13 +948,16 @@ sub Verbose {
         }
     }
     print $out "; Query families\t$nb_query_families\n";
-    foreach my $f (keys %query_families) {
-        printf $out ";\t%d\t%s\n", $query_families{$f}->get_size(), $query_families{$f}->get_name();
+    if ($verbose >= 2) {
+	foreach my $f (keys %query_families) {
+	    printf $out ";\t%d\t%s\n", $query_families{$f}->get_size(), $query_families{$f}->get_name();
+	}
     }
-
     print $out "; Reference families\t$nb_ref_families\n";
-    foreach my $f (keys %ref_families) {
-        printf $out ";\t%d\t%s\n", $ref_families{$f}->get_size(), $ref_families{$f}->get_name();
+    if ($verbose >= 2) {
+	foreach my $f (keys %ref_families) {
+	    printf $out ";\t%d\t%s\n", $ref_families{$f}->get_size(), $ref_families{$f}->get_name();
+	}
     }
     printf $out "; %-21s\t%d\n", "Population size", $population_size;
     printf $out "; %-21s\t%s\n", "Sort key", $sort_key if ($sort_key);
@@ -772,8 +998,8 @@ sub Verbose {
 
 ################################################################
 ##### read input
-($ref) = &OpenInputFile($infile{ref_families});
-while (<$ref>) {
-    warn $_;
-}
-close $ref if ($infile{ref_families});
+#($ref) = &OpenInputFile($infile{ref_families});
+#while (<$ref>) {
+#    warn $_;
+#}
+#close $ref if ($infile{ref_families});
