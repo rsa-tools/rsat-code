@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-matrix,v 1.1 2004/02/28 17:05:44 jvanheld Exp $
+# $Id: convert-matrix,v 1.2 2004/02/29 23:03:15 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -90,7 +90,7 @@ $current_matrix->push_attribute("parameters", "pseudo");
 
 ## Print the alignment matrix
 if ($return{alignment}) {
-    print  $current_matrix->toString(sep=>"\t");
+    print $out $current_matrix->toString(sep=>"\t");
 }
 
 ## Calculate frequency matrix

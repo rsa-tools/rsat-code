@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: consensus.cgi,v 1.8 2004/02/28 17:08:18 jvanheld Exp $
+# $Id: consensus.cgi,v 1.9 2004/02/29 23:03:15 jvanheld Exp $
 #
 # Time-stamp: <2003-07-03 10:06:42 jvanheld>
 #
@@ -26,9 +26,10 @@ require "RSA.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 $command = "$BIN/consensus";
-$matrix_from_consensus_command = "$SCRIPTS/matrix-from-consensus -v 1";
+#$convert_matrix_command = "$SCRIPTS/matrix-from-consensus -v 1";
+$convert_matrix_command = "$SCRIPTS/convert-matrix -format consensus -return alignment";
 $convert_seq_command = "$SCRIPTS/convert-seq";
-$tmp_file_name = sprintf "consensus.%s", &AlphaDate;
+$tmp_file_name = sprintf "consensus.%s", &AlphaDate();
 
 ### Read the CGI query
 $query = new CGI;
@@ -38,7 +39,7 @@ $query = new CGI;
 &ListParameters() if ($ECHO >= 2);
 
 #### update log file ####
-&UpdateLogFile;
+&UpdateLogFile();
 
 ################################################################
 #
@@ -99,24 +100,26 @@ if ($query->param('seed') eq "on") {
     }
 }
 
+#### Output files    
+$result_file = "$TMP/$tmp_file_name.res";
+$matrix_file = "$TMP/$tmp_file_name.matrix";
+
+#### Matrix conversion command
+$convert_matrix_command.= " -i".$result_file." -o ".$matrix_file;
 
 #### error file
 #$error_file  = "$TMP/$tmp_file_name.err";
 
 #### execute the command ###
 if ($query->param('output') eq "display") {
-
-    
-    $result_file = "$TMP/$tmp_file_name.res";
-    $matrix_file = "$TMP/$tmp_file_name.matrix";
-
-    #### echo the command
-    print "<PRE><B>Command:</B> $command $parameters </PRE>" if ($ECHO >= 1);
-    print "<PRE>$matrix_from_consensus_command -i $result_file -o $matrix_file</PRE>" if ($ECHO >= 1);
+    #### echo the commands
+    if ($ECHO >= 1) {
+	print "<PRE><B>Command:</B> $command $parameters </PRE>";
+	print "<PRE><b>Conversion:</b> $convert_matrix_command</PRE>";
+    }
 
     open RESULT, "$command $parameters | ";
     open RES_FILE, ">$result_file";
-    
     
     ### prepare data for piping
     &PipingWarning();
@@ -134,7 +137,7 @@ if ($query->param('output') eq "display") {
     
     &PipingForm();
     
-    system "$matrix_from_consensus_command -i $result_file -o $matrix_file";
+    system "$convert_matrix_command -i $result_file -o $matrix_file";
 
     print "<HR SIZE = 3>";
     

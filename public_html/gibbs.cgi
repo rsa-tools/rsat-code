@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gibbs.cgi,v 1.9 2003/10/29 09:04:36 jvanheld Exp $
+# $Id: gibbs.cgi,v 1.10 2004/02/29 23:03:15 jvanheld Exp $
 #
 # Time-stamp: <2003-05-13 11:30:48 jvanheld>
 #
@@ -25,8 +25,11 @@ require "RSA.lib";
 require "RSA.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
+$ECHO=2;
+
 $command = "$BIN/gibbs";
-$matrix_from_gibbs_command = "$SCRIPTS/matrix-from-gibbs";
+#$convert_matrix_command = "$SCRIPTS/matrix-from-gibbs";
+$convert_matrix_command = "$SCRIPTS/convert-matrix -format gibbs -return alignment";
 $convert_seq_command = "$SCRIPTS/convert-seq";
 $tmp_file_name = sprintf "gibbs.%s", &AlphaDate;
 
@@ -85,8 +88,13 @@ if ($query->param('output') eq "display") {
     $matrix_file = "$TMP/$tmp_file_name.matrix";
     
     system "$command $parameters > $result_file";
-    system "$matrix_from_gibbs_command -i $result_file -o $matrix_file";
-    print "<PRE><B>Command:</B> $command $parameters </PRE>" if ($ECHO);
+
+    $convert_matrix_command .= " -i ".$result_file." -o ".$matrix_file;
+    system "$convert_matrix_command";
+    if ($ECHO >= 1) {
+	print "<PRE><B>Command:</B> $command $parameters </PRE>";
+	print "<PRE><B>Conversion:</B> $convert_matrix_command </PRE>";
+    }
     
     ### Print result on the web page
     print '<H4>Result</H4>';
