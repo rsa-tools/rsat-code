@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-families,v 1.10 2002/10/15 05:56:26 jvanheld Exp $
+# $Id: compare-families,v 1.11 2002/10/15 06:15:40 jvanheld Exp $
 #
-# Time-stamp: <2002-10-03 10:08:21 jvanheld>
+# Time-stamp: <2002-10-15 00:09:23 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -23,21 +23,23 @@ local $distinct = 0;
 local $simkey = "sig"; ### key to export as similarity index (option -matrix)
 $sort_key = "name";
 
-
-
 %supported_return_fields = (
-			    proba=>1,
-			    percent=>1,
-			    members=>1
-			    );
+                            proba=>1,
+                            percent=>1,
+                            members=>1
+                            );
 $supported_return_fields = join ",", keys %supported_return_fields;
 
 %supported_sort_keys = (
-			name=>1,
-			occ=>1,
-			sig=>1
-			);
-$supported_sort_keys = join ",", keys %supported_sort_keys;
+                        name=>1,
+			ref_percent=>1,
+			query_percent=>1,
+                        occ=>1,
+                        P_val=>1,
+                        E_val=>1,
+                        sig=>1
+                        );
+$supported_sort_keys = join ",", sort (keys %supported_sort_keys);
 
 local %infile = ();
 local %outfile = ();
@@ -53,9 +55,7 @@ local $out = STDOUT;
 
 $population_size = 0;
 
-
 &ReadArguments;
-
 
 ################################################################
 #### check argument values
@@ -70,7 +70,6 @@ unless ($infile{query_families}) {
 ### open output stream
 $out = &OpenOutputFile($outfile{output});
 
-
 ################################################################
 ###### read family files
 %query_families = &ReadFamilies($infile{query_families});
@@ -78,24 +77,24 @@ $out = &OpenOutputFile($outfile{output});
 $nb_ref_families = scalar(keys %ref_families);
 $nb_query_families = scalar(keys %query_families);
 
-#### unless specified, calculate population size from the lists of  reference and query members
+#### unless specified, calculate population size from the lists of
+#### reference and query members
 unless ($population_size > 0 ) {
     %member_index = ();
     foreach my $r (keys %ref_families) {
-	foreach $m ( $ref_families{$r}->get_members()) {
-	    $member_index{$m}++;
-	}
+        foreach $m ( $ref_families{$r}->get_members()) {
+            $member_index{$m}++;
+        }
     }
     foreach my $q (keys %query_families) {
-	foreach $m ( $query_families{$q}->get_members()) {
-	    $member_index{$m}++;
-	}
+        foreach $m ( $query_families{$q}->get_members()) {
+            $member_index{$m}++;
+        }
     }
 
 #    die keys %member_index;
     $population_size = scalar(keys %member_index);
 }
-
 
 ################################################################
 #### print verbose
@@ -110,80 +109,77 @@ foreach my $r (keys %ref_families) {
     my %ref_member = ();
     my %not_query = ();
     foreach $m ( $ref_families{$r}->get_members()) {
-	$ref_member{$m} = 1;
+        $ref_member{$m} = 1;
     }
     foreach my $q (keys %query_families) {
-	next if (($distinct) && ($r eq $q));
-	my $compa_key = $r."__VERSUS__".$q;
+        next if (($distinct) && ($r eq $q));
+        my $compa_key = $r."__VERSUS__".$q;
 
-	@{$common{$compa_key}} = ();
-	@{$ref_only{$compa_key}} = ();
-	@{$query_only{$compa_key}} = ();
+        @{$common{$compa_key}} = ();
+        @{$ref_only{$compa_key}} = ();
+        @{$query_only{$compa_key}} = ();
 
-	my @query_members = $query_families{$q}->get_members();
-	foreach my $m (@query_members) {
-	    if ($ref_member{$m}) {
-		push @{$common{$compa_key}}, $m; ### elements common to reference and query family
- 		$matching_elements->{$compa_key}->{$m}++;
-	    } else {
-		push @{$query_only{$compa_key}}, $m; ### elements found in the query fmily only
-	    }
-	}
-	
-	#### identify elements found in the reference family only
-	foreach $m (sort( $ref_families{$r}->get_members())) {
-	    unless ($matching_elements->{$compa_key}->{$m}) {
-		push @{$ref_only{$compa_key}}, $m;
-	    }
-	}
+        my @query_members = $query_families{$q}->get_members();
+        foreach my $m (@query_members) {
+            if ($ref_member{$m}) {
+                push @{$common{$compa_key}}, $m; ### elements common to reference and query family
+                $matching_elements->{$compa_key}->{$m}++;
+            } else {
+                push @{$query_only{$compa_key}}, $m; ### elements found in the query fmily only
+            }
+        }
 
-	$compa{$compa_key}->{occ} = scalar(keys %{$matching_elements->{$compa_key}});
+        #### identify elements found in the reference family only
+        foreach $m (sort( $ref_families{$r}->get_members())) {
+            unless ($matching_elements->{$compa_key}->{$m}) {
+                push @{$ref_only{$compa_key}}, $m;
+            }
+        }
 
+        $compa{$compa_key}->{occ} = scalar(keys %{$matching_elements->{$compa_key}});
 
-	#### check thresholds for number of common members
-	if ((defined($lth{occ})) && 
-	    ($compa{$compa_key}->{occ}< $lth{occ})) {
-	    delete $compa{$compa_key};
-	    undef @{$common{$compa_key}};
-	} elsif ((defined($uth{occ})) && 
-	    ($compa{$compa_key}->{occ} > $uth{occ})) {
-	    delete $compa{$compa_key};
-	    undef @{$common{$compa_key}};
-	}
+        #### check thresholds for number of common members
+        if ((defined($lth{occ})) &&
+            ($compa{$compa_key}->{occ}< $lth{occ})) {
+            delete $compa{$compa_key};
+            undef @{$common{$compa_key}};
+        } elsif ((defined($uth{occ})) &&
+            ($compa{$compa_key}->{occ} > $uth{occ})) {
+            delete $compa{$compa_key};
+            undef @{$common{$compa_key}};
+        }
     }
 }
 # die;
-
 
 ################################################################
 #### percentages
 if ($return_fields{percent}) {
     foreach my $compa_key (keys %compa) {
-	my ($r, $q) = split "__VERSUS__", $compa_key;
-	warn "; calculating percentages for ", $compa_key, "\n" if ($verbose >= 2);
-	my $n_q = $query_families{$q}->get_size(); ### number of elements in query family
-	my $n_r = $ref_families{$r}->get_size(); ### number of elements in the reference family
-	my $c = $compa{$compa_key}->{occ}; ### number of common elements
-	$compa{$compa_key}->{ref_percent} = 100*$c/$n_r;
-	$compa{$compa_key}->{query_percent} = 100*$c/$n_r;
+        my ($r, $q) = split "__VERSUS__", $compa_key;
+        warn "; calculating percentages for ", $compa_key, "\n" if ($verbose >= 2);
+        my $n_q = $query_families{$q}->get_size(); ### number of elements in query family
+        my $n_r = $ref_families{$r}->get_size(); ### number of elements in the reference family
+        my $c = $compa{$compa_key}->{occ}; ### number of common elements
+        $compa{$compa_key}->{ref_percent} = 100*$c/$n_r;
+        $compa{$compa_key}->{query_percent} = 100*$c/$n_q;
 
-	for my $key ("ref_percent", "query_percent") {
-	    if ((defined($lth{$key})) && 
-		($compa{$compa_key}->{$key}< $lth{$key})) {
-		delete $compa{$compa_key};
-		undef @{$common{$compa_key}};
-		last;
-	    } elsif ((defined($uth{$key})) && 
-		     ($compa{$compa_key}->{$key} > $uth{$key})) {
-		delete $compa{$compa_key};
-		undef @{$common{$compa_key}};
-		last;
-	    }
-	}
+        for my $key ("ref_percent", "query_percent") {
+            if ((defined($lth{$key})) &&
+                ($compa{$compa_key}->{$key}< $lth{$key})) {
+                delete $compa{$compa_key};
+                undef @{$common{$compa_key}};
+                last;
+            } elsif ((defined($uth{$key})) &&
+                     ($compa{$compa_key}->{$key} > $uth{$key})) {
+                delete $compa{$compa_key};
+                undef @{$common{$compa_key}};
+                last;
+            }
+        }
 
     }
 }
-
 
 ################################################################
 #### calculate probabilities
@@ -194,79 +190,79 @@ if ($return_fields{proba}) {
     #### check population size
     my $n = $population_size;
     if ($n <= 0) {
-	&FatalError("Cannot calculate probabilities if reference population is empty");
+        &FatalError("Cannot calculate probabilities if reference population is empty");
     }
 
     #### calculate probabilities of matches
     foreach my $compa_key (keys %compa) {
-	my ($r, $q) = split "__VERSUS__", $compa_key;
-	warn "; calculating proba for ", $compa_key, "\n" if ($verbose >= 2);
-	my $n_q = $query_families{$q}->get_size(); ### number of elements in query family
-	my $n_r = $ref_families{$r}->get_size(); ### number of elements in the reference family
-	my $c = $compa{$compa_key}->{occ}; ### number of common elements
+        my ($r, $q) = split "__VERSUS__", $compa_key;
+        warn "; calculating proba for ", $compa_key, "\n" if ($verbose >= 2);
+        my $n_q = $query_families{$q}->get_size(); ### number of elements in query family
+        my $n_r = $ref_families{$r}->get_size(); ### number of elements in the reference family
+        my $c = $compa{$compa_key}->{occ}; ### number of common elements
 
-	#### check number of elements in the reference family
- 	if ($n_r > $n) {
-	    &FatalError("Number of elements in the reference family ($n_r) cannot be higher than population size ($n)");
-	}
+        #### check number of elements in the reference family
+        if ($n_r > $n) {
+            &FatalError("Number of elements in the reference family ($n_r) cannot be higher than population size ($n)");
+        }
 
-	#### check number of elements in the query family
- 	if ($n_q > $n) {
-	    &FatalError("Number of elements in the query family ($n_q) cannot be higher than population size ($n)");
-	}
+        #### check number of elements in the query family
+        if ($n_q > $n) {
+            &FatalError("Number of elements in the query family ($n_q) cannot be higher than population size ($n)");
+        }
 
-	#### check number of common elements
- 	if ($c > $n_q) {
-	    &FatalError("Number of common elements ($c) cannot be higher than query size ($n_q)");
-	}
- 	if ($c > $n_r) {
-	    &FatalError("Number of common elements ($c) cannot be higher than reference size ($n_r)");
-	}
-	
-
-	if ($replacement) { 
-	    #### use binomial distribution of there are replacements
-
-	    if ($symmetric) {
-		#### test the joint probability to belong to both query and reference families, for each element of the population
-		my $p = $n_r/$n * $n_q/$n; 
-		$compa{$compa_key}->{P_val} = &sum_of_binomials($p,$n,$c,$n);
-	    } else {
-		#### test the probability to belong to the reference family, for each element of the query family
-		my $p = $n_r/$n; 
-		$compa{$compa_key}->{P_val} = &sum_of_binomials($p,$n_q,$c,$n_q);
-	    }
-	    
-	} else{
-	    #### use hypergeometric distribution
-	    $compa{$compa_key}->{P_val} = &sum_of_hypergeometrics($n_r, $n, $n_q, $c, &min($n_r, $n_q));
-	    
-	}
+        #### check number of common elements
+        if ($c > $n_q) {
+            &FatalError("Number of common elements ($c) cannot be higher than query size ($n_q)");
+        }
+        if ($c > $n_r) {
+            &FatalError("Number of common elements ($c) cannot be higher than reference size ($n_r)");
+        }
 
 
-	$nb_tests = $nb_ref_families * $nb_query_families;
-	$compa{$compa_key}->{E_val} = $compa{$compa_key}->{P_val} * $nb_tests;
-	$compa{$compa_key}->{sig} = -log($compa{$compa_key}->{E_val})/$ref_log;
+        if ($replacement) {
+            #### use binomial distribution of there are replacements
 
-	#### check thresholds on probabilities
-	foreach my $key (qw(P_val E_val sig)) {
-	    if ((defined($lth{$key})) && 
-		($compa{$compa_key}->{$key}< $lth{$key})) {
-		delete $compa{$compa_key};
-		undef @{$common{$compa_key}};
-	    } elsif ((defined($uth{$key})) && 
-		($compa{$compa_key}->{$key} > $uth{$key})) {
-		delete $compa{$compa_key};
-		undef @{$common{$compa_key}};
-	    }
-	}
+            if ($symmetric) {
+                #### test the joint probability to belong to both
+                #### query and reference families, for each element of
+                #### the population
+                my $p = $n_r/$n * $n_q/$n;
+                $compa{$compa_key}->{P_val} = &sum_of_binomials($p,$n,$c,$n);
+            } else {
+                #### test the probability to belong to the reference family, for each element of the query family
+                my $p = $n_r/$n;
+                $compa{$compa_key}->{P_val} = &sum_of_binomials($p,$n_q,$c,$n_q);
+            }
+
+        } else{
+            #### use hypergeometric distribution
+            $compa{$compa_key}->{P_val} = &sum_of_hypergeometrics($n_r, $n, $n_q, $c, &min($n_r, $n_q));
+
+        }
+
+        $nb_tests = $nb_ref_families * $nb_query_families;
+        $compa{$compa_key}->{E_val} = $compa{$compa_key}->{P_val} * $nb_tests;
+        $compa{$compa_key}->{sig} = -log($compa{$compa_key}->{E_val})/$ref_log;
+
+        #### check thresholds on probabilities
+        foreach my $key (qw(P_val E_val sig)) {
+            if ((defined($lth{$key})) &&
+                ($compa{$compa_key}->{$key}< $lth{$key})) {
+                delete $compa{$compa_key};
+                undef @{$common{$compa_key}};
+            } elsif ((defined($uth{$key})) &&
+                ($compa{$compa_key}->{$key} > $uth{$key})) {
+                delete $compa{$compa_key};
+                undef @{$common{$compa_key}};
+            }
+        }
     }
 }
 
 ################################################################
 ###### print result
 ################################################################
-
 
 if ($return{matrix}) {
     #### print a smilarity matrix
@@ -277,103 +273,100 @@ if ($return{matrix}) {
 
     #### print the result
     foreach my $q (sort keys %query_families ) {
-	print $out $q;
-	foreach my $r (sort keys %ref_families ) {
-	    my $compa_key = $r."__VERSUS__".$q;
-	    if (defined($compa{$compa_key}->{$simkey})) {
-		print $out "\t",  $compa{$compa_key}->{$simkey};
-	    } else {
-		print $out "\t", "NA";
-	    }
-	}
-	print $out "\n";
+        print $out $q;
+        foreach my $r (sort keys %ref_families ) {
+            my $compa_key = $r."__VERSUS__".$q;
+            if (defined($compa{$compa_key}->{$simkey})) {
+                print $out "\t",  $compa{$compa_key}->{$simkey};
+            } else {
+                print $out "\t", "NA";
+            }
+        }
+        print $out "\n";
     }
-    
+
 
 } else {
     #### header
     my @header_fields = (
-			 "; ref", 
-			 "query",
-			 "ref#",
-			 "query#",
-			 "common#");
+                         "; ref",
+                         "query",
+                         "ref#",
+                         "query#",
+                         "common#");
 
     if ($return_fields{percent}) {
-	push @header_fields, "ref_%" ;
-	push @header_fields, "query_%" ;
+        push @header_fields, "ref_%" ;
+        push @header_fields, "query_%" ;
     }
     if ($return_fields{proba}) {
-	push @header_fields, "P_val" ;
-	push @header_fields, "E_val";
-	push @header_fields, "sig";
+        push @header_fields, "P_val" ;
+        push @header_fields, "E_val";
+        push @header_fields, "sig";
     }
 
     if ($return_fields{members}) {
-#	push @header_fields, "ref_members";
-#	push @header_fields, "query_members";
-	push @header_fields, "ref_only";
-	push @header_fields, "query_only";
-	push @header_fields, "common_members";
+#       push @header_fields, "ref_members";
+#       push @header_fields, "query_members";
+        push @header_fields, "ref_only";
+        push @header_fields, "query_only";
+        push @header_fields, "common_members";
     }
     print $out join("\t", @header_fields), "\n";
-    
+
     #### sort family comparisons
-    if ($sort_key eq "sig") {
-	@sorted_keys = sort {$compa{$b}->{sig} <=> $compa{$a}->{sig}} (keys %compa);
-    } elsif ($sort_key eq "occ") {
-	@sorted_keys = sort {$compa{$b}->{occ} <=> $compa{$a}->{occ}} (keys %compa);
+    if ($sort_key eq "name") {
+        @sorted_keys = sort (keys %compa); ### alphabetical order
     } else {
-	@sorted_keys = sort (keys %compa); ### alphabetical order
+        @sorted_keys = sort {$compa{$b}->{$sort_key} <=> $compa{$a}->{$sort_key}} (keys %compa);
     }
 
     #### family combinations
     foreach my $compa_key (@sorted_keys) {
-	my ($r, $q) = split "__VERSUS__", $compa_key;
+        my ($r, $q) = split "__VERSUS__", $compa_key;
 
-	#### counts
-	print $out join "\t", ($r, 
-			       $q, 
-			       $ref_families{$r}->get_size(),
-			       $query_families{$q}->get_size(),
-			       $compa{$compa_key}->{occ});
+        #### counts
+        print $out join "\t", ($r,
+                               $q,
+                               $ref_families{$r}->get_size(),
+                               $query_families{$q}->get_size(),
+                               $compa{$compa_key}->{occ});
 
-	#### percentages
-	if ($return_fields{percent}) {	    
-	    printf $out "\t%7.4f", $compa{$compa_key}->{ref_percent};
-	    printf $out "\t%7.4f", $compa{$compa_key}->{query_percent};
-	}
+        #### percentages
+        if ($return_fields{percent}) {
+            printf $out "\t%7.4f", $compa{$compa_key}->{ref_percent};
+            printf $out "\t%7.4f", $compa{$compa_key}->{query_percent};
+        }
 
+        #### probabilities
+        if ($return_fields{proba}) {
+            if ($compa{$compa_key}->{P_val} >= 0.0001) {
+                printf $out "\t%.5f", $compa{$compa_key}->{P_val};
+            } else {
+                printf $out "\t%.2g", $compa{$compa_key}->{P_val};
+            }
 
-	#### probabilities
-	if ($return_fields{proba}) {
-	    if ($compa{$compa_key}->{P_val} >= 0.0001) {
-		printf $out "\t%.5f", $compa{$compa_key}->{P_val};
-	    } else {
-		printf $out "\t%.2g", $compa{$compa_key}->{P_val};
-	    }
-	    
-	    if ($compa{$compa_key}->{E_val} >= 1) {
-		printf $out "\t%7.3f", $compa{$compa_key}->{E_val};
-	    } elsif ($compa{$compa_key}->{E_val} >= 0.0001) {
-		printf $out "\t%7.4f", $compa{$compa_key}->{E_val};
-	    } else {
-		printf $out "\t%.2g", $compa{$compa_key}->{E_val};
-	    }
-	    printf $out ( "\t%.2f", $compa{$compa_key}->{sig});
-	}
+            if ($compa{$compa_key}->{E_val} >= 1) {
+                printf $out "\t%7.3f", $compa{$compa_key}->{E_val};
+            } elsif ($compa{$compa_key}->{E_val} >= 0.0001) {
+                printf $out "\t%7.4f", $compa{$compa_key}->{E_val};
+            } else {
+                printf $out "\t%.2g", $compa{$compa_key}->{E_val};
+            }
+            printf $out ( "\t%.2f", $compa{$compa_key}->{sig});
+        }
 
+        #### members of the intersection
+        if ($return_fields{members}) {
+#           print $out "\t", join( " ", $ref_families{$r}->get_members()) ;
+#           print $out "\t", join( " ", $query_families{$q}->get_members())
+;
+            print $out "\t", join( " ", @{$ref_only{$compa_key}}) ;
+            print $out "\t", join( " ", @{$query_only{$compa_key}}) ;
+            print $out "\t", join( " ", @{$common{$compa_key}}) ;
+        }
 
-	#### members of the intersection
-	if ($return_fields{members}) {
-#	    print $out "\t", join( " ", $ref_families{$r}->get_members()) ;
-#	    print $out "\t", join( " ", $query_families{$q}->get_members()) ;
-	    print $out "\t", join( " ", @{$ref_only{$compa_key}}) ;
-	    print $out "\t", join( " ", @{$query_only{$compa_key}}) ;
-	    print $out "\t", join( " ", @{$common{$compa_key}}) ;
-	}
-
-	print $out "\n";
+        print $out "\n";
     }
 }
 
@@ -385,200 +378,194 @@ if ($verbose) {
     print $out "; Job done    $done_time\n";
 }
 
-
 ################################################################
 ###### close output stream
 close $out if ($outfile{output});
 
-
 exit(0);
-
 
 ################################################################
 ################### subroutine definition ######################
 ################################################################
 
-
 ################################################################
-#### display full help message 
+#### display full help message
 sub PrintHelp {
     my $HELP_FAMILY_FILE = &help_message("family file");
     open HELP, "| more";
     print HELP <<End_of_help;
 NAME
-	compare-families
+        compare-families
 
         2002 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
-	
+
 DESCRIPTION
-	Compare two family files (the query file and the reference
-	file). Each family of the query file is compared to each
-	family of the reference file. The number of common elements is
-	reported, as well as the probability to observe at least this
-	number of common elements by chance alone.
+        Compare two family files (the query file and the reference
+        file). Each family of the query file is compared to each
+        family of the reference file. The number of common elements is
+        reported, as well as the probability to observe at least this
+        number of common elements by chance alone.
 
 CATEGORY
-	util,stat
+        util,stat
 
 USAGE
         compare-families -r ref_families -q query_families
-		[-o outputfile] [-v]
+                [-o outputfile] [-v]
 
 OPTIONS
-	-h	(must be first argument) display full help message
-	-help	(must be first argument) display options
-	-v	verbose
-	-r ref_families
-		A tab-delimited text file containing the dscription of
-		reference families (see format description below).
-	-q query_families
-		A tab-delimited text file containing the dscription of
-		query families (see format description below).
-	-o outputfile
-		if not specified, the standard output is used.
-		This allows to place the command within a pipe.
-	-return	return_fields
-		List of fields to return. Supported field :
-		$supported_return_fields
-	-uth field #
-		upper threshold value for a given field
-		Supported_fields:
-			occ, P_val, E_val, sig, ref_percent, query_percent
-	-lth field #
-		lower threshold value for a given field 
-		(same fields as -uth)
-	-pop #	
-	        Population size. If not specified, the population size
-	        is estimated as the number of distinct elemenst in the
-	        whole set of referenc families.
-	-sort key
-		sort on the basis of the specified key.
-		Supported keys: $supported_sort_keys
-	-rep	replacement
-		Sampling was performed with replacement, i.e. a given
-		element can appear several times in the same family.
+        -h      (must be first argument) display full help message
+        -help   (must be first argument) display options
+        -v      verbose
+        -r ref_families
+                A tab-delimited text file containing the dscription of
+                reference families (see format description below).
+        -q query_families
+                A tab-delimited text file containing the dscription of
+                query families (see format description below).
+        -o outputfile
+                if not specified, the standard output is used.
+                This allows to place the command within a pipe.
+        -return return_fields
+                List of fields to return. Supported field :
+                $supported_return_fields
+        -uth field #
+                upper threshold value for a given field
+                Supported_fields:
+                        occ, P_val, E_val, sig, ref_percent, query_percent
+        -lth field #
+                lower threshold value for a given field
+                (same fields as -uth)
+        -pop #
+                Population size. If not specified, the population size
+                is estimated as the number of distinct elemenst in the
+                whole set of referenc families.
+        -sort key
+                sort on the basis of the specified key.
+                Supported keys: $supported_sort_keys
+        -rep    replacement
+                Sampling was performed with replacement, i.e. a given
+                element can appear several times in the same family.
 
-		In this case, the binomial distribution is used
-		instead of the hypergeometric.
+                In this case, the binomial distribution is used
+                instead of the hypergeometric.
 
-	-sym	symmetric comparison
-		(only useful when -rep is activated, because th
-		hypergeometric is by definition symmetric)
-		
-	-distinct
-		Prevent to compare each family with itself (when the
-		reference and query files contain the same families).
-	-matrix
-		Return a distance matrix, where each row corresponds
-		to a reference family, each column to a query family,
-		and each cell contains a similarity index. By default,
-		the sig index is used as similarity index.
+        -sym    symmetric comparison
+                (only useful when -rep is activated, because th
+                hypergeometric is by definition symmetric)
+
+        -distinct
+                Prevent to compare each family with itself (when the
+                reference and query files contain the same families).
+        -matrix
+                Return a distance matrix, where each row corresponds
+                to a reference family, each column to a query family,
+                and each cell contains a similarity index. By default,
+                the sig index is used as similarity index.
 
 PROBABILITIES
-	P-VALUE
+        P-VALUE
 
-		The P-value is the probability to observe at least c
-		common elements between a given query family and a
-		given reference family. It can be calculated with
-		different formulae, depending on the underlying random
-		model.
+                The P-value is the probability to observe at least c
+                common elements between a given query family and a
+                given reference family. It can be calculated with
+                different formulae, depending on the underlying random
+                model.
 
-		Let us assume that we have : 
-			q	size of the query family
-			r	size of the reference family
-			c	number of common elements
-			n	population size
+                Let us assume that we have :
+                        q       size of the query family
+                        r       size of the reference family
+                        c       number of common elements
+                        n       population size
 
+                HYPERGEOMETRIC
+                                       q     i  q-i     q
+                P_value = P(X >= c) = SUM ( C  C     / C  )
+                                      i=c    r  n-r     n
 
-		HYPERGEOMETRIC
-		                       q     i  q-i     q
-		P_value = P(X >= c) = SUM ( C  C     / C  )
-		                      i=c    r  n-r     n   
+                BINOMIAL
 
-		BINOMIAL
-
-		When the option -rep (replacement) is active,
-		probabilities are calculated on the basis of the
-		binomial distribution instead of the hypergeometric.
-		
-
-		The binomial formula is applied with 
-			p_r = r/n probability of success at each trial
-			nb of trials = q
-			nb of successes = c
-
-			               q
-		P_value = P(X >= c) = SUM (binom(i,q,p_r)) 
-			              i=c
+                When the option -rep (replacement) is active,
+                probabilities are calculated on the basis of the
+                binomial distribution instead of the hypergeometric.
 
 
-		Beware: the binomial gives an assymmetric result,
-		i.e. the fact to swap query and reference families
-		changes the probability. This can be circumvented by
-		using the option -sym, described below.
+                The binomial formula is applied with
+                        p_r = r/n probability of success at each trial
+                        nb of trials = q
+                        nb of successes = c
 
-		SYMMETRICAL COMPARISON WITH THE BINOMIAL
+                                       q
+                P_value = P(X >= c) = SUM (binom(i,q,p_r))
+                                      i=c
 
-		When the comparison is assumed to be symmetrical, the
-		program calculates the joint probability fo at least c
-		elements to belong to both the query set and the
-		reference set.
+                Beware: the binomial gives an assymmetric result,
+                i.e. the fact to swap query and reference families
+                changes the probability. This can be circumvented by
+                using the option -sym, described below.
 
-		In this case, the binomial is applied with :
-			p_qr = q/n * r/n	   
-			  = proba of success at each trial
-			nb of trials = n
-			nb of successes = c
+                SYMMETRICAL COMPARISON WITH THE BINOMIAL
 
-			               q
-		P_value = P(X >= c) = SUM (binom(i,n,p_qr)) 
-			              i=c
+                When the comparison is assumed to be symmetrical, the
+                program calculates the joint probability fo at least c
+                elements to belong to both the query set and the
+                reference set.
 
-	E-VALUE
+                In this case, the binomial is applied with :
+                        p_qr = q/n * r/n
+                          = proba of success at each trial
+                        nb of trials = n
+                        nb of successes = c
 
-		Assuming that there are x query families and y
-		reference families, each analysis consists in x*y
-		comparisons. Thus, thhe P-value can be misleading,
-		because even low P-values are expected to emerge by
-		chance alone when the number of query and/or reference
-		families is very high. The E-value reflects better the
-		degree of exceptionality.
+                                       q
+                P_value = P(X >= c) = SUM (binom(i,n,p_qr))
+                                      i=c
 
-		E_val = P_Val * nb_tests
-		      = P_val * x * y
+        E-VALUE
 
-		      where x = number of query families
-			    y = number of reference families
+                Assuming that there are x query families and y
+                reference families, each analysis consists in x*y
+                comparisons. Thus, thhe P-value can be misleading,
+                because even low P-values are expected to emerge by
+                chance alone when the number of query and/or reference
+                families is very high. The E-value reflects better the
+                degree of exceptionality.
 
-	SIG
-		The significance index is the minus log of the
-		E-value. It is calculated in base 10.
+                E_val = P_Val * nb_tests
+                      = P_val * x * y
 
-		sig = -log10(E_val)
+                      where x = number of query families
+                            y = number of reference families
 
-		This index gives an intuitive perception of the
-		exceptionality of the common elements : a negative sig
-		indicates that the common matches are likely to come by
-		chanc alone, a ositive value that they are
-		significant. Higher sig values indicate a higher
-		significance.
+        SIG
+                The significance index is the minus log of the
+                E-value. It is calculated in base 10.
+
+                sig = -log10(E_val)
+
+                This index gives an intuitive perception of the
+                exceptionality of the common elements : a negative sig
+                indicates that the common matches are likely to come by
+                chanc alone, a ositive value that they are
+                significant. Higher sig values indicate a higher
+                significance.
 
 OUTPUT FORMAT
 
-	The program returns a tabdelimited file with one row per
-	combination of reference-query family, and one column per
-	return field.
+        The program returns a tabdelimited file with one row per
+        combination of reference-query family, and one column per
+        return field.
 
-	Default return fields:
-		1) ref      reference family
-		2) query    query family
-		3) ref#	    number of members in the ref family
-		4) query#   number of members in the query family
-		5) common   number of elements in common between the
-			    query and reference family
+        Default return fields:
+                1) ref      reference family
+                2) query    query family
+                3) ref#     number of members in the ref family
+                4) query#   number of members in the query family
+                5) common   number of elements in common between the
+                            query and reference family
 
-	Additional return values are optionally returned, and can be
-	specified with the -return option.
+        Additional return values are optionally returned, and can be
+        specified with the -return option.
 
 FILE FORMATS
     $HELP_FAMILY_FILE
@@ -594,116 +581,116 @@ sub PrintOptions {
   print HELP <<End_short_help;
 compare-families options
 ----------------
--h		(must be first argument) display full help message
--help		(must be first argument) display options
--r		reference families
--q		query families
--o		output file
--v		verbose
--return		return fields (supported $supported_return_fields)
--lth		threshold on a given field
--uth		threshold on a given field
--pop		population size
--sort		sort key (supported keys: occ, sig)
--rep		sampling with replacement (use binomial instead of hyergeometric)
--sym		symmetric comparison (only with -rep, see detailed help)
--distinct	prevent to compare each family with itself
--matrix		return a similarity matrix
+-h              (must be first argument) display full help message
+-help           (must be first argument) display options
+-r              reference families
+-q              query families
+-o              output file
+-v              verbose
+-return         return fields (supported $supported_return_fields)
+-lth            threshold on a given field
+-uth            threshold on a given field
+-pop            population size
+-sort           sort key (supported keys: occ, sig)
+-rep            sampling with replacement (use binomial instead of
+hyergeometric)
+-sym            symmetric comparison (only with -rep, see detailed help)
+-distinct       prevent to compare each family with itself
+-matrix         return a similarity matrix
 End_short_help
   close HELP;
   exit(0);
 }
 
-
 ################################################################
-#### read arguments 
+#### read arguments
 sub ReadArguments {
     foreach my $a (0..$#ARGV) {
 
-	### verbose  
-	if ($ARGV[$a] eq "-v") {
-	    if (&IsNatural($ARGV[$a+1])) {
-		$verbose = $ARGV[$a+1];
-	    } else {
-		$verbose = 1;
-	    }
+        ### verbose
+        if ($ARGV[$a] eq "-v") {
+            if (&IsNatural($ARGV[$a+1])) {
+                $verbose = $ARGV[$a+1];
+            } else {
+                $verbose = 1;
+            }
 
-	    ### detailed help
-	} elsif ($ARGV[$a] eq "-h") {
-	    &PrintHelp();
+            ### detailed help
+        } elsif ($ARGV[$a] eq "-h") {
+            &PrintHelp();
 
-	    ### list of options
-	} elsif ($ARGV[$a] eq "-help") {
-	    &PrintOptions();
+            ### list of options
+        } elsif ($ARGV[$a] eq "-help") {
+            &PrintOptions();
 
-	    ### reference file  
-	} elsif ($ARGV[$a] eq "-r") {
-	    $infile{ref_families} = $ARGV[$a+1];
+            ### reference file
+        } elsif ($ARGV[$a] eq "-r") {
+            $infile{ref_families} = $ARGV[$a+1];
 
-	    ### replacement
-	} elsif ($ARGV[$a] eq "-rep") {
-	    $replacement = 1;
+            ### replacement
+        } elsif ($ARGV[$a] eq "-rep") {
+            $replacement = 1;
 
-	    ### symmetric (for binomial distrib only)
-	} elsif ($ARGV[$a] eq "-sym") {
-	    $symmetric = 1;
+            ### symmetric (for binomial distrib only)
+        } elsif ($ARGV[$a] eq "-sym") {
+            $symmetric = 1;
 
-	    ### query file  
-	} elsif ($ARGV[$a] eq "-q") {
-	    $infile{query_families} = $ARGV[$a+1];
+            ### query file
+        } elsif ($ARGV[$a] eq "-q") {
+            $infile{query_families} = $ARGV[$a+1];
 
-	    ### output file  
-	} elsif ($ARGV[$a] eq "-o") {
-	    $outfile{output} = $ARGV[$a+1];
+            ### output file
+        } elsif ($ARGV[$a] eq "-o") {
+            $outfile{output} = $ARGV[$a+1];
 
-	    ### sort key
-	} elsif ($ARGV[$a] eq "-sort") {
-	    $sort_key = $ARGV[$a+1];
-	    unless ($supported_sort_keys{$sort_key}) {
-		&FatalError ("Invalid sort key $sort_key. Supported: $supported_sort_keys" );
-	    }
+            ### sort key
+        } elsif ($ARGV[$a] eq "-sort") {
+            $sort_key = $ARGV[$a+1];
+            unless ($supported_sort_keys{$sort_key}) {
+                &FatalError ("Invalid sort key $sort_key. Supported: $supported_sort_keys" );
+            }
 
-	    ### export a distance matrix
-	} elsif ($ARGV[$a] eq "-matrix") {
-	    $return{matrix} = 1;
-	    $return_fields{proba} = 1;
+            ### export a distance matrix
+        } elsif ($ARGV[$a] eq "-matrix") {
+            $return{matrix} = 1;
+            $return_fields{proba} = 1;
 
-	    ### prevent to compare each family with itself
-	} elsif ($ARGV[$a] eq "-distinct") {
-	    $distinct = 1;
+            ### prevent to compare each family with itself
+        } elsif ($ARGV[$a] eq "-distinct") {
+            $distinct = 1;
 
-	    ### population size
-	} elsif ($ARGV[$a] eq "-pop") {
-	    $population_size = $ARGV[$a+1];
-	    unless (&IsNatural($population_size)) {
-		&FatalError("Population size must be a natural number");
-	    }
-	    unless ($population_size > 0) {
-		&FatalError("Population size must be strictly positive.");
-	    }
+            ### population size
+        } elsif ($ARGV[$a] eq "-pop") {
+            $population_size = $ARGV[$a+1];
+            unless (&IsNatural($population_size)) {
+                &FatalError("Population size must be a natural number");
+            }
+            unless ($population_size > 0) {
+                &FatalError("Population size must be strictly positive.");
+            }
 
-	    #### threshold values
-	} elsif ($ARGV[$a] eq "-lth") {
-	    my $field = $ARGV[$a+1];
-	    my $value = $ARGV[$a+2];
-	    $lth{$field} = $value;
-	} elsif ($ARGV[$a] eq "-uth") {
-	    my $field = $ARGV[$a+1];
-	    my $value = $ARGV[$a+2];
-	    $uth{$field} = $value;
+            #### threshold values
+        } elsif ($ARGV[$a] eq "-lth") {
+            my $field = $ARGV[$a+1];
+            my $value = $ARGV[$a+2];
+            $lth{$field} = $value;
+        } elsif ($ARGV[$a] eq "-uth") {
+            my $field = $ARGV[$a+1];
+            my $value = $ARGV[$a+2];
+            $uth{$field} = $value;
 
-	    #### return fields
-	} elsif ($ARGV[$a] eq "-return") {
-	    chomp($ARGV[$a+1]);		 
-	    my @fields_to_return = split ",", $ARGV[$a+1];
-	    foreach $field (@fields_to_return) {
-		if ($supported_return_fields{$field}) {
-		    $return_fields{$field} = 1;
-		} else {
-		    &FatalError("Invalid return field $field");
-		}
-	    }
-	}
+            #### return fields
+        } elsif ($ARGV[$a] eq "-return") {
+            chomp($ARGV[$a+1]);
+            my @fields_to_return = split ",", $ARGV[$a+1];
+            foreach $field (@fields_to_return) {
+                if ($supported_return_fields{$field}) {
+                    $return_fields{$field} = 1;
+                } else {
+                    &FatalError("Invalid return field $field");
+                }
+            }
+        }
 
     }
 }
@@ -714,52 +701,50 @@ sub Verbose {
     print $out "; compare-families ";
     &PrintArguments($out);
     if (defined(%infile)) {
-	print $out "; Input files\n";
-	while (($key,$value) = each %infile) {
-	    print $out ";\t$key\t$value\n";
-	}
+        print $out "; Input files\n";
+        while (($key,$value) = each %infile) {
+            print $out ";\t$key\t$value\n";
+        }
     }
 
     print $out "; Reference families\n";
     foreach my $f (keys %ref_families) {
-	printf $out ";\t%s\t%d\n", $ref_families{$f}->get_name(), $ref_families{$f}->get_size();
+        printf $out ";\t%s\t%d\n", $ref_families{$f}->get_name(), $ref_families{$f}->get_size();
     }
     printf $out "; %-21s\t%d\n", "Population size", $population_size;
     printf $out "; %-21s\t%s\n", "Sort key", $sort_key if ($sort_key);
 
     print $out "; Sampling with replacement (binommial proba)\n" if ($replacement);
     print $out "; Symmetric comparison\n" if ($symmetric);
-    
+
     print $out "; Thresholds\tlower\tupper\n";
     foreach $f (qw(occ sig)) {
-	print $out ";\t$f";
-	if (defined($lth{$f})) {
-	    printf $out "\t%-5g", $lth{$f};
-	} else {
-	    print $out "\tNA";
-	}
-	if (defined($uth{$f})) {
-	    printf $out "\t%-5g", $uth{$f};
-	} else {
-	    print $out "\tNA";
-	}
-	print $out "\n";
+        print $out ";\t$f";
+        if (defined($lth{$f})) {
+            printf $out "\t%-5g", $lth{$f};
+        } else {
+            print $out "\tNA";
+        }
+        if (defined($uth{$f})) {
+            printf $out "\t%-5g", $uth{$f};
+        } else {
+            print $out "\tNA";
+        }
+        print $out "\n";
     }
-
 
     print $out "; Query families\n";
     foreach my $f (keys %query_families) {
-	printf $out ";\t%s\t%d\n", $query_families{$f}->get_name(), $query_families{$f}->get_size();
+        printf $out ";\t%s\t%d\n", $query_families{$f}->get_name(), $query_families{$f}->get_size();
     }
-    
+
     if (defined(%outfile)) {
-	print $out "; Output files\n";
-	while (($key,$value) = each %outfile) {
-	    print $out ";\t$key\t$value\n";
-	}
+        print $out "; Output files\n";
+        while (($key,$value) = each %outfile) {
+            print $out ";\t$key\t$value\n";
+        }
     }
 }
-
 
 ################################################################
 #### read family file
