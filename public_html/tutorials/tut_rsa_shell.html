@@ -46,6 +46,11 @@ analyzing regulatory sequences in a unix shell
 <li><a href=#xygraph>XYgraph</a>
 </ul>
 
+<li><a href=#utilities>Utilities</a>
+<ul>
+<li><a href=#orf_info>orf-info</a>
+</ul>
+
 <li><a href=#advanced>Advanced use of RSA-Tools</a>
 <ul>
 <li><a href=#install_organism>Installing additional organisms</a>
@@ -1136,6 +1141,44 @@ retrieve-seq -type upstream -from -1 -to -800  -org yeast \
 
 <a name=xygraph>
 <h3>XYgraph</h3>
+
+
+</ul>
+<a name=utilities>
+<h2>Utilities</h2>
+<UL>
+
+<a name=orf_info>
+<h3>orf-info</h3>
+
+<b>orf-info</b> allows you to get information on ORFs, given a series of
+query words. Queries are matched against ORF identifiers and ORF
+names. Imperfect matches can be specified by using regular
+expressions.
+
+For example, to get all info about the yeast gene GAT1 :
+
+<ul><pre>
+orf-info -org yeast -q GAT1
+</ul></pre>
+
+And to get all the purine genes from <i>Escherichia coli</I>, type : 
+
+<ul><pre>
+orf-info -org ecoli -q 'pur.*'
+</ul></pre>
+
+Note the use of quotes, which is necessary whenever the query contains
+a *.
+
+<P>
+You can also combine several queries on the same command line, by
+using reiteratively the -q option :
+
+<ul><pre>
+orf-info -org ecoli -q 'met.*' -q 'thr.*' -q 'lys.*'
+</ul></pre>
+
 
 
 </ul>
