@@ -13,18 +13,31 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $query = new CGI;
 
 ### default values for filling the form
-$default{set_name} = "";
 $default{matrix_format} = "consensus";
-$default{matrix} = "";
-$default{sequence} = "";
-$default{sequence_format} = "fasta";
-$default{sequence_file} = "";
-$default{alphabet} = "a:t 0.3 c:g 0.2";
-$default{pseudo_counts} = 1;
-$default{strands} = "both";
+$default{matrix} = ""; ### [-m <Name of matrix file---default name is "matrix">]
+$default{matrix_is_weight} = ""; ### [-w <Matrix is a weight matrix>]
+$default{matrix_is_vertical} = ""; ### [-v <Vertical matrix---rows correspond to positions>]
+$default{sequence_file} = ""; ### [-f <Name of sequence file---default: standard input>]
+$default{sequence} = ""; ### [-f <Name of sequence file---default: standard input>]
+$default{sequence_format} = "fasta"; ### automatic conversion from any format to wc
+$default{pseudo_counts} = 1; ### [-b <Correction added to the elements of the alignment matrix (default: 1)>]
+$default{alphabet_file} = ""; ### [-a <Name of ascii alphabet file---default name is "alphabet">]
+$default{alphabet} = "a:t 0.3 c:g 0.2"; ### [-A <Ascii alphabet information>]
+$default{case} = "insensitive"; ### [-CS <Ascii alphabet is case sensitive (default: ascii alphabets are case insensitive)>]
+$default{strands} = "both"; ### [-c <Score the complementary strand>]
+
+$default{lthreshold_method} = "manual";
+### [-li <Determine lower-threshold score from adjusted information content>]
+### [-lp <Determine lower-threshold score from a maximum ln(p-value)>]
+$default{lthreshold} = "0"; ### [-ls <Lower-threshold score, inclusive (formerly the -l option)>]
+$default{uthreshold} = "none"; ### [-u <Upper-threshold score, exclusive>]
+
+
 $default{return} = "all matching positions";
-$default{lthreshold} = "0";
-$default{uthreshold} = "none";
+$default{top_scores} = "1"; ### [-t <Print only the top scores>]
+$default{sort} = "checked"; ### [-ds <Print top scores in order of decreasing score (default: print in order of position)>]
+
+
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
@@ -58,29 +71,49 @@ print "</CENTER>";
 
 print $query->start_multipart_form(-action=>"patser.cgi");
 
-### text area to enter the matrix
+
+################################################################
+#### Matrix specification
 print "<A HREF='help.patser.html#matrix'><B>\n";
 print "Matrix</B></A>\n";
 print "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
 print "<B>Format</B>&nbsp;";
+
+#### matrix format
 print $query->popup_menu(-name=>'matrix_format',
 			 -Values=>['consensus',
 				   'gibbs',
 				   'transfac'
 				   ],
 			 -default=>$matrix_format);
+
+#### mwight matrix
+print "&nbsp;"x6;
+print $query->checkbox(-name=>'matrix_is_weight',
+		       -label=>"contains weigths",
+		       -checked=>$default{matrix_is_weight});
+
+#### vertical matrix
+print "&nbsp;"x6;
+print $query->checkbox(-name=>'matrix_is_vertical',
+		       -label=>"vertical",
+		       -checked=>$default{matrix_is_vertical});
+
+
+### text area to enter the matrix
 print "<BR>\n";
 print $query->textarea(-name=>'matrix',
 		       -default=>$default{matrix},
 		       -rows=>4,
 		       -columns=>60);
-print "<BR>\n";
 
 #### sequence
+print "<BR>\n";
 &DisplaySequenceChoice;
 
 
 ### strands
+print "<BR>\n";
 print "<A HREF='help.patser.html#strands'><B>Search strands</B></A>&nbsp;\n";
 print $query->popup_menu(-name=>'strands',
 			 -Values=>['single',
@@ -88,11 +121,22 @@ print $query->popup_menu(-name=>'strands',
 			 -default=>$default{strands});
 
 ### return
+print "<BR>\n";
 print "<A HREF='help.patser.html#return'><B>Return</B></A>&nbsp;\n";
-print $query->popup_menu(-name=>'return',
-			 -Values=>['top value for each sequence',
-				   'all matching positions'],
-			 -default=>$default{return});
+print $query->radio_group(-name=>'return',
+			  -Values=>[ 'all matching positions'],
+			  -default=>$default{return});
+
+print "&nbsp;"x6;
+print $query->radio_group(-name=>'return',
+			  -Values=>['top values for each sequence'],
+			  -labels=>{'top values for each sequence'=>''},
+			  -default=>$default{return});
+print $query->textfield(-name=>top_scores,
+			-default=>$default{top_scores},
+			-size=>3
+			);
+print "top value(s) for each sequence";
 
 ### pseudo-counts and thresholds
 print "<BR>\n";
@@ -119,15 +163,26 @@ print CGI::table({-border=>0,-cellpadding=>3,-cellspacing=>0},
 		 );
 
 ### alphabet
+print "<BR>\n";
 print "<B><A HREF='help.patser.html#alphabet'>\n";
-print "Alphabet</A>\n";
+print "Alphabet</A></b>\n";
 print $query->textfield(-name=>'alphabet',
 			-default=>$default{alphabet},
 			-size=>50);
 
+#### case sensitivity
 print "<BR>\n";
+print "<B><A HREF='help.patser.html#case'>\n";
+print "Case</A></b>\n";
+print "&nbsp;"x6;
+print $query->popup_menu(-name=>'case',
+			 -Values=>[ "sensitive", "insensitive","insensitive, but mark lowercases"],
+			 -default=>$default{case});
+
+
 
 ### send results by e-mail or display on the browser
+print "<BR>\n";
 &SelectOutput;
 
 ### action buttons
@@ -226,7 +281,6 @@ print $query->hidden(-name=>'matrix',-default=>$demo_matrix);
 print $query->hidden(-name=>'sequence',-default=>$demo_sequence);
 print $query->hidden(-name=>'sequence_format',-default=>$default{sequence_format});
 print $query->hidden(-name=>'alphabet',-default=>"a:t 0.325 c:g 0.175");
-print $query->hidden(-name=>'set_name',-default=>'upstream sequences from the yeast PHO genes');
 print $query->submit(-label=>"DEMO");
 print "</B></TD>\n";
 print $query->end_form;
