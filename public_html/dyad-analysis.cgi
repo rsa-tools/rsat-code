@@ -1,11 +1,4 @@
 #!/usr/bin/perl
-############################################################
-#
-# $Id: dyad-analysis.cgi,v 1.2 2000/11/12 09:01:24 jvanheld Exp $
-#
-# Time-stamp: <2000-11-12 10:01:18 jvanheld>
-#
-############################################################
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
@@ -15,14 +8,14 @@ use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib.pl";
 require "RSA.cgi.lib.pl";
 
-$dyad_detector_command = "$SCRIPTS/dyad-analysis";
-$tmp_file_name = sprintf "dyad-analysis.%s", &AlphaDate;
+$dyad_detector_command = "$SCRIPTS/dyad-detector";
+$tmp_file_name = sprintf "dyad-detector.%s", &AlphaDate;
 
 ### Read the CGI query
 $query = new CGI;
 
 ### print the result page
-&RSA_header("dyad-analysis result");
+&RSA_header("dyad-detector result");
 #&ListParameters;
 
 #### update log file ####
