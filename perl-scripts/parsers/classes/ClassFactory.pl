@@ -819,7 +819,7 @@ use Data::Dumper;
 
 
       #### field sizes
-      my $default_id_size = 16;
+      my $default_id_size = 32;
       my $default_field_size = 255;
       my $default_field_format = "VARCHAR($default_field_size)"; ### temporary : all fields are strings
       
