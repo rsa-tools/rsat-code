@@ -1,9 +1,10 @@
 #!/usr/bin/perl -w
+
 ############################################################
 #
-# $Id: compare-families,v 1.4 2002/09/19 23:01:13 jvanheld Exp $
+# $Id: compare-families,v 1.5 2002/09/24 04:58:38 jvanheld Exp $
 #
-# Time-stamp: <2002-09-19 18:00:01 jvanheld>
+# Time-stamp: <2002-09-23 23:58:19 jvanheld>
 #
 ############################################################
 #use strict;;
