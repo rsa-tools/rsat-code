@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank.pl,v 1.10 2003/12/02 08:50:03 jvanheld Exp $
+# $Id: parse_genbank.pl,v 1.11 2004/03/29 12:47:15 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 15:41:54 jvanheld>
 #
@@ -19,6 +19,7 @@ require "config.pl";
 require "lib/util.pl";
 #require "lib/loading_util.pl"; ### for converting polypeptide IDs into ACs
 require "lib/parsing_util.pl";
+require "lib/parse_genbank_lib.pl";
 
 require "classes/Genbank_classes.pl";
 
