@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence,v 1.21 2003/10/29 09:04:12 jvanheld Exp $
+# $Id: purge-sequence,v 1.22 2004/03/11 09:12:30 jvanheld Exp $
 #
 # Time-stamp: <2003-10-05 23:01:33 jvanheld>
 #
@@ -22,10 +22,13 @@ my $convert_seq_command = "$SCRIPTS/convert-seq";
 $both_strands = 1;
 $inputfile = "";
 $outputfile = "";
-$verbose = 0;
 $match_len = 40;
 $mismatches = 3;
 $in_format = "fasta";
+
+$verbose = 0;
+$dry_run = 0;
+$die_on_error = 1;
 
 &ReadArguments();
 
@@ -70,7 +73,7 @@ $tmp_file = "tmp_".$basename.".fasta";
 #$command = "cd $TMP ; ";
 $command = " $convert_seq_command -from $in_format -to fasta -o ${TMP}/$tmp_file";
 $command .= " -i $dir{input}/$basename" if ($inputfile);
-&doit($command);
+&doit($command, $dry_run, $die_one_error, $verbose);
 
 
 ###### execute the command #########
@@ -88,7 +91,8 @@ $mkvtree_options .= " -lcp"; # output longest common prefix lengths to file
 $mkvtree_options .= " -ois"; # output the parsed input string to a file
 $mkvtree_options .= " -pl"; # length of prefix for bucket sort (default 0)
 $mkvtree_options .= " -db $tmp_file"; # sequence file
-&doit("cd $TMP; $skdir/mkvtree $mkvtree_options");
+$command = "cd $TMP; $skdir/mkvtree $mkvtree_options";
+&doit($command, $dry_run, $die_one_error, $verbose);
 
 #### locate the duplications
 my $vmatch_options = "-s"; # show the sequence content of a match
@@ -113,13 +117,16 @@ $vmatch_options .= " | grep -v '^#' ";
 $vmatch_options .= " | perl -pe 's| (\\d+) |_\$1_|'";
 
 $vmatch_options .= "> $dir{output}/$basename{out}" if ($outputfile);
-&doit("cd $TMP ; $skdir/vmatch $vmatch_options");
+$command = "cd $TMP ; $skdir/vmatch $vmatch_options";
+&doit($command, $dry_run, $die_one_error, $verbose);
 foreach $ext  (@extensions) {
-    &doit("rm -f ${TMP}/${tmp_file}.${ext}");
+    my $command = "rm -f ${TMP}/${tmp_file}.${ext}";
+    &doit($command, $dry_run, $die_one_error, $verbose);
 }
 
 #### remove the temp file
-&doit("rm -f ${TMP}/$tmp_file");
+$command = "rm -f ${TMP}/$tmp_file";
+&doit($command, $dry_run, $die_one_error, $verbose);
 
 
 ###### verbose ######
@@ -134,13 +141,6 @@ exit(0);
 
 
 ########################## subroutine definition ############################
-
-sub doit {
-    my ($command) = @_;
-#    chdir($TMP);
-    warn "; $command\n" if ($verbose);
-    system $command unless $dry_run;
-}
 
 sub PrintHelp {
 #### display full help message #####

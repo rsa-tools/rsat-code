@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.75 2004/03/08 14:16:44 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.76 2004/03/11 09:12:30 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -548,7 +548,7 @@ sub UpstreamSequences {
    $command .= " -label orf_gene ";
    $command .= " -feattype $feature_types " if ($feature_types);
    $command .= " -format $seq_format";
-   &doit($command,$dry_run, $die_on_error);
+   &doit($command, $dry_run, $die_one_error, $verbose);
 }
 
 ################################################################
@@ -558,7 +558,7 @@ sub PurgeSequences {
    $command = "purge-sequence -ml 40 -mis 3";
    $command .= " -i $family{$family_name}->{seq_file}";
    $command .= " > $family{$family_name}->{seq_file_purged}";
-   &doit($command,$dry_run, $die_on_error);
+   &doit($command, $dry_run, $die_one_error, $verbose);
 }
 
 
@@ -662,7 +662,7 @@ sub OligoAnalysis {
    ## Analyze all oligo lengths
    for $oligo_len ($min_oligo_len..$max_oligo_len) {
 	&CalcOligoOptions($oligo_len);
-	&doit($command,$dry_run, $die_on_error);
+	&doit($command, $dry_run, $die_one_error, $verbose);
 #	system "cat $oligo_file >> $family{$family_name}->{oligo_file}";
    }
 
@@ -693,7 +693,7 @@ sub MergeOligoLengths {
    ### fragment assembly
    $command = "pattern-assembly -i $family{$family_name}->{oligo_file} ${strands} -v -o $family{$family_name}->{oligo_assembly_file} -maxfl 1 -maxpat 200 -subst 1";
    
-   &doit($command,$dry_run, 0);
+   &doit($command, $dry_run, 0, $verbose);
 }
 
 
@@ -725,7 +725,7 @@ sub MatchPatterns {
    $command .= " | features-from-dnapat -o ".$feature_file;
 
    ## Check if pattern matching is OK (sometimes there are no patterns)
-   my $error = &doit($command,$dry_run, 0);
+   my $error = &doit($command, $dry_run, 0, $verbose);
    if ($error) {
 	warn "; WARNING: Feature map skipped because dna-pattern returned an error\n";
 	return;
@@ -769,7 +769,7 @@ sub DrawFeatureMap {
 	$command .= " -htmap > $htmap_file ";
    };
    
-   &doit($command,$dry_run, 0);
+   &doit($command, $dry_run, 0, $verbose);
 }
 
 ################################################################
@@ -786,12 +786,12 @@ sub DyadAnalysis {
    die "Error : cannot read file $family{$family_name}->{input_seq_file}\n" unless (-r $family{$family_name}->{input_seq_file});
    $command = "dyad-analysis -return occ,proba,rank -i $family{$family_name}->{input_seq_file} -format $seq_format -o $family{$family_name}->{dyad_file} $dyad_options";
    
-   &doit($command,$dry_run, $die_on_error);
+   &doit($command, $dry_run, $die_one_error, $verbose);
    
    ### fragment assembly
    $command = "pattern-assembly -v -i $family{$family_name}->{dyad_file} -o $family{$family_name}->{dyad_assembly_file} ${strands} -maxfl 1 -maxpat 200 ";
    
-   &doit($command,$dry_run, 0);
+   &doit($command, $dry_run, 0, $verbose);
    
 }
 
@@ -820,7 +820,7 @@ sub MergePatterns {
    }
    $command .= " >> $family{$family_name}->{merged_file};";
    $command .= " wc $family{$family_name}->{merged_file}";
-   &doit($command,$dry_run, $die_on_error);
+   &doit($command, $dry_run, $die_one_error, $verbose);
    &DrawMergedFeatureMap() if ($task{map});
 }
 
@@ -836,7 +836,7 @@ sub DrawMergedFeatureMap {
    $origin = "-0";
    my $command = "dna-pattern -i $family{$family_name}->{seq_file} -format $seq_format -pl $family{$family_name}->{merged_file} -origin $origin -N 4 ";
    $command .= " | features-from-dnapat -o $family{$family_name}->{merged_ft_file} ";
-   my $error = &doit($command,$dry_run, 0);
+   my $error = &doit($command, $dry_run, 0, $verbose);
    if ($error) {
 	warn "; WARNING: Feature map skipped because dna-pattern returned an error\n";
 	return;
@@ -856,7 +856,7 @@ sub DrawMergedFeatureMap {
 	$command .= " -htmap > $htmap_file ";
    };
    
-   &doit($command,$dry_run, 0);
+   &doit($command, $dry_run, 0, $verbose);
 }
 
 
@@ -878,7 +878,7 @@ sub MotifSampler {
 #	my $command = " CreateBackgroundModel -f ".$family{$family_name}->{input_seq_file};
 #	$command .= " -b ".$family{$family_name}->{MotifSamplerBackground};
 #	$command .= " -o ".$MS_bg_order;
-#	&doit($command,$dry_run, $die_on_error);
+#	&doit($command, $dry_run, $die_one_error, $verbose);
 #   }
 
    ## run the command
@@ -887,7 +887,7 @@ sub MotifSampler {
 #    unless ($main::verbose >= 4) {
 #	$MS_command .= ">& /dev/null";
 #    }
-   &doit($MS_command, $dry_run, $die_on_error);
+   &doit($MS_command, $dry_run, $die_on_error, $verbose);
 
 }
 
@@ -915,7 +915,7 @@ sub Gibbs {
 #    unless ($main::verbose >= 4) {
 #	$gibbs_command .= ">& /dev/null";
 #    }
-   &doit($gibbs_command, $dry_run, $die_on_error);
+   &doit($gibbs_command, $dry_run, $die_on_error, $verbose);
 }
 
 ################################################################
@@ -926,7 +926,7 @@ sub MEME {
 
    ## run the command
    $meme_command = "meme ".$family{$family_name}->{meme_options};
-   &doit($meme_command, $dry_run, 0);
+   &doit($meme_command, $dry_run, 0, $verbose);
 }
 
 ################################################################
@@ -941,7 +941,7 @@ sub Consensus {
    ## run the command
    $consensus_command .= " | consensus ".$family{$family_name}->{consensus_options};
    $consensus_command .= " > ".$family{$family_name}->{consensus_file};
-   &doit($consensus_command, $dry_run, 0);
+   &doit($consensus_command, $dry_run, 0, $verbose);
 }
 
 ################################################################
@@ -1432,7 +1432,7 @@ sub DrawDyadFeatureMap {
    $origin = "-0";
    my $command = "dna-pattern -pl $family{$family_name}->{dyad_file} -format $seq_format -i $family{$family_name}->{seq_file} -origin $origin -N 4 ";
    $command .= "| features-from-dnapat -o $family{$family_name}->{dyad_ft_file} ";
-   my $error = &doit($command,$dry_run, 0);
+   my $error = &doit($command, $dry_run, 0, $verbose);
    if ($error) {
 	warn "; WARNING: Feature map skipped because dna-pattern returned an error\n";
 	return;
@@ -1451,7 +1451,7 @@ sub DrawDyadFeatureMap {
 	$command .= "-htmap >  $family{$family_name}->{htmap_file}";
    }
    #  $command .= " ;  xv -o $family{$family_name}->{fmap_file} &";
-   &doit($command,$dry_run, 0);
+   &doit($command, $dry_run, 0, $verbose);
 }
 
 
@@ -2461,7 +2461,7 @@ sub CalcCalibrationLengths {
 		  $family{$family_name}->{seq_len_file}), "\n" if ($verbose >= 3);
 	my $command = "sequence-lengths -i ".$family{$family_name}->{seq_file};
 	$command .= " -o ".$family{$family_name}->{seq_len_file};
-	&doit($command, $dry_run, $die_on_error);
+	&doit($command, $dry_run, $die_on_error, $verbose);
 	
 	## Index sequence lengths
 	my ($in, $indir) = &OpenInputFile($family{$family_name}->{seq_len_file});
@@ -2507,7 +2507,7 @@ sub CalibrateOligos {
 	} else {
 	    $command = "retrieve-seq -org $organism_name -all -from -$calib_length -to -1 -o $allup_file";
 	    warn ";\tRetrieving all upstream sequences\t", $allup_file, "\n" if ($main::verbose >= 1);
-	    &doit($command, $dry_run, $die_on_error);
+	    &doit($command, $dry_run, $die_on_error, $verbose);
 	}
 
 	## Calibrate oligonucleotides
@@ -2529,21 +2529,21 @@ sub CalibrateOligos {
 	    ## Calculate occurrence distributions
 	    $command = "oligo-analysis -v 3 -l $oligo_len $noov $strands  -i $allup_file -return occ -distrib -o $distrib_file";
 	    warn ";\tAnalysing ",$oligo_len,"nt distributions\t",$distrib_file, "\n" if ($main::verbose >= 1);
-	    &doit($command, $dry_run, 0);
+	    &doit($command, $dry_run, 0, $verbose);
 	    
 	    ## Calculate stats and fit negbin on the distributions
 	    $command = "fit-distribution -v 1 -i $distrib_file -distrib negbin -o $fitting_file";
-	    &doit($command, $dry_run, $die_on_error);
+	    &doit($command, $dry_run, $die_on_error, $verbose);
 
 	    ## Compress distrib and fitting file
 	    $command = "gzip -f $distrib_file $fitting_file";
-	    &doit($command, $dry_run, $die_on_error);
+	    &doit($command, $dry_run, $die_on_error, $verbose);
 	}
 
 	## Delete the file with all upstream sequences
 	$command = "rm -f $allup_file";
 	warn ":\tCleaning all upstream sequences\t", $allup_file, "\n" if ($main::verbose >= 1);
-	&doit($command, $dry_run, 0);
+	&doit($command, $dry_run, 0, $verbose);
    }
 
 }
@@ -2735,7 +2735,7 @@ sub MDCreport {
 	$command = "MDCreport-from-dnapat -d ".$family_name;
 	$command .= " -i ".$feature_file;
 	$command .= ">> ".$outfile{results} if ($outfile{results});
-	&doit($command);
+	&doit($command, $dry_run, $die_one_error, $verbose);
    }    
 
    close $parameters;

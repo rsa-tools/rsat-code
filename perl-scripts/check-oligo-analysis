@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: check-oligo-analysis,v 1.6 2004/01/22 00:13:58 jvanheld Exp $
+# $Id: check-oligo-analysis,v 1.7 2004/03/11 09:12:30 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 23:00:11 jvanheld>
 #
@@ -20,7 +20,9 @@ my $start_time = &AlphaDate;
 local %infile = ();
 local %outfile = ();
 
-local $verbose = 0;
+$verbose = 0;
+$dry_run = 0;
+$die_on_error = 1;
 
 $oligo_len = 6;
 $str = "-1str";
@@ -176,7 +178,7 @@ sub SummarizeResults {
     $command .= " | classfreq -ci 1 -v 1 -min ${thosig}";
     $command .= " >> ${synthesis_file}; ";
 
-    &doit ($command);
+    &doit($command, $dry_run, $die_one_error, $verbose);
 
     warn "; Synthesis file\t", ${synthesis_file}, "\n\n" if ($verbose >= 1);
 }
@@ -200,7 +202,7 @@ sub OneJob {
 
     ################################################################
     ###### execute the command
-    &doit($command);
+    &doit($command, $dry_run, $die_one_error, $verbose);
     warn "$result_file\n" if ($verbose >= 1);
 }
 

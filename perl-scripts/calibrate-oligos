@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: calibrate-oligos,v 1.3 2004/01/22 00:13:58 jvanheld Exp $
+# $Id: calibrate-oligos,v 1.4 2004/03/11 09:12:30 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -40,6 +40,8 @@ local %infile = ();
 local %outfile = ();
 
 $verbose = 0;
+$dry_run = 0;
+$die_on_error = 1;
 
 &ReadArguments();
 
@@ -102,7 +104,7 @@ if ($task{upstream}) {
     $command .= " -label orf";
     $command .= " -o $seq_file";
     print $out "; $command\n";
-    &doit($command);
+    &doit($command, $dry_run, $die_one_error, $verbose);
 }
 
 ################################################################
@@ -115,7 +117,7 @@ if ($task{random}) {
     $command .= " -n ".$seq_nb;
     $command .= " -o ".$family_file;
     print $out "; $command\n";
-    &doit($command);
+    &doit($command, $dry_run, $die_one_error, $verbose);
 }
 
 ################################################################
@@ -132,7 +134,7 @@ if ($task{oligos}) {
 	$command = "grep 'RAND".$r."\$' ".$family_file;
 	$command .= " | cut -f 1 > ".$one_family_file;
 	print $out "; $command\n" if ($r == 1);
-	&doit($command);
+	&doit($command, $dry_run, $die_one_error, $verbose);
 	
 	#### select the corresponding upstream sequences
 	my $oligo_file = "oligos/oligos_".$oligo_len."nt".$str.$ov."_L".$seq_len."_n".$seq_nb."_r".$r;
@@ -143,7 +145,7 @@ if ($task{oligos}) {
 	$command .= " -l ".$oligo_len;
 	$command .= " -o ".$oligo_file;
 	print $out "; $command\n" if ($r == 1);
-	&doit($command);
+	&doit($command, $dry_run, $die_one_error, $verbose);
     }
 }
 
@@ -154,7 +156,7 @@ if ($task{oligos}) {
 #  $command = "compare-scores -o ".$oligo_table;
 #  $command .= " -null 0 -sc 3 -files oligos/oligos_".$oligo_len."nt_r*";
 # print $out "; $command\n";
-#&doit($command);
+#&doit($command, $dry_run, $die_one_error, $verbose);
 
 ################################################################
 #### Calculate distribution for each oligonucleotide
@@ -205,14 +207,14 @@ if ($task{distrib}) {
 if ($task{clean_seq}) {
     warn "; ", &AlphaDate(), "\tDeletingsequence file\n" if ($verbose >= 1);
     my $command = "rm -f ".$seq_file;
-    &doit($command);
+    &doit($command, $dry_run, $die_one_error, $verbose);
 }
 if ($task{clean_oligos}) {
     warn "; ", &AlphaDate(), "\tDeleting oligos from directory\t", $dir{output},"\n" if ($verbose >= 1);
     my $command = "\\rm -rf oligos";
 #    $command .= " oligos/oligos_".$oligo_len."nt".$str.$ov."_L".$seq_len."_n".$seq_nb."_r*";
 #    $command .= " oligos/RAND*.fam";
-    &doit($command);
+    &doit($command, $dry_run, $die_one_error, $verbose);
 }
 
 ################################################################
@@ -458,7 +460,7 @@ sub FitDistribution {
 	$command .= " -distrib ". $theor;
 	$command .= " -i ".$outfile{distrib};
 	$command .= " -o ".$outfile{$theor};
-	&doit($command);
+	&doit($command, $dry_run, $die_one_error, $verbose);
     }
 }
 
