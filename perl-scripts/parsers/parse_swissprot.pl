@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_swissprot.pl,v 1.12 2002/03/19 12:13:09 jvanheld Exp $
+# $Id: parse_swissprot.pl,v 1.13 2002/03/19 14:15:15 jvanheld Exp $
 #
-# Time-stamp: <2002-03-19 13:12:07 jvanheld>
+# Time-stamp: <2002-03-19 15:12:49 jvanheld>
 #
 ############################################################
 
@@ -25,7 +25,23 @@ use SWISS::Entry;
 package main;
 {
     
-    
+    ################################################################
+    #### initialize parameters
+
+    #### output fields
+    @out_fields = qw( id 
+		      source
+		      description
+		      gene
+		      names
+		      organisms
+		      features
+		      comments
+		      swissprot_acs
+		      swissprot_ids
+		      ECs
+		      );
+
     #### organism selection
     @selected_organisms = ();
     $full_name{yeast} = "Saccharomyces cerevisiae (Baker's yeast)";
@@ -133,7 +149,16 @@ package main;
 
     foreach $db (keys %data_sources) {
 	if ($data_sources{$db}) {
-	    $in_file{$source{$db}} = "gunzip -c ".$dir{input}."/".$source{$db}.".dat.gz | ";
+	    #### the file can be compressed or not
+	    if (-e "$dir{input}/$source{$db}.dat") {
+		$in_file{$source{$db}} = "cat $dir{input}/$source{$db}.dat | ";
+	    } elsif (-e "$dir{input}/$source{$db}.dat.gz") {
+		$in_file{$source{$db}} = "gunzip -c $dir{input}/$source{$db}.dat.gz | ";
+	    } elsif (-e "$dir{input}/$source{$db}.dat.Z") {
+		$in_file{$source{$db}} = "uncompress -c $dir{input}/$source{$db}.dat.Z | ";
+	    } else {
+		die "Error: file $dir{input}/$source{$db}.dat does not exist\n";
+	    }
 	    $files_to_parse{$source{$db}} = 1;
 	}
 	warn ";\tdata source\t", $db, "\t", $in_file{$source{$db}}, "\n" if ($warn_level >= 2);
@@ -142,19 +167,7 @@ package main;
     #### create class holders
     $polypeptides = PFBP::ClassFactory->new_class(object_type=>"PFBP::Polypeptide",
 						  prefix=>"spp_");
-    $polypeptides->set_out_fields( qw( id 
-				       source
-#				       name 
-				       description
-				       gene
-				       names
-				       organisms
-				       features
-				       comments
-				       swissprot_acs
-				       swissprot_ids
-				       ECs
-				       ));
+    $polypeptides->set_out_fields(@out_fields);
     $polypeptides->set_attribute_header("features", join ("\t", "Feature_key", "from", "to", "description") );
     $polypeptides->set_attribute_header("comments", join ("\t", "topic", "comment") );
 
@@ -174,6 +187,7 @@ package main;
 	warn "; Selected organisms\n;\t", join("\n;\t", @selected_organisms), "\n";
 	warn "; Polypeptide classes\n;\t", join("\n;\t", keys %export), "\n";
 	warn "; Data sources\n;\t", join("\n;\t",  keys %data_sources), "\n";
+	warn "; Output fields\n;\t", join("\n;\t",  @out_fields), "\n";
 	&DefaultVerbose;
     }
 
@@ -337,6 +351,10 @@ sub ReadArguments {
 	    #### select enzymes for exportation
 	} elsif ($ARGV[$a] =~ /^-enz/) {
 	    $main::export{enzymes} = 1;
+
+	    #### output fields
+	} elsif ($ARGV[$a] =~ /^-field/) {
+	    @main::out_fields = split ",", $ARGV[$a+1];
 	}
 
 
