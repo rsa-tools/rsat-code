@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: calibrate-oligos,v 1.4 2004/03/11 09:12:30 jvanheld Exp $
+# $Id: calibrate-oligos,v 1.5 2004/05/21 09:28:18 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -77,7 +77,7 @@ chdir($dir{output});
 #### output files
 $file_prefix =  $organism_name."_".$oligo_len."nt_".$str.$ov."_n".$seq_nb."_l".$seq_len."_r".$repet;
 $outfile{distrib} =$file_prefix."_distrib.tab";
-$outfile{stats} =$file_prefix."_stats.tab";
+#$outfile{stats} =$file_prefix."_stats.tab";
 $outfile{negbin} =$file_prefix."_negbin.tab";
 $outfile{poisson} =$file_prefix."_poisson.tab";
 
@@ -91,7 +91,7 @@ if ($task{distrib}) {
 
 
 ################################################################
-#### Retrieve all upstream sequences in wc format. This will allow to
+#### Retrieve all upstream sequences in wc format. This allows to
 #### load them rapidly for further analysis
 $seq_file = $organism_name."_allup".$seq_len.".wc";
 if ($task{upstream}) {
@@ -104,11 +104,11 @@ if ($task{upstream}) {
     $command .= " -label orf";
     $command .= " -o $seq_file";
     print $out "; $command\n";
-    &doit($command, $dry_run, $die_one_error, $verbose);
+    &doit($command, $dry_run, $die_on_error, $verbose);
 }
 
 ################################################################
-##### Random gene families
+##### Select random gene families
 $family_file = "random_genes.tab";
 if ($task{random}) {
     warn "; ", &AlphaDate(), "\tSelecting random gene families\t".$family_file."\n" if ($verbose >= 1);
@@ -117,11 +117,13 @@ if ($task{random}) {
     $command .= " -n ".$seq_nb;
     $command .= " -o ".$family_file;
     print $out "; $command\n";
-    &doit($command, $dry_run, $die_one_error, $verbose);
+    &doit($command, $dry_run, $die_on_error, $verbose);
 }
 
 ################################################################
-#### oligo-analysis
+## Run oligo-analysis to count oligonucleotide occurrences in each
+## random sequence set.
+
 if ($task{oligos}) {
     unless (defined($end)) {
 	$end = $repet;
@@ -134,7 +136,7 @@ if ($task{oligos}) {
 	$command = "grep 'RAND".$r."\$' ".$family_file;
 	$command .= " | cut -f 1 > ".$one_family_file;
 	print $out "; $command\n" if ($r == 1);
-	&doit($command, $dry_run, $die_one_error, $verbose);
+	&doit($command, $dry_run, $die_on_error, $verbose);
 	
 	#### select the corresponding upstream sequences
 	my $oligo_file = "oligos/oligos_".$oligo_len."nt".$str.$ov."_L".$seq_len."_n".$seq_nb."_r".$r;
@@ -145,7 +147,7 @@ if ($task{oligos}) {
 	$command .= " -l ".$oligo_len;
 	$command .= " -o ".$oligo_file;
 	print $out "; $command\n" if ($r == 1);
-	&doit($command, $dry_run, $die_one_error, $verbose);
+	&doit($command, $dry_run, $die_on_error, $verbose);
     }
 }
 
@@ -156,10 +158,10 @@ if ($task{oligos}) {
 #  $command = "compare-scores -o ".$oligo_table;
 #  $command .= " -null 0 -sc 3 -files oligos/oligos_".$oligo_len."nt_r*";
 # print $out "; $command\n";
-#&doit($command, $dry_run, $die_one_error, $verbose);
+#&doit($command, $dry_run, $die_on_error, $verbose);
 
 ################################################################
-#### Calculate distribution for each oligonucleotide
+#### Calculate distribution of occurrences for each oligonucleotide
 local $max_occ = 0;
 local %counts = ();
 local %count_sum = ();
@@ -203,28 +205,30 @@ if ($task{distrib}) {
 }
 
 ################################################################
-#### Clean data files (just hold the distrib files)
+#### Clean data files (just hold the distrib files).
+
+## Delete sequence files. 
 if ($task{clean_seq}) {
     warn "; ", &AlphaDate(), "\tDeletingsequence file\n" if ($verbose >= 1);
     my $command = "rm -f ".$seq_file;
-    &doit($command, $dry_run, $die_one_error, $verbose);
+    &doit($command, $dry_run, $die_on_error, $verbose);
 }
+
+## Delete files with oligonucleotide counts. 
 if ($task{clean_oligos}) {
     warn "; ", &AlphaDate(), "\tDeleting oligos from directory\t", $dir{output},"\n" if ($verbose >= 1);
     my $command = "\\rm -rf oligos";
 #    $command .= " oligos/oligos_".$oligo_len."nt".$str.$ov."_L".$seq_len."_n".$seq_nb."_r*";
 #    $command .= " oligos/RAND*.fam";
-    &doit($command, $dry_run, $die_one_error, $verbose);
+    &doit($command, $dry_run, $die_on_error, $verbose);
 }
 
 ################################################################
 #### Calculate statistics on each pattern count distribution
-&CalculateStatistics() if ($task{stats});
+#&CalculateStatistics() if ($task{stats});
 &FitDistribution() if ($task{fit});
 
 warn "; Result stored in directory\t", $dir{output}, "\n";
-
-
 
 exit(0);
 
@@ -242,7 +246,7 @@ sub PrintHelp {
 NAME
 	calibrate-oligos
 
-        2002 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
+        2002 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
 	
 DESCRIPTION
 
@@ -293,6 +297,35 @@ OPTIONS
 	-noov	prevent overlapping matches for self-overlapping patterms
 		(default)
 	-ovlp	allow overlapping matches for self-overlapping patterms
+
+TASKS
+    all
+        Perform all the supported tasks
+
+    upstream
+	Retrieve all upstream sequences in wc format. This allows to
+	load them rapidly for further analysis.
+
+    random
+	Select random gene families.
+
+    oligos
+	Count oligonucleotide occurrences in each random family. 
+
+    distrib
+	Calculate distribution of occurrences for each
+	oligonucleotide.
+
+    fit
+	Fit theoretical distributions (Poisson and negbin) on the
+        observed distribution.
+
+   clean_seq 
+	Delete sequence files.
+
+   clean_oligos
+	Delete oligonucleotide count files.
+
 End_of_help
   close HELP;
   exit;
@@ -416,9 +449,9 @@ sub Verbose {
     &PrintArguments($out);
     printf $out "; %-29s\t%s\n", "Output directory", $dir{output};
     printf $out "; %-29s\t%s\n", "Distribution", $outfile{distrib} if ($task{distrib});
-    printf $out "; %-29s\t%s\n", "Stats", $outfile{stats} if ($task{stats});
-    printf $out "; %-29s\t%s\n", "Stats", $outfile{poisson} if ($task{fit});
-    printf $out "; %-29s\t%s\n", "Stats", $outfile{negbin} if ($task{fit});
+#    printf $out "; %-29s\t%s\n", "Stats", $outfile{stats} if ($task{stats});
+    printf $out "; %-29s\t%s\n", "Poisson fitting", $outfile{poisson} if ($task{fit});
+    printf $out "; %-29s\t%s\n", "negbin fitting", $outfile{negbin} if ($task{fit});
     printf $out "; %-29s\t%s\n", "Organism", $organism_name;
     printf $out "; %-29s\t%s\n", "Sequence length", $seq_len;
     printf $out "; %-29s\t%s\n", "Sequence number", $seq_nb;
@@ -453,18 +486,20 @@ sub CloseVerbose {
 
 
 ################################################################
-### Fit a theoretical distribution on the observed distribution
+## Fit theoretical distributions (Poisson and negbin) on the observed
+## distribution.
 sub FitDistribution {
     for my $theor ("negbin", "poisson") {
 	my $command = "fit-distribution -v 1";
 	$command .= " -distrib ". $theor;
 	$command .= " -i ".$outfile{distrib};
 	$command .= " -o ".$outfile{$theor};
-	&doit($command, $dry_run, $die_one_error, $verbose);
+	&doit($command, $dry_run, $die_on_error, $verbose);
     }
 }
 
 ################################################################
+### OBSOLETE
 ### Previous method for calculating statistics. This is now done with
 ### the script fit-distribution
 sub CalculateStatistics {
