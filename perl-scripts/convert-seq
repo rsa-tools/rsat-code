@@ -85,7 +85,15 @@ while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_form
 	} elsif ($uppercases) {
 	    $rev_seq = uc($rev_seq);
 	} 
-	&PrintNextSequence($out, $out_format, $line_width, $rev_seq, $current_id, @comments);
+	if ($out_format eq "filelist") {
+	    $one_seq_file = "${current_id}.raw";
+	    open RAW, "> $one_seq_file";
+	    &PrintNextSequence(RAW, "raw", 0, $rev_seq, $current_id);
+	    close RAW;
+	    print $out "$one_seq_file\n";
+	} else {
+	    &PrintNextSequence($out, $out_format, $line_width, $rev_seq, $current_id, @comments);
+	}
     }
 }
 
