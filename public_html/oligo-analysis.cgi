@@ -66,23 +66,39 @@ if ($query->param('return') eq "table") {
     ### occurrences
     if ($query->param('occ')) {
 	$return_fields .= "occ,";
-	### threshold on occurrences
-	if ($query->param('occurrence_threshold') =~ /^\d+$/) {
-	    $parameters .= " -tho ".$query->param('occurrence_threshold');
+
+	### Lower threshold on occurrences
+	if (&IsReal($query->param('lth_occ'))) {
+	    $parameters .= " -lth occ ".$query->param('lth_occ');
+	}
+
+	### Upper threshold on occurrences
+	if (&IsReal($query->param('uth_occ'))) {
+	    $parameters .= " -uth occ ".$query->param('uth_occ');
 	}
     } 
     
     ### frequencies
     if ($query->param('freq')) {
 	$return_fields .= "freq,";
+
+	### Lower threshold on frequencies
+	if (&IsReal($query->param('lth_observed_freq'))) {
+	    $parameters .= " -lth observed_freq ".$query->param('lth_observed_freq');
+	}
+
+	### Upper threshold on frequencies
+	if (&IsReal($query->param('uth_observed_freq'))) {
+	    $parameters .= " -uth observed_freq ".$query->param('uth_observed_freq');
+	}
     } 
     
     ### matching sequences
     if ($query->param('mseq')) {
 	$return_fields .= "mseq,";
 	### threshold on matching sequences
-	if ($query->param('ms_threshold') =~ /^\d+$/) {
-	    $parameters .= " -thms ".$query->param('ms_threshold');
+	if ($query->param('lth_mseq') =~ /^\d+$/) {
+	    $parameters .= " -thms ".$query->param('lth_mseq');
 	}  
     } 
     
@@ -104,13 +120,25 @@ if ($query->param('return') eq "table") {
     ### binomial probabilities
     if ($query->param('proba')) {
 	$return_fields .= "proba,";
-	### threshold on probabilities
-	if ($query->param('proba_occ_threshold') =~ /^[\d\.\-+e]+$/i) {
-	    $parameters .= " -thpo ".$query->param('proba_occ_threshold');
+
+	### Lower threshold on probabilities
+	if ($query->param('lth_occ_pro') =~ /^[\d\.\-+e]+$/i) {
+	    $parameters .= " -lth occ_pro ".$query->param('lth_occ_pro');
 	}
-	### threshold on significance
-	if ($query->param('occ_significance_threshold') =~ /^-{0,1}[\d\.\-+e]+$/i) {
-	    $parameters .= " -thosig ".$query->param('occ_significance_threshold');
+
+	### Upper threshold on probabilities
+	if ($query->param('uth_occ_pro') =~ /^[\d\.\-+e]+$/i) {
+	    $parameters .= " -uth occ_pro ".$query->param('uth_occ_pro');
+	}
+
+	### Lower threshold on significance
+	if ($query->param('lth_occ_sig') =~ /^-{0,1}[\d\.\-+e]+$/i) {
+	    $parameters .= " -lth occ_sig ".$query->param('lth_occ_sig');
+	}
+
+	### Upper threshold on significance
+	if ($query->param('uth_occ_sig') =~ /^-{0,1}[\d\.\-+e]+$/i) {
+	    $parameters .= " -uth occ_sig ".$query->param('uth_occ_sig');
 	}
     } 
     
@@ -254,7 +282,7 @@ if ($query->param('output') =~ /display/i) {
     #### oligonucleotide assembly ####
     if (($query->param('return') ne "table") &&
 	($query->param('return') ne "distrib") &&
-	(&IsReal($query->param('occ_significance_threshold')))) {
+	(&IsReal($query->param('lth_occ_sig')))) {
 	$pattern_assembly_command = "$SCRIPTS/pattern-assembly -v 1 -subst 1";
 	if ($query->param('strand') =~ /single/) {
 	    $pattern_assembly_command .= " -1str";

@@ -37,10 +37,15 @@ $default{zscore} = '';
 $default{freq} = '';
 $default{mseq} = '';
 $default{ratio} = '';
-$default{occurrence_threshold} = "1";
-$default{ms_threshold} = "none";
-$default{proba_occ_threshold} = "none";
-$default{occ_significance_threshold} = "0";
+$default{lth_occ} = "1";
+$default{uth_occ} = "none";
+$default{lth_mseq} = "none";
+$default{lth_occ_pro} = "none";
+$default{uth_occ_pro} = "none";
+$default{lth_occ_sig} = "0";
+$default{uth_occ_sig} = "none";
+$default{lth_observed_freq} = "none";
+$default{uth_observed_freq} = "none";
 $default{return}="fields";
 
 ### print the form ###
@@ -219,28 +224,36 @@ print $query->table({-border=>1,-cellpadding=>0,-cellspacing=>0},
 			  $query->td([$query->checkbox(-name=>'occ',
 						    -checked=>$default{occ},
 						    -label=>' Occurrences '),
-				   $query->textfield(-name=>'occurrence_threshold',
-						     -default=>$default{occurrence_threshold},
+				   $query->textfield(-name=>'lth_occ',
+						     -default=>$default{lth_occ},
 						     -size=>5),
-				   '']),
+				   $query->textfield(-name=>'uth_occ',
+						     -default=>$default{uth_occ},
+						     -size=>5)
+				   ]),
 
 			  ### binomial proba
 			  $query->td([$query->checkbox(-name=>'proba',
 						    -checked=>$default{proba},
 						    -label=>' Binomial proba '),
-				   '',
-				   $query->textfield(-name=>'proba_occ_threshold',
-						     -default=>$default{proba_occ_threshold},
+				   $query->textfield(-name=>'lth_occ_pro',
+						     -default=>$default{lth_occ_pro},
+						     -size=>5),
+				   $query->textfield(-name=>'uth_occ_pro',
+						     -default=>$default{uth_occ_pro},
 						     -size=>5)]),
 
 			  ### significance index
 			  $query->td([$query->checkbox(-name=>'proba',
 						    -checked=>$default{proba},
 						    -label=>' Significance '),
-				   $query->textfield(-name=>'occ_significance_threshold',
-						     -default=>$default{occ_significance_threshold},
+				   $query->textfield(-name=>'lth_occ_sig',
+						     -default=>$default{lth_occ_sig},
 						     -size=>5),
-				   '']),
+				   $query->textfield(-name=>'uth_occ_sig',
+						     -default=>$default{uth_occ_sig},
+						     -size=>5)
+				   ]),
 
 			  ### Z-scores
 			  $query->td([$query->checkbox(-name=>'zscore',
@@ -253,15 +266,20 @@ print $query->table({-border=>1,-cellpadding=>0,-cellspacing=>0},
 			  $query->td([$query->checkbox(-name=>'freq',
 						    -checked=>$default{freq},
 						    -label=>' Frequencies '),
-				   '',
-				   '']),
+				   $query->textfield(-name=>'lth_observed_freq',
+						     -default=>$default{lth_observed_freq},
+						     -size=>5),
+				   $query->textfield(-name=>'uth_observed_freq',
+						     -default=>$default{uth_observed_freq},
+						     -size=>5)
+				      ]),
 
 			  ### matching sequences
 			  $query->td([$query->checkbox(-name=>'mseq',
 						    -checked=>$default{mseq},
 						    -label=>' Matching sequences '),
-				   $query->textfield(-name=>'ms_threshold',
-						     -default=>$default{ms_threshold},
+				   $query->textfield(-name=>'lth_mseq',
+						     -default=>$default{lth_mseq},
 						     -size=>5),
 				   '']),
 
