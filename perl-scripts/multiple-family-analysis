@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.40 2004/01/22 00:12:52 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.41 2004/01/22 07:25:02 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -338,7 +338,7 @@ sub OligoAnalysis {
     ### fragment assembly
     $command = "pattern-assembly -i $family{$family_name}->{oligo_file} -${strands} -v -o $family{$family_name}->{oligo_assembly_file} -maxfl 1 -maxpat 200 -subst 1";
     
-    &doit($command,$dry_run, $die_on_error);
+    &doit($command,$dry_run, 0);
 }
 
 
@@ -384,7 +384,7 @@ sub DyadAnalysis {
     ### fragment assembly
     $command = "pattern-assembly -v -i $family{$family_name}->{dyad_file} -o $family{$family_name}->{dyad_assembly_file} -$strands -maxfl 1 -maxpat 200 ";
     
-    &doit($command,$dry_run, $die_on_error);
+    &doit($command,$dry_run, 0);
     
 }
 
@@ -1485,9 +1485,9 @@ sub ExportSQL {
 	}
 
 	#### discovered oligos
-	
 	my $oligo_file = $family{$family_name}->{oligo_file};
 	if (-e $oligo_file) {
+	    my %export_columns = ();
 	    open OLIGOS, $oligo_file;
 	    while (<OLIGOS>) {
 		chomp;
@@ -1499,21 +1499,25 @@ sub ExportSQL {
 		}
 		next unless (/\S/);
 		my @fields = split;
+		my $sequence = uc($fields[0]);
 #		my %export_columns = ();
 		my $oligo_object = $pattern_factory->new_object();
-#		warn join ("\t", "HELLO", $oligo_object, $score_column, $fields[0], $fields[$score_column]), "\n";
-		my $sequence = uc($fields[0]);
-		$oligo_object->set_attribute("sequence", $sequence);
+		warn join ("\t", "; Created object", $sequence, $oligo_object), "\n" if ($main::verbose >= 3);
 		foreach $k (sort keys %export_columns) {
+		    warn join ("\t", ";", "specifying attribute", 
+			       $k, 
+			       $export_columns{$k},
+			       $fields[$export_columns{$k}],
+			       ), "\n" if ($main::verbose >= 5);
 		    $oligo_object->set_attribute($k, $fields[$export_columns{$k}]);
 		}
-#		$oligo_object->set_attribute("occ_sig", $fields[$export_columns{occ_sig}]);
-#		$oligo_object->set_attribute("occ", $fields[$export_columns{occ}]);
+		warn join ("\t", ";", "specifying sequence", $sequence), "\n" if ($main::verbose >= 5);
+		$oligo_object->force_attribute("sequence", $sequence);
 		$oligo_object->set_attribute("type", "oligo");
 		$oligo_object->set_attribute("family_id", $family_id);
 		$oligo_object->set_attribute("family", $family_name);
 		if ($strands eq "2str") {
-		    $oligo_object->set_attribute("rev_compl", &ReverseComplement($oligo_object->get_attribute("sequence")));
+		    $oligo_object->force_attribute("rev_compl", &ReverseComplement($oligo_object->get_attribute("sequence")));
 		}
 	    }
 	    close OLIGOS;
@@ -1524,6 +1528,7 @@ sub ExportSQL {
 	#### discovered dyads
 	my $dyad_file = $family{$family_name}->{dyad_file};
 	if (-e $dyad_file) {
+	    my %export_columns = ();
 	    open DYADS, $dyad_file;
 	    while (<DYADS>) {
 		chomp;
@@ -1531,33 +1536,32 @@ sub ExportSQL {
 		    if ((/;\s+(\d+)\t(\S+)/) && ($2 ne "id")){
 			$export_columns{$2} = $1 - 1;
 		    }
-#		    if (/;\s+(\d+)\tocc_sig/) {
-#			$export_columns{occ_sig} = $1 - 1;
-#		    } elsif (/;\s+(\d+)\tocc\s/) {
-#			$export_columns{occ} = $1 - 1;
-#		    }
 		    next;
 		}
 		next unless (/\S/);
 		my @fields = split;
-#		my %export_columns = ();
-		my $dyad_object = $pattern_factory->new_object();
-#		warn join ("\t", "HELLO", $dyad_object, $score_column, $fields[0], $fields[$score_column]), "\n";
 		my $sequence = uc($fields[0]);
 		$sequence =~ s/N/n/g;
-		$dyad_object->set_attribute("sequence", $sequence);
+#		$sequence =~ s/n\{0\}//g;
+		my $dyad_object = $pattern_factory->new_object();
+		warn join ("\t", "; Created object", $sequence, $oligo_object), "\n" if ($main::verbose >= 3);
 		foreach $k (sort keys %export_columns) {
+		    warn join ("\t", ";", "specifying attribute", 
+			       $k, 
+			       $export_columns{$k},
+			       $fields[$export_columns{$k}],
+			       ), "\n" if ($main::verbose >= 5);
 		    $dyad_object->set_attribute($k, $fields[$export_columns{$k}]);
 		}
-#		$dyad_object->set_attribute("occ_sig", $fields[$export_columns{occ_sig}]);
-#		$dyad_object->set_attribute("occ", $fields[$export_columns{occ}]);
+		warn join ("\t", ";", "specifying sequence", $sequence), "\n" if ($main::verbose >= 5);
+		$dyad_object->force_attribute("sequence", $sequence);
 		$dyad_object->set_attribute("type", "dyad");
 		$dyad_object->set_attribute("family_id", $family_id);
 		$dyad_object->set_attribute("family", $family_name);
 		if ($strands eq "2str") {
 		    my $rc_sequence = uc( &ReverseComplement($dyad_object->get_attribute("sequence")));
 		    $rc_sequence =~ s/N/n/g;
-		    $dyad_object->set_attribute("rev_compl",$rc_sequence);
+		    $dyad_object->force_attribute("rev_compl",$rc_sequence);
 		}
 	    }
 	    close DYADS;
@@ -1568,7 +1572,7 @@ sub ExportSQL {
 	
     }
 
-    ## Specify the output fields
+    ## Specify output fields
     $family_factory->set_out_fields(qw(id organism size name suffix genes));
     @pattern_out_fields = qw(id
 			     family_id
@@ -1583,7 +1587,6 @@ sub ExportSQL {
 			     occ_sig
 			     rank
 			     );
-#    push @pattern_out_fields, sort keys %export_columns;
     $pattern_factory->set_out_fields(@pattern_out_fields);
 
     #### export the result tables
