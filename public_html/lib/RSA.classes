@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: RSA.classes,v 1.1 2002/06/06 11:46:44 jvanheld Exp $
+# $Id: RSA.classes,v 1.2 2002/09/25 03:15:30 jvanheld Exp $
 #
-# Time-stamp: <2002-06-06 13:46:06 jvanheld>
+# Time-stamp: <2002-09-24 22:11:19 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -12,15 +12,17 @@ if ($0 =~ /([^(\/)]+)$/) {
 require "RSA.seq.lib";
 
 
+################################################################
+#### generic RSA object, from which all other objects inherit
 package RSA::Object;
 {
 #  use strict;
 
-  ### class variables
+  #### class variables
   my $_count = 0;
   my $_prefix = "obj_";
 
-  ### creator
+  #### creator
   sub new { 
       my ($class, %args) = @_;
       my $object = bless {
@@ -31,11 +33,14 @@ package RSA::Object;
       return $object;
   }
 
+  #### automatic ID assignation
   sub auto_id {
     my ($object) = @_;
     my $class = ref($object) || $object;
     my $id = $class->get_prefix();
-    $id .= sprintf "%6s", $class->get_count();
+    my $count = $class->get_count() || 0; 
+    my $pretty_count = sprintf ("%6s", $count);
+    $id .= $pretty_count;
     $id =~ s/ /0/g;
     return $id;
   }
@@ -48,12 +53,12 @@ package RSA::Object;
   }
   sub incr_count {
       my ($object) = @_;
-      $class = ref($object) || $object;
+      my $class = ref($object) || $object;
       $class->{_count}++;
   }
   sub get_prefix {
       my ($object) = @_;
-      $class = ref($object) || $object;
+      my $class = ref($object) || $object;
       return $_prefix;
   }
 
@@ -88,6 +93,7 @@ package RSA::Object;
     return $object->{$key};
   }
 
+  #### get attribute value
   sub get_attribute {
     my ($object,$key) = @_;
     my $class = ref($object);
@@ -100,6 +106,7 @@ package RSA::Object;
 
 }
 
+################################################################
 #### organism
 package RSA::Organism;
 {
@@ -126,6 +133,7 @@ package RSA::Organism;
     }
 }
 
+################################################################
 #### Chromosome
 package RSA::Chromosome;
 {
@@ -174,7 +182,6 @@ package RSA::Chromosome;
 
     #### sequence
     sub get_sequence {
-	my ($object) = @_;
 	return $object->{sequence};
     }
     sub set_sequence {
@@ -184,6 +191,7 @@ package RSA::Chromosome;
 
 }
 
+################################################################
 #### Gene
 package RSA::Gene;
 {
@@ -224,7 +232,8 @@ package RSA::Gene;
 }
 
 
-### class for manipulating sequences
+################################################################
+### macromolecular sequence
 package RSA::Sequence;
 {
 #  use strict;
@@ -288,9 +297,20 @@ package RSA::Sequence;
     return $object->{type};
   }
   sub get_sequence {
-    my ($object) = @_;
-    return $object->{sequence};
+      my ($object, $from, $to, $strand) = @_;
+      if (($from) && ($to) && ($strand)) {
+	  if ($to < $from) {
+	      my $tmp = $from;
+	      $from = $to;
+	      $to = $tmp;
+	  }
+	  my $fragment_length = $to - $from + 1;
+	  my $fragment = substr($object->{sequence}, $from-1, $fragment_length);
+      } else {
+	  return $object->{sequence};
+      }
   }
+  
   sub get_length {
     my ($object) = @_;
     return length($object->{sequence});
@@ -306,10 +326,11 @@ package RSA::Sequence;
 
 }
 
-package RSA::SequenceOnDisk;
+################################################################
 ### provides direct read access to a sequence on disk
 ### this is particularly important for retrieving sub-sequences of large chromosomes
 ### whose size could exceeed the RAM 
+package RSA::SequenceOnDisk;
 @ISA = qw( RSA::Sequence );
 {
 #  use strict;
@@ -334,22 +355,23 @@ package RSA::SequenceOnDisk;
   sub init {
     my ($object) = @_;
     my $filename = $object->get_attribute("filename");
-    die "Error: a file name has to be specified\n"
-	unless ($filename);
-    die "Error: file $filename does not exist\n"
+
+    if ($filename) {
+      die "Error: file $filename does not exist\n"
 	unless (-e $filename);
-    die "Error: cannot read file $filename\n"
+      die "Error: cannot read file $filename\n"
 	unless (-r $filename);
-    warn ("opening file ",$filename,"\n")
-	if ($main::warn_level >= 2);
-    ### open a stream to the file
-    open FILE, $filename ||
+      ### open a stream to the file
+      open FILE, $filename ||
 	die "Error: cannot open file ", $filename, "\n";
-#    no strict;
-    my $filehandle = FILE;
-    $object->set_attribute("filehandle", $filehandle);
-    
-    return $filehandle;
+      #    no strict;
+      my $filehandle = FILE;
+      $object->set_attribute("filehandle", $filehandle);
+      
+      return $filehandle;
+    } else { 
+      &FatalError("A file name has to be specified");
+    }
   }
 
   sub DESTROY {
@@ -358,8 +380,6 @@ package RSA::SequenceOnDisk;
     my $filename =  $object->get_attribute("filename");
     close $filehandle ||
 	die "Error: cannot close file $filename\n";;
-    warn ("closing file ",$filename,"\n")
-	if ($main::warn_level >= 2);
   }
 
   sub get_length() {
@@ -399,7 +419,7 @@ package RSA::SequenceOnDisk;
 	  $strand,
 	  $sequence,
 	  "\n")
-	if ($main::warn_level >= 3);
+	if ($verbose >= 3);
 
 
     ### treat out-of-bonds cases
@@ -413,7 +433,7 @@ package RSA::SequenceOnDisk;
 	$sequence .= $object->get_sequence(1,$to);
       } else {
 	### truncate and warn
-	warn "Error: cannot retrieve sub-sequence with negative limits\n";
+	warn join "\t", "; WARNING: cannot retrieve sub-sequence with negative limits", $object->get_id(), $from, $to, "\n";
 	$sequence = $object->get_sequence(1,$to);
       }
       
@@ -427,7 +447,7 @@ package RSA::SequenceOnDisk;
 	$sequence .= $object->get_sequence(1,$to - $object->get_length());
       } else {
 	### truncate and warn
-	warn "Error: cannot return sub-sequence with one limit larger the sequence length\n";
+	warn join "\t", "; WARNING: cannot retrieve sub-sequence with limits larger than sequence length", $object->get_id(), $from, $to, "\n";
 	$sequence = $object->get_sequence($from,$object->get_length());
       }
 
@@ -479,7 +499,7 @@ package RSA::SequenceOnDisk;
 	    $len,
 	    $offset,
 	    "\n")
-	  if ($main::warn_level >= 3);
+	  if ($verbose >= 3);
 
     }
     
@@ -504,7 +524,8 @@ package RSA::SequenceOnDisk;
 }
 
 
-### class for manipulating patterns
+################################################################
+### string pattern
 package RSA::pattern;
 @RSA::pattern::ISA = qw( RSA::Sequence );
 {
@@ -541,17 +562,18 @@ package RSA::pattern;
     return $object->{$key};
   }
 
-  ### pattern comparison routines
+  ################################################################
+  ### pattern comparison method
+  ### usage:
+  ### if ($pattern1->contains($pattern2)) { ... }
+  ### if ($pattern1->contains($pattern2), rc=>1) { ... }
+  ### options: 
+  ###    rc=>1: try to match reverse complement
+  ### returns 1 if the first pattern contains 
+  ### a match with the second pattern. 
+  ### Matching includes degenerate code, for instance 
+  ### W matches M since they have A as a possible intersection
   sub contains {
-    ### usage:
-    ### if ($pattern1->contains($pattern2)) { ... }
-    ### if ($pattern1->contains($pattern2), rc=>1) { ... }
-    ### options: 
-    ###    rc=>1: try to match reverse complement
-    ### returns 1 if the first pattern contains 
-    ### a match with the second pattern. 
-    ### Matching includes degenerate code, for instance 
-    ### W matches M since they have A as a possible intersection
     my ($pattern1, $pattern2,%args) = @_;
     my $seq1 = $pattern1->get_sequence();
     my $seq2 = $pattern2->get_sequence();
@@ -664,6 +686,52 @@ package RSA::matrix;
     }
 
 }
+
+
+################################################################
+#
+# Family manipulation
+#
+
+################################################################
+### family
+package RSA::family;
+@RSA::family::ISA = qw( RSA::Object );
+{
+#    my @members = ();
+
+    ### creator
+    sub new {
+	my ($class, %args) = @_;
+	my $object = bless {
+	    id=>$args{id} || $args{seq}
+	}, $class;
+	$object->add_name($args{name});
+	return $object;
+    }
+    
+
+    #### return the list of members
+    sub get_members {
+	my ($self) = @_;
+	return @{$self->{members}};
+    }
+
+    #### return the number of members
+    sub get_size {
+	my ($self) = @_;
+	my $size = scalar(@{$self->{members}});
+	return $size;
+    }
+    
+     #### add a member to the family
+    sub new_member {
+ 	my ($self, $new_member) = @_;
+ 	push @{$self->{members}}, $new_member;
+    }
+	
+}
+
 
 
 1;
