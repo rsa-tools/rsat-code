@@ -70,7 +70,8 @@ while ($current_line = <$in>) {
 	next;
     }
     if ($current_line =~ /^;/) {
-	print $out join ("\t", $current_line, @header), "\n";
+#	print $out join ("\t", $current_line, @header), "\n";
+	print $out join ("\t", $current_line), "\n";
 	next;
     }
     $current_line =~ s/\r//g;
