@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-ensembl-genome.pl,v 1.1 2005/02/21 16:48:56 jvanheld Exp $
+# $Id: get-ensembl-genome.pl,v 1.2 2005/02/21 17:03:23 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -14,9 +14,9 @@ BEGIN {
 }
 require "RSA.lib";
 
-#use DBI;
+use DBI;
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
-#use Bio::EnsEMBL::DBSQL::DBConnection;
+use Bio::EnsEMBL::DBSQL::DBConnection;
 use Bio::EnsEMBL::DBSQL::SliceAdaptor;
 
 ################################################################
@@ -60,12 +60,17 @@ $FT_TABLE =  &OpenOutputFile($outfile{feature});
 
 ## Connect to database:
 my $db = new Bio::EnsEMBL::DBSQL::DBAdaptor(-host => $host, -user => $user, -dbname => $dbname);
+warn join ("\t", "db", $db), "\n" if ($main::verbose >= 0);
 
 my $slice_adaptor = $db->get_SliceAdaptor();
+warn join ("\t", "adaptor", $slice_adaptor), "\n" if ($main::verbose >= 0);
 
 ## Get one chromosome object
-my $slice = $slice_adaptor->fetch_by_region('chromosome', 'X'); 
+my $slice = $slice_adaptor->fetch_by_region('chromosome', 'X');
+warn join ("\t", "slice", $slice), "\n" if ($main::verbose >= 0);
+
 foreach my $gene (@{$slice->get_all_Genes()}) {
+    warn join("\t", "gene", $gene), "\n" if ($main::verbose >= 0);
     my @feature = &get_feature($gene);
     print join("\t", @feature), "\n";
 }
@@ -221,18 +226,18 @@ sub get_feature {
     my ($gene) = @_;
     my @feature = ();
    
-    push @feature, $f->stable_id(); ## ID
+    push @feature, $gene->stable_id(); ## ID
     push @feature, "CDS"; ## We need here the feature type 
-    push @feature, $f->slice->seq_region_name(); ## Chromosome name. Actually we need the contig ID
-    push @feature, $f->start(); ## Start position
-    push @feature, $f->end(); ## End position
+    push @feature, $gene->slice->seq_region_name(); ## Chromosome name. Actually we need the contig ID
+    push @feature, $gene->start(); ## Start position
+    push @feature, $gene->end(); ## End position
     my $strand = "D";
-    unless ($f->strand()) {
+    unless ($gene->strand()) {
 	$strand =  "R";
     }
     push @feature, $strand; ## Strand
-    push @feature, $f->description(); ## Description
-    push @feature, $f->external_name();
+    push @feature, $gene->description(); ## Description
+    push @feature, $gene->external_name();
     
     return @feature;
 }
