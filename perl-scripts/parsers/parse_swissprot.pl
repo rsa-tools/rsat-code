@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_swissprot.pl,v 1.29 2003/11/28 15:45:44 oly Exp $
+# $Id: parse_swissprot.pl,v 1.30 2003/12/03 15:28:22 jvanheld Exp $
 #
 # Time-stamp: <2003-07-10 11:52:54 jvanheld>
 #
@@ -173,7 +173,7 @@ package main;
     $polypeptides = classes::ClassFactory->new_class(object_type=>"classes::Polypeptide",
 						  prefix=>"spp_");
     $polypeptides->set_out_fields(@out_fields);
-    $polypeptides->set_attribute_header("features", join ("\t", "Feature_key", "start_pos", "end_pos", "description") );
+    $polypeptides->set_attribute_header("features", join ("\t", "Feature_key", "start_pos", "end_pos", "description", "method", "f6", "f7", "f8") );
 #    $polypeptides->set_attribute_header("comments", join ("\t", "topic", "comments") );
 
     #### testing mode
@@ -234,7 +234,7 @@ package main;
 				);
     &ExportClasses($out_file{polypeptides}, $out_format,classes::Polypeptide) if ($export{obj});
 
-    &CompressParsedData();
+#    &CompressParsedData();
 
     ### report execution time
     if ($verbose >= 1) {
@@ -318,8 +318,6 @@ EndHelp
 sub ReadArguments {
 
     for my $a (0..$#ARGV) {
-
-#	warn "HELLO\t", $a;
 
 	&ReadGenericOptions($a);
 	    
@@ -405,10 +403,12 @@ sub ParseSwissprot {
 	}
 	next unless $parse;
 
+    
 	warn ";\tParsing object\n" if ($verbose >=3);
 
 	#### convert the entry into an object
 	my $object_entry = SWISS::Entry->fromText($text_entry);
+
 
 	#### get the polypeptide accession number
 	my $swissprot_ac = $object_entry->AC;
@@ -420,6 +420,8 @@ sub ParseSwissprot {
 	my $export = 0;
 	my @organisms = $object_entry->OSs->elements;
 #	my @tax_ids = $object_entry->OXs->elements;
+
+	
 
 	#### check whether the accession number was specified for export 
 	if ($in_file{acs}) {
@@ -448,8 +450,9 @@ sub ParseSwissprot {
 	    }
 	}
 	
-	next unless $export;
 
+	next unless $export;
+	
 	warn ";\tExporting polypeptide $swissprot_ac\t$swissprot_id\n" if ($verbose >= 3);
 
 	my @swissprot_ids = $object_entry->IDs->elements;
@@ -508,10 +511,10 @@ sub ParseSwissprot {
 		unless $already_assigned{uc($name)};
 	    $already_assigned{uc($name)}++;  #### prevent assigning twice the same name
 	}
-
 	
 	my @features = $object_entry->FTs->elements;
 	foreach my $ft (@features) {
+	    warn join "'|'", "HELLO ft", $#{$ft}, @{$ft} , "'\n" if ($verbose >= 10);
 	    $polypeptide->push_expanded_attribute("features", @{$ft});
 	}
 #	my @comments = $object_entry->CCs->elements;
