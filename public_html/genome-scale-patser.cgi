@@ -38,9 +38,11 @@ $query = new CGI;
 # patser parameters
 #
 
-#### read parameters
+my $patser_parameters = " -p ";
+
+#### alphabet
 my $alphabet = $query->param('alphabet') || " a:t c:g ";
-$patser_parameters = " -A $alphabet";
+$patser_parameters .= " -A $alphabet";
 
 ### matrix ####
 unless ($query->param('matrix') =~ /\S/) { ### empty matrix
