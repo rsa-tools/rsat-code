@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: check-oligo-analysis,v 1.5 2003/12/23 09:35:25 jvanheld Exp $
+# $Id: check-oligo-analysis,v 1.6 2004/01/22 00:13:58 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 23:00:11 jvanheld>
 #
@@ -66,7 +66,7 @@ if ($task{all}) {
 unless (defined($dir{output})) {
     $dir{output} = "oligo_check_results";
 }
-&CheckOutputDir($dir{output});
+&CheckOutDir($dir{output});
 
 
 ################################################################
@@ -142,7 +142,7 @@ sub SummarizeResults {
     warn join( "\t", "\n; Summarizing results", $str, $ov), "\n" if ($verbose >= 1);
     $score_col=9;
     $synthesis_dir=$dir{output}."/synthesis";
-    &CheckOutputDir($synthesis_dir);
+    &CheckOutDir($synthesis_dir);
     $synthesis_file = $synthesis_dir."/RAND_L${seq_len}_N${seq_nb}_oligos_${oligo_len}nt${str}${ov}_sig${thosig}_distrib.tab";
 
     
@@ -189,7 +189,7 @@ sub OneJob {
     ################################################################
     ### compose the command
     my $result_file=${result_dir}."/oligos_r${job}_${oligo_len}nt${str}${ov}_sig${thosig}.tab";
-    &CheckOutputDir($result_dir);
+    &CheckOutDir($result_dir);
     $command = "random-seq -l ${seq_len} -r ${seq_nb} ";
     $command .= " | oligo-analysis -v $job_verbose -return occ,freq,proba,rank -sort "; 
     $command .= " -l $oligo_len";
@@ -396,7 +396,7 @@ sub CalcTheoreticalDistributions {
     my @descriptions = ();
 
     $theory_dir=$dir{output}."/theory";
-    &CheckOutputDir($theory_dir);
+    &CheckOutDir($theory_dir);
     $theory_file = $theory_dir."/RAND_L${seq_len}_N${seq_nb}_oligos_${oligo_len}nt${str}${ov}_sig${thosig}_distrib.tab";
 
     $thf = &OpenOutputFile($theory_file); ## open output file

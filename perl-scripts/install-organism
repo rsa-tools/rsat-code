@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.36 2004/01/14 23:02:37 jvanheld Exp $
+# $Id: install-organism,v 1.37 2004/01/22 00:13:58 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -99,27 +99,27 @@ unless ($dir{genbank}) {
 	&FatalError("You should specify the directory where Genbank genomes can be found.");
     }
 }
-&CheckOutputDir($dir{genbank});
+&CheckOutDir($dir{genbank});
 
 unless ($dir{install}) {
     $dir{install} = $RSA."/data/genomes/".$organism_short_name;
 }
 
-&CheckOutputDir($dir{install});
+&CheckOutDir($dir{install});
 #unless (-d $dir{install}) {
 #    warn "\tCreating installation directory $dir{install}\n" if ($verbose >= 1);
 #    mkdir $dir{install}, 0775;
 #}
 
 $dir{genome} = "$dir{install}/genome";
-&CheckOutputDir($dir{genome});
+&CheckOutDir($dir{genome});
 #unless (-d $dir{genome}) {
 #    warn "\tCreating genome directory $dir{genome}\n" if ($verbose >= 1);
 #    mkdir $dir{genome}, 0775;
 #}
 
 $dir{oligos} = "$dir{install}/oligo-frequencies";
-&CheckOutputDir($dir{oligos});
+&CheckOutDir($dir{oligos});
 #unless (-d $dir{oligos}) {
 #    print "Creating dir $dir{oligos}\n";
 #    mkdir $dir{oligos}, 0775;

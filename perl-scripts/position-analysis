@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: position-analysis,v 1.21 2004/01/13 23:54:18 jvanheld Exp $
+# $Id: position-analysis,v 1.22 2004/01/22 00:13:58 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -71,7 +71,7 @@ if ($outputfile) {
     $dir{output} =`dirname $outputfile`; 
     chomp $dir{output};
 }
-&CheckOutputDir($dir{output});
+&CheckOutDir($dir{output});
 $out = &OpenOutputFile($outputfile);
 
 ### open sequence file ###
