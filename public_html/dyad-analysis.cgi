@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.10 2001/09/21 06:30:03 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.11 2001/10/07 22:51:59 jvanheld Exp $
 #
-# Time-stamp: <2001-09-21 08:27:10 jvanheld>
+# Time-stamp: <2001-10-08 00:51:55 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -14,7 +14,7 @@ use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
 require "RSA.cgi.lib";
-$output_context = "cgi";
+$ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 $dyad_analysis_command = "$SCRIPTS/dyad-analysis";
 $convert_seq_command = "$SCRIPTS/convert-seq";

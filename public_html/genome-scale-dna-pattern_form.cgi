@@ -5,21 +5,15 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
-require "RSA.lib.pl";
-require "RSA.cgi.lib.pl";
+require "RSA.lib";
+require "RSA.cgi.lib";
+$ENV{RSA_OUTPUT_CONTEXT} = "cgi";
+require "$RSA/public_html/genome-scale.lib.pl";
 
 ### Read the CGI query
 $query = new CGI;
 
-### default values for filling the form
-$default{sequence_format} = "fasta";
-$default{seq_label} = "gene name";
-$default{organism} = "Saccharomyces cerevisiae";
-$default{from} = "default";
-$default{to} = "default";
-$default{genes} = "";
-$default{sequence_type} = "upstream";
-
+#### default values for dna-pattern
 $default{set_name} = "";
 $default{patterns} = "";
 $default{strands} = "both strands";
@@ -66,49 +60,51 @@ print $query->start_multipart_form(-action=>"genome-scale-dna-pattern.cgi");
 #
 # retrieve-seq options
 #
-print $query->h3("Sequence retrieval options");
+&DisplayRetrieveSeqOptions();
 
-print $query->hidden(-name=>'genes',-default=>"all");
-print $query->hidden(-name=>'sequence_format',-default=>$default{sequence_format});
+#  print $query->h3("Sequence retrieval options");
 
-
-&OrganismPopUp;
-
-### sequence type
-print "<B><A HREF='help.retrieve-seq.html#sequence_type'>Sequence type</A></B>&nbsp;";
-print $query->popup_menu(-name=>'sequence_type',
-			 -Values=>['upstream','downstream','ORF'],
-			 -default=>$default{sequence_type});
-
-### from to
-
-print "<B><A HREF='help.retrieve-seq.html#from_to'>From</A></B>&nbsp;\n";
-print $query->textfield(-name=>'from',
-			-default=>$default{from},
-			-size=>10);
-
-print "&nbsp;&nbsp;";
-print "<B><A HREF='help.retrieve-seq.html#from_to'>To</A></B>&nbsp;\n";
-print $query->textfield(-name=>'to',
-			-default=>$default{to},
-			-size=>10);
-print "<BR>\n";
+#  print $query->hidden(-name=>'genes',-default=>"all");
+#  print $query->hidden(-name=>'sequence_format',-default=>$default{sequence_format});
 
 
-### allow ORF overlap
-### temporarily inactivated because it does not work with all organisms
-#  print $query->checkbox(-name=>'orf_overlap',
-#  		       -checked=>'checked',
-#  		       -label=>'');
-#  print "&nbsp;<A HREF='help.retrieve-seq.html#noorf'><B>allow overlap with upstream ORFs</B></A>";
+#  &OrganismPopUp;
+
+#  ### sequence type
+#  print "<B><A HREF='help.retrieve-seq.html#sequence_type'>Sequence type</A></B>&nbsp;";
+#  print $query->popup_menu(-name=>'sequence_type',
+#  			 -Values=>['upstream','downstream','ORF (unspliced)'],
+#  			 -default=>$default{sequence_type});
+
+#  ### from to
+
+#  print "<B><A HREF='help.retrieve-seq.html#from_to'>From</A></B>&nbsp;\n";
+#  print $query->textfield(-name=>'from',
+#  			-default=>$default{from},
+#  			-size=>10);
+
+#  print "&nbsp;&nbsp;";
+#  print "<B><A HREF='help.retrieve-seq.html#from_to'>To</A></B>&nbsp;\n";
+#  print $query->textfield(-name=>'to',
+#  			-default=>$default{to},
+#  			-size=>10);
 #  print "<BR>\n";
 
-print $query->hidden(-name=>'orf_overlap',-default=>'on');
 
-### sequence label
-print $query->hidden(-name=>'seq_label',-default=>'ORF id');
+#  ### allow ORF overlap
+#  ### temporarily inactivated because it does not work with all organisms
+#  #  print $query->checkbox(-name=>'orf_overlap',
+#  #  		       -checked=>'checked',
+#  #  		       -label=>'');
+#  #  print "&nbsp;<A HREF='help.retrieve-seq.html#noorf'><B>allow overlap with upstream ORFs</B></A>";
+#  #  print "<BR>\n";
 
-print "<BR>\n";
+#  print $query->hidden(-name=>'orf_overlap',-default=>'on');
+
+#  ### sequence label
+#  print $query->hidden(-name=>'seq_label',-default=>'ORF id');
+
+#  print "<BR>\n";
 
 
 ################################################################

@@ -6,7 +6,7 @@ use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
 require "RSA.cgi.lib";
-$output_context = "cgi";
+$ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 ### intialization
 $feature_map_command = "$SCRIPTS/feature-map";

@@ -7,6 +7,7 @@ use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
 require "RSA.cgi.lib";
+$ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 require "$RSA/public_html/genome-scale.lib.pl";
 
 ### Read the CGI query
@@ -15,31 +16,12 @@ $query = new CGI;
 ### default values for filling the form
 $default{matrix_format} = "consensus";
 $default{matrix} = "";
-#$default{sequence} = "";
-#$default{sequence_file} = "";
-#$default{strands} = "both";
+$default{strands} = "both";
 $default{return} = "all matching positions";
 $default{lthreshold} = "0";
 $default{uthreshold} = "none";
 
-$default{sequence_format} = "wc";
-#$default{seq_label} = "gene name";
-#$default{organism} = "Saccharomyces cerevisiae";
-#$default{from} = "default";
-#$default{to} = "default";
-#$default{genes} = "";
-#$default{sequence_type} = "upstream";
-
-$default{set_name} = "";
-#$default{patterns} = "";
-$default{strands} = "both strands";
-#$default{return} = "positions";
-#$default{noov} = "on";
-#$default{flanking} = "4";
-#$default{threshold} = "0";
-#$default{subst} = "0";
-#$default{origin} = "end";
-
+$default{sequence_format} = "wc"; ### Important ! the format supported by patser
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
@@ -64,7 +46,9 @@ if (($matrix_file = $query->param("matrix_file")) &&
 
 ### head
 print "<CENTER>";
-print "Scan all upstream or downstream regions with a profile matrix<P>\n";
+print "Scan all upstream or downstream regions with a profile matrix<BR>\n";
+print "Program developed by <A HREF='mailto:hertz\@colorado.edu (Jerry Hertz)'>Jerry Hertz</A><BR>";
+print "Web interface by <A HREF='mailto:jvanheld\@ucmb.ulb.ac.be'>Jacques van Helden</A><P>";
 print "</CENTER>";
 
 #&ListParameters;
@@ -161,7 +145,7 @@ T    |    4    1    0    0    0    0    0    8    3    2    2    2";
 print "<TD><B>";
 print $query->hidden(-name=>'matrix',-default=>$demo_matrix);
 print $query->hidden(-name=>'sequence',-default=>$demo_sequence);
-print $query->hidden(-name=>'lthreshold',-default=>8);
+print $query->hidden(-name=>'lthreshold',-default=>9);
 print $query->hidden(-name=>'sequence_format',-default=>$default{sequence_format});
 print $query->hidden(-name=>'set_name',-default=>'upstream sequences from the yeast PHO genes');
 print $query->submit(-label=>"DEMO");

@@ -6,6 +6,7 @@ use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
 require "RSA.cgi.lib";
+$ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 require "$RSA/public_html/genome-scale.lib.pl";
 
 $patser_command = "$BIN/patser";
@@ -79,7 +80,7 @@ if ($query->param('return') =~ /top/i) {
 
 ### thresholds ###
 if (&IsReal($query->param('lthreshold'))) {
-    $patser_parameters .= " -l ".$query->param('lthreshold');
+    $patser_parameters .= " -ls ".$query->param('lthreshold');
     $patser_parameters .= " -M ".$query->param('lthreshold');
 } 
 
@@ -98,7 +99,6 @@ $command .= "| $patser_command $patser_parameters ";
 if ($org eq "yeast") { #### not yet supported for other organisms
     $command .= "| $add_orf_function_command  ";
     $command .= "| $link_command  ";
-    open POST, $post_command;;
 }
 
 ### execute the command ###
@@ -106,7 +106,7 @@ if ($query->param("output") =~ /display/i) {
 
     ### execute the command ###
     $result_file = "$TMP/$tmp_file_name.res";
-    print "<PRE>$command</PRE>";
+#    print "<PRE>$command</PRE>";
 #    print "<PRE>$features_from_patser_cmd</PRE>";
     open RESULT, "$command & |";
 
@@ -121,7 +121,7 @@ if ($query->param("output") =~ /display/i) {
 #  <TABLE>
 #  <TR>
 #    <TD>
-#      <H4>Next step</H4>
+#      <H3>Next step</H3>
 #    </TD>
 #    <TD>
 #      <FORM METHOD="POST" ACTION="feature-map_form.cgi">
@@ -183,11 +183,12 @@ sub PipingForm {
   $title = $query->param("title");
   $title =~ s/\"/'/g;
   print <<End_of_form;
+<HR SIZE = 3>
 <CENTER>
 <TABLE>
 <TR>
 <TD>
-<H4>Next step</H4>
+<H3>Next step</H3>
 </TD>
 <TD>
 <FORM METHOD="POST" ACTION="feature-map_form.cgi">

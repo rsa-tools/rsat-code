@@ -6,7 +6,7 @@ use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
 require "RSA.cgi.lib";
-$output_context = "cgi";
+$ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 $retrieve_seq_command = "$SCRIPTS/retrieve-seq";
 $tmp_file_name = sprintf "retrieve-seq.%s", &AlphaDate;

@@ -4,8 +4,9 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
-require "RSA.lib.pl";
-require "RSA.cgi.lib.pl";
+require "RSA.lib";
+require "RSA.cgi.lib";
+$ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 ### intialization
 $feature_map_command = "$SCRIPTS/feature-map";
@@ -239,8 +240,15 @@ DelayedRemoval("$TMP/$map_file");
 DelayedRemoval("$TMP/$html_file");
 
 ### executre the command
+if ($ECHO) {
+    print $query->header();
+    print $query->start_html;
+    print "<PRE>command = $feature_map_command $parameters \n</PRE>";
+    print $query->end_html;
+    exit(0)
+} 
+
 system "$feature_map_command $parameters ";
-#print "<PRE>$feature_map_command $parameters </PRE>";
 
 ### display the result ###
 if (lc($query->param('htmap')) eq "on") {
@@ -249,13 +257,6 @@ if (lc($query->param('htmap')) eq "on") {
     $location = "$WWW_RSA/tmp/$map_file";
 }
 print "Location: $location", "\n\n";
-
-### debug only
-#print $query->header();
-#print $query->start_html;
-#print "<PRE>command = $feature_map_command $parameters \n</PRE>";
-#print $query->end_html;
-
 
 exit(0);
 

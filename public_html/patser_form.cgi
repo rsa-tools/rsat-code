@@ -5,8 +5,9 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
-require "RSA.lib.pl";
-require "RSA.cgi.lib.pl";
+require "RSA.lib";
+require "RSA.cgi.lib";
+$ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 ### Read the CGI query
 $query = new CGI;
@@ -212,7 +213,7 @@ T    |    4    1    0    0    0    0    0    8    3    2    2    2";
 print "<TD><B>";
 print $query->hidden(-name=>'matrix',-default=>$demo_matrix);
 print $query->hidden(-name=>'sequence',-default=>$demo_sequence);
-print $query->hidden(-name=>'sequence_format',-default=>$default_sequence_format);
+print $query->hidden(-name=>'sequence_format',-default=>$default{sequence_format});
 print $query->hidden(-name=>'set_name',-default=>'upstream sequences from the yeast PHO genes');
 print $query->submit(-label=>"DEMO");
 print "</B></TD>\n";

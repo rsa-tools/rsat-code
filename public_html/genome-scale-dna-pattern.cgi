@@ -6,6 +6,7 @@ use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
 require "RSA.cgi.lib";
+$ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 require "$RSA/public_html/genome-scale.lib.pl";
 
 $dna_pattern_command = "$SCRIPTS/dna-pattern";
@@ -147,11 +148,12 @@ sub PipingForm {
   $title = $query->param("title");
   $title =~ s/\"/'/g;
   print <<End_of_form;
+<HR SIZE = 3>
 <CENTER>
 <TABLE>
 <TR>
 <TD>
-<H4>Next step</H4>
+<H3>Next step</H3>
 </TD>
 <TD>
 <FORM METHOD="POST" ACTION="feature-map_form.cgi">

@@ -7,7 +7,7 @@ use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
 require "RSA.cgi.lib";
-$output_context = "cgi";
+$ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 ### Read the CGI query
 $query = new CGI;
@@ -22,6 +22,7 @@ $default{exp_freq_file} = "";
 $default{sequence_type} = "dna";
 $default{oligo_size} = 6;
 $default{markov_order} = 2;
+$default{pseudo_weight} = "0.00";
 $default{strand} = "both strands";
 $default{noov} = '';
 $default{grouprc} = 'checked';
@@ -132,7 +133,11 @@ print "<HR width=550 align=left>\n";
 print $query->table({-border=>0,-cellpadding=>3,-cellspacing=>0},
 		    $query->Tr($query->td("<A HREF='help.oligo-analysis.html#exp_freq'><B>Expected frequency calibration</B></A>&nbsp;<BR>")),
 		    $query->Tr($query->td(["<INPUT TYPE='radio' NAME='freq_estimate' VALUE='Oligo frequencies from all non-coding regions' CHECKED>Oligo frequencies from all non-coding regions<BR>",
-					   &OrganismPopUpString])),
+					   &OrganismPopUpString,
+					   "Pseudo-weight &nbsp;".$query->textfield(-name=>'pseudo_weight',
+										    -default=>$default{pseudo_weight},
+										    -size=>5),
+					   ])),
 		    $query->Tr($query->td([
 					   "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='Markov Chain (higher order dependencies)'>Markov Chain (higher order dependencies)<BR>",
 					   "Markov order &nbsp;".$query->textfield(-name=>'markov_order',

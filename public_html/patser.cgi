@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: patser.cgi,v 1.7 2001/07/18 11:56:47 jvanheld Exp $
+# $Id: patser.cgi,v 1.8 2001/10/07 22:53:07 jvanheld Exp $
 #
-# Time-stamp: <2001-07-18 13:55:14 jvanheld>
+# Time-stamp: <2001-10-08 00:53:05 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -14,6 +14,7 @@ use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
 require "RSA.cgi.lib";
+$ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 $patser_command = "$BIN/patser";
 $matrix_from_transfac_command = "$SCRIPTS/matrix-from-transfac";
@@ -96,7 +97,7 @@ if ($query->param('output') eq "display") {
     $features_from_patser_cmd .= " -seq $sequence_file";
     $features_from_patser_cmd .= " -o $feature_file";
 
-    print &PipingWarning();
+    &PipingWarning();
 
     ### Print the result on Web page
     open RESULT, "$patser_command $parameters & |";
@@ -105,13 +106,13 @@ if ($query->param('output') eq "display") {
 
     print "<PRE>";
     while (<RESULT>) {
+	s|$RSA/||g;
 	print;
 	print FEATURES;
     }
     close FEATURES;
     close RESULT;
     print "</PRE>";
-    print "<HR SIZE=3>\n";
 
     &PipingForm();
     
@@ -141,11 +142,12 @@ exit(0);
 sub PipingForm {
     ### prepare data for piping
     print <<End_of_form;
+<HR SIZE = 3>
 <CENTER>
 <TABLE>
 <TR>
   <TD>
-    <H4>Next step</H4>
+    <H3>Next step</H3>
   </TD>
   <TD>
     <FORM METHOD="POST" ACTION="feature-map_form.cgi">

@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis_form.cgi,v 1.3 2001/09/21 06:29:59 jvanheld Exp $
+# $Id: dyad-analysis_form.cgi,v 1.4 2001/10/07 22:51:53 jvanheld Exp $
 #
-# Time-stamp: <2001-09-21 08:26:34 jvanheld>
+# Time-stamp: <2001-10-08 00:51:50 jvanheld>
 #
 ############################################################
 #### this cgi script fills the HTML form for the program dyad-analysis
@@ -14,7 +14,7 @@ use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
 require "RSA.cgi.lib";
-$output_context = "cgi";
+$ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 ### Read the CGI query
 $query = new CGI;
