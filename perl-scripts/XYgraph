@@ -31,7 +31,7 @@ if ($ARGV[0] eq "-h") {
     exit(0);
 }
 if ($ARGV[0] eq "-help") {
-    &PrintShortHelp;
+    &PrintOptions;
     exit(0);
 }
 
@@ -72,8 +72,17 @@ $large_font_height = 16;
 
 &ReadArguments();
 
-$x_ref_log=log($x_log_base);
-$y_ref_log=log($y_log_base);
+if ($x_log_base eq "e") {
+    $x_ref_log = 1;
+} else {
+    $x_ref_log=log($x_log_base);
+}
+if ($y_log_base eq "e") {
+    $y_ref_log = 1;
+} else {
+    $y_ref_log=log($y_log_base);
+}
+
 
 #### check parameter values ####
 if ($HTML_map) {
@@ -233,56 +242,71 @@ $image->filledRectangle(0,0,$graph_x_size, $graph_y_size, $bg_color);
 
 #### draw grid and limits ####
 
-
-### second X grid
-if ($x_grid_step2 > 0) {
-    for ($g = $x_axis_min; $g <= $x_axis_max; $g += $x_grid_step2) {
-	$grid_pos = $left + ($g-$x_axis_min)*$x_scale;
-        $image->line($grid_pos, $bottom, $grid_pos, $top, $grid2_color);
+#### second grid (only when the axis is not in log
+unless ($xlog) {
+    ### second X grid
+    if ($x_grid_step2 > 0) {
+	for ($g = $x_axis_min; $g <= $x_axis_max; $g += $x_grid_step2) {
+	    $grid_pos = $left + ($g-$x_axis_min)*$x_scale;
+	    $image->line($grid_pos, $bottom, $grid_pos, $top, $grid2_color);
+	}
     }
 }
 
-### second Y grid
-if ($y_grid_step2 > 0) {
-    for ($g = $y_axis_min; $g <= $y_axis_max; $g += $y_grid_step2) {
-	$grid_pos = &YPixelPos($g);
-	$image->line($left, $grid_pos, $right, $grid_pos, $grid2_color);
+unless ($ylog) {
+    ### second Y grid
+    if ($y_grid_step2 > 0) {
+	for ($g = $y_axis_min; $g <= $y_axis_max; $g += $y_grid_step2) {
+	    $grid_pos = &YPixelPos($g);
+	    $image->line($left, $grid_pos, $right, $grid_pos, $grid2_color);
+	}
     }
 }
-
 
 ### first X grid
 if ($x_grid_step1 > 0) {
-    for ($g = $x_axis_min; $g <= $x_axis_max; $g += $x_grid_step1) {
-#	$grid_pos = $left + ($g-$x_axis_min)*$x_scale;
-	if ($xlog) {
-	    next unless (&IsInteger($g));
+    if ($xlog) {
+	$min_log = int($x_axis_min);
+	$max_log = int($x_axis_max)+1;
+	for ($g = $min_log; $g <= $max_log; $g++) {
 	    $grid_value = $x_log_base^$g;
-	    $grid_text = sprintf("%g^%-6g", $x_log_base, $g);
-	} else {
+	    $grid_text = sprintf("%s^%-6g", $x_log_base, $g);
+	    $grid_pos = &XPixelPos($g);
+	    $image->line($grid_pos, $bottom, $grid_pos, $top, $grid1_color);
+	    $image->string(gdSmallFont, $grid_pos - $small_font_width*length($grid_text)/2, $bottom + 5, $grid_text, $text_color);
+	}
+    } else {
+	for ($g = $x_axis_min; $g <= $x_axis_max; $g += $x_grid_step1) {
 	    $grid_value = $g;
 	    $grid_text = sprintf("%6g", $grid_value);
+	    $grid_pos = &XPixelPos($g);
+	    $image->line($grid_pos, $bottom, $grid_pos, $top, $grid1_color);
+	    $image->string(gdSmallFont, $grid_pos - $small_font_width*length($grid_text)/2, $bottom + 5, $grid_text, $text_color);
 	}
-	$grid_pos = &XPixelPos($g);
-	$image->line($grid_pos, $bottom, $grid_pos, $top, $grid1_color);
-	$image->string(gdSmallFont, $grid_pos - $small_font_width*length($grid_text)/2, $bottom + 5, $grid_text, $text_color);
     }
 }
 
-### first Y grid
+#### first Y grid
 if ($y_grid_step1 > 0) {
-    for ($g = $y_axis_min; $g <= $y_axis_max; $g += $y_grid_step1) {
-	if ($ylog) {
-	    next unless (&IsInteger($g));
+    if ($ylog) {
+	$min_log = int($y_axis_min);
+	$max_log = int($y_axis_max)+1;
+	for ($g = $min_log; $g <= $max_log; $g++) {
 	    $grid_value = $y_log_base^$g;
-	    $grid_text = sprintf("%g^%-6g", $y_log_base, $g);
-	} else {
+	    $grid_text = sprintf("%s^%-6g", $y_log_base, $g);
+	    $grid_pos = &YPixelPos($g);
+#	    warn ("\t", $y_gid_step1, $g, $grid_value, $grid_text, $grid_pos), "\n";
+	    $image->line($left, $grid_pos, $right, $grid_pos, $grid1_color);
+	    $image->string(gdSmallFont, $left - $small_font_width * length($grid_text) - 5, $grid_pos - $small_font_height/2, $grid_text, $text_color);
+	}
+    } else {
+	for ($g = $y_axis_min; $g <= $y_axis_max; $g += $y_grid_step1) {
 	    $grid_value = $g;
 	    $grid_text = sprintf("%6g", $grid_value);
+	    $grid_pos = &YPixelPos($g);
+	    $image->line($left, $grid_pos, $right, $grid_pos, $grid1_color);
+	    $image->string(gdSmallFont, $left - $small_font_width * length($grid_text) - 5, $grid_pos - $small_font_height/2, $grid_text, $text_color);
 	}
-	$grid_pos = &YPixelPos($g);
-	$image->line($left, $grid_pos, $right, $grid_pos, $grid1_color);
-	$image->string(gdSmallFont, $left - $small_font_width * length($grid_text) - 5, $grid_pos - $small_font_height/2, $grid_text, $text_color);
     }
 }
 
@@ -1188,7 +1212,9 @@ sub CloseHTMLmap {
 
 
 
-sub PrintShortHelp {
+################################################################
+#### display short help message
+sub PrintOptions {
     open SHORTHELP, "| more";
     print SHORTHELP <<End_of_options;
 XYgraph options
@@ -1223,8 +1249,8 @@ XYgraph options
 -rows		data fields are in rows
 -xcol #	        column containing data for the X axis. 
 -ycol #,#,#     columns containing data for the Y axis. 
--xlog #		X data are displayed on a logarithmic scale
--ylog #		Y data are displayed on a logarithmic scale
+-xlog #		logarithm X axis base #, default 10)
+-ylog #		logarithm Y axis (base #, default 10)
 -log #		same as combining -xlog # -ylog #
 -lines	        points are jointed by lines 
 -line #		points of the #th column are jointed by lines
@@ -1244,6 +1270,8 @@ End_of_options
 }
 
 
+################################################################
+#### display full help message 
 sub PrintHelp {
     open HELP, "| more";
     print HELP <<End_of_Help;
@@ -1392,28 +1420,29 @@ End_of_Help
   close HELP;
 }
 
-#### read arguments ####
+################################################################
+#### read arguments
 sub ReadArguments {
 
     for $a (0..$#ARGV) {
-	
+
 	### input, output files ###
 	if ($ARGV[$a] eq "-i") {
 	    $inputfile = $ARGV[$a+1];
 	} elsif ($ARGV[$a] eq "-o") {
 	    $outputfile = $ARGV[$a+1];
-	    
+
 	    ### output format
 	} elsif ($ARGV[$a] eq "-format") {
 	    $out_format = lc($ARGV[$a+1]);
 	    unless ($supported_format{$out_format}) {
 		&FatalError("Format $out_format is not supported (supported: $supported_formats)");
 	    }
-	    
+
 	    ### verbose ###
 	} elsif ($ARGV[$a] eq "-v") {
 	    $verbose = 1;
-	    
+
 	    ### legends and titles ###
 	} elsif (($ARGV[$a] eq "-title") || ($ARGV[$a] eq "-title1")) {
 	    $title1 = $ARGV[$a+1];
@@ -1427,7 +1456,7 @@ sub ReadArguments {
 	    $y_legend1 = $ARGV[$a+1];
 	} elsif ($ARGV[$a] eq "-yleg2") {
 	    $y_legend2 = $ARGV[$a+1];
-	    
+
 	    ### grid steps ###
 	} elsif (($ARGV[$a] eq "-gstep1") && ($ARGV[$a+1] =~ /^\d+(\.\d+){0,1}$/)){
 	    $y_grid_step1 = $ARGV[$a+1];
@@ -1443,8 +1472,7 @@ sub ReadArguments {
 	    $x_grid_step2 = $ARGV[$a+1];
 	} elsif (($ARGV[$a] eq "-ygstep2") && ($ARGV[$a+1] =~ /^\d+(\.\d+){0,1}$/)){
 	    $y_grid_step2 = $ARGV[$a+1];
-	    
-	    
+
 	    ### min and max values to represent ###
 	} elsif (($ARGV[$a] eq "-max") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+){0,1}(E[+-]{0,1}\d+){0,1}$/i)){
 	    $x_axis_max = $ARGV[$a+1];
@@ -1460,7 +1488,7 @@ sub ReadArguments {
 	    $x_axis_min = $ARGV[$a+1];
 	} elsif (($ARGV[$a] eq "-ymin") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+){0,1}(E[+-]{0,1}\d+){0,1}$/i)){
 	    $y_axis_min = $ARGV[$a+1];
-	    
+
 	    ### axis size (in pixels) ###
 	} elsif (($ARGV[$a] eq "-xsize") && ($ARGV[$a+1] =~ /^\d+$/)){
 	    $x_axis_size = $ARGV[$a+1];
@@ -1469,77 +1497,78 @@ sub ReadArguments {
 	} elsif (($ARGV[$a] eq "-size") && ($ARGV[$a+1] =~ /^\d+$/)){
 	    $x_axis_size = $ARGV[$a+1];
 	    $y_axis_size = $ARGV[$a+1];
-	    
-	    
+
 	    ### backgreound color ####
 	} elsif ($ARGV[$a] eq "-bg") {
 	    $bg = $ARGV[$a+1];
-	    
+
 	    ### monochrome output
 	} elsif ($ARGV[$a] =~ /-mono/i) {
 	    $monochrome = 1;
-	    
+
 	    ### monochrome output
 	} elsif ($ARGV[$a] =~ /-symb/i) {
 	    $symbols = 1;
-	    
+
 	    ### logarithmic representation
 	} elsif ($ARGV[$a] eq "-log") {
 	    $xlog= 1;
 	    $ylog= 1;
-	    if (&IsReal($ARGV[$a+1])) {
+	    if (($ARGV[$a+1] eq "e") 
+		|| (&IsReal($ARGV[$a+1]))) {
 		$x_log_base = $ARGV[$a+1];
 		$y_log_base = $ARGV[$a+1];
 		&FatalError("Log base should be strictly higher than 1.") 
-		    unless ($x_log_base > 1);
+		    unless (($x_log_base > 1) || ($x_log_base eq "e"));
 	    }
 	} elsif ($ARGV[$a] eq "-xlog") {
 	    $xlog= 1;
-	    if (&IsReal($ARGV[$a+1])) {
+	    if (($ARGV[$a+1] eq "e") 
+		|| (&IsReal($ARGV[$a+1]))) {
 		$x_log_base = $ARGV[$a+1];
 		&FatalError("Log base should be strictly higher than 1.") 
-		    unless ($x_log_base > 1);
+		    unless (($x_log_base > 1) || ($x_log_base eq "e"));
 	    }
 	} elsif ($ARGV[$a] eq "-ylog") {
 	    $ylog= 1;
-	    if (&IsReal($ARGV[$a+1])) {
+	    if (($ARGV[$a+1] eq "e") 
+		|| (&IsReal($ARGV[$a+1]))) {
 		$y_log_base = $ARGV[$a+1];
 		&FatalError("Log base should be strictly higher than 1.") 
-		    unless ($y_log_base > 1);
+		    unless (($y_log_base > 1) || ($y_log_base eq "e"));
 	    }
-	    
-	    
+
 	    ### histogram ###
 	} elsif ($ARGV[$a] eq "-histo") {
 	    $histogram = 1;
-	    
+
 	    ### filled histogram ###
 	} elsif ($ARGV[$a] eq "-fhisto") {
 	    $filled_histogram = 1;
-	    
+
 	    ### join points by lines ###
 	} elsif ($ARGV[$a] eq "-lines") {
 	    $lines = 1;
-	    
+
 	    ### join points of a specific column by lines ###
 	} elsif (($ARGV[$a] eq "-line") && (&IsNatural($ARGV[$a+1]))) {
 	    $lines[$ARGV[$a+1]-1] = 1;
-	    
+
 	    ### first input line contains Y data legends ###
 	} elsif ($ARGV[$a] eq "-header") {
 	    $header = 1;
 	} elsif ($ARGV[$a] eq "-legend") {
 	    $header = 1;
 	    $legend = 1;
-	    
+
 	    ### point size ###
 	} elsif (($ARGV[$a] eq "-pointsize") && ($ARGV[$a+1] =~ /^\d+$/)){
 	    $point_size = $ARGV[$a+1];
-	    
+
 	    ### data columns ###  
 	} elsif ($ARGV[$a] eq "-xcol") {
 	    $x_col = $ARGV[$a+1] -1; #indexes begin at 0
-	    
+
 	} elsif ($ARGV[$a] eq "-ycol") {
 	    $y_col_string = $ARGV[$a+1];
 	    ### single column
@@ -1575,27 +1604,27 @@ sub ReadArguments {
 		print "	Type XYgraph -h for help.\n";
 		exit;
 	    }
-	    
+
 	    ### highlight box ###
 	} elsif (($ARGV[$a] eq "-hbox") && ($ARGV[$a+1] =~ /^(\d+),(\d+),(\d+),(\d+)$/)){
 	    $hbox_left = $1;
 	    $hbox_top = $2;
 	    $hbox_right = $3;
 	    $hbox_bottom = $4;
-	    
+
 	    ### threshold box ###
 	} elsif (($ARGV[$a] eq "-tbox") && ($ARGV[$a+1] =~ /^(\d+),(\d+),(\d+),(\d+)$/)){
 	    $tbox_low_x = $1;
 	    $tbox_high_x = $2;
 	    $tbox_low_y = $3;
 	    $tbox_high_y = $4;
-	    
+
 	    ### data fields ####
 	} elsif ($ARGV[$a] eq "-rows") {
 	    $data_fields = "rows";
 	} elsif ($ARGV[$a] eq "-columns")  {
 	    $data_fields = "columns";
-	    
+
 	    ### HTML map ###
 	} elsif ($ARGV[$a] eq "-htmap") {
 	    $HTML_map = 1;
@@ -1603,9 +1632,7 @@ sub ReadArguments {
 	    ### label column
 	} elsif (($ARGV[$a] eq "-lc") && (&IsNatural($ARGV[$a+1]))) {
 	    $label_col = $ARGV[$a+1];
-	    
 
 	}
-	
     }
 }
