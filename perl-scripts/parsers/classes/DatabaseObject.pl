@@ -1,7 +1,7 @@
 
 ### The parent class for all FFBP objects
 ### include generic accessor methods
-package PFBP::DatabaseObject;
+package classes::DatabaseObject;
 {
 #  use Data::Dumper;
   $_count = 0;
@@ -79,7 +79,7 @@ package PFBP::DatabaseObject;
     my ($self,$attr) = @_;
     my $class = ref($self);
     unless (defined($self->{$attr})) {
-      warn("WARNING: object $self of class $class has no attribute named '$attr'\n") if ($main::verbose >= 3);
+      warn("WARNING: object $self of class $class has no attribute named '$attr'\n") if ($main::verbose >= 4);
       return;
     }
     if (ref($self->{$attr}) eq "ARRAY") {
@@ -457,29 +457,6 @@ package PFBP::DatabaseObject;
   }
 
   
-  ### usage: $class->index_names(); ### uses the object ID as value
-  ### index the "names" attribute in the %name_index hash
-  ### the "id" attribute is indexed as well, so each object can be called
-  ### by either its id or one of its names
-  ### name_index allows to retrieve the object id on basis of 
-  ### any of the indexed names
-  ### id_index allows then to retrieve the object reference 
-  ### WARNING: indexing is case-insensitive, 
-  ### i.e. all keys are converted to uppercases in the hash table
-  sub index_names {
-      my $class = ref($_[0]) || $_[0];
-      foreach $object ($class->get_objects()) {
-	  $object->unique_names(); #### make sure a name only appears once
-	  my @keys = ();
-	  $index_value = $object->get_attribute("id");
-	  push @keys, $index_value;
-	  push @keys, $object->get_attribute("names");
-	  foreach $key (@keys) {
-	      ${$class."::_name_index"}{uc($key)} = $index_value 
-		  if (($key) && ($index_value));
-          }
-      }
-  }
 
   ### usage: $class->index_names(); ### uses the object ID as value
   ### index the "names" attribute in the %name_index hash
@@ -523,6 +500,31 @@ package PFBP::DatabaseObject;
     foreach $object ($class->get_objects()) {
       $object->index_id();
     }
+  }
+
+  ### class method
+  ### usage: $class->index_names(); ### uses the object ID as value
+  ### index the "names" attribute in the %name_index hash
+  ### the "id" attribute is indexed as well, so each object can be called
+  ### by either its id or one of its names
+  ### name_index allows to retrieve the object id on basis of 
+  ### any of the indexed names
+  ### id_index allows then to retrieve the object reference 
+  ### WARNING: indexing is case-insensitive, 
+  ### i.e. all keys are converted to uppercases in the hash table
+  sub index_names {
+      my $class = ref($_[0]) || $_[0];
+      foreach $object ($class->get_objects()) {
+	  $object->unique_names(); #### make sure a name only appears once
+	  my @keys = ();
+	  $index_value = $object->get_attribute("id");
+	  push @keys, $index_value;
+	  push @keys, $object->get_attribute("names");
+	  foreach $key (@keys) {
+	      ${$class."::_name_index"}{uc($key)} = $index_value 
+		  if (($key) && ($index_value));
+          }
+      }
   }
 
   sub _incr_attribute_count { 
