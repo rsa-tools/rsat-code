@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: orf-info,v 1.4 2001/03/11 06:52:22 jvanheld Exp $
+# $Id: orf-info,v 1.5 2001/03/11 06:52:54 jvanheld Exp $
 #
-# Time-stamp: <2001-03-11 07:52:17 jvanheld>
+# Time-stamp: <2001-03-11 07:52:52 jvanheld>
 #
 ############################################################
 
@@ -168,7 +168,7 @@ sub PrintHelp {
 USAGE
 	orf-info -org organism -q query
 	orf-info -org organism -q query1 -q query2 -q query3 ...
-	orf-info --org organism i query_file
+	orf-info -org organism i query_file
 
 	returns the information about ORFs specified either by their
 	ORF identifier, or by any supported synonym.
