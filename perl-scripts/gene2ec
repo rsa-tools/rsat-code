@@ -93,8 +93,12 @@ while (<$in>) {
     if ($orf_id) {
 	&Warning("Query $query\t$orf_id") if ($verbose >=2);
 	$query{uc($orf_id)} = 1;
-	foreach $ec (@{$ecs{$orf_id}}) {
-	    print $out join ("\t", $ec, @fields), "\n";
+	if ($#{$ecs{$orf_id}} >= 0) {
+	    foreach $ec (@{$ecs{$orf_id}}) {
+		print $out join ("\t", $ec, @fields), "\n";
+	    }
+	} else {
+	    &Warning("No EC associated with gene $query") if ($verbose >=2);
 	}
 
     } else {
@@ -103,11 +107,8 @@ while (<$in>) {
 }
 close $in unless ($inputfile eq "");
 
-
-###### print output ######
-
-
-###### verbose ######
+################################################################
+#### verbose
 if ($verbose) {
     $done_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
     print $out ";Job started $start_time";
