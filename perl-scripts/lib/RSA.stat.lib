@@ -82,7 +82,7 @@ sub checked_avg {
 
 ### usage:
 ###     &binomial($proba,$trials,$successes)
-### this routine uses the recurrent formula for the calculation of binomial:
+### this routine uses the recursive formula for the calculation of binomial:
 ### We calculate everything in logarithms, and make a custom exp conversion
 ### to overcome the limitation of the Perl exp(x) function
 ###
@@ -125,6 +125,10 @@ sub binomial {
 }
 
 
+################################################################
+#### converts a natural logarithm (x) into e^x.
+#### This is performed by generating the output string, in order to
+#### cirumvent a problem with very low values (<< e-70).
 sub LogToEng {
     my ($log) = @_;
     my $base = 10;
@@ -145,7 +149,7 @@ sub LogToEng {
 ###     &sum_of_binomials($proba,$trials,$from,$to)
 ### Calculates the sum of binomial probabilities between two values.
 ###
-### This routine uses the recurrent formula for the calculation of
+### This routine uses the recursive formula for the calculation of
 ### binomial:
 ###           P(x) * p(r-x)
 ###  P(x+1) = -------------
@@ -309,10 +313,57 @@ sub sum_of_poisson {
     }
     return $sum_of_poi;
 }
+### usage:
+###     &hypergeometric($x, $m, $n, $k)
+### this routine uses the recursive formula for the calculation of hypergeometric:
+###
+### We calculate everything in logarithms, and make a custom exp conversion
+### to overcome the limitation of the Perl exp(x) function
+###
+###                       (m - x + 1) (k - x + 1)
+###  P(X = x) = P(X=x-1) ------------------------
+###                         x ( n - m - k + x)
+###
+sub hypergeometric {
+    my($x, $m, $n, $k) = @_;
+
+    warn join ( "\t", 
+		"Hypergeometric", 
+		"x=$x",
+		"m=$m",
+		"n=$n",
+		"k=$k",
+		), "\n";
+    #### check parameter values
+    if ($x < 0) {
+	&FatalError( "Error : number of successes must be strictly positive\n");
+    }
+
+    #### calculate value for 0 successes
+    $log_proba = 0;
+    for my $i (($n-$m-$k+1)..($n-$m)) {
+	$log_proba += log($i);
+    }
+    for my $i (($n-$k+1)..$n) {
+	$log_proba -= log($i);
+    }
+
+    #### recursively calculate value
+    for my $i (1..$x) {
+	$log_proba += log($m - $i + 1);
+	$log_proba -= log($i);
+	$log_proba += log($k - $i + 1);
+	$log_proba -= log($n - $m - $k + $i);
+    }
+
+#    my $proba = exp($log_proba);
+    my $proba = &LogToEng($log_proba);
+    return($proba);
+}
 
 
 ################################################################
-### This routine uses the recurrent formula for the calculation of hypergeometric:
+### Hypergeometric formula. 
 ###
 ### Usage:
 ###     &hypergeometric($x, $m, $n, $k)
@@ -332,25 +383,40 @@ sub sum_of_poisson {
 ###
 sub hypergeometric {
     my($m, $n, $k, $x, %args) = @_;
-
+    
     warn join ( "\t", 
 		"Hypergeometric", 
 		"m=$m",
 		"n=$n",
 		"k=$k",
-		"x=$x",
+		"x=$x"
 		), "\n";
+
     #### check parameter values
-    if ($x < 0) {
-	&FatalError( "Error : number of successes must be strictly positive\n");
+    unless ($args{nocheck}) {
+	if ($x < 0) {
+	    &FatalError( "Number of black balls in the sample ($x) must be strictly positive\n");
+	}
+	if ($k > $n) {
+	    &FatalError("Sample ($k) cannot be larged than number of balls in the urn ($n)");	
+	}
+	if ($m > $n) {
+	    &FatalError("Number of black balls in the urn ($m) cannot be larged than number of balls in the urn ($n)");	
+	}
+	if ($x > $m) {
+	    &FatalError("Number of black balls in the sample ($x) cannot be larged than number of black balls in the urn ($m)");	
+	}
+	if ($x > $k) {
+	    &FatalError("Number of black balls in the sample ($x) cannot be larged than sample size ($k)");	
+	}
     }
 
+    #### initialization
     if (defined($args{previous_value})) {
 	#### a single recursion is sufficient
 	die;
 	$start = $x-1;
     } else {
-	#### initialization
 	#### calculate value for 0 successes
 	$log_proba = 0;
 	for my $i (($n-$m-$k+1)..($n-$m)) {
@@ -362,7 +428,7 @@ sub hypergeometric {
 	$start = 1;
     }
 
-    #### recursively calculate value
+    #### recursive calculation
     for my $i ($start..$x) {
 	$log_proba += log($m - $i + 1);
 	$log_proba -= log($i);
@@ -375,68 +441,21 @@ sub hypergeometric {
     return($proba);
 }
 
+
 ################################################################
-## usage:
-##     &sum_of_hypergeometrics($proba,$trials,$from,$to)
-## Calculates the sum of hypergeometric probabilities between two values.
-##
-## This routine uses the recurrent formula for the calculation of
-## hypergeometric. The calculation time is thus linear.
-##
+#### sum_of_hypergeometric($m, $n, $k, $from, $to)
+####
 sub sum_of_hypergeometrics {
-    my($m, $n, $k, $from, $to, %args) = @_;
-#    my ($proba, $trials, $from, $to) = @_;
+    my ($m, $n, $k, $from, $to) = @_;
 
-    if ($verbose >= 5) {
-	print join ("\t", "sum_of_hypergeometrics", "m=$m", "n=$n", "k=$k", "from=$from", "to=$to"), "\n";
+    my $sum_proba = 0;
+    for my $i ($from..$to) {
+	$prev_sum = $sum_proba;
+	$sum_proba += &hypergeometric($m, $n, $k, $i);
+	last if ($sum_proba == $prev_sum);
     }
-
-#    my $precision_limit = 1.0e-06;
-#    my $expected = $trials*$proba;
-
-#    if ($proba <=0) {
-#	 &FatalError("Error: invalid probability $proba (must be a positive value)\n");
-#    }
-    
-    #### make sure that "from" is smaller than "to"
-    ($from,$to) = sort {$a <=> $b} ($from, $to);
-    if ($to > $n) {
-	&FatalError( "Error: successes ($to) cannot be higher than trials ($trials)\n");
-    }
-    my $q = 1 - $proba;
-    my $logproba = log($proba);
-    my $logq = log($q);
-
-    my $sum_of_bin = 0;
-    my $x = 0;
-    my $logbin;
-    my $prev_value = -1;
-
-    #### initialize
-    $x = 0;
-    $logbin = $trials * log($q);
-    if ($from == 0) {
-	$sum_of_bin = exp($logbin);
-	$loop_start = 1;
-    } else {
-	$loop_start = $from;
-	for $x (1..$from-1) {
-	    $logbin += log($trials - $x + 1) - log($x) + $logproba - $logq;
-	}
-    }
-
-    for $x ($loop_start..$to) {
-	$logbin += log($trials - $x + 1) - log($x) + $logproba - $logq;
-	$sum_of_bin += exp($logbin);
-	last if (($x > $expected) && ($sum_of_bin <= $prev_value)); ### limit of precision
-	$prev_value = $sum_of_bin;
-    }
-
-    $sum_of_bin = 1 if ($sum_of_bin > 1);
-    $sum_of_bin = "ND0" if ($sum_of_bin < 0);
-    return($sum_of_bin);
+    return $sum_proba;
 }
-
 
 
 ################################################################
