@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: retrieve-seq,v 1.15 2002/02/13 00:55:02 jvanheld Exp $
+# $Id: retrieve-seq,v 1.16 2002/02/13 01:17:01 jvanheld Exp $
 #
-# Time-stamp: <2002-02-01 07:27:59 jvanheld>
+# Time-stamp: <2002-02-13 02:15:11 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -75,6 +75,9 @@ if ($sequence_type eq "upstream") {
 
 #### check output format ####
 &CheckOutputSeqFormat($out_format);
+#### read data
+&ReadOrfPositions($organism_name);
+&ReadSynonyms($organism_name);
 
 #### check limits ####
 $from = $default{from} unless (defined($from));
@@ -90,16 +93,22 @@ if ($to < $from) {
 if ($return_all) {
     $query_file = $feature_table_file;
 } 
+
+#### select random ORFs
+if ($random_orfs > 0) {
+    srand (time);
+    my @orfs = keys %chr;
+    for my $i (1..$random_orfs) {
+	my $remaining_orfs = $#orfs+1;
+	my $selected = int(rand($remaining_orfs));
+	warn ";", join ("\t", "Selected ORF", $selected, $remaining_orfs), "\n" if ($verbose >= 0);
+	push @queries, splice(@orfs, $selected, 1);
+    }
+}
+
 if (@queries == ()) {
     ### open query file ###
     $in = &OpenInputFile($query_file);
-#  if ($query_file) {
-#    open(QUERIES, $query_file) || 
-#	die "\tcannot open query file $query_file\n";
-#    $in = QUERIES;
-#  } else {
-#    $in = STDIN;
-#  }
     while (<$in>) {
 	next if ((/^;/) || (/^\#/) || (/^--/));
 	next if (/^--/);
@@ -140,11 +149,6 @@ if ($warn_level) {
     }
     print $out ";\n";
 }
-
-#### read data
-&ReadOrfPositions($organism_name);
-&ReadSynonyms($organism_name);
-#&ReadGenomeSequence;
 
 #### no overlapping with upstream orfs
 if ($noorf) {
@@ -361,6 +365,9 @@ $supported_organisms
 		upstream sequence coordinates.
 	-nowarn
 		Prevents warning when a gene cannot be identified.
+	-randorfs #	
+		Return the sequences (specified by the option -type)
+		for a random selection of # ORFs.
 
 INPUT FORMAT
 	Sequence file
@@ -404,6 +411,7 @@ retrieve-seq options
 -org		organism
 $supported_organisms
 -type		upstream | downstream | orf
+-randorfs #	random selection of # ORFs.
 -i		query file. This option is incompatible with -q.
 -q		query
 -all		returns all genomic upstream regions
@@ -460,6 +468,16 @@ sub ReadArguments {
 	    #### input file (one query per line)
 	} elsif ($ARGV[$a] eq "-i") {
 	    $query_file =$ARGV[$a+1];
+	    
+	    #### random selection of ORFs
+	} elsif ($ARGV[$a] =~ /-randorf/) {
+	    $random_orfs =$ARGV[$a+1];
+	    unless (&IsNatural($random_orfs)) {
+		&FatalError("The number of ORFs must be a natural number");
+	    }
+	    unless ($random_orfs > 0) {
+		&FatalError("The number of ORFs must be > 0");
+	    }
 	    
 	    ### return all genomic  upstream regions	
 	} elsif ($ARGV[$a] eq "-all") {
