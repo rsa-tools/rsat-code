@@ -1,0 +1,245 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: random-genes,v 1.1 2002/07/08 15:00:42 jvanheld Exp $
+#
+# Time-stamp: <2002-07-08 17:00:34 jvanheld>
+#
+############################################################
+#use strict;;
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.lib";
+require "RSA.classes";
+
+
+#### initialise parameters 
+my $start_time = &AlphaDate;
+
+local %infile = ();
+local %outfile = ();
+
+local $verbose = 0;
+local $out = STDOUT;
+local $n = 0; #### number of genes to return
+#local $infile{family} = "";
+local %family_count = ();
+local $pairs = 0;
+
+&ReadArguments;
+
+
+#### check argument values 
+unless ($organism) {
+    &FatalError("You should select an organism.");
+}
+&CheckOrganism($organism);
+&ReadOrfPositions($organism);
+
+### open output file ###
+$out = &OpenOutputFile($outfile{output});
+
+##### read family file
+if ($infile{family}) {
+    ($fam) = &OpenInputFile($infile{family});
+    while (<$fam>) {
+	chomp;
+	next if (/^;/);
+	next if (/^\#/);
+	next unless (/\S/);
+	my ($gene, $fam) = split "\t";
+	if ($fam) {
+	    $n++;
+	    $family_count{$fam}++;
+	}
+    }
+    close $fam;
+}
+
+
+#### verbose 
+&Verbose if ($verbose);
+
+###### execute the command #####
+
+###### print output ##
+if ($infile{family}) {
+    @families = keys %family_count;
+    for my $f (0..$#families) {
+	my $fam = $families[$f];
+	my $count = $family_count{$fam};
+	$rand_family_name = "RAND";
+	$rand_family_name .= $f+1;
+	@random_orfs = &SelectRandomORFs($count);
+	foreach $orf (@random_orfs) {
+	    print $out $orf, "\t", $rand_family_name. "\n";
+	}
+    } 
+} elsif ($pairs) {
+    $n = $pairs *2;
+    @random_orfs = &SelectRandomORFs($n);
+    for my $p (1..$pairs) {
+	print $out shift @random_orfs, "\t";
+	print $out shift @random_orfs, "\n";
+    }
+} else {
+    @random_orfs = &SelectRandomORFs($n);
+    print $out join ("\n", @random_orfs), "\n";
+}
+
+###### verbose ##
+if ($verbose) {
+    my $done_time = &AlphaDate;
+    print $out "; Job started $start_time\n";
+    print $out "; Job done    $done_time\n";
+}
+
+
+###### Close output file ##
+close $out if ($outfile{output});
+
+
+exit(0);
+
+
+########################## subroutine definition ########################
+
+#### display full help message #
+sub PrintHelp {
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	random-genes
+
+        2002 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
+	
+DESCRIPTION
+	Returns a random selection of genes for the specified
+	organism.
+
+	There are three modes of utilization.
+	   (1) -n	returns random genes.
+	   (2) -pairs	returns random pairs of genes.
+	   (3) -fam	substitutes genes from a family file 
+			by random genes. 
+
+CATEGORY
+	util
+
+USAGE
+        random-genes [-i inputfile] [-o outputfile] [-v]
+
+OPTIONS
+	-h	(must be first argument) display full help message
+	-help	(must be first argument) display options
+	-v	verbose
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+	-org	organism
+	-n #	number of random genes to return
+	-pairs #
+		number of random pairs of genes to return. Each row of
+		the output contains two genes, separated by a tab.
+	-fam family file
+		A 2-column file containing gene names in the first
+		column and family (cluster) name in the second column.
+		(same format as for multiple-family-analysis).
+		The program returns a file of the same size as the
+		input, where input genes have been substituted by 
+		random genes.
+End_of_help
+  close HELP;
+  exit;
+}
+
+#### display short help message #
+sub PrintOptions {
+  open HELP, "| more";
+  print HELP <<End_short_help;
+random-genes options
+----------------
+-h	(must be first argument) display full help message
+-help	(must be first argument) display options
+-o	output file
+-v	verbose
+-org	organism
+-n	number of genes
+-pairs	number of pairs of genes
+-fam	family file
+End_short_help
+  close HELP;
+  exit;
+}
+
+
+#### read arguments 
+sub ReadArguments {
+  foreach my $a (0..$#ARGV) {
+    ### verbose ###
+    if ($ARGV[$a] eq "-v") {
+      if (&IsNatural($ARGV[$a+1])) {
+	$verbose = $ARGV[$a+1];
+      } else {
+	$verbose = 1;
+      }
+      
+      ### detailed help
+    } elsif ($ARGV[$a] eq "-h") {
+      &PrintHelp;
+      
+      ### list of options
+    } elsif ($ARGV[0] eq "-help") {
+      &PrintOptions;
+      
+      ### output file 
+    } elsif ($ARGV[$a] eq "-o") {
+      $outfile{output} = $ARGV[$a+1];
+      
+      ### organism
+    } elsif ($ARGV[$a] eq "-org") {
+      $organism = $ARGV[$a+1];
+      
+      ### family file 
+    } elsif ($ARGV[$a] eq "-fam") {
+      $infile{family} = $ARGV[$a+1];
+      
+      ### number of genes
+    } elsif ($ARGV[$a] eq "-n") {
+      $n = $ARGV[$a+1];
+      unless (&IsNatural($n)) {
+	&FatalError("$n\tInvalid number of genes. Should be a natural number.");
+      }
+      
+      ### number of gene pairs
+    } elsif ($ARGV[$a] eq "-pairs") {
+      $pairs = $ARGV[$a+1];
+      unless (&IsNatural($pairs)) {
+	&FatalError("$pairs\tInvalid number of pairs. Should be a natural number.");
+      }
+    }
+  }
+}
+  
+################################################################
+#### verbose message
+sub Verbose {
+    print $out "; random-genes ";
+    &PrintArguments($out);
+    printf $out "; %-14s\t%s\n", "organism", $organism;
+    if (defined(%infile)) {
+	print $out "; Input files\n";
+	while (($key,$value) = each %infile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+    if (defined(%outfile)) {
+	print $out "; Output files\n";
+	while (($key,$value) = each %outfile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+    printf $out "; %-14s\t%d\n", "number of pairs", $pairs if ($pairs);
+    printf $out "; %-14s\t%d\n", "number of genes", $n;
+}
