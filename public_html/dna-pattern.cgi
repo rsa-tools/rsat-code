@@ -17,7 +17,7 @@ $query = new CGI;
 ### print the header of the result page
 &RSA_header("dna-pattern result ".$query->param("title"));
 
-#&ListParameters;
+&ListParameters if ($ECHO >= 2);
 
 
 #### update log file ####
@@ -103,35 +103,37 @@ if ($query->param('subst') =~ /^\d+$/) {
 if ($query->param("output") =~ /display/i) {
     
     ### execute the command ###
-    &PipingWarning() if ($query->param('return') =~ /positions/);
+    &PipingWarning() if ($query->param('match_positions'));
     
     $result_file = "$TMP/$tmp_file_name.res";
-    open RESULT, "$dna_pattern_command $parameters & |";
+    open RESULT, "$dna_pattern_command $parameters |";
+    print "<PRE>$dna_pattern_command $parameters </b>" if ($ECHO);
   
     ### Print the result on Web page
     print "<H3>Result</H3>";
     PrintHtmlTable(RESULT, $result_file);
     close RESULT;
-    &PipingForm if ($query->param('return') =~ /positions/);
-  
+    &PipingForm if ($query->param('match_positions'));
+    print "<HR SIZE = 3>";
+
 } else {
-  ### send an e-mail with the result ###
-  if ($query->param('user_email') =~ /(\S+\@\S+)/) {
-    $address = $1;
-    print "<B>Result will be sent to your e-mail address: <P>";
-    print "$address</B><P>";
-    system "$dna_pattern_command $parameters | $mail_command $address &";
-  } else {
-    if ($query->param('user_email') eq "") {
-      print "<B>ERROR: you did not enter your e-mail address<P>";
-    } else {
-      print "<B>ERROR: the e-mail address you entered is not valid<P>";
-      print "$query->param('user_email')</B><P>";      
-    }
-  } 
+    &EmailTheResult("$dna_pattern_command $parameters", $query->param('user_email'));
+#   ### send an e-mail with the result ###
+#     if ($query->param('user_email') =~ /(\S+\@\S+)/) {
+# 	$address = $1;
+# 	print "<B>Result will be sent to your e-mail address: <P>";
+# 	print "$address</B><P>";
+# 	system "$dna_pattern_command $parameters | $mail_command $address &";
+#     } else {
+# 	if ($query->param('user_email') eq "") {
+# 	    print "<B>ERROR: you did not enter your e-mail address<P>";
+# 	} else {
+# 	    print "<B>ERROR: the e-mail address you entered is not valid<P>";
+# 	    print "$query->param('user_email')</B><P>";      
+# 	}
+#     } 
 }
 
-print "<HR SIZE = 3>";
 print $query->end_html;
 
 

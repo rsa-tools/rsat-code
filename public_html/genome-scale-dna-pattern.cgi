@@ -27,7 +27,33 @@ $query = new CGI;
 #### update log file ####
 &UpdateLogFile;
 
-&ReadRetrieveSeqParams();
+################################################################
+#
+# Organism
+#
+
+$org = $query->param("organism");
+
+
+################################################################
+#
+# Sequence retrieval parameters
+#
+#  if ($query->param("sequence_type") =~ /chromosome/) {
+#      $seq_format = $supported_organism{$org}->{'seq_format'};
+#      $command = "dna-pattern -i ".$supported_organism{$org}->{'genome'};
+#  #      #### DEBUGGING
+#  #      print "<PRE>";
+#  #      print `ls -lt $supported_organism{$org}->{'genome'}`;
+#  #      print `cat $supported_organism{$org}->{'genome'}`;
+#  #      print "</PRE>";
+
+#  } else {
+#    &ReadRetrieveSeqParams();
+#    $command = "$retrieve_seq_command $retrieve_seq_parameters | $dna_pattern_command ";
+#    $seq_format = "fasta";
+#}
+
 
 ################################################################
 #
@@ -35,9 +61,10 @@ $query = new CGI;
 #
 
 #### read parameters ####
+$seq_format = "fasta";
 $parameters_dna_pattern = "";
-$parameters_dna_pattern .= " -v";
-$parameters_dna_pattern .= " -format ".$query->param('sequence_format');
+$parameters_dna_pattern .= " -v ";
+$parameters_dna_pattern .= " -format $seq_format ";
 
 ### pattern file ####
 unless ($query->param('patterns') =~ /\S/) {
@@ -98,47 +125,69 @@ if ($query->param('subst') =~ /^\d+$/) {
 }
 
 
-$command = "$retrieve_seq_command $retrieve_seq_parameters ";
-$command .= "| $dna_pattern_command $parameters_dna_pattern ";
-$command .= "| $add_orf_function_command -org $org ";
-$command .= "| $add_linenb_command ";
-if ($org eq "Saccharomyces_cerevisiae") { #### not yet supported for other organisms
-    $command .= "| $link_command  ";
+#### linking to external databases
+if ($query->param('return') =~ /positions/) {
+    $orf_col = 4;
+} else {
+    $orf_col = 1;
 }
 
+#### pattern matching parameters
+&ReadRetrieveSeqParams();
+$command = "$retrieve_seq_command $retrieve_seq_parameters | $dna_pattern_command ";
+$command .= " $parameters_dna_pattern ";
+
+################################################################'
+#
+# Additional information
+#
+unless ($query->param("sequence_type") =~ /chromosome/) {
+    $command .= "| $add_orf_function_command -org $org ";
+    $command .= "| $add_linenb_command ";
+    if ($org eq "Saccharomyces_cerevisiae") { #### not yet supported for other organisms
+	$command .= "| $link_command -col $orf_col  ";
+    }
+}
+
+print "<PRE>$command</PRE>" if ($ECHO);
+
+################################################################
 ### execute the command ###
 if ($query->param("output") =~ /display/i) {
 
     ### execute the command ###
     $result_file = "$TMP/$tmp_file_name.res";
-    print "<PRE>$command</PRE>" if ($ECHO);
     open RESULT, "$command & |";
     
     ### Print the result on Web page
-    &PrintHtmlTable(RESULT, $result_file,,,,1);
+    &PrintHtmlTable(RESULT, $result_file);
     close RESULT;
     
-    $export_genes = `grep -v '^;' $result_file | cut -f 1 | sort -u '`;
+    system "grep -v '^;' $result_file | cut -f $orf_col | sort -u > $result_file.genes";
+    $export_genes = `cat $result_file.genes`;
+
+#    if ($export_genes =~ /\S/) {
+	&PipingForm () ;
+#    }
     
-    &PipingForm () ;
-    
+    print "<HR SIZE = 3>";
     
 } else {
-    ### send an e-mail with the result ###
-    if ($query->param('user_email') =~ /(\S+\@\S+)/) {
-	$address = $1;
-	print "<B>Result will be sent to your e-mail address: <P>";
-	print "$address</B><P>";
-	system "$command | $mail_command $address &";
-    } else {
-	if ($query->param('user_email') eq "") {
-	    print "<B>ERROR: you did not enter your e-mail address<P>";
-	} else {
-	    print "<B>ERROR: the e-mail address you entered is not valid<P>";
-	    print "$query->param('user_email')</B><P>";      
-	}
-    } 
-    print "<HR SIZE = 3>";
+    &EmailTheResult($command, $query->param('user_email'));
+#     ### send an e-mail with the result ###
+#     if ($query->param('user_email') =~ /(\S+\@\S+)/) {
+# 	$address = $1;
+# 	print "<B>Result will be sent to your e-mail address: <P>";
+# 	print "$address</B><P>";
+# 	system "$command | $mail_command $address &";
+#     } else {
+# 	if ($query->param('user_email') eq "") {
+# 	    print "<B>ERROR: you did not enter your e-mail address<P>";
+# 	} else {
+# 	    print "<B>ERROR: the e-mail address you entered is not valid<P>";
+# 	    print "$query->param('user_email')</B><P>";      
+# 	}
+#     } 
 }
 
 print $query->end_html;
@@ -146,8 +195,10 @@ print $query->end_html;
 
 exit(0);
 
+
+
+### prepare data for piping
 sub PipingForm {
-  ### prepare data for piping
   $title = $query->param("title");
   $title =~ s/\"/\'/g;
   $organism = $org;
@@ -155,17 +206,21 @@ sub PipingForm {
 ## if ($query->param('return') =~ /positions/) {
 ## if ($org eq "Saccharomyces_cerevisiae") {
 
-  print <<End_of_form;
+
+  print <<part1;
 <HR SIZE = 3>
 <CENTER>
 <TABLE>
+part1
 
+
+if ($query->param('return') =~ /positions/) {
+#### pipe to feature-map
+    print <<part2;
 <TR>
-
 <TD>
 <H3>Next step</H3>
 </TD>
-
 <TD>
 <FORM METHOD="POST" ACTION="feature-map_form.cgi">
 <INPUT type="hidden" NAME="title" VALUE="$title">
@@ -175,22 +230,24 @@ sub PipingForm {
 <INPUT type="submit" VALUE="feature map">
 </FORM>
 </TD>
-
 <TD>
 </TD>
-
 </TR>
+part2
+    
+}
 
-
+  if (($org eq "Saccharomyces_cerevisiae") && 
+      !($query->param("sequence_type") =~ /chromosome/)) {
+#### pipe to yMGV and KEGG map coloring
+	print <<part3
 <TR>
 
 <TR>
-<TD colpsan=2>
+<TD colpsan=3>
 <h3>External servers</h3>
 </TD>
-</tr>
 
-<tr>
 <TD>
 <a href="http://www.biologie.ens.fr/fr/genetiqu/puces/publications/ymgv_NARdb2002/index.html" target=_blank>yMGV transcription profiles</a>
 </TD><td>
@@ -201,22 +258,25 @@ sub PipingForm {
 </TD>
 </tr>
 
-<!--
 <tr>
+<td width=20></td>
 <TD>
 <a href="http://www.genome.ad.jp/kegg/kegg2.html#pathway" target=_blank>KEGG pathway coloring</a>
 </TD><td>
-<FORM METHOD="POST" ACTION="http://www.genome.ad.jp/kegg-bin/search_pathway_multi_www" target=_blank>
-<INPUT type="hidden" NAME="org_name" VALUE="$organism">
-<INPUT type="hidden" NAME="unclassified" VALUE="$export_genes">
+<FORM METHOD="GET" target=_blank ACTION='http://www.genome.ad.jp/kegg-bin/search_pathway_multi_www'>
+<INPUT type="hidden" NAME=org_name VALUE=sce>
+<INPUT type="hidden" NAME=unclassified VALUE="$export_genes">
 <INPUT type="submit" VALUE="Send">
 </FORM>
 </TD>
 </TR>
--->
+part3
+}
 
-
+  print <<End_of_form;
 </TABLE>
 </CENTER>
 End_of_form
+
+
 }
