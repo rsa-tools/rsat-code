@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: retrieve-seq,v 1.16 2002/02/13 01:17:01 jvanheld Exp $
+# $Id: retrieve-seq,v 1.17 2002/02/13 09:14:49 jvanheld Exp $
 #
-# Time-stamp: <2002-02-13 02:15:11 jvanheld>
+# Time-stamp: <2002-02-13 10:14:21 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -32,6 +32,8 @@ $sequence_type = "upstream";
 @queries = ();
 $out_format = "fasta";
 $line_width = 60;
+$default{from} = -800;
+$default{to} = -1;
 
 
 &ReadArguments;
@@ -75,21 +77,30 @@ if ($sequence_type eq "upstream") {
 
 #### check output format ####
 &CheckOutputSeqFormat($out_format);
-#### read data
-&ReadOrfPositions($organism_name);
-&ReadSynonyms($organism_name);
 
 #### check limits ####
 $from = $default{from} unless (defined($from));
 $to = $default{to} unless (defined($to));
-
 if ($to < $from) {
     $tmp = $to;
     $to = $from;
     $from = $tmp;
 }
 
-#### queries ####
+################################################################
+## organism data 
+&ReadOrfPositions($organism_name);
+&ReadSynonyms($organism_name);
+#### no overlapping with upstream orfs
+if ($noorf) {
+    &CalcNeighbourLimits();
+}
+
+################################################################
+# Query ORFs
+#
+
+#### retrieve all
 if ($return_all) {
     $query_file = $feature_table_file;
 } 
@@ -101,13 +112,11 @@ if ($random_orfs > 0) {
     for my $i (1..$random_orfs) {
 	my $remaining_orfs = $#orfs+1;
 	my $selected = int(rand($remaining_orfs));
-	warn ";", join ("\t", "Selected ORF", $selected, $remaining_orfs), "\n" if ($verbose >= 0);
+	warn ";", join ("\t", "Selected ORF", $selected, $remaining_orfs), "\n" if ($verbose >= 3);
 	push @queries, splice(@orfs, $selected, 1);
     }
-}
-
-if (@queries == ()) {
-    ### open query file ###
+} elsif (@queries == ()) {
+    #### read queries
     $in = &OpenInputFile($query_file);
     while (<$in>) {
 	next if ((/^;/) || (/^\#/) || (/^--/));
@@ -127,6 +136,7 @@ if ($#queries <0) {
 #### output file ####
 $out = &OpenOutputFile($outputfile);
 
+################################################################
 #### verbose ####
 if ($warn_level) {
     print $out "; retrieve-seq\n";
@@ -150,16 +160,12 @@ if ($warn_level) {
     print $out ";\n";
 }
 
-#### no overlapping with upstream orfs
-if ($noorf) {
-    &CalcNeighbourLimits();
-}
-
-
-
+################################################################
 #### retrieve the sequences ####
+my $seq_length = abs($to - $from + 1);
+my $q = 0;
 foreach $query (@queries) {
-
+    $q++;
     unless (defined($orf_id{uc($query)})) {
 	my $warn_message = ";WARNING\tinvalid query $query"; 
 #      warn $warn_message, "\n" unless $no_warn;
@@ -174,16 +180,13 @@ foreach $query (@queries) {
 	$name = $orf_id;
     }
     $chrom = $chr{$orf_id};
+
     $orf_left = $left{$orf_id};
     $orf_right = $right{$orf_id};
     $orf_strand = $strand{$orf_id};
-    
     $current_from = $from;
     $current_to = $to;
-#    if ($sequence_type eq "exons") {
-	
-#    } else {
-	### upstream region
+    ### upstream region
     if ($sequence_type eq "upstream") {
 	if ($noorf) {
 	    $current_from = &max(-$upstr_size{$orf_id}, $from);
@@ -215,17 +218,31 @@ foreach $query (@queries) {
     } elsif ($sequence_type eq "unspliced ORF") {
 	$reg_left = $orf_left;
 	    $reg_right = $orf_right;
+
+	#### random genomic segments
+    } elsif ($sequence_type eq "random genomic segments") {
+	my $chr_length = $chromosome_seq{$chrom}->get_length();
+	my $max_pos = $chr_length - $seq_length +1;
+	$reg_left = int(rand($max_pos));
+	$reg_right = $reg_left + $seq_length -1;
+	if (int(rand(2))) {
+	    $orf_strand = "D";
+	} else {
+	    $orf_strand = "R";
+	};
+	warn join("\t", $chrom, $chr_length, $seq_length, $max_pos, $reg_left, $reg_right, $orf_strand), "\n" if ($verbose >= 3);
     }
     
     
     $reg_size =  $reg_right - $reg_left + 1;
-    if ($reg_size <= 0) {
-	$reg_size = 0;
-    }
+#    if ($reg_size <= 0) {
+#	$reg_size = 0;
+#    }
     
-    
-    ###  ID and comments ####
-    if ($seq_label eq "orf") {
+    ###  sequence ID 
+    if ($sequence_type eq "random genomic segments") {
+	$current_id = $query = "rand_".$q;
+    } elsif ($seq_label eq "orf") {
 	$current_id = $orf_id;
     } elsif ($seq_label eq "gene") {
 	$current_id = $name;
@@ -246,9 +263,13 @@ foreach $query (@queries) {
     }
     
     unless ($no_comments) {
-	@comments = ("$query $sequence_type sequence, from $current_from to $current_to, size $reg_size");
-	@comments = (@comments, "sequence size: $reg_size; location: $reg_left $reg_right $orf_strand");
-	@comments = (@comments, "Gene: $name; ID: $orf_id; gene location: $orf_left $orf_right $orf_strand");
+	if ($sequence_type eq "random genomic segments") {
+	    @comments = ("random genomic segment; size: $reg_size; location: $chrom $reg_left $reg_right $orf_strand");
+	} else {
+	    @comments = ("$query $sequence_type sequence, from $current_from to $current_to, size $reg_size");
+	    @comments = (@comments, "sequence size: $reg_size; location: $chrom $reg_left $reg_right $orf_strand");
+	    @comments = (@comments, "Gene: $name; ID: $orf_id; gene location: $orf_left $orf_right $orf_strand");
+	}
     }
     
     ### substring retrieval
@@ -270,7 +291,7 @@ foreach $query (@queries) {
 	if ($warn_level >= 2); 
     $current_seq = $chromosome_seq{$chrom}->get_sequence($reg_left,$reg_right,$orf_strand);
 
-### print result sequence
+    ### print result sequence
     &PrintNextSequence($out,$out_format,$line_width,$current_seq,$current_id, @comments);
 }
 
@@ -313,6 +334,7 @@ $supported_organisms
 			upstream (default)
 			downstream
 			orf (warning: introns are not spliced out)
+			random (random genomic segments)
 		To implement in the future
 			introns
 			coding
@@ -410,7 +432,7 @@ retrieve-seq options
 --------------------
 -org		organism
 $supported_organisms
--type		upstream | downstream | orf
+-type		upstream | downstream | orf | random
 -randorfs #	random selection of # ORFs.
 -i		query file. This option is incompatible with -q.
 -q		query
@@ -501,6 +523,9 @@ sub ReadArguments {
 		$sequence_type = "unspliced ORF";
 		$default{from} = "start";
 		$default{to} = "stop";
+		
+	    } elsif ($ARGV[$a+1] =~ /^rand/i) {
+		$sequence_type = "random genomic segments";
 		
 #	    } elsif ($ARGV[$a+1] =~ /^exon/i) {
 #		$sequence_type = "exons";
