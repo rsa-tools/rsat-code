@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence,v 1.4 2001/09/21 04:24:13 jvanheld Exp $
+# $Id: purge-sequence,v 1.5 2001/09/21 04:32:12 jvanheld Exp $
 #
-# Time-stamp: <2001-09-21 06:19:20 jvanheld>
+# Time-stamp: <2001-09-21 06:31:16 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -20,7 +20,7 @@ my $skdir = "$RSA/bin";
 #}
 
 #### initialise parameters ####
-my $start_time = &AlphaDate;
+my $start_time = &AlphaDate();
 
 local $inputfile = "";
 local $outputfile = "";
@@ -33,24 +33,25 @@ local $in_format = "fasta";
 
 
 #### check argument values ####
-unless ($inputfile) {
-    die "\tError : you should specify an input file (in fasta format)\n";
-}
-unless (-e $inputfile) {
-    die "\tError : input file $inputfile does not exist\n";
-}
+### check input format 
+&CheckInputSeqFormat($in_format);
 
-$basename = `basename ${inputfile}`;
-chomp $basename;
-$dirname = `dirname ${inputfile}`;
-chomp $dirname;
+if ($inputfile) {
+    $basename = `basename ${inputfile}`;
+    chomp $basename;
+    $dirname = `dirname ${inputfile}`;
+    chomp $dirname;
+} else {
+    $dirname = ".";
+    $basename = $start_time;
+}
 
 #chdir $dirname;
 
-unless ($outputfile) {
-    $outputfile = "$dirname/".`basename ${inputfile} .fasta`."_purged_l${match_len}_m${mismatches}.fasta";
-    $outputfile =~ s/\s//g;
-}
+#unless ($outputfile) {
+#    $outputfile = "$dirname/$basemane"."_purged_l${match_len}_m${mismatches}.fasta";
+#    $outputfile =~ s/\s//g;
+#}
 
 
 #### verbose ####
@@ -74,7 +75,8 @@ $command .= " -i $inputfile" if ($inputfile);
 my $command = "$skdir/vmatch -s -dbnomatch 1 -l $match_len ";
 $command .= " -e $mismatches" if ($mismatches > 0);
 $command .= " $tmp_file ";
-$command .= " | grep -v '# args=' > $outputfile";
+$command .= " | grep -v '# args=' ";
+$command .= "> $outputfile" if ($outputfile);
 &doit($command);
 foreach $ext  (@extensions) {
     &doit("rm -f ${tmp_file}.${ext}");
