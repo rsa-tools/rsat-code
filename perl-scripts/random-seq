@@ -72,14 +72,14 @@ if ($length_file) {
     }
 }
  
-#### non-coding frequencies
-if ($ncf) {
+#### intergenic frequencies
+if ($background_model) {
   
     $data_dir = $supported_organism{$organism_name}->{'data'};
     
-    ### localize dyad non-coding frequency file
+    ### localize dyad intergenic frequency file
     $method = "Frequency file";
-    $exp_freq_file = &ExpectedFreqFile($organism_name, $oligo_length);
+    $exp_freq_file = &ExpectedFreqFile($organism_name, $oligo_length, $background_model);
 } 
 
 
@@ -313,9 +313,14 @@ sub ReadArguments {
 		$alphabet{'C'} = $alphabet{'G'} = 0.191487802444946;
 	    }
 
-	    ### use oligo non-coding frequencies as expected frequencies
+	    ### use oligo intergenic frequencies as expected frequencies
 	} elsif ($ARGV[$a] =~ /^-ncf/i) {
-	    $ncf = 1;
+	    $background_model = "intergenic";
+
+	    ### specify a background model for estimating expected frequencies
+	} elsif ($ARGV[$a] =~ /^-bg/i) {
+	    $background_model = $ARGV[$a+1];
+	    $background_model =~ s/ncf/intergenic/;
 
 	    ### organism (for selecting the appropriate expected frequencies)
 	} elsif ($ARGV[$a] =~ /^-org/i) {
@@ -400,7 +405,7 @@ OPTIONS
 				positions j-3 and j-1
 			Wj-3,j	is the same word with the character B 
 				concatenated at its end
-	-ncf	use non-coding frequencies as expected frequencies
+	-ncf	use intergenic frequencies as expected frequencies
 	-org	organism 
 		This is necessary with the option -ncf, to determine
 		which frequency file has to be sued for expected
@@ -440,7 +445,7 @@ random-seq options
 -expfreq	file containing expected oligomer frequencies
 -type		protein|DNA|other
 -seed #	seed for the random generator
--ncf		use dyad non-coding frequencies as expected frequencies
+-ncf		use dyad intergenic frequencies as expected frequencies
 -org		organism 
 -ol		oligo-length
 -lf		length file 
