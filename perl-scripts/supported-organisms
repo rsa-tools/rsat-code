@@ -31,7 +31,7 @@ exit(0);
 ##  Export the taxonomy of supported organisms in a tree (nexus)
 ##  format
 sub SupportedOrganismTree {
-    use Bio::TreeIO;
+#    use Bio::TreeIO;
 
     my %nodes = (); # node index
 
