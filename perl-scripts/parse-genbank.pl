@@ -1,7 +1,6 @@
 #!/usr/bin/perl 
-############################################################
-#
-# $Id: parse-genbank.pl,v 1.14 2003/12/17 18:09:18 jvanheld Exp $
+#############################################################
+# $Id: parse-genbank.pl,v 1.15 2004/01/23 16:04:15 oly Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -20,6 +19,8 @@ require "classes/Genbank_classes.pl";
 
 ################################################################
 #### initialization
+$ext = "gbk";
+$data_type = "genbank";
 $no_suffix=1;
 $host= $default{'host'};
 $schema="genbank";
@@ -102,12 +103,14 @@ package main;
     #### check argument values ####
 
     #### input directory
-    unless (defined($dir{input})) {
-	&FatalError("You must specify the input directory.\n");
+    unless (($inputfiles) || (defined($dir{input}))) {
+	&FatalError("You must specify an input directory or input file(s).\n");
     }
-    unless (-d $dir{input}) {
-	&FatalError("Input directory '$dir{input}' does not exist.\n");
-    }
+    if ($dir{input}) {
+	unless (-d $dir{input}) {
+	    &FatalError("Input directory '$dir{input}' does not exist.\n");
+	}
+    } 
 
     #### organism name
     unless (defined($org)) {
@@ -116,28 +119,29 @@ package main;
 	warn "; Auto selection of organism name\t$org\n" if ($verbose >= 1);
     }
 
-    ################################################################
-    #### find genbank files in the input directory
+    ### initial directory
     $dir{main} = `pwd`; #### remember working directory
     chomp($dir{main});
-    chdir ($dir{input});
-    push @genbank_files, glob("*.gbk");
-    push @genbank_files, glob("*.gbk.gz");
-    push @genbank_files, glob("*.genomic.gbff");
-    push @genbank_files, glob("*.genomic.gbff.gz");
+
+    ################################################################
+    #### find genbank files in the input directory
+    unless ($inputfiles) {
+	chdir ($dir{input});
+	push @genbank_files, glob("*.genomic.${ext}");
+	push @genbank_files, glob("*.genomic.${ext}.gz");
+    }
     if ($#genbank_files < 0) {
 	&FatalError("There is no genbank file in the input directory $dir{input}\n");
     } else {
 	warn "; Genbank files\n;\t", join("\n;\t", @genbank_files), "\n" if ($verbose >= 1);
     }
     chdir($dir{main});     #### come back to the starting directory
-    
-
 
     #### output directory
     unless (defined($dir{output})) {
-	if ($dir{input} =~ /refseq/) {
-	    $dir{output} = $parsed_data."/refseq/gbff/".$delivery_date;
+	if (($dir{input} =~ /refseq/) ||
+	    ($data_type eq "refseq")) {
+	    $dir{output} = $parsed_data."/refseq/".$ext."/".$delivery_date;
 	    warn "; Auto selection of output dir\t$dir{output}\n" if ($verbose >= 1);
 	} else {
 	    $dir{output} = "$RSA/data/genomes/".$org."/genome";
@@ -150,6 +154,11 @@ package main;
     $out_file{error} = "$dir{output}/genbank.errors.txt";
     $out_file{stats} = "$dir{output}/genbank.stats.txt";
 
+    ### Sequence directory 
+    unless ($noseq) {
+	$dir{sequences} = $dir{output};
+    }
+
     ### open error report file
     open ERR, ">$out_file{error}" 
 	|| die "Error: cannot write error file $out_file{error}\n";
@@ -159,9 +168,9 @@ package main;
 
     ################################################################
     #### parse the genbank files
-    chdir $dir{main};
+    chdir $dir{input};
     foreach my $file (@genbank_files) {
-	$file{input} = "$dir{input}/$file";
+	$file{input} = $file;
 
 	#### check whether the file has to be uncompressed on the fly
 	if ($file{input} =~ /.gz/) {
@@ -188,7 +197,7 @@ package main;
 			  $organisms, 
 			  $sources,
 #			  source=>"Genbank", 
-			  seq_dir=>$dir{output}
+			  seq_dir=>$dir{sequences}
 			  );
     }
 
@@ -204,6 +213,8 @@ package main;
     close $chrom;
     
     #### index names
+    warn "; Indexing names\n" if ($main::verbose >= 1);
+
     $features->index_names();
     $genes->index_names();
     $mRNAs->index_names();
@@ -214,8 +225,12 @@ package main;
     $CDSs->index_names();
 
 
-    #### Create features from CDSs and RNAs
-    &CreateGenbankFeatures($features, $genes, $mRNAs, $tRNAs, $rRNAs, $misc_RNAs, $misc_features, $CDSs, $sources);
+    if ($data_type eq "refseq") {
+	&RefseqPostProcessing();
+    } else {
+	#### Create features from CDSs and RNAs
+	&CreateGenbankFeatures($features, $genes, $mRNAs, $tRNAs, $rRNAs, $misc_RNAs, $misc_features, $CDSs, $sources);
+    }
 
     #### parse chromosomal positions
     &ParsePositions($features);
@@ -276,7 +291,9 @@ package main;
     ###### close output file ######
     close $out if ($outfile{output});
     
-    
+    ### State the output directory
+    warn "; Output directorry\t", $dir{output}, "\n";
+
     exit(0);
 }
 
@@ -333,15 +350,22 @@ OPTIONS
 	-h	(must be first argument) display full help message
 	-help	(must be first argument) display options
 	-v	verbose
+	-f      input file (mutually exclusive with -i)
+		Specify one file to be parsed.
+		Can be used iteratively to specify several files.
+		 -f file1 -f file2 -f ...
 	-i	input directory
 		input directory. This directory must contain one or
-		several genbank files (extension .gbk). 
+		several genbank files (extension .gbk by default). 
+	-ext    extension to be found in the director specified 
+	        with the option -i. 
 	-o	output directory
 		The parsing result will be saved in this directory. If
 		the directory does not exist, it will be created.
 	-test #	quick test (for debugging): only parse the # first
 		lines of each Genabnk file (default $test_lines).
-
+	-refseq	input files are refseq entries
+	-noseq  do not export sequences in .raw files
    Options for the automaticaly generated SQL scripts
 	-schema database schema (default: $schema)
 	-host	database host (efault: $host)
@@ -363,7 +387,11 @@ parse-genbank options
 ----------------
 -h	(must be first argument) display full help message
 -help	(must be first argument) display options
+-f	input file
 -i	input dir
+-ext    extension of the input files
+-refseq	input files are refseq entries
+-noseq  do not export sequences in .raw files
 -o	output dir
 -v	verbose
 -test #	quick test (for debugging)
@@ -397,9 +425,27 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-help") {
 	    &PrintOptions();
 	    
-	    ### input file ###
+	    ### input file 
+	} elsif ($ARGV[$a] eq "-f") {
+	    $inputfiles++;
+	    push @genbank_files, $ARGV[$a+1];
+
+	    ### input directory
 	} elsif ($ARGV[$a] eq "-i") {
+	    &FatalError("Option -i is incompatible with option -f") if ($inputfiles);
 	    $dir{input} = $ARGV[$a+1];
+
+	    ### extension to be searched in the input directory
+	} elsif ($ARGV[$a] eq "-ext") {
+	    $ext = $ARGV[$a+1];
+
+	    ### refseq
+	} elsif ($ARGV[$a] eq "-refseq") {
+	    $data_type = "refseq";
+
+	    ### do not export sequences
+	} elsif ($ARGV[$a] eq "-noseq") {
+	    $noseq = 1;
 
 	    ### output file ###
 	} elsif ($ARGV[$a] eq "-o") {
@@ -460,3 +506,25 @@ sub Verbose {
     printf $out "; %-29s\t%s\n", "genbank files", join (" ", @genbank_files);
 }
 
+################################################################
+## Specific postprocessing for Refseq data
+sub RefseqPostProcessing {
+    warn "; Postprocessing proteins parsed from Refseq\n" if ($main::verbose >= 1);
+    foreach my $protein ($contigs->get_objects()) {
+	my $id = $protein->get_attribute("id");
+	my $version = $protein->get_attribute("version");
+	my ($version_id,$gi) = split /\s+/, $version;
+	if ($gi =~ /^GI:/) {
+	    $gi = $';
+	} else {
+	    &ErrorMessage(join ("\t", "Protein", $id, "version", $version, "Invalid GI"));
+	}
+	
+	$protein->set_attribute("GI", $gi);
+	$protein->set_attribute("version_id", $version_id);
+	warn join ("\t", $protein->get_attribute('id'),$version,
+		  $version_id,
+		  $gi), "\n" if ($main::verbose >= 1);
+    }
+
+}
