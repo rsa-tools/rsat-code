@@ -1,9 +1,10 @@
+
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genes.pl,v 1.6 2000/03/29 08:12:26 jvanheld Exp $
+# $Id: parse_genes.pl,v 1.7 2000/11/17 07:44:39 jvanheld Exp $
 #
-# Time-stamp: <2000-03-28 23:23:12 jvanheld>
+# Time-stamp: <2000-11-17 08:34:26 jvanheld>
 #
 ############################################################
 
@@ -27,14 +28,23 @@ package main;
 $start_time = &AlphaDate;
 
 ### files to parse
-$KEGG_dir = "~jvanheld/pfmp/Databases/KEGG/downloaded";
-
-
 @selected_organisms= ();
 
-$in_file{yeast} = "gunzip -c $KEGG_dir/genomes/genes/S.cerevisiae.ent.gz | ";
-$in_file{human} = "gunzip -c $KEGG_dir/genomes/genes/H.sapiens.ent.gz | ";
-$in_file{ecoli} = "gunzip -c $KEGG_dir/genomes/genes/E.coli.ent.gz | ";
+$species_name{yeast} = "S.cerevisiae";
+$species_name{human} = "H.sapiens";
+$species_name{ecoli} = "E.coli";
+
+foreach $org (keys %species_name) {
+    my $data_file = "$KEGG_dir/genomes/genes/".$species_name{$org}.".ent";
+    if (-e $data_file) {
+	$in_file{$org} = "cat ${data_file} | ";
+    } elsif (-e "${data_file}.gz") {
+	$in_file{$org} = "gunzip -c ${data_file}.gz | ";
+    } else {
+	die ("Error: cannot find data file for organism ", $org, "\n",
+	     "\t", $data_file{$org}, "\n");
+    }
+}
 
 $organism{yeast}->{name} = "Saccharomyces cerevisiae";
 $organism{ecoli}->{name} = "Escherichia coli";
@@ -45,7 +55,8 @@ $warn_level = 0;
 $out_format = "obj";
 
 #### classes and classholders
-@classes = qw( PFBP::Gene PFBP::Expression );
+#@classes = qw( PFBP::Gene PFBP::Expression );
+@classes = qw( PFBP::Gene );
 $genes = PFBP::ClassFactory->new_class(object_type=>"PFBP::Gene",
 				       prefix=>"gene_");
 $expressions = PFBP::ClassFactory->new_class(object_type=>"PFBP::Expression",
@@ -70,17 +81,23 @@ if ($export{all}) {
 }
 $suffix .= "_test" if ($test);
 
-$out_file{error} = "Gene".$suffix.".errors.txt";
-$out_file{stats} = "Gene".$suffix.".stats.txt";
-$out_file{genes} = "Gene".$suffix.".obj";
-$out_file{synonyms} = "Gene".$suffix.".synonyms.tab";
-$out_file{mldbm_genes} = "Gene".$suffix.".mldbm";
-$out_file{mldbm_gene_index} = "Gene".$suffix."__name_index.mldbm";
-$out_file{mldbm_expression_name_index} = "Expression".$suffix."__name_index.mldbm";
-$out_file{mldbm_expression_input_index} = "Expression".$suffix."__input_index.mldbm";
-$out_file{mldbm_expression_output_index} = "Expression".$suffix."__output_index.mldbm";
-$out_file{expressions} = "Expression".$suffix.".obj";
-$out_file{mldbm_expressions} = "Expression".$suffix.".mldbm";
+$output_dir = $parsed_data."/genes_kegg";
+unless (-d $output_dir) {
+    warn "Creating output dir $output_dir";
+    mkdir $output_dir, 0775 || die "Error: cannot create directory $dir\n";
+}
+chdir $output_dir;
+$out_file{error} = "$output_dir/Gene".$suffix.".errors.txt";
+$out_file{stats} = "$output_dir/Gene".$suffix.".stats.txt";
+$out_file{genes} = "$output_dir/Gene".$suffix.".obj";
+$out_file{synonyms} = "$output_dir/Gene".$suffix.".synonyms.tab";
+#$out_file{mldbm_genes} = "$output_dir/Gene".$suffix.".mldbm";
+#$out_file{mldbm_gene_index} = "$output_dir/Gene".$suffix."__name_index.mldbm";
+#$out_file{mldbm_expression_name_index} = "$output_dir/Expression".$suffix."__name_index.mldbm";
+#$out_file{mldbm_expression_input_index} = "$output_dir/Expression".$suffix."__input_index.mldbm";
+#$out_file{mldbm_expression_output_index} = "$output_dir/Expression".$suffix."__output_index.mldbm";
+#$out_file{expressions} = "$output_dir/Expression".$suffix.".obj";
+#$out_file{mldbm_expressions} = "$output_dir/Expression".$suffix.".mldbm";
 
 ### open error report file
 open ERR, ">$out_file{error}" || die "Error: cannot write error file $out_file{error}\n";
@@ -93,11 +110,7 @@ unless ($#selected_organisms >= 0) {
   push @selected_organisms, "yeast";
 }
 
-&DefaultVerbose if ($warn_level >= 1);
-warn "; Selected organisms\n;\t", join("\n;\t", @selected_organisms), "\n"
-    if ($warn_level >= 1);
-
-### actualize parameters
+### test conditions
 if ($test) {
   warn ";TEST\n" if ($warn_level >= 1);
   ### fast partial parsing for debugging
@@ -105,6 +118,10 @@ if ($test) {
     $in_file{$key} .= " head -1000 |";
   }
 }
+
+&DefaultVerbose if ($warn_level >= 1);
+warn "; Selected organisms\n;\t", join("\n;\t", @selected_organisms), "\n"
+    if ($warn_level >= 1);
 
 
 ### parse data from original files
@@ -116,95 +133,26 @@ foreach $org (@selected_organisms) {
 }
 $genes->index_names();
 
+&ParsePositions();
 
-### clean up positions
-warn ("; parsing gene positions\n")
-    if ($warn_level >= 1);
-foreach my $gene ($genes->get_objects()) {
-  my $organism = $gene->get_attribute("organism");
-  unless (defined($organism)) {
-    &ErrorMessage("Error: gene ", $gene->get_attribute("id"), " has no organism attribute\n");
-    next;
-  }
-  my $position = $gene->get_attribute("position");
-  unless (defined($position)) {
-    &ErrorMessage("Error: gene ", $gene->get_attribute("id"), " has no position attribute\n");
-    next;
-  }
-  my $coord;
-  my $chomosome;
-  my $chrom_pos;
-  my $strand;
-  my $start;
-  my $end;
-  if ($organism eq "Escherichia coli") {
-    $chromosome = "genome";
-    $chrom_pos = $position;
-  } elsif ($organism eq "Saccharomyces cerevisiae") {
-    if ($position =~ /^(\d+)\:(.*)/) {
-      $chromosome = $1;
-      $chrom_pos = $2;
-    } elsif ($position =~ /^mit\:(.*)/) {
-      $chromosome = "mitochondrial";
-      $chrom_pos = $1;
-    } else {
-      &ErrorMessage("Error in gene ",$gene->get_attribute("id"),"\tinvalid position\t$position\n");
-      next;
-    }
-  } elsif ($organism eq "Homo sapiens") {
-    
-  }
-  
-  if ($chrom_pos =~ /complement\((.*)\)/) {
-    $strand = "R";
-    $coord = $1;
-  } else {
-    $strand = "D";
-    $coord = $chrom_pos;
-  }
-  
-  if ($coord =~ /^(\d+)\.\.(\d+)$/) {
-    $start = $1;
-    $end = $2;
-  } elsif ($coord =~ /^join\((.*)\)$/) { ### exons
-    @exons = split ",", $1;
-    foreach $exon (@exons) {
-      $gene->push_attribute("exons", $exon);
-    }
-    if ($exons[0] =~ /^(\d+)\.\.(\d+)$/) {
-      $start = $1;
-    }
-    if ($exons[$#exons] =~ /^(\d+)\.\.(\d+)$/) {
-      $end = $2;
-    }
-  } else {
-    &ErrorMessage("Error : gene ",$gene->get_attribute("id"),"\tinvalid gene coordinade $coord\n");
-    next;
-  }
-  $gene->set_attribute("chromosome", "genome");
-  $gene->set_attribute("strand",$strand);
-  $gene->set_attribute("start",$start);
-  $gene->set_attribute("end",$end);
-}
-
-&CreateExpression;
-$expressions->index_names();
-$expressions->index_inputs();
-$expressions->index_outputs();
+#&CreateExpression;
+#$expressions->index_names();
+#$expressions->index_inputs();
+#$expressions->index_outputs();
 
 ### print result
 &ExportClasses($out_file{genes}, $out_format, PFBP::Gene);
-&ExportClasses($out_file{expressions}, $out_format, PFBP::Expression);
+#&ExportClasses($out_file{expressions}, $out_format, PFBP::Expression);
 
 $genes->dump_tables($suffix);
-$expressions->dump_tables($suffix);
+#$expressions->dump_tables($suffix);
 
-$genes->export('MLDBM',$out_file{mldbm_genes});
-$genes->export_name_index("MLDBM",$out_file{mldbm_gene_index});
-$expressions->export_name_index("MLDBM",$out_file{mldbm_expression_name_index});
-$expressions->export_input_index("MLDBM",$out_file{mldbm_expression_input_index});
-$expressions->export_output_index("MLDBM",$out_file{mldbm_expression_output_index});
-$expressions->export('MLDBM',$out_file{mldbm_expressions});
+#$genes->export('MLDBM',$out_file{mldbm_genes});
+#$genes->export_name_index("MLDBM",$out_file{mldbm_gene_index});
+#$expressions->export_name_index("MLDBM",$out_file{mldbm_expression_name_index});
+#$expressions->export_input_index("MLDBM",$out_file{mldbm_expression_input_index});
+#$expressions->export_output_index("MLDBM",$out_file{mldbm_expression_output_index});
+#$expressions->export('MLDBM',$out_file{mldbm_expressions});
 
 &PrintStats($out_file{stats}, @classes);
 
@@ -217,6 +165,9 @@ if ($warn_level >= 1) {
 }
 
 close ERR;
+
+system "gzip -f $output_dir/*.tab $output_dir/*.obj $output_dir/*.txt";
+
 
 exit(0);
 
@@ -390,5 +341,79 @@ sub CreateExpression {
 	die "Error: cannot untie file $infile{polypeptide_index}";
     
   }
+}
+
+
+sub ParsePositions {
+### clean up positions
+    warn ("; parsing gene positions\n")
+	if ($warn_level >= 1);
+
+    foreach my $gene ($genes->get_objects()) {
+	my $organism = $gene->get_attribute("organism");
+	unless (defined($organism)) {
+	    &ErrorMessage("Error: gene ", $gene->get_attribute("id"), " has no organism attribute\n");
+	    next;
+	}
+	my $position = $gene->get_attribute("position");
+	unless (defined($position)) {
+	    &ErrorMessage("Error: gene ", $gene->get_attribute("id"), " has no position attribute\n");
+	    next;
+	}
+	my $coord;
+	my $chomosome;
+	my $chrom_pos;
+	my $strand;
+	my $start;
+	my $end;
+	if ($organism eq "Escherichia coli") {
+	    $chromosome = "genome";
+	    $chrom_pos = $position;
+	} elsif ($organism eq "Saccharomyces cerevisiae") {
+	    if ($position =~ /^(\d+)\:(.*)/) {
+		$chromosome = $1;
+		$chrom_pos = $2;
+	    } elsif ($position =~ /^mit\:(.*)/) {
+		$chromosome = "mitochondrial";
+		$chrom_pos = $1;
+	    } else {
+		&ErrorMessage("Error in gene ",$gene->get_attribute("id"),"\tinvalid position\t$position\n");
+		next;
+	    }
+	} elsif ($organism eq "Homo sapiens") {
+	    next;
+	}
+	
+	if ($chrom_pos =~ /complement\((.*)\)/) {
+	    $strand = "R";
+	    $coord = $1;
+	} else {
+	    $strand = "D";
+	    $coord = $chrom_pos;
+	}
+	
+	if ($coord =~ /^(\d+)\.\.(\d+)$/) {
+	    $start = $1;
+	    $end = $2;
+	} elsif ($coord =~ /^join\((.*)\)$/) { ### exons
+	    @exons = split ",", $1;
+	    foreach $exon (@exons) {
+		$gene->push_attribute("exons", $exon);
+	    }
+	    if ($exons[0] =~ /^(\d+)\.\.(\d+)$/) {
+		$start = $1;
+	    }
+	    if ($exons[$#exons] =~ /^(\d+)\.\.(\d+)$/) {
+		$end = $2;
+	    }
+	} else {
+	    &ErrorMessage("Error : gene ",$gene->get_attribute("id"),"\tinvalid gene coordinate $coord\n");
+	    next;
+	}
+	$gene->set_attribute("chromosome", "genome");
+	$gene->set_attribute("strand",$strand);
+	$gene->set_attribute("start",$start);
+	$gene->set_attribute("end",$end);
+    }
 }
 
