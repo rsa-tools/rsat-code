@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.62 2004/02/01 15:52:07 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.63 2004/02/01 22:21:46 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -532,6 +532,7 @@ sub DrawFeatureMap {
 	$to = -1;
     }
     $command = "feature-map -i ".$feature_file;
+    $command .= " -minfthick 2";
     $command .= " -scalebar -scalestep $scalestep -legend ";
     $command .= " -title '".$title."'";
     $command .= " -from $from" if (defined($from));
@@ -2236,7 +2237,7 @@ sub MDCreport {
 	
 	## Draw the feature map of the selected oligos
 	&MatchPatterns($selection_file, $selection_ft_prefix,  $matching_options);
-	&DrawFeatureMap($selection_ft_prefix, $selection_ft_prefix, " -minfthick 2");
+	&DrawFeatureMap($selection_ft_prefix, $selection_ft_prefix, " -minfthick 5");
 
 	## Convert the features in MDC format
 	warn ";\tReporting\t",$feature_file, "\n" if ($verbose >=2);
