@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: position-analysis,v 1.14 2002/11/20 23:59:31 jvanheld Exp $
+# $Id: position-analysis,v 1.15 2002/11/21 04:38:53 jvanheld Exp $
 #
-# Time-stamp: <2002-11-20 17:58:31 jvanheld>
+# Time-stamp: <2002-11-20 22:38:02 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -55,10 +55,10 @@ unless ($oligo_length > 0) {
 
 
 #### min and max classes to take into account for chi-square calculation
-if ((&IsNatural($min_pos)) && (&IsNatural($max_pos))) {
-  if ($max_pos < $min_pos) {
-    die "Error: min position should be smaller than max position\n";
-  }
+if ((&IsInteger($min_pos)) && (&IsInteger($max_pos))) {
+    if ($max_pos < $min_pos) {
+	&FatalError( "min position should be smaller than max position");
+    }
 }
 
 
@@ -335,9 +335,7 @@ sub ReadSequence {
 	$max_last_pos = &max($max_last_pos, $last_pos);
 
 	$reference_pos = 0;
-	if ($origin eq "-0") {
-	    $reference_pos = $seq_length[$sequence_number] + 1;
-	} elsif ($origin < 0) {
+	if (($origin eq "-0") || ($origin < 0)) {
 	    $reference_pos = $seq_length[$sequence_number] + $origin + 1;
 	} else {
 	    $reference_pos = $origin;
@@ -356,7 +354,11 @@ sub ReadSequence {
 	my %classes_in_this_seq = ();
 	while ($current_pos <= $last_pos) {
 	    $relative_pos = $current_pos - $reference_pos;
-	    $class = POSIX::floor(($relative_pos - 1)/$class_interval);
+	    if (($origin eq "-0") || ($origin < 0)) {
+		$class = POSIX::floor($relative_pos/$class_interval);
+	    } else {
+		$class = POSIX::floor(($relative_pos - 1)/$class_interval);
+	    }
 	    $pos_per_class{$class}++;
 	    $classes_in_this_seq{$class}++;
 	    $oligo_seq = lc(substr($current_seq,$current_pos-1,$oligo_length));
@@ -367,11 +369,12 @@ sub ReadSequence {
 		       "len = ".$seq_length[$sequence_number],
 		       "pos = ".$current_pos,
 		       "last_pos = ".$last_pos,
+		       "ref_pos = ".$reference_pos,
 		       "rel_pos = ".$relative_pos,
 		       "class = ".$class,
 		       "oligo_seq = ".$oligo_seq
 		       ), "\n"
-			   if ($verbose >= 4) ; 
+			   if ($verbose >= 4); 
 	    if ((defined(%selected_pattern)) && 
 		!($selected_pattern{$oligo_seq}) && 
 		!($selected_pattern{$rc})) {
@@ -447,17 +450,6 @@ sub ReadSequence {
 	$max_seq_length = &max($max_seq_length, $seq_length[$s]);
 
 	warn join ("\t", $s, $seq_length[$s], $sum_seq_length, $nb_possible_pos), "\n" if ($verbose >= 4);
-
-#	$last_pos = $seq_length[$s] - $oligo_length + 1;
-#	$current_max_class = int(($last_pos-1)/$class_interval); 
-#	for $class (0..$current_max_class-1) {
-#	    $seq_per_class{$class}++;
-#	    $pos_per_class{$class} += $class_interval;
-#	    $sum_seq_per_class++;
-#	}
-#	$seq_per_class[$current_max_class]++;
-#	$pos_per_class[$current_max_class] += ($last_pos-1) % $class_interval;
-	#print "$s\t$id_list[$sequence_number] \t$seq_length[$s]\t",$last_pos-1, "\t", ($last_pos-1) % $class_interval,"\n";
     }
 }
 
@@ -470,25 +462,32 @@ sub CalcClasses {
     ### class definition
     $class_nb = $max_class + 1;
     for $class ($min_class..$max_class) {
-	$class_min{$class} = $class*$class_interval + 1;
-	$class_max{$class} = ($class+1)*$class_interval;
+
+	if (($origin eq  '-0') || ($origin < 0)) {
+	    $class_min{$class} = $class *$class_interval;
+	    $class_max{$class} = ($class+1)*$class_interval -1;
+	} else {
+	    $class_min{$class} = $class *$class_interval + 1;
+	    $class_max{$class} = ($class+1)*$class_interval;
+	}
+
 	$class_center{$class} = ($class_min{$class} + $class_max{$class})/2;
 	warn join ("\t", 
 		   $class,
-		   $class_min{$class},
-		   $class_max{$class},
-		   $class_center{$class},
+		   "class_min=".$class_min{$class},
+		   "class_max=".$class_max{$class},
+		   "class_center=".$class_center{$class},
 		   ), "\n" if ($verbose >= 4);
     }
 
     #### min and max classes for calculating the chi2
-    if (&IsNatural($min_pos)) {
-	$min_calc_class = POSIX::floor(($min_pos-1)/$class_interval);	
+    if (&IsInteger($min_pos)) {
+	$min_calc_class = POSIX::floor($min_pos/$class_interval);	
     } else {
 	$min_calc_class = $min_class;
     }
-    if (&IsNatural($max_pos)) {
-	$max_calc_class = POSIX::floor(($max_pos-1)/$class_interval);
+    if (&IsInteger($max_pos)) {
+	$max_calc_class = POSIX::floor($max_pos/$class_interval);
     } else {
 #	die $max_class , "\n";
 	$max_calc_class = $max_class;
@@ -879,9 +878,9 @@ sub ReadArguments {
 	    }
 	    
 	    ### min and max positions
-	} elsif (($ARGV[$a] eq "-minpos") && (&IsNatural($ARGV[$a+1]))) {
+	} elsif (($ARGV[$a] eq "-minpos") && (&IsInteger($ARGV[$a+1]))) {
 	    $min_pos = $ARGV[$a+1];
-	} elsif (($ARGV[$a] eq "-maxpos") && (&IsNatural($ARGV[$a+1]))) {
+	} elsif (($ARGV[$a] eq "-maxpos") && (&IsInteger($ARGV[$a+1]))) {
 	    $max_pos = $ARGV[$a+1];
 	    
 	}
@@ -912,7 +911,7 @@ sub Verbose {
 	printf $out "; %-29s\n", "Occurrences counted  on a single  strands";
     }
     print $out "; Conditions of applicability not checked !\n" if $no_check;
-    print $out "; WARNING ! Oligos which do not fit conditions of applicability have chi2 between curly braces !\n" if $no_filter;
+    print $out "; WARNING ! chi2 is shown between curly braces when the applicability conditions are not satisfy.\n" if $no_filter;
 
     print $out "; Sequence statistics:\n";
     printf $out ";\t%-29s\t%d\n", "Nb of sequences", $sequence_number;
@@ -943,8 +942,8 @@ sub Verbose {
     print $out "; Class parameters:\n";
 
     printf $out ";\t%-21s\t%d\n", "Class interval", $class_interval;
-    printf $out ";\t%-21s\t%d\n", "Min position", $min_pos if (&IsNatural($min_pos));
-    printf $out ";\t%-21s\t%d\n", "Max position", $max_pos if (&IsNatural($max_pos));
+    printf $out ";\t%-21s\t%d\n", "Min position", $min_pos if (&IsInteger($min_pos));
+    printf $out ";\t%-21s\t%d\n", "Max position", $max_pos if (&IsInteger($max_pos));
 #    printf $out ";\t%-21s\t%d\n", "Min class", $min_calc_class + 1 if (&IsInteger($min_calc_class));
 #    printf $out ";\t%-21s\t%d\n", "Max class", $max_calc_class + 1 if (&IsInteger($max_calc_class));
     printf $out ";\t%-21s\t%d\n", "Number of classes", $calc_class_nb;
@@ -1055,8 +1054,8 @@ sub PrintResult {
 	    for $class ($min_calc_class..$max_calc_class) {
 		printf $out "\t%.1f", $exp_occ{$oligo_seq}{$class}; 
 	    }       
-	    print $out "\n";
 	}
+	print $out "\n";
     }
 }
 
