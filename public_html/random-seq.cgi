@@ -3,7 +3,7 @@ if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
 require "cgi-lib.pl";
-require "RSA.lib.pl";
+require "RSA.lib";
 $random_seq_command = "$SCRIPTS/random-seq";
 &UpdateLogFile;
 
