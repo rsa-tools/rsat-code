@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.14 2002/04/23 20:27:02 jvanheld Exp $
+# $Id: install-organism,v 1.15 2002/04/26 01:52:55 jvanheld Exp $
 #
-# Time-stamp: <2002-04-23 22:21:28 jvanheld>
+# Time-stamp: <2002-04-26 03:49:14 jvanheld>
 #
 ############################################################
 
@@ -232,39 +232,46 @@ sub UpdateConfig {
 
     if (defined($supported_organism{$organism_short_name}->{'genome'})) {
 	warn ("\n\tWARNING : organism $organism_short_name already defined in the config file",
-	     "\n\tConflicts may result",
-	     "\n\tChoose another short name or edit manually the config file to solve conflict\n\n", 
-	     "Supported organisms\n", $supported_organisms, "\n");
-    } else {
-	#### read previous config
-	open CONFIG, $config_to_update;
-	while ($line = <CONFIG>) {
-	    last if ($line =~ /return/);
-	    $previous_config .= $line;
-	}
-	close CONFIG;
-	
-	#### write new config
-	warn ";\n; Updating config file\t$config_to_update\n" if ($verbose);
-	open CONFIG, ">$config_to_update" 
-	    || die "Error: cannot write config file $config_to_update\n";
-	print CONFIG $previous_config;
-
-	my $new_org_config = 	 "\n#### $organism_short_name\t$organism_full_name\n";
-	$new_org_config .= "\$supported_organism{'$organism_short_name'}->{'name'} = \"$organism_full_name\";\n";
-	$new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'data'} = \"$install_dir\";\n";
-	$new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'features'} = \"$outfile{features}\";\n";
-	$new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'genome'} = \"$outfile{genome}\";\n";
-	$new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'seq_format'} = \"filelist\";\n";
-	if (defined($outfile{synonyms})) {
-	    $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'synonyms'} = \"$outfile{synonyms}\";\n";
-	}
-	$new_org_config =~ s|$RSA/|\$RSA/|g;
-
-	print CONFIG $new_org_config;
-	print CONFIG "\nreturn 1;\n";
-	close CONFIG;
+	      "\n\tthe previous config will be commented\n");
     }
+
+    #### read previous config
+    $install_date = `date`;
+    chomp $install_date;
+    open CONFIG, $config_to_update;
+    while ($line = <CONFIG>) {
+	chomp $line;
+	last if ($line =~ /return/);
+	if (($line =~ /supported_organism\{\'$organism_short_name\'\}/) && ($line !~ /^\#/)) {
+	    #### comment the previous config
+	    $previous_config .= "# ${line} # reinstalled on\t${date}\n";
+	} else {
+	    $previous_config .= $line."\n";
+	}
+    }
+    close CONFIG;
+    
+    #### write new config
+    warn ";\n; Updating config file\t$config_to_update\n" if ($verbose);
+    open CONFIG, ">$config_to_update" 
+	|| die "Error: cannot write config file $config_to_update\n";
+    print CONFIG $previous_config;
+    
+    my $new_org_config = 	 "\n#### $organism_short_name\t$organism_full_name\t$install_date\n";
+    $new_org_config .= "\$supported_organism{'$organism_short_name'}->{'name'} = \"$organism_full_name\";\n";
+    $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'data'} = \"$install_dir\";\n";
+    $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'features'} = \"$outfile{features}\";\n";
+    $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'genome'} = \"$outfile{genome}\";\n";
+    $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'seq_format'} = \"filelist\";\n";
+    if (defined($outfile{synonyms})) {
+	$new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'synonyms'} = \"$outfile{synonyms}\";\n";
+    }
+    $new_org_config =~ s|$RSA/|\$RSA/|g;
+    
+    print CONFIG $new_org_config;
+    print CONFIG "\nreturn 1;\n";
+    close CONFIG;
+
 }
 
 #### obsolete ####
@@ -393,6 +400,7 @@ sub CalcOligoFreq {
 	$command .= "-return freq,occ -nogrouprc ";
 	$command .= "| cut -f1,3,4 ";
 	$command .= "> $out_file ";
+	$command .= "; gzip -f $out_file ";
 	&doit;  
     }
 }
@@ -420,9 +428,9 @@ sub CalcDyadFreq {
 	$command .= " -nogrouprc";
 	$command .= " | cut -f1,3,4";
 	$command .= " > $dyad_file";
+	$command .= "; gzip -f $dyad_file ";
 	&doit;
     }
-
 }
 
 
