@@ -4,14 +4,15 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 require "RSA.lib.pl";
 
-&ReadArguments;
-
-
-
 ### initialization
 $start_time = `date`;
 $in_format = "orf";
 $out_format = "lr";
+
+
+&ReadArguments();
+
+
 
 
 #### read ORF positions ####
@@ -149,27 +150,32 @@ if ($verbose) {
     print $out "Q_id\t";
     print $out "Q_gene\t";
     print $out "Q_chr\t";
+    print $out "Qstrand\t";
     print $out "Q_start\t";
     print $out "Q_end\t";
 
     if ($out_format eq "ud") {
 	print $out "U_ORF\t";
 	print $out "U_gene\t";
+	print $out "Ustrand\t";
 	print $out "U_dist\t";
 	print $out "U_len\t";
 
 	print $out "D_ORF\t";
 	print $out "D_gene\t";
+	print $out "Dstrand\t";
 	print $out "D_dist\t";
 	print $out "D_len\n";
     } else {
 	print $out "L_ORF\t";
 	print $out "L_gene\t";
+	print $out "Lstrand\t";
 	print $out "L_dist\t";
 	print $out "L_len\t";
 
 	print $out "R_ORF\t";
 	print $out "R_gene\t";
+	print $out "Rstrand\t";
 	print $out "R_dist\t";
 	print $out "R_len\n";
     }
@@ -270,6 +276,7 @@ for $query (0..$#chromosome) {
     print $out "$locus\t";
 
     print $out $latin{$chromosome}, "\t";
+    print $out $strand{$id}, "\t";
     print $out $startposition, "\t";
     print $out $endposition, "\t";
 
@@ -280,6 +287,7 @@ for $query (0..$#chromosome) {
         } else {
             print $out $ORF_locus{$right_neighbour}, "\t";
         }
+        print $out $strand{$right_neighbour}, "\t";
         print $out "$right_distance\t$right_len\t";
 
         print $out $left_neighbour, "\t";
@@ -288,6 +296,7 @@ for $query (0..$#chromosome) {
         } else {
             print $out $ORF_locus{$left_neighbour}, "\t";
         }
+        print $out $strand{$left_neighbour}, "\t";
         print $out "$left_distance\t$left_len\n"; 
   
     } else {
@@ -297,6 +306,7 @@ for $query (0..$#chromosome) {
         } else {
             print $out $ORF_locus{$left_neighbour}, "\t";
         }
+        print $out $strand{$left_neighbour}, "\t";
         print $out "$left_distance\t$left_len\t"; 
      
         print $out $right_neighbour, "\t";
@@ -305,6 +315,7 @@ for $query (0..$#chromosome) {
         } else {
             print $out $ORF_locus{$right_neighbour}, "\t";
         }
+        print $out $strand{$right_neighbour}, "\t";
         print $out "$right_distance\t$right_len\n";
     }
 } 
@@ -416,14 +427,17 @@ OUTPUT FORMATS
         - Q_id    query identifier
         - Q_gene  query gene name
         - Q_chr   query chromosome
+        - Qstrand query strand
         - Q_start query start position
         - Q_end   query end position
         - U_ORF   upstream neighbour ORF identifier
-        - U_gene  upetrsam neighbour gene name
+        - U_gene  upstream neighbour gene name
+        - Ustrand upstream neighbour strand
         - U_dist  distance between query position and upstream neighbour
         - U_len	  upstream ORF length
         - D_ORF   downstream neighbour ORF identifier
         - D_gene  downstream neighbour gene name
+        - Dstrand downstream neighbour strand
         - D_dist  distance between query position and downstream neighbour
         - D_len	  downstream ORF length
 
@@ -432,14 +446,17 @@ OUTPUT FORMATS
         - Q_id    query identifier
         - Q_gene  query gene name
         - Q_chr   query chromosome
+        - Qstrand query strand
         - Q_start query start position
         - Q_end   query end position
         - L_ORF   left neighbour ORF identifier
         - L_gene  left neighbour gene name
+        - Lstrand left neighbour strand
         - L_dist  distance between query position and left neighbour
         - L_len	  left ORF length
         - R_ORF   right neighbour ORF identifier
         - R_gene  right neighbour gene name
+        - Rstrand right neighbour strand
         - R_dist  distance between query position and right neighbour
         - R_len	  right ORF length
 
