@@ -1821,7 +1821,7 @@ sub _printMatrixRow {
     }
     
     ## Print the matrix row
-    $row_string .= $sep."|";
+#    $row_string .= $sep."|";
     for $c (0..($ncol-1)) {
 	my $value = $values[$c];
 	if ($col_width) {
