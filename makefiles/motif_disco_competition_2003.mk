@@ -99,12 +99,12 @@ background: seq_len all_up bg_oligos
 
 ################################################################
 #### report sequence length for the current set
-SEQ_LEN=`sequence-lengths -i ${SEQ_FILE} | cut -f 2 | sort -u`
+CURRENT_SEQ_LEN=`sequence-lengths -i ${SEQ_FILE} | cut -f 2 | sort -u`
 SEQ_NB=`sequence-lengths -i ${SEQ_FILE} | wc -l | awk '{print $$1}'`
 SEQ_LEN_FILE=${CURRENT_RES_DIR}/${CURRENT_SET}_lengths.txt
 seq_len:  current_dir
-	@echo "set ${CURRENT_SET} length ${SEQ_LEN}	${SEQ_NB} seqs	${SEQ_LEN_FILE}"
-	@echo ${SEQ_LEN} > ${SEQ_LEN_FILE}
+	@echo "set ${CURRENT_SET} length ${CURRENT_SEQ_LEN}	${SEQ_NB} seqs	${SEQ_LEN_FILE}"
+	@echo ${CURRENT_SEQ_LEN} > ${SEQ_LEN_FILE}
 
 MAKE_DIR=makefiles
 CALIB_SCRIPT=${MAKE_DIR}/calibrate_${ORG}.mk
@@ -118,7 +118,7 @@ calib_script:
 	@echo "Script saved in file ${CALIB_SCRIPT}"
 
 one_calib_script:
-	@echo "	${MAKE} calibrate_oligos ORG=${ORG} SEQ_LEN=${SEQ_LEN} N=${SEQ_NB} STR=-2str STR=-2str NOOV=-noov" >> ${CALIB_SCRIPT}
+	@echo "	${MAKE} calibrate_oligos ORG=${ORG} SEQ_LEN=${CURRENT_SEQ_LEN} N=${SEQ_NB} STR=-2str STR=-2str NOOV=-noov" >> ${CALIB_SCRIPT}
 
 
 ################################################################
@@ -287,11 +287,12 @@ multi:
 ## Calculate oligonucleotide distributions of occurrences for random
 ## gene selections
 SEQ_LEN=500
-CALIB_TASK=all
+CALIB_TASK=all,clean_oligos
 START=1
+REPET=10000
 CALIBRATE_CMD=							\
 	calibrate-oligos.pl -v ${V}				\
-		-r ${R} -sn ${N} -l ${OL} -sl ${SEQ_LEN}	\
+		-r ${REPET} -sn ${N} -l ${OL} -sl ${SEQ_LEN}	\
 		-task ${CALIB_TASK}				\
 		-start ${START}					\
 		${END}						\
