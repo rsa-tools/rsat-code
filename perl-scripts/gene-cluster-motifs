@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.9 2002/03/07 11:46:22 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.10 2002/03/07 13:47:00 jvanheld Exp $
 #
-# Time-stamp: <2002-03-07 12:45:08 jvanheld>
+# Time-stamp: <2002-03-07 14:41:36 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -22,7 +22,7 @@ if ($#ARGV < 0) {
 
 
 #### initialisations	    
-@supported_tasks = qw (upstream oligos dyads synthesis all);
+@supported_tasks = qw (upstream oligos dyads synthesis clean all);
 foreach my $task (@supported_tasks) {
     $supported_task{$task} = 1;
 }
@@ -40,6 +40,7 @@ unless (defined(%task)) {
 }
 if ($task{all}) {
     foreach my $t (@supported_tasks) {
+	next if ($t eq 'clean'); ### clean needs to be actively called
 	$task{$t} = 1;
     }
 }
@@ -170,6 +171,7 @@ sub SetFileNames {
     $family{$family_name}->{family_file} = "$family_name/${family_name}.fam";
     $family{$family_name}->{known_site_file} = "$family_name/${family_name}_known_sites";
     $family{$family_name}->{seq_file} = "$family_name/${family_name}_up${seq_length}.${seq_format}";
+    $family{$family_name}->{seq_file_purged} = "$family_name/${family_name}_up${seq_length}_purged.${seq_format}";
     
     $family{$family_name}->{oligo_file} =  "${family_name}/oligos_${family_name}/${family_name}_oligos_up${seq_length}_${min_oligo_length}-${max_oligo_length}nt_${strands}_sig${th}";
     $family{$family_name}->{oligo_file} .= "_noov" if ($noov);
@@ -185,45 +187,8 @@ sub SetFileNames {
 }
 
 ################### SUBROUTINE DEFINITION ###################"
-sub OldReadFamily {
-  print "\n; Reading family\t$family_name\n" if ($verbose);
-  unless (-r $family{$family_name}->{family_file}) {
-    die "Error : family $family_name: cannot read family file '$family{$family_name}->{family_file}'\n";
-  }
-  
-  @{$family{$family_name}->{members}} = {};
-#  @{$member{$family_name}} = ();
-  
-  open FAM, $family{$family_name}->{family_file} || die "Error : cannot read file $family{$family_name}->{family_file}\n" ;
-  while (<FAM>) {
-    next if (/^;/);
-    next unless (/\S/);
-    chomp;
-    @fields = split /\s+/;
-    $query = uc($fields[0]);
-    $id = $orf_id{$query};
-    if ($id eq "") {
-      print STDERR "\t;WARNING ! $query unknown gene name \n";
-    } else {
-      push @{$family{$family_name}->{members}}, $id;
-#      push @{$member{$family_name}}, $id;
-      print "\t$query\t$id\t$name{$id}\n" if ($verbose);
-    }
-  }
-  close FAM;
-  
-}
 
-sub OldUpstreamSequences {
-  warn "\n; Generating upstream sequences for family $family_name\n" if ($verbose);
-  #  unless (-e  $family{$family_name}->{seq_file}) {
-  system "rm -f $family{$family_name}->{seq_file} "; 
-  foreach $id ( @{$family{$family_name}->{members}}) {
-    print "\t$id\t$name{$id}\n" if ($verbose);
-    $command =  "grep -i $id $upstream_sequence_file | replace-string -query '$id' -by '$name{$id}' >> $family{$family_name}->{seq_file}";
-    system $command;
-  }
-}
+
 
 #### retrieve upstream sequences
 sub UpstreamSequences {
@@ -234,7 +199,11 @@ sub UpstreamSequences {
   $command .= " -from $from -to $to ";
   $command .= " -label orf_gene ";
   $command .= " -format $seq_format";
+  &doit($command);
 
+  $command = "purge-sequence -ml 40 -mis 3";
+  $command .= " -i $family{$family_name}->{seq_file}";
+  $command .= " > $family{$family_name}->{seq_file_purged}";
   &doit($command);
 }
 
@@ -246,7 +215,7 @@ sub OligoAnalysis {
   unless (-d $dir) {
     mkdir $dir, 0755 || die "Error: cannot create directory $dir\n";
   }
-  die "Error : cannot read file $family{$family_name}->{seq_file}\n" unless (-r $family{$family_name}->{seq_file});
+  die "Error : cannot read file $family{$family_name}->{seq_file_purged}\n" unless (-r $family{$family_name}->{seq_file_purged});
   
   
   system "echo '' > $family{$family_name}->{oligo_file}" if ($verbose >=1);
@@ -270,7 +239,7 @@ sub OligoAnalysis {
     $oligo_suffix .= "_noov" if ($noov);
     
     $oligo_file = "$family_name/oligos_${family_name}/$family_name".$oligo_suffix;    
-    $command = "oligo-analysis -i $family{$family_name}->{seq_file} -format $seq_format -o $oligo_file $oligo_options";
+    $command = "oligo-analysis -i $family{$family_name}->{seq_file_purged} -format $seq_format -o $oligo_file $oligo_options";
     
     &doit($command);
     system "cat $oligo_file | grep -v ';' >> $family{$family_name}->{oligo_file}";
@@ -279,12 +248,13 @@ sub OligoAnalysis {
   ### fragment assembly
   $fmap_file = $family{$family_name}->{oligo_file}.".gif";
   $htmap_file = $family{$family_name}->{oligo_file}.".html";
-  
+
   $command = "pattern-assembly -i $family{$family_name}->{oligo_file} -sc 7 -${strands} -v -o $family{$family_name}->{oligo_assembly_file} -maxfl 1 -maxpat 200 ";
 
   &doit($command);
 
   ### feature-map for oligo-analysis
+  die "Error : cannot read file $family{$family_name}->{seq_file}\n" unless (-r $family{$family_name}->{seq_file});
   $origin = -$from + 1;
   $command = "dna-pattern -i $family{$family_name}->{seq_file} -format $seq_format -pl $family{$family_name}->{oligo_file} -origin $origin -sc 7 -N 4 ";
   $command .= " | features-from-dnapat ";
@@ -299,8 +269,8 @@ sub DyadAnalysis {
   unless (-d $dir) {
     mkdir $dir, 0755 || die "Error: cannot create directory $dir\n";
   }
-  die "Error : cannot read file $family{$family_name}->{seq_file}\n" unless (-r $family{$family_name}->{seq_file});
-  $command = "dyad-analysis -i $family{$family_name}->{seq_file} -format $seq_format -o $family{$family_name}->{dyad_file} $dyad_options";
+  die "Error : cannot read file $family{$family_name}->{seq_file_purged}\n" unless (-r $family{$family_name}->{seq_file_purged});
+  $command = "dyad-analysis -i $family{$family_name}->{seq_file_purged} -format $seq_format -o $family{$family_name}->{dyad_file} $dyad_options";
 
   &doit($command);
   
@@ -310,6 +280,7 @@ sub DyadAnalysis {
   &doit($command);
 
   ### feature-maps
+  die "Error : cannot read file $family{$family_name}->{seq_file}\n" unless (-r $family{$family_name}->{seq_file});
   &DrawFeatureMaps;
 }
 
@@ -377,29 +348,14 @@ sub SyntheticTable {
   $row{genes} = $row++;
   $row{known} = $row++;
   $row{oligo} = $row++;
-  #$row{oligo_rev} = $row++;
-  #$row{oligo_sc} = $row++;
   $row{dyad} = $row++;
-  #$row{dyad_rev} = $row++;
-  #$row{dyad_sc} = $row++;
   while (($header,$row) = each %row) {
     $table[$row][0] = "<B>$header</B>";
   }
   $col = 0;
 
-  #$table[$r][$c] = "family";
-  #$table[$r][$c] = "genes";
-  #$table[$r][$c] = "known sites (experimental)";
-  #$table[$r][$c] = "oligo";
-  #$table[$r][$c] = "reverse oligo";
-  #$table[$r][$c] = "oligo score";
-  #$table[$r][$c] = "dyad";
-  #$table[$r][$c] = "reverse dyad";
-  #$table[$r][$c] = "dyad score";
-
   foreach $family_name (@families) {
     $col++;
-#    &ReadFamily;
     
     ### check directory
     $dir = "${family_name}/dyads_${family_name}";
@@ -423,6 +379,7 @@ sub SyntheticTable {
     
     #### oligo-analysis
     open OLIGOS, "$family{$family_name}->{oligo_assembly_file}";
+    $map_link = "<A HREF=../$family{$family_name}->{oligo_file}.html>\n";
     print "extracting info from\t$family{$family_name}->{oligo_assembly_file}\n" if ($verbose);
     undef @patterns;
     undef @sorted_patterns;
@@ -468,14 +425,14 @@ sub SyntheticTable {
     $table[$row{oligo}][$col] .= "</TD>\n";
 
     ### print oligo score
-    $table[$row{oligo}][$col] .= "<TD>\n";
+    $table[$row{oligo}][$col] .= "<TD>$map_link\n";
     for $p (0..$#sorted_patterns) {
       $table[$row{oligo}][$col] .= "<B>" if ($score{$sorted_patterns[$p]} >= 1);
       $table[$row{oligo}][$col] .= "$score{$sorted_patterns[$p]}";
       $table[$row{oligo}][$col] .= "</B>" if ($score{$sorted_patterns[$p]} >= 1);
       $table[$row{oligo}][$col] .= "<BR>" unless ($p == $#sorted_patterns);
     }
-    $table[$row{oligo}][$col] .= "</TD>\n";
+    $table[$row{oligo}][$col] .= "</A></TD>\n";
 
     ### print matching patterns
     $table[$row{oligo}][$col] .= "<TD>\n";
@@ -501,6 +458,7 @@ sub SyntheticTable {
 
     ### dyad analysis
     open DYADS, "$family{$family_name}->{dyad_assembly_file}";
+    $map_link = "<A HREF=../$family{$family_name}->{dyad_file}.html>\n";
     print "extracting info from\t$family{$family_name}->{dyad_assembly_file}\n" if ($verbose);
     undef @patterns;
     undef @sorted_patterns;
@@ -511,7 +469,7 @@ sub SyntheticTable {
       chomp;
       next if (/^;/);
       next unless (/\S/);
-      if ((/contig/) || (/isol/)) {
+      if ((/contig/) || (/consensus/) || (/isol/)) {
 	@fields = split "\t";
 	my $sequence = $fields[0];
 	$pattern = new RSA::pattern(sequence=>$sequence);
@@ -551,14 +509,14 @@ sub SyntheticTable {
     $table[$row{dyad}][$col] .= "</TD>\n";
 
     ### dyad scores
-    $table[$row{dyad}][$col] .= "<TD>\n";
+    $table[$row{dyad}][$col] .= "<TD>$map_link\n";
     for $p (0..$#sorted_patterns) {
       $table[$row{dyad}][$col] .= "<B>" if ($score{$sorted_patterns[$p]} >= 1);
       $table[$row{dyad}][$col] .= "$score{$sorted_patterns[$p]}";
       $table[$row{dyad}][$col] .= "</B>" if ($score{$sorted_patterns[$p]} >= 1);
       $table[$row{dyad}][$col] .= "<BR>" unless ($p == $#sorted_patterns);
     }
-    $table[$row{dyad}][$col] .= "</TD>\n";
+    $table[$row{dyad}][$col] .= "</A></TD>\n";
 
     ### print matching patterns
     $table[$row{dyad}][$col] .= "<TD>\n";
@@ -684,9 +642,8 @@ sub InitParameters {
     
 sub AnalyzeFamilies {
   foreach $family_name (@families) {
-    print "; Analyzing family $family_name\t", `date` if ($verbose);
-#    &ReadFamily;
-    
+    print "\n; Treating family $family_name\t", `date` if ($verbose);
+
     ### retrieve upstream sequences
     &UpstreamSequences if ($task{upstream});
     
@@ -697,7 +654,11 @@ sub AnalyzeFamilies {
     &DyadAnalysis if ($task{dyads});
 
     ### delete upstream sequence file
-#    system "rm $family{$family_name}->{seq_file}";
+    if ($task{clean}) {
+	system "rm $family{$family_name}->{seq_file}" ;
+	system "rm $family{$family_name}->{seq_file_purged}" ;
+    }
+
   }
 }
 
@@ -995,3 +956,42 @@ sub ReadFamilies {
 
   @families = keys %family;
 }
+
+#### obsolete routines
+#  sub OldReadFamily {
+#    print "\n; Reading family\t$family_name\n" if ($verbose);
+#    unless (-r $family{$family_name}->{family_file}) {
+#      die "Error : family $family_name: cannot read family file '$family{$family_name}->{family_file}'\n";
+#    }
+  
+#    @{$family{$family_name}->{members}} = {};
+#  #  @{$member{$family_name}} = ();
+#    open FAM, $family{$family_name}->{family_file} || die "Error : cannot read file $family{$family_name}->{family_file}\n" ;
+#    while (<FAM>) {
+#      next if (/^;/);
+#      next unless (/\S/);
+#      chomp;
+#      @fields = split /\s+/;
+#      $query = uc($fields[0]);
+#      $id = $orf_id{$query};
+#      if ($id eq "") {
+#        print STDERR "\t;WARNING ! $query unknown gene name \n";
+#      } else {
+#        push @{$family{$family_name}->{members}}, $id;
+#  #      push @{$member{$family_name}}, $id;
+#        print "\t$query\t$id\t$name{$id}\n" if ($verbose);
+#      }
+#    }
+#    close FAM;
+#  }
+
+#  sub OldUpstreamSequences {
+#    warn "\n; Generating upstream sequences for family $family_name\n" if ($verbose);
+#    #  unless (-e  $family{$family_name}->{seq_file}) {
+#    system "rm -f $family{$family_name}->{seq_file} "; 
+#    foreach $id ( @{$family{$family_name}->{members}}) {
+#      print "\t$id\t$name{$id}\n" if ($verbose);
+#      $command =  "grep -i $id $upstream_sequence_file | replace-string -query '$id' -by '$name{$id}' >> $family{$family_name}->{seq_file}";
+#      system $command;
+#    }
+#  }
