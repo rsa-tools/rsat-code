@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gibbs_form.cgi,v 1.3 2003/10/29 09:04:36 jvanheld Exp $
+# $Id: gibbs_form.cgi,v 1.4 2004/05/07 07:14:23 jvanheld Exp $
 #
 # Time-stamp: <2003-07-11 15:08:18 jvanheld>
 #
@@ -43,7 +43,7 @@ print "<CENTER>\n";
 print "Matrix-based pattern discovery using GIBBS<BR>\n";
 print "Extract shared motifs from a set of unaligned sequences<BR>\n";
 print "Program developed by <A HREF='mailto:neuwald\@cshl.org (Andrew Neuwald)'>Andrew Neuwald</A><BR>\n";
-print "Web interface by <A HREF='mailto:jvanheld\@ucmb.ulb.ac.be'>Jacques van Helden</A>).\n";
+print "Web interface by <A HREF='mailto:jvanheld\@scmbb.ulb.ac.be'>Jacques van Helden</A>).\n";
 print "</CENTER>\n";
 
 
@@ -205,7 +205,7 @@ print $query->end_form;
 #print "<TD><B><A HREF='demo.gibbs.html'>DEMO</A></B></TD>\n";
 print "<TD><B><A HREF='help.gibbs.html'>MANUAL</A></B></TD>\n";
 print "<TD><B><A HREF='tutorials/tut_gibbs.html'>TUTORIAL</A></B></TD>\n";
-print "<TD><B><A HREF='mailto:jvanheld\@ucmb.ulb.ac.be'>MAIL</A></B></TD>\n";
+print "<TD><B><A HREF='mailto:jvanheld\@scmbb.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
 print "</FONT>\n";

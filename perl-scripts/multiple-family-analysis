@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.76 2004/03/11 09:12:30 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.77 2004/05/07 07:11:43 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -161,7 +161,7 @@ if ($sequence_file_list) {
     ### read gene name and identifiers
     warn "; Reading ORF information ...\n" 
 	 if ($verbose >= 1);
-    &ReadFeatures($organism_name);
+    &ReadFeatures($organism_name,"",$feature_types);
     &ReadSynonyms($organism_name);
 
     ### Read family file
@@ -548,7 +548,7 @@ sub UpstreamSequences {
    $command .= " -label orf_gene ";
    $command .= " -feattype $feature_types " if ($feature_types);
    $command .= " -format $seq_format";
-   &doit($command, $dry_run, $die_one_error, $verbose);
+   &doit($command, $dry_run, $die_on_error, $verbose);
 }
 
 ################################################################
@@ -558,7 +558,7 @@ sub PurgeSequences {
    $command = "purge-sequence -ml 40 -mis 3";
    $command .= " -i $family{$family_name}->{seq_file}";
    $command .= " > $family{$family_name}->{seq_file_purged}";
-   &doit($command, $dry_run, $die_one_error, $verbose);
+   &doit($command, $dry_run, $die_on_error, $verbose);
 }
 
 
@@ -662,7 +662,7 @@ sub OligoAnalysis {
    ## Analyze all oligo lengths
    for $oligo_len ($min_oligo_len..$max_oligo_len) {
 	&CalcOligoOptions($oligo_len);
-	&doit($command, $dry_run, $die_one_error, $verbose);
+	&doit($command, $dry_run, $die_on_error, $verbose);
 #	system "cat $oligo_file >> $family{$family_name}->{oligo_file}";
    }
 
@@ -786,7 +786,7 @@ sub DyadAnalysis {
    die "Error : cannot read file $family{$family_name}->{input_seq_file}\n" unless (-r $family{$family_name}->{input_seq_file});
    $command = "dyad-analysis -return occ,proba,rank -i $family{$family_name}->{input_seq_file} -format $seq_format -o $family{$family_name}->{dyad_file} $dyad_options";
    
-   &doit($command, $dry_run, $die_one_error, $verbose);
+   &doit($command, $dry_run, $die_on_error, $verbose);
    
    ### fragment assembly
    $command = "pattern-assembly -v -i $family{$family_name}->{dyad_file} -o $family{$family_name}->{dyad_assembly_file} ${strands} -maxfl 1 -maxpat 200 ";
@@ -820,7 +820,7 @@ sub MergePatterns {
    }
    $command .= " >> $family{$family_name}->{merged_file};";
    $command .= " wc $family{$family_name}->{merged_file}";
-   &doit($command, $dry_run, $die_one_error, $verbose);
+   &doit($command, $dry_run, $die_on_error, $verbose);
    &DrawMergedFeatureMap() if ($task{map});
 }
 
@@ -878,7 +878,7 @@ sub MotifSampler {
 #	my $command = " CreateBackgroundModel -f ".$family{$family_name}->{input_seq_file};
 #	$command .= " -b ".$family{$family_name}->{MotifSamplerBackground};
 #	$command .= " -o ".$MS_bg_order;
-#	&doit($command, $dry_run, $die_one_error, $verbose);
+#	&doit($command, $dry_run, $die_on_error, $verbose);
 #   }
 
    ## run the command
@@ -1461,7 +1461,9 @@ sub CheckParameters {
 
    #### accepted feature types
    unless (defined %accepted_feature_types) {
-	$accepted_feature_types{cds} = 1;
+       ## By default, accept all feature types
+       %accepted_feature_types = %supported_feature_types;
+#	$accepted_feature_types{cds} = 1;
    }
    $feature_types = join ",", keys (%accepted_feature_types);
 
@@ -1641,7 +1643,7 @@ sub PrintHelp {
 NAME
 	multiple-family-analysis
 
-       1999 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
+       1999 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
 	
 USAGE
        multiple-family-analysis [-i inputfile] [-v]
@@ -2735,7 +2737,7 @@ sub MDCreport {
 	$command = "MDCreport-from-dnapat -d ".$family_name;
 	$command .= " -i ".$feature_file;
 	$command .= ">> ".$outfile{results} if ($outfile{results});
-	&doit($command, $dry_run, $die_one_error, $verbose);
+	&doit($command, $dry_run, $die_on_error, $verbose);
    }    
 
    close $parameters;

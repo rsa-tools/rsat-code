@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dna-pattern,v 1.32 2004/04/02 22:05:02 jvanheld Exp $
+# $Id: dna-pattern,v 1.33 2004/05/07 07:11:44 jvanheld Exp $
 #
 # Time-stamp: <2003-08-13 12:16:03 jvanheld>
 #
@@ -19,6 +19,7 @@ $start_date = &AlphaDate();
 $merge_matches = 0;
 $pattern_score = 1;
 $noid = 0;
+$no_limits = 0;
 $strands_to_search = "DR";
 $in_format = "fasta";
 $match_format = "table";
@@ -166,7 +167,7 @@ while ((($current_seq, $sequence_id, @comments) = &ReadNextSequence($in, $in_for
     }
     
     ## Print sequence limits
-    &PrintSequenceLimits($sequence_id, $sequence_length, $orig_pos);
+    &PrintSequenceLimits($sequence_id, $sequence_length, $orig_pos) unless ($no_limits);
 
     if ($search_method eq "sliding window") {
 	&SlidingWindowSearch();
@@ -632,7 +633,8 @@ dna-pattern options
 -NL #		return matching sequences with # left flanking nucleotides
 -NR #		return matching sequences with # right flanking nucleotides
 -v		verbose
--origin origin (position 0)
+-origin		origin (position 0)
+-nolimit	do not print sequence start and end positions
 EndShortHelp
     close HELP;
     exit(0);
@@ -659,6 +661,9 @@ sub ReadArguments {
 
 	} elsif ($ARGV[$a] =~ /^-ori/) {
 	    $origin = $ARGV[$a+1];
+	    
+	} elsif ($ARGV[$a] =~ /^-nolimit/) {
+	    $no_limits = 1;
 	    
 	} elsif (($ARGV[$a] eq "-subst") && (&IsNatural($ARGV[$a+1]))){
 	    $allowed_subst = $ARGV[$a+1];
@@ -1235,6 +1240,8 @@ ARGUMENTS
                 origin. The matching positions are then negative values, 
                 providing the distance between the match and the end of the 
                 sequence.
+	-nolimit
+		do not print sequence start and end positions
 	-window #	
 		Sliding window size. The score at each position is
 		calculated by summing the scores of all patterns
@@ -1364,7 +1371,7 @@ EXAMPLES
 	will count all occurences of the strings 'GATAA' and 'GATTA' present 
 	in the file $RSAGENOME/chr1.raw.
 WEB VERSION
-	http://www.ucmb.ulb.ac.be/bioinformatics/rsa-tools/
+	http://www.scmbb.ulb.ac.be/bioinformatics/rsa-tools/
 EndOfHelp
     close HELP;
     exit(0);

@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSA_home.cgi,v 1.14 2003/12/29 16:03:40 jvanheld Exp $
+# $Id: RSA_home.cgi,v 1.15 2004/05/07 07:14:23 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -20,7 +20,7 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $query = new CGI;
 print $query->header;
 print $query->start_html(-title=>'Regulatory Sequence Analysis Tools',
-			 -author=>'jvanheld@ucmb.ulb.ac.be',
+			 -author=>'jvanheld@scmbb.ulb.ac.be',
 			 -BGCOLOR=>'#FFEEDD');
 
 print <<EndText;
@@ -50,7 +50,7 @@ print <<EndText;
   
   <TD VALIGN=TOP WIDTH="160">
   <CENTER>
-  <A HREF="http://www.ucmb.ulb.ac.be" TARGET=_blank>
+  <A HREF="http://www.scmbb.ulb.ac.be" TARGET=_blank>
   <IMG SRC="images/ULB_Blue_215.gif" ALT="ULB_Blue_215.gif" BORDER=0 HEIGHT=75 WIDTH=75>
   <BR>
   <FONT COLOR="#0000dd" SIZE=-2>
@@ -98,19 +98,8 @@ print <<EndText;
   <P>
   Welcome to Regulatory Sequence Analysis Tools (<B>RSAT</B>). This
   site provides a series of modular computer programs specifically
-  designed for the detection of regulatory signals in intergenic
+  designed for the detection of regulatory signals in non-coding
   sequences.  <P>
-
-  <P> An increasing number of organisms are supported on this web
-  site. We installed a few eukaryotes (<i>Saccharomyces
-  cerevisiae</i>, <i>Schizosaccharomyces pombe</i>, <i>Drosophila
-  melanogaster</i>, <i>Caenorhabditis elegans</i>, <i>Arabidopsis
-  thaliana</i>) and all the completely sequenced bacterial genomes
-  (from Genbank). We are willing to install additional organisms
-  provided their genome has been fully sequenced and is publicly
-  available. If you would like to add such an organism, please contact
-  <a target=_top href="http://www.ucmb.ulb.ac.be/~jvanheld/">Jacques
-  van Helden</a>.
 
   <P>
   This web site is freely available for academic users. For users from
@@ -210,8 +199,8 @@ print <<EndAddress;
 <FONT SIZE=-1>
 For suggestions or information request, please contact :
 <BR>
-<A HREF="mailto:jvanheld\@ucmb.ulb.ac.be (Jacques van Helden)">
-Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
+<A HREF="mailto:jvanheld\@scmbb.ulb.ac.be (Jacques van Helden)">
+Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
 </A>
 </FONT>
 </CENTER>

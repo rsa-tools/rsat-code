@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: fit-distribution,v 1.10 2004/01/23 23:49:05 jvanheld Exp $
+# $Id: fit-distribution,v 1.11 2004/05/07 07:11:43 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -281,7 +281,7 @@ sub PrintHelp {
 NAME
 	fit-distribution
 
-        2002 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
+        2002 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
 	
 DESCRIPTION
 	Fit a theoretical distribution on observed distributions, and

@@ -394,7 +394,7 @@ OPTIONS
 		    - sequence ID (ignored)
 		    - sequence length
 WEB VERSION
-	http://ucmb.ulb.ac.be/bioinformatics/rsa-tools/
+	http://scmbb.ulb.ac.be/bioinformatics/rsa-tools/
 
 End_of_help
     close HELP;

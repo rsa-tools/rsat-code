@@ -1,27 +1,33 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis,v 1.14 2001/06/25 20:24:46 jvanheld Exp $
+# $Id: dyad-analysis,v 1.15 2004/05/07 07:11:44 jvanheld Exp $
 #
-# Time-stamp: <2001-06-25 22:24:44 jvanheld>
+# Time-stamp: <2003-10-22 23:46:08 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
+require "RSA.lib";
+require "RSA.classes";
 
-if ($ARGV[0] eq "-h") { #### display full help message ##### open
-    &HelpMessage;
-} elsif ($ARGV[0] eq "-help") {
-    &PrintOptions;
-}
 
+################################################################
 #### initialise parameters ####
+$start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+
+#### background models
+%supported_bg = ('upstream'=>1,
+		 'upstream-noorf'=>1,
+		 'intergenic'=>1
+		 );
+$supported_bg = join ",", sort keys %supported_bg;
+
+
 $oligo_length = 3;
 %default_return = (occ=>1,proba=>1);
-$start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
-$timeout = 100000;
+$timeout = 900;
 
 $min_spacing = $max_spacing = 0;
 $sum_strands = 1;
@@ -32,82 +38,96 @@ $accepted_dyad_type{dr} = 1;  #direct repeats
 $accepted_dyad_type{ir} = 1;  #inverted repeats
 $accepted_dyad_type{any} = 1; #any dyad, repeat or not
 
+$seq_type = "DNA";
 $dyad_type = "any";
 $input_format = "fasta";
 
 $nb_possible_pos = 0;
 $sum_seq_length = 0;
+$discarded_dyad_positions = 0;
+$discarded_monad_positions = 0;
+
+$exp_freq_file = "";
+
+$max_seq_verbose = 99;
 
 ### read command line arguments
-&ReadArguments;
+&ReadArguments();
+
+#### define the list of allowed oligomers
+if ($seq_type eq "DNA") {
+    foreach my $oligo(&all_oligos($oligo_length)) {
+	$allowed_monads{$oligo} = 1; 
+    }
+}
+
 
 #### timeout control
 $SIG{ALRM} = sub {die "timeout" };
 #$ENV{SERVER_ADMIN} = "jvanheld\@localhost.localdomain";
 eval {
     alarm($timeout);
-
-
-
-#### hyperverbose ####
-    if ($hyperverbose) {
+    if ($verbose >= 2) {
 	$current_time = `date '+%H:%M:%S'`;
 	chomp($current_time);
-	print STDERR ";dyad-analysis\t$current_time\tStarting\n";
+	warn ";dyad-analysis\t$current_time\tStarting\n";
     }
 
+    #### check argument values ####
 
-#### check argument values ####
-
-
-### check pre-defined frequency tables
-### non-coding frequency calibration
-    if (($ncf) || ($mncf)) {
-	### check organism first
-	unless ($organism_name) {
-	    die ";Error: you should specify an organism for using non-coding frequency calibration\n";
-	}
-	unless ($supported_organism{$organism_name}) {
-	    die ";Error: organism $organism_name is not supported on this site\n";
-	}
-
+    ### check pre-defined frequency tables
+    ### intergenic frequency calibration
+    if (($background_model) || ($mncf)) {
+	
+	#### organism
+	&CheckOrganism($organism_name);
+	
 	$data_dir = $supported_organism{$organism_name}->{'data'};
-	if ($ncf) {
-	    ### localise expected frequency file for dyads in non-coding sequences
-	    $exp_freq_file = "$data_dir/oligo-frequencies/dyads_3nt_sp0-20_non-coding_${organism_name}_noov.freq";
+	if ($background_model) {
+	    ### localise expected frequency file for dyads in intergenic sequences
+	    $exp_freq_file = "$data_dir/oligo-frequencies/dyads_3nt_sp0-20_${background_model}_${organism_name}-1str.freq";
 
-	    #### TEMPORARY / ACCEPT OVERLAPS IN CALIBRATED FREQS
-	    unless (-r $exp_freq_file) {
-		$exp_freq_file = "$data_dir/oligo-frequencies/dyads_3nt_sp0-16_non-coding_${organism_name}.freq";
-	    }
+ 	    unless ((-e $exp_freq_file) || (-e "$exp_freq_file.gz") ) {
+		&FatalError("Expected frequency file does not exist\t$exp_freq_file");
+# 	    #### TEMPORARY: the previous format is still supported
+# 	    #### until integrenic dyad frequencies are recalculated
+# 	    #### for all the supported genomes
+# 		$exp_freq_file = "$data_dir/oligo-frequencies/dyads_3nt_sp0-20_intergenic_${organism_name}_noov.freq";
+ 	    }
 
-	    die "Error: cannot read expected frequency file $exp_freq_file\n" unless (-r  $exp_freq_file);
+#	    &FatalError("Cannot read expected frequency file $exp_freq_file.") unless (-r  $exp_freq_file);
+
 	} elsif ($mncf) {
-	    ### localize monad non-coding frequency file
-	    $monad_exp_freq_file .= "$data_dir/oligo-frequencies/${oligo_length}nt_non-coding_${organism_name}.freq";
-	    die "Error: cannot read expected frequency file $monad_exp_freq_file\n" unless (-r  $monad_exp_freq_file);
+	    ### localize monad intergenic frequency file
+	    $monad_exp_freq_file .= "$data_dir/oligo-frequencies/${oligo_length}nt_intergenic_${organism_name}.freq";
+#	    &FatalError("Cannot read expected frequency file $monad_exp_freq_file.") unless (-r  $monad_exp_freq_file);
 	}
     }
 
-### check stats to return
+    ### check stats to return
     %return = %default_return unless (defined(%return));
     if (($return{proba}) || ($return{zscore})) {
 	$return{occ} = 1;
 	$return{exp_occ} = 1;
 	$return{exp_freq} = 1;
     }
+    if ($return{ratio}) {
+	$return{occ} = 1;
+	$return{exp_occ} = 1;
+	$return{exp_freq} = 1;
+    }
 
-### check spacing values and order
+    ### check spacing values and order
     if ($sp_group) {
 	@spacing_list = ("$min_spacing,$max_spacing");
     } else {
 	@spacing_list = ($min_spacing..$max_spacing);
     }
     unless ($oligo_length > 0) {
-	die "Error :invalid oligonucleotide length specification\n";
+	&FatalError("Invalid oligonucleotide length specification.");
     }
     
-### check sequence format
+    ### check sequence format
     if ($input_format eq "") {
 	die ("\tError: you did not specify the input sequence format\n",
 	     "\tType dyad-analysis -help for info\n");
@@ -117,32 +137,19 @@ eval {
     }
 
 
-    &CalcPossibleDyads;
+    &CalcPossibleDyads(); ### calculate ll possible dyads
+    &CountDyads(); ### read sequence and count dyads ###    
+    &SumReverseComplements() if ($sum_strands); ### group dyads by pairs of reverse complements
+    &CalcFrequencies() if ($return{freq}); ### calculate observed frequencies
+    $out = &OpenOutputFile($outputfile); ### open output file ###
+    &PrintVerbose() if ($verbose); ### print analysis parameters
+    &CalcExpectedFreq() if ($return{exp_freq}); ### calculate expected frequencies
+    &CalcExpectedOcc() if ($return{exp_occ}); ### calculate expected occurrences
+#    &CalcRatio() if ($return{ratio}); ### calculate obs/exp ratio
+    &CalcProba() if ($return{proba}); ### calculate probabilities
+    &PrintResult(); ### print the result
 
-
-### read sequence and count dyads ###
-    &CountDyads();
-    
-    
-    &SumReverseComplements if ($sum_strands);
-
-    &CalcFrequencies if ($return{freq});
-
-
-### open output file ###
-    $out = &OpenOutputFile($outputfile);
-
-    &PrintVerbose if ($verbose);
-
-    &CalcExpectedFreq if ($return{exp_freq});
-
-
-    &CalcProba if ($return{proba});
-
-### print the result
-    &PrintResult;
-
-###### verbose ######
+    ###### verbose
     if ($verbose) {
 	$done_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
 	print $out ";Job started $start_time";
@@ -150,16 +157,19 @@ eval {
     }
 
 
-###### close input file ######
+    ###### close input file ######
     close $in unless ($inputfile eq "");
     
-###### close output file ######
+    ###### close output file ######
     close $out unless ($outputfile eq "");
 
     alarm(0);
 }; ###eval 
 
 
+
+################################################################
+#### report out of time errors to the rsa-tools administrator
 if ($@) {
     if ($@ =~ /timeout/) {
 	open ERROR_REPORT, "| $mail_command $ENV{SERVER_ADMIN}";
@@ -183,6 +193,8 @@ exit(0);
 
 ########################## subroutine definition ############################
 
+################################################################
+#### print header line for the output file
 sub PrintHeaderLine {
     $col_description{"dyad_seq"} = "dyad sequence";
     $col_description{"dyad_sequence"} = "dyad sequence";
@@ -195,12 +207,13 @@ sub PrintHeaderLine {
     $col_description{"exp_frq"} = "expected relative frequency"; 
     $col_description{"obs_occ"} = "observed occurrences";
     $col_description{"exp_occ"} = "expected occurrences"; 
-    $col_description{"occ_prb"} = "occurrence probability (binomial)";
+    $col_description{"occ_P"} = "occurrence probability (binomial)";
+    $col_description{"occ_E"} = "E-value for occurrences (binomial)";
     $col_description{"occ_sig"} = "occurrence significance (binomial)";
     $col_description{"zscore"} = "z-score (normal)"; 
     $col_description{"occ_lkh"} = "occurrence likelihood"; 
-    $col_description{"occ+ovl"} = "number of non-overlapping + overlapping occurrences"; 
-    $col_description{"ovlaps"} = "number of overlapping occurrences"; 
+    $col_description{"all_occ"} = "number of non-overlapping + overlapping occurrences"; 
+    $col_description{"ovl_occ"} = "number of overlapping occurrences"; 
     $col_description{"ratio"} = "observed/expected ratio"; 
     $col_description{"rank"} = "rank"; 
     $col_description{"ov_coef"} = "overlap coefficient"; 
@@ -212,9 +225,9 @@ sub PrintHeaderLine {
     if ($sum_strands) {
 	push @out_col, "dyad_sequence";
 	if ($sum_strands) {
-	    push @out_col, "dyad_identifier";
-	} else {
 	    push @out_col, "dyad_identifier       ";
+	} else {
+	    push @out_col, "dyad_identifier";
 	}
     } else {
 	push @out_col, "dyad_seque";
@@ -225,7 +238,8 @@ sub PrintHeaderLine {
     push @out_col, "obs_occ" if ($return{occ});
     push @out_col, "exp_occ"  if ($return{exp_occ});
     if ($return{proba}) {
-	push @out_col, "occ_prb";
+	push @out_col, "occ_P";
+	push @out_col, "occ_E";
 	push @out_col, "occ_sig";
     }
     if ($return{zscore}) {
@@ -233,11 +247,12 @@ sub PrintHeaderLine {
 	push @out_col, "occ_var";
     }
     if ($noov) {
-	push @out_col, "ovlaps";
-	push @out_col, "occ+ovl";
+	push @out_col, "ovl_occ";
+	push @out_col, "all_occ";
     }
     push @out_col, "ratio"  if ($return{ratio});
     push @out_col, "rank"  if ($return{rank});
+
     if (($return{proba})|| ($return{zscore})) {
 	push @out_col, "ov_coef" ;
 	push @out_col, "remark";
@@ -258,8 +273,15 @@ sub PrintHeaderLine {
 
 
 
-
+################################################################
+#### print the result
 sub PrintResult {
+  if ($verbose >= 2) {
+    $current_time = `date '+%H:%M:%S'`;
+    chomp($current_time);
+    warn ";\t$current_time\tPrinting result\n";
+  }
+  
     #### print header line
     &PrintHeaderLine();
 
@@ -275,6 +297,7 @@ sub PrintResult {
 #    print $out "\texp_occ"  if ($return{exp_occ});
 #    if ($return{proba}) {
 #      print $out "\tproba";
+#      print $out "\tocc_E";
 #      print $out "\tocc_sig";
 #    }
 #    if ($return{zscore}) {
@@ -282,8 +305,8 @@ sub PrintResult {
 #      print $out "\tocc_var";
 #    }
 #    if ($noov) {
-#      print $out "\tovlaps";
-#      print $out "\tocc+ovl";
+#      print $out "\tovl_occ";
+#      print $out "\tall_occ";
 #    }
 #    if (($return{proba})|| ($return{zscore})) {
 #      print $out "\tov_coef" ;
@@ -306,8 +329,8 @@ sub PrintResult {
     }
     
     ### print values for each dyad
-    my $rank = 0;
-    foreach $p (0..$#sorted_patterns) {
+  my $rank = 0;
+    foreach my $p (0..$#sorted_patterns) {
 	my $pattern_seq = $sorted_patterns[$p];
 	next unless (defined($patterns{$pattern_seq}->{obs_occ}));
 	$rank++;
@@ -323,23 +346,31 @@ sub PrintResult {
 	printf $out "\t%7.2f", $patterns{$pattern_seq}->{exp_occ} if ($return{exp_occ});
 	if ($return{proba}) {
 	    if ($patterns{$pattern_seq}->{occ_proba} >= 0.0001) {
-		printf $out "\t%.4f", $patterns{$pattern_seq}->{occ_proba};
+		printf $out "\t%7.5f", $patterns{$pattern_seq}->{occ_proba};
 	    } else {
-	  printf $out "\t%.2g", $patterns{$pattern_seq}->{occ_proba};
-      }
-	    printf $out "\t%.1f", $patterns{$pattern_seq}->{occ_sig};
+		printf $out "\t%7.2g", $patterns{$pattern_seq}->{occ_proba};
+	    }
+	    printf $out "\t%7.1e", $patterns{$pattern_seq}->{occ_E};
+	    printf $out "\t%7.2f", $patterns{$pattern_seq}->{occ_sig};
 	}
 	if ($return{zscore}) {
-	    printf $out "\t%.2f", $patterns{$pattern_seq}->{zscore};
-	    printf $out "\t%.2f", $patterns{$pattern_seq}->{var_est};
+	    printf $out "\t%7.2f", $patterns{$pattern_seq}->{zscore};
+	    printf $out "\t%7.2f", $patterns{$pattern_seq}->{var_est};
 	}
 	if ($noov) {
 	    printf $out "\t%d", $patterns{$pattern_seq}->{overlaps};
 	    printf $out "\t%d", $patterns{$pattern_seq}->{overlaps} + $patterns{$pattern_seq}->{obs_occ};
 	}
-	printf $out "\t%d", $rank if ($return{rank});
+	if ($return{ratio}) {
+	    if ($patterns{$pattern_seq}->{exp_occ} > 0) {
+		printf $out "\t%7.2f", $patterns{$pattern_seq}->{obs_occ}/$patterns{$pattern_seq}->{exp_occ};
+	    } else {
+		print $out "\tNA";
+	    }
+	}
+	printf $out "\t%7d", $rank if ($return{rank});
 	if (($return{proba}) || ($return{zscore})) {
-	    printf $out "\t%.3f", $overlap_coeff{$pattern_seq};
+	    printf $out "\t%7.4f", $overlap_coeff{$pattern_seq};
 	    print $out "\t", $patterns{$pattern_seq}->{remark};
 	}
 	print $out "\n";
@@ -347,52 +378,16 @@ sub PrintResult {
 }
 
 
-sub SmartRC {
-  ### calculates only once the reverse complement of each dyad
-  ### stores the result of each calculated reverse complement 
-  my $direct_seq = lc($_[0]);
-  unless (defined($SmartRC{$direct_seq})) {
-    $SmartRC{$direct_seq} = lc(&ReverseComplement($direct_seq));
-  }
-  return($SmartRC{$direct_seq});
-}
 
 
-
-
-### expected frequencies ###
+################################################################
+#### calculate expected frequencies
 sub CalcExpectedFreq {
-    if (defined($exp_freq_file)) {
-	### read expected dyad frequencies from a file
 
-	$exp = &OpenInputFile($exp_freq_file);
-#	unless (open FREQ,$exp_freq_file) {
-#	    print "\tError: could not open expected frequency file\n";
-#	    print "\t$exp_freq_file\n";	
-#	    print "\tType dyad-analysis -help for info\n";
-#	    exit;
-#	}
-	while (<$exp>) {
-	    next if (/^;/);
-	    chomp;
-	    @fields = split;
-	    $pattern_seq = lc($fields[0]);
-	    $freq = $fields[1];
-	    if (&IsReal($freq)) {
-		$patterns{$pattern_seq}->{exp_freq} = $freq;
-	    } else {
-		warn "WARNING: invalid frequency specification\t", join(" ", @fields), "\n";
-	    }
-	}
-	close $exp;
-    } elsif ($mncf) {
+    #### monad expected frequencies
+    if ($mncf) {
 	### read expected monad frequencies from a file
-	$exp = &OpenInputFile($exp_freq_file);
-#	unless (open FREQ,$monad_exp_freq_file) {
-#	    print "\tError: could not open expected frequency file $monad_exp_freq_file\n";
-#	    print "\tType dyad-analysis -help for info\n";
-#	    exit;
-#	}
+	($exp) = &OpenInputFile($exp_freq_file);
 	while (<$exp>) {
 	    next if (/^;/);
 	    chomp;
@@ -413,8 +408,17 @@ sub CalcExpectedFreq {
 	
     }
     
-    if ($exp_freq_file eq "") {
-	### calculate expected dyad freq on basis of oligo frequencies
+    ################################################################
+    # dyad expected frequencies
+    if ($exp_freq_file) {
+#	&ReadExpectedFrequencies($exp_freq_file, $sum_rc);
+	&ReadExpectedFrequencies($exp_freq_file);
+
+	
+    ################################################################
+    ### calculate expected dyad freq on basis of monad frequencies 
+    ### observed in the input sequence
+    } else {
 	foreach $oligo1 (keys %oligo) {
 	    my $freq1 = $oligo{$oligo1}->{exp_freq};
 	    foreach my $spacing (@spacing_list) {
@@ -427,7 +431,6 @@ sub CalcExpectedFreq {
 		    } else {
 			$patterns{$pattern_seq}->{exp_freq} = $freq1*$freq2;
 		    }
-#print STDERR "\t$oligo1\t$oligo2\t$freq1\t$freq2\t", $patterns{$pattern_seq}->{exp_freq} , "\n";
 		}
 	    }	
 	}
@@ -437,10 +440,10 @@ sub CalcExpectedFreq {
 
 #### sum reverse complement occurrences
 sub SumReverseComplements {
-  if ($hyperverbose) {
+  if ($verbose >= 2) {
     $current_time = `date '+%H:%M:%S'`;
     chomp($current_time);
-    print STDERR ";\t$current_time\tSumming occurrences of reverse complement pairs\n";
+    warn ";\t$current_time\tSumming occurrences of reverse complement pairs\n";
   }
   
   #### sum dyad occurrences
@@ -502,234 +505,301 @@ sub CalcFrequencies {
   }
 }  ### CalcFrequencies
 
-
+sub CalcExpectedOcc {
+    foreach $oligo1 (sort keys %oligo) {
+	foreach $spacing (@spacing_list) {
+	    foreach $oligo2 (&SecondElement($oligo1)) {
+		### build the dyad
+		my $pattern_seq= "${oligo1}n\{$spacing\}${oligo2}";
+		next unless (defined($patterns{$pattern_seq}->{obs_occ})); 
+  		### calculate expected occurrences
+  		if ($noov) {
+  		    $patterns{$pattern_seq}->{exp_occ} =  $patterns{$pattern_seq}->{exp_freq} * 
+  			($nb_valid_pos - ($min_overlap_dist - 1) * $patterns{$pattern_seq}->{obs_occ});
+  		} else {
+  		    $patterns{$pattern_seq}->{exp_occ} =  $patterns{$pattern_seq}->{exp_freq}*$nb_valid_pos;
+  		}
+	    }
+	}
+    }
+}
 
 ### calculate dyad probabilities
 sub CalcProba {
-  foreach $oligo1 (sort keys %oligo) {
-    foreach $spacing (@spacing_list) {
-      foreach $oligo2 (&SecondElement($oligo1)) {
-	### build the dyad
-	my $pattern_seq= "${oligo1}n\{$spacing\}${oligo2}";
-	next unless (defined($patterns{$pattern_seq}->{obs_occ})); 
-	if ($sum_strands) {
-	  $rc_dyad = &SmartRC($pattern_seq);
-	  if (($group_rc) &&($rc_dyad lt $pattern_seq)) {
-	    delete $patterns{$pattern_seq};
-	    next;
-	  }
-	}
-	
-	### calculate expected occurrences
-	if ($noov) {
-	  $patterns{$pattern_seq}->{exp_occ} =  $patterns{$pattern_seq}->{exp_freq}* ($nb_possible_pos - ($min_overlap_dist - 1) * $patterns{$pattern_seq}->{obs_occ});
-	} else {
-	  $patterns{$pattern_seq}->{exp_occ} =  $patterns{$pattern_seq}->{exp_freq}*$nb_possible_pos;
-	}
-	#if ($hyperverbose) {
-	#  $current_time = `date '+%H:%M:%S'`;
-	#  chomp($current_time);
-	#  print ";;$current_time";
-	#  print "\t$pattern_seq";
-	#  printf "\t%d", $patterns{$pattern_seq}->{obs_occ};
-	#  printf "\t%7.3f", $patterns{$pattern_seq}->{exp_occ};
-	#  print "\n";
-	#}
-	
-	
-	### detect repeats ###
-	if (($sum_strands) && (&Palindromic($pattern_seq))) {
-	  $patterns{$pattern_seq}->{remark} = "inv_rep";
-	}
-	if ($oligo1 eq $oligo2) {
-	  $patterns{$pattern_seq}->{remark} .= "dir_rep";
-	}
+    foreach $oligo1 (sort keys %oligo) {
+	foreach $spacing (@spacing_list) {
+	    foreach $oligo2 (&SecondElement($oligo1)) {
+		### build the dyad
+		my $pattern_seq= "${oligo1}n\{$spacing\}${oligo2}";
+		next unless (defined($patterns{$pattern_seq}->{obs_occ})); 
+		if ($sum_strands) {
+		    $rc_dyad = &SmartRC($pattern_seq);
+		    if (($group_rc) &&($rc_dyad lt $pattern_seq)) {
+			delete $patterns{$pattern_seq};
+			next;
+		    }
+		}
+		
+#  		### calculate expected occurrences
+#  		if ($noov) {
+#  		    $patterns{$pattern_seq}->{exp_occ} =  $patterns{$pattern_seq}->{exp_freq} * 
+#  			($nb_possible_pos - ($min_overlap_dist - 1) * $patterns{$pattern_seq}->{obs_occ});
+#  		} else {
+#  		    $patterns{$pattern_seq}->{exp_occ} =  $patterns{$pattern_seq}->{exp_freq}*$nb_possible_pos;
+#  		}
+		
+		### detect repeats ###
+		if (($sum_strands) && (&Palindromic($pattern_seq))) {
+		    $patterns{$pattern_seq}->{remark} = "inv_rep";
+		}
+		if ($oligo1 eq $oligo2) {
+		    $patterns{$pattern_seq}->{remark} .= "dir_rep";
+		}
+		
+		#### check expected frequency
+		if ($patterns{$pattern_seq}->{exp_freq} <= 0) {
 
-	
-	### self-overlap coefficient
-	if (($return{proba}) || ($return{zscore})) {
-	  $oligo_pair = $oligo1.$oligo2;
-	  $overlap_coeff{$pattern_seq} = &OverlapCoeff($oligo_pair);
-	}
-	
+		    #### expected frequency might not be defined if
+		    #### max_spacing is > than the max spacing of the
+		    #### expected frequency file
+		    if ($max_spacing >= 20) {
+			#### calculate expected frequency oin the basis of monad frequencies
+			my $freq1 = $oligo{$oligo1}->{exp_freq};
+			my $freq2 = $oligo{$oligo2}->{exp_freq};
+			if ($sp_group) {
+			    $patterns{$pattern_seq}->{exp_freq} = $freq1*$freq2*($max_spacing-$min_spacing + 1);
+			} else {
+			    $patterns{$pattern_seq}->{exp_freq} = $freq1*$freq2;
+			}
+			    $patterns{$pattern_seq}->{remark} = "monad exp freq ".$patterns{$pattern_seq}->{remark};
+		    } else {
+			&Warning ("Expected frequency must be > 0 for dyad\t$pattern_seq\t$patterns{$pattern_seq}->{exp_freq}\n");
+			delete $patterns{$pattern_seq};
+		    }
+		}
 
-	if ($patterns{$pattern_seq}->{exp_freq} <= 0) {
-	    warn "Error : expected frequency must be > 0 for dyad\t$pattern_seq\t$patterns{$pattern_seq}->{exp_freq}";
-	    next;
+		### self-overlap coefficient
+		if (($return{proba}) || ($return{zscore})) {
+		    $oligo_pair = $oligo1.$oligo2;
+		    $overlap_coeff{$pattern_seq} = &OverlapCoeff($oligo_pair);
+		}
+		
+		### calculate Z-scores ###
+		if ($return{zscore}) {
+		    $patterns{$pattern_seq}->{var_est} = $nb_valid_pos*$patterns{$pattern_seq}->{exp_freq}*(2*$overlap_coeff{$pattern_seq} - 1 - (4*$oligo_length+1)*$patterns{$pattern_seq}->{exp_freq});
+		    $patterns{$pattern_seq}->{zscore} = ($patterns{$pattern_seq}->{obs_occ} - $patterns{$pattern_seq}->{exp_occ})/sqrt($patterns{$pattern_seq}->{var_est});
+		}
+		
+		
+		### calculate occurrence probability ####
+		if ($return{proba}) {
+		    if (($sum_strands) && (&Palindromic($pattern_seq))) {
+			$patterns{$pattern_seq}->{occ_proba} =  &binomial_boe($patterns{$pattern_seq}->{exp_freq},$nb_valid_pos/2,$patterns{$pattern_seq}->{obs_occ}/2);
+		    } else {
+			$patterns{$pattern_seq}->{occ_proba} =  &binomial_boe($patterns{$pattern_seq}->{exp_freq},$nb_valid_pos,$patterns{$pattern_seq}->{obs_occ});
+		    }
+		    
+		    ### calculate occurrence significance
+		    $patterns{$pattern_seq}->{occ_E} =  $nb_possible_dyads*$patterns{$pattern_seq}->{occ_proba};
+		    if ($patterns{$pattern_seq}->{occ_proba} > 0) {
+			$patterns{$pattern_seq}->{occ_sig} =  -log($patterns{$pattern_seq}->{occ_E})/log(10);
+		    } else {
+			$patterns{$pattern_seq}->{occ_sig} =  999;
+		    }
+		    #### threshold filtering ####
+		    if (($thr_filter) && ($patterns{$pattern_seq}->{occ_sig} < $sig_threshold)) {
+			delete $patterns{$pattern_seq};
+		    } 		
+		}
+	    }
 	}
-
-	### calculate Z-scores ###
-	if ($return{zscore}) {
-	    $patterns{$pattern_seq}->{var_est} = $nb_possible_pos*$patterns{$pattern_seq}->{exp_freq}*(2*$overlap_coeff{$pattern_seq} - 1 - (4*$oligo_length+1)*$patterns{$pattern_seq}->{exp_freq});
-	    $patterns{$pattern_seq}->{zscore} = ($patterns{$pattern_seq}->{obs_occ} - $patterns{$pattern_seq}->{exp_occ})/sqrt($patterns{$pattern_seq}->{var_est});
-	}
-	
-	
-	### calculate occurrence probability ####
-	if ($return{proba}) {
-	  if (($sum_strands) && (&Palindromic($pattern_seq))) {
-	    $patterns{$pattern_seq}->{occ_proba} =  &sum_of_binomials($patterns{$pattern_seq}->{exp_freq},$nb_possible_pos/2,$patterns{$pattern_seq}->{obs_occ}/2);
-	  } else {
-	    $patterns{$pattern_seq}->{occ_proba} =  &sum_of_binomials($patterns{$pattern_seq}->{exp_freq},$nb_possible_pos,$patterns{$pattern_seq}->{obs_occ});
-	  }
-	  
-	  ### calculate occurrence significance
-	  if ($patterns{$pattern_seq}->{occ_proba} > 0) {
-	    $patterns{$pattern_seq}->{occ_sig} =  -log($nb_possible_dyads*$patterns{$pattern_seq}->{occ_proba})/log(10);
-	  } else {
-	    $patterns{$pattern_seq}->{occ_sig} =  20;
-	  }
-	  #### threshold filtering ####
-	  if (($thr_filter) && ($patterns{$pattern_seq}->{occ_sig} < $sig_threshold)) {
-	    delete $patterns{$pattern_seq};
-	  } 		
-	}
-      }
-    }
-  }  
+    }  
 } ### CalcProba
 
 
 
 #### read arguments ####
 sub ReadArguments {
-  foreach $a (0..$#ARGV) {
-    ### verbose ###
-    if ($ARGV[$a] eq "-v") {
-      $verbose = 1;
-      
-    } elsif ($ARGV[$a] eq "-vv") {
-      $verbose = 1;
-      $hyperverbose = 1;
-      
-      ### input file ###
-    } elsif ($ARGV[$a] eq "-i") {
-      $inputfile = $ARGV[$a+1];
-      
-      ### input format ###
-    } elsif ($ARGV[$a] eq "-format") {
-      $input_format = lc($ARGV[$a+1]);
-      
-      ### output file ###
-    } elsif ($ARGV[$a] eq "-o") {
-      $outputfile = $ARGV[$a+1];
-      
-      ### oligo length ###
-    } elsif (($ARGV[$a] eq "-l") && (&IsNatural($ARGV[$a+1]))) {
-      $oligo_length = $ARGV[$a+1];
-      
-      ### spacing ###
-    } elsif ($ARGV[$a] =~ /^-sp/i) {
-      if (&IsNatural($ARGV[$a+1])) {
-	$min_spacing = $max_spacing = $ARGV[$a+1];
-      } elsif ($ARGV[$a+1] =~ /^(\d+)\-(\d+)$/) {
-	$min_spacing = &min($1,$2);
-	$max_spacing = &max($1,$2);
-      } else {
-	print "Error: invalid spacing specification\n";
-	print "Type dyad-analysis -help for more info\n";
-	exit;
-      }
-      
-      ### dyad type ###
-    } elsif ($ARGV[$a] =~ /^-type/i) {
-      $dyad_type = lc($ARGV[$a+1]);
-      die "Error : '$dyad_type' is not a valid dyad type" unless $accepted_dyad_type{$dyad_type};
-      
-      ### sort results ###
-    } elsif ($ARGV[$a] =~ /^-sort/i) {
-      $sort_results = 1;
-      
-      ### expected frequency table ###
-    } elsif ($ARGV[$a] =~ /^-exp/i) {
-      $exp_freq_file = $ARGV[$a+1];
-      die "Error: cannot read expected frequency file $exp_freq_file\n" unless (-r  $exp_freq_file);
-      
-      ### timeout setting
-    } elsif ($ARGV[$a] =~ /^-timeout/i) {
-      $timeout = $ARGV[$a+1];
-      die "Error: timeout value should be integer\n"
-	  unless &IsNatural($timeout);
-      
-      ### use dyad non-coding frequencies as expected frequencies
-    } elsif ($ARGV[$a] =~ /^-ncf/i) {
-      $ncf = 1;
-      
-      ### organism (for selecting the appropriate expected frequencies)
-    } elsif ($ARGV[$a] =~ /^-org/i) {
-      $organism_name = $ARGV[$a+1];
-      
-      ### use monad non-coding frequencies as expected frequencies
-    } elsif ($ARGV[$a] =~ /^-mncf/i) {
-      $mncf = 1;
-      
-      ### single strand count ###
-    } elsif ($ARGV[$a] =~ /^-1str/i) {
-      $sum_strands = 0;
-      $group_rc = 0;
-      
-      ### sum count on both strands ###
-    } elsif ($ARGV[$a] =~ /^-2str/i) {
-      $sum_strands = 1;
-      
-      ### group pairs of reverse complements
-    } elsif ($ARGV[$a] =~ /^-grouprc/i) {
-      $group_rc = 1;
-      
-      ### group pairs of reverse complements
-    } elsif ($ARGV[$a] =~ /^-nogrouprc/i) {
-      $group_rc = 0;
-      
-      ### proteic sequence ###
-    } elsif ($ARGV[$a] =~ /^-prot/i) {
-      $sum_strands = 0;
-      $proteic = 1;
-      
-      ### group spacings ###
-    } elsif ($ARGV[$a] =~ /^-group/i) {
-      $sp_group = 1;
-      
-      ### threshold on significance ###
-    } elsif (($ARGV[$a] =~ /^-thosig/i) && (&IsReal($ARGV[$a+1]))) {
-      $thr_filter =  1;
-      $sig_threshold = $ARGV[$a+1];
-      $return{proba} = 1;
-      
-      ### output fields ###
-    } elsif ($ARGV[$a] =~ /^-return/i) {
-      @return_fields = split ",", $ARGV[$a+1];
-      foreach $field (@return_fields) {
-	if ($field =~ /^proba/i) {
-	  $return{proba} = 1;
-	} elsif  ($field =~ /^zsc/i) {
-	  $return{zscore} = 1;
-	} elsif  ($field =~ /^freq/i) {
-	  $return{freq} = 1;
-	} elsif  ($field =~ /^exp_freq/i) {
-	  $return{exp_freq} = 1;
-	} elsif  ($field =~ /^occ/i) {
-	  $return{occ} = 1;
-	} elsif  ($field eq "rank") {
-	  $return{rank} = 1;
+    foreach $a (0..$#ARGV) {
+	### verbose ###
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+	} elsif ($ARGV[$a] eq "-vv") {
+	    $verbose = 10;
+
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp;
+	    
+	    ### list of options
+	} elsif ($ARGV[0] eq "-help") {
+	    &PrintOptions;
+	    
+	    ### input file ###
+	} elsif ($ARGV[$a] eq "-i") {
+	    $inputfile = $ARGV[$a+1];
+	    
+	    ### input format ###
+	} elsif ($ARGV[$a] eq "-format") {
+	    $input_format = lc($ARGV[$a+1]);
+	    
+	    ### output file ###
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outputfile = $ARGV[$a+1];
+	    
+	    ### oligo length ###
+	} elsif (($ARGV[$a] eq "-l") && (&IsNatural($ARGV[$a+1]))) {
+	    $oligo_length = $ARGV[$a+1];
+	    
+	    ### spacing ###
+	} elsif ($ARGV[$a] =~ /^-sp/i) {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$min_spacing = $max_spacing = $ARGV[$a+1];
+	    } elsif ($ARGV[$a+1] =~ /^(\d+)\-(\d+)$/) {
+		$min_spacing = &min($1,$2);
+		$max_spacing = &max($1,$2);
+	    } else {
+		print "Error: invalid spacing specification\n";
+		print "Type dyad-analysis -help for more info\n";
+		exit;
+	    }
+	    
+	    ### dyad type ###
+	} elsif ($ARGV[$a] =~ /^-type/i) {
+	    $dyad_type = lc($ARGV[$a+1]);
+	    die "Error : '$dyad_type' is not a valid dyad type" unless $accepted_dyad_type{$dyad_type};
+	    
+	    ### sort results ###
+	} elsif ($ARGV[$a] =~ /^-sort/i) {
+	    $sort_results = 1;
+	    
+	    ### expected frequency table ###
+	} elsif ($ARGV[$a] =~ /^-exp/i) {
+	    $exp_freq_file = $ARGV[$a+1];
+#	    die "Error: cannot read expected frequency file $exp_freq_file\n" unless (-r  $exp_freq_file);
+	    
+	    ### timeout setting
+	} elsif ($ARGV[$a] =~ /^-timeout/i) {
+	    $timeout = $ARGV[$a+1];
+	    die "Error: timeout value should be integer\n"
+		unless &IsNatural($timeout);
+	    
+	    ### use oligo non-coding frequencies as expected frequencies
+	} elsif ($ARGV[$a] =~ /^-ncf/i) {
+	    &Warning ("option -ncf is deprecated, use '-bg intergenic' instead");
+	    $background_model = "intergenic";
+#	    $rescale_freq = 1;
+
+	    ### specify a background model for estimating expected frequencies
+	} elsif ($ARGV[$a] =~ /^-bg/i) {
+	    $background_model = $ARGV[$a+1];
+	    $background_model =~ s/ncf/intergenic/;
+	    unless ($supported_bg{$background_model}) {
+		&FatalError("Invalid background model\t$background_model\tsupported: $supported_bg");
+	    }
+	    
+	    ### organism (for selecting the appropriate expected frequencies)
+	} elsif ($ARGV[$a] =~ /^-org/i) {
+	    $organism_name = $ARGV[$a+1];
+	    
+	    ### use monad intergenic frequencies as expected frequencies
+	} elsif ($ARGV[$a] =~ /^-mncf/i) {
+	    $mncf = 1;
+	    
+	    ### single strand count ###
+	} elsif ($ARGV[$a] =~ /^-1str/i) {
+	    $sum_strands = 0;
+	    $group_rc = 0;
+	    
+	    ### sum count on both strands ###
+	} elsif ($ARGV[$a] =~ /^-2str/i) {
+	    $sum_strands = 1;
+	    
+	    ### group pairs of reverse complements
+	} elsif ($ARGV[$a] =~ /^-grouprc/i) {
+	    $group_rc = 1;
+	    
+	    ### group pairs of reverse complements
+	} elsif ($ARGV[$a] =~ /^-nogrouprc/i) {
+	    $group_rc = 0;
+	    
+	    ### proteic sequence ###
+	} elsif ($ARGV[$a] =~ /^-prot/i) {
+	    $sum_strands = 0;
+	    $proteic = 1;
+	    
+	    ### group spacings ###
+	} elsif ($ARGV[$a] =~ /^-group/i) {
+	    $sp_group = 1;
+	    
+	    ### threshold on significance ###
+	} elsif (($ARGV[$a] =~ /^-thosig/i) && (&IsReal($ARGV[$a+1]))) {
+	    $thr_filter =  1;
+	    $sig_threshold = $ARGV[$a+1];
+	    $return{proba} = 1;
+	    
+	    ### output fields ###
+	} elsif ($ARGV[$a] =~ /^-return/i) {
+	    @return_fields = split ",", $ARGV[$a+1];
+	    foreach $field (@return_fields) {
+		if ($field =~ /^proba/i) {
+		    $return{proba} = 1;
+		} elsif  ($field =~ /^zsc/i) {
+		    $return{zscore} = 1;
+		} elsif  ($field =~ /^freq/i) {
+		    $return{freq} = 1;
+		} elsif  ($field =~ /^exp_freq/i) {
+		    $return{exp_freq} = 1;
+		} elsif  ($field =~ /^occ/i) {
+		    $return{occ} = 1;
+		} elsif  ($field eq "ratio") {
+		    $return{ratio} = 1;
+		} elsif  ($field eq "rank") {
+		    $return{rank} = 1;
+		}
+	    }
+	    
+	    ### prevent overlapping matches
+	} elsif ($ARGV[$a] =~ /^-noov/) {
+	    $noov = 1;
+	    
+	    #### sequence type
+	} elsif ($ARGV[$a] =~ /^-seqtype/i) {
+	    $a++;
+	    if ($ARGV[$a] =~ /^prot/i) {
+		$sum_strands = 0;
+		$group_rc = 0;
+		$seq_type = "protein";
+		
+		#### DNA sequences
+	    } elsif ($ARGV[$a] =~ /^dna/i) {
+		$seq_type = "DNA";
+		
+		#### any other sequence type
+	    } elsif ($ARGV[$a] =~ /^other/i) {
+		$sum_strands = 0;
+		$group_rc = 0;
+		$seq_type = "other";
+
+	    } else {
+		die "\tError: sequence type '$ARGV[$a]' is not supported\n";
+	    }
 	}
-      }
-      
-      ### prevent overlapping matches
-    } elsif ($ARGV[$a] =~ /^-noov/) {
-      $noov = 1;
-      
     }
-  }
 }
 
 
-sub HelpMessage {
+sub PrintHelp {
   open HELP, "| more"; 
   print HELP <<End_of_help; 
 
 NAME dyad-analysis
 
-	1998 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be) 
+	1998 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be) 
 
 DESCRIPTION
 
@@ -745,6 +815,11 @@ DESCRIPTION
 
 	The dyad-analysis is generally efficient to detect binding sites 
 	for HTH factors from E.coli, and for C6 Zinc cluster proteins in yeast.
+
+CATEGORY
+	statistics
+	sequences
+	pattern-discovery
 
 OPTIONS
 	-h      (must be first argument) display full help message
@@ -816,13 +891,31 @@ OPTIONS
 		Alternatively, predefined frequency tables can be used. 
 		These tables can for instance be calculated on basis of
 		- the whole yeast genome 
-		- all yeast non-coding regions 
-		- all yeast coding regions 
+		- all yeast intergenic regions 
+		- all yeast gene regions 
 		This allows to correct the bias due to the highly variable
 		distribution of oligonucleotides observed in the yeast genome. 
-	-ncf	use dyad non-coding frequencies as expected frequencies
+	-ncf	(deprecated, use "-bg intergenic" instead)
+		use intergenic frequencies as background frequencies
+	-bg	background model
+		Type of sequences used as background model for
+		estimating expected dyad frequencies.
+		
+		Supported models: 
+		-bg upstream 
+			 all upstream sequences, allowing overlap with
+		         upstream ORFs
+
+		-bg upstream-noorf
+			  all upstream sequences, preventing overlap
+			  with upstream ORFs
+
+		-bg intergenic
+		         intergenic frequencies 
+			 Whole set of intergenic regions, including
+			 upstream and downstream sequences
 	-org	organism 
-		This is necessary with the option -ncf, to determine
+		This is necessary with the option -bg, to determine
 		which frequency file has to be sued for expected
 		frequency calibration.
 	-thosig #
@@ -842,6 +935,7 @@ OPTIONS
 			occ
 			proba (binomial probability)
 			zscore
+			ratio
 			rank
 		the fields have to be separated by commas
 		By default, only occurrences are returned.
@@ -853,6 +947,22 @@ OPTIONS
 		will automatically stop after 1 hour (default) of
 		calculation. The time out value can be changed for
 		heavy tasks.
+	-seqtype  dna|prot|other
+		Input sequence type
+		. DNA (default)
+		    Only A, C, G, and T residues are
+		    accepted. oligomers that contain partly defined
+		    (IUPAC code) or undefined nucleotides (N) are
+		    discarded from the countings.
+		. protein
+		    Oligopeptide analysis instead of oligonucleotide.
+		    This inactivates the grouping of oligomers with
+		    their reverse complements, and modifies the
+		    alphabet size.
+		. other
+		    Any type of letters found in the input sequence is
+		    considered valid. This allows to analyze texts in
+		    human language.
 
 OUTPUT COLUMNS
 	Dyad pattern
@@ -953,7 +1063,7 @@ PROBABILITIES
 
 AVAILABILITY
       The program can be used through its web interface at:
-      http://www.ucmb.ulb.ac.be/bioinformatics/rsa-tools/
+      http://www.scmbb.ulb.ac.be/bioinformatics/rsa-tools/
       dyad-analysis is a perl script running on unix machines (SUN, SGI
       have been tested). The web interface is a perl-cgi script. 
 End_of_help
@@ -973,11 +1083,13 @@ dyad-analysis options
 -o		output file
 -i		input file
 -format		input sequence format
+-seqtype       	sequence type (dna|prot|other)
 -v		verbose
 -l		oligonucleotide length
 -sp		spacing
 -expfreq	expected frequency file
--ncf		use dyad non-coding frequencies as expected frequencies
+-ncf		(deprecated, use '-bg intergenic' instead) 
+-bg		background model (supported: $supported_bg)
 -org		organism 
 -type		ir|dr|rep|any
 -sort		sort results by decreasing significance
@@ -985,7 +1097,7 @@ dyad-analysis options
 -1str		count occurrences on a direct strand only
 -2str		count occurrences on both strands
 -prot		input sequence is proteic
--return		occ,freq,proba,zscore,rank
+-return		occ,freq,proba,zscore,ratio,rank
 -noov		do not allow overlapping matches of the same word
 -timeout #	timeout (seconds). Default = 3600.
 End_short_help
@@ -993,124 +1105,158 @@ End_short_help
   exit(0);
 }
 
-
+################################################################
+### calculate number of possible dyads ###
 sub CalcPossibleDyads {
-  ### calculate number of possible dyads ###
-  if ($proteic) {
-    $nb_possible_oligo = 20**$oligo_length;
-  } else {
-    $nb_possible_oligo = 4**$oligo_length;
-  }
 
-  $nb_possible_dr = $nb_possible_oligo;
-  $nb_possible_ir = $nb_possible_oligo;
-  $nb_possible_dr /= 2 if ($sum_strands); 
-  ### beware : grouping with the reverse complement reduces the number of distintc patterns
-  ### but this is only tru for direct repeats, 
-  ### since inverted repeats are by definition identical to their reverse complement
-  
-  if ($dyad_type eq "dr") {
-    $nb_possible_dyads = $nb_possible_dr;
-  } elsif ($dyad_type eq "ir") {
-    $nb_possible_dyads = $nb_possible_ir;
-  } elsif ($dyad_type eq "rep") {
-    $nb_possible_dyads = $nb_possible_dr + $nb_possible_ir;
-  } else {
-    $nb_possible_dyads = $nb_possible_oligo**2;
-    ### reduce according to reverse-complement grouping
-    if ($sum_strands) {
-      $nb_possible_dyads -= ($nb_possible_oligo**2 - $nb_possible_oligo)/2;
+    if ($proteic) {
+	$nb_possible_oligo = 20**$oligo_length;
+    } else {
+	$nb_possible_oligo = 4**$oligo_length;
     }
-  }
-  ### multiply by spacing range
-  if ($max_spacing > $min_spacing) {
-    $nb_possible_dyads *= $max_spacing - $min_spacing + 1;
-  }
+
+    $nb_possible_dr = $nb_possible_oligo;
+    $nb_possible_ir = $nb_possible_oligo;
+    $nb_possible_dr /= 2 if ($sum_strands); 
+    ### beware : grouping with the reverse complement reduces the number of distintc patterns
+    ### but this is only tru for direct repeats, 
+    ### since inverted repeats are by definition identical to their reverse complement
+    
+    if ($dyad_type eq "dr") {
+	$nb_possible_dyads = $nb_possible_dr;
+    } elsif ($dyad_type eq "ir") {
+	$nb_possible_dyads = $nb_possible_ir;
+    } elsif ($dyad_type eq "rep") {
+	$nb_possible_dyads = $nb_possible_dr + $nb_possible_ir;
+    } else {
+	$nb_possible_dyads = $nb_possible_oligo**2;
+	### reduce according to reverse-complement grouping
+	if ($sum_strands) {
+	    $nb_possible_dyads -= ($nb_possible_oligo**2 - $nb_possible_oligo)/2;
+	}
+    }
+    ### multiply by spacing range
+    if ($max_spacing > $min_spacing) {
+	$nb_possible_dyads *= $max_spacing - $min_spacing + 1;
+    }
 }
 
+
+################################################################
+### given an oligonucleotide, return 
+### the list of oligos that can be combined with it to form a dyad
+### this list depends on the variable $dyad_type (ir, dr or any)
 sub SecondElement {
-  ### given an oligonucleotide, return 
-  ### the list of oligos that can be combined with it to form a dyad
-  ### this list depends on the variable $dyad_type (ir, dr or any)
-  my ($oligo1) = @_;
-  my @oligo2 = ();
-  if ($dyad_type eq "dr") {
-    return $oligo1;
-  } elsif ($dyad_type eq "ir") {
-    return lc(&ReverseComplement($oligo1));
-  } elsif ($dyad_type eq "rep") {
-    return $oligo1, lc(&ReverseComplement($oligo1));
-  } else {
-    return keys %oligo; 
-  }
+    my ($oligo1) = @_;
+    my @oligo2 = ();
+    if ($dyad_type eq "dr") {
+	return $oligo1;
+    } elsif ($dyad_type eq "ir") {
+	return lc(&ReverseComplement($oligo1));
+    } elsif ($dyad_type eq "rep") {
+	return $oligo1, lc(&ReverseComplement($oligo1));
+    } else {
+	return keys %oligo; 
+    }
 }
 
 
+################################################################
+#### Verbose
 sub PrintVerbose {
-  #### verbose ####
-  print $out "; dyad-analysis ";
-  &PrintArguments($out);
-  if ($inputfile ne "") {
-    print $out ";Input file	          $inputfile\n";
-  }
-  if ($outputfile ne "") {
-    print $out ";Output file          $outputfile\n";
-  }
-  printf $out ";default return        %s\n", join(",", keys(%default_return));
-  printf $out ";return                %s\n", join(",", keys(%return));
-  printf $out ";min spacing           %s\n", $min_spacing;
-  printf $out ";max spacing           %s\n", $max_spacing;
-  my %extended_type = (dr=>"direct repeats", 
-		       ir=>"inverted repeats", 
-		       rep=>"direct or inverted repeats", 
-		       any=>"any dyad");
-  printf $out ";dyad type             %s\n", $extended_type{$dyad_type};
-  printf $out ";dyad positions        %s\n", $nb_possible_pos;
-  printf $out ";total oligo count     %s\n", $sum_oligo_count;
-  printf $out ";distinct oligont      %s\n", $nb_possible_oligo;
-  printf $out ";distinct dyads        %s\n", $nb_possible_dyads;
-  printf $out ";threshold on sig      ";
-  if ($thr_filter) {
-    print $out "$sig_threshold\n";
-  } else {
-    print $out "none\n";
-  }
-  
-  printf $out ";exp. freq. calib       ";
-  if ($ncf) {
-    print $out "dyad frequencies in non-coding region\n";
-    printf $out ";organism              %s\n", ($supported_organism{$organism_name}->{name} || $organism_name);
-    printf $out ";exp. freq. file       %s\n", $exp_freq_file;
-  } elsif ($mncf) {
-    print $out "mondad frequencies in non-coding region\n";
-    printf $out ";organism              %s\n", $organism_name;
-    printf $out ";exp. monad freq. file %s\n", $monad_exp_freq_file;
-  } else {
-    print $out "monad calibration in input sequences\n";
-  }
-  
-  print $out ";Sequences:\n";
-  foreach $s (1..$sequence_number) {
-    print $out ";\t$id_list[$s]\t$seq_length[$s]\n";
-  }
+
+    print $out "; dyad-analysis ";
+    &PrintArguments($out);
+    print $out "; Citation: van Helden et al. (2000). Nucleic Acids Res. 28(8):1808-18.\n";
+    printf $out "; %-29s\t%s\n", "Input file", $inputfile if ($inputfile);
+    printf $out "; %-29s\t%s\n", "Sequence type", $seq_type;
+    printf $out "; %-29s\t%s\n", "Nb of sequences", $sequence_number;
+    printf $out "; %-29s\t%s\n", "Sum of sequence lengths", $sum_seq_length;
+    printf $out "; %-29s\t%s\n", "Output file", $outputfile if ($outputfile);
+    printf $out "; %-29s\t%s\n", "default return values", join(",", keys(%default_return));
+    printf $out "; %-29s\t%s\n", "return values", join(",", keys(%return));
+
+    #### monads
+    printf $out "; %-29s\n", "Monad parameters";
+    printf $out "; %-23s\t%d\n", "\tmonad size", $oligo_length;
+    if ($verbose >= 3) {
+	print $out ("; allowed monads\n;\t". join("\n;\t", sort keys %allowed_monads), "\n") ;
+    }
+    printf $out "; \t%-23s%d\n", "monad positions", $sum_oligo_count + $discarded_monad_positions;
+    if ($seq_type eq "DNA") {
+	printf $out "; \t%-23s\t%d\n", "    valid", $sum_oligo_count;
+	printf $out "; \t%-23s\t%d%s\n", "    discarded", $discarded_monad_positions, " (contain other letters than ACGT)";
+    }
+    printf $out "; \t%-23s%d\n", "distinct monads", $nb_possible_oligo;
+
+    #### dyads
+    printf $out "; %-23s\n", "Dyad parameters";
+    my %extended_type = (dr=>"direct repeats", 
+			 ir=>"inverted repeats", 
+			 rep=>"direct or inverted repeats", 
+			 any=>"any dyad");
+    printf $out "; \t%-23s%s\n", "dyad type", $extended_type{$dyad_type};
+    printf $out "; \t%-23s%d\n", "minimal spacing", $min_spacing;
+    printf $out "; \t%-23s%d\n", "maximal spacing", $max_spacing;
+    printf $out "; \t%-23s%d\n", "dyad positions", $nb_possible_pos;
+    if ($seq_type eq "DNA") {
+	printf $out "; \t%-23s\t%s\n", "    valid", $nb_valid_pos;
+	printf $out "; \t%-23s\t%d\t%s\n", "    discarded", $discarded_dyad_positions, " (contain other letters than ACGT)";
+    }
+    printf $out "; \t%-23s%d\n", "distinct dyads", $nb_possible_dyads;
+    my $thr = "none";
+    if ($thr_filter) {
+	$thr = $sig_threshold;
+    }
+
+    #### expected frequencies
+    printf $out "; %-29s\t%d\n", "Threshold on sig", $thr;
+    printf $out "; %s\n", "Estimation of expected dyad frequencies";
+    if ($background_model) {
+	print $out ";\tBackground model\n";
+	printf $out ";\t%-23s\t%s\n", "    organism", ($supported_organism{$organism_name}->{name} || $organism_name);
+	printf $out ";\t%-23s\t%s\n", "    sequence type", $background_model;
+    }
+
+    
+    if ($mncf) {
+	print $out ";\tMonad frequencies in intergenic region\n";
+	printf $out ";\t%-23s\t%s\n", "organism", $organism_name;
+	printf $out ";\t%-23s\t%s\n", "exp. monad freq. file", $monad_exp_freq_file;
+    } elsif ($exp_freq_file) {
+	printf $out ";\t%-23s\t%s\n", "exp. freq. file", $exp_freq_file;
+    } else {
+	print $out ";\tMonad calibration in input sequences\n";
+    }
+    
+    unless ($#id_list > $max_seq_verbose) {
+	print $out "; Sequences:\n";
+	foreach $s (1..$#id_list) {
+	    print $out ";\t$id_list[$s]\t$seq_length[$s]\n";
+	}
+    }
 }
 
-
-#### Read input sequences and count dyads ####
+################################################################
+#### read sequences and count dyads
 sub CountDyads {
-    $in = &OpenInputFile($inputfile);
-    my $sequence_number = 0;
-    while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $input_format)) &&
+    ($in, $input_dir) = &OpenInputFile($inputfile);
+    $sequence_number = 0;
+    while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $input_format, $input_dir, $seq_type)) &&
        (($current_seq ne "") || ($current_id ne ""))) {
 	
 	### remove tabs and blank spaces ###    
 	$current_seq = &FoldSequence($current_seq,0);
+	$current_seq = &CleanDNA($current_seq) if ($seq_type eq "DNA");
 	
 	### statistics about sequences ###
 	$sequence_number++;  
 
-	if ($hyperverbose) {
-	    print STDERR "; sequence\t$sequence_number\t$current_id\n";
+	if ($verbose >=2) {
+	    warn join ("\t", "; sequence",
+		       $sequence_number,
+		       $current_id,
+		       $nb_possible_pos), "\n";
 	}
 	
 	$id_list[$sequence_number] = $current_id;
@@ -1129,18 +1275,39 @@ sub CountDyads {
 	$pos1 = 0;
 	while ($pos1 <= $last_pos) {
 	    
-	    if ($hyperverbose) {
+	    if ($verbose >= 2) {
 		if (($pos1%$chunk ==0 ) && ($pos1 > 0)) {
 		    $chunk_nb++;
 		    $ps = `ps v  -p $$ | grep -v TIME`;
 		    chomp $ps;
-		    warn "\tsequence position\t$pos1\t$ps\n";
+		    warn join ("\t", 
+			       ";", 
+			       "seq position", $pos1,
+			       "total", $nb_possible_pos,
+			       $ps), "\n";
 		}
 	    }
 	    
 	    #### count oligont occurrences
 	    #### will be used for estimation of expected dyad frequencies
 	    $oligo1 = lc(substr($current_seq,$pos1,$oligo_length));
+
+	    if ($seq_type eq "DNA") {
+		unless ($allowed_monads{$oligo1}) {
+		    $discarded_monad_positions++;
+		    $discarded_dyad_positions++;
+#		    die join "\t", $oligo1, $oligo2, $pos1, $current_id, $sequence_number, "\n", $current_seq;
+		    #### !!!! This was incorrect !!!!
+#		    if ($pos1 + $oligo_length + $max_spacing <= $last_pos) {
+#			$discarded_dyad_positions += $max_spacing - $min_spacing + 1;
+#		    } else {
+#			#### TO CALCULATE #### 
+#		    }
+		    $pos1++;
+		    next;
+		}
+	    }
+
 	    $oligo{$oligo1}->{obs_occ}++;
 	    $sum_oligo_count++;
 	    
@@ -1152,6 +1319,16 @@ sub CountDyads {
 		
 		if ($pos2 <= $last_pos) {
 		    $oligo2 = lc(substr($current_seq,$pos2,$oligo_length));
+		    
+		    if ($seq_type eq "DNA") {
+			unless ($allowed_monads{$oligo2}) {
+			    $discarded_dyad_positions++;
+			    $discarded_monad_positions++ 
+				if ($last_pos = $pos2 < $max_spacing); #### only if it the same position not be counted as discarded pos1. 
+			    next;
+			}
+		    }
+
 		    next if (($dyad_type eq "dr") && ($oligo1 ne $oligo2)); ### count only direct repeats
 		    next if (($dyad_type eq "ir") && ($oligo2 ne &SmartRC($oligo1))); ### count only inverted repeats
 		    next if (($dyad_type eq "rep") && ($oligo1 ne $oligo2) &&($oligo2 ne &SmartRC($oligo1))); ### count only repeats
@@ -1183,4 +1360,6 @@ sub CountDyads {
 	}
 	undef %last_pos;
     }
+
+    $nb_valid_pos = $nb_possible_pos - $discarded_dyad_positions;
 }

@@ -121,7 +121,7 @@ NAME
 	count-matches
 
 AUTHOR
-	Jacques van Helden (jacques\@ucmb.ulb.ac.be)
+	Jacques van Helden (jacques\@scmbb.ulb.ac.be)
 
 USAGE
 	count-matches seq1 seq2

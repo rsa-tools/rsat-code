@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: row-stats,v 1.3 2002/06/06 11:37:29 jvanheld Exp $
+# $Id: row-stats,v 1.4 2004/05/07 07:07:05 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:37:27 jvanheld>
 #
@@ -103,7 +103,7 @@ sub PrintHelp {
 NAME
 	row-stats
 
-        2001 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
+        2001 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
 	
 USAGE
         row-stats [-i inputfile] [-o outputfile] [-v]

@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: transpose-table,v 1.3 2002/06/06 11:59:02 jvanheld Exp $
+# $Id: transpose-table,v 1.4 2004/05/07 07:07:05 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:59:01 jvanheld>
 #
@@ -82,7 +82,7 @@ sub PrintHelp {
 NAME
 	transpose-table
 
-        1999 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
+        1999 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
 	
 USAGE
         transpose-table [-i inputfile] [-o outputfile] [-v]

@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis_form.cgi,v 1.8 2003/10/29 09:04:36 jvanheld Exp $
+# $Id: dyad-analysis_form.cgi,v 1.9 2004/05/07 07:14:23 jvanheld Exp $
 #
 # Time-stamp: <2003-07-11 15:08:24 jvanheld>
 #
@@ -299,7 +299,7 @@ print $query->end_form;
 #print "<TD><B><A HREF='demo.dyad-analysis.html'>DEMO</A></B></TD>\n";
 print "<TD><B><A HREF='help.dyad-analysis.html'>MANUAL</A></B></TD>\n";
 print "<TD><B><A HREF='tutorials/tut_dyad-analysis.html'>TUTORIAL</A></B></TD>\n";
-print "<TD><B><A HREF='mailto:jvanheld\@ucmb.ulb.ac.be'>MAIL</A></B></TD>\n";
+print "<TD><B><A HREF='mailto:jvanheld\@scmbb.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 
 print "</FONT>\n";

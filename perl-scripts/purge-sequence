@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence,v 1.22 2004/03/11 09:12:30 jvanheld Exp $
+# $Id: purge-sequence,v 1.23 2004/05/07 07:07:05 jvanheld Exp $
 #
 # Time-stamp: <2003-10-05 23:01:33 jvanheld>
 #
@@ -73,7 +73,7 @@ $tmp_file = "tmp_".$basename.".fasta";
 #$command = "cd $TMP ; ";
 $command = " $convert_seq_command -from $in_format -to fasta -o ${TMP}/$tmp_file";
 $command .= " -i $dir{input}/$basename" if ($inputfile);
-&doit($command, $dry_run, $die_one_error, $verbose);
+&doit($command, $dry_run, $die_on_error, $verbose);
 
 
 ###### execute the command #########
@@ -92,7 +92,7 @@ $mkvtree_options .= " -ois"; # output the parsed input string to a file
 $mkvtree_options .= " -pl"; # length of prefix for bucket sort (default 0)
 $mkvtree_options .= " -db $tmp_file"; # sequence file
 $command = "cd $TMP; $skdir/mkvtree $mkvtree_options";
-&doit($command, $dry_run, $die_one_error, $verbose);
+&doit($command, $dry_run, $die_on_error, $verbose);
 
 #### locate the duplications
 my $vmatch_options = "-s"; # show the sequence content of a match
@@ -118,15 +118,15 @@ $vmatch_options .= " | perl -pe 's| (\\d+) |_\$1_|'";
 
 $vmatch_options .= "> $dir{output}/$basename{out}" if ($outputfile);
 $command = "cd $TMP ; $skdir/vmatch $vmatch_options";
-&doit($command, $dry_run, $die_one_error, $verbose);
+&doit($command, $dry_run, $die_on_error, $verbose);
 foreach $ext  (@extensions) {
     my $command = "rm -f ${TMP}/${tmp_file}.${ext}";
-    &doit($command, $dry_run, $die_one_error, $verbose);
+    &doit($command, $dry_run, $die_on_error, $verbose);
 }
 
 #### remove the temp file
 $command = "rm -f ${TMP}/$tmp_file";
-&doit($command, $dry_run, $die_one_error, $verbose);
+&doit($command, $dry_run, $die_on_error, $verbose);
 
 
 ###### verbose ######
@@ -149,7 +149,7 @@ sub PrintHelp {
 NAME
 	purge-sequence
 
-        1999 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
+        1999 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
 	
 USAGE
         purge-sequence [-i inputfile] [-o outputfile] [-v] [-2str | -1str]

@@ -1,7 +1,7 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: parse-yeast-from-mips.pl,v 1.3 2003/10/29 09:04:12 jvanheld Exp $
+# $Id: parse-yeast-from-mips.pl,v 1.4 2004/05/07 07:07:06 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:29:16 jvanheld>
 #
@@ -122,7 +122,7 @@ sub PrintHelp {
 NAME
 	parse_yeast_genome_from_mips
 
-        2001 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
+        2001 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
 	
 USAGE
         parse_yeast_genome_from_mips [-i inputfile] [-o outputfile] [-v]

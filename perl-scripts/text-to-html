@@ -85,7 +85,7 @@ sub PrintHelp {
 NAME
 	text-to-html
 
-        1998 by Jacques van Helden (jacques\@ucmb.ulb.ac.be)
+        1998 by Jacques van Helden (jacques\@scmbb.ulb.ac.be)
 	
 USAGE
         text-to-html [-i inputfile] [-o outputfile] [-v] [-font variable]

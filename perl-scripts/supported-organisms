@@ -69,7 +69,7 @@ sub PrintHelp {
 NAME
 	supported-organisms
 
-        2002 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
+        2002 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
 	
 USAGE
         supported-organisms [-i inputfile] [-o outputfile] [-v]

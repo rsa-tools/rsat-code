@@ -37,7 +37,7 @@ unless ($feature_table_file) {
     $feature_table_file = $supported_organism{$organism_name}->{'features'};
 }
 warn "; Reading ORF table for $organism_name\n" if ($verbose >= 1);
-&ReadFeatures($organism_name, $feature_table_file);
+&ReadFeatures($organism_name, $feature_table_file, "cds,mrna");
 warn "; Reading synonyms for $organism_name\n" if ($verbose >= 1);
 &ReadSynonyms($organism_name);
 
@@ -148,7 +148,7 @@ sub PrintHelp {
 NAME
 	gene2ec
 
-        1999 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
+        1999 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
 	
 USAGE
         gene2ec -org organism [-i inputfile] [-o outputfile] [-v]

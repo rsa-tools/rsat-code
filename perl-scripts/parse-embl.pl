@@ -1,7 +1,7 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: parse-embl.pl,v 1.9 2004/03/29 12:41:47 jvanheld Exp $
+# $Id: parse-embl.pl,v 1.10 2004/05/07 07:07:06 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:17:49 jvanheld>
 #
@@ -444,7 +444,7 @@ sub PrintHelp {
 NAME
 	parse-embl
 
-        2001 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
+        2001 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
 	
 USAGE
         parse-embl [-dir input_dir][-i inputfile] [-o outputfile] [-v]
