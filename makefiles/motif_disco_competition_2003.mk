@@ -52,9 +52,9 @@ update_from_server:
 ## Synchronize calibrations from merlin
 from_merlin:
 	${MAKE} update_from_server SERVER_DIR=motif_discovery_competition_2003/ TO_SYNC=results
-	${MAKE} update_from_server SERVER_DIR=./ TO_SYNC=results
 
 # Temporary
+#	${MAKE} update_from_server SERVER_DIR=./ TO_SYNC=results
 #	${MAKE} update_from_server SERVER_DIR=makefiles/ TO_SYNC=results
 #	${MAKE} update_from_server TO_SYNC='*.xls'
 #	${MAKE} update_from_server TO_SYNC='*.tab'
@@ -605,7 +605,7 @@ mv_calib1:
 	${MAKE} iterate_organisms ORG_TASK=mv_calib1_one_org
 
 mv_calib1_one_org:
-	results/${ORG}/calibrations_1gene/
+	@mkdir -p results/${ORG}/calibrations_1gene/
 	rsync -ruptvl results/${ORG}/multi/calib1_bg/calibrations/* results/${ORG}/calibrations_1gene/
 	rm -rf results/${ORG}/multi/calib1_bg/calibrations
 
@@ -613,8 +613,6 @@ discard_oldies:
 	mkdir -p old_results
 	rsync -ruptvl results/multi old_results/
 	rm -rf results/multi
-	rsync -ruptvl results/Mycoplasma_genitalium old_results/
-	rm -rf results/Mycoplasma_genitalium
 
 mv_seq_lengths: mv_seq_lengths_mouse mv_seq_lengths_human mv_seq_lengths_fly mv_seq_lengths_yeast
 
