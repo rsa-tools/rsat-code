@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis_form.cgi,v 1.2 2001/09/21 06:14:07 jvanheld Exp $
+# $Id: dyad-analysis_form.cgi,v 1.3 2001/09/21 06:29:59 jvanheld Exp $
 #
-# Time-stamp: <2001-09-21 07:54:24 jvanheld>
+# Time-stamp: <2001-09-21 08:26:34 jvanheld>
 #
 ############################################################
 #### this cgi script fills the HTML form for the program dyad-analysis
@@ -21,7 +21,7 @@ $query = new CGI;
 
 ### default values for filling the form
 $default{organism} = "Saccharomyces cerevisiae";
-$default{title} = "";
+#$default{title} = "";
 $default{sequence} = "";
 $default{sequence_format} = "fasta";
 $default{sequence_file} = "";
@@ -55,15 +55,13 @@ print $query->start_multipart_form(-action=>"dyad-analysis.cgi");
 
 #print "<FONT FACE='Helvetica'>";
 
-&OrganismPopUp;
-
 ### Title
-print "<B><A HREF='help.dyad-analysis.html#title'>Title</A></B>&nbsp;\n";
-print $query->textfield(-name=>'title',
-			-default=>$default{title},
-			-size=>50);
-
-print "<BR>\n";
+#print "<B><A HREF='help.dyad-analysis.html#title'>Title</A></B>&nbsp;\n";
+#print $query->textfield(-name=>'title',
+#			-default=>$default{title},
+#			-size=>50);
+#
+#print "<BR>\n";
 
 
 
@@ -76,8 +74,7 @@ print $query->checkbox(-name=>'purge',
 print "&nbsp;<A HREF='help.oligo-analysis.html#purge'><B>purge sequences (highly recommended)</B></A>";
 print "<BR>";
 
-
-
+print "<HR width=550 align=left>\n";
 
 ### oligo size
 print "<B><A HREF='help.dyad-analysis.html#oligo_size'>Oligonucleotide size</A>&nbsp;</B>\n";
@@ -127,14 +124,30 @@ print "</B></A>\n";
 print "<BR>\n";
 
 
-### expected frequency calculation
-print "<A HREF='help.dyad-analysis.html#exp_freq'><B>Expected frequency</B></A>&nbsp;";
-print $query->popup_menu(-name=>'exp_freq',
-			 -values=>['dyad freq in non-coding sequences',
-				   'monad (word) freq in the input sequences'],
-			 -default=>$default{exp_freq});
+print "<HR width=550 align=left>\n";
 
-print "<BR>\n";
+
+### expected frequency calculation
+print $query->table({-border=>0,-cellpadding=>3,-cellspacing=>0},
+		    $query->Tr($query->td("<A HREF='help.oligo-analysis.html#exp_freq'><B>Expected frequency calibration</B></A>&nbsp;<BR>")),
+		    $query->Tr($query->td(["<INPUT TYPE='radio' NAME='exp_freq' VALUE='dyad freq in non-coding sequences' CHECKED>Dyad frequencies from all non-coding regions<BR>",
+					   &OrganismPopUpString])),
+		    $query->Tr($query->td([
+					   "<INPUT TYPE='radio' NAME='exp_freq' VALUE='monad (word) freq in the input sequences.'>Monad (word) frequencies from the input sequences<BR>",
+					   ])),
+		    );
+
+print "<HR width=550 align=left>\n";
+
+### expected frequency calculation
+#print "<A HREF='help.dyad-analysis.html#exp_freq'><B>Expected frequency</B></A>&nbsp;";
+#print $query->popup_menu(-name=>'exp_freq',
+#			 -values=>['dyad freq in non-coding sequences',
+#				   'monad (word) freq in the input sequences'],
+#			 -default=>$default{exp_freq});
+#
+#print "<BR>\n";
+
 
 ### significance threshold
 print "<B><A HREF='help.dyad-analysis.html#threshold'>\n";
@@ -256,7 +269,7 @@ print $query->hidden(-name=>'sequence_format',-default=>"fasta");
 print $query->hidden(-name=>'spacing_from',-default=>"8");
 print $query->hidden(-name=>'spacing_to',-default=>"12");
 print $query->hidden(-name=>'organism',-default=>'Saccharomyces cerevisiae');
-print $query->hidden(-name=>'title',-default=>'upstream sequences from the yeast GAL genes');
+#print $query->hidden(-name=>'title',-default=>'upstream sequences from the yeast GAL genes');
 print $query->submit(-label=>"DEMO");
 print "</B></TD>\n";
 print $query->end_form;
