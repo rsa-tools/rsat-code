@@ -1,0 +1,252 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <TITLE>RSA-Tools - tutorials - analyzing regulatory sequences in a unix shell</TITLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF" LINK="#0000EE" VLINK="#55008B" ALINK="#FF0000">
+<blockquote>
+
+<HR SIZE=6 WIDTH="100%">
+<H2 align=center><A HREF="../RSA_home.cgi">RSA-Tools</A> - 
+<a href="tutorials.html">Tutorials</a> -
+analyzing regulatory sequences in a unix shell
+</H2>
+
+<HR SIZE=6 WIDTH="100%">
+
+<h3>Introduction</h3>
+<ul>
+
+This tutorial aims at introducing how to use Regulatory Sequence
+Analysis Tools (<B><I>RSAT</I></B>) directly from the unix shell. 
+
+<P>
+<I>RSAT</I> is a package combining a series of specialized programs for the
+detection of regulatory signals in non-coding sequences. A variety of
+tasks can be performed : retrieval of upstream or downstream
+sequences, pattern discovery, pattern matching, and gaphical
+reprsentation of regulatory regions.
+
+<P>
+A web interface has been developed for the most common tools, and is
+freely available for academic users.
+
+<UL>
+
+<li><a href=http://www.ucmb.ulb.ac.be/~jvanheld/rsa-tools/>
+http://www.ucmb.ulb.ac.be/~jvanheld/rsa-tools/</a>
+
+<li><a href=http://embnet.cifn.unam.mx/~jvanheld/rsa-tools/>
+http://embnet.cifn.unam.mx/~jvanheld/rsa-tools/</a>
+
+</UL>
+
+<P>
+All programs can also be used directly from the unix shell. The shell
+access is less intuitive than the web interface, but is very
+convenient for automatizing repetitive tasks.
+
+</ul>
+<h3>Accessing the programs</h3>
+<ul>
+
+In order to use the shell version of <I>RSAT</I>, you first need an account
+at the UCMB, or at the CIFN. If this is not your case, please contact
+Jacques van Helden (<a href=mailto
+jvanheld@ucmb.ulb.ac.be>jvanheld@ucmb.ulb.ac.be</a>). 
+
+<P>
+<LI>Open a telnet or ssh session to your account at UCMB
+(paulus.ulb.ac.be) or at CIFN (embnet.cifn.unam.mx). 
+
+<P>
+<LI>If your default shell is <B>tcsh</B>, type the following command.
+
+<UL><PRE>
+set path=(~jvanheld/rsa-tools/perl-scripts/ $path)
+rehash
+</PRE></UL>
+
+If you are using a different shell (e.g. bash), you might need a
+slightly different command to obtain the same result. See you system
+manager in case of doubt.
+
+<P><LI> The previous step should have added all <I>RSAT</I> programs to your
+current path.  To check if it worked, just type :
+
+<UL><PRE>
+random-seq -l 350
+</PRE></UL>
+
+If your configuration is correct, this command should return a random
+sequence of 350 nucleotides.
+
+<P>
+You are now able to use any program from the <I>RSAT</I> package, untill you
+quit your telnet session. It is however not very convenient to set the
+path manually each time you open a new connection. You can modifu your
+defaul configuration by adding the following line to the file
+<TT>.personal-cshrc</TT> in the root of your home directory. 
+
+<UL><PRE>
+set path=(~jvanheld/rsa-tools/perl-scripts/ $path)
+</PRE></UL>
+
+If you don't know how to modify this file, see the system
+adiministrator.
+
+</UL>
+<h3>Getting help</H3> 
+<UL>
+
+The first step before using any program is to read the manual. All
+programs in the <I>RSAT</I> package come with an on-line help, which is
+obtained by typing the name of the program followed by
+<TT>-h</TT>. For example, to get a detailed description of the
+functionality and options for the program <tt>retrieve-seq</tt>, type
+
+<UL><PRE>
+retrieve-seq -h
+</PRE></UL>
+
+The detailed help is specially convenient before using the program for
+the first time. A complementary functionality is offered by the option
+<TT>-help</TT>, which prints a short list of options. Try :
+
+<UL><PRE>
+retrieve-seq -help
+</PRE></UL>
+
+which is convenient to remind the precise formulation of arguments for
+a given progam.
+
+</ul>
+<h3>Retrieving upstream sequences</h3>
+<ul>
+
+The program <TT>retrieve-seq</tt> allows you to retrieve sequences
+from a genome (provided this genome is supported on your machine). In
+particular (and by default), this program extracts the non-coding
+sequences located upstream the start codon of a series of genes, where
+regulatory elements are generally found, at least in microbial
+organisms.
+
+<h4>Retrieving a single upstream sequence</h4>
+<P>
+First trial : we wll extract the upstream sequence for a single yeast
+gene. Try:
+
+<ul><pre>
+retrieve-seq -org ecoli -q metA -from -200 -to -1
+</pre></ul>
+
+This command retrieves a 200 bp upstream sequence for the gene metA of
+<I>Escherichia coli</i>. Note the negative coordinates, indicating the
+upstream side. Also note that all coordinates are calculated starting
+relative to the star codon (position 0 is the A from the start ATG).
+
+<h4>Combining upstream and coding sequence</h4>
+<P>
+For coli genes, regulatory signals sometimes overlap the 5' side of
+the coding sequence. By doing so, they exert a repression effect by
+preventing RNA-polymerase from binding DNA. <tt>retrieve-seq</tt>
+allows you to extract a sequence that combines an upstream and a
+coding segment. Try :
+
+<ul><pre>
+retrieve-seq -org ecoli -q metA -from -200 -to 49
+</pre></ul>
+
+<h4>Retrieving a few upstream sequences</h4>
+
+The option <tt>-q</tt> can be used iteratively in a command to
+retrieve sequences for several genes.
+
+<ul><pre>
+retrieve-seq -org ecoli -from -200 -to 49  -q metA -q metB -q metC
+</pre></ul>
+
+<h4>Retrieving many upstream sequences</h4>
+
+If you have to retrieve a large number of sequences, it might become
+cumbersome to type each gene name on the command-line. A list of gene
+enames can be provided in a text file, each gene name coming as the
+first word of a new line.
+
+<P>
+To create a test file, you can execute the following steps :
+<ol>
+<LI>to create a new file, call the standard unix command 
+
+<ul><pre>
+cat > test_genes.txt
+</pre></ul> 
+
+<LI>You can now type a list of gene names, for example :
+
+<ul><pre>
+PHO5
+PHO8
+PHO11
+PHO81
+PHO84
+</pre></ul> 
+
+<li>Once you have finished typing gene names, press <TT>Ctrl-D</TT>
+
+<LI>Check the content of your file by typing 
+
+<ul><pre>
+cat test_genes.txt
+</pre></ul> 
+
+</ol>
+
+
+<P>
+This file can now be used as input to indicate the list of genes.
+
+<ul><pre>
+retrieve-seq -i test_genes.txt -org yeast -from -800 -to -1 -label orf
+</pre></ul> 
+
+The option <TT>-o</TT> allow you to indicate a file where the sequence will be stored. 
+
+<ul><pre>
+retrieve-seq -i test_genes.txt -org yeast \
+        -from -800 -to -1 -label gene \
+        -o test_genes_up800.fasta
+</pre></ul> 
+
+Check the sequence file :
+
+<ul><pre>
+more test_genes_up800.fasta
+</pre></ul>
+
+<h4>Retrieving all upstream sequences</h4>
+
+For genome-scale analyses, it is convenient to retrieve upstream
+sequenes for all the genes of a given genome, without having to
+specify the complete list of names. Fr this, simply use the option
+<TT>-all</TT>.
+
+<ul><pre>
+retrieve-seq -org ecoli -from 0 -to 2 -all \
+        -format wc -nocomments -label orf_gene \
+        -o ecoli_start_codons.wc
+</pre></ul>
+
+Check the result :
+
+<ul><pre>
+more ecoli_start_codons.wc
+</pre></ul>
+
+</ul>
+
+<HR SIZE=6 WIDTH="100%">
+
+</blockquot>
+</body>
+</html>
