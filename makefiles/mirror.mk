@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: mirror.mk,v 1.13 2005/01/26 12:17:21 jvanheld Exp $
+# $Id: mirror.mk,v 1.14 2005/01/26 22:22:54 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 12:05:45 jvanheld>
 #
@@ -98,14 +98,19 @@ pub_from_server:
 		--exclude tmp							\
 		${RSA_LOGIN}@${RSA_SERVER}:${RSA_SERVER_DIR}/public_html ${RSA}/
 
-EXCLUDED=					\
+EXCLUDED_GENOMES=				\
+		--exclude Mus_musculus		\
+		--exclude Gallus_callus		\
+		--exclude Canis_familiaris	\
+		--exclude Pan_troglodytes	\
+		--exclude Rattus_norvegicus	\
+		--exclude Homo_sapiens*
+
+EXCLUDED=${EXCLUDED_GENOMES}			\
+		--exclude embl_genomes		\
 		--exclude previous_version	\
 		--exclude tmp			\
 		--exclude upstream_calibrations	\
-		--exclude Mus_musculus		\
-		--exclude Rattus_norvegicus	\
-		--exclude Homo_sapiens*		\
-		--exclude embl_genomes		\
 		--exclude comparative_genomics
 data_from_server:
 	${RSYNC} ${EXCLUDED}							\
@@ -290,5 +295,4 @@ clean_tmp:
 	find ${RSA}/public_html/tmp/ -mtime +${CLEAN_DATE} -type f -exec rm -f {} \;	
 	@echo "After cleaning	" `du -sk public_html/tmp`
 	@echo "Cleaned temporary directory" | mail -s 'cleaning tmp' jvanheld@scmbb.ulb.ac.be
-
 
