@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank_lib.pl,v 1.3 2004/04/02 00:26:15 jvanheld Exp $
+# $Id: parse_genbank_lib.pl,v 1.4 2004/05/06 15:35:43 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -562,6 +562,8 @@ summarizes information (only retins selected fields) and reformats it
 sub CreateGenbankFeatures {
     my ($features, $genes, $mRNAs, $scRNA, $tRNAs, $rRNAs, $misc_RNAs, $misc_features, $CDSs, $sources) = @_;
 
+    #### initialize parameters
+    my $xref_as_id = 1;
 
 
     #### warning message
@@ -572,16 +574,13 @@ sub CreateGenbankFeatures {
 
 
 
-    #### assign gene name to the different types of features
+    #### extract taxid for each source object
     foreach my $source ($sources->get_objects()) {
 	$source->get_taxid();
     }
     
     
-    
-    #### initialize parameters
-    my $gi_as_id = 1;
-    warn "; Creating features from CDS and RNAs\n" if ($verbose >= 1);
+    warn "; Creating unified features from different feature types (CDS, mRNA, tRNA, ...)\n" if ($verbose >= 1);
     foreach my $parsed_feature ($CDSs->get_objects(),
 				$mRNAs->get_objects(),
 				$scRNAs->get_objects(),
@@ -592,7 +591,12 @@ sub CreateGenbankFeatures {
 				) {
 
 	
-	
+	## Collect some attributes of the parsed feature
+	my @products = $parsed_feature->get_attribute("product");
+	my @xrefs = $parsed_feature->get_attribute("db_xref");
+
+
+	## Create a new feature from the parsed feature
 	$created_feature = $features->new_object(%args);
 	
 	$created_feature->set_attribute("type",$parsed_feature->get_attribute("type"));
@@ -668,13 +672,36 @@ sub CreateGenbankFeatures {
 		   $created_feature->get_attribute("id"),
 		   "Cross references", 
 		   ), "\n" if ($verbose >= 5);
-	my @xrefs = $parsed_feature->get_attribute("db_xref");
-	my $gi = "";
+	local $gi = "";
+	local $GeneID = "";
+	local $LocusID = "";
+	local $locus_tag = "";
+	local @preferred_cross_ids = qw (locus_tag GeneID LocusID gi);
+
 	foreach my $xref (@xrefs) {
 	    #### extract GI from cross-references
 	    if ($xref =~ /GI:/) {
 		$gi = "$'";
-		last;
+
+		#### accept GI as synonym
+		$created_feature->push_attribute("names", $gi); 
+
+	    } elsif ($xref =~ /GeneID:/) {
+		$GeneID = "$'";
+		#### accept GeneID as synonym
+		$created_feature->push_attribute("names", $GeneID); 
+
+	    } elsif ($xref =~ /LocusID:/) {
+		$LocusID = "$'";
+		#### accept LocusID as synonym
+		$created_feature->push_attribute("names", $LocusID); 
+
+	    } elsif ($xref =~ /locus_tag:/) {
+		## Locus tags were previously annotated as cross-references rather than direct attributes
+		$locus_tag = "$'";
+		#### accept locus_tag as synonym
+		$created_feature->push_attribute("names", $locus_tag); 
+
 	    } 
 	}
 	
@@ -684,15 +711,56 @@ sub CreateGenbankFeatures {
 		   "product=$products[0]",
 		   ), "\n" if ($verbose >= 5);
 	
-	if ($gi) {
-	    if ($gi_as_id) {
-		$created_feature->force_attribute("id",$gi); #### use GI as dientifier
-	    } else {
-		$created_feature->push_attribute("names",$gi); #### accept GI as synonym
-	    }
-	} else {
-	    &ErrorMessage("; Error\tfeature ".$created_feature->get_attribute("id")." has no GI.\n"); 
+	################################################################
+	## Locus tag
+	my @locus_tags = $parsed_feature->get_attribute("locus_tag");
+
+	warn join( "\t",
+		  "parsed feature", $parsed_feature->get_attribute("id"), 
+		  "locus tag", join ";", @locus_tags), "\n" if ($main::verbose >= 5);
+
+	## Add locus tags to the list of synonyms
+	foreach my $locus_tag (@locus_tags) {
+	    warn join ("\t", "Feature", $created_feature->get_attribute("id"),
+		       "Adding locus tag as synonym", $locus_tag),  "\n" 
+			   if ($main::verbose >= 5);
+	    $created_feature->push_attribute("names", $locus_tag); 
 	}
+	## Check the number of locus tags
+	if (scalar(@locus_tags) > 1) {
+	    &ErrorMessage("There are several locus tags associated to",  
+			  $parsed_feature->get_attribute("locus_tag"), "\t", 
+			  join (";", @locus_tags));
+	} elsif (scalar(@locus_tags) == 1) {
+	    $locus_tag = $locus_tags[0];
+	}
+	
+
+
+	################################################################
+	## Use some cross-reference as main identifier for the created feature
+
+	## Use GI as identifier
+	if ($xref_as_id) {
+	    my $cross_id_found = 0;
+	    foreach my $cross_id (@preferred_cross_ids) {
+		if ($$cross_id) {
+		    warn join ("\t", 
+			       "Using", $cross_id, $$cross_id, 
+			       "as main identifier for feature", 
+			       $created_feature->get_attribute("id"),
+			       $products[0]), "\n" if ($main::verbose >= 3);
+		    
+		    $created_feature->force_attribute("id", $$cross_id);
+		    $cross_id_found = 1;
+		    last;
+		}
+	    }
+	    unless ($cross_id_found) {
+		&ErrorMessage("; Error\tfeature ".$created_feature->get_attribute("id")." has no valid cross-reference to use as main ID.\n"); 
+	    }
+	}
+
 	
 	################################################################
 	#### define a single name  (take the first value in the name list)
@@ -710,7 +778,6 @@ sub CreateGenbankFeatures {
 	
 	################################################################
 	#### create a description for the new feature
-	my @products = $parsed_feature->get_attribute("product");
 	if (($products[0]) && ($products[0] ne $main::null)){
 	    $created_feature->set_attribute("description",$products[0]);
 	} else {
