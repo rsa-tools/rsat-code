@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.10 2001/01/26 23:40:33 jvanheld Exp $
+# $Id: oligo-analysis,v 1.11 2001/01/29 06:26:31 jvanheld Exp $
 #
-# Time-stamp: <2001-01-27 00:39:27 jvanheld>
+# Time-stamp: <2001-01-29 07:21:33 jvanheld>
 #
 ############################################################
 
@@ -43,8 +43,10 @@ $residue_proba{'t'} = 0.25;
 ### check parameter values ###
 ##############################
 
-if (($return{'proba'}) || ($return{'ratio'})) {
-  $return{'exp_freq'} = 1;
+if (($return{'proba'}) || 
+    ($return{'like'}) || 
+    ($return{'ratio'})) {
+    $return{'exp_freq'} = 1;
 }
 
 ### check oligomer length
@@ -136,7 +138,7 @@ $out = &OpenOutputFile($outputfile);
 
 &CountOligo;
 
-&CalcSubWordFrequencies if (($method eq "Markov chain") || ($method eq "dictionary"));
+&CalcSubWordFrequencies if (($method eq "Markov chain") || ($method eq "lexicon"));
 &CalcAlphabet if (($input_alphabet) || ($return{'zscore'}));
 &Degenerate if ($one_var_position);
 &SumStrands if ($sum_strands);
@@ -224,7 +226,7 @@ sub CountOligo {
     if ($method eq "Markov chain") {
       for $w (1..$oligo_length - 1) {
 	$subseq = lc(substr($current_seq,$seq_length[$sequence_number]-$w,$w));
-	$sub_freq[$w]{$subseq}++;
+	$sub_occ[$w]{$subseq}++;
       }
     }
     
@@ -364,45 +366,45 @@ sub CalcSubWordFrequencies {
     ### w-1 word occurrences
     $w = $oligo_length-1;
     $subseq = substr($oligo_seq,0,$w);
-    $sub_freq[$w]{$subseq} += ($oligo{$oligo_seq}->{occ} + $oligo{$oligo_seq}->{overlaps});
+    $sub_word[$w]{$subseq}->{occ} += $oligo{$oligo_seq}->{occ} + $oligo{$oligo_seq}->{overlaps};
   }
   
   ### occurrences of words with length from w-2 to 1
   for $k (2..$oligo_length-1) {
     $w = $oligo_length - $k;
-    foreach $oligo_seq (keys %{$sub_freq[$w+1]}) {
+    foreach $oligo_seq (keys %{$sub_word[$w+1]}) {
       $subseq = substr($oligo_seq,0,$w);
-      $sub_freq[$w]{$subseq} += $sub_freq[$w+1]{$oligo_seq} ;
+      $sub_word[$w]{$subseq}->{occ} += $sub_word[$w+1]{$oligo_seq}->{occ} ;
     }
   }
   
   ### sum occurrences on both strands if requested
   if ($sum_strands) {
-    for $w (1..$oligo_length-1) {
-      foreach $subseq (sort keys %{$sub_freq[$w]}) {
-	$rc = lc(&ReverseComplement($subseq));
-	$sub_freq_2str[$w]{$subseq} = $sub_freq_2str[$w]{$rc} = $sub_freq[$w]{$subseq} + $sub_freq[$w]{$rc};
+      for $w (1..$oligo_length-1) {
+	  foreach $subseq (sort keys %{$sub_word[$w]}) {
+	      $rc = lc(&ReverseComplement($subseq));
+	      $sub_occ_2str[$w]{$subseq} = $sub_occ_2str[$w]{$rc} = $sub_word[$w]{$subseq}->{occ} + $sub_word[$w]{$rc}->{occ};
+	  }
+	  %{$sub_word[$w]} = %{$sub_occ_2str[$w]};
+	  undef  %sub_occ_2str;
       }
-      %{$sub_freq[$w]} = %{$sub_freq_2str[$w]};
-      undef  %sub_freq_2str;
-    }
   }
-  
-  ### calculates relative frequencies from occurrences
+
+  ### calculate relative frequencies from occurrences
   for $w (1..$oligo_length-1) {
-    $occ_sum[$w] = 0;
-    foreach $subseq (keys %{$sub_freq[$w]}) {
-      $occ_sum[$w] += $sub_freq[$w]{$subseq};
-    }
-    foreach $subseq (keys %{$sub_freq[$w]}) {
-      $sub_freq[$w]{$subseq} /= $occ_sum[$w];
-    }
+      $occ_sum[$w] = 0;
+      foreach $subseq (keys %{$sub_word[$w]}) {
+	  $occ_sum[$w] += $sub_word[$w]{$subseq}->{occ};
+      }
+      foreach $subseq (keys %{$sub_word[$w]}) {
+	  $sub_word[$w]{$subseq}->{freq} = $sub_word[$w]{$subseq}->{occ}/$occ_sum[$w];
+      }
   }	
   
   if ($hyperverbose) {
     for $w (1..$oligo_length-1) {
-      foreach $oligo_seq (sort keys %{$sub_freq[$w]}) {
-	printf ";\tsubword_freq\t$w\t$occ_sum[$w]\t$oligo_seq\t%15.13f\n", $sub_freq[$w]{$oligo_seq};
+      foreach $oligo_seq (sort keys %{$sub_word[$w]}) {
+	printf ";\tsubword_freq\t$w\t$occ_sum[$w]\t$oligo_seq\t%15.13f\n", $sub_word[$w]{$oligo_seq}->{freq};
       }
     }
   }
@@ -616,27 +618,26 @@ sub CalcExpected {
 	    $oligo{$oligo_seq}->{exp_freq} = 1;
 	    for $offset (0..($oligo_length - $markov_order -1)) {
 		$subseq = substr($oligo_seq,$offset,$markov_order+1);
-		$oligo{$oligo_seq}->{exp_freq} *= $sub_freq[$markov_order+1]{$subseq};
+		$oligo{$oligo_seq}->{exp_freq} *= $sub_word[$markov_order+1]{$subseq}->{freq};
 		if (($markov_order > 0) && ($offset > 0)) {
 		    $subseq = substr($oligo_seq,$offset,$markov_order);
-		    $oligo{$oligo_seq}->{exp_freq} /= $sub_freq[$markov_order]{$subseq};
+		    $oligo{$oligo_seq}->{exp_freq} /= $sub_word[$markov_order]{$subseq}->{freq};
 		}
 	    }
 	}
 
-#	foreach $oligo_seq (sort keys %oligo) {
-#	    $subseq = substr($oligo_seq,0,$markov_order+1);
-#	    $oligo{$oligo_seq}->{exp_freq} = $sub_freq[$markov_order+1]{$subseq};
-#	    for $offset (1..($oligo_length - $markov_order-1)) {
-#		$subseq = substr($oligo_seq,$offset,$markov_order+1);
-#		$oligo{$oligo_seq}->{exp_freq} *= $sub_freq[$markov_order+1]{$subseq};
-#		if ($markov_order > 0) {
-#		    $subseq = substr($oligo_seq,$offset,$markov_order);
-#		    $oligo{$oligo_seq}->{exp_freq} /= $sub_freq[$markov_order]{$subseq};
-#		}
-#	    }
-#	}
-    
+    } elsif ($method eq "lexicon") {  ### Markov chain
+	$l  = 1;
+	foreach $oligo_seq (@alphabet ) {
+		print join "\t", $l, $oligo_seq, $sub_word[$l]{$oligo_seq}->{freq}, $sub_word[$l]{$oligo_seq}->{occ}, "\n";
+	}
+	for $l (2..$oligo_length - 1) {
+	    foreach $oligo_seq (keys %{$sub_word[$l]}) {
+		print join "\t", $l, $oligo_seq, $sub_word[$l]{$oligo_seq}->{freq}, $sub_word[$l]{$oligo_seq}->{occ}, "\n";
+	    }
+	}
+	die
+
     } else {    
 	### calculate the expected oligo frequency with 
 	#### independent nucleotide probabilities 
@@ -791,38 +792,25 @@ sub CalcProba {
     }
 
     
-    #### dictionary method (Bussemaker 2000)
-    if ($method eq "dictionary") {
-	foreach $oligo_seq (sort keys %oligo) {
-	    die "Sorry, the dictionary method is not yet implemented\n";
-	}
-	
-	
-	#### binomial probability
-    } else {
-	
-	### calculate oligo probabilities
-	foreach $oligo_seq (sort keys %oligo) {
-	    if ($hyperverbose) {
-		$current_time = `date '+%H:%M:%S'`;
-		chomp($current_time);
-		printf ("oligo-analysis\t$current_time\tcalculating proba $oligo_seq obs %7d exp %7.1f\n", 
-			$oligo{$oligo_seq}->{occ}, 
-			$oligo{$oligo_seq}->{exp_occ});
-	    }
-	    
-	    ### probability of the observed number of occurrences ####
-	    $rev_compl = uc(&ReverseComplement($oligo_seq));
-	    if (($sum_strands) && (uc($oligo_seq) eq $rev_compl)) {
-		$oligo{$oligo_seq}->{occ_pro} = &sum_of_binomials($oligo{$oligo_seq}->{exp_freq},$oligo{$oligo_seq}->{nb_possible_pos}/2,$oligo{$oligo_seq}->{occ}/2);
-		$oligo{$oligo_seq}->{remark} = "\tpalindrome";
-	    } else {
-		$oligo{$oligo_seq}->{occ_pro} = &sum_of_binomials($oligo{$oligo_seq}->{exp_freq},$oligo{$oligo_seq}->{nb_possible_pos} - $oligo{$oligo_seq}->{overlaps},$oligo{$oligo_seq}->{occ});
-	    }
-	}
-    }
-	
+    ### calculate oligo probabilities
     foreach $oligo_seq (sort keys %oligo) {
+	if ($hyperverbose) {
+	    $current_time = `date '+%H:%M:%S'`;
+	    chomp($current_time);
+	    printf ("oligo-analysis\t$current_time\tcalculating proba $oligo_seq obs %7d exp %7.1f\n", 
+		    $oligo{$oligo_seq}->{occ}, 
+		    $oligo{$oligo_seq}->{exp_occ});
+	}
+	
+	### probability of the observed number of occurrences ####
+	$rev_compl = uc(&ReverseComplement($oligo_seq));
+	if (($sum_strands) && (uc($oligo_seq) eq $rev_compl)) {
+	    $oligo{$oligo_seq}->{occ_pro} = &sum_of_binomials($oligo{$oligo_seq}->{exp_freq},$oligo{$oligo_seq}->{nb_possible_pos}/2,$oligo{$oligo_seq}->{occ}/2);
+	    $oligo{$oligo_seq}->{remark} = "\tpalindrome";
+	} else {
+	    $oligo{$oligo_seq}->{occ_pro} = &sum_of_binomials($oligo{$oligo_seq}->{exp_freq},$oligo{$oligo_seq}->{nb_possible_pos} - $oligo{$oligo_seq}->{overlaps},$oligo{$oligo_seq}->{occ});
+	}
+    
 	#### check threshold on occurrence probability ####
 	if ($oligo{$oligo_seq}->{occ_pro} > $proba_occ_threshold) {
 	    delete $oligo{$oligo_seq};
@@ -879,7 +867,7 @@ sub PrintResult {
   ### verbose ###
   if ($verbose) {
     print $out "; oligo-analysis ", join(" ", @ARGV), "\n";
-    printf $out "; %.21s\t%s\n", "Oligomer length", $oligo_length;
+    printf $out "; %-29s\t%s\n", "Oligomer length", $oligo_length;
     printf $out "; %-29s\t%s\n", "Input file",	$inputfile if ($inputfile ne "");
     printf $out "; %-29s\t%s\n", "Input format", $in_format;
     printf $out "; %-29s\t%s\n", "Method", $method if ($method);
@@ -1288,13 +1276,15 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] =~ /^-ncf/i) {
 	    $ncf = 1;
 	    
-	    #### dictionary
-	} elsif ($ARGV[$a] =~ /^-dict/i) { ### Markov chains
-	    $method = "dictionary";
+	    #### lexicon
+	} elsif ($ARGV[$a] =~ /^-lex/i) { ### Markov chains
+	    $method = "lexicon";
+	    $return{'exp_freq'} = 1;
 
 	    #### markov chain
 	} elsif ($ARGV[$a] =~ /^-markov/i) { ### Markov chains
 	    $method = "Markov chain";
+	    $return{'exp_freq'} = 1;
 	    if (&IsInteger($ARGV[$a+1])) {
 		$a++;
 		$markov_order = $ARGV[$a];
@@ -1575,6 +1565,24 @@ ARGUMENTS
 		              obs(GATAA) x obs(ATAAG)
 		exp(GATAAG) = -----------------------
 		                   obs(ATAA)
+
+	-lexicon
+	
+		Expected word frequencies are calculated on the basis
+		of subword frequencies, in a similar (but not
+		identical) way to the "dictionary" approach developed
+		by Harmen Bussemaker.  Each word is segmented in 2
+		subwords in all possible ways:
+
+			GATAAG	G & ATAAG
+				GA & TAAG
+				GAT & TAG
+				GATA & AG
+				GATAA & G
+
+		The expected frequency of each segmented pair is the
+		sum of expected frequency of its members. The expected
+		word frequency is the maximum expected pair frequency.
 
 	-pseudo #
 		 pseudo-weight
@@ -1943,6 +1951,7 @@ oligo-analysis options
 -org		organism 
 -markov	#	calculate expected frequencies according to
 		Markov chains of order #
+-lexicon	exp word frequencies calculaed on the basis of word segments
 -pseudo	#	pseudo-weight (# between 0 and 1)
 -return		fields to return, among: 
 			occ,proba,freq,mseq,ratio,zscore,like,pos
