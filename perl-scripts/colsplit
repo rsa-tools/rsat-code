@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: colsplit,v 1.4 2002/06/06 10:11:32 jvanheld Exp $
+# $Id: colsplit,v 1.5 2002/10/07 15:30:46 jvanheld Exp $
 #
-# Time-stamp: <2002-06-06 12:11:31 jvanheld>
+# Time-stamp: <2002-10-07 09:30:27 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -46,7 +46,7 @@ unless (-d $output_dir) {
     }
 }
 
-##### read input #####
+##### read input
 ($in) = &OpenInputFile($infile{input});
 while (my $line = <$in>) {
     chomp $line;
@@ -55,15 +55,14 @@ while (my $line = <$in>) {
     next if ($line =~ /^\-\-/); #### ignore comment lines
     next unless ($line =~ /\S/); #### ignore empty lines
     my @fields = split $separator, $line;
-    my $pattern = $fields[$column-1];
-#    unless (defined($$pattern)) {
-    my $filename = $output_dir."/".$prefix.$pattern.$suffix;
-    if ($counts{$pattern}) {
+    my $key = $fields[$column-1];
+    my $filename = $output_dir."/".$prefix.$key.$suffix;
+    if ($counts{$key}) {
 	open OUT, ">>$filename";
     } else {
 	open OUT, ">$filename";
     }
-    $counts{$pattern}++;
+    $counts{$key}++;
     if ($full_line) {
 	print OUT $line, "\n";
     } else {
@@ -71,24 +70,11 @@ while (my $line = <$in>) {
 	print OUT "\n";
     }
     close OUT;
-#	warn "opening $filename\n" if ($verbose >=1);
-#	open ${$pattern}, ">$filename"
-#	    || &FatalError ("Cannot write file $filename");
-#	push @patterns, $pattern;
-#    }
-#    print ${$pattern} $line;
 }
-
 close $in if ($infile{input});
 
 #### verbose ####
 &Verbose if ($verbose);
-
-###### execute the command #########
-
-
-###### print output ######
-
 
 ###### verbose ######
 if ($verbose) {
@@ -122,10 +108,10 @@ USAGE
 DESCRIPTION
 
 	Splits a file accoding to the content of a specified column
-	(the pattern column).
+	(the key column).
 
 	A separate output file will be gnerated for each distinct
-	value of the specified column of the input file.
+	key found in the key column of the input file.
 
 CATEGORY
 	util
@@ -140,9 +126,9 @@ OPTIONS
 	-prefix prefix for output file names
 	-suffix suffix for output file names
 		Each output file name starts with the prefix, followed
-		by the value of the pattern column, followed by the 
+		by the value of the key column, followed by the 
 		suffix. 
-	-c pattern column (default $column)
+	-c key column (default $column)
 	-sep field separator
 	        (default \\t)
 	-outdir	output directory
@@ -167,7 +153,7 @@ colsplit options
 -i	input file
 -prefix	prefix for output file names
 -suffix	suffix for output file names
--c	pattern column (default $column)
+-c	key column (default $column)
 -sep	field separator (default \\t)
 -outdir	output directory
 -fields	output fields
@@ -232,14 +218,14 @@ sub ReadArguments {
 		$output_fields[$f] -= 1;
 	    }
 	    
-	    ### pattern column
+	    ### key column
 	} elsif ($ARGV[$a] eq "-c") {
 	    $column = $ARGV[$a+1];
 	    unless (&IsNatural($column)) {
-		&FatalError("Pattern column must be a natural number");
+		&FatalError("Key column must be a natural number");
 	    }
 	    unless ($column >=1)  {
-		&FatalError("Pattern column must be strictly positive");
+		&FatalError("Key column must be strictly positive");
 	    }
 
 	}
@@ -251,7 +237,7 @@ sub Verbose {
     &PrintArguments($out);
     if (defined(%infile)) {
 	print $out "; Input files\n";
-	while (($key,$value) = each %infile) {
+	while (($key, $value) = each %infile) {
 	    print $out ";\t$key\t$value\n";
 	}
     }
@@ -266,8 +252,8 @@ sub Verbose {
     } else {
 	print $out "; Output fields\t",join (",", @output_fields),"\n";	
     }
-    print $out "; Pattern counts\n";
-    foreach my $pattern (keys %counts) {
-	print $out ";\t$pattern\t$counts{$pattern}\n";
+    print $out "; Key counts\n";
+    foreach my $key (sort {$counts{$b} <=> $counts{$a}} keys %counts) {
+	print $out ";\t$key\t$counts{$key}\n";
     }
 }
