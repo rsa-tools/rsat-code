@@ -1,11 +1,12 @@
 #!/usr/bin/perl
+
 #use strict;
 if ($0 =~ /([^(\/)]+)$/) {
   push (@INC, "$`lib/");
 }
 require "RSA.lib";
-require "RSA.classes";
 require "RSA.seq.lib";
+require RSAT::Sequence;
 
   #### initialise parameters ####
 my $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
@@ -33,12 +34,11 @@ my ($in, $input_dir) = &OpenInputFile($inputfile);
 while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $seq_format, $input_dir)) &&
        (($current_seq) || ($current_id))) {
   $seq_count++;
-  $seq[$seq_count] = new RSA::Sequence(
-				       id=>$current_id, 
-				       sequence=>$current_seq,
-				       description=>$comments[0],
-				       type=>"dna"
-				      );
+  $seq[$seq_count] = new RSAT::Sequence(id=>$current_id, 
+					sequence=>$current_seq,
+					description=>$comments[0],
+					type=>"dna"
+				       );
   if ($hyperverbose) {
     print STDERR "; $seq_count";
     print STDERR "\t", $seq[$seq_count]->get_id();
