@@ -74,6 +74,9 @@ DESCRIPTION
 
 	The previous versions are saved in 
 	$RSA/old_version.
+
+CATEGORY
+	administration
 	
 OPTIONS
 	-h	(must be first argument) display full help message

@@ -2,7 +2,7 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
+require "RSA.lib";
 
 
 $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
@@ -14,14 +14,15 @@ if ($ARGV[0] eq "-h") {
 NAME
 	classfreq
 
+	First version dates from July 1997
+	by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be).
+
+DESCRIPTION
 	This script takes a group of numbers (real or integers) and outputs
 	their distribution among classes. 
-	Within each class are counted all numbers that are 
-	- greater or equal to the lower limit, and 
-	- strictly smaller than the upper limit of the class
-	(lowerlimit <= x < upperlimit).
 
-	v1.2, 25 July 1997 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be).
+CATEGORY
+	statistics
 
 USAGE
 	classfreq [-i inputfile] [-o outputfile] [-ci class_interval] [-min #][-max #][-s][-p]
@@ -49,6 +50,11 @@ OUTPUT
 
 	With the option -v, the list of class frequencies is followed by a 
 	short statistical report on the data.
+
+	Within each class are counted all numbers that are 
+	- greater or equal to the lower limit, and 
+	- strictly smaller than the upper limit of the class
+	(lowerlimit <= x < upperlimit).
 
 ARGUMENTS
         -h      (must be first argument) display full help message
@@ -155,18 +161,20 @@ foreach $a (0..$#ARGV) {
 
 
 ##### open input file #####
-$in = &OpenInputFile($inputfile);
+($in, $input_dir) = &OpenInputFile($inputfile);
 $out = &OpenOutputFile($outputfile);
+
+#die "HELLO", $inputfile, $in;
 
 $count = 0;
 $sum = 0;
 $sumofsquares = 0;
 @ListOfNumbers = ();
-while($CurrentLine = <$in>) {   
-    next if ($CurrentLine =~ /^;/); ### skip comment lines 
-    while($CurrentLine =~ /(\S+)(.*)/) {
+while($current_line = <$in>) {   
+    next if ($current_line =~ /^;/); ### skip comment lines 
+    while($current_line =~ /(\S+)(.*)/) {
 	$word = $1;
-	$CurrentLine = $2;
+	$current_line = $2;
 	if ((IsReal($word)) 
 	    && (($usermin eq "") || ($word >= $usermin))	
 	    && (($usermax eq "") || ($word <= $usermax))

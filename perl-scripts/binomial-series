@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: binomial-series,v 1.5 2001/07/05 18:23:46 jvanheld Exp $
+# $Id: binomial-series,v 1.6 2002/06/06 10:08:14 jvanheld Exp $
 #
-# Time-stamp: <2001-07-05 20:20:57 jvanheld>
+# Time-stamp: <2002-06-06 12:08:12 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -127,6 +127,9 @@ USAGE
 DESCRIPTION
         Comparison of different approximations for the binomial 
 	formula.
+
+CATEGORY
+	statistics
 	
 OPTIONS
 	-h	(must be first argument) display full help message

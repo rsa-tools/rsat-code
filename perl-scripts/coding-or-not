@@ -58,23 +58,16 @@ print C_POSITIONS ";segm_type_nb\tORFs\tchr\tstart\tend\tleft\tright\n"  if ($re
 
 foreach my $chromosome ($organism->get_chromosomes()) {
     ### read chromosomal sequence
-#    $seq_file = $seq_file{$chr};
     my $chr = $chromosome->get_name();
     my $seq_file = $chromosome->get_sequence()->get_attribute("filename");
     
-#    open SEQ, $seq_file || die "Error: cannot open sequence file $seq_file\n";
-#    ($sequence, $seq_id, @seq_comments) = &ReadNextSequence(SEQ, $seq_format);
-#    close SEQ;
-#    $sequence = &FoldSequence($sequence, 0);
     my $sequence = $chromosome->get_sequence();
     my $chr_length = $sequence->get_length();
 
     ### sort ORF from current chromosome
-#    $ORF_nb{$chr} = $#{$ids{$chr}}+1;;
     my @genes = $chromosome->get_genes();
     printf "; %s\t%s\t%d\t%d\n", $seq_file, $chr, $chr_length, $#genes+1 
 	if ($verbose);
-#die "HELLO\t",$chromosome->count_genes() ,"\n";
 
     @sorted_orfs = sort {
 	(($left{$a} <=> $left{$b}) || (($left{$a} == $left{$b}) && ($right{$a} <=> $right{$b})))
@@ -187,6 +180,9 @@ DESCRIPTION
 	Starting from a complete assembled genome, generate
 	non-redundant sets of sequences, partitioned into different
 	sequence types (see options).
+
+CATEGORY
+	genomics
 
 USAGE
 	coding-or-not -org organism

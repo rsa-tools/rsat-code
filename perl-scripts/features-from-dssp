@@ -2,7 +2,7 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
+require "RSA.lib";
 
 
 
@@ -23,6 +23,11 @@ USAGE
 DESCRIPTION
 	extracts features from a dssp file.
 	dssp: definition of secondary structures in proteins
+
+CATEGORY
+	util
+	conversion
+	drawing
 
 REFERENCES
 	Kabsch, W., and Sander, C. (1983). Dictionary of protein
@@ -125,7 +130,7 @@ if ($map eq "") {
 
 
 ### open input file ###
-$in = &OpenInputFile($inputfile);
+($in, $input_dir) = &OpenInputFile($inputfile);
 
 ### open output file ###
 $out = &OpenOutputFile($outputfile);

@@ -2,7 +2,7 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
+require "RSA.lib";
 
 
 
@@ -21,6 +21,9 @@ USAGE
 DESCRIPTION
 	Calculates the chi square value for a given table of numerical values.
 	
+CATEGORY
+	statistics
+
 OPTIONS
         -h      (must be first argument) display full help message
         -help   (must be first argument) display options
@@ -114,7 +117,7 @@ foreach $a (0..$#ARGV) {
 
 
 ### open input file ###
-$in = &OpenInputFile($inputfile);
+($in, $input_dir) = &OpenInputFile($inputfile);
 
 ### open output file ###
 $out = &OpenOutputFile($outputfile);

@@ -14,8 +14,14 @@ if ($ARGV[0] eq "-h") {
 NAME
 	add-orf-function
 
-        v1.0, 1997 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
+DESCRIPTION
+	Takes as input a tab-delimited file where the first word of
+	each row is an ORF identifier, and adds a column with a
+	description of the ORFs.
 	
+CATEGORY
+	genomics
+
 USAGE
         add-orf-function [-i inputfile] [-o outputfile] [-v] 
         [-col orf_column] -org organism
@@ -97,7 +103,7 @@ foreach $a (0..$#ARGV) {
 }
 
 #### input file ####
-$in = &OpenInputFile($query_file);
+($in, $input_dir) = &OpenInputFile($query_file);
 
 #### output file ####
 $out = &OpenOutputFile($outputfile);
@@ -163,9 +169,9 @@ while ($current_line = <$in>) {
 	    $descr = $descr{$orf_id};
 	    @synonyms = @{$synonyms{$orf_id}};
 	    if (@synonyms) {
-		$synonyms = "[";
-		$synonyms .= join (";", @synonyms);
-		$synonyms .= "]";
+#		$synonyms = "[";
+		$synonyms = join (";", @synonyms);
+#		$synonyms .= "]";
 	    }
 	}
 	print join ("\t", $current_line, $descr, $synonyms), "\n";

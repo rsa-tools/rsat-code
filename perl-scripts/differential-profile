@@ -2,7 +2,7 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
+require "RSA.lib";
 
 
 
@@ -15,19 +15,23 @@ NAME
 
         1998 by Jacques van Helden (jacques\@ucmb.ulb.ac.be)
 	
+DESCRIPTION
+	Given two matrix files (each containing a position frequency
+	matrix), perform an independence test to estimate whether the
+	matrices are similar or different.
+
+	Alternatively, the input can be provided as two pre-aligned
+	sequence sets. The program then calculates the two
+	corresponding profile matrices and compares them.
+
+CATEGORY
+	statistics
+	sequences
+
 USAGE
         differential-profile [-i sequencefile] -cl1 first_cluster_file 
 		-cl2 second_cluster_file [-o outputfile] [-v] [-seq] [-mat] 
 		-stat [chi | like | proba]
-
-DESCRIPTION
-	given two matrix files (each containing a position frequency
-	matrix), perform an independence test to estimate whether the
-	matrices are similar or different.
-
-	Alternatively, the output can be provided as two pre-aligned
-	sequence sets. The program then calculates the two
-	corresponding profiles and compares them.
 
 OPTIONS
         -h      (must be first argument) display full help message
@@ -296,7 +300,7 @@ if ($input_type eq "matrices") {
        print "\tType differential-profile -h for info\n";
       exit;
    }
-   $in = &OpenInputFile($inputfile);
+   ($in, $input_dir) = &OpenInputFile($inputfile);
    %seq_hash = ReadMSF($in);
    @all_ids = sort keys %seq_hash;
    $seq_nb = $#all_ids + 1;

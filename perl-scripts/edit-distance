@@ -3,7 +3,7 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
+require "RSA.lib";
 
 
 #### initialise parameters ####
@@ -32,7 +32,7 @@ printf "distance: %d\n", $distance;
 $out = &OpenOutputFile($outputfile);
 
 ##### read input #####
-#$in = &OpenInputFile($inputfile);
+#($in, $input_dir) = &OpenInputFile($inputfile);
 #while (<$in>) {
 #
 #}
@@ -83,6 +83,9 @@ USAGE
 
 DESCRIPTION
 	calculated the minimal edit distance between two strings
+
+CATEGORY
+	sequences
 
 OPTIONS
 	-h	(must be first argument) display full help message

@@ -1,24 +1,38 @@
 #!/usr/bin/perl
-#if ($config_site eq "ebi") {
-#    use lib '/homes/jvanheld/rsa-tools/perl-scripts/lib',  
-#            '/homes/jvanheld/rsa-tools/perl-scripts/lib/arch';
-#}
-if ($0 =~ /([^(\/)]+)$/) {
-    push (@INC, "$`lib/");
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push @INC, "$`lib/";
+    }
+    require "RSA.lib";
+    push @INC, "$RSA/extlib/arch/";
+#    if ($config_site eq "uppsala") {
+#	use lib ('/home/jvanheld/rsa-tools/perl-scripts/lib',  
+#		 '/home/jvanheld/rsa-tools/perl-scripts/lib/arch');
+#    }
 }
-require "RSA.lib";
 
 use GD;
+
+%supported_format = ();
+
+if ($config_site eq "rsa") {
+    $supported_format{"jpeg"} = 1;
+    $out_format = "jpeg";
+} else {
+    $supported_format{"gif"} = 1;
+    $out_format = "gif";
+}
+$supported_formats = join (";", keys %supported_format); 
 
 $start_time = `date`;
 
 if ($ARGV[0] eq "-h") {
-  &PrintHelp;
-  exit(0);
+    &PrintHelp;
+    exit(0);
 }
 if ($ARGV[0] eq "-help") {
-  &PrintShortHelp;
-  exit(0);
+    &PrintShortHelp;
+    exit(0);
 }
 
 
@@ -63,42 +77,42 @@ $y_ref_log=log($y_log_base);
 
 #### check parameter values ####
 if ($HTML_map) {
-  $verbose = 0;
+    $verbose = 0;
 }		 
 
 #### if log representation, check user-entered axis values  ###
 if ($xlog) {
-  if (x_axis_max ne "ND") {
-    if ($x_axis_max > 0) {
-      $x_axis_max = log($x_axis_max)/$x_ref_log;
-    } else {
-      $x_axis_max = "ND";
+    if (x_axis_max ne "ND") {
+	if ($x_axis_max > 0) {
+	    $x_axis_max = log($x_axis_max)/$x_ref_log;
+	} else {
+	    $x_axis_max = "ND";
+	}
     }
-  }
-  if (x_axis_min ne "ND") {
-    if ($x_axis_min > 0) {
-      $x_axis_min = log($x_axis_min)/$x_ref_log;
-    } else {
-      $x_axis_min = "ND";
+    if (x_axis_min ne "ND") {
+	if ($x_axis_min > 0) {
+	    $x_axis_min = log($x_axis_min)/$x_ref_log;
+	} else {
+	    $x_axis_min = "ND";
+	}
     }
-  }
 }
 
 if ($ylog) {
-  if (y_axis_max ne "ND") {
-    if ($y_axis_max > 0) {
-      $y_axis_max = log($y_axis_max)/$y_ref_log;
-    } else {
-      $y_axis_max = "ND";
+    if (y_axis_max ne "ND") {
+	if ($y_axis_max > 0) {
+	    $y_axis_max = log($y_axis_max)/$y_ref_log;
+	} else {
+	    $y_axis_max = "ND";
+	}
     }
-  }
-  if (y_axis_min ne "ND") {
-    if ($y_axis_min > 0) {
-      $y_axis_min = log($y_axis_min)/$y_ref_log;
-    } else {
-      $y_axis_min = "ND";
+    if (y_axis_min ne "ND") {
+	if ($y_axis_min > 0) {
+	    $y_axis_min = log($y_axis_min)/$y_ref_log;
+	} else {
+	    $y_axis_min = "ND";
+	}
     }
-  }
 }
 
 #### open output file ####
@@ -107,42 +121,42 @@ $out = &OpenOutputFile($outputfile);
 
 &ReadData;
 &CalcLimits;
-  
+
 #### convert tbox into an hbox ###
 if ($tbox_low_x ne "") {
-  $hbox_left = &XPixelPos($tbox_low_x);
-  $hbox_right = &XPixelPos($tbox_high_x);
-  $hbox_top = &YPixelPos($tbox_high_y); 
-  $hbox_bottom = &YPixelPos($tbox_low_y); 
+    $hbox_left = &XPixelPos($tbox_low_x);
+    $hbox_right = &XPixelPos($tbox_high_x);
+    $hbox_top = &YPixelPos($tbox_high_y); 
+    $hbox_bottom = &YPixelPos($tbox_low_y); 
 }
 
 ### check hbox dimensions ###
 if ($hbox_left ne "") {
-  if ($hbox_left < $left) {
-    $hbox_left = $left
-  } elsif ($hbox_left > $right) {
-    $hbox_left = $right;
-  }
-  if ($hbox_right < $left) {
-    $hbox_right = $left
-  } elsif ($hbox_right > $right) {
-    $hbox_right = $right;
-  }
-  if ($hbox_top < $top) {
-    $hbox_top = $top
-  } elsif ($hbox_top > $bottom) {
-    $hbox_top = $bottom;
-  }
-  if ($hbox_bottom < $top) {
-    $hbox_bottom = $top
-  } elsif ($hbox_bottom > $bottom) {
-    $hbox_bottom = $bottom;
-  }
+    if ($hbox_left < $left) {
+	$hbox_left = $left
+	} elsif ($hbox_left > $right) {
+	    $hbox_left = $right;
+	}
+    if ($hbox_right < $left) {
+	$hbox_right = $left
+	} elsif ($hbox_right > $right) {
+	    $hbox_right = $right;
+	}
+    if ($hbox_top < $top) {
+	$hbox_top = $top
+	} elsif ($hbox_top > $bottom) {
+	    $hbox_top = $bottom;
+	}
+    if ($hbox_bottom < $top) {
+	$hbox_bottom = $top
+	} elsif ($hbox_bottom > $bottom) {
+	    $hbox_bottom = $bottom;
+	}
 #### convert hbox into a tbox ###
-  $tbox_low_x = ($hbox_left - $border)/$x_scale + $x_axis_min;
-  $tbox_high_x = ($hbox_right - $border)/$x_scale + $x_axis_min;
-  $tbox_high_y = ($hbox_top - $graph_y_size + $border)/$y_scale + $y_axis_min; 
-  $tbox_low_y = ($hbox_bottom - $graph_y_size + $border)/$y_scale + $y_axis_min; 
+    $tbox_low_x = ($hbox_left - $border)/$x_scale + $x_axis_min;
+    $tbox_high_x = ($hbox_right - $border)/$x_scale + $x_axis_min;
+    $tbox_high_y = ($hbox_top - $graph_y_size + $border)/$y_scale + $y_axis_min; 
+    $tbox_low_y = ($hbox_bottom - $graph_y_size + $border)/$y_scale + $y_axis_min; 
 }
 
 #### report graph parameters ####
@@ -230,10 +244,10 @@ if ($x_grid_step2 > 0) {
 
 ### second Y grid
 if ($y_grid_step2 > 0) {
-  for ($g = $y_axis_min; $g <= $y_axis_max; $g += $y_grid_step2) {
-    $grid_pos = &YPixelPos($g);
-    $image->line($left, $grid_pos, $right, $grid_pos, $grid2_color);
-  }
+    for ($g = $y_axis_min; $g <= $y_axis_max; $g += $y_grid_step2) {
+	$grid_pos = &YPixelPos($g);
+	$image->line($left, $grid_pos, $right, $grid_pos, $grid2_color);
+    }
 }
 
 
@@ -279,7 +293,7 @@ $image->line($left, $bottom, $right, $bottom, $axis_color);
 
 #### draw highlight box ####
 unless ($hbox_left eq ""){
-  $image->filledRectangle($hbox_left, $hbox_top, $hbox_right, $hbox_bottom, $highlight_box_color);
+    $image->filledRectangle($hbox_left, $hbox_top, $hbox_right, $hbox_bottom, $highlight_box_color);
 }
 
 
@@ -434,15 +448,22 @@ if ($legend) {
 
 
 #### print output ####
-print $out $image->gif;
-if ($outputfile ne "") {
-  close $out;
+#### write the gif file ####
+if ($out_format eq "gif") {
+    print $out $image->gif;
+} elsif ($out_format eq "jpeg") {
+    print $out $image->jpeg;
+} elsif ($out_format eq "png") {
+    print $out $image->png;
+} else {
+    &FatalError("Error: ormat $out_format is not supported\n");
 }
+
 &CloseHTMLmap if ($HTML_map);
 
 if ($verbose) {
-  print ";Job started $start_time";
-  print ";Job done    ", `date`;
+    print ";Job started $start_time";
+    print ";Job done    ", `date`;
 
 }
 
@@ -676,113 +697,113 @@ sub DrawSymbol {
     local($s_height) = abs($s_top - $s_bottom) + 1;
 
     if ($s_type eq "rectangle") {
-      $image->rectangle($s_left, $s_top, $s_right, $s_bottom, $s_color);
+	$image->rectangle($s_left, $s_top, $s_right, $s_bottom, $s_color);
 
     } elsif ($s_type eq "filled_rectangle") {
-      $image->filledRectangle($s_left, $s_top, $s_right, $s_bottom, $s_color);
+	$image->filledRectangle($s_left, $s_top, $s_right, $s_bottom, $s_color);
 
     } elsif ($s_type eq "filled_butterfly") {
-      $image->line($s_left, $s_top, $s_right, $s_bottom, $s_color);
-      $image->line($s_left, $s_bottom, $s_right, $s_top, $s_color);
-      $image->line($s_right, $s_top, $s_right, $s_bottom, $s_color);
-      $image->line($s_left, $s_top, $s_left, $s_bottom, $s_color);
-      $image->fillToBorder($s_left+1,$s_y_center,$s_color,$s_color);
-      $image->fillToBorder($s_right-1,$s_y_center,$s_color,$s_color);
+	$image->line($s_left, $s_top, $s_right, $s_bottom, $s_color);
+	$image->line($s_left, $s_bottom, $s_right, $s_top, $s_color);
+	$image->line($s_right, $s_top, $s_right, $s_bottom, $s_color);
+	$image->line($s_left, $s_top, $s_left, $s_bottom, $s_color);
+	$image->fillToBorder($s_left+1,$s_y_center,$s_color,$s_color);
+	$image->fillToBorder($s_right-1,$s_y_center,$s_color,$s_color);
 
     } elsif ($s_type eq "butterfly") {
-      $image->line($s_left, $s_top, $s_right, $s_bottom, $s_color);
-      $image->line($s_left, $s_bottom, $s_right, $s_top, $s_color);
-      $image->line($s_right, $s_top, $s_right, $s_bottom, $s_color);
-      $image->line($s_left, $s_top, $s_left, $s_bottom, $s_color);
+	$image->line($s_left, $s_top, $s_right, $s_bottom, $s_color);
+	$image->line($s_left, $s_bottom, $s_right, $s_top, $s_color);
+	$image->line($s_right, $s_top, $s_right, $s_bottom, $s_color);
+	$image->line($s_left, $s_top, $s_left, $s_bottom, $s_color);
 
     } elsif ($s_type eq "triangle2") {
-      $image->line($s_left, $s_y_center, $s_right, $s_bottom, $s_color);
-      $image->line($s_right, $s_bottom, $s_right, $s_top, $s_color);
-      $image->line($s_left, $s_y_center, $s_right, $s_top, $s_color);
+	$image->line($s_left, $s_y_center, $s_right, $s_bottom, $s_color);
+	$image->line($s_right, $s_bottom, $s_right, $s_top, $s_color);
+	$image->line($s_left, $s_y_center, $s_right, $s_top, $s_color);
 
     } elsif ($s_type eq "filled_triangle2") {
-      $image->line($s_left, $s_y_center, $s_right, $s_bottom, $s_color);
-      $image->line($s_right, $s_bottom, $s_right, $s_top, $s_color);
-      $image->line($s_left, $s_y_center, $s_right, $s_top, $s_color);
-      $image->fillToBorder($s_x_center,$s_y_center,$s_color,$s_color);
+	$image->line($s_left, $s_y_center, $s_right, $s_bottom, $s_color);
+	$image->line($s_right, $s_bottom, $s_right, $s_top, $s_color);
+	$image->line($s_left, $s_y_center, $s_right, $s_top, $s_color);
+	$image->fillToBorder($s_x_center,$s_y_center,$s_color,$s_color);
 
     } elsif ($s_type eq "triangle1") {
-      $image->line($s_left, $s_bottom, $s_right, $s_y_center, $s_color);
-      $image->line($s_left, $s_bottom, $s_left, $s_top, $s_color);
-      $image->line($s_right, $s_y_center, $s_left, $s_top, $s_color);
+	$image->line($s_left, $s_bottom, $s_right, $s_y_center, $s_color);
+	$image->line($s_left, $s_bottom, $s_left, $s_top, $s_color);
+	$image->line($s_right, $s_y_center, $s_left, $s_top, $s_color);
 
     } elsif ($s_type eq "filled_triangle1") {
-      $image->line($s_left, $s_bottom, $s_right, $s_y_center, $s_color);
-      $image->line($s_left, $s_bottom, $s_left, $s_top, $s_color);
-      $image->line($s_right, $s_y_center, $s_left, $s_top, $s_color);
-      $image->fillToBorder($s_x_center,$s_y_center,$s_color,$s_color);
+	$image->line($s_left, $s_bottom, $s_right, $s_y_center, $s_color);
+	$image->line($s_left, $s_bottom, $s_left, $s_top, $s_color);
+	$image->line($s_right, $s_y_center, $s_left, $s_top, $s_color);
+	$image->fillToBorder($s_x_center,$s_y_center,$s_color,$s_color);
 
     } elsif ($s_type eq "triangle3") {
-      $image->line($s_left, $s_bottom, $s_right, $s_bottom, $s_color);
-      $image->line($s_left, $s_bottom, $s_x_center, $s_top, $s_color);
-      $image->line($s_x_center, $s_top, $s_right, $s_bottom, $s_color);
+	$image->line($s_left, $s_bottom, $s_right, $s_bottom, $s_color);
+	$image->line($s_left, $s_bottom, $s_x_center, $s_top, $s_color);
+	$image->line($s_x_center, $s_top, $s_right, $s_bottom, $s_color);
 
     } elsif ($s_type eq "filled_triangle3") {
-      $image->line($s_left, $s_bottom, $s_right, $s_bottom, $s_color);
-      $image->line($s_left, $s_bottom, $s_x_center, $s_top, $s_color);
-      $image->line($s_x_center, $s_top, $s_right, $s_bottom, $s_color);
-      $image->fillToBorder($s_x_center,$s_y_center,$s_color,$s_color);
+	$image->line($s_left, $s_bottom, $s_right, $s_bottom, $s_color);
+	$image->line($s_left, $s_bottom, $s_x_center, $s_top, $s_color);
+	$image->line($s_x_center, $s_top, $s_right, $s_bottom, $s_color);
+	$image->fillToBorder($s_x_center,$s_y_center,$s_color,$s_color);
 
     } elsif ($s_type eq "triangle4") {
-      $image->line($s_left, $s_top, $s_right, $s_top, $s_color);
-      $image->line($s_left, $s_top, $s_x_center, $s_bottom, $s_color);
-      $image->line($s_x_center, $s_bottom, $s_right, $s_top, $s_color);
+	$image->line($s_left, $s_top, $s_right, $s_top, $s_color);
+	$image->line($s_left, $s_top, $s_x_center, $s_bottom, $s_color);
+	$image->line($s_x_center, $s_bottom, $s_right, $s_top, $s_color);
 
     } elsif ($s_type eq "filled_triangle4") {
-      $image->line($s_left, $s_top, $s_right, $s_top, $s_color);
-      $image->line($s_left, $s_top, $s_x_center, $s_bottom, $s_color);
-      $image->line($s_x_center, $s_bottom, $s_right, $s_top, $s_color);
-      $image->fillToBorder($s_x_center,$s_y_center,$s_color,$s_color);
+	$image->line($s_left, $s_top, $s_right, $s_top, $s_color);
+	$image->line($s_left, $s_top, $s_x_center, $s_bottom, $s_color);
+	$image->line($s_x_center, $s_bottom, $s_right, $s_top, $s_color);
+	$image->fillToBorder($s_x_center,$s_y_center,$s_color,$s_color);
 
     } elsif ($s_type eq "circle") {
-      $image->arc($s_x_center,$s_y_center,$s_width,$s_height,0,360,$s_color);
+	$image->arc($s_x_center,$s_y_center,$s_width,$s_height,0,360,$s_color);
 
     } elsif ($s_type eq "filled_circle") {
-      $image->arc($s_x_center,$s_y_center,$s_width,$s_height,0,360,$s_color);
-      $image->fillToBorder($s_x_center,$s_y_center,$s_color,$s_color);
+	$image->arc($s_x_center,$s_y_center,$s_width,$s_height,0,360,$s_color);
+	$image->fillToBorder($s_x_center,$s_y_center,$s_color,$s_color);
 
     } elsif ($s_type eq "crossrect1") {
-      $image->rectangle($s_left, $s_top, $s_right, $s_bottom, $s_color);
-      $image->line($s_left, $s_bottom, $s_right, $s_top, $s_color);
-      $image->line($s_left, $s_top, $s_right, $s_bottom, $s_color);
+	$image->rectangle($s_left, $s_top, $s_right, $s_bottom, $s_color);
+	$image->line($s_left, $s_bottom, $s_right, $s_top, $s_color);
+	$image->line($s_left, $s_top, $s_right, $s_bottom, $s_color);
 
     } elsif ($s_type eq "crossrect2") {
-      $image->rectangle($s_left, $s_top, $s_right, $s_bottom, $s_color);
-      $image->line($s_left, $s_y_center, $s_right, $s_y_center, $s_color);
-      $image->line($s_x_center, $s_top, $s_x_center, $s_bottom, $s_color);
+	$image->rectangle($s_left, $s_top, $s_right, $s_bottom, $s_color);
+	$image->line($s_left, $s_y_center, $s_right, $s_y_center, $s_color);
+	$image->line($s_x_center, $s_top, $s_x_center, $s_bottom, $s_color);
 
     } elsif ($s_type eq "crosscircle2") {
-      $image->arc($s_x_center,$s_y_center,$s_width,$s_height,0,360,$s_color);
-      $image->line($s_left, $s_bottom, $s_right, $s_top, $s_color);
-      $image->line($s_left, $s_top, $s_right, $s_bottom, $s_color);
+	$image->arc($s_x_center,$s_y_center,$s_width,$s_height,0,360,$s_color);
+	$image->line($s_left, $s_bottom, $s_right, $s_top, $s_color);
+	$image->line($s_left, $s_top, $s_right, $s_bottom, $s_color);
 
     } elsif ($s_type eq "crosscircle1") {
-      $image->arc($s_x_center,$s_y_center,$s_width,$s_height,0,360,$s_color);
-      $image->line($s_left, $s_y_center, $s_right, $s_y_center, $s_color);
-      $image->line($s_x_center, $s_top, $s_x_center, $s_bottom, $s_color);
+	$image->arc($s_x_center,$s_y_center,$s_width,$s_height,0,360,$s_color);
+	$image->line($s_left, $s_y_center, $s_right, $s_y_center, $s_color);
+	$image->line($s_x_center, $s_top, $s_x_center, $s_bottom, $s_color);
 
     } elsif ($s_type eq "cross1") {
-      $image->line($s_left, $s_bottom, $s_right, $s_top, $s_color);
-      $image->line($s_left, $s_top, $s_right, $s_bottom, $s_color);
+	$image->line($s_left, $s_bottom, $s_right, $s_top, $s_color);
+	$image->line($s_left, $s_top, $s_right, $s_bottom, $s_color);
 
     } elsif ($s_type eq "cross2") {
-      $image->line($s_left, $s_y_center, $s_right, $s_y_center, $s_color);
-      $image->line($s_x_center, $s_top, $s_x_center, $s_bottom, $s_color);
+	$image->line($s_left, $s_y_center, $s_right, $s_y_center, $s_color);
+	$image->line($s_x_center, $s_top, $s_x_center, $s_bottom, $s_color);
 
     } elsif ($s_type eq "vbars") {
-      for ($h = $s_left; $h <= $s_right; $h += 2) {
-        $image->line($h, $s_top, $h, $s_bottom, $s_color);
-      }
+	for ($h = $s_left; $h <= $s_right; $h += 2) {
+	    $image->line($h, $s_top, $h, $s_bottom, $s_color);
+	}
 
     } elsif ($s_type eq "hbars") {
-      for ($h = $s_top; $h <= $s_bottom; $h += 2) {
-        $image->line($s_left, $h, $s_right, $h, $s_color);
-      }
+	for ($h = $s_top; $h <= $s_bottom; $h += 2) {
+	    $image->line($s_left, $h, $s_right, $h, $s_color);
+	}
     }
 }
 
@@ -803,23 +824,23 @@ sub AutoGrid {
     $range = abs($min_value -$max_value);
     $range_order = int(log($range)/$x_ref_log);
     if ($range_order < 0) {
-		$range_order -= 1;
+	$range_order -= 1;
     }
     $grid_step = 10**$range_order;
     while ($range < 5*$grid_step) {
-		$grid_step /=2;
-		$grid_step =~ s/25/20/;
-		$grid_step =~ s/2\.5/2\.0/;
+	$grid_step /=2;
+	$grid_step =~ s/25/20/;
+	$grid_step =~ s/2\.5/2\.0/;
     }
 
     if ($min_value >= 0) {
-		$grid_min = int($min_value/$grid_step) * $grid_step;
+	$grid_min = int($min_value/$grid_step) * $grid_step;
     } else {
-		$grid_min = (int($min_value/$grid_step) -1)* $grid_step;
+	$grid_min = (int($min_value/$grid_step) -1)* $grid_step;
     }
-	
-	$grid_max = (int($max_value/$grid_step)+1)*$grid_step;
-	
+    
+    $grid_max = (int($max_value/$grid_step)+1)*$grid_step;
+    
     return($grid_min, $grid_step, $grid_max);
 }
 
@@ -908,7 +929,7 @@ sub StandardPalette {
 
 #### read data ####
 sub ReadData {
-    $in = &OpenInputFile($inputfile);
+    ($in, $input_dir) = &OpenInputFile($inputfile);
 
     ################################################################
     #### point series correspond to columns
@@ -956,7 +977,6 @@ sub ReadData {
 		} else {
 		    $new_x = $data_fields[$x_col];
 		}
-#print STDERR "HELLO\t$data_fields[$x_col]\t$new_x\t",$#X_values,"\n";
 		push (@X_values, $new_x);
 	    } else {
 		next;
@@ -985,8 +1005,8 @@ sub ReadData {
 	    }
 	}    
 
-    ################################################################
-    #### point series correspond to rows
+	################################################################
+	#### point series correspond to rows
     } else {
 	$line_nb = -1;
 	$xline = $x_col;	foreach $c (0..$#y_col_list) {
@@ -1071,7 +1091,6 @@ sub CalcLimits {
     
     $min_x_value = &checked_min(@X_values);
     $max_x_value = &checked_max(@X_values);
-#print "HELLO\t",$min_x_value, $max_x_value, "\n", join " ", @X_values, "\n";    
     unless ((&IsReal($max_x_value)) && 
 	    (&IsReal($min_x_value))) {
 	&FatalError("X axis data (column ", $x_col+1, ") are not numeric.");
@@ -1086,7 +1105,7 @@ sub CalcLimits {
     unless ((&IsReal($max_y_value)) &&
 	    (&IsReal($min_y_value))) {
 	&FatalError("\tError: Y axis data (column ", join(",", @y_col_list),
-	     ") are not numeric.");
+		    ") are not numeric.");
     }
 
     #### min and max axis values ####
@@ -1143,39 +1162,40 @@ sub CalcLimits {
 
 ##### Initialize HTML map #####
 sub InitHTMLmap {
-  $max_map_elements = 2000;
-  $href = ShortFileName($inputfile);
-  
-  ###### header of the HTML file #####
-  print "<HTML>\n";
-  print "<HEAD>\n";
-  print "<TITLE>XYgraph ";
-  print ShortFileName($inputfile);
-  print "</TITLE>\n";
-  print "</HEAD>\n";
-  print "<BODY>\n";
-  print "<img src=\"";
-  print ShortFileName($outputfile);
-  print "\" border=0 usemap=\"#map1\">\n";
-  print "<map name=\"map1\">\n";
+    $max_map_elements = 2000;
+    $href = ShortFileName($inputfile);
+    
+    ###### header of the HTML file #####
+    print "<HTML>\n";
+    print "<HEAD>\n";
+    print "<TITLE>XYgraph ";
+    print ShortFileName($inputfile);
+    print "</TITLE>\n";
+    print "</HEAD>\n";
+    print "<BODY>\n";
+    print "<img src=\"";
+    print ShortFileName($outputfile);
+    print "\" border=0 usemap=\"#map1\">\n";
+    print "<map name=\"map1\">\n";
 }
 
 ##### terminate the HTML map #####
 sub CloseHTMLmap {
-  print "</map>";
-  print "</BODY>\n";
-  print "</HTML>\n";
+    print "</map>";
+    print "</BODY>\n";
+    print "</HTML>\n";
 }
 
 
 
 sub PrintShortHelp {
-  open SHORTHELP, "| more";
-  print SHORTHELP <<End_of_options;
+    open SHORTHELP, "| more";
+    print SHORTHELP <<End_of_options;
 XYgraph options
 ---------------
 -i	inputfile
 -o	outpufile
+-format		output format (default $out_format)
 -v	verbose. 
 -title1 "t1"	first graph title. 
 -title2 "t2"	second graph title. 	
@@ -1220,17 +1240,24 @@ XYgraph options
 -htmap		HTML map
 -lc		label column
 End_of_options
-  close SHORTHELP;
+    close SHORTHELP;
 }
 
 
 sub PrintHelp {
-  open HELP, "| more";
-  print HELP <<End_of_Help;
+    open HELP, "| more";
+    print HELP <<End_of_Help;
 NAME
 	XYgraph
 
 	1997-98 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
+
+DESCRIPTION		
+	Draws a XY graph with the numbers of the 2 first columns of 
+	input file and exports this graph as a GIF file. 
+	
+CATEGORY
+	drawing
 
 USAGE
 	XYgraph [-i inputfile] [-o outputfile] [-v] 
@@ -1242,9 +1269,6 @@ USAGE
 		[-lines][-legend][-header] [-histo|-fhisto] 
                 [-xgstep1 #][-ygstep1 #][-xgstep2 #][-ygstep2 #]
 		
-		
-	draws a XY graph with the numbers of the 2 first columns of 
-	input file and exports this graph as a GIF file. 
 	
 OPTIONS
 	-i inputfile    The input file should contain columns with 
@@ -1261,6 +1285,9 @@ OPTIONS
 			the form of a GIF document. 
 			If no output file is specified, the result is sent 
 			to the standard output (screen).
+	-format		output format
+			Supported: $supported_formats
+			Default: $out_format
 	-v		verbose. Comments about data and graph parameters
 			are printed on the screen.
 	-title1 "t1"	first graph title. The title string should be 
@@ -1375,6 +1402,13 @@ sub ReadArguments {
 	    $inputfile = $ARGV[$a+1];
 	} elsif ($ARGV[$a] eq "-o") {
 	    $outputfile = $ARGV[$a+1];
+	    
+	    ### output format
+	} elsif ($ARGV[$a] eq "-format") {
+	    $out_format = lc($ARGV[$a+1]);
+	    unless ($supported_format{$out_format}) {
+		&FatalError("Format $out_format is not supported (supported: $supported_formats)");
+	    }
 	    
 	    ### verbose ###
 	} elsif ($ARGV[$a] eq "-v") {

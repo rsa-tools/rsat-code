@@ -7,12 +7,18 @@ NAME
 	exp-occ
 	
 	8 July 1997 by Jacques van Helden
+
+DESCRIPTION
+	Calculates the number of occurence for a pattern (word)
+	expected to be found in a DNA sequence.
+
+CATEGORY
+	statistics
+	sequences
+
 USAGE
 	exp-occ -w word -l sequence_length [-proba proba] 
 	        [-v] [-ov | -noov]
-	
-	calculate number of occurence for a pattern (word) expected to be 
-	found in a DNA sequence.
 	
 OPTIONS
 	-v	verbose.
@@ -47,13 +53,13 @@ PROBABILITIES
 	fact that each time a match is found, the next (w-1) positions will not 
 	be considered. The number of possible match positions is thus :
 	
-		T' = T - (w-1)*E(n(W))
+		T\' = T - (w-1)*E(n(W))
 	
-	If the search algorithm can detects overlapping matches
-	-------------------------------------------------------
+	If the search algorithm can detect overlapping matches
+	------------------------------------------------------
 
 EXAMPLES
-	exp-occ -w 'AATAA' -L 1000
+	exp-occ -w 'AATAA' -l 1000
 	
 End_of_help
   exit;

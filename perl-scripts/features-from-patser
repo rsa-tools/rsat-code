@@ -2,7 +2,7 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
+require "RSA.lib";
 
 
 
@@ -21,6 +21,11 @@ USAGE
 DESCRIPTION
 	converts the output from the program patser into a file
 	that can be used as input for the program feature-map.
+
+CATEGORY
+	util
+	conversion
+	drawing
 
 OPTIONS
         -h      (must be first argument) display full help message
@@ -147,8 +152,8 @@ if ($origin_file ne "") {
 
 ##### read the sequences #####
 if ($sequence_file) {
-    $seq = &OpenInputFile($sequence_file);
-    while ((($current_seq, $current_id) = &ReadNextSequence($seq, $seq_format)) &&
+    ($seq, $seq_dir) = &OpenInputFile($sequence_file);
+    while ((($current_seq, $current_id) = &ReadNextSequence($seq, $seq_format, $seq_dir)) &&
 	   (($current_seq ne "") || ($current_id ne ""))) {
 	$current_seq =~s/\s//g;
 	$sequence{$current_id} = $current_seq;
@@ -158,7 +163,7 @@ if ($sequence_file) {
 
 
 ### open input file ###
-$in = &OpenInputFile($inputfile);
+($in, $input_dir) = &OpenInputFile($inputfile);
 
 ### open output file ###
 $out = &OpenOutputFile($outputfile);

@@ -2,7 +2,7 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
+require "RSA.lib";
 
 
 
@@ -12,11 +12,16 @@ if (($ARGV[0] eq "-h") || ($ARGV[0] eq "-help")) {
 NAME
 	deletions
 
+DESCRIPTION
 	returns a list of sequences matching a DNA pattern 
         with a given number of deletions
 	
 USAGE
         deletions -p pattern [-o outputfile] [-v] -del #
+
+CATEGORY
+	util
+	sequences
 	
 OPTIONS
 	-v	verbose.

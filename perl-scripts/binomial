@@ -156,13 +156,19 @@ NAME
 	
 	v1.0 by Jacques van Helden, July 1997
 	
+DESCRIPTION
+	Calculates the probability that an event with probability p 
+	challenged r times successes s times, according to the binomial 
+	formula.
+
+CATEGORY
+	statistics
+
 USAGE
 	binomial -p single_proba -r repetitions -s nb_success 
 		[-v] [-boe]
-	
-	calculates the probability that an event with probability p 
-	challenged r times successes s times, according to the binomial 
-	formulae:
+
+FORMULA
 	
 	              (r!)       s      (r-s)
 	P(s|r;p) = ---------- (p)  (1-p)

@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: convert-seq,v 1.10 2001/11/21 19:08:57 jvanheld Exp $
+# $Id: convert-seq,v 1.11 2002/06/06 10:13:25 jvanheld Exp $
 #
-# Time-stamp: <2001-11-21 20:08:28 jvanheld>
+# Time-stamp: <2002-06-06 12:13:21 jvanheld>
 #
 ############################################################
 
@@ -42,11 +42,7 @@ if ($out_format eq "multi") {
 }
 
 ### open input file ###
-$in = &OpenInputFile($inputfile);
-if ($inputfile) {
-    $input_dir = `dirname $inputfile`;
-    chomp $input_dir;
-}
+($in, $input_dir) = &OpenInputFile($inputfile);
 
 ### open output file ###
 $out = &OpenOutputFile($outputfile);
@@ -72,6 +68,7 @@ if ($verbose) {
 }
 
 ###### execute the command #########
+#die join "\t", $in_format, $input_dir , "\n";
 while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir)) &&
        (($current_seq ne "") || ($current_id ne ""))) {
 
@@ -184,14 +181,22 @@ NAME
 
         v1.0, 1997 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
 	
+DESCRIPTION
+	Converts sequences between different formats. Optionally, also
+	returns the reverse-complement of the input sequences.
+
+CATEGORY
+	util
+	sequence
+
 USAGE
-        consvert-seq [-i inputfile] [-o outputfile] [-v] 
+        consert-seq [-i inputfile] [-o outputfile] [-v] 
 	          -id identifier
                   -from inputformat -to outputformat
                   [-lw line_width]
 	
 OPTIONS
-	-v	verbose.
+	-v #	verbose level
 	-i inputfile
 		if not specified, the standard input is used.
 		This allows to place the command within a pipe.
@@ -237,7 +242,7 @@ consvert-seq options
 --------------------
 -h      detailed help message
 -help   short help message (shows the present message)
--v	verbose.
+-v #	verbose level
 -i      inputfile
 -o      outputfile
 -from   input format (see below for accepted formats)
@@ -265,7 +270,11 @@ sub ReadArguments {
     foreach $a (0..$#ARGV) {
 	
 	if ($ARGV[$a] eq "-v") {
-	    $verbose = 1;
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
 	    
 	    ### detailed help
 	} elsif ($ARGV[$a] eq "-h") {

@@ -2,7 +2,7 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
+require "RSA.lib";
 
 
 
@@ -13,13 +13,20 @@ NAME
 	IUPAC-to-regular
 	by Jacques van Helden, 26 June 1997
 
+
+DESCRIPTION
+	Transforms a sequence conform to IUPAC degenerate code into an
+	equivalent regular expression. this expression canbe used to
+	search for complex patterns with general string search program
+	like grep or gais.
+
+CATEGORIES
+	util
+	sequence
+
 USAGE
 	IUPAC-to-regular 'input_sequence'
 	
-	transforms a sequence conform to IUPAC degenerate code into an 
-	equivalent regular expression. this expression canbe used to search for 
-	complex patterns with general string search program like grep or gais. 
-
 INPUT
 	Any sequence conform to the standard degenerate nucleotide code of the 
 	IUPAC-IUB commission. The pattern sequence should thus only contain the 

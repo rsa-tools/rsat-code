@@ -2,7 +2,7 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
+require "RSA.lib";
 
 
 
@@ -22,6 +22,11 @@ USAGE
 
 DESCRIPTION
 	extracts features from a fugue file.
+
+CATEGORY
+	util
+	conversion
+	drawing
 
 REFERENCES
 	Rooman, M.J., Kocher, J-P.A., and Wodak, S.J. (1992). 
@@ -123,7 +128,7 @@ if ($map eq "") {
 
 
 ### open input file ###
-$in = &OpenInputFile($inputfile);
+($in, $input_dir) = &OpenInputFile($inputfile);
 
 ### open output file ###
 $out = &OpenOutputFile($outputfile);

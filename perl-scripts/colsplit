@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: colsplit,v 1.3 2002/03/21 09:12:54 jvanheld Exp $
+# $Id: colsplit,v 1.4 2002/06/06 10:11:32 jvanheld Exp $
 #
-# Time-stamp: <2002-03-21 10:11:00 jvanheld>
+# Time-stamp: <2002-06-06 12:11:31 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -47,7 +47,7 @@ unless (-d $output_dir) {
 }
 
 ##### read input #####
-$in = &OpenInputFile($infile{input});
+($in) = &OpenInputFile($infile{input});
 while (my $line = <$in>) {
     chomp $line;
     next if ($line =~ /^;/); #### ignore comment lines
@@ -126,6 +126,9 @@ DESCRIPTION
 
 	A separate output file will be gnerated for each distinct
 	value of the specified column of the input file.
+
+CATEGORY
+	util
 
 OPTIONS
 	-h	(must be first argument) display full help message

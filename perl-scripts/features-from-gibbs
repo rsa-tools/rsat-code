@@ -2,7 +2,7 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
+require "RSA.lib";
 
 
 
@@ -22,6 +22,11 @@ DESCRIPTION
 	extracts features from an output file from the Gibbs sampler,
 	and exports them in a format readable by the script feature-map. 
 	
+CATEGORY
+	util
+	conversion
+	drawing
+
 OPTIONS
         -h      (must be first argument) display full help message
         -help   (must be first argument) display options
@@ -95,7 +100,7 @@ foreach $a (0..$#ARGV) {
 
 
 ### open input file ###
-$in = &OpenInputFile($inputfile);
+($in, $input_dir) = &OpenInputFile($inputfile);
 
 ### open output file ###
 $out = &OpenOutputFile($outputfile);

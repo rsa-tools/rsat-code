@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dna-pattern,v 1.20 2002/05/13 23:58:23 jvanheld Exp $
+# $Id: dna-pattern,v 1.21 2002/06/06 10:16:47 jvanheld Exp $
 #
-# Time-stamp: <2002-05-14 01:57:32 jvanheld>
+# Time-stamp: <2002-06-06 12:16:36 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -345,15 +345,19 @@ sub PrintMatchLocation {
 ############ HELP message ####################
 sub Help	{
     open HELP, "|more";
-    print HELP "
+    print HELP <<EndOfHelp;
 NAME
 	dna-pattern
 	perl script v1.1 by Jacques van Helden, 30 July 1997.
 
+DESCRIPTION
 	Searches all occurrences of a pattern within DNA sequences.
         The pattern can be entered as a simple nucleotide sequence, 
         but can also include degenerate nucleotide codes, or regular 
         expressions. 
+
+CATEGORY
+	sequences
 
 USAGE
 	(get help)
@@ -576,6 +580,7 @@ EXAMPLES
 WEB VERSION
 	http://www.ucmb.ulb.ac.be/bioinformatics/rsa-tools/
 ";
+EndOfHelp
     close HELP;
     exit(0);
 }
@@ -583,7 +588,7 @@ WEB VERSION
 
 sub ShortHelp	{
     open HELP, "|more";
-    print HELP "
+    print HELP <<EndShortHelp;
 dna-pattern options
 -------------------
 -h	complete help message
@@ -610,7 +615,7 @@ dna-pattern options
 -stats	return matching statistics
 -window	sliding window size
 -top	only return the top score
--top	sort sequences according to their top score
+-sort	sort sequences according to their top score
 -th     threshold
 -ct	return total count in all sequences
 -N #	return matching sequences with # flanking nucleotides
@@ -618,7 +623,7 @@ dna-pattern options
 -NR #	return matching sequences with # right flanking nucleotides
 -v	verbose
 -origin origin (position 0)
-";
+EndShortHelp
     close HELP;
     exit(0);
 }

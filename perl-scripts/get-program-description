@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-program-description,v 1.1 2002/05/23 10:41:08 jvanheld Exp $
+# $Id: get-program-description,v 1.2 2002/06/06 10:29:39 jvanheld Exp $
 #
-# Time-stamp: <2002-05-23 12:40:56 jvanheld>
+# Time-stamp: <2002-06-06 12:29:37 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -52,8 +52,9 @@ close $in if ($infile{input});
 &Verbose if ($verbose);
 
 ###### execute the command #########
-
 foreach my $program (@program_names) {
+
+    warn ("Getting help for\t$program\n") if ($verbose >=1);
     my $description = "";
     open HELP, "$program -h | ";
     while (<HELP>) {
@@ -62,7 +63,6 @@ foreach my $program (@program_names) {
 	} elsif ($in_description) {
 	    if (/^\S/) {
 		$in_description = 0;
-		break;
 	    } else {
 		$description .= $_;
 	    }
@@ -71,12 +71,15 @@ foreach my $program (@program_names) {
     }
     close HELP;
     $description =~ s/\s+/ /g;
+    unless ($description) {
+	&Warning( "no description for program $program");
+    }
     $description{$program} = $description;
-    
+
 }
 
 ###### print output ######
-
+print $out ";program\tdescription\n";
 foreach my $program (@program_names) {
     print $out join ("\t", $program, $description{$program}), "\n";
 }
@@ -115,6 +118,9 @@ DESCRIPTION
 	Returns the description of one or several programs from the
 	rsa-tool package. 
 	
+CATEGORY
+	util
+
 OPTIONS
 	-h	(must be first argument) display full help message
 	-help	(must be first argument) display options

@@ -5,12 +5,100 @@ if ($0 =~ /([^(\/)]+)$/) {
 require "RSA.lib";
 
 ### initialization
-$ec_file = "$RSA/data/enzymes/enzymes.tab";
-$col{'ec'} = 6;
-$col{'gene'} = 3;
-$col{'org'} = 4;
+$ec_file = "$RSA/data/Saccharomyces_cerevisiae/gene_ec.tab";
+$col{'ec'} = 1;
+$col{'gene'} = 0;
 
-if ($ARGV[0] eq "-h") {
+&ReadArguments();
+
+#### initialise parameters ####
+$start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+
+
+
+### open output file ###
+$out = &OpenOutputFile($outputfile);
+
+##### read input #####
+($in, $input_dir) = &OpenInputFile($inputfile);
+while (<$in>) {
+    next if (/^;/);
+    next unless (/\S/);
+    chomp;
+    @fields = split /\s+/;
+    $gene = $fields[0];
+    push @genes, $gene;
+    $query{lc($gene)} = 1;
+}
+close $in unless ($inputfile eq "");
+
+#### verbose ####
+if ($verbose) {
+    print $out "; gene2ec ";
+    &PrintArguments();
+    if ($inputfile ne "") {
+	print $out ";Input file	$inputfile\n";
+    }
+    if ($outputfile ne "") {
+	print $out ";Output file	$outputfile\n";
+    }
+    print $out ";Organism\t$sel_org\t$selected_organism\n";
+    print $out ";Query genes\n";
+    foreach $gene (@genes) {
+	print $out ";\t$gene\n";
+    }
+}
+
+
+###### execute the command #########
+($ecs) = &OpenInputFile($ec_file);
+while (<$ecs>) {
+    next if (/^;/);
+    next if (/^--/);
+    next if (/^\#/);
+    next unless (/\S/);
+    chomp;
+
+    @fields = split "\t";
+    $ec = $fields[$col{'ec'}];
+    $gene = $fields[$col{'gene'}];
+    
+#    print join "\t", "HELLO", $ec, $gene, "\n";
+
+    ### treat synonyms
+    if ($query{lc($gene)}) {
+	print $out "$ec";
+	print $out "\t$gene";
+	print $out "\n";
+    }
+}
+close $ecs if $ec_file;
+
+###### print output ######
+
+
+###### verbose ######
+if ($verbose) {
+    $done_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+    print $out ";Job started $start_time";
+    print $out ";Job done    $done_time";
+}
+
+
+###### close output file ######
+close $out unless ($outputfile eq "");
+
+
+exit(0);
+
+
+########################## subroutine definition ############################
+
+sub ReadArguments {
+
+}
+
+sub PrintHelp {
 #### display full help message #####
   open HELP, "| more";
   print HELP <<End_of_help;
@@ -26,6 +114,9 @@ DESCRIPTION
 	Takes as input a list of genes, and returns the list 
 	of reactions (EC numbers) catalyzed by their products in 
 	the selected organism.
+
+CATEGORY
+	genomics
 
 OPTIONS
 	-h	(must be first argument) display full help message
@@ -53,7 +144,7 @@ End_of_help
   exit;
 }
 
-if ($ARGV[0] eq "-help") {
+sub PrintOptions {
 #### display short help message #####
   open HELP, "| more";
   print HELP <<End_short_help;
@@ -73,114 +164,42 @@ End_short_help
   exit;
 }
 
-#### initialise parameters ####
-$start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
 
-
+sub ReadArguments {
 #### read arguments ####
-foreach $a (0..$#ARGV) {
-  ### verbose ###
-  if ($ARGV[$a] eq "-v") {
-    $verbose = 1;
-    
-    ### input file ###
-  } elsif ($ARGV[$a] eq "-i") {
-    $inputfile = $ARGV[$a+1];
-    
-    ### output file ###
-  } elsif ($ARGV[$a] eq "-o") {
-    $outputfile = $ARGV[$a+1];
-    
-    ### organism ###
-  } elsif ($ARGV[$a] eq "-org") {
-    $sel_org = $ARGV[$a+1];
-    if ($supported_organism{$sel_org}) {
-      $selected_organism = $supported_organism{$sel_org}->{'name'};
-    } else {
-      die "Error: organism $org is not supported\n$supported_organisms\n";
+    foreach $a (0..$#ARGV) {
+	### verbose ###
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+	    
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp;
+	    
+	    ### list of options
+	} elsif ($ARGV[0] eq "-help") {
+	    &PrintOptions;
+	    
+	    ### input file ###
+	} elsif ($ARGV[$a] eq "-i") {
+	    $inputfile = $ARGV[$a+1];
+	    
+	    ### output file ###
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outputfile = $ARGV[$a+1];
+	    
+	    ### organism ###
+	} elsif ($ARGV[$a] eq "-org") {
+	    $sel_org = $ARGV[$a+1];
+	    if ($supported_organism{$sel_org}) {
+		$selected_organism = $supported_organism{$sel_org}->{'name'};
+	    } else {
+		die "Error: organism $org is not supported\n$supported_organisms\n";
+	    }
+	}
     }
-    
-  }
 }
-
-#### check argument values ####
-unless (defined($selected_organism)) {
-  die "Error : you should select an organism\n";
-}
-
-### open output file ###
-$out = &OpenOutputFile($outputfile);
-
-##### read input #####
-($in, $input_dir) = &OpenInputFile($inputfile);
-while (<$in>) {
-  next if (/^;/);
-  next unless (/\S/);
-  chomp;
-  @fields = split /\s+/;
-  $gene = $fields[0];
-  push @genes, $gene;
-  $query{lc($gene)} = 1;
-}
-close $in unless ($inputfile eq "");
-
-#### verbose ####
-if ($verbose) {
-  print $out "; gene2ec ";
-  &PrintArguments;
-  if ($inputfile ne "") {
-    print $out ";Input file	$inputfile\n";
-  }
-  if ($outputfile ne "") {
-    print $out ";Output file	$outputfile\n";
-  }
-  print $out ";Organism\t$sel_org\t$selected_organism\n";
-  print $out ";Query genes\n";
-  foreach $gene (@genes) {
-    print $out ";\t$gene\n";
-  }
-}
-
-
-###### execute the command #########
-open EC, $ec_file || die "Error: cannot read EC file $ec_file\n";
-while (<EC>) {
-  next if (/^;/);
-  next unless (/\S/);
-  chomp;
-  @fields = split "\t";
-  $ec = $fields[$col{'ec'}];
-  $gene_names = lc($fields[$col{'gene'}]);
-  $org = $fields[$col{'org'}];
-  ### treat synonyms
-  @genes = split /\|/, $gene_names;
-  foreach $gene (@genes) {
-    if (($query{$gene}) && ($org =~ /$selected_organism/i)) {
-      print $out "$ec";
-      print $out "\t$gene";
-      print $out "\t$selected_organism";
-      print $out "\n";
-    }
-  }
-}
-
-###### print output ######
-
-
-###### verbose ######
-if ($verbose) {
-  $done_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
-  print $out ";Job started $start_time";
-  print $out ";Job done    $done_time";
-}
-
-
-###### close output file ######
-close $out unless ($outputfile eq "");
-
-
-exit(0);
-
-
-########################## subroutine definition ############################
-

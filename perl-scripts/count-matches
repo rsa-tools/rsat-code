@@ -2,7 +2,7 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
+require "RSA.lib";
 
 
 
@@ -19,12 +19,17 @@ USAGE
         count-matches seq1 seq2
 
 DESCRIPTION
-	
+	Count matching positions between two sequences provided as
+	command line arguments.
+
+CATEGORY
+	util
+	sequences
+
 OPTIONS
         -h      (must be first argument) display full help message
         -help   (must be first argument) display options
 	-v	verbose
-		
 	
 INPUT FORMAT
 	seq1 and seq2 must be DNA sequence (not proteic). 

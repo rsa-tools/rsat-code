@@ -2,7 +2,7 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
+require "RSA.lib";
 
 ### initialization
 $ec_file = "$RSA/data/enzymes/enzymes.tab";
@@ -26,6 +26,9 @@ DESCRIPTION
 	Takes as input a list of EC numbers, and returns the list 
 	of genes whose products catalyze these reactions in the
 	selected organism.
+
+CATEGORY
+	genomics
 
 OPTIONS
 	-h	(must be first argument) display full help message
@@ -115,7 +118,7 @@ unless (defined($selected_organism)) {
 $out = &OpenOutputFile($outputfile);
 
 ##### read input #####
-$in = &OpenInputFile($inputfile);
+($in, $input_dir) = &OpenInputFile($inputfile);
 while (<$in>) {
   next if (/^;/);
   next unless (/\S/);
