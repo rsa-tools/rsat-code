@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.35 2001/08/23 00:22:35 jvanheld Exp $
+# $Id: oligo-analysis,v 1.36 2002/02/07 03:19:18 jvanheld Exp $
 #
-# Time-stamp: <2001-08-23 02:08:16 jvanheld>
+# Time-stamp: <2002-02-07 04:15:42 jvanheld>
 #
 ############################################################
 
@@ -11,6 +11,7 @@ if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
 require "RSA.lib";
+require "RSA.classes";
 
 
 ###### initialize parameters ##########
@@ -57,8 +58,8 @@ if (@output_fields == ()) { #default output is occurrence numbers
 
 ### check oligomer length
 unless ($oligo_length > 0) {
-    warn "\tYou should specify an oligomer length > 0.\n";
-    warn "\tType oligo-analysis -h for more info..\n";
+    &Warning("\tYou should specify an oligomer length > 0.\n",
+	     "\tType oligo-analysis -h for more info..\n");
     exit;
 }
 if ($noov) {
@@ -75,9 +76,9 @@ if ($method eq "Markov chain") {
 	}
     }
     if ($markov_order > $oligo_length -2) {
-	die "Error: Markov order ($markov_order) cannot be higher than word length - 2 ($oligo_length -2)\n"; 
+	&FatalError("Markov order ($markov_order) cannot be higher than word length - 2 ($oligo_length -2)\n"); 
     } elsif ($markov_order < 0) {
-	die "Error: invalid markov order $markov_order\n";
+	&FatalError("invalid markov order $markov_order\n");
     }
 }
 
@@ -90,21 +91,16 @@ if ($method eq "Markov chain") {
 ### check pre-defined frequency tables
 ### non-coding frequency calibration
 if ($ncf) {
-  ### check organism first
-  unless ($organism_name) {
-      die ";Error: you should specify an organism for using non-coding frequency calibration\n";
-  }
-  unless ($supported_organism{$organism_name}) {
-      die ";Error: organism $organism_name is not supported on this site\n";
-  }
-  
-  $data_dir = $supported_organism{$organism_name}->{'data'};
-  
-  ### localize dyad non-coding frequency file
-  $method = "Frequency file";
-  $exp_freq_file = "$data_dir/oligo-frequencies/${oligo_length}nt_non-coding_${organism_name}.freq";
-  
-  die "Error: cannot read expected frequency file $exp_freq_file\n" unless (-r  $exp_freq_file);
+    #### organism
+    &CheckOrganism($organism_name);
+    
+    $data_dir = $supported_organism{$organism_name}->{'data'};
+    
+    ### localize dyad non-coding frequency file
+    $method = "Frequency file";
+    $exp_freq_file = "$data_dir/oligo-frequencies/${oligo_length}nt_non-coding_${organism_name}.freq";
+    
+    &FatalError("cannot read expected frequency file $exp_freq_file\n") unless (-r  $exp_freq_file);
 }
 
 ### read expected frequencies
@@ -149,9 +145,9 @@ $out = &OpenOutputFile($outputfile);
 
 
 if ($verbose >= 2) {
-  $current_time = `date '+%H:%M:%S'`;
-  chomp($current_time);
-  warn "oligo-analysis\t$current_time\tDone\n";
+    $current_time = `date '+%H:%M:%S'`;
+    chomp($current_time);
+    &Warning( "oligo-analysis\t$current_time\tDone\n");
 }
 
 
@@ -170,7 +166,7 @@ sub CountOligo {
     if ($verbose >= 2) {
 	$current_time = `date '+%H:%M:%S'`;
 	chomp($current_time);
-	warn "oligo-analysis\t$current_time\tCounting oligo frequencies\n";
+	&Warning( "oligo-analysis\t$current_time\tCounting oligo frequencies\n");
     }
 
     if ($return{'table'}) {
@@ -195,7 +191,7 @@ sub CountOligo {
 	if ($verbose >= 3) {
 	    $current_time = `date '+%H:%M:%S'`;
 	    chomp($current_time);
-	    warn "oligo-analysis\t$curent_time\t$current_id\t$seq_length[$sequence_number]\n";
+	    &Warning( "oligo-analysis\t$curent_time\t$current_id\t$seq_length[$sequence_number]\n");
 	}
 	
 	$sum_seq_length += $seq_length[$sequence_number];
@@ -234,7 +230,7 @@ sub CountOligo {
 	while ($current_pos >=0) {
 	    if ($verbose >= 3 && (($current_pos%$chunk) == 0) && ($current_pos > 0)) {
 		$current_length = length($current_seq);
-		warn "\t$current_id\tremain to read: $current_pos\n";
+		&Warning( "\t$current_id\tremain to read: $current_pos\n");
 	    }
 	    
 	    ### occurrences
@@ -347,7 +343,7 @@ sub OccurrenceThreshold {
   if ($verbose >= 2) {
     $current_time = `date '+%H:%M:%S'`;
     chomp($current_time);
-    warn "oligo-analysis\t$current_time\tThreshold on occurrences\n";
+    &Warning( "oligo-analysis\t$current_time\tThreshold on occurrences\n");
   }
   
   foreach $pattern_seq (keys %patterns) {
@@ -362,7 +358,7 @@ sub MatchingSeqThreshold {
   if ($verbose >= 2) {
     $current_time = `date '+%H:%M:%S'`;
     chomp($current_time);
-    warn "oligo-analysis\t$current_time\tThreshold on matching sequences\n";
+    &Warning( "oligo-analysis\t$current_time\tThreshold on matching sequences\n");
   }
   foreach $pattern_seq (keys %patterns) {
     if ($patterns{$pattern_seq}->{mseq} < $mseq_threshold) {
@@ -379,7 +375,7 @@ sub CalcSubWordFrequencies {
     if ($verbose >= 2) {
 	$current_time = `date '+%H:%M:%S'`;
 	chomp($current_time);
-	warn "oligo-analysis\t$current_time\tCalculating subword frequencies\n";
+	&Warning( "oligo-analysis\t$current_time\tCalculating subword frequencies\n");
     }
     
     foreach $pattern_seq (keys %patterns) {
@@ -438,7 +434,7 @@ sub CalcFrequencies {
   if ($verbose >= 2) {
     $current_time = `date '+%H:%M:%S'`;
     chomp($current_time);
-    warn "oligo-analysis\t$current_time\tCalculating relative frequencies\n";
+    &Warning( "oligo-analysis\t$current_time\tCalculating relative frequencies\n");
   }
   
   $sum_overlaps = 0;
@@ -468,7 +464,7 @@ sub CalcAlphabet {
   if ($verbose >= 2) {
     $current_time = `date '+%H:%M:%S'`;
     chomp($current_time);
-    warn "oligo-analysis\t$current_time\tCalculating input alphabet\n";
+    &Warning( "oligo-analysis\t$current_time\tCalculating input alphabet\n");
   }
   
   foreach $key (sort keys %residue_occ) {
@@ -491,7 +487,7 @@ sub CalcAlphabet {
 #	if ($verbose >= 2) {
 #		$current_time = `date '+%H:%M:%S'`;
 #		chomp($current_time);
-#		warn "oligo-analysis\t$current_time\tCalculating input alphabet\n";
+#		&Warning( "oligo-analysis\t$current_time\tCalculating input alphabet\n");
 #    }
 #    foreach $pattern_seq (sort keys %patterns) {
 #        for $seq (1..$sequence_number) {
@@ -511,7 +507,7 @@ sub SumStrands {
     if ($verbose >= 2) {
 	$current_time = `date '+%H:%M:%S'`;
 	chomp($current_time);
-	warn "oligo-analysis\t$current_time\tSumming occurrences for pairs of reverse complements\n";
+	&Warning( "oligo-analysis\t$current_time\tSumming occurrences for pairs of reverse complements\n");
     }
     if ($seq_type eq "DNA") {
 	$discarded_occurrences *=2;
@@ -561,7 +557,7 @@ sub Degenerate {
   if ($verbose >= 2) {
     $current_time = `date '+%H:%M:%S'`;
     chomp($current_time);
-    warn "oligo-analysis\t$current_time\tNeighborhood\n";
+    &Warning( "oligo-analysis\t$current_time\tNeighborhood\n");
   }
   
   foreach $d (@degenerate_code) {  
@@ -632,7 +628,7 @@ sub CalcExpected {
     if ($verbose >= 2) {
 	$current_time = `date '+%H:%M:%S'`;
 	chomp($current_time);
-	warn "oligo-analysis\t$current_time\tCalculating probabilities\n";
+	&Warning( "oligo-analysis\t$current_time\tCalculating probabilities\n");
     }
     
     ### expected frequency file
@@ -967,7 +963,7 @@ sub PrintResult {
     if ($verbose >= 2) {
 	$current_time = `date '+%H:%M:%S'`;
 	chomp($current_time);
-	warn "oligo-analysis\t$current_time\tPrinting output file\n";
+	&Warning( "oligo-analysis\t$current_time\tPrinting output file\n");
     }
     
     ### verbose ###
@@ -1455,8 +1451,8 @@ sub ReadArguments {
 	    unless ( (&IsReal($pseudo_weight)) &&
 		     ($pseudo_weight <= 1) &&
 		     ($pseudo_weight >= 0)) {
-		die ("Error: invalid value for pseudo frequency\t", $pseudo_weight, "\n",
-		     "Pseudo frequency must be a real value between 0 and 1\n");
+		&FatalError ("Error: $pseudo_weight is not a valid value for pseudo frequency.",
+			     "Pseudo frequency must be a real value between 0 and 1.");
 	    }
 	    
 	    #### alphabet
@@ -1646,7 +1642,7 @@ sub ReadArguments {
     if ($verbose >= 2) {
 	$current_time = `date '+%H:%M:%S'`;
 	chomp($current_time);
-	warn "oligo-analysis\t$current_time\tStarting\n";
+	&Warning( "oligo-analysis\t$current_time\tStarting\n");
     }
 }
  
@@ -1858,7 +1854,6 @@ ARGUMENTS
 
 	-under	detect under-represented instead of over-represented words
 		(see below for details). 
-
 
     THRESHOLDS
 	-tho #	where # is an integer. Occurrence threshold: only returns the 
