@@ -162,8 +162,6 @@ sub OpenOutputFile {
 	} else {
 	    $to_open = ">$filename";
 	}
-#	print `pwd`;
-#	die  "$to_open";
 	unless (open OUTPUT, "$to_open") {
 	    &FatalError ("\tError : cannot write output file $filename\n");
 	}
