@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.27 2002/11/08 05:23:42 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.28 2002/12/09 22:14:25 jvanheld Exp $
 #
-# Time-stamp: <2002-11-07 23:23:31 jvanheld>
+# Time-stamp: <2002-12-09 16:14:14 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -16,8 +16,8 @@ require "RSA.classes";
 
 ###read parameters
 if ($#ARGV < 0) {
-  die ("Usage : multiple-family-analysis -org organism -fam family_file \n", 
-       "\t[-noup] [-nocalc] [-nosynt] [-v]\n");
+    die ("Usage : multiple-family-analysis -org organism -fam family_file \n", 
+	 "\t[-noup] [-nocalc] [-nosynt] [-v]\n");
 }
 
 
@@ -67,7 +67,7 @@ $verbose = 0;
 
 ### read gene name and identifiers
 warn "; Reading ORF information ...\n" 
-    if ($verbose);
+    if ($verbose >= 1);
 &ReadOrfPositions($organism_name);
 &ReadSynonyms($organism_name);
 
@@ -80,56 +80,15 @@ warn "; Reading ORF information ...\n"
 %family = &ReadFamilies($family_file, 1);
 @families = sort keys %family;
 
-#### verbose
-if ($verbose >= 1) {
-    print "; multiple-family-analysis ";
-    &PrintArguments($out);
-    printf "; families     \t%d\n", $#families + 1;
-    foreach my $family_name (@families) {
-	printf ";\t%s\t%d elements\n", $family_name, $family{$family_name}->get_size();
-    }
-    printf "; family file\t%s\n", $family_file;
-    printf "; upstream region\n";
-    printf ";\t%-22s\t%d\n", "strands", $strands;
-    printf ";\t%-22s\t%d\n", "from", $from;
-    printf ";\t%-22s\t%d\n", "to", $to;
-    printf ";\t%-22s\t%d\n", "size", $size;
-    printf "; oligo-analysis\n";
-    printf ";\t%-22s\t%d\n", "max oligo length", $max_oligo_length;
-    printf ";\t%-22s\t%d\n", "min oligo length", $min_oligo_length;
-    printf "; dyad-analysis\n";
-    printf ";\t%-22s\t%d\n", "monad length", $monad_length;
-    printf ";\t%-22s\t%d\n", "min spacing", $min_sp;
-    printf ";\t%-22s\t%d\n", "max spacing", $max_sp;
-    printf ";\t%-22s\t%s\n", "dyad type", $dyad_type;
-    printf ";\t%-22s\t%g\n", "sig threshold", $th;
-    if ($markov) {
-	printf ";%-13s\t%s\n", "Markov chains, order", $markov_order;
-    } elsif ($background) {
-	printf ";%-13s\t%s\n", "background model", $background;
-    }
-    printf ";%-13s\t%s\n", "organism", $organism_name;
-    print "; no overlap with upstream ORFs" if ($noorf);
-}
-
-
 ### write composition of the families in the separated directories
 &SetFileNames();
 
-### initialize one directory for each family
-foreach $family_name(@families) {
-  $dir = "${family_name}/";
-  unless (-d $dir) {
-    mkdir $dir, 0755 || die "Error: cannot create directory $dir\n";
-  }
-  open FAM, ">$family{$family_name}->{family_file}" ||
-      die "Error: cannot write family file $family{$family_name}->{family_file}\n";
-  foreach $id ($family{$family_name}->get_members()) {
-    print FAM "$id\t$name{$id}\n";
-    
-  }
-  close FAM;
-}
+&MakeDirectories();
+
+&CheckOutputDirectory();
+
+#### verbose
+&Verbose() if ($verbose >= 1);
 
 ### perform analysis
 &AnalyzeFamilies();
@@ -853,7 +812,7 @@ NAME
         1999 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
 	
 USAGE
-        multiple-family-analysis [-i inputfile] [-o outputfile] [-v]
+        multiple-family-analysis [-i inputfile] [-v]
 
 DESCRIPTION
 	Runs a combination of programs in order to discover significant
@@ -879,6 +838,7 @@ OPTIONS
 	-help	(must be first argument) display options
 	-v	verbose
 	-i	family file
+	-outdir	output directory
 	-org	organism
 	-from	upstream region left limit
 	-to	upstream region right limit
@@ -957,6 +917,7 @@ multiple-family-analysis options
 -help		(must be first argument) display options
 -v		verbose
 -i		family file
+-outdir		output directory
 -org		organism
 -from		upstream region left limit
 -to		upstream region right limit
@@ -980,6 +941,7 @@ multiple-family-analysis options
 -pseudo		pseudo-weight (see oligo-analysis manual)
 -nomap		do not draw feature maps (for saving time and hard disk space)
 -bg		background frequency modelEnd_short_help
+End_short_help
   close HELP;
   exit;
 }
@@ -1009,6 +971,10 @@ sub ReadArguments {
 		 ($ARGV[$a] eq "-fam") # for compatibility with previous versions
 		 ) {
 	    $family_file = $ARGV[$a+1];
+
+	    ### output directory
+	} elsif ($ARGV[$a] eq "-outdir") {
+	    $dir{output} = $ARGV[$a+1];
 
 	    ### upstream sequence lmits
 	} elsif (($ARGV[$a] eq "-from") &&
@@ -1127,3 +1093,74 @@ sub ReadArguments {
 }
 
 
+
+################################################################
+# Verbosity
+#
+sub Verbose {
+    print "; multiple-family-analysis ";
+    &PrintArguments($out);
+    printf "; families     \t%d\n", $#families + 1;
+    foreach my $family_name (@families) {
+	printf ";\t%s\t%d elements\n", $family_name, $family{$family_name}->get_size();
+    }
+    printf "; family file\t%s\n", $family_file;
+    printf "; upstream region\n";
+    printf ";\t%-22s\t%d\n", "strands", $strands;
+    printf ";\t%-22s\t%d\n", "from", $from;
+    printf ";\t%-22s\t%d\n", "to", $to;
+    printf ";\t%-22s\t%d\n", "size", $size;
+    printf "; oligo-analysis\n";
+    printf ";\t%-22s\t%d\n", "max oligo length", $max_oligo_length;
+    printf ";\t%-22s\t%d\n", "min oligo length", $min_oligo_length;
+    printf "; dyad-analysis\n";
+    printf ";\t%-22s\t%d\n", "monad length", $monad_length;
+    printf ";\t%-22s\t%d\n", "min spacing", $min_sp;
+    printf ";\t%-22s\t%d\n", "max spacing", $max_sp;
+    printf ";\t%-22s\t%s\n", "dyad type", $dyad_type;
+    printf ";\t%-22s\t%g\n", "sig threshold", $th;
+    if ($markov) {
+	printf ";%-13s\t%s\n", "Markov chains, order", $markov_order;
+    } elsif ($background) {
+	printf ";%-13s\t%s\n", "background model", $background;
+    }
+    printf ";%-13s\t%s\n", "organism", $organism_name;
+    print "; no overlap with upstream ORFs" if ($noorf);
+}
+
+
+################################################################
+### initialize one directory for each family
+sub MakeDirectories {
+    foreach $family_name(@families) {
+	$dir = "${family_name}/";
+	unless (-d $dir) {
+	    mkdir $dir, 0755 || die "Error: cannot create directory $dir\n";
+	}
+	open FAM, ">$family{$family_name}->{family_file}" ||
+	    die "Error: cannot write family file $family{$family_name}->{family_file}\n";
+	foreach $id ($family{$family_name}->get_members()) {
+	    print FAM "$id\t$name{$id}\n";
+    
+	}
+	close FAM;
+    }
+}
+
+
+
+
+################################################################
+#### check output directory
+#### output directory
+sub CheckOutputDirectory {
+    if ($dir{output}) {
+	unless (-d $dir{output}) {
+	    `mkdir -p $dir{output}`;
+	    unless (-d $dir{output}) {
+		&FatalError("Cannot create output directory $dir{output}");
+	    }
+	}
+	chdir ($dir{output});
+    }
+}
