@@ -488,6 +488,19 @@ link_one_file:
 		echo "[<a href=${FILE_TO_LINK}>${LINK_TEXT}</a>]"  >> ${INDEX_FILE};	\
 	fi
 	if [ -f "${FILE_TO_LINK}.gz" ] ; then						\
-		echo "[<a href=${FILE_TO_LINK}.gz>${LINK_TEXT}</a>]"  >> ${INDEX_FILE};	\
+		echo "[<a href=${FILE_TO_LINK}.gz>${LINK_TEXT}.gz</a>]"  >> ${INDEX_FILE};	\
 	fi
+
+################################################################
+## Synchronize the results to the server
+SERVER=rsat.ulb.ac.be
+SERVER_DIR=rsa-tools/data/comparative_genomics
+SCMBB=jvanheld@${SERVER}:${SERVER_DIR}
+TO_SYNC=data
+TO_SYNC_DIR=`dirname ${TO_SYNC}`
+RSYNC_CMD=${RSYNC} ${OPT} ${TO_SYNC} ${SCMBB}/${TO_SYNC_DIR}/
+to_scmbb:
+	@echo ${RSYNC_CMD}
+	@${RSYNC_CMD}
+
 
