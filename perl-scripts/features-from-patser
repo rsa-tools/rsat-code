@@ -34,9 +34,10 @@ OPTIONS
 		This allows to place the command within a pipe.
 	-id	feature identifier
 		the same identifier is used for all features
-	-mlen #	matrix length
+	-mlen #	
+		matrix length
 	-strand	D, R or DR. Strand on which to draw the feature.
-	-orig	origin
+	-origin	#
 		each position is recalculated using this value as reference.
 	-origfile	origin file	
 		each line indicates the specific origin for one of the 
@@ -67,17 +68,17 @@ if ($ARGV[0] eq "-help") {
   print HELP <<End_short_help;
 features-from-patser options
 ----------------
--h      (must be first argument) display full help message
--help   (must be first argument) display options
--i      input file
--o      output file
--v      verbose
--id	feature identifier
--mlen #	matrix length
--strand	D, R or DR. Strand on which to draw the feature
--orig	origin
+-h      	(must be first argument) display full help message
+-help   	(must be first argument) display options
+-i      	input file
+-o      	output file
+-v      	verbose
+-id		feature identifier
+-mlen #		matrix length
+-strand		D, R or DR. Strand on which to draw the feature
+-origin #	origin
 -origfile	origin file
--seq	sequencefile
+-seq		sequencefile
 End_short_help
   close HELP;
   exit;
@@ -110,7 +111,8 @@ foreach $a (0..$#ARGV) {
     } elsif ($ARGV[$a] eq "-id") {
 	$id = $ARGV[$a+1];
 
-    } elsif (($ARGV[$a] =~ /^-orig$/i) &&(&IsInteger($ARGV[$a+1]))) {
+    } elsif (($ARGV[$a] =~ /^-orig/i) &&
+	     ((&IsInteger($ARGV[$a+1]) || ($ARGV[$a+1] eq "-0")))) {
 	$fixed_origin = 1;
         $origin = $ARGV[$a+1];
 
@@ -144,21 +146,14 @@ if ($origin_file ne "") {
 
 
 ##### read the sequences #####
-if ($sequence_file ne "") {
-    unless (open SEQ, $sequence_file) {
-	print "Error: cannot open sequence file\n";
-	print "type features-from-patser -h for the manual\n";
-	exit;
-    }
-
-    $in = SEQ;
-    while ((($current_seq, $current_id) = &ReadNextSequence($in, $seq_format)) &&
+if ($sequence_file) {
+    $seq = &OpenInputFile($sequence_file);
+    while ((($current_seq, $current_id) = &ReadNextSequence($seq, $seq_format)) &&
 	   (($current_seq ne "") || ($current_id ne ""))) {
 	$current_seq =~s/\s//g;
 	$sequence{$current_id} = $current_seq;
-
     }
-    close SEQ;
+    close $seq;
 }
 
 
@@ -202,21 +197,29 @@ while (<$in>) {
 
     } elsif (/^\s*(\S+)\s+position=\s+(\d+)([c\s])\s+score=\s+(\S+)/i) {
 	$map = $1;
+	$position = $2;
+	$strand = $3;
 	$score = $4;
-        $sub_sequence = substr($sequence{$map}, $2 -1, $matrix_length);
-	if ($3 eq "C") {
+
+	#### get the sub sequence
+        $sub_sequence = substr($sequence{$map}, $position -1, $matrix_length);
+	if ($strand eq "C") {
 	    $sub_sequence = &ReverseComplement($sub_sequence);
 	}
 
-	if ($fixed_origin) {
-	    $start = $2 - $origin;
+	
+	unless ($fixed_origin) {
+	    $origin = $origin{$1};
+	}
+	if ($origin eq "-0") {
+	    $start = $position - length($sequence{$map}) + 1;
 	} else {
-	    $start = $2 - $origin{$1};
+	    $start = $position - $origin;
 	}
 	$end = $start + $matrix_length -1;
 
 	unless ($force_strand) {
-	    if  ($3 =~ /^c$/i) {
+	    if  ($strand =~ /^c$/i) {
 		$strand = "R";
 	    } else {
 		$strand = "D";
