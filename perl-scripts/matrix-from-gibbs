@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-gibbs,v 1.4 2004/02/04 02:18:37 jvanheld Exp $
+# $Id: matrix-from-gibbs,v 1.5 2004/02/04 14:07:11 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:36 jvanheld>
 #
@@ -16,16 +16,15 @@ require "RSA.classes";
 
 
 #### initialise parameters ####
-my $start_time = &AlphaDate;
+my $start_time = &AlphaDate();
 
 local $infile{input} = "";
 local $outfile{output} = "";
 
 local $verbose = 0;
-local $in = STDIN;
 local $out = STDOUT;
 
-&ReadArguments;
+&ReadArguments();
 
 
 #### check argument values ####
@@ -34,42 +33,8 @@ local $out = STDOUT;
 ### open output file ###
 $out = &OpenOutputFile($outfile{output});
 
-##### read input #####
-($in) = &OpenInputFile($infile{input});
-$in_matrix = 0;
-
-while (<$in>) {
-    next unless (/\S/);
-    if (/Information \(relative entropy\) contribution in tenth bits\:/) {
-	$in_matrix = 1;
-	$current_matrix = new RSA::matrix();
-	$current_matrix->setAlphabet("A","C","G","T");   # default nucletodide alphabet
-	next;
-    } elsif (/site/) {
-	$in_matrix = 0;
-	$last_matrix = $current_matrix;
-	undef($current_matrix);
-	next;
-    } elsif ((/^\s*POS/) && ($in_matrix)) {
-	chomp;
-	@header = split " +";
-	@alphabet = @header[1..$#header-1];
-	$current_matrix->setAlphabet(@alphabet);
-    } elsif ($in_matrix) {
-	chomp;
-	s/^\s+//;
-	@fields = split " +";
-	@values = @fields[1..$#header-1];
-	foreach my $v (0..$#values) {
-	    $values[$v] =~ s/^\.$/0/;
-	}
-	$current_matrix->addColumn(@values);
-    }
-}
-
-close $in if ($infile{input});
-
-
+$current_matrix = new RSA::matrix();
+$current_matrix->readFromFile($infile{input}, "gibbs");
 
 #### verbose ####
 &Verbose if ($verbose);
@@ -78,7 +43,7 @@ close $in if ($infile{input});
 
 
 ###### print output ######
-print $out $last_matrix->toString();
+print $out $current_matrix->toString();
 
 ###### verbose ######
 if ($verbose) {
@@ -198,4 +163,16 @@ sub Verbose {
       print $out ";\t$key\t$value\n";
     }
   }
+
+  printf $out "; %-14s\t%s\n", "command", $current_matrix->get_attribute("command");
+  for my $param qw(
+		   nrow
+		   ncol
+		   model.map
+		   betaprior.map
+		   MAP
+		   ) {
+      printf $out "; %-14s\t%g\n", $param, $current_matrix->get_attribute($param);
+  }
+  printf $out "; %-14s\t%d\n", "seed", $current_matrix->get_attribute("seed");
 }

@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.65 2004/02/04 02:18:37 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.66 2004/02/04 14:07:11 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -34,7 +34,7 @@ $dir{main} = `pwd`;
 $dir{calib1} = "calibrations_1gene"; 
 chomp($dir{main});
 
-@supported_tasks = qw (upstream purge calibrate oligos merge_oligos oligo_maps dyad_maps maps dyads merge_patterns slide synthesis sql clean all report consensus);
+@supported_tasks = qw (upstream purge calibrate oligos merge_oligos oligo_maps dyad_maps maps dyads merge_patterns slide synthesis sql clean all report consensus gibbs);
 foreach my $task (@supported_tasks) {
     $supported_task{$task} = 1;
 }
@@ -86,6 +86,7 @@ $max_sp = 20;
 ## consensus options
 $matrix_width = 10;
 $expected_sites_per_gene = 2;
+$seed = undef;
 
 ## Comparison between discovered and known motifs
 $known_site_file = "";
@@ -267,14 +268,53 @@ sub SetFileNames {
 	$family{$family_name}->{merged_file} =  "${family_name}/merged_${family_name}/".$family{$family_name}->{file_prefix}.$oligo_suffix.$dyad_suffix;
 	$family{$family_name}->{merged_ft_file} = $family{$family_name}->{merged_file}.".ft";
 
-#	$family{$family_name}->{consensus_file} = "$family_name/consensus_${family_name}/".$family{$family_name}->{file_prefix}.$consensus_suffix;
-
 
 	################################################################
+	## Gibbs options and files
+	my $gibbs_options = "";
+	my $gibbs_suffix = "";
+
+	## input file
+	$family{$family_name}->{gibbs_input_seq_file} = $family{$family_name}->{input_seq_file}.".gibbs";
+	$gibbs_options .= " ".$family{$family_name}->{gibbs_input_seq_file};
+
+	## Matrix width
+	$gibbs_options .= " ".$matrix_width;
+	$gibbs_suffix .= "-L".$matrix_width;
+
+	## Expected number of sites
+	my $gene_nb = scalar(@{$family{$family_name}->{members}});
+	warn join ("\t", "Number of genes", $family_name, $gene_nb), "\n";
+	$expected_sites = $gene_nb*$expected_sites_per_gene;	
+	$gibbs_options .= " ".$expected_sites;
+	$gibbs_suffix .= "-n".$expected_sites; 
+
+	## DON'T use fragmentation (i.e., column sampler)	
+	$gibbs_options .= " -d";
+	$gibbs_suffix .= "-d";
+
+	## Use nucleic acid alphabet
+	$gibbs_options .= " -n";
+	$gibbs_suffix .= "-n";
+
+	## Random seed
+	if (defined($seed)) {
+	    $gibbs_options .= " -s".$seed;
+	    $gibbs_suffix .= "-s".$seed;
+	}
+
+	## Assign gibbs options to the family
+	$family{$family_name}->{gibbs_suffix} = $gibbs_suffix;
+	$family{$family_name}->{gibbs_options} = $gibbs_options;
+	$family{$family_name}->{gibbs_dir} = "${family_name}/gibbs_${family_name}";
+	$family{$family_name}->{gibbs_file} = $family{$family_name}->{gibbs_dir}."/".$family{$family_name}->{file_prefix}.$gibbs_suffix;
+	
+	################################################################
 	## Consensus options and files
-	## strands
 	my $consensus_options = "";
 	my $consensus_suffix = "";
+
+	## strands
 	if ($strands eq "-1str") {
 	    $consensus_options .= " -c0"; ## Single-strand search
 	    $consensus_suffix .= "-c0";
@@ -683,19 +723,43 @@ sub DrawMergedFeatureMap {
 
 ################################################################
 ## Run Jerry Hertz' consensus program 
+sub Gibbs {
+    chdir($dir{output});
+    &CheckOutDir($family{$family_name}->{gibbs_dir});
+
+
+    if ($strand = "-2str") {
+	$addrc = " -addrc";
+    }
+    ## This can be useful in case the file is compressed
+    my $gibbs_command = "convert-seq ".$addrc;
+    $gibbs_command .= " -from fasta -to fasta ";
+    $gibbs_command .= " -i ".$family{$family_name}->{input_seq_file};
+    $gibbs_command .= " -o ".$family{$family_name}->{gibbs_input_seq_file};
+
+
+    ## run the command
+    $gibbs_command .= " ; gibbs ".$family{$family_name}->{gibbs_options};
+    $gibbs_command .= " > ".$family{$family_name}->{gibbs_file};
+#    unless ($main::verbose >= 4) {
+#	$gibbs_command .= ">& /dev/null";
+#    }
+    &doit($gibbs_command);
+}
+
+################################################################
+## Run Jerry Hertz' consensus program 
 sub Consensus {
     chdir($dir{output});
     &CheckOutDir($family{$family_name}->{consensus_dir});
 
     ## input file has to be converted to consensus format
-    $convert_command = "convert-seq -dna -from fasta -to wc -i ".$family{$family_name}->{input_seq_file};
-
+    $consensus_command = "convert-seq -dna -from fasta -to wc -i ".$family{$family_name}->{input_seq_file};
 
     ## run the command
-    my $command = $convert_command;
-    $command .= " | consensus ".$family{$family_name}->{consensus_options};
-    $command .= " > ".$family{$family_name}->{consensus_file};
-    &doit($command);
+    $consensus_command .= " | consensus ".$family{$family_name}->{consensus_options};
+    $consensus_command .= " > ".$family{$family_name}->{consensus_file};
+    &doit($consensus_command);
 }
 
 ################################################################
@@ -784,6 +848,7 @@ sub SyntheticTable {
     $row{dyads} = $row++;
     $row{selection} = $row++ if ($task{report});
     $row{consensus} = $row++;
+    $row{gibbs} = $row++;
     $row_num = $row-1;
     while (($header,$row) = each %row) {
 	$table[$row][0] = "<B>$header</B>";
@@ -870,6 +935,15 @@ sub SyntheticTable {
 	    $map_link = "<a href=../$family{$family_name}->{oligo_selection}.${IMG_FORMAT}>\n";
 	}
 	&IndexConsensus($family_name,  $family{$family_name}->{consensus_file}, $map_link, $row{consensus}, $col);
+
+	################################################################
+	#### Index results of gibbs
+	if ($htmaps) {
+	    $map_link = "<a href=../$family{$family_name}->{oligo_selection}.html>\n";
+	} else {
+	    $map_link = "<a href=../$family{$family_name}->{oligo_selection}.${IMG_FORMAT}>\n";
+	}
+	&IndexGibbs($family_name,  $family{$family_name}->{gibbs_file}, $map_link, $row{gibbs}, $col);
     }
     
 
@@ -918,7 +992,7 @@ sub SyntheticTable {
     ## Transpose the result table
     if ($transpose) {
 	foreach $r (0..$row_num) {
-	    print $syn "<tr>\n";
+	    print $syn "<tr valign=top>\n";
 	    foreach $f (@sorted_families) {
 		my $c = $column{$f};
 		print $syn "<td>", $table[$r][$c], "</td>\n";
@@ -933,7 +1007,7 @@ sub SyntheticTable {
 	#### print table content
 	foreach $f (@sorted_families) {
 	    my $c = $column{$f};
-	    print $syn "<tr>\n";
+	    print $syn "<tr valign=top>\n";
 	    foreach $r (0..$row_num) {
 		print $syn "<td>", $table[$r][$c], "</td>\n";
 	    }
@@ -951,25 +1025,71 @@ sub SyntheticTable {
 }
 
 
+
+
 ################################################################
 ## Index the matrix from a consensus file
 sub IndexConsensus {
+    &IndexMatrix(@_, format=>"consensus");
+}
+
+################################################################
+## Index a matrix
+sub IndexMatrix {
     my ($family_name, $consensus_file, $map_link, $row, $col, %args) = @_;
-    warn join ("\t", "; Indexing consensus matrix for family", $family_name, $consensus_file, $row, $col), "\n" if ($verbose >= 2);
+    my $format = $args{format};
+    my @attributes = ();
+    if ($format eq "consensus") {
+	push @attributes, qw (unadjusted.information
+			      adjusted.information
+			      Pval
+			      ln.Pval
+			      exp
+			      ln.exp
+			      );
+    } elsif ($format eq "gibbs") {
+	push @attributes, qw (
+			      model.map
+			      betaprior.map
+			      MAP
+			      seed
+			      );
+    } else {
+	&FatalError("Invalid format for a matrix $format");
+    }
+    warn join ("\t", "; Indexing $format matrix for family", $family_name, $consensus_file, $row, $col), "\n" if ($verbose >= 2);
     my $matrix = new RSA::matrix();
-    $matrix->readFromFile($consensus_file, "consensus");
+    $matrix->readFromFile($consensus_file, $format);
     $table[$row][$col] = "<table cellpadding=3>\n";
     $table[$row][$col] .= "<TR>\n";
     $table[$row][$col] .= "<td colspan=2><pre>".$matrix->toString(" ", 4)."</pre></td>\n";
     $table[$row][$col] .= "</TR>\n";
-
-    $table[$row][$col] .= "<tr><td align=right>unadjusted.information</td><td>".$matrix->get_attribute("unadjusted.information")."</td></tr>\n";
-    $table[$row][$col] .= "<tr><td align=right>adjusted.information</td><td>".$matrix->get_attribute("adjusted.information")."</td></tr>\n";
-    $table[$row][$col] .= "<tr><td align=right>Pval</td><td>".$matrix->get_attribute("Pval")."</td></tr>\n";
-    $table[$row][$col] .= "<tr><td align=right>ln.Pval</td><td>".$matrix->get_attribute("ln.Pval")."</td></tr>\n";
-    $table[$row][$col] .= "<tr><td align=right>exp</td><td>".$matrix->get_attribute("exp")."</td></tr>\n";
-    $table[$row][$col] .= "<tr><td align=right>ln.exp</td><td>".$matrix->get_attribute("ln.exp")."</td></tr>\n";
+    for my $attr (@attributes) {
+	$table[$row][$col] .= "<tr><td align=right>".$attr."</td><td>".$matrix->get_attribute($attr)."</td></tr>\n";
+    }
     $table[$row][$col] .= "</table>\n";
+}
+
+################################################################
+## Index the matrix from a gibbs file
+sub IndexGibbs {
+    &IndexMatrix(@_, format=>"gibbs");
+#      my ($family_name, $gibbs_file, $map_link, $row, $col, %args) = @_;
+#      warn join ("\t", "; Indexing gibbs matrix for family", $family_name, $gibbs_file, $row, $col), "\n" if ($verbose >= 2);
+#      my $matrix = new RSA::matrix();
+#      $matrix->readFromFile($gibbs_file, "gibbs");
+#      $table[$row][$col] = "<table cellpadding=3>\n";
+#      $table[$row][$col] .= "<TR>\n";
+#      $table[$row][$col] .= "<td colspan=2><pre>".$matrix->toString(" ", 4)."</pre></td>\n";
+#      $table[$row][$col] .= "</TR>\n";
+
+#      $table[$row][$col] .= "<tr><td align=right>unadjusted.information</td><td>".$matrix->get_attribute("unadjusted.information")."</td></tr>\n";
+#      $table[$row][$col] .= "<tr><td align=right>adjusted.information</td><td>".$matrix->get_attribute("adjusted.information")."</td></tr>\n";
+#      $table[$row][$col] .= "<tr><td align=right>Pval</td><td>".$matrix->get_attribute("Pval")."</td></tr>\n";
+#      $table[$row][$col] .= "<tr><td align=right>ln.Pval</td><td>".$matrix->get_attribute("ln.Pval")."</td></tr>\n";
+#      $table[$row][$col] .= "<tr><td align=right>exp</td><td>".$matrix->get_attribute("exp")."</td></tr>\n";
+#      $table[$row][$col] .= "<tr><td align=right>ln.exp</td><td>".$matrix->get_attribute("ln.exp")."</td></tr>\n";
+#      $table[$row][$col] .= "</table>\n";
 }
 
 
@@ -1245,6 +1365,9 @@ sub AnalyzeFamilies {
 	### Jerry Hertz' consensus
 	&Consensus() if ($task{consensus});
 	
+	### Andrew Neuwald's gibbs
+	&Gibbs() if ($task{gibbs});
+	
 #	### merge oligo-analysis and dyad-analysis results
 #	&MergePatterns() if ($task{merge_patterns});
 
@@ -1382,6 +1505,9 @@ OPTIONS
 	-sps	expected number of sites per sequence
 		(default $expected_sites_per_gene)
 
+    Gibbs sampler (Neuwald 1995)
+	-seed	 seed number for the random generator
+
     Output options
 	-transp	transpose synthetic result table (columns become rows)
 	-sort sort_key
@@ -1514,6 +1640,7 @@ multiple-family-analysis options
 -minsp		maximum spacing for dyad-analysis
 -maxsp		maximum spacing for dyad-analysis
 -width		matrix width
+-seed		seed number for the random generator
 -sps		expected number of sites per sequence (default $expected_sites_per_gene)
 -n      	dry run: print commands without executing them
 -exp		expected frequency file
@@ -1622,6 +1749,10 @@ sub ReadArguments {
 	    $matrix_width = $ARGV[$a+1];
 	} elsif ($ARGV[$a] eq "-sps") {
 	    $expected_sites_per_gene = $ARGV[$a+1];
+	    
+	    ### Gibbs sampler options
+	} elsif ($ARGV[$a] eq "-seed") {
+	    $seed = $ARGV[$a+1];
 
 	    ### organism
 	} elsif ($ARGV[$a] eq "-org") {

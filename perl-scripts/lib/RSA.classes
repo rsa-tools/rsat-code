@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: RSA.classes,v 1.5 2004/02/04 02:18:38 jvanheld Exp $
+# $Id: RSA.classes,v 1.6 2004/02/04 14:07:11 jvanheld Exp $
 #
 # Time-stamp: <2003-10-02 17:58:27 jvanheld>
 #
@@ -692,6 +692,16 @@ package RSA::matrix;
 	$self->set_attribute("nrow", scalar(@alphabet));
     } 
 
+    #### Reset the matrix to empty
+    sub reset {
+	my ($self) = @_;
+	warn "Resetting the matrix to empty\n" if ($main::verbose >= 5);
+	undef(@{$self->{alphabet}});
+	undef(@{$self->{matrix}});
+	$self->set_attribute("nrow", 0);
+	$self->set_attribute("ncol", 0);
+    }
+
     #### Return the list of valid letters for the matrix.
     sub getAlphabet {
 	my ($self) = @_;
@@ -701,10 +711,12 @@ package RSA::matrix;
     #### Add a new column to the matrix.
     sub addColumn {
 	my ($self,@new_col) = @_;
-	push @{$self->{columns}}, [@new_col];
+#	push @{$self->{matrix}}, [@new_col];
 	
+
 	## Update number of columns
-	$self->set_attribute("ncol", $self->ncol() + 1);
+	my $ncol = $self->ncol()+1;
+	$self->set_attribute("ncol", $ncol);
 	warn ("Matrix: updating number of columns\t", $self->ncol(), "\n") if ($main::verbose >= 5);
 	
 	## update number of rows
@@ -713,6 +725,12 @@ package RSA::matrix;
 	    warn ("Matrix: updating number of rows\t", $column_size, "\n") if ($main::verbose >= 5);
 	    $self->set_attribute("nrow", scalar(@new_col));
 	}
+
+	## update matrix content
+	for my $r (0..$#new_col) {
+	     ${$self->{matrix}}[$ncol-1][$r] = $new_col[$r];
+	}
+
     }
 
     #### Add a new row to the matrix.
@@ -733,7 +751,7 @@ package RSA::matrix;
 	
 	## update matrix content
 	for my $c (0..$#new_row) {
-	     ${$self->{columns}}[$c][$nrow-1] = $new_row[$c];
+	     ${$self->{matrix}}[$c][$nrow-1] = $new_row[$c];
 	}
     }
 
@@ -765,7 +783,15 @@ package RSA::matrix;
     #### Return the whole matrix as a list of columns. 
     sub getMatrix {
 	my ($self,$col_nb) = @_;
-	return @{$self->{columns}};
+	return @{$self->{matrix}};
+    }
+
+    #### Return the whole matrix as a list of columns. 
+    sub setMatrix {
+	my ($self,$nrow, $ncol, @matrix) = @_;
+	$self->set_attribute("nrow", $nrow);
+	$self->set_attribute("ncol", $ncol);
+	@{$self->{matrix}} = @matrix;
     }
 
     ################################################################
@@ -774,11 +800,82 @@ package RSA::matrix;
 	my ($self, $file, $format) = @_;
 	if (($format =~ /consensus/) || ($format =~ /^wc/i)) {
 	    $self->readFromConsensusFile($file);
+	} elsif ($format =~ /gibbs/) {
+	    $self->readFromGibbsFile($file);
 	} else {
 	    &main::FatalError("Invalid format for matrix\t$format");
 	}
     }
 
+
+    ################################################################
+    #### Read a matrix from a gibbs file
+    sub readFromGibbsFile {
+	my ($self, $file) = @_;
+
+	## open input stream
+	my $in = STDIN;
+	if ($file) {
+	    open INPUT, $file;
+	    $in = INPUT;
+	}
+	$in_matrix = 0;
+
+	my @matrix = ();
+	my @alphabet = ();
+	my $ncol = 0;
+	my $nrow = 0;
+	while (<$in>) {
+	    next unless (/\S/);
+	    chomp();
+	    if (/Information \(relative entropy\) contribution in tenth bits\:/) {
+		$in_matrix = 1;
+		$self->setAlphabet("A","C","G","T");   # default nucletodide alphabet
+		next;
+	    } elsif (/site/) {
+		### Empty the previous matrix because it was not the definitive result
+		$in_matrix = 0;
+		@last_matrix = @matrix;
+		$last_nrow = $nrow;
+		$last_ncol = $ncol;
+		@matrix = ();
+		$nrow = 0;
+		$ncol = 0;
+#		$self->reset();
+		next;
+	    } elsif ((/^\s*POS/) && ($in_matrix)) {
+		chomp;
+		@header = split " +";
+		@alphabet = @header[1..$#header-1];
+#		$self->setAlphabet(@alphabet);
+	    } elsif (/model map = (\S+); betaprior map = (\S+)/) {
+		$self->set_attribute("model.map", $1);
+		$self->set_attribute("betaprior.map", $2);
+	    } elsif (/MAP = (\S+)/) {
+		$self->set_attribute("MAP", $1);
+	    } elsif (/seed: (\S+)/) {
+		$self->set_attribute("seed", $1);
+	    } elsif (/^gibbs /) {
+		$self->set_attribute("command", $_);
+	    } elsif ($in_matrix) {
+		## Add a column to the matrix (gibbs rows correspond to our columns)
+		chomp;
+		s/^\s+//;
+		@fields = split " +";
+		@values = @fields[1..$#header-1];
+		$nrow = scalar(@values);
+		foreach my $v (0..$#values) {
+		    $values[$v] =~ s/^\.$/0/;
+		    $matrix[$ncol][$v] = $values[$v];
+		}
+		$ncol++;
+	    }
+	}
+	close $in if ($file);
+
+	$self->setAlphabet (@alphabet);
+	$self->setMatrix ($last_nrow, $last_ncol, @last_matrix);
+    }
 
     ################################################################
     #### read matrix from a consensus file
@@ -790,12 +887,20 @@ package RSA::matrix;
 #
 #	die "HELLO\t", $in, "\t", $dir;
 	
-	open INPUT, "$file";
+	## open input stream
+	my $in = STDIN;
+	if ($file) {
+	    open INPUT, $file;
+	    $in = INPUT;
+	}
 	my $current_matrix_nb = 0;
-	while (<INPUT>) {
-	    chomp;
+	while (<$in>) {
 	    next unless (/\S/);
-	    if (/MATRIX\s(\d+)/) {
+	    chomp();
+	    if (/COMMAND LINE: /) {
+		$command = $';
+		$self->set_attribute("command", $command);
+	    } elsif (/MATRIX\s(\d+)/) {
 		$current_matrix_nb = $1;
 		next;
 	    } elsif  ($current_matrix_nb == 1) {
@@ -824,7 +929,7 @@ package RSA::matrix;
 		}
 	    }
 	}
-	close INPUT if ($file);
+	close $in if ($file);
     }
  
 
@@ -835,14 +940,14 @@ package RSA::matrix;
 	
 	$sep = $sep || "\t";
 	
-	my @matrix = @{$self->{columns}};	
+	my @matrix = @{$self->{matrix}};	
 	my @alphabet = $self->getAlphabet();
 	my $col_nb = $#matrix;
 	my $to_print = "";
 	
 	for $a (0..$#alphabet) {
 	    $to_print .= $alphabet[$a];
-	    $to_print .= "\t|";
+	    $to_print .= $sep."|";
 	    for $c (0..$col_nb) {
 		if ($col_width) {
 		    $to_print .= sprintf "%${col_width}s", $matrix[$c][$a];

@@ -157,7 +157,7 @@ sub OpenInputFile {
 	$input_stream = STDIN; ### default is standard input
 
     }
-    return ($input_stream, $input_dir);
+   return ($input_stream, $input_dir);
 }
 
 ### open output file ###

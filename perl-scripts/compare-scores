@@ -90,7 +90,18 @@ foreach $f (0..$#input_files) {
 print $out "\n";
 
 #### print result
-foreach $key (sort keys %id) {
+my @sorted_keys = ();
+if ($numeric_IDs) {
+    if ($decreasing) {
+	@sorted_keys = sort {$b <=> $a } keys %id;
+    } else {
+	@sorted_keys = sort {$a <=> $b } keys %id;
+    }
+} else {
+    @sorted_keys = sort keys %id;
+}
+
+foreach $key (@sorted_keys) {
     print $out $id{$key};
     for $f (1..$last_col) {
 	$score = $score{$key}[$f];
@@ -160,9 +171,12 @@ OPTIONS
 	-sc#	score column for the #th file
 	-ic	Identifier column (default 1) 
 	-ic#	identifier column for the #th file
-	-null	null string (default $default_null)
-		displayed when one file contains no value for a given
-		key)
+	-null   null string (default $default_null) displayed when one
+		file contains no value for a given key)
+	-numeric
+		sort IDs numerically rather than alphabetically
+	-decreasing
+		sort IDs numerically in a decreasing order
 
 INPUT FORMAT
 	each line of the input file provides the score for a single key. 
@@ -188,17 +202,19 @@ sub PrintOptions {
   print HELP <<End_short_help;
 compare-scores options
 ----------------
--h      (must be first argument) display full help message
--help   (must be first argument) display options
--i      input file (use recursively to indicate several input files)
--files	input files (all following arguments are used as input file)
--o      output file
--v      verbose
--sc	score column
--sc#	score column for the #th file
--ic	identifier column
--ic#	identifier column for the #th file
--null	null string (default $default_null)
+-h		(must be first argument) display full help message
+-help		(must be first argument) display options
+-i		input file (use recursively to indicate several input files)
+-files		input files (all following arguments are used as input file)
+-o		output file
+-v		verbose
+-sc		score column
+-sc#		score column for the #th file
+-ic		identifier column
+-ic#		identifier column for the #th file
+-null		null string (default $default_null)
+-numeric	sort IDs numerically rather than alphabetically
+-decreasing	sort IDs numerically in a decreasing order
 End_short_help
   close HELP;
   exit;
@@ -235,6 +251,15 @@ sub ReadArguments {
 	    ### null string ###
 	} elsif ($ARGV[$a] eq "-null") {
 	    $null = $ARGV[$a+1];
+	    
+	    ### null string ###
+	} elsif ($ARGV[$a] eq "-numeric") {
+	    $numeric_IDs = 1;
+	    
+	    ### null string ###
+	} elsif ($ARGV[$a] eq "-decreasing") {
+	    $numeric_IDs = 1;
+	    $decreasing = 1;
 	    
 	    ### score column
 	} elsif ($ARGV[$a] eq "-sc") {
