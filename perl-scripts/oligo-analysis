@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.72 2004/01/23 23:46:05 jvanheld Exp $
+# $Id: oligo-analysis,v 1.73 2004/01/27 12:02:11 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -1753,7 +1753,7 @@ sub ReadArguments {
 	    $infile{expected_freq} = $ARGV[$a+1];
 
 	    #### calibration file, occ and var for N sequences
-	} elsif ($ARGV[$a] eq "-calib") {
+	} elsif ($ARGV[$a] eq "-calibN") {
 	    $method = "Calibration per set";
 	    $infile{calibration} = $ARGV[$a+1];
 
@@ -2005,7 +2005,7 @@ USAGE
 	oligo-analysis -l length [-i inputfile]  [-format input_format]
 		[-o outputfile] 
 		[-return occ,freq,ratio,mseq,proba,zscore,like,rank]
-		[-expfreq exp_freq_file | -calib calibration_file | -a alphabet | -markov #]
+		[-expfreq exp_freq_file | -calibN calibration_file | -a alphabet | -markov #]
 		[-1str | -2str] [-seqtype dna|prot|other][-grouprc | -nogrouprc]
 		[-tho #][-thpo #][-thosig #][-thratio #][-thms #]
 		[-thpms #][-thmssig #] [-oneN | -onedeg][-v]
@@ -2037,13 +2037,13 @@ ARGUMENTS
                 -a input
                         use the alphabet of the input sequence
 	-expfreq
-		(mutually exclusive with -calib and -a)
+		(mutually exclusive with -calibN, -calib1 and -a)
 		file containing the estimations for expected oligomer 
 		frequencies. This can be for instance the olignonucleotide 
 		frequency measured in the whole genome, or in all intergenic 
 		regions, or in all coding regions. 
 		This information is used for the calculation of probabilities.
-	-calib
+	-calibN
 		(mutually exclusive with -expfreq and -a) File
 		containing the estimations for the mean and variance
 		of oligomer occurrences. This calibration can be
@@ -2570,7 +2570,7 @@ oligo-analysis options
 -a yeast        use yeast genomic alphabet
 -a input        use alphabet from input sequence
 -expfreq        file with expected frequency table
--calib		file with calibration table based on set analysis
+-calibN		file with calibration table based on random gene sets (N genes per set)
 -calib1		file with calibration table based on single sequence analysis
 -ncf		(deprecated, use '-bg intergenic' instead) 
 -bg		background model (supported: $supported_bg)
