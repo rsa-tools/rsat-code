@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: retrieve-seq,v 1.24 2002/06/06 12:08:32 jvanheld Exp $
+# $Id: retrieve-seq,v 1.25 2002/09/25 02:17:36 jvanheld Exp $
 #
-# Time-stamp: <2002-06-06 14:07:52 jvanheld>
+# Time-stamp: <2002-09-24 21:15:31 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -13,7 +13,7 @@ require "RSA.lib";
 require "RSA.classes";
 require "RSA.seq.lib";
 
-# warn "Starting" if ($warn_level >= 1);
+# warn "Starting" if ($verbose >= 1);
 
 ############# help ###########
 if ($ARGV[0] eq "-h") {
@@ -40,17 +40,26 @@ $default{from} = -800;
 $default{to} = -1;
 
 
-&ReadArguments;
+&ReadArguments();
 
 
 ################################################################################
 ############################### check parameters ###############################
 ################################################################################
 
-#### organism
-warn "; Checking organism $organism_name\n" if ($warn_level >= 1);
-&CheckOrganism($organism_name, $feature_table_file);
-
+#### selection of genome and feature file
+if ($input_sequence_file) {
+    #### manually specified input sequence
+    $input_sequence_format = $input_sequence_format || "filelist"; ### by default, take filelist
+    $organism_name = $organism_name || "input sequence";
+    warn "; Manually specified input sequence file\t$input_sequence_file\n" if ($verbose >= 1);
+    &CheckOrganism($organism_name, $feature_table_file, $input_sequence_file, $input_sequence_format);
+    
+} else {
+    #### automatic selection of genome file (and feature file)
+    warn "; Checking organism $organism_name\n" if ($verbose >= 1);
+    &CheckOrganism($organism_name, $feature_table_file);
+}
 unless ($feature_table_file) {
     $feature_table_file = $supported_organism{$organism_name}->{'features'};
 }
@@ -102,8 +111,8 @@ $seq_length = abs($to - $from + 1);
 ## organism data 
 
 
-#### random genomic segments
-if ($sequence_type eq "random genomic segments") {
+#### random fragments
+if ($sequence_type eq "random fragments") {
     #### calculate chromosome lengths
     @chroms = sort keys %chromosome_seq;
     @chr_start;
@@ -113,22 +122,22 @@ if ($sequence_type eq "random genomic segments") {
 	$chr_len[$c] = $chromosome_seq{$chroms[$c]}->get_length();
 	$chr_start[$c+1] = $chr_start[$c] +  $chr_len[$c];
 	warn join ("\t", ";\tchromosome", $c+1, $chroms[$c], $chr_len[$c], $chr_start[$c], $chr_start[$c+1]), "\n" 
-	    if ($warn_level >= 2);
+	    if ($verbose >= 2);
     }
     $genome_len = $chr_start[$#chroms+1];
     warn join ("\t", ";", "genome length", $genome_len), "\n"	    
-	if ($warn_level >= 2);
+	if ($verbose >= 2);
     
 } else {
-    warn "; Reading ORF table for $organism_name\n" if ($warn_level >= 1);
+    warn "; Reading ORF table for $organism_name\n" if ($verbose >= 1);
     &ReadOrfPositions($organism_name, $feature_table_file);
-    warn "; Reading synonyms for $organism_name\n" if ($warn_level >= 1);
+    warn "; Reading synonyms for $organism_name\n" if ($verbose >= 1);
     &ReadSynonyms($organism_name);
 }
 
 #### no overlapping with upstream orfs
 if ($noorf) {
-    warn "Calculating neighbour ORF limits\n" if ($warn_level >= 1);
+    warn "; Calculating neighbour ORF limits\n" if ($verbose >= 1);
     &CalcNeighbourLimits();
 }
 
@@ -143,14 +152,7 @@ if ($return_all) {
 
 #### select random ORFs
 if ($random_orfs > 0) {
-    srand (time);
-    my @orfs = keys %chr;
-    for my $i (1..$random_orfs) {
-	my $remaining_orfs = $#orfs+1;
-	my $selected = int(rand($remaining_orfs));
-	warn ";", join ("\t", "Selected ORF", $selected, $remaining_orfs), "\n" if ($warn_level >= 0);
-	push @queries, splice(@orfs, $selected, 1);
-    }
+  @queries = &SelectRandomORFs($random_orfs);
 } elsif ($length_file) {
     ($len_handle, $input_dir) = &OpenInputFile($length_file);
 #    open LEN, $length_file;
@@ -186,29 +188,8 @@ if ($#queries <0) {
 #### output file ####
 $out = &OpenOutputFile($outputfile);
 
-################################################################
-#### verbose ####
-if ($warn_level) {
-    print $out "; retrieve-seq\n";
-    printf $out "; %-14s\t%s\n", "organism", $organism_name;
-    printf $out "; %-14s\t%s\n", "sequence type", $sequence_type;
-    printf $out "; %-14s\t%s\n", "Output format", $out_format;
-    printf $out "; %-14s\t%s\n", "Line width", $line_width;
-    print $out "; clipping to avoid overlap with neighbour ORFs\n" if ($noorf);
-    print $out "; relative coordinates\n";
-    print $out ";        from    $from\n";
-    print $out ";        to      $to\n";
-    print $out ";        size    ", abs($to - $from + 1), "\n";
-    if (defined($query_file)) {
-	printf $out "; %-14s\t%s\n", "Query file", $query_file;
-    } else {
-	print $out "; Queries:\n";
-	foreach $q (@queries) {
-	    print $out ";	$q\n";
-	}
-    }
-    print $out ";\n";
-}
+#### verbose
+&Verbose if ($verbose);
 
 ################################################################
 #### retrieve the sequences ####
@@ -218,7 +199,7 @@ foreach my  $query (@queries) {
     $q++;
 
     #### check the validity of the query
-    unless (($sequence_type eq "random genomic segments") ||
+    unless (($sequence_type eq "random fragments") ||
 	    (defined($orf_id{uc($query)}))) {
 	my $warn_message = ";WARNING\tinvalid query $query"; 
 	push @warnings, $warn_message;
@@ -272,13 +253,13 @@ foreach my  $query (@queries) {
 	$reg_right = $orf_right;
 	
     #### select random genommic positions
-    } elsif ($sequence_type eq "random genomic segments") {
+    } elsif ($sequence_type eq "random fragments") {
 #	foreach my $seq_length (@seq_lengths) {
 	my $seq_length = $query;
 	my $max_pos = $genome_len - ($#chroms + 1) * ($seq_length  - 1); ### skip the last  L-1 positions of each chromosome because they would not allow a sequence of length $seq_length
 	my $position = int(rand($max_pos));
 	my $c = 0;
-	warn join("\t", $seq_length, $position, $max_pos, $genome_len), "\n" if ($warn_level >= 3);
+	warn join("\t", $seq_length, $position, $max_pos, $genome_len), "\n" if ($verbose >= 3);
 	while ($position > ($chr_len[$c] - $seq_length + 1)) {
 	    $position -= $chr_len[$c]; 
 	    $c++;
@@ -292,11 +273,11 @@ foreach my  $query (@queries) {
 	} else {
 	    $orf_strand = "R";
 	};
-	warn join("\t", $chrom, $reg_left, $reg_right, $orf_strand, $seq_length, $chr_length, $position, $max_pos), "\n" if ($warn_level >= 3);
+	warn join("\t", $chrom, $reg_left, $reg_right, $orf_strand, $seq_length, $chr_length, $position, $max_pos), "\n" if ($verbose >= 3);
 
 
-#  	#### random genomic segments
-#      } elsif ($sequence_type eq "random genomic segments") {
+#  	#### random fragments
+#      } elsif ($sequence_type eq "random fragments") {
 #  	my $chr_length = $chromosome_seq{$chrom}->get_length();
 #  	my $max_pos = $chr_length - $seq_length +1;
 #  	$reg_left = int(rand($max_pos));
@@ -306,7 +287,7 @@ foreach my  $query (@queries) {
 #  	} else {
 #  	    $orf_strand = "R";
 #  	};
-#  	warn join("\t", $chrom, $chr_length, $seq_length, $max_pos, $reg_left, $reg_right, $orf_strand), "\n" if ($warn_level >= 3);
+#  	warn join("\t", $chrom, $chr_length, $seq_length, $max_pos, $reg_left, $reg_right, $orf_strand), "\n" if ($verbose >= 3);
     }
     
     
@@ -316,7 +297,7 @@ foreach my  $query (@queries) {
 #    }
     
     ###  sequence ID 
-    if ($sequence_type eq "random genomic segments") {
+    if ($sequence_type eq "random fragments") {
 	$current_id = $query = "rand_".$q;
     } elsif ($seq_label eq "orf") {
 	$current_id = $orf_id;
@@ -339,8 +320,8 @@ foreach my  $query (@queries) {
     }
     
     unless ($no_comments) {
-	if ($sequence_type eq "random genomic segments") {
-	    @comments = ("random genomic segment; size: $reg_size; location: $chrom $reg_left $reg_right $orf_strand");
+	if ($sequence_type eq "random fragments") {
+	    @comments = ("random fragment; size: $reg_size; location: $chrom $reg_left $reg_right $orf_strand");
 	} else {
 	    @comments = ("$query $sequence_type sequence, from $current_from to $current_to, size $reg_size");
 	    @comments = (@comments, "sequence size: $reg_size; location: $chrom $reg_left $reg_right $orf_strand");
@@ -364,7 +345,7 @@ foreach my  $query (@queries) {
 	  $reg_size,
 	  "\n"
 	  )
-	if ($warn_level >= 2); 
+	if ($verbose >= 2); 
     $current_seq = $chromosome_seq{$chrom}->get_sequence($reg_left,$reg_right,$orf_strand);
 
     ### print result sequence
@@ -378,7 +359,7 @@ print $out (join "\n", @warnings), "\n"
 close $out;
 
 ###### verbose ######
-if ($warn_level) {
+if ($verbose) {
     my $done_time = &AlphaDate;
     print $out "; Job started $start_time\n";
     print $out "; Job done    $done_time\n";
@@ -388,9 +369,12 @@ if ($warn_level) {
 
 exit(0);
 
+################################################################
+#### subroutine definitions
+################################################################
 
-
-
+################################################################
+#### detailed help message
 sub PrintHelp {
     open(HELP, "| more");
     print HELP<<End_help;
@@ -409,14 +393,27 @@ CATEGORY
 
 OPTIONS
 	-org organism
-	     supported organisms : 
+	     When an organism is specified, the program automatically
+	     loads the appropriate genome sequence and feature table.
+
+	     If this option is not used, the option -seq must be used
+	     instead.
+
+	     Supported organisms :
 $supported_organisms
+
+	-seq	input sequence file
+		(alternative to organism)
+
+		Specify the input sequence file. See INPUT FORMAT
+		below.
+		
 	-type	sequence type
 		Currently supported sequence types
 			upstream (default)
 			downstream
 			orf (warning: introns are not spliced out)
-			random (random genomic segments)
+			random (random fragments)
 		To implement in the future
 			introns
 			coding
@@ -479,7 +476,7 @@ $supported_organisms
 		for a random selection of # ORFs.
 	-lf	length file 
 		(only with the option '-type random')
-		Allows to generate rndom sequences with the same
+		Allows to generate random sequences with the same
 		lengths as a set of reference sequences. The sequence
 		length file can be obtained with the command
 			sequence-lengths
@@ -491,8 +488,8 @@ $supported_organisms
 		an alternate file where the ORF locations are found. 
 		See below for a description of the feature file format.
 
-INPUT FORMAT
-	Sequence file
+INPUT FORMATS
+	Input sequence file
 		Sequence file is of type chrlist, i.e. this file
 		contains a list of other file names, each of which
 		contains a raw contig sequence (usually a whole
@@ -530,12 +527,15 @@ End_help
     exit;
 }
 
+################################################################
+#### list of options    
 sub PrintShortHelp {
   open(HELP, "| more");
   print HELP<<End_short_help;
 retrieve-seq options
 --------------------
 -org		organism
+-seq		sequence file (alternative to organism)
 $supported_organisms
 -type		upstream | downstream | orf | random
 -n		number of sequences (only with -type random)
@@ -558,7 +558,7 @@ End_short_help
   exit;
 }
 
-
+################################################################
 #### read arguments
 sub ReadArguments {
     foreach $a (0..$#ARGV) {
@@ -585,15 +585,15 @@ sub ReadArguments {
 	    ### verbose
 	} elsif ($ARGV[$a] eq "-v") {
 	    if (&IsReal($ARGV[$a+1])) {
-		$warn_level = $ARGV[$a+1];
+		$verbose = $ARGV[$a+1];
 	    } else {
-		$warn_level = 1;
+		$verbose = 1;
 	    }
 
-	    ### warn_level
+	    ### verbose
 	} elsif (($ARGV[$a] eq "-w") &&
 		 (&IsNatural($ARGV[$a+1]))){
-	    $warn_level = $ARGV[$a+1];
+	    $verbose = $ARGV[$a+1];
 
 	    #### new query
 	} elsif ($ARGV[$a] eq "-q") {
@@ -626,6 +626,10 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-org") {
 	    $organism_name =$ARGV[$a+1];
 
+	    #### sequence file
+	} elsif ($ARGV[$a] eq "-seq") {
+	    $input_sequence_file =$ARGV[$a+1];
+
 	    #### number of random segments tor eturn
 	} elsif ($ARGV[$a] eq "-n") {
 	    $num_rand_sel =$ARGV[$a+1];
@@ -652,7 +656,7 @@ sub ReadArguments {
 		$default{to} = "stop";
 		
 	    } elsif ($ARGV[$a+1] =~ /^rand/i) {
-		$sequence_type = "random genomic segments";
+		$sequence_type = "random fragments";
 		
 #	    } elsif ($ARGV[$a+1] =~ /^exon/i) {
 #		$sequence_type = "exons";
@@ -703,4 +707,36 @@ sub ReadArguments {
 	    
 	}
     }
+}
+
+
+################################################################
+#### verbose ####
+sub Verbose {
+    print $out "; retrieve-seq";
+    &PrintArguments($out);
+    printf $out "; %-14s\t%s\n", "organism", $organism_name;
+    printf $out "; %-14s\t%s\n", "sequence type", $sequence_type;
+    if ($input_sequence_file) {
+	printf $out "; %-14s\t%s\n", "input sequence file", $input_sequence_file;
+	printf $out "; %-14s\t%s\n", "input sequence format", $input_sequence_format;
+    }
+    printf $out "; %-14s\t%s\n", "feature table file", $feature_table_file if ($feature_table_file);
+    printf $out "; %-14s\t%s\n", "Output format", $out_format;
+    printf $out "; %-14s\t%s\n", "Line width", $line_width;
+    printf $out "; %-14s\t%d\n", "Random selection", $random_orfs if ($random_orfs);
+    print $out "; clipping to avoid overlap with neighbour ORFs\n" if ($noorf);
+    print $out "; relative coordinates\n";
+    print $out ";        from    $from\n";
+    print $out ";        to      $to\n";
+    print $out ";        size    ", abs($to - $from + 1), "\n";
+    if (defined($query_file)) {
+	printf $out "; %-14s\t%s\n", "Query file", $query_file;
+    } else {
+	print $out "; Queries:\n";
+	foreach $q (@queries) {
+	    print $out ";	$q\n";
+	}
+    }
+    print $out ";\n";
 }
