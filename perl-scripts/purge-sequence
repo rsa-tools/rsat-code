@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence,v 1.5 2001/09/21 04:32:12 jvanheld Exp $
+# $Id: purge-sequence,v 1.6 2001/09/21 04:37:30 jvanheld Exp $
 #
-# Time-stamp: <2001-09-21 06:31:16 jvanheld>
+# Time-stamp: <2001-09-21 06:36:12 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -64,7 +64,7 @@ $tmp_file = "tmp_".$basename;
 #&doit("grep -v '^;' $basename > $tmp_file");
 #&doit("grep -v '^;' $inputfile > $tmp_file");
 
-$command = "convert-seq -from $in_format -to fasta -dna -o $tmp_file";
+$command = "convert-seq -from $in_format -to fasta -o $tmp_file";
 $command .= " -i $inputfile" if ($inputfile);
 &doit($command);
 
