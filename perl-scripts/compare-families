@@ -1,10 +1,9 @@
 #!/usr/bin/perl -w
-
 ############################################################
 #
-# $Id: compare-families,v 1.5 2002/09/24 04:58:38 jvanheld Exp $
+# $Id: compare-families,v 1.6 2002/09/26 17:08:14 jvanheld Exp $
 #
-# Time-stamp: <2002-09-23 23:58:19 jvanheld>
+# Time-stamp: <2002-09-26 12:07:19 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -18,6 +17,8 @@ require "RSA.help.pl";
 ################################################################
 #### initialise parameters
 my $start_time = &AlphaDate;
+local $replacement = 0;
+local $symmetric = 0;
 
 %supported_return_fields = (
 			    proba=>1,
@@ -103,9 +104,9 @@ foreach my $r (keys %ref_families) {
 		$matching_elements->{$compa_key}->{$m}++;
 	    }
 	}
-#	$compa{$compa_key}->{occ} = scalar(@{$common{$compa_key}});
+
 	$compa{$compa_key}->{occ} = scalar(keys %{$matching_elements->{$compa_key}});
-#	warn join "\t", $compa{$compa_key}->{occ}, scalar(keys %{$matching_elements->{$compa_key}}), "\n";
+
 
 	#### check thresholds for number of common members
 	if ((defined($lth{occ})) && 
@@ -130,28 +131,64 @@ if ($return_fields{proba}) {
     $log_base = 10;
     $ref_log = log($log_base);
 
+    #### check population size
     my $n = $population_size;
+    if ($n <= 0) {
+	&FatalError("Cannot calculate probabilities if reference population is empty");
+    }
+
+    #### calculate probabilities of matches
     foreach my $compa_key (keys %compa) {
 	my ($r, $q) = split "__VERSUS__", $compa_key;
+	my $n_q = $query_families{$q}->get_size(); ### number of elements in query family
+	my $n_r = $ref_families{$r}->get_size(); ### number of elements in the reference family
+	my $c = $compa{$compa_key}->{occ}; ### number of common elements
 
-	my $t = $query_families{$q}->get_size(); ### number of trials
-	my $s = $compa{$compa_key}->{occ}; ### number of successes
-	
-	my $b = $ref_families{$r}->get_size(); ### number of black balls in the urn
-	my $p = 0;
-	
-	if ($n > 0) {
-	    $p = $b/$n;
-	} else {
-	    &FatalError("Cannot calculate probabilities if reference population is empty");
+	#### check number of elements in the reference family
+ 	if ($n_r > $n) {
+	    &FatalError("Number of elements in the reference family ($n_r) cannot be higher than population size ($n)");
 	}
-	$compa{$compa_key}->{P_val} = &sum_of_binomials($p,$t,$s,$t);
+
+	#### check number of elements in the query family
+ 	if ($n_q > $n) {
+	    &FatalError("Number of elements in the query family ($n_q) cannot be higher than population size ($n)");
+	}
+
+	#### check number of common elements
+ 	if ($c > $n_q) {
+	    &FatalError("Number of common elements ($c) cannot be higher than query size ($n_q)");
+	}
+ 	if ($c > $n_r) {
+	    &FatalError("Number of common elements ($c) cannot be higher than reference size ($n_r)");
+	}
+	
+
+	if ($replacement) { 
+	    #### use binomial distribution of there are replacements
+
+	    if ($symmetric) {
+		#### test the joint probability to belong to both query and reference families, for each element of the population
+		my $p = $n_r/$n * $n_q/$n; 
+		$compa{$compa_key}->{P_val} = &sum_of_binomials($p,$n,$c,$n);
+	    } else {
+		#### test the probability to belong to the reference family, for each element of the query family
+		my $p = $n_r/$n; 
+		$compa{$compa_key}->{P_val} = &sum_of_binomials($p,$n_q,$c,$n_q);
+	    }
+	    
+	} else{
+	    #### use hypergeometric distribution
+	    $compa{$compa_key}->{P_val} = &sum_of_hypergeometrics($n_r,$n,$n_q, $c, $n_q);
+	    
+	}
+
+
 	$nb_tests = $nb_ref_families * $nb_query_families;
 	$compa{$compa_key}->{E_val} = $compa{$compa_key}->{P_val} * $nb_tests;
 	$compa{$compa_key}->{sig} = -log($compa{$compa_key}->{E_val})/$ref_log;
 
 	#### check thresholds on probabilities
-	foreach my $key qw(P_val E_val sig) {
+	foreach my $key (qw(P_val E_val sig)) {
 	    if ((defined($lth{$key})) && 
 		($compa{$compa_key}->{$key}< $lth{$key})) {
 		delete $compa{$compa_key};
@@ -309,6 +346,106 @@ OPTIONS
 		sort on the basis of the specified key.
 		Supported keys:
 			  name (default), occ, sig
+	-rep	replacement
+		Sampling was performed with replacement, i.e. a given
+		element can appear several times in the same family.
+
+		In this case, the binomial distribution is used
+		instead of the hypergeometric.
+
+	-sym	symmetric comparison
+		(only useful when -rep is activated, because th
+		hypergeometric is by definition symmetric)
+		
+
+PROBABILITIES
+	P-VALUE
+
+		The P-value is the probability to observe at least c
+		common elements between a given query family and a
+		given reference family. It can be calculated with
+		different formulae, depending on the underlying random
+		model.
+
+		Let us assume that we have : 
+			q	size of the query family
+			r	size of the reference family
+			c	number of common elements
+			n	population size
+
+
+		HYPERGEOMETRIC
+		                       q     i  q-i     q
+		P_value = P(X >= c) = SUM ( C  C     / C  )
+		                      i=c    r  n-r     n   
+
+		BINOMIAL
+
+		When the option -rep (replacement) is active,
+		probabilities are calculated on the basis of the
+		binomial distribution instead of the hypergeometric.
+		
+
+		The binomial formula is applied with 
+			p_r = r/n probability of success at each trial
+			nb of trials = q
+			nb of successes = c
+
+			               q
+		P_value = P(X >= c) = SUM (binom(i,q,p_r)) 
+			              i=c
+
+
+		Beware: the binomial gives an assymmetric result,
+		i.e. the fact to swap query and reference families
+		changes the probability. This can be circumvented by
+		using the option -sym, described below.
+
+		SYMMETRICAL COMPARISON WITH THE BINOMIAL
+
+		When the comparison is assumed to be symmetrical, the
+		program calculates the joint probability fo at least c
+		elements to belong to both the query set and the
+		reference set.
+
+		In this case, the binomial is applied with :
+			p_qr = q/n * r/n	   
+			  = proba of success at each trial
+			nb of trials = n
+			nb of successes = c
+
+			               q
+		P_value = P(X >= c) = SUM (binom(i,n,p_qr)) 
+			              i=c
+
+	E-VALUE
+
+		Assuming that there are x query families and y
+		reference families, each analysis consists in x*y
+		comparisons. Thus, thhe P-value can be misleading,
+		because even low P-values are expected to emerge by
+		chance alone when the number of query and/or reference
+		families is very high. The E-value reflects better the
+		degree of exceptionality.
+
+		E_val = P_Val * nb_tests
+		      = P_val * x * y
+
+		      where x = number of query families
+			    y = number of reference families
+
+	SIG
+		The significance index is the minus log of the
+		E-value. It is calculated in base 10.
+
+		sig = -log10(E_val)
+
+		This index gives an intuitive perception of the
+		exceptionality of the common elements : a negative sig
+		indicates that the common mtches are likely to come by
+		chanc alone, a ositive value that they are
+		significant. Higher sig values indicate a higher
+		significance.
 
 OUTPUT FORMAT
 
@@ -352,6 +489,8 @@ compare-families options
 -uth	threshold on a given field
 -pop	population size
 -sort   sort key (supported keys: occ, sig)
+-rep	sampling with replacement (use binomial instead of hyergeometric)
+-sym	symmetric comparison (only with -rep, see detailed help)
 End_short_help
   close HELP;
   exit(0);
@@ -382,6 +521,14 @@ sub ReadArguments {
 	    ### reference file  
 	} elsif ($ARGV[$a] eq "-r") {
 	    $infile{ref_families} = $ARGV[$a+1];
+
+	    ### replacement
+	} elsif ($ARGV[$a] eq "-rep") {
+	    $replacement = 1;
+
+	    ### symmetric (for binomial distrib only)
+	} elsif ($ARGV[$a] eq "-sym") {
+	    $symmetric = 1;
 
 	    ### query file  
 	} elsif ($ARGV[$a] eq "-q") {
@@ -448,9 +595,12 @@ sub Verbose {
     }
     printf $out "; %-21s\t%d\n", "Population size", $population_size;
     printf $out "; %-21s\t%s\n", "Sort key", $sort_key if ($sort_key);
+
+    print $out "; Sampling with replacement (binommial proba)\n" if ($replacement);
+    print $out "; Symmetric comparison\n" if ($symmetric);
     
     print $out "; Thresholds\tlower\tupper\n";
-    foreach $f qw(occ sig) {
+    foreach $f (qw(occ sig)) {
 	print $out ";\t$f";
 	if (defined($lth{$f})) {
 	    printf $out "\t%-5g", $lth{$f};
@@ -464,6 +614,8 @@ sub Verbose {
 	}
 	print $out "\n";
     }
+
+
     print $out "; Query families\n";
     foreach my $f (keys %query_families) {
 	printf $out ";\t%s\t%d\n", $query_families{$f}->get_name(), $query_families{$f}->get_size();

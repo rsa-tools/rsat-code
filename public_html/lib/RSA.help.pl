@@ -12,14 +12,22 @@ sub help_message {
     
     if ($help_request eq "family file") {
 	$help_message = "FAMILY FILE
-	The family file specifies the co;position of several gene families.
-	It is a text file containing 2 tab-separated columns.
-	col 1:	gene name (or ID)
-	col 2: family name
-	
+	The family file specifies the composition of several gene
+	families.  It is a text file containing 2 columns separated by
+	a tab character.
+
+	    col 1:   family member
+	    col 2:   family name
+
+        Additional columns are ignored. 
+
 	Lines starting with a semicolumn (;) are ignored, allowing to
-	document the family files with comments..
-	
+	document the family files with comments.
+
+        A given element (e.g. gene) can belong simultaneously to
+        several families. In such a case, the element will appear on
+        several rows (one per family),
+
 	Example
 		; genes responding to Phosphate stress
 		pho5	PHO
@@ -30,9 +38,10 @@ sub help_message {
 		...
 ";
     } else {
-	&warn ("No help message about $help_request");
+	warn ("No help message about $help_request");
     }
     
     return $help_message;
 }
     
+return 1;
