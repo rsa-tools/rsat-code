@@ -15,8 +15,12 @@ chdir $RSA;
 $out_dir = "$RSA/archives";
 
 for $folder ("perl-scripts","public_html") {
+    warn "; Archiving folder $folder\n" if $verbose;
     $tar_file = "${out_dir}/${folder}_${config_site}_${alpha_date}.tar";
-    $command = "tar -cpf $tar_file $folder; gzip $tar_file";
+    if ($folder eq "public_html") {
+	$excluded = " --exclude tmp --exclude logs --exclude data";
+    }
+    $command = "tar $excluded -cpf $tar_file $folder; gzip $tar_file";
 
     warn "$command\n" if ($verbose);
     system $command;
