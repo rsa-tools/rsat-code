@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.32 2003/11/06 12:33:46 jvanheld Exp $
+# $Id: install-organism,v 1.33 2003/12/31 11:04:48 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -29,6 +29,7 @@ $supported_for_installation{"filelist"} = 1;
 		   ncf=>1,
 		   allup=>1,
 		   oligos=>1,
+		   distrib=>1,
 		   gene_freq=>1,
 		   genome_freq=>1,
 		   upstream_freq=>1,
@@ -155,7 +156,7 @@ $out = &OpenOutputFile($outputfile);
 
 &AllUpstream() if ($task{allup});
 
-&CalcFrequencies() if (($task{oligos}) || ($task{dyads}));
+&CalcFrequencies() if (($task{oligos}) || ($task{distrib}) || ($task{dyads}));
 
 &CleanUp if ($task{clean});
 
@@ -498,6 +499,7 @@ sub CalcFrequencies {
 		$seq_format = "fasta";
 	    }
 	    &CalcOligoFreq($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{oligos});
+	    &CalcOligoDistrib($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{distrib});
 	    &CalcDyadFreq($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{dyads});
 	}
     }
@@ -514,6 +516,7 @@ sub CalcFrequencies {
 	    $seq_format = "wc";
 	}
 	&CalcOligoFreq($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{oligos});
+	&CalcOligoDistrib($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{distrib});
 	&CalcDyadFreq($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{dyads});
     }
     
@@ -524,6 +527,7 @@ sub CalcFrequencies {
 	$seq_format = "filelist";
 	$seq_file = $outfile{'genome'};
 	&CalcOligoFreq($seq_file, $seq_format, $seq_type) if ($task{oligos});
+	&CalcOligoDistrib($seq_file, $seq_format, $seq_type) if ($task{distrib});
 	&CalcDyadFreq($seq_file, $seq_format, $seq_type) if ($task{dyads});
     }
 
@@ -539,6 +543,7 @@ sub CalcFrequencies {
 	    $seq_format = "wc";
 	}
 	&CalcOligoFreq($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{oligos});
+	&CalcOligoDistrib($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{distrib});
 	&CalcDyadFreq($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{dyads});
     }
 
@@ -547,7 +552,7 @@ sub CalcFrequencies {
 }
 
 ################################################################
-#### calculate oligonucleotide frequencies in a specified sequence
+#### calculate oligonucleotide frequencies for a specified sequence
 #### file
 sub CalcOligoFreq {
     my ($seq_file,$seq_format,$seq_type) = @_;
@@ -564,9 +569,27 @@ sub CalcOligoFreq {
     }
 }
 
+################################################################
+#### calculate oligonucleotide distribution for a specified sequence
+#### file
+sub CalcOligoDistrib {
+    my ($seq_file,$seq_format,$seq_type) = @_;
+    foreach $oligo_length (1..8) {
+	$out_file = "$dir{oligos}/${oligo_length}nt_${seq_type}_${organism_short_name}${noov}${strands}.distrib";
+	$command = "$SCRIPTS/oligo-analysis -v 1 ${strands} -i $seq_file -format $seq_format ";
+	$command .= " ".$strands;
+	$command .= " ".$noov;
+	$command .= "-l ".$oligo_length." -type dna ";
+	$command .= "-return occ -distrib -nogrouprc ";
+	$command .= "-o ".$out_file;
+	$command .= " ; gzip -f ".$out_file;
+	&doit($command, $dry_run);  
+    }
+}
+
 
 ################################################################
-#### calculate dyad frequencies in a specified sequence
+#### calculate dyad frequencies for a specified sequence
 #### file
 sub CalcDyadFreq {
     my ($seq_file,$seq_format,$seq_type) = @_;
