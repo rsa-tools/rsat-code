@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: retrieve-seq,v 1.2 2000/03/26 22:06:15 jvanheld Exp $
+# $Id: retrieve-seq,v 1.3 2000/08/02 07:01:29 jvanheld Exp $
 #
-# Time-stamp: <2000-03-26 23:28:59 jvanheld>
+# Time-stamp: <2000-08-02 09:00:53 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -25,20 +25,21 @@ if ($ARGV[0] eq "-help") {
 #### initialize parameters
 my $start_time = &AlphaDate;
 
-my %col = ();
-$col{'id'} = 0;
-$col{'kind'} = 1;
-$col{'name'} = 2;
-$col{'chrom'} = 3;
-$col{'left'} = 4;
-$col{'right'} = 5;
-$col{'strand'} = 6;
-$col{'descr'} = 8;
+#  my %col = ();
+#  $col{'id'} = 0;
+#  $col{'kind'} = 1;
+#  $col{'name'} = 2;
+#  $col{'chrom'} = 3;
+#  $col{'left'} = 4;
+#  $col{'right'} = 5;
+#  $col{'strand'} = 6;
+#  $col{'descr'} = 8;
 
 my %chomosome = ();
 my $chrom = "";
 
   
+$sequence_type = "upstream";
 $upstream_reg_from = -200;
 $upstream_reg_to = -1;
 @queries = ();
@@ -59,7 +60,7 @@ if ($organism eq "") {
   die "Error: you should specify an organism\n$supported_organisms\n";  
 } elsif ($organism eq "yeast") {
   $args = join " ", @ARGV;
-  system "upstream-region-yeast $args";
+  system "$SCRIPTS/upstream-region-yeast $args";
   exit(0);
 } elsif ($supported_organism{$organism}) {
   $feature_table_file = $supported_organism{$organism}->{'features'};
@@ -118,6 +119,12 @@ if ($#queries <0) {
 #### output file ####
 $out = &OpenOutputFile($outputfile);
 
+#### temporary: inactivation of the -noorf option
+if ($no_orf) {
+  undef $no_orf;
+  print $out ";\n;\tWARNING: -noorf is currently not supported due to a bug\n;\n";
+}
+
 #### verbose ####
 if ($warn_level) {
   print $out ";upstream-region\n";
@@ -126,7 +133,8 @@ if ($warn_level) {
     print $out ";	$q\n";
   }
   
-  if ($no_CDS) {
+  if ($no_orf) {
+
     print $out ";maximal upstream region sizes\n";
     foreach $key (keys %up_dist) {
       print $out ";\t$key\t$up_dist{$key}\n";
@@ -145,37 +153,39 @@ if ($warn_level) {
 }
 
 #### read data
-&ReadCDSPositions;
+#&ReadCDSPositions;
+&ReadOrfPositions($organism);
 &ReadSynonyms($organism);
 #&ReadGenomeSequence;
 
 #### get the upstream regions ####
 QUERYLOOP: foreach $query (@queries) {
-  unless (defined($CDS_id{uc($query)})) {
+
+
+  unless (defined($orf_id{uc($query)})) {
     print $out ";WARNING\tinvalid query $query\n";
     next;
   }
+
+  $orf_id = $orf_id{uc($query)};
+  $name = $name{$orf_id}; 
+  $orf_left = $left{$orf_id};
+  $orf_right = $right{$orf_id};
+  $orf_strand = $strand{$orf_id};
   
-  $CDS_id = $CDS_id{uc($query)};
-  $name = $name{$CDS_id}; 
-  $CDS_left = $left{$CDS_id};
-  $CDS_right = $right{$CDS_id};
-  $CDS_strand = $strand{$CDS_id};
-  
-  if ($no_CDS) {
-    $current_from = &max(-$up_dist{$CDS_id} + 1, $upstream_reg_from);
+  if ($no_orf) {
+    $current_from = &max(-$up_dist{$orf_id} + 1, $upstream_reg_from);
   } else {
     $current_from = $upstream_reg_from;
   }
   $current_to = $upstream_reg_to;
   
-  
-  if ($CDS_strand eq ">") {
-    $upstream_reg_left = $CDS_left + $current_from;
-    $upstream_reg_right = $CDS_left + $current_to;
+  if ($orf_strand eq "D") {
+    $upstream_reg_left = $orf_left + $current_from;
+    $upstream_reg_right = $orf_left + $current_to;
   } else {
-    $upstream_reg_right = $CDS_right - $current_from;
-    $upstream_reg_left = $CDS_right - $current_to;
+    $upstream_reg_right = $orf_right - $current_from;
+    $upstream_reg_left = $orf_right - $current_to;
   }
   
   $upstream_reg_size =  $upstream_reg_right - $upstream_reg_left + 1;
@@ -184,23 +194,40 @@ QUERYLOOP: foreach $query (@queries) {
   }
   
   
-  
   ### upstream region ID and comments ####
-  if (($CDS_as_id) || ($name eq "")) {
-    $current_id = $CDS_id;
+  if (($orf_as_id) || ($name eq "")) {
+    $current_id = $orf_id;
   } else {
     $current_id = "$name";
   }
   
   unless ($no_comments) {
     @comments = ("$query upstream sequence, from $current_from to $current_to, size $upstream_reg_size");
-    @comments = (@comments, "upstream region size: $upstream_reg_size; upstream region location: $upstream_reg_left $upstream_reg_right $CDS_strand");
-    @comments = (@comments, "Gene: $name; ID: $CDS_id; gene location: $CDS_left $CDS_right $CDS_strand");
+    @comments = (@comments, "upstream region size: $upstream_reg_size; upstream region location: $upstream_reg_left $upstream_reg_right $orf_strand");
+    @comments = (@comments, "Gene: $name; ID: $orf_id; gene location: $orf_left $orf_right $orf_strand");
   }
   
   ### substring retrieval
   ### beware! DNA is circular
-  $current_seq = $chromosome{$chrom}->get_sequence($upstream_reg_left,$upstream_reg_right,$CDS_strand);
+  warn (join "\t", 
+	";",
+	$query, 
+	$orf_id, 
+	$orf_left, 
+	$orf_right, 
+	$orf_strand,
+	$current_from,
+	$current_to,
+	$upstream_reg_left,
+	$upstream_reg_right,
+	$upstream_reg_size,
+	"\n"
+	)
+      if ($warn_level >= 2); 
+ 
+  
+  $current_seq = $chromosome{$chrom}->get_sequence($upstream_reg_left,$upstream_reg_right,$orf_strand);
+  
 #    if (($upstream_reg_left <= 0) && ($upstream_reg_right > 0)) { 
 #      $current_seq = substr($genome_seq, $genome_length + $upstream_reg_left - 1, -$upstream_reg_left + 1);
 #      $current_seq .= substr($genome_seq,0,$upstream_reg_right);
@@ -216,7 +243,7 @@ QUERYLOOP: foreach $query (@queries) {
 #    }
   
 #    ### reverse complement
-#    if ($CDS_strand eq "<") {
+#    if ($orf_strand eq "R") {
 #      $current_seq = &ReverseComplement($current_seq);
 #    } else {
 #      $current_seq = uc($current_seq);
@@ -241,46 +268,46 @@ exit(0);
 
 
 
-sub ReadCDSPositions {
+#  sub ReadCDSPositions {
   
-  open CDS, "$feature_table_file" ||
-    die "Cannot open CDS location file $feature_table_file\n";
+#    open CDS, "$feature_table_file" ||
+#      die "Cannot open CDS location file $feature_table_file\n";
   
   
-  ### read CDS positions
-  while (<CDS>) {
-    next unless (/\S/);
-    next if (/^;/);
-    chomp;
-    @fields = split "\t";
-    foreach $f (keys %col) {
-      ${$f} = $fields[$col{$f}];
-    }
+#    ### read CDS positions
+#    while (<CDS>) {
+#      next unless (/\S/);
+#      next if (/^;/);
+#      chomp;
+#      @fields = split "\t";
+#      foreach $f (keys %col) {
+#        ${$f} = $fields[$col{$f}];
+#      }
     
-    next unless (($kind eq "CDS") || ($kind =~ /^gene$/i));
+#      next unless (($kind eq "CDS") || ($kind =~ /^gene$/i));
     
-    next unless ($left < $right);
-    ### we adopt Madison notation: orientation is ">" or "<" 
-    ### Heli's notation: F (forward) or R (reverse)
-    $strand =~ s/F/>/;
-    $strand =~ s/R/</;
+#      next unless ($left < $right);
+#      ### we adopt Madison notation: orientation is "D" or "R" 
+#      ### Heli's notation: F (forward) or R (reverse)
+#      $strand =~ s/F/>/;
+#      $strand =~ s/R/</;
     
-    ### D for Direct
-    $strand =~ s/D/>/;
+#      ### D for Direct
+#      $strand =~ s/D/>/;
     
-    ### Yeast notation: W (Watson) or C (Crick)
-    $strand =~ s/W/>/;
-    $strand =~ s/C/</;
+#      ### Yeast notation: W (Watson) or C (Crick)
+#      $strand =~ s/W/>/;
+#      $strand =~ s/C/</;
   
     
-    $left{$id} = $left;
-    $right{$id} = $right;
-    $strand{$id} = $strand;
-    $name{$id} = $name;
-    $CDS_id{uc($id)} = $id;
-    $CDS_id{uc($name)} = $id;
-  }
-}
+#      $left{$id} = $left;
+#      $right{$id} = $right;
+#      $strand{$id} = $strand;
+#      $name{$id} = $name;
+#      $orf_id{uc($id)} = $id;
+#      $orf_id{uc($name)} = $id;
+#    }
+#  }
 
 
 #  sub ReadGenomeSequence {
@@ -303,16 +330,23 @@ sub PrintHelp {
 USAGE
 	upstream-region -org organism	
 			[-from] [-to] [-format seqformat] [-lw linewidth] 
-			[-o outpufile] -q query_CDS | -i query file | -all
+			[-o outpufile] -q query_orf | -i query file | -all
 	
-	returns the DNA sequence of a region located upstream from a query CDS.
+	returns the DNA sequence of a region located upstream from a query orf.
 	
 OPTIONS
 	-org organism
 	     supported organisms : 
 $supported_organisms
+	-type	sequence type
+		Currently supported sequence types
+			upstream (default)
+		To implement in the future
+			downstream
+			introns
+			coding
 	-q query
-		The query should be an CDS identifier (eg 'metR').
+		The query should be an orf identifier (eg 'metR').
 		The query is case-insensitive.
 		Multiple queries can be entered by reiteratively using the -q 
 		option.
@@ -322,10 +356,10 @@ $supported_organisms
 	-o	followed by the name of the outputfile. 
         -from #1 -to #2 
                 where #1 and #2 are numbers. #2 should be higher than #1.
-                limits of the region to extract, relative to CDS start 
+                limits of the region to extract, relative to orf start 
                 (=position 0). Use negative values for upstream sequence.
                         example: -from -800 -to -1 
-                        will extract the 800 bp upstream the CDS start.
+                        will extract the 800 bp upstream the orf start.
 			 (this is the default)
 	-format	allows to select different output formats, with the following 
 		options:
@@ -337,16 +371,16 @@ $supported_organisms
 	-lw ##	Line width. A newline character will be inserted in the 
 		sequence every ## bases. Default is 60. 
 		-lw 0 will prevent newline insertion.
-        -id CDS Use CDS identifier instead of gene name in the output file
-	-nocds	the upstream sequence can only contain non-coding sequence.
-		i.e. the -from values is modified if a predicted CDS
+        -id orf Use orf identifier instead of gene name in the output file
+	-noorf	the upstream sequence can only contain non-coding sequence.
+		i.e. the -from values is modified if a predicted orf
 		is encountered within its range. 
 		The weaknesses of using this option are that
-		- all predicted CDS do not correspond to real CDS,
+		- all predicted orf do not correspond to real orf,
 		- there is no a priori reason to exclude a regulatory site
 		  which would overlap the upstream coding sequence.
 	-nocom	no comments. Only the identifier and the sequence are
-		returned. By default, the comment indicates the CDS and
+		returned. By default, the comment indicates the orf and
 		upstream sequence coordinates.
 
 INPUT FORMAT
@@ -359,7 +393,7 @@ INPUT FORMAT
 		tab-delimited columns providing the following information:
 		column	field
 		1	id	feature identifier
-		2	kind	CDS for coding sequence
+		2	kind	orf for coding sequence
 		3	name	feature name
 		4	chrom	chomosome. 
 				For bacteria, use the organism abbrev
@@ -390,15 +424,16 @@ upstream-region options
 -----------------------
 -org		organism
 $supported_organisms
+-type		upstream
 -i		query file. This option is incompatible with -q.
 -q		query
 -all		returns all genomic upstream regions
 -o		followed by the name of the outputfile. 
--from #1 -to #2	limits of the region to extract, relative to CDS start 
+-from #1 -to #2	limits of the region to extract, relative to orf start 
 -format		output sequence format. accepted: IG, raw, WC
 -lw ##		Line width. -lw 0 will prevent newline insertion.
--id CDS		Use CDS identifier rather than gene name
--nocds		the upstream sequence can only contain non-coding sequence.
+-id orf		Use orf identifier rather than gene name
+-noorf		the upstream sequence can only contain non-coding sequence.
 -nocom		do not print related information (start, end position, ...)
 End_short_help
   close HELP;
@@ -454,20 +489,28 @@ sub ReadArguments {
     } elsif ($ARGV[$a] eq "-org") {
       $organism =$ARGV[$a+1];
       
+      #### type
+    } elsif ($ARGV[$a] eq "-type") {
+      if ($ARGV[$a+1] =~ /^up/) {
+	$sequence_type = "upstream";
+      } else {
+	die "Error: unsupported sequence type $ARGV[$a+1]\n";
+      }
+      
       
       #### line width
     } elsif (($ARGV[$a] eq "-lw") && ($ARGV[$a+1] >= 0)) {
       $linewidth = $ARGV[$a+1];
       
       #### use identifiers rather than gene names
-    } elsif (($ARGV[$a] eq "-id") && (lc($ARGV[$a+1]) eq "cds")) {
-      $CDS_as_id = 1;
+    } elsif (($ARGV[$a] eq "-id") && (lc($ARGV[$a+1]) eq "orf")) {
+      $orf_as_id = 1;
       
       #### do not allow overlapping coding sequences
     } elsif (($ARGV[$a] =~ /^-nocds/i) || 
 	     ($ARGV[$a] =~ /^-noorf/i)) {
-      $no_CDS = 1;
-      
+      $no_orf = 1;
+
       #### do not print the comments field
     } elsif ($ARGV[$a] =~ /^-nocom/i) {
       $no_comments = 1;
