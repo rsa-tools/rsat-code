@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank_lib.pl,v 1.8 2004/06/17 06:42:40 jvanheld Exp $
+# $Id: parse_genbank_lib.pl,v 1.9 2004/06/17 07:21:14 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -547,8 +547,8 @@ sub ParseFeatureNames {
 			 ){
 		    
 		    $new_name = $1;
-		    $new_name = s/\;$//;
-		    $new_name = s/\:$//;
+		    $new_name ~= s/\;$//;
+		    $new_name ~= s/\:$//;
 		    
 		    #### add the new name
 		    warn join( "\t", "Adding name to feature", 
