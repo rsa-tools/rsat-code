@@ -1186,7 +1186,7 @@ sub CalcLimits {
 
 ##### Initialize HTML map #####
 sub InitHTMLmap {
-    $max_map_elements = 2000;
+    $max_map_elements = 5000;
     $href = ShortFileName($inputfile);
     
     ###### header of the HTML file #####
