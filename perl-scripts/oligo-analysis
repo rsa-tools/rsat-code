@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.70 2004/01/23 22:17:04 jvanheld Exp $
+# $Id: oligo-analysis,v 1.71 2004/01/23 23:17:38 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -174,7 +174,7 @@ if (($method eq "Frequency file") &&
 ################################################################
 #### Read calibration from a file
 if ($method =~ /calibration/i) {
-    warn "; Reading calibration file\t",$infile{calibration},"\n" if ($main::verbose >= 1);
+    &TimeWarn( "; Reading calibration file\t",$infile{calibration},"\n") if ($main::verbose >= 1);
     &ReadCalibration($infile{calibration});
 }
 
@@ -234,7 +234,7 @@ exit(0);
 #### Read input sequences and count oligomers ####
 sub CountOligo {
     if ($verbose >= 2) {
-	&TimeWarning("Counting oligo frequencies");
+	&TimeWarn("Counting oligo frequencies");
     }
     
     if ($return{'table'}) {
@@ -267,7 +267,7 @@ sub CountOligo {
 	$id_list[$sequence_number] = $current_id;
 	$seq_length[$sequence_number] = length($current_seq);
 	
-	&TimeWarning(join "\t", $sequence_number,  $current_id, $seq_length[$sequence_number]) if ($main::verbose >= 2);
+	&TimeWarn(join "\t", $sequence_number,  $current_id, $seq_length[$sequence_number]) if ($main::verbose >= 3);
 	
 	$sum_seq_length += $seq_length[$sequence_number];
 	if ($seq_length[$sequence_number] < $oligo_length) {
@@ -279,7 +279,7 @@ sub CountOligo {
 	
 	### calculate alphabet from input sequence ####
 #    if (($input_alphabet) || ($return{'zscore'}) || ($method eq "Markov chain")) {
-	&TimeWarning("$current_id\tcalculating alphabet") if ($verbose >= 4);
+	&TimeWarn("$current_id\tcalculating alphabet") if ($verbose >= 4);
 	
 	for $pos (0..$seq_length[$sequence_number]-1) {
 	    $letter = lc(substr($current_seq,$pos,1));
@@ -304,7 +304,7 @@ sub CountOligo {
 	while ($current_pos >=0) {
 	    if ($verbose >= 3 && (($current_pos%$chunk) == 0) && ($current_pos > 0)) {
 		$current_length = length($current_seq);
-		&TimeWarning("$current_id\tremain to read: $current_pos");
+		&TimeWarn("$current_id\tremain to read: $current_pos");
 	    }
 	    
 	    ### occurrences
@@ -452,7 +452,7 @@ sub PrintTableHeader {
 ################################################################
 ### sum occurrences of reverse complement patterns
 sub SumReverseComplements {
-    warn (join "\t", &AlphaDate, "Summing occurrences for pairs of reverse complements") if ($verbose >= 2);
+    &TimeWarn("Summing occurrences for pairs of reverse complements") if ($verbose >= 2);
 
     foreach my $pattern_seq (keys %patterns) {
 	my $rc_pattern_seq = &SmartRC($pattern_seq);
@@ -510,7 +510,7 @@ sub SumReverseComplements {
 ################################################################
 ### sum occurrence distribution of reverse complement patterns
 sub SumReverseComplementsDistrib {
-    warn (join "\t", &AlphaDate, "Summing occurrence distributions for pairs of reverse complements") if ($verbose >= 2);
+    &TimeWarn("Summing occurrence distributions for pairs of reverse complements") if ($verbose >= 2);
 
     foreach my $pattern_seq (keys %distrib) {
 	my $rc_pattern_seq = &SmartRC($pattern_seq);
@@ -545,7 +545,7 @@ sub SumReverseComplementsDistrib {
     undef %distrib_2strands;
     
     ## remove duplicate information
-    foreach $pattern_seq (keys %distrib) {
+    foreach my $pattern_seq (keys %distrib) {
 	$rc_pattern_seq = &SmartRC($pattern_seq);
 	if ($rc_pattern_seq gt $pattern_seq) { ### only suppress one oligo from the pair
 	    delete $distrib{$rc_pattern_seq};
@@ -569,7 +569,7 @@ sub GroupRc {
 #### check occurrence threshold
 sub OccurrenceThreshold {
   if ($verbose >= 2) {
-    &TimeWarning("Threshold on occurrences");
+    &TimeWarn("Threshold on occurrences");
   }
   
   foreach $pattern_seq (keys %patterns) {
@@ -583,7 +583,7 @@ sub OccurrenceThreshold {
 #### check threshold on matching sequences
 sub MatchingSeqThreshold {
   if ($verbose >= 2) {
-    &TimeWarning("Threshold on matching sequences");
+    &TimeWarn("Threshold on matching sequences");
   }
   foreach $pattern_seq (keys %patterns) {
     if ($patterns{$pattern_seq}->{mseq} < $mseq_threshold) {
@@ -596,7 +596,7 @@ sub MatchingSeqThreshold {
 ### Calculate subword frequencies
 sub CalcSubWordFrequencies {
     if ($verbose >= 2) {
-	&TimeWarning("Calculating subword frequencies");
+	&TimeWarn("Calculating subword frequencies");
     }
     
     foreach $pattern_seq (keys %patterns) {
@@ -662,7 +662,7 @@ sub CalcSubWordFrequencies {
 #### calculate relative frequencies if requested
 sub CalcFrequencies {
     if ($verbose >= 2) {
-	&TimeWarning("Calculating relative frequencies");
+	&TimeWarn("Calculating relative frequencies");
     }
     
     #### sum of occurrences
@@ -693,7 +693,7 @@ sub CalcFrequencies {
 ### residue frequencies from input sequences
 sub CalcAlphabet {
     %residue_proba = ();
-    &TimeWarning("Calculating residue frequencies from input sequences") if ($verbose >= 2);
+    &TimeWarn("Calculating residue frequencies from input sequences") if ($verbose >= 2);
     
     foreach $key (sort keys %residue_occ) {
 	$residue_total += $residue_occ{$key};
@@ -715,7 +715,7 @@ sub CalcAlphabet {
 ### calculate occurrences with 1 degenerated position 
 sub Degenerate {
   if ($verbose >= 2) {
-    &TimeWarning("Neighborhood");
+    &TimeWarn("Neighborhood");
   }
   
   foreach $d (@degenerate_code) {  
@@ -784,7 +784,7 @@ sub NbPossibleOligo {
 #### expected oligomer frequencies
 sub CalcExpected {
     if ($verbose >= 2) {
-	&TimeWarning("Calculating probabilities");
+	&TimeWarn("Calculating probabilities");
     }
     
     #### Calcualte the number of possible positions for each pattern
@@ -1119,7 +1119,7 @@ sub CalcProba {
     
     ### calculate oligo probabilities
     foreach $pattern_seq (sort keys %patterns) {
-	&TimeWarning ("calculating proba $pattern_seq occ %7d exp_occ %7.1f\texp_freq %g\tpos %g\n", 
+	&TimeWarn ("calculating proba $pattern_seq occ %7d exp_occ %7.1f\texp_freq %g\tpos %g\n", 
 		      $patterns{$pattern_seq}->{occ}, 
 		      $patterns{$pattern_seq}->{exp_occ},
 		      $patterns{$pattern_seq}->{exp_freq},
@@ -1463,7 +1463,7 @@ sub Verbose {
 sub PrintResult {
     ### open output file ###
     if ($verbose >= 2) {
-	&TimeWarning("Printing output file");
+	&TimeWarn("Printing output file");
     }
 
     #### print verbose
@@ -1978,7 +1978,7 @@ sub ReadArguments {
     }
     
     if ($verbose >= 2) {
-	&TimeWarning("Starting");
+	&TimeWarn("Starting");
     }
 }
  
@@ -2612,16 +2612,13 @@ End_of_help
 # Select reverse palindromic patterns (delete all other patterns)
 #
 sub SelectPalindroms {
-  if ($verbose >= 2) {
-    &TimeWarning("Selcting reverse palindroms");
-  }
-  
-  foreach $pattern_seq (keys %patterns) {
-      my $rc = &SmartRC($pattern_seq);
-      unless ($rc eq $pattern_seq) { ### palindroms
-	  delete $patterns{$pattern_seq};
-      }
-  }
+    &TimeWarn("Selecting reverse palindroms") if ($verbose >= 2);
+    foreach $pattern_seq (keys %patterns) {
+	my $rc = &SmartRC($pattern_seq);
+	unless ($rc eq $pattern_seq) { ### palindroms
+	    delete $patterns{$pattern_seq};
+	}
+    }
 }
 
 
@@ -2629,7 +2626,6 @@ sub SelectPalindroms {
 #
 # Print oligo count distribution
 #
-
 sub PrintCountDistrib {
     my %min = ();
     my %max = ();
@@ -2658,12 +2654,14 @@ sub PrintCountDistrib {
 
     #### Print the header
     print $out join ("\t", 
-		     ";occ", 
+		     "; pattern", 
+		     "ID", 
 		     $distrib_min..$distrib_max), "\n";
 
     #### Print the result
     foreach my $pattern_seq (@output_patterns) {
-	print $out &PatternID($pattern_seq, $sum_rc);
+	print $out $pattern_seq;
+	print $out "\t", &PatternID($pattern_seq, $sum_rc);
 	foreach my $occ ($distrib_min..$distrib_max) {
 	    my $freq = $distrib{$pattern_seq}{$occ} || 0;
 	    print $out "\t", $freq;
