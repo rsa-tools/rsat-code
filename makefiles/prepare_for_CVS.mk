@@ -18,7 +18,11 @@ MAKEFILE=prepare_for_CVS.mk
 DIR=perl-scripts
 
 ## all directories to submit
-DIRS=perl-scripts perl-scripts/lib perl-scripts/parsers perl-scripts/parsers/classes perl-scripts/parsers/lib public_html
+DIRS= perl-scripts				\
+	public_html				\
+	makefiles				\
+	doc
+
 SUBDIRS=`find ${DIR} -type d | grep -v RCS | grep -v SWISS | grep -v perllib`
 
 ## excluded directories and files
@@ -29,6 +33,7 @@ EXCLUDED=					\
 	--exclude oldies			\
 	--exclude logs				\
 	--exclude auto				\
+	--exclude papers			\
 	--exclude '*~'
 
 
@@ -60,7 +65,6 @@ all_tasks:
 	${MAKE} rsync_one_dir 
 	${MAKE} treat_one_dir
 	${MAKE} iterate_subdirs TASK=treat_one_dir 
-
 
 rsync_one_dir:
 	${RSYNC} ${EXCLUDED} ${RSAT}/${DIR} .
