@@ -149,44 +149,44 @@ if ($query->param('subst') =~ /^\d+$/) {
 }
 
 
+$command = "$retrieve_seq_command $retrieve_seq_parameters ";
+$command .= "| $dna_pattern_command $parameters_dna_pattern ";
+if ($org eq "yeast") { #### not yet supported for other organisms
+    $command .= "| $add_orf_function_command  ";
+    $command .= "| $link_command  ";
+}
+
 ### execute the command ###
 if ($query->param("output") =~ /display/i) {
 
-  ### execute the command ###
-  $result_file = "$TMP/$tmp_file_name.res";
-  $command = "$retrieve_seq_command $retrieve_seq_parameters ";
-  $command .= "| $dna_pattern_command $parameters_dna_pattern ";
-  if ($org eq "yeast") { #### not yet supported for other organisms
-      $command .= "| $add_orf_function_command  ";
-      $command .= "| $link_command  ";
-  }
-  $command .= "& |";
+    ### execute the command ###
+    $result_file = "$TMP/$tmp_file_name.res";
 #  print "<PRE>$command</PRE>";
-  open RESULT, $command;
-
-  &PipingForm if ($query->param('return') =~ /positions/);
-  
-  ### Print the result on Web page
-  &PrintHtmlTable(RESULT, $result_file);
-  close RESULT;
-  
-  
+    open RESULT, "$command & |";
+    
+    &PipingForm if ($query->param('return') =~ /positions/);
+    
+    ### Print the result on Web page
+    &PrintHtmlTable(RESULT, $result_file);
+    close RESULT;
+    
+    
 } else {
-  ### send an e-mail with the result ###
-  if ($query->param('user_email') =~ /(\S+\@\S+)/) {
-    $address = $1;
-    print "<B>Result will be sent to your e-mail address: <P>";
-    print "$address</B><P>";
-    system "$dna_pattern_command $parameters_dna_pattern | $mail_command $address &";
-  } else {
-    if ($query->param('user_email') eq "") {
-      print "<B>ERROR: you did not enter your e-mail address<P>";
+    ### send an e-mail with the result ###
+    if ($query->param('user_email') =~ /(\S+\@\S+)/) {
+	$address = $1;
+	print "<B>Result will be sent to your e-mail address: <P>";
+	print "$address</B><P>";
+	system "$command | $mail_command $address &";
     } else {
-      print "<B>ERROR: the e-mail address you entered is not valid<P>";
-      print "$query->param('user_email')</B><P>";      
-    }
-  } 
-  print "<HR SIZE = 3>";
+	if ($query->param('user_email') eq "") {
+	    print "<B>ERROR: you did not enter your e-mail address<P>";
+	} else {
+	    print "<B>ERROR: the e-mail address you entered is not valid<P>";
+	    print "$query->param('user_email')</B><P>";      
+	}
+    } 
+    print "<HR SIZE = 3>";
 }
 
 print $query->end_html;
@@ -206,7 +206,7 @@ sub PipingForm {
 <H4>Next step</H4>
 </TD>
 <TD>
-<FORM METHOD="POST" ACTION="feature-map.cgi">
+<FORM METHOD="POST" ACTION="feature-map_form.cgi">
 <INPUT type="hidden" NAME="title" VALUE="$title">
 <INPUT type="hidden" NAME="feature_file" VALUE="$result_file">
 <INPUT type="hidden" NAME="format" VALUE="dna-pattern">
