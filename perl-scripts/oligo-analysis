@@ -1,4 +1,12 @@
 #!/usr/bin/perl
+############################################################
+#
+# $Id: oligo-analysis,v 1.2 2000/03/06 12:54:25 jvanheld Exp $
+#
+# Time-stamp: <2000-03-06 13:54:00 jvanheld>
+#
+############################################################
+
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
@@ -590,24 +598,29 @@ while ($a <= $#ARGV) {
     $return{'freq'} = 1;
     push(@output_fields, "frequency");
     
-  } elsif (($ARGV[$a] eq "-thms") && (&IsInteger($ARGV[$a+1]))) {
+  } elsif (($ARGV[$a] eq "-thms") && 
+	   (&IsInteger($ARGV[$a+1]))) {
     $mseq_threshold = $ARGV[$a+1];
     
-  } elsif (($ARGV[$a] eq "-tho") && (&IsInteger($ARGV[$a+1]))) {
+  } elsif (($ARGV[$a] eq "-tho") && 
+	   (&IsInteger($ARGV[$a+1]))) {
     $occurrence_threshold = $ARGV[$a+1];
     
-  } elsif (($ARGV[$a] eq "-thpo") && (&IsReal($ARGV[$a+1]))
+  } elsif (($ARGV[$a] eq "-thpo") && 
+	   (&IsReal($ARGV[$a+1]))
 	   && ($ARGV[$a+1] >= 0) && ($ARGV[$a+1] <= 1)) {
     $proba_occ_threshold = $ARGV[$a+1];
     $return{'proba'} = 1;
     
-  } elsif (($ARGV[$a] =~ /^-thrat/i) && (&IsReal($ARGV[$a+1]))
+  } elsif (($ARGV[$a] =~ /^-thrat/i) && 
+	   (&IsReal($ARGV[$a+1]))
 	   && ($ARGV[$a+1] >= 0)) {
     $ratio_threshold = $ARGV[$a+1];
     $return{'exp_freq'} = 1;
     $return{'ratio'} = 1;
     
-  } elsif (($ARGV[$a] eq "-thpms") &&  (&IsReal($ARGV[$a+1]))
+  } elsif (($ARGV[$a] eq "-thpms") &&  
+	   (&IsReal($ARGV[$a+1]))
 	   && ($ARGV[$a+1] >= 0) && ($ARGV[$a+1] <= 1)) {
     $proba_mseq_threshold = $ARGV[$a+1];
     $return{'proba'} = 1;
