@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.41 2004/01/22 07:25:02 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.42 2004/01/22 08:09:41 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -1446,9 +1446,7 @@ sub MakeDirectories {
 ### relational database
 sub ExportSQL {
     warn "; Generating SQL $table_file\n" if ($verbose >= 1);
-    
     my $test = new RSAT::Family;
-
     my $time_prefix = time();
     my $family_factory = classes::ClassFactory->new_class(object_type=>"RSAT::Family",
 							  prefix=>$time_prefix);
@@ -1457,11 +1455,6 @@ sub ExportSQL {
 #    my $pattern_prefix = "pat_".&AlphaDate()."_";
     my $pattern_factory = classes::ClassFactory->new_class(object_type=>"RSAT::Pattern",
 							   prefix=>$time_prefix);
-
-    #### output directory
-    $dir{sql} = "sql_export";
-    &CheckOutDir($dir{sql});
-
     my $table_file = $dir."/".$table_suffix;
 
     my %export_columns = ();
@@ -1488,8 +1481,8 @@ sub ExportSQL {
 	my $oligo_file = $family{$family_name}->{oligo_file};
 	if (-e $oligo_file) {
 	    my %export_columns = ();
-	    open OLIGOS, $oligo_file;
-	    while (<OLIGOS>) {
+	    ($oligo_handle, $dir) = &OpenInputFile($oligo_file);
+	    while (<$oligo_handle>) {
 		chomp;
 		if (/^;/) {
 		    if ((/;\s+(\d+)\t(\S+)/) && ($2 ne "id")){
@@ -1520,9 +1513,11 @@ sub ExportSQL {
 		    $oligo_object->force_attribute("rev_compl", &ReverseComplement($oligo_object->get_attribute("sequence")));
 		}
 	    }
-	    close OLIGOS;
+	    close $oligo_handle;
 	} else {
-	    &Warning("$family_name\toligo file $oligo_file does not exist\tSKIPPED\n");
+	    my $pwd = `pwd`;
+	    chomp $pwd;
+	    &Warning("$family_name\t$pwd\toligo file $oligo_file does not exist\tSKIPPED\n");
 	}
 
 	#### discovered dyads
@@ -1589,6 +1584,16 @@ sub ExportSQL {
 			     );
     $pattern_factory->set_out_fields(@pattern_out_fields);
 
+    #### export directory
+    $dir{sql} = "sql_export";
+    &CheckOutDir($dir{sql});
+
+    ### temporary output directory
+    $dir{output_bk} = $dir{output};
+    $dir{output} = $dir{sql};
+    my $pwd = `pwd`;
+    chomp $pwd;
+    warn join ("\t", $pwd , $dir{output}, $dir{output_bk}), "\n";
     #### export the result tables
     foreach my $factory ($family_factory, $pattern_factory) {
 	$factory->dump_tables();
@@ -1598,7 +1603,8 @@ sub ExportSQL {
 			       user=>$user);
     }
     &ExportMakefile("family", "pattern");
-
+#    $dir{output} = $dir{output_bk};
+#    chdir($dir{output});
 }
 
 ## ##############################################################
