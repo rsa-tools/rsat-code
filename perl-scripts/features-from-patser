@@ -10,19 +10,27 @@ $start_time = $date = `date '+%d/%m/%y %H:%M:%S %Z'`;
 $type="site";
 $id = "patser";
 $matrix_length = 1;
-$seq_format = "wconsensus";
+$seq_format = "wconsensus";  ### because this is the usual format for patser
 $flank_len = 0;
 
-%supported= ();
-$supported{table} = 1;
-$supported{matches} = 1;
+@supported_table_fields = qw (scores starts strands positions);
+foreach my $field  (@supported_table_fields) {
+    $supported_table_fields{$field} = 1;
+}
+
+$supported_table_fields = join ",", @supported_table_fields;
 
 #### read arguments ####
 &ReadArguments();
 
+#### default return format
 unless (defined(%return)) {
     $return{matches} = 1;
 }
+if (($return{table}) && !(defined(%table_fields))){
+    $table_fields{scores} = 1;
+}
+
 
 #### origin file
 if ($origin_file) {
@@ -82,6 +90,7 @@ while (<$in>) {
 	$matrix_length = $1;
 	print $out "; $_";
 
+	#### the row contains a match description
     } elsif (/^\s*(\S+)\s+position=\s+(\d+)([c\s])\s+score=\s+(\S+)(.*)/i) {
 	
 	#### parse the match
@@ -89,14 +98,12 @@ while (<$in>) {
 	$position = $2;
 	$strand = $3;
 	$score = $4;
-	
+
 	#### P-value
 	if ($5 =~ /ln\(p-value\)=\s+(\S+)/) {
 	    $lnP = $1;
 	}
 
-	
-	
 	#### adapt coordinates to the selected origin
 	unless ($fixed_origin) {
 	    $origin = $origin{$1};
@@ -107,7 +114,7 @@ while (<$in>) {
 	    $start = $position - $origin;
 	}
 	$end = $start + $matrix_length -1;
-	
+
 	#### strand
 	unless ($force_strand) {
 	    if  ($strand =~ /^c$/i) {
@@ -116,7 +123,7 @@ while (<$in>) {
 		$strand = "D";
 	    }
 	}
-	
+
 	#### parse information about the match
 	if ($return{matches}) {
 
@@ -138,8 +145,6 @@ while (<$in>) {
 		#### description
 		$descr = "${sub_sequence}";
 	    }
-
-
 
 	    ################################################################
 	    ### print the header line if it has not yet been done
@@ -165,9 +170,9 @@ while (<$in>) {
 	#### store scores for the score table
 	if ($return{table}) {
 	    push @{$scores{$map}}, $score;
-	    push @{$starts{$map}},  $start;
-	    push @{$strands{$map}},  $strand;
-	    push @{$positions{$map}},  join ("", $start,"..",$end,$strand); #$position;
+	    push @{$starts{$map}},  $start if ($table_fields{starts});
+	    push @{$strands{$map}},  $strand if ($table_fields{strands});
+	    push @{$positions{$map}},  join ("", $start,"..",$end,$strand) if ($table_fields{positions});
 	    $max_scores_per_map = &max($max_scores_per_map, $#{$scores{$map}}+1);
 	}
 	
@@ -177,24 +182,33 @@ while (<$in>) {
     }
 }
 
+################################################################
 #### print score table
 if ($return{table}) {
     print $out "; Score table\n" if ($verbose >= 1);
-
+    
     #### header
 #    print $out join ("\t", "; seq_id", 1..$max_scores_per_map), "\n";
     print $out "; seq_id";
-    for my $i (1..$max_scores_per_map) {
-	print $out "\tscore.${i}";
+    if ($table_fields{scores}) {
+	for my $i (1..$max_scores_per_map) {
+	    print $out "\tscore.${i}";
+	} 
     }
-    for my $i (1..$max_scores_per_map) {
-	print $out "\tstart.${i}";
+    if ($table_fields{starts}) {
+	for my $i (1..$max_scores_per_map) {
+	    print $out "\tstart.${i}";
+	} 
     }
-    for my $i (1..$max_scores_per_map) {
-	print $out "\tstrand.${i}";
+    if ($table_fields{strands}) {
+	for my $i (1..$max_scores_per_map) {
+	    print $out "\tstrand.${i}";
+	} 
     }
-    for my $i (1..$max_scores_per_map) {
-	print $out "\tposition.${i}";
+    if ($table_fields{positions}) {
+	for my $i (1..$max_scores_per_map) {
+	    print $out "\tposition.${i}";
+	} 
     }
     print $out "\n";
 
@@ -203,16 +217,23 @@ if ($return{table}) {
 
 	for my $i ($#{$scores{$map}}..$max_scores_per_map-2) {
 	    push @{$scores{$map}}, "";
-	    push @{$starts{$map}}, "";
-	    push @{$strands{$map}}, "";
-	    push @{$positions{$map}}, "";
+	    push @{$starts{$map}}, "" if ($table_fields{$starts});
+	    push @{$strands{$map}}, "" if ($table_fields{$strands});
+	    push @{$positions{$map}}, "" if ($table_fields{$positions});
 	}
-	print $out join ("\t", $map, 
-			 (sort {$b <=> $a} @{$scores{$map}}), 
-			 (sort {$scores{$b} <=> $scores{$a}} @{$starts{$map}}),
-			 (sort {$scores{$b} <=> $scores{$a}} @{$strands{$map}}),
-			 (sort {$scores{$b} <=> $scores{$a}} @{$positions{$map}})
-			 );
+	print $out $map;
+	print $out "\t", join ("\t", 
+			       (sort {$b <=> $a} @{$scores{$map}}), 
+			       ) if ($table_fields{scores});
+	print $out "\t", join ("\t", 
+			       (sort {$scores{$b} <=> $scores{$a}} @{$starts{$map}}),
+			       ) if ($table_fields{starts});
+	print $out "\t", join ("\t", 
+			       (sort {$scores{$b} <=> $scores{$a}} @{$strands{$map}}),
+			       ) if ($table_fields{strands});
+	print $out "\t", join ("\t", 
+			       (sort {$scores{$b} <=> $scores{$a}} @{$positions{$map}})
+			       ) if ($table_fields{positions});
 	print $out "\n";
     }
 }
@@ -299,19 +320,19 @@ OPTIONS
 	-seq seq_file
 		indicates the sequence file which had been used as 
 		input for patser. This file must be in wconsensus format.
+	-format
+		sequence file format 
+		(default is wcconsensus, since this is the usual format for patser)
 	-N #	return matching sequences with # flanking nucleotides
 		(only valid with the -seq option)
-	-return
-		Information to return. Supported: matches,table
+	-table return_fields
+		Return a table with one row per sequence and one column per match. 
 
-		matches (Default) the output file contains one row per
-		match, with the same information as in the patser
-		file.
+		The next argument indicates the information to
+		return. Supported: $supported_table_fields
 
-	        table: the program returns a table with one row per
-		sequence and one column per match. Matches are sorted
-		by significance. Beware: this format is not supported
-		by feature-map.
+		Beware: this format is not supported by feature-map,
+		but it is very convenient for post-processing.
 		
 INPUT FORMAT
 	The input file should be the result of patser.
@@ -327,7 +348,7 @@ OUTPUT FORMAT
 EXAMPLES
 
        features-from-patser -v -i mydata -o myresult \
-	    -return matches,table
+	    -table matches,table
 
 End_of_help
   close HELP;
@@ -354,8 +375,9 @@ features-from-patser options
 -origin #	origin
 -N #		return matching sequences with # flanking nucleotides
 -origfile	origin file
--seq		sequencefile
--return		information to return (Supported: matches,table)
+-seq		sequence file
+-format		sequence file format (default wc)
+-table		return a table with specified fields (Supported: $supported_table_fields).
 End_short_help
   close HELP;
   exit;
@@ -415,14 +437,20 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] =~ /^-seq/) {
 	    $sequence_file = $ARGV[$a+1];
 
+	    ### sequence file format 
+	} elsif ($ARGV[$a] eq "-format") {
+	    $seq_format = $ARGV[$a+1];
+
 	    ### return a table
-	} elsif ($ARGV[$a] eq "-return") {
+	} elsif ($ARGV[$a] eq "-table") {
+	    $return{table} = 1;
+	    $return{matches} = 0;
 	    @to_return = split ",", $ARGV[$a+1];
-	    foreach $format (@to_return) {
-		unless ($supported{$format}) {
-		    &FatalError("$format is not a supported return format");
+	    foreach my $field (@to_return) {
+		unless ($supported_table_fields{$field}) {
+		    &FatalError("$field is not a supported return field");
 		}
-		$return{$format} = 1;
+		$table_fields{$field} = 1;
 	    }
 
 	}
