@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_swissprot.pl,v 1.16 2002/03/22 13:38:45 jvanheld Exp $
+# $Id: parse_swissprot.pl,v 1.17 2002/03/29 10:30:06 jvanheld Exp $
 #
-# Time-stamp: <2002-03-22 14:16:42 jvanheld>
+# Time-stamp: <2002-03-29 11:29:32 jvanheld>
 #
 ############################################################
 
@@ -81,12 +81,12 @@ package main;
 	while (<ACS>) {
 	    chomp;
 	    my @fields = split /\s+/;
-	    my $ac = $fields[0];
+	    my $ac = &trim($fields[0]);
 	    next unless ($ac);
-	    $selected_acs{$ac}++;
+	    $selected_acs{uc($ac)}++; #### case-insensitive
 	}
 	close ACS;
-	warn "; Selected ACs\n;\t",  join ("\n;\t", keys %selected_acs), "\n" if ($warn_level >= 0);
+	warn "; Selected ACs\n;\t",  join ("\n;\t", sort (keys %selected_acs)), "\n" if ($warn_level >= 0);
     }
 
     #### output directory
@@ -94,16 +94,15 @@ package main;
     unless (defined($dir{output})) {
 	$dir = $parsed_data."/swissprot_parsed";
 	unless (-d $dir) {
-	    warn "Creating output dir $dir", "\n";
+	    warn "; Creating output dir $dir", "\n";
 	    mkdir $dir, 0775 || die "Error: cannot create directory $dir\n";
 	}
 	$dir{output} = $dir."/".$delivery_date;
     }
     unless (-d $dir{output}) {
-	warn "Creating output dir $dir{output}\n";
+	warn "; Creating output dir $dir{output}\n";
 	mkdir $dir{output}, 0775 || die "Error: cannot create directory $dir\n";
     }
-#    die unless chdir $dir{output};
 
     #### output file names
     $out_file{polypeptides} = $dir{output}."/Polypeptide".$suffix.".obj";
@@ -112,6 +111,8 @@ package main;
     
     #### clean output directory
     if ($clean) {
+	system "\\rm -f $dir{output}/swissprot*.txt";
+	system "\\rm -f $dir{output}/swissprot*.txt.gz";
 	system "\\rm -f $dir{output}/Polypeptide*.tab";
 	system "\\rm -f $dir{output}/Polypeptide*.tab.gz";
 	system "\\rm -f $dir{output}/Polypeptide*.gz";
@@ -123,9 +124,11 @@ package main;
     #### open error report file
     open ERR, ">$out_file{errors}" || 
 	die "Error: cannot write error file $out_file{errors}\n";
-    
+#    ERR = STDERR;
+   
     #### select three predefined organisms if none was selected (-org)
-    unless (($#selected_organisms >= 0) || 
+    unless (($in_file{acs}) ||
+	    ($#selected_organisms >= 0) || 
 	    ($export{allorg})){
 	push @selected_organisms, "ecoli";
 	push @selected_organisms, "human";
@@ -192,11 +195,13 @@ package main;
 	&DefaultVerbose;
     }
 
-
     #### parse data from original files
     foreach $source (keys %files_to_parse) {
 	&ParseSwissprot($in_file{$source}, "SWISSPROT:".$source);
     }
+
+    #### check that all the selected acs have been found
+    &CheckSelectedACs if ($in_file{acs});
 
     #### use first name as primary name
 #  foreach $polypeptide ($polypeptides->get_objects()) {
@@ -206,15 +211,16 @@ package main;
 #  }
 
 
+    
     #### print the result
     &PrintStats($out_file{stats}, @classes);
     $polypeptides->dump_tables($suffix, 0, $dir{output});
-    system "gzip -f $dir{output}/*.tab $dir{output}/*.txt";
-    system "gzip -f $dir{output}/*.obj" if ($export{obj});
-
     &ExportClasses($out_file{polypeptides}, $out_format,PFBP::Polypeptide) if ($export{obj});
 
-    
+    system "gzip -f $dir{output}/*.tab";
+#    system "gzip -f $dir{output}/*.txt"; 
+    system "gzip -f $dir{output}/*.obj" if ($export{obj});
+
     ### report execution time
     if ($warn_level >= 1) {
 	$done_time = &AlphaDate;
@@ -388,16 +394,26 @@ sub ParseSwissprot {
     while ($text_entry = <DATA>){
 	$entries++;
 	
-	### check that the entry matches organism name 
-	### before converting it to an object
 	my $parse = 1;
-	unless ($export{allorg}) {
-	    $parse = 0;
-	    foreach $regexp (@regexps) {
-		if ($text_entry =~ /$regexp/i) {
-		    $parse = 1;
-		    last;
-		}
+
+
+	################################################################ 
+	# Pre-parsing checks, to save memory and time
+        #
+
+	### check that the entry matches organism name 
+	my $regexp = "";
+	if ($#selected_organisms >= 0) {
+	    $regexp = "(?:".join ("|", @regexps).")";
+	}
+
+	#### check that the entry contains a selected AC or ID before
+#	if ($in_file{acs}) {
+#	    $regexp = "(?:".join ("|", keys %selected_acs).")";
+#	}
+	if ($regexp) {
+	    unless ($text_entry =~ /$regexp/i) {
+		$parse = 0;
 	    }
 	}
 	next unless $parse;
@@ -415,18 +431,27 @@ sub ParseSwissprot {
 
 	#### initialize the export flag
 	my $export = 0;
-	my @organisms = ();
+	my @organisms = $object_entry->OSs->elements;
 
 	#### check whether the accession number was specified for export 
 	if ($in_file{acs}) {
-	    $export = 1 if (($selected_acs{$swissprot_ac}) ||
-			    ($selected_acs{$swissprot_id}));
+
+	    #### check if the current polypeptide was part of the selection
+	    if ($selected_acs{uc($swissprot_ac)}) {
+		$found_acs{$swissprot_ac}++;
+		delete $selected_acs{uc($swissprot_ac)};
+		$export = 1;
+	    } elsif ($selected_acs{uc($swissprot_id)}) {
+		$found_acs{$swissprot_id}++;
+		delete $selected_acs{uc($swissprot_id)};
+		$export = 1;
+	    }
+
 	} elsif ($export{allorg}) {
 	    $export = 1;
 	} else {
 	    #### check whether the polypeptide organism(s)
 	    #### match the organism selection
-	    @organisms = $object_entry->OSs->elements;
 	    foreach $organism (@organisms) {
 		if ($selected_organism{uc($organism)}) {
 		    $export = 1;
@@ -562,6 +587,14 @@ sub ParseSwissprot {
 #  		print join ";", $object_entry->{$attribute}->toText;
 #  	    };
 #  	}
+
+	#### check how many polypeptides remain to be found
+	if ($in_file{acs}) {
+	    my $remaining = scalar(keys %selected_acs);
+	    warn "; remaning ACs\t$remaining\n" if ($verbose >=0);
+	    last if ($remaining == 0);
+	}
+	
     }
     close DATA;
     
@@ -570,3 +603,12 @@ sub ParseSwissprot {
 }
 
 
+################################################################
+# Check that all the selected ACs/IDs have been found
+#
+sub CheckSelectedACs {
+    #### report the selected ACs/IDs which were not found
+    foreach my $ac (keys %selected_acs) {
+	&ErrorMessage ("Did not find any polypeptide with accession or identifier\t", $ac, "\n");
+    }
+}
