@@ -1,9 +1,6 @@
 #!/usr/bin/perl
 use CGI;
 
-$ECHO = 0; ### set to 1 for debigging: list parameters and echo the unix commands on the web interface
-    
-
 ### for debugging
 sub ListParameters {
   my($cgi_query) = $_[0];
@@ -241,104 +238,106 @@ sub OrganismPopUpString {
 
 
 sub PrintHtmlTable {
-  #### prints a text table in html format
-  ####
-  #### usage
-  ####   PrintHtmlTable(FILE_HANDLE,$mirror_file)
-  #### reads the content of FILEHANDLE and displays 
-  #### it in the form of a HTML table.
-  #### if $mirror_file is specified, a copy of the input text (without HTML formatting)  
-  #### is saved on the hard drive
-  ####
-  #### global variables
-  #### ================
-  #### The fixed font type can be switched off 
-  #### by specifiying a global variable 
-  ####       $font{variable} = 1;
-  my ($FILE, $mirror_file, $mirror_verbose) = @_;
-  my $chunk = 50;
-  my $line_count = 0;
-  my $last_line = "";
-  my $header_line = "";
-  
-  unless ($font{variable}) {
-    $font_spec_start = "<TT>";
-    $font_spec_end = "</TT>";
-  }
-  
-  if ($mirror_file ne "") {
-    if (open MIRROR, ">$mirror_file") {
-      $mirror = 1;
-      &DelayedRemoval($mirror_file);
-    } else {
-      print ";WARNING: Could not open the mirror file $mirror_file<P>\n";
+    #### prints a text table in html format
+    ####
+    #### usage
+    ####   PrintHtmlTable(FILE_HANDLE,$mirror_file)
+    #### reads the content of FILEHANDLE and displays 
+    #### it in the form of a HTML table.
+    #### if $mirror_file is specified, a copy of the input text (without HTML formatting)  
+    #### is saved on the hard drive
+    ####
+    #### global variables
+    #### ================
+    #### The fixed font type can be switched off 
+    #### by specifiying a global variable 
+    ####       $font{variable} = 1;
+    my ($FILE, $mirror_file, $mirror_verbose, $chunk, $out, $border) = @_;
+    $out = STDOUT unless ($out);
+    $chunk = 50 unless (&IsNatural($chunk));
+    my $line_count = 0;
+    my $last_line = "";
+    my $header_line = "";
+    unless ($border) {
+	$border=1;
     }
-  }
-  
-  print "<PRE>";
-  while (<$FILE>) {
-#      if ($ENV{RSA_ERROR}) {
-#	  print "</PRE>HELLO";
-#      }
-      s|$RSA/||g; #### avoid exposing the full path through the web interface
-      if ($mirror) {
-	  print MIRROR $_
-	      unless ((/^;/) && !($mirror_verbose)); 
-      }
+    
+    $TABLE="<TABLE CELLSPACING=3 BORDER=$border>";
+    unless ($font{variable}) {
+	$font_spec_start = "<TT>";
+	$font_spec_end = "</TT>";
+    }
+    
+    if ($mirror_file ne "") {
+	if (open MIRROR, ">$mirror_file") {
+	    $mirror = 1;
+	    &DelayedRemoval($mirror_file);
+	} else {
+	    &Warning("Could not open the mirror file $mirror_file<P>\n");
+	}
+    }
+    
+    print $out "<PRE>";
+    while (<$FILE>) {
+	s|$RSA/||g; #### avoid exposing the full path through the web interface
+	if ($mirror) {
+	    print MIRROR $_
+		unless ((/^;/) && !($mirror_verbose)); 
+	}
 
-      if (/^\s*$/) {		#nothing on the line
-      } elsif (/^;WARNING/) {		# warning
-	  push @warnings, $_;
-      } elsif (/^;/) {		# comment line
-	  if ($table_opened) {
-	      print "<\/TABLE><PRE>\n";
-	      $table_opened = 0;
-	  } 
-	  print $last_line;
-      $last_line = $_;
-      
-    } elsif (!($table_opened)) { # first line of the table
-      $table_opened = 1;
-      print "</PRE><TABLE CELLSPACING=3>\n";
-      
-      # print the header line
-      chomp($last_line);
-      $last_line =~ s/;//;
-      $last_line =~ s/\t/ <\/TT><\/B><\/TD><TD><B>$font_spec_start/g;
-      $header_line = "<TR><TD><B>".$font_spec_start.$last_line.$font_spec_end."</B></TD></TR>\n";
-      print $header_line;
-      $last_line = "";
-      
-      ### print the first result line
-      chomp;
-      s/\t/ <\/TT><\/TD><TD>$font_spec_start/g;
-      print "<TR><TD>".$font_spec_start;
-      print $_;
-      print $font_spec_end."</TD></TR>\n";
-      
-    } else {			# other line of the table
-      $line_count++;
-      if ($line_count%$chunk == 0) {
-	### avoid HTML tables with too many rows
-	print "</TABLE><TABLE>";
-	print $header_line;
-      }
-      chomp;
-      s/\t/ <\/TT><\/TD><TD>$font_spec_start/g;
-      print "<TR><TD>".$font_spec_start.$_.$font_spec_end."</TD></TR>\n";
+	if (/^\s*$/) {		#nothing on the line
+	} elsif (/^;WARNING/) {		# warning
+	    push @warnings, $_;
+	} elsif (/^;/) {		# comment line
+	    if ($table_opened) {
+		print $out "<\/TABLE><PRE>\n";
+		$table_opened = 0;
+	    } 
+	    print $out $last_line;
+	    $last_line = $_;
+	    
+	} elsif (!($table_opened)) { # first line of the table
+	    $table_opened = 1;
+	    print $out "</PRE>\n\n$TABLE\n";
+	    
+	    # print the header line
+	    chomp($last_line);
+	    $last_line =~ s/;//;
+	    $last_line =~ s/\t/ <\/TT><\/B><\/TD>\n<TD><B>$font_spec_start/g;
+	    $header_line = "<TR VALIGN=top>\n<TD><B>".$font_spec_start.$last_line.$font_spec_end."</B></TD>\n</TR>\n\n";
+	    print $out $header_line;
+	    $last_line = "";
+	    
+	    ### print the first result line
+	    chomp;
+	    s/\t/ <\/TT><\/TD>\n<TD>$font_spec_start/g;
+	    print $out "<TR VALIGN=top>\n<TD>".$font_spec_start;
+	    print $out $_;
+	    print $out $font_spec_end."</TD>\n</TR>\n\n";
+	    
+	} else {			# other line of the table
+	    $line_count++;
+	    if ($line_count%$chunk == 0) {
+		### avoid HTML tables with too many rows
+		print $out "</TABLE>\n\n$TABLE";
+		print $out $header_line;
+	    }
+	    chomp;
+	    s/\t/ <\/TT><\/TD>\n<TD>$font_spec_start/g;
+	    print $out "<TR VALIGN=top>\n<TD>".$font_spec_start.$_.$font_spec_end."</TD>\n</TR>\n\n";
+	}
     }
-  }
-  if ($table_opened) {
-    print "<\/TABLE>";
-    print @warnings;
-    print "<PRE>\n";
-    $table_opened = 0;
-  }
-  print $last_line;
-  print "</PRE>";
-  if ($mirror_file ne "") {
-    close MIRROR;
-  }
+    if ($table_opened) {
+	print $out "</TABLE>\n\n";
+	print $out @warnings;
+	print $out "<PRE>\n";
+	$table_opened = 0;
+    }
+    print $out $last_line;
+    print $out "</PRE>\n";
+    if ($mirror_file ne "") {
+	close MIRROR;
+    }
 }
 
 sub Print_CGI_Input {
@@ -352,6 +351,23 @@ sub Print_CGI_Input {
     print "Parameters: $parameters<P><P>\n";
 }
 
+
+
+
+#### send e-mail with the result of a command
+sub EmailTheResult {
+    if ($query->param('user_email') =~ /(\S+\@\S+)/) {
+	$address = $1;
+	&Info ("Result will be sent to your e-mail address: $address");
+	system "$command | $mail_command $address &"; 
+    } else {
+	if ($query->param('user_email') eq "") {
+	    &FatalError ("You did not enter your e-mail address");
+	} else {
+	    &FatalError ("The e-mail address you entered is not valid:<P>".$query->param('user_email'));
+	}
+    }
+}
 
 
 sub SelectFormat {
