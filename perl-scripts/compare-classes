@@ -1,7 +1,7 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: compare-classes,v 1.3 2004/05/17 15:35:48 jvanheld Exp $
+# $Id: compare-classes,v 1.4 2004/07/27 14:19:10 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -16,7 +16,7 @@ require "RSA.help.pl";
 
 ################################################################
 #### initialise parameters
-my $start_time = &AlphaDate;
+my $start_time = &AlphaDate();
 local $replacement = 0;
 local $symmetric = 0;
 local $distinct = 0;
@@ -116,6 +116,40 @@ $out = &OpenOutputFile($outfile{output});
 $nb_ref_classes = scalar(keys %ref_classes);
 $nb_query_classes = scalar(keys %query_classes);
 
+## Read ref class names
+if ($infile{rnames}) {
+    my ($in) = &OpenInputFile($infile{rnames});
+    while (<$in>) {
+	chomp();
+	next if (/^;/);
+	next unless (/^\S/);
+	my @fields = split '\t';
+	my $id = $fields[0];
+	my $name = $fields[1];
+	warn join ("\t", ";ref class", $id, $name), "\n" if ($main::verbose >= 10);
+	if (defined($ref_classes{$id})) {
+	    $ref_classes{$id}->force_attribute("name",$name);
+	}
+    }
+}
+
+## Read query class names
+if ($infile{qnames}) {
+    my ($in) = &OpenInputFile($infile{qnames});
+    while (<$in>) {
+	chomp;
+	next if (/^;/);
+	next unless (/^\S/);
+	my @fields = split '\t';
+	my $id = $fields[0];
+	my $name = $fields[1];
+	warn join ("\t", ";query class", $id, $name), "\n" if ($main::verbose >= 10);
+	if (defined($query_classes{$id})) {
+	    $query_classes{$id}->force_attribute("name",$name);
+	}
+    }
+}
+
 #### unless specified, calculate population size from the lists of
 #### reference and query members
 unless ($population_size > 0 ) {
@@ -175,7 +209,7 @@ sub PrintHelp {
 NAME
         compare-classes
 
-        2002 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
+        2002 by Joseph Tran and Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
 
 DESCRIPTION
         Compare two class files (the query file and the reference
@@ -189,7 +223,10 @@ CATEGORY
 
 USAGE
         compare-classes -r ref_classes -q query_classes
-                [-o outputfile] [-v]
+                [additional options]
+
+        compare-classes -i classes
+                [additional options]
 
 OPTIONS
         -h      (must be first argument) display full help message
@@ -208,6 +245,17 @@ OPTIONS
         -o outputfile
                 if not specified, the standard output is used.
                 This allows to place the command within a pipe.
+	-rnames class_name_file
+		File containing names for the reference classes.
+		Associate a name to each class, when the classes are
+		specified by an ID (ex Gene Ontology term IDs).  
+		The class name file contains two columns
+
+		    1) class ID
+		    2) class name
+	-qnames class_name_file
+		File containing names for the query classes.
+		Same format as for -rnames.
 	-cat catalog
 		Compare the query file to pre-defined catalogs
 		(e.g. GO, MIPS functional classes, ...). These
@@ -388,6 +436,8 @@ compare-classes options
 -r              reference classes
 -q              query classes
 -i		single input file (used as query and reference)
+-rnames	reference class names
+-qnames	query class names
 -o              output file
 -v              verbose
 -return         return fields (supported $supported_return_fields)
@@ -432,6 +482,14 @@ sub ReadArguments {
             ### query file
         } elsif ($ARGV[$a] eq "-q") {
             $infile{query_classes} = $ARGV[$a+1];
+	    
+            ### reference class names
+        } elsif ($ARGV[$a] eq "-rnames") {
+            $infile{rnames} = $ARGV[$a+1];
+	    
+            ### query class names
+        } elsif ($ARGV[$a] eq "-qnames") {
+            $infile{qnames} = $ARGV[$a+1];
 	    
             ### reference file
         } elsif ($ARGV[$a] eq "-r") {
@@ -816,16 +874,44 @@ sub CompareClasses {
 ################################################################
 ###### print result
 sub PrintResult {
+
+    #### print a smilarity matrix
     if ($return{matrix}) {
-	#### print a smilarity matrix
-	my $header = ";fam\t";
-	$header .= join "\t", (sort keys %query_classes);
+	my @query_classes = sort keys %query_classes;
+	my $header = ";fam";
+	if ($infile{qnames}) {
+	    ## replace class IDs by class names
+	    foreach my $class (@query_classes) {
+		my $qname = $query_class{$class}->get_attribute("name");
+		if (defined($qname)) {
+		    $header .= "\t".$qname; 
+		} else {
+		    &Warning("There is no name associated to query class $r\n", 1),
+		    $header .= "\t".$class; 
+		}
+	    }
+	} else {
+	    $header .= "\t";
+	    $header .= join "\t", @query_classes;
+	}
+
 	$header .= "\n";
 	print $out $header;
 
 	#### print the result
 	foreach my $r (sort keys %ref_classes ) {
-	    print $out $r;
+	    if ($infile{rnames}) {
+		my $rname =  $ref_classes{$r}->get_attribute("name");
+		if ($rname) {
+		    ## Replace class ID by class name
+		    print $out $rname; 
+		} else {
+		    &Warning("There is no name associated to reference class $r\n", 1),
+		    print $out $r;
+		}
+	    } else {
+		print $out $r;
+	    }
 	    foreach my $q (sort keys %query_classes ) {
 		my $compa_key = $r."__VERSUS__".$q;
 		if (defined($compa{$compa_key}->{$matrix_key})) {
@@ -839,6 +925,7 @@ sub PrintResult {
 
 
     } else {
+	## Print one row per association between a reference and a query class
 	#### header
 	my @header_fields = (
 			     "; ref",
@@ -883,9 +970,26 @@ sub PrintResult {
 	foreach my $compa_key (@sorted_keys) {
 	    my ($r, $q) = split "__VERSUS__", $compa_key;
 
-	    #### family names
-	    print $out join "\t", ($r,
-				   $q);
+	    #### reference family name
+	    my $r_text = $r;
+	    my $rname =  $ref_classes{$r}->get_attribute("name");
+	    if ($rname) {
+		## Replace class ID by class name
+		$r_text .= ":".$rname; 
+	    }
+	    warn join( "\t", ";ref class", $r, $r_text), "\n" if ($main::verbose >= 10);
+
+	    #### query family name
+	    my $q_text = $q;
+	    my $qname =  $query_classes{$q}->get_attribute("name");
+	    if ($qname) {
+		## Replace class ID by class name
+		$q_text .= ";".$qname; 
+	    }
+	    warn join( "\t", ";query class", $q, $q_text), "\n" if ($main::verbose >= 10);
+	    
+	    print $out join "\t", ($r_text,
+				   $q_text);
 
 	    #### occurrence counts
 	    if ($return_fields{occ}) {
