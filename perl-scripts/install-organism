@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.7 2001/10/09 07:10:21 jvanheld Exp $
+# $Id: install-organism,v 1.8 2001/12/06 22:07:27 jvanheld Exp $
 #
-# Time-stamp: <2001-10-09 09:06:23 jvanheld>
+# Time-stamp: <2001-12-06 23:03:17 jvanheld>
 #
 ############################################################
 
@@ -16,12 +16,26 @@ require "RSA.lib";
 #### initialisation
 $supported_for_installation{"fasta"} = 1;
 $supported_for_installation{"raw"} = 1;
+%supported_steps = (genome=>1,
+		    features=>1,
+		    config=>1,
+		    start_stop=>1,
+		    ncf=>1,
+		    oligos=>1,
+		    dyads=>1
+		   );
+%install_steps = ();
 
 ################################################################
 ############################ arguments #########################
 ################################################################
 
 &ReadArguments;
+
+@install_steps = keys %install_steps;
+if ($#install_steps == -1) {
+    %install_steps = %supported_steps;
+}
 
 
 ################################################################
@@ -85,15 +99,16 @@ $outfile{synonyms} = "$genome_dir/${organism_short_name}_synonyms.tab";
 ################################################################
 ###################### start installation ######################
 ################################################################
-
-&InstallGenome();
-&GenerateFeatureTable() if ($infile{ptt});
-&InstallFeatureTable();
-&UpdateConfig();
-&StartAndStopCodons();
-&NonCodingSegments();
-&OligoFrequencies();
-&DyadFrequencies();
+&InstallGenome() if ($install_steps{genome});
+if ($install_steps{features}) {
+    &GenerateFeatureTable() if ($infile{ptt});
+    &InstallFeatureTable();
+}
+&UpdateConfig() if ($install_steps{config});
+&StartAndStopCodons() if ($install_steps{start_stop});
+&NonCodingSegments() if ($install_steps{ncf});
+&OligoFrequencies() if ($install_steps{oligos});
+&DyadFrequencies() if ($install_steps{dyads});
 
 exit(0);
 
@@ -498,6 +513,18 @@ OPTIONS
 		A Genbank/NCBI feature table can be provided instead
 		of the RSA-formatted feature table. It will be
 		converted.
+
+	-step	specification of a single installation step
+		    e.g.
+			install-organism -step dyads
+		supported suboptions:
+			  genome
+			  features
+			  config
+			  start_stop
+			  ncf
+			  oligos
+			  dyads
 End_of_help
     close HELP;
     exit(0);
@@ -523,6 +550,7 @@ install_organism options
 -dir		absolut path of the installation directory
 -local		update local config file 
 		(specified by the environment variable RSA_LOCAL_CONFIG)
+-step		specification of a single installation step
 End_short_help
   close HELP;
   exit;
@@ -584,6 +612,16 @@ sub ReadArguments {
 	    #### installation dir
 	} elsif ($ARGV[$a] =~ /^-dir/) {
 	    $install_dir = $ARGV[$a+1];
+
+	    #### installation step
+	} elsif ($ARGV[$a] =~ /^-step/) {
+	    my $step = $ARGV[$a+1];
+	    if ($supported_steps{$step}) {
+		$install_steps{$step} = 1;
+	    } else {
+		&FatalError("Invalid step option. Supported options: ", 
+			    join(",", keys %supported_steps));
+	    }
 
 	    #### installation dir
 	} elsif ($ARGV[$a] =~ /^-local/) {
