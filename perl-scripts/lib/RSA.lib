@@ -1082,8 +1082,13 @@ sub ReadFeatures {
 	    next;
 	}
 	unless ($left < $right) {
-	    warn "; WARNING: left should be smaller than right position specification in in  feature table line $linenb\n;\t",join "\t", @fields, "\n" if ($warn);
-	    next;
+	    warn "; WARNING: left should be smaller than right position specification in in  feature table line $linenb\n;\t",join "\t", @fields, "\n" if ($main::verbose >= 0);
+
+	    ## Patch: swap ORF limits  if inverted (in half of the genes from ENSEMBL files)
+	    my $tmp = $left;
+	    $left =  $right;
+	    $right = $tmp;
+	    warn join ("\t", "; Swapping ORF limits", $id, $chrom, $left, $right, $strand), "\n" if ($main::verbose >= 0);
 	}
 	
 	#### make sure the strand format is correct
