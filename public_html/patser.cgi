@@ -4,7 +4,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 require "cgi-lib.pl";
 require "RSA.lib.pl";
-require "RSA_cgi_lib.pl";
+require "RSA.cgi.lib.pl";
 $patser_command = "$BIN/patser";
 $matrix_from_transfac_command = "$SCRIPTS/matrix-from-transfac";
 $convert_seq_command = "$SCRIPTS/convert-seq";

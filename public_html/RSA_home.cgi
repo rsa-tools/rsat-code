@@ -6,7 +6,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib.pl";
-require "RSA_cgi_lib.pl";
+require "RSA.cgi.lib.pl";
 
 
 $query = new CGI;

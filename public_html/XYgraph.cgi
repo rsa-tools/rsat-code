@@ -4,7 +4,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 require "cgi-lib.pl";
 require "RSA.lib.pl";
-require "RSA_cgi_lib.pl";
+require "RSA.cgi.lib.pl";
 $XYgraph_command = "$SCRIPTS/XYgraph";
 $tmp_file_name = sprintf "XYgraph.%s", &AlphaDate;
 

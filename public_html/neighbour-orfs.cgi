@@ -4,7 +4,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 require "cgi-lib.pl";
 require "RSA.lib.pl";
-require "RSA_cgi_lib.pl";
+require "RSA.cgi.lib.pl";
 $neighbour_orfs_command = "$SCRIPTS/neighbour-orfs";
 $add_yeast_link_command = "$SCRIPTS/add-yeast-link";
 $tmp_file_name = sprintf "neighbour-orfs.%s", &AlphaDate;

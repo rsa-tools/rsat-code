@@ -6,7 +6,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib.pl";
-require "RSA_cgi_lib.pl";
+require "RSA.cgi.lib.pl";
 
 $dna_pattern_command = "$SCRIPTS/dna-pattern";
 $tmp_file_name = sprintf "dna-pattern.%s", &AlphaDate;

@@ -4,7 +4,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 require "cgi-lib.pl";
 require "RSA.lib.pl";
-require "RSA_cgi_lib.pl";
+require "RSA.cgi.lib.pl";
 $consensus_command = "$BIN/consensus";
 $convert_seq_command = "$SCRIPTS/convert-seq";
 $tmp_file_name = sprintf "consensus.%s", &AlphaDate;

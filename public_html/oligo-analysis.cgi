@@ -5,7 +5,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib.pl";
-require "RSA_cgi_lib.pl";
+require "RSA.cgi.lib.pl";
 
 $oligo_analysis_command = "$SCRIPTS/oligo-analysis";
 $tmp_file_name = sprintf "oligo-analysis.%s", &AlphaDate;
