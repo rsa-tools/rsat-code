@@ -1,11 +1,13 @@
 #!/usr/bin/perl
+
+## CVS: I wonder if this script is still useful, since count-matches provides the same functionality
+
 #use strict;;
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
 require "RSA.lib";
-require "RSA.classes";
-
+require RSAT::pattern;
 
 package main;;
 
@@ -19,8 +21,7 @@ local $verbose = 0;
 local $out = STDOUT;
 local $double_strand = 1;
 
-&ReadArguments;
-
+&ReadArguments();
 
 #### check argument values ####
 unless (($infile{patterns1}) && ($infile{patterns2})) {
@@ -48,9 +49,9 @@ for $file (1..2) {
 	$sequence =~ s/\s+$//; ### trim trailing spaces
 	my $id = $fields[1] || $sequence;
  	my $source = $fields[2] || ($infile{"patterns".$file});
-	my $pattern = new RSA::pattern(sequence=>$sequence, 
-				       id=>$id, 
-				       source=>$source);
+	my $pattern = new RSAT::pattern(sequence=>$sequence, 
+					id=>$id, 
+					source=>$source);
 	push @{"patterns".$file}, $pattern;
       }
     }
@@ -143,6 +144,9 @@ DESCRIPTION
 	program can be used for comparing the results of a pattern
 	discovery program with the experimentally characterized
 	patterns.
+
+      Note: this version is probably obsolete, the program
+      count-matches is more indicated.
 
 CATEGORY
 	sequences
