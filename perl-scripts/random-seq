@@ -18,7 +18,7 @@ $sequence_type = "dna";
 
 ################################################################
 #
-# calculate residue frequencies
+# Check alphabet
 #
 if ($sequence_type eq "dna") {
     @letters = qw ( A C G T );
@@ -85,55 +85,7 @@ if ($background_model) {
 
 ### expected frequency file
 if ($exp_freq_file) {
-
-    &ReadExpectedFrequencies($exp_freq_file) ;
-    
-    foreach my $pattern_seq (keys %patterns) {
-	$expected_freq{$pattern_seq} = $patterns{$pattern_seq}->{exp_freq};
-    }
-
-    #### calculate alphabet from expected frequency keys
-    foreach my $pattern_seq (keys %patterns) {
-	my @residues = split "|", $pattern_seq;
-	foreach my $r (@residues) {
-	    $letter{$r} = 1;
-	}
-    }
-    @letters = keys (%letter);
-
-    #### calculate subword frequencies
-    foreach $oligo_seq (keys %expected_freq) {
-	$subword = substr($oligo_seq,0,$oligo_length-1);
-	$subword_freq{$subword} += $expected_freq{$oligo_seq};
-    }
-    #### calculate conditional residue probabilities
-    foreach $subword (keys %subword_freq) {
-	$word = lc($subword.$letters[0]);
-	$cum_letter_freq{$subword}[0] = $expected_freq{$word};
-	$cum_letter_freq{$subword}[0]/=$subword_freq{$subword} if $expected_freq{$word};
-# 	warn (join ("\t", 
-# 		    $subword, 
-# 		    $subword_freq{$subword},
-# 		    $word, 
-# 		    $expected_freq{$word},
-# 		    $cum_letter_freq{$subword}[0]
-# 		    ), "\n");
-	for $l (1..$#letters) {
-	    $word = lc($subword.$letters[$l]);
-	    $cum_letter_freq{$subword}[$l] = $cum_letter_freq{$subword}[$l-1];
-	    $cum_letter_freq{$subword}[$l] += $expected_freq{$word}/$subword_freq{$subword} if $expected_freq{$word};
-#	    warn (join ("\t", 
-#			$subword, 
-#			$subword_freq{$subword},
-#			$word, 
-#			$expected_freq{$word},
-#			$cum_letter_freq{$subword}[$l]
-#			), "\n");
-	}
-    }
-    @subword_keys = sort keys %subword_freq;
-	    
-
+    &CalcConditionalProbabilities($exp_freq_file);
 } else {
 ### calculate cumulated frequencies ###
 ### for individual residues ###
