@@ -1,9 +1,9 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: compare-families,v 1.15 2003/01/25 05:03:36 jvanheld Exp $
+# $Id: compare-families,v 1.16 2003/01/25 06:43:50 jvanheld Exp $
 #
-# Time-stamp: <2003-01-25 06:02:59 jvanheld>
+# Time-stamp: <2003-01-25 07:41:36 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -619,6 +619,7 @@ sub CompareFamilies {
 	foreach my $q (keys %query_families) {
 	    
 	    next if (($distinct) && ($r eq $q));
+	    next if (($infile{ref_families} eq $infile{query_families} ) && ($r ge $q));
 
 	    my $compa_key = $r."__VERSUS__".$q;
 
@@ -946,24 +947,34 @@ sub ExportDotFile {
     my %ref_nodes = ();
     my %query_nodes = ();
     my $arcs = "";
+    my %ref_id = ();
+    my %query_id = ();
     foreach my $compa_key (keys %compa) {
         my ($r, $q) = split "__VERSUS__", $compa_key;
 	my $arc_label = $compa{$compa_key}->{occ};
 
 	$ref_nodes{$r}++;
-	$query_nodes{$q}++;
-	
+	if ($infile{ref_families} eq $infile{query_families}) {
+	    #### ref and query set are identical
+	    $ref_id{$r} = $r;
+	    $query_id{$q} = $q;
+	    $ref_nodes{$q}++; 
+	} else {
+	    #### distinct ID prefixes for references and queries
+	    $ref_id{$r} = "r_".$q;
+	    $query_id{$q} = "q_".$q;
+	    $query_nodes{$q}++;
+	}
+	$arcs .=  join ("", "\"", $query_id{$q}, "\" -- \"", $ref_id{$r}, "\" [label=", $arc_label,"]", "\n");
 
-	$arcs .=  join ("", "\"", "q_",$q, "\" -- \"", "r_",$r, "\" [label=", $arc_label,"]", "\n");
     }
 
     #### draw nodes for reference families
     foreach $n (sort keys %ref_nodes) {
-	my $node_id = "r_".$n;
 	my @members = $ref_families{$n}->get_members();
 	my $node_label = $n." (".scalar(@members).")";
-	print $dot ("\"", $node_id, "\"",  
-		    "[color=",$color{'ref_node'},
+	print $dot ("\"", $ref_id{$n}, "\"",  
+		    " [color=",$color{'ref_node'},
 		    ",fontsize=18",
 		    ",fontcolor=", $color{'ref_node'},
 		    ",shape=",$shape{'ref_node'},
@@ -975,11 +986,10 @@ sub ExportDotFile {
 
     #### draw nodes for query families
     foreach $n (sort keys %query_nodes) {
-	my $node_id = "q_".$n;
 	my @members = $query_families{$n}->get_members();
 	my $node_label = $n." (".scalar(@members).")";
-	print $dot ("\"", $node_id, "\"",  
-		    "[color=",$color{'query_node'},
+	print $dot ("\"", $query_id{$n}, "\"",  
+		    " [color=",$color{'query_node'},
 		    ",fontsize=18",
 		    ",fontcolor=", $color{'query_node'},
 		    ",shape=",$shape{'query_node'},
