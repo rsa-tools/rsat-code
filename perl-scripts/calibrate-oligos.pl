@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: calibrate-oligos.pl,v 1.3 2003/12/28 19:48:22 jvanheld Exp $
+# $Id: calibrate-oligos.pl,v 1.4 2003/12/29 13:56:07 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -204,10 +204,10 @@ if ($task{clean_seq}) {
     &doit($command);
 }
 if ($task{clean_oligos}) {
-    warn "; ", &AlphaDate(), "\tDeleting oligo files\n" if ($verbose >= 1);
-    my $command = "rm -f ";
-    $command .= " oligos/oligos_".$oligo_len."nt".$str.$ov."_L".$seq_len."_n".$seq_nb."_r*";
-    $command .= " oligos/RAND*.fam";
+    warn "; ", &AlphaDate(), "\tDeleting oligos from directory\t", $dir{output},"\n" if ($verbose >= 1);
+    my $command = "\\rm -rf oligos";
+#    $command .= " oligos/oligos_".$oligo_len."nt".$str.$ov."_L".$seq_len."_n".$seq_nb."_r*";
+#    $command .= " oligos/RAND*.fam";
     &doit($command);
 }
 
