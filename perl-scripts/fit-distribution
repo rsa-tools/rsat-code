@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: fit-distribution,v 1.6 2004/01/08 07:21:53 jvanheld Exp $
+# $Id: fit-distribution,v 1.7 2004/01/14 04:17:09 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -73,8 +73,6 @@ print $out ";", join ("\t", @out_fields), "\n";
 
 ## Open the file with count distributions
 ($in) = &OpenInputFile($infile{input});
-local $p;
-local $k;
 my $pattern_count = 0;
 my $header_done = 0;
 my $header_OK = 0;
@@ -92,7 +90,7 @@ while (<$in>) {
 	@values = split( "\t", $last_comment);
 	### temporary
 	$values[0] =~ s/^;\s+//;
-	if ($values[0] =~ /pattern/) {
+	if (($values[0] =~ /pattern/)  || ($values[0] =~ /occ/)) {
 	    shift @values;
 	}
 	$header_done = 1;
@@ -141,15 +139,19 @@ while (<$in>) {
     
     ## Fit a poisson distribution and calculate the goodness of fit
     local @expected;
+    local $p = "NA";
+    local $k = "NA";
     local $fitted_distrib = $distrib;
     if ($distrib eq "poisson")  {
 	@expected = &poisson($max_occ, $avg, 1); 
     } elsif ($distrib eq "negbin") {
 	if ($avg >= $var) {
 	    @expected = &poisson($max_occ, $avg, 1); 
-	    $fitted_distrib = "negbin";
+	    $fitted_distrib = "poisson";
 	} else {
-	    ($p, $k, @expected) = &negbin2($max_occ, $avg, $var, 1);}
+	    $fitted_distrib = "negbin";
+	    ($p, $k, @expected) = &negbin2($max_occ, $avg, $var, 1);
+	}
     };
 
     local $exp_sum = 0;
