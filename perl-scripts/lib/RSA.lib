@@ -258,6 +258,10 @@ sub ReadCalibration {
 	my @fields =  split /\s+/;
 	my $pattern_seq = lc($fields[0]);
 
+	if ($pattern_seq =~ /(\S+)\|/) {
+	    $pattern_seq = $1;
+	}
+
 	## Expected occurrences
 	my $exp_occ = $fields[1];
 	&FatalError("Invalid expected occurrences") unless ((&IsReal($exp_occ)) && ($exp_occ >= 0));
@@ -267,6 +271,10 @@ sub ReadCalibration {
 	my $exp_var = $fields[3];
 	&FatalError("Invalid expected variance") unless ((&IsReal($exp_var)) && ($exp_ocvar >= 0));
 	$patterns{$pattern_seq}->{exp_var} = $exp_var;
+
+	warn join("\t", "; calibration", $pattern_seq, 
+		  $patterns{$pattern_seq}->{exp_occ},
+		  $patterns{$pattern_seq}->{exp_var}), "\n" if ($main::verbose >= 5);
 
     }
     close $cal if ($calibration_file);
@@ -278,6 +286,7 @@ sub ReadCalibration {
   	if (($patterns{$rc}->{exp_occ} <= 0) &&
   	    ($patterns{$pattern_seq}->{exp_occ})) {
   	    $patterns{$rc}->{exp_occ} = $patterns{$pattern_seq}->{exp_occ};
+  	    $patterns{$rc}->{exp_var} = $patterns{$pattern_seq}->{exp_var};
 	    #print STDERR join "\t", $pattern_seq,  $patterns{$pattern_seq}->{exp_freq}, $rc, $patterns{$rc}->{exp_freq}, "\n";
   	}
     }
