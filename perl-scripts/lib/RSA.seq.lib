@@ -765,10 +765,11 @@ sub ReadNextSequence {
     ##### Reads a DNA sequence
     ##### various formats are accepted (see the hash %accepted_raw_formats
     ##### Usage:
-    ##### ($sequence, $seq_id, @seq_comments) = &ReadNextSequence(FILE, $format [, $input_dir])
+    ##### ($sequence, $seq_id, @seq_comments) = &ReadNextSequence(FILE, $seq_format, $input_dir])
     ##### where   FILE is a file handle
     #####         $format is one of the accepted sequence formats 
     #####                 (see CheckSeqFormat) 
+#    die "HELLO";
     local $SEQ = $_[0];
     local $sequence_format = lc($_[1]);
     local $input_dir = $_[2];
@@ -830,13 +831,14 @@ sub ReadNextSequence {
 	    }
 	} 
 	
-#print STDERR join "\t", $next_file, $input_dir, "$input_dir/$next_file", "\n";
+#	die join "\t", $next_file, $input_dir, "$input_dir/$next_file", "\n";
 	unless (-e $next_file) {
 	    if (-e "$input_dir/$next_file") {
 		$next_file = "$input_dir/$next_file";
 	    }
 	}
 	if ((-e $next_file) && (open NEXT_SEQ, $next_file)) {
+	    warn "; Reading file $next_file\n" if ($verbose >= 2);
 	    #### extract the sequence file name without path ####
 	    if ($next_file =~ /([\S]*\/)*([\S^\/]+)$/ ) {
 		$seq_id = $2;
@@ -1109,10 +1111,15 @@ sub CleanDNA {
 sub EditDistance {
     use strict;
     ### usage : $dist = EditDistance($string1,$string2);
-    ### usage : $dist = EditDistance($string1,$string2,1); 
+    ### usage : $dist = EditDistance($string1,$string2,1); ### hyperverbose
+    ### usage : $dist = EditDistance($string1,$string2,1,1); ### case sensitive 
     ### $main::hyperverbose -> print matrix
-    my ($string1,$string2,$hyperverbose) = @_;
+    my ($string1,$string2,$hyperverbose, $cs) = @_;
     my @dist = ();
+    unless ($cs) {
+	$string1 = lc($string1);
+	$string2 = lc($string2);
+    }
     my $len1 = length($string1);
     my $len2 = length($string2);
     my %weight = ();
@@ -1185,4 +1192,83 @@ sub all_oligos {
     return @oligos;
 }
 
+
+################################################################
+# Read patterns from a file (or from the standard input) 
+# and returns a list of RSA::Pattern objects. 
+#
+sub ReadPatterns {
+    my (%args) = @_;
+    my @patterns = ();
+    my $pattern_file = $args{pattern_file};
+    $score_column = $args{score_column};
+    my $noid = $args{noid};
+    my $pattern_id = $args{pattern_id};
+    my $pattern_score = $args{pattern_score};
+    my $pattern_seq = $args{pattern_seq};
+    
+    if ($pattern_file) {
+	### read patterns from a file
+	my ($pattern_stream) = &OpenInputFile($pattern_file);
+	while (<$pattern_stream>) {
+	    if (/^;/) {
+		#### for piping with oligo-analysis and dyad-analysis
+		#### take occ_sig as the score column
+		if (!(defined($score_column)) &&
+		    (/^;\s+(\d+)\s+occ_sig\s+/)) {
+		    $score_column = $1;
+		}
+		next;
+	    }
+	    next unless (/\S/);
+	    chomp;
+	    my @fields = split, /\t/;
+	    next unless ($fields[0] =~ /\S/);
+	    $pattern_seq = $fields[0];
+	    if (($noid) || ($fields[1] !~ /\S/)) {
+		$pattern_id = $pattern_seq;
+	    } else {
+		$pattern_id = $fields[1];
+	    }
+	    if ($score_column >= 1) {
+		$pattern_score = $fields[$score_column - 1];
+		$pattern_score = 1 unless &IsReal($pattern_score);
+	    } else {
+		$pattern_score = 1; #### default score
+	    }
+	    push @patterns, new RSA::pattern(id => $pattern_id,
+					     sequence => $pattern_seq,
+					     score => $pattern_score);
+	}
+	close $pattern_stream;
+	
+	#### pattern specified on the command line
+    } elsif ($pattern_seq) {
+	if ($pattern_id) {
+	    $pattern_id = $pattern_id;
+	} else {
+	    $pattern_id = $pattern_seq;
+	}
+	push @patterns, new RSA::pattern(id=>$pattern_id,
+					 sequence=>$pattern_seq,
+					 score=>$pattern_score);
+    }
+
+    return @patterns;
+}
+
+sub SmartRC {
+  ### calculates only once the reverse complement of each dyad
+  ### stores the result of each calculated reverse complement 
+  my $direct_seq = lc($_[0]);
+  unless (defined($SmartRC{$direct_seq})) {
+    $SmartRC{$direct_seq} = lc(&ReverseComplement($direct_seq));
+  }
+  return($SmartRC{$direct_seq});
+}
+
+
+
+
 1;
+
