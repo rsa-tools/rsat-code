@@ -55,6 +55,12 @@ sensitivity (which percentage of the true target genes will be
 detected ?) and specificity (among the prediction, how many represent
 true targets ?).
 
+<P>Patser is abel to select a threshold automatically, on the basis of
+the information content of the matrix and the sequence size. This
+usually provides a good first guess, but it might be wise to sort the
+results by score, and select a more restrictive threshold on the basis
+of the funciton of the selected genes.
+
 </ul>
 <a name=example><h2>Example of utilization</h2>
 <ul>
@@ -100,19 +106,43 @@ upstream ORFs</b>.
 
 
 <p>
-After a few seconds, the result of patser will be displayed. Notice
-that many of these genes are associated with amino-acid metabolism.
-This is consistent with the function of Gcn4p, the general control of
-amino-acid metabolism.
+After a few seconds, the result of patser will be displayed. 
+
 
 </ul>
 <a name=interpret><h2>Interpreting the results</h2>
 <ul>
 
+<P>When analyzing the selected genes, you can notice that many of these
+genes are associated with amino-acid metabolism.  This is consistent
+with the function of Gcn4p, the general control of amino-acid
+metabolism.
+
+<P>The relatively good results might come from the fact that the Gcn4p
+matrix is quite informative, due to its large size. For most
+transcription factors, the PSSM is restricted to a few nucleotides,
+and the matrix is poorly discriminant. 
+
 
 </ul>
 <a name=exercises><h2>Additional exercises</h2>
 <ul>
+
+<ol>
+
+
+<li>Use the Pho4p matrix from <a href="http://cgsigma.cshl.org/jian"
+TARGET=_blank>SCPD</a> (the same as in the <a
+href=tut_patser.html>patser tutorial</a>) to predict targets for this
+transcription factor in the genome of <i>Saccharomyces
+crevisiae</i>. Apply the same strategy as in the <a
+href=tut_patser.html>patser tutorial</a> in order to select the lower
+scoring threshold on the basis of the known binding sites. Compare the
+results obtained with this strategy, and with the automatic threshold
+selection, respectively.
+
+
+</ol>
 
 </ul>
 <p>
