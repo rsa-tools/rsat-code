@@ -1,9 +1,9 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: parse-genbank.pl,v 1.6 2003/06/05 22:08:18 jvanheld Exp $
+# $Id: parse-genbank.pl,v 1.7 2003/08/08 22:13:37 jvanheld Exp $
 #
-# Time-stamp: <2003-06-05 01:14:53 jvanheld>
+# Time-stamp: <2003-08-09 00:12:18 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -11,16 +11,23 @@ if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
 require "RSA.lib";
-push @INC, $ENV{PARSER};
-require "PFBP_classes.pl";
-require "Genbank_classes.pl";
-require "PFBP_parsing_util.pl";
+push @INC, "$RSA/perl-scripts/parsers/";
+require "lib/load_classes.pl";
+require "lib/util.pl";
+require "lib/parsing_util.pl";
+require "classes/Genbank_classes.pl";
 
 
 ################################################################
 #### initialization
 $dbms = "mysql";
+$schema= "rsat";
+$host= "rsat.ulb.ac.be";
+$user="rsat";
+$password="rsat";
+$no_suffix=1;
 
+$test_lines = 10000;
 
 ################################################################
 #### main package
@@ -38,20 +45,26 @@ package main;
 
     local $single_name = 1;
     
-    $features = PFBP::ClassFactory->new_class(object_type=>"Genbank::Feature",
-						 prefix=>"ft_");
+    $features = classes::ClassFactory->new_class(object_type=>"Genbank::Feature", prefix=>"ft_");
 
-    $genes = PFBP::ClassFactory->new_class(object_type=>"Genbank::Gene",
-					   prefix=>"gn_");
+    $genes = classes::ClassFactory->new_class(object_type=>"Genbank::Gene", prefix=>"gn_");
 
-    $mRNAs = PFBP::ClassFactory->new_class(object_type=>"Genbank::mRNA",
-					   prefix=>"mRNA_");
+    $mRNAs = classes::ClassFactory->new_class(object_type=>"Genbank::mRNA", prefix=>"mRNA_");
 
-    $CDSs = PFBP::ClassFactory->new_class(object_type=>"Genbank::CDS",
-					   prefix=>"CDS_");
+    $tRNAs = classes::ClassFactory->new_class(object_type=>"Genbank::tRNA", prefix=>"tRNA_");
+    
+    $rRNAs = classes::ClassFactory->new_class(object_type=>"Genbank::rRNA", prefix=>"rRNA");
 
-    $contigs = PFBP::ClassFactory->new_class(object_type=>"Genbank::Contig",
-					     prefix=>"ctg_");
+    $misc_RNAs = classes::ClassFactory->new_class(object_type=>"Genbank::misc_RNA", prefix=>"misc_RNA");
+
+    $CDSs = classes::ClassFactory->new_class(object_type=>"Genbank::CDS", prefix=>"cds_");
+
+    $sources = classes::ClassFactory->new_class(object_type=>"Genbank::Source", prefix=>"src_");
+
+    $contigs = classes::ClassFactory->new_class(object_type=>"Genbank::Contig", prefix=>"ctg_");
+
+    $organisms = classes::ClassFactory->new_class(object_type=>"Genbank::Organism", prefix=>"org_");
+
     $features->set_out_fields(qw(id 
 				 type
 				 name
@@ -61,6 +74,7 @@ package main;
 				 strand
 				 description
 				 chrom_position
+				 organism
 
 				 names
 				 db_xref
@@ -69,9 +83,16 @@ package main;
 				 EC_number
 				 ));
     
-    $organisms = PFBP::ClassFactory->new_class(object_type=>"Genbank::Organism",
-					  prefix=>"org_");
-    @classes = qw( Genbank::Feature Genbank::Contig Genbank::Organism );
+    @classes = qw( Genbank::Feature
+		   Genbank::Contig
+		   Genbank::Organism
+		   Genbank::Gene
+		   Genbank::CDS
+		   Genbank::mRNA 
+		   Genbank::tRNA 
+		   Genbank::rRNA 
+		   Genbank::misc_RNA 
+		   Genbank::Source);
     
     &ReadArguments();
     
@@ -92,18 +113,11 @@ package main;
 	chomp($org);
 	warn "; Auto selection of organism name\t$org\n" if ($verbose >= 1);
     }
-    #### output directory
-    unless (defined($dir{output})) {
-	$dir{output} = "$RSA/data/genomes/".$org."/genome";
-	warn "; Auto selection of output dir\t$dir{output}\n" if ($verbose >= 1);
-    }
-    &CheckOutputDir();
-    
-    
+
     ################################################################
     #### find genbank files in the input directory
-    $wd = `pwd`; #### remember working directory
-    chomp($wd);
+    $dir{main} = `pwd`; #### remember working directory
+    chomp($dir{main});
     chdir ($dir{input});
     push @genbank_files, glob("*.gbk");
     push @genbank_files, glob("*.gbk.gz");
@@ -112,14 +126,31 @@ package main;
     } else {
 	warn "; Genbank files\n;\t", join("\n;\t", @genbank_files), "\n" if ($verbose >= 1);
     }
-    chdir($wd);     #### come back to the starting directory
+    chdir($dir{main});     #### come back to the starting directory
     
+
+
+    #### output directory
+    unless (defined($dir{output})) {
+	$dir{output} = "$RSA/data/genomes/".$org."/genome";
+	warn "; Auto selection of output dir\t$dir{output}\n" if ($verbose >= 1);
+    }
+    &CheckOutputDir();
+    chdir $dir{main};
+    $out_file{features} = "$dir{output}/genbank.obj" if ($export{obj});
+    $out_file{error} = "$dir{output}/genbank.errors.txt";
+    $out_file{stats} = "$dir{output}/genbank.stats.txt";
+
+    ### open error report file
+    open ERR, ">$out_file{error}" 
+	|| die "Error: cannot write error file $out_file{error}\n";
 
     #### verbose ####
     &Verbose if ($verbose);
-    
+
     ################################################################
     #### parse the genbank files
+    chdir $dir{main};
     foreach my $file (@genbank_files) {
 	$file{input} = "$dir{input}/$file";
 
@@ -130,24 +161,30 @@ package main;
 	    $file{input} = "cat $file{input} |";
 	}
 	
-	#### for quick testing; only parse the first 10000 lines
+	#### for quick testing; only parse the first  lines
 	if ($test) {
-	    $file{input} .= " head -10000 | ";
+	    $file{input} .= " head -$test_lines | ";
 	}
+
 	&ParseGenbankFile($file{input}, 
 			  $features,
 			  $genes,
 			  $mRNAs,
+			  $tRNAs,
+			  $rRNAs,
+			  $misc_RNAs,
 			  $CDSs,
 			  $contigs, 
 			  $organisms, 
-			  source=>"Genbank", 
-#			  source=>$contig, 
-			  seq_dir=>$dir{output});
+			  $sources,
+#			  source=>"Genbank", 
+			  seq_dir=>$dir{output}
+			  );
     }
 
     #### write the chromosome file
-    $chrom = &OpenOutputFile("$dir{output}/Contigs_${org}.txt"); # file with chromosome IDs
+    chdir $dir{main};
+    $chrom = &OpenOutputFile("$dir{output}/Contigs.txt"); # file with chromosome IDs
     foreach my $contig ($contigs->get_objects()) {
 	print $chrom join ("\t", 
 			   $contig->get_attribute("file"),
@@ -156,65 +193,67 @@ package main;
     }
     close $chrom;
     
-    #### parse feature positions
-#    die "HELLO\t$ENV{PARSER}\t$0\t@INC\n";   
+    #### index names
+    $features->index_names();
+    $genes->index_names();
+    $mRNAs->index_names();
+    $tRNAs->index_names();
+    $rRNAs->index_names();
+    $misc_RNAs->index_names();
+    $CDSs->index_names();
 
-    #### parse chromosomal poitions
+
+    #### Create features from CDSs and RNAs
+    &CreateGenbankFeatures($features, $genes, $mRNAs, $tRNAs, $rRNAs, $misc_RNAs, $CDSs, $sources);
+
+    #### parse chromosomal positions
     &ParsePositions($features);
-#    &ParsePositions($genes);
-#    &ParsePositions($mRNAs);
-#    &ParsePositions($CDSs);
-
-    #### check feature names, description, cross-references
-#    &CheckGenbankFeatures($features);
-    &CheckGenbankFeatures($features, $genes, $mRNAs, $CDSs);
-#    &GuessSynonyms($features);
-
+    &ParsePositions($genes);
+    &ParsePositions($mRNAs);
+    &ParsePositions($tRNAs);
+    &ParsePositions($rRNAs);
+    &ParsePositions($misc_RNAs);
+    &ParsePositions($CDSs);
 
     ################################################################
     ### export result in various formats
-    chdir $dir{output};
+#    chdir $dir{output};
+
+    #### print parsing statistics
     &PrintStats($out_file{stats}, @classes);
 
-    @class_factories = qw (organisms contigs features genes mRNAs CDSs);
+    @class_factories = qw (
+			   organisms 
+			   contigs
+			   features
+			   genes
+			   mRNAs
+			   tRNAs
+			   rRNAs
+			   misc_RNAs
+			   CDSs
+			   sources
+			   );
 
     foreach my $factory_name (@class_factories) {
 	my $class_factory = $$factory_name;
 	warn "; Dumping class $factory_name $class_factory\n" if ($verbose >= 1);
-	if ($factory_name eq "features") {
-	    $suffix = "_$org";
-	} else {
-	    $suffix = "";
-	}
+#	if ($factory_name eq "features") {
+	$suffix = "_$org" unless ($no_suffix);
+#	} else {
+#	    $suffix = "";
+#	}
 	$class_factory->dump_tables($suffix);
-	$class_factory->generate_sql(schema=>$schema,
-				     dir=>"$dir{output}/sql_scripts",
+	$class_factory->generate_sql(dir=>"$dir{output}/sql_scripts",
 				     prefix=>"$class_factory_",
-				     dbms=>$dbms
+				     schema=>$schema,
+				     host=>$host,
+				     dbms=>$dbms,
+				     user=>$user,
+				     password=>$password
 				     );
     }
     &ExportClasses($out_file{features}, $out_format, @classes) if $export{obj};
-
-
-
-#      #### print result
-#      chdir $dir{output};
-#      #&PrintStats($out_file{stats}, @classes);
-#      $features->dump_tables("_$org");
-#      $genes->dump_tables("_$org");
-#      $mRNAs->dump_tables("_$org");
-#      $CDSs->dump_tables("_$org");
-#      $contigs->dump_tables("_$org");
-#      $organisms->dump_tables("_$org");
-
-#      $features->generate_sql();
-#      $genes->generate_sql("_$org");
-#      $mRNAs->generate_sql("_$org");
-#      $CDSs->generate_sql("_$org");
-#      $contigs->generate_sql("_$org");
-#      $organisms->generate_sql("_$org");
-
-#      #&ExportClasses($out_file{features}, $out_format, Genbank::Feature) if $export{obj};
     
     ###### verbose ######
     if ($verbose) {
@@ -269,6 +308,19 @@ OPTIONS
 	-o	output directory
 		The parsing result will be saved in this directory. If
 		the directory does not exist, it will be created.
+	-test	quick test (for debugging): only parse the first $test_lines
+		lines of each Genabnk file
+
+   Options for the automaticaly generated SQL scripts
+
+	-dbms   database management system. 
+		Supported: mysql, oracle, postgresql 
+		(default: $dbms)
+	-schema database schema (default: $schema)
+	-host	database host (efault: $host)
+	-user	database user (efault: $user)
+	-password	
+		database password (default: $password)
 End_of_help
   close HELP;
   exit;
@@ -287,9 +339,15 @@ parse-genbank options
 -i	input dir
 -o	output dir
 -v	verbose
+-test #	quick test (for debugging)
+-dbms   database management system (default: $dbms)
+-schema database schema (default: $schema)
+-host	database host (default: $host)
+-user	database user (default: $user)
+-password	database password (default: $password)
 End_short_help
   close HELP;
-  exit;
+  exit(0);
 }
 
 
@@ -307,11 +365,11 @@ sub ReadArguments {
 	    
 	    ### detailed help
 	} elsif ($ARGV[$a] eq "-h") {
-	    &PrintHelp;
+	    &PrintHelp();
 	    
 	    ### list of options
-	} elsif ($ARGV[0] eq "-help") {
-	    &PrintOptions;
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions();
 	    
 	    ### input file ###
 	} elsif ($ARGV[$a] eq "-i") {
@@ -324,6 +382,29 @@ sub ReadArguments {
 	    ### quick test
 	} elsif ($ARGV[$a] eq "-test") {
 	    $test = 1;
+	    if (&IsNatural($ARGV[$a+1])) {
+		$test_lines = $ARGV[$a+1];
+	    }
+
+	    ### database management system
+	} elsif ($ARGV[$a] eq "-dbms") {
+	    $dbms = $ARGV[$a+1];
+	    
+	    ### database schema
+	} elsif ($ARGV[$a] eq "-schema") {
+	    $schema = $ARGV[$a+1];
+	    
+	    ### database host
+	} elsif ($ARGV[$a] eq "-host") {
+	    $host = $ARGV[$a+1];
+	    
+	    ### databaseuser
+	} elsif ($ARGV[$a] eq "-user") {
+	    $user = $ARGV[$a+1];
+	    
+	    ### database 
+	} elsif ($ARGV[$a] eq "-password") {
+	    $password = $ARGV[$a+1];
 	    
 	}
     }

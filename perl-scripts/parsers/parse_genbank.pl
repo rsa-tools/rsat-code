@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank.pl,v 1.5 2003/04/28 11:32:34 jvanheld Exp $
+# $Id: parse_genbank.pl,v 1.6 2003/08/08 22:13:24 jvanheld Exp $
 #
-# Time-stamp: <2003-04-28 13:25:15 jvanheld>
+# Time-stamp: <2003-08-09 00:13:09 jvanheld>
 #
 ############################################################
 
@@ -14,79 +14,17 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`"); ### add the program's directory to the lib path
 }
-require "PFBP_classes.pl";
-require "PFBP_config.pl";
-require "PFBP_util.pl";
-require "PFBP_loading_util.pl"; ### for converting polypeptide IDs into ACs
-require "PFBP_parsing_util.pl";
+require "lib/load_classes.pl";
+require "config.pl";
+require "lib/util.pl";
+#require "lib/loading_util.pl"; ### for converting polypeptide IDs into ACs
+require "lib/parsing_util.pl";
+
+require "classes/Genbank_classes.pl";
 
 
-package Genbank::Organism; ### for parsing genbank files
-{
-  @ISA = qw ( PFBP::DatabaseObject );
-  ### class attributes
-  $_count = 0;
-  $_prefix = "ctg_";
-  @_objects = ();
-  %_name_index = ();
-  %_id_index = ();
-  %_attribute_count = ();
-  %_attribute_cardinality = (id=>"SCALAR",
-			     names=>"ARRAY",
-			     taxonomy=>"SCALAR"
-			     );
-}
-
-package Genbank::Contig; ### for parsing genbank files
-{
-  @ISA = qw ( PFBP::DatabaseObject );
-  ### class attributes
-  $_count = 0;
-  $_prefix = "ctg_";
-  @_objects = ();
-  %_name_index = ();
-  %_id_index = ();
-  %_attribute_count = ();
-  %_attribute_cardinality = (id=>"SCALAR",
-			     names=>"ARRAY",
-			     organism=>"SCALAR",
-			     type=>"SCALAR",
-			     xrefs=>"EXPANDED"
-			     );
-}
-
-package Genbank::Feature;
-{
-  @ISA = qw ( PFBP::DatabaseObject );
-  ### class attributes
-  $_count = 0;
-  $_prefix = "ft_";
-  @_objects = ();
-  %_name_index = ();
-  %_id_index = ();
-  %_attribute_count = ();
-  %_attribute_cardinality = (id=>"SCALAR",
-			     names=>"ARRAY",
-			     organism=>"SCALAR",
-			     type=>"SCALAR",
-			     description=>"SCALAR",
-			     chrom_position=>"SCALAR",
-			     chrom_position=>"SCALAR",
-			     chromosome=>"SCALAR",
-			     strand=>"SCALAR",
-			     start_pos=>"SCALAR",
-			     end_pos=>"SCALAR",
-			     source=>"SCALAR",
-			     note=>"ARRAY",
-			     protein_id=>"ARRAY",
-			     xrefs=>"EXPANDED"
-			     );
-
-}
-
-
-
-
+################################################################
+#### main package
 package main;
 {
     
@@ -110,20 +48,48 @@ package main;
     $export_subdir = "genbank";
     $dir{output} = "$parsed_data/${export_subdir}/$delivery_date";
 
-    #### temporary
-    if ($hostname =~ /^brol/i) {
-	$dir{genbank} = "/lin/genomics/genbank/ftp.ncbi.nih.gov/genomes/";
-    }
 
     #### classes and classholders
-    $features = PFBP::ClassFactory->new_class(object_type=>"Genbank::Feature",
-					   prefix=>"feature_");
+    
+    $features = classes::ClassFactory->new_class(object_type=>"Genbank::Feature", prefix=>"ft_");
 
-    $contigs = PFBP::ClassFactory->new_class(object_type=>"Genbank::Contig",
-					  prefix=>"contig_");
-    $organisms = PFBP::ClassFactory->new_class(object_type=>"Genbank::Organism",
-					  prefix=>"org_");
-    @classes = qw( Genbank::Feature Genbank::Contig Genbank::Organism );
+    $genes = classes::ClassFactory->new_class(object_type=>"Genbank::Gene", prefix=>"gn_");
+
+    $mRNAs = classes::ClassFactory->new_class(object_type=>"Genbank::mRNA", prefix=>"mRNA_");
+
+    $tRNAs = classes::ClassFactory->new_class(object_type=>"Genbank::tRNA", prefix=>"tRNA_");
+    
+    $rRNAs = classes::ClassFactory->new_class(object_type=>"Genbank::rRNA", prefix=>"rRNA");
+
+    $misc_RNAs = classes::ClassFactory->new_class(object_type=>"Genbank::misc_RNA", prefix=>"misc_RNA");
+
+    $CDSs = classes::ClassFactory->new_class(object_type=>"Genbank::CDS", prefix=>"cds_");
+
+    $sources = classes::ClassFactory->new_class(object_type=>"Genbank::Source", prefix=>"src_");
+
+    $contigs = classes::ClassFactory->new_class(object_type=>"Genbank::Contig", prefix=>"ctg_");
+
+    $organisms = classes::ClassFactory->new_class(object_type=>"Genbank::Organism", prefix=>"org_");
+
+#      $features = classes::ClassFactory->new_class(object_type=>"Genbank::Feature",
+#  					   prefix=>"ft_");
+
+#      $genes = classes::ClassFactory->new_class(object_type=>"Genbank::Gene",
+#  					   prefix=>"gn_");
+
+#      $mRNAs = classes::ClassFactory->new_class(object_type=>"Genbank::mRNA",
+#  					   prefix=>"mRNA_");
+
+#      $CDSs = classes::ClassFactory->new_class(object_type=>"Genbank::CDS",
+#  					   prefix=>"CDS_");
+
+#      $contigs = classes::ClassFactory->new_class(object_type=>"Genbank::Contig",
+#  					  prefix=>"contig_");
+
+#     $organisms = classes::ClassFactory->new_class(object_type=>"Genbank::Organism",
+# 					  prefix=>"org_");
+
+    @classes = qw( Genbank::Feature Genbank::Contig Genbank::Organism Genbank::Gene Genbank::CDS Genbank::mRNA);
 
     #### read command arguments
     &ReadArguments();
@@ -165,11 +131,12 @@ package main;
 				
 				));
     
+    
     &CheckOutputDir();
     chdir $dir{output};
-    $out_file{features} = "$dir{output}/feature.obj" if ($export{obj});
-    $out_file{error} = "$dir{output}/feature.errors.txt";
-    $out_file{stats} = "$dir{output}/feature.stats.txt";
+    $out_file{features} = "$dir{output}/genbank.obj" if ($export{obj});
+    $out_file{error} = "$dir{output}/genbank.errors.txt";
+    $out_file{stats} = "$dir{output}/genbank.stats.txt";
     
     ### open error report file
     open ERR, ">$out_file{error}" || die "Error: cannot write error file $out_file{error}\n";
@@ -262,36 +229,76 @@ package main;
 	    if ($test) {
 		$file{input} .= " head -10000 | ";
 	    }
-	    &ParseGenbankFile($file{input}, 
-			      $features, 
-			      $contigs, 
-			      $organisms, 
-			      source=>"genbank:".$short_file{$org},
-			      no_seq=>1);
+	&ParseGenbankFile($file{input}, 
+			  $features,
+			  $genes,
+			  $mRNAs,
+			  $tRNAs,
+			  $rRNAs,
+			  $misc_RNAs,
+			  $CDSs,
+			  $contigs, 
+			  $organisms, 
+			  $sources,
+#			  source=>"Genbank", 
+#			  seq_dir=>$dir{output}
+			  );
+#  	    &ParseGenbankFile($file{input}, 
+#  			      $features,
+#  			      $genes,
+#  			      $mRNAs,
+#  			      $CDSs,
+#  			      $contigs, 
+#  			      $organisms, 
+#  			      source=>$contig, 
+#  			      seq_dir=>$dir{output});
+#  	    &ParseGenbankFile($file{input}, 
+#  			      $features, 
+#  			      $contigs, 
+#  			      $organisms, 
+#  			      source=>"genbank:".$short_file{$org},
+#  			      no_seq=>1);
 	}
 	
 	
     }
     
-    &ParsePositions($features);
     
-#    &GuessSynonyms($features);
-    &CheckGenbankFeatures($features);
+
+    #### index names
+    $features->index_names();
+    $genes->index_names();
+    $mRNAs->index_names();
+    $CDSs->index_names();
+
+
+    #### parse chromosomal poitions
+    &ParsePositions($features);
+    &ParsePositions($genes);
+    &ParsePositions($mRNAs);
+    &ParsePositions($CDSs);
+    
+    #### Create features from CDSs and mRNAs
+    &CreateGenbankFeatures($features, $genes, $mRNAs, $CDSs);
 
 
     ################################################################
-    ### export result in various formats
+    #### export result 
     chdir $dir{output};
+
+    #### print parsing statistics
     &PrintStats($out_file{stats}, @classes);
-#    $features->dump_tables();
-#    $contigs->dump_tables();
+
     @class_factories = qw (
-			   features
+			   organisms 
 			   contigs
-			   organisms
+			   features
+			   genes
+			   mRNAs
+			   CDSs
 			   );
-    foreach $class_factory (@class_factories) {
-	
+
+    foreach $class_factory (@class_factories) {	
 	$$class_factory->dump_tables();
 	$$class_factory->generate_sql(schema=>$schema,
 				      dir=>"$dir{output}/sql_scripts",
