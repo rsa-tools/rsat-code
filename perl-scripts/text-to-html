@@ -4,7 +4,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 require "RSA.lib";
 require "RSA.cgi.lib";
-require "cgi-lib.pl";
+###require "cgi-lib.pl";
 
 
 #### initialise parameters ####
@@ -21,28 +21,37 @@ $chunk = 50;
 
 
 ### open input file ###
-$in = &OpenInputFile($inputfile);
+$in = &OpenInputFile($infile{input});
 
 ### open output file ###
-$out = &OpenOutputFile($outputfile);
+$out = &OpenOutputFile($outfile{output});
+
+###### execute the command #########
+#print &HtmlTop ($infile{input});    
+#die "$outfile{output}\t$out";
+
+
+print $out "<HTML>";
+print $out "<TITLE>$infile{input}</TITLE>";
+print $out "<BODY>";
 
 #### verbose ####
 if ($verbose) {
     print $out ";text-to-html result\n";
-    if ($inputfile ne "") {
-	print $out ";Input file	$inputfile\n";
+    if ($infile{input} ne "") {
+	print $out ";Input file	$infile{input}\n";
     }
-    if ($outputfile ne "") {
-	print $out ";Output file	$outputfile\n";
+    if ($outfile{output} ne "") {
+	print $out ";Output file	$outfile{output}\n";
     }
 }
 
-###### execute the command #########
-print &HtmlTop ($inputfile);    
 
-&PrintHtmlTable($in, "", "", $chunk);
+print &PrintHtmlTable($in, "", "", $chunk, $out);
 
-print &HtmlBot;
+print $out "</BODY>";
+print $out "</HTML>";
+
 
 ###### print output ######
 
@@ -58,10 +67,10 @@ if ($verbose) {
 
 
 ###### close input file ######
-close $in unless ($inputfile eq "");
+close $in unless ($infile{input} eq "");
 
 ###### close output file ######
-close $out unless ($outputfile eq "");
+close $out unless ($outfile{output} eq "");
 
 
 exit(0);
@@ -112,7 +121,7 @@ EXAMPLES
 	
 End_of_help
   close HELP;
-  exit;
+  exit (0);
 }
 
 sub PrintOptions {
@@ -130,7 +139,7 @@ text-to-html options
 -chunk	chunk size
 End_short_help
   close HELP;
-  exit;
+  exit (0);
 }
 
 
@@ -148,11 +157,11 @@ sub ReadArguments {
 		
 		### detailed help
 	    } elsif ($ARGV[$a] eq "-h") {
-		&PrintHelp;
+		&PrintHelp();
 		
 		### list of options
 	    } elsif ($ARGV[0] eq "-help") {
-		&PrintOptions;
+		&PrintOptions();
 		
 		### input file ###
 	    } elsif ($ARGV[$a] eq "-i") {
