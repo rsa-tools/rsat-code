@@ -197,6 +197,9 @@ use Data::Dumper;
     ${$class_holder->{_id_index}}{uc($id)} = $object;
   }
 
+
+  ################################################################
+  #### index object names for all the objects of the embedded class 
   sub index_object_names {
     ### index the names for a single object in the class_holder
     my ($class_holder, $object) = @_;
@@ -235,6 +238,7 @@ use Data::Dumper;
     %{$class_holder->{_name_index}} = ();
 
     foreach $object ($class_holder->get_objects()) {
+	$object->unique_names(); #### make sure a name only appears once
 	$class_holder->index_object_names($object);
     }
     return %{$class_holder->{_name_index}};
