@@ -180,7 +180,6 @@ print $query->popup_menu(-name=>'case',
 			 -default=>$default{case});
 
 
-
 ### send results by e-mail or display on the browser
 print "<BR>\n";
 &SelectOutput;
