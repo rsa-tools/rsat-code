@@ -75,7 +75,8 @@ OPTIONS
 	-from # -to #
 		calculates the sum of Poisson between two values 
 		(inclusive).
-
+	-series
+		return the complete series from 0 to s
 	
 End_of_help
   close HELP;
@@ -95,7 +96,7 @@ poisson options
 -boe		bigger or equal. 
 -soe		smaller or equal. 
 -from # -to #	sum of Poisson between two values (inclusive)   
-
+-series		return the complete series from 0 to s
 End_short_help
   close HELP;
   exit;
@@ -104,6 +105,7 @@ End_short_help
 #### initialise parameters ####
 $soe = 0;
 $approx = 0;
+$series = 0;
 
 #### read arguments ####
 foreach $a (0..$#ARGV) {
@@ -140,6 +142,10 @@ foreach $a (0..$#ARGV) {
 	$from_to = 1;
 	$to = $ARGV[$a+1];
 	
+
+    } elsif ($ARGV[$a] eq "-series") {
+	$series = 1;
+
     }
 }
 
@@ -188,22 +194,20 @@ if ($verbose) {
   }
 }
 
-if ($boe) {
+if ($series) {
+    @pois = poisson($s, $m, 1);
+    for my $i (0..$s) {
+	print $i, "\t", $pois[$i], "\n";
+    }
+    exit(0);
+
+} elsif ($boe) {
     unless (defined($r)) {
 	die "Error: you must give the number of trials (-r)\n";
     }
     $result = &old_sum_of_poissons($m,$s,$r);
-#  for $j (0..$s-1) {
-#    $result -= poisson($j,$m);
-#    last if ($result <=0);
-#  }
 } elsif ($soe) {
     $result = &sum_of_poissons($m,0,$s);
-#  $result = 0;
-#  for $j (0..$s) {
-#    $result += poisson($j,$m);
-#    last if ($result >=1);
-#  }
 } elsif($from_to) {
     $result = sum_of_poisson($m,$from,$to);
 } else {
