@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: retrieve-seq,v 1.7 2000/08/11 21:29:08 jvanheld Exp $
+# $Id: retrieve-seq,v 1.8 2000/09/18 11:52:06 jvanheld Exp $
 #
-# Time-stamp: <2000-08-11 23:28:55 jvanheld>
+# Time-stamp: <2000-09-18 13:51:36 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -421,7 +421,7 @@ retrieve-seq options
 --------------------
 -org		organism
 $supported_organisms
--type		upstream
+-type		upstream | downstream | orf
 -i		query file. This option is incompatible with -q.
 -q		query
 -all		returns all genomic upstream regions
