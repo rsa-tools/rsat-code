@@ -243,8 +243,6 @@ sub string {
     $self::image->text($x,$y, $string);
 }
 
-return 1;
-
 ################################################################
 =pod
 
@@ -319,6 +317,7 @@ sub output {
     $self::image->output($outputfile);
 }
 
+return 1;
 
 __END__
 

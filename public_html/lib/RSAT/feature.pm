@@ -4,6 +4,8 @@
 #
 package RSAT::feature;
 
+## CVS : minor fixes
+
 %strand_index = (D=>0,
 		 R=>1,
 		 DR=>2
@@ -168,14 +170,10 @@ Create a new feature.
 =cut
 sub new {
     my ($class, %args) = @_;
-    my $matrix = bless {
-	nrow=>0,
-	ncol=>0
+    my $feature = bless {
 	}, $class;
-    return $matrix;
+    return $feature;
 }
-
-return 1;
 
 ################################################################
 =pod

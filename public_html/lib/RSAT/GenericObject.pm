@@ -5,6 +5,8 @@ package RSAT::GenericObject;
 $_count = 0;
 # use Data::Dumper
 
+## CVS: added the method auto_id()
+
 ################################################################
 #### Instance methods
 ################################################################
@@ -14,12 +16,14 @@ $_count = 0;
 sub new {
     my ($class,%args) = @_;
     ### bless the new object
-    my $self = bless {}, ref($class) || $class;
+    my $self = bless {
+    }, ref($class) || $class;
     $self->init(%args) if $self->can("init"); ### initialization
     return $self;
 }
 
 
+################################################################
 ### create object without initialization
 ### WARNING: the class attributes are thus not updated
 ### and some class methods (e.g. $class->get_object($id)) do not function
@@ -32,6 +36,24 @@ sub fast_new {
     push @{$class."::_objects"}, $self;
     
     return $self;
+}
+
+
+################################################################
+=pod
+
+=item auto_id
+
+Automatically assign a unique identifier to the object
+
+=cut
+
+sub auto_id {
+    my ($class) = @_;
+    my $id = $class->{_prefix} || $class;
+    $id .= sprintf "%6s", $class->{_count}++;
+    $id = s/ /0/g;
+    return $id;
 }
 
 ################################################################
@@ -70,9 +92,10 @@ sub init {
     
     ### make sure the new object has an ID
     unless ($args{id}) {
-	my $auto_id = sprintf "%s%6d", $self->get_prefix, $class->get_count;
-	$auto_id =~ s/ /0/g;
-	$self->set_attribute("id",$auto_id);
+# 	my $auto_id = sprintf "%s%6d", $self->get_prefix, $class->get_count;
+# 	$auto_id =~ s/ /0/g;
+	my $auto_id = $self->auto_id();
+ 	$self->set_attribute("id",$auto_id);
     }
     
     ### add the new object to the class list
@@ -154,10 +177,11 @@ sub reset_attribute {
 ################################################################
 ## set key-value pairs for a HASH attribute
 sub set_hash_attribute {
-    my ($self, $attr, @pairs) = @_;
+    my ($self, $attr, %hash) = @_;
     my $class = ref($self);
     $self->_set_attribute_cardinality($attr, "HASH");
-    %{$self->{$attr}} = @pairs;
+    %{$self->{$attr}} = %hash;
+#    die join "\t", "POUET", keys %hash;
 }
 
 ################################################################
@@ -194,6 +218,16 @@ sub push_attribute {
 }
 
 ################################################################
+# set the value of an array attribute to the specified array
+sub set_array_attribute {
+    my ($self,$attr,@values) = @_;
+    my $class = ref($self) || $self;
+    $self->_set_attribute_cardinality($attr, "ARRAY");
+    $self->_incr_attribute_count($attr);
+    @{$self->{$attr}} = @values;
+}
+
+################################################################
 ## add an entry to an EXPANDED attribute an EXPANDED is an array of
 ## entries, where #### each entry is itself an array of values
 sub push_expanded_attribute {
@@ -222,16 +256,6 @@ sub new_attribute_value {
     }
 }
 
-
-################################################################
-# set the value of an array attribute to the specified array
-sub set_array_attribute {
-    my ($self,$attr,@values) = @_;
-    my $class = ref($self) || $self;
-    $self->_set_attribute_cardinality($attr, "ARRAY");
-    $self->_incr_attribute_count($attr);
-    @{$self->{$attr}} = @values;
-}
 
 ################################################################
 ## set the value of an array attribute to an empty list
