@@ -110,10 +110,10 @@ $out = &OpenOutputFile($outputfile);
   
 #### convert tbox into an hbox ###
 if ($tbox_low_x ne "") {
-  $hbox_left = XPixelPos($tbox_low_x);
-  $hbox_right = XPixelPos($tbox_high_x);
-  $hbox_top = YPixelPos($tbox_high_y); 
-  $hbox_bottom = YPixelPos($tbox_low_y); 
+  $hbox_left = &XPixelPos($tbox_low_x);
+  $hbox_right = &XPixelPos($tbox_high_x);
+  $hbox_top = &YPixelPos($tbox_high_y); 
+  $hbox_bottom = &YPixelPos($tbox_low_y); 
 }
 
 ### check hbox dimensions ###
@@ -231,7 +231,7 @@ if ($x_grid_step2 > 0) {
 ### second Y grid
 if ($y_grid_step2 > 0) {
   for ($g = $y_axis_min; $g <= $y_axis_max; $g += $y_grid_step2) {
-    $grid_pos = YPixelPos($g);
+    $grid_pos = &YPixelPos($g);
     $image->line($left, $grid_pos, $right, $grid_pos, $grid2_color);
   }
 }
@@ -939,7 +939,7 @@ sub ReadData {
 
 	    if ($x_col == -1) {
 		push @X_values, $#X_values +2;
-	    } elsif (IsReal($data_fields[$x_col])) {
+	    } elsif (&IsReal($data_fields[$x_col])) {
 		if ($xlog)  {
 		    if ($data_fields[$x_col] > 0) {
 			$new_x = log($data_fields[$x_col])/$x_ref_log;
@@ -949,6 +949,7 @@ sub ReadData {
 		} else {
 		    $new_x = $data_fields[$x_col];
 		}
+#print STDERR "HELLO\t$data_fields[$x_col]\t$new_x\t",$#X_values,"\n";
 		push (@X_values, $new_x);
 	    } else {
 		next;
@@ -1061,9 +1062,9 @@ sub CalcLimits {
     $max_y_value = "ND";
     $min_y_value = "ND";
     
-    $min_x_value = &min(@X_values);
-    $max_x_value = &max(@X_values);
-    
+    $min_x_value = &checked_min(@X_values);
+    $max_x_value = &checked_max(@X_values);
+#print "HELLO\t",$min_x_value, $max_x_value, "\n", join " ", @X_values, "\n";    
     unless ((&IsReal($max_x_value)) && 
 	    (&IsReal($min_x_value))) {
 	die ("\tError: X axis data (column ", $x_col+1, ") are not numeric\n",
