@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: util.pl,v 1.3 2003/11/30 07:46:17 jvanheld Exp $
+# $Id: util.pl,v 1.4 2003/12/19 15:14:27 jvanheld Exp $
 #
 # Time-stamp: <2003-07-10 11:46:32 jvanheld>
 #
@@ -21,7 +21,6 @@ foreach my $k (keys %main::default) {
 
 ################################################################
 #### read generic options
-$supported_dbms = join "," , keys %supported_dbms;
 $generic_option_message ="	-h	detailed help
 	-help	short list of options
 	-test	fast parsing of partial data, for debugging
@@ -40,8 +39,6 @@ $generic_option_message ="	-h	detailed help
 	-nocomp skip data compression
 	-clean	remove all files from the output directory before
 		parsing
-	-dbms	database management system (default $default{dbms})
-		supported: $supported_dbms
 	-db	database schema (default=$main::default{schema}, current=$main::schema)
 ";
 
@@ -76,13 +73,6 @@ sub ReadGenericOptions {	### warn level
 	### skip data compression
     } elsif ($ARGV[$a] eq "-nocomp") {
 	$no_compression = 1;
-
-	### dbms
-    } elsif ($ARGV[$a] eq "-dbms") {
-	$main::dbms = $ARGV[$a+1];
-	unless ($supported_dbms{$main::dbms}) {
-	    die "Error: this dbms is not supported\n";
-	}
 
 	### database schema
     } elsif ($ARGV[$a] eq "-schema") {
