@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_genomes.mk,v 1.7 2005/01/15 20:37:16 jvanheld Exp $
+# $Id: install_genomes.mk,v 1.8 2005/01/18 15:08:23 jvanheld Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -97,3 +97,25 @@ install_all_eukaryotes:
 		ORG=$${org} ; done
 
 
+################################################################
+#
+# Clean obsolete SQL files (before splitting into subfolders for
+# mysql, postgresql and oracle)
+#
+clean_sql:
+	ls -ltr ${RSAT}/data/genomes/Escherichia_coli_K12/genome/sql_scripts/
+	rm -f ${RSAT}/data/genomes/*/genome/sql_scripts/feature*
+	rm -f ${RSAT}/data/genomes/*/genome/sql_scripts/gene*
+	rm -f ${RSAT}/data/genomes/*/genome/sql_scripts/cds*.ctl
+	rm -f ${RSAT}/data/genomes/*/genome/sql_scripts/cds*
+	rm -f ${RSAT}/data/genomes/*/genome/sql_scripts/mrna*
+	rm -f ${RSAT}/data/genomes/*/genome/sql_scripts/trna*.ctl
+	rm -f ${RSAT}/data/genomes/*/genome/sql_scripts/trna*
+	rm -f ${RSAT}/data/genomes/*/genome/sql_scripts/rrna*
+	rm -f ${RSAT}/data/genomes/*/genome/sql_scripts/*rna*
+	rm -f ${RSAT}/data/genomes/*/genome/sql_scripts/organism*
+	rm -f ${RSAT}/data/genomes/*/genome/sql_scripts/contig*
+	rm -f ${RSAT}/data/genomes/*/genome/sql_scripts/misc*
+	rm -f ${RSAT}/data/genomes/*/genome/sql_scripts/source*
+	rm -f ${RSAT}/data/genomes/*/genome/sql_scripts/*
+	ls -ltr ${RSAT}/data/genomes/Escherichia_coli_K12/genome/sql_scripts/
