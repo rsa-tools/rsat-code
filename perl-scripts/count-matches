@@ -4,73 +4,295 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 require "RSA.lib";
 
+################################################################
+#### initialise parameters
+my $start_time = &AlphaDate();
+
+local %infile = ();
+local %outfile = ();
+
+local $verbose = 0;
+local $in = STDIN;
+local $out = STDOUT;
+
+#### initialise parameters ####
+$start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+@supported_return_fields = qw(
+			      match
+			      weight
+			      seq
+			      length
+			      );
+foreach my $field (@supported_return_fields) {
+    $supported_return_field{$field} = 1;
+}
+$supported_return_fields = join (",", @supported_return_fields);
+
+&ReadArguments();
+
+################################################################
+## Check arguments
+
+## return fields
+if (scalar(@return_fields) < 1) {
+    @return_fields = ("match");
+}
+
+my @temp_return_fields = @return_fields;
+@return_fields = (); ## Ordered list of fields to return. 
+%return_field = ();  ## Index for the fields to return.
+foreach my $field (@temp_return_fields) {
+    &FatalError("$field\tInvalid return field. Supported: $supported_return_fields\n") unless $supported_return_field{$field};
+
+    $return_field{$field}++;
+
+#    warn "; Adding field\t", $field, "\n" if ($verbose >= 5);
+    if ($field eq "seq") {
+	push @return_fields, "seq1", "seq2";
+    } elsif ($field eq "length") {
+	push @return_fields, "len1", "len2";
+    } else {
+	push @return_fields, $field;
+    }
+}
 
 
-if ($ARGV[0] eq "-h") {
-#### display full help message #####
-  open HELP, "| more";
-  print HELP <<End_of_help;
-NAME
+## Check input sequences
+&FatalError("You must specify at least one first sequence") unless (scalar(@seq1) > 0);
+&FatalError("You must specify at least one second sequence") unless (scalar(@seq2) > 0);
+
+
+################################################################
+### open output stream
+$out = &OpenOutputFile($outfile{output});
+
+################################################################
+#### print verbose
+&Verbose() if ($verbose >= 1);
+
+## Print header
+if ($verbose >= 1) {
+    print $out ";", join ("\t", @return_fields), "\n";
+}
+
+## Count matches for each pair of input sequences	
+foreach $seq1 (@seq1) {
+    foreach $seq2 (@seq2) {
+	my @result = ();
+	
+	## Check input sequences
+	&FatalError("You must specify a first sequence") unless ($seq1);
+	&FatalError("You must specify a second sequence") unless ($seq2);
+	
+	################################################################
+	## Count the matches
+	($match, $weight) = &CountMatches($seq1,$seq2);
+	
+	if ($return_field{length}) {
+	    $len1 = length($seq1);
+	    $len2 = length($seq2);
+	    #$max_len = &max($len1, $len2);
+	    #$min_len = &min($len1, $len2);
+	}
+ 	
+	## Print the result for this comparison
+	foreach my $field (@return_fields) {
+	    my $result = $$field;
+	    push @result, $result;
+	    warn join "\t", ";", $field, $result, "\n" if ($verbose >= 3);
+	}
+	print $out join ("\t", @result), "\n";
+    }
+}
+
+exit(0);
+
+################################################################
+################### subroutine definition ######################
+################################################################
+
+
+################################################################
+#### display full help message 
+sub PrintHelp {
+    open HELP, "| more";
+    print HELP <<End_of_help;
+    NAME
 	count-matches
 
-        1998 by Jacques van Helden (jacques\@ucmb.ulb.ac.be)
-	
-USAGE
-        count-matches seq1 seq2
+	    1998 by Jacques van Helden (jacques\@ucmb.ulb.ac.be)
+		
+		USAGE
+		    count-matches seq1 seq2
 
-DESCRIPTION
-	Count matching positions between two sequences provided as
-	command line arguments.
+			DESCRIPTION
+			    Count matching positions between two sequences provided as
+				command line arguments.
 
-CATEGORY
-	util
-	sequences
+				    CATEGORY
+					util
+					    sequences
 
-OPTIONS
-        -h      (must be first argument) display full help message
-        -help   (must be first argument) display options
-	-v	verbose
-	
-INPUT FORMAT
-	seq1 and seq2 must be DNA sequence (not proteic). 
-	IUPAC degenerate code is accepted in seq1 as well as seq2.
+						OPTIONS
+						    -h      (must be first argument) display full help message
+							-help   (must be first argument) display options
+							    -v	verbose
+								-seq1	first sequence for the comparison
+								    -seq2	second sequence for the comparison
 
-EXAMPLES
-       count-matches GATAAT GATWAG
-       should return the value 5
+									-seq1 and -seq2 can be used iteratively to specify
+									    multiple patterns. Each sequence of group 1 is then
+										compared t each sequence of group 2.
+
+										    -return	return fields
+											Each selected field is returned in a separate column.
+											  Supported: $supported_return_fields
+
+											      INPUT FORMAT
+												  seq1 and seq2 must be DNA sequences (not peptidic). 
+												      IUPAC degenerate code is accepted in seq1 as well as seq2.
+
+													  OUTPUT FORMAT
+
+													      The output consists in a tab-separated text table, with one row
+														  per pair of sequences, and one column per return field.
+
+														      RETURN FIELDS
+															  
+															  match	number of matching positions
+
+															      weight   number of matching positions, with a lower weight for
+																  matches between partially specified nucleotides (IUPAC
+																						   codes). The letter N has a weright of 0, since it
+																						       matches any character. For the other IUPAC letters,
+																						       the weight is inversely proportional to the number of
+																							   nucleotides they encompass.
+
+																							       code	nucleotides	weight	mnemonics
+																								   ---------------------------------------------------------------
+																								       A			1	(Adenine)
+																									   C			1	(Cytosine)
+																									       G			1	(Guanine)
+																										   T			1	(Thymine)
+																										       R	= A or G	1/2	(puRines)
+																											   Y	= C or T	1/2	(pYrimidines)
+																											       W	= A or T	1/2	(Weak hydrogen bonding)
+																												   S	= G or C	1/2	(Strong hydrogen bonding)
+																												       M	= A or C	1/2	(aMino group at common position)
+																													   K	= G or T	1/2	(Keto group at common position)
+																													       H	= A, C or T	1/3	(not G)
+																														   B	= G, C or T	1/3	(not A)
+																														       V	= G, A, C	1/3	(not T)
+																															   D	= G, A or T	1/3	(not C)
+																															       N	= G, A, C or T	0	(aNy)
+
+																																   length	lengths of the two sequences
+
+																																       seq	sequences to be compared
+
+																																	   EXAMPLES
+
+																																	       Single pair of sequences
+																																		   ------------------------
+																																		       count-matches -seq1 GATAAT -seq2 GATWAG -return match,weight
+
+																																			   should return the value 5 matches (the degenerate code W stands for "T
+       or A") and a weight of 4.5
+
+	   Multiple pairs of sequences
+	       ---------------------------
+		   count-matches  -seq1 GATAAT				\
+		       -seq2 GATWAG				\
+			   -seq2 GATNNS				\
+			       -seq2 NNNNNN				\
+				   -v 1 -return match,weight,length,seq
+
+				       Compares the firsts sequence with each sequence of group
+					   2. Notice the difference between the columns match and weight.
+      
 	
 End_of_help
   close HELP;
   exit;
 }
 
-if ($ARGV[0] eq "-help") {
-#### display short help message #####
+################################################################
+#### display short help message
+sub PrintOptions {
   open HELP, "| more";
   print HELP <<End_short_help;
 count-matches options
 ----------------
-usage:
-	count-matches seq1 seq2
-
 -h      (must be first argument) display full help message
 -help   (must be first argument) display options
+-seq1	first sequence for the comparison
+-seq2	second sequence for the comparison
+-return	return fields. Supported: $supported_return_fields
 End_short_help
   close HELP;
   exit;
 }
 
-#### initialise parameters ####
-$start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
 
+################################################################
+#### read arguments 
+sub ReadArguments {
+    foreach my $a (0..$#ARGV) {
+	### verbose  
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+	    
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp();
+	    
+	    ### list of options
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions();
+	    
+	    ### input file  
+	} elsif ($ARGV[$a] eq "-i") {
+	    $infile{input} = $ARGV[$a+1];
+	    
+	    ### output file  
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outfile{output} = $ARGV[$a+1];
+	    
+	    ### first sequence  
+	} elsif ($ARGV[$a] eq "-seq1") {
+	    push @seq1, $ARGV[$a+1];
+	    
+	    ### second sequence  
+	} elsif ($ARGV[$a] eq "-seq2") {
+	    push @seq2, $ARGV[$a+1];
 
-#### read arguments ####
-$seq1 = $ARGV[0];
-$seq2 = $ARGV[1];
+	    ### return fields
+	} elsif ($ARGV[$a] eq "-return") {
+	    push @return_fields, split ",", $ARGV[$a+1];
+	    
+	}
+    }
+}
 
-$matches = &CountMatches($seq1,$seq2);
-
-print "$matches\n";
-
-exit(0);
-
+################################################################
+#### verbose message
+sub Verbose {
+    print $out "; count-matches ";
+    &PrintArguments($out);
+    if (defined(%infile)) {
+	print $out "; Input files\n";
+	while (($key,$value) = each %infile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+    if (defined(%outfile)) {
+	print $out "; Output files\n";
+	while (($key,$value) = each %outfile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+}
