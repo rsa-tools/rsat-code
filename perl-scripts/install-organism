@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.35 2004/01/14 22:42:29 jvanheld Exp $
+# $Id: install-organism,v 1.36 2004/01/14 23:02:37 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -156,7 +156,7 @@ $out = &OpenOutputFile($outputfile);
 
 &AllUpstream() if ($task{allup});
 
-for $noov ("", "-noov") {
+for $noov ("-ovlp", "-noov") {
     for $strands ("-1str", "-2str") {
 	&CalcFrequencies() if (($task{oligos}) || ($task{distrib}) || ($task{dyads}));
     }
@@ -517,7 +517,7 @@ sub CalcOligoFreq {
 #### file
 sub CalcOligoDistrib {
     my ($seq_file,$seq_format,$seq_type) = @_;
-    foreach my $oligo_length (1..1) {
+    foreach my $oligo_length (1..8) {
 	#### Calculate occurrence distributions in the sequence file
 	my $distrib_file = "$dir{oligos}/${oligo_length}nt_${seq_type}_${organism_short_name}${noov}${strands}_distrib.tab";
 	my $command = "$SCRIPTS/oligo-analysis -v 1 ${strands} -i $seq_file -format $seq_format ";
