@@ -4,52 +4,81 @@
 
 \section{Installing additional organisms}
 
-\subsection{Parsing a genome from Genbank}
-
 The easiest way to install an organism in \RSAT is to download the
 complete genome files from the NCBI
 \urlref{ftp://ftp.ncbi.nih.gov/genomes/}, and to parse it with the
 program \program{parse-genbank.pl}.
 
+We will illustrate the procedure with some examples. 
 
+\subsection{Downloading genomes from NCBI/Genbank}
 
+\RSAT includes a makefile to download genomes from different sources.
+We provide hereafter a protocol to create a download directory in your
+account, and download genomes in this directory. Beware, genomes
+require a lot of disk space, especially for those of higher
+organisms. To avoid filling up your hard drive, we illustrate the protocol
+with the smallest procaryote genome to date: \textit{Mycoplasma
+  genitamlium}.
 
-\subsection{Manual installation of a genome}
-
-If you are not lucky, the genome you want to work with is not
-available in Genbank format. If this is the case, you cn still try a
-manual installation. This is a bit tricky, but basically you will need
-two informations :
-
-\begin{enumerate}
-\item the complete genome sequence in raw format
-\item a table with gene description (identifier, name, chromosomal
-  position, description)
-\end{enumerate}
-
-We describe below how this information should be formatted to be used
-in rsa-tools.
-
-In this chapter, we explain how to add support for an organism on your
-local configuration of \RSAT. This assumes that you have the complete
-sequence of a genome, and a table describing the predicted location of
-genes.
-
-First, prepare a directory where you will store the data for your
-organism. For example:
+The script \file{\$RSAT/makefiles/downloads.mk} relies on the
+application \program{wget}, which is part of linux
+distribution. \program{wget} is a ``web aspirator'', which allows to
+downlaod whole directories from ftp and http sites. You can check if
+the program is installed on your machine.
 
 \begin{verbatim}
-~myaccount/rsat-add/data/Mygenus_myspecies/
+wgget -help
 \end{verbatim}
 
-You need two informations to start installing a new genome:
+This command should return the help pages for \program{wget}.  If you
+obtain an error message (``command not found''), you need to ask your
+system administrator to install it.
 
-\begin{itemize}
-\item The genome in fasta format. If the genome contains multiple
-chromosomes, they should all be included in a common multi-sequence
-fasta file.
+\begin{verbatim}
+## Creating a directory for downloading genomes in your home account
+cd $HOME
+mkdir -p downloads
+cd downloads
 
-\item A feature-table giving the basic information about genes. This is
+## Creating a link to the makefile which allows you to dowload genomes
+ln -s ${RSAT}/makefiles/downloads.mk ./makefile
+\end{verbatim}
+
+We will now download a small genome from NCBI/Genbank. 
+
+\begin{verbatim}
+## Downloading one directory from NCBI Genbank
+cd $HOME/downloads/
+make one\_genbank\_dir GB\_DIR=genomes/Bacteria/Mycoplasma\_genitalium
+\end{verbatim}
+
+
+
+\subsection{The genome files}
+
+
+\begin{enumerate}
+\item genome sequence
+\item feature table
+\item list of names/synonyms
+\end{enumerate}
+
+\subsubsection{Genome sequence} 
+
+The genome must be in raw format (text files containing the sequence
+without any space or carriage return). If the organism contains
+several chromosomes, there should be one separate file per contig
+(chromosome). 
+
+In addition, the genome directory must contain one file listing the
+contig (chromosome) files. You can find an example in the directory
+\file{\$RSAT/data/genomes/Saccharomyces\_cerevisiae/genome/}.
+
+
+\subsubsection{Feature table}
+
+A feature-table giving the basic information about genes. This is
 a tab-delimited text file. Each row contains information about one
 gene. The columns contain the following information: 
 \begin{enumerate}
@@ -73,7 +102,9 @@ identifiers from the fasta file.
 
 \end{enumerate}
 
-\item Optionally, you can provide a synonym file, which contains two
+\subsubsection{Gene names (synonyms)}
+
+Optionally, you can provide a synonym file, which contains two
 columns:
 
 \begin{enumerate}
@@ -84,22 +115,66 @@ columns:
 Multiple synonyms can be given for a gene, by adding several lines with
 the same ID in the first column.
 
-\end{itemize}
+\subsubsection{Example}
 
-\subsection{Installing the genome locally}
-One you have this information, start the program
 \begin{verbatim}
-install-organism
+cd \$RSAT/data/genomes/Saccharomyces\_cerevisiae/genome/
+
+## The list of sequence files
+cat contigs.txt
+
+## The sequence files
+ls -l *.raw
+
+## The feature table
+head -30 feature.tab
+
+## The gene names/synonyms
+head -30 feature\_names.tab
+
 \end{verbatim}
-You will be asked to enter the information needed for genome installation. 
+
+\subsubsection{Manual installation of a genome}
+
+If you are not lucky, the genome you want to work with is not
+available in Genbank format. If this is the case, you can still try a
+manual installation. This is a bit tricky, but basically you will need
+three informations described above. 
+
+\subsubsection{Installing a genome in the main \RSAT directory}
+
+%%%%%%%%%%%%%%%% to be written %%%%%%%%%%%%%%%%
+
+\subsubsection{Installing a genome in your own account}
+
+We describe below how this information should be formatted to be used
+in rsa-tools.
+
+In this chapter, we explain how to add support for an organism on your
+local configuration of \RSAT. This assumes that you have the complete
+sequence of a genome, and a table describing the predicted location of
+genes.
+
+First, prepare a directory where you will store the data for your
+organism. For example:
+
+\begin{verbatim}
+mkdir -p ${HOME}/rsat-add/data/Mygenus_myspecies/
+\end{verbatim}
+
+
+One you have this information, start the program
+\program{install-organism}. You will be asked to enter the information
+needed for genome installation.
 
 \subsection{Updating your local configuration}
+
 
 \begin{itemize}
 \item Modify the local config file
 
 \item You need to define an environment variable called
-  RSA\_LOCAL\_CONFIG, contaiing the full path of the local config
+  RSA\_LOCAL\_CONFIG, containing the full path of the local config
   file.
 
 \end{itemize}
@@ -127,3 +202,5 @@ retrieve-seq -org myorganism -all -from 0 -to 2 \
     | oligo-analysis -format multi -v \
     -1str -l 3 -return occ,freq
 \end{verbatim}
+
+\subsection{Calibrating the newly installed genome}

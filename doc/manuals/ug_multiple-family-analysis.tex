@@ -220,4 +220,46 @@ Note that you can define multipe tasks either with a single call to
 the option \option{-task}, or by insering iteratively the option in
 the command line.
 
+\subsection{The negative control: analyzing random gene selections}
+
+An essential quality of pattern discovery programs is their ability to
+ return a negative answer when there are no specific patterns in a
+ sequence set.
+
+The program \program{random-genes} allows to select random sets of
+ genes, which can then be used by \program{multiple-family-analysis}
+ to check the rate of false positive of pattern discovery programs.
+
+The simplest way to use random-gene is to ask a set of $n$ genes:
+
+\begin{verbatim}
+random-genes -org Saccharomyces_cerevisiae -n 10
+\end{verbatim}
+
+You can also use the option \option{-r} to select $r$ distinct sets of
+$n$ genes.
+
+\begin{verbatim}
+random-genes -org Saccharomyces_cerevisiae -n 10 -r 5
+\end{verbatim}
+
+Another possibility is to specify a template family file with the
+ option \option{-fam}.
+
+\begin{verbatim}
+random-genes -org Saccharomyces_cerevisiae -fam test.fam
+\end{verbatim}
+
+This will return a family file with the same number of gene family as
+in the input file (\file{test.fam}). Each output family will contain
+the same number of gene as the corresponding input family. This option
+provides thus a very convenient way to generate a negative control of
+exactly the same size as the real family file.
+
+\subsection{Analyzing a large set of regulons}
+
+To get a better feeling about the potentialities of the different
+pattern discovery programs, you can analyze the collection of regulons
+collected by Nicolas Simonis (2004), which is available at
+\url{http://rsat.scmbb.ulb.ac.be/rsat/data/published\_data/Simonis\_Bioinformatics\_2004/}.
 
