@@ -708,6 +708,9 @@ use Data::Dumper;
       }
   }
 
+  ################################################################
+  #### Generate SQL scripts for one specific DBMS. This method is
+  #### called iteratively by generate_sql with the different DBMS. 
   sub generate_sql_one_dbms {
       my ($class_holder,%args) = @_;
       my $object_type = $class_holder->get_object_type();
@@ -839,10 +842,11 @@ use Data::Dumper;
 
       #### main table
       my $table_name = $table_prefix;
+      my $main_table_name = $table_name;
       print_sql_header ("Main table - $table_name");
       print SQL "CREATE TABLE $table_name", "\n\t(", "\n";
       my @field_defs = ();
-      push @field_defs, sprintf "\t\t%-33s\t%s\t%s", "id", "VARCHAR($default_id_size)", "NOT NULL";
+      push @field_defs, sprintf "\t\t%-33s\t%s\t%s", "id", "VARCHAR($default_id_size)", "NOT NULL PRIMARY KEY";
       foreach my $field (@scalar_fields) {
 	  my $field_size = $main::special_field_size{$field} || $default_field_size;
 	  my $field_format;
@@ -855,7 +859,11 @@ use Data::Dumper;
 	  push @field_defs, sprintf "\t\t%-33s\t%s", $field, $field_format;
       }
       print SQL join (",\n", @field_defs), "\n";
-      print SQL "\t)", "\n", ";", "\n";
+      if ($dbms eq mysql) {
+	  print SQL "\t) TYPE=INNODB", "\n", ";", "\n";
+      } else {
+	  print SQL "\t)", "\n", ";", "\n";
+      }
 
       #### grant 
       foreach $g (@granted_readers) {
@@ -887,8 +895,15 @@ use Data::Dumper;
 	  if ($field eq "names") {
 	      push @field_defs, sprintf "\t\t%-33s\t%s", "qualifier", "VARCHAR(20)";
 	  }
-	  print SQL join (",\n", @field_defs), "\n";
-	  print SQL "\t)", "\n", ";", "\n";
+	  print SQL join (",\n", @field_defs, 
+			  "INDEX(id)",
+			  "FOREIGN KEY (id) REFERENCES ${main_table_name}(id) ON DELETE CASCADE",
+			  ), "\n";
+	  if ($dbms eq mysql) {
+	      print SQL "\t) TYPE=INNODB", "\n", ";", "\n";
+	  } else {
+	      print SQL "\t)", "\n", ";", "\n";
+	  }
 	  foreach $g (@granted_readers) {
 	      print SQL "GRANT select ON $table_name TO $g;\n";
 	  }
@@ -927,8 +942,15 @@ use Data::Dumper;
 	  foreach my $field (@fields) {
 	      push @field_defs, sprintf "\t\t%-33s\t%s", $field, $field_format;
 	  }
-	  print SQL join (",\n", @field_defs), "\n";
-	  print SQL "\t)", "\n", ";", "\n";
+	  print SQL join (",\n", @field_defs, 
+			  "INDEX(id)",
+			  "FOREIGN KEY (id) REFERENCES ${main_table_name}(id) ON DELETE CASCADE",
+			  ), "\n";
+	  if ($dbms eq mysql) {
+	      print SQL "\t) TYPE=INNODB", "\n", ";", "\n";
+	  } else {
+	      print SQL "\t)", "\n", ";", "\n";
+	  }
 	  foreach $g (@granted_readers) {
 	      print SQL "GRANT select ON $table_name TO $g;\n";
 	  }
@@ -943,7 +965,6 @@ use Data::Dumper;
 	  print SQL "quit;";
 	  close SQL;
       } 
-
 
       ################################################################
       #### Table loading
