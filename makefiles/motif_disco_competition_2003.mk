@@ -3,30 +3,32 @@
 ################################################################
 ## makefile for getting info for the motif discovery competition
 
+include ${RSAT}/makefiles/util.mk
+
+MAKEFILE=${RSAT}/makefiles/motif_disco_competition_2003.mk
 
 ################################################################
 #### General parameters
 
 ## level of verbosity
-V=1
+# V=1
 
-################################################################
-### commands
-MAKEFILE=${RSAT}/makefiles/motif_disco_competition_2003.mk
-MAKE=make -s -f ${MAKEFILE}
+# ################################################################
+# ### commands
+# MAKE=make -s -f ${MAKEFILE}
 
-SSH_OPT = -e ssh 
-RSYNC_OPT= -ruptvlz  ${SSH_OPT} 
-RSYNC = rsync  ${RSYNC_OPT}
+# SSH_OPT = -e ssh 
+# RSYNC_OPT= -ruptvlz  ${SSH_OPT} 
+# RSYNC = rsync  ${RSYNC_OPT}
 
-WGET=wget --passive-ftp -np -rNL
+# WGET=wget --passive-ftp -np -rNL
 
-################################################################
-#### list of targets
-usage:
-	@echo "usage: make [-OPT='options'] target"
-	@echo "implemented targets"
-	@perl -ne 'if (/^([a-z]\S+):/){ print "\t$$1\n";  }' ${MAKEFILE}
+# ################################################################
+# #### list of targets
+# usage:
+# 	@echo "usage: make [-OPT='options'] target"
+# 	@echo "implemented targets"
+# 	@perl -ne 'if (/^([a-z]\S+):/){ print "\t$$1\n";  }' ${MAKEFILE}
 
 ################################################################
 #### Synchronization between different machines
@@ -55,18 +57,18 @@ from_server:
 
 ## Synchronize calibrations from merlin
 from_merlin:
-	${MAKE} update_from_server SERVER_DIR=motif_discovery_competition_2003/ 
+	${MAKE} from_server SERVER_DIR=motif_discovery_competition_2003/ 
 
 # Temporary
-#	${MAKE} update_from_server SERVER_DIR=./ TO_SYNC=results
-#	${MAKE} update_from_server SERVER_DIR=makefiles/ TO_SYNC=results
-#	${MAKE} update_from_server TO_SYNC='*.xls'
-#	${MAKE} update_from_server TO_SYNC='*.tab'
-#	${MAKE} update_from_server TO_SYNC=my_calibrate-oligos.R
+#	${MAKE} from_server SERVER_DIR=./ TO_SYNC=results
+#	${MAKE} from_server SERVER_DIR=makefiles/ TO_SYNC=results
+#	${MAKE} from_server TO_SYNC='*.xls'
+#	${MAKE} from_server TO_SYNC='*.tab'
+#	${MAKE} from_server TO_SYNC=my_calibrate-oligos.R
 
 
 from_liv:
-	${MAKE} update_from_server SERVER=liv.bmc.uu.se ${SERVER_DIR}=motif_discovery_competition_2003/
+	${MAKE} from_server SERVER=liv.bmc.uu.se ${SERVER_DIR}=motif_discovery_competition_2003/
 
 ################################################################
 #### retrieve information from the competition web site 
@@ -341,6 +343,12 @@ multi_upstream_dyads:
 multi_upstreamL:
 	make iterate_oligo_lengths OL_TASK=multi_upstreamL_one_length
 
+multi_upstreamL_synthesis:
+	${MAKE} multi							\
+		MULTI_DIR=${ORG_DIR}/multi/upstreamL_bg${PURGE}		\
+		MULTI_EXP='-oligo_exp_freq ${BG_OLIGO_FILE}'		\
+		MULTI_TASK=merge_oligos,oligo_maps,report,synthesis
+
 multi_upstreamL_one_length:
 	${MAKE} multi											\
 		MULTI_DIR=${ORG_DIR}/multi/upstreamL_bg${PURGE}						\
@@ -592,22 +600,6 @@ join_all_mean_var_N:
 #	${MAKE} join_mean_var_N ORG=Saccharomyces_cerevisiae SEQ_LEN=1000 REPET=10000
 #	${MAKE} join_mean_var_N ORG=Homo_sapiens SEQ_LEN=1000 REPET=10000
 #	${MAKE} join_mean_var_N ORG=Homo_sapiens SEQ_LEN=2000 REPET=10000
-
-my_command:
-	@echo ${WHEN} command ${MY_COMMAND}
-	${MAKE} command_${WHEN}
-
-command_queue:
-	@mkdir -p ${JOB_DIR}
-	@for job in ${JOB} ; do						\
-		echo "Job $${job}" ;					\
-		echo "${MY_COMMAND}" > $${job} ;		\
-		qsub -m e -q rsa@merlin.ulb.ac.be -N $${job} -j oe	\
-			-o $${job}.log $${job} ;	\
-	done
-
-command_now:
-	${MY_COMMAND}
 
 
 
