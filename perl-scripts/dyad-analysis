@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis,v 1.5 2001/02/20 00:54:01 jvanheld Exp $
+# $Id: dyad-analysis,v 1.6 2001/02/20 01:42:58 jvanheld Exp $
 #
-# Time-stamp: <2001-02-20 01:53:35 jvanheld>
+# Time-stamp: <2001-02-20 02:42:50 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -64,17 +64,17 @@ if (($ncf) || ($mncf)) {
   $data_dir = $supported_organism{$organism_name}->{'data'};
   if ($ncf) {
     ### localize dyad non-coding frequency file
-    $exp_freq_file = "$data_dir/oligo-frequencies/dyads_3nt_sp0-20_non-coding_${organism}_noov.freq";
+    $exp_freq_file = "$data_dir/oligo-frequencies/dyads_3nt_sp0-20_non-coding_${organism_name}_noov.freq";
 
     #### TEMPORARY / ACCEPT OVERLAPS IN CALIBRATED FREQS
     unless (-r $exp_freq_file) {
-      $exp_freq_file = "$data_dir/oligo-frequencies/dyads_3nt_sp0-16_non-coding_${organism}.freq";
+      $exp_freq_file = "$data_dir/oligo-frequencies/dyads_3nt_sp0-16_non-coding_${organism_name}.freq";
     }
 
     die "Error: cannot read expected frequency file $exp_freq_file\n" unless (-r  $exp_freq_file);
   } elsif ($mncf) {
     ### localize monad non-coding frequency file
-    $monad_exp_freq_file .= "$data_dir/oligo-frequencies/${oligo_length}nt_non-coding_${organism}.freq";
+    $monad_exp_freq_file .= "$data_dir/oligo-frequencies/${oligo_length}nt_non-coding_${organism_name}.freq";
     die "Error: cannot read expected frequency file $monad_exp_freq_file\n" unless (-r  $monad_exp_freq_file);
   }
 }
@@ -359,7 +359,7 @@ sub CalcExpectedFreq {
     }
     
   } else { ### use observed monad frequencies
-#    $oligo_file = "$RSA/data/${organism}/oligo-frequencies/${oligo_length}nt_non-coding_${organism}.freq";
+#    $oligo_file = "$RSA/data/${organism_name}/oligo-frequencies/${oligo_length}nt_non-coding_${organism_name}.freq";
 #    if (open OLIGOS, $oligo_file) {
 #      while (<OLIGOS>) {
 #	next if (/;/);

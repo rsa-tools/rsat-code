@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.16 2001/02/20 00:54:58 jvanheld Exp $
+# $Id: oligo-analysis,v 1.17 2001/02/20 01:43:39 jvanheld Exp $
 #
-# Time-stamp: <2001-02-20 01:54:30 jvanheld>
+# Time-stamp: <2001-02-20 02:43:35 jvanheld>
 #
 ############################################################
 
@@ -99,11 +99,11 @@ if ($ncf) {
 
   ### localize dyad non-coding frequency file
   $method = "Frequency file";
-  $exp_freq_file = "$data_dir/oligo-frequencies/${oligo_length}nt_non-coding_${organism}.freq";
+  $exp_freq_file = "$data_dir/oligo-frequencies/${oligo_length}nt_non-coding_${organism_name}.freq";
   
   #### TEMPORARY / ACCEPT OVERLAPS IN CALIBRATED FREQS
 #  unless (-r $exp_freq_file) {
-#    $exp_freq_file = "$data_dir/oligo-frequencies/dyads_3nt_sp0-16_non-coding_${organism}.freq";
+#    $exp_freq_file = "$data_dir/oligo-frequencies/dyads_3nt_sp0-16_non-coding_${organism_name}.freq";
 #  }
   
   die "Error: cannot read expected frequency file $exp_freq_file\n" unless (-r  $exp_freq_file);
