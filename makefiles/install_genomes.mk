@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_genomes.mk,v 1.3 2004/03/11 09:13:32 jvanheld Exp $
+# $Id: install_genomes.mk,v 1.4 2004/06/12 17:33:36 jvanheld Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -73,6 +73,7 @@ parse_organism:
 #### Genomes are selected manually because NCBI directories are
 #### a bit messy for eukaryotes.
 EUKARYOTES=					\
+	Apis_mellifera				\
 	Arabidopsis_thaliana			\
 	Caenorhabditis_elegans			\
 	Drosophila_melanogaster			\
