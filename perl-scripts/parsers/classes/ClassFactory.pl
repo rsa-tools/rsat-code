@@ -349,12 +349,12 @@ use Data::Dumper;
 	  $tables{$short_class} .= "\n";
 	  
 	  ### dump object content 
-	  foreach my $attribute (@out_fields) { 
-	      my $cardinality = $attribute_cardinalities{$attribute};
-	      my $header = $object_type->get_attribute_header($attribute) || $attribute;
-	      foreach my $object ($class_holder->get_objects()) {
-		  my $id = $object->get_attribute("id");
-		  my @scalar_fields = ();
+	  foreach my $object ($class_holder->get_objects()) {
+	      my $id = $object->get_attribute("id");
+	      my @scalar_fields = ();
+	      foreach my $attribute (@out_fields) { 
+		  my $cardinality = $attribute_cardinalities{$attribute};
+		  my $header = $object_type->get_attribute_header($attribute) || $attribute;
 		  unless ($attribute eq "id") {
 		      
 		      #### SCALAR attibute
