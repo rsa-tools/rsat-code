@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: downloads.mk,v 1.6 2003/11/30 20:35:30 jvanheld Exp $
+# $Id: downloads.mk,v 1.7 2003/12/17 14:40:39 jvanheld Exp $
 #
 # Time-stamp: <2003-10-09 14:02:21 jvanheld>
 #
@@ -56,6 +56,7 @@ one_genbank_dir:
 	${WGET}							\
 		--exclude-directories 'Bacteria.OLD'		\
 		--exclude-directories ARCHIVE			\
+		--accept=gpff --accept=gpff.gz			\
 		--accept=gbk --accept=README --accept=gbff	\
 		--accept=gaa --accept=faa --accept=gbk.gz	\
 		--accept=README.gz --accept=gbff.gz		\
