@@ -29,48 +29,25 @@ $features_from_patser_cmd = "$SCRIPTS/features-from-patser";
 $query = new CGI;
 
 ### read values to fill the form ###
-$default{title} = $query->param('title');
-$default{title} =~ s/\"//g;
+$default{title} = "";
+$default{data} = "";
+$default{format} = 'feature map';
+$default{from} = 'auto';
+$default{to} = 'auto';
+$default{handle} = 'none';
+$default{origin} = '0';
+$default{map_len} = 500;
 
+### replace defaults by parameters from the cgi call, if defined
+foreach $key (keys %default) {
+    if ($query->param($key)) {
+	$default{$key} = $query->param($key);
+    }
+} 
 
-if (-e $query->param('feature_file')) {
-    $file = $query->param('feature_file');
-    $default{data} = `cat $file`;
-} else {
-    $default{data} = $query->param('data');
-}
+### remove quotes from the title and data
 $default{data} =~ s/\"//g;
-
-
-if ($query->param('format')) {
-    $default{format} = $query->param('format');
-} else {
-    $default{format} = 'feature map';
-}
-
-if ($query->param('from')) {
-    $default{from} = $query->param('from');
-} else {
-    $default{from} = 'auto';
-}
-
-if ($query->param('to')) {
-    $default{to} = $query->param('to');
-} else {
-    $default{to} = 'auto';
-}
-
-if ($query->param('handle')) {
-    $default{handle} = $query->param('handle');
-} else {
-    $default{handle} = 'symbol';
-}
-
-if ($query->param('origin')) {
-    $default{origin} = $query->param('origin');
-} else {
-    $default{origin} = '0';
-}
+$default{title} =~ s/\"//g;
 
 
 ### print the form ###
@@ -143,7 +120,7 @@ print $query->checkbox(-name=>'scalebar',
 print "</A>";
 
 print "(step ";
-print $query->textfield(-name=>'scalebarstep',
+print $query->textfield(-name=>'scalestep',
 			-default=>'auto',
 			-size=>5);
 print ")\n";
@@ -177,7 +154,7 @@ print "<BR>\n";
 print "<A HREF='help.feature-map.html#dimensions'><B>Map dimensions</B></A>\n";
 print "&nbsp;Length&nbsp;";
 print $query->textfield(-name=>'mlen',
-			-default=>'500',
+			-default=>$default{map_len},
 			-size=>5);
 
 print "&nbsp;thickness&nbsp;";
@@ -230,7 +207,7 @@ print "<B>";
 print "<A HREF='help.feature-map.html#htmap'>";
 print $query->checkbox(-name=>'htmap',
 		       -checked=>'checked',
-		       -label=>' Dynamic ');
+		       -label=>' Dynamic map ');
 print "</A>";
 print "&nbsp;&nbsp;&nbsp;";
 
@@ -266,15 +243,115 @@ print "<P>";
 print "<UL><UL><TABLE><TR>";
 print "<TD>", $query->submit(-label=>"GO"), "</TD>\n";
 print"<TD>", $query->reset, "</TD>\n";
+print $query->end_form;
+
+
+### data for the demo 
+print $query->start_multipart_form(-action=>"feature-map_form.cgi");
+$demo_data = "PHO5	dnapat	acgtgc|gcacgt	R	438	443	ACGTGC	4.37
+PHO8	dnapat	acgtgc|gcacgt	D	268	273	ACGTGC	4.37
+PHO11	dnapat	acgtgc|gcacgt	R	586	591	ACGTGC	4.37
+PHO81	dnapat	acgtgc|gcacgt	D	458	463	ACGTGC	4.37
+PHO81	dnapat	acgtgc|gcacgt	D	794	799	ACGTGC	4.37
+PHO81	dnapat	acgtgc|gcacgt	R	456	461	ACGTGC	4.37
+PHO84	dnapat	acgtgc|gcacgt	D	242	247	ACGTGC	4.37
+PHO84	dnapat	acgtgc|gcacgt	D	540	545	ACGTGC	4.37
+PHO84	dnapat	acgtgc|gcacgt	R	213	218	ACGTGC	4.37
+PHO84	dnapat	acgtgc|gcacgt	R	386	391	ACGTGC	4.37
+PHO5	dnapat	acgtgg|ccacgt	D	549	554	ACGTGG	2.84
+PHO8	dnapat	acgtgg|ccacgt	R	266	271	ACGTGG	2.84
+PHO11	dnapat	acgtgg|ccacgt	D	519	524	ACGTGG	2.84
+PHO11	dnapat	acgtgg|ccacgt	R	384	389	ACGTGG	2.84
+PHO81	dnapat	acgtgg|ccacgt	D	86	91	ACGTGG	2.84
+PHO84	dnapat	acgtgg|ccacgt	D	366	371	ACGTGG	2.84
+PHO84	dnapat	acgtgg|ccacgt	D	388	393	ACGTGG	2.84
+PHO84	dnapat	acgtgg|ccacgt	R	364	369	ACGTGG	2.84
+PHO5	dnapat	cgcacg|cgtgcg	D	218	223	CGCACG	1.50
+PHO8	dnapat	cgcacg|cgtgcg	R	73	78	CGCACG	1.50
+PHO11	dnapat	cgcacg|cgtgcg	D	585	590	CGCACG	1.50
+PHO81	dnapat	cgcacg|cgtgcg	R	459	464	CGCACG	1.50
+PHO84	dnapat	cgcacg|cgtgcg	D	212	217	CGCACG	1.50
+PHO84	dnapat	cgcacg|cgtgcg	R	541	546	CGCACG	1.50
+PHO5	dnapat	ctgcac|gtgcag	D	29	34	CTGCAC	1.77
+PHO5	dnapat	ctgcac|gtgcag	D	411	416	CTGCAC	1.77
+PHO5	dnapat	ctgcac|gtgcag	D	461	466	CTGCAC	1.77
+PHO8	dnapat	ctgcac|gtgcag	R	270	275	CTGCAC	1.77
+PHO8	dnapat	ctgcac|gtgcag	R	390	395	CTGCAC	1.77
+PHO81	dnapat	ctgcac|gtgcag	D	671	676	CTGCAC	1.77
+PHO84	dnapat	ctgcac|gtgcag	R	244	249	CTGCAC	1.77
+PHO84	dnapat	ctgcac|gtgcag	R	457	462	CTGCAC	1.77
+PHO5	dnapat	tgccaa|ttggca	D	469	474	TGCCAA	2.57
+PHO5	dnapat	tgccaa|ttggca	D	610	615	TGCCAA	2.57
+PHO5	dnapat	tgccaa|ttggca	R	36	41	TGCCAA	2.57
+PHO5	dnapat	tgccaa|ttggca	R	538	543	TGCCAA	2.57
+PHO5	dnapat	tgccaa|ttggca	R	638	643	TGCCAA	2.57
+PHO11	dnapat	tgccaa|ttggca	D	597	602	TGCCAA	2.57
+PHO11	dnapat	tgccaa|ttggca	D	663	668	TGCCAA	2.57
+PHO81	dnapat	tgccaa|ttggca	R	287	292	TGCCAA	2.57
+PHO84	dnapat	tgccaa|ttggca	D	184	189	TGCCAA	2.57
+PHO84	dnapat	tgccaa|ttggca	D	348	353	TGCCAA	2.57
+PHO84	dnapat	tgccaa|ttggca	D	634	639	TGCCAA	2.57
+PHO84	dnapat	tgccaa|ttggca	R	598	603	TGCCAA	2.57
+PHO5	dnapat	cacgtg|cacgtg	D	548	553	CACGTG	1.79
+PHO5	dnapat	cacgtg|cacgtg	R	548	553	CACGTG	1.79
+PHO8	dnapat	cacgtg|cacgtg	D	267	272	CACGTG	1.79
+PHO8	dnapat	cacgtg|cacgtg	R	267	272	CACGTG	1.79
+PHO11	dnapat	cacgtg|cacgtg	D	518	523	CACGTG	1.79
+PHO11	dnapat	cacgtg|cacgtg	R	518	523	CACGTG	1.79
+PHO81	dnapat	cacgtg|cacgtg	D	457	462	CACGTG	1.79
+PHO81	dnapat	cacgtg|cacgtg	R	457	462	CACGTG	1.79
+PHO84	dnapat	cacgtg|cacgtg	D	365	370	CACGTG	1.79
+PHO84	dnapat	cacgtg|cacgtg	D	387	392	CACGTG	1.79
+PHO84	dnapat	cacgtg|cacgtg	R	365	370	CACGTG	1.79
+PHO84	dnapat	cacgtg|cacgtg	R	387	392	CACGTG	1.79
+PHO5	dnapat	cccacg|cgtggg	D	197	202	CCCACG	0.45
+PHO5	dnapat	cccacg|cgtggg	R	550	555	CCCACG	0.45
+PHO11	dnapat	cccacg|cgtggg	R	300	305	CCCACG	0.45
+PHO11	dnapat	cccacg|cgtggg	R	520	525	CCCACG	0.45
+PHO84	dnapat	cccacg|cgtggg	R	389	394	CCCACG	0.45
+PHO5	dnapat	aacgtg|cacgtt	D	77	82	AACGTG	0.22
+PHO5	dnapat	aacgtg|cacgtt	R	439	444	AACGTG	0.22
+PHO8	dnapat	aacgtg|cacgtt	D	421	426	AACGTG	0.22
+PHO11	dnapat	aacgtg|cacgtt	R	385	390	AACGTG	0.22
+PHO81	dnapat	aacgtg|cacgtt	D	793	798	AACGTG	0.22
+PHO84	dnapat	aacgtg|cacgtt	D	539	544	AACGTG	0.22
+PHO84	dnapat	aacgtg|cacgtt	R	214	219	AACGTG	0.22
+PHO5	dnapat	aaacgt|acgttt	D	76	81	AAACGT	0.79
+PHO5	dnapat	aaacgt|acgttt	D	695	700	AAACGT	0.79
+PHO5	dnapat	aaacgt|acgttt	R	440	445	AAACGT	0.79
+PHO8	dnapat	aaacgt|acgttt	D	420	425	AAACGT	0.79
+PHO8	dnapat	aaacgt|acgttt	D	700	705	AAACGT	0.79
+PHO8	dnapat	aaacgt|acgttt	R	702	707	AAACGT	0.79
+PHO11	dnapat	aaacgt|acgttt	D	672	677	AAACGT	0.79
+PHO11	dnapat	aaacgt|acgttt	R	386	391	AAACGT	0.79
+PHO81	dnapat	aaacgt|acgttt	D	792	797	AAACGT	0.79
+PHO81	dnapat	aaacgt|acgttt	R	54	59	AAACGT	0.79
+PHO84	dnapat	aaacgt|acgttt	D	538	543	AAACGT	0.79
+";
+print "<TD><B>";
+print $query->hidden(-name=>'data',-default=>$demo_data);
+print $query->hidden(-name=>'title',-default=>'Motifs discovered in PHO genes');
+print $query->hidden(-name=>'scalestep',-default=>'50');
+print $query->hidden(-name=>'from',-default=>'0');
+print $query->hidden(-name=>'to',-default=>'801');
+print $query->hidden(-name=>'origin',-default=>'801');
+print $query->submit(-label=>"DEMO");
+print "</B></TD>\n";
+print $query->end_form;
 print "<TD><B><A HREF='help.feature-map.html'>MANUAL</A></B></TD>\n";
 print "<TD><B><A HREF='demo.feature-map.html'>DEMO</A></B></TD>\n";
+
+
+
 print "<TD><B><A HREF='mailto:jvanheld\@ucmb.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>";
 
+
+print "<HR>\n";
+
+
 print "</FONT>";
 
-print $query->end_form;
-print "<HR>\n";
 print $query->end_html;
 
 exit(0);
