@@ -30,11 +30,15 @@ $query = new CGI;
 #### update log file ####
 &UpdateLogFile();
 
-&ListParameters() if ($ECHO >= 2);
+#$ECHO=2;
 
+if ($ECHO >= 2) {
+    &RSA_header();
+    &ListParameters();
+}
 
 #### read parameters ####
-$parameters = "";
+$parameters = " -v ";
 
 ### general parameters ###
 if ($query->param('title1')) {
@@ -46,13 +50,13 @@ if ($query->param('title2')) {
 if (&IsNatural($query->param('pointsize'))) {
     $parameters .= " -pointsize ".$query->param('pointsize');
 }
-if ($query->param('lines') eq "yes") {
+if ($query->param('lines')) {
     $parameters .= " -lines ";
 }
-if ($query->param('symbols') eq "yes") {
+if ($query->param('symbols')) {
     $parameters .= " -symbols ";
 }
-if ($query->param('legend') eq "yes") {
+if ($query->param('legend')) {
     $parameters .= " -legend ";
 }
 if (&IsNatural($query->param('label_col'))) {
@@ -75,7 +79,7 @@ if ($accepted_bg{$query->param('bg')}) {
 if ($query->param('xcol')) {
     $parameters .= " -xcol ".$query->param('xcol');
 }
-if ($query->param('xlog') eq "yes") {
+if ($query->param('xlog')) {
     $parameters .= " -xlog ";
 }
 if ($query->param('xleg1')) {
@@ -104,7 +108,7 @@ if ($query->param('xsize')) {
 if ($query->param('ycol')) {
     $parameters .= " -ycol ".$query->param('ycol');
 }
-if ($query->param('ylog') eq "yes") {
+if ($query->param('ylog')) {
     $parameters .= " -ylog ";
 }
 if ($query->param('yleg1')) {
@@ -129,57 +133,49 @@ if ($query->param('ysize')) {
     $parameters .= " -ysize ".$query->param('ysize');
 }
 
-# ### Y axis parameters ###
-# if ($query->param('ycol'}) {
-#     $parameters .= " -ycol $query->param('ycol'} ";
-# }
-# if ($query->param('ylog'} eq "yes") {
-#     $parameters .= " -ylog ";
-# }
-# if ($query->param('yleg1'}) {
-# 	$parameters .= " -yleg1 \"$query->param('yleg1'}\" ";
-#     }
-# if ($query->param('yleg2'}) {
-#     $parameters .= " -yleg2 \"$query->param('yleg2'}\" ";
-# }
-# if ($query->param('ymin'}) {
-#     $parameters .= " -ymin $query->param('ymin'} ";
-# }
-# if ($query->param('ymax'}) {
-#     $parameters .= " -ymax $query->param('ymax'} ";
-# }
-# if ($query->param('ygstep1'}) {
-#     $parameters .= " -ygstep1 $query->param('ygstep1'} ";
-# }
-# if ($query->param('ygstep2'}) {
-#     $parameters .= " -ygstep2 $query->param('ygstep2'} ";
-# }
-# if ($query->param('ysize'}) {
-#     $parameters .= " -ysize $query->param('ysize'} ";
-# }
+################################################################
+## data file 
+if ($query->param('data_file') =~ /\S/) {
+    ### file on the server
+    $data_file = $query->param('data_file');
 
-### data file ####
-if ($query->param('data_file')) {
-    ### internal data file ###
-    $parameters .= " -i ".$query->param('data_file');
+} elsif ($query->param('uploaded_file')) {
+    ### upload file from the client
+    $data_file = "$TMP/$tmp_file_name.tab";
+    open DATA, ">$data_file";
+    $upload_data_file = $query->param('uploaded_file');
+    $type = $query->uploadInfo($upload_data_file)->{'Content-Type'};
+    while (<$upload_data_file>) {
+	print DATA;
+    }
+    close DATA;
+    
+
+### data from the textarea
 } else {
     unless ($query->param('data') =~ /\S/) {
-	&RSA_header("XYgraph");
-	&FatalError("The data box should not be empty.");
+ 	&RSA_header("XYgraph");
+ 	&FatalError("The data box should not be empty.");
     }
-    $data_file = "$tmp_file_name.data";
-    open DATA, ">$TMP/$data_file";
+    $data_file = "$TMP/$tmp_file_name.tab";
+    open DATA, ">$data_file";
     print DATA $query->param('data');
     close DATA;
-    $parameters .= " -i $TMP/$data_file ";
 }
+#     $data_file = "$tmp_file_name.data";
+#     open DATA, ">$TMP/$data_file";
+#     print DATA $query->param('data');
+#     close DATA;
+#     $parameters .= " -i $TMP/$data_file ";
+
+$parameters .= " -i $data_file ";
 
 ### graph file ###
 $graph_file = "$tmp_file_name.${image_format}";
 $parameters .= " -o $TMP/$graph_file ";
 
 
-if ($query->param('htmap') eq "yes") {
+if ($query->param('htmap')) {
     $htmap = 1;
     $htmap_file = "$tmp_file_name.html";
     $parameters .= " -htmap ";
@@ -199,14 +195,7 @@ if ($htmap) {
     print "Location: $WWW_TMP/$htmap_file", "\n\n";
 } else {
     ### display the result ###
-    print &RSA_header("XYgraph");
-    print <<End_Header;
-    <HEADER>
-<TITLE>RSA-tools - XY graph result</TITLE>
-</HEADER><BODY BGCOLOR="#FFFFFF">
-<H3 ALIGN=CENTER><A HREF="$WWW_RSA/RSA_home.cgi">
-RSA-tools</A> - XY graph result</H3>
-End_Header
+    print &RSA_header("XYgraph result");
     print "<CENTER><IMG SRC=\"$WWW_TMP/$graph_file\"></CENTER><P>\n";
     print "<H4 ALIGN=CENTER>Data report</H4>";
     print "<PRE>";
