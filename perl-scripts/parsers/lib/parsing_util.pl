@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parsing_util.pl,v 1.6 2003/11/16 00:17:10 jvanheld Exp $
+# $Id: parsing_util.pl,v 1.7 2003/12/01 15:27:04 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -894,9 +894,9 @@ sub ParseGenbankFile {
 	}
 
 	if  ($line =~ /^LOCUS/) {
+	    #### new contig
 	    @fields = split /\s+/, $line;
 	    warn join ("\t", "; New contig", $line), "\n" if ($main::verbose >= 1);
-	    #### new contig
 	    my $contig_id = $fields[1];
 	    my $length = $fields[2];
 	    my $type = $fields[4];      #### DNA or peptide
@@ -1040,17 +1040,16 @@ sub ParseGenbankFile {
 		    #### WARNING : this is VERY tricky : some gene
 		    #### names are annotated in the gene, and some in
 		    #### the CDS. I automatically add all the names of
-		    #### the ene to the CDS. This relies on the
-		    #### assumption that each CDS is preceding by the
+		    #### the gene to the CDS. This relies on the
+		    #### assumption that each CDS is preceeded by the
 		    #### corresponding gene.
 		} elsif (($feature_type eq 'CDS') ||
 			 ($feature_type eq 'mRNA') ||
 			 ($feature_type eq 'tRNA') ||
 			 ($feature_type eq 'rRNA') ||
-			 ($feature_type eq 'misc_RNA') || 
-			 ($feature_type eq 'misc_feature') 
-			 ){
+			 ($feature_type eq 'misc_RNA')) {
 		    if ($last_gene) {
+			#### addd the names of the last gene to the current feature
 			foreach my $gene_name ($last_gene->get_attribute("names")) {
 			    $current_feature->push_attribute("names", $gene_name);
 			}
@@ -1058,7 +1057,14 @@ sub ParseGenbankFile {
 			$current_feature->set_attribute("gene_id", $gene_id);
 #                   print join ("\t", $feature_type, join (";", $last_gene->get_attribute("names")), $gene_id), "\n";
 #		    $current_feature->set_attribute("gene_id", $last_gene->get_attribute("id"));
-			$last_gene->force_attribute("type", $feature_type);
+
+			#### set the type of the last gene to the current feature type, if it has not yet been done
+			my $last_gene_type = $last_gene->get_attribute("type");
+			if (($last_gene_type eq "") ||
+			    ($last_gene_type eq $null) ||
+			    ($last_gene_type eq "gene")) {
+			    $last_gene->force_attribute("type", $feature_type);
+			}
 		    }
 		}
 
