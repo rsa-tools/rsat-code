@@ -19,7 +19,10 @@ $default{sequence} = "";
 $default{sequence_format} = "fasta";
 $default{sequence_file} = "";
 $default{strands} = "both strands";
-$default{return} = "positions";
+$default{match_positions} = 'checked';
+$default{match_counts} = '';
+$default{table} = '';
+$default{stats} = '';
 $default{noov} = "on";
 $default{flanking} = "4";
 $default{threshold} = "0";
@@ -82,7 +85,7 @@ prevent overlapping matches
 </B></A>";
 
 
-### return matching positions or matching count
+### return 
 print "<BR>\n";
 print CGI::table({-border=>0,-cellpadding=>3,-cellspacing=>0},
 	       CGI::Tr({-align=>left,-valign=>MIDDLE},
@@ -90,12 +93,14 @@ print CGI::table({-border=>0,-cellpadding=>3,-cellspacing=>0},
 		      CGI::td({-align=>left,-valign=>MIDDLE},
 			      [
 			       "<A HREF='help.dna-pattern.html#return'><B>Return</B></A>\n",
-			       "<INPUT TYPE=RADIO NAME='return' VALUE='positions' CHECKED> match positions",
+			       
+			       $query->checkbox(-name=>'match_positions',
+						-checked=>$default{match_positions},
+						-label=>' match positions'),
 			       "<A HREF='help.all-upstream-search.html#flanking'><B> flanking</B></A>",
 			       $query->textfield(-name=>'flanking',
 						 -default=>$default{flanking},
 						 -size=>2),
-			       
 				   "<A HREF='help.dna-pattern.html#origin'><B>Origin</B></A>",
 			       $query->popup_menu(-name=>'origin',
 						  -Values=>['start',
@@ -105,28 +110,33 @@ print CGI::table({-border=>0,-cellpadding=>3,-cellspacing=>0},
 		      CGI::td({-align=>left,-valign=>MIDDLE},
 			      [
 			       '',
-			       "<INPUT TYPE=RADIO NAME='return' VALUE='counts'>match counts",
+			       $query->checkbox(-name=>'match_counts',
+						-checked=>$default{match_counts},
+						-label=>' match counts'),
 			       "<A HREF='help.all-upstream-search.html#threshold'><B> threshold</B></A>",
 			       $query->textfield(-name=>'threshold',
 						 -default=>$default{threshold},
 						 -size=>2)
-			       
 			       ]),
 		      CGI::td({-align=>left,-valign=>MIDDLE},
 			      [
 			       '',
-			       "<INPUT TYPE=RADIO NAME='return' VALUE='table'>match count table",
+			       $query->checkbox(-name=>'table',
+						-checked=>$default{table},
+						-label=>' match count table'),
 			       $query->checkbox(-name=>'total',
 						-checked=>'checked',
 						-label=>'totals'),
-			       ""
+			       ''
 			       ]),
 		      CGI::td({-align=>left,-valign=>MIDDLE},
 			      [
 			       '',
-			       "<INPUT TYPE=RADIO NAME='return' VALUE='stats'>matching statistics",
-			       "",
-			       ""
+			       $query->checkbox(-name=>'stats',
+						-checked=>$default{stats},
+						-label=>' matching statistics'),
+			       '',
+			       ''
 			       ])
 			])
 		 );

@@ -45,37 +45,41 @@ $parameters .= " -pl $pattern_file";
 $parameters .= " -i $sequence_file -format $sequence_format";
 
 
+### return match positions ###
+if ($query->param('match_positions')) {
+    ### origin ###
+    if ($query->param('origin') =~ /end/i) {
+	$parameters .= " -origin -0";
+    }
+    
+    if ($query->param('flanking') =~ /^\d+$/) {
+	$parameters .= " -N ".$query->param('flanking');
+    }
+    $parameters .= " -pos";
+} 
+
 ### return match count ###
-if ($query->param('return') =~ /count/i) {
-  $parameters .= " -c";
-  if (($query->param('threshold') =~ /^\d+$/) && ($query->param('threshold') > 0)) {
-    $parameters .= " -th ".$query->param('threshold');
-  }
+if ($query->param('match_counts')) {
+    $parameters .= " -c";
+    if (($query->param('threshold') =~ /^\d+$/) && ($query->param('threshold') > 0)) {
+	$parameters .= " -th ".$query->param('threshold');
+    }
+} 
 
 ### return match count table
-} elsif ($query->param('return') =~ /table/i) {
-  $parameters .= " -table";
-  ### add a rwo and a column with the totals
-  if (lc($query->param('total')) eq "on") {
-    $parameters .= " -total";
-  }
-  
-### return match statistics
-} elsif ($query->param('return') =~ /stats/i) {
-  $parameters .= " -stats";
-  
-### return matching positions
-} elsif ($query->param('return') =~ /positions/) { 
-  ### origin ###
-  if ($query->param('origin') =~ /end/i) {
-    $parameters .= " -origin -0";
-  }
-  
-  if ($query->param('flanking') =~ /^\d+$/) {
-    $parameters .= " -N ".$query->param('flanking');
-  }
+if ($query->param('table')) {
+    $parameters .= " -table";
+    ### add a rwo and a column with the totals
+    if ($query->param('total')) {
+	$parameters .= " -total";
+    }
 }
 
+### return match statistics
+if ($query->param('stats')) {
+  $parameters .= " -stats";
+}
+  
 ### prevent overlapping matches
 if (lc($query->param('noov')) eq "on") {
   $parameters .= " -noov";
