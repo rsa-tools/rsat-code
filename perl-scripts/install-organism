@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.33 2003/12/31 11:04:48 jvanheld Exp $
+# $Id: install-organism,v 1.34 2004/01/14 22:12:22 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -211,67 +211,6 @@ sub Verbose {
 }
 
 
-# ################################################################
-# #### convert the genome from fasta to filelist format : one file per
-# #### chromosome in raw format
-# sub InstallGenome {
-    
-#     #### genome sequence
-#     unless ($infile{genome}) {
-# 	print "Enter the location of the genome sequence file : ";
-# 	$infile{genome} = <STDIN>;
-# 	$infile{genome} = &trim($infile{genome});
-# 	die "\n\tError: you should specify a genome sequence file\n\n"
-# 	    unless ($infile{genome} =~ /\S/);
-#     }
-#     die "\n\tError: file $infile{genome} does not exist\n\n"
-# 	unless (-e $infile{genome});
-#     die "\n\tError: cannot read genome file $infile{genome}\n\n"
-# 	unless (-r $infile{genome});
-
-#     #### sequence format
-#     unless ($seq_format) {
-# 	print "Enter the genome sequence format : ";
-# 	$seq_format = <STDIN>;
-# 	$seq_format = &trim($seq_format);
-# 	die "\n\tError: you should specify the sequence format\n\n"
-# 	    unless ($seq_format =~ /\S/);
-#     }
-#     unless ($supported_for_installation{$seq_format}) {
-# 	die ("\n\tError: invalid sequence format $seq_format",
-# 	     "\n\tSupported formats : ", 
-# 	     join (" ", keys %supported_for_installation),
-# 	     "\n\n");
-#     }
-
-#     #### convert the genome file
-#     warn "Installing genome from file $infile{genome} (format $seq_format) \n\tto file $outfile{genome}\n"
-# 	if ($verbose >= 1);
-#     $command = "convert-seq -i $infile{genome} -from $seq_format -to filelist -o $outfile{genome}";
-#     &doit($command, $dry_run);
-# }
-
-# ################################################################
-# #### install the feature table
-# sub InstallFeatureTable {
-#     if (($infile{ptt})) {
-# 	#### do nothing
-#     } elsif ($infile{features}) {
-# 	$command = "cp $infile{features} $outfile{features}";
-# 	&doit($command, $dry_run);
-#     } else {
-# 	print "Enter the location of the feature table file : ";
-# 	$infile{features} = <STDIN>;
-# 	$infile{features} = &trim($infile{features});
-# 	die "\n\tError: you should specify the feature table\n\n"
-# 	    unless ($infile{features} =~ /\S/);
-#     }
-#     if ($infile{synonyms}) {
-# 	$command = "cp $infile{synonyms} $outfile{synonyms}"; 
-# 	&doit($command, $dry_run);
-#     }
-# }
-
 ################################################################
 #### update configuration file
 sub UpdateConfig {
@@ -378,7 +317,7 @@ sub IntergenicSegments {
     chdir $dir{genome};
 
     #### retrieve intergenic sequences
-    $command = "coding-or-not ";
+    my $command = "coding-or-not ";
     $command .= "-v " if ($verbose >= 1);
     $command .= "-org $organism_short_name -return ncs,seq,cs \n\n";
     &doit($command, $dry_run);
@@ -418,7 +357,7 @@ sub AllUpstream {
 	my $format = "fasta";
     
 	#### retrieve intergenic sequences
-	$command = "retrieve-seq ${noorf} -format $format";
+	my $command = "retrieve-seq ${noorf} -format $format";
 	$command .= " -type upstream -all -org $organism_short_name ";
 	$command .= " -all -o $seq_file\n\n";
 	&doit($command, $dry_run);
@@ -445,7 +384,7 @@ sub SeqLengthDistribution {
     $format = "fasta" unless $format;
     my $from = 0;
 
-    $command = "sequence-lengths -i $seq_file";
+    my $command = "sequence-lengths -i $seq_file";
     $command .= " -format $format | cut -f 2 | classfreq -ci $ci -v -from $from";
     $command .= " | XYgraph -xcol 3 -ycol 7,8,9 -lines -xmin $from";
     $command .= " -ymin 0 -ymax 1  -xsize 600 -ysize 400 -legend";
@@ -466,7 +405,7 @@ sub PurgeSequences {
     $format = "fasta" unless ($format);
     my $purged_seq_file = `basename $seq_file $format`;
     $purged_seq_file .= "_purged.$format";
-    $command = "purge-sequence -i $seq_file -format wc -ml 300 -mis 9 -2str -o $purged_seq_file";
+    my $command = "purge-sequence -i $seq_file -format wc -ml 300 -mis 9 -2str -o $purged_seq_file";
     &doit($command, $dry_run);
     #### compress purged sequence file
     $command = "gzip -f $purged_seq_file";
@@ -499,7 +438,7 @@ sub CalcFrequencies {
 		$seq_format = "fasta";
 	    }
 	    &CalcOligoFreq($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{oligos});
-	    &CalcOligoDistrib($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{distrib});
+	    &CalcOligoDistrib($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{distrib} && !($noorf));
 	    &CalcDyadFreq($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{dyads});
 	}
     }
@@ -516,7 +455,7 @@ sub CalcFrequencies {
 	    $seq_format = "wc";
 	}
 	&CalcOligoFreq($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{oligos});
-	&CalcOligoDistrib($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{distrib});
+#	&CalcOligoDistrib($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{distrib});
 	&CalcDyadFreq($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{dyads});
     }
     
@@ -527,7 +466,7 @@ sub CalcFrequencies {
 	$seq_format = "filelist";
 	$seq_file = $outfile{'genome'};
 	&CalcOligoFreq($seq_file, $seq_format, $seq_type) if ($task{oligos});
-	&CalcOligoDistrib($seq_file, $seq_format, $seq_type) if ($task{distrib});
+#	&CalcOligoDistrib($seq_file, $seq_format, $seq_type) if ($task{distrib});
 	&CalcDyadFreq($seq_file, $seq_format, $seq_type) if ($task{dyads});
     }
 
@@ -543,7 +482,7 @@ sub CalcFrequencies {
 	    $seq_format = "wc";
 	}
 	&CalcOligoFreq($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{oligos});
-	&CalcOligoDistrib($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{distrib});
+#	&CalcOligoDistrib($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{distrib});
 	&CalcDyadFreq($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{dyads});
     }
 
@@ -558,7 +497,7 @@ sub CalcOligoFreq {
     my ($seq_file,$seq_format,$seq_type) = @_;
     foreach $oligo_length (1..8) {
 	$out_file = "$dir{oligos}/${oligo_length}nt_${seq_type}_${organism_short_name}${noov}${strands}.freq";
-	$command = "$SCRIPTS/oligo-analysis -v 1 ${strands} -i $seq_file -format $seq_format ";
+	my $command = "$SCRIPTS/oligo-analysis -v 1 ${strands} -i $seq_file -format $seq_format ";
 	$command .= " $strands";
 	$command .= " $noov";
 	$command .= "-l ${oligo_length} -type dna ";
@@ -574,16 +513,28 @@ sub CalcOligoFreq {
 #### file
 sub CalcOligoDistrib {
     my ($seq_file,$seq_format,$seq_type) = @_;
-    foreach $oligo_length (1..8) {
-	$out_file = "$dir{oligos}/${oligo_length}nt_${seq_type}_${organism_short_name}${noov}${strands}.distrib";
-	$command = "$SCRIPTS/oligo-analysis -v 1 ${strands} -i $seq_file -format $seq_format ";
+    foreach my $oligo_length (1..1) {
+#    foreach my $oligo_length (1..8) {
+	#### Calculate occurrence distributions in the sequence file
+	my $distrib_file = "$dir{oligos}/${oligo_length}nt_${seq_type}_${organism_short_name}${noov}${strands}_distrib.tab";
+	my $command = "$SCRIPTS/oligo-analysis -v 1 ${strands} -i $seq_file -format $seq_format ";
 	$command .= " ".$strands;
 	$command .= " ".$noov;
 	$command .= "-l ".$oligo_length." -type dna ";
 	$command .= "-return occ -distrib -nogrouprc ";
-	$command .= "-o ".$out_file;
-	$command .= " ; gzip -f ".$out_file;
+	$command .= "-o ".$distrib_file;
+#	$command = " ; gzip -f ".$distrib_file;
 	&doit($command, $dry_run);  
+
+	#### Fit a Poisson and a negbin on occurrence distribution
+	foreach my $theor ("negbin", "poisson") {
+	    my $fitting_file = "$dir{oligos}/${oligo_length}nt_${seq_type}_${organism_short_name}${noov}${strands}_${theor}.tab";
+	    $command = "fit-distribution -v 1 -i ".$distrib_file;
+	    $command .= " -o ".$fitting_file;
+	    $command .= " -distrib ".$theor;
+#	    $command .= " ; gzip -f ".$fitting_file;
+	    &doit($command, $dry_run);  
+	}
     }
 }
 
@@ -601,7 +552,7 @@ sub CalcDyadFreq {
     foreach $monad_length (@monad_lengths) {
 	$dyad_file = "dyads_${monad_length}nt_sp${min_spacing}-${max_spacing}_${seq_type}_${organism_short_name}${noov}${strands}";
 	$dyad_file .= ".freq";
-	$command = "$SCRIPTS/dyad-analysis -v 1 -i $seq_file -format $seq_format";
+	my $command = "$SCRIPTS/dyad-analysis -v 1 -i $seq_file -format $seq_format";
 	$command .= " -timeout 240000 ";
 	$command .= " -type any -seqtype dna";
 	$command .= " $strands";
@@ -616,81 +567,6 @@ sub CalcDyadFreq {
     }
 }
 
-
-# ################################################################
-# #### probably obsolete ####
-# sub GenerateFeatureTable {
-#     if ($source eq "sanger") {
-# 	$dir{source} = "$dir{install}/data_source/";
-# 	$genome_src = "${dir{source}}/${organism_short_name}.dbs.gz";
-# 	$protein_sequences = "${dir{source}}/${organism_short_name}.pep.gz";
-	
-# 	$target_dir = "./";
-# 	$outfile{genome} = "$dir{genome}/${organism_short_name}.raw";
-# 	$ftt_file = "$dir{genome}/${organism_short_name}.ftt";
-# 	#### convert genome to raw format
-# 	$command = "convert-seq -from fasta -to filelist -lw 0 -i $genome_src -o $outfile{genome}";
-# 	&doit($command, $dry_run);
-# 	#### write feature table 
-# 	@cols =  qw(ID TYPE NAME CHROM LEFT RIGHT STRAND DESCR );
-# 	open FTT, "> $ftt_file" ||
-# 	    die "Error: cannot write $ftt_file\n";
-# 	print FTT (";",
-# 		   join("\t", @cols),
-# 		   "\n");
-# 	my $type = "CDS";
-# 	my $chrom = $organism_short_name;
-# 	open DESCR, "zcat $protein_sequences | grep '^>' |";
-# 	while ($line = <DESCR>) {
-# 	    if ($line =~ /^>(\S+)\s+(.*)\s+(\d+):(\d+) (reverse|forward)/) {
-# 		my $id = $1;
-# 		my $name = "";
-# 		my $descr = $2;
-# 		my $left = $3;
-# 		my $right = $4;;
-# 		my $strand = $5;
-# 		$strand =~ s/forward/D/;
-# 		$strand =~ s/reverse/R/;
-# 		$id =~ s/,$//;
-# 		if ($descr =~ /^(\S+),/) {
-# 		    $name = $1;
-# 		} else {
-# 		    $name = $id;
-# 		}
-# 		#print  FTT $line;
-# 		print FTT (join ("\t",
-# 				 $id,
-# 				 $type,
-# 				 $name,
-# 				 $chrom,
-# 				 $left,
-# 				 $right,
-# 				 $strand,
-# 				 $descr
-# 				 ),
-# 			   "\n");
-# 	    } else {
-# 		warn "cannot parse line\t$line";
-# 	    }
-# 	}
-# 	close DESCR;
-# 	close FTT;
-#     } elsif (lc($source) eq "ncbi") {
-# 	&ParseNcbiFeatures($infile{ptt});
-#     } elsif (lc($source) eq "genbank") {
-# 	&ParseNCBIFeatures($infile{ptt});
-#     } else {
-# 	die "Error: cannot convert genome from source '$source'\n";
-#     }
-# }
-
-
-# sub trim {
-#     local($to_trim) = $_[0];
-#     $to_trim =~ s/^\s+//;
-#     $to_trim =~ s/\s+$//;
-#     return $to_trim;
-# }
 
 
 ################################################################
@@ -938,7 +814,7 @@ sub ReadArguments {
 #### retrieve start and stop codons and calculate word occurrences
 #### (for checking)
 sub StartAndStopCodons {
-    $command = "retrieve-seq -v -org ${organism_short_name} -all  \ ";
+    my $command = "retrieve-seq -v -org ${organism_short_name} -all  \ ";
     $command .= "-type downstream -from 0 -to -2  \ ";
     $command .= "-format wc -nocomment -label orf \ ";
     $command .= " | oligo-analysis -type dna -l 3 -return occ,freq -v -format wc -1str -sort \ ";
@@ -1290,9 +1166,7 @@ sub ParseGenome {
     } else {
 	&FatalError("Cannot find a directory $organism_short_name in genbank dir $dir{genbank}" );
     }
-    $command = "$RSA/perl-scripts/parse-genbank.pl -v 1 -i $dir{source}";
-#    $command = "$RSA/perl-scripts/parsers/parse_genbank.pl -v 1 -i $dir{source}";
-#    die $command;
+    my $command = "$RSA/perl-scripts/parse-genbank.pl -v 1 -i $dir{source}";
     &doit($command, $dry_run);
 }
 
@@ -1318,7 +1192,7 @@ sub CleanUp {
 	}
     }
     foreach my $file (@files) {
-	$command = "rm -f $file";
+	my $command = "rm -f $file";
 	&doit($command, $dry_run);
     }
 }
