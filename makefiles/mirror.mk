@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: mirror.mk,v 1.1 2003/11/02 00:07:11 jvanheld Exp $
+# $Id: mirror.mk,v 1.2 2003/11/14 11:24:44 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 12:05:45 jvanheld>
 #
@@ -8,7 +8,7 @@
 
 RSA=${HOME}/rsa-tools
 RSA_SERVER=rsat.ulb.ac.be
-RSA_SERVER_DIR=/rsat/ext/jvanheld/rsa-tools
+RSA_SERVER_DIR=rsa-tools
 
 DATE = `date +%Y%m%d_%H%M%S`
 
@@ -16,7 +16,7 @@ DATE = `date +%Y%m%d_%H%M%S`
 #################################################################
 # programs
 OPT=
-MAKE=make -s
+MAKE=make -sk
 RSYNC_OPT = -ruptvl ${OPT} --exclude '*~'
 SSH=-e ssh
 RSYNC = rsync ${RSYNC_OPT} ${SSH}
