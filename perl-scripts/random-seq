@@ -56,17 +56,27 @@ unless ($repetitions >=1) {
 
 #### non-coding frequencies
 if ($ncf) {
-    #### organism
+    #### check organism
     &CheckOrganism($organism_name);
   
+    #### check oligo length
+#    die $oligo_length;
+    unless ((&IsNatural($oligo_length)) && ($oligo_length > 0)) {
+	&FatalError("For using intergenic oligonucleotide frequencies, the oligo length needs to be specified\n");
+    }
+
     $data_dir = $supported_organism{$organism_name}->{'data'};
     
     ### localize dyad non-coding frequency file
     $method = "Frequency file";
     $exp_freq_file = "$data_dir/oligo-frequencies/${oligo_length}nt_non-coding_${organism_name}.freq";
     
-    &FatalError("cannot read expected frequency file $exp_freq_file\n") unless (-r  $exp_freq_file);
+#    &FatalError("cannot read expected frequency file $exp_freq_file\n") 
+#	unless ((-e  $exp_freq_file) && 
+#		(-e  $exp_freq_file.".gz"));
 } 
+
+
 #  if ($genomic_segments) {
 #      #### organism
 #      &CheckOrganism($organism_name);
@@ -77,31 +87,38 @@ if ($ncf) {
 
 ### expected frequency file
 if ($exp_freq_file) {
-    die "	cannot open frequency file\n"
-	unless (open EXPECTED, $exp_freq_file);
-    
-    while (<EXPECTED>) {
-	chomp;
-	next if (/^;/);
-	next unless (/\S/);
-	($oligo_seq, $expected_freq) = split "\t";
-#print STDERR "HELLO\t$oligo_seq";
 
-	die "error: frequency files contains non-number values\t'$expected_freq'\n"
-	    unless (&IsReal($expected_freq));
-	    
-	$oligo_seq = lc($oligo_seq);
-#warn "\t$oligo_seq\n";
-	if (defined($expected_freq{$oligo_seq})) {
-	    warn ("; WARNING: oligomer\t", $oligo_seq, "\t found twice in the expected frequency file\n",
-		  "; only taking the first frequency into account\n");
-	} else {
-	    $expected_freq{$oligo_seq} = $expected_freq;
-	    $sum_expected_freq+= $expected_freq{$oligo_seq};
-	}
+    &ReadExpectedFrequencies($exp_freq_file) ;
+    
+    foreach my $pattern_seq (keys %patterns) {
+	$expected_freq{$pattern_seq} = $patterns{$pattern_seq}->{exp_freq};
     }
-    $oligo_length = length($oligo_seq); ##!!! all oligomers must be the same size
-    close EXPECTED;
+    
+#      die "	cannot open frequency file\n"
+#  	unless (open EXPECTED, $exp_freq_file);
+    
+#      while (<EXPECTED>) {
+#  	chomp;
+#  	next if (/^;/);
+#  	next unless (/\S/);
+#  	($oligo_seq, $expected_freq) = split "\t";
+#  #print STDERR "HELLO\t$oligo_seq";
+
+#  	die "error: frequency file contains non-number values\t'$expected_freq'\n"
+#  	    unless (&IsReal($expected_freq));
+	    
+#  	$oligo_seq = lc($oligo_seq);
+#  #warn "\t$oligo_seq\n";
+#  	if (defined($expected_freq{$oligo_seq})) {
+#  	    warn ("; WARNING: oligomer\t", $oligo_seq, "\t found twice in the expected frequency file\n",
+#  		  "; only taking the first frequency into account\n");
+#  	} else {
+#  	    $expected_freq{$oligo_seq} = $expected_freq;
+#  	    $sum_expected_freq+= $expected_freq{$oligo_seq};
+#  	}
+#      }
+#      $oligo_length = length($oligo_seq); ##!!! all oligomers must be the same size
+#      close EXPECTED;
 
     #### make sure the sum of frequencies is 1
 #    foreach $oligo_seq (keys %expected_freq) {
