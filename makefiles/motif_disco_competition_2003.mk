@@ -602,14 +602,6 @@ command_now:
 	${MY_COMMAND}
 
 
-## ##############################################################
-## publish some directory on the web site
-
-PUBLISH_SITE=jvanheld@www.scmbb.ulb.ac.be:public_html/motif_discovery_competition_2003/
-PUBLISH_DIR=evaluation
-publish:
-	${RSYNC} --exclude '*~' ${PUBLISH_DIR} ${PUBLISH_SITE}
-
 
 BACKGROUND=calibN
 OLD_BG_DIR=results/multi/${BACKGROUND}_bg
@@ -789,3 +781,27 @@ to_do:
 	make iterate_organisms ORG_TASK=multi_calibN THOSIG=-1
 	make iterate_organisms ORG_TASK=multi_calibN PURGE=-nopurge MIN_OL=8 MAX_OL=8 WHEN=queue
 	make iterate_organisms ORG_TASK=multi_calibN PURGE=-nopurge MIN_OL=5 MAX_OL=8 WHEN=queue THOSIG=-1
+
+
+## ##############################################################
+## publish some directory on the web site
+
+PUBLISH_SITE=jvanheld@www.scmbb.ulb.ac.be:public_html/motif_discovery_competition_2003/
+PUBLISH_DIR=evaluation
+publish_eval:
+	${RSYNC} --exclude '*~' ${PUBLISH_DIR} ${PUBLISH_SITE}
+
+TO_PUBLISH=file_index.html
+#PUBLISH_SERVER=jvanheld@rsat.ulb.ac.be:
+PUBLISH_SITE=${PUBLISH_SERVER}${PUBLISH_DIR}
+PUBLISH_DIR=/home/jvanheld/rsa-tools/public_html/data/motif_discovery_competition
+publish:
+	for pub in ${TO_PUBLISH}; do					\
+		${MAKE} publish_one_item ITEM_TO_PUBLISH=$${pub} ;	\
+	done
+
+ITEM_TO_PUBLISH=results/Homo_sapiens/multi/calibN_bg-purge
+ITEM_DIR=`dirname ${ITEM_TO_PUBLISH}`
+publish_one_item:
+	mkdir -p ${PUBLISH_DIR}/${ITEM_DIR}
+	${RSYNC} ${ITEM_TO_PUBLISH} ${PUBLISH_SITE}/${ITEM_DIR}/
