@@ -107,7 +107,8 @@ STR=-2str
 THOSIG=0
 NOOV=-noov
 MULTI_TASK=upstream,purge,oligos,merge_oligos,oligo_maps,dyads,dyad_maps,consensus,gibbs,MotifSampler,meme,synthesis,sql
-MULTI_BG=upstream
+NOORF=-noorf
+MULTI_BG=upstream${NOORF}
 MULTI_EXP=-bg ${MULTI_BG}
 PURGE=-purge
 RES_DIR=${WORK_DIR}/results
@@ -122,10 +123,11 @@ SPS=2
 SORT=score
 MULTI_OPT=
 SKIP=
+KNOWN=-known data/factor_site.tab
 MULTI_CMD=multiple-family-analysis -v ${V}					\
 		${MULTI_INPUT}							\
 		-thosig ${THOSIG}						\
-		${PURGE}							\
+		${PURGE} ${NOORF}							\
 		-org ${ORG}							\
 		-outdir ${MULTI_DIR}						\
 		${STR}								\
@@ -135,7 +137,7 @@ MULTI_CMD=multiple-family-analysis -v ${V}					\
 		${MULTI_EXP}							\
 		-sort ${SORT} -task ${MULTI_TASK}				\
 		${NOOV} ${MULTI_OPT}						\
-		${SKIP}							
+		${SKIP} ${KNOWN}							
 
 list_directories:
 	@echo working	${WORK_DIR}
