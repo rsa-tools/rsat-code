@@ -31,14 +31,15 @@ OPTIONS
 			(ORFs, regulatory sites).
 			Each feature is represented by a single line, which 
 			should provide the following information:
-			- map (eg gene name)
-			- feature type
-			- identifier (ex: GATAbox, Abf1_site)
-			- strand (D for Direct, R for Reverse),
-			- feature start position
-			- feature end position
-			- (optional) description 
-			- (optional) score
+			Input file columns:
+			1. map label (eg gene name)
+			2. feature type
+			3. feature identifier (ex: GATAbox, Abf1_site)
+			4. strand (D for Direct, R for Reverse),
+			5. feature start position
+			6. feature end position
+			7. (optional) description 
+			8. (optional) score
 			The standard input format assumes that these topics 
 			are provided in this order, separated by tabs. 
 			Start and end positions can be positive or negative.
@@ -192,6 +193,15 @@ feature-map options
 -vertic		vertical map (default is horizontal).
 -select id_list	only display features with an ID included in id_list
 
+Input file columns:
+	1. map label (eg gene name)
+	2. feature type
+	3. feature identifier (ex: GATAbox, Abf1_site)
+	4. strand (D for Direct, R for Reverse),
+	5. feature start position
+	6. feature end position
+	7. (optional) description 
+	8. (optional) score
 End_short_Help
   close HELP;
   exit(0);
