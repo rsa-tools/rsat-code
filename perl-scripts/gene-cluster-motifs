@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.31 2003/03/04 10:47:21 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.32 2003/03/21 08:20:46 jvanheld Exp $
 #
-# Time-stamp: <2003-03-04 11:46:02 jvanheld>
+# Time-stamp: <2003-03-21 09:20:43 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -39,8 +39,8 @@ $supported_background  = join ",", sort keys %supported_background;
 
 $scalestep = 100;
 $noorf = 1;
-$default{from} = -800;
-$default{to} = 0;
+#$default{from} = -800;
+#$default{to} = 0;
 $known_site_file = "known-consensus";
 $known_sites_provided = 0;
 $background = "upstream-noorf";
@@ -197,7 +197,10 @@ sub SetFileNames {
     } elsif ($background) {
 	$table_suffix .= "_bg_${background}";
     }
-    $table_suffix .= "_up".$from."_".$to.$noorf_string;
+
+    $table_suffix .= "_up".$from     if (defined($from));
+    $table_suffix .= "_".$to     if (defined($to));
+    $table_suffix .= $noorf_string;
     $table_suffix .= $noov_string;
     $table_suffix .= "_".$strands;
     $table_suffix = `basename $table_suffix`;
@@ -215,7 +218,8 @@ sub UpstreamSequences {
     $command .= " -noorf " if ($noorf);
     $command .= " -i $family{$family_name}->{family_file}";
     $command .= " -o $family{$family_name}->{seq_file}";
-    $command .= " -from $from -to $to ";
+    $command .= " -from $from" if (defined($from));
+    $command .= " -to $to " if (defined($to));
     $command .= " -label orf_gene ";
     $command .= " -format $seq_format";
     &doit($command);
@@ -290,13 +294,13 @@ sub DrawOligoFeatureMap {
     die "Error : cannot read file $family{$family_name}->{seq_file}\n" unless (-r $family{$family_name}->{seq_file});
     $fmap_file = $family{$family_name}->{oligo_file}.".${IMG_FORMAT}";
     $htmap_file = $family{$family_name}->{oligo_file}.".html";
-    
-
-#    $origin = -$from + 1;
     $origin = "-0";
     $command = "dna-pattern -i $family{$family_name}->{seq_file} -format $seq_format -pl $family{$family_name}->{oligo_file} -origin $origin -N 4 ";
     $command .= " | features-from-dnapat -o $family{$family_name}->{oligo_ft_file} ";
-    $command .= " ; feature-map -i $family{$family_name}->{oligo_ft_file} -scalebar -scalestep $scalestep -legend -from $from -to $to -o $fmap_file -scorethick ";
+    $command .= " ; feature-map -i $family{$family_name}->{oligo_ft_file} -scalebar -scalestep $scalestep -legend ";
+    $command .= " -from $from" if (defined($from));
+    $command .= " -to $to" if (defined($to));
+    $command .= " -o $fmap_file -scorethick ";
     if ($htmaps) {
 	$command .= " -htmap > $htmap_file ";
     };
@@ -733,7 +737,8 @@ sub DrawDyadFeatureMap {
     $command = "dna-pattern -pl $family{$family_name}->{dyad_file} -format $seq_format -i $family{$family_name}->{seq_file} -origin $origin -N 4 ";
     $command .= "| features-from-dnapat -o $family{$family_name}->{dyad_ft_file} ";
     $command .= "; feature-map -i $family{$family_name}->{dyad_ft_file} -o $family{$family_name}->{fmap_file} ";;
-    $command .= "-from $from -to $to ";
+    $command .= " -from $from" if (defined($from));
+    $command .= " -to $to " if (defined($to));
     $command .= "-legend ";
     $command .= "-scalebar -scalestep $scalestep ";
     $command .= "-scorethick ";
@@ -773,8 +778,14 @@ sub CheckParameters {
 	die ("Error: organism $organism_name is not supported\n",
 	     "Supported organisms:\n$supported_organisms\n");
     }
-    $from = $default{from} unless defined($from);
-    $to = $default{to} unless defined($to);
+
+    
+#    $from = $default{from} unless defined($from);
+#    $to = $default{to} unless defined($to);
+
+    $from = $supported_organism{$organism_name}->{'up_from'}  unless defined($from);
+    $to = $supported_organism{$organism_name}->{'up_to'}  unless defined($to);
+
     $seq_length = abs($to - $from) + 1;
     $dyad_type = "any" unless ($dyad_type);
 
@@ -993,6 +1004,7 @@ multiple-family-analysis options
 -transp		transpose synthetic result table (columns become rows)
 -sort		sort key (supported: $supported_sort_keys)
 -task		selected task (supported: $supported_tasks)
+-htmaps		draw html maps (dynamic map with pointers to the features)
 -dyad_exp_freq	expected frequencies for dyad-analysis
 -oligo_exp_freq	expected frequencies for oligo-analysis
 -noorf		exclude upstream ORFs from upstream sequences
@@ -1193,21 +1205,30 @@ sub Verbose {
     $verbose_message .= sprintf ";\t%-22s\t%d\n", "strands", $strands;
     $verbose_message .= sprintf ";\t%-22s\t%d\n", "from", $from;
     $verbose_message .= sprintf ";\t%-22s\t%d\n", "to", $to;
-    $verbose_message .= sprintf "; oligo-analysis\n";
-    $verbose_message .= sprintf ";\t%-22s\t%d\n", "max oligo length", $max_oligo_length;
-    $verbose_message .= sprintf ";\t%-22s\t%d\n", "min oligo length", $min_oligo_length;
-    $verbose_message .= sprintf "; dyad-analysis\n";
-    $verbose_message .= sprintf ";\t%-22s\t%d\n", "monad length", $monad_length;
-    $verbose_message .= sprintf ";\t%-22s\t%d\n", "min spacing", $min_sp;
-    $verbose_message .= sprintf ";\t%-22s\t%d\n", "max spacing", $max_sp;
-    $verbose_message .= sprintf ";\t%-22s\t%s\n", "dyad type", $dyad_type;
-    $verbose_message .= sprintf ";\t%-22s\t%g\n", "sig threshold", $th;
+
+    $verbose_message .= sprintf "; %-13s\t%s\n", "organism", $organism_name;
+
+    if ($task{oligos}) {
+	$verbose_message .= sprintf "; oligo-analysis\n";
+	$verbose_message .= sprintf ";\t%-22s\t%d\n", "max oligo length", $max_oligo_length;
+	$verbose_message .= sprintf ";\t%-22s\t%d\n", "min oligo length", $min_oligo_length;
+    }
+    
+    if ($task{dyads}) {
+	$verbose_message .= sprintf "; dyad-analysis\n";
+	$verbose_message .= sprintf ";\t%-22s\t%d\n", "monad length", $monad_length;
+	$verbose_message .= sprintf ";\t%-22s\t%d\n", "min spacing", $min_sp;
+	$verbose_message .= sprintf ";\t%-22s\t%d\n", "max spacing", $max_sp;
+	$verbose_message .= sprintf ";\t%-22s\t%s\n", "dyad type", $dyad_type;
+	$verbose_message .= sprintf ";\t%-22s\t%g\n", "sig threshold", $th;
+    }
+
     if ($markov) {
 	$verbose_message .= sprintf "; %-13s\t%s\n", "Markov chains, order", $markov_order;
     } elsif ($background) {
 	$verbose_message .= sprintf "; %-13s\t%s\n", "background model", $background;
     }
-    $verbose_message .= sprintf "; %-13s\t%s\n", "organism", $organism_name;
+
     $verbose_message .= "; No overlap with upstream ORFs\n" if ($noorf);
     $verbose_message .= "; Overlapping matches are discarded for self-overlapping patterns\n" if ($noov);
     warn $verbose_message;
