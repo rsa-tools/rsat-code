@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.25 2001/05/12 11:48:05 jvanheld Exp $
+# $Id: oligo-analysis,v 1.26 2001/05/18 08:32:53 jvanheld Exp $
 #
-# Time-stamp: <2001-05-12 13:46:21 jvanheld>
+# Time-stamp: <2001-05-18 10:32:49 jvanheld>
 #
 ############################################################
 
@@ -1323,7 +1323,7 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-format") {
 	    $in_format = lc($ARGV[$a+1]);
 	    
-	    #### protein sequences
+	    #### sequence type
 	} elsif ($ARGV[$a] =~ /^-seqtype/i) {
 	    $a++;
 	    if ($ARGV[$a] =~ /^prot/i) {
