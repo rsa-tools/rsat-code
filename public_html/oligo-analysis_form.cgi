@@ -27,7 +27,7 @@ $default{zscore} = '';
 $default{freq} = '';
 $default{mseq} = '';
 $default{ratio} = '';
-$default{occurrence_threshold} = "none";
+$default{occurrence_threshold} = "1";
 $default{ms_threshold} = "none";
 $default{proba_occ_threshold} = "none";
 $default{occ_significance_threshold} = "0";
@@ -105,7 +105,7 @@ print "<A HREF='help.oligo-analysis.html#exp_freq'><B>Expected frequency</B></A>
 print $query->popup_menu(-name=>'freq_estimate',
 			 -Values=>['equiprobable nucleotides',
 				   'alphabet from input sequence',
-				   'Makov Chain',
+				   'Markov Chain',
 				   'oligo freq in non-coding regions'],
 			 -default=>$default{freq_estimate});
 print "<BR>";
