@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_genomes.mk,v 1.14 2005/01/26 19:12:42 jvanheld Exp $
+# $Id: install_genomes.mk,v 1.15 2005/01/27 09:13:34 jvanheld Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -33,7 +33,7 @@ V=1
 ### Install one organism
 ORG=Arabidopsis_thaliana
 ORG_DIR=${NCBI_DIR}/${ORG}
-INSTALL_TASK=allup,clean,config,dyads,oligos,parse,start_stop,upstream_freq
+INSTALL_TASK=allup,clean,config,dyads,oligos,parse,start_stop,upstream_freq,phylogeny
 INSTALL_CMD=install-organism -v ${V}		\
 		-org ${ORG}			\
 		-task ${INSTALL_TASK}		\
