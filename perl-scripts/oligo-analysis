@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.78 2004/02/12 08:08:34 jvanheld Exp $
+# $Id: oligo-analysis,v 1.79 2004/05/17 15:06:11 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -719,6 +719,10 @@ sub CalcFrequencies {
     if ($return{'mseq'}) {
 	foreach $pattern_seq (keys %patterns) {
 	    $patterns{$pattern_seq}->{ms_freq} = $patterns{$pattern_seq}->{mseq}/$sequence_number;
+	    if ((defined($msf_threshold)) &&
+		($patterns{$pattern_seq}->{ms_freq} < $msf_threshold)) {
+		delete $patterns{$pattern_seq};
+	    }
 	}
     }
 }
@@ -1748,7 +1752,7 @@ sub ReadArguments {
 	    ### organism (for selecting the appropriate expected frequencies)
 	} elsif ($ARGV[$a] =~ /^-org/i) {
 	    $organism_name = $ARGV[$a+1];
-	    
+	    &CheckOrganismName($organism_name);
 
 	    ################################################################ 
 	    #### oligonucleotide counting options
@@ -1883,6 +1887,11 @@ sub ReadArguments {
 	} elsif (($ARGV[$a] eq "-thms") && 
 		 (&IsInteger($ARGV[$a+1]))) {
 	    $mseq_threshold = $ARGV[$a+1];
+	    
+	    #### threshold on matching sequence frequency
+	} elsif (($ARGV[$a] eq "-thmsf") && 
+		 (&IsReal($ARGV[$a+1]))) {
+	    $msf_threshold = $ARGV[$a+1];
 	    
 	    #### threshold on occurrences
 	} elsif (($ARGV[$a] eq "-tho") && 
@@ -2047,7 +2056,7 @@ sub PrintHelp {
 NAME
 	oligo-analysis
 	
-        1997-99 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
+        1997-99 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
 	
 DESCRIPTION
 	calculates oligomer frequencies in a set of sequences,
@@ -2307,9 +2316,14 @@ ARGUMENTS
 		threshold on observed/expected occurrence ratio
 		Only returns patterns with higher ratios than the threshold.
 
-	-thms #	where # is an integer. Gene threshold: only returns the 
-		patterns encountered at least once in at least # upstream 
-		regions.
+	-thms # where # is an integer. Threshold on matching
+		sequences: only returns the patterns encountered at
+		least once in at least # sequences.
+
+	-thmsf threshold on frequency of matching sequences (propotion
+	        of sequences with at least one occurrence of the
+	        pattern)
+
 	-thpms #	
                 where # is a real value comprised between 0 and 1.
 		Threshold on occurrence probability: only returns the patterns
@@ -2551,7 +2565,7 @@ PROBABILITIES
 
 	The estimation of the variance is derived from Pevzner et al.(1989). 
 	J Biomol Struct & Dynamics 5:1013-1026):
-		var_occ = exp_occ(2*Kov - 1 - (2*w-1)*exp_occ)
+		var_occ = exp_occ(2*Kov - 1 - (2*w+1)*exp_freq)
 
 	In random sequences, Z-scores are normally distributed. The probability 
 	to observe a given number of occurrences can thus be read in the 
@@ -2600,7 +2614,7 @@ EXAMPLE
 	
 WEB VERSION
 	oligo-analysis can be used via internet at the following site:
-	http://www.ucmb.ulb.ac.be/bioinformatics/rsa-tools/
+	http://www.scmbb.ulb.ac.be/bioinformatics/rsa-tools/
 
 HISTORY
 	1997	June	starting the oligo-analysis project
@@ -2655,6 +2669,7 @@ oligo-analysis options
 -thratio	threshold on observed/expected occurrence ratio
 -thosig         threshold on occurence significance index
 -thms           threshold on matching sequence number
+-thmsf		threshold on frequency of matching sequences 
 -thpms          threshold on matching sequence proba
 -thmssig        threshold on matching sequence significance index
 -oneN           one undefined position
