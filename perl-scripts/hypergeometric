@@ -7,6 +7,7 @@ require "RSA.lib";
 #### initialise parameters ####
 $boe = 0;
 $soe = 0;
+$step = 1;
 
 &ReadArguments();
 
@@ -29,8 +30,10 @@ if ($verbose) {
 
 my $format = "%.6e\n";
 if ($series) {
-    for my $x ($from..$to) {
+    my $x = $from;
+    while ($x <= $to) {
 	print $x, "\t",  sprintf($format, &hypergeometric($m, $n, $k, $x));
+	$x += $step;
     }
 } elsif ($boe) {
     printf $format, &sum_of_hypergeometrics($m, $n, $k, $x, $k); 
@@ -82,6 +85,9 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-series") {
 	    $series = 1;
 
+	} elsif ($ARGV[$a] eq "-step") {
+	    $step = $ARGV[$a+1];
+
 	} elsif ($ARGV[$a] eq "-soe") {
 	    $soe = 1;
 
@@ -114,6 +120,8 @@ hypergeometric options
 -soe		smaller or equal. 
 -approx		only valid in combination with -boe
 -from # -to #	sum of hypergeometric between two values (inclusive)   
+-series		return a series of values for x between -from and -to
+-step		step between successive x in the series
 End_short_help
     close HELP;
   exit;
@@ -159,7 +167,10 @@ OPTIONS
 	-from # -to #
 		calculates the sum of hypergeometrics between two values 
 		(inclusive).
-	
+	-series	
+		return a series of values for x between -from and -to
+	-step #	
+		step between successive x in the series
 End_of_help
     close HELP;
   exit;
