@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_swissprot.pl,v 1.22 2002/08/15 12:01:23 jvanheld Exp $
+# $Id: parse_swissprot.pl,v 1.23 2002/08/15 12:05:59 jvanheld Exp $
 #
-# Time-stamp: <2002-08-15 06:42:58 jvanheld>
+# Time-stamp: <2002-08-15 07:03:49 jvanheld>
 #
 ############################################################
 
@@ -43,11 +43,6 @@ package main;
 		      sequence
 		      );
 
-    #### hash table with the output fields
-    foreach my $field (@out_fields) {
-	$out_fields{$field} = 1;
-    }
-
     #### organism selection
     @selected_organisms = ();
     $full_name{yeast} = "Saccharomyces cerevisiae (Baker's yeast)";
@@ -70,6 +65,9 @@ package main;
     
     &ReadArguments;
     
+    #### add optional fields
+    push @out_fields, keys %out_fields;
+
     #### check option compatibility
     if ($in_file{acs} && ($#selected_organisms >= 0)) {
 	die "Error: options -acs and -org are incompatible\n";
@@ -316,6 +314,7 @@ OPTIONS
 		Fields to be exported. Several fields can be provided,
 		separated by commas. Example:
 			  -fields id,names,gene,ECs,swissprot_ids
+	-seq    return polypeptide sequences
 	-dbms	database management system
 		supported: oracle, postgresql
 	-db	database schema
@@ -396,6 +395,11 @@ sub ReadArguments {
 	    #### output fields
 	} elsif ($ARGV[$a] =~ /^-field/) {
 	    @main::out_fields = split ",", $ARGV[$a+1];
+
+	    #### output fields
+	} elsif ($ARGV[$a] =~ /^-seq/) {
+	    $main::out_fields{sequence} = 1;
+
 	}
 
 
