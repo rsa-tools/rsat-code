@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genes.pl,v 1.15 2000/12/27 23:47:35 jvanheld Exp $
+# $Id: parse_genes.pl,v 1.16 2000/12/29 00:24:19 jvanheld Exp $
 #
-# Time-stamp: <2000-12-28 00:47:25 jvanheld>
+# Time-stamp: <2000-12-29 01:21:16 jvanheld>
 #
 ############################################################
 
@@ -59,18 +59,14 @@ $warn_level = 0;
 $out_format = "obj";
 
 #### classes and classholders
-#@classes = qw( PFBP::Gene PFBP::Expression );
 @classes = qw( PFBP::Gene );
 $genes = PFBP::ClassFactory->new_class(object_type=>"PFBP::Gene",
 				       prefix=>"gene_");
-#$expressions = PFBP::ClassFactory->new_class(object_type=>"PFBP::Expression",
-#					     prefix=>"expr_");
+$genes->set_out_fields(qw( id source organism position chromosome strand start end description  names exons introns ));
 
 ### default output fields for each class
-@{$out_fields{'PFBP::Gene'}} = qw( id organism names position chromosome strand start end exons definition source);
-#@{$out_fields{'PFBP::Gene'}} = qw( id source organism raw_position chromosome strand start_base end_base description names exons );
 
-#@{$out_fields{'PFBP::Expression'}} = qw( id gene_id polypeptide_id );
+#@{$out_fields{'PFBP::Gene'}} = qw( id source organism raw_position chromosome strand start_base end_base description names exons );
 
 &ReadArguments;
 
@@ -162,9 +158,9 @@ foreach $gene ($genes->get_objects()) {
 #	$gene->set_attribute("primary_name",$name);
 #    }
 
-    #### check for genes without definition
-    if ($gene->get_attribute("definition") eq "<UNDEF>") {
-	$gene->set_attribute("definition",$gene->get_name());
+    #### check for genes without description
+    if ($gene->get_attribute("description") eq "<UNDEF>") {
+	$gene->set_attribute("description",$gene->get_name());
     }
 }
 
@@ -341,20 +337,44 @@ sub ParsePositions {
 	    $strand = "D";
 	    $coord = $chrom_pos;
 	}
-	
+
 	if ($coord =~ /^(\d+)\.\.(\d+)$/) {
 	    $start = $1;
 	    $end = $2;
 	} elsif ($coord =~ /^join\((.*)\)$/) { ### exons
-	    @exons = split ",", $1;
-	    foreach $exon (@exons) {
+	    my @exons = split ",", $1;
+	    my @exon_starts = ();
+	    my @exon_ends = ();
+
+	    #### exon limits
+	    foreach my $exon (@exons) {
+		$exon =~ s/\s+//g;
 		$gene->push_attribute("exons", $exon);
+		if ($exon =~ /(\d+)\.\.(\d+)/) {
+		    push @exon_starts, $1;
+		    push @exon_ends, $2;
+		} else {
+		    &ErrorMessage("Error gene\t",$gene->get_id(),"\tinvalid exon\t$exon\n");
+		}
 	    }
-	    if ($exons[0] =~ /^(\d+)\.\.(\d+)$/) {
-		$start = $1;
-	    }
-	    if ($exons[$#exons] =~ /^(\d+)\.\.(\d+)$/) {
-		$end = $2;
+	    
+	    #### gene start and end 
+	    $start = $exon_starts[0];
+	    $end = $exon_ends[$#exons];
+#	    if ($exons[0] =~ /^(\d+)\.\.(\d+)$/) {
+#		$start = $1;
+#	    }
+#	    if ($exons[$#exons] =~ /^(\d+)\.\.(\d+)$/) {
+#		$end = $2;
+#	    }
+
+	    #### introns
+	    my @introns = ();
+	    for my $e (0..$#exon_starts - 1) {
+		my $intron = $exon_ends[$e] + 1;
+		$intron .= "..";
+		$intron .= $exon_starts[$e+1] -1;
+		$gene->push_attribute("introns", $intron);
 	    }
 	} else {
 	    &ErrorMessage("Warning : gene ",$gene->get_attribute("id"),"\tinvalid gene position $position\n");
