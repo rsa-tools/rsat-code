@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.2 2004/09/23 19:48:21 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.3 2005/01/26 11:50:33 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -31,7 +31,7 @@ print <<EndText;
   <TR>
   <TD VALIGN=TOP WIDTH="160">
   <CENTER>
-  <A HREF="http://embnet.cifn.unam.mx/"
+  <A HREF="http://www.ccg.unam.mx/Computational_Genomics/"
   target=_blank> <IMG SRC="images/lablogo.gif" ALT="lab logo" BORDER=0
   HEIGHT=48 WIDTH=75></A>
   <BR>
@@ -174,11 +174,11 @@ print <<EndText;
   </TD>
 
 <TD ALIGN=CENTER>
-  <A HREF="http://rsat-new.ccb.sickkids.ca/" target="_top">
+  <A HREF="http://rsat.ccb.sickkids.ca/" target="_top">
   <B>Toronto - Canada</B><BR>
   <IMG SRC="images/toronto.jpg" HEIGHT=80 BORDER=0><BR>
   <FONT SIZE=-1>
-  http://rsat-new.ccb.sickkids.ca/</A>
+  http://rsat.ccb.sickkids.ca/</A>
   </FONT>
   </TD>
 
