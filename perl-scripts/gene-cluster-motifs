@@ -1,52 +1,52 @@
 #!/usr/bin/perl
- ############################################################
- #
- # $Id: gene-cluster-motifs,v 1.68 2004/02/05 00:55:17 jvanheld Exp $
- #
- # Time-stamp: <2003-10-21 01:19:12 jvanheld>
- #
- ############################################################
+############################################################
+#
+# $Id: gene-cluster-motifs,v 1.69 2004/02/05 01:44:40 jvanheld Exp $
+#
+# Time-stamp: <2003-10-21 01:19:12 jvanheld>
+#
+############################################################
 if ($0 =~ /([^(\/)]+)$/) {
-   push (@INC, "$`lib/");
- }
+  push (@INC, "$`lib/");
+}
 
- require "RSA.lib";
- require "RSA.seq.lib";
- require "RSA.help.pl";
- require "RSA.cgi.lib";
- require "RSA.classes";
- push @INC, "$RSA/perl-scripts/parsers/";
- require "lib/load_classes.pl";
- require "lib/util.pl";
- require "lib/parsing_util.pl";
- require "$RSA/perl-scripts/lib/RSA.classes";
+require "RSA.lib";
+require "RSA.seq.lib";
+require "RSA.help.pl";
+require "RSA.cgi.lib";
+require "RSA.classes";
+push @INC, "$RSA/perl-scripts/parsers/";
+require "lib/load_classes.pl";
+require "lib/util.pl";
+require "lib/parsing_util.pl";
+require "$RSA/perl-scripts/lib/RSA.classes";
 
 
- ################################################################
- ## initialisations	    
- $skip=0;
- $sliding_window_size = 0;
- $die_on_error = 1;
- $analyze_purged_sequences = 1;
- $repetitions=10000; ### Repetitions for the calibN
- %dir = ();
- $dir{main} = `pwd`;
- $dir{calib1} = "calibrations_1gene"; 
- chomp($dir{main});
+################################################################
+## initialisations	    
+$skip=0;
+$sliding_window_size = 0;
+$die_on_error = 1;
+$analyze_purged_sequences = 1;
+$repetitions=10000; ### Repetitions for the calibN
+%dir = ();
+$dir{main} = `pwd`;
+$dir{calib1} = "calibrations_1gene"; 
+chomp($dir{main});
 
- @supported_tasks = qw (upstream purge calibrate oligos merge_oligos oligo_maps dyad_maps maps dyads merge_patterns slide synthesis sql clean all report consensus gibbs MotifSampler);
- foreach my $task (@supported_tasks) {
-     $supported_task{$task} = 1;
- }
- $supported_tasks = join ",", @supported_tasks;
+@supported_tasks = qw (upstream purge calibrate oligos merge_oligos oligo_maps dyad_maps maps dyads merge_patterns slide synthesis sql clean all report consensus gibbs MotifSampler);
+foreach my $task (@supported_tasks) {
+    $supported_task{$task} = 1;
+}
+$supported_tasks = join ",", @supported_tasks;
 
- %supported_sort_key = (
+%supported_sort_key = (
 			 "score"=>1,
 			 "name"=>1
 			 );
- $supported_sort_keys  = join ",", sort keys %supported_sort_key;
+$supported_sort_keys  = join ",", sort keys %supported_sort_key;
 
- %supported_background = (
+%supported_background = (
 			 "intergenic"=>1,
 			 "upstream"=>1,
 			 "upstreamL"=>1,
@@ -54,189 +54,190 @@ if ($0 =~ /([^(\/)]+)$/) {
 			 "calib1"=>1,
 			 "calibN"=>1,
 			 );
- $supported_background  = join ",", sort keys %supported_background;
+$supported_background  = join ",", sort keys %supported_background;
 
- ## input files
- $family_file = "";
- $sequene_file_list = "";
+## input files
+$family_file = "";
+$sequene_file_list = "";
 
- ## feature-map options
- $htmaps=0;
- $draw_maps=1;
- $scalestep = 100; 
+## feature-map options
+$htmaps=0;
+$draw_maps=1;
+$scalestep = 100; 
 
- ## retrieve-seq options
- $noorf = 1; 
- $seq_format = "fasta";
- $seq_dir = "";
- $seq_ext = "fasta";
+## retrieve-seq options
+$noorf = 1; 
+$seq_format = "fasta";
+$seq_dir = "";
+$seq_ext = "fasta";
 
- ## pattern discovery options
- $background = "upstream-noorf";
- $noov = "-noov";
- $sort_key = "score";
- ## oligo-analysis options
- $min_oligo_len = 6;
- $max_oligo_len = 6;
- ## dyad-analysis options
- $monad_length = 3;
- $min_sp = 0;
- $max_sp = 20;
+## pattern discovery options
+$background = "upstream-noorf";
+$noov = "-noov";
+$sort_key = "score";
+## oligo-analysis options
+$min_oligo_len = 6;
+$max_oligo_len = 6;
+## dyad-analysis options
+$monad_length = 3;
+$min_sp = 0;
+$max_sp = 20;
 
- ## consensus options
- $matrix_width = 10;
- $expected_sites_per_gene = 2;
- $seed = undef;
+## consensus options
+$matrix_width = 10;
+$expected_sites_per_gene = 2;
+$seed = undef;
 
- ## MotifSampler
- $bg_order = 0;
+## MotifSampler
+$bg_order = 0;
+$MotifSampler_background = "/home/nicolas/motifsampler/background_models/yeast_up800_nomit_noorf_o3.bg"; ### TEMPORARY
 
- ## Comparison between discovered and known motifs
- $known_site_file = "";
- $known_sites_provided = 0;
- $min_matching_score = 4;
+## Comparison between discovered and known motifs
+$known_site_file = "";
+$known_sites_provided = 0;
+$min_matching_score = 4;
 
- ## misc
- $start_date = `date`;
- $verbose = 0;
+## misc
+$start_date = `date`;
+$verbose = 0;
 
- #### data export options
- $schema = "multifam";
- $host="localhost";
- $user = getlogin();
- $password="";
+#### data export options
+$schema = "multifam";
+$host="localhost";
+$user = getlogin();
+$password="";
 
- ################################################################
- ### MAIN
+################################################################
+### MAIN
 
- #### Read arguments
- &ReadArguments();
+#### Read arguments
+&ReadArguments();
 
- #### Check parameters
- &CheckParameters();
+#### Check parameters
+&CheckParameters();
 
 
- ################################################################
- ## Read data
- &ReadKnownSites($known_site_file);
- #&ReadSiteLibrary("known_sites.tab");
+################################################################
+## Read data
+&ReadKnownSites($known_site_file);
+#&ReadSiteLibrary("known_sites.tab");
 
- if ($sequence_file_list) {
-     $task{upstream} = 0; 
-     &ReadSequenceList();
- } else {
+if ($sequence_file_list) {
+    $task{upstream} = 0; 
+    &ReadSequenceList();
+} else {
 
-     ### read gene name and identifiers
-     warn "; Reading ORF information ...\n" 
+    ### read gene name and identifiers
+    warn "; Reading ORF information ...\n" 
 	 if ($verbose >= 1);
-     &ReadFeatures($organism_name);
-     &ReadSynonyms($organism_name);
+    &ReadFeatures($organism_name);
+    &ReadSynonyms($organism_name);
 
-     ### Read family file
-     %family = &ReadClasses($family_file, 1);
-     @families = sort keys %family;
+    ### Read family file
+    %family = &ReadClasses($family_file, 1);
+    @families = sort keys %family;
 
- }
+}
 
- ### write composition of the families in the separated directories
- &SetFileNames();
+### write composition of the families in the separated directories
+&SetFileNames();
 
- &CheckOutDir($dir{output});
- chdir($dir{output});
+&CheckOutDir($dir{output});
+chdir($dir{output});
 
- &MakeDirectories();
+&MakeDirectories();
 
- #### verbose
- $verbose_message = &Verbose() if ($verbose >= 1);
+#### verbose
+$verbose_message = &Verbose() if ($verbose >= 1);
 
 
- ### perform analysis
- &AnalyzeFamilies();
- &MDCreport() if ($task{report});
- &ExportSQL() if ($task{sql});
- &SyntheticTable() if ($task{synthesis});
+### perform analysis
+&AnalyzeFamilies();
+&MDCreport() if ($task{report});
+&ExportSQL() if ($task{sql});
+&SyntheticTable() if ($task{synthesis});
 
- ### Warn output dir and files
- if ($main::verbose >= 1) {
-     warn "; Results are stored in directory\t".$dir{output}."\n";
-     warn "; synthetic table\t", $dir{output}."/".$outfile{table}, "\n";
-     if ($task{report}) {
+### Warn output dir and files
+if ($main::verbose >= 1) {
+    warn "; Results are stored in directory\t".$dir{output}."\n";
+    warn "; synthetic table\t", $dir{output}."/".$outfile{table}, "\n";
+    if ($task{report}) {
 	 warn "; results\t", $dir{output}."/".$outfile{results}, "\n";
 	 warn "; parameters\t", $dir{output}."/".$outfile{parameters}, "\n";
-     }
- }
+    }
+}
 
- #### report execution time 
- if ($verbose >= 1) {
-   $done_date = `date`;
-   print ";Job started\t$start_date";
-   print ";Job done\t", `date`;
- }
+#### report execution time 
+if ($verbose >= 1) {
+  $done_date = `date`;
+  print ";Job started\t$start_date";
+  print ";Job done\t", `date`;
+}
 
- exit(0);
+exit(0);
 
 
- ################################################################
- #
- #                 SUBROUTINE DEFINITION
- #
- ################################################################
+################################################################
+#
+#                 SUBROUTINE DEFINITION
+#
+################################################################
 
- #### set the file names as a function of parameters
- sub SetFileNames {
-     $sp = "$min_sp-$max_sp";
-     $dyad_options = "-v ";
-     $dyad_options .= " -sort ";
-     $dyad_options .= " ".$strands;
-     $dyad_options .= " -type ".$dyad_type;
-     $dyad_options .= " ".$noov;
-     $dyad_options .= " -l ".$monad_length;
-     $dyad_options .= " -thosig $thosig ";
-     $dyad_options .= " -sp ".$sp;
+#### set the file names as a function of parameters
+sub SetFileNames {
+    $sp = "$min_sp-$max_sp";
+    $dyad_options = "-v ";
+    $dyad_options .= " -sort ";
+    $dyad_options .= " ".$strands;
+    $dyad_options .= " -type ".$dyad_type;
+    $dyad_options .= " ".$noov;
+    $dyad_options .= " -l ".$monad_length;
+    $dyad_options .= " -thosig $thosig ";
+    $dyad_options .= " -sp ".$sp;
 
-     $dyad_suffix = "_dyads";
-     if ($markov) {
+    $dyad_suffix = "_dyads";
+    if ($markov) {
 	 $dyad_suffix .= "_monad"; ### TEMP
-     } elsif ($background) {
+    } elsif ($background) {
 	 $dyad_suffix .= "_bg_".$background; ### TEMP
-     }
-     $dyad_suffix .= "_l".$monad_length;
-     $dyad_suffix .= "_sp".$sp;
-     $dyad_suffix .= $strands;
-     $dyad_suffix .= "_".$dyad_type;
-     $dyad_suffix .= "_sig".$thosig;
-     $dyad_suffix .= $noov;
+    }
+    $dyad_suffix .= "_l".$monad_length;
+    $dyad_suffix .= "_sp".$sp;
+    $dyad_suffix .= $strands;
+    $dyad_suffix .= "_".$dyad_type;
+    $dyad_suffix .= "_sig".$thosig;
+    $dyad_suffix .= $noov;
 
-     #### expected frequency model
-     if ($markov) {
+    #### expected frequency model
+    if ($markov) {
 	 ## do nothing. Expected dyad frequencies will be calculated on the basis of monad frequencies
-     } elsif ($exp_freq_file{dyads}) {
+    } elsif ($exp_freq_file{dyads}) {
 	 $dyad_options .= " -expfreq $exp_freq_file{dyads}";
-     } elsif ($background) {
+    } elsif ($background) {
 	 $dyad_options .= " -bg $background ";
 	 $dyad_options .= " -org $organism_name ";
- #      $dyad_suffix .= "_ncf";
-     } elsif ($background eq "mncf") {
+#      $dyad_suffix .= "_ncf";
+    } elsif ($background eq "mncf") {
 	 $dyad_options .= " -mncf ";
 	 $dyad_options .= " -org $organism_name ";
 	 $dyad_suffix .= "_mncf";
-     }
- #  $dyad_suffix .= "_ncf" if ($background); ### TEMP
+    }
+#  $dyad_suffix .= "_ncf" if ($background); ### TEMP
 
-     #### suffix for the oligo-analysis file
-     $noorf_string = "_noorf" if ($noorf);
-     $oligo_suffix = "_oligos";
-     if ($markov) {
+    #### suffix for the oligo-analysis file
+    $noorf_string = "_noorf" if ($noorf);
+    $oligo_suffix = "_oligos";
+    if ($markov) {
 	 $oligo_suffix .= "_mkv".$markov_order;
-     } elsif ($background) {
+    } elsif ($background) {
 	 $oligo_suffix .= "_bg_".$background;
-     }
-     $oligo_suffix .= "_".$min_oligo_len."-".$max_oligo_len."nt";
-     $oligo_suffix .= "$strands";
-     $oligo_suffix .= "_sig".$thosig;
-     $oligo_suffix .= $noov;
+    }
+    $oligo_suffix .= "_".$min_oligo_len."-".$max_oligo_len."nt";
+    $oligo_suffix .= "$strands";
+    $oligo_suffix .= "_sig".$thosig;
+    $oligo_suffix .= $noov;
 
-     foreach my $family_name (@families) {
+    foreach my $family_name (@families) {
 	 $family{$family_name}->{family_file} = "$family_name/${family_name}.fam";
 	 $family{$family_name}->{known_site_file} = "$family_name/${family_name}_known_sites";
 	 $family{$family_name}->{file_prefix} = "${family_name}";
@@ -252,12 +253,12 @@ if ($0 =~ /([^(\/)]+)$/) {
 	     $family{$family_name}->{input_seq_file} = $family{$family_name}->{seq_file};
 	 }
 	 $family{$family_name}->{seq_len_file} = $family_name."/".$family{$family_name}->{file_prefix}."_seq_len.tab";
- #      $family{$family_name}->{oligo_file} =  "${family_name}/oligos_${family_name}/".$family{$family_name}->{file_prefix}."_oligos_${min_oligo_len}-${max_oligo_len}nt$strands_sig${thosig}${noov}";
+#      $family{$family_name}->{oligo_file} =  "${family_name}/oligos_${family_name}/".$family{$family_name}->{file_prefix}."_oligos_${min_oligo_len}-${max_oligo_len}nt$strands_sig${thosig}${noov}";
 	 $family{$family_name}->{oligo_file} =  "${family_name}/oligos_${family_name}/".$family{$family_name}->{file_prefix}.$oligo_suffix; ## TEMP
 	 $family{$family_name}->{oligo_assembly_file} = $family{$family_name}->{oligo_file}."_contigs";
 	 $family{$family_name}->{oligo_selection} = $family{$family_name}->{oligo_file}."_selection";
 	 $family{$family_name}->{oligo_ft_prefix} = $family{$family_name}->{oligo_file};
- #	$family{$family_name}->{selection_ft_prefix} = $family{$family_name}->{oligo_ft_prefix}."_report";
+#	$family{$family_name}->{selection_ft_prefix} = $family{$family_name}->{oligo_ft_prefix}."_report";
 	 $family{$family_name}->{oligo_ft_file} = $family{$family_name}->{oligo_ft_prefix}.".ft";
 
 	 $family{$family_name}->{dyad_file} = "$family_name/dyads_${family_name}/".$family{$family_name}->{file_prefix}.$dyad_suffix;
@@ -324,10 +325,10 @@ if ($0 =~ /([^(\/)]+)$/) {
 
 	 ## background model
 	 if ($MotifSampler_background) {
-	     $MotifSampler_options = " -b ".$MotifSampler_background;
+	     $MotifSampler_options .= " -b ".$MotifSampler_background;
 	 } else {
-	     $family{$family_name}->{MotifSamplerBackground} = $family{$family_name}->{input_seq_file}."_MotifSampler_bg".$bg_order;
-	     $MotifSampler_options = " -b ".$family{$family_name}->{MotifSamplerBackground};
+	     $family{$family_name}->{MotifSamplerBackground} = $dir{output}."/".$family{$family_name}->{input_seq_file}."_MotifSampler_bg".$bg_order;
+	     $MotifSampler_options .= " -b ".$family{$family_name}->{MotifSamplerBackground};
 	 }
 
 	 ## strand
@@ -352,8 +353,8 @@ if ($0 =~ /([^(\/)]+)$/) {
 	 $MotifSampler_suffix .= "-n1";	 
 
 	 ## Sets length of the motif (default 8).
-	 $MotifSampler_options .= " -w ".$width;
-	 $MotifSampler_suffix .= "-w".$width;	 
+	 $MotifSampler_options .= " -w ".$matrix_width;
+	 $MotifSampler_suffix .= "-w".$matrix_width;	 
 
 	 ## Sets allowed overlap between different motifs. (default 1)
 	 $MotifSampler_options .= " -x ".1;
@@ -363,10 +364,15 @@ if ($0 =~ /([^(\/)]+)$/) {
 	 $MotifSampler_options .= " -r ".1;
 	 $MotifSampler_suffix .= "-r".1;	 
 
+	 ## output file
+	 $family{$family_name}->{MotifSampler_file} = $family{$family_name}->{MotifSampler_dir}."/".$family{$family_name}->{file_prefix}.$MotifSampler_suffix;
+	 $MotifSampler_options .= " -o ".$family{$family_name}->{MotifSampler_file}."sites";
+	 $MotifSampler_options .= " -m ".$family{$family_name}->{MotifSampler_file}.".matrix";
+
+
 	 ## Assign MotifSampler options to the family
 	 $family{$family_name}->{MotifSampler_suffix} = $MotifSampler_suffix;
 	 $family{$family_name}->{MotifSampler_options} = $MotifSampler_options;
-	 $family{$family_name}->{MotifSampler_file} = $family{$family_name}->{MotifSampler_dir}."/".$family{$family_name}->{file_prefix}.$MotifSampler_suffix;
 	 
 	 ################################################################
 	## Consensus options and files
@@ -405,49 +411,49 @@ if ($0 =~ /([^(\/)]+)$/) {
 	$family{$family_name}->{consensus_file} = $family{$family_name}->{consensus_dir}."/".$family{$family_name}->{file_prefix}.$consensus_suffix;
 	
 	
-    }  
+   }  
 
 
-    ################################################################
-    ## Suffix for the synthetic table
-    if ($family_file) {
+   ################################################################
+   ## Suffix for the synthetic table
+   if ($family_file) {
 	$table_suffix = $family_file;
-    } elsif ($sequence_file_list) {
+   } elsif ($sequence_file_list) {
 	$table_suffix .= $sequence_file_list;
 	$table_suffix =~  s/\.tab$//;
 	$table_suffix =~  s/\.txt$//;
-    } else {
+   } else {
 	$table_suffix = $organism_name;
-    }
-    if ($markov) {
+   }
+   if ($markov) {
 	$table_suffix .= "_mkv${markov_order}";
-    } elsif ($background) {
+   } elsif ($background) {
 	$table_suffix .= "_bg_${background}";
-    }
+   }
 
-    if ($family_file) {
+   if ($family_file) {
 	$table_suffix .= "_up".$from     if (defined($from));
 	$table_suffix .= "_".$to     if (defined($to));
 	$table_suffix .= $noorf_string;
-    }
-    if ($analyze_purged_sequences) {
+   }
+   if ($analyze_purged_sequences) {
 	$table_suffix .= "-purge";
-    } else {
+   } else {
 	$table_suffix .= "-nopurge";
-    }
-    $table_suffix .= "_".$min_oligo_len."nt";
-    $table_suffix .= "_".$max_oligo_len."nt";
-    $table_suffix .= $noov;
-    $table_suffix .= $strands;
-    $table_suffix .= "_sig".$thosig;
-    $table_suffix = `basename $table_suffix`;
-    chomp $table_suffix;
+   }
+   $table_suffix .= "_".$min_oligo_len."nt";
+   $table_suffix .= "_".$max_oligo_len."nt";
+   $table_suffix .= $noov;
+   $table_suffix .= $strands;
+   $table_suffix .= "_sig".$thosig;
+   $table_suffix = `basename $table_suffix`;
+   chomp $table_suffix;
 
-    ################################################################
-    ## Name of the report for the Motif Discovery Competition 2004
-    $dir{mdc_report} = "mdc_report";
-    $outfile{results} = $dir{mdc_report}."/".$table_suffix."_results.txt";
-    $outfile{parameters} = $dir{mdc_report}."/".$table_suffix."_parameters.txt";
+   ################################################################
+   ## Name of the report for the Motif Discovery Competition 2004
+   $dir{mdc_report} = "mdc_report";
+   $outfile{results} = $dir{mdc_report}."/".$table_suffix."_results.txt";
+   $outfile{parameters} = $dir{mdc_report}."/".$table_suffix."_parameters.txt";
 }
 
 ################### SUBROUTINE DEFINITION ###################"
@@ -456,27 +462,27 @@ if ($0 =~ /([^(\/)]+)$/) {
 ################################################################
 #### retrieve upstream sequences
 sub UpstreamSequences {
-    warn ";\tRetrieving upstream sequences for family $family_name\n" if ($verbose >= 1);
-    $command = "retrieve-seq -type upstream -org $organism_name";
-    $command .= " -noorf " if ($noorf);
-    $command .= " -i $family{$family_name}->{family_file}";
-    $command .= " -o $family{$family_name}->{seq_file}";
-    $command .= " -from $from" if (defined($from));
-    $command .= " -to $to " if (defined($to));
-    $command .= " -label orf_gene ";
-    $command .= " -feattype $feature_types " if ($feature_types);
-    $command .= " -format $seq_format";
-    &doit($command,$dry_run, $die_on_error);
+   warn ";\tRetrieving upstream sequences for family $family_name\n" if ($verbose >= 1);
+   $command = "retrieve-seq -type upstream -org $organism_name";
+   $command .= " -noorf " if ($noorf);
+   $command .= " -i $family{$family_name}->{family_file}";
+   $command .= " -o $family{$family_name}->{seq_file}";
+   $command .= " -from $from" if (defined($from));
+   $command .= " -to $to " if (defined($to));
+   $command .= " -label orf_gene ";
+   $command .= " -feattype $feature_types " if ($feature_types);
+   $command .= " -format $seq_format";
+   &doit($command,$dry_run, $die_on_error);
 }
 
 ################################################################
 #### Purge input sequences
 sub PurgeSequences {
-    warn ";\tPurging sequences for family $family_name\n" if ($verbose >= 1);
-    $command = "purge-sequence -ml 40 -mis 3";
-    $command .= " -i $family{$family_name}->{seq_file}";
-    $command .= " > $family{$family_name}->{seq_file_purged}";
-    &doit($command,$dry_run, $die_on_error);
+   warn ";\tPurging sequences for family $family_name\n" if ($verbose >= 1);
+   $command = "purge-sequence -ml 40 -mis 3";
+   $command .= " -i $family{$family_name}->{seq_file}";
+   $command .= " > $family{$family_name}->{seq_file_purged}";
+   &doit($command,$dry_run, $die_on_error);
 }
 
 
@@ -484,23 +490,23 @@ sub PurgeSequences {
 ### Calculate options and file names according to the selected
 ### parameters
 sub CalcOligoOptions {
-    my ($oligo_len) = @_;
-    $oligo_options = "-v ";
-    $oligo_options .= " -pseudo ".$pseudo if ($pseudo);
-    $oligo_options .= " -sort ";
-    $oligo_options .= " ".$strands;
-    $oligo_options .= " -l ".$oligo_len;
-    $oligo_options .= " -thosig ".$thosig;
-    
-    if ($markov) {
+   my ($oligo_len) = @_;
+   $oligo_options = "-v ";
+   $oligo_options .= " -pseudo ".$pseudo if ($pseudo);
+   $oligo_options .= " -sort ";
+   $oligo_options .= " ".$strands;
+   $oligo_options .= " -l ".$oligo_len;
+   $oligo_options .= " -thosig ".$thosig;
+   
+   if ($markov) {
 	### Markov chain model
 	$oligo_options .= " -markov ".$markov_order;
 	
-    } elsif ($exp_freq_file{oligos}) {
+   } elsif ($exp_freq_file{oligos}) {
 	### Manually specified calibrated frequencies
 	$oligo_options .= " -expfreq ".$exp_freq_file{oligos};
 	
-    } elsif ($background eq "calib1") {
+   } elsif ($background eq "calib1") {
 	### Single-sequence based calibrated occurrences (mean and var per sequence)
 	my $calib_length = $family{$family_name}->{calib_length};
 	my $calib_file = &CalibrationPrefix($calib_length, $oligo_len);
@@ -512,7 +518,7 @@ sub CalcOligoOptions {
 	$oligo_options .= " -calib1 ".$calib_file;
 	warn join ("\t", "; Oligonucleotide calibration", $calib_length, $calib_file), "\n" if ($main::verbose >= 3);
 	
-    } elsif ($background eq "calibN") {
+   } elsif ($background eq "calibN") {
 	### Set-based calibrated occurrences (mean and var per set of N sequences)
 	my $calib_length = $family{$family_name}->{calib_length};
 	my $N = scalar(@{$family{$family_name}->{members}});
@@ -540,319 +546,327 @@ sub CalcOligoOptions {
 	$oligo_options .= " -calibN ".$calib_file;
 	warn join ("\t", "; Oligonucleotide calibration", $calib_length, $calib_file), "\n" if ($main::verbose >= 3);
 	
-    } else {
+   } else {
 	### Pre-calculated expected frequenccy files
 	$oligo_options .= " -org ".$organism_name;
 	$oligo_options .= " -bg ".$background;
 	
-    }
-    $oligo_options .= " -return occ,proba,mseq,rank";
-    $oligo_options .= " ".$noov;
-    
-    $oligo_suffix = "_oligos";
-    $oligo_suffix .= "_${oligo_len}nt";
-    $oligo_suffix .= $strands;
-    $oligo_suffix .= "_sig${thosig}";
-    $oligo_suffix .= $noov;
-    
-    $oligo_file = "$family_name/oligos_${family_name}/".$family{$family_name}->{file_prefix}.$oligo_suffix;    
-    $command = "oligo-analysis -i $family{$family_name}->{input_seq_file} -format $seq_format -o $oligo_file $oligo_options";
+   }
+   $oligo_options .= " -return occ,proba,mseq,rank";
+   $oligo_options .= " ".$noov;
+   
+   $oligo_suffix = "_oligos";
+   $oligo_suffix .= "_${oligo_len}nt";
+   $oligo_suffix .= $strands;
+   $oligo_suffix .= "_sig${thosig}";
+   $oligo_suffix .= $noov;
+   
+   $oligo_file = "$family_name/oligos_${family_name}/".$family{$family_name}->{file_prefix}.$oligo_suffix;    
+   $command = "oligo-analysis -i $family{$family_name}->{input_seq_file} -format $seq_format -o $oligo_file $oligo_options";
 
-    return ($command, $oligo_file, $oligo_suffix, $oligo_options);
+   return ($command, $oligo_file, $oligo_suffix, $oligo_options);
 }
 
 
 ################################################################
 ### oligo-analysis
 sub OligoAnalysis {
-    warn join ("\t", 
+   warn join ("\t", 
 	       ";\tAnalyzing oligonucleotides for family $family_name",
 	       "min len: $min_oligo_len",
 	       "max len: $max_oligo_len"), "\n" if ($verbose >= 1);
-    my $dir = "${family_name}/oligos_${family_name}";
-    
-    &CheckOutDir($dir);
-    die "Error : cannot read file $family{$family_name}->{input_seq_file}\n" unless (-r $family{$family_name}->{input_seq_file});
-    
-    ## initialize the oligo file
+   my $dir = "${family_name}/oligos_${family_name}";
+   
+   &CheckOutDir($dir);
+   die "Error : cannot read file $family{$family_name}->{input_seq_file}\n" unless (-r $family{$family_name}->{input_seq_file});
+   
+   ## initialize the oligo file
 #    system "echo '' > $family{$family_name}->{oligo_file}"; # if ($verbose >=1);
-    
-    ## Analyze all oligo lengths
-    for $oligo_len ($min_oligo_len..$max_oligo_len) {
+   
+   ## Analyze all oligo lengths
+   for $oligo_len ($min_oligo_len..$max_oligo_len) {
 	&CalcOligoOptions($oligo_len);
 	&doit($command,$dry_run, $die_on_error);
 #	system "cat $oligo_file >> $family{$family_name}->{oligo_file}";
-    }
+   }
 
-    ## Merge the results obtained with diffferent oligo lengths
-    &MergeOligoLengths();
+   ## Merge the results obtained with diffferent oligo lengths
+   &MergeOligoLengths();
 }
 
 ################################################################
 ### Merge the results of oligo-analysis for different oligo lengths
 sub MergeOligoLengths {
-    warn join ("\t", 
+   warn join ("\t", 
 	       ";\tMerging oligonucleotides for family ".$family_name,
 	       "min len: ".$min_oligo_len,
 	       "max len:".$max_oligo_len,
 	       $family{$family_name}->{oligo_file}), "\n" if ($verbose >= 1);
-    my $dir = "${family_name}/oligos_${family_name}";
+   my $dir = "${family_name}/oligos_${family_name}";
 
-    &CheckOutDir($dir);
-    die "Error : cannot read file $family{$family_name}->{input_seq_file}\n" unless (-r $family{$family_name}->{input_seq_file});
-    
-    ## initialize the oligo file
-    system "echo '' > $family{$family_name}->{oligo_file}"; # if ($verbose >=1);    
-    for $oligo_len ($min_oligo_len..$max_oligo_len) {
+   &CheckOutDir($dir);
+   die "Error : cannot read file $family{$family_name}->{input_seq_file}\n" unless (-r $family{$family_name}->{input_seq_file});
+   
+   ## initialize the oligo file
+   system "echo '' > $family{$family_name}->{oligo_file}"; # if ($verbose >=1);    
+   for $oligo_len ($min_oligo_len..$max_oligo_len) {
 	($command, $oligo_file) = &CalcOligoOptions($oligo_len);
 	system "cat $oligo_file >> $family{$family_name}->{oligo_file}";
-    }
-    
-    ### fragment assembly
-    $command = "pattern-assembly -i $family{$family_name}->{oligo_file} ${strands} -v -o $family{$family_name}->{oligo_assembly_file} -maxfl 1 -maxpat 200 -subst 1";
-    
-    &doit($command,$dry_run, 0);
+   }
+   
+   ### fragment assembly
+   $command = "pattern-assembly -i $family{$family_name}->{oligo_file} ${strands} -v -o $family{$family_name}->{oligo_assembly_file} -maxfl 1 -maxpat 200 -subst 1";
+   
+   &doit($command,$dry_run, 0);
 }
 
 
 ################################################################
 ## Match discovered patterns
 sub MatchPatterns {
-    my ($oligo_file, $fmap_prefix, $options) = @_;
+   my ($oligo_file, $fmap_prefix, $options) = @_;
 
-    ## check file names
-    $oligo_file = $family{$family_name}->{oligo_file} unless ($oligo_file);
-    $fmap_prefix = $oligo_file unless ($fmap_prefix);
+   ## check file names
+   $oligo_file = $family{$family_name}->{oligo_file} unless ($oligo_file);
+   $fmap_prefix = $oligo_file unless ($fmap_prefix);
 
-    ### pattern matching
-    die "Error : cannot read file $family{$family_name}->{seq_file}\n" unless (-r $family{$family_name}->{seq_file});
-    $feature_file = $fmap_prefix.".ft";
-    $fmap_file = $fmap_prefix.".".$IMG_FORMAT;
-    $htmap_file = $fmap_prefix.".html";
-    warn( ";\tDrawing feature-map",
+   ### pattern matching
+   die "Error : cannot read file $family{$family_name}->{seq_file}\n" unless (-r $family{$family_name}->{seq_file});
+   $feature_file = $fmap_prefix.".ft";
+   $fmap_file = $fmap_prefix.".".$IMG_FORMAT;
+   $htmap_file = $fmap_prefix.".html";
+   warn( ";\tDrawing feature-map",
 	  "\n;\t", $oligo_file,
 	  "\n;\t", $fmap_file,
 	  "\n")  if ($main::verbose >= 1);
-    
-    $origin = "-0";
-    my $command = "dna-pattern -i ".$family{$family_name}->{seq_file};
-    $command .= " -format ".$seq_format;
-    $command .= " -pl ".$oligo_file;
-    $command .= " -origin ".$origin;
-    $command .= $options;
-    $command .= " | features-from-dnapat -o ".$feature_file;
+   
+   $origin = "-0";
+   my $command = "dna-pattern -i ".$family{$family_name}->{seq_file};
+   $command .= " -format ".$seq_format;
+   $command .= " -pl ".$oligo_file;
+   $command .= " -origin ".$origin;
+   $command .= $options;
+   $command .= " | features-from-dnapat -o ".$feature_file;
 
 #    warn "HELLO\t", $command, "\n";
 
-    ## Check if pattern matching is OK (sometimes there are no patterns)
-    my $error = &doit($command,$dry_run, 0);
-    if ($error) {
+   ## Check if pattern matching is OK (sometimes there are no patterns)
+   my $error = &doit($command,$dry_run, 0);
+   if ($error) {
 	warn "; WARNING: Feature map skipped because dna-pattern returned an error\n";
 	return;
-    }
+   }
 }
 
 ################################################################
 #### draw feature-map for the result of oligo-analysis
 sub DrawFeatureMap {
-    my ($fmap_prefix, $title, $options) = @_;
+   my ($fmap_prefix, $title, $options) = @_;
 
-    ## check file names
-    $fmap_prefix = $family{$family_name}->{oligo_ft_prefix} unless ($fmap_prefix);
-    $title = $fmap_prefix unless ($title);
+   ## check file names
+   $fmap_prefix = $family{$family_name}->{oligo_ft_prefix} unless ($fmap_prefix);
+   $title = $fmap_prefix unless ($title);
 
-    ### pattern matching
-    die "Error : cannot read file $family{$family_name}->{seq_file}\n" unless (-r $family{$family_name}->{seq_file});
-    $feature_file = $fmap_prefix.".ft";
-    $fmap_file = $fmap_prefix.".".$IMG_FORMAT;
-    $htmap_file = $fmap_prefix.".html";
-    warn( ";\tDrawing feature-map",
+   ### pattern matching
+   die "Error : cannot read file $family{$family_name}->{seq_file}\n" unless (-r $family{$family_name}->{seq_file});
+   $feature_file = $fmap_prefix.".ft";
+   $fmap_file = $fmap_prefix.".".$IMG_FORMAT;
+   $htmap_file = $fmap_prefix.".html";
+   warn( ";\tDrawing feature-map",
 	  "\n;\t", $oligo_file,
 	  "\n;\t", $fmap_file,
 	  "\n")  if ($main::verbose >= 1);
-    
+   
 
-    ## feature-map drawing
-    if ($family{$family_name}->{calib_length}) {
+   ## feature-map drawing
+   if ($family{$family_name}->{calib_length}) {
 	$from = -$family{$family_name}->{calib_length};
 	$to = -1;
-    }
-    $command = "feature-map -i ".$feature_file;
-    $command .= " -minfthick 2";
-    $command .= " -scalebar -scalestep $scalestep -legend ";
-    $command .= " -title '".$title."'";
-    $command .= " -from $from" if (defined($from));
-    $command .= " -to $to" if (defined($to));
-    $command .= " -o $fmap_file -scorethick ";
-    $command .= " ".$options;
-    if ($htmaps) {
+   }
+   $command = "feature-map -i ".$feature_file;
+   $command .= " -minfthick 2";
+   $command .= " -scalebar -scalestep $scalestep -legend ";
+   $command .= " -title '".$title."'";
+   $command .= " -from $from" if (defined($from));
+   $command .= " -to $to" if (defined($to));
+   $command .= " -o $fmap_file -scorethick ";
+   $command .= " ".$options;
+   if ($htmaps) {
 	$command .= " -htmap > $htmap_file ";
-    };
-    
-    &doit($command,$dry_run, 0);
+   };
+   
+   &doit($command,$dry_run, 0);
 }
 
 ################################################################
 ### dyad analysis
 sub DyadAnalysis {
-    warn join( "\t", 
+   warn join( "\t", 
 	       ";\tAnalyzing dyads for family $family_name",
 	       "monad length: $monad_length",
 	       "min_sp: $min_sp",
 	       "max_sp: $max_sp",
 	       ), "\n" if ($verbose >= 1);
-    $dir = "${family_name}/dyads_${family_name}";
-    &CheckOutDir($dir);
-    die "Error : cannot read file $family{$family_name}->{input_seq_file}\n" unless (-r $family{$family_name}->{input_seq_file});
-    $command = "dyad-analysis -return occ,proba,rank -i $family{$family_name}->{input_seq_file} -format $seq_format -o $family{$family_name}->{dyad_file} $dyad_options";
-    
-    &doit($command,$dry_run, $die_on_error);
-    
-    ### fragment assembly
-    $command = "pattern-assembly -v -i $family{$family_name}->{dyad_file} -o $family{$family_name}->{dyad_assembly_file} ${strands} -maxfl 1 -maxpat 200 ";
-    
-    &doit($command,$dry_run, 0);
-    
+   $dir = "${family_name}/dyads_${family_name}";
+   &CheckOutDir($dir);
+   die "Error : cannot read file $family{$family_name}->{input_seq_file}\n" unless (-r $family{$family_name}->{input_seq_file});
+   $command = "dyad-analysis -return occ,proba,rank -i $family{$family_name}->{input_seq_file} -format $seq_format -o $family{$family_name}->{dyad_file} $dyad_options";
+   
+   &doit($command,$dry_run, $die_on_error);
+   
+   ### fragment assembly
+   $command = "pattern-assembly -v -i $family{$family_name}->{dyad_file} -o $family{$family_name}->{dyad_assembly_file} ${strands} -maxfl 1 -maxpat 200 ";
+   
+   &doit($command,$dry_run, 0);
+   
 }
 
 
 ################################################################
 ## Merge patterns detected by oligo-analysis and dyad-analysis
 sub MergePatterns {
-    my $filter_dyads = 1;
-    warn join ("\t", 
+   my $filter_dyads = 1;
+   warn join ("\t", 
 	       ";\tMerging oligonucleotides and dyads for family ",
 	       $family_name,
 	       $family{$family_name}->{merged_file}
 	       ), "\n" if ($verbose >= 1);
 
-    my $dir = "${family_name}/merged_${family_name}";
-    &CheckOutDir($dir);
-    my $command = "cat $family{$family_name}->{oligo_file}";
+   my $dir = "${family_name}/merged_${family_name}";
+   &CheckOutDir($dir);
+   my $command = "cat $family{$family_name}->{oligo_file}";
 #    $command .= " | grep -v '^;'";
-    $command .= " > $family{$family_name}->{merged_file};";
-    $command .= " cat $family{$family_name}->{dyad_file}";
+   $command .= " > $family{$family_name}->{merged_file};";
+   $command .= " cat $family{$family_name}->{dyad_file}";
 #    $command .= " | grep -v '^;'";
-    if ($filter_dyads) {
+   if ($filter_dyads) {
 	$command .= " | grep -v '\{0\}'";
-    } else {
+   } else {
 	$command .= " | perl -pe 's/n\{0\}//g'";
-    }
-    $command .= " >> $family{$family_name}->{merged_file};";
-    $command .= " wc $family{$family_name}->{merged_file}";
-    &doit($command);
-    &DrawMergedFeatureMap() if ($task{map});
+   }
+   $command .= " >> $family{$family_name}->{merged_file};";
+   $command .= " wc $family{$family_name}->{merged_file}";
+   &doit($command,$dry_run, $die_on_error);
+   &DrawMergedFeatureMap() if ($task{map});
 }
 
 
 ################################################################
 #### draw feature-map for the result of merged oligonucleotides and dyads
 sub DrawMergedFeatureMap {
-    warn ";\tDrawing feature-map with results of merged oligonucleotides and dyads for family $family_name\n" if ($verbose >= 1);
-    ### pattern matching
-    die "Error : cannot read file $family{$family_name}->{seq_file}\n" unless (-r $family{$family_name}->{seq_file});
-    $fmap_file = $family{$family_name}->{merged_file}.".${IMG_FORMAT}";
-    $htmap_file = $family{$family_name}->{merged_file}.".html";
-    $origin = "-0";
-    my $command = "dna-pattern -i $family{$family_name}->{seq_file} -format $seq_format -pl $family{$family_name}->{merged_file} -origin $origin -N 4 ";
-    $command .= " | features-from-dnapat -o $family{$family_name}->{merged_ft_file} ";
-    my $error = &doit($command,$dry_run, 0);
-    if ($error) {
+   warn ";\tDrawing feature-map with results of merged oligonucleotides and dyads for family $family_name\n" if ($verbose >= 1);
+   ### pattern matching
+   die "Error : cannot read file $family{$family_name}->{seq_file}\n" unless (-r $family{$family_name}->{seq_file});
+   $fmap_file = $family{$family_name}->{merged_file}.".${IMG_FORMAT}";
+   $htmap_file = $family{$family_name}->{merged_file}.".html";
+   $origin = "-0";
+   my $command = "dna-pattern -i $family{$family_name}->{seq_file} -format $seq_format -pl $family{$family_name}->{merged_file} -origin $origin -N 4 ";
+   $command .= " | features-from-dnapat -o $family{$family_name}->{merged_ft_file} ";
+   my $error = &doit($command,$dry_run, 0);
+   if ($error) {
 	warn "; WARNING: Feature map skipped because dna-pattern returned an error\n";
 	return;
-    }
+   }
 
-    ## feature-map drawing
-    if  ($family{$family_name}->{calib_length}) {
+   ## feature-map drawing
+   if  ($family{$family_name}->{calib_length}) {
 	$from =  $family{$family_name}->{calib_length};
 	$to = -1;
-    }
-    $command = " feature-map -i $family{$family_name}->{merged_ft_file} -scalebar -scalestep $scalestep -legend ";
-    $command .= " -title $family{$family_name}->{merged_ft_file}";
-    $command .= " -from $from" if (defined($from));
-    $command .= " -to $to" if (defined($to));
-    $command .= " -o $fmap_file -scorethick ";
-    if ($htmaps) {
+   }
+   $command = " feature-map -i $family{$family_name}->{merged_ft_file} -scalebar -scalestep $scalestep -legend ";
+   $command .= " -title $family{$family_name}->{merged_ft_file}";
+   $command .= " -from $from" if (defined($from));
+   $command .= " -to $to" if (defined($to));
+   $command .= " -o $fmap_file -scorethick ";
+   if ($htmaps) {
 	$command .= " -htmap > $htmap_file ";
-    };
-    
-    &doit($command,$dry_run, 0);
+   };
+   
+   &doit($command,$dry_run, 0);
 }
 
 
 ################################################################
 ## Run Gert Thijs' MotifSampler
 sub MotifSampler {
-    warn join ("; Running MotifSampler for family $family_name") if ($main::verbose >= 1);
-    ## Check output directory
-    my $dir = $family{$family_name}->{MotifSampler_dir};
-    &CheckOutDir($dir);
+   warn join ("; Running MotifSampler for family $family_name") if ($main::verbose >= 1);
+   ## Check output directory
+   my $dir = $family{$family_name}->{MotifSampler_dir};
+   &CheckOutDir($dir);
 
-    chdir($dir{output});
+   chdir($dir{output});
+   print "HELLO\t", `pwd`;
 
-    warn  "HELLO\t", `pwd`;
+#   ## Create ackground model if required
+#   unless ($MotifSampler_background) {
+#	warn "; Creating background model for the input sequence\torder ".$bg_order."\n" 
+#	    if ($main::verbose >= 1);
+#	## create bacakground model
+#	my $command = " CreateBackgroundModel -f ".$family{$family_name}->{input_seq_file};
+#	$command .= " -b ".$family{$family_name}->{MotifSamplerBackground};
+#	$command .= " -o ".$bg_order;
+#	&doit($command,$dry_run, $die_on_error);
+#   }
 
-    ## Create ackground model if required
-    unless ($MotifSampler_background) {
-	warn "; Creating background model for the input sequence\torder ".$bg_order."\n" 
-	    if ($main::verbose >= 1);
-	## create bacakground model
-	my $command = " CreateBackgroundModel -f ".$family{$family_name}->{input_seq_file};
-	$command .= " -b ".$family{$family_name}->{MotifSamplerBackground};
-	$command .= " -o ".$bg_order;
-	&doit($command,$dry_run, $die_on_error);
-    }
+   ## run the command
+   my $MotifSampler_command = "MotifSampler ".$family{$family_name}->{MotifSampler_options};
+#   $MotifSampler_command .= " > ".$family{$family_name}->{MotifSampler_file};
+#    unless ($main::verbose >= 4) {
+#	$MotifSampler_command .= ">& /dev/null";
+#    }
+   &doit($MotifSampler_command, $dry_run, $die_on_error);
+
 }
 
 
 ################################################################
 ## Run Andrew Neuwald's gibbs program 
 sub Gibbs {
-    chdir($dir{output});
-    &CheckOutDir($family{$family_name}->{gibbs_dir});
+   chdir($dir{output});
+   &CheckOutDir($family{$family_name}->{gibbs_dir});
 
 
-    if ($strand = "-2str") {
+   if ($strand = "-2str") {
 	$addrc = " -addrc";
-    }
-    ## This can be useful in case the file is compressed
-    my $gibbs_command = "convert-seq ".$addrc;
-    $gibbs_command .= " -from fasta -to fasta ";
-    $gibbs_command .= " -i ".$family{$family_name}->{input_seq_file};
-    $gibbs_command .= " -o ".$family{$family_name}->{gibbs_input_seq_file};
+   }
+   ## This can be useful in case the file is compressed
+   my $gibbs_command = "convert-seq ".$addrc;
+   $gibbs_command .= " -from fasta -to fasta ";
+   $gibbs_command .= " -i ".$family{$family_name}->{input_seq_file};
+   $gibbs_command .= " -o ".$family{$family_name}->{gibbs_input_seq_file};
 
 
-    ## run the command
-    $gibbs_command .= " ; gibbs ".$family{$family_name}->{gibbs_options};
-    $gibbs_command .= " > ".$family{$family_name}->{gibbs_file};
+   ## run the command
+   $gibbs_command .= " ; gibbs ".$family{$family_name}->{gibbs_options};
+   $gibbs_command .= " > ".$family{$family_name}->{gibbs_file};
 #    unless ($main::verbose >= 4) {
 #	$gibbs_command .= ">& /dev/null";
 #    }
-    &doit($gibbs_command);
+   &doit($gibbs_command, $dry_run, $die_on_error);
 }
 
 ################################################################
 ## Run Jerry Hertz' consensus program 
 sub Consensus {
-    chdir($dir{output});
-    &CheckOutDir($family{$family_name}->{consensus_dir});
+   chdir($dir{output});
+   &CheckOutDir($family{$family_name}->{consensus_dir});
 
-    ## input file has to be converted to consensus format
-    $consensus_command = "convert-seq -dna -from fasta -to wc -i ".$family{$family_name}->{input_seq_file};
+   ## input file has to be converted to consensus format
+   $consensus_command = "convert-seq -dna -from fasta -to wc -i ".$family{$family_name}->{input_seq_file};
 
-    ## run the command
-    $consensus_command .= " | consensus ".$family{$family_name}->{consensus_options};
-    $consensus_command .= " > ".$family{$family_name}->{consensus_file};
-    &doit($consensus_command);
+   ## run the command
+   $consensus_command .= " | consensus ".$family{$family_name}->{consensus_options};
+   $consensus_command .= " > ".$family{$family_name}->{consensus_file};
+   &doit($consensus_command, $dry_run, $die_on_error);
 }
 
 ################################################################
 ### Read known known_site for each family
 sub ReadKnownSites {
-    my ($known_site_file) = @_;
-    %known_site = ();
-    %known_site_source = ();
-    if (-e $known_site_file) {
+   my ($known_site_file) = @_;
+   %known_site = ();
+   %known_site_source = ();
+   if (-e $known_site_file) {
 	$known_sites_provided = 1;
 	open KNOWN_SITE, $known_site_file;
 	while (<KNOWN_SITE>) {
@@ -870,7 +884,7 @@ sub ReadKnownSites {
 	    push @{$known_site_source{$family_name}}, $source;
 	}
 	close KNOWN_SITE;
-    }
+   }
 }
 
 
@@ -906,40 +920,40 @@ sub ReadKnownSites {
 ################################################################
 ### Generate a synthetic table
 sub SyntheticTable {
-    my $dir = "synthetic_tables";
-    
-    $outfile{table} = $dir."/".$table_suffix;
-    $outfile{table} .= "_tr" if ($transpose);
-    $outfile{table} .= ".html";
+   my $dir = "synthetic_tables";
+   
+   $outfile{table} = $dir."/".$table_suffix;
+   $outfile{table} .= "_tr" if ($transpose);
+   $outfile{table} .= ".html";
 
-    warn "; Generating synthetic table ", $outfile{table}, "\n" if ($verbose >= 1);
-    
-    unless (-d $dir) {
+   warn "; Generating synthetic table ", $outfile{table}, "\n" if ($verbose >= 1);
+   
+   unless (-d $dir) {
 	mkdir $dir, 0755 || die "Error: cannot create directory $dir\n";
-    }
-    
-    ### synthesize the results of all families into a single file
-    
-    ### headers
-    $row = 0;
-    $row{f} = $row++;
-    $row{family} = $row++;
-    $row{size} = $row++;
-    $row{genes} = $row++;
-    $row{total_length} = $row++ if ($seq_length_calculated);
-    $row{known} = $row++ if ($known_sites_provided);
-    $row{oligos} = $row++;
-    $row{dyads} = $row++;
-    $row{selection} = $row++ if ($task{report});
-    $row{consensus} = $row++;
-    $row{gibbs} = $row++;
-    $row_num = $row-1;
-    while (($header,$row) = each %row) {
+   }
+   
+   ### synthesize the results of all families into a single file
+   
+   ### headers
+   $row = 0;
+   $row{f} = $row++;
+   $row{family} = $row++;
+   $row{size} = $row++;
+   $row{genes} = $row++;
+   $row{total_length} = $row++ if ($seq_length_calculated);
+   $row{known} = $row++ if ($known_sites_provided);
+   $row{oligos} = $row++;
+   $row{dyads} = $row++;
+   $row{selection} = $row++ if ($task{report});
+   $row{consensus} = $row++;
+   $row{gibbs} = $row++;
+   $row_num = $row-1;
+   while (($header,$row) = each %row) {
 	$table[$row][0] = "<B>$header</B>";
-    }
-    my $col = 0;
-    
-    foreach $family_name (@families) {
+   }
+   my $col = 0;
+   
+   foreach $family_name (@families) {
 	$col++;
 	
 	#### Index columns associated to each family
@@ -978,28 +992,28 @@ sub SyntheticTable {
 	    }
 	} 
 	
-        ################################################################
+       ################################################################
 	#### Index results from oligo-analysis
 #	open OLIGOS, "$family{$family_name}->{oligo_assembly_file}";
-        if ($htmaps) {
+       if ($htmaps) {
 	    $map_link = "../$family{$family_name}->{oligo_file}.html";
-        } else {
+       } else {
 	    $map_link = "../$family{$family_name}->{oligo_file}.${IMG_FORMAT}";
-        }
-        my $pattern_file = $family{$family_name}->{oligo_assembly_file};
-        &IndexPatterns($family_name, $pattern_file, $map_link, $row{oligos}, $col, assembly=>1);
+       }
+       my $pattern_file = $family{$family_name}->{oligo_assembly_file};
+       &IndexPatterns($family_name, $pattern_file, $map_link, $row{oligos}, $col, assembly=>1);
 	
-        ################################################################
+       ################################################################
 	### index results of dyad analysis
-        if ($htmaps) {
+       if ($htmaps) {
 	    $map_link = "../$family{$family_name}->{dyad_file}.html";
-        } else {
+       } else {
 	    $map_link = "../$family{$family_name}->{dyad_file}.${IMG_FORMAT}";
-        }
-        my $pattern_file = $family{$family_name}->{dyad_assembly_file};
-        &IndexPatterns($family_name, $pattern_file, $map_link, $row{dyads}, $col, assembly=>1);
+       }
+       my $pattern_file = $family{$family_name}->{dyad_assembly_file};
+       &IndexPatterns($family_name, $pattern_file, $map_link, $row{dyads}, $col, assembly=>1);
 	
-        ################################################################
+       ################################################################
 	### index results of manual pattern selection
 	if ($task{report}) {
 	    if ($htmaps) {
@@ -1030,28 +1044,28 @@ sub SyntheticTable {
 #	}
 	$map_link = "../$family{$family_name}->{gibbs_file}";
 	&IndexGibbs($family_name,  $family{$family_name}->{gibbs_file}, $map_link, $row{gibbs}, $col);
-    }
-    
+   }
+   
 
-    ###############################################################
-    ## Print the header of the  synthetic table
-    $syn = &OpenOutputFile($outfile{table});
-    print $syn "<html>\n";
-    print $syn "<title>",$table_suffix, "</title>","\n";
-    print $syn "<body>\n";
-    print $syn "<h1>".$table_suffix."</h1>\n";
-    
-    print $syn join( "\n",
+   ###############################################################
+   ## Print the header of the  synthetic table
+   $syn = &OpenOutputFile($outfile{table});
+   print $syn "<html>\n";
+   print $syn "<title>",$table_suffix, "</title>","\n";
+   print $syn "<body>\n";
+   print $syn "<h1>".$table_suffix."</h1>\n";
+   
+   print $syn join( "\n",
 		      "<pre>",
 		      $verbose_message,
 		      "</pre>"
 		      ), "\n";
-    
-    
-    print $syn "<table border=1>\n";
+   
+   
+   print $syn "<table border=1>\n";
 
-    ################################################################
-    ## Add a link to the MDC report files
+   ################################################################
+   ## Add a link to the MDC report files
 #    if ($task{report}) {
 	print $syn "<h4>Reports for the motif discovery competition</h4>";
 	print $syn "<ul>";
@@ -1061,22 +1075,22 @@ sub SyntheticTable {
 #    }
 
 
-    ################################################################
-    ## Sort families according to the selected criterion
-    if ($sort_key eq "score") {
+   ################################################################
+   ## Sort families according to the selected criterion
+   if ($sort_key eq "score") {
 	#### sort families by score
 	#### decreasing order
 	@sorted_families = sort {$max_score{$b} <=> $max_score{$a}} @families; 
 
-    } else {
+   } else {
 	#### sort families by family name
 	@sorted_families = sort @families;
-    }
+   }
 
 
-    ################################################################
-    ## Transpose the result table
-    if ($transpose) {
+   ################################################################
+   ## Transpose the result table
+   if ($transpose) {
 	foreach $r (0..$row_num) {
 	    print $syn "<tr valign=top>\n";
 	    foreach $f (@sorted_families) {
@@ -1085,7 +1099,7 @@ sub SyntheticTable {
 	    }
 	    print $syn "</tr>\n";
 	}
-    } else {
+   } else {
 	#### print table header
 	foreach $r (0..$row_num) {
 	    print $syn "<th>", $table[$r][0], "</th>\n";
@@ -1099,13 +1113,13 @@ sub SyntheticTable {
 	    }
 	    print $syn "</tr>\n";
 	}
-    }
-    
-    print $syn "</table>\n";
-    print $syn "<hr>", &AlphaDate;
-    print $syn "</body>\n";
-    print $syn "</html>\n";
-    close $syn;
+   }
+   
+   print $syn "</table>\n";
+   print $syn "<hr>", &AlphaDate;
+   print $syn "</body>\n";
+   print $syn "</html>\n";
+   close $syn;
 #    chdir "synthetic_tables";
 #    chdir "../";
 }
@@ -1116,16 +1130,16 @@ sub SyntheticTable {
 ################################################################
 ## Index the matrix from a consensus file
 sub IndexConsensus {
-    &IndexMatrix(@_, format=>"consensus");
+   &IndexMatrix(@_, format=>"consensus");
 }
 
 ################################################################
 ## Index a matrix
 sub IndexMatrix {
-    my ($family_name, $consensus_file, $map_link, $row, $col, %args) = @_;
-    my $format = $args{format};
-    my @attributes = ();
-    if ($format eq "consensus") {
+   my ($family_name, $consensus_file, $map_link, $row, $col, %args) = @_;
+   my $format = $args{format};
+   my @attributes = ();
+   if ($format eq "consensus") {
 	push @attributes, qw (unadjusted.information
 			      adjusted.information
 			      Pval
@@ -1133,34 +1147,34 @@ sub IndexMatrix {
 			      exp
 			      ln.exp
 			      );
-    } elsif ($format eq "gibbs") {
+   } elsif ($format eq "gibbs") {
 	push @attributes, qw (
 			      model.map
 			      betaprior.map
 			      MAP
 			      seed
 			      );
-    } else {
+   } else {
 	&FatalError("Invalid format for a matrix $format");
-    }
-    warn join ("\t", "; Indexing $format matrix for family", $family_name, $consensus_file, $row, $col), "\n" if ($verbose >= 2);
-    my $matrix = new RSA::matrix();
-    $matrix->readFromFile($consensus_file, $format);
-    $table[$row][$col] = "<a href=".$map_link.">Results</a>\n";
-    $table[$row][$col] .= "<table cellpadding=3>\n";
-    $table[$row][$col] .= "<TR>\n";
-    $table[$row][$col] .= "<td colspan=2><pre>".$matrix->toString(" ", 4)."</pre></td>\n";
-    $table[$row][$col] .= "</TR>\n";
-    for my $attr (@attributes) {
+   }
+   warn join ("\t", "; Indexing $format matrix for family", $family_name, $consensus_file, $row, $col), "\n" if ($verbose >= 2);
+   my $matrix = new RSA::matrix();
+   $matrix->readFromFile($consensus_file, $format);
+   $table[$row][$col] = "<a href=".$map_link.">Results</a>\n";
+   $table[$row][$col] .= "<table cellpadding=3>\n";
+   $table[$row][$col] .= "<TR>\n";
+   $table[$row][$col] .= "<td colspan=2><pre>".$matrix->toString(" ", 4)."</pre></td>\n";
+   $table[$row][$col] .= "</TR>\n";
+   for my $attr (@attributes) {
 	$table[$row][$col] .= "<tr><td align=right>".$attr."</td><td>".$matrix->get_attribute($attr)."</td></tr>\n";
-    }
-    $table[$row][$col] .= "</table>\n";
+   }
+   $table[$row][$col] .= "</table>\n";
 }
 
 ################################################################
 ## Index the matrix from a gibbs file
 sub IndexGibbs {
-    &IndexMatrix(@_, format=>"gibbs");
+   &IndexMatrix(@_, format=>"gibbs");
 #      my ($family_name, $gibbs_file, $map_link, $row, $col, %args) = @_;
 #      warn join ("\t", "; Indexing gibbs matrix for family", $family_name, $gibbs_file, $row, $col), "\n" if ($verbose >= 2);
 #      my $matrix = new RSA::matrix();
@@ -1185,16 +1199,16 @@ sub IndexGibbs {
 ################################################################
 ## Index the patterns discovered for the HTML synthetic table
 sub IndexPatterns {
-    my ($family_name, $pattern_file, $map_link, $row, $col, %args) = @_;
-    warn join ("\t", "; Indexing patterns for family", $family_name, $pattern_file), "\n" if ($verbose >= 2);
-    undef @patterns;
-    undef @sorted_patterns;
-    undef %rc;
-    undef %score;
-    undef %type;
+   my ($family_name, $pattern_file, $map_link, $row, $col, %args) = @_;
+   warn join ("\t", "; Indexing patterns for family", $family_name, $pattern_file), "\n" if ($verbose >= 2);
+   undef @patterns;
+   undef @sorted_patterns;
+   undef %rc;
+   undef %score;
+   undef %type;
 
-    ## read the patterns
-    if (-e $pattern_file) {
+   ## read the patterns
+   if (-e $pattern_file) {
 	if ($args{assembly}) {
 	    ## Parse an assembly file (only retain contigs and isolated)
 	    ($error, @patterns) = &ReadAssemblyFile($pattern_file);
@@ -1202,7 +1216,7 @@ sub IndexPatterns {
 	    ## Parse a pattern file (retain all patterns)
 	    @patterns = &ReadPatterns(pattern_file=>$pattern_file);
 	}
-    } else {
+   } else {
 	$table[$row][$col] = "<font color=red>File not found</font>\n";
 	$pwd = `pwd`;
 	&Warning(join ( "\t", 
@@ -1213,11 +1227,11 @@ sub IndexPatterns {
 			" does not exist. Skipped.",
 			));
 	return;
-    }
-    
-    if ($error) {
+   }
+   
+   if ($error) {
 	$table[$row][$col] = "<font color=red>$error</font>\n";
-    } else {
+   } else {
 	@sorted_patterns = sort { $score{$b} <=> $score{$a} } @patterns;
 	$table[$row][$col] = "<table><tr><td align=right>Max score</td><td>".$max_score{$family_name}."</td></tr></table>\n";
 	$table[$row][$col] .= "<table>\n";
@@ -1291,39 +1305,39 @@ sub IndexPatterns {
 
 
 #	    close $olig;
-    }
+   }
 }
 
 ################################################################
 #### Draw feature maps
 sub DrawDyadFeatureMap {
-    warn ";\tDrawing feature-map with results of dyad-analysis for family $family_name\n" if ($verbose >= 1);
-    die "Error : cannot read file $family{$family_name}->{seq_file}\n" unless (-r $family{$family_name}->{seq_file});
+   warn ";\tDrawing feature-map with results of dyad-analysis for family $family_name\n" if ($verbose >= 1);
+   die "Error : cannot read file $family{$family_name}->{seq_file}\n" unless (-r $family{$family_name}->{seq_file});
 
-    ## pattern matching
-    $origin = "-0";
-    my $command = "dna-pattern -pl $family{$family_name}->{dyad_file} -format $seq_format -i $family{$family_name}->{seq_file} -origin $origin -N 4 ";
-    $command .= "| features-from-dnapat -o $family{$family_name}->{dyad_ft_file} ";
-    my $error = &doit($command,$dry_run, 0);
-    if ($error) {
+   ## pattern matching
+   $origin = "-0";
+   my $command = "dna-pattern -pl $family{$family_name}->{dyad_file} -format $seq_format -i $family{$family_name}->{seq_file} -origin $origin -N 4 ";
+   $command .= "| features-from-dnapat -o $family{$family_name}->{dyad_ft_file} ";
+   my $error = &doit($command,$dry_run, 0);
+   if ($error) {
 	warn "; WARNING: Feature map skipped because dna-pattern returned an error\n";
 	return;
-    }
+   }
 
-    ## feature-map drawing
-    $command = "feature-map -i $family{$family_name}->{dyad_ft_file} -o $family{$family_name}->{fmap_file} ";;
-    $command .= " -from $from" if (defined($from));
-    $command .= " -to $to " if (defined($to));
-    $command .= "-legend ";
-    $command .= "-scalebar -scalestep $scalestep ";
-    $command .= "-scorethick ";
-    $command .= "-mlen 520 ";
-    $command .= "-title '${family_name}$dyad_suffix' ";
-    if ($htmaps) {
+   ## feature-map drawing
+   $command = "feature-map -i $family{$family_name}->{dyad_ft_file} -o $family{$family_name}->{fmap_file} ";;
+   $command .= " -from $from" if (defined($from));
+   $command .= " -to $to " if (defined($to));
+   $command .= "-legend ";
+   $command .= "-scalebar -scalestep $scalestep ";
+   $command .= "-scorethick ";
+   $command .= "-mlen 520 ";
+   $command .= "-title '${family_name}$dyad_suffix' ";
+   if ($htmaps) {
 	$command .= "-htmap >  $family{$family_name}->{htmap_file}";
-    }
-    #  $command .= " ;  xv -o $family{$family_name}->{fmap_file} &";
-    &doit($command,$dry_run, 0);
+   }
+   #  $command .= " ;  xv -o $family{$family_name}->{fmap_file} &";
+   &doit($command,$dry_run, 0);
 }
 
 
@@ -1331,18 +1345,18 @@ sub DrawDyadFeatureMap {
 #### check parameters
 sub CheckParameters {
 
-    #### accepted feature types
-    unless (defined %accepted_feature_types) {
+   #### accepted feature types
+   unless (defined %accepted_feature_types) {
 	$accepted_feature_types{cds} = 1;
-    }
-    $feature_types = join ",", keys (%accepted_feature_types);
+   }
+   $feature_types = join ",", keys (%accepted_feature_types);
 
 
-    #### check selected tasks
-    unless (defined(%task)) {
+   #### check selected tasks
+   unless (defined(%task)) {
 	&FatalError("You should select at least one task.");
-    }
-    if ($task{all}) {
+   }
+   if ($task{all}) {
 	foreach my $t (@supported_tasks) {
 	    $task{$t} = 1;
 	}
@@ -1351,63 +1365,63 @@ sub CheckParameters {
 	    $task{oligo_maps} = 0;
 	    $task{dyad_maps} = 0;
 	}
-    }
-    if ($task{maps}) {
+   }
+   if ($task{maps}) {
 	$task{oligo_maps} = 1;
 	$task{dyad_maps} = 1;
-    }
-    
-    
-    ### family file ###
-    unless (($family_file) || ($sequence_file_list)) {
+   }
+   
+   
+   ### family file ###
+   unless (($family_file) || ($sequence_file_list)) {
 	die "Error: you should specify either a family file or a sequence file list\n";  
-    } 
-    
-    ### organism ###
-    unless ($organism_name) {
+   } 
+   
+   ### organism ###
+   unless ($organism_name) {
 	die "Error: you should specify an organism\n$supported_organisms\n";  
-    } 
-    unless ($supported_organism{$organism_name}) {
+   } 
+   unless ($supported_organism{$organism_name}) {
 	die ("Error: organism $organism_name is not supported\n",
 	     "Supported organisms:\n$supported_organisms\n");
-    }
+   }
 
-    
+   
 #    $from = $default{from} unless defined($from);
 #    $to = $default{to} unless defined($to);
 
-    $from = $supported_organism{$organism_name}->{'up_from'}  unless defined($from);
-    $to = $supported_organism{$organism_name}->{'up_to'}  unless defined($to);
+   $from = $supported_organism{$organism_name}->{'up_from'}  unless defined($from);
+   $to = $supported_organism{$organism_name}->{'up_to'}  unless defined($to);
 
-    $seq_length = abs($to - $from) + 1;
-    $dyad_type = "any" unless ($dyad_type);
+   $seq_length = abs($to - $from) + 1;
+   $dyad_type = "any" unless ($dyad_type);
 
-    if (defined($force{strands})) {
+   if (defined($force{strands})) {
 	$strands = $force{strands}; ### force
-    } else {
+   } else {
 	$strands = "-2str";
-    }
-    if (defined($force{exp})) {
+   }
+   if (defined($force{exp})) {
 	$exp = $force{exp}; ### force
-    }
-    if (&IsReal($force{th})) {
+   }
+   if (&IsReal($force{th})) {
 	$thosig = $force{th}; ### force
-    } elsif ($#families > 0) {
+   } elsif ($#families > 0) {
 	$thosig = &round(10*abs(log($#families + 1)/log(10)))/10;
-    } else {
+   } else {
 	$thosig = 0;
-    } 
+   } 
 }
 
 
 ################################################################
 ## Analyze all the families    
 sub AnalyzeFamilies {
-    my $fam_count=0;
-    my $fam_nb = $#families+1;
+   my $fam_count=0;
+   my $fam_nb = $#families+1;
 
-    ### Calibrate oligonucleotides for each sequence length
-    if (($task{calibrate}) || 
+   ### Calibrate oligonucleotides for each sequence length
+   if (($task{calibrate}) || 
 	($sequence_file_list) ||
 	($background eq "calib1") ||
 	($background eq "calibN")
@@ -1419,9 +1433,9 @@ sub AnalyzeFamilies {
 #	    $family{$family_name}->{seq_length} = $seq_length*scalar(@{$family{$family_name}->{members}});
 #	}
 	$seq_length_calculated = 1;
-    }
+   }
 
-    foreach $family_name (@families) {
+   foreach $family_name (@families) {
 	$fam_count++;
 	if ($fam_count <= $skip) {
 	    warn "; Skipping family\t$fam_count\t$family_name\n" if ($main::verbose >= 1);
@@ -1488,7 +1502,7 @@ sub AnalyzeFamilies {
 	    }
 	}
 	
-    }
+   }
 }
 
 ################################################################
@@ -1504,16 +1518,16 @@ sub AnalyzeFamilies {
 
 sub PrintHelp {
 #### display full help message #####
-    $HELP_FAMILY_FILE = &help_message("family file");
-    open HELP, "| more";
-    print HELP <<End_of_help;
+   $HELP_FAMILY_FILE = &help_message("family file");
+   open HELP, "| more";
+   print HELP <<End_of_help;
 NAME
 	multiple-family-analysis
 
-        1999 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
+       1999 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
 	
 USAGE
-        multiple-family-analysis [-i inputfile] [-v]
+       multiple-family-analysis [-i inputfile] [-v]
 
 DESCRIPTION
 	Runs a combination of programs in order to discover significant
@@ -1546,19 +1560,19 @@ OPTIONS
 	-outdir	output directory
 
 
-    Sequence retrieval options
+   Sequence retrieval options
 	-org	organism
 	-noorf	exclude upstream ORFs from upstream sequences
 	-from	upstream region left limit
 	-to	upstream region right limit
-        -feattype
+       -feattype
 		feature type (e.g. CDS, mRNA)
 	-purge	use purged sequences for pattern discovery
 		(default)
 	-nopurge	
 		use non-purged sequences for pattern discovery
 
-    oligo-analysis and dyad-analysis options
+   oligo-analysis and dyad-analysis options
 	-1str   strand-sensitive analysis
 	-2str   strand-insensitive analysis
 	-htmaps	draw html maps (dynamic map with pointers to the features)
@@ -1579,7 +1593,7 @@ OPTIONS
 		from the conditions (seq lengths, seq number, ...)
 	-thosig threshold on occurrence significance
 
-    oligo-analysis options
+   oligo-analysis options
 	-maxol	maximum oligonucleotide length
 	-minol	minimum oligonucleotide length
 	-oligo_exp_freq
@@ -1590,7 +1604,7 @@ OPTIONS
 		calculate expected frequencies on the basis of a
 		Markov chain model of order #
 
-    dyad-analysis options
+   dyad-analysis options
 	-monad  monad length for dyad-analysis
 	-minsp	maximum spacing for dyad-analysis
 	-maxsp	maximum spacing for dyad-analysis
@@ -1598,28 +1612,28 @@ OPTIONS
 		name of a file containing the expected frequencies for
 		dyad-analysis.
 
-    Matrix-based pattern discovery options (consensus, gibbs, meme)
-        -width  matrix width
+   Matrix-based pattern discovery options (consensus, gibbs, meme)
+       -width  matrix width
 	-sps	expected number of sites per sequence
 		(default $expected_sites_per_gene)
 
-    Gibbs sampler (Neuwald 1995)
+   Gibbs sampler (Neuwald 1995)
 	-seed	 seed number for the random generator
 
-    Output options
+   Output options
 	-transp	transpose synthetic result table (columns become rows)
 	-sort sort_key
 	        sort key for the synthetic table
 		Supported: $supported_sort_keys
 
-   Options for the automaticaly generated SQL scripts
+  Options for the automaticaly generated SQL scripts
 	-schema database schema (default: $schema)
 	-host	database host (default: $host)
 	-user	database user (default: $user)
 	-password	
 		database password (default: $password)
 
-    Other options
+   Other options
 	-task selected_task
 		Select the tasks to be performed.
 		Supported tasks: $supported_tasks
@@ -1648,72 +1662,72 @@ OPTIONS
 		       3) source (optional)
 
 FILE FORMAT
-    $HELP_FAMILY_FILE
+   $HELP_FAMILY_FILE
 QUICK START
-    1) create a directory for the set of families
+   1) create a directory for the set of families
 
-    2) witin this directory, create a text file contaning the
-       description of family composition, as described above
-    
-    3) run the command. For example, with a bacterial genome :
+   2) witin this directory, create a text file contaning the
+      description of family composition, as described above
+   
+   3) run the command. For example, with a bacterial genome :
 
-       multiple-family-analysis -org organism -i family_file \
-           -v -from -200 -to 49 -task all
+      multiple-family-analysis -org organism -i family_file \
+          -v -from -200 -to 49 -task all
 
-    4) With a web browser (e.g. Netscape), open the folder
-       'synthetic_tables'. There should be a HTML file with the name
-       of your family ile as prefix, and the suffix indicating the
-       other analysis parameters. Open this file and analyze the
-       result.
+   4) With a web browser (e.g. Netscape), open the folder
+      'synthetic_tables'. There should be a HTML file with the name
+      of your family ile as prefix, and the suffix indicating the
+      other analysis parameters. Open this file and analyze the
+      result.
 
 TASK DESCRIPTION
 
-    all		Perform all the tasks below.
+   all		Perform all the tasks below.
 
-    upstream	Retrieve upstream sequences for the families.
+   upstream	Retrieve upstream sequences for the families.
 		(retrieve-seq)
 
-    purge	Purge upstream sequences for the family.
+   purge	Purge upstream sequences for the family.
 		(purge-sequences)
 
-    calibrate   Perform a family-secific calibration of expected
+   calibrate   Perform a family-secific calibration of expected
 		frequencies, by calculating oligonucleotide
 		distributions in the whole genome set of upstream
 		sequences of the same size. Beware: this takes time,
 		but it gives much less false positives with when
 		analyzing higher organisms.
-   
-    oligos	Run oligo-analysis on each family.
+  
+   oligos	Run oligo-analysis on each family.
 
-    dyads	Run dyad-analysis on each family.
+   dyads	Run dyad-analysis on each family.
 
-    maps	Draw feature maps with the results of oligo-analysi and
+   maps	Draw feature maps with the results of oligo-analysi and
 		dyad-analysis.
 		(feature-map)
 
-    merge	Merge the results of oligo-analysis and dyad-analysis.
+   merge	Merge the results of oligo-analysis and dyad-analysis.
 
-    slide	Match discovered patterns with a sliding window.
+   slide	Match discovered patterns with a sliding window.
 		(dna-pattern)
 
-    synthesis	Generate a HTML report in the directory sythetic_tables.
+   synthesis	Generate a HTML report in the directory sythetic_tables.
 
-    sql		Export the discovered patterns in tab-delimited files, 
+   sql		Export the discovered patterns in tab-delimited files, 
 		and export SQL scripts for loading these tables in a
 		relational database.  
 
-    clean	Delete upstream sequences after processing, in order 
+   clean	Delete upstream sequences after processing, in order 
 		to save disk space.  
 End_of_help
-  close HELP;
-  exit;
+ close HELP;
+ exit;
 }
 
 ################################################################
 #### display short help message
 sub PrintOptions {
-  open HELP, "| more";
-  print HELP <<End_short_help;
+ open HELP, "| more";
+ print HELP <<End_short_help;
 multiple-family-analysis options
 --------------------------------
 -h		(must be first argument) display full help message
@@ -1762,14 +1776,14 @@ multiple-family-analysis options
 -user		database user (default: $user)
 -password	database password (default: $password)
 End_short_help
-  close HELP;
-  exit;
+ close HELP;
+ exit;
 }
 
 ################################################################
 #### Read arguments
 sub ReadArguments {
-    foreach my $a (0..$#ARGV) {
+   foreach my $a (0..$#ARGV) {
 	### verbose ###
 	if ($ARGV[$a] eq "-v") {
 	    $verbose = $ARGV[$a+1];
@@ -1971,7 +1985,7 @@ sub ReadArguments {
 	    $password = $ARGV[$a+1];
 
 	}
-    }
+   }
 }
 
 
@@ -1980,60 +1994,60 @@ sub ReadArguments {
 # Verbosity
 #
 sub Verbose {
-    my $verbose_message = "";
-    $verbose_message .= "; multiple-family-analysis ";
-    $verbose_message .= &PrintArguments()."\n";
-    printf "; families     \t%d\n", $#families + 1;
-    foreach my $family_name (@families) {
+   my $verbose_message = "";
+   $verbose_message .= "; multiple-family-analysis ";
+   $verbose_message .= &PrintArguments()."\n";
+   printf "; families     \t%d\n", $#families + 1;
+   foreach my $family_name (@families) {
 	printf ";\t%s\t%d elements\n", $family_name, $family{$family_name}->get_size();
-    }
-    if ($family_file) {
+   }
+   if ($family_file) {
 	$verbose_message .= sprintf "; Family file\t%s\n", $family_file ;
 	$verbose_message .= sprintf "; Upstream regions\n";
 	$verbose_message .= sprintf ";\t%-22s\t%d\n", "Strands", $strands;
 	$verbose_message .= sprintf ";\t%-22s\t%d\n", "From", $from;
 	$verbose_message .= sprintf ";\t%-22s\t%d\n", "To", $to;
-    } elsif ($sequence_file_list) {
+   } elsif ($sequence_file_list) {
 	$verbose_message .= sprintf "; Sequence file list\t%s\n", $sequence_file_list;
-    }
-    $verbose_message .= sprintf "; %-13s\t%s\n", "Organism", $organism_name;
+   }
+   $verbose_message .= sprintf "; %-13s\t%s\n", "Organism", $organism_name;
 
-    if ($task{oligos}) {
+   if ($task{oligos}) {
 	$verbose_message .= sprintf "; oligo-analysis\n";
 	$verbose_message .= sprintf ";\t%-22s\t%d\n", "max oligo length", $max_oligo_len;
 	$verbose_message .= sprintf ";\t%-22s\t%d\n", "min oligo length", $min_oligo_len;
-    }
-    
-    if ($task{dyads}) {
+   }
+   
+   if ($task{dyads}) {
 	$verbose_message .= sprintf "; dyad-analysis\n";
 	$verbose_message .= sprintf ";\t%-22s\t%d\n", "monad length", $monad_length;
 	$verbose_message .= sprintf ";\t%-22s\t%d\n", "min spacing", $min_sp;
 	$verbose_message .= sprintf ";\t%-22s\t%d\n", "max spacing", $max_sp;
 	$verbose_message .= sprintf ";\t%-22s\t%s\n", "dyad type", $dyad_type;
 	$verbose_message .= sprintf ";\t%-22s\t%g\n", "sig threshold", $thosig;
-    }
+   }
 
-    if ($markov) {
+   if ($markov) {
 	$verbose_message .= sprintf "; %-13s\t%s\n", "Markov chains, order", $markov_order;
-    } elsif ($background) {
+   } elsif ($background) {
 	$verbose_message .= sprintf "; %-13s\t%s\n", "background model", $background;
-    }
+   }
 
-    $verbose_message .= "; No overlap with upstream ORFs\n" if ($noorf);
-    if ($noov eq "-noov") {
+   $verbose_message .= "; No overlap with upstream ORFs\n" if ($noorf);
+   if ($noov eq "-noov") {
 	$verbose_message .= "; Overlapping matches are discarded for self-overlapping patterns\n" ;
-    } else {
+   } else {
 	$verbose_message .= "; Overlapping matches are allowed for self-overlapping patterns\n" ;
-    }
-    warn $verbose_message;
-    return($verbose_message);
+   }
+   warn $verbose_message;
+   return($verbose_message);
 }
 
 
 ################################################################
 ### initialize one directory for each family
 sub MakeDirectories {
-    foreach $family_name(@families) {
+   foreach $family_name(@families) {
 	$dir = "${family_name}/";
 	unless (-d $dir) {
 	    mkdir $dir, 0755 || die "Error: cannot create directory $dir\n";
@@ -2045,7 +2059,7 @@ sub MakeDirectories {
 	    
 	}
 	close FAM;
-    }
+   }
 }
 
 
@@ -2053,20 +2067,20 @@ sub MakeDirectories {
 ### Generate tab files and SQL scripts for storing the results in a
 ### relational database
 sub ExportSQL {
-    warn "; Generating SQL\n" if ($verbose >= 1);
-    my $test = new RSAT::Family;
-    my $time_prefix = time();
-    my $family_factory = classes::ClassFactory->new_class(object_type=>"RSAT::Family",
+   warn "; Generating SQL\n" if ($verbose >= 1);
+   my $test = new RSAT::Family;
+   my $time_prefix = time();
+   my $family_factory = classes::ClassFactory->new_class(object_type=>"RSAT::Family",
 							  prefix=>$time_prefix);
-    
-    
+   
+   
 #    my $pattern_prefix = "pat_".&AlphaDate()."_";
-    my $pattern_factory = classes::ClassFactory->new_class(object_type=>"RSAT::Pattern",
+   my $pattern_factory = classes::ClassFactory->new_class(object_type=>"RSAT::Pattern",
 							   prefix=>$time_prefix);
-    
-    my %export_columns = ();
-    
-    foreach my $family_name (@families) {
+   
+   my %export_columns = ();
+   
+   foreach my $family_name (@families) {
 	
 	#### general family attributes
 	my $family_object = $family_factory->new_object(id=>$family_name);
@@ -2172,11 +2186,11 @@ sub ExportSQL {
 	}
 	
 	
-    }
+   }
 
-    ## Specify output fields
-    $family_factory->set_out_fields(qw(id organism size name suffix genes));
-    @pattern_out_fields = qw(id
+   ## Specify output fields
+   $family_factory->set_out_fields(qw(id organism size name suffix genes));
+   @pattern_out_fields = qw(id
 			     family_id
 			     family 
 			     type 
@@ -2189,27 +2203,27 @@ sub ExportSQL {
 			     occ_sig
 			     rank
 			     );
-    $pattern_factory->set_out_fields(@pattern_out_fields);
+   $pattern_factory->set_out_fields(@pattern_out_fields);
 
-    #### export directory
-    $dir{sql} = "sql_export";
-    &CheckOutDir($dir{sql});
+   #### export directory
+   $dir{sql} = "sql_export";
+   &CheckOutDir($dir{sql});
 
-    ### temporary output directory
-    $dir{output_bk} = $dir{output};
-    $dir{output} = $dir{sql};
-    my $pwd = `pwd`;
-    chomp $pwd;
-    warn join ("\t", $pwd , $dir{output}, $dir{output_bk}), "\n";
-    #### export the result tables
-    foreach my $factory ($family_factory, $pattern_factory) {
+   ### temporary output directory
+   $dir{output_bk} = $dir{output};
+   $dir{output} = $dir{sql};
+   my $pwd = `pwd`;
+   chomp $pwd;
+   warn join ("\t", $pwd , $dir{output}, $dir{output_bk}), "\n";
+   #### export the result tables
+   foreach my $factory ($family_factory, $pattern_factory) {
 	$factory->dump_tables();
 	$factory->generate_sql(schema=>$schema, 
 			       host=>$host, 
 			       password=>$password, 
 			       user=>$user);
-    }
-    &ExportMakefile("family", "pattern");
+   }
+   &ExportMakefile("family", "pattern");
 #    $dir{output} = $dir{output_bk};
 #    chdir($dir{output});
 }
@@ -2217,19 +2231,19 @@ sub ExportSQL {
 ## ##############################################################
 ## The input is a list of sequence files instead of a family file
 sub ReadSequenceList {
-    ($dir{sequences}, $short_sequence_file_list) = &SplitFileName($sequence_file_list);
+   ($dir{sequences}, $short_sequence_file_list) = &SplitFileName($sequence_file_list);
 
-    ## Convert relative to absolute directory
-    if ($dir{main}) {
+   ## Convert relative to absolute directory
+   if ($dir{main}) {
 	$dir{sequences} = $dir{main}."/".$dir{sequences};
-    }
+   }
 
 #    die $dir{sequences};
 
-    warn "; Reading sequence file list\t", $sequence_file_list, "\n" if ($verbose >= 1);
-    my ($files) = &OpenInputFile($sequence_file_list);
-    my $f = 0;
-    while (<$files>) {
+   warn "; Reading sequence file list\t", $sequence_file_list, "\n" if ($verbose >= 1);
+   my ($files) = &OpenInputFile($sequence_file_list);
+   my $f = 0;
+   while (<$files>) {
 	next if (/^;/);
 	next unless (/\S/);
 	chomp;
@@ -2239,7 +2253,7 @@ sub ReadSequenceList {
 	my $short_file = &ShortFileName($sequence_file);
 	my $family_name = $short_file;
 	$family_name =~ s|\.${seq_ext}$||;
-        my $comment = join "; ", @fields;
+       my $comment = join "; ", @fields;
 	
 #	push @families, $family_name;
 #	push @sequence_files, $sequence_file;
@@ -2249,7 +2263,7 @@ sub ReadSequenceList {
 	    $family{$family_name} = new RSA::family(name=>$family_name);
 	}
 
-        #### Sequence file
+       #### Sequence file
 	if ($dir{sequences}) {
 	    $family{$family_name}->{seq_file} = $dir{sequences}."/".$sequence_file;
 	} else {
@@ -2258,9 +2272,9 @@ sub ReadSequenceList {
 	$family{$family_name}->{seq_file_purged} = $family{$family_name}->{seq_file};
 	$family{$family_name}->{seq_file_purged} =~ s/\.${seq_ext}$//;
 	$family{$family_name}->{seq_file_purged} .= "_purged.".${seq_ext};
-         
-        #### Comment
-        $family{$family_name}->{comment} = $comment;
+        
+       #### Comment
+       $family{$family_name}->{comment} = $comment;
 
 	warn join ("\t", "; File $f", 
 		   $sequence_file, 
@@ -2272,35 +2286,35 @@ sub ReadSequenceList {
 		   ), "\n" if ($verbose >= 2); 
 	
 	push @comments, $comment;
-    }
-    close $files;
+   }
+   close $files;
 
-    @families = sort keys %family;
+   @families = sort keys %family;
 
 
-    #### Family members are read from the sequence file (sequence IDs are used as member IDs)
-    foreach my $family_name (@families) {
-        my ($in, $input_dir) =  &OpenInputFile($family{$family_name}->{seq_file});
-        my $seq_type = "dna";
-        while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $seq_format, $input_dir, $seq_type)) &&
+   #### Family members are read from the sequence file (sequence IDs are used as member IDs)
+   foreach my $family_name (@families) {
+       my ($in, $input_dir) =  &OpenInputFile($family{$family_name}->{seq_file});
+       my $seq_type = "dna";
+       while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $seq_format, $input_dir, $seq_type)) &&
 	   (($current_seq) || ($current_id))) {
-            $family{$family_name}->new_member($current_id);
-            warn join ("\t", 
+           $family{$family_name}->new_member($current_id);
+           warn join ("\t", 
 		       ";\tFile", $family{$family_name}->{seq_file}, 
 		       "Family", $family_name, 
 		       "member", $current_id), "\n" if ($main::verbose >= 2);
-        }
-        close $in;
-    }
+       }
+       close $in;
+   }
 }
 
 
 ################################################################
 ## Index one sequence length per family
 sub CalcCalibrationLengths {
-    my %calib_lengths = ();
-    warn ";\n; Calculating sequence lengths\n" if ($verbose >=1);
-    foreach $family_name (@families) {
+   my %calib_lengths = ();
+   warn ";\n; Calculating sequence lengths\n" if ($verbose >=1);
+   foreach $family_name (@families) {
 	$fam_count++;
 	
 	## Calculate sequence lengths
@@ -2330,23 +2344,23 @@ sub CalcCalibrationLengths {
 	}
 	close $in;
 	warn ";\tcalibration length for family ", $family_name, "\t", $calib_lengths{$family_name}, "\n" if ($main::verbose >= 1);
-    }  
-    my @calib_lengths = keys %calib_lengths;
-    warn "; Calibration lengths\n;\t", join( "\n;\t", @calib_lengths), "\n";
-    return @calib_lengths;
+   }  
+   my @calib_lengths = keys %calib_lengths;
+   warn "; Calibration lengths\n;\t", join( "\n;\t", @calib_lengths), "\n";
+   return @calib_lengths;
 }
 
 ################################################################
 ## Calibrate oligonucleotide occurrences (mean and variance) for each
 ## sequence length
 sub CalibrateOligos {
-    my @calib_lengths = @_;
-    warn ";\n; Calibrating oligonucleotide occurrences\n" if ($verbose >=1);
+   my @calib_lengths = @_;
+   warn ";\n; Calibrating oligonucleotide occurrences\n" if ($verbose >=1);
 
-    ### Analyse upstream occurrence distributions for each sequence length
-    &CheckOutDir($dir{calib1});
-    warn "; Calculating oligonucleotide distributions in all upstream sequences\n" if ($verbose >= 1);
-    foreach my $calib_length (sort {$a <=> $b} @calib_lengths) {
+   ### Analyse upstream occurrence distributions for each sequence length
+   &CheckOutDir($dir{calib1});
+   warn "; Calculating oligonucleotide distributions in all upstream sequences\n" if ($verbose >= 1);
+   foreach my $calib_length (sort {$a <=> $b} @calib_lengths) {
 
 	## retrieve all upstream sequence if required
 	my $allup_file = $dir{calib1}."/tmp_all_up_".$calib_length.".fasta";
@@ -2392,18 +2406,18 @@ sub CalibrateOligos {
 	$command = "rm -f $allup_file";
 	warn ":\tCleaning all upstream sequences\t", $allup_file, "\n" if ($main::verbose >= 1);
 	&doit($command, $dry_run, 0);
-    }
+   }
 
 }
 
 ## ##############################################################
 ## Calculate the prefix of the calibration file
 sub CalibrationPrefix {
-    my ($calib_length, $oligo_len, $N) = @_;
+   my ($calib_length, $oligo_len, $N) = @_;
 
-    my $calib_prefix = "";
+   my $calib_prefix = "";
 
-    if ($N) {
+   if ($N) {
 	## set-based calibration (simulations)
 
 	## Dirtectories containing the calibration files
@@ -2433,7 +2447,7 @@ sub CalibrationPrefix {
 	$calib_prefix .= "_l".$calib_length;
 	$calib_prefix .= "_r".$repetitions;
 
-    } else {
+   } else {
 	## single-gene-based calibration (all upstream)
 	$calib_prefix = $dir{calib1}."/";
 	$calib_prefix .= $oligo_len."nt";
@@ -2441,8 +2455,8 @@ sub CalibrationPrefix {
 	$calib_prefix .= "_".$organism_name;
 	$calib_prefix .= $noov;
 	$calib_prefix .= $strands;
-    }
-    return $calib_prefix;
+   }
+   return $calib_prefix;
 }
 
 
@@ -2450,12 +2464,12 @@ sub CalibrationPrefix {
 ################################################################
 ## Generate report fiels for the motif disovery competition 2004
 sub MDCreport {
-    &CheckOutDir($dir{mdc_report});
-    warn ";\n; Generating report\t", $outfile{results}, "\n" if ($verbose >=1);
-    
-    ################################################################
-    ## Open a file for the report of results
-    ($results) = &OpenOutputFile($outfile{results});
+   &CheckOutDir($dir{mdc_report});
+   warn ";\n; Generating report\t", $outfile{results}, "\n" if ($verbose >=1);
+   
+   ################################################################
+   ## Open a file for the report of results
+   ($results) = &OpenOutputFile($outfile{results});
 #      print $results join ("\n", 
 #  			 ">name of contact",
 #  			 "Jacques van Helden",
@@ -2463,11 +2477,11 @@ sub MDCreport {
 #  			 "jvanheld\@scmbb.ulb.ac.be",
 #  			 ">program name",
 #  			 "multiple-family-analyis"), "\n";
-    close $results;
-    
-    ################################################################
-    ## Open a file for the report of parameters
-    ($parameters) = &OpenOutputFile($outfile{parameters});
+   close $results;
+   
+   ################################################################
+   ## Open a file for the report of parameters
+   ($parameters) = &OpenOutputFile($outfile{parameters});
 #      print $parameters join ("\n", 
 #  			    ">name of contact",
 #  			    "Jacques van Helden",
@@ -2476,10 +2490,10 @@ sub MDCreport {
 #  			    ">program name",
 #  			    "multiple-family-analyis"), "\n";
 
-    ################################################################
-    ## Generate the report for each family
-    my $command = "";
-    foreach $family_name (@families) {
+   ################################################################
+   ## Generate the report for each family
+   my $command = "";
+   foreach $family_name (@families) {
 	$fam_count++;
 	if ($fam_count <= $skip) {
 	    warn "; Skipping family\t$fam_count\t$family_name\n" if ($main::verbose >= 1);
@@ -2497,7 +2511,7 @@ sub MDCreport {
 
 	my $selection_ft_prefix =  $family{$family_name}->{oligo_selection};
 	my $feature_file = $selection_ft_prefix.".ft";
-  	my $matching_options = " -N 0"; ## Make sure flanking sequences are not considered
+ 	my $matching_options = " -N 0"; ## Make sure flanking sequences are not considered
 	$matching_options = " -merge"; ## merge overlapping matches
 
 #  	## Threshold for reporting a match
@@ -2584,23 +2598,23 @@ sub MDCreport {
 	$command .= " -i ".$feature_file;
 	$command .= ">> ".$outfile{results} if ($outfile{results});
 	&doit($command);
-    }    
+   }    
 
-    close $parameters;
+   close $parameters;
 
-    warn ";\n; Generated report\t", $outfile{results}, "\n" if ($verbose >=1);
+   warn ";\n; Generated report\t", $outfile{results}, "\n" if ($verbose >=1);
 }
 
 
 ################################################################
 ## Extract contigs and isolated patterns from an assembly file
 sub ReadAssemblyFile {
-    my ($assembly_file) = @_;
-    my ($pattern_handle, $input_dir) = &OpenInputFile($assembly_file);
-    my @assembled_patterns = ();
-    my $error = "";
+   my ($assembly_file) = @_;
+   my ($pattern_handle, $input_dir) = &OpenInputFile($assembly_file);
+   my @assembled_patterns = ();
+   my $error = "";
 
-    while (<$pattern_handle>) {
+   while (<$pattern_handle>) {
 	chomp;
 	if (/Too many patterns to assemble/i) {
 	    $error = $_;
@@ -2642,8 +2656,8 @@ sub ReadAssemblyFile {
 					     $score{$pattern},
 					     ), "\n" if ($main::verbose >= 10);
 	}
-    }
-    close $pattern_handle;
-    return ($error, @assembled_patterns);
+   }
+   close $pattern_handle;
+   return ($error, @assembled_patterns);
 }
 
