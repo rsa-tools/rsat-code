@@ -1,21 +1,35 @@
 #!/usr/bin/perl
+#### redirect error log to a file
 if ($0 =~ /([^(\/)]+)$/) {
-    push (@INC, "$`lib/");
+  push (@INC, "$`lib/");
 }
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
-require "RSA.lib.pl";
+#### redirect error log to a file
+BEGIN {
+    $ERR_LOG = "/dev/null";
+#    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
+    use CGI::Carp qw(carpout);
+    open (LOG, ">> $ERR_LOG")
+	|| die "Unable to redirect log\n";
+    carpout(*LOG);
+}
+require "RSA.lib";
+require "RSA.cgi.lib";
+$ENV{RSA_OUTPUT_CONTEXT} = "cgi";
+
 $print_env_command = "$SCRIPTS/print-env";
-$tmp_file_name = sprintf "print-env.%s", &AlphaDate;
 
 ### Print the header
 $query = new CGI;
-print $query->header;
-print $query->start_html;
+
+### print the result page
+&RSA_header("print-env result");
+&ListParameters if ($ECHO >=2);
 
 
 ##### update log file ####
-#&UpdateLogFile;
+&UpdateLogFile();
 
 #### execute the command #####
 
