@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: position-analysis,v 1.18 2003/10/29 09:04:12 jvanheld Exp $
+# $Id: position-analysis,v 1.19 2003/11/06 12:33:22 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -23,7 +23,7 @@ $XYgraph_command = "$SCRIPTS/XYgraph";
 $reference_pos = 0;
 
 #### initialize other variables
-$start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+$start_time = &AlphaDate;
 $sequence_number = 0;
 
 $max_seq_length = 0;
@@ -315,7 +315,12 @@ sub ReadSequence {
 	
 	$sequence_number++;  
 
-	warn "; Analysing sequence\t$sequence_number\t$current_id\n" if ($verbose >= 2);
+	warn "; ", join ("\t", 
+			 $start_time,
+			 &AlphaDate(), 
+			 "Analysing sequence",
+			 $sequence_number,
+			 $current_id), "\n" if ($verbose >= 2);
 	### remove tabs and blank spaces ###    
 	$current_seq = &FoldSequence($current_seq,0);
 	
