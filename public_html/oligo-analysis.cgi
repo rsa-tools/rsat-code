@@ -8,7 +8,8 @@ use CGI::Carp qw/fatalsToBrowser/;
 #### redirect error log to a file
 BEGIN {
     $ERR_LOG = "/dev/null";
-#    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
+#    $ERR_LOG = "/tmp/RSA_ERROR_LOG.txt";
+#    $ERR_LOG = "/rubens/dsk2/jvanheld/rsa/rsa-tools/logs/RSA_ERROR_LOG.txt";
     use CGI::Carp qw(carpout);
     open (LOG, ">> $ERR_LOG")
 	|| die "Unable to redirect log\n";
@@ -30,7 +31,7 @@ $query = new CGI;
 
 ### print the result page
 &RSA_header("oligo-analysis result");
-&ListParameters if ($ECHO >=2);
+&ListParameters() if ($ECHO >=2);
 
 #### update log file ####
 &UpdateLogFile;
@@ -39,14 +40,15 @@ $query = new CGI;
 $parameters = "";
 $parameters .= " -sort";
 
-#### purge sequence option
-$purge = $query->param('purge');
 
 ### sequence file
 ($sequence_file,$sequence_format) = &GetSequenceFile();
+
+$purge = $query->param('purge');
 if ($purge) {
-    $command= "$purge_sequence_command -i $sequence_file -format $sequence_format |  $oligo_analysis_command ";
-#    $command= "$purge_sequence_command -i $sequence_file -format $sequence_format -o ${sequence_file}.purged;  $oligo_analysis_command -i ${sequence_file}.purged  ";
+    #### purge sequence option
+#    $command= "$purge_sequence_command -i $sequence_file -format $sequence_format |  $oligo_analysis_command ";
+    $command= "$purge_sequence_command -i $sequence_file -format $sequence_format -o ${sequence_file}.purged;  $oligo_analysis_command -i ${sequence_file}.purged  ";
 } else {
     $command= "$oligo_analysis_command -i $sequence_file  ";
 }
@@ -55,78 +57,85 @@ if ($purge) {
 ### fields to return
 $return_fields = "";
 
-### occurrences
-if ($query->param('occ')) {
-  $return_fields .= "occ,";
-  ### threshold on occurrences
-  if ($query->param('occurrence_threshold') =~ /^\d+$/) {
-    $parameters .= " -tho ".$query->param('occurrence_threshold');
-  }
-} 
-
-### frequencies
-if ($query->param('freq')) {
-  $return_fields .= "freq,";
-} 
-
-### matching sequences
-if ($query->param('mseq')) {
-  $return_fields .= "mseq,";
-  ### threshold on matching sequences
-  if ($query->param('ms_threshold') =~ /^\d+$/) {
-    $parameters .= " -thms ".$query->param('ms_threshold');
-  }  
-} 
-
-### observed/expected ratio
-if ($query->param('ratio')) {
-  $return_fields .= "ratio,";
-} 
-
-### rank
-if ($query->param('rank')) {
-  $return_fields .= "rank,";
-} 
-
-### z-score
-if ($query->param('zscore')) {
-  $return_fields .= "zscore,";
-} 
-
-### binomial probabilities
-if ($query->param('proba')) {
-  $return_fields .= "proba,";
-  ### threshold on probabilities
-  if ($query->param('proba_occ_threshold') =~ /^[\d\.\-+e]+$/i) {
-    $parameters .= " -thpo ".$query->param('proba_occ_threshold');
-  }
-  ### threshold on significance
-  if ($query->param('occ_significance_threshold') =~ /^-{0,1}[\d\.\-+e]+$/i) {
-    $parameters .= " -thosig ".$query->param('occ_significance_threshold');
-  }
-} 
-
-### positions
-if ($query->param('pos')) {
-  $return_fields .= "pos,";
-} 
-
-$return_fields =~ s/,$//;
-
-if ($return_fields eq "") {
-  &cgiError("You should select at least one option in the \"Return\" box.");
+if ($query->param('return') eq "table") {
+    $parameters .= " -return occ -table"; 
 } else {
-  $parameters .= " -return $return_fields";
+    
+    ### occurrences
+    if ($query->param('occ')) {
+	$return_fields .= "occ,";
+	### threshold on occurrences
+	if ($query->param('occurrence_threshold') =~ /^\d+$/) {
+	    $parameters .= " -tho ".$query->param('occurrence_threshold');
+	}
+    } 
+    
+    ### frequencies
+    if ($query->param('freq')) {
+	$return_fields .= "freq,";
+    } 
+    
+    ### matching sequences
+    if ($query->param('mseq')) {
+	$return_fields .= "mseq,";
+	### threshold on matching sequences
+	if ($query->param('ms_threshold') =~ /^\d+$/) {
+	    $parameters .= " -thms ".$query->param('ms_threshold');
+	}  
+    } 
+    
+    ### observed/expected ratio
+    if ($query->param('ratio')) {
+	$return_fields .= "ratio,";
+    } 
+    
+    ### rank
+    if ($query->param('rank')) {
+	$return_fields .= "rank,";
+    } 
+    
+    ### z-score
+    if ($query->param('zscore')) {
+	$return_fields .= "zscore,";
+    } 
+    
+    ### binomial probabilities
+    if ($query->param('proba')) {
+	$return_fields .= "proba,";
+	### threshold on probabilities
+	if ($query->param('proba_occ_threshold') =~ /^[\d\.\-+e]+$/i) {
+	    $parameters .= " -thpo ".$query->param('proba_occ_threshold');
+	}
+	### threshold on significance
+	if ($query->param('occ_significance_threshold') =~ /^-{0,1}[\d\.\-+e]+$/i) {
+	    $parameters .= " -thosig ".$query->param('occ_significance_threshold');
+	}
+    } 
+    
+    ### positions
+    if ($query->param('pos')) {
+	$return_fields .= "pos,";
+    } 
+    
+    $return_fields =~ s/,$//;
+    
+
+    if ($return_fields eq "") {
+	&cgiError("You should select at least one option in the \"Return\" box.");
+    } else {
+	$parameters .= " -return $return_fields";
+    }
 }
 
+    
 ### single or both strands
-if ($query->param('strand') =~ /single/) {
-  $parameters .= " -1str";
-} else {
+    if ($query->param('strand') =~ /single/) {
+	$parameters .= " -1str";
+    } else {
   $parameters .= " -2str";
 }
 
-### prevent overlapping matches of the same pattern
+### group patterns by pairs of reverse complements
 unless ($query->param('grouprc')) {
   $parameters .= " -nogrouprc";
 } 
@@ -143,9 +152,8 @@ $parameters .= " -v";
 $parameters .= " -seqtype ".$query->param("sequence_type");
 
 #### oligo size ####
-if ($query->param('oligo_size') =~ /\d/) {
-    $oligo_length = $query->param('oligo_size') ;
-} 
+$oligo_length = $query->param('oligo_length') ;
+&FatalError("$oligo_length Invalid oligonucleotide length") unless &IsNatural($oligo_length);
 $parameters .= " -l $oligo_length";
 
 #### expected frequency estimation ####
@@ -177,7 +185,6 @@ if ($query->param('freq_estimate') =~ /background/i) {
 #    }
 
 } elsif ($query->param('freq_estimate') =~ /upload/i) {
-    ### TO IMPLEMENT
     $exp_freq_file = "${TMP}/$tmp_file_name.expfreq";
     $upload_freq_file = $query->param('upload_freq_file');
     if ($upload_freq_file) {
@@ -223,8 +230,11 @@ if ($query->param('neighborhood') =~ /N at one position/i) {
   $parameters .= " -onedeg ";
 }
 
+$command .= $parameters;
 
-print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ECHO >=1);
+print "<PRE>command: $command<P>\n</PRE>" if ($ECHO >=1);
+
+&SaveCommand("$command", "$TMP/$tmp_file_name");
 
 if ($query->param('output') =~ /display/i) {
 
@@ -232,7 +242,7 @@ if ($query->param('output') =~ /display/i) {
     
     ### execute the command ###
     $result_file = "$TMP/$tmp_file_name.res";
-    open RESULT, "$command $parameters |";
+    open RESULT, "$command |";
     
     ### Print result on the web page
     print '<H2>Result</H2>';
@@ -240,7 +250,8 @@ if ($query->param('output') =~ /display/i) {
     close(RESULT);
     
     #### oligonucleotide assembly ####
-    if (&IsReal($query->param('occ_significance_threshold'))) {
+    if (($query->param('return') ne "table") &&
+	(&IsReal($query->param('occ_significance_threshold')))) {
 	$pattern_assembly_command = "$SCRIPTS/pattern-assembly -v 1 -subst 1";
 	if ($query->param('strand') =~ /single/) {
 	    $pattern_assembly_command .= " -1str";
@@ -265,9 +276,9 @@ if ($query->param('output') =~ /display/i) {
     print '<HR SIZE=3>';
   
 } elsif ($query->param('output') =~ /server/i) {
-    &ServerOutput("$command $parameters");
+    &ServerOutput("$command", $query->param('user_email'), $tmp_file_name);
 } else {
-    &EmailTheResult("$command $parameters", $query->param('user_email'));
+    &EmailTheResult("$command", $query->param('user_email'), $tmp_file_name);
 }
 
 print $query->end_html;
