@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: check-oligo-analysis,v 1.2 2003/10/21 17:24:20 jvanheld Exp $
+# $Id: check-oligo-analysis,v 1.3 2003/10/26 22:35:40 jvanheld Exp $
 #
-# Time-stamp: <2003-10-21 08:54:49 jvanheld>
+# Time-stamp: <2003-10-21 23:00:11 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -11,6 +11,7 @@ if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
 require "RSA.lib";
+require POSIX;
 
 ################################################################
 #### initialise parameters
@@ -23,18 +24,22 @@ local $verbose = 0;
 
 $oligo_len = 6;
 $str = "-1str";
+@strand_modes = ("-1str", "-2str");
 $seq_len=800;
 $seq_nb=10;
-$noov="-noov";
+$ov="-noov";
+@overlap_modes=("-noov", "-ovlp");
 $thosig = -2;
-$repetitions = 100;
+$repet = 1000;
 $from=1;
 
 @tasks = ();
 %supported_tasks = ();
-$supported_task{"oligos"}++;
-$supported_task{"synthesis"}++;
-$supported_tasks = join",", keys (%supported_task);
+$supported_task{'oligos'}++;
+$supported_task{'synthesis'}++;
+$supported_task{'theory'}++;
+$supported_task{'all'}++;
+$supported_tasks = join",", sort(keys (%supported_task));
 
 &ReadArguments();
 
@@ -48,6 +53,12 @@ foreach my $t (@tasks) {
 	&FatalError ("Task $t is invalid. Supported: $supported_tasks.");
     }
     $task{$t}++;
+}
+
+if ($task{all}) {
+    foreach my $t (keys %supported_tasks) {
+	$task{$t}++;
+    }
 }
 
 ################################################################
@@ -67,21 +78,38 @@ $out = &OpenOutputFile($outfile{output});
 &Verbose if ($verbose);
 
 if ($task{oligos}) {
-    for $job ($from..$repetitions) {
-	foreach $noov ("-noov", "-ovlp") {
-	    foreach $str ("-2str", "-1str") {
-		$result_dir=$dir{output}."/RAND_L${seq_len}_N${seq_nb}${str}${noov}";
-		&OneJob($job);
+    for $job ($from..$repet) {
+	foreach $ov (@overlap_modes) {
+	    foreach $str (@strand_modes) {
+		
+		## use a verbosity of 1 for the first job only
+		if ($job == $from) {
+		    $job_verbose = 1;
+		} else {
+		    $job_verbose = 0;
+		}
+		
+		$result_dir=$dir{output}."/RAND_L${seq_len}_N${seq_nb}${str}${ov}";
+		&OneJob($job, $job_verbose);
 	    }
 	}
     }
 }
 
 if ($task{synthesis}) {
-    foreach $noov ("-noov", "-ovlp") {
-	foreach $str ("-2str", "-1str") {
-	    $result_dir=$dir{output}."/RAND_L${seq_len}_N${seq_nb}${str}${noov}";
+    foreach $ov (@overlap_modes) {
+	foreach $str (@strand_modes) {
+	    $result_dir=$dir{output}."/RAND_L${seq_len}_N${seq_nb}${str}${ov}";
 	    &SummarizeResults() ;
+	}
+    }
+}
+
+if ($task{theory}) {
+    foreach $ov (@overlap_modes) {
+	foreach $str (@strand_modes) {
+	    $result_dir=$dir{output}."/RAND_L${seq_len}_N${seq_nb}${str}${ov}";
+	    &CalcTheoreticalDistributions();
 	}
     }
 }
@@ -108,14 +136,13 @@ exit(0);
 ################################################################
 ## Calculate score distributions
 sub SummarizeResults {
-    warn join( "\t", "\n; Summarizing results", ${str}, $noov), "\n" if ($verbose >= 1);
-    
+    warn join( "\t", "\n; Summarizing results", ${str}, $ov), "\n" if ($verbose >= 1);
     $score_col=9;
     $synthesis_dir=$dir{output}."/synthesis";
     &CheckOutputDir($synthesis_dir);
-    $synthesis_file = ${synthesis_dir}."/oligos_${oligo_len}nt${str}${noov}_sig${thosig}_distrib.tab";
-    $command =  "echo ';Jobs' `ls ${result_dir}/oligos_*_${oligo_len}nt${str}${noov}_sig${thosig}.tab | wc --lines` > ${synthesis_file}; ";
-    $command .=  " cat ${result_dir}/oligos_*_${oligo_len}nt${str}${noov}_sig${thosig}.tab";
+    $synthesis_file = ${synthesis_dir}."/oligos_${oligo_len}nt${str}${ov}_sig${thosig}_distrib.tab";
+    $command =  "echo ';Jobs' `ls ${result_dir}/oligos_*_${oligo_len}nt${str}${ov}_sig${thosig}.tab | wc | awk '{print \$0}'` > ${synthesis_file}; ";
+    $command .=  " cat ${result_dir}/oligos_*_${oligo_len}nt${str}${ov}_sig${thosig}.tab";
     $command .= " | grep -v ';'" ;
     $command .= " | cut -f ${score_col}";
     $command .= " | classfreq -ci 1 -v 1 -min ${thosig}";
@@ -127,20 +154,20 @@ sub SummarizeResults {
 ################################################################
 ## perform a single comparison
 sub OneJob {
-    my ($job) = @_;
+    my ($job, $job_verbose) = @_;
 
     ################################################################
     ### compose the command
-    my $result_file=${result_dir}."/oligos_r${job}_${oligo_len}nt${str}${noov}_sig${thosig}.tab";
+    my $result_file=${result_dir}."/oligos_r${job}_${oligo_len}nt${str}${ov}_sig${thosig}.tab";
     &CheckOutputDir($result_dir);
     $command = "random-seq -l ${seq_len} -r ${seq_nb} ";
-    $command .= " | oligo-analysis -return occ,freq,proba,rank -sort "; 
+    $command .= " | oligo-analysis -v $job_verbose -return occ,freq,proba,rank -sort "; 
     $command .= " -l $oligo_len";
     $command .= " $str";
-    $command .= " $noov";
+    $command .= " $ov";
     $command .= " -thosig ${thosig}";
     $command .= " -o ${result_file}";
-    
+
     ################################################################
     ###### execute the command
     &doit($command);
@@ -159,7 +186,7 @@ NAME
         2002 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
 	
 DESCRIPTION
-	Check the program oligo-analysis by generatin random
+	Check the program oligo-analysis by generating random
 	sequences, and calculating oligo occurrences, P-value, E-value
 	and significance.
 
@@ -184,6 +211,39 @@ OPTIONS
 	-thosig occurrence significance
 	-task	task (supported: $supported_tasks)
 	-from #	starting iteration (to pursue an interrupted test)
+	-max_occ #
+		maximum number of occurrences for calculating 
+		the theoretical distributions
+OUTPUT FORMAT
+
+    Task oligos
+    -----------
+
+       Each simulation consists in generating a random sequence and
+       running oligo-analysis on this sequence. Each analysis consists
+       in a repetition of several simulations (1000 by default). 
+
+       The program returns one file per simulation, with the result of
+       oligo-analysis. The first output file contains the verbosity
+       (detail of the nalysis options), the subsequent files only
+       contain the pattern counts and associated statistics. This
+       avoid repeating the same verbosity 1000 times.
+
+       There is a separate directory for each analysis condition
+       (1str, 2str, noov, ovlp), and the successive repetitions are
+       sved in separate files in this directory..
+
+   Task synthesis
+   --------------
+       This task collects all results from the output directories, and
+       summarizes them in one file per condition.
+
+   Task theory
+   -----------
+       Calculate the theoretical expectation for all occurrences from
+       0 to a given maximum (option -max_occ). The results are saved
+       in the diretory 'theory', as one separate file per condition.
+
 End_of_help
   close HELP;
   exit;
@@ -207,7 +267,8 @@ check-oligo-analysis options
 -ol		oligo length
 -thosig		occurrence significance
 -task		task (supported: $supported_tasks)
--from #	starting iteration (to pursue an interrupted test)
+-from #	starting iteration (to pursue an interrupted test)E
+-max_occ #	maximum occurrences for the theoretical distributions
 End_short_help
   close HELP;
   exit;
@@ -244,7 +305,7 @@ sub ReadArguments {
 	    	
 	    ### repetitions
 	} elsif ($ARGV[$a] eq "-r") {
-	    $repetitions = $ARGV[$a+1];
+	    $repet = $ARGV[$a+1];
 	    
 	    ### sequence length
 	} elsif ($ARGV[$a] eq "-sl") {
@@ -270,6 +331,10 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-from") {
 	    $from = $ARGV[$a+1];
 	    
+	    ### max occurrences for the theoretical distrib
+	} elsif ($ARGV[$a] eq "-max_occ") {
+	    $manual_max_occ = $ARGV[$a+1];
+	    
 
 	}
     }
@@ -293,3 +358,118 @@ sub Verbose {
 	}
     }
 }
+
+################################################################
+## calculate theoretical distributions as a function of the conditions
+sub CalcTheoreticalDistributions {
+#    my ($theory_file) = @_;
+
+    my @descriptions = ();
+
+    $theory_dir=$dir{output}."/theory";
+    &CheckOutputDir($theory_dir);
+    $theory_file = $theory_dir."/oligos_${oligo_len}nt${str}${ov}_sig${thosig}_distrib.tab";
+    
+    $thf = &OpenOutputFile($theory_file); ## open output file
+    
+    ## number of jobs
+#    $jobs = `ls ${result_dir}/oligos_*_${oligo_len}nt${str}${ov}_sig${thosig}.tab | wc --lines`;
+#    $desc{jobs} = "Repetitions";
+
+    $desc{repet}= "repetitions (number of families analyzed)"; push @descriptions, "repet";
+
+    $L = $seq_len; $desc{L} = "sequence length"; push @descriptions, "L";
+    $N = $seq_nb;$desc{N} = "number of sequences" ;push @descriptions, "N";
+    $w = $oligo_len; $desc{w} = "word lengths";push @descriptions, "w";
+    
+    $desc{str}= "strands"; push @descriptions, "str";
+    $desc{ov} = "overlap count mode"; push @descriptions, "ov";
+
+    ## number of positions
+    $T = $N*($L - $w + 1); $desc{T} = "number of possible positions"; push @descriptions, "T";
+    if ($str eq "-1str") {
+        $D = 4**$w; 
+    } elsif ($w%2 == 1) {
+	$D = (4**$w)/2;
+    } else {
+	$D = (4**$w + 4**($w/2))/2;	
+    }
+    $desc{D} = "number of possible patterns"; push @descriptions, "D";
+
+    ## average occurrence probabilities
+    ## this is an approximation, I should separate reverse palindroms from the other patterns 
+    $p = 1/$D; $desc{p} = "average probability of occurrence at each position"; push @descriptions, "p";
+    $m = $p*$T; $desc{m} = "mean number of occurrences"; push @descriptions, "m";
+    
+
+    ## print parameters
+    print $thf ";Theoretical distribution\n";
+    foreach my $var (@descriptions) {
+	if (&IsInteger($$var)) {
+	    printf $thf "; %s\t%13d\t%s\n",  $var, $$var, $desc{$var};
+	} elsif (&IsReal($$var)) {
+	    printf $thf "; %s\t%13f\t%s\n",  $var, $$var, $desc{$var};
+	} else {
+	    printf $thf "; %s\t%13s\t%s\n",  $var, $$var, $desc{$var};
+	}
+    }
+
+
+    ## calculate the P-value, E-value and sig for each occurrence
+    if (defined($manual_max_occ)) {
+	$max_occ = manual_max_occ;
+    } else {
+	$max_occ = &min($T, POSIX::ceil($m*5));
+    }
+
+    print $thf ";", join( "\t",
+			  "occ",
+			  sprintf ("%-13s", "P_value"),
+			  sprintf ("%-13s", "E_value"),
+			  "sig",
+			  sprintf ("%-13s", "P(x>=1)"),
+			  sprintf ("%-13s", "P(x>=1) approx"),
+			  sprintf ("%-13s", "approx error"),
+			  sprintf ("%-13s", "relative error"),
+			  sprintf ("%-13s", "exp_patterns"),
+			  sprintf ("%-13s", "exp_first_sig"),
+			  ), "\n";
+    foreach my $occ (0..$max_occ) {
+	## P-value
+	$P_value = &sum_of_binomials($p, $T, $occ, $T);
+	$E_value = $P_value * $D;
+	$sig = -log($E_value)/log(10);
+	
+	## this is the simple application of the formula, but it is restricted to the e-15 limit of precision of  floating point calculation
+#	$P_first_sig = 1-(1-$P_value)**$D;
+#	$P_first_sig_approx = 1-exp(-$E_value);
+
+	## this is slower but it has a precision of ~e-300
+	$P_first_sig = &sum_of_binomials($P_value, $D, 1, $D);
+	$P_first_sig_approx = &sum_of_poisson($E_value, 1, $D);
+
+	$approx_error = $P_first_sig_approx - $P_first_sig;
+	if ($P_first_sig > 0) {
+	    $relative_error = sprintf("%-13.8g", $approx_error/$P_first_sig);
+	} else {
+	    $relative_error = sprintf("%-13s", "NA");
+	}
+	print $thf join ("\t", 
+			 $occ,
+			 sprintf("%-13.8g", $P_value),
+			 sprintf("%-13.8g", $E_value),
+			 sprintf("%.2f", $sig),
+			 sprintf("%-13.8g", $P_first_sig),
+			 sprintf("%-13.8g", $P_first_sig_approx),
+			 sprintf("%-13.8g", $approx_error),
+			 $relative_error,
+			 sprintf("%-13.8g", $E_value*$repet),
+			 sprintf("%-13.8g", $P_first_sig*$repet),
+			 "\n"
+			 );
+    }
+	 
+    print $thf ";\n";
+    close $thf if ($theory_file);
+
+} 
