@@ -712,12 +712,13 @@ sub ReadNextSequence {
     ##### Reads a DNA sequence
     ##### various formats are accepted (see the hash %accepted_raw_formats
     ##### Usage:
-    ##### ($sequence, $seq_id, @seq_comments) = &ReadNextSequence(FILE, $format)
+    ##### ($sequence, $seq_id, @seq_comments) = &ReadNextSequence(FILE, $format [, $input_dir])
     ##### where   FILE is a file handle
     #####         $format is one of the accepted sequence formats 
     #####                 (see CheckSeqFormat) 
-    local $SEQFILE = $_[0];
+    local $SEQ = $_[0];
     local $sequence_format = lc($_[1]);
+    local $input_dir = $_[2];
     local $sequence = "";
     local $seq_id = "";
     local @comments = ();
@@ -731,7 +732,7 @@ sub ReadNextSequence {
 	}
 	
 	$sequence = "";
-	while (<$SEQFILE>) {
+	while (<$SEQ>) {
 	    next if (/^;/);
 	    $sequence .= $_;
 	}
@@ -754,7 +755,7 @@ sub ReadNextSequence {
 	$seq_id .= "_$seq_counter";
 	$sequence = "";
 	my $gotit = 0;
-	while ((defined($SEQFILE)) && ($sequence = <$SEQFILE>) && !($gotit)) {
+	while ((defined($SEQ)) && ($sequence = <$SEQ>) && !($gotit)) {
 	    next if ($sequence =~ /^;/);
 	    $gotit = 1;
 	    &CheckFormat($sequence, $sequence_format);
@@ -767,15 +768,21 @@ sub ReadNextSequence {
 	### file list ###
     } elsif ($sequence_format eq "filelist") {
 	$found = 0;
-	do {
-	    $next_line = <$SEQFILE> || return ("","");
+	while (!($found)) {
+	    $next_line = <$SEQ> || return ("","");
 	    next if ($next_line =~ /^;/); ### skip comment lines
 	    if ($next_line =~ /^\s*(\S+)/) { ### make sure to take a non-empty line
 		$next_file = $1;	### file name is the first word of the line
 		$found = 1;
 	    }
-	} until ($found);
+	} 
 	
+print STDERR join "\t", $next_file, $input_dir, "$input_dir/$next_file", "\n";
+	unless (-e $next_file) {
+	    if (-e "$input_dir/$next_file") {
+		$next_file = "$input_dir/$next_file";
+	    }
+	}
 	if ((-e $next_file) && (open NEXT_SEQ, $next_file)) {
 	    #### extract the sequence file name without path ####
 	    if ($next_file =~ /([\S]*\/)*([\S^\/]+)$/ ) {
@@ -797,7 +804,7 @@ sub ReadNextSequence {
 	
 	### IntelliGenetics format ###
     } elsif ($sequence_format eq "ig") {
-	while (<$SEQFILE>) {
+	while (<$SEQ>) {
 	    if (/^;(.*)/) {		### comment line
 		@comments = (@comments, $1);
 	    } elsif (($seq_id eq "") && (/(\S+)\s/)) { ### identifier for the next sequence
@@ -815,7 +822,7 @@ sub ReadNextSequence {
 	
 	### Wconsensus format ###
     } elsif (($sequence_format eq "wc") || ($sequence_format eq "wconsensus")) {
-	while (<$SEQFILE>) {
+	while (<$SEQ>) {
 	    if (/^;(.*)/) {		### comment line
 		@comments = (@comments, $1);
 	    } elsif (($seq_id eq "") && (/(\S+)\s+\\(.*)/)) { 
@@ -827,7 +834,7 @@ sub ReadNextSequence {
 		    $end_of_seq = 0;
 		    $sequence = $the_rest;
 		    do { 
-			if ($next_line = <$SEQFILE>) {
+			if ($next_line = <$SEQ>) {
 			    if ($next_line=~ /(.*)\\/) {
 				$end_of_seq = 1;
 				$sequence .= $1;
@@ -848,7 +855,7 @@ sub ReadNextSequence {
 	
 	### FastA format ###
     } elsif ($sequence_format eq "fasta") {
-	while (<$SEQFILE>) {
+	while (<$SEQ>) {
 	    next if (/^;/);
 	    if (/^\s*>\s*(\S+)\s*(.*)/) { ### new identifier
 		@comment = ($2);
@@ -883,7 +890,7 @@ sub ReadNextSequence {
 	@comments = ();
 	$in_sequence = 0;
 	
-	while (<$SEQFILE>) {
+	while (<$SEQ>) {
 	    if (/^\/\/$/) {		### end of record
 		&FoldSequence($sequence, 0);
 		return ($sequence, $seq_id, @comments);
@@ -913,7 +920,7 @@ sub ReadNextSequence {
 	@comments = ();
 	$in_sequence = 0;
 	
-	while (<$SEQFILE>) {
+	while (<$SEQ>) {
 	    chomp;
 	    if (/^\/\/$/) {		### end of record
 		FoldSequence($sequence, 0);
@@ -943,7 +950,7 @@ sub ReadNextSequence {
 	@comments = ();
 	$in_sequence = 0;
 	
-	while (<$SEQFILE>) {
+	while (<$SEQ>) {
 	    chomp;
 	    if (/^\/\/$/) {		### end of record
 		FoldSequence($sequence, 0);
@@ -980,12 +987,12 @@ sub ReadMSF {
   #### ======
   #### %seq_hash = ReadMsf(FILE);
   ####
-  local $SEQFILE = $_[0];
+  local $SEQ = $_[0];
   local(%seq_hash);
   local($id);
   local($started) = 0;
   
-  while (<$SEQFILE>) {
+  while (<$SEQ>) {
     if (/\/\//) {
       $started = 1;
     } elsif (/^\s*(\d+)\s+(\d+)\s+$/) {
