@@ -408,6 +408,14 @@ OPTIONS
 	-ol	oligo-length
 		This is necessary with the option -ncf, to determine
 		the oligonucleotide length for the Markov chain model.
+	-lf	length file 
+		Allows to generate random sequences with the same
+		lengths as a set of reference sequences. The sequence
+		length file can be obtained with the command
+			sequence-lengths
+		The length file contains two columns : 
+		    - sequence ID (ignored)
+		    - sequence length
 WEB VERSION
 	http://ucmb.ulb.ac.be/bioinformatics/rsa-tools/
 
@@ -435,6 +443,7 @@ random-seq options
 -ncf		use dyad non-coding frequencies as expected frequencies
 -org		organism 
 -ol		oligo-length
+-lf		length file 
 End_short_help
     close HELP;
     exit(0);
