@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: random-genes,v 1.4 2002/09/14 06:12:09 jvanheld Exp $
+# $Id: random-genes,v 1.5 2003/03/17 08:11:22 jvanheld Exp $
 #
-# Time-stamp: <2002-09-14 01:08:28 jvanheld>
+# Time-stamp: <2003-03-17 09:10:45 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -11,6 +11,7 @@ if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
 require "RSA.lib";
+require "RSA.help.pl";
 require "RSA.classes";
 
 
@@ -23,11 +24,13 @@ local %outfile = ();
 local $verbose = 0;
 local $out = STDOUT;
 local $n = 0; #### number of genes to return
+local $rep = 1; #### number of gene families to return
 #local $infile{family} = "";
+local @families = ();
 local %family_count = ();
 local $pairs = 0;
 
-&ReadArguments;
+&ReadArguments();
 
 
 #### check argument values 
@@ -63,6 +66,11 @@ if ($infile{family}) {
     }
     close $fam;
     @families = keys %family_count;
+} elsif ($rep >= 1) {
+  for my $r (1..$rep) {
+      $family_count{"RAND".$r}=$n;
+  } 
+  @families = keys %family_count;
 }
 # warn join ("\t", "genes: $n", 
 # 	   "families: ", scalar(@families)
@@ -80,7 +88,7 @@ if ($seed) { ### defined seed
 }
 
 ###### print output ##
-if ($infile{family}) {
+if ($#families > -1) {
     for my $f (0..$#families) {
 	my $fam = $families[$f];
 	my $count = $family_count{$fam};
@@ -117,13 +125,15 @@ close $out if ($outfile{output});
 
 exit(0);
 
-
-########################## subroutine definition ########################
+################################################################
+########################## subroutine definition ###############
+################################################################
 
 #### display full help message #
 sub PrintHelp {
-  open HELP, "| more";
-  print HELP <<End_of_help;
+    $HELP_FAMILY_FILE = &help_message("family file");
+    open HELP, "| more";
+    print HELP <<End_of_help;
 NAME
 	random-genes
 
@@ -133,11 +143,21 @@ DESCRIPTION
 	Returns a random selection of genes for the specified
 	organism.
 
-	There are three modes of utilization.
+	There are several modes of utilization.
+
 	   (1) -n	returns random genes.
-	   (2) -pairs	returns random pairs of genes.
-	   (3) -fam	substitutes genes from a family file 
-			by random genes. 
+           (2) -r       repetitions. Create a family file with r groups of n
+			genes (n must be specified)
+	   (3) -pairs	returns random pairs of genes.
+	   (4) -fam	takes a family file (see multiple-family-analysis)
+			as input, and return another family file with
+			the same number of families, the same number
+			of random genes per family as in the input
+			file. This allows to deal with families of
+			different sizes in the same file, and to
+			perform negative controls in exactly the same
+			conditions as the test.
+
 
 CATEGORY
 	util
@@ -160,6 +180,7 @@ OPTIONS
 	-rep	random selection with replacement
 		(a same ORF might appear several times in the output)
 	-n #	number of random genes to return
+	-r #	repetitions (number of random families).
 	-pairs #
 		number of random pairs of genes to return. Each row of
 		the output contains two genes, separated by a tab.
@@ -170,6 +191,8 @@ OPTIONS
 		The program returns a file of the same size as the
 		input, where input genes have been substituted by 
 		random genes.
+FILE FORMATS
+    $HELP_FAMILY_FILE
 End_of_help
   close HELP;
   exit;
@@ -189,6 +212,7 @@ random-genes options
 -features	alternate feature table
 -rep		random selection with replacement
 -n		number of genes
+-r #		repetitions (number of random families).
 -pairs		number of pairs of genes
 -fam		family file
 End_short_help
@@ -243,6 +267,13 @@ sub ReadArguments {
 		&FatalError("$n\tInvalid number of genes. Should be a natural number.");
 	    }
 	    
+	    ### number of genes
+	} elsif ($ARGV[$a] eq "-r") {
+	    $rep = $ARGV[$a+1];
+	    unless (&IsNatural($rep)) {
+		&FatalError("$rep\tInvalid number of genes. Should be a natural number.");
+	    }
+	    
 	    ### number of gene pairs
 	} elsif ($ARGV[$a] eq "-pairs") {
 	    $pairs = $ARGV[$a+1];
@@ -275,4 +306,5 @@ sub Verbose {
     printf $out "; %-14s\t%d\n", "number of families", scalar(@families) if ($infile{family});
     printf $out "; %-14s\t%d\n", "number of pairs", $pairs if ($pairs);
     printf $out "; %-14s\t%d\n", "number of genes", $n;
+    printf $out "; %-14s\t%d\n", "number of genes", $rep if ($rep);
 }
