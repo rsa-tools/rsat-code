@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: binomial-series,v 1.1 2001/05/06 13:01:28 jvanheld Exp $
+# $Id: binomial-series,v 1.2 2001/05/06 13:04:50 jvanheld Exp $
 #
-# Time-stamp: <2001-05-06 14:38:17 jvanheld>
+# Time-stamp: <2001-05-06 15:04:27 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -24,12 +24,13 @@ $trials = 8000;
 &ReadArguments();
 
 $step = 1 unless ($step >= 1);
-$max = $trials unless ($max >= 1);
+$max_successes = $trials unless ($max_successes >= 1);
+$min_successes = 0 unless (defined($min_successes));
 
 ### open output file ###
 $out = &OpenOutputFile($outfile{output});
 
-&PrintVerbose if ($verbose);
+&Verbose if ($verbose);
 
 #### header
 print $out (join("\t", "; s", 
@@ -41,7 +42,7 @@ print $out (join("\t", "; s",
 	    ,"\n");
 
 #### result
-for ($s = 0; $s <= $max; $s += $step) {
+for ($s = $min_successes; $s <= $max_successes; $s += $step) {
     $expected_successes = $proba*$trials;
     #$bin = `binomial -p $proba -r $trials -s $s`;
     $bin = &binomial($proba,$trials,$s);
@@ -126,6 +127,7 @@ OPTIONS
 	-r	trials
 	-step	step
 	-max	max number of successes
+	-min	min number of successes
 End_of_help
   close HELP;
   exit;
@@ -145,6 +147,7 @@ template options
 -r	trials
 -step	step
 -max	max number of successes
+-min	min number of successes
 End_short_help
   close HELP;
   exit;
@@ -188,7 +191,11 @@ sub ReadArguments {
 
 	    #### max
 	} elsif ($ARGV[$a] eq "-max") {
-	    $max = $ARGV[$a+1];
+	    $max_successes = $ARGV[$a+1];
+
+	    #### min
+	} elsif ($ARGV[$a] eq "-min") {
+	    $min_successes = $ARGV[$a+1];
 
 	}
     }
@@ -209,8 +216,10 @@ sub Verbose {
       print $out ";\t$key\t$value\n";
     }
   }
-  printf $out "; %-8s\t%f", "proba", $proba;
-  printf $out "; %-8s\t%d", "trials", $trials;
-  printf $out "; %-8s\t%d", "step", $step;
+  printf $out "; %-8s\t%f\n", "proba", $proba;
+  printf $out "; %-8s\t%d\n", "trials", $trials;
+  printf $out "; %-8s\t%d\n", "min", $min_successes;
+  printf $out "; %-8s\t%d\n", "max", $max_successes;
+  printf $out "; %-8s\t%d\n", "step", $step;
 
 }
