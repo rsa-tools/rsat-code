@@ -1,9 +1,9 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: parse-genbank.pl,v 1.2 2002/01/07 00:30:04 jvanheld Exp $
+# $Id: parse-genbank.pl,v 1.3 2002/05/10 21:03:28 jvanheld Exp $
 #
-# Time-stamp: <2002-01-07 01:26:55 jvanheld>
+# Time-stamp: <2002-05-10 23:03:14 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -15,155 +15,209 @@ push @INC, $ENV{PARSER};
 require "PFBP_classes.pl";
 require "PFBP_parsing_util.pl";
 
-#### initialise parameters ####
-my $start_time = &AlphaDate;
 
-local %infile = ();
-local %outfile = ();
-
-local $verbose = 0;
-local $in = STDIN;
-local $out = STDOUT;
-
-my $genes = PFBP::ClassFactory->new_class(object_type=>"PFBP::Gene",
-					  prefix=>"gene_");
-$genes->set_out_fields(qw( id type name chromosome start end strand description position names db_xref introns exons ));
-
-#### working directory
-$wd = `pwd`;
-chomp($wd);
-
-&ReadArguments;
-
-
-#### check argument values ####
-
-#### input directory
-unless (defined($dir{input})) {
-    &FatalError("You must specify the input directory.\n");
-}
-unless (-d $dir{input}) {
-    &FatalError("Input directory '$dir{input}' does not exist.\n");
-}
-unless (defined($org)) {
-    $org = `basename $dir{input}`;
-    chomp($org);
-    warn "; Auto selection of organism name\t$org\n" if ($verbose >= 1);
+package PFBP::Feature;
+{
+  @ISA = qw ( PFBP::BiochemicalEntity );
+  ### class attributes
+  $_count = 0;
+  $_prefix = "gene_";
+  @_objects = ();
+  %_name_index = ();
+  %_id_index = ();
+  %_attribute_count = ();
+  %_attribute_cardinality = (id=>"SCALAR",
+			     names=>"ARRAY",
+			     organism=>"SCALAR",
+			     type=>"SCALAR",
+			     description=>"SCALAR",
+			     position=>"SCALAR",
+			     chromosome=>"SCALAR",
+			     strand=>"SCALAR",
+			     start=>"SCALAR",
+			     end=>"SCALAR",
+			     source=>"SCALAR",
+			     xrefs=>"EXPANDED"
+			     );
 }
 
-#### find genbank files in the input directory
-chdir ($dir{input});
-@genbank_files = glob("*.gbk");
-if ($#genbank_files < 0) {
-    &FatalError("There is no genbank file in the input directory $dir{input}\n");
-} else {
-    warn "; Genbank files\n;\t", join("\n;\t", @genbank_files), "\n" if ($verbose >= 1);
-}
-
-#### come back to the starting directory
-chdir($wd);
-
-#### output directory
-unless (defined($dir{output})) {
-    $dir{output} = "$RSA/data/$org/genome";
-    warn "; Auto selection of output dir\t$dir{output}\n" if ($verbose >= 1);
-}
-unless (-d $dir{output}) {
-    #### create output directory if necessary
-    warn "; Creating output dir $dir{output}\n" if ($verbose >= 1);
-    system "mkdir -p $dir{output}";
-    unless (-d $dir{output}) {
-	&FatalError("Could not create output directory $dir{output}\n");
-    }
-}
-
-#### verbose ####
-&Verbose if ($verbose);
-
-#### parse the genbank files
-$chrom = &OpenOutputFile("$dir{output}/Chromosomes_${org}.txt"); # file with chromosome IDs
-foreach my $file (@genbank_files) {
-    my $contig = `basename $file .gbk`;
-    chomp($contig);
-    my $sequence = &ParseGenbankFile("$dir{input}/$file", $genes, source=>$contig);
-    open RAW, ">$dir{output}/${contig}.raw";
-    &PrintNextSequence(RAW, "raw", 0, $sequence, $contig);
-    close RAW;
-    print $chrom "$contig.raw", "\t", $contig, "\n";
-}
-close $chrom;
-
-#### parse gene positions
-&ParsePositions($genes);
-
-#### check some gene attributes (name, description, ...)
-foreach $gene ($genes->get_objects()) {
-    foreach my $name ($gene->get_attribute("gene")) {
-	$gene->push_attribute("names",$name);
-    };
-    #$gene->push_attribute("names", $gene->get_attribute("gene"));
+package main;
+{
+    #### initialise parameters ####
+    my $start_time = &AlphaDate;
     
-    ### define a single name  (take the first value in the name list)
-    if ($name = $gene->get_name()) {
-	$gene->set_attribute("name",$name);
+    local %infile = ();
+    local %outfile = ();
+    
+    local $verbose = 0;
+    local $in = STDIN;
+    local $out = STDOUT;
+    
+    my $features = PFBP::ClassFactory->new_class(object_type=>"PFBP::Feature",
+						 prefix=>"ft_");
+    my $contigs = PFBP::ClassFactory->new_class(object_type=>"PFBP::Contig",
+					     prefix=>"ctg_");
+    $features->set_out_fields(qw( id type name contig start end strand description position names db_xref introns exons EC_number));
+    
+    #### working directory
+    $wd = `pwd`;
+    chomp($wd);
+    
+    &ReadArguments();
+    
+    
+    #### check argument values ####
+    
+    #### input directory
+    unless (defined($dir{input})) {
+	&FatalError("You must specify the input directory.\n");
+    }
+    unless (-d $dir{input}) {
+	&FatalError("Input directory '$dir{input}' does not exist.\n");
+    }
+    unless (defined($org)) {
+	$org = `basename $dir{input}`;
+	chomp($org);
+	warn "; Auto selection of organism name\t$org\n" if ($verbose >= 1);
+    }
+    
+    #### find genbank files in the input directory
+    chdir ($dir{input});
+    push @genbank_files, glob("*.gbk");
+    push @genbank_files, glob("*.gbk.gz");
+    if ($#genbank_files < 0) {
+	&FatalError("There is no genbank file in the input directory $dir{input}\n");
     } else {
-	$gene->set_attribute("name",$gene->get_id());
+	warn "; Genbank files\n;\t", join("\n;\t", @genbank_files), "\n" if ($verbose >= 1);
     }
     
-    #### check for genes without description
-    if (($gene->get_attribute("description") eq $null) 
-	|| ($gene->get_attribute("description") eq "")) {
-	$gene->set_attribute("description",
-			     join("; ", $gene->get_attribute("product"),
-				  $gene->get_attribute("note")));
+    #### come back to the starting directory
+    chdir($wd);
+    
+    #### output directory
+    unless (defined($dir{output})) {
+	$dir{output} = "$RSA/data/$org/genome";
+	warn "; Auto selection of output dir\t$dir{output}\n" if ($verbose >= 1);
+    }
+    unless (-d $dir{output}) {
+	#### create output directory if necessary
+	warn "; Creating output dir $dir{output}\n" if ($verbose >= 1);
+	system "mkdir -p $dir{output}";
+	unless (-d $dir{output}) {
+	    &FatalError("Could not create output directory $dir{output}\n");
+	}
     }
     
-    #### use GI as gene identifier
-    my @xrefs = $gene->get_attribute("db_xref");
-    my $gi = "";
-    foreach my $xref (@xrefs) {
-	if ($xref =~ /GI:/) {
-	    $gi = $';
-	    last;
-	} 
+    #### verbose ####
+    &Verbose if ($verbose);
+    
+    #### parse the genbank files
+    foreach my $file (@genbank_files) {
+	$file{input} = "$dir{input}/$file";
+
+	#### check whether the file has to be uncompressed on the fly
+	if ($file{input} =~ /.gz/) {
+	    $file{input} = "gunzip -c $file{input} |";
+	} else {
+	    $file{input} = "cat $file{input} |";
+	}
+	
+	#### for quick testing; only parse the first 10000 lines
+	if ($test) {
+	    $file{input} .= " head -10000 | ";
+	}
+	&ParseGenbankFile($file{input}, 
+			  $features, 
+			  $contigs, 
+			  source=>$contig, 
+			  seq_dir=>$dir{output});
+    }
+
+    #### write the chromosome file
+    $chrom = &OpenOutputFile("$dir{output}/Contigs_${org}.txt"); # file with chromosome IDs
+    foreach my $contig ($contigs->get_objects()) {
+	print $chrom join ("\t", 
+			   $contig->get_attribute("file"),
+			   $contig->get_attribute("id"),
+			   $contig->get_attribute("form")), "\n";
+    }
+    close $chrom;
+    
+    #### parse feature positions
+    &ParsePositions($features);
+    
+    #### check some feature attributes (name, description, ...)
+    foreach $feature ($features->get_objects()) {
+	foreach my $name ($feature->get_attribute("gene")) {
+	    $feature->push_attribute("names",$name);
+	};
+	#$feature->push_attribute("names", $feature->get_attribute("gene"));
+	
+	### define a single name  (take the first value in the name list)
+	if ($name = $feature->get_name()) {
+	    $feature->set_attribute("name",$name);
+	} else {
+	    $feature->set_attribute("name",$feature->get_id());
+	}
+	
+	#### check for features without description
+	if (($feature->get_attribute("description") eq $null) 
+	    || ($feature->get_attribute("description") eq "")) {
+	    $feature->set_attribute("description",
+				    join("; ", $feature->get_attribute("product"),
+					 $feature->get_attribute("note")));
+	}
+	
+	#### use GI as feature identifier
+	my @xrefs = $feature->get_attribute("db_xref");
+	my $gi = "";
+	foreach my $xref (@xrefs) {
+	    if ($xref =~ /GI:/) {
+		$gi = $';
+		last;
+	    } 
+	}
+	
+	if ($gi) {
+	    $feature->force_attribute("id",$gi);
+	} else {
+	    &ErrorMessage("; Error\tfeature ".$feature->get_attribute("id")." has no GI.\n"); 
+	}
+	
+	#### use genbank name as chromosome name
+	my $source = $feature->get_attribute("source");
+	if ($source =~ /genbank:/) {
+	    my $chromosome = $';
+	    $chromosome =~ s/\.gz$//;
+	    $chromosome =~ s/\.gbk$//;
+	    $feature->force_attribute("chromosome",$chromosome);
+	}
     }
     
-      if ($gi) {
-  	$gene->force_attribute("id",$gi);
-      } else {
-  	&ErrorMessage("; Error\tgene ".$gene->get_attribute("id")." has no GI.\n"); 
-      }
+    #### print result
+    chdir $dir{output};
+    #&PrintStats($out_file{stats}, @classes);
+    $features->dump_tables("_$org");
+    $contigs->dump_tables("_$org");
+
+#    $features->generate_sql();
+#    $contigs->generate_sql();
+    #&ExportClasses($out_file{features}, $out_format, PFBP::Feature) if $export{obj};
     
-    #### use genbank name as chromosome name
-    my $source = $gene->get_attribute("source");
-    if ($source =~ /genbank:/) {
-	my $chromosome = $';
-	$chromosome =~ s/\.gz$//;
-	$chromosome =~ s/\.gbk$//;
-	$gene->force_attribute("chromosome",$chromosome);
+    ###### verbose ######
+    if ($verbose) {
+	my $done_time = &AlphaDate;
+	print $out "; Job started $start_time\n";
+	print $out "; Job done    $done_time\n";
     }
+    
+    
+    ###### close output file ######
+    close $out if ($outfile{output});
+    
+    
+    exit(0);
 }
-
-### print result
-chdir $dir{output};
-#&PrintStats($out_file{stats}, @classes);
-$genes->dump_tables("_$org");
-#&ExportClasses($out_file{genes}, $out_format, PFBP::Gene) if $export{obj};
-
-###### verbose ######
-if ($verbose) {
-    my $done_time = &AlphaDate;
-    print $out "; Job started $start_time\n";
-    print $out "; Job done    $done_time\n";
-}
-
-
-###### close output file ######
-close $out if ($outfile{output});
-
-
-exit(0);
-
 
 ########################## subroutine definition ############################
 
@@ -244,6 +298,10 @@ sub ReadArguments {
 	    ### output file ###
 	} elsif ($ARGV[$a] eq "-o") {
 	    $dir{output} = $ARGV[$a+1];
+
+	    ### output file ###
+	} elsif ($ARGV[$a] eq "-test") {
+	    $test = 1;
 	    
 	}
     }
@@ -273,96 +331,4 @@ sub Verbose {
     printf $out "; %-29s\t%s\n", "organism", $org;
     printf $out "; %-29s\t%s\n", "genbank files", join (" ", @genbank_files);
 }
-
-
-#  sub ParseGenbankFile {
-#      my ($input_file, $class_holder, %args) = @_;
-#      warn ";\n; Parsing file $input_file.\n" if ($verbose >= 1);
-    
-#      $gbk = &OpenInputFile($input_file);
-#  #    open GBK, $input_file 
-#  #	|| die "Error: cannot open input file $input_file.\n";
-#      my $l = 0;
-#      my $in_features = 0;
-#      my $in_feature = 0;
-#      my $in_gene = 0;
-#      my $in_cds = 0;
-#      my $current_gene = null;
-#      my $organism_name = "";
-#      while (my $line = <$gbk>) {
-#  	$l++;
-#  	print STDERR $line if ($verbose >= 10);
-#  	chomp $line;
-#  	next unless ($line =~ /\S/);
-#  	unless ($in_features) {
-#  	    if ($line =~ /^\s+ORGANISM\s+/) {
-#  		$organism_name = $';
-#  		warn "; Organism name\t\t$organism_name\n" if ($verbose >= 1);
-#  	    }
-#  	    if ($line =~ /^FEATURES/) {
-#  		$in_features = 1 ;
-#  		warn "; Reading features\n" if ($verbose >= 1);
-#  	    }
-#  	    next;
-#  	}
-#  	if ($line =~ /^     CDS\s+(.*)/) {
-#  	    $in_gene = 0;
-#  	    $in_cds = 1;
-#  	    $position = &trim($1);
-#  	    $current_gene = $class_holder->new_object(%args);
-#  	    $current_gene->set_attribute("type","CDS");
-#  	    $current_gene->set_attribute("organism",$organism_name);
-#  	    $current_gene->set_attribute("position",$position);
-#  	    warn ";\tline $l\tnew CDS\n" if ($verbose >= 2);
-#  	} elsif ($line =~ /     gene\s+(.*)/) {
-#  	    $in_cds = 0;
-#  	    $in_gene  = 1;
-#  	    $position = $1;
-#  	    &trim($position);
-#  	} elsif ($in_cds) {
-#  	    unless ($current_gene) {
-#  		die "Error: $file $input_file\tline $l\tno gene defined\n.";
-#  	    }
-#  	    if ($line =~ / +\/(\S+)\=(\d+)/) {
-#  		#### numerical value
-#  		$key = $1;
-#  		$value = $2;
-#  		$current_gene->new_attribute_value($key,$value);
-		
-#  	    } elsif ($line =~ / +\/(\S+)\=\"(.+)\"/) {
-#  		#### short string
-#  		$key = $1;
-#  		$value = $2;
-#  		$current_gene->new_attribute_value($key,$value);
-
-#  	    } elsif ($line =~ / +\/(\S+)\=\"(.+)/) {
-#  		#### long string
-#  		$key = $1;
-#  		$value = $2;
-#  		$in_feature = 1;
-		
-#  	    } elsif ($in_feature) {
-#  		$to_add = &trim($line);
-#  		if ($to_add =~ /\"$/) {
-#  		    $value .= " " unless ($key eq "translation");
-#  		    $value .= $`;
-#  #		    die "HELLO\n$to_add\n$`\n$value\n";
-#  		    $current_gene->new_attribute_value($key,$value);
-#  		    $key = "";
-#  		    $value  = "";
-#  		    $in_feature = 0;
-#  		} else {
-#  		    $value .= " " unless ($key eq "translation");
-#  		    $value .= $to_add;
-#  		}
-#  	    } elsif ($in_gene) {
-#  		#### genes are not parsed for the time being (which means that tRNA are not parsed, since there is no corresponding CDS)
-#  	    }
-#  	} else {
-#  	    warn ("file ".$input_file."\tline $l\tnot parsed\t$line\n") if ($verbose >= 2);
-#  	}
-#      }
-#      close $gbk;
-	    
-#  }
 
