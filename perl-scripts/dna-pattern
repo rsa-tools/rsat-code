@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dna-pattern,v 1.17 2002/04/02 00:11:48 jvanheld Exp $
+# $Id: dna-pattern,v 1.18 2002/04/02 01:06:53 jvanheld Exp $
 #
-# Time-stamp: <2002-04-02 02:11:43 jvanheld>
+# Time-stamp: <2002-04-02 03:04:05 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -48,9 +48,7 @@ unless (defined(%return)) {
 
 #### check allowed substitutions ####
 unless (($allowed_subst eq "") || (&IsNatural($allowed_subst))) {
-    print "	Error: invalid number of allowed substitutions.\n";
-    print "	Type dna-pattern -help for more info.\n";
-    exit;
+    &FatalError("Invalid number of allowed substitutions.\n");
 }
 
 ### check input format 
@@ -147,12 +145,12 @@ while ((($current_seq, $sequence_id, @comments) = &ReadNextSequence($in, $in_for
 	    
 	    $match_count = 0;
 	    #### palindromic patterns are searched only  on one strand 
-	    if (($expression eq ReverseComplement($expression)) && 
+	    if (($expression eq &ReverseComplement($expression)) && 
 		($strands_to_search eq "DR")) {
 		$regular_expression = $D_regular_expression;
 		$strand = "DR";
 		if ($search_method eq "regexp") {
-		    &RegExpSearch();
+		    &RegExpSearch($current_seq, $regular_expression);
 		} else {
 		    &IUPACsearch();
 		}
@@ -162,7 +160,7 @@ while ((($current_seq, $sequence_id, @comments) = &ReadNextSequence($in, $in_for
 		    $regular_expression = $D_regular_expression;
 		    $strand = "D";
 		    if ($search_method eq "regexp") {
-			&RegExpSearch();
+			&RegExpSearch($current_seq, $regular_expression);
 		    } else {
 			&IUPACsearch();
 		    }
@@ -172,7 +170,7 @@ while ((($current_seq, $sequence_id, @comments) = &ReadNextSequence($in, $in_for
 		    $regular_expression = $R_regular_expression;
 		    $strand = "R";
 		    if ($search_method eq "regexp") {
-			&RegExpSearch();
+			&RegExpSearch($current_seq, $regular_expression);
 		    } else {
 			&IUPACsearch();
 		    }
@@ -192,126 +190,13 @@ while ((($current_seq, $sequence_id, @comments) = &ReadNextSequence($in, $in_for
     }
 }
 
-#### match counts
-if ($return{match_counts}) {
-    if ($return{sum_only}) {
-	print $out "; Counts per pattern\n";
-	print $out "; PatID\tPattern\tMatches\n";
-	foreach my $pattern (@patterns) {
-	    print $out $pattern->get_attribute("id");
-	    print $out "\t", $pattern->get_attribute("sequence");
-	    print $out "\t", $sum_per_pattern{$pattern};
-	    print $out "\ttotal";
-	    print $out "\n";
-	}
 
-    } else {
-	print $out "; Counts per sequence and per pattern\n";
-	print $out "; SeqID\tPatID\tPattern\tMatches\n";
-	foreach $sequence_id (@sequence_ids) {
-	    foreach $pattern (@patterns) {
-		if ($match_count{$sequence_id}{$pattern} >= $threshold) {
-		    print $out join ("\t", "$sequence_id",
-				     $pattern->get_attribute("id"),
-				     $pattern->get_attribute("sequence"),
-				     $match_count{$sequence_id}{$pattern}
-				     ), "\n";
-		}
-	    }
-	}
-    }
-}
 
-#### print the sum of occurrences per pattern
+&MatchCounts if ($return{match_counts});
 
-### print the matching table (patterns/sequences)
-if ($return{table}) {
-#    print $out "; Match count table\n";
-    print $out ";seq";
-    foreach my $pattern (@patterns) {
-	print $out "\t", $pattern->get_attribute("id");
-    }
-    print $out "\ttotal" if ($return{col_sum}); #### print total of occurrences per sequence
-    print $out "\n";
-    foreach $sequence_id (@sequence_ids) {
-	print $out $sequence_id;
-	foreach my $pattern (@patterns) {
-	    print $out "\t", $match_count{$sequence_id}{$pattern};
-	}
-	print $out "\t", $sum_per_sequence{$sequence_id} if ($return{col_sum});
-	print $out "\n";
-    }
-    #### print total of occurrences per pattern
-    if ($return{row_sum}) {
-	print $out "total";
-	foreach my $pattern (@patterns) {
-	    print $out "\t", $sum_per_pattern{$pattern};
-	}
-	print $out "\t", $total_sum;
-	print $out "\n";
-    }
-}
+&CountTable if ($return{table});
 
-#### matching statistics
-if ($return{stats}) {
-    my $nb_sequences = $#sequence_ids + 1;
-    my $nb_patterns = $#patterns + 1;
-    my $matching_patterns = 0;
-    my $matching_patterns_pct = 0;
-    my $max_matching_score_pct = 0;
-    my $max_matching_score;
-    my $max_score;
-    foreach my $pattern (@patterns) {
-	$max_score = &max($max_score, $pattern->get_attribute("score"));
-	if ($sum_per_pattern{$pattern} > 0) {
-	    $matching_patterns++ ;
-	    $max_matching_score = &max($max_matching_score, $pattern->get_attribute("score"));
-	}
-    }
-    if ($nb_patterns > 0) {
-	$matching_patterns_pct =  100*$matching_patterns/$nb_patterns;
-    }
-
-    if ($max_score > 0) {
-	$max_matching_score_pct =  100*$max_matching_score/$max_score;
-    }
-
-    my $matched_sequences = 0;
-    my $matched_sequences_pct = 0;
-    foreach my $sequence_id (@sequence_ids) {
-	$matched_sequences++ if ($sum_per_sequence{$sequence_id} > 0);
-    }
-    if ($nb_sequences > 0) {
-	$matched_sequences_pct = 100*$matched_sequences/$nb_sequences;
-    }
-
-    print $out "; Matching statistics\n";
-
-    printf $out ( "%-21s\t%s\t%s\t%s\n", 
-		  "; statistics",
-		  "max",
-		  "matched",
-		  "percent"
-		  ), "\n";
-    printf $out ( "%-21s\t%d\t%d\t%.1f\n", 
-		  "matching patterns",
-		  $nb_patterns,
-		  $matching_patterns,
-		  $matching_patterns_pct
-		  );
-    printf $out ( "%-21s\t%.2f\t%.2f\t%.1f\n", 
-		  "matching scores",
-		  $max_score,
-		  $max_matching_score,
-		  $max_matching_score_pct
-		  );
-    printf $out ( "%-21s\t%d\t%d\t%.1f\n", 
-		  "matching sequence",
-		  $nb_sequences,
-		  $matched_sequences,
-		  $matched_sequences_pct
-		  );
-}
+&MatchingStatistics() if ($return{stats});
 
 #### elapsed time
 if ($verbose) {
@@ -325,20 +210,23 @@ if ($outputfile) {
 }
 
 
-############################# subroutine definition ############################
+################################################################
+#################### subroutine definition #####################
+################################################################
 
 
-
-###### search with regular expression ######
+################################################################
+# search with a regular expression
+#
 sub RegExpSearch {
-    local(%pat_hash) = Substitute($regular_expression, $allowed_subst, 0);
-    @keys = sort {
+    my %pat_hash = &Substitute($regular_expression, $allowed_subst, 0);
+    my @keys = sort {
 	($pat_hash{$a} > $pat_hash{$b}) ||
 	    (($pat_hash{$a} == $pat_hash{$b}) and
 	     (lc($a) cmp lc($b)))
 	    } keys %pat_hash;
-    foreach $reg_pat (@keys) {
-	$seq_to_crop = $current_seq;
+    foreach my $reg_pat (@keys) {
+	my $seq_to_crop = $current_seq;
 	while ($seq_to_crop =~ /($reg_pat)(.*)/i) {
 	    $match_count++;
 	    if ($strand eq "DR") {
@@ -371,7 +259,7 @@ sub RegExpSearch {
 		$start_pos = $sequence_length - $offset - $orig_pos;
 		$end_pos = $start_pos + $matching_word_length - 1;
 		$mismatches = $pat_hash{$reg_pat};
-		&PrintMatch();
+		&PrintMatchLocation();
 	    }
 	    if ($no_overlap) {
 		$seq_to_crop = $remaining_seq;
@@ -382,7 +270,9 @@ sub RegExpSearch {
     }
 } # RegExpSearch
 
-###### search a IUPAC pattern
+################################################################
+# search a IUPAC pattern
+#
 sub IUPACsearch {
     $offset = 0;
     $match_pos = 0;
@@ -408,7 +298,7 @@ sub IUPACsearch {
 		} 
 		$start_pos = $match_pos -$orig_pos;
 		$end_pos = $start_pos + $pattern_len -1;
-		&PrintMatch();
+		&PrintMatchLocation();
 	    }
 	    if ($no_overlap) {
 		$offset = $match_pos + $pattern_len;
@@ -420,7 +310,9 @@ sub IUPACsearch {
 } # IUPACsearch
 
 
-sub PrintMatch {
+################################################################
+# Print a single match location
+sub PrintMatchLocation {
     if ($score_column > 0) {
 	$score = $pattern->get_attribute("score");
     } else {
@@ -714,7 +606,10 @@ dna-pattern options
 }
 
 
-#### read arguments ####
+################################################################
+#
+# Read command line arguments
+#
 sub ReadArguments {
     foreach $a (0..$#ARGV) {
 	if ($ARGV[$a] eq "-h") {
@@ -736,7 +631,12 @@ sub ReadArguments {
 	    $allowed_subst = $ARGV[$a+1];
 	    if ($allowed_subst > 0) {
 		$search_method = "IUPAC";
+		warn "; Seach method: IUPAC\n" if ($verbose >=1);
 	    }
+	    
+	} elsif ($ARGV[$a] eq "-IUPAC") {
+	    $search_method = "IUPAC";
+	    warn "; Seach method: IUPAC\n" if ($verbose >=1);
 	    
 	    ################################################################
 	    #### pattern specification
@@ -876,73 +776,9 @@ sub ReadArguments {
 }
 
 
-##
-# Reads patterns from a file (or from the standard input) 
-# and returns a list of RSA::Pattern objects. 
-##
-sub ReadPatterns {
-    my (%args) = @_;
-    my @patterns = ();
-    my $pattern_file = $args{pattern_file};
-    $score_column = $args{score_column};
-    my $noid = $args{noid};
-    my $pattern_id = $args{pattern_id};
-    my $pattern_score = $args{pattern_score};
-    my $pattern_seq = $args{pattern_seq};
-    
-    if ($pattern_file) {
-	### read patterns from a file
-	my ($pattern_stream) = &OpenInputFile($pattern_file);
-	while (<$pattern_stream>) {
-	    if (/^;/) {
-		#### for piping with oligo-analysis and dyad-analysis
-		#### take occ_sig as the score column
-		if (!(defined($score_column)) &&
-		    (/^;\s+(\d+)\s+occ_sig\s+/)) {
-		    $score_column = $1;
-		}
-		next;
-	    }
-	    next unless (/\S/);
-	    chomp;
-	    my @fields = split, /\t/;
-	    next unless ($fields[0] =~ /\S/);
-	    $pattern_seq = $fields[0];
-	    if (($noid) || ($fields[1] !~ /\S/)) {
-		$pattern_id = $pattern_seq;
-	    } else {
-		$pattern_id = $fields[1];
-	    }
-	    if ($score_column >= 1) {
-		$pattern_score = $fields[$score_column - 1];
-		$pattern_score = 1 unless &IsReal($pattern_score);
-	    } else {
-		$pattern_score = 1; #### default score
-	    }
-	    push @patterns, new RSA::pattern(id => $pattern_id,
-					     sequence => $pattern_seq,
-					     score => $pattern_score);
-	}
-	close $pattern_stream;
-	
-	#### pattern specified on the command line
-    } elsif ($pattern_seq) {
-	if ($pattern_id) {
-	    $pattern_id = $pattern_id;
-	} else {
-	    $pattern_id = $pattern_seq;
-	}
-	push @patterns, new RSA::pattern(id=>$pattern_id,
-					 sequence=>$pattern_seq,
-					 score=>$pattern_score);
-	
-    }
 
-    return @patterns;
-}
-
-
-#### scan the sequence with a sliding window
+################################################################
+# scan the sequence with a sliding window
 sub SlidingWindowSearch {
     $last_pos = $sequence_length - $pattern_length;
 
@@ -972,8 +808,7 @@ sub SlidingWindowSearch {
 	    $end_pos = $pos - $orig_pos + $pattern_length ;
 	    $start_pos = $pos - $orig_pos - $sliding_window_size +2;
 	    $matching_word = substr($current_seq, $start_pos, $sliding_window_size + $pattern_length - 1);
-#	    print "HELLO\t$score_sum";
-	    &PrintMatch() ;
+	    &PrintMatchLocation() ;
 	}
 
 	$previous_score = shift @scores;
@@ -985,8 +820,8 @@ sub SlidingWindowSearch {
 
 
 ################################################################
-#
-# Report parameters
+# Verbosity: report parameters
+# 
 sub Verbose {
     print $out "; dna-pattern ";
     &PrintArguments($out);
@@ -1031,5 +866,130 @@ sub Verbose {
 	print $out "\tMatching_word";
 	print $out "\tScore";
 	print $out "\n";
+    }
+}
+
+
+
+################################################################
+# Matching statistics
+#
+sub MatchingStatistics {
+    my $nb_sequences = $#sequence_ids + 1;
+    my $nb_patterns = $#patterns + 1;
+    my $matching_patterns = 0;
+    my $matching_patterns_pct = 0;
+    my $max_matching_score_pct = 0;
+    my $max_matching_score;
+    my $max_score;
+    foreach my $pattern (@patterns) {
+	$max_score = &max($max_score, $pattern->get_attribute("score"));
+	if ($sum_per_pattern{$pattern} > 0) {
+	    $matching_patterns++ ;
+	    $max_matching_score = &max($max_matching_score, $pattern->get_attribute("score"));
+	}
+    }
+    if ($nb_patterns > 0) {
+	$matching_patterns_pct =  100*$matching_patterns/$nb_patterns;
+    }
+
+    if ($max_score > 0) {
+	$max_matching_score_pct =  100*$max_matching_score/$max_score;
+    }
+
+    my $matched_sequences = 0;
+    my $matched_sequences_pct = 0;
+    foreach my $sequence_id (@sequence_ids) {
+	$matched_sequences++ if ($sum_per_sequence{$sequence_id} > 0);
+    }
+    if ($nb_sequences > 0) {
+	$matched_sequences_pct = 100*$matched_sequences/$nb_sequences;
+    }
+
+    print $out "; Matching statistics\n";
+
+    printf $out ( "%-21s\t%s\t%s\t%s\n", 
+		  "; statistics",
+		  "max",
+		  "matched",
+		  "percent"
+		  ), "\n";
+    printf $out ( "%-21s\t%d\t%d\t%.1f\n", 
+		  "matching patterns",
+		  $nb_patterns,
+		  $matching_patterns,
+		  $matching_patterns_pct
+		  );
+    printf $out ( "%-21s\t%.2f\t%.2f\t%.1f\n", 
+		  "matching scores",
+		  $max_score,
+		  $max_matching_score,
+		  $max_matching_score_pct
+		  );
+    printf $out ( "%-21s\t%d\t%d\t%.1f\n", 
+		  "matching sequence",
+		  $nb_sequences,
+		  $matched_sequences,
+		  $matched_sequences_pct
+		  );
+}
+
+################################################################
+# print the matching table (patterns/sequences)
+sub CountTable {
+#    print $out "; Match count table\n";
+    print $out ";seq";
+    foreach my $pattern (@patterns) {
+	print $out "\t", $pattern->get_attribute("id");
+    }
+    print $out "\ttotal" if ($return{col_sum}); #### print total of occurrences per sequence
+    print $out "\n";
+    foreach $sequence_id (@sequence_ids) {
+	print $out $sequence_id;
+	foreach my $pattern (@patterns) {
+	    print $out "\t", $match_count{$sequence_id}{$pattern};
+	}
+	print $out "\t", $sum_per_sequence{$sequence_id} if ($return{col_sum});
+	print $out "\n";
+    }
+    #### print total of occurrences per pattern
+    if ($return{row_sum}) {
+	print $out "total";
+	foreach my $pattern (@patterns) {
+	    print $out "\t", $sum_per_pattern{$pattern};
+	}
+	print $out "\t", $total_sum;
+	print $out "\n";
+    }
+}
+
+################################################################
+# match counts
+sub MatchCounts {
+    if ($return{sum_only}) {
+	print $out "; Counts per pattern\n";
+	print $out "; PatID\tPattern\tMatches\n";
+	foreach my $pattern (@patterns) {
+	    print $out $pattern->get_attribute("id");
+	    print $out "\t", $pattern->get_attribute("sequence");
+	    print $out "\t", $sum_per_pattern{$pattern};
+	    print $out "\ttotal";
+	    print $out "\n";
+	}
+
+    } else {
+	print $out "; Counts per sequence and per pattern\n";
+	print $out "; SeqID\tPatID\tPattern\tMatches\n";
+	foreach $sequence_id (@sequence_ids) {
+	    foreach $pattern (@patterns) {
+		if ($match_count{$sequence_id}{$pattern} >= $threshold) {
+		    print $out join ("\t", "$sequence_id",
+				     $pattern->get_attribute("id"),
+				     $pattern->get_attribute("sequence"),
+				     $match_count{$sequence_id}{$pattern}
+				     ), "\n";
+		}
+	    }
+	}
     }
 }
