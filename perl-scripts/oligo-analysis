@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.36 2002/02/07 03:19:18 jvanheld Exp $
+# $Id: oligo-analysis,v 1.37 2002/03/05 22:19:24 jvanheld Exp $
 #
-# Time-stamp: <2002-02-07 04:15:42 jvanheld>
+# Time-stamp: <2002-03-05 21:37:43 jvanheld>
 #
 ############################################################
 
@@ -56,6 +56,10 @@ if (@output_fields == ()) { #default output is occurrence numbers
     $return{'exp_freq'} = 1;
 }
 
+if ($return{'zscore'} && !($noov)) {
+    $return{'ovlp'} = 1;
+}
+
 ### check oligomer length
 unless ($oligo_length > 0) {
     &Warning("\tYou should specify an oligomer length > 0.\n",
@@ -103,6 +107,47 @@ if ($ncf) {
     &FatalError("cannot read expected frequency file $exp_freq_file\n") unless (-r  $exp_freq_file);
 }
 
+#### read alphabet from a file
+if ($alphabet_file) {
+    $alpha = &OpenInputFile($alphabet_file);
+    while (<$alpha>) {
+	next if (/^;/);
+	next unless (/\S/);
+	if (/^(\S)\s+(\S+)/) {
+	    my $residue = $1;
+	    my $freq = $2;
+	    unless (&IsReal($freq)) {
+		&FatalError("Invalid value for frequency: $freq. Must be a real number.");
+	    }
+	    unless ($freq >= 0) {
+		&FatalError("Invalid value for frequency: $freq. Must be >=0.");
+	    }
+	    $residue_proba{$residue} = $freq;
+
+	} else {
+	    &Warning("This line does not conform the alphabet format\t$_");
+	}
+    }
+    close $alpha;
+
+}
+
+#### normalize alphabet (sum must be 1)
+if (($alphabet) && !($input_alphabet)) {
+    my $proba_sum = 0;
+    foreach my $r (keys %residue_proba) {
+	$proba_sum += $residue_proba{$r};
+    }
+    if ($proba_sum == 0 ) {
+	&FatalError("Sum of residue probabilities must be > 0");
+    }
+    unless ($proba_sum ==1) {
+	foreach my $r (keys %residue_proba) {
+	    $residue_proba{$r} /= $proba_sum;
+	}
+    }
+}
+
 ### read expected frequencies
 if (($method eq "Frequency file") && 
     ($return{'exp_freq'})) {    #### expected frequencies ####
@@ -135,6 +180,7 @@ $out = &OpenOutputFile($outputfile);
 &MatchingSeqThreshold() if ($mseq_threshold > 0); 
 &NbPossibleOligo();
 &CalcExpected() if ($return{'exp_freq'});
+&CalcOverlapCoefficient() if ($return{'ovlp'});
 &CalcZscore() if ($return{'zscore'});
 &CalcLikelihood() if ($return{'like'});
 &CalcRatio() if ($return{'ratio'});
@@ -776,16 +822,21 @@ sub CalcExpected {
 
 } # CalcExpected
 
+#### calculate overlap coefficient
+sub CalcOverlapCoefficient {
+    foreach $pattern_seq (keys %patterns) {
+	$patterns{$pattern_seq}->{ovlp} = &OverlapCoeff($pattern_seq);
+    }
+}
 
 sub CalcZscore {
     #### z-scores ####
     if ($return{'occ'}) {
 	foreach $pattern_seq (keys %patterns) {
 	    if ($noov) {
-		$patterns{$pattern_seq}->{ovlp} = 1;
 		$patterns{$pattern_seq}->{est_var} = $patterns{$pattern_seq}->{exp_occ};
 	    } else {
-		$patterns{$pattern_seq}->{ovlp} = &OverlapCoeff($pattern_seq);
+#		$patterns{$pattern_seq}->{ovlp} = &OverlapCoeff($pattern_seq);
 		$patterns{$pattern_seq}->{est_var} = $patterns{$pattern_seq}->{nb_possible_pos} * $patterns{$pattern_seq}->{exp_freq}*(2*$patterns{$pattern_seq}->{ovlp} - 1 - (2*$oligo_length+1)*$patterns{$pattern_seq}->{exp_freq});
 #       	$patterns{$pattern_seq}->{est_var} = $patterns{$pattern_seq}->{nb_possible_pos} * $patterns{$pattern_seq}->{exp_freq}*(1 - $patterns{$pattern_seq}->{exp_freq});
 	    }
@@ -982,6 +1033,7 @@ sub PrintResult {
 	printf $out "; %-29s\t%s\n", "Method", $method if ($method);
 	printf $out "; %-29s\t%s\n", "Expected frequency file", $exp_freq_file if ($exp_freq_file);
 	printf $out "; %-29s\t%s\n", "Markov chain order", $markov_order if ($method eq "Markov chain");
+	printf $out "; %-29s\t%s\n", "Alphabet frequency file", $alphabet_file if ($alphabet_file);
 	if ($alphabet) {
 	    print $out "; Alphabet\n";
 	    foreach $key (sort keys %residue_proba) {
@@ -1081,6 +1133,9 @@ sub PrintResult {
 		$sorted = 1;
 	    } elsif($return{'like'}) {
 		@sorted_keys = sort {$patterns{$b}->{ms_lkh} <=>  $patterns{$a}->{ms_lkh}} keys %patterns;
+		$sorted = 1;
+	    } else {
+		@sorted_keys = sort {$patterns{$b}->{occ} <=> $patterns{$a}->{mseq}} keys %patterns;
 		$sorted = 1;
 	    }
 	    ### if no matching sequence request, sort by statistics on occurrences
@@ -1192,7 +1247,7 @@ sub PrintResult {
 	}
 	
 	### miscellaneous info
-	printf $out "\t%.3f", $patterns{$pattern_seq}->{ovlp} if ($return{'ovlp'});
+	printf $out "\t%.5f", $patterns{$pattern_seq}->{ovlp} if ($return{'ovlp'});
 	printf $out "\t%.3f", $patterns{$pattern_seq}->{est_var} if ($return{'est_var'});
 	printf $out "\t%s", $patterns{$pattern_seq}->{remark} if ($return{'remark'});
 	printf $out "\t%s", $patterns{$pattern_seq}->{segments} if ($return{'segments'});
@@ -1455,6 +1510,11 @@ sub ReadArguments {
 			     "Pseudo frequency must be a real value between 0 and 1.");
 	    }
 	    
+	    #### fiel with alphabet utilization
+	} elsif ($ARGV[$a] eq "-afile") {
+	    $alphabet = 1;
+	    $alphabet_file = $ARGV[$a+1];
+
 	    #### alphabet
 	} elsif ($ARGV[$a] eq "-a") {
 	    $alphabet = 1;
