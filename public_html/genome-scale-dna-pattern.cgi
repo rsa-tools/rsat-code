@@ -4,10 +4,10 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
-require "RSA.lib.pl";
-require "RSA.cgi.lib.pl";
+require "RSA.lib";
+require "RSA.cgi.lib";
+require "$RSA/public_html/genome-scale.lib.pl";
 
-$retrieve_seq_command = "$SCRIPTS/retrieve-seq";
 $dna_pattern_command = "$SCRIPTS/dna-pattern";
 $add_orf_function_command = "$SCRIPTS/add-orf-function";
 $link_command = "$SCRIPTS/add-yeast-link";
@@ -25,58 +25,7 @@ $query = new CGI;
 #### update log file ####
 &UpdateLogFile;
 
-################################################################
-#
-# retrieve-seq parameters
-#
-$retrieve_seq_parameters = " -all ";
-
-#### organism
-if (defined($supported_organism{$query->param('organism')})) {
-    $org = $query->param('organism');
-} else {
-    $org = "yeast";
-}
-$retrieve_seq_parameters .= " -org ".$org;
-
-### sequence type
-if ($query->param('sequence_type')) {
-  $retrieve_seq_parameters .= " -type ".$query->param('sequence_type');
-}
-
-### output format ###
-if ($accepted_output_seq{$out_format}) {
-  $retrieve_seq_parameters .= " -format ".$query->param('sequence_format');;
-}
-
-### sequence label
-$seq_label = lc($query->param('seq_label'));
-if (($seq_label =~ /gene/) && 
-    ($seq_label =~ /orf/)) {
-  $retrieve_seq_parameters .= " -label orf_gene";
-} elsif ($seq_label =~ /gene/) {
-  $retrieve_seq_parameters .= " -label gene";
-} elsif ($seq_label =~ /orf/) {
-  $retrieve_seq_parameters .= " -label orf";
-} elsif ($seq_label =~ /full/) {
-  $retrieve_seq_parameters .= " -label full";
-} else {
-  &cgiError("Invalid option for sequence label '$seq_label'");
-}
-
-### limits ###
-if (&IsInteger($query->param('from'))) {
-  $retrieve_seq_parameters .= " -from ".$query->param('from');
-}  
-if (&IsInteger($query->param('to'))) {
-  $retrieve_seq_parameters .= " -to ".$query->param('to');
-}
-
-### orf overlap ###
-unless (lc($query->param('orf_overlap')) eq "on") {
-  $retrieve_seq_parameters .= " -noorf ";
-}
-
+&ReadRetrieveSeqParams();
 
 ################################################################
 #
