@@ -37,6 +37,19 @@ $default{return} = "all matching positions";
 $default{top_scores} = "1"; ### [-t <Print only the top scores>]
 $default{sort} = "checked"; ### [-ds <Print top scores in order of decreasing score (default: print in order of position)>]
 
+$default{unrecognized} = "discontinuities (with warning)"; ### [-d1 <Treat unrecognized characters as discontinuities, but print warning (the default)>]
+
+$default{vertically_print} = "checked"; ### [-p <Vertically print the weight matrix>]
+
+
+
+################################################################
+#### STILL TO BE TREATED
+# [-R <Set the range for approximating a weight matrix with integers (default: 10000)>]
+# [-M <Set the minimum score for calculating the p-value of scores (default: 0)>]
+# [-e <Small difference for considering 2 scores equal (default: 0.000001)>]
+# [-li <Determine lower-threshold score from adjusted information content>]
+# [-lp <Determine lower-threshold score from a maximum ln(p-value)>]
 
 
 ### replace defaults by parameters from the cgi call, if defined
@@ -87,16 +100,16 @@ print $query->popup_menu(-name=>'matrix_format',
 				   ],
 			 -default=>$matrix_format);
 
-#### mwight matrix
+#### weight matrix
 print "&nbsp;"x6;
 print $query->checkbox(-name=>'matrix_is_weight',
-		       -label=>"contains weigths",
+		       -label=>" contains weigths",
 		       -checked=>$default{matrix_is_weight});
 
 #### vertical matrix
 print "&nbsp;"x6;
 print $query->checkbox(-name=>'matrix_is_vertical',
-		       -label=>"vertical",
+		       -label=>" vertical",
 		       -checked=>$default{matrix_is_vertical});
 
 
@@ -132,11 +145,12 @@ print $query->radio_group(-name=>'return',
 			  -Values=>['top values for each sequence'],
 			  -labels=>{'top values for each sequence'=>''},
 			  -default=>$default{return});
+print "&nbsp;";
 print $query->textfield(-name=>top_scores,
 			-default=>$default{top_scores},
 			-size=>3
 			);
-print "top value(s) for each sequence";
+print "&nbsp;top value(s) for each sequence";
 
 ### pseudo-counts and thresholds
 print "<BR>\n";
@@ -179,6 +193,20 @@ print $query->popup_menu(-name=>'case',
 			 -Values=>[ "sensitive", "insensitive","insensitive, but mark lowercases"],
 			 -default=>$default{case});
 
+#### unrecignized characters
+print "<BR>\n";
+print "<B><A HREF='help.patser.html#unrecognized'>\n";
+print "Treat unrecognized characters as</A></b>\n";
+print "&nbsp;"x2;
+print $query->popup_menu(-name=>'unrecognized',
+			 -Values=>[ "errors", "discontinuities (with warning)","discontinuities (no warning)"],
+			 -default=>$default{unrecognized});
+
+#### vertically print the matrix
+print "<BR>\n";
+print $query->checkbox(-name=>'vertically_print',
+		       -label=>" print the weight matrix",
+		       -checked=>$default{vertically_print});
 
 ### send results by e-mail or display on the browser
 print "<BR>\n";
