@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: permute-table,v 1.1 2005/03/13 10:41:02 jvanheld Exp $
+# $Id: permute-table,v 1.2 2005/03/22 17:22:12 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -132,7 +132,7 @@ close $in if ($infile{input});
 
 ## Print the header
 if ($header) {
-    print $out join($sep, @header);
+    print $out join($sep, @header), "\n";
 }
 
 ## Print the table
