@@ -189,6 +189,7 @@ bg_oligos:
 STR=-2str
 THOSIG=0
 NOOV=-noov
+#NOOV=-ovlp
 pattern_disco: oligos dyads
 
 ################################################################
@@ -247,17 +248,16 @@ MIN_OL=6
 MAX_OL=6
 MIN_SP=0
 MAX_SP=20
-NOOV=-noov
 SORT=score
 MULTI_CMD=multiple-family-analysis -v ${V}				\
 		-org ${ORG}						\
 		-seq ${SEQ_LIST_FILE}					\
 		-outdir ${MULTI_DIR}					\
-		-2str \
+		${STR}							\
 		-minol ${MIN_OL} -maxol ${MAX_OL}			\
 		-minsp ${MIN_SP} -maxsp ${MAX_SP}			\
-		-bg ${MULTI_BG} -sort ${SORT} -task ${MULTI_TASK}		\
-		${NOOV} 						\
+		-bg ${MULTI_BG} -sort ${SORT} -task ${MULTI_TASK}	\
+		${NOOV}							\
 		-user jvanheld -password jvanheld -schema multifam
 
 multi:
@@ -341,7 +341,7 @@ CALIBRATE_CMD=								\
 		-org ${ORG}
 
 ## Run the program immediately (WHEN=now) or submit it to a queue (WHEN=queue)
-WHEN=queue
+WHEN=now
 N=5
 calibrate_oligos:
 	${MAKE} calibrate_oligos_${WHEN}
