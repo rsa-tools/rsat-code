@@ -26,7 +26,7 @@ usage:
 ## for a cluster.
 WHEN=now
 my_command:
-	@echo ${WHEN} command ${MY_COMMAND}
+	@echo "${WHEN} command ${MY_COMMAND}"
 	${MAKE} command_${WHEN}
 
 JOB_DIR=jobs
