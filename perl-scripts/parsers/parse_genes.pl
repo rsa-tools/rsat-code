@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genes.pl,v 1.5 2000/03/28 12:34:44 jvanheld Exp $
+# $Id: parse_genes.pl,v 1.6 2000/03/29 08:12:26 jvanheld Exp $
 #
-# Time-stamp: <2000-03-28 12:55:39 jvanheld>
+# Time-stamp: <2000-03-28 23:23:12 jvanheld>
 #
 ############################################################
 
@@ -76,6 +76,9 @@ $out_file{genes} = "Gene".$suffix.".obj";
 $out_file{synonyms} = "Gene".$suffix.".synonyms.tab";
 $out_file{mldbm_genes} = "Gene".$suffix.".mldbm";
 $out_file{mldbm_gene_index} = "Gene".$suffix."__name_index.mldbm";
+$out_file{mldbm_expression_name_index} = "Expression".$suffix."__name_index.mldbm";
+$out_file{mldbm_expression_input_index} = "Expression".$suffix."__input_index.mldbm";
+$out_file{mldbm_expression_output_index} = "Expression".$suffix."__output_index.mldbm";
 $out_file{expressions} = "Expression".$suffix.".obj";
 $out_file{mldbm_expressions} = "Expression".$suffix.".mldbm";
 
@@ -99,7 +102,7 @@ if ($test) {
   warn ";TEST\n" if ($warn_level >= 1);
   ### fast partial parsing for debugging
   foreach $key (keys %in_file) {
-    $in_file{$key} .= " head -3000 |";
+    $in_file{$key} .= " head -1000 |";
   }
 }
 
@@ -186,17 +189,21 @@ foreach my $gene ($genes->get_objects()) {
 
 &CreateExpression;
 $expressions->index_names();
+$expressions->index_inputs();
+$expressions->index_outputs();
 
 ### print result
 &ExportClasses($out_file{genes}, $out_format, PFBP::Gene);
 &ExportClasses($out_file{expressions}, $out_format, PFBP::Expression);
-
 
 $genes->dump_tables($suffix);
 $expressions->dump_tables($suffix);
 
 $genes->export('MLDBM',$out_file{mldbm_genes});
 $genes->export_name_index("MLDBM",$out_file{mldbm_gene_index});
+$expressions->export_name_index("MLDBM",$out_file{mldbm_expression_name_index});
+$expressions->export_input_index("MLDBM",$out_file{mldbm_expression_input_index});
+$expressions->export_output_index("MLDBM",$out_file{mldbm_expression_output_index});
 $expressions->export('MLDBM',$out_file{mldbm_expressions});
 
 &PrintStats($out_file{stats}, @classes);
@@ -371,8 +378,9 @@ sub CreateExpression {
 	  }
 	}
       } else {
-	&ErrorMessage ("WARNING: gene $gene_id could not be linked to swissprot\n",
-		       "\tdefinition\t$definition\n");
+	&ErrorMessage ("WARNING: gene $gene_id could not be linked to swissprot",
+		       "\tdefinition\t$definition",
+		       "\n");
       }
     } else {
       &ErrorMessage("WARNING: gene $gene_id has no definition field\n");
