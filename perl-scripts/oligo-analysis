@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.18 2001/02/22 23:59:50 jvanheld Exp $
+# $Id: oligo-analysis,v 1.19 2001/02/23 00:00:36 jvanheld Exp $
 #
-# Time-stamp: <2001-02-23 00:57:37 jvanheld>
+# Time-stamp: <2001-02-23 01:00:28 jvanheld>
 #
 ############################################################
 
@@ -1298,7 +1298,7 @@ sub ReadArguments {
 	    $in_format = lc($ARGV[$a+1]);
 	    
 	    #### protein sequences
-	} elsif ($ARGV[$a] =~ /^-type/i) {
+	} elsif ($ARGV[$a] =~ /^-seqtype/i) {
 	    $a++;
 	    if ($ARGV[$a] =~ /^prot/i) {
 		$sum_strands = 0;
@@ -1602,7 +1602,7 @@ USAGE
 		[-o outputfile] 
 		[-return occ,freq,ratio,mseq,proba,zscore,like]
 		[-expfreq exp_freq_file | -a alphabet | -markov #]
-		[-1str | -2str] [-type dna|prot|other][-grouprc | -nogrouprc]
+		[-1str | -2str] [-seqtype dna|prot|other][-grouprc | -nogrouprc]
 		[-tho #][-thpo #][-thosig #][-thratio #][-thms #]
 		[-thpms #][-thmssig #] [-oneN | -onedeg][-v]
 
@@ -1709,7 +1709,7 @@ ARGUMENTS
 		inactivates the summation of occurrences on both strands.
 
     SEQUENCE TYPE
-	-type	dna|prot|other
+	-seqtype  dna|prot|other
 		Input sequence type
 		. DNA (default)
 		    Only A, C, G, and T residues are
@@ -2075,7 +2075,7 @@ oligo-analysis options
 			occ,proba,freq,mseq,ratio,zscore,like,pos
 -table		return a table sequences (rows)/oligo occurrences (cols)
 -noov		no overlapping
--type		sequence type (dna|prot|other)
+-seqtype       	sequence type (dna|prot|other)
 -1str		inactivate summation of occ on both strands
 -2str		sum occurences on both strands (default)
 -prot		input sequences are proteic (oligopeptide analysis)
