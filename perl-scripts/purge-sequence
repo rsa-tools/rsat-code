@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence,v 1.6 2001/09/21 04:37:30 jvanheld Exp $
+# $Id: purge-sequence,v 1.7 2001/09/21 05:28:54 jvanheld Exp $
 #
-# Time-stamp: <2001-09-21 06:36:12 jvanheld>
+# Time-stamp: <2001-09-21 07:26:40 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -21,7 +21,7 @@ my $skdir = "$RSA/bin";
 
 #### initialise parameters ####
 my $start_time = &AlphaDate();
-
+my $convert_seq_command = "$SCRIPTS/convert-seq";
 local $inputfile = "";
 local $outputfile = "";
 local $verbose = 0;
@@ -41,6 +41,8 @@ if ($inputfile) {
     chomp $basename;
     $dirname = `dirname ${inputfile}`;
     chomp $dirname;
+    $pwd = `pwd`;
+    chomp $pwd;
 } else {
     $dirname = ".";
     $basename = $start_time;
@@ -64,8 +66,8 @@ $tmp_file = "tmp_".$basename;
 #&doit("grep -v '^;' $basename > $tmp_file");
 #&doit("grep -v '^;' $inputfile > $tmp_file");
 
-$command = "convert-seq -from $in_format -to fasta -o $tmp_file";
-$command .= " -i $inputfile" if ($inputfile);
+$command = "$convert_seq_command -from $in_format -to fasta -o $tmp_file";
+$command .= " -i $pwd/$inputfile" if ($inputfile);
 &doit($command);
 
 
@@ -101,7 +103,8 @@ exit(0);
 
 sub doit {
     my ($command) = @_;
-    warn "\n$command\n" if ($verbose);
+    chdir($TMP);
+    warn ";\n$command\n" if ($verbose);
     system $command unless $dry_run;
 }
 
