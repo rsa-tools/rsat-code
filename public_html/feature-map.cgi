@@ -135,7 +135,7 @@ sub ExecFeatureMap {
     $parameters .= " -symbol ";
   }
   
-  ### handle ###
+  ### palette
   if (lc($query->param('palette')) =~ /mono/i) {
     $parameters .= " -mono ";
   }
@@ -266,54 +266,54 @@ sub ExecFeatureMap {
 sub FillFeatureMapForm {
 
   ### read values to fill the form ###
-  $title = $query->param('title');
-  $title =~ s/\"//g;
+  $default{title} = $query->param('title');
+  $default{title} =~ s/\"//g;
 
 
   if (-e $query->param('feature_file')) {
     $file = $query->param('feature_file');
-    $data = `cat $file`;
+    $default{data} = `cat $file`;
   } else {
-    $data = $query->param('data');
+    $default{data} = $query->param('data');
   }
-  $data =~ s/\"//g;
+  $default{data} =~ s/\"//g;
 
 
   if ($query->param('format')) {
-    $format = $query->param('format');
+    $default{format} = $query->param('format');
   } else {
-    $format = 'feature map';
+    $default{format} = 'feature map';
   }
 
   if ($query->param('from')) {
-    $from = $query->param('from');
+    $default{from} = $query->param('from');
   } else {
-    $from = 'auto';
+    $default{from} = 'auto';
   }
 
   if ($query->param('to')) {
-    $to = $query->param('to');
+    $default{to} = $query->param('to');
   } else {
-    $to = 'auto';
+    $default{to} = 'auto';
+  }
+
+  if ($query->param('handle')) {
+    $default{handle} = $query->param('handle');
+  } else {
+    $default{handle} = 'symbol';
   }
 
   if ($query->param('origin')) {
-    $origin = $query->param('origin');
+    $default{origin} = $query->param('origin');
   } else {
-    $origin = '0';
+    $default{origin} = '0';
   }
 
 
   ### print the form ###
-  print $query->header;
-  print $query->start_html(-title=>'RSA-tools : feature-map',
-                            -author=>'jvanheld@ucmb.ulb.ac.be',
-                            -base=>'true',
-                            -meta=>{'keywords'=>['regulatory', 'sequence', 'analysis', 'feature-map'], 
-                                    'copyright'=>'copyright 1999 Jacques van Helden'},
-                            -BGCOLOR=>'#FFEEDD');
+  &RSA_header("feature map");
+
   print "<CENTER>";
-  print "<FONT SIZE=+1><B>RSA-Tools : feature-map</B></FONT><BR>\n";
   print "Generates a physical map of genetic features for one or several sequences<P>\n";
   print "</CENTER>";
 
@@ -337,12 +337,12 @@ sub FillFeatureMapForm {
 				     'DSSP',
 				     'Gibbs sampler',
 				     'Fugue'],
-			   -default=>"$format");
+			   -default=>$default{format});
   print ")<BR>\n";
 
 
   print $query->textarea(-name=>'data',
-			 -default=>"$data",
+			 -default=>$default{data},
 			 -rows=>6,
 			 -columns=>60);
   print "<BR>\n";
@@ -360,7 +360,7 @@ sub FillFeatureMapForm {
   print "Title";
   print "</A></B>&nbsp;";
   print $query->textfield(-name=>'title',
-                            -default=>"$title",
+                            -default=>$default{title},
                             -size=>50,
                             -maxlength=>80);
 
@@ -394,16 +394,16 @@ sub FillFeatureMapForm {
   print "<B><A HREF='help.feature-map.html#limits'>Display limits</A></B>&nbsp;";
   print "&nbsp;From&nbsp;";
   print $query->textfield(-name=>'from',
-			  -default=>"$from",
+			  -default=>$default{from},
 			  -size=>5);
   
   print "&nbsp;To&nbsp;";
   print $query->textfield(-name=>'to',
-			  -default=>"$to",
+			  -default=>$default{to},
 			  -size=>5);
   print "&nbsp;origin&nbsp;";
   print $query->textfield(-name=>'origin',
-			  -default=>"$origin",
+			  -default=>$default{origin},
 			  -size=>5);
   
 
@@ -430,7 +430,7 @@ sub FillFeatureMapForm {
   print "<B><A HREF='help.feature-map.html#handle'>Feature handle</A></B>&nbsp;&nbsp;&nbsp;&nbsp";
   print $query->popup_menu(-name=>'handle',
 			   -Values=>['color dot','symbol','none'],
-			   -default=>'color dot');
+			   -default=>$default{handle});
 
   print "<B><A HREF='help.feature-map.html#palette'>Color palette</A></B>&nbsp;&nbsp;&nbsp;&nbsp";
   print $query->popup_menu(-name=>'palette',
@@ -504,7 +504,7 @@ sub FillFeatureMapForm {
   print"<TD>", $query->reset, "</TD>\n";
   print "<TD><B><A HREF='help.feature-map.html'>MANUAL</A></B></TD>\n";
   print "<TD><B><A HREF='demo.feature-map.html'>DEMO</A></B></TD>\n";
-  print "<TD><B><A HREF='mailto:jvanheld\@cifn.unam.mx'>MAIL</A></B></TD>\n";
+  print "<TD><B><A HREF='mailto:jvanheld\@ucmb.ulb.ac.be'>MAIL</A></B></TD>\n";
   print "</TR></TABLE></UL></UL>";
 
   print "</FONT>";
