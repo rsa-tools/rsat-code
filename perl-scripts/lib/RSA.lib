@@ -12,16 +12,10 @@ umask 0022;
 ############################################################################
 ############################################################################
 ####                                                                    ####
-####                            RSAlib.perl                             ####
+####                            RSA.lib                                 ####
 ####                                                                    ####
-############################################################################
-############################################################################
-############################################################################
-############################################################################
-############################################################################
-
 #### Regulatory Sequence Analysis Tools (RSA-tools)
-####  Project started in 1997 by Jacques van Helden (jvanheld@ucmb.ulb.ac.be)
+####  Project started in 1997 by Jacques van Helden (jvanheld@scmbb.ulb.ac.be)
 ####  a Perl library with diverse procedures
 ####  used by rsa-tools perl scripts
 
@@ -51,12 +45,8 @@ if ($0 =~ /([^(\/)]+)$/) {
 	}
     }
 } else {
-    print "Error: problem when opening config file\n";
-    print "Please contact jvanheld\@ucmb.ulb.ac.be\n";
-    exit;
+    &FatalError("Error: problem when opening config file. Please contact jvanheld\@scmbb.ulb.ac.be");
 }
-
-
 
 $BIN = "$RSA/bin";
 $LIB = "$RSA/lib";
@@ -64,8 +54,11 @@ $TMP = "$RSA/public_html/tmp";
 $LOGS = "$RSA/logs";
 $SCRIPTS = "$RSA/perl-scripts";
 
-my $login = getlogin;
-#### redirect queries to a remote server
+my $login = getlogin();
+
+################################################################
+## Redirect queries to a remote server
+## 
 if ($REMOTE_SERVER) {
     if (($login eq "webserv") || !($login)) {
 	$NICE = "nice +5";
@@ -78,7 +71,7 @@ if ($REMOTE_SERVER) {
 
 $HTML = "$RSA/public_html"; 
 $WWW_TMP = "$WWW_RSA/tmp";
-$ENV{SERVER_ADMIN} = "jvanheld\@ucmb.ulb.ac.be";
+$ENV{SERVER_ADMIN} = "jvanheld\@scmbb.ulb.ac.be";
 
 $counter_file = "$LOGS/count-file";
 ($sec, $min, $hour,$day,$month,$year) = localtime(time);
@@ -783,7 +776,8 @@ foreach my $type (@supported_feature_types) {
 $supported_feature_types = join ",", @supported_feature_types;
 
 
-
+################################################################
+## Chek if the specified organism name is supported on this server
 sub CheckOrganismName {
     my ($organism_name) = @_;
      unless ($supported_organism{$organism_name}) {
@@ -822,7 +816,7 @@ sub CheckOrganism {
 	&CheckOrganismName($organism_name);
 	$genome_file = $supported_organism{$organism_name}->{'genome'};
 	$genome_seq_format = $supported_organism{$organism_name}->{'seq_format'};
-	&Warning("checking organism\t$organism_name") if ($verbose >= 2);
+	&Warning("Checking organism\t$organism_name") if ($verbose >= 2);
 	&FatalError("You should specify an organism.", 
 		    "Supported organisms\n".&ListSupportedOrganisms)
 	    unless ($organism_name);
@@ -838,7 +832,7 @@ sub CheckOrganism {
     &Warning("Feature table\t$feature_table_file") if ($verbose >= 2);
 
 
-    warn join ("\t", $organism_name, $genome_file, $genome_seq_format, $feature_table_file) if ($main::verbose >= 0);
+    warn join ("\t", "; Loading features", $organism_name, $genome_file, $genome_seq_format, $feature_table_file) if ($main::verbose >= 3);
     
     if ($genome_seq_format eq "raw") {
 	### open a direct read access to the genome file
@@ -993,6 +987,8 @@ sub ReadFeatures {
 	$feature_table_file,
 	$feature_types)= @_;
 
+    warn "; ", &AlphaDate(), "\tReading feature table for $organism_name\n" if ($verbose >= 1);
+
     my @feature_types = ();
     my %accepted_feature_types = ();
     if ($feature_types) {
@@ -1005,17 +1001,10 @@ sub ReadFeatures {
   	$accepted_feature_types{$feature_type}++;
     }
 
-    warn join ("\t", "; Accepted feature types", join( ",", keys %accepted_feature_types)), "\n" if ($main::verbose >= 2);
-
-#      unless (defined (%accepted_feature_types)) {
-#  	%accepted_feature_types = (cds=>1,
-#  #				   mrna=>1,
-#  #				   trna=>1,
-#  #				   rrna=>1,
-#  				   );
-#      }
+    warn join ("\t", "; Accepted feature types", 
+	       join( ",", keys %accepted_feature_types)), "\n" 
+	if ($main::verbose >= 2);
     
-
     unless ($feature_table_file) {
 	$feature_table_file = $supported_organism{$organism_name}->{'features'};
     }
@@ -1127,6 +1116,19 @@ sub ReadFeatures {
     ## Check the number of features
     if (scalar(keys(%orf_id)) < 1) {
 	&FatalError("There is no annotated feature of type ".$feature_types." in the genome of ".$organism_name);
+    }
+
+
+    ## Print stats on the features
+    if ($main::verbose >= 2) {
+	warn "; Features loaded\n";
+	my %stats = ();
+	foreach my $orf_id (keys %type) {
+	    $stats{$type{$orf_id}}++;
+	}
+	foreach my $type (sort keys %stats) {
+	    warn join ("\t", ";", $type, $stats{$type}), "\n";
+	}
     }
 }
 
