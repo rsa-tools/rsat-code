@@ -31,28 +31,60 @@ $parameters .= " -i $sequence_file";
 
 ### fields to return
 $return_fields = "";
+
+### occurrences
 if ($query->param('occ')) {
   $return_fields .= "occ,";
+  ### threshold on occurrences
+  if ($query->param('occurrence_threshold') =~ /^\d+$/) {
+    $parameters .= " -tho ".$query->param('occurrence_threshold');
+  }
 } 
+
+### frequencies
 if ($query->param('freq')) {
   $return_fields .= "freq,";
 } 
+
+### matching sequences
 if ($query->param('mseq')) {
   $return_fields .= "mseq,";
+  ### threshold on matching sequences
+  if ($query->param('ms_threshold') =~ /^\d+$/) {
+    $parameters .= " -thms ".$query->param('ms_threshold');
+  }  
 } 
+
+### observed/expected ratio
 if ($query->param('ratio')) {
   $return_fields .= "ratio,";
 } 
+
+### z-score
 if ($query->param('zscore')) {
   $return_fields .= "zscore,";
 } 
+
+### binomial probabilities
 if ($query->param('proba')) {
   $return_fields .= "proba,";
+  ### threshold on probabilities
+  if ($query->param('proba_occ_threshold') =~ /^[\d\.\-+e]+$/i) {
+    $parameters .= " -thpo ".$query->param('proba_occ_threshold');
+  }
+  ### threshold on significance
+  if ($query->param('occ_significance_threshold') =~ /^-{0,1}[\d\.\-+e]+$/i) {
+    $parameters .= " -thosig ".$query->param('occ_significance_threshold');
+  }
 } 
+
+### positions
 if ($query->param('pos')) {
   $return_fields .= "pos,";
 } 
+
 $return_fields =~ s/,$//;
+
 if ($return_fields eq "") {
   &cgiError("Error: you should select at least one option in the \"Return\" box.");
 } else {
@@ -70,23 +102,6 @@ if ($query->param('strand') =~ /single/) {
 if ($query->param('noov')) {
   $parameters .= " -noov";
 } 
-
-### thresholds ###
-if ($query->param('ms_threshold') =~ /^\d+$/) {
-  $parameters .= " -thms ".$query->param('ms_threshold');
-}  
-if ($query->param('occurence_threshold') =~ /^\d+$/) {
-  $parameters .= " -tho ".$query->param('occurence_threshold');
-}
-if ($query->param('proba_occ_threshold') =~ /^[\d\.\-+e]+$/i) {
-  $parameters .= " -thpo ".$query->param('proba_occ_threshold');
-}
-if ($query->param('occ_significance_threshold') =~ /^-{0,1}[\d\.\-+e]+$/i) {
-  $parameters .= " -thosig ".$query->param('occ_significance_threshold');
-}
-if ($query->param('proba_ms_threshold') =~ /^[\d\.\-+e]+$/i) {
-  $parameters .= " -thpms ".$query->param('proba_ms_threshold');
-}
 
 ### graphical output ###
 $parameters .= " -v";
