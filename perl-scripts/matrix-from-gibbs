@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-gibbs,v 1.1 2000/11/11 00:18:50 jvanheld Exp $
+# $Id: matrix-from-gibbs,v 1.2 2000/11/12 01:34:04 jvanheld Exp $
 #
-# Time-stamp: <2000-11-10 08:24:39 jvanheld>
+# Time-stamp: <2000-11-12 02:30:25 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -11,6 +11,8 @@ if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
 require "RSA.lib.pl";
+require "RSA.classes.pl";
+
 
 
 #### initialise parameters ####
@@ -34,11 +36,39 @@ $out = &OpenOutputFile($outfile{output});
 
 ##### read input #####
 $in = &OpenInputFile($infile{input});
-while (<$in>) {
+$in_matrix = 0;
 
+while (<$in>) {
+    next unless (/\S/);
+    if (/Information \(relative entropy\) contribution in tenth bits\:/) {
+	$in_matrix = 1;
+	$current_matrix = new RSA::matrix();
+	next;
+    } elsif (/site/) {
+	$in_matrix = 0;
+	$last_matrix = $current_matrix;
+	undef($current_matrix);
+	next;
+    } elsif ((/^\s*POS/) && ($in_matrix)) {
+	chomp;
+	@header = split " +";
+	@alphabet = @header[1..$#header-1];
+	$current_matrix->setAlphabet(@alphabet);
+    } elsif ($in_matrix) {
+	chomp;
+	s/^\s+//;
+	@fields = split " +";
+	@values = @fields[1..$#header-1];
+	foreach my $v (0..$#values) {
+	    $values[$v] =~ s/^\.$/0/;
+	}
+	$current_matrix->addColumn(@values);
+    }
 }
 
 close $in if ($infile{input});
+
+
 
 #### verbose ####
 &Verbose if ($verbose);
@@ -47,7 +77,7 @@ close $in if ($infile{input});
 
 
 ###### print output ######
-
+print $out $last_matrix->getString();
 
 ###### verbose ######
 if ($verbose) {
@@ -71,14 +101,17 @@ sub PrintHelp {
   open HELP, "| more";
   print HELP <<End_of_help;
 NAME
-	template
+	matrix-from-gibbs
 
         1999 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
 	
 USAGE
-        template [-i inputfile] [-o outputfile] [-v]
+        matrix-from-gibbs [-i inputfile] [-o outputfile] [-v]
 
 DESCRIPTION
+	Extracts position weight matrix from the output of the gibbs
+	sampler (Neuwald et al, 1995) and returns it in a format that
+	can be used by consensus (Hertz et al, 1999).
 	
 OPTIONS
 	-h	(must be first argument) display full help message
@@ -100,7 +133,7 @@ sub PrintOptions {
 #### display short help message #####
   open HELP, "| more";
   print HELP <<End_short_help;
-template options
+matrix-from-gibbs options
 ----------------
 -h	(must be first argument) display full help message
 -help	(must be first argument) display options
@@ -140,21 +173,12 @@ sub ReadArguments {
     } elsif ($ARGV[$a] eq "-o") {
       $outfile{output} = $ARGV[$a+1];
       
-      ### organism
-    } elsif ($ARGV[$a] eq "-org") {
-      $organism = $ARGV[$a+1];
-      unless (defined($supported_organism{$organism})) {
-	  die ("Error: organism '$organism' is not supported on this site",
-	       $supported_organisms,
-	       "\n");
-      }
-      
     }
   }
 }
 
 sub Verbose {
-  print $out "; template ";
+  print $out "; matrix-from-gibbs ";
   &PrintArguments($out);
   if (defined(%infile)) {
     print $out "; Input files\n";
