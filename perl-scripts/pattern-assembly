@@ -494,8 +494,8 @@ USAGE
         pattern-assembly [-i inputfile] [-o outputfile] [-v]
 
 DESCRIPTION
-	Assemble a set of oligonucleotides into clusters of overlapping 
-	patterns (the assembly).
+	Assemble a set of oligonucleotides or dyads into clusters of
+	overlapping patterns (the assembly).
 
 CATEGORY
 	sequences
@@ -511,11 +511,23 @@ OPTIONS
 		if not specified, the standard output is used.
 		This allows to place the command within a pipe.
 	-2str	strand insensitive assembly (default).
-		Oligonucleotides can be used in direct or reverse complement
-		orientation for assembly. The orientation chosen is that 
-		which offers the best match.
+		With the strand insensitive option, patterns can be
+		used either in direct or reverse complement
+		orientation for assembly. For each pattern, the
+		orientation which offers the best match is chosen.
 	-1str	strand sensitive assembly.
 	-sc #	score column
+
+		Pattern assembly is a NP-hard problem, i.e. the time
+		of calculation increases exponentially with the number
+		of patterns. Beyond a certain number of patterns, it
+		is impossible to envisage all possible assemblie in
+		order to select the best ones. pattern-assembly
+		implements a heuristic which is sensitive to the order
+		of entry of the patterns. When a score column is
+		specified, patterns are incorporated accordingly to
+		their scores (higher scores are incorporated first.
+
 	-maxfl #
 		maximum flanking segment size (default $max_flanking). 
 		The flanking segment is the portion of a fragment that 
@@ -533,8 +545,8 @@ OPTIONS
 		quadratically.
 
 INPUT FORMAT
-	Each oligonucleotide must appear as the first word of a line. 
-	Lines beginning with a semicolon (;) are ignored.
+	Each pattern must appear as the first word of a line. 
+	Lines starting with a semicolon (;) are ignored.
 	
 OUTPUT FORMAT
 	The program returns clusters of aligned oligonucleotides. 

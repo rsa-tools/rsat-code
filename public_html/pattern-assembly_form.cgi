@@ -18,8 +18,8 @@ $default{pattern_file} = "";
 $default{maxfl} = 1;
 $default{maxpat} = 200;
 $default{subst} = 1;
-$default{strand} = "both strands";
-$default{sc} = "`auto";
+$default{strand} = "insensitive";
+$default{sc} = "none";
 
 ### print the form ###
 &RSA_header("pattern-assembly");
@@ -42,7 +42,7 @@ print $query->start_multipart_form(-action=>"pattern-assembly.cgi");
 
 
 ### text area to enter the patterns
-print "<A HREF='help.dna-pattern.html#patterns'><B>\n";
+print "<A HREF='help.pattern-assembly.html#patterns'><B>\n";
 print "Query pattern(s)</B></A><BR>\n";
 print $query->textarea(-name=>'patterns',
 		       -default=>$default{patterns},
@@ -51,7 +51,7 @@ print $query->textarea(-name=>'patterns',
 print "<BR>\n";
 
 #### upload patterns from a file on the client machine
-print "<a href='help.oligo-analysis.html#pattern_file'>Upload pattern file</a><BR>";
+print "<a href='help.pattern-assembly.html#pattern_file'>Upload pattern file</a><BR>";
 
 print $query->filefield(-name=>'pattern_file',
 			-default=>'starting value',
@@ -73,17 +73,24 @@ print $query->popup_menu(-name=>'subst',
 print "<br>";
 
 ### maximal number of patterns 
-print "<B><A HREF='help.pattern-assembly.html#maxpat'>Maximum number of ptterns</A>&nbsp;</B>\n";
+print "<B><A HREF='help.pattern-assembly.html#maxpat'>Maximum number of patterns</A>&nbsp;</B>\n";
 print $query->textfield(-name=>'maxpat',
 			-size=>4,
 			-default=>$default{maxpat});
 print "<br>";
 
+### score column
+print "<B><A HREF='help.pattern-assembly.html#sc'>Score column</A>&nbsp;</B>\n";
+print $query->textfield(-name=>'sc',
+			-size=>4,
+			-default=>$default{sc});
+print "<br>";
+
 ### strand ###
-print "<B><A HREF='help.pattern-assembly.html#count_strands'>Count on</A>&nbsp;</B>\n";
+print "<B><A HREF='help.pattern-assembly.html#count_strands'>Strands</A>&nbsp;</B>\n";
 print $query->popup_menu(-name=>'strand',
-			 -Values=>['single strand',
-				  'both strands'],
+			 -Values=>['sensitive',
+				  'insensitive'],
 			 -default=>$default{strand});
 print "<br>";
 
@@ -119,6 +126,7 @@ print "<TD><B>";
 print $query->hidden(-name=>'patterns',-default=>$demo_patterns);
 print $query->hidden(-name=>'maxfl',-default=>1);
 print $query->hidden(-name=>'subst',-default=>1);
+print $query->hidden(-name=>'sc',-default=>2);
 print $query->hidden(-name=>'maxpat',-default=>100);
 print $query->submit(-label=>"DEMO");
 print "</B></TD>\n";
@@ -127,7 +135,7 @@ print $query->end_form;
 
 #print "<TD><B><A HREF='demo.pattern-assembly.html'>DEMO</A></B></TD>\n";
 print "<TD><B><A HREF='help.pattern-assembly.html'>MANUAL</A></B></TD>\n";
-print "<TD><B><A HREF='tutorials/tut_pattern-assembly.html'>TUTORIAL</A></B></TD>\n";
+#print "<TD><B><A HREF='tutorials/tut_pattern-assembly.html'>TUTORIAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:jvanheld\@ucmb.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 

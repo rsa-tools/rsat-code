@@ -8,7 +8,7 @@
 <H3 ALIGN=CENTER><A HREF="RSA_home.cgi">RSA-tools</A> - Help about pattern-assembly</H3>
 
 
-<H4>Description</H4>
+<H3>Description</H3>
 
 <ul>	
 		Assemble a set of oligonucleotides or dyads into clusters of overlapping 
@@ -16,11 +16,11 @@
 
 </ul>
 
-<h4>Options</h4>
+<h3>Options</h3>
 <ul>
 
 
-<h5>Strands</h5>
+<h4>Strands</h4>
 
 Strand sensitive or insensitive assembly.
 
@@ -29,7 +29,7 @@ direct or reverse complement orientation for assembly. For each
 pattern, the orientation  which offers the best
 match is chosen.
 
-<h5>Score column</h5>
+<h4>Score column</h4>
 		
 Pattern assembly is a NP-hard problem, i.e. the time of calculation
 increases exponentially with the number of patterns. Beyond a certain
@@ -39,17 +39,17 @@ implements a heuristic which is sensitive to the order of entry of the
 patterns. When a score column is specified, patterns are incorporated
 accordingly to their scores (higher scores are incorporated first.
 
-<h5>Maximum flanking residues</h5>
+<h4>Maximum flanking residues</h4>
 
 The flanking segment is the portion of a fragment that extends outside
 of the assembly on which it is aligned.
 
-<h5>maximum substitutions</h5>
+<h4>maximum substitutions</h4>
 
 maximum allowed substitutions for incorporating a pattern into a
 cluster.
 
-<h5>Maximum number of patterns</h5>
+<h4>Maximum number of patterns</h4>
 
 Assembly takes a huge time when too many patterns are submitted. In
 any cases, when too many patterns are obtained fom a pattern discovery
@@ -58,18 +58,22 @@ selection of the threshold). The option can however be changed to any
 value, but the time increases quadratically.
 
 
-<h5>Patterns</h5>
+<h4>Patterns</h4>
 	
 Each pattern must appear as the first word of a line. 
 Lines starting with a semicolon (;) are ignored.
 	
-<h4>Output format</h4>
+</ul>
+
+<h3>Output format</h3>
+
+<ul>
 
 The program returns clusters of aligned oligonucleotides.  The
 information associated to each oligo in the input file is returned
 besides the same oligo in the output file.
-	
-</ul>
+
+</ul>	
 
 <HR SIZE=3>
 

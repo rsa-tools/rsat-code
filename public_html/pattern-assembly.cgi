@@ -89,10 +89,10 @@ if (&IsNatural($sc)) {
 
 ################################################################
 #### single or double strand assembly
-if ($query->param('strand') =~ /single/) {
-  $parameters .= " -1str";
-} else {
+if ($query->param('strand') =~ /insensitive/) {
   $parameters .= " -2str";
+} else {
+  $parameters .= " -1str";
 }
 
 
