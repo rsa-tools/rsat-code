@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genes.pl,v 1.12 2000/12/04 02:55:38 jvanheld Exp $
+# $Id: parse_genes.pl,v 1.13 2000/12/11 09:19:05 jvanheld Exp $
 #
-# Time-stamp: <2000-12-04 01:42:40 jvanheld>
+# Time-stamp: <2000-12-11 10:16:07 jvanheld>
 #
 ############################################################
 
@@ -26,21 +26,29 @@ package main;
 ### files to parse
 @selected_organisms= ();
 
+$dir{genes} = $dir{KEGG}."/genomes/genes/";
+
 $kegg_file{yeast} = "S.cerevisiae.ent";
 $kegg_file{human} = "H.sapiens.ent";
 $kegg_file{ecoli} = "E.coli.ent";
 
-foreach $org (keys %kegg_file) {
-    my $data_file = $dir{KEGG}."/genomes/genes/".$kegg_file{$org};
-    if (-e $data_file) {
-	$in_file{$org} = "cat ${data_file} | ";
-    } elsif (-e "${data_file}.gz") {
-	$in_file{$org} = "gunzip -c ${data_file}.gz | ";
-    } else {
-	die ("Error: cannot find data file for organism ", $org, "\n",
-	     "\t", $data_file{$org}, "\n");
+@all_files = ();
+push @all_files, glob($dir{genes}."/*\.ent");
+push @all_files, glob($dir{genes}."/*\.ent\.gz");
+foreach $file (@all_files) {
+    if ($file =~ /\/([^\/]*)$/) {
+	$file = $1;
     }
+    $organism = $file;
+    $organism =~ s/\.ent$//;
+    $organism =~ s/\.ent\.gz$//;
+    $organism{$organism}->{name} = $organism;
+    $kegg_file{lc($organism)} = $file;
+    push @all_organisms, $organism;
 }
+
+
+
 
 $organism{yeast}->{name} = "Saccharomyces cerevisiae";
 $organism{ecoli}->{name} = "Escherichia coli";
@@ -69,12 +77,13 @@ $suffix = "";
 foreach $organism (@selected_organisms) {
   $suffix .= "_$organism";
 }
-if ($export{all}) {
-  $suffix .= "_all";
-} elsif ($export{enzymes}) {
+#if ($export{all}) {
+#  $suffix .= "_all";
+#} 
+if ($export{enzymes}) {
   $suffix .= "_enz";
 }
-$suffix .= "_test" if ($test);
+#$suffix .= "_test" if ($test);
 
 $dir{output} = $parsed_data."/kegg_parsed/".$delivery_date;
 unless (-d $dir{output}) {
@@ -85,7 +94,6 @@ chdir $dir{output};
 $out_file{error} = "$dir{output}/Gene".$suffix.".errors.txt";
 $out_file{stats} = "$dir{output}/Gene".$suffix.".stats.txt";
 $out_file{genes} = "$dir{output}/Gene".$suffix.".obj";
-$out_file{synonyms} = "$dir{output}/Gene".$suffix.".synonyms.tab";
 
 ### open error report file
 open ERR, ">$out_file{error}" || die "Error: cannot write error file $out_file{error}\n";
@@ -93,9 +101,21 @@ open ERR, ">$out_file{error}" || die "Error: cannot write error file $out_file{e
 
 ### select all organisms if none was selected (-org)
 unless ($#selected_organisms >= 0) {
-  push @selected_organisms, "ecoli";
-  push @selected_organisms, "human";
-  push @selected_organisms, "yeast";
+    @selected_organisms = @all_organisms;
+}
+
+foreach $org (@selected_organisms) {
+    die "; Fatal Error: no data file for organism $org\n"
+	unless (defined($kegg_file{lc($org)}));
+    my $data_file = $dir{genes}.$kegg_file{lc($org)};
+    if (-e $data_file) {
+	$in_file{$org} = "cat ${data_file} | ";
+    } elsif (-e "${data_file}.gz") {
+	$in_file{$org} = "gunzip -c ${data_file}.gz | ";
+    } else {
+	die ("Error: cannot find data file for organism ", $org, "\n",
+	     "\t", $data_file{$org}, "\n");
+    }
 }
 
 ### test conditions
@@ -116,10 +136,19 @@ warn "; Selected organisms\n;\t", join("\n;\t", @selected_organisms), "\n"
 foreach $org (@selected_organisms) {
     &ParseKeggFile($in_file{$org}, 
 		   $genes, 
-		   source=>"KEGG:".$kegg_file{$org}, 
+		   source=>"KEGG:".$kegg_file{lc($org)}, 
 		   organism=>$organism{$org}->{name});
+    ### check organism attribute
+    foreach $gene ($genes->get_objects()) {
+	my $organism = $gene->get_attribute("organism");
+	unless (defined($organism)) {
+	    &ErrorMessage("Warning: gene ", $gene->get_attribute("id"), " has no organism attribute\n");
+	    $gene->set_attribute("organism",$org);
+	    next;
+	}
+    }
 }
-$genes->index_names();
+#$genes->index_names();
 
 &ParsePositions();
 
@@ -137,22 +166,23 @@ foreach $gene ($genes->get_objects()) {
 
 
 ### print result
-&ExportClasses($out_file{genes}, $out_format, PFBP::Gene);
-
-$genes->dump_tables($suffix);
-
 &PrintStats($out_file{stats}, @classes);
+$genes->dump_tables($suffix);
+&ExportClasses($out_file{genes}, $out_format, PFBP::Gene) if $export{obj};
+
 
 ### report execution time
 if ($warn_level >= 1) {
   $done_time = &AlphaDate;
   warn ";\n";
-  warn "; job started $start_time\n";
+  warn "; job started $start_time";
   warn "; job done    $done_time\n";
 }
 
 close ERR;
 
+
+warn "; compressing the files\n" if ($warn_level >= 1);
 system "gzip -f $dir{output}/*.tab $dir{output}/*.obj $dir{output}/*.txt";
 
 
@@ -197,6 +227,7 @@ OPTIONS
 	-o	output file
 		If ommited, STDOUT is used. 
 		This allows to insert the program within a unix pipe
+	-obj    Export results in "obj" format (human readable)
 	-enz	export enzymes only
 	-all	export all polypeptides for the selected organisms
 		(default)
@@ -247,13 +278,18 @@ sub ReadArguments {
 
       ### select enzymes for exportation
     } elsif ($ARGV[$a] =~ /^-org/) {
-      push @selected_organisms, lc($ARGV[$a+1]);
+      push @selected_organisms, $ARGV[$a+1];
       
       ### select enzymes for exportation
     } elsif ($ARGV[$a] =~ /^-enz/) {
       $main::export{enzymes} = 1;
+
     } elsif ($ARGV[$a] =~ /^-all/) {
       $main::export{all} = 1;
+
+      #### export object file
+    } elsif ($ARGV[$a] =~ /^-obj/) {
+      $main::export{obj} = 1;
     }
     
   }
@@ -269,11 +305,6 @@ sub ParsePositions {
 	if ($warn_level >= 1);
 
     foreach my $gene ($genes->get_objects()) {
-	my $organism = $gene->get_attribute("organism");
-	unless (defined($organism)) {
-	    &ErrorMessage("Error: gene ", $gene->get_attribute("id"), " has no organism attribute\n");
-	    next;
-	}
 	my $position = $gene->get_attribute("position");
 
 	if ($position eq "<UNDEF>") {
@@ -282,7 +313,7 @@ sub ParsePositions {
 	    $gene->set_attribute("strand","<NULL>");
 	    $gene->set_attribute("start","<NULL>");
 	    $gene->set_attribute("end","<NULL>");
-	    &ErrorMessage("Error: gene ", $gene->get_attribute("id"), " has no position attribute\n");
+	    &ErrorMessage("Warning: gene ", $gene->get_attribute("id"), " has no position attribute\n");
 	    next;
 	}
 	my $coord;
@@ -291,28 +322,28 @@ sub ParsePositions {
 	my $strand;
 	my $start;
 	my $end;
-	if ($organism eq "Escherichia coli") {
+#	if ($organism eq "Escherichia coli") {
+#	    $chromosome = "genome";
+#	    $chrom_pos = $position;
+#	} elsif ($organism eq "Saccharomyces cerevisiae") {
+	if ($position =~ /^(\S+)\:(.*)/) {
+	    $chromosome = $1;
+	    $chrom_pos = $2;
+	} elsif ($position =~ /^([^\:]*)$/) {
 	    $chromosome = "genome";
-	    $chrom_pos = $position;
-	} elsif ($organism eq "Saccharomyces cerevisiae") {
-	    if ($position =~ /^(\d+)\:(.*)/) {
-		$chromosome = $1;
-		$chrom_pos = $2;
-	    } elsif ($position =~ /^mit\:(.*)/) {
-		$chromosome = "mitochondrial";
-		$chrom_pos = $1;
-	    } else {
-		&ErrorMessage("Error in gene ",$gene->get_attribute("id"),"\tinvalid position\t$position\n");
-		next;
-	    }
-	} elsif ($organism eq "Homo sapiens") {
+	    $chrom_pos = $1;
+	} else {
+	    &ErrorMessage("Warning: invalid position",
+			  "\t", $gene->get_attribute("id"),
+			  "\t", $gene->get_attribute("organism"),
+			  "\t", $position, "\n");
 	    $gene->set_attribute("chromosome", "<NULL>");
 	    $gene->set_attribute("strand","<NULL>");
 	    $gene->set_attribute("start","<NULL>");
 	    $gene->set_attribute("end","<NULL>");
 	    next;
 	}
-	
+
 	if ($chrom_pos =~ /complement\((.*)\)/) {
 	    $strand = "R";
 	    $coord = $1;
@@ -336,8 +367,10 @@ sub ParsePositions {
 		$end = $2;
 	    }
 	} else {
-	    &ErrorMessage("Error : gene ",$gene->get_attribute("id"),"\tinvalid gene coordinate $coord\n");
-	    next;
+	    &ErrorMessage("Warning : gene ",$gene->get_attribute("id"),"\tinvalid gene position $position\n");
+	    $strand = "<NULL>";
+	    $start = "<NULL>";
+	    $end = "<NULL>";
 	}
 	$gene->set_attribute("chromosome", $chromosome);
 	$gene->set_attribute("strand",$strand);
