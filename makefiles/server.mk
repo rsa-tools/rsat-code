@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: server.mk,v 1.9 2004/06/17 07:16:13 jvanheld Exp $
+# $Id: server.mk,v 1.10 2004/08/18 05:21:51 jvanheld Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -81,9 +81,10 @@ rsync_dir:
 	${RSYNC} ${OPT} ${EXCLUDED}		\
 		${DIR} ${MIRROR}/
 
-DATA_EXCLUDED= --exclude 'Mus_musculus*'	\
-	--exclude 'Homo_sapiens*'		\
-	--exclude comparative_genomics 		\
+DATA_EXCLUDED= --exclude 'Mus_*'		\
+	--exclude 'Homo_*'			\
+	--exclude 'Rattus_*'			\
+	--exclude comparative_genomics		\
 	--exclude upstream_calibrations
 
 RSYNC_DATA_CMD=${RSYNC} ${DATA_EXCLUDED} \
