@@ -70,7 +70,7 @@ sub RSA_header {
 sub SelectOutput {
   print "<B>Output</B>&nbsp;";
   print $query->radio_group(-name=>'output',
-			    -values=>['display','server','e-mail'],
+			    -values=>['display','e-mail'],
 			    -default=>'display');
   print $query->textfield(-name=>'user_email',
 			  -size=>30);
@@ -420,6 +420,10 @@ sub ServerOutput {
 
 #### send e-mail with the result of a command
 sub EmailTheResult {
+    #### redirect the task to ServerOutput
+    &ServerOutput(@_);
+}
+sub OldEmailTheResult {
     my ($command, $email_address) = @_;
 
     $mail_command = "mail -s \'RSA-tools - $script_name - $date\'";
