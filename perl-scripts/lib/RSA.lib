@@ -1209,11 +1209,11 @@ sub CalcNeighbourLimits {
 	    my $gene = $genes[$g];
 	    my $ln = $g -1; ### first guess for left neighbour
 	    my $rn = $g +1; ### first guess for right neighbour
-	    my $found = 0;
 
 	    #### calculate left upstream limit 
+	    my $found = 0;
 	    do {
-		if ($chrom_rights[$ln] > $left{$gene}) {
+		if (($chrom_rights[$ln] > $left{$gene}) && ($chrom_lefts[$ln] > $left{$gene})) {
 		    $ln--;
 		} elsif ($chrom_rights[$ln+1] < $left{$gene}) {
 		    $ln++;
@@ -1225,17 +1225,15 @@ sub CalcNeighbourLimits {
 		$neighb_left_limit{$gene} = $chrom_rights[$ln]; 
 	    } elsif ($ln < 0) {
 		$neighb_left_limit{$gene} = 0; 
-	    } elsif ($ln > $#chrom_rights) {
+	    } else {
 		$neighb_left_limit{$gene} = undef; 
 	    }
-	    $neighb_left_size{$gene} = $left{$gene} - $neighb_left_limit{$gene} -1;
+	    $neighb_left_size{$gene} = &max(0, $left{$gene} - $neighb_left_limit{$gene} -1);
 	    
-
-
 	    #### calculate right upstream limit 
 	    $found = 0;
 	    do {
-		if ($chrom_lefts[$rn] < $right{$gene}) {
+		if (($chrom_lefts[$rn] < $right{$gene}) && ($chrom_rights[$rn] < $right{$gene})) {
 		    $rn++;
 		} elsif ($chrom_lefts[$rn-1] > $right{$gene}) {
 		    $rn--;
@@ -1250,7 +1248,7 @@ sub CalcNeighbourLimits {
 	    } elsif ($rn > $#chrom_lefts) {
 		$neighb_right_limit{$gene} = $chromosome_seq{$chr}->get_length() + 1; 
 	    }
-	    $neighb_right_size{$gene} = $neighb_right_limit{$gene} - $right{$gene} -1;
+	    $neighb_right_size{$gene} = &max(0, $neighb_right_limit{$gene} - $right{$gene} -1);
 	    
 	    if ($strand{$gene} eq "R") {
 		$upstr_limit{$gene} = $neighb_right_limit{$gene};
