@@ -4,6 +4,7 @@
 ## makefile for getting info for the motif discovery competition
 
 include ${RSAT}/makefiles/util.mk
+include ${RSAT}/makefiles/upstream_calibrations.mk
 
 MAKEFILE=${RSAT}/makefiles/motif_disco_competition_2003.mk
 

@@ -15,7 +15,7 @@ REF_ORG=Saccharomyces_cerevisiae
 ## Perform the complete analysis
 ORG=S_kudriavzevii
 #ORG=S_bayanus
-OTHER_ORGANISMS=S.paradoxus S.mikatae S.bayanus S.kluyveri S.castellii S.kudriavzevii
+OTHER_ORGANISMS=S_paradoxus S_mikatae S_bayanus S_kluyveri S_castellii S_kudriavzevii
 ORGANISMS=S_cerevisiae ${OTHER_ORGANISMS}
 
 ################################################################
@@ -104,7 +104,7 @@ utr_Sce:
 	@echo ${RETRIEVE_CMD}
 	${RETRIEVE_CMD}
 #	gzip -f ${SCE_UTR_FILE}
-	@echo "S.cerevisiae downstream sequences saved in ${SCE_UTR_FILE}"
+	@echo "S_cerevisiae downstream sequences saved in ${SCE_UTR_FILE}"
 
 ################################################################
 ## Convert downstream sequences for one alternate yeast species
@@ -181,7 +181,7 @@ count_merged:
 	wc ${REDUNDANT_DIR}/${MIT_FILE} ${REDUNDANT_DIR}/${WASHU_FILE} ${MERGED_FILE}
 
 ################################################################
-## Iterate over S.cerevisiae ORFs
+## Iterate over S_cerevisiae ORFs
 ORF_LIST=`cat ${ORF_FILE}`
 ORF_DIR=data/orfs
 ORF_FILE=${ORF_DIR}/S_cerevisiae_orfs.txt
@@ -194,7 +194,7 @@ iterate_orfs:
 	done
 
 ################################################################
-## Get the list of S.cerevisiae ORFs from the locus_tag attributes
+## Get the list of S_cerevisiae ORFs from the locus_tag attributes
 orf_list:
 	grep -v '^--' ${RSAT}/data/genomes/${REF_ORG}/genome/cds_locus_tag.tab \
 		| cut -f 2 | grep -v '^Q' > ${ORF_FILE}
@@ -286,8 +286,37 @@ tree_one_orf:
 	@echo "Calculated NJ tree for orf ${ORF}	${TREE_FILE}"
 
 ################################################################
-## Oligo-analysis
+## Position-analysis
+POSITION_DIR=${UTR_DIR}/genome-wise_oligos/positions
+POSITION_PREFIX=${OL}nt_ci${CI}${STR}${NOOV}
+POSITION_FILE=${POSITION_DIR}/${ORG}_${POSITION_PREFIX}_positions.tab
+POS_ORIGIN=0
+CI=20
+POSITION_OPTIONS=-v 1 -l ${OL} ${STR} ${NOOV}	\
+	-ci ${CI} -nogrouprc -origin ${POS_ORIGIN} -sort	\
+	-return chi,distrib,exp,rank		\
+	-nofilter				\
+	-i ${SUB_UTR_WC_PURGED} -format wc	\
+	-o ${POSITION_FILE}
 
+POSITION_CMD=position-analysis ${POSITION_OPTIONS}
+positions:
+	@${MAKE} iterate_oligo_lengths OLIGO_TASK=positions_one_len
+
+positions_one_len:
+	@${MAKE} iterate_organisms ORG_TASK=positions_one_genome_one_len
+	@${MAKE} positions_compare
+
+positions_compare:
+	compare-scores -sc 4 -o ${POSITION_DIR}/${POSITION_PREFIX}_comparison_chi2.tab -files ${POSITION_DIR}/*_${POSITION_PREFIX}_positions.tab
+	compare-scores -sc 3 -o ${POSITION_DIR}/${POSITION_PREFIX}_comparison_occ.tab -files ${POSITION_DIR}/*_${POSITION_PREFIX}_positions.tab
+
+positions_one_genome_one_len:
+	@echo ${POSITION_CMD}
+	@${POSITION_CMD}
+
+################################################################
+## Oligo-analysis
 OL=6
 STR=-1str
 NOOV=-noov
@@ -342,9 +371,9 @@ compare_oligos_two_genomes:
 ORG1=S_cerevisiae
 ORG2=S_kluyveri
 SC=9
-OLIGOS_ORG1=${GENOME_OLIGO_DIR}/${ORG1}_${OLIGO_PREFIX}_mkv${MKV}.gz
-OLIGOS_ORG2=${GENOME_OLIGO_DIR}/${ORG2}_${OLIGO_PREFIX}_mkv${MKV}.gz
-GENOME_OLIGO_COMPA_DIR=${GENOME_OLIGO_DIR}/comparisons
+OLIGOS_ORG1=${OLIGO_MARKOV_DIR}/${ORG1}_${OLIGO_PREFIX}_mkv${MKV}.gz
+OLIGOS_ORG2=${OLIGO_MARKOV_DIR}/${ORG2}_${OLIGO_PREFIX}_mkv${MKV}.gz
+GENOME_OLIGO_COMPA_DIR=${OLIGO_MARKOV_DIR}/comparisons
 OLIGOS_COMPA_PREFIX=${GENOME_OLIGO_COMPA_DIR}/${ORG1}_vs_${ORG2}_${OLIGO_PREFIX}_mkv${MKV}_sc${SC}
 IMG_FORMAT=jpg
 compare_oligos_two_genomes_one_sc:

@@ -3,11 +3,13 @@
 # Check the calibration of upstream frequencies for some organisms
 # - position analysis of all promoters
 
+include ${RSAT}/makefiles/util.mk
+
 MAKEFILE=${RSAT}/makefiles/upstream_calibrations.mk
 
 #### programs
-NICE=nice -n 20
-MAKE=${NICE} make -s
+#NICE=nice -n 20
+#MAKE=${NICE} make -s
 DATE=`date +%Y%m%d_%H%M%S`
 
 COMPRESS=.gz
@@ -18,25 +20,23 @@ STR=-1str
 NOOV=-noov
 
 #### organisms
-##ORG=Mycoplasma_genitalium
-ORG=Homo_sapiens
+#ORG=Mycoplasma_genitalium
+#ORG=Homo_sapiens
+ORG=Saccharomyces_cerevisiae_no_mito
 ORGANISMS=					\
+	Saccharomyces_cerevisiae_no_mito	\
+	Homo_sapiens				\
 	Mycoplasma_genitalium			\
 	Escherichia_coli_K12			\
-	Saccharomyces_cerevisiae		\
-	Plasmodium_falciparum			\
-	Arabidopsis_thaliana			\
 	Drosophila_melanogaster			\
-	${ON_RSAT}
-
-TO_DO=						\
+	Caenorhabditis_elegans			\
+	Arabidopsis_thaliana			\
+	Plasmodium_falciparum			\
 	Bacillus_subtilis			\
-	Schizosaccharomyces_pombe		\
-	Salmonella_typhimurium_LT2 
-
-ON_RSAT=						\
 	Mus_musculus				\
-	Homo_sapiens				
+	Schizosaccharomyces_pombe		\
+	Salmonella_typhimurium_LT2		\
+	Saccharomyces_cerevisiae
 
 #### directories
 RESULT=results
@@ -46,17 +46,15 @@ OLIGO_DIR=${ORG_DIR}/oligo-frequencies
 RAND_FAM_DIR=${ORG_DIR}/random_gene_families
 RAND_MULTI_DIR=${RAND_FAM_DIR}/rand_r${R}_n${N}
 
-SEQ_FILE=${ORG_DIR}/${ORG}_allup${NOORF}.fta${COMPRESS}
-
-usage:
-	@echo "usage: make [-OPT='options'] target"
-	@echo "implemented targets"
-	@perl -ne 'if (/^(\S+):/){ print "\t$$1\n" }' ${MAKEFILE}
+UP_LEN=1000
+SEQ_PREFIX=${ORG}_allup${UP_LEN}${NOORF}
+SEQ_FILE=${ORG_DIR}/${SEQ_PREFIX}.fta${COMPRESS}
 
 dirs:
 	mkdir -p ${ORG_DIR}
 	mkdir -p ${POS_DIR}
 	mkdir -p ${OLIGO_DIR}
+	mkdir -p ${OLIGO_DISTRIB_DIR}
 	mkdir -p ${RAND_MULTI_DIR}
 
 
@@ -82,11 +80,11 @@ upstream_calibrations: seqs position_analysis  markov oligo_tables clean_seqs
 ####
 #### Iterators
 ####
-iterate_organisms:
-	@for org in ${ORGANISMS} ; do			\
-		echo "treating organism $${org}" ;	\
-		${MAKE} ${TASK} ORG=$${org} ;		\
-	done
+# iterate_organisms:
+# 	@for org in ${ORGANISMS} ; do			\
+# 		echo "treating organism $${org}" ;	\
+# 		${MAKE} ${TASK} ORG=$${org} ;		\
+# 	done
 
 FAMILY_SIZES= 20 50 10 5 100
 iterate_family_sizes:
@@ -103,9 +101,10 @@ iterate_seq_lengths:
 
 ################################################################
 #### retrieve upstream sequences
-NOORF=-noorf
-seqs:
-	retrieve-seq -org ${ORG} -all -o ${SEQ_FILE} ${NOORF}
+#NOORF=-noorf
+NOORF=
+seqs: dirs
+	retrieve-seq -org ${ORG} -all -o ${SEQ_FILE} ${NOORF} -from -1 -to -${UP_LEN}
 
 clean_seqs:
 	\rm -f ${SEQ_FILE}
@@ -161,6 +160,10 @@ markov:
 	${MAKE} markov_one_ol OL=7 MARKOV_ORDERS='0 1 2 3 4'
 	${MAKE} markov_one_ol OL=8 MARKOV_ORDERS='0 1 2 3 4 5'
 
+
+################################################################
+## Calculate a table with the occurrences of each nucleotide (columns)
+## in each upstream sequence (rows)
 
 FROM=-1
 TO=-250
@@ -354,5 +357,56 @@ compare_sig_distrib_graph:
 tmp_copy:
 	@mkdir -p ${TMP}
 	cp  ${SIG_DISTRIB}${TOP}.tab ${TMP}/${ORG}
+
+
+################################################################
+## Calculate the distribution of occurrences for each oligonucleotide
+## in all upstream sequencces
+OLIGO_DISTRIB_DIR=${ORG_DIR}/oligo_distrib
+OLIGO_DISTRIB_FILE=${OLIGO_DISTRIB_DIR}/${SEQ_PREFIX}_${OL}nt${STR}${NOOV}
+
+OLIGO_DISTRIB_CMD= \
+	oligo-analysis -v ${V} -i ${SEQ_FILE} ${STR} ${NOOV} -l ${OL} -distrib -o ${OLIGO_DISTRIB_FILE} 
+oligo_distrib:
+#	@echo ${OLIGO_DISTRIB_CMD}
+	@${MAKE} my_command MY_COMMAND="${OLIGO_DISTRIB_CMD}"
+	@echo OLIGO_DISTRIB_FILE ${OLIGO_DISTRIB_FILE}
+	${MAKE} _fit_distrib DISTRIB_TO_FIT=negbin
+	${MAKE} _fit_distrib DISTRIB_TO_FIT=poisson
+
+DISTRIB_TO_FIT=negbin
+FIT_FILE=${OLIGO_DISTRIB_FILE}_${DISTRIB_TO_FIT}.tab
+FIT_CMD=fit-distribution			\
+	-v ${V} -distrib ${DISTRIB_TO_FIT}	\
+	-i ${OLIGO_DISTRIB_FILE}		\
+	-o ${FIT_FILE} 
+
+_fit_distrib:
+	@echo ${FIT_CMD}
+	@${FIT_CMD}
+
+
+
+################################################################
+## Organism-specific settings
+yeast:
+	${MAKE} seqs UP_LEN=800 ORG=Saccharomyces_cerevisiae_no_mito
+	${MAKE} oligo_distrib UP_LEN=800 ORG=Saccharomyces_cerevisiae_no_mito V=3
+
+coli:
+	${MAKE} seqs UP_LEN=200 ORG=Escherichia_coli_K12
+	${MAKE} oligo_distrib UP_LEN=200 ORG=Escherichia_coli_K12 V=3
+
+human:
+	${MAKE} seqs UP_LEN=800 ORG=Homo_sapiens
+	${MAKE} oligo_distrib UP_LEN=1000 ORG=Homo_sapiens V=3
+
+arabido:
+	${MAKE} seqs UP_LEN=1000 ORG=Arabidopsis_thaliana
+	${MAKE} oligo_distrib UP_LEN=1000 ORG=Arabidopsis_thaliana V=3
+
+plasmodium:
+	${MAKE} seqs UP_LEN=1000 ORG=Plasmodium_falciparum
+	${MAKE} oligo_distrib UP_LEN=1000 ORG=Plasmodium_falciparum V=3
 
 

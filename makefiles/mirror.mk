@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: mirror.mk,v 1.8 2004/04/21 08:27:58 jvanheld Exp $
+# $Id: mirror.mk,v 1.9 2004/05/06 15:31:06 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 12:05:45 jvanheld>
 #
@@ -314,7 +314,7 @@ install_gd:
 CLEAN_DATE=3
 clean_tmp:
 	@echo "Before cleaning	" `du -sk public_html/tmp`
-	find public_html/tmp/ -mtime +${CLEAN_DATE} -type f -exec rm -f {} \;	
+	find ${RSA}/public_html/tmp/ -mtime +${CLEAN_DATE} -type f -exec rm -f {} \;	
 	@echo "After cleaning	" `du -sk public_html/tmp`
 	@echo "Cleaned temporary directory" | mail -s 'cleaning tmp' jvanheld@scmbb.ulb.ac.be
 
