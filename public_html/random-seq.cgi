@@ -23,20 +23,27 @@ $query = new CGI;
 
 &ListParameters() if ($ECHO >= 2);
 
+################################################################
 #### read parameters ####
 $parameters = "";
+
+#### sequence length
 $length = $query->param('length');
 if (&IsNatural($length)) {
     $parameters .= " -l $length ";
 } else {
     &FatalError("Sequence length must be a natural number");
 }
+
+#### number of repetitions
 $repet = $query->param('repet');
 if (&IsNatural($repet)) {
     $parameters .= " -r $repet";
 } else {
     &FatalError("Repetitions must be a natural number");
 }
+
+#### check lengths and repetitions
 if ($repet * $length == 0) {
     &FatalError("Sequence length and repeitions must be non-null");
 }
@@ -44,13 +51,17 @@ if ($repet*$length > $size_limit) {
     &FatalError("The web interface does not support queries of this size. Maximum size per query (length * repetitions) = ".$size_limit);
 }
 
+#### line width
 if (&IsNatural($query->param('lw'))) {
     $parameters .= " -lw ".$query->param('lw');
 }
+
+#### output format
 $out_format = $query->param('format');
-&CheckInputSeqFormat($out_format);
+&CheckOutputSeqFormat($out_format);
 $parameters .= " -format $out_format ";
 
+#### alphabet
 if ($query->param('proba') eq "alphabet") {
     $at_freq = $query->param('ATfreq');
     $cg_freq = $query->param('CGfreq');
@@ -58,63 +69,51 @@ if ($query->param('proba') eq "alphabet") {
 	&FatalError("Invalid residue frequencies");
     }
     $parameters .= " -a a:t $at_freq c:g $cg_freq ";
+
 #### expected frequency estimation ####
 } elsif ($query->param('proba') =~ /ncf/i) {
     ### check organism
     unless ($organism = $query->param('organism')) {
-	&cgiError("You should specify an organism to use non-coding frequency calibration");
+	&cgiError("You should specify an organism to use intergenic frequency calibration");
     }
     unless (defined(%{$supported_organism{$organism}})) {
-	&cgiError("Organism $org is not supported on this site");
+	&cgiError("Organism $organism is not supported on this site");
     }
     $oligo_size = $query->param("oligo_size");
     unless (&IsNatural($oligo_size)) {
 	&cgiError("Invalid oligonucleotide length $oligo_size");
     }
     $parameters .= " -ncf -org $organism -ol $oligo_size";
+}
 
-#} elsif ($query->param('proba') eq "expfreq") {
-#    $oligo_size = $query->param('oligo_size');
-#    $freq_file = "${oligo_size}nt";
-#    
-#    if ($query->param('seq_type') eq "genomic") {
-#	$freq_file .= ".genomic.freq";
-#    } elsif ($query->param('seq_type') eq "coding") {
-#	$freq_file .= ".coding.freq";
-#    } elsif ($query->param('seq_type') eq "non coding") {
-#	$freq_file .= ".non-coding.freq";
-#    }
-#    
-#    $parameters .= " -expfreq $RSA/data/yeast/oligo-frequencies/$freq_file ";
-} 
+print "<PRE>command: $random_seq_command $parameters<P>\n</PRE>" if ($ECHO >= 1);
 
-print "<PRE>command: $random_seq_command $parameters<P>\n</PRE>" if $ECHO;
 
 ### execute the command ###
-if ($query->param('output') eq "display") {
-    open RESULT, "$random_seq_command $parameters |";
-    
-    ### open the mirror file ###
-    $mirror_file = "$TMP/$tmp_file_name.res";
-    if (open MIRROR, ">$mirror_file") {
-	$mirror = 1;
-	&DelayedRemoval($mirror_file);
-    }
-    
-    
-    ### print the result ### 
-    &PipingWarning();
-    print '<H3>Result</H3>';
-    print "<PRE>";
-    while (<RESULT>) {
-	print "$_";
-	print MIRROR $_ if ($mirror);
-    }
-    print "</PRE>";
-    close RESULT;
-    
-    ### prepare data for piping
-    &PipingForm();
+    if ($query->param('output') eq "display") {
+	open RESULT, "$random_seq_command $parameters |";
+	
+	### open the mirror file ###
+	$mirror_file = "$TMP/$tmp_file_name.res";
+	if (open MIRROR, ">$mirror_file") {
+	    $mirror = 1;
+	    &DelayedRemoval($mirror_file);
+	}
+	
+	
+	### print the result ### 
+	&PipingWarning();
+	print '<H3>Result</H3>';
+	print "<PRE>";
+	while (<RESULT>) {
+	    print "$_";
+	    print MIRROR $_ if ($mirror);
+	}
+	print "</PRE>";
+	close RESULT;
+	
+	### prepare data for piping
+	&PipingForm();
 
 #      &PipingWarning();
 #      ### Print the result on Web page
@@ -127,14 +126,14 @@ if ($query->param('output') eq "display") {
 #      close RESULT;
 #      ### prepare data for piping
 #      &PipingForm();
-    print "<HR SIZE = 3>";
+	print "<HR SIZE = 3>";
 
-} else {
-    &EmailTheResult("$random_seq_command $parameters", $query->param('user_email'));
-}
-print $query->end_html;
+    } else {
+	&EmailTheResult("$random_seq_command $parameters", $query->param('user_email'));
+    }
+    print $query->end_html;
 
-exit(0);
+    exit(0);
 
 
 ################################################################
