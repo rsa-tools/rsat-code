@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_swissprot.pl,v 1.19 2002/07/02 13:56:55 jvanheld Exp $
+# $Id: parse_swissprot.pl,v 1.20 2002/07/02 14:05:33 jvanheld Exp $
 #
-# Time-stamp: <2002-07-02 15:56:06 jvanheld>
+# Time-stamp: <2002-07-02 16:05:31 jvanheld>
 #
 ############################################################
 
@@ -48,7 +48,7 @@ package main;
     $full_name{ecoli} = "Escherichia coli";
     $full_name{human} = "Homo sapiens (Human)";
 
-    $dir{delivery} = "/rubens/dsk3/genomics/delivery/internal/swissprot_parsed";
+    $dir{delivery} = "/rubens/dsk3/genomics/delivery/internal/swissprot";
 
     #### input directories and files
     $dir{input} = "$Databases/ftp.expasy.org/databases/sp_tr_nrdb";
@@ -92,7 +92,7 @@ package main;
     #### output directory
     $out_format = "obj";
     unless (defined($dir{output})) {
-	$dir = $parsed_data."/swissprot_parsed";
+	$dir = $parsed_data."/swissprot";
 	unless (-d $dir) {
 	    warn "; Creating output dir $dir", "\n";
 	    mkdir $dir, 0775 || die "Error: cannot create directory $dir\n";
