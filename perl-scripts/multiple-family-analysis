@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.51 2004/01/28 12:37:37 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.52 2004/01/28 15:51:21 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -30,7 +30,7 @@ $dir{main} = `pwd`;
 $dir{calib1} = "calibrations_1gene"; 
 chomp($dir{main});
 
-@supported_tasks = qw (upstream purge calibrate oligos maps dyads merge slide synthesis sql clean all);
+@supported_tasks = qw (upstream purge calibrate oligos maps dyads merge slide synthesis sql clean all report);
 foreach my $task (@supported_tasks) {
     $supported_task{$task} = 1;
 }
@@ -137,6 +137,7 @@ $verbose_message = &Verbose() if ($verbose >= 1);
 ### perform analysis
 &AnalyzeFamilies();
 &SyntheticTable() if ($task{synthesis});
+&MDCreport() if ($task{report});
 &ExportSQL() if ($task{sql});
 
 ### Remind output dir
@@ -384,14 +385,30 @@ sub OligoAnalysis {
 ################################################################
 #### draw feature-map for the result of oligo-analysis
 sub DrawOligoFeatureMap {
-    warn ";\tDrawing feature-map with results of oligo-analysis for family $family_name\n" if ($verbose >= 1);
+    my ($oligo_file, $fmap_prefix) = @_;
+
+    ## check file names
+    $oligo_file = $family{$family_name}->{oligo_file} unless ($oligo_file);
+    $fmap_prefix = $oligo_file unless ($fmap_prefix);
+
     ### pattern matching
     die "Error : cannot read file $family{$family_name}->{seq_file}\n" unless (-r $family{$family_name}->{seq_file});
-    $fmap_file = $family{$family_name}->{oligo_file}.".${IMG_FORMAT}";
-    $htmap_file = $family{$family_name}->{oligo_file}.".html";
+    $feature_file = $fmap_prefix.".ft";
+    $fmap_file = $fmap_prefix.".".$IMG_FORMAT;
+    $htmap_file = $fmap_prefix.".html";
+    warn( ";\tDrawing feature-map",
+	  "\n;\t", $oligo_file,
+	  "\n;\t", $fmap_file,
+	  "\n")  if ($main::verbose >= 1);
+    
     $origin = "-0";
-    my $command = "dna-pattern -i $family{$family_name}->{seq_file} -format $seq_format -pl $family{$family_name}->{oligo_file} -origin $origin -N 4 ";
-    $command .= " | features-from-dnapat -o $family{$family_name}->{oligo_ft_file} ";
+    my $command = "dna-pattern -i ".$family{$family_name}->{seq_file};
+    $command .= " -format ".$seq_format;
+    $command .= " -pl ".$oligo_file;
+    $command .= " -origin ".$origin;
+    $command .= " -N 4 ";
+    $command .= " | features-from-dnapat -o ".$feature_file;
+    ## Check if pattern matching is OK (sometimes there are no patterns)
     my $error = &doit($command,$dry_run, 0);
     if ($error) {
 	warn "; WARNING: Feature map skipped because dna-pattern returned an error\n";
@@ -403,8 +420,9 @@ sub DrawOligoFeatureMap {
 	$from = -$family{$family_name}->{calib_length};
 	$to = -1;
     }
-    $command = "feature-map -i $family{$family_name}->{oligo_ft_file} -scalebar -scalestep $scalestep -legend ";
-    $command .= " -title $family{$family_name}->{oligo_ft_file}";
+    $command = "feature-map -i ".$feature_file;
+    $command .= " -scalebar -scalestep $scalestep -legend ";
+    $command .= " -title '".$oligo_file."'";
     $command .= " -from $from" if (defined($from));
     $command .= " -to $to" if (defined($to));
     $command .= " -o $fmap_file -scorethick ";
@@ -587,7 +605,7 @@ sub SyntheticTable {
     $row{family} = $row++;
     $row{size} = $row++;
     $row{genes} = $row++;
-    $row{seq_length} = $row++ if ($seq_length_calculated);
+    $row{total_length} = $row++ if ($seq_length_calculated);
     $row{known} = $row++ if ($known_sites_provided);
     $row{oligo} = $row++;
     $row{dyad} = $row++;
@@ -620,7 +638,7 @@ sub SyntheticTable {
 	$table[$row{size}][$col] = scalar(@{$family{$family_name}->{members}});
 
 	#### sequence length
-	$table[$row{seq_length}][$col] = $family{$family_name}->{seq_length} if ($seq_length_calculated);
+	$table[$row{total_length}][$col] = $family{$family_name}->{total_length} if ($seq_length_calculated);
 
 	### list of genes
 	$table[$row{genes}][$col] = "<a href='../".$family{$family_name}->{family_file}."'>";
@@ -1842,7 +1860,7 @@ sub CalcCalibrationLengths {
 	    chomp;
 	    @fields = split "\t";	    
 	    my $current_len = $fields[1];
-	    $family{$family_name}->{seq_length} += $current_len;
+	    $family{$family_name}->{total_length} += $current_len;
 	    ## check that all sequences of one family have the same length
 	    if (defined($family{$family_name}->{calib_length})) {
 		unless ($family{$family_name}->{calib_length} == $current_len) {
@@ -2016,4 +2034,59 @@ sub ReadAssemblyFile {
     close $pattern_handle;
     return @assembled_patterns;
 }
+
+################################################################
+## Generate report fiels for the motif disovery competition 2004
+sub MDCreport {
+    $dir{mdc_report} = "mdc_report";
+    &CheckOutDir($dir{mdc_report});
+    my $report_file = $dir{mdc_report}."/".$table_suffix."_report.txt";
+    
+    warn ";\n; Generating report\t", $report_file, "\n" if ($verbose >=1);
+    ($report) = &OpenOutputFile($report_file);
+    print $report join ("\n", 
+			">name of contact",
+			"Jacques van Helden",
+			">email",
+			"jvanheld\@scmbb.ulb.ac.be",
+			">program name",
+			"multiple-family-analyis"), "\n";
+    close $report;
+
+    my $command = "";
+    foreach $family_name (@families) {
+	my $oligo_file = $family{$family_name}->{oligo_file}."_selection";
+	unless (-e $oligo_file) {
+	    $oligo_file = $family{$family_name}->{oligo_file};
+	}
+	my $feature_prefix =  $family{$family_name}->{oligo_file}."_report";
+	my $feature_file = $feature_prefix.".ft";
+	
+	### Read the feature_file in order to select the threshold
+#	($in) = &OpenInputFile($oligo_file);
+#	
+#	close $in;
+
+	## Localize the instances of the selected patterns with dna-pattern
+	$command = "dna-pattern -v 1 -i ".$family{$family_name}->{input_seq_file};
+	$command .= " -window 10";
+	$command .= " -pl ".$oligo_file;
+	$command .= "| features-from-dnapat -o ".$feature_file;
+	print `pwd`;
+	die "$command",
+	&doit($command);
+
+	## Draw the feature map of the selected oligos
+	&DrawOligoFeatureMap($oligo_file, $feature_prefix);
+
+	## Convert the features in MDC format
+	warn ";\tReporting\t",$feature_file, "\n" if ($verbose >=2);
+	$command = "MDCreport-from-dnapat -d ".$family_name;
+	$command .= " -i ".$feature_file;
+	$command .= ">> $report_file" if ($report_file);
+	&doit($command);
+    }    
+    warn ";\n; Generated report\t", $report_file, "\n" if ($verbose >=1);
+}
+
 

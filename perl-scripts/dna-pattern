@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dna-pattern,v 1.23 2003/08/13 10:17:55 jvanheld Exp $
+# $Id: dna-pattern,v 1.24 2004/01/28 15:51:21 jvanheld Exp $
 #
 # Time-stamp: <2003-08-13 12:16:03 jvanheld>
 #
@@ -70,13 +70,15 @@ unless (($allowed_subst eq "") || (&IsNatural($allowed_subst))) {
 			  noid=>$noid,
 			  pattern_score=>$pattern_score,
 			  pattern_id=>$pattern_id,
-			  pattern_seq=>$pattern_seq);
+			  pattern_seq=>$pattern_seq,
+			  );
 
 #### check patterns
 
 ### no pattern specified
 if ($#patterns < 0) {
     &Warning("There is not a single pattern.") ;
+    exit(0);
 }
 
 #### prepare pattern hash for sliding window 
@@ -565,7 +567,8 @@ sub ReadArguments {
 	    $return{match_profiles} = 1;
 
 	    #### sliding window
-	} elsif ($ARGV[$a] =~ /-win/) {
+	} elsif ($ARGV[$a] =~ /^-win/) {
+#	    die;
 	    $search_method = "sliding window";
 	    $sliding_window_size = $ARGV[$a+1];
 	    unless (&IsNatural($sliding_window_size)) {

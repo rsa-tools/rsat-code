@@ -74,7 +74,10 @@ if ($verbose) {
     &PrintArguments($out);
     print $out "; Input file	$inputfile\n" if $inputfile;
     print $out "; Output file	$outputfile\n" if $outputfile;
-    print $out "; score column\t$score_column\n" if (&IsNatural($score_column));
+    if (&IsNatural($score_column)) {
+	print $out "; Input score column\t$score_column\n";
+	print $out "; Output score column\t",3,"\n";
+    }
     if ($strand_insensitive) {
 	print $out "; two strand assembly\n";
     } else {
