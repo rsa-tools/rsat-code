@@ -658,7 +658,7 @@ sub hypergeometric {
 
 
     
-# 	$Id: RSA.stat.lib,v 1.23 2004/04/01 22:19:11 jvanheld Exp $	
+# 	$Id: RSA.stat.lib,v 1.24 2004/07/29 16:21:46 jvanheld Exp $	
 
     #### initialization
     if (defined($args{previous_value})) {
@@ -786,7 +786,7 @@ sub hypergeometric {
 
 
 ################################################################
-#### sum_of_hypergeometric($m, $n, $k, $from, $to)
+#### sum_of_hypergeometrics($m, $n, $k, $from, $to)
 ####
 #### REMARK: I checked this routine by comparing results with R, and
 #### there is a difference with some test cases, e.g. : 
