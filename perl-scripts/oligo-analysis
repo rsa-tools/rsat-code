@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.47 2002/05/08 02:17:21 jvanheld Exp $
+# $Id: oligo-analysis,v 1.48 2002/05/08 12:29:47 jvanheld Exp $
 #
-# Time-stamp: <2002-05-08 04:17:03 jvanheld>
+# Time-stamp: <2002-05-08 12:37:33 jvanheld>
 #
 ############################################################
 
@@ -263,7 +263,11 @@ sub CountOligo {
     }
     
     if ($return{'table'}) {
-	@possible_oligos = &all_oligos($oligo_length);
+	if ($seq_type eq "DNA") {
+	    @possible_oligos = &all_oligos($oligo_length);
+	} else {
+	    @possible_oligos = sort keys %patterns;
+	}
 	print $out $current_id;
 	foreach my $pattern_seq (@possible_oligos) {
 	    print $out "\t", $pattern_seq;
@@ -1024,13 +1028,13 @@ sub CalcProba {
 							       $patterns{$pattern_seq}->{nb_possible_pos},
 							       $patterns{$pattern_seq}->{occ});
 
-	    print STDERR join( "\t", "HELLO", 
-			       $pattern_seq, 
-			       $patterns{$pattern_seq}->{occ},  
-			       $patterns{$pattern_seq}->{exp_freq},  
-			       $patterns{$pattern_seq}->{nb_possible_pos},
-			       $patterns{$pattern_seq}->{occ_pro}
-			       ),"\n";
+#  	    print STDERR join( "\t", "HELLO", 
+#  			       $pattern_seq, 
+#  			       $patterns{$pattern_seq}->{occ},  
+#  			       $patterns{$pattern_seq}->{exp_freq},  
+#  			       $patterns{$pattern_seq}->{nb_possible_pos},
+#  			       $patterns{$pattern_seq}->{occ_pro}
+#  			       ),"\n";
 
 #	    }
 	}
@@ -2276,7 +2280,6 @@ oligo-analysis options
 -noov		no overlapping
 -1str		inactivate summation of occ on both strands
 -2str		sum occurences on both strands (default)
--prot		input sequences are proteic (oligopeptide analysis)
 -grouprc        group reverse complement pairs (default)
 -nogrouprc      do not group reverse complement pairs
 -tho            threshold on occurence number
