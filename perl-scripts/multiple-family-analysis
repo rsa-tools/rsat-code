@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.48 2004/01/23 23:14:19 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.49 2004/01/27 11:59:02 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -26,7 +26,7 @@ require "$RSA/perl-scripts/lib/RSA.classes";
 $die_on_error = 1;
 %dir = ();
 $dir{main} = `pwd`;
-$dir{calib} = "calibrations"; 
+$dir{calib1} = "calibrations"; 
 chomp($dir{main});
 
 @supported_tasks = qw (upstream purge calibrate oligos maps dyads merge slide synthesis sql clean all);
@@ -45,7 +45,8 @@ $supported_sort_keys  = join ",", sort keys %supported_sort_key;
 			"intergenic"=>1,
 			"upstream"=>1,
 			"upstream-noorf"=>1,
-			"calib"=>1,
+			"calib1"=>1,
+			"calibN"=>1,
 			);
 $supported_background  = join ",", sort keys %supported_background;
 
@@ -315,19 +316,37 @@ sub OligoAnalysis {
 	$oligo_options .= " ".$strands;
 	$oligo_options .= " -l ".$oligo_len;
 	$oligo_options .= " -thosig ".$th;
+
 	if ($markov) {
+	    ### Markov chain model
 	    $oligo_options .= " -markov ".$markov_order;
+
 	} elsif ($exp_freq_file{oligos}) {
+	    ### Manually specified calibrated frequencies
 	    $oligo_options .= " -expfreq ".$exp_freq_file{oligos};
-	} elsif ($background eq "calib") {
+
+	} elsif ($background eq "calib1") {
+	    ### Single-sequence based calibrated occurrences (mean and var per sequence)
 	    my $calib_length = $family{$family_name}->{calib_length};
 	    my $calib_file = &CalibrationPrefix($calib_length, $oligo_len);
 	    $calib_file .= "_negbin.tab";
 	    $oligo_options .= " -calib1 ".$calib_file;
 #	    die join ("\t", "; Oligonucleotide calibration", $calib_length, $calib_file), "\n";
+
+	} elsif ($background eq "calibN") {
+	    ### Set-based calibrated occurrences (mean and var per set of N sequences)
+	    my $calib_length = $family{$family_name}->{calib_length};
+	    my $N = scalar(@{$family{$family_name}->{members}});
+	    my $calib_file = &CalibrationPrefix($calib_length, $oligo_len, $N);
+	    $calib_file .= "_negbin.tab";
+	    $oligo_options .= " -calibN ".$calib_file;
+#	    die join ("\t", "; Oligonucleotide calibration", $calib_length, $calib_file), "\n";
+
 	} else {
+	    ### Pre-calculated expected frequenccy files
 	    $oligo_options .= " -org ".$organism_name;
 	    $oligo_options .= " -bg ".$background;
+
 	}
 	$oligo_options .= " -return occ,proba,mseq,rank";
 	$oligo_options .= " ".${noov};
@@ -371,7 +390,12 @@ sub DrawOligoFeatureMap {
     }
 
     ## feature-map drawing
+    if (($background eq "calib1") || ($background eq "calibN")){
+	$from = -$family{$family_name}->{calib_length};
+	$to = -1;
+    }
     $command = "feature-map -i $family{$family_name}->{oligo_ft_file} -scalebar -scalestep $scalestep -legend ";
+    $command .= " -title $family{$family_name}->{oligo_ft_file}";
     $command .= " -from $from" if (defined($from));
     $command .= " -to $to" if (defined($to));
     $command .= " -o $fmap_file -scorethick ";
@@ -453,7 +477,12 @@ sub DrawMergedFeatureMap {
     }
 
     ## feature-map drawing
+    if (($background eq "calib1") || ($background eq "calib1")){
+	$from =  $family{$family_name}->{calib_length};
+	$to = -1;
+    }
     $command = " feature-map -i $family{$family_name}->{merged_ft_file} -scalebar -scalestep $scalestep -legend ";
+    $command .= " -title $family{$family_name}->{merged_ft_file}";
     $command .= " -from $from" if (defined($from));
     $command .= " -to $to" if (defined($to));
     $command .= " -o $fmap_file -scorethick ";
@@ -976,7 +1005,10 @@ sub AnalyzeFamilies {
     my $fam_nb = $#families+1;
 
     ### Calibrate oligonucleotides for each sequence length
-    if ($task{calibrate} || ($background eq "calib")) {
+    if (($task{calibrate}) || 
+	($background eq "calib1") ||
+	($background eq "calibN")
+	) {
 	my @calib_lengths = &CalcCalibrationLengths();
 	&CalibrateOligos(@calib_lengths) if ($task{calibrate});
     }
@@ -1827,27 +1859,34 @@ sub CalibrateOligos {
     warn ";\n; Calibrating oligonucleotide occurrences\n" if ($verbose >=1);
 
     ### Analyse upstream occurrence distributions for each sequence length
-    &CheckOutDir($dir{calib});
+    &CheckOutDir($dir{calib1});
     warn "; Calculating oligonucleotide distributions in all upstream sequences\n" if ($verbose >= 1);
     foreach my $calib_length (sort {$a <=> $b} @calib_lengths) {
 	## retrieve all upstream sequence
-	my $allup = $dir{calib}."/tmp_all_up_".$calib_length.".fasta";
+	my $allup = $dir{calib1}."/tmp_all_up_".$calib_length.".fasta";
 	my $command = "retrieve-seq -org $organism_name -all -from -$calib_length -to -1 -o $allup";
 	warn ";\tRetrieving all upstream sequences\t", $allup, "\n" if ($main::verbose >= 0);
 	&doit($command, $dry_run, $die_on_error);
 
 	for my $oligo_len ($min_oligo_len..$max_oligo_len) {
 
+	    ## Names of the calibration files
 	    my $calib_prefix = &CalibrationPrefix($calib_length, $oligo_len);
+	    my $distrib_file = $calib_prefix."_distrib.tab";
+	    my $fitting_file = $calib_prefix."_negbin.tab";
+
+	    ## Skip the calibration if the file already exists
+	    if ((-e $fitting_file.".gz") && !($force_calib)) {
+		warn "Calibration file ${fitting_file}..gz already exists. Skipping calibration\n";
+		next;
+	    }
 
 	    ## Calculate occurrence distributions
-	    my $distrib_file = $calib_prefix."_distrib.tab";
 	    $command = "oligo-analysis -v 3 -l $oligo_len $noov $strands  -i $allup -return occ -distrib -o $distrib_file";
 	    warn ";\tAnalysing ",$oligo_len,"nt distributions\t",$distrib_file, "\n" if ($main::verbose >= 0);
 	    &doit($command, $dry_run, 0);
 	    
 	    ## Calculate stats and fit negbin on the distributions
-	    my $fitting_file = $calib_prefix."_negbin.tab";
 	    $command = "fit-distribution -v 1 -i $distrib_file -distrib negbin -o $fitting_file";
 	    &doit($command, $dry_run, $die_on_error);
 
@@ -1867,13 +1906,47 @@ sub CalibrateOligos {
 ## ##############################################################
 ## Calculate the prefix of the calibration file
 sub CalibrationPrefix {
-    my ($calib_length, $oligo_len) = @_;
-    my $calib_prefix = $dir{calib}."/";
-    $calib_prefix .= $oligo_len."nt";
-    $calib_prefix .= "_upstream_L".$calib_length;
-    $calib_prefix .= "_".$organism_name;
-    $calib_prefix .= $noov;
-    $calib_prefix .= $strands;
+    my ($calib_length, $oligo_len, $N) = @_;
+
+    my $repetitions=10000;
+
+    my $calib_prefix = "";
+
+    if ($N) {
+	## set-based calibration (simulations)
+	$calib_prefix = $supported_organism{$organism_name}->{'data'}."/rand_gene_selections";
+
+	## Temporary
+	$calib_prefix = "~/motif_discovery_competition_2003/results/".$organism_name."/rand_gene_selections/";
+
+	## directory
+	$calib_prefix .= "/";
+	$calib_prefix .= $oligo_len."nt";
+	$calib_prefix .= $strands;
+	$calib_prefix .= $noov;
+	$calib_prefix .= "_N".$N;
+	$calib_prefix .= "_L".$calib_length;
+	$calib_prefix .= "_R".$repetitions;
+
+	## file name
+	$calib_prefix .= "/";
+	$calib_prefix .= $organism_name."_";
+	$calib_prefix .= $oligo_len."nt_";
+	$calib_prefix .= $strands;
+	$calib_prefix .= $noov;
+	$calib_prefix .= "_n".$N;
+	$calib_prefix .= "_l".$calib_length;
+	$calib_prefix .= "_r".$repetitions;
+
+    } else {
+	## single-gene-based calibration (all upstream)
+	$calib_prefix = $dir{calib1}."/";
+	$calib_prefix .= $oligo_len."nt";
+	$calib_prefix .= "_upstream_L".$calib_length;
+	$calib_prefix .= "_".$organism_name;
+	$calib_prefix .= $noov;
+	$calib_prefix .= $strands;
+    }
     return $calib_prefix;
 }
 
