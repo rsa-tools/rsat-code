@@ -40,9 +40,12 @@ SERVER_DIR=motif_discovery_competition_2003/
 #SERVER=merlin.ulb.ac.be
 SERVER=164.15.109.32
 EXCLUDE=--exclude '*~' --exclude oligos --exclude '*.wc' --exclude random_genes.tab --exclude '*.fasta' --exclude '*.fasta.gz' --exclude '*.wc.gz'
-to_server:
-	${MAKE} rsync_one_dir TO_SYNC=TASK_LIST.html
-	${MAKE} rsync_one_dir TO_SYNC=results
+all_to_merlin:
+	${MAKE} to_merlin TO_SYNC='*.html' 
+	${MAKE} to_merlin TO_SYNC='makefiles' 
+
+to_merlin:
+	${MAKE} one_dir_to_server SERVER=164.15.109.32
 
 one_dir_to_server:
 	${RSYNC} ${EXCLUDE} ${TO_SYNC} ${SERVER_LOCATION}
@@ -52,7 +55,8 @@ update_from_server:
 
 ## Synchronize calibrations from merlin
 from_merlin:
-	${MAKE} update_from_server SERVER_DIR=motif_discovery_competition_2003/ TO_SYNC=results
+	${MAKE} update_from_server SERVER_DIR=motif_discovery_competition_2003/ 
+
 
 # Temporary
 #	${MAKE} update_from_server SERVER_DIR=./ TO_SYNC=results
@@ -652,3 +656,9 @@ mv_background_dirs:
 
 mv_background_dir_one_org:
 	mv results/${ORG}/background_frequencies results/${ORG}/upstreamL_frequencies 
+
+to_do:
+	rm -rf results/Mus_musculus/rand_gene_selections/6nt-2str-noov_N0_L_R10000
+	rm -rf results/*/multi/calib1_bg
+	rm -rf results/*/multi/calibN_bg
+	rm -rf results/*/multi/upstream_bg
