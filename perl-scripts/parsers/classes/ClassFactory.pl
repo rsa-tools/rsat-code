@@ -450,7 +450,7 @@ use Data::Dumper;
 	      open STDOUT, ">$outfile"  || die "Error : cannot write file $outfile\n"; 
 	  }
 	  warn (";\n; ", &main::AlphaDate, " exporting class ", $object_type, " to file '$outfile'\n") 
-	      if ($main::verbose >= 1);
+	      if ($main::verbose >= 2);
 	  my @selected = $class_holder->get_out_fields();
 #	  my @selected = @{$out_fields{$object_type}};
 	  foreach my $object ($class_holder->get_objects()) {
@@ -487,7 +487,7 @@ use Data::Dumper;
 	      unless ($outfile);
 	  warn (";\n; ", &main::AlphaDate, 
 		" exporting name index for class $object_type in format MLDBM to file $outfile\n")
-	      if ($main::verbose >= 1);
+	      if ($main::verbose >= 2);
 	  
 	  tie %db, 'MLDBM', $outfile ||
 	      die "Cannnot tie to $outfile\n";
@@ -527,7 +527,7 @@ use Data::Dumper;
 	  unless ($outfile);
       warn (";\n; ", &main::AlphaDate, 
 	    " exporting input index for class $object_type in format MLDBM to file $outfile\n")
-	  if ($main::verbose >= 1);
+	  if ($main::verbose >= 2);
       tie %db, 'MLDBM', $outfile ||
 	  die "Cannnot tie to $outfile\n";
       
@@ -564,7 +564,7 @@ use Data::Dumper;
 	  unless ($outfile);
       warn (";\n; ", &main::AlphaDate, 
 	    " exporting output index for class $object_type in format MLDBM to file $outfile\n")
-	  if ($main::verbose >= 1);
+	  if ($main::verbose >= 2);
       tie %db, 'MLDBM', $outfile ||
 	  die "Cannnot tie to $outfile\n";
       
@@ -706,9 +706,9 @@ use Data::Dumper;
   sub generate_sql {
       my ($class_holder,%args) = @_;
       foreach my $dbms (keys %main::supported_dbms) {
-	  warn "Exporting SQL scripts for $dbms\n";
+	  warn "Exporting SQL scripts for $dbms\n" if ($main::verbose >= 2);
 	  $class_holder->generate_sql_one_dbms(%args, dbms=>$dbms,
-					       dir=>$main::dir{output}."/sql_scripts/".$dbms);
+					       dir=>$main::dir{output}."/sql_scripts/".$dbms) if ($main::verbose >= 2);
       }
   }
 
@@ -739,11 +739,11 @@ use Data::Dumper;
       warn join ("\t", ";\n;", &main::AlphaDate(), 
 		 " Generating SQL scripts for class ", $class_holder->get_object_type(),
 		 "sql_dir: $sql_dir"),
-		 "\n" if ($main::verbose >= 1);
+		 "\n" if ($main::verbose >= 2);
       
       #### create SQL export directory if required
       unless (-d $sql_dir) {
-	  warn "; Creating SQL dir $sql_dir" if ($main::verbose > 1);
+	  warn "; Creating SQL dir $sql_dir" if ($main::verbose > 2);
 	  system "mkdir -p $sql_dir";
 	  unless (-e $sql_dir) {
 	      die "Error: cannot create directory $sql_dir for exporting SQL scripts\n";
@@ -785,7 +785,7 @@ use Data::Dumper;
 	    ";\tgranted readers\t", join (",",@granted_readers), "\n",
 	    ";\tgranted writers\t", join (",",@granted_writers), "\n",
 	    ";\tpassword\t", $password, "\n",
-	    ) if ($main::verbose >= 1);
+	    ) if ($main::verbose >= 2);
 
 
 
@@ -829,7 +829,7 @@ use Data::Dumper;
       #### Table creation
       my $create_file = "${table_prefix}_table_create.sql";
       warn ";\ttable creation scripts to file $create_file\n" 
-	  if ($main::verbose >= 1);
+	  if ($main::verbose >= 2);
       open SQL, "> $sql_dir/$create_file" || die "Error: cannot write file $create_file\n";
 
       print_sql_header ("Table creation scripts for class $table_prefix");
@@ -1001,7 +1001,7 @@ use Data::Dumper;
 	  }
 	  my $load_file = "${table_prefix}_table_load.ctl";
 	  warn ";\ttable loading scripts to file $load_file\n" 
-	      if ($main::verbose >= 1);
+	      if ($main::verbose >= 2);
 	  open SQL, "> $sql_dir/$load_file" || die "Error: cannot write file $load_file\n";
 	  print_sql_header ("Table loading scripts for class $table_prefix");
 	  print_sql_header ("Main table - $table_prefix");
@@ -1046,7 +1046,7 @@ use Data::Dumper;
 	      }
 	      my $load_file = "${table_prefix}_${field}_table_load.ctl";
 	      warn ";\ttable loading scripts to file $load_file\n" 
-		  if ($main::verbose >= 1);
+		  if ($main::verbose >= 2);
 	      open SQL, "> $sql_dir/$load_file" || die "Error: cannot write file $load_file\n";
 	      print_sql_header ("Table loading scripts for class $table_prefix");
 	      print_sql_header ("Multivalue attribute - $table_name");
@@ -1110,7 +1110,7 @@ use Data::Dumper;
 	      my @fields = split "\t", $header;
 #	      shift @fields;
 	      warn ";\ttable loading scripts to file $load_file\n" 
-		  if ($main::verbose >= 1);
+		  if ($main::verbose >= 2);
 	      open SQL, "> $sql_dir/$load_file" || die "Error: cannot write file $load_file\n";
 	      print_sql_header ("Table loading scripts for class $table_prefix");
 	      print_sql_header ("Multivalue attribute - $table_name");
@@ -1146,7 +1146,7 @@ use Data::Dumper;
 	  }
 	  my $load_file = "${table_prefix}_table_load.ctl";
 	  warn ";\ttable loading scripts to file $load_file\n" 
-	      if ($main::verbose >= 1);
+	      if ($main::verbose >= 2);
 	  open SQL, "> $sql_dir/$load_file" || die "Error: cannot write file $load_file\n";
 	  print_sql_header ("Table loading scripts for class $table_prefix");
 	  print_sql_header ("Main table - $table_prefix");
@@ -1162,7 +1162,7 @@ use Data::Dumper;
 	      }
 	      my $load_file = "${table_prefix}_${field}_table_load.ctl";
 	      warn ";\ttable loading scripts to file $load_file\n" 
-		  if ($main::verbose >= 1);
+		  if ($main::verbose >= 2);
 	      open SQL, "> $sql_dir/$load_file" || die "Error: cannot write file $load_file\n";
 	      print_sql_header ("Table loading scripts for class $table_prefix");
 	      print_sql_header ("Multivalue attribute - $table_name");
@@ -1179,7 +1179,7 @@ use Data::Dumper;
 	  }
 	  my $load_file = "${table_prefix}_table_load.ctl";
 	  warn ";\ttable loading scripts to file $load_file\n" 
-	      if ($main::verbose >= 1);
+	      if ($main::verbose >= 2);
 	  open SQL, "> $sql_dir/$load_file" || die "Error: cannot write file $load_file\n";
 	  print_sql_header ("Table loading scripts for class $table_prefix");
 	  print SQL "use ", $schema, ";\n\n";
@@ -1196,7 +1196,7 @@ use Data::Dumper;
 	      }
 	      my $load_file = "${table_prefix}_${field}_table_load.ctl";
 	      warn ";\ttable loading scripts to file $load_file\n" 
-		  if ($main::verbose >= 1);
+		  if ($main::verbose >= 2);
 	      open SQL, "> $sql_dir/$load_file" || die "Error: cannot write file $load_file\n";
 	      print_sql_header ("Table loading scripts for class $table_prefix");
 	      print SQL "use ", $schema, ";\n\n";
@@ -1213,7 +1213,7 @@ use Data::Dumper;
       #### Table dropping
       my $drop_file = "${table_prefix}_table_drop.sql";
       warn ";\ttable dropping scripts to file $drop_file\n" 
-	  if ($main::verbose >= 1);
+	  if ($main::verbose >= 2);
       open SQL, "> $sql_dir/$drop_file" || die "Error: cannot write file $drop_file\n";
       
       print_sql_header ("Table droping scripts for class $table_prefix");

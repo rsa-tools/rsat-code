@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parsing_util.pl,v 1.7 2003/12/01 15:27:04 jvanheld Exp $
+# $Id: parsing_util.pl,v 1.8 2003/12/17 18:08:45 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -92,7 +92,7 @@ sub ExportMakefile {
     ## data loading
     foreach my $dbms (keys %main::supported_dbms) {
 	my $makefile=$dir{output}."/sql_scripts/".$dbms."/makefile";
-	warn "Exporting makefile for $dbms in file $makefile\n";
+	warn "; Exporting makefile for $dbms in file $makefile\n" if ($main::verbose >= 2);
 	open MAKEFILE, ">$makefile" || die "Cannot write makefile in dir $dir\n";
 	#### usage
 	print MAKEFILE "\nusage:\n";
