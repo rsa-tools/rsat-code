@@ -1,0 +1,10 @@
+----------------------------------------------------------------
+-- given a list of gene identifiers, get similar genes (results of
+-- BLAST comparisons) from the database
+
+SELECT
+	*
+FROM
+	blast_hits
+WHERE
+	gi=16131776
