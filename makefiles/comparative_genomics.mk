@@ -4,6 +4,7 @@
 MAKEFILE=${RSAT}/makefiles/comparative_genomics.mk
 include ${RSAT}/makefiles/util.mk
 
+
 ################################################################
 ## Variables
 V=1
@@ -206,10 +207,14 @@ all:
 	@${MAKE} index
 
 analyze_all_orfs:
+	@${MAKE} open_index
 	@${MAKE} iterate_orfs ORF_TASK=analyze_one_orf
+	@${MAKE} close_index
 
-ALL_TASKS= collect_one_orf purge_one_orf align_one_orf tree_one_orf profile_one_orf
-analyze_one_orf: ${ALL_TASKS}
+#ALL_TASKS= collect_one_orf purge_one_orf align_one_orf tree_one_orf profile_one_orf oligos_one_orf clean_one_orf
+ALL_TASKS= collect_one_orf purge_one_orf align_one_orf profile_one_orf index_one_orf
+analyze_one_orf: 
+	@${MAKE} -k ${ALL_TASKS}
 
 ################################################################
 ## Collect the ortholog sequences for one specific ORF in a separate
@@ -256,6 +261,8 @@ purge_one_orf:
 ## Align one ortholog group
 ALIGN_DIR=${ORTHO_DIR}/aligned
 ALIGN_FILE=${ALIGN_DIR}/${ORTHO_PREFIX}.aln
+DND_FILE_ORI=${PURGED_DIR}/${ORTHO_PREFIX}_purged.dnd
+DND_FILE=${ALIGN_DIR}/${ORTHO_PREFIX}.dnd
 clustal_one_orf: align_one_orf tree_one_orf
 
 ## Multiple alignment
@@ -264,6 +271,7 @@ align_one_orf:
 	clustalw -TYPE=DNA -ALIGN=t		\
 		-INFILE=${PURGED_FILE}		\
 		-OUTFILE=${ALIGN_FILE}
+	@mv ${DND_FILE_ORI} ${DND_FILE}
 	@echo "Aligned orthologs for orf ${ORF}	${ALIGN_FILE}"
 
 ## Neighbour-Joining tree with bootstrap
@@ -401,7 +409,7 @@ profile_one_orf:
 	@mkdir -p ${PROFILE_DIR}
 	convert-matrix -v ${V} -format clustal -pseudo 0 -decimal 2	\
 		-margins						\
-		-return consensus,parameters,profile			\
+		-return profile,parameters				\
 	 	-i ${ALIGN_FILE}					\
 		-o ${PROFILE_FILE} 
 	@echo "Created profile for orf ${ORF}	${PROFILE_FILE}"
@@ -420,6 +428,20 @@ index: open_index index_all_orfs close_index
 open_index:
 	@echo "Opening index file ${INDEX_FILE}"
 	@echo "<html><body><table border=1 cellpadding=3 cellspacing=3>" > ${INDEX_FILE}
+	@echo "<th>ORF</th>" >> ${INDEX_FILE}
+	@echo "<th></th>" >> ${INDEX_FILE}
+	@echo "<th>Sensu stricto<br>5'</th>" >> ${INDEX_FILE}
+	@echo "<th></th>" >> ${INDEX_FILE}
+	@echo "<th>Sensu stricto<br>3'</th>" >> ${INDEX_FILE}
+	@echo "<th></th>" >> ${INDEX_FILE}
+#	@echo "<th>Sensu lato<br>5'</th>" >> ${INDEX_FILE}
+#	@echo "<th></th>" >> ${INDEX_FILE}
+#	@echo "<th>Sensu lato<br>3'</th>" >> ${INDEX_FILE}
+#	@echo "<th></th>" >> ${INDEX_FILE}
+	@echo "<th>Description</th>" >> ${INDEX_FILE}
+	@echo "<th></th>" >> ${INDEX_FILE}
+	@echo "<th></th>" >> ${INDEX_FILE}
+	@echo "<th></th>" >> ${INDEX_FILE}
 
 close_index:
 	@echo "Closing index file ${INDEX_FILE}"
@@ -437,9 +459,9 @@ index_one_orf:
 	@echo "<tr>" >> ${INDEX_FILE}
 	@echo "<th><tt>${ORF}</tt></th>" >> ${INDEX_FILE}
 
-	@echo "<th>stricto</th>" >> ${INDEX_FILE}
+#	@echo "<th>stricto</th>" >> ${INDEX_FILE}
 	@${MAKE} index_one_orf_one_group PROXIMITY=stricto UTR_FILES='${STRICTO}' SIDE=5 SEQ_LEN=2000 SIDE_NAME=upstream
-#	@${MAKE} index_one_orf_one_group PROXIMITY=stricto UTR_FILES='${STRICTO}' SIDE=3 SEQ_LEN=500 SIDE_NAME=downstream
+	@${MAKE} index_one_orf_one_group PROXIMITY=stricto UTR_FILES='${STRICTO}' SIDE=3 SEQ_LEN=500 SIDE_NAME=downstream
 
 #	@echo "<td></td>" >> ${INDEX_FILE}
 #	@echo "<th>lato</th>" >> ${INDEX_FILE}
@@ -453,13 +475,26 @@ index_one_orf:
 
 index_one_orf_one_group:
 	@echo "<td></td>" >> ${INDEX_FILE}
-	@echo "<td> ${SIDE}'" >> ${INDEX_FILE}
-	@echo "[<a href=${COLLECT_FILE}>unaligned</a>]"  >> ${INDEX_FILE}
-	@echo "[<a href=${PURGED_FILE}>purged</a>]"  >> ${INDEX_FILE}
-	@echo "[<a href=${ALIGN_FILE}>aligned</a>]"  >> ${INDEX_FILE}
-#	@echo "[<a href=${TREE_FILE}>tree</a>]"  >> ${INDEX_FILE}
-	@echo "[<a href=${PROFILE_FILE}>profile</a>]"  >> ${INDEX_FILE}
-	@echo "[<a href=${OLIGO_FILE}>oligos</a>]"  >> ${INDEX_FILE}
-	@echo "</td>" >> ${INDEX_FILE}
+	@echo "<td>" >> ${INDEX_FILE}
+	@echo "<font size=-1>" >> ${INDEX_FILE}
+	if [ -f "${COLLECT_FILE}" ] ; then					\
+		echo "[<a href=${COLLECT_FILE}>raw</a>]"  >> ${INDEX_FILE};	\
+	fi
+	if [ -f "${PURGED_FILE}" ] ; then					\
+		echo "[<a href=${PURGED_FILE}>purged</a>]"  >> ${INDEX_FILE};	\
+	fi
+	if [ -f "${ALIGN_FILE}" ] ; then					\
+		echo "[<a href=${ALIGN_FILE}>aligned</a>]"  >> ${INDEX_FILE};	\
+	fi
+	if [ -f "${TREE_FILE}" ] ; then					\
+		echo "[<a href=${TREE_FILE}>tree</a>]"  >> ${INDEX_FILE};	\
+	fi
+	if [ -f "${PROFILE_FILE}" ] ; then					\
+		echo "[<a href=${PROFILE_FILE}>profile</a>]"  >> ${INDEX_FILE};	\
+	fi
+	if [ -f "${ORF_OLIGO_FILE}" ] ; then					\
+		echo "[<a href=${ORF_OLIGO_FILE}>oligos</a>]"  >> ${INDEX_FILE};	\
+	fi
+	@echo "</font></td>" >> ${INDEX_FILE}
 
 
