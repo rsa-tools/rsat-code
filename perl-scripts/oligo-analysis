@@ -1,12 +1,11 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.57 2002/11/16 13:14:05 jvanheld Exp $
+# $Id: oligo-analysis,v 1.58 2003/03/11 07:35:00 jvanheld Exp $
 #
-# Time-stamp: <2002-11-16 07:11:52 jvanheld>
+# Time-stamp: <2003-03-11 08:34:58 jvanheld>
 #
 ############################################################
-
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
@@ -18,6 +17,7 @@ require "RSA.classes";
 ###### initialize parameters ##########
 $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
 
+#### background models
 %supported_bg = ('upstream'=>1,
 		 'upstream-noorf'=>1,
 		 'intergenic'=>1
@@ -235,7 +235,7 @@ sub CountOligo {
 	$seq_length[$sequence_number] = length($current_seq);
 	
 	if ($verbose >= 3) {
-	    &Warning(&AlphaDate()."\t$current_id\t$seq_length[$sequence_number]");
+	    &Warning(join "\t", &AlphaDate(),$sequence_number,  $current_id, $seq_length[$sequence_number]);
 	}
 	
 	$sum_seq_length += $seq_length[$sequence_number];
@@ -252,9 +252,8 @@ sub CountOligo {
 	
 	### calculate alphabet from input sequence ####
 #    if (($input_alphabet) || ($return{'zscore'}) || ($method eq "Markov chain")) {
-	if ($verbose >= 3) {
-	    &Warning(&AlphaDate()."\t$current_id\tcalculating alphabet");
-	}
+	&Warning(&AlphaDate()."\t$current_id\tcalculating alphabet") if ($verbose >= 4);
+	
 	for $pos (0..$seq_length[$sequence_number]-1) {
 	    $letter = lc(substr($current_seq,$pos,1));
 	    $residue_occ{$letter}++;
@@ -1502,6 +1501,7 @@ sub ReadArguments {
 	    #### output file
 	} elsif ($ARGV[$a] eq "-o") {
 	    $outputfile = $ARGV[$a+1];
+
 	    
 	    ### organism (for selecting the appropriate expected frequencies)
 	} elsif ($ARGV[$a] =~ /^-org/i) {
