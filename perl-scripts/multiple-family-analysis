@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.17 2002/04/28 05:32:52 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.18 2002/04/28 05:40:40 jvanheld Exp $
 #
-# Time-stamp: <2002-04-28 07:32:31 jvanheld>
+# Time-stamp: <2002-04-28 07:40:36 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -59,9 +59,10 @@ warn "; Reading ORF information ...\n"
 &ReadSiteLibrary();
 &ReadFamilies();
 
-### some verbose
+#### verbose
 if ($verbose >= 1) {
-    print "; multiple-family analysis\n";
+    print "; multiple-family analysis ";
+    &PrintArguments($out);
     printf "; families     \t%d\n", $#families + 1;
     foreach $family (@families) {
 	printf ";\t%s\n", $family;
@@ -75,6 +76,7 @@ if ($verbose >= 1) {
     printf "; dyad type    \t%s\n", $type;
     printf "; exp freq     \t%s\n", $exp;
 }
+
 
 ### write composition of the families in the separated directories
 &SetFileNames();
@@ -202,83 +204,83 @@ sub UpstreamSequences {
 
 ### oligo-analysis
 sub OligoAnalysis {
-  warn ";\tAnalyzing oligonucleotides for family $family_name\n" if ($verbose >= 1);
-  $dir = "${family_name}/oligos_${family_name}";
-  unless (-d $dir) {
-    mkdir $dir, 0755 || die "Error: cannot create directory $dir\n";
-  }
-  die "Error : cannot read file $family{$family_name}->{seq_file_purged}\n" unless (-r $family{$family_name}->{seq_file_purged});
-  
-  
-  system "echo '' > $family{$family_name}->{oligo_file}" if ($verbose >=1);
-  
-  for $oligo_length ($min_oligo_length..$max_oligo_length) {
-    $oligo_options = "-v ";
-    $oligo_options .= "-pseudo $pseudo " if ($pseudo);
-    $oligo_options .= "-sort ";
-    $oligo_options .= "-${strands} ";
-    $oligo_options .= "-l $oligo_length ";
-    $oligo_options .= "-thosig $th ";
-    if ($exp_freq_file{oligos}) {
-	$oligo_options .= "-expfreq $exp_freq_file{oligos} ";
-    } else {
-	$oligo_options .= "-org $organism_name ";
-	$oligo_options .= "-ncf ";
-      }
-    $oligo_options .= "-return occ,proba,zscore ";
-    $oligo_options .= "-noov " if ($noov);
+    warn ";\tAnalyzing oligonucleotides for family $family_name\n" if ($verbose >= 1);
+    $dir = "${family_name}/oligos_${family_name}";
+    unless (-d $dir) {
+	mkdir $dir, 0755 || die "Error: cannot create directory $dir\n";
+    }
+    die "Error : cannot read file $family{$family_name}->{seq_file_purged}\n" unless (-r $family{$family_name}->{seq_file_purged});
     
-    $oligo_suffix = "_oligos";
-    $oligo_suffix .= "_${oligo_length}nt";
-    $oligo_suffix .= "_${strands}";
-    $oligo_suffix .= "_sig${th}";
-    $oligo_suffix .= "_noov" if ($noov);
     
-    $oligo_file = "$family_name/oligos_${family_name}/".$family{$family_name}->{file_prefix}.$oligo_suffix;    
-    $command = "oligo-analysis -i $family{$family_name}->{seq_file_purged} -format $seq_format -o $oligo_file $oligo_options";
+    system "echo '' > $family{$family_name}->{oligo_file}" if ($verbose >=1);
+    
+    for $oligo_length ($min_oligo_length..$max_oligo_length) {
+	$oligo_options = "-v ";
+	$oligo_options .= "-pseudo $pseudo " if ($pseudo);
+	$oligo_options .= "-sort ";
+	$oligo_options .= "-${strands} ";
+	$oligo_options .= "-l $oligo_length ";
+	$oligo_options .= "-thosig $th ";
+	if ($exp_freq_file{oligos}) {
+	    $oligo_options .= "-expfreq $exp_freq_file{oligos} ";
+	} else {
+	    $oligo_options .= "-org $organism_name ";
+	    $oligo_options .= "-ncf ";
+	}
+	$oligo_options .= "-return occ,proba,zscore ";
+	$oligo_options .= "-noov " if ($noov);
+	
+	$oligo_suffix = "_oligos";
+	$oligo_suffix .= "_${oligo_length}nt";
+	$oligo_suffix .= "_${strands}";
+	$oligo_suffix .= "_sig${th}";
+	$oligo_suffix .= "_noov" if ($noov);
+	
+	$oligo_file = "$family_name/oligos_${family_name}/".$family{$family_name}->{file_prefix}.$oligo_suffix;    
+	$command = "oligo-analysis -i $family{$family_name}->{seq_file_purged} -format $seq_format -o $oligo_file $oligo_options";
+	
+	&doit($command);
+	system "cat $oligo_file | grep -v ';' >> $family{$family_name}->{oligo_file}";
+    }
+    
+    ### fragment assembly
+    $fmap_file = $family{$family_name}->{oligo_file}.".gif";
+    $htmap_file = $family{$family_name}->{oligo_file}.".html";
+    
+    $command = "pattern-assembly -i $family{$family_name}->{oligo_file} -sc 7 -${strands} -v -o $family{$family_name}->{oligo_assembly_file} -maxfl 1 -maxpat 200 ";
     
     &doit($command);
-    system "cat $oligo_file | grep -v ';' >> $family{$family_name}->{oligo_file}";
-  }
-
-  ### fragment assembly
-  $fmap_file = $family{$family_name}->{oligo_file}.".gif";
-  $htmap_file = $family{$family_name}->{oligo_file}.".html";
-
-  $command = "pattern-assembly -i $family{$family_name}->{oligo_file} -sc 7 -${strands} -v -o $family{$family_name}->{oligo_assembly_file} -maxfl 1 -maxpat 200 ";
-
-  &doit($command);
-
-  ### feature-map for oligo-analysis
-  die "Error : cannot read file $family{$family_name}->{seq_file}\n" unless (-r $family{$family_name}->{seq_file});
-  $origin = -$from + 1;
-  $command = "dna-pattern -i $family{$family_name}->{seq_file} -format $seq_format -pl $family{$family_name}->{oligo_file} -origin $origin -sc 7 -N 4 ";
-  $command .= " | features-from-dnapat -o $family{$family_name}->{oligo_ft_file} ";
-  $command .= " ; feature-map -i $family{$family_name}->{oligo_ft_file} -scalebar -scalestep 50 -legend -from $from -to $to -o $fmap_file -scorethick -htmap > $htmap_file ";
-  
-  &doit($command);
+    
+    ### feature-map for oligo-analysis
+    die "Error : cannot read file $family{$family_name}->{seq_file}\n" unless (-r $family{$family_name}->{seq_file});
+    $origin = -$from + 1;
+    $command = "dna-pattern -i $family{$family_name}->{seq_file} -format $seq_format -pl $family{$family_name}->{oligo_file} -origin $origin -sc 7 -N 4 ";
+    $command .= " | features-from-dnapat -o $family{$family_name}->{oligo_ft_file} ";
+    $command .= " ; feature-map -i $family{$family_name}->{oligo_ft_file} -scalebar -scalestep 50 -legend -from $from -to $to -o $fmap_file -scorethick -htmap > $htmap_file ";
+    
+    &doit($command);
 }
 
 ### dyad analysis
 sub DyadAnalysis {
-  warn ";\tAnalyzing dyads for family $family_name\n" if ($verbose >= 1);
-  $dir = "${family_name}/dyads_${family_name}";
-  unless (-d $dir) {
-    mkdir $dir, 0755 || die "Error: cannot create directory $dir\n";
-  }
-  die "Error : cannot read file $family{$family_name}->{seq_file_purged}\n" unless (-r $family{$family_name}->{seq_file_purged});
-  $command = "dyad-analysis -i $family{$family_name}->{seq_file_purged} -format $seq_format -o $family{$family_name}->{dyad_file} $dyad_options";
-
-  &doit($command);
-  
-  ### fragment assembly
-  $command = "pattern-assembly -v -i $family{$family_name}->{dyad_file} -o $family{$family_name}->{dyad_assembly_file} -$strands -maxfl 2 -sc 7 -maxpat 200 ";
-
-  &doit($command);
-
-  ### feature-maps
-  die "Error : cannot read file $family{$family_name}->{seq_file}\n" unless (-r $family{$family_name}->{seq_file});
-  &DrawFeatureMaps;
+    warn ";\tAnalyzing dyads for family $family_name\n" if ($verbose >= 1);
+    $dir = "${family_name}/dyads_${family_name}";
+    unless (-d $dir) {
+	mkdir $dir, 0755 || die "Error: cannot create directory $dir\n";
+    }
+    die "Error : cannot read file $family{$family_name}->{seq_file_purged}\n" unless (-r $family{$family_name}->{seq_file_purged});
+    $command = "dyad-analysis -i $family{$family_name}->{seq_file_purged} -format $seq_format -o $family{$family_name}->{dyad_file} $dyad_options";
+    
+    &doit($command);
+    
+    ### fragment assembly
+    $command = "pattern-assembly -v -i $family{$family_name}->{dyad_file} -o $family{$family_name}->{dyad_assembly_file} -$strands -maxfl 2 -sc 7 -maxpat 200 ";
+    
+    &doit($command);
+    
+    ### feature-maps
+    die "Error : cannot read file $family{$family_name}->{seq_file}\n" unless (-r $family{$family_name}->{seq_file});
+    &DrawFeatureMaps;
 }
 
 ### read known known_site for each family
@@ -971,7 +973,7 @@ sub ReadFamilies {
 	### identify the gene
 	$id = $orf_id{$query};
 	if ($id eq "") {
-	    &Warning ";\tWARNING ! $query unknown gene name \n";
+	    &Warning (";\tWARNING ! $query unknown gene name \n");
 	} else {
 	    push @{$family{$family_name}->{members}}, $id;
 	    warn "\t$family_name\t$query\t$id\t$name{$id}\n" 
