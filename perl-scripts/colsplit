@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: colsplit,v 1.2 2002/03/21 08:57:18 jvanheld Exp $
+# $Id: colsplit,v 1.3 2002/03/21 09:12:54 jvanheld Exp $
 #
-# Time-stamp: <2002-03-21 09:56:15 jvanheld>
+# Time-stamp: <2002-03-21 10:11:00 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -19,6 +19,9 @@ my $start_time = &AlphaDate;
 local $output_dir = ".";
 local $column = 1;
 local $prefix = "";
+local $suffix = "";
+local $full_line = 1;
+local @output_fields = ();
 
 local %infile = ();
 local %outfile = ();
@@ -54,14 +57,19 @@ while (my $line = <$in>) {
     my @fields = split $separator, $line;
     my $pattern = $fields[$column-1];
 #    unless (defined($$pattern)) {
-    my $filename = $output_dir."/".$prefix.$pattern;
+    my $filename = $output_dir."/".$prefix.$pattern.$suffix;
     if ($counts{$pattern}) {
 	open OUT, ">>$filename";
     } else {
 	open OUT, ">$filename";
     }
     $counts{$pattern}++;
-    print OUT $line, "\n";
+    if ($full_line) {
+	print OUT $line, "\n";
+    } else {
+	print OUT join $separator, @fields[@output_fields];
+	print OUT "\n";
+    }
     close OUT;
 #	warn "opening $filename\n" if ($verbose >=1);
 #	open ${$pattern}, ">$filename"
@@ -84,10 +92,6 @@ close $in if ($infile{input});
 
 ###### verbose ######
 if ($verbose) {
-    print $out "; Pattern counts\n";
-    foreach my $pattern (keys %counts) {
-	print $out ";\t$pattern\t$counts{$pattern}\n";
-    }
     my $done_time = &AlphaDate;
     print $out "; Job started $start_time\n";
     print $out "; Job done    $done_time\n";
@@ -130,13 +134,19 @@ OPTIONS
 	-i inputfile
 		if not specified, the standard input is used.
 		This allows to place the command within a pipe.
-	-f prefix for output file names
+	-prefix prefix for output file names
+	-suffix suffix for output file names
 		Each output file name starts with the prefix, followed
-		by the value of the pattern column. 
+		by the value of the pattern column, followed by the 
+		suffix. 
 	-c pattern column (default $column)
 	-sep field separator
 	        (default \\t)
-
+	-outdir	output directory
+	-fields	output fields
+		output fields are olumn numbers, separated by commas.
+		Example:
+			-fields 1,3,2
 End_of_help
   close HELP;
   exit;
@@ -152,9 +162,12 @@ colsplit options
 -help	(must be first argument) display options
 -v	verbose
 -i	input file
--f	prefix for output file names
+-prefix	prefix for output file names
+-suffix	suffix for output file names
 -c	pattern column (default $column)
 -sep	field separator (default \\t)
+-outdir	output directory
+-fields	output fields
 End_short_help
   close HELP;
   exit;
@@ -185,8 +198,12 @@ sub ReadArguments {
 	    $infile{input} = $ARGV[$a+1];
 	    
 	    ### output file prefix
-	} elsif ($ARGV[$a] eq "-f") {
+	} elsif ($ARGV[$a] eq "-prefix") {
 	    $prefix = $ARGV[$a+1];
+	    
+	    ### output file suffix
+	} elsif ($ARGV[$a] eq "-suffix") {
+	    $suffix = $ARGV[$a+1];
 	    
 	    ### output directory
 	} elsif ($ARGV[$a] eq "-outdir") {
@@ -195,6 +212,22 @@ sub ReadArguments {
 	    ### field separator
 	} elsif ($ARGV[$a] eq "-sep") {
 	    $separator = $ARGV[$a+1];
+	    
+	    ### outpput fields
+	} elsif ($ARGV[$a] eq "-fields") {
+	    $full_line = 0;
+	    @output_fields = split ",", $ARGV[$a+1];
+	    foreach $field (@output_fields) {
+		unless (&IsNatural($field)) {
+		    &FatalError("Field columns must be natural numbers");
+		}
+		unless ($field >=1)  {
+		    &FatalError("Field columns must be strictly positive");
+		}
+	    }
+	    for $f (0..$#output_fields) {
+		$output_fields[$f] -= 1;
+	    }
 	    
 	    ### pattern column
 	} elsif ($ARGV[$a] eq "-c") {
@@ -224,5 +257,14 @@ sub Verbose {
 	while (($key,$value) = each %outfile) {
 	    print $out ";\t$key\t$value\n";
 	}
+    }
+    if ($full_line) {
+	print $out "; Full line output\n";
+    } else {
+	print $out "; Output fields\t",join (",", @output_fields),"\n";	
+    }
+    print $out "; Pattern counts\n";
+    foreach my $pattern (keys %counts) {
+	print $out ";\t$pattern\t$counts{$pattern}\n";
     }
 }
