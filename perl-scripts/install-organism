@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.3 2001/05/18 22:34:16 jvanheld Exp $
+# $Id: install-organism,v 1.4 2001/05/28 01:15:52 jvanheld Exp $
 #
-# Time-stamp: <2001-05-19 00:34:10 jvanheld>
+# Time-stamp: <2001-05-28 03:11:06 jvanheld>
 #
 ############################################################
 
@@ -46,7 +46,7 @@ unless ($organism_full_name) {
     } else {
 	print "Enter organism full name : ";
 	$organism_full_name = <STDIN>;
-	$organism_full_name = &trim($organism_full_name);
+	$organism_full_name = &trim($organisom_full_name);
 	die "\n\tError: you should specify a full name for the organism\n\n"
 	    unless ($organism_full_name =~ /\S/);
     }
@@ -94,7 +94,7 @@ $outfile{synonyms} = "$genome_dir/${organism_short_name}_synonyms.tab";
 &StartAndStopCodons();
 &NonCodingSegments();
 &OligoFrequencies();
-#&DyadFrequencies();
+&DyadFrequencies();
 
 exit(0);
 
@@ -194,6 +194,12 @@ sub InstallFeatureTable {
 
 #### update configuration file
 sub UpdateConfig {
+    if ($local_config) {
+	$config_to_update = $ENV{'RSA_LOCAL_CONFIG'} ;
+    } else {
+	$config_to_update = $config_file;
+    }
+
     if (defined($supported_organism{$organism_short_name}->{'genome'})) {
 	warn ("\n\tWARNING : organism $organism_short_name already defined in the config file",
 	     "\n\tConflicts may result",
@@ -201,7 +207,7 @@ sub UpdateConfig {
 	     "Supported organisms\n", $supported_organisms, "\n");
     } else {
 	#### read previous config
-	open CONFIG, $config_file;
+	open CONFIG, $config_to_update;
 	while ($line = <CONFIG>) {
 	    last if ($line =~ /return/);
 	    $previous_config .= $line;
@@ -209,9 +215,9 @@ sub UpdateConfig {
 	close CONFIG;
 	
 	#### write new config
-	warn ";\n;Updating config file\t$config_file\n";
-	open CONFIG, ">$config_file" 
-	    || die "Error: cannot write config file $config_file\n";
+	warn ";\n;Updating config file\t$config_to_update\n" if ($verbose);
+	open CONFIG, ">$config_to_update" 
+	    || die "Error: cannot write config file $config_to_update\n";
 	print CONFIG $previous_config;
 	print CONFIG "\n#### $organism_short_name\t$organism_full_name\n";
 	print CONFIG "\$supported_organism{'$organism_short_name'}->{'name'} = '$organism_full_name';\n";
@@ -298,9 +304,15 @@ sub OligoFrequencies {
 	$command .= "> $oligo_freq ";
 	&doit;  
     }
+    chdir '../';
 }
 
 sub DyadFrequencies {
+    chdir $oligo_dir;
+    pwd;
+    
+    $type = "non-coding";
+    $seq = "${organism_short_name}_non_coding_segments.wc";
     ### calculate dyad frequencies in all non-coding sequences
     $oligo_length = 3;
     $min_spacing = 0;
@@ -407,7 +419,79 @@ sub trim {
 
 sub PrintHelp {
 #### display full help message #####
-    &PrintOptions;
+    open HELP, "| more";
+    print HELP <<End_of_help;
+NAME
+	install-organism
+
+        2001 by Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)
+	
+USAGE
+        install-organism -org short_org -organism 'Full organism' \
+		-genome genome_seq.fasta -format fasta \
+		-features feature_file.tab [-source data_source]\
+		[-dir install_dir] [-conf local_config_file] \
+
+DESCRIPTION
+	Add support for an organism in RSA-tools.
+
+	This program performs a series of installation tasks, by
+	calling other programs in RSA-Tools.
+	
+OPTIONS
+	-h	(must be first argument) display full help message
+	-help	(must be first argument) display options
+	-v	verbose
+
+    MANDATORY ARGUMENTS
+	-org	short organism name (e.g. 'yeast')
+	-organism
+		Full name of the organism (e.g. 'Saccharomyces
+		cerevisiae').
+	-features
+		feature table.
+	-genome genome_file
+		genome sequence file. preferably in fasta format. 
+	-format 
+		format of the genome sequence file. It is recommended
+		to use fasta, but other formats (e.g. raw) might work
+		as well. Beware: this has not been tested for all
+		formats, and there is no guarantee that it works.
+
+    OPTIONAL ARGUMENTS
+	-source	data source
+	-dir install_dir
+		Absolute path of the installation directory. 
+		BEWARE : you should provide the absolute path of the
+		installation directory, not the relative path.
+	-local
+		Absolute path of a RSA local config file. 
+
+		By default, the newly installed organism is added to
+		the main RSA config file is changed (provided the user
+		has write access to the RSA config file).
+
+		In addition to the organisms installed by the RSA
+		system administrator (found in $RSA/RSA.config), any
+		user can install some organisms locally. 
+
+		For this, the user must first define an environment
+		variable called RSA_LOCAL_CONFIG, and indicating the
+		absolute path of the local config file.  
+		E.g.  
+		  export RSA_LOCAL_CONFIG=/home/fred/RSA.local.config
+
+		When install-organisms is called with the option
+		-local, the new organism is added to the file
+		indicated by the environment variable RSA_LOCAL_CONFIG
+		rather than the main RSA config file.
+
+	-ptt	Genbank/NCBI feature table
+		A Genbank/NCBI feature table can be provided instead
+		of the RSA-formatted feature table. It will be
+		converted.
+End_of_help
+    close HELP;
     exit(0);
 }
 
@@ -428,6 +512,9 @@ install_organism options
 -format		genome file format (preferentially fasta)
 -features	feature table file
 -ptt		NCBI feature table file
+-dir		absolut path of the installation directory
+-local		update local config file 
+		(specified by the environment variable RSA_LOCAL_CONFIG)
 End_short_help
   close HELP;
   exit;
@@ -487,8 +574,15 @@ sub ReadArguments {
 	    $infile{synonyms} = $ARGV[$a+1];
 
 	    #### installation dir
-	} elsif ($ARGV[$a] =~ /-dir/) {
+	} elsif ($ARGV[$a] =~ /^-dir/) {
 	    $install_dir = $ARGV[$a+1];
+
+	    #### installation dir
+	} elsif ($ARGV[$a] =~ /^-local/) {
+	    unless ($ENV{'RSA_LOCAL_CONFIG'}) {
+		die "Error : local config file must be specified \nin an environment variable RSA_LOCAL_CONFIG\n";
+	    }
+	    $local_config = 1;
 
 	}
     }
