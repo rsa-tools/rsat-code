@@ -13,7 +13,7 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $query = new CGI;
 
 ### default values for filling the form
-$default{output} = "e-mail";
+$default{output} = "email";
 $default{sequence} = "";
 $default{sequence_format} = "fasta";
 $default{sequence_file} = "";
@@ -22,7 +22,7 @@ $default{class_interval} = 20;
 $default{strand} = "single strand";
 $default{noov} = 'checked';
 $default{grouprc} = 'checked';
-$default{purge} = '';
+$default{purge} = 'checked';
 $default{origin} = "-0";
 
 #### return values
@@ -35,7 +35,7 @@ $default{return_graph} = '';
 ### thresholds and filtering
 $default{sort} = 'checked';
 $default{check} = 'checked';
-$default{filter} = 'checked';
+$default{filter} = '';
 $default{lth} = "0";
 $default{oth} = "1";
 
@@ -86,17 +86,17 @@ print $query->table({-border=>0,-cellpadding=>3,-cellspacing=>0},
 
 		 );
 
-#  #### purge sequences
-#  print $query->checkbox(-name=>'purge',
-#  		       -checked=>$default{purge},
-#  		       -label=>'');
-#  print "&nbsp;<A HREF='help.position-analysis.html#purge'><B>purge sequences (highly recommended)</B></A>";
-#  print "<BR>";
+#### purge sequences
+print $query->checkbox(-name=>'purge',
+ 		       -checked=>$default{purge},
+ 		       -label=>'');
+print "&nbsp;<A HREF='help.position-analysis.html#purge'><B>purge sequences (highly recommended)</B></A>";
+print "<BR>";
 
-#  print "<HR width=550 align=left>\n";
+print "<HR width=550 align=left>\n";
 
 
-### oligo size
+### OLIGOy size
 print "<B><A HREF='help.position-analysis.html#oligo_length'>Oligonucleotide size</A>&nbsp;</B>\n";
 print $query->popup_menu(-name=>'oligo_length',
 			 -Values=>[1,2,3,4,5,6,7,8],
@@ -223,7 +223,7 @@ print "<HR width=550 align=left>\n";
 print "<font color=red><B>Warning !</B>position-analysis is time-consuming. We recommend email output.</font><BR>\n";
 
 
-### send results by e-mail or display on the browser
+### send results by email or display on the browser
 &SelectOutput($default{output});
 
 
