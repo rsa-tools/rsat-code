@@ -6,6 +6,7 @@ use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
 require "RSA.cgi.lib";
+$output_context = "cgi";
 
 $oligo_analysis_command = "$SCRIPTS/oligo-analysis";
 $tmp_file_name = sprintf "oligo-analysis.%s", &AlphaDate;
@@ -104,6 +105,11 @@ if ($query->param('strand') =~ /single/) {
 }
 
 ### prevent overlapping matches of the same pattern
+unless ($query->param('grouprc')) {
+  $parameters .= " -nogrouprc";
+} 
+
+### prevent overlapping matches of the same pattern
 if ($query->param('noov')) {
   $parameters .= " -noov";
 } 
@@ -144,10 +150,13 @@ if ($query->param('freq_estimate') =~ /oligo freq.* non-coding regions/i) {
 #  #    &cgiError(" cannot read expected frequency file $freq_file");
 #  #  }
 #    $freq_option = " -expfreq $freq_file";
-} elsif ($query->param('freq_estimate') eq "alphabet from input sequence") {
+} elsif ($query->param('freq_estimate') =~ /residue frequenc/i) {
   $freq_option = " -a input";
 } elsif ($query->param('freq_estimate') =~ /markov/i) {
   $freq_option = " -markov";
+  if (&IsNatural($query->param('markov_order'))) {
+      $freq_option .= " ".$query->param('markov_order');
+  }
 } elsif ($query->param('freq_estimate') =~ /lexicon/i) {
   $freq_option = " -lexicon";
 } else {
@@ -164,12 +173,12 @@ if ($query->param('neighborhood') =~ /N at one position/i) {
 
 
 
-print "<PRE>command: $oligo_analysis_command $parameters<P>\n</PRE>";
+#print "<PRE>command: $oligo_analysis_command $parameters<P>\n</PRE>";
   
 
 if ($query->param('output') =~ /display/i) {
 
-    print &PipingWarning();
+    &PipingWarning();
     
     ### execute the command ###
     $result_file = "$TMP/$tmp_file_name.res";
@@ -231,10 +240,11 @@ sub PipingForm {
   $title = $query->param('title');
   $title =~ s/\"/\'/g;
   print <<End_of_form;
+<HR SIZE = 3>
 <TABLE>
 <TR>
 <TD>
-<H4>Next step</H4>
+<H3>Next step</H3>
 </TD>
 <TD>
 <FORM METHOD="POST" ACTION="dna-pattern_form.cgi">
