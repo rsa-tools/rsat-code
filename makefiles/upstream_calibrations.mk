@@ -287,8 +287,7 @@ SEQ_LEN=500
 #OLIGO_DISTRIB_DIR=${ORG_DIR}/rand_gene_selections/N${N}_R${R}_L${SEQ_LEN}
 CALIB_TASK=all,clean_seq
 START=1
-calibrate_oligos:
-#	mkdir -p ${OLIGO_DISTRIB_DIR}
+CALIBRATE_CMD= \
 	calibrate-oligos.pl -v 1				\
 		-r ${R} -sn ${N} -l ${OL} -sl ${SEQ_LEN}	\
 		-task ${CALIB_TASK}				\
@@ -296,6 +295,22 @@ calibrate_oligos:
 		${STR} ${NOOV}					\
 		-org ${ORG}
 
+WHEN=now
+calibrate_oligos: calibrate_oligos_${WHEN}
+
+calibrate_oligos_now:
+#	mkdir -p ${OLIGO_DISTRIB_DIR}
+	${CALIBRATE_CMD}
+
+JOB_DIR=jobs
+JOB_FILE=${JOB_DIR}/`mktemp job.XXXXXX`
+LOG_FILE=${JOB_FILE}.log
+calibrate_oligos_queue:
+	mkdir -p ${JOB_DIR}
+	for job in ${JOB_FILE} ; do								\
+		echo ${CALIBRATE_CMD} > $${job} ;						\
+		qsub -q rsa@merlin.ulb.ac.be -N $${job} -j oe -o $${job}.log $${job} ;	\
+	done
 
 ################################################################
 #
