@@ -28,9 +28,10 @@ SUBDIRS=`find ${DIR} -type d | grep -v RCS | grep -v SWISS | grep -v perllib`
 ## excluded directories and files
 EXCLUDED=					\
 	--exclude obsolete			\
+	--exclude oldies			\
+	--exclude old				\
 	--exclude data				\
 	--exclude tmp				\
-	--exclude oldies			\
 	--exclude logs				\
 	--exclude auto				\
 	--exclude papers			\
