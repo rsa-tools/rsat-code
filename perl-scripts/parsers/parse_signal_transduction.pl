@@ -82,7 +82,7 @@ package main;
 	    unless (-d $dir{output});
     }
     if ($clean) {
-	warn "Cleaning output directory\n" if ($verbose >= 1);
+	warn "Cleaning output directory\n" if ($warn_level >= 1);
 	system "\\rm -rf $dir{output}/*";
     }
 
@@ -107,12 +107,13 @@ package main;
 
     &ReadArguments;
 
-    &DefaultVerbose() if ($verbose >= 1);
+    &DefaultVerbose() if ($warn_level >= 1);
 
     open ERR, "> $out_file{errors}" || die "Error : cannot write file $out_file{errors}\n";
 
     &ReadEntities();
     &ReadInteractions();
+    &CheckInteractions();
     &ReadPathways();
 
     ### print each pathway in a separate file
@@ -134,7 +135,7 @@ package main;
     ###################
     &PrintStats($out_file{stats}, @classes);
 
-    warn "; Done\t", `date` if ($verbose >= 1);
+    warn "; Done\t", `date` if ($warn_level >= 1);
 
     close ERR;
     exit(0);
@@ -145,7 +146,7 @@ package main;
 
 ### read entity information
 sub ReadEntities {
-    warn "; Reading entities\n" if ($verbose >= 1);
+    warn "; Reading entities\n" if ($warn_level >= 1);
     undef %col;
     $col{swissprot_ac} = 0;
     $col{swissprot_id} = 1;
@@ -161,7 +162,7 @@ sub ReadEntities {
     while (<ENT>) {
 	$line_nb++;
 	&MySplit;
-	warn "$_\n" if ($verbose >= 4);
+	warn "$_\n" if ($warn_level >= 4);
 
 	### read the fields ###
 	$name = $fields[$col{name}];
@@ -171,6 +172,8 @@ sub ReadEntities {
 	if ($fields[$col{type}] =~ /\S/) {
 	    $type = lc($fields[$col{type}]);
 	    $type =~ s/ /_/g;
+	    #### set first letter to uppercase, for compatibility with aMAZE styles
+	    $type = ucfirst($type);
 	} else {
 	    $type = "undef";
 	    print ERR ";Error in $in_file{entities}, line $line_nb: entity $name has no type\n";
@@ -189,7 +192,7 @@ sub ReadEntities {
 		    $entity->get_attribute("type"),
 		    $entity->get_attribute("names")
 		   ), "\n")
-	    if ($verbose >= 2);
+	    if ($warn_level >= 2);
 	
 	### remind accession number ###
 	$lc_name = lc($entity{$ac}->{name});
@@ -231,10 +234,44 @@ sub ReadEntities {
     close NAMES;
 }
 
+
+#### check consistency of interactions
+sub CheckInteractions {
+    foreach my $interaction ($interactions->get_objects()) {
+	my @inputs = $interaction->get_attribute("inputs");
+	my $id = $interaction->get_attribute("id");
+	my $input_nb = $#inputs +1;
+	if ($input_nb < 1) {
+	    &ErrorMessage(join ("\t", 
+				";Error in $in_file{interactions}",
+				"interaction", 
+				$id,
+				"has no input"), "\n");
+	}
+
+	my @outputs = $interaction->get_attribute("outputs");
+	my $id = $interaction->get_attribute("id");
+	my $output_nb = $#outputs +1;
+	if ($output_nb < 1) {
+	    &ErrorMessage(join ("\t", 
+				";Error in $in_file{interactions}",
+				"interaction", 
+				$id,
+				"has no output"), "\n");
+	}
+
+	warn join ("\t", 
+		   ";\tInteraction $id",
+		   "inputs: $input_nb",
+		   "outputs: $output_nb"
+		   ), "\n" if ($warn_level >= 2);
+    }
+}
+
 ### read description of interact<ion ###
 sub ReadInteractions {
-    warn "; Reading interactions\n" if ($verbose >= 1);
-    undef %col;
+    warn "; Reading interactions\n" if ($warn_level >= 1);
+    undef %cnol;
     $col{ac} = 0;
     $col{type} = 1;
     $col{descr} = 2;
@@ -255,8 +292,8 @@ sub ReadInteractions {
 	$type =~ s/ /_/g;
 	unless ($type =~ /\S/) {
 	    $type = "undef";
-	    print ERR ";Error in $in_file{interactions} line $line_nb: interaction type is not specified\n";
-	    print ERR "\t$_\n";
+	    &ErrorMessage( ";Error in $in_file{interactions} line $line_nb: interaction type is not specified\n");
+	    &ErrorMessage( "\t$_\n");
 	}
 	#$interactionType{$type} = 1;
 	
@@ -272,7 +309,7 @@ sub ReadInteractions {
 		    $interaction->get_attribute("id"),
 		    $interaction->get_attribute("type")
 		   ), "\n")
-	    if ($verbose >= 2);
+	    if ($warn_level >= 2);
 	
 
 	&CreateAssociation($ac,$type,$name,$description,$source,$target);
@@ -285,7 +322,7 @@ sub ReadInteractions {
 
 
     ### read interaction sources
-    warn "; Reading interaction sources\n" if ($verbose >= 1);
+    warn "; Reading interaction sources\n" if ($warn_level >= 1);
 
     ### initialisation
     undef %col;
@@ -307,8 +344,8 @@ sub ReadInteractions {
 	$inter = $fields[$col{inter}];
 	unless ($activ_object = $interactions->get_object($inter)) {
 	    #unless (defined($association{$inter})) {
-	    print ERR "Error in $in_file{interaction_source} line $line_nb: $inter has not been defined in $InteractionFile\n";
-	    print ERR "\t$_\n";
+	    &ErrorMessage( "Error in $in_file{interaction_source} line $line_nb: $inter has not been defined in $InteractionFile\n");
+	    &ErrorMessage( "\t$_\n");
 	    next;
 	}
 
@@ -317,8 +354,8 @@ sub ReadInteractions {
 	if ($entity_object = $entities->get_object($molec)) {
 	    $ent_id = $entity_object->get_attribute("id");
 	} else {
-	    print ERR "Error in $in_file{interaction_source} line $line_nb: $molecAC has not been defined in $in_file{entities}\n";
-	    print ERR "\t$_\n";
+	    &ErrorMessage( "Error in $in_file{interaction_source} line $line_nb: $molecAC has not been defined in $in_file{entities}\n");
+	    &ErrorMessage( "\t$_\n");
 	    next;
 	}
 	
@@ -333,7 +370,7 @@ sub ReadInteractions {
     close SOURCE;
 
     ### interaction targets
-    warn "; Reading interaction targets\n" if ($verbose >= 1);
+    warn "; Reading interaction targets\n" if ($warn_level >= 1);
     open TARGET, "$in_file{interaction_target}"   || die "Error : cannot read file $in_file{interaction_target}\n";
     $header = <TARGET>;
     $line_nb = 0;
@@ -346,8 +383,8 @@ sub ReadInteractions {
 	$inter = $fields[$col{inter}];
 	unless ($activ_object = $interactions->get_object($inter)) {
 	    #unless (defined($association{$inter})) {
-	    print ERR "Error in $in_file{interaction_source} line $line_nb: $inter has not been defined in $InteractionFile\n";
-	    print ERR "\t$_\n";
+	    &ErrorMessage( "Error in $in_file{interaction_source} line $line_nb: $inter has not been defined in $InteractionFile\n");
+	    &ErrorMessage( "\t$_\n");
 	    next;
 	}
 	
@@ -356,8 +393,8 @@ sub ReadInteractions {
 	if ($entity_object = $entities->get_object($molec)) {
 	    $ent_id = $entity_object->get_attribute("id");
 	} else {
-	    print ERR "Error in $in_file{interaction_source} line $line_nb: $molecAC has not been defined in $in_file{entities}\n";
-	    print ERR "\t$_\n";
+	    &ErrorMessage( "Error in $in_file{interaction_source} line $line_nb: $molecAC has not been defined in $in_file{entities}\n");
+	    &ErrorMessage( "\t$_\n");
 	    next;
 	}
 	
@@ -386,8 +423,8 @@ sub ReadInteractions {
 	&MySplit;  
 	$inter = $fields[$col{inter}];
 	unless (defined($association{$inter})) {
-	    print ERR "Error in $LocationFile line $line_nb: $inter has not been defined in $InteractionFile\n";
-	    print ERR "\t$_\n";
+	    &ErrorMessage( "Error in $LocationFile line $line_nb: $inter has not been defined in $InteractionFile\n");
+	    &ErrorMessage( "\t$_\n");
 	    next;
 	}
 	
@@ -396,8 +433,8 @@ sub ReadInteractions {
 	if (defined ($AC{$lc_molec})) {
 	    $molecAC = $AC{$lc_molec};
 	} else {
-	    print ERR "Error in $LocationFile line $line_nb: $molec has not been defined in $in_file{entities}\n";
-	    print ERR "\t$_\n";
+	    &ErrorMessage( "Error in $LocationFile line $line_nb: $molec has not been defined in $in_file{entities}\n");
+	    &ErrorMessage( "\t$_\n");
 	    next;
 	}
 	$OK = 0;
@@ -416,8 +453,8 @@ $OK = 1;
 }
 }
 unless ($OK) {
-    print ERR "Error in $LocationFile line $line_nb: ";
-    print ERR "$molec has not been defined as source or target for interaction $inter\n";
+    &ErrorMessage( "Error in $LocationFile line $line_nb: ");
+    &ErrorMessage( "$molec has not been defined as source or target for interaction $inter\n");
 }
 }
 close LOCATIONS;
@@ -448,7 +485,7 @@ sub ReadPathways {
 		    $pathway->get_attribute("id"),
 		    $pathway->get_attribute("names")
 		   ), "\n")
-	    if ($verbose >= 2);
+	    if ($warn_level >= 2);
 	
     }
     close PATH_DESC;
@@ -464,11 +501,11 @@ sub ReadPathways {
 	&MySplit;
 	my $path_id = $fields[0];
 	my $entity = $fields[1];
-	warn ";\t$path_id\t$entity\n" if ($verbose >= 2);
+	warn ";\t$path_id\t$entity\n" if ($warn_level >= 2);
 
 	#### identify the pathway
 	unless ($pathway = $pathways->get_object($path_id)) {
-	    print ERR ";ERROR: file $in_file{pathway_entity} line $line_count: pathway $path_id has not been found in $in_file{pathway_descriptions}\n";
+	    &ErrorMessage( ";ERROR: file $in_file{pathway_entity} line $line_count: pathway $path_id has not been found in $in_file{pathway_descriptions}\n");
 	    next;
 	}
 
@@ -478,8 +515,8 @@ sub ReadPathways {
 	    $pathway->push_attribute("entities",$ent_id);
 	    $complete_pathway->push_attribute("entities",$ent_id);
 	} else {
-	    print ERR "Error in $in_file{pathwy_entity} line $line_nb: $entity has not been defined in $in_file{entities}\n";
-	    print ERR "\t$_\n";
+	    &ErrorMessage( "Error in $in_file{pathwy_entity} line $line_nb: $entity has not been defined in $in_file{entities}\n");
+	    &ErrorMessage( "\t$_\n");
 	    next;
 	}
 
@@ -495,11 +532,11 @@ sub ReadPathways {
 	&MySplit;
 	my $path_id = $fields[0];
 	my $interaction = $fields[1];
-	warn ";\t$path_id\t$interaction\n" if ($verbose >= 2);
+	warn ";\t$path_id\t$interaction\n" if ($warn_level >= 2);
 
 	#### identify the pathway
 	unless ($pathway = $pathways->get_object($path_id)) {
-	    print ERR ";ERROR: file $in_file{pathway_interaction} line $line_count: pathway $path_id has not been found in $in_file{pathway_descriptions}\n";
+	    &ErrorMessage( ";ERROR: file $in_file{pathway_interaction} line $line_count: pathway $path_id has not been found in $in_file{pathway_descriptions}\n");
 	    next;
 	}
 
@@ -509,8 +546,8 @@ sub ReadPathways {
 	    $pathway->push_attribute("interactions",$int_id);
 	    $complete_pathway->push_attribute("interactions",$int_id);
 	} else {
-	    print ERR "Error in $in_file{pathway_interaction} line $line_nb: $interaction has not been defined in $in_file{interactions}\n";
-	    print ERR "\t$_\n";
+	    &ErrorMessage( "Error in $in_file{pathway_interaction} line $line_nb: $interaction has not been defined in $in_file{interactions}\n");
+	    &ErrorMessage( "\t$_\n");
 	    next;
 	}
 
@@ -526,11 +563,11 @@ sub ReadPathways {
 	&MySplit;
 	my $path_id = $fields[0];
 	my $subpathway = $fields[1];
-	warn ";\t$path_id\t$subpathway\n" if ($verbose >= 2);
+	warn ";\t$path_id\t$subpathway\n" if ($warn_level >= 2);
 
 	#### identify the pathway
 	unless ($pathway = $pathways->get_object($path_id)) {
-	    print ERR ";ERROR: file $in_file{pathway_subpathway} line $line_count: pathway $path_id has not been found in $in_file{pathway_descriptions}\n";
+	    &ErrorMessage( ";ERROR: file $in_file{pathway_subpathway} line $line_count: pathway $path_id has not been found in $in_file{pathway_descriptions}\n");
 	    next;
 	}
 
@@ -539,8 +576,8 @@ sub ReadPathways {
 	    $sub_id = $subpathway_object->get_attribute("id");
 	    $pathway->push_attribute("subpathways",$sub_id);
 	} else {
-	    print ERR "Error in $in_file{pathway_subpathway} line $line_nb: $subpathway has not been defined in $in_file{subpathways}\n";
-	    print ERR "\t$_\n";
+	    &ErrorMessage( "Error in $in_file{pathway_subpathway} line $line_nb: $subpathway has not been defined in $in_file{subpathways}\n");
+	    &ErrorMessage( "\t$_\n");
 	    next;
 	}
 
@@ -686,11 +723,11 @@ sub PrintAssociations {
 	### export only associations that have at least one source and one target
 	$to_export = 1;
 	if ($#{$association{$ac}->{sources}} < 0) {
-	    print ERR "Error: association $ac has no source\n";
+	    &ErrorMessage( "Error: association $ac has no source\n");
 	    $to_export = 0;
 	}
 	if ($#{$association{$ac}->{targets}} < 0) {
-	    print ERR "Error: association $ac has no target\n";
+	    &ErrorMessage( "Error: association $ac has no target\n");
 	    $to_export = 0;
 	}
 	if ($to_export) {
@@ -760,7 +797,7 @@ sub ReadArguments {
 	### warn level
 	if (($ARGV[$a] eq "-v" ) && 
 	    ($ARGV[$a+1] =~ /^\d+$/)){
-	    $main::verbose = $ARGV[$a+1];
+	    $main::warn_level = $ARGV[$a+1];
 	    $a++;
 
 	    ### clean
@@ -809,8 +846,8 @@ sub PathwayToDiagram {
 		     "interactions", $#interaction_ids+1,
 		     "subpathways", $#subpathay_ids+1,
 		     "pathway", $pathway->get_attribute("names")
-		     ), "\n") if ($verbose >= 1);
-    warn "; Creating diagram\t$name\n" if ($verbose >= 1); 
+		     ), "\n") if ($warn_level >= 1);
+    warn "; Creating diagram\t$name\n" if ($warn_level >= 1); 
     $diagram = $diagrams->new_object();
     $diagram->push_attribute("names", $name);
     $diagram->set_attribute("description", "Saccharomyces cerevisiae - $name");
@@ -830,9 +867,9 @@ sub PathwayToDiagram {
     }
 
     ### create nodes corresponding to subpathway
+    warn "; Creating nodes for subpathways\n" if ($main::warn_level >= 2);
     foreach my $sub_id (@subpathway_ids) {
 	$subpathway = $pathways->get_object($sub_id);
-
 	unless ($diagram->get_node($sub_id)) {
 	    #### create a node for the entity if necessary
 	    my $node = $diagram->add_node(id=>$sub_id);
@@ -841,12 +878,15 @@ sub PathwayToDiagram {
 	    $node->set_attribute("xpos", int(rand $xsize));
 	    $node->set_attribute("ypos", int(rand $ysize));
 	}
+
     }
     
     ### create nodes corresponding to interaction inputs/output
+    warn "; Creating nodes for interaction inputs/outputs\n" if ($main::warn_level >= 2);
     foreach my $ent_id (keys %linked_entities) {
 	$entity = $entities->get_object($ent_id);
 
+#	warn join("\t", "getting node", $ent_id, $diagram->get_node($ent_id), "\n");
 	unless ($diagram->get_node($ent_id)) {
 	    #### create a node for the entity if necessary
 	    my $node = $diagram->add_node(id=>$ent_id);
@@ -858,9 +898,11 @@ sub PathwayToDiagram {
     }
     
     #### create nodes for the explicitly specified entities
+    warn "; Creating nodes for entities\n" if ($main::warn_level >= 2);
     foreach my $ent_id (@entity_ids) {
 	$entity = $entities->get_object($ent_id);
 
+#	warn join("\t", "getting node", $ent_id, $diagram->get_node($ent_id), "\n");
 	unless ($diagram->get_node($ent_id)) {
 	    #### create a node for the entity if necessary
 	    my $node = $diagram->add_node(id=>$ent_id);
@@ -871,7 +913,8 @@ sub PathwayToDiagram {
 	}
     }
     
-    ### print a node for each interaction
+    ### create a node for each interaction
+    warn "; Creating nodes for interactions\n" if ($main::warn_level >= 2);
     foreach my $int_id (@interaction_ids) {
 	my $interaction = $interactions->get_object($int_id);
 	my $type = $interaction->get_attribute("type");
@@ -905,7 +948,7 @@ sub PathwayToDiagram {
     }
 
     #### export the diagram in text format
-    warn "; Exporting diagram\t$diagram_file\n" if ($verbose >= 1);
+    warn "; Exporting diagram\t$diagram_file\n" if ($warn_level >= 1);
     $diagram->print("tdd", $diagram_file);
 }
 
@@ -923,7 +966,7 @@ sub PathwayToDiagram {
 #      my %linked_entities = ();
 #      srand (time);
     
-#      warn "; Printing graph\t$graph_file\n" if ($verbose >= 1);
+#      warn "; Printing graph\t$graph_file\n" if ($warn_level >= 1);
     
 #      open GRAPH, ">$graph_file" 
 #  	|| die "Error: cannot write $out_file{graph}\n";
@@ -1061,7 +1104,7 @@ OPTIONS
 	-h	detailed help
 	-help	short list of options
 	-v #	warn level
-		Warn level 1 corresponds to a restricted verbose
+		Warn level 1 corresponds to a restricted verbosity
 		Warn level 2 reports all polypeptide instantiations
 		Warn level 3 reports failing get_attribute()
 	-obj	export the data in .obj format
