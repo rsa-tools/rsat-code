@@ -160,14 +160,14 @@ compare_one_criterion:
 		-o ${COMPA_DIR}/compa.${PROGRAM}.${CRITERION}_rand_vs_reg.jpg			\
 		-xmin 0								\
 		-xmax 1								\
-		-format jpg -xcol 2 -ycol 3							\
+		-format jpg -xcol 3 -ycol 2							\
 		-ymin 0 -ymax 1									\
 		-ygstep1 0.1 -ygstep2 0.02							\
 		-xgstep1 0.1 -xgstep2 0.02								\
 		-title1 "${PROGRAM} ${CRITERION}"						\
-		-xleg1 "regulons"								\
+		-yleg1 "regulons"								\
 		-title2 'Comparison between annotated regulons and random gene selections'	\
-		-yleg1 "random selections"							\
+		-xleg1 "random selections"							\
 		 -legend -lines -xsize 800 -ysize 400
 
 
