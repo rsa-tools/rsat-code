@@ -67,6 +67,31 @@ wconsensus).
 
 <P>
 
+<A NAME="sequence_type">
+<B>Sequence type:</B></A><BR>
+
+Input sequence type
+<UL>
+
+<LI> DNA (default)<BR>
+Only A, C, G, and T residues are accepted. oligomers that contain
+undefined (N) or partly defined (IUPAC code) nucleotides are discarded
+from the countings.
+
+<LI>protein
+Oligopeptide analysis instead of oligonucleotide.  This inactivates
+the grouping of oligomers with their reverse complements, and modifies
+the alphabet size.
+
+<LI>other
+Any type of letters found in the input sequence is considered
+valid. This allows to analyze texts in human language.
+
+</UL>
+
+
+<P>
+
 <A NAME="oligo_size">
 <B>Oligonucleotide size:</B></A><BR>
 
