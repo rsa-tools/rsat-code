@@ -110,23 +110,19 @@ print $query->end_form;
 ################################################################
 ### data for the demo 
 print $query->start_multipart_form(-action=>"convert-matrix_form.cgi");
-
-
-#$demo_matrix = "A   \|   1   3   2   0   8   0   0   0   0   0   1   2
-#C   \|   2   2   3   8   0   8   0   0   0   2   0   2
-#G   \|   1   2   3   0   0   0   8   0   5   4   5   2
-#T   \|   4   1   0   0   0   0   0   8   3   2   2   2";
-
 $demo_matrix=`cat convert-matrix_demo_data.txt`;
 print "<TD><B>";
 print $query->hidden(-name=>'matrix',-default=>$demo_matrix);
+print $query->hidden(-name=>'information',-default=>"on");
+print $query->hidden(-name=>'weights',-default=>"on");
+print $query->hidden(-name=>'parameters',-default=>"on");
 print $query->submit(-label=>"DEMO");
 print "</B></TD>\n";
 print $query->end_form;
 
 
-print "<TD><B><A HREF='help.patser.html'>MANUAL</A></B></TD>\n";
-print "<TD><B><A HREF='tutorials/tut_patser.html'>TUTORIAL</A></B></TD>\n";
+print "<TD><B><A HREF='help.convert-matrix.html'>MANUAL</A></B></TD>\n";
+#print "<TD><B><A HREF='tutorials/tut_convert-matrix.html'>TUTORIAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:jvanheld\@scmbb.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 

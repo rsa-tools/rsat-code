@@ -75,7 +75,7 @@ MAIN:
 <HEADER>
 <TITLE>RSA-tools - neighbour-orfs result</TITLE>
 </HEADER><BODY BGCOLOR="#FFFFFF">
-<H3 ALIGN=CENTER><A HREF="$WWW_RSA/RSA_home.cgi">
+<H3 ALIGN=CENTER><A HREF="$WWW_RSA/RSAT_home.cgi">
 RSA-tools</A> - neighbour-orfs result $input{'set_name'}</H3>
 End_Header
 
