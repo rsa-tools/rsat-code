@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dna-pattern,v 1.25 2004/01/29 12:47:32 jvanheld Exp $
+# $Id: dna-pattern,v 1.26 2004/01/29 16:07:59 jvanheld Exp $
 #
 # Time-stamp: <2003-08-13 12:16:03 jvanheld>
 #
@@ -72,8 +72,19 @@ unless (($allowed_subst eq "") || (&IsNatural($allowed_subst))) {
 			  pattern_id=>$pattern_id,
 			  pattern_seq=>$pattern_seq,
 			  );
+@patterns = sort {$b->get_attribute("score") <=> $a->get_attribute("score")} @patterns;
 
 #### check patterns
+if ($main::verbose >= 2) {
+    warn "Patterns/n";
+    foreach my $pattern (@patterns) {
+	warn join ("\t", 
+		   $pattern->get_attribute("sequence"),
+		   $pattern->get_attribute("id"),
+		   $pattern->get_attribute("score"),
+		   ), "\n";
+    }
+}
 
 ### no pattern specified
 if ($#patterns < 0) {
@@ -91,15 +102,15 @@ if ($search_method eq "sliding window") {
 
     foreach my $pattern (@patterns) {
 	my $pattern_seq = lc($pattern->get_attribute("sequence"));
-
+	
 	#### index pattern length
 	$pattern_lengths{length($pattern_seq)}++;
-
+	
 	#### check pattern length
 #	if (length($pattern_seq) != $pattern_length) {
 #	    &FatalError("With the sliding window option, all patterns must have the same length");
 #	}
-
+	
 	#### check non-degeneracy
 	if ($pattern_seq =~ /[^acgt]/i) { &FatalError("With the sliding window option, only non-degenerate DNA alphabet is supported [ACGT]\n") };
 
@@ -617,6 +628,7 @@ sub SlidingWindowSearch {
     my $min_pattern_length = &min(@pattern_lengths);
     my $max_pattern_length = &max(@pattern_lengths);
 
+
     $last_pos = $sequence_length - $min_pattern_length;
 
     return if ($last_pos < $sliding_window_size);
@@ -631,7 +643,7 @@ sub SlidingWindowSearch {
     #### initialize score vector
     for my $pos (0..($sliding_window_size-2)) {
 	my @current_position_scores = ();
-	for my $pattern_length (@pattern_length) {
+	for my $pattern_length (@pattern_lengths) {
 	    my $subseq = substr($current_seq, $pos, $pattern_length);
 	    push @current_position_scores, $current_score, $pattern_scores{$subseq};
 	}
@@ -643,12 +655,16 @@ sub SlidingWindowSearch {
 
     #### scan the sequence with the sliding window
     for my $pos (($sliding_window_size-1)..$last_pos) {
-	my $subseq = substr($current_seq, $pos, $pattern_length);
-	my $current_score = $pattern_scores{$subseq};
-
+	my @current_position_scores = ();
+	for my $pattern_length (@pattern_lengths) {
+	    my $subseq = substr($current_seq, $pos, $pattern_length);
+	    push @current_position_scores, $current_score, $pattern_scores{$subseq};
+	}
+	my $current_score = &checked_max(@current_position_scores);
 	push @scores, $current_score;
 	$score_sum += $current_score;
-
+	
+#	warn join( "\t", $sliding_window_size, $last_pos, $subseq, $current_score, $score_sum, $threshold), "\n" if ($current_score);
 	if ($score_sum >= $threshold) {
 	    $pattern->set_attribute("score", $score_sum);
 	    $end_pos = $pos - $orig_pos + $pattern_length ;
@@ -658,7 +674,7 @@ sub SlidingWindowSearch {
 	    $profile_score{$sequence_id}{$start_pos} = $score_sum if ($return{match_profiles});
 #	    die $profile_score{$sequence_id}{$start_pos};
 	}
-
+	
 	$previous_score = shift @scores;
 	$score_sum -= $previous_score;
 	$top_score = &max($top_score, $score_sum);
