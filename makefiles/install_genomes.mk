@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_genomes.mk,v 1.10 2005/01/18 15:32:10 jvanheld Exp $
+# $Id: install_genomes.mk,v 1.11 2005/01/19 20:55:05 jvanheld Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -100,7 +100,7 @@ install_all_eukaryotes:
 ################################################################
 #
 # Clean obsolete genome files (those with uppercases)
-ORGANISMS=`ls -d1 data/genomes/*_* | xargs basename | xargs`
+ORGANISMS=`ls -d1 data/genomes/*_* | perl -pe "s|/|\t|g" | cut -f 3 | xargs`
 clean_genomes:
 	${MAKE} iterate_organisms ORG_TASK=clean_one_genome
 
