@@ -40,8 +40,11 @@ foreach $f (0..$#input_files) {
 	} else {
 	    $max_fields{$f} = &max($max_fields{$f},$#fields);
 	}
-	$key = lc($fields[$ii]);
-	$id{$key} = $fields[$ii];
+
+	### comparison is case-insensitive, but the ID case is maintained in the output
+	$id =  &trim($fields[$ii]);
+	$key = lc($id);
+	$id{$key} = $id;
 
 	if (defined($sc[$f])) {
 	    $col = $last_col + 1;
@@ -52,6 +55,7 @@ foreach $f (0..$#input_files) {
 		$score{$key}[$col] = $fields[$c];
 	    }
 	}
+
     }
     close $in;
     $last_col += $max_fields{$f};
