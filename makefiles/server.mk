@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: server.mk,v 1.3 2003/11/28 17:15:57 jvanheld Exp $
+# $Id: server.mk,v 1.4 2003/12/12 11:31:26 jvanheld Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -163,80 +163,32 @@ compile:
 		(cd ${COMPIL}/bin; pwd; perlcc $${pgm}.pl && rm -f $${pgm}.pl); \
 	dgone
 
-#BACTERIA = `ls -1 genbank/genomes/Bacteria/ | grep _ | xargs`
-#BACTERIAS = `ls -1 ${GENBANK_DIR}/Bacteria | grep -v Mesorhizobium_loti | grep _ | tail -37 | xargs `
-#BACTERIA = `ls -1 ${NCBI_DIR}/Bacteria | grep _ | sort -ru | xargs `
-BACTERIA = `cat TO_INSTALL.txt| sort -ru | xargs `
-#BACTERIAS = Ralstonia_solanacearum
-#BACTERIA =					\
-#	Clostridium_perfringens			\
-#	Pyrobaculum_aerophilum			\
-#	Pyrococcus_furiosus
-BACT=Mycoplasma_genitalium
-
-list_bacteria:
-	@echo "Bacteria to install	${BACTERIA}"
-
-install_all_bacteria:
-	@for bact in ${BACTERIA}; do				\
-		${MAKE} install_one_bacteria BACT=$${bact} ;	\
-	done
-
-install_one_bacteria:
-	@echo
-	@echo "${DATE}	Installing bacteria ${BACT}"
-	@${MAKE} install_organism ORGANISM=${BACT}		\
-		ORGANISM_DIR=${NCBI_DIR}/Bacteria/${BACT}
-
-parse_organism:
-	@make install_organism INSTALL_TASK=parse
-
-ORGANISM=Arabidopsis_thaliana
-ORGANISM_DIR=${GENBANK_DIR}/${ORGANISM}
-INSTALL_TASK=allup,clean,config,dyads,ncf,intergenic_freq,oligos,parse,start_stop,upstream_freq
-install_organism:
-	@echo "install log	${INSTALL_LOG}"
-	@echo "Parsing organism ${ORGANISM}" 
-	install-organism -v 1								\
-		-org ${ORGANISM}							\
-		-task  ${INSTALL_TASK}
+# #### Obsolete
+# #### Instal the GD library
+# GD_DISTRIB_DIR=stein.cshl.org/WWW/software/GD/
+# GD_DISTRIB= http://${GD_DISTRIB_DIR}/GD.pm.tar.gz
+# get_gd:
+# 	mkdir -p lib-sources
+# 	(cd lib-sources; \
+# 	${WGET} ${GD_DISTRIB})
 
 
-POMBE_DIR=/win/databases/downloads/ftp.sanger.ac.uk/pub/yeast/Pombe/CONTIGS/
-install_pombe:
-	echo "Parsing organism Schizosaccharomyces pombe" ;
-#	parse-embl.pl -i ${POMBE_DIR} -org 'Schizosaccharomyces pombe' -v 1
-	install-organism -v 1											\
-		-org Schizosaccharomyces_pombe									\
-		-features ${RSA}/data/Schizosaccharomyces_pombe/genome/Gene_Schizosaccharomyces_pombe.tab	\
-		-genome ${RSA}/data/genome/Contigs_Schizosaccharomyces_pombe.txt				\
-		-format filelist										\
-		-source genbank											\
-		-step config -step start_stop -step ncf -step oligos -step dyads;
+# GD_VERSION=2.06
+# uncompress_gd:
+# 	(cd lib-sources/${GD_DISTRIB_DIR};		\
+# 	gunzip -c GD.pm.tar.gz | tar -xpf - ;		\
 
-GD_DISTRIB_DIR=stein.cshl.org/WWW/software/GD/
-GD_DISTRIB= http://${GD_DISTRIB_DIR}/GD.pm.tar.gz
-get_gd:
-	mkdir -p lib-sources
-	(cd lib-sources; \
-	${WGET} ${GD_DISTRIB})
+# install_gd:
+# 	(cd lib-sources/${GD_DISTRIB_DIR}/GD-${GD_VERSION} ;	\
+# 	perl Makefile.PL INSTALLDIRS=site			\
+# 		INSTALLSITELIB=${RSA}/extlib			\
+# 		INSTALLSITEARCH=${RSA}/extlib/arch ;		\
+# 	make ;							\
+# 	make install ;						\
+# 	)
 
-
-GD_VERSION=2.06
-uncompress_gd:
-	(cd lib-sources/${GD_DISTRIB_DIR};		\
-	gunzip -c GD.pm.tar.gz | tar -xpf - ;		\
-
-install_gd:
-	(cd lib-sources/${GD_DISTRIB_DIR}/GD-${GD_VERSION} ;	\
-	perl Makefile.PL INSTALLDIRS=site			\
-		INSTALLSITELIB=${RSA}/extlib			\
-		INSTALLSITEARCH=${RSA}/extlib/arch ;		\
-	make ;							\
-	make install ;						\
-	)
-
-
+################################################################
+#### Install programs from third parties
 APP_DIR=${RSA}/applications
 PROGRAM=consensus
 PROGRAM_DIR=${APP_DIR}/${PROGRAM}
