@@ -5,7 +5,18 @@ use CGI;
 local $verbose = 0;
 require "RSA.seq.lib";
 require "RSA.stat.lib";
+require RSAT::organism;
+require RSAT::contig;
+require RSAT::error;
+require RSAT::util;
+
 umask 0022;
+
+## CVS: created separate objects for handling different methods
+## RSAT::organism (check_name, is_supported)
+## RSAT::error (FatalError, cgiError)
+## RSAT::util (IsNatureal, IsReal, IsInteger, trim, round)
+## ReadFeatures became RSAT::organism::LoadFeatures
 
 ############################################################################
 ############################################################################
@@ -46,7 +57,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 	}
     }
 } else {
-    &FatalError("Error: problem when opening config file. Please contact jvanheld\@scmbb.ulb.ac.be");
+    &RSAT::error::FatalError("Error: problem when opening config file. Please contact jvanheld\@scmbb.ulb.ac.be");
 }
 
 $BIN = "$RSA/bin";
@@ -78,7 +89,7 @@ $counter_file = "$LOGS/count-file";
 ($sec, $min, $hour,$day,$month,$year) = localtime(time);
 $log_file = sprintf "$LOGS/log-file_${config_site}_%04d_%02d", $year+1900,$month+1;
 
-$script_name = &ShortFileName($0);
+$script_name = &RSAT::util::ShortFileName($0);
 
 $date = &AlphaDate();
 
@@ -91,17 +102,21 @@ $date = &AlphaDate();
 ##################### PERL SUBROUTINE DEFINITION ###########################
 ############################################################################
 
+
+
 ################################################################
 ## echo a command and send it to the system
 sub doit {
     my ($command, $dry, $die_on_error, $verbose) = @_;
-    warn "\n", &AlphaDate(), "\t", $command, "\n" if ($verbose >= 1);
+    my $wd = `pwd`;
+    chomp $wd;
+    warn join("\t", &AlphaDate(), $wd, $command), "\n" if ($verbose >= 1);
     my $error = system $command unless ($dry);
     if ($die_on_error) {
 	if ($error == -1) {
-	    &FatalError("Could not execute the command\n\t$command");
+	    &RSAT::error::FatalError("Could not execute the command\n\t$command");
 	} elsif ($error) {
-	    &FatalError("Error $error occurred during execution of the command\n\t$command");
+	    &RSAT::error::FatalError("Error $error occurred during execution of the command\n\t$command");
 	}
     } else {
 	return ($error);
@@ -109,104 +124,6 @@ sub doit {
 }
 
 
-################################################################
-#### Open an input stream
-#### If a file name is specified, open this file. If not, read input from the STDIN
-#### if the input file has extension .gz, or .Z, it is decopmpressed on the flight. 
-#### usage 
-####    ($in,$input_dir) = &OpenInputFile($filename);
-#### returns a file handle
-sub OpenInputFile {
-    my ($filename) = @_;
-#    warn "BOUM $filename";
-    my $input_stream;
-#    my ($short_file_name, $input_dir) = &ShortFileName($filename);
-    warn join ("\t", "; Opening input stream", $filename), "\n" 
-	if ($verbose >= 2);
-    my $input_dir = "";
-    my $short_file_name = "";
-    if ($filename) {
-	($input_dir, $short_file_name) = &SplitFileName($filename);
-	unless (-e $filename) {
-	    if (-e "${filename}.gz") {
-		$filename .= ".gz";
-	    } elsif (-e "${filename}.Z") {
-		$filename .= ".Z";
-	    } else {
-		&FatalError("OpenInputFile: File $filename does not exist.");
-	    }
-	}
-	if ($filename =~ /\.gz$/) { ### gzip file -> decompress it on the fly
-	    warn "; Uncompressing .gz file\n" if ($verbose >= 2);
-	    $filename = "gunzip -c $filename |";
-	} elsif ($filename =~ /\.Z$/) { ### gzip file -> decompress it on the fly
-	    warn "; Uncompressing .Z file\n" if ($verbose >= 2);
-	    $filename = "uncompress -c $filename |";
-	}
-	unless (open(INPUT, $filename)) {
-	    print "\tError : cannot read input file $filename\n";
-	    exit;
-	}
-	$input_stream = INPUT;
-    } else {
-	$input_stream = STDIN; ### default is standard input
-
-    }
-   return ($input_stream, $input_dir);
-}
-
-### open output file ###
-sub OpenOutputFile {
-    ### usage $output_stream = &OpenOutputFile($filename);
-    my ($filename) = @_;
-    my $to_open = "";
-    
-    if ($filename) {
-	if ($filename =~ /\.gz$/) { ### gzip file -> decompress it on the fly
-	    $to_open = "| gzip -c > $filename";
-	} else {
-	    $to_open = ">$filename";
-	}
-	unless (open OUTPUT, "$to_open") {
-	    &FatalError ("\tError : cannot write output file $filename\n");
-	}
-	$output_stream = OUTPUT;
-    } else {
-	$output_stream = STDOUT;
-    }
-    return $output_stream;
-}
-
-################################################################
-## Check for the existence of an output directory, and, if it does not
-## exist, create it
-sub CheckOutDir {
-    my ($output_dir, $umask) = @_;
-
-    unless ($output_dir) {
-	warn "; CheckOutDir\tNo directory has been specified\n" if ($main::verbose >= 1);
-	return;
-    }
-
-    $umask = 0002 unless ($umask);
-    umask($umask);
-
-    if ($output_dir) {
-	unless (-d $output_dir) {
-	    warn "Creating directory $output_dir\n" if ($main::verbose >= 1);
-	}
-	mkdir ($output_dir, 0755);
-	unless (-d $output_dir) {
-	    warn "Creating directory with all parents $output_dir\n" if ($main::verbose >= 1);
-	    system "mkdir -p $output_dir"; ## create output directory with all parents
-	}
-	unless (-d $output_dir) {
-	    &FatalError("Cannot create output directory $output_dir");
-	}
-    } else {
-	$output_dir = ".";
-    }
-}
 
 ################################################################
 ## Name of the expected frequency file, 
@@ -223,14 +140,14 @@ sub ExpectedFreqFile {
     
     #### check oligo length
     unless (&IsNatural($oligo_length)) {
-	&FatalError("Invalid oligonucleotide length : must be a natural number");
+	&RSAT::error::FatalError("Invalid oligonucleotide length : must be a natural number");
     }
     
     if ($oligo_length < 1) {
-	&FatalError("Invalid oligonucleotide length : must be >= 1");
+	&RSAT::error::FatalError("Invalid oligonucleotide length : must be >= 1");
     }
     if ($oligo_length > 8) {
-	&FatalError("Invalid oligonucleotide length : must be <= 8");
+	&RSAT::error::FatalError("Invalid oligonucleotide length : must be <= 8");
     }
 
     
@@ -259,7 +176,7 @@ sub ExpectedFreqFile {
     ## Check the existence of the exp freq file
     unless ((-e $exp_freq_file) || 
 	    (-e $exp_freq_file.".gz")) {
-	&FatalError("Cannot find expected frequency file $exp_freq_file");
+	&RSAT::error::FatalError("Cannot find expected frequency file $exp_freq_file");
     }
 
     warn "; Expected frequency file\t", $exp_freq_file, "\n" if ($main::verbose >= 2);
@@ -295,12 +212,12 @@ sub ReadCalibration {
 
 	## Expected occurrences
 	my $exp_occ = $fields[0];
-	&FatalError("Invalid expected occurrences\t${exp_occ}") unless ((&IsReal($exp_occ)) && ($exp_occ >= 0));
+	&RSAT::error::FatalError("Invalid expected occurrences\t${exp_occ}") unless ((&IsReal($exp_occ)) && ($exp_occ >= 0));
 	$patterns{$pattern_seq}->{exp_occ} = $exp_occ;
 
 	## Expected variance
 	my $exp_var = $fields[2];
-	&FatalError("Invalid expected variance") unless ((&IsReal($exp_var)) && ($exp_ocvar >= 0));
+	&RSAT::error::FatalError("Invalid expected variance") unless ((&IsReal($exp_var)) && ($exp_ocvar >= 0));
 	$patterns{$pattern_seq}->{exp_var} = $exp_var;
 
 	warn join("\t", "; calibration", $pattern_seq, 
@@ -329,7 +246,7 @@ sub ReadCalibration {
 #
 sub ReadExpectedFrequencies {
     my ($exp_freq_file, $sum_rc, $rescale_freq) = @_;
-    
+    warn join ("\t", "; Reading expected frequency file", $exp_freq_file), "\n" if ($main::verbose >= 1);
     my ($exp) = &OpenInputFile($exp_freq_file);
     my $l=0;
     while (<$exp>) {
@@ -365,11 +282,11 @@ sub ReadExpectedFrequencies {
 
 	} else {
 	    ### unrecognized format
-	    &FatalError("Invalid expected frequency in file $exp_freq_file at line $l\n");
+	    &RSAT::error::FatalError("Invalid expected frequency in file $exp_freq_file at line $l\n");
 	}
 	
 	if ($patterns{$pattern_seq}->{exp_freq} < 0) {
-	    &FatalError("Expected frequency cannot be negative\t$pattern_seq\t".$patterns{$pattern_seq}->{exp_freq});
+	    &RSAT::error::FatalError("Expected frequency cannot be negative\t$pattern_seq\t".$patterns{$pattern_seq}->{exp_freq});
 	}
     }
     close $exp if ($exp_freq_file);
@@ -398,12 +315,12 @@ sub ReadExpectedFrequencies {
 	$freq_sum += $patterns{$pattern_seq}->{exp_freq};
     }
     if ($freq_sum <= 0) {
-	&FatalError("Error with the expected frequency file : the sum must be strictly positive\t$freq_sum");
+	&RSAT::error::FatalError("Error with the expected frequency file : the sum must be strictly positive\t$freq_sum");
     }
     
     #### rescale expected frequencies to have a sum of 1
     if ($rescale_freq) {
-	print $out "; Rescaling expected frequencies\n" if ($verbose >=1);
+	warn "; Rescaling expected frequencies\n" if ($verbose >=1);
 	foreach my $pattern_seq (keys %patterns) {
 	    $patterns{$pattern_seq}->{exp_freq} /= $freq_sum;
 	}
@@ -516,103 +433,6 @@ sub CalcConditionalProbabilities {
 }
 
 ################################################################
-### returns current time
-### usage
-### $time = &CurrentTime;
-sub CurrentTime {
-    my $current_time = `date '+%H:%M:%S'`;
-    $current_time =~ chomp $current_time;
-    return $current_time;
-}
-
-################################################################
-### returns 1 if the first argument is a natural number,
-###         0 otherwise
-### usage
-### if (IsNatural($my_number) { 
-sub IsNatural {
-    if ($_[0] =~ /^ *\d+ *$/) {
-	return 1;
-    } else {
-	return 0;
-    }
-}
-
-################################################################
-### returns 1 if the first argument is an integer number,
-###         0 otherwise
-### usage
-### if (IsInteger($my_number) { 
-sub IsInteger {
-    if ($_[0] =~ /^ *[\+\-]{0,1}\d+ *$/) {
-	return 1;
-    } else {
-	return 0;
-    }
-}
-
-################################################################
-### returns 1 if the first argument is a real number,
-###         0 otherwise
-### usage
-### if (number($my_number) { 
-sub IsReal {
-    my ($value) = @_;
-    return if ($#_ < 0);
-    return 0 unless defined($value);
-
-    if (($value =~ /^ *[\+\-]{0,1}\d+(\.\d*){0,1} *$/) || 
-        ($value =~ /^ *[\+\-]{0,1}\d+(\.\d*){0,1}e[\+\-]{0,1}\d+ *$/i)) {
-	return 1;
-    } else {
-	return 0;
-    }
-}
-
-
-################################################################
-#### returns the closest integer value from a real number
-#### usage:
-#### $my_int = &round($my_real);
-sub round {
-    my $my_real = $_[0];
-    my $my_int;
-    if (abs(($my_real - int($my_real))) < 0.5) {
-	return int($my_real);
-    } elsif ($my_real < 0) {
-	return int($my_real) - 1;
-    } else {
-	return int($my_real) + 1;
-    }
-}
-
-################################################################
-#### suppress space characters at the start and the end of a string
-sub trim {
-    my ($string) = @_;
-    $string =~ s/^\s+//;
-    $string =~ s/\s+$//;
-    return $string;
-}
-
-
-
-################################################################
-### returns a date in the inverted form, so that 
-### the choromological and alphabetical sorting ar identical.
-### Usage:
-###      $alpha_date = &AlphaDate;
-sub AlphaDate {
-    my $my_date = "";
-    my ($sec, $min, $hour,$day,$month,$year) = localtime(time);
-
-    ###$my_date = sprintf("%02d%02d%02d.%02d%02d%02d", $year,$month+1,$day,$hour, $min, $sec);
-    $my_date = `date +%Y_%m_%d.%H%M%S`;
-    chomp $my_date;
-    return $my_date;
-}
-
-################################################################
 #### increment the counter file for monitoring web access
 sub UpdateCounterFile {
     my $nb_visitors = 1;
@@ -662,47 +482,6 @@ sub UpdateLogFile {
   chmod 0777, $log_file;
 }
 
-################################################################
-#### splits a full file name into directory and short file name
-#### usage:
-####     my ($dir, $short_file_name) = &SplitFileName($full_file_name);
-sub SplitFileName {
-    my ($full_file_name) = @_;
-    my $short_file_name = $full_file_name;
-    my $dir = "";
-    if ($full_file_name =~ /[^(\/)]+$/) {
-	$dir = $`;
-	$short_file_name = $&;
-#	$dir =~ s|/$||; #### suppress the trailing /
-    }
-    return ($dir, $short_file_name);
-}
-
-################################################################
-#### removes the directory from a full file name, and returns the short file name
-#### usage:
-#### $file_name = &ShortFileName($full_file_name);
-sub ShortFileName {
-    my $full_file_name = $_[0];
-    my ($dir, $short_file_name) = &SplitFileName($full_file_name);
-    return $short_file_name;
-}
-
-
-################################################################
-### returns the path from a file name
-### usage 
-### path = &ExtractPath($long_file_name);
-###
-sub ExtractPath {
-    my $l_file_name = $_[0];
-    my $l_path = "";
-    while ($l_file_name =~ /\/(.*)/) {
-	$l_path .= "$`\/";
-	$l_file_name = $1;
-    }
-    return $l_path;
-}
 
 
 ################################################################
@@ -785,15 +564,14 @@ $supported_feature_types = join ",", @supported_feature_types;
 
 
 ################################################################
-## Chek if the specified organism name is supported on this server
+## Check if the specified organism name is supported on this server
 sub CheckOrganismName {
     my ($organism_name) = @_;
      unless ($supported_organism{$organism_name}) {
-	&FatalError("Organism $organism_name is not supported.",
+	&RSAT::error::FatalError("Organism $organism_name is not supported.",
 		    "Supported on this site : \n".&ListSupportedOrganisms());
     }
 }
-
 
 ################################################################
 #### Check if an organism is supported on the current installation,
@@ -806,491 +584,329 @@ sub CheckOrganismName {
 ####
 #### Manual specification of input files :
 #### &CheckOrganism($organism_name, 
-####                $feature_table_file, 
+####                $annotation_table, 
 ####                $input_sequence_file,  
 ####                $input_sequence_format);
 sub CheckOrganism {
-    my ($organism_name, $feature_table_file, $input_sequence_file, $input_sequence_format) = @_;
-    my $organism_object = new RSA::Organism;
-
-#    die $organism_name;
-
-    #### check input sequence file and format
-    if ($input_sequence_file) {
-	$genome_file = $input_sequence_file;
-	$genome_seq_format = $input_sequence_format;  
-	
-    } else {
-	&CheckOrganismName($organism_name);
-	$genome_file = $supported_organism{$organism_name}->{'genome'};
-	$genome_seq_format = $supported_organism{$organism_name}->{'seq_format'};
-	&Warning("Checking organism\t$organism_name") if ($verbose >= 2);
-	&FatalError("You should specify an organism.", 
-		    "Supported organisms\n".&ListSupportedOrganisms)
-	    unless ($organism_name);
-    }
-
-
-#    die join( "\t", $organism_name, $feature_table_file, $genome_file, $genome_seq_format), "\n";
-    
-    #### check feature file
-    unless ($feature_table_file) {
-	$feature_table_file = $supported_organism{$organism_name}->{'features'};
-    }	
-    &Warning("Feature table\t$feature_table_file") if ($verbose >= 2);
-
-
-    warn join ("\t", "; Loading features", $organism_name, $genome_file, $genome_seq_format, $feature_table_file) if ($main::verbose >= 3);
-    
-    if ($genome_seq_format eq "raw") {
-	### open a direct read access to the genome file
-	$chr = $organism_name;
-	$genome_file =~ s/\.fna$/\.raw/;
-	$chromosome_seq{$chr} = new RSA::SequenceOnDisk (filename=>  $genome_file,
-							 id=>        $chr,
-							 circular=>  1, ### for bacterial genomes
-							 organism=>  $organism_name);
-	$chromosome{$chr} = new RSA::Chromosome();
-	$chromosome{$chr}->push_attribute("names", $chr);
-	$chromosome{$chr}->set_sequence($chromosome_seq{$chr});
-	$chromosome{$chr}->set_organism($organism_name);
-	$organism_object->add_chromosome($chromosome{$chr});
-
-    } elsif ($genome_seq_format eq "filelist") {
-	my ($seq_dir, $seq_list) = &SplitFileName($genome_file);
-	
-	&Warning("Genome file\t$genome_file") if ($verbose >= 2);
-
-	unless (-e $genome_file) {
-	    &FatalError("Genome file $genome_file does not exist.");
-	}
-	open FILES, $genome_file || 
-	    &Fatalrror("Cannot open genome file $genome_file for reading.");
-	while (<FILES>) {
-	    chomp;
-	    ($seq_file, $chr, $type) = split "\t";
-	    if ($type eq "circular") {
-		$circular = 1;
-	    } else {
-		$circular = 0;
-	    }
-	    $chr = $seq_file unless ($chr);
-
-#	    warn join ("\t", "dir:$seq_dir", "file:$seq_file", "chr:$chr", "circular:$circular", "org:$organism_name"), "\n";
-
-	    $chromosome_seq{$chr} = new RSA::SequenceOnDisk (filename=>  $seq_dir.$seq_file,
-							     id=>        $chr,
-							     circular=>  $circular, 
-							     organism=>  $organism_name);	    
-	    $chromosome{$chr} = new RSA::Chromosome();
-	    $chromosome{$chr}->push_attribute("names",$chr);
-	    $chromosome{$chr}->set_sequence($chromosome_seq{$chr});
-	    $chromosome{$chr}->set_organism($organism_name);
-	    $organism_object->add_chromosome($chromosome{$chr});
-
-# 	    warn join ("\t","CHROMOSOME", 
-# 		       $seq_file,
-# 		       $chr, 
-# 		       $chromosome{$chr},
-# 		       $chromosome{$chr}->get_attribute("sequence"),
-# 		       $chromosome{$chr}->get_attribute("sequence")->get_length()
-# 		       ), "\n";
-	    
-# 	    warn join ("\t", "SEQUENCE", 
-# 		       $chromosome_seq{$chr},
-# 		       $chromosome_seq{$chr}->get_attribute("filename"),
-# 		       $chromosome_seq{$chr}->get_length(),
-# 		       $chromosome_seq{$chr}->get_attribute("circular"),
-# 		       $chromosome_seq{$chr}->get_sequence(1,12,"D")
-# 		       ), "\n";
-
-	}
-	close FILES;
-	
-    } elsif ($accepted_input_seq{$genome_seq_format}) {
-	unless (-e $genome_file) {
-	    &FatalError("Genome file $genome_file does not exist.");
-	}
-	my ($in, $input_dir) = &OpenInputFile($genome_file, $genome_seq_format);
-
-	while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $genome_seq_format, $input_dir)) &&
-	       (($current_seq) || ($current_id))) {
-	    $chr = $current_id;
-	    $chromosome_seq{$chr} = new RSA::Sequence (
-						       id=>        $chr,
-						       sequence=>  $current_seq,
-						       organism=>  $organism_name);
-	    $chromosome{$chr} = new RSA::Chromosome();
-	    $chromosome{$chr}->push_attribute("names",$chr);
-	    $chromosome{$chr}->set_sequence($chromosome_seq{$chr});
-	    $chromosome{$chr}->set_organism($organism_name);
-	    $organism_object->add_chromosome($chromosome{$chr});
-#	    warn join ("\t", $current_id, $chr), "\n";
-
-	}
-    } else {
-	&FatalError("Sequence format $genome_seq_format is not supported for genomes.");
-    }
+    my ($organism_name, $annotation_table, $input_sequence_file, $input_sequence_format) = @_;
+    my $organism_object = new RSAT::organism();
+    $organism_object->OpenContigs($organism_name, 
+				  $annotation_table, 
+				  $input_sequence_file, 
+				  $input_sequence_format);
     return $organism_object;
 }
 
 
-################################################################
-#### return a random ORF selection
-#### usage 
-####      @random_orfs = &SelectRandomORFs($n, $replace);
-#### requires prior loading of an organism [see &ReadFeatures()]
-sub SelectRandomORFs {  
-  my ($rand_orf_nb, $replace, $init, $seed) = @_;
-  my @random_orfs = ();
+# ################################################################
+# <<<<<<< RSA.lib
+# ## usage : &ListSupportedOrganisms($format);
+# ## $supp =  &ListSupportedOrganisms("text");
+# ## $supp =  &ListSupportedOrganisms("html_list");
+# ## $supp =  &ListSupportedOrganisms("html_table");
+# ## @keys =  &ListSupportedOrganisms("keys");
+# ## @names =  &ListSupportedOrganisms("names");
+# ## %organisms =  &ListSupportedOrganisms("hash");
+# =======
+# #### read ORF positions for a given organism
+# #### usage: &ReadFeatures($organism_name, $feature_table_name, $feature_types)
+# sub ReadFeatures {
+#     my ($organism_name, 
+# 	$feature_table_file,
+# 	$feature_types)= @_;
 
-  #### initalize the random generator
-  if ($init) {
-      if ($seed) { ### defined seed
-	  srand($seed);
-      } else {
-	  srand (time); ### current time
-      }
-  }
+#     warn "; ", &AlphaDate(), "\tReading feature table for $organism_name\n" if ($verbose >= 1);
 
-  my @orfs = keys %chr;
-  for my $i (1..$rand_orf_nb) {
-    my $remaining_orfs = $#orfs+1;
-    my $selected = int(rand($remaining_orfs));
-    warn ";", join ("\t", "Selected ORF", $selected, $remaining_orfs), "\n" if ($verbose >= 2);
-    if ($replace) {
-	push @random_orfs, $orfs[$selected];
-    } else {
-	push @random_orfs, splice(@orfs, $selected, 1);
-    }
-  }
-  return @random_orfs;
-}
+#     my @feature_types = ();
+#     my %accepted_feature_types = ();
+#     if ($feature_types) {
+# 	@feature_types = split ",", $feature_types;
+#     } else {
+#   	@feature_types = qw (cds);
+#     }
+#     foreach my $feature_type (@feature_types) {
+# 	warn join ("\t", "accepting feature type", $feature_type), "\n" if ($main::verbose >= 2);
+#   	$accepted_feature_types{$feature_type}++;
+#     }
 
-
-################################################################
-#### convert different strand formats into
-#### "D" (direct) and "R" (reverse)
-sub ConvertStrand {
-    my ($strand_to_convert) = @_;
-    ### Heli's notation: F (forward) or R (reverse)
-    $strand_to_convert =~ s/F/D/;
-    $strand_to_convert =~ s/R/R/;
+#     warn join ("\t", "; Accepted feature types", 
+# 	       join( ",", keys %accepted_feature_types)), "\n" 
+# 	if ($main::verbose >= 2);
     
-    ### > OR <
-    $strand_to_convert =~ s/>/D/;
-    $strand_to_convert =~ s/</R/;
-    
-    ### Yeast notation: W (Watson) or C (Crick)
-    $strand_to_convert =~ s/W/D/;
-    $strand_to_convert =~ s/C/R/;
-    return $strand_to_convert;
-}
-
-################################################################
-#### read ORF positions for a given organism
-#### usage: &ReadFeatures($organism_name, $feature_table_name, $feature_types)
-sub ReadFeatures {
-    my ($organism_name, 
-	$feature_table_file,
-	$feature_types)= @_;
-
-    warn "; ", &AlphaDate(), "\tReading feature table for $organism_name\n" if ($verbose >= 1);
-
-    my @feature_types = ();
-    my %accepted_feature_types = ();
-    if ($feature_types) {
-	@feature_types = split ",", $feature_types;
-    } else {
-  	@feature_types = qw (cds);
-    }
-    foreach my $feature_type (@feature_types) {
-	warn join ("\t", "accepting feature type", $feature_type), "\n" if ($main::verbose >= 2);
-  	$accepted_feature_types{$feature_type}++;
-    }
-
-    warn join ("\t", "; Accepted feature types", 
-	       join( ",", keys %accepted_feature_types)), "\n" 
-	if ($main::verbose >= 2);
-    
-    unless ($feature_table_file) {
-	$feature_table_file = $supported_organism{$organism_name}->{'features'};
-    }
-    $col{'orf_id'} = 0;
-    $col{'type'} = 1;
-    $col{'name'} = 2;
-    $col{'chr'} = 3;
-    $col{'left'} = 4;
-    $col{'right'} = 5;
-    $col{'strand'} = 6;
-    $col{'descr'} = 7;
-    $col{'location'} = 8;
+#     unless ($feature_table_file) {
+# 	$feature_table_file = $supported_organism{$organism_name}->{'features'};
+#     }
+#     $col{'orf_id'} = 0;
+#     $col{'type'} = 1;
+#     $col{'name'} = 2;
+#     $col{'chr'} = 3;
+#     $col{'left'} = 4;
+#     $col{'right'} = 5;
+#     $col{'strand'} = 6;
+#     $col{'descr'} = 7;
+#     $col{'location'} = 8;
     
     
-    ### read ORF positions
-    my ($orfs) = &OpenInputFile($feature_table_file);
-    my $linenb = 0;
-    while (<$orfs>) {
-	$linenb++;
-	next unless (/\S/);
-	next if ((/^;/) || (/^\#/) || (/^--/));
-	next if (/^--/);
-	chomp;
+#     ### read ORF positions
+#     my ($orfs) = &OpenInputFile($feature_table_file);
+#     my $linenb = 0;
+#     while (<$orfs>) {
+# 	$linenb++;
+# 	next unless (/\S/);
+# 	next if ((/^;/) || (/^\#/) || (/^--/));
+# 	next if (/^--/);
+# 	chomp;
 
-	## Split the columns of the input row
-	@fields = split "\t";
-	foreach $f (keys %col) {
-	    $$f = $fields[$col{$f}];
-	}
+# 	## Split the columns of the input row
+# 	@fields = split "\t";
+# 	foreach $f (keys %col) {
+# 	    $$f = $fields[$col{$f}];
+# 	}
 
-	## Check if the type of this feature is accepted
-	unless ($accepted_feature_types{lc($type)}) {
-	    warn join( "\t","skipping feature", $orf_id, "Non-selected feature type",$type), "\n" 
-		if ($main::verbose >= 5);
-	    next;
-	}
+# 	## Check if the type of this feature is accepted
+# 	unless ($accepted_feature_types{lc($type)}) {
+# 	    warn join( "\t","skipping feature", $orf_id, "Non-selected feature type",$type), "\n" 
+# 		if ($main::verbose >= 5);
+# 	    next;
+# 	}
 	
-	#### check mandatory attributes
-	unless ($orf_id) {
-	    warn "; WARNING: invalid orf identifier specification in the feature table line $linenb\n;\t",join "\t", @fields, "\n" if ($warn);
-	    next;
-	}
-	unless ($chr) {
-	    warn "; WARNING: invalid chromosome specification in the feature table line $linenb\n;\t",join "\t", @fields, "\n" if ($warn);
-	    next;
-	}
-	unless ($left) {
-	    warn "; WARNING: left position not specified in the feature table line $linenb\n;\t",join "\t", @fields, "\n" if ($warn);
-	    next;
-	}
-	unless ($right) {
-	    warn "; WARNING:right position not specified in the feature table line $linenb\n;\t",join "\t", @fields, "\n" if ($warn);
-	    next;
-	}
+# 	#### check mandatory attributes
+# 	unless ($orf_id) {
+# 	    warn "; WARNING: invalid orf identifier specification in the feature table line $linenb\n;\t",join "\t", @fields, "\n" if ($warn);
+# 	    next;
+# 	}
+# 	unless ($chr) {
+# 	    warn "; WARNING: invalid chromosome specification in the feature table line $linenb\n;\t",join "\t", @fields, "\n" if ($warn);
+# 	    next;
+# 	}
+# 	unless ($left) {
+# 	    warn "; WARNING: left position not specified in the feature table line $linenb\n;\t",join "\t", @fields, "\n" if ($warn);
+# 	    next;
+# 	}
+# 	unless ($right) {
+# 	    warn "; WARNING:right position not specified in the feature table line $linenb\n;\t",join "\t", @fields, "\n" if ($warn);
+# 	    next;
+# 	}
 	
-	unless (&IsNatural($left) ) {
-	    warn "; WARNING: invalid left position specification in the feature table line $linenb\n;\t",join "\t", @fields, "\n" if ($warn);
-	    next;
-	}
-	unless (&IsNatural($right) ) {
-	    warn "; WARNING: invalid right position specification in the feature table line $linenb\n;\t",join "\t", @fields, "\n" if ($warn);
-	    next;
-	}
+# 	unless (&IsNatural($left) ) {
+# 	    warn "; WARNING: invalid left position specification in the feature table line $linenb\n;\t",join "\t", @fields, "\n" if ($warn);
+# 	    next;
+# 	}
+# 	unless (&IsNatural($right) ) {
+# 	    warn "; WARNING: invalid right position specification in the feature table line $linenb\n;\t",join "\t", @fields, "\n" if ($warn);
+# 	    next;
+# 	}
 	
-	unless ($strand) {
-	    warn "; WARNING: invalid strand specification in the feature table line $linenb\n;\t",join "\t", @fields, "\n" if ($warn);
-	    next;
-	}
-	unless ($left < $right) {
-	    warn "; WARNING: left should be smaller than right position specification in in  feature table line $linenb\n;\t",join "\t", @fields, "\n" if ($main::verbose >= 0);
+# 	unless ($strand) {
+# 	    warn "; WARNING: invalid strand specification in the feature table line $linenb\n;\t",join "\t", @fields, "\n" if ($warn);
+# 	    next;
+# 	}
+# 	unless ($left < $right) {
+# 	    warn "; WARNING: left should be smaller than right position specification in in  feature table line $linenb\n;\t",join "\t", @fields, "\n" if ($main::verbose >= 0);
 
-	    ## Patch: swap ORF limits  if inverted (in half of the genes from ENSEMBL files)
-	    my $tmp = $left;
-	    $left =  $right;
-	    $right = $tmp;
-	    warn join ("\t", "; Swapping ORF limits", $id, $chrom, $left, $right, $strand), "\n" if ($main::verbose >= 0);
-	}
+# 	    ## Patch: swap ORF limits  if inverted (in half of the genes from ENSEMBL files)
+# 	    my $tmp = $left;
+# 	    $left =  $right;
+# 	    $right = $tmp;
+# 	    warn join ("\t", "; Swapping ORF limits", $id, $chrom, $left, $right, $strand), "\n" if ($main::verbose >= 0);
+# 	}
 	
-	#### make sure the strand format is correct
-	$strand = &ConvertStrand($strand);
+# 	#### make sure the strand format is correct
+# 	$strand = &ConvertStrand($strand);
 	
-	### assign attributes to the gene
-	$left{$orf_id} = $left;
-	$right{$orf_id} = $right;
-	$strand{$orf_id} = $strand;
-	$chr{$orf_id} = $chr;
-	$type{$orf_id} = $type;
-	$descr{$orf_id} = $descr;
-	$orf_id{uc($orf_id)} = $orf_id;
-	$orf_id{uc($name)} = $orf_id if ($name =~ /\S/);
-	$orf_info{$orf_id} = $_;
-	#$name{$orf_id} = $name;
-	if ($name eq "") {
-	    $name{$orf_id} = $orf_id;
-	} else {
-	    $name{$orf_id} = $name;
-	}
-	unless (defined($chromosome{$chr})) {
-	    $chromosome{$chr} = new RSA::Chromosome(id=>$chr);
-	    $chromosome{$chr}->set_organism($organism_name);
-	}
-	$chromosome{$chr}->add_gene($orf_id);
-	warn join( "\t",
-		   $orf_id,
-		   $chr,
-		   $strand,
-		   $left,
-		   $right,
-		   $descr{$orf_id},
-		   $chromosome{$chr}->count_genes()), "\n" if ($main::verbose >= 10);
-    }
-    close $orfs if ($feature_table_file);
+# 	### assign attributes to the gene
+# 	$left{$orf_id} = $left;
+# 	$right{$orf_id} = $right;
+# 	$strand{$orf_id} = $strand;
+# 	$chr{$orf_id} = $chr;
+# 	$type{$orf_id} = $type;
+# 	$descr{$orf_id} = $descr;
+# 	$orf_id{uc($orf_id)} = $orf_id;
+# 	$orf_id{uc($name)} = $orf_id if ($name =~ /\S/);
+# 	$orf_info{$orf_id} = $_;
+# 	#$name{$orf_id} = $name;
+# 	if ($name eq "") {
+# 	    $name{$orf_id} = $orf_id;
+# 	} else {
+# 	    $name{$orf_id} = $name;
+# 	}
+# 	unless (defined($chromosome{$chr})) {
+# 	    $chromosome{$chr} = new RSA::Chromosome(id=>$chr);
+# 	    $chromosome{$chr}->set_organism($organism_name);
+# 	}
+# 	$chromosome{$chr}->add_gene($orf_id);
+# 	warn join( "\t",
+# 		   $orf_id,
+# 		   $chr,
+# 		   $strand,
+# 		   $left,
+# 		   $right,
+# 		   $descr{$orf_id},
+# 		   $chromosome{$chr}->count_genes()), "\n" if ($main::verbose >= 10);
+#     }
+#     close $orfs if ($feature_table_file);
     
-    ## Check the number of features
-    if (scalar(keys(%orf_id)) < 1) {
-	&FatalError("There is no annotated feature of type ".$feature_types." in the genome of ".$organism_name);
-    }
+#     ## Check the number of features
+#     if (scalar(keys(%orf_id)) < 1) {
+# 	&FatalError("There is no annotated feature of type ".$feature_types." in the genome of ".$organism_name);
+#     }
 
 
-    ## Print stats on the features
-    if ($main::verbose >= 2) {
-	warn "; Features loaded\n";
-	my %stats = ();
-	foreach my $orf_id (keys %type) {
-	    $stats{$type{$orf_id}}++;
-	}
-	foreach my $type (sort keys %stats) {
-	    warn join ("\t", ";", $type, $stats{$type}), "\n";
-	}
-    }
-}
+#     ## Print stats on the features
+#     if ($main::verbose >= 2) {
+# 	warn "; Features loaded\n";
+# 	my %stats = ();
+# 	foreach my $orf_id (keys %type) {
+# 	    $stats{$type{$orf_id}}++;
+# 	}
+# 	foreach my $type (sort keys %stats) {
+# 	    warn join ("\t", ";", $type, $stats{$type}), "\n";
+# 	}
+#     }
+# }
 
 
-################################################################
-#### read a list of synonyms for gene names, given an organism name
-sub ReadSynonyms {  
-    #### read synonym file ###
-    ### usage : &ReadSynonyms($organism_name);
-    my ($organism_name) = @_;
+# ################################################################
+# #### read a list of synonyms for gene names, given an organism name
+# sub ReadSynonyms {  
+#     #### read synonym file ###
+#     ### usage : &ReadSynonyms($organism_name);
+#     my ($organism_name) = @_;
 
-    unless ( $supported_organism{$organism_name}->{'synonyms'}) {
-	return;
-    }
+#     unless ( $supported_organism{$organism_name}->{'synonyms'}) {
+# 	return;
+#     }
 
-    ($syn) = &OpenInputFile( $supported_organism{$organism_name}->{'synonyms'});
-    if (($organism_name eq "") || 
-	($organism_name eq "yeast")
-	){
-	while(<$syn>) {
-	    chomp;
-	    tr/a-z/A-Z/;
-	    @fields = split;
-	    if ((defined($orf_id{$fields[0]})) &&
-		($orf_info{$orf_id{$fields[0]}})) {
-		$orf_id = $orf_id{$fields[0]};
-		unless (($fields[1] eq  $orf_id) || ($orf_info{$fields[1]})) {
-		    $orf_id{$fields[1]} = $orf_id;
-		    push @{$synonyms{$orf_id}}, $fields[1] if ($fields[1] =~ /\S/);
-		}
-	    } elsif ((defined($orf_id{$fields[1]})) &&
-		     ($orf_info{$orf_id{$fields[1]}})) {
-		$orf_id = $orf_id{$fields[1]};
-		unless (($fields[0] eq  $orf_id) ||($orf_info{$fields[0]})) {
-		    $orf_id{$fields[0]} = $orf_id;
-		    push @{$synonyms{$orf_id}}, $fields[0] if ($fields[0] =~ /\S/);
-		}
-	    }
-	}
-    } else {
-	while(<$syn>) {
-	    next if ((/^;/) || (/^\#/) || (/^--/));
-	    next unless (/\S/);
-	    chomp;
-	    @fields = split "\t";
-	    my $id = uc($fields[0]);
-	    my $name = $fields[1];
-#	    print join "\t", $id, $name, $fields[0], $fields[1], "\n"; 
-	    if (defined($orf_id{$id})) {
-		$orf_id{uc($name)} = $orf_id{$id};
-		push @{$synonyms{$orf_id{$id}}}, $name;
-	    }
-	}
-    }
-    close $syn if ($supported_organism{$organism_name}->{'synonyms'});
-} ### ReadSynonyms
+#     ($syn) = &OpenInputFile( $supported_organism{$organism_name}->{'synonyms'});
+#     if (($organism_name eq "") || 
+# 	($organism_name eq "yeast")
+# 	){
+# 	while(<$syn>) {
+# 	    chomp;
+# 	    tr/a-z/A-Z/;
+# 	    @fields = split;
+# 	    if ((defined($orf_id{$fields[0]})) &&
+# 		($orf_info{$orf_id{$fields[0]}})) {
+# 		$orf_id = $orf_id{$fields[0]};
+# 		unless (($fields[1] eq  $orf_id) || ($orf_info{$fields[1]})) {
+# 		    $orf_id{$fields[1]} = $orf_id;
+# 		    push @{$synonyms{$orf_id}}, $fields[1] if ($fields[1] =~ /\S/);
+# 		}
+# 	    } elsif ((defined($orf_id{$fields[1]})) &&
+# 		     ($orf_info{$orf_id{$fields[1]}})) {
+# 		$orf_id = $orf_id{$fields[1]};
+# 		unless (($fields[0] eq  $orf_id) ||($orf_info{$fields[0]})) {
+# 		    $orf_id{$fields[0]} = $orf_id;
+# 		    push @{$synonyms{$orf_id}}, $fields[0] if ($fields[0] =~ /\S/);
+# 		}
+# 	    }
+# 	}
+#     } else {
+# 	while(<$syn>) {
+# 	    next if ((/^;/) || (/^\#/) || (/^--/));
+# 	    next unless (/\S/);
+# 	    chomp;
+# 	    @fields = split "\t";
+# 	    my $id = uc($fields[0]);
+# 	    my $name = $fields[1];
+# #	    print join "\t", $id, $name, $fields[0], $fields[1], "\n"; 
+# 	    if (defined($orf_id{$id})) {
+# 		$orf_id{uc($name)} = $orf_id{$id};
+# 		push @{$synonyms{$orf_id{$id}}}, $name;
+# 	    }
+# 	}
+#     }
+#     close $syn if ($supported_organism{$organism_name}->{'synonyms'});
+# } ### ReadSynonyms
 
 
-################################################################
-#### Calculate the limits of the non-coding region on both sides of
-#### each gene
-sub CalcNeighbourLimits {
-    foreach my $chr (sort keys %chromosome) {
-	my @genes = sort { $left{$a} <=> $left{$b} } $chromosome{$chr}->get_genes();
-	@chrom_lefts = sort {$a <=> $b} @left{@genes};
-	@chrom_rights = sort {$a <=> $b} @right{@genes};
+# ################################################################
+# #### Calculate the limits of the non-coding region on both sides of
+# #### each gene
+# sub CalcNeighbourLimits {
+#     foreach my $chr (sort keys %chromosome) {
+# 	my @genes = sort { $left{$a} <=> $left{$b} } $chromosome{$chr}->get_genes();
+# 	@chrom_lefts = sort {$a <=> $b} @left{@genes};
+# 	@chrom_rights = sort {$a <=> $b} @right{@genes};
 	
 
-	for my $g (0..$#genes) {
-	    my $gene = $genes[$g];
-	    my $ln = $g -1; ### first guess for left neighbour
-	    my $rn = $g +1; ### first guess for right neighbour
+# 	for my $g (0..$#genes) {
+# 	    my $gene = $genes[$g];
+# 	    my $ln = $g -1; ### first guess for left neighbour
+# 	    my $rn = $g +1; ### first guess for right neighbour
 
-	    #### calculate left upstream limit 
-	    my $found = 0;
-	    do {
-		if (($chrom_rights[$ln] > $left{$gene}) && ($chrom_lefts[$ln] > $left{$gene})) {
-		    $ln--;
-		} elsif ($chrom_rights[$ln+1] < $left{$gene}) {
-		    $ln++;
-		} else {
-		    $found = 1;
-		}
-	    } until (($found) || ($ln < 0) || ($ln > $#chrom_rights));
-	    if ($found) {
-		$neighb_left_limit{$gene} = $chrom_rights[$ln]; 
-	    } elsif ($ln < 0) {
-		$neighb_left_limit{$gene} = 0; 
-	    } else {
-		$neighb_left_limit{$gene} = undef; 
-	    }
-	    $neighb_left_size{$gene} = &max(0, $left{$gene} - $neighb_left_limit{$gene} -1);
+# 	    #### calculate left upstream limit 
+# 	    my $found = 0;
+# 	    do {
+# 		if (($chrom_rights[$ln] > $left{$gene}) && ($chrom_lefts[$ln] > $left{$gene})) {
+# 		    $ln--;
+# 		} elsif ($chrom_rights[$ln+1] < $left{$gene}) {
+# 		    $ln++;
+# 		} else {
+# 		    $found = 1;
+# 		}
+# 	    } until (($found) || ($ln < 0) || ($ln > $#chrom_rights));
+# 	    if ($found) {
+# 		$neighb_left_limit{$gene} = $chrom_rights[$ln]; 
+# 	    } elsif ($ln < 0) {
+# 		$neighb_left_limit{$gene} = 0; 
+# 	    } else {
+# 		$neighb_left_limit{$gene} = undef; 
+# 	    }
+# 	    $neighb_left_size{$gene} = &max(0, $left{$gene} - $neighb_left_limit{$gene} -1);
 	    
-	    #### calculate right upstream limit 
-	    $found = 0;
-	    do {
-		if (($chrom_lefts[$rn] < $right{$gene}) && ($chrom_rights[$rn] < $right{$gene})) {
-		    $rn++;
-		} elsif ($chrom_lefts[$rn-1] > $right{$gene}) {
-		    $rn--;
-		} else {
-		    $found = 1;
-		}
-	    } until (($found) || ($rn < 0) || ($rn > $#chrom_lefts));
-	    if ($found) {
-		$neighb_right_limit{$gene} = $chrom_lefts[$rn];
-	    } elsif ($rn < 0) {
-		$neighb_right_limit{$gene} = undef; 
-	    } elsif ($rn > $#chrom_lefts) {
-		$neighb_right_limit{$gene} = $chromosome_seq{$chr}->get_length() + 1; 
-	    }
-	    $neighb_right_size{$gene} = &max(0, $neighb_right_limit{$gene} - $right{$gene} -1);
+# 	    #### calculate right upstream limit 
+# 	    $found = 0;
+# 	    do {
+# 		if (($chrom_lefts[$rn] < $right{$gene}) && ($chrom_rights[$rn] < $right{$gene})) {
+# 		    $rn++;
+# 		} elsif ($chrom_lefts[$rn-1] > $right{$gene}) {
+# 		    $rn--;
+# 		} else {
+# 		    $found = 1;
+# 		}
+# 	    } until (($found) || ($rn < 0) || ($rn > $#chrom_lefts));
+# 	    if ($found) {
+# 		$neighb_right_limit{$gene} = $chrom_lefts[$rn];
+# 	    } elsif ($rn < 0) {
+# 		$neighb_right_limit{$gene} = undef; 
+# 	    } elsif ($rn > $#chrom_lefts) {
+# 		$neighb_right_limit{$gene} = $chromosome_seq{$chr}->get_length() + 1; 
+# 	    }
+# 	    $neighb_right_size{$gene} = &max(0, $neighb_right_limit{$gene} - $right{$gene} -1);
 	    
-	    if ($strand{$gene} eq "R") {
-		$upstr_limit{$gene} = $neighb_right_limit{$gene};
-		$upstr_size{$gene} = $neighb_right_size{$gene};
-		$downstr_limit{$gene} = $neighb_left_limit{$gene};
-		$downstr_size{$gene} = $neighb_left_size{$gene};
-	    } else {
-		$upstr_limit{$gene} = $neighb_left_limit{$gene};
-		$upstr_size{$gene} = $neighb_left_size{$gene};
-		$downstr_limit{$gene} = $neighb_right_limit{$gene};
-		$downstr_size{$gene} = $neighb_right_size{$gene};
-	    }    
+# 	    if ($strand{$gene} eq "R") {
+# 		$upstr_limit{$gene} = $neighb_right_limit{$gene};
+# 		$upstr_size{$gene} = $neighb_right_size{$gene};
+# 		$downstr_limit{$gene} = $neighb_left_limit{$gene};
+# 		$downstr_size{$gene} = $neighb_left_size{$gene};
+# 	    } else {
+# 		$upstr_limit{$gene} = $neighb_left_limit{$gene};
+# 		$upstr_size{$gene} = $neighb_left_size{$gene};
+# 		$downstr_limit{$gene} = $neighb_right_limit{$gene};
+# 		$downstr_size{$gene} = $neighb_right_size{$gene};
+# 	    }    
 
-#  	print join ("\t", "HELLO", $g, $gene, 
-#  		    $left{$gene},$right{$gene}, 
-#  		    "ln", $ln, $chrom_lefts[$ln],$chrom_rights[$ln], 
-#  		    "rn", $rn, $chrom_lefts[$rn],$chrom_rights[$rn], 
-#  		    "left", $neighb_left_limit{$gene}, $neighb_left_size{$gene},
-#  		    "right", $neighb_right_limit{$gene}, $neighb_right_size{$gene},
-#  		    "upstr", $upstr_limit{$gene}, $upstr_size{$gene},
-#  		    "down", $downstr_limit{$gene}, $downstr_size{$gene},
-#  		    "\n");
-	}
-#    die "HELLO";
+# #  	print join ("\t", "HELLO", $g, $gene, 
+# #  		    $left{$gene},$right{$gene}, 
+# #  		    "ln", $ln, $chrom_lefts[$ln],$chrom_rights[$ln], 
+# #  		    "rn", $rn, $chrom_lefts[$rn],$chrom_rights[$rn], 
+# #  		    "left", $neighb_left_limit{$gene}, $neighb_left_size{$gene},
+# #  		    "right", $neighb_right_limit{$gene}, $neighb_right_size{$gene},
+# #  		    "upstr", $upstr_limit{$gene}, $upstr_size{$gene},
+# #  		    "down", $downstr_limit{$gene}, $downstr_size{$gene},
+# #  		    "\n");
+# 	}
+# #    die "HELLO";
 	
-    }
+#     }
 
-}
+# }
+
+# >>>>>>> 1.48
+
 
 sub ListSupportedOrganisms {
-  ### usage : &ListSupportedOrganisms($format);
-  ### $supp =  &ListSupportedOrganisms("text");
-  ### $supp =  &ListSupportedOrganisms("html_list");
-  ### $supp =  &ListSupportedOrganisms("html_table");
-  ### @keys =  &ListSupportedOrganisms("keys");
-  ### @names =  &ListSupportedOrganisms("names");
-  ### %organisms =  &ListSupportedOrganisms("hash");
   my $out_format = $_[0] || "text";
 
   foreach my $key (keys %main::supported_organism) {
@@ -1376,105 +992,106 @@ sub ListSupportedOrganisms {
 $supported_organisms = &ListSupportedOrganisms();
 
 
-#foreach $key (sort keys %supported_organism) {
-#  $supported_organisms .= sprintf "\t\t%-12s\t", $key;
-#  $supported_organisms .= $supported_organism{$key}->{'name'};
-#  $supported_organisms .= "\n";
-#}
 
 
 
+# ################################################################
+# ## Methods below have been transferred to RSAT::util
+
+sub ConvertStrand {
+    return &RSAT::util::ConvertStrand(@_);
+}
+
+sub OpenInputFile {
+    return &RSAT::util::OpenInputFile(@_);
+}
+
+sub OpenOutputFile {
+    return &RSAT::util::OpenOutputFile(@_);
+}
+
+sub IsNatural {
+    return &RSAT::util::IsNatural(@_);
+}
+
+sub IsInteger {
+    return &RSAT::util::IsInteger(@_);
+}
+
+sub IsReal {
+    return &RSAT::util::IsReal(@_);
+}
+
+sub round {
+    return &RSAT::util::round(@_);
+}
+
+sub trim {
+    return &RSAT::util::trim(@_);
+}
+
+sub AlphaDate {
+    return &RSAT::util::AlphaDate(@_);
+}
+
+sub SplitFileName {
+    return &RSAT::util::SplitFileName(@_);
+}
+
+sub ShortFileName {
+    return &RSAT::util::ShortFileName(@_);
+}
+
+sub ExtractPath {
+    return &RSAT::util::ExtractPath(@_);
+}
 
 ################################################################
 #### Treatment of warnings and  errors
 ################################################################
 
-### warn with time 
+
+################################################################
+### Messages and errors are now passed to RSAT::message and RSAT::error
+sub FatalError {
+    &RSAT::error::FatalError(@_);
+}
+
+sub cgiError {
+    &RSAT::error::cgiError(@_);
+}
+
+
+sub Warning {
+    &RSAT::message::Warning(@_);
+}
+
+sub cgiWarning {
+    &RSAT::message::cgiWarning(@_);
+}
+
+sub Info {
+    &RSAT::message::Info(@_);
+}
+
+sub cgiMessage {
+    &RSAT::message::cgiMessage(@_);
+}
+
 sub TimeWarn {
-    my $message = join "\t", &AlphaDate(), @_;
-    chomp($message);
-    $message .= "\n";
-    warn ($message);
+    &RSAT::message::timeWarn(@_);
+}
+
+sub MessageToAdmin {
+    &RSAT::message::MessageToAdmin(@_);
 }
 
 
 ################################################################
-#### report an error by sending an email to RSAT administrator
-sub MessageToAdmin {
-    my ($message) = @_;
-    $mail_command = "mail -s \'RSA-tools - $script_name - $date\'";
-    system "echo \"$message\" | $mail_command $ENV{SERVER_ADMIN} &"; 
+## Changed the name of this method
+sub ReadFamilies {
+    &ReadClasses(@_);
 }
-
-
-### report fatal errors 
-sub FatalError {
-    my @error_message = @_;
-    my $message = join "\n\t", @error_message;
-    $ENV{RSA_ERROR} = "1";
-    my $context = $ENV{RSA_OUTPUT_CONTEXT} || "screen";
-    if ($context eq "cgi") {
-	$message =~ s/\n\t/ /g;
-	$message =~ s/\t/ /g;
-	&cgiError($message);
-    } else {
-	die("Error\n\t", $message, "\n");
-    }
-}
-
-sub cgiError {
-    my $error_message = join "", @_;
-    my $error_color = "#FF0000";
-    &cgiMessage($error_message, "Error", $error_color);
-    print "</body></html>\n";
-    exit(1);
-}
-
-
-### report a warning
-sub Warning {
-    my @warning_message = @_;
-    my $message = join "\n\t", @warning_message;
-    if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
-	($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
-	$message =~ s/\n/<br>\n/g;
-	&cgiWarning($message);
-    } else {
-	warn("; WARNING\t", $message, "\n");
-    }
-}
-
-sub cgiWarning {
-    my $warning_message = join "<P>", @_;
-    my $warning_color = "#aa0000";
-    &cgiMessage($warning_message, "Warning", $warning_color);
-}
-
-### information message
-sub Info {
-    my @info_message = @_;
-    my $message = join "\n\t", @info_message;
-    if ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi") {
-	$message =~ s/\n/<br>\n/g;
-	&cgiMessage($message);
-    } else {
-	warn("Info\n\t", $message, "\n");
-    }
-}
-
-#### report a message in HTML format
-sub cgiMessage {
-    my ($message, $message_type, $color) = @_;
-    $color = "#00BB00" unless ($color);
-    print  "<h3>$message_type</h3>",
-	    "<blockquote>",
-	    "<FONT SIZE=+1 color=$color><B>",
-	    $message,
-	    "</B></FONT>",
-	    "</blockquote>",
-	    "<BR><HR SIZE=3>";
-}
-
 
 ################################################################
 #### read classification file
@@ -1483,7 +1100,7 @@ sub cgiMessage {
 #### - class (e.g. a functional class, or a regulon, or a clustering result)
 #### additional columns are allowed, but they are ignored
 sub ReadClasses {
-    my ($family_file, $get_orf_id) = @_;
+    my ($family_file, $get_orf_id, $organism) = @_;
     warn "; Reading family file\t$family_file\n" 
 	if ($verbose >=2);
 
@@ -1498,22 +1115,23 @@ sub ReadClasses {
 	next unless (/\S/);
 	chomp;
 	s/\r$//;
-##	my @fields = split /\s+/;
 	my @fields = split /\t/;
 	
 	### family member
 	$member_name = &trim(uc($fields[0]));
 	unless ($member_name =~ /\S/) {
-	    warn ("Error family file $family_file line $line\t",
-		  "gene not specified\n");
+	    &RSAT::message::Warning("Error family file", 
+				 $family_file,  "line", 
+				 $line, "member not specified") if ($main::verbose >= 1);
 	    next;
 	}
 	### family name
 	$family_name = &trim($fields[1]);
 	$family_name =~ s/ +/_/g;
 	unless ($family_name =~ /\S/) {
-	    warn ("Error family file $family_file line $line\t",
-		  "family not specified\n");
+	    &RSAT::message::Warning("Error family file", 
+				 $family_file,  "line", 
+				 $line, "family not specified") if ($main::verbose >= 1);
 	    next;
 	}
 
@@ -1522,30 +1140,35 @@ sub ReadClasses {
 	    $family{$family_name} = new RSA::family(name=>$family_name);
 	}
 
-	
+	################################################################
+	### identify the gene on the basis of its name
 	my $member_key = "";
-	if ($get_orf_id) {
+	if (($get_orf_id) && ($organism)) {
 	    ### identify the gene on the basis of its name
-	    $member_key = $orf_id{$member_name};
+	    my $feature = $organism->get_feature_for_name($member_name);
+	    if ($feature) {
+		$member_key = $feature->get_attribute("id");
+	    } else {
+		&RSAT::message::Warning(join ("\t", "organism", $organism->get_attribute("name"), 
+					      "has no feature with name", $member_name));
+	    }
+#	    $member_key = $orf_id{$member_name};
 	} else {
 	    $member_key = $member_name;
 	}
 	if ($member_key) {
-#	    push @{$family{$family_name}->{members}}, $member_key;
 	    $family{$family_name}->new_member($member_key);
-#	    warn join ("\t",  "; \t$family_name","$member_name","$member_key","$name{$id}"), "\n" 
-#		if ($verbose >= 10);
+	    &RSAT::message::Warning( join ("\t",  ";", $family_name,
+					   $member_name,
+					   $member_key,
+					   $name{$id}) ) if ($verbose >= 5);
 	} else {
-	    &Warning ("$member_name unknown gene name");
+	    &RSAT::message::Warning ($member_name." unknown gene name");
 	}
 	
     }
     close $fam if ($family_file);
     return %family;
-}
-
-sub ReadFamilies {
-    &ReadClasses(@_);
 }
 
 

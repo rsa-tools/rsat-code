@@ -6,7 +6,56 @@
 ###
 ################################################################
 
-#### returns the simi of a list of numeric values
+################################################################
+## Calculate basic statistics on a list of values
+sub summary {
+    my (@values) = @_;
+    my %stats = (n=>0,
+		 sum=>0,
+		 mean=>0,
+		 median=>0,
+		 var=>0,
+		 sd=>0,
+		 min=>"NA",
+		 max=>"NA",
+		);
+    my $n = scalar(@values);
+    $stats{n} = $n;
+    $stats{sum} = &sum(@values);
+    if ($n > 0) {
+
+	## Calculate the mean
+	$stats{mean} = $stats{sum}/$n;
+
+	## Calculate the median
+	my @sorted_values = sort {$a <=> $b} @values;
+	if ($n%2==0) {
+	    $stats{median} = ($sorted_values[$n/2-1] + $sorted_values[$n/2])/2;	
+	} else {
+	    $stats{median} = $sorted_values[($n-1)/2];
+	}
+
+	## Calculate standard deviation
+	my $ssq = 0;
+	foreach my $value (@values) {
+	    $ssq += $value*$value;
+	}
+	$stats{ssq} = $ssq;
+	$stats{var} = $ssq/$n - $stats{mean}*$stats{mean};
+	$stats{sd} = sqrt($stats{var});
+
+	$stats{var_est} = $n/($n-1)*$stats{var};
+	$stats{sd_est} = sqrt($stats{var_est});
+
+	## Extremes
+	$stats{min} = &min(@values);
+	$stats{max} = &max(@values);
+    }
+    return %stats;
+}
+
+
+#### returns the sumi of a list of numeric values
 #### usage:
 #### $sum = &sum(@value_list);
 sub sum {
@@ -94,7 +143,7 @@ sub checked_avg {
     if ($valid_values > 0) {
 	return ($sum/$valid_values);
     } else {
-	&FatalError( "Error: cannot calculate average of an empty list\n");
+	&RSAT::error::FatalError( "Error: cannot calculate average of an empty list\n");
     }
 }
 
@@ -115,7 +164,7 @@ sub binomial {
     my($q) = 1 - $proba;
 
     if ($proba <=0) {
-	&FatalError( "Error : invalid probability value $proba\n");
+	&RSAT::error::FatalError( "Error : invalid probability value $proba\n");
     }
 
     my($logproba) = log($proba);
@@ -177,7 +226,7 @@ sub LogToEng {
 sub sum_of_binomials {
     my ($proba, $trials, $from, $to) = @_;
 
-    if ($main::verbose >= 5) {
+    if ($main::verbose >= 6) {
 	print join ("\t", "sum_of_binomials", "p=$proba", "t=$trials", "from=$from", "to=$to"), "\n";
     }
 
@@ -185,11 +234,11 @@ sub sum_of_binomials {
     my $expected = $trials*$proba;
     
     if ($proba <0) {
-	 &FatalError("Error: invalid probability $proba (must be a positive value)\n");
+	 &RSAT::error::FatalError("Error: invalid probability $proba (must be a positive value)\n");
     }
     ($from,$to) = sort {$a <=> $b} ($from, $to);
     if ($to > $trials) {
-	&FatalError( "Error: successes ($to) cannot be higher than trials ($trials)\n");
+	&RSAT::error::FatalError( "Error: successes ($to) cannot be higher than trials ($trials)\n");
     }
 
 
@@ -324,9 +373,9 @@ sub negbin2 {
     my ($x, $mean, $variance, $series) = @_;
     
     ### Check parameters
-    &FatalError("negbin2: the mean should be strictly positive") if ($mean <= 0);
-    &FatalError("negbin2: the variance should be positive") if ($variance < 0);
-    &FatalError("negbin2: the variance should be greater than the mean") if ($variance <= $mean);
+    &RSAT::error::FatalError("negbin2: the mean should be strictly positive") if ($mean <= 0);
+    &RSAT::error::FatalError("negbin2: the variance should be positive") if ($variance < 0);
+    &RSAT::error::FatalError("negbin2: the variance should be greater than the mean") if ($variance <= $mean);
 
     ### Convert mean and variance to p and k
     my $p = $variance/$mean -1;
@@ -334,7 +383,7 @@ sub negbin2 {
     warn ("; Calculating p and k from mean and variance\n",
 	  ";\tp = ", $p, "\n",
 	  ";\tk = ", $k, "\n"
-	  ) if ($main::verbose >= 5);
+	  ) if ($main::verbose >= 6);
 
     ### Calculate the negbin
     my @negbin = &negbin($x, $p, $k, $series);
@@ -358,7 +407,7 @@ sub negbin {
 	  ";\tq = ", $q, "\n",
 	  ";\tk = ", $k, "\n",
 	  ";\tx = ", $x, "\n",
-	  ) if ($main::verbose >= 5);
+	  ) if ($main::verbose >= 6);
 
     ## Calculate proba for 0 successes
     my $log_negbin = - $log_q*$k;;
@@ -393,9 +442,9 @@ sub sum_of_negbin2 {
     
     ### Check parameters
     &Warning("Cannot calculate negbin with mean <= 0 and x >0") if (($mean <= 0) && ($to > 0));
-    &FatalError("negbin2: the mean should be strictly positive") if ($mean <= 0);
-    &FatalError("negbin2: the variance should be positive") if ($variance < 0);
-    &FatalError("negbin2: the variance should be greater than the mean") if ($variance <= $mean);
+    &RSAT::error::FatalError("negbin2: the mean should be strictly positive") if ($mean <= 0);
+    &RSAT::error::FatalError("negbin2: the variance should be positive") if ($variance < 0);
+    &RSAT::error::FatalError("negbin2: the variance should be greater than the mean") if ($variance <= $mean);
 
     ### Convert mean and variance to p and k
     my $p = $variance/$mean -1;
@@ -403,7 +452,7 @@ sub sum_of_negbin2 {
     warn ("; Calculating p and k from mean and variance\n",
 	  ";\tp = ", $p, "\n",
 	  ";\tk = ", $k, "\n"
-	  ) if ($main::verbose >= 5);
+	  ) if ($main::verbose >= 6);
 
     ### Calculate the negbin
     my $sum_of_negbin = &sum_of_negbin($p, $k, $from, $to);
@@ -597,13 +646,13 @@ sub hypergeometric {
  		"k=$k",
  		"x=$x",
 		 "depth=$args{depth}"
- 		), "\n" if ($main::verbose >= 5);
+ 		), "\n" if ($main::verbose >= 6);
 
     ### error if too high recursion depth
     my $max_depth = 10; 
     $args{depth} = $args{depth} || 0;
     if ($args{depth} > $max_depth) {
-	&FatalError("Hypergeometric, recursion reached depth limit $max_depth\n");
+	&RSAT::error::FatalError("Hypergeometric, recursion reached depth limit $max_depth\n");
     }
     
     #### initilization
@@ -619,19 +668,19 @@ sub hypergeometric {
 
     #### incompatible parameter values
     if ($k > $n) {
-	&FatalError("Sample ($k) cannot be larger than number of balls in the urn ($n)");	
+	&RSAT::error::FatalError("Sample ($k) cannot be larger than number of balls in the urn ($n)");	
     }
     if ($m > $n) {
-	&FatalError("Number of black balls in the urn ($m) cannot be larger than number of balls in the urn ($n)");	
+	&RSAT::error::FatalError("Number of black balls in the urn ($m) cannot be larger than number of balls in the urn ($n)");	
     }
     if ($w > $n) {
-	&FatalError("Number of white balls in the urn ($m) cannot be larger than number of balls in the urn ($n)");	
+	&RSAT::error::FatalError("Number of white balls in the urn ($m) cannot be larger than number of balls in the urn ($n)");	
     }
     if ($x > $k) {
-	&FatalError("Number of black balls in the sample ($x) cannot be larger than sample size ($k)");	
+	&RSAT::error::FatalError("Number of black balls in the sample ($x) cannot be larger than sample size ($k)");	
     }
     if ($x < 0) {
-	&FatalError( "Number of black balls in the sample ($x) must be strictly positive\n");
+	&RSAT::error::FatalError( "Number of black balls in the sample ($x) must be strictly positive\n");
     }
 
     #### impossible events
@@ -639,14 +688,14 @@ sub hypergeometric {
     #### with an argument &hypergeometric(..., check=>1)
     if ($x > $m) {
 	if ($args{check}) {
-	    &FatalError("Number of black balls in the sample ($x) cannot be larger than number of black balls in the urn ($m)");	
+	    &RSAT::error::FatalError("Number of black balls in the sample ($x) cannot be larger than number of black balls in the urn ($m)");	
 	} else {
 	    return(0);
 	}
     }
     if ($k - $x > $w) {
 	if ($args{check}) {
-	    &FatalError(join( "", "Number of white balls in the sample (",
+	    &RSAT::error::FatalError(join( "", "Number of white balls in the sample (",
 			      $k-$x,
 			      ") cannot be larger than number of white balls in the urn (", 
 			      $w, 
@@ -658,14 +707,14 @@ sub hypergeometric {
 
 
     
-# 	$Id: RSA.stat.lib,v 1.24 2004/07/29 16:21:46 jvanheld Exp $	
+# 	$Id: RSA.stat.lib,v 1.25 2005/03/13 10:10:07 jvanheld Exp $	
 
     #### initialization
     if (defined($args{previous_value})) {
 	#### a single recursion is sufficient
 #	die;
 	$log_proba = log($args{previous_value});
-	warn "Previous value\t", $log_proba, "\n" if ($main::verbose >= 4);
+	warn "Previous value\t", $log_proba, "\n" if ($main::verbose >= 6);
 	$start = $x;
 
     } elsif ($w < $k) {
@@ -744,7 +793,7 @@ sub hypergeometric {
 		    "to=$to",
 		    "depth=$args{depth}",
 		    "last_proba=$proba"
-		    ), "\n" if ($main::verbose >= 5);
+		    ), "\n" if ($main::verbose >= 6);
 	$log_proba += log($m - $i + 1);
 	$log_proba -= log($i);
 	$log_proba += log($k - $i + 1);
@@ -761,7 +810,7 @@ sub hypergeometric {
 		    "depth=$args{depth}",
 		    "log(p)=$log_proba",
 		    "proba=$proba"
-		    ), "\n" if ($main::verbose >= 5);
+		    ), "\n" if ($main::verbose >= 6);
 	last if (($proba == $last_proba) && ($proba >0)); ### beyond precision limit, it is worthless adding more elements
     }
 
@@ -778,7 +827,7 @@ sub hypergeometric {
 		    "depth=$args{depth}",
 		    "log(p)=$log_proba",
 		    "proba=$proba"		    
-		    ), "\n" if ($main::verbose >= 4);
+		    ), "\n" if ($main::verbose >= 6);
 
 #    my $proba = exp($log_proba);
     return($proba);
@@ -790,6 +839,10 @@ sub hypergeometric {
 ####
 #### REMARK: I checked this routine by comparing results with R, and
 #### there is a difference with some test cases, e.g. : 
+#### $m = number of black balls in the urn
+#### $n = total number of balls in the urn (beware: this differs from R)
+#### $k = number of balls in the sample
+#### $from, $to :  number of selected black balls
 ####
 #### sum_of_hypergeometrics(44,60,44,43,44) = 4.71230301093258e-12
 #### in R:
@@ -814,7 +867,7 @@ sub sum_of_hypergeometrics {
     $to = &min($to,$m);
 
     
-    warn join( "\t", "sum_of_hypergeometrics", "m=$m", "n=$n", "k=$k", "from=$from", "to=$to", "min_x=$min_x"), "\n" if ($main::verbose >= 4);
+    warn join( "\t", "sum_of_hypergeometrics", "m=$m", "n=$n", "k=$k", "from=$from", "to=$to", "min_x=$min_x"), "\n" if ($main::verbose >= 6);
     
     if ($min_x > $to) {
 	return(0);
@@ -886,10 +939,10 @@ sub FisherExactTest {
     
     ## Check parameters
     if (($row_nb < 2) || ($col_nb < 2)) {
-	&FatalError( ";ChiSquare: at least 2 rows and 2 columns are required for the chi2 test"); # too few rows or columns
+	&RSAT::error::FatalError( ";ChiSquare: at least 2 rows and 2 columns are required for the chi2 test"); # too few rows or columns
     }
     unless ($val_nb == $row_nb * $col_nb) {
-	&FatalError( ";ChiSquare: invalid number of numeric values",
+	&RSAT::error::FatalError( ";ChiSquare: invalid number of numeric values",
 		     "\t".$row_nb." rows",
 		     "\t".$col_nb." columns",
 		     "\t".$val_nb." values");
@@ -1051,15 +1104,15 @@ sub ChiSquare {
 
     ### check parameter values ###
     unless (($test =~ /^indep/i) || ($test =~ /^good/i) || ($test =~ /^homog/i)) {
-	&FatalError("Unknown test (supported: 'goodness of fit', 'homogeneity' and 'independence')"); 
+	&RSAT::error::FatalError("Unknown test (supported: 'goodness of fit', 'homogeneity' and 'independence')"); 
     }
     if (($row_nb < 2) || ($col_nb < 2)) {
-	&FatalError("At least 2 rows and 2 columns are required"); # too few rows or columns
+	&RSAT::error::FatalError("At least 2 rows and 2 columns are required"); # too few rows or columns
     }
 
     ## values = columns*rows
     unless ($val_nb == $row_nb * $col_nb) {
-	&FatalError( ";ChiSquare: invalid number of numeric values",
+	&RSAT::error::FatalError( ";ChiSquare: invalid number of numeric values",
 		     "\t".$row_nb." rows",
 		     "\t".$col_nb." columns",
 		     "\t".$val_nb." values");
@@ -1067,7 +1120,7 @@ sub ChiSquare {
 
     ### all values must be real numbers
     foreach $val (@values) {
-	&FatalError("Invalid values: $val is not a real number") unless &IsReal($val); # invalid values
+	&RSAT::error::FatalError("Invalid values: $val is not a real number") unless &IsReal($val); # invalid values
     }
 
     ################################################################
@@ -1152,7 +1205,7 @@ sub ChiSquare {
 			   "sum=$left_sum",
 			   $observed[0],
 			   $expected[0],
-			   ), "\n" if ($main::verbose >= 5); 
+			   ), "\n" if ($main::verbose >= 6); 
 	    }
 	    ## recalculate the number of columns after left grouping
 	    $col_nb = scalar(@expected);
@@ -1190,7 +1243,7 @@ sub ChiSquare {
 			   "sum=$right_sum",
 			   $observed[$#observed],
 			   $expected[$#expected],
-			   ), "\n" if ($main::verbose >= 5); 
+			   ), "\n" if ($main::verbose >= 6); 
 	    }
 	    ## recalculate the number of columns after right grouping
 	    $col_nb = scalar(@expected);
@@ -1282,7 +1335,7 @@ sub ChiSquare {
 	      $#expected,
 	      $expected[0],
 	      $expected[$#expected],
-	      ), "\n" if ($main::verbose >= 5);
+	      ), "\n" if ($main::verbose >= 6);
     return ($answer, $deg_freedom, $left_group, $right_group, \@observed, \@expected);
 } ### end ChiSquare
 
