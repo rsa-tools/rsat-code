@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.49 2002/06/06 11:17:52 jvanheld Exp $
+# $Id: oligo-analysis,v 1.50 2002/06/10 00:05:29 jvanheld Exp $
 #
-# Time-stamp: <2002-06-06 13:17:48 jvanheld>
+# Time-stamp: <2002-06-10 02:04:34 jvanheld>
 #
 ############################################################
 
@@ -106,7 +106,13 @@ if ($ncf) {
     
     ### localize dyad non-coding frequency file
     $method = "Frequency file";
-    $exp_freq_file = "$data_dir/oligo-frequencies/${oligo_length}nt_non-coding_${organism_name}.freq";
+    if ((-e "$data_dir/oligo-frequencies/${oligo_length}nt_non-coding_${organism_name}-1str.freq") || 
+	(-e "$data_dir/oligo-frequencies/${oligo_length}nt_non-coding_${organism_name}-1str.freq.gz")) {
+	$exp_freq_file = "$data_dir/oligo-frequencies/${oligo_length}nt_non-coding_${organism_name}-1str.freq";
+    } else {
+	#### TEMPORARYL the previous format is still supported
+	$exp_freq_file = "$data_dir/oligo-frequencies/${oligo_length}nt_non-coding_${organism_name}.freq";
+    }
     
 #    &FatalError("cannot read expected frequency file $exp_freq_file\n") unless (-r  $exp_freq_file);
 }
@@ -156,7 +162,7 @@ if (($alphabet) && !($input_alphabet)) {
 #### Read expected frequencies from a file
 if (($method eq "Frequency file") && 
     ($return{'exp_freq'})) {    #### expected frequencies ####
-    &ReadExpectedFrequencies($exp_freq_file);
+    &ReadExpectedFrequencies($exp_freq_file, $sum_rc);
 }
 
 #### open sequence stream
@@ -1729,7 +1735,7 @@ DESCRIPTION
         and detects overrepresented oligomers.
 
 CATEGORY
-	sequence
+	sequences
 	pattern discovery
 
 USAGE
