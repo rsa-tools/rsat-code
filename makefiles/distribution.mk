@@ -3,6 +3,8 @@
 ## distribution.mk makefile
 ## Usage: make -f distribution.mk
 
+include ${RSAT}/makefiles/util.mk
+
 MAKEFILE=${RSAT}/makefiles/distribution.mk
 MAKE = make -sk -f ${MAKEFILE}
 
@@ -15,17 +17,18 @@ ARCHIVE=rsa-tools/rsa-tools_${DATE}
 TAR_CREATE =tar ${TAR_EXCLUDE} -cpvf ${ARCHIVE}.tar rsa-tools/RSA.config.default 
 TAR =tar ${TAR_EXCLUDE} -rpvf ${ARCHIVE}.tar 
 
+
+## Manuals
+
+manuals:
+	(cd doc/manuals; make fullclean; make ig; make ug; make tex_clean)
+
 ## Archive with zip
 ZIP_EXCLUDE=-x CVS '*~' 
 ZIP =zip -ry ${ARCHIVE}.zip 
 
 POST_CMD=
 
-### tags
-usage:
-	@echo "usage: make [-OPT='options'] target"
-	@echo "implemented targets"
-	@perl -ne 'if (/^([a-z]\S+):/){ print "\t$$1\n";  }' ${MAKEFILE}
 
 DISTRIB_FILES= rsa-tools/perl-scripts					\
 	rsa-tools/RSA.config.default					\
