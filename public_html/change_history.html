@@ -1,0 +1,142 @@
+<HTML>
+<HEAD>
+   <TITLE>RSA-tools - Change summary</TITLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFEEDD" LINK="#0000EE" VLINK="#55008B" ALINK="#FF0000">
+
+<CENTER><H2><A HREF="RSA_home.cgi">RSA-tools</A> - 
+Change summary
+</H2></CENTER>
+
+<P>
+The Regulatory Sequence Analysis tools are evolving regularly. We
+summarize here the important steps in this evolution. In addition,
+this summary only started in September 2002 (although the tools exist
+since 1997).
+
+<P>
+A detailed list of program modifications (including those anterior to
+September 2002) can be obtained on request to Jacques van Helden (<a
+href=mailto:jvanheld@ucmb.ulb.ac.be>jvanheld@ucmb.ulb.ac.be</a>).
+
+<p>
+
+<table border=1>
+
+<tr valign=top>
+<th>Date</th>
+<th>Program</th>
+<th>Description</th>
+</tr>
+
+
+<tr valign=top>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+
+<tr valign=top>
+<td>2002/11/16</td>
+<td><a href=dyad-analysis_form.cgi>dyad-analysis</a></td>
+<td>Support different bacground models : intergenic (as previously), upstream, upstream-noorf</td>
+</tr>
+
+<tr valign=top>
+<td>2002/10/22</td>
+<td><a href=pattern-assembly_form.cgi>pattern-assembly</a></td>
+<td>Added a form for pattern-assembly (previously, it was only available through the result of dyad-assembly or oligo-assembly)</td>
+</tr>
+
+<tr valign=top>
+<td>2002/09/16</td>
+<td><a href=tutorials/tut_consensus.html>tutorial on consensus</a></td>
+<td>Wrote a tutorial for consensus, Jerry Hert'z pattern discovery
+program.</td>
+</tr>
+
+<tr valign=top>
+<td>2002/09/16</td>
+<td><a href=orf-info_form.cgi>orf-info</a></td>
+<td>Added an option to match queries against gene description
+(previously, queries were only matched against gene names and
+identifiers).</td>
+</tr>
+
+
+<tr valign=top>
+<td>2002/09/15</td>
+<td><a href=tutorials/tut_oligo-analysis.html>oligo-analysis tutorial</a></td>
+<td>improved the tutorial in several ways
+<ol>
+<li>changed the example to the MET family
+<li>added an explanation about result interpretation
+<li>use the min feature thickness to highlight the Met3p binding site in the feature map. 
+</ol>
+</td>
+</tr>
+
+
+<tr valign=top>
+<td>2002/09/15</td>
+<td><a href=tutorials/tutorials.html>tutorials</a></td>
+<td>Added a tutorial on <a href=tutorials/tut_genome-scale-patser.html>genome-scale patser</a></td>
+</tr>
+
+
+<tr valign=top>
+<td>2002/09/13</td>
+<td><a href=retrieve-seq_form.cgi>retrieve-seq</a></td>
+<td>The default is now to prevent overlap with upstream ORFs. This is
+essential for bacteria, to avoid taking large fragments of coding
+sequences, when the gene is in the middle of an operon. Actually, for
+bacteria, the distance to the upstream ORF is < 50bp for more than
+half of the genes.</td>
+</tr>
+
+<tr valign=top>
+<td>2002/09/14</td>
+<td><a href=oligo-analysis_form.cgi>oligo-analysis</a></td>
+<td>different background models are supported: intergenic, all
+upstream sequences (with or without overlap with upstream ORFs).
+</td>
+</tr>
+
+
+<tr valign=top>
+<td>2002/09/12</td>
+<td><a href=random-genes_form.cgi>random-genes</a></td>
+<td>A new program, allowing to select random genes in a given
+genome. The selected genes can be piped to retrieve-seq. This program
+is important for testing the rate of false positive returned by the
+different pattern discovery programs.</td>
+</tr>
+
+<tr valign=top>
+<td>2002/09/12</td>
+<td><a href=oligo-analysis_form.cgi>oligo-analysis</a> and <a
+href=dyad-analysis_form.cgi>dyad-analysis</a></td>
+<td>The programs now return an E-value, in addition to the P-value and
+sig index.</td>
+</tr>
+
+
+<tr valign=top>
+<td>2002/09/12</td>
+<td><a href=oligo-analysis_form.cgi>oligo-analysis</a></td>
+<td>For double strand counts of occurrences, I changed the way to
+calculate the binomial probability. See the <a
+href=help.oligo-analysis.html#proba>manual</a> for the
+detail.</td>
+</tr>
+
+</table>
+
+
+</BODY>
+</HTML>
+
+
+
+
+
