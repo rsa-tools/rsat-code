@@ -17,6 +17,7 @@ $default{title} = "";
 $default{sequence} = "";
 $default{sequence_format} = "fasta";
 $default{sequence_file} = "";
+$default{sequence_type} = "dna";
 $default{oligo_size} = 6;
 $default{strand} = "both strands";
 $default{noov} = "checked";
@@ -32,6 +33,14 @@ $default{ms_threshold} = "none";
 $default{proba_occ_threshold} = "none";
 $default{occ_significance_threshold} = "0";
 
+### print the form ###
+&RSA_header("oligo-analysis");
+print "<CENTER>";
+print "Analysis of oligonucleotide representation in a set of DNA sequences<P>\n";
+print "</CENTER>";
+
+#&ListParameters;
+
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
   if ($query->param($key)) {
@@ -39,26 +48,7 @@ foreach $key (keys %default) {
   }
 } 
 
-#if (($query->param('sequence_file')) && 
-#    (-r $query->param('sequence_file'))) {
-#  open SEQ, $query->param('sequence_file');
-#  while (<SEQ>) {
-#    $default{sequence} .= $_;
-#  }
-#  close SEQ;
-#}
-
-
-### print the form ###
-&RSA_header("oligo-analysis");
-
-print "<CENTER>";
-print "Analysis of oligonucleotide representation in a set of DNA sequences<P>\n";
-print "</CENTER>";
-
 print $query->start_multipart_form(-action=>"oligo-analysis.cgi");
-
-#print "<FONT FACE='Helvetica'>";
 
 &OrganismPopUp;
 
@@ -73,6 +63,13 @@ print "<BR>\n";
 
 
 &DisplaySequenceChoice;
+
+### sequence type
+print "<B><A HREF='help.oligo-analysis.html#sequence_type'>Sequence type</A>&nbsp;</B>\n";
+print $query->popup_menu(-name=>'sequence_type',
+			 -Values=>["dna","protein","other"],
+			 -default=>$default{sequence_type});
+print "<BR>\n";
 
 ### oligo size
 print "<B><A HREF='help.oligo-analysis.html#oligo_size'>Oligonucleotide size</A>&nbsp;</B>\n";
@@ -284,6 +281,7 @@ print $query->end_form;
 
 #print "<TD><B><A HREF='demo.oligo-analysis.html'>DEMO</A></B></TD>\n";
 print "<TD><B><A HREF='help.oligo-analysis.html'>MANUAL</A></B></TD>\n";
+print "<TD><B><A HREF='tutorials/tut_oligo-analysis.html'>TUTORIAL</A></B></TD>\n";
 print "<TD><B><A HREF='mailto:jvanheld\@ucmb.ulb.ac.be'>MAIL</A></B></TD>\n";
 print "</TR></TABLE></UL></UL>\n";
 

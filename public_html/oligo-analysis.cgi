@@ -103,32 +103,42 @@ if ($query->param('noov')) {
   $parameters .= " -noov";
 } 
 
-### graphical output ###
+### verbose
 $parameters .= " -v";
+
+#### sequence type
+$parameters .= " -seqtype ".$query->param("sequence_type");
 
 #### oligo size ####
 if ($query->param('oligo_size') =~ /\d/) {
-  $oligo_length = $query->param('oligo_size') ;
+    $oligo_length = $query->param('oligo_size') ;
 } 
 $parameters .= " -l $oligo_length";
 
 #### expected frequency estimation ####
 if ($query->param('freq_estimate') =~ /oligo freq.* in non-coding regions/i) {
-  ### check organism
-  unless ($organism = $query->param('organism')) {
-    &cgiError("Error : you should specify an organism to use non-coding frequency calibration");
-  }
-  unless (defined(%{$supported_organism{$organism}})) {
-    &cgiError("Error: organism $org is not supported on this site");
-  }
-  ### select expected frequency file for that organism
-  $freq_file = $supported_organism{$organism}->{'data'};
-  $freq_file .= "/oligo-frequencies";
-  $freq_file .= "/${oligo_length}nt_non-coding_${organism}.freq";
-  unless (-r $freq_file) {
-    &cgiError("Error: cannot read expected frequency file $freq_file");
-  }
-  $freq_option = " -expfreq $freq_file";
+    if (($query->param("proba")) ||
+	($query->param("ratio")) ||
+	($query->param("zscore"))
+	) {
+	
+	### check organism
+	unless ($organism = $query->param('organism')) {
+	    &cgiError("Error : you should specify an organism to use non-coding frequency calibration");
+	}
+	unless (defined(%{$supported_organism{$organism}})) {
+	    &cgiError("Error: organism $org is not supported on this site");
+	}
+	$freq_option = " -ncf -org $organism";
+    }
+#    ### select expected frequency file for that organism
+#    $freq_file = $supported_organism{$organism}->{'data'};
+#    $freq_file .= "/oligo-frequencies";
+#    $freq_file .= "/${oligo_length}nt_non-coding_${organism}.freq";
+#  #  unless (-r $freq_file) {
+#  #    &cgiError("Error: cannot read expected frequency file $freq_file");
+#  #  }
+#    $freq_option = " -expfreq $freq_file";
 } elsif ($query->param('freq_estimate') eq "alphabet from input sequence") {
   $freq_option = " -a input";
 } elsif ($query->param('freq_estimate') =~ /markov/i) {

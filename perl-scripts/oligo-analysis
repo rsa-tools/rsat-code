@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.19 2001/02/23 00:00:36 jvanheld Exp $
+# $Id: oligo-analysis,v 1.20 2001/02/23 06:34:11 jvanheld Exp $
 #
-# Time-stamp: <2001-02-23 01:00:28 jvanheld>
+# Time-stamp: <2001-02-23 07:06:48 jvanheld>
 #
 ############################################################
 
@@ -984,7 +984,7 @@ sub PrintResult {
     printf $out "; %-29s\t%s\n", "Sum of sequence lengths", $sum_seq_length;
     printf $out "; %-29s\t%s\n", "nb possible positions",$nb_possible_pos;
     if ($seq_type eq "DNA") {
-	printf $out "; %-29s\t%s\t%s\n", "discarded occurrences", $discarded_occurrences, " (contain other letters than ACGT)";
+	printf $out "; %-29s\t%d\t%s\n", "discarded occurrences", $discarded_occurrences, " (contain other letters than ACGT)";
     }
     printf $out "; %-29s\t%s\n", "total oligo occurrences", $sum_occurrences;
     if ($noov) {
