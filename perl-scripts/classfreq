@@ -6,6 +6,7 @@ require "RSA.lib";
 
 
 $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+$threshold = 0;
 
 ##### help #####
 if ($ARGV[0] eq "-h") {
@@ -94,6 +95,11 @@ ARGUMENTS
 		- max, 
 		If -min or -max options are used, the statistics only take 
 		into account the numbers falling into this range. 
+	-thr # threshold
+	        Only display classes with absolute frequency higher
+	        than or equal to the threshold. This option is useful
+	        for sparse data, where many classes do not contain any
+	        observation (-thr 1).
 
 EXAMPLES
 	To get the distribution of all numbers x such that 0 <= x <= 1000, 
@@ -127,6 +133,7 @@ if ($ARGV[0] eq "-help") {
 -from	inferior limit of classes to display
 -to	superior limit of classes to display
 -v	verbose.
+-thr # threshold
 ";
   close HELP;
   exit(0);
@@ -158,7 +165,8 @@ foreach $a (0..$#ARGV) {
   } elsif (($ARGV[$a] eq "-to") && (&IsReal($ARGV[$a+1]))) {
     $display_to = $ARGV[$a+1];  
 
-
+  } elsif (($ARGV[$a] eq "-thr") && (&IsNatural($ARGV[$a+1]))) {
+    $threshold = $ARGV[$a+1];  
 
   }
 }  
@@ -321,7 +329,9 @@ foreach $c (0.. $#ListOfClasses) {
 	}
 	$out_line .= sprintf "\n";
 	$out_line =~ s/ //g;
-	print $out $out_line;
+	if ($ListOfFrequencies[$c] >= $threshold) {
+	    print $out $out_line;
+	}
     }
 }
 
