@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: fit-distribution,v 1.4 2004/01/05 17:00:59 jvanheld Exp $
+# $Id: fit-distribution,v 1.5 2004/01/07 16:04:33 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -365,8 +365,13 @@ sub Verbose {
 	    print $out ";\t$key\t$value\n";
 	}
     }
-
     printf $out "; %-29s\t%s\n", "Theor.distrib", $distrib;
     printf $out "; %-29s\t%d\n", "Repetitions", $last_repet;
+    print $out "; Columns\n";
+    for my $i (0..$#out_fields) {
+	printf $out ";\t%d\t%s\n", $i+1, $out_fields[$i];
+    }
+
+
 }
 
