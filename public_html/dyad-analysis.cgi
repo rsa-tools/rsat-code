@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.16 2002/09/05 09:40:03 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.17 2002/11/16 14:11:37 jvanheld Exp $
 #
-# Time-stamp: <2002-09-05 04:33:28 jvanheld>
+# Time-stamp: <2002-11-16 07:46:24 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -101,9 +101,13 @@ if ($query->param('spacing_from') >$query->param('spacing_to')) {
 $parameters .= " -spacing $spacing";
 
 #### expected frequency estimation ####
-if ($query->param('exp_freq') =~ /non\-coding/i) {
-  $parameters .= " -ncf";
-} 
+if ($query->param('freq_estimate') eq 'background') {
+    $parameters .= " -bg ".$query->param('background');
+} else {
+    unless ($query->param('freq_estimate') eq 'monads') {
+	&FatalError("Invalid expected frequency calibration");
+    }
+}
 
 print "<PRE><B>Command:</B> $command $parameters </PRE>" if ($ECHO);
 
@@ -157,8 +161,17 @@ exit(0);
 
 sub PipingForm {
     ### prepare data for piping
+
+    #### title
     $title = $query->param('title');
     $title =~ s/\"/\'/g;
+
+    #### strand for pattern-assembly
+    if ($query->param('strand') =~ /single/) {
+	$strand_opt .= " sensitive";
+    } else {
+	$strand_opt .= " insensitive";
+    }
     print <<End_of_form;
 <TABLE>
 <TR>
@@ -174,6 +187,22 @@ sub PipingForm {
 <INPUT type="submit" value="pattern matching (dna-pattern)">
 </FORM>
 </TD>
+
+
+
+</TD>
+<TD>
+<FORM METHOD="POST" ACTION="pattern-assembly_form.cgi">
+<INPUT type="hidden" NAME="local_pattern_file" VALUE="$result_file">
+<INPUT type="hidden" NAME="subst" VALUE=0>
+<INPUT type="hidden" NAME="maxfl" VALUE=1>
+<INPUT type="hidden" NAME="sc" VALUE="auto">
+<INPUT type="hidden" NAME="strand" VALUE=$strand_opt>
+<INPUT type="submit" value="pattern assembly">
+</FORM>
+</TD>
+
+
 </TR>
 </TABLE>
 End_of_form
