@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: downloads.mk,v 1.2 2003/11/06 21:49:57 jvanheld Exp $
+# $Id: downloads.mk,v 1.3 2003/11/10 12:39:35 jvanheld Exp $
 #
 # Time-stamp: <2003-10-09 14:02:21 jvanheld>
 #
@@ -14,7 +14,7 @@ MAKE = make -sk -f ${MAKEFILE}
 
 DATE = `date +%Y%m%d_%H%M%S`
 LOGFILE=-o logs/wget_${DATE}_log.txt
-WGET=wget -np -rNL ${LOGFILE}
+WGET=wget --passive-ftp -np -rNL ${LOGFILE}
 # #WGET = wget -rNL -o logs/wget_${DATE}_log.txt
 RSYNC = rsync -ruptvl -e ssh
 
