@@ -24,6 +24,8 @@ if ($ARGV[0] eq "-help") {
 
 
 ##### initialize default parameters #####
+$x_log_base=10;
+$y_log_base=10;
 $data_fields = "columns";
 $bg = "white";
 $verbose = 0;
@@ -56,6 +58,8 @@ $large_font_height = 16;
 
 &ReadArguments();
 
+$x_ref_log=log($x_log_base);
+$y_ref_log=log($y_log_base);
 
 #### check parameter values ####
 if ($HTML_map) {
@@ -66,14 +70,14 @@ if ($HTML_map) {
 if ($xlog) {
   if (x_axis_max ne "ND") {
     if ($x_axis_max > 0) {
-      $x_axis_max = log($x_axis_max);
+      $x_axis_max = log($x_axis_max)/$x_ref_log;
     } else {
       $x_axis_max = "ND";
     }
   }
   if (x_axis_min ne "ND") {
     if ($x_axis_min > 0) {
-      $x_axis_min = log($x_axis_min);
+      $x_axis_min = log($x_axis_min)/$x_ref_log;
     } else {
       $x_axis_min = "ND";
     }
@@ -83,14 +87,14 @@ if ($xlog) {
 if ($ylog) {
   if (y_axis_max ne "ND") {
     if ($y_axis_max > 0) {
-      $y_axis_max = log($y_axis_max);
+      $y_axis_max = log($y_axis_max)/$y_ref_log;
     } else {
       $y_axis_max = "ND";
     }
   }
   if (y_axis_min ne "ND") {
     if ($y_axis_min > 0) {
-      $y_axis_min = log($y_axis_min);
+      $y_axis_min = log($y_axis_min)/$y_ref_log;
     } else {
       $y_axis_min = "ND";
     }
@@ -238,11 +242,13 @@ if ($x_grid_step1 > 0) {
     for ($g = $x_axis_min; $g <= $x_axis_max; $g += $x_grid_step1) {
 	$grid_pos = $left + ($g-$x_axis_min)*$x_scale;
 	if ($xlog) {
+	    next unless (&IsInteger($g));
 	    $grid_value = exp($g);
+	    $grid_text = sprintf("%g^%-6g", $x_log_base, $g);
 	} else {
 	    $grid_value = $g;
+	    $grid_text = sprintf("%6g", $grid_value);
 	}
-	$grid_text = $grid_value;
 	$image->line($grid_pos, $bottom, $grid_pos, $top, $grid1_color);
 	$image->string(gdSmallFont, $grid_pos - $small_font_width*length($grid_text)/2, $bottom + 5, $grid_text, $text_color);
     }
@@ -251,13 +257,15 @@ if ($x_grid_step1 > 0) {
 ### first Y grid
 if ($y_grid_step1 > 0) {
     for ($g = $y_axis_min; $g <= $y_axis_max; $g += $y_grid_step1) {
-	$grid_pos = YPixelPos($g);
 	if ($ylog) {
+	    next unless (&IsInteger($g));
 	    $grid_value = exp($g);
+	    $grid_text = sprintf("%g^%-6g", $y_log_base, $g);
 	} else {
 	    $grid_value = $g;
+	    $grid_text = sprintf("%6g", $grid_value);
 	}
-	$grid_text = sprintf("%6g", $grid_value);
+	$grid_pos = YPixelPos($g);
 	$image->line($left, $grid_pos, $right, $grid_pos, $grid1_color);
 	$image->string(gdSmallFont, $left - $small_font_width * length($grid_text) - 5, $grid_pos - $small_font_height/2, $grid_text, $text_color);
     }
@@ -783,7 +791,7 @@ sub AutoGrid {
     local($grid_max);
 
     $range = abs($min_value -$max_value);
-    $range_order = int(log($range)/log(10));
+    $range_order = int(log($range)/$x_ref_log);
     if ($range_order < 0) {
 		$range_order -= 1;
     }
@@ -931,7 +939,7 @@ sub ReadData {
 	    } elsif (IsReal($data_fields[$x_col])) {
 		if ($xlog)  {
 		    if ($data_fields[$x_col] > 0) {
-			$new_x = log($data_fields[$x_col]);
+			$new_x = log($data_fields[$x_col])/$x_ref_log;
 		    } else {
 			$new_x = "ND";
 		    }
@@ -953,7 +961,7 @@ sub ReadData {
 		if ((IsReal($data_fields[$y_col_list[$series]]))) {
 		    if ($ylog) {
 			if ($data_fields[$y_col_list[$series]] > 0) {
-			    $Y_values[$series][$#X_values] = log($data_fields[$y_col_list[$series]]); 
+			    $Y_values[$series][$#X_values] = log($data_fields[$y_col_list[$series]])/$y_ref_log; 
 			} else {
 			    $Y_values[$series][$#X_values] = "ND";
 			}
@@ -1005,7 +1013,7 @@ sub ReadData {
 		for $c (0..$#data_fields) {
 		    if ($xlog)  {
 			if ($data_fields[$c] > 0) {
-			    $new_x = log($data_fields[$c]);
+			    $new_x = log($data_fields[$c])/$x_ref_log;
 			} else {
 			    $new_x = "ND";
 			}
@@ -1022,7 +1030,7 @@ sub ReadData {
 		    $new_y = "ND";
 		    if ($ylog)  {
 			if ($data_fields[$c] > 0) {
-			    $new_y = log($data_fields[$c]);
+			    $new_y = log($data_fields[$c])/$y_ref_log;
 			}
 		    } elsif (&IsReal($data_fields[$c])) {
 			$new_y = $data_fields[$c];
@@ -1067,7 +1075,7 @@ sub CalcLimits {
     
     unless ((&IsReal($max_y_value)) &&
 	    (&IsReal($min_y_value))) {
-	die ("	Error: Y axis data (column ", join(",", @y_col_list),
+	die ("\tError: Y axis data (column ", join(",", @y_col_list),
 	     ") are not numeric\n",
 	     "\tType XYgraph -help for more info\n");
     }
@@ -1186,8 +1194,8 @@ XYgraph options
 -rows		data fields are in rows
 -xcol #	        column containing data for the X axis. 
 -ycol #,#,#     columns containing data for the Y axis. 
--xlog		X data are displayed on a logarithmic scale
--ylog		Y data are displayed on a logarithmic scale
+-xlog #		X data are displayed on a logarithmic scale
+-ylog #		Y data are displayed on a logarithmic scale
 -lines	        points are jointed by lines 
 -line #		points of the #th column are jointed by lines
 -header		first line of the data file contains a column header 
@@ -1287,8 +1295,12 @@ OPTIONS
 			A range of columns can be specified by:
 				-ycol #-#
 			They have to be separated by commas without spaces. 
-	-xlog		X data are displayed on a logarithmic scale
-	-ylog		Y data are displayed on a logarithmic scale
+	-xlog #		X data are displayed on a logarithmic scale
+			If the next argument is a number, it provides the 
+			log base. Default log base is 10.  
+	-ylog #		Y data are displayed on a logarithmic scale
+			If the next argument is a number, it provides the 
+			log base. Default log base is 10.  
 	-lines	        points are jointed by lines 
 	-line #		same as lines, but for the #th column only
 			can be used recursively to specify several columns for 
@@ -1343,7 +1355,7 @@ End_of_Help
 #### read arguments ####
 sub ReadArguments {
 
-    foreach $a (0..$#ARGV) {
+    for $a (0..$#ARGV) {
 	
 	### input, output files ###
 	if ($ARGV[$a] eq "-i") {
@@ -1427,8 +1439,18 @@ sub ReadArguments {
 	    ### logarithmic representation
 	} elsif ($ARGV[$a] eq "-xlog") {
 	    $xlog= 1;
+	    if (&IsReal($ARGV[$a+1])) {
+		$x_log_base = $ARGV[$a+1];
+		die "\tError: log base should be strictly higher than 1\n" 
+		    unless ($x_log_base > 1);
+	    }
 	} elsif ($ARGV[$a] eq "-ylog") {
 	    $ylog= 1;
+	    if (&IsReal($ARGV[$a+1])) {
+		$y_log_base = $ARGV[$a+1];
+		die "\tError: log base should be strictly higher than 1\n" 
+		    unless ($y_log_base > 1);
+	    }
 	    
 	    
 	    ### histogram ###
