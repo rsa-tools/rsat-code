@@ -37,7 +37,7 @@ if ((&IsNatural($min_pos)) && (&IsNatural($max_pos))) {
 
 ### open sequence file ###
 &CheckInputSeqFormat($in_format);
-$in = &OpenInputFile($inputfile);
+($in, $input_dir) = &OpenInputFile($inputfile);
 
 
 
@@ -48,7 +48,8 @@ $sum_seq_length = 0;
 
 
 
-&ReadPatterns if ($pattern_file ne "");
+#die "POUET\t$pattern_file\n" if ($pattern_file);
+&LocalReadPatterns() if ($pattern_file);
 &ReadSequence;
 &CalcClasses;
 
@@ -63,7 +64,7 @@ foreach $oligo_seq (sort keys %occurrences) {
 
 
 #### if a pattern file has been specified, forget info about other patterns
-if ($pattern_file ne "") {
+if ($pattern_file) {
   foreach $oligo_seq (sort keys %occurrences) {
     unless ($selected_pattern{$oligo_seq}) {
       delete $occurrences{$oligo_seq};
@@ -80,9 +81,9 @@ if (&IsNatural($low_thr{'occ'})) {
     }
 }
 
-&CalcExpected;
+&CalcExpected();
 
-&CalcChi;
+&CalcChi();
 
 ### open output file ###
 $out = &OpenOutputFile($outputfile);
@@ -122,6 +123,10 @@ if ($verbose) {
     foreach $s (1..$sequence_number) {
       print $out ";\t$id_list[$s]\t$seq_length[$s]\n";
     }
+  }
+
+  if ($#selected_patterns >=0) {
+      print $out join ("\n;\t", "; Selected patterns", @selected_patterns), "\n";
   }
   
   print $out ";Class parameters:\n";
@@ -236,43 +241,51 @@ foreach $oligo_seq (@sorted_keys) {
 
 ### generate XYgraphs
 if ($return{'graph'}) {
-  $date = `date '+%H:%M:%S'`;
-  chomp $date;
-  print ";$date\tgenerating the graphs ... \n" if ($hyperverbose);
-  $index_file = "graph_index_${oligo_length}nt_ci${class_interval}.html";
-  open INDEX, ">$index_file";
-  print INDEX "<HTML><BODY><PRE>\n";
-  close INDEX;
-  foreach $oligo_seq (@sorted_keys) {
-    $graph_file_name = "${oligo_seq}_ci${class_interval}_pos_distrib.gif";
-    $xmax = ($max_class+1) * $class_interval;
-    $title2 = "$in_bound_occurrences{$oligo_seq} occurrences";
-    if ($score_column > 0) {
-      $score = sprintf "score = %.2f", $score{$oligo_seq};
-    } elsif ($return{'chi'}) {
-      $score = sprintf "%.2f", $chi_square{$oligo_seq};
-      $title2 .= ", score = $score";
-    } 
-    $command = "$XYgraph_command -o $graph_file_name -lines -xcol 1 -ycol 2,3 -legend -title1 '$oligo_seq distribution profile' -title2 '$title2' -xleg1 'position' -yleg1 'class frequency' -ymin 0 -xmin $class_min[0] -xmax $class_max[$max_class] -xgstep2 $class_interval -xsize 600";
-    print "; $command\n" if ($verbose);
-    open XY, "| $command";
-    print XY ";class\tocc_$oligo_seq\texp_$oligo_seq\n"; ### header line
-    foreach $class (0..$max_class) {
-      print XY "$class_center[$class]\t";
-      print XY "$class_freq{$oligo_seq}[$class]\t";
-      print XY "$exp_occ{$oligo_seq}[$class]\n";
+    if ($outputfile) {
+	$dir =`dirname $outputfile`; 
+	if ($dir) {
+	    chdir ($dir);
+	    #### PROBLEM
+#	    die "HELLO\t$dir",`pwd`,"\n";
+	}
     }
-    close XYgraph;
-    open INDEX, ">>$index_file";
-    print INDEX "<A HREF=\"$graph_file_name\">$oligo_seq</A>";
-    print INDEX "\t$in_bound_occurrences{$oligo_seq}";
-    print INDEX "\t$score";
-    print INDEX "\n";
+    $date = `date '+%H:%M:%S'`;
+    chomp $date;
+    print ";$date\tgenerating the graphs ... \n" if ($hyperverbose);
+    $index_file = "graph_index_${oligo_length}nt_ci${class_interval}.html";
+    open INDEX, ">$index_file";
+    print INDEX "<HTML><BODY><PRE>\n";
     close INDEX;
-  }
-  open INDEX, ">>$index_file";
-  print INDEX "</PRE></BODY></HTML>\n";
-  close INDEX;
+    foreach $oligo_seq (@sorted_keys) {
+	$graph_file_name = "${oligo_seq}_ci${class_interval}_pos_distrib.gif";
+	$xmax = ($max_class+1) * $class_interval;
+	$title2 = "$in_bound_occurrences{$oligo_seq} occurrences";
+	if ($score_column > 0) {
+	    $score = sprintf "score = %.2f", $score{$oligo_seq};
+	} elsif ($return{'chi'}) {
+	    $score = sprintf "%.2f", $chi_square{$oligo_seq};
+	    $title2 .= ", score = $score";
+	} 
+	$command = "$XYgraph_command -o $graph_file_name -lines -xcol 1 -ycol 2,3 -legend -title1 '$oligo_seq distribution profile' -title2 '$title2' -xleg1 'position' -yleg1 'class frequency' -ymin 0 -xmin $class_min[0] -xmax $class_max[$max_class] -xgstep2 $class_interval -xsize 600";
+	print "; $command\n" if ($verbose);
+	open XY, "| $command";
+	print XY ";class\tocc_$oligo_seq\texp_$oligo_seq\n"; ### header line
+	foreach $class (0..$max_class) {
+	    print XY "$class_center[$class]\t";
+	    print XY "$class_freq{$oligo_seq}[$class]\t";
+	    print XY "$exp_occ{$oligo_seq}[$class]\n";
+	}
+	close XYgraph;
+	open INDEX, ">>$index_file";
+	print INDEX "<A HREF=\"$graph_file_name\">$oligo_seq</A>";
+	print INDEX "\t$in_bound_occurrences{$oligo_seq}";
+	print INDEX "\t$score";
+	print INDEX "\n";
+	close INDEX;
+    }
+    open INDEX, ">>$index_file";
+    print INDEX "</PRE></BODY></HTML>\n";
+    close INDEX;
 }
 
 
@@ -339,22 +352,25 @@ sub SumStrands {
 }
 
 
-sub ReadPatterns {
-  $date = `date '+%H:%M:%S'`;
-  chomp $date;
-  print ";$date\treading pattern file ...\n" if ($hyperverbose);
-  open PATTERNS, "$pattern_file" || die "Error: cannot open pattern file $pattern_file\n";
-  while (<PATTERNS>) {
-    next if (/^;/);
-    next unless (\S);
-    chomp;
-    @fields = split, "\t";
-    $pattern = lc($fields[0]);
-    print ";\t$pattern\n" if ($hyperverbose);
-    $selected_pattern{$pattern} = 1;
-    $score{$pattern} = $fields[$score_column-1] if ($score_column > 0);
-  }
-  close PATTERNS;
+#### read patterns from a file
+sub LocalReadPatterns {
+#    die "HELLO";
+    $date = `date '+%H:%M:%S'`;
+    chomp $date;
+    print ";$date\treading pattern file ...\n" if ($hyperverbose);
+    open PATTERNS, "$pattern_file" || die "Error: cannot open pattern file $pattern_file\n";
+    while (<PATTERNS>) {
+	next if (/^;/);
+	next unless (\S);
+	chomp;
+	@fields = split, "\t";
+	$pattern = lc($fields[0]);
+	print ";\t$pattern\n" if ($hyperverbose);
+	$selected_pattern{$pattern} = 1;
+	$score{$pattern} = $fields[$score_column-1] if ($score_column > 0);
+    }
+    close PATTERNS;
+    @selected_patterns = keys %selected_pattern;
 }
 
 
@@ -366,7 +382,7 @@ sub ReadSequence {
     print "$date\tReading sequences\n";
   }
   
-  while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format)) &&
+  while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir)) &&
 	 (($current_seq ne "") || ($current_id ne ""))) {
     
     print "; analysing sequence $current_id\n" if ($hyperverbose);
@@ -751,7 +767,6 @@ sub ReadArguments {
 		    
 		} elsif ($field =~ /graph/) {
 		    $return{'graph'} = 1;
-		    
 		}
 	    }
 	    
@@ -761,6 +776,7 @@ sub ReadArguments {
 	    
 	    ### predefined pattern list
 	} elsif ($ARGV[$a] =~ /-pl/) {
+#	    die "BOUM\t$pattern_file\n";
 	    $pattern_file = $ARGV[$a+1];
 	    
 	    ### score column
