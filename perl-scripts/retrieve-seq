@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: retrieve-seq,v 1.25 2002/09/25 02:17:36 jvanheld Exp $
+# $Id: retrieve-seq,v 1.26 2002/09/25 03:14:11 jvanheld Exp $
 #
-# Time-stamp: <2002-09-24 21:15:31 jvanheld>
+# Time-stamp: <2002-09-24 22:12:21 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -38,7 +38,7 @@ $out_format = "fasta";
 $line_width = 60;
 $default{from} = -800;
 $default{to} = -1;
-
+$input_sequence_format = "filelist";
 
 &ReadArguments();
 
@@ -50,7 +50,6 @@ $default{to} = -1;
 #### selection of genome and feature file
 if ($input_sequence_file) {
     #### manually specified input sequence
-    $input_sequence_format = $input_sequence_format || "filelist"; ### by default, take filelist
     $organism_name = $organism_name || "input sequence";
     warn "; Manually specified input sequence file\t$input_sequence_file\n" if ($verbose >= 1);
     &CheckOrganism($organism_name, $feature_table_file, $input_sequence_file, $input_sequence_format);
@@ -407,7 +406,8 @@ $supported_organisms
 
 		Specify the input sequence file. See INPUT FORMAT
 		below.
-		
+	-informat	input sequence format
+
 	-type	sequence type
 		Currently supported sequence types
 			upstream (default)
@@ -536,7 +536,7 @@ retrieve-seq options
 --------------------
 -org		organism
 -seq		sequence file (alternative to organism)
-$supported_organisms
+-informat		input sequence format
 -type		upstream | downstream | orf | random
 -n		number of sequences (only with -type random)
 -randsels #	random selection of # ORFs.
@@ -626,9 +626,13 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-org") {
 	    $organism_name =$ARGV[$a+1];
 
-	    #### sequence file
+	    #### input sequence file
 	} elsif ($ARGV[$a] eq "-seq") {
 	    $input_sequence_file =$ARGV[$a+1];
+
+	    #### input sequence format
+	} elsif ($ARGV[$a] eq "-informat") {
+	    $input_sequence_format =$ARGV[$a+1];
 
 	    #### number of random segments tor eturn
 	} elsif ($ARGV[$a] eq "-n") {
