@@ -193,6 +193,17 @@ sub PipingForm {
     </TD>
 
     <TD>
+	<FORM METHOD="POST" ACTION="position-analysis_form.cgi">
+	<INPUT type="hidden" NAME="organism" VALUE="$organism">
+	<INPUT type="hidden" NAME="from" VALUE="$from">
+	<INPUT type="hidden" NAME="to" VALUE="$to">
+	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
+	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
+	<INPUT type="submit" value="position analysis">
+	</FORM>
+    </TD>
+
+    <TD>
 	<FORM METHOD="POST" ACTION="consensus_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism">
 	<INPUT type="hidden" NAME="from" VALUE="$from">
