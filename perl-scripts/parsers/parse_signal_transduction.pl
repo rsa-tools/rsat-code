@@ -27,7 +27,7 @@ package main;
     #### class factory for entities
     $entities = PFBP::ClassFactory->new_class(object_type=>"PFBP::BiochemicalEntity",
 					      prefix=>"ent_");
-    $entities->set_out_fields(qw( id type names ));
+    $entities->set_out_fields(qw( id type primary_name names ));
 
     #### class factory for interactions
     $interactions = PFBP::ClassFactory->new_class(object_type=>"PFBP::BiochemicalActivity",
@@ -37,7 +37,7 @@ package main;
     #### class factory  for pathways
     $pathways = PFBP::ClassFactory->new_class(object_type=>"PFBP::Pathway",
 					      prefix=>"pth_");
-    $pathways->set_out_fields(qw( id names description entities ));
+    $pathways->set_out_fields(qw( id names description entities interactions subpathways ));
 
     #### class factory  for diagrams
     $diagrams = PFBP::ClassFactory->new_class(object_type=>"PFBP::PathwayDiagram",
@@ -48,9 +48,9 @@ package main;
     $Step = 0;
 
     ### directory containing the input files ###
-    $dir{input} = "/win/amaze/amaze_team/Sandra/export";
-    unless (-e $dir{input}) {
-	die "Error : cannot open input dir $dir{input}\n";
+    $dir{input} = "/win/amaze/amaze_team/Sandra/export_20011208";
+    unless (-d $dir{input}) {
+	die "Error : input dir $dir{input} does not exist\n";
     }
 
     ### entities (entities)
@@ -64,7 +64,14 @@ package main;
 
     ### pathways
     $in_file{pathway_description} = $dir{input}."/pathway_description.txt";
-    $in_file{pathway_entity} = $dir{input}."/pathway_entity.txt";
+    $in_file{pathway_subpathway} = $dir{input}."/pathway_subpathway.txt";
+    $in_file{pathway_interaction} = $dir{input}."/pathway_interaction.txt";
+    $in_file{pathway_entity} = $dir{input}."/pathway_molecule.txt";
+
+    #### check for the existence of all the input files
+    foreach my $file (keys %infile) {
+	&checkfile($file);
+    }
 
     ### output dir
     $dir{output} = "${parsed_data}/signal_transduction/$delivery_date";
@@ -109,21 +116,9 @@ package main;
     &ReadInteractions();
     &ReadPathways();
 
-    ### print the complete graph of interactions
-    &ExportDiagram($out_file{graph}, "Signal transduction pathways", $interactions->get_objects());
-
     ### print each pathway in a separate file
     foreach $pathway ($pathways->get_objects()) {
-#	my @entities = $pathway->get_attribute("entities");
-#	my @interactions = &LinkEntities(@entities);
-	my @interactions = $pathway->get_attribute("interactions");
-	my $graph_file = $dir{diagrams}."/pathway_".$pathway->get_attribute("id").".tdd";
-	warn ("; ",join ("\t", 
-			 "entities", $#entities,
-			 "interactions", $#interactions,
-			 "pathway", $pathway->get_attribute("names")
-			 ), "\n") if ($verbose >= 1);
-	&ExportDiagram($graph_file, $pathway->get_attribute("names"), @interactions);
+	&ExportPathway($pathway);
     }
 
     #####################
@@ -161,9 +156,6 @@ sub ReadEntities {
     $entity_nb = -1;
 
     ### read entity description
-    unless (-e $in_file{entities}) {
-	die "Error: file '".$in_file{entities}."' does not exist\n";
-    }
     open ENT, "$in_file{entities}" || die "Error : cannot read file $in_file{entities}\n";
     $header = <ENT>;
     $line_nb = 0;
@@ -213,7 +205,12 @@ sub ReadEntities {
 #print "$ac\t$lc_name\n";
     } 
     close ENT;
-    
+
+    #### set a primary nme
+    foreach my $entity ($entities->get_objects()) {
+	$entity->set_attribute("primary_name", $entity->get_name());
+    }
+
     ### create indexes
     $entities->index_ids();
     $entities->index_names();
@@ -333,8 +330,8 @@ sub ReadInteractions {
 
 	### identify the entity
 	$molec = $fields[$col{molec}];
-	if ($molec_object = $entities->get_object($molec)) {
-	    $molec_id = $molec_object->get_attribute("id");
+	if ($entity_object = $entities->get_object($molec)) {
+	    $ent_id = $entity_object->get_attribute("id");
 	} else {
 	    print ERR "Error in $in_file{interaction_source} line $line_nb: $molecAC has not been defined in $in_file{entities}\n";
 	    print ERR "\t$_\n";
@@ -346,7 +343,7 @@ sub ReadInteractions {
 	$state_before = $fields[$col{state_before}];
 	$state_after = $fields[$col{state_after}];
 	
-	$activ_object->push_attribute("inputs",$molec_id);
+	$activ_object->push_attribute("inputs",$ent_id);
 	
 	#$lc_molec = lc($molec);
 	#if (defined ($AC{$lc_molec})) {
@@ -387,8 +384,8 @@ sub ReadInteractions {
 	
 	### identify the entity
 	$molec = $fields[$col{molec}];
-	if ($molec_object = $entities->get_object($molec)) {
-	    $molec_id = $molec_object->get_attribute("id");
+	if ($entity_object = $entities->get_object($molec)) {
+	    $ent_id = $entity_object->get_attribute("id");
 	} else {
 	    print ERR "Error in $in_file{interaction_source} line $line_nb: $molecAC has not been defined in $in_file{entities}\n";
 	    print ERR "\t$_\n";
@@ -400,7 +397,7 @@ sub ReadInteractions {
 	$state_before = $fields[$col{state_before}];
 	$state_after = $fields[$col{state_after}];
 	
-	$activ_object->push_attribute("outputs",$molec_id);
+	$activ_object->push_attribute("outputs",$ent_id);
 
 
 	#$inter = $fields[$col{inter}];
@@ -486,6 +483,10 @@ close LOCATIONS;
 
 ### read pathways
 sub ReadPathways {
+    #### create a pathway to store all interactions and entities
+    $complete_pathway = $pathways->new_object();
+    $complete_pathway->push_attribute("names","Signal transduction pathways");
+
     ### read pathway description
     open PATH_DESC, $in_file{pathway_description} || die ";Error: cannot read pathway description file $in_file{pathway_description}\n";
     $header = <PATH_DESC>; ### skip header line
@@ -528,14 +529,89 @@ sub ReadPathways {
 	&MySplit;
 	my $path_id = $fields[0];
 	my $entity = $fields[1];
-	warn "\t$path_id\t$entity\n";
+	warn ";\t$path_id\t$entity\n" if ($verbose >= 2);
+
+	#### identify the pathway
 	unless ($pathway = $pathways->get_object($path_id)) {
-	    print ERR ";ERROR: file $in_file{pathway_entity} line $line_count: pathway $path_id has not been found in pathway description file\n";
+	    print ERR ";ERROR: file $in_file{pathway_entity} line $line_count: pathway $path_id has not been found in $in_file{pathway_descriptions}\n";
 	    next;
 	}
-	$pathway->push_attribute("entities",$entity);
+
+	#### identify the entity
+	if ($entity_object = $entities->get_object($entity)) {
+	    $ent_id = $entity_object->get_attribute("id");
+	    $pathway->push_attribute("entities",$ent_id);
+	    $complete_pathway->push_attribute("entities",$ent_id);
+	} else {
+	    print ERR "Error in $in_file{pathwy_entity} line $line_nb: $entity has not been defined in $in_file{entities}\n";
+	    print ERR "\t$_\n";
+	    next;
+	}
+
     }
     close PATH_ENT;
+
+    ### read pathway interactions
+    open PATH_INT, $in_file{pathway_interaction} || die ";Error: cannot read pathway interaction file $in_file{pathway_interaction}\n";
+    $header = <PATH_INT>; ### skip header line
+    my $line_count = 1;
+    while (<PATH_INT>) {
+	$line_count++;
+	&MySplit;
+	my $path_id = $fields[0];
+	my $interaction = $fields[1];
+	warn ";\t$path_id\t$interaction\n" if ($verbose >= 2);
+
+	#### identify the pathway
+	unless ($pathway = $pathways->get_object($path_id)) {
+	    print ERR ";ERROR: file $in_file{pathway_interaction} line $line_count: pathway $path_id has not been found in $in_file{pathway_descriptions}\n";
+	    next;
+	}
+
+	#### identify the interaction
+	if ($interaction_object = $interactions->get_object($interaction)) {
+	    $int_id = $interaction_object->get_attribute("id");
+	    $pathway->push_attribute("interactions",$int_id);
+	    $complete_pathway->push_attribute("interactions",$int_id);
+	} else {
+	    print ERR "Error in $in_file{pathway_interaction} line $line_nb: $interaction has not been defined in $in_file{interactions}\n";
+	    print ERR "\t$_\n";
+	    next;
+	}
+
+    }
+    close PATH_INT;
+
+    ### read pathway subpathways
+    open PATH_INT, $in_file{pathway_subpathway} || die ";Error: cannot read pathway subpathway file $in_file{pathway_subpathway}\n";
+    $header = <PATH_INT>; ### skip header line
+    my $line_count = 1;
+    while (<PATH_INT>) {
+	$line_count++;
+	&MySplit;
+	my $path_id = $fields[0];
+	my $subpathway = $fields[1];
+	warn ";\t$path_id\t$subpathway\n" if ($verbose >= 2);
+
+	#### identify the pathway
+	unless ($pathway = $pathways->get_object($path_id)) {
+	    print ERR ";ERROR: file $in_file{pathway_subpathway} line $line_count: pathway $path_id has not been found in $in_file{pathway_descriptions}\n";
+	    next;
+	}
+
+	#### identify the subpathway
+	if ($subpathway_object = $pathways->get_object($subpathway)) {
+	    $sub_id = $subpathway_object->get_attribute("id");
+	    $pathway->push_attribute("subpathways",$sub_id);
+	} else {
+	    print ERR "Error in $in_file{pathway_subpathway} line $line_nb: $subpathway has not been defined in $in_file{subpathways}\n";
+	    print ERR "\t$_\n";
+	    next;
+	}
+
+    }
+    close PATH_INT;
+
 }
 
 #  sub oldReadPathways {
@@ -834,11 +910,11 @@ sub ReadArguments {
 
 
 ### export a pathway diagram
-sub ExportDiagram {
-    ### usage : &ExportDiagram($graph_file, $title, @interactions);
+sub ExportPathway {
+    ### usage : &ExportPathway($pathway);
     ### collects all inputs and outputs of these interactions
     ### and prints the diagramin text format
-    my ($diagram_file, $title, @interactions) = @_;
+    my ($pathway) = @_;
     my $arc_count = 0;
     my %linked_entities = ();
 
@@ -846,19 +922,35 @@ sub ExportDiagram {
     my $ysize = 600;
     srand (time);
     
-    warn "; Creating diagram\t$title\n" if ($verbose >= 1); 
+
+    my @entity_ids = $pathway->get_attribute("entities");
+    my @interaction_ids = $pathway->get_attribute("interactions");
+    my @subpathway_ids = $pathway->get_attribute("subpathways");
+    my $name = $pathway->get_name();
+    my $diagram_file = $dir{diagrams}."/".$pathway->get_attribute("id").".tdd";
+
+    warn ("; ",join ("\t", 
+		     "entities", $#entity_ids+1,
+		     "interactions", $#interaction_ids+1,
+		     "subpathways", $#subpathay_ids+1,
+		     "pathway", $pathway->get_attribute("names")
+		     ), "\n") if ($verbose >= 1);
+    warn "; Creating diagram\t$name\n" if ($verbose >= 1); 
     $diagram = $diagrams->new_object();
-    $diagram->push_attribute("names", $title);
-    $diagram->set_attribute("description", "Saccharomyces cerevisiae - $title");
+    $diagram->push_attribute("names", $name);
+    $diagram->set_attribute("description", "Saccharomyces cerevisiae - $name");
     $diagram->set_attribute("type", "signal transduction");
 
     ### collect inputs and outputs for each interaction
-    foreach my $interaction (@interactions) {
-	foreach my $input ($interaction->get_attribute("inputs")) {
-	    $linked_entities{$input}++;
-	}
-	foreach my $output ($interaction->get_attribute("outputs")) {
-	    $linked_entities{$output}++;
+    foreach my $interaction_id (@interaction_ids) {
+	#### identify the interaction
+	if ($interaction = $interactions->get_object($interaction_id)) {
+	    foreach my $input ($interaction->get_attribute("inputs")) {
+		$linked_entities{$input}++;
+	    }
+	    foreach my $output ($interaction->get_attribute("outputs")) {
+		$linked_entities{$output}++;
+	    }
 	}
     }
 
@@ -877,8 +969,8 @@ sub ExportDiagram {
     }
     
     ### print a node for each interaction
-    foreach my $interaction (@interactions) {
-	my $int_id = $interaction->get_attribute("id");
+    foreach my $int_id (@interaction_ids) {
+	my $interaction = $interactions->get_object($int_id);
 	my $type = $interaction->get_attribute("type");
 
 	#### create a node for the entity
@@ -993,25 +1085,25 @@ sub ExportDiagram {
 #      close GRAPH;
 #  }
 
-sub PrintArc {
-    print GRAPH "arc";
-    print GRAPH "\t", $arc_id;
-    print GRAPH "\t", $from;
-    print GRAPH "\t", $to;
-    print GRAPH "\t", $label;
-    print GRAPH "\t", $type;
-    print GRAPH "\n";
-}
+#  sub PrintArc {
+#      print GRAPH "arc";
+#      print GRAPH "\t", $arc_id;
+#      print GRAPH "\t", $from;
+#      print GRAPH "\t", $to;
+#      print GRAPH "\t", $label;
+#      print GRAPH "\t", $type;
+#      print GRAPH "\n";
+#  }
 
-sub PrintNode {
-    print GRAPH "node";
-    print GRAPH "\t", $id;
-    print GRAPH "\t", $xpos;
-    print GRAPH "\t", $ypos;
-    print GRAPH "\t", $label;
-    print GRAPH "\t", $type;
-    print GRAPH "\n";
-}
+#  sub PrintNode {
+#      print GRAPH "node";
+#      print GRAPH "\t", $id;
+#      print GRAPH "\t", $xpos;
+#      print GRAPH "\t", $ypos;
+#      print GRAPH "\t", $label;
+#      print GRAPH "\t", $type;
+#      print GRAPH "\n";
+#  }
 
 
 sub LinkEntities {
