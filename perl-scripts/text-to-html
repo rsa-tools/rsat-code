@@ -2,89 +2,18 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
-require "RSA.cgi.lib.pl";
-###require "cgi-lib.pl";
+require "RSA.lib";
+require "RSA.cgi.lib";
+require "cgi-lib.pl";
 
-if ($ARGV[0] eq "-h") {
-#### display full help message #####
-  open HELP, "| more";
-  print HELP <<End_of_help;
-NAME
-	text-to-html
-
-        1998 by Jacques van Helden (jacques\@ucmb.ulb.ac.be)
-	
-USAGE
-        text-to-html [-i inputfile] [-o outputfile] [-v] [-font variable]
-
-DESCRIPTION
-	
-OPTIONS
-        -h      (must be first argument) display full help message
-        -help   (must be first argument) display options
-	-v	verbose
-	-i inputfile
-		if not specified, the standard input is used.
-		This allows to place the command within a pipe.
-	-o outputfile
-		if not specified, the standard output is used.
-		This allows to place the command within a pipe.
-	-font variable
-		use variable instead of fixed fonts
-	
-INPUT FORMAT
-	A tab-delimited text file
-	
-OUTPUT FORMAT
-	An HTML file with a HTML table.
-		
-EXAMPLES
-       text-to-html -v -i mydata -o myresult
-	
-End_of_help
-  close HELP;
-  exit;
-}
-
-if ($ARGV[0] eq "-help") {
-#### display short help message #####
-  open HELP, "| more";
-  print HELP <<End_short_help;
-text-to-html options
-----------------
--h      (must be first argument) display full help message
--help   (must be first argument) display options
--i      input file
--o      output file
--v      verbose
--font	variable
-End_short_help
-  close HELP;
-  exit;
-}
 
 #### initialise parameters ####
 $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
 
+$chunk = 50;
 
 #### read arguments ####
-foreach $a (0..$#ARGV) {
-    ### verbose ###
-    if ($ARGV[$a] eq "-v") {
-	$verbose = 1;
-    ### input file ###
-    } elsif ($ARGV[$a] eq "-i") {
-	$inputfile = $ARGV[$a+1];
-    ### output file ###
-    } elsif ($ARGV[$a] eq "-o") {
-	$outputfile = $ARGV[$a+1];
-    ### input file ###
-    } elsif (($ARGV[$a] eq "-font") && ($ARGV[$a+1] =~ /^var/i)) {
-	$font{variable} = 1;
-
-    }
-}
+&ReadArguments();
 
 
 #### check argument values ####
@@ -111,7 +40,7 @@ if ($verbose) {
 ###### execute the command #########
 print &HtmlTop ($inputfile);    
 
-&PrintHtmlTable($in);
+&PrintHtmlTable($in, "", "", $chunk);
 
 print &HtmlBot;
 
@@ -140,3 +69,111 @@ exit(0);
 
 ########################## subroutine definition ############################
 
+sub PrintHelp {
+#### display full help message #####
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	text-to-html
+
+        1998 by Jacques van Helden (jacques\@ucmb.ulb.ac.be)
+	
+USAGE
+        text-to-html [-i inputfile] [-o outputfile] [-v] [-font variable]
+
+DESCRIPTION
+	
+OPTIONS
+        -h      (must be first argument) display full help message
+        -help   (must be first argument) display options
+	-v	verbose
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+	-font variable
+		use variable instead of fixed fonts
+	-chunk
+		chunk size (when there are many rows, the program
+		splits the table into several HTML tables, to reduce
+		the waiting time on the browser.
+
+	
+INPUT FORMAT
+	A tab-delimited text file
+	
+OUTPUT FORMAT
+	An HTML file with a HTML table.
+		
+EXAMPLES
+       text-to-html -v -i mydata -o myresult
+	
+End_of_help
+  close HELP;
+  exit;
+}
+
+sub PrintOptions {
+#### display short help message #####
+  open HELP, "| more";
+  print HELP <<End_short_help;
+text-to-html options
+----------------
+-h      (must be first argument) display full help message
+-help   (must be first argument) display options
+-i      input file
+-o      output file
+-v      verbose
+-font	variable
+-chunk	chunk size
+End_short_help
+  close HELP;
+  exit;
+}
+
+
+
+sub ReadArguments {
+    foreach $a (0..$#ARGV) {
+	foreach my $a (0..$#ARGV) {
+	    ### verbose ###
+	    if ($ARGV[$a] eq "-v") {
+		if (&IsNatural($ARGV[$a+1])) {
+		    $verbose = $ARGV[$a+1];
+		} else {
+		    $verbose = 1;
+		}
+		
+		### detailed help
+	    } elsif ($ARGV[$a] eq "-h") {
+		&PrintHelp;
+		
+		### list of options
+	    } elsif ($ARGV[0] eq "-help") {
+		&PrintOptions;
+		
+		### input file ###
+	    } elsif ($ARGV[$a] eq "-i") {
+		$infile{input} = $ARGV[$a+1];
+		
+		### output file ###
+	    } elsif ($ARGV[$a] eq "-o") {
+		$outfile{output} = $ARGV[$a+1];
+		
+		### output file ###
+	    } elsif ($ARGV[$a] eq "-chunk") {
+		$chunk= $ARGV[$a+1];
+		unless (&IsNatural($chunk)) {
+		    &FatalError("Chunk must be a natural number");
+		}
+
+		### input file ###
+	    } elsif (($ARGV[$a] eq "-font") && ($ARGV[$a+1] =~ /^var/i)) {
+		$font{variable} = 1;
+		
+	    }
+	}
+    }
+}
