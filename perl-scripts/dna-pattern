@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dna-pattern,v 1.29 2004/02/01 03:27:50 jvanheld Exp $
+# $Id: dna-pattern,v 1.30 2004/02/01 15:55:06 jvanheld Exp $
 #
 # Time-stamp: <2003-08-13 12:16:03 jvanheld>
 #
@@ -496,7 +496,7 @@ sub MergeMatches {
 			   $current_match->get_attribute("end_pos"), 
 			   $offset, 
 			   $extension, 
-			   $merged_sequence), "\n";
+			   $merged_sequence), "\n" if ($main::verbose >= 10);
 		$last_match->set_attribute("matching_seq", $merged_sequence);
 
 		## position
