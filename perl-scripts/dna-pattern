@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dna-pattern,v 1.26 2004/01/29 16:07:59 jvanheld Exp $
+# $Id: dna-pattern,v 1.27 2004/01/30 17:05:33 jvanheld Exp $
 #
 # Time-stamp: <2003-08-13 12:16:03 jvanheld>
 #
@@ -360,6 +360,8 @@ sub PrintMatchLocation {
 	$match_length = length($matching_word);
 	$score = ($match_length - $mismatches)/$match_length;
     }
+
+    return if ($score < $threshold);
 
     if ($match_format eq "fasta") {
 	#### fasta identifier line
