@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_pathway_skeletons.pl,v 1.9 2002/11/14 19:43:38 jvanheld Exp $
+# $Id: parse_pathway_skeletons.pl,v 1.10 2002/11/15 19:37:51 jvanheld Exp $
 #
-# Time-stamp: <2002-11-14 12:05:11 jvanheld>
+# Time-stamp: <2002-11-15 13:37:11 jvanheld>
 #
 ############################################################
 
@@ -87,7 +87,7 @@ package main;
 	die "Error: cannot open error file $out_file{errors} with write access";
     }
 
-    my $files_to_parse = `find $dir{skeletons} -name "*.txt" -o -name "*.tab" | xargs`;
+    my $files_to_parse = `find $dir{skeletons} -follow -name "*.txt" -o -name "*.tab" | xargs`;
     $files_to_parse =~ s|$dir{skeletons}/*||g;
     @files_to_parse = split " ", $files_to_parse;
 
@@ -547,6 +547,15 @@ sub ReadProcesses {
 
 	    #### reaction provided in the form of a KEGG ID
 	    my $provided_kegg_id = &trim($fields[$col{kegg_id}]); 
+	    
+	    #### KEGG id provided in the equation column
+	    if (!($provided_kegg_id) && ($provided_reaction =~ /^R0/)) {
+		$provided_kegg_id = $provided_reaction;
+		warn ("provided_kegg_id\tin column ", 
+		      $col{equation} + 1, 
+		      "\t", $provided_kegg_id, "\n") if ($verbose >=2);
+	    }
+
 	    if ($provided_kegg_id) {
 		warn ("provided_kegg_id\tin column ", 
 		      $col{kegg_id} + 1, 
@@ -563,17 +572,6 @@ sub ReadProcesses {
 		    } else {
 			&ErrorMessage (join ("\t", $file, $l, "Invalid KEGG ID for a reaction", $provided_kegg_id), "\n");
 		    }		}
-
-	    } elsif ($provided_reaction =~ /^R0/) {
-		$provided_kegg_id = $provided_reaction;
-		warn ("provided_kegg_id\tin column ", 
-		      $col{equation} + 1, 
-		      "\t", $provided_kegg_id, "\n") if ($verbose >=2);
-
-#		#### reaction provided in the form of an aMAZE ID
-#	    } elsif ($provided_reaction =~ /aMAZEReaction/) {
-#		$provided_amaze_id = $provided_reaction;
-#		warn ("provided_amaze_id\t", $provided_amaze_id, "\n") if ($verbose >=3);
 
 		#### reaction described by its equation
 	    } elsif (($provided_reaction =~ /=/) || 
