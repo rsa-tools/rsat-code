@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_kegg.pl,v 1.16 2003/10/29 09:04:13 jvanheld Exp $
+# $Id: parse_kegg.pl,v 1.17 2003/11/17 00:28:41 jvanheld Exp $
 #
 # Time-stamp: <2003-07-10 11:53:00 jvanheld>
 #
@@ -124,7 +124,7 @@ $data_file{reaction} = $dir{KEGG}."/ligand/reaction";
 $data_file{ec} = $dir{KEGG}."/ligand/ECtable";
 
 #### pathways
-$dir{pathway_reactions} = $dir{KEGG}."/ligand/reaction.main/";
+#$dir{pathway_reactions} = $dir{KEGG}."/ligand/reaction.main/";
 $dir{eco} = $dir{KEGG}."/pathways/eco/";
 $dir{sce} = $dir{KEGG}."/pathways/sce/";
 $dir{hsa} = $dir{KEGG}."/pathways/hsa/";
@@ -151,10 +151,10 @@ push @classes, ("KEGG::GenericPathway");
 
 
 #### input directories
-unless (-d $dir{pathway_reactions}) {
-    warn "Uncompressing reactions from KEGG archive\n";
-    system "cd $dir{KEGG}/ligand/; uncompress -c reaction.main.tar.Z | tar -xvf -";
-}
+#unless (-d $dir{pathway_reactions}) {
+#    warn "Uncompressing reactions from KEGG archive\n";
+#    system "cd $dir{KEGG}/ligand/; uncompress -c reaction.main.tar.Z | tar -xvf -";
+#}
 
 #### output directory
 &CheckOutputDir();
@@ -699,7 +699,7 @@ sub ParseKeggPathways {
     }
 
     #### generic pathways
-    &ParseGenericPathways();
+#    &ParseGenericPathways();
 
     #### organism-specific pathways
     &ParseSpecificPathways(); 
