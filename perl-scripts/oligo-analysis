@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.77 2004/02/09 00:29:24 jvanheld Exp $
+# $Id: oligo-analysis,v 1.78 2004/02/12 08:08:34 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -386,44 +386,49 @@ sub CountOligo {
 	
 	undef %last_pos;
 
-	
-	#### Specific treatmeent for occurrence table or distribution
-	if (($return{'table'}) || ($return{'distrib'})){
-	    
-	    ## summarize pattern counts
+	################################################################
+	#### Specific treatmeent for occurrence table
+	if ($return{'table'}) {
+	    ## Make sure that all patterns are considered
 	    foreach my $pattern_seq (@possible_oligos) {
 		## Assign 0 values
-		unless ($patterns{$pattern_seq}->{occ} > 0 ) {
+		unless ($patterns{$pattern_seq}->{occ}) {
 		    $patterns{$pattern_seq}->{occ} = 0;
 		}
 	    }
+
+	    ## Sum the reverse complements for the current sequence
+	    &SumReverseComplements() if ($sum_rc);
+	    	    
+	    ## select patterns to be printed (depend on whether RC have been grouped)
 	    @output_patterns = sort keys %patterns;
+	    
+	    ## Print table header before the first pattern counts
+	    unless ($header_printed) {
+		print $out "; Number of output patterns\t", scalar(@output_patterns), "\n" 
+		    if ($main::verbose >= 1);
+		&PrintTableHeader(@output_patterns);
+		$header_printed = 1;
+	    }
+	    
+	    ## Print patern counts for the current sequence
+	    print $out $current_id;
+	    foreach my $pattern_seq (@output_patterns) {
+		print $out "\t", $patterns{$pattern_seq}->{occ};
+	    }
+	    print $out "\n";
+	    undef(%patterns);
 
-	    if ($return{'table'}) {
-		## Sum the reverse complements for the current sequence
-		&SumReverseComplements() if ($sum_rc);
-
-		## Print table header before the first pattern counts
-		unless ($header_printed) {
-		    &PrintTableHeader(@output_patterns);
-		    $header_printed = 1;
+	################################################################
+	#### Specific treatmeent for occurrence distribution
+	} elsif ($return{'distrib'}) {
+	    foreach my $pattern_seq (@possible_oligos) {
+		## Check if no occurrences were found
+		unless ($patterns{$pattern_seq}->{occ}) {
+		    $patterns{$pattern_seq}->{occ} = 0;
 		}
-		
-		## Print patern counts for the current sequence
-		print $out $current_id;
-		foreach my $pattern_seq (@output_patterns) {
-		    print $out "\t", $patterns{$pattern_seq}->{occ};
-		}
-		print $out "\n";
-	    } elsif ($return{'distrib'}) {
-		foreach my $pattern_seq (@possible_oligos) {
-		    ## Check if no occurrences were found
-		    unless ($patterns{$pattern_seq}->{occ}) {
-			$patterns{$pattern_seq}->{occ} = 0;
-		    }
-		    ## Increment the occurrence counter
-		    $distrib{$pattern_seq}{$patterns{$pattern_seq}->{occ}}++;
-		}
+		## Increment the occurrence counter
+		$distrib{$pattern_seq}{$patterns{$pattern_seq}->{occ}}++;
 	    }
 	    undef(%patterns);
 	}
