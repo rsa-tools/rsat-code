@@ -1,7 +1,4 @@
 #!/usr/bin/perl
-if ($config_site eq "dbm") {
-    use lib '/a/YRT/lib', '/a/YRT/lib/arch';
-}
 if ($config_site eq "ebi") {
     use lib '/homes/jvanheld/rsa-tools/perl-scripts/lib',  
             '/homes/jvanheld/rsa-tools/perl-scripts/lib/arch';
@@ -39,7 +36,7 @@ $x_axis_size = 400;
 $y_axis_size = 400;
 $point_size = 2;
 @y_col_list = (1);
-$x_col = 0;
+$x_col = -1;
 $lines = 0;
 $legend = 0;
 $legend_size = 0;
@@ -57,188 +54,7 @@ $small_font_height = 8;
 $large_font_width = 8;
 $large_font_height = 16;
 
-#### read arguments ####
-foreach $a (0..$#ARGV) {
-  
-  ### input, output files ###
-  if ($ARGV[$a] eq "-i") {
-    $inputfile = $ARGV[$a+1];
-  } elsif ($ARGV[$a] eq "-o") {
-    $outputfile = $ARGV[$a+1];
-    
-    ### verbose ###
-  } elsif ($ARGV[$a] eq "-v") {
-    $verbose = 1;
-    
-    ### legends and titles ###
-  } elsif (($ARGV[$a] eq "-title") || ($ARGV[$a] eq "-title1")) {
-    $title1 = $ARGV[$a+1];
-  } elsif ($ARGV[$a] eq "-title2") {
-    $title2 = $ARGV[$a+1];
-  } elsif ($ARGV[$a] eq "-xleg1") {
-    $x_legend1 = $ARGV[$a+1];
-  } elsif ($ARGV[$a] eq "-xleg2") {
-    $x_legend2 = $ARGV[$a+1];
-  } elsif ($ARGV[$a] eq "-yleg1") {
-    $y_legend1 = $ARGV[$a+1];
-  } elsif ($ARGV[$a] eq "-yleg2") {
-    $y_legend2 = $ARGV[$a+1];
-    
-    ### grid steps ###
-  } elsif (($ARGV[$a] eq "-gstep1") && ($ARGV[$a+1] =~ /^\d+(\.\d+){0,1}$/)){
-    $y_grid_step1 = $ARGV[$a+1];
-    $x_grid_step1 = $ARGV[$a+1];
-  } elsif (($ARGV[$a] eq "-xgstep1") && ($ARGV[$a+1] =~ /^\d+(\.\d+){0,1}$/)){
-    $x_grid_step1 = $ARGV[$a+1];
-  } elsif (($ARGV[$a] eq "-ygstep1") && ($ARGV[$a+1] =~ /^\d+(\.\d+){0,1}$/)){
-    $y_grid_step1 = $ARGV[$a+1];
-  } elsif (($ARGV[$a] eq "-gstep2") && ($ARGV[$a+1] =~ /^\d+(\.\d+){0,1}$/)){
-    $y_grid_step2 = $ARGV[$a+1];
-    $x_grid_step2 = $ARGV[$a+1];
-  } elsif (($ARGV[$a] eq "-xgstep2") && ($ARGV[$a+1] =~ /^\d+(\.\d+){0,1}$/)){
-    $x_grid_step2 = $ARGV[$a+1];
-  } elsif (($ARGV[$a] eq "-ygstep2") && ($ARGV[$a+1] =~ /^\d+(\.\d+){0,1}$/)){
-    $y_grid_step2 = $ARGV[$a+1];
-    
-    
-    ### min and max values to represent ###
-  } elsif (($ARGV[$a] eq "-max") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+){0,1}(E[+-]{0,1}\d+){0,1}$/i)){
-    $x_axis_max = $ARGV[$a+1];
-    $y_axis_max = $ARGV[$a+1];
-  } elsif (($ARGV[$a] eq "-xmax") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+){0,1}(E[+-]{0,1}\d+){0,1}$/i)){
-    $x_axis_max = $ARGV[$a+1];
-  } elsif (($ARGV[$a] eq "-ymax") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+){0,1}(E[+-]{0,1}\d+){0,1}$/i)){
-    $y_axis_max = $ARGV[$a+1];
-  } elsif (($ARGV[$a] eq "-min") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+){0,1}(E[+-]{0,1}\d+){0,1}$/i)){
-    $x_axis_min = $ARGV[$a+1];
-    $y_axis_min = $ARGV[$a+1];
-  } elsif (($ARGV[$a] eq "-xmin") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+){0,1}(E[+-]{0,1}\d+){0,1}$/i)){
-    $x_axis_min = $ARGV[$a+1];
-  } elsif (($ARGV[$a] eq "-ymin") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+){0,1}(E[+-]{0,1}\d+){0,1}$/i)){
-    $y_axis_min = $ARGV[$a+1];
-    
-    ### axis size (in pixels) ###
-  } elsif (($ARGV[$a] eq "-xsize") && ($ARGV[$a+1] =~ /^\d+$/)){
-    $x_axis_size = $ARGV[$a+1];
-  } elsif (($ARGV[$a] eq "-ysize") && ($ARGV[$a+1] =~ /^\d+$/)){
-    $y_axis_size = $ARGV[$a+1];
-  } elsif (($ARGV[$a] eq "-size") && ($ARGV[$a+1] =~ /^\d+$/)){
-    $x_axis_size = $ARGV[$a+1];
-    $y_axis_size = $ARGV[$a+1];
-    
-    
-    ### backgreound color ####
-  } elsif ($ARGV[$a] eq "-bg") {
-    $bg = $ARGV[$a+1];
-    
-    ### monochrome output
-  } elsif ($ARGV[$a] =~ /-mono/i) {
-    $monochrome = 1;
-    
-    ### monochrome output
-  } elsif ($ARGV[$a] =~ /-symb/i) {
-    $symbols = 1;
-    
-    ### logarithmic representation
-  } elsif ($ARGV[$a] eq "-xlog") {
-    $xlog= 1;
-  } elsif ($ARGV[$a] eq "-ylog") {
-    $ylog= 1;
-    
-    
-    ### histogram ###
-  } elsif ($ARGV[$a] eq "-histo") {
-    $histogram = 1;
-    
-    ### join points by lines ###
-  } elsif ($ARGV[$a] eq "-lines") {
-    $lines = 1;
-    
-    ### join points of a specific column by lines ###
-  } elsif (($ARGV[$a] eq "-line") && (&IsNatural($ARGV[$a+1]))) {
-    $lines[$ARGV[$a+1]-1] = 1;
-    
-    ### first input line contains Y data legends ###
-  } elsif ($ARGV[$a] eq "-header") {
-    $header = 1;
-  } elsif ($ARGV[$a] eq "-legend") {
-    $header = 1;
-    $legend = 1;
-    
-    ### point size ###
-  } elsif (($ARGV[$a] eq "-pointsize") && ($ARGV[$a+1] =~ /^\d+$/)){
-    $point_size = $ARGV[$a+1];
-    
-    ### data columns ###  
-  } elsif ($ARGV[$a] eq "-xcol") {
-    $x_col = $ARGV[$a+1] -1; #indexes begin at 0
-    
-  } elsif ($ARGV[$a] eq "-ycol") {
-    $y_col_string = $ARGV[$a+1];
-    ### single column
-    if (&IsNatural($ARGV[$a+1])) {
-      @y_col_list = ();
-      push @y_col_list, $ARGV[$a+1]-1;
-
-      ### range of column
-    } elsif (($ARGV[$a+1] =~ /(.*)\-(.*)/) &&
-	     (&IsNatural($1)) &&
-	     (&IsNatural($2)) && 
-	     ($2 >= $1)) {
-      @y_col_list = ();
-      for $col ($1-1..$2-1) {
-	push  @y_col_list, $col;
-      }
-
-      ### comma-separated list of columns
-    } elsif ($ARGV[$a+1] =~ /\,/) {
-      @y_col_list = split(/,/,$y_col_string);
-      foreach $col (0..$#y_col_list) {
-	if ($y_col_list[$col] =~ /\d+/) {
-	  $y_col_list[$col]--; #indexes begin at 0
-	} else {
-	  print "	Invalid Y column specification.\n";
-	  print "	Type XYgraph -h for help.\n";
-	  exit;
-	}
-      }
-    } else {
-      print "	Invalid Y column specification.\n";
-      print "	Type XYgraph -h for help.\n";
-      exit;
-    }
-    
-    ### highlight box ###
-  } elsif (($ARGV[$a] eq "-hbox") && ($ARGV[$a+1] =~ /^(\d+),(\d+),(\d+),(\d+)$/)){
-    $hbox_left = $1;
-    $hbox_top = $2;
-    $hbox_right = $3;
-    $hbox_bottom = $4;
-    
-    ### threshold box ###
-  } elsif (($ARGV[$a] eq "-tbox") && ($ARGV[$a+1] =~ /^(\d+),(\d+),(\d+),(\d+)$/)){
-    $tbox_low_x = $1;
-    $tbox_high_x = $2;
-    $tbox_low_y = $3;
-    $tbox_high_y = $4;
-    
-    ### data fields ####
-  } elsif ($ARGV[$a] eq "-rows") {
-    $data_fields = "rows";
-  } elsif ($ARGV[$a] eq "-columns")  {
-    $data_fields = "columns";
-    
-    ### HTML map ###
-  } elsif ($ARGV[$a] eq "-htmap") {
-    $HTML_map = 1;
-
-    ### label column
-  } elsif (($ARGV[$a] eq "-lc") && (&IsNatural($ARGV[$a+1]))) {
-    $label_col = $ARGV[$a+1];
-    
-  }
-  
-}
+&ReadArguments();
 
 
 #### check parameter values ####
@@ -246,7 +62,7 @@ if ($HTML_map) {
   $verbose = 0;
 }		 
 
-#### if log representation, check user=entered axis values  ###
+#### if log representation, check user-entered axis values  ###
 if ($xlog) {
   if (x_axis_max ne "ND") {
     if ($x_axis_max > 0) {
@@ -1074,230 +890,245 @@ sub StandardPalette {
 
 #### read data ####
 sub ReadData {
-  $in = &OpenInputFile($inputfile);
+    $in = &OpenInputFile($inputfile);
 
-  if ($data_fields eq "columns") {
-    #### read legend ####
-    if ($header) {
-      $legend_line = <$in>;
-      unless ($legend_line =~ /\t/) {   # if there are no tabs,
-	$legend_line =~ s/ {1,}/\t/g; # single or multiple spaces are considered as a singlew tab
-      }
-      @legend_fields = split(/[\t\n\r]/, $legend_line);
-      ### calculate legend width ###
-      $legend_length = 0;
-      for $series (0..$#y_col_list) {
-	$new_length = length($legend_fields[$y_col_list[$series]]);
-	$legend_length = &max($legend_length,$new_length);
-      }
-      $legend_size = $legend_length * $small_font_width + $point_size + 20;
-    }
-    
-    ### read X and Y values ###
-    while ($new_data_line = <$in>) {
-      next if ($new_data_line =~ /^;/);
-      next unless ($new_data_line =~ /\S/);
-      
-      
-      if ($new_data_line =~ /\t/) {  # if column delimiter is the tab character
-	$new_data_line =~ s/ //g; # remove all blank spaces
-      } else { # if there are no tabs,
-	$new_data_line =~ s/ +/\t/g; # single or multiple spaces are considered as a single tab
-      }
-      
-      $new_data_line =~ s/\,//g; # remove all commas
-      @data_fields = split(/[\t\n\r]/, $new_data_line);
-      
-      if (IsReal($data_fields[$x_col])) {
-	if ($xlog)  {
-	  if ($data_fields[$x_col] > 0) {
-	    $new_x = log($data_fields[$x_col]);
-	  } else {
-	    $new_x = "ND";
-	  }
-	} else {
-	  $new_x = $data_fields[$x_col];
-	}
-	push (@X_values, $new_x);
-	if ($label_col > 0) {
-	  push @data_lines, @data_fields[$label_col -1];
-	} else {
-	  push @data_lines, $new_data_line;
-	}
-	for $series (0..$#y_col_list) {
-	  if ((IsReal($data_fields[$y_col_list[$series]]))) {
-	    if ($ylog) {
-	      if ($data_fields[$y_col_list[$series]] > 0) {
-		$Y_values[$series][$#X_values] = log($data_fields[$y_col_list[$series]]); 
-	      } else {
-		$Y_values[$series][$#X_values] = "ND";
-	      }
-	    } else {
-	      $Y_values[$series][$#X_values] = $data_fields[$y_col_list[$series]]; 
-	    }    
-	  } else {
-	    $Y_values[$series][$#X_values] = "ND";
-	  } 
-	} 
-      }
-    }    
-  } else { ### data fields in rows
-    $line_nb = -1;
-    
-    $xline = $x_col;
-    foreach $c (0..$#y_col_list) {
-      $yline{$y_col_list[$c]} = $c;
-    }
-    
-    
-    while ($new_data_line = <$in>) {
-      next if ($new_data_line =~ /^;/);
-      next unless ($new_data_line =~ /\S/);
-      $line_nb++;
-      
-      next unless (($line_nb == $xline) || (defined($yline{$line_nb})));
-      
-      ### split data line
-      if ($new_data_line =~ /\t/) {  # if column delimiter is the tab character
-	$new_data_line =~ s/ //g; # remove all blank spaces
-      } else { # if there are no tabs,
-	$new_data_line =~ s/ +/\t/g; # single or multiple spaces are considered as a single tab
-      }
-      $new_data_line =~ s/\,//g; # remove all commas
-      @data_fields = split(/[\t\n\r]/, $new_data_line);
-      
-      ### read legend ###
-      if ($header) {
-	$line_legend = shift @data_fields;    ### take first word as legend
-	$legend_fields[$line_nb] =  $line_legend;
-	$legend_length = &max($legend_length,length($line_legend));
-	$legend_size = $legend_length * $small_font_width + $point_size + 20;
-      }
-      
-      ### read X values
-      if ($line_nb == $x_col) {
-	for $c (0..$#data_fields) {
-	  if ($xlog)  {
-	    if ($data_fields[$c] > 0) {
-	      $new_x = log($data_fields[$c]);
-	    } else {
-	      $new_x = "ND";
+    ################################################################
+    #### point series correspond to columns
+    if ($data_fields eq "columns") {
+	#### read legend ####
+	if ($header) {
+	    $legend_line = <$in>;
+	    unless ($legend_line =~ /\t/) {   # if there are no tabs,
+		$legend_line =~ s/ {1,}/\t/g; # single or multiple spaces are considered as a singlew tab
 	    }
-	  } else {
-	    $new_x = $data_fields[$c];
-	  }
-	  push (@X_values, $new_x);
-	}
-      }
-      
-      ### read Y values
-      if (defined($yline{$line_nb})) {
-	for $c (0..$#data_fields) {
-	  if ($ylog)  {
-	    if ($data_fields[$c] > 0) {
-	      $new_y = log($data_fields[$c]);
-	    } else {
-	      $new_y = "ND";
+	    @legend_fields = split(/[\t\n\r]/, $legend_line);
+	    ### calculate legend width ###
+	    $legend_length = 0;
+	    for $series (0..$#y_col_list) {
+		$new_length = length($legend_fields[$y_col_list[$series]]);
+		$legend_length = &max($legend_length,$new_length);
 	    }
-	  } else {
-	    $new_y = $data_fields[$c];
-	  }
-	  $Y_values[$yline{$line_nb}][$c] = $new_y;
+	    $legend_size = $legend_length * $small_font_width + $point_size + 20;
 	}
-      }
+	
+	### read X and Y values ###
+	while ($new_data_line = <$in>) {
+	    next if ($new_data_line =~ /^;/);
+	    next unless ($new_data_line =~ /\S/);
+	    
+	    
+	    if ($new_data_line =~ /\t/) {  # if column delimiter is the tab character
+		$new_data_line =~ s/ //g; # remove all blank spaces
+	    } else { # if there are no tabs,
+		$new_data_line =~ s/ +/\t/g; # single or multiple spaces are considered as a single tab
+	    }
+	    
+	    $new_data_line =~ s/\,//g; # remove all commas
+	    @data_fields = split(/[\t\n\r]/, $new_data_line);
+
+	    if ($x_col == -1) {
+		push @X_values, $#X_values +2;
+	    } elsif (IsReal($data_fields[$x_col])) {
+		if ($xlog)  {
+		    if ($data_fields[$x_col] > 0) {
+			$new_x = log($data_fields[$x_col]);
+		    } else {
+			$new_x = "ND";
+		    }
+		} else {
+		    $new_x = $data_fields[$x_col];
+		}
+		push (@X_values, $new_x);
+	    } else {
+		next;
+	    }
+	    if ($label_col > 0) {
+		push @data_lines, @data_fields[$label_col -1];
+	    } else {
+		push @data_lines, $new_data_line;
+	    }
+	    
+	    #### read Y values
+	    for $series (0..$#y_col_list) {
+		if ((IsReal($data_fields[$y_col_list[$series]]))) {
+		    if ($ylog) {
+			if ($data_fields[$y_col_list[$series]] > 0) {
+			    $Y_values[$series][$#X_values] = log($data_fields[$y_col_list[$series]]); 
+			} else {
+			    $Y_values[$series][$#X_values] = "ND";
+			}
+		    } else {
+			$Y_values[$series][$#X_values] = $data_fields[$y_col_list[$series]]; 
+		    }    
+		} else {
+		    $Y_values[$series][$#X_values] = "ND";
+		} 
+	    }
+	}    
+
+    ################################################################
+    #### point series correspond to rows
+    } else {
+	$line_nb = -1;
+	$xline = $x_col;	foreach $c (0..$#y_col_list) {
+	    $yline{$y_col_list[$c]} = $c;
+	}
+	
+	while ($new_data_line = <$in>) {
+	    next if ($new_data_line =~ /^;/);
+	    next unless ($new_data_line =~ /\S/);
+	    $line_nb++;
+	    
+	    next unless (($line_nb == $xline) || (defined($yline{$line_nb})));
+	    
+	    ### split data line
+	    if ($new_data_line =~ /\t/) {  # if column delimiter is the tab character
+		$new_data_line =~ s/ //g; # remove all blank spaces
+	    } else { # if there are no tabs,
+		$new_data_line =~ s/ +/\t/g; # single or multiple spaces are considered as a single tab
+	    }
+	    $new_data_line =~ s/\,//g; # remove all commas
+	    @data_fields = split(/[\t\n\r]/, $new_data_line);
+	    
+	    ### read legend ###
+	    if ($header) {
+		$line_legend = shift @data_fields;    ### take first word as legend
+		$legend_fields[$line_nb] =  $line_legend;
+		$legend_length = &max($legend_length,length($line_legend));
+		$legend_size = $legend_length * $small_font_width + $point_size + 20;
+	    }
+	    
+	    ### read X values
+	    if ($x_col == -1) {
+		$max_col = &max($max_col, $#data_fields+1);
+	    } elsif ($line_nb == $x_col) {
+		for $c (0..$#data_fields) {
+		    if ($xlog)  {
+			if ($data_fields[$c] > 0) {
+			    $new_x = log($data_fields[$c]);
+			} else {
+			    $new_x = "ND";
+			}
+		    } else {
+			$new_x = $data_fields[$c];
+		    }
+		    push (@X_values, $new_x);
+		}
+	    }
+	    
+	    ### read Y values
+	    if (defined($yline{$line_nb})) {
+		for $c (0..$#data_fields) {
+		    $new_y = "ND";
+		    if ($ylog)  {
+			if ($data_fields[$c] > 0) {
+			    $new_y = log($data_fields[$c]);
+			}
+		    } elsif (&IsReal($data_fields[$c])) {
+			$new_y = $data_fields[$c];
+		    }
+		    $Y_values[$yline{$line_nb}][$c] = $new_y;
+		}
+	    }
+	}
+	if ($x_col == -1) {
+	    for $x (1..$max_col) {
+		push @X_values, $x;
+	    }
+	}
     }
-  }
-  
-  close $in unless ($inputfile eq "");
+    
+    close $in unless ($inputfile eq "");
+
 } #### ReadData
 
 
 sub CalcLimits {
-  #### calculate data limits ####
-  $max_x_value = "ND";
-  $min_x_value = "ND";
-  $max_y_value = "ND";
-  $min_y_value = "ND";
-  
-  $min_x_value = &min(@X_values);
-  $max_x_value = &max(@X_values);
-  
-  unless ((&IsReal($max_x_value)) && 
-	  (&IsReal($min_x_value))) {
-    print "	Error: X axis data (column ", $x_col+1, ") are not numeric\n";
-    print "	Type XYgraph -help for more info\n";
-    exit;
-  }
-  
-  for $series (0..$#y_col_list) {
-    $min_y_value = &checked_min($min_y_value,@{$Y_values[$series]});
-    $max_y_value = &max($max_y_value,@{$Y_values[$series]});
+    #### calculate data limits ####
+    $max_x_value = "ND";
+    $min_x_value = "ND";
+    $max_y_value = "ND";
+    $min_y_value = "ND";
     
-  }
-  
-  unless ((&IsReal($max_y_value)) &&
-	  (&IsReal($min_y_value))) {
-    print "	Error: Y axis data (column ";
-    for $col (0..$#y_col_list -1) {
-      print $y_col_list[$col]+1, ", ";
+    $min_x_value = &min(@X_values);
+    $max_x_value = &max(@X_values);
+    
+    unless ((&IsReal($max_x_value)) && 
+	    (&IsReal($min_x_value))) {
+	print "	Error: X axis data (column ", $x_col+1, ") are not numeric\n";
+	print "	Type XYgraph -help for more info\n";
+	exit;
     }
-    print $y_col_list[$#y_col_list]+1;
-    print ") are not numeric\n";
-    print "	Type XYgraph -help for more info\n";
-    exit;
-  }
-  
-  
+    
+    for $series (0..$#y_col_list) {
+	$min_y_value = &checked_min($min_y_value,@{$Y_values[$series]});
+	$max_y_value = &max($max_y_value,@{$Y_values[$series]});
+	
+    }
+    
+    unless ((&IsReal($max_y_value)) &&
+	    (&IsReal($min_y_value))) {
+	print "	Error: Y axis data (column ";
+	for $col (0..$#y_col_list -1) {
+	    print $y_col_list[$col]+1, ", ";
+	}
+	print $y_col_list[$#y_col_list]+1;
+	print ") are not numeric\n";
+	print "	Type XYgraph -help for more info\n";
+	exit;
+    }
+    
+    
 
-  #### min and max axis values ####
-  ($tmp_xmin,$tmp_xgrid,$tmp_xmax) = &AutoGrid($min_x_value,$max_x_value);
-  if ($x_axis_min eq "ND") {
-    $x_axis_min = $tmp_xmin;
-  }
-  if ($x_axis_max eq "ND") {
-    $x_axis_max = $tmp_xmax;
-  }
-  if ($x_grid_step1 eq "") {
-    ($x_grid_min, $x_grid_step1,$x_grid_max) = &AutoGrid($x_axis_min,$x_axis_max);
-  }
-  
-  ($tmp_ymin,$tmp_ygrid,$tmp_ymax) = &AutoGrid($min_y_value,$max_y_value);
-  if ($y_axis_min eq "ND") {
-    $y_axis_min = $tmp_ymin;
-  }
-  if ($y_axis_max eq "ND") {
-    $y_axis_max = $tmp_ymax;
-  }
-  if ($y_grid_step1 eq "") {
-    ($y_grid_min, $y_grid_step1,$y_grid_max) = &AutoGrid($y_axis_min,$y_axis_max);
-  }
-  
-  
-  #### graph dimensions
-  $top = $border;
-  $left = $border + 2*$small_font_height + 6 + $x_scale_border;
-  $right = $left + $x_axis_size;
-  if ($title1 ne "") {
-    $top += $large_font_height;
-  }
-  if ($title2 ne "") {
-    $top += $large_font_height + 4;
-  }
-  $bottom = $top + $y_axis_size;
-  $graph_x_size = $right + $border + $legend_size + $point_size + 20;
-  $graph_y_size = $bottom + $border + $y_scale_border + 2*$small_font_height + 6;
-  
-  ### scale ###
-  if ($x_axis_max > $x_axis_min) {
-    $x_scale = $x_axis_size/($x_axis_max - $x_axis_min);
-  } else {
-    $x_scale = $x_axis_size;
-  }
-  if ($y_axis_max > $y_axis_min) {
-    $y_scale = $y_axis_size/($y_axis_max - $y_axis_min);
-  } else {
-    $y_scale = $y_axis_size;
-  }
+    #### min and max axis values ####
+    ($tmp_xmin,$tmp_xgrid,$tmp_xmax) = &AutoGrid($min_x_value,$max_x_value);
+    if ($x_axis_min eq "ND") {
+	$x_axis_min = $tmp_xmin;
+    }
+    if ($x_axis_max eq "ND") {
+	$x_axis_max = $tmp_xmax;
+    }
+    if ($x_grid_step1 eq "") {
+	($x_grid_min, $x_grid_step1,$x_grid_max) = &AutoGrid($x_axis_min,$x_axis_max);
+    }
+    
+    ($tmp_ymin,$tmp_ygrid,$tmp_ymax) = &AutoGrid($min_y_value,$max_y_value);
+    if ($y_axis_min eq "ND") {
+	$y_axis_min = $tmp_ymin;
+    }
+    if ($y_axis_max eq "ND") {
+	$y_axis_max = $tmp_ymax;
+    }
+    if ($y_grid_step1 eq "") {
+	($y_grid_min, $y_grid_step1,$y_grid_max) = &AutoGrid($y_axis_min,$y_axis_max);
+    }
+    
+    
+    #### graph dimensions
+    $top = $border;
+    $left = $border + 2*$small_font_height + 6 + $x_scale_border;
+    $right = $left + $x_axis_size;
+    if ($title1 ne "") {
+	$top += $large_font_height;
+    }
+    if ($title2 ne "") {
+	$top += $large_font_height + 4;
+    }
+    $bottom = $top + $y_axis_size;
+    $graph_x_size = $right + $border + $legend_size + $point_size + 20;
+    $graph_y_size = $bottom + $border + $y_scale_border + 2*$small_font_height + 6;
+    
+    ### scale ###
+    if ($x_axis_max > $x_axis_min) {
+	$x_scale = $x_axis_size/($x_axis_max - $x_axis_min);
+    } else {
+	$x_scale = $x_axis_size;
+    }
+    if ($y_axis_max > $y_axis_min) {
+	$y_scale = $y_axis_size/($y_axis_max - $y_axis_min);
+    } else {
+	$y_scale = $y_axis_size;
+    }
 }  
 
 
@@ -1456,6 +1287,8 @@ OPTIONS
 	-rows		data fields are in row
 			(one row for X and one or several for Y values)
 	-xcol #	        column containing data for the X axis. 
+			A zero value indicates that there is no column with X values. 
+			In this case, X values are ordinal.
 	-ycol #		column containing data for the Y axis. 
 			Several columns can be specified by:
 				-ycol #,#,#
@@ -1513,4 +1346,192 @@ WEB VERSION
 
 End_of_Help
   close HELP;
+}
+
+#### read arguments ####
+sub ReadArguments {
+
+    foreach $a (0..$#ARGV) {
+	
+	### input, output files ###
+	if ($ARGV[$a] eq "-i") {
+	    $inputfile = $ARGV[$a+1];
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outputfile = $ARGV[$a+1];
+	    
+	    ### verbose ###
+	} elsif ($ARGV[$a] eq "-v") {
+	    $verbose = 1;
+	    
+	    ### legends and titles ###
+	} elsif (($ARGV[$a] eq "-title") || ($ARGV[$a] eq "-title1")) {
+	    $title1 = $ARGV[$a+1];
+	} elsif ($ARGV[$a] eq "-title2") {
+	    $title2 = $ARGV[$a+1];
+	} elsif ($ARGV[$a] eq "-xleg1") {
+	    $x_legend1 = $ARGV[$a+1];
+	} elsif ($ARGV[$a] eq "-xleg2") {
+	    $x_legend2 = $ARGV[$a+1];
+	} elsif ($ARGV[$a] eq "-yleg1") {
+	    $y_legend1 = $ARGV[$a+1];
+	} elsif ($ARGV[$a] eq "-yleg2") {
+	    $y_legend2 = $ARGV[$a+1];
+	    
+	    ### grid steps ###
+	} elsif (($ARGV[$a] eq "-gstep1") && ($ARGV[$a+1] =~ /^\d+(\.\d+){0,1}$/)){
+	    $y_grid_step1 = $ARGV[$a+1];
+	    $x_grid_step1 = $ARGV[$a+1];
+	} elsif (($ARGV[$a] eq "-xgstep1") && ($ARGV[$a+1] =~ /^\d+(\.\d+){0,1}$/)){
+	    $x_grid_step1 = $ARGV[$a+1];
+	} elsif (($ARGV[$a] eq "-ygstep1") && ($ARGV[$a+1] =~ /^\d+(\.\d+){0,1}$/)){
+	    $y_grid_step1 = $ARGV[$a+1];
+	} elsif (($ARGV[$a] eq "-gstep2") && ($ARGV[$a+1] =~ /^\d+(\.\d+){0,1}$/)){
+	    $y_grid_step2 = $ARGV[$a+1];
+	    $x_grid_step2 = $ARGV[$a+1];
+	} elsif (($ARGV[$a] eq "-xgstep2") && ($ARGV[$a+1] =~ /^\d+(\.\d+){0,1}$/)){
+	    $x_grid_step2 = $ARGV[$a+1];
+	} elsif (($ARGV[$a] eq "-ygstep2") && ($ARGV[$a+1] =~ /^\d+(\.\d+){0,1}$/)){
+	    $y_grid_step2 = $ARGV[$a+1];
+	    
+	    
+	    ### min and max values to represent ###
+	} elsif (($ARGV[$a] eq "-max") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+){0,1}(E[+-]{0,1}\d+){0,1}$/i)){
+	    $x_axis_max = $ARGV[$a+1];
+	    $y_axis_max = $ARGV[$a+1];
+	} elsif (($ARGV[$a] eq "-xmax") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+){0,1}(E[+-]{0,1}\d+){0,1}$/i)){
+	    $x_axis_max = $ARGV[$a+1];
+	} elsif (($ARGV[$a] eq "-ymax") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+){0,1}(E[+-]{0,1}\d+){0,1}$/i)){
+	    $y_axis_max = $ARGV[$a+1];
+	} elsif (($ARGV[$a] eq "-min") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+){0,1}(E[+-]{0,1}\d+){0,1}$/i)){
+	    $x_axis_min = $ARGV[$a+1];
+	    $y_axis_min = $ARGV[$a+1];
+	} elsif (($ARGV[$a] eq "-xmin") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+){0,1}(E[+-]{0,1}\d+){0,1}$/i)){
+	    $x_axis_min = $ARGV[$a+1];
+	} elsif (($ARGV[$a] eq "-ymin") && ($ARGV[$a+1] =~ /^[+-]{0,1}\d+(\.\d+){0,1}(E[+-]{0,1}\d+){0,1}$/i)){
+	    $y_axis_min = $ARGV[$a+1];
+	    
+	    ### axis size (in pixels) ###
+	} elsif (($ARGV[$a] eq "-xsize") && ($ARGV[$a+1] =~ /^\d+$/)){
+	    $x_axis_size = $ARGV[$a+1];
+	} elsif (($ARGV[$a] eq "-ysize") && ($ARGV[$a+1] =~ /^\d+$/)){
+	    $y_axis_size = $ARGV[$a+1];
+	} elsif (($ARGV[$a] eq "-size") && ($ARGV[$a+1] =~ /^\d+$/)){
+	    $x_axis_size = $ARGV[$a+1];
+	    $y_axis_size = $ARGV[$a+1];
+	    
+	    
+	    ### backgreound color ####
+	} elsif ($ARGV[$a] eq "-bg") {
+	    $bg = $ARGV[$a+1];
+	    
+	    ### monochrome output
+	} elsif ($ARGV[$a] =~ /-mono/i) {
+	    $monochrome = 1;
+	    
+	    ### monochrome output
+	} elsif ($ARGV[$a] =~ /-symb/i) {
+	    $symbols = 1;
+	    
+	    ### logarithmic representation
+	} elsif ($ARGV[$a] eq "-xlog") {
+	    $xlog= 1;
+	} elsif ($ARGV[$a] eq "-ylog") {
+	    $ylog= 1;
+	    
+	    
+	    ### histogram ###
+	} elsif ($ARGV[$a] eq "-histo") {
+	    $histogram = 1;
+	    
+	    ### join points by lines ###
+	} elsif ($ARGV[$a] eq "-lines") {
+	    $lines = 1;
+	    
+	    ### join points of a specific column by lines ###
+	} elsif (($ARGV[$a] eq "-line") && (&IsNatural($ARGV[$a+1]))) {
+	    $lines[$ARGV[$a+1]-1] = 1;
+	    
+	    ### first input line contains Y data legends ###
+	} elsif ($ARGV[$a] eq "-header") {
+	    $header = 1;
+	} elsif ($ARGV[$a] eq "-legend") {
+	    $header = 1;
+	    $legend = 1;
+	    
+	    ### point size ###
+	} elsif (($ARGV[$a] eq "-pointsize") && ($ARGV[$a+1] =~ /^\d+$/)){
+	    $point_size = $ARGV[$a+1];
+	    
+	    ### data columns ###  
+	} elsif ($ARGV[$a] eq "-xcol") {
+	    $x_col = $ARGV[$a+1] -1; #indexes begin at 0
+	    
+	} elsif ($ARGV[$a] eq "-ycol") {
+	    $y_col_string = $ARGV[$a+1];
+	    ### single column
+	    if (&IsNatural($ARGV[$a+1])) {
+		@y_col_list = ();
+		push @y_col_list, $ARGV[$a+1]-1;
+
+		### range of column
+	    } elsif (($ARGV[$a+1] =~ /(.*)\-(.*)/) &&
+		     (&IsNatural($1)) &&
+		     (&IsNatural($2)) && 
+		     ($2 >= $1)) {
+		@y_col_list = ();
+		for $col ($1-1..$2-1) {
+		    push  @y_col_list, $col;
+		}
+
+		### comma-separated list of columns
+	    } elsif ($ARGV[$a+1] =~ /\,/) {
+		@y_col_list = split(/,/,$y_col_string);
+		foreach $col (0..$#y_col_list) {
+		    if ($y_col_list[$col] =~ /\d+/) {
+			$y_col_list[$col]--; #indexes begin at 0
+		    } else {
+			print "	Invalid Y column specification.\n";
+			print "	Type XYgraph -h for help.\n";
+			exit;
+		    }
+		}
+
+	    } else {
+		print "	Invalid Y column specification.\n";
+		print "	Type XYgraph -h for help.\n";
+		exit;
+	    }
+	    
+	    ### highlight box ###
+	} elsif (($ARGV[$a] eq "-hbox") && ($ARGV[$a+1] =~ /^(\d+),(\d+),(\d+),(\d+)$/)){
+	    $hbox_left = $1;
+	    $hbox_top = $2;
+	    $hbox_right = $3;
+	    $hbox_bottom = $4;
+	    
+	    ### threshold box ###
+	} elsif (($ARGV[$a] eq "-tbox") && ($ARGV[$a+1] =~ /^(\d+),(\d+),(\d+),(\d+)$/)){
+	    $tbox_low_x = $1;
+	    $tbox_high_x = $2;
+	    $tbox_low_y = $3;
+	    $tbox_high_y = $4;
+	    
+	    ### data fields ####
+	} elsif ($ARGV[$a] eq "-rows") {
+	    $data_fields = "rows";
+	} elsif ($ARGV[$a] eq "-columns")  {
+	    $data_fields = "columns";
+	    
+	    ### HTML map ###
+	} elsif ($ARGV[$a] eq "-htmap") {
+	    $HTML_map = 1;
+
+	    ### label column
+	} elsif (($ARGV[$a] eq "-lc") && (&IsNatural($ARGV[$a+1]))) {
+	    $label_col = $ARGV[$a+1];
+	    
+
+	}
+	
+    }
 }
