@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-consensus,v 1.5 2004/02/28 17:07:49 jvanheld Exp $
+# $Id: matrix-from-consensus,v 1.6 2004/03/22 22:29:55 jvanheld Exp $
 #
-# Time-stamp: <2002-06-06 13:14:17 jvanheld>
+# Time-stamp: <2004-03-22 22:39:41 jvanheld>
 #
 ############################################################
 #use strict;;
@@ -168,16 +168,15 @@ sub Verbose {
   }
 
   printf $out "; %-14s\t%s\n", "command", $current_matrix->get_attribute("command");
-  for my $param qw(nrow
-		   ncol
-		   nb.sequences
-		   unadjusted.information
-		   adjusted.information
-		   ln.Pval
-		   Pval
-		   ln.exp
-		   exp
-		   ) {
+  foreach my $param (qw(nrow
+			ncol
+			nb.sequences
+			unadjusted.information
+			adjusted.information
+			ln.Pval
+			Pval
+			ln.exp
+			exp)) {
       printf $out "; %-14s\t%g\n", $param, $current_matrix->get_attribute($param);
   }
 }
