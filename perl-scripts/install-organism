@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.4 2001/05/28 01:15:52 jvanheld Exp $
+# $Id: install-organism,v 1.5 2001/05/28 10:05:58 jvanheld Exp $
 #
-# Time-stamp: <2001-05-28 03:11:06 jvanheld>
+# Time-stamp: <2001-05-28 12:02:48 jvanheld>
 #
 ############################################################
 
@@ -87,14 +87,14 @@ $outfile{synonyms} = "$genome_dir/${organism_short_name}_synonyms.tab";
 ###################### start installation ######################
 ################################################################
 
-&InstallGenome();
-&GenerateFeatureTable() if ($infile{ptt});
-&InstallFeatureTable();
+#&InstallGenome();
+#&GenerateFeatureTable() if ($infile{ptt});
+#&InstallFeatureTable();
 &UpdateConfig();
 &StartAndStopCodons();
-&NonCodingSegments();
-&OligoFrequencies();
-&DyadFrequencies();
+#&NonCodingSegments();
+#&OligoFrequencies();
+#&DyadFrequencies();
 
 exit(0);
 
@@ -129,6 +129,15 @@ sub Verbose {
     printf ";    %-25s\t%s\n", "genome sequence file", $outfile{genome};
     printf ";    %-25s\t%s\n", "feature table", $outfile{features};
     printf ";    %-25s\t%s\n", "synonyms", $outfile{synonyms};
+
+    print ";\n; Config files:", $rsa_config,"\n";
+    printf ";    %-25s\t%s\n", "RSA config", $config_file;
+    printf ";    %-25s\t%s\n", "\$RSA_LOCAL_CONFIG", $ENV{'RSA_LOCAL_CONFIG'} if ($ENV{'RSA_LOCAL_CONFIG'});
+    if ($local_config) {
+	printf ";    %-25s\t%s\n", "file to update", $ENV{'RSA_LOCAL_CONFIG'} ;
+    } else {
+	printf ";    %-25s\t%s\n", "file to update", $config_file;
+    }
 
     
 }
@@ -215,7 +224,7 @@ sub UpdateConfig {
 	close CONFIG;
 	
 	#### write new config
-	warn ";\n;Updating config file\t$config_to_update\n" if ($verbose);
+	warn ";\n; Updating config file\t$config_to_update\n" if ($verbose);
 	open CONFIG, ">$config_to_update" 
 	    || die "Error: cannot write config file $config_to_update\n";
 	print CONFIG $previous_config;
