@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.15 2002/04/26 01:52:55 jvanheld Exp $
+# $Id: install-organism,v 1.16 2002/04/26 02:24:57 jvanheld Exp $
 #
-# Time-stamp: <2002-04-26 03:49:14 jvanheld>
+# Time-stamp: <2002-04-26 04:24:40 jvanheld>
 #
 ############################################################
 
@@ -377,16 +377,16 @@ sub CalcFrequencies {
 
     ################################################################
     # calculate oligont frequencies in all intergenic sequences
-    $seq_type = "coding";
-    if ($purged_frequencies) {
-	$seq_file = "${organism_short_name}_coding_segments_purged.fasta";
-	$seq_format = "fasta";
-    } else {
-	$seq_file = "${organism_short_name}_coding_segments.wc";
-	$seq_format = "wc";
-    }
-    &CalcOligoFreq($genome_dir."/".$seq_file, $seq_format, $seq_type) if ($install_steps{oligos});
-    &CalcDyadFreq($genome_dir."/".$seq_file, $seq_format, $seq_type) if ($install_steps{dyads});
+#      $seq_type = "coding";
+#      if ($purged_frequencies) {
+#  	$seq_file = "${organism_short_name}_coding_segments_purged.fasta";
+#  	$seq_format = "fasta";
+#      } else {
+#  	$seq_file = "${organism_short_name}_coding_segments.wc";
+#  	$seq_format = "wc";
+#      }
+#      &CalcOligoFreq($genome_dir."/".$seq_file, $seq_format, $seq_type) if ($install_steps{oligos});
+#      &CalcDyadFreq($genome_dir."/".$seq_file, $seq_format, $seq_type) if ($install_steps{dyads});
 
     chdir '../';
 }
