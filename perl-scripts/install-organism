@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.27 2002/11/13 07:54:11 jvanheld Exp $
+# $Id: install-organism,v 1.28 2003/01/06 19:37:44 jvanheld Exp $
 #
-# Time-stamp: <2002-11-13 01:50:45 jvanheld>
+# Time-stamp: <2003-01-06 13:35:50 jvanheld>
 #
 ############################################################
 
@@ -28,8 +28,9 @@ $supported_for_installation{"filelist"} = 1;
 		   ncf=>1,
 		   allup=>1,
 		   oligos=>1,
-#		   gene_freq=>1,
-#		   genome_freq=>1,
+		   gene_freq=>1,
+		   genome_freq=>1,
+		   upstream_freq=>1,
 		   intergenic_freq=>1,
 		   dyads=>1,
 		   clean=>1,
@@ -304,6 +305,20 @@ sub UpdateConfig {
     if (defined($outfile{synonyms})) {
 	$new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'synonyms'} = \"$outfile{synonyms}\";\n";
     }
+
+    #### default limits of upstream region for retrieve-seq
+    if (defined($supported_organism{$organism_short_name}->{'up_from'})) {
+	$new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'up_from'} = ".$supported_organism{$organism_short_name}->{'up_from'}.";\n";
+    } else {
+	$new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'up_from'} = -400 ;\n";
+    }
+    if (defined($supported_organism{$organism_short_name}->{'up_to'})) {
+	$new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'up_to'} = ".$supported_organism{$organism_short_name}->{'up_to'}.";\n";
+    } else {
+	$new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'up_to'} = -1 ;\n";
+    }
+
+    #### replace absolute paths by relative paths
     $new_org_config =~ s|$RSA/|\$RSA/|g;
     
     print CONFIG $new_org_config;
@@ -426,17 +441,19 @@ sub CalcFrequencies {
 
     ################################################################
     # calculate oligont frequencies in all upstream sequences
-    foreach my $noorf ("", "-noorf") {
-	$seq_type = "upstream${noorf}";
-	if ($purged_frequencies) {
-	    $seq_file = "${organism_short_name}_${seq_type}_purged.fasta";
-	    $seq_format = "fasta";
-	} else {
-	    $seq_file = "${organism_short_name}_${seq_type}.fasta";
-	    $seq_format = "fasta";
+    if ($task{upstream_freq}) {
+	foreach my $noorf ("", "-noorf") {
+	    $seq_type = "upstream${noorf}";
+	    if ($purged_frequencies) {
+		$seq_file = "${organism_short_name}_${seq_type}_purged.fasta";
+		$seq_format = "fasta";
+	    } else {
+		$seq_file = "${organism_short_name}_${seq_type}.fasta";
+		$seq_format = "fasta";
+	    }
+	    &CalcOligoFreq($genome_dir."/".$seq_file, $seq_format, $seq_type) if ($task{oligos});
+	    &CalcDyadFreq($genome_dir."/".$seq_file, $seq_format, $seq_type) if ($task{dyads});
 	}
-	&CalcOligoFreq($genome_dir."/".$seq_file, $seq_format, $seq_type) if ($task{oligos});
-	&CalcDyadFreq($genome_dir."/".$seq_file, $seq_format, $seq_type) if ($task{dyads});
     }
 
     ################################################################
@@ -453,7 +470,7 @@ sub CalcFrequencies {
 	&CalcOligoFreq($genome_dir."/".$seq_file, $seq_format, $seq_type) if ($task{oligos});
 	&CalcDyadFreq($genome_dir."/".$seq_file, $seq_format, $seq_type) if ($task{dyads});
     }
-
+    
     ################################################################
     # calculate oligo-frequencies in full genome
     if ($task{genome_freq}) {
@@ -509,8 +526,8 @@ sub CalcDyadFreq {
     my ($seq_file,$seq_format,$seq_type) = @_;
     $min_spacing = 0;
     $max_spacing = 20;
-#    @monad_lengths = (3,2,1);
-    @monad_lengths = (3);
+    @monad_lengths = (3,2,1);
+#    @monad_lengths = (3);
 
     foreach $monad_length (@monad_lengths) {
 	$dyad_file = "dyads_${monad_length}nt_sp${min_spacing}-${max_spacing}_${seq_type}_${organism_short_name}${noov}${strands}";
@@ -779,7 +796,7 @@ sub ReadArguments {
 	    &PrintHelp;
 	    
 	    ### list of options
-	} elsif ($ARGV[0] eq "-help") {
+	} elsif ($ARGV[$a] eq "-help") {
 	    &PrintOptions;
 	    
 	    ### data source
