@@ -1,0 +1,288 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE>RSA-tools: dyad analysis manual</TITLE>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFEEDD" LINK="#0000EE" VLINK="#55008B" ALINK="#FF0000">
+
+<H3 ALIGN=CENTER><A HREF="RSA_home.cgi">RSA-tools</A> - dyad analysis manual</H3>
+
+<H4>Name</H4>
+<UL>
+dyad-analysis<P>
+1998 by Jacques van Helden (<A HREF="mailto:Jacques van Helden <jvanheld@ucmb.ulb.ac.be>">jvanheld@ucmb.ulb.ac.be</A>)
+</UL>
+
+<H4>Description</H4>
+<UL>
+
+Detects overrepresented spaced dyads in a set of DNA sequences. A dyad
+is a pair of oligonucleotides of the same size. They can be separated
+by a fixed number of bases. <P>
+
+This algorithm detects a set of binding sites that is not detected by
+oligo-analysis, because of the variability within the spacer region. A
+typical example of patterns that are efficiently detected by the dyad
+analysis is the binding site for the yeast Gal4p transcription factor,
+which has the consensus <TT><B>CGGNNNNNWNNNNNCCG</B></TT>.<P>
+</UL>
+
+<H4>Options</H4>
+<UL>
+
+<A NAME="title"><B>Title</B></A>
+(facultative)<BR>
+
+Title of the data set. This information is returned as title of the
+result page.<P>
+
+<A NAME="sequence">
+<B>Input sequence:</B></A><BR>
+
+The sequence that will be analyzed. Multiple sequences can be entered
+at once with most sequence formats (see below).<P>
+
+<A NAME="format">
+<B>Format:</B></A><BR>
+
+Input sequence format. Various standards are supported (click on the
+links for more details):
+<UL>
+
+<LI><A HREF="help.formats.html#raw"><B>raw</B></A>: the raw sequence
+without any identifier or comment.
+
+<LI><A HREF="help.formats.html#multi"><B>multi</B></A>: several raw
+sequences concatenated.
+
+<LI><A HREF="help.formats.html#ig"><B>IG</B></A>: IntelliGenetics
+format.
+
+<LI><A HREF="help.formats.html#fasta"><B>FastA</B></A>: the sequence
+format used by FastA, BLAST, Gibbs sampler and a lot of other
+bioinformatic programs.
+
+<LI><A HREF="help.formats.html#wconsensus"><B>Wconsensus</B></A>: the
+format defined by Jerry Hertz for his programs (patser, consensus,
+wconsensus).
+
+</UL>
+<P>
+
+<A NAME="oligo_size">
+<B>Oligonucleotide size</B></A><BR>
+This is the size of a single element (a half dyade). 
+
+<P>
+<A NAME="spacing">
+<B>Spacing</B></A><BR>
+
+Spacing between the elements of the dyad. The spacing is the number of
+bases between the end of the fisrt element and the start of the second
+one. <P>
+
+A single integer value means that the spacing is fixed. Variable
+spacing can be introdued by entering the min and max values separated
+by a hyphen. For example 8-12 means that all occurrences of the dyad
+with a spacing between 8 and 12 qill be counted together and their
+significance estimated globally. Warning, this is different from
+scanning one by one th spacing values 8 to 12.
+
+<P>
+<A NAME="dyad_type">
+<B>Dyad type</B></A><BR>
+
+In order to fasten execution, the program can be asked to restrict its
+analysis to symmetric dyads, with 3 possibilities : <BR>
+
+<UL>
+
+<LI><B>direct repeats</B>: the second element is the same as the first
+one
+
+<LI><B>inverted repeats</B>: the second element is the reverse
+complement of the first one.
+
+<LI><B>any repeat</B>: analyse both direct and inverted repeats
+</UL>
+
+<BR>
+When selecting the option <B>any dyad</B>, the analysis is performed
+on all dyads, symmetric as well as non-symmetric.  <B>Warning</B>: the
+number of dyads increases dramatically with this option, and it should
+not be used for elements widers than 3 nucleotides.
+<P>
+
+<A NAME="count_strands">
+<B>Count on:</B></A> (single or both strands)<BR> By selecting "both
+strands", the occurrences of each oligonucleotide are summed on both
+strands. This allows to detect elements which act in an
+orientation-insensitive way (as is generally the case for yeast
+upstream elements). <P>
+
+<A NAME="exp_freq">
+<B>Expected frequency:</B></A><BR> The frequency expected for each
+dyad is the product of the frequency expected for each element
+(oligonucleotide):
+<PRE>
+	exp(dyad) = exp(oligo1)*exp(oligo2)
+</PRE>
+By default, the oligonucleotide frequencies observed in the input
+sequences are used to estimate the expected oligo frequencies.
+
+Alternatively, predefined frequency tables can be used. These tables
+have been calculated on basis of<BR>
+<UL>
+<LI><B>the whole yeast genome</B>
+<LI><B>all yeast non-coding regions</B>
+<LI><B>all yeast coding regions</B>
+<BR>
+</UL>
+This allows to correct the bias due to the highly variable
+distribution of oligonucleotides observed in the yeast genome.
+
+<P>
+<A NAME="threshold">
+<B>Threshold of significance:</B></A> 
+<BR> Thresholds can be imposed to select the most significantly
+overrepresented patterns. A threshold of 0 on occurrence significance
+index is selected by default. This is the most efficient way we found
+to automatically select the biologicaly significant regulatory sites,
+irrespective of oligonucleotide size, number and size of the sequences
+in the input set.
+<P>
+
+</UL>
+
+<P>
+<A NAME="return">
+<B>Output columns</B></A><BR>
+<UL>
+
+<LI><B>Expected frequency (exp_frq):</B> the probability to observe
+the dyad at each position. This value is calculated on basis of the
+expected frequency table (see below).
+
+<LI><B>Observed occurrences (obs_occ):</B> the number of ocurrences
+observed for each dyad. Overlapping matches are detected and summed in
+the counting.
+
+<LI><B>Expected number of occurrences (exp_occ):</B> the number of
+ocurrences expected for each dyad. This value is calculated on basis
+of the oligonucleotide frequency table selected.
+
+<LI><B>Occurrence probability (occ_pro):</B> the probability to have N
+or more occurrences, given the expected number of occurrences (where N
+is the observed number of occurrences).
+
+<LI><B>Occurrence Significance (occ_sig):</B> this is a conversion of
+the occurrence probability, taking into account the number of possible
+dyads (which varies with oligo size) and doing a logarithmic
+transformation. The highest sig correspond to the most overrepresented
+oligonucleotide. Sig value higher than 0 indicate overrepresentation.
+
+	</UL>
+</UL>
+<P>
+
+<A NAME="proba">
+<H4>Probabilities</H4></A>
+<UL>
+
+Various calibration models can be used to estimate the probability of
+each oligonucleotide (see above). From there, and expected number of
+occurrences is calculated and compared to the observed number of
+occurrences. The significance of the observed number of occurrences is
+calculated with the binomial formulae.
+
+<PRE>	
+    EXPECTED DYAD FREQUENCY
+	If exp(oligo1) is the expected frequency for the first element, and
+	   exp(oligo1) is the expected frequency for the second element
+	
+	Then
+	   exp(dyad) = exp(oligo1)*exp(oligo2)
+
+    NUMBER OF POSSIBLE DYADS
+	This number depends on the dyad type selected by the user. 
+	When the analysis is restricted to inverted repeats, or to direct 
+	repeats, the first element univocally determines the second one, 
+	thus:
+		nb_poss_dyads = nb_poss_oligo
+		              = 4^w
+		where w is the oligonucleotide length.
+
+	When any dyad is allowed, each oligonucleotide can combine with any 
+	other or itself, thus:
+		nb_poss_dyads = nb_poss_oligo * nb_poss_oligo 
+		              = 4^2w
+
+
+    EXPECTED OCCURRENCES
+	                      r
+	   Exp_occ = p * 2 * SUM (Lj + 1 - d) = p * T
+	                     j=1
+	
+	where	p  = expected dyad frequency
+		n  = number of input sequences
+		Lj = length of the jth input sequence
+		d  = length of the dyad, calculated as follows:
+			d = 2w + s
+			where w is the oligonucleotide length
+			      s is the spacer length
+                T  = the number of possible matching positions in the 
+		     whole set of input sequences.
+
+		The factor 2 stands for the fact that occurrences are summed
+		on both strands (it is omitted when the option -1str 
+                is active).
+
+    PROBABILITY OF THE OBSERVED NUMBER OF OCCURRENCES
+	
+	The probability to observe exactly obs occurrences in the whole set
+  	of sequences is calculated by the binomial
+	
+	                                              obs      T-obs
+	    P(obs) = bin(p,T,obs) =       T!         p    (1-p)
+                                     ---------------
+                                     obs! * (T-obs)! 
+	
+	where   obs is the observed number of dyad occurrences,
+                p   is the expected dyad frequency,
+                T   is the number of possible matching positions,
+                    as defined above. 
+	
+	The probability to observe obs or more occurrences in the whole set of
+  	of sequences is calculated by the sum of binomials:
+	
+	                    obs-1
+	    P(>=obs) =  1 - SUM P(j)
+	                    j=0
+	                        
+    SIGNIFICANCE INDEX
+        The significance index is a conversion of the occurrence probability, 
+	calculated as follows:.
+	
+	      Sig_occ = -log10(NPD * P(>=obs));
+
+	where	NPD	is the number of possible dyads, calculated as above.
+</PRE>
+</UL>
+
+
+<HR SIZE=3></P></CENTER>
+
+
+<CENTER><ADDRESS>For information, contact <A HREF="mailto:jvanheld@ucmb.ulb.ac.be">Jacques
+van Helden (jvanheld@ucmb.ulb.ac.be)</A></ADDRESS></CENTER>
+
+</BODY>
+</HTML>
+
+
+
+
+
+
+
