@@ -1,7 +1,7 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: parse-genbank.pl,v 1.9 2003/10/29 09:04:12 jvanheld Exp $
+# $Id: parse-genbank.pl,v 1.10 2003/11/06 21:49:13 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -20,11 +20,11 @@ require "classes/Genbank_classes.pl";
 
 ################################################################
 #### initialization
-$dbms = "mysql";
-$schema= "rsat";
-$host= "rsat.ulb.ac.be";
-$user="rsat";
-$password="rsat";
+$dbms = $default{'dbms'};
+$schema= $default{'schema'};
+$host= $default{'host'};
+$user= $default{'user'};
+$password= $default{'password'};
 $no_suffix=1;
 
 $test_lines = 10000;

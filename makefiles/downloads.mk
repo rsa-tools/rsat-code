@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: downloads.mk,v 1.1 2003/11/06 17:07:34 jvanheld Exp $
+# $Id: downloads.mk,v 1.2 2003/11/06 21:49:57 jvanheld Exp $
 #
 # Time-stamp: <2003-10-09 14:02:21 jvanheld>
 #
@@ -37,34 +37,25 @@ ebi_genomes:
 	@echo importing genomes from EBI
 	${WGET} --accept=embl.Z,con,fasta.Z ${EBI_GENOMES}
 
+
 ################################################################
 #
 # Genbank genome repository
 #
 GENBANK_DIRS =					\
-	genomes/*				\
-	genbank/genomes/*			\
-	refseq/* 
-
-#	genomes/Drosophila_melanogaster		\
-#	genomes/Plasmodium_falciparum		\
-#	genomes/A_thaliana			\
-#	genbank/genomes/S_cerevisiae		\
-#	genomes/Bacteria			\
-#	genomes/S_pombe				\
-#	genomes/Encephalitozoon_cuniculi	\
-#	genomes/C_elegans			\
-#	genomes/H_sapiens 			\
-#	genbank/genomes/P_falciparum		\
-
+	genomes					\
+	genbank/genomes				\
+	refseq 
 
 
 GENBANK_GENOMES=ftp://ftp.ncbi.nih.gov
-GB_DIR=genomes/H_sapiens
+GB_DIR=genomes/Saccharomyces_cerevisiae
 one_genbank_dir:
+	@mkdir -p logs
 	@echo "${DATE}	updating dir	$${GB_DIR}" >> wget_updates.txt
 	${WGET}							\
 		--exclude-directories 'Bacteria.OLD'		\
+		--exclude-directories ARCHIVE			\
 		--accept=gbk,README,gbff,gaa,faa		\
 		--accept=gbk.gz,README.gz,gbff.gz,gaa.gz,faa.gz	\
 		"${GENBANK_GENOMES}/${GB_DIR}" 
@@ -82,6 +73,64 @@ genbank:
 	@echo "${DATE}	finished to update	${GENBANK_DIRS}" >> wget_updates.txt; 
 
 
+
+
+################################################################
+#
+# Download KEGG databases
+#
+# does not take the full genome sequences
+
+kegg: kegg_ligand kegg_genomes kegg_pathways
+
+
+KEGG_FTP=ftp://ftp.genome.ad.jp/pub/kegg/
+
+KEGG_GENOMES=${KEGG_FTP}/genomes/
+kegg_genomes:
+	@mkdir -p logs
+	${WGET} -X sequences.old,sequences,sequences.weekly.last.tar.Z,genes.weekly.last.tar.Z ${KEGG_GENOMES}
+
+
+KEGG_LIGAND=${KEGG_FTP}/ligand/
+kegg_ligand:
+	@mkdir -p logs
+	${WGET} ${KEGG_LIGAND}
+
+KEGG_PATHWAYS=${KEGG_FTP}/pathways/
+kegg_pathways:
+	@mkdir -p logs
+	${WGET} ${KEGG_PATHWAYS}
+
+
+################################################################
+# Databases at Expasy :
+# - swiss-prot
+# - trembl
+# - ENZYME
+################################################################
+EXPASY=ftp://ftp.expasy.org/databases
+EXPASY_DIRS=						\
+	README						\
+	enzyme						\
+	sp_tr_nrdb					\
+	swiss-prot/release_compressed		
+expasy:
+	@mkdir -p logs
+	for dir in ${EXPASY_DIRS} ; do		\
+		${WGET} ${EXPASY}/$${dir} ;	\
+	done
+
+################################################################
+#
+# Gene ontology
+#
+################################################################
+
+
+GO=http://www.godatabase.org/dev/database/archive/latest/
+go:
+	${WGET} ${GO}
 
 ################################################################
 #
@@ -103,54 +152,6 @@ sgd:
 #	${WGET} ${SGD}/tables/ORF_Locations/ORF_table.txt.gz
 #	${WGET} ${SGD}/tables/ORF_Descriptions
 
-################################################################
-#
-# Download KEGG databases
-#
-
-kegg: kegg_ligand kegg_genomes kegg_pathways
-
-
-KEGG_FTP=ftp://ftp.genome.ad.jp/pub/kegg/
-#KEGG_MIRROR=${KEGG_FTP}/mirror/
-#kegg_mirror:
-#	${WGET} ${KEGG_MIRROR}
-
-#KEGG_CD=${KEGG_FTP}/cd/
-#kegg_cd:
-#	${WGET} ${KEGG_CD}
-
-KEGG_GENOMES=${KEGG_FTP}/genomes/
-# do not tke the genome sequences
-kegg_genomes:
-	${WGET} -X sequences.old,sequences,sequences.weekly.last.tar.Z,genes.weekly.last.tar.Z ${KEGG_GENOMES}
-
-
-KEGG_LIGAND=${KEGG_FTP}/ligand/
-kegg_ligand:
-	${WGET} ${KEGG_LIGAND}
-
-KEGG_PATHWAYS=${KEGG_FTP}/pathways/
-kegg_pathways:
-	${WGET} ${KEGG_PATHWAYS}
-
-
-################################################################
-# Databases at Expasy :
-# - swiss-prot
-# - trembl
-# - ENZYME
-################################################################
-EXPASY=ftp://ftp.expasy.org/databases
-EXPASY_DIRS=						\
-	README						\
-	enzyme						\
-	sp_tr_nrdb					\
-	swiss-prot/release_compressed		
-expasy:
-	for dir in ${EXPASY_DIRS} ; do		\
-		${WGET} ${EXPASY}/$${dir} ;	\
-	done
 
 ################################################################
 #
