@@ -5,8 +5,8 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
-require "RSA.lib.pl";
-require "RSA.cgi.lib.pl";
+require "RSA.lib";
+require "RSA.cgi.lib";
 
 ### Read the CGI query
 $query = new CGI;
@@ -21,7 +21,7 @@ $default{sequence_type} = "dna";
 $default{oligo_size} = 6;
 $default{strand} = "both strands";
 $default{noov} = "checked";
-$default{freq_estimate} = "oligo freq in non-coding regions";
+$default{freq_estimate} = "Oligo frequencies from all non-coding regions";
 $default{occ} = 'checked';
 $default{proba} = 'checked';
 $default{zscore} = '';
@@ -100,10 +100,11 @@ print "<BR>\n";
 ### expected frequency calculation
 print "<A HREF='help.oligo-analysis.html#exp_freq'><B>Expected frequency</B></A>&nbsp;";
 print $query->popup_menu(-name=>'freq_estimate',
-			 -Values=>['equiprobable nucleotides',
-				   'alphabet from input sequence',
-				   'Markov Chain',
-				   'oligo freq in non-coding regions'],
+			 -Values=>['Equiprobable residues',
+				   'Residue frequencies from input sequence',
+				   'Markov Chain (higher order dependencies)',
+				   'Lexicon partitioning',
+				   'Oligo frequencies from all non-coding regions'],
 			 -default=>$default{freq_estimate});
 print "<BR>";
 
