@@ -1,7 +1,13 @@
 #!/usr/bin/perl
 
-### initialization
+require "RSA.stat.lib";
 
+## CVS
+# - implemented &IUPAC();
+# - implemented &ReverseIUPAC();
+# - improved the treatment of CountMatches: matches between two ambiguous nucleotides are now supported
+
+### initialization
 $accepted_input_seq{'raw'} = 1;
 $accepted_input_seq{'multi'} = 1;
 $accepted_input_seq{'ig'} = 1;
@@ -65,69 +71,109 @@ sub sub_sequence {
 ###	D	= G, A or T     (not C)
 ###	N	= G, A, C or T  (aNy)
 sub InitMatchScores {
-    $match{A}{A} = 1/4;
-    $match{C}{C} = 1/4;
-    $match{G}{G} = 1/4;
-    $match{T}{T} = 1/4;
+    my %matching_residues = ();
     
-    $match{R}{A} = 1/2;
-    $match{R}{G} = 1/2;
-    $match{S}{C} = 1/2;
-    $match{S}{G} = 1/2;
-    $match{W}{T} = 1/2;
-    $match{W}{A} = 1/2;
-    $match{Y}{C} = 1/2;
-    $match{Y}{T} = 1/2;
-    $match{B}{C} = 3/4;
-    $match{B}{G} = 3/4;
-    $match{B}{T} = 3/4;
-    $match{D}{A} = 3/4;
-    $match{D}{G} = 3/4;
-    $match{D}{T} = 3/4;
-    $match{H}{A} = 3/4;
-    $match{H}{C} = 3/4;
-    $match{H}{T} = 3/4;
-    $match{V}{A} = 3/4;
-    $match{V}{C} = 3/4;
-    $match{V}{G} = 3/4;
-    $match{N}{A} = 1;
-    $match{N}{C} = 1;
-    $match{N}{G} = 1;
-    $match{N}{T} = 1;
-    
-    $match{A}{R} = 1/2;
-    $match{G}{R} = 1/2;
-    $match{C}{S} = 1/2;
-    $match{G}{S} = 1/2;
-    $match{T}{W} = 1/2;
-    $match{A}{W} = 1/2;
-    $match{C}{Y} = 1/2;
-    $match{T}{Y} = 1/2;
-    $match{C}{B} = 3/4;
-    $match{G}{B} = 3/4;
-    $match{T}{B} = 3/4;
-    $match{A}{D} = 3/4;
-    $match{G}{D} = 3/4;
-    $match{T}{D} = 3/4;
-    $match{A}{H} = 3/4;
-    $match{C}{H} = 3/4;
-    $match{T}{H} = 3/4;
-    $match{A}{V} = 3/4;
-    $match{C}{V} = 3/4;
-    $match{G}{V} = 3/4;
-    $match{A}{N} = 1;
-    $match{C}{N} = 1;
-    $match{G}{N} = 1;
-    $match{T}{N} = 1;
-    
-    $match{N}{N} = 1;
+    ## Matches between non-ambiguous nucleotides
+    my @nucleotides = qw (A C G T);
 
-
-    my @letters = sort keys %match;
-    foreach my $l1 (@letters) {
-	foreach my $l2 (@letters) {
+    ## Matches between nucleotides and IUPAC
+    my %IUPAC = &IUPAC();
+    my @IUPAC = keys %IUPAC;
+    foreach my $d1 (@IUPAC) {
+	foreach my $d2 (@IUPAC) {
+	    next if ($d2 gt $d1); ## Already treated since the match is reciprocal
+	    my @match1 = @{$IUPAC{$d1}};
+	    $match1 = scalar(@match1);
+	    
+	    my @match2 = @{$IUPAC{$d2}};
+	    $match2 = scalar(@match2);
+	    
+	    $match{$d1}{$d2} = 0; ## initialization
+	    $match{$d2}{$d1} = 0; ## initialization
+	    R1: foreach my $r1 (@match1) {
+		R2: foreach my $r2 (@match2) {
+		    if ($r1 eq $r2) {
+			$match{$d2}{$d1} = $match{$d1}{$d2} = &max($match1, $match2)/4;
+			warn join("\t", "match", $d1, $r1, $d2, $r2, $match{$d2}{$d1}, $match{$d2}{$d1}), "\n" if ($main::verbose >= 10);
+			last R1;
+		    }
+		}
+	    }
 	}
     }
+
+    ## Check (debug)
+    if ($main::verbose >= 10) {
+	foreach my $d1 (@IUPAC) {
+	    foreach my $d2 (@IUPAC) {
+		warn join("\t", 
+			  "d1:$d1", join ("", @match1), $match1,
+			  "d2:$d2", join ("", @match2), $match2,
+		      $match{$d1}{$d2},
+			  $match{$d2}{$d1},
+			 ), "\n";
+	    }
+
+	}
+    }
+
+#     $match{A}{A} = 1/4;
+#     $match{C}{C} = 1/4;
+#     $match{G}{G} = 1/4;
+#     $match{T}{T} = 1/4;
+    
+#     $match{R}{A} = 1/2;
+#     $match{R}{G} = 1/2;
+#     $match{S}{C} = 1/2;
+#     $match{S}{G} = 1/2;
+#     $match{W}{T} = 1/2;
+#     $match{W}{A} = 1/2;
+#     $match{Y}{C} = 1/2;
+#     $match{Y}{T} = 1/2;
+#     $match{B}{C} = 3/4;
+#     $match{B}{G} = 3/4;
+#     $match{B}{T} = 3/4;
+#     $match{D}{A} = 3/4;
+#     $match{D}{G} = 3/4;
+#     $match{D}{T} = 3/4;
+#     $match{H}{A} = 3/4;
+#     $match{H}{C} = 3/4;
+#     $match{H}{T} = 3/4;
+#     $match{V}{A} = 3/4;
+#     $match{V}{C} = 3/4;
+#     $match{V}{G} = 3/4;
+#     $match{N}{A} = 1;
+#     $match{N}{C} = 1;
+#     $match{N}{G} = 1;
+#     $match{N}{T} = 1;
+    
+#     $match{A}{R} = 1/2;
+#     $match{G}{R} = 1/2;
+#     $match{C}{S} = 1/2;
+#     $match{G}{S} = 1/2;
+#     $match{T}{W} = 1/2;
+#     $match{A}{W} = 1/2;
+#     $match{C}{Y} = 1/2;
+#     $match{T}{Y} = 1/2;
+#     $match{C}{B} = 3/4;
+#     $match{G}{B} = 3/4;
+#     $match{T}{B} = 3/4;
+#     $match{A}{D} = 3/4;
+#     $match{G}{D} = 3/4;
+#     $match{T}{D} = 3/4;
+#     $match{A}{H} = 3/4;
+#     $match{C}{H} = 3/4;
+#     $match{T}{H} = 3/4;
+#     $match{A}{V} = 3/4;
+#     $match{C}{V} = 3/4;
+#     $match{G}{V} = 3/4;
+#     $match{A}{N} = 1;
+#     $match{C}{N} = 1;
+#     $match{G}{N} = 1;
+#     $match{T}{N} = 1;
+#     $match{N}{N} = 1;
+
+    return %match;
 }
 
 
@@ -141,7 +187,7 @@ returns the number of matching positions between two sequences
 of same length
 
 usage:
-   ($matches,$weight, $proba) = &CountMatches($seq1,$seq2);
+   ($matches,$weight, $proba, $length) = &CountMatches($seq1,$seq2);
 
 IUPAC degenerate codes are accepted for the first as well as the
 second sequences.
@@ -150,20 +196,21 @@ The weight is in base units, i.e.  each unit correspond to one
 perfectly specified base it is calculated from the matching
 probability:
 
-      score = -log4(proba)
-
+      weight = -log4(proba)
 =cut
 
 sub CountMatches {
     my ($seq1, $seq2) = @_;
     my $matches = 0;
     my $proba = 1;
-    my $seq_len = length($seq1);
+    my $len1 = length($seq1);
+    my $len2 = length($seq2);
     my $weight = "Inf";
-
-    foreach my $pos (0..$seq_len-1) {
-	my $base1 = uc(substr($seq1,$pos,1));
-	my $base2 = uc(substr($seq2,$pos,1));
+    my $weight = 0;
+    my $length = &min($len1, $len2);
+    foreach my $offset (0..$length-1) {
+	my $base1 = uc(substr($seq1,$offset,1));
+	my $base2 = uc(substr($seq2,$offset,1));
 	if ($match{$base1}{$base2}) {
 	    $matches++;
 	    $proba *= $match{$base1}{$base2};
@@ -172,36 +219,81 @@ sub CountMatches {
     if ($proba > 0) {
 	$weight = abs(log($proba))/log(4);
     } 
-    return ($matches, $weight, $proba);
+    return ($matches, $weight, $proba, $length);
 }
 
+
+=pod 
+
+=item &BestMatch($seq1, $seq2);
+
+Return the best match between two patterns or sequences by sliding one
+sequence against another, and calculating the matching score for each
+offset. The matching score is the weight returned &CountMatches().
+
+usage:
+    my ($match, $weight, $proba, $length, $offset) = &BestMatch($seq1, $seq2);
+
+=cut
+sub BestMatch {
+    my ($seq1, $seq2) = @_;
+    my $len1 = length($seq1);
+    my $len2 = length($seq2);
+    my $min_offset = -$len2+1;
+    my $max_offset = $len1 -1;
+
+    my $best_matches = -1;
+    my $best_weight = -1;
+    my $best_proba = -1;
+    my $best_offset;
+
+    for my $offset ($min_offset..$max_offset) {
+	my $of1 = 0;
+	my $of2 = 0;
+	if ($offset < 0) {
+	    $of2 = -$offset; ## truncate left side of seq2
+	} elsif ($offset > 0) {
+	    $of1 = $offset; ## truncate left side of seq1	    
+	}
+	$sub1=substr($seq1, $of1);
+	$sub2=substr($seq2, $of2);
+	my ($matches, $weight, $proba, $length) = &CountMatches($sub1, $sub2);
+	if ($weight > $best_weight) {
+	    $best_matches = $matches;
+	    $best_weight = $weight;
+	    $best_proba = $proba;
+	    $best_length = $length, 
+	    $best_offset = $offset;
+	}
+	warn join ("\t", $offset, $of1, $sub1, $of2, $sub2, $weight), "\n" if ($main::verbose >= 10);
+    }
+    warn join ("\t", $seq1, $seq2, $best_matches, $best_weight, $best_proba, $best_length, $best_offset), "\n" if ($main::verbose >= 5);
+    return ($best_matches, $best_weight, $best_proba, $best_length, $best_offset);
+}
 
 =pod
 
 =item  &CountMismatches($seq1,$seq2,$max);
 
-returns the number of non-matching positions between two sequences of
-same length, up to the maximum allowed value $max.
+Return the number of non-matching positions between two sequences of
+same length, up to the maximum allowed value $max.  IUPAC degenerate
+codes is supported for the first as well as the second sequence.
 
 usage:
    $mismatches = &CountMismatches($seq1,$seq2,$max);
 
-IUPAC degenerate codes is supported for the first as well as the
-second sequence.
 
 =cut
 
 sub CountMismatches {
-    my $seq1 = $_[0];
-    my $seq2 = $_[1];
-    my $max = $_[2];
+    my ($seq1,$seq2,$max) = @_;
     my $mismatches = 0;
     
-    my $seq_len = length($seq1);
+    my $len1 = length($seq1);
     
-    foreach my $pos (0..$seq_len-1) {
-	my $base1 = uc(substr($seq1,$pos,1));
-	my $base2 = uc(substr($seq2,$pos,1));
+    foreach my $offset (0..$len1-1) {
+	my $base1 = uc(substr($seq1,$offset,1));
+	my $base2 = uc(substr($seq2,$offset,1));
 	unless ($match{$base1}{$base2}){
 	    $mismatches++;
 	    if ($mismatches > $max) {
@@ -213,38 +305,31 @@ sub CountMismatches {
 } ### CountMismatches
 
 
+=pod
+
+=item  &NextMatch($input_seq, $pattern,$allowed_subst,$offset);
+
+Return the next matching position given an input sequence and a
+pattern. Substitutions are allowed, and an offset can be introduced to
+start searching from an abitrary position. If no match is encountered,
+-1 is returned. IUPAC degenerate codes is supported for the pattern as
+well as the input sequence.
+
+usage: 
+    ($match_pos,$match_seq,$mismatches) = &NextMatch($input_seq, $pattern,$allowed_subst,$offset);
+
+=cut
+
 sub NextMatch {
-### returns the next matching position
-### given an input sequence and a pattern
-### substitutions are allowed, and an offset can be introduce to start searching from an abitrary position
-### if no match is encountered, -1 is returned
-### usage: 
-###     ($match_pos,$match_seq,$mismatches) = &NextMatch($input_seq, $pattern,$allowed_subst,$offset);
-
-    local($input_seq) = uc($_[0]);
-    local($pattern) = uc($_[1]);
-    local($allowed_subst) = $_[2];
-    local($offset) = $_[3];
-    local($pattern_len) = length($pattern);
-    local($last_pos) =  length($input_seq) - $pattern_len;
-    local($min) = $pattern_len - $allowed_subst;
-    local($mismatches = 0);
-
+    my ($input_seq, $pattern, $allowed_subst, $offset) = @_;
+    $input_seq = uc($input_seq);
+    $pattern = uc($pattern);
+    my $pattern_len = length($pattern);
+    my $last_pos =  length($input_seq) - $pattern_len;
+    my $min = $pattern_len - $allowed_subst;
+    my $mismatches = 0;
     for $pos ($offset..$last_pos) {
 	$sub_seq = substr($input_seq,$pos,$pattern_len);
-
-#	$mismatches = 0;
-#	foreach $base (0..$pattern_len-1) {
-#	    $base1 = substr($sub_seq,$base,1);
-#	    $base2 = substr($pattern,$base,1);
-#	    unless ($match{$base1}{$base2}){
-#		$mismatches++;
-#		if ($mismatches > $allowed_subst) {
-#		    $base = $seq_len;
-#		}
-#	    }
-#	}
-
 	$mismatches = &CountMismatches($sub_seq,$pattern,$allowed_subst);
 	if ($mismatches <= $allowed_subst) {
 	    $match_pos = $pos+1;
@@ -253,12 +338,9 @@ sub NextMatch {
 	}
     }
     return(-1);
-
 } ### NetxMatch
 
 ### DNA sequence substitutions ####
-sub Substitute {
-###
 ### usage 
 ### %subst_hash = Substitute($pattern, $allowed_subst, $IUPAC_output);
 ###
@@ -266,7 +348,7 @@ sub Substitute {
 ### with >= $allowed_subst substitutions
 ### the keys of the hash are the matching patterns,
 ### the values give the number of substitutions
-
+sub Substitute {
     local($l_pattern) = uc($_[0]);
     local($l_allowed_subst) = $_[1];
     local($l_IUPAC_output) = $_[2];
@@ -343,7 +425,6 @@ sub Substitute {
 }
 
 
-sub degenerate_nucleotide {
 #### From a list of nucleotides, return the corresponding IUPAC degenerate 
 ### based on the IUPAC code for partly specified nucleotides
 ###	A			(Adenine)
@@ -364,45 +445,45 @@ sub degenerate_nucleotide {
 #### usage:
 #### $deg_nucl = &degererate_nucleotide(@nucleotides);
 #### input nucleotides can themslve be compltely or partly spcified 
-    my @nucleotides = lc(@_);
-    my $deg_nucl;
-    my %signature = ();
-    @{$signature{a}} = ('a');
-    @{$signature{c}} = ('c');
-    @{$signature{g}} = ('g');
-    @{$signature{t}} = ('t');
-    @{$signature{r}} = ('a','g');
-    @{$signature{y}} = ('c','t');
-    @{$signature{w}} = ('a','c');
-    @{$signature{s}} = ('c','g');
-    @{$signature{m}} = ('a','c');
-    @{$signature{k}} = ('g','t');
-    @{$signature{h}} = ('a','c','t');
-    @{$signature{b}} = ('c','g','t');
-    @{$signature{v}} = ('a','c','g');
-    @{$signature{d}} = ('a','g','t');
-    @{$signature{n}} = ('a','c','g','t');
-    my %pure_nucleotides = ();
+# sub degenerate_nucleotide {
+#     my @nucleotides = lc(@_);
+#     my $deg_nucl;
+#     my %signature = ();
+#     @{$signature{a}} = ('a');
+#     @{$signature{c}} = ('c');
+#     @{$signature{g}} = ('g');
+#     @{$signature{t}} = ('t');
+#     @{$signature{r}} = ('a','g');
+#     @{$signature{y}} = ('c','t');
+#     @{$signature{w}} = ('a','c');
+#     @{$signature{s}} = ('c','g');
+#     @{$signature{m}} = ('a','c');
+#     @{$signature{k}} = ('g','t');
+#     @{$signature{h}} = ('a','c','t');
+#     @{$signature{b}} = ('c','g','t');
+#     @{$signature{v}} = ('a','c','g');
+#     @{$signature{d}} = ('a','g','t');
+#     @{$signature{n}} = ('a','c','g','t');
+#     my %pure_nucleotides = ();
 
-#    foreach my $i (@nucelotides) {
-#	foreach $pure @{$signature{$l}} {
-#	    #
-#	}
-#    }
+# #    foreach my $i (@nucelotides) {
+# #	foreach $pure @{$signature{$l}} {
+# #	    #
+# #	}
+# #    }
 
     
-    return $deg_nucl;
-}
+#     return $deg_nucl;
+# }
 
 
-sub Insert {
 ### usage 
 ### %ins_hash = Insert($pattern, $allowed_ins, $IUPAC_output)
 ### returns a hash of DNA sequences matching $pattern 
 ### with >= $allowed_ins insertions
 ### the keys of the hash are the matching patterns,
 ### the values give the number of insertions
-
+sub Insert {
     local($l_pattern) = uc($_[0]);
     local($l_allowed_ins) = $_[1];
     local($l_IUPAC_output) = $_[2];
@@ -444,13 +525,13 @@ sub Insert {
 
 
 
-sub Delete {
 ### usage 
 ### %del_hash = Delete($pattern, $allowed_del, $IUPAC_output)
 ### returns a hash of DNA sequences matching $pattern 
 ### with >= $allowed_del deletions
 ### the keys of the hash are the matching patterns,
 ### the values give the number of deletions
+sub Delete {
 
     local($l_pattern) = uc($_[0]);
     local($l_allowed_del) = $_[1];
@@ -478,11 +559,11 @@ sub Delete {
 }
 
 
-sub ExpandSeq {
 #### replaces the multipliers within a sequence
 #### eg: atgn(3)gta is transformed to atgnnngta
 #### usage
 ####   $exp_seq = &ExpandSeq($seq);
+sub ExpandSeq {
     local($seq) = $_[0];
     local($exp_seq) = "";
 
@@ -498,12 +579,12 @@ sub ExpandSeq {
 
 }
 
-sub compress_pattern {
 ### transform letter repeats into a single letter followed by a multiplier
 #### usage 
 ### $compressed_pattern = compress_pattern($expanded_pattern,@letters_to_compress);
 ### example: $compressed = &compress_pattern("aaannnnnnnccc","n");
 ### returns aaan{7}ccc
+sub compress_pattern {
     my ($expanded_pattern,@letters_to_compress) = @_;
     my $compressed_pattern = "";
     my $epl = length($expanded_pattern);
@@ -542,32 +623,79 @@ sub compress_pattern {
 }
 
 
-sub IUPAC_to_regular {
-### converts a DNA sequence with IUPAC ambiguous codes
+################################################################
+## Return the reverse of the IUPAC codes for ambiguous nucleotides
+## Result : a hash table with a nucleotide as key and the list of
+## matching ambiguous codes as value
+## Usage:
+##     my %revIUPAC = &ReverseIUPAC();
+sub ReverseIUPAC {
+    my %revIUPAC = ();
+    my %IUPAC = &IUPAC();
+    foreach my $d (sort keys %IUPAC) {
+	my @nucleotides = sort(@{$IUPAC{$d}});
+	foreach my $n (@nucleotides) {
+	    push @{$revIUPAC{$n}}, $d; 
+	}
+    }
+    return %revIUPAC;
+}
+
+################################################################
+## Return IUPAC codes for ambiguous nucleotides
+## Result : a hash table with an ambiguous code as key and the list of
+## matching nucleotides as value
+## Usage:
+##      my %IUPAC = &IUPAC();
+sub IUPAC {
+    my %IUPAC = ();
+    $IUPAC{A} = ["A"];
+    $IUPAC{C} = ["C"];
+    $IUPAC{G} = ["G"];
+    $IUPAC{T} = ["T"];
+
+    $IUPAC{R} = ["A","G"];
+    $IUPAC{Y} = ["C","T"];
+    $IUPAC{M} = ["A","C"];
+    $IUPAC{K} = ["G","T"];
+    $IUPAC{S} = ["C","G"];
+    $IUPAC{W} = ["A","T"];
+    $IUPAC{B} = ["C","G","T"];
+    $IUPAC{D} = ["A","G","T"];
+    $IUPAC{H} = ["A","C","T"];
+    $IUPAC{V} = ["A","C","G"];
+    $IUPAC{N} = ["A","C","G","T"];
+    return %IUPAC;
+}
+
+################################################################
+### Convert a DNA sequence with IUPAC ambiguous codes
 ### into a regular expression 
-    local($regular) = $_[0];
-    $regular =~ s/R/[AG]/g;
-    $regular =~ s/Y/[CT]/g;
-    $regular =~ s/M/[AC]/g;
-    $regular =~ s/K/[GT]/g;
-    $regular =~ s/S/[CG]/g;
-    $regular =~ s/W/[AT]/g;
-    $regular =~ s/B/[CGT]/g;
-    $regular =~ s/D/[AGT]/g;
-    $regular =~ s/H/[ACT]/g;
-    $regular =~ s/V/[ACG]/g;
-    $regular =~ s/N/[ACGT]/g;
-    $regular =~ s/r/[ag]/g;
-    $regular =~ s/y/[ct]/g;
-    $regular =~ s/m/[ac]/g;
-    $regular =~ s/k/[gt]/g;
-    $regular =~ s/s/[cg]/g;
-    $regular =~ s/w/[at]/g;
-    $regular =~ s/b/[cgt]/g;
-    $regular =~ s/d/[agt]/g;
-    $regular =~ s/h/[act]/g;
-    $regular =~ s/v/[acg]/g;
-    $regular =~ s/n/[acgt]/g;
+sub IUPAC_to_regular {
+    my ($regular) = @_;
+    
+    my %IUPAC = &IUPAC();
+    foreach my $N (sort keys %IUPAC) {
+	## only replace ambiguous code
+	next unless (scalar(@{$IUPAC{$N}}) > 1);
+
+	my $N = uc($N); ## make sure we have an uppercase
+	my $expr_uc = uc(join "", sort(@{$IUPAC{$N}}));
+	$regular =~ s/$N/[${expr_uc}]/g;
+
+	my $n = lc($N); ## take the corresponding lowercase
+	my $expr_lc = lc($expr_uc);
+	$regular =~ s/$n/[${expr_lc}]/g;
+
+# 	warn join( "\t", 
+# 		   $N,
+# 		   $expr_uc,
+# 		   $n,
+# 		   $expr_lc,
+# 		   join( ";", @{$IUPAC{$N}}),
+		   
+# 	     ), "\n" if ($main::verbose >= 10);
+    }
     return $regular;
 }
 
@@ -610,14 +738,15 @@ sub regular_to_IUPAC {
     return $regular;
 }
 
+################################################################
 #### overlap coefficient ####
-sub OverlapCoeff {
 ### calculates the overlap coefficient, calculated following
 ### Pevzner et al.(1989). J. Biomol. Struct & Dynamics 5:1013-1026
 ### and adapted for the overlapping with reverse complement
 ### usage: OverlapCoeff($pattern)
 ### returns a value of 1 for non-overlapping patterns, and greater for 
 ### self-overlapping patterns
+sub OverlapCoeff {
     my ($word, %residue_proba) = @_;
     my $word_length = length($word);
     my $coeff = 1;
@@ -670,6 +799,8 @@ sub OverlapCoeff {
     return($coeff);
 }
 
+################################################################
+## Return the reverse complement of a DNA sequence
 sub ReverseComplement {
     local($orig_seq) = $_[0];
     $complement = reverse $orig_seq;
@@ -710,11 +841,11 @@ sub ReverseComplement {
 }# ReverseComplement
 
 
-sub Palindromic {
 #### usage
 ####    Palindromic($sequence)
 #### returns true if a sequence is palindromic, i.e., if 
 #### it is equal to its reverse complement
+sub Palindromic {
     local($seq) = lc($_[0]);
     local($rc) = lc(&ReverseComplement($seq));
 
@@ -727,7 +858,6 @@ sub Palindromic {
 }
 
 ###### print next sequence #####
-sub PrintNextSequence {
 ##### prints DNA sequence in various formats 
 ##### See the hash %accepted_output_seq for a list of accepted formats
 ##### Usage: 
@@ -744,6 +874,7 @@ sub PrintNextSequence {
 #####       @comments is a list of comments (one element per line)
 #####                 comments are only supported for some formats such as
 #####                 IG or Wconsensus 
+sub PrintNextSequence {
     local($OUTFILE) =  shift;
     local($out_format) = lc(shift);
     local($line_width) = shift;
@@ -789,15 +920,12 @@ sub PrintNextSequence {
 }
 
 
-
-##### DNA sequence reading & writing ######
-
-sub CheckInputSeqFormat {
 #### checks whether the sequence format is supported
 #### Usage:
 ####     &CheckInputSeqFormat($format)
 #### Returns 1 if the format is accepted for input sequence,
 #### exits otherwise
+sub CheckInputSeqFormat {
   local($sequence_format) = lc($_[0]);
   if ($accepted_input_seq{$sequence_format}) {
     return 1;
@@ -807,12 +935,12 @@ sub CheckInputSeqFormat {
   }
 }
 
-sub CheckOutputSeqFormat {
 #### checks whether the sequence format is supported
 #### Usage:
 ####     &CheckOutputSeqFormat($format)
 #### Returns 1 if the format is accepted for output sequence,
 #### exits otherwise
+sub CheckOutputSeqFormat {
     local($sequence_format) = lc($_[0]);
     if ($accepted_output_seq{$sequence_format}) {
 	return 1;
@@ -822,10 +950,10 @@ sub CheckOutputSeqFormat {
     }
 }
 
-sub CheckFormat {
 ### checks that a sequence only contains letters from a to z
 ### usage 
 ###    CheckFormat($sequence,$expected_format, $seq_type);
+sub CheckFormat {
     my ($l_sequence, $expected_format, $seq_type) = @_;
     $expected_format = lc($expected_format);
     $expected_format = "wconsensus" if ($expected_format eq "wc");
@@ -853,14 +981,14 @@ sub CheckFormat {
     return;
 }
 
+##### Reads a DNA sequence
+##### various formats are accepted (see the hash %accepted_raw_formats
+##### Usage:
+##### ($sequence, $seq_id, @seq_comments) = &ReadNextSequence(FILE, $seq_format, $input_dir])
+##### where   FILE is a file handle
+#####         $format is one of the accepted sequence formats 
+#####                 (see CheckFormat) 
 sub ReadNextSequence {
-    ##### Reads a DNA sequence
-    ##### various formats are accepted (see the hash %accepted_raw_formats
-    ##### Usage:
-    ##### ($sequence, $seq_id, @seq_comments) = &ReadNextSequence(FILE, $seq_format, $input_dir])
-    ##### where   FILE is a file handle
-    #####         $format is one of the accepted sequence formats 
-    #####                 (see CheckFormat) 
 
     my ($SEQ, $sequence_format, $input_dir, $seq_type) = @_;
     $sequence_format = lc($sequence_format);
@@ -1168,11 +1296,11 @@ sub ReadMSF {
 }
 
 ####### fold sequence ##########
-sub FoldSequence {
 ### usage &FoldSequence($sequence, $line_width)
 ### remove all blank spaces from a sequence, 
 ### and insert return carriages every $l characters
 ### no carriage return is inserted if $l = 0
+sub FoldSequence {
     my ($in_seq, $lw) = @_;
     my $out_seq = "";
 
@@ -1192,9 +1320,9 @@ sub FoldSequence {
 }
 
 ####### fold sequence ##########
-sub CleanDNA {
 ### usage &CleanDNA($sequence)
 ### replaces all non-acgt characters by "."
+sub CleanDNA {
     my ($_sequence) = @_;
 
     $_sequence =~ s/\s//g;  ### remove blank spaces, tabs and newlines
@@ -1203,12 +1331,12 @@ sub CleanDNA {
     return $_sequence;
 }
 
+### usage : $dist = EditDistance($string1,$string2);
+### usage : $dist = EditDistance($string1,$string2,1); ### hyperverbose
+### usage : $dist = EditDistance($string1,$string2,1,1); ### case sensitive 
+### $main::hyperverbose -> print matrix
 sub EditDistance {
     use strict;
-    ### usage : $dist = EditDistance($string1,$string2);
-    ### usage : $dist = EditDistance($string1,$string2,1); ### hyperverbose
-    ### usage : $dist = EditDistance($string1,$string2,1,1); ### case sensitive 
-    ### $main::hyperverbose -> print matrix
     my ($string1,$string2,$hyperverbose, $cs) = @_;
     my @dist = ();
     unless ($cs) {
@@ -1269,9 +1397,9 @@ sub EditDistance {
 
 
 
+#### usage : all_oligos($length)
+#### returns an array with all possible oligonucleotids of the specified length.
 sub all_oligos {
-    #### usage : all_oligos($length)
-    #### returns an array with all possible oligonucleotids of the specified length.
     my $len = $_[0];
     my @alphabet = ("a", "c", "g", "t");
     my @oligos = ();
