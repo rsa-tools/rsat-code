@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_genomes.mk,v 1.13 2005/01/24 21:26:34 jvanheld Exp $
+# $Id: install_genomes.mk,v 1.14 2005/01/26 19:12:42 jvanheld Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -33,7 +33,7 @@ V=1
 ### Install one organism
 ORG=Arabidopsis_thaliana
 ORG_DIR=${NCBI_DIR}/${ORG}
-INSTALL_TASK=allup,clean,config,dyads,ncf,intergenic_freq,oligos,parse,start_stop,upstream_freq
+INSTALL_TASK=allup,clean,config,dyads,oligos,parse,start_stop,upstream_freq
 INSTALL_CMD=install-organism -v ${V}		\
 		-org ${ORG}			\
 		-task ${INSTALL_TASK}		\
@@ -41,7 +41,7 @@ INSTALL_CMD=install-organism -v ${V}		\
 
 install_one_organism:
 	@echo "install log	${INSTALL_LOG}"
-	@echo "Parsing organism ${ORG}" 
+	@echo "Installing organism ${ORG}" 
 	${MAKE} my_command MY_COMMAND="${INSTALL_CMD}" JOB_PREFIX=install_${ORG}
 
 ### Bacteria with a small genome for quick testing
