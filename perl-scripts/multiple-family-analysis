@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.13 2002/03/18 11:03:03 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.14 2002/03/18 13:05:11 jvanheld Exp $
 #
-# Time-stamp: <2002-03-18 12:00:38 jvanheld>
+# Time-stamp: <2002-03-18 14:04:27 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -20,50 +20,30 @@ if ($#ARGV < 0) {
 }
 
 
-
 #### initialisations	    
 @supported_tasks = qw (upstream oligos dyads synthesis clean all);
 foreach my $task (@supported_tasks) {
     $supported_task{$task} = 1;
 }
 $supported_tasks = join ",", @supported_tasks;
-
 $noorf = 0;
 $default{from} = -800;
 $default{to} = 0;
 $known_site_file = "known-consensus";
 $known_sites_provided = 0;
 $exp = "ncf";
+$seq_format = "fasta";
+$min_oligo_length = 6;
+$max_oligo_length = 6;
+$min_matching_score = 4;
+$dyad_element_length = 3;
+$noov = 1;
+$max_sp = 16;
+$start_date = `date`;
 
 &ReadArguments();
 
-#### check selected tasks
-unless (defined(%task)) {
-    &FatalError("You should select at least one task.");
-}
-if ($task{all}) {
-    foreach my $t (@supported_tasks) {
-#	next if ($t eq 'clean'); ### clean needs to be actively called
-	$task{$t} = 1;
-    }
-}
-
-############################### check parameters ###############################
-
-### family file ###
-if ($family_file eq "") {
-  die "Error: you should specify a family file\n";  
-} 
-
-### organism ###
-if ($organism_name eq "") {
-  die "Error: you should specify an organism\n$supported_organisms\n";  
-} 
-unless ($supported_organism{$organism_name}) {
-  die ("Error: organism $organism_name is not supported\n",
-       "Supported organisms:\n$supported_organisms\n");
-}
-&InitParameters;
+&CheckParameters;
 
 ### read gene name and identifiers
 warn "; Reading ORF information ...\n" 
@@ -137,21 +117,21 @@ exit(0);
 sub SetFileNames {
   $sp = "0-$max_sp";
   $dyad_options = "-v ";
-  $dyad_options .= "-sort ";
-  $dyad_options .= "-${strands} ";
-  $dyad_options .= "-type $type ";
-  $dyad_options .= "-noov " if ($noov);
-  $dyad_options .= "-l $dyad_element_length ";
-  $dyad_options .= "-thosig $th ";
-  $dyad_options .= "-sp $sp ";
+  $dyad_options .= " -sort ";
+  $dyad_options .= " -${strands} ";
+  $dyad_options .= " -type $type ";
+  $dyad_options .= " -noov " if ($noov);
+  $dyad_options .= " -l $dyad_element_length ";
+  $dyad_options .= " -thosig $th ";
+  $dyad_options .= " -sp $sp ";
   if ($exp_freq_file{dyads}) {
-    $dyad_options .= "-expfreq $exp_freq_file{dyads}";
+    $dyad_options .= " -expfreq $exp_freq_file{dyads}";
   } elsif ($exp eq "ncf") {
-    $dyad_options .= "-ncf ";
-    $dyad_options .= "-org $organism_name ";
+    $dyad_options .= " -ncf ";
+    $dyad_options .= " -org $organism_name ";
   } elsif ($exp eq "mncf") {
-    $dyad_options .= "-mncf ";
-    $dyad_options .= "-org $organism_name ";
+    $dyad_options .= " -mncf ";
+    $dyad_options .= " -org $organism_name ";
   }
   
   $dyad_suffix = "_dyads";
@@ -172,6 +152,7 @@ sub SetFileNames {
   }
 
   $noorf_string = "_noorf" if ($noorf);
+  $noov_string = "_noov" if ($noov);
   foreach my $family_name (@families) {
       $family{$family_name}->{family_file} = "$family_name/${family_name}.fam";
       $family{$family_name}->{known_site_file} = "$family_name/${family_name}_known_sites";
@@ -179,8 +160,7 @@ sub SetFileNames {
       $family{$family_name}->{seq_file} = $family_name."/".$family{$family_name}->{file_prefix}.".${seq_format}";
       $family{$family_name}->{seq_file_purged} = $family_name."/".$family{$family_name}->{file_prefix}."_purged.${seq_format}";
       
-      $family{$family_name}->{oligo_file} =  "${family_name}/oligos_${family_name}/".$family{$family_name}->{file_prefix}."_oligos_${min_oligo_length}-${max_oligo_length}nt_${strands}_sig${th}";
-      $family{$family_name}->{oligo_file} .= "_noov" if ($noov);
+      $family{$family_name}->{oligo_file} =  "${family_name}/oligos_${family_name}/".$family{$family_name}->{file_prefix}."_oligos_${min_oligo_length}-${max_oligo_length}nt_${strands}_sig${th}${noov_string}";
       $family{$family_name}->{oligo_assembly_file} = $family{$family_name}->{oligo_file}."_contigs";
       $family{$family_name}->{oligo_ft_file} = $family{$family_name}->{oligo_file}.".ft";
       
@@ -190,6 +170,8 @@ sub SetFileNames {
       $family{$family_name}->{fmap_file} = $family{$family_name}->{dyad_file}.".gif";
       $family{$family_name}->{htmap_file} = $family{$family_name}->{dyad_file}.".html";
   }  
+
+  $table_suffix = $family_file."_up_".$from."_".$to.$noorf_string.$noov_string;
 }
 
 ################### SUBROUTINE DEFINITION ###################"
@@ -556,7 +538,7 @@ sub SyntheticTable {
     close DYADS;
   }
   
-  $table_file = "synthetic_tables/table".$dyad_suffix;
+  $table_file = "synthetic_tables/".$table_suffix;
   $table_file .= "_tr" if ($transpose);
   open TABLE, "> ${table_file}.html";
   print TABLE "<HTML><BODY>\n";
@@ -612,45 +594,54 @@ sub DrawFeatureMaps {
 }
 
 
-#### initialization
-sub InitParameters {
-  $from = $default{from} unless defined($from);
-  $to = $default{to} unless defined($to);
-  $seq_length = abs($to - $from) + 1;
-  $seq_format = "fasta";
-#  $upstream_sequence_file = "$RSA//data/yeast/sequences/all_up${seq_length}.${seq_format}";
-  
-  $min_oligo_length = 6;
-  $max_oligo_length = 6;
-  $min_matching_score = 4;
-  
-  $dyad_element_length = 3;
-  
-  if (defined($force{type})) {
-    $type = $force{type}; ### force
-  } else {
-    $type = "any";
-  }
-  if (defined($force{strands})) {
-    $strands = $force{strands}; ### force
-  } else {
-    $strands = "2str";
-  }
-  if (defined($force{exp})) {
-    $exp = $force{exp}; ### force
-  }
-  if (&IsReal($force{th})) {
-    $th = $force{th}; ### force
-  } elsif ($#families > 0) {
-    $th = &round(10*abs(log($#families + 1)/log(10)))/10;
-  } else {
-    $th = 0;
-  } 
-  $noov = 1;
-
-  $max_sp = 16;
-  $start_date = `date`;
-
+############################### check parameters ###############################
+sub CheckParameters {
+    #### check selected tasks
+    unless (defined(%task)) {
+	&FatalError("You should select at least one task.");
+    }
+    if ($task{all}) {
+	foreach my $t (@supported_tasks) {
+	    $task{$t} = 1;
+	}
+    }
+    
+    ### family file ###
+    if ($family_file eq "") {
+	die "Error: you should specify a family file\n";  
+    } 
+    
+    ### organism ###
+    if ($organism_name eq "") {
+	die "Error: you should specify an organism\n$supported_organisms\n";  
+    } 
+    unless ($supported_organism{$organism_name}) {
+	die ("Error: organism $organism_name is not supported\n",
+	     "Supported organisms:\n$supported_organisms\n");
+    }
+    $from = $default{from} unless defined($from);
+    $to = $default{to} unless defined($to);
+    $seq_length = abs($to - $from) + 1;
+    if (defined($force{type})) {
+	$type = $force{type}; ### force
+    } else {
+	$type = "any";
+    }
+    if (defined($force{strands})) {
+	$strands = $force{strands}; ### force
+    } else {
+	$strands = "2str";
+    }
+    if (defined($force{exp})) {
+	$exp = $force{exp}; ### force
+    }
+    if (&IsReal($force{th})) {
+	$th = $force{th}; ### force
+    } elsif ($#families > 0) {
+	$th = &round(10*abs(log($#families + 1)/log(10)))/10;
+    } else {
+	$th = 0;
+    } 
 }
 
     
