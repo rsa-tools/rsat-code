@@ -1,7 +1,8 @@
 #!/usr/bin/perl -w
+
 ############################################################
 #
-# $Id: convert-matrix,v 1.7 2004/08/02 22:12:32 jvanheld Exp $
+# $Id: convert-matrix,v 1.8 2005/03/13 10:27:51 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -12,7 +13,6 @@ BEGIN {
 	push (@INC, "$`lib/");
     }
     require "RSA.lib";
-    require "RSA.classes";
 }
 use RSAT::matrix;
 
@@ -35,7 +35,7 @@ local $out = STDOUT;
 @return_formats = ();
 %supported_return_format = (
 			    "profile"=>1,
-			    "alignment"=>1,
+			    "counts"=>1,
 			    "frequencies"=>1,
 			    "weights"=>1,
 			    "information"=>1,
@@ -47,6 +47,7 @@ $supported_return_formats = join ",", sort keys %supported_return_format;
 
 ## input formats
 %supported_input_format = ('consensus'=>1,
+			   'tab'=>1,
 			   'meme'=>1,
 			   'gibbs'=> 1,
 			   'clustal'=>1);
@@ -60,21 +61,31 @@ $supported_input_formats = join ",", sort keys %supported_input_format;
 
 ## Input format
 unless ($input_format) {
-    &FatalError("You should specify the input matrix format.");
+    &RSAT::error::FatalError("You should specify the input matrix format.");
 }
 
 ## return formats
 local %return_formats = ();
+&RSAT::error::FatalError("You should define at least one return format") unless (@return_formats);
 foreach my $format (@return_formats) {
     if ($supported_return_format{$format}) {
 	$return{$format}++;
     } else {
-	&FatalError("Invalid return format $format. Supported: ".$supported_return_formats);
+	&RSAT::error::FatalError("Invalid return format $format. Supported: ".$supported_return_formats);
     }
 }
 
-## Default return format
 
+## Prior residue frequencies
+if ($prior_file) {
+    %prior = ();
+    &ReadExpectedFrequencies($prior_file, 1, 1);    
+    foreach my $key (sort keys %patterns) {
+	my $residue = uc($key);
+	$prior{$residue} = $patterns{$key}->{exp_freq};
+#	&RSAT::message::Debug("residue", $residue, "prior", $prior{$residue}) if ($main::verbose >= 10);
+    }
+}
 
 ################################################################
 #### Perform the conversion
@@ -85,9 +96,10 @@ $out = &OpenOutputFile($outfile{output});
 
 #### verbose ####
 my @residues = ();
-my @matrix = ();
+##my @matrix = ();
 my $current_matrix = new RSAT::matrix();
 $current_matrix->readFromFile($infile{input}, $input_format);
+if ($prior_file) { $current_matrix->setPrior(%prior) };
 $current_matrix->set_attribute("pseudo", $pseudo_weight);
 $current_matrix->push_attribute("parameters", "pseudo");
 $current_matrix->force_attribute("decimals", $decimals);
@@ -107,10 +119,10 @@ if ($return{profile}) {
 }
 
 
-## Print the alignment matrix
-if ($return{alignment}) {
+## Print the counts matrix
+if ($return{counts}) {
     print $out $current_matrix->toString(sep=>"\t",
-					 type=>"alignment"
+					 type=>"counts"
 					 );
 }
 
@@ -212,28 +224,80 @@ OPTIONS
 	-h	display full help message
 	-help	display options
 	-v	verbose
+
 	-i inputfile
 		if not specified, the standard input is used.
 		This allows to place the command within a pipe.
+
 	-o outputfile
 		if not specified, the standard output is used.
 		This allows to place the command within a pipe.
+
+	-prior prior frequency file
+		File indicating prior residue frequencies
+		If no prior frequency file is specified, prior
+		frequencies are read from the input file. In case this
+		file does not contain any indication of prior
+		frequencies, equal priors are assumed.
+
 	-format	input matrix format
 		Supported: $supported_input_formats
+
 	-return	return formats
 		Supported: $supported_return_formats
+
 	-pseudo	
 		pseudo-weight used for the calculation of the weight
 		matrix (default: $pseudo_weight)
+
 	-decimals
 		number of decimals to print for real matrices
 		(frequencies, weights, information)
+
 	-max_profile
 		Maximal width of the profile histogram (units = number
 		of characters).
 
+PRIOR FREQUENCY FILE
+
+      The prior frequency file is a tab-delimited text file with one
+      row per residue, and two columns. The first column indicates the
+      residue, the second column its prior frequency.
+
+      Prior frequency files can be generated with the program
+      oligo-analysis.
+      
+      oligo-analysis -i reference-seq.fasta -l 1 -return freq -1str -v 1
+
+INPUT FORMATS
+    consensus
+	Output file from consensus, the pattern-discovery program
+	developed by Jerry Hertz (Hertz et al., Comput Appl Biosci,
+	1990:6, 81-92).
+
+    tab
+	tab-delimited file. One row per residue, one column per
+	position. The first letter of each row indicates the residue.
+
+    gibbs
+	Output file from gibbs, the pattern-discovery program
+	developed by Andrew Neuwald (Lawrence et al. Science, 1993:
+	262, 208-214; Neuwald, et al. Protein Sci, 1995: 4, 1618-1632)
+
+    meme
+	Output file from MEME, the pattern-discovery program developed by
+	tim Bailey.
+    
+    MotifSampler
+	Output file from MotifSampler, the pattern-discovery program
+	developed by Gert Thijs (Thijs et al. Bioinformatics, 2001:17,
+	1113-1122).
+
+    clustal
+	The popular multiple alignemnt program clustalw. 
+
 OUTPUT FORMATS
-    alignment
+    counts
         Each cell of the matrix indicates the number of occurrences of the
         residue at a given position of the alignment.
 
@@ -360,6 +424,7 @@ convert-matrix options
 -v		verbose
 -format		input matrix format. Supported: $supported_input_formats
 -return		return formats. Supported: $supported_return_formats
+-prior 		prior frequency file
 -pseudo		pseudo-weight (default: $pseudo_weight)
 -decimals	number of decimals digits to print for real matrices
 -max_profile	Maximal width of the profile histogram 
@@ -393,6 +458,10 @@ sub ReadArguments {
     } elsif ($ARGV[$a] eq "-i") {
       $infile{input} = $ARGV[$a+1];
       
+      ### prior frequency file
+    } elsif ($ARGV[$a] eq "-prior") {
+	$prior_file = $ARGV[$a+1];
+
       ### output file 
     } elsif ($ARGV[$a] eq "-o") {
       $outfile{output} = $ARGV[$a+1];
@@ -402,32 +471,33 @@ sub ReadArguments {
       my $return_formats = $ARGV[$a+1];
       push @return_formats, split(",", $return_formats);
 
+
       ### input format 
     } elsif ($ARGV[$a] eq "-format") {
       $input_format = $ARGV[$a+1];
       unless ($supported_input_format{$input_format}) {
-	  &FatalError("$input_format\tInvalid format for input matrix\tSupported: $supported_input_formats");
+	  &RSAT::error::FatalError("$input_format\tInvalid format for input matrix\tSupported: $supported_input_formats");
       }
 
       ### pseudo-weight
     } elsif ($ARGV[$a] eq "-pseudo") {
       $pseudo_weight = $ARGV[$a+1];
       unless (&IsReal($pseudo_weight)) {
-	  &FatalError("Invalid pseudo-weight $pseudo_weight. Must be a real value");
+	  &RSAT::error::FatalError("Invalid pseudo-weight $pseudo_weight. Must be a real value");
       }
 
       ### decimals
     } elsif ($ARGV[$a] eq "-decimals") {
       $decimals = $ARGV[$a+1];
       unless (&IsNatural($decimals)) {
-	  &FatalError("Invalid decimals $decimals. Must be a natural value");
+	  &RSAT::error::FatalError("Invalid decimals $decimals. Must be a natural value");
       }
 
       ### max_profile
     } elsif ($ARGV[$a] eq "-max_profile") {
       $max_profile = $ARGV[$a+1];
       unless (&IsNatural($max_profile)) {
-	  &FatalError("Invalid max_profile $max_profile. Must be a natural value");
+	  &RSAT::error::FatalError("Invalid max_profile $max_profile. Must be a natural value");
       }
 
     }
