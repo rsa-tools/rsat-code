@@ -14,6 +14,8 @@ COMPRESS=.gz
 
 ### verbosity
 V=1
+STR=-1str
+NOOV=-noov
 
 #### organisms
 ##ORG=Mycoplasma_genitalium
@@ -205,7 +207,6 @@ oligo_tables:
 # Analyze random gene families to check the rate of false positive
 #
 
-
 random_families_all_organisms:
 	${MAKE} iterate_organisms TASK=random_families
 
@@ -231,6 +232,15 @@ rand_multi: dirs
 	multiple-family-analysis -v ${V} -org ${ORG}		\
 		-i ${RAND_FAM_FILE}				\
 		-outdir ${RAND_MULTI_DIR} -task ${MULTI_TASKS}
+
+SEQ_LEN=500
+OLIGO_DISTRIB_DIR=${ORG_DIR}/rand_gene_selections/N${N}_R${R}_L${SEQ_LEN}
+random_oligo_calibration:
+	mkdir -p ${OLIGO_DISTRIB_DIR}
+	calibrate-oligos.pl -v 1 -outdir ${OLIGO_DISTRIB_DIR}	\
+		-r ${R} -sn ${N} -l ${OL} -sl ${SEQ_LEN}	\
+		${STR} ${NOOV}					\
+		-org ${ORG}
 
 
 ################################################################
