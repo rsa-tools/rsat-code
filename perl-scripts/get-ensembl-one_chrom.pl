@@ -13,6 +13,10 @@ BEGIN {
     }
 }
 require "RSA.lib";
+push @INC, $RSA."/perl-scripts/parsers/";
+require "lib/load_classes.pl";
+require "lib/util.pl";
+require "lib/parsing_util.pl";
 
 use Bio::EnsEMBL::DBSQL::DBAdaptor;
 use Bio::EnsEMBL::DBSQL::SliceAdaptor;
@@ -25,7 +29,7 @@ use Bio::EnsEMBL::DBSQL::SliceAdaptor;
 ################################################################
 #### initialise parameters
 my $start_time = &AlphaDate();
-
+my $slice_type = "chromosome";
 my $chromname = 'Y';
 
 local %dir = ();
@@ -91,17 +95,18 @@ warn join ("\t", "; Db", $db), "\n" if ($main::verbose >= 3);
 
 my $slice_adaptor = $db->get_SliceAdaptor();
 warn join ("\t", "; Adaptor", $slice_adaptor), "\n" if ($main::verbose >= 3);
-
     
 ## Get one chromosome object
-warn ("\t", "; Getting slice", $slice_type, $chromname), "\n" if ($main::verbose >= 1);
+warn join("\t", "; Getting slice", $slice_type, $chromname), "\n" if ($main::verbose >= 1);
 my $slice = $slice_adaptor->fetch_by_region('chromosome', $chromname);
-warn join ("\t", "; Slice", $slice), "\n" if ($main::verbose >= 3);
+warn join("\t", "; Slice", $slice), "\n" if ($main::verbose >= 3);
 
 ## Get all Gene objects
-warn join("\t", "; Getting al genes"), "\n" if ($main::verbose >= 1);
+warn join("\t", "; Getting all genes"), "\n" if ($main::verbose >= 1);
 foreach my $gene (@{$slice->get_all_Genes()}) {
-    warn join("\t", "gene", $gene), "\n" if ($main::verbose >= 3);
+    my $gene_name = $gene->external_name();
+
+    warn join("\t", "gene", $gene, $gene_name), "\n" if ($main::verbose >= 3);
     @feature = &get_feature($gene);
     print $FT_TABLE join("\t", @feature), "\n";
     print_DBEntries($gene->get_all_DBLinks());
