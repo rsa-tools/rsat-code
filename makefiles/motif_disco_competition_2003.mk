@@ -108,16 +108,8 @@ SEQ_LEN_DIR=${ORG_DIR}/sequence_lengths
 current_dir:
 	@mkdir -p ${ORG_DIR}
 
-################################################################
-## Iterate over all organisms
 ORGANISMS=Saccharomyces_cerevisiae Drosophila_melanogaster Mus_musculus Homo_sapiens
 ORG_TASK=calib_script
-iterate_organisms:
-	@echo "Iterating task ${ORG_TASK} over organisms"
-	@echo ${ORGANISMS}
-	@for org in ${ORGANISMS} ; do			\
-		${MAKE} ${ORG_TASK} ORG=$${org} ;	\
-	done
 
 ################################################################
 #### iterate over all data sets for a given organism

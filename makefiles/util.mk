@@ -41,3 +41,13 @@ command_queue:
 command_now:
 	${MY_COMMAND}
 
+
+################################################################
+## Iterate over all organisms
+iterate_organisms:
+	@echo "Iterating task ${ORG_TASK} over organisms"
+	@echo ${ORGANISMS}
+	@for org in ${ORGANISMS} ; do			\
+		${MAKE} ${ORG_TASK} ORG=$${org} ;	\
+	done
+

@@ -39,9 +39,9 @@ rand_fam:
 #### Parameters for pattern discovery (oligo-analysis and
 #### dyad-analysis)
 FAM=${REGULONS}
-FAM_FILE=data/${FAMS}
+FAM_FILE=data/${FAM}
 
-MULTI_INPUT=-i ${FAM}
+MULTI_INPUT=-i ${FAM_FILE}
 ORG=Saccharomyces_cerevisiae
 STR=-2str
 THOSIG=0
