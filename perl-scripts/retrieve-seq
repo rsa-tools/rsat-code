@@ -1,25 +1,25 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: retrieve-seq,v 1.13 2001/06/19 20:40:28 jvanheld Exp $
+# $Id: retrieve-seq,v 1.14 2002/01/26 23:20:12 jvanheld Exp $
 #
-# Time-stamp: <2001-06-19 22:40:06 jvanheld>
+# Time-stamp: <2002-01-27 00:19:51 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
-require "RSA.classes.pl";
-require "RSA.seq.lib.pl";
+require "RSA.lib";
+require "RSA.classes";
+require "RSA.seq.lib";
 
 ############# help ###########
 if ($ARGV[0] eq "-h") {
-  &PrintHelp;
+    &PrintHelp;
 }
 
 if ($ARGV[0] eq "-help") {
-  &PrintShortHelp;
+    &PrintShortHelp;
 }
 
 #### initialize parameters
@@ -43,10 +43,15 @@ $line_width = 60;
 
 #### organism
 &CheckOrganism($organism_name);
-    
+
 #### default boundaries
 if ($sequence_type eq "upstream") {
-    if ($organism_name eq "yeast") {
+    if (($organism_name eq "yeast") || 
+	($organism_name =~ /Schizosaccharomyces/) ||
+	($organism_name =~ /Saccharomyces/) ||
+	($organism_name =~ /Caenorhabditis/) ||
+	($organism_name =~ /Arabidopsia/) ||
+	($organism_name =~ /Drosophila/)) {
 	$default{from} = -800;
 	$default{to} = -1;
     } elsif (($organism_name eq "droso") ||
@@ -70,37 +75,38 @@ $from = $default{from} unless (defined($from));
 $to = $default{to} unless (defined($to));
 
 if ($to < $from) {
-  $tmp = $to;
-  $to = $from;
-  $from = $tmp;
+    $tmp = $to;
+    $to = $from;
+    $from = $tmp;
 }
 
 #### queries ####
 if ($return_all) {
-  $query_file = $feature_table_file;
+    $query_file = $feature_table_file;
 } 
 if (@queries == ()) {
-  ### open query file ###
-  if ($query_file ne "") {
-    open(QUERIES, $query_file) || 
-	die "\tcannot open query file $query_file\n";
-    $in = QUERIES;
-  } else {
-    $in = STDIN;
-  }
-  while (<$in>) {
-    next if (/^;/);
-    next if (/^--/);
-    if ((/(\S+)/) && !(/^;/)) {
-      push @queries, $1;
+    ### open query file ###
+    $in = &OpenInputFile($query_file);
+#  if ($query_file) {
+#    open(QUERIES, $query_file) || 
+#	die "\tcannot open query file $query_file\n";
+#    $in = QUERIES;
+#  } else {
+#    $in = STDIN;
+#  }
+    while (<$in>) {
+	next if ((/^;/) || (/^\#/) || (/^--/));
+	next if (/^--/);
+	if ((/(\S+)/) && !(/^;/)) {
+	    push @queries, $1;
+	}
     }
-  }
-  close $in;
+    close $in;
 }
 if ($#queries <0) {
-  print "Error: you should enter at least one valid query\n";
-  print "type retrieve-seq -help for info\n";
-  exit;
+    print "Error: you should enter at least one valid query\n";
+    print "type retrieve-seq -help for info\n";
+    exit;
 }
 
 #### output file ####
@@ -110,25 +116,25 @@ $out = &OpenOutputFile($outputfile);
 
 #### verbose ####
 if ($warn_level) {
-  print $out "; retrieve-seq\n";
-  printf $out "; %-14s\t%s\n", "organism", $organism_name;
-  printf $out "; %-14s\t%s\n", "sequence type", $sequence_type;
-  printf $out "; %-14s\t%s\n", "Output format", $out_format;
-  printf $out "; %-14s\t%s\n", "Line width", $line_width;
-  print $out "; clipping to avoid overlap with neighbour ORFs\n" if ($noorf);
-  print $out "; relative coordinates\n";
-  print $out ";        from    $from\n";
-  print $out ";        to      $to\n";
-  print $out ";        size    ", abs($to - $from + 1), "\n";
-  if (defined($query_file)) {
-    printf $out "; %-14s\t%s\n", "Query file", $query_file;
-  } else {
-    print $out "; Queries:\n";
-    foreach $q (@queries) {
-      print $out ";	$q\n";
+    print $out "; retrieve-seq\n";
+    printf $out "; %-14s\t%s\n", "organism", $organism_name;
+    printf $out "; %-14s\t%s\n", "sequence type", $sequence_type;
+    printf $out "; %-14s\t%s\n", "Output format", $out_format;
+    printf $out "; %-14s\t%s\n", "Line width", $line_width;
+    print $out "; clipping to avoid overlap with neighbour ORFs\n" if ($noorf);
+    print $out "; relative coordinates\n";
+    print $out ";        from    $from\n";
+    print $out ";        to      $to\n";
+    print $out ";        size    ", abs($to - $from + 1), "\n";
+    if (defined($query_file)) {
+	printf $out "; %-14s\t%s\n", "Query file", $query_file;
+    } else {
+	print $out "; Queries:\n";
+	foreach $q (@queries) {
+	    print $out ";	$q\n";
+	}
     }
-  }
-  print $out ";\n";
+    print $out ";\n";
 }
 
 #### read data
@@ -147,125 +153,131 @@ if ($noorf) {
 #### retrieve the sequences ####
 foreach $query (@queries) {
 
-  unless (defined($orf_id{uc($query)})) {
-    print $out ";WARNING\tinvalid query $query\n";
-    next;
-  }
+    unless (defined($orf_id{uc($query)})) {
+	my $warn_message = ";WARNING\tinvalid query $query"; 
+#      warn $warn_message, "\n" unless $no_warn;
+	push @warnings, $warn_message;
+	next;
+    }
 
-  $orf_id = $orf_id{uc($query)};
-  if ($name{$orf_id}) {
-    $name = $name{$orf_id}; 
-  } else {
-    $name = $orf_id;
-  }
-  $chrom = $chr{$orf_id};
-  $orf_left = $left{$orf_id};
-  $orf_right = $right{$orf_id};
-  $orf_strand = $strand{$orf_id};
-  
-  $current_from = $from;
-  $current_to = $to;
-  
-  ### upstream region
-  if ($sequence_type eq "upstream") {
-    if ($noorf) {
-      $current_from = &max(-$upstr_size{$orf_id}, $from);
-    } 
-
-    if ($orf_strand eq "D") {
-      $reg_left = $orf_left + $current_from;
-      $reg_right = $orf_left + $current_to;
+    $orf_id = $orf_id{uc($query)};
+    if ($name{$orf_id}) {
+	$name = $name{$orf_id}; 
     } else {
-      $reg_right = $orf_right - $current_from;
-      $reg_left = $orf_right - $current_to;
+	$name = $orf_id;
+    }
+    $chrom = $chr{$orf_id};
+    $orf_left = $left{$orf_id};
+    $orf_right = $right{$orf_id};
+    $orf_strand = $strand{$orf_id};
+    
+    $current_from = $from;
+    $current_to = $to;
+
+    ### upstream region
+    if ($sequence_type eq "upstream") {
+	if ($noorf) {
+	    $current_from = &max(-$upstr_size{$orf_id}, $from);
+	} 
+
+	if ($orf_strand eq "D") {
+	    $reg_left = $orf_left + $current_from;
+	    $reg_right = $orf_left + $current_to;
+	} else {
+	    $reg_right = $orf_right - $current_from;
+	    $reg_left = $orf_right - $current_to;
+	}
+	
+	### downstream region
+    } elsif ($sequence_type eq "downstream") {
+	if ($noorf) {
+#    print join ("\t", "HELLO", $query, $orf_id, $name, $current_from, $current_to, $upstr_size{$orf_id}, $downstr_size{$orf_id}, "\n");
+	    $current_to = &min($downstr_size{$orf_id}, $to);
+	} 
+
+	if ($orf_strand eq "D") {
+	    $reg_left = $orf_right + $current_from;
+	    $reg_right = $orf_right + $current_to;
+	} else {
+	    $reg_right = $orf_left - $current_from;
+	    $reg_left = $orf_left - $current_to;
+	}
+
+	### ORF (wargning: this does not splice out introns
+    } elsif ($sequence_type eq "unspliced ORF") {
+	$reg_left = $orf_left;
+	$reg_right = $orf_right;
+    }
+
+
+    $reg_size =  $reg_right - $reg_left + 1;
+    if ($reg_size <= 0) {
+	$reg_size = 0;
     }
     
-    ### downstream region
-  } elsif ($sequence_type eq "downstream") {
-    if ($noorf) {
-      $current_to = &min($down_size{$orf_id}, $to);
-    } 
-
-    if ($orf_strand eq "D") {
-      $reg_left = $orf_right + $current_from;
-      $reg_right = $orf_right + $current_to;
+    
+    ###  ID and comments ####
+    if ($seq_label eq "orf") {
+	$current_id = $orf_id;
+    } elsif ($seq_label eq "gene") {
+	$current_id = $name;
+    } elsif ($seq_label eq "orf_gene") {
+	$current_id = join "_", $orf_id, $name;
     } else {
-      $reg_right = $orf_left - $current_from;
-      $reg_left = $orf_left - $current_to;
+	$current_id = join("_", 
+			   $orf_id,
+			   $name,
+			   $sequence_type,
+			   $current_from,
+			   $current_to,
+			   $chrom,
+			   $orf_strand,
+			   $reg_left,
+			   $reg_right
+			   );
     }
-
-      ### ORF (wargning: this does not splice out introns
-  } elsif ($sequence_type eq "orf") {
-    $reg_left = $orf_left;
-    $reg_right = $orf_right;
-  }
-
-
-  $reg_size =  $reg_right - $reg_left + 1;
-  if ($reg_size <= 0) {
-    $reg_size = 0;
-  }
-  
-  
-  ### upstream region ID and comments ####
-  if ($seq_label eq "orf") {
-    $current_id = $orf_id;
-  } elsif ($seq_label eq "gene") {
-    $current_id = $name;
-  } elsif ($seq_label eq "orf_gene") {
-    $current_id = join "_", $orf_id, $name;
-  } else {
-    $current_id = join("_", 
-		       $orf_id,
-		       $name,
-		       $sequence_type,
-		       $current_from,
-		       $current_to,
-		       $chrom,
-		       $orf_strand,
-		       $reg_left,
-		       $reg_right
-		       );
-  }
-  
-  unless ($no_comments) {
-    @comments = ("$query $sequence_type sequence, from $current_from to $current_to, size $reg_size");
-    @comments = (@comments, "upstream region size: $reg_size; upstream region location: $reg_left $reg_right $orf_strand");
-    @comments = (@comments, "Gene: $name; ID: $orf_id; gene location: $orf_left $orf_right $orf_strand");
-  }
-  
-  ### substring retrieval
-  warn (join "\t", 
-	";",
-	$query, 
-	$orf_id, 
-	$chrom, 
-	$orf_left, 
-	$orf_right, 
-	$orf_strand,
-	$current_from,
-	$current_to,
-	$reg_left,
-	$reg_right,
-	$reg_size,
-	"\n"
-	)
-      if ($warn_level >= 2); 
-  $current_seq = $chromosome_seq{$chrom}->get_sequence($reg_left,$reg_right,$orf_strand);
-  
-  
+    
+    unless ($no_comments) {
+	@comments = ("$query $sequence_type sequence, from $current_from to $current_to, size $reg_size");
+	@comments = (@comments, "sequence size: $reg_size; location: $reg_left $reg_right $orf_strand");
+	@comments = (@comments, "Gene: $name; ID: $orf_id; gene location: $orf_left $orf_right $orf_strand");
+    }
+    
+    ### substring retrieval
+    warn (join "\t", 
+	  ";",
+	  $query, 
+	  $orf_id, 
+	  $chrom, 
+	  $orf_left, 
+	  $orf_right, 
+	  $orf_strand,
+	  $current_from,
+	  $current_to,
+	  $reg_left,
+	  $reg_right,
+	  $reg_size,
+	  "\n"
+	  )
+	if ($warn_level >= 2); 
+    $current_seq = $chromosome_seq{$chrom}->get_sequence($reg_left,$reg_right,$orf_strand);
+    
+    
 
 ### print result sequence
-  &PrintNextSequence($out,$out_format,$line_width,$current_seq,$current_id, @comments);
+    &PrintNextSequence($out,$out_format,$line_width,$current_seq,$current_id, @comments);
 }
+
+print $out (join "\n", @warnings), "\n" 
+    unless $no_warn;
 
 close $out;
 
 ###### verbose ######
 if ($warn_level) {
-  my $done_time = &AlphaDate;
-  print $out "; Job started $start_time\n";
-  print $out "; Job done    $done_time\n";
+    my $done_time = &AlphaDate;
+    print $out "; Job started $start_time\n";
+    print $out "; Job done    $done_time\n";
 }
 
 
@@ -283,7 +295,8 @@ USAGE
 			[-from] [-to] [-format seqformat] [-lw line_width] 
 			[-o outpufile] -q query_orf | -i query file | -all
 	
-	returns the DNA sequence of a region located upstream from a query orf.
+	Returns upstream or downstream sequences for list of query
+	genes.
 	
 OPTIONS
 	-org organism
@@ -344,6 +357,8 @@ $supported_organisms
 	-nocom	no comments. Only the identifier and the sequence are
 		returned. By default, the comment indicates the orf and
 		upstream sequence coordinates.
+	-nowarn
+		Prevents warning when a gene cannot be identified.
 
 INPUT FORMAT
 	Sequence file
@@ -396,6 +411,7 @@ $supported_organisms
 -lw ##		Line width. -lw 0 will prevent newline insertion.
 -label orf|gene|orf_gene|full	rule for naming sequences
 -noorf		the upstream sequence can only contain non-coding sequence.
+-nowarn		prevents warning when a gene can not be identified
 -nocom		do not print related information (start, end position, ...)
 End_short_help
   close HELP;
@@ -405,100 +421,104 @@ End_short_help
 
 #### read arguments
 sub ReadArguments {
-  foreach $a (0..$#ARGV) {
-    ### output file name
-    if ($ARGV[$a] eq "-o") {
-      $outputfile = $ARGV[$a+1];
-      
-      ### help request
-    } elsif ($ARGV[$a] eq "-h") {
-      &PrintHelp;
-    } elsif ($ARGV[$a] eq "-help") {
-      &PrintShortHelp;
-      
-      ### output sequence format
-    } elsif ($ARGV[$a] eq "-format") {
-      $out_format = lc($ARGV[$a+1]);
-      
-      ### limits of the region to retrieve
-    } elsif (($ARGV[$a] eq "-from") && ($ARGV[$a+1] =~ /^[+-]{0,1}(\d+)$/)) {
-      $from = $ARGV[$a+1];
-    } elsif (($ARGV[$a] eq "-to") && ($ARGV[$a+1] =~ /^[+-]{0,1}(\d+)$/)) {
-      $to = $ARGV[$a+1];
-      
-      ### verbose
-    } elsif ($ARGV[$a] eq "-v") {
-      $warn_level = 1;
-      
-      ### warn_level
-    } elsif (($ARGV[$a] eq "-w") &&
-	     (&IsNatural($ARGV[$a+1]))){
-      $warn_level = $ARGV[$a+1];
+    foreach $a (0..$#ARGV) {
+	### output file name
+	if ($ARGV[$a] eq "-o") {
+	    $outputfile = $ARGV[$a+1];
+	    
+	    ### help request
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp;
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintShortHelp;
+	    
+	    ### output sequence format
+	} elsif ($ARGV[$a] eq "-format") {
+	    $out_format = lc($ARGV[$a+1]);
+	    
+	    ### limits of the region to retrieve
+	} elsif (($ARGV[$a] eq "-from") && ($ARGV[$a+1] =~ /^[+-]{0,1}(\d+)$/)) {
+	    $from = $ARGV[$a+1];
+	} elsif (($ARGV[$a] eq "-to") && ($ARGV[$a+1] =~ /^[+-]{0,1}(\d+)$/)) {
+	    $to = $ARGV[$a+1];
+	    
+	    ### verbose
+	} elsif ($ARGV[$a] eq "-v") {
+	    $warn_level = 1;
+	    
+	    ### warn_level
+	} elsif (($ARGV[$a] eq "-w") &&
+		 (&IsNatural($ARGV[$a+1]))){
+	    $warn_level = $ARGV[$a+1];
 
-      #### new query
-    } elsif ($ARGV[$a] eq "-q") {
-      @queries = (@queries, $ARGV[$a+1]);
-      
-      #### input file (one query per line)
-    } elsif ($ARGV[$a] eq "-i") {
-      $query_file =$ARGV[$a+1];
-      
-      ### return all genomic  upstream regions	
-    } elsif ($ARGV[$a] eq "-all") {
-      $return_all = 1;;
-      
-      #### organism
-    } elsif ($ARGV[$a] eq "-org") {
-      $organism_name =$ARGV[$a+1];
-      
-      #### type
-    } elsif ($ARGV[$a] eq "-type") {
-      if ($ARGV[$a+1] =~ /^up/i) {
-	$sequence_type = "upstream";
-	$default{from} = -400;
-	$default{to} = -1;
+	    #### new query
+	} elsif ($ARGV[$a] eq "-q") {
+	    @queries = (@queries, $ARGV[$a+1]);
+	    
+	    #### input file (one query per line)
+	} elsif ($ARGV[$a] eq "-i") {
+	    $query_file =$ARGV[$a+1];
+	    
+	    ### return all genomic  upstream regions	
+	} elsif ($ARGV[$a] eq "-all") {
+	    $return_all = 1;;
+	    
+	    #### organism
+	} elsif ($ARGV[$a] eq "-org") {
+	    $organism_name =$ARGV[$a+1];
+	    
+	    #### type
+	} elsif ($ARGV[$a] eq "-type") {
+	    if ($ARGV[$a+1] =~ /^up/i) {
+		$sequence_type = "upstream";
+		$default{from} = -400;
+		$default{to} = -1;
+		
+	    } elsif ($ARGV[$a+1] =~ /^down/i) {
+		$sequence_type = "downstream";
+		
+	    } elsif ($ARGV[$a+1] =~ /^orf/i) {
+		$sequence_type = "unspliced ORF";
+		$default{from} = "start";
+		$default{to} = "stop";
+		
+	    } else {
+		die ("Error: unsupported sequence type: '$ARGV[$a+1]'", 
+		     "\n");
+	    }
+	    
+	    
+	    #### line width
+	} elsif (($ARGV[$a] eq "-lw") && ($ARGV[$a+1] >= 0)) {
+	    $line_width = $ARGV[$a+1];
+	    
+	    #### use identifiers rather than gene names
+	} elsif ($ARGV[$a] eq "-label") {
+	    if ((lc($ARGV[$a+1]) eq "orf")) {
+		$seq_label = "orf";
+	    } elsif ((lc($ARGV[$a+1]) eq "gene")) {
+		$seq_label = "gene";
+	    } elsif ((lc($ARGV[$a+1]) eq "orf_gene")) {
+		$seq_label = "orf_gene";
+	    } elsif ((lc($ARGV[$a+1]) eq "full")) {
+		$seq_label = "full";
+	    } else {
+		die "Error: invalid sequence label";
+	    }
+	    
+	    #### do not allow overlapping coding sequences
+	} elsif (($ARGV[$a] =~ /^-nocds/i) || 
+		 ($ARGV[$a] =~ /^-noorf/i)) {
+	    $noorf = 1;
 
-      } elsif ($ARGV[$a+1] =~ /^down/i) {
-	$sequence_type = "downstream";
-
-      } elsif ($ARGV[$a+1] =~ /^orf/i) {
-	$sequence_type = "orf";
-	$default{from} = "start";
-	$default{to} = "stop";
-
-      } else {
-	die ("Error: unsupported sequence type: '$ARGV[$a+1]'", 
-	     "\n");
-      }
-      
-      
-      #### line width
-    } elsif (($ARGV[$a] eq "-lw") && ($ARGV[$a+1] >= 0)) {
-      $line_width = $ARGV[$a+1];
-      
-      #### use identifiers rather than gene names
-    } elsif ($ARGV[$a] eq "-label") {
-      if ((lc($ARGV[$a+1]) eq "orf")) {
-	$seq_label = "orf";
-      } elsif ((lc($ARGV[$a+1]) eq "gene")) {
-	$seq_label = "gene";
-      } elsif ((lc($ARGV[$a+1]) eq "orf_gene")) {
-	$seq_label = "orf_gene";
-      } elsif ((lc($ARGV[$a+1]) eq "full")) {
-	$seq_label = "full";
-      } else {
-	die "Error: invalid sequence label";
-      }
-      
-      #### do not allow overlapping coding sequences
-    } elsif (($ARGV[$a] =~ /^-nocds/i) || 
-	     ($ARGV[$a] =~ /^-noorf/i)) {
-      $noorf = 1;
-
-      #### do not print the comments field
-    } elsif ($ARGV[$a] =~ /^-nocom/i) {
-      $no_comments = 1;
-      
+	    #### do not print the comments field
+	} elsif ($ARGV[$a] =~ /^-nocom/i) {
+	    $no_comments = 1;
+	    
+	    #### do not warn
+	} elsif ($ARGV[$a] =~ /^-nowarn/i) {
+	    $no_warn = 1;
+	    
+	}
     }
-  }
 }
