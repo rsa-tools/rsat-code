@@ -27,13 +27,26 @@ usage:
 	@perl -ne 'if (/^([a-z]\S+):/){ print "\t$$1\n";  }' ${MAKEFILE}
 
 ################################################################
+#### Synchronization between different machines
+
 #### publish
-SERVER_LOCATION=rubens.ulb.ac.be:/rubens/dsk3/genomics/motif_discovery_competition
+SYNC_DIR=results
+#SERVER_LOCATION=rubens.ulb.ac.be:/rubens/dsk3/genomics/motif_discovery_competition/
+SERVER_LOCATION=merlin.ulb.ac.be:motif_discovery_competition/
+EXCLUDE=--exclude '*~' --exclude oligos --exclude '*.wc' --exclude random_genes.tab
 publish:
-	${RSYNC} --exclude '*~' . ${SERVER_LOCATION}
+	${RSYNC} ${EXCLUDE} ${SYNC_DIR} ${SERVER_LOCATION}
 
 update_from_server:
-	${RSYNC} --exclude '*~' ${SERVER_LOCATION}/'*' .
+	${RSYNC} ${EXCLUDE} ${SERVER_LOCATION}${SYNC_DIR} .
+
+## Synchronize calibrations from merlin
+from_merlin:
+	${MAKE} update_from_server SERVER_LOCATION=jvanheld@merlin.ulb.ac.be:
+
+from_liv:
+	${MAKE} update_from_server SERVER_LOCATION=jvanheld@liv.bmc.uu.se:/Users/jvanheld/motif_discovery_competition_2003/
+
 
 ################################################################
 #### retrieve information from the competition web site 
@@ -281,6 +294,22 @@ multi:
 # #Error
 # #        Input sequence seq_1 is not in the expected format, or contains invalid characters for a sequence of type .
 
+################################################################
+## Calculate the effect of the number of sequences on mean and variance
+SEQ_SERIES=1 2 3 4 5 6 7 8 9 10 15  20 30 40 50 60 70 80 90 100
+seq_nb_series:
+	for nb in ${SEQ_SERIES} ; do			\
+		${MAKE} calibrate_oligos N=$${nb};	\
+	done
+
+seq_nb_series_human:
+	${MAKE} seq_nb_series ORG=Homo_sapiens SEQ_LEN=1000 REPET=1000
+	${MAKE} seq_nb_series ORG=Homo_sapiens SEQ_LEN=2000 REPET=1000
+
+seq_nb_series_yeast:
+	${MAKE} seq_nb_series ORG=Saccharomyces_cerevisiae SEQ_LEN=500 REPET=1000
+	${MAKE} seq_nb_series ORG=Saccharomyces_cerevisiae SEQ_LEN=1000 REPET=1000
+
 
 ################################################################
 ## Calculate oligonucleotide distributions of occurrences for random
@@ -320,8 +349,4 @@ calibrate_oligos_queue:
 ## A quick test for calibrate_oligos
 calibrate_oligos_test:
 	${MAKE} calibrate_oligos ORG=Mycoplasma_genitalium N=10 SEQ_LEN=200 STR=-1str NOOV=-ovlp R=10
-
-## Synchronize calibrations from merlin
-from_merlin:
-	rsync -e ssh -ruptvLz --exclude oligos --exclude '*.wc'  jvanheld@merlin.ulb.ac.be:results . 
 
