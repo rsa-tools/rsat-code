@@ -25,16 +25,18 @@ usage:
 ## Send a task, either direcoy (WHEN=now) or in a queue (WHEN=queue)
 ## for a cluster.
 WHEN=now
-JOB_DIR=jobs
 my_command:
 	@echo ${WHEN} command ${MY_COMMAND}
 	${MAKE} command_${WHEN}
 
+JOB_DIR=jobs
+JOB=`mktemp ${JOB_DIR}/job.XXXXXX`
 command_queue:
 	@mkdir -p ${JOB_DIR}
 	@for job in ${JOB} ; do						\
 		echo "Job $${job}" ;					\
-		echo "${MY_COMMAND}" > $${job} ;		\
+		echo "echo running on node "'$$HOST' > $${job}; \
+		echo "${MY_COMMAND}" >> $${job} ;		\
 		qsub -m e -q rsa@merlin.ulb.ac.be -N $${job} -j oe	\
 			-o $${job}.log $${job} ;	\
 	done
