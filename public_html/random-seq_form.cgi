@@ -85,13 +85,15 @@ print "<UL>";
 print "<INPUT TYPE='radio' NAME='proba' VALUE='ncf' checked>Markov chain (calibrated on intergenic oligonucleotide frequencies)<BR>";
 
 print "<UL>";
-&OrganismPopUp;
+&OrganismPopUp();
 
 ### oligo size
 print "<B><A HREF='help.random-seq.html#oligo_size'>Oligonucleotide size</A>&nbsp;</B>\n";
 print $query->popup_menu(-name=>'oligo_size',
 			 -Values=>[1,2,3,4,5,6,7,8],
 			 -default=>$default{oligo_size});
+
+print "<font size=-1><b>Note:</b> Markov order = oligonucleotide length minus 1</font>";
 
 print "</UL>";
 

@@ -79,8 +79,16 @@ basis of the complete set of intergenic sequences).
 
 <li><b>Oligonucleotide size</b> This determines which expected
 oligonucleotide calibraiton table has to be used. The markov chain
-order is this value minus one (for example, when hexnucleotides are
-selected, a Markov chain of order 5 is used.
+order is this value minus one. For example, 
+
+<ul>
+<li>Calibrating with hexanucleoides (oligonucleotide length = 6) means
+that the nucleotide at each position depends on the 5 preceding
+nucleotides. This is this thus a Markov chain of order 5.
+
+<li>Calibrating on single nucleotides (oligo length = 1) means that
+each nucleotide is chosen independently off the preceding one. This is
+thus a Bernouille model (or Markov chain of order 0).
 
 </ul>
 
