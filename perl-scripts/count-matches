@@ -60,6 +60,7 @@ $supported_return_fields = join (",", @supported_return_fields);
 my %field_format = (match=>"%d",
 		    weight=>"%.2f",
 		    proba=>"%.2g",
+		    seq1=>"%s",		
 		    seq2=>"%s",		
 		    id1=>"%s",
 		    id2=>"%s",		
@@ -107,7 +108,7 @@ if ($pattern_file1) {
     push @pattern1, &ReadPatterns(pattern_file=>$pattern_file1);
 }
 if ($pattern_file2) {
-    push @pattern2, &ReadPatterns(pattern_file=>$pattern_file1);
+    push @pattern2, &ReadPatterns(pattern_file=>$pattern_file2);
 }
 
 
@@ -149,9 +150,9 @@ exit(0);
 ## Match one pattern against another one
 sub OneMatch {
     my ($pattern1, $pattern2, $reverse) = @_;
-    $seq1 = &ExpandSeq($pattern1->get_attribute("sequence"));
-
     $id1 =  $pattern1->get_attribute("id");
+    $seq1 = $pattern1->get_attribute("sequence");
+    $seq1 = &ExpandSeq($seq1);
 
     ## Match direct or reverse complement
     $strand = "D";
@@ -161,8 +162,16 @@ sub OneMatch {
 #	$id1 .= "_rev";
     }
     
-    $seq2 = &ExpandSeq($pattern2->get_attribute("sequence"));
     $id2 =  $pattern2->get_attribute("id");
+    $seq2 = $pattern2->get_attribute("sequence");
+    $seq2 = &ExpandSeq($seq2);
+
+    ## Check input sequences
+    &FatalError("You must specify a first sequence") unless ($seq1);
+    &FatalError("You must specify a second sequence") unless ($seq2);
+
+#    warn join("\t", "Comparing",  $id1, $seq1, $id2, $seq2),"\n" if ($main::verbose >= 10);
+
     local @result = ();
     local $match;
     local $weight;
@@ -173,9 +182,6 @@ sub OneMatch {
     local $mlen;
     local $tlen;
 
-    ## Check input sequences
-    &FatalError("You must specify a first sequence") unless ($seq1);
-    &FatalError("You must specify a second sequence") unless ($seq2);
     
     ################################################################
     ## Count the matches
@@ -205,7 +211,7 @@ sub OneMatch {
 	    $to_print = 0;
 	    last
 	    }
-
+	
 	## Format the field
 	push @result, sprintf $field_format{$field}, $result;
 	warn join "\t", ";", $field, $result, "\n" if ($verbose >= 3);
@@ -399,7 +405,7 @@ count-matches options
 -seq1		first sequence for the comparison
 -seq2		second sequence for the comparison
 -file1		file containing a first list of sequences 
--file1		file containing a second list of sequences 
+-file2		file containing a second list of sequences 
 -return		return fields. Supported: $supported_return_fields
 -lth            lower threshold on a given field
 -uth            upper threshold on a given field
@@ -456,7 +462,7 @@ sub ReadArguments {
 	    $pattern_file1 = $ARGV[$a+1];
 
 	    ### second sequence   file
-	} elsif ($ARGV[$a] eq "-file1") {
+	} elsif ($ARGV[$a] eq "-file2") {
 	    $pattern_file2 = $ARGV[$a+1];
 
 	    ### return fields
