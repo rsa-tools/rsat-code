@@ -1,4 +1,11 @@
 #!/usr/bin/perl
+############################################################
+#
+# $Id: dyad-analysis.cgi,v 1.3 2000/12/26 22:54:39 jvanheld Exp $
+#
+# Time-stamp: <2000-12-26 23:54:36 jvanheld>
+#
+############################################################
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
@@ -8,14 +15,14 @@ use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib.pl";
 require "RSA.cgi.lib.pl";
 
-$dyad_detector_command = "$SCRIPTS/dyad-detector";
-$tmp_file_name = sprintf "dyad-detector.%s", &AlphaDate;
+$dyad_analysis_command = "$SCRIPTS/dyad-analysis";
+$tmp_file_name = sprintf "dyad-analysis.%s", &AlphaDate;
 
 ### Read the CGI query
 $query = new CGI;
 
 ### print the result page
-&RSA_header("dyad-detector result");
+&RSA_header("dyad-analysis result");
 #&ListParameters;
 
 #### update log file ####
@@ -25,7 +32,7 @@ $query = new CGI;
 $parameters = "-v -sort -return proba ";
 
 ### sequence file
-$sequence_file = &GetSequenceFile;
+($sequence_file,$sequence_format) = &GetSequenceFile();
 $parameters .= " -i $sequence_file";
 
 ### dyad type
@@ -87,12 +94,12 @@ if ($query->param('exp_freq') =~ /non\-coding/i) {
 if ($query->param('output') eq "display") {  
   ### execute the command ###
   $result_file = "$TMP/$tmp_file_name.res";
-  open RESULT, "$dyad_detector_command $parameters | ";
-  #print "<PRE><B>Command:</B> $dyad_detector_command $parameters </PRE>";
+  open RESULT, "$dyad_analysis_command $parameters | ";
+  #print "<PRE><B>Command:</B> $dyad_analysis_command $parameters </PRE>";
 
   ### prepare data for piping
   $title = $query->param('title');
-  $title =~ s/\"/'/g;
+  $title =~ s/\"/\'/g;
     print <<End_of_form;
 <TABLE>
 <TR>
@@ -104,8 +111,8 @@ if ($query->param('output') eq "display") {
 <INPUT type="hidden" NAME="title" VALUE="$title">
 <INPUT type="hidden" NAME="pattern_file" VALUE="$result_file">
 <INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
-<INPUT type="hidden" NAME="sequence_format" VALUE="$seq_format">
-<INPUT type="submit" value="pattern search">
+<INPUT type="hidden" NAME="sequence_format" VALUE="$sequence_format">
+<INPUT type="submit" value="pattern matching (dna-pattern)">
 </FORM>
 </TD>
 </TR>
@@ -144,9 +151,9 @@ End_of_form
   #### send e-mail with the result
   if ($query->param('user_email') =~ /(\S+\@\S+)/) {
     $address = $1;
-    print "<B>Result will be sent to your account: <P>";
+    print "<B>Result will be sent to your e-mail address: <P>";
     print "$address</B><P>";
-    system "$dyad_detector_command $parameters | $mail_command $address &"; 
+    system "$dyad_analysis_command $parameters | $mail_command $address &"; 
   } else {
     if ($query->param('user_email') eq "") {
       print "<B>ERROR: you did not enter your e-mail address<P>";
@@ -159,7 +166,8 @@ End_of_form
 }
 
 unless ($graph_request) {
-  print &HtmlBot;
+    print "<HR SIZE = 3>";
+    print $query->end_html;
 }
 
 

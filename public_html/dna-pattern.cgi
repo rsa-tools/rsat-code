@@ -41,7 +41,7 @@ $parameters .= " -pl $pattern_file";
 
 
 ### sequence file
-$sequence_file = &GetSequenceFile(sequence_format=>$query);
+$sequence_file = &GetSequenceFile();
 $parameters .= " -i $sequence_file";
 
 
@@ -56,8 +56,13 @@ if ($query->param('return') =~ /count/i) {
 ### return match count table
 } elsif ($query->param('return') =~ /table/i) {
   $parameters .= " -table";
+  ### add a rwo and a column with the totals
+  if (lc($query->param('total')) eq "on") {
+    $parameters .= " -total";
+  }
   
-} elsif ($query->param('return') =~ /positions/) { ### return matching positions
+### return matching positions
+} elsif ($query->param('return') =~ /positions/) { 
   ### origin ###
   if ($query->param('origin') =~ /end/i) {
     $parameters .= " -origin -0";
@@ -67,6 +72,12 @@ if ($query->param('return') =~ /count/i) {
     $parameters .= " -N ".$query->param('flanking');
   }
 }
+
+### prevent overlapping matches
+if (lc($query->param('noov')) eq "on") {
+  $parameters .= " -noov";
+}
+
 
 ### strands
 if ($query->param('strands') =~ /direct/i) {
@@ -99,7 +110,7 @@ if ($query->param("output") =~ /display/i) {
   ### send an e-mail with the result ###
   if ($query->param('user_email') =~ /(\S+\@\S+)/) {
     $address = $1;
-    print "<B>Result will be sent to your account: <P>";
+    print "<B>Result will be sent to your e-mail address: <P>";
     print "$address</B><P>";
     system "$dna_pattern_command $parameters | $mail_command $address &";
   } else {

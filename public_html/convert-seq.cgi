@@ -88,7 +88,7 @@ print "$convert_seq_command $parameters ";
   ### send an e-mail with the result ###
     if ($input{'user_email'} =~ /(\S+\@\S+)/) {
       $address = $1;
-      print "<B>Result will be sent to your account: <P>";
+      print "<B>Result will be sent to your e-mail address: <P>";
       print "$address</B><P>";
       system "$convert_seq_command $parameters | $mail_command $address &";
     } else {
