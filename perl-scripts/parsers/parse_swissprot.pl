@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_swissprot.pl,v 1.17 2002/03/29 10:30:06 jvanheld Exp $
+# $Id: parse_swissprot.pl,v 1.18 2002/04/23 11:32:18 jvanheld Exp $
 #
-# Time-stamp: <2002-03-29 11:29:32 jvanheld>
+# Time-stamp: <2002-04-23 13:19:35 jvanheld>
 #
 ############################################################
 
@@ -215,6 +215,11 @@ package main;
     #### print the result
     &PrintStats($out_file{stats}, @classes);
     $polypeptides->dump_tables($suffix, 0, $dir{output});
+    $polypeptides->generate_sql(schema=>$schema, 
+				dir=>"$dir{output}/sql_scripts",
+				prefix=>"s_",
+				dbms=>$dbms
+				);
     &ExportClasses($out_file{polypeptides}, $out_format,PFBP::Polypeptide) if ($export{obj});
 
     system "gzip -f $dir{output}/*.tab";
@@ -303,6 +308,9 @@ OPTIONS
 		Fields to be exported. Several fields can be provided,
 		separated by commas. Example:
 			  -fields id,names,gene,ECs,swissprot_ids
+	-dbms	database management system
+		supported: oracle, postgresql
+	-db	database schema
 
 EXAMPLE
 	parse_polypeptides.pl -w 2 -org ecoli -data swissprot -enz
@@ -323,7 +331,18 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-test") {
 	    $main::test = 1;
 	    
-	    #### clean
+	    ### dbms
+	} elsif ($ARGV[$a] eq "-dbms") {
+	    $main::dbms = $ARGV[$a+1];
+	    unless ($supported_dbms{$main::dbms}) {
+		die "Error: this dbms is not supported\n";
+	    }
+
+	    ### database schema
+	} elsif ($ARGV[$a] eq "-schema") {
+	    $main::schema = $ARGV[$a+1];
+
+	    ### clean
 	} elsif ($ARGV[$a] eq "-clean") {
 	    $main::clean = 1;
 	    
@@ -427,7 +446,7 @@ sub ParseSwissprot {
 	my $swissprot_ac = $object_entry->AC;
 	my $swissprot_id = $object_entry->ID;
 
-	warn ";\tParsed polypeptide $swissprot_ac\t$swissprot_id\n" if ($warn_level >=2);
+	warn ";\tParsed polypeptide $swissprot_ac\t$swissprot_id\n" if ($warn_level >= 3);
 
 	#### initialize the export flag
 	my $export = 0;
@@ -462,7 +481,7 @@ sub ParseSwissprot {
 	
 	next unless $export;
 
-	warn ";\tExporting polypeptide $swissprot_ac\t$swissprot_id\n" if ($warn_level >=2);
+	warn ";\tExporting polypeptide $swissprot_ac\t$swissprot_id\n" if ($warn_level >= 3);
 
 	my @swissprot_ids = $object_entry->IDs->elements;
 	my @swissprot_acs = $object_entry->ACs->elements;
@@ -504,7 +523,7 @@ sub ParseSwissprot {
 	
 	### create a new polypeptide
 	warn "$source\tentry $entries\t$swissprot_ids[0]\t$names[0]\n"
-	    if ($warn_level >= 2); 
+	    if ($warn_level >= 3); 
 	my $polypeptide = $polypeptides->new_object(id=>$swissprot_ac,
 						    source=>$source);
 	if (defined($geneNames[0])) {
@@ -591,7 +610,7 @@ sub ParseSwissprot {
 	#### check how many polypeptides remain to be found
 	if ($in_file{acs}) {
 	    my $remaining = scalar(keys %selected_acs);
-	    warn "; remaning ACs\t$remaining\n" if ($verbose >=0);
+	    warn ";\tfound\t$swissprot_ac\t$swissprot_id\tremaning ACs\t$remaining\n" if ($warn_level >= 2);
 	    last if ($remaining == 0);
 	}
 	
