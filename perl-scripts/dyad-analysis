@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis,v 1.11 2001/05/12 11:48:22 jvanheld Exp $
+# $Id: dyad-analysis,v 1.12 2001/05/27 08:37:58 jvanheld Exp $
 #
-# Time-stamp: <2001-05-12 13:38:26 jvanheld>
+# Time-stamp: <2001-05-27 10:36:44 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -21,7 +21,7 @@ if ($ARGV[0] eq "-h") { #### display full help message ##### open
 $oligo_length = 3;
 %default_return = (occ=>1,proba=>1);
 $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
-$timeout = 3600;
+$timeout = 100000;
 
 $min_spacing = $max_spacing = 0;
 $sum_strands = 1;
@@ -1090,15 +1090,16 @@ sub CountDyads {
     while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $input_format)) &&
        (($current_seq ne "") || ($current_id ne ""))) {
 	
-	if ($hyperverbose) {
-	    print STDERR ";Reading sequence\t$current_id\n";
-	}
-	
 	### remove tabs and blank spaces ###    
 	$current_seq = &FoldSequence($current_seq,0);
 	
 	### statistics about sequences ###
 	$sequence_number++;  
+
+	if ($hyperverbose) {
+	    print STDERR "; sequence\t$sequence_number\t$current_id\n";
+	}
+	
 	$id_list[$sequence_number] = $current_id;
 	$seq_length[$sequence_number] = length($current_seq);
 	$sum_seq_length += $seq_length[$sequence_number];
