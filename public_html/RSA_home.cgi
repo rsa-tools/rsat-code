@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSA_home.cgi,v 1.17 2004/06/25 07:36:11 jvanheld Exp $
+# $Id: RSA_home.cgi,v 1.18 2004/06/26 20:52:31 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -133,7 +133,7 @@ print <<EndText;
   <TD>
   <A HREF="http://rsat.scmbb.ulb.ac.be/rsat/" target="_top">
   <B>Brussels - Belgium</B><BR>
-  <IMG SRC="images/manneken_pis.jpg" HEIGHT=80 WIDTH=53 BORDER=0><BR>
+  <IMG SRC="images/manneken_pis.jpg" HEIGHT=80 BORDER=0><BR>
   <FONT SIZE=-1>
   http://rsat.scmbb.ulb.ac.be/rsat/</A>
   </FONT>
@@ -142,7 +142,7 @@ print <<EndText;
   <TD ALIGN=CENTER>
   <A HREF="http://embnet.cifn.unam.mx/rsa-tools/" target="_top">
   <B>Cuernavaca - Mexico</B><BR>
-  <IMG SRC="images/zapata.jpg" HEIGHT=80 WIDTH=89 BORDER=0><BR>
+  <IMG SRC="images/zapata.jpg" HEIGHT=80 BORDER=0><BR>
   <FONT SIZE=-1>http://embnet.cifn.unam.mx/rsa-tools/</A>
   </FONT>
   </TD>
@@ -173,10 +173,10 @@ print <<EndText;
   </FONT>
   </TD>
 
-  <TD>
+  <TD ALIGN=CENTER>
   <A HREF="http://rsat.ccb.sickkids.ca/" target="_top">
   <B>Toronto - Canada</B><BR>
-  <IMG SRC="" HEIGHT=80 WIDTH=53 BORDER=0><BR>
+  <IMG SRC="images/toronto.jpg" HEIGHT=80 BORDER=0><BR>
   <FONT SIZE=-1>
   http://rsat.ccb.sickkids.ca/</A>
   </FONT>
