@@ -145,9 +145,12 @@ print "<BR>\n";
 
 ### substitutions
 print "<B><A HREF='help.dna-pattern.html#subst'>Substitutions </A></B>&nbsp;\n";
-print $query->textfield(-name=>'subst',
-			-default=>$default{subst},
-			-size=>2);
+print $query->popup_menu(-name=>'subst',
+			 -Values=>[0..2],
+			 -default=>$default{subst});
+#print $query->textfield(-name=>'subst',
+#			-default=>$default{subst},
+#			-size=>2);
 
 
 print "<BR>\n";
