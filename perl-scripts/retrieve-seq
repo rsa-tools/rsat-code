@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: retrieve-seq,v 1.26 2002/09/25 03:14:11 jvanheld Exp $
+# $Id: retrieve-seq,v 1.27 2002/09/25 03:27:49 jvanheld Exp $
 #
-# Time-stamp: <2002-09-24 22:12:21 jvanheld>
+# Time-stamp: <2002-09-24 22:25:45 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -260,7 +260,7 @@ foreach my  $query (@queries) {
 	my $c = 0;
 	warn join("\t", $seq_length, $position, $max_pos, $genome_len), "\n" if ($verbose >= 3);
 	while ($position > ($chr_len[$c] - $seq_length + 1)) {
-	    $position -= $chr_len[$c]; 
+	    $position -= $chr_len[$c]  - $seq_length + 1; 
 	    $c++;
 	}
 	$chrom = $chroms[$c];
@@ -272,7 +272,10 @@ foreach my  $query (@queries) {
 	} else {
 	    $orf_strand = "R";
 	};
-	warn join("\t", $chrom, $reg_left, $reg_right, $orf_strand, $seq_length, $chr_length, $position, $max_pos), "\n" if ($verbose >= 3);
+
+	if ($reg_left < 0) {
+	    die join("\t", $chrom, $reg_left, $reg_right, $orf_strand, $seq_length, $chr_length, $position, $max_pos), "\n" if ($verbose >= 0);
+	}
 
 
 #  	#### random fragments
