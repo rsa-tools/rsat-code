@@ -1,0 +1,113 @@
+;program	category	description
+Fisher-exact-test	statistics	 Calculates the value of probability for Fisher's exact test, for a given table of numerical values. 
+IUPAC-to-regular	util; sequence	 Transforms a sequence conform to IUPAC degenerate code into an equivalent regular expression. this expression canbe used to search for complex patterns with general string search program like grep or gais. 
+MDCreport-from-dnapat	util	 Convert a pattern matching file (obtained with dna-pattern) into the format specified for the motif discovery competition 2004. http://www.cs.washington.edu/homes/tompa/competition/ 
+Naus_Sheng_1997.pl	statistics	 This scripts calculates the approximations according to Naus, J.I. and Sheng, K. (1997). Matching among multiple random sequence. Bulletin of Mathematical Biology 59(3): 483-496. 
+RSA-backup	administration	 Creates a backup of rsa-tools programs, in the for of two tar files: one containing perl-script and the other public_html. 
+RSA-zip	administration	 Creates a backup of rsa-tools programs, in the for of two tar files: one containing perl-script and the other public_html. 
+XYgraph	drawing	 Draws a XY graph with the numbers of the 2 first columns of input file and exports this graph as a GIF file. 
+add-linenb	util	 add a column to the input file indicating the line number 
+add-orf-function	genomics	 Takes as input a tab-delimited file where the first word of each row is an ORF identifier, and adds a column with a description of the ORFs. 
+add-orf-id	genomics	 Taking as input a file where each line starts with a gene name (or any supoprted synonym), adds a column in frot of it, giving the ORF identifer. 
+add-yeast-link	genomics	 Takes as input a text or HTML file, and insert HTML tags to link yeast ORF names to the selected databases. The current version only supports the yeast Saccharomyces cerevisiae. 
+binomial	statistics	 Calculates the probability that an event with probability p challenged r times successes s times, according to the binomial formula. 
+binomial-series	statistics	 Comparison of different approximations for the binomial formula. 
+calc-neighbour-limits	genomics	 Calculates the relative positions of neighbour CDS for all genes of a selected organism. 
+calibrate-oligos	util	 Calibrate oligonucleotide frequencies in upstream sequences of a selected organism. The calibration can be gene-wise (count oligo frequencies in the upstream sequence of each gene) or cluster-wise (count oligo frequencies in upstream sequences of random gene selections). 
+check-oligo-analysis	util	 Check the program oligo-analysis by generating random sequences, and calculating oligo occurrences, P-value, E-value and significance. 
+chi-square	statistics	 Calculates the chi square value for a given table of numerical values. 
+classfreq	statistics	 This script takes a group of numbers (real or integers) and outputs their distribution among classes. 
+closest-pair	statistics	 returns the distance between the closest elements of a list of integer numbers. 
+coding-or-not	genomics	 Starting from a complete assembled genome, generate non-redundant sets of sequences, partitioned into different sequence types (see options). 
+colsplit	util	 Splits a file accoding to the content of a specified column (the key column). A separate output file will be gnerated for each distinct key found in the key column of the input file. 
+compare-classes	util,stat	 Compare two class files (the query file and the reference file). Each class of the query file is compared to each class of the reference file. The number of common elements is reported, as well as the probability to observe at least this number of common elements by chance alone. 
+compare-scores	util	 compares the score associated to keys in different input files (basically, this amounts to join different tables on the basis of a unique identifier). 
+compress-pattern	util; sequence	 Compresses a pattern (first argument) by replacing repeats of the same letter (e.g. NNNNNNNNNNNNNNNN) by the corresponding regular expression (e.g. N{16}). 
+conditional-probabilities	util	 Calculate conditional residue probabilities on the basis of a specified oligonucleotide frequencies. 
+convert-chip	util	 Interconversions between microarray data files. 
+convert-features	util	 Interconversions between various formats of feature description. 
+convert-matrix	util; conversion; sequences	 Read a position-specific scoring matrix (PSSM) from different formats, and exports it in a format that can be used by the matrix matching program patser (Hertz et al, 1999). 
+convert-seq	util; sequences	 Converts sequences between different formats. Optionally, also returns the reverse-complement of the input sequences. 
+count-matches	util; sequences	 Count matching positions between two sequences provided as command line arguments. 
+deletions	util; sequences	 returns a list of sequences matching a DNA pattern with a given number of deletions 
+differential-profile	statistics; sequences	 Given two matrix files (each containing a position frequency matrix), perform an independence test to estimate whether the matrices are similar or different. Alternatively, the input can be provided as two pre-aligned sequence sets. The program then calculates the two corresponding profile matrices and compares them. 
+dna-pattern	sequences; pattern matching	 Searches all occurrences of a pattern within DNA sequences. The pattern can be entered as a simple nucleotide sequence, but can also include degenerate nucleotide codes, or regular expressions. 
+dyad-analysis	statistics; sequences; pattern-discovery	 Detects overrepresented spaced dyads in a set of DNA sequences. A dyad is a pair of oligonucleotides of the same size separated by a fixed number of bases. This algorithm is able to detect binding sites that escape detection by oligo-analysis, because of the sequence degeneracy within the spacer region. A typical example of patterns that are efficiently detected by the dyad analysis is the binding site for the yeast Gal4p transcription factor, which has the consensus CGGNNNNNWNNNNNCCG. The dyad-analysis is generally efficient to detect binding sites for HTH factors from E.coli, and for C6 Zinc cluster proteins in yeast. 
+ec2gene	genomics	 Takes as input a list of EC numbers, and returns the list of genes whose products catalyze these reactions in the selected organism. 
+edit-distance	sequences	 calculated the minimal edit distance between two strings 
+exp-occ	statistics; sequences	 Calculates the number of occurence for a pattern (word) expected to be found in a DNA sequence. 
+expand-seq	util; sequences	 replaces the multipliers in a sequence by a repetitions of the preceding element. Example: atgn{5}gta is replaced by atgnnnnngta 
+factorial	statistics	 Calculates the factorial of a given number. 
+feature-map	drawing	 draws a graphical map of regulatory features in a series of DNA sequences. 
+features-from-dnapat	util; conversion; drawing	 converts the output from the program dna-pattern into a file that can be used as input for the program feature-map. 
+features-from-dssp	util; conversion; drawing	 extracts features from a dssp file. dssp: definition of secondary structures in proteins 
+features-from-fugue	util; conversion; drawing	 extracts features from a fugue file. 
+features-from-gibbs	util; conversion; drawing	 extracts features from an output file from the Gibbs sampler, and exports them in a format readable by the script feature-map. 
+features-from-matins	util; conversion; drawing	 converts the output from the program matins into a file that can be used as input for the program feature-map. 
+features-from-msf	util; conversion; drawing	 extracts features from a msf file. 
+features-from-patser	util; conversion; drawing	 converts the output from the program patser into a file that can be used as input for the program feature-map. 
+features-from-sigscan	util; conversion; drawing	 converts the output from the program Signal Scan (http://bimas.dcrt.nih.gov/molbio/signal/) into a file that can be used as input for the program feature-map. 
+features-from-swissprot	util; conversion; drawing	 extracts features from a Swissprot file and exports them in a format readable by the script feature-map. 
+filter-shifts	util; sequences	 Starting from a list of patterns, suppress those that are 1-base shifts from an already seen pattern. 
+fit-distribution	util	 Fit a theoretical distribution on observed distributions, and estimate the goodness of fit with a chi2 test. 
+gene-info	genomics	 Returns the information about ORFs specified either by their ORF identifier, or by any supported synonym. 
+gene2ec	genomics	 Takes as input a list of genes, and returns the list of reactions (EC numbers) catalyzed by their products in the selected organism. 
+get-program-description	util	 Returns the description of one or several programs from the rsa-tool package. 
+gibbs-series	util; sequences; patern discovery	 performs several runs of the gibbs sampler to detect motifs shared by functionally related DNA sequences. 
+gibbs-to-msf	util; conversion; sequences	 extracts sequences from an output file from the Gibbs sampler, and exports them in a multiple file sequence format. See GCG manual (http://www.gcg.com) for a description of the msf format. 
+html-dir	util; administration	 Creates an HTML file with the contents of the current directory. 
+hypergeometric	statistics	 Given an urn with m black balls and n-m white balls, calculate the probability to observe x black balls in a random sample of k balls (without replacement). 
+information-profile	statistics; sequences	 Draws the information profile, as described in Claverie & Bougueleret (1986),Nucleic Acids Res. 14(1): 179-196. 
+insertions	util; sequences	 Returns a list of sequences matching a DNA pattern with a given number of insertions. 
+install-organism	adminstration	 Add support for an organism in RSA-tools. This program performs a series of installation tasks, by calling other programs in RSA-Tools. 
+log-likelihood	statistics	 Calculates the log-likelihood value for a given table of numerical values. 
+login-statistics	administration	 Reads a login file and returns statistics about the client domains and the scripts that have been requested. 
+matrix-from-align	util; conversion; sequences	 Creates a nucleotide frequency matrix from a set of aligned sequences. 
+matrix-from-contrast	util; conversion; sequences	 Converts the output file from contrast into a matrix that can be read by PHYLIP. 
+matrix-from-transfac	util; conversion; sequences	 Converts a matrix from Transfac database into a matrix that can be read by Jerry Hertz's patser program. 
+merge-results	util	 Executes several commands and merges the result in a HTML table. 
+mismatches	util; sequences	 returns a list of sequences matching a DNA pattern with a given number of mismatches 
+multiple-family-analysis	sequences; pattern discovery	 Runs a combination of programs in order to discover significant patterns in the upstream regions of several gene families. This script is a way to auto;atize the systematic analysis of multiple clusters of co-regulated genes, such as those obtained with DNA chip experiments. The program reads the composition of several families in a single text file, then executes different program discovery programs, and generates a summary report. Results are subdifided in directories created on the fly, one directory per family plus one summary directory. 
+negative-binomial	statistics	 Calculates negative binomial probabilities. 
+neighbour-orfs	genomics	 returns the closest ORFS on left and right side from a given chromosomal coordinate. 
+next-match	sequences; pattern matching	 returns the position and sequence of the first match with the pattern in the sequence, allowing subst substitutions, and starting with a given offset (0 is the first base of the input sequence). 
+oligo-analysis	sequences; pattern discovery	 calculates oligomer frequencies in a set of sequences, and detects overrepresented oligomers. 
+oligo-distance-matrix	statistics; sequences; pattern matching	 Elaborate a distance matrix between a series of non aligned sequences. Distances are calculated on bases of oligonucleotide frequencies. 
+one-var-pos	util; sequences	 Returns all variants of a given pattern with one degenerated position. By default, all degenerated letters from the 15-letter IUPAC alphabet are used, but a subset cn be specified. 
+orf-synonyms	genomics	 Provides a list of synonyms for a query yeast gene name. 
+overlap-coeff	statistics; sequences	 Calculates overlap coefficient for a given sequence. 
+overlaps	sequences	 Detects self-overlapping sequences. 
+palindroms	sequences	 Detects complement-palindromic sequences (i.e. sequences which are identical to their reverse-complement). 
+parse-RNAfold	parser; sequences	 Parses the result of RNAfold, and extracts the sequences of the loops (in the future, it will also allow to extract other sub-structures, like stem-loops. 
+parse-embl.pl	parser	 Parse one or sveral EMBL files for extracting genome information. 
+parse-genbank.pl	parser	 Parse one or sveral Genbank files for extracting genome information. Genbank genomes can be retrieved by anonymous ftp : ftp://ftp.ncbi.nlm.nih.gov/genomes Genome sequence and annotations are parsed from the genbank flat files (extension .gbk). Each directory contains the genome of one organism. Note that - a single directoy can contain several files, if the organism has several chromosomes. - a single .gbk file can contain several contigs, if the genome is not fully assembled for example. Parsed data is exported in tab-delimited format, according to the normalization rules for relational databases : one main table regroups all the single-value attributes(one attribute per column), and each multi-value attribute comes in a separate table with the foregin key in the first column. The program also exports some parsing statistics, an error log, and a set of SQL scripts for creating a relational database (supported standards: mysql, postgresql, oracle). 
+parse-location.pl	parser	 Parse ORF locations and generates one file with introns and one with exons. 
+parse-refseq.pl	parser	 Parse one or sveral Refseq files for extracting genome information. Refseq files can be retrieved by anonymous ftp : ftp://ftp.ncbi.nlm.nih.gov/refseq Genome sequence and annotations are parsed from the refseq flat files (extension .gbk). Each directory contains the genome of one organism. Note that - a single directoy can contain several files, if the organism has several chromosomes. - a single .gbk file can contain several contigs, if the genome is not fully assembled for example. Parsed data is exported in tab-delimited format, according to the normalization rules for relational databases : one main table regroups all the single-value attributes(one attribute per column), and each multi-value attribute comes in a separate table with the foregin key in the first column. The program also exports some parsing statistics, an error log, and a set of SQL scripts for creating a relational database (supported standards: mysql, postgresql, oracle). 
+parse-transfac	parser	 Parse transfac database 
+parse-yeast-from-mips.pl	parser	 Parse the yeast genome imported from the MIPS. Data source: ftp://ftpmips.gsf.de/yeast/ 
+pattern-assembly	sequences	 Assemble a set of oligonucleotides or dyads into clusters of overlapping patterns (the assembly). 
+pattern-cross-matching	sequences; pattern matching	 Matches two pattern files against each other. This program can be used for comparing the results of a pattern discovery program with the experimentally characterized patterns. 
+poisson	statistics	 Calculates Poisson probabilities. 
+position-analysis	sequences; pattern-discovery	 Calculates the positional distribution of oligonucleotides in a set of sequences, and detects those which significantly discard from a homogeneous distribution. 
+print-env		
+profile-distance	statistics	 Calculates pairwise distances between the elements of set of class frequency distributions. Application: The frequency distributions can for example be temporal profiles of gene expression (cf Eisen et al. 1995, PNAS 95:14863-8), or word position distributions. 
+purge-sequence	sequences	 Mask redundant fragments in a sequence. This perl script is no more than a wrapper to facilitate this specific usage for two programs developed by Stefan Kurtz : mkvtree and vmatch. When a fragment is duplicated, the first ocurrence is conserved and the second masked (or optionally deleted). By default, the program also searches similarities between the direct and reverse complement strand. 
+quantiles	util	 Taking as input a list of objects associated with a score, classify them into quantiles. 
+random-genes	util	 Returns a random selection of genes for the specified organism. There are several modes of utilization. (1) -n returns random genes. (2) -r repetitions. Create a family file with r groups of n genes (n must be specified) (3) -pairs returns random pairs of genes. (4) -fam takes a family file (see multiple-family-analysis) as input, and return another family file with the same number of families, the same number of random genes per family as in the input file. This allows to deal with families of different sizes in the same file, and to perform negative controls in exactly the same conditions as the test. 
+random-seq	sequences	 Generates random sequences according to different probabilistic models, including Markov chains. 
+replace-string	util	 looks for all occurrences of a query string within the input file and replaces them by another string. 
+retrieve-seq	genomics; sequences	 Returns upstream or downstream sequences for list of query genes. 
+reverse-complement	sequences	 Returns the reverse complement of an input DNA sequence. 
+row-stats	statistics	 Calculate basic statistics (min, max, avg, ...) on each row of a tab-delimited input file. 
+seq-distances	sequences	 Calculates the edit distance between sequences from the input file (note: this implementation is very inefficient, it is just for a quick test). 
+sequence-lengths	sequences	 Return the lengths of each sequence from an input file. Otionally, return the sum of lengths. 
+spaces-to-tab	util	 replaces any series of contiguous spaces from input file by a tab character. 
+split-chromosomes	sequences	 Converts fasta file containing a whole genome (several chromosomes into a set of files with raw sequences (one file per chromosome). This is partly overlapping with convert-seq, but this script is optimized for very large sequenc files. Thus, sequences are written progressively in the output files instead of loading the wole sequence in memory. 
+sub-sequence	sequences	 Returns a segment from the input sequence, specified by its position. 
+substitutions	sequences	 Returns a list of sequences matching a nucleotide pattern with a given number of substitutions (only ATGC are supported). 
+substract-origin	util	 Converts positions by introducting a gene-specific correction. This program can for example be used to correct matching positions (resulting from dna-pattern) to convert positions calculated from the start codon into positions from the transcription start site. 
+supported-organisms	genomics; administration	 Returns the list of organisms supported on this site of rsa-tools. 
+template	util	 Template for writing new perl scripts 
+text-to-html	util	 Converts a tab-delimited file into a HTML table. 
+transpose-table	util	 transposes a table provided in a tab-delimited file (transposing means converting columns into rows and vice versa) 
+waterman-parameters	statistics	 calculates the probability to find a word within a given % of a set of sequences, following the method of Waterman et al (1984). Bulletin Math. Biol. 45 (4):515-527. 
