@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_rsat.mk,v 1.3 2003/11/14 08:30:21 jvanheld Exp $
+# $Id: install_rsat.mk,v 1.4 2003/11/14 08:52:34 jvanheld Exp $
 #
 # Time-stamp: <2003-05-23 09:36:00 jvanheld>
 #
@@ -8,7 +8,7 @@
 
 GENBANK_DIR=${RSAT}/downloads/ftp.ncbi.nih.gov/genbank/genomes
 NCBI_DIR=${RSAT}/downloads/ftp.ncbi.nih.gov/genomes
-
+V=1
 DATE = `date +%Y%m%d_%H%M%S`
 
 
@@ -177,15 +177,15 @@ INSTALL_TASK=allup,clean,config,dyads,ncf,intergenic_freq,oligos,parse,start_sto
 install_organism:
 	@echo "install log	${INSTALL_LOG}"
 	echo "Parsing organism ${ORGANISM}" 
-	install-organism -v 1								\
+	install-organism -v ${V}								\
 		-org ${ORGANISM}							\
 		-task  ${INSTALL_TASK}
 
 POMBE_DIR=/win/databases/downloads/ftp.sanger.ac.uk/pub/yeast/Pombe/CONTIGS/
 install_pombe:
 	echo "Parsing organism Schizosaccharomyces pombe" ;
-#	parse-embl.pl -i ${POMBE_DIR} -org 'Schizosaccharomyces pombe' -v 1
-	install-organism -v 1											\
+#	parse-embl.pl -i ${POMBE_DIR} -org 'Schizosaccharomyces pombe' -v ${V}
+	install-organism -v ${V}											\
 		-org Schizosaccharomyces_pombe									\
 		-features ${RSAT}/data/Schizosaccharomyces_pombe/genome/Gene_Schizosaccharomyces_pombe.tab	\
 		-genome ${RSAT}/data/genome/Contigs_Schizosaccharomyces_pombe.txt				\
@@ -198,7 +198,7 @@ install_pombe:
 ORGANISM=Plasmodium_faciparum
 #ORGANISM=Homo_sapiens
 ORGANISM_DIR=${NCBI_DIR}/${ORGANISM}
-PARSE_COMMAND=parse-genbank.pl -v 1 -i ${ORGANISM_DIR} ${OPT}
+PARSE_COMMAND=parse-genbank.pl -v ${V} -i ${ORGANISM_DIR} ${OPT}
 parse_organism:
 	${PARSE_COMMAND}
 
