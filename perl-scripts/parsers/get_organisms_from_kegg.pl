@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ################################################################
 #### use the soap interface to retrieve a list of oranisms supported in KEGG
-
+###INSTAL SOAP!
 
 use strict;
 use SOAP::Lite;
