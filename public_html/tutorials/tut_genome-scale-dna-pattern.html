@@ -1,0 +1,78 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <TITLE>RSA-tools - tutorials</TITLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF" LINK="#0000EE" VLINK="#55008B" ALINK="#FF0000">
+<blockquote>
+
+<HR SIZE=6 WIDTH="100%">
+<CENTER>
+<H2><A HREF="../RSA_home.cgi">RSA-tools</A> - 
+<a href="tutorials.html">Tutorials</a> - 
+<a href="../genome-scale-dna-pattern_form.cgi">genome-scale dna-pattern</a>
+</H2>
+</CENTER>
+
+<HR SIZE=6 WIDTH="100%">
+
+We are now considering the case where we know the binding
+specificity for a given transcription factor, and we are looking for
+all the genes potentially regulated by this factor. We will use the
+Nitrogen regulation as an example.  Response to nitrogen is mediated
+by the so-called GATA-box, whose most common motif is GATAAG. An
+interesting property is that a single GATA-box is insufficient to
+affect the transcription. All genes effectively controlled by these
+elements possess at least one group of 2 to 4 closely associated
+GATA-boxes. 
+
+
+<P>We will use <B>dna-pattern</B> to select all genes having 3 or more
+occurrences of the GATA box in their 500 bp upstream region.
+
+<P>
+<OL>
+<LI>
+On the left pannel, click <B>genome-scale dna-pattern (strings)</B>.
+
+<li>In the Sequence retrieval options, make sure that the selected
+<b>organism</b> is <b>Saccharomyces cerevisiae</b>, and that <b>Sequence
+type</b> is set to upstream.
+
+<li>Specify the sequence limits <b>from</b> -500 <b>to</b> -1.
+
+<LI>In the <B>Query pattern(s)</B> box, type</LI>
+
+<PRE>GATAAG</PRE>
+
+<LI>In the <B>Return </B>option, select <B>match counts</B>.</LI>
+
+<LI>Change the <B>Threshold </B>to 3.</LI>
+
+<LI>
+Click <B>GO</B></LI>
+</OL>
+
+<P>
+After a few seconds you will see a list of the genes with 3 or more
+occurrences of the GATAAG pattern in their 500 bp upstream
+sequence. Each ORF identifier appears as a hyperlink, which is
+connected to the information on this ORF in the yeast genome
+database.
+
+
+<P>
+You can now come back to the <a href=tutorials.html>tutorial main
+page</a> and try the next tutorial.
+
+
+<HR WIDTH="100%">
+<CENTER>
+<ADDRESS>
+For suggestions or information request, please contact :</ADDRESS></CENTER>
+
+<CENTER><A HREF="mailto:jvanheld@ucmb.ulb.ac.be">Jacques van Helden (jvanheld@ucmb.ulb.ac.be)</A></CENTER>
+
+</blockquote>
+</BODY>
+</HTML>
