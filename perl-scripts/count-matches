@@ -3,8 +3,8 @@ if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
 require "RSA.lib";
-require "RSA.classes";
 require "RSA.seq.lib";
+require RSAT::pattern;
 
 ################################################################
 #### initialise parameters
@@ -79,14 +79,14 @@ my %field_format = (match=>"%d",
 
 ## return fields
 if (scalar(@return_fields) < 1) {
-    @return_fields = ("seq", "weight");
+    @return_fields = ("seq", "match");
 }
 
 my @temp_return_fields = @return_fields;
 @return_fields = (); ## Ordered list of fields to return. 
 %return_field = ();  ## Index for the fields to return.
 foreach my $field (@temp_return_fields) {
-    &FatalError("$field\tInvalid return field. Supported: $supported_return_fields\n") unless $supported_return_field{$field};
+    &RSAT::error::FatalError("$field\tInvalid return field. Supported: $supported_return_fields\n") unless $supported_return_field{$field};
 
     $return_field{$field}++;
 
@@ -113,8 +113,8 @@ if ($pattern_file2) {
 
 
 ## Check input patterns
-&FatalError("You must specify at least one first sequence") unless (scalar(@pattern1) > 0);
-&FatalError("You must specify at least one second sequence") unless (scalar(@pattern2) > 0);
+&RSAT::error::FatalError("You must specify at least one first sequence") unless (scalar(@pattern1) > 0);
+&RSAT::error::FatalError("You must specify at least one second sequence") unless (scalar(@pattern2) > 0);
 
 
 ################################################################
@@ -167,8 +167,8 @@ sub OneMatch {
     $seq2 = &ExpandSeq($seq2);
 
     ## Check input sequences
-    &FatalError("You must specify a first sequence") unless ($seq1);
-    &FatalError("You must specify a second sequence") unless ($seq2);
+    &RSAT::error::FatalError("You must specify a first sequence") unless ($seq1);
+    &RSAT::error::FatalError("You must specify a second sequence") unless ($seq2);
 
 #    warn join("\t", "Comparing",  $id1, $seq1, $id2, $seq2),"\n" if ($main::verbose >= 10);
 
@@ -448,13 +448,13 @@ sub ReadArguments {
 	    ### first sequence  
 	} elsif ($ARGV[$a] eq "-seq1") {
 #	    push @pattern1, $ARGV[$a+1];
-	    push @pattern1, new RSA::pattern(sequence=>$ARGV[$a+1],
+	    push @pattern1, new RSAT::pattern(sequence=>$ARGV[$a+1],
 					     id=>$ARGV[$a+1]);
 	    
 	    ### second sequence  
 	} elsif ($ARGV[$a] eq "-seq2") {
 #	    push @pattern2, $ARGV[$a+1];
-	    push @pattern2, new RSA::pattern(sequence=>$ARGV[$a+1],
+	    push @pattern2, new RSAT::pattern(sequence=>$ARGV[$a+1],
 					     id=>$ARGV[$a+1]);
 
 	    ### first sequence   file
@@ -473,13 +473,13 @@ sub ReadArguments {
         } elsif ($ARGV[$a] eq "-lth") {
             my $field = $ARGV[$a+1];
             my $value = $ARGV[$a+2];
-	    &FatalError("Invalid threshold crierion\t".$field)
+	    &RSAT::error::FatalError("Invalid threshold crierion\t".$field)
 		unless ($supported_threshold_field{$field});
             $lth{$field} = $value;
         } elsif ($ARGV[$a] eq "-uth") {
             my $field = $ARGV[$a+1];
             my $value = $ARGV[$a+2];
-	    &FatalError("Invalid threshold crierion\t".$field)
+	    &RSAT::error::FatalError("Invalid threshold crierion\t".$field)
 		unless ($supported_threshold_field{$field});
             $uth{$field} = $value;
 
