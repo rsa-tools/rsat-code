@@ -1,17 +1,17 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: orf-info,v 1.7 2001/07/05 15:10:15 jvanheld Exp $
+# $Id: orf-info,v 1.8 2001/09/21 03:09:41 jvanheld Exp $
 #
-# Time-stamp: <2001-05-26 09:46:56 jvanheld>
+# Time-stamp: <2001-09-21 05:08:53 jvanheld>
 #
 ############################################################
 
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
-require "RSA.classes.pl";
+require "RSA.lib";
+require "RSA.classes";
 
 $start_time = $date = `date '+%d/%m/%y %H:%M:%S %Z'`;
 
@@ -80,13 +80,20 @@ foreach $query (@queries) {
     $found = 0;
 
     if ($exact) {
-	if (defined($orf_id{uc($query)})) {
-	    $found = 1;
-	    &PrintInfo($query,$orf_id{uc($query)});
-	}
-    } else {
 	foreach $key (keys %orf_id) {
 	    if ($key =~ /^$query$/i) {
+		$found = 1;
+		&PrintInfo($query, $orf_id{$key});
+		
+	    }
+	}
+#	if (defined($orf_id{uc($query)})) {
+#	    $found = 1;
+#	    &PrintInfo($query,$orf_id{uc($query)});
+#	}
+    } else {
+	foreach $key (keys %orf_id) {
+	    if ($key =~ /$query/i) {
 		$found = 1;
 		&PrintInfo($query, $orf_id{$key});
 		
