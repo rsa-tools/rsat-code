@@ -2,7 +2,6 @@
 #
 # Check the calibration of upstream frequencies for some organisms
 # - position analysis of all promoters
-# 
 
 #### programs
 NICE=nice -n 20
