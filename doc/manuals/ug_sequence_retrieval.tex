@@ -149,11 +149,11 @@ The option \texttt{-noorf} of \textit{retrieve-seq} indicates that, if
 the upstream gene is closer than the specified limit, the sequence
 should be clipped in order to return only intergenic regions.
 
-As an example, we will store the list of hitidin genes in a file and
+As an example, we will store the list of histidin genes in a file and
 compare the results obtained with and without the option
 \texttt{-noorf}.
 
-Create a text file named \texttt{his\_genes.txt} with the following
+Create a text file named \texttt{his.genes.txt} with the following
 genes.
 
 \begin{verbatim}
@@ -177,7 +177,7 @@ The default behaviour will return 200bp for each gene.
 
 \begin{verbatim}
 retrieve-seq -type upstream -org Escherichia_coli_K12 \
-    -i his\_genes.txt -from -200 -to -1
+    -i his.genes.txt -from -200 -to -1
 \end{verbatim}
 
 With the option \texttt{-noorf}, sequences are clipped depending on
@@ -185,17 +185,17 @@ the position of the closest upstream neighbour.
 
 \begin{verbatim}
 retrieve-seq -type upstream -org Escherichia_coli_K12 \
-    -i his\_genes.txt -from -200 -to -1 -noorf \
-    -o his\_up200\_noorf.fasta
+    -i his.genes.txt -from -200 -to -1 -noorf \
+    -o his.up200.noorf.fasta
 
-more his\_up200\_noorf.fasta
+more his.up200.noorf.fasta
 \end{verbatim}
 
 You can measure the length of the resulting sequences with the program
 \textit{sequence-lengths}.
 
 \begin{verbatim}
-sequence-lengths -i his\_up200\_noorf.fasta
+sequence-lengths -i his.up200.noorf.fasta
 \end{verbatim}
 
 Notice that some genes have very short upstream sequences (no more

@@ -26,7 +26,7 @@ important to reduce the rate of false positive.
 Matrix-based approach can provide a more refined description of motifs
 presenting a high degree of degeneracy. The problem of matrix-based
 approaches is that it is impossible to analyze all possible
-position-weight matrices, and thus on has to use heuristics. There is
+position-weight matrices, and thus one has to use heuristics. There is
 thus a risk to miss the global optimum because the program is
 attracted to local maxima. Another problem is that there are more
 parameters to select (typically, matrix width and expected number of
@@ -135,6 +135,9 @@ oligo-analysis -i PHO_up800.fasta -format fasta      \
     -o PHO_up800_6nt_2str_ncf_sig0 
 \end{verbatim}
 
+Note that the return fields (``occ'', and ``proba'') are separated by
+a comma \textit{without} space.
+
 Call the on-line help to understand the meaning of the parameters.
 
 \begin{verbatim} 
@@ -176,7 +179,7 @@ complement.
 
 \subsubsection{Assembling the patterns}
 
-A separate program, \texttt{pattern-assembly} allows to assemble a
+A separate program, \texttt{pattern-assembly}, allows to assemble a
 list of patterns, in order to group those that overlap mutually. Try:
 
 \begin{verbatim}
@@ -234,8 +237,8 @@ oligo-analysis -i PHO_up800.fasta -format fasta \
 Note that
 \begin{itemize} 
 \item The number of selected motifs is higher (27) than in the previous trial
-\item The most significant motifs have nothing to with Pho4p binding
-sites. All these false positive are A-rich motifs (or T-rich, since we
+\item The most significant motifs have nothing to do with Pho4p binding
+sites. All these false positives are A-rich motifs (or T-rich, since we
 are grouping patterns with their reverse-complement).
 \item Two patterns (\texttt{acgttt} and \texttt{acgtgc}) are selected
 which are related to Pho4p binding site. However, they come at the
@@ -405,7 +408,7 @@ consensus -L 10 -f PHO_up800.wc -A a:t c:g -c2 -N 10 \
     > PHO_consensus
 \end{verbatim}
 
-(this may take a few minuts)
+(this may take a few minutes)
 
 Once the task is achieved, check the result.
 
