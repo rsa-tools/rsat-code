@@ -1,5 +1,6 @@
 #!/usr/bin/perl
 
+
 #### returns the maximum of a list of numeric values
 #### usage:
 #### $max_value = &max(@value_list);
@@ -610,7 +611,7 @@ sub hypergeometric {
 
 
     
-# 	$Id: RSA.stat.lib,v 1.15 2004/01/05 11:25:23 jvanheld Exp $	
+# 	$Id: RSA.stat.lib,v 1.16 2004/01/05 11:26:22 jvanheld Exp $	
 
     #### initialization
     if (defined($args{previous_value})) {
