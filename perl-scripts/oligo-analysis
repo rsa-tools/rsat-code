@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.54 2002/09/14 15:46:29 jvanheld Exp $
+# $Id: oligo-analysis,v 1.55 2002/09/14 23:01:51 jvanheld Exp $
 #
-# Time-stamp: <2002-09-14 10:46:17 jvanheld>
+# Time-stamp: <2002-09-14 18:01:12 jvanheld>
 #
 ############################################################
 
@@ -1177,6 +1177,7 @@ sub Verbose {
 	printf $out "; %-29s\t%s\n", "Input file",	$inputfile if ($inputfile);
 	printf $out "; %-29s\t%s\n", "Input format", $in_format;
 	printf $out "; %-29s\t%s\n", "Background model", $background_model if ($background_model);
+	printf $out "; %-29s\t%s\n", "Organism", $organism_name if ($organism_name);
 	printf $out "; %-29s\t%s\n", "Method", $method;
 	printf $out "; %-29s\t%s\n", "Expected frequency file", $exp_freq_file if ($exp_freq_file);
 	printf $out "; %-29s\n", "\trescaled to 1" if ($rescale_freq);
@@ -2061,25 +2062,21 @@ INPUT FORMATS
 PROBABILITIES
 
     EXPECTED OCCURRENCES
-	                      r
-	   Exp_occ = p * 2 * SUM (Lj + 1 - w) = p * T
-	                     j=1
+	                          S
+	   Exp_occ = p * T = p * SUM (Lj + 1 - k)
+	                         j=1
 	
 	where	p  = probability of the pattern
-		     in our case, a good estimate for this value is the 
-		     frequence observed for this pattern in all intergenic 
-		     genomic regions.
-		n  = number of regulatory regions considered 
-		     (members of the family)
+		     Severay models are supported for estimating the
+		     prior probability (see options -a, -expfreq and
+		     -bg).
+		S  = number of sequences in the sequence set. 
 		Lj = length of the jth regulatory region
-		l  = length of the pattern
+		k  = length of oligomer
                 T = the number of possible matching positions.
 		
-		the factor 2 stands for the fact that patterns are searched 
-		on both strands (it is omitted when the option -1str 
-                is active).
-	
-	
+
+
     PROBABILITY OF SEQUENCE MATCHING
 	The probability to find at least one occurrence of the pattern within
 	a single sequence is :
@@ -2088,10 +2085,14 @@ PROBABILITIES
 	    q = 1 - (1-p)
 	    
 	with the same abbreviations as above
-	
+
 
     EXPECTED NUMBER OF MATCHING SEQUENCES
-	             
+
+	In this counting mode, only the first occurrence of each
+	sequence is taken into connsideration. We have thus to
+	calculate a probability of first occurrence.
+
 	   Exp_ms = n (1 - (1 - p)^T)
 	
 	with the same abbreviations as above
@@ -2120,9 +2121,9 @@ PROBABILITIES
 	The probability to observe obs or more occurrences in the whole family
   	of sequences is calculated by the sum of binomials:
 	
-	                 T             obs-1
-	    P(>=obs) =  SUM P(i) =  1 - SUM P(i)
-	               i=obs            i=0
+	                 T              obs-1
+	    P(>=obs) =  SUM P(i) =  1 -  SUM  P(i)
+	               i=obs             i=0
 
     OVER/UNDER-REPRESENTATION
 
@@ -2145,22 +2146,71 @@ PROBABILITIES
 		values can be used to asses word under-representation.
 
 	                        
+    SPECIFIC TREATMENT FOR DOUBLE STRAND COUNTS
+
+	When occurrences are counted on both strands, each pattern is
+	grouped with its erverse complement. 
+
+	For reverse-palindromic patterns, probabilities are calculated
+	on the basis of the single strand count, since the occurrence
+	on the reverse complement strand is completely dependent on
+	that on the direct strand. 
+
+        A more biological justification for this is that, although the
+        word is foudn on both strands in a string representation of
+        the sequences, at the structural level, there is a single
+        binding site for the factor. 
+
+
+	On the contrary, for non-palindrommic patterns, occurrences on
+        the direct and reverse complement strand represent distinct
+        binding sites. Thus, 
+
+		 Obs_occ(W|Wr) = Obs_occ(W) + Obs_occ(Wr)
+		 Exp_freq(W|Wr) = Exp_freq(W) + Exp_freq(Wr)
+
+	   where
+		 W     is a given word
+		 Wr    is the reverse complement of W
+
+	Probabilities are then calculated as above, on the basis of
+	the event W|Wr instead of simply W.
+
+    E-VALUE
+
+	The probability of occurrence by itself is not fully
+	informative, because the threshold must be adapted depending
+	on the number of patterns considered. Indeed, a simple
+	hexanucleotide analysis amounts to consider 4096
+	hypotheses. 
+
+	The E-value represented the expected number of patterns which
+	would be returned at random for a given P-value (probability).
+
+	      E-value = NPO * P(>=obs)
+
+	where	NPO	 is the number of possible oligomers of the 
+	                 chosen length (eg 4096 for hexanucleotides). 
+
+        Note that when searches are performed on both strands, NPO is
+        corrected for the fact that non-palindromic patterns are
+        grouped by pairs (for example, there are 2080 patterns when
+        hexanucleotides are counted on both strands).
+
+
     SIGNIFICANCE INDEXES
-        Significance indexes are conversions of the probabilities of occurence 
-        and matching sequences.
+
+        The significance index is simply a negative logarithm
+        conversion of the E-value (in base 10).
+
 
 	The significance indexes are calculated as follows:
 	
-	      Sig_occ = -log10(NPO * P(>=obs));
-	      Sig_ms  = -log10(NPO * P(>=ms));
+	      Sig_occ = -log10(E-value);
 
-	where	NPO	 is the number of possible oligomers of the 
-	                 chosen length (eg 4096 for hexanucleotides). Note 
-                         that  when searches are performed on both strands, 
-                         NPO is  corrected for the fact that each 
-                         non-palindromic pattern will become dependent of its 
-                         reverse complement (thus in this case there will be 
-                         2080 independent  pentanucleotides).		
+	This index is very convenient to interpret : highest values
+	correspond to the most exceptional patterns.
+
 
     OVERLAP COEFFICIENT
         overlap coefficient is calculated as follows 
