@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.83 2004/09/04 06:42:38 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.84 2005/01/20 21:38:57 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -110,14 +110,14 @@ $monad_length = 3;
 $min_sp = 0;
 $max_sp = 20;
 
-## matrix-based pattern discovery options
+## Default matrix-based pattern discovery options
 $matrix_width = 10;
 $expected_sites_per_gene = 2;
 $seed = undef;
 
-## MotifSampler options
+## Default MotifSampler options
 $MS_bg_order = 0;
-$MS_b = "/home/nicolas/motifsampler/background_models/yeast_up800_nomit_noorf_o3.bg"; ### TEMPORARY
+$MS_b =$ENV{MOTIF_SAMPLER_DIR}."/background_models/yeast_up800_nomit_noorf_o3.bg"; ### TEMPORARY
 $MS_p = 0.2;
 $MS_M = 0;
 $MS_n = 4;
@@ -125,7 +125,7 @@ $MS_w = $matrix_width;
 $MS_x = 1;
 $MS_r = 5;
 
-## MEME options
+## Default MEME options
 $MEME_minw = 6;
 $MEME_maxw = 25;
 
@@ -426,7 +426,6 @@ sub SetFileNames {
 	$MS_options .= " -o ".$family{$family_name}->{MotifSampler_file}.".sites";
 	$MS_options .= " -m ".$family{$family_name}->{MotifSampler_file}.".matrix";
 
-
 	## Assign MotifSampler options to the family
 	$family{$family_name}->{MotifSampler_suffix} = $MS_suffix;
 	$family{$family_name}->{MotifSampler_options} = $MS_options;
@@ -463,7 +462,6 @@ sub SetFileNames {
 	
 	## Background frequencies
 	$meme_dir = $ENV{MEME_DIR} || $RSA."/bin/meme/";
-#	$meme_dir = "~nicolas/meme.3.0.4";
 	$meme_bg_file = $meme_dir."/tests/yeast.nc.6.freq";
 	$meme_options .= " -bfile ".$meme_bg_file;
 
@@ -911,13 +909,13 @@ sub MotifSampler {
 #   }
 
    ## run the command
-   my $MS_command = "MotifSampler ".$family{$family_name}->{MotifSampler_options};
+   my $MS_command = $ENV{MOTIF_SAMPLER_DIR}."/MotifSampler ".$family{$family_name}->{MotifSampler_options};
+#   die `pwd`;
 #   $MS_command .= " > ".$family{$family_name}->{MotifSampler_file};
 #    unless ($main::verbose >= 4) {
 #	$MS_command .= ">& /dev/null";
 #    }
    &doit($MS_command, $dry_run, $die_on_error, $verbose);
-
 }
 
 
@@ -1778,7 +1776,7 @@ OPTIONS
    Gibbs sampler (Neuwald, 1995)
 	-seed	 seed number for the random generator
 
-   MotifSampler (This, 200X)
+   MotifSampler (Thijs, 200X)
 	-MS_b	backgound file
 	-MS_p	prior probability of 1 motif copy (default $MS_p)
 	-MS_M   Maximal number of motif instances per sequence. (default $MS_M; unset=0)
