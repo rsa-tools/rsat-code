@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: retrieve-seq,v 1.17 2002/02/13 09:14:49 jvanheld Exp $
+# $Id: retrieve-seq,v 1.18 2002/03/18 14:06:28 jvanheld Exp $
 #
-# Time-stamp: <2002-02-13 10:14:21 jvanheld>
+# Time-stamp: <2002-03-18 15:06:04 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -12,6 +12,8 @@ if ($0 =~ /([^(\/)]+)$/) {
 require "RSA.lib";
 require "RSA.classes";
 require "RSA.seq.lib";
+
+warn "Starting" if ($warn_level >= 1);
 
 ############# help ###########
 if ($ARGV[0] eq "-h") {
@@ -27,6 +29,8 @@ my $start_time = &AlphaDate;
 
 my %chomosome = ();
 my $chrom = "";
+
+$feature_table_file = "";
 $seq_label = "gene";  
 $sequence_type = "upstream";
 @queries = ();
@@ -43,22 +47,28 @@ $default{to} = -1;
 ############################### check parameters ###############################
 ################################################################################
 
+unless ($feature_table_file) {
+    $feature_table_file = $supported_organism{$organism_name}->{'features'};
+}
+
 #### organism
-&CheckOrganism($organism_name);
+warn "Checking organism $organism_name\n" if ($warn_level >= 1);
+&CheckOrganism($organism_name, $feature_table_file);
 
 #### default boundaries
 if ($sequence_type eq "upstream") {
+    $default{to} = -1;
     if (($organism_name eq "yeast") || 
 	($organism_name =~ /Schizosaccharomyces/) ||
-	($organism_name =~ /Saccharomyces/) ||
-	($organism_name =~ /Caenorhabditis/) ||
-	($organism_name =~ /Arabidopsia/) ||
-	($organism_name =~ /Drosophila/)) {
+	($organism_name =~ /Saccharomyces/)) {
 	$default{from} = -800;
-	$default{to} = -1;
+    } elsif (($organism_name =~ /Caenorhabditis/) ||
+	     ($organism_name =~ /Arabidopsis/) ||
+	     ($organism_name =~ /Plasmodium/) ||
+	     ($organism_name =~ /Drosophila/)) {
+	$default{from} = -2000;
     } else { #### bacteria
 	$default{from} = -400;
-	$default{to} = -1;
     }
 } elsif ($sequence_type eq "downstream") {
     $default{from} = 1;
@@ -89,10 +99,14 @@ if ($to < $from) {
 
 ################################################################
 ## organism data 
-&ReadOrfPositions($organism_name);
+warn "Reading ORF table for $organism_name\n" if ($warn_level >= 1);
+&ReadOrfPositions($organism_name, $feature_table_file);
+warn "Reading synonyms for $organism_name\n" if ($warn_level >= 1);
 &ReadSynonyms($organism_name);
+
 #### no overlapping with upstream orfs
 if ($noorf) {
+    warn "Calculating neighbour ORF limits\n" if ($warn_level >= 1);
     &CalcNeighbourLimits();
 }
 
@@ -112,7 +126,7 @@ if ($random_orfs > 0) {
     for my $i (1..$random_orfs) {
 	my $remaining_orfs = $#orfs+1;
 	my $selected = int(rand($remaining_orfs));
-	warn ";", join ("\t", "Selected ORF", $selected, $remaining_orfs), "\n" if ($verbose >= 3);
+	warn ";", join ("\t", "Selected ORF", $selected, $remaining_orfs), "\n" if ($warn_level >= 3);
 	push @queries, splice(@orfs, $selected, 1);
     }
 } elsif (@queries == ()) {
@@ -230,7 +244,7 @@ foreach $query (@queries) {
 	} else {
 	    $orf_strand = "R";
 	};
-	warn join("\t", $chrom, $chr_length, $seq_length, $max_pos, $reg_left, $reg_right, $orf_strand), "\n" if ($verbose >= 3);
+	warn join("\t", $chrom, $chr_length, $seq_length, $max_pos, $reg_left, $reg_right, $orf_strand), "\n" if ($warn_level >= 3);
     }
     
     
@@ -387,14 +401,23 @@ $supported_organisms
 		upstream sequence coordinates.
 	-nowarn
 		Prevents warning when a gene cannot be identified.
-	-randorfs #	
+	-randsels #	
 		Return the sequences (specified by the option -type)
 		for a random selection of # ORFs.
+	-features	
+		alternate feature table. This option allows to speify
+		an alternate file where the ORF locations are found. 
+		See below for a description of the feature file format.
 
 INPUT FORMAT
 	Sequence file
-		Sequence file can adopt any format supported by RSA 
-		(currently : fasta, IG, raw, multi, filelist)
+		Sequence file is of type chrlist, i.e. this file
+		contains a list of other file names, each of which
+		contains a raw contig sequence (usually a whole
+		chromosome). The raw sequence files cannot contain any
+		space or carriage return : the character position in
+		the file must correspond to the nucleotide position on
+		the chromosome.
 
 	Feature file
 		The feature file contains one line per feature, with
@@ -433,7 +456,7 @@ retrieve-seq options
 -org		organism
 $supported_organisms
 -type		upstream | downstream | orf | random
--randorfs #	random selection of # ORFs.
+-randsels #	random selection of # ORFs.
 -i		query file. This option is incompatible with -q.
 -q		query
 -all		returns all genomic upstream regions
@@ -445,6 +468,7 @@ $supported_organisms
 -noorf		the upstream sequence can only contain non-coding sequence.
 -nowarn		prevents warning when a gene can not be identified
 -nocom		do not print related information (start, end position, ...)
+-features	alternate feature table
 End_short_help
   close HELP;
   exit;
@@ -492,10 +516,10 @@ sub ReadArguments {
 	    $query_file =$ARGV[$a+1];
 	    
 	    #### random selection of ORFs
-	} elsif ($ARGV[$a] =~ /-randorf/) {
+	} elsif ($ARGV[$a] =~ /-randsel/) {
 	    $random_orfs =$ARGV[$a+1];
 	    unless (&IsNatural($random_orfs)) {
-		&FatalError("The number of ORFs must be a natural number");
+		&FatalError("The number of sequences must be a natural number");
 	    }
 	    unless ($random_orfs > 0) {
 		&FatalError("The number of ORFs must be > 0");
@@ -569,6 +593,10 @@ sub ReadArguments {
 	    #### do not warn
 	} elsif ($ARGV[$a] =~ /^-nowarn/i) {
 	    $no_warn = 1;
+	    
+	    #### alternative feature file
+	} elsif ($ARGV[$a] =~ /^-feat/i) {
+	    $feature_table_file = $ARGV[$a+1];
 	    
 	}
     }
