@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.26 2002/10/16 06:48:28 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.27 2002/11/08 05:23:42 jvanheld Exp $
 #
-# Time-stamp: <2002-10-16 00:48:23 jvanheld>
+# Time-stamp: <2002-11-07 23:23:31 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -28,18 +28,26 @@ foreach my $task (@supported_tasks) {
 }
 $supported_tasks = join ",", @supported_tasks;
 
+
 %supported_sort_key = (
 			"score"=>1,
 			"name"=>1
 			);
 $supported_sort_keys  = join ",", sort keys %supported_sort_key;
 
+%supported_background = (
+			"intergenic"=>1,
+			"upstream"=>1,
+			"upstream-noorf"=>1
+			);
+$supported_background  = join ",", sort keys %supported_background;
+
 $noorf = 0;
 $default{from} = -800;
 $default{to} = 0;
 $known_site_file = "known-consensus";
 $known_sites_provided = 0;
-$background = "upstream-noorf";
+$background = "intergenic";
 $seq_format = "fasta";
 $min_oligo_length = 6;
 $max_oligo_length = 6;
@@ -144,90 +152,90 @@ exit(0);
 
 #### set the file names as a function of parameters
 sub SetFileNames {
-  $sp = "$min_sp-$max_sp";
-  $dyad_options = "-v ";
-  $dyad_options .= " -sort ";
-  $dyad_options .= " -${strands} ";
-  $dyad_options .= " -type $dyad_type ";
-  $dyad_options .= " -noov " if ($noov);
-  $dyad_options .= " -l $monad_length ";
-  $dyad_options .= " -thosig $th ";
-  $dyad_options .= " -sp $sp ";
-  
-  $dyad_suffix = "_dyads";
-  if ($markov) {
-      $dyad_suffix .= "_monad"; ### TEMP
-  } elsif ($background) {
-      $dyad_suffix .= "_bg_${background}"; ### TEMP
-  }
-  $dyad_suffix .= "_l${monad_length}";
-  $dyad_suffix .= "_sp${sp}";
-  $dyad_suffix .= "_${strands}";
-  $dyad_suffix .= "_${dyad_type}";
-  $dyad_suffix .= "_sig${th}";
-  if ($noov) {
-    $dyad_suffix .= "_noov";
-  } else {
-    $dyad_suffix .= "_ov";
-  }
+    $sp = "$min_sp-$max_sp";
+    $dyad_options = "-v ";
+    $dyad_options .= " -sort ";
+    $dyad_options .= " -${strands} ";
+    $dyad_options .= " -type $dyad_type ";
+    $dyad_options .= " -noov " if ($noov);
+    $dyad_options .= " -l $monad_length ";
+    $dyad_options .= " -thosig $th ";
+    $dyad_options .= " -sp $sp ";
+    
+    $dyad_suffix = "_dyads";
+    if ($markov) {
+	$dyad_suffix .= "_monad"; ### TEMP
+    } elsif ($background) {
+	$dyad_suffix .= "_bg_${background}"; ### TEMP
+    }
+    $dyad_suffix .= "_l${monad_length}";
+    $dyad_suffix .= "_sp${sp}";
+    $dyad_suffix .= "_${strands}";
+    $dyad_suffix .= "_${dyad_type}";
+    $dyad_suffix .= "_sig${th}";
+    if ($noov) {
+	$dyad_suffix .= "_noov";
+    } else {
+	$dyad_suffix .= "_ov";
+    }
 
-  #### expected frequency model
-  if ($markov) {
-      ## do nothing. Expected dyad frequencies will be calculated on the basis of monad frequencies
-  } elsif ($exp_freq_file{dyads}) {
-      $dyad_options .= " -expfreq $exp_freq_file{dyads}";
-  } elsif ($background eq "intergenic") {
-      $dyad_options .= " -ncf ";
-      $dyad_options .= " -org $organism_name ";
+    #### expected frequency model
+    if ($markov) {
+	## do nothing. Expected dyad frequencies will be calculated on the basis of monad frequencies
+    } elsif ($exp_freq_file{dyads}) {
+	$dyad_options .= " -expfreq $exp_freq_file{dyads}";
+    } elsif ($background eq "intergenic") {
+	$dyad_options .= " -ncf ";
+	$dyad_options .= " -org $organism_name ";
 #      $dyad_suffix .= "_ncf";
-  } elsif ($background eq "mncf") {
-      $dyad_options .= " -mncf ";
-      $dyad_options .= " -org $organism_name ";
-      $dyad_suffix .= "_mncf";
-  }
+    } elsif ($background eq "mncf") {
+	$dyad_options .= " -mncf ";
+	$dyad_options .= " -org $organism_name ";
+	$dyad_suffix .= "_mncf";
+    }
 #  $dyad_suffix .= "_ncf" if ($background); ### TEMP
 
-  #### suffix for the oligo-analysis file
-  $noorf_string = "_noorf" if ($noorf);
-  $noov_string = "_noov" if ($noov);
-  $oligo_suffix = "_oligos";
-  if ($markov) {
-      $oligo_suffix .= "_mkv${markov_order}";
-  } elsif ($background) {
-      $oligo_suffix .= "_bg_${background}";
-  }
-  $oligo_suffix .= "_${min_oligo_length}-${max_oligo_length}nt";
-  $oligo_suffix .= "_${strands}";
-  $oligo_suffix .= "_sig${th}${noov_string}";
+    #### suffix for the oligo-analysis file
+    $noorf_string = "_noorf" if ($noorf);
+    $noov_string = "_noov" if ($noov);
+    $oligo_suffix = "_oligos";
+    if ($markov) {
+	$oligo_suffix .= "_mkv${markov_order}";
+    } elsif ($background) {
+	$oligo_suffix .= "_bg_${background}";
+    }
+    $oligo_suffix .= "_${min_oligo_length}-${max_oligo_length}nt";
+    $oligo_suffix .= "_${strands}";
+    $oligo_suffix .= "_sig${th}${noov_string}";
 
-  foreach my $family_name (@families) {
-      $family{$family_name}->{family_file} = "$family_name/${family_name}.fam";
-      $family{$family_name}->{known_site_file} = "$family_name/${family_name}_known_sites";
-      $family{$family_name}->{file_prefix} = "${family_name}_up${seq_length}${noorf_string}"; 
-      $family{$family_name}->{seq_file} = $family_name."/".$family{$family_name}->{file_prefix}.".${seq_format}";
-      $family{$family_name}->{seq_file_purged} = $family_name."/".$family{$family_name}->{file_prefix}."_purged.${seq_format}";
+    foreach my $family_name (@families) {
+	$family{$family_name}->{family_file} = "$family_name/${family_name}.fam";
+	$family{$family_name}->{known_site_file} = "$family_name/${family_name}_known_sites";
+	$family{$family_name}->{file_prefix} = "${family_name}_up${seq_length}${noorf_string}"; 
+	$family{$family_name}->{seq_file} = $family_name."/".$family{$family_name}->{file_prefix}.".${seq_format}";
+	$family{$family_name}->{seq_file_purged} = $family_name."/".$family{$family_name}->{file_prefix}."_purged.${seq_format}";
 #      $family{$family_name}->{oligo_file} =  "${family_name}/oligos_${family_name}/".$family{$family_name}->{file_prefix}."_oligos_${min_oligo_length}-${max_oligo_length}nt_${strands}_sig${th}${noov_string}";
-      $family{$family_name}->{oligo_file} =  "${family_name}/oligos_${family_name}/".$family{$family_name}->{file_prefix}.$oligo_suffix; ## TEMP
-      $family{$family_name}->{oligo_assembly_file} = $family{$family_name}->{oligo_file}."_contigs";
-      $family{$family_name}->{oligo_ft_file} = $family{$family_name}->{oligo_file}.".ft";
-      
-      $family{$family_name}->{dyad_file} = "$family_name/dyads_${family_name}/".$family{$family_name}->{file_prefix}.$dyad_suffix;
-      $family{$family_name}->{dyad_assembly_file} = $family{$family_name}->{dyad_file}."_contigs";
-      $family{$family_name}->{dyad_ft_file} = $family{$family_name}->{dyad_file}.".ft";
-      $family{$family_name}->{fmap_file} = $family{$family_name}->{dyad_file}.".gif";
-      $family{$family_name}->{htmap_file} = $family{$family_name}->{dyad_file}.".html";
-  }  
+	$family{$family_name}->{oligo_file} =  "${family_name}/oligos_${family_name}/".$family{$family_name}->{file_prefix}.$oligo_suffix; ## TEMP
+	$family{$family_name}->{oligo_assembly_file} = $family{$family_name}->{oligo_file}."_contigs";
+	$family{$family_name}->{oligo_ft_file} = $family{$family_name}->{oligo_file}.".ft";
+	
+	$family{$family_name}->{dyad_file} = "$family_name/dyads_${family_name}/".$family{$family_name}->{file_prefix}.$dyad_suffix;
+	$family{$family_name}->{dyad_assembly_file} = $family{$family_name}->{dyad_file}."_contigs";
+	$family{$family_name}->{dyad_ft_file} = $family{$family_name}->{dyad_file}.".ft";
+	$family{$family_name}->{fmap_file} = $family{$family_name}->{dyad_file}.".gif";
+	$family{$family_name}->{htmap_file} = $family{$family_name}->{dyad_file}.".html";
+    }  
 
-  $table_suffix = $family_file;
-  if ($markov) {
-      $table_suffix .= "_mkv${markov_order}";
-  } elsif ($background) {
-      $table_suffix .= "_bg_${background}";
-  }
-  $table_suffix .= "_up".$from."_".$to.$noorf_string;
-  $table_suffix .= $noov_string;
-  $table_suffix = `basename $table_suffix`;
-  chomp $table_suffix;
+    $table_suffix = $family_file;
+    if ($markov) {
+	$table_suffix .= "_mkv${markov_order}";
+    } elsif ($background) {
+	$table_suffix .= "_bg_${background}";
+    }
+    $table_suffix .= "_up".$from."_".$to.$noorf_string;
+    $table_suffix .= $noov_string;
+    $table_suffix = `basename $table_suffix`;
+    chomp $table_suffix;
 }
 
 ################### SUBROUTINE DEFINITION ###################"
@@ -236,20 +244,20 @@ sub SetFileNames {
 
 #### retrieve upstream sequences
 sub UpstreamSequences {
-  warn ";\tRetrieving upstream sequences for family $family_name\n" if ($verbose >= 1);
-  $command = "retrieve-seq -type upstream -org $organism_name";
-  $command .= " -noorf " if ($noorf);
-  $command .= " -i $family{$family_name}->{family_file}";
-  $command .= " -o $family{$family_name}->{seq_file}";
-  $command .= " -from $from -to $to ";
-  $command .= " -label orf_gene ";
-  $command .= " -format $seq_format";
-  &doit($command);
+    warn ";\tRetrieving upstream sequences for family $family_name\n" if ($verbose >= 1);
+    $command = "retrieve-seq -type upstream -org $organism_name";
+    $command .= " -noorf " if ($noorf);
+    $command .= " -i $family{$family_name}->{family_file}";
+    $command .= " -o $family{$family_name}->{seq_file}";
+    $command .= " -from $from -to $to ";
+    $command .= " -label orf_gene ";
+    $command .= " -format $seq_format";
+    &doit($command);
 
-  $command = "purge-sequence -ml 40 -mis 3";
-  $command .= " -i $family{$family_name}->{seq_file}";
-  $command .= " > $family{$family_name}->{seq_file_purged}";
-  &doit($command);
+    $command = "purge-sequence -ml 40 -mis 3";
+    $command .= " -i $family{$family_name}->{seq_file}";
+    $command .= " > $family{$family_name}->{seq_file_purged}";
+    &doit($command);
 }
 
 
@@ -377,28 +385,28 @@ sub ReadKnownSites {
 }
 
 sub ReadSiteLibrary {
-  @site_library = ();
-  $library_file = "known_sites.tab";
-  if (-e $library_file) {
-    open LIBRARY, $library_file;
-    while (<LIBRARY>) {
-	next if (/^;/);
-	next if (/^\#/);
-	next unless (/\S/);
-	chomp;
-	my @fields = split "\t";
-	my $source = $fields[2] || $library_file;
-	my $id = uc($fields[1]);
-	my $sequence = uc($fields[0]);
-	$sequence =~ s/N/n/g;
-	
-	$pattern = RSA::pattern->new(id=>$id,
-				     sequence=>$sequence,
-				     source=>source);
-	push @site_library, $pattern;
+    @site_library = ();
+    $library_file = "known_sites.tab";
+    if (-e $library_file) {
+	open LIBRARY, $library_file;
+	while (<LIBRARY>) {
+	    next if (/^;/);
+	    next if (/^\#/);
+	    next unless (/\S/);
+	    chomp;
+	    my @fields = split "\t";
+	    my $source = $fields[2] || $library_file;
+	    my $id = uc($fields[1]);
+	    my $sequence = uc($fields[0]);
+	    $sequence =~ s/N/n/g;
+	    
+	    $pattern = RSA::pattern->new(id=>$id,
+					 sequence=>$sequence,
+					 source=>source);
+	    push @site_library, $pattern;
+	}
+	close LIBRARY;
     }
-    close LIBRARY;
-  }
 }
 
 
@@ -908,6 +916,12 @@ OPTIONS
 	-ovlp	allow overlapping matches for self-overlapping patterms
 	-pseudo	pseudo-weight (see oligo-analysis manual)
 	-nomap	do not draw feature maps (for saving time and hard disk space)
+	-bg	background frequency model
+		This parameter indicates which background model has to
+		be used for the estimation of expected pattern
+		frequencies.
+		
+		Supported: $supported_background
 
 FILE FORMAT
     $HELP_FAMILY_FILE
@@ -965,7 +979,7 @@ multiple-family-analysis options
 -ovlp		allow overlapping matches for self-overlapping patterms
 -pseudo		pseudo-weight (see oligo-analysis manual)
 -nomap		do not draw feature maps (for saving time and hard disk space)
-End_short_help
+-bg		background frequency modelEnd_short_help
   close HELP;
   exit;
 }
@@ -1080,6 +1094,10 @@ sub ReadArguments {
 		 || ($ARGV[$a] =~ /^-bg/)) {
 	    $background = $ARGV[$a+1];
 	    $background =~ s/^ncf$/intergenic/;
+
+	    unless ($supported_background{$background}) {
+		&FatalError("$background\tInvalid value for background. Supported : $supported_background");
+	    }
 
 	    #### Markov chain estimation of expected oligo frequencies
 	} elsif ($ARGV[$a] =~ /^-markov/) {
