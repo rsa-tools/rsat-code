@@ -13,7 +13,7 @@ $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $query = new CGI;
 
 ### default values for filling the form
-$default{output} = "email";
+$default{output} = "display";
 $default{sequence} = "";
 $default{sequence_format} = "fasta";
 $default{sequence_file} = "";
