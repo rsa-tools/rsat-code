@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_genomes.mk,v 1.15 2005/01/27 09:13:34 jvanheld Exp $
+# $Id: install_genomes.mk,v 1.16 2005/01/27 13:21:32 jvanheld Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -76,17 +76,20 @@ parse_organism:
 #### Genomes are selected manually because NCBI directories are
 #### a bit messy for eukaryotes.
 EUKARYOTES=					\
+	Saccharomyces_cerevisiae		\
+	Schizosaccharomyces_pombe		\
+	Encephalitozoon_cuniculi		\
+	Plasmodium_falciparum			\
 	Apis_mellifera				\
+	Drosophila_melanogaster			\
 	Arabidopsis_thaliana			\
 	Caenorhabditis_elegans			\
-	Drosophila_melanogaster			\
-	Encephalitozoon_cuniculi		\
+	Gallus_gallus				\
 	Homo_sapiens				\
 	Mus_musculus				\
-	Plasmodium_falciparum			\
 	Rattus_norvegicus			\
-	Saccharomyces_cerevisiae		\
-	Schizosaccharomyces_pombe 
+	Canis_familiaris			\
+	Pan_troglodytes
 install_all_eukaryotes:
 	for org in ${EUKARYOTES} ; do ${MAKE} install_one_organism	\
 		ORG=$${org} ; done
