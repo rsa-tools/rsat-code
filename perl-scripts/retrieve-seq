@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: retrieve-seq,v 1.8 2000/09/18 11:52:06 jvanheld Exp $
+# $Id: retrieve-seq,v 1.9 2000/12/29 21:19:06 jvanheld Exp $
 #
-# Time-stamp: <2000-09-18 13:51:36 jvanheld>
+# Time-stamp: <2000-12-29 21:46:37 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -43,59 +43,8 @@ $line_width = 60;
 ############################### check parameters ###############################
 ################################################################################
 
-
-### organism ###
-if ($organism eq "") {
-  die "Error: you should specify an organism\n$supported_organisms\n";  
-
-} elsif ($organism eq "yeast") {
-
-  $feature_table_file = "$RSA/data/yeast/orfs/ORF_table.txt";
-  foreach my $chrom ("I",
-		     "II",
-		     "III",
-		     "IV",
-		     "V",
-		     "VI",
-		     "VII",
-		     "VIII",
-		     "IX",
-		     "V",
-		     "X",
-		     "XI",
-		     "XII",
-		     "XIII",
-		     "XIV",
-		     "XV",
-		     "XVI"
-		     ) {
-    my $chromosome_file = "$RSA/data/yeast/sequences/$chrom";
-    $chromosome{$chrom} = new RSA::SequenceOnDisk (filename=>  $chromosome_file,
-						   id=>        $chrom,
-						   circular=>  0, ### for bacterial genomes
-						   organism=>  $organism);
-  }
-  if ($sequence_type eq "upstream") {
-    $default{from} = -800;
-    $default{to} = -1;
-  }
-
-} elsif ($supported_organism{$organism}) {
-  $feature_table_file = $supported_organism{$organism}->{'features'};
-  $genome_file = $supported_organism{$organism}->{'genome'};
-  $genome_seq_format = $supported_organism{$organism}->{'seq_format'};
-  
-  ### open a direct read access to the genome file
-  $chrom = "genome";
-  $genome_file =~ s/\.fna$/\.raw/;
-  $chromosome{$chrom} = new RSA::SequenceOnDisk (filename=>  $genome_file,
-						 id=>        $chrom,
-						 circular=>  1, ### for bacterial genomes
-						 organism=>  $organism);
-
-} else {
-  die "Error: unsupported organism $organism\n";
-}
+#### organism
+&CheckOrganism($organism);
 
 #### check output format ####
 &CheckOutputSeqFormat($out_format);
@@ -125,6 +74,7 @@ if (@queries == ()) {
   }
   while (<$in>) {
     next if (/^;/);
+    next if (/^--/);
     if ((/(\S+)/) && !(/^;/)) {
       push @queries, $1;
     }
@@ -141,11 +91,6 @@ if ($#queries <0) {
 $out = &OpenOutputFile($outputfile);
 
 
-#### temporary: inactivation of the -noorf option
-if ($no_orf) {
-  undef $no_orf;
-  print $out ";\n;\tWARNING: -noorf is currently not supported due to a bug\n;\n";
-}
 
 #### verbose ####
 if ($warn_level) {
@@ -154,7 +99,7 @@ if ($warn_level) {
   printf $out "; %-14s\t%s\n", "sequence type", $sequence_type;
   printf $out "; %-14s\t%s\n", "Output format", $out_format;
   printf $out "; %-14s\t%s\n", "Line width", $line_width;
-  print $out "; clipping to avoid overlap with neighbour ORFs\n" if ($no_orf);
+  print $out "; clipping to avoid overlap with neighbour ORFs\n" if ($noorf);
   print $out "; relative coordinates\n";
   print $out ";        from    $from\n";
   print $out ";        to      $to\n";
@@ -176,8 +121,15 @@ if ($warn_level) {
 &ReadSynonyms($organism);
 #&ReadGenomeSequence;
 
+#### no overlapping with upstream orfs
+if ($noorf) {
+    &CalcNeighbourLimits();
+}
+
+
+
 #### retrieve the sequences ####
-QUERYLOOP: foreach $query (@queries) {
+foreach $query (@queries) {
 
   unless (defined($orf_id{uc($query)})) {
     print $out ";WARNING\tinvalid query $query\n";
@@ -200,8 +152,8 @@ QUERYLOOP: foreach $query (@queries) {
   
   ### upstream region
   if ($sequence_type eq "upstream") {
-    if ($no_orf) {
-      $current_from = &max(-$up_dist{$orf_id} + 1, $from);
+    if ($noorf) {
+      $current_from = &max(-$upstr_size{$orf_id}, $from);
     } 
 
     if ($orf_strand eq "D") {
@@ -214,8 +166,8 @@ QUERYLOOP: foreach $query (@queries) {
     
     ### downstream region
   } elsif ($sequence_type eq "downstream") {
-    if ($no_orf) {
-      $current_to = &min($down_dist{$orf_id} - 1, $to);
+    if ($noorf) {
+      $current_to = &min($down_size{$orf_id}, $to);
     } 
 
     if ($orf_strand eq "D") {
@@ -267,7 +219,6 @@ QUERYLOOP: foreach $query (@queries) {
   }
   
   ### substring retrieval
-  ### beware! DNA is circular
   warn (join "\t", 
 	";",
 	$query, 
@@ -284,9 +235,8 @@ QUERYLOOP: foreach $query (@queries) {
 	"\n"
 	)
       if ($warn_level >= 2); 
- 
-#    die "HELLo";
-  $current_seq = $chromosome{$chrom}->get_sequence($reg_left,$reg_right,$orf_strand);
+  
+  $current_seq = $chromosome_seq{$chrom}->get_sequence($reg_left,$reg_right,$orf_strand);
   
   
 
@@ -529,7 +479,7 @@ sub ReadArguments {
       #### do not allow overlapping coding sequences
     } elsif (($ARGV[$a] =~ /^-nocds/i) || 
 	     ($ARGV[$a] =~ /^-noorf/i)) {
-      $no_orf = 1;
+      $noorf = 1;
 
       #### do not print the comments field
     } elsif ($ARGV[$a] =~ /^-nocom/i) {
