@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis,v 1.6 2001/02/20 01:42:58 jvanheld Exp $
+# $Id: dyad-analysis,v 1.7 2001/03/08 01:34:55 jvanheld Exp $
 #
-# Time-stamp: <2001-02-20 02:42:50 jvanheld>
+# Time-stamp: <2001-03-08 02:33:45 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -11,17 +11,17 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 require "RSA.lib.pl";
 
-
 if ($ARGV[0] eq "-h") { #### display full help message ##### open
-  &HelpMessage;
+    &HelpMessage;
 } elsif ($ARGV[0] eq "-help") {
-  &PrintOptions;
+    &PrintOptions;
 }
 
 #### initialise parameters ####
 $oligo_length = 3;
 %default_return = (occ=>1,proba=>1);
 $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+$timeout = 3600;
 
 $min_spacing = $max_spacing = 0;
 $sum_strands = 1;
@@ -38,13 +38,19 @@ $input_format = "fasta";
 ### read command line arguments
 &ReadArguments;
 
-  
+#### timeout control
+$SIG{ALRM} = sub { die "timeout" };
+eval {
+    alarm($timeout);
+
+
+
 #### hyperverbose ####
-if ($hyperverbose) {
-  $current_time = `date '+%H:%M:%S'`;
-  chomp($current_time);
-  print STDERR ";dyad-analysis\t$current_time\tStarting\n";
-}
+    if ($hyperverbose) {
+	$current_time = `date '+%H:%M:%S'`;
+	chomp($current_time);
+	print STDERR ";dyad-analysis\t$current_time\tStarting\n";
+    }
 
 
 #### check argument values ####
@@ -52,103 +58,123 @@ if ($hyperverbose) {
 
 ### check pre-defined frequency tables
 ### non-coding frequency calibration
-if (($ncf) || ($mncf)) {
-  ### check organism first
-  unless ($organism_name) {
-    die ";Error: you should specify an organism for using non-coding frequency calibration\n";
-  }
-  unless ($supported_organism{$organism_name}) {
-    die ";Error: organism $organism_name is not supported on this site\n";
-  }
+    if (($ncf) || ($mncf)) {
+	### check organism first
+	unless ($organism_name) {
+	    die ";Error: you should specify an organism for using non-coding frequency calibration\n";
+	}
+	unless ($supported_organism{$organism_name}) {
+	    die ";Error: organism $organism_name is not supported on this site\n";
+	}
 
-  $data_dir = $supported_organism{$organism_name}->{'data'};
-  if ($ncf) {
-    ### localize dyad non-coding frequency file
-    $exp_freq_file = "$data_dir/oligo-frequencies/dyads_3nt_sp0-20_non-coding_${organism_name}_noov.freq";
+	$data_dir = $supported_organism{$organism_name}->{'data'};
+	if ($ncf) {
+	    ### localize dyad non-coding frequency file
+	    $exp_freq_file = "$data_dir/oligo-frequencies/dyads_3nt_sp0-20_non-coding_${organism_name}_noov.freq";
 
-    #### TEMPORARY / ACCEPT OVERLAPS IN CALIBRATED FREQS
-    unless (-r $exp_freq_file) {
-      $exp_freq_file = "$data_dir/oligo-frequencies/dyads_3nt_sp0-16_non-coding_${organism_name}.freq";
+	    #### TEMPORARY / ACCEPT OVERLAPS IN CALIBRATED FREQS
+	    unless (-r $exp_freq_file) {
+		$exp_freq_file = "$data_dir/oligo-frequencies/dyads_3nt_sp0-16_non-coding_${organism_name}.freq";
+	    }
+
+	    die "Error: cannot read expected frequency file $exp_freq_file\n" unless (-r  $exp_freq_file);
+	} elsif ($mncf) {
+	    ### localize monad non-coding frequency file
+	    $monad_exp_freq_file .= "$data_dir/oligo-frequencies/${oligo_length}nt_non-coding_${organism_name}.freq";
+	    die "Error: cannot read expected frequency file $monad_exp_freq_file\n" unless (-r  $monad_exp_freq_file);
+	}
     }
 
-    die "Error: cannot read expected frequency file $exp_freq_file\n" unless (-r  $exp_freq_file);
-  } elsif ($mncf) {
-    ### localize monad non-coding frequency file
-    $monad_exp_freq_file .= "$data_dir/oligo-frequencies/${oligo_length}nt_non-coding_${organism_name}.freq";
-    die "Error: cannot read expected frequency file $monad_exp_freq_file\n" unless (-r  $monad_exp_freq_file);
-  }
-}
-
 ### check stats to return
-%return = %default_return unless (defined(%return));
-if (($return{proba}) || ($return{zscore})) {
-  $return{occ} = 1;
-  $return{exp_occ} = 1;
-  $return{exp_freq} = 1;
-}
+    %return = %default_return unless (defined(%return));
+    if (($return{proba}) || ($return{zscore})) {
+	$return{occ} = 1;
+	$return{exp_occ} = 1;
+	$return{exp_freq} = 1;
+    }
 
 ### check spacing values and order
-if ($sp_group) {
-  @spacing_list = ("$min_spacing,$max_spacing");
-} else {
-  @spacing_list = ($min_spacing..$max_spacing);
-}
-unless ($oligo_length > 0) {
-  die "Error :invalid oligonucleotide length specification\n";
-}
+    if ($sp_group) {
+	@spacing_list = ("$min_spacing,$max_spacing");
+    } else {
+	@spacing_list = ($min_spacing..$max_spacing);
+    }
+    unless ($oligo_length > 0) {
+	die "Error :invalid oligonucleotide length specification\n";
+    }
     
 ### check sequence format
-if ($input_format eq "") {
-    print "\tError: you did not specify the input sequence format\n";
-    print "\tType dyad-analysis -help for info\n";
-    exit;
-} elsif (not $accepted_input_seq{$input_format}) {
-    print "\tError: $input_format is not a valid input sequence format\n";
-    print "\tType dyad-analysis -help for info\n";
-    exit;
-  }
+    if ($input_format eq "") {
+	print "\tError: you did not specify the input sequence format\n";
+	print "\tType dyad-analysis -help for info\n";
+	exit;
+    } elsif (not $accepted_input_seq{$input_format}) {
+	print "\tError: $input_format is not a valid input sequence format\n";
+	print "\tType dyad-analysis -help for info\n";
+	exit;
+    }
 
 
-&CalcPossibleDyads;
+    &CalcPossibleDyads;
 
 
 ### read sequence and count dyads ###
-&CountDyads();
- 
-   
-&SumReverseComplements if ($sum_strands);
+    &CountDyads();
+    
+    
+    &SumReverseComplements if ($sum_strands);
 
-&CalcFrequencies if ($return{freq});
+    &CalcFrequencies if ($return{freq});
 
 
 ### open output file ###
-$out = &OpenOutputFile($outputfile);
+    $out = &OpenOutputFile($outputfile);
 
-&PrintVerbose if ($verbose);
+    &PrintVerbose if ($verbose);
 
-&CalcExpectedFreq if ($return{exp_freq});
+    &CalcExpectedFreq if ($return{exp_freq});
 
 
-&CalcProba if ($return{proba});
+    &CalcProba if ($return{proba});
 
 ### print the result
-&PrintResult;
+    &PrintResult;
 
 ###### verbose ######
-if ($verbose) {
-    $done_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
-    print $out ";Job started $start_time";
-    print $out ";Job done    $done_time";
-}
+    if ($verbose) {
+	$done_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+	print $out ";Job started $start_time";
+	print $out ";Job done    $done_time";
+    }
 
 
 ###### close input file ######
-close $in unless ($inputfile eq "");
-
+    close $in unless ($inputfile eq "");
+    
 ###### close output file ######
-close $out unless ($outputfile eq "");
+    close $out unless ($outputfile eq "");
+
+    alarm(0);
+}; ###eval 
 
 
+if ($@) {
+    if ($@ =~ /timeout/) {
+	open ERROR_REPORT, "| $mail_command $ENV{SERVER_ADMIN}";
+	$out = ERROR_REPORT;
+	print $out "!!!!!!!!!!!!!!!! Time out ($timeout seconds) during execution of dyad-analysis !!!!!!!!!!!!!!!!\n";
+	&PrintArguments($out);
+	&PrintVerbose();
+	close ERROR_REPORT;
+	print "\tError: timeout (after $timeout seconds of processing)\n";
+	print "\tThe error has automatically been reported to $ENV{SERVER_ADMIN}\n";
+	print "\tPlease contact this person for more details\n";
+	die "\n";
+    } else {
+	alarm(0);
+	die;
+    }
+}
 
 exit(0);
 
@@ -601,6 +627,12 @@ sub ReadArguments {
       $exp_freq_file = $ARGV[$a+1];
       die "Error: cannot read expected frequency file $exp_freq_file\n" unless (-r  $exp_freq_file);
       
+      ### timeout setting
+    } elsif ($ARGV[$a] =~ /^-timeout/i) {
+      $timeout = $ARGV[$a+1];
+      die "Error: timeout value should be integer\n"
+	  unless &IsNatural($timeout);
+      
       ### use dyad non-coding frequencies as expected frequencies
     } elsif ($ARGV[$a] =~ /^-ncf/i) {
       $ncf = 1;
@@ -793,6 +825,13 @@ OPTIONS
 		the fields have to be separated by commas
 		By default, only occurrences are returned.
 	-noov	do not allow overlapping matches of the same word
+	-timeout #
+		timeout (in seconds). Default = 3600.
+		dyad-analysis can be time consuming. In order to
+		protect the server from endless queries, the program
+		will automatically stop after 1 hour (default) of
+		calculation. The time out value can be changed for
+		heavy tasks.
 
 OUTPUT COLUMNS
 	Dyad pattern
@@ -927,9 +966,10 @@ dyad-analysis options
 -prot		input sequence is proteic
 -return		occ,freq,proba,zscore
 -noov		do not allow overlapping matches of the same word
+-timeout #	timeout (seconds). Default = 3600.
 End_short_help
   close HELP;
-  exit;
+  exit(0);
 }
 
 
