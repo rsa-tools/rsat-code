@@ -10,7 +10,7 @@ if ($ARGV[0] eq "-h") {
   open HELP, "| more ";
   print HELP<<End_of_Help;
 NAME  
-	parse-transfac
+	transfac-extract
 	
 	by Jacques van Helden, June 1997
 	
@@ -21,7 +21,7 @@ CATEGORY
 	parser
 
 USAGE
-	parse-transfac -XX -XY -XZ [-i inputfile] [-o outputfile] 
+	transfac-extract -XX -XY -XZ [-i inputfile] [-o outputfile] 
 		[-site | -factor | -gene | -matrix | -class | -cell] 
 		[-filter field_ID filterstring]
 
@@ -169,12 +169,12 @@ OPTIONS
 	   TR   TRRD accession number	   
 	
 EXAMPLES
-		parse-transfac -ID -AC -filter BF sp1 -o sp1.sites
+		transfac-extract -ID -AC -filter BF sp1 -o sp1.sites
 	selects all the binding sites for SP1 factor, and print for each the 
 	identifier and accession number. Result is stored 
 	in the file sp1.sites.
 	
-		parse-transfac -factor -AC -FA -OS -filter OS cerevisiae 
+		transfac-extract -factor -AC -FA -OS -filter OS cerevisiae 
 				 -o yeast.factors
 	selects all the transcriptional factors from Saccharomyces cerevisiae, 
 	and print for each the identifier and accession number. Result is 
@@ -188,7 +188,7 @@ End_of_Help
 if ($ARGV[0] eq "-help") {
   open HELP, "| more ";
   print HELP<<End_short_Help;
-parse-transfac options
+transfac-extract options
 ------------------------
 -h      (must be first argument) display full help message
 -help   (must be first argument) display options
@@ -281,7 +281,7 @@ if (@FieldName == ()) {
   print "
   	you should specify the fields you want to extract.
 	For more info, type:
-		parse-transfac -h		
+		transfac-extract -h		
 ";
   exit;
 }
@@ -339,7 +339,7 @@ if ($outputfile ne "") {
 }
 
 if ($verbose) {
-    print $out ";parse-transfac";
+    print $out ";transfac-extract";
     foreach $a (@ARGV) {
 	if ($a =~ /\s+/) {
 	    print $out " 'a'";
