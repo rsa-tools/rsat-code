@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: retrieve-seq,v 1.32 2003/10/29 09:04:12 jvanheld Exp $
+# $Id: retrieve-seq,v 1.33 2004/05/06 15:43:49 jvanheld Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -399,8 +399,8 @@ OPTIONS
 	     If this option is not used, the option -seq must be used
 	     instead.
 
-	     Supported organisms :
-$supported_organisms
+	     (type supported-organism to obtain the list of supported
+	     organisms)
 
 	-seq	input sequence file
 		(alternative to organism)
@@ -508,7 +508,7 @@ INPUT FORMATS
 		tab-delimited columns providing the following information:
 		column	field   description
 		1	id	feature identifier
-		2	type	feature type (CDS or mRNA)
+		2	type	feature type (Supported: ${supported_feature_types})
 		3	name	feature name
 		4	chrom	chomosome.or contig
 		5	left	left end position
@@ -625,7 +625,7 @@ sub ReadArguments {
 	    
 	    ### return all genomic  upstream regions	
 	} elsif ($ARGV[$a] eq "-all") {
-	    $return_all = 1;;
+	    $return_all = 1;
 	    
 	    #### organism
 	} elsif ($ARGV[$a] eq "-org") {
