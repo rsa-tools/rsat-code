@@ -2,8 +2,8 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-require "RSA.lib.pl";
-require "RSA.classes.pl";
+require "RSA.lib";
+require "RSA.classes";
 
 
 #### configuration #####
@@ -17,6 +17,7 @@ $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
 
 #### default : return sequences of all types
 unless (defined(%return)) {
+  $return{'pos'} = 1;
   $return{'ncs'} = 1;
   $return{'cs'} = 1;
   $return{'div'} = 1;
@@ -40,20 +41,20 @@ $organism = &CheckOrganism($organism_name);
 &PrintVerbose if ($verbose);
 
 ### open all output files
-open NC_LOCATIONS, ">${organism_name}_non_coding_segments.coord";
+open NC_POSITIONS, ">${organism_name}_non_coding_segments.pos" if ($return{pos});
 open NC_SEQ, ">${organism_name}_non_coding_segments.$out_format" if (($return{'ncs'}) && ($return{seq}));
 
 open DIVERGENT_NC_SEQ, ">${organism_name}_non_coding_segments_divergent.$out_format" if (($return{'div'}) && ($return{seq}));
 open CONVERGENT_NC_SEQ, ">${organism_name}_non_coding_segments_convergent.$out_format" if (($return{'conv'}) && ($return{seq}));
 open TANDEM_NC_SEQ, ">${organism_name}_non_coding_segments_tandem.$out_format" if (($return{'tandem'}) && ($return{seq}));
 
-open C_LOCATIONS, ">${organism_name}_coding_segments.coord" if ($return{'cs'});
+open C_POSITIONS, ">${organism_name}_coding_segments.pos" if ($return{pos});
 open C_SEQ, ">${organism_name}_coding_segments.$out_format" if (($return{'cs'}) && ($return{seq}));
 open ORF_SEQ, ">${organism_name}_ORF_sequences.$out_format" if (($return{'orf'}) && ($return{seq}));
 
 ### print headers
-print NC_LOCATIONS ";segm_type_nb\tchr\tstart\tend\tleft\tright\n"  if ($return{'ncs'});
-print C_LOCATIONS ";segm_type_nb\tORFs\tchr\tstart\tend\tleft\tright\n"  if ($return{'cs'});
+print NC_POSITIONS ";segm_type_nb\tchr\tstart\tend\tleft\tright\n"  if ($return{pos});
+print C_POSITIONS ";segm_type_nb\tORFs\tchr\tstart\tend\tleft\tright\n"  if ($return{pos});
 
 foreach my $chromosome ($organism->get_chromosomes()) {
     ### read chromosomal sequence
@@ -107,7 +108,7 @@ foreach my $chromosome ($organism->get_chromosomes()) {
 	$nc_end = $coding_start - 1;
 
 	@comments = ("non_coding_segment_${cluster}\t$chr\t$nc_start\t$nc_end\t$nc_left_ORF\t$nc_right_ORF");
-	print NC_LOCATIONS "$comments[0]\n" if ($return{'ncs'});
+	print NC_POSITIONS "$comments[0]\n" if ($return{pos});
 	$seq_id = "non_coding_segment_${cluster}_${chr}_${nc_start}_${nc_end}_l${nc_left_ORF}_r${nc_right_ORF}";
 	$current_seq = $sequence->get_sequence($nc_start,$nc_end);
 	&PrintNextSequence(NC_SEQ, $out_format,$line_width,$current_seq,$seq_id) if (($return{'ncs'}) && ($return{seq}));
@@ -133,7 +134,7 @@ foreach my $chromosome ($organism->get_chromosomes()) {
 	}
 
 	@comments = ("coding_segment_${cluster}\t$orf_cluster\t$chr\t$coding_start\t$coding_end");
-	print C_LOCATIONS "$comments[0]\n"  if ($return{'cs'});
+	print C_POSITIONS "$comments[0]\n"  if ($return{pos});
 	$seq_id = "coding_segment_${cluster}_${chr}_${coding_start}_${coding_end}";
 	$current_seq = $sequence->get_sequence($coding_start,$coding_end);
 	&PrintNextSequence(C_SEQ, $out_format,$line_width,$current_seq,$seq_id)  if (($return{'cs'}) && ($return{seq}));
@@ -148,7 +149,7 @@ foreach my $chromosome ($organism->get_chromosomes()) {
 	    $nc_end = $chr_length;
 
 	    @comments = ("non_coding_segment_${cluster}\t$chr\t$nc_start\t$nc_end");
-	    print NC_LOCATIONS "$comments[0]\n"  if ($return{'ncs'});
+	    print NC_POSITIONS "$comments[0]\n"  if ($return{pos});
 	    $seq_id = "non_coding_segment_${cluster}_${chr}_${nc_start}_${nc_end}";
 	    $current_seq = $sequence->get_sequence($nc_start,$nc_end);
 	    &PrintNextSequence(NC_SEQ, $out_format,$line_width,$current_seq,$seq_id, @comments)  if (($return{'ncs'}) && ($return{seq}));
@@ -161,9 +162,9 @@ close NC_SEQ;
 close DIVERGENT_NC_SEQ;
 close CONVERGENT_NC_SEQ;
 close TANDEM_NC_SEQ;
-close NC_LOCATIONS;
+close NC_POSITIONS;
 close C_SEQ;
-close C_LOCATIONS;
+close C_POSITIONS;
 close ORF_SEQ;
 
 $done_time  = `date '+%d/%m/%y %H:%M:%S %Z'`;
@@ -195,8 +196,9 @@ OPTIONS
 $supported_organisms
 	-return	type of sequences to return. 
 		The following options are available
+		pos	positions of the coding/non-coding segments
 		seq	return sequences
-			(otherwise, only coordinate files are printed)
+			(otherwise, only position files are printed)
 		ncs	non-coding segments
 			These sequences are further separated into 3 
 			subsets, corresponding to the options div, conv 
@@ -225,9 +227,9 @@ $supported_organisms
 
 OUTPUT
 	coding sequence coordinates are stored in a file named 
-		${organism_name}_coding_segments.coord
+		${organism_name}_coding_segments.pos
 	non coding sequence coordinates are stored in another file named 
-		${organism_name}_non_coding_segments.coord
+		${organism_name}_non_coding_segments.pos
 	coding sequences are stored in a file named 
 		${organism_name}_coding_segments.seq
 	non coding sequences are stored in another file named 
@@ -260,6 +262,8 @@ sub ReadArguments {
 		    $return{'ncs'} = 1;
 		} elsif ($field eq "cs") {
 		    $return{'cs'} = 1;
+		} elsif ($field eq "pos") {
+		    $return{'pos'} = 1;
 		} elsif ($field eq "div") {
 		    $return{'div'} = 1;
 		} elsif ($field eq "conv") {
@@ -294,7 +298,7 @@ sub ReadArguments {
 #  	$start_column = 4;
 #  	$end_column = 5;
 #  	$strand_column = -1; ### there is no such column in the ORF file; 
-#  	### strand C is indicated by the fact that start coord > end coord
+#  	### strand C is indicated by the fact that start position > end position
 	
 #  	push @chr_list, 'I';
 #  	push @chr_list, 'II';
@@ -353,7 +357,7 @@ sub ReadArguments {
     
 #  #### read all ORF positions ####
 #      open ORFS, $supported_organism{$organism_name}->{'features'} ||
-#  	die "	Cannot open ORF location file ", $supported_organism{$organism_name}->{'features'}, "\n";
+#  	die "	Cannot open ORF position file ", $supported_organism{$organism_name}->{'features'}, "\n";
 
 
 #      while (<ORFS>) {
