@@ -305,6 +305,7 @@ SORT=score
 MULTI_OPT=
 SKIP=
 MULTI_CMD=multiple-family-analysis -v ${V}				\
+		-thosig ${THOSIG}					\
 		${PURGE}						\
 		-org ${ORG}						\
 		-seq ${SEQ_LIST_FILE}					\
@@ -710,7 +711,7 @@ compare_calibrations:
 		-yleg2 "${CALIBN_PREFIX}"			\
 		-o ${COMPARISON_FILE}_variance.jpg
 
-	compare-scores -sc1 3 -sc2 2 -sc3 3	\
+	compare-scores -sc1 3 -sc2 2 -sc3 4	\
 		-i ${CALIB1_FILE}		\
 		-i ${CALIBN_FILE}		\
 		-i ${BG_OLIGO_FILE}		\
@@ -755,10 +756,18 @@ queued_on_merlin:
 	make -f makefiles/calibrate_Drosophila_melanogaster_sorted.mk calibrate OLIGO_LEN=5 >& calib_Drosophila_melanogaster_5nt_log.txt WHEN=queue &
 	make -sk iterate_organisms ORG_TASK=multi_calibN MIN_OL=5 MAX_OL=5 WHEN=queue
 	make -sk iterate_organisms ORG_TASK=multi_calibN MIN_OL=8 MAX_OL=8 WHEN=queue
-
-to_run:
-	make iterate_organisms ORG_TASK=multi_calib1 MIN_OL=6 MAX_OL=6
+	make iterate_organisms ORG_TASK=multi_upstream_dyads MIN_OL=5 MAX_OL=8 WHEN=queue
+	make iterate_organisms ORG_TASK=multi_calib1 MIN_OL=6 MAX_OL=6 WHEN=queue
 	make iterate_organisms ORG_TASK=multi_calib1 MIN_OL=5 MAX_OL=5 WHEN=queue
 	make iterate_organisms ORG_TASK=multi_calib1 MIN_OL=7 MAX_OL=7 WHEN=queue
 	make iterate_organisms ORG_TASK=multi_calib1 MIN_OL=8 MAX_OL=8 WHEN=queue
 
+	make iterate_organisms ORG_TASK=multi_calibN MIN_OL=6 MAX_OL=6 WHEN=queue
+	make iterate_organisms ORG_TASK=multi_calibN MIN_OL=7 MAX_OL=7 WHEN=queue
+	make iterate_organisms ORG_TASK=multi_calibN MIN_OL=5 MAX_OL=5 WHEN=queue
+	make iterate_organisms ORG_TASK=multi_calibN MIN_OL=8 MAX_OL=8 WHEN=queue
+
+	make -s -f ${RSAT}/makefiles/motif_disco_competition_2003.mk calibrate_oligos ORG=Homo_sapiens SEQ_LEN=2000 N=35 STR=-2str STR=-2str NOOV=-noov REPET=100 WHEN=queue
+
+to_do:
+	make iterate_organisms ORG_TASK=multi_calibN THOSIG=-1
