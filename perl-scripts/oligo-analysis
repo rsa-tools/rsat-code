@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.76 2004/02/04 02:18:37 jvanheld Exp $
+# $Id: oligo-analysis,v 1.77 2004/02/09 00:29:24 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -24,8 +24,25 @@ $start_time = &AlphaDate();
 		 'intergenic'=>1
 		 );
 $supported_bg = join ",", sort keys %supported_bg;
+
+#### return fields
+%supported_return_fields = ('occ'=>1,
+			    'freq'=>1,
+			    'mseq'=>1,
+			    'proba'=>1,
+			    'exp'=>1,
+			    'exp_var'=>1,
+			    'ratio'=>1,
+			    'zscore'=>1,
+			    'likelihood'=>1,
+			    'pos'=>1,
+			    'rank'=>1,
+			    'overlap'=>1,
+			    'remark'=>1,
+			    );
+$supported_return_fields = join ",", sort keys %supported_return_fields;
     
-$palindroms = 0;
+$palindroms_only = 0;
 $in_format = "fasta";
 @output_fields = ();
 @output_patterns = ();
@@ -52,7 +69,8 @@ $residue_proba{'t'} = 0.25;
 
 #### read arguments ####
 &ReadArguments();
-   
+
+
 ##############################
 ### check parameter values ###
 ##############################
@@ -200,7 +218,7 @@ if ($return{'table'}) {
     &CalcFrequencies() if (($return{'freq'}) || ($verbose >= 1) || ($method eq "Markov chain"));
     &SumReverseComplements() if ($sum_rc);
 #&GroupRc() if ($group_rc);
-    &SelectPalindroms() if ($palindroms);
+    &SelectPalindroms() if (($palindroms_only) || ($return{'remark'}));
     &OccurrenceThreshold() if ($occurrence_threshold > 0);
     &MatchingSeqThreshold() if ($mseq_threshold > 0); 
     &NbPossibleOligo();
@@ -209,7 +227,7 @@ if ($return{'table'}) {
     &CalcZscore() if ($return{'zscore'});
     &CalcLikelihood() if ($return{'like'});
     &CalcRatio() if ($return{'ratio'});
-    &GroupRc(); #### remove the duplicate pattern (only retain the first by alphabetical order) 
+    &GroupRc() if ($group_rc); #### remove the duplicate pattern (only retain the first by alphabetical order) 
     &CalcProba() if ($return{'proba'}) ;
     &PrintResult();
 }
@@ -457,8 +475,10 @@ sub SumReverseComplements {
 
     foreach my $pattern_seq (keys %patterns) {
 	my $rc_pattern_seq = &SmartRC($pattern_seq);
+
 	warn ("; Summing occurrences\t", $pattern_seq, "\t", $rc_pattern_seq, "\n") if ($verbose >= 4);
 	if ($rc_pattern_seq eq $pattern_seq) {
+	    $patterns{$pattern_seq}->{'remark'} = "palindrom";
 	    #### don't count twice the reverse palindroms !!!!!!!
 	    $occ_2strands{$pattern_seq} = $patterns{$pattern_seq}->{occ};
 	    $overlaps_2strands{$pattern_seq} = $patterns{$pattern_seq}->{overlaps};
@@ -529,6 +549,7 @@ sub SumReverseComplementsDistrib {
 	my $max_occ = &max(@direct_occ, @rc_occ);
 
 	if ($rc_pattern_seq eq $pattern_seq) {
+	    $patterns{$pattern_seq}->{'remark'} = "palindrom";
 	    #### don't count twice the reverse palindroms !!!!!!!
 	    $distrib_2strands{$pattern_seq} = $distrib{$pattern_seq};
 	} else {
@@ -1536,6 +1557,11 @@ sub PrintResult {
     ### in all the other cases, sort by sequence
     @sorted_keys = sort keys %patterns unless ($sorted);
 
+    ### Reverse order if one is looking for under-represented patterns
+    if ($under_represented) {
+	@sorted_keys = reverse(@sorted_keys);
+    }
+
     &PrintHeaderLine();
     
     ### print result ###
@@ -1748,7 +1774,7 @@ sub ReadArguments {
 	    
 	    #### return reverse palindroms only
 	} elsif ($ARGV[$a] =~ /^-pal/) {
-	    $palindroms = 1;
+	    $palindroms_only = 1;
 	    
 	    #### degenerate code: one N at any position
 	} elsif ($ARGV[$a] eq "-oneN") {
@@ -1952,12 +1978,20 @@ sub ReadArguments {
 		    $return{'ovlp'} = 1;
 		    push(@output_fields, "ovlp");
 		    
-		} elsif ($field eq "var") {
+		} elsif ($field eq "exp") {
+		    $return{'exp'} = 1;
+		    push(@output_fields, "exp");
+		    
+		} elsif ($field eq "exp_var") {
 		    $return{'exp_var'} = 1;
 		    push(@output_fields, "exp_var");
 		    
+		} elsif ($field =~ /^remark/) {
+		    $return{'remark'} = 1;
+		    push(@output_fields, "remark");
+		    
 		} else {
-		    &FatalError("Invalid return field $field");
+		    &FatalError("Invalid return field $field. Supported: $supported_return_fields");
 		}
 
 	    }
@@ -2603,7 +2637,7 @@ oligo-analysis options
 -lexicon	exp word frequencies calculaed on the basis of word segments
 -pseudo	#	pseudo-weight (# between 0 and 1)
 -return		fields to return, among: 
-			occ,proba,freq,mseq,ratio,zscore,like,pos,rank
+			$supported_return_fields
 -table		return a table sequences (rows)/oligo occurrences (cols)
 -distrib	return occurrence distributions (one row per pattern)
 -noov		no overlapping
@@ -2637,8 +2671,11 @@ End_of_help
 sub SelectPalindroms {
     &TimeWarn("Selecting reverse palindroms") if ($verbose >= 2);
     foreach $pattern_seq (keys %patterns) {
-	my $rc = &SmartRC($pattern_seq);
-	unless ($rc eq $pattern_seq) { ### palindroms
+	my $rc = lc(&SmartRC($pattern_seq));
+	if ($rc eq lc($pattern_seq)) { ### palindroms
+	    $patterns{$pattern_seq}->{'remark'} = "palindrom";
+	    $patterns{$rc}->{'remark'} = "palindrom";
+	} elsif ($palindroms_only) {
 	    delete $patterns{$pattern_seq};
 	}
     }
