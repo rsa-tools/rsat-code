@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.37 2002/03/05 22:19:24 jvanheld Exp $
+# $Id: oligo-analysis,v 1.38 2002/03/06 06:04:02 jvanheld Exp $
 #
-# Time-stamp: <2002-03-05 21:37:43 jvanheld>
+# Time-stamp: <2002-03-06 06:58:38 jvanheld>
 #
 ############################################################
 
@@ -825,7 +825,7 @@ sub CalcExpected {
 #### calculate overlap coefficient
 sub CalcOverlapCoefficient {
     foreach $pattern_seq (keys %patterns) {
-	$patterns{$pattern_seq}->{ovlp} = &OverlapCoeff($pattern_seq);
+	$patterns{$pattern_seq}->{ovlp} = &OverlapCoeff($pattern_seq, %residue_proba);
     }
 }
 
