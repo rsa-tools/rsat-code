@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: fit-distribution,v 1.2 2004/01/05 13:18:21 jvanheld Exp $
+# $Id: fit-distribution,v 1.3 2004/01/05 13:19:57 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -74,7 +74,7 @@ local $p;
 local $k;
 my $pattern_count = 0;
 my $header_done = 0;
-my $header_OK = 1;
+my $header_OK = 0;
 my @values = ();
 while (<$in>) {
     next unless (/\S/);
@@ -93,7 +93,9 @@ while (<$in>) {
 	    shift @values;
 	}
 	$header_done = 1;
+
 	## Check that al header fields are integer
+	$header_OK = 1; ## Initialize as OK, put at 0 when any problem is found
 	foreach my $value (@values) {
 	    unless (&IsInteger($value)) {
 		&Warning("Header contains non-integer values. Values are inferred from the number of columns");
