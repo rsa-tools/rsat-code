@@ -1,26 +1,21 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genes.pl,v 1.19 2001/10/02 03:51:22 jvanheld Exp $
+# $Id: parse_genes.pl,v 1.20 2002/07/02 18:06:15 jvanheld Exp $
 #
-# Time-stamp: <2001-10-01 23:07:06 jvanheld>
+# Time-stamp: <2002-07-02 20:02:41 jvanheld>
 #
 ############################################################
-
-### parse_kegg.pl
-### type parse_kegg.pl -h for info
 
 #use strict;
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`"); ### add the program's directory to the lib path
 }
-require "PFBP_classes.pl";
 require "PFBP_config.pl";
+require "PFBP_classes.pl";
 require "PFBP_util.pl";
 require "PFBP_loading_util.pl"; ### for converting polypeptide IDs into ACs
 require "PFBP_parsing_util.pl";
-
-
 
 package main ;
 {
@@ -28,9 +23,19 @@ package main ;
     ### files to parse
     @selected_organisms= ();
     
-    $dir{output} = $parsed_data."/kegg_parsed/".$delivery_date;
+#    $dir{KEGG} = "${Databases}/kegg.genome.ad.jp/pub"; ### older version (Dec 2002)
     #$dir{genes} = $dir{KEGG}."/genomes/previous_genes/";
-    $dir{genes} = $dir{KEGG}."/genomes/genes_2000/";
+#    $dir{genes} = $dir{KEGG}."/genomes/genes_2000/";
+
+
+    $dir{KEGG} = "${Databases}/ftp.genome.ad.jp/pub/kegg";
+    $dir{genes} = $dir{KEGG}."/genomes/genes/";
+
+    foreach $d (keys %dir) {
+	unless (-d ($dir{$d}) ) {
+	    die "Error: $d directory $dir{$d} does not exist\n";
+	}
+    }
     
     $kegg_file{yeast} = "S.cerevisiae.ent";
     $kegg_file{human} = "H.sapiens.ent";
@@ -59,7 +64,7 @@ package main ;
     $organism_name{"ecoli"} = "Escherichia coli";
     $organism_name{"human"} = "Homo sapiens";
 
-    $warn_level = 0;
+    $verbose = 0;
     $out_format = "obj";
 
     #### classes and classholders
@@ -74,23 +79,14 @@ package main ;
     if ($rsa) {
         #### specific export format for RSA-tools
 	$single_name = 1;
-	$genes->set_out_fields(qw( id type name chromosome start end strand description position names xrefs));
+	$genes->set_out_fields(qw( id type name chromosome start_pos end_pos strand description chrom_position names xrefs));
     } else {
-	$genes->set_out_fields(qw( id source organism type position chromosome strand start end description names exons introns xrefs dblinks));
+	$genes->set_out_fields(qw( id source organism type chrom_position chromosome strand start_pos end_pos description names exons introns xrefs dblinks ECs));
 	#@{$out_fields{'PFBP::Gene'}} = qw( id source organism raw_position chromosome strand start_base end_base description names exons );
     }
 
-    ### outfile names
-    unless (defined($suffix)) {
-        #    foreach my $organism (@selected_organisms) {
-        #	$suffix .= "_$organism";
-        #    }
-	if ($export{enzymes}) {
-	    $suffix .= "_enz";
-	}
-	$suffix .= "_test" if ($test);
-    }
 
+    $dir{output} = $parsed_data."/kegg_genes/".$delivery_date;
     unless (-d $dir{output}) {
 	warn "Creating output dir $dir{output}\n";
 	mkdir $dir{output}, 0775 || die "Error: cannot create directory $dir\n";
@@ -99,9 +95,9 @@ package main ;
     if ($clean) {
 	system "\\rm -f $dir{output}/*";
     }
-    $out_file{error} = "$dir{output}/gene".$suffix.".errors.txt";
-    $out_file{stats} = "$dir{output}/gene".$suffix.".stats.txt";
-    $out_file{genes} = "$dir{output}/gene".$suffix.".obj" if ($export{obj});
+    $out_file{error} = "$dir{output}/gene.errors.txt";
+    $out_file{stats} = "$dir{output}/gene.stats.txt";
+    $out_file{genes} = "$dir{output}/gene.obj" if ($export{obj});
 
     ### open error report file
     open ERR, ">$out_file{error}" || die "Error: cannot write error file $out_file{error}\n";
@@ -132,21 +128,22 @@ package main ;
 
     ### test conditions
     if ($test) {
-	warn ";TEST\n" if ($warn_level >= 1);
+	warn ";TEST\n" if ($verbose >= 1);
 	### fast partial parsing for debugging
 	foreach $key (keys %in_file) {
 	    $in_file{$key} .= " head -1000 |";
 	}
     }
 
-    &DefaultVerbose if ($warn_level >= 1);
+    &DefaultVerbose if ($verbose >= 1);
     warn "; Selected organisms\n;\t", join("\n;\t", @selected_organisms), "\n"
-	if ($warn_level >= 1);
+	if ($verbose >= 1);
 
  
     ### parse data from original files
     foreach $org (@selected_organisms) {
-	warn join ("\t", "; Organism name", $org, $organism_name{$org}), "\n";
+	warn join ("\t", "; Organism name", $org, $organism_name{$org}), "\n" 
+	    if ($verbose >= 1);
 	&ParseKeggFile($in_file{$org}, 
 		       $genes, 
 		       organism_name=>$organism_name{$org},
@@ -154,7 +151,7 @@ package main ;
 
     }
 
-    &ParsePositions();
+    &ParsePositions($genes);
 
     foreach $gene ($genes->get_objects()) {
 	### define a single name  (take the first value in the name list)
@@ -168,7 +165,7 @@ package main ;
 
 	#### check for genes without description
 	if (($gene->get_attribute("description") eq "") ||
-	    ($gene->get_attribute("description") eq "<UNDEF>")) {
+	    ($gene->get_attribute("description") eq $null)) {
 	    &ErrorMessage(join ("\t", 
 				"Warning",
 				"no description for gene", 
@@ -176,29 +173,40 @@ package main ;
 				), "\n");
 	    $gene->set_attribute("description",$gene->get_attribute("organism")." ".$gene->get_name());
 	} else {
-	    #### extract the swissprot link from the description
 	    my $description = $gene->get_attribute("description");
+
+	    #### extract the swissprot link from the description
 	    if ($description =~ /\[SP\:(\S+)\]/) {
 		my $swissprot_id = $1;
 		$gene->push_expanded_attribute("xrefs", "swissprot", $swissprot_id);
 	    } else {
-		&ErrorMessage(join ("\t", "Warning", "no swissprot reference", $gene->get_name(), $gene->get_attribute("organism")), "\n");
+		&ErrorMessage(join ("\t", "Warning", "no swissprot reference", $gene->get_attribute("id"),  "name", $gene->get_name(), $gene->get_attribute("organism")), "\n");
+	    }
+	    
+	    #### extract EC numbers from the description
+	    if ($description =~ /\[EC\:([\d\.\s]+)\]/) {
+		my $ec_string = $1;
+		my @ecs = split /\s+/, $ec_string;
+		foreach $ec (@ecs) {
+		    $gene->push_attribute("ECs", $ec);
+		}
 	    }
 	}
 
 	### check organism attribute
 	unless ($gene->get_attribute("organism")) {
 	    &ErrorMessage("Warning: gene ", $gene->get_attribute("id"), " has no organism attribute\n");
-	    $gene->set_attribute("organism","<UNDEF>");
+	    $gene->set_attribute("organism",$null);
 	    next;
 	}
 	    
-	#### choose the full organism name
+	#### choose the full organism name instead of the abbreviated name
 	if ($gene->get_attribute("organism_name")) {
-	    $gene->set_attribute("organism",$gene->get_attribute("organism_name"));
+	    $gene->force_attribute("organism",$gene->get_attribute("organism_name"));
 	}
 
-	#### dblinks
+	#### transform dblinks (single string) to xrefs 
+	#### (expanded attribute with database name + external ID)
 	my @dblinks = $gene->get_attribute("dblinks");
 	foreach my $xref (@dblinks) {
 	    $xref =~ s/: /\t/;
@@ -210,12 +218,17 @@ package main ;
 
     ### print result
     &PrintStats($out_file{stats}, @classes);
-    $genes->dump_tables($suffix);
+    $genes->dump_tables();
+    $genes->generate_sql(schema=>$schema, 
+			 dir=>"$dir{output}/sql_scripts",
+			 prefix=>"k_",
+			 dbms=>$dbms
+			 );
     &ExportClasses($out_file{genes}, $out_format, PFBP::Gene) if $export{obj};
 
 
     ### report execution time
-    if ($warn_level >= 1) {
+    if ($verbose >= 1) {
 	$done_time = &AlphaDate;
 	warn ";\n";
 	warn "; job started $start_time";
@@ -225,7 +238,7 @@ package main ;
     close ERR;
 
 
-    warn "; compressing the files\n" if ($warn_level >= 1);
+    warn "; compressing the files\n" if ($verbose >= 1);
     system "gzip -f $dir{output}/*.tab $dir{output}/*.txt";
     system "gzip -f $dir{output}/*.obj" if ($export{obj});
 
@@ -262,7 +275,7 @@ OPTIONS
 	-help	short list of options
 	-test	fast parsing of partial data, for debugging
 	-outdir output directory
-	-w #	warn level
+	-v #	warn level
 		Warn level 1 corresponds to a restricted verbose
 		Warn level 2 reports all polypeptide instantiations
 		Warn level 3 reports failing get_attribute()
@@ -275,9 +288,6 @@ OPTIONS
 		to select several organisms
 		by default, all organisms found in the input directory
 		are selected
-	-suffix suffix
-		add a suffix to output file names
-		    -suffix '' prevents from adding any suffix
 	-name
 		exports a name as single value attribute in
 		the main table (this is redundant but can be useful)
@@ -293,62 +303,57 @@ EndHelp
 
 ### read arguments from the command line
 sub ReadArguments {
-  for my $a (0..$#ARGV) {
-    
-    ### warn level
-    if (($ARGV[$a] eq "-w" ) && 
-	($ARGV[$a+1] =~ /^\d+$/)){
-      $main::warn_level = $ARGV[$a+1];
-      
-      ### test run
-    } elsif ($ARGV[$a] eq "-test") {
-      $main::test = 1;
-      
-      ### clean
-    } elsif ($ARGV[$a] eq "-clean") {
-      $main::clean = 1;
-      
-      ### export single name in main table
-    } elsif ($ARGV[$a] eq "-name") {
-      $main::single_name = 1;
-      
-      ### specific export format  for RSA-tools
-    } elsif ($ARGV[$a] eq "-rsa") {
-      $main::rsa = 1;
-      
-      ### suffix
-    } elsif ($ARGV[$a] eq "-suffix") {
-      $a++;
-      $main::suffix = $ARGV[$a];
-      
-      ### output dir
-    } elsif ($ARGV[$a] eq "-outdir") {
-      $a++;
-      $main::dir{output} = $ARGV[$a];
-      
-      ### help
-    } elsif (($ARGV[$a] eq "-h") ||
-	     ($ARGV[$a] eq "-help")) {
-      &PrintHelp;
-      exit(0);
+    for my $a (0..$#ARGV) {
+	
+	### warn level
+	if (($ARGV[$a] eq "-v" ) && 
+	    ($ARGV[$a+1] =~ /^\d+$/)){
+	    $main::verbose = $ARGV[$a+1];
+	    
+	    ### test run
+	} elsif ($ARGV[$a] eq "-test") {
+	    $main::test = 1;
+	    
+	    ### clean
+	} elsif ($ARGV[$a] eq "-clean") {
+	    $main::clean = 1;
+	    
+	    ### export single name in main table
+	} elsif ($ARGV[$a] eq "-name") {
+	    $main::single_name = 1;
+	    
+	    ### specific export format  for RSA-tools
+	} elsif ($ARGV[$a] eq "-rsa") {
+	    $main::rsa = 1;
+	    
+	    ### output dir
+	} elsif ($ARGV[$a] eq "-outdir") {
+	    $a++;
+	    $main::dir{output} = $ARGV[$a];
+	    
+	    ### help
+	} elsif (($ARGV[$a] eq "-h") ||
+		 ($ARGV[$a] eq "-help")) {
+	    &PrintHelp;
+	    exit(0);
 
-      ### select enzymes for exportation
-    } elsif ($ARGV[$a] =~ /^-org/) {
-      push @selected_organisms, $ARGV[$a+1];
-      
-      ### select enzymes for exportation
-    } elsif ($ARGV[$a] =~ /^-enz/) {
-      $main::export{enzymes} = 1;
+	    ### select enzymes for exportation
+	} elsif ($ARGV[$a] =~ /^-org/) {
+	    push @selected_organisms, $ARGV[$a+1];
+	    
+	    ### select enzymes for exportation
+	} elsif ($ARGV[$a] =~ /^-enz/) {
+	    $main::export{enzymes} = 1;
 
-    } elsif ($ARGV[$a] =~ /^-all/) {
-      $main::export{all} = 1;
+	} elsif ($ARGV[$a] =~ /^-all/) {
+	    $main::export{all} = 1;
 
-      #### export object file
-    } elsif ($ARGV[$a] =~ /^-obj/) {
-      $main::export{obj} = 1;
+	    #### export object file
+	} elsif ($ARGV[$a] =~ /^-obj/) {
+	    $main::export{obj} = 1;
+	}
+	
     }
-    
-  }
 }
 
 
@@ -360,26 +365,26 @@ sub ReadArguments {
 #      warn ("; ",
 #  	  &AlphaDate(),
 #  	  "\tparsing gene positions\n")
-#  	if ($warn_level >= 1);
+#  	if ($verbose >= 1);
 
 #      foreach my $gene ($genes->get_objects()) {
 #  	my $position = $gene->get_attribute("position");
 
-#  	if ($position eq "<UNDEF>") {
-#  	    $gene->set_attribute("position","<NULL>");
-#  	    $gene->set_attribute("chromosome", "<NULL>");
-#  	    $gene->set_attribute("strand","<NULL>");
-#  	    $gene->set_attribute("start","<NULL>");
-#  	    $gene->set_attribute("end","<NULL>");
+#  	if ($position eq $null) {
+#  	    $gene->set_attribute("position",$null);
+#  	    $gene->set_attribute("chromosome", $null);
+#  	    $gene->set_attribute("strand",$null);
+#  	    $gene->set_attribute("start",$null);
+#  	    $gene->set_attribute("end",$null);
 #  	    &ErrorMessage("Warning: gene ", $gene->get_attribute("id"), " has no position attribute\n");
 #  	    next;
 #  	}
-#  	my $coord = "<NULL>";
-#  	my $chomosome = "<NULL>";
-#  	my $chrom_pos = "<NULL>";
-#  	my $strand = "<NULL>";
-#  	my $start = "<NULL>";
-#  	my $end = "<NULL>";
+#  	my $coord = $null;
+#  	my $chomosome = $null;
+#  	my $chrom_position = $null;
+#  	my $strand = $null;
+#  	my $start = $null;
+#  	my $end = $null;
 
 #  	if ($position =~ /^(\S+)\:(.*)/) {
 #  	    $chromosome = $1;
@@ -392,10 +397,10 @@ sub ReadArguments {
 #  			  "\t", $gene->get_attribute("id"),
 #  			  "\t", $gene->get_attribute("organism"),
 #  			  "\t", $position, "\n");
-#  	    $gene->set_attribute("chromosome", "<NULL>");
-#  	    $gene->set_attribute("strand","<NULL>");
-#  	    $gene->set_attribute("start","<NULL>");
-#  	    $gene->set_attribute("end","<NULL>");
+#  	    $gene->set_attribute("chromosome", $null);
+#  	    $gene->set_attribute("strand",$null);
+#  	    $gene->set_attribute("start",$null);
+#  	    $gene->set_attribute("end",$null);
 #  	    next;
 #  	}
 
@@ -428,8 +433,8 @@ sub ReadArguments {
 #  	    }
 	    
 #  	    #### gene start and end 
-#  	    $start = $exon_starts[0] || "<NULL>";
-#  	    $end = $exon_ends[$#exons] || "<NULL>";
+#  	    $start = $exon_starts[0] || $null;
+#  	    $end = $exon_ends[$#exons] || $null;
 
 #  	    #### introns
 #  	    my @introns = ();
@@ -441,9 +446,9 @@ sub ReadArguments {
 #  	    }
 #  	} else {
 #  	    &ErrorMessage("Warning : gene ",$gene->get_attribute("id"),"\tinvalid gene position $position\n");
-#  	    $strand = "<NULL>";
-#  	    $start = "<NULL>";
-#  	    $end = "<NULL>";
+#  	    $strand = $null;
+#  	    $start = $null;
+#  	    $end = $null;
 #  	}
 #  	$gene->set_attribute("chromosome", $chromosome);
 #  	$gene->set_attribute("strand",$strand);
