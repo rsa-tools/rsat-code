@@ -90,39 +90,6 @@ $date = &AlphaDate();
 ############################################################################
 ############################ GLOBAL VARIABLES ##############################
 ############################################################################
-$arab{I} = 1;
-$arab{II} = 2;
-$arab{III} = 3;
-$arab{IV} = 4;
-$arab{V} = 5;
-$arab{VI} = 6;
-$arab{VII} = 7;
-$arab{VIII} = 8;
-$arab{IX} = 9;
-$arab{X} = 10;
-$arab{XI} = 11;
-$arab{XII} = 12;
-$arab{XIII} = 13;
-$arab{XIV} = 14;
-$arab{XV} = 15;
-$arab{XVI} = 16;
-
-$latin{1} = 'I';
-$latin{2} = 'II';
-$latin{3} = 'III';
-$latin{4} = 'IV';
-$latin{5} = 'V';
-$latin{6} = 'VI';
-$latin{7} = 'VII';
-$latin{8} = 'VIII';
-$latin{9} = 'IX';
-$latin{10} = 'X';
-$latin{11} = 'XI';
-$latin{12} = 'XII';
-$latin{13} = 'XIII';
-$latin{14} = 'XIV';
-$latin{15} = 'XV';
-$latin{16} = 'XVI';
 
 
 ############################################################################
@@ -242,23 +209,37 @@ sub ReadExpectedFrequencies {
     my $l=0;
     while (<$exp>) {
 	$l++;
+	chomp();
 	next if (/^;/);
 	next unless (/\S/);
-	my @fields =  split "\t";
+
+
+	my @fields =  split /\s+/;
 	$pattern_seq = lc($fields[0]);
+
+#	warn join "\t", "fields", $fields[0], "\n";
+
+	#### check the format and extract expected frequency
 	if (&IsReal($fields[1])) {
+	    ### second field contains the expected frequency (old format)
 	    $patterns{$pattern_seq}->{exp_freq} = $fields[1];
 	    $file_type="undef";
+
   	} elsif (($fields[1] =~ /(\S+)\|(\S+)/) && (&IsReal($fields[2]))) {
+	    #### second field contains the ID as a pair of reverse complements
 	    $file_type = "2str";
   	    $fw = lc($1);
   	    $rc = lc($2);
   	    $patterns{$rc}->{exp_freq} = $fields[2];
   	    $patterns{$fw}->{exp_freq} = $fields[2];
+
   	} elsif	(($fields[1] eq $fields[0]) &&(&IsReal($fields[2]))) {
+	    #### second field contains the ID which is identical to the pattern (single strand pattern)
 	    $file_type = "1str";
   	    $patterns{$fields[0]}->{exp_freq} = $fields[2];
+
 	} else {
+	    ### unrecognized format
 	    &FatalError("Invalid expected frequency in file $exp_freq_file at line $l\n");
 	}
 	
@@ -559,9 +540,9 @@ sub PrintList {
 #### print the command-line arguments
 sub PrintArguments {
     my $local_out = $_[0];
-    unless ($local_out)  {
-	$local_out = STDOUT;
-    }
+#    unless ($local_out)  {
+#	$local_out = STDOUT;
+#    }
     my $argument_string = "";
 
     foreach my $a (@main::ARGV) {
@@ -573,7 +554,7 @@ sub PrintArguments {
 	    $argument_string .= " $a";
 	}
     }
-    print $local_out $argument_string, "\n";
+    print $local_out $argument_string, "\n" if ($local_out);
     return $argument_string;
 }
 
@@ -581,6 +562,14 @@ sub PrintArguments {
 ############################################################
 ###############  Genome data ###############################
 ############################################################
+
+@supported_feature_types = qw (CDS mRNA);
+%supported_feature_types = ();
+foreach my $type (@supported_feature_types) {
+    $supported_feature_types{lc($type)} = 1;
+}
+$supported_feature_types = join ",", @supported_feature_types;
+
 
 
 ################################################################
@@ -698,6 +687,7 @@ sub CheckOrganism {
 
 	}
 	close FILES;
+	
     } elsif ($accepted_input_seq{$genome_seq_format}) {
 	unless (-e $genome_file) {
 	    &FatalError("Genome file $genome_file does not exist.");
@@ -720,7 +710,7 @@ sub CheckOrganism {
 
 	}
     } else {
-	&FatalError("Unsupported genome sequence format $genome_seq_format");
+	&FatalError("Sequence format $genome_seq_format is not supported for genomes.");
     }
     return $organism_object;
 }
@@ -782,17 +772,24 @@ sub ConvertStrand {
 #### read ORF positions for a given organism
 #### usage: &ReadOrfPositions($organism_name)
 sub ReadOrfPositions {
-    ### usage
-    ### &ReadOrfPositions($organism_name);
     my ($organism_name, 
 	$feature_table_file,
 	$warn)= @_;
+
+    unless (defined (%accepted_feature_types)) {
+	%accepted_feature_types = (cds=>1,
+#				   mrna=>1,
+#				   trna=>1,
+#				   rrna=>1,
+				   );
+    }
     
+
     unless ($feature_table_file) {
 	$feature_table_file = $supported_organism{$organism_name}->{'features'};
     }
     $col{'orf_id'} = 0;
-    $col{'kind'} = 1;
+    $col{'type'} = 1;
     $col{'name'} = 2;
     $col{'chr'} = 3;
     $col{'left'} = 4;
@@ -843,11 +840,10 @@ sub ReadOrfPositions {
 	    foreach $f (keys %col) {
 		$$f = $fields[$col{$f}];
 	    }
-	    next unless (($kind =~ /^cds$/i) || 
-			 ($kind =~ /^orf$/i) || 
-			 ($kind =~ /^rrna$/i) || 
-			 ($kind =~ /^trna$/i) || 
-			 ($kind =~ /^gene$/i));
+
+
+#	    print join "\t", "HELLO", $name, $type, "\n";
+	    next unless ($accepted_feature_types{lc($type)});
 	}
 	
 	#### check mandatory attributes
@@ -894,7 +890,7 @@ sub ReadOrfPositions {
 	$right{$orf_id} = $right;
 	$strand{$orf_id} = $strand;
 	$chr{$orf_id} = $chr;
-	$kind{$orf_id} = $kind;
+	$type{$orf_id} = $type;
 	$descr{$orf_id} = $descr;
 	$orf_id{uc($orf_id)} = $orf_id;
 	$orf_id{uc($name)} = $orf_id if ($name =~ /\S/);
