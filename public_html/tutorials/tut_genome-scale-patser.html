@@ -1,0 +1,101 @@
+<html>
+<head>
+ <meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+ <title>RSA-tools - tutorials</title>
+</head>
+<body text="#000000" bgcolor="#ffffff" link="#0000ee" vlink="#55008b" alink="#ff0000">
+<blockquote>
+
+<hr size=6 width="100%">
+<center>
+<h2><a href="../RSA_home.cgi">RSA-tools</A> - 
+<a href="tutorials.html">Tutorials</a> - 
+<a href="../genome-scale-patser_form.cgi">genome-scale patser</a>
+</h2>
+</center>
+
+<hr size=6 width="100%">
+
+<h2>Introduction</h2>
+<ul>
+
+<p>
+<ol>
+</ol>
+
+
+</ul>
+<h2>Scanning all upstream regions with a position-specific scoring matrix</h2>
+<ul>
+
+<p>
+We will use a position-specific scoring matrix from Transfac (entry
+F$GCN4_01) to scan the whole genomes for genes potentially regulated
+by the transcription factor Gcn4p. 
+
+<p>
+<ol>
+<p><li>In the left pannel, select the tool <b>genome-scale patser</b>
+<p><li>Paste the following matrix in the <b>matrix</b> box. 
+<pre>
+A | 4  2  7  2  3  5  5  4  6 19  0  0 43  0  2  1 43  1 12  4 12  6  7  4  5  8  6
+C | 6  7  6  7  6  4 11 12  9  6  0  0  0 43  0 42  0 11 16 14 10  9 10  8 10  7  7
+G | 2  5  2  9  6 10  7  9 11 15  0 43  0  0  0  0  0  5  2 13  4 11  4 11  6  3  4
+T | 2  1  3  2  8  6  4  5 11  2 43  0  0  0 41  0  0 26  8  3  8  7 10  5  6  7  6
+</pre>
+
+<p><li><b>Note</b>This matrix is already in consensus format. Make
+sure that the matrix format option is set to <b>consensus</b>.
+
+<p><li>You can try to run the program with a threshold of 0, but this
+usually returns many suprious matches. We will increase the threshold
+to be more selective. Set the <b>lower threshold</b> to <b>9</b>.
+
+<p><li>Let us assume that, in a first time, we simply want a list of the
+genes which have at least one match above the selected threshold in
+their upstream region. For the time being, we are thus not interested
+in the precise positioning of the matching sites. For this, we can
+select to return the <b>top value for each sequence</b>.
+
+<p><li>To be even more selective, we will prevent matches with
+upsteram ORFs. Beware that this might provoke a loss in sensitivity,
+since there are many false ORFs in the yeast genome, as discussed in
+the tutorial on <a href=tut_retrieve-seq.html>sequence
+retrieval</a>. Inactivate the option to <b>Allow overlaps with
+upstream ORFs</b>.
+
+<p><li>Click <b>GO</b>.
+</ol>
+
+
+<p>
+After a few seconds, the result of patser will be displayed. Notice
+that many of these genes are associated with amino-acid metabolism.
+This is consistent with the function of Gcn4p, the general control of
+amino-acid metabolism.
+
+
+</ul>
+<h2>Remarks</h2>
+<ul>
+
+
+
+
+
+<p>
+You can now come back to the <a href=tutorials.html>tutorial main
+page</a> and follow the next tutorials.
+
+</ul>
+<hr width="100%">
+<center>
+<address>
+For suggestions or information request, please contact <a
+href="mailto:jvanheld@ucmb.ulb.ac.be">Jacques van Helden
+(jvanheld@ucmb.ulb.ac.be)</a>
+</address></center>
+
+</blockquote>
+</body>
+</html>
