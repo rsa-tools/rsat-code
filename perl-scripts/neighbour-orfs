@@ -111,7 +111,7 @@ unless ($input_as_arg)  {
         @fields = split(/\s+/);
 	if ($in_format eq "pos") {
 	    ### read position ###
-	    $chromosome[$count] = $fields[0];
+	    $contig[$count] = $fields[0];
 	    $startposition[$count] = $fields[1];
 	    if ($fields[2] =~ /^\d+$/) {
 		$endposition[$count] = $fields[2];
@@ -123,16 +123,16 @@ unless ($input_as_arg)  {
 	} elsif ($in_format eq "dna-pattern") {
 	    ### read position ###
 	    $id[$count] = $fields[0];
-	    $chromosome[$count] = $fields[3];
-	    $chromosome[$count] =~ s/chr//i;
-	    $chromosome[$count] =~ s/\.raw//i;
+	    $contig[$count] = $fields[3];
+	    $contig[$count] =~ s/chr//i;
+	    $contig[$count] =~ s/\.raw//i;
 	    $startposition[$count] = $fields[4];
 	    $endposition[$count] = $fields[5];
 
 	} elsif ($in_format eq "orf") {
 	    $query = $orf_id{uc($fields[0])};
 	    $id[$count] = $query;
-	    $chromosome[$count] = $chrom{$query};
+	    $contig[$count] = $chrom{$query};
 	    $startposition[$count] = $start{$query};
 	    $endposition[$count] = $end{$query};
 	}
@@ -227,7 +227,7 @@ if ($verbose) {
 }
 
 QUERYLOOP:
-for $query (0..$#chromosome) {
+for $query (0..$#contig) {
     $id = $id[$query];
 
     ### check parameter values ###
@@ -238,17 +238,17 @@ for $query (0..$#chromosome) {
 
     $locus = $ORF_locus{$id};
     $strand = $strand{$id};
-    $chromosome = $chromosome[$query];
+    $contig = $contig[$query];
     $startposition = $startposition[$query];
     $endposition = $endposition[$query];
 
 
-    if (defined($arab{$chromosome})) {
-	$chromosome = $arab{uc($chromosome)};
+    if (defined($arab{$contig})) {
+	$contig = $arab{uc($contig)};
     }
 
-    if (($chromosome < 1) || ($chromosome > 16)) {
-	print $out ";WARNING! $chromosome: invalid chromosome specification\n";
+    if (($contig < 1) || ($contig > 16)) {
+	print $out ";WARNING! $contig: invalid contig specification\n";
 	next QUERYLOOP;
     }
 
@@ -272,7 +272,7 @@ for $query (0..$#chromosome) {
 	$strand = "W";
     }
 
-    $max_count = $#{$sorted_end3{$chromosome}};
+    $max_count = $#{$sorted_end3{$contig}};
 
 
     $found = 0;
@@ -280,7 +280,7 @@ for $query (0..$#chromosome) {
     ### search left neighbour end3
     do {
         $count++;
-        $next_end3 = ${$sorted_end3{$chromosome}}[$count];
+        $next_end3 = ${$sorted_end3{$contig}}[$count];
         if ($next_end3 >  $end5) {
 	    $found = 1;
 	}
@@ -289,8 +289,8 @@ for $query (0..$#chromosome) {
 	$nearest_left_end3 = 0;
 	$left_neighbour = "none";
     } else {
-	$nearest_left_end3 =  ${$sorted_end3{$chromosome}}[$count-1];
-        $left_neighbour = $ID_end3{$chromosome}{$nearest_left_end3};
+	$nearest_left_end3 =  ${$sorted_end3{$contig}}[$count-1];
+        $left_neighbour = $ID_end3{$contig}{$nearest_left_end3};
         $left_distance = $end5 - $nearest_left_end3;
         $left_len = abs($start{$left_neighbour} - $end{$left_neighbour}) +1;
     }
@@ -299,7 +299,7 @@ for $query (0..$#chromosome) {
     $count = -1;
     do {
         $count++;
-        $next_end5 = ${$sorted_end5{$chromosome}}[$count];
+        $next_end5 = ${$sorted_end5{$contig}}[$count];
         if ($next_end5 >  $end3) {
             $found = 1;
         }
@@ -309,8 +309,8 @@ for $query (0..$#chromosome) {
         $nearest_right_end5 = 9999999;
         $right_neighbour = "none";
     } else {
-        $nearest_right_end5 =  ${$sorted_end5{$chromosome}}[$count];
-        $right_neighbour =  $ID_end5{$chromosome}{$nearest_right_end5};
+        $nearest_right_end5 =  ${$sorted_end5{$contig}}[$count];
+        $right_neighbour =  $ID_end5{$contig}{$nearest_right_end5};
         $right_distance =  $nearest_right_end5 - $end3;
         $right_len = abs($start{$right_neighbour} - $end{$right_neighbour}) +1;
     }
@@ -320,7 +320,7 @@ for $query (0..$#chromosome) {
     print $out "$id\t";
     print $out "$locus\t";
 
-    print $out $latin{$chromosome}, "\t";
+    print $out $latin{$contig}, "\t";
     print $out $strand{$id}, "\t";
     print $out $startposition, "\t";
     print $out $endposition, "\t";
@@ -453,7 +453,7 @@ INPUT FILE FORMATS
                 #chr #startpos [#endpos] [id]
 
             Where 
-               #chr is the chromosome number (in latin or arab notation)
+               #chr is the contig number (in latin or arab notation)
                #startpos is the start position
                #endpos is the end position (optional)
                id is an optional identifier
@@ -474,7 +474,7 @@ OUTPUT FORMATS
         Columns from the output provide respectively
         - Q_id    query identifier
         - Q_gene  query gene name
-        - Q_chr   query chromosome
+        - Q_chr   query contig
         - Qstrand query strand
         - Q_start query start position
         - Q_end   query end position
@@ -493,7 +493,7 @@ OUTPUT FORMATS
         Columns from the output provide respectively
         - Q_id    query identifier
         - Q_gene  query gene name
-        - Q_chr   query chromosome
+        - Q_chr   query contig
         - Qstrand query strand
         - Q_start query start position
         - Q_end   query end position
@@ -584,14 +584,14 @@ sub ReadArguments {
 	    $input_as_arg = 1;
 	    $query_number = $#id+1;
 	    $id[$query_number] = $orf_id{uc($ARGV[$a+1])};
-	    $chromosome[$query_number] = $chrom{$id[$query_number]};
+	    $contig[$query_number] = $chrom{$id[$query_number]};
 	    $startposition[$query_number] = $start{$id[$query_number]};
 	    $endposition[$query_number] = $end{$id[$query_number]};
 	    
 	} elsif ($ARGV[$a] eq "-pos") {
 	    $in_format = "pos";
 	    $input_as_arg = 1;
-	    $chromosome[0] = $ARGV[$a+1];
+	    $contig[0] = $ARGV[$a+1];
 	    $startposition[0] = $ARGV[$a+2];
 	    if ($ARGV[$a+3] =~ /^[-\+\d]\d*$/) {
 		$endposition[0] = $ARGV[$a+3];

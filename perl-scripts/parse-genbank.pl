@@ -1,6 +1,6 @@
 #!/usr/bin/perl 
 #############################################################
-# $Id: parse-genbank.pl,v 1.24 2005/02/21 20:05:31 jvanheld Exp $
+# $Id: parse-genbank.pl,v 1.25 2005/03/13 10:36:13 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -9,6 +9,8 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
+
+
 require "RSA.lib";
 push @INC, "$RSA/perl-scripts/parsers/";
 require "lib/load_classes.pl";
@@ -110,11 +112,11 @@ package main;
 
     #### input directory
     unless (($inputfiles) || (defined($dir{input}))) {
-	&FatalError("You must specify an input directory or input file(s).\n");
+	&RSAT::error::FatalError("You must specify an input directory or input file(s).\n");
     }
     if ($dir{input}) {
 	unless (-d $dir{input}) {
-	    &FatalError("Input directory '$dir{input}' does not exist.\n");
+	    &RSAT::error::FatalError("Input directory '$dir{input}' does not exist.\n");
 	}
     } 
     
@@ -137,7 +139,7 @@ package main;
 	push @genbank_files, glob("*.${ext}.gz");
     }
     if ($#genbank_files < 0) {
-	&FatalError("There is no genbank file in the input directory $dir{input}\n");
+	&RSAT::error::FatalError("There is no genbank file in the input directory $dir{input}\n");
     } else {
 	warn "; Genbank files\n;\t", join("\n;\t", @genbank_files), "\n" if ($verbose >= 1);
     }
@@ -208,9 +210,9 @@ package main;
 			  );
     }
 
-    #### write the chromosome file
+    #### write the contig file
     chdir $dir{main};
-    $chrom = &OpenOutputFile("$dir{output}/contigs.txt"); # file with chromosome IDs
+    $chrom = &OpenOutputFile("$dir{output}/contigs.txt"); # file with contig IDs
     foreach my $contig ($contigs->get_objects()) {
 	print $chrom join ("\t", 
 			   $contig->get_attribute("file"),
@@ -338,7 +340,7 @@ DESCRIPTION
 	Each directory contains the genome of one organism.  Note that
 
 	  - a single directoy can contain several files, if the
-	    organism has several chromosomes.  
+	    organism has several contigs.  
 
           - a single .gbk file can contain several contigs, if the
 	    genome is not fully assembled for example.
@@ -468,7 +470,7 @@ sub ReadArguments {
 
 	    ### input directory
 	} elsif ($ARGV[$a] eq "-i") {
-	    &FatalError("Option -i is incompatible with option -f") if ($inputfiles);
+	    &RSAT::error::FatalError("Option -i is incompatible with option -f") if ($inputfiles);
 	    $dir{input} = $ARGV[$a+1];
 
 	    ### extension to be searched in the input directory

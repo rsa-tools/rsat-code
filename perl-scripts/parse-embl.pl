@@ -1,7 +1,7 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: parse-embl.pl,v 1.10 2004/05/07 07:07:06 jvanheld Exp $
+# $Id: parse-embl.pl,v 1.11 2005/03/13 10:32:12 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:17:49 jvanheld>
 #
@@ -41,8 +41,7 @@ package EMBL::Feature;
 			     type=>"SCALAR",
 			     description=>"SCALAR",
 			     position=>"SCALAR",
-			     position=>"SCALAR",
-			     chromosome=>"SCALAR",
+			     contig=>"SCALAR",
 			     strand=>"SCALAR",
 			     start_pos=>"SCALAR",
 			     end_pos=>"SCALAR",
@@ -131,9 +130,9 @@ package main;
     #### Organism
     my $organisms = classes::ClassFactory->new_class(object_type=>"EMBL::Organism",prefix=>"org_");
     $organisms->set_out_fields(qw (id
+				   taxonomy
 				   name
 				   names
-				   taxonomy
 				   ));
     
 
@@ -161,7 +160,6 @@ package main;
 			      strand
 			      description
 			      organism
-			      chromosome
 			      position
 			      names
 			      db_xref
@@ -212,17 +210,17 @@ package main;
     
     #### input directory
     unless (defined($dir{input})) {
-	&FatalError("You must specify the input directory.\n");
+	&RSAT::error::FatalError("You must specify the input directory.\n");
     }
     unless (-d $dir{input}) {
-	&FatalError("Input directory '$dir{input}' does not exist.\n");
+	&RSAT::error::FatalError("Input directory '$dir{input}' does not exist.\n");
     }
 
     #### First guess for organism
     unless (defined($org)) {
 	$org = `basename $dir{input}`;
 	chomp($org);
-	warn "; Auto selection of organism name\t$org\n" if ($verbose >= 1);
+	warn "; Auto selection of organism name\t$org\n" if ($main::verbose >= 1);
     }
 
     #### find embl files in the input directory
@@ -231,9 +229,9 @@ package main;
     push @embl_files, glob("*.embl");
     push @embl_files, glob("*.embl.Z");
     if ($#embl_files < 0) {
-	&FatalError("There is no embl file in the input directory $dir{input}\n");
+	&RSAT::error::FatalError("There is no embl file in the input directory $dir{input}\n");
     } else {
-	warn "; EMBL files\n;\t", join("\n;\t", @embl_files), "\n" if ($verbose >= 1);
+	warn "; EMBL files\n;\t", join("\n;\t", @embl_files), "\n" if ($main::verbose >= 1);
     }
     #### come back to the starting directory
     chdir($wd);
@@ -244,7 +242,7 @@ package main;
 	$export_subdir = "embl";
 	$dir{output} = "$parsed_data/$export_subdir/$delivery_date/$org";
 #	$dir{output} = "$RSA/data/embl_genomes/$org/genome";
-	warn "; Auto selection of output dir\t$dir{output}\n" if ($verbose >= 1);
+	warn "; Auto selection of output dir\t$dir{output}\n" if ($main::verbose >= 1);
     }
     &CheckOutputDir($dir{output});
     chdir $dir{output};
@@ -256,10 +254,10 @@ package main;
     chdir($wd);
 
     #### verbose ####
-    &Verbose() if ($verbose);
+    &Verbose() if ($main::verbose >= 1);
 
     #### parse the embl files
-    $contig_handle = &OpenOutputFile("$dir{output}/contigs.txt"); # file with chromosome IDs
+    $contig_handle = &OpenOutputFile("$dir{output}/contigs.txt"); # file with contig IDs
     foreach my $file (@embl_files) {
 	my $sequence = &ParseEMBLFile("$dir{input}/$file", 
 				      $organisms, 
@@ -283,22 +281,28 @@ package main;
     #### Postprocessing : we interpret the features to extract more information
     #### check some feature attributes (name, description, ...)
 
-    warn "; Processing features\n" if ($verbose >= 1);
+    warn "; Processing features\n" if ($main::verbose >= 1);
     my $organism_name = $org; #### first guess
-    my $chromosome = "";
+    my $contig = "";
     foreach $feature ($features->get_objects()) {
 
 	#### the real organism name is annotated in the feature of type "source"
 	if ($feature->get_attribute("type") eq "source") {
             $organism_name = $feature->get_attribute("organism");
-            $chromosome = $feature->get_attribute("chromosome");
-            if (($chromosome eq "") || ($chromosome eq $null)) {
-		$chromosome = $feature->get_attribute("contig");
-		$feature->set_attribute("chromosome", $chromosome);
+            $contig = $feature->get_attribute("contig");
+	    my @xrefs = $feature->get_attribute("db_xref");
+	    foreach my $xref (@xrefs) {
+		if ($xref =~ /taxon:(\S+)/) {
+		    $taxon = $1;
+		}
+	    }
+            if (($contig eq "") || ($contig eq $null)) {
+		$contig = $feature->get_attribute("contig");
+		$feature->force_attribute("contig", $contig);
 	    }
         } else {
            $feature->set_attribute("organism", $organism_name);
-	   $feature->set_attribute("chromosome", $chromosome);
+	   $feature->force_attribute("contig", $contig);
         }
 	
         ### use gene attribute as name
@@ -313,19 +317,28 @@ package main;
 	### add protein_id as valid name
 	@protein_ids = $feature->get_attribute("protein_id");
 	if ($#protein_ids >= 0) {
-#	    $feature->force_attribute("id", $protein_ids[0]); #### Use protein ID as ID for the CDS
 	    foreach my $id (@protein_ids) {
 		$feature->push_attribute("names",$id);
 	    }
 	}
 	
 
-	#### add SWISS-PROT ID as valid name
+	### add locus_tag as valid name
+	@locus_tags = $feature->get_attribute("locus_tag");
+	if ($#locus_tags >= 0) {
+	    foreach my $id (@locus_tags) {
+		$feature->push_attribute("names",$id);
+	    }
+	}
+	
+
+	#### add SWISS-PROT/Uniprot/TrEMBL ID as valid name
 	my @xrefs = $feature->get_attribute("db_xref");
 	my $gi = "";
 	foreach my $xref (@xrefs) {
-	    if (($xref =~ /SWISS-PROT:/) ||
-		($xref =~ /SPTREMBL:/)) {
+	    if (($xref =~ /SWISS-PROT:/i) ||
+		($xref =~ /Uniprot\/TrEMBL:/i) ||
+		($xref =~ /SPTREMBL:/i)) {
 		my $name = $';
 		$feature->push_attribute("names",$name);		
 	    } 
@@ -379,16 +392,16 @@ package main;
 #  	if ($gi) {
 #  	    $feature->force_attribute("id",$gi);
 #  	} else {
-#  	    &Warning("feature\t".$feature->get_attribute("id")."\thas no GI.\n") if ($verbose >= 2); 
+#  	    &Warning("feature\t".$feature->get_attribute("id")."\thas no GI.\n") if ($main::verbose >= 2); 
 #  	}
 	
-#  	#### use embl name as chromosome name
+#  	#### use embl name as contig name
 #  	my $source = $feature->get_attribute("source");
 #  	if ($source =~ /embl:/) {
-#  	    my $chromosome = $';
-#  	    $chromosome =~ s/\.gz$//;
-#  	    $chromosome =~ s/\.contig$//;
-#  	    $feature->force_attribute("chromosome",$chromosome);
+#  	    my $contig = $';
+#  	    $contig =~ s/\.gz$//;
+#  	    $contig =~ s/\.contig$//;
+#  	    $feature->force_attribute("contig",$contig);
 #  	}
     }
     
@@ -406,10 +419,11 @@ package main;
 				);
     }
     &ExportMakefile(@classes);
+
+    chdir($dir{output});
     &PrintStats($outfile{stats}, @classes);
 
     #### document the ffields which were parsed but not exported
-    chdir($dir{output});
     open STATS, ">>$outfile{stats}";
     print STATS "; \n; Fields parsed but not exported\n";
     foreach my $key (sort keys %feature_extra_fields) {
@@ -419,7 +433,7 @@ package main;
     close STATS;
 
     ###### verbose ######
-    if ($verbose) {
+    if ($main::verbose >= 1) {
 	my $done_time = &AlphaDate();
 	print $out "; Job started $start_time\n";
 	print $out "; Job done    $done_time\n";
@@ -429,7 +443,7 @@ package main;
     close $out if ($outfile{output});
     close ERR;
 
-    warn "; Results exported in directory\t", $dir{output}, "\n" if ($verbose >= 1);
+    warn "; Results exported in directory\t", $dir{output}, "\n" if ($main::verbose >= 1);
 
     exit(0);
 }
@@ -473,8 +487,8 @@ OPTIONS
 
    Options for the automaticaly generated SQL scripts
 	-schema database schema (default: $schema)
-	-host	database host (efault: $host)
-	-user	database user (efault: $user)
+	-host	database host (default: $host)
+	-user	database user (default: $user)
 	-password	
 		database password (default: $password)
 
@@ -482,10 +496,14 @@ INPUT FILE
 
         This parser takes as input all the .embl and .embl.Z files
         found in the input directory. Each file is parsed and the
-        results are exported in a single directory (the outpu
-        directory). Features found in different files are merged in
-        the same output file (features.tab). The idea is tha one
-        parsing corresponds to one genome.
+        results are exported in a single directory (the output
+        directory). 
+
+	One input directory is supposed corresponds to one genome. For
+        eucaryotes (and some procaryotes), a directory can contain
+        several .embl files, one per chromosome.Features found in
+        different files are merged in the same output file
+        (features.tab).
 
 OBJECT TYPES
 
@@ -574,7 +592,7 @@ parse-embl options
 -schema database schema (default: $schema)
 -host	database host (default: $host)
 -user	database user (default: $user)
--password	database password (default: $password)
+-pass	database password (default: $password)
 -noseq  do not export sequences in .raw files
 End_short_help
   close HELP;
@@ -588,9 +606,9 @@ sub ReadArguments {
 	### verbose ###
 	if ($ARGV[$a] eq "-v") {
 	    if (&IsNatural($ARGV[$a+1])) {
-		$verbose = $ARGV[$a+1];
+		$main::verbose = $ARGV[$a+1];
 	    } else {
-		$verbose = 1;
+		$main::verbose = 1;
 	    }
 	    
 	    ### detailed help
@@ -641,7 +659,7 @@ sub ReadArguments {
 	    $user = $ARGV[$a+1];
 	    
 	    ### password 
-	} elsif ($ARGV[$a] eq "-password") {
+	} elsif ($ARGV[$a] =~ /^-pass/) {
 	    $password = $ARGV[$a+1];
 	    
 	}
@@ -682,7 +700,7 @@ sub Verbose {
 #### parse one EMBL file
 sub ParseEMBLFile {
     my ($input_file, $organisms, $contigs, $features, %args) = @_;
-    warn ";\n; Parsing file $input_file\n" if ($verbose >= 1);
+    warn ";\n; Parsing file $input_file\n" if ($main::verbose >= 1);
     
     my ($file,$dir) = &OpenInputFile($input_file);
 #    open EMBL, $input_file 
@@ -707,7 +725,7 @@ sub ParseEMBLFile {
 	    last; 
 	}
 
-	warn $line if ($verbose >= 10);
+	warn $line if ($main::verbose >= 10);
 	chomp $line;
 	next unless ($line =~ /\S/);
 
@@ -757,11 +775,13 @@ sub ParseEMBLFile {
 	} elsif ($line =~ /^OS\s+/) {
 	    #### organism name
 	    $organism_name = $';
-	    warn "; Organism name\t", $organism_name, "\n" if ($verbose >= 2);
-	    $organism = $organisms->new_object(%args);
-	    $organism->push_attribute("names", $organism_name);
-	    $organism->set_attribute("name",$organism_name);
-
+	    unless ($organism_created{$organism_name}) {
+		warn "; Creating organism Organism name\t", $organism_name, "\n" if ($main::verbose >= 2);
+		$organism = $organisms->new_object(%args);
+		$organism->push_attribute("names", $organism_name);
+		$organism->set_attribute("name",$organism_name);
+		$organism_created{$organism_name} = 1;
+	    }
 	} elsif ($line =~ /^OC\s+/) {
 	    my $taxonomy = $';
 
@@ -779,7 +799,7 @@ sub ParseEMBLFile {
 	    
 	    #### organism taxonomy
 	    if ($organism) {
-		$organism->set_attribute("taxonomy", $taxxonomy);
+		$organism->set_attribute("taxonomy", $taxonomy);
 	    }
 	} 
 
@@ -788,7 +808,7 @@ sub ParseEMBLFile {
 	unless ($in_FT) {
 	    if ($line =~ /^FT\s+/) {
 		$in_FT = 1 ;
-		warn "; Reading features\n" if ($verbose >= 10);
+		warn "; Reading features\n" if ($main::verbose >= 10);
 	    }
 	}
 
@@ -830,17 +850,17 @@ sub ParseEMBLFile {
 	    #### create a new object for the feature
 	    $current_feature = $features->new_object(%args);
 	    $feature_count++;
-	    warn join "\t",  "; file $input_file", "line $l", "feature $feature_count", $feature_type, "\n" if ($verbose >= 2);
+	    warn join "\t",  "; file $input_file", "line $l", "feature $feature_count", $feature_type, "\n" if ($main::verbose >= 2);
 	    $current_feature->set_attribute("type",$feature_type);
 	    $current_feature->set_attribute("contig",$contig->get_attribute("id"));
 #	    $current_feature->set_attribute("organism",$organism_name);
 	    $current_feature->set_attribute("position",$position);
 	    &ParsePositionEMBL($current_feature);
 
-	    ### chromosome
-#	    my $chromosome = $current_feature->get_attribute("source");
-#	    $chromosome =~ s/\.embl.*//;
-#	    $current_feature->set_attribute("chromosome",$chromosome);
+	    ### contig
+#	    my $contig = $current_feature->get_attribute("source");
+#	    $contig =~ s/\.embl.*//;
+#	    $current_feature->set_attribute("contig",$contig);
 	}
 
 
@@ -892,7 +912,7 @@ sub ParseEMBLFile {
 
 	    #### add the new attribtue to the feature
 	    $current_feature->new_attribute_value($key, $value);
-	    warn join ("\t", "; attribute", $feature_count, $start_l, $l, $key, $value), "\n" if ($verbose >= 4);
+	    warn join ("\t", "; attribute", $feature_count, $start_l, $l, $key, $value), "\n" if ($main::verbose >= 4);
 
 	}
 	
@@ -942,8 +962,6 @@ sub ParsePositionEMBL {
 	if ($exon =~ /^complement\((.*)\)$/) {
 	    $exon = $1;
 	    $strand = "R";
-	} else {
-	    $strand = "D";
 	}
 	
 	if ($exon =~ /^(<*\d+)..(>*\d+)$/) {
@@ -963,8 +981,8 @@ sub ParsePositionEMBL {
     }
 
     if ($#exon_starts >= 0) {
-	$current_feature->set_attribute("start_pos",$exon_starts[0]);
-	$current_feature->set_attribute("end_pos",$exon_ends[$#exon_ends]);
+	$current_feature->set_attribute("start_pos",&min(@exon_starts,@exon_ends));
+	$current_feature->set_attribute("end_pos",&max(@exon_starts,@exon_ends));
     } else {
 	$current_feature->set_attribute("start_pos",$null);
 	$current_feature->set_attribute("end_pos",$null);
