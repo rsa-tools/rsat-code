@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_kegg.pl,v 1.14 2002/10/28 18:43:00 jvanheld Exp $
+# $Id: parse_kegg.pl,v 1.15 2002/12/09 00:23:06 jvanheld Exp $
 #
-# Time-stamp: <2002-10-28 12:41:43 jvanheld>
+# Time-stamp: <2002-10-29 17:26:55 jvanheld>
 #
 ############################################################
 
@@ -67,13 +67,13 @@ package KEGG::Reaction;
   %_id_index = ();
   %_attribute_count = ();
   %_attribute_cardinality = (id=>"SCALAR",
-		      equation=>"SCALAR",
-		      description=>"SCALAR",
-		      enzyme=>"SCALAR",
-		      pathway=>"ARRAY",
+			     equation=>"SCALAR",
+			     description=>"SCALAR",
+			     enzyme=>"SCALAR",
+			     pathway=>"ARRAY",
 #		      substrates=>"ARRAY",
 #		      products=>"ARRAY",
-		      source=>"SCALAR");
+			     source=>"SCALAR");
 }
 
 
@@ -134,6 +134,8 @@ $in_file{pathway_names} = $dir{KEGG}."/pathways/map_title.tab";
 #
 # output files
 #
+
+#### default export directory
 $export_subdir = "kegg_ligand";
 $dir{output} = "$parsed_data/${export_subdir}/$delivery_date";
 
@@ -145,7 +147,7 @@ push @classes, ("KEGG::Reactant");
 push @classes, ("PFBP::ECSet");
 push @classes, ("KEGG::GenericPathway");
 
-&ReadArguments;
+&ReadArguments();
 
 
 #### input directories
@@ -207,20 +209,20 @@ $pathways = PFBP::ClassFactory->new_class(object_type=>"KEGG::Pathway",
 					  prefix=>"pthw_");
 $genericPathways = PFBP::ClassFactory->new_class(object_type=>"KEGG::GenericPathway",
 						 prefix=>"gptw_");
-$compounds->generate_sql(schema=>$schema,
-			 user=>$user,
-			 password=>$password,
-#				  dir=>"$dir{output}/sql_scripts",
-			 prefix=>"$class_factory_",
-			 dbms=>$dbms
-			 );
+#  $compounds->generate_sql(schema=>$schema,
+#  			 user=>$user,
+#  			 password=>$password,
+#  #				  dir=>"$dir{output}/sql_scripts",
+#  			 prefix=>"$class_factory_",
+#  			 dbms=>$dbms
+#  			 );
 
 ### default output fields for each class
-$compounds->set_out_fields(qw( id names formula source ));
+$compounds->set_out_fields(qw( id names formula description source ));
 $reactions->set_out_fields(qw( id  source equation description ecs pathways
 			       name pathway enzyme  left right)); ## for parsing only
 $reactants->set_out_fields(qw( id reactant_type reaction_id compound_id stoichio valid_interm ));
-$ecs->set_out_fields(qw( id names parent ));
+$ecs->set_out_fields(qw( id parent description names  ));
 $pathways->set_out_fields(qw( id parent organism source names reactions ECs genes ));
 $genericPathways->set_out_fields(qw( id source names reactions ECs ));
 
@@ -229,21 +231,42 @@ $genericPathways->set_attribute_header("reactions", join ("\t", "reaction", "dir
 
 #### parse compounds
 &ParseKeggFile($in_file{compound}, $compounds, source=>'KEGG:compound');
+if ($in_file{additional_compounds}) {
+    &ParseKeggFile($in_file{additional_compounds}, $compounds, source=>"amaze");
+}
+
+
 $compounds->index_names();
 foreach $compound ($compounds->get_objects()) {
     #### check for compounds without formula
-    if ($compound->get_attribute("formula") eq $null) {
+    if ($compound->get_attribute("formula") eq "") {
 	$compound->set_attribute("formula",$null);
     }
+
+    #### use the formula as dscription
+    $compound->set_attribute("description", $compound->get_attribute("formula"));
 }
 
 
 ##### parse reactions
 &ParseReactions($in_file{reaction}, $reactions);
+
 $reactions->set_out_fields(qw( id  source equation description ecs pathways)); ### remove temporary fields, which were necessary for parsing but not for export
 
 #### parse EC numbers
 &ParseEC($in_file{ec}, $ecs);
+
+#### define a description for EC numbers
+foreach my $ec ($ecs->get_objects()) {
+    my $name = "";
+    my @names = $ec->get_attribute("names");
+    if ($#names > 0) {
+	$name = $names[1];
+    } else {
+	$name = $names[0];
+    }
+    $ec->set_attribute('description', $name)
+}
 
 #### parse pathways
 &ParseKeggPathways();
@@ -261,7 +284,6 @@ $reactions->set_out_fields(qw( id  source equation description ecs pathways)); #
 		       genericPathways
 		       );
 foreach $class_factory (@class_factories) {
-    
     $$class_factory->dump_tables();
     $$class_factory->generate_sql(schema=>$schema,
 				  user=>$user,
@@ -289,9 +311,7 @@ if ($verbose >= 1) {
 
 close ERR;
 
-
-system "gzip -f $dir{output}/*.tab $dir{output}/*.txt";
-system "gzip -f $dir{output}/*.obj" if ($export{obj});
+&CompressParsedData();
 
 exit(0);
 
@@ -313,6 +333,16 @@ AUTHOR
 
 OPTIONS	
 $generic_option_message
+	-react additional_reaction_file
+	       Specify a file containing additional reactions. This
+	       file must be exactly in the same format as the flat
+	       file containing KEGG reactions.
+
+	-comp additional_compound_file
+	       Specify a file containing additional compounds. This
+	       file must be exactly in the same format as the flat
+	       file containing KEGG compounds.
+
 EXAMPLE
 	perl parse_kegg.pl -v 1 -clean -dbms postgresql -schema atest
 
@@ -329,6 +359,16 @@ sub ReadArguments {
     my $a = "";
     for $a (0..$#ARGV) {
 	&ReadGenericOptions($a);
+
+	### additional reactions
+	if ($ARGV[$a] eq "-react") {
+	    $main::in_file{additional_reactions} = $ARGV[$a+1];
+	}
+
+	### additional compounds
+	if ($ARGV[$a] eq "-comp") {
+	    $main::in_file{additional_compounds} = $ARGV[$a+1];
+	}
     }
 }
 
@@ -359,20 +399,23 @@ sub TrivialCompounds {
 #### parse reactions
 sub ParseReactions {
     ### read the reaction file from KEGG
-    my ($reaction_file, $class_holder, $equation_file) = @_;
+    my ($reaction_file, $class_holder, $source) = @_;
+    $source = $source || "KEGG:reaction";
 
     &TrivialCompounds();
     
-    warn (";\n; ", 
-	  &AlphaDate, 
-	  "\tparsing class ", 
-	  $class_holder->get_object_type(),
-	  " from ",
-	  $reaction_file,
-	  "\n")     if ($verbose >= 1);
+#     warn (";\n; ", 
+# 	  &AlphaDate, 
+# 	  "\tparsing class ", 
+# 	  $class_holder->get_object_type(),
+# 	  " from ",
+# 	  $reaction_file,
+# 	  "\n")     if ($verbose >= 1);
 
-
-    &ParseKeggFile($reaction_file,$class_holder, source=>"KEGG:reaction");
+    &ParseKeggFile($reaction_file,$class_holder, source=>$source);
+    if ($in_file{additional_reactions}) {
+	&ParseKeggFile($in_file{additional_reactions}, $reactions, source=>$source);
+    }
 
     ################################################################
     #### post-processing of KEGG information to better fit with our objects
@@ -446,103 +489,6 @@ sub ParseReactions {
 	}
 
     }
-}
-
-################################################################
-#### parse reactions
-sub ParseReactions_old {
-    ### read the reaction file from KEGG
-    my ($input_file, $class_holder, $equation_file) = @_;
-
-    &TrivialCompounds;
-    
-    if ($verbose >= 1) {
-	warn (";\n; ", 
-	      &AlphaDate, 
-	      "\tparsing class ", 
-	      $class_holder->get_object_type(),
-	      " from ",
-	      $input_file,
-	      "\n");
-    }
-
-    ### read reactions
-#    die "Error: reaction file $input_file does not exist\n" 
-#	unless (-e $input_file); 
-#    die "Error: cannot read reaction file $input_file\n" 
-#	unless (-r $input_file); 
-    open RXN, $input_file 
-	|| die "Error: cannot read $input_file\n";
-    while (<RXN>) {
-	if (/(R\d+):\s*(.*)\s*$/) {
-	    $reaction_id = $1;
-	    $reaction = $reactions->new_object(id=>$reaction_id,
-					       source=>'KEGG:reaction.lst');
-	    $equation = $2;
-	    $reaction->set_attribute("equation",$equation);
-	    
-	    if ($equation =~ /^\s*(.*)\s*\<\=\>\s*(.*)\s*$/) {
-		$left = $1;
-		$right = $2;
-
-		### temporary
-#		$reaction->set_attribute("left",$left);
-#		$reaction->set_attribute("right",$right);
-
-		### split the equation into reactants
-		%substrate = &SplitReactants($left);
-		%product = &SplitReactants($right);
-		
-		foreach $reactant_type ("substrate","product") {
-		    while (($compound, $stoichio) = each %{$reactant_type}) {
-			### instantiate a new reactant
-			$reactant = $reactants->new_object();
-			$reactant_id = $reactant->get_attribute("id");
-			$reactant->set_attribute("compound_id",$compound);
-			$reactant->set_attribute("reaction_id",$reaction_id);
-			$reactant->set_attribute("reactant_type",$reactant_type);
-			$reactant->new_attribute_value("stoichio",$stoichio);
-			
-			### validity of the reactant as intermediate
-			### between two successive reactions in a pathway
-			if ($trivial{$compound}) {
-			    $validity = "0";
-			} else {
-			    $validity = "1";
-			}
-			$reactant->set_attribute("valid_interm", $validity);
-#			printf STDERR ";\t%s\t%d\n", $compound, 1 - $trivial{$compound};
-			### assign the reactant to the reaction
-#			$reaction->new_attribute_value($reactant_type,$reactant_id);
-		    }
-		}
-	    }
-	}
-    }
-    close RXN;
-
-    ### read reaction equations by name
-#    die "Error: equation file $equation_file does not exist\n" 
-#	unless (-e $equation_file); 
-#    die "Error: cannot read equation file $equation_file\n" 
-#	unless (-r $equation_file); 
-    open EQUATIONS, $equation_file 
-	|| die "Error: cannot read $equation_file\n";
-    while (<EQUATIONS>) {
-	if (/(R\d+):\s*(.*)\s*$/) {
-	    my $reaction_id = $1;
-	    my $equation = $2;
-
-	    #### assign the "equation by names" to the previously defined reaction
-	    my $reaction = $reactions->get_object($reaction_id);
-	    if ($reaction == null) {
-		&ErrorMessage ("Error: equation $reaction_id found in file $equation_file but not in $input_file.\n");
-		next;
-	    }
-	    $reaction->force_attribute("equation",$equation);
-	}
-    }
-    close EQUATIONS; 
 }
 
 
@@ -649,51 +595,6 @@ sub ParseEC {
     }
 }
 
-
-################################################################
-#### parse the link between reactions and ECs
-sub ParseReactionEC {
-    my ($file) = @_;
-    
-    warn (";\n; ", &AlphaDate, " parsing reaction ECs from $file\n")
-	if ($verbose >= 1);
-    
-#    unless (-e $file) {
-#	die "Error: ec2reaction file $file does not exist\n";
-#    }
-#    unless (-r $file) {
-#	die "Error: ec2reaction file $file is not readable\n";
-#    }
-    open EC_REACT, $file || die "Error: cannot read ec2reaction file $file\n";
-    
-    while (<EC_REACT>) {
-	chomp;
-	if (/(\S+)\:(.+)\s*/) {
-	    $reaction_id = $1;
-	    $ec_number = $2;
-#      $ec_number =~ s/\.\-//g; ### remove the .- used for partly specified EC
-	    $ec_number =~ s/\.\s*$//g; ### remove trailing dot
-	    $ec_number =~ s/^ +//g; ### remove leading spaces
-	    $ec_number =~ s/ +$//g; ### remove trailing spaces
-#print STDERR "trying to get EC number '", $ec_number, "' for reaction $reaction_id\n";
-	    unless ($reaction_object = $reactions->get_object($reaction_id)) {
-		&ErrorMessage(";WARNING: reaction '$reaction_id' has not been defined, cannot assign EC number $ec_number to it\n");
-		next;
-	    }
-	    if ($ec_object = $ecs->get_object($ec_number)) {
-		$reaction_object->push_attribute("ecs", $ec_number);
-		$ec_object->push_attribute("reactions",$reaction_id);
-	    } else {
-		&ErrorMessage(";WARNING: could not identify the set '$ec_number' for reaction '$reaction_id'\n");
-	    }
-	} else {
-	    &ErrorMessage(";WARNING: invalid reaction line\t$_\n");
-	}
-    }
-    
-
-    close EC_REACT;
-}
 
 ################################################################
 #### calculate the number of reactions in which each compound is

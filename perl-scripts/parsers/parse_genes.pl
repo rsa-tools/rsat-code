@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genes.pl,v 1.22 2002/07/04 14:00:26 jvanheld Exp $
+# $Id: parse_genes.pl,v 1.23 2002/12/09 00:22:26 jvanheld Exp $
 #
-# Time-stamp: <2002-07-04 16:00:19 jvanheld>
+# Time-stamp: <2002-09-19 14:21:44 jvanheld>
 #
 ############################################################
 
@@ -31,7 +31,6 @@ package KEGG::Gene;
   %_attribute_cardinality = (id=>"SCALAR",
 			     names=>"ARRAY",
 			     organism=>"SCALAR",
-			     type=>"SCALAR",
 			     description=>"SCALAR",
 			     chrom_position=>"SCALAR",
 			     chromosome=>"SCALAR",
@@ -45,6 +44,15 @@ package KEGG::Gene;
 
 package main ;
 {
+
+    ################################################################
+    #### initialization
+
+    #### oracle schema
+    $schema = "kegg";
+    $user = "kegg";
+    $password = "kegg";
+
     
     ### files to parse
     @selected_organisms= ();
@@ -98,29 +106,50 @@ package main ;
     $genes = PFBP::ClassFactory->new_class(object_type=>"KEGG::Gene",
 					   prefix=>"gene_");
 
+    #### default output directory
+    $export_subdir = "kegg_genes";
+    $dir{output} = "$parsed_data/$export_subdir/$delivery_date";
 
+
+    #### read command-line arguments
     &ReadArguments;
-
-    ### default output fields for each class
-    if ($rsa) {
-        #### specific export format for RSA-tools
-	$single_name = 1;
-	$genes->set_out_fields(qw( id type name chromosome start_pos end_pos strand description chrom_position names xrefs));
-    } else {
-	$genes->set_out_fields(qw( id source organism type chrom_position chromosome strand start_pos end_pos description names exons introns xrefs dblinks ECs));
-	#@{$out_fields{'KEGG::Gene'}} = qw( id source organism raw_position chromosome strand start_base end_base description names exons );
-    }
-
-
-    $dir{output} = $parsed_data."/kegg_genes/".$delivery_date;
+    
+    #### check output directory
     &CheckOutputDir();
 
     $out_file{error} = "$dir{output}/gene.errors.txt";
     $out_file{stats} = "$dir{output}/gene.stats.txt";
     $out_file{genes} = "$dir{output}/gene.obj" if ($export{obj});
-
     ### open error report file
     open ERR, ">$out_file{error}" || die "Error: cannot write error file $out_file{error}\n";
+
+
+    ### default output fields for each class
+    if ($rsa) {
+        #### specific export format for RSA-tools
+	$single_name = 1;
+	$genes->set_out_fields(qw( id name chromosome start_pos end_pos strand description chrom_position names xrefs));
+    } else {
+
+	$genes->set_out_fields(qw( id
+				   source 
+				   organism
+				   chrom_position
+				   chromosome
+				   strand
+				   start_pos
+				   end_pos 
+				   description
+				   names
+				   exons
+				   introns
+				   xrefs
+				   dblinks
+				   ECs));
+
+	#@{$out_fields{'KEGG::Gene'}} = qw( id source organism raw_position chromosome strand start_base end_base description names exons );
+    }
+
 
 
     ### select all organisms if none was selected (-org)
@@ -240,12 +269,18 @@ package main ;
     &PrintStats($out_file{stats}, @classes);
     $genes->dump_tables();
     $genes->generate_sql(schema=>$schema, 
+			 user=>$user,
+			 password=>$password,
 			 dir=>"$dir{output}/sql_scripts",
-			 prefix=>"k_",
+			 prefix=>"",
 			 dbms=>$dbms
 			 );
     &ExportClasses($out_file{genes}, $out_format, @classes) if $export{obj};
 
+
+    close ERR;
+
+    CompressParsedData();
 
     ### report execution time
     if ($verbose >= 1) {
@@ -254,14 +289,6 @@ package main ;
 	warn "; job started $start_time";
 	warn "; job done    $done_time\n";
     }
-
-    close ERR;
-
-
-    warn "; compressing the files\n" if ($verbose >= 1);
-    system "gzip -f $dir{output}/*.tab $dir{output}/*.txt";
-    system "gzip -f $dir{output}/*.obj" if ($export{obj});
-
 
     exit(0);
 }
@@ -324,39 +351,19 @@ EndHelp
 ### read arguments from the command line
 sub ReadArguments {
     for my $a (0..$#ARGV) {
+
+
+	&ReadGenericOptions($a);
 	
-	### warn level
-	if (($ARGV[$a] eq "-v" ) && 
-	    ($ARGV[$a+1] =~ /^\d+$/)){
-	    $main::verbose = $ARGV[$a+1];
-	    
-	    ### test run
-	} elsif ($ARGV[$a] eq "-test") {
-	    $main::test = 1;
-	    
-	    ### clean
-	} elsif ($ARGV[$a] eq "-clean") {
-	    $main::clean = 1;
 	    
 	    ### export single name in main table
-	} elsif ($ARGV[$a] eq "-name") {
+	if ($ARGV[$a] eq "-name") {
 	    $main::single_name = 1;
 	    
 	    ### specific export format  for RSA-tools
 	} elsif ($ARGV[$a] eq "-rsa") {
 	    $main::rsa = 1;
 	    
-	    ### output dir
-	} elsif ($ARGV[$a] eq "-outdir") {
-	    $a++;
-	    $main::dir{output} = $ARGV[$a];
-	    
-	    ### help
-	} elsif (($ARGV[$a] eq "-h") ||
-		 ($ARGV[$a] eq "-help")) {
-	    &PrintHelp;
-	    exit(0);
-
 	    ### select enzymes for exportation
 	} elsif ($ARGV[$a] =~ /^-org/) {
 	    push @selected_organisms, $ARGV[$a+1];
@@ -368,9 +375,6 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] =~ /^-all/) {
 	    $main::export{all} = 1;
 
-	    #### export object file
-	} elsif ($ARGV[$a] =~ /^-obj/) {
-	    $main::export{obj} = 1;
 	}
 	
     }

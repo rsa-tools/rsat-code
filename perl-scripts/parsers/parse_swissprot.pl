@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_swissprot.pl,v 1.26 2002/11/25 23:38:28 jvanheld Exp $
+# $Id: parse_swissprot.pl,v 1.27 2002/12/09 00:23:01 jvanheld Exp $
 #
-# Time-stamp: <2002-11-25 17:37:54 jvanheld>
+# Time-stamp: <2002-11-25 17:41:53 jvanheld>
 #
 ############################################################
 
@@ -36,7 +36,7 @@ package main;
 		      names
 		      organisms
 		      features
-		      comments
+#		      comments
 		      swissprot_acs
 		      swissprot_ids
 		      ECs
@@ -53,6 +53,10 @@ package main;
     $source{swissprot} = "sprot";
     $source{trembl} = "trembl";
     $source{trembl_new} = "trembl_new";
+
+    #### default output directory
+    $export_subdir = "swissprot";
+    $dir{output} = "$parsed_data/$export_subdir/$delivery_date";
     
     #### export classes
     push @classes, "PFBP::Polypeptide";
@@ -61,8 +65,11 @@ package main;
     $schema = "swissprot";
     $user = "swissprot";
     $password = "swissprot";
+
+    #### pseudo-serialized format 
+    $out_format = "obj";
     
-    &ReadArguments;
+    &ReadArguments();
     
     #### add optional fields
     push @out_fields, keys %out_fields;
@@ -96,10 +103,6 @@ package main;
     }
 
     #### output directory
-    $out_format = "obj";
-    unless (defined($dir{output})) {
-	$dir{output} = $parsed_data."/swissprot/".$delivery_date;
-    }
     &CheckOutputDir();
 
     #### output file names
@@ -171,7 +174,7 @@ package main;
 						  prefix=>"spp_");
     $polypeptides->set_out_fields(@out_fields);
     $polypeptides->set_attribute_header("features", join ("\t", "Feature_key", "start_pos", "end_pos", "description") );
-    $polypeptides->set_attribute_header("comments", join ("\t", "topic", "comments") );
+#    $polypeptides->set_attribute_header("comments", join ("\t", "topic", "comments") );
 
     #### testing mode
     if ($test) {
@@ -217,7 +220,7 @@ package main;
     #### special field formats for SQL
     $special_field_size{features} = 2047;
     $special_field_size{bioseq} = 10000; ### long type 
-    $special_field_size{comments} = 10000; ### long type
+#    $special_field_size{comments} = 10000; ### long type
 
     ### generate SQL scripts for loading the data
     $polypeptides->generate_sql(schema=>$main::schema, 
@@ -230,9 +233,7 @@ package main;
 				);
     &ExportClasses($out_file{polypeptides}, $out_format,PFBP::Polypeptide) if ($export{obj});
 
-    system "gzip -f $dir{output}/*.tab";
-#    system "gzip -f $dir{output}/*.txt"; 
-    system "gzip -f $dir{output}/*.obj" if ($export{obj});
+    &CompressParsedData();
 
     ### report execution time
     if ($verbose >= 1) {
@@ -332,12 +333,12 @@ EndHelp
 ### read arguments from the command line
 sub ReadArguments {
 
-    &ReadGenericOptions($a);
-
-
     for my $a (0..$#ARGV) {
-	
 
+#	warn "HELLO\t", $a;
+
+	&ReadGenericOptions($a);
+	    
 	    #### input directory
 	if ($ARGV[$a] =~ /^-indir/) {
 	    $dir{input} = $ARGV[$a+1];
@@ -528,10 +529,10 @@ sub ParseSwissprot {
 	foreach my $ft (@features) {
 	    $polypeptide->push_expanded_attribute("features", @{$ft});
 	}
-	my @comments = $object_entry->CCs->elements;
-	foreach my $cc (@comments) {
-	    $polypeptide->push_expanded_attribute("comments", @{$cc});
-	}
+#	my @comments = $object_entry->CCs->elements;
+#	foreach my $cc (@comments) {
+#	    $polypeptide->push_expanded_attribute("comments", @{$cc});
+#	}
 
 	foreach my $id (@swissprot_ids) {
 #print STDERR "id\t$id\n";

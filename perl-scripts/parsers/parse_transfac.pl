@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_transfac.pl,v 1.1 2002/05/07 00:37:07 jvanheld Exp $
+# $Id: parse_transfac.pl,v 1.2 2002/12/09 00:22:40 jvanheld Exp $
 #
-# Time-stamp: <2002-05-07 02:37:05 jvanheld>
+# Time-stamp: <2002-07-09 22:41:49 jvanheld>
 #
 ############################################################
 
@@ -90,6 +90,11 @@ package main ;
     #### input directory
     $dir{transfac} = "${Databases}/transfac";
 
+
+    #### default export directory
+    $export_subdir = "transfac";
+    $dir{output} = "$parsed_data/${export_subdir}/$delivery_date";
+
     #### check existence of input directories
     foreach $d (keys %dir) {
 	unless (-d ($dir{$d}) ) {
@@ -107,7 +112,7 @@ package main ;
 	}
     }
     
-    $warn_level = 0;
+    $verbose = 0;
     $out_format = "obj";
 
     #### classes and class_holders
@@ -115,21 +120,12 @@ package main ;
     $sites = PFBP::ClassFactory->new_class(object_type=>"PFBP::TransfacSite");
     $factors = PFBP::ClassFactory->new_class(object_type=>"PFBP::TransfacFactor");
     $genes = PFBP::ClassFactory->new_class(object_type=>"PFBP::TransfacGene");
+
+
     &ReadArguments;
 
-
-    $dir{output} = $parsed_data."/transfac_parsed/".$delivery_date;
-    unless (-d $dir{output}) {
-	warn "Creating output dir $dir{output}\n";
-	
-	`mkdir -p $dir{output}`;
-	die "Error: cannot create directory $dir\n" unless  (-d $dir{output});
-    }
-    chdir $dir{output};
-    if ($clean) {
-	system "\\rm -f $dir{output}/*";
-	system "\\rm -rf $dir{output}/sql_scripts";
-    }
+    #### output directory
+    &CheckOutputDir();
     $out_file{error} = "$dir{output}/transfac.errors.txt";
     $out_file{stats} = "$dir{output}/transfac.stats.txt";
     $out_file{transfac} = "$dir{output}/transfac.obj" if ($export{obj});
@@ -140,14 +136,14 @@ package main ;
 
     ### test conditions
     if ($test) {
-	warn ";TEST\n" if ($warn_level >= 1);
+	warn ";TEST\n" if ($verbose >= 1);
 	### fast partial parsing for debugging
 	foreach $key (keys %in_file) {
 	    $in_file{$key} = " head -5000 $in_file{$key} |";
 	}
     }
 
-    &DefaultVerbose if ($warn_level >= 1);
+    &DefaultVerbose if ($verbose >= 1);
  
     ### parse data from original files
     &ParseTransfacFile($in_file{site}, $sites);
@@ -163,15 +159,14 @@ package main ;
     foreach $class_holder ($sites, $factors, $genes) {
 	$class_holder->dump_tables();
 	$class_holder->generate_sql(schema=>"jvanheld", 
-				   grant=>"p3", 
-				   dir=>"$dir{output}/sql_scripts", 
-				   prefix=>"transfac_");
+				    dir=>"$dir{output}/sql_scripts", 
+				    prefix=>"transfac_");
     }
     &ExportClasses($out_file{transfac}, $out_format, @classes) if $export{obj};
 
 
     ### report execution time
-    if ($warn_level >= 1) {
+    if ($verbose >= 1) {
 	$done_time = &AlphaDate;
 	warn ";\n";
 	warn "; job started $start_time";
@@ -183,10 +178,7 @@ package main ;
 
     &deliver("transfac_parsed") if ($deliver);
 
-    warn "; compressing the files\n" if ($warn_level >= 1);
-    system "gzip -f $dir{output}/*.tab $dir{output}/*.txt";
-    system "gzip -f $dir{output}/*.obj" if ($export{obj});
-
+    &CompressParsedData();
 
     exit(0);
 }
@@ -215,7 +207,7 @@ OPTIONS
 	-help	short list of options
 	-test	fast parsing of partial data, for debugging
 	-outdir output directory
-	-w #	warn level
+	-v #	warn level
 		Warn level 1 corresponds to a restricted verbose
 		Warn level 2 reports all polypeptide instantiations
 		Warn level 3 reports failing get_attribute()
@@ -238,9 +230,9 @@ sub ReadArguments {
     for my $a (0..$#ARGV) {
 	
 	### warn level
-	if (($ARGV[$a] eq "-w" ) && 
+	if (($ARGV[$a] eq "-v" ) && 
 	    ($ARGV[$a+1] =~ /^\d+$/)){
-	    $main::warn_level = $ARGV[$a+1];
+	    $main::verbose = $ARGV[$a+1];
 	    
 	    ### test run
 	} elsif ($ARGV[$a] eq "-test") {
@@ -284,7 +276,7 @@ sub ParseTransfacFile {
     my ($input_file, $class_holder, $source) = @_;
     
     warn (";\n; ", &AlphaDate,  "  parsing file $input_file\n")
-	if ($warn_level >= 1);
+	if ($verbose >= 1);
 
     open DATA, $input_file || 
 	die "Error: cannot open data file $input_file\n";
@@ -295,14 +287,14 @@ sub ParseTransfacFile {
     my $entries = 0;
     while ($text_entry = <DATA>) {
 	$entries++;
-	warn "; $input_file\t$entries entries\n" if ($warn_level >=2);
+	warn "; $input_file\t$entries entries\n" if ($verbose >=2);
 
 	if ($entries==1) {
 	    #### check if there is a header
     	    if ($header =~ /TRANSFAC \S+ TABLE, V.(\S+)\s+(\S+)/i) {
 		$transfac_version = $1;
 		$release_date = $2;
-		if ($warn_level >= 1) {
+		if ($verbose >= 1) {
 		    warn "; Transfac version $transfac_version\n";
 		    warn "; Release date     $release_date\n";
 		}

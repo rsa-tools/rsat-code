@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_pathway_skeletons.pl,v 1.13 2002/11/15 21:01:21 jvanheld Exp $
+# $Id: parse_pathway_skeletons.pl,v 1.14 2002/12/09 00:22:14 jvanheld Exp $
 #
-# Time-stamp: <2002-11-15 14:59:54 jvanheld>
+# Time-stamp: <2002-11-29 16:34:29 jvanheld>
 #
 ############################################################
 
@@ -18,12 +18,15 @@ require "PFBP_loading_util.pl";
 
 package main;
 {
+    ################################################################
     #### default parameters
-    
+
+    #### relational DBMS parameters
     $schema="annotator";
     $user="annotator";
     $password="annotator";
 
+    #### other parameters
     $fast_index = 1;
     $debug = 0;
     $clean = 0;
@@ -150,6 +153,7 @@ package main;
 				id
 				interaction
 				is_direct
+				description
 				));
     
     ### default verbose message
@@ -186,11 +190,9 @@ package main;
 	      "; job started $start_time",
 	      "; job done    $done_time\n")
 	}
-
-    #### compress result files
-#    system "gzip -f $dir{output}/*.tab $dir{output}/*.txt";
-    system "gzip -f $dir{output}/*.obj" if ($export{obj});
-
+    
+    &CompressParsedData();
+    
     exit(0);
 }
 
@@ -285,8 +287,6 @@ $generic_option_message
 	-mirror export a copy of the data files with additional
 		columns to indicate whether each equation was
 		identified or not.
-	-clean remove all files from the outpu directory before
-	       parsing.
 	-skel  skel_dir
 	       skeleton directory
 	       Directory with the input files. See below for a
@@ -461,7 +461,7 @@ sub ReadProcesses {
 	       products=>4,
 	       equation=>5,
 	       kegg_id => 6,
-	       reverse => 7
+	       direction => 7
 	       );
 
     foreach my $file (@files_to_parse) {
@@ -559,10 +559,11 @@ sub ReadProcesses {
 #	    my $provided_amaze_id = "";
 	    my $provided_equation = "";
 	    my $reverse_equation = "";
-	    my $provided_reaction = &trim($fields[$col{equation}]);
+	    my $provided_direction = &trim($fields[$col{direction}]);
 
 	    ################################################################
 	    #### fix a problem with previoous annotation, where AmazeIDs were used to specify the reaciotn
+	    my $provided_reaction = &trim($fields[$col{equation}]);
 	    if ($provided_reaction =~ /amazereaction/i) {
 		$provided_reaction = "";
 		$fields[$col{equation}] = "";
@@ -577,14 +578,17 @@ sub ReadProcesses {
 	    my $provided_kegg_id = &trim($fields[$col{kegg_id}]); 
 	    
 	    #### fix a problem with some remarks which are in this column where reaction IDs are supposed to be found
-	    unless ($provided_kegg_id =~ /R0/) {
+	    unless ($provided_kegg_id =~ /^A{0,1}R0/) {
 		$provided_kegg_id = "";
 		$fields[$col{kegg_id}] = "";
+		warn ("provided_kegg_id\tin column ", 
+		      $col{kegg_id} + 1, 
+		      "\t", $provided_kegg_id, "\n") if ($verbose >=2);
 	    }
 
 
-	    #### KEGG id provided in the equation column
-	    if (!($provided_kegg_id) && ($provided_reaction =~ /^R0/)) {
+	    #### KEGG id sometimes provided in the equation column
+	    if (!($provided_kegg_id) && ($provided_reaction =~ /^A{0,1}R0/)) {
 		$provided_kegg_id = $provided_reaction;
 		warn ("provided_kegg_id\tin column ", 
 		      $col{equation} + 1, 
@@ -592,9 +596,8 @@ sub ReadProcesses {
 	    }
 
 	    if ($provided_kegg_id) {
-		warn ("provided_kegg_id\tin column ", 
-		      $col{kegg_id} + 1, 
-		      "\t", $provided_kegg_id, "\n") if ($verbose >=2);
+		warn ("provided_kegg_id", 
+		      "\t", $provided_kegg_id, "\n") if ($verbose >= 2);
 		@provided_reactions = split '\|', $provided_kegg_id;
 		if ($#provided_reactions > 0) {
 		    warn join ("\t", $file, $l, "Multiple reactions are provided", $provided_kegg_id), "\n" 
@@ -602,11 +605,13 @@ sub ReadProcesses {
 		}
 
 		foreach my $reaction_id (@provided_reactions) {
-		    if ($provided_kegg_id=~ /^R0/) {
+		    if ($reaction_id=~ /^A{0,1}R0/) {
+#			warn "HELLO\tprovided reaction\t$reaction_id\n" if ($verbose >= 0);
 			push @matching_reactions, $reaction_id;
 		    } else {
 			&ErrorMessage (join ("\t", $file, $l, "Invalid KEGG ID for a reaction", $provided_kegg_id), "\n");
-		    }		}
+		    }		
+		}
 
 		#### reaction described by its equation
 	    } elsif (($provided_reaction =~ /=/) || 
@@ -618,7 +623,7 @@ sub ReadProcesses {
 
 	    } 
 	    #### initialize the reaction direction
-	    $is_direct{$reaction} = "NA";
+	    $is_direct{$reaction} = $null;
 	    
 
 	    ################################################################
@@ -805,12 +810,20 @@ sub ReadProcesses {
 	    ################################################################
 	    #### determine the direction of the reaction (forward or reverse) in each step
 	    foreach my $reaction (@matching_reactions) {
-		unless (defined($is_direct{$reaction})) {
+		#### use provided direction
+		if (($provided_direction =~ /\S/)  &&
+		    (($provided_direction eq "0") || ($provided_direction eq "1"))) {
+		    $is_direct{$reaction} = $provided_direction;
+		}
+
+		#### if nothing is provided, try to deduce from substrates and products
+#		unless (defined($is_direct{$reaction})) {
+		if ($is_direct{$reaction} eq $null) {
 		    my $kegg_id = "";
 		    
 		    ################################################################
 		    #### try to match any kegg substrate or product with the provided substrates/products
-		    if ($reaction =~ /R0/) {
+		    if ($reaction =~ /^A{0,1}R0/) {
 			
 			my @kegg_substrates = $index{reaction_substrate}->get_values($kegg_id);
 			my @kegg_products = $index{reaction_product}->get_values($kegg_id);
@@ -947,7 +960,7 @@ sub ReadProcesses {
 				   $index{reaction_equation_names}->get_values($reaction)), "\n" if ($mirror);
 		my $reaction = $matching_reactions[0];
 		my $kegg_id = "ERROR";
-		if ($reaction =~ /R0/) {
+		if ($reaction =~ /^A{0,1}R0/) {
 		    $kegg_id = $reaction;
 		} else {
 		    &ErrorMessage(join ("\t", $file, $l, "invalid_reaction_identifier", $reaction), "\n");		
@@ -955,12 +968,18 @@ sub ReadProcesses {
 		
 		#### check if the direction is known
 		if ($is_direct{$reaction} eq $null) {
-		    next;
+		    &ErrorMessage(join ("\t", $file, $l, "cannot identify the direction for reaction ", $reaction), "\n");		
+#		    next;
 		}
 		
 		$leaf = $leaves->new_object();
 		$leaf->set_attribute("interaction", $kegg_id);
 		$leaf->set_attribute("is_direct", $is_direct{$reaction});
+		if ($index{reaction_equation_names}->contains($kegg_id)) {
+		    $leaf->set_attribute("description", $index{reaction_equation_names}->get_first_value($kegg_id));
+		} else {
+		    $leaf->set_attribute("description", $kegg_id);
+		}
 		$leaf->set_attribute("step", $step);
 		$process->push_expanded_attribute("nodes",$leaf->get_id(), $step);
 		$process->push_expanded_attribute("reactions", $reaction, $step); #if ($debug);

@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank.pl,v 1.3 2002/05/10 20:55:20 jvanheld Exp $
+# $Id: parse_genbank.pl,v 1.4 2002/12/09 00:22:31 jvanheld Exp $
 #
-# Time-stamp: <2002-05-10 22:54:33 jvanheld>
+# Time-stamp: <2002-10-25 12:05:54 jvanheld>
 #
 ############################################################
 
@@ -21,117 +21,188 @@ require "PFBP_loading_util.pl"; ### for converting polypeptide IDs into ACs
 require "PFBP_parsing_util.pl";
 
 
+package Genbank::Contig; ### for parsing genbank files
+{
+  @ISA = qw ( PFBP::DatabaseObject );
+  ### class attributes
+  $_count = 0;
+  $_prefix = "ctg_";
+  @_objects = ();
+  %_name_index = ();
+  %_id_index = ();
+  %_attribute_count = ();
+  %_attribute_cardinality = (id=>"SCALAR",
+			     names=>"ARRAY",
+			     organism=>"SCALAR",
+			     type=>"SCALAR",
+			     xrefs=>"EXPANDED"
+			     );
+}
+
+package Genbank::Feature;
+{
+  @ISA = qw ( PFBP::DatabaseObject );
+  ### class attributes
+  $_count = 0;
+  $_prefix = "ft_";
+  @_objects = ();
+  %_name_index = ();
+  %_id_index = ();
+  %_attribute_count = ();
+  %_attribute_cardinality = (id=>"SCALAR",
+			     names=>"ARRAY",
+			     organism=>"SCALAR",
+			     type=>"SCALAR",
+			     description=>"SCALAR",
+			     chrom_position=>"SCALAR",
+			     chrom_position=>"SCALAR",
+			     chromosome=>"SCALAR",
+			     strand=>"SCALAR",
+			     start_pos=>"SCALAR",
+			     end_pos=>"SCALAR",
+			     source=>"SCALAR",
+			     note=>"ARRAY",
+			     xrefs=>"EXPANDED"
+			     );
+
+}
+
+
+
 
 package main;
 {
     
     #### initialization
+    $test;
+    $suffix = "";
     $verbose = 0;
     $out_format = "obj";
     
     
-    #### files to parse
-    @selected_organisms = ();
-    push @selected_organisms, qw ( Mycoplasma_genitalium ); 
-    push @selected_organisms, qw ( Escherichia_coli_K12 );
+    #### selected organisms
+#    @selected_organisms = ();
+#    push @selected_organisms, qw ( Bacteria/Mycoplasma_genitalium ); 
+#    push @selected_organisms, qw ( Bacteria/Escherichia_coli_K12 );
+#    push @selected_organisms, qw ( Saccharomyces_cerevisiae ); #### problem with multiple chromosomes
 
-    $dir{output} = $parsed_data."/genbank_parsed/".$delivery_date;
-    $dir{genbank} = "/lin/genomics/genbank/ftp.ncbi.nlm.nih.gov/genbank/genomes";
+    #### input directory
+    $dir{genbank} = $Databases."/ftp.ncbi.nih.gov/genomes/";
+    
+    #### default export directory
+    $export_subdir = "genbank";
+    $dir{output} = "$parsed_data/${export_subdir}/$delivery_date";
 
+    #### temporary
+    if ($hostname =~ /^brol/i) {
+	$dir{genbank} = "/lin/genomics/genbank/ftp.ncbi.nih.gov/genomes/";
+    }
 
     #### classes and classholders
-    @classes = qw( PFBP::Gene );
-    $genes = PFBP::ClassFactory->new_class(object_type=>"PFBP::Gene",
-					   prefix=>"gene_");
+    $features = PFBP::ClassFactory->new_class(object_type=>"Genbank::Feature",
+					   prefix=>"feature_");
 
-    $contigs = PFBP::ClassFactory->new_class(object_type=>"PFBP::Contig",
+    $contigs = PFBP::ClassFactory->new_class(object_type=>"Genbank::Contig",
 					  prefix=>"contig_");
+    @classes = qw( Genbank::Feature Genbank::Contig );
 
-    
-    
-    &ReadArguments;
+    #### read command arguments
+    &ReadArguments();
 
-    ### default output fields for each class
-    if ($rsa) {
-	warn "; Exporting in special format for rsa-tools.\n" if ($verbose >=1);
-	#### specific export format for RSA-tools
-	$single_name = 1;
-	$genes->set_out_fields(qw( id type name chromosome start end strand description position names ));
-    } else {
-	$genes->set_out_fields(qw( id source organism type position chromosome strand start end description names exons introns db_xref ));
-	#@{$out_fields{'PFBP::Gene'}} = qw( id source organism raw_position chromosome strand start_base end_base description names exons );
-    }
-    
-    ### outfile names
-    unless (defined($suffix)) {
-	$suffix .= "_test" if ($test);
-    }
-    
-    unless (-d $dir{output}) {
-	warn "Creating output dir $dir{output}\n";
-	mkdir $dir{output}, 0775 
-	    || die "Error: cannot create directory $dir\n";
-    }
-    chdir $dir{output};
-    $out_file{genes} = "$dir{output}/gene".$suffix.".obj" if ($export{obj});
-    $out_file{error} = "$dir{output}/gene".$suffix.".errors.txt";
-    $out_file{stats} = "$dir{output}/gene".$suffix.".stats.txt";
-    
-    ### open error report file
-    open ERR, ">$out_file{error}" || die "Error: cannot write error file $out_file{error}\n";
-    
-    
+    ################################################################
+    #### check arguments
+
+
     ### select all organisms if none was selected (-org)
     if (($export{all}) || 
 	($#selected_organisms < 0)) {
 	@selected_organisms = &SelectAllOrganisms();
     }
-    
+    #### check existence of input directories
     foreach my $org (@selected_organisms) {
-	my $org_dir = "Bacteria/${org}/";
+	my $org_dir = "${org}/";
 	my $data_dir = $dir{genbank}."/${org_dir}";
 	die ("Error: directory ", $data_dir, " does not exist.\n") 
 	    unless (-d $data_dir);
+    }
 
-	@genbank_files = glob($data_dir."/*.gbk");
-	push @genbank_files, glob($data_dir."/*.gbk.gz"); #### compressed files are supported
-	
-#die join "\n", $#genbank_files, @genbank_files;
-	if ($#genbank_files <= -1) {
-	    die ("Error: there is not genbank file in the directory ", 
-		 $data_dir,
-		 "\n");
-	} elsif ($#genbank_files > 0) {
-	    warn ("Error: there are several genbank files in the directory ", 
-		 $data_dir, "\n\t",
-		 join ("\n\t", @genbank_files),
-		 "\n");
-	    next;
-	} else {
-	    $in_file{$org} = $genbank_files[0];
-	    push @parsed_organisms, $org;
-	}
 
-	$short_file{$org} = `basename $in_file{$org} .gbk`;
-	chomp $short_file{$org};
+    ### default output fields
+    @out_fields = qw( id type name chromosome start_pos end_pos strand description chrom_position names  exons introns db_xref note);
+    if ($rsa) {
+	#### specific export format for RSA-tools
+	warn "; Exporting in special format for rsa-tools.\n" if ($verbose >=1);
+	$features->set_out_fields(@out_fields);
+	$single_name = 1;
+    } else {
+	$features->set_out_fields(@out_fields, qw(source organism));
+    }
+    $contigs->set_out_fields(qw(id	
+				organism
+				type
+				length
+				form	
+				genbank_file
+				
+				));
+    
+    &CheckOutputDir();
+    chdir $dir{output};
+    $out_file{features} = "$dir{output}/feature.obj" if ($export{obj});
+    $out_file{error} = "$dir{output}/feature.errors.txt";
+    $out_file{stats} = "$dir{output}/feature.stats.txt";
+    
+    ### open error report file
+    open ERR, ">$out_file{error}" || die "Error: cannot write error file $out_file{error}\n";
+    
+
+    #### define organism-specific data directories
+    my %data_dir = ();
+    foreach my $org (@selected_organisms) {
+	my $org_dir = "${org}/";
+	$data_dir{$org} = $dir{genbank}."/${org_dir}";
+#	die ("Error: directory ", $data_dir, " does not exist.\n") 
+#	    unless (-d $data_dir);
+
+#  	@genbank_files = glob($data_dir."/*.gbk");
+#  	push @genbank_files, glob($data_dir."/*.gbk.gz"); #### compressed files are supported
 	
-	if (-e $in_file{$org}) {
-	    if ($in_file{$org} =~ /\.gz$/) {
-		$in_stream{$org} = "gunzip -c $in_file{$org} | ";
-	    } else {
-		$in_stream{$org} = "cat $in_file{$org} | ";
-	    }
-	} elsif (-e "$in_file{$org}.gz") {
-	    $in_stream{$org} = "gunzip -c $in_file{$org}.gz | ";
-	} else {
-	    die ("Error: cannot find data file for organism ", $org, "\n",
-		 "\t", $in_file{$org}, "\n");
-	}
+#  #die join "\n", $#genbank_files, @genbank_files;
+#  	if ($#genbank_files <= -1) {
+#  	    die ("Error: there is not genbank file in the directory ", 
+#  		 $data_dir,
+#  		 "\n");
+#  	} elsif ($#genbank_files > 0) {
+#  	    warn ("Error: there are several genbank files in the directory ", 
+#  		 $data_dir, "\n\t",
+#  		 join ("\n\t", @genbank_files),
+#  		 "\n");
+#  	    next;
+#  	} else {
+#  	    $in_file{$org} = $genbank_files[0];
+#  	    push @parsed_organisms, $org;
+#  	}
+
+#  	$short_file{$org} = `basename $in_file{$org} .gbk`;
+#  	chomp $short_file{$org};
+	
+#  	if (-e $in_file{$org}) {
+#  	    if ($in_file{$org} =~ /\.gz$/) {
+#  		$in_stream{$org} = "gunzip -c $in_file{$org} | ";
+#  	    } else {
+#  		$in_stream{$org} = "cat $in_file{$org} | ";
+#  	    }
+#  	} elsif (-e "$in_file{$org}.gz") {
+#  	    $in_stream{$org} = "gunzip -c $in_file{$org}.gz | ";
+#  	} else {
+#  	    die ("Error: cannot find data file for organism ", $org, "\n",
+#  		 "\t", $in_file{$org}, "\n");
+#  	}
        
-	### test conditions
-	if ($test) {
-	    $in_stream{$org} .= " head -1000 |";
-	}
+#  	### test conditions
+#  	if ($test) {
+#  	    $in_stream{$org} .= " head -1000 |";
+#  	}
     }
     
     if ($verbose >=1) {
@@ -141,56 +212,85 @@ package main;
 
 	warn "; Selected organisms\n;\t", join("\n;\t", @selected_organisms), "\n";
 	warn "; Parsed organisms\n";
-	foreach my $org (@parsed_organisms) {
-	    warn ";\t$org\t",$short_file{$org},"\n";
+	foreach my $org (@selected_organisms) {
+	    warn ";\t$org\tdir\t",$data_dir{$org},"\n";
 	}
     }
     
     ### parse data from original files
-    foreach $org (@parsed_organisms) {
-	&ParseGenbankFile($in_stream{$org}, 
-			  $genes, 
-			  $contigs, 
-			  source=>"genbank:".$short_file{$org},
-			  no_seq=>1);
+    foreach $org (@selected_organisms) {
+	warn "; Parsing genome data for organism $org\n" if ($verbose >=1);
+	chdir ($data_dir{$org});
+	my @genbank_files = ();
+	push @genbank_files, glob("*.gbk");
+	push @genbank_files, glob("*.gbk.gz");
+	if ($#genbank_files < 0) {
+	    &FatalError("There is no genbank file in the input directory $data_dir{$org}\n");
+	} else {
+	    warn "; \tGenbank files\n;\t", join("\n;\t", @genbank_files), "\n" if ($verbose >= 1);
+	}
+	foreach my $file (@genbank_files) {
+	    $file{input} = "$data_dir{$org}/$file";
+	    
+	    #### check whether the file has to be uncompressed on the fly
+	    if ($file{input} =~ /.gz/) {
+		$file{input} = "gunzip -c $file{input} |";
+	    } else {
+		$file{input} = "cat $file{input} |";
+	    }
+	    
+	    #### for quick testing; only parse the first 10000 lines
+	    if ($test) {
+		$file{input} .= " head -10000 | ";
+	    }
+	    &ParseGenbankFile($file{input}, 
+			      $features, 
+			      $contigs, 
+			      source=>"genbank:".$short_file{$org},
+			      no_seq=>1);
+	}
 	
-#  	### check organism attribute
-#  	foreach $gene ($genes->get_objects()) {
-#  	    unless ($gene->get_attribute("organism")) {
-#  		&ErrorMessage("Warning: gene ", $gene->get_attribute("id"), " has no organism attribute\n");
-#  		$gene->set_attribute("organism",$org);
-#  		next;
-#  	    }
-#  	}
+#  	&ParseGenbankFile($in_stream{$org}, 
+#  			  $features, 
+#  			  $contigs, 
+#  			  source=>"genbank:".$short_file{$org},
+#  			  no_seq=>1);
+	
     }
     
-    &ParsePositions($genes);
+    &ParsePositions($features);
+
+    &GuessSynonyms($features);
     
-    foreach $gene ($genes->get_objects()) {
-	foreach my $name ($gene->get_attribute("gene")) {
-	    $gene->push_attribute("names",$name);
+    
+    foreach $feature ($features->get_objects()) {
+	foreach my $name ($feature->get_attribute("gene")) {
+	    $feature->push_attribute("names",$name);
 	};
-	#$gene->push_attribute("names", $gene->get_attribute("gene"));
+	#$feature->push_attribute("names", $feature->get_attribute("gene"));
 	
 	### define a single name  (take the first value in the name list)
 	if ($single_name) {
-	    if ($name = $gene->get_name()) {
-		$gene->set_attribute("name",$name);
+	    if ($name = $feature->get_name()) {
+		$feature->set_attribute("name",$name);
 	    } else {
-		$gene->set_attribute("name",$gene->get_id());
+		$feature->set_attribute("name",$feature->get_id());
 	    }
 	}
 	
-	#### check for genes without description
-	if (($gene->get_attribute("description") eq $null) 
-	    || ($gene->get_attribute("description") eq "")) {
-	    $gene->set_attribute("description",$gene->get_attribute("product"));
+	#### check for features without description
+	if (($feature->get_attribute("description") eq $null) 
+	    || ($feature->get_attribute("description") eq "")) {
+	    $feature->set_attribute("description",$feature->get_attribute("product"));
 	}
 
-	#### use GI as gene identifier
-	my @xrefs = $gene->get_attribute("db_xref");
+	################################################################
+	#### cross-references
+	my @xrefs = $feature->get_attribute("db_xref");
 	my $gi = "";
 	foreach my $xref (@xrefs) {
+#	    my @fields = split ":", $xref;
+	    #### use GI as feature identifier
 	    if ($xref =~ /GI:/) {
 		$gi = $';
 		last;
@@ -198,18 +298,18 @@ package main;
 	}
 
 	if ($gi) {
-	    $gene->force_attribute("id",$gi);
+	    $feature->force_attribute("id",$gi);
 	} else {
-	    &ErrorMessage("; Error\tgene ".$gene->get_attribute("id")." has no GI.\n"); 
+	    &ErrorMessage("; Error\tfeature ".$feature->get_attribute("id")." has no GI.\n"); 
 	}
 
 	#### use genbank name as chromosome name
-	my $source = $gene->get_attribute("source");
+	my $source = $feature->get_attribute("source");
 	if ($source =~ /genbank:/) {
 	    my $chromosome = $';
 	    $chromosome =~ s/\.gz$//;
 	    $chromosome =~ s/\.gbk$//;
-	    $gene->force_attribute("chromosome",$chromosome);
+	    $feature->force_attribute("chromosome",$chromosome);
 	}
 
 
@@ -217,12 +317,28 @@ package main;
     }
     
     
-    ### print result
+    ################################################################
+    ### export result in various formats
     chdir $dir{output};
     &PrintStats($out_file{stats}, @classes);
-    $genes->dump_tables($suffix);
-    $contigs->dump_tables($suffix);
-    &ExportClasses($out_file{genes}, $out_format, PFBP::Gene) if $export{obj};
+#    $features->dump_tables();
+#    $contigs->dump_tables();
+    @class_factories = qw (
+			   features
+			   contigs
+			   );
+    foreach $class_factory (@class_factories) {
+	
+	$$class_factory->dump_tables();
+	$$class_factory->generate_sql(schema=>$schema,
+				      dir=>"$dir{output}/sql_scripts",
+				      prefix=>"g_$class_factory_",
+				      dbms=>$dbms
+				      );
+    }
+    &ExportClasses($out_file{features}, $out_format, @classes) if $export{obj};
+
+
     
     
     ### report execution time
@@ -235,11 +351,7 @@ package main;
     
     close ERR;
     
-    
-    warn "; compressing the files\n" if ($verbose >= 1);
-    system "gzip -f $dir{output}/*.tab $dir{output}/*.txt";
-    system "gzip -f $dir{output}/*.obj" if ($export{obj});
-    
+    &CompressParsedData();
     
     exit(0);
     
@@ -256,7 +368,7 @@ NAME
 	parse_genbank.pl
 
 DESCRIPTION
-	Parse genes from a Genbank file 
+	Parse features from a Genbank file 
 	
 AUTHOR
 	Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)  
@@ -284,8 +396,9 @@ OPTIONS
 		by default, all organisms found in the input directory
 		are selected
 	-suffix suffix
-		add a suffix to output file names
-		    -suffix '' prevents from adding any suffix
+		add a suffix to output dir name
+	-clean	remove all files from the output directory before
+		parsing
 	-name
 		exports a name as single value attribute in
 		the main table (this is redundant but can be useful)
@@ -300,167 +413,69 @@ EndHelp
 
 ### read arguments from the command line
 sub ReadArguments {
-  for my $a (0..$#ARGV) {
-    
-    ### warn level
-    if (($ARGV[$a] eq "-v" ) && 
-	($ARGV[$a+1] =~ /^\d+$/)){
-      $main::verbose = $ARGV[$a+1];
-      
-      ### test run
-    } elsif ($ARGV[$a] eq "-test") {
-      $main::test = 1;
-      
-      ### export single name in main table
-    } elsif ($ARGV[$a] eq "-name") {
-      $main::single_name = 1;
-      
-      ### specific export format  for RSA-tools
-    } elsif ($ARGV[$a] eq "-rsa") {
-      $main::rsa = 1;
-      
-      ### suffix
-    } elsif ($ARGV[$a] eq "-suffix") {
-      $a++;
-      $main::suffix = $ARGV[$a];
-      
-      ### output dir
-    } elsif ($ARGV[$a] eq "-outdir") {
-      $a++;
-      $main::dir{output} = $ARGV[$a];
-      
-      ### help
-    } elsif (($ARGV[$a] eq "-h") ||
-	     ($ARGV[$a] eq "-help")) {
-      &PrintHelp;
-      exit(0);
-
-      ### select enzymes for exportation
-    } elsif ($ARGV[$a] =~ /^-org/) {
-      push @selected_organisms, $ARGV[$a+1];
-
-      #### export all organisms
-    } elsif ($ARGV[$a] =~ /^-all/) {
-      $main::export{all} = 1;
-
-      #### export object file
-    } elsif ($ARGV[$a] =~ /^-obj/) {
-      $main::export{obj} = 1;
-    }
-    
-  }
-}
-
-
-
-
-
-#  sub ParsePositions {
-#  ### clean up positions
-#      warn ("; ",
-#  	  &AlphaDate(),
-#  	  "\tparsing gene positions\n")
-#  	if ($verbose >= 1);
-
-#      foreach my $gene ($genes->get_objects()) {
-#  	my $position = $gene->get_attribute("position");
-
-#  	if ($position eq $null) {
-#  	    $gene->set_attribute("position",$null);
-#  	    $gene->set_attribute("chromosome", $null);
-#  	    $gene->set_attribute("strand",$null);
-#  	    $gene->set_attribute("start",$null);
-#  	    $gene->set_attribute("end",$null);
-#  	    &ErrorMessage("Warning: gene ", $gene->get_attribute("id"), " has no position attribute\n");
-#  	    next;
-#  	}
-#  	my $coord = $null;
-#  	my $chomosome = $null;
-#  	my $chrom_pos = $null;
-#  	my $strand = $null;
-#  	my $start = $null;
-#  	my $end = $null;
-
-#  	if ($position =~ /^(\S+)\:(.*)/) {
-#  	    $chromosome = $1;
-#  	    $chrom_pos = $2;
-#  	} elsif ($position =~ /^([^\:]*)$/) {
-#  	    $chromosome = "genome";
-#  	    $chrom_pos = $1;
-#  	} else {
-#  	    &ErrorMessage("Warning: invalid position",
-#  			  "\t", $gene->get_attribute("id"),
-#  			  "\t", $gene->get_attribute("organism"),
-#  			  "\t", $position, "\n");
-#  	    $gene->set_attribute("chromosome", $null);
-#  	    $gene->set_attribute("strand",$null);
-#  	    $gene->set_attribute("start",$null);
-#  	    $gene->set_attribute("end",$null);
-#  	    next;
-#  	}
-
-#  	if ($chrom_pos =~ /complement\((.*)\)/) {
-#  	    $strand = "R";
-#  	    $coord = $1;
-#  	} else {
-#  	    $strand = "D";
-#  	    $coord = $chrom_pos;
-#  	}
-
-#  	if ($coord =~ /^(\d+)\.\.(\d+)$/) {
-#  	    $start = $1;
-#  	    $end = $2;
-#  	} elsif ($coord =~ /^join\((.*)\)$/) { ### exons
-#  	    my @exons = split ",", $1;
-#  	    my @exon_starts = ();
-#  	    my @exon_ends = ();
-
-#  	    #### exon limits
-#  	    foreach my $exon (@exons) {
-#  		$exon =~ s/\s+//g;
-#  		$gene->push_attribute("exons", $exon);
-#  		if ($exon =~ /(\d+)\.\.(\d+)/) {
-#  		    push @exon_starts, $1;
-#  		    push @exon_ends, $2;
-#  		} else {
-#  		    &ErrorMessage("Error gene\t",$gene->get_id(),"\tinvalid exon\t$exon\n");
-#  		}
-#  	    }
+    for my $a (0..$#ARGV) {
+	
+	### warn level
+	if (($ARGV[$a] eq "-v" ) && 
+	    ($ARGV[$a+1] =~ /^\d+$/)){
+	    $main::verbose = $ARGV[$a+1];
 	    
-#  	    #### gene start and end 
-#  	    $start = $exon_starts[0] || $null;
-#  	    $end = $exon_ends[$#exons] || $null;
+	    ### test run
+	} elsif ($ARGV[$a] eq "-test") {
+	    $main::test = 1;
+	    
+	    ### export single name in main table
+	} elsif ($ARGV[$a] eq "-name") {
+	    $main::single_name = 1;
+	    
+	    ### specific export format  for RSA-tools
+	} elsif ($ARGV[$a] eq "-rsa") {
+	    $main::rsa = 1;
+	    
+	    ### clean
+	} elsif ($ARGV[$a] eq "-clean") {
+	    $main::clean = 1;
+	    
+	    ### suffix
+	} elsif ($ARGV[$a] eq "-suffix") {
+	    $a++;
+	    $main::suffix = $ARGV[$a];
+	    
+	    ### output dir
+	} elsif ($ARGV[$a] eq "-outdir") {
+	    $a++;
+	    $main::dir{output} = $ARGV[$a];
+	    
+	    ### help
+	} elsif (($ARGV[$a] eq "-h") ||
+		 ($ARGV[$a] eq "-help")) {
+	    &PrintHelp;
+	    exit(0);
 
-#  	    #### introns
-#  	    my @introns = ();
-#  	    for my $e (0..$#exon_starts - 1) {
-#  		my $intron = $exon_ends[$e] + 1;
-#  		$intron .= "..";
-#  		$intron .= $exon_starts[$e+1] -1;
-#  		$gene->push_attribute("introns", $intron);
-#  	    }
-#  	} else {
-#  	    &ErrorMessage("Warning : gene ",$gene->get_attribute("id"),"\tinvalid gene position $position\n");
-#  	    $strand = $null;
-#  	    $start = $null;
-#  	    $end = $null;
-#  	}
-#  	$gene->set_attribute("chromosome", $chromosome);
-#  	$gene->set_attribute("strand",$strand);
-#  	$gene->set_attribute("start",$start);
-#  	$gene->set_attribute("end",$end);
-#      }
-#  }
+	    ### select enzymes for exportation
+	} elsif ($ARGV[$a] =~ /^-org/) {
+	    push @selected_organisms, $ARGV[$a+1];
 
+	    #### export all organisms
+	} elsif ($ARGV[$a] =~ /^-all/) {
+	    $main::export{all} = 1;
+
+	    #### export object file
+	} elsif ($ARGV[$a] =~ /^-obj/) {
+	    $main::export{obj} = 1;
+	}
+	
+    }
+}
 
 
 sub SelectAllOrganisms {
     my @organisms = ();
-    my $dir = $dir{genbank}."/Bacteria/";
+    my $dir = $dir{genbank};
     die "Error: directory $dir does not exist.\n"
 	unless (-d $dir);
     chdir $dir;
-    @organisms = glob "*";
+    @organisms = glob "Bacteria/*_*";
     die "Error: there are no organisms in the directory $dir.\n"
 	unless $#organisms >=0;
     return @organisms;

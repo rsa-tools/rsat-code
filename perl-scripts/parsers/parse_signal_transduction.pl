@@ -62,7 +62,6 @@ package main;
 {
 
     ### initialization
-    $null = "<NULL>";
     $start_time = `date +%Y-%m-%d.%H%M%S`;
     $clean = 1;
     
@@ -127,24 +126,10 @@ package main;
 	&checkfile($in_file{$file});
     }
 
-    ### output dir
-    $dir{output} = "${parsed_data}/signal_transduction/$delivery_date";
-    unless (-d $dir{output}) {
-	warn "Creating output dir $dir{output}\n"  if ($warn_level >= 1);
-	`mkdir -p $dir{output}`;
-	die "Error: cannot create directory $dir\n" 
-	    unless (-d $dir{output});
-    }
-    if ($clean) {
-	warn "Cleaning output directory\n" if ($warn_level >= 1);
-	system "\\rm -rf $dir{output}/*";
-    }
-    chdir $dir{output};
-
     ### diagram dir
     $dir{diagrams} = $dir{output}."/diagrams";
     unless (-d $dir{diagrams}) {
-	warn "Creating diagram dir $dir{diagrams}\n"  if ($warn_level >= 1);
+	warn "Creating diagram dir $dir{diagrams}\n"  if ($verbose >= 1);
 	`mkdir -p $dir{diagrams}`;
 	die "Error: cannot create directory $dir\n" 
 	    unless (-d $dir{diagrams});
@@ -160,7 +145,9 @@ package main;
 
     &ReadArguments;
 
-    &DefaultVerbose() if ($warn_level >= 1);
+
+
+    &DefaultVerbose() if ($verbose >= 1);
 
     open ERR, "> $out_file{errors}" || die "Error : cannot write file $out_file{errors}\n";
 
@@ -186,12 +173,12 @@ package main;
 
     &ExportClasses($out_file{signal_transduction}, $out_format, @classes)  if ($export{obj});
 
-    ###################
-    ### print stats ###
-    ###################
+    ### print stats 
     &PrintStats($out_file{stats}, @classes);
+    
+    &CompressParsedData();
 
-    warn "; Done\t", `date` if ($warn_level >= 1);
+    warn "; Done\t", `date` if ($verbose >= 1);
 
     close ERR;
     exit(0);
@@ -202,7 +189,7 @@ package main;
 
 ### read entity information
 sub ReadEntities {
-    warn "; Reading entities\n" if ($warn_level >= 1);
+    warn "; Reading entities\n" if ($verbose >= 1);
     undef %col;
     $col{swissprot_ac} = 0;
     $col{swissprot_id} = 1;
@@ -218,7 +205,7 @@ sub ReadEntities {
     while (<ENT>) {
 	$line_nb++;
 	my @fields = &MySplit;
-	warn "$_\n" if ($warn_level >= 4);
+	warn "$_\n" if ($verbose >= 4);
 
 	### read the fields ###
 	$entity_name = $fields[$col{entity_name}];
@@ -251,7 +238,7 @@ sub ReadEntities {
 			$entity->get_attribute("type"),
 			$entity->get_attribute("names")
 			), "\n")
-		if ($warn_level >= 2);
+		if ($verbose >= 2);
 	    
 	    ### remind accession number ###
 	    $lc_name = lc($entity{$ac}->{name});
@@ -301,7 +288,7 @@ sub ReadEntities {
 
 #### import entity states
 sub ReadEntityStates {
-    warn "; Reading entity states from file $in_file{entity_state}\n" if ($warn_level >= 1);
+    warn "; Reading entity states from file $in_file{entity_state}\n" if ($verbose >= 1);
     my $l = 0;
     open STATES, $in_file{entity_state} ||
 	die "Error: cannot read entity_name state file $in_file{entity_state}\n";
@@ -311,7 +298,7 @@ sub ReadEntityStates {
 	my @fields = &MySplit();
 	my $entity_name = $fields[0];
 	my $state = $fields[1];
-	warn ";\tEntity state\t$entity_name\t$state\n" if ($warn_level >= 2);
+	warn ";\tEntity state\t$entity_name\t$state\n" if ($verbose >= 2);
 	&CreateEntityState($entity_name, $state);
     }
     close STATES
@@ -333,7 +320,7 @@ sub CreateEntityState {
 		       $entity_in_state->get_name(),
 		       $entity_in_state->get_attribute("state"),
 		       $entity_in_state->get_attribute("parent")
-		       ), "\n" if ($warn_level >= 2);
+		       ), "\n" if ($verbose >= 2);
 	}
     } else {
 	&ErrorMessage("$in_file{entity_state}\t$l\tundefined entity\t$entity_name\n");
@@ -372,13 +359,13 @@ sub CheckInteractions {
 		   ";\tInteraction $id",
 		   "inputs: $input_nb",
 		   "outputs: $output_nb"
-		   ), "\n" if ($warn_level >= 2);
+		   ), "\n" if ($verbose >= 2);
     }
 }
 
 ### read description of interact<ion ###
 sub ReadInteractions {
-    warn "; Reading interactions\n" if ($warn_level >= 1);
+    warn "; Reading interactions\n" if ($verbose >= 1);
     undef %cnol;
     $col{ac} = 0;
     $col{type} = 1;
@@ -419,7 +406,7 @@ sub ReadInteractions {
 			$interaction->get_attribute("id"),
 		    $interaction->get_attribute("type")
 		    ), "\n")
-	    if ($warn_level >= 2);
+	    if ($verbose >= 2);
 
 #	&CreateAssociation($ac,$type,$name,$description,$input,$output);
     }
@@ -430,7 +417,7 @@ sub ReadInteractions {
     $interactions->index_names();
 
     ### read interaction inputs
-    warn "; Reading interaction inputs\n" if ($warn_level >= 1);
+    warn "; Reading interaction inputs\n" if ($verbose >= 1);
 
     ### initialisation
     undef %col;
@@ -530,7 +517,7 @@ sub ReadInteractions {
 	    unless ($location_before eq $location_after) {
 		if ($inter_object->get_attribute("type") eq "translocation") {
 		    #### specific treatment for translocations : there is no "target" attribute, but the output is in the "location_after" of the "source"
-		    warn "Translocation treated\n" if ($warn_level >= 2);
+		    warn "Translocation treated\n" if ($verbose >= 2);
 		} else {
 		    #### report unexpected cases
 		    &ErrorMessage ("Unknown location modification for interaction input", 
@@ -602,10 +589,10 @@ sub ReadInteractions {
 
 	    #### identify the gene
 	    if ($gene = $entities->get_object("$gene_name gene")) {
-		warn "; Gene $gene_name already exists\n" if ($warn_level >= 3); 
+		warn "; Gene $gene_name already exists\n" if ($verbose >= 3); 
 	    } else {
 		#### create a new entity for the gene 
-		warn "; Creating new gene\t$gene_name\n" if ($warn_level >= 2);
+		warn "; Creating new gene\t$gene_name\n" if ($verbose >= 2);
 		$gene = $entities->new_object();
 		$gene->push_attribute("names", $gene_name);
 		$gene->set_attribute("type", "Gene");
@@ -618,10 +605,10 @@ sub ReadInteractions {
 	    #### identify the expression
 	    my $expression;
 	    if  ($expression = $interactions->get_object("$gene_name expression")) {
-		warn "; Expression\t", $expression->get_attribute("id"), "\talready exists\n" if ($warn_level >= 3);
+		warn "; Expression\t", $expression->get_attribute("id"), "\talready exists\n" if ($verbose >= 3);
 	    } else {
 		#### create a new interaction for the expression
-		warn "; Creating new expression object\n" if ($warn_level >= 2);
+		warn "; Creating new expression object\n" if ($verbose >= 2);
 		$expression = $interactions->new_object(id=>"$ac_exp");
 		$expression->push_attribute("names", "$gene_name expression");
 		$expression->push_expanded_attribute("inputs", $gene_id, $null, $state_before, $stoeichiometry, $location_before);
@@ -697,7 +684,7 @@ sub ReadInteractions {
 	    unless ($location_before eq $location_after) {
 		if ($inter_object->get_attribute("type") eq "translocation") {
 		    #### specific treatment for translocations : there is no "target" attribute, but the output is in the "location_after" of the "source"
-		    warn "Translocation treated\n" if ($warn_level >= 2);
+		    warn "Translocation treated\n" if ($verbose >= 2);
 		} else {
 		    #### report unexpected cases
 		    &ErrorMessage ("Unknown location modification for interaction output", 
@@ -803,7 +790,7 @@ sub ReadPathways {
 		    $pathway->get_attribute("id"),
 		    $pathway->get_attribute("names")
 		   ), "\n")
-	    if ($warn_level >= 2);
+	    if ($verbose >= 2);
 	
     }
     close PATH_DESC;
@@ -825,7 +812,7 @@ sub ReadPathwaySubpathways {
 	my @fields = &MySplit;
 	my $path_id = $fields[0];
 	my $subpathway = $fields[1];
-	warn ";\t$path_id\t$subpathway\n" if ($warn_level >= 2);
+	warn ";\t$path_id\t$subpathway\n" if ($verbose >= 2);
 
 	#### identify the pathway
 	unless ($pathway = $pathways->get_object($path_id)) {
@@ -849,7 +836,7 @@ sub ReadPathwaySubpathways {
 
 ### read pathway interactions
 sub ReadPathwayInteractions {
-    warn "; Reading pathway interactions from file $infile{pathway_interaction}\n" if ($warn_level >= 1);
+    warn "; Reading pathway interactions from file $infile{pathway_interaction}\n" if ($verbose >= 1);
     open PATH_INT, $in_file{pathway_interaction} || die ";Error: cannot read pathway interaction file $in_file{pathway_interaction}\n";
     $header = <PATH_INT>; ### skip header line
     my $line_count = 1;
@@ -858,7 +845,7 @@ sub ReadPathwayInteractions {
 	my @fields = &MySplit;
 	my $path_id = $fields[0];
 	my $interaction = $fields[1];
-	warn ";\t$path_id\t$interaction\n" if ($warn_level >= 2);
+	warn ";\t$path_id\t$interaction\n" if ($verbose >= 2);
 
 	#### identify the pathway
 	unless ($pathway = $pathways->get_object($path_id)) {
@@ -879,7 +866,7 @@ sub ReadPathwayInteractions {
 		if ($output_object = $interactions->get_object($output_id)) {
 		    warn ("; Adding interaction output\t", 
 			  $output_object->get_attribute("description"), 
-			  "\tto the pathway\n") if ($warn_level >= 3);
+			  "\tto the pathway\n") if ($verbose >= 3);
 		    $pathway->push_attribute("interactions",$output_object->get_attribute("id"));
 		    $complete_pathway->push_attribute("interactions",$output_object->get_attribute("id"));
 		}
@@ -897,7 +884,7 @@ sub ReadPathwayInteractions {
 
 #### read pathway entities
 sub ReadPathwayEntities {
-    warn "Reading pathway entities from file $infile{pathway_entity}\n" if ($warn_level >= 1);
+    warn "Reading pathway entities from file $infile{pathway_entity}\n" if ($verbose >= 1);
     ### read pathway entities
     open PATH_ENT, $in_file{pathway_entity} || die ";Error: cannot read pathway entity file $in_file{pathway_entity}\n";
     $header = <PATH_ENT>; ### skip header line
@@ -907,7 +894,7 @@ sub ReadPathwayEntities {
 	my @fields = &MySplit;
 	my $path_id = $fields[0];
 	my $entity = $fields[1];
-	warn ";\t$path_id\t$entity\n" if ($warn_level >= 2);
+	warn ";\t$path_id\t$entity\n" if ($verbose >= 2);
 
 	#### identify the pathway
 	unless ($pathway = $pathways->get_object($path_id)) {
@@ -1141,7 +1128,7 @@ sub ReadArguments {
 	### warn level
 	if (($ARGV[$a] eq "-v" ) && 
 	    ($ARGV[$a+1] =~ /^\d+$/)){
-	    $main::warn_level = $ARGV[$a+1];
+	    $main::verbose = $ARGV[$a+1];
 	    $a++;
 
 	    ### clean
@@ -1198,8 +1185,8 @@ sub PathwayToDiagram {
 		     "interactions", $#interaction_ids+1,
 		     "subpathways", $#subpathay_ids+1,
 		     "pathway", $pathway->get_attribute("names")
-		     ), "\n") if ($warn_level >= 1);
-    warn "; Creating diagram\t$name\n" if ($warn_level >= 1); 
+		     ), "\n") if ($verbose >= 1);
+    warn "; Creating diagram\t$name\n" if ($verbose >= 1); 
     $diagram = $diagrams->new_object();
     $diagram->push_attribute("names", $name);
     $diagram->set_attribute("description", "Saccharomyces cerevisiae - $name");
@@ -1219,7 +1206,7 @@ sub PathwayToDiagram {
     }
 
     ### create nodes corresponding to subpathway
-    warn "; Creating nodes for subpathways\n" if ($main::warn_level >= 2);
+    warn "; Creating nodes for subpathways\n" if ($main::verbose >= 2);
     foreach my $sub_id (@subpathway_ids) {
 	$subpathway = $pathways->get_object($sub_id);
 	unless ($diagram->get_node($sub_id)) {
@@ -1234,7 +1221,7 @@ sub PathwayToDiagram {
     }
     
     ### create nodes corresponding to interaction inputs/output
-    warn "; Creating nodes for interaction inputs/outputs\n" if ($main::warn_level >= 2);
+    warn "; Creating nodes for interaction inputs/outputs\n" if ($main::verbose >= 2);
     foreach my $entity_id (keys %linked_entities) {
 	$entity = $entities->get_object($entity_id);
 
@@ -1254,7 +1241,7 @@ sub PathwayToDiagram {
     }
     
     #### create nodes for the explicitly specified entities
-    warn "; Creating nodes for entities\n" if ($main::warn_level >= 2);
+    warn "; Creating nodes for entities\n" if ($main::verbose >= 2);
     foreach my $entity_id (@entity_ids) {
 	$entity = $entities->get_object($entity_id);
 
@@ -1270,7 +1257,7 @@ sub PathwayToDiagram {
     }
     
     ### create a node for each interaction
-    warn "; Creating nodes for interactions\n" if ($main::warn_level >= 2);
+    warn "; Creating nodes for interactions\n" if ($main::verbose >= 2);
     foreach my $int_id (@interaction_ids) {
 	my $interaction = $interactions->get_object($int_id);
 	my $type = $interaction->get_attribute("type");
@@ -1324,7 +1311,7 @@ sub PathwayToDiagram {
     }
 
     #### export the diagram in text format
-    warn "; Exporting diagram\t$diagram_file.tdd\n" if ($warn_level >= 1);
+    warn "; Exporting diagram\t$diagram_file.tdd\n" if ($verbose >= 1);
     $diagram->print("tdd", "$diagram_file.tdd");
 
 
@@ -1332,11 +1319,11 @@ sub PathwayToDiagram {
 	#### layout and export the diagram in different formats
 	warn join ("\t", "; Layout for diagram",  
 		   $diagram->get_attribute("name"), 
-		   "size", $diagram->size()), "\n" if ($warn_level >= 1);
+		   "size", $diagram->size()), "\n" if ($verbose >= 1);
 	my $classpath = ".:/win/amaze/amaze_programs/delivered/delivery_20011113/amaze_framework_20011113/amaze_framework.jar";
 	$classpath .= ":/win/amaze/amaze_programs/amaze_manuals/programming_examples";
 	my $command = "java -classpath $classpath  DiagramConverterApp ${diagram_file}.tdd $diagram_file";
-	warn $command, "\n" if ($warn_level >= 1);
+	warn $command, "\n" if ($verbose >= 1);
 	system $command;
     }
 }
@@ -1355,7 +1342,7 @@ sub PathwayToDiagram {
 #      my %linked_entities = ();
 #      srand (time);
     
-#      warn "; Printing graph\t$graph_file\n" if ($warn_level >= 1);
+#      warn "; Printing graph\t$graph_file\n" if ($verbose >= 1);
     
 #      open GRAPH, ">$graph_file" 
 #  	|| die "Error: cannot write $out_file{graph}\n";

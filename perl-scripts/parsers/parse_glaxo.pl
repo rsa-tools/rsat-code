@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_glaxo.pl,v 1.4 2001/10/31 01:02:43 jvanheld Exp $
+# $Id: parse_glaxo.pl,v 1.5 2002/12/09 00:22:36 jvanheld Exp $
 #
-# Time-stamp: <2001-10-31 02:00:46 jvanheld>
+# Time-stamp: <2002-05-31 17:06:41 jvanheld>
 #
 ############################################################
 ### parse_ligand.plt
@@ -33,7 +33,7 @@ package PFBP::Smiles;
 			       names=>"ARRAY",
 			       SMILES=>"SCALAR",
 			       Biosequence=>"SCALAR",
-			       Parent_Formula=>"SCALAR",
+			       Parent_Formula=>"ARRAY",
 			       source=>"SCALAR");
 }
 
@@ -66,7 +66,7 @@ package PFBP::BrendaName;
 			       source=>"SCALAR",
 			       parent_smiles=>"SCALAR",
 			       BRENDA_name=>"SCALAR",
-			       Mol_Formula=>"SCALAR",
+			       Mol_Formula=>"ARRAY",
 			       Isomer=>"ARRAY");
 }
 
@@ -97,22 +97,18 @@ $clean = 0;
 ### files to parse
 $file_name = "didier.fdt";
 $source = "GLAXO:".$file_name;
+$data_glaxo = "/win/amaze/Databases/Glaxo/glaxo_compounds/2000_09_glaxo_compounds";
 $dir{input} = $data_glaxo;
 $in_file{glaxo} = "gunzip -c ".$dir{input}."/".$file_name.".gz | ";
 
-$dir{output} = "$parsed_data/glaxo_parsed/$delivery_date";
-unless (-d $dir{output}) {
-    warn "Creating output dir $dir{output}";
-    mkdir $dir{output}, 0775 || die "Error: cannot create directory $dir\n";
-}
-chdir $dir{output};
-$out_file{glaxo} = "$dir{output}/glaxo.obj";
-$out_file{stats} = "$dir{output}/glaxo.stats.txt";
-$out_file{errors} = "$dir{output}/glaxo.errors.txt";
 
 open ERR, ">$out_file{errors}" || die "Error: cannot write error report fle $out_file{errors}\n";
 
 $out_format = "obj";
+
+#### default export directory
+$export_subdir = "glaxo";
+$dir{output} = "$parsed_data/${export_subdir}/$delivery_date";
 
 push @classes, "PFBP::Smiles";
 push @classes, "PFBP::BrendaName";
@@ -121,11 +117,19 @@ push @classes, "PFBP::ECreference";
 
 &ReadArguments;
 
+
+#### output directory
+&CheckOutputDir();
+
+$out_file{glaxo} = "$dir{output}/glaxo.obj";
+$out_file{stats} = "$dir{output}/glaxo.stats.txt";
+$out_file{errors} = "$dir{output}/glaxo.errors.txt";
+
 #### clean the output directory
 if ($clean) {
     warn "Cleaning output directory $dir{output}\n" if ($verbose >=1);
     system "\\rm -f $dir{output}/*.tab.gz $dir{output}/*.txt.gz $dir{output}/*.obj.gz" ;
-    system "\\rm -rf $dir{output}/mirror";
+#    system "\\rm -rf $dir{output}/mirror";
 }
 
 
@@ -192,7 +196,10 @@ foreach $brenda_name ($brenda_names->get_objects()) {
 foreach my $gbs_obj ($biosequences->get_objects()) {
     my $gsm_id = $gbs_obj->get_attribute("parent_smiles");
     my $gsm_obj = $smiles->get_object($gsm_id);
-    $gsm_obj->set_attribute("Parent Formula", $gbs_obj->get_attribute("Parent Formula"));
+
+    foreach my $paf ($gbs_obj->get_attribute("Parent Formula")) {
+	$gsm_obj->push_attribute("Parent Formula", $paf);
+    }
 
 #    print STDERR join ("\t", "HELLO", 
 #		       $gsm_id, 
@@ -229,15 +236,21 @@ if ($export{analysis}) {
     }
 }
 
-### print result
+### export the result
+warn "Dumping objects to tab files\n" if ($verbose >=1);
 $smiles->dump_tables();
 $brenda_names->dump_tables();
 $biosequences->dump_tables();
 $ec_references->dump_tables();
-&ExportClasses($out_file{glaxo}, $out_format, @classes) if ($export{obj});
+
+if ($export{obj}) {
+    warn "Exporting objects in .obj format\n" if ($verbose >=1);
+    &ExportClasses($out_file{glaxo}, $out_format, @classes) 
+}
 
 
 ### print some stats after parsing
+warn "Printing parsing statitsics\n" if ($verbose >=1);
 &PrintStats($out_file{stats}, @classes);
 
 ### report execution time
@@ -250,10 +263,7 @@ if ($verbose >= 1) {
 
 close ERR;
 
-warn "; compressing parsed files\n" 
-    if ($verbose >= 1);
-system "gzip -f $dir{output}/*.tab $dir{output}/*.txt";
-system "gzip -f $dir{output}/*.obj" if ($export{obj});
+&CompressParsedData();
 
 if ($verbose >= 1) {
     my @commands = ("ls -l '$dir{output}'",
@@ -389,7 +399,7 @@ sub ParseGlaxoFile{
     $smiles_multi_value_attributes{"Parent Avg molecular weight"} = 1;
 
     my @smiles_single_value_attributes;
-    $smiles_single_value_attributes{"Parent Formula"} = 1;
+    $smiles_multi_value_attributes{"Parent Formula"} = 1;
 #  $smiles_single_value_attributes{"Biosequence"} = 1;
     
     my @smiles_single_value_attributes;
@@ -408,7 +418,7 @@ sub ParseGlaxoFile{
 
     $child_multi_value_attributes{"Mol Formula"} = 1; #### there is at least one case at the 14921th BRENDA name
     $child_multi_value_attributes{"Parent Avg molecular weight"} = 1; ### this is for biosequence
-    $child_single_value_attributes{"Parent Formula"} = 1; ### this is for biosequence
+    $child_multi_value_attributes{"Parent Formula"} = 1; ### this is for biosequence
     
     my @child_single_value_attributes;
     foreach $attr (keys %child_multi_value_attributes, keys %child_single_value_attributes) {

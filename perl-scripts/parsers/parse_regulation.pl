@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_regulation.pl,v 1.7 2002/11/28 07:58:08 jvanheld Exp $
+# $Id: parse_regulation.pl,v 1.8 2002/12/09 00:22:20 jvanheld Exp $
 #
-# Time-stamp: <2002-11-28 01:56:46 jvanheld>
+# Time-stamp: <2002-11-29 10:28:28 jvanheld>
 #
 ############################################################
 ### parse_regulation.plt
@@ -41,14 +41,21 @@ package main;
 
 #    $in_file{regulation} = "/win/amaze/amaze_team/gaurab/regulation_2001_09_07.txt";
 #    $in_file{regulation} = "/win/amaze/amaze_team/georges_cohen/excel_files_georges/regulation/concatenated_regulations.tab";
-    $in_file{regulation} = "/win/amaze/amaze_team/georges_cohen/excel_files_georges/regulation/all_regulation_corrected.txt";
-
+    if ($hostname eq "brol") {
+	$in_file{regulation} = "/win/amaze/amaze_team/georges_cohen/excel_files_georges/regulation/all_regulation_corrected.txt";
+    } else {
+	$in_file{regulation} = "/rubens/dsk2/dgonze/annotation_regulation/all_regulations.tab";
+    }
 
     $dir{genes} = "$parsed_data/kegg_genes/20021127";
     $dir{polypeptides} = "$parsed_data/swissprot/20021127";
 
 
-    $dir{output} = "$parsed_data/regulation/$delivery_date";
+    #### default output directory
+    $export_subdir = "regulation";
+    $dir{output} = "$parsed_data/$export_subdir/$delivery_date";
+
+#    $dir{output} = "$parsed_data/regulation/$delivery_date";
     $dir{delivery} = "/win/amaze/amaze_programs/amaze_oracle_data";
 
     $out_format = "obj";
@@ -118,7 +125,7 @@ package main;
     #### class factories
     $controlOfControls = PFBP::ClassFactory->new_class(object_type=>"PFBP::ControlOfControl",
 						       prefix=>"act_");
-    $transcriptionalRegulations = PFBP::ClassFactory->new_class(object_type=>"PFBP::TranscriptionalRegulation",
+    $transcriptionalRegulations = PFBP::ClassFactory->new_class(object_type=>"PFBP::TranscriptRegul",
 								prefix=>"trr_");
 
     $indirectInteractions = PFBP::ClassFactory->new_class(object_type=>"PFBP::IndirectInteraction",
@@ -142,19 +149,20 @@ package main;
 		     is_positive
 		     description
 
+#		     type_of_inhibition
+#		     strength
+
 		     gene_name
 		     gene_id
 		     factor_name
 		     factor_id
 		     file
 		     pathwayIDs 
-		     strength
-		     type_of_inhibition
 		     coenzyme 
 		     cofactor 
 		     relative_concentration_of_input
-		     remark 
 
+		     remark 
 		     pubmedIDs 
 		     );
     if ($debug) {
@@ -186,7 +194,7 @@ package main;
     #$inductions->dump_tables();
 
 
-    push @classes, ("PFBP::TranscriptionalRegulation");
+    push @classes, ("PFBP::TranscriptRegul");
     #push @classes, ("PFBP::ControlOfControl");
     #push @classes, ("PFBP::Induction");
     &ExportClasses($out_file{regulation}, $out_format, @classes)  if ($export{obj});
@@ -217,11 +225,7 @@ package main;
 
     &deliver() if ($deliver);
 
-#    system "gzip -f $dir{output}/*.tab $dir{output}/*.txt";
-#    system "gzip -f $dir{output}/*.obj" if ($export{obj});
-
-
-
+    &CompressParsedData();
 
     exit(0);
 
@@ -382,8 +386,10 @@ sub ParseRegulation {
 
     my @cols = split "\t", $header;
     for my $c (0..$#cols) {
-	$cols[$c] =~ s/ +$//;
-	$cols[$c] =~ s/^ +//;
+	$cols[$c] =~ s/ +/ /g;
+	$cols[$c] =~ s/ $//g;
+	$cols[$c] =~ s/^ //g;
+	$cols[$c] =~ s/ /_/g;
     }
 
 
@@ -425,7 +431,7 @@ sub ParseRegulation {
 		      'source',
 		      'inputType',
 		      'input',
-		      'enzyme or protein controlled',
+		      'enzyme_or_protein_controlled',
 		      'controlType',
 		      'controlledType',
 		      'type_of_inhibition',
@@ -434,7 +440,8 @@ sub ParseRegulation {
 		      'remark',
 		      'remark2',
 		      'remark3',
-		      'remark 4',
+		      'remark4',
+		      'remark_4',
 		      'method',
 		      'parsing_errors');
     print MIRROR join( "\t", @mirror_fields), "\n";
@@ -468,6 +475,30 @@ sub ParseRegulation {
 	}
 
 
+	#### merge the remarks (Georges annotated them in 4 columns)
+	if ($field{remark2} =~ /\S/) {
+	    warn join "\t", $l, "merging remark2\n" if ($verbose >= 3);
+	    $field{remark} .= "|" if $field{remark};
+	    $field{remark} .= $field{remark2};
+	}
+	if ($field{remark3} =~ /\S/) {
+	    warn join "\t", $l, "merging remark3\n" if ($verbose >= 3);
+	    $field{remark} .= "|" if $field{remark};
+	    $field{remark} .= $field{remark3};
+	}
+	if ($field{remark4} =~ /\S/) {	
+	    warn join "\t", $l, "merging remark4\n" if ($verbose >= 3);
+	    $field{remark} .= "|" if $field{remark};
+	    $field{remark} .= $field{remark4};
+	}
+	if ($field{'remark 4'} =~ /\S/) {
+	    warn join "\t", $l, "merging remark 4\n" if ($verbose >= 3);
+	    $field{remark} .= "|" if $field{remark};
+	    $field{remark} .= $field{'remark 4'};
+	}
+	
+
+
 	#### check the controlType
 	unless (defined($class_holder{$field{controlType}})) {
 	    push @current_errors, "unknown control type";
@@ -496,24 +527,7 @@ sub ParseRegulation {
 	    next;
 	}
 
-	#### merge the remarks (Georges annotated them in 4 columns)
-	if ($field{remark2} =~ /\S/) {
-	    warn join "\t", $l, "merging remark2\n" if ($verbose >= 0);
-	    $field{remark} .= "|".$field{remark2};
-	}
-	if ($field{remark3} =~ /\S/) {
-	    warn join "\t", $l, "merging remark3\n" if ($verbose >= 0);
-	    $field{remark} .= "|".$field{remark3};
-	}
-	if ($field{remark4} =~ /\S/) {	
-	    warn join "\t", $l, "merging remark4\n" if ($verbose >= 0);
-	    $field{remark} .= "|".$field{remark4};
-	}
-	if ($field{'remark 4'} =~ /\S/) {
-	    warn join "\t", $l, "merging remark 4\n" if ($verbose >= 0);
-	    $field{remark} .= "|".$field{'remark 4'};
-	}
-	
+
 	#### when there are multiple outputs, create one regulation per output
 	my @control_outputs = split /\|/, $field{controlledFrom};
 
@@ -547,7 +561,9 @@ sub ParseRegulation {
 	    foreach my $key  (@multi_value) {
 		my @values = split '\|', $field{$key};
 		foreach my $value (@values) {
-		    $current_control->new_attribute_value($key, $value);
+		    if ($value =~ /\S/) {
+			$current_control->new_attribute_value($key, $value);
+		    }
 		}
 	    }
 	    
