@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: position-analysis,v 1.16 2002/11/21 07:26:51 jvanheld Exp $
+# $Id: position-analysis,v 1.17 2003/05/06 12:27:26 jvanheld Exp $
 #
-# Time-stamp: <2002-11-21 01:26:47 jvanheld>
+# Time-stamp: <2003-05-06 14:17:47 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -323,12 +323,13 @@ sub ReadSequence {
     while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir)) &&
 	   (($current_seq ne "") || ($current_id ne ""))) {
 	
-	warn "; Analysing sequence $current_id\n" if ($verbose >= 2);
+	$sequence_number++;  
+
+	warn "; Analysing sequence\t$sequence_number\t$current_id\n" if ($verbose >= 2);
 	### remove tabs and blank spaces ###    
 	$current_seq = &FoldSequence($current_seq,0);
 	
 	### statistics about sequences ###
-	$sequence_number++;  
 	$seq_length[$sequence_number] = length($current_seq);
 	$id_list[$sequence_number] = $current_id;
 	$last_pos = $seq_length[$sequence_number] - $oligo_length + 1;
@@ -656,6 +657,8 @@ OPTIONS
 			exp	expected occurrences for each class
 			graph	a rgaph file per oligont profile
 			chi	chi-square value
+			rank	rank of the pattern according to the
+				sorting criterion
 		several fields can be entered, separated by commas
 	-lth #	lower threshold on chi2
 		return only words with a chi2 value > #
@@ -733,7 +736,7 @@ position-analysis options
 -nogrouprc	do not group reverse complement pairs
 -noov		no overlap
 -sort		sort oligonucleotides according to the score
--return		chi,distrib,exp,graph
+-return		chi,distrib,exp,graph,rank
 -lth		lower threshold on chi2
 -oth		lower threshold on occurrences
 -pl		pattern list
@@ -840,6 +843,9 @@ sub ReadArguments {
 		    
 		} elsif ($field =~ /graph/) {
 		    $return{'graph'} = 1;
+
+		} elsif ($field =~ /rank/) {
+		    $return{'rank'} = 1;
 		}
 	    }
 	    
@@ -891,10 +897,11 @@ sub ReadArguments {
 ### verbose
 sub Verbose {
     print $out "; position-analysis";
-    foreach $a (@ARGV) {
-	print $out " $a";
-    }
-    print $out "\n";
+    &PrintArguments($out);
+#    print $out "\n";
+
+    printf $out "; %s\n", "Citation: van Helden, et al. (2000).  Nucleic Acids Res 28, 1000-1010.";
+
     printf $out "; %-29s\t%s\n", "Sequence file", $inputfile if ($inputfile);
     printf $out "; %-29s\t%s\n", "Sequence format", $in_format;
     printf $out "; %-29s\t%s\n", "Sequence type", $seq_type;
@@ -916,7 +923,7 @@ sub Verbose {
     print $out "; Sequence statistics:\n";
     printf $out ";\t%-29s\t%d\n", "Nb of sequences", $sequence_number;
     printf $out ";\t%-29s\t%d\n", "Sum of sequence lengths", $sum_seq_length;
-    printf $out ";\t%-29s\t%d\n", "Max sequence length", $max_seq_length;
+    printf $out ";\t%-29s\t%d\n", "Min sequence length", $min_seq_length;
     printf $out ";\t%-29s\t%d\n", "Max sequence length", $max_seq_length;
     printf $out ";\t%-29s\t%d\n", "Average sequence length", $sum_seq_length/$sequence_number ,"\n" if ($sequence_number > 0);
     printf $out ";\t%-29s\t%d\n", "Possible positions", $nb_possible_pos;
@@ -994,29 +1001,42 @@ sub PrintResult {
 	@sorted_keys = sort keys %occurrences;
     }
 
+
+    #### output columns
+    @out_col = (); @col_descriptions = ();
+    push @out_col, 'seq'; push @col_descriptions, 'pattern sequence';
+    push @out_col, 'id'; push @col_descriptions, 'pattern identifier';
+    push @out_col, 'occ'; push @col_descriptions, 'pattern occurrences';
+    if ($no_overlaps) {push @out_col, "over"; push @col_descriptions, 'overlapping occurrences (discarded)';}
+    if ($return{'chi'}) {push @out_col, "chi2" ; push @col_descriptions, 'observed chi-square';}
+    if ($return{'rank'}) {push @out_col, "rank"; push @col_descriptions, 'rank of the pattern according to sorting criterion';}
+    if ($return{'distrib'}) {
+	for $class ($min_calc_class..$max_calc_class) {
+	    push @out_col, $class_center{$class}; push @col_descriptions, 'observed class occurrences';
+	}
+	if ($return{'exp'}) {
+	    for $class ($min_calc_class..$max_calc_class) {
+		push @out_col, $class_center{$class}; push @col_descriptions ,'expected class occurrences';
+	    }
+	}
+    }
+
+    if ($verbose >= 1) {
+	print $out "; column headers\n";
+	foreach $c (0..$#out_col) {
+	    printf $out ";\t%d\t%-15s\t%s\n", $c+1, $out_col[$c], $col_descriptions[$c];
+	}
+    }
+
     ### header 
     $date = `date '+%H:%M:%S'`;
     chomp $date;
     print ";$date\tprinting results ...\n" if ($verbose >= 2);
-    print $out ";seq";
-    print $out "\tid";
-    print $out "\tocc";
-    print $out "\tover" if ($no_overlaps);
-    print $out "\tchi2" if ($return{'chi'});
-    if ($return{'distrib'}) {
-	for $class ($min_calc_class..$max_calc_class) {
-	    print $out "\t", $class_center{$class};
-	}
-	if ($return{'exp'}) {
-	    for $class ($min_calc_class..$max_calc_class) {
-		print $out "\t", $class_center{$class};
-	    }
-	}
-    }
-    print $out "\n";
+    print $out ";", join("\t", @out_col), "\n";
 
 
     ### pattern distributions
+    my $rank = 0;
     foreach $oligo_seq (@sorted_keys) {
 	print $out "$oligo_seq";
 	print $out "\t$oligo_seq";
@@ -1030,6 +1050,12 @@ sub PrintResult {
 	
 	### chi-square value ###
 	print $out "\t$chi_square{$oligo_seq}" if ($return{'chi'});
+
+	#### rank
+	if ($return{'rank'}) {
+	    $rank++;
+	    print $out "\t$rank";
+	}
 	
 	### position distribution
 	if ($return{'distrib'}) {
