@@ -447,15 +447,20 @@ sub PrintArguments {
 ### organism ###
 sub CheckOrganism {
 
-    my ($organism_name) = @_;
+    my ($organism_name, $feature_table_file) = @_;
     my $organism_object = new RSA::Organism;
+
+    &Warning("checking organism\t$organism_name") if ($warn_level >= 2);
 
     &FatalError("You should specify an organism.", 
 		"Supported organisms\n".&ListSupportedOrganisms)
 	unless ($organism_name);
 
     if ($supported_organism{$organism_name}) {
-	$feature_table_file = $supported_organism{$organism_name}->{'features'};
+	unless ($feature_table_file) {
+	    $feature_table_file = $supported_organism{$organism_name}->{'features'};
+	}	
+	&Warning("Feature table\t$feature_table_file") if ($warn_level >= 2);
 	$genome_file = $supported_organism{$organism_name}->{'genome'};
 	$genome_seq_format = $supported_organism{$organism_name}->{'seq_format'};
 	
