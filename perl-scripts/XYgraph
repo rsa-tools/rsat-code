@@ -235,32 +235,32 @@ if ($y_grid_step2 > 0) {
 
 ### first X grid
 if ($x_grid_step1 > 0) {
-  for ($g = $x_axis_min; $g <= $x_axis_max; $g += $x_grid_step1) {
-    $grid_pos = $left + ($g-$x_axis_min)*$x_scale;
-     if ($xlog) {
-     $grid_value = exp($g);
-    } else {
-      $grid_value = $g;
+    for ($g = $x_axis_min; $g <= $x_axis_max; $g += $x_grid_step1) {
+	$grid_pos = $left + ($g-$x_axis_min)*$x_scale;
+	if ($xlog) {
+	    $grid_value = exp($g);
+	} else {
+	    $grid_value = $g;
+	}
+	$grid_text = $grid_value;
+	$image->line($grid_pos, $bottom, $grid_pos, $top, $grid1_color);
+	$image->string(gdSmallFont, $grid_pos - $small_font_width*length($grid_text)/2, $bottom + 5, $grid_text, $text_color);
     }
-    $grid_text = $grid_value;
-   $image->line($grid_pos, $bottom, $grid_pos, $top, $grid1_color);
-     $image->string(gdSmallFont, $grid_pos - $small_font_width*length($grid_text)/2, $bottom + 5, $grid_text, $text_color);
-  }
 }
 
 ### first Y grid
 if ($y_grid_step1 > 0) {
-  for ($g = $y_axis_min; $g <= $y_axis_max; $g += $y_grid_step1) {
-    $grid_pos = YPixelPos($g);
-    if ($ylog) {
-      $grid_value = exp($g);
-    } else {
-      $grid_value = $g;
+    for ($g = $y_axis_min; $g <= $y_axis_max; $g += $y_grid_step1) {
+	$grid_pos = YPixelPos($g);
+	if ($ylog) {
+	    $grid_value = exp($g);
+	} else {
+	    $grid_value = $g;
+	}
+	$grid_text = sprintf("%6g", $grid_value);
+	$image->line($left, $grid_pos, $right, $grid_pos, $grid1_color);
+	$image->string(gdSmallFont, $left - $small_font_width * length($grid_text) - 5, $grid_pos - $small_font_height/2, $grid_text, $text_color);
     }
-    $grid_text = sprintf("%6g", $grid_value);
-    $image->line($left, $grid_pos, $right, $grid_pos, $grid1_color);
-    $image->string(gdSmallFont, $left - $small_font_width * length($grid_text) - 5, $grid_pos - $small_font_height/2, $grid_text, $text_color);
-  }
 }
 
 ### draw axes
@@ -1055,30 +1055,22 @@ sub CalcLimits {
     
     unless ((&IsReal($max_x_value)) && 
 	    (&IsReal($min_x_value))) {
-	print "	Error: X axis data (column ", $x_col+1, ") are not numeric\n";
-	print "	Type XYgraph -help for more info\n";
-	exit;
+	die ("\tError: X axis data (column ", $x_col+1, ") are not numeric\n",
+	     "\tType XYgraph -help for more info\n");
     }
     
     for $series (0..$#y_col_list) {
 	$min_y_value = &checked_min($min_y_value,@{$Y_values[$series]});
-	$max_y_value = &max($max_y_value,@{$Y_values[$series]});
+	$max_y_value = &checked_max($max_y_value,@{$Y_values[$series]});
 	
     }
     
     unless ((&IsReal($max_y_value)) &&
 	    (&IsReal($min_y_value))) {
-	print "	Error: Y axis data (column ";
-	for $col (0..$#y_col_list -1) {
-	    print $y_col_list[$col]+1, ", ";
-	}
-	print $y_col_list[$#y_col_list]+1;
-	print ") are not numeric\n";
-	print "	Type XYgraph -help for more info\n";
-	exit;
+	die ("	Error: Y axis data (column ", join(",", @y_col_list),
+	     ") are not numeric\n",
+	     "\tType XYgraph -help for more info\n");
     }
-    
-    
 
     #### min and max axis values ####
     ($tmp_xmin,$tmp_xgrid,$tmp_xmax) = &AutoGrid($min_x_value,$max_x_value);
