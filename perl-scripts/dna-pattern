@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dna-pattern,v 1.30 2004/02/01 15:55:06 jvanheld Exp $
+# $Id: dna-pattern,v 1.31 2004/03/29 10:58:38 jvanheld Exp $
 #
 # Time-stamp: <2003-08-13 12:16:03 jvanheld>
 #
@@ -72,7 +72,7 @@ unless (($allowed_subst eq "") || (&IsNatural($allowed_subst))) {
 
 #### check patterns
 if ($main::verbose >= 2) {
-    warn "Patterns/n";
+    warn "Patterns\n";
     foreach my $pattern (@patterns) {
 	warn join ("\t", 
 		   $pattern->get_attribute("sequence"),

@@ -1412,4 +1412,6 @@ return 1;
 
 __END__
 
+=pod
+
 =back

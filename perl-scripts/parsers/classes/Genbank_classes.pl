@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: Genbank_classes.pl,v 1.2 2003/08/08 22:37:17 jvanheld Exp $
+# $Id: Genbank_classes.pl,v 1.3 2004/03/29 10:57:57 jvanheld Exp $
 #
 # Time-stamp: <2003-08-09 00:37:11 jvanheld>
 #
@@ -187,7 +187,7 @@ package Genbank::Gene;
   %_attribute_count = ();
   %_attribute_cardinality = (id=>"SCALAR",
 
-			     ### primary info found in Genbank flat files
+			     ### raw info found in Genbank flat files
 			     chrom_position=>"SCALAR",
 			     gene=>"SCALAR",
 
@@ -218,7 +218,7 @@ package Genbank::mRNA;
   %_attribute_cardinality = (id=>"SCALAR",
 			     gene_id=>"SCALAR",
 
-			     ### primary info found in Genbank flat files
+			     ### raw info found in Genbank flat files
 			     chrom_position=>"SCALAR",
 			     note=>"ARRAY",
 			     gene=>"SCALAR",
@@ -244,7 +244,7 @@ package Genbank::tRNA;
 			     gene_id=>"SCALAR",
 			     names=>"ARRAY",
 
-			     ### primary info found in Genbank flat files
+			     ### raw info found in Genbank flat files
 			     chrom_position=>"SCALAR",
 			     gene=>"SCALAR",
 			     product=>"SCALAR",
@@ -271,7 +271,7 @@ package Genbank::rRNA;
 			     gene_id=>"SCALAR",
 			     names=>"ARRAY",
 
-			     ### primary info found in Genbank flat files
+			     ### raw info found in Genbank flat files
 			     chrom_position=>"SCALAR",
 			     gene=>"SCALAR",
 			     product=>"SCALAR",
@@ -298,7 +298,7 @@ package Genbank::misc_RNA;
 			     gene_id=>"SCALAR",
 			     names=>"ARRAY",
 
-			     ### primary info found in Genbank flat files
+			     ### raw info found in Genbank flat files
 			     chrom_position=>"SCALAR",
 			     gene=>"SCALAR",
 			     product=>"SCALAR",
@@ -326,7 +326,7 @@ package Genbank::misc_feature;
 			     gene_id=>"SCALAR",
 			     names=>"ARRAY",
 
-			     ### primary info found in Genbank flat files
+			     ### raw info found in Genbank flat files
 			     chrom_position=>"SCALAR",
 			     gene=>"SCALAR",
 			     product=>"SCALAR",
