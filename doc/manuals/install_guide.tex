@@ -31,12 +31,8 @@ Installation guide}
 
 \section{Description}
 
-This documents contain the installation guide for the package
-\textbf{Regulatory Sequence Analysis Tools} (\RSAT).
-
-In the current release, the version is limited to the perl scripts,
-and does not contain the web interface.
-
+This documents describes the installation procedure for the software
+package \textbf{Regulatory Sequence Analysis Tools} (\RSAT).
 
 \section{Requirements}
 
@@ -46,20 +42,23 @@ and does not contain the web interface.
 the following unix systems.
 
 \begin{enumerate}
-\item Sun Solaris
+\item Linux
 \item Mac OSX
+\item Sun Solaris
+\item Dec Alpha
 \item cygwin (under MS Windows 98)
 \end{enumerate}
 
 \RSAT is not compatible with any version of Microsoft Windows and we
-have no intention to make it compatible. Since most programs are
-writtent in perl, it is not impossible that some scripts will run
-under windows, but some other will certainly not, because they include
+have no intention to make it compatible in a foreseeable future. Since
+most programs are written in perl, part of them might run under
+windows, but some others will certainly not, because they include
 calls to unix system commands.
 
 \subsection{perl}
 
-Almost all the programs in \RSAT are written in perl version 5.0. 
+Almost all the programs in \RSAT are written in perl version 5.0 or
+later.
 
 \section{Installation}
 
@@ -81,13 +80,15 @@ cvs -d mylogin@rubens.ulb.ac.be:/rubens/dsk2/cvs co rsa-tools
 \end{verbatim}
 
 This will create a directory \file{rsa-tools} on your computer, and
-store the rsa-tools in it.
+store the programs in it. Note that at this stage the programs are not
+yet functional, because you still need to install genomes, which are
+not included in the CVS distribution.
 
 \subsubsection{Updates}
 
 Once the tools have been retrieved, you can obtain updates very
 easily. For this, you need to change your directory to the rsa-tools
-directory, and use the \command{cvs} command in the following way.
+directory, and use the \texttt{cvs} command in the following way.
 
 \begin{verbatim}
 cd rsa-tools
@@ -107,15 +108,13 @@ where yyyymmdd stands for the version number (delivery date).
 
 \end{enumerate}
 
-\section{Configuring \RSAT}
-
 \section{Adding \RSAT to your path}
 
 \begin{enumerate}
 
 \item Create an environment variable named RSAT and containing the
-path of rsa-tools. For example, assuming \RSAT have been installed
-in the directory \texttt{/home/myaccount/rsa-tools}, and your shell is
+path of rsa-tools. For example, assuming \RSAT have been installed in
+the directory \texttt{/home/myaccount/rsa-tools}, and your shell is
 bash:
 
 \begin{verbatim}
@@ -131,7 +130,55 @@ export PATH=${PATH}:${RSAT}/perl-scripts
 
 \end{enumerate}
 
+
+\section{Initializing the directories}
+
+In addition to the programs, the installation of rsa-tools requires
+the creation of a few directories for storing data, access logs (forr
+the web server), and temporary files.  
+
+The distribution includes a series of make scripts which will
+facilitate this step. You just need go to the rsa-tools directory, and
+start the appropriate make file.
+
+\begin{verbatim}
+cd rsa-tools
+make -f makefiles/init_RSAT.mk init
+\end{verbatim}
+
+
+
+\section{Installing genomes}
+
+Genomes are distributed via the HTTP server. 
+
+\url{http://rsat.ulb.ac.be/rsat/data/genomes/}
+
+Download the genomes you need and store them in the directory
+
+\file{rsa-tools/public\_html/data/genomes}
+
+You also need the file which provides the list of supported genomes.
+
+\url{http://rsat.ulb.ac.be/rsat/data/supported\_organisms.pl}
+
+This file must be stored in your directory
+
+\file{rsa-tools/public\_html/data/}
+
+
+\section{Configuring \RSAT}
+
+The \RSAT distribution comes with a template configuration file.
+
+\file{rsa-tools/RSA.config}
+
+Open this file with a text editor, and edit the first variables
+according to your local configuration.
+
 \section{Testing the installation}
+
+\subsection{Testing the access to perl scripts}
 
 From now on, you should be able to use the perl scripts from the
 command line. To test this, run: 
@@ -148,6 +195,8 @@ random-seq -l 200 -r 4 -a a:t 0.3 c:g 0.2
 \end{verbatim}
 
 Should generate a random sequence.
+
+\subsection{Testing genome installation}
 
 We will now testif the genomes are correctly installed. You will
 obtain the list of supported organisms with the command:
@@ -167,6 +216,24 @@ retrieve-seq -org Saccharomyces_cerevisiae \
 
 This should return a set of 3 bp sequences, mostly ATG (in the case of
 \organism{Saccharomyces cerevisiae} at least)
+
+\subsection{Testing the graphical scripts}
+
+\RSAT includes two graphical tools, \program{feature-map} and
+\program{XYgraph}. These tools require the perl library GD.pm. To test
+if this library has been installed on your machine, type.
+
+\begin{verbatim}
+feature-map -help
+\end{verbatim}
+
+If you receive the correct help message, it means that the library is
+intalled.
+
+
+\section{Further steps}
+
+The installation is now finished, you can start the user's guide. 
 
 \end{document}
 

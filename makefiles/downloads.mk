@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: downloads.mk,v 1.4 2003/11/14 08:13:06 jvanheld Exp $
+# $Id: downloads.mk,v 1.5 2003/11/16 01:04:24 jvanheld Exp $
 #
 # Time-stamp: <2003-10-09 14:02:21 jvanheld>
 #
@@ -8,7 +8,7 @@
 
 
 ################################################################
-#### proograms
+#### programs
 MAKEFILE=${RSAT}/makefiles/downloads.mk
 MAKE = make -sk -f ${MAKEFILE}
 

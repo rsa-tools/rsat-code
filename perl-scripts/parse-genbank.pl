@@ -1,7 +1,7 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: parse-genbank.pl,v 1.10 2003/11/06 21:49:13 jvanheld Exp $
+# $Id: parse-genbank.pl,v 1.11 2003/11/16 01:04:40 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -20,12 +20,11 @@ require "classes/Genbank_classes.pl";
 
 ################################################################
 #### initialization
-$dbms = $default{'dbms'};
-$schema= $default{'schema'};
-$host= $default{'host'};
-$user= $default{'user'};
-$password= $default{'password'};
 $no_suffix=1;
+$host= $default{'host'};
+$schema="genbank";
+$user="genbank";
+$password="genbank";
 
 $test_lines = 10000;
 
@@ -245,11 +244,7 @@ package main;
     foreach my $factory_name (@class_factories) {
 	my $class_factory = $$factory_name;
 	warn "; Dumping class $factory_name $class_factory\n" if ($verbose >= 1);
-#	if ($factory_name eq "features") {
 	$suffix = "_$org" unless ($no_suffix);
-#	} else {
-#	    $suffix = "";
-#	}
 	$class_factory->dump_tables($suffix);
 	$class_factory->generate_sql(dir=>"$dir{output}/sql_scripts",
 				     prefix=>"$class_factory_",
