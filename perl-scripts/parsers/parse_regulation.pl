@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_regulation.pl,v 1.1 2001/10/15 21:52:59 jvanheld Exp $
+# $Id: parse_regulation.pl,v 1.2 2001/10/15 22:12:57 jvanheld Exp $
 #
-# Time-stamp: <2001-10-15 23:40:49 jvanheld>
+# Time-stamp: <2001-10-16 00:12:29 jvanheld>
 #
 ############################################################
 ### parse_regulation.plt
@@ -77,35 +77,39 @@ package main;
     $transcriptionalRegulations = PFBP::ClassFactory->new_class(object_type=>"PFBP::TranscriptionalRegulation",
 								prefix=>"trr_");
 
+    $indirectInteractions = PFBP::ClassFactory->new_class(object_type=>"PFBP::IndirectInteraction",
+							  prefix=>"iin_");
+
     #### output fields
 
     @out_fields = qw(
+		     inputType
 		     factor_name
 		     factor_id
-		     sign
+		     controlType
 		     gene_name
 		     gene_id
+		     sign
+		     description
+
+		     pubmedIDs 
 		     );
     if ($debug) {
 	push @out_fields, qw(
+			     file
 			     input
-			     input_id
-			     inputType
-			     controlType
+			     input_ids
 			     output_id
-			     sign
 			     controlledFrom
 			     controlledType
 			     controlledTo
 			     strength
 			     type_of_inhibition
-			     source
 			     coenzyme 
 			     cofactor 
 			     org_if_not_Ecoli 
 			     org_in_addition_to_Ecoli 
 			     pathwayIDs 
-			     pubmedIDs 
 			     relative_concentration_of_input
 			     remark 
 			     remark_pubmedIDs);
@@ -276,6 +280,8 @@ sub ParseRegulation {
     $class_holder{inhibits} = $controlOfControls;
     $class_holder{'down-regulates'} = $transcriptionalRegulations;
     $class_holder{'up-regulates'} = $transcriptionalRegulations;
+    $class_holder{'down-regulates'} = $transcriptionalRegulations;
+    $class_holder{'up-regulates'} = $transcriptionalRegulations;
     $class_holder{induces} = $inductions;
     
     my %sign;
@@ -373,6 +379,12 @@ sub ParseRegulation {
 	    next;
 	}
 	
+	my $class_holder;
+	if (lc($field{inputType}) eq "compound") {
+	    $class_holder = $indirectInteractions;
+	} else {
+	    $class_holder = $class_holder{$field{controlType}};
+	}
 
 	#### when there are multiple outputs, create one regulation per output
 	my @control_outputs = split /\|/, $field{controlledFrom};
@@ -384,9 +396,9 @@ sub ParseRegulation {
 
 	foreach my $control_output (@control_outputs) {
 	    $field{controlledFrom} = $control_output;
-	    my $current_control = $class_holder{$field{controlType}}->new_object();
-	    $current_control->set_attribute("file", $filename);
-	    $current_control->set_attribute("line", $l);
+	    my $current_control = $class_holder->new_object();
+	    $current_control->set_attribute("file", $filename); #### for error report
+	    $current_control->set_attribute("line", $l);        #### for error report
 	    $current_control->set_attribute("sign", $sign{$field{controlType}});
 	    foreach my $key (@single_value) {
 		$current_control->set_attribute($key, $field{$key});
@@ -540,6 +552,12 @@ sub IdentifyInputsOutputs {
 		$trreg->new_attribute_value("output_ids", $gene_id);
 	    }
 	}
+
+	#### description
+	my $description = $factor_name;
+	$description .= " ".$trreg->get_attribute("controlType");
+	$description .= " ".$gene_name;
+	$trreg->set_attribute("description", $description);
 
 	#### matching_expressions
 #	my @matching_expressions = $index{gene_expression}->get_values(&standardize($gene_name));
