@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: server.mk,v 1.12 2004/11/08 09:09:27 jvanheld Exp $
+# $Id: server.mk,v 1.13 2005/02/06 08:45:17 jvanheld Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -27,15 +27,16 @@ RSYNC = rsync ${RSYNC_OPT} ${SSH}
 
 ################################################################
 # Mirrors
-RSAT_SERVER = jvanheld@rsat.scmbb.ulb.ac.be:rsa-tools
-NEWPAULUS = jvanheld@164.15.109.52:rsa-tools
-MERLIN = jvanheld@164.15.109.32:rsa-tools
+RSAT_SERVER = rsat@rsat.scmbb.ulb.ac.be:rsa-tools
+MAMAZE = jvanheld@164.15.109.52:rsa-tools
+MERLIN = jvanheld@merlin.scmbb.ulb.ac.be:rsa-tools
 FLYCHIP = jvanheld@flychip.org.uk:rsa-tools
 CIFN = jvanheld@itzamna.cifn.unam.mx:rsa-tools
 GIN = jvanheld@gin.univ-mrs.fr:rsa-tools
 LIV = jvanheld@liv.bmc.uu.se:rsa-tools
 TORONTO=jvanheld@ws03.ccb.sickkids.ca:rsa-tools
-MIRROR_SERVERS = ${NEW_PAULUS} ${MERLIN} ${LIV} ${FLYCHIP} ${GIN} ${TORONTO} ${CIFN}
+MIRROR_SERVERS = ${MAMAZE} ${MERLIN} ${LIV} ${FLYCHIP} ${GIN} ${TORONTO} ${CIFN}
+LOG_SERVERS= ${LIV} ${FLYCHIP} ${GIN} ${TORONTO} ${CIFN} ${RSAT_SERVER}
 
 ################################################################
 ## distribution
@@ -107,7 +108,7 @@ rsync_archives:
 #### from mirrors to brol
 ################################################################
 rsync_logs:
-	@for mirror in ${MIRROR_SERVERS} ; do					\
+	@for mirror in ${LOG_SERVERS} ; do					\
 		echo "${RSYNC} $${mirror}/logs/log-file_* logs/" ;	\
 		${RSYNC} $${mirror}/logs/log-file_* logs/ ;		\
 	done
