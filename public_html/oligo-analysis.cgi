@@ -25,8 +25,8 @@ $parameters = "";
 $parameters .= " -sort";
 
 ### sequence file
-$sequence_file = &GetSequenceFile();
-$parameters .= " -i $sequence_file";
+($sequence_file,$sequence_format) = &GetSequenceFile();
+$parameters .= " -i $sequence_file -format $sequence_format";
 
 
 ### fields to return

@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: patser.cgi,v 1.3 2001/01/13 19:57:01 jvanheld Exp $
+# $Id: patser.cgi,v 1.4 2001/02/23 06:55:58 jvanheld Exp $
 #
-# Time-stamp: <2001-01-13 20:52:54 jvanheld>
+# Time-stamp: <2001-01-13 21:01:32 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -110,7 +110,7 @@ if ($query->param('output') eq "display") {
     <H4>Next step</H4>
   </TD>
   <TD>
-    <FORM METHOD="POST" ACTION="feature-map.cgi">
+    <FORM METHOD="POST" ACTION="feature-map_form.cgi">
     <INPUT type="hidden" NAME="feature_file" VALUE="$feature_file">
     <INPUT type="hidden" NAME="format" VALUE="feature-map">
     <INPUT type="hidden" NAME="handle" VALUE="none">

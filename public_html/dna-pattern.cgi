@@ -41,8 +41,8 @@ $parameters .= " -pl $pattern_file";
 
 
 ### sequence file
-$sequence_file = &GetSequenceFile();
-$parameters .= " -i $sequence_file";
+($sequence_file,$sequence_format) = &GetSequenceFile();
+$parameters .= " -i $sequence_file -format $sequence_format";
 
 
 ### return match count ###
@@ -141,7 +141,7 @@ sub PipingForm {
 <H4>Next step</H4>
 </TD>
 <TD>
-<FORM METHOD="POST" ACTION="feature-map.cgi">
+<FORM METHOD="POST" ACTION="feature-map_form.cgi">
 <INPUT type="hidden" NAME="title" VALUE="$title">
 <INPUT type="hidden" NAME="feature_file" VALUE="$result_file">
 <INPUT type="hidden" NAME="format" VALUE="dna-pattern">

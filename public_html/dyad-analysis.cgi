@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.3 2000/12/26 22:54:39 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.4 2001/02/23 06:54:58 jvanheld Exp $
 #
-# Time-stamp: <2000-12-26 23:54:36 jvanheld>
+# Time-stamp: <2001-02-23 07:45:09 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -33,7 +33,7 @@ $parameters = "-v -sort -return proba ";
 
 ### sequence file
 ($sequence_file,$sequence_format) = &GetSequenceFile();
-$parameters .= " -i $sequence_file";
+$parameters .= " -i $sequence_file -format $sequence_format";
 
 ### dyad type
 if ($query->param('dyad_type') =~ /invert/) {
@@ -121,7 +121,7 @@ End_of_form
   
   ### Print result on the web page
   print '<H4>Result</H4>';
-  PrintHtmlTable(RESULT, $result_file);
+  &PrintHtmlTable(RESULT, $result_file, true);
   close(RESULT);
   
   #### pattern assembly ####

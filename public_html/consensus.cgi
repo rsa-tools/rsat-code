@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: consensus.cgi,v 1.3 2000/12/26 22:51:48 jvanheld Exp $
+# $Id: consensus.cgi,v 1.4 2001/02/23 06:54:42 jvanheld Exp $
 #
-# Time-stamp: <2000-12-26 23:51:42 jvanheld>
+# Time-stamp: <2001-02-23 07:42:38 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -118,7 +118,7 @@ if ($query->param('output') eq "display") {
 <INPUT type="hidden" NAME="matrix_file" VALUE="$matrix_file">
 <INPUT type="hidden" NAME="matrix_format" VALUE="consensus">
 <INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
-<INPUT type="hidden" NAME="sequence_format" VALUE="$sequence_format">
+<INPUT type="hidden" NAME="sequence_format" VALUE="wconsensus">
 <INPUT type="submit" value="pattern matching (patser)">
 </FORM>
 </TD>
