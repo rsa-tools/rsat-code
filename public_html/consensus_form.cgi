@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: consensus_form.cgi,v 1.2 2001/10/04 20:36:40 jvanheld Exp $
+# $Id: consensus_form.cgi,v 1.3 2001/11/13 23:40:19 jvanheld Exp $
 #
-# Time-stamp: <2001-10-04 22:35:57 jvanheld>
+# Time-stamp: <2001-11-14 00:39:56 jvanheld>
 #
 ############################################################
 #### this cgi script fills the HTML form for the program consensus
@@ -14,7 +14,7 @@ use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
 require "RSA.cgi.lib";
-$output_context = "cgi";
+$ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 ### Read the CGI query
 $query = new CGI;
@@ -26,7 +26,7 @@ $default{sequence_file} = "";
 $default{upload_file} = "";
 $default{length} = 10;
 $default{repeats} = "auto";
-$default{alphabet} = "a:t c:g";
+$default{alphabet} = "a:t 0.3 c:g 0.2";
 $default{strands} = "include as a single sequence";
 $default{symmetrical} = '';
 $default{one_per_seq} = '';
@@ -116,8 +116,8 @@ print "<BR>\n";
 print "<B><A HREF='help.consensus.html#alphabet'>\n";
 print "Alphabet</A>\n";
 print $query->textfield(-name=>'alphabet',
-		  -default=>$default{alphabet},
-		  -size=>50);
+			-default=>$default{alphabet},
+			-size=>50);
 print "<BR>\n";
 
 ### prior frequencies
