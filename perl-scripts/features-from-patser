@@ -68,42 +68,59 @@ if ($verbose) {
 	    print $out ";\t$id\t$length\n";
 	}
     }
-    print $out ";map";
-    print $out "\ttype";
-    print $out "\tid";
-    print $out "\tstrand";
-    print $out "\tstart";
-    print $out "\tend";
-    print $out "\tdescr";
-    print $out "\tscore";
-    print $out "\n";
 }
 
 ###### execute the command #########
-
+$header_printed=0;
 while (<$in>) {
     if (($matrix_length == 1) && (/width of the alignment matrix\:\s+(\d+)/)) {
          $matrix_length = $1;
 	 print $out "; $_";
 
-    } elsif (/^\s*(\S+)\s+position=\s+(\d+)([c\s])\s+score=\s+(\S+)/i) {
+    } elsif (/^\s*(\S+)\s+position=\s+(\d+)([c\s])\s+score=\s+(\S+)(.*)/i) {
+	unless ($header_printed) {
+	    print $out $map;
+	    print $out join ("\t", 
+			     "; map", 
+			     "type", 
+			     "id", 
+			     "strand", 
+			     "start", 
+			     "end", 
+			     "sequence", 
+			     "score",
+			     "ln(P)",
+			     ), "\n";
+	    $header_printed=1;
+	}
 	$map = $1;
 	$position = $2;
 	$strand = $3;
 	$score = $4;
+	if ($5 =~ /ln\(p-value\)=\s+(\S+)/) {
+	    $lnP = $1;
+	}
+	
 
 	#### get the sub sequence
-        $sub_sequence = substr($sequence{$map}, $position -1, $matrix_length);
+	$flank_len = 5;
+        my $sub_sequence = uc(substr($sequence{$map}, $position -1, $matrix_length));
+	my $left_flank =  lc(substr($sequence{$map}, $position -1 - $flank_len, $flank_len));
+	my $right_flank =  lc(substr($sequence{$map}, $position + $matrix_length -1, $flank_len));
 	if ($strand eq "C") {
 	    $sub_sequence = &ReverseComplement($sub_sequence);
+	    $left_flank = lc(&ReverseComplement($left_flank));
+	    $right_flank = lc(&ReverseComplement($right_flank));
+	    $sub_sequence = $right_flank.$sub_sequence.$left_flank;
+	} else {
+	    $sub_sequence = $left_flank.$sub_sequence.$right_flank;
 	}
-
 	
 	unless ($fixed_origin) {
 	    $origin = $origin{$1};
 	}
 	if ($origin eq "-0") {
-	    $start = $position - length($sequence{$map}) + 1;
+	    $start = $position - length($sequence{$map}) - 1;
 	} else {
 	    $start = $position - $origin;
 	}
@@ -119,7 +136,7 @@ while (<$in>) {
 
 	$descr = "${sub_sequence}";
 
-	&PrintFeature;
+	&PrintFeature();
     } else {
 	print $out "; $_";
     }
@@ -146,16 +163,16 @@ exit(0);
 ########################## subroutine definition ############################
 
 sub PrintFeature {
-    print $out $map;
-    print $out "\t$type";
-    print $out "\t$id";
-    print $out "\t$strand";
-    print $out "\t$start";
-    print $out "\t$end";
-    print $out "\t$descr";
-    print $out "\t$score";
-    print $out "\t";
-    print $out "\n";
+    print $out join ("\t",  
+		     $map, 
+		     $type, 
+		     $id, 
+		     $strand, 
+		     $start, 
+		     $end, 
+		     $descr, 
+		     $score,
+		     $lnP), "\n";
 }
 
 sub PrintHelp {
