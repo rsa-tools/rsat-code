@@ -303,20 +303,20 @@ calibrate_oligos: calibrate_oligos_${WHEN}
 
 ## A quick test for calibrate_oligos
 calibrate_oligos_test:
-	${MAKE} calibrate_oligos ORG=Mycoplasma_genitalium N=10 SEQ_LEN=200 STR=-1str NOOV=-ovlp R=100
+	${MAKE} calibrate_oligos ORG=Mycoplasma_genitalium N=10 SEQ_LEN=200 STR=-1str NOOV=-ovlp R=10
 
 calibrate_oligos_now:
 #	mkdir -p ${OLIGO_DISTRIB_DIR}
 	${CALIBRATE_CMD}
 
 JOB_DIR=jobs
-JOB_FILE=${JOB_DIR}/`mktemp job.XXXXXX`
-LOG_FILE=${JOB_FILE}.log
+JOB=`mktemp job.XXXXXX`
 calibrate_oligos_queue:
 	mkdir -p ${JOB_DIR}
-	for job in ${JOB_FILE} ; do								\
-		echo ${CALIBRATE_CMD} > $${job} ;						\
-		qsub -q rsa@merlin.ulb.ac.be -N $${job} -j oe -o $${job}.log $${job} ;	\
+	for job in ${JOB} ; do											\
+		echo "Job $${job}" ;										\
+		echo "${CALIBRATE_CMD}" > ${JOB_DIR}/$${job} ;							\
+		qsub -m e -q rsa@merlin.ulb.ac.be -N $${job} -j oe -o ${JOB_DIR}/$${job}.log ${JOB_DIR}/$${job} ;	\
 	done
 
 ################################################################
