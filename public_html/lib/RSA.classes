@@ -1,0 +1,670 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: RSA.classes,v 1.1 2002/06/06 11:46:44 jvanheld Exp $
+#
+# Time-stamp: <2002-06-06 13:46:06 jvanheld>
+#
+############################################################
+if ($0 =~ /([^(\/)]+)$/) {
+    push (@INC, "$`lib/");
+}
+require "RSA.seq.lib";
+
+
+package RSA::Object;
+{
+#  use strict;
+
+  ### class variables
+  my $_count = 0;
+  my $_prefix = "obj_";
+
+  ### creator
+  sub new { 
+      my ($class, %args) = @_;
+      my $object = bless {
+	  id=>$args{id} || $class->auto_id(),
+      }, $class;
+      $class->incr_count();
+      $object->init() if $object->can("init");
+      return $object;
+  }
+
+  sub auto_id {
+    my ($object) = @_;
+    my $class = ref($object) || $object;
+    my $id = $class->get_prefix();
+    $id .= sprintf "%6s", $class->get_count();
+    $id =~ s/ /0/g;
+    return $id;
+  }
+
+  #### class accessors
+  sub get_count {
+      my ($object) = @_;
+      $class = ref($object) || $object;
+      return $class->{_count};
+  }
+  sub incr_count {
+      my ($object) = @_;
+      $class = ref($object) || $object;
+      $class->{_count}++;
+  }
+  sub get_prefix {
+      my ($object) = @_;
+      $class = ref($object) || $object;
+      return $_prefix;
+  }
+
+  #### instance accessors
+  sub get_id {
+      my ($object) = @_;
+      return $object->{id};
+  }
+  sub set_id {
+      my ($object, $new_id) = @_;
+      $object->{id} = $new_id;
+  }
+
+  #### names
+  sub get_name {
+      my ($object) = @_;
+      return ${$object->{names}}[0];
+  }
+  sub set_name {
+      my ($object, $new_name) = @_;
+      ${$object->{names}}[0] = $new_name;
+  }
+  sub add_name {
+      my ($object, $new_name) = @_;
+      push @{$object->{names}}, $new_name;
+  }
+
+  ### general accessors
+  sub set_attribute {
+    my ($object,$key,$value) = @_;
+    $object->{$key} = $value;
+    return $object->{$key};
+  }
+
+  sub get_attribute {
+    my ($object,$key) = @_;
+    my $class = ref($object);
+    unless (defined($object->{$key})) {
+      warn("WARNING: object $object of class $class has no attribute named '$key'\n"); 
+      return undef;
+    }
+    return $object->{$key};
+  }
+
+}
+
+#### organism
+package RSA::Organism;
+{
+    @ISA = qw( RSA::Object );
+    my $_count = 0;
+    my $_prefix = "org_";
+    
+    #### chromosomes
+    sub get_chromosomes {
+	my ($object) = @_;
+	return @{$object->{chromosomes}};
+    }
+    sub set_chromosomes {
+	my ($object, @chromosomes) = @_;
+	@{$object->{chromosomes}} = @chromosomes;
+    }
+    sub add_chromosome {
+	my ($object, $chromosome) = @_;
+	push @{$object->{chromosomes}}, $chromosome;
+    }
+    sub count_chromosomes {
+	my ($object) = @_;
+	return $#{$object->{chromosomes}} + 1;
+    }
+}
+
+#### Chromosome
+package RSA::Chromosome;
+{
+    @ISA = qw( RSA::Object );
+    my $_count = 0;
+    my $_prefix = "chr_";
+
+    sub init() {
+	my ($object) = @_;
+	$object->set_genes();
+    }
+
+    #### class accessors
+    sub get_prefix {
+	my ($class) = @_;
+	return $_prefix;
+    }
+
+    #### genes
+    sub get_genes {
+	my ($object) = @_;
+	return @{$object->{genes}};
+    }
+    sub set_genes {
+	my ($object, @genes) = @_;
+	@{$object->{genes}} = @genes;
+    }
+    sub add_gene {
+	my ($object, $gene) = @_;
+	push @{$object->{genes}}, $gene;
+    }
+    sub count_genes {
+	my ($object) = @_;
+	return $#{$object->{genes}} + 1;
+    }
+
+    #### organism
+    sub get_organism {
+	my ($object) = @_;
+	return $object->{organism};
+    }
+    sub set_organism {
+	my ($object, $new_organism) = @_;
+	$object->{organism} = $new_organism;
+    }
+
+    #### sequence
+    sub get_sequence {
+	my ($object) = @_;
+	return $object->{sequence};
+    }
+    sub set_sequence {
+	my ($object, $new_sequence) = @_;
+	$object->{sequence} = $new_sequence;
+    }
+
+}
+
+#### Gene
+package RSA::Gene;
+{
+    @ISA = qw( RSA::Object );
+    my $_count = 0;
+    my $_prefix = "gn_";
+
+    sub init() {
+	my ($object) = @_;
+    }
+
+    #### class accessors
+    sub get_prefix {
+	my ($class) = @_;
+	return $_prefix;
+    }
+
+    #### organism
+    sub get_organism {
+	my ($object) = @_;
+	return $object->{organism};
+    }
+    sub set_organism {
+	my ($object, $new_organism) = @_;
+	$object->{organism} = $new_organism;
+    }
+
+    #### exons
+    sub get_exons {
+	my ($object) = @_;
+	return @{$object->{exons}};
+    }
+    sub add_exon {
+        my ($object, $new_exon) = @_;
+        push @{$object->{exons}}, $new_exon;
+    }
+
+}
+
+
+### class for manipulating sequences
+package RSA::Sequence;
+{
+#  use strict;
+
+  ### class variables
+  my $_count = 0;
+  my $_prefix = "seq_";
+
+  ### creator
+  sub new {
+    my ($class, %args) = @_;
+    my $object = bless {
+			id=>$args{id} || $class->auto_id(),
+			sequence=>$args{sequence},
+			type=>lc($args{type}) || "dna", ### dna (default) or aa
+			source=>$args{source},
+			description=>$args{description},
+		       }, $class;
+    $object->init();
+    return $object;
+  }
+  
+  ### initiator
+  sub init {
+    my ($object) = @_;
+    $object->{sequence} =~ s/\s//g;
+  }
+  
+  sub auto_id {
+    my ($class) = @_;
+    my $id = $class->{_prefix};
+    $id .= sprintf "%6s", $class->{_count}++;
+    $id = s/ /0/g;
+    return $id;
+  }
+
+
+  ### accessors
+  sub set_attribute {
+    my ($object,$key,$value) = @_;
+    $object->{$key} = $value;
+    return $object->{$key};
+  }
+
+  sub get_attribute {
+    my ($object,$key) = @_;
+    my $class = ref($object);
+    unless (defined($object->{$key})) {
+      warn("WARNING: object $object of class $class has no attribute named '$key'\n"); 
+      return undef;
+    }
+    return $object->{$key};
+  }
+
+  sub get_id {
+    my ($object) = @_;
+    return $object->{id};
+  }
+  sub get_type {
+    my ($object) = @_;
+    return $object->{type};
+  }
+  sub get_sequence {
+    my ($object) = @_;
+    return $object->{sequence};
+  }
+  sub get_length {
+    my ($object) = @_;
+    return length($object->{sequence});
+  }
+  sub get_source {
+    my ($object) = @_;
+    return $object->{source};
+  }
+  sub get_description {
+    my ($object) = @_;
+    return $object->{description};
+  }
+
+}
+
+package RSA::SequenceOnDisk;
+### provides direct read access to a sequence on disk
+### this is particularly important for retrieving sub-sequences of large chromosomes
+### whose size could exceeed the RAM 
+@ISA = qw( RSA::Sequence );
+{
+#  use strict;
+  sub new {
+    my ($class, %args) = @_;
+
+    my %new_seq = ();
+    unless (defined($args{filename})) {
+      die "Error: cannot open a sequence on disk without a specified filename\n";
+    }
+
+    %new_seq = %args;
+    unless (defined($new_seq{id})) {
+      $new_seq{id} = $class->auto_id();
+    }
+    my $object = bless \%new_seq, $class;
+    $object->init();
+    
+    return $object;
+  }
+  
+  sub init {
+    my ($object) = @_;
+    my $filename = $object->get_attribute("filename");
+    die "Error: a file name has to be specified\n"
+	unless ($filename);
+    die "Error: file $filename does not exist\n"
+	unless (-e $filename);
+    die "Error: cannot read file $filename\n"
+	unless (-r $filename);
+    warn ("opening file ",$filename,"\n")
+	if ($main::warn_level >= 2);
+    ### open a stream to the file
+    open FILE, $filename ||
+	die "Error: cannot open file ", $filename, "\n";
+#    no strict;
+    my $filehandle = FILE;
+    $object->set_attribute("filehandle", $filehandle);
+    
+    return $filehandle;
+  }
+
+  sub DESTROY {
+    my ($object) = @_;
+    my $filehandle =  $object->get_attribute("filehandle");
+    my $filename =  $object->get_attribute("filename");
+    close $filehandle ||
+	die "Error: cannot close file $filename\n";;
+    warn ("closing file ",$filename,"\n")
+	if ($main::warn_level >= 2);
+  }
+
+  sub get_length() {
+    my ($object) = @_;
+    my $filename = $object->get_attribute("filename");
+    unless (defined($object->{length})) {
+      my $length = (-s $filename) -1;
+      $object->set_attribute("length", $length);
+    }
+    return $object->get_attribute("length");
+  }
+
+
+  ### retrieve a sub-sequence
+  sub get_sequence {
+    my ($object, $from, $to, $strand) = @_;
+
+#    no strict;
+#    my $filehandle =  $object->get_attribute("filehandle");
+
+    my $sequence = "";
+
+    ### check from and to
+    $from = 1 unless (defined($from));
+    $to = $object->get_length() unless (defined($to));
+    if ($from > $to) { 
+      my $tmp = $to;
+      $to = $from;
+      $from = $tmp;
+    }
+
+    warn (join "\t",
+	  "; get_sequence",
+	  $object->get_attribute("filename"),
+	  $from,
+	  $to,
+	  $strand,
+	  $sequence,
+	  "\n")
+	if ($main::warn_level >= 3);
+
+
+    ### treat out-of-bonds cases
+
+    ### overlap sequence origin
+    if (($from < 0) && 
+	($to > 0)) {
+      if ($object->get_attribute("circular") == 1) { 
+	### concatenate end and beginning of circular sequence
+	$sequence = $object->get_sequence($object->get_length() + $from, $object->get_length());
+	$sequence .= $object->get_sequence(1,$to);
+      } else {
+	### truncate and warn
+	warn "Error: cannot retrieve sub-sequence with negative limits\n";
+	$sequence = $object->get_sequence(1,$to);
+      }
+      
+    ### treat out-of-bonds cases      ### overlap sequence end
+    } elsif (($from < $object->get_length()) &&
+	     ($to > $object->get_length())) {
+    
+      if ($object->get_attribute("circular") == 1) { 
+	### concatenate end and beginning of circular sequence
+	$sequence = $object->get_sequence($from,$object->get_length());
+	$sequence .= $object->get_sequence(1,$to - $object->get_length());
+      } else {
+	### truncate and warn
+	warn "Error: cannot return sub-sequence with one limit larger the sequence length\n";
+	$sequence = $object->get_sequence($from,$object->get_length());
+      }
+
+
+      ### negative coordinates
+    } elsif (($from < 0) &&
+	     ($to < 0)) {
+      if ($object->get_attribute("circular") == 1) { 
+	$from += $object->get_length();
+	$to += $object->get_length();
+	$sequence =  $object->get_sequence($from,$to);
+      } else {
+	warn "Error: cannot retrieve sub-sequence with negative limits\n";
+	return undef;
+      }
+
+      ### coordinates larger than sequence length
+    } elsif (($from > $object->get_length()) && 
+	     ($to > $object->get_length())) {
+      if ($object->get_attribute("circular") == 1) { 
+	$from -= $object->get_length();
+	$to -= $object->get_length();
+	$sequence = $object->get_sequence($from,$to);
+      } else {
+	warn "Error: cannot retrieve sub-sequence with limits larger than whole sequence size\n";
+	return undef;
+      }
+
+      ### normal case
+    } else { 
+      my $len = $to - $from + 1;
+      my $offset = $from -1;
+      
+      ### open a stream to the file
+      my $filename = $object->get_attribute("filename");
+      open FH, $filename ||
+	  die "Error: cannot open file ", $filename, "\n";
+      my $filehandle = FH;
+      
+      sysseek($filehandle, $offset, 0) &&
+	  sysread($filehandle, $sequence, $len);
+      close $filehandle;
+
+      warn (join "\t",
+	    "; get_sequence",
+	    $filehandle,
+	    $from,
+	    $to,
+	    $len,
+	    $offset,
+	    "\n")
+	  if ($main::warn_level >= 3);
+
+    }
+    
+
+    if ($strand eq "R") { ### reverse complement
+      return (&main::ReverseComplement($sequence));
+    } else {
+      return $sequence;
+    }
+  }
+
+  #### file name
+  sub get_file_name {
+      my ($object) = @_;
+      return $object->{name};
+  }
+  sub set_file_name {
+      my ($object, $new_name) = @_;
+      $object->{name} = $new_name;
+  }
+
+}
+
+
+### class for manipulating patterns
+package RSA::pattern;
+@RSA::pattern::ISA = qw( RSA::Sequence );
+{
+#  use strict;
+  
+  ### creator
+  sub new {
+    my ($class, %args) = @_;
+    my $object = bless {
+			id=>$args{id} || $args{seq},
+			type=>"pattern",
+			sequence=>$args{sequence},
+			source=>$args{source},
+			description=>$args{description},
+			score=>$args{score},
+		       }, $class;
+    return $object;
+  }
+
+  ### accessors
+  sub set_attribute {
+    my ($object,$key,$value) = @_;
+    $object->{$key} = $value;
+    return $object->{$key};
+  }
+
+  sub get_attribute {
+    my ($object,$key) = @_;
+    my $class = ref($object);
+    unless (defined($object->{$key})) {
+      warn("WARNING: object $object of class $class has no attribute named '$key'\n"); 
+      return undef;
+    }
+    return $object->{$key};
+  }
+
+  ### pattern comparison routines
+  sub contains {
+    ### usage:
+    ### if ($pattern1->contains($pattern2)) { ... }
+    ### if ($pattern1->contains($pattern2), rc=>1) { ... }
+    ### options: 
+    ###    rc=>1: try to match reverse complement
+    ### returns 1 if the first pattern contains 
+    ### a match with the second pattern. 
+    ### Matching includes degenerate code, for instance 
+    ### W matches M since they have A as a possible intersection
+    my ($pattern1, $pattern2,%args) = @_;
+    my $seq1 = $pattern1->get_sequence();
+    my $seq2 = $pattern2->get_sequence();
+    my $len1 = length($seq1);
+    my $len2 = length($seq2);
+    my $max_offset = $len1 - $len2;
+    my @seqs = ();
+    my $min_matches = $len2;
+    my $min_score = 0;
+    if ($args{min_score}) {
+      $min_score = $args{min_score};
+    } elsif ($args{perfect}) {
+      $min_score = $len2;
+    }
+    
+    return 0 if ($len2 > $len1);
+    
+    push @seqs, $seq2;
+    unless ($args{single_strand}){ ### reverse complement
+      push @seqs, &main::ReverseComplement($seq2) 
+    }
+
+    foreach my $seq (@seqs) {
+      for my $i (0..$max_offset) {
+	my $subseq = substr($seq1,$i,$len2);
+	my ($matches, $score) = &main::CountMatches($subseq,$seq);
+	return $score if (($matches >= $min_matches) &&
+			  ($score >= $min_score)); 
+      }
+    }
+    return 0;
+  }
+}
+
+
+
+################################################################
+#
+# matrix manipulation
+#
+
+package RSA::matrix;
+################################################################
+# Main class for manipuating profile matrices (alignment
+# matrices, position-weight matrices). 
+# 
+#
+# A profile matrix represents a (usually short) domain of a sequence
+# alignment.
+#
+# Each row corresponds to one residue
+# (nucleotide or amino-acid depending on the sequence type).
+# Each olumn corresponds to one position in the alignment.
+# The value within each cell represents the frequency of each residue
+# at each position.
+
+{
+    #### Creates an empty matrix
+    sub new {
+	my ($class, %args) = @_;
+	my $matrix = bless {
+	}, $class;
+	$matrix->setAlphabet("A","C","G","T");   # default nucletodide alphabet
+	return $matrix;
+    }
+
+    #### Sets the list of valid letters for the matrix.
+    sub setAlphabet {
+	my ($self, @new_alphabet) = @_;
+	@{$self->{alphabet}} = @new_alphabet;
+    } 
+
+    #### Returns the list of valid letters for the matrix.
+    sub getAlphabet {
+	my ($self) = @_;
+	return @{$self->{alphabet}};
+    }
+
+    #### Adds a new column to the matrix.
+    sub addColumn {
+	my ($self,@new_col) = @_;
+	push @{$self->{columns}}, [@new_col];
+    }
+
+    #### returns the whole matrix as a list of columns. 
+    sub getMatrix {
+	my ($self,$col_nb) = @_;
+	return @{$self->{columns}};
+    }
+
+    #### returns a string description of the matrix
+    #### in the same format as Jerry Hertz' programs
+    sub getString {
+	my ($self) = @_;
+	my @matrix = @{$self->{columns}};
+	
+	my @alphabet = $self->getAlphabet();
+	my $col_nb = $#matrix;
+	my $to_print = "";
+	
+	for $a (0..$#alphabet) {
+	    $to_print .= $alphabet[$a];
+	    $to_print .= "\t|";
+	    for $c (0..$col_nb) {
+		$to_print .= "\t$matrix[$c][$a]";
+	    }
+	    $to_print .= "\n";
+	}
+	return $to_print;
+    }
+
+}
+
+
+1;
+
