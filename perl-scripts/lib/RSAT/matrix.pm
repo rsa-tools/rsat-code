@@ -69,7 +69,7 @@ is the relative frequency of residue i at position j of the alignment
 Relative frequencies can be corrected by a pseudo-weight (b) to reduce
 the bias due to the small number of observations.
 
-S<F'ij=Cij+b*Pi/[SUMi(Cij)+b]>
+S<F''ij=Cij+b*Pi/[SUMi(Cij)+b]>
 
 where 
 
@@ -94,7 +94,7 @@ Weights are calculated according to the formula from Hertz (1999), as
 the natural logarithm of the ratio between the relative frequency
 (corrected for pseudo-weights) and the prior residue probability.
 
-S<Wij=ln(F'ij/Pi)>
+S<Wij=ln(F''ij/Pi)>
 
 =item information
 
@@ -106,7 +106,7 @@ S<Iij = Fij*ln(Fij/Pi)>
 In addition, we calculate a "corrected" information content which
 takes pseudo-weights into account.
 
-S<I'ij = F'ij*ln(F'ij/Pi)>
+S<I''ij = F''ij*ln(F''ij/Pi)>
 
 
 =item parameters
@@ -174,6 +174,9 @@ Specify the alphabet (i.e. the list of valid letters) for the matrix.
 sub setAlphabet {
     my ($self, @new_alphabet) = @_;
     @{$self->{alphabet}} = @new_alphabet;	
+
+#    warn join("\t", "; Alphabet", $self->getAlphabet()), "\n" if ($main::verbose >= 10);
+    
     ## update the number of columns
     $self->force_attribute("nrow", scalar(@alphabet));
 } 
@@ -271,6 +274,8 @@ sub addColumn {
     my ($self,@new_col) = @_;
 #	push @{$self->{matrix}}, [@new_col];
     
+    
+    warn ("Matrix: adding column\t", join (" ", @new_col), "\n") if ($main::verbose >= 5);
     
     ## Update number of columns
     my $ncol = $self->ncol()+1;
@@ -415,6 +420,39 @@ sub setMatrix {
 }
 
 
+################################################################
+=pod
+
+=item setCell($row, $col, $value)
+
+Specify the content of a single cell. 
+
+=cut
+sub setCell {
+    my ($self,$row, $col, $value) = @_;
+#    warn join("\t", "Setting cell", 
+#	      "row", $row, 
+#	      "column", $col, 
+#	      "value", $value), "\n" 
+#		  if (main::verbose >= 10); 
+    ${$self->{matrix}}[$col-1][$row-1] = $value;
+}
+
+
+################################################################
+=pod
+
+=item getCell($row, $col)
+
+Return the content of a single cell. 
+
+=cut
+sub getCell {
+    my ($self,$row, $col) = @_;
+    return ${$self->{matrix}}[$col-1][$row-1];
+}
+
+
 
 ################################################################
 =pod
@@ -426,15 +464,18 @@ Read a matrix from a file
 =cut
 sub readFromFile {
     my ($self, $file, $format) = @_;
-    if (($format =~ /consensus/) || ($format =~ /^wc/i)) {
+    if (($format =~ /consensus/i) || ($format =~ /^wc/i)) {
 	$self->_readFromConsensusFile($file);
-    } elsif ($format =~ /gibbs/) {
+    } elsif ($format =~ /gibbs/i) {
 	$self->_readFromGibbsFile($file);
-    } elsif ($format =~ /MotifSampler/) {
+    } elsif ($format =~ /MotifSampler/i) {
 	$self->_readFromMotifSamplerFile($file);
+    } elsif ($format =~ /meme/i) {
+	$self->_readFromMEMEFile($file);
     } else {
-	    &main::FatalError("Invalid format for reading matrix\t$format");
-	}
+	&main::FatalError("Invalid format for reading matrix\t$format");
+    }
+
     ## Check that the matrix contains at least one row and one col
     if (($self->nrow() > 0) && ($self->ncol() > 0)) {
 	warn join("\t", "; Matrix read", 
@@ -613,6 +654,172 @@ sub _readFromConsensusFile {
 ################################################################
 =pod
 
+=item init
+
+Initialize the matrix.
+
+=cut
+
+sub init {
+    my ($self) = @_;
+
+    ## initialize the matrix
+    my $nrow = $self->nrow();
+    my $ncol = $self->ncol();
+    warn "Initializing the matrix $nrow rows, $ncol columns\n" if ($main::verbose >= 5);
+    foreach my $r (1..$nrow) {
+	foreach my $c (1..$ncol) {
+	    $self->setCell($r,$c,0);
+	}
+    }
+#    warn $self->toString() if ($verbose >= 10);
+
+}
+
+################################################################
+=pod
+
+=item _readFromMEMEFile($file)
+
+Read a matrix from a MEME file. This method is called by the
+method C<readFromFile($file, "MEME")>.
+
+=cut
+
+sub _readFromMEMEFile {
+    my ($self, $file) = @_;
+    warn ("; Reading matrix from consensus file\t",$file, "\n") if ($main::verbose >= 2);
+    
+    ## open input stream
+#    ($in, $dir) = &main::OpenInputFile($file);
+    my $in = STDIN;
+    if ($file) {
+	open INPUT, $file;
+	$in = INPUT;
+    }
+
+    my $current_matrix_nb = 0;
+    my $current_col = 0;
+    my $in_proba_matrix = 0;
+    my $in_blocks = 0;
+    my $width_to_parse = 0;
+    my %alphabet = ();
+    my @frequencies = ();
+#    my @matrix = ();
+    my $parsed_width = 0;
+    while (<$in>) {
+	next unless (/\S/);
+	chomp();
+	$_ = &main::trim($_);
+	if (/MOTIF\s+(\d+)\s+width =\s+(\d+)\s+sites =\s+(\d+)\s+llr =\s+(\d+)\s+E-value =\s+(\S+)/) {
+	    warn "Parsing matrix parameters\n" if ($main::verbose >= 5);
+
+	    $current_matrix_number = $1;
+	    $width_to_parse = $2;
+	    $self->set_attribute("ncol", $2);
+	    $self->set_attribute("sites", $3);
+	    $self->push_attribute("parameters", "sites");
+	    $self->set_attribute("llr", $4);
+	    $self->push_attribute("parameters", "llr");
+	    $self->set_attribute("E-value", $5);
+	    $self->push_attribute("parameters", "E-value");
+	    
+	    $self->init();
+#	    @matrix = $self->getMatrix();
+
+#	    warn $self->toString() if ($main::verbose >= 0);
+
+	    ## Parse alphabet
+	} elsif (/Letter frequencies in dataset/) {
+	    warn "Reading letter frequencies\n" if ($main::verbose >= 5);
+	    my $alphabet = <$in>;
+	    $alphabet = &main::trim($alphabet);
+	    %residue_frequencies = split /\s+/, $alphabet;
+
+	    $self->setPrior(%residue_frequencies);
+
+	    my @alphabet = sort (keys %residue_frequencies);
+	    $self->setAlphabet(@alphabet);
+	    
+	    ## Index the alphabet
+	    foreach my $l (0..$#alphabet) {
+		$alphabet{$alphabet[$l]} = $l;
+	    }
+
+	    ## Specify the number of rows of the matrix
+	    $self->force_attribute("nrow", scalar(@alphabet));
+
+	    ## Parse BLOCKS format
+	} elsif (/Motif (\d+) in BLOCKS format/) {
+	    $current_matrix_number = $1;
+	    $in_blocks = 1;
+	    warn "; Starting to parse BLOCKS format\n" if ($main::verbose >= 5);
+	} elsif ($in_blocks) {
+	    if (/(\S+)\s+\(\s*\d+\)\s+(\S+)/) {
+		my $seq_id = $1;
+		my $seq = $2;
+		my @letters = split "|", $seq;
+		$parsed_width = &main::max($parsed_width, scalar(@letters));
+		warn join ("\t", ";\tAdding site", $seq_id, $seq, scalar(@letters)), "\n" 
+		    if ($main::verbose >= 5);
+		foreach my $c (0..$#letters) {
+		    my $row = $alphabet{$letters[$c]};
+#		    warn join ("\t","Incrementing column", $c, "row", $row, "letter", $letters[$c]), "\n" if ($main::verbose >= 10);
+		    ${$self->{matrix}}[$c][$row]++;
+#		    $matrix[$c][$row]++;
+		}
+#		warn $self->toString() if ($main::verbose >= 10);
+		
+	    } elsif (/\/\//) {
+		warn "; BLOCKS format parsed\n" if ($main::verbose >= 5);
+#		$self->setMatrix(@matrix);
+#		$self->force_attribute("ncol", $parsed_width);
+#		print join( ":", $self->toString()), "\n" if ($main::verbose >= 10);
+		$in_blocks = 0;
+	    }
+	    
+#	} elsif (/Motif (\d+) position-specific probability matrix/) {
+#	    $current_matrix_number = $1;
+#	    $in_proba_matrix = 1;
+#	    warn ("; Parsing motif $current_matrix_number\n") if ($main::verbose >= 0);
+#	    next;
+#	}
+#	if (/letter-probability matrix: alength= (\d+) w= (\d+) n= (\d+) E= (\S+)/) {
+#	    warn join ("\t", 
+#		       $1." rows",
+#		       $2." columns",
+#		       "n=".$3,
+#		       "E=".$4,
+#		       ), "\n" if ($main::verbose >= 1);
+#	    $self->force_attribute("nrow", $1);
+#	    $width_to_parse = $2;
+#	    $self->set_attribute("n", $3);
+#	    $self->push_attribute("parameters", "n");
+#	    $self->set_attribute("E", $4);
+#	    $self->push_attribute("parameters", "E");
+#	} elsif ($in_proba_matrix) {
+#	    $current_col++;
+#	    my @fields = split /\s+/;
+#	    warn (join "\t", @fields, "\n") if ($main::verbose >= 0);
+#	    
+#	    foreach my $r (0..$#fields) {
+#		$frequencies[$current_col-1][$r] = $fields[$r];
+#	    }
+#	    
+#	    ## Terminate the reading of this matrix
+#	    if ($current_col == $width_to_parse) {
+#		warn "; Read ".$current_col." columns\n" if ($main::verbose >= 0);
+#		$in_proba_matrix = 0;
+#		$self->setFrequencies(@frequencies);
+#	    }
+	}
+    }
+    close $in if ($file);
+}
+
+################################################################
+=pod
+
 =item _readFromMotifSamplerFile($file)
 
 Read a matrix from a MotifSampler file. This method is called by the
@@ -622,6 +829,38 @@ TO BE IMPLEMENTED
 
 =cut
 
+sub _readFromMotifSamplerFile {
+    &FatalError("The MotifSampler format is not yet supported in this version of the program.");
+}
+
+################################################################
+=pod
+
+=item _addSeparator($sep, $col_width, $type, $ncol, $to_print)
+
+Print a separator between header/footer and matrix
+
+=cut
+
+sub _addSeparator {
+    my ($self, $sep, $col_width, $type, $ncol, $to_print) = @_;
+    if (($col_width) && ($col_width < 6)){
+	$to_print .= ";-";
+    } else {
+	$to_print .= "; -----";
+    }
+    $to_print .= $sep."|-";
+    for $c (0..($ncol-1)) {
+	if ($col_width) {
+	    $to_print .= "-"x($col_width-1);
+	} else {
+	    $to_print .= "-"x7;
+	}
+	$to_print .= "|";
+    }
+    $to_print .= "\n";
+    return $to_print;
+}
 
 ################################################################
 =pod
@@ -677,12 +916,12 @@ sub toString {
 	
 	## Alphabet
 	$to_print .= "; Alphabet\t";
-	$to_print .= join(" ", $self->get_attribute("alphabet"));
+	$to_print .= join(" ", $self->getAlphabet());
 	$to_print .= "\n";
 	
 	## Prior probabilities
 	my %prior = $self->getPrior();
-	foreach my $letter (keys %prior) {
+	foreach my $letter (sort keys %prior) {
 	    $to_print .= join ("\t", ";", $letter, $prior{$letter})."\n";
 	}
 	
@@ -735,22 +974,7 @@ sub toString {
 	    }
 	    $to_print .= "\n";
 
-	    ## Separator between header and matrix
-	    if (($col_width) && ($col_width < 6)){
-		$to_print .= ";-";
-	    } else {
-		$to_print .= "; -----";
-	    }
-	    $to_print .= $sep."|-";
-	    for $c (0..($ncol-1)) {
-		if ($col_width) {
-		    $to_print .= "-"x($col_width-1);
-		} else {
-		    $to_print .= "-"x7;
-		}
-		$to_print .= "|";
-	    }
-	    $to_print .= "\n";
+	    $to_print = $self->_addSeparator($sep, $col_width, $type, $ncol, $to_print);
 	}
 
 	## Print the matrix
@@ -775,8 +999,32 @@ sub toString {
 	    }
 	    $to_print .= "\n";
 	}
-    }
 
+	## Print information per column
+	if (($type eq "information") && ($main::verbose >= 1)){
+	    $to_print = $self->_addSeparator($sep, $col_width, $type, $ncol, $to_print);
+	    my @column_information = $self->get_attribute("column.information");
+	    $to_print .= ";I";
+	    $to_print .= $sep."|";
+	    for my $c (0..($ncol-1)) {
+		my $value = $column_information[$c];
+		if ($col_width) {
+		    my $value_format = "%${number_width}s";
+		    if (&main::IsReal($value)){
+			if ($type eq "alignment") {
+			    $value_format = "%${number_width}d";
+			} else {
+			    $value_format= "%${number_width}.${decimals}f";
+			}
+		    }
+		    $to_print .= sprintf " ${value_format}", $value;
+		} else {
+		    $to_print .= $sep.$value;
+		}
+	    }
+	    $to_print .= "\n";
+	}
+    }
     return $to_print;
 }
 
@@ -922,8 +1170,9 @@ sub calcInformation {
     my $ncol = $self->ncol();
 
     ## Calculate information contents
-    my @information = ();
-    my $total_information = 0;
+    my @information = (); ## Informatiion matrix 
+    my @column_information = (); ## Information per column
+    my $total_information = 0; ## Total information for the matrix
     for my $c (0..($ncol-1)) {
 	for my $r (0..($nrow-1)) {
 	    my $letter = $alphabet[$r];
@@ -934,13 +1183,21 @@ sub calcInformation {
 	    } else {
 		$information[$c][$r] = $freq * log($freq/$prior);
 	    }
+	    $column_information[$c] += $information[$c][$r];
 	    $total_information += $information[$c][$r];
 	    warn join "\t", "information", $r, $c, $information[$c][$r], $total_information, "\n" if ($main::verbose >= 10);
 	}
     }
     $self->setInformation($nrow,$ncol,@information);
+
+
+    ## Information per column
+    $self->push_attribute("column.information", @column_information);
+
+    ## Total information for the matrix
     $self->force_attribute("total.information", $total_information);
     $self->push_attribute("parameters", "total.information");
+
 }
 
 
@@ -1081,7 +1338,7 @@ sub calcFrequencies {
 ## Calculate the consensus
 sub calcConsensus {
     my ($self) = @_;
-    my $consensus_type = $args{type} || "degenerate";
+#    my $consensus_type = $args{type} || "degenerate";
 
     ## Calculate weight only if required
     unless ($self->get_attribute("weight_specified")) {
@@ -1095,41 +1352,57 @@ sub calcConsensus {
     my $nrow = $self->nrow();
     my $ncol = $self->ncol();
     my $consensus = "";
+    my $consensus_strict = "";
     for my $c (0..($ncol-1)) {
 	my $col_max = 0;
 	my $col_consensus = "-";
 	my %positive_score = ();
 	for my $r (0..($nrow - 1)) {
 	    my $weight = $weights[$c][$r];
-	    if ((&main::IsReal($weight)) && ($weight >= $col_max)) {
-		$col_max = $weight;
+	    if ((&main::IsReal($weight)) && ($weight >= 0)) {
+		my $letter = $alphabet[$r];
+		$positive_score{$letter} = $weight;
+		if ($weight >= $col_max) {
+		    $col_max = $weight;
 #		die join "\t", $c, $r, $col_max, $alphabet[$r], $col_consensus;
-		$col_consensus = $alphabet[$r];
-		$positive_score{$col_consensus} = $weight;
+		    $col_consensus = $letter;
+		}
 	    }
 	}
+	
 	## Calculate degenerate code
-	if (($consensus_type eq "degenerate") && (scalar(keys %positive_score) >= 2)) {
-	    my $regular = "[";
+	my  $regular = $col_consensus;
+	if (scalar(keys %positive_score) >= 2) {
+	    $regular = "[";
 	    $regular .= join "", sort keys %positive_score;
 	    $regular .= "]";
-	    $col_consensus = $regular;
 	}
 	
 	## Use uppercase for scores >= 1
 	if ($col_max >= 1) {
-	    $consensus .= uc($col_consensus);
+	    $consensus_strict .= uc($col_consensus);
+	    $consensus .= uc($regular);
 	} else {
-	    $consensus .= lc($col_consensus);
+	    $consensus_strict .= lc($col_consensus);
+	    $consensus .= lc($regular);
 	}
     }
 
-    if ($consensus_type eq "degenerate") {
-	$consensus = &main::regular_to_IUPAC($consensus);
-    }
+    
 
-    $self->force_attribute("consensus", $consensus);
-    $self->push_attribute("parameters","consensus");
+    ## Strict consensus 
+    $self->force_attribute("consensus.strict", $consensus_strict);
+    $self->push_attribute("parameters","consensus.strict");
+
+    ## Degenerate consensus in regexp format
+    $self->force_attribute("consensus.regexp", $consensus);
+    $self->push_attribute("parameters","consensus.regexp");
+
+    ## Degenerate consensus in IUPAC format
+    my $consensus_IUPAC = &main::regular_to_IUPAC($consensus);
+    $self->force_attribute("consensus.IUPAC", $consensus_IUPAC);
+    $self->push_attribute("parameters","consensus.IUPAC");
+
 }
 
 
