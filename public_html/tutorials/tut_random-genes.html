@@ -29,9 +29,36 @@
 <a name=prerequisite><h2>Prerequisite</h2>
 <ul>
 
+This tutorial does not require any prior knowledge, but in order to
+take the maximal benefit of it, you should first follow the tutorials
+on 
+<a href=tut_retrieve-seq.html>sequence retrieval</a> and 
+<a href=tut_oligo-analysis.html>oligo-analysis</a>.
+
 </ul>
 <a name=intro><h2>Introduction</h2>
 <ul>
+
+<p>In the context of transcriptome analysis, we are facing with huge
+amounts of data, which can be processed in different ways to obtain
+clusters of co-expressed genes. A routine approach is to apply some
+clustering algorithm to gene expression profiles, and to predict
+regulatory elements in the promoter sequences of each cluster, with a
+pattern discovery program.
+
+<p>It is well knwon that microarray data is noisy, and, in addition,
+there are dozens of ways to post-process this data (choice of a
+normalization method, fitering of , clustering algorithm, distance
+metrics, other clustering options, ...). It is thus expected that many
+of our supposedly "co-expressed" genes will result from all the
+possible biases of these treatments, and will actually not correspond
+to a set of co-regulated genes (i.e. direct targeets of a same
+transcription factor).
+
+
+<p>The selection of a random set of genes is a very simple but very
+efficient way to check the rate of false positives of pattern
+discovery programs.
 
 </ul>
 <a name=example><h2>Example of utilization</h2>

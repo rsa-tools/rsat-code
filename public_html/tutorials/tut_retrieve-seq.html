@@ -116,14 +116,16 @@ same strand as the gene, it might indicate that they belong to the
 same operon. 
 
 <p>
-For most organisms, it is thus preferible to prevent overlap with
-upstream ORFs. A notable exception is the yeast <i>Saccharomyces
+It is thus usually preferible to prevent overlap with upstream ORFs. 
+
+<p>A notable exception is the yeast <i>Saccharomyces
 cerevisiae</i>. We evaluated the results obtained when this option is
 activated and inactivated respectively, and it is clear that many
 patterns escape detection when upstream ORFs are clipped. One possible
 reason is that the annotations of <i>Saccharomyces cerevisiae</i>
 contain many false ORFs (some auhors estimate that there are ~1000
 false ORFs in the original annotation).
+
 
 <p>
 This is particularly well examplified with the yeast PHO genes : when
@@ -148,8 +150,14 @@ in sensitivity when the option was activated.
 <li>When working with bacteria, systematically activate the option
 <b>prevent overlap with upstream ORFs</b>, to prevent including too
 many coding sequences when the genes are located in operons.
-<li>With eukaryotes, inactivate this option, to circumvent the
-weaknesses of gene boundary annotations.
+
+<li>With the yeast </i>Saccharomyces cerevisiae</i>, inactivate this
+option, to circumvent the weaknesses of gene boundary annotations.
+
+<li>With other eukaryotes, I did not perform any evaluation yet, you
+shhould do some trials with some well characterized test cases
+(e.g. experimentally characterized regulons).
+
 </ul>
 
 
