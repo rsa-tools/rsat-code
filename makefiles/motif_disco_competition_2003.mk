@@ -309,9 +309,14 @@ multi:
 	${MAKE} my_command MY_COMMAND="${MULTI_CMD}"
 
 ## run multiple-family-analysis with default upstream calibration
-## (same lengths for all sets)
-DYAD_TASK=-task dyads
+## (same upstream length for all sets)
 multi_upstream: 
+	${MAKE} multi 
+
+## For the time being, we run dyad-anaysis only with the default
+## upstream background
+DYAD_TASK=-task dyads
+multi_upstream_dyads: 
 	${MAKE} multi MULTI_OPT='${DYAD_TASK}'
 
 ## run multiple-family-analysis with upstream frequencies calculated
