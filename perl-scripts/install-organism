@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.19 2002/06/10 01:40:07 jvanheld Exp $
+# $Id: install-organism,v 1.20 2002/06/10 08:26:09 jvanheld Exp $
 #
-# Time-stamp: <2002-06-10 03:38:57 jvanheld>
+# Time-stamp: <2002-06-10 10:23:24 jvanheld>
 #
 ############################################################
 
@@ -27,7 +27,8 @@ $supported_for_installation{"raw"} = 1;
 		    oligos=>1,
 #		    coding_freq=>1,
 #		    genome_freq=>1,
-		    dyads=>1
+		    dyads=>1,
+		    clean=>1
 		   );
 $supported_steps = join ",", keys %supported_steps;
 %install_steps = ();
@@ -120,6 +121,7 @@ if ($install_steps{features}) {
 &NonCodingSegments() if ($install_steps{ncf});
 &CalcFrequencies() if (($install_steps{oligos}) || ($install_steps{dyads}));
 
+&CleanUp if ($install_steps{clean});
 
 exit(0);
 
@@ -203,7 +205,7 @@ sub InstallGenome {
     warn "Installing genome from file $infile{genome} (format $seq_format) \n\tto file $outfile{genome}\n"
 	if ($verbose);
     $command = "convert-seq -i $infile{genome} -from $seq_format -to filelist -o $outfile{genome}";
-    &doit;
+    &doit();
 }
 
 #### install the feature table
@@ -212,7 +214,7 @@ sub InstallFeatureTable {
 	#### do nothing
     } elsif ($infile{features}) {
 	$command = "cp $infile{features} $outfile{features}";
-	&doit;
+	&doit();
     } else {
 	print "Enter the location of the feature table file : ";
 	$infile{features} = <STDIN>;
@@ -222,7 +224,7 @@ sub InstallFeatureTable {
     }
     if ($infile{synonyms}) {
 	$command = "cp $infile{synonyms} $outfile{synonyms}"; 
-	&doit;
+	&doit();
     }
 }
 
@@ -304,7 +306,7 @@ sub AllUpstream {
 	
 	chdir "$genome_dir";
 	$command = "retrieve-seq -type upstream -all -org $organism_short_name -from $from -to $to -format $format -nocomment -lw 0 -o $up_file";
-	&doit;  }
+	&doit();  }
 
     chdir "../";
 }
@@ -316,9 +318,13 @@ sub NonCodingSegments {
     $command = "coding-or-not ";
     $command .= "-v " if ($verbose);
     $command .= "-org $organism_short_name -return ncs,seq,cs \n\n";
-    &doit;
+    &doit();
 
-    foreach my $type ('coding', 'non_coding') {
+    my @types = ();
+    push @type, "coding";
+    push @types, "non_coding" if ($install_steps{coding_freq});
+	    
+    foreach my $type (@types) {
 	
 	my $seq_file = "${genome_dir}/${organism_short_name}_${type}_segments.wc";
 	my $purged_seq_file = "${genome_dir}/${organism_short_name}_${type}_segments_purged.fasta";
@@ -334,15 +340,15 @@ sub NonCodingSegments {
 	$command .= " -title1 '$organism_full_name'";
 	$command .= " -title2 'length distribution of intergenic segments'";
 	$command .= " -o  ${organism_short_name}_${type}_segments_lengths.gif";
-	&doit;
+	&doit();
 	
 	#### purge sequences
 	if ($purged_frequencies) {
 	    $command = "purge-sequence -i $seq_file -format wc -ml 300 -mis 9 -2str -o $purged_seq_file";
-	    &doit;
+	    &doit();
 	    #### compress intergenic sequence file
 	    $command = "gzip -f $seq_file $purged_seq_file";
-	    &doit;
+	    &doit();
 	}
 	
     }
@@ -396,11 +402,6 @@ sub CalcFrequencies {
 	&CalcDyadFreq($genome_dir."/".$seq_file, $seq_format, $seq_type) if ($install_steps{dyads});
     }
 
-    if ($purged_frequencies) {
-	`\rm -f ${organism_short_name}_coding_segments_purged.fasta`;
-    }
-    `\rm -f ${organism_short_name}_coding_segments.fasta`;
-
     chdir '../';
     
 }
@@ -416,7 +417,7 @@ sub CalcOligoFreq {
 	$command .= "-return freq,occ -nogrouprc ";
 	$command .= "-o $out_file ";
 	$command .= "; gzip -f $out_file ";
-	&doit;  
+	&doit();  
     }
 }
 
@@ -442,7 +443,7 @@ sub CalcDyadFreq {
 	$command .= " -nogrouprc";
 	$command .= " -o $dyad_file";
 	$command .= "; gzip -f $dyad_file ";
-	&doit;
+	&doit();
     }
 }
 
@@ -459,7 +460,7 @@ sub GenerateFeatureTable {
 	$ftt_file = "${genome_dir}/${organism_short_name}.ftt";
 	#### convert genome to raw format
 	$command = "convert-seq -from fasta -to filelist -lw 0 -i $genome_src -o $outfile{genome}";
-	&doit;
+	&doit();
 
 	#### write feature table 
 	@cols =  qw(ID TYPE NAME CHROM LEFT RIGHT STRAND DESCR );
@@ -726,14 +727,14 @@ sub StartAndStopCodons {
     $command .= "-format wc -nocomment -label orf \ ";
     $command .= " | oligo-analysis -type dna -l 3 -return occ,freq -v -format wc -1str -sort \ ";
     $command .= " -o ${genome_dir}/${organism_short_name}_stop_codon_frequencies";
-    &doit;
+    &doit();
 
     $command = "retrieve-seq -v -org ${organism_short_name} -all  \ ";
     $command .= "-type upstream -from 0 -to 2  \ ";
     $command .= "-format wc -nocomment -label orf \ ";
     $command .= " | oligo-analysis -type dna -l 3 -return occ,freq -v -format wc -1str -sort \ ";
     $command .= " -o ${genome_dir}/${organism_short_name}_start_codon_frequencies";
-    &doit;
+    &doit();
 }
 
 sub doit {
@@ -1061,4 +1062,28 @@ sub ParseNCBIFeatures {
     close SYNONYMS;
     close PTT;
     close FTT;
+}
+
+
+################################################################
+## clean up unnecessary files to save disk space
+
+sub CleanUp {
+    chdir $genome_dir;
+
+    #### non-coding segments
+    my @files = ();
+    push @files, "${organism_short_name}_non_coding_segments.wc";
+    push @files, "${organism_short_name}_non_coding_segments_purged.fasta";
+    push @files, "${organism_short_name}_coding_segments.wc";
+    push @files, "${organism_short_name}_coding_segments_purged.fasta";
+
+    push @files, "${organism_short_name}_non_coding_segments.wc.gz";
+    push @files, "${organism_short_name}_non_coding_segments_purged.fasta.gz";
+    push @files, "${organism_short_name}_coding_segments.wc.gz";
+    push @files, "${organism_short_name}_coding_segments_purged.fasta.gz";
+    foreach my $file (@files) {
+	$command = "rm -f $file";
+	&doit();
+    }
 }
