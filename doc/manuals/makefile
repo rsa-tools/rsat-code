@@ -3,7 +3,7 @@
 
 ############################################################
 #
-# $Id: makefile,v 1.2 2003/10/29 09:04:17 jvanheld Exp $
+# $Id: makefile,v 1.3 2004/03/11 09:13:32 jvanheld Exp $
 #
 # Time-stamp: <2003-10-02 15:13:34 jvanheld>
 #
@@ -37,7 +37,7 @@ VIEW_FILES=${TEX_FILES:.tex=.view}
 usage:
 	@echo "usage: make [-OPT='options'] target"
 	@echo "implemented targets"
-	@perl -ne 'if (/^([a-z]\S+:)/){ print "\t$$1\n";  }' makefile
+	@perl -ne 'if (/^([a-z]\S+):/){ print "\t$$1\n";  }' makefile
 
 DOC=tutorial_shell_rsat
 it:

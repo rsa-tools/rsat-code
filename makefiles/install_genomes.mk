@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_genomes.mk,v 1.2 2003/12/19 08:35:06 jvanheld Exp $
+# $Id: install_genomes.mk,v 1.3 2004/03/11 09:13:32 jvanheld Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -23,6 +23,8 @@ MAKE=nice -n 19 make -s -f ${MAKEFILE}
 RSYNC_OPT = -ruptvl ${OPT}
 SSH=-e 'ssh -x'
 RSYNC = rsync ${RSYNC_OPT} ${SSH}
+
+V=1 
 
 ################################################################
 ### Targets
@@ -93,19 +95,7 @@ INSTALL_TASK=allup,clean,config,dyads,ncf,intergenic_freq,oligos,parse,start_sto
 install_organism:
 	@echo "install log	${INSTALL_LOG}"
 	@echo "Parsing organism ${ORGANISM}" 
-	install-organism -v 1								\
+	install-organism -v ${V}								\
 		-org ${ORGANISM}							\
 		-task  ${INSTALL_TASK}
 
-# ### Install S.pombe genome (obsolete)
-# POMBE_DIR=/win/databases/downloads/ftp.sanger.ac.uk/pub/yeast/Pombe/CONTIGS/
-# install_pombe:
-# 	echo "Parsing organism Schizosaccharomyces pombe" ;
-# #	parse-embl.pl -i ${POMBE_DIR} -org 'Schizosaccharomyces pombe' -v 1
-# 	install-organism -v 1											\
-# 		-org Schizosaccharomyces_pombe									\
-# 		-features ${RSA}/data/Schizosaccharomyces_pombe/genome/Gene_Schizosaccharomyces_pombe.tab	\
-# 		-genome ${RSA}/data/genome/Contigs_Schizosaccharomyces_pombe.txt				\
-# 		-format filelist										\
-# 		-source genbank											\
-# 		-step config -step start_stop -step ncf -step oligos -step dyads;
