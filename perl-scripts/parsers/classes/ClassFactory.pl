@@ -718,7 +718,7 @@ use Data::Dumper;
       }
       $table_prefix = lc($table_prefix); #### all in lowercase
 
-      $max_col_length = 255;
+      $max_col_length = 255; #beyond this length fields are of type long/text/longtext
 
      #### Database management system
       my $dbms = $args{dbms} || $main::default{dbms};
@@ -746,10 +746,12 @@ use Data::Dumper;
 
       #### DBMS-specific options
       if ($dbms eq "mysql") {
-	  $long_format = "LONGTEXT";
+	    $long_format = "LONGTEXT";
+      } elsif ($dbms eq "postgresql") {
+	    $long_format = "TEXT";
 #	  $comment_symbol = "#";
       } else {
-	  $long_format = "LONG";
+	    $long_format = "LONG";
       }
 
       #### grants
