@@ -1,7 +1,8 @@
 #!/usr/bin/perl
+
 ############################################################
 #
-# $Id: retrieve-seq,v 1.36 2005/01/20 11:43:22 jvanheld Exp $
+# $Id: retrieve-seq,v 1.37 2005/03/13 10:16:28 jvanheld Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -10,19 +11,15 @@ if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
 require "RSA.lib";
-require "RSA.classes";
 require "RSA.seq.lib";
+require RSAT::organism;
 
 #### initialize parameters
-my $start_time = &AlphaDate;
-
+my $start_time = &AlphaDate();
+my $organism = "";
 my %chomosome = ();
-my $chrom = "";
-
-
-
-$feature_table_file = "";
-$seq_label = "gene";  
+$label_sep = "|";
+$annotation_table = "";
 $sequence_type = "upstream";
 @queries = ();
 $out_format = "fasta";
@@ -31,6 +28,12 @@ $default{from} = -800;
 $default{to} = -1;
 $input_sequence_format = "filelist";
 $prefix = "";
+@supported_label_fields = qw (id name organism_name sequence_type current_from current_to ctg orf_strand reg_left reg_right);
+foreach my $field (@supported_label_fields) {
+    $supported_label_fields{$field}++;
+}
+$supported_label_fields = join ",", @supported_label_fields;
+@label_fields = ();
 
 &ReadArguments();
 
@@ -39,57 +42,73 @@ $prefix = "";
 ############################### check parameters ###############################
 ################################################################################
 
+## Label fields
+if (scalar(@label_fields) <= 0) {
+    @label_fields = "name";
+} 
+
 #### accepted feature types
 unless (defined %accepted_feature_types) {
     $accepted_feature_types{cds} = 1;
 }
 $feature_types = join ",", keys (%accepted_feature_types);
 
-#### selection of genome and feature file
-unless ($feature_table_file) {
-    $feature_table_file = $supported_organism{$organism_name}->{'features'};
+
+################################################################
+## Instantiate organism
+$organism = new RSAT::organism();
+
+#### Check organism name
+if ($organism_name) {
+    $organism->check_name($organism_name);
+} elsif ($input_sequence_file) {
+    $organism_name = "input sequence";
+} else {
+    &RSAT::error::FatalError("You must either specify an organism (-org), or an input sequence file (-seq)");
 }
+$organism->set_attribute("name", $organism_name);
+
+#### Specify the file containing genome annotations
+unless ($annotation_table) {
+    $annotation_table = $supported_organism{$organism_name}->{'features'};
+}
+$organism->set_attribute("annotation_table", $annotation_table);
+
+################################################################
+#### Specify the input sequence file
 if ($input_sequence_file) {
     #### manually specified input sequence
-    $organism_name = $organism_name || "input sequence";
-    warn "; ", &AlphaDate(), "\tManually specified input sequence file\t$input_sequence_file\n" if ($verbose >= 1);
-    &CheckOrganism($organism_name, $feature_table_file, $input_sequence_file, $input_sequence_format);
-    
+    $organism->set_attribute("input_sequence_file", $input_sequence_file);
+    $organism->set_attribute("input_sequence_format", $input_sequence_format);
+    $organism->OpenContigs($organism_name, $annotation_table, $input_sequence_file, $input_sequence_format);
 } else {
-    #### automatic selection of genome file (and feature file)
-    warn "; ", &AlphaDate(), "\tChecking organism $organism_name\n" if ($verbose >= 1);
-    &CheckOrganism($organism_name, $feature_table_file);
+    if ($organism_name) {
+	#### automatic selection of genome file (and feature file)
+	$organism->OpenContigs($organism_name, $annotation_table);
+    } else {
+	&RSAT::error::FatalError("You should specify an organism name.", 
+				 "Run the commnd supported-organism to obtain the list of supported organisms.");
+    }
 }
 
-#### default boundaries
+#### Default limits (from, to)
 if ($sequence_type eq "upstream") {
-    
     if (defined($supported_organism{$organism_name}->{'up_to'})) {
 	$default{to} = $supported_organism{$organism_name}->{'up_to'};
     } else {
 	$default{to} = -1;
     }
-
     if (defined($supported_organism{$organism_name}->{'up_from'})) {
 	$default{from} = $supported_organism{$organism_name}->{'up_from'};
-#    } elsif (($organism_name eq "yeast") || 
-#	($organism_name =~ /Schizosaccharomyces/) ||
-#	($organism_name =~ /Saccharomyces/)) {
-#	$default{from} = -800;
-#    } elsif (($organism_name =~ /Caenorhabditis/) ||
-#	     ($organism_name =~ /Arabidopsis/) ||
-#	     ($organism_name =~ /Plasmodium/) ||
-#	     ($organism_name =~ /Drosophila/)) {
-#	$default{from} = -2000;
-    } else { #### bacteria
-	$default{from} = -400;
+    } else { 
+	$default{from} = -500;
     }
 } elsif ($sequence_type eq "downstream") {
     $default{from} = 1;
     $default{to} = 200;
 #} elsif ($sequence_type = "exons") {
 #    unless (defined($supported_organism{$organism_name}->{'exons'})) {
-#	&FatalError("There is no informationa about introns for organism ", $organism_name, "\n");
+#	&RSAT::error::FatalError("There is no informationa about introns for organism ", $organism_name, "\n");
 #    }
 #    #### read exons
 #    ($exons) = &OpenInputFile($supported_organism{$organism_name}->{'exons'}) {
@@ -115,38 +134,42 @@ $seq_length = abs($to - $from + 1);
 ################################################################
 ## organism data 
 
+my %contig = $organism->get_attribute("contigs");
+
+&RSAT::message::Info(join ("\t", "Contig IDs\t", join (";", sort keys %contig))) if ($main::verbose >= 10);
+
 #### random fragments
 if ($sequence_type eq "random fragments") {
-    #### calculate chromosome lengths
-    @chroms = sort keys %chromosome_seq;
-    @chr_start;
-    @chr_len;
-    $chr_start[0] = 0;
-    for my $c (0..$#chroms) {
-	$chr_len[$c] = $chromosome_seq{$chroms[$c]}->get_length();
-	$chr_start[$c+1] = $chr_start[$c] +  $chr_len[$c];
-	warn join ("\t", ";\tchromosome", $c+1, $chroms[$c], $chr_len[$c], $chr_start[$c], $chr_start[$c+1]), "\n" 
+    #### calculate contig lengths
+    @ctgs = sort keys %contig;
+    @ctg_start;
+    @ctg_len;
+    $ctg_start[0] = 0;
+    for my $c (0..$#ctgs) {
+	$ctg_len[$c] = $contig{$ctgs[$c]}->get_length();
+	$ctg_start[$c+1] = $ctg_start[$c] +  $ctg_len[$c];
+	warn join ("\t", ";\tcontig", $c+1, $ctgs[$c], $ctg_len[$c], $ctg_start[$c], $ctg_start[$c+1]), "\n" 
 	    if ($verbose >= 2);
     }
-    $genome_len = $chr_start[$#chroms+1];
+    $genome_len = $ctg_start[$#ctgs+1];
     warn join ("\t", ";", "genome length", $genome_len), "\n"	    
 	if ($verbose >= 2);
     
 } else {
     ### read feature attributes (position, description, ...)
-    &ReadFeatures($organism_name, $feature_table_file, $feature_types);
+    $organism->LoadFeatures($annotation_table, $feature_types);
+#    &ReadFeatures($organism_name, $annotation_table, $feature_types);
 
     #### read synonyms
     unless ($return_all) {
-	warn "; ", &AlphaDate(), "\tReading synonyms for $organism_name\n" if ($verbose >= 1);
-	&ReadSynonyms($organism_name);
+	$organism->LoadSynonyms();
     }
 }
 
 #### no overlapping with upstream orfs
 if ($noorf) {
     warn "; ", &AlphaDate(), "\tCalculating neighbour ORF limits\n" if ($verbose >= 1);
-    &CalcNeighbourLimits();
+    $organism->CalcNeighbourLimits();
 }
 
 ################################################################
@@ -155,7 +178,7 @@ if ($noorf) {
 
 #### retrieve all
 if ($return_all) {
-    @queries = keys %left;
+    @queries = $organism->get_attribute("features");
 } 
 
 
@@ -189,7 +212,7 @@ if ($random_orfs > 0) {
     close $in;
 }
 if ($#queries <0) {
-    &FatalError("You should enter at least one valid query.");
+    &RSAT::error::FatalError("You should enter at least one valid query.");
 }
 
 #### output file ####
@@ -197,6 +220,11 @@ $out = &OpenOutputFile($outputfile);
 
 #### verbose
 &Verbose() if ($verbose);
+
+#### Get the index of GenomeFeatures by names and ID
+$feature_index = $organism->get_attribute("name_index");
+
+#&RSAT::message::Debug("Feature keys", scalar(keys (%feature_index))) if ($main::verbose >= 0);
 
 ################################################################
 #### retrieve the sequences ####
@@ -207,32 +235,54 @@ foreach my  $query (@queries) {
 
     $query = &trim($query); ### make sure there are no leading or trailing spaces
 
-
     #### check the validity of the query
-    unless (($sequence_type eq "random fragments") ||
-	    (defined($orf_id{uc($query)}))) {
+    my $current_feature;
+    if ($return_all) { 
+	## In this case the query is provided as an object. I switch
+	## current feature and query for the sequence comments
+	$current_feature = $query;
+	$query = $current_feature->get_attribute("id");
+   } elsif ($sequence_type eq "random fragments") {
+       ## TO BE CHECKED
+   } elsif ($feature_index->contains(uc($query))) {
+       $current_feature = $feature_index->get_first_value(uc($query));
+   } else {
 	my $warn_message = ";WARNING\tinvalid query $query"; 
 	push @warnings, $warn_message;
 	next;
     }
     
-    $orf_id = $orf_id{uc($query)};
-    if ($name{$orf_id}) {
-	$name = $name{$orf_id}; 
-    } else {
-	$name = $orf_id;
-    }
-    $chrom = $chr{$orf_id};
-    
-    $orf_left = $left{$orf_id};
-    $orf_right = $right{$orf_id};
-    $orf_strand = $strand{$orf_id};
+    local $id = $current_feature->get_attribute("id");
+    local $name = $current_feature->get_attribute("name");
+    local $ctg = $current_feature->get_attribute("ctg");
+    local $orf_left = $current_feature->get_attribute("left");
+    local $orf_right = $current_feature->get_attribute("right");
+    local $orf_strand = $current_feature->get_attribute("strand");
     $current_from = $from;
     $current_to = $to;
+
+#     &RSAT::message::Debug($query,
+# 			  $id,
+# 			  $name,
+# 			  $ctg,
+# 			  $orf_left,
+# 			  $orf_right,
+# 			  $orf_strand,
+# 			 ) if ($main::verbose >= 10);
+
     ### upstream region
     if ($sequence_type eq "upstream") {
 	if ($noorf) {
-	    $current_from = &max(-$upstr_size{$orf_id}, $from);
+	    my $upstr_size = $current_feature->get_attribute("upstr_size");
+	    $current_from = &max(-$upstr_size, $from);
+	    &RSAT::message::Debug("upstream size", 
+				  "ft:".$current_feature,
+				  "id:".$current_feature->get_attribute("id"),
+				  "size:".$current_feature->get_attribute("upstr_size"),
+				  "size:".$upstr_size, 
+				  "limit".$current_feature->get_attribute("upstr_limit"),
+				  "current_from", $current_from) 
+		if ($main::verbose >= 10);
 	} 
 	
 	if ($orf_strand eq "D") {
@@ -246,7 +296,7 @@ foreach my  $query (@queries) {
 	### downstream region
     } elsif ($sequence_type eq "downstream") {
 	if ($noorf) {
-	    $current_to = &min($downstr_size{$orf_id}, $to);
+	    $current_to = &min($downstr_size{$id}, $to);
 	} 
 	
 	if ($orf_strand eq "D") {
@@ -266,16 +316,16 @@ foreach my  $query (@queries) {
     } elsif ($sequence_type eq "random fragments") {
 #	foreach my $seq_length (@seq_lengths) {
 	my $seq_length = $query;
-	my $max_pos = $genome_len - ($#chroms + 1) * ($seq_length  - 1); ### skip the last  L-1 positions of each chromosome because they would not allow a sequence of length $seq_length
+	my $max_pos = $genome_len - ($#ctgs + 1) * ($seq_length  - 1); ### skip the last  L-1 positions of each contig because they would not allow a sequence of length $seq_length
 	my $position = int(rand($max_pos));
 	my $c = 0;
 	warn join("\t", $seq_length, $position, $max_pos, $genome_len), "\n" if ($verbose >= 3);
-	while ($position > ($chr_len[$c] - $seq_length + 1)) {
-	    $position -= $chr_len[$c]  - $seq_length + 1; 
+	while ($position > ($ctg_len[$c] - $seq_length + 1)) {
+	    $position -= $ctg_len[$c]  - $seq_length + 1; 
 	    $c++;
 	}
-	$chrom = $chroms[$c];
-	$chr_length = $chromosome_seq{$chroms[$c]}->get_length();
+	$ctg = $ctgs[$c];
+	$ctg_length = $contig{$ctgs[$c]}->get_length();
 	$reg_left = $position;
 	$reg_right = $reg_left + $seq_length -1;
 	if (int(rand(2))) {
@@ -284,43 +334,74 @@ foreach my  $query (@queries) {
 	    $orf_strand = "R";
 	};
 
-	warn join("\t", $chrom, $reg_left, $reg_right, $orf_strand, $seq_length, $chr_length, $position, $max_pos), "\n" if ($verbose >= 3);
+	&RSAT::message::Debug($ctg, $reg_left, $reg_right, $orf_strand, $seq_length, $ctg_length, $position, $max_pos) if ($verbose >= 10);
 
     }
     
     $reg_size =  $reg_right - $reg_left + 1;
     
-    ###  sequence ID 
-    my $current_id = $prefix;
+    ###  sequence label
+    my @current_id = ();
+    if ($prefix) {
+	push @current_id, $prefix;
+    }
     if ($sequence_type eq "random fragments") {
-	$current_id .= $query = "rand_".$q;
-    } elsif ($seq_label eq "orf") {
-	$current_id .= $orf_id;
-    } elsif ($seq_label eq "gene") {
-	$current_id .= $name;
-    } elsif ($seq_label eq "orf_gene") {
-	$current_id .= join "_", $orf_id, $name;
-    } else {
-	$current_id .= join("_", 
-			   $orf_id,
-			   $name,
-			   $sequence_type,
-			   $current_from,
-			   $current_to,
-			   $chrom,
-			   $orf_strand,
-			   $reg_left,
-			   $reg_right
-			   );
+	$query = "rand_".$q;
+	push @current_id, $query;
     }
     
+    foreach my $field (@label_fields) {
+#	&RSAT::message::Debug("label field", $field, $$field) if ($main::verbose >= 10);
+	push @current_id, $$field;
+    }
+    my $current_id = join $label_sep, @current_id;
+
+#     } elsif ($seq_label eq "ID") {
+# 	$current_id .= $id;
+#     } elsif ($seq_label eq "name") {
+# 	$current_id .= $name;
+#     } elsif ($seq_label eq "orf_gene") {
+# 	$current_id .= join "_", $id, $name;
+#     } else {
+# 	$current_id .= join("_", 
+# 			   $id,
+# 			   $name,
+# 			   $sequence_type,
+# 			   $current_from,
+# 			   $current_to,
+# 			   $ctg,
+# 			   $orf_strand,
+# 			   $reg_left,
+# 			   $reg_right
+# 			   );
+#     }
+    
     unless ($no_comments) {
+
+	my $location = join (" ", $ctg, $reg_left, $reg_right, $orf_strand);
 	if ($sequence_type eq "random fragments") {
-	    @comments = ("random fragment; size: $reg_size; location: $chrom $reg_left $reg_right $orf_strand");
+	    @comments = (join("; ","random fragment", 
+			      "size: ".$reg_size,
+			      "location: ".$location));
 	} else {
-	    @comments = ("$query $sequence_type sequence, from $current_from to $current_to, size $reg_size");
-	    @comments = (@comments, "sequence size: $reg_size; location: $chrom $reg_left $reg_right $orf_strand");
-	    @comments = (@comments, "Gene: $name; ID: $orf_id; gene location: $orf_left $orf_right $orf_strand");
+	    ## in fasta format, only the first comment line is printed 
+	    $first_comment_line = join("; ", $query, 
+				       $sequence_type." from ".$current_from." to ".$current_to,
+				       "size: ".$reg_size,
+				       "location: ".$location);
+	    if ($noorf) {
+		if ($sequence_type eq "upstream") {
+		    $first_comment_line .= "; upstream neighbour: ".$current_feature->get_attribute("upstr_neighbour")->get_attribute("id");
+		    $first_comment_line .= " (distance: ".$current_feature->get_attribute("upstr_size").")";
+		} elsif ($sequence_type eq "downstream") {
+		    $first_comment_line .= "; downstream neighbour: ".$current_feature->get_attribute("downstr_neighbour")->get_attribute("id");
+		    $first_comment_line .= " (distance: ".$current_feature->get_attribute("downstr_size").")";
+		}
+	    }
+	    @comments = ($first_comment_line);
+	    push @comments, join ("; ","Gene: ".$name,
+				  "IDÅ: ".$id,
+				  "gene location: ".$orf_left." ".$orf_right." ".$orf_strand);
 	}
     }
     
@@ -339,15 +420,15 @@ foreach my  $query (@queries) {
 	  "reg_right: ".$reg_right,
 	  "reg_size: ".$reg_size,
 	  "\n"
-	  )
+	 )
 	if ($main::verbose >= 2); 
     if ($reg_left < $reg_right) {
-	$current_seq = $chromosome_seq{$chrom}->get_sequence($reg_left,$reg_right,$orf_strand);
+	$current_seq = $contig{$ctg}->get_sequence($reg_left,$reg_right,$orf_strand);
+#	$current_seq = $chromosome_seq{$chrom}->get_sequence($reg_left,$reg_right,$orf_strand);
     } else {
 	$current_seq = "";
     }
-#    die join "\n", "COMMENTS", @comments, "\n";
-
+    
     ### print result sequence
     &PrintNextSequence($out,$out_format,$line_width,$current_seq,$current_id, @comments);
 }
@@ -455,17 +536,21 @@ OPTIONS
 	-lw ##	Line width. A newline character will be inserted in the 
 		sequence every ## bases. Default is 60. 
 		-lw 0 will prevent newline insertion.
-        -label label_type
-		rule for naming sequences
-		supported label types
-			orf	ORF identifier
-			gene	gene name
-				(if the gene has no name, ORF identifier is used instead).
-			orf_gene
-				concatenate ORF id and gene name
-			full	label is a concatenation of ORF identifier,
-				gene name, sequence type and limits
+        -label label_fields
+	       Field(s) to be used in the sequence label. 
+	       Default: name.
+	       Supported: $supported_label_fields
 
+	       Multiple fields can be specified, separated by commas
+	       in the command line. 
+
+	       Example:
+			-label org,name,id
+
+	       In this case, the sequence identifier will contain all
+	       of these fields, separated by underscore.
+	-labelsep
+		Separator between label fields. Default: $label_sep
 	-noorf	the upstream sequence can only contain non-coding sequence.
 		i.e. the -from values is modified if a predicted orf
 		is encountered within its range. 
@@ -497,13 +582,13 @@ OPTIONS
 
 INPUT FORMATS
 	Input sequence file
-		Sequence file is of type chrlist, i.e. this file
+		Sequence file is of type filelist, i.e. this file
 		contains a list of other file names, each of which
 		contains a raw contig sequence (usually a whole
 		chromosome). The raw sequence files cannot contain any
 		space or carriage return : the character position in
 		the file must correspond to the nucleotide position on
-		the chromosome.
+		the contig.
 
 	Feature file
 		The feature file contains one line per feature, with
@@ -512,7 +597,7 @@ INPUT FORMATS
 		1	id	feature identifier
 		2	type	feature type (Supported: ${supported_feature_types})
 		3	name	feature name
-		4	chrom	chomosome.or contig
+		4	ctg	chomosome.or contig
 		5	left	left end position
 		6	right	right end position
 		7	strand	D (direct) or R (reverse)
@@ -553,9 +638,10 @@ retrieve-seq options
 -all		returns all genomic upstream regions
 -o		followed by the name of the outputfile. 
 -from #1 -to #2	limits of the region to extract, relative to orf start 
--format		output sequence format. accepted: IG, raw, WC
+-format		output sequence format. accepted: $accepted_output_seq
 -lw ##		Line width. -lw 0 will prevent newline insertion.
--label orf|gene|orf_gene|full	rule for naming sequences
+-label 		label field(s) (Supported: $supported_label_fields)
+-labelsep	separator between label fields. Default: $label_sep
 -noorf		the upstream sequence can only contain non-coding sequence.
 -nowarn		prevents warning when a gene can not be identified
 -nocom		do not print related information (start, end position, ...)
@@ -619,10 +705,10 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] =~ /-randsel/) {
 	    $random_orfs =$ARGV[$a+1];
 	    unless (&IsNatural($random_orfs)) {
-		&FatalError("The number of sequences must be a natural number");
+		&RSAT::error::FatalError("The number of sequences must be a natural number");
 	    }
 	    unless ($random_orfs > 0) {
-		&FatalError("The number of ORFs must be > 0");
+		&RSAT::error::FatalError("The number of ORFs must be > 0");
 	    }
 	    
 	    ### return all genomic  upstream regions	
@@ -632,7 +718,7 @@ sub ReadArguments {
 	    #### organism
 	} elsif ($ARGV[$a] eq "-org") {
 	    $organism_name =$ARGV[$a+1];
-	    &CheckOrganismName($organism_name);
+#	    &CheckOrganismName($organism_name);
 
 	    #### input sequence file
 	} elsif ($ARGV[$a] eq "-seq") {
@@ -650,10 +736,10 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-n") {
 	    $num_rand_sel =$ARGV[$a+1];
 	    unless (&IsNatural($num_rand_sel)) {
-		&FatalError("The number of sequences must be a natural number");
+		&RSAT::error::FatalError("The number of sequences must be a natural number");
 	    }
 	    unless ($num_rand_sel > 0) {
-		&FatalError("The number of sequences must be a strictly positive");
+		&RSAT::error::FatalError("The number of sequences must be a strictly positive");
 	    }
 
 	    #### feature types
@@ -663,7 +749,7 @@ sub ReadArguments {
 		if ($supported_feature_types{lc($feature_type)}) {
 		    $accepted_feature_types{lc($feature_type)}++;
 		} else {
-		    &FatalError("$feature_type invalid feature type. Supported: $supported_feature_types");
+		    &RSAT::error::FatalError("$feature_type invalid feature type. Supported: $supported_feature_types");
 		}
 	    }
 
@@ -703,17 +789,19 @@ sub ReadArguments {
 	    
 	    #### use identifiers rather than gene names
 	} elsif ($ARGV[$a] eq "-label") {
-	    if ((lc($ARGV[$a+1]) eq "orf")) {
-		$seq_label = "orf";
-	    } elsif ((lc($ARGV[$a+1]) eq "gene")) {
-		$seq_label = "gene";
-	    } elsif ((lc($ARGV[$a+1]) eq "orf_gene")) {
-		$seq_label = "orf_gene";
-	    } elsif ((lc($ARGV[$a+1]) eq "full")) {
-		$seq_label = "full";
-	    } else {
-		die "Error: invalid sequence label";
+	    my @fields = split(",", $ARGV[$a+1]);
+	    foreach my $field (@fields) {
+		$field =~ s/^orf$/id/;
+		if ($supported_label_fields{$field}) {
+		    push @label_fields, $field;
+		} else {
+		    &RSAT::error::FatalError("$field is not a valid field for sequence label. Supported: $supported_label_fields.");
+		}
 	    }
+	    
+	    #### Label field separator
+	} elsif ($ARGV[$a] eq "-labelsep") {
+	    $label_sep = $ARGV[$a+1];
 	    
 	    #### do not allow overlapping coding sequences
 	} elsif (($ARGV[$a] =~ /^-nocds/i) || 
@@ -730,7 +818,7 @@ sub ReadArguments {
 	    
 	    #### alternative feature file
 	} elsif ($ARGV[$a] =~ /^-feat/i) {
-	    $feature_table_file = $ARGV[$a+1];
+	    $annotation_table = $ARGV[$a+1];
 	    
 	}
     }
@@ -749,7 +837,7 @@ sub Verbose {
 	printf $out "; %-14s\t%s\n", "input sequence file", $input_sequence_file;
 	printf $out "; %-14s\t%s\n", "input sequence format", $input_sequence_format;
     }
-    printf $out "; %-14s\t%s\n", "feature table file", $feature_table_file if ($feature_table_file);
+    printf $out "; %-14s\t%s\n", "feature table file", $annotation_table if ($annotation_table);
     printf $out "; %-14s\t%s\n", "Output format", $out_format;
     printf $out "; %-14s\t%s\n", "Line width", $line_width;
     printf $out "; %-14s\t%d\n", "Random selection", $random_orfs if ($random_orfs);
