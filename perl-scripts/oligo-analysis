@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: oligo-analysis,v 1.22 2001/04/20 22:11:58 jvanheld Exp $
+# $Id: oligo-analysis,v 1.23 2001/04/20 22:59:16 jvanheld Exp $
 #
-# Time-stamp: <2001-04-21 00:11:55 jvanheld>
+# Time-stamp: <2001-04-21 00:26:59 jvanheld>
 #
 ############################################################
 
@@ -773,26 +773,26 @@ sub CalcExpected {
 
 
 sub CalcZscore {
-  #### z-scores ####
-  if ($return{'occ'}) {
-    foreach $oligo_seq (keys %oligo) {
-      if ($noov) {
-	$oligo{$oligo_seq}->{ovlp} = 1;
-	$oligo{$oligo_seq}->{est_var} = $oligo{$oligo_seq}->{exp_occ};
-      } else {
-	$oligo{$oligo_seq}->{ovlp} = &OverlapCoeff($oligo_seq);
-	$oligo{$oligo_seq}->{est_var} = $oligo{$oligo_seq}->{nb_possible_pos} * $oligo{$oligo_seq}->{exp_freq}*(2*$oligo{$oligo_seq}->{ovlp} - 1 - (2*$oligo_length+1)*$oligo{$oligo_seq}->{exp_freq});
+    #### z-scores ####
+    if ($return{'occ'}) {
+	foreach $oligo_seq (keys %oligo) {
+	    if ($noov) {
+		$oligo{$oligo_seq}->{ovlp} = 1;
+		$oligo{$oligo_seq}->{est_var} = $oligo{$oligo_seq}->{exp_occ};
+	    } else {
+		$oligo{$oligo_seq}->{ovlp} = &OverlapCoeff($oligo_seq);
+		$oligo{$oligo_seq}->{est_var} = $oligo{$oligo_seq}->{nb_possible_pos} * $oligo{$oligo_seq}->{exp_freq}*(2*$oligo{$oligo_seq}->{ovlp} - 1 - (2*$oligo_length+1)*$oligo{$oligo_seq}->{exp_freq});
 #       	$oligo{$oligo_seq}->{est_var} = $oligo{$oligo_seq}->{nb_possible_pos} * $oligo{$oligo_seq}->{exp_freq}*(1 - $oligo{$oligo_seq}->{exp_freq});
-      }
-      if ($oligo{$oligo_seq}->{est_var} > 0) {
-	$stdev = sqrt($oligo{$oligo_seq}->{est_var});
-	$oligo{$oligo_seq}->{zscore} = ($oligo{$oligo_seq}->{occ} - $oligo{$oligo_seq}->{exp_occ})/$stdev;
-      } else {
-	$stdev = "NA";
-	$oligo{$oligo_seq}->{zscore} = "NA";
-      }
+	    }
+	    if ($oligo{$oligo_seq}->{est_var} > 0) {
+		$stdev = sqrt($oligo{$oligo_seq}->{est_var});
+		$oligo{$oligo_seq}->{zscore} = ($oligo{$oligo_seq}->{occ} - $oligo{$oligo_seq}->{exp_occ})/$stdev;
+	    } else {
+		$stdev = "NA";
+		$oligo{$oligo_seq}->{zscore} = "NA";
+	    }
+	}
     }
-  }
 }
 
 
@@ -1100,7 +1100,11 @@ sub PrintResult {
       
       ### zscore
       if ($return{'zscore'}) {
-	printf $out "\t%.2f", $oligo{$oligo_seq}->{zscore};
+	  if (&IsReal($oligo{$oligo_seq}->{zscore})) {
+	      printf $out "\t%.2f", $oligo{$oligo_seq}->{zscore};
+	  } else {
+	      printf $out "\t%s", $oligo{$oligo_seq}->{zscore};
+	  }
 	#			printf $out "\t%.1f", $oligo{$oligo_seq}->{est_var};
       }
       
