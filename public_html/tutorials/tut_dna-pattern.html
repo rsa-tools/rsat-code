@@ -8,10 +8,38 @@
 
 <HR SIZE=6 WIDTH="100%">
 <CENTER>
-<H2><A HREF="../RSA_home.cgi">RSA-tools</A> - Tutorials - Pattern matching</H2></CENTER>
+<H2><A HREF="../RSA_home.cgi">RSA-tools</A> - 
+<a href="tutorials.html">Tutorials</a> - 
+<a href="../dna-pattern_form.cgi">dna-pattern</a>
+</H2>
+</CENTER>
+
+<UL>
 
 
-<UL>Let us suppose that you are searching the positions of putative GATA
+<P>
+DNA-pattern is a program that allow to match known patterns against a
+sequence set. The program has some features that make it particularly
+well suited for the recognition of regulatory motifs in DNA sequences, in short :
+<P>
+<ol>
+
+<li>Motifs can automatically be searched on both strands of the
+sequences.
+
+<li>Motis can contain any letter from the degenerate nucleotide
+alphabet.
+
+<li>It is possible to specify a number of allowed substitutions. The
+program will not allow deletions or insertions in the motif. This is
+important because many transcription factors allow some degeneracy,
+but insertions and deletions usually prevent the factor from
+recognizing a site.
+
+</ol>
+
+<P>
+Let us suppose that you are searching the positions of putative GATA
 boxes and Hap sites within the upstream regions of the genes from the GDH
 family (GDH1, GDH2, and GDH3). We will first retrieve the sequences upstream
 from your genes.
@@ -24,7 +52,7 @@ from your genes.
 <P><LI>
 Retrieve upstream sequences from -800 to -1 for the following yeast
 genes (as you have seen in the <a
-href="tut_sequence_retrieval.html">tutorial on sequence retrieval</a>)
+href="tut_retrieve-seq.html">tutorial on sequence retrieval</a>)
 
 <PRE>
 GDH1
@@ -40,10 +68,10 @@ A new form appears.
 
 <P>
 Note that the search will automatically be performed on the sequences
-you just retrieved (<i>sequences transferred from your previous
+you just retrieved (<i>sequence transferred from your previous
 query</I>). This differs from the form you would receive by clicking
-on "dna-pattern" in the left panel, and which would allow to fill an
-additional box with your own sequences.
+on "dna-pattern" in the left panel, and which would contain an
+additional box for entering your own sequences.
 
 <P><LI>
 In the <B>Query pattern(s)</B> box, we will enter the patterns to search
@@ -63,29 +91,40 @@ first line means "either A or T", the Y from CCAAY on the second line means
 You see now the positions of all matches with the patterns you entered
 within the upstream sequence of GDH1, GDH2 and GDH3. Each line shows a
 single match, and the different columns indicate respectively:
-<OL>
-<P><LI>
-the pattern identifier.</LI>
 
-<P><LI>
-the strand on which the match was found (W for Watson, C for Crick).</LI>
+<UL>
+<LI>
+pattern identifier</LI>
 
-<P><LI>
-the pattern searched for (i.e. the consensus you provided)</LI>
+<LI>
+strand on which the match was found (D for direct, R for Reverse)</LI>
 
-<P><LI>
-the sequence in which it was found.</LI>
+<LI>
+pattern searched for (i.e. the consensus you provided)</LI>
 
-<P><LI>
-the starting position of the match</LI>
+<LI>
+sequence in which it was found</LI>
 
-<P><LI>
-the end position of the match</LI>
+<LI>
+starting position of the match</LI>
 
-<P><LI>
-the matching sequence. The matching bases are indicated in UPPERCASES.
-The 4 flanking bases at left and right are provided in lowercases.</LI>
-</OL>
+<LI>
+end position of the match</LI>
+
+<LI>
+matching sequence. The matching bases are indicated in UPPERCASES.
+The 4 flanking bases at left and right are in lowercases.</LI>
+
+<LI>
+matching score. In this case all scores equal 1, but we will see later
+how to use this column.
+
+</UL>
+
+Notice that positions are returned in negative coordinates, relative
+to the end of the sequence (the last nucleotide has position -1). This
+option (Origin=end) is particularly useful for analyzing regulatory
+sequences, but it can be inactivated in other cases.
 
 </UL>
 
@@ -93,8 +132,8 @@ The 4 flanking bases at left and right are provided in lowercases.</LI>
 We will now display the same results graphically.
 
 <OL>
-<P><LI>
-Click on the <B>Feature map</B> button on the top of the result page.</LI>
+<P><LI> Click on the <B>Feature map</B> button on the top of the
+result page.</LI>
 
 <P><LI>
 In the <B>Title </B>box, type</LI>
@@ -145,16 +184,20 @@ start codon).
 Just for the fun, note the nice repetition of Hap-Gata site pairs in the
 upstream sequence of GDH1.
 
-<P><LI>
-If your browser is recent, the map is dynamic. With your mouse, position
-the cursor just above one of the sites in the sequences. Look now at the
-bottom border of your Netscape window. The complete information about this
-site is displayed. Move the cursor to another site and check that the information
-is well updated. If you are using Internet Explorer, make sure to activate
-the <B>status bar</B> (in the <B>View</B> menu).
+<P><LI> If your browser is recent, the map is dynamic. With your
+mouse, position the cursor just above one of the sites in the
+sequences. Look now at the bottom border of your Netscape window. The
+complete information about this site is displayed. Move the cursor to
+another site and check that the information is well updated. If you
+are using Internet Explorer, make sure to activate the <B>status
+bar</B> (in the <B>View</B> menu).
 </UL>
 </UL>
 
+
+<P>
+You can now come back to the <a href=tutorials.html>tutorial main
+page</a> and try the next tutorial.
 
 <HR WIDTH="100%">
 <CENTER>
