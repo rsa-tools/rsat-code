@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.49 2004/01/27 11:59:02 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.50 2004/01/28 10:17:30 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -26,7 +26,7 @@ require "$RSA/perl-scripts/lib/RSA.classes";
 $die_on_error = 1;
 %dir = ();
 $dir{main} = `pwd`;
-$dir{calib1} = "calibrations"; 
+$dir{calib1} = "calibrations_1gene"; 
 chomp($dir{main});
 
 @supported_tasks = qw (upstream purge calibrate oligos maps dyads merge slide synthesis sql clean all);
@@ -139,7 +139,10 @@ $verbose_message = &Verbose() if ($verbose >= 1);
 &ExportSQL() if ($task{sql});
 
 ### Remind output dir
-warn "; Results are stored in directory\t$dir{output}\n" if ($main::verbose >= 1);
+if ($main::verbose >= 1) {
+    warn "; Results are stored in directory\t$dir{output}\n";
+    warn "; synthetic table\t$table_file\n";
+}
 
 #### report execution time 
 if ($verbose >= 1) {
@@ -214,7 +217,7 @@ sub SetFileNames {
 	$family{$family_name}->{family_file} = "$family_name/${family_name}.fam";
 	$family{$family_name}->{known_site_file} = "$family_name/${family_name}_known_sites";
 	$family{$family_name}->{file_prefix} = "${family_name}";
-	$family{$family_name}->{file_prefix} .= "_up${seq_length}" unless ($sequence_file_list);
+	$family{$family_name}->{file_prefix} .= "_up".$seq_length unless ($sequence_file_list);
 	$family{$family_name}->{file_prefix} .= "${noorf_string}"; 
 	unless ($sequence_file_list) {
 	    $family{$family_name}->{seq_file} = $family_name."/".$family{$family_name}->{file_prefix}.".${seq_format}";
@@ -259,7 +262,7 @@ sub SetFileNames {
 	$table_suffix .= $noorf_string;
     }
     $table_suffix .= $noov;
-    $table_suffix .= "_".$strands;
+    $table_suffix .= $strands;
     $table_suffix = `basename $table_suffix`;
     chomp $table_suffix;
 }
@@ -561,7 +564,7 @@ sub ReadKnownSites {
 sub SyntheticTable {
     my $dir = "synthetic_tables";
     
-    my $table_file = $dir."/".$table_suffix;
+    $table_file = $dir."/".$table_suffix;
     $table_file .= "_tr" if ($transpose);
 
     warn "; Generating synthetic table $table_file\n" if ($verbose >= 1);
@@ -578,9 +581,11 @@ sub SyntheticTable {
     $row{family} = $row++;
     $row{size} = $row++;
     $row{genes} = $row++;
+    $row{seq_length} = $row++ if ($seq_length_calculated);
     $row{known} = $row++ if ($known_sites_provided);
     $row{oligo} = $row++;
     $row{dyad} = $row++;
+    $row{merged} = $row++;
     $row_num = $row-1;
     while (($header,$row) = each %row) {
 	$table[$row][0] = "<B>$header</B>";
@@ -608,6 +613,9 @@ sub SyntheticTable {
 	#### number of genes
 	$table[$row{size}][$col] = scalar(@{$family{$family_name}->{members}});
 
+	#### sequence length
+	$table[$row{seq_length}][$col] = $family{$family_name}->{seq_length} if ($seq_length_calculated);
+
 	### list of genes
 	$table[$row{genes}][$col] = "<a href='../".$family{$family_name}->{family_file}."'>";
 	$table[$row{genes}][$col] .= join " ", @{$family{$family_name}->{members}};
@@ -623,7 +631,8 @@ sub SyntheticTable {
 	    }
 	} 
 	
-	#### oligo-analysis
+        ################################################################
+	#### Index results from oligo-analysis
 #	open OLIGOS, "$family{$family_name}->{oligo_assembly_file}";
         if ($htmaps) {
           $map_link = "<A HREF=../$family{$family_name}->{oligo_file}.html>\n";
@@ -636,45 +645,30 @@ sub SyntheticTable {
 	undef %rc;
 	undef %score;
 	undef %type;
-
 	if (-e $family{$family_name}->{oligo_assembly_file}) {
-	    my ($olig, $input_dir) = &OpenInputFile($family{$family_name}->{oligo_assembly_file});
-	    while (<$olig>) {
-		chomp;
-		next if (/^;/);
-		next if (/^\#/);
-		next unless (/\S/);
-		if ((/contig/) || (/consensus/) || (/isol/)) {
-		    @fields = split "\t";
-		    my $sequence = shift (@fields);
-		    $pattern = new RSA::pattern(sequence=>$sequence);
-		    push @patterns, $pattern;
-		    if ($strands eq "2str") {
-			$rc{$pattern} = shift @fields;
-#			$rc{$pattern} = uc(&ReverseComplement($pattern->get_attribute("sequence")));
-		    }
-		    $score{$pattern} = shift @fields;
-		    $type{$pattern} = shift @fields;
-		    $max_score{$family_name} = &max($max_score{$family_name}, $score{$pattern});
-		}
-	    }
+            @patterns = &ReadAssemblyFile($family{$family_name}->{oligo_assembly_file});
 	} else {
+            $pwd = `pwd`;
 	    &Warning(join ( "\t", 
-			    "Family $family_name\t",  
-			    "oligo-analysis file ", $family{$family_name}->{oligo_assembly_file}, 
-			    " does not exist. Skipped."));
+			    $pwd,
+			    "Family $family_name",  
+			    "oligo-analysis file ", 
+			    $family{$family_name}->{oligo_assembly_file}, 
+			    " does not exist. Skipped.",
+			    ));
 
 	}
+
 	@sorted_patterns = sort { $score{$b} <=> $score{$a} } @patterns;
 	$table[$row{oligo}][$col] = "<TABLE>\n";
 	$table[$row{oligo}][$col] .= "<TR>\n";
 	
 	### print oligo sequence
 	$table[$row{oligo}][$col] .= "<TD>\n";
-	for $p (0..$#sorted_patterns) {
-	    $table[$row{oligo}][$col] .= "<B>" if ($score{$sorted_patterns[$p]} >= 1);
-	    $table[$row{oligo}][$col] .= $sorted_patterns[$p]->get_attribute("sequence"); 
-	    $table[$row{oligo}][$col] .= "</B>" if ($score{$sorted_patterns[$p]} >= 1);
+	for $p (@sorted_patterns) {
+	    $table[$row{oligo}][$col] .= "<B>" if ($p->get_attribute("score") >= 1);
+	    $table[$row{oligo}][$col] .= $p->get_attribute("sequence"); 
+	    $table[$row{oligo}][$col] .= "</B>" if ($p->get_attribute("score") >= 1);
 	    $table[$row{oligo}][$col] .= "<BR>" unless ($p == $#sorted_patterns);
 	}
 	$table[$row{oligo}][$col] .= "</TD>\n";
@@ -682,10 +676,10 @@ sub SyntheticTable {
 	### print reverse complementary oligo
 	if ($strands eq "2str") {
 	    $table[$row{oligo}][$col] .= "<TD>\n";
-	    for $p (0..$#sorted_patterns) {
-		$table[$row{oligo}][$col] .= "<B>" if ($score{$sorted_patterns[$p]} >= 1);
-		$table[$row{oligo}][$col] .= $rc{$sorted_patterns[$p]};
-		$table[$row{oligo}][$col] .= "</B>" if ($score{$sorted_patterns[$p]} >= 1);
+	    for $p (@sorted_patterns) {
+		$table[$row{oligo}][$col] .= "<B>" if ($p->get_attribute("score") >= 1);
+		$table[$row{oligo}][$col] .= $p->get_attribute("rc");
+		$table[$row{oligo}][$col] .= "</B>" if ($p->get_attribute("score") >= 1);
 		$table[$row{oligo}][$col] .= "<BR>" unless ($p == $#sorted_patterns);
 	    }
 	    $table[$row{oligo}][$col] .= "</TD>\n";
@@ -693,10 +687,10 @@ sub SyntheticTable {
 
 	### print oligo score
 	$table[$row{oligo}][$col] .= "<TD>$map_link\n";
-	for $p (0..$#sorted_patterns) {
-	    $table[$row{oligo}][$col] .= "<B>" if ($score{$sorted_patterns[$p]} >= 1);
-	    $table[$row{oligo}][$col] .= "$score{$sorted_patterns[$p]}";
-	    $table[$row{oligo}][$col] .= "</B>" if ($score{$sorted_patterns[$p]} >= 1);
+	for $p (@sorted_patterns) {
+	    $table[$row{oligo}][$col] .= "<B>" if ($p->get_attribute("score") >= 1);
+	    $table[$row{oligo}][$col] .= $p->get_attribute("score");
+	    $table[$row{oligo}][$col] .= "</B>" if ($p->get_attribute("score") >= 1);
 	    $table[$row{oligo}][$col] .= "<BR>" unless ($p == $#sorted_patterns);
 	}
 	$table[$row{oligo}][$col] .= "</A></TD>\n";
@@ -704,11 +698,11 @@ sub SyntheticTable {
 	### print matching patterns
 	if ($known_sites_provided) {
 	    $table[$row{oligo}][$col] .= "<TD>\n";
-	    for $p (0..$#sorted_patterns) {
+	    for $p (@sorted_patterns) {
 		my @matches = ();
 		foreach $site (@site_library) {
-		    if (($sorted_patterns[$p]->contains($site, min_score=>$min_matching_score)) ||
-			($site->contains($sorted_patterns[$p], min_score=>$min_matching_score))) {
+		    if (($p->contains($site, min_score=>$min_matching_score)) ||
+			($site->contains($p->get_attribute("sequence"), min_score=>$min_matching_score))) {
 			#my $match = $site->get_attribute("sequence");
 			my $match = $site->get_id();
 			push @matches, $match;
@@ -724,40 +718,22 @@ sub SyntheticTable {
 	$table[$row{oligo}][$col] .= "</TABLE>\n";
 	close $olig;
 	
-	### dyad analysis
+        ################################################################
+	### index results of dyad analysis
         if ($htmaps) {
 	  $map_link = "<A HREF=../$family{$family_name}->{dyad_file}.html>\n";
         } else {
 	  $map_link = "<A HREF=../$family{$family_name}->{dyad_file}.${IMG_FORMAT}>\n";
         }
 	warn ";\tExtracting info from\t$family{$family_name}->{dyad_assembly_file}\n" if ($verbose >= 2);
-	undef @patterns;
+        undef @patterns;
 	undef @sorted_patterns;
 	undef %rc;
 	undef %score;
 	undef %type;
 
 	if (-e $family{$family_name}->{dyad_assembly_file}) {
-	    my ($dyadhandle) = &OpenInputFile($family{$family_name}->{dyad_assembly_file});
-#	open DYADS, "$family{$family_name}->{dyad_assembly_file}";
-	    while (<$dyadhandle>) {
-		chomp;
-		next if (/^;/);
-		next if (/^\#/);
-		next unless (/\S/);
-		if ((/contig/) || (/consensus/) || (/isol/)) {
-		    @fields = split "\t";
-		    my $sequence = shift @fields;
-		    $pattern = new RSA::pattern(sequence=>$sequence);
-		    push @patterns, $pattern;
-		    if ($strands eq "2str") {
-			$rc{$pattern} = shift @fields;
-#			$rc{$pattern} = uc(&ReverseComplement($pattern->get_attribute("sequence")));
-		    }
-		    $score{$pattern} = shift @fields;
-		    $type{$pattern} = shift @fields;
-		}
-	    }
+           @patterns = (&ReadAssemblyFile($family{$family_name}->{dyad_assembly_file}));
 	} else {
 	    &Warning(join( "\t", 
 			   "Family $family_name", 
@@ -770,13 +746,13 @@ sub SyntheticTable {
 	
 	### print dyad sequence
 	$table[$row{dyad}][$col] .= "<TD>\n";
-	for $p (0..$#sorted_patterns) {
-	    $table[$row{dyad}][$col] .= "<B>" if ($score{$sorted_patterns[$p]} >= 1);
-	    $sequence = $sorted_patterns[$p]->get_attribute("sequence");
+	for $p (@sorted_patterns) {
+	    $table[$row{dyad}][$col] .= "<B>" if ($p->get_attribute("score") >= 1);
+	    $sequence = $p->get_attribute("sequence");
 	    $compressed = &compress_pattern($sequence, "n");
 	    $compressed =~ s/N/n/g;
 	    $table[$row{dyad}][$col] .= $compressed;
-	    $table[$row{dyad}][$col] .= "</B>" if ($score{$sorted_patterns[$p]} >= 1);
+	    $table[$row{dyad}][$col] .= "</B>" if ($p->get_attribute("score") >= 1);
 	    $table[$row{dyad}][$col] .= "<BR>" unless ($p == $#sorted_patterns);
 	}
 	$table[$row{dyad}][$col] .= "</TD>\n";
@@ -784,12 +760,12 @@ sub SyntheticTable {
 	### reverse complementary dyad
 	if ($strands eq "2str") {
 	    $table[$row{dyad}][$col] .= "<TD>\n";
-	    for $p (0..$#sorted_patterns) {
-		$table[$row{dyad}][$col] .= "<B>" if ($score{$sorted_patterns[$p]} >= 1);
-		$compressed = &compress_pattern($rc{$sorted_patterns[$p]},"n");
+	    for $p (@sorted_patterns) {
+		$table[$row{dyad}][$col] .= "<B>" if ($p->get_attribute("score") >= 1);
+		$compressed = &compress_pattern($p->get_attribute("rc"),"n");
 		$compressed =~ s/N/n/g;
 		$table[$row{dyad}][$col] .= $compressed;
-		$table[$row{dyad}][$col] .= "</B>" if ($score{$sorted_patterns[$p]} >= 1);
+		$table[$row{dyad}][$col] .= "</B>" if ($p->get_attribute("score") >= 1);
 		$table[$row{dyad}][$col] .= "<BR>" unless ($p == $#sorted_patterns);
 	    }
 	    $table[$row{dyad}][$col] .= "</TD>\n";
@@ -797,10 +773,10 @@ sub SyntheticTable {
 
 	### dyad scores
 	$table[$row{dyad}][$col] .= "<TD>$map_link\n";
-	for $p (0..$#sorted_patterns) {
-	    $table[$row{dyad}][$col] .= "<B>" if ($score{$sorted_patterns[$p]} >= 1);
-	    $table[$row{dyad}][$col] .= "$score{$sorted_patterns[$p]}";
-	    $table[$row{dyad}][$col] .= "</B>" if ($score{$sorted_patterns[$p]} >= 1);
+	for $p (@sorted_patterns) {
+	    $table[$row{dyad}][$col] .= "<B>" if ($p->get_attribute("score") >= 1);
+	    $table[$row{dyad}][$col] .= $p->get_attribute("score");
+	    $table[$row{dyad}][$col] .= "</B>" if ($p->get_attribute("score") >= 1);
 	    $table[$row{dyad}][$col] .= "<BR>" unless ($p == $#sorted_patterns);
 	}
 	$table[$row{dyad}][$col] .= "</A></TD>\n";
@@ -808,11 +784,11 @@ sub SyntheticTable {
 	### print matching patterns
 	if ($known_sites_providde) {
 	    $table[$row{dyad}][$col] .= "<TD>\n";
-	    for $p (0..$#sorted_patterns) {
+	    for $p (@sorted_patterns) {
 		my @matches = ();
 		foreach $site (@site_library) {
-		    if (($sorted_patterns[$p]->contains($site, min_score=>$min_matching_score)) ||
-			($site->contains($sorted_patterns[$p], min_score=>$min_matching_score))) {
+		    if (($p->contains($site, min_score=>$min_matching_score)) ||
+			($site->contains($p->get_attribute("sequence"), min_score=>$min_matching_score))) {
 			#my $match = $site->get_attribute("sequence");
 			my $match = $site->get_id();
 			push @matches, $match;
@@ -1006,11 +982,17 @@ sub AnalyzeFamilies {
 
     ### Calibrate oligonucleotides for each sequence length
     if (($task{calibrate}) || 
+	($sequence_file_list) ||
 	($background eq "calib1") ||
 	($background eq "calibN")
 	) {
 	my @calib_lengths = &CalcCalibrationLengths();
 	&CalibrateOligos(@calib_lengths) if ($task{calibrate});
+#    } else {
+#	foreach $family_name (@families) {
+#	    $family{$family_name}->{seq_length} = $seq_length*scalar(@{$family{$family_name}->{members}});
+#	}
+	$seq_length_calculated = 1;
     }
 
     foreach $family_name (@families) {
@@ -1134,6 +1116,10 @@ OPTIONS
 		be used for the estimation of expected pattern
 		frequencies.
 		Supported: $supported_background
+	-calib_dir
+		Directory containing the calibration files. The
+		calibration file name is then calculated automatically
+		from the conditions (seq lengths, seq number, ...)
 
     oligo-analysis options
 	-maxol	maximum oligonucleotide length
@@ -1295,6 +1281,7 @@ multiple-family-analysis options
 -pseudo		pseudo-weight (see oligo-analysis manual)
 -nomap		do not draw feature maps (for saving time and hard disk space)
 -bg		background frequency modelEnd_short_help
+-calib_dir	calibration directory
 -markov #	exp. freq. calcualted with Markov chain model of order #
 -known		file containing a list of known sites/motifs
 -schema		database schema (default: $schema)
@@ -1434,6 +1421,10 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] =~ /^-oligo_exp_freq/) {
 	    $exp_freq_file{oligos} = $ARGV[$a+1];
 
+	    #### Calibration directory
+	} elsif ($ARGV[$a] =~ /^-calib_dir/) {
+	    $dir{calib1} = $ARGV[$a+1];
+	    $dir{calibN} = $ARGV[$a+1];
 
 	    #### background model for expected frequency. 
 	    #### Supported: "upstream", "upstam-noorf", "intergenic", "mncf"
@@ -1833,6 +1824,7 @@ sub CalcCalibrationLengths {
 	    chomp;
 	    @fields = split "\t";	    
 	    my $current_len = $fields[1];
+	    $family{$family_name}->{seq_length} += $current_len;
 	    ## check that all sequences of one family have the same length
 	    if (defined($family{$family_name}->{calib_length})) {
 		unless ($family{$family_name}->{calib_length} == $current_len) {
@@ -1862,12 +1854,18 @@ sub CalibrateOligos {
     &CheckOutDir($dir{calib1});
     warn "; Calculating oligonucleotide distributions in all upstream sequences\n" if ($verbose >= 1);
     foreach my $calib_length (sort {$a <=> $b} @calib_lengths) {
-	## retrieve all upstream sequence
-	my $allup = $dir{calib1}."/tmp_all_up_".$calib_length.".fasta";
-	my $command = "retrieve-seq -org $organism_name -all -from -$calib_length -to -1 -o $allup";
-	warn ";\tRetrieving all upstream sequences\t", $allup, "\n" if ($main::verbose >= 0);
-	&doit($command, $dry_run, $die_on_error);
 
+	## retrieve all upstream sequence if required
+	my $allup_file = $dir{calib1}."/tmp_all_up_".$calib_length.".fasta";
+	if (-e $allup_file) {
+	    warn ";\tAll upstream sequence file already exists. Skipping retrieval\t", $allup_file, "\n" if ($main::verbose >= 0);
+	} else {
+	    $command = "retrieve-seq -org $organism_name -all -from -$calib_length -to -1 -o $allup_file";
+	    warn ";\tRetrieving all upstream sequences\t", $allup_file, "\n" if ($main::verbose >= 0);
+	    &doit($command, $dry_run, $die_on_error);
+	}
+
+	## Calibrate oligonucleotides
 	for my $oligo_len ($min_oligo_len..$max_oligo_len) {
 
 	    ## Names of the calibration files
@@ -1877,12 +1875,14 @@ sub CalibrateOligos {
 
 	    ## Skip the calibration if the file already exists
 	    if ((-e $fitting_file.".gz") && !($force_calib)) {
-		warn "Calibration file ${fitting_file}..gz already exists. Skipping calibration\n";
+		warn "Calibration file already exists. Skipping calibration.\t${fitting_file}.gz\n";
 		next;
+	    } else {
+		warn "Calculating oligo calibration\t${fitting_file}.gz\n";
 	    }
 
 	    ## Calculate occurrence distributions
-	    $command = "oligo-analysis -v 3 -l $oligo_len $noov $strands  -i $allup -return occ -distrib -o $distrib_file";
+	    $command = "oligo-analysis -v 3 -l $oligo_len $noov $strands  -i $allup_file -return occ -distrib -o $distrib_file";
 	    warn ";\tAnalysing ",$oligo_len,"nt distributions\t",$distrib_file, "\n" if ($main::verbose >= 0);
 	    &doit($command, $dry_run, 0);
 	    
@@ -1896,8 +1896,8 @@ sub CalibrateOligos {
 	}
 
 	## Delete the file with all upstream sequences
-	$command = "rm -f $allup";
-	warn ":\tCleaning all upstream sequences\t", $allup, "\n" if ($main::verbose >= 0);
+	$command = "rm -f $allup_file";
+	warn ":\tCleaning all upstream sequences\t", $allup_file, "\n" if ($main::verbose >= 0);
 	&doit($command, $dry_run, 0);
     }
 
@@ -1914,13 +1914,17 @@ sub CalibrationPrefix {
 
     if ($N) {
 	## set-based calibration (simulations)
-	$calib_prefix = $supported_organism{$organism_name}->{'data'}."/rand_gene_selections";
 
-	## Temporary
-	$calib_prefix = "~/motif_discovery_competition_2003/results/".$organism_name."/rand_gene_selections/";
+	## Dirtectories containing the calibration files
+	unless ($dir{calibN}) {
+	    $dir{calibN} = $supported_organism{$organism_name}->{'data'}."/rand_gene_selections";
+	    ## Temporary
+	    $dir{calibN} = "~/motif_discovery_competition_2003/results/".$organism_name."/rand_gene_selections/";
+	}
 
-	## directory
-	$calib_prefix .= "/";
+
+	## directory for the current calibration
+	$calib_prefix = $dir{calibN}."/";
 	$calib_prefix .= $oligo_len."nt";
 	$calib_prefix .= $strands;
 	$calib_prefix .= $noov;
@@ -1950,4 +1954,48 @@ sub CalibrationPrefix {
     return $calib_prefix;
 }
 
+
+################################################################
+## Extract ccontigs and isolated patterns from an assembly file
+sub ReadAssemblyFile {
+    my ($assembly_file) = @_;
+    my ($pattern_handle, $input_dir) = &OpenInputFile($assembly_file);
+    my @assembled_patterns = ();
+
+    while (<$pattern_handle>) {
+	chomp;
+	next if (/^;/);
+	next if (/^\#/);
+	next unless (/\S/);
+	
+	if ((/contig/) || (/consensus/) || (/isol/)) {
+	    @fields = split "\t";
+	    my $sequence = &trim(shift (@fields));
+	    $pattern = new RSA::pattern();
+	    $pattern->set_attribute("sequence", $sequence);
+	    push @assembled_patterns, $pattern;
+	    if ($strands eq "-2str") {
+		my $rc = &trim(shift @fields);
+			$pattern->set_attribute("rc", $rc);
+#			$rc{$pattern} = uc(&ReverseComplement($pattern->get_attribute("sequence")));
+		    }
+	    my $score = shift @fields;
+	    $pattern->set_attribute("score", $score);
+	    $score{$pattern} = $score; ## index pattern scores for sorting
+	    
+	    my $type = shift @fields;
+	    $pattern->set_attribute("type", $type);
+	    $max_score{$family_name} = &max($max_score{$family_name}, $score{$pattern});
+	    warn "HELLO\t", $_, "\n", join("\t", $family_name, 
+					   $pattern->get_attribute('sequence'),
+					   $pattern->get_attribute('rc'),
+					   $pattern->get_attribute('score'),
+					   $pattern->get_attribute('type'),
+					   $score{$pattern},
+					   ), "\n" if ($main::verbose >= 10);
+	}
+    }
+    close $pattern_handle;
+    return @assembled_patterns;
+}
 
