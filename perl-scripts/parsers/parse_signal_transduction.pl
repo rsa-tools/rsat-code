@@ -795,7 +795,7 @@ sub ReadPathwaySubpathways {
 
 ### read pathway interactions
 sub ReadPathwayInteractions {
-    warn "Reading pathway interactions from file $infile{pathway_interaction}\n" if ($warn_level >= 1);
+    warn "; Reading pathway interactions from file $infile{pathway_interaction}\n" if ($warn_level >= 1);
     open PATH_INT, $in_file{pathway_interaction} || die ";Error: cannot read pathway interaction file $in_file{pathway_interaction}\n";
     $header = <PATH_INT>; ### skip header line
     my $line_count = 1;
@@ -1118,7 +1118,7 @@ sub PathwayToDiagram {
 
     my $filename = &my_trim($pathway->get_name());
     $filename =~ s/ /_/g;
-    my $diagram_file = $dir{diagrams}."/$filename.tdd";
+    my $diagram_file = $dir{diagrams}."/$filename";
 
     warn ("; ",join ("\t", 
 		     "entities", $#entity_ids+1,
@@ -1250,8 +1250,22 @@ sub PathwayToDiagram {
     }
 
     #### export the diagram in text format
-    warn "; Exporting diagram\t$diagram_file\n" if ($warn_level >= 1);
-    $diagram->print("tdd", $diagram_file);
+    warn "; Exporting diagram\t$diagram_file.tdd\n" if ($warn_level >= 1);
+    $diagram->print("tdd", "$diagram_file.tdd");
+
+    #### layout and export the diagram in different formats
+    warn join ("\t", "Layout for diagram",  
+	       $diagram->get_attribute("name"), 
+	       "size", $diagram->size()), "\n" if ($warn_level >= 1);
+    if ($diagram->size() > 500) {
+	warn "too big for exporting in JPEG; skipping\n";
+	next; 
+    }
+    my $classpath = ".:/win/amaze/amaze_programs/delivered/delivery_20011113/amaze_framework_20011113/amaze_framework.jar";
+    $classpath .= ":/win/amaze/amaze_programs/amaze_manuals/programming_examples";
+    my $command = "java -classpath $classpath  DiagramConverterApp ${diagram_file}.tdd $diagram_file";
+    warn $command, "\n" if ($warn_level >= 1);
+    system $command;
 }
 
 
