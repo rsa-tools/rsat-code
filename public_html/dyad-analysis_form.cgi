@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis_form.cgi,v 1.1 2001/02/23 06:55:17 jvanheld Exp $
+# $Id: dyad-analysis_form.cgi,v 1.2 2001/09/21 06:14:07 jvanheld Exp $
 #
-# Time-stamp: <2001-02-23 07:55:15 jvanheld>
+# Time-stamp: <2001-09-21 07:54:24 jvanheld>
 #
 ############################################################
 #### this cgi script fills the HTML form for the program dyad-analysis
@@ -12,8 +12,9 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
-require "RSA.lib.pl";
-require "RSA.cgi.lib.pl";
+require "RSA.lib";
+require "RSA.cgi.lib";
+$output_context = "cgi";
 
 ### Read the CGI query
 $query = new CGI;
@@ -29,7 +30,8 @@ $default{oligo_size} = 3;
 $default{spacing_from} = 0;
 $default{spacing_to} = 20;
 $default{strand} = "both strands";
-$default{noov} = "checked";
+$default{noov} = '';
+$default{purge} = 'checked';
 $default{dyad_type} = "any dyad";
 $default{exp_freq} = "dyad freq in non-coding sequences";
 $default{occ_significance_threshold} = "0";
@@ -66,6 +68,16 @@ print "<BR>\n";
 
 
 &DisplaySequenceChoice;
+
+#### purge sequences
+print $query->checkbox(-name=>'purge',
+		       -checked=>$default{purge},
+		       -label=>'');
+print "&nbsp;<A HREF='help.oligo-analysis.html#purge'><B>purge sequences (highly recommended)</B></A>";
+print "<BR>";
+
+
+
 
 ### oligo size
 print "<B><A HREF='help.dyad-analysis.html#oligo_size'>Oligonucleotide size</A>&nbsp;</B>\n";
