@@ -50,18 +50,28 @@ if ($0 =~ /([^(\/)]+)$/) {
 	}
     }
 } else {
-    die ( "Error: problem when opening config file\n",
-	  "Please contact jvanheld\@ucmb.ulb.ac.be\n");
+    print "Error: problem when opening config file\n";
+    print "Please contact jvanheld\@ucmb.ulb.ac.be\n";
+    exit;
 }
 
 
 
 $BIN = "$RSA/bin";
 $LIB = "$RSA/lib";
-
 $TMP = "$RSA/public_html/tmp";
 $LOGS = "$RSA/logs";
 $SCRIPTS = "$RSA/perl-scripts";
+
+if ($config_site eq "rubens") {
+    @remote_servers = qw ( bouts delvaux jordaens khnopff magritte paulus tytgat );
+    srand(time);
+    $s = int (rand $#remote_servers);
+    $remote_server = @remote_servers[$s];
+    $RSH = "rsh -l jvanheld ${remote_server}.ulb.ac.be";
+    $SCRIPTS = "$RSH ~jvanheld/rsa-tools/perl-scripts";
+    $BIN = "$REMOTE_SERVER ~jvanheld/rsa-tools/bin";
+}
 $HTML = "$RSA/public_html";
 $WWW_TMP = "$WWW_RSA/tmp";
 $ENV{SERVER_ADMIN} = "jvanheld\@ucmb.ulb.ac.be";
@@ -137,7 +147,8 @@ sub OpenInputFile {
 	    $filename = "gunzip -c $filename |";
 	}
 	unless (open(INPUT, $filename)) {
-	    die "\tError : cannot read input file $filename\n";
+	    print "\tError : cannot read input file $filename\n";
+	    exit;
 	}
 	$input_stream = INPUT;
     } 
