@@ -1233,7 +1233,7 @@ Will give you a list of installed organisms.
 Once the organism is found in your configuration, you need to check whether sequences are retrieved properly. A good test for this is to retrieve all the start codons, and check whether they are made of the expected codons (mainly ATG, plus some alternative start codons like GTG or TTG for bacteria). 
 
 <ul><pre>
-retrieve-seq -org myorganism -from 0 -to 2  | oligo-analysis -v -1str -l 3 -return occ,freq
+retrieve-seq -org myorganism -all -from 0 -to 2 -format multi  | oligo-analysis -format multi -v -1str -l 3 -return occ,freq
 </pre></ul>
 
 
