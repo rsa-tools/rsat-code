@@ -25,6 +25,7 @@ usage:
 ## Send a task, either direcoy (WHEN=now) or in a queue (WHEN=queue)
 ## for a cluster.
 WHEN=now
+JOB_DIR=jobs
 my_command:
 	@echo ${WHEN} command ${MY_COMMAND}
 	${MAKE} command_${WHEN}
