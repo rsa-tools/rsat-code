@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank.pl,v 1.2 2001/08/31 02:04:57 jvanheld Exp $
+# $Id: parse_genbank.pl,v 1.3 2002/05/10 20:55:20 jvanheld Exp $
 #
-# Time-stamp: <2001-08-31 03:40:24 jvanheld>
+# Time-stamp: <2002-05-10 22:54:33 jvanheld>
 #
 ############################################################
 
@@ -26,7 +26,7 @@ package main;
 {
     
     #### initialization
-    $warn_level = 0;
+    $verbose = 0;
     $out_format = "obj";
     
     
@@ -36,7 +36,7 @@ package main;
     push @selected_organisms, qw ( Escherichia_coli_K12 );
 
     $dir{output} = $parsed_data."/genbank_parsed/".$delivery_date;
-    $dir{genbank} = "/lin/genomics/genbank/genomes/";
+    $dir{genbank} = "/lin/genomics/genbank/ftp.ncbi.nlm.nih.gov/genbank/genomes";
 
 
     #### classes and classholders
@@ -44,13 +44,16 @@ package main;
     $genes = PFBP::ClassFactory->new_class(object_type=>"PFBP::Gene",
 					   prefix=>"gene_");
 
+    $contigs = PFBP::ClassFactory->new_class(object_type=>"PFBP::Contig",
+					  prefix=>"contig_");
+
     
     
     &ReadArguments;
 
     ### default output fields for each class
     if ($rsa) {
-	warn "; Exporting in special format for rsa-tools.\n" if ($warn_level >=1);
+	warn "; Exporting in special format for rsa-tools.\n" if ($verbose >=1);
 	#### specific export format for RSA-tools
 	$single_name = 1;
 	$genes->set_out_fields(qw( id type name chromosome start end strand description position names ));
@@ -85,7 +88,7 @@ package main;
     }
     
     foreach my $org (@selected_organisms) {
-	my $org_dir = "Bacteria/${org}/${org}/";
+	my $org_dir = "Bacteria/${org}/";
 	my $data_dir = $dir{genbank}."/${org_dir}";
 	die ("Error: directory ", $data_dir, " does not exist.\n") 
 	    unless (-d $data_dir);
@@ -131,7 +134,7 @@ package main;
 	}
     }
     
-    if ($warn_level >=1) {
+    if ($verbose >=1) {
 	warn ";TEST\n" if ($test); 
 	
 	&DefaultVerbose;
@@ -147,7 +150,9 @@ package main;
     foreach $org (@parsed_organisms) {
 	&ParseGenbankFile($in_stream{$org}, 
 			  $genes, 
-			  source=>"genbank:".$short_file{$org});
+			  $contigs, 
+			  source=>"genbank:".$short_file{$org},
+			  no_seq=>1);
 	
 #  	### check organism attribute
 #  	foreach $gene ($genes->get_objects()) {
@@ -159,10 +164,13 @@ package main;
 #  	}
     }
     
-    &ParsePositions();
+    &ParsePositions($genes);
     
     foreach $gene ($genes->get_objects()) {
-	$gene->push_attribute("names", $gene->get_attribute("gene"));
+	foreach my $name ($gene->get_attribute("gene")) {
+	    $gene->push_attribute("names",$name);
+	};
+	#$gene->push_attribute("names", $gene->get_attribute("gene"));
 	
 	### define a single name  (take the first value in the name list)
 	if ($single_name) {
@@ -174,7 +182,8 @@ package main;
 	}
 	
 	#### check for genes without description
-	if ($gene->get_attribute("description") eq "<UNDEF>") {
+	if (($gene->get_attribute("description") eq $null) 
+	    || ($gene->get_attribute("description") eq "")) {
 	    $gene->set_attribute("description",$gene->get_attribute("product"));
 	}
 
@@ -187,8 +196,9 @@ package main;
 		last;
 	    } 
 	}
+
 	if ($gi) {
-	    $gene->set_attribute("id",$gi);
+	    $gene->force_attribute("id",$gi);
 	} else {
 	    &ErrorMessage("; Error\tgene ".$gene->get_attribute("id")." has no GI.\n"); 
 	}
@@ -196,7 +206,10 @@ package main;
 	#### use genbank name as chromosome name
 	my $source = $gene->get_attribute("source");
 	if ($source =~ /genbank:/) {
-	    $gene->set_attribute("chromosome",$');
+	    my $chromosome = $';
+	    $chromosome =~ s/\.gz$//;
+	    $chromosome =~ s/\.gbk$//;
+	    $gene->force_attribute("chromosome",$chromosome);
 	}
 
 
@@ -208,11 +221,12 @@ package main;
     chdir $dir{output};
     &PrintStats($out_file{stats}, @classes);
     $genes->dump_tables($suffix);
+    $contigs->dump_tables($suffix);
     &ExportClasses($out_file{genes}, $out_format, PFBP::Gene) if $export{obj};
     
     
     ### report execution time
-    if ($warn_level >= 1) {
+    if ($verbose >= 1) {
 	$done_time = &AlphaDate;
 	warn ";\n";
 	warn "; job started $start_time";
@@ -222,7 +236,7 @@ package main;
     close ERR;
     
     
-    warn "; compressing the files\n" if ($warn_level >= 1);
+    warn "; compressing the files\n" if ($verbose >= 1);
     system "gzip -f $dir{output}/*.tab $dir{output}/*.txt";
     system "gzip -f $dir{output}/*.obj" if ($export{obj});
     
@@ -242,7 +256,7 @@ NAME
 	parse_genbank.pl
 
 DESCRIPTION
-	Parse genes from a Genbank file. 
+	Parse genes from a Genbank file 
 	
 AUTHOR
 	Jacques van Helden (jvanheld\@ucmb.ulb.ac.be)  
@@ -257,7 +271,7 @@ OPTIONS
 	-help	short list of options
 	-test	fast parsing of partial data, for debugging
 	-outdir output directory
-	-w #	warn level
+	-v #	warn level
 		Warn level 1 corresponds to a restricted verbose
 		Warn level 2 reports all polypeptide instantiations
 		Warn level 3 reports failing get_attribute()
@@ -289,9 +303,9 @@ sub ReadArguments {
   for my $a (0..$#ARGV) {
     
     ### warn level
-    if (($ARGV[$a] eq "-w" ) && 
+    if (($ARGV[$a] eq "-v" ) && 
 	($ARGV[$a+1] =~ /^\d+$/)){
-      $main::warn_level = $ARGV[$a+1];
+      $main::verbose = $ARGV[$a+1];
       
       ### test run
     } elsif ($ARGV[$a] eq "-test") {
@@ -324,11 +338,8 @@ sub ReadArguments {
       ### select enzymes for exportation
     } elsif ($ARGV[$a] =~ /^-org/) {
       push @selected_organisms, $ARGV[$a+1];
-      
-      ### select enzymes for exportation
-    } elsif ($ARGV[$a] =~ /^-enz/) {
-      $main::export{enzymes} = 1;
 
+      #### export all organisms
     } elsif ($ARGV[$a] =~ /^-all/) {
       $main::export{all} = 1;
 
@@ -349,26 +360,26 @@ sub ReadArguments {
 #      warn ("; ",
 #  	  &AlphaDate(),
 #  	  "\tparsing gene positions\n")
-#  	if ($warn_level >= 1);
+#  	if ($verbose >= 1);
 
 #      foreach my $gene ($genes->get_objects()) {
 #  	my $position = $gene->get_attribute("position");
 
-#  	if ($position eq "<UNDEF>") {
-#  	    $gene->set_attribute("position","<NULL>");
-#  	    $gene->set_attribute("chromosome", "<NULL>");
-#  	    $gene->set_attribute("strand","<NULL>");
-#  	    $gene->set_attribute("start","<NULL>");
-#  	    $gene->set_attribute("end","<NULL>");
+#  	if ($position eq $null) {
+#  	    $gene->set_attribute("position",$null);
+#  	    $gene->set_attribute("chromosome", $null);
+#  	    $gene->set_attribute("strand",$null);
+#  	    $gene->set_attribute("start",$null);
+#  	    $gene->set_attribute("end",$null);
 #  	    &ErrorMessage("Warning: gene ", $gene->get_attribute("id"), " has no position attribute\n");
 #  	    next;
 #  	}
-#  	my $coord = "<NULL>";
-#  	my $chomosome = "<NULL>";
-#  	my $chrom_pos = "<NULL>";
-#  	my $strand = "<NULL>";
-#  	my $start = "<NULL>";
-#  	my $end = "<NULL>";
+#  	my $coord = $null;
+#  	my $chomosome = $null;
+#  	my $chrom_pos = $null;
+#  	my $strand = $null;
+#  	my $start = $null;
+#  	my $end = $null;
 
 #  	if ($position =~ /^(\S+)\:(.*)/) {
 #  	    $chromosome = $1;
@@ -381,10 +392,10 @@ sub ReadArguments {
 #  			  "\t", $gene->get_attribute("id"),
 #  			  "\t", $gene->get_attribute("organism"),
 #  			  "\t", $position, "\n");
-#  	    $gene->set_attribute("chromosome", "<NULL>");
-#  	    $gene->set_attribute("strand","<NULL>");
-#  	    $gene->set_attribute("start","<NULL>");
-#  	    $gene->set_attribute("end","<NULL>");
+#  	    $gene->set_attribute("chromosome", $null);
+#  	    $gene->set_attribute("strand",$null);
+#  	    $gene->set_attribute("start",$null);
+#  	    $gene->set_attribute("end",$null);
 #  	    next;
 #  	}
 
@@ -417,8 +428,8 @@ sub ReadArguments {
 #  	    }
 	    
 #  	    #### gene start and end 
-#  	    $start = $exon_starts[0] || "<NULL>";
-#  	    $end = $exon_ends[$#exons] || "<NULL>";
+#  	    $start = $exon_starts[0] || $null;
+#  	    $end = $exon_ends[$#exons] || $null;
 
 #  	    #### introns
 #  	    my @introns = ();
@@ -430,9 +441,9 @@ sub ReadArguments {
 #  	    }
 #  	} else {
 #  	    &ErrorMessage("Warning : gene ",$gene->get_attribute("id"),"\tinvalid gene position $position\n");
-#  	    $strand = "<NULL>";
-#  	    $start = "<NULL>";
-#  	    $end = "<NULL>";
+#  	    $strand = $null;
+#  	    $start = $null;
+#  	    $end = $null;
 #  	}
 #  	$gene->set_attribute("chromosome", $chromosome);
 #  	$gene->set_attribute("strand",$strand);
@@ -453,95 +464,5 @@ sub SelectAllOrganisms {
     die "Error: there are no organisms in the directory $dir.\n"
 	unless $#organisms >=0;
     return @organisms;
-
 }
 
-sub ParseGenbankFile {
-    my ($input_file, $class_holder, %args) = @_;
-    warn ";\n; Parsing file $input_file.\n" if ($warn_level >= 1);
-    
-    open GBK, $input_file 
-	|| die "Error: cannot open input file $input_file.\n";
-    my $l = 0;
-    my $in_features = 0;
-    my $in_feature = 0;
-    my $in_gene = 0;
-    my $in_cds = 0;
-    my $current_gene = null;
-    my $organism_name = "";
-    while (my $line = <GBK>) {
-	$l++;
-	print STDERR $line if ($warn_level >= 10);
-	chomp $line;
-	next unless ($line =~ /\S/);
-	unless ($in_features) {
-	    if ($line =~ /^\s+ORGANISM\s+/) {
-		$organism_name = $';
-		warn "; Organism name\t\t$organism_name\n" if ($warn_level >= 1);
-	    }
-	    if ($line =~ /^FEATURES/) {
-		$in_features = 1 ;
-		warn "; Reading features\n" if ($warn_level >= 1);
-	    }
-	    next;
-	}
-	if ($line =~ /^     CDS\s+(.*)/) {
-	    $in_gene = 0;
-	    $in_cds = 1;
-	    $position = &trim($1);
-	    $current_gene = $class_holder->new_object(%args);
-	    $current_gene->set_attribute("type","CDS");
-	    $current_gene->set_attribute("organism",$organism_name);
-	    $current_gene->set_attribute("position",$position);
-	    warn ";\tline $l\tnew CDS\n" if ($warn_level >= 2);
-	} elsif ($line =~ /     gene\s+(.*)/) {
-	    $in_cds = 0;
-	    $in_gene  = 1;
-	    $position = $1;
-	    &trim($position);
-	} elsif ($in_cds) {
-	    unless ($current_gene) {
-		die "Error: $file $input_file\tline $l\tno gene defined\n.";
-	    }
-	    if ($line =~ / +\/(\S+)\=(\d+)/) {
-		#### numerical value
-		$key = $1;
-		$value = $2;
-		$current_gene->new_attribute_value($key,$value);
-		
-	    } elsif ($line =~ / +\/(\S+)\=\"(.+)\"/) {
-		#### short string
-		$key = $1;
-		$value = $2;
-		$current_gene->new_attribute_value($key,$value);
-
-	    } elsif ($line =~ / +\/(\S+)\=\"(.+)/) {
-		#### long string
-		$key = $1;
-		$value = $2;
-		$in_feature = 1;
-		
-	    } elsif ($in_feature) {
-		$to_add = &trim($line);
-		if ($to_add =~ /\"$/) {
-		    $value .= " " unless ($key eq "translation");
-		    $value .= $`;
-#		    die "HELLO\n$to_add\n$`\n$value\n";
-		    $current_gene->new_attribute_value($key,$value);
-		    $key = "";
-		    $value  = "";
-		    $in_feature = 0;
-		} else {
-		    $value .= " " unless ($key eq "translation");
-		    $value .= $to_add;
-		}
-	    } elsif ($in_gene) {
-		#### genes are not parsed for the time being (which means that tRNA are not parsed, since there is no corresponding CDS)
-	    }
-	} else {
-	    &ErrorMessage ("file ".$short_name{$org}."\tline $l\tnot parsed\t$line\n");
-	}
-    }
-    close GBK;
-	    
-}
