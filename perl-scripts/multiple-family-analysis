@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.2 2000/06/19 02:04:48 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.3 2000/08/03 01:40:26 jvanheld Exp $
 #
-# Time-stamp: <2000-04-06 03:43:47 jvanheld>
+# Time-stamp: <2000-08-03 03:39:43 jvanheld>
 #
 ############################################################
 if ($0 =~ /([^(\/)]+)$/) {
@@ -78,7 +78,7 @@ foreach $family_name(@families) {
   open FAM, ">$family{$family_name}->{family_file}" ||
       die "Error: cannot write family file $family{$family_name}->{family_file}\n";
   foreach $id (@{$family{$family_name}->{members}}) {
-    print FAM "$id\t$preferred_name{$id}\n";
+    print FAM "$id\t$name{$id}\n";
     
   }
   close FAM;
@@ -173,7 +173,7 @@ sub OldReadFamily {
     } else {
       push @{$family{$family_name}->{members}}, $id;
 #      push @{$member{$family_name}}, $id;
-      print "\t$query\t$id\t$preferred_name{$id}\n" if ($verbose);
+      print "\t$query\t$id\t$name{$id}\n" if ($verbose);
     }
   }
   close FAM;
@@ -185,8 +185,8 @@ sub OldUpstreamSequences {
   #  unless (-e  $family{$family_name}->{seq_file}) {
   system "rm -f $family{$family_name}->{seq_file} "; 
   foreach $id ( @{$family{$family_name}->{members}}) {
-    print "\t$id\t$preferred_name{$id}\n" if ($verbose);
-    $command =  "grep -i $id $upstream_sequence_file | replace-string -query '$id' -by '$preferred_name{$id}' >> $family{$family_name}->{seq_file}";
+    print "\t$id\t$name{$id}\n" if ($verbose);
+    $command =  "grep -i $id $upstream_sequence_file | replace-string -query '$id' -by '$name{$id}' >> $family{$family_name}->{seq_file}";
     system $command;
   }
 }
@@ -789,30 +789,43 @@ sub ReadArguments {
     } elsif (($ARGV[$a] eq "-from") &&
 	     (&IsInteger($ARGV[$a+1]))) {
       $from = $ARGV[$a+1];
-
     } elsif (($ARGV[$a] eq "-to") &&
 	     (&IsInteger($ARGV[$a+1]))){
       $to = $ARGV[$a+1];
+
+      ### strands 
+    } elsif ($ARGV[$a] eq "-1str") {
+      $strands = "1str";
+    } elsif ($ARGV[$a] eq "-2str") {
+      $strands = "2str";
 
       ### organism
     } elsif ($ARGV[$a] eq "-org") {
       $organism = $ARGV[$a+1];
 
+      #### inactivate some tasks
+      
+      ### inactivate upstream sequence retrieval
     } elsif ($ARGV[$a] eq "-noup") {
       $no_up = 1;
 
+      ### inactivate synthetic table
     } elsif ($ARGV[$a] eq "-nosynt") {
       $no_synt = 1;
 
+      ### inactivate calculations
     } elsif ($ARGV[$a] eq "-nocalc") {
       $no_calc = 1;
 
+      ### inactivate oligo-analysis
     } elsif ($ARGV[$a] =~ /-nooligo/) {
       $no_oligo = 1;
 
+      ### inactivate dyad-analysis
     } elsif ($ARGV[$a] =~ /-nodyads/) {
       $no_dyads = 1;
 
+      
     } elsif ($ARGV[$a] =~ /^-transp/) {
       $transpose = 1;
 
@@ -888,7 +901,7 @@ sub ReadFamilies {
       print STDERR "\t;WARNING ! $query unknown gene name \n";
     } else {
       push @{$family{$family_name}->{members}}, $id;
-      print "\t$family_name\t$query\t$id\t$preferred_name{$id}\n" 
+      print "\t$family_name\t$query\t$id\t$name{$id}\n" 
 	  if ($verbose > 1);
     }
     
