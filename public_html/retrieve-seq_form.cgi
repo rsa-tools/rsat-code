@@ -18,7 +18,8 @@ $default{seq_label} = "gene name";
 $default{organism} = "Saccharomyces cerevisiae";
 $default{from} = "default";
 $default{to} = "default";
-$default{genes} = "";
+$default{genes} = "selection";
+$default{gene_selection} = "";
 $default{sequence_type} = "upstream";
 
 ### replace defaults by parameters from the cgi call, if defined
@@ -47,13 +48,13 @@ print "<FONT FACE='Helvetica'>";
 print "<B><A HREF='help.retrieve-seq.html#genes'>Genes</A></B>&nbsp;";
 print $query->radio_group(-name=>'genes',
 			  -values=>['all','selection'],
-			  -default=>'selection');
+			  -default=>$default{genes});
 
 print "<BR>\n";
 print "<UL>\n";
 
 print $query->textarea(-name=>'gene_selection',
-		       -default=>$default{genes},
+		       -default=>$default{gene_selection},
 		       -rows=>6,
 		       -columns=>40);
 
@@ -135,7 +136,7 @@ $demo_genes .= "PHO11\n";
 $demo_genes .= "PHO81\n";
 $demo_genes .= "PHO84\n";
 print "<TD><B>";
-print $query->hidden(-name=>'genes',-default=>$demo_genes);
+print $query->hidden(-name=>'gene_selection',-default=>$demo_genes);
 print $query->hidden(-name=>'organism',-default=>"Saccharomyces cerevisiae");
 print $query->hidden(-name=>'from',-default=>"-800");
 print $query->hidden(-name=>'to',-default=>"-1");
