@@ -526,22 +526,22 @@ sub OverlapCoeff {
 ### usage: OverlapCoeff($pattern)
 ### returns a value of 1 for non-overlapping patterns, and greater for 
 ### self-overlapping patterns
-    local($word) = $_[0];
-    local($rc_word);
-    local($coeff) = 1;
-    local($word_length) = length($word);
-    local($comp_word);
+    my ($word, %residue_proba) = @_;
+    my $word_length = length($word);
+    my $coeff = 1;
+    my $rc_word = "";
+    my $comp_word = "";
 
     #### check that nucleotide probabilities were defined
-    foreach $base (sort keys %nt_proba) {
-	$nt_proba_sum += $nt_proba{$base};
+    foreach $base (sort keys %residue_proba) {
+	$residue_proba_sum += $residue_proba{$base};
     }
     #### if not, assume equiprobable nucleotides
-    if  ($nt_proba_sum == 0) {
-	$nt_proba{'a'} = 0.25;
-	$nt_proba{'c'} = 0.25;
-	$nt_proba{'g'} = 0.25;
-	$nt_proba{'t'} = 0.25;
+    if  ($residue_proba_sum == 0) {
+	$residue_proba{'a'} = 0.25;
+	$residue_proba{'c'} = 0.25;
+	$residue_proba{'g'} = 0.25;
+	$residue_proba{'t'} = 0.25;
     }
 
     ### direct overlaps
@@ -552,7 +552,7 @@ sub OverlapCoeff {
             $coeff_add = 1;
 	    for $offset (0..$i-1) {
 		$base = lc(substr($comp_word,$offset,1));
-		$coeff_add *= $nt_proba{$base};
+		$coeff_add *= $residue_proba{$base};
 	    }
 	    $coeff += $coeff_add;
 	}
@@ -568,7 +568,7 @@ sub OverlapCoeff {
 		$coeff_add = 1;
 		for $offset (0..$i-1) {
 		    $base = lc(substr($comp_word,$offset,1));
-		    $coeff_add *= $nt_proba{$base};
+		    $coeff_add *= $residue_proba{$base};
 		}
 		$coeff += $coeff_add;
 	    }
