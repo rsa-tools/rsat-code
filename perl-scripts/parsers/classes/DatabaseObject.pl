@@ -90,7 +90,7 @@ sub get_attribute {
     my ($self,$attr) = @_;
     my $class = ref($self);
     unless (defined($self->{$attr})) {
-	warn("WARNING: object $self of class $class has no attribute named '$attr'\n") if ($main::verbose >= 4);
+	warn("WARNING: object $self of class $class has no attribute named '$attr'\n") if ($main::verbose >= 10);
 	return;
     }
     if (ref($self->{$attr}) eq "ARRAY") {

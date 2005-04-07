@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: fit-distribution,v 1.13 2005/03/13 10:41:01 jvanheld Exp $
+# $Id: fit-distribution,v 1.14 2005/04/07 22:18:39 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -157,7 +157,7 @@ while (<$in>) {
 		    "repet=".$repet) unless (&IsInteger($repet));
 	$sum += $occ*$counts[$i];
 	$ssq += $occ*$occ*$counts[$i];
-	warn join ("\t", "pattern=".$pattern, "i=".$i, "occ=".$occ, "repet=".$repet, "sum=".$sum, "ssq=".$ssq), "\n" if ($main::verbose >= 0);
+	warn join ("\t", "pattern=".$pattern, "i=".$i, "occ=".$occ, "repet=".$repet, "sum=".$sum, "ssq=".$ssq), "\n" if ($main::verbose >= 10);
     }
     
     local $avg = undef;
