@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank_lib.pl,v 1.15 2005/03/22 23:14:50 jvanheld Exp $
+# $Id: parse_genbank_lib.pl,v 1.16 2005/04/07 22:17:36 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -22,6 +22,24 @@
 
 =cut
 
+
+################################################################
+=pod
+
+=item ReadNextLine()
+
+Read one line of the Genbank file, increment line counter, and chomp. 
+
+=cut
+
+sub ReadNextLine {
+    my $line = <GBK>;
+    print STDERR "$l\t$line" if ($main::verbose >= 10);
+    $l++;
+    $line =~ s/\r//;
+    chomp($line);
+    return ($line);
+}
 
 
 ################################################################
@@ -99,10 +117,9 @@ sub ParseGenbankFile {
 		    "MEDLINE"=>1,
 		    );
 
-    while (my $line = <GBK>) {
-	$l++;
-	print STDERR "$l\t$line" if ($main::verbose >= 10);
-	chomp $line;
+
+
+    while (my $line = &ReadNextLine()) {
 	next unless ($line =~ /\S/);
 	unless (($in_features) || 
 		($in_sequence)){
@@ -123,7 +140,7 @@ sub ParseGenbankFile {
 		
 		#### collect the taxonomy
 		my $taxonomy = "";
-		while ($line = <GBK>) {
+		while ($line = &ReadNextLine()) {
 		    if ($line =~ /^\S/) {
 			$taxonomy = &trim($taxonomy);
 			$taxonomy =~ s/\s+/ /g;
@@ -139,21 +156,21 @@ sub ParseGenbankFile {
 	    if ($line =~ /^([A-Z]+)\s+/) {
 		$current_contig_key = $1;
 		$current_contig_value = "$'";
-		chomp $current_contig_value;
+		chomp($current_contig_value);
 		$current_contig_value =~ s/\.\s*$//;
 		if ($contig_keys{$current_contig_key}) {
 		    warn "parsing\t$current_contig_key\t$current_contig_value\n" if ($verbose >= 4);
 		    $current_contig->push_attribute(lc($current_contig_key), $current_contig_value);
 		}
 		
-		## Use ACCESSION number as ID
-		if (lc($current_contig_key) eq "accession") {
-		    $current_contig->force_attribute("id", $current_contig_value);
+		## Use VERSION number as ID
+		if (lc($current_contig_key) eq "version") {
+		    @current_contig_values = split / +/, $current_contig_value; 
+		    $current_contig->force_attribute("id", $current_contig_values[0]);
 		}
 
-
 	    } elsif ($line =~ /^ {12}/) {
-		### suite of the current contig key
+		### suite of the current contig value
 		$current_contig_value .= " ".$'; ##'
 		warn "parsing\t$current_contig_key\t$current_contig_value\n" if ($verbose >= 4);
 		$current_contig->append_attribute(lc($current_contig_key), $current_contig_value);
@@ -200,9 +217,9 @@ sub ParseGenbankFile {
 	    $in_sequence = 1;
 	    if ($args{no_seq}) {
 		#### skip the sequence
-		while (<GBK>) {
-		    if (/^\/\/$/) {
-			$current_contig = null;
+		while ($line = &readNextLine()) {
+		    if ($line =~ /^\/\/$/) {
+			$current_contig = $null;
 			last;
 		    }
 		}
@@ -224,7 +241,7 @@ sub ParseGenbankFile {
 		
 		open SEQ, ">$args{seq_dir}/$seq_file" 
 		    || die "Error: cannot write sequence file $args{seq_file}\n";
-		while ($line = <GBK>) {
+		while ($line = &ReadNextLine()) {
 		    if ($line =~ /^\s+\d+\s+/) {
 			$sequence = "$'";
 			$sequence =~ s/\s//g;
@@ -241,7 +258,7 @@ sub ParseGenbankFile {
 		close SEQ;
 	    } else {
 		#### load sequence in memory and return it
-		while ($line = <GBK>) {
+		while ($line = &ReadNextLine()) {
 		    if ($line =~ /^\s+\d+\s+/) {
 			$sequence .= "$'";
 		    } elsif ($line =~ /^\/\/$/) {
@@ -273,9 +290,8 @@ sub ParseGenbankFile {
 
 		unless ($next =~ /${end_expression}/) {
 		    do {
-			$l++;
 			die "Error: position starting at line $l is not terminated properly.\n"
-			    unless $position_suite = <GBK>;
+			    unless $position_suite = &ReadNextLine();
 			$position_suite =~ s/^FT//;
 			$position .= &trim($position_suite);
 		    } until ($position =~ /${end_expression}/);
@@ -367,6 +383,13 @@ sub ParseGenbankFile {
 	    
 	    
 	    #### new feature attribute
+	    
+	    ### A new feature attribute is detected by 
+	    ### - 21 spaces
+	    ### - followed by a slash (/), 
+	    ### - followed by a word (the name of the attribute), 
+	    ### - followed by the attribute value
+
 	} elsif ($line =~ /^ {21}\/(\S+)=/) {
 	    $attribute_type=$1;
 	    $attribute_value=&trim("$'");
@@ -375,10 +398,11 @@ sub ParseGenbankFile {
 	    if ($attribute_value =~ /^\"/) {
 		unless ($attribute_value =~ /\"$/) {
 		    do {
-			$line = <GBK>;
-			chomp $line;
+			$line = &ReadNextLine();
+			$line = &trim($line);
 			$attribute_value .= " ";
 			$attribute_value .= &trim($line);
+			warn join ("\t", $l, "Collecting string attribute", $attribute_type, $attribute_value), "\n" if ($main::verbose >= 10);
 		    } until ($line =~ /\"$/);
 		}
 		$attribute_value =~ s/^\"//;
@@ -525,7 +549,7 @@ sub ParseFeatureNames {
 		
 		if ($note =~ /synonyms:/) {
 		    ## For some genomes there is a note of type 'synonyms:' (e.g. Saccharomyces cerevisiae),
-		    my $synonyms = $';
+		    my $synonyms = $'; ##'
 		    my @synonyms = split /, /, $synonyms;
 		    foreach my $new_name (@synonyms) {
 			$new_name = &trim($new_name);
@@ -538,7 +562,7 @@ sub ParseFeatureNames {
 		    
 		} elsif ($note =~ /synonym:/) {
 		    ## For other genomes there is a note of type 'synonym:' (e.g. Arabidopsis thaliana),
-		    my $synonyms = $';
+		    my $synonyms = $';  ##'
 		    $synonyms =~ s/;.*//; ## In A.thaliana there are comments after the synonym
 		    
 		    my @synonyms = split /, /, $synonyms;
@@ -773,24 +797,24 @@ sub CreateGenbankFeatures {
 	foreach my $xref (@xrefs) {
 	    #### extract GI from cross-references
 	    if ($xref =~ /GI:/) {
-		$gi = "$'";
+		$gi = $';  ##'
 
 		#### accept GI as synonym
 		$created_feature->push_attribute("names", $gi); 
 
 	    } elsif ($xref =~ /GeneID:/) {
-		$GeneID = "$'";
+		$GeneID = $';  ##'
 		#### accept GeneID as synonym
 		$created_feature->push_attribute("names", $GeneID); 
 
 	    } elsif ($xref =~ /LocusID:/) {
-		$LocusID = "$'";
+		$LocusID = $';  ##'
 		#### accept LocusID as synonym
 		$created_feature->push_attribute("names", $LocusID); 
 
 	    } elsif ($xref =~ /locus_tag:/) {
 		## Locus tags were previously annotated as cross-references rather than direct attributes
-		$locus_tag = "$'";
+		$locus_tag = $';  ##'
 		#### accept locus_tag as synonym
 		$created_feature->push_attribute("names", $locus_tag); 
 
