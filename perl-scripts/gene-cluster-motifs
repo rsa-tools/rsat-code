@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.87 2005/03/29 05:08:32 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.88 2005/04/07 22:21:45 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -1892,12 +1892,12 @@ TASK DESCRIPTION
    purge	Purge upstream sequences for the family.
 		(purge-sequences)
 
-   calibrate   Perform a family-secific calibration of expected
+   calibrate    Perform a family-secific calibration of expected
 		frequencies, by calculating oligonucleotide
 		distributions in the whole genome set of upstream
 		sequences of the same size. Beware: this takes time,
-		but it gives much less false positives with when
-		analyzing higher organisms.
+		but, for higher organisms, it gives much less false
+		positives than the standard background models.
   
    oligos	Run oligo-analysis on each family.
 
