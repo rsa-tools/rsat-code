@@ -255,15 +255,15 @@ part2
       !($query->param("sequence_type") =~ /chromosome/) &&
       !($query->param("match_format") eq "fasta") 
       ) {
-#### pipe to yMGV and KEGG map coloring
+#### pipe to external servers
       print <<part3
-<TR>
 
-<TR>
-<TD colpsan=3>
-<h3>External servers</h3>
-</TD>
+<tr valign=top>
+<td colpsan=2><h3>External servers</h3></td>
+</tr>
 
+<!--
+<tr valign=top>
 <TD>
 <a href="http://www.biologie.ens.fr/fr/genetiqu/puces/publications/ymgv_NARdb2002/index.html" target=_blank>yMGV transcription profiles</a>
 </TD><td>
@@ -273,12 +273,13 @@ part2
 </FORM>
 </TD>
 </tr>
+-->
 
-<tr>
-<td width=20></td>
+<tr valign=top>
 <TD>
 <a href="http://www.genome.ad.jp/kegg/kegg2.html#pathway" target=_blank>KEGG pathway coloring</a>
-</TD><td>
+</TD>
+<td>
 <FORM METHOD="GET" target=_blank ACTION='http://www.genome.ad.jp/kegg-bin/search_pathway_multi_www'>
 <INPUT type="hidden" NAME=org_name VALUE=sce>
 <INPUT type="hidden" NAME=unclassified VALUE="$export_genes">
@@ -286,9 +287,10 @@ part2
 </FORM>
 </TD>
 </TR>
+
 part3
 }
-
+  
   print <<End_of_form;
 </TABLE>
 </CENTER>
