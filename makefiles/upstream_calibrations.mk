@@ -29,19 +29,20 @@ UP_LEN=800
 ORG=Saccharomyces_cerevisiae
 #ORG=Saccharomyces_cerevisiae_no_mito
 ORGANISMS=					\
-	Saccharomyces_cerevisiae_no_mito	\
-	Homo_sapiens				\
 	Mycoplasma_genitalium			\
 	Escherichia_coli_K12			\
+	Bacillus_subtilis			\
+	Salmonella_typhimurium_LT2		\
+	Saccharomyces_cerevisiae		\
+	Schizosaccharomyces_pombe		\
 	Drosophila_melanogaster			\
 	Caenorhabditis_elegans			\
 	Arabidopsis_thaliana			\
 	Plasmodium_falciparum			\
-	Bacillus_subtilis			\
-	Mus_musculus				\
-	Schizosaccharomyces_pombe		\
-	Salmonella_typhimurium_LT2		\
-	Saccharomyces_cerevisiae
+	Homo_sapiens				\
+	Saccharomyces_cerevisiae_no_mito
+
+#	Mus_musculus				\
 
 #### directories
 RESULT=results
@@ -393,6 +394,7 @@ FIT_CMD=fit-distribution			\
 _fit_distrib:
 	@echo ${FIT_CMD}
 	@${FIT_CMD}
+	@echo FIT_FILE ${FIT_FILE}
 
 
 
