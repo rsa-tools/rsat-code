@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: compare-profiles,v 1.3 2005/03/22 21:33:37 jvanheld Exp $
+# $Id: compare-profiles,v 1.4 2005/04/07 22:19:27 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -886,6 +886,18 @@ hypergeometric distribution.
 =cut
 	} elsif ($ARGV[$a] eq "-table_sig_L") {
 	    $outfile{table_sig_L} = $ARGV[$a+1];
+	    
+	    ## Export  table with sig
+=pod
+
+=item	B<-table_sig table_file>
+
+Export a table with the significance of the right tail of the
+hypergeometric distribution.
+
+=cut
+	} elsif ($ARGV[$a] eq "-table_sig") {
+	    $outfile{table_sig} = $ARGV[$a+1];
 	    
 	    ## base for the logarihtms
 =pod
