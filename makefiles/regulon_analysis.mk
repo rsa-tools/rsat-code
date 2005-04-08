@@ -151,9 +151,9 @@ multi:
 	${MAKE} my_command MY_COMMAND="${MULTI_CMD}"
 
 
-SERVER=164.15.109.32
+SERVER=merlin.scmbb.ulb.ac.be
 LOGIN=jvanheld
-SERVER_DIR=regulons/
+SERVER_DIR=research/seq_analysis/yeast/regul_fam/regulons_Nicolas_2004
 SERVER_LOCATION=${LOGIN}@${SERVER}:${SERVER_DIR}
 TO_SYNC=results
 TARGET_DIR=.
