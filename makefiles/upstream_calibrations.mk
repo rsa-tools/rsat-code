@@ -114,8 +114,8 @@ iterate_seq_lengths:
 
 ################################################################
 #### retrieve upstream sequences
-NOORF=-noorf
-#NOORF=
+#NOORF=-noorf
+NOORF=
 RETRIEVE_CMD=retrieve-seq -org ${ORG} -all -o ${SEQ_FILE} ${NOORF} -from -1 -to -${UP_LEN}
 seqs: dirs
 	@echo ""
