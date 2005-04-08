@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: fit-distribution,v 1.14 2005/04/07 22:18:39 jvanheld Exp $
+# $Id: fit-distribution,v 1.15 2005/04/08 06:09:10 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -15,7 +15,7 @@ require "RSA.lib";
 ################################################################
 #### initialise parameters
 my $start_time = &AlphaDate();
-
+local $null = "NA";
 local %infile = ();
 local %outfile = ();
 
@@ -160,6 +160,9 @@ while (<$in>) {
 	warn join ("\t", "pattern=".$pattern, "i=".$i, "occ=".$occ, "repet=".$repet, "sum=".$sum, "ssq=".$ssq), "\n" if ($main::verbose >= 10);
     }
     
+
+    ################################################################
+    ## Calculate the parameters of the distribution
     local $avg = undef;
     local $var = undef;
     local $std = undef;
@@ -184,7 +187,8 @@ while (<$in>) {
     local $obs_grouped;
     local $exp_grouped;
 
-    unless ($repet_is_zero) {
+    unless (($repet_is_zero) 
+	    || ($avg == 0)) {
 	if ($distrib eq "poisson")  {
 	    @expected = &poisson($max_occ, $avg, 1); 
 	} elsif ($distrib eq "negbin") {
@@ -253,7 +257,7 @@ while (<$in>) {
     my  @out_values = ();
     foreach my $field (@out_fields) {
 	unless (defined($$field)) {
-	    $$field = "<NULL>";
+	    $$field = $null;
 	}
 	push @out_values, $$field;
     }
@@ -317,6 +321,7 @@ OPTIONS
 		Theoretical distribution to be fitted on the observed
 		distributions.
 		Supported distributions: $supported_distrib
+	-null	string for null (undefined) values. Default: $null
 
 INPUT FORMAT
 
@@ -372,6 +377,7 @@ fit-distribution options
 -o		output file
 -v		verbose
 -distrib	distribution. Supported: $supported_distrib
+-null		string for null (undefined) values. Default: $null
 End_short_help
   close HELP;
   exit;
@@ -405,6 +411,10 @@ sub ReadArguments {
 	    ### output file  
 	} elsif ($ARGV[$a] eq "-o") {
 	    $outfile{output} = $ARGV[$a+1];
+	    
+	    ### string for null (undefined) values
+	} elsif ($ARGV[$a] eq "-null") {
+	    $null = $ARGV[$a+1];
 	    
 	    ### distribution  
 	} elsif ($ARGV[$a] eq "-distrib") {
