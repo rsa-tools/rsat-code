@@ -59,7 +59,8 @@ iterate_organisms:
 
 
 ################################################################
-## Iterate over all organisms
+## Iterate over all oligo lengths
+OLIGO_LENGTHS=1 2 3 4 5 6 7 8
 iterate_oligo_lengths:
 	@echo "Iterating task ${OLIGO_TASK} over oligonucleotide lengths ${OLIGO_LENGTHS}"
 	@echo
