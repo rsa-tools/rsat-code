@@ -52,7 +52,7 @@ sub auto_id {
     my ($class) = @_;
     my $id = $class->{_prefix} || $class;
     $id .= sprintf "%6s", $class->{_count}++;
-    $id = s/ /0/g;
+    $id =~ s/ /0/g;
     return $id;
 }
 
