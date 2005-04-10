@@ -5,7 +5,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.89 2005/04/10 12:57:10 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.90 2005/04/10 13:46:48 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -1329,7 +1329,7 @@ sub IndexMatrix {
 	   $table[$row][$col] .= "<br><font color=red>No matrix could be found in the result file</font>\n";
        }
    } else {
-       $table[$row][$col] =  "<font color=red>File not found</font>".$matrix_file."\n";
+       $table[$row][$col] =  "<font color=red>File not found</font><br>".$matrix_file."\n";
        &RSAT::message::Warning(join ("\t", "File not found. Skipped.", $format, $matrix_file));
    }
 }
@@ -1441,7 +1441,7 @@ sub IndexPatterns {
 	   @patterns = &ReadPatterns(assembly_file=>$assembly_file);
        }
    } else {
-	$table[$row][$col] = "<font color=red>File not found</font>\n";
+	$table[$row][$col] = "<font color=red>File not found</font><br>".$assembly_file."\n";
 	$pwd = `pwd`;
 	&RSAT::message::Warning(join ( "\t", 
 			$pwd,
