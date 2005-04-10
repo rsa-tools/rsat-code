@@ -1,6 +1,7 @@
+
 ###############################################################
 #
-# Manipulation of organisms
+# Class to handle organisms
 #
 package RSAT::organism;
 
@@ -623,7 +624,7 @@ sub CalcNeighbourLimits {
 		$neighb_left_limit = undef; 
 	    }
 	    $neighb_left_size = &RSAT::stats::max(0, $left{$gene} - $neighb_left_limit -1);
-
+	    
 	    $gene->set_attribute("left_neighbour", $ln);
 	    $gene->set_attribute("left_limit", $neighb_left_limit);
 	    $gene->set_attribute("left_size", $neighb_left_size);
@@ -655,7 +656,15 @@ sub CalcNeighbourLimits {
 	    ## Calculate upstream and downstream limits (according to the strand)
 	    my $un; ## upstream neighbour index
 	    my $dn; ## upstream neighbour index
-	    if ($gene->get_attribute("strand" eq "R")) {
+	    
+#	    &RSAT::message::Debug("Calculating neighbours for gene", 
+#				  $gene->get_attribute('id'),
+#				  $gene->get_attribute('name'),
+#				  $gene->get_attribute('strand'),
+#				 ) if ($main::verbose >= 10);
+	    if ($gene->get_attribute("strand") eq "R") {
+
+
 		## Upstream neighbour is on the right side
 		$un=$rn;
 		$upstr_limit = $neighb_right_limit;
