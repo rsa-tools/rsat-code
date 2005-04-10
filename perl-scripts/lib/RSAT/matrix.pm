@@ -215,7 +215,8 @@ sub new {
     my ($class, %args) = @_;
     my $matrix = bless {
 	nrow=>0,
-	ncol=>0
+	ncol=>0,
+	%args
 	}, $class;
     return $matrix;
 }
