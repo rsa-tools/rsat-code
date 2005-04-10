@@ -1,3 +1,5 @@
+## CVS: added a target bg_model_meme
+
 ################################################################
 ## Evaluation of pattern discovery methods
 
@@ -14,8 +16,29 @@ site_map:
 		-label id -from -1000 -to 50 -mlen 1000
 
 ################################################################
+## Generate MEME models
+NOORF=-noorf
+NOOV=-ovlp
+MEME_BG_DIR=bg_models/meme/${ORG}
+MEME_BG_FILE=`pwd`/${MEME_BG_DIR}/${ORG}_upstream-noorf${NOOV}-1str_6.freq
+bg_model_meme:
+	@echo "Generating background model for MEME	${ORG}	${MEME_BG_FILE}"
+	@mkdir -p ${MEME_BG_DIR}
+	@echo "# MEME background model ${ORG} upstream-noorf" > ${MEME_BG_FILE}
+	for ol in 1 2 3 4 5 6; do ${MAKE} bg_model_meme_one_size OL=$${ol}; done
+	@echo "Generated background model for MEME	${ORG}	${MEME_BG_FILE}"
+
+OL=6
+RSAT_BG_FILE=${RSAT}/data/genomes/${ORG}/oligo-frequencies/${OL}nt_upstream-noorf_${ORG}${NOOV}-1str.freq.gz
+bg_model_meme_one_size:
+	@echo ${RSAT_BG_FILE}
+	@echo "# seq	frequency ${OL}nt_upstream-noorf${NOOV}-1str" >> ${MEME_BG_FILE}
+	@gunzip -c ${RSAT_BG_FILE} | grep -v '^;' | cut -f 1,3 >> ${MEME_BG_FILE}
+
+################################################################
 ## Run pattern discovery programs with the regulons
-REGULONS=data/${ORG}/gene_factor_${ORG}.tab
+REGULON_FILE=gene_factor_${ORG}.tab
+REGULONS=data/${ORG}/${REGULON_FILE}
 REGULON_DIR=results/${ORG}/regulons/
 MULTI_TASK=upstream,purge,oligos,oligo_maps,dyads,dyad_maps,synthesis,sql,clean,consensus,meme,gibbs
 FAM=${REGULONS}
@@ -25,7 +48,8 @@ multi:
 	multiple-family-analysis -v 1 -i ${FAM} -org ${ORG} -task	\
 		${MULTI_TASK} -2str -sort score -outdir ${MULTI_DIR}	\
 		${OPT} -user multifam -password multifam -login		\
-		multifam -schema multifam
+		-MEME_bfile ${MEME_BG_FILE} \
+		multifam -schema multifam ${OPT}
 
 ################################################################
 ## Load the results of multiple-family-aalysis into the database
