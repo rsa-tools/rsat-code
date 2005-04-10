@@ -39,11 +39,11 @@ PROCARYOTES= \
 	Salmonella_typhimurium_LT2
 
 OTHER_ORGS= \
+	Homo_sapiens				\
 	Drosophila_melanogaster			\
 	Caenorhabditis_elegans			\
 	Arabidopsis_thaliana			\
-	Plasmodium_falciparum			\
-	Homo_sapiens
+	Plasmodium_falciparum
 #	Mus_musculus				\
 
 ORGANISMS=${FUNGI} ${PROCARYOTES} ${OTHER_ORGANISMS}
