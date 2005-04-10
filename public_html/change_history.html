@@ -11,7 +11,8 @@ Change summary
 <P>
 The Regulatory Sequence Analysis tools are evolving regularly. We
 summarize here the important steps in this evolution.  This summary
-only started in September 2002 (although the tools exist since 1997).
+only started in September 2002 (although the tools exist since
+1997). In addition, it only mention important changes.
 
 <P>
 A detailed list of program modifications (including those anterior to
@@ -37,15 +38,26 @@ href=mailto:jvanheld@scmbb.ulb.ac.be>jvanheld@scmbb.ulb.ac.be</a>).
 </tr>
 -->
 
+<tr valign=top>
+<td>2005/04/09</td>
+<td><a href=retrieve-seq_form.cgi>retrieve-seq</a></td>
+<td>Fixed a bug with the determination of neighbour ORFS. This bug
+resulted in incorrect clipping with the option "no overlapping
+ORF". In particular, it waas incompatible with downstream sequecnes
+(all sizes=0).</td>
+</tr>
+
 
 <tr valign=top>
 <td>2004/09/18</td>
-<td><a href=>retrieve-seq</a></td>
+<td><a href=retrieve-seq_form.cgi>retrieve-seq</a></td>
 <td>
-<br>Homonyms are now supported (i.e. several genes with the same name)
-<br>fixed a bug by treating the cases of overlapping upstream genes
+<ul>
+<li>Homonyms are now supported (i.e. several genes with the same name)
+<li>fixed a bug by treating the cases of overlapping upstream genes
 (e.g. in bacterial operons) : in this case, the sequence has a length
 of 0
+</ul>
 </td>
 </tr>
 
