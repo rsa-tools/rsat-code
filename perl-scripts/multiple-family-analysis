@@ -1,8 +1,11 @@
 #!/usr/bin/perl
 
+## CVS: bug fixed: matrices were not indexed in the synthetic table anymore 
+## CVS: bug fixed: dyad occurrences were missing from SQL table pattern.tab
+
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.88 2005/04/07 22:21:45 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.89 2005/04/10 12:57:10 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -29,7 +32,9 @@ require RSAT::Family;
 
 ################################################################
 ## initialisations	    
+$null="NA";
 $skip=0;
+$last=-1;
 $min_genes = 1;
 $sliding_window_size = 0;
 $die_on_error = 1;
@@ -37,8 +42,9 @@ $analyze_purged_sequences = 1;
 $repetitions=10000; ### Repetitions for the calibN
 %dir = ();
 $dir{main} = `pwd`;
-$dir{calib1} = "calibrations_1gene"; 
 chomp($dir{main});
+
+$dir{calib1} = "calibrations_1gene"; 
 %max_score = ();
 
 ## Supported tasks
@@ -131,6 +137,7 @@ $MS_r = 5;
 ## Default MEME options
 $MEME_minw = 6;
 $MEME_maxw = 25;
+$MEME_bfile = "";
 
 ## Comparison between discovered and known motifs
 $known_site_file = "";
@@ -157,6 +164,30 @@ $password="";
 #### Check parameters
 &CheckParameters();
 
+################################################################
+## Create class factories
+
+## Unique prefix for each analysis, to allow merging them in a database
+
+local $run_date = &AlphaDate();
+local $run_prefix = `mktemp XXXX`;
+chomp($run_prefix);
+
+## Class holder for the analysis
+local $analysis_factory = classes::ClassFactory->new_class(object_type=>"RSAT::Analysis");
+$current_analysis = $analysis_factory->new_object(id=>$run_prefix);
+
+## Class holder for families
+local $family_factory = classes::ClassFactory->new_class(object_type=>"RSAT::Family",
+						      prefix=>$run_prefix."_");
+## Class holder for patterns (oligos and dyads)
+local $pattern_factory = classes::ClassFactory->new_class(object_type=>"RSAT::pattern",
+						       prefix=>$run_prefix."_");
+
+## Class holder for the matrices (gibbs, meme, consensus, MotifSampler)
+local $matrix_factory = classes::ClassFactory->new_class(object_type=>"RSAT::matrix",
+							 prefix=>$run_prefix."_");
+local %matrix_by_file = (); ## index for the matrices already treated
 
 ################################################################
 ## Read data
@@ -475,14 +506,16 @@ sub SetFileNames {
 	
 	## Background frequencies
 	$meme_dir = $ENV{MEME_DIR} || $RSA."/bin/meme/";
-	$meme_bg_file = $meme_dir."/tests/yeast.nc.6.freq";
-	$meme_options .= " -bfile ".$meme_bg_file;
+	if ($MEME_bfile) { 
+#	    $MEME_bfile = $meme_dir."/tests/yeast.nc.6.freq" };
+	    $meme_options .= " -bfile ".$MEME_bfile;
+	}
 
 	## Output type
 	$meme_options .= " -text";
 
 	## Output file
-	$family{$family_name}->{meme_dir} = "${family_name}/meme_${family_name}";
+	$family{$family_name}->{meme_dir} = ${family_name}."/"."meme_".${family_name};
 	$family{$family_name}->{meme_file} = $family{$family_name}->{meme_dir}."/".$family{$family_name}->{file_prefix}.$meme_suffix;
 	$meme_options .= " > ".$family{$family_name}->{meme_file};
 	
@@ -569,7 +602,8 @@ sub SetFileNames {
     $outfile{parameters} = $dir{mdc_report}."/".$table_suffix."_parameters.txt";
 }
 
-################### SUBROUTINE DEFINITION ###################"
+################################################################
+##################### SUBROUTINE DEFINITION ####################
 
 
 ################################################################
@@ -592,9 +626,15 @@ sub UpstreamSequences {
 #### Purge input sequences
 sub PurgeSequences {
    warn ";\tPurging sequences for family $family_name\n" if ($verbose >= 1);
-   $command = "purge-sequence -ml 40 -mis 3";
-   $command .= " -i $family{$family_name}->{seq_file}";
-   $command .= " > $family{$family_name}->{seq_file_purged}";
+
+   ## Remove sequences of length 0
+   $command = "convert-seq -from fasta -to wc -lw 0";
+   $command .= " -i ".$family{$family_name}->{seq_file};
+#   $command .= " -i"..$family{$family_name}->{seq_file};
+   $command .= " | grep -v '\\\\\\\\'";
+   $command .= " | purge-sequence -format wc -ml 40 -mis 3";
+#   $command .= " -i ".$family{$family_name}->{seq_file};
+   $command .= " -o ".$family{$family_name}->{seq_file_purged};
    &doit($command, $dry_run, $die_on_error, $verbose);
 }
 
@@ -644,12 +684,12 @@ sub CalcOligoOptions {
 	    ### temporary: if there is no R10000 file, try R1000
 	    $calib_file =~ s/10000/1000/g;
 	    if ((-e $calib_file) || (-e $calib_file.".gz")) {
-		&Warning("Using calibration with 1000 repetitions\t".$calib_file);
+		&RSAT::message::Warning("Using calibration with 1000 repetitions\t".$calib_file);
 	    } else {
 		### temporary: if there is no R1000 file, try R100
 		$calib_file =~ s/1000/100/g;
 		if ((-e $calib_file) || (-e $calib_file.".gz")) {
-		    &Warning("Using calibration with 1000 repetitions\t".$calib_file);
+		    &RSAT::message::Warning("Using calibration with 1000 repetitions\t".$calib_file);
 		    
 		} else {
 		    &RSAT::error::FatalError ("Calibration file not found\t".$calib_file);
@@ -737,7 +777,7 @@ sub MergeOligoLengths {
 
 
 ################################################################
-## Match discovered patterns
+## Match discovered patterns (oligos and dyads only)
 sub MatchPatterns {
    my ($oligo_file, $fmap_prefix, $options) = @_;
 
@@ -908,8 +948,6 @@ sub MotifSampler {
    my $dir = $family{$family_name}->{MotifSampler_dir};
    chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
 
-   chdir($dir{output});
-
 #   ## Create ackground model if required
 #   unless ($MS_b) {
 #	warn "; Creating background model for the input sequence\torder ".$MS_bg_order."\n" 
@@ -935,7 +973,6 @@ sub MotifSampler {
 ################################################################
 ## Run Andrew Neuwald's gibbs program 
 sub Gibbs {
-   chdir($dir{output});
    chdir($dir{output}); &RSAT::util::CheckOutDir($family{$family_name}->{gibbs_dir});
 
 
@@ -1005,7 +1042,7 @@ sub ReadKnownSites {
 	    my $source =  &trim(shift(@fields));
 	    push @{$known_site{$family_name}}, $site_sequence;
 	    push @{$known_site_source{$family_name}}, $source;
-	    warn join ("\t", "; known site", "family:".$family_name, "site:".$site_sequence, $source), "\n" if ($main::verbose >= 0);
+#	    &RSAT::message::Debug(join ("\t", "; known site", "family:".$family_name, "site:".$site_sequence, $source)) if ($main::verbose >= 10);
 	}
 	close KNOWN_SITE;
    }
@@ -1073,7 +1110,7 @@ sub SyntheticTable {
 	### check directory
 	$dir = "${family_name}/dyads_${family_name}";
 	unless (-d $dir) {
-	    &Warning ("Cannot find directory $dir\n");
+	    &RSAT::message::Warning ("Cannot find directory $dir\n");
 	}
 	
 	### family number
@@ -1117,66 +1154,46 @@ sub SyntheticTable {
 	
        ################################################################
 	#### Index results from oligo-analysis
-#	open OLIGOS, "$family{$family_name}->{oligo_assembly_file}";
-       if ($htmaps) {
-	    $map_link = "../$family{$family_name}->{oligo_file}.html";
-       } else {
-	    $map_link = "../$family{$family_name}->{oligo_file}.${IMG_FORMAT}";
-       }
-       my $pattern_file = $family{$family_name}->{oligo_assembly_file};
-       &IndexPatterns($family_name, $pattern_file, $map_link, $row{oligos}, $col, type=>"oligos");
-	
+	&IndexPatterns($family_name, 
+		       $row{oligos}, 
+		       $col, 
+		       assembly=>$family{$family_name}->{oligo_assembly_file}, 
+		       patterns=>$family{$family_name}->{oligo_file}, 
+		       type=>"oligos", 
+		      );
+
        ################################################################
-	### index results of dyad analysis
-       if ($htmaps) {
-	    $map_link = "../$family{$family_name}->{dyad_file}.html";
-       } else {
-	    $map_link = "../$family{$family_name}->{dyad_file}.${IMG_FORMAT}";
-       }
-       my $pattern_file = $family{$family_name}->{dyad_assembly_file};
-       &IndexPatterns($family_name, $pattern_file, $map_link, $row{dyads}, $col, type=>"dyads");
+	#### Index results from dyad-analysis
+	&IndexPatterns($family_name, 
+		       $row{dyads}, 
+		       $col, 
+		       patterns=>$family{$family_name}->{dyad_file}, 
+		       assembly=>$family{$family_name}->{dyad_assembly_file}, 
+		       type=>"dyads", 
+		      );
 	
-       ################################################################
+	################################################################
 	### index results of manual pattern selection
 	if ($task{report}) {
-	    if ($htmaps) {
-		$map_link = "../$family{$family_name}->{oligo_selection}.html";
-	    } else {
-		$map_link = "../$family{$family_name}->{oligo_selection}.${IMG_FORMAT}";
-	    }
-	    my $pattern_file = $family{$family_name}->{oligo_selection};
-	    &IndexPatterns($family_name, $pattern_file, $map_link, $row{selection}, $col, type=>"manual");
+	    &IndexPatterns($family_name, 
+			   $row{selection}, 
+			   $col, 
+			   patterns=>$family{$family_name}->{oligo_selection},
+			   type=>"manual"
+			  );
 	}
 
 	################################################################
 	#### Index results of consensus
-#	if ($htmaps) {
-#	    $map_link = "../$family{$family_name}->{consensus_file}.html";
-#	} else {
-#	    $map_link = "../$family{$family_name}->{consensus_file}.${IMG_FORMAT}";
-#	}
-	$map_link = "../$family{$family_name}->{consensus_file}\n";
-	&IndexConsensus($family_name,  $family{$family_name}->{consensus_file}, $map_link, $row{consensus}, $col);
+	&IndexConsensus($family_name, $row{consensus}, $col, matrix_file=>$family{$family_name}->{consensus_file});
 
 	################################################################
 	#### Index results of gibbs
-#	if ($htmaps) {
-#	    $map_link = "../$family{$family_name}->{gibbs_file}.html";
-#	} else {
-#	    $map_link = "../$family{$family_name}->{gibbs_file}.${IMG_FORMAT}";
-#	}
-	$map_link = "../$family{$family_name}->{gibbs_file}";
-	&IndexGibbs($family_name,  $family{$family_name}->{gibbs_file}, $map_link, $row{gibbs}, $col);
+	&IndexGibbs($family_name, $row{gibbs}, $col, matrix_file=>$family{$family_name}->{gibbs_file});
 
 	################################################################
 	#### Index results of meme
-#	if ($htmaps) {
-#	    $map_link = "../$family{$family_name}->{meme_file}.html";
-#	} else {
-#	    $map_link = "../$family{$family_name}->{meme_file}.${IMG_FORMAT}";
-#	}
-	$map_link = "../$family{$family_name}->{meme_file}";
-	&IndexMEME($family_name,  $family{$family_name}->{meme_file}, $map_link, $row{meme}, $col);
+	&IndexMEME($family_name, $row{meme}, $col, matrix_file=>$family{$family_name}->{meme_file});
    }
    
 
@@ -1267,55 +1284,100 @@ sub IndexConsensus {
 }
 
 ################################################################
-## Index a matrix
+##  Read a matrix and generate a summary for the synthetic table
 sub IndexMatrix {
-   my ($family_name, $matrix_file, $map_link, $row, $col, %args) = @_;
+   my ($family_name, $row, $col, %args) = @_;
    my $format = $args{format};
-   my @attributes = ();
-#     if ($format eq "consensus") {
-#         push @attributes, qw (unadjusted.information
-#  			     adjusted.information
-#  			     Pval
-#  			     ln.Pval
-#  			     exp
-#  			     ln.exp
-#  			     );
-#     } elsif ($format eq "gibbs") {
-#         push @attributes, qw (
-#  			     model.map
-#  			     betaprior.map
-#  			     MAP
-#  			     seed
-#  			     );
-#     } else {
-#         &RSAT::error::FatalError("Invalid format for a matrix $format");
-#     }
-   warn join ("\t", "; Indexing $format matrix for family", $family_name, $matrix_file, $row, $col), "\n" if ($verbose >= 2);
-   my $matrix = new RSAT::matrix();
-   my $matrix_result = "";
+
+   my $base = "../";
+   my $matrix_file = $args{matrix_file};
+   my $format = $args{format};
+#   my $family_dir = $args{dir}."/".$family_name."/";
+   my $family_dir = $family_name."/";
+   $family_dir =~ s|/+|/|g;
+   my $matrix_dir = $family_dir.$format."_".$family_name."/";
+   my $map_link = $base.$matrix_file;
 
    ## This piece of code has to be evaluated because it can raise an
    ## error, if the output file does not contain any matrix. This is
    ## the case for some output files of consensus, due to a bug.
-   eval {
-       $matrix->readFromFile($matrix_file, $format);
-       $matrix->calcConsensus();
-       $matrix->calcInformation();
-       $matrix_result = $matrix->toString(sep=>" ", col_width=>4, type=>"alignment");
-       $matrix_result .= $matrix->toString(sep=>" ", col_width=>4, type=>"parameters");
-   };
-   if ($@) {
-       $matrix_result = "<font color=red>No matrix could be found in the output file</font>";
-       &Warning(join ("\t", "No matrix found. Skipped.", $format, $matrix_file));
+   if (-e $matrix_file) {
+       my $matrix = &ReadMatrix($family_name, $matrix_file, %args);
+       $table[$row][$col] .= "<a href=".$base.$family_dir.">".$family_name."</a>\n";
+       $table[$row][$col] .= "<a href=".$base.$matrix_dir.">[".$format."]</a>\n";
+       $table[$row][$col] .= "<a href=".$base.$matrix_file.">[result]</a>\n";
+#       $table[$row][$col] .= "<a href=".$base.$pattern_file.".".${IMG_FORMAT}.">[".${IMG_FORMAT}."]</a>\n";
+#       if ($htmaps) {
+#	   $table[$row][$col] .= "<a href=".$base.$pattern_file.".html>[html]</a>\n";
+#       }
+       if ($matrix) {
+#	   &RSAT::message::Debug("IndexMatrix", $matrix, 
+#				 $matrix->get_attribute("id"),
+#				 $matrix->get_attribute("input_file"),
+#				) if ($main::verbose >= 10);
+
+	   $matrix_result = $matrix->toString(sep=>" ", col_width=>4, type=>"counts");
+	   $matrix_result .= $matrix->toString(sep=>" ", col_width=>4, type=>"parameters");
+	   $table[$row][$col] .= "<table cellpadding=3>\n";
+	   $table[$row][$col] .= "<TR>\n";
+	   $table[$row][$col] .= "<td colspan=2><pre>";
+	   $table[$row][$col] .= $matrix_result;
+	   $table[$row][$col] .= "</pre></td>\n";
+	   $table[$row][$col] .= "</TR>\n";
+	   $table[$row][$col] .= "</table>\n";
+       } else {
+	   $table[$row][$col] .= "<br><font color=red>No matrix could be found in the result file</font>\n";
+       }
+   } else {
+       $table[$row][$col] =  "<font color=red>File not found</font>".$matrix_file."\n";
+       &RSAT::message::Warning(join ("\t", "File not found. Skipped.", $format, $matrix_file));
    }
-   $table[$row][$col] = "<a href=".$map_link.">Results</a>\n";
-   $table[$row][$col] .= "<table cellpadding=3>\n";
-   $table[$row][$col] .= "<TR>\n";
-   $table[$row][$col] .= "<td colspan=2><pre>";
-   $table[$row][$col] .= $matrix_result;
-   $table[$row][$col] .= "</pre></td>\n";
-   $table[$row][$col] .= "</TR>\n";
-   $table[$row][$col] .= "</table>\n";
+}
+
+################################################################
+##  Read a matrix from a matrix file and return a matrix object
+sub ReadMatrix {
+   my ($family_name, $matrix_file, %args) = @_;
+   my $format = $args{format};
+   my $matrix;
+#   my @attributes = ();
+   warn join ("\t", "; Indexing $format matrix for family", $family_name, $matrix_file, $row, $col), "\n" if ($verbose >= 2);
+#   my $matrix = new RSAT::matrix();
+
+   ## If the matrix has already been loaded, return the indexed matrix
+   if ($matrix_by_file{$matrix_file}) {
+       return ($matrix_by_file{$matrix_file});
+   } else {
+       if (-e $matrix_file) {
+	   ## Instantiate a new matrix and index it
+	   $matrix = $matrix_factory->new_object(id=>join("_",$run_prefix,$family_name,$format));
+	   $matrix->set_attribute("input_file", $matrix_file);
+	   $matrix_by_file{$matrix_file} = $matrix;
+#	   &RSAT::message::Debug(join("\t", "New matrix created", $matrix, $matrix->get_attribute("id"))) if ($main::verbose >= 0) if ($main::verbose >= 10);
+
+	   ## This piece of code has to be evaluated because it can raise
+	   ## an error, if the output file does not contain any
+	   ## matrix. This is the case for some output files of consensus,
+	   ## due to a bug. There are also gibbs file which contain empty
+	   ## matrices.
+	   eval {
+#	       &RSAT::message::Debug(join("\t", "Reading  matrix from file", $matrix_file, $matrix->get_attribute("id"))) if ($main::verbose >= 10);
+	       $matrix->readFromFile($matrix_file, $format);
+#	       &RSAT::message::Debug(join("\n", "Read matrix", $matrix_file, $matrix->toString(), $matrix_result)), if ($main::verbose >= 10);
+	       $matrix->calcConsensus();
+	       $matrix->calcInformation();
+	   };
+	   if ($@) {
+	       &RSAT::message::Warning(join ("\t", "Matrix file does no contain a valid matrix. Skipped.", $format, $matrix_file)) if ($main::verbose >= 1);
+	       return(undef);
+	   } else {
+	       return($matrix);
+	   }
+       } else {
+	   &RSAT::message::Warning(join ("\t", "File not found. Skipped.", $format, $matrix_file)) if ($main::verbose >= 1);
+	   return(undef);
+       }
+   }
 }
 
 ################################################################
@@ -1350,7 +1412,7 @@ sub IndexMEME {
 ################################################################
 ## Index the patterns discovered for the HTML synthetic table
 sub IndexPatterns {
-   my ($family_name, $pattern_file, $map_link, $row, $col, %args) = @_;
+   my ($family_name, $row, $col, %args) = @_;
    warn join ("\t", "; Indexing patterns for family", $family_name, $pattern_file), "\n" if ($verbose >= 2);
    undef @patterns;
    undef @sorted_patterns;
@@ -1358,26 +1420,36 @@ sub IndexPatterns {
    undef %score;
    undef %type;
 
-   ## read the patterns
-   if (-e $pattern_file) {
-       if (($args{type} eq "dyads") ||
-	   ($args{type} eq "oligos")) {
+   my $base = "../";
+   my $type = $args{type};
+   my $assembly_file = $args{assembly};
+   my $pattern_file = $args{patterns};
+#   my $family_dir = $args{dir}."/".$family_name."/";
+   my $family_dir = $family_name."/";
+   $family_dir =~ s|/+|/|g;
+   my $pattern_dir = $family_dir.$type."_".$family_name."/";
+   my $map_link = $base.$pattern_file;
+
+   ## Read the patterns
+   if (-e $assembly_file) {
+       if (($type eq "dyads") ||
+	   ($type eq "oligos")) {
 	   ## Parse an assembly file (only retain contigs and isolated)
-	   ($error, @patterns) = &ReadAssemblyFile($family_name, $pattern_file, $args{type});
+	   ($error, @patterns) = &ReadAssemblyFile($family_name, $assembly_file, $type);
        } else {
 	   ## Parse a pattern file (retain all patterns)
-	   @patterns = &ReadPatterns(pattern_file=>$pattern_file);
+	   @patterns = &ReadPatterns(assembly_file=>$assembly_file);
        }
    } else {
 	$table[$row][$col] = "<font color=red>File not found</font>\n";
 	$pwd = `pwd`;
-	&Warning(join ( "\t", 
+	&RSAT::message::Warning(join ( "\t", 
 			$pwd,
 			"Family $family_name",  
-			"pattern file ", 
+			"assembly file ", 
 			$pattern_file, 
 			" does not exist. Skipped.",
-			));
+			)) if ($main::verbose >= 1);
 	return;
    }
    
@@ -1385,8 +1457,16 @@ sub IndexPatterns {
 	$table[$row][$col] = "<font color=red>$error</font>\n";
    } else {
 	@sorted_patterns = sort { $score{$b} <=> $score{$a} } @patterns;
-	$table[$row][$col] = "<table>\n";
-	$table[$row][$col] .="<tr><td align=right>max.score</td><td>".$max_score{$args{type}}{$family_name}."</td></tr>\n";
+	$table[$row][$col] .= "<a href=".$base.$family_dir.">".$family_name."</a>\n";
+	$table[$row][$col] .= "<a href=".$base.$pattern_dir.">[".$type."]</a>\n";
+	$table[$row][$col] .= "<a href=".$base.$pattern_file.">[patt]</a>\n";
+	$table[$row][$col] .= "<a href=".$base.$assembly_file.">[asmb]</a>\n";
+	$table[$row][$col] .= "<a href=".$base.$pattern_file.".".${IMG_FORMAT}.">[".${IMG_FORMAT}."]</a>\n";
+	if ($htmaps) {
+	    $table[$row][$col] .= "<a href=".$base.$pattern_file.".html>[html]</a>\n";
+	}
+	$table[$row][$col] .= "<table>\n";
+	$table[$row][$col] .="<tr><td align=right>max.score</td><td>".$max_score{$type}{$family_name}."</td></tr>\n";
 	$table[$row][$col] .="</table>\n";
 	$table[$row][$col] .= "<table>\n";
 	$table[$row][$col] .= "<TR>\n";
@@ -1603,6 +1683,12 @@ sub AnalyzeFamilies {
 	    next;
 	}
 
+	## Stop after a few families
+	if (($last >0) && ($fam_count > $last)) {
+	    &RSAT::message::Warning("Stopped after $last genes");
+	    last;
+	}
+
 	## Check minimum number of genes
 	if ($gene_nb < $min_genes) {
 	    warn join ("\t", "; Skipping family", 
@@ -1731,9 +1817,11 @@ OPTIONS
 		of sequence files. The first word of each line must
 		specify the path of a sequence file. Each sequence
 		file must be in fasta format.
-	-skip # skip the forst # data sets when performing the
+	-skip # skip the first # data sets when performing the
 		analyses (this si useful when the program has been
 		interrupted after a considerable amount of work).
+	-last # stop after the first # data sets when performing the
+		analyses (this si useful to perform quick tests).
 	-outdir	output directory
 	-mingenes #
 		minimal number of genes per family. Families with less
@@ -1817,6 +1905,7 @@ OPTIONS
    MEME options (Bailey)
    	-MEME_minw	minimum motif width (default $MEME_minw)
    	-MEME_maxw	maximum motif widht (default $MEME_maxw)
+	-MEME_bfile     name of background Markov model file
 
    Output options
 	-transp	transpose synthetic result table (columns become rows)
@@ -1938,6 +2027,7 @@ multiple-family-analysis options
 -i		family file (incompatible with -seq)
 -seq		sequence file (incompatible with -i)
 -skip #		skip the # first data sets
+-last #		stop after the # first data sets
 -purge		use purged sequences for pattern discovery (default)
 -nopurge	use non-purged sequences for pattern discovery
 -outdir		output directory
@@ -1993,6 +2083,7 @@ multiple-family-analysis options
 ## MEME options (Bailey)
 -MEME_minw	minimum motif width (default $MEME_minw)
 -MEME_maxw	maximum motif width (default $MEME_maxw)
+-MEME_bfile     name of background Markov model file
 End_short_help
  close HELP;
  exit;
@@ -2037,6 +2128,11 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-skip") {
 	    $skip = $ARGV[$a+1];
 	    &RSAT::error::FatalError("Invalid number with option -skip\t$skip") unless &IsNatural($skip);
+	    
+	    ### stop after some data sets
+	} elsif ($ARGV[$a] eq "-last") {
+	    $last = $ARGV[$a+1];
+	    &RSAT::error::FatalError("Invalid number with option -last\t$last") unless &IsNatural($last);
 	    
 	    ### sequence file list
 	} elsif ($ARGV[$a] eq "-seq") {
@@ -2089,11 +2185,11 @@ sub ReadArguments {
 	    $seed = $ARGV[$a+1];
 
 	    ### MotifSampler options
-	} elsif ($ARGV[$a] =~ /-(MS_\S)/) {
+	} elsif ($ARGV[$a] =~ /-(MS_\S+)/) {
 	    $$1 =  $ARGV[$a+1];
 
 	    ### MEME options
-	} elsif ($ARGV[$a] =~ /-(MEME_\S)/) {
+	} elsif ($ARGV[$a] =~ /-(MEME_\S+)/) {
 	    $$1 =  $ARGV[$a+1];
 
 	    ### organism
@@ -2214,7 +2310,7 @@ sub ReadArguments {
 		&RSAT::error::FatalError("pseudo-weight must be a positive real number");
 	    }
 
-	    #### Optoins for the SQL scripts
+	    #### Options for the SQL scripts
 	} elsif ($ARGV[$a] eq "-schema") {
 	    $schema = $ARGV[$a+1];
 	} elsif ($ARGV[$a] eq "-host") {
@@ -2310,15 +2406,6 @@ sub ExportSQL {
    warn "; Generating SQL\n" if ($verbose >= 1);
 #   my $test = new RSAT::Family;
 
-   ## Unique prefix for each analysis, to allow merging them in a database
-   my $run_prefix = `mktemp XXXX`;
-   chomp($run_prefix);
-   my $run_date = &AlphaDate();
-
-   ## Class holder for the analysis
-   local $analysis_factory = classes::ClassFactory->new_class(object_type=>"RSAT::Analysis");
-   $current_analysis = $analysis_factory->new_object(id=>$run_prefix);
-
    &RSAT::message::debug($current_analysis, $current_analysis->get_attribute("id")) if ($main::verbose >= 10);
 
    $current_analysis->set_attribute("date", $run_date);
@@ -2333,14 +2420,6 @@ sub ExportSQL {
    $current_analysis->set_attribute("thosig", $thosig);
    $current_analysis->set_attribute("suffix", $table_suffix);
 
-   ## Class holder for families
-   my $family_factory = classes::ClassFactory->new_class(object_type=>"RSAT::Family",
-							 prefix=>$run_prefix."_");
-   
-   ## Class holder for patterns
-   my $pattern_factory = classes::ClassFactory->new_class(object_type=>"RSAT::pattern",
-							  prefix=>$run_prefix."_");
-   
    my %export_columns = ();
    
    foreach my $family_name (@families) {
@@ -2404,7 +2483,7 @@ sub ExportSQL {
 	} else {
 	    my $pwd = `pwd`;
 	    chomp $pwd;
-	    &Warning("$family_name\t$pwd\toligo file $oligo_file does not exist\tSKIPPED\n");
+	    &RSAT::message::Warning(join ("\t", "SQL export", $family_name, $pwd, "oligo file does not exist",  $oligo_file , "SKIPPED"));
 	}
 
 	#### discovered dyads
@@ -2415,6 +2494,10 @@ sub ExportSQL {
 	    while (<DYADS>) {
 		chomp;
 		if (/^;/) {
+		    ## Temporary patch for dyad obs_occ -> occ (to be compatile with oligo-analysis
+		    s/obs_occ/occ/;
+
+		    ## Output fields
 		    if ((/;\s+(\d+)\t(\S+)/) && ($2 ne "id")){
 			$export_columns{$2} = $1 - 1;
 		    }
@@ -2448,10 +2531,19 @@ sub ExportSQL {
 	    }
 	    close DYADS;
 	} else {
-	    &Warning("$family_name\tdyad file $dyad_file does not exist\tSKIPPED\n");
+	    &RSAT::message::Warning(join ("\t", "SQL export", $family_name, $pwd, "dyad file does not exist",  $dyad_file , "SKIPPED"));
 	}
 	
 	
+	#### Matrices
+	for my $program qw (consensus gibbs meme MotifSampler) {
+	    my $matrix_file = $family{$family_name}->{$program."_file"};
+	    if (-e $matrix_file) {
+		&ReadMatrix($family_name, $matrix_file, format=>$program);
+	    } else {
+		&RSAT::message::Warning(join ("\t", "SQL export", $family_name, $pwd, "matrix file does not exist",  $matrix_file , "SKIPPED"));
+	    }
+	}
    }
 
    ## Specify output fields
@@ -2482,7 +2574,7 @@ sub ExportSQL {
    chomp $pwd;
    warn join ("\t", $pwd , $dir{output}, $dir{output_bk}), "\n";
    #### export the result tables
-   foreach my $factory ($analysis_factory, $family_factory, $pattern_factory) {
+   foreach my $factory ($analysis_factory, $family_factory, $pattern_factory, $matrix_factory) {
 	$factory->dump_tables();
 	$factory->generate_sql(schema=>$schema, 
 			       host=>$host, 
@@ -2726,8 +2818,6 @@ sub CalibrationPrefix {
    return $calib_prefix;
 }
 
-
-
 ################################################################
 ## Generate report fiels for the motif disovery competition 2004
 sub MDCreport {
@@ -2770,8 +2860,8 @@ sub MDCreport {
 	my $selection_file = $family{$family_name}->{oligo_selection};
 	unless (-e $selection_file) {
 #	    $selection_file = $family{$family_name}->{oligo_file};
-#	    &Warning("No manual selection: using default file $selection_file") if ($main::verbose >= 0);
-	    &Warning("No manual selection file does not exist $selection_file") if ($main::verbose >= 0);
+#	    &RSAT::message::Warning("No manual selection: using default file $selection_file") if ($main::verbose >= 0);
+	    &RSAT::message::Warning("No manual selection: file does not exist $selection_file") if ($main::verbose >= 0);
 	    next;
 	}
 	warn ("; Pattern file for the report $selection_file\n") if ($main::verbose >= 1);
@@ -2873,8 +2963,9 @@ sub MDCreport {
 }
 
 
-################################################################
-## Extract contigs and isolated patterns from an assembly file
+## ##############################################################
+## Extract contigs and isolated patterns from an assembly file for the
+## synthetic table
 sub ReadAssemblyFile {
    my ($family_name, $assembly_file, $pattern_type) = @_;
    my ($pattern_handle, $input_dir) = &OpenInputFile($assembly_file);
