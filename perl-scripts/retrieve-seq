@@ -1,8 +1,9 @@
 #!/usr/bin/perl
 
+
 ############################################################
 #
-# $Id: retrieve-seq,v 1.39 2005/03/29 05:06:10 jvanheld Exp $
+# $Id: retrieve-seq,v 1.40 2005/04/10 12:54:20 jvanheld Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -89,7 +90,7 @@ if ($input_sequence_file) {
 	$organism->OpenContigs($organism_name, $annotation_table);
     } else {
 	&RSAT::error::FatalError("You should specify an organism name.", 
-				 "Run the commnd supported-organism to obtain the list of supported organisms.");
+				 "Run the command supported-organism to obtain the list of supported organisms.");
     }
 }
 
@@ -298,7 +299,8 @@ foreach my  $query (@queries) {
 	### downstream region
     } elsif ($sequence_type eq "downstream") {
 	if ($noorf) {
-	    $current_to = &min($downstr_size{$id}, $to);
+	    my $downstr_size = $current_feature->get_attribute("downstr_size");
+	    $current_to = &min($downstr_size, $to);
 	} 
 	
 	if ($orf_strand eq "D") {
@@ -384,7 +386,7 @@ foreach my  $query (@queries) {
 	if ($sequence_type eq "random fragments") {
 	    @comments = (join("; ","random fragment", 
 			      "size: ".$reg_size,
-			      "location: ".$location));
+			      "location: ".$location)) unless ($no_comments);
 	} else {
 	    ## in fasta format, only the first comment line is printed 
 	    $first_comment_line = join("; ", $query, 
@@ -393,10 +395,21 @@ foreach my  $query (@queries) {
 				       "location: ".$location);
 	    if ($noorf) {
 		if ($sequence_type eq "upstream") {
-		    $first_comment_line .= "; upstream neighbour: ".$current_feature->get_attribute("upstr_neighbour")->get_attribute("id");
+		    my $upstr_neighbour = $current_feature->get_attribute("upstr_neighbour");
+		    $upstr_neighbour_id = "<NULL>";
+		    if ($upstr_neighbour) { 
+			$upstr_neighbour_id = $upstr_neighbour->get_attribute("id");
+		    }
+		    $first_comment_line .= "; upstream neighbour: ".$upstr_neighbour_id;
 		    $first_comment_line .= " (distance: ".$current_feature->get_attribute("upstr_size").")";
 		} elsif ($sequence_type eq "downstream") {
-		    $first_comment_line .= "; downstream neighbour: ".$current_feature->get_attribute("downstr_neighbour")->get_attribute("id");
+		    my $downstr_neighbour = $current_feature->get_attribute("downstr_neighbour");
+		    $downstr_neighbour_id = "<NULL>";
+		    if ($downstr_neighbour) { 
+			$downstr_neighbour_id = $downstr_neighbour->get_attribute("id");
+		    }
+		    $first_comment_line .= "; downstream neighbour: ".$downstr_neighbour_id;
+#		    $first_comment_line .= "; downstream neighbour: ".$current_feature->get_attribute("downstr_neighbour")->get_attribute("id");
 		    $first_comment_line .= " (distance: ".$current_feature->get_attribute("downstr_size").")";
 		}
 	    }
