@@ -1,9 +1,8 @@
 #!/usr/bin/perl
 
-
 ############################################################
 #
-# $Id: oligo-analysis,v 1.84 2005/04/07 22:23:20 jvanheld Exp $
+# $Id: oligo-analysis,v 1.85 2005/04/18 18:28:24 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -1707,10 +1706,14 @@ sub PrintResult {
 	    if ($return{'proba'}) {
 		if ($patterns{$pattern_seq}->{occ_pro} >= 0.0001) {
 		    printf $out "\t%.5f", $patterns{$pattern_seq}->{occ_pro};
+		    printf $out "\t%.1e", $patterns{$pattern_seq}->{occ_E};
+		} elsif ($patterns{$pattern_seq}->{occ_pro} <= 1e-100) {
+		    printf $out "\t%.0g", $patterns{$pattern_seq}->{occ_pro};
+		    printf $out "\t%.0e", $patterns{$pattern_seq}->{occ_E};
 		} else {
 		    printf $out "\t%.2g", $patterns{$pattern_seq}->{occ_pro};
+		    printf $out "\t%.1e", $patterns{$pattern_seq}->{occ_E};
 		}
-		printf $out "\t%.1e", $patterns{$pattern_seq}->{occ_E};
 		printf $out "\t%.2f", $patterns{$pattern_seq}->{occ_sig};
 	    }
 	    
@@ -1746,10 +1749,14 @@ sub PrintResult {
 		printf $out "\t%.2f", $patterns{$pattern_seq}->{ems_cor} unless ($noov);
 		if ($patterns{$pattern_seq}->{ms_pro} >= 0.0001) {
 		    printf $out "\t%.5f", $patterns{$pattern_seq}->{ms_pro};     
+		    printf $out "\t%.2g", $patterns{$pattern_seq}->{ms_E};
+		} elsif ($patterns{$pattern_seq}->{ms_pro} < 1e-100) {
+		    printf $out "\t%.0g", $patterns{$pattern_seq}->{ms_pro};     
+		    printf $out "\t%.0g", $patterns{$pattern_seq}->{ms_E};
 		} else {
 		    printf $out "\t%.2g", $patterns{$pattern_seq}->{ms_pro};   
+		    printf $out "\t%.2g", $patterns{$pattern_seq}->{ms_E};
 		}
-		printf $out "\t%.2g", $patterns{$pattern_seq}->{ms_E};
 		printf $out "\t%.1f", $patterns{$pattern_seq}->{ms_sig};
 	    }
 	    printf $out "\t%7.5f", $patterns{$pattern_seq}->{ms_freq} if ($return{'freq'});
