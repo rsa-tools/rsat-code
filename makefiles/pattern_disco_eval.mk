@@ -76,3 +76,47 @@ rand_multi:
 ## synchronize on mamaze
 to_scmbb:
 	rsync -ruptvl -e ssh . jvanheld@mamaze.scmbb.ulb.ac.be:pattern_disco_eval
+
+## ##############################################################
+## Score distributions
+
+DATA_TYPE=random_genes
+PROGRAM=meme
+SCORE_COLUMN=2
+SQL_FILE=results/${ORG}/${DATA_TYPE}/sql_export/matrix.tab
+meme_score_distrib:
+	${MAKE} score_distrib PROGRAM=meme SCORE_COLUMN=2 DATA_TYPE=random_genes
+	${MAKE} score_distrib PROGRAM=meme SCORE_COLUMN=2 DATA_TYPE=regulons
+
+consensus_score_distrib:
+	${MAKE} score_distrib PROGRAM=consensus SCORE_COLUMN=13 DATA_TYPE=random_genes
+	${MAKE} score_distrib PROGRAM=consensus SCORE_COLUMN=13 DATA_TYPE=regulons
+
+## Calculate distibution of E-values obtained with MEME
+SCORE_DIR=results/${ORG}/scores
+SCORE_ENUM=${SCORE_DIR}/${ORG}_${PROGRAM}_${DATA_TYPE}_scores
+SCORE_DISTRIB=${SCORE_ENUM}_distrib
+ENUM_CMD=grep -v '^;' ${SQL_FILE} \
+	| grep -v '^--' \
+	| grep ${PROGRAM}  | cut -f 1,${SCORE_COLUMN} \
+	| awk -F '\t' '{print $$1"\t"$$2"\t"(-log($$2)/log(10))}' >> ${SCORE_ENUM}.txt
+score_distrib:
+	@mkdir -p ${SCORE_DIR}
+	@echo "; dataset	score	-log10(score)" >  ${SCORE_ENUM}.txt
+	@echo ${ENUM_CMD}
+	${ENUM_CMD}
+	@echo "Scores	${PROGRAM}	${DATA_TYPE}	${SCORE_ENUM}.txt"
+	@${MAKE} score_distrib_graph
+
+## Draw frequency polygons with score distributions
+TITLE= '${PROGRAM} scores with ${DATA_TYPE}'
+score_distrib_graph:
+	cut -f 3 ${SCORE_ENUM}.txt | classfreq  -v 1 -ci 1 -o ${SCORE_DISTRIB}.tab
+	XYgraph -xcol 3 -ycol 4,5,6 -lines -xsize 800 -ysize 400 \
+		-title1 ${TITLE} \
+		-yleg1 'number of motifs' \
+		-xleg1 'sig=-log10(E-value)' \
+		-i ${SCORE_DISTRIB}.tab \
+		-o ${SCORE_DISTRIB}.jpg
+	@echo "Distrib	${PROGRAM}	${DATA_TYPE}	${SCORE_DISTRIB}.tab"
+	@echo "Graph	${PROGRAM}	${DATA_TYPE}	${SCORE_DISTRIB}.jpg"
