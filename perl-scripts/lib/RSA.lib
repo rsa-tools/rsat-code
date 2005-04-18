@@ -246,7 +246,7 @@ sub ReadCalibration {
 #
 sub ReadExpectedFrequencies {
     my ($exp_freq_file, $sum_rc, $rescale_freq) = @_;
-    warn join ("\t", "; Reading expected frequency file", $exp_freq_file), "\n" if ($main::verbose >= 1);
+    warn join ("\t", "; Reading expected frequency file", $exp_freq_file), "\n" if ($main::verbose >= 2);
     my ($exp) = &OpenInputFile($exp_freq_file);
     my $l=0;
     while (<$exp>) {
