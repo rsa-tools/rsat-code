@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.7 2005/03/13 10:31:33 jvanheld Exp $
+# $Id: compare-classes,v 1.8 2005/04/18 18:26:51 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -848,7 +848,7 @@ sub CompareClasses {
 		    &RSAT::error::FatalError("Number of common elements ($c) cannot be higher than reference size ($n_r)");
 		}
 		
-		
+		my $p; ## Proba for a member to be found in common in the two classes
 		if ($replacement) {
 		    #### use binomial distribution of there are replacements
 		    
@@ -856,19 +856,23 @@ sub CompareClasses {
 			#### test the joint probability to belong to both
 			#### query and reference classes, for each element of
 			#### the population
-			my $p = $n_r/$n * $n_q/$n;
+			$p = $n_r/$n * $n_q/$n;
 			$compa{$compa_key}->{P_val} = &sum_of_binomials($p,$n,$c,$n);
 		    } else {
-			#### test the probability to belong to the reference class, for each element of the query class
-			my $p = $n_r/$n;
+			#### test the probability to belong to the
+			#### reference class, for each element of the
+			#### query class
+			$p = $n_r/$n;
 			$compa{$compa_key}->{P_val} = &sum_of_binomials($p,$n_q,$c,$n_q);
 		    }
 		    
 		} else{
 		    #### use hypergeometric distribution
+		    $p = $n_r/$n * $n_q/$n;
 		    $compa{$compa_key}->{P_val} = &sum_of_hypergeometrics($n_r, $n, $n_q, $c, &min($n_r, $n_q));
 		    
 		}
+		$compa{$compa_key}->{exp_common} = $p*$n;
 		
 #	$nb_tests = $nb_ref_classes * $nb_query_classes;
 		$nb_tests = $nb_ref_classes;
@@ -968,6 +972,7 @@ sub PrintResult {
 	    push @header_fields, "query_%" ;
 	}
 	if ($return_fields{proba}) {
+	    push @header_fields, "exp_common" ;
 	    push @header_fields, "P_val" ;
 	    push @header_fields, "E_val";
 	    push @header_fields, "sig";
@@ -1026,12 +1031,14 @@ sub PrintResult {
 
 	    #### percentages
 	    if ($return_fields{percent}) {
-		printf $out "\t%7.4f", $compa{$compa_key}->{ref_percent};
-		printf $out "\t%7.4f", $compa{$compa_key}->{query_percent};
+		printf $out "\t%7.2f", $compa{$compa_key}->{ref_percent};
+		printf $out "\t%7.2f", $compa{$compa_key}->{query_percent};
 	    }
 
 	    #### probabilities
 	    if ($return_fields{proba}) {
+		printf $out "\t%7.2f", $compa{$compa_key}->{exp_common};
+
 		if ($compa{$compa_key}->{P_val} >= 0.0001) {
 		    printf $out "\t%.5f", $compa{$compa_key}->{P_val};
 		} else {
