@@ -140,7 +140,7 @@ POSITION_ANALYSIS_CMD=							\
 one_position_analysis:
 	@echo ${DATE} ${POSITION_ANALYSIS_CMD}
 	@mkdir -p ${POS_DIR}
-	@${POSITION_ANALYSIS_CMD}
+	@${MAKE} my_command MY_COMMAND="${POSITION_ANALYSIS_CMD}"
 
 POS_OLIGO_LENGTHS=1 2 3 4 5 6
 position_analysis:
@@ -160,7 +160,7 @@ OLIGO_ANALYSIS_CMD=						\
 		-return occ,freq,proba,zscore,mseq,rank -sort
 one_markov: dirs
 	@echo ${DATE}	${OLIGO_ANALYSIS_CMD}
-	@${OLIGO_ANALYSIS_CMD}
+	@${MAKE} my_command MY_COMMAND="${OLIGO_ANALYSIS_CMD}"
 
 markov_one_ol:
 	@for m in ${MARKOV_ORDERS} ;do		\
@@ -192,7 +192,7 @@ one_oligo_table:
 	@echo
 	@echo ${DATE}
 	@echo "${OLIGO_TABLE_CMD}"
-	@${OLIGO_TABLE_CMD}
+	@${MAKE} my_command MY_COMMAND="${OLIGO_TABLE_CMD}"
 
 oligo_windows:
 	${MAKE} one_oligo_table FROM=-0001 TO=-0250
