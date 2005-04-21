@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.48 2005/04/07 22:20:24 jvanheld Exp $
+# $Id: install-organism,v 1.49 2005/04/21 23:10:56 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -79,7 +79,7 @@ unless ($organism_short_name) {
 }
 
 unless ($organism_full_name) {
-    if ($organism_short_name =~ /^[\_\-\w]+$/) {
+    if ($organism_short_name =~ /\_/) {
 	$organism_full_name = $organism_short_name;
 	$organism_full_name =~ s/\_/ /g;
     } else {
@@ -336,8 +336,10 @@ sub CreatePhylogeny {
 
     if ($taxonomy) {
 	$taxonomy = &trim($taxonomy);
-	$taxonomy =~ s|\s*;\s*|/|g;
-	$taxonomy =~ s|\s+|_|g;
+	$taxonomy =~ s|\s*;\s*|/|g; ## Each taxonomic level becomes a subdirectorry
+	$taxonomy =~ s|\s+|_|g; ## I prefer to avoid spaces in directory names
+	$taxonomy =~ s|\(|_|g; ## this character cannot be used for a directory name
+	$taxonomy =~ s|\)|_|g; ## this character cannot be used for a directory name
 	my $dir = $RSA."/data/phylogeny/".$taxonomy;
 	warn "; Taxonomy directory\t", $dir, "\n" if ($main::verbose >= 1);
 	&RSAT::util::CheckOutDir($dir);
