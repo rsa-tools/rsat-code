@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: genome-blast.pl,v 1.1 2005/04/21 22:55:49 jvanheld Exp $
+# $Id: genome-blast.pl,v 1.2 2005/04/21 23:10:13 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -26,7 +26,7 @@ util
 
 =head1 USAGE
     
-genome-blast.pl -q query_organism -db db_organism [-i inputfile]
+genome-blast.pl -q query_organism -db db_organism [-i inputfile] [-o outputfile] [-v #]
 
 =head1 INPUT FORMAT
 
@@ -239,6 +239,16 @@ obtained with the option blastall -m 8 (table output).
 =cut
 	} elsif ($ARGV[$a] eq "-i") {
 	    $infile{input} = $ARGV[$a+1];
+	    
+	    ## Output file
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outfile{output} = $ARGV[$a+1];
 	    
 	    ## Query organism
 =pod
