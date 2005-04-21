@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: load_classes.pl,v 1.1 2003/10/28 23:12:16 jvanheld Exp $
+# $Id: load_classes.pl,v 1.2 2005/04/21 22:55:08 jvanheld Exp $
 #
 # Time-stamp: <2003-07-10 12:08:29 jvanheld>
 #
@@ -12,7 +12,7 @@
 ############################################################
 
 require "lib/util.pl";
-require "config.pl";
+#require "config.pl";
 use strict;
 no strict "refs";
 no strict "vars";

@@ -1,6 +1,6 @@
 #!/usr/bin/perl 
 #############################################################
-# $Id: parse-genbank.pl,v 1.26 2005/03/22 23:12:56 jvanheld Exp $
+# $Id: parse-genbank.pl,v 1.27 2005/04/21 22:55:08 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -287,6 +287,8 @@ package main;
 				     password=>$password
 				     );
     }
+
+    &ExportProteinSequences($CDSs,$org);
     &ExportMakefile(@classes);
     &ExportClasses($out_file{features}, $out_format, @classes) if $export{obj};
     
@@ -575,4 +577,40 @@ sub RefseqPostProcessing {
 		  $gi, $embl_xref), "\n" if ($main::verbose >= 1);
     }
 
+}
+
+
+################################################################
+## Export protein sequences in fasta format
+sub ExportProteinSequences {
+    my ($CDSs, $org) = @_;
+    $out_file{pp} = $dir{output}."/".$org."_aa.fasta";
+
+    warn join ("\t", "; Exporting translated sequences to file", $out_file{pp}), "\n" if ($main::verbose >= 1);
+    
+    open PP, ">$out_file{pp}";
+    foreach my $cds ($CDSs->get_objects()) {
+	next unless ($cds);
+	my ($translation) = $cds->get_attribute("translation");	    
+	next unless ($translation =~ /\S+/);
+
+# 	my $id = $data_source;
+	my $pp_id = $cds->get_attribute("id");
+
+        ## Get CDS description
+        my $description = $cds->get_attribute("description");
+       unless ($description) {
+          $description =  join ("; ", $cds->get_attribute("note"));   
+       }
+
+        my $pp_description;
+        if ($description) {
+          $pp_description .= $description;
+        }	    
+        $pp_description .= "; ".join ("|", $cds->get_attribute("names"));
+
+        print PP $header, "\n";
+        &PrintNextSequence(PP,"fasta",60,$translation,$pp_id, $pp_description);
+    }
+    close PP;
 }

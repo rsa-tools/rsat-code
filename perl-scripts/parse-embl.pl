@@ -1,7 +1,7 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: parse-embl.pl,v 1.11 2005/03/13 10:32:12 jvanheld Exp $
+# $Id: parse-embl.pl,v 1.12 2005/04/21 22:55:08 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:17:49 jvanheld>
 #
@@ -103,9 +103,10 @@ package main;
     ### initial directory
     $dir{main} = `pwd`; #### remember working directory
     chomp($dir{main});
-
+    
+    local $data_source = "embl";
     local %infile = ();
-    local %outfile = ();
+    local %out_file = ();
     local $verbose = 0;
     local $in = STDIN;
     local $out = STDOUT;
@@ -150,7 +151,7 @@ package main;
     
     
     #### Features
-    my $features = classes::ClassFactory->new_class(object_type=>"EMBL::Feature",prefix=>"ft_");
+    my $features = classes::ClassFactory->new_class(object_type=>"EMBL::Feature",prefix=>"ft_", source=>$data_source);
     @feature_out_fields = qw( id
 			      type
 			      name
@@ -248,7 +249,7 @@ package main;
     chdir $dir{output};
     $out_file{error} = "$dir{output}/genbank.errors.txt";
     $out_file{stats} = "$dir{output}/genbank.stats.txt";
-    open ERR, ">$outfile{error}";
+    open ERR, ">$out_file{error}";
 
     #### come back to the starting directory
     chdir($wd);
@@ -314,24 +315,40 @@ package main;
 	    }
 	}
 
+#	## Use attribute "accession" as main ID if there is one
+#	my $accession = $feature->get_attribute("accession");
+#	if ($accession =~ /(\S+)/) {
+#	    $feature->force_attribute('id', $1);
+#	}
+
+
+
 	### add protein_id as valid name
 	@protein_ids = $feature->get_attribute("protein_id");
 	if ($#protein_ids >= 0) {
 	    foreach my $id (@protein_ids) {
 		$feature->push_attribute("names",$id);
 	    }
+
+	    ## Use protein_id as main ID for the CDS
+	    if ($protein_ids[0] =~ /(\S+)/) {
+		$feature->force_attribute('id', $1);
+	    }
 	}
 	
-
 	### add locus_tag as valid name
 	@locus_tags = $feature->get_attribute("locus_tag");
 	if ($#locus_tags >= 0) {
 	    foreach my $id (@locus_tags) {
 		$feature->push_attribute("names",$id);
 	    }
+
+	    ## Use locus_tag as main ID if there is one
+	    if ($locus_tags[0] =~ /(\S+)/) {
+		$feature->force_attribute('id', $1);
+	    }
 	}
 	
-
 	#### add SWISS-PROT/Uniprot/TrEMBL ID as valid name
 	my @xrefs = $feature->get_attribute("db_xref");
 	my $gi = "";
@@ -339,11 +356,11 @@ package main;
 	    if (($xref =~ /SWISS-PROT:/i) ||
 		($xref =~ /Uniprot\/TrEMBL:/i) ||
 		($xref =~ /SPTREMBL:/i)) {
-		my $name = $';
+		my $name = "$'";
 		$feature->push_attribute("names",$name);		
 	    } 
 	}
-
+	
 	### define a single name  (take the first value in the name list)
 	if ($name = $feature->get_name()) {
 	    $feature->set_attribute("name",$name);
@@ -369,7 +386,7 @@ package main;
 	foreach my $xref (@xrefs) {
 	    if ($xref =~ /:/) {
 		my $xref_db = $`;
-		my $xref_id = $';
+		my $xref_id = "$'";
 		$feature->push_expanded_attribute("db_xref_exp", $xref_db, $xref_id);
 	    } else {
 		&ErrorMessage(join ("\t", 
@@ -378,33 +395,8 @@ package main;
 				    $xref), "\n");
 	    }
 	}
-	
-
-#  	#### use GI as feature identifier
-#  	my @xrefs = $feature->get_attribute("db_xref");
-#  	my $gi = "";
-#  	foreach my $xref (@xrefs) {
-#  	    if ($xref =~ /GI:/) {
-#  		$gi = $';
-#  		last;
-#  	    } 
-#  	}
-#  	if ($gi) {
-#  	    $feature->force_attribute("id",$gi);
-#  	} else {
-#  	    &Warning("feature\t".$feature->get_attribute("id")."\thas no GI.\n") if ($main::verbose >= 2); 
-#  	}
-	
-#  	#### use embl name as contig name
-#  	my $source = $feature->get_attribute("source");
-#  	if ($source =~ /embl:/) {
-#  	    my $contig = $';
-#  	    $contig =~ s/\.gz$//;
-#  	    $contig =~ s/\.contig$//;
-#  	    $feature->force_attribute("contig",$contig);
-#  	}
     }
-    
+
     ################################################################
     ### Save result in tab files
     chdir $dir{main};
@@ -418,13 +410,19 @@ package main;
 				password=>$password
 				);
     }
+
+    &ExportProteinSequences($features,$org);
     &ExportMakefile(@classes);
 
+
+
     chdir($dir{output});
-    &PrintStats($outfile{stats}, @classes);
+    &PrintStats($out_file{stats}, @classes);
+
+
 
     #### document the ffields which were parsed but not exported
-    open STATS, ">>$outfile{stats}";
+    open STATS, ">>$out_file{stats}";
     print STATS "; \n; Fields parsed but not exported\n";
     foreach my $key (sort keys %feature_extra_fields) {
 	my $value = $feature_extra_fields{$key};
@@ -440,7 +438,7 @@ package main;
     }
 
     ###### close output file ######
-    close $out if ($outfile{output});
+    close $out if ($out_file{output});
     close ERR;
 
     warn "; Results exported in directory\t", $dir{output}, "\n" if ($main::verbose >= 1);
@@ -484,6 +482,7 @@ OPTIONS
 		the directory does not exist, it will be created.
 	-org	organism name
 	-noseq  do not export sequences in .raw files
+	-source	data source (default: $data_source)
 
    Options for the automaticaly generated SQL scripts
 	-schema database schema (default: $schema)
@@ -587,6 +586,7 @@ parse-embl options
 -test #	quick test (for debugging)
 -i	input dir
 -o	output dir
+-source	data source (default: $data_source)
 -v	verbose
 -org	organism name
 -schema database schema (default: $schema)
@@ -639,6 +639,10 @@ sub ReadArguments {
 	    $org = $ARGV[$a+1];
 	    $org =~ s/\s+/_/g;
 
+	    ### data source
+	} elsif ($ARGV[$a] eq "-source") {
+	    $data_source = $ARGV[$a+1];
+
 	    ### do not export sequences
 	} elsif ($ARGV[$a] eq "-noseq") {
 	    $noseq = 1;
@@ -684,9 +688,9 @@ sub Verbose {
 	    print $out ";\t$key\t$value\n";
 	}
     }
-    if (defined(%outfile)) {
+    if (defined(%out_file)) {
 	print $out "; Output files\n";
-	while (($key,$value) = each %outfile) {
+	while (($key,$value) = each %out_file) {
 	    print $out ";\t$key\t$value\n";
 	}
     }
@@ -745,7 +749,7 @@ sub ParseEMBLFile {
 	if  ($line =~ /^ID\s+(\S+)\s*/) {
 	    #### contig ID line
 	    $contig = $contigs->new_object(id=>$1);
-	    my $contig_description = $';
+	    my $contig_description = "$'"; 
 	    $contig->set_attribute("description",$contig_description);
 	    $contig->set_attribute("file",$input_file);
 
@@ -783,7 +787,7 @@ sub ParseEMBLFile {
 		$organism_created{$organism_name} = 1;
 	    }
 	} elsif ($line =~ /^OC\s+/) {
-	    my $taxonomy = $';
+	    my $taxonomy = "$'";
 
 	    #### read the rest of the taxxonomy (it can be larger than
 	    #### one line)
@@ -791,7 +795,7 @@ sub ParseEMBLFile {
 		chomp $line;
 		$l++;
 		if ($line =~ /^OC\s+/) {
-		    $taxonomy .= $';
+		    $taxonomy .= "$'";
 		} else {
 		    last;
 		}
@@ -873,13 +877,13 @@ sub ParseEMBLFile {
 		$feature_extra_fields{$key}++;
 	    }
 
-	    my $value = $';
+	    my $value = "$'";
 	    my $start_l = $l;
 
 	    #### If the attribute starts with a quote, make sure to
 	    #### have the closing quote, and trim the quotes
 	    if  ($value =~ /^\"/) {
-		$value = $'; #### trim the leading quote
+		$value = "$'"; #### trim the leading quote
 
 		if ($value =~ /\"\s*$/) {
 		    #### value terminates on the first line
@@ -891,7 +895,7 @@ sub ParseEMBLFile {
 			$l++;
 			if  ($line =~ /^FT\s+/) {
 			    #### value is included in the first line
-			    $value .= " ".$';
+			    $value .= " $'";
 			    if  ($value =~ /\"\s*$/) {
 				#### value is terminated
 				$value = $`;
@@ -996,5 +1000,37 @@ sub ParsePositionEMBL {
 } 
 
 
+################################################################
+## Export protein sequences in fasta format
+sub ExportProteinSequences {
+    my ($features, $org) = @_;
+    $out_file{pp} = $dir{output}."/".$org."_aa.fasta";
 
+    warn join ("\t", "; Exporting translated sequences to file", $out_file{pp}), "\n" if ($main::verbose >= 1);
 
+    open PP, ">$out_file{pp}";
+    foreach my $feature ($features->get_objects()) {
+	next unless ($feature);
+	if ($feature->get_attribute("type") eq "CDS") {
+	    my ($translation) = $feature->get_attribute("translation");	    
+	    next unless ($translation =~ /\S+/);
+
+	    my $id = $feature->get_attribute("id");
+	    my $pp_id = $id;
+#	    my $pp_id = "id|".$id;
+#	    $pp_id .= "|ref|".$feature->get_attribute("id");
+#	    $pp_id .= "|name|".$feature->get_attribute("name");
+#	    $pp_id .= "| ";
+
+	    my $description;
+	    $description .= $feature->get_attribute("description");
+	    $description .= "; ".join ("|", $id, $feature->get_attribute("names"));
+	    
+
+	    print PP $header, "\n";
+#	    &PrintNextSequence(PP,"fasta",60,$translation,$pp_id);
+	    &PrintNextSequence(PP,"fasta",60,$translation,$pp_id, $description);
+	}
+    }
+    close PP;
+}

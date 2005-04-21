@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: loading_util.pl,v 1.1 2003/10/28 23:12:21 jvanheld Exp $
+# $Id: loading_util.pl,v 1.2 2005/04/21 22:55:08 jvanheld Exp $
 #
 # Time-stamp: <2003-07-10 11:52:50 jvanheld>
 #
@@ -10,7 +10,7 @@
 ### utilities for the AMAZE project
 
 
-require "config.pl";
+#require "config.pl";
 require "lib/load_classes.pl";
 require "lib/util.pl";
 require Data::Dumper;
