@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: dyad-analysis,v 1.18 2005/04/10 12:43:09 jvanheld Exp $
+# $Id: dyad-analysis,v 1.19 2005/04/23 20:44:40 rsat Exp $
 #
 # Time-stamp: <2003-10-22 23:46:08 jvanheld>
 #
@@ -84,7 +84,12 @@ eval {
 	$data_dir = $supported_organism{$organism_name}->{'data'};
 	if ($background_model) {
 	    ### localise expected frequency file for dyads in intergenic sequences
-	    $exp_freq_file = "$data_dir/oligo-frequencies/dyads_3nt_sp0-20_${background_model}_${organism_name}-1str.freq";
+	    if ($noov) {
+		$noov_suffix = "-noov";
+	    } else { 
+		$noov_suffix = "-ovlp";
+	    }
+	    $exp_freq_file = $data_dir."/oligo-frequencies/dyads_3nt_sp0-20_".${background_model}."_".${organism_name}.${noov_suffix}."-1str.freq";
 
  	    unless ((-e $exp_freq_file) || (-e "$exp_freq_file.gz") ) {
 		&RSAT::error::FatalError("Expected frequency file does not exist\t$exp_freq_file");
