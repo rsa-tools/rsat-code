@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank_lib.pl,v 1.16 2005/04/07 22:17:36 jvanheld Exp $
+# $Id: parse_genbank_lib.pl,v 1.17 2005/04/25 19:36:54 rsat Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -842,6 +842,7 @@ sub CreateGenbankFeatures {
 			   if ($main::verbose >= 5);
 	    $created_feature->push_attribute("names", $locus_tag); 
 	}
+
 	## Check the number of locus tags
 	if (scalar(@locus_tags) > 1) {
 	    &ErrorMessage("There are several locus tags associated to",  
@@ -849,6 +850,8 @@ sub CreateGenbankFeatures {
 			  join (";", @locus_tags));
 	} elsif (scalar(@locus_tags) == 1) {
 	    $locus_tag = $locus_tags[0];
+	    ## Use locus tag as identifier
+	    $created_feature->force_attribute("id",$locus_tag);
 	}
 	
 
@@ -856,7 +859,7 @@ sub CreateGenbankFeatures {
 	################################################################
 	## Use some cross-reference as main identifier for the created feature
 
-	## Use GI as identifier
+	## Use selected cross-references as identifier
 	if ($xref_as_id) {
 	    my $cross_id_found = 0;
 	    foreach my $cross_id (@preferred_cross_ids) {
