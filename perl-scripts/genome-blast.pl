@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: genome-blast.pl,v 1.3 2005/04/25 08:11:09 jvanheld Exp $
+# $Id: genome-blast.pl,v 1.4 2005/04/25 09:35:08 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -289,35 +289,6 @@ display options
 	} elsif ($ARGV[$a] eq "-help") {
 	    &PrintOptions();
 	    
-<<<<<<< genome-blast.pl
-=======
-
-	    ## Input file
-=pod
-
-=item B<-i inputfile>
-
-If no input file is specified, the standard input is used.  This
-allows to use the command within a pipe.
-
-The input file should be the result of the genome-to-genome BLAST,
-obtained with the option blastall -m 8 (table output).
-
-=cut
-	} elsif ($ARGV[$a] eq "-i") {
-	    $infile{input} = $ARGV[$a+1];
-	    
-	    ## Output file
-=item	B<-o outputfile>
-
-If no output file is specified, the standard output is used.  This
-allows to use the command within a pipe.
-
-=cut
-	} elsif ($ARGV[$a] eq "-o") {
-	    $outfile{output} = $ARGV[$a+1];
-	    
->>>>>>> 1.2
 	    ## Query organism
 =pod
 
@@ -340,21 +311,17 @@ Name of the db organism.
 	} elsif ($ARGV[$a] eq "-db") {
 	    $db_organism = $ARGV[$a+1];
 	    
-
+	    
 	    ## BLAST file
 =pod
 
 =item B<-i blast_file>
 
 The input file should be the result of the genome-to-genome BLAST,
-obtained with the option blastall -m 8 (table output). The input file
-is the result of a BLAST for all protein sequences of the query
-organism against all protein sequences of the DB organism.
+obtained with the option blastall -m 8 (table output). 
 
-If no input file is specified, a default name is used on the basis of
-query and db organisms. The default name is
-q_Query_organism_db_Db_organism.tab
-(e.g. q_Saccharomyces_cerevisiae_db_Candida_glabrata.tab).
+The input file is the result of a BLAST for all protein sequences of
+the query organism against all protein sequences of the DB organism.
 
 =cut
 	} elsif ($ARGV[$a] eq "-i") {
@@ -368,28 +335,6 @@ allows to use the command within a pipe.
 =cut
 	} elsif ($ARGV[$a] eq "-o") {
 	    $outfile{output} = $ARGV[$a+1];
-	    
-# 	    ## Reciprocal BLAST file
-# =pod
-
-# =item B<-r recp_file>
-
-# The second input file should be the result of the genome-to-genome
-# BLAST, obtained with the option blastall -m 8 (table output). 
-
-# The second input file (reciprocal blast) is the result of a BLAST for
-# all protein sequences of the db organism against all protein sequences
-# of the query organism.
-
-# If no input file is specified, a default name is used on the basis of
-# query and db organisms. The default name is
-# q_Db_organism_db_Query_organism.tab
-# (e.g. q_Candida_glabrata_db_Saccharomyces_cerevisiae.tab).
-
-# =cut
-# 	} elsif ($ARGV[$a] eq "-r") {
-# 	    $infile{recip} = $ARGV[$a+1];
-	    
 	}
 
     }
