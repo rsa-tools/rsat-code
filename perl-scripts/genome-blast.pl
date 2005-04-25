@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: genome-blast.pl,v 1.2 2005/04/21 23:10:13 rsat Exp $
+# $Id: genome-blast.pl,v 1.3 2005/04/25 08:11:09 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -42,6 +42,9 @@ BEGIN {
     }
 }
 require "RSA.lib";
+push @INC, $RSA."/perl-scripts/parsers/" if ($RSA);
+require "lib/load_classes.pl";
+require RSAT::blast_hit;
 
 ################################################################
 #### initialise parameters
@@ -53,6 +56,8 @@ local %outfile = ();
 local $verbose = 0;
 local $in = STDIN;
 local $out = STDOUT;
+
+local @columns = qw(query level subject ident ali_len mismat gap_open q_start q_end s_start s_end e_value bit_sc);
 
 &ReadArguments();
 
@@ -68,9 +73,18 @@ unless ($db_organism) {
 }
 
 unless ($infile{input}) {
+#    $infile{input} = "q_".$query_organism."_db_".$db_organism.".tab";
     &RSAT::error::FatalError("You should define an input file");
 }
 
+#unless ($infile{recp}) {
+#    $infile{recp} = "q_".$db_organism."_db_".$query_organism.".tab";
+#}
+
+################################################################
+## Class factory for blast hits
+my $blast_hits = classes::ClassFactory->new_class(object_type=>"RSAT::blast_hit",prefix=>"hit_");
+    
 ################################################################
 #### print verbose
 &Verbose() if ($verbose);
@@ -87,59 +101,110 @@ $out = &OpenOutputFile($outfile{output});
 my $header = <$in>;
 chomp($header);
 $header =~ s/\r//;
-my @header = split "\t", $header;
-print $out join ("\t", "query_organism", "db_organism", @header, "rank"), "\n";
+
+my $h = 0;
 while (<$in>) {
     chomp();
     s/\r//;
-    my ($query, 
-	$level, 
-	$subject, 
-	$ident, 
-	$ali_len, 
-	$mismat, 
-	$gap_opn, 
-	$q_start, 
-	$q_end,
-	$s_start,
-	$s_end,
-	$e_value,
-	$bit_sc) = split "\t";
+    next unless /\S/;
+    $h++;
+    my @fields = split "\t";
+
+#     my ($query, 
+# 	$level, 
+# 	$subject, 
+# 	$ident, 
+# 	$ali_len, 
+# 	$mismat, 
+# 	$gap_opn, 
+# 	$q_start, 
+# 	$q_end,
+# 	$s_start,
+# 	$s_end,
+# 	$e_value,
+# 	$bit_sc) = split "\t";
+#    ## Index row per pair of sequence IDs
+#    $hit{$query}->{$subject} = $_;
+#    $score{$query}->{$subject} = $e_value;
+
+    ## Create a new object for the match
+    my $hit = $blast_hits->new_object(id=>$query_organism."_".$db_organism."_".$h);
+    foreach my $col (@columns) {
+	$hit->set_attribute($col, shift @fields);
+    }
+
 
     ## Index row per pair of sequence IDs
-    $hit{$query}->{$subject} = $_;
-    $score{$query}->{$subject} = $e_value;
+    my $query = $hit->get_attribute("query");
+    my $subject = $hit->get_attribute("subject");
     
-#    print $out join ("\t",
-#		     $query_organism,
-#		     $db_organism,
-#		     $query,
-#		     $subject,
-#		     $e_value
-#		    ), "\n" if ($main::verbose >= 4);
-		     
+    push @{$hits_per_query{$query}}, $hit;
+    push @{$hits_per_subject{$subject}}, $hit;
 }
 close $in if ($infile{input});
 
+
 ################################################################
-###### execute the command
-foreach my $query (sort keys %hit) {
-    my $hit_ref = $hit{$query};
-    my @hits = sort {$score{$query}->{$a} <=> $score{$query}->{$b}} keys (%$hit_ref);
+## Calculate hit rank per query
+&RSAT::message::Info("Ranking BLAST hits per query") if ($main::verbose >= 1);
+foreach my $query (sort keys %hits_per_query) {
+    my @sorted_hits = sort {$a->get_attribute("e_value") <=> $b->get_attribute("e_value") }  @{$hits_per_query{$query}};
+
     my $rank=0;
-    foreach my $hit (@hits) {
+    foreach my $hit (@sorted_hits) {
+	## Assign rank attribute
 	$rank++;
-	print $out join("\t",
-		       $query_organism,
-		       $db_organism,
-		       $hit{$query}->{$hit},
-		       $rank), "\n";
+#	&RSAT::message::Debug("Hit rank", $query, $rank, $hit) if ($main::verbose >= 10);
+	$hit->set_attribute("q_rank", $rank);
+
+	## Index best hits
+	if ($rank == 1) {
+	    $best_hit{$hit->get_attribute("query")} = $hit->get_attribute("subject");
+	}
+
     }
     &RSAT::message::Info(join ("\t", "Sorted hits for query", $query, scalar(@hits))) if ($main::verbose >= 3);
 }
 
 ################################################################
+## Calculate hit rank per subject
+&RSAT::message::Info("Ranking BLAST hits per subject") if ($main::verbose >= 1);
+foreach my $query (sort keys %hits_per_subject) {
+    my @sorted_hits = sort {$a->get_attribute("e_value") <=> $b->get_attribute("e_value") }  @{$hits_per_subject{$query}};
+
+    my $rank=0;
+    foreach my $hit (@sorted_hits) {
+	## Assign rank attribute
+	$rank++;
+#	&RSAT::message::Debug("Hit rank", $query, $rank, $hit) if ($main::verbose >= 10);
+	$hit->set_attribute("s_rank", $rank);
+
+	## Index best hits
+	if ($rank == 1) {
+	    $best_hit{$hit->get_attribute("query")} = $hit->get_attribute("subject");
+	}
+
+    }
+    &RSAT::message::Info(join ("\t", "Sorted hits for query", $query, scalar(@hits))) if ($main::verbose >= 3);
+}
+
+
+################################################################
 ###### print output
+#my @header = split "\t", $header;
+&RSAT::message::Info("Printing the result") if ($main::verbose >= 1);
+my @header = join "\t", @columns;
+print $out join ("\t", "query_organism", "db_organism", @header, "q_rank", "s_rank"), "\n";
+foreach my $hit ($blast_hits->get_objects()) {
+    my @fields = ();
+    foreach my $col (@columns, "q_rank", "s_rank") {
+	push @fields, $hit->get_attribute($col);
+    }
+    print $out join("\t",
+		    $query_organism,
+		    $db_organism,
+		    @fields), "\n";
+}
 
 
 ################################################################
@@ -224,6 +289,8 @@ display options
 	} elsif ($ARGV[$a] eq "-help") {
 	    &PrintOptions();
 	    
+<<<<<<< genome-blast.pl
+=======
 
 	    ## Input file
 =pod
@@ -250,6 +317,7 @@ allows to use the command within a pipe.
 	} elsif ($ARGV[$a] eq "-o") {
 	    $outfile{output} = $ARGV[$a+1];
 	    
+>>>>>>> 1.2
 	    ## Query organism
 =pod
 
@@ -271,6 +339,56 @@ Name of the db organism.
 =cut
 	} elsif ($ARGV[$a] eq "-db") {
 	    $db_organism = $ARGV[$a+1];
+	    
+
+	    ## BLAST file
+=pod
+
+=item B<-i blast_file>
+
+The input file should be the result of the genome-to-genome BLAST,
+obtained with the option blastall -m 8 (table output). The input file
+is the result of a BLAST for all protein sequences of the query
+organism against all protein sequences of the DB organism.
+
+If no input file is specified, a default name is used on the basis of
+query and db organisms. The default name is
+q_Query_organism_db_Db_organism.tab
+(e.g. q_Saccharomyces_cerevisiae_db_Candida_glabrata.tab).
+
+=cut
+	} elsif ($ARGV[$a] eq "-i") {
+	    $infile{input} = $ARGV[$a+1];
+	    
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outfile{output} = $ARGV[$a+1];
+	    
+# 	    ## Reciprocal BLAST file
+# =pod
+
+# =item B<-r recp_file>
+
+# The second input file should be the result of the genome-to-genome
+# BLAST, obtained with the option blastall -m 8 (table output). 
+
+# The second input file (reciprocal blast) is the result of a BLAST for
+# all protein sequences of the db organism against all protein sequences
+# of the query organism.
+
+# If no input file is specified, a default name is used on the basis of
+# query and db organisms. The default name is
+# q_Db_organism_db_Query_organism.tab
+# (e.g. q_Candida_glabrata_db_Saccharomyces_cerevisiae.tab).
+
+# =cut
+# 	} elsif ($ARGV[$a] eq "-r") {
+# 	    $infile{recip} = $ARGV[$a+1];
 	    
 	}
 
