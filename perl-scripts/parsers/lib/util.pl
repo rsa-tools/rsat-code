@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: util.pl,v 1.7 2005/03/13 10:41:02 jvanheld Exp $
+# $Id: util.pl,v 1.8 2005/04/25 08:11:54 jvanheld Exp $
 #
 # Time-stamp: <2003-07-10 11:46:32 jvanheld>
 #
@@ -17,6 +17,10 @@ $null = "<NULL>";
 #### Initialize all config variables to the default value
 foreach my $k (keys %main::default) {
     $$k = $default{$k};
+}
+
+unless (defined($parsed_dir)) {
+    $parsed_dir = "~/parsed_data";
 }
 
 ################################################################

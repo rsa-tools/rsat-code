@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: load_classes.pl,v 1.2 2005/04/21 22:55:08 jvanheld Exp $
+# $Id: load_classes.pl,v 1.3 2005/04/25 08:11:54 jvanheld Exp $
 #
 # Time-stamp: <2003-07-10 12:08:29 jvanheld>
 #
@@ -22,13 +22,14 @@ no strict "vars";
 $class_dir = $main::RSA."/perl-scripts/parsers/classes/*.pl";
 my @class_files = glob($class_dir);
 
-warn ("loading classes", "\n\t",  
-      join ("\n\t", 
-	    $main::RSA, 
-	    $class_dir,
-	    @class_files), 
-      "\n") if ($verbose >= 3);
-      
+if ((defined($main::verbose)) && ($main::verbose >= 3)){
+    warn ("loading classes", "\n\t",  
+	  join ("\n\t", 
+		$main::RSA, 
+		$class_dir,
+		@class_files), 
+	  "\n");
+}
 foreach my $file (@class_files) {
     require $file;
 }

@@ -4,8 +4,6 @@
 #
 package RSAT::feature;
 
-## CVS : minor fixes
-
 %strand_index = (D=>0,
 		 R=>1,
 		 DR=>2
