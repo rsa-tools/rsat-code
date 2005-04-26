@@ -5,7 +5,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.91 2005/04/26 08:14:52 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.92 2005/04/26 08:19:02 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -864,7 +864,12 @@ sub DyadAnalysis {
    $dir = "${family_name}/dyads_${family_name}";
    chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
    die "Error : cannot read file $family{$family_name}->{input_seq_file}\n" unless (-r $family{$family_name}->{input_seq_file});
-   $command = "dyad-analysis -return occ,proba,rank -i $family{$family_name}->{input_seq_file} -format $seq_format -o $family{$family_name}->{dyad_file} $dyad_options";
+   $command = "dyad-analysis";
+   $command .= " -return occ,proba,rank";
+   $command .= " -i ".$family{$family_name}->{input_seq_file};
+   $command .= " -format ".$seq_format;
+   $command .= " -o ".$family{$family_name}->{dyad_file};
+   $command .= " ".$dyad_options;
    
    &doit($command, $dry_run, $die_on_error, $verbose);
    

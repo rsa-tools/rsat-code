@@ -1,6 +1,6 @@
 #!/usr/bin/perl 
 #############################################################
-# $Id: parse-genbank.pl,v 1.27 2005/04/21 22:55:08 jvanheld Exp $
+# $Id: parse-genbank.pl,v 1.28 2005/04/26 08:19:44 rsat Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -288,9 +288,9 @@ package main;
 				     );
     }
 
-    &ExportProteinSequences($CDSs,$org);
     &ExportMakefile(@classes);
     &ExportClasses($out_file{features}, $out_format, @classes) if $export{obj};
+    &ExportProteinSequences($CDSs,$org);
     
     ###### verbose ######
     if ($verbose) {
@@ -564,7 +564,7 @@ sub RefseqPostProcessing {
 	my ($comment_1, $comment_2) = split /The reference sequence was derived from /, $comment;
 	my ($embl_xref, $comment_3) = split /\./, $comment_2;
 	if ($gi =~ /^GI:/) {
-	    $gi = $';
+	    $gi = "$'";
 	} else {
 	    &ErrorMessage(join ("\t", "Protein", $id, "version", $version, "Invalid GI"));
 	}
