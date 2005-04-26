@@ -107,19 +107,41 @@ $date = &AlphaDate();
 ################################################################
 ## echo a command and send it to the system
 sub doit {
-    my ($command, $dry, $die_on_error, $verbose) = @_;
+    my ($command, $dry, $die_on_error, $verbose,$pc_cluster) = @_;
     my $wd = `pwd`;
     chomp $wd;
     warn join("\t", &AlphaDate(), $wd, $command), "\n" if ($verbose >= 1);
-    my $error = system $command unless ($dry);
-    if ($die_on_error) {
-	if ($error == -1) {
-	    &RSAT::error::FatalError("Could not execute the command\n\t$command");
-	} elsif ($error) {
-	    &RSAT::error::FatalError("Error $error occurred during execution of the command\n\t$command");
-	}
+
+
+    if ($pc_cluster) {
+	## Store the command in a sh script (the job)
+	my $job_dir = "jobs";
+	my $job_prefix = "multi";
+	&RSAT::util::CheckOutDir($job_dir);
+	my $job = `mktemp ${job_dir}/${job_prefix}.XXXXXX`;
+	chomp $job;
+	open JOB, ">$job";
+	print JOB "( cd ".$wd." ; ";
+	print JOB $command;
+	print JOB " )", "\n";
+	close JOB;
+	&RSAT::message::Info(join("\t", "; Job queued. Job file", $job)) if ($main::verbose >= 0);
+
+	## Send the command to a batch queue on a PC cluster
+	system "qsub -m e -q rsa\@merlin.scmbb.ulb.ac.be -N ${job} -j oe -o ${job}.log ${job}";
+
     } else {
-	return ($error);
+	## Run the command immediately
+	my $error = system $command unless ($dry);
+	if ($die_on_error) {
+	    if ($error == -1) {
+		&RSAT::error::FatalError("Could not execute the command\n\t$command");
+	    } elsif ($error) {
+		&RSAT::error::FatalError("Error $error occurred during execution of the command\n\t$command");
+	    }
+	} else {
+	    return ($error);
+	}
     }
 }
 
@@ -166,7 +188,13 @@ sub ExpectedFreqFile {
 	#### build the name of the expected frequency file 
 #	if ((-e $exp_freq_file."-1str.freq") || 
 #	    (-e $exp_freq_file."-1str.freq.gz")) {
-	    $exp_freq_file .= "-1str.freq";
+	if ($noov) {
+	    $noov_suffix = "-noov";
+	} else { 
+	    $noov_suffix = "-ovlp";
+	}
+	$exp_freq_file .= $noov_suffix;
+	$exp_freq_file .= "-1str.freq";
 #	} else {
 #	    #### TEMPORARY the previous format is still supported
 #	    $exp_freq_file .= ".freq";

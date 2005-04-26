@@ -5,7 +5,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.92 2005/04/26 08:19:02 rsat Exp $
+# $Id: gene-cluster-motifs,v 1.93 2005/04/26 09:51:09 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -870,13 +870,10 @@ sub DyadAnalysis {
    $command .= " -format ".$seq_format;
    $command .= " -o ".$family{$family_name}->{dyad_file};
    $command .= " ".$dyad_options;
-   
-   &doit($command, $dry_run, $die_on_error, $verbose);
-   
    ### fragment assembly
-   $command = "pattern-assembly -v -i $family{$family_name}->{dyad_file} -o $family{$family_name}->{dyad_assembly_file} ${strands} -maxfl 1 -maxpat 200 ";
+   $command .= "; pattern-assembly -v -i $family{$family_name}->{dyad_file} -o $family{$family_name}->{dyad_assembly_file} ${strands} -maxfl 1 -maxpat 200 ";
    
-   &doit($command, $dry_run, 0, $verbose);
+   &doit($command, $dry_run, $die_on_error, $verbose, $pc_cluster);
    
 }
 
@@ -964,14 +961,20 @@ sub MotifSampler {
 #	&doit($command, $dry_run, $die_on_error, $verbose);
 #   }
 
+
+   my $MotifSampler_cmd = "MotifSampler";
+   if (defined ($ENV{MOTIF_SAMPLER_DIR})) {
+       $ENV{MOTIF_SAMPLER_DIR}."MotifSampler";
+   }
+   
    ## run the command
-   my $MS_command = $ENV{MOTIF_SAMPLER_DIR}."/MotifSampler ".$family{$family_name}->{MotifSampler_options};
+   my $MS_command = $MotifSampler_cmd." ".$family{$family_name}->{MotifSampler_options};
 #   die `pwd`;
 #   $MS_command .= " > ".$family{$family_name}->{MotifSampler_file};
 #    unless ($main::verbose >= 4) {
 #	$MS_command .= ">& /dev/null";
 #    }
-   &doit($MS_command, $dry_run, $die_on_error, $verbose);
+   &doit($MS_command, $dry_run, $die_on_error, $verbose, $pc_cluster);
 }
 
 
@@ -997,7 +1000,7 @@ sub Gibbs {
 #    unless ($main::verbose >= 4) {
 #	$gibbs_command .= ">& /dev/null";
 #    }
-   &doit($gibbs_command, $dry_run, $die_on_error, $verbose);
+   &doit($gibbs_command, $dry_run, $die_on_error, $verbose, $pc_cluster);
 }
 
 ################################################################
@@ -1007,7 +1010,7 @@ sub MEME {
 
    ## run the command
    $meme_command = "meme ".$family{$family_name}->{meme_options};
-   &doit($meme_command, $dry_run, 0, $verbose);
+   &doit($meme_command, $dry_run, 0, $verbose, $pc_cluster);
 }
 
 ################################################################
@@ -1021,7 +1024,7 @@ sub Consensus {
    ## run the command
    $consensus_command .= " | consensus ".$family{$family_name}->{consensus_options};
    $consensus_command .= " > ".$family{$family_name}->{consensus_file};
-   &doit($consensus_command, $dry_run, 0, $verbose);
+   &doit($consensus_command, $dry_run, 0, $verbose, $pc_cluster);
 }
 
 ################################################################
@@ -1870,8 +1873,6 @@ OPTIONS
 	-thmsf threshold on frequency of matching sequences (propotion
 	        of sequences with at least one occurrence of the
 	        pattern)
-
-   oligo-analysis options
 	-maxol	maximum oligonucleotide length
 	-minol	minimum oligonucleotide length
 	-oligo_exp_freq
@@ -1882,7 +1883,7 @@ OPTIONS
 		calculate expected frequencies on the basis of a
 		Markov chain model of order #
 
-   dyad-analysis options
+   dyad-analysis specific options
 	-monad  monad length for dyad-analysis
 	-minsp	maximum spacing for dyad-analysis
 	-maxsp	maximum spacing for dyad-analysis
@@ -1955,6 +1956,11 @@ OPTIONS
 		maximal length for using known sites. This allows to
 		filter out some sites with large sequences annotated in
 		TRANSFAC (default: $known_site_max_len)
+
+	-pc_cluster (advanced users)
+		Send time-consuming jobs on a batch queue which will be
+		executed on a PC cluster. This option requires a PC cluster
+		with a specific configuration. 
 
 FILE FORMAT
    $HELP_FAMILY_FILE
@@ -2072,6 +2078,7 @@ multiple-family-analysis options
 -host		database host (default: $host)
 -user		database user (default: $user)
 -password	database password (default: $password)
+-pc_cluster	send time-consuming jobs to a batch queue for a PC cluster
 ## Matrix-based pattern dscovery
 -width		matrix width (default $matrix_width)
 -sps		expected number of sites per sequence (default $expected_sites_per_gene)
@@ -2323,6 +2330,9 @@ sub ReadArguments {
 	    $user = $ARGV[$a+1];
 	} elsif ($ARGV[$a] eq "-password") {
 	    $password = $ARGV[$a+1];
+
+	} elsif ($ARGV[$a] eq "-pc_cluster") {
+	    $pc_cluster = 1;
 
 	}
    }
