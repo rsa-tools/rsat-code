@@ -5,7 +5,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.90 2005/04/10 13:46:48 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.91 2005/04/26 08:14:52 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -610,7 +610,7 @@ sub SetFileNames {
 #### retrieve upstream sequences
 sub UpstreamSequences {
    warn ";\tRetrieving upstream sequences for family $family_name\n" if ($verbose >= 1);
-   $command = "retrieve-seq -type upstream -org $organism_name";
+   $command = "retrieve-seq -imp_pos -type upstream -org $organism_name";
    $command .= " -noorf " if ($noorf);
    $command .= " -i $family{$family_name}->{family_file}";
    $command .= " -o $family{$family_name}->{seq_file}";
@@ -1579,12 +1579,11 @@ sub CheckParameters {
    #### accepted feature types
    unless (defined %accepted_feature_types) {
        ## By default, accept all feature types
-       %accepted_feature_types = %supported_feature_types;
-#	$accepted_feature_types{cds} = 1;
+#       %accepted_feature_types = %supported_feature_types;
+	$accepted_feature_types{cds} = 1;
    }
    $feature_types = join ",", keys (%accepted_feature_types);
-
-
+    
    #### check selected tasks
    unless (defined(%task)) {
 	&RSAT::error::FatalError("You should select at least one task.");
@@ -2726,7 +2725,7 @@ sub CalibrateOligos {
 	if (-e $allup_file) {
 	    warn ";\tAll upstream sequence file already exists. Skipping retrieval\t", $allup_file, "\n" if ($main::verbose >= 1);
 	} else {
-	    $command = "retrieve-seq -org $organism_name -all -from -$calib_length -to -1 -o $allup_file";
+	    $command = "retrieve-seq -imp_pos -org $organism_name -all -from -$calib_length -to -1 -o $allup_file";
 	    warn ";\tRetrieving all upstream sequences\t", $allup_file, "\n" if ($main::verbose >= 1);
 	    &doit($command, $dry_run, $die_on_error, $verbose);
 	}
