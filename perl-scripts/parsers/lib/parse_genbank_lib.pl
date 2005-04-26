@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank_lib.pl,v 1.17 2005/04/25 19:36:54 rsat Exp $
+# $Id: parse_genbank_lib.pl,v 1.18 2005/04/26 08:18:14 rsat Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -852,6 +852,7 @@ sub CreateGenbankFeatures {
 	    $locus_tag = $locus_tags[0];
 	    ## Use locus tag as identifier
 	    $created_feature->force_attribute("id",$locus_tag);
+	    $parsed_feature->force_attribute("id",$locus_tag);
 	}
 	
 
