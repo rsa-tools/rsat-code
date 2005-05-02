@@ -5,7 +5,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.93 2005/04/26 09:51:09 rsat Exp $
+# $Id: multiple-family-analysis,v 1.94 2005/05/02 13:23:50 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -468,7 +468,7 @@ sub SetFileNames {
 	## output file
 	$family{$family_name}->{MotifSampler_file} = $family{$family_name}->{MotifSampler_dir}."/".$family{$family_name}->{file_prefix}.$MS_suffix;
 	$MS_options .= " -o ".$family{$family_name}->{MotifSampler_file}.".sites";
-	$MS_options .= " -m ".$family{$family_name}->{MotifSampler_file}.".matrix";
+	$MS_options .= " -M ".$family{$family_name}->{MotifSampler_file}.".matrix";
 
 	## Assign MotifSampler options to the family
 	$family{$family_name}->{MotifSampler_suffix} = $MS_suffix;
