@@ -5,7 +5,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.94 2005/05/02 13:23:50 rsat Exp $
+# $Id: gene-cluster-motifs,v 1.95 2005/05/04 14:08:43 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -1949,8 +1949,8 @@ OPTIONS
 		
 		Format: the known site file is a tab-delimited text
 		files, with the collofing column content :
-		       1) family
-		       2) site/motif
+		       1) site/motif
+		       2) family
 		       3) source (optional)
     	-known_max_len #
 		maximal length for using known sites. This allows to
