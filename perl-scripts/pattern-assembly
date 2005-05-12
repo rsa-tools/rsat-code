@@ -352,14 +352,14 @@ sub MatchScore {
 
 
 
+### assign a length to a pattern, taking into account the informative bases 
+### only. This means that a N is not taken into account into the length
+### while A, C, G, or T are.
+### example:
+###     I&InfoLength('ATGnnnGCA') will return 6
+### usage:
+###     $info_length = &InfoLength($word);
 sub InfoLength {
-    ### assign a length to a pattern, taking into account the informative bases 
-    ### only. This means that a N is not taken into account into the length
-    ### while A, C, G, or T are.
-    ### example:
-    ###     I&InfoLength('ATGnnnGCA') will return 6
-    ### usage:
-    ###     $info_length = &InfoLength($word);
     local($word) = $_[0];
     local($info_length) = 0;
     local($string_length) = length($word);    

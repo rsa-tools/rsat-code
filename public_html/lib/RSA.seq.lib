@@ -281,6 +281,7 @@ sub CountMismatches {
 } ### CountMismatches
 
 
+################################################################
 =pod
 
 =item  &NextMatch($input_seq, $pattern,$allowed_subst,$offset);
