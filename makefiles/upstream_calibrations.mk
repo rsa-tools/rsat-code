@@ -50,7 +50,7 @@ ORGANISMS=${FUNGI} ${PROCARYOTES} ${OTHER_ORGANISMS}
 
 
 #### directories
-RESULT=results
+RESULT=`pwd`/results
 ORG_DIR=${RESULT}/${ORG}
 POS_DIR=${ORG_DIR}/position_analysis
 OLIGO_DIR=${ORG_DIR}/oligo-frequencies
