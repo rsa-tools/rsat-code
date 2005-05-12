@@ -90,7 +90,7 @@ print "<H4><A HREF='help.random-seq.html#alphabet'>Nucleotide probabilities</a><
 
 print "<UL>";
 
-print "<INPUT TYPE='radio' NAME='proba' VALUE='ncf' checked>Markov chain (calibrated on intergenic oligonucleotide frequencies)<BR>";
+print "<INPUT TYPE='radio' NAME='proba' VALUE='upstream' checked>Markov chain (calibrated on oligonucleotide frequencies in non-coding upstream sequences)<BR>";
 
 print "<UL>";
 &OrganismPopUp();

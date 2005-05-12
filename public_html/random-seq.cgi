@@ -109,10 +109,10 @@ if ($query->param('proba') eq "alphabet") {
 #    $parameters .= " -a a:t $at_freq c:g $cg_freq ";
 
 #### expected frequency estimation ####
-} elsif ($query->param('proba') =~ /ncf/i) {
+} elsif ($query->param('proba') =~ /upstream/i) {
     ### check organism
     unless ($organism = $query->param('organism')) {
-	&cgiError("You should specify an organism to use intergenic frequency calibration");
+	&cgiError("You should specify an organism to use upstream frequency calibration");
     }
     unless (defined(%{$supported_organism{$organism}})) {
 	&cgiError("Organism $organism is not supported on this site");
@@ -121,7 +121,7 @@ if ($query->param('proba') eq "alphabet") {
     unless (&IsNatural($oligo_size)) {
 	&cgiError("Invalid oligonucleotide length $oligo_size");
     }
-    $parameters .= " -bg intergenic -org $organism -ol $oligo_size";
+    $parameters .= " -bg upstream-noorf -org $organism -ol $oligo_size";
 }
 
 print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ECHO >= 1);
