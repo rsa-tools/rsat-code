@@ -1,12 +1,16 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: genome-blast.pl,v 1.4 2005/04/25 09:35:08 jvanheld Exp $
+# $Id: genome-blast.pl,v 1.5 2005/05/12 05:25:46 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
 ############################################################
 #use strict;;
+
+## TO DO
+## - start blastall from within this program
+## - treat the case of ex-aequos (same E-value for distinct subjects)
 
 =pod
 
