@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: mirror.mk,v 1.19 2005/03/17 14:46:04 jvanheld Exp $
+# $Id: mirror.mk,v 1.20 2005/05/12 09:09:58 rsat Exp $
 #
 # Time-stamp: <2003-10-01 12:05:45 jvanheld>
 #
@@ -108,9 +108,9 @@ EXCLUDED_GENOMES=				\
 
 EXCLUDED_FILES=					\
 		--exclude '*.wc'		\
-		--exclude '*.wc.gz'		\
-		--exclude '*.fasta'		\
-		--exclude '*.fasta.gz'
+		--exclude '*.wc.gz'		
+#		--exclude '*.fasta'		\
+#		--exclude '*.fasta.gz'
 
 EXCLUDED_DIRS=					\
 		--exclude embl_genomes		\
