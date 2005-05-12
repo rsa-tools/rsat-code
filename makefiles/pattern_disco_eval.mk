@@ -36,6 +36,20 @@ bg_model_meme_one_size:
 	@gunzip -c ${RSAT_BG_FILE} | grep -v '^;' | cut -f 1,3 >> ${MEME_BG_FILE}
 
 ################################################################
+## Generate MotifSampler model
+NOORF=-noorf
+NOOV=-ovlp
+MOTIFSAMPLER_BG_DIR=bg_models/MotifSampler/${ORG}
+MOTIFSAMPLER_BG_FILE=`pwd`/${MOTIFSAMPLER_BG_DIR}/${ORG}_upstream-noorf${NOOV}-1str_6.freq
+ORDER=6
+bg_model_MotifSampler:
+	@echo "Generating background model for MotifSampler     ${ORG}  ${MOTIFSAMPLER_BG_FILE}"
+	@mkdir -p ${MOTIFSAMPLER_BG_DIR}
+	@echo "# MotifSampler background model ${ORG} upstream-noorf" > ${MOTIFSAMPLER_BG_FILE}
+	${MAKE} CreateBackgroundModel -f -b ${MOTIFSAMPLER_BG_FILE} -o ${ORDER} -n ${ORG}
+	@echo "Generated background model for MotifSampler      ${ORG}  ${MOTIFSAMPLER_BG_FILE}"
+
+################################################################
 ## Run pattern discovery programs with the regulons
 REGULON_FILE=gene_factor_${ORG}.tab
 REGULONS=data/${ORG}/${REGULON_FILE}
