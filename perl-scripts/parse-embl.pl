@@ -1,7 +1,7 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: parse-embl.pl,v 1.12 2005/04/21 22:55:08 jvanheld Exp $
+# $Id: parse-embl.pl,v 1.13 2005/05/12 05:26:55 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:17:49 jvanheld>
 #
@@ -10,10 +10,6 @@
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
-#require "RSA.lib";
-#push @INC, $ENV{PARSER};
-#require "PFBP_classes.pl";
-#require "PFBP_parsing_util.pl";
 
 require "RSA.lib";
 push @INC, "$RSA/perl-scripts/parsers/";
