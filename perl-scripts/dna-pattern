@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: dna-pattern,v 1.37 2005/03/13 10:22:28 jvanheld Exp $
+# $Id: dna-pattern,v 1.38 2005/05/12 05:25:09 jvanheld Exp $
 #
 # Time-stamp: <2003-08-13 12:16:03 jvanheld>
 #
@@ -403,7 +403,7 @@ sub TreatMatch {
 	$match_length = length($matching_seq);
 	$score = ($match_length - $mismatches)/$match_length;
     }
-    $match->set_attribute("score", $score);
+    $match->force_attribute("score", $score);
 
     return if ((defined($threshold)) && ($score < $threshold));
 
@@ -469,7 +469,7 @@ sub MergeMatches {
 	    $last_match->set_attribute("pattern_seq", "merged");
 	    
 	    ## merged score is the maximum score
-	    $last_match->set_attribute("score", &max($last_match->get_attribute("score"),
+	    $last_match->force_attribute("score", &max($last_match->get_attribute("score"),
 						     $current_match->get_attribute("score")));
 	    
 	    ## Merged strand is the sum of last and current strands
@@ -881,7 +881,7 @@ sub SlidingWindowSearch {
 	
 #	warn join( "\t", $sliding_window_size, $last_pos, $subseq, $current_score, $score_sum, $threshold), "\n" if ($current_score);
 	if ($score_sum >= $threshold) {
-	    $pattern->set_attribute("score", $score_sum);
+	    $pattern->force_attribute("score", $score_sum);
 	    $end_pos = $pos - $orig_pos + $pattern_length ;
 	    $start_pos = $pos - $orig_pos - $sliding_window_size +2;
 	    $matching_seq = substr($current_seq, $start_pos, $sliding_window_size + $pattern_length - 1);
