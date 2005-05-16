@@ -73,11 +73,10 @@ if ($length_file) {
 #### intergenic frequencies
 if ($background_model) {
   
-    $data_dir = $supported_organism{$organism_name}->{'data'};
-    
     ### localize dyad intergenic frequency file
     $method = "Frequency file";
-    $exp_freq_file = &ExpectedFreqFile($organism_name, $oligo_length, $background_model);
+    $exp_freq_file = &ExpectedFreqFile($organism_name, $oligo_length, $background_model, 
+				       $noov=>"-ovlp", str=>"-1str");
 } 
 
 
@@ -121,18 +120,21 @@ if ($verbose) {
 	print $out "; Calibrated oligomer frequencies\n";
 	print $out "; 	oligomer length:         $oligo_length\n";
 	print $out "; 	expected frequency file: $exp_freq_file\n";
-	print $out "; oligomer frequencies\n";
-	print $out "; subword frequencies\n";
 
-	foreach $subword (sort keys %subword_freq) {
-	    printf $out ";\t%s\t%f\t", $subword, $subword_freq{$subword};
-	    for $l (0..$#letters) {
-		printf $out (" %s:%g",
-			    $letters[$l],
-			    $cum_letter_freq{$subword}[$l] - ($l>0)*$cum_letter_freq{$subword}[$l-1]
-			     );
+	if ($main::verbose >= 3) {
+	    print $out "; oligomer frequencies\n";
+	    print $out "; subword frequencies\n";
+	    
+	    foreach $subword (sort keys %subword_freq) {
+		printf $out ";\t%s\t%f\t", $subword, $subword_freq{$subword};
+		for $l (0..$#letters) {
+		    printf $out (" %s:%g",
+				 $letters[$l],
+				 $cum_letter_freq{$subword}[$l] - ($l>0)*$cum_letter_freq{$subword}[$l-1]
+				);
+		}
+		print $out "\n";
 	    }
-	    print $out "\n";
 	}
     } else {
 	for $l (0..$#letters) {

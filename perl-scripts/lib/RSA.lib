@@ -161,10 +161,13 @@ sub ExpectedFreqFile {
     &CheckOrganism($organism_name);
     
     #### check oligo length
+    unless ($oligo_length) {
+	&FatalError("You must specify the oligonucleotide length for the background model (expected frequency file)");
+    }
+
     unless (&IsNatural($oligo_length)) {
 	&RSAT::error::FatalError("Invalid oligonucleotide length : must be a natural number");
-    }
-    
+    }    
     if ($oligo_length < 1) {
 	&RSAT::error::FatalError("Invalid oligonucleotide length : must be >= 1");
     }
@@ -172,7 +175,7 @@ sub ExpectedFreqFile {
 	&RSAT::error::FatalError("Invalid oligonucleotide length : must be <= 8");
     }
 
-    
+    my $data_dir = $supported_organism{$organism_name}->{'data'};
     $exp_freq_file = $data_dir."/oligo-frequencies/";
     if ($background eq "upstreamL") {
 	$exp_freq_file .= "_".$organism_name;
