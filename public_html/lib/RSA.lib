@@ -181,24 +181,20 @@ sub ExpectedFreqFile {
 	$exp_freq_file .= $str;
 	$exp_freq_file .= $noov;
 	$exp_freq_file .= "_freq.tab";
+
     } else {
 	$exp_freq_file .= $oligo_length."nt";
 	$exp_freq_file .= "_".$background;
 	$exp_freq_file .= "_".$organism_name;
 	#### build the name of the expected frequency file 
-#	if ((-e $exp_freq_file."-1str.freq") || 
-#	    (-e $exp_freq_file."-1str.freq.gz")) {
-	if ($noov) {
+	if ($noov eq "-noov") {
 	    $noov_suffix = "-noov";
 	} else { 
 	    $noov_suffix = "-ovlp";
 	}
 	$exp_freq_file .= $noov_suffix;
-	$exp_freq_file .= "-1str.freq";
-#	} else {
-#	    #### TEMPORARY the previous format is still supported
-#	    $exp_freq_file .= ".freq";
-#	}
+	$exp_freq_file .= $str;
+	$exp_freq_file .= ".freq";
     }
 
     ## Check the existence of the exp freq file

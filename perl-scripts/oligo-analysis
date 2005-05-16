@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.86 2005/04/23 20:45:07 rsat Exp $
+# $Id: oligo-analysis,v 1.87 2005/05/16 22:05:43 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -69,6 +69,7 @@ $in_format = "fasta";
 @output_fields = ();
 @output_patterns = ();
 
+$noov="-ovlp";
 $sum_rc = 1;
 #$group_rc = 1;
 $uth{occ_pro} = 1;
@@ -113,10 +114,10 @@ if ($method =~  /calibration/i) {
 }
 
 #### conditions which require the calculateion of the overlap coefficient
-if ($return{'zscore'} && !($noov)) {
+if ($return{'zscore'} && !($noov eq "-noov")) {
     $return{'ovlp'} = 1;
 }
-if ($return{'mseq'} && $return{'proba'} && !($noov)) {
+if ($return{'mseq'} && $return{'proba'} && !($noov eq "-noov")) {
     $return{'ovlp'} = 1;
 }
 
@@ -126,7 +127,7 @@ if ($return{'mseq'} && $return{'proba'} && !($noov)) {
 &RSAT::error::FatalError("Oligomer length should be strictly positive.") unless ($oligo_length > 0);
 
 ## minimum overlap distance
-if ($noov) {
+if ($noov eq "-noov") {
     $min_overlap_dist = $oligo_length;
 }
 
@@ -162,8 +163,16 @@ if ($background_model) {
     
     ### localize dyad non-coding frequency file
     $method = "Frequency file";
+    if ($sum_rc) {
+	$str="-2str";
+    } else {
+	$str="-1str";
+    }
+	
+    $infile{exp_freq} = &ExpectedFreqFile($organism_name, $oligo_length, $background_model,
+					  noov=>$noov, str=>$str);
+
     
-    $infile{exp_freq} = &ExpectedFreqFile($organism_name, $oligo_length, $background_model);
 
 #### read alphabet from a file
 } elsif ($infile{alphabet}) {
@@ -370,7 +379,7 @@ sub CountOligo {
 
 	    #### prevent overlapping matches
 #	    if (0) {
-	    if ($noov) {
+	    if ($noov eq "-noov") {
 		if ((&IsNatural($last_pos{$pattern_seq})) && 
 		    ($last_pos{$pattern_seq} - $current_pos < $min_overlap_dist)) {
 		    $patterns{$pattern_seq}->{overlaps}++;
@@ -1087,7 +1096,7 @@ sub CalcExpected {
 #	    $one_seq_match_proba =  &sum_of_binomials($exp_freq_est, $pos_per_seq, 1, $pos_per_seq);
 	    $patterns{$pattern_seq}->{exp_ms} =  $one_seq_match_proba*$sequence_number;
 	    
-	    unless ($noov) {
+	    unless ($noov eq "-noov") {
 		## Mireille Regnier's Correction on expected
 		## frequencies to calculate the probability of
 		## first occurrences for self-overlapping patterns
@@ -1128,7 +1137,7 @@ sub CalcZscore {
 
 	    #### Calculate expected variance
 	    unless ($method =~ /calibration/i) {
-		if ($noov) {
+		if ($noov eq "-noov") {
 		    ### With the option -noov, there is no problem of overlap
 		    ### The expected variance thus equals the expected occurrences
 		    $patterns{$pattern_seq}->{exp_var} = $patterns{$pattern_seq}->{exp_occ};
@@ -1442,7 +1451,7 @@ sub PrintHeaderLine {
 	}
 	push(@out_col,"zscore") if ($return{'zscore'});
 	push(@out_col,"occ_lkh") if ($return{'like'});
-	push(@out_col,"ovl_occ") if ($noov);
+	push(@out_col,"ovl_occ") if ($noov eq "-noov");
     }
     push(@out_col,"ratio") if ($return{'ratio'});
     
@@ -1451,7 +1460,7 @@ sub PrintHeaderLine {
 	push(@out_col,"ms");
 	if ($return{'proba'}) {
 	    push(@out_col,"exp_ms");
-	    push(@out_col,"ems_cor") unless ($noov);
+	    push(@out_col,"ems_cor") unless ($noov eq "-noov");
 	    push(@out_col,"ms_P");
 	    push(@out_col,"ms_E");
 	    push(@out_col,"ms_sig");
@@ -1509,7 +1518,7 @@ sub Verbose {
 	printf $out "; %-29s\t%s\n", "Input format", $in_format;
 
 	    printf $out "; %-29s\t%s\n", "Output file", $outputfile if ($outputfile);
-	    if ($noov) {
+	    if ($noov eq "-noov") {
 		print $out "; Discard overlapping matches\n";
 	    } else {
 		print $out "; Count overlapping matches\n";
@@ -1559,7 +1568,7 @@ sub Verbose {
 	    }
 	    printf $out "; %-29s\t%s\n", "nb possible positions",$nb_possible_pos;
 	    printf $out "; %-29s\t%s\n", "total oligo occurrences", $sum_occurrences;
-	    if ($noov) {
+	    if ($noov eq "-noov") {
 		printf $out "; %-29s\t%s\n", "total overlapping occurrences", $sum_overlaps;
 		printf $out "; %-29s\t%s\n", "total non overlapping occ", $sum_noov;
 	    }
@@ -1731,7 +1740,7 @@ sub PrintResult {
 	    printf $out "\t%7.5f", $patterns{$pattern_seq}->{occ_lkh} if ($return{'like'});
 	    
 	    ### overlapping occurrences
-	    if ($noov) {
+	    if ($noov eq "-noov") {
 		$patterns{$pattern_seq}->{overlaps} = 0 if ($patterns{$pattern_seq}->{overlaps} eq "");
 		print $out "\t", $patterns{$pattern_seq}->{overlaps};
 	    }
@@ -1746,7 +1755,7 @@ sub PrintResult {
 	    print $out "\t", $patterns{$pattern_seq}->{mseq};
 	    if ($return{'proba'}) {
 		printf $out "\t%.2f", $patterns{$pattern_seq}->{exp_ms};
-		printf $out "\t%.2f", $patterns{$pattern_seq}->{ems_cor} unless ($noov);
+		printf $out "\t%.2f", $patterns{$pattern_seq}->{ems_cor} unless ($noov eq "-noov");
 		if ($patterns{$pattern_seq}->{ms_pro} >= 0.0001) {
 		    printf $out "\t%.5f", $patterns{$pattern_seq}->{ms_pro};     
 		    printf $out "\t%.2g", $patterns{$pattern_seq}->{ms_E};
@@ -1885,9 +1894,13 @@ sub ReadArguments {
 #	} elsif ($ARGV[$a] eq "-nogrouprc") {
 #	    $group_rc = 0;
 	    
-	    #### overlapping matches
+	    #### Discard overlapping matches
 	} elsif ($ARGV[$a] =~ /^-noov/) {
-	    $noov = 1;
+	    $noov = "-noov";
+
+	    #### Count overlapping matches
+	} elsif ($ARGV[$a] =~ /^-ovlp/) {
+	    $noov = "-ovlp";
 	    
 	    #### return reverse palindroms only
 	} elsif ($ARGV[$a] =~ /^-pal/) {
