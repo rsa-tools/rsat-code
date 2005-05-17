@@ -2,10 +2,11 @@
 
 ## CVS: bug fixed: matrices were not indexed in the synthetic table anymore 
 ## CVS: bug fixed: dyad occurrences were missing from SQL table pattern.tab
+## Ce script est une usine a gaz
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.96 2005/05/17 19:51:26 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.97 2005/05/17 21:16:29 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -36,6 +37,7 @@ $null="NA";
 $skip=0;
 $last=-1;
 $min_genes = 1;
+$rel_w = 1; ## Threshold on relative weight for count-matches
 $sliding_window_size = 0;
 $die_on_error = 1;
 $analyze_purged_sequences = 1;
@@ -193,12 +195,18 @@ local %matrix_by_file = (); ## index for the matrices already treated
 
 ################################################################
 ## Read data
-&ReadKnownSites($known_site_file);
-#&ReadSiteLibrary("known_sites.tab");
 
+## Known sites
+if ($known_site_file) {
+    &ReadKnownSites($known_site_file);
+}
+
+## List of sequence files
 if ($sequence_file_list) {
     $task{upstream} = 0; 
     &ReadSequenceList();
+
+## Family file
 } else {
 
     ### read gene name and identifiers
@@ -216,9 +224,6 @@ if ($sequence_file_list) {
 
     $organism->LoadFeatures($annotation_table, $feature_types);
     $organism->LoadSynonyms();
-
-#    &ReadFeatures($organism_name,"",$feature_types);
-#    &ReadSynonyms($organism_name);
 
     ### Read family file
     %family = &ReadClasses($family_file, 1, $organism);
@@ -253,6 +258,7 @@ $verbose_message = &Verbose() if ($verbose >= 1);
 ### perform analysis
 &AnalyzeFamilies();
 &MDCreport() if ($task{report});
+&Validate() if ($task{validate});
 &ExportSQL() if ($task{sql});
 &SyntheticTable() if ($task{synthesis});
 
@@ -346,35 +352,45 @@ sub SetFileNames {
 	$family{$family_name}->{file_prefix} = "${family_name}";
 	$family{$family_name}->{file_prefix} .= "_up".$seq_length unless ($sequence_file_list);
 	$family{$family_name}->{file_prefix} .= "${noorf_string}"; 
-	unless ($sequence_file_list) {
-	    $family{$family_name}->{seq_file} = $family_name."/".$family{$family_name}->{file_prefix}.".${seq_format}";
-	    $family{$family_name}->{seq_file_purged} = $family_name."/".$family{$family_name}->{file_prefix}."_purged.${seq_format}";
-	}
+	
+	## Sequence files	unless ($sequence_file_list) {
+	$family{$family_name}->{seq_file} = $family_name."/".$family{$family_name}->{file_prefix}.".${seq_format}";
+	$family{$family_name}->{seq_file_purged} = $family_name."/".$family{$family_name}->{file_prefix}."_purged.${seq_format}";
 	if ($analyze_purged_sequences) {
 	    $family{$family_name}->{input_seq_file} = $family{$family_name}->{seq_file_purged};
 	} else {
 	    $family{$family_name}->{input_seq_file} = $family{$family_name}->{seq_file};
 	}
 	$family{$family_name}->{seq_len_file} = $family_name."/".$family{$family_name}->{file_prefix}."_seq_len.tab";
-#      $family{$family_name}->{oligo_file} =  "${family_name}/oligos_${family_name}/".$family{$family_name}->{file_prefix}."_oligos_${min_oligo_len}-${max_oligo_len}nt$strands_sig${thosig}${noov}";
+	
+	## Known sites for this family
+	if ($task{validate}) {
+	    $family{$family_name}->{known_sites} = $family_name."/".$family{$family_name}->{file_prefix}."_known_sites.tab";
+	}
+	
+	################################################################
+	## oligo-analysis results
 	$family{$family_name}->{oligo_file} =  "${family_name}/oligos_${family_name}/".$family{$family_name}->{file_prefix}.$oligo_suffix; ## TEMP
 	$family{$family_name}->{oligo_assembly_file} = $family{$family_name}->{oligo_file}."_contigs";
 	$family{$family_name}->{oligo_selection} = $family{$family_name}->{oligo_file}."_selection";
 	$family{$family_name}->{oligo_ft_prefix} = $family{$family_name}->{oligo_file};
 #	$family{$family_name}->{selection_ft_prefix} = $family{$family_name}->{oligo_ft_prefix}."_report";
 	$family{$family_name}->{oligo_ft_file} = $family{$family_name}->{oligo_ft_prefix}.".ft";
-	
+	$family{$family_name}->{oligo_vs_known} = $family{$family_name}->{oligo_file}."__vs__known_relw".$rel_w.".tab";
+
+	################################################################
+	## dyad-analysis results
 	$family{$family_name}->{dyad_file} = "$family_name/dyads_${family_name}/".$family{$family_name}->{file_prefix}.$dyad_suffix;
 	$family{$family_name}->{dyad_assembly_file} = $family{$family_name}->{dyad_file}."_contigs";
 	$family{$family_name}->{dyad_ft_prefix} = $family{$family_name}->{dyad_file};
-	$family{$family_name}->{dyad_ft_file} = $family{$family_name}->{dyad_ft_prefix}.".ft";
-	
+	$family{$family_name}->{dyad_ft_file} = $family{$family_name}->{dyad_ft_prefix}.".ft";	
 	$family{$family_name}->{fmap_file} = $family{$family_name}->{dyad_file}.".${IMG_FORMAT}";
 	$family{$family_name}->{htmap_file} = $family{$family_name}->{dyad_file}.".html";
-	
+
+	################################################################
+	## oligos + dyads
 	$family{$family_name}->{merged_file} =  "${family_name}/merged_${family_name}/".$family{$family_name}->{file_prefix}.$oligo_suffix.$dyad_suffix;
 	$family{$family_name}->{merged_ft_file} = $family{$family_name}->{merged_file}.".ft";
-	
 	
 	################################################################
 	## Andrew Neuwald's Gibbs options and files
@@ -1169,6 +1185,7 @@ sub SyntheticTable {
 		       $col, 
 		       assembly=>$family{$family_name}->{oligo_assembly_file}, 
 		       patterns=>$family{$family_name}->{oligo_file}, 
+		       validation=>$family{$family_name}->{oligo_vs_known}, 
 		       type=>"oligos", 
 		      );
 
@@ -1179,6 +1196,7 @@ sub SyntheticTable {
 		       $col, 
 		       patterns=>$family{$family_name}->{dyad_file}, 
 		       assembly=>$family{$family_name}->{dyad_assembly_file}, 
+		       validation=>$family{$family_name}->{dyad_vs_known}, 
 		       type=>"dyads", 
 		      );
 	
@@ -1434,6 +1452,7 @@ sub IndexPatterns {
    my $type = $args{type};
    my $assembly_file = $args{assembly};
    my $pattern_file = $args{patterns};
+   my $validation_file = $args{validation};
 #   my $family_dir = $args{dir}."/".$family_name."/";
    my $family_dir = $family_name."/";
    $family_dir =~ s|/+|/|g;
@@ -1474,6 +1493,9 @@ sub IndexPatterns {
 	$table[$row][$col] .= "<a href=".$base.$pattern_file.".".${IMG_FORMAT}.">[".${IMG_FORMAT}."]</a>\n";
 	if ($htmaps) {
 	    $table[$row][$col] .= "<a href=".$base.$pattern_file.".html>[html]</a>\n";
+	}
+	if ($task{validate}) {
+	    $table[$row][$col] .= "<a href=".$base.$validation_file.".html>[valid]</a>\n";
 	}
 	$table[$row][$col] .= "<table>\n";
 	$table[$row][$col] .="<tr><td align=right>max.score</td><td>".$max_score{$type}{$family_name}."</td></tr>\n";
@@ -2262,6 +2284,11 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] =~ /^-orfov/) {
 	    $noorf = "";
 
+	    #### Threshold on relative weight for count-matches
+	} elsif ($ARGV[$a] eq '-rel_w') {
+	    $rel_w = $ARGV[$a+1];
+	    &FatalError("Relative weight should be a real value comprised between 0 and 1") unless ((&IsReal($rel_w)) && ($rel_w >= 0) && ($rel_w <= 1));
+
 	    #### threshold
 	} elsif ($ARGV[$a] =~ /^-thosig/) {
 	    $force{th} = $ARGV[$a+1];
@@ -2697,13 +2724,47 @@ sub ReadSequenceList {
    }
 }
 
+################################################################
+## Validate the pattern discovery results by comparing discovered patterns to
+## known sites
+sub Validate {
+   warn ";\n; Validating discovered patterns\n" if ($verbose >=1);
+   foreach my $family_name (@families) {
+       ## Create a separate file for count-matches with the current family
+       my @sites = @{$known_site{$family_name}};
+       my @sources = @{$known_site_source{$family_name}};
+       warn join("\t", "Validating", $family_name, "known sites", $family{$family_name}->{known_sites}), "\n" if ($main::verbose >= 0);
+       $known_handle = &OpenOutputFile($family{$family_name}->{known_sites});
+       foreach my $s (0..$#sites) {
+	   my $source = $sources[$s];
+	   unless ($source) {
+	       $source = $family_name."known".$s;
+	   }
+	   print $known_handle join("\t", $sites[$s], $source), "\n";
+       }
+       close $known_handle;
+
+       ## Compare oligos with known sites
+       my $command = "count-matches"; 
+       $command .= " -v 1";
+       $command .= $strands;
+       $command .= " -file1 ".$family{$family_name}->{known_sites};
+       $command .= " -file2 ".$family{$family_name}->{oligo_file};
+       $command .= " -slide"; 
+       $command .= " -return match,weight,rel_w,seq"; 
+       $command .= " -lth rel_w ".$rel_w;
+       $command .= " -o ".$family{$family_name}->{oligo_vs_known};
+       &doit($command, $dry_run, $die_on_error, $verbose);
+   }
+}
+
 
 ################################################################
 ## Index one sequence length per family
 sub CalcCalibrationLengths {
    my %calib_lengths = ();
    warn ";\n; Calculating sequence lengths\n" if ($verbose >=1);
-   foreach $family_name (@families) {
+   foreach my $family_name (@families) {
 	$fam_count++;
 	
 	## Calculate sequence lengths
