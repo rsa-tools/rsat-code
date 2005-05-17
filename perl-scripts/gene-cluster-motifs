@@ -5,7 +5,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.95 2005/05/04 14:08:43 rsat Exp $
+# $Id: gene-cluster-motifs,v 1.96 2005/05/17 19:51:26 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -61,13 +61,15 @@ $dir{calib1} = "calibrations_1gene";
 		       slide
 		       synthesis
 		       sql
+		       validate
 		       clean
 		       all
 		       report
 		       consensus
 		       gibbs
 		       MotifSampler
-		       meme);
+		       meme
+		       );
 foreach my $task (@supported_tasks) {
     $supported_task{$task} = 1;
 }
@@ -1584,19 +1586,19 @@ sub CheckParameters {
     ################################################################
     &RSAT::error::FatalError("You must specify the output directory (option -outdir)") unless $dir{output};
 
-   #### accepted feature types
-   unless (defined %accepted_feature_types) {
-       ## By default, accept all feature types
+    #### accepted feature types
+    unless (defined %accepted_feature_types) {
+	## By default, accept all feature types
 #       %accepted_feature_types = %supported_feature_types;
 	$accepted_feature_types{cds} = 1;
-   }
-   $feature_types = join ",", keys (%accepted_feature_types);
+    }
+    $feature_types = join ",", keys (%accepted_feature_types);
     
-   #### check selected tasks
-   unless (defined(%task)) {
+    #### check selected tasks
+    unless (defined(%task)) {
 	&RSAT::error::FatalError("You should select at least one task.");
-   }
-   if ($task{all}) {
+    }
+    if ($task{all}) {
 	foreach my $t (@supported_tasks) {
 	    $task{$t} = 1;
 	}
@@ -1605,52 +1607,53 @@ sub CheckParameters {
 	    $task{oligo_maps} = 0;
 	    $task{dyad_maps} = 0;
 	}
-   }
-   if ($task{maps}) {
+    }
+    if ($task{maps}) {
 	$task{oligo_maps} = 1;
 	$task{dyad_maps} = 1;
-   }
-   
-   
-   ### family file ###
-   unless (($family_file) || ($sequence_file_list)) {
+    }
+    if ($task{validate}) {
+	&FatalError("For the task 'validate', you must specify a list of known sites with the option -known")
+	    unless ($known_site_file);
+    }
+    
+    ### family file ###
+    unless (($family_file) || ($sequence_file_list)) {
 	die "Error: you should specify either a family file or a sequence file list\n";  
-   } 
-   
-   ### organism ###
-   unless ($organism_name) {
+    } 
+    
+    ### organism ###
+    unless ($organism_name) {
 	die "Error: you should specify an organism\n$supported_organisms\n";  
-   } 
-   unless ($supported_organism{$organism_name}) {
+    } 
+    unless ($supported_organism{$organism_name}) {
 	die ("Error: organism $organism_name is not supported\n",
 	     "Supported organisms:\n$supported_organisms\n");
-   }
+    }
+    
+    ## Upstream region limits
+    $from = $supported_organism{$organism_name}->{'up_from'}  unless defined($from);
+    $to = $supported_organism{$organism_name}->{'up_to'}  unless defined($to);
+    $seq_length = abs($to - $from) + 1;
 
-   
-#    $from = $default{from} unless defined($from);
-#    $to = $default{to} unless defined($to);
+    ## Dyad type
+    $dyad_type = "any" unless ($dyad_type);
 
-   $from = $supported_organism{$organism_name}->{'up_from'}  unless defined($from);
-   $to = $supported_organism{$organism_name}->{'up_to'}  unless defined($to);
-
-   $seq_length = abs($to - $from) + 1;
-   $dyad_type = "any" unless ($dyad_type);
-
-   if (defined($force{strands})) {
+    ## Strands
+    if (defined($force{strands})) {
 	$strands = $force{strands}; ### force
-   } else {
+    } else {
 	$strands = "-2str";
-   }
-   if (defined($force{exp})) {
-	$exp = $force{exp}; ### force
-   }
-   if (&IsReal($force{th})) {
+    }
+
+    ## Threshold on occurrence significance
+    if (&IsReal($force{th})) {
 	$thosig = $force{th}; ### force
-   } elsif ($#families > 0) {
+    } elsif ($#families > 0) {
 	$thosig = &round(10*abs(log($#families + 1)/log(10)))/10;
-   } else {
+    } else {
 	$thosig = 0;
-   } 
+    } 
 }
 
 
@@ -1949,9 +1952,18 @@ OPTIONS
 		
 		Format: the known site file is a tab-delimited text
 		files, with the collofing column content :
-		       1) site/motif
+		       1) site/motif sequence
 		       2) family
 		       3) source (optional)
+    		
+		Example
+		=======
+		; sequence	family	source
+		gGGAAAaTGAAACT	ISGF-3	TRANSFAC:R00001
+		AGGAAATAGAAACT	ISGF-3	TRANSFAC:R00003
+		ggagGGGCGGccct	Sp1	TRANSFAC:R14218
+		...
+
     	-known_max_len #
 		maximal length for using known sites. This allows to
 		filter out some sites with large sequences annotated in
@@ -2019,6 +2031,11 @@ TASK DESCRIPTION
 
    clean	Delete upstream sequences after processing, in order 
 		to save disk space.  
+
+   validate	Validate discovered patterns by comparing them to the list
+   		of known sites. This requires to specify a collection
+   		of know sites with the option -known.
+
 End_of_help
  close HELP;
  exit;
