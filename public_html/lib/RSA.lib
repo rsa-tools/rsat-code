@@ -1127,7 +1127,7 @@ sub ReadFamilies {
 #### - class (e.g. a functional class, or a regulon, or a clustering result)
 #### additional columns are allowed, but they are ignored
 sub ReadClasses {
-    my ($family_file, $get_orf_id, $organism) = @_;
+    my ($family_file, $get_orf_id, $organism, $no_subst) = @_;
     warn "; Reading family file\t$family_file\n" 
 	if ($verbose >=2);
 
@@ -1155,12 +1155,14 @@ sub ReadClasses {
 
 	### family name
 	$family_name = &trim($fields[1]);
-	$subst_char = ".";
-	$family_name =~ s/ +/${subst_char}/g; ## spaces create problems with file names in Unix
-	$family_name =~ s/\//${subst_char}/g; ## spaces create problems with file names in Unix
-	$family_name =~ s/\:/${subst_char}/g; ## spaces create problems with file names in Unix
-	$family_name =~ s/\(/${subst_char}/g; ## paretheses interfere with Unix commands
-	$family_name =~ s/\)/${subst_char}/g; ## paretheses interfere with Unix commands
+	unless ($no_subst) {
+	    $subst_char = ".";
+	    $family_name =~ s/ +/${subst_char}/g; ## spaces create problems with file names in Unix
+	    $family_name =~ s/\//${subst_char}/g; ## spaces create problems with file names in Unix
+	    $family_name =~ s/\:/${subst_char}/g; ## spaces create problems with file names in Unix
+	    $family_name =~ s/\(/${subst_char}/g; ## paretheses interfere with Unix commands
+	    $family_name =~ s/\)/${subst_char}/g; ## paretheses interfere with Unix commands
+	}
 	unless ($family_name =~ /\S/) {
 	    &RSAT::message::Warning("Error family file", 
 				 $family_file,  "line", 

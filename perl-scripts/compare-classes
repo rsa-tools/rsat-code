@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.8 2005/04/18 18:26:51 jvanheld Exp $
+# $Id: compare-classes,v 1.9 2005/05/17 14:05:41 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -112,8 +112,8 @@ $out = &OpenOutputFile($outfile{output});
 
 ################################################################
 ###### read class files
-%query_classes = &ReadClasses($infile{query_classes});
-%ref_classes = &ReadClasses($infile{ref_classes});
+%query_classes = &ReadClasses($infile{query_classes},0,"",1);
+%ref_classes = &ReadClasses($infile{ref_classes},0,"",1);
 $nb_ref_classes = scalar(keys %ref_classes);
 $nb_query_classes = scalar(keys %query_classes);
 
