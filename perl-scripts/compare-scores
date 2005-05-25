@@ -84,7 +84,25 @@ if ($verbose) {
 print $out ";key";
 foreach $f (0..$#input_files) {
     foreach $c (1..$max_fields{$f}) {
-	print $out "\t", $input_files[$f], "_$c";
+	my $column_name = $input_files[$f];
+
+	## Basename
+	if ($basename) {
+	    $column_name = &ShortFileName($column_name);
+	}
+
+	## Suppress substrings
+	for my $sub (@suppress) {
+	    $column_name =~ s/$sub//g;
+	}
+
+
+	## Column number
+	if ($max_fields[$f] > 1 ) {
+	    $column_name .=  "_$c"
+	}
+
+	print $out "\t", $column_name;
     }
 }
 print $out "\n";
@@ -177,6 +195,15 @@ OPTIONS
 		sort IDs numerically rather than alphabetically
 	-decreasing
 		sort IDs numerically in a decreasing order
+	-basename
+		remove path (directory) from file names in the header
+	-suppress
+		Suppress a given substring from file names in the header
+		This option can be used iteratively to suppress different
+		substrings.
+
+		Example:
+			-suppress '.tab' -suppress 'oligos_'
 
 INPUT FORMAT
 	each line of the input file provides the score for a single key. 
@@ -215,6 +242,8 @@ compare-scores options
 -null		null string (default $default_null)
 -numeric	sort IDs numerically rather than alphabetically
 -decreasing	sort IDs numerically in a decreasing order
+-basename	remove path (directory) from file names in the header
+-suppress	suppress a given substring from file names in the header
 End_short_help
   close HELP;
   exit;
@@ -280,17 +309,20 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-ic") {
 	    $default_ic = $ARGV[$a+1];
 	    unless ((&IsNatural($default_ic)) && ($default_ic >= 1)) {
-		warn "Error : identifier column must be an integer >= 1\n";
-		&PrintHelp();
-	    }
-	    
+		&Fatalerror("Identifier column must be an integer >= 1");
+	    }	    
 	} elsif ($ARGV[$a] =~ /^-ic(\d+)/)  {
 	    $ic[$1-1] = $ARGV[$a+1]; ### substract 1 from the index
 	    unless ((&IsNatural($ic[$1-1])) && ($ic[$1-1] >= 1)) {
-		warn "Error : identifier column must be an integer and >= 1\n";
-		&PrintHelp();
-
+		&Fatalerror("Identifier column must be an integer >= 1");
 	    }
+
+	} elsif ($ARGV[$a] eq '-basename') {
+	    $basename = 1;
+
+	} elsif ($ARGV[$a] eq '-suppress') {
+	    push @suppress, $ARGV[$a+1];
+
 	}
     }
 }
