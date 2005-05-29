@@ -1,8 +1,14 @@
 #!/usr/bin/perl
 
+## CVS: fixed the options -grouprc and -nogrouprc (a sort of patch, not very legant, I should revisit all this some time)
+## CVS: added the option -two_tail to test over- and under-representation simultaneously
+
+## BUG: with markov chains and -2str, expected frequencies give a sum of 4 (with -1str it is OK, the sum is 1)
+## BUG: with markov order 0, exp freq of mononucleotides are set to 0. should be the observed frequency
+
 ############################################################
 #
-# $Id: oligo-analysis,v 1.88 2005/05/16 22:23:18 jvanheld Exp $
+# $Id: oligo-analysis,v 1.89 2005/05/29 09:15:57 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -71,7 +77,7 @@ $in_format = "fasta";
 
 $noov="-ovlp";
 $sum_rc = 1;
-#$group_rc = 1;
+$group_rc = 1;
 $uth{occ_pro} = 1;
 $proba_mseq_threshold = 1;
 
@@ -247,7 +253,7 @@ if ($return{'table'}) {
     &Degenerate() if ($one_var_position);
     &SumReverseComplements() if ($sum_rc);
     &CalcFrequencies() if (($return{'freq'}) || ($method eq "Markov chain"));
-#&GroupRc() if ($group_rc);
+#&GroupRC() if ($group_rc);
     &SelectPalindroms() if (($palindroms_only) || ($return{'remark'}));
 
 #    &MatchingSeqThreshold() if (defined($lth{mseq})); 
@@ -257,7 +263,7 @@ if ($return{'table'}) {
 
     if ($return{'exp_freq'}) {
 	&CalcExpected();
-	&GroupRc() if ($group_rc);
+#	&GroupRC() if ($group_rc); ## The routine CalcExpFreq 
     }
 
     ## Check somte thresholds before calculating other scores
@@ -271,9 +277,17 @@ if ($return{'table'}) {
     &CalcZscore() if ($return{'zscore'});
     &CalcLikelihood() if ($return{'like'});
     &CalcRatio() if ($return{'ratio'});
-    &GroupRc() if ($group_rc); #### remove the duplicate pattern (only retain the first by alphabetical order) 
+#    &GroupRC() if ($group_rc); #### remove the duplicate pattern (only retain the first by alphabetical order) 
     &CalcProba() if ($return{'proba'}) ;
-    &GroupRc() if ($group_rc); #### remove the duplicate pattern (only retain the first by alphabetical order) 
+#    &GroupRC() if ($group_rc); #### remove the duplicate pattern (only retain the first by alphabetical order) 
+
+    if ($sum_rc) {
+	if ($group_rc) {
+	    &GroupRC();
+	} else {
+	    &UngroupRC();
+	}
+    }
     &PrintResult();
 }
 
@@ -581,7 +595,7 @@ sub SumReverseComplements {
 	    }   
 	}
     }
-    &GroupRc(); #### remove the duplicate pattern (only retain the first by alphabetical order) 
+    &GroupRC(); #### remove the duplicate pattern (only retain the first by alphabetical order) 
 }
 
 ################################################################
@@ -634,13 +648,27 @@ sub SumReverseComplementsDistrib {
 ################################################################
 #### when grouping occurrences with their reverse complement, 
 #### only retain one of each pair. 
-sub GroupRc {
+sub GroupRC {
     warn ("; Grouping pairs of reverse complements\n"), "\n" if ($verbose >= 2);
     foreach $pattern_seq (keys %patterns) {
 	$rc_pattern_seq = &SmartRC($pattern_seq);
 	warn ("; Grouping reverse complements\t", $pattern_seq, "\t", $rc_pattern_seq, "\n") if ($verbose >= 4);
 	if ($rc_pattern_seq gt $pattern_seq) { ### only suppress one oligo from the pair
 	    delete $patterns{$rc_pattern_seq};
+	}
+    }
+}
+
+################################################################
+#### when grouping occurrences with their reverse complement, 
+#### only retain one of each pair. 
+sub UngroupRC {
+    warn ("; Reporting both elements of reverse complements pairs\n"), "\n" if ($verbose >= 2);
+    foreach $pattern_seq (keys %patterns) {
+	$rc_pattern_seq = &SmartRC($pattern_seq);
+	warn ("; Ungrouping reverse complements\t", $pattern_seq, "\t", $rc_pattern_seq, "\n") if ($verbose >= 4);
+	if ($rc_pattern_seq gt $pattern_seq) { ### only suppress one oligo from the pair
+	    $patterns{$rc_pattern_seq} = $patterns{$pattern_seq} ;
 	}
     }
 }
@@ -1252,90 +1280,42 @@ sub CalcProba {
 	    $patterns{$pattern_seq}->{exp_occ} = "NA";
 	    next;
 	}
-	
-#	$rc = uc(&SmartRC($pattern_seq));
-	
-	if ($under_represented) {
-	    #### probability of observing less than the observed number of occurrences ####
-	    #### for searching under-represented patterns only
-#	    if (($sum_rc) && (uc($pattern_seq) eq $rc)) {
-#		$patterns{$pattern_seq}->{occ_pro} = &sum_of_binomials($patterns{$pattern_seq}->{exp_freq},
-#								 $patterns{$pattern_seq}->{nb_possible_pos}/2,
-#								 0,
-#								 $patterns{$pattern_seq}->{occ}/2-1);
-#		$patterns{$pattern_seq}->{remark} = "\tpalindrome";
-#	    } else {
 
-	    if ($method =~ /calibration/i) {
-		if ($patterns{$pattern_seq}->{exp_occ} < $patterns{$pattern_seq}->{exp_var}) {
-		    #### Fit a negative binomial
-		    ($p, $k, $patterns{$pattern_seq}->{occ_pro}) = &sum_of_negbin2($patterns{$pattern_seq}->{exp_occ},
-										   $patterns{$pattern_seq}->{exp_var},
-										   0,
-										   $patterns{$pattern_seq}->{occ});
-		    $patterns{$pattern_seq}->{fitted} = "negbin";
-		} else {
-		    #### Fit a Poisson
-		    $patterns{$pattern_seq}->{occ_pro} = &sum_of_poisson($patterns{$pattern_seq}->{exp_occ},
-									 0,
-									 $patterns{$pattern_seq}->{occ});
-		    $patterns{$pattern_seq}->{fitted} = "Poisson";
-		}
-	    } else {
-		$patterns{$pattern_seq}->{occ_pro} = &sum_of_binomials($patterns{$pattern_seq}->{exp_freq},
-								       $patterns{$pattern_seq}->{nb_possible_pos},
-								       0,
-								       $patterns{$pattern_seq}->{occ});
-	    }
-#	    }
+	## Select the left or right tail of the theoretical distribution
+	if (($tail eq "left") || 
+	    (($tail eq "two") &&  ($patterns{$pattern_seq}->{occ} < $patterns{$pattern_seq}->{exp_occ}))) {
+	    ## Left tail
+	    $occ_from = 0;
+	    $occ_to = $patterns{$pattern_seq}->{occ};
+	    $patterns{$pattern_seq}->{test} = "under";
 	} else {
-	    ### probability of observing at least the observed number of occurrences ####
-#	    if (($sum_rc) && (uc($pattern_seq) eq $rc)) {
-#		$patterns{$pattern_seq}->{occ_pro} = &binomial_boe($patterns{$pattern_seq}->{exp_freq},
-#								   $patterns{$pattern_seq}->{nb_possible_pos}/2,
-#								   $patterns{$pattern_seq}->{occ}/2);
-#		$patterns{$pattern_seq}->{remark} = "\tpalindrome";
-#	    } else {
-	    if ($method =~ /calibration/i) {
-		if ($patterns{$pattern_seq}->{exp_occ} < $patterns{$pattern_seq}->{exp_var}) {
-		    #### Fit a negative binomial
-		    ($p, $k, $patterns{$pattern_seq}->{occ_pro}) = &sum_of_negbin2($patterns{$pattern_seq}->{exp_occ},
-										   $patterns{$pattern_seq}->{exp_var},
-										   $patterns{$pattern_seq}->{occ},
-										   $patterns{$pattern_seq}->{nb_possible_pos},
-										   );
-		    $patterns{$pattern_seq}->{fitted} = "negbin";
-		} else {
-		    #### Fit a Poisson
-#		    warn join( "\t", "HELLO", $pattern_seq, 
-#			      $patterns{$pattern_seq}->{exp_occ},
-#			      $patterns{$pattern_seq}->{occ},
-#			      $patterns{$pattern_seq}->{nb_possible_pos},
-#			      "\n");
-		    $patterns{$pattern_seq}->{occ_pro} = &sum_of_poisson($patterns{$pattern_seq}->{exp_occ},
-									  $patterns{$pattern_seq}->{occ},
-									  $patterns{$pattern_seq}->{nb_possible_pos},
-									  );
-		    
-		    $patterns{$pattern_seq}->{fitted} = "Poisson";
-		}
-	    } else {
-		$patterns{$pattern_seq}->{occ_pro} = &binomial_boe($patterns{$pattern_seq}->{exp_freq},
-								   $patterns{$pattern_seq}->{nb_possible_pos},
-								   $patterns{$pattern_seq}->{occ});
-	    }
-#  	    warn join( "\t", "HELLO", 
-#  			       $pattern_seq, 
-#  			       $patterns{$pattern_seq}->{occ},  
-#  			       $patterns{$pattern_seq}->{exp_freq},  
-#  			       $patterns{$pattern_seq}->{nb_possible_pos},
-#  			       $patterns{$pattern_seq}->{occ_pro}
-#  			       ),"\n" if ($main::verbose >= 10);
-
-#	    }
+	    ## Right tail
+	    $occ_from = $patterns{$pattern_seq}->{occ};
+	    $occ_to = $patterns{$pattern_seq}->{nb_possible_pos};	    
+	    $patterns{$pattern_seq}->{test} = "over";
 	}
 
-
+	if ($method =~ /calibration/i) {
+	    if ($patterns{$pattern_seq}->{exp_occ} < $patterns{$pattern_seq}->{exp_var}) {
+		#### Fit a negative binomial
+		($p, $k, $patterns{$pattern_seq}->{occ_pro}) = &sum_of_negbin2($patterns{$pattern_seq}->{exp_occ},
+									       $patterns{$pattern_seq}->{exp_var},
+									       $occ_from,
+									       $occ_to);
+		$patterns{$pattern_seq}->{fitted} = "negbin";
+	    } else {
+		#### Fit a Poisson
+		$patterns{$pattern_seq}->{occ_pro} = &sum_of_poisson($patterns{$pattern_seq}->{exp_occ},
+								     $occ_from,
+								     $occ_to);
+		$patterns{$pattern_seq}->{fitted} = "Poisson";
+	    }
+	} else {
+	    $patterns{$pattern_seq}->{occ_pro} = &sum_of_binomials($patterns{$pattern_seq}->{exp_freq},
+								   $patterns{$pattern_seq}->{nb_possible_pos},
+								   $occ_from,
+								   $occ_to);
+	}
 
 	### Significance index for occurrence number
 	if ($nb_possible_oligo > 0) {
@@ -1350,10 +1330,6 @@ sub CalcProba {
 	#### check thresholds on occurrence probability ####
 	&CheckPatternThresholds("occ_pro", $pattern_seq);
 	next unless (defined($patterns{$pattern_seq})) ;	## Skip pattern if it did not pass the threshold filtering
-#	if ($patterns{$pattern_seq}->{occ_pro} > $uth{occ_pro}) {
-#	    delete $patterns{$pattern_seq};
-#	    next;
-#	}
 	
 	#### check thresholds on occurrence probability ####
 	&CheckPatternThresholds("occ_sig", $pattern_seq);
@@ -1399,8 +1375,8 @@ sub PrintHeaderLine {
     $col_description{"occ_P"} = "occurrence probability (binomial)";
     $col_description{"occ_E"} = "E-value for occurrences (binomial)";
     $col_description{"occ_sig"} = "occurrence significance (binomial)";
-    $col_description{"zscore"} = "z-score (normal)"; 
-    $col_description{"occ_lkh"} = "occurrence likelihood"; 
+    $col_description{"zscore"} = "z-score (Gaussian approximation)"; 
+    $col_description{"occ_likelihood"} = "occurrence likelihood"; 
     $col_description{"ovl_occ"} = "number of overlapping occurrences (discarded from the count)"; 
     $col_description{"ratio"} = "observed/expected ratio"; 
     $col_description{"ms"} = "number of matching sequences";
@@ -1412,12 +1388,13 @@ sub PrintHeaderLine {
     $col_description{"ms_freq"} = "observed matching sequence frequency"; 
     $col_description{"exp_msf"} = "expected matching sequence frequency"; 
     $col_description{"ms_rati"} = "observed/expected matching seqyences"; 
-    $col_description{"ms_lkh"} = "matching sequence likelihood"; 
+    $col_description{"ms_likelihood"} = "matching sequence likelihood"; 
     $col_description{"rank"} = "rank"; 
     $col_description{"positions"} = "matching positions"; 
     $col_description{"ovlp"} = "overlap coefficient"; 
     $col_description{"exp_var"} = "estimation of the variance on occurrences"; 
     $col_description{"fitted"} = "fitted distribution"; 
+    $col_description{"test"} = "over- or under-representation test"; 
     $col_description{"remark"} = "remark"; 
     $col_description{"segments"} = "word segmentation"; 
     @out_col = ();
@@ -1427,8 +1404,14 @@ sub PrintHeaderLine {
     } else {
 	push(@out_col,"sequence");
     }
-    if (($oligo_length > 8) ||
-	(($oligo_length > 5) && ($sum_rc))) {   
+
+    my $id_width = $oligo_length;
+    if ($sum_rc) {
+	$id_width += $oligo_length + 1;
+    }
+    if ($id_width >= 16) {   
+	push(@out_col, sprintf("%-${id_width}s", "identifier"));
+    } elsif ($id_width >= 8) {   
 	push(@out_col,"identifier");
     } else {
 	push(@out_col,"id");
@@ -1448,7 +1431,7 @@ sub PrintHeaderLine {
 	    push(@out_col,"occ_sig");
 	}
 	push(@out_col,"zscore") if ($return{'zscore'});
-	push(@out_col,"occ_lkh") if ($return{'like'});
+	push(@out_col,"occ_likelihood") if ($return{'like'});
 	push(@out_col,"ovl_occ") if ($noov eq "-noov");
     }
     push(@out_col,"ratio") if ($return{'ratio'});
@@ -1466,7 +1449,7 @@ sub PrintHeaderLine {
 	push(@out_col,"ms_freq") if ($return{'freq'});
 	push(@out_col,"exp_msf") if ($return{'exp_freq'});
 	push(@out_col,"ms_rati") if ($return{'ratio'});
-	push(@out_col,"ms_lkh") if ($return{'like'});
+	push(@out_col,"ms_likelihood") if ($return{'like'});
     }
     
     ### rank
@@ -1479,6 +1462,7 @@ sub PrintHeaderLine {
     push(@out_col,"ovlp") if ($return{'ovlp'});
     push(@out_col,"exp_var") if ($return{'exp_var'});
     push(@out_col,"fitted") if ($return{'fitted'});
+    push(@out_col,"test") if ($tail="two");
     push(@out_col,"remark") if ($return{'remark'});
     push(@out_col,"segments") if ($return{'segments'});
 
@@ -1505,10 +1489,12 @@ sub Verbose {
 	&PrintArguments($out);
 	printf $out "; %s\n", "Citation: van Helden et al. (1998). J Mol Biol 281(5), 827-42. ";
 	if ($return{proba}) {
-	    if ($under_represented) {
-		printf $out "; %s\n", "Detection of under-represented words";
+	    if ($tail eq "two") {
+		printf $out "; %s\n", "Detection of under-represented and over-represented words (two-tail test)";
+	    } elsif ($tail eq "left") {
+		printf $out "; %s\n", "Detection of under-represented words (left-tail test)";
 	    } else {
-		printf $out "; %s\n", "Detection of over-represented words";
+		printf $out "; %s\n", "Detection of over-represented words (right-tail test)";
 	    }
 	}
 	printf $out "; %-29s\t%s\n", "Oligomer length", $oligo_length;
@@ -1523,9 +1509,9 @@ sub Verbose {
 	    }
 	if ($sum_rc) {
 	    print $out "; Counted on both strands\n";
-#	    if ($group_rc) {
+	    if ($group_rc) {
 		print $out "; \tgrouped by pairs of reverse complements\n";
-#	    }
+	    }
 	} else {
 	    print $out "; Counted on a single strand\n";
 	}
@@ -1610,12 +1596,18 @@ sub PrintResult {
 	    ### preferred fields for sorting are the most generally reliable
 	    if ($return{'zscore'}){
 		if ($return{'proba'}) { 
-		    #### two-criteria sorting, sig is prioritary, but
-		    #### zscore is useful when the proba reaches
-		    #### calculation limits
-		    @sorted_keys = sort {  $patterns{$b}->{zscore} <=>  $patterns{$a}->{zscore} || 
-					       $patterns{$b}->{occ_sig} <=>  $patterns{$a}->{occ_sig}
-				      } keys %patterns;
+		    if ($tail eq "two") {
+			@sorted_keys = sort {(($patterns{$b}->{zscore} <=>  $patterns{$a}->{zscore}) ||
+					      ($patterns{$b}->{occ_sig} <=>  $patterns{$a}->{occ_sig}))
+					    } keys %patterns;
+		    } else {
+			#### two-criteria sorting, sig is prioritary, but
+			#### zscore is useful when the proba reaches
+			#### calculation limits
+			@sorted_keys = sort {(($patterns{$b}->{occ_sig} <=>  $patterns{$a}->{occ_sig}) || 
+					      ($patterns{$b}->{zscore} <=>  $patterns{$a}->{zscore}))
+					    } keys %patterns;
+		    }
 		} else {
 		    @sorted_keys = sort {$patterns{$b}->{zscore} <=>  $patterns{$a}->{zscore}} keys %patterns;
 		}
@@ -1654,7 +1646,7 @@ sub PrintResult {
     @sorted_keys = sort keys %patterns unless ($sorted);
 
     ### Reverse order if one is looking for under-represented patterns
-    if ($under_represented) {
+    if (($tail eq "left") && (!$return{'proba'})){
 	@sorted_keys = reverse(@sorted_keys);
     }
 
@@ -1735,7 +1727,7 @@ sub PrintResult {
 	    }
 	    
 	    ### log likelihood of occurrences
-	    printf $out "\t%7.5f", $patterns{$pattern_seq}->{occ_lkh} if ($return{'like'});
+	    printf $out "\t%15.12f", $patterns{$pattern_seq}->{occ_lkh} if ($return{'like'});
 	    
 	    ### overlapping occurrences
 	    if ($noov eq "-noov") {
@@ -1769,7 +1761,7 @@ sub PrintResult {
 	    printf $out "\t%7.5f", $patterns{$pattern_seq}->{ms_freq} if ($return{'freq'});
 	    printf $out "\t%7.5f", $patterns{$pattern_seq}->{exp_ms}/$sequence_number if ($return{'exp_freq'});
 	    printf $out "\t%7.5f", $patterns{$pattern_seq}->{mseq}/$patterns{$pattern_seq}->{exp_ms} if (($return{'ratio'}) && ($patterns{$pattern_seq}->{exp_ms} > 0));
-	    printf $out "\t%7.5f", $patterns{$pattern_seq}->{ms_lkh} if ($return{'like'});
+	    printf $out "\t%15.12f", $patterns{$pattern_seq}->{ms_lkh} if ($return{'like'});
 	    
 	}
 	
@@ -1792,6 +1784,7 @@ sub PrintResult {
 	printf $out "\t%.5f", $patterns{$pattern_seq}->{ovlp} if ($return{'ovlp'});
 	printf $out "\t%.3f", $patterns{$pattern_seq}->{exp_var} if ($return{'exp_var'});
 	printf $out "\t%s", $patterns{$pattern_seq}->{fitted} if ($return{'fitted'});
+	printf $out "\t%s", $patterns{$pattern_seq}->{test} if ($tail="two");
 	printf $out "\t%s", $patterns{$pattern_seq}->{remark} if ($return{'remark'});
 	printf $out "\t%s", $patterns{$pattern_seq}->{segments} if ($return{'segments'});
 	
@@ -1842,7 +1835,7 @@ sub ReadArguments {
 	    $a++;
 	    if ($ARGV[$a] =~ /^prot/i) {
 		$sum_rc = 0;
-#		$group_rc = 0;
+		$group_rc = 0;
 		$seq_type = "protein";
 		
 		#### DNA sequences
@@ -1852,7 +1845,7 @@ sub ReadArguments {
 		#### any other sequence type
 	    } elsif ($ARGV[$a] =~ /^other/i) {
 		$sum_rc = 0;
-#		$group_rc = 0;
+		$group_rc = 0;
 		$seq_type = "other";
 
 	    } else {
@@ -1879,18 +1872,18 @@ sub ReadArguments {
 	    #### strands
 	} elsif ($ARGV[$a] eq "-1str") {
 	    $sum_rc = 0;
-#	    $group_rc = 0;
+	    $group_rc = 0;
 	    
 	} elsif ($ARGV[$a] eq "-2str") {
 	    $sum_rc = 1;
 	    
 	    #### reverse complement grouping or not
-#	} elsif ($ARGV[$a] eq "-grouprc") {
-#	    $sum_rc = 1;
-#	    $group_rc = 1;
+	} elsif ($ARGV[$a] eq "-grouprc") {
+	    $sum_rc = 1;
+	    $group_rc = 1;
 	    
-#	} elsif ($ARGV[$a] eq "-nogrouprc") {
-#	    $group_rc = 0;
+	} elsif ($ARGV[$a] eq "-nogrouprc") {
+	    $group_rc = 0;
 	    
 	    #### Discard overlapping matches
 	} elsif ($ARGV[$a] =~ /^-noov/) {
@@ -2178,7 +2171,10 @@ sub ReadArguments {
 	    $sort_result = 1;
 	    
 	} elsif ($ARGV[$a] eq "-under") {
-	    $under_represented = 1;
+	    $tail = "left";
+	    
+	} elsif ($ARGV[$a] eq "-two_tail") {
+	    $tail = "two";
 	    
 	}
 	$a++;
@@ -2395,7 +2391,7 @@ ARGUMENTS
 			freq	relative frequencies 
 				(occurrences/sum of occurrences)
 			proba	binomial probability for observing
-				>= obs occurrences
+				>= k occurrences
 			ratio	observed/expected ratio
 			zscore	z-score
 			like	log likelihood
@@ -2438,6 +2434,10 @@ ARGUMENTS
 		- occurrence number
 
 	-under	detect under-represented instead of over-represented words
+		(see below for details). 
+
+	-two_tail
+		detect under-represented and over-represented words
 		(see below for details). 
 
     THRESHOLDS
@@ -2590,15 +2590,15 @@ PROBABILITIES
     
     PROBABILITY OF THE OBSERVED NUMBER OF OCCURRENCES (BINOMIAL)
 	
-	The probability to observe exactly obs occurrences in the whole family
+	The probability to observe exactly k occurrences in the whole family
   	of sequences is calculated by the binomial
 	
-	                                              obs      T-obs
-	    P(obs) = bin(p,T,obs) =       T!         p    (1-p)
-                                     ---------------
-                                     obs! * (T-obs)! 
+	                                          k      T-k
+	    P(X=k) = bin(p,T,k) =       T!      p  (1-p)
+                                   -----------
+                                   k! * (T-k)! 
 	
-	where   obs is the observed number of occurrences,
+	where   k   is the observed number of occurrences,
                 p   is the expected frequency for the pattern,
                 T   is the number of possible matching positions,
                     as defined above. 
@@ -2606,21 +2606,24 @@ PROBABILITIES
 	The probability to observe obs or more occurrences in the whole family
   	of sequences is calculated by the sum of binomials:
 	
-	                 T              obs-1
-	    P(>=obs) =  SUM P(i) =  1 -  SUM  P(i)
-	               i=obs             i=0
+	                T               k-1
+	    P(X>=k) =  SUM P(i) =  1 -  SUM  P(i)
+	               i=k              i=0
 
     OVER/UNDER-REPRESENTATION
 
-		By default, the program calculates probability to have
-		at least obs occurrences:
+		By default, the program calculates the P-value on the
+		right tail of the probability distribution, which
+		represents the probability to have at least k
+		occurrences:
 
-			                 T
-			    P(>=occ) =  SUM P(i)
-			               i=occ
+			                T
+			    P(X>=k) =  SUM P(i)
+			              i=occ
 
-		With the option -under, the program calculates the
-		probability of having less than obs occurrences : 
+		With the option -under, the P-value is calcluated on
+		the left tail of the distribution, which represents the
+		probability of having less than k occurrences :
 
 			               occ-1
 			    P(<=occ) =  SUM P(i)
@@ -2629,6 +2632,13 @@ PROBABILITIES
 		The option -under does not affect the other statistics
 		(zscore, loglikelihood). For z-score, the negative
 		values can be used to asses word under-representation.
+
+		With the option -two_tail, the P-value is calculated
+		on either the left or the right-tail of the
+		distribution, depending on the observed/expected
+		comparison:
+		- if k >= exp_occ, right tail (over-representation)
+		- if k < exp_occ, left tail (under-representation)
 
 	                        
     SPECIFIC TREATMENT FOR DOUBLE STRAND COUNTS
@@ -2651,7 +2661,7 @@ PROBABILITIES
         the direct and reverse complement strand represent distinct
         binding sites. Thus, 
 
-		 Obs_occ(W|Wr) = Obs_occ(W) + Obs_occ(Wr)
+		 occ(W|Wr) = occ(W) + occ(Wr)
 		 exp_freq(W|Wr) = exp_freq(W) + exp_freq(Wr)
 
 	   where
@@ -2672,7 +2682,7 @@ PROBABILITIES
 	The E-value represented the expected number of patterns which
 	would be returned at random for a given P-value (probability).
 
-	      E-value = NPO * P(>=obs)
+	      E-value = NPO * P(X>=k)
 
 	where	NPO	 is the number of possible oligomers of the 
 	                 chosen length (eg 4096 for hexanucleotides). 
@@ -2718,9 +2728,9 @@ PROBABILITIES
     Z-SCORE
 	The Z-score is calculated in the following way
 
-		Zsc = (obs_occ - exp_occ)/var_occ
+		Zsc = (k - exp_occ)/var_occ
 	where
-		obs_occ	is the observed number of occurrences
+		k	is the observed number of occurrences
 		exp_occ	is the expected number of occurrences
 		var_occ	is the estimate for the variance on occurrences
 
@@ -2839,6 +2849,7 @@ oligo-analysis options
 -onedeg         one degenerate position		
 -sort		sort oligomers by overrepresentation
 -under		detect under-represented instead of over-represented words 
+-tow_tail      	detect under-represented and over-represented words 
 -pal		only return reverse palindroms
 End_of_help
     close HELP;
