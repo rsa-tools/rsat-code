@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: util.pl,v 1.8 2005/04/25 08:11:54 jvanheld Exp $
+# $Id: util.pl,v 1.9 2005/05/31 09:14:22 rsat Exp $
 #
 # Time-stamp: <2003-07-10 11:46:32 jvanheld>
 #
@@ -213,7 +213,7 @@ sub next_count {
 #### Default verbose message
 sub DefaultVerbose {
     warn "; $0 "; 
-    &PrintArguments(STERR);
+    &RSAT::util::PrintArguments(STERR);
     warn "; directories\n";
     while (($key, $value) = each %dir) {
 	warn sprintf ";\t%-23s\t%s\n", $key, $value;

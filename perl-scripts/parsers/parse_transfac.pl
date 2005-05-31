@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_transfac.pl,v 1.5 2005/03/13 10:41:02 jvanheld Exp $
+# $Id: parse_transfac.pl,v 1.6 2005/05/31 09:14:50 rsat Exp $
 #
 # Time-stamp: <2003-07-10 11:52:52 jvanheld>
 #
@@ -16,8 +16,7 @@ require "lib/load_classes.pl";
 require "lib/util.pl";
 require "lib/loading_util.pl"; ### for converting polypeptide IDs into ACs
 require "lib/parsing_util.pl";
-
-
+require RSAT::util;
 
 ################################################################
 ## Matrix
@@ -237,7 +236,7 @@ package main ;
 
     ### report execution time
     if ($verbose >= 1) {
-	$done_time = &AlphaDate;
+	$done_time = &RSAT::util::AlphaDate();
 	warn ";\n";
 	warn "; job started $start_time";
 	warn "; job done    $done_time\n";
@@ -385,7 +384,7 @@ sub ReadArguments {
 sub ParseTransfacFile {
     my ($input_file, $class_holder, $source) = @_;
     
-    warn (join "\t", ";", &AlphaDate(),  "parsing file", $input_file, "class holder", $class_holder->get_object_type(), "source", $source,  "\n")
+    warn (join "\t", ";", &RSAT::util::AlphaDate(),  "parsing file", $input_file, "class holder", $class_holder->get_object_type(), "source", $source,  "\n")
 	if ($verbose >= 1);
 
     open DATA, $input_file || 
