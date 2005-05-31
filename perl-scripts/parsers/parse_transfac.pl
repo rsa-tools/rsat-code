@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_transfac.pl,v 1.6 2005/05/31 09:14:50 rsat Exp $
+# $Id: parse_transfac.pl,v 1.7 2005/05/31 10:11:20 rsat Exp $
 #
 # Time-stamp: <2003-07-10 11:52:52 jvanheld>
 #
@@ -448,7 +448,7 @@ sub ParseTransfacFile {
 		    ## Specific treatment for matrices
 		} elsif ($class_holder->get_object_type() eq "TRANSFAC::Matrix") {
 		    if ($key eq "P0") { ## Matrix header
-			$value = &trim($value);
+			$value = &RSAT::util::trim($value);
 			unless ($value =~ /^\s*A\s+C\s+G\s+T/i) {
 			    ## Check if all matrices have the same header
 			    &ErrorMessage("Non-conform header", $value, "\n");
@@ -457,7 +457,7 @@ sub ParseTransfacFile {
 			}
 			next;
 		    } elsif ($key =~ /^\d+$/) {
-			$value = &trim($value);
+			$value = &RSAT::util::trim($value);
 			my @values = split /\s+/, $value;
 			warn join "\t", "PSSM", $key, @values, "\n" if ($main::verbose >= 10); 
 			$current_obj->push_expanded_attribute("pssm", join "\t", $key, @values);
@@ -570,12 +570,12 @@ sub parse_database_references {
     foreach my $object ($class->get_objects()) {
 	foreach my $db_ref ($object->get_attribute("database_references")) {
 	    my @fields = split ":", $db_ref;
-	    my $xdb = &trim(shift @fields);
-	    my $xids = &trim(shift @fields);
+	    my $xdb = &RSAT::util::trim(shift @fields);
+	    my $xids = &RSAT::util::trim(shift @fields);
 	    $xids =~ s/\.$//; 
 	    my @xids = split ";", $xids;
 	    foreach my $xid (@xids) {
-		$current_obj->push_expanded_attribute("xrefs", $xdb, &trim($xid));
+		$current_obj->push_expanded_attribute("xrefs", $xdb, &RSAT::util::trim($xid));
 	    }
 	}
     }
