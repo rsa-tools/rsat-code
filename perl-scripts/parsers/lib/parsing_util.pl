@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parsing_util.pl,v 1.18 2005/03/13 10:41:02 jvanheld Exp $
+# $Id: parsing_util.pl,v 1.19 2005/05/31 10:12:03 rsat Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -102,13 +102,13 @@ sub ExportClasses {
     open STDOUT, ">$output_file"  || die "Error : cannot write file $output_file\n"; 
   }
   foreach $class (@classes) {
-    warn (";\n; ", &AlphaDate, " exporting class ", $class, " to file '$output_file'\n") 
+    warn (";\n; ", &RSAT::util::AlphaDate, " exporting class ", $class, " to file '$output_file'\n") 
       if ($verbose >= 1);
     local @selected = @{$out_fields{$class}};
     foreach $object ($class->get_objects()) {
       $object->print_attributes($out_format, @selected);
     }
-    warn ("; ", &AlphaDate, " class ", $class, " exported\n") 
+    warn ("; ", &RSAT::util::AlphaDate, " class ", $class, " exported\n") 
       if ($verbose >= 1);
   }
   close STDOUT if ($output_file);
@@ -195,14 +195,14 @@ sub ParseKeggFile {
     
     ### open the input stream
     if ($kegg_file) {
-	warn (";\n; ", &AlphaDate,
+	warn (";\n; ", &RSAT::util::AlphaDate,
 	      " parsing class $class from $kegg_file\n")
 	    if ($verbose >= 1);
 	open INFILE, $kegg_file 
 	    || die "Error: cannot $kegg_file\n";
 	$in = INFILE;
     } else {
-	warn (";\n; ", &AlphaDate,
+	warn (";\n; ", &RSAT::util::AlphaDate,
 	      " parsing class $class from STDIN\n")
 	    if ($verbose >= 1);
 	$in = STDIN;
@@ -369,7 +369,7 @@ sub PrintStats {
   }
   
   ### print some stats
-  $alpha_date =  &AlphaDate();
+  $alpha_date =  &RSAT::util::AlphaDate();
   warn (";\n; ", $alpha_date,
 	" printing parsing statistics in file ", 
 	$stat_file, "\n")  
@@ -447,7 +447,7 @@ sub ParsePositions {
     my ($features) = @_;
 
     warn ("; ",
-	  &AlphaDate(),
+	  &RSAT::util::AlphaDate(),
 	  "\tparsing feature positions\n")
 	if ($verbose >= 1);
 
