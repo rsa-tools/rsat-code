@@ -1194,7 +1194,7 @@ sub ReadNextSequence {
 		chomp;
 		push @comments, $seq_id;
 	    } elsif (/^DEFINITION\s+/) {	### definition
-		push @comments, $';
+		push @comments, "$'";
 	    } elsif (/^ORIGIN/) {
 		warn "Reading sequence\t$seq_id\n" if ($verbose >= 2);
 		$in_sequence = 1;
@@ -1225,7 +1225,7 @@ sub ReadNextSequence {
 		chomp;
 		push @comments, $seq_id;
 	    } elsif (/^DE\s+/) {	### definition
-		push @comments, $';
+		push @comments, "$'";
 	    } elsif (/^SQ\s+/) {
 		$in_sequence = 1;
 	    } elsif (($in_sequence) && (/^(.+)\s+(\d+)\s*$/)) { ### sequence
