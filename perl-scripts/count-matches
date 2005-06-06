@@ -6,6 +6,9 @@ require "RSA.lib";
 require "RSA.seq.lib";
 require RSAT::pattern;
 
+## CVS: adapted the help to describe the hypergeometric proba
+## CVS: added the option -table
+
 ################################################################
 #### initialise parameters
 my $start_time = &AlphaDate();
@@ -19,7 +22,11 @@ local $in = STDIN;
 local $out = STDOUT;
 $slide = 0;
 local @pattern1 = ();
+
 local @pattern2 = ();
+local $NULL="NA";
+
+#local @table_fields = ();
 
 ## lower and upper thresholds
 %lth = ();
@@ -33,7 +40,11 @@ local @pattern2 = ();
 			      mlen
 			      tlen
 			      offset
+			      max_w1
+			      max_w2
 			      max_w
+			      rel_w1
+			      rel_w2
 			      rel_w
 			      );
 foreach my $field (@supported_threshold_fields) {
@@ -42,8 +53,10 @@ foreach my $field (@supported_threshold_fields) {
 $supported_threshold_fields = join (",", @supported_threshold_fields);
 
 
-#### initialise parameters ####
+## Starting time 
 $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+
+## Return fields
 @supported_return_fields = qw(
 			      match
 			      proba
@@ -85,16 +98,33 @@ my %field_format = (match=>"%d",
 		    top_s2=>"%s",
 		    );
 
+## accepted fields for a table output
+@supported_table_fields = qw(
+			      match
+			      proba
+			      weight
+			      offset
+			      strand
+			      max_w
+			      rel_w1
+			      rel_w2
+			      rel_w
+			      top_s
+			      );
+foreach my $field (@supported_table_fields) {
+    $supported_table_field{$field} = 1;
+}
+$supported_table_fields = join (",", @supported_table_fields);
+
 &ReadArguments();
 
 ################################################################
 ## Check arguments
 
 ## return fields
-if (scalar(@return_fields) < 1) {
+if ((scalar(@return_fields) < 1) && (scalar(@table_fields) < 1)){
     @return_fields = ("seq", "match");
 }
-
 my @temp_return_fields = @return_fields;
 @return_fields = (); ## Ordered list of fields to return. 
 %return_field = ();  ## Index for the fields to return.
@@ -120,6 +150,17 @@ foreach my $field (@temp_return_fields) {
 	push @return_fields, $field;
     }
 }
+
+
+## table fields
+%table_field = ();  ## Index for the fields to table.
+foreach my $field (@table_fields) {
+    &RSAT::error::FatalError("$field\tInvalid table field. Supported: $supported_table_fields\n") unless $supported_table_field{$field};
+
+    $table_field{$field}++;
+
+}
+
 
 ################################################################
 ## Read input patterns from file
@@ -162,6 +203,52 @@ foreach $pattern1 (@pattern1) {
     }
 }
 
+## Print contingency tables
+foreach my $field (@table_fields) {
+    my $table_name = $field."_table";
+    print $out join("\t", "; Contingency table", $field), "\n";
+
+    ## Calculate widdth of first column
+    my $max_seq1_len = 0;
+    foreach my $pattern1 (@pattern1) {
+	my $seq1  = $pattern1->{sequence};
+	$max_seq1_len = &max(length($seq1), $max_seq1_len); 
+    }
+
+    ## Print the header
+    my @header = ();    
+    foreach my $pattern2 (@pattern2) {
+	my $seq2  = $pattern2->{sequence};
+	$max_seq2_len = &max(length($seq2), $max_seq2_len); 
+	push @header, $seq2;
+    }
+    print $out  join ("\t", 
+		      sprintf("; %-${max_seq1_len}s", "sequence"),
+		      @header), "\n";
+
+    foreach my $pattern1 (@pattern1) {
+	my @result = ();
+	my $seq1 = $pattern1->{sequence};
+	
+	foreach my $pattern2 (@pattern2) {
+	    my $seq2 = $pattern2->{sequence};
+	    my $result = $$table_name->{$seq1}->{$seq2};
+
+	    if ($filtered_out->{$seq1}->{$seq2}) {
+		push @result, $NULL;
+	    } else {
+		push @result, sprintf $field_format{$field}, $result;
+	    }
+	}
+	print $out join( "\t", 
+			 sprintf ("%-${max_seq1_len}s", $seq1), 
+			 @result), "\n";
+    }
+    
+    
+
+}
+
 exit(0);
 
 ################################################################
@@ -172,9 +259,9 @@ exit(0);
 ## Match one pattern against another one
 sub OneMatch {
     my ($pattern1, $pattern2, $reverse) = @_;
-    $id1 =  $pattern1->get_attribute("id");
-    $seq1 = $pattern1->get_attribute("sequence");
-    $seq1 = &ExpandSeq($seq1);
+    local $id1 =  $pattern1->get_attribute("id");
+    local $seq1 = $pattern1->get_attribute("sequence");
+#    $seq1 = &ExpandSeq($seq1);
 
     ## Match direct or reverse complement
     $strand = "D";
@@ -184,9 +271,9 @@ sub OneMatch {
 #	$id1 .= "_rev";
     }
     
-    $id2 =  $pattern2->get_attribute("id");
-    $seq2 = $pattern2->get_attribute("sequence");
-    $seq2 = &ExpandSeq($seq2);
+    local $id2 =  $pattern2->get_attribute("id");
+    local $seq2 = $pattern2->get_attribute("sequence");
+#    $seq2 = &ExpandSeq($seq2);
 
     ## Check input sequences
     &RSAT::message::Warning("There is not a single sequence in the first set") unless ($seq1);
@@ -208,9 +295,9 @@ sub OneMatch {
     ################################################################
     ## Count the matches
     if ($slide) {
-	($match, $weight, $proba, $mlen, $offset) = &BestMatch($seq1,$seq2);
+	($match, $weight, $proba, $mlen, $offset) = &BestMatch(&ExpandSeq($seq1),&ExpandSeq($seq2));
     } else {
-	($match, $weight, $proba, $mlen) = &CountMatches($seq1,$seq2);
+	($match, $weight, $proba, $mlen) = &CountMatches(&ExpandSeq($seq1),&ExpandSeq($seq2));
     }
     if ($return_field{length}) {
 	$len1 = length($seq1);
@@ -244,30 +331,41 @@ sub OneMatch {
 	$rel_w = "NA";
     }
     
-
     
     ################################################################
-    ## Print the result for this comparison
-    my $to_print = 1;
+    ## Calculate the resulting row for this comparison and check thresholds
     foreach my $field (@return_fields) {
 	my $result = $$field;
-
-	## Check thresholds on this field
-	if ((defined($lth{$field})) && ($result < $lth{$field})) {
-	    $to_print = 0;
-	    last
-	    }
-	if ((defined($uth{$field})) && ($result > $uth{$field})) {
-	    $to_print = 0;
-	    last
-	    }
 	
 	## Format the field
 	push @result, sprintf $field_format{$field}, $result;
 	warn join "\t", ";", $field, $result, "\n" if ($verbose >= 3);
     }
-    if ($to_print) {
+
+    ## Check thresholds on this field
+    foreach my $field (keys(%lth)) {
+	if ($$field < $lth{$field}) {
+	    $filtered_out->{$seq1}->{$seq2} = 1;
+#	    last;
+	}
+    }
+    foreach my $field (keys(%uth)) {
+	if ($$field > $uth{$field}) {
+	    $filtered_out->{$seq1}->{$seq2} = 1;
+#	    last;
+	}
+    }
+	
+    ## Print the result for this comparison
+    unless ((scalar(@return_fields) < 1) ||
+	    ($filtered_out->{$seq1}->{$seq2})) {
 	print $out join ("\t", @result), "\n";
+    }
+
+    ## Store the result for the contingency table
+    foreach my $field (@table_fields) {
+	my $table_name = $field."_table";
+	$$table_name->{$seq1}->{$seq2} = $$field;
     }
 }
 
@@ -338,6 +436,17 @@ OPTIONS
 		(specified by -seq1 or -file1) is matched against each
 		pattern of group2.
 
+	-table field
+	       Return a contingency table, where each row corresponds
+	       to one sequence from file 1, each column to a sequence
+	       from file 2, and the cells contain the value of the
+	       specified field.
+	       Supported fields: $supported_table_fields
+
+	-null   null string (default $default_null) displayed in
+                contingency tables when the cell contains a value
+                which does not pass the thresholds.
+
 INPUT FORMAT
     PATTERNS
 	seq1 and seq2 must be DNA sequences (not peptidic). 
@@ -360,31 +469,123 @@ OUTPUT FORMAT
 RETURN FIELDS
        match	number of matching positions
 
-       proba 	probability to observe a random match. The probability of
-                an alignment is the product of probabilities of
-                matching pairs of residues.
+       proba    probability to observe a random match. 
 
-		If one assumes equiprobable nucleotides, the
-		probability of random match is estimated as follows
-		for non-ambiguous and ambiguous nucleotides.
+       		When the simple nucleotide alphabet (A, C, G, T) is
+       		used, the probability of random match is estimated to
+       		1/4: given the letter in the first sequence, the
+       		probability that a random letter would match it is
+       		1/4.
 
-	code	nucleotides	proba	mnemonics
-	---------------------------------------------------------------
-	A			1/4	(Adenine)
-	C			1/4	(Cytosine)
-	G			1/4	(Guanine)
-	T			1/4	(Thymine)
-	R	= A or G	1/2	(puRines)
-	Y	= C or T	1/2	(pYrimidines)
-	W	= A or T	1/2	(Weak hydrogen bonding)
-	S	= G or C	1/2	(Strong hydrogen bonding)
-	M	= A or C	1/2	(aMino group at common position)
-	K	= G or T	1/2	(Keto group at common position)
-	H	= A, C or T	3/4	(not G)
-	B	= G, C or T	3/4	(not A)
-	V	= G, A, C	3/4	(not T)
-	D	= G, A or T	3/4	(not C)
-	N	= G, A, C or T	1	(aNy)
+		Note that this assumes that nucleotides are considered
+		equiprobable.
+
+		The program also scores matches between the
+		degenerated nucleotides defined by the IUPAC
+		commission (http://www.iupac.org/).
+
+		code	nucleotides	mnemonics
+		---------------------------------------------------------
+		A			Adenine
+		C			Cytosine
+		G			Guanine
+		T			Thymine
+		R	= A or G	puRines
+		Y	= C or T	pYrimidines
+		W	= A or T	Weak hydrogen bonding
+		S	= G or C	Strong hydrogen bonding
+		M	= A or C	aMino group at common position
+		K	= G or T	Keto group at common position
+		H	= A, C or T	not G
+		B	= G, C or T	not A
+		V	= G, A, C	not T
+		D	= G, A or T	not C
+		N	= G, A, C or T	aNy)
+
+		The probability of an match between two degenerated
+                nucleotides is calculated with the hypergeometric
+                distribution.
+
+		The underlying probabilistic model is that the two
+		letters to be macthed represent each a subset of the
+		alphabet. The problem can be thought of as an urn with
+		4 balls, each ball representing one possible
+		nucleotide (A, C, G, T).
+
+		For the sake of illustration, let us assume that we
+		want to compare the two IUPAC codes Y (C or T) and M
+		(A or C). in the urn (alphabet), we will label in
+		black the balls (nucleotides) comprised in the first
+		set (C and T). We can now consider the second IUPAC
+		letter as a random selection of 2 balls in this urn,
+		which contains 2 black balls (A, C) and 2 white balls
+		(G, T). Our selection (C and T) contains one black
+		ball. It is thus a match.
+
+		The right tail of the hypergeometric distribution
+		allows us to calculate the probability to observe at
+		least one back ball in a selection of 2 balls,
+		selected at random in an urn with 2 black balls and 2
+		white balls.
+
+                                          c      i  n-i     n
+                   P_value = P(X >= c) = SUM  ( C  C     / C  )
+                                         i=1     m  4-m     4
+
+		Where
+
+		   m   is the number of black balls in the urn
+		       (nucleotides matching the first IUPAC letter)
+
+		   4-m is the number of white balls in the urn 
+		       (nucleotides not matching the first IUPAC
+		       letter)
+
+		   n   is the number of nucleotides matched by the
+		       second IUPAC letter.
+
+		   c = min(n,m) is the maximal number of common
+		       letters between the m nucleotides of the 1st
+		       IUPAC letter and the n nucleotides of the 2nd
+		       IUPAC letter.
+
+                In our example (Y against M), m=2, n=2, c=min(2,2)=2.
+		   P_value=0.83333
+
+		We can check the generality of the formula with some
+		examples : 
+
+		 - a trivial match (e.g. N against A) should have a
+                   P-value of 1. In this case, m=4, n=1, c=min(4,1)=1.
+
+                                           1  0    1
+                   P_value = P(X >= c) =  C  C  / C   = 4*1/4 = 1
+                                           4  0    4
+
+				   
+		 - a simple match between two non-degenerated letters
+                   should have a P-value of 1/4. Indeed, in this case
+                   n=1, m=1, c=min(1,1)=1.
+
+                                           1  0    1
+                   P_value = P(X >= c) =  C  C  / C  = 0.25
+                                           1  3    4
+
+	         - Interestingly, a match between a IUPAC letter
+                   matching 3 nucleotides (e.g. H = A, C or T) letter
+                   another matching 2 nucleotides (e.g. S = G or C)
+                   will have a probability to 1. Indeed, m=3, n=2 and
+                   c=min(3,2)=2, thus:
+
+                                          2      i  2-i    2
+                   P_value = P(X >= c) = SUM  ( C  C    / C  )
+                                         i=1     3  1      4
+
+		   This reflects the fact that it is impossible to
+		   have not a single white ball in the selection, when
+		   we select 2 balls among a set of 3 black and 1
+		   white balls.
+
 
 	weight 	the weight reflects the number of matching positions,
                 with a lower weight for matches between partially
@@ -470,7 +671,9 @@ count-matches options
 -seq2		second sequence for the comparison
 -file1		file containing a first list of sequences 
 -file2		file containing a second list of sequences 
--return		return fields. Supported: $supported_return_fields
+-return	field	return fields. Supported: $supported_return_fields
+-table field    return a contingency table. Supported: $supported_table_fields
+-null           null string (default $NULL)
 -lth            lower threshold on a given field
 -uth            upper threshold on a given field
 -slide	      	find best match by sliding seq2 along seq1
@@ -532,6 +735,14 @@ sub ReadArguments {
 	    ### return fields
 	} elsif ($ARGV[$a] eq "-return") {
 	    push @return_fields, split ",", $ARGV[$a+1];
+	    
+	    ### table fields
+	} elsif ($ARGV[$a] eq "-table") {
+	    push @table_fields, split ",", $ARGV[$a+1];
+	    
+	    ### null string
+	} elsif ($ARGV[$a] eq "-null") {
+	    $NULL = $ARGV[$a+1];
 	    
             #### threshold values
         } elsif ($ARGV[$a] eq "-lth") {
