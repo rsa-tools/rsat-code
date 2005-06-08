@@ -49,7 +49,7 @@ $parameters .= " -i $matrix_file";
 ################################################################
 #### Matrix format
 my $matrix_format = lc($query->param('matrix_format'));
-$parameters .= " -format $matrix_format";
+$parameters .= " -in_format $matrix_format";
 
 ## Return fields
 my @return_fields = ();
@@ -65,7 +65,7 @@ print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ECHO >= 1);
 
 ### execute the command ###
 if ($query->param('output') eq "display") {
-    &PipingWarning();
+#    &PipingWarning();
 
     ### prepare data for piping
     open RESULT, "$command $parameters |";
@@ -81,7 +81,7 @@ if ($query->param('output') eq "display") {
     print '</PRE>';
     close(RESULT);
 
-    &PipingForm();
+#    &PipingForm();
 
     print "<HR SIZE = 3>";
 
@@ -94,32 +94,3 @@ print $query->end_html;
 
 exit(0);
 
-
-################################################################
-#
-# Pipe the result to other commands
-#
-sub PipingForm {
-#    my $genes = `cat $result_file`;
-
-    ### prepare data for piping
-    print <<End_of_form;
-<HR SIZE = 3>
-<TABLE>
-<TR>
-<TD>
-<H3>Next step</H3>
-</TD>
-<TD>
-<FORM METHOD="POST" ACTION="retrieve-seq_form.cgi">
-<INPUT type="hidden" NAME="organism" VALUE="$organism">
-<INPUT type="hidden" NAME="genes" VALUE="selection">
-<INPUT type="hidden" NAME="gene_selection" VALUE="$genes">
-<INPUT type="hidden" NAME="feattype" VALUE="$feattype">
-<INPUT type="submit" value="retrieve sequences">
-</FORM>
-</TD>
-</TR>
-</TABLE>
-End_of_form
-}
