@@ -8,7 +8,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.91 2005/06/12 21:37:36 jvanheld Exp $
+# $Id: oligo-analysis,v 1.92 2005/06/12 22:02:34 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -263,7 +263,7 @@ if ($return{'table'}) {
 
     if ($return{'exp_freq'}) {
 	&CalcExpected();
-#	&GroupRC() if ($group_rc); ## The routine CalcExpFreq 
+#	&GroupRC() if ($group_rc); 
     }
 
     ## Check somte thresholds before calculating other scores
@@ -954,7 +954,7 @@ sub CalcExpected {
 	$patterns{$pattern_seq}->{nb_possible_pos} += $nb_possible_pos;
     }
 
-    ### expected frequency file
+    ### Expected frequency file
     if ($method eq "Frequency file") {    
 	if ($one_var_position) {
 	    foreach $deg_pattern_seq (sort keys %patterns) {
@@ -1094,9 +1094,9 @@ sub CalcExpected {
 		$patterns{$pattern_seq}->{exp_freq} *= $residue_proba{$nt};
 	    }
 	}
-    } 
+    }
     
-    #### correct expected frequencies with pseudo weight
+    #### Correct expected frequencies with pseudo weight
     if ($pseudo_weight > 0) {
 	$pseudo_frequency = $pseudo_weight/$nb_possible_oligo;
 	foreach $pattern_seq (keys %patterns) {
