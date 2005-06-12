@@ -8,7 +8,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.90 2005/06/12 20:53:34 jvanheld Exp $
+# $Id: oligo-analysis,v 1.91 2005/06/12 21:37:36 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -114,7 +114,7 @@ if (@output_fields == ()) { #default output is occurrence numbers
     $return{'exp_freq'};
 }
 if ($method =~  /calibration/i) {
-    $return{'exp_occ'} = 1;
+    $return{exp_occ} = 1;
     $return{'exp_var'} = 1;
     $return{'fitted'} = 1;
 }
@@ -239,7 +239,7 @@ if ($method =~ /calibration/i) {
 #### open output stream
 $out = &OpenOutputFile($outputfile);
 
-&CountOligo();
+&CountOligos();
 
 if ($return{'table'}) {
     ## already printed
@@ -267,10 +267,10 @@ if ($return{'table'}) {
     }
 
     ## Check somte thresholds before calculating other scores
-    &CheckThresholds("exp_freq") if ($return{exp_freq}); ## Check thresholds on expected frequencies
+    &CheckThresholds("exp_freq") if ($return{'exp_freq'}); ## Check thresholds on expected frequencies
     &CheckThresholds("mseq") if ($return{mseq}); ## Check thresholds on matching sequences
     &CheckThresholds("occ") if ($return{occ}); ## Check thresholds on occurrences
-    &CheckThresholds("observed_freq") if ($return{exp_freq}); ## Check thresholds on frequencies
+    &CheckThresholds("observed_freq") if ($return{'exp_freq'}); ## Check thresholds on frequencies
 
 #    die join ("\t", "HELLO", $pattern_seq, sort (keys( %patterns)), scalar(keys(%patterns)));
 
@@ -310,7 +310,7 @@ exit(0);
 
 ################################################################
 #### Read input sequences and count oligomers ####
-sub CountOligo {
+sub CountOligos {
     if ($verbose >= 2) {
 	&RSAT::message::TimeWarn("Counting oligo frequencies");
     }
@@ -373,24 +373,23 @@ sub CountOligo {
 	    }
 	}
 	
-	#### count oligomers ####
+	#### Count oligomers ####
 	$offset = 0;
 	my $current_pos = $last_pos;
 	my $chunk=100000;
 	
-	#### the sequence is read from the end to the start, in order to progressively release memory
+	#### The sequence is read from the end to the start, in order to progressively release memory
 	while ($current_pos >=0) {
 	    if ($verbose >= 3 && (($current_pos%$chunk) == 0) && ($current_pos > 0)) {
 		$current_length = length($current_seq);
 		&RSAT::message::TimeWarn("$current_id\tremain to read: $current_pos");
 	    }
 	    
-	    ### occurrences
+	    ### Occurrences
 	    $pattern_seq = lc(substr($current_seq,$current_pos,$oligo_length));
 	    chop $current_seq;  ### eat the tail to release memory
 
 	    #### prevent overlapping matches
-#	    if (0) {
 	    if ($noov eq "-noov") {
 		if ((&IsNatural($last_pos{$pattern_seq})) && 
 		    ($last_pos{$pattern_seq} - $current_pos < $min_overlap_dist)) {
@@ -426,10 +425,12 @@ sub CountOligo {
 		    $current_mseq{$pattern_seq} = 1;
 		}
 	    }
+
+	    ## Step to the previous position in the sequence
 	    $current_pos--;
 	}
 
-	#### update the counts of first occurrences
+	#### Update the counts of matching sequences (first occurrences)
 	if ($return{'mseq'}) {
 	    foreach $pattern_seq (keys %current_mseq) {
 		$patterns{$pattern_seq}->{mseq} += 1;
@@ -446,7 +447,7 @@ sub CountOligo {
 	undef %last_pos;
 
 	################################################################
-	#### Specific treatmeent for occurrence table
+	#### Specific treatment for occurrence table
 	if ($return{'table'}) {
 	    ## Make sure that all patterns are considered
 	    foreach my $pattern_seq (@possible_oligos) {
@@ -542,8 +543,8 @@ sub SumReverseComplements {
 
 	warn ("; Summing occurrences\t", $pattern_seq, "\t", $rc_pattern_seq, "\n") if ($verbose >= 4);
 	if ($rc_pattern_seq eq $pattern_seq) {
-	    $patterns{$pattern_seq}->{'remark'} = "palindrom";
 	    #### don't count twice the reverse palindroms !!!!!!!
+	    $patterns{$pattern_seq}->{'remark'} = "palindrom";
 	    $occ_2strands{$pattern_seq} = $patterns{$pattern_seq}->{occ};
 	    $overlaps_2strands{$pattern_seq} = $patterns{$pattern_seq}->{overlaps};
 	} else {
@@ -942,7 +943,7 @@ sub NbPossibleOligo {
 }
 
 ################################################################
-#### expected oligomer frequencies
+#### Expected oligomer frequencies
 sub CalcExpected {
     if ($verbose >= 2) {
 	&RSAT::message::TimeWarn("Calculating expected frequencies");
@@ -952,7 +953,6 @@ sub CalcExpected {
     foreach $pattern_seq (sort keys %patterns) {
 	$patterns{$pattern_seq}->{nb_possible_pos} += $nb_possible_pos;
     }
-
 
     ### expected frequency file
     if ($method eq "Frequency file") {    
@@ -968,8 +968,11 @@ sub CalcExpected {
 	    undef %deg_exp_freq;
 	}
 	
-    } elsif ($method eq "Markov chain") {  ### Markov chain
-	### expected frequency according to Markov chain model
+
+	
+	################################################################
+	## Calculate expected frequencies according to a Markov chain model
+    } elsif ($method eq "Markov chain") {
 	foreach $pattern_seq (sort keys %patterns) {
 	    $patterns{$pattern_seq}->{exp_freq} = 1;
 	    for $offset (0..($oligo_length - $markov_order -1)) {
@@ -982,8 +985,10 @@ sub CalcExpected {
 	    }
 	}
 
-    } elsif ($method =~ /calibration/i) {  ### calibration file
-	### calculate expected frequencies from the expected occurrences
+	################################################################
+	## Calculate expected frequencies from the expected
+	## occurrences in a calibration file
+    } elsif ($method =~ /calibration/i) {  
 	foreach $pattern_seq (sort keys %patterns) {
 	    if ($patterns{$pattern_seq}->{nb_possible_pos} > 0) {
 		$patterns{$pattern_seq}->{exp_freq} = $patterns{$pattern_seq}->{exp_occ}/$patterns{$pattern_seq}->{nb_possible_pos};
@@ -999,7 +1004,11 @@ sub CalcExpected {
 #  		       );
 	}
 
-    } elsif ($method eq "lexicon") {  ### Markov chain
+
+	################################################################
+	## Lexicon method (non-overlapping subdivisions of an oligo
+	## into 2 sub-oligos)
+    } elsif ($method eq "lexicon") {  
 	my $l  = 1;
 	foreach $pattern_seq (@alphabet ) {
 #	    print join "\t", $l, $pattern_seq, $sub_word[$l]{$pattern_seq}->{observed_freq}, $sub_word[$l]{$pattern_seq}->{occ}, "\n";
@@ -1060,9 +1069,9 @@ sub CalcExpected {
 	}
 
     } else {    
-	### calculate the expected oligo frequency with 
-	#### independent nucleotide probabilities 
-	#### calculate probability for ambiguous nucleotide codes  ####
+	################################################################
+	## Independent nucleotide probabilities 
+	## calculate probability for ambiguous nucleotide codes  ####
 	$method = "alphabet";
 	if ($seq_type eq "DNA") {
 	    $residue_proba{'r'} = $residue_proba{'a'}+$residue_proba{'g'};
@@ -1114,7 +1123,8 @@ sub CalcExpected {
     #### expected number of occurrences and matching sequences ####
     foreach $pattern_seq (sort keys %patterns) {
 	unless ($method =~ /calibration/i) {
-	    $patterns{$pattern_seq}->{exp_occ} = $patterns{$pattern_seq}->{exp_freq} * $patterns{$pattern_seq}->{nb_possible_pos}; 
+#	    $patterns{$pattern_seq}->{exp_occ} = $patterns{$pattern_seq}->{exp_freq} * $patterns{$pattern_seq}->{nb_possible_pos}; 
+	    $patterns{$pattern_seq}->{exp_occ} = $patterns{$pattern_seq}->{exp_freq} * $sum_noov; 
 	}
 	if ($return{'mseq'}) {
 	    ### expected number of matching sequences ###
@@ -1293,12 +1303,12 @@ sub CalcProba {
 	    ## Left tail
 	    $occ_from = 0;
 	    $occ_to = $patterns{$pattern_seq}->{occ};
-	    $patterns{$pattern_seq}->{test} = "under";
+	    $patterns{$pattern_seq}->{test} = "left";
 	} else {
 	    ## Right tail
 	    $occ_from = $patterns{$pattern_seq}->{occ};
 	    $occ_to = $patterns{$pattern_seq}->{nb_possible_pos};	    
-	    $patterns{$pattern_seq}->{test} = "over";
+	    $patterns{$pattern_seq}->{test} = "right";
 	}
 
 	if ($method =~ /calibration/i) {
