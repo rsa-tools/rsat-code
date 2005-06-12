@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: dna-pattern,v 1.38 2005/05/12 05:25:09 jvanheld Exp $
+# $Id: dna-pattern,v 1.39 2005/06/12 21:39:13 jvanheld Exp $
 #
 # Time-stamp: <2003-08-13 12:16:03 jvanheld>
 #
@@ -1254,30 +1254,34 @@ ARGUMENTS
 	-sort	(with -top only)
 		sort sequences according to their top score
 PATTERN FORMATS
-	PATTERN SEQUENCE FORMAT
-	The standard degenerate nucleotide code of the IUPAC-IUB commission 
-	is supported (see http://www.chem.qmw.ac.uk/iupac/misc/naseq.html for 
-	complete information).
+
+	PATTERN SEQUENCE
+
+	The standard degenerate nucleotide code of the IUPAC-IUB
+	commission is supported (http://www.iupac.org/, see
+	http://www.chem.qmw.ac.uk/iupac/misc/naseq.html for complete
+	information).
+
 	The pattern sequence should thus only contain the following characters:
-		A			(Adenine)
-		C			(Cytosine)
-		G			(Guanine)
-		T			(Thymine)
-		R	= A or G        (puRines)
-		Y	= C or T        (pYrimidines)
-		W	= A or T        (Weak hydrogen bonding)
-		S	= G or C        (Strong hydrogen bonding)
-		M	= A or C        (aMino group at common position)
-		K	= G or T        (Keto group at common position)
-		H	= A, C or T     (not G)
-		B	= G, C or T     (not A)
-		V	= G, A, C       (not T)
-		D	= G, A or T     (not C)
-		N	= G, A, C or T  (aNy)
+		A			Adenine
+		C			Cytosine
+		G			Guanine
+		T			Thymine
+		R	= A or G        puRines
+		Y	= C or T        pYrimidines
+		W	= A or T        Weak hydrogen bonding
+		S	= G or C        Strong hydrogen bonding
+		M	= A or C        aMino group at common position
+		K	= G or T        Keto group at common position
+		H	= A, C or T     not G
+		B	= G, C or T     not A
+		V	= G, A, C       not T
+		D	= G, A or T     not C
+		N	= G, A, C or T  aNy
 	Upper and lower case are considered equivalent.
-	
-	Patterns can be either entered directly by the user, or listed in a 
-	file.
+
+	Patterns can either be entered directly by the user, or listed
+	in a file.
 
         The pattern can also contain regular expression elements:
         - GAT\[TA\]AG means \"GATAAG or GATTAG\" (equivalent to GATWAG).
