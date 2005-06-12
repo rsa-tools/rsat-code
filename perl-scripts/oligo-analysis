@@ -1,13 +1,10 @@
 #!/usr/bin/perl
 
-## CVS: fixed the options -grouprc and -nogrouprc (a sort of patch, not very legant, I should revisit all this some time)
-## CVS: added the option -two_tail to test over- and under-representation simultaneously
- 
 ## BUG: with markov order 0, exp freq of mononucleotides are set to 0. should be the observed frequency
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.93 2005/06/12 22:27:32 jvanheld Exp $
+# $Id: oligo-analysis,v 1.94 2005/06/12 22:28:37 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
