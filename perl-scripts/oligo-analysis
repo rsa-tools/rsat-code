@@ -8,7 +8,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.89 2005/05/29 09:15:57 jvanheld Exp $
+# $Id: oligo-analysis,v 1.90 2005/06/12 20:53:34 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -810,7 +810,7 @@ sub CalcSubWordFrequencies {
 }
 
 ################################################################
-#### calculate relative frequencies if requested
+#### Calculate relative frequencies
 sub CalcFrequencies {
     if ($verbose >= 2) {
 	&RSAT::message::TimeWarn("Calculating relative frequencies");
@@ -827,8 +827,14 @@ sub CalcFrequencies {
     }
     
     #### relative frequencies
-    foreach $pattern_seq (keys %patterns) {
-	$patterns{$pattern_seq}->{observed_freq} = $patterns{$pattern_seq}->{occ}/$sum_occurrences;
+    if ($noov) {
+	foreach $pattern_seq (keys %patterns) {
+	    $patterns{$pattern_seq}->{observed_freq} = $patterns{$pattern_seq}->{occ}/$sum_noov;
+	}
+    } else {
+	foreach $pattern_seq (keys %patterns) {
+	    $patterns{$pattern_seq}->{observed_freq} = $patterns{$pattern_seq}->{occ}/$sum_occurrences;
+	}
     }
 
     #### frequency of matching sequences
