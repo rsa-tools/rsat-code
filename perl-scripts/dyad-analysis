@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: dyad-analysis,v 1.19 2005/04/23 20:44:40 rsat Exp $
+# $Id: dyad-analysis,v 1.20 2005/06/13 00:46:25 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 23:46:08 jvanheld>
 #
@@ -151,6 +151,13 @@ eval {
     &CalcExpectedOcc() if ($return{exp_occ}); ### calculate expected occurrences
 #    &CalcRatio() if ($return{ratio}); ### calculate obs/exp ratio
     &CalcProba() if ($return{proba}); ### calculate probabilities
+    if ($sum_strands) {
+	if ($group_rc) {
+	    &GroupRC();
+	} else {
+	    &UngroupRC();
+	}
+    }
     &PrintResult(); ### print the result
 
     ###### verbose
@@ -200,9 +207,10 @@ exit(0);
 ################################################################
 #### print header line for the output file
 sub PrintHeaderLine {
-    $col_description{"dyad_seq"} = "dyad sequence";
-    $col_description{"dyad_sequence"} = "dyad sequence";
-    $col_description{"dyad_identifier"} = "dyad identifier";
+    $col_description{"seq"} = "dyad sequence";
+    $col_description{"sequence"} = "dyad sequence";
+    $col_description{"id"} = "dyad identifier";
+    $col_description{"identifier"} = "dyad identifier";
     $col_description{"dyad_identifier       "} = "dyad identifier";
     $col_description{"dyad_id"} = "dyad identifier";
     $col_description{"observed_freq"} = "observed relative frequency"; 
@@ -226,13 +234,18 @@ sub PrintHeaderLine {
     @out_col = ();
 
     ### print header line ###
+    my $dyad_len = 2*$oligo_length+5;
+    my $dyad_id_len = $dyad_len;
     if ($sum_strands) {
-	push @out_col, "dyad_sequence";
-	if ($sum_strands) {
-	    push @out_col, "dyad_identifier       ";
+	$dyad_id_len = 2*$dyad_len + 1;
+    } 
+    if ($sum_strands) {
+	if ($dyad_len < 8) {
+	    push @out_col, sprintf("%-".(${dyad_len}-1)."s", "seq");
 	} else {
-	    push @out_col, "dyad_identifier";
+	    push @out_col, sprintf("%-".(${dyad_len}-1)."s", "sequence");
 	}
+	push @out_col, sprintf("%-${dyad_id_len}s", "identifier");
     } else {
 	push @out_col, "dyad_seque";
 	push @out_col, "dyad_ident";    
@@ -385,10 +398,11 @@ sub PrintResult {
 
 
 ################################################################
-#### calculate expected frequencies
+#### Calculate expected frequencies
 sub CalcExpectedFreq {
 
-    #### monad expected frequencies
+    #### Calculate expected dyad frequencies on the basis of monad
+    #### frequencies provided in an external file
     if ($mncf) {
 	### read expected monad frequencies from a file
 	($exp) = &OpenInputFile($exp_freq_file);
@@ -404,8 +418,9 @@ sub CalcExpectedFreq {
 	}
 	close $exp;
 	
-    } else { ### use observed monad frequencies
-
+	## Use monad frequencies observed in the input file to
+	## estimated expected monad frequencies
+    } else { 
 	foreach $oligo (keys %oligo) {
 	    $oligo{$oligo}->{exp_freq} = $oligo{$oligo}->{occ}/$sum_oligo_count;
 	}
@@ -417,24 +432,18 @@ sub CalcExpectedFreq {
     if ($exp_freq_file) {
 #	&ReadExpectedFrequencies($exp_freq_file, $sum_rc);
 	&ReadExpectedFrequencies($exp_freq_file);
-
 	
-    ################################################################
-    ### calculate expected dyad freq on basis of monad frequencies 
-    ### observed in the input sequence
+	
+	################################################################
+	## Calculate expected dyad freq on basis of monad frequencies 
+	## observed in the input sequence.
     } else {
-	foreach $oligo1 (keys %oligo) {
-	    my $freq1 = $oligo{$oligo1}->{exp_freq};
+	foreach my $oligo1 (keys %oligo) {
 	    foreach my $spacing (@spacing_list) {
 		foreach my $oligo2 (&SecondElement($oligo1)) {
 		    ### build the dyad
 		    my $pattern_seq= "${oligo1}n\{$spacing\}${oligo2}";
-		    my $freq2 = $oligo{$oligo2}->{exp_freq};
-		    if ($sp_group) {
-			$patterns{$pattern_seq}->{exp_freq} = $freq1*$freq2*($max_spacing-$min_spacing + 1);
-		    } else {
-			$patterns{$pattern_seq}->{exp_freq} = $freq1*$freq2;
-		    }
+		        $patterns{$pattern_seq}->{exp_freq} = &CalcExpFreqFromMondads($oligo1, $oligo2);
 		}
 	    }	
 	}
@@ -442,115 +451,158 @@ sub CalcExpectedFreq {
 }
 
 
-#### sum reverse complement occurrences
+################################################################
+## Calculate expected frequency from monad frequencies
+sub CalcExpFreqFromMondads {
+    my ($oligo1, $oligo2) = @_;
+    my $oligo1_rc, $oligo2_rc;
+    my $freq1_rc, $freq2_rc;
+
+    my $freq1 = $oligo{$oligo1}->{exp_freq};
+    if ($sum_strands) {
+	$oligo1_rc = &SmartRC($oligo1);
+	$freq1_rc = $oligo{$oligo1_rc}->{exp_freq};
+    }
+    my $freq2 = $oligo{$oligo2}->{exp_freq};
+    if ($sum_strands) {
+	$oligo2_rc = &SmartRC($oligo2);
+	$freq2_rc = $oligo{$oligo2_rc}->{exp_freq};
+    }
+    my $exp_freq =  $freq1*$freq2;
+    
+    if (($sum_strands) && 
+	($oligo1 ne $oligo2_rc)) {
+	$exp_freq += $freq1_rc*$freq2_rc;
+    }
+    if ($sp_group) {
+	$exp_freq *= ($max_spacing-$min_spacing + 1);
+    }
+#    &RSAT::message::Debug("HELLO", $freq1, $freq2, $freq1_rc, $freq2_rc, $exp_freq);
+    return ($exp_freq);
+}
+
+################################################################
+## Sum occurrences of reverse complementary dyads
 sub SumReverseComplements {
-  if ($verbose >= 2) {
-    $current_time = `date '+%H:%M:%S'`;
-    chomp($current_time);
-    warn ";\t$current_time\tSumming occurrences of reverse complement pairs\n";
-  }
-  
-  #### sum dyad occurrences
-  foreach $pattern_seq (keys %patterns) {
-    $rc_dyad = &SmartRC($pattern_seq);
-    $dyad_occ_2str{$rc_dyad} = $dyad_occ_2str{$pattern_seq} =  $patterns{$pattern_seq}->{occ} + $patterns{$rc_dyad}->{occ};
-    $overlaps_2str{$rc_dyad} = $overlaps_2str{$pattern_seq} =  $patterns{$pattern_seq}->{overlaps} + $patterns{$rc_dyad}->{overlaps};
-  }
-  foreach $pattern_seq (keys %patterns) {
-    $patterns{$pattern_seq}->{occ} = $dyad_occ_2str{$pattern_seq};
-    $patterns{$pattern_seq}->{overlaps} = $overlaps_2str{$pattern_seq};
-  }
-  undef %patterns_occ_2str;
-  undef %overlaps_2str;
+    if ($verbose >= 2) {
+	$current_time = `date '+%H:%M:%S'`;
+	chomp($current_time);
+	warn ";\t$current_time\tSumming occurrences of reverse complement pairs\n";
+    }
+    
+    #### Sum dyad occurrences
+    foreach my $pattern_seq (keys %patterns) {
+	my $rc_dyad = &SmartRC($pattern_seq);
+	if ($rc_dyad eq $pattern_seq) {
+	    #### don't count twice the reverse palindroms !!!!!!!
+	    $patterns{$pattern_seq}->{'remark'} = "inv_rep";
+	    $dyad_occ_2str{$rc_dyad} = $patterns{$pattern_seq}->{occ};
+	    $overlaps_2str{$rc_dyad} = $patterns{$pattern_seq}->{overlaps} ;
+	} else {
+	    $dyad_occ_2str{$rc_dyad} = $dyad_occ_2str{$pattern_seq} =  $patterns{$pattern_seq}->{occ} + $patterns{$rc_dyad}->{occ};
+	    $overlaps_2str{$rc_dyad} = $overlaps_2str{$pattern_seq} =  $patterns{$pattern_seq}->{overlaps} + $patterns{$rc_dyad}->{overlaps};
+	}
+    }
+    foreach my $pattern_seq (keys %patterns) {
+	$patterns{$pattern_seq}->{occ} = $dyad_occ_2str{$pattern_seq};
+	$patterns{$pattern_seq}->{overlaps} = $overlaps_2str{$pattern_seq};
+    }
+    undef %patterns_occ_2str;
+    undef %overlaps_2str;
+    
+    
+    #### Sum oligo occurrences
+    foreach my $oligo_seq (sort keys %oligo) {
+	my $rc_oligo = &SmartRC($oligo_seq);
+	if ($rc_oligo eq $pattern_seq) {
+	    $patterns{$pattern_seq}->{'remark'} = "palindrom";
+	    $oligo_occ_2str{$rc_oligo} = $oligo{$oligo_seq}->{occ};
+	} else {
+	    $oligo_occ_2str{$rc_oligo} = $oligo_occ_2str{$oligo_seq} =  $oligo{$oligo_seq}->{occ} + $oligo{$rc_oligo}->{occ};
+	}
+    }
+    foreach $oligo_seq (sort keys %oligo) {
+	$oligo{$oligo_seq}->{occ} = $oligo_occ_2str{$oligo_seq};
+    }
+    $sum_oligo_count *= 2;
+    undef %oligo_occ_2str;
 
-
-  #### sum oligo occurrences
-  foreach $oligo_seq (sort keys %oligo) {
-    $rc_oligo = lc(&ReverseComplement($oligo_seq));
-    $oligo_occ_2str{$rc_oligo} = $oligo_occ_2str{$oligo_seq} =  $oligo{$oligo_seq}->{occ} + $oligo{$rc_oligo}->{occ};
-  }
-  foreach $oligo_seq (sort keys %oligo) {
-    $oligo{$oligo_seq}->{occ} = $oligo_occ_2str{$oligo_seq};
-  }
-  $sum_oligo_count *= 2;
-  undef %oligo_occ_2str;
+    &GroupRC();
 }
 
 
-### calculate observed dyad frequencies ###
+################################################################
+## Calculate observed dyad frequencies
 sub CalcFrequencies {
-  foreach $spacing (@spacing_list) {
-    ### frequencies are calculated for each spacing value independently
-    ### sum occurrences for this spacing value
-    foreach $oligo1 (keys %oligo) {
-      foreach $oligo2 (&SecondElement($oligo1)) {
-	if ($sp_group) {
-	  $pattern_seq = "${oligo1}n\{$min_spacing,$max_spacing\}${oligo2}";
-	} else {
-	  $pattern_seq = "${oligo1}n\{$spacing\}${oligo2}";
-	}
-	$dyad_occ_sum{$spacing} += $patterns{$pattern_seq}->{occ};
-      }
-    }
-    foreach $oligo1 (keys %oligo) {
-      foreach $oligo2 (&SecondElement($oligo1)) {
-	if ($sp_group) {
-	  $pattern_seq = "${oligo1}n\{$min_spacing,$max_spacing\}${oligo2}";
-	} else {
-	  $pattern_seq = "${oligo1}n\{$spacing\}${oligo2}";
-	}
-	die "Error : sum of occurrences = 0 for spacing $spacing\n" if ($dyad_occ_sum{$spacing} == 0);
-	unless (defined($patterns{$pattern_seq}->{occ})) {
-	  $patterns{$pattern_seq}->{occ} = 0;
-	}
-	$patterns{$pattern_seq}->{obs_freq} = $patterns{$pattern_seq}->{occ}/$dyad_occ_sum{$spacing};
-      }
-    }
-  }
-}  ### CalcFrequencies
-
-sub CalcExpectedOcc {
-    foreach $oligo1 (sort keys %oligo) {
-	foreach $spacing (@spacing_list) {
+    foreach $spacing (@spacing_list) {
+	### frequencies are calculated for each spacing value independently
+	### sum occurrences for this spacing value
+	foreach $oligo1 (keys %oligo) {
 	    foreach $oligo2 (&SecondElement($oligo1)) {
+		if ($sp_group) {
+		    $pattern_seq = "${oligo1}n\{$min_spacing,$max_spacing\}${oligo2}";
+		} else {
+		    $pattern_seq = "${oligo1}n\{$spacing\}${oligo2}";
+		}
+		$dyad_occ_sum{$spacing} += $patterns{$pattern_seq}->{occ};
+	    }
+	}
+	foreach $oligo1 (keys %oligo) {
+	    foreach $oligo2 (&SecondElement($oligo1)) {
+		if ($sp_group) {
+		    $pattern_seq = "${oligo1}n\{$min_spacing,$max_spacing\}${oligo2}";
+		} else {
+		    $pattern_seq = "${oligo1}n\{$spacing\}${oligo2}";
+		}
+		die "Error : sum of occurrences = 0 for spacing $spacing\n" if ($dyad_occ_sum{$spacing} == 0);
+		unless (defined($patterns{$pattern_seq}->{occ})) {
+		    $patterns{$pattern_seq}->{occ} = 0;
+		}
+		$patterns{$pattern_seq}->{obs_freq} = $patterns{$pattern_seq}->{occ}/$dyad_occ_sum{$spacing};
+	    }
+	}
+    }
+
+}  ### /CalcFrequencies
+
+
+################################################################
+## Calculate expected occurrences
+sub CalcExpectedOcc {
+    foreach my $spacing (@spacing_list) {
+	foreach my $oligo1 (sort keys %oligo) {
+	    foreach my $oligo2 (&SecondElement($oligo1)) {
 		### build the dyad
 		my $pattern_seq= "${oligo1}n\{$spacing\}${oligo2}";
 		next unless (defined($patterns{$pattern_seq}->{occ})); 
   		### calculate expected occurrences
-  		if ($noov) {
-  		    $patterns{$pattern_seq}->{exp_occ} =  $patterns{$pattern_seq}->{exp_freq} * 
-  			($nb_valid_pos - ($min_overlap_dist - 1) * $patterns{$pattern_seq}->{occ});
-  		} else {
-  		    $patterns{$pattern_seq}->{exp_occ} =  $patterns{$pattern_seq}->{exp_freq}*$nb_valid_pos;
-  		}
+#  		if ($noov) {
+#  		    $patterns{$pattern_seq}->{exp_occ} =  $patterns{$pattern_seq}->{exp_freq} * 
+#  			($dyad_occ_sum{$spacing} - ($min_overlap_dist{$spacing} - 1) * $patterns{$pattern_seq}->{occ});
+#  		} else {
+  		    $patterns{$pattern_seq}->{exp_occ} =  $patterns{$pattern_seq}->{exp_freq}*${dyad_occ_sum{$spacing}};
+#  		}
 	    }
 	}
     }
 }
 
-### calculate dyad probabilities
+## ##############################################################
+## Calculate dyad probabilities
 sub CalcProba {
-    foreach $oligo1 (sort keys %oligo) {
-	foreach $spacing (@spacing_list) {
-	    foreach $oligo2 (&SecondElement($oligo1)) {
+    foreach my $spacing (@spacing_list) {
+	foreach my $oligo1 (sort keys %oligo) {
+	    foreach my $oligo2 (&SecondElement($oligo1)) {
 		### build the dyad
 		my $pattern_seq= "${oligo1}n\{$spacing\}${oligo2}";
 		next unless (defined($patterns{$pattern_seq}->{occ})); 
 		if ($sum_strands) {
-		    $rc_dyad = &SmartRC($pattern_seq);
-		    if (($group_rc) &&($rc_dyad lt $pattern_seq)) {
+		    $rc_pattern_seq = &SmartRC($pattern_seq);
+		    if (($group_rc) &&($rc_pattern_seq lt $pattern_seq)) {
 			delete $patterns{$pattern_seq};
 			next;
 		    }
 		}
-		
-#  		### calculate expected occurrences
-#  		if ($noov) {
-#  		    $patterns{$pattern_seq}->{exp_occ} =  $patterns{$pattern_seq}->{exp_freq} * 
-#  			($nb_possible_pos - ($min_overlap_dist - 1) * $patterns{$pattern_seq}->{occ});
-#  		} else {
-#  		    $patterns{$pattern_seq}->{exp_occ} =  $patterns{$pattern_seq}->{exp_freq}*$nb_possible_pos;
-#  		}
 		
 		### detect repeats ###
 		if (($sum_strands) && (&Palindromic($pattern_seq))) {
@@ -562,20 +614,15 @@ sub CalcProba {
 		
 		#### check expected frequency
 		if ($patterns{$pattern_seq}->{exp_freq} <= 0) {
-
-		    #### expected frequency might not be defined if
+		    
+		    #### Expected frequency might not be defined if
 		    #### max_spacing is > than the max spacing of the
 		    #### expected frequency file
 		    if ($max_spacing >= 20) {
 			#### calculate expected frequency oin the basis of monad frequencies
-			my $freq1 = $oligo{$oligo1}->{exp_freq};
-			my $freq2 = $oligo{$oligo2}->{exp_freq};
-			if ($sp_group) {
-			    $patterns{$pattern_seq}->{exp_freq} = $freq1*$freq2*($max_spacing-$min_spacing + 1);
-			} else {
-			    $patterns{$pattern_seq}->{exp_freq} = $freq1*$freq2;
-			}
-			    $patterns{$pattern_seq}->{remark} = "monad exp freq ".$patterns{$pattern_seq}->{remark};
+			$patterns{$pattern_seq}->{exp_freq} = &CalcExpFreqFromMonads($oligo1, $oligo2);
+			$patterns{$pattern_seq}->{remark} = "monad exp freq ".$patterns{$pattern_seq}->{remark};
+
 		    } else {
 			&Warning ("Expected frequency must be > 0 for dyad\t$pattern_seq\t$patterns{$pattern_seq}->{exp_freq}\n");
 			delete $patterns{$pattern_seq};
@@ -597,11 +644,11 @@ sub CalcProba {
 		
 		### calculate occurrence probability ####
 		if ($return{proba}) {
-		    if (($sum_strands) && (&Palindromic($pattern_seq))) {
-			$patterns{$pattern_seq}->{occ_proba} =  &binomial_boe($patterns{$pattern_seq}->{exp_freq},$nb_valid_pos/2,$patterns{$pattern_seq}->{occ}/2);
-		    } else {
+#		    if (($sum_strands) && (&Palindromic($pattern_seq))) {
+#			$patterns{$pattern_seq}->{occ_proba} =  &binomial_boe($patterns{$pattern_seq}->{exp_freq},$nb_valid_pos/2,$patterns{$pattern_seq}->{occ}/2);
+#		    } else {
 			$patterns{$pattern_seq}->{occ_proba} =  &binomial_boe($patterns{$pattern_seq}->{exp_freq},$nb_valid_pos,$patterns{$pattern_seq}->{occ});
-		    }
+#		    }
 		    
 		    ### calculate occurrence significance
 		    $patterns{$pattern_seq}->{occ_E} =  $nb_possible_dyads*$patterns{$pattern_seq}->{occ_proba};
@@ -1242,18 +1289,18 @@ sub PrintVerbose {
 }
 
 ################################################################
-#### read sequences and count dyads
+#### Read sequences and count dyads
 sub CountDyads {
     ($in, $input_dir) = &OpenInputFile($inputfile);
     $sequence_number = 0;
     while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $input_format, $input_dir, $seq_type)) &&
        (($current_seq ne "") || ($current_id ne ""))) {
 	
-	### remove tabs and blank spaces ###    
+	### Remove tabs and blank spaces
 	$current_seq = &FoldSequence($current_seq,0);
 	$current_seq = &CleanDNA($current_seq) if ($seq_type eq "DNA");
 	
-	### statistics about sequences ###
+	### Statistics about sequences
 	$sequence_number++;  
 
 	if ($verbose >=2) {
@@ -1266,14 +1313,12 @@ sub CountDyads {
 	$id_list[$sequence_number] = $current_id;
 	$seq_length[$sequence_number] = length($current_seq);
 	$sum_seq_length += $seq_length[$sequence_number];
-	$new_pos_nb =  max(0,$seq_length[$sequence_number] - 2*$oligo_length - $min_spacing + 1); ### cannot be negative ven if new seq is shorter than dyad length
-	if ($sum_strands) {
-	    $new_pos_nb *= 2;
-	}
+	
+	## cannot be negative ven if new seq is shorter than dyad length
+	$new_pos_nb =  max(0,$seq_length[$sequence_number] - 2*$oligo_length - $min_spacing + 1); 
 	$nb_possible_pos += $new_pos_nb if ($new_pos_nb > 0); 
 
-
-	#### count oligonucleotides and dyads
+	#### Count monads and dyads
 	$last_pos = $seq_length[$sequence_number] - $oligo_length;
 	$chunk = 10000;
 	$pos1 = 0;
@@ -1319,7 +1364,7 @@ sub CountDyads {
 	    foreach $spacing ($min_spacing..$max_spacing) {
 		$pos2 = $pos1 + $oligo_length + $spacing;
 		#      $min_overlap_dist = $oligo_length;
-		$min_overlap_dist = 2*$oligo_length + $spacing;
+		$min_overlap_dist{$spacing} = 2*$oligo_length + $spacing;
 		
 		if ($pos2 <= $last_pos) {
 		    $oligo2 = lc(substr($current_seq,$pos2,$oligo_length));
@@ -1346,15 +1391,15 @@ sub CountDyads {
 		    if ($noov) {
 			$dist = $pos1 - $last_pos{$pattern_seq};
 			if  ((&IsNatural($last_pos{$pattern_seq})) &&
-			     ($dist < $min_overlap_dist)) {
+			     ($dist < $min_overlap_dist{$spacing})) {
 			    ### new position can overlap with either the first of the second element of the previous dyad occurrence
 			    $patterns{$pattern_seq}->{overlaps}++;
 			    next;
 			} 
 			$last_pos{$pattern_seq} = $pos1;
 			if ($sum_strands) {
-			    $rc_dyad = &SmartRC($pattern_seq);
-			    $last_pos{$rc_dyad} = $pos1;
+			    $rc_pattern_seq = &SmartRC($pattern_seq);
+			    $last_pos{$rc_pattern_seq} = $pos1;
 			} 
 		    }
 		    $patterns{$pattern_seq}->{occ}++;
