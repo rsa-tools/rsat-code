@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.94 2005/06/12 22:28:37 jvanheld Exp $
+# $Id: oligo-analysis,v 1.95 2005/06/16 06:18:09 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -642,33 +642,6 @@ sub SumReverseComplementsDistrib {
     }
 }
 
-################################################################
-#### when grouping occurrences with their reverse complement, 
-#### only retain one of each pair. 
-sub GroupRC {
-    warn ("; Grouping pairs of reverse complements\n"), "\n" if ($verbose >= 2);
-    foreach $pattern_seq (keys %patterns) {
-	$rc_pattern_seq = &SmartRC($pattern_seq);
-	warn ("; Grouping reverse complements\t", $pattern_seq, "\t", $rc_pattern_seq, "\n") if ($verbose >= 4);
-	if ($rc_pattern_seq gt $pattern_seq) { ### only suppress one oligo from the pair
-	    delete $patterns{$rc_pattern_seq};
-	}
-    }
-}
-
-################################################################
-#### when grouping occurrences with their reverse complement, 
-#### only retain one of each pair. 
-sub UngroupRC {
-    warn ("; Reporting both elements of reverse complements pairs\n"), "\n" if ($verbose >= 2);
-    foreach $pattern_seq (keys %patterns) {
-	$rc_pattern_seq = &SmartRC($pattern_seq);
-	warn ("; Ungrouping reverse complements\t", $pattern_seq, "\t", $rc_pattern_seq, "\n") if ($verbose >= 4);
-	if ($rc_pattern_seq gt $pattern_seq) { ### only suppress one oligo from the pair
-	    $patterns{$rc_pattern_seq} = $patterns{$pattern_seq} ;
-	}
-    }
-}
 
 ################################################################
 #### check threshold on some parameter
@@ -785,7 +758,7 @@ sub CalcSubWordFrequencies {
 #     }
 
     ## Report subword occurrences ad frequencies
-    if ($verbose >= 0) {
+    if ($verbose >= 4) {
 	for $w (1..$oligo_length-1) {
 	    foreach $pattern_seq (sort keys %{$sub_word[$w]}) {
 		&RSAT::message::Debug( ";",

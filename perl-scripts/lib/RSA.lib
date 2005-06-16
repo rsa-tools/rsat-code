@@ -1206,6 +1206,34 @@ sub ReadClasses {
     return %family;
 }
 
+################################################################
+#### when grouping occurrences with their reverse complement, 
+#### only retain one of each pair. 
+sub GroupRC {
+    warn ("; Grouping pairs of reverse complements\n"), "\n" if ($verbose >= 2);
+    foreach $pattern_seq (keys %patterns) {
+	$rc_pattern_seq = &SmartRC($pattern_seq);
+	warn ("; Grouping reverse complements\t", $pattern_seq, "\t", $rc_pattern_seq, "\n") if ($verbose >= 4);
+	if ($rc_pattern_seq gt $pattern_seq) { ### only suppress one oligo from the pair
+	    delete $patterns{$rc_pattern_seq};
+	}
+    }
+}
+
+
+################################################################
+## Do the opposite as GroupRC: starting from the grouped RC, re-create
+## one pattern for the RC of each pattern
+sub UngroupRC {
+    warn ("; Reporting both elements of reverse complements pairs\n"), "\n" if ($verbose >= 2);
+    foreach $pattern_seq (keys %patterns) {
+	$rc_pattern_seq = &SmartRC($pattern_seq);
+	warn ("; Ungrouping reverse complements\t", $pattern_seq, "\t", $rc_pattern_seq, "\n") if ($verbose >= 4);
+	if ($rc_pattern_seq gt $pattern_seq) { ### only suppress one oligo from the pair
+	    $patterns{$rc_pattern_seq} = $patterns{$pattern_seq} ;
+	}
+    }
+}
 
 #### end of the library #####
 
