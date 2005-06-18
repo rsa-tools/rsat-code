@@ -4,7 +4,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 require "RSA.lib";
 
-die "This program is obsolete.\nPlease use parse_transfac.pl instead\n";
+die "This program is obsolete.\nPlease use parse-transfac.pl instead\n";
 
 
 ################################################################
