@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse-transfac.pl,v 1.2 2005/06/19 08:07:54 jvanheld Exp $
+# $Id: parse-transfac.pl,v 1.3 2005/06/19 08:44:05 rsat Exp $
 #
 # Time-stamp: <2003-07-10 11:52:52 jvanheld>
 #
@@ -143,6 +143,7 @@ package TRANSFAC::TransPro;
 			     transfac_id=>"SCALAR",      ### site ID from the Transfac entry
 			     descr=>"SCALAR",
 			     organism=>"SCALAR",
+			     chromosomal_location=>"SCALAR",
 			     );     
 }
 
@@ -151,33 +152,33 @@ package TRANSFAC::TransPro;
 #### Main package
 package main;
 {
+
+    ## Initialize parameters
+
 #    $special_field_size{description} = 10000;
     $parse_transpro = 0;
-
     $host= $default{'host'};
     $schema="transfac";
     $user="transfac";
     $password="transfac";
-
     $pssm_sep="\t";
-
     %key_alias = ();
     %transfac_index = (); ## Index transfac objects with transfac AC as key
-
-    
-    #### input directory
-    $dir{transfac} = "${Databases}/transfac";
-
-    #### default export directory
-    $export_subdir = "transfac";
-    $dir{output} = "$parsed_data/${export_subdir}/$delivery_date";
-
-#    @data_types = qw (site factor matrix class cell classification reference);
-
     $verbose = 0;
     $out_format = "obj";
 
+    ## Read arguments
     &ReadArguments();
+
+    #### default input and output directories
+    if ($parse_transpro) {
+	$dir{transfac} = "${Databases}/transpro";
+	$export_subdir = "transpro";
+    } else {
+	$dir{transfac} = "${Databases}/transfac";
+	$export_subdir = "transfac";
+    }
+    $dir{output} = join('/', $parsed_data, ${export_subdir},$delivery_date);
 
     #### classes and class_holders
     @data_types = ();
@@ -217,7 +218,8 @@ package main;
     }
 
     #### output directory
-    &CheckOutputDir();
+    &RSAT::util::CheckOutDir($dir{output});
+#    &CheckOutputDir();
 
     #### check existence of input and output directories
     foreach $d (keys %dir) {
@@ -238,7 +240,7 @@ package main;
      
     ### Report files
     $out_file{error} = "$dir{output}/transfac.errors.txt";
-    open ERR, ">$out_file{error}" || die "Error: cannot write error file $out_file{error}\n";
+    open ERR, ">$out_file{error}" || &RSAT::error::FatalError("cannot write error file $out_file{error}");
     $out_file{stats} = "$dir{output}/transfac.stats.txt";
     $out_file{transfac} = "$dir{output}/transfac.obj" if ($export{obj});
 
