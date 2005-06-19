@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse-transfac.pl,v 1.1 2005/06/18 13:31:31 jvanheld Exp $
+# $Id: parse-transfac.pl,v 1.2 2005/06/19 08:07:54 jvanheld Exp $
 #
 # Time-stamp: <2003-07-10 11:52:52 jvanheld>
 #
@@ -36,7 +36,7 @@ package TRANSFAC::Matrix;
   %_name_index = ();
   %_id_index = ();
   %_attribute_count = ();
-  %_attribute_cardinality = (id=>"SCALAR",           ### internal ID for the pathway diagram
+  %_attribute_cardinality = (id=>"SCALAR",           ### internal ID 
 			     transfac_id=>"SCALAR",      ### site ID from the Transfac entry
 			     description=>"SCALAR",
 			     );     
@@ -55,7 +55,7 @@ package TRANSFAC::Site;
   %_name_index = ();
   %_id_index = ();
   %_attribute_count = ();
-  %_attribute_cardinality = (id=>"SCALAR",           ### internal ID for the pathway diagram
+  %_attribute_cardinality = (id=>"SCALAR",           ### internal ID
 			     transfac_id=>"SCALAR",      ### site ID from the Transfac entry
 			     description=>"SCALAR",
 			     gene_ac=>"SCALAR",      ### regulated gene AC
@@ -90,7 +90,7 @@ package TRANSFAC::Factor;
   %_name_index = ();
   %_id_index = ();
   %_attribute_count = ();
-  %_attribute_cardinality = (id=>"SCALAR",              ## internal ID for the pathway diagram
+  %_attribute_cardinality = (id=>"SCALAR",              ## internal ID
 			     transfac_id=>"SCALAR",     ## transfac factor ID
 			     organism=>"SCALAR",        ## OS field
 			     name=>"SCALAR",            ## FA field
@@ -113,7 +113,7 @@ package TRANSFAC::Gene;
   %_name_index = ();
   %_id_index = ();
   %_attribute_count = ();
-  %_attribute_cardinality = (id=>"SCALAR",           ## internal ID for the pathway diagram
+  %_attribute_cardinality = (id=>"SCALAR",           ## internal ID
 
 			     transfac_id=>"SCALAR",  ## transfac gene ID
 			     organism=>"SCALAR",     ## OS field
@@ -126,15 +126,38 @@ package TRANSFAC::Gene;
 			    );     
 }
 
+
+################################################################
+## TransPro
+package TRANSFAC::TransPro;
+{
+  @ISA = qw ( classes::DatabaseObject );
+  ### class attributes
+  $_count = 0;
+  $_prefix = "prom_";
+  @_objects = ();
+  %_name_index = ();
+  %_id_index = ();
+  %_attribute_count = ();
+  %_attribute_cardinality = (id=>"SCALAR",           ### internal ID 
+			     transfac_id=>"SCALAR",      ### site ID from the Transfac entry
+			     descr=>"SCALAR",
+			     organism=>"SCALAR",
+			     );     
+}
+
+
 ################################################################
 #### Main package
-package main ;
+package main;
 {
+#    $special_field_size{description} = 10000;
+    $parse_transpro = 0;
+
     $host= $default{'host'};
     $schema="transfac";
     $user="transfac";
     $password="transfac";
-#    $special_field_size{description} = 10000;
 
     $pssm_sep="\t";
 
@@ -149,28 +172,49 @@ package main ;
     $export_subdir = "transfac";
     $dir{output} = "$parsed_data/${export_subdir}/$delivery_date";
 
-    @data_types = qw (site factor gene matrix);
 #    @data_types = qw (site factor matrix class cell classification reference);
 
     $verbose = 0;
     $out_format = "obj";
 
-    #### classes and class_holders
-    @classes = qw( TRANSFAC::Site TRANSFAC::Factor TRANSFAC::Gene TRANSFAC::Matrix );
-    $site_holder = classes::ClassFactory->new_class(object_type=>"TRANSFAC::Site");
-    $site_holder->set_attribute_header("modifications", join("\t", "date", "author"));
-
-    $factor_holder = classes::ClassFactory->new_class(object_type=>"TRANSFAC::Factor");
-    $factor_holder->set_attribute_header("modifications", join("\t", "date", "author"));
-
-    $gene_holder = classes::ClassFactory->new_class(object_type=>"TRANSFAC::Gene");
-    $gene_holder->set_attribute_header("modifications", join("\t", "date", "author"));
-    $gene_holder->set_attribute_header("xrefs", join("\t", "xdb", "xid"));
-
-    $matrix_holder = classes::ClassFactory->new_class(object_type=>"TRANSFAC::Matrix");
-    $matrix_holder->set_attribute_header("pssm", join("\t", "pos", "A", "C", "G", "T", "consensus"));
-
     &ReadArguments();
+
+    #### classes and class_holders
+    @data_types = ();
+    @class_factories = ();
+    @classes = ();
+    if ($parse_transpro) {
+	&RSAT::message::Info("Parsing TRANSPRO") if ($main::verbose >= 1);
+	$transpro_holder = classes::ClassFactory->new_class(object_type=>"TRANSFAC::TransPro");
+	$transpro_holder->set_attribute_header("modifications", join("\t", "date", "author"));
+
+	push @data_types, qw(transpro);
+	push @classes, qw( TRANSFAC::TransPro );
+	push @class_factories, ($transpro_holder);
+
+    } else {	
+	$site_holder = classes::ClassFactory->new_class(object_type=>"TRANSFAC::Site");
+	$site_holder->set_attribute_header("modifications", join("\t", "date", "author"));
+	
+	$factor_holder = classes::ClassFactory->new_class(object_type=>"TRANSFAC::Factor");
+	$factor_holder->set_attribute_header("modifications", join("\t", "date", "author"));
+	
+	$gene_holder = classes::ClassFactory->new_class(object_type=>"TRANSFAC::Gene");
+	$gene_holder->set_attribute_header("modifications", join("\t", "date", "author"));
+	$gene_holder->set_attribute_header("xrefs", join("\t", "xdb", "xid"));
+	
+	$matrix_holder = classes::ClassFactory->new_class(object_type=>"TRANSFAC::Matrix");
+	$matrix_holder->set_attribute_header("pssm", join("\t", "pos", "A", "C", "G", "T", "consensus"));
+
+	push @data_types, qw (site factor gene matrix);
+	push @classes, qw( TRANSFAC::Site TRANSFAC::Factor TRANSFAC::Gene TRANSFAC::Matrix );
+	push @class_factories, ($site_holder, $factor_holder, $gene_holder, $matrix_holder);
+    }
+
+    ## Index classes to be parsed
+    foreach my $type (@data_types) {
+	$parse{$type} = 1;
+    }
 
     #### output directory
     &CheckOutputDir();
@@ -188,7 +232,7 @@ package main ;
     foreach my $type (@data_types) {
 	$in_file{$type} = $dir{transfac}."/".$type.".dat";
 	unless (-e $in_file{$type}) {
-	    &FatalError("Input file $file does not exist\t$in_file{$file}");
+	    &FatalError(join ("\t", "Input file for data type", $type, "does not exist", $in_file{$type}));
 	}
     }
      
@@ -207,8 +251,15 @@ package main ;
 	}
     }
 
-    &DefaultVerbose() if ($main::verbose >= 1);
- 
+    if ($main::verbose >= 1) {
+	&DefaultVerbose();
+	warn sprintf "%-20s\t%d\n", "parse_transpro", $parse_transpro;
+	warn sprintf "%-20s\t%s\n", "host", $host;
+	warn sprintf "%-20s\t%s\n", "schema", $schema;
+	warn sprintf "%-20s\t%s\n", "user", $user;
+    }
+
+
     ### parse data from original files
     foreach my $type (@data_types) {
 	my $holder = $type."_holder";
@@ -216,15 +267,16 @@ package main ;
     } 
 
     ## Data type-specific treatment
-    &TreatSites();
-    &TreatFactors();
-    &TreatGenes();
-    &TreatMatrices();
+    &TreatPromoters() if ($parse{transpro});
+    &TreatSites() if ($parse{site});
+    &TreatFactors() if ($parse{factor});
+    &TreatGenes() if ($parse{gene});
+    &TreatMatrices() if ($parse{matrix});
 
     ### print result
     &PrintStats($out_file{stats}, @classes);
-    foreach my $class_factory ($site_holder, $factor_holder, $gene_holder, $matrix_holder) {
-	warn (join "\t", "; Dumping class", $class_factory->object_type()), "\n" if ($main::verbose >= 1);
+    foreach my $class_factory (@class_factories) {
+	warn (join "\t", "; Dumping class", $class_factory->get_object_type()), "\n" if ($main::verbose >= 1);
 	$class_factory->dump_tables();
 	$class_factory->generate_sql(dir=>"$dir{output}/sql_scripts",
 				     prefix=>"$class_factory_",
@@ -302,6 +354,11 @@ OPTIONS
 
 	-clean	remove all files from the output directory before
 		parsing
+	-transpro
+		parse TRANSPRO (promoter database) 
+		This requires the commercial version of TRANSPRO(R).
+		The input directrry must then contain a file called
+		    transpro.tat
 
    Options for the automaticaly generated SQL scripts
 	-schema database schema (default: $schema)
@@ -362,20 +419,26 @@ sub ReadArguments {
 
 	    ### database schema
 	} elsif ($ARGV[$a] eq "-schema") {
-	    $schema = $ARGV[$a+1];
+	    $main::schema = $ARGV[$a+1];
 	    
 	    ### database host
 	} elsif ($ARGV[$a] eq "-host") {
-	    $host = $ARGV[$a+1];
+	    $main::host = $ARGV[$a+1];
 	    
 	    ### database user
 	} elsif ($ARGV[$a] eq "-user") {
-	    $user = $ARGV[$a+1];
+	    $main::user = $ARGV[$a+1];
 	    
 	    ### password 
 	} elsif ($ARGV[$a] eq "-password") {
-	    $password = $ARGV[$a+1];
+	    $main::password = $ARGV[$a+1];
 	    
+	    ### transpro
+	} elsif ($ARGV[$a] eq "-transpro") {
+	    $main::parse_transpro = 1;
+
+#	    warn join("\t", "HELLO", $parse_transpro, $main::parse_transpro), "\n";
+
 	}
 	
     }
@@ -406,7 +469,9 @@ sub ParseTransfacFile {
 
 	if ($entries==1) {
 	    #### check if there is a header
-    	    if ($text_entry =~ /TRANSFAC \S+ TABLE/i) {
+    	    if (($text_entry =~ /TRANSFAC \S+ TABLE/i) ||
+		($text_entry =~ /TRANSPro/i))
+		{
 		if ($' =~ /Release (\S+)/) { 
 		    $transfac_version = $1;
 		   }
@@ -587,6 +652,62 @@ sub parse_database_references {
     }
 }
     
+################################################################
+# Specific treatment for promoters (TRANSPRO)
+#
+sub TreatPromoters {
+    ## Open a separate file for storing the sequence in fasta format
+    $out_file{promoter_sequences} = $dir{output}."/promoter_sequences.fasta";
+    &RSAT::message::Info(join ("\t", "; Exporting promoter sequences to file", 
+			       $out_file{promoter_sequences})) if ($main::verbose >= 1);
+    
+    open SEQ, ">$out_file{promoter_sequences}";
+    
+    foreach my $promoter ($transpro_holder->get_objects()) {
+	my $id = $promoter->get_attribute("id");
+	
+	## Read the chromosomal location from the comments
+	my @comments = $promoter->get_attribute("comments");
+	foreach my $comment (@comments) {
+	    if ($comment =~  /Sequence Fragment/) {
+		if ($comment =~ /Sequence Fragment\s+\[(.*)\]/) {
+		    $promoter->set_attribute("build", $1);
+		}
+		if ($comment =~ /\:\s+chr.(\S+)\s+(\d+)\.\.(\d+)/i) {
+		    $promoter->set_attribute("chromosome", $1);
+		    $promoter->set_attribute("left", $2);
+		    $promoter->set_attribute("right", $3);
+		    if ($comment =~ /FORWARD/i) {
+			$promoter->set_attribute("strand", "D");
+		    } elsif ($comment =~ /REVERSE/i) {
+			$promoter->set_attribute("strand", "R");
+		    } else {
+			&ErrorMessage(join("\t", "Invalid strand specification for promoter", $id, $comment));
+		    }
+		}
+	    }
+	}
+
+	## Concatenate the sequence fragments and export them
+	my $seq_comment = $promoter->get_attribute("organism");
+	$seq_comment .= "; ";
+	$seq_comment .= $promoter->get_attribute("descr");
+	my $sequence = join ("", $promoter->get_attribute($key_alias{"SQ"})); ## join for possible multi-line sequence
+	
+	if ($sequence =~ /\.$/) {
+	    $sequence = $`;
+#	} elsif ($sequence) {
+#	    &ErrorMessage (join ("\t", "unproperly terminated sequence (no dot)", $promoter->get_attribute("ac"), $sequence), "\n");
+	}
+	if ($sequence) {
+	    $promoter->set_array_attribute("seq"); ### empty the seq vector
+#	    $promoter->push_attribute("sequence", $sequence);
+	    &PrintNextSequence(SEQ,"fasta",60,$sequence,$id, $seq_comment);
+	}
+    }
+    close SEQ;
+}
+
 ################################################################
 # Specific treatment for sites
 #
