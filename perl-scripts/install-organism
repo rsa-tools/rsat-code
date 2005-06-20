@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.50 2005/05/12 09:05:22 jvanheld Exp $
+# $Id: install-organism,v 1.51 2005/06/20 15:06:46 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -147,8 +147,8 @@ $out = &OpenOutputFile($outputfile);
 
 &AllUpstream() if ($task{allup});
 
-for $noov ("-ovlp", "-noov") {
-    for $strands ("-1str", "-2str") {
+for $noov ("-noov", "-ovlp") {
+    for $strands ("-2str", "-1str") {
 	&CalcFrequencies() if (($task{oligos}) || ($task{distrib}) || ($task{dyads}));
     }
 }
