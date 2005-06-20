@@ -372,6 +372,33 @@ sub ConvertStrand {
     return $strand_to_convert;
 }
 
+################################################################
+=pod
+
+=item PrintArguments()
+
+print the command-line arguments
+
+=cut
+sub PrintArguments {
+    my $local_out = $_[0];
+#    unless ($local_out)  {
+#	$local_out = STDOUT;
+#    }
+    my $argument_string = "";
+
+    foreach my $a (@main::ARGV) {
+	if (($a =~ /\s+/)  ||
+	    ($a !~ /\S+/) ||
+	    ($a =~ /[\(\)\>\<\&]/)) {
+	    $argument_string .= " '$a'";
+	} else {
+	    $argument_string .= " $a";
+	}
+    }
+    print $local_out $argument_string, "\n" if ($local_out);
+    return $argument_string;
+}
 
 return 1;
 
