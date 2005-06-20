@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse-transfac.pl,v 1.4 2005/06/20 06:43:57 rsat Exp $
+# $Id: parse-transfac.pl,v 1.5 2005/06/20 13:11:29 jvanheld Exp $
 #
 # Time-stamp: <2003-07-10 11:52:52 jvanheld>
 #
@@ -13,9 +13,6 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 require "RSA.lib";
 require "RSA.seq.lib";
-# if ($0 =~ /([^(\/)]+)$/) {
-#     push (@INC, "$`"); ### add the program directory to the lib path
-# }
 push @INC, "$RSA/perl-scripts/parsers/";
 #require "config.pl";
 require "lib/load_classes.pl";
@@ -23,6 +20,7 @@ require "lib/util.pl";
 require "lib/loading_util.pl"; ### for converting polypeptide IDs into ACs
 require "lib/parsing_util.pl";
 require RSAT::util;
+require RSAT::feature;
 
 ################################################################
 ## Matrix
@@ -189,9 +187,12 @@ package main;
 	$transpro_holder = classes::ClassFactory->new_class(object_type=>"TRANSFAC::TransPro");
 	$transpro_holder->set_attribute_header("modifications", join("\t", "date", "author"));
 
+	## Create a class holder for parsed features
+	$feature_holder = classes::ClassFactory->new_class(object_type=>"RSAT::feature");
+
 	push @data_types, qw(transpro);
-	push @classes, qw( TRANSFAC::TransPro );
-	push @class_factories, ($transpro_holder);
+	push @classes, qw(TRANSFAC::TransPro);
+	push @class_factories, ($transpro_holder, $feature_holder);
 
     } else {	
 	$site_holder = classes::ClassFactory->new_class(object_type=>"TRANSFAC::Site");
@@ -659,14 +660,77 @@ sub parse_database_references {
 #
 sub TreatPromoters {
     ## Open a separate file for storing the sequence in fasta format
-    $out_file{promoter_sequences} = $dir{output}."/promoter_sequences.fasta";
     &RSAT::message::Info(join ("\t", "; Exporting promoter sequences to file", 
 			       $out_file{promoter_sequences})) if ($main::verbose >= 1);
     
-    open SEQ, ">$out_file{promoter_sequences}";
-    
+    ################################################################
+    ## Export features in a .ft format (in addition to the field
+    ## transpro_features)
+    $out_file{features} = $dir{output}."/promoter_features.ft";
+    open FT, ">$out_file{features}";
     foreach my $promoter ($transpro_holder->get_objects()) {
-	my $id = $promoter->get_attribute("id");
+	my $prom_id = $promoter->get_attribute("id");
+	my $f = 0; ## Count features per promoter
+	foreach my $feature_line ($promoter->get_attribute("feature_table")) {
+	    $f++;
+	    my $feature_id;
+	    if ($feature_line =~ /\:/) {
+		my $feature_type = $`;
+		my @feature_fields = split("\s*;\s*", "$'");
+		unless ($feature_type =~ /\S+/) {
+		    &ErrorMessage("Invalid feature format: missing feature type", "promoter ID", $prom_id, $feature_line);
+		    next;
+		}
+		
+		## Create a new feature object
+		my $feature = $feature_holder->new_object();
+		$feature->set_attribute("promoter", $prom_id);
+		$feature->set_attribute("seq_name", $prom_id);
+		
+		## Treat position
+		my $position = &trim($feature_fields[$#feature_fields]);
+		if ($position =~ /^(\d+)\.\.(\d+)\.$/) {
+		    $feature->set_attribute("start", $1);
+		    $feature->set_attribute("end", $2);
+		} elsif ($position =~ /^(\d+)\.$/) {
+		    $feature->set_attribute("start", $1);
+		    $feature->set_attribute("end", $1);
+		} else {
+		    &ErrorMessage("Invalid feature position", "promoter ID", $prom_id, $feature_line);
+		}
+		$feature->set_attribute("strand", "DR");
+		
+		## Treat separately TRANSFAC SITES and other features, because they have different formats !!!
+		my $feature_name;
+		my $feature_source;
+		if ($feature_type =~ /transfac site/i) {
+		    $feature_source = "TRANSFAC";
+		    $feature_id = $feature_fields[0];
+		    $feature_name =  "site_".$feature_id;
+		} else {
+		    $feature_source = $feature_fields[0];
+		    $feature_id =  $feature_fields[1];
+		    $feature_name = $feature_type;
+		}
+		$feature->set_attribute("id", $feature_id);
+		$feature->set_attribute("ft_type", $feature_type);
+		$feature->set_attribute("feature_name",$feature_name);
+		$feature->set_attribute("description", join ("; ", $prom_id, $feature_type, $feature_source, $feature_id, $feature_name));
+
+		print FT $feature->to_text("ft", $null);
+	    } else {
+		&ErrorMessage("Invalid feature format: missing column", "promoter ID", $prom_id, $feature_line);
+	    }
+	}
+    }
+    close FT;
+
+    ################################################################
+    ## Export promoter sequences
+    $out_file{promoter_sequences} = $dir{output}."/promoter_sequences.fasta";
+    open SEQ, ">$out_file{promoter_sequences}";
+    foreach my $promoter ($transpro_holder->get_objects()) {
+	my $prom_id = $promoter->get_attribute("id");
 	
 	## Read the chromosomal location from the comments
 	my @comments = $promoter->get_attribute("comments");
@@ -684,7 +748,7 @@ sub TreatPromoters {
 		    } elsif ($comment =~ /REVERSE/i) {
 			$promoter->set_attribute("strand", "R");
 		    } else {
-			&ErrorMessage(join("\t", "Invalid strand specification for promoter", $id, $comment));
+			&ErrorMessage(join("\t", "Invalid strand specification for promoter", $prom_id, $comment));
 		    }
 		}
 	    }
@@ -704,7 +768,7 @@ sub TreatPromoters {
 	if ($sequence) {
 	    $promoter->set_array_attribute("seq"); ### empty the seq vector
 #	    $promoter->push_attribute("sequence", $sequence);
-	    &PrintNextSequence(SEQ,"fasta",60,$sequence,$id, $seq_comment);
+	    &PrintNextSequence(SEQ,"fasta",60,$sequence,$prom_id, $seq_comment);
 	}
     }
     close SEQ;
