@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse-transfac.pl,v 1.3 2005/06/19 08:44:05 rsat Exp $
+# $Id: parse-transfac.pl,v 1.4 2005/06/20 06:43:57 rsat Exp $
 #
 # Time-stamp: <2003-07-10 11:52:52 jvanheld>
 #
@@ -172,13 +172,13 @@ package main;
 
     #### default input and output directories
     if ($parse_transpro) {
-	$dir{transfac} = "${Databases}/transpro";
+	unless ($dir{transfac}) {$dir{transfac} = "${Databases}/transpro"};
 	$export_subdir = "transpro";
     } else {
-	$dir{transfac} = "${Databases}/transfac";
+	unless ($dir{transfac}) {$dir{transfac} = "${Databases}/transfac"};
 	$export_subdir = "transfac";
     }
-    $dir{output} = join('/', $parsed_data, ${export_subdir},$delivery_date);
+    unless ($dir{output}) { $dir{output} = join('/', $parsed_data, ${export_subdir},$delivery_date) };
 
     #### classes and class_holders
     @data_types = ();
