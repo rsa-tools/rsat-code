@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse-transfac.pl,v 1.7 2005/06/20 15:19:28 jvanheld Exp $
+# $Id: parse-transfac.pl,v 1.8 2005/06/20 15:32:10 jvanheld Exp $
 #
 # Time-stamp: <2003-07-10 11:52:52 jvanheld>
 #
@@ -691,6 +691,7 @@ sub TreatPromoters {
 		
 		## Create a new feature object
 		my $feature = $feature_holder->new_object();
+		$feature->set_attribute("score", 20); ## Aritrary score, but convenient since the feature will be visible above patser results (max score ~10)
 		$feature->set_attribute("promoter", $prom_ac);
 		$feature->set_attribute("seq_name", $prom_label);
 		
