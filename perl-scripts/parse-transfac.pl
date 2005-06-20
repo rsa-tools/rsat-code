@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse-transfac.pl,v 1.5 2005/06/20 13:11:29 jvanheld Exp $
+# $Id: parse-transfac.pl,v 1.6 2005/06/20 15:04:22 jvanheld Exp $
 #
 # Time-stamp: <2003-07-10 11:52:52 jvanheld>
 #
@@ -669,7 +669,8 @@ sub TreatPromoters {
     $out_file{features} = $dir{output}."/promoter_features.ft";
     open FT, ">$out_file{features}";
     foreach my $promoter ($transpro_holder->get_objects()) {
-	my $prom_id = $promoter->get_attribute("id");
+	my $prom_ac = $promoter->get_attribute("id");
+	my $prom_id = $promoter->get_attribute("transfac_id");
 	my $f = 0; ## Count features per promoter
 	foreach my $feature_line ($promoter->get_attribute("feature_table")) {
 	    $f++;
@@ -678,14 +679,14 @@ sub TreatPromoters {
 		my $feature_type = $`;
 		my @feature_fields = split("\s*;\s*", "$'");
 		unless ($feature_type =~ /\S+/) {
-		    &ErrorMessage("Invalid feature format: missing feature type", "promoter ID", $prom_id, $feature_line);
+		    &ErrorMessage("Invalid feature format: missing feature type", "promoter ID", $prom_id, $prom_ac, $feature_line);
 		    next;
 		}
 		
 		## Create a new feature object
 		my $feature = $feature_holder->new_object();
-		$feature->set_attribute("promoter", $prom_id);
-		$feature->set_attribute("seq_name", $prom_id);
+		$feature->set_attribute("promoter", $prom_ac);
+		$feature->set_attribute("seq_name", join ("|", $prom_id, $prom_ac));
 		
 		## Treat position
 		my $position = &trim($feature_fields[$#feature_fields]);
@@ -696,7 +697,7 @@ sub TreatPromoters {
 		    $feature->set_attribute("start", $1);
 		    $feature->set_attribute("end", $1);
 		} else {
-		    &ErrorMessage("Invalid feature position", "promoter ID", $prom_id, $feature_line);
+		    &ErrorMessage("Invalid feature position", "promoter ID", $prom_id, $prom_ac, $feature_line);
 		}
 		$feature->set_attribute("strand", "DR");
 		
@@ -705,8 +706,8 @@ sub TreatPromoters {
 		my $feature_source;
 		if ($feature_type =~ /transfac site/i) {
 		    $feature_source = "TRANSFAC";
-		    $feature_id = $feature_fields[0];
-		    $feature_name =  "site_".$feature_id;
+		    $feature_id = &trim($feature_fields[0]);
+		    $feature_name =  $feature_id;
 		} else {
 		    $feature_source = $feature_fields[0];
 		    $feature_id =  $feature_fields[1];
@@ -715,11 +716,11 @@ sub TreatPromoters {
 		$feature->set_attribute("id", $feature_id);
 		$feature->set_attribute("ft_type", $feature_type);
 		$feature->set_attribute("feature_name",$feature_name);
-		$feature->set_attribute("description", join ("; ", $prom_id, $feature_type, $feature_source, $feature_id, $feature_name));
+		$feature->set_attribute("description", join ("; ", $prom_id, $prom_ac, $feature_type, $feature_source, $feature_id));
 
 		print FT $feature->to_text("ft", $null);
 	    } else {
-		&ErrorMessage("Invalid feature format: missing column", "promoter ID", $prom_id, $feature_line);
+		&ErrorMessage("Invalid feature format: missing column", "promoter ID", $prom_id, $prom_ac, $feature_line);
 	    }
 	}
     }
@@ -730,7 +731,7 @@ sub TreatPromoters {
     $out_file{promoter_sequences} = $dir{output}."/promoter_sequences.fasta";
     open SEQ, ">$out_file{promoter_sequences}";
     foreach my $promoter ($transpro_holder->get_objects()) {
-	my $prom_id = $promoter->get_attribute("id");
+	my $prom_ac = $promoter->get_attribute("id");
 	
 	## Read the chromosomal location from the comments
 	my @comments = $promoter->get_attribute("comments");
@@ -748,7 +749,7 @@ sub TreatPromoters {
 		    } elsif ($comment =~ /REVERSE/i) {
 			$promoter->set_attribute("strand", "R");
 		    } else {
-			&ErrorMessage(join("\t", "Invalid strand specification for promoter", $prom_id, $comment));
+			&ErrorMessage(join("\t", "Invalid strand specification for promoter", $prom_ac, $comment));
 		    }
 		}
 	    }
@@ -768,7 +769,7 @@ sub TreatPromoters {
 	if ($sequence) {
 	    $promoter->set_array_attribute("seq"); ### empty the seq vector
 #	    $promoter->push_attribute("sequence", $sequence);
-	    &PrintNextSequence(SEQ,"fasta",60,$sequence,$prom_id, $seq_comment);
+	    &PrintNextSequence(SEQ,"fasta",60,$sequence,$prom_ac, $seq_comment);
 	}
     }
     close SEQ;
