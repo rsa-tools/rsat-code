@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse-transfac.pl,v 1.6 2005/06/20 15:04:22 jvanheld Exp $
+# $Id: parse-transfac.pl,v 1.7 2005/06/20 15:19:28 jvanheld Exp $
 #
 # Time-stamp: <2003-07-10 11:52:52 jvanheld>
 #
@@ -663,15 +663,21 @@ sub TreatPromoters {
     &RSAT::message::Info(join ("\t", "; Exporting promoter sequences to file", 
 			       $out_file{promoter_sequences})) if ($main::verbose >= 1);
     
-    ################################################################
-    ## Export features in a .ft format (in addition to the field
-    ## transpro_features)
+    $out_file{promoter_sequences} = $dir{output}."/promoter_sequences.fasta";
+    open SEQ, ">$out_file{promoter_sequences}";
     $out_file{features} = $dir{output}."/promoter_features.ft";
     open FT, ">$out_file{features}";
     foreach my $promoter ($transpro_holder->get_objects()) {
 	my $prom_ac = $promoter->get_attribute("id");
 	my $prom_id = $promoter->get_attribute("transfac_id");
 	my $f = 0; ## Count features per promoter
+	my $synonyms = join (", ", $promoter->get_attribute('synonyms'));
+	my @synonyms = split(", ", $synonyms);
+	my $prom_label = join ("|", $prom_id, $prom_ac, @synonyms);
+
+	################################################################
+	## Export features in a .ft format (in addition to the field
+	## transpro_features)
 	foreach my $feature_line ($promoter->get_attribute("feature_table")) {
 	    $f++;
 	    my $feature_id;
@@ -686,7 +692,7 @@ sub TreatPromoters {
 		## Create a new feature object
 		my $feature = $feature_holder->new_object();
 		$feature->set_attribute("promoter", $prom_ac);
-		$feature->set_attribute("seq_name", join ("|", $prom_id, $prom_ac));
+		$feature->set_attribute("seq_name", $prom_label);
 		
 		## Treat position
 		my $position = &trim($feature_fields[$#feature_fields]);
@@ -716,22 +722,16 @@ sub TreatPromoters {
 		$feature->set_attribute("id", $feature_id);
 		$feature->set_attribute("ft_type", $feature_type);
 		$feature->set_attribute("feature_name",$feature_name);
-		$feature->set_attribute("description", join ("; ", $prom_id, $prom_ac, $feature_type, $feature_source, $feature_id));
+		$feature->set_attribute("description", join ("; ", $prom_id, $prom_ac, $feature_type, $feature_source, $feature_id, $synonyms));
 
 		print FT $feature->to_text("ft", $null);
 	    } else {
 		&ErrorMessage("Invalid feature format: missing column", "promoter ID", $prom_id, $prom_ac, $feature_line);
 	    }
 	}
-    }
-    close FT;
 
-    ################################################################
-    ## Export promoter sequences
-    $out_file{promoter_sequences} = $dir{output}."/promoter_sequences.fasta";
-    open SEQ, ">$out_file{promoter_sequences}";
-    foreach my $promoter ($transpro_holder->get_objects()) {
-	my $prom_ac = $promoter->get_attribute("id");
+	################################################################
+	## Export promoter sequences
 	
 	## Read the chromosomal location from the comments
 	my @comments = $promoter->get_attribute("comments");
@@ -769,10 +769,12 @@ sub TreatPromoters {
 	if ($sequence) {
 	    $promoter->set_array_attribute("seq"); ### empty the seq vector
 #	    $promoter->push_attribute("sequence", $sequence);
-	    &PrintNextSequence(SEQ,"fasta",60,$sequence,$prom_ac, $seq_comment);
+	    &PrintNextSequence(SEQ,"fasta",60,$sequence,$prom_label, $seq_comment);
 	}
     }
     close SEQ;
+    close FT;
+
 }
 
 ################################################################
