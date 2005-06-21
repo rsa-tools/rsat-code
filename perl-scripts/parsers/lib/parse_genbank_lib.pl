@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank_lib.pl,v 1.18 2005/04/26 08:18:14 rsat Exp $
+# $Id: parse_genbank_lib.pl,v 1.19 2005/06/21 18:57:17 rsat Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -518,6 +518,15 @@ sub ParseFeatureNames {
 
 	foreach my $feature ($class_holder->get_objects()) {
 	    
+	    ## Attribute "synonym" (e.g. C.elegans genome version July 2003)
+	    foreach my $synonym_line ($feature->get_attribute("synonym")) {
+		my @synonyms = split /\,\s+/, $synonym_line;
+#		&RSAT::message::Debug("feature synonym field", $feature->get_attribute("id"), scalar(@synonyms), join ("; ", @synonyms)) if ($$main::verbose >= 10);
+		foreach my $synonym (@synonyms) {
+		    $feature->push_attribute("names", $synonym);
+		}
+	    }
+
 	    ## Attribute "gene"
 	    my @genes = $feature->get_attribute("gene");
 	    foreach my $gene_name (@genes) {
