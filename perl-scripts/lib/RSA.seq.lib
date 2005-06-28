@@ -128,27 +128,29 @@ usage:
 
 sub MaxMatchingWeight {
     my ($seq) = @_;
+    my $expanded_seq = &ExpandSeq($seq);
     my %IUPAC = &IUPAC();
     my $top_matching_seq = "";
-    my $len = length($seq);
+    my $len = length($expanded_seq);
     foreach my $offset (0..$len-1) {
-	my $base = uc(substr($seq,$offset,1));
+	my $base = uc(substr($expanded_seq,$offset,1));
 	
 	my @match = @{$IUPAC{$base}}; ## set of matching residues
 
-	## For the time begin, I just take the first matching residue In a
-	## later version, I will use the residue with the lowest prior
-	## probability
+	## For the time begin, I just take the first matching
+	## residue. In a later version, I will use the residue with
+	## the lowest prior probability
 	$top_matching_seq .= $match[0];
-#	warn (";base: ",$base," matches: ",@match, "\t", $top_matching_seq,"\n");
+#	&RSAT::message::Debug (";base: ",$base," matches: ",@match, "\t", $top_matching_seq,"\n");
 	
     }
 
-    #warn (";seq: ",$seq," top_seq: ",$top_matching_seq,"\n");
-    my ($matches,$max_weight, $proba, $length) = &CountMatches($seq,$top_matching_seq);
+#    &RSAT::message::Debug(";seq: ",$seq, $expanded_seq," top_seq: ",$top_matching_seq) if ($main::verbose >= 10);
+    my ($matches,$max_weight, $proba, $length) = &CountMatches($expanded_seq,$top_matching_seq);
     #warn join"\t",";CountMatches() results",$matches,$max_weight, $proba, $length,"\n";
     return ($max_weight,$top_matching_seq);
 }
+
 
 
 
