@@ -6,7 +6,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.99 2005/06/29 23:07:51 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.100 2005/06/29 23:13:58 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -2754,7 +2754,7 @@ sub Validate {
        ## Compare oligos with known sites
        my $command = "count-matches"; 
        $command .= " -v 1";
-       $command .= $strands;
+       $command .= " ".$strands;
        $command .= " -file1 ".$family{$family_name}->{known_sites};
        $command .= " -file2 ".$family{$family_name}->{oligo_file};
        $command .= " -slide"; 
@@ -2766,7 +2766,7 @@ sub Validate {
        ## Compare oligos with known sites (table output type)
        my $command = "count-matches";
        $command .= " -v 1";
-       $command .= $strands;
+       $command .= " ".$strands;
        $command .= " -file1 ".$family{$family_name}->{known_sites};
        $command .= " -file2 ".$family{$family_name}->{oligo_file};
        $command .= " -slide";
@@ -2789,7 +2789,7 @@ sub Validate {
        ## Compare dyads with known sites (table output type)
        my $command = "count-matches";
        $command .= " -v 1";
-       $command .= $strands;
+       $command .= " ".$strands;
        $command .= " -file1 ".$family{$family_name}->{known_sites};
        $command .= " -file2 ".$family{$family_name}->{dyad_file};
        $command .= " -slide";
