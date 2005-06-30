@@ -6,7 +6,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.100 2005/06/29 23:13:58 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.101 2005/06/30 00:27:11 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -338,7 +338,7 @@ sub SetFileNames {
 	$oligo_suffix .= "_bg_".$background;
     }
     $oligo_suffix .= "_".$min_oligo_len."-".$max_oligo_len."nt";
-    $oligo_suffix .= "$strands";
+    $oligo_suffix .= $strands;
     $oligo_suffix .= "_sig".$thosig;
     $oligo_suffix .= $noov;
 
