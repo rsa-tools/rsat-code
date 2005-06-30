@@ -5,6 +5,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 require "RSA.lib";
 require "RSA.seq.lib";
 require RSAT::pattern;
+require RSAT::match;
 
 ## CVS: adapted the help to describe the hypergeometric proba
 ## CVS: added the option -table
@@ -198,17 +199,18 @@ if ($verbose >= 1) {
 ## Count matches for each pair of input sequences	
 foreach $pattern1 (@pattern1) {
     foreach $pattern2 (@pattern2) {
-	local %reverse_match = ();
-	local %best_match = &OneMatch($pattern1, $pattern2, 0);
+	local $reverse_match;
+	local $best_match = &OneMatch($pattern1, $pattern2, 0);
 	if ($both_strands) {
-	    %reverse_match = &OneMatch($pattern1, $pattern2, 1);
+	    $reverse_match = &OneMatch($pattern1, $pattern2, 1);
 	    if ($reverse_match->{weight} > $best_match->{weight}) {
-		%best_match = %reverse_match;
+		$best_match = $reverse_match;
 	    }
 	}
 	
+#	die $best_match;
 	## Print the match and store the parameters in tables
-	&PrintOneMatch(%best_match);
+	&PrintOneMatch($best_match);
 	
     }
 }
@@ -270,7 +272,7 @@ exit(0);
 ## Match one pattern against another one
 sub OneMatch {
     my ($pattern1, $pattern2, $reverse) = @_;
-    local %one_match = ();
+    local $one_match = new RSAT::match();
 
     $one_match->{pattern1} = $pattern1;
     $one_match->{pattern2} = $pattern2;
@@ -345,13 +347,14 @@ sub OneMatch {
 	$one_match->{rel_w} = "NA";
     }
 
-    return(%one_match);
+    return($one_match);
 }
 
 ################################################################
 ## Print one match
 sub PrintOneMatch {
-    my (%one_match) = ();
+    my ($one_match) = @_;
+    
     my @result = ();
 
     my $seq1 = $one_match->{pattern1}->get_attribute("sequence");
