@@ -16,6 +16,8 @@ my $start_time = &AlphaDate();
 local %infile = ();
 local %outfile = ();
 
+local %filtered_out = ();
+
 local $both_strands=0;
 local $verbose = 0;
 local $in = STDIN;
@@ -196,19 +198,28 @@ if ($verbose >= 1) {
 ## Count matches for each pair of input sequences	
 foreach $pattern1 (@pattern1) {
     foreach $pattern2 (@pattern2) {
-	&OneMatch($pattern1, $pattern2, 0);
+	local %reverse_match = ();
+	local %best_match = &OneMatch($pattern1, $pattern2, 0);
 	if ($both_strands) {
-	    &OneMatch($pattern1, $pattern2, 1);
+	    %reverse_match = &OneMatch($pattern1, $pattern2, 1);
+	    if ($reverse_match->{weight} > $best_match->{weight}) {
+		%best_match = %reverse_match;
+	    }
 	}
+	
+	## Print the match and store the parameters in tables
+	&PrintOneMatch(%best_match);
+	
     }
 }
+
 
 ## Print contingency tables
 foreach my $field (@table_fields) {
     my $table_name = $field."_table";
     print $out join("\t", "; Contingency table", $field), "\n";
 
-    ## Calculate widdth of first column
+    ## Calculate width of first column
     my $max_seq1_len = 0;
     foreach my $pattern1 (@pattern1) {
 	my $seq1  = $pattern1->{sequence};
@@ -259,113 +270,122 @@ exit(0);
 ## Match one pattern against another one
 sub OneMatch {
     my ($pattern1, $pattern2, $reverse) = @_;
-    local $id1 =  $pattern1->get_attribute("id");
-    local $seq1 = $pattern1->get_attribute("sequence");
-#    $seq1 = &ExpandSeq($seq1);
+    local %one_match = ();
 
+    $one_match->{id1} =  $pattern1->get_attribute("id");
+    $one_match->{seq1} = $pattern1->get_attribute("sequence");
+    
     ## Match direct or reverse complement
-    $strand = "D";
     if ($reverse) {
-	$seq1 = &ReverseComplement($seq1);
-	$strand = "R";
-#	$id1 .= "_rev";
+	$one_match->{seq1} = &ReverseComplement($one_match->{seq1});
+	$one_match->{strand} = "R";
+    } else {
+	$one_match->{strand} = "D";
     }
     
-    local $id2 =  $pattern2->get_attribute("id");
-    local $seq2 = $pattern2->get_attribute("sequence");
-#    $seq2 = &ExpandSeq($seq2);
-
+    $one_match->{id2} =  $pattern2->get_attribute("id");
+    $one_match->{seq2} = $pattern2->get_attribute("sequence");
+    
     ## Check input sequences
-    &RSAT::message::Warning("There is not a single sequence in the first set") unless ($seq1);
-    &RSAT::message::Warning("There is not a single sequence in the second set") unless ($seq2);
-
-#    warn join("\t", "Comparing",  $id1, $seq1, $id2, $seq2),"\n" if ($main::verbose >= 10);
-
-    local @result = ();
-    local $match;
-    local $weight;
-    local $proba;
-    local $offset;
-    local $len1;
-    local $len2;
-    local $mlen;
-    local $tlen;
-
+    &RSAT::message::Warning("There is not a single sequence in the first set") unless ($one_match->{seq1});
+    &RSAT::message::Warning("There is not a single sequence in the second set") unless ($one_match->{seq2});
+    
+#    &RSAT::message::Debug("Comparing",  $one_match->{id1}, $one_match->{seq1}, $one_match->{id2}, $one_match->{seq2}, $reverse), if ($main::verbose >= 10);
     
     ################################################################
     ## Count the matches
     if ($slide) {
-	($match, $weight, $proba, $mlen, $offset) = &BestMatch(&ExpandSeq($seq1),&ExpandSeq($seq2));
+	($match, $weight, $proba, $mlen, $offset) = &BestMatch(&ExpandSeq($one_match->{seq1}),&ExpandSeq($one_match->{seq2}));
+	$one_match->{offset} = $offset;
     } else {
-	($match, $weight, $proba, $mlen) = &CountMatches(&ExpandSeq($seq1),&ExpandSeq($seq2));
+	($match, $weight, $proba, $mlen) = &CountMatches(&ExpandSeq($one_match->{seq1}),&ExpandSeq($one_match->{seq2}));
     }
+    $one_match->{match} = $match; ## Number of matching residues
+    $one_match->{weight} = $weight; ## Weight
+    $one_match->{proba} = $proba; ## P-value
+    $one_match->{mlen} = $mlen; ## Matching length
+
+
+    ################################################################
+    ## Calculate sequence and match lengths
     if ($return_field{length}) {
-	$len1 = length($seq1);
-	$len2 = length($seq2);
-	$tlen = $len1 + $len2 - $mlen; ## total length of the alignment
+	$one_match->{len1} = length($one_match->{seq1});
+	$one_match->{len2} = length($one_match->{seq2});
+	$one_match->{tlen} = $one_match->{len1} + $one_match->{len2} - $one_match->{mlen}; ## total length of the alignment
     }
 
     ################################################################
-    ## Calculate max matching weights
-    ($max_w1, $top_s1) = &MaxMatchingWeight($seq1);
-    ($max_w2, $top_s2) = &MaxMatchingWeight($seq2);
-    $max_w = &min($max_w1, $max_w2);
+    ## Calculate maximum possible matching weights
+    ## This takes into account the sequence lengths and their level of
+    ## degeneracy
+    ($one_match->{max_w1}, $one_match->{top_s1}) = &MaxMatchingWeight($one_match->{seq1}); ## Maximal weight for a match against seq1
+    ($one_match->{max_w2}, $one_match->{top_s2}) = &MaxMatchingWeight($one_match->{seq2}); ## Maximal weight for a match against seq2
+    $one_match->{max_w} = &min($one_match->{max_w1}, $one_match->{max_w2}); ## Maximal weight for a match between seq1 and seq2
 
     ################################################################
     ## Calculate relative weights
-    if ($max_w1 > 0) {
-	$rel_w1 = $weight/$max_w1;
+    if ($one_match->{max_w1} > 0) {
+	$one_match->{rel_w1} = $weight/$one_match->{max_w1};
     } else {
-	$rel_w1 = "NA";
+	$one_match->{rel_w1} = "NA";
     }
     
-    if ($max_w2 > 0) {
-	$rel_w2 = $weight/$max_w2;
+    if ($one_match->{max_w2} > 0) {
+	$one_match->{rel_w2} = $weight/$one_match->{max_w2};
     } else {
-	$rel_w2 = "NA";
+	$one_match->{rel_w2} = "NA";
     }
     
-    if ($max_w > 0) {
-	$rel_w = $weight/$max_w;
+    if ($one_match->{max_w} > 0) {
+	$one_match->{rel_w} = $weight/$one_match->{max_w};
     } else {
-	$rel_w = "NA";
+	$one_match->{rel_w} = "NA";
     }
-    
-    
+
+    return(%one_match);
+}
+
+################################################################
+## Print one match
+sub PrintOneMatch {
+    my (%one_match) = ();
+    my @result = ();
+
     ################################################################
     ## Calculate the resulting row for this comparison and check thresholds
     foreach my $field (@return_fields) {
-	my $result = $$field;
-	
+	my $result = $one_match->{$field};
 	## Format the field
 	push @result, sprintf $field_format{$field}, $result;
 	warn join "\t", ";", $field, $result, "\n" if ($verbose >= 3);
     }
-
+    
     ## Check thresholds on this field
     foreach my $field (keys(%lth)) {
-	if ($$field < $lth{$field}) {
-	    $filtered_out->{$seq1}->{$seq2} = 1;
-#	    last;
+	if ($one_match->{$field} < $lth{$field}) {
+	    $filtered_out->{$one_match->{seq1}}->{$one_match->{seq2}} = 1;
 	}
     }
     foreach my $field (keys(%uth)) {
-	if ($$field > $uth{$field}) {
-	    $filtered_out->{$seq1}->{$seq2} = 1;
-#	    last;
+	if ($one_match->{$field} > $uth{$field}) {
+	    $filtered_out->{$one_match->{seq1}}->{$one_match->{seq2}} = 1;
 	}
     }
-	
+    
     ## Print the result for this comparison
     unless ((scalar(@return_fields) < 1) ||
-	    ($filtered_out->{$seq1}->{$seq2})) {
+	    ($filtered_out->{$best_match->{seq1}}->{$best_match->{seq2}})) {
 	print $out join ("\t", @result), "\n";
     }
 
     ## Store the result for the contingency table
     foreach my $field (@table_fields) {
 	my $table_name = $field."_table";
-	$$table_name->{$seq1}->{$seq2} = $$field;
+	my $seq1 = $pattern1->get_attribute("sequence");
+	my $seq2 = $pattern2->get_attribute("sequence");
+	my $value = $one_match->{$field};
+#	&RSAT::message::Debug($seq1, $seq2, $field, %one_match, $value) if ($main::verbose >= 0);
+	$$table_name->{$seq1}->{$seq2} = $value;
     }
 }
 
