@@ -272,6 +272,9 @@ sub OneMatch {
     my ($pattern1, $pattern2, $reverse) = @_;
     local %one_match = ();
 
+    $one_match->{pattern1} = $pattern1;
+    $one_match->{pattern2} = $pattern2;
+
     $one_match->{id1} =  $pattern1->get_attribute("id");
     $one_match->{seq1} = $pattern1->get_attribute("sequence");
     
@@ -351,40 +354,44 @@ sub PrintOneMatch {
     my (%one_match) = ();
     my @result = ();
 
+    my $seq1 = $one_match->{pattern1}->get_attribute("sequence");
+    my $seq2 = $one_match->{pattern2}->get_attribute("sequence");
+
+
     ################################################################
     ## Calculate the resulting row for this comparison and check thresholds
     foreach my $field (@return_fields) {
-	my $result = $one_match->{$field};
+	my $value = $one_match->{$field};
 	## Format the field
-	push @result, sprintf $field_format{$field}, $result;
-	warn join "\t", ";", $field, $result, "\n" if ($verbose >= 3);
-    }
+	push @result, sprintf $field_format{$field}, $value;
+#	&RSAT::message::Debug($seq1, $seq2, $field, $value) if ($main::verbose >= 0); 
+   }
     
     ## Check thresholds on this field
     foreach my $field (keys(%lth)) {
-	if ($one_match->{$field} < $lth{$field}) {
-	    $filtered_out->{$one_match->{seq1}}->{$one_match->{seq2}} = 1;
+	my $value = $one_match->{$field};
+	if ($value < $lth{$field}) {
+	    $filtered_out->{$seq1}->{$seq2} = 1;
 	}
+#	&RSAT::message::Debug($seq1, $seq2, $field, $value) if ($main::verbose >= 0); 
     }
     foreach my $field (keys(%uth)) {
-	if ($one_match->{$field} > $uth{$field}) {
-	    $filtered_out->{$one_match->{seq1}}->{$one_match->{seq2}} = 1;
+	my $value = $one_match->{$field};
+	if ($value > $uth{$field}) {
+	    $filtered_out->{$seq1}->{$seq2} = 1;
 	}
     }
     
     ## Print the result for this comparison
     unless ((scalar(@return_fields) < 1) ||
-	    ($filtered_out->{$best_match->{seq1}}->{$best_match->{seq2}})) {
+	    ($filtered_out->{$seq1}->{$seq2})) {
 	print $out join ("\t", @result), "\n";
     }
 
     ## Store the result for the contingency table
     foreach my $field (@table_fields) {
 	my $table_name = $field."_table";
-	my $seq1 = $pattern1->get_attribute("sequence");
-	my $seq2 = $pattern2->get_attribute("sequence");
 	my $value = $one_match->{$field};
-#	&RSAT::message::Debug($seq1, $seq2, $field, %one_match, $value) if ($main::verbose >= 0);
 	$$table_name->{$seq1}->{$seq2} = $value;
     }
 }
