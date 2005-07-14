@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-ensembl-genome.pl,v 1.14 2005/07/14 16:17:02 oly Exp $
+# $Id: get-ensembl-genome.pl,v 1.15 2005/07/14 16:23:34 oly Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -23,7 +23,7 @@ require "lib/load_classes.pl";
 require "lib/parsing_util.pl";
 
 ## EnsEMBL libraries
-use Bio::EnsEMBL::DBSQL::DBAdaptor;
+# use Bio::EnsEMBL::DBSQL::DBAdaptor;
 use Bio::EnsEMBL::DBSQL::SliceAdaptor;
 
 ## TO DO
