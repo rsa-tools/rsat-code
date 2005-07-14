@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-ensembl-genome.pl,v 1.13 2005/03/31 15:18:32 jvanheld Exp $
+# $Id: get-ensembl-genome.pl,v 1.14 2005/07/14 16:17:02 oly Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -172,7 +172,7 @@ package main;
     ## Connection to the EnsEMBL MYSQL database
     $ensembl_host = 'ensembldb.ensembl.org';
     $ensembl_user = "anonymous";
-    $dbname = 'homo_sapiens_core_28_35a';
+    $dbname = 'homo_sapiens_core_31_35d';
     $org = 'schtroumpf';
     
     #### Options for the exported SQL database
@@ -284,8 +284,8 @@ package main;
     ## error file
     open ERR, ">".$outfile{err} || die "cannot open error log file".$outfile{err}."\n";
     
-    ## List of contif sequence files
-    open CTG, ">", $outfile{contigs} || die "cannot open contig file".$outfile{contigs}."\n";; # file with contig IDs
+    ## List of contig sequence files
+    open CTG, ">", $outfile{contigs} || die "cannot open contig file".$outfile{contigs}."\n"; # file with contig IDs
 
     ## feature file
     $FT_TABLE =  &OpenOutputFile($outfile{feature});
@@ -297,6 +297,9 @@ package main;
     ## feature_name table
     open $FT_NAME_TABLE, ">".$outfile{ft_name} || die "cannot open error log file".$outfile{ft_name}."\n";
     
+    ## cds sequences in fasta format
+    $outfile{pp} = $org."_aa.fasta";
+    open PP, ">", $outfile{pp} || die "cannot open sequence file".$outfile{pp}."\n";
     
     #### print verbose
     &Verbose() if ($verbose);
@@ -391,7 +394,7 @@ package main;
 	    $rsat_gene->force_attribute("organism", $organism_name);
 	    
 	    print $FT_TABLE join("\t", @feature), "\n";
-	    print_DBEntries($ensembl_gene->get_all_DBLinks());
+#	    print_DBEntries($ensembl_gene->get_all_DBLinks());
 
 	    ## Get all Transcript objects
 	    my $tr = 0;
@@ -418,7 +421,7 @@ package main;
 		$transcriptID = $feature[0];
 
 		## Get CDS ID and coordinates (relative to chromosome) - there is a strand trick (see API doc)
-		## Problem: corrdinates are strange
+		## Problem: coordinates are strange
 		my $coding_region_start = $trans->coding_region_start();
 		my $coding_region_end = $trans->coding_region_end();
 		my $ensembl_translation = $trans->translation();
@@ -437,10 +440,10 @@ package main;
 		    $rsat_cds->push_attribute("names", $rsat_gene->get_attribute("name"));
 		    $rsat_cds->push_attribute("names", $rsat_gene->get_attribute("id"));
 		    $rsat_cds->push_attribute("names", $rsat_transcript->get_attribute("name"));
+#		    print PP $header, "\n";
+			&PrintNextSequence(PP,"fasta",60,$ensembl_translation->seq(),$ensembl_translation->stable_id(),$rsat_gene->get_attribute("description"));
 
 		    ## VERIFIER SI CECI EST TOUJOURS UTILE
-		    $feature[0] =  $ensembl_translation->stable_id();
-		    $feature[1] = "CDS";
 		    if ($feature[6] eq 'D') {
 			$feature[4] = $coding_region_start;
 			$feature[5] = $coding_region_end;
@@ -448,7 +451,7 @@ package main;
 			$feature[4] = $coding_region_end;
 			$feature[5] = $coding_region_start;
 		    }
-		    print $FT_TABLE join ("\t", @feature), "\n"; 
+
 		}
 
 		## Tests to make sure a transcripts includes UTRs (are also in first and last exons!)
@@ -544,6 +547,7 @@ package main;
     close $FT_TABLE if ($outfile{feature});
     close $XREF_TABLE if ($outfile{xreference});
     close $FT_NAME_TABLE if ($outfile{ft_name});
+    close PP;
 
     ################################################################
     ## Report the output directory
