@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.51 2005/06/20 15:06:46 jvanheld Exp $
+# $Id: install-organism,v 1.52 2005/07/19 23:30:00 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -358,7 +358,7 @@ sub IntergenicSegments {
     #### retrieve intergenic sequences
     my $command = "coding-or-not ";
     $command .= "-v " if ($verbose >= 1);
-    $command .= "-org $organism_short_name -return ncs,seq,cs,stats \n\n";
+    $command .= "-org $organism_short_name -return ncs,cs,pos,seq,stats \n\n";
     &doit($command, $dry_run, $die_on_error, $verbose);
 
     my @types = ();
