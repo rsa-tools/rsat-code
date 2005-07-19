@@ -1,11 +1,5 @@
 #!/usr/bin/perl
 
-## CVS: fixed a bug in gene segment IDS: the chromosome name did not appear anymore. 
-## CVS: fixed a bug with the last left ID (was not 'none' anymore)
-## CVS: the sequence ID contains the same info as the .pos file, but with _ instead of \t as field separator 
-## CVS: replaced ORF by gene (since tRNA and rRNA are used in the analysis)
-## CVS: fixed a bug with embedded genes (were not treated correctly)
-
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
