@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.52 2005/07/19 23:30:00 jvanheld Exp $
+# $Id: install-organism,v 1.53 2005/07/19 23:46:24 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -29,10 +29,11 @@ $supported_for_installation{"filelist"} = 1;
 		   parse=>1,
 		   config=>1,
 		   start_stop=>1,
-		   ncf=>1,
 		   allup=>1,
+		   genome_segments=>1,
 		   oligos=>1,
 		   distrib=>1,
+		   ncf=>1,
 		   gene_freq=>1,
 		   genome_freq=>1,
 		   upstream_freq=>1,
@@ -143,7 +144,7 @@ $out = &OpenOutputFile($outputfile);
 
 &StartAndStopCodons() if ($task{start_stop});
 
-&IntergenicSegments() if ($task{ncf});
+&IntergenicSegments() if ($task{genome_segments});
 
 &AllUpstream() if ($task{allup});
 
@@ -719,13 +720,18 @@ OPTIONS
 			     calculate start and stop codon
 			     frequencies
 
-		ncf	     retrieve intergenic fragments
-
 		allup	     retrieve all upstream sequences
+
+		genome_segments
+			     retrieve sequences and limits of genome segments
+			     (intergenic, genic)
 
 		oligos	     calculate oligonucleotide frequencies
 
 		dyads	     calculate dyad frequencies
+
+		ncf	     calculate oligo and dyad frequencies in
+			     intergenic segments
 
 		genome_freq  
 			     calculate oligo and dyad frequencies from
