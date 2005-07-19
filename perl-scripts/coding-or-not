@@ -1,4 +1,11 @@
 #!/usr/bin/perl
+
+## CVS: fixed a bug in gene segment IDS: the chromosome name did not appear anymore. 
+## CVS: fixed a bug with the last left ID (was not 'none' anymore)
+## CVS: the sequence ID contains the same info as the .pos file, but with _ instead of \t as field separator 
+## CVS: replaced ORF by gene (since tRNA and rRNA are used in the analysis)
+## CVS: fixed a bug with embedded genes (were not treated correctly)
+
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
@@ -10,11 +17,12 @@ $line_width = 0;
 $out_format = "wc";
 $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
 $number_format = "%-7g";
+$NULL="<NULL>";
 
 ## Initialization
 @nc_lengths = ();
 @cs_lengths = ();
-@supported_return = qw(ncs cs pos div conv tandem orf seq stats);
+@supported_return = qw(ncs cs pos div conv tandem gene seq stats);
 %supported_return = ();
 foreach my $field (@supported_return) {
     $supported_return{$field} = 1;
@@ -39,14 +47,10 @@ unless (defined(%return)) {
   $return{'div'} = 1;
   $return{'conv'} = 1;
   $return{'tandem'} = 1;
-  $return{'orf'} = 1;
+  $return{'gene'} = 1;
   $return{'seq'} = 1;
 }
    
-#### organism
-#$organism = &CheckOrganism($organism_name);
-#&ReadFeatures($organism_name,"",$feature_types);
-
 ### read feature attributes (position, description, ...)
 $organism = new RSAT::organism();
 $organism->check_name($organism_name);
@@ -68,7 +72,7 @@ if ($return{seq}) {
     open CONVERGENT_NC_SEQ, ">${organism_name}_intergenic_segments_convergent.$out_format" if ($return{'conv'});
     open TANDEM_NC_SEQ, ">${organism_name}_intergenic_segments_tandem.$out_format" if ($return{'tandem'});
     open C_SEQ, ">${organism_name}_gene_segments.$out_format" if ($return{'cs'});
-    open ORF_SEQ, ">${organism_name}_ORF_sequences.$out_format" if ($return{'orf'});
+    open GENE_SEQ, ">${organism_name}_gene_sequences.$out_format" if ($return{'gene'});
 }
 
 
@@ -93,17 +97,10 @@ my %left = $organism->index_attribute_by_feature("left");
 my %right = $organism->index_attribute_by_feature("right");
 foreach my $ctg (sort keys %contig) {
     my $contig = $contig{$ctg};
-    my @genes = sort { $left{$a} <=> $left{$b} } $contig->get_genes();
-    
-    &RSAT::message::Info(join ("\t", "Features per contig", $ctg, scalar(@genes))) if ($main::verbose >= 2);
-    
-
-##%contigs= $organism->get_contigs();
-#foreach my $contig (values %contig) {
-#    ### get contig file
-#    my $ctg = $contig->get_name();    
-    
     &RSAT::message::Info(join ("\t", "Analyzing Contig\t", $ctg, $contig->count_genes())) if ($main::verbose >= 3);
+
+    my @genes = sort { $left{$a} <=> $left{$b} } $contig->get_genes();
+    &RSAT::message::Info(join ("\t", "Features per contig", $ctg, scalar(@genes))) if ($main::verbose >= 2);
 
     ## Open sequence for the current contig
     my $sequence = $contig->get_attribute("sequence");
@@ -116,181 +113,183 @@ foreach my $ctg (sort keys %contig) {
     ## Contig length
     my $ctg_length = $sequence->get_length();
 
-
     my @genes = $contig->get_genes();
     $gene_nb += scalar(@genes);
     &RSAT::message::Info(join("\t", $seq_file, $ctg, $ctg_length, scalar(@genes), $gene_nb))
 	if ($verbose >= 3);
 
     ### sort genes belonging to the current contig
-    @sorted_orfs = sort {
+    @sorted_genes = sort {
 	(($left{$a} <=> $left{$b}) || (($left{$a} == $left{$b}) && ($right{$a} <=> $right{$b})))
 	} @genes;
 
-#    die join "\n", @sorted_orfs;
-
-    ### print ORF sequences
-    if (($return{'orf'}) && ($return{seq})) {
-	foreach $orf (@sorted_orfs) {
-	    my $id = $orf->get_attribute("id");
+    ################################################################
+    ### Return gene sequences
+    if (($return{'gene'}) && ($return{seq})) {
+	&RSAT::message::Info("Printing gene sequences") if ($main::verbose >= 2);
+	foreach $gene (@sorted_genes) {
+	    my $id = $gene->get_attribute("id");
 	    $seq_id = join ("_", 
-			    $orf->get_attribute("id"),
+			    $gene->get_attribute("id"),
 			    $ctg, 
-			    $orf->get_attribute("start"),
-			    $orf->get_attribute("end"),
-			    $orf->get_attribute("strand"));
-	    $current_seq = $sequence->get_sequence($left{$orf},$right{$orf});
-#	warn $seq_id, "\t", $current_seq, "\n" if ($main::verbose >= 5);
+			    $gene->get_attribute("start"),
+			    $gene->get_attribute("end"),
+			    $gene->get_attribute("strand"));
+	    $current_seq = $sequence->get_sequence($left{$gene},$right{$gene});
+#	&RSAT::message::Debug($seq_id,  $current_seq) if ($main::verbose >= 5);
 	    
-	    if ($orf->get_attribute("strand") eq "R") {
+	    if ($gene->get_attribute("strand") eq "R") {
 		$current_seq = &ReverseComplement($current_seq);
 	    }
-	    &PrintNextSequence(ORF_SEQ, $out_format,$line_width,$current_seq,$seq_id);
+	    &PrintNextSequence(GENE_SEQ, $out_format,$line_width,$current_seq,$seq_id);
 	}
     }
     
-    #### gene and intergenic segments
-    $gene_end = 0;
-    $end_reached = 0;
-    $orf_nb = 0;
-    my $nc_left_ORF_ID = "none";
-    my $nc_left_ORF_strand = "none";
-    my $nc_right_ORF_ID = "none";
-    my $nc_right_ORF_strand = "none";
+    ################################################################
+    #### Gene and intergenic segments
+    my $gene_segment_right = 0;
+    my $end_reached = 0;
+    my $gene_nb = 0;
+    my $gene_group = 0;
+    my $nc_left_gene = $NULL;
+    my $nc_left_gene_ID = $NULL;
+    my $nc_left_gene_strand = $NULL;
+    my $nc_right_gene_ID = $NULL;
+    my $nc_right_gene_strand = $NULL;
     
+    &RSAT::message::Info("Treating intergenic and gene segments") if ($main::verbose >= 2);
     do {
 	################################################################
 	### next intergenic segment
-	$nc_start = $gene_end+1;
-	$cluster++;
-	@orf_cluster = ($sorted_orfs[$orf_nb]->get_attribute('id'));
-	$gene_start = $left{$sorted_orfs[$orf_nb]};
-	$nc_right_ORF = $sorted_orfs[$orf_nb];
-	$nc_right_ORF_ID = $nc_right_ORF->get_attribute("id");
-	$nc_right_ORF_strand = $nc_right_ORF->get_attribute("strand");
-	$nc_end = $gene_start - 1;
+	my  @segment_genes = ();
+	my  @segment_gene_strands = ();
+	$nc_start = $gene_segment_right+1;
+	$gene_group++;
+	push @segment_genes, $sorted_genes[$gene_nb]->get_attribute('id');
+	push @segment_gene_strands, $sorted_genes[$gene_nb]->get_attribute('strand');
+	$gene_segment_left = $left{$sorted_genes[$gene_nb]};
+	$nc_right_gene = $sorted_genes[$gene_nb];
+	$nc_right_gene_ID = $nc_right_gene->get_attribute("id");
+	$nc_right_gene_strand = $nc_right_gene->get_attribute("strand");
+	$nc_end = $gene_segment_left - 1;
 	$nc_len = $nc_end - $nc_start + 1;
 	push @nc_lengths, $nc_len;
 
-	$pos_fields = join ("\t",
-			    "intergenic_segment_".${cluster},
-			    $ctg,
-			    $nc_start,
-			    $nc_end,
-			    $nc_len,
-			    $nc_left_ORF_ID,
-			    $nc_right_ORF_ID,
-			    $nc_left_ORF_strand,
-			    $nc_right_ORF_strand,
-			   );
-	print NC_POSITIONS $pos_fields, "\n" if ($return{pos});
-
+	@pos_fields =  ("intergenic_segment_".$gene_group,
+			$ctg,
+			$nc_start,
+			$nc_end,
+			$nc_len,
+			$nc_left_gene_ID,
+			$nc_right_gene_ID,
+			$nc_left_gene_strand,
+			$nc_right_gene_strand,
+		       );
+	print NC_POSITIONS join ("\t", @pos_fields), "\n" if ($return{pos});
+	&RSAT::message::Debug(@pos_fields) if ($main::verbose >= 3);
 
 	if ($return{seq}) {
-	    $seq_id = join( "_", 
-			    "intergenic_segment", 
-			    $cluster,
-			    $ctg,
-			    $nc_start,
-			    $nc_end,
-			    "l".$nc_left_ORF_ID,
-			    "r".$nc_right_ORF_ID);
+	    $seq_id = join ("_", @pos_fields);
 	    $current_seq = $sequence->get_sequence($nc_start,$nc_end);
-	    
 	    &PrintNextSequence(NC_SEQ, $out_format,$line_width,$current_seq,$seq_id) if ($return{'ncs'});
 	    
-	    unless ($nc_left_ORF) {
+	    if ($nc_left_gene eq $NULL) {
 		## TO BE TREATED ##
-		&RSAT::message::Debug(join ("\t", 
-					    "nc_left_ORF_ID", $nc_left_ORF_ID,
-					    "nc_right_ORF_ID", $nc_right_ORF_ID,
-					   ));
-	    } elsif ($nc_left_ORF->get_attribute('strand') eq $nc_right_ORF->get_attribute('strand')) {
+		&RSAT::message::Info(join ("\t", 
+					    "Intergenic segment without left gene",
+					    "nc_left_gene_ID", $nc_left_gene_ID,
+					    "nc_right_gene_ID", $nc_right_gene_ID,
+					   )) if ($main::verbose >= 1);
+	    } elsif ($nc_left_gene->get_attribute('strand') eq $nc_right_gene->get_attribute('strand')) {
 		&PrintNextSequence(TANDEM_NC_SEQ, $out_format,$line_width,$current_seq,$seq_id) 
 		    if ($return{'tandem'});
-	    } elsif (($nc_left_ORF->get_attribute('strand') eq "R") && ($nc_right_ORF->get_attribute('strand') eq "D")) {
+	    } elsif (($nc_left_gene->get_attribute('strand') eq "R") && ($nc_right_gene->get_attribute('strand') eq "D")) {
 		&PrintNextSequence(DIVERGENT_NC_SEQ, $out_format,$line_width,$current_seq,$seq_id)  
 		    if ($return{'div'});
-	    } elsif (($nc_left_ORF->get_attribute('strand') eq "D") && ($nc_right_ORF->get_attribute('strand') eq "R")) {
+	    } elsif (($nc_left_gene->get_attribute('strand') eq "D") && ($nc_right_gene->get_attribute('strand') eq "R")) {
 		&PrintNextSequence(CONVERGENT_NC_SEQ, $out_format,$line_width,$current_seq,$seq_id)  if ($return{'conv'});
 	    }
 	}
 	
 	################################################################
-	### next gene segment
-	$gene_end = $right{$sorted_orfs[$orf_nb]};
-	$nc_left_ORF = "";
+	#### Next gene segment.
+	#### Note: a gene segment can contain one or several genes
+	#### (overlapping genes are frequent in bacteria)
+	$gene_segment_right = $right{$sorted_genes[$gene_nb]};
+	$nc_left_gene = $sorted_genes[$gene_nb]; 
 
-        #### look for next ORF whose left limit is at right
-	while (($orf_nb < $#sorted_orfs) && 
-	       ($left{$sorted_orfs[$orf_nb+1]} <= $gene_end)) { 
-	    $orf_nb++;
-	    push @orf_cluster,  $sorted_orfs[$orf_nb]->get_attribute('id');
-	    $nc_left_ORF = $sorted_orfs[$orf_nb] unless ($gene_end > $sorted_orfs[$orf_nb]->get_attribute("right"));
-	    if ($nc_left_ORF) {
-		$nc_left_ORF_ID = $nc_left_ORF->get_attribute("id");
-		$nc_left_ORF_strand = $nc_left_ORF->get_attribute("strand");
+        #### Extend the current gene segment by incorporating all overlapping genes.
+	while (($gene_nb < $#sorted_genes) && 
+	       ($left{$sorted_genes[$gene_nb+1]} <= $gene_segment_right+1)) { 
+	    $gene_nb++;
+	    &RSAT::message::Debug(join("\t", "Next gene", $gene_nb,
+				       $sorted_genes[$gene_nb]->get_attribute("id"),
+				       "gene segment right:".$gene_segment_right,
+				      )) if ($main::verbose >= 3);
+	    push @segment_genes, $sorted_genes[$gene_nb]->get_attribute('id');
+	    push @segment_gene_strands, $sorted_genes[$gene_nb]->get_attribute('strand');
+
+	    #### The rightmost gene of this segment will be the left limit of the next intergenic segment
+	    if ($gene_segment_right > $sorted_genes[$gene_nb]->get_attribute("right")) {
+		&RSAT::message::Info(join("\t", "Embedded gene", $sorted_genes[$gene_nb]->get_attribute("id"))) if ($main::verbose >= 1);
 	    } else {
-		$nc_left_ORF_ID = "none";
-		$nc_left_ORF_strand = "none";
+		$nc_left_gene = $sorted_genes[$gene_nb]; 
+		$gene_segment_right = &max($gene_segment_right, $right{$sorted_genes[$gene_nb]});
 	    }
-	    $gene_end = &max($gene_end, $right{$sorted_orfs[$orf_nb]});
+	}
+	unless ($nc_left_gene eq $NULL) {
+	    $nc_left_gene_ID = $nc_left_gene->get_attribute("id");
+	    $nc_left_gene_strand = $nc_left_gene->get_attribute("strand");
 	}
 
-	$cs_len = $gene_end - $gene_start + 1;
+	## Export the current gene segment
+	$cs_len = $gene_segment_right - $gene_segment_left + 1;
 	push @cs_lengths, $cs_len;
-	$pos_fields = join ("\t", 
-			    "gene_segment_".${cluster},
-			    $ctg,
-			    $gene_start,
-			    $gene_end,
-			    $cs_len,
-			    scalar (@orf_cluster),
-			    join (";", @orf_cluster),
-			   );
-	print C_POSITIONS $pos_fields, "\n"  if ($return{pos});
+	@pos_fields =  ("gene_segment_".$gene_group,
+			$ctg,
+			$gene_segment_left,
+			$gene_segment_right,
+			$cs_len,
+			scalar (@segment_genes),
+			join (":", @segment_genes),
+			    join (":", @segment_gene_strands),
+		       );
+	print C_POSITIONS join ("\t", @pos_fields), "\n"  if ($return{pos});
 
-	## Coding segment sequence
+	## Export the current gene segment sequence
 	if (($return{'cs'}) && ($return{seq})) {
-	    $seq_id = join("_", "gene_segment", $cluster, $chr,$gene_start,$gene_end);
-	    $current_seq = $sequence->get_sequence($gene_start,$gene_end);
+	    $seq_id = join("_", @pos_fields);
+	    $current_seq = $sequence->get_sequence($gene_segment_left,$gene_segment_right);
 	    &PrintNextSequence(C_SEQ, $out_format,$line_width,$current_seq,$seq_id);	    
 	}
-	$nc_left_ORF = $sorted_orfs[$orf_nb] unless ($gene_end > $sorted_orfs[$orf_nb]->get_attribute("right"));
-	if ($nc_left_ORF) {
-	    $nc_left_ORF_ID = $nc_left_ORF->get_attribute("id");
-	    $nc_left_ORF_strand = $nc_left_ORF->get_attribute("strand");
-	} else {
-	    $nc_left_ORF_ID = "none";
-	    $nc_left_ORF_strand = "none";
-	}
-    	$orf_nb++;
+    	$gene_nb++;
 
 	################################################################
 	### Last intergenic segment
-	if ($orf_nb > $#sorted_orfs) {
+	if ($gene_nb > $#sorted_genes) {
 	    $end_reached = 1;
-	    $nc_start = $gene_end+1;
+	    $nc_start = $gene_segment_right+1;
 	    $nc_end = $ctg_length;
 	    $nc_len = $nc_end - $nc_start + 1;
+	    $nc_right_gene_ID = $NULL;
+	    $nc_right_gene_strand = $NULL;
 	    push @nc_lengths, $nc_len;
-	    $pos_fields = (join ("\t",
-			       "intergenic_segment_".${cluster},
-			       $ctg,
-			       $nc_start,
-			       $nc_end,
-			       $nc_len,
-			       $nc_left_ORF_ID,
-			       $nc_right_ORF_ID,
-			       $nc_left_ORF_strand,
-			       $nc_right_ORF_strand,
-			      ));
-	    print NC_POSITIONS "$pos_fields\n" if ($return{pos});
-
+	    @pos_fields = ("intergenic_segment_".$gene_group,
+			   $ctg,
+			   $nc_start,
+			   $nc_end,
+			   $nc_len,
+			   $nc_left_gene_ID,
+			   $nc_right_gene_ID,
+			   $nc_left_gene_strand,
+			   $nc_right_gene_strand,
+			  );
+	    print NC_POSITIONS join("\t", @pos_fields), "\n" if ($return{pos});
+	    
 	    if (($return{'ncs'}) && ($return{seq})) {
-		$seq_id = "intergenic_segment_${cluster}_${chr}_${nc_start}_${nc_end}";
+		$seq_id = join ("_", @pos_fields);
 		$current_seq = $sequence->get_sequence($nc_start,$nc_end);
-		&PrintNextSequence(NC_SEQ, $out_format,$line_width,$current_seq,$seq_id, $pos_fields);
+		&PrintNextSequence(NC_SEQ, $out_format,$line_width,$current_seq,$seq_id);
 	    }
 	}
     } until $end_reached;
@@ -363,7 +362,7 @@ close TANDEM_NC_SEQ if (($return{'tandem'}) && ($return{seq}));
 close NC_POSITIONS if ($return{pos});;
 close C_SEQ  if (($return{'cs'}) && ($return{seq}));
 close C_POSITIONS if ($return{pos});;
-close ORF_SEQ if (($return{'orf'}) && ($return{seq}));
+close GENE_SEQ if (($return{'gene'}) && ($return{seq}));
 
 ## Report execution time
 $done_time  = `date '+%d/%m/%y %H:%M:%S %Z'`;
@@ -420,8 +419,8 @@ OPTIONS
 			as in the genome sequence file, which is 
 			sometimes the reverse complement of the gene 
 			sequence.  . 
-		orf	open reading frame sequences
-			Contrarily to cs, orf returns every gene sequence
+		gene	open reading frame sequences
+			Contrarily to cs, gene returns every gene sequence
 			from the start to the stop codon, and in the
 			gene strand 
 		
@@ -441,8 +440,9 @@ OUTPUT
 }
 
 
+################################################################
+##### Read parameters
 sub ReadArguments {
-##### read parameters ###
     for $a (0..$#ARGV) {
 	if ($ARGV[$a] eq "-v") {
 	    if (&IsNatural($ARGV[$a+1])) {
@@ -454,7 +454,8 @@ sub ReadArguments {
 	    $organism_name = $ARGV[$a+1];
 	} elsif (($ARGV[$a] eq "-help") || 
 		 ($ARGV[$a] eq "-h")) {
-	    &PrintHelp;
+	    &PrintHelp();
+
 	} elsif ($ARGV[$a] eq "-return") {
 	    chomp($ARGV[$a+1]);
 	    @fields_to_return = split ",", $ARGV[$a+1];
@@ -474,19 +475,11 @@ sub ReadArguments {
 
 
 ################################################################
-#### print some verbosity
+#### Print some verbosity
 sub PrintVerbose {
     printf "; %-16s\t%s\n", "Organism", $supported_organism{$organism_name}->{'name'};
     printf "; %-16s\t%-12s\t%s\n", "feature file", $supported_organism{$organism_name}->{'features'};
     printf "; contig sequence file(s)\n";
-    foreach $contig ($organism->get_contigs()) {
-#	print "HELLO\tContig\t$contig\n";
-#	print (";\t", join ("\t", 
-#			    $contig->get_name(),
-#			    $contig->get_sequence()->get_attribute("filename")
-#			    )
-#	       , "\n");
-    }
-    printf "; %-16s\t%-12s\t%s\n", , "ORFs in total", $orf_count;
-    printf "; chr\tlength\torfs\n";
+    printf "; %-16s\t%-12s\t%s\n", , "genes in total", $gene_count;
+    printf "; chr\tlength\tgenes\n";
 }
