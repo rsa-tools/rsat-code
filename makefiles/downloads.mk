@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: downloads.mk,v 1.22 2005/05/12 09:05:05 jvanheld Exp $
+# $Id: downloads.mk,v 1.23 2005/07/21 12:47:06 rsat Exp $
 #
 # Time-stamp: <2003-10-09 14:02:21 jvanheld>
 #
@@ -45,15 +45,23 @@ ebi_genomes:
 # Genbank genome repository
 #
 GENBANK_DIRS =					\
-	genomes					
+	genomes					\
+	genbank/genomes				\
+	refseq 
 
-#	genbank/genomes				\
-#	refseq 
-
+GB_SUB_DIR=Saccharomyces_cerevisiae
+one_ncbi_dir_from_mirror:
+	rsync --delete								\
+		--exclude ARCHIVE						\
+		--exclude BACENDS						\
+		--exclude Bacteria.OLD						\
+		--exclude '*.tar.gz'						\
+		-avz rsync://bio-mirror.net/biomirror/ncbigenomes/${GB_SUB_DIR}	\
+		ftp.ncbi.nih.gov/genomes/
 
 GENBANK_GENOMES=ftp://ftp.ncbi.nih.gov
 GB_DIR=genomes/Saccharomyces_cerevisiae
-one_genbank_dir:
+one_genbank_dir_ori:
 	@mkdir -p logs
 	@echo "${DATE}	updating dir	$${GB_DIR}" >> wget_updates.txt
 	${WGET}							\
@@ -67,6 +75,9 @@ one_genbank_dir:
 		--accept=gaa.gz --accept=faa.gz			\
 		"${GENBANK_GENOMES}/${GB_DIR}" 
 	@echo "${DATE}	updated dir	$${GB_DIR}" >> wget_updates.txt
+
+one_genbank_dir:
+	${MAKE} one_ncbi_dir_from_mirror
 
 genbank:
 	@echo "${DATE}	starting to update	${GENBANK_DIRS}" >> wget_updates.txt; 
