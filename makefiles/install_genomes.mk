@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_genomes.mk,v 1.18 2005/02/01 20:56:31 jvanheld Exp $
+# $Id: install_genomes.mk,v 1.19 2005/07/21 12:47:37 rsat Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -35,6 +35,7 @@ ORG=Arabidopsis_thaliana
 ORG_DIR=${NCBI_DIR}/${ORG}
 INSTALL_TASK=allup,config,dyads,oligos,parse,start_stop,upstream_freq,phylogeny
 INSTALL_CMD=install-organism -v ${V}		\
+		-genbank ${NCBI_DIR}		\
 		-org ${ORG}			\
 		-task ${INSTALL_TASK}		\
 		${OPT}
@@ -103,4 +104,11 @@ install_all_eukaryotes:
 		${MAKE} install_one_organism ORG=$${org} INSTALL_TASK=${INSTALL_TASK},clean; \
 	done
 
-
+LINK_DIR=${RSAT}/genome_installations
+LINK_DIR_ORG=${LINK_DIR}/${ORG}
+install_one_eukaryote:
+	@mkdir -p ${LINK_DIR_ORG}
+	@rm -rf ${LINK_DIR_ORG}/*
+	@(cd ${LINK_DIR_ORG}; ln -s ${ORG_DIR}/CHR_*/*.gbk.gz .)
+	@echo ${LINK_DIR_ORG}
+	${MAKE} install_one_organism NCBI_DIR=${LINK_DIR}
