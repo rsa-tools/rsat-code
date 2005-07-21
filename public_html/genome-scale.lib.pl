@@ -4,6 +4,7 @@ $default{seq_label} = "name";
 $default{organism} = "Saccharomyces cerevisiae";
 $default{from} = "default";
 $default{to} = "default";
+$default{feattype} = "CDS";
 $default{sequence_type} = "upstream";
 
 
@@ -19,6 +20,13 @@ sub DisplayRetrieveSeqOptions {
 
 
     &OrganismPopUp();
+
+    #### feature type
+    print "<B><A HREF='help.retrieve-seq.html#feattype'>Feature type</A></B>&nbsp;";
+    print $query->radio_group(-name=>'feattype',
+			      -values=>[@supported_feature_types],
+			  -default=>$default{feattype});
+    print "<BR>\n";
 
     ### sequence type
     print "<B><A HREF='help.retrieve-seq.html#sequence_type'>Sequence type</A></B>&nbsp;";
@@ -86,6 +94,12 @@ sub ReadRetrieveSeqParams {
 	    $org = "Saccharomyces_cerevisiae";
 	}
 	$retrieve_seq_parameters .= " -org ".$org;
+	
+	### feature type
+	if ($query->param('feattype')) {
+	    my ($feattype) = split " ", $query->param('feattype'); ### take the first word
+	    $parameters .= " -feattype ".$feattype;
+	}
 	
 	### sequence type
 	if ($query->param('sequence_type')) {
