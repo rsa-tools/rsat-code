@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: downloads.mk,v 1.23 2005/07/21 12:47:06 rsat Exp $
+# $Id: downloads.mk,v 1.24 2005/07/22 10:05:05 rsat Exp $
 #
 # Time-stamp: <2003-10-09 14:02:21 jvanheld>
 #
@@ -49,14 +49,28 @@ GENBANK_DIRS =					\
 	genbank/genomes				\
 	refseq 
 
-GB_SUB_DIR=Saccharomyces_cerevisiae
+NCBI_DIR=Saccharomyces_cerevisiae
+NCBI_EXCLUDE=										\
+		--exclude Assembled_chromosomes						\
+		--exclude SNP								\
+		--exclude maps								\
+		--exclude CLONEEND							\
+		--exclude FOSMIDS							\
+		--exclude SARS								\
+		--exclude TOOLS								\
+		--exclude WGS_BACTERIA							\
+		--exclude ARCHIVE							\
+		--exclude BACENDS							\
+		--exclude Bacteria.OLD							\
+		--exclude '*.tar.gz'						
 one_ncbi_dir_from_mirror:
-	rsync --delete								\
-		--exclude ARCHIVE						\
-		--exclude BACENDS						\
-		--exclude Bacteria.OLD						\
-		--exclude '*.tar.gz'						\
-		-avz rsync://bio-mirror.net/biomirror/ncbigenomes/${GB_SUB_DIR}	\
+	rsync --delete	${NCBI_EXCLUDE}						\
+		-avz rsync://bio-mirror.net/biomirror/ncbigenomes/${NCBI_DIR}	\
+		ftp.ncbi.nih.gov/genomes/
+
+ncbi:
+	rsync --delete	${NCBI_EXCLUDE}						\
+		-avz rsync://bio-mirror.net/biomirror/ncbigenomes/*	\
 		ftp.ncbi.nih.gov/genomes/
 
 GENBANK_GENOMES=ftp://ftp.ncbi.nih.gov
