@@ -6,7 +6,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.102 2005/06/30 09:22:45 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.103 2005/07/22 10:01:29 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -674,6 +674,7 @@ sub CalcOligoOptions {
    $oligo_options .= " -l ".$oligo_len;
    $oligo_options .= " -lth occ_sig ".$thosig;
    $oligo_options .= " -thmsf ".$thmsf if (defined($thmsf));
+   $oligo_options .= " -thmssig ".$thmssig if (defined($thmssig));
    
    if ($markov) {
 	### Markov chain model
@@ -1911,6 +1912,9 @@ OPTIONS
 	-thmsf threshold on frequency of matching sequences (propotion
 	        of sequences with at least one occurrence of the
 	        pattern)
+	-thmssig threshold on the significance of matching sequences
+	        (sequences with at least one occurrence of the
+	        pattern). 
 	-maxol	maximum oligonucleotide length
 	-minol	minimum oligonucleotide length
 	-oligo_exp_freq
@@ -2123,6 +2127,7 @@ multiple-family-analysis options
 -calib_dir	calibration directory
 -thosig         threshold on occurrence significance
 -thmsf		threshold on frequency of matching sequences 
+-thmssig		threshold on the significance of matching sequences
 -markov #	exp. freq. calcualted with Markov chain model of order #
 -known		file containing a list of known sites/motifs
 -known_max_len 	maximal length for using known sites (default: $known_site_max_len)
@@ -2309,6 +2314,10 @@ sub ReadArguments {
 	    #### threshold on mseq frequency
 	} elsif ($ARGV[$a] =~ /^-thmsf/) {
 	    $thmsf = $ARGV[$a+1];
+
+	    #### threshold on mseq significance
+	} elsif ($ARGV[$a] =~ /^-thmssig/) {
+	    $thmssig = $ARGV[$a+1];
 
 	    #### dyad type
 	} elsif ($ARGV[$a] =~ /^-type/) {
