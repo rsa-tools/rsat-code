@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_genomes.mk,v 1.19 2005/07/21 12:47:37 rsat Exp $
+# $Id: install_genomes.mk,v 1.20 2005/07/23 05:57:17 rsat Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -104,11 +104,12 @@ install_all_eukaryotes:
 		${MAKE} install_one_organism ORG=$${org} INSTALL_TASK=${INSTALL_TASK},clean; \
 	done
 
+FULL_ORG=${ORG}
 LINK_DIR=${RSAT}/genome_installations
-LINK_DIR_ORG=${LINK_DIR}/${ORG}
+LINK_DIR_ORG=${LINK_DIR}/${FULL_ORG}
 install_one_eukaryote:
 	@mkdir -p ${LINK_DIR_ORG}
 	@rm -rf ${LINK_DIR_ORG}/*
 	@(cd ${LINK_DIR_ORG}; ln -s ${ORG_DIR}/CHR_*/*.gbk.gz .)
 	@echo ${LINK_DIR_ORG}
-	${MAKE} install_one_organism NCBI_DIR=${LINK_DIR}
+	${MAKE} install_one_organism NCBI_DIR=${LINK_DIR} ORG=${FULL_ORG}
