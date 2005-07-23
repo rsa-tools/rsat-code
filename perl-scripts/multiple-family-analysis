@@ -6,7 +6,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.103 2005/07/22 10:01:29 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.104 2005/07/23 15:41:50 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -45,6 +45,10 @@ $repetitions=10000; ### Repetitions for the calibN
 %dir = ();
 $dir{main} = `pwd`;
 chomp($dir{main});
+
+$thmssig = "none";
+$thmsf = "none";
+
 
 $dir{calib1} = "calibrations_1gene"; 
 %max_score = ();
@@ -340,6 +344,8 @@ sub SetFileNames {
     $oligo_suffix .= "_".$min_oligo_len."-".$max_oligo_len."nt";
     $oligo_suffix .= $strands;
     $oligo_suffix .= "_sig".$thosig;
+    if (&IsReal($thmsf)) {$oligo_suffix .= "_msf".$thmsf ; }
+    if (&IsReal($thmssig)) {$oligo_suffix .= "_mssig".$thmssig ; }
     $oligo_suffix .= $noov;
 
     foreach my $family_name (@families) {
@@ -673,8 +679,8 @@ sub CalcOligoOptions {
    $oligo_options .= " ".$strands;
    $oligo_options .= " -l ".$oligo_len;
    $oligo_options .= " -lth occ_sig ".$thosig;
-   $oligo_options .= " -thmsf ".$thmsf if (defined($thmsf));
-   $oligo_options .= " -thmssig ".$thmssig if (defined($thmssig));
+   if (&IsReal($thmsf)) {$oligo_options .= " -thmsf ".$thmsf ; }
+   if (&IsReal($thmssig)) {$oligo_options .= " -thmssig ".$thmssig ; }
    
    if ($markov) {
 	### Markov chain model
@@ -737,7 +743,8 @@ sub CalcOligoOptions {
    $oligo_suffix .= "_${oligo_len}nt";
    $oligo_suffix .= $strands;
    $oligo_suffix .= "_sig".$thosig;
-   $oligo_suffix .= "_thmsf".$thmsf if (defined($thmsf));
+   $oligo_suffix .= "_thmsf".$thmsf if (&IsReal($thmsf));
+   $oligo_suffix .= "_thmssig".$thmssig if (&IsReal($thmssig));
    $oligo_suffix .= $noov;
    
    $oligo_file = "$family_name/oligos_${family_name}/".$family{$family_name}->{file_prefix}.$oligo_suffix;    
@@ -761,16 +768,22 @@ sub OligoAnalysis {
    
    ## initialize the oligo file
 #    system "echo '' > $family{$family_name}->{oligo_file}"; # if ($verbose >=1);
-   
+
    ## Analyze all oligo lengths
+   my @oligo_commands = ();
    for $oligo_len ($min_oligo_len..$max_oligo_len) {
-	&CalcOligoOptions($oligo_len);
-	&doit($command, $dry_run, $die_on_error, $verbose);
+	my ($one_oligo_command) = &CalcOligoOptions($oligo_len);
+	push @oligo_commands, $one_oligo_command;
+#	&doit($command, $dry_run, $die_on_error, $verbose);
 #	system "cat $oligo_file >> $family{$family_name}->{oligo_file}";
    }
 
    ## Merge the results obtained with diffferent oligo lengths
-   &MergeOligoLengths();
+   my $merge_command = &MergeOligoLengths();
+   push @oligo_commands, $merge_command;
+   my $command = join "; \\\n", @oligo_commands;
+
+   &doit($command, $dry_run, $die_on_error, $verbose,$pc_cluster);
 }
 
 ################################################################
@@ -787,16 +800,25 @@ sub MergeOligoLengths {
    die "Error : cannot read file $family{$family_name}->{input_seq_file}\n" unless (-r $family{$family_name}->{input_seq_file});
    
    ## initialize the oligo file
-   system "echo '' > $family{$family_name}->{oligo_file}"; # if ($verbose >=1);    
+   my @merge_commands = "echo '' > $family{$family_name}->{oligo_file}"; # if ($verbose >=1);    
    for $oligo_len ($min_oligo_len..$max_oligo_len) {
 	($command, $oligo_file) = &CalcOligoOptions($oligo_len);
-	system "cat $oligo_file >> $family{$family_name}->{oligo_file}";
+	push @merge_commands, "cat ".$oligo_file." >> ".$family{$family_name}->{oligo_file};
    }
    
    ### fragment assembly
-   $command = "pattern-assembly -i $family{$family_name}->{oligo_file} ${strands} -v -o $family{$family_name}->{oligo_assembly_file} -maxfl 1 -maxpat 200 -subst 1";
-   
-   &doit($command, $dry_run, 0, $verbose);
+   my $assembly_command = "pattern-assembly -v 1 ";
+   $assembly_command .= " -i ".$family{$family_name}->{oligo_file};
+   $assembly_command .= " -maxfl 1 -maxpat 200 -subst 1 ".$strands;
+   $assembly_command .= " -o ".$family{$family_name}->{oligo_assembly_file};
+   push @merge_commands, $assembly_command;
+ 
+   my $merge_command = join "; \\\n", @merge_commands;
+   if ($task{oligos}) {
+       return $merge_command;
+   } else {
+       &doit($merge_command, $dry_run, 0, $verbose);
+   }
 }
 
 
