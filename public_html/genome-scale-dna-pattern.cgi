@@ -30,7 +30,7 @@ $query = new CGI;
 ### print the header of the result page
 &RSA_header("dna-pattern result ".$query->param("title"));
 
-#&ListParameters;
+&ListParameters() if ($ECHO >= 2);
 
 
 #### update log file ####

@@ -98,7 +98,7 @@ sub ReadRetrieveSeqParams {
 	### feature type
 	if ($query->param('feattype')) {
 	    my ($feattype) = split " ", $query->param('feattype'); ### take the first word
-	    $parameters .= " -feattype ".$feattype;
+	    $retrieve_seq_parameters .= " -feattype ".$feattype;
 	}
 	
 	### sequence type
