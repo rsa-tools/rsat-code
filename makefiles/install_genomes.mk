@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_genomes.mk,v 1.20 2005/07/23 05:57:17 rsat Exp $
+# $Id: install_genomes.mk,v 1.21 2005/07/24 21:52:11 rsat Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -45,27 +45,27 @@ install_one_organism:
 	@echo "Installing organism ${ORG}" 
 	${MAKE} my_command MY_COMMAND="${INSTALL_CMD}" JOB_PREFIX=install_${ORG}
 
-### Bacteria with a small genome for quick testing
-BACT=Mycoplasma_genitalium
+### Prokaryote with a small genome for quick testing
+PRO=Mycoplasma_genitalium
 
-### All the bacteria in NCBI genome directory
-BACTERIA = `ls -1 ${NCBI_DIR}/Bacteria | grep _ | sort -u | xargs `
-list_bacteria:
-	@echo "Bacteria to install	${BACTERIA}"
+### All the prokaryote in NCBI genome directory
+PROKARYOTES = `ls -1 ${NCBI_DIR}/Bacteria | grep _ | sort -u | xargs `
+list_prokaryote:
+	@echo "Prokaryote to install	${PROKARYOTES}"
 
 
-### Install all bacterial genomes on RSAT
-install_all_bacteria:
-	@for bact in ${BACTERIA}; do				\
-		${MAKE} install_one_bacteria BACT=$${bact} ;	\
+### Install all prokaryotel genomes on RSAT
+install_all_prokaryotes:
+	@for pro in ${PROKARYOTES}; do				\
+		${MAKE} install_one_prokaryote PRO=$${pro} ;	\
 	done
 
-### Install a single bacteria genome
-install_one_bacteria:
+### Install a single prokaryote genome
+install_one_prokaryote:
 	@echo
-	@echo "${DATE}	Installing bacteria ${BACT}"
-	@${MAKE} install_one_organism ORG=${BACT}		\
-		ORG_DIR=${NCBI_DIR}/Bacteria/${BACT}
+	@echo "${DATE}	Installing prokaryote ${PRO}"
+	@${MAKE} install_one_organism ORG=${PRO}		\
+		ORG_DIR=${NCBI_DIR}/Prokaryote/${PRO}
 
 ### Parse one organism
 parse_organism:
@@ -92,24 +92,55 @@ EUKARYOTES=					\
 	Apis_mellifera				\
 	Drosophila_melanogaster			\
 	Arabidopsis_thaliana			\
-	Caenorhabditis_elegans			\
-	Gallus_gallus				\
-	Homo_sapiens				\
-	Mus_musculus				\
-	Rattus_norvegicus			\
-	Canis_familiaris			\
-	Pan_troglodytes
+	Caenorhabditis_elegans
 install_all_eukaryotes:
-	for org in ${EUKARYOTES} ; do \
+	@for org in ${EUKARYOTES} ; do \
 		${MAKE} install_one_organism ORG=$${org} INSTALL_TASK=${INSTALL_TASK},clean; \
 	done
+	@for org in ${REF_EUKARYOTES} ; do \
+		${MAKE} install_one_ref_organism ORG=$${org} INSTALL_TASK=${INSTALL_TASK},clean; \
+	done
+	@${MAKE} install_mouse
+	@${MAKE} install_human
+	@${MAKE} install_rat
+	@${MAKE} install_zebrafish
 
+################################################################
+## Install organisms found in the root of the NCBI genome distribution. 
 FULL_ORG=${ORG}
 LINK_DIR=${RSAT}/genome_installations
 LINK_DIR_ORG=${LINK_DIR}/${FULL_ORG}
+LINK_PATTERN=CHR_*/*.gbk.gz
 install_one_eukaryote:
+	@echo 'Installing eukaryote ${ORG}	${FULL_ORG}'
 	@mkdir -p ${LINK_DIR_ORG}
 	@rm -rf ${LINK_DIR_ORG}/*
-	@(cd ${LINK_DIR_ORG}; ln -s ${ORG_DIR}/CHR_*/*.gbk.gz .)
+	@(cd ${LINK_DIR_ORG}; ln -s ${ORG_DIR}/${LINK_PATTERN} .)
 	@echo ${LINK_DIR_ORG}
 	${MAKE} install_one_organism NCBI_DIR=${LINK_DIR} ORG=${FULL_ORG}
+
+################################################################
+## use only the _ref_ files (e.g. for vertebrate genomes)
+REF_EUKARYOTES= \
+	Gallus_gallus				\
+	Canis_familiaris			\
+	Pan_troglodytes
+install_one_ref_eukaryote:
+	${MAKE} install_one_eukaryote LINK_PATTERN=CHR_*/*_ref_*.gbk.gz
+
+
+################################################################
+## Specific treatment for some organisms, because the folder name ($ORG)
+## differs from the organism name in the NCBI distribution ($FULL_ORG)
+## (e.g. ORG=H_sapiens FULL_ORG=Homo_sapiens)
+install_mouse:
+	${MAKE} install_one_ref_eukaryote ORG=M_musculus FULL_ORG=Mus_musculus
+
+install_zebrafish:
+	${MAKE} install_one_ref_eukaryote ORG=D_rerio FULL_ORG=Danio_rerio
+
+install_rat:
+	${MAKE} install_one_ref_eukaryote ORG=R_norvegicus FULL_ORG=Rattus_norvegicus
+
+install_human:
+	${MAKE} install_one_ref_eukaryote ORG=H_sapiens FULL_ORG=Homo_sapiens
