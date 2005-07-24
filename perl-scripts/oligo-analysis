@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.95 2005/06/16 06:18:09 jvanheld Exp $
+# $Id: oligo-analysis,v 1.96 2005/07/24 21:40:04 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -408,6 +408,17 @@ sub CountOligos {
 				      $last_pos - $current_pos);
 		$patterns{$pattern_seq}->{nb_possible_pos} -= $forbidden_pos;
 		$patterns{$rc}->{nb_possible_pos} -= $forbidden_pos if ($sum_rc);
+#  		&RSAT::message::Debug("forbidden pos", 
+# 				      $pattern_seq, 
+# 				      $forbidden_pos, $last_pos, $current_pos, 
+# 				      $patterns{$pattern_seq}->{occ},
+# 				      $patterns{$pattern_seq}->{overlaps},
+# 				      $patterns{$pattern_seq}->{nb_possible_pos},
+# 				      $rc, 
+# 				      $patterns{$rc}->{occ},
+# 				      $patterns{$rc}->{overlaps},
+# 				      $patterns{$rc}->{nb_possible_pos},
+# 				     ) if ($main::verbose >= 10);
 	    }
 	    $patterns{$pattern_seq}->{occ}++;
 	    $last_pos{$pattern_seq} = $current_pos;
@@ -784,21 +795,21 @@ sub CalcFrequencies {
     $sum_noov = 0;
     $sum_occurrences = 0;
     foreach $pattern_seq (keys %patterns) {
-	$sum_occurrences += $patterns{$pattern_seq}->{occ} + $patterns{$pattern_seq}->{overlaps};
 	$sum_overlaps += $patterns{$pattern_seq}->{overlaps};
 	$sum_noov += $patterns{$pattern_seq}->{occ};
     }
+    $sum_occurrences = $sum_overlaps + $sum_noov;
     
     #### relative frequencies
-    if ($noov) {
-	foreach $pattern_seq (keys %patterns) {
-	    $patterns{$pattern_seq}->{observed_freq} = $patterns{$pattern_seq}->{occ}/$sum_noov;
-	}
-    } else {
+#    if ($noov) {
+#	foreach $pattern_seq (keys %patterns) {
+#	    $patterns{$pattern_seq}->{observed_freq} = $patterns{$pattern_seq}->{occ}/$sum_noov;
+#	}
+#    } else {
 	foreach $pattern_seq (keys %patterns) {
 	    $patterns{$pattern_seq}->{observed_freq} = $patterns{$pattern_seq}->{occ}/$sum_occurrences;
 	}
-    }
+#    }
 
     #### frequency of matching sequences
     if ($return{'mseq'}) {
@@ -1085,8 +1096,8 @@ sub CalcExpected {
     #### expected number of occurrences and matching sequences ####
     foreach $pattern_seq (sort keys %patterns) {
 	unless ($method =~ /calibration/i) {
-#	    $patterns{$pattern_seq}->{exp_occ} = $patterns{$pattern_seq}->{exp_freq} * $patterns{$pattern_seq}->{nb_possible_pos}; 
-	    $patterns{$pattern_seq}->{exp_occ} = $patterns{$pattern_seq}->{exp_freq} * $sum_noov; 
+ 	    $patterns{$pattern_seq}->{exp_occ} = $patterns{$pattern_seq}->{exp_freq} * $patterns{$pattern_seq}->{nb_possible_pos}; 
+#	    $patterns{$pattern_seq}->{exp_occ} = $patterns{$pattern_seq}->{exp_freq} * $sum_noov; 
 	}
 	if ($return{'mseq'}) {
 	    ### expected number of matching sequences ###
@@ -1170,26 +1181,28 @@ sub CalcZscore {
 ################################################################
 #### Calculate log likelihood
 sub CalcLikelihood {
-### log likelihood ###
-  if ($return{'occ'}) {
-    foreach $pattern_seq (keys %patterns) {
-      if (($patterns{$pattern_seq}->{exp_freq} > 0) && ($patterns{$pattern_seq}->{observed_freq} > 0)) {
-	$patterns{$pattern_seq}->{occ_lkh} = $patterns{$pattern_seq}->{observed_freq} * log($patterns{$pattern_seq}->{observed_freq}/$patterns{$pattern_seq}->{exp_freq});
-      } else {
-	$patterns{$pattern_seq}->{occ_lkh} = "NA";
-      }
+
+    ### log likelihood for occurrences
+    if ($return{'occ'}) {
+	foreach $pattern_seq (keys %patterns) {
+	    if (($patterns{$pattern_seq}->{exp_freq} > 0) && ($patterns{$pattern_seq}->{observed_freq} > 0)) {
+		$patterns{$pattern_seq}->{occ_lkh} = $patterns{$pattern_seq}->{observed_freq} * log($patterns{$pattern_seq}->{observed_freq}/$patterns{$pattern_seq}->{exp_freq});
+	    } else {
+		$patterns{$pattern_seq}->{occ_lkh} = "NA";
+	    }
+	}
     }
-  }
-  if ($return{'mseq'}) {
-    foreach $pattern_seq (keys %patterns) {
-      if (($patterns{$pattern_seq}->{exp_ms} > 0) && ($patterns{$pattern_seq}->{mseq} > 0)) {
-	$patterns{$pattern_seq}->{ms_lkh} = $patterns{$pattern_seq}->{mseq} * log($patterns{$pattern_seq}->{mseq}/$patterns{$pattern_seq}->{exp_ms}) / $sequence_number;
-      } else {
-	$patterns{$pattern_seq}->{ms_lkh} = "NA";
-      }
+    ## log likelihood for matching sequences
+    if ($return{'mseq'}) {
+	foreach $pattern_seq (keys %patterns) {
+	    if (($patterns{$pattern_seq}->{exp_ms} > 0) && ($patterns{$pattern_seq}->{mseq} > 0)) {
+		$patterns{$pattern_seq}->{ms_lkh} = $patterns{$pattern_seq}->{mseq} * log($patterns{$pattern_seq}->{mseq}/$patterns{$pattern_seq}->{exp_ms}) / $sequence_number;
+	    } else {
+		$patterns{$pattern_seq}->{ms_lkh} = "NA";
+	    }
+	}
     }
-  }
-}  ### CalcLikelihood
+} 
 
 
 ################################################################
@@ -1293,6 +1306,13 @@ sub CalcProba {
 								   $patterns{$pattern_seq}->{nb_possible_pos},
 								   $occ_from,
 								   $occ_to);
+#	    &RSAT::message::Debug($pattern_seq,
+#				  $patterns{$pattern_seq}->{exp_freq},
+#				  $patterns{$pattern_seq}->{nb_possible_pos},
+#				  $occ_from,
+#				  $occ_to,
+#				  $patterns{$pattern_seq}->{occ_pro}
+#				 ) if ($main::verbose >= 10);
 	}
 
 	### Significance index for occurrence number
