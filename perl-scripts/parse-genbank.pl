@@ -1,6 +1,6 @@
 #!/usr/bin/perl 
 #############################################################
-# $Id: parse-genbank.pl,v 1.28 2005/04/26 08:19:44 rsat Exp $
+# $Id: parse-genbank.pl,v 1.29 2005/07/24 21:51:11 rsat Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -260,8 +260,8 @@ package main;
 
     @class_factories = qw (
 			   organisms 
-			   contigs
 			   features
+			   contigs
 			   genes
 			   mRNAs
 			   scRNAs
