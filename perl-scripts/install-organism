@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.53 2005/07/19 23:46:24 rsat Exp $
+# $Id: install-organism,v 1.54 2005/07/24 21:41:37 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -544,7 +544,7 @@ sub CalcOligoFreq {
 	$command .= " ".$strands;
 	$command .= " ".$noov;
 	$command .= " -l ".$oligo_length." -type dna ";
-	$command .= " -return freq,occ -nogrouprc ";
+	$command .= " -return freq,occ -grouprc ";
 	$command .= " -o ".$out_file;
 	$command .= "; gzip -f ".$out_file;
 	&doit($command, $dry_run, $die_on_error, $verbose);  
@@ -563,7 +563,7 @@ sub CalcOligoDistrib {
 		$command .= " ".$strands;
 	$command .= " ".$noov;
 	$command .= " -l ".$oligo_length." -type dna";
-	$command .= " -return occ -distrib -nogrouprc";
+	$command .= " -return occ -distrib -grouprc";
 	$command .= " -o ".$distrib_file;
 	$command .= " ; gzip -f ".$distrib_file;
 	&doit($command, $dry_run, $die_on_error, $verbose);  
@@ -602,7 +602,7 @@ sub CalcDyadFreq {
 	$command .= " -sp ${min_spacing}-${max_spacing}";
 	$command .= " -l $monad_length";
 	$command .= " -return freq,occ";
-	$command .= " -nogrouprc";
+	$command .= " -grouprc";
 	$command .= " -o $dyad_file";
 	$command .= "; gzip -f $dyad_file ";
 	&doit($command, $dry_run, $die_on_error, $verbose);
