@@ -206,6 +206,18 @@ sub parse_from_row {
     if ($format eq "dnapat") {
 	$self->force_attribute("type", "dnapat");
     }
+    &RSAT::message::Info(join("\t",
+			      "new feature",			      
+			      $self->get_attribute("seq_name"),
+			      $self->get_attribute("feature_type"),
+			      $self->get_attribute("feature_name"),
+			      $self->get_attribute("id"),
+			      $self->get_attribute("start"),
+			      $self->get_attribute("end"),
+			      $self->get_attribute("strand"),
+			      $self->get_attribute("description"),
+			      $self->get_attribute("score"))
+			 ) if ($main::verbose >= 3);
 }
 
 ################################################################
