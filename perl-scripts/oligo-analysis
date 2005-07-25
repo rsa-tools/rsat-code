@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.96 2005/07/24 21:40:04 jvanheld Exp $
+# $Id: oligo-analysis,v 1.97 2005/07/25 01:12:44 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -80,6 +80,9 @@ $proba_mseq_threshold = 1;
 $markov_order = -2;
 $sequence_number = 0;
 $nb_possible_pos = 0;
+$sum_occurrences = 0;
+$sum_overlaps = 0;
+$sum_noov = 0;
 $nb_possible_oligo = 0;
 $sum_seq_length = 0;
 
@@ -248,6 +251,7 @@ if ($return{'table'}) {
     &CalcAlphabet() if ($input_alphabet); # || ($return{'zscore'}));
     &Degenerate() if ($one_var_position);
     &SumReverseComplements() if ($sum_rc);
+    &CalcOccSum();
     &CalcFrequencies() if (($return{'freq'}) || ($method eq "Markov chain"));
 #&GroupRC() if ($group_rc);
     &SelectPalindroms() if (($palindroms_only) || ($return{'remark'}));
@@ -406,18 +410,18 @@ sub CountOligos {
 		#### substract the forbidden positions from the nb of possible positions
 		$forbidden_pos = &min($min_overlap_dist-1,
 				      $last_pos - $current_pos);
-		$patterns{$pattern_seq}->{nb_possible_pos} -= $forbidden_pos;
-		$patterns{$rc}->{nb_possible_pos} -= $forbidden_pos if ($sum_rc);
+		$patterns{$pattern_seq}->{forbocc} += $forbidden_pos;
+		$patterns{$rc}->{forbocc} += $forbidden_pos if ($sum_rc);
 #  		&RSAT::message::Debug("forbidden pos", 
 # 				      $pattern_seq, 
 # 				      $forbidden_pos, $last_pos, $current_pos, 
 # 				      $patterns{$pattern_seq}->{occ},
 # 				      $patterns{$pattern_seq}->{overlaps},
-# 				      $patterns{$pattern_seq}->{nb_possible_pos},
+# 				      $patterns{$pattern_seq}->{forbocc},
 # 				      $rc, 
 # 				      $patterns{$rc}->{occ},
 # 				      $patterns{$rc}->{overlaps},
-# 				      $patterns{$rc}->{nb_possible_pos},
+# 				      $patterns{$rc}->{forbocc},
 # 				     ) if ($main::verbose >= 10);
 	    }
 	    $patterns{$pattern_seq}->{occ}++;
@@ -503,20 +507,21 @@ sub CountOligos {
     }
     undef $current_seq; ### release the memory occupied
     close $in;
-    
 
     #### filter out undefined residues for DNA sequences
     if ($seq_type eq "DNA") {
 	foreach $pattern_seq (keys %patterns) {
 	    if ($pattern_seq =~ /[^atcg]/i) {
 		$discarded_occurrences += $patterns{$pattern_seq}->{occ};
+		$discarded_occurrences += $patterns{$pattern_seq}->{overlaps};
+#		&RSAT::message::Debug("Discarded occurrences for pattern", $pattern_seq, "occ", $patterns{$pattern_seq}->{occ}, "overlaps", $patterns{$pattern_seq}->{overlaps}, "total", $discarded_occurrences) if ($main::verbose >= 10);
 		delete $patterns{$pattern_seq};
 	    }
 	}
 	$nb_possible_pos -= $discarded_occurrences;
 	foreach $letter (keys %residue_occ) {
 	    if ($letter =~ /[^atcg]/i) {
-		$discarded_residues += $residue_occ;
+		$discarded_residues += $residue_occ{$letter};
 		delete $residue_occ{$letter};
 	    }
 	}
@@ -784,24 +789,24 @@ sub CalcSubWordFrequencies {
 }
 
 ################################################################
+## Calculate the sum of occurrences
+sub CalcOccSum {
+    foreach $pattern_seq (keys %patterns) {
+	$sum_overlaps += $patterns{$pattern_seq}->{overlaps};
+	$sum_noov += $patterns{$pattern_seq}->{occ};
+    }
+    $sum_occurrences = $sum_overlaps + $sum_noov;
+}
+
+################################################################
 #### Calculate relative frequencies
 sub CalcFrequencies {
     if ($verbose >= 2) {
 	&RSAT::message::TimeWarn("Calculating relative frequencies");
     }
     
-    #### sum of occurrences
-    $sum_overlaps = 0;
-    $sum_noov = 0;
-    $sum_occurrences = 0;
-    foreach $pattern_seq (keys %patterns) {
-	$sum_overlaps += $patterns{$pattern_seq}->{overlaps};
-	$sum_noov += $patterns{$pattern_seq}->{occ};
-    }
-    $sum_occurrences = $sum_overlaps + $sum_noov;
-    
     #### relative frequencies
-#    if ($noov) {
+#    if ($noov eq "-noov") {
 #	foreach $pattern_seq (keys %patterns) {
 #	    $patterns{$pattern_seq}->{observed_freq} = $patterns{$pattern_seq}->{occ}/$sum_noov;
 #	}
@@ -924,7 +929,8 @@ sub CalcExpected {
     
     #### Calcualte the number of possible positions for each pattern
     foreach $pattern_seq (sort keys %patterns) {
-	$patterns{$pattern_seq}->{nb_possible_pos} += $nb_possible_pos;
+#	$patterns{$pattern_seq}->{forbocc} += $nb_possible_pos;
+	$patterns{$pattern_seq}->{notforb} = $nb_possible_pos - $patterns{$pattern_seq}->{forbocc};
     }
 
     ### Expected frequency file
@@ -963,8 +969,8 @@ sub CalcExpected {
 	## occurrences in a calibration file
     } elsif ($method =~ /calibration/i) {  
 	foreach $pattern_seq (sort keys %patterns) {
-	    if ($patterns{$pattern_seq}->{nb_possible_pos} > 0) {
-		$patterns{$pattern_seq}->{exp_freq} = $patterns{$pattern_seq}->{exp_occ}/$patterns{$pattern_seq}->{nb_possible_pos};
+	    if ($patterns{$pattern_seq}->{notforb} > 0) {
+		$patterns{$pattern_seq}->{exp_freq} = $patterns{$pattern_seq}->{exp_occ}/$patterns{$pattern_seq}->{notforb};
 	    } else {
 		$patterns{$pattern_seq}->{exp_freq} = "NA";
 	    }
@@ -972,7 +978,7 @@ sub CalcExpected {
 #  		       $pattern_seq, 
 #  		       $patterns{$pattern_seq}->{exp_occ}, 
 #  		       $patterns{$pattern_seq}->{exp_var},
-#  		       $patterns{$pattern_seq}->{nb_possible_pos},
+#  		       $patterns{$pattern_seq}->{notforb},
 #  		       $patterns{$pattern_seq}->{exp_freq},
 #  		       );
 	}
@@ -1096,7 +1102,8 @@ sub CalcExpected {
     #### expected number of occurrences and matching sequences ####
     foreach $pattern_seq (sort keys %patterns) {
 	unless ($method =~ /calibration/i) {
- 	    $patterns{$pattern_seq}->{exp_occ} = $patterns{$pattern_seq}->{exp_freq} * $patterns{$pattern_seq}->{nb_possible_pos}; 
+# 	    $patterns{$pattern_seq}->{exp_occ} = $patterns{$pattern_seq}->{exp_freq} * $patterns{$pattern_seq}->{notforb}; 
+	    $patterns{$pattern_seq}->{exp_occ} = $patterns{$pattern_seq}->{exp_freq} * $sum_occurrences; 
 #	    $patterns{$pattern_seq}->{exp_occ} = $patterns{$pattern_seq}->{exp_freq} * $sum_noov; 
 	}
 	if ($return{'mseq'}) {
@@ -1159,8 +1166,8 @@ sub CalcZscore {
 		} else {
 		    ### Correction for self-overlapping patterns
 #		$patterns{$pattern_seq}->{ovlp} = &OverlapCoeff($pattern_seq);
-		    $patterns{$pattern_seq}->{exp_var} = $patterns{$pattern_seq}->{nb_possible_pos} * $patterns{$pattern_seq}->{exp_freq}*(2*$patterns{$pattern_seq}->{ovlp} - 1 - (2*$oligo_length+1)*$patterns{$pattern_seq}->{exp_freq});
-#       	$patterns{$pattern_seq}->{exp_var} = $patterns{$pattern_seq}->{nb_possible_pos} * $patterns{$pattern_seq}->{exp_freq}*(1 - $patterns{$pattern_seq}->{exp_freq});
+		    $patterns{$pattern_seq}->{exp_var} = $patterns{$pattern_seq}->{notforb} * $patterns{$pattern_seq}->{exp_freq}*(2*$patterns{$pattern_seq}->{ovlp} - 1 - (2*$oligo_length+1)*$patterns{$pattern_seq}->{exp_freq});
+#       	$patterns{$pattern_seq}->{exp_var} = $patterns{$pattern_seq}->{notforb} * $patterns{$pattern_seq}->{exp_freq}*(1 - $patterns{$pattern_seq}->{exp_freq});
 		}
 	    }
 
@@ -1261,7 +1268,7 @@ sub CalcProba {
 		     $patterns{$pattern_seq}->{occ}, 
 		     $patterns{$pattern_seq}->{exp_occ},
 		     $patterns{$pattern_seq}->{exp_freq},
-		     $patterns{$pattern_seq}->{nb_possible_pos}
+		     $patterns{$pattern_seq}->{notforb}
 		     ) if ($verbose >= 4);
 
 	if ($patterns{$pattern_seq}->{exp_freq} <= 0) {
@@ -1282,7 +1289,8 @@ sub CalcProba {
 	} else {
 	    ## Right tail
 	    $occ_from = $patterns{$pattern_seq}->{occ};
-	    $occ_to = $patterns{$pattern_seq}->{nb_possible_pos};	    
+#	    $occ_to = $patterns{$pattern_seq}->{notforb};	    
+	    $occ_to = $sum_occurrences;
 	    $patterns{$pattern_seq}->{test} = "right";
 	}
 
@@ -1303,12 +1311,13 @@ sub CalcProba {
 	    }
 	} else {
 	    $patterns{$pattern_seq}->{occ_pro} = &sum_of_binomials($patterns{$pattern_seq}->{exp_freq},
-								   $patterns{$pattern_seq}->{nb_possible_pos},
+								   $sum_occurrences,
 								   $occ_from,
 								   $occ_to);
 #	    &RSAT::message::Debug($pattern_seq,
 #				  $patterns{$pattern_seq}->{exp_freq},
-#				  $patterns{$pattern_seq}->{nb_possible_pos},
+#				  $patterns{$pattern_seq}->{forbocc},
+#				  $patterns{$pattern_seq}->{notforb},
 #				  $occ_from,
 #				  $occ_to,
 #				  $patterns{$pattern_seq}->{occ_pro}
@@ -1390,6 +1399,8 @@ sub PrintHeaderLine {
     $col_description{"rank"} = "rank"; 
     $col_description{"positions"} = "matching positions"; 
     $col_description{"ovlp"} = "overlap coefficient"; 
+    $col_description{"forbocc"} = "forbidden positions (to avoid self-overlap)"; 
+    $col_description{"notforb"} = "non-discarded positions (possible positions - forbidden)"; 
     $col_description{"exp_var"} = "estimation of the variance on occurrences"; 
     $col_description{"fitted"} = "fitted distribution"; 
     $col_description{"test"} = "over- or under-representation test"; 
@@ -1430,7 +1441,11 @@ sub PrintHeaderLine {
 	}
 	push(@out_col,"zscore") if ($return{'zscore'});
 	push(@out_col,"occ_likelihood") if ($return{'like'});
-	push(@out_col,"ovl_occ") if ($noov eq "-noov");
+    if ($noov eq "-noov") {
+	push(@out_col,"ovl_occ");
+	push(@out_col,"forbocc");
+#	push(@out_col,"notforb");
+     }
     }
     push(@out_col,"ratio") if ($return{'ratio'});
     
@@ -1546,7 +1561,8 @@ sub Verbose {
 	    printf $out "; %-29s\t%s\n", "Nb of sequences", $sequence_number;
 	    printf $out "; %-29s\t%s\n", "Sum of sequence lengths", $sum_seq_length;
 	    if ($seq_type eq "DNA") {
-		printf $out "; %-29s\t%d\t%s\n", "discarded occurrences", $discarded_occurrences, " (contain other letters than ACGT)";
+		printf $out "; %-29s\t%d\t%s\n", "discarded residues", $discarded_residues, " (other letters than ACGT)";
+		printf $out "; %-29s\t%d\t%s\n", "discarded occurrences", $discarded_occurrences, " (contain discarded residues)";
 	    }
 	    printf $out "; %-29s\t%s\n", "nb possible positions",$nb_possible_pos;
 	    printf $out "; %-29s\t%s\n", "total oligo occurrences", $sum_occurrences;
@@ -1696,9 +1712,6 @@ sub PrintResult {
 		}
 	    }
 
-	    ### TEMPORARY ###
-#	    printf $out "\t%.2f", $patterns{$pattern_seq}->{nb_possible_pos};
-	    
 	    ### occurrence probability
 	    if ($return{'proba'}) {
 		if ($patterns{$pattern_seq}->{occ_pro} >= 0.0001) {
@@ -1731,6 +1744,8 @@ sub PrintResult {
 	    if ($noov eq "-noov") {
 		$patterns{$pattern_seq}->{overlaps} = 0 if ($patterns{$pattern_seq}->{overlaps} eq "");
 		print $out "\t", $patterns{$pattern_seq}->{overlaps};
+		printf $out "\t%d", $patterns{$pattern_seq}->{forbocc};
+#	    printf $out "\t%d", $patterns{$pattern_seq}->{notforb};
 	    }
 	}
 	### obs/exp ratio

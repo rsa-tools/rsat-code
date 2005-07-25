@@ -47,9 +47,9 @@ $purge = $query->param('purge');
 if ($purge) {
     #### purge sequence option
 #    $command= "$purge_sequence_command -i $sequence_file -format $sequence_format |  $oligo_analysis_command ";
-    $command= "$purge_sequence_command -i $sequence_file -format $sequence_format -o ${sequence_file}.purged;  $oligo_analysis_command -i ${sequence_file}.purged -formt fasta ";
+    $command = "$purge_sequence_command -i $sequence_file -format $sequence_format -o ${sequence_file}.purged;  $oligo_analysis_command -i ${sequence_file}.purged -format fasta ";
 } else {
-    $command= "$oligo_analysis_command -i $sequence_file  ";
+    $command = "$oligo_analysis_command -i $sequence_file  ";
 }
 
 ### fields to return
