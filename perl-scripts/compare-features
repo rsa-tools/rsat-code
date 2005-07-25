@@ -1,0 +1,412 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: compare-features,v 1.1 2005/07/25 12:22:00 jvanheld Exp $
+#
+# Time-stamp: <2003-07-04 12:48:55 jvanheld>
+#
+############################################################
+# use strict;
+#use diagnostics;
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+    require "RSA.lib";
+}
+use RSAT::feature;
+use RSAT::stats;
+
+
+=pod
+
+=head1 NAME
+
+compare-features
+
+=head1 DESCRIPTION
+
+Compare two sets of features. 
+
+This program takes as input several feature files (two or more), and
+calculates the intersection and difference between features.
+
+=head1 AUTHORS
+
+=item Jean Valéry Turatsinze <jturatsi@ulb.ac.be> 
+
+=item Jacques van Helden <jvanheld@scmbb.ulb.ac.be>
+
+=head1 CATEGORY
+
+util
+
+=head1 USAGE
+    
+compare-features -i inputfile_1 -i inputfile_2 [-i inputfile_3 ... ...] 
+[-o outputfile] [-v]
+
+=head1 INPUT FORMAT
+
+The two input files are in feature format. 
+
+Each feature is represented by a single line, which 
+should provide the following information:
+
+Input file columns:
+
+=item 1. map label (eg gene name)
+
+=item 2. feature type
+
+=item 3. feature identifier (ex: GATAbox, Abf1_site)
+
+=item 4. strand (D for Direct, R for Reverse),
+
+=item 5. feature start position
+
+=item 6. feature end position
+
+=item 7. (optional) description 
+
+=item 8. (optional) score
+
+The standard input format assumes that these topics 
+are provided in this order, separated by tabs. 
+Start and end positions can be positive or negative.
+
+
+=head1 OUTPUT FORMAT
+
+=cut
+
+
+################################################################
+#### Main package
+package main;
+{
+    ################################################################
+    #### initialise parameters
+    my $start_time = &AlphaDate();
+    
+    
+    #local %infile = ();
+    local @inputfiles = ();
+    local %outfile = ();
+    
+    local $verbose = 0;
+    local $in = STDIN;
+    local $out = STDOUT;
+
+    local $input_format = "ft";
+    %supported_input_format =(
+			      ft=>1,
+			      gft=>1,
+			      gff=>1,
+			      dnapat=>1,
+			      );
+    $supported_input_formats = join (",", keys %supported_input_format);
+
+    local $output_format = "ft";
+    %supported_output_format =(
+			       ft=>1,
+			       gft=>1,
+			       gff=>1,
+			       dnapat=>1
+			       );
+    $supported_output_formats = join (",", keys %supported_output_format);
+
+    local @feature_lists = ();
+
+    &ReadArguments();
+
+    ################################################################
+    #### check argument values
+
+    ## Number of input files should be >= 2
+    unless (scalar(@inputfiles) >= 2) {
+	&RSAT::error::FatalError("You must specify at least two input files\n");
+    }
+
+    ################################################################
+    ### open output stream
+    $out = &OpenOutputFile($outfile{output});
+
+    ################################################################
+    ##### read input
+    foreach my $f (0..$#inputfiles) {
+	my @features = ();
+	my $infile = $inputfiles[$f];
+	&RSAT::message::TimeWarn(join("\t", "Reading features from file", $f, $infile)) if ($main::verbose >= 2);
+	($in) = &OpenInputFile($infile);
+	while (<$in>) {
+	    ## Comment lines
+	    if ((/^;\s+(.*)/) || (/^--\s+(.*)/)) {
+		next;
+	    }
+	    next unless (/\S/);
+	    chomp;
+	    my $feature = new RSAT::feature();
+	    $feature->parse_from_row($_, $input_format);
+	    $feature->set_attribute("file_nb", $f);
+	    $feature->set_attribute("filename", $filename);
+	    push @features, $feature;
+#	print $out $feature->to_text($output_format, $null);
+	}
+	close $in if ($infile);
+	push @feature_lists, \@features;
+    }
+
+    ################################################################
+    #### print verbose
+    &Verbose() if ($verbose);
+
+    ################################################################
+    ## Index of all the starting positions per sequence. The indexing keys are
+    ## - sequence name
+    ## - reference to the feature object
+    ## The indexed value is the starting positions
+    my %left_index = (); 
+    for my $a (0..$#inputfiles) {
+	my $ref_a = $feature_lists[$a];
+	foreach my $feature (@{$ref_a}) {
+	    my $seq_name = $feature->get_attribute('seq_name');
+	    my $start = $feature->get_attribute('start');
+	    my $end = $feature->get_attribute('end');
+
+	    ## Calcualate left and right coordinates
+	    my $left = &RSAT::stats::min($start, $end);
+	    $feature->set_attribute("left", $left);
+	    my $right = &RSAT::stats::max($start, $end);
+	    $feature->set_attribute("right", $right);
+
+	    ## Index the feature 
+	    $left_index{$seq_name}->{\$feature} = $left;
+	    &RSAT::message::Debug("Indexing left position", 
+				  $a, $inputfiles[$a], $seq_name, $start, $end, $left,
+				  $feature, \$feature, $feature->get_attribute("left"),
+				  ) if ($main::verbose >= 0);
+	}
+    }
+    
+    ## Detect intersection between features
+    foreach my $seq_name (keys (%left_index)) {
+	my %seq_features = %{$left_index{$seq_name}};
+	my @sorted_features = sort {$left_index{$seq_name}->{$a} <=> $left_index{$seq_name}->{$b} } keys %seq_features;
+	&RSAT::message::Info(join("\t", "Features per sequences", 
+				  scalar(keys(%seq_features)), 
+				  $seq_name)
+			     ) if ($main::verbose >= 3);
+	foreach my $f (0..$#sorted_features) {
+	    my $feature_ref = $sorted_features[$f];
+	    my $feature = ${$feature_ref};
+#	    my $left = $feature->get_attribute("left");
+	    &RSAT::message::Debug("Sorted features", $seq_name,
+				  $f, $feature_ref, $feature, 
+				  $left,
+#				  $feature->get_attribute("left"),
+				  ) if ($main::verbose >= 0);
+	}
+    }
+
+#     ## Pairwise comparisons of feature lists
+#     for my $a (0..$#inputfiles) {
+# 	my $ref_a = $feature_lists[$a];
+# 	for my $b ($a..$#inputfiles) {
+# 	    my $ref_b = $feature_lists[$b];	    
+# 	}
+#     }
+
+
+    ################################################################
+    ###### print output
+
+
+    ################################################################
+    ###### finish verbose
+    if ($verbose >= 1) {
+	my $done_time = &AlphaDate();
+	print $out "; Job started $start_time\n";
+	print $out "; Job done    $done_time\n";
+    }
+
+
+    ################################################################
+    ###### close output stream
+    close $out if ($outfile{output});
+
+
+    exit(0);
+    
+}
+
+################################################################
+################### subroutine definition ######################
+################################################################
+
+
+################################################################
+#### display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+#### display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+#### Read arguments 
+sub ReadArguments {
+    foreach my $a (0..$#ARGV) {
+
+	## Verbosity
+=pod
+
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$main::verbose = $ARGV[$a+1];
+	    } else {
+		$main::verbose = 1;
+	    }
+	    
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp();
+	    
+	    ## List of options
+=pod
+
+=item B<-help>
+
+display options
+
+=cut
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions();
+	    
+
+	    ## Input file
+=pod
+
+=item B<-i inputfile>
+
+This option can be used iteratively to specify several input files. 
+
+It must be used at least 2 times, since the comparison requires at least two
+feature files.
+
+=cut
+	} elsif ($ARGV[$a] eq "-i") {
+	    push @main::inputfiles, $ARGV[$a+1];
+	    
+	    ## Output file
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($ARGV[$a] eq "-o") {
+	    $main::outfile{output} = $ARGV[$a+1];
+	    
+
+	    ### input format  
+=pod
+
+=item B<-iformat input_format>
+
+Input feature format (Supported: $supported_input_formats)
+
+=cut
+	} elsif ($ARGV[$a] eq "-iformat") {
+	    $main::input_format = $ARGV[$a+1];
+	    &RSAT::error::FatalError("$input_format\tInvalid input format. Supoprted: $supported_input_formats")
+		unless ($supported_input_format{$input_format});
+
+	    ### output format  
+=pod
+
+=item B<-oformat output_format>
+
+Output feature format (Supported: $supported_output_formats)
+
+=cut
+	} elsif ($ARGV[$a] eq "-oformat") {
+	    $main::output_format = $ARGV[$a+1];
+	    &RSAT::error::FatalError("$output_format\tInvalid output format. Supoprted: $supported_output_formats")
+		unless ($supported_output_format{$output_format});
+
+	}
+    }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $out "; compare-features ";
+    &PrintArguments($out);
+    print $out "; Input files\n";
+    print $out join ("\t", ";", "file#", "feat#", "file name"), "\n";
+    foreach my $f (0..$#main::inputfiles) {
+	my $infile = $main::inputfiles[$f];
+	my $feature_list_ref = $main::feature_lists[$f];
+	my @feature_list = @{$feature_list_ref};
+	my $nb_features = scalar(@feature_list);
+	print $out join("\t", ";", 
+			$f+1,
+			$nb_features,
+			$infile,
+			), "\n";
+    }
+
+    if (defined(%main::outfile)) {
+	print $out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+}
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=item feature-map
+
+=item convert-features
+
+
+=cut
