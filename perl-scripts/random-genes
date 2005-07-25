@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: random-genes,v 1.10 2005/03/13 10:18:27 jvanheld Exp $
+# $Id: random-genes,v 1.11 2005/07/25 15:00:49 jvanheld Exp $
 #
 # Time-stamp: <2003-09-10 23:21:27 jvanheld>
 #
@@ -24,7 +24,8 @@ local %outfile = ();
 local $verbose = 0;
 local $out = STDOUT;
 local $n = 0; #### number of genes to return
-local $rep = 1; #### number of gene families to return
+local $repeat = 1; #### number of repetision of the input families (with option -fam)
+local $groups = 1; #### number of gene families to return
 #local $infile{family} = "";
 local @families = ();
 local %family_count = ();
@@ -72,8 +73,10 @@ if ($infile{family}) {
     }
     close $fam;
     @families = keys %family_count;
-} elsif ($rep >= 1) {
-  for my $r (1..$rep) {
+
+
+} elsif ($groups >= 1) {
+  for my $r (1..$groups) {
       $family_count{"RAND".$r}=$n;
   } 
   @families = keys %family_count;
@@ -95,15 +98,20 @@ if ($seed) { ### defined seed
 ###### print output ##
 if ($#families > -1) {
     for my $f (0..$#families) {
-	my $fam = $families[$f];
-	my $count = $family_count{$fam};
-	$rand_family_name = "RAND";
-	$rand_family_name .= $f+1;
-	@random_orfs = $organism->SelectRandomGenes($count, $replace);
-	foreach $orf (@random_orfs) {
-	    print $out $orf, "\t", $rand_family_name. "\n";
-	}
-    } 
+	for my $r (1..$repeat) {
+	    my $fam = $families[$f];
+	    my $count = $family_count{$fam};
+	    $rand_family_name = "RAND";
+	    $rand_family_name .= $f+1;
+	    if ($repeat > 1) {
+		$rand_family_name .= ".".$r;
+	    }
+	    @random_orfs = $organism->SelectRandomGenes($count, $replace);
+	    foreach $orf (@random_orfs) {
+		print $out $orf, "\t", $rand_family_name. "\n";
+	    }
+	} 
+    }
 } elsif ($pairs) {
     $n = $pairs *2;
     @random_orfs = $organism->SelectRandomGenes($n,$replace);
@@ -151,7 +159,7 @@ DESCRIPTION
 	There are several modes of utilization.
 
 	   (1) -n	returns random genes.
-           (2) -r       repetitions. Create a family file with r groups of n
+           (2) -g       groups. Create a family file with g groups of n
 			genes (n must be specified)
 	   (3) -pairs	returns random pairs of genes.
 	   (4) -fam	takes a family file (see multiple-family-analysis)
@@ -162,7 +170,6 @@ DESCRIPTION
 			different sizes in the same file, and to
 			perform negative controls in exactly the same
 			conditions as the test.
-
 
 CATEGORY
 	util
@@ -185,13 +192,20 @@ OPTIONS
 	-feattype
 		Feature type.
 		Supported: $supported_feature_types
-	-rep	random selection with replacement
+	-replace	
+		random selection with replacement
 		(a same ORF might appear several times in the output)
+
+    Exporting g groups of n genes
 	-n #	number of random genes to return
-	-r #	repetitions (number of random families).
+	-g #	groups (number of random families).
+
+    Exporting pairs of genes
 	-pairs #
 		number of random pairs of genes to return. Each row of
 		the output contains two genes, separated by a tab.
+
+    Using a family file as template
 	-fam family file
 		A 2-column file containing gene names in the first
 		column and family (cluster) name in the second column.
@@ -199,6 +213,12 @@ OPTIONS
 		The program returns a file of the same size as the
 		input, where input genes have been substituted by 
 		random genes.
+	-repeat #
+		(requires the option -fam)
+		Number of repetitions for each input family. 
+		This option generates, for each input family, R output
+		random gene selections of the same size.
+
 FILE FORMATS
     $HELP_FAMILY_FILE
 End_of_help
@@ -219,11 +239,12 @@ random-genes options
 -org		organism
 -features	alternate feature table
 -feattype	accepted feature types. Supported: $supported_feature_types
--rep		random selection with replacement
+-replace	random selection with replacement
 -n		number of genes
--r #		repetitions (number of random families).
+-g #		groups (number of random families).
 -pairs		number of pairs of genes
 -fam		family file
+-repeat		number of repetitions (only with the option -fam)
 End_short_help
   close HELP;
   exit;
@@ -273,7 +294,7 @@ sub ReadArguments {
 	    }
 
 	    ### random selection with replacement
-	} elsif ($ARGV[$a] =~ /^-rep/) {
+	} elsif ($ARGV[$a] eq "-replace") {
 	    $replace = 1;
 	    
 	    ### family file 
@@ -287,11 +308,26 @@ sub ReadArguments {
 		&RSAT::error::FatalError("$n\tInvalid number of genes. Should be a natural number.");
 	    }
 	    
-	    ### number of genes
+	    ### number of groups
+	} elsif ($ARGV[$a] eq "-g") {
+	    $groups = $ARGV[$a+1];
+	    unless (&IsNatural($groups)) {
+		&RSAT::error::FatalError("$groups\tInvalid number of genes. Should be a natural number.");
+	    }
+	    
+	    ### number of groups
 	} elsif ($ARGV[$a] eq "-r") {
-	    $rep = $ARGV[$a+1];
-	    unless (&IsNatural($rep)) {
-		&RSAT::error::FatalError("$rep\tInvalid number of genes. Should be a natural number.");
+	    &RSAT::message::Warning("The option -r is obsolete. Use -g instead");
+	    $groups = $ARGV[$a+1];
+	    unless (&IsNatural($groups)) {
+		&RSAT::error::FatalError("$groups\tInvalid number of groups. Should be a natural number.");
+	    }
+	    
+	    ### number of groups
+	} elsif ($ARGV[$a] eq "-repeat") {
+	    $repeat = $ARGV[$a+1];
+	    unless (&IsNatural($repeat)) {
+		&RSAT::error::FatalError("$groups\tInvalid number of repetitions. Should be a natural number.");
 	    }
 	    
 	    ### number of gene pairs
@@ -324,7 +360,8 @@ sub Verbose {
 
     printf $out "; %-14s\t%s\n", "organism", $organism_name;
     printf $out "; %-14s\t%d\n", "Number of families", scalar(@families) if ($infile{family});
+    printf $out "; %-14s\t%d\n", "Number of repetitions", $repeat if ($repeat > 1);
     printf $out "; %-14s\t%d\n", "Number of pairs", $pairs if ($pairs);
     printf $out "; %-14s\t%d\n", "Number of genes", $n;
-    printf $out "; %-14s\t%d\n", "Repetition", $rep if ($rep);
+    printf $out "; %-14s\t%d\n", "Number of groups", $groups if ($groups);
 }
