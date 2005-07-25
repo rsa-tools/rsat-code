@@ -11,6 +11,7 @@ fungi <- c('Saccharomyces_cerevisiae','Schizosaccharomyces_pombe','Ashbya_gossyp
 procaryotes <- c('Mycoplasma_genitalium','Escherichia_coli_K12','Bacillus_subtilis','Salmonella_typhimurium_LT2')
 other.orgs <- c('Homo_sapiens','Drosophila_melanogaster','Caenorhabditis_elegans','Arabidopsis_thaliana','Plasmodium_falciparum')
 
+
 ## Default parameters
 org <- 'Saccharomyces_cerevisiae'
 seq.len <- 800
@@ -22,6 +23,7 @@ result.table <- matrix(ncol=7,nrow=0)
 export.plots <- F
 
 dir.upstream.calibrations <- file.path('~', 'research', 'upstream_calibrations')
+
 
 upstream.calibration <- function (org='Saccharomyces_cerevisiae', 
 				  seq.len = 800,
@@ -68,3 +70,4 @@ for (ol in 1:6) {
 }
 
 setwd(dir.results); export.object(result.table,file.prefix='fitting_tests_summary',export.formats='table')
+

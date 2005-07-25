@@ -3,8 +3,8 @@ source(file.path(dir.util, 'util.R'))
 source(file.path(dir.util, 'util_test_fitting_poisson.R'))
 
 ################################################################
-## Calculate P-value, E-value and sig for a fitting file
-## and draw some plots
+## Calculate P-value, E-value and sig for a fitting file and draw
+## distribution histograms for a selected of oligonucleotides
 analyze.fitting <- function(file.prefix, ## file resulting from the perl script fit-distribution
 			    theor, ## theoretcial distribution; supported: negbin, poisson
 			    dir.input='.', ## Input directory (containing the input file)
