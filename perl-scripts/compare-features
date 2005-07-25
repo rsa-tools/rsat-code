@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-features,v 1.1 2005/07/25 12:22:00 jvanheld Exp $
+# $Id: compare-features,v 1.2 2005/07/25 16:13:32 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -134,6 +134,8 @@ package main;
 
     ################################################################
     ##### read input
+    my $feat_nb = 0;
+    my %feature_ids = ();
     foreach my $f (0..$#inputfiles) {
 	my @features = ();
 	my $infile = $inputfiles[$f];
@@ -147,10 +149,14 @@ package main;
 	    next unless (/\S/);
 	    chomp;
 	    my $feature = new RSAT::feature();
+	    $feat_nb++;
+	    my $new_id = "ft_".$feat_nb;
 	    $feature->parse_from_row($_, $input_format);
+	    $feature->set_attribute("id", $new_id);
 	    $feature->set_attribute("file_nb", $f);
-	    $feature->set_attribute("filename", $filename);
+	    $feature->set_attribute("filename", $infile);
 	    push @features, $feature;
+	    $feature_ids{$new_id} = $feature;
 #	print $out $feature->to_text($output_format, $null);
 	}
 	close $in if ($infile);
@@ -179,16 +185,22 @@ package main;
 	    $feature->set_attribute("left", $left);
 	    my $right = &RSAT::stats::max($start, $end);
 	    $feature->set_attribute("right", $right);
+	    my $len = $right - $left + 1;
+	    $feature->set_attribute("len", $len);
+
 
 	    ## Index the feature 
-	    $left_index{$seq_name}->{\$feature} = $left;
-	    &RSAT::message::Debug("Indexing left position", 
-				  $a, $inputfiles[$a], $seq_name, $start, $end, $left,
-				  $feature, \$feature, $feature->get_attribute("left"),
-				  ) if ($main::verbose >= 0);
+	    my $id = $feature->get_attribute("id");
+	    $left_index{$seq_name}->{$id} = $left;
+# 	    &RSAT::message::Debug("Indexing left position", 
+# 				  $a, $inputfiles[$a], $seq_name, $start, $end, $left,
+# #				  $feature, \$feature, 
+# 				  $feature->get_attribute("id"),
+# 				  $feature->get_attribute("left"),
+# 				  ) if ($main::verbose >= 0);
 	}
     }
-    
+
     ## Detect intersection between features
     foreach my $seq_name (keys (%left_index)) {
 	my %seq_features = %{$left_index{$seq_name}};
@@ -198,14 +210,47 @@ package main;
 				  $seq_name)
 			     ) if ($main::verbose >= 3);
 	foreach my $f (0..$#sorted_features) {
-	    my $feature_ref = $sorted_features[$f];
-	    my $feature = ${$feature_ref};
-#	    my $left = $feature->get_attribute("left");
-	    &RSAT::message::Debug("Sorted features", $seq_name,
-				  $f, $feature_ref, $feature, 
-				  $left,
-#				  $feature->get_attribute("left"),
+	    my $current_id = $sorted_features[$f];
+	    my $current_feature = $feature_ids{$current_id};
+	    &RSAT::message::Debug("Sorted features",
+				  $f+1, 
+				  scalar(@sorted_features),
+				  $current_id, 
+				  $seq_name,
+				  $current_feature->get_attribute("strand"),
+				  $current_feature->get_attribute("left"),
+				  $current_feature->get_attribute("right"),
+				  $current_feature->get_attribute("len"),
+				  $current_feature->get_attribute("file_nb"),
+				  $current_feature->get_attribute("filename"),
 				  ) if ($main::verbose >= 0);
+
+	    ## Detect next features overlapping with the current one
+	    my $next = $f+1;
+	    my $intersection = 0;
+	    while ($next <= $#sorted_features) {
+		my $next_id = $sorted_features[$next];
+		my $next_feature = $feature_ids{$next_id};
+		my $intersection = $current_feature->get_attribute("right") - $next_feature->get_attribute("left") + 1;
+		$intersection = &RSAT::stats::max(0,$intersection);
+		if ($intersection <= 0) {
+		    last;
+		} else {
+		    &RSAT::message::Debug("Intersection", 
+					  $f+1,
+					  $current_id, 
+					  $current_feature->get_attribute("left"),
+					  $current_feature->get_attribute("right"),
+					  $next+1,
+					  $next_id, 
+					  $next_feature->get_attribute("left"),
+					  $next_feature->get_attribute("right"),
+					  $intersection) if ($main::verbose >= 0);
+		    ## Treat the intersection (stats, report)
+		}
+		$next++;
+	    }
+
 	}
     }
 
