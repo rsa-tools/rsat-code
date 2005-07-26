@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-features,v 1.2 2005/07/25 16:13:32 jvanheld Exp $
+# $Id: compare-features,v 1.3 2005/07/26 08:23:54 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -26,7 +26,7 @@ compare-features
 
 =head1 DESCRIPTION
 
-Compare two sets of features. 
+Compare two or more sets of features. 
 
 This program takes as input several feature files (two or more), and
 calculates the intersection and difference between features.
@@ -48,7 +48,10 @@ compare-features -i inputfile_1 -i inputfile_2 [-i inputfile_3 ... ...]
 
 =head1 INPUT FORMAT
 
-The two input files are in feature format. 
+The default input format is .ft (the same as for feature-map). Other
+formats are also supported ($supported_input_formats).
+
+=head2 Feature format
 
 Each feature is represented by a single line, which 
 should provide the following information:
@@ -356,10 +359,9 @@ display options
 
 =item B<-i inputfile>
 
-This option can be used iteratively to specify several input files. 
-
-It must be used at least 2 times, since the comparison requires at least two
-feature files.
+This option can be used iteratively to specify several input files.
+It must be used at least 2 times, since the comparison requires at
+least two feature files.
 
 =cut
 	} elsif ($ARGV[$a] eq "-i") {
