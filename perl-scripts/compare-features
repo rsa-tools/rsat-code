@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-features,v 1.4 2005/07/27 00:12:36 jvanheld Exp $
+# $Id: compare-features,v 1.5 2005/07/27 13:38:41 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -83,10 +83,10 @@ Start and end positions can be positive or negative.
 
 =cut
 
-
+    
 ################################################################
 #### Main package
-package main;
+    package main;
 {
     ################################################################
     #### initialise parameters
@@ -99,36 +99,59 @@ package main;
     local $verbose = 0;
     local $in = STDIN;
     local $out = STDOUT;
-
+    
+    ## Input formats
     local $input_format = "ft";
-    %supported_input_format =(
-			      ft=>1,
+    %supported_input_format =(ft=>1,
 			      gft=>1,
 			      gff=>1,
 			      dnapat=>1,
-			      );
+			     );
     $supported_input_formats = join (",", keys %supported_input_format);
-
+    
+    ## Output formats
     local $output_format = "ft";
-    %supported_output_format =(
-			       ft=>1,
+    %supported_output_format =(ft=>1,
 			       gft=>1,
 			       gff=>1,
 			       dnapat=>1
-			       );
+			      );
     $supported_output_formats = join (",", keys %supported_output_format);
-
+    
+    ## Return types
+    %supported_return_type =(stats=>1,
+			     inter=>1,
+			     diff=>1
+			    );
+    $supported_return_types = join (",", sort(keys %supported_return_type));
+    local @return_types = ();
+    local %return_types = ();
+    
+    ## Variables for storing the data and results
     local @feature_lists = ();
-
     local $inter_nb = 0;
     local @intersection_counts = ();
     local @intersection_features = ();
-
+    
     local $self_comparison = 0;
-
+    
     local $null = "<NA>";
-
+    
     &ReadArguments();
+    
+    ################################################################
+    ## Return types
+    if (scalar(@return_types) <= 0) {
+	@return_types  = qw(stats inter);
+    }
+    foreach my $type (@return_types) {
+	if ($supported_return_type{$type}) {
+	    $return{$type}++;
+	} else {
+	    &FatalError(join ("\t", "Invalid return type", $type, "Supported: $supported_return_types"));
+	}
+    }
+    
 
     ################################################################
     #### check argument values
@@ -185,9 +208,13 @@ package main;
     ## - sequence name
     ## - reference to the feature object
     ## The indexed value is the starting positions
+    &RSAT::message::TimeWarn("Indexing features by position");
     my %left_index = (); 
     for my $a (0..$#inputfiles) {
 	my $ref_a = $feature_lists[$a];
+	&RSAT::message::TimeWarn(join("\t","", "Indexing file", 
+				      ($a+1)."/".scalar(@inputfiles), 
+				      $inputfiles[$a])) if ($main::verbose >= 2);
 	foreach my $feature (@{$ref_a}) {
 	    my $seq_name = $feature->get_attribute('seq_name');
 	    my $start = $feature->get_attribute('start');
@@ -215,13 +242,18 @@ package main;
     }
 
     ## Detect intersection between features
+    my $seq_nb = scalar(keys %left_index);
+    my $s = 0;
     foreach my $seq_name (keys (%left_index)) {
+	$s++;
 	my %seq_features = %{$left_index{$seq_name}};
 	my @sorted_features = sort {$left_index{$seq_name}->{$a} <=> $left_index{$seq_name}->{$b} } keys %seq_features;
-	&RSAT::message::Info(join("\t", "Features per sequences", 
-				  scalar(keys(%seq_features)), 
-				  $seq_name)
-			     ) if ($main::verbose >= 3);
+	&RSAT::message::TimeWarn(join("\t", "Finding intersections between", 
+				      scalar(keys(%seq_features)), 
+				      "features in sequence",
+				      $s."/".$seq_nb,
+				      $seq_name)
+			     ) if ($main::verbose >= 2);
 	foreach my $f (0..$#sorted_features) {
 	    my $current_id = $sorted_features[$f];
 	    my $current_ft = $feature_ids{$current_id};
@@ -266,17 +298,42 @@ package main;
 	}
     }
 
+    
+
+    &PrintStatistics if ($return{stats});
 
     ################################################################
-    ## Print the intersection features
-
-    foreach my $feature (@intersection_features) {
-	print $out $feature->to_text($output_format, $null);
+    ## Print the comparison features
+    if ($return{inter}) {
+	foreach my $feature (@intersection_features) {
+	    print $out $feature->to_text($output_format, $null);
+	}
     }
 
     ################################################################
-    ## Print statistics
+    ###### finish verbose
+    if ($verbose >= 1) {
+	my $done_time = &AlphaDate();
+	print $out "; Job started $start_time\n";
+	print $out "; Job done    $done_time\n";
+    }
 
+
+    ################################################################
+    ###### close output stream
+    close $out if ($outfile{output});
+
+    exit(0);
+    
+}
+
+################################################################
+################### subroutine definition ######################
+################################################################
+
+################################################################
+## Print statistics
+sub PrintStatistics {
     ## Calculate max length of file names for aligning the stat tables
     local $filename_len = 0;
     foreach my $filename (@inputfiles) {
@@ -341,29 +398,10 @@ package main;
 	}
     }
     &PrintTable("FRACTION OF FEATURES WITH LEAST ONE INTERSECTION", "%7.5f", @intersection_percent);
-
-
-    ################################################################
-    ###### finish verbose
-    if ($verbose >= 1) {
-	my $done_time = &AlphaDate();
-	print $out "; Job started $start_time\n";
-	print $out "; Job done    $done_time\n";
-    }
-
-
-    ################################################################
-    ###### close output stream
-    close $out if ($outfile{output});
-
-    exit(0);
-    
 }
 
 ################################################################
-################### subroutine definition ######################
-################################################################
-
+## Print one stat table
 sub PrintTable {
     my ($title, $format, @table) = @_;
     $format = $format || "%7g";
@@ -646,6 +684,37 @@ annotated features.
 =cut
 	} elsif ($ARGV[$a] eq "-self") {
     $self_comparison = 1;
+
+    ### Return types
+=pod
+
+=item B<-return output1[,output2,...]>
+
+Specify the output type(s).
+
+Supported output types:
+
+=over
+
+=item inter
+
+Intersections between features (pairwise comparisons). For each
+intersection between two features, a feature of type "inter" is
+created.
+
+=item diff
+
+Pairwise differences between files. For each pair of file, a feature
+of type "diff" is created. Its ID of the "diff" feature indicates the
+number of the files containing and not containing the feature,
+respezctively. For example, the ID "1.not.3" indictaes a feature found
+in file 1 and without any intersection with features oof file 3.
+
+=back
+
+=cut
+	} elsif ($ARGV[$a] eq "-return") {
+          push  @return_types, split(",", $ARGV[$a+1]);
 
 	}
     }
