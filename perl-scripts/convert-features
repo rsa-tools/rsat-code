@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-features,v 1.4 2005/03/13 10:34:08 jvanheld Exp $
+# $Id: convert-features,v 1.5 2005/07/27 17:30:36 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -25,8 +25,8 @@ local %outfile = ();
 local $verbose = 0;
 local $in = STDIN;
 local $out = STDOUT;
-local $output_format = "ft";
 local $null = "";
+
 %supported_input_format =(
     ft=>1,
     gft=>1,
@@ -35,6 +35,7 @@ local $null = "";
 );
 $supported_input_formats = join (",", keys %supported_input_format);
 
+local $output_format = "ft";
 %supported_output_format =(
     ft=>1,
     gft=>1,

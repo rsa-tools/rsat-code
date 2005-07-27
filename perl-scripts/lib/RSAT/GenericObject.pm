@@ -175,7 +175,7 @@ sub reset_attribute {
 }
 
 ################################################################
-## set key-value pairs for a HASH attribute
+## Set a whole set of key-value pairs for a HASH attribute
 sub set_hash_attribute {
     my ($self, $attr, %hash) = @_;
     my $class = ref($self);
