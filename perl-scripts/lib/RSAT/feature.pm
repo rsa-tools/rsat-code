@@ -305,6 +305,27 @@ sub header {
     return $header;
 }
 
+
+################################################################
+=pod
+
+=item full_id
+
+Return a full identifier for the feature
+
+=cut
+
+sub full_id {
+    my ($self)  = @_;
+    return (join (":", 
+		  $self->get_attribute("filename"),
+		  $self->get_attribute("id"),
+		  $self->get_attribute("feature_name")
+		 ));
+
+}
+
+
 return 1;
 
 
