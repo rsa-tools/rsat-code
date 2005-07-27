@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-features,v 1.3 2005/07/26 08:23:54 jvanheld Exp $
+# $Id: compare-features,v 1.4 2005/07/27 00:12:36 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -33,7 +33,7 @@ calculates the intersection and difference between features.
 
 =head1 AUTHORS
 
-=item Jean Valéry Turatsinze <jturatsi@ulb.ac.be> 
+=item Jean Valery Turatsinze <jturatsi@ulb.ac.be> 
 
 =item Jacques van Helden <jvanheld@scmbb.ulb.ac.be>
 
@@ -92,7 +92,6 @@ package main;
     #### initialise parameters
     my $start_time = &AlphaDate();
     
-    
     #local %infile = ();
     local @inputfiles = ();
     local %outfile = ();
@@ -121,6 +120,14 @@ package main;
 
     local @feature_lists = ();
 
+    local $inter_nb = 0;
+    local @intersection_counts = ();
+    local @intersection_features = ();
+
+    local $self_comparison = 0;
+
+    local $null = "<NA>";
+
     &ReadArguments();
 
     ################################################################
@@ -131,9 +138,8 @@ package main;
 	&RSAT::error::FatalError("You must specify at least two input files\n");
     }
 
-    ################################################################
-    ### open output stream
-    $out = &OpenOutputFile($outfile{output});
+
+
 
     ################################################################
     ##### read input
@@ -165,6 +171,10 @@ package main;
 	close $in if ($infile);
 	push @feature_lists, \@features;
     }
+
+    ################################################################
+    ## Open output stream
+    $out = &OpenOutputFile($outfile{output});
 
     ################################################################
     #### print verbose
@@ -214,60 +224,123 @@ package main;
 			     ) if ($main::verbose >= 3);
 	foreach my $f (0..$#sorted_features) {
 	    my $current_id = $sorted_features[$f];
-	    my $current_feature = $feature_ids{$current_id};
-	    &RSAT::message::Debug("Sorted features",
-				  $f+1, 
-				  scalar(@sorted_features),
-				  $current_id, 
-				  $seq_name,
-				  $current_feature->get_attribute("strand"),
-				  $current_feature->get_attribute("left"),
-				  $current_feature->get_attribute("right"),
-				  $current_feature->get_attribute("len"),
-				  $current_feature->get_attribute("file_nb"),
-				  $current_feature->get_attribute("filename"),
-				  ) if ($main::verbose >= 0);
+	    my $current_ft = $feature_ids{$current_id};
+#	    &RSAT::message::Debug("Sorted features",
+#				  $f+1, 
+#				  scalar(@sorted_features),
+#				  $current_id, 
+#				  $seq_name,
+#				  $current_ft->get_attribute("strand"),
+#				  $current_ft->get_attribute("left"),
+#				  $current_ft->get_attribute("right"),
+#				  $current_ft->get_attribute("len"),
+#				  $current_ft->get_attribute("file_nb"),
+#				  $current_ft->get_attribute("filename"),
+#				  ) if ($main::verbose >= 0);
 
 	    ## Detect next features overlapping with the current one
-	    my $next = $f+1;
-	    my $intersection = 0;
-	    while ($next <= $#sorted_features) {
+	    my $next = $f;
+	    my $inter_len = 0;
+	    while ($next <= ($#sorted_features-1)) {
+		$next++;
 		my $next_id = $sorted_features[$next];
-		my $next_feature = $feature_ids{$next_id};
-		my $intersection = $current_feature->get_attribute("right") - $next_feature->get_attribute("left") + 1;
-		$intersection = &RSAT::stats::max(0,$intersection);
-		if ($intersection <= 0) {
+		my $next_ft = $feature_ids{$next_id};
+		my $inter_len = $current_ft->get_attribute("right") - $next_ft->get_attribute("left") + 1;
+		$inter_len = &RSAT::stats::max(0,$inter_len);
+		if ($inter_len <= 0) {
 		    last;
 		} else {
-		    &RSAT::message::Debug("Intersection", 
-					  $f+1,
-					  $current_id, 
-					  $current_feature->get_attribute("left"),
-					  $current_feature->get_attribute("right"),
-					  $next+1,
-					  $next_id, 
-					  $next_feature->get_attribute("left"),
-					  $next_feature->get_attribute("right"),
-					  $intersection) if ($main::verbose >= 0);
-		    ## Treat the intersection (stats, report)
+#		    &RSAT::message::Debug("Intersection", #
+#					  $f+1,
+#					  $current_id, 
+#					  $current_ft->get_attribute("left"),
+#					  $current_ft->get_attribute("right"),
+#					  $next+1,
+#					  $next_id, 
+#					  $next_ft->get_attribute("left"),
+#					  $next_ft->get_attribute("right"),
+#					  $inter_len) if ($main::verbose >= 0);
+		    &CreateIntersection($current_ft,$next_ft);
 		}
-		$next++;
 	    }
-
 	}
     }
 
-#     ## Pairwise comparisons of feature lists
-#     for my $a (0..$#inputfiles) {
-# 	my $ref_a = $feature_lists[$a];
-# 	for my $b ($a..$#inputfiles) {
-# 	    my $ref_b = $feature_lists[$b];	    
-# 	}
-#     }
-
 
     ################################################################
-    ###### print output
+    ## Print the intersection features
+
+    foreach my $feature (@intersection_features) {
+	print $out $feature->to_text($output_format, $null);
+    }
+
+    ################################################################
+    ## Print statistics
+
+    ## Calculate max length of file names for aligning the stat tables
+    local $filename_len = 0;
+    foreach my $filename (@inputfiles) {
+	$filename_len = &RSAT::stats::max($filename_len, length($filename));
+    }
+
+    ## INTERSECTION COUNTS
+    &PrintTable("INTERSECION COUNTS", "%d", @intersection_counts);
+
+    ## FEATURES WITH AT LEAST ONE INTERSECTION
+    ## Count intersections per features 
+    my %intersections_per_ft = ();
+    foreach my $intersection_ft (@intersection_features) {
+	my ($a, $b) = ($intersection_ft->get_attribute("files"));
+	my ($id_a, $id_b) = ($intersection_ft->get_attribute("feature_ids"));
+#	&RSAT::message::Debug($a, $b, $id_a, $id_b) if ($main::verbose >= 0);
+	$intersections_per_ft{$a}->{$b}->{$id_a}++; ## intersections for feature id_a of file A in file B
+	$intersections_per_ft{$b}->{$a}->{$id_b}++; ## intersections for feature id_b of file B in file A
+    }
+
+    ## Features with at least one intersection
+    my @one_inter_per_ft = ();
+    foreach my $a (0..$#inputfiles) {
+	foreach my $b (0..$#inputfiles) {
+	    my $a_in_b = 0;
+	    if (!($self_comparison) && ($a == $b)) {
+		$a_in_b = "<NA>";
+	    } elsif (defined($intersections_per_ft{$b}->{$a})) {
+		$hash_ref = $intersections_per_ft{$b}->{$a};
+		$a_in_b = scalar(keys(%$hash_ref));
+	    } else {
+		$a_in_b = 0;
+	    }
+#	    &RSAT::message::Debug("One intersection per feature", 
+#				  $a,
+#				  $b,
+#				  $a_in_b) if ($main::verbose >= 0);
+	    $one_inter_per_ft[$a][$b] = $a_in_b;
+	}
+    }
+    &PrintTable("FEATURES WITH LEAST ONE INTERSECTION", "%d", @one_inter_per_ft);
+
+
+    ## FRACTION OF FEATURES WITH AT LEAST ONE INTERSECTION
+    my @intersection_percent = ();
+    for my $a (0..$#inputfiles) {
+	my $ref_a = $feature_lists[$a];
+	my $nb_features_a = scalar(@{$ref_a});
+	for my $b (0..$#inputfiles) {
+	    my $ref_b = $feature_lists[$b];
+	    my $nb_features_b = scalar(@{$ref_b});
+	    if (&IsReal($one_inter_per_ft[$a][$b]) && (&IsReal($nb_features_b))) {
+		$intersection_percent[$a][$b] = $one_inter_per_ft[$a][$b]/$nb_features_b;
+	    } else {
+		$intersection_percent[$a][$b] = $null;
+	    }
+	    if (&IsReal($one_inter_per_ft[$b][$a]) && (&IsReal($nb_features_a))) {
+		$intersection_percent[$b][$a] = $one_inter_per_ft[$b][$a]/$nb_features_a;
+	    } else {
+		$intersection_percent[$b][$a] = $null;
+	    }
+	}
+    }
+    &PrintTable("FRACTION OF FEATURES WITH LEAST ONE INTERSECTION", "%7.5f", @intersection_percent);
 
 
     ################################################################
@@ -283,7 +356,6 @@ package main;
     ###### close output stream
     close $out if ($outfile{output});
 
-
     exit(0);
     
 }
@@ -291,6 +363,147 @@ package main;
 ################################################################
 ################### subroutine definition ######################
 ################################################################
+
+sub PrintTable {
+    my ($title, $format, @table) = @_;
+    $format = $format || "%7g";
+    print $out ";\n";
+    print $out "; ",$title,"\n";
+    print $out join ("\t", ";", "file_nb", sprintf("%-${filename_len}s", "file name"));
+    for my $a (0..$#inputfiles) {
+	print $out "\tfile_".($a+1);
+    }
+    print $out "\n";
+
+    for my $a (0..$#inputfiles) {
+	print $out join "\t", ";", "file_".($a+1), sprintf("%-${filename_len}s", $inputfiles[$a]);
+	for my $b (0..$#inputfiles) {
+	    unless (defined($table[$a][$b])) {
+		if (($self_comparison) || ($a != $b)) {
+		    $table[$a][$b] = 0;
+		} else {
+		    $table[$a][$b] = $null;
+		}
+	    }
+	    if (&IsReal($table[$a][$b])) {
+		print $out "\t", sprintf($format, $table[$a][$b]);
+	    } else {
+		print $out "\t", $table[$a][$b];
+	    }
+	}
+	print $out "\n";
+    }    
+    print $out ";\n";
+}
+    
+    
+################################################################
+## Create a feature with the intersection between two features, and
+## append it to the list.
+sub CreateIntersection {
+    my ($current_ft, $next_ft) = @_;
+    my $file_1 = $current_ft->get_attribute("file_nb");
+    my $file_2 = $next_ft->get_attribute("file_nb");
+
+    ## Check if self-comparison
+    if (($file_1 == $file_2) && !($self_comparison)) {
+	return();
+    }
+    
+    my $file_a = &RSAT::stats::min($file_1, $file_2);
+    my $file_b = &RSAT::stats::max($file_1, $file_2);
+    
+    ## Add the intersection in statistics
+    $intersection_counts[$file_a][$file_b]++;
+    if ($file_a != $file_b) {
+	$intersection_counts[$file_b][$file_a]++;
+    }
+    
+    ## create a new feature for the intersection
+    my $intersection_ft = new RSAT::feature();
+    $inter_nb++;
+    $intersection_ft->set_attribute("id", "inter".$inter_nb);
+    $intersection_ft->set_attribute("seq_name", $current_ft->get_attribute("seq_name"));
+    $intersection_ft->set_attribute("ft_type", "inter");
+    
+    ## Intersection name
+    my $inter_name = "";
+    $inter_name .= ($file_a+1).".inter.".($file_b+1);
+    $intersection_ft->set_attribute("feature_name", $inter_name);
+    
+    ## Intersection boundaries
+    $intersection_ft->set_attribute("start", $next_ft->get_attribute("left"));
+    $intersection_ft->set_attribute("end", $current_ft->get_attribute("right"));
+
+    ## Length calculations
+    my $pair_left = &RSAT::stats::min($next_ft->get_attribute("left"),
+				      $current_ft->get_attribute("left"));
+    my $pair_right = &RSAT::stats::max($next_ft->get_attribute("right"),
+				      $current_ft->get_attribute("right"));
+    my $pair_len = $pair_right - $pair_left + 1;
+    my $inter_len = $intersection_ft->get_attribute("end") -  $intersection_ft->get_attribute("start") + 1;
+    my $len_cov = $inter_len/$pair_len;
+    $intersection_ft->set_attribute("pair_len", $pair_len);
+    $intersection_ft->set_attribute("inter_len", $inter_len);
+    $intersection_ft->set_attribute("len_cov", $len_cov);
+
+#     &RSAT::message::Debug("Intersection len", 
+# 			  $intersection_ft->get_attribute("seq_name"),
+# 			  $current_ft->get_attribute("filename"),
+# 			  $current_ft->get_attribute("id"),
+# 			  $current_ft->get_attribute("left"),
+# 			  $current_ft->get_attribute("right"),
+# 			  $next_ft->get_attribute("filename"),
+# 			  $next_ft->get_attribute("id"),
+# 			  $next_ft->get_attribute("left"),
+# 			  $next_ft->get_attribute("right"),
+# 			  $inter_len,
+# 			  $pair_len,
+# 			  $len_cov,
+# 			 );
+
+    ## Intersection strand
+    if ($current_ft->get_attribute("strand") eq $next_ft->get_attribute("strand")) {
+	$intersection_ft->set_attribute("strand", $current_ft->get_attribute("strand"));
+    } else {
+	$intersection_ft->set_attribute("strand", "DR");
+    }
+    
+    ## Intersection description
+    my $description = "Intersection";
+    $description .= " (".$intersection_ft->get_attribute("inter_len");
+    $description .= "/";
+    $description .= $intersection_ft->get_attribute("pair_len").")";
+    $description .= " between ";
+    $description .= join (":", 
+			  $current_ft->get_attribute("filename"),
+			  $current_ft->get_attribute("id"),
+			  $current_ft->get_attribute("feature_name")
+			  );
+    $description .= " and ";
+    $description .= join (":", 
+			  $next_ft->get_attribute("filename"),
+			  $next_ft->get_attribute("id"),
+			  $next_ft->get_attribute("feature_name")
+			  );
+    $intersection_ft->set_attribute("description", $description);
+
+    
+    $intersection_ft->set_attribute("score", sprintf("%.2f", $intersection_ft->get_attribute("len_cov")*10));
+
+    ## Intersection files
+    $intersection_ft->push_attribute("files",$current_ft->get_attribute("file_nb"));
+    $intersection_ft->push_attribute("files",$next_ft->get_attribute("file_nb"));
+
+    ## Intersection features
+    $intersection_ft->push_attribute("feature_ids",$current_ft->get_attribute("id"));
+    $intersection_ft->push_attribute("feature_ids",$next_ft->get_attribute("id"));
+    
+    ## Add this intersecion to the list
+    $current_ft->push_attribute("intersections", $intersection_ft);
+    $next_ft->push_attribute("intersections", $intersection_ft);
+    push @intersection_features, $intersection_ft;
+}
 
 
 ################################################################
@@ -367,6 +580,21 @@ least two feature files.
 	} elsif ($ARGV[$a] eq "-i") {
 	    push @main::inputfiles, $ARGV[$a+1];
 	    
+	    ## Input files
+=pod
+
+=item B<-files inputfile_1 inputfile_2 ...>
+
+Specify multiple input files. All the arguments following the option
+-files are considered as input files.
+
+=cut
+	} elsif ($ARGV[$a] eq "-files") {
+	    for my $a (($a+1)..$#ARGV) {
+		push @inputfiles, $ARGV[$a];
+	    }
+	    last;
+	    
 	    ## Output file
 =pod
 
@@ -405,6 +633,19 @@ Output feature format (Supported: $supported_output_formats)
 	    $main::output_format = $ARGV[$a+1];
 	    &RSAT::error::FatalError("$output_format\tInvalid output format. Supoprted: $supported_output_formats")
 		unless ($supported_output_format{$output_format});
+	    
+    ### Self-comparison
+=pod
+
+=item B<-self>
+
+Also perform comparison between features in the same file
+(self-comparison). This can be useful to detect redundancy between
+annotated features.
+
+=cut
+	} elsif ($ARGV[$a] eq "-self") {
+    $self_comparison = 1;
 
 	}
     }
@@ -442,6 +683,13 @@ sub Verbose {
 	    print $out ";\t$key\t$value\n";
 	}
     }
+
+    if ($self_comparison) {
+	print $out "; Self-comparison included\n";
+    } else {
+	print $out "; No self-comparison\n";
+    }
+
 }
 
 
