@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: mirror.mk,v 1.22 2005/05/18 22:20:22 jvanheld Exp $
+# $Id: mirror.mk,v 1.23 2005/07/30 12:33:30 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 12:05:45 jvanheld>
 #
@@ -99,6 +99,7 @@ pub_from_server:
 		${RSA_SERVER_LOGIN}@${RSA_SERVER}:${RSA_SERVER_DIR}/public_html ${RSA}/
 
 EXCLUDED_GENOMES=				\
+		--exclude Danio_rerio		\
 		--exclude Mus_musculus*		\
 		--exclude Gallus_gallus		\
 		--exclude Canis_familiaris	\
