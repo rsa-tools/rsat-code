@@ -219,7 +219,7 @@ foreach $pattern1 (@pattern1) {
 ## Print contingency tables
 foreach my $field (@table_fields) {
     my $table_name = $field."_table";
-    print $out join("\t", "; Contingency table", $field), "\n";
+    print $out join("\t", "; Contingency table", $field), "\n" if ($main::verbose >= 1);
 
     ## Calculate width of first column
     my $max_seq1_len = 0;
