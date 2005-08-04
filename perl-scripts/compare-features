@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-features,v 1.7 2005/07/30 12:51:30 jvanheld Exp $
+# $Id: compare-features,v 1.8 2005/08/04 12:03:54 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -216,8 +216,10 @@ perl -pe 's/^;//' outfile
     #### check argument values
 
     ## Number of input files should be >= 2
-    if (($ref_file) && (scalar(@query_files) < 1)) {
-	&RSAT::error::FatalError("You must specify at least one input file in addition to the reference file\n");
+    if ($ref_file) {
+	if (scalar(@query_files) < 1) {
+	    &RSAT::error::FatalError("You must specify at least one input file in addition to the reference file\n");
+	}
     } elsif (scalar(@query_files) < 2) {
 	&RSAT::error::FatalError("You must specify at least two input files\n");
     }
@@ -256,6 +258,11 @@ perl -pe 's/^;//' outfile
 	    push @features, $feature;
 	    $feature_ids{$new_id} = $feature;
 #	print $out $feature->to_text($output_format, $null);
+
+	    ## mark reference features
+	    if (($ref_file) && ($f==0)) {
+		$feature->set_attribute('ref', 1);
+	    }
 	}
 	close $in if ($infile);
 	push @feature_lists, \@features;
@@ -332,6 +339,15 @@ perl -pe 's/^;//' outfile
 		    last;
 		} else {
 		    &CreateIntersection($current_ft,$next_ft);
+		    ## Validation
+		    if ($ref_file) {
+			if ($current_ft->get_attribute('ref')) {
+			    $next_ft->add_hash_attribute('matched_references',$current_id, 1);
+			}
+			if ($next_ft->get_attribute('ref')) {
+			    $current_ft->add_hash_attribute('matched_references',$next_id, 1);
+			}
+		    }
 		}
 	    }
 	}
@@ -837,11 +853,10 @@ sub Validation {
 #    print $out ";\tValidation table\n";
 
     ##Header
-    print $out join ("\t",
-		     ";",
-		     @selected_fields
-		    ),"\n";
-
+    print $out "#", join ("\t",
+			  @selected_fields
+			 ),"\n";
+    
     ## Query files
     foreach my $q (1..$#input_files) {
 
@@ -850,7 +865,6 @@ sub Validation {
 	my $acc_a = ($PPV+$Sn)/2;
 	my $acc_g = sqrt($PPV*$Sn);
 	print $out join ("\t", 
-			 ";",
 			 &FileLabel($q),
 			 $features_per_file[$r],
 			 $features_per_file[$q],
@@ -865,6 +879,99 @@ sub Validation {
 			), "\n";
     }
     
+    &ScoreStatistics();
+}
+
+## ##############################################################
+## Calculate distributions of sensitivity, PPV, accuracy as a function
+## of feature score
+sub ScoreStatistics {
+
+    ## Count numbre of reference features
+    my $ft_r = $feature_lists[0];
+    my $ref_nb = scalar(@$ft_r);
+
+    ## Count number of matches for each score
+    my %prT = ();
+    my %prF = ();
+    my %freq = ();
+    my %matched_per_score = ();
+    foreach my $q (1..$#input_files) {
+	my $ft_q = $feature_lists[$q];
+	&RSAT::message::TimeWarn(join("\t","", "Score statistics for file", 
+				      ($a+1)."/".scalar(@input_files), 
+				      $input_files[$a])) if ($main::verbose >= 2);
+	foreach my $feature (@{$ft_q}) {
+	    my $score = $feature->get_attribute('score');
+	    $freq{$score}++;
+
+	    ## Index matched references
+	    my %matched_references = $feature->get_attribute('matched_references');
+	    my @matched_references = keys (%matched_references);
+	    my $matched_references = scalar(@matched_references);
+	    foreach my $ref (@matched_references) {
+		$matched_per_score{$score}->{$ref} = 1;
+	    }
+
+	    ## Update prT, prF
+	    if ($matched_references >= 1) {
+		$prT{$score}++;
+	    } else {
+		$prF{$score}++;
+	    }
+	}
+    }    
+
+    ## Header
+    print $out "#", join("\t", 'score','freq','prT','prF',
+			 'cum_frq', 'cum_prT', 'cum_prF',
+			 "matched"
+			), "\n";
+    
+    ## Inverse cumulative distribution
+    my @sorted_scores = sort {$b <=> $a} keys(%freq);
+    my $cum_frq = 0;
+    my $cum_prT = 0;
+    my $cum_prF = 0;
+    my %matched = ();
+    my $format = "%.3f";
+    foreach my $score (@sorted_scores) {
+	$prT{$score}=0 unless defined($prT{$score});
+	$prF{$score}=0 unless defined($prF{$score});
+	$cum_frq += $freq{$score};
+	$cum_prT += $prT{$score};
+	$cum_prF += $prF{$score};
+
+	my $matched_per_score = $matched_per_score{$score};
+	foreach my $ref (keys %{$matched_per_score}) {
+	    $matched{$ref}++;
+	}
+	my $matched = scalar(keys(%matched));
+	my $PPV = $null;
+	if ($cum_frq > 0) {
+	    $PPV = sprintf($format, $cum_prT/$cum_frq);
+	}
+	my $Sn = $null;
+	if ($ref_nb > 0) {
+	    $Sn = sprintf($format, $matched/$ref_nb);
+	}
+	my $acc_a = $null;
+	my $acc_g = $null;
+	if ((&IsReal($PPV)) && (&IsReal($Sn))) {
+	    $acc_a = sprintf($format, ($PPV+$Sn)/2);
+	    $acc_g = sprintf($format, sqrt(($PPV*$Sn)));
+	}
+	
+	print $out join("\t",
+			$score, $freq{$score}, $prT{$score}, $prF{$score},
+			$cum_frq, $cum_prT, $cum_prF,
+			$matched, 
+			$PPV, 
+			$Sn, 
+			$acc_a, 
+			$acc_g,
+		       ), "\n";
+    }
 }
 
 
