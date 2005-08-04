@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-features,v 1.9 2005/08/04 15:48:20 jvanheld Exp $
+# $Id: compare-features,v 1.10 2005/08/04 16:18:54 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -862,9 +862,9 @@ sub Validation {
 #    print $out ";\tValidation table\n";
 
     ##Header
-    print $out "#", join ("\t",
-			  @selected_fields
-			 ),"\n";
+    print $out join ("\t", ";", 
+		     @selected_fields
+		    ),"\n";
     
     ## Query files
     foreach my $q (1..$#input_files) {
@@ -873,7 +873,7 @@ sub Validation {
 	my $Sn  = $intersection_fraction[$q][$r];
 	my $Acc_a = ($PPV+$Sn)/2;
 	my $Acc_g = sqrt($PPV*$Sn);
-	print $out join ("\t", 
+	print $out join ("\t", ";",
 			 &FileLabel($q),
 			 $features_per_file[$r],
 			 $features_per_file[$q],
@@ -943,49 +943,62 @@ sub ScoreStatistics {
 
     
     ## Inverse cumulative distribution
-    my @sorted_scores = sort {$b <=> $a} keys(%freq);
-    my $cum_frq = 0;
-    my $cum_prT = 0;
-    my $cum_prF = 0;
-    my %matched = ();
-    my $format = "%.3f";
-    foreach my $score (@sorted_scores) {
+    local @sorted_scores = sort {$b <=> $a} keys(%freq);
+    local $cum_frq = 0;
+    local $cum_prT = 0;
+    local $cum_prF = 0;
+    local %matched = ();
+    local $format = "%.3f";
+    local $score;
+    local $nomatch;
+    local $matched;
+    foreach $score (@sorted_scores) {
+	local $freq = $freq{$score};
 	$prT{$score}=0 unless defined($prT{$score});
 	$prF{$score}=0 unless defined($prF{$score});
-	$cum_frq += $freq{$score};
-	$cum_prT += $prT{$score};
-	$cum_prF += $prF{$score};
-
-	my $matched_per_score = $matched_per_score{$score};
+	local $prT = $prT{$score};
+	local $prF = $prF{$score};
+	$cum_frq += $freq;
+	$cum_prT += $prT;
+	$cum_prF += $prF;
+	
+	local $matched_per_score = $matched_per_score{$score};
 	foreach my $ref (keys %{$matched_per_score}) {
 	    $matched{$ref}++;
 	}
-	my $matched = scalar(keys(%matched));
-	my $nomatch = $ref_nb - $matched;
-	my $PPV = $null;
+	$matched = scalar(keys(%matched));
+	$nomatch = $ref_nb - $matched;
+	local $PPV = $null;
 	if ($cum_frq > 0) {
 	    $PPV = sprintf($format, $cum_prT/$cum_frq);
 	}
-	my $Sn = $null;
+	local $Sn = $null;
 	if ($ref_nb > 0) {
 	    $Sn = sprintf($format, $matched/$ref_nb);
 	}
-	my $Acc_a = $null;
-	my $Acc_g = $null;
+	local $Acc_a = $null;
+	local $Acc_g = $null;
 	if ((&IsReal($PPV)) && (&IsReal($Sn))) {
 	    $Acc_a = sprintf($format, ($PPV+$Sn)/2);
 	    $Acc_g = sprintf($format, sqrt(($PPV*$Sn)));
 	}
+	local @output = ();
+	foreach my $field (@selected_fields) {
+	    local $value = $$field;
+#	    &RSAT::message::Debug($field, $value);
+	    push @output, $value;
+	}
 	
 	print $out join("\t",
-			$score, $freq{$score}, $prT{$score}, $prF{$score},
-			$cum_frq, $cum_prT, $cum_prF,
-			$matched, 
-			$nomatch, 
-			$PPV, 
-			$Sn, 
-			$Acc_a, 
-			$Acc_g,
+			@output,
+#			$score, $freq, $prT{$score}, $prF{$score},
+#			$cum_frq, $cum_prT, $cum_prF,
+#			$matched, 
+#			$nomatch, 
+#			$PPV, 
+#			$Sn, 
+#			$Acc_a, 
+#			$Acc_g,
 		       ), "\n";
     }
 }
