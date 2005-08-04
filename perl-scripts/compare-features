@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-features,v 1.8 2005/08/04 12:03:54 jvanheld Exp $
+# $Id: compare-features,v 1.9 2005/08/04 15:48:20 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -823,7 +823,7 @@ sub PrintStatistics {
 sub Validation {
     my $r = 0;
 
-    my @selected_fields = qw( file r_ft q_ft inter q_in_r r_in_q PPV Sn Acc_a Acc_g file_name );
+    my @selected_fields = qw( file r_ft q_ft inter prT matched PPV Sn Acc_a Acc_g file_name );
     
     ## Field descriptions
     my %field_descriptions = ();
@@ -832,12 +832,21 @@ sub Validation {
     $field_description{'r_ft'} = "Features in the reference file";
     $field_description{'q_ft'} = "Features in the query file";
     $field_description{'inter'} = "Number of intersections";
-    $field_description{'q_in_r'} = "Query features with at least one intersection in the reference features";
-    $field_description{'r_in_q'} = "Reference features with at least one intersection in the query features";
-    $field_description{'PPV'} = "Positive predictive value. PPV=q_in_r/q_ft";
-    $field_description{'Sn'} = "Sensitivity. Sn = r_in_q/r";
+    $field_description{'prT'} = "True predictions: query features with at least one intersection in the reference features";
+    $field_description{'prF'} = "False predictions: query features with no intersection in the reference features";
+    $field_description{'matched'} = "Reference features with at least one intersection in the query features";
+    $field_description{'nomatch'} = "Reference features with no intersection in the query features";
+    $field_description{'PPV'} = "Positive predictive value. PPV=prT/q_ft=prT/(prT+prF)";
+    $field_description{'Sn'} = "Sensitivity. Sn = matched/r_ft=matched(prT+nomatch)";
     $field_description{'Acc_a'} = "Accuracy (artihmetic). Acc_a = (PPV + Sp)/2";
     $field_description{'Acc_g'} = "Accuracy (geometric). Acc_g = sqrt(PPV * Sp)";
+
+    $field_description{'score'} = 'Score of the predicted feature';
+    $field_description{'freq'} = 'Frequency of the score in the query features';
+    $field_description{'cum_frq'} = 'Inverse cumulated frequency of the score in the query features';
+    $field_description{'cum_prF'} = 'Inverse cumulated frequency of false predictions';
+    $field_description{'cum_prT'} = 'Inverse cumulated frequency of true predictions';
+    
 #    $field_description{} = "";
 #    $field_description{} = "";
     print $out "; VALIDATION STATISTICS", "\n";
@@ -862,8 +871,8 @@ sub Validation {
 
 	my $PPV = $intersection_fraction[$r][$q];
 	my $Sn  = $intersection_fraction[$q][$r];
-	my $acc_a = ($PPV+$Sn)/2;
-	my $acc_g = sqrt($PPV*$Sn);
+	my $Acc_a = ($PPV+$Sn)/2;
+	my $Acc_g = sqrt($PPV*$Sn);
 	print $out join ("\t", 
 			 &FileLabel($q),
 			 $features_per_file[$r],
@@ -873,8 +882,8 @@ sub Validation {
 			 $one_inter_per_ft[$q][$r],
 			 sprintf("%.3f",$PPV),
 			 sprintf("%.3f",$Sn),
-			 sprintf("%.3f",$acc_a),
-			 sprintf("%.3f",$acc_g),
+			 sprintf("%.3f",$Acc_a),
+			 sprintf("%.3f",$Acc_g),
 			 $input_files[$q],
 			), "\n";
     }
@@ -923,10 +932,15 @@ sub ScoreStatistics {
     }    
 
     ## Header
-    print $out "#", join("\t", 'score','freq','prT','prF',
-			 'cum_frq', 'cum_prT', 'cum_prF',
-			 "matched"
-			), "\n";
+    @selected_fields = ('score','freq','prT','prF',
+			   'cum_frq', 'cum_prT', 'cum_prF',
+			"matched", "nomatch", "PPV", "Sn", "Acc_a", "Acc_g");
+    foreach my $field (@selected_fields) {
+	print $out  join ("\t", ";", $field, $field_description{$field}), "\n";
+    }
+    
+    print $out "#", join("\t", @selected_fields), "\n";
+
     
     ## Inverse cumulative distribution
     my @sorted_scores = sort {$b <=> $a} keys(%freq);
@@ -947,6 +961,7 @@ sub ScoreStatistics {
 	    $matched{$ref}++;
 	}
 	my $matched = scalar(keys(%matched));
+	my $nomatch = $ref_nb - $matched;
 	my $PPV = $null;
 	if ($cum_frq > 0) {
 	    $PPV = sprintf($format, $cum_prT/$cum_frq);
@@ -955,21 +970,22 @@ sub ScoreStatistics {
 	if ($ref_nb > 0) {
 	    $Sn = sprintf($format, $matched/$ref_nb);
 	}
-	my $acc_a = $null;
-	my $acc_g = $null;
+	my $Acc_a = $null;
+	my $Acc_g = $null;
 	if ((&IsReal($PPV)) && (&IsReal($Sn))) {
-	    $acc_a = sprintf($format, ($PPV+$Sn)/2);
-	    $acc_g = sprintf($format, sqrt(($PPV*$Sn)));
+	    $Acc_a = sprintf($format, ($PPV+$Sn)/2);
+	    $Acc_g = sprintf($format, sqrt(($PPV*$Sn)));
 	}
 	
 	print $out join("\t",
 			$score, $freq{$score}, $prT{$score}, $prF{$score},
 			$cum_frq, $cum_prT, $cum_prF,
 			$matched, 
+			$nomatch, 
 			$PPV, 
 			$Sn, 
-			$acc_a, 
-			$acc_g,
+			$Acc_a, 
+			$Acc_g,
 		       ), "\n";
     }
 }
