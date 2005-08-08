@@ -6,7 +6,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.105 2005/07/24 21:50:21 rsat Exp $
+# $Id: gene-cluster-motifs,v 1.106 2005/08/08 23:58:21 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -32,16 +32,18 @@ require RSAT::Analysis;
 require RSAT::Family;
 
 ################################################################
-## initialisations	    
-$null="NA";
-$skip=0;
-$last=-1;
-$min_genes = 1;
+## initialize global variables
+$null="NA"; ## Null character for the exports
+$skip=0; ## Skip the first families
+$last=-1; ## Stop after a few families
+$batch = 0; ## Run task in batch mode (on a PC cluster)
+$batch_script = ""; ## Script to run in batch mode
+$min_genes = 1; ## Min number of genes per family
 $rel_w = 1; ## Threshold on relative weight for count-matches
-$sliding_window_size = 0;
+$sliding_window_size = 0; 
 $die_on_error = 1;
 $analyze_purged_sequences = 1;
-$repetitions=10000; ### Repetitions for the calibN
+$repetitions=1000; ### Repetitions for the calibN
 %dir = ();
 $dir{main} = `pwd`;
 chomp($dir{main});
@@ -648,7 +650,11 @@ sub UpstreamSequences {
    $command .= " -label id,name ";
    $command .= " -feattype $feature_types " if ($feature_types);
    $command .= " -format $seq_format";
-   &doit($command, $dry_run, $die_on_error, $verbose);
+   if ($batch) {
+       $main::batch_script .= $command;
+   } else {
+       &doit($command, $dry_run, $die_on_error, $verbose);
+   }
 }
 
 ################################################################
@@ -783,7 +789,11 @@ sub OligoAnalysis {
    push @oligo_commands, $merge_command;
    my $command = join "; \\\n", @oligo_commands;
 
-   &doit($command, $dry_run, $die_on_error, $verbose,$batch);
+   if ($batch) {
+       $main::batch_script .= $command;
+   } else {
+       &doit($command, $dry_run, $die_on_error, $verbose);
+   }
 }
 
 ################################################################
@@ -919,7 +929,11 @@ sub DyadAnalysis {
    ### fragment assembly
    $command .= "; pattern-assembly -v -i $family{$family_name}->{dyad_file} -o $family{$family_name}->{dyad_assembly_file} ${strands} -maxfl 1 -maxpat 200 ";
    
-   &doit($command, $dry_run, $die_on_error, $verbose, $batch);
+   if ($batch) {
+       $main::batch_script .= $command;
+   } else {
+       &doit($command, $dry_run, $die_on_error, $verbose);
+   }
    
 }
 
@@ -1020,7 +1034,11 @@ sub MotifSampler {
 #    unless ($main::verbose >= 4) {
 #	$MS_command .= ">& /dev/null";
 #    }
-   &doit($MS_command, $dry_run, $die_on_error, $verbose, $batch);
+   if ($batch) {
+       $main::batch_script .= $command;
+   } else {
+       &doit($MS_command, $dry_run, $die_on_error, $verbose);
+   }
 }
 
 
@@ -1046,7 +1064,11 @@ sub Gibbs {
 #    unless ($main::verbose >= 4) {
 #	$gibbs_command .= ">& /dev/null";
 #    }
-   &doit($gibbs_command, $dry_run, $die_on_error, $verbose, $batch);
+   if ($batch) {
+       $main::batch_script .= $command;
+   } else {
+       &doit($gibbs_command, $dry_run, $die_on_error, $verbose);
+   }
 }
 
 ################################################################
@@ -1056,7 +1078,11 @@ sub MEME {
 
    ## run the command
    $meme_command = "meme ".$family{$family_name}->{meme_options};
-   &doit($meme_command, $dry_run, 0, $verbose, $batch);
+   if ($batch) {
+       $main::batch_script .= $command;
+   } else {
+       &doit($meme_command, $dry_run, 0, $verbose);
+   }
 }
 
 ################################################################
@@ -1070,7 +1096,11 @@ sub Consensus {
    ## run the command
    $consensus_command .= " | consensus ".$family{$family_name}->{consensus_options};
    $consensus_command .= " > ".$family{$family_name}->{consensus_file};
-   &doit($consensus_command, $dry_run, 0, $verbose, $batch);
+   if ($batch) {
+       $main::batch_script .= $command;
+   } else {
+       &doit($consensus_command, $dry_run, 0, $verbose);
+   }
 }
 
 ################################################################
@@ -1737,6 +1767,8 @@ sub AnalyzeFamilies {
    }
 
    foreach $family_name (@families) {
+       $main::batch_script = "";
+
 	$fam_count++;
 	my @members = @{$family{$family_name}->{members}};
 	$gene_nb = scalar(@members);
@@ -1817,18 +1849,28 @@ sub AnalyzeFamilies {
 #	&SlidingWindow() if ($task{slide});
 		
 	### delete upstream sequence file
-	if ($task{clean}) {
-	    warn ";\tCleaning files from the hard drive for family $family_name\n" if ($verbose >=1);
-	    foreach my $file ($family{$family_name}->{seq_file},
-			      $family{$family_name}->{seq_file_purged},
-			      $family{$family_name}->{oligo_ft_file},
-			      $family{$family_name}->{dyad_ft_file}
-			      ) {
-		warn ";\t\t$file\n" if ($verbose >=1);
-		system "rm -f $file" ;
-	    }
+       if ($task{clean}) {
+	   warn ";\tCleaning files from the hard drive for family $family_name\n" if ($verbose >=1);
+	   foreach my $file ($family{$family_name}->{seq_file},
+			     $family{$family_name}->{seq_file_purged},
+			     $family{$family_name}->{oligo_ft_file},
+			     $family{$family_name}->{dyad_ft_file}
+			    ) {
+	       warn ";\t\t$file\n" if ($verbose >=1);
+	       $commmand = "rm -f $file";
+	       if ($batch) {
+		   $main::batch_script .= $command;
+	       } else {
+		   &doit($command, $dry_run, $die_on_error, $verbose);
+	       }
+	   }
 	}
-	
+       
+
+       ## Send the batch script to the queue
+       if ($batch) {
+	   &doit($main::batch_script, $dry_run, $die_on_error, $verbose, $batch);
+       }
    }
 }
 
@@ -2615,7 +2657,7 @@ sub ExportSQL {
 		$sequence =~ s/N/n/g;
 #		$sequence =~ s/n\{0\}//g;
 		my $dyad_object = $pattern_factory->new_object();
-		warn join ("\t", "; Created object", $sequence, $oligo_object), "\n" if ($main::verbose >= 3);
+		warn join ("\t", "; Created object", $sequence, $dyad_object), "\n" if ($main::verbose >= 3);
 		foreach $k (sort keys %export_columns) {
 		    warn join ("\t", ";", "specifying attribute", 
 			       $k, 

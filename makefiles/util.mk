@@ -35,12 +35,12 @@ JOB_PREFIX=job
 JOB=`mktemp ${JOB_DIR}/${JOB_PREFIX}.XXXXXX`
 command_queue:
 	@mkdir -p ${JOB_DIR}
-	@for job in ${JOB} ; do						\
-		echo "Job $${job}" ;					\
-		echo "echo running on node "'$$HOST' > $${job}; \
-		echo "${MY_COMMAND}" >> $${job} ;		\
+	@for job in ${JOB} ; do							\
+		echo "Job $${job}" ;						\
+		echo "echo running on node "'$$HOST' > $${job}; 		\
+		echo "${MY_COMMAND}" >> $${job} ;				\
 		qsub -m e -q rsa@merlin.scmbb.ulb.ac.be -N $${job} -j oe	\
-			-o $${job}.log $${job} ;	\
+			-o $${job}.log $${job} ;				\
 	done
 
 command_now:
