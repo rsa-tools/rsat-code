@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-features,v 1.10 2005/08/04 16:18:54 jvanheld Exp $
+# $Id: compare-features,v 1.11 2005/08/08 11:59:09 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -172,6 +172,12 @@ perl -pe 's/^;//' outfile
 			      );
     $supported_output_formats = join (",", keys %supported_output_format);
     
+    ## Threshold parameters
+    %supported_threshold_parameter =(inter_len=>1,
+				      inter_cov=>1,
+			      );
+    $supported_threshold_parameters = join (",", keys %supported_threshold_parameter);
+    
     ## Return types
     %supported_return_type =(stats=>1,
 			     inter=>1,
@@ -195,6 +201,10 @@ perl -pe 's/^;//' outfile
     
     local $null = "<NA>";
     local $max_score = 10;
+
+    local %lth = ();
+    $lth{inter_len} = 1;
+    $lth{inter_cov} = 0;
     
     &ReadArguments();
     
@@ -329,25 +339,29 @@ perl -pe 's/^;//' outfile
 	    ## Detect next features overlapping with the current one
 	    my $next = $f;
 	    my $inter_len = 0;
+	    
 	    while ($next <= ($#sorted_features-1)) {
 		$next++;
 		my $next_id = $sorted_features[$next];
 		my $next_ft = $feature_ids{$next_id};
 		my $inter_len = $current_ft->get_attribute("right") - $next_ft->get_attribute("left") + 1;
 		$inter_len = &RSAT::stats::max(0,$inter_len);
+
 		if ($inter_len <= 0) {
 		    last;
 		} else {
-		    &CreateIntersection($current_ft,$next_ft);
-		    ## Validation
-		    if ($ref_file) {
-			if ($current_ft->get_attribute('ref')) {
-			    $next_ft->add_hash_attribute('matched_references',$current_id, 1);
+#		    if ($inter_len >= $lth{inter_len}) {
+			&CreateIntersection($current_ft,$next_ft);
+			## Validation
+			if ($ref_file) {
+			    if ($current_ft->get_attribute('ref')) {
+				$next_ft->add_hash_attribute('matched_references',$current_id, 1);
+			    }
+			    if ($next_ft->get_attribute('ref')) {
+				$current_ft->add_hash_attribute('matched_references',$next_id, 1);
+			    }
 			}
-			if ($next_ft->get_attribute('ref')) {
-			    $current_ft->add_hash_attribute('matched_references',$next_id, 1);
-			}
-		    }
+#		    }
 		}
 	    }
 	}
@@ -462,7 +476,6 @@ sub CreateIntersection {
     my $current_file = $current_ft->get_attribute("file_nb");
     my $next_file = $next_ft->get_attribute("file_nb");
 
-
     ## Check if self-comparison
     if (($current_file == $next_file) && !($self_comparison)) {
 	return();
@@ -491,8 +504,9 @@ sub CreateIntersection {
     $inter_ft->set_attribute("feature_name", $inter_name);
     
     ## Intersection boundaries
-    $inter_ft->set_attribute("start", $next_ft->get_attribute("left"));
-    $inter_ft->set_attribute("end", $current_ft->get_attribute("right"));
+    $inter_ft->set_attribute("start", &max($next_ft->get_attribute("left"), $current_ft->get_attribute("left")));
+    $inter_ft->set_attribute("end", &min($next_ft->get_attribute("right"), $current_ft->get_attribute("right")));
+#    $inter_ft->set_attribute("end", $current_ft->get_attribute("right"));
 
     ## Length calculations
     my $pair_left = &RSAT::stats::min($next_ft->get_attribute("left"),
@@ -501,10 +515,23 @@ sub CreateIntersection {
 				      $current_ft->get_attribute("right"));
     my $pair_len = $pair_right - $pair_left + 1;
     my $inter_len = $inter_ft->get_attribute("end") -  $inter_ft->get_attribute("start") + 1;
-    my $len_cov = $inter_len/$pair_len;
+    my $inter_cov = $inter_len/$pair_len;
+
     $inter_ft->set_attribute("pair_len", $pair_len);
     $inter_ft->set_attribute("inter_len", $inter_len);
-    $inter_ft->set_attribute("len_cov", $len_cov);
+    $inter_ft->set_attribute("inter_cov", $inter_cov);
+
+    ## Check thresholds
+    foreach my $param (keys %lth) {
+	if ($inter_ft->get_attribute($param) < $lth{$param}) {
+	    &RSAT::message::Info(join ("\t", "Intersection does not reach lower threshold on", 
+				       $param, $lth{$param}, 
+				       "len:".$inter_len, "cov:".$inter_cov)) 
+		if ($main::verbose >= 3);
+	    undef $inter_ft;
+	    return();
+	}
+    }
 
     ## Intersection strand
     if ($current_ft->get_attribute("strand") eq $next_ft->get_attribute("strand")) {
@@ -525,16 +552,16 @@ sub CreateIntersection {
     $inter_ft->set_attribute("description", $description);
 
     
-    $inter_ft->set_attribute("score", sprintf("%.2f", $inter_ft->get_attribute("len_cov")*$max_score));
+    $inter_ft->set_attribute("score", sprintf("%.2f", $inter_ft->get_attribute("inter_cov")*$max_score));
 
-    ## Intersection files
+    ## Files of the intersecting features
     $inter_ft->push_attribute("files",$current_ft->get_attribute("file_nb"));
     $inter_ft->push_attribute("files",$next_ft->get_attribute("file_nb"));
 
-    ## Intersection features
+    ## IDs of the intersecting features
     $inter_ft->push_attribute("feature_ids",$current_ft->get_attribute("id"));
     $inter_ft->push_attribute("feature_ids",$next_ft->get_attribute("id"));
-    
+
     ## Add this intersecion to the list
     $current_ft->push_attribute("intersections", $inter_ft);
     $next_ft->push_attribute("intersections", $inter_ft);
@@ -719,6 +746,58 @@ Supported output types: $supported_output_types
 	} elsif ($ARGV[$a] eq "-return") {
           push  @return_types, split(",", $ARGV[$a+1]);
 
+## Thresholds
+=pod
+
+=item B<-lth parameter value>
+
+Specify the value of the lower threshold on some parameter.
+
+Examples:
+
+=over
+
+=item -lth inter_len 3
+
+=item -lth inter_cov 0.8
+
+=back
+
+Supported parameters : 
+
+=over
+
+=item inter_len
+
+Length (in residues) of the intersection between two features.
+
+=item inter_cov
+
+Coverage of the intersection between two features. The coverage
+(inter_cov) is defined as
+
+inter_cov = inter_len / inter_pair
+
+where inter_len is the length of the intersection, pair_len is the
+total length covered by the pair of intersecting features.
+
+=back
+
+
+=cut
+
+	} elsif ($ARGV[$a] eq "-lth") {
+    my $param = $ARGV[$a+1];
+unless ($supported_threshold_parameter{$param}) {
+    &FatalError(join ("\t", "Invalid threshold parameter", $param, "Supported:", $supported_threshold_parameters));
+}
+my $value = $ARGV[$a+2];
+unless (&IsReal($value)) {
+    &FatalError(join ("\t", "Invalid value for threshold parameter", $value, "Choose a real number."));
+}
+$lth{$param} = $value;
+
+
 	}
     }
 
@@ -838,8 +917,8 @@ sub Validation {
     $field_description{'nomatch'} = "Reference features with no intersection in the query features";
     $field_description{'PPV'} = "Positive predictive value. PPV=prT/q_ft=prT/(prT+prF)";
     $field_description{'Sn'} = "Sensitivity. Sn = matched/r_ft=matched(prT+nomatch)";
-    $field_description{'Acc_a'} = "Accuracy (artihmetic). Acc_a = (PPV + Sp)/2";
-    $field_description{'Acc_g'} = "Accuracy (geometric). Acc_g = sqrt(PPV * Sp)";
+    $field_description{'Acc_a'} = "Accuracy (artihmetic). Acc_a = (PPV + Sn)/2";
+    $field_description{'Acc_g'} = "Accuracy (geometric). Acc_g = sqrt(PPV * Sn)";
 
     $field_description{'score'} = 'Score of the predicted feature';
     $field_description{'freq'} = 'Frequency of the score in the query features';
@@ -939,7 +1018,7 @@ sub ScoreStatistics {
 	print $out  join ("\t", ";", $field, $field_description{$field}), "\n";
     }
     
-    print $out "#", join("\t", @selected_fields), "\n";
+    print $out join("\t", @selected_fields), "\n";
 
     
     ## Inverse cumulative distribution
