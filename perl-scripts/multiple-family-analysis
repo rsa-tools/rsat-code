@@ -6,7 +6,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.106 2005/08/08 23:58:21 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.107 2005/08/09 01:27:09 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -37,7 +37,8 @@ $null="NA"; ## Null character for the exports
 $skip=0; ## Skip the first families
 $last=-1; ## Stop after a few families
 $batch = 0; ## Run task in batch mode (on a PC cluster)
-$batch_script = ""; ## Script to run in batch mode
+@batch_commands = (); ## Set of commandst to run in batch mode
+#$batch_script = ""; ## Script collecting the commands to be run on the same node of the PC cluster
 $min_genes = 1; ## Min number of genes per family
 $rel_w = 1; ## Threshold on relative weight for count-matches
 $sliding_window_size = 0; 
@@ -180,8 +181,9 @@ $password="";
 ## Unique prefix for each analysis, to allow merging them in a database
 
 local $run_date = &AlphaDate();
-local $run_prefix = `mktemp XXXX`;
+local $run_prefix = `mktemp XXXXX`;
 chomp($run_prefix);
+system "rm $run_prefix" if (-f $run_prefix);
 
 ## Class holder for the analysis
 local $analysis_factory = classes::ClassFactory->new_class(object_type=>"RSAT::Analysis");
@@ -651,7 +653,7 @@ sub UpstreamSequences {
    $command .= " -feattype $feature_types " if ($feature_types);
    $command .= " -format $seq_format";
    if ($batch) {
-       $main::batch_script .= $command;
+       push @main::batch_commands, $command;
    } else {
        &doit($command, $dry_run, $die_on_error, $verbose);
    }
@@ -670,7 +672,11 @@ sub PurgeSequences {
    $command .= " | purge-sequence -format wc -ml 40 -mis 3";
 #   $command .= " -i ".$family{$family_name}->{seq_file};
    $command .= " -o ".$family{$family_name}->{seq_file_purged};
-   &doit($command, $dry_run, $die_on_error, $verbose);
+   if ($batch) {
+       push @main::batch_commands, $command;
+   } else {
+       &doit($command, $dry_run, $die_on_error, $verbose);
+   }
 }
 
 
@@ -770,8 +776,8 @@ sub OligoAnalysis {
    my $dir = "${family_name}/oligos_${family_name}";
    
    chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
-   die "Error : cannot read file $family{$family_name}->{input_seq_file}\n" unless (-r $family{$family_name}->{input_seq_file});
-   
+   &RSAT::error::FatalError( "Cannot read file $family{$family_name}->{input_seq_file}") unless (($batch) || (-r $family{$family_name}->{input_seq_file}));
+  
    ## initialize the oligo file
 #    system "echo '' > $family{$family_name}->{oligo_file}"; # if ($verbose >=1);
 
@@ -787,11 +793,11 @@ sub OligoAnalysis {
    ## Merge the results obtained with diffferent oligo lengths
    my $merge_command = &MergeOligoLengths();
    push @oligo_commands, $merge_command;
-   my $command = join "; \\\n", @oligo_commands;
 
    if ($batch) {
-       $main::batch_script .= $command;
+       push @main::batch_commands, @oligo_commands;
    } else {
+       my $command = join "; \\\n", @oligo_commands;
        &doit($command, $dry_run, $die_on_error, $verbose);
    }
 }
@@ -807,7 +813,7 @@ sub MergeOligoLengths {
    my $dir = "${family_name}/oligos_${family_name}";
 
    chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
-   die "Error : cannot read file $family{$family_name}->{input_seq_file}\n" unless (-r $family{$family_name}->{input_seq_file});
+   &RSAT::error::FatalError("Cannot read file ".$family{$family_name}->{input_seq_file}) unless (($batch) ||(-r $family{$family_name}->{input_seq_file}));
    
    ## initialize the oligo file
    my @merge_commands = "echo '' > $family{$family_name}->{oligo_file}"; # if ($verbose >=1);    
@@ -827,7 +833,11 @@ sub MergeOligoLengths {
    if ($task{oligos}) {
        return $merge_command;
    } else {
-       &doit($merge_command, $dry_run, 0, $verbose);
+       if ($batch) {
+	   push @main::batch_commands, @merge_commands;
+       } else {
+	   &doit($merge_command, $dry_run, 0, $verbose);
+       }
    }
 }
 
@@ -842,7 +852,7 @@ sub MatchPatterns {
    $fmap_prefix = $oligo_file unless ($fmap_prefix);
 
    ### pattern matching
-   die "Error : cannot read file $family{$family_name}->{seq_file}\n" unless (-r $family{$family_name}->{seq_file});
+   &RSAT::error::FatalError("Cannot read file $family{$family_name}->{seq_file}") unless (($batch) || (-r $family{$family_name}->{seq_file}));
    $feature_file = $fmap_prefix.".ft";
    $fmap_file = $fmap_prefix.".".$IMG_FORMAT;
    $htmap_file = $fmap_prefix.".html";
@@ -861,10 +871,14 @@ sub MatchPatterns {
    $command .= " | features-from-dnapat -o ".$feature_file;
 
    ## Check if pattern matching is OK (sometimes there are no patterns)
-   my $error = &doit($command, $dry_run, 0, $verbose);
-   if ($error) {
-	warn "; WARNING: Feature map skipped because dna-pattern returned an error\n";
-	return;
+   if ($batch) {
+       push @main::batch_commands, $command;
+   } else {
+       my $error = &doit($command, $dry_run, 0, $verbose);
+       if ($error) {
+	   warn "; WARNING: Feature map skipped because dna-pattern returned an error\n";
+	   return;
+       }
    }
 }
 
@@ -878,7 +892,7 @@ sub DrawFeatureMap {
    $title = $fmap_prefix unless ($title);
 
    ### pattern matching
-   die "Error : cannot read file $family{$family_name}->{seq_file}\n" unless (-r $family{$family_name}->{seq_file});
+   &RSAT::error::FatalError("Cannot read file $family{$family_name}->{seq_file}") unless (($batch) || (-r $family{$family_name}->{seq_file}));
    $feature_file = $fmap_prefix.".ft";
    $fmap_file = $fmap_prefix.".".$IMG_FORMAT;
    $htmap_file = $fmap_prefix.".html";
@@ -905,7 +919,11 @@ sub DrawFeatureMap {
 	$command .= " -htmap > $htmap_file ";
    };
    
-   &doit($command, $dry_run, 0, $verbose);
+   if ($batch) {
+       push @main::batch_commands, $command;
+   } else {
+       &doit($command, $dry_run, 0, $verbose);
+   }
 }
 
 ################################################################
@@ -919,7 +937,7 @@ sub DyadAnalysis {
 	       ), "\n" if ($verbose >= 1);
    $dir = "${family_name}/dyads_${family_name}";
    chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
-   die "Error : cannot read file $family{$family_name}->{input_seq_file}\n" unless (-r $family{$family_name}->{input_seq_file});
+   &RSAT::error::FatalError("Cannot read file $family{$family_name}->{input_seq_file}") unless (($batch) || (-r $family{$family_name}->{input_seq_file}));
    $command = "dyad-analysis";
    $command .= " -return occ,proba,rank";
    $command .= " -i ".$family{$family_name}->{input_seq_file};
@@ -930,7 +948,7 @@ sub DyadAnalysis {
    $command .= "; pattern-assembly -v -i $family{$family_name}->{dyad_file} -o $family{$family_name}->{dyad_assembly_file} ${strands} -maxfl 1 -maxpat 200 ";
    
    if ($batch) {
-       $main::batch_script .= $command;
+       push @main::batch_commands, $command;
    } else {
        &doit($command, $dry_run, $die_on_error, $verbose);
    }
@@ -962,7 +980,11 @@ sub MergePatterns {
    }
    $command .= " >> $family{$family_name}->{merged_file};";
    $command .= " wc $family{$family_name}->{merged_file}";
-   &doit($command, $dry_run, $die_on_error, $verbose);
+   if ($batch) {
+       push @main::batch_commands, $command;
+   } else {
+       &doit($command, $dry_run, $die_on_error, $verbose);
+   }
    &DrawMergedFeatureMap() if ($task{map});
 }
 
@@ -972,16 +994,21 @@ sub MergePatterns {
 sub DrawMergedFeatureMap {
    warn ";\tDrawing feature-map with results of merged oligonucleotides and dyads for family $family_name\n" if ($verbose >= 1);
    ### pattern matching
-   die "Error : cannot read file $family{$family_name}->{seq_file}\n" unless (-r $family{$family_name}->{seq_file});
+   &RSAT::error::FatalError("Cannot read file $family{$family_name}->{seq_file}") unless (($batch) || (-r $family{$family_name}->{seq_file}));
    $fmap_file = $family{$family_name}->{merged_file}.".${IMG_FORMAT}";
    $htmap_file = $family{$family_name}->{merged_file}.".html";
    $origin = "-0";
    my $command = "dna-pattern -i $family{$family_name}->{seq_file} -format $seq_format -pl $family{$family_name}->{merged_file} -origin $origin -N 4 -limit ";
    $command .= " | features-from-dnapat -o $family{$family_name}->{merged_ft_file} ";
-   my $error = &doit($command, $dry_run, 0, $verbose);
-   if ($error) {
-	warn "; WARNING: Feature map skipped because dna-pattern returned an error\n";
-	return;
+
+   if ($batch) {
+       push @main::batch_commands, $command;
+   } else {
+       my $error = &doit($command, $dry_run, 0, $verbose);
+       if ($error) {
+	   warn "; WARNING: Feature map skipped because dna-pattern returned an error\n";
+	   return;
+       }
    }
 
    ## feature-map drawing
@@ -998,7 +1025,11 @@ sub DrawMergedFeatureMap {
 	$command .= " -htmap > $htmap_file ";
    };
    
-   &doit($command, $dry_run, 0, $verbose);
+   if ($batch) {
+       push @main::batch_commands, $command;
+   } else {
+       &doit($command, $dry_run, 0, $verbose);
+   }
 }
 
 
@@ -1035,7 +1066,7 @@ sub MotifSampler {
 #	$MS_command .= ">& /dev/null";
 #    }
    if ($batch) {
-       $main::batch_script .= $command;
+       push @main::batch_commands, $command;
    } else {
        &doit($MS_command, $dry_run, $die_on_error, $verbose);
    }
@@ -1065,7 +1096,7 @@ sub Gibbs {
 #	$gibbs_command .= ">& /dev/null";
 #    }
    if ($batch) {
-       $main::batch_script .= $command;
+       push @main::batch_commands, $command;
    } else {
        &doit($gibbs_command, $dry_run, $die_on_error, $verbose);
    }
@@ -1079,7 +1110,7 @@ sub MEME {
    ## run the command
    $meme_command = "meme ".$family{$family_name}->{meme_options};
    if ($batch) {
-       $main::batch_script .= $command;
+       push @main::batch_commands, $command;
    } else {
        &doit($meme_command, $dry_run, 0, $verbose);
    }
@@ -1097,7 +1128,7 @@ sub Consensus {
    $consensus_command .= " | consensus ".$family{$family_name}->{consensus_options};
    $consensus_command .= " > ".$family{$family_name}->{consensus_file};
    if ($batch) {
-       $main::batch_script .= $command;
+       push @main::batch_commands, $command;
    } else {
        &doit($consensus_command, $dry_run, 0, $verbose);
    }
@@ -1638,16 +1669,20 @@ sub IndexPatterns {
 #### Draw feature maps
 sub DrawDyadFeatureMap {
    warn ";\tDrawing feature-map with results of dyad-analysis for family $family_name\n" if ($verbose >= 1);
-   die "Error : cannot read file $family{$family_name}->{seq_file}\n" unless (-r $family{$family_name}->{seq_file});
+   &RSAT::error::FatalError("Cannot read file $family{$family_name}->{seq_file}") unless (($batch) || (-r $family{$family_name}->{seq_file}));
 
    ## pattern matching
    $origin = "-0";
    my $command = "dna-pattern -pl $family{$family_name}->{dyad_file} -format $seq_format -i $family{$family_name}->{seq_file} -origin $origin -N 4 -limit ";
    $command .= "| features-from-dnapat -o $family{$family_name}->{dyad_ft_file} ";
-   my $error = &doit($command, $dry_run, 0, $verbose);
-   if ($error) {
-	warn "; WARNING: Feature map skipped because dna-pattern returned an error\n";
-	return;
+   if ($batch) {
+       push @main::batch_commands, $command;
+   } else {
+       my $error = &doit($command, $dry_run, 0, $verbose);
+       if ($error) {
+	   warn "; WARNING: Feature map skipped because dna-pattern returned an error\n";
+	   return;
+       }
    }
 
    ## feature-map drawing
@@ -1663,7 +1698,11 @@ sub DrawDyadFeatureMap {
 	$command .= "-htmap >  $family{$family_name}->{htmap_file}";
    }
    #  $command .= " ;  xv -o $family{$family_name}->{fmap_file} &";
-   &doit($command, $dry_run, 0, $verbose);
+   if ($batch) {
+       push @main::batch_commands, $command;
+   } else {
+       &doit($command, $dry_run, 0, $verbose);
+   }
 }
 
 
@@ -1767,7 +1806,7 @@ sub AnalyzeFamilies {
    }
 
    foreach $family_name (@families) {
-       $main::batch_script = "";
+#       @main::batch_commands = ();
 
 	$fam_count++;
 	my @members = @{$family{$family_name}->{members}};
@@ -1857,9 +1896,9 @@ sub AnalyzeFamilies {
 			     $family{$family_name}->{dyad_ft_file}
 			    ) {
 	       warn ";\t\t$file\n" if ($verbose >=1);
-	       $commmand = "rm -f $file";
-	       if ($batch) {
-		   $main::batch_script .= $command;
+	       $command = "rm -f $file";
+	       if ($main::batch) {
+		   push @main::batch_commands, $command;
 	       } else {
 		   &doit($command, $dry_run, $die_on_error, $verbose);
 	       }
@@ -1869,7 +1908,9 @@ sub AnalyzeFamilies {
 
        ## Send the batch script to the queue
        if ($batch) {
-	   &doit($main::batch_script, $dry_run, $die_on_error, $verbose, $batch);
+	   my $batch_script = join "\n\n", @main::batch_commands;
+	   &doit($batch_script, $dry_run, $die_on_error, $verbose, $batch);
+	   @main::batch_commands = ();
        }
    }
 }
