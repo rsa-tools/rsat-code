@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_genomes.mk,v 1.21 2005/07/24 21:52:11 rsat Exp $
+# $Id: install_genomes.mk,v 1.22 2005/08/10 06:12:29 rsat Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -86,9 +86,9 @@ install_organism_ensembl:
 #### a bit messy for eukaryotes.
 EUKARYOTES=					\
 	Saccharomyces_cerevisiae		\
+	Plasmodium_falciparum			\
 	Schizosaccharomyces_pombe		\
 	Encephalitozoon_cuniculi		\
-	Plasmodium_falciparum			\
 	Apis_mellifera				\
 	Drosophila_melanogaster			\
 	Arabidopsis_thaliana			\
@@ -98,7 +98,7 @@ install_all_eukaryotes:
 		${MAKE} install_one_organism ORG=$${org} INSTALL_TASK=${INSTALL_TASK},clean; \
 	done
 	@for org in ${REF_EUKARYOTES} ; do \
-		${MAKE} install_one_ref_organism ORG=$${org} INSTALL_TASK=${INSTALL_TASK},clean; \
+		${MAKE} install_one_ref_eukaryote ORG=$${org} INSTALL_TASK=${INSTALL_TASK},clean; \
 	done
 	@${MAKE} install_mouse
 	@${MAKE} install_human
