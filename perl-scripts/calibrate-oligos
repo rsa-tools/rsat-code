@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: calibrate-oligos,v 1.6 2005/03/13 10:42:09 jvanheld Exp $
+# $Id: calibrate-oligos,v 1.7 2005/08/10 06:10:46 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -102,7 +102,7 @@ if ($task{upstream}) {
     $command .= " -from -".$seq_len;
     $command .= "  -to -1";
     $command .= "  -format wc";
-    $command .= " -label orf";
+    $command .= " -label id";
     $command .= " -o $seq_file";
     print $out "; $command\n";
     &doit($command, $dry_run, $die_on_error, $verbose);
@@ -114,7 +114,7 @@ $family_file = "random_genes.tab";
 if ($task{random}) {
     warn "; ", &AlphaDate(), "\tSelecting random gene families\t".$family_file."\n" if ($verbose >= 1);
     $command = "random-genes -org ".$organism_name;
-    $command .= " -r ".$repet;
+    $command .= " -g ".$repet;
     $command .= " -n ".$seq_nb;
     $command .= " -o ".$family_file;
     print $out "; $command\n";
