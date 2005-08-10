@@ -6,7 +6,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.107 2005/08/09 01:27:09 rsat Exp $
+# $Id: gene-cluster-motifs,v 1.108 2005/08/10 06:11:27 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -33,6 +33,7 @@ require RSAT::Family;
 
 ################################################################
 ## initialize global variables
+$force_calib=1;
 $null="NA"; ## Null character for the exports
 $skip=0; ## Skip the first families
 $last=-1; ## Stop after a few families
@@ -1812,21 +1813,8 @@ sub AnalyzeFamilies {
 	my @members = @{$family{$family_name}->{members}};
 	$gene_nb = scalar(@members);
 
-	## Skip initial families if specified with -skip option
-	if ($fam_count <= $skip) {
-	    warn join ("\t", "; Skipping family", 
-		       $fam_count, $family_name,
-		       $gene_nb." genes",
-		       "\t(skip ".$skip. ")",
-		       ), "\n" if ($main::verbose >= 1);
-	    next;
-	}
-
-	## Stop after a few families
-	if (($last >0) && ($fam_count > $last)) {
-	    &RSAT::message::Warning("Stopped after $last genes");
-	    last;
-	}
+	&CheckSkip($fam_count,$family_name);
+	&CheckLast($fam_count);
 
 	## Check minimum number of genes
 	if ($gene_nb < $min_genes) {
@@ -1907,7 +1895,7 @@ sub AnalyzeFamilies {
        
 
        ## Send the batch script to the queue
-       if ($batch) {
+	if (($batch) && (scalar(@batch_commands) > 0)) {
 	   my $batch_script = join "\n\n", @main::batch_commands;
 	   &doit($batch_script, $dry_run, $die_on_error, $verbose, $batch);
 	   @main::batch_commands = ();
@@ -1923,6 +1911,27 @@ sub AnalyzeFamilies {
 #    system $command unless $dry_run;
 #}
 
+## Skip initial families if specified with -skip option
+sub CheckSkip {
+    my ($fam_count,$family_name) = @_;
+    if ($fam_count <= $skip) {
+	warn join ("\t", "; Skipping family", 
+		   $fam_count, $family_name,
+		       $gene_nb." genes",
+		   "\t(skip ".$skip. ")",
+		   ), "\n" if ($main::verbose >= 1);
+	next;
+    }
+}
+
+## Stop after a few families
+sub CheckLast {
+    my ($fam_count) = @_;
+    if (($last >0) && ($fam_count > $last)) {
+	&RSAT::message::Warning("Stopped after $last genes");
+	last;
+    }
+}
 
 ########################## subroutine definition ############################
 
@@ -2954,6 +2963,9 @@ sub CalcCalibrationLengths {
    warn ";\n; Calculating sequence lengths\n" if ($verbose >=1);
    foreach my $family_name (@families) {
 	$fam_count++;
+
+	&CheckSkip($fam_count,$family_name);
+	&CheckLast($fam_count);
 	
 	## Calculate sequence lengths
 	warn join("\t", ";\tSequence lengths", 
@@ -2985,7 +2997,7 @@ sub CalcCalibrationLengths {
 	warn ";\tcalibration length for family ", $family_name, "\t", $calib_lengths{$family_name}, "\n" if ($main::verbose >= 1);
    }  
    my @calib_lengths = keys %calib_lengths;
-   warn "; Calibration lengths\n;\t", join( "\n;\t", @calib_lengths), "\n";
+   &RSAT::message::Info(join("\t", "Calibration lengths", join( ";", @calib_lengths))) if ($main::verbose >= 1);
    return @calib_lengths;
 }
 
@@ -3004,11 +3016,15 @@ sub CalibrateOligos {
 	## retrieve all upstream sequence if required
 	my $allup_file = $dir{calib1}."/tmp_all_up_".$calib_length.".fasta";
 	if (-e $allup_file) {
-	    warn ";\tAll upstream sequence file already exists. Skipping retrieval\t", $allup_file, "\n" if ($main::verbose >= 1);
+	    &RSAT::message::Info(join("\t", "All upstream sequence file already exists. Skipping retrieval", $allup_file)) if ($main::verbose >= 1);
 	} else {
 	    $command = "retrieve-seq -imp_pos -org $organism_name -all -from -$calib_length -to -1 -o $allup_file";
-	    warn ";\tRetrieving all upstream sequences\t", $allup_file, "\n" if ($main::verbose >= 1);
-	    &doit($command, $dry_run, $die_on_error, $verbose);
+	    &RSAT::message::TimeWarn(join ("\t", "Retrieving all upstream sequences", $allup_file)) if ($main::verbose >= 1);
+	    if ($batch) {
+		push @main::batch_commands, $command;
+	    } else {
+		&doit($command, $dry_run, $die_on_error, $verbose);
+	    }
 	}
 
 	## Calibrate oligonucleotides
@@ -3030,21 +3046,44 @@ sub CalibrateOligos {
 	    ## Calculate occurrence distributions
 	    $command = "oligo-analysis -v 3 -l $oligo_len $noov $strands  -i $allup_file -return occ -distrib -o $distrib_file";
 	    warn ";\tAnalysing ",$oligo_len,"nt distributions\t",$distrib_file, "\n" if ($main::verbose >= 1);
-	    &doit($command, $dry_run, 0, $verbose);
-	    
+	    if ($batch) {
+		push @main::batch_commands, $command;
+	    } else {
+		&doit($command, $dry_run, 0, $verbose);
+	    }
+
 	    ## Calculate stats and fit negbin on the distributions
 	    $command = "fit-distribution -v 1 -i $distrib_file -distrib negbin -o $fitting_file";
-	    &doit($command, $dry_run, $die_on_error, $verbose);
+	    if ($batch) {
+		push @main::batch_commands, $command;
+	    } else {
+		&doit($command, $dry_run, $die_on_error, $verbose);
+	    }
 
 	    ## Compress distrib and fitting file
 	    $command = "gzip -f $distrib_file $fitting_file";
-	    &doit($command, $dry_run, $die_on_error, $verbose);
+	    if ($batch) {
+		push @main::batch_commands, $command;
+	    } else {
+  	        &doit($command, $dry_run, $die_on_error, $verbose);
+           }
 	}
 
 	## Delete the file with all upstream sequences
 	$command = "rm -f $allup_file";
 	warn ":\tCleaning all upstream sequences\t", $allup_file, "\n" if ($main::verbose >= 1);
-	&doit($command, $dry_run, 0, $verbose);
+	if ($batch) {
+	    push @main::batch_commands, $command;
+	} else {
+	    &doit($command, $dry_run, 0, $verbose);
+	}
+
+	## Send the batch script to the queue
+	if ($batch) {
+	    my $batch_script = join "\n\n", @main::batch_commands;
+	    &doit($batch_script, $dry_run, $die_on_error, $verbose, $batch);
+	    @main::batch_commands = ();
+	}
    }
 
 }
