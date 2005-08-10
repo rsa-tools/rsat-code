@@ -3,7 +3,7 @@
 ## upstreal sequences of a given organism
 
 include ${RSAT}/makefiles/util.mk
-MAKEFILE=makefile
+MAKEFILE=${RSAT}/makefiles/calibrate_oligos.mk
 
 STR=-2str
 NOOV=-noov
@@ -28,6 +28,9 @@ calibrateN:
 N_VALUES=1 2 3 4 5 10 20 30 40 50 100 150 200
 n_series:
 	@for n in ${N_VALUES}; do \
-		${MAKE} calibrateN N=$${n} ; \
+		${MAKE} calibrateN N=$${n}; \
 	done
 
+## Tun the N series in a batch queue on the PC cluster
+batch_n_series:
+	${MAKE} n_series WHEN=queue
