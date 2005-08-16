@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-features,v 1.11 2005/08/08 11:59:09 jvanheld Exp $
+# $Id: compare-features,v 1.12 2005/08/16 20:58:23 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -911,12 +911,12 @@ sub Validation {
     $field_description{'r_ft'} = "Features in the reference file";
     $field_description{'q_ft'} = "Features in the query file";
     $field_description{'inter'} = "Number of intersections";
-    $field_description{'prT'} = "True predictions: query features with at least one intersection in the reference features";
+    $field_description{'prT'} = "True predictions: query features with at least one intersection in the reference features. Beware, this number may sometimes exceed the number of reference features, if several predictions match the same reference feature.";
     $field_description{'prF'} = "False predictions: query features with no intersection in the reference features";
     $field_description{'matched'} = "Reference features with at least one intersection in the query features";
-    $field_description{'nomatch'} = "Reference features with no intersection in the query features";
+    $field_description{'missed'} = "Reference features with no intersection in the query features";
     $field_description{'PPV'} = "Positive predictive value. PPV=prT/q_ft=prT/(prT+prF)";
-    $field_description{'Sn'} = "Sensitivity. Sn = matched/r_ft=matched(prT+nomatch)";
+    $field_description{'Sn'} = "Sensitivity. Sn = matched/r_ft=matched(prT+missed)";
     $field_description{'Acc_a'} = "Accuracy (artihmetic). Acc_a = (PPV + Sn)/2";
     $field_description{'Acc_g'} = "Accuracy (geometric). Acc_g = sqrt(PPV * Sn)";
 
@@ -1013,7 +1013,7 @@ sub ScoreStatistics {
     ## Header
     @selected_fields = ('score','freq','prT','prF',
 			   'cum_frq', 'cum_prT', 'cum_prF',
-			"matched", "nomatch", "PPV", "Sn", "Acc_a", "Acc_g");
+			"matched", "missed", "PPV", "Sn", "Acc_a", "Acc_g");
     foreach my $field (@selected_fields) {
 	print $out  join ("\t", ";", $field, $field_description{$field}), "\n";
     }
@@ -1029,7 +1029,7 @@ sub ScoreStatistics {
     local %matched = ();
     local $format = "%.3f";
     local $score;
-    local $nomatch;
+    local $missed;
     local $matched;
     foreach $score (@sorted_scores) {
 	local $freq = $freq{$score};
@@ -1046,7 +1046,7 @@ sub ScoreStatistics {
 	    $matched{$ref}++;
 	}
 	$matched = scalar(keys(%matched));
-	$nomatch = $ref_nb - $matched;
+	$missed = $ref_nb - $matched;
 	local $PPV = $null;
 	if ($cum_frq > 0) {
 	    $PPV = sprintf($format, $cum_prT/$cum_frq);
@@ -1073,7 +1073,7 @@ sub ScoreStatistics {
 #			$score, $freq, $prT{$score}, $prF{$score},
 #			$cum_frq, $cum_prT, $cum_prF,
 #			$matched, 
-#			$nomatch, 
+#			$missed, 
 #			$PPV, 
 #			$Sn, 
 #			$Acc_a, 
