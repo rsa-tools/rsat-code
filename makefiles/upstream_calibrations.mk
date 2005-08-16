@@ -382,7 +382,17 @@ OLIGO_DISTRIB_DIR=${ORG_DIR}/oligo_distrib
 OLIGO_DISTRIB_FILE=${OLIGO_DISTRIB_DIR}/${SEQ_PREFIX}_${OL}nt${STR}${NOOV}
 
 OLIGO_DISTRIB_CMD= \
-	oligo-analysis -v ${V} -i ${SEQ_FILE} ${STR} ${NOOV} -l ${OL} -distrib -o ${OLIGO_DISTRIB_FILE} 
+	oligo-analysis -v ${V} -i ${SEQ_FILE} ${STR} ${NOOV} -l ${OL} -distrib -o ${OLIGO_DISTRIB_FILE} ; \
+	fit-distribution			\
+		-v ${V} -distrib poisson \
+		-i ${OLIGO_DISTRIB_FILE}		\
+		-o ${OLIGO_DISTRIB_FILE}_poisson.tab ; \
+	fit-distribution			\
+		-v ${V} -distrib negbin \
+		-i ${OLIGO_DISTRIB_FILE}		\
+		-o ${OLIGO_DISTRIB_FILE}_negbin.tab
+
+
 oligo_distrib_one_org:
 	${MAKE} seqs
 	${MAKE} iterate_oligo_lengths OLIGO_TASK=oligo_distrib_one_org_one_size
@@ -392,21 +402,8 @@ oligo_distrib_one_org_one_size:
 	@echo "Analyzing oligo distributions for one organism	${ORG}	${OL}	${UP_LEN}	${NOORF}"
 	@${MAKE} my_command MY_COMMAND="${OLIGO_DISTRIB_CMD}"
 	@echo OLIGO_DISTRIB_FILE ${OLIGO_DISTRIB_FILE}
-	${MAKE} _fit_distrib DISTRIB_TO_FIT=negbin
-	${MAKE} _fit_distrib DISTRIB_TO_FIT=poisson
 	@echo "Done oligo distributions for one organism	${ORG}	${OL}	${UP_LEN}	${NOORF}"
 
-DISTRIB_TO_FIT=negbin
-FIT_FILE=${OLIGO_DISTRIB_FILE}_${DISTRIB_TO_FIT}.tab
-FIT_CMD=fit-distribution			\
-	-v ${V} -distrib ${DISTRIB_TO_FIT}	\
-	-i ${OLIGO_DISTRIB_FILE}		\
-	-o ${FIT_FILE} 
-
-_fit_distrib:
-	@echo ${FIT_CMD}
-	@${FIT_CMD}
-	@echo FIT_FILE ${FIT_FILE}
 
 
 
