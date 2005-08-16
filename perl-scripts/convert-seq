@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: convert-seq,v 1.14 2004/05/07 07:11:44 jvanheld Exp $
+# $Id: convert-seq,v 1.15 2005/08/16 16:30:49 jvanheld Exp $
 #
 # Time-stamp: <2002-09-24 21:24:13 jvanheld>
 #
@@ -12,10 +12,12 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 require "RSA.lib";
 
-$start_time = `date`;
-$line_width = 60;
 
 #### initialise parameters ####
+$start_time = `date`;
+$line_width = 60;
+$check_id = 1;
+
 $accepted_input_string = join "\n\t\t\t", "",keys %accepted_input_seq;
 $accepted_output_string = join "\n\t\t\t", "", keys %accepted_output_seq; 
 
@@ -108,10 +110,12 @@ while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_form
 
 	#### ensure that the id is a valid filename
 	chomp $current_id;
-	$current_id =~ s/\|/_/g;
-	$current_id =~ s/\;/_/g;
-	$current_id =~ s/\&/_/g;
-
+	if ($check_id) {
+	    $current_id =~ s/\|/_/g;
+	    $current_id =~ s/\;/_/g;
+	    $current_id =~ s/\:/_/g;
+	    $current_id =~ s/\&/_/g;
+	}
 
 	$one_seq_file = "$current_id.raw";
 	open RAW, "> ${output_dir}/$one_seq_file"
@@ -195,30 +199,43 @@ USAGE
 	
 OPTIONS
 	-v #	verbose level
+
 	-i inputfile
 		if not specified, the standard input is used.
 		This allows to place the command within a pipe.
+
 	-o outputfile
 		if not specified, the standard output is used.
 		This allows to place the command within a pipe.
+
 	-from   input format 
 		    Supported input formats : $accepted_input_string
+
         -to     output format
 		    Supported output formats : $accepted_output_string
+
         -lw #   line width. A carriage return is inserted every # 
                 characters within the output sequence.
                 Default is 60. A 0 value indicates that no carriage 
                 return must be inserted.
+
         -addrc  adds the reverse complement of each input sequence
                 to the output file. This is usefull for programs that 
                 cannot handle reverse complement (like the Gibbs Sampler).
+
 	-lc	lowercase. the sequence is printed in lowercase.
+
 	-uc	lowercase. the sequence is printed in uppercase.
+
 	-dna	convert any non-acgt character into "." 
 		This is to filter out partly speciied nucleotides.
+
 	-id identifier
 		sequence identifier (useful for converting a raw
 		sequence from the STDIN)
+
+	-nocheckid
+		Prevent to check sequence IDs for conversion to file list
 
 SUPPORTED FORMATS
     INPUT $accepted_input_string
@@ -238,19 +255,20 @@ sub PrintOptions {
   print HELP <<End_shorthelp;
 consvert-seq options
 --------------------
--h      detailed help message
--help   short help message (shows the present message)
--v #	verbose level
--i      inputfile
--o      outputfile
--from   input format (see below for accepted formats)
--to     output format (see below for accepted formats)
--lw #   line width. 
--addrc  adds the reverse complement of each input sequence
--lc	lowercase
--uc	uppsercase
--dna	convert any non-acgt character into "." 
--id identifier
+-h		detailed help message
+-help		short help message (shows the present message)
+-v #		verbose level
+-i		inputfile
+-o		outputfile
+-from		input format (see below for accepted formats)
+-to		output format (see below for accepted formats)
+-lw #		line width. 
+-addrc		adds the reverse complement of each input sequence
+-lc		lowercase
+-uc		uppsercase
+-dna		convert any non-acgt character into "." 
+-id		identifier
+-nocheckid	Prevent to check sequence IDs for conversion to file list
 
 SUPPORTED FORMATS
     INPUT $accepted_input_string
@@ -313,6 +331,10 @@ sub ReadArguments {
 
 	} elsif ($ARGV[$a] eq "-dna") {
 	    $dna = 1;
+	    
+	    ## Prevent to check sequence IDs for conversion to file list
+	} elsif ($ARGV[$a] eq "-nocheckid") {
+	    $check_id = 0;
 	    
 	}
     }
