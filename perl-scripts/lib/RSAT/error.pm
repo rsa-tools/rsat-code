@@ -56,6 +56,7 @@ Print a HTML message and die.
 sub cgiError {
     my $error_message = join "", @_;
     my $error_color = "#FF0000";
+    $error_message .= "\n<p>(error occurred on host ".`hostname`.")";
     RSAT::message::cgiMessage($error_message, "Error", $error_color);
     print "</body></html>\n";
     exit(1);
