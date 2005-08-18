@@ -6,7 +6,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.108 2005/08/10 06:11:27 rsat Exp $
+# $Id: gene-cluster-motifs,v 1.109 2005/08/18 05:23:50 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -1451,7 +1451,7 @@ sub IndexMatrix {
 	   $table[$row][$col] .= "<br><font color=red>No matrix could be found in the result file</font>\n";
        }
    } else {
-       $table[$row][$col] =  "<font color=red>File not found</font><br>".$matrix_file."\n";
+       $table[$row][$col] =  "<a href=".$matrix_file."><font color=red>File not found</font></a><br>\n";
        &RSAT::message::Warning(join ("\t", "File not found. Skipped.", $format, $matrix_file));
    }
 }
@@ -1566,7 +1566,7 @@ sub IndexPatterns {
 	   @patterns = &ReadPatterns(assembly_file=>$assembly_file);
        }
    } else {
-	$table[$row][$col] = "<font color=red>File not found</font><br>".$assembly_file."\n";
+	$table[$row][$col] = "<a href=".$assembly_file."><font color=red>File not found</font></a><br>\n";
 	$pwd = `pwd`;
 	&RSAT::message::Warning(join ( "\t", 
 			$pwd,
