@@ -4,70 +4,6 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 require "RSA.lib";
 
-if ($ARGV[0] eq "-h") {
-#### display full help message #####
-  open HELP, "| more";
-  print HELP <<End_of_help;
-NAME
-	add-linenb
-
-        1998 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
-	
-USAGE
-        add-linenb [-i inputfile] [-o outputfile] [-v]
-
-DESCRIPTION
-	add a column to the input file indicating the line number
-
-CATEGORY
-	util	
-
-OPTIONS
-        -h      (must be first argument) display full help message
-        -help   (must be first argument) display options
-	-v	verbose
-	-i inputfile
-		if not specified, the standard input is used.
-		This allows to place the command within a pipe.
-	-o outputfile
-		if not specified, the standard output is used.
-		This allows to place the command within a pipe.
-	-before	add line number before line content 
-		(by default, line number is added at the end of the line)
-	
-INPUT FORMAT
-      any text file	
-      lines beginning with a semicolon (;) are considered as comments 
-      and are returned without numbering
-	
-OUTPUT FORMAT
-      the same file with one column added (separated by a tab) 
-      indicating the line number 
-	
-EXAMPLES
-       add-linenb -v -i mydata -o myresult
-	
-End_of_help
-  close HELP;
-  exit;
-}
-
-if ($ARGV[0] eq "-help") {
-#### display short help message #####
-  open HELP, "| more";
-  print HELP <<End_short_help;
-add-linenb options
-----------------
--h      (must be first argument) display full help message
--help   (must be first argument) display options
--i      input file
--o      output file
--v      verbose
--before	insert line number before line content
-End_short_help
-  close HELP;
-  exit;
-}
 
 #### initialise parameters ####
 $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
@@ -75,8 +11,13 @@ $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
 
 #### read arguments ####
 foreach $a (0..$#ARGV) {
+
+    if ($ARGV[0] eq "-h") {
+	&PrintHelp();
+    } elsif ($ARGV[0] eq "-help") {
+	&PrintOptions();
     ### verbose ###
-    if ($ARGV[$a] eq "-v") {
+    } elsif ($ARGV[$a] eq "-v") {
 	$verbose = 1;
     ### input file ###
     } elsif ($ARGV[$a] eq "-i") {
@@ -152,5 +93,73 @@ close $out unless ($outputfile eq "");
 exit(0);
 
 
-########################## subroutine definition ############################
+################################################################
+#################### subroutine definition #####################
+################################################################
 
+################################################################
+#### display full help message #####
+sub PrintHelp {
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	add-linenb
+
+        1998 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
+	
+USAGE
+        add-linenb [-i inputfile] [-o outputfile] [-v]
+
+DESCRIPTION
+	add a column to the input file indicating the line number
+
+CATEGORY
+	util	
+
+OPTIONS
+        -h      (must be first argument) display full help message
+        -help   (must be first argument) display options
+	-v	verbose
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+	-before	add line number before line content 
+		(by default, line number is added at the end of the line)
+	
+INPUT FORMAT
+      any text file	
+      lines beginning with a semicolon (;) are considered as comments 
+      and are returned without numbering
+	
+OUTPUT FORMAT
+      the same file with one column added (separated by a tab) 
+      indicating the line number 
+	
+EXAMPLES
+       add-linenb -v -i mydata -o myresult
+	
+End_of_help
+  close HELP;
+  exit;
+}
+
+################################################################
+#### display short help message #####
+sub PrintOptions {
+  open HELP, "| more";
+  print HELP <<End_short_help;
+add-linenb options
+----------------
+-h      (must be first argument) display full help message
+-help   (must be first argument) display options
+-i      input file
+-o      output file
+-v      verbose
+-before	insert line number before line content
+End_short_help
+  close HELP;
+  exit;
+}

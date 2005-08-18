@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: parse-RNAfold,v 1.4 2004/05/07 07:11:42 jvanheld Exp $
+# $Id: parse-RNAfold,v 1.5 2005/08/18 04:25:22 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:23:08 jvanheld>
 #
@@ -168,7 +168,7 @@ sub ReadArguments {
 	    &PrintHelp;
 	    
 	    ### list of options
-	} elsif ($ARGV[0] eq "-help") {
+	} elsif ($ARGV[$a] eq "-help") {
 	    &PrintOptions;
 	    
 	    ### input file ###

@@ -1,7 +1,7 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: parse-yeast-from-mips.pl,v 1.5 2005/03/13 10:41:02 jvanheld Exp $
+# $Id: parse-yeast-from-mips.pl,v 1.6 2005/08/18 04:25:22 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:29:16 jvanheld>
 #
@@ -185,7 +185,7 @@ sub ReadArguments {
 	    &PrintHelp;
 	    
 	    ### list of options
-	} elsif ($ARGV[0] eq "-help") {
+	} elsif ($ARGV[$a] eq "-help") {
 	    &PrintOptions;
 	    
 	}

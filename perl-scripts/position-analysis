@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: position-analysis,v 1.25 2005/03/13 10:19:40 jvanheld Exp $
+# $Id: position-analysis,v 1.26 2005/08/18 04:25:22 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -764,7 +764,7 @@ sub ReadArguments {
 	    &PrintHelp();
 	    
 	    ### list of options
-	} elsif ($ARGV[0] eq "-help") {
+	} elsif ($ARGV[$a] eq "-help") {
 	    &PrintOptions();
 	    
 	    ### input file

@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: convert-seq,v 1.15 2005/08/16 16:30:49 jvanheld Exp $
+# $Id: convert-seq,v 1.16 2005/08/18 04:25:22 jvanheld Exp $
 #
 # Time-stamp: <2002-09-24 21:24:13 jvanheld>
 #
@@ -116,7 +116,6 @@ while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_form
 	    $current_id =~ s/\:/_/g;
 	    $current_id =~ s/\&/_/g;
 	}
-
 	$one_seq_file = "$current_id.raw";
 	open RAW, "> ${output_dir}/$one_seq_file"
 	    || die "Error: cannot write file ${output_dir}/$one_seq_file\n";
@@ -297,7 +296,7 @@ sub ReadArguments {
 	    &PrintHelp;
 	    
 	    ### list of options
-	} elsif ($ARGV[0] eq "-help") {
+	} elsif ($ARGV[$a] eq "-help") {
 	    &PrintOptions;
 	    
 	} elsif ($ARGV[$a] eq "-i") {

@@ -14,10 +14,7 @@ $max_pattern_nb = 100;
 
 &ReadArguments();
 
-
 #### check argument values ####
-
-
 
 ### open output file ###
 $out = &OpenOutputFile($outputfile);
@@ -31,34 +28,7 @@ $out = &OpenOutputFile($outputfile);
 			  pattern_id=>$pattern_id,
 			  pattern_seq=>$pattern_seq,
 			  expand=>1);
-
-#### create a hash with pattern scores
-foreach $pattern (@patterns) {
-    my $word = $pattern->get_attribute("sequence"); 
-    my $score = $pattern->get_attribute("score");
-    my $description = $pattern->get_attribute("description");
-    if ($score_column >= 1) {
-	$info{$word} = $score;
-	$score{$word} = $score;
-    } else {
-	$info{$word} = $description;
-	$score{$word} = "nd";
-    }
-#    die join "\t", $info{$word}, $score{$word}, $description, "\n";
-}
-
-
-###### reverse complement
-%seed = %score;
-if ($strand_insensitive) {
-    foreach $word (keys %seed) {
-	$score{lc(&ReverseComplement($word))} = $score{$word};
-    }
-}
-
-#### sort pattern according to their score
-@to_assemble = sort {$score{$b} <=> $score{$a}} keys %seed;
-$pattern_nb = $#to_assemble+1;
+&IndexScores(@patterns);
 
 #### verbose ####
 if ($verbose) {
@@ -86,12 +56,24 @@ if ($verbose) {
 if($pattern_nb > $max_pattern_nb) {
     my @message = ("Too many patterns to assemble. ",
 		   "Number of patterns = $pattern_nb.",
-		   "Maximum nb allowed = $max_pattern_nb.");
+		   "Maximum nb allowed = $max_pattern_nb.",
+		   "The exceeding patterns will be ignored."
+		  );
     print $out ";", join ("\n;", @message), "\n";
+    my $message = join "\t", @message;
     &Warning ($message);
 
+#     $last = $max_pattern_nb -1;
+#     @to_assemble = @to_assemble[0..$last];
+#     %new_seed = ();
+#     foreach my $pattern (@to_assemble) {
+# 	$new_seed{$to_assemble} = $seed{$to_assemble};
+# 	$new_score{$to_assemble} = $score{$to_assemble};
+#     }
+#     %seed = %new_seed;
+#     %score = %new_score;
 } else {
-    &AssemblePatterns();
+    &AssemblePatterns(@to_assemble);
 }
 
 ###### verbose ######
@@ -110,6 +92,39 @@ exit(0);
 
 
 ########################## subroutine definition ############################
+
+
+#### create a hash with pattern scores
+sub  IndexScores {
+    my (@patterns) = @_;
+    foreach $pattern (@patterns) {
+	my $word = $pattern->get_attribute("sequence"); 
+	my $score = $pattern->get_attribute("score");
+	my $description = $pattern->get_attribute("description");
+	if ($score_column >= 1) {
+	    $info{$word} = $score;
+	    $score{$word} = $score;
+	} else {
+	    $info{$word} = $description;
+	    $score{$word} = "nd";
+	}
+#    die join "\t", $info{$word}, $score{$word}, $description, "\n";
+    }
+
+
+    ## #### reverse complement
+    %seed = %score;
+    if ($strand_insensitive) {
+	foreach $word (keys %seed) {
+	    $score{lc(&ReverseComplement($word))} = $score{$word};
+	}
+    }
+
+    #### sort patterns according to their score
+    @to_assemble = sort {$score{$b} <=> $score{$a}} keys %seed;
+    $pattern_nb = $#to_assemble+1;
+
+}
 
 sub AssembleFragments {
     ### usage 
@@ -550,6 +565,11 @@ sub ReadArguments {
 ################################################################
 ## Assemble patterns
 sub AssemblePatterns {
+    my @to_assemble = @_;
+    
+    &RSAT::message::TimeWarn(join "\t", "Starting pattern assembly", scalar(@patterns)) if ($main::verbose >= 2);
+#    die;
+
     #### make a list of words remaining to cluster
     while ($#to_assemble > -1) {
 	#### reinitialize variables
@@ -560,12 +580,15 @@ sub AssemblePatterns {
 	$seed = $first_seed = $to_assemble[0];
 	$position{$first_seed} = 0;
 	delete $seed{$to_assemble[0]};
+
+#	&RSAT::message::TimeWarn(join ("\t", "new seed", $seed, "remaining", scalar(@to_assemble))) 
+#	    if ($main::verbose >= 0);
 	
 	#### all input oligos are considered for assembly with the new seed
 	%to_align = %score;
 	delete $to_align{$first_seed};
 	@to_align =  sort {$score{$b} <=> $score{$a}} keys %to_align;
-	
+
 	#### ty to align each input word to the current cluster
 	while ($#to_align > -1) {
 	    $found = 0;
@@ -575,6 +598,8 @@ sub AssemblePatterns {
 		#### best alignment for the direct word
 		$best_word = $word = shift(@to_align);
 		$min_score = &InfoLength($word) - $max_flanking;
+#		&RSAT::message::TimeWarn(join ("\t", "aligning word", $word, "remaining", scalar(@to_align))) 
+#		    if ($main::verbose >= 0);
 		
 		#### alignment by substitutions ####
 		if ($max_subst > 0) {

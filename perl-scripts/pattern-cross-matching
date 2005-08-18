@@ -213,7 +213,7 @@ sub ReadArguments {
       &PrintHelp;
       
       ### list of options
-    } elsif ($ARGV[0] eq "-help") {
+    } elsif ($ARGV[$a] eq "-help") {
       &PrintOptions;
       
       ### pattern files

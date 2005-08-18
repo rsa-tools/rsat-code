@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: parse-location.pl,v 1.6 2004/05/07 07:07:06 jvanheld Exp $
+# $Id: parse-location.pl,v 1.7 2005/08/18 04:25:22 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 14:06:08 jvanheld>
 #
@@ -176,7 +176,7 @@ sub ReadArguments {
 	    &PrintHelp;
 	    
 	    ### list of options
-	} elsif ($ARGV[0] eq "-help") {
+	} elsif ($ARGV[$a] eq "-help") {
 	    &PrintOptions;
 	    
 	    ### input file ###
