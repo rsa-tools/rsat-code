@@ -16,18 +16,16 @@ $to =$null;
 
 &ReadArguments();
 
-
-
 #### check argument values ####
 &CheckInputSeqFormat($in_format);
 &CheckInputSeqFormat($out_format);
-
-# if ($from > $to) {
-#     $reverse_complement = 1;
-# }
-
 &RSAT::error::FatalError("You must specify the starting position (option -from)") if ($from eq $null);
 &RSAT::error::FatalError("You must specify the ending position (option -to)") if ($to eq $null);
+if ($from > $to) {
+    my $tmp = $from;
+    $from = $to;
+    $to = $tmp;
+}
 
 ### open input file ###
 ($in, $input_dir) = &OpenInputFile($inputfile);
@@ -36,20 +34,20 @@ $to =$null;
 $out = &OpenOutputFile($outputfile);
 
 #### verbose ####
-if ($verbose) {
-    print $out ";sub-sequence result\n";
+if ($main::verbose >= 1) {
+    print $out "; sub-sequence result\n";
     if ($inputfile ne "") {
-	print $out ";Input file	$inputfile\n";
+	print $out "; Input file	$inputfile\n";
     }
     if ($outputfile ne "") {
-	print $out ";Output file	$outputfile\n";
+	print $out "; Output file	$outputfile\n";
     }
-    print $out ";Input format\t$in_format\n";
-    print $out ";Output format\t$out_format\n";
-    print $out ";From\t$from\n";
-    print $out ";To\t$to\n";
+    print $out "; Input format\t$in_format\n";
+    print $out "; Output format\t$out_format\n";
+    print $out "; From\t$from\n";
+    print $out "; To\t$to\n";
     if ($reverse_complement) {
-	print $out ";Output is the reverse complement of input sequence\n";
+	print $out "; Output is the reverse complement of input sequence\n";
     }
 }
 
@@ -76,9 +74,9 @@ while ((($current_seq, $current_id) = &ReadNextSequence($in, $in_format, $input_
     $current_to = &min($current_to, $seq_length);
     $current_length = $current_to - $current_from + 1;
 
-    push @comments, "$current_id sub-sequence from $current_from to $current_to" if $verbose;
+    push @comments, join(" ", "sub-sequence from", $current_from, "to", $current_to);
     if ($limits) {
-	$current_id .= "_${from}_${to}";
+	$current_id .= "_".$from."_".$to;
     }
     $sub_seq = substr($current_seq, $current_from -1, $current_length);
     if ($reverse_complement) {
@@ -90,7 +88,7 @@ while ((($current_seq, $current_id) = &ReadNextSequence($in, $in_format, $input_
 }
 
 ###### verbose ######
-if ($verbose) {
+if ($main::verbose >= 1) {
     $done_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
     print $out ";Job started $start_time";
     print $out ";Job done    $done_time";
@@ -221,7 +219,7 @@ sub ReadArguments {
     foreach $a (0..$#ARGV) {
 	### verbose ###
 	if ($ARGV[$a] eq "-v") {
-	    $verbose = 1;
+	    $main::verbose = 1;
 	    
 	    ### detailed help
 	} elsif ($ARGV[$a] eq "-h") {
