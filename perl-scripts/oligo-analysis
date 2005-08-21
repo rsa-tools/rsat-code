@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.97 2005/07/25 01:12:44 jvanheld Exp $
+# $Id: oligo-analysis,v 1.98 2005/08/21 18:54:25 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -1830,11 +1830,11 @@ sub ReadArguments {
 	    
 	    ### detailed help
 	} elsif ($ARGV[$a] eq "-h") {
-	    &PrintHelp;
+	    &PrintHelp();
 	    
 	    ### list of options
 	} elsif ($ARGV[$a] eq "-help") {
-	    &PrintOptions;
+	    &PrintOptions();
 
 	    #### input file
 	} elsif ($ARGV[$a] eq "-i") {
