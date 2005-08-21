@@ -5,141 +5,29 @@ if ($0 =~ /([^(\/)]+)$/) {
 require "RSA.lib";
 
 
-
-if ($ARGV[0] eq "-h") {
-#### display full help message #####
-  open HELP, "| more";
-  print HELP <<End_of_help;
-NAME
-	sub-sequence
-
-        1998 by Jacques van Helden (jacques\@scmbb.ulb.ac.be)
-	
-USAGE
-        sub-sequence [-i inputfile] -from # -to # [-o outputfile] [-v]
-
-DESCRIPTION
-	Returns a segment from the input sequence, specified by its position. 
-	
-CATEGORY
-	sequences
-
-OPTIONS
-        -h      (must be first argument) display full help message
-        -help   (must be first argument) display options
-	-v	verbose
-	-i inputfile
-		if not specified, the standard input is used.
-		This allows to place the command within a pipe.
-	-o outputfile
-		if not specified, the standard output is used.
-		This allows to place the command within a pipe.
-	-from #	starting position
-		if not specified, the subsequence starts at 1st position.
-	-to #	end position
-		if not specified, the end of the sequence is used.
-	-iformat	
-		input format. Default is fasta
-	-oformat	
-		output format. Default is fasta
-	-format	input-output format. Default is fasta
-
-POSITION SPECIFICATION
-	Caution ! When the from position is higher than the to position,
-	the reverse complement is returned.
-	Positive position are used to refer to the sequence start. +1 is 
-	the first residue from the sequence.
-	Negative positions refer to the sequence end (-1 is the last residue 
-	from the sequence).
-	
-INPUT-OUTPUT FORMAT
-	Various sequence formats are supported:
-	- IG
-	- Fasta
-	- Wconsensus
-	- raw
-	- multi	
-	When the input contains several sequences in the same file, the 
-	programs extracts the fragment at the specified positions from 
-	each of them.
-
-EXAMPLES
-	sub-sequence -v -i mydata -o myresult -from -353 -to -397
-	
-End_of_help
-  close HELP;
-  exit;
-}
-
-if ($ARGV[0] eq "-help") {
-#### display short help message #####
-  open HELP, "| more";
-  print HELP <<End_short_help;
-sub-sequence options
-----------------
--h		(must be first argument) display full help message
--help		(must be first argument) display options
--i		input file
--o		output file
--v		verbose
--from #		start position
--to #		end position
--iformat	input format. Default is fasta
--oformat	output format. Default is fasta
--format		input/output format (fasta|wc|ig|raw|multi)
-End_short_help
-  close HELP;
-  exit;
-}
-
 #### initialise parameters ####
 $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
 $line_width = 0;
 $in_format = "fasta";
 $out_format = "fasta";
-$from = 1;
-$to = -1;
+$null = "NA";
+$from = $null;
+$to =$null;
 
-#### read arguments ####
-foreach $a (0..$#ARGV) {
-    ### verbose ###
-    if ($ARGV[$a] eq "-v") {
-	$verbose = 1;
-    ### input file ###
-    } elsif ($ARGV[$a] eq "-i") {
-	$inputfile = $ARGV[$a+1];
-    ### output file ###
-    } elsif ($ARGV[$a] eq "-o") {
-	$outputfile = $ARGV[$a+1];
+&ReadArguments();
 
-    } elsif ($ARGV[$a] eq "-from") {
-	$from = $ARGV[$a+1];
-
-    } elsif ($ARGV[$a] eq "-to") {
-	$to = $ARGV[$a+1];
-
-    } elsif ($ARGV[$a] eq "-format") {
-	$in_format = $ARGV[$a+1];
-	$out_format = $ARGV[$a+1];
-
-    } elsif ($ARGV[$a] eq "-iformat") {
-	$in_format = $ARGV[$a+1];
-
-    } elsif ($ARGV[$a] eq "-oformat") {
-	$out_format = $ARGV[$a+1];
-
-    }
-
-}
 
 
 #### check argument values ####
 &CheckInputSeqFormat($in_format);
 &CheckInputSeqFormat($out_format);
 
-if ($from > $to) {
-    $reverse_complement = 1;
-}
+# if ($from > $to) {
+#     $reverse_complement = 1;
+# }
+
+&RSAT::error::FatalError("You must specify the starting position (option -from)") if ($from eq $null);
+&RSAT::error::FatalError("You must specify the ending position (option -to)") if ($to eq $null);
 
 ### open input file ###
 ($in, $input_dir) = &OpenInputFile($inputfile);
@@ -165,6 +53,8 @@ if ($verbose) {
     }
 }
 
+
+################################################################
 ###### execute the command #########
 while ((($current_seq, $current_id) = &ReadNextSequence($in, $in_format, $input_dir)) &&
        (($current_seq ne "") || ($current_id ne ""))) {
@@ -184,18 +74,15 @@ while ((($current_seq, $current_id) = &ReadNextSequence($in, $in_format, $input_
     $current_from = &min($current_from, $seq_length);
     $current_to = &max($current_to, 1);
     $current_to = &min($current_to, $seq_length);
-    if ($reverse_complement) {
-	$tmp = $current_from;
-	$current_from = $current_to;
-	$current_to = $tmp;
-    }
     $current_length = $current_to - $current_from + 1;
 
     push @comments, "$current_id sub-sequence from $current_from to $current_to" if $verbose;
-    $current_id .= "_${from}_${to}";
+    if ($limits) {
+	$current_id .= "_${from}_${to}";
+    }
     $sub_seq = substr($current_seq, $current_from -1, $current_length);
     if ($reverse_complement) {
-	$sub_seq = ReverseComplement($sub_seq);
+	$sub_seq = &ReverseComplement($sub_seq);
     }
 
     &PrintNextSequence($out, $out_format, $line_width, $sub_seq, $current_id, @comments);
@@ -219,6 +106,162 @@ close $out unless ($outputfile eq "");
 
 exit(0);
 
+################################################################
+##################### SUBROUTINE DEFINITION ####################
+################################################################
 
-########################## subroutine definition ############################
 
+################################################################
+#### display full help message 
+sub PrintHelp {
+  open HELP, "| more";
+  print HELP <<End_of_help;
+NAME
+	sub-sequence
+
+        1998 by Jacques van Helden (jacques\@scmbb.ulb.ac.be)
+	
+USAGE
+        sub-sequence [-i inputfile] -from # -to # [-o outputfile] [-v]
+
+DESCRIPTION
+	Returns a segment from the input sequence, specified by its position. 
+	
+CATEGORY
+	sequences
+
+OPTIONS
+        -h      (must be first argument) display full help message
+
+        -help   (must be first argument) display options
+
+	-v	verbose
+
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+
+	-o outputfile
+		if not specified, the standard output is used.
+		This allows to place the command within a pipe.
+
+	-from #	starting position
+		if not specified, the subsequence starts at 1st position.
+
+	-to #	end position
+		if not specified, the end of the sequence is used.
+
+	-iformat	
+		input format. Default is fasta
+
+	-oformat	
+		output format. Default is fasta
+
+	-format	input-output format. Default is fasta
+
+	-rc	return the reverse complement of the sub-sequences
+
+	-limits	
+		add a suffix to sequence IDs to indicate the limits of
+		the sub-sequence.
+
+POSITION SPECIFICATION
+	Positive position are used to refer to the sequence start. +1 is 
+	the first residue from the sequence.
+	Negative positions refer to the sequence end (-1 is the last residue 
+	from the sequence).
+	
+INPUT-OUTPUT FORMAT
+	Various sequence formats are supported:
+	- IG
+	- Fasta
+	- Wconsensus
+	- raw
+	- multi	
+	When the input contains several sequences in the same file, the 
+	programs extracts the fragment at the specified positions from 
+	each of them.
+
+EXAMPLES
+	sub-sequence -v -i mydata -o myresult -from -353 -to -397
+	
+End_of_help
+  close HELP;
+  exit(0);
+}
+
+
+################################################################
+#### Display short help message 
+sub PrintOptions {
+  open HELP, "| more";
+  print HELP <<End_short_help;
+sub-sequence options
+----------------
+-h		(must be first argument) display full help message
+-help		(must be first argument) display options
+-i		input file
+-o		output file
+-v		verbose
+-from #		start position
+-to #		end position
+-iformat	input format. Default is fasta
+-oformat	output format. Default is fasta
+-format		input/output format (fasta|wc|ig|raw|multi)
+-rc		return the reverse complement of the sub-sequences
+-limits		add a suffix to sequence IDs to indicate the limits of the sub-sequence
+End_short_help
+  close HELP;
+  exit;
+}
+
+################################################################
+#### Read arguments 
+sub ReadArguments {
+    foreach $a (0..$#ARGV) {
+	### verbose ###
+	if ($ARGV[$a] eq "-v") {
+	    $verbose = 1;
+	    
+	    ### detailed help
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp();
+	    
+	    ### list of options
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions();
+	    
+	    ### input file ###
+	} elsif ($ARGV[$a] eq "-i") {
+	    $inputfile = $ARGV[$a+1];
+
+	    ### output file ###
+	} elsif ($ARGV[$a] eq "-o") {
+	    $outputfile = $ARGV[$a+1];
+
+	} elsif ($ARGV[$a] eq "-from") {
+	    $from = $ARGV[$a+1];
+
+	} elsif ($ARGV[$a] eq "-to") {
+	    $to = $ARGV[$a+1];
+
+	} elsif ($ARGV[$a] eq "-format") {
+	    $in_format = $ARGV[$a+1];
+	    $out_format = $ARGV[$a+1];
+
+	} elsif ($ARGV[$a] eq "-iformat") {
+	    $in_format = $ARGV[$a+1];
+
+	} elsif ($ARGV[$a] eq "-oformat") {
+	    $out_format = $ARGV[$a+1];
+
+	} elsif ($ARGV[$a] eq "-rc") {
+	    $reverse_complement = 1;
+
+	} elsif ($ARGV[$a] eq "-limits") {
+	    $limits = 1;
+
+	}
+
+    }
+}
