@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.4 2005/03/13 15:59:39 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.5 2005/08/22 14:51:24 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -25,26 +25,24 @@ print $query->start_html(-title=>'Regulatory Sequence Analysis Tools',
 
 print <<EndText;
 
-  <FONT FACE="Helvetica">
   
-  <TABLE CELLPADDING=10 ALIGN=CENTER>
-  <TR>
+  <table cellpadding=10 align=center>
+  <tr>
 
   
-  <TD VALIGN=TOP WIDTH="160">
-  <CENTER>
-  <IMG SRC="images/ULB_Blue_215.gif" ALT="ULB_Blue_215.gif" BORDER=0 HEIGHT=75 WIDTH=75>
-  <BR>
-  <FONT COLOR="#0000dd" SIZE=-2>
-  <A HREF="http://www.scmbb.ulb.ac.be" TARGET=_blank>SCMBB</a> - <A HREF="http://www.ulb.ac.be" TARGET=_blank>ULB</a>
-  </FONT>
-  </CENTER>
-  </TD>
+  <td valign=top width="160">
+  <center>
+  <img src="images/ulb_blue_215.gif" alt="ULB_Blue_215.gif" border=0 height=75 width=75>
+  <br>
+  <font color="#0000dd" size=-2>
+  <a href="http://www.scmbb.ulb.ac.be" target=_blank>SCMBB</a> - <a href="http://www.ulb.ac.be" target=_blank>ULB</a>
+  </font>
+  </center>
+  </td>
 
-  <TD ALIGN=CENTER VALIGN=CENTER>
-  <FONT FACE="Helvetica,Arial" SIZE=+1><B>
-  Regulatory Sequence Analysis Tools</B></FONT>
-  </TD>
+  <td align=center valign=center>
+  <font face="Helvetica,Arial" SIZE=+1><B>Regulatory Sequence Analysis Tools</B></font>
+  </td>
   
   
   <TD VALIGN=TOP WIDTH="160">
@@ -92,12 +90,12 @@ print <<EndText;
   
   </TR>
   </TABLE>
-  
+
+<font face=Arial,Helvetica size=-1>  
   
 <table> 
 <tr  valign=top>
 <td>
-    <font face=arial,helvetica>
   <P>
   Welcome to Regulatory Sequence Analysis Tools (<B>RSAT</B>). This
   site provides a series of modular computer programs specifically
@@ -113,7 +111,7 @@ print <<EndText;
 
 
 <td>
-<table  border=1 bgcolor='#ffcccc' cellpadding=5><tr><td>
+<table  border=1 bgcolor='#ffcccc' cellpadding=5 cellspacing=5 border=3><tr><td>
 <B>
 <font face=arial,helvetica color='#ff0000'>Warnings</font>
 <ul>
@@ -128,64 +126,84 @@ print <<EndText;
 
 
   <P>
-  <B>Regulatory Sequence Analysis Tools - Web servers</B>
+  <h2 align=center>Regulatory Sequence Analysis Tools - Web servers</h2>
   
-  <TABLE BORDER=0 CELLPADDING=10 ALIGN=CENTER>
-  <TR ALIGN=CENTER VALIGN=BOTTOM>
+<table border=5 cellspacing=5 cellpadding=5 align=center>
 
-  <TD>
+<tr align=center valign=bottom>
+
+  <td colspan=3>
+  <font size=-1>
   <A HREF="http://rsat.scmbb.ulb.ac.be/rsat/" target="_top">
   <B>Brussels - Belgium</B><BR>
   <IMG SRC="images/manneken_pis.jpg" HEIGHT=80 BORDER=0><BR>
-  <FONT SIZE=-1>
   http://rsat.scmbb.ulb.ac.be/rsat/</A>
-  </FONT>
-  </TD>
-
-  <TD ALIGN=CENTER>
-  <A HREF="http://embnet.cifn.unam.mx/rsa-tools/" target="_top">
-  <B>Cuernavaca - Mexico</B><BR>
-  <IMG SRC="images/zapata.jpg" HEIGHT=80 BORDER=0><BR>
-  <FONT SIZE=-1>http://embnet.cifn.unam.mx/rsa-tools/</A>
-  </FONT>
-  </TD>
-  
-  <TD ALIGN=CENTER>
-  <A HREF="http://liv.bmc.uu.se/rsa-tools/" target="_top">
-  <B>Uppsala - Sweden</B><BR>
-  <IMG SRC="images/uppsala_lcb.jpg" HEIGHT=80 BORDER=0><BR>
-  <FONT SIZE=-1>http://liv.bmc.uu.se/rsa-tools/</A>
   </FONT>
   </TD>
 
 </tr></tr>
 
+
   <TD ALIGN=CENTER>
+  <font size=-1>
+  <A HREF="http://embnet.cifn.unam.mx/rsa-tools/" target="_top">
+  <B>Cuernavaca - Mexico</B><BR>
+  <IMG SRC="images/zapata.jpg" HEIGHT=80 BORDER=0><BR>
+  http://embnet.cifn.unam.mx/rsa-tools/</A>
+  </FONT>
+  </TD>
+  
+  <TD ALIGN=CENTER>
+  <FONT SIZE=-1>
+  <A HREF="http://liv.bmc.uu.se/rsa-tools/" target="_top">
+  <B>Uppsala - Sweden</B><BR>
+  <IMG SRC="images/uppsala_lcb.jpg" HEIGHT=80 BORDER=0><BR>
+  http://liv.bmc.uu.se/rsa-tools/</A>
+  </FONT>
+  </TD>
+
+  <td align=center>
+  <font size=-1>
   <A HREF="http://gin.univ-mrs.fr/~jvanheld/rsa-tools/" target="_top">
   <B>Marseille - France</B><BR>
   <IMG SRC="images/calanques.jpg" HEIGHT=80 BORDER=0><BR>
-  <FONT SIZE=-1>http://gin.uiv-mrs.fr/~jvanheld/rsa-tools/</A>
+  http://gin.uiv-mrs.fr/~jvanheld/rsa-tools/</A>
   </FONT>
   </TD>
 
+</tr></tr>
+
+
   <TD ALIGN=CENTER>
+  <font size=-1>
   <A HREF="http://www.flychip.org.uk/rsa-tools/" target="_top">
   <B>Cambridge - UK</B><BR>
   <IMG SRC="images/cambridge.jpg" HEIGHT=80 BORDER=0><BR>
-  <FONT SIZE=-1>http://www.flychip.org.uk/rsa-tools/</A>
+  http://www.flychip.org.uk/rsa-tools/</A>
   </FONT>
   </TD>
 
-<TD ALIGN=CENTER>
+  <td align=center>
+  <font size=-1>
   <A HREF="http://rsat.ccb.sickkids.ca/" target="_top">
   <B>Toronto - Canada</B><BR>
   <IMG SRC="images/toronto.jpg" HEIGHT=80 BORDER=0><BR>
-  <FONT SIZE=-1>
   http://rsat.ccb.sickkids.ca/</A>
   </FONT>
   </TD>
 
-  </TR>
+  <td align=center>
+  <font size=-1>
+  <a href="http://www.bi.up.ac.za/rsa-tools/" target="_top">
+  <B>Pretoria - South-Africa</b><br>
+  <img src="images/pretoria_icon.jpg" height=80 border=0><br>
+  http://www.bi.up.ac.za/rsa-tools/</a>
+  </font>
+  </td>
+
+
+</tr>
+
   </TABLE>
   
 EndText
