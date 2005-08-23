@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.5 2005/08/22 14:51:24 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.6 2005/08/23 17:24:31 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -32,7 +32,7 @@ print <<EndText;
   
   <td valign=top width="160">
   <center>
-  <img src="images/ulb_blue_215.gif" alt="ULB_Blue_215.gif" border=0 height=75 width=75>
+  <img src="images/ULB_Blue_215.gif" alt="ULB_Blue_215.gif" border=0 height=75 width=75>
   <br>
   <font color="#0000dd" size=-2>
   <a href="http://www.scmbb.ulb.ac.be" target=_blank>SCMBB</a> - <a href="http://www.ulb.ac.be" target=_blank>ULB</a>
