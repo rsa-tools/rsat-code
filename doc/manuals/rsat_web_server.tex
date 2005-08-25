@@ -104,8 +104,16 @@ specify some additional settings. For example, on the Max OSX version
 of Apache server allows to define a user-specific configuration in the
 directory \file{/etc/httpd/users}.
 
-Note that you need to restart the werb server for these changes to
-take effect.
+Note that you need to restart the web server for these changes to take
+effect. The command to restart the server depends on its version. You
+can try the following commands, and if they don'r work check the
+documentation of your web server.
+
+\begin{verbatim}
+httpd restart
+
+apachectl restart
+\end{verbatim}
 
 \subsection{Editing the configuration file for the \RSAT server}
 
@@ -115,13 +123,61 @@ specify the variables \texttt{\$config\_site} and \texttt{\$WWW\_RSA}
 according to your local configuration.
 
 
-\subsection{testing the web server}
+\subsection{Configuring the RSAT options for the web server}
+
+You need to adapt the RSAT configuration file to indicate the
+configuration of your server. For this, edit the file
+\texttt{\$RSAT/RSA.config}.
+
+\subsubsection{IP address of your machine}
+
+By default, the RSAT web server is configured to be used from the
+machine on which it is installed. 
+
+\begin{verbatim}
+$WWW_RSA = 	"http://localhost/rsa-tools/";
+\end{verbatim}
+
+If you want to give access from external machines, you need to adapt
+the following line and replace ``localhost'' by the IP address of your
+machine. Let us assume that your mahine has the address
+www.myserver. You should then edit the row as follows.
+
+\begin{verbatim}
+$WWW_RSA = 	"http://www.myserver/rsa-tools/";
+\end{verbatim}
+
+\subsubsection{Setting the environment variable RSAT}
+
+For the basic RSAT configuration, you had to define an environment
+variable RSAT. This is necessary for the perl program to know the
+location of your programs. If this variable is not specified, the
+scripts are stopped with an error message.
+
+\begin{verbatim}
+unless ($ENV{RSAT}) {
+    die "Error: the environment variable RSAT needs to be defined\n";
+}
+\end{verbatim}
+
+Since the web server is ran by another user, you need to define this
+environment variable for this user as well. For this, edit the
+above line in the following way.
+
+\begin{verbatim}
+unless ($ENV{RSAT}) {
+    $ENV{RSAT} = "/home/myaccount/rsa-tools";
+}
+\end{verbatim}
+
+
+\subsection{Testing the web server}
 
 To test the werb server, open a web browser and connect your \RSAT server
 
 \url{http://www.myserver/rsa-tools/} 
 
-(of course you  need to adapt the URL according to your IP address).
+Of course you  need to adapt the URL according to your IP address.
 
 If the connection works, try to execute the demonstration of the
 following pages.
