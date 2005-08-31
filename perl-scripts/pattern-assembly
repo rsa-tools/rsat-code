@@ -9,6 +9,7 @@ require "RSA.seq.lib";
 $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
 $max_flanking = 1;
 $max_subst = 0;
+$max_cluster_size = 50;
 $strand_insensitive = 1;
 $max_pattern_nb = 100;
 
@@ -37,18 +38,20 @@ if ($verbose) {
     print $out "; Input file	$inputfile\n" if $inputfile;
     print $out "; Output file	$outputfile\n" if $outputfile;
     if (&IsNatural($score_column)) {
-	print $out "; Input score column\t$score_column\n";
-	print $out "; Output score column\t",3,"\n";
+	printf $out "; %-29s\t%d\n", "Input score column", $score_column;
+	printf $out "; %-29s\t%d\n", "Output score column", $3;
     }
     if ($strand_insensitive) {
 	print $out "; two strand assembly\n";
     } else {
 	print $out "; single strand assembly\n";
     }
-    print $out "; max flanking bases\t$max_flanking\n";
-    print $out "; max substitutions\t$max_subst\n";
-    print $out "; number of patterns\t$pattern_nb\n";
-    print $out ";\n";
+    printf $out "; %-29s\t%d\n", "max flanking bases", $max_flanking;
+    printf $out "; %-29s\t%d\n", "max substitutions", $max_subst;
+    printf $out "; %-29s\t%d\n", "max cluster size", $max_cluster_size;
+    printf $out "; %-29s\t%d\n", "max number of patterns", $max_pattern_nb;
+    printf $out "; %-29s\t%d\n", "number of input patterns", $pattern_nb;
+    printf $out ";\n";
 }
 
 
@@ -418,20 +421,24 @@ OPTIONS
         -h      (must be first argument) display full help message
         -help   (must be first argument) display options
 	-v	verbose
+
 	-i inputfile
 		if not specified, the standard input is used.
 		This allows to place the command within a pipe.
+
 	-o outputfile
 		if not specified, the standard output is used.
 		This allows to place the command within a pipe.
+
 	-2str	strand insensitive assembly (default).
 		With the strand insensitive option, patterns can be
 		used either in direct or reverse complement
 		orientation for assembly. For each pattern, the
 		orientation which offers the best match is chosen.
-	-1str	strand sensitive assembly.
-	-sc #	score column
 
+	-1str	strand sensitive assembly.
+
+	-sc #	score column
 		Pattern assembly is a NP-hard problem, i.e. the time
 		of calculation increases exponentially with the number
 		of patterns. Beyond a certain number of patterns, it
@@ -446,8 +453,13 @@ OPTIONS
 		maximum flanking segment size (default $max_flanking). 
 		The flanking segment is the portion of a fragment that 
 		extends outside of the assembly on which it is aligned.
+
 	-subst #
 		maximum allowed substitutions (default $max_subst)
+
+	-maxcl #
+		maximal cluster size, i.e. the number of patterns per
+		alignment cluster (default: $max_cluster_size)
 	-maxpat #
 		maximum number of patterns to assemble (default 100).
 		Assembly takes a huge time when too many patterns are
@@ -490,15 +502,17 @@ pattern-assembly options
 -2str		strand insensitive assembly
 -sc		score column
 -maxfl #	maximum flanking segment size (default $max_flanking). 
--maxpat #	maximum bumber of patterns to assemble
 -subst #	maximum allowed substitutions (default $max_subst).
+-maxcl #	maximal cluster size, i.e. number of patterns per cluster (default: $max_cluster_size)
+-maxpat #	maximum bumber of patterns to assemble
 End_short_help
   close HELP;
   exit(0);
 }
 
+################################################################
+#### Read arguments
 sub ReadArguments {
-#### read arguments ####
     foreach $a (0..$#ARGV) {
 	### verbose ###
 	if ($ARGV[$a] eq "-v") {
@@ -556,6 +570,13 @@ sub ReadArguments {
 		exit;
 	    }
 	    
+	    ### max flank
+	} elsif ($ARGV[$a] =~ /^-maxcl/i) {
+	    $max_cluster_size = $ARGV[$a+1];
+	    unless (&IsNatural($max_cluster_size)) {
+		&RSAT::error::FatalErro("maximal cluster size must be a positive integer");
+	    }
+	    
 	    
 	}
     }
@@ -589,10 +610,11 @@ sub AssemblePatterns {
 	delete $to_align{$first_seed};
 	@to_align =  sort {$score{$b} <=> $score{$a}} keys %to_align;
 
-	#### ty to align each input word to the current cluster
-	while ($#to_align > -1) {
+	#### try to align each input word to the current cluster
+	my $cluster_size = 1;
+	while (($cluster_size < $max_cluster_size) && ($#to_align > -1)) {
 	    $found = 0;
-	    while ($#to_align > -1) {
+	    while (($cluster_size < $max_cluster_size) && ($#to_align > -1)) {
 		$best_offset = "";
 		
 		#### best alignment for the direct word
@@ -644,6 +666,7 @@ sub AssemblePatterns {
 		}
 		
 		if ($found) {
+		    $cluster_size++;
 		    ### -> do not consider this word anymore
 		    delete($to_align{$word});
 		    delete($seed{$word});
@@ -663,7 +686,7 @@ sub AssemblePatterns {
 	if ($#positions <=0) { 	### no pattern matches the initial seed
 	    push @singletons, $seed;
 	} else {
-	    &PrintCluster;
+	    &PrintCluster();
 	}
 	@to_assemble = sort {$score{$b} <=> $score{$a}} keys %seed;
     }
