@@ -18,7 +18,7 @@ $query = new CGI;
 $default{output}="display";
 $default{matrix}="";
 $default{matrix_file}="";
-$default{matrix_format} = "consensus";
+$default{matrix_format} = "tab";
 $default{counts}="checked";
 $default{consensus}="checked";
 $default{frequencies}="";
@@ -67,10 +67,12 @@ print "<B><A HREF='help.convert-matrix.html#matrix'>Input matrix</A></B>&nbsp;";
 print "&nbsp;"x10;
 print "<B><A HREF='help.convert-matrix.html#matrix_format'>format</A></B>&nbsp;";
 print $query->popup_menu(-name=>'matrix_format',
-			 -Values=>['consensus', 
+			 -Values=>['tab',
+				   'consensus (warning: requires the whole consensus file)', 
 				   'gibbs',
 				   'MEME',
-				   'clustal'],
+				   'clustal',
+				   ],
 			 -default=>$default{matrix_format});
 print "<BR>\n";
 
@@ -113,6 +115,7 @@ print $query->start_multipart_form(-action=>"convert-matrix_form.cgi");
 $demo_matrix=`cat convert-matrix_demo_data.txt`;
 print "<TD><B>";
 print $query->hidden(-name=>'matrix',-default=>$demo_matrix);
+print $query->hidden(-name=>'matrix_format',-default=>'consensus');
 print $query->hidden(-name=>'information',-default=>"on");
 print $query->hidden(-name=>'weights',-default=>"on");
 print $query->hidden(-name=>'parameters',-default=>"on");

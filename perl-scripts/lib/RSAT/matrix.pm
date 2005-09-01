@@ -689,6 +689,7 @@ sub _readFromTabFile {
 	$header = <$in>;
 	$header =~ s/\r//;
 	chomp ($header);
+	$header =~ s/\s+/\t/g;
 	@header = split "\t", $header;
 	$self->push_attribute("header", @header);
     }
@@ -696,10 +697,11 @@ sub _readFromTabFile {
 	next unless (/\S/);
 	s/\r//;
 	chomp();
+	s/\s+/\t/g;
 	if (/^\s*(\S+)\s+/) {
 	    my @fields = split /\t/, $_;
 
-#	    warn join("\t", @fields), "\n" if ($main::verbose >= 10);
+#	    warn join("\t", @fields), "\n" if ($main::verbose >= 0);
 
 	    ## residue associated to the row
 	    my $residue = shift @fields;

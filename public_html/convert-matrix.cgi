@@ -49,6 +49,7 @@ $parameters .= " -i $matrix_file";
 ################################################################
 #### Matrix format
 my $matrix_format = lc($query->param('matrix_format'));
+$matrix_format =~ s/(\S+)/$1/; ## Only retain the first word
 $parameters .= " -in_format $matrix_format";
 
 ## Return fields
