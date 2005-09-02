@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: convert-seq,v 1.16 2005/08/18 04:25:22 jvanheld Exp $
+# $Id: convert-seq,v 1.17 2005/09/02 15:56:43 jvanheld Exp $
 #
 # Time-stamp: <2002-09-24 21:24:13 jvanheld>
 #
@@ -73,6 +73,11 @@ while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_form
        (($current_seq ne "") || ($current_id ne ""))) {
 
     $seq_nb++;
+
+    ## Remove empty sequences 
+    if (($noempty) && ($current_seq !~ /\S/)) {
+	next;
+    }
 
     #### case conversion
     if ($lowercases) {
@@ -267,8 +272,8 @@ consvert-seq options
 -uc		uppsercase
 -dna		convert any non-acgt character into "." 
 -id		identifier
--nocheckid	Prevent to check sequence IDs for conversion to file list
-
+-nocheckid	Prevent to check sequence IDs for conversion to the format filelist.
+-noempty	Remove empty sequences from the set. 
 SUPPORTED FORMATS
     INPUT $accepted_input_string
 	
@@ -297,7 +302,7 @@ sub ReadArguments {
 	    
 	    ### list of options
 	} elsif ($ARGV[$a] eq "-help") {
-	    &PrintOptions;
+	    &PrintOptions();
 	    
 	} elsif ($ARGV[$a] eq "-i") {
 	    $inputfile = $ARGV[$a+1];
@@ -330,6 +335,11 @@ sub ReadArguments {
 
 	} elsif ($ARGV[$a] eq "-dna") {
 	    $dna = 1;
+	    
+
+	    ## Remove empty sequences from the set
+	} elsif ($ARGV[$a] eq "-noempty") {
+	    $noempty = 1;
 	    
 	    ## Prevent to check sequence IDs for conversion to file list
 	} elsif ($ARGV[$a] eq "-nocheckid") {
