@@ -3,10 +3,11 @@
 ## CVS: bug fixed: matrices were not indexed in the synthetic table anymore 
 ## CVS: bug fixed: dyad occurrences were missing from SQL table pattern.tab
 ## Ce script est une usine a gaz
+## CVS: fixed bugs with option -seq
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.109 2005/08/18 05:23:50 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.110 2005/09/02 15:58:46 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -17,6 +18,7 @@ BEGIN {
     }
     require "RSA.lib";
     require "RSA.seq.lib";
+    require "RSA.disco.lib";
     require "RSA.help.pl";
     require "RSA.cgi.lib";
     push @INC, "$RSA/perl-scripts/parsers/";
@@ -49,10 +51,6 @@ $repetitions=1000; ### Repetitions for the calibN
 %dir = ();
 $dir{main} = `pwd`;
 chomp($dir{main});
-
-$thmssig = "none";
-$thmsf = "none";
-
 
 $dir{calib1} = "calibrations_1gene"; 
 %max_score = ();
@@ -251,8 +249,10 @@ foreach my $family_name (@families) {
 	delete $family{$family_name};
     }
 }
+
 @families = sort keys %family;
 warn "Remaining families after filtering\t", scalar(@families), "\n";
+
 
 &SetFileNames();
 
@@ -297,6 +297,8 @@ exit(0);
 #
 ################################################################
 
+################################################################
+
 #### set the file names as a function of parameters
 sub SetFileNames {
     $sp = "$min_sp-$max_sp";
@@ -306,7 +308,8 @@ sub SetFileNames {
     $dyad_options .= " -type ".$dyad_type;
     $dyad_options .= " ".$noov;
     $dyad_options .= " -l ".$monad_length;
-    $dyad_options .= " -thosig $thosig ";
+    $dyad_options .= &ThresholdOptions();
+#    $dyad_options .= " -lth occ_sig $lth{occ_sig} ";
     $dyad_options .= " -sp ".$sp;
 
     $dyad_suffix = "_dyads";
@@ -319,7 +322,8 @@ sub SetFileNames {
     $dyad_suffix .= "_sp".$sp;
     $dyad_suffix .= $strands;
     $dyad_suffix .= "_".$dyad_type;
-    $dyad_suffix .= "_sig".$thosig;
+    $dyad_suffix .= &ThresholdSuffix();
+#    $dyad_suffix .= "_sig".$lth{occ_sig};
     $dyad_suffix .= $noov;
 
     #### expected frequency model
@@ -348,9 +352,10 @@ sub SetFileNames {
     }
     $oligo_suffix .= "_".$min_oligo_len."-".$max_oligo_len."nt";
     $oligo_suffix .= $strands;
-    $oligo_suffix .= "_sig".$thosig;
-    if (&IsReal($thmsf)) {$oligo_suffix .= "_msf".$thmsf ; }
-    if (&IsReal($thmssig)) {$oligo_suffix .= "_mssig".$thmssig ; }
+    $oligo_suffix .= &ThresholdSuffix();
+#    $oligo_suffix .= "_sig".$lth{occ_sig};
+#    if (&IsReal($lth{ms_freq})) {$oligo_suffix .= "_msf".$lth{ms_freq} ; }
+#    if (&IsReal($lth{ms_sig})) {$oligo_suffix .= "_mssig".$lth{ms_sig} ; }
     $oligo_suffix .= $noov;
 
     foreach my $family_name (@families) {
@@ -365,8 +370,10 @@ sub SetFileNames {
 	$family{$family_name}->{file_prefix} .= "${noorf_string}"; 
 	
 	## Sequence files	unless ($sequence_file_list) {
-	$family{$family_name}->{seq_file} = $family_name."/".$family{$family_name}->{file_prefix}.".${seq_format}";
-	$family{$family_name}->{seq_file_purged} = $family_name."/".$family{$family_name}->{file_prefix}."_purged.${seq_format}";
+	unless ($sequence_file_list) {
+	    $family{$family_name}->{seq_file} = $family_name."/".$family{$family_name}->{file_prefix}.".${seq_format}";
+	    $family{$family_name}->{seq_file_purged} = $family_name."/".$family{$family_name}->{file_prefix}."_purged.${seq_format}";
+	}
 	if ($analyze_purged_sequences) {
 	    $family{$family_name}->{input_seq_file} = $family{$family_name}->{seq_file_purged};
 	} else {
@@ -521,8 +528,9 @@ sub SetFileNames {
 	$meme_options .= " -dna";
 
 	## Distribution
-	$meme_options .= " -mod tcm";
-	$meme_suffix .= "_tcm";
+	$MEME_mod = "anr";
+	$meme_options .= " -mod ".$MEME_mod;
+	$meme_suffix .= "_".$MEME_mod;
 
 	## Matrix width
 #	$meme_options .= " -w ".$matrix_width;
@@ -625,7 +633,8 @@ sub SetFileNames {
     $table_suffix .= "_".$max_oligo_len."nt";
     $table_suffix .= $noov;
     $table_suffix .= $strands;
-    $table_suffix .= "_sig".$thosig;
+    $table_suffix .= &ThresholdSuffix();
+#    $table_suffix .= "_sig".$lth{occ_sig};
     $table_suffix = `basename $table_suffix`;
     chomp $table_suffix;
 
@@ -691,9 +700,10 @@ sub CalcOligoOptions {
    $oligo_options .= " -sort ";
    $oligo_options .= " ".$strands;
    $oligo_options .= " -l ".$oligo_len;
-   $oligo_options .= " -lth occ_sig ".$thosig;
-   if (&IsReal($thmsf)) {$oligo_options .= " -thmsf ".$thmsf ; }
-   if (&IsReal($thmssig)) {$oligo_options .= " -thmssig ".$thmssig ; }
+   $oligo_options .= &ThresholdOptions();
+#   $oligo_options .= " -lth occ_sig ".$lth{occ_sig};
+#   if (&IsReal($lth{ms_freq})) {$oligo_options .= " -thmsf ".$lth{ms_freq} ; }
+#   if (&IsReal($lth{ms_sig})) {$oligo_options .= " -thmssig ".$lth{ms_sig} ; }
    
    if ($markov) {
 	### Markov chain model
@@ -755,9 +765,10 @@ sub CalcOligoOptions {
    $oligo_suffix = "_oligos";
    $oligo_suffix .= "_${oligo_len}nt";
    $oligo_suffix .= $strands;
-   $oligo_suffix .= "_sig".$thosig;
-   $oligo_suffix .= "_thmsf".$thmsf if (&IsReal($thmsf));
-   $oligo_suffix .= "_thmssig".$thmssig if (&IsReal($thmssig));
+   $oligo_suffix .= &ThresholdSuffix();
+#   $oligo_suffix .= "_sig".$lth{occ_sig};
+#   $oligo_suffix .= "_thmsf".$lth{ms_freq} if (&IsReal($lth{ms_freq}));
+#   $oligo_suffix .= "_thmssig".$lth{ms_sig} if (&IsReal($lth{ms_sig}));
    $oligo_suffix .= $noov;
    
    $oligo_file = "$family_name/oligos_${family_name}/".$family{$family_name}->{file_prefix}.$oligo_suffix;    
@@ -890,7 +901,7 @@ sub DrawFeatureMap {
 
    ## check file names
    $fmap_prefix = $family{$family_name}->{oligo_ft_prefix} unless ($fmap_prefix);
-   $title = $fmap_prefix unless ($title);
+   $title = &ShortFileName($fmap_prefix) unless ($title);
 
    ### pattern matching
    &RSAT::error::FatalError("Cannot read file $family{$family_name}->{seq_file}") unless (($batch) || (-r $family{$family_name}->{seq_file}));
@@ -912,8 +923,8 @@ sub DrawFeatureMap {
    $command .= " -minfthick 2";
    $command .= " -scalebar -scalestep $scalestep -legend ";
    $command .= " -title '".$title."'";
-   $command .= " -from $from" if (defined($from));
-   $command .= " -to $to" if (defined($to));
+#   $command .= " -from $from" if (defined($from));
+#   $command .= " -to $to" if (defined($to));
    $command .= " -o $fmap_file -scorethick ";
    $command .= " ".$options;
    if ($htmaps) {
@@ -1018,9 +1029,10 @@ sub DrawMergedFeatureMap {
 	$to = -1;
    }
    $command = " feature-map -i $family{$family_name}->{merged_ft_file} -scalebar -scalestep $scalestep -legend ";
-   $command .= " -title $family{$family_name}->{merged_ft_file}";
-   $command .= " -from $from" if (defined($from));
-   $command .= " -to $to" if (defined($to));
+   $command .= " -title ";
+   $command .= &ShortFileName($family{$family_name}->{merged_ft_file});
+#   $command .= " -from $from" if (defined($from));
+#   $command .= " -to $to" if (defined($to));
    $command .= " -o $fmap_file -scorethick ";
    if ($htmaps) {
 	$command .= " -htmap > $htmap_file ";
@@ -1688,8 +1700,8 @@ sub DrawDyadFeatureMap {
 
    ## feature-map drawing
    $command = "feature-map -i $family{$family_name}->{dyad_ft_file} -o $family{$family_name}->{fmap_file} ";;
-   $command .= " -from $from" if (defined($from));
-   $command .= " -to $to " if (defined($to));
+#   $command .= " -from $from" if (defined($from));
+#   $command .= " -to $to " if (defined($to));
    $command .= "-legend ";
    $command .= "-scalebar -scalestep $scalestep ";
    $command .= "-scorethick ";
@@ -1776,11 +1788,11 @@ sub CheckParameters {
 
     ## Threshold on occurrence significance
     if (&IsReal($force{th})) {
-	$thosig = $force{th}; ### force
+	$lth{occ_sig} = $force{th}; ### force
     } elsif ($#families > 0) {
-	$thosig = &round(10*abs(log($#families + 1)/log(10)))/10;
+	$lth{occ_sig} = &round(10*abs(log($#families + 1)/log(10)))/10;
     } else {
-	$thosig = 0;
+	$lth{occ_sig} = 0;
     } 
 }
 
@@ -2001,26 +2013,55 @@ OPTIONS
 		use non-purged sequences for pattern discovery
 
    oligo-analysis and dyad-analysis options
+
 	-1str   strand-sensitive analysis
+
 	-2str   strand-insensitive analysis
+
 	-htmaps	draw html maps (dynamic map with pointers to the features)
 		These html files take space on the hard drive, so I
 		suppressed them from the default output.
+
 	-noov	prevent overlapping matches for self-overlapping patterms
 		(default)
+
 	-ovlp	allow overlapping matches for self-overlapping patterms
+
 	-nomap	do not draw feature maps (for saving time and hard disk space)
+
 	-bg	background frequency model
 		This parameter indicates which background model has to
 		be used for the estimation of expected pattern
 		frequencies.
 		Supported: $supported_background
+
 	-calib_dir
 		Directory containing the calibration files. The
 		calibration file name is then calculated automatically
 		from the conditions (seq lengths, seq number, ...)
-	-thosig threshold on occurrence significance
 
+
+	-thosig #
+		Threshold on occurrence significance.
+		(obsolete: use -lth occ_sig instead)
+
+	-lth param value
+		Lower threshold on some parameter. All patterns with a
+		parameter value smaller than the threshold are
+		discarded.
+		Supported parameters: $supported_thresholds
+	      	Example: select patterns with a positive value for the
+	      	occurrence significance.
+
+			 -lth occ_sig 0
+
+	-uth param value
+		Upper threshold on some parameter. All patterns with a
+		parameter value higher than the threshold are
+		discarded.
+		Supported parameters: $supported_thresholds
+		Example: to select no more than 50 patterns
+		        -uth rank 50
 
    oligo-analysis specific options
 	-thmsf threshold on frequency of matching sequences (propotion
@@ -2201,60 +2242,68 @@ sub PrintOptions {
  print HELP <<End_short_help;
 multiple-family-analysis options
 --------------------------------
+## General options
 -h		(must be first argument) display full help message
 -help		(must be first argument) display options
 -v		verbose
 -i		family file (incompatible with -seq)
--seq		sequence file (incompatible with -i)
 -skip #		skip the # first data sets
 -last #		stop after the # first data sets
+-task		selected task (supported: $supported_tasks)
+-htmaps		draw html maps (dynamic map with pointers to the features)
+-outdir		output directory
+-org		organism
+-n      	dry run: print commands without executing them
+-batch	send time-consuming jobs to a batch queue for a PC cluster
+
+## Sequence options
+-seq		sequence file (incompatible with -i)
 -purge		use purged sequences for pattern discovery (default)
 -nopurge	use non-purged sequences for pattern discovery
--outdir		output directory
 -mingenes	minimal number of genes per family
--org		organism
 -from		upstream region left limit
 -to		upstream region right limit
 -noorf		exclude upstream ORFs from upstream sequences
 -orfov		do not exclude upstream ORFs from upstream sequences
 -feattype	feature type for sequence retrieval (e.g. CDS, mRNA)
+
+## Parameters for oligo-analysis and dyad-analysis
 -1str   	strand-sensitive analysis
 -2str   	strand-insensitive analysis
--maxol		maximum oligonucleotide length
--minol		minimum oligonucleotide length
--monad		monad length for dyad-analysis
--minsp		maximum spacing for dyad-analysis
--maxsp		maximum spacing for dyad-analysis
--n      	dry run: print commands without executing them
--exp		expected frequency file
--transp		transpose synthetic result table (columns become rows)
--sort		sort key (supported: $supported_sort_keys)
--task		selected task (supported: $supported_tasks)
--htmaps		draw html maps (dynamic map with pointers to the features)
--dyad_exp_freq	expected frequencies for dyad-analysis
--oligo_exp_freq	expected frequencies for oligo-analysis
 -noov		prevent overlapping matches for self-overlapping patterms
 -ovlp		allow overlapping matches for self-overlapping patterms
 -pseudo		pseudo-weight (see oligo-analysis manual)
 -nomap		do not draw feature maps (for saving time and hard disk space)
+-lth param \#	lower threshold on parameter. Supported: $supported_thresholds
+-uth param \#	upwer threshold on parameter. Supported: $supported_thresholds
+-thosig		threshold on occurrence significance (obsolete)
+
+## oligo-analysis specific parameters
+-maxol		maximum oligonucleotide length
+-minol		minimum oligonucleotide length
+-exp		expected frequency file (obsolete)
+-oligo_exp_freq	expected frequencies for oligo-analysis
 -bg		background frequency model
 -calib_dir	calibration directory
--thosig         threshold on occurrence significance
--thmsf		threshold on frequency of matching sequences 
--thmssig		threshold on the significance of matching sequences
 -markov #	exp. freq. calcualted with Markov chain model of order #
--known		file containing a list of known sites/motifs
--known_max_len 	maximal length for using known sites (default: $known_site_max_len)
--schema		database schema (default: $schema)
--host		database host (default: $host)
--user		database user (default: $user)
--password	database password (default: $password)
--batch	send time-consuming jobs to a batch queue for a PC cluster
-## Matrix-based pattern dscovery
+-thmsf		threshold on frequency of matching sequences (obsolete)
+-thmssig	threshold on the significance of matching sequences (obsolete)
+
+## dyad-analysis specific parameters
+-monad		monad length for dyad-analysis
+-minsp		maximum spacing for dyad-analysis
+-maxsp		maximum spacing for dyad-analysis
+-transp		transpose synthetic result table (columns become rows)
+-sort		sort key (supported: $supported_sort_keys)
+-dyad_exp_freq	expected frequencies for dyad-analysis
+
+## Options for matrix-based pattern discovery
 -width		matrix width (default $matrix_width)
 -sps		expected number of sites per sequence (default $expected_sites_per_gene)
+
 ## Gibbs sampler
 -seed		seed number for the random generator
+
 ## MotifSampler 
 -MS_b		backgound file
 -MS_p		prior probability of 1 motif copy (default $MS_p)
@@ -2262,10 +2311,22 @@ multiple-family-analysis options
 -MS_n		number of different motifs to search for (default $MS_n).
 -MS_x		allowed overlap between different motifs. (default $MS_x)
 -MS_r		number of times the MotifSampler should be repeated (default = $MS_r).
+
 ## MEME options (Bailey)
 -MEME_minw	minimum motif width (default $MEME_minw)
 -MEME_maxw	maximum motif width (default $MEME_maxw)
 -MEME_bfile     name of background Markov model file
+
+## Validation
+-known		file containing a list of known sites/motifs
+-known_max_len 	maximal length for using known sites (default: $known_site_max_len)
+
+## Database
+-schema		database schema (default: $schema)
+-host		database host (default: $host)
+-user		database user (default: $user)
+-password	database password (default: $password)
+
 End_short_help
  close HELP;
  exit;
@@ -2294,11 +2355,11 @@ sub ReadArguments {
 	    
 	    ### detailed help
 	} elsif ($ARGV[$a] eq "-h") {
-	    &PrintHelp;
+	    &PrintHelp();
 	    
 	    ### list of options
 	} elsif ($ARGV[$a] eq "-help") {
-	    &PrintOptions;
+	    &PrintOptions();
 	    
 	    ### family file
 	} elsif (($ARGV[$a] eq "-i") ||
@@ -2420,18 +2481,39 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq '-rel_w') {
 	    $rel_w = $ARGV[$a+1];
 	    &FatalError("Relative weight should be a real value comprised between 0 and 1") unless ((&IsReal($rel_w)) && ($rel_w >= 0) && ($rel_w <= 1));
+	    
+	    ### Upper threshold
+	} elsif ($ARGV[$a] eq "-lth") {
+	    my $thr_field = $ARGV[$a+1];
+	    my $thr_value =  $ARGV[$a+2];
+	    unless ($supported_threshold{$thr_field}) {
+		&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
+	    }
+	    $lth{$thr_field} = $thr_value;
+
+	    ### Lower threshold
+	} elsif ($ARGV[$a] eq "-uth") {
+	    my $thr_field = $ARGV[$a+1];
+	    my $thr_value =  $ARGV[$a+2];
+	    unless ($supported_threshold{$thr_field}) {
+		&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
+	    }
+	    $uth{$thr_field} = $thr_value;
 
 	    #### threshold
 	} elsif ($ARGV[$a] =~ /^-thosig/) {
+	    &Warning("Option -thosig is deprecated. Please use '-lth occ_sig' instead.");
 	    $force{th} = $ARGV[$a+1];
 
 	    #### threshold on mseq frequency
 	} elsif ($ARGV[$a] =~ /^-thmsf/) {
-	    $thmsf = $ARGV[$a+1];
+	    &Warning("Option -thmsf is deprecated. Please use '-lth ms_freq' instead.");
+	    $lth{ms_freq} = $ARGV[$a+1];
 
 	    #### threshold on mseq significance
 	} elsif ($ARGV[$a] =~ /^-thmssig/) {
-	    $thmssig = $ARGV[$a+1];
+	    &Warning("Option -thmssig is deprecated. Please use '-lth ms_sig' instead.");
+	    $lth{ms_sig} = $ARGV[$a+1];
 
 	    #### dyad type
 	} elsif ($ARGV[$a] =~ /^-type/) {
@@ -2558,7 +2640,8 @@ sub Verbose {
 	$verbose_message .= sprintf ";\t%-22s\t%d\n", "min spacing", $min_sp;
 	$verbose_message .= sprintf ";\t%-22s\t%d\n", "max spacing", $max_sp;
 	$verbose_message .= sprintf ";\t%-22s\t%s\n", "dyad type", $dyad_type;
-	$verbose_message .= sprintf ";\t%-22s\t%g\n", "sig threshold", $thosig;
+	$verbose_message .= &PrintThresholdValues();
+#	$verbose_message .= sprintf ";\t%-22s\t%g\n", "sig threshold", $lth{occ_sig};
    }
 
    if ($markov) {
@@ -2615,7 +2698,7 @@ sub ExportSQL {
    $current_analysis->set_attribute("orf_ovlp", $noorf);
    $current_analysis->set_attribute("pattern_ovlp", $noov);
    $current_analysis->set_attribute("strands", $strands);
-   $current_analysis->set_attribute("thosig", $thosig);
+   $current_analysis->set_attribute("thosig", $lth{occ_sig});
    $current_analysis->set_attribute("suffix", $table_suffix);
 
    my %export_columns = ();
@@ -2785,18 +2868,20 @@ sub ExportSQL {
 }
 
 ## ##############################################################
-## The input is a list of sequence files instead of a family file
+## If the input is a list of sequence files instead of a family file,
+## index the input sequence files
 sub ReadSequenceList {
-   ($dir{sequences}, $short_sequence_file_list) = &SplitFileName($sequence_file_list);
+   ($sequence_dir, $short_sequence_file_list) = &SplitFileName($sequence_file_list);
 
    ## Convert relative to absolute directory
    if ($dir{main}) {
-	$dir{sequences} = $dir{main}."/".$dir{sequences};
+	$sequence_dir = $dir{main}."/".$sequence_dir;
    }
 
-#    die $dir{sequences};
+#   die $sequence_dir;
 
-   warn "; Reading sequence file list\t", $sequence_file_list, "\n" if ($verbose >= 1);
+   &RSAT::message::Info(join ("\t","Sequence dir", $sequence_dir)) if ($verbose >= 1);
+   &RSAT::message::Info(join ("\t","Reading sequence file list", $sequence_file_list)) if ($verbose >= 1);
    my ($files) = &OpenInputFile($sequence_file_list);
    my $f = 0;
    while (<$files>) {
@@ -2820,11 +2905,12 @@ sub ReadSequenceList {
 	}
 
        #### Sequence file
-	if ($dir{sequences}) {
-	    $family{$family_name}->{seq_file} = $dir{sequences}."/".$sequence_file;
+	if ($sequence_dir) {
+	    $family{$family_name}->{seq_file} = $sequence_dir."/".$sequence_file;
 	} else {
 	    $family{$family_name}->{seq_file} = $sequence_file;
 	}
+	$family{$family_name}->{seq_file} =~ s|/+|/|g;
 	$family{$family_name}->{seq_file_purged} = $family{$family_name}->{seq_file};
 	$family{$family_name}->{seq_file_purged} =~ s/\.${seq_ext}$//;
 	$family{$family_name}->{seq_file_purged} .= "_purged.".${seq_ext};
@@ -2832,14 +2918,17 @@ sub ReadSequenceList {
        #### Comment
        $family{$family_name}->{comment} = $comment;
 
-	warn join ("\t", "; File $f", 
-		   $sequence_file, 
-		   $short_file, 
-		   $family_name, 
-		   $comment, 
+	&RSAT::message::Info (join ("\t", "File $f", 
+				    $family_name,
+				    $family{$family_name}->{seq_file},
+				    $family{$family_name}->{seq_file_purged},
+#				    $sequence_file, 
+#				    $short_file, 
+#				    $family_name, 
+				    $comment, 
 #		   "\n", $family{$family_name}->{seq_file},
 #		   "\n", $family{$family_name}->{seq_file_purged}
-		   ), "\n" if ($verbose >= 2); 
+				   )) if ($verbose >= 3); 
 	
 	push @comments, $comment;
    }
@@ -2847,21 +2936,27 @@ sub ReadSequenceList {
 
    @families = sort keys %family;
 
-
    #### Family members are read from the sequence file (sequence IDs are used as member IDs)
+
+   &RSAT::message::Info("Reading family members from input sequence files") if ($main::verbose >= 1);
    foreach my $family_name (@families) {
        my ($in, $input_dir) =  &OpenInputFile($family{$family_name}->{seq_file});
        my $seq_type = "dna";
        while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $seq_format, $input_dir, $seq_type)) &&
-	   (($current_seq) || ($current_id))) {
+	      (($current_seq) || ($current_id))) {
            $family{$family_name}->new_member($current_id);
-           warn join ("\t", 
-		       ";\tFile", $family{$family_name}->{seq_file}, 
-		       "Family", $family_name, 
-		       "member", $current_id), "\n" if ($main::verbose >= 2);
+           &RSAT::message::Info (join ("\t", 
+				       "", "File", $family{$family_name}->{seq_file}, 
+				       "Family", $family_name, 
+				       "member", $current_id)) if ($main::verbose >= 3);
        }
        close $in;
-   }
+       my $gene_nb = scalar(@{$family{$family_name}->{members}});
+       &RSAT::message::Info (join ("\t", 
+				   $family_name, 
+				   $family{$family_name}->{seq_file}, 
+				   $gene_nb." members")) if ($main::verbose >= 2);
+			    }
 }
 
 ################################################################
@@ -2960,7 +3055,7 @@ sub Validate {
 ## Index one sequence length per family
 sub CalcCalibrationLengths {
    my %calib_lengths = ();
-   warn ";\n; Calculating sequence lengths\n" if ($verbose >=1);
+   &RSAT::message::TimeWarn("Calculating sequence lengths") if ($verbose >=1);
    foreach my $family_name (@families) {
 	$fam_count++;
 
@@ -2968,9 +3063,11 @@ sub CalcCalibrationLengths {
 	&CheckLast($fam_count);
 	
 	## Calculate sequence lengths
-	warn join("\t", ";\tSequence lengths", 
-		  $family_name, 
-		  $family{$family_name}->{seq_len_file}), "\n" if ($verbose >= 3);
+	&RSAT::message::Info( join("\t", "", "Calculating sequence lengths for family", 
+				    $family_name, 
+				    $family{$family_name}->{seq_file},
+				    $family{$family_name}->{seq_len_file})
+			     ) if ($verbose >= 2);
 	my $command = "sequence-lengths -i ".$family{$family_name}->{seq_file};
 	$command .= " -o ".$family{$family_name}->{seq_len_file};
 	&doit($command, $dry_run, $die_on_error, $verbose);
@@ -3250,7 +3347,7 @@ sub MDCreport {
 
 	warn "Family $family_name\tParameters\t", $parameters_text, "\n" if ($main::verbose >= 2);
 	warn "Family $family_name\tPostprocessing\t", $postprocessing_text, "\n" if ($main::verbose >= 2);
-	warn "Matching options\t", $matching_options, "\n" if ($main::verbose >= 0);
+	warn "Matching options\t", $matching_options, "\n" if ($main::verbose >= 2);
 
 	## Make sure there is a carriage return after postprocessing and parameters
 	chomp($parameter_text);
