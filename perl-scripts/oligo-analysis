@@ -1,10 +1,11 @@
 #!/usr/bin/perl
 
 ## BUG: with markov order 0, exp freq of mononucleotides are set to 0. should be the observed frequency
+## TO DO: option -table freq
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.98 2005/08/21 18:54:25 jvanheld Exp $
+# $Id: oligo-analysis,v 1.99 2005/09/02 15:48:26 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -14,6 +15,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 require "RSA.lib";
 require "RSA.seq.lib";
+require "RSA.disco.lib";
 
 ################################################################
 ###### initialize parameters ##########
@@ -26,28 +28,6 @@ $start_time = &AlphaDate();
 		 'intergenic'=>1
 		 );
 $supported_bg = join ",", sort keys %supported_bg;
-
-## Supported thresholds
-%lth = (); # lower threshold values
-%uth = (); # upper threshold values
-@supported_thresholds = qw(
-			   occ
-			   occ_sig
-			   observed_freq
-			   exp_freq
-			   occ_pro
-			   zscore
-			   mseq
-			   ratio
-			   rank
-			 );
-#			   likelihood
-
-$supported_thresholds = join ",", @supported_thresholds;
-%supported_threshold = ();
-foreach my $thr (@supported_thresholds) {
-    $supported_threshold{$thr} = 1;
-}
 
 #### return fields
 %supported_return_fields = ('occ'=>1,
@@ -660,63 +640,6 @@ sub SumReverseComplementsDistrib {
 
 
 ################################################################
-#### check threshold on some parameter
-sub CheckThresholds {
-    my ($parameter) = @_;
-
-  ## Lower threshold
-  if (defined($lth{$parameter})) {
-      if ($verbose >= 2) {
-	  &RSAT::message::TimeWarn("Lower threshold on $parameter\t$lth{$parameter}");
-      }
-      foreach $pattern_seq (keys %patterns) {
-	  if ($patterns{$pattern_seq}->{$parameter} < $lth{$parameter}) {
-	      delete $patterns{$pattern_seq};
-	  }
-      }  
-  }
-
-  ## Upper threshold
-  if (defined($uth{$parameter})) {
-      if ($verbose >= 2) {
-	  &RSAT::message::TimeWarn("Upper threshold on $parameter\t$uth{$parameter}");
-      }
-      foreach $pattern_seq (keys %patterns) {
-	  if ($patterns{$pattern_seq}->{$parameter} > $uth{$parameter}) {
-	      delete $patterns{$pattern_seq};
-	  }
-      }  
-  }
-}
-
-################################################################
-#### check threshold on some parameter for one pattern
-sub CheckPatternThresholds {
-    my ($parameter, $pattern_seq) = @_;
-
-  ## Lower threshold
-  if (defined($lth{$parameter})) {
-      if ($verbose >= 4) {
-	  &RSAT::message::TimeWarn("Lower threshold on $parameter\t$lth{$parameter}");
-      }
-      if ($patterns{$pattern_seq}->{$parameter} < $lth{$parameter}) {
-	  delete $patterns{$pattern_seq};
-	  return;
-      }
-  }
-
-  ## Upper threshold
-  if (defined($uth{$parameter})) {
-      if ($verbose >= 4) {
-	  &RSAT::message::TimeWarn("Upper threshold on $parameter\t$uth{$parameter}");
-      }
-      if ($patterns{$pattern_seq}->{$parameter} > $uth{$parameter}) {
-	  delete $patterns{$pattern_seq};
-      }  
-  }
-}
-
-################################################################
 ### Calculate subword frequencies
 sub CalcSubWordFrequencies {
     if ($verbose >= 2) {
@@ -1212,37 +1135,6 @@ sub CalcLikelihood {
 } 
 
 
-################################################################
-#### Calculate observed/expected ratio
-sub CalcRatio {
-    if ($return{'freq'}) {
-	foreach $pattern_seq (sort keys %patterns) {
-	    if ($patterns{$pattern_seq}->{exp_freq} == 0) {
-		$patterns{$pattern_seq}->{ratio} = 0;
-	    } else {
-		$patterns{$pattern_seq}->{ratio} =  $patterns{$pattern_seq}->{observed_freq}/$patterns{$pattern_seq}->{exp_freq};
-	    }
-	    #### check threshold on occurrence probability ####
-	    if ($patterns{$pattern_seq}->{ratio} < $ratio_threshold) {
-		delete $patterns{$pattern_seq};
-	    }
-	}
-    } elsif ($return{'occ'}) {
-	foreach $pattern_seq (sort keys %patterns) {
-	    if ($patterns{$pattern_seq}->{exp_occ} == 0) {
-		$patterns{$pattern_seq}->{ratio} = 0;
-	    } else {
-		$patterns{$pattern_seq}->{ratio} =  $patterns{$pattern_seq}->{occ}/$patterns{$pattern_seq}->{exp_occ};
-	    }
-	    
-	    #### check threshold on occurrence probability ####
-	    if ($patterns{$pattern_seq}->{ratio} < $ratio_threshold) {
-		delete $patterns{$pattern_seq};
-	    }
-	}
-    }
-    &CheckThresholds("ratio");
-} ### CalcRatio
 
 
 
@@ -1572,13 +1464,14 @@ sub Verbose {
 	    }
 	    printf $out "; %-29s\t%s\n", "alphabet size", $alphabet_size;
 	    printf $out "; %-29s\t%s\n", "nb possible oligomers", $nb_possible_oligo;
-	    printf $out "; %-29s\t%s\n", "threshold on occurrences", $lth{occ} if ($lth{occ} > 0);
-	    printf $out "; %-29s\t%s\n", "threshold on occ sig", $lth{occ_sig} if (defined($lth{occ_sig}));
-	    printf $out "; %-29s\t%s\n", "threshold on matching seq sig", $mseq_significance_threshold if (defined($mseq_significance_threshold));
-	    printf $out "; %-29s\t%s\n", "threshold on matching seq.", $lth{mseq} if ($lth{mseq} > 0);
-	    printf $out "; %-29s\t%s\n", "threshold on occ proba", $uth{occ_pro} if ($uth{occ_pro} < 1);
-	    printf $out "; %-29s\t%s\n", "threshold on occ ratio", $ratio_threshold if ($ratio_threshold > 0);
-	    printf $out "; %-29s\t%s\n", "threshold on match. seq proba", $proba_mseq_threshold if ($proba_mseq_threshold < 1);
+	    printf $out &PrintThresholdValues();
+#	    printf $out "; %-29s\t%s\n", "threshold on occurrences", $lth{occ} if ($lth{occ} > 0);
+#	    printf $out "; %-29s\t%s\n", "threshold on occ sig", $lth{occ_sig} if (defined($lth{occ_sig}));
+#	    printf $out "; %-29s\t%s\n", "threshold on matching seq sig", $mseq_significance_threshold if (defined($mseq_significance_threshold));
+#	    printf $out "; %-29s\t%s\n", "threshold on matching seq.", $lth{mseq} if ($lth{mseq} > 0);
+#	    printf $out "; %-29s\t%s\n", "threshold on occ proba", $uth{occ_pro} if ($uth{occ_pro} < 1);
+#	    printf $out "; %-29s\t%s\n", "threshold on occ ratio", $ratio_threshold if ($ratio_threshold > 0);
+#	    printf $out "; %-29s\t%s\n", "threshold on match. seq proba", $proba_mseq_threshold if ($proba_mseq_threshold < 1);
 
 	    unless (($return{'table'}) || ($sequence_number > $max_seq_verbose)) {
 		print $out "; Sequences:\n";
@@ -1969,6 +1862,8 @@ sub ReadArguments {
 	    if (&IsInteger($ARGV[$a+1])) {
 		$a++;
 		$markov_order = $ARGV[$a];
+	    } else {
+		&RSAT::error::FatalError("The Markov order must be an integer value");
 	    }
 	    
 	    #### markov chain
@@ -2458,12 +2353,19 @@ ARGUMENTS
 		parameter value smaller than the threshold are
 		discarded.
 		Supported parameters: $supported_thresholds
+	      	Example: select patterns with a positive value for the
+	      	occurrence significance.
+
+			 -lth occ_sig 0
+
 
 	-uth param value
 		Upper threshold on some parameter. All patterns with a
 		parameter value higher than the threshold are
 		discarded.
 		Supported parameters: $supported_thresholds
+		Example: to select no more than 50 patterns
+		        -uth rank 50
 
 
     DEPRECATED THRESHOLD OPTIONS
@@ -2849,14 +2751,14 @@ oligo-analysis options
 -nogrouprc      do not group reverse complement pairs
 -lth param \#	lower threshold on parameter. Supported: $supported_thresholds
 -uth param \#	upwer threshold on parameter. Supported: $supported_thresholds
--tho            threshold on occurence number
--thpo           threshold on occurence probability
--thratio	threshold on observed/expected occurrence ratio
--thosig         threshold on occurence significance index
--thms           threshold on matching sequence number
--thmsf		threshold on frequency of matching sequences 
--thpms          threshold on matching sequence proba
--thmssig        threshold on matching sequence significance index
+-tho            threshold on occurence number (obsolete)
+-thpo           threshold on occurence probability (obsolete)
+-thratio	threshold on observed/expected occurrence ratio (obsolete)
+-thosig         threshold on occurence significance index (obsolete)
+-thms           threshold on matching sequence number (obsolete)
+-thmsf		threshold on frequency of matching sequences  (obsolete)
+-thpms          threshold on matching sequence proba (obsolete)
+-thmssig        threshold on matching sequence significance index (obsolete)
 -oneN           one undefined position
 -onedeg         one degenerate position		
 -sort		sort oligomers by overrepresentation

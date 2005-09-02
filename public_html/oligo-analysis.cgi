@@ -16,6 +16,7 @@ BEGIN {
     carpout(*LOG);
 }
 require "RSA.lib";
+require "RSA.disco.lib";
 require "RSA.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
@@ -53,147 +54,14 @@ if ($purge) {
 }
 
 ### fields to return
-$return_fields = "";
-
 if ($query->param('return') eq "table") {
     $parameters .= " -return occ -table"; 
 } elsif ($query->param('return') eq "distrib") {
     $parameters .= " -return occ -distrib"; 
 } else {
+
+    &CGI_return_fields();
     
-    ### occurrences
-    if ($query->param('occ')) {
-	$return_fields .= "occ,";
-
-	### Lower threshold on occurrences
-	if (&IsReal($query->param('lth_occ'))) {
-	    $parameters .= " -lth occ ".$query->param('lth_occ');
-	}
-
-	### Upper threshold on occurrences
-	if (&IsReal($query->param('uth_occ'))) {
-	    $parameters .= " -uth occ ".$query->param('uth_occ');
-	}
-    } 
-    
-    ### frequencies
-    if ($query->param('freq')) {
-	$return_fields .= "freq,";
-
-	### Lower threshold on frequencies
-	if (&IsReal($query->param('lth_observed_freq'))) {
-	    $parameters .= " -lth observed_freq ".$query->param('lth_observed_freq');
-	}
-
-	### Upper threshold on frequencies
-	if (&IsReal($query->param('uth_observed_freq'))) {
-	    $parameters .= " -uth observed_freq ".$query->param('uth_observed_freq');
-	}
-    } 
-    
-    ### matching sequences
-    if ($query->param('mseq')) {
-	$return_fields .= "mseq,";
-
-	### Lower threshold on matching sequences
-	if (&IsReal($query->param('lth_mseq'))) {
-	    $parameters .= " -lth mseq ".$query->param('lth_mseq');
-	}
-
-	### Upper threshold on matching sequences
-	if (&IsReal($query->param('uth_mseq'))) {
-	    $parameters .= " -uth mseq ".$query->param('uth_mseq');
-	}
-
-#	### threshold on matching sequences
-#	if ($query->param('lth_mseq') =~ /^\d+$/) {
-#	    $parameters .= " -thms ".$query->param('lth_mseq');
-#	}  
-    } 
-    
-    ### observed/expected ratio
-    if ($query->param('ratio')) {
-	$return_fields .= "ratio,";
-
-	### Lower threshold on ratio
-	if (&IsReal($query->param('lth_ratio'))) {
-	    $parameters .= " -lth ratio ".$query->param('lth_ratio');
-	}
-
-	### Upper threshold on ratio
-	if (&IsReal($query->param('uth_ratio'))) {
-	    $parameters .= " -uth ratio ".$query->param('uth_ratio');
-	}
-    } 
-    
-    ### rank
-    if ($query->param('rank')) {
-	$return_fields .= "rank,";
-
-	### Lower threshold on rank
-	if (&IsReal($query->param('lth_rank'))) {
-	    $parameters .= " -lth rank ".$query->param('lth_rank');
-	}
-
-	### Upper threshold on rank
-	if (&IsReal($query->param('uth_rank'))) {
-	    $parameters .= " -uth rank ".$query->param('uth_rank');
-	}
-    } 
-    
-    ### z-score
-    if ($query->param('zscore')) {
-	$return_fields .= "zscore,";
-
-	### Lower threshold on z-score
-	if (&IsReal($query->param('lth_zscore'))) {
-	    $parameters .= " -lth zscore ".$query->param('lth_zscore');
-	}
-
-	### Upper threshold on z-score
-	if (&IsReal($query->param('uth_zscore'))) {
-	    $parameters .= " -uth zscore ".$query->param('uth_zscore');
-	}
-    } 
-    
-    ### binomial probabilities
-    if ($query->param('proba')) {
-	$return_fields .= "proba,";
-
-	### Lower threshold on probabilities
-	if (&IsReal($query->param('lth_occ_pro'))) {
-	    $parameters .= " -lth occ_pro ".$query->param('lth_occ_pro');
-	}
-
-	### Upper threshold on probabilities
-	if (&IsReal($query->param('uth_occ_pro'))) {
-	    $parameters .= " -uth occ_pro ".$query->param('uth_occ_pro');
-	}
-
-	### Lower threshold on significance
-	if (&IsReal($query->param('lth_occ_sig'))) {
-	    $parameters .= " -lth occ_sig ".$query->param('lth_occ_sig');
-	}
-
-	### Upper threshold on significance
-	if (&IsReal($query->param('uth_occ_sig'))) {
-	    $parameters .= " -uth occ_sig ".$query->param('uth_occ_sig');
-	}
-    } 
-    
-    ### positions
-    if ($query->param('pos')) {
-	$return_fields .= "pos,";
-    } 
-    
-    $return_fields =~ s/,$//;
-    
-
-    if ($return_fields eq "") {
-	&cgiError("You should select at least one option in the \"Return\" box.");
-    } else {
-	$parameters .= " -return $return_fields";
-    }
 }
 
     

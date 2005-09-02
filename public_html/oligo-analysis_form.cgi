@@ -220,128 +220,7 @@ print "<HR width=550 align=left>\n";
 #			  -default=>$default{freq_estimate});
 #print "<BR>";
 
-
-
-#### table with all the statistics and thresholds
-print "<h3>Return</h3>\n";
-
-print ("<INPUT TYPE='radio' NAME='return' VALUE='fields' checked>", 
-       "One row per pattern");
-
-
-print "<BLOCKQUOTE>\n";
-print $query->table({-border=>1,-cellpadding=>0,-cellspacing=>0},
-		    $query->Tr({-align=>left,-valign=>TOP},
-			 [
-			  $query->th([" <A HREF='help.oligo-analysis.html#return_fields'>Fields</A> ",
-				   " <A HREF='help.oligo-analysis.html#thresholds'>Lower<BR>Threshold</A> ",
-				   " <A HREF='help.oligo-analysis.html#thresholds'>Upper<BR>Threshold</A> "]),
-
-			  ### occurrences
-			  $query->td([$query->checkbox(-name=>'occ',
-						       -checked=>$default{occ},
-						       -label=>' Occurrences '),
-				      $query->textfield(-name=>'lth_occ',
-							-default=>$default{lth_occ},
-							-size=>5),
-				      $query->textfield(-name=>'uth_occ',
-							-default=>$default{uth_occ},
-							-size=>5)
-				   ]),
-
-			  ### binomial proba
-			  $query->td([$query->checkbox(-name=>'proba',
-						    -checked=>$default{proba},
-						    -label=>' Binomial proba '),
-				   $query->textfield(-name=>'lth_occ_pro',
-						     -default=>$default{lth_occ_pro},
-						     -size=>5),
-				   $query->textfield(-name=>'uth_occ_pro',
-						     -default=>$default{uth_occ_pro},
-						     -size=>5)]),
-
-			  ### significance index
-			  $query->td([$query->checkbox(-name=>'proba',
-						    -checked=>$default{proba},
-						    -label=>' Significance '),
-				   $query->textfield(-name=>'lth_occ_sig',
-						     -default=>$default{lth_occ_sig},
-						     -size=>5),
-				   $query->textfield(-name=>'uth_occ_sig',
-						     -default=>$default{uth_occ_sig},
-						     -size=>5)
-				   ]),
-
-			  ### Z-scores
-			  $query->td([$query->checkbox(-name=>'zscore',
-						    -checked=>$default{zscore},
-						    -label=>' Z-scores '),
-				   $query->textfield(-name=>'lth_zscore',
-						     -default=>$default{lth_zscore},
-						     -size=>5),
-				   $query->textfield(-name=>'uth_zscore',
-						     -default=>$default{uth_zscore},
-						     -size=>5)
-				      ]),
-
-			  ### frequencies
-			  $query->td([$query->checkbox(-name=>'freq',
-						    -checked=>$default{freq},
-						    -label=>' Frequencies '),
-				   $query->textfield(-name=>'lth_observed_freq',
-						     -default=>$default{lth_observed_freq},
-						     -size=>5),
-				   $query->textfield(-name=>'uth_observed_freq',
-						     -default=>$default{uth_observed_freq},
-						     -size=>5)
-				      ]),
-
-			  ### matching sequences
-			  $query->td([$query->checkbox(-name=>'mseq',
-						    -checked=>$default{mseq},
-						    -label=>' Matching sequences '),
-				   $query->textfield(-name=>'lth_mseq',
-						     -default=>$default{lth_mseq},
-						     -size=>5),
-				   $query->textfield(-name=>'uth_mseq',
-						     -default=>$default{uth_mseq},
-						     -size=>5)
-				      ]),
-
-			  ### ratio
-			  $query->td([$query->checkbox(-name=>'ratio',
-						    -checked=>$default{ratio},
-						    -label=>' Obs/exp ratio '),
-				   $query->textfield(-name=>'lth_ratio',
-						     -default=>$default{lth_ratio},
-						     -size=>5),
-				   $query->textfield(-name=>'uth_ratio',
-						     -default=>$default{uth_ratio},
-						     -size=>5)
-				      ]),
-
-			  ### rank
-			  $query->td([$query->checkbox(-name=>'rank',
-						       -checked=>$default{rank},
-						       -label=>' Rank '),
-				      $query->textfield(-name=>'lth_rank',
-							-default=>$default{lth_rank},
-							-size=>5),
-				      $query->textfield(-name=>'uth_rank',
-							-default=>$default{uth_rank},
-							-size=>5)
-				      ]),
-			  
-			  ]
-			       )
-		    );
-print "</BLOCKQUOTE>\n";
-print ("<INPUT TYPE='radio' NAME='return' VALUE='table'>", 
-       "One row per gene (occurrence counts only, email output recommended)", "<P>\n");
-
-print ("<INPUT TYPE='radio' NAME='return' VALUE='distrib'>", 
-       "Pattern count distribubtions, one row per pattern (occurrence counts only, email output recommended)", "<P>\n");
-
+&ReturnTable();
 
 print "<HR width=550 align=left>\n";
 
@@ -458,3 +337,126 @@ print $query->end_html;
 exit(0);
 
 
+################################################################
+## Table with all the supported statistics and thresholds
+sub ReturnTable {
+
+print "<h3>Return</h3>\n";
+
+print ("<INPUT TYPE='radio' NAME='return' VALUE='fields' checked>", 
+       "One row per pattern");
+
+print "<BLOCKQUOTE>\n";
+print $query->table({-border=>1,-cellpadding=>0,-cellspacing=>0},
+		    $query->Tr({-align=>left,-valign=>TOP},
+			 [
+			  $query->th([" <A HREF='help.oligo-analysis.html#return_fields'>Fields</A> ",
+				   " <A HREF='help.oligo-analysis.html#thresholds'>Lower<BR>Threshold</A> ",
+				   " <A HREF='help.oligo-analysis.html#thresholds'>Upper<BR>Threshold</A> "]),
+
+			  ### occurrences
+			  $query->td([$query->checkbox(-name=>'occ',
+						       -checked=>$default{occ},
+						       -label=>' Occurrences '),
+				      $query->textfield(-name=>'lth_occ',
+							-default=>$default{lth_occ},
+							-size=>5),
+				      $query->textfield(-name=>'uth_occ',
+							-default=>$default{uth_occ},
+							-size=>5)
+				   ]),
+
+			  ### binomial proba
+			  $query->td([$query->checkbox(-name=>'proba',
+						    -checked=>$default{proba},
+						    -label=>' Binomial proba '),
+				   $query->textfield(-name=>'lth_occ_pro',
+						     -default=>$default{lth_occ_pro},
+						     -size=>5),
+				   $query->textfield(-name=>'uth_occ_pro',
+						     -default=>$default{uth_occ_pro},
+						     -size=>5)]),
+
+			  ### significance index
+			  $query->td([$query->checkbox(-name=>'proba',
+						    -checked=>$default{proba},
+						    -label=>' Significance '),
+				   $query->textfield(-name=>'lth_occ_sig',
+						     -default=>$default{lth_occ_sig},
+						     -size=>5),
+				   $query->textfield(-name=>'uth_occ_sig',
+						     -default=>$default{uth_occ_sig},
+						     -size=>5)
+				   ]),
+
+			  ### Z-scores
+			  $query->td([$query->checkbox(-name=>'zscore',
+						    -checked=>$default{zscore},
+						    -label=>' Z-scores '),
+				   $query->textfield(-name=>'lth_zscore',
+						     -default=>$default{lth_zscore},
+						     -size=>5),
+				   $query->textfield(-name=>'uth_zscore',
+						     -default=>$default{uth_zscore},
+						     -size=>5)
+				      ]),
+
+			  ### frequencies
+			  $query->td([$query->checkbox(-name=>'freq',
+						    -checked=>$default{freq},
+						    -label=>' Frequencies '),
+				   $query->textfield(-name=>'lth_observed_freq',
+						     -default=>$default{lth_observed_freq},
+						     -size=>5),
+				   $query->textfield(-name=>'uth_observed_freq',
+						     -default=>$default{uth_observed_freq},
+						     -size=>5)
+				      ]),
+
+			  ### matching sequences
+			  $query->td([$query->checkbox(-name=>'mseq',
+						    -checked=>$default{mseq},
+						    -label=>' Matching sequences '),
+				   $query->textfield(-name=>'lth_mseq',
+						     -default=>$default{lth_mseq},
+						     -size=>5),
+				   $query->textfield(-name=>'uth_mseq',
+						     -default=>$default{uth_mseq},
+						     -size=>5)
+				      ]),
+
+			  ### ratio
+			  $query->td([$query->checkbox(-name=>'ratio',
+						    -checked=>$default{ratio},
+						    -label=>' Obs/exp ratio '),
+				   $query->textfield(-name=>'lth_ratio',
+						     -default=>$default{lth_ratio},
+						     -size=>5),
+				   $query->textfield(-name=>'uth_ratio',
+						     -default=>$default{uth_ratio},
+						     -size=>5)
+				      ]),
+
+			  ### rank
+			  $query->td([$query->checkbox(-name=>'rank',
+						       -checked=>$default{rank},
+						       -label=>' Rank '),
+				      $query->textfield(-name=>'lth_rank',
+							-default=>$default{lth_rank},
+							-size=>5),
+				      $query->textfield(-name=>'uth_rank',
+							-default=>$default{uth_rank},
+							-size=>5)
+				      ]),
+			  
+			  ]
+			       )
+		    );
+print "</BLOCKQUOTE>\n";
+print ("<INPUT TYPE='radio' NAME='return' VALUE='table'>", 
+       "One row per gene (occurrence counts only, email output recommended)", "<P>\n");
+
+print ("<INPUT TYPE='radio' NAME='return' VALUE='distrib'>", 
+       "Pattern count distribubtions, one row per pattern (occurrence counts only, email output recommended)", "<P>\n");
+
+}

@@ -1,0 +1,313 @@
+#!/usr/bin/perl
+################################################################
+## Libraries for shared tasks between pattern discovery programs
+## (oligo-analysis and dyad-analysis)
+
+
+## Supported thresholds
+%lth = (); # lower threshold values
+%uth = (); # upper threshold values
+@supported_thresholds = qw(
+			   occ
+			   occ_sig
+			   observed_freq
+			   exp_freq
+			   occ_pro
+			   zscore
+			   mseq
+			   ratio
+			   rank
+			 );
+#			   likelihood
+
+$supported_thresholds = join ",", @supported_thresholds;
+%supported_threshold = ();
+foreach my $thr (@supported_thresholds) {
+    $supported_threshold{$thr} = 1;
+}
+
+## Print threshold values for verbosity
+sub PrintThresholdValues {
+    my %th = (%lth, %uth);
+    my @keys = keys %th;
+    my $message = "";
+    if (scalar(@keys > 0)) {
+	$message .= sprintf "; Threshold values\n";
+	$message .= sprintf  ";\t%-15s\t%s\t%s\n", "Parameter", "Lower", "Upper";
+	foreach my $key (@keys) {
+	    my $lth = "none";
+	    my $uth = "none";
+	    if (defined($lth{$key})) {
+		$lth = $lth{$key};
+	    }
+	    if (defined($uth{$key})) {
+		$uth = $uth{$key};
+	    }
+	    $message .= sprintf  ";\t%-15s\t%s\t%s\n", $key, $lth, $uth;
+	}
+    }
+    return $message;
+}
+
+## Specify threshold options for oligo-analysis and dyad-analysis
+sub ThresholdOptions {
+    my $threshold_options = "";
+    foreach my $key (keys %lth) {
+	$threshold_options .= join(" ", " -lth", $key, $lth{$key});
+    }
+    foreach my $key (keys %uth) {
+	$threshold_options .= join(" ", " -uth", $key, $uth{$key});
+    }
+    return ($threshold_options);
+}
+
+################################################################
+## Indicate threshold options in the suffix
+sub ThresholdSuffix {
+    my $threshold_suffix = "";
+    foreach my $key (keys %lth) {
+	$threshold_suffix .= "_lth_".$key.$lth{$key};
+    }
+    foreach my $key (keys %uth) {
+	$threshold_suffix .= "_uth_".$key.$uth{$key};
+    }
+    return ($threshold_suffix);
+}
+
+################################################################
+#### check threshold on some parameter
+sub CheckThresholds {
+    my ($key) = @_;
+
+  ## Lower threshold
+  if (defined($lth{$key})) {
+      if ($verbose >= 2) {
+	  &RSAT::message::TimeWarn("Lower threshold on $key\t$lth{$key}");
+      }
+      foreach $pattern_seq (keys %patterns) {
+	  if ($patterns{$pattern_seq}->{$key} < $lth{$key}) {
+#	      &RSAT::message::Debug("Lower threshold", "deleting pattern", $pattern_seq, $key, $patterns{$pattern_seq}->{$key}, $lth{$key}) if ($main::verbose >= 0);
+	      delete $patterns{$pattern_seq};
+	  }
+      }  
+  }
+
+  ## Upper threshold
+  if (defined($uth{$key})) {
+      if ($verbose >= 2) {
+	  &RSAT::message::TimeWarn("Upper threshold on $key\t$uth{$key}");
+      }
+      foreach $pattern_seq (keys %patterns) {
+	  if ($patterns{$pattern_seq}->{$key} > $uth{$key}) {
+#	      &RSAT::message::Debug("Upper threshold", "deleting pattern", $pattern_seq, $key, $patterns{$pattern_seq}->{$key}, $lth{$key}) if ($main::verbose >= 0);
+	      delete $patterns{$pattern_seq};
+	  }
+      }  
+  }
+}
+
+
+
+
+################################################################
+#### check threshold on some parameter for one pattern
+sub CheckPatternThresholds {
+    my ($key, $pattern_seq) = @_;
+
+  ## Lower threshold
+  if (defined($lth{$key})) {
+      if ($verbose >= 4) {
+	  &RSAT::message::TimeWarn("Lower threshold on $key\t$lth{$key}");
+      }
+      if ($patterns{$pattern_seq}->{$key} < $lth{$key}) {
+	  delete $patterns{$pattern_seq};
+	  return();
+      }
+  }
+
+  ## Upper threshold
+  if (defined($uth{$key})) {
+      if ($verbose >= 4) {
+	  &RSAT::message::TimeWarn("Upper threshold on $key\t$uth{$key}");
+      }
+      if ($patterns{$pattern_seq}->{$key} > $uth{$key}) {
+	  delete $patterns{$pattern_seq};
+      }  
+  }
+}
+
+
+################################################################
+#### Calculate observed/expected ratio
+sub CalcRatio {
+    if ($return{'freq'}) {
+	foreach $pattern_seq (sort keys %patterns) {
+	    if ($patterns{$pattern_seq}->{exp_freq} == 0) {
+		$patterns{$pattern_seq}->{ratio} = 0;
+	    } else {
+		$patterns{$pattern_seq}->{ratio} =  $patterns{$pattern_seq}->{observed_freq}/$patterns{$pattern_seq}->{exp_freq};
+	    }
+	    #### check threshold on occurrence probability ####
+	    if ($patterns{$pattern_seq}->{ratio} < $ratio_threshold) {
+		delete $patterns{$pattern_seq};
+	    }
+	}
+    } elsif ($return{'occ'}) {
+	foreach $pattern_seq (sort keys %patterns) {
+	    if ($patterns{$pattern_seq}->{exp_occ} == 0) {
+		$patterns{$pattern_seq}->{ratio} = 0;
+	    } else {
+		$patterns{$pattern_seq}->{ratio} =  $patterns{$pattern_seq}->{occ}/$patterns{$pattern_seq}->{exp_occ};
+	    }
+	    
+	    #### check threshold on occurrence probability ####
+	    if ($patterns{$pattern_seq}->{ratio} < $ratio_threshold) {
+		delete $patterns{$pattern_seq};
+	    }
+	}
+    }
+    &CheckThresholds("ratio");
+} ### CalcRatio
+
+
+
+################################################################
+## Concatenate return and threshold options from the CGI form
+sub CGI_return_fields {
+    my $return_fields = "";
+
+    ### occurrences
+    if ($query->param('occ')) {
+	$return_fields .= "occ,";
+
+	### Lower threshold on occurrences
+	if (&IsReal($query->param('lth_occ'))) {
+	    $parameters .= " -lth occ ".$query->param('lth_occ');
+	}
+
+	### Upper threshold on occurrences
+	if (&IsReal($query->param('uth_occ'))) {
+	    $parameters .= " -uth occ ".$query->param('uth_occ');
+	}
+    } 
+    
+    ### frequencies
+    if ($query->param('freq')) {
+	$return_fields .= "freq,";
+
+	### Lower threshold on frequencies
+	if (&IsReal($query->param('lth_observed_freq'))) {
+	    $parameters .= " -lth observed_freq ".$query->param('lth_observed_freq');
+	}
+
+	### Upper threshold on frequencies
+	if (&IsReal($query->param('uth_observed_freq'))) {
+	    $parameters .= " -uth observed_freq ".$query->param('uth_observed_freq');
+	}
+    } 
+    
+    ### matching sequences
+    if ($query->param('mseq')) {
+	$return_fields .= "mseq,";
+
+	### Lower threshold on matching sequences
+	if (&IsReal($query->param('lth_mseq'))) {
+	    $parameters .= " -lth mseq ".$query->param('lth_mseq');
+	}
+
+	### Upper threshold on matching sequences
+	if (&IsReal($query->param('uth_mseq'))) {
+	    $parameters .= " -uth mseq ".$query->param('uth_mseq');
+	}
+
+    } 
+    
+    ### observed/expected ratio
+    if ($query->param('ratio')) {
+	$return_fields .= "ratio,";
+
+	### Lower threshold on ratio
+	if (&IsReal($query->param('lth_ratio'))) {
+	    $parameters .= " -lth ratio ".$query->param('lth_ratio');
+	}
+
+	### Upper threshold on ratio
+	if (&IsReal($query->param('uth_ratio'))) {
+	    $parameters .= " -uth ratio ".$query->param('uth_ratio');
+	}
+    } 
+    
+    ### rank
+    if ($query->param('rank')) {
+	$return_fields .= "rank,";
+
+	### Lower threshold on rank
+	if (&IsReal($query->param('lth_rank'))) {
+	    $parameters .= " -lth rank ".$query->param('lth_rank');
+	}
+
+	### Upper threshold on rank
+	if (&IsReal($query->param('uth_rank'))) {
+	    $parameters .= " -uth rank ".$query->param('uth_rank');
+	}
+    } 
+    
+    ### z-score
+    if ($query->param('zscore')) {
+	$return_fields .= "zscore,";
+
+	### Lower threshold on z-score
+	if (&IsReal($query->param('lth_zscore'))) {
+	    $parameters .= " -lth zscore ".$query->param('lth_zscore');
+	}
+
+	### Upper threshold on z-score
+	if (&IsReal($query->param('uth_zscore'))) {
+	    $parameters .= " -uth zscore ".$query->param('uth_zscore');
+	}
+    } 
+    
+    ### binomial probabilities
+    if ($query->param('proba')) {
+	$return_fields .= "proba,";
+
+	### Lower threshold on probabilities
+	if (&IsReal($query->param('lth_occ_pro'))) {
+	    $parameters .= " -lth occ_pro ".$query->param('lth_occ_pro');
+	}
+
+	### Upper threshold on probabilities
+	if (&IsReal($query->param('uth_occ_pro'))) {
+	    $parameters .= " -uth occ_pro ".$query->param('uth_occ_pro');
+	}
+
+	### Lower threshold on significance
+	if (&IsReal($query->param('lth_occ_sig'))) {
+	    $parameters .= " -lth occ_sig ".$query->param('lth_occ_sig');
+	}
+
+	### Upper threshold on significance
+	if (&IsReal($query->param('uth_occ_sig'))) {
+	    $parameters .= " -uth occ_sig ".$query->param('uth_occ_sig');
+	}
+
+    }
+
+
+    ### positions
+    if ($query->param('pos')) {
+	$return_fields .= "pos,";
+    } 
+    
+    $return_fields =~ s/,$//;
+    
+
+    if ($return_fields eq "") {
+	&cgiError("You should select at least one option in the \"Return\" box.");
+    } else {
+	$parameters .= " -return $return_fields";
+    }
+
+}
+
+return 1;
