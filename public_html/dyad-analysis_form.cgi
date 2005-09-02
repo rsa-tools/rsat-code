@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis_form.cgi,v 1.10 2005/03/13 15:59:39 jvanheld Exp $
+# $Id: dyad-analysis_form.cgi,v 1.11 2005/09/02 15:45:51 jvanheld Exp $
 #
 # Time-stamp: <2003-07-11 15:08:24 jvanheld>
 #
@@ -36,7 +36,35 @@ $default{dyad_type} = "any dyad";
 $default{exp_freq} = "background";
 $default{upload_freq_file} = "";
 $default{background} = "upstream-noorf";
-$default{occ_significance_threshold} = "0";
+#$default{lth_occ_sig} = "0";
+
+## Return values and thresholds
+$default{zscore} = '';
+$default{lth_zscore} = 'none';
+$default{uth_zscore} = 'none';
+
+$default{rank} = 'checked';
+$default{lth_rank} = "none";
+$default{uth_rank} = "none";
+
+$default{ratio} = '';
+$default{lth_ratio} = "none";
+$default{uth_ratio} = "none";
+
+$default{occ} = 'checked';
+$default{lth_occ} = "1";
+$default{uth_occ} = "none";
+
+$default{proba} = 'checked';
+$default{lth_occ_pro} = "none";
+$default{uth_occ_pro} = "none";
+
+$default{lth_occ_sig} = "0";
+$default{uth_occ_sig} = "none";
+
+$default{freq} = '';
+$default{lth_observed_freq} = "none";
+$default{uth_observed_freq} = "none";
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
@@ -167,20 +195,24 @@ print "<p>";
 # 					   ])),
 # 		    );
 
-print "<HR width=550 align=left>\n";
+ print "<HR width=550 align=left>\n";
 
-### significance threshold
-print "<B><A HREF='help.dyad-analysis.html#threshold'>\n";
-print "Threshold of significance</A> >= \n";
-print $query->textfield(-name=>'occ_significance_threshold',
-		  -default=>$default{occ_significance_threshold},
-		  -size=>5);
-print "<BR>\n";
+# ### significance threshold
+# print "<B><A HREF='help.dyad-analysis.html#threshold'>\n";
+# print "Threshold of significance</A> >= \n";
+# print $query->textfield(-name=>'lth_occ_sig',
+# 		  -default=>$default{lth_occ_sig},
+# 		  -size=>5);
+# print "<BR>\n";
+
+&ReturnTable();
 
 
 
 ### send results by email or display on the browser
-&SelectOutput;
+print "<HR width=550 align=left>\n";
+
+&SelectOutput();
 
 print "<font color=red><B>Warning !</B> dyad-analysis is time-consuming, especially if you select a wide spacing range. If you don't obtain any result after 5 minutes, we recommend email output.</font><BR>\n";
 
@@ -308,4 +340,107 @@ print $query->end_html;
 
 exit(0);
 
+################################################################
+## Table with all the supported statistics and thresholds
+sub ReturnTable {
 
+    print "<h3>Return</h3>\n";
+
+    print "<BLOCKQUOTE>\n";
+    print $query->table({-border=>1,-cellpadding=>0,-cellspacing=>0},
+			$query->Tr({-align=>left,-valign=>TOP},
+				   [
+				    $query->th([" <A HREF='help.oligo-analysis.html#return_fields'>Fields</A> ",
+						" <A HREF='help.oligo-analysis.html#thresholds'>Lower<BR>Threshold</A> ",
+						" <A HREF='help.oligo-analysis.html#thresholds'>Upper<BR>Threshold</A> "]),
+
+				    ### occurrences
+				    $query->td([$query->checkbox(-name=>'occ',
+								 -checked=>$default{occ},
+								 -label=>' Occurrences '),
+						$query->textfield(-name=>'lth_occ',
+								  -default=>$default{lth_occ},
+								  -size=>5),
+						$query->textfield(-name=>'uth_occ',
+								  -default=>$default{uth_occ},
+								  -size=>5)
+					       ]),
+
+				    ### binomial proba
+				    $query->td([$query->checkbox(-name=>'proba',
+								 -checked=>$default{proba},
+								 -label=>' Binomial proba '),
+						$query->textfield(-name=>'lth_occ_pro',
+								  -default=>$default{lth_occ_pro},
+								  -size=>5),
+						$query->textfield(-name=>'uth_occ_pro',
+								  -default=>$default{uth_occ_pro},
+								  -size=>5)]),
+
+				    ### significance index
+				    $query->td([$query->checkbox(-name=>'proba',
+								 -checked=>$default{proba},
+								 -label=>' Significance '),
+						$query->textfield(-name=>'lth_occ_sig',
+								  -default=>$default{lth_occ_sig},
+								  -size=>5),
+						$query->textfield(-name=>'uth_occ_sig',
+								  -default=>$default{uth_occ_sig},
+								  -size=>5)
+					       ]),
+
+				    ### Z-scores
+				    $query->td([$query->checkbox(-name=>'zscore',
+								 -checked=>$default{zscore},
+								 -label=>' Z-scores '),
+						$query->textfield(-name=>'lth_zscore',
+								  -default=>$default{lth_zscore},
+								  -size=>5),
+						$query->textfield(-name=>'uth_zscore',
+								  -default=>$default{uth_zscore},
+								  -size=>5)
+					       ]),
+
+				    ### frequencies
+				    $query->td([$query->checkbox(-name=>'freq',
+								 -checked=>$default{freq},
+								 -label=>' Frequencies '),
+						$query->textfield(-name=>'lth_observed_freq',
+								  -default=>$default{lth_observed_freq},
+								  -size=>5),
+						$query->textfield(-name=>'uth_observed_freq',
+								  -default=>$default{uth_observed_freq},
+								  -size=>5)
+					       ]),
+
+
+				    ### ratio
+				    $query->td([$query->checkbox(-name=>'ratio',
+								 -checked=>$default{ratio},
+								 -label=>' Obs/exp ratio '),
+						$query->textfield(-name=>'lth_ratio',
+								  -default=>$default{lth_ratio},
+								  -size=>5),
+						$query->textfield(-name=>'uth_ratio',
+								  -default=>$default{uth_ratio},
+								  -size=>5)
+					       ]),
+
+				    ### rank
+				    $query->td([$query->checkbox(-name=>'rank',
+								 -checked=>$default{rank},
+								 -label=>' Rank '),
+						$query->textfield(-name=>'lth_rank',
+								  -default=>$default{lth_rank},
+								  -size=>5),
+						$query->textfield(-name=>'uth_rank',
+								  -default=>$default{uth_rank},
+								  -size=>5)
+					       ]),
+				    
+				   ]
+				  )
+		       );
+
+    print "</blockquote>";
+}

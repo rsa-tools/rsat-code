@@ -1,8 +1,11 @@
 #!/usr/bin/perl
 
+## CVS: added options -lth and -uth, valid for the fields occ, exp_occ, obs_freq, exp_freq, occ_P, occ_E, occ_sig
+## CVS: reactivated the option -return ratio
+
 ############################################################
 #
-# $Id: dyad-analysis,v 1.22 2005/08/04 12:05:05 jvanheld Exp $
+# $Id: dyad-analysis,v 1.23 2005/09/02 15:45:51 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 23:46:08 jvanheld>
 #
@@ -11,6 +14,7 @@ if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
 require "RSA.lib";
+require "RSA.disco.lib";
 
 ################################################################
 #### initialise parameters ####
@@ -112,6 +116,10 @@ eval {
 
     ### check stats to return
     %return = %default_return unless (defined(%return));
+    if ((defined($lth{occ_sig})) || (defined($uth{occ_sig}))) {
+	$return{proba} = 1;
+    }
+
     if (($return{proba}) || ($return{zscore})) {
 	$return{occ} = 1;
 	$return{exp_occ} = 1;
@@ -150,9 +158,15 @@ eval {
     &CalcFrequencies() if ($return{freq}); ### calculate observed frequencies
     $out = &OpenOutputFile($outputfile); ### open output file ###
     &PrintVerbose() if ($verbose); ### print analysis parameters
+    
+    &CheckThresholds("occ");
+    &CheckThresholds("obs_freq");
+
     &CalcExpectedFreq() if ($return{exp_freq}); ### calculate expected frequencies
+    &CheckThresholds("exp_freq");
     &CalcExpectedOcc() if ($return{exp_occ}); ### calculate expected occurrences
-#    &CalcRatio() if ($return{ratio}); ### calculate obs/exp ratio
+    &CheckThresholds("exp_occ");
+    &CalcRatio() if ($return{ratio}); ### calculate obs/exp ratio
     &CalcProba() if ($return{proba}); ### calculate probabilities
     if ($sum_rc) {
 	if ($group_rc) {
@@ -218,7 +232,6 @@ sub PrintHeaderLine {
     $col_description{"dyad_id"} = "dyad identifier";
     $col_description{"observed_freq"} = "observed relative frequency"; 
     $col_description{"obs_frq"} = "expected relative frequency"; 
-    $col_description{"observed_freq"} = "observed relative frequency"; 
     $col_description{"exp_frq"} = "expected relative frequency"; 
     $col_description{"occ"} = "observed occurrences";
     $col_description{"exp_occ"} = "expected occurrences"; 
@@ -315,12 +328,22 @@ sub PrintResult {
 	@sorted_patterns = sort keys %patterns;
     }
     
+
+    ################################################################
+    ## Calculate rank and check thresholds
+    &RSAT::message::TimeWarn("Calculating ranks") if ($main::verbose >= 2);
+    my $rank = 0;
+    foreach my $p (0..$#sorted_patterns) {
+	$rank++;
+	my $pattern_seq = $sorted_patterns[$p];
+	$patterns{$pattern_seq}->{rank} = $rank;
+    }
+    &CheckThresholds('rank');
+
     ### print values for each dyad
-  my $rank = 0;
     foreach my $p (0..$#sorted_patterns) {
 	my $pattern_seq = $sorted_patterns[$p];
 	next unless (defined($patterns{$pattern_seq}->{occ}));
-	$rank++;
 	print $out "$pattern_seq";
 	print $out "\t$pattern_seq";
 	if ($sum_rc){
@@ -332,10 +355,10 @@ sub PrintResult {
 	printf $out "\t%7d", $patterns{$pattern_seq}->{occ} if ($return{occ});
 	printf $out "\t%7.2f", $patterns{$pattern_seq}->{exp_occ} if ($return{exp_occ});
 	if ($return{proba}) {
-	    if ($patterns{$pattern_seq}->{occ_proba} >= 0.0001) {
-		printf $out "\t%7.5f", $patterns{$pattern_seq}->{occ_proba};
+	    if ($patterns{$pattern_seq}->{occ_P} >= 0.0001) {
+		printf $out "\t%7.5f", $patterns{$pattern_seq}->{occ_P};
 	    } else {
-		printf $out "\t%7.2g", $patterns{$pattern_seq}->{occ_proba};
+		printf $out "\t%7.2g", $patterns{$pattern_seq}->{occ_P};
 	    }
 	    printf $out "\t%7.1e", $patterns{$pattern_seq}->{occ_E};
 	    printf $out "\t%7.2f", $patterns{$pattern_seq}->{occ_sig};
@@ -355,7 +378,7 @@ sub PrintResult {
 		print $out "\tNA";
 	    }
 	}
-	printf $out "\t%7d", $rank if ($return{rank});
+	printf $out "\t%7d", $patterns{$pattern_seq}->{rank} if ($return{rank});
 	if (($return{proba}) || ($return{zscore})) {
 	    printf $out "\t%7.4f", $overlap_coeff{$pattern_seq};
 	    print $out "\t", $patterns{$pattern_seq}->{remark};
@@ -629,28 +652,51 @@ sub CalcProba {
 		### calculate occurrence probability ####
 		if ($return{proba}) {
 #		    if (($sum_rc) && (&Palindromic($pattern_seq))) {
-#			$patterns{$pattern_seq}->{occ_proba} =  &binomial_boe($patterns{$pattern_seq}->{exp_freq},$nb_valid_pos/2,$patterns{$pattern_seq}->{occ}/2);
+#			$patterns{$pattern_seq}->{occ_P} =  &binomial_boe($patterns{$pattern_seq}->{exp_freq},$nb_valid_pos/2,$patterns{$pattern_seq}->{occ}/2);
 #		    } else {
-			$patterns{$pattern_seq}->{occ_proba} =  &binomial_boe($patterns{$pattern_seq}->{exp_freq},$nb_valid_pos,$patterns{$pattern_seq}->{occ});
+			$patterns{$pattern_seq}->{occ_P} =  &binomial_boe($patterns{$pattern_seq}->{exp_freq},$nb_valid_pos,$patterns{$pattern_seq}->{occ});
 #		    }
 		    
 		    ### calculate occurrence significance
-		    $patterns{$pattern_seq}->{occ_E} =  $nb_possible_dyads*$patterns{$pattern_seq}->{occ_proba};
-		    if ($patterns{$pattern_seq}->{occ_proba} > 0) {
+		    $patterns{$pattern_seq}->{occ_E} =  $nb_possible_dyads*$patterns{$pattern_seq}->{occ_P};
+		    if ($patterns{$pattern_seq}->{occ_P} > 0) {
 			$patterns{$pattern_seq}->{occ_sig} =  -log($patterns{$pattern_seq}->{occ_E})/log(10);
 		    } else {
 			$patterns{$pattern_seq}->{occ_sig} =  999;
 		    }
-		    #### threshold filtering ####
-		    if (($thr_filter) && ($patterns{$pattern_seq}->{occ_sig} < $sig_threshold)) {
-			delete $patterns{$pattern_seq};
-		    } 		
 		}
 	    }
 	}
     }  
+
+    #### threshold filtering ####
+    &CheckThresholds("zscore");
+    &CheckThresholds("occ_P");		      
+    &CheckThresholds("occ_E");
+    &CheckThresholds("occ_sig");
+		      
+
 } ### CalcProba
 
+# ################################################################
+# ## Check the thresholds on one parameter value
+# sub CheckThresholds {
+#     my ($key) = @_;
+#     &RSAT::message::TimeWarn(join "\t", "Checking thresholds on", $key) if ($main::verbose >= 2);
+#     foreach my $pattern_seq (keys %patterns) {
+# #	&RSAT::message::Debug("Checking thresholds", $pattern_seq, $key, $patterns{$pattern_seq}->{$key}) if ($main::verbose >= 0);
+# 	if ((defined($lth{$key})) && ($patterns{$pattern_seq}->{$key} < $lth{$key})) {
+# #	    &RSAT::message::Debug("Lower threshold", "deleting pattern", $pattern_seq, $key, $lth{$key}) if ($main::verbose >= 0);
+# 	    delete $patterns{$pattern_seq};
+# 	    next;
+# 	} 		
+# 	if ((defined($uth{$key})) && ($patterns{$pattern_seq}->{$key} > $uth{$key})) {
+# #	    &RSAT::message::Debug("Upper threshold", "deleting pattern", $pattern_seq, $key, $uth{$key}) if ($main::verbose >= 0);
+# 	    delete $patterns{$pattern_seq};
+# 	    next;
+# 	} 	     
+#     }
+# }
 
 
 #### read arguments ####
@@ -773,11 +819,33 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] =~ /^-group/i) {
 	    $sp_group = 1;
 	    
+	    ################################################################
+	    ### Thresholds
+
+	    ### Lower threshold
+	} elsif ($ARGV[$a] eq "-lth") {
+	    my $thr_field = $ARGV[$a+1];
+	    my $thr_value =  $ARGV[$a+2];
+	    unless ($supported_threshold{$thr_field}) {
+		&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
+	    }
+	    $lth{$thr_field} = $thr_value;
+
+	    ### Upper threshold
+	} elsif ($ARGV[$a] eq "-uth") {
+	    my $thr_field = $ARGV[$a+1];
+	    my $thr_value =  $ARGV[$a+2];
+	    unless ($supported_threshold{$thr_field}) {
+		&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
+	    }
+	    $uth{$thr_field} = $thr_value;
+
+
 	    ### threshold on significance ###
-	} elsif (($ARGV[$a] =~ /^-thosig/i) && (&IsReal($ARGV[$a+1]))) {
-	    $thr_filter =  1;
-	    $sig_threshold = $ARGV[$a+1];
-	    $return{proba} = 1;
+	} elsif ($ARGV[$a] =~ /^-thosig/i) {
+	    &RSAT::message::Warning("Option -thosig is obsolete. Use option -lth occ_sig instead");
+	    $lth{occ_sig} = $ARGV[$a+1];
+	    &FatalError ("Threshold on occurrence significance must be a real number") unless (&IsReal($lth{occ_sig}));
 	    
 	    ### output fields ###
 	} elsif ($ARGV[$a] =~ /^-return/i) {
@@ -861,8 +929,11 @@ CATEGORY
 
 OPTIONS
 	-h      (must be first argument) display full help message
+
 	-help   (must be first argument) display options
+
 	-o output_file
+
 	-i input_file
 		The sequence to be analyzed. Multiple sequences can 
 		be entered at once with most sequence formats (see below).
@@ -906,16 +977,20 @@ OPTIONS
 		   any	(default)
 			When selecting the option any, the analysis is 
 			performed on all non-symmetric dyads as well. 
+
 	-2str	count on oth strands
 		The occurrences of each oligonucleotide are summed on both 
 		strands. This allows to detect elements which act in an
 		orientation-insensitive way (as is generally the case for 
 		yeast upstream elements). 
+
 	-1str	single strand count
 		only the direct strand is considered for oligonucleotide and 
 		dyad occurrence counting.
+
 	-prot	input sequence is proteic. In this case, the analysis
 		concerns pairs of oligopeptides instead of oligonucleotides
+
 	-expfreq	file with an expected frequency table
 		By default, the frequency expected for each dyad is the 
 		product of the frequency expected for each element 
@@ -933,8 +1008,10 @@ OPTIONS
 		- all yeast gene regions 
 		This allows to correct the bias due to the highly variable
 		distribution of oligonucleotides observed in the yeast genome. 
+
 	-ncf	(deprecated, use "-bg intergenic" instead)
 		use intergenic frequencies as background frequencies
+
 	-bg	background model
 		Type of sequences used as background model for
 		estimating expected dyad frequencies.
@@ -954,18 +1031,33 @@ OPTIONS
 			 upstream and downstream sequences
 	-org	organism 
 		This is necessary with the option -bg, to determine
-		which frequency file has to be sued for expected
+		which frequency file has to be used for expected
 		frequency calibration.
+
 	-thosig #
-		Threshold of significance:
-		Thresholds can be imposed to select the most significantly
-		overrepresented patterns. A threshold of 0 on occurrence
-		significance index is selected by default. This is the most
-		efficient way we found to automatically select the biologicaly
-		significant regulatory sites, irrespective of oligonucleotide
-		size, spacing, number and size of the sequences in the input
-		set. 
+		Threshold on occurrence significance.
+		(obsolete: use -lth occ_sig instead)
+
+	-lth param value
+		Lower threshold on some parameter. All patterns with a
+		parameter value smaller than the threshold are
+		discarded.
+		Supported parameters: $supported_thresholds
+	      	Example: select patterns with a positive value for the
+	      	occurrence significance.
+
+			 -lth occ_sig 0
+
+	-uth param value
+		Upper threshold on some parameter. All patterns with a
+		parameter value higher than the threshold are
+		discarded.
+		Supported parameters: $supported_thresholds
+		Example: to select no more than 50 patterns
+		        -uth rank 50
+
 	-sort	sort results by decreasing order of significance
+
 	-return	output_fields
 		output fields may contain one or several of the following 
 		words:
@@ -977,7 +1069,9 @@ OPTIONS
 			rank
 		the fields have to be separated by commas
 		By default, only occurrences are returned.
+
 	-noov	do not allow overlapping matches of the same word
+
 	-timeout #
 		timeout (in seconds). Default = 3600.
 		dyad-analysis can be time consuming. In order to
@@ -985,6 +1079,7 @@ OPTIONS
 		will automatically stop after 1 hour (default) of
 		calculation. The time out value can be changed for
 		heavy tasks.
+
 	-seqtype  dna|prot|other
 		Input sequence type
 		. DNA (default)
@@ -1101,9 +1196,12 @@ PROBABILITIES
 
 AVAILABILITY
       The program can be used through its web interface at:
-      http://www.scmbb.ulb.ac.be/bioinformatics/rsa-tools/
-      dyad-analysis is a perl script running on unix machines (SUN, SGI
-      have been tested). The web interface is a perl-cgi script. 
+      http://rsat.scmbb.ulb.ac.be/rsat/
+
+      dyad-analysis is a perl script running on unix machines (SUN,
+      SGI, DEC Alpha, Max OSX have been tested). The web interface is
+      a perl-cgi script.
+
 End_of_help
   close HELP;
   exit;
@@ -1132,7 +1230,9 @@ dyad-analysis options
 -org		organism 
 -type		ir|dr|rep|any
 -sort		sort results by decreasing significance
--thosig		threshold on occurrence significance
+-thosig		threshold on occurrence significance (obsolete)
+-lth param \#	lower threshold on parameter. Supported: $supported_thresholds
+-uth param \#	upwer threshold on parameter. Supported: $supported_thresholds
 -1str		count occurrences on a direct strand only
 -2str		count occurrences on both strands
 -prot		input sequence is proteic
@@ -1243,13 +1343,10 @@ sub PrintVerbose {
 	printf $out "; \t%-23s\t%d\t%s\n", "    discarded", $discarded_dyad_positions, " (contain other letters than ACGT)";
     }
     printf $out "; \t%-23s%d\n", "distinct dyads", $nb_possible_dyads;
-    my $thr = "none";
-    if ($thr_filter) {
-	$thr = $sig_threshold;
-    }
+
+    print $out &PrintThresholdValues();
 
     #### expected frequencies
-    printf $out "; %-29s\t%d\n", "Threshold on sig", $thr;
     printf $out "; %s\n", "Estimation of expected dyad frequencies";
     if ($background_model) {
 	print $out ";\tBackground model\n";

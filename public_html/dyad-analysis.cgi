@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.19 2003/10/10 22:33:36 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.20 2005/09/02 15:45:52 jvanheld Exp $
 #
 # Time-stamp: <2003-10-11 00:30:17 jvanheld>
 #
@@ -23,6 +23,7 @@ BEGIN {
 }
 require "RSA.lib";
 require "RSA.cgi.lib";
+require "RSA.disco.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 $dyad_analysis_command = "$SCRIPTS/dyad-analysis";
@@ -41,7 +42,8 @@ $query = new CGI;
 &UpdateLogFile;
 
 #### read parameters ####
-$parameters = " -v 1 -sort -return proba,rank -timeout 3600 ";
+$parameters = " -v 1 -sort -timeout 3600 ";
+#$parameters = " -v 1 -sort -return proba,rank -timeout 3600 ";
 
 
 ### sequence file
@@ -89,9 +91,11 @@ if ($organism = $query->param('organism')) {
 
 
 ### threshold ###
-if ($query->param('occ_significance_threshold') =~ /^-{0,1}[\d\.\-+e]+$/i) {
-  $parameters .= "  -thosig ".$query->param('occ_significance_threshold');
-}
+#if ($query->param('lth_occ_sig') =~ /^-{0,1}[\d\.\-+e]+$/i) {
+#  $parameters .= "  -thosig ".$query->param('lth_occ_sig');
+#}
+
+&CGI_return_fields();
 
 #### oligo size ####
 if (&IsNatural($query->param('oligo_size'))) {
@@ -159,7 +163,7 @@ if ($query->param('output') eq "display") {
     close(RESULT);
 
     #### pattern assembly ####
-    if ((&IsReal($query->param('occ_significance_threshold'))) && ($query->param('occ_significance_threshold')>= -1)) {
+    if ((&IsReal($query->param('lth_occ_sig'))) && ($query->param('lth_occ_sig')>= -1)) {
 	$pattern_assembly_command = "$SCRIPTS/pattern-assembly -v 1 -subst 0";
 	if ($query->param('strand') =~ /single/) {
 	    $pattern_assembly_command .= " -1str";
@@ -242,3 +246,4 @@ sub PipingForm {
 </TABLE>
 End_of_form
 }
+
