@@ -1,8 +1,10 @@
 #!/usr/bin/perl -w
 
+## TO DO: calculate GC content of the motif in parameters
+
 ############################################################
 #
-# $Id: convert-matrix,v 1.10 2005/03/30 05:51:29 jvanheld Exp $
+# $Id: convert-matrix,v 1.11 2005/09/02 15:49:49 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
