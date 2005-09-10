@@ -2,7 +2,7 @@
 use CGI;
 #require "cgi-lib.pl";
 
-local $verbose = 0;
+$main::verbose = 0;
 require "RSA.seq.lib";
 require "RSA.stat.lib";
 require RSAT::organism;
@@ -106,15 +106,17 @@ $date = &AlphaDate();
 
 ################################################################
 ## echo a command and send it to the system
+## Usage:
+##   &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 sub doit {
-    my ($command, $dry, $die_on_error, $verbose,$batch) = @_;
+    my ($command, $dry, $die_on_error, $verbose,$batch, $job_prefix) = @_;
     my $wd = `pwd`;
     chomp $wd;
 
     if ($batch) {
 	## Store the command in a sh script (the job)
 	my $job_dir = "jobs";
-	my $job_prefix = "multi";
+	my $job_prefix = $job_prefix || "doit";
 	&RSAT::util::CheckOutDir($job_dir);
 	my $job = `mktemp ${job_dir}/${job_prefix}.XXXXXX`;
 	chomp $job;
@@ -130,7 +132,7 @@ sub doit {
 
     } else {
 	## Verbose
-	if ($verbose >= 1) {
+	if ($main::verbose >= 1) {
 	    &RSAT::message::TimeWarn("Working dir", $wd);
 	    &RSAT::message::TimeWarn($command);
 	}
@@ -351,7 +353,7 @@ sub ReadExpectedFrequencies {
     
     #### rescale expected frequencies to have a sum of 1
     if ($rescale_freq) {
-	warn "; Rescaling expected frequencies\n" if ($verbose >=1);
+	warn "; Rescaling expected frequencies\n" if ($main::verbose >=1);
 	foreach my $pattern_seq (keys %patterns) {
 	    $patterns{$pattern_seq}->{exp_freq} /= $freq_sum;
 	}
@@ -382,7 +384,7 @@ sub SumExpectedFrequencies {
 		   $rc, 
 		   $patterns{$rc}->{exp_freq}, 
 		   $freq_2str{$rc},
-		   ), "\n" if ($verbose >= 5);
+		   ), "\n" if ($main::verbose >= 5);
     }
 
     foreach my $pattern_seq (sort keys %patterns) {
@@ -646,7 +648,7 @@ sub CheckOrganism {
 # 	$feature_table_file,
 # 	$feature_types)= @_;
 
-#     warn "; ", &AlphaDate(), "\tReading feature table for $organism_name\n" if ($verbose >= 1);
+#     warn "; ", &AlphaDate(), "\tReading feature table for $organism_name\n" if ($main::verbose >= 1);
 
 #     my @feature_types = ();
 #     my %accepted_feature_types = ();
@@ -1133,7 +1135,7 @@ sub ReadFamilies {
 sub ReadClasses {
     my ($family_file, $get_orf_id, $organism, $no_subst) = @_;
     warn "; Reading family file\t$family_file\n" 
-	if ($verbose >=2);
+	if ($main::verbose >=2);
 
     my %family = ();
     my ($fam) = &OpenInputFile($family_file);
@@ -1200,7 +1202,7 @@ sub ReadClasses {
 	    &RSAT::message::Warning( join ("\t",  ";", $family_name,
 					   $member_name,
 					   $member_key,
-					   $name{$id}) ) if ($verbose >= 5);
+					   $name{$id}) ) if ($main::verbose >= 5);
 	} else {
 	    &RSAT::message::Warning ($member_name." unknown gene name");
 	}
@@ -1214,10 +1216,10 @@ sub ReadClasses {
 #### when grouping occurrences with their reverse complement, 
 #### only retain one of each pair. 
 sub GroupRC {
-    &RSAT::message::TimeWarn("Grouping pairs of reverse complements\n") if ($verbose >= 2);
+    &RSAT::message::TimeWarn("Grouping pairs of reverse complements\n") if ($main::verbose >= 2);
     foreach $pattern_seq (keys %patterns) {
 	$rc_pattern_seq = &SmartRC($pattern_seq);
-	warn ("; Grouping reverse complements\t", $pattern_seq, "\t", $rc_pattern_seq, "\n") if ($verbose >= 4);
+	warn ("; Grouping reverse complements\t", $pattern_seq, "\t", $rc_pattern_seq, "\n") if ($main::verbose >= 4);
 	if ($rc_pattern_seq gt $pattern_seq) { ### only suppress one oligo from the pair
 	    delete $patterns{$rc_pattern_seq};
 	}
@@ -1229,10 +1231,10 @@ sub GroupRC {
 ## Do the opposite as GroupRC: starting from the grouped RC, re-create
 ## one pattern for the RC of each pattern
 sub UngroupRC {
-    &RSAT::message::TimeWarn("; Reporting both elements of reverse complements pairs\n") if ($verbose >= 2);
+    &RSAT::message::TimeWarn("; Reporting both elements of reverse complements pairs\n") if ($main::verbose >= 2);
     foreach $pattern_seq (keys %patterns) {
 	$rc_pattern_seq = &SmartRC($pattern_seq);
-	warn ("; Ungrouping reverse complements\t", $pattern_seq, "\t", $rc_pattern_seq, "\n") if ($verbose >= 4);
+	warn ("; Ungrouping reverse complements\t", $pattern_seq, "\t", $rc_pattern_seq, "\n") if ($main::verbose >= 4);
 	if ($rc_pattern_seq gt $pattern_seq) { ### only suppress one oligo from the pair
 	    $patterns{$rc_pattern_seq} = $patterns{$pattern_seq} ;
 	}
