@@ -296,13 +296,20 @@ sub OpenInputFile {
 				      warn "; Uncompressing .Z file\n" if ($verbose >= 2);
 				      $filename = "uncompress -c $filename |";
 								}
-	unless (open(INPUT, $filename)) {
-	    &RSAT::error::FatalError("Cannot read input file\t".$filename);
-	}
-	$input_stream = *INPUT;
+	open (my $input_fh, $filename) || 
+	    &RSAT::error::FatalError ("Cannot read input file ".$filename);
+	return ($input_fh)
     } else {
-	### use standard input if no file name was specified
-	$input_stream = *STDIN;
+	my $input_fh = *STDIN;
+	return $input_fh;
+
+# 	unless (open(INPUT, $filename)) {
+# 	    &RSAT::error::FatalError("Cannot read input file\t".$filename);
+# 	}
+# 	$input_stream = *INPUT;
+#     } else {
+# 	### use standard input if no file name was specified
+# 	$input_stream = *STDIN;
 	
     }
 
@@ -329,21 +336,21 @@ sub OpenOutputFile {
     ### usage $output_stream = &OpenOutputFile($filename);
     my ($filename) = @_;
     my $to_open = "";
-    
+    my $fh;
+
     if ($filename) {
 	if ($filename =~ /\.gz$/) { ### gzip file -> decompress it on the fly
 	    $to_open = "| gzip -c > $filename";
 	} else {
 	    $to_open = ">$filename";
 	}
-	unless (open OUTPUT, "$to_open") {
-	    &RSAT::error::FatalError ("\tError : cannot write output file $filename\n");
-	}
-	$output_stream = *OUTPUT;
+	open (my $fh, "$to_open") || 
+	    &RSAT::error::FatalError ("Cannot write output file ".$filename);
+	return ($fh)
     } else {
-	$output_stream = *STDOUT;
+	$fh = *STDOUT;
+	return $fh;
     }
-    return $output_stream;
 }
 
 
