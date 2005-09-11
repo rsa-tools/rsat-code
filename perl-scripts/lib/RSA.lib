@@ -138,15 +138,17 @@ sub doit {
 	}
 
 	## Run the command immediately
-	my $error = system $command unless ($dry);
-	if ($die_on_error) {
-	    if ($error == -1) {
-		&RSAT::error::FatalError("Could not execute the command\n\t$command");
-	    } elsif ($error) {
-		&RSAT::error::FatalError("Error $error occurred during execution of the command\n\t$command");
+	unless ($dry) {
+	    my $error = system $command;
+	    if ($die_on_error) {
+		if ($error == -1) {
+		    &RSAT::error::FatalError("Could not execute the command\n\t$command");
+		} elsif ($error) {
+		    &RSAT::error::FatalError("Error $error occurred during execution of the command\n\t$command");
+		}
+	    } else {
+		return ($error);
 	    }
-	} else {
-	    return ($error);
 	}
     }
 }
