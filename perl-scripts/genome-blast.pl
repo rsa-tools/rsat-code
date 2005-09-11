@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: genome-blast.pl,v 1.8 2005/09/11 09:24:55 jvanheld Exp $
+# $Id: genome-blast.pl,v 1.9 2005/09/11 23:12:39 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -10,7 +10,9 @@
 
 ## TO DO
 ## - treat the case of ex-aequos (same E-value for distinct subjects)
-## - add tasks: bbh,clean
+## - fix a problem with the column "level" of the BLAST file. Apparently the comments of the fasta files are considered as "level".
+## Export phylogenetic profiles
+
 
 =pod
 
@@ -82,7 +84,7 @@ local $batch = 0;
 local $die_on_error = 1;
 
 ## Supported tasks
-@supported_tasks = qw (formatdb blastall rank);
+@supported_tasks = qw (formatdb blastall rank bbh cleandb);
 foreach my $task (@supported_tasks) {
     $supported_task{$task} = 1;
 }
@@ -184,10 +186,15 @@ foreach $db_organism (@db_organisms) {
 	$compa_prefix="q_".${query_organism}."_db_".${db_organism};
 	$outfile{blast_result}=$dir{blast_result}."/".$compa_prefix.".tab";
 	$outfile{blast_ranks}=$dir{blast_result}."/".$compa_prefix."_ranks.tab";
+	$outfile{blast_bbh}=$dir{blast_result}."/".$compa_prefix."_bbh.tab";
 	
 	
 	&BlastAll() if ($task{blastall});
-	&RankHits() if ($task{rank});
+	&RankHits() if (($task{rank}) || ($task{bbh}));
+    }
+    if ($task{cleandb}) {
+	my $clean_command = "rm -f ".$outfile{blast_db}.".*";
+	&doit($clean_command,$dry, $die_on_error, $verbose);
     }
 }
 
@@ -563,23 +570,45 @@ sub RankHits {
     
     
     ###### close output stream
-    $hits = &OpenOutputFile($outfile{blast_ranks});
     &RSAT::message::Info("Printing the result") if ($main::verbose >= 1);
     my @header = join "\t", @columns;
-    print $hits join ("\t", "query_organism", "db_organism", @header, "q_rank", "s_rank"), "\n";
+    if ($task{rank}) {
+	&RSAT::message::Info(join("\t", "Ranked BLAST hits", $outfile{blast_ranks})) if ($main::verbose >= 1);
+	$hits = &OpenOutputFile($outfile{blast_ranks});
+	print $hits join ("\t", "query_organism", "db_organism", @header, "q_rank", "s_rank"), "\n";
+    }    
+    if ($task{bbh}) {
+	&RSAT::message::Info(join("\t", "Bidirectional best hits (bbh)", $outfile{blast_bbh})) if ($main::verbose >= 1);
+	$bbh = &OpenOutputFile($outfile{blast_bbh});
+	print $bbh join ("\t", "query_organism", "db_organism", @header, "q_rank", "s_rank"), "\n";
+    }
+
+#    die join "\t", $hits, $bbh;
+
     foreach my $hit ($blast_hits->get_objects()) {
 	my @fields = ();
 	foreach my $col (@columns, "q_rank", "s_rank") {
 	    push @fields, $hit->get_attribute($col);
 	}
-	print $hits join("\t",
-			$query_organism,
-			$db_organism,
-			@fields), "\n";
+	if ($task{rank}) {
+	    print $hits join("\t",
+			     $query_organism,
+			     $db_organism,
+			     @fields), "\n";
+	}
+	if (($task{bbh}) &&
+	    ($hit->get_attribute("q_rank")==1) &&
+	    ($hit->get_attribute("s_rank")==1)) {
+	    print $bbh join("\t",
+			    $query_organism,
+			    $db_organism,
+			    @fields), "\n";
+	}
     }
-    close $hits if ($outfile{blast_ranks});
-    ##### read blast output
-    &RSAT::message::Info(join("\t", "Ranked BLAST hits", $outfile{blast_ranks})) if ($main::verbose >= 1);
+    close $bbh if ($task{blast_bbh});
+    close $hits if ($task{blast_ranks});
+
+
 }
 
 __END__
