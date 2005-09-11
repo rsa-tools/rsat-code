@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: genome-blast.pl,v 1.7 2005/09/11 05:04:01 rsat Exp $
+# $Id: genome-blast.pl,v 1.8 2005/09/11 09:24:55 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -10,9 +10,7 @@
 
 ## TO DO
 ## - treat the case of ex-aequos (same E-value for distinct subjects)
-## - one organism against all supported
-## - all againt all supported organisms
-## - label BBH
+## - add tasks: bbh,clean
 
 =pod
 
@@ -74,6 +72,9 @@ local @columns = qw(query level subject ident ali_len mismat gap_open q_start q_
 local @query_organisms = ();
 local @db_organisms = ();
 
+local @query_taxons = ();
+local @db_taxons = ();
+
 
 ## Options for the command &doit()
 local $dry = 0;
@@ -93,12 +94,53 @@ $supported_tasks = join ",", @supported_tasks;
 ################################################################
 #### check argument values
 
+## Query taxons
+foreach my $query_taxon (@query_taxons) {
+    foreach my $organism (sort keys %supported_organism) {
+	my $taxonomy = $supported_organism{$organism}->{'taxonomy'};
+	my @org_taxons = split /\s*;\s*/, $taxonomy;
+	foreach my $org_taxon (@org_taxons) {
+	    if (lc($org_taxon) eq lc($query_taxon)) {
+		&RSAT::message::Info(join("\t", 
+					  "Adding query organism", $organism,
+					 $query_taxon, $taxonomy)) if ($main::verbose >= 0);
+		push @query_organisms, $organism;
+	    }
+	}
+    }
+}
+
+## Db taxons
+foreach my $db_taxon (@db_taxons) {
+    foreach my $organism (sort keys %supported_organism) {
+	my $taxonomy = $supported_organism{$organism}->{'taxonomy'};
+	my @org_taxons = split /\s*;\s*/, $taxonomy;
+	foreach my $org_taxon (@org_taxons) {
+	    if (lc($org_taxon) eq lc($db_taxon)) {
+		push @db_organisms, $organism;
+	    }
+	}
+    }
+}
+
+## Query organisms
 unless (scalar(@query_organisms) >= 1) {
     &RSAT::error::FatalError("You should define at least one query organism");
 }
+foreach $db_organism (@db_organisms) {
+    unless ($supported_organism{$db_organism}) {
+	&FatalError(join("\t", $db_organism, "is not a supported organism"));
+    }
+}
 
+## DB organisms
 unless (scalar(@db_organisms) >= 1) {
     &RSAT::error::FatalError("You should define at least one db organism");
+}
+foreach $query_organism (@query_organisms) {
+    unless ($supported_organism{$query_organism}) {
+	&FatalError(join("\t", $query_organism, "is not a supported organism"));
+    }
 }
 
 
@@ -107,6 +149,7 @@ unless (scalar(@db_organisms) >= 1) {
 $out = &OpenOutputFile($outfile{output});
 &Verbose() if ($verbose);
 foreach $db_organism (@db_organisms) {
+
     ## DB organism
     $dir{db_org_dir} = $supported_organism{$db_organism}->{'data'};
     $dir{db_org_genome} = $dir{db_org_dir}."/genome";
@@ -252,6 +295,35 @@ several db organisms.
 	    push @db_organisms, $ARGV[$a+1];
 	    
 	    
+	    ## Query taxon
+=pod
+
+=item	B<-query query_taxon>
+
+Name of the query taxon. All the organisms included in this taxon will
+be used as QUERY organisms. This option can be used iteratively to
+specify several taxons.
+
+=cut
+	} elsif ($ARGV[$a] eq "-qtaxon") {
+	    push @query_taxons, $ARGV[$a+1];
+	    
+	    
+	    ## Db taxon
+=pod
+
+=item	B<-db db_taxon>
+
+Name of the db taxon. All the organisms included in this taxon will be
+used as DB organisms. This option can be used iteratively to specify
+several taxons.
+
+
+=cut
+	} elsif ($ARGV[$a] eq "-dbtaxon") {
+	    push @db_taxons, $ARGV[$a+1];
+	    
+	    
 # 	    ## BLAST file
 # =pod
 
@@ -390,7 +462,9 @@ sub FormatDB {
     &RSAT::util::CheckOutDir($dir{blast_db}); 
     my $command = "formatdb -i ".$infile{db_org_fasta}." -p t -o t -n ".$outfile{blast_db};
     &doit($command, $dry, $die_on_error, $verbose);
+    &RSAT::message::Info(join("\t", "DB formatted", $outfile{blast_db}.".*"));
 }
+
 
 ################################################################
 ## Blast one genome against another one
