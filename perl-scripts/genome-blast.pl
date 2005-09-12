@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: genome-blast.pl,v 1.9 2005/09/11 23:12:39 jvanheld Exp $
+# $Id: genome-blast.pl,v 1.10 2005/09/12 07:08:27 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -409,6 +409,17 @@ Dry run: echo the tasks but do not execute them.
 =cut
 	} elsif ($ARGV[$a] eq "-n") {
 	    $dry = 1;
+
+	    #### don't die on error
+=pod
+
+=item B<-nodie>
+
+Don't die on error.
+
+=cut
+	} elsif ($ARGV[$a] eq "-nodie") {
+	    $die_on_error = 0;
 
 	    #### batch
 =pod
