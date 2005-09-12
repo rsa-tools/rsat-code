@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: genome-blast.pl,v 1.10 2005/09/12 07:08:27 rsat Exp $
+# $Id: genome-blast.pl,v 1.11 2005/09/12 17:44:33 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -58,6 +58,7 @@ require RSAT::blast_hit;
 ################################################################
 #### initialise parameters
 my $start_time = &AlphaDate();
+local $null = "<NULL>";
 
 ## Blast matrix
 $blast_matrix = "BLOSUM62";
@@ -498,6 +499,8 @@ sub BlastAll {
 ################################################################
 ## Rank the blast hits
 sub RankHits {
+    my %hits_per_query = ();
+    my %hits_per_subject = ();
     unless (-e $outfile{blast_result}) {
 	&RSAT::error::FatalError(join("\t", "Blast result file does not exist (did you run blastall ?)", $outfile{blast_result}));
     }
@@ -591,7 +594,7 @@ sub RankHits {
     if ($task{bbh}) {
 	&RSAT::message::Info(join("\t", "Bidirectional best hits (bbh)", $outfile{blast_bbh})) if ($main::verbose >= 1);
 	$bbh = &OpenOutputFile($outfile{blast_bbh});
-	print $bbh join ("\t", "query_organism", "db_organism", @header, "q_rank", "s_rank"), "\n";
+	print $bbh join ("\t", "query_organism", "db_organism", @header), "\n";
     }
 
 #    die join "\t", $hits, $bbh;
@@ -601,6 +604,9 @@ sub RankHits {
 	foreach my $col (@columns, "q_rank", "s_rank") {
 	    push @fields, $hit->get_attribute($col);
 	}
+	## TEMPORARY: THE COLUMN LEVEL CONTAINS WRONG INFORMATION, I SUPPRESS IT UNTIL I FIX IT
+	$fields[1] = $null;
+	
 	if ($task{rank}) {
 	    print $hits join("\t",
 			     $query_organism,
@@ -613,7 +619,7 @@ sub RankHits {
 	    print $bbh join("\t",
 			    $query_organism,
 			    $db_organism,
-			    @fields), "\n";
+			    @fields[0..($#fields-2)]), "\n";
 	}
     }
     close $bbh if ($task{blast_bbh});
