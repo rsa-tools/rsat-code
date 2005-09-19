@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.54 2005/07/24 21:41:37 jvanheld Exp $
+# $Id: install-organism,v 1.55 2005/09/19 10:16:59 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -17,6 +17,7 @@ require RSAT::util;
 #### initialisation
 @oligo_lengths=(6,1,2,3,4,5,7,8);
 $verbose = 0;
+$batch = 0;
 $die_on_error = 1;
 $img_format = $IMG_FORMAT || "png";
 $noov="";
@@ -86,7 +87,7 @@ unless ($organism_full_name) {
     } else {
 	print "Enter organism full name : ";
 	$organism_full_name = <STDIN>;
-	$organism_full_name = &trim($organisom_full_name);
+	$organism_full_name = &trim($organism_full_name);
 	die "\n\tError: you should specify a full name for the organism\n\n"
 	    unless ($organism_full_name =~ /\S/);
     }
@@ -219,7 +220,7 @@ sub UpdateConfig {
 
     if (defined($supported_organism{$organism_short_name}->{'genome'})) {
 	&Warning ("Organism $organism_short_name already defined in the config file",
-		  "\n\tthe previous config will be commented\n");
+		  "\n\the previous config will be commented\n");
     }
 
     ### read taxonomy from the parsing result
@@ -539,6 +540,7 @@ sub CalcOligoFreq {
     my ($seq_file,$seq_format,$seq_type) = @_;
     warn join ("\t", "; Calculating oligo frequencies",$seq_file, $seq_format, $seq_type),"\n" if ($main::verbose >= 1);
     foreach my $oligo_length (@oligo_lengths) {
+	$job_prefix = ${organism_short_name}."_oligo_".$oligo_length;
 	$out_file = "$dir{oligos}/${oligo_length}nt_${seq_type}_${organism_short_name}${noov}${strands}.freq";
 	my $command = "$SCRIPTS/oligo-analysis -v 1 ${strands} -i $seq_file -format $seq_format ";
 	$command .= " ".$strands;
@@ -547,7 +549,7 @@ sub CalcOligoFreq {
 	$command .= " -return freq,occ -grouprc ";
 	$command .= " -o ".$out_file;
 	$command .= "; gzip -f ".$out_file;
-	&doit($command, $dry_run, $die_on_error, $verbose);  
+	&doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
     }
 }
 
@@ -557,6 +559,7 @@ sub CalcOligoFreq {
 sub CalcOligoDistrib {
     my ($seq_file,$seq_format,$seq_type) = @_;
     foreach my $oligo_length (@oligo_lengths) {
+	$job_prefix = ${organism_short_name}."_oligo_".$oligo_length;
 	#### Calculate occurrence distributions in the sequence file
 	my $distrib_file = "$dir{oligos}/${oligo_length}nt_${seq_type}_${organism_short_name}${noov}${strands}_distrib.tab";
 	my $command = "$SCRIPTS/oligo-analysis -v 1 ${strands} -i $seq_file -format $seq_format ";
@@ -566,7 +569,7 @@ sub CalcOligoDistrib {
 	$command .= " -return occ -distrib -grouprc";
 	$command .= " -o ".$distrib_file;
 	$command .= " ; gzip -f ".$distrib_file;
-	&doit($command, $dry_run, $die_on_error, $verbose);  
+	&doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
 	
 	#### Fit a Poisson and a negbin on occurrence distribution
 	foreach my $theor ("negbin", "poisson") {
@@ -592,6 +595,7 @@ sub CalcDyadFreq {
 #    @monad_lengths = (3);
 
     foreach $monad_length (@monad_lengths) {
+	$job_prefix = ${organism_short_name}."_dyad_".$monad_length;
 	$dyad_file = "dyads_${monad_length}nt_sp${min_spacing}-${max_spacing}_${seq_type}_${organism_short_name}${noov}${strands}";
 	$dyad_file .= ".freq";
 	my $command = "$SCRIPTS/dyad-analysis -v 1 -i $seq_file -format $seq_format";
@@ -605,7 +609,7 @@ sub CalcDyadFreq {
 	$command .= " -grouprc";
 	$command .= " -o $dyad_file";
 	$command .= "; gzip -f $dyad_file ";
-	&doit($command, $dry_run, $die_on_error, $verbose);
+	&doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);
     }
 }
 
@@ -840,6 +844,10 @@ sub ReadArguments {
 	    #### ENSEMBL dir
 	} elsif ($ARGV[$a] =~ /^-ensembl/) {
 	    $dir{ensembl} = $ARGV[$a+1];
+
+	    #### Batch mode
+	} elsif ($ARGV[$a] eq "-batch") {
+	    $batch = 1;
 
 	    #### task selection
 	} elsif (($ARGV[$a] =~ /^-task/) 
