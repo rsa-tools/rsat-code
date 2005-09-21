@@ -751,6 +751,20 @@ use Data::Dumper;
       }
   }
 
+
+  ################################################################
+  ## Calculate table path with or without schema as prefix
+  sub get_table_path {
+      my ($table_name, $schema, $full_path) = @_;
+      my $table_path;
+      if ($full_path) {
+	  $table_path = $schema.".".$table_name;
+      } else {
+	  $table_path = $table_name;
+      }
+      return($table_path);
+  }
+
   ################################################################
   #### Generate SQL scripts for one specific DBMS. This method is
   #### called iteratively by generate_sql with the different DBMS. 
@@ -772,6 +786,7 @@ use Data::Dumper;
       my $host = $args{host} || $main::default{host};
       my $user = $args{user} || $main::default{user};
       my $password = $args{password} || $main::default{password};
+      my $full_path = $args{full_path} || $main::default{full_path};
       my $schema = $args{schema} || $main::default{schema};
       my $sql_dir = $args{dir} || $main::dir{output}."/sql_scripts/$dbms";
       
@@ -885,15 +900,14 @@ use Data::Dumper;
 	  print_sql_header ("Schema");
 	  if ($dbms eq "oracle") {
 	      print SQL "alter session set current_schema=", $schema, ";\n\n";
-	  }  elsif ($dbms eq "mysql") {
-	      print SQL "use ", $schema, ";\n\n";
+#	  }  elsif ($dbms eq "mysql") {
+#	      print SQL "use ", $schema, ";\n\n";
 	  }
       }
 
       #### name and path for the main table
       my $main_table_name = $table_name = $table_prefix;
-      my $main_table_path = $table_path = $schema.".".$table_name;
-
+      my $main_table_path = $table_path = &get_table_path($table_name, $schema, $full_path);
       print_sql_header ("Main table - $table_name");
       print SQL "CREATE TABLE $table_path", "\n\t(", "\n";
       my @field_defs = ();
@@ -929,8 +943,7 @@ use Data::Dumper;
       foreach my $field (@array_fields) {
 	  $field = lc($field);
 	  my $table_name = $table_prefix."_".$field;
-	  my $table_path = $schema.".".$table_name; 
-
+	  my $table_path = &get_table_path($table_name, $schema, $full_path);
 	  print_sql_header ("Multivalue field - $table_name");
 	  print SQL "CREATE TABLE $table_path", "\n\t(", "\n";
 	  my @field_defs = ();
@@ -977,7 +990,7 @@ use Data::Dumper;
 #	  shift @fields;
 #	  warn "HELLO\tEXPANDED\t$field\t$cardinality\t$header\t", join (";", @fields), "\n";
 	  my $table_name = $table_prefix."_".$field;
-	  my $table_path = $schema.".".$table_name;
+	  my $table_path = &get_table_path($table_name, $schema, $full_path);
 	  print_sql_header ("Expanded attribute - $table_name");
 	  print SQL "CREATE TABLE $table_path", "\n\t(", "\n";
 	  my @field_defs = ();
@@ -1035,7 +1048,7 @@ use Data::Dumper;
       if ($dbms eq "oracle") {
 	  #### load main table
 	  my $table_name = $table_prefix;
-	  my $table_path = $schema.".".$table_name;
+	  my $table_path = &get_table_path($table_name, $schema, $full_path);
 	  my $load_file = "${table_prefix}_table_load.ctl";
 	  warn ";\ttable loading scripts to file $load_file\n" 
 	      if ($main::verbose >= 4);
@@ -1078,7 +1091,7 @@ use Data::Dumper;
 	  foreach my $field (@array_fields) {
 	      $field = lc($field);
 	      my $table_name = $table_prefix."_".$field;
-	      my $table_path = $schema.".".$table_name;
+  	      my $table_path = &get_table_path($table_name, $schema, $full_path);
 	      my $load_file = "${table_prefix}_${field}_table_load.ctl";
 	      warn ";\ttable loading scripts to file $load_file\n" 
 		  if ($main::verbose >= 4);
@@ -1128,7 +1141,7 @@ use Data::Dumper;
 	  foreach $field (@expanded_fields) {
 	      $field = lc($field);
 	      my $table_name = $table_prefix."_".$field;
-	      my $table_path = $schema.".".$table_name;
+  	      my $table_path = &get_table_path($table_name, $schema, $full_path);
 	      my $load_file = "${table_prefix}_${field}_table_load.ctl";
 	      my $field_size = $main::special_field_size{$field} || $default_field_size;
 	      my $load_field_format;
@@ -1174,7 +1187,7 @@ use Data::Dumper;
 	  #### postgresql loader
       } elsif ($dbms eq "postgresql") {
 	  my $table_name = $table_prefix;
-	  my $table_path = $schema.".".$table_name;
+	  my $table_path = &get_table_path($table_name, $schema, $full_path);
 	  my $load_file = "${table_prefix}_table_load.ctl";
 	  warn ";\ttable loading scripts to file $load_file\n" 
 	      if ($main::verbose >= 4);
@@ -1188,7 +1201,7 @@ use Data::Dumper;
 	  foreach $field (@array_fields, @expanded_fields) {
 	      $field = lc($field);
 	      my $table_name = $table_prefix."_".$field;
-	      my $table_path = $schema.".".$table_name;
+	      my $table_path = &get_table_path($table_name, $schema, $full_path);
 	      my $load_file = "${table_prefix}_${field}_table_load.ctl";
 	      warn ";\ttable loading scripts to file $load_file\n" 
 		  if ($main::verbose >= 4);
@@ -1203,13 +1216,13 @@ use Data::Dumper;
 	  #### mysql loader
       } elsif ($dbms eq "mysql") {
 	  my $table_name = $table_prefix;
-	  my $table_path = $schema.".".$table_name;
+	  my $table_path = &get_table_path($table_name, $schema, $full_path);
 	  my $load_file = "${table_prefix}_table_load.ctl";
 	  warn ";\ttable loading scripts to file $load_file\n" 
 	      if ($main::verbose >= 4);
 	  open SQL, "> $sql_dir/$load_file" || die "Error: cannot write file $load_file\n";
 	  print_sql_header ("Table loading scripts for class $table_prefix");
-	  print SQL "use ", $schema, ";\n\n";
+#	  print SQL "use ", $schema, ";\n\n";
 	  print_sql_header ("Main table - $table_prefix");
 	  print SQL "LOAD DATA LOCAL INFILE \"../../${short_class}_filtered.tab\" INTO TABLE $table_path;\n";
 	  close SQL;
@@ -1218,13 +1231,13 @@ use Data::Dumper;
 	  foreach $field (@array_fields, @expanded_fields) {
 	      $field = lc($field);
 	      my $table_name = $table_prefix."_".$field;
-	      my $table_path = $schema.".".$table_name;
+	      my $table_path = &get_table_path($table_name, $schema, $full_path);
 	      my $load_file = "${table_prefix}_${field}_table_load.ctl";
 	      warn ";\ttable loading scripts to file $load_file\n" 
 		  if ($main::verbose >= 4);
 	      open SQL, "> $sql_dir/$load_file" || die "Error: cannot write file $load_file\n";
 	      print_sql_header ("Table loading scripts for class $table_prefix");
-	      print SQL "use ", $schema, ";\n\n";
+#	      print SQL "use ", $schema, ";\n\n";
 	      print_sql_header ("Multivalue attribute - $table_name");
 	      print SQL "LOAD DATA LOCAL INFILE \"../../${short_class}_${field}_filtered.tab\" INTO TABLE $table_path;\n";
 	      close SQL;
@@ -1248,14 +1261,14 @@ use Data::Dumper;
 	  print_sql_header ("Schema");
 	  if ($dbms eq "oracle") {
 	      print SQL "alter session set current_schema=", $schema, ";\n\n";
-	  } elsif ($dbms eq "mysql") {
-	      print SQL "use ", $schema, ";\n\n";	      
+#	  } elsif ($dbms eq "mysql") {
+#	      print SQL "use ", $schema, ";\n\n";	      
 	  }
       }
 
       #### main table
       my $table_name = $table_prefix;
-      my $table_path = $schema.".".$table_name;
+      my $table_path = &get_table_path($table_name, $schema, $full_path);
       print_sql_header ("Main table - $table_prefix");
       print SQL "DROP TABLE ", $table_path, ";\n";
 
@@ -1264,7 +1277,7 @@ use Data::Dumper;
       foreach $field (@array_fields) {
 	  $field = lc($field);
 	  my $table_name = $table_prefix."_".$field;
-	  my $table_path = $schema.".".$table_name;
+	  my $table_path = &get_table_path($table_name, $schema, $full_path);
 	  print SQL "DROP TABLE ", $table_path, ";\n";
       }
 
@@ -1273,7 +1286,7 @@ use Data::Dumper;
       foreach $field (@expanded_fields) {
 	  $field = lc($field);
 	  my $table_name = $table_prefix."_".$field;
-	  my $table_path = $schema.".".$table_name;
+	  my $table_path = &get_table_path($table_name, $schema, $full_path);
 	  print SQL "DROP TABLE ", $table_path, ";\n";
       }
 

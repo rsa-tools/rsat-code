@@ -1,6 +1,6 @@
 #!/usr/bin/perl 
 #############################################################
-# $Id: parse-genbank.pl,v 1.29 2005/07/24 21:51:11 rsat Exp $
+# $Id: parse-genbank.pl,v 1.30 2005/09/21 21:05:25 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -24,12 +24,13 @@ require "classes/Genbank_classes.pl";
 #### initialization
 $data_source = "NCBI";
 $ext = "gbk";
-$data_type = "genbank";
+$data_type = "gbk";
 $no_suffix=1;
 $host= $default{'host'};
-$schema="genbank";
-$user="genbank";
-$password="genbank";
+$schema="rsat";
+$user="rsat";
+$password="rsat";
+$full_path = 0;
 
 $test_lines = 10000;
 
@@ -42,6 +43,7 @@ package main;
     
     local %infile = ();
     local %outfile = ();
+
     
     local $verbose = 0;
     local $in = STDIN;
@@ -284,7 +286,8 @@ package main;
 				     host=>$host,
 				     dbms=>$dbms,
 				     user=>$user,
-				     password=>$password
+				     password=>$password,
+				     full_path=>$full_path
 				     );
     }
 
@@ -408,6 +411,11 @@ OPTIONS
 	-user	database user (efault: $user)
 	-password	
 		database password (default: $password)
+	-fullpath
+		Specify the full table path
+		(e.g. ${schema}.cds_names) in the SQL scripts, instead
+		of the simple table name (e.g. cds_names).
+
 End_of_help
   close HELP;
   exit;
@@ -437,6 +445,7 @@ parse-genbank.pl options
 -host		database host (default: $host)
 -user		database user (default: $user)
 -password	database password (default: $password)
+-fullpath	Specify the full table path in the SQL scripts. 
 End_short_help
   close HELP;
   exit(0);
@@ -519,6 +528,10 @@ sub ReadArguments {
 	    ### password 
 	} elsif ($ARGV[$a] eq "-password") {
 	    $password = $ARGV[$a+1];
+	    
+	    ### full path
+	} elsif ($ARGV[$a] eq "-fullpath") {
+	    $full_path  = 1;
 	    
 	}
     }
