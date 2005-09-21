@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: downloads.mk,v 1.24 2005/07/22 10:05:05 rsat Exp $
+# $Id: downloads.mk,v 1.25 2005/09/21 21:17:35 jvanheld Exp $
 #
 # Time-stamp: <2003-10-09 14:02:21 jvanheld>
 #
@@ -64,9 +64,10 @@ NCBI_EXCLUDE=										\
 		--exclude Bacteria.OLD							\
 		--exclude '*.tar.gz'						
 one_ncbi_dir_from_mirror:
-	rsync --delete	${NCBI_EXCLUDE}						\
-		-avz rsync://bio-mirror.net/biomirror/ncbigenomes/${NCBI_DIR}	\
-		ftp.ncbi.nih.gov/genomes/
+	@mkdir -p ftp.ncbi.nih.gov/genomes/${NCBI_DIR}
+	rsync ${NCBI_EXCLUDE}						\
+		-avz ${OPT} rsync://bio-mirror.net/biomirror/ncbigenomes/${NCBI_DIR}/*	\
+		ftp.ncbi.nih.gov/genomes/${NCBI_DIR}/
 
 ncbi:
 	rsync --delete	${NCBI_EXCLUDE}						\
