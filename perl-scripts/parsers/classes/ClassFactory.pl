@@ -1315,6 +1315,7 @@ use Data::Dumper;
       } elsif ($dbms eq "mysql") {
 #	  print MK 'MYSQL=mysql', "\n";
 	  my $mysql = "mysql";
+	  $mysql .= " --local-infile";
 	  $mysql .= " -u $user" if $user;
 	  $mysql .= " -D $schema" if $schema;
 	  $mysql .= " -p$password" if $password;
