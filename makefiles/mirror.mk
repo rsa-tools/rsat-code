@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: mirror.mk,v 1.23 2005/07/30 12:33:30 jvanheld Exp $
+# $Id: mirror.mk,v 1.24 2005/09/22 06:29:40 rsat Exp $
 #
 # Time-stamp: <2003-10-01 12:05:45 jvanheld>
 #
@@ -54,7 +54,7 @@ pub_to_server:
 
 data_to_server:
 	echo "Synchronizing data to server ${SERVER}"
-	${RSYNC}  public_html/data/* ${SERVER}/public_html/data/
+	${RSYNC} ${EXCLUDED_FILES}  public_html/data/* ${SERVER}/public_html/data/
 
 genomes_to_server:
 	echo "Synchronizing genomes to server ${SERVER}"
@@ -108,6 +108,8 @@ EXCLUDED_GENOMES=				\
 		--exclude Homo_sapiens*
 
 EXCLUDED_FILES=					\
+		--exclude 'blast_db'		\
+		--exclude 'blast_hits'		\
 		--exclude '*.wc'		\
 		--exclude '*.wc.gz'		
 #		--exclude '*.fasta'		\
