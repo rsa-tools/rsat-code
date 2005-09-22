@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: genome-blast.pl,v 1.11 2005/09/12 17:44:33 rsat Exp $
+# $Id: genome-blast.pl,v 1.12 2005/09/22 06:30:18 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -306,7 +306,7 @@ several db organisms.
 	    ## Query taxon
 =pod
 
-=item	B<-query query_taxon>
+=item	B<-qtaxon query_taxon>
 
 Name of the query taxon. All the organisms included in this taxon will
 be used as QUERY organisms. This option can be used iteratively to
@@ -320,7 +320,7 @@ specify several taxons.
 	    ## Db taxon
 =pod
 
-=item	B<-db db_taxon>
+=item	B<-dbtaxon db_taxon>
 
 Name of the db taxon. All the organisms included in this taxon will be
 used as DB organisms. This option can be used iteratively to specify
