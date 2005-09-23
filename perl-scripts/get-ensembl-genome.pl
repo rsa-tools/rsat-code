@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-ensembl-genome.pl,v 1.17 2005/09/12 12:52:50 rsat Exp $
+# $Id: get-ensembl-genome.pl,v 1.18 2005/09/23 09:37:43 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -172,7 +172,7 @@ package main;
     ## Connection to the EnsEMBL MYSQL database
     $ensembl_host = 'ensembldb.ensembl.org';
     $ensembl_user = "anonymous";
-    $dbname = 'homo_sapiens_core_31_35d';
+    $dbname = 'homo_sapiens_core_33_35f';
     $org = 'schtroumpf';
     
     #### Options for the exported SQL database
@@ -298,6 +298,8 @@ package main;
     open $FT_NAME_TABLE, ">".$outfile{ft_name} || die "cannot open error log file".$outfile{ft_name}."\n";
     
     ## cds sequences in fasta format
+    @dbsplit = split /_core_/, $dbname;
+    $org = $dbsplit[0];
     $outfile{pp} = $org."_aa.fasta";
     open PP, ">", $outfile{pp} || die "cannot open sequence file".$outfile{pp}."\n";
     
@@ -374,6 +376,7 @@ package main;
 	$rsat_contig->set_attribute("chromosome", $slice->seq_region_name());
 
 	## Get all Gene objects
+	unless ($seqonly){
 	&RSAT::message::TimeWarn("Getting all genes for slice", $slice_name) if ($main::verbose >= 1);
 	my $g = 0;
 	my @ensembl_genes = @{$slice->get_all_Genes()};
@@ -476,6 +479,7 @@ package main;
 		    print $FT_TABLE join("\t", @intronfeature), "\n";
 		}
 	    }
+	}
 	}
 
 	################################################################
@@ -594,6 +598,7 @@ OPTIONS
 	-v	verbose
 	-outdir output directory
 	-noseq  do not export the sequence (only the features)
+	-seqonly only exports sequences (no features (God Save the RAM))
 	-test #  perform a quick test on # genes (default: $test_number)
 	-chrom  import a selected chromosome only
 		This option can be used iteratively to specify several
@@ -621,7 +626,7 @@ SUBSEQUENT STEPS
 	default, this directory corresponds to the dbname argument,
 	and indicates the organism name and its version in EnsEMBL.
 	    genus_species_core_version
-	(for example EnsEMBL_homo_sapiens_core_28_35a)
+	(for example EnsEMBL_homo_sapiens_core_33_35f or EnsEMBL_mus_musculus_core_33_34a)
 
 	After this, the genome is still not installed in RSAT. For
 	this, you need to use the program install-organism.
@@ -680,6 +685,7 @@ get-ensembl-genome.pl options
 -i		input file
 -outdir		output directory
 -noseq  	do not export the sequence (only the features)
+-seqonly	only exports sequences (no features (God Save the RAM))
 -chrom  	import a selected chromosome
 -test #  	perform a test on # genes (default: $test_number)
 -v		verbose
@@ -753,6 +759,10 @@ sub ReadArguments {
 	    ### do not export the sequence
 	} elsif ($ARGV[$a] eq "-noseq") {
 	    $no_seq=1;
+
+	    ### only export the sequence
+	} elsif ($ARGV[$a] eq "-seqonly") {
+	    $seqonly=1;
 
 	    ### do not export the masked sequence
 	} elsif ($ARGV[$a] eq "-nomask") {
