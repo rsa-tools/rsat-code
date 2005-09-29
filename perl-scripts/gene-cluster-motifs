@@ -7,7 +7,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.112 2005/09/29 10:53:20 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.113 2005/09/29 11:56:13 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -620,16 +620,22 @@ sub SetFileNames {
 	## Options for orm
 	my $orm_suffix = $ormbg_suffix;
 
+	## Location
+	$orm_options .= " --location=".$ORM_location;
+
 	## Number of top motifs
 	$orm_options .= " --top=".$ORM_top;
 	$orm_suffix .= "_t".$ORM_top;
+
+
+	## Fixed window size
 	if ($ORM_fixedsizewindow) {
 	    $orm_options .= " --fixedsizewindow";
 	    $orm_suffix .= "_z";
 	}
 
 	## input file
-	$orm_options .= " ".$family{$family_name}->{input_seq_file};
+	$orm_options .= " --input=".$family{$family_name}->{input_seq_file};
 
 	## Background model file
 	$dir{ormbg} = "bg_models/orm_models";
@@ -1218,7 +1224,7 @@ sub orm {
    chdir($dir{output}); &RSAT::util::CheckOutDir($family{$family_name}->{orm_dir});
 
    ## run the command
-   $orm_command = "orm.py ".$family{$family_name}->{orm_options};
+   $orm_command = "orm.py -v1 ".$family{$family_name}->{orm_options};
    if ($batch) {
        push @main::batch_commands, $command;
    } else {
@@ -1241,7 +1247,7 @@ sub ormbg {
    $ormbg_command .= " -format fasta";
 
    ## orm
-   $ormbg_command .= " | ormbg.py ".$ormbg_options;
+   $ormbg_command .= " | ormbg.py -v 1 ".$ormbg_options;
 
    if ($batch) {
        push @main::batch_commands, $ormbg_command;
