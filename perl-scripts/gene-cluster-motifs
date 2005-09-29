@@ -7,7 +7,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.113 2005/09/29 11:56:13 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.114 2005/09/29 14:56:15 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -651,6 +651,15 @@ sub SetFileNames {
 	$family{$family_name}->{orm_options} = $orm_options;
 	$family{$family_name}->{orm_suffix} = $orm_suffix;
 
+	$family{$family_name}->{orm_assembly_file} = $family{$family_name}->{orm_file}."_contigs";
+#	$family{$family_name}->{orm_selection} = $family{$family_name}->{orm_file}."_selection";
+	$family{$family_name}->{orm_ft_prefix} = $family{$family_name}->{orm_file};
+#	$family{$family_name}->{selection_ft_prefix} = $family{$family_name}->{orm_ft_prefix}."_report";
+	$family{$family_name}->{orm_ft_file} = $family{$family_name}->{orm_ft_prefix}.".ft";
+	$family{$family_name}->{orm_vs_known} = $family{$family_name}->{orm_file}."__vs__known_relw".$rel_w.".tab";
+	$family{$family_name}->{orm_vs_known_weight_table} = $family{$family_name}->{orm_file}."__vs__known_weigth_table.tab";
+	$family{$family_name}->{orm_vs_known_relw_table} = $family{$family_name}->{orm_file}."__vs__known_relw_table.tab";
+
 	
 	################################################################
 	## Consensus options and files
@@ -1225,6 +1234,10 @@ sub orm {
 
    ## run the command
    $orm_command = "orm.py -v1 ".$family{$family_name}->{orm_options};
+   $orm_command .= "; pattern-assembly -v  -maxfl 1 -subst 1 -maxpat 200 ".${strands};
+   $orm_command .= " -i ".$family{$family_name}->{orm_file};
+   $orm_command .= " -o ".$family{$family_name}->{orm_assembly_file};
+
    if ($batch) {
        push @main::batch_commands, $command;
    } else {
@@ -1335,11 +1348,11 @@ sub SyntheticTable {
    $row{known} = $row++ if ($known_sites_provided);
    $row{oligos} = $row++;
    $row{dyads} = $row++;
+   $row{orm} = $row++;
    $row{selection} = $row++ if ($task{report});
    $row{consensus} = $row++;
    $row{gibbs} = $row++;
    $row{meme} = $row++;
-   $row{orm} = $row++;
    $row_num = $row-1;
    while (($header,$row) = each %row) {
 	$table[$row][0] = "<B>$header</B>";
@@ -1408,14 +1421,14 @@ sub SyntheticTable {
 		$table[$row{known}][$col] .= "<P>";
 	    }
 	} 
-	
-       ################################################################
+
+	################################################################
 	#### Index results from oligo-analysis
 	&IndexPatterns($family_name, 
 		       $row{oligos}, 
 		       $col, 
-		       assembly=>$family{$family_name}->{oligo_assembly_file}, 
 		       patterns=>$family{$family_name}->{oligo_file}, 
+		       assembly=>$family{$family_name}->{oligo_assembly_file}, 
 		       validation=>$family{$family_name}->{oligo_vs_known}, 
 		       validation_table_relw=>$family{$family_name}->{oligo_vs_known_relw_table}, 
 		       validation_table_weight=>$family{$family_name}->{oligo_vs_known_weight_table}, 
@@ -1436,6 +1449,19 @@ sub SyntheticTable {
 		      );
 	
 	################################################################
+	#### Index results from oligo-analysis
+	&IndexPatterns($family_name, 
+		       $row{orm}, 
+		       $col, 
+		       patterns=>$family{$family_name}->{orm_file}, 
+		       assembly=>$family{$family_name}->{orm_assembly_file}, 
+		       validation=>$family{$family_name}->{orm_vs_known}, 
+		       validation_table_relw=>$family{$family_name}->{orm_vs_known_relw_table}, 
+		       validation_table_weight=>$family{$family_name}->{orm_vs_known_weight_table}, 
+		       type=>"orm", 
+		      );
+
+	################################################################
 	### index results of manual pattern selection
 	if ($task{report}) {
 	    &IndexPatterns($family_name, 
@@ -1445,6 +1471,7 @@ sub SyntheticTable {
 			   type=>"manual"
 			  );
 	}
+
 
 	################################################################
 	#### Index results of consensus
@@ -1676,7 +1703,8 @@ sub IndexMEME {
 ## Index the patterns discovered for the HTML synthetic table
 sub IndexPatterns {
    my ($family_name, $row, $col, %args) = @_;
-   warn join ("\t", "; Indexing patterns for family", $family_name, $pattern_file), "\n" if ($verbose >= 2);
+
+
    undef @patterns;
    undef @sorted_patterns;
    undef %rc;
@@ -1696,15 +1724,19 @@ sub IndexPatterns {
    my $pattern_dir = $family_dir.$type."_".$family_name."/";
    my $map_link = $base.$pattern_file;
 
+   &RSAT::message::Info(join("\t", "; Indexing patterns of type", $type, "for family", $family_name, $pattern_file)) if ($verbose >= 2);
+
    ## Read the patterns
    if (-e $assembly_file) {
        if (($type eq "dyads") ||
-	   ($type eq "oligos")) {
+	   ($type eq "oligos") ||
+	   ($type eq "orm"))
+	   {
 	   ## Parse an assembly file (only retain contigs and isolated)
 	   ($error, @patterns) = &ReadAssemblyFile($family_name, $assembly_file, $type);
        } else {
 	   ## Parse a pattern file (retain all patterns)
-	   @patterns = &ReadPatterns(assembly_file=>$assembly_file);
+	   @patterns = &ReadPatterns($assembly_file);
        }
    } else {
 	$table[$row][$col] = "<a href=".$assembly_file."><font color=red>File not found</font></a><br>\n";
