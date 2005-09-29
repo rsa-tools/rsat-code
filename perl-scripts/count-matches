@@ -664,8 +664,8 @@ EXAMPLES
 	Multiple pairs of sequences
 	---------------------------
 
-	count-matches -seq1 GATAAG -seq2 GATWAG -seq2 GATAAG \
-	    -seq2 GATAAT -seq2 gatha -seq2 gatnns -seq2 NNNNNN \
+	count-matches -seq1 GATAAG -seq2 GATWAG -seq2 GATAAG \\
+	    -seq2 GATAAT -seq2 gatha -seq2 gatnns -seq2 NNNNNN \\
 	    -v 1 -return match,weight,proba,length,seq
 
         Compares the firsts sequence with each sequence of group 2.
@@ -673,13 +673,13 @@ EXAMPLES
 
 	Sliding sequences
 	-----------------
-	count-matches -v 1 -seq1 gatasg -seq2 twagtt -slide \
+	count-matches -v 1 -seq1 gatasg -seq2 twagtt -slide \\
 	    -return match,weight,proba,seq,length
 
         Thresholds
 	----------
-	count-matches -v 1 -seq1 gatasg -seq2 twagtt -seq2 ccccga \
-	    -slide -return match,weight,proba,seq,length -lth mlen 3
+	count-matches -v 1 -seq1 gatasg -seq2 twagtt -seq2 ccccga \\
+	    -slide -return offset,match,weight,proba,seq,length -lth mlen 3
 
 	This options sets a lower threshold of 3 on matching length.
 
