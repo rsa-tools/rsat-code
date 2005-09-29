@@ -7,7 +7,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.111 2005/09/10 09:13:13 rsat Exp $
+# $Id: multiple-family-analysis,v 1.112 2005/09/29 10:53:20 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -77,6 +77,8 @@ $dir{calib1} = "calibrations_1gene";
 		       gibbs
 		       MotifSampler
 		       meme
+		       ormbg
+		       orm
 		       );
 foreach my $task (@supported_tasks) {
     $supported_task{$task} = 1;
@@ -148,6 +150,16 @@ $MS_r = 5;
 $MEME_minw = 6;
 $MEME_maxw = 25;
 $MEME_bfile = "";
+
+## Default ORM options
+$ormbg_options = ""; ## must be global
+$ORM_top=20;
+$ORM_fixedsizewindow=0;
+$ORM_overlap=0;
+$ORM_strand="+-";
+$ORM_word_length=6;
+$ORM_window=100;
+$ORM_markov_order=-1;
 
 ## Comparison between discovered and known motifs
 $known_site_file = "";
@@ -563,6 +575,75 @@ sub SetFileNames {
 	
 	$family{$family_name}->{meme_options} = $meme_options;
 	$family{$family_name}->{meme_suffix} = $meme_suffix;
+
+	################################################################
+	## ORM
+	my $ormbg_suffix = "";
+	$ormbg_options = "";
+
+	my $orm_options = "";
+
+
+	##
+	## Options for ormbg
+	$ormbg_suffix .= $organism_name;
+
+	## Self-overlapping words
+	if ($ORM_overlap) {
+	    $ormbg_options .= " --overlap";
+	    $ormbg_suffix .= "-ovlp";
+	}
+
+	## Location
+	my $ORM_location = $from.":".$to;
+	$ormbg_options .= " --location=".$ORM_location;
+	$ormbg_suffix .= $from."_".$to;
+
+	## Strand
+	$ormbg_options .= " --strand=".$ORM_strand;
+	$ormbg_suffix .= $ORM_strand;
+
+	## Word length
+	$ormbg_options .= " --word_length=".$ORM_word_length;
+	$ormbg_suffix .= "_w".$ORM_word_length;
+
+	## Window size
+	$ormbg_options .= " --window=".$ORM_window;
+	$ormbg_suffix .= "_W".$ORM_window;
+
+	## Markov model
+	if ($ORM_markov_order >= 0) {
+	    $ormbg_options .= " --markov_order=".$ORM_markov_order;
+	    $ormbg_suffix .= "_m".$ORM_markov_order;
+	}
+
+	## Options for orm
+	my $orm_suffix = $ormbg_suffix;
+
+	## Number of top motifs
+	$orm_options .= " --top=".$ORM_top;
+	$orm_suffix .= "_t".$ORM_top;
+	if ($ORM_fixedsizewindow) {
+	    $orm_options .= " --fixedsizewindow";
+	    $orm_suffix .= "_z";
+	}
+
+	## input file
+	$orm_options .= " ".$family{$family_name}->{input_seq_file};
+
+	## Background model file
+	$dir{ormbg} = "bg_models/orm_models";
+	my $ormbg_file = $dir{ormbg}."/".$ormbg_suffix;
+	$orm_options .= " --background=".$ormbg_file;
+	$ormbg_options .= " --output=".$ormbg_file;
+
+	## Output file
+	$family{$family_name}->{orm_dir} = ${family_name}."/"."orm_".${family_name};
+	$family{$family_name}->{orm_file} = $family{$family_name}->{orm_dir}."/".$family{$family_name}->{file_prefix}.$orm_suffix;
+	$orm_options .= " --output=".$family{$family_name}->{orm_file};
+	
+	$family{$family_name}->{orm_options} = $orm_options;
+	$family{$family_name}->{orm_suffix} = $orm_suffix;
 
 	
 	################################################################
@@ -1115,6 +1196,7 @@ sub Gibbs {
    }
 }
 
+
 ################################################################
 ## Run MEME program 
 sub MEME {
@@ -1128,6 +1210,46 @@ sub MEME {
        &doit($meme_command, $dry_run, 0, $verbose);
    }
 }
+
+
+################################################################
+## Run orm program 
+sub orm {
+   chdir($dir{output}); &RSAT::util::CheckOutDir($family{$family_name}->{orm_dir});
+
+   ## run the command
+   $orm_command = "orm.py ".$family{$family_name}->{orm_options};
+   if ($batch) {
+       push @main::batch_commands, $command;
+   } else {
+       &doit($orm_command, $dry_run, 0, $verbose);
+   }
+}
+
+################################################################
+## Run ormbg program 
+sub ormbg {
+   chdir($dir{output}); &RSAT::util::CheckOutDir($dir{ormbg});
+
+   #### retrieve upstream sequences
+   $ormbg_command = "retrieve-seq -all -imp_pos -type upstream -org $organism_name";
+   $ormbg_command .= " -noorf " if ($noorf);
+   $ormbg_command .= " -from $from" if (defined($from));
+   $ormbg_command .= " -to $to " if (defined($to));
+   $ormbg_command .= " -label id,name ";
+   $ormbg_command .= " -feattype $feature_types " if ($feature_types);
+   $ormbg_command .= " -format fasta";
+
+   ## orm
+   $ormbg_command .= " | ormbg.py ".$ormbg_options;
+
+   if ($batch) {
+       push @main::batch_commands, $ormbg_command;
+   } else {
+       &doit($ormbg_command, $dry_run, $die_on_error, $verbose);
+   }
+}
+
 
 ################################################################
 ## Run Jerry Hertz' consensus program 
@@ -1211,6 +1333,7 @@ sub SyntheticTable {
    $row{consensus} = $row++;
    $row{gibbs} = $row++;
    $row{meme} = $row++;
+   $row{orm} = $row++;
    $row_num = $row-1;
    while (($header,$row) = each %row) {
 	$table[$row][0] = "<B>$header</B>";
@@ -1818,6 +1941,9 @@ sub AnalyzeFamilies {
 	$seq_length_calculated = 1;
    }
 
+   ### Calculate background model for orm
+   &ormbg() if ($task{ormbg});
+
    foreach $family_name (@families) {
 #       @main::batch_commands = ();
 
@@ -1877,6 +2003,9 @@ sub AnalyzeFamilies {
 	
 	### MEME
 	&MEME() if ($task{meme});
+
+	### orm
+	&orm() if ($task{orm});
 
 #	### merge oligo-analysis and dyad-analysis results
 #	&MergePatterns() if ($task{merge_patterns});
@@ -2968,7 +3097,7 @@ sub Validate {
        ## Create a separate file for count-matches with the current family
        my @sites = @{$known_site{$family_name}};
        my @sources = @{$known_site_source{$family_name}};
-       warn join("\t", "Validating", $family_name, "known sites", $family{$family_name}->{known_sites}, "Number of sites", scalar(@sites)), "\n" if ($main::verbose >= 0);
+       &RSAT::message::Debug("Validating", $family_name, "known sites", $family{$family_name}->{known_sites}, "Number of sites", scalar(@sites)) if ($main::verbose >= 0);
        $known_handle = &OpenOutputFile($family{$family_name}->{known_sites});
        foreach my $s (0..$#sites) {
 	   my $source = $sources[$s];
