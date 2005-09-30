@@ -8,7 +8,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.117 2005/09/30 21:02:21 rsat Exp $
+# $Id: gene-cluster-motifs,v 1.118 2005/09/30 22:48:03 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -267,17 +267,19 @@ foreach my $family_name (@families) {
 @families = sort keys %family;
 warn "Remaining families after filtering\t", scalar(@families), "\n";
 
-
+## Set all the file names
 &SetFileNames();
 
+## Create output directories
 &RSAT::util::CheckOutDir($dir{output}); 
 chdir($dir{output});
-
 &MakeDirectories();
 
 #### verbose
 $verbose_message = &Verbose() if ($verbose >= 1);
 
+
+################################################################
 ### perform analysis
 &AnalyzeFamilies();
 &MDCreport() if ($task{report});
@@ -307,7 +309,7 @@ exit(0);
 
 ################################################################
 #
-#                 SUBROUTINE DEFINITION
+#                 SUBROUTINE DEFINITIONS
 #
 ################################################################
 
@@ -378,28 +380,32 @@ sub SetFileNames {
 
     $ormbg_options = "";
 
-    ## Self-overlapping words
-    if ($ORM_overlap) {
-	$ormbg_options .= " --overlap";
-	$ormbg_suffix .= "-ovlp";
-    }
+
+
+    ## Word length
+    $ormbg_options .= " --word_length=".$ORM_word_length;
+    $ormbg_suffix .= "_w".$ORM_word_length;
 
     ## Location
     my $ORM_location = $from.":".$to;
     $ormbg_options .= " --location=".$ORM_location;
     $ormbg_suffix .= $from."_".$to;
 
+    ## Window size
+    $ormbg_options .= " --window=".$ORM_window;
+    $ormbg_suffix .= "_W".$ORM_window;
+
     ## Strand
     $ormbg_options .= " --strand=".$ORM_strand;
     $ormbg_suffix .= $ORM_strand;
 
-    ## Word length
-    $ormbg_options .= " --word_length=".$ORM_word_length;
-    $ormbg_suffix .= "_w".$ORM_word_length;
-
-    ## Window size
-    $ormbg_options .= " --window=".$ORM_window;
-    $ormbg_suffix .= "_W".$ORM_window;
+    ## Self-overlapping words
+    if ($ORM_overlap) {
+	$ormbg_options .= " --overlap";
+	$ormbg_suffix .= "-ovlp";
+    } else {
+	$ormbg_suffix .= "-noov";
+    }
 
     ## Markov model
     if ($ORM_markov_order >= 0) {
@@ -438,12 +444,13 @@ sub SetFileNames {
 	
 	## Known sites for this family
 	if ($task{validate}) {
-	    $family{$family_name}->{known_sites} = $family_name."/".$family{$family_name}->{file_prefix}."_known_sites.tab";
+#	    $family{$family_name}->{known_sites} = $family_name."/".$family{$family_name}->{file_prefix}."_known_sites.tab";
+	    $family{$family_name}->{known_sites} = $family_name."/".$family_name."_known_sites.tab";
 	}
 	
 	################################################################
 	## oligo-analysis results
-	$family{$family_name}->{oligo_file} =  "${family_name}/oligos_${family_name}/".$family{$family_name}->{file_prefix}.$oligo_suffix; ## TEMP
+	$family{$family_name}->{oligo_file} =  "${family_name}/oligos_${family_name}/".$family{$family_name}->{file_prefix}.$oligo_suffix; 
 	$family{$family_name}->{oligo_assembly_file} = $family{$family_name}->{oligo_file}."_contigs";
 	$family{$family_name}->{oligo_selection} = $family{$family_name}->{oligo_file}."_selection";
 	$family{$family_name}->{oligo_ft_prefix} = $family{$family_name}->{oligo_file};
@@ -627,7 +634,7 @@ sub SetFileNames {
 
 	##
 	## Options for ormbg
-	$ormbg_suffix .= $organism_name;
+#	$ormbg_suffix .= $organism_name;
 
 	## Options for orm
 	my $orm_suffix = $ormbg_suffix;
@@ -658,7 +665,7 @@ sub SetFileNames {
 
 	## Output file
 	$family{$family_name}->{orm_dir} = ${family_name}."/"."orm_".${family_name};
-	$family{$family_name}->{orm_file} = $family{$family_name}->{orm_dir}."/".$family{$family_name}->{file_prefix}.$orm_suffix;
+	$family{$family_name}->{orm_file} = $family{$family_name}->{orm_dir}."/".$family{$family_name}->{file_prefix}."_".$orm_suffix;
 	$orm_options .= " --output=".$family{$family_name}->{orm_file};
 	
 	$family{$family_name}->{orm_options} = $orm_options;
@@ -3159,75 +3166,122 @@ sub Validate {
        }
        close $known_handle;
 
-       ## Compare oligos with known sites
-       my $command = "count-matches"; 
-       $command .= " -v 1";
-       $command .= " ".$strands;
-       $command .= " -file1 ".$family{$family_name}->{known_sites};
-       $command .= " -file2 ".$family{$family_name}->{oligo_file};
-       $command .= " -slide"; 
-       $command .= " -return match,weight,rel_w,seq,strand"; 
-       $command .= " -lth rel_w ".$rel_w;
-       $command .= " -o ".$family{$family_name}->{oligo_vs_known};
-       &doit($command, $dry_run, $die_on_error, $verbose);
+       &ValidateOneResult($family_name, "oligo");
+       &ValidateOneResult($family_name, "dyad");
+       &ValidateOneResult($family_name, "orm");
 
-       ## Compare oligos with known sites (table output type)
-       my $command = "count-matches";
-       $command .= " -v 1";
-       $command .= " ".$strands;
-       $command .= " -file1 ".$family{$family_name}->{known_sites};
-       $command .= " -file2 ".$family{$family_name}->{oligo_file};
-       $command .= " -slide";
-       $command .= " -table rel_w";
-       $command .= " -o ".$family{$family_name}->{oligo_vs_known_relw_table};
-       &doit($command, $dry_run, $die_on_error, $verbose);
+#        ## Compare oligos with known sites
+#        my $command = "count-matches"; 
+#        $command .= " -v 1";
+#        $command .= " ".$strands;
+#        $command .= " -file1 ".$family{$family_name}->{known_sites};
+#        $command .= " -file2 ".$family{$family_name}->{oligo_file};
+#        $command .= " -slide"; 
+#        $command .= " -return match,weight,rel_w,seq,strand"; 
+#        $command .= " -lth rel_w ".$rel_w;
+#        $command .= " -o ".$family{$family_name}->{oligo_vs_known};
+#        &doit($command, $dry_run, $die_on_error, $verbose);
 
-       ## Compare oligos with known sites (table output type)
-       my $command = "count-matches";
-       $command .= " -v 1";
-       $command .= " ".$strands;
-       $command .= " -file1 ".$family{$family_name}->{known_sites};
-       $command .= " -file2 ".$family{$family_name}->{oligo_file};
-       $command .= " -slide";
-       $command .= " -table weight";
-       $command .= " -o ".$family{$family_name}->{oligo_vs_known_weight_table};
-       &doit($command, $dry_run, $die_on_error, $verbose);
+#        ## Compare oligos with known sites (table output type)
+#        my $command = "count-matches";
+#        $command .= " -v 1";
+#        $command .= " ".$strands;
+#        $command .= " -file1 ".$family{$family_name}->{known_sites};
+#        $command .= " -file2 ".$family{$family_name}->{oligo_file};
+#        $command .= " -slide";
+#        $command .= " -table rel_w";
+#        $command .= " -o ".$family{$family_name}->{oligo_vs_known_relw_table};
+#        &doit($command, $dry_run, $die_on_error, $verbose);
 
-       ## Compare dyads with known sites
-       my $command = "count-matches";
-       $command .= " -v 1";
-       $command .= " ".$strands;
-       $command .= " -file1 ".$family{$family_name}->{known_sites};
-       $command .= " -file2 ".$family{$family_name}->{dyad_file};
-       $command .= " -slide";
-       $command .= " -return match,weight,rel_w,seq,strand";
-       $command .= " -lth rel_w ".$rel_w;
-       $command .= " -o ".$family{$family_name}->{dyad_vs_known};
-       &doit($command, $dry_run, $die_on_error, $verbose);
+#        ## Compare oligos with known sites (table output type)
+#        my $command = "count-matches";
+#        $command .= " -v 1";
+#        $command .= " ".$strands;
+#        $command .= " -file1 ".$family{$family_name}->{known_sites};
+#        $command .= " -file2 ".$family{$family_name}->{oligo_file};
+#        $command .= " -slide";
+#        $command .= " -table weight";
+#        $command .= " -o ".$family{$family_name}->{oligo_vs_known_weight_table};
+#        &doit($command, $dry_run, $die_on_error, $verbose);
 
-       ## Compare dyads with known sites (table output type)
-       my $command = "count-matches";
-       $command .= " -v 1";
-       $command .= " ".$strands;
-       $command .= " -file1 ".$family{$family_name}->{known_sites};
-       $command .= " -file2 ".$family{$family_name}->{dyad_file};
-       $command .= " -slide";
-       $command .= " -table rel_w";
-       $command .= " -o ".$family{$family_name}->{dyad_vs_known_relw_table};
-       &doit($command, $dry_run, $die_on_error, $verbose);
+#        ## Compare dyads with known sites
+#        my $command = "count-matches";
+#        $command .= " -v 1";
+#        $command .= " ".$strands;
+#        $command .= " -file1 ".$family{$family_name}->{known_sites};
+#        $command .= " -file2 ".$family{$family_name}->{dyad_file};
+#        $command .= " -slide";
+#        $command .= " -return match,weight,rel_w,seq,strand";
+#        $command .= " -lth rel_w ".$rel_w;
+#        $command .= " -o ".$family{$family_name}->{dyad_vs_known};
+#        &doit($command, $dry_run, $die_on_error, $verbose);
+
+#        ## Compare dyads with known sites (table output type)
+#        my $command = "count-matches";
+#        $command .= " -v 1";
+#        $command .= " ".$strands;
+#        $command .= " -file1 ".$family{$family_name}->{known_sites};
+#        $command .= " -file2 ".$family{$family_name}->{dyad_file};
+#        $command .= " -slide";
+#        $command .= " -table rel_w";
+#        $command .= " -o ".$family{$family_name}->{dyad_vs_known_relw_table};
+#        &doit($command, $dry_run, $die_on_error, $verbose);
 
 
-       ## Compare dyads with known sites (table output type)
-       my $command = "count-matches";
-       $command .= " -v 1";
-       $command .= " ".$strands;
-       $command .= " -file1 ".$family{$family_name}->{known_sites};
-       $command .= " -file2 ".$family{$family_name}->{dyad_file};
-       $command .= " -slide";
-       $command .= " -table weight";
-       $command .= " -o ".$family{$family_name}->{dyad_vs_known_weight_table};
-       &doit($command, $dry_run, $die_on_error, $verbose);
+#        ## Compare dyads with known sites (table output type)
+#        my $command = "count-matches";
+#        $command .= " -v 1";
+#        $command .= " ".$strands;
+#        $command .= " -file1 ".$family{$family_name}->{known_sites};
+#        $command .= " -file2 ".$family{$family_name}->{dyad_file};
+#        $command .= " -slide";
+#        $command .= " -table weight";
+#        $command .= " -o ".$family{$family_name}->{dyad_vs_known_weight_table};
+#        &doit($command, $dry_run, $die_on_error, $verbose);
    }
+}
+
+################################################################
+## Compare one result file with annotated motifs
+sub ValidateOneResult {
+    my ($family_name, $pattern_type) = @_;
+    
+    my $pattern_file = $family{$family_name}->{$pattern_type."_file"};
+
+    ## Compare dyads with known sites
+    my $command = "count-matches";
+    $command .= " -v 1";
+    $command .= " ".$strands;
+    $command .= " -file1 ".$family{$family_name}->{known_sites};
+    $command .= " -file2 ".$pattern_file;
+    $command .= " -slide";
+    $command .= " -return match,weight,rel_w,seq,strand";
+    $command .= " -lth rel_w ".$rel_w;
+    $command .= " -o ".$family{$family_name}->{$pattern_type."_vs_known"};
+    &doit($command, $dry_run, $die_on_error, $verbose);
+    
+    ## Compare dyads with known sites (table output type)
+    my $command = "count-matches";
+    $command .= " -v 1";
+    $command .= " ".$strands;
+    $command .= " -file1 ".$family{$family_name}->{known_sites};
+    $command .= " -file2 ".$pattern_file;
+    $command .= " -slide";
+    $command .= " -table rel_w";
+    $command .= " -o ".$family{$family_name}->{$pattern_type."_vs_known_relw_table"};
+    &doit($command, $dry_run, $die_on_error, $verbose);
+    
+    
+    ## Compare dyads with known sites (table output type)
+    my $command = "count-matches";
+    $command .= " -v 1";
+    $command .= " ".$strands;
+    $command .= " -file1 ".$family{$family_name}->{known_sites};
+    $command .= " -file2 ".$pattern_file;
+    $command .= " -slide";
+    $command .= " -table weight";
+    $command .= " -o ".$family{$family_name}->{$pattern_type."_vs_known_weight_table"};
+    &doit($command, $dry_run, $die_on_error, $verbose);
 }
 
 
