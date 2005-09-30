@@ -7,7 +7,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.115 2005/09/30 08:33:24 rsat Exp $
+# $Id: multiple-family-analysis,v 1.116 2005/09/30 14:47:51 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -154,6 +154,7 @@ $MEME_bfile = "";
 ## Default ORM options
 $ormbg_options = ""; ## must be global
 $ORM_top=20;
+$ORM_uth_occ_sig=0;
 $ORM_fixedsizewindow=0;
 $ORM_overlap=0;
 $ORM_strand="+-";
@@ -628,6 +629,10 @@ sub SetFileNames {
 	$orm_options .= " --top=".$ORM_top;
 	$orm_suffix .= "_t".$ORM_top;
 
+	## Occurrence significance
+	$orm_options .= " -d occ_sig ".$ORM_uth_occ_sig;
+	$orm_suffix .= "_occ_sig".$ORM_uth_occ_sig;
+	$orm_options .= " --sort=-occ_sig";
 
 	## Fixed window size
 	if ($ORM_fixedsizewindow) {
