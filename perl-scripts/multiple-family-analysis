@@ -1,5 +1,6 @@
 #!/usr/bin/perl
 
+
 ## CVS: bug fixed: matrices were not indexed in the synthetic table anymore 
 ## CVS: bug fixed: dyad occurrences were missing from SQL table pattern.tab
 ## Ce script est une usine a gaz
@@ -7,7 +8,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.116 2005/09/30 14:47:51 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.117 2005/09/30 21:02:21 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -152,15 +153,15 @@ $MEME_maxw = 25;
 $MEME_bfile = "";
 
 ## Default ORM options
-$ormbg_options = ""; ## must be global
-$ORM_top=20;
-$ORM_uth_occ_sig=0;
-$ORM_fixedsizewindow=0;
-$ORM_overlap=0;
-$ORM_strand="+-";
-$ORM_word_length=6;
-$ORM_window=100;
-$ORM_markov_order=-1;
+local $ormbg_options = ""; ## must be global
+local $ORM_top=20;
+local $ORM_uth_occ_sig=0;
+local $ORM_fixedsizewindow=0;
+local $ORM_overlap=0;
+local $ORM_strand="+-";
+local $ORM_word_length=6;
+local $ORM_window=100;
+local $ORM_markov_order=-1;
 
 ## Comparison between discovered and known motifs
 $known_site_file = "";
@@ -371,6 +372,46 @@ sub SetFileNames {
 #    if (&IsReal($lth{ms_sig})) {$oligo_suffix .= "_mssig".$lth{ms_sig} ; }
     $oligo_suffix .= $noov;
 
+
+    ################################################################
+    ## Options for ormbg (calculate bckground model for orm)
+
+    $ormbg_options = "";
+
+    ## Self-overlapping words
+    if ($ORM_overlap) {
+	$ormbg_options .= " --overlap";
+	$ormbg_suffix .= "-ovlp";
+    }
+
+    ## Location
+    my $ORM_location = $from.":".$to;
+    $ormbg_options .= " --location=".$ORM_location;
+    $ormbg_suffix .= $from."_".$to;
+
+    ## Strand
+    $ormbg_options .= " --strand=".$ORM_strand;
+    $ormbg_suffix .= $ORM_strand;
+
+    ## Word length
+    $ormbg_options .= " --word_length=".$ORM_word_length;
+    $ormbg_suffix .= "_w".$ORM_word_length;
+
+    ## Window size
+    $ormbg_options .= " --window=".$ORM_window;
+    $ormbg_suffix .= "_W".$ORM_window;
+
+    ## Markov model
+    if ($ORM_markov_order >= 0) {
+	$ormbg_options .= " --markov_order=".$ORM_markov_order;
+	$ormbg_suffix .= "_m".$ORM_markov_order;
+    }
+    
+    ## Background model file
+    $dir{ormbg} = "bg_models/orm_models";
+    my $ormbg_file = $dir{ormbg}."/".$ormbg_suffix;
+    $ormbg_options .= " --output=".$ormbg_file;
+    
     foreach my $family_name (@families) {
 	my $gene_nb = scalar(@{$family{$family_name}->{members}});
 #	warn join ("\t", "Number of genes", $family_name, $gene_nb), "\n";
@@ -581,43 +622,12 @@ sub SetFileNames {
 	################################################################
 	## ORM
 	my $ormbg_suffix = "";
-	$ormbg_options = "";
-
 	my $orm_options = "";
 
 
 	##
 	## Options for ormbg
 	$ormbg_suffix .= $organism_name;
-
-	## Self-overlapping words
-	if ($ORM_overlap) {
-	    $ormbg_options .= " --overlap";
-	    $ormbg_suffix .= "-ovlp";
-	}
-
-	## Location
-	my $ORM_location = $from.":".$to;
-	$ormbg_options .= " --location=".$ORM_location;
-	$ormbg_suffix .= $from."_".$to;
-
-	## Strand
-	$ormbg_options .= " --strand=".$ORM_strand;
-	$ormbg_suffix .= $ORM_strand;
-
-	## Word length
-	$ormbg_options .= " --word_length=".$ORM_word_length;
-	$ormbg_suffix .= "_w".$ORM_word_length;
-
-	## Window size
-	$ormbg_options .= " --window=".$ORM_window;
-	$ormbg_suffix .= "_W".$ORM_window;
-
-	## Markov model
-	if ($ORM_markov_order >= 0) {
-	    $ormbg_options .= " --markov_order=".$ORM_markov_order;
-	    $ormbg_suffix .= "_m".$ORM_markov_order;
-	}
 
 	## Options for orm
 	my $orm_suffix = $ormbg_suffix;
@@ -643,11 +653,8 @@ sub SetFileNames {
 	## input file
 	$orm_options .= " --input=".$family{$family_name}->{input_seq_file};
 
-	## Background model file
-	$dir{ormbg} = "bg_models/orm_models";
-	my $ormbg_file = $dir{ormbg}."/".$ormbg_suffix;
+
 	$orm_options .= " --background=".$ormbg_file;
-	$ormbg_options .= " --output=".$ormbg_file;
 
 	## Output file
 	$family{$family_name}->{orm_dir} = ${family_name}."/"."orm_".${family_name};
