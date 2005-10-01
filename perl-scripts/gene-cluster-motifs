@@ -8,7 +8,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.119 2005/10/01 07:22:46 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.120 2005/10/01 17:29:30 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -463,7 +463,7 @@ sub SetFileNames {
 	################################################################
 	## dyad-analysis results
 	$family{$family_name}->{dyad_file} = "$family_name/dyads_${family_name}/".$family{$family_name}->{file_prefix}.$dyad_suffix;
-	$family{$family_name}->{dyad_assembly_file} = $family{$family_name}->{dyad_file}.".asmbs";
+	$family{$family_name}->{dyad_assembly_file} = $family{$family_name}->{dyad_file}.".asmb";
 	$family{$family_name}->{dyad_ft_prefix} = $family{$family_name}->{dyad_file};
 	$family{$family_name}->{dyad_ft_file} = $family{$family_name}->{dyad_ft_prefix}.".ft";	
 	$family{$family_name}->{fmap_file} = $family{$family_name}->{dyad_file}.".${IMG_FORMAT}";
@@ -670,7 +670,7 @@ sub SetFileNames {
 	$family{$family_name}->{orm_options} = $orm_options;
 	$family{$family_name}->{orm_suffix} = $orm_suffix;
 
-	$family{$family_name}->{orm_assembly_file} = $family{$family_name}->{orm_file}.".asmbs";
+	$family{$family_name}->{orm_assembly_file} = $family{$family_name}->{orm_file}.".asmb";
 #	$family{$family_name}->{orm_selection} = $family{$family_name}->{orm_file}."_selection";
 	$family{$family_name}->{orm_ft_prefix} = $family{$family_name}->{orm_file};
 #	$family{$family_name}->{selection_ft_prefix} = $family{$family_name}->{orm_ft_prefix}."_report";
