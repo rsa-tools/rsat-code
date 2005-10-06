@@ -1,6 +1,5 @@
 #!/usr/bin/perl
 
-
 ## CVS: bug fixed: matrices were not indexed in the synthetic table anymore 
 ## CVS: bug fixed: dyad occurrences were missing from SQL table pattern.tab
 ## Ce script est une usine a gaz
@@ -8,7 +7,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.120 2005/10/01 17:29:30 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.121 2005/10/06 04:57:34 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -155,14 +154,16 @@ $MEME_bfile = "";
 ## Default ORM options
 $ormbg_options = ""; ## must be global
 $ormbg_suffix = ""; ## must be global
-$ORM_top=20;
-$ORM_uth_occ_sig=0;
-$ORM_fixedsizewindow=0;
-$ORM_overlap=0;
-$ORM_strand="+-";
-$ORM_word_length=6;
-$ORM_window=100;
-$ORM_markov_order=-1;
+$ORM_lth_width = 100; ## Minimal window width for variable window size
+$ORM_uth_wrank = 1; ## Max rank per word
+$ORM_uth_rank=50; ## max rank (all words)
+$ORM_uth_occ_sig=0; ## lower thresold on occurrence significance
+$ORM_fixedsizewindow=0; ## Fixed window size
+$ORM_overlap=0; ## Allow overlapping occurrences for self-overlapping words
+$ORM_strand="+-"; ## Strands
+$ORM_word_length=6; ## Word length
+$ORM_window=100; ## Window size for the background model
+$ORM_markov_order=-1; ## markov order for the background model
 
 ## Comparison between discovered and known motifs
 $known_site_file = "";
@@ -642,13 +643,21 @@ sub SetFileNames {
 	$orm_options .= " --location=".$ORM_location;
 
 	## Number of top motifs
-	$orm_options .= " --top=".$ORM_top;
-	$orm_suffix .= "_t".$ORM_top;
+	$orm_options .= " -u rank ".$ORM_uth_rank;
+	$orm_suffix .= "_rank".$ORM_uth_rank;
 
 	## Occurrence significance
 	$orm_options .= " -d occ_sig ".$ORM_uth_occ_sig;
 	$orm_suffix .= "_occ_sig".$ORM_uth_occ_sig;
 	$orm_options .= " --sort=-occ_sig";
+
+	## Window width
+	$orm_options .= " -d width ".$ORM_lth_width;
+	$orm_suffix .= "_minwidth".$ORM_lth_width;
+
+	## Word rank
+	$orm_options .= " -u w_rank ".$ORM_uth_wrank;
+	$orm_suffix .= "_wrank".$ORM_uth_wrank;
 
 	## Fixed window size
 	if ($ORM_fixedsizewindow) {
