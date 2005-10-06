@@ -1457,6 +1457,7 @@ sub ReadPatterns {
 	    }
 	    if ($score_column >= 1) {
 		$pattern_score = $fields[$score_column - 1];
+		$pattern_score =~ s/^\+//; ## remove trailing +
 		$pattern_score = 1 unless &IsReal($pattern_score);
 	    } else {
 		$pattern_score = 1; #### default score
