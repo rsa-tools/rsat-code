@@ -7,7 +7,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.121 2005/10/06 04:57:34 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.122 2005/10/07 06:38:12 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -69,7 +69,9 @@ $dir{calib1} = "calibrations_1gene";
 		       slide
 		       synthesis
 		       sql
-		       validate
+		       validate_oligos
+		       validate_dyads
+		       validate_orm
 		       clean
 		       all
 		       report
@@ -1941,7 +1943,12 @@ sub CheckParameters {
 	$task{oligo_maps} = 1;
 	$task{dyad_maps} = 1;
     }
-    if ($task{validate}) {
+
+    ## Validation
+    if (($task{validate_oligos}) ||
+	($task{validate_dyads}) ||
+	($task{validate_orm})) {
+	$task{validate} = 1;
 	&FatalError("For the task 'validate', you must specify a list of known sites with the option -known")
 	    unless ($known_site_file);
     }
@@ -1983,6 +1990,7 @@ sub CheckParameters {
     } else {
 	$lth{occ_sig} = 0;
     } 
+
 }
 
 
@@ -3174,9 +3182,9 @@ sub Validate {
        }
        close $known_handle;
 
-       &ValidateOneResult($family_name, "oligo");
-       &ValidateOneResult($family_name, "dyad");
-       &ValidateOneResult($family_name, "orm");
+       &ValidateOneResult($family_name, "oligo") if ($task{validate_oligos});
+       &ValidateOneResult($family_name, "dyad") if ($task{validate_dyads});
+       &ValidateOneResult($family_name, "orm") if ($task{validate_orm});
 
 #        ## Compare oligos with known sites
 #        my $command = "count-matches"; 
