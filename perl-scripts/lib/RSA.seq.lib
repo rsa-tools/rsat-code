@@ -1426,14 +1426,15 @@ sub ReadPatterns {
 	my ($pattern_stream) = &OpenInputFile($pattern_file);
 	while (my $line = <$pattern_stream>) {
 	    chomp($line);
+	    next if ($line =~ /^#/);
 	    next unless ($line =~ /\S/);
 	    if ($line =~ /^;/) {
 		#### for piping with oligo-analysis and dyad-analysis
 		#### take occ_sig as the score column
 		if (!(defined($score_column)) &&
-		    (($line =~ /^;\s+(\d+)\s+occ_sig\s+/) ||
+		    (($line =~ /^;\s+(\d+)\s+occ_sig\s+/) || ## for oligo-analysis, dyad-analysis, orm.py
 		     ($line =~ /^;\s+Output score column\s+(\d+)/) ||
-		     ($line =~ /^;\s+(\d+)\s+chi2\s+/)
+		     ($line =~ /^;\s+(\d+)\s+chi2\s+/) ## for position-analysis
 		    )
 		   ) {
 		    $score_column = $1;
