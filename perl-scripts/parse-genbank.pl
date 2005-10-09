@@ -1,6 +1,6 @@
 #!/usr/bin/perl 
 #############################################################
-# $Id: parse-genbank.pl,v 1.30 2005/09/21 21:05:25 jvanheld Exp $
+# $Id: parse-genbank.pl,v 1.31 2005/10/09 13:42:09 rsat Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -352,7 +352,7 @@ DESCRIPTION
 	the normalization rules for relational databases : one main
 	table regroups all the single-value attributes(one attribute
 	per column), and each multi-value attribute comes in a
-	separate table with the foregin key in the first column.
+	separate table with the foreign key in the first column.
 
 	The program also exports some parsing statistics, an error
 	log, and a set of SQL scripts for creating a relational
