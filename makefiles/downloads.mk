@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: downloads.mk,v 1.25 2005/09/21 21:17:35 jvanheld Exp $
+# $Id: downloads.mk,v 1.26 2005/10/09 17:41:42 rsat Exp $
 #
 # Time-stamp: <2003-10-09 14:02:21 jvanheld>
 #
@@ -94,10 +94,10 @@ one_genbank_dir_ori:
 one_genbank_dir:
 	${MAKE} one_ncbi_dir_from_mirror
 
-genbank:
+genbank_ori:
 	@echo "${DATE}	starting to update	${GENBANK_DIRS}" >> wget_updates.txt; 
 	@for dir in ${GENBANK_DIRS} ; do		\
-		make one_genbank_dir GB_DIR=$${dir} ;	\
+		make one_genbank_dir_ori GB_DIR=$${dir} ;	\
 	done
 	@${WGET} ${GENBANK_GENOMES}/acc
 	@${WGET} ${GENBANK_GENOMES}/README
