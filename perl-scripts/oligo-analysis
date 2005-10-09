@@ -5,7 +5,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.99 2005/09/02 15:48:26 jvanheld Exp $
+# $Id: oligo-analysis,v 1.100 2005/10/09 13:35:26 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -1785,6 +1785,9 @@ sub ReadArguments {
 	    
 	    #### reverse complement grouping or not
 	} elsif ($ARGV[$a] eq "-grouprc") {
+	    if ($sum_rc == 0) {
+		&FatalError("The option -grouprc is incompatible with the option -1str");
+	    }
 	    $sum_rc = 1;
 	    $group_rc = 1;
 	    
