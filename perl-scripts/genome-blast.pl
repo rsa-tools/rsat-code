@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: genome-blast.pl,v 1.12 2005/09/22 06:30:18 rsat Exp $
+# $Id: genome-blast.pl,v 1.13 2005/10/09 13:37:54 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -85,7 +85,7 @@ local $batch = 0;
 local $die_on_error = 1;
 
 ## Supported tasks
-@supported_tasks = qw (formatdb blastall rank bbh cleandb);
+@supported_tasks = qw (formatdb blastall rank bbh cleandb all);
 foreach my $task (@supported_tasks) {
     $supported_task{$task} = 1;
 }
@@ -94,8 +94,22 @@ $supported_tasks = join ",", @supported_tasks;
 
 &ReadArguments();
 
+
+
 ################################################################
 #### check argument values
+
+## Tasks
+if (scalar(keys(%task)) < 1) {
+    &FatalError("You should specify at least one task");
+}
+if ($task{all}) {
+    foreach my $task (@supported_tasks) {
+	$task{$task} = 1;
+    }
+    delete($task{all});
+}
+
 
 ## Query taxons
 foreach my $query_taxon (@query_taxons) {
@@ -378,8 +392,11 @@ directory of your choice.
 
 =item B<-task selected_task>
 
-Select the tasks to be performed.  Supported tasks: formatdb,blastall,rank
-Can be used iteratively on the same command line to select multiple tasks.
+Select the tasks to be performed.  Supported tasks:
+formatdb,blastall,rank,bbh,cleandb,all.
+
+This option can be used iteratively on the same command line to select
+multiple tasks.
 
 Example:
 		    
@@ -452,6 +469,7 @@ sub Verbose {
     &PrintArguments($out);
     print $out "; Query organisms\n;\t", join ("\n;\t", @query_organisms), "\n";
     print $out "; Db organisms\n;\t", join ("\n;\t", @db_organisms), "\n";
+    print $out "; Tasks\n;\t", join ("\n;\t", sort (keys(%task))), "\n";
 
     if (defined(%dir)) {
 	print $out "; Directories\n";
