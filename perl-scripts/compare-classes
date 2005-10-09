@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.9 2005/05/17 14:05:41 jvanheld Exp $
+# $Id: compare-classes,v 1.10 2005/10/09 13:23:00 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -13,7 +13,8 @@ if ($0 =~ /([^(\/)]+)$/) {
 }
 require "RSA.lib";
 require "RSA.help.pl";
-require "RSA.classes";
+require RSAT::Family;
+#require "RSA.classes";
 
 ################################################################
 #### initialise parameters
