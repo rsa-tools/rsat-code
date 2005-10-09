@@ -1,13 +1,10 @@
 #!/usr/bin/perl
 
-## CVS: bug fixed: matrices were not indexed in the synthetic table anymore 
-## CVS: bug fixed: dyad occurrences were missing from SQL table pattern.tab
 ## Ce script est une usine a gaz
-## CVS: fixed bugs with option -seq
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.122 2005/10/07 06:38:12 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.123 2005/10/09 13:41:15 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -25,7 +22,7 @@ BEGIN {
     require "lib/load_classes.pl";
     require "lib/util.pl";
     require "lib/parsing_util.pl";
-    require "$RSA/perl-scripts/lib/RSA.classes";
+#    require "$RSA/perl-scripts/lib/RSA.classes";
 }
 require RSAT::util;
 require RSAT::matrix;
@@ -63,6 +60,7 @@ $dir{calib1} = "calibrations_1gene";
 		       merge_oligos
 		       oligo_maps
 		       dyad_maps
+		       orm_maps
 		       maps
 		       dyads
 		       merge_patterns
@@ -1937,11 +1935,13 @@ sub CheckParameters {
 	    $task{maps} = 0;
 	    $task{oligo_maps} = 0;
 	    $task{dyad_maps} = 0;
+	    $task{orm_maps} = 0;
 	}
     }
     if ($task{maps}) {
 	$task{oligo_maps} = 1;
 	$task{dyad_maps} = 1;
+	$task{orm_maps} = 1;
     }
 
     ## Validation
@@ -2057,7 +2057,7 @@ sub AnalyzeFamilies {
 	    &MatchPatterns($family{$family_name}->{oligo_file},  
 			   $family{$family_name}->{oligo_file},
 			   " -N 4");
-	    &DrawFeatureMap();
+	    &DrawFeatureMap($family{$family_name}->{oligo_file});
 	}
 
 	### dyad analysis
@@ -2081,11 +2081,16 @@ sub AnalyzeFamilies {
 	### orm
 	&orm() if ($task{orm});
 
+	### orm feature-maps
+	if ($task{orm_maps}) {
+	    &MatchPatterns($family{$family_name}->{orm_file},  
+			   $family{$family_name}->{orm_file},
+			   " -N 4");
+	    &DrawFeatureMap($family{$family_name}->{orm_file});
+	}
+
 #	### merge oligo-analysis and dyad-analysis results
 #	&MergePatterns() if ($task{merge_patterns});
-
-#	### dyad feature-maps
-#	&DrawFeatureMap() if ($task{maps});
 
 #	### Match all patterns together with a sliding window
 #	&SlidingWindow() if ($task{slide});
