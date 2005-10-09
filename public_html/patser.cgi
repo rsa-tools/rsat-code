@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: patser.cgi,v 1.22 2004/06/10 04:42:45 jvanheld Exp $
+# $Id: patser.cgi,v 1.23 2005/10/09 13:40:05 jvanheld Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -31,7 +31,6 @@ $matrix_from_transfac_command = "$SCRIPTS/matrix-from-transfac";
 $matrix_from_gibbs_command = "$SCRIPTS/matrix-from-gibbs";
 $convert_seq_command = "$SCRIPTS/convert-seq";
 $features_from_patser_cmd = "$SCRIPTS/features-from-patser -v 1";
-$add_orf_function_command = "$SCRIPTS/add-orf-function";
 $add_yeast_link_command = "$SCRIPTS/add-yeast-link";
 $tmp_file_name = sprintf "patser.%s", &AlphaDate();
 
