@@ -1,11 +1,13 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.55 2005/09/19 10:16:59 rsat Exp $
+# $Id: install-organism,v 1.56 2005/10/09 13:33:04 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
 ############################################################
+
+## CVS: suppressed the option -grouprc from the calibration, because it caused the files -1str to be grouped by pairs of reverse complements 
 
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
@@ -546,7 +548,7 @@ sub CalcOligoFreq {
 	$command .= " ".$strands;
 	$command .= " ".$noov;
 	$command .= " -l ".$oligo_length." -type dna ";
-	$command .= " -return freq,occ -grouprc ";
+	$command .= " -return freq,occ";
 	$command .= " -o ".$out_file;
 	$command .= "; gzip -f ".$out_file;
 	&doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
@@ -566,7 +568,7 @@ sub CalcOligoDistrib {
 		$command .= " ".$strands;
 	$command .= " ".$noov;
 	$command .= " -l ".$oligo_length." -type dna";
-	$command .= " -return occ -distrib -grouprc";
+	$command .= " -return occ -distrib";
 	$command .= " -o ".$distrib_file;
 	$command .= " ; gzip -f ".$distrib_file;
 	&doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);  
@@ -606,7 +608,6 @@ sub CalcDyadFreq {
 	$command .= " -sp ${min_spacing}-${max_spacing}";
 	$command .= " -l $monad_length";
 	$command .= " -return freq,occ";
-	$command .= " -grouprc";
 	$command .= " -o $dyad_file";
 	$command .= "; gzip -f $dyad_file ";
 	&doit($command, $dry_run, $die_on_error, $verbose, $batch, $job_prefix);
