@@ -61,10 +61,10 @@ tar_archive:
 zip_archive:
 	${MAKE} fill_archive ARCHIVE_CMD='${ZIP}' POST_CMD='${ZIP_EXCLUDE}'
 
-
 PUB_LOGIN=jvanheld
 PUB_SERVER=rsat.scmbb.ulb.ac.be
 PUB_DIR=/home/jvanheld/public_html/rsat_distrib/
-PUB_FORMAT=zip
+PUB_FORMAT=tar.gz
 publish:
 	rsync -ruptvl -e ssh ${ARCHIVE_PREFIX}.${PUB_FORMAT} ${PUB_LOGIN}@${PUB_SERVER}:${PUB_DIR}
+
