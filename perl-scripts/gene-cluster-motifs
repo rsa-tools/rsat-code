@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.124 2005/10/17 16:48:29 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.125 2005/10/17 16:49:19 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -3748,8 +3748,7 @@ sub CalibrateOligosN {
 					   "random gene selections","upstream length", $seq_len) )
 		    if ($main::verbose >= 1);
 		my $command = "calibrate-oligos -v 1";
-		
-		my $command  .= "-r ".$R." -sn ".$gene_nb." -ol ".$oligo_len." -sl ".$seq_len;
+		$command  .= "-r ".$R." -sn ".$gene_nb." -ol ".$oligo_len." -sl ".$seq_len;
 		my $calibN_task = "all,clean_oligos";
 		$command .= "-task ".$calibN_task;
 #	$command .= "-start ${START}";
@@ -3764,34 +3763,4 @@ sub CalibrateOligosN {
 	}
     }
 }
-
-# sub CalibrateOligosN {
-#     &RSAT::message::Info("Calibrating oligo occurrences with random gene selections") if ($main::verbose >= 1);
-#     for my $oligo_len ($min_oligo_len..$max_oligo_len) {
-# 	foreach my $family_name (@families) {
-# 	    my $gene_nb = scalar(@{$family{$family_name}->{members}});
-# 	    my $seq_len = $family{$family_name}->{calib_length};
-	    
-# 	    next if ($calib_done{$gene_nb}{$seq_len} >= 0);
-	    
-# 	    &RSAT::message::Info(join ("\t", "Calibrating oligo occurrences with ",$gene_nb, 
-# 				       "random gene selections","upstream length", $seq_len) )
-# 		if ($main::verbose >= 1);
-	    
-# 	    my $command = "calibrate-oligos -v 1";
-	    
-# 	    my $command  .= "-r ".$R." -sn ".$gene_nb." -ol ".$oligo_len." -sl ".$seq_len;
-# 	    my $calibN_task = "all,clean_oligos";
-# 	    $command .= "-task ".$calibN_task;
-# #	$command .= "-start ${START}";
-# #	$command .= "${END}";
-# 	    $command .= " ".$strands;
-# 	    $command .= " ".$noov;
-# 	    $command .= "-outdir ".$dir{calibN};
-# 	    $command .= "-org ".$organism_name;
-# 	    $calib_done{$gene_nb}{$seq_len}++;
-# 	    &doit($batch_script, $dry_run, $die_on_error, $verbose, $batch, "multi_calibN");
-# 	}
-#     }
-# }
 
