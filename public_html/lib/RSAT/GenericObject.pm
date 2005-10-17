@@ -15,6 +15,7 @@ $_count = 0;
 ## Instantiate a new object
 sub new {
     my ($class,%args) = @_;
+#    warn join (" ", keys(%args));
     ### bless the new object
     my $self = bless {
     }, ref($class) || $class;
@@ -64,8 +65,8 @@ sub init {
     
     ### increment class counters
     $self->_incr_count;
-    foreach $super (@{ $class."::ISA"}) {
-	$super->_incr_count if $super->can("_incr_count");
+    foreach $super (@{$class."::ISA"}) {
+	$super->_incr_count() if $super->can("_incr_count");
     }
     
     #### initialize SCALAR variables to $null
@@ -78,12 +79,6 @@ sub init {
 	    }
 	}
     }
-
-    ### set the creation date 
-    #$today = `date +%Y-%m-%d`;
-    #chomp $today;
-    #$self->set_attribute("creationDate",$today);
-    #$self->set_attribute("modifDate",$today);
     
     ### assign attribute values
     while (($key, $value) = each %args) {
@@ -111,7 +106,7 @@ sub get_attribute {
     my ($self,$attr) = @_;
     my $class = ref($self);
     unless (defined($self->{$attr})) {
-	warn("WARNING: object $self of class $class has no attribute named '$attr'\n") if ($main::verbose >= 4);
+	warn("WARNING: object $self of class $class has no attribute named '$attr'\n") if ($main::verbose >= 6);
 	return;
     }
     if (ref($self->{$attr}) eq "ARRAY") {
