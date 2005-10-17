@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.123 2005/10/09 13:41:15 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.124 2005/10/17 16:48:29 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -44,7 +44,7 @@ $rel_w = 1; ## Threshold on relative weight for count-matches
 $sliding_window_size = 0; 
 $die_on_error = 1;
 $analyze_purged_sequences = 1;
-$repetitions=1000; ### Repetitions for the calibN
+$repetitions=100; ### Repetitions for the calibN
 %dir = ();
 $dir{main} = `pwd`;
 chomp($dir{main});
@@ -56,6 +56,7 @@ $dir{calib1} = "calibrations_1gene";
 @supported_tasks = qw (upstream
 		       purge
 		       calibrate
+		       calibN
 		       oligos
 		       merge_oligos
 		       oligo_maps
@@ -799,11 +800,11 @@ sub PurgeSequences {
    warn ";\tPurging sequences for family $family_name\n" if ($verbose >= 1);
 
    ## Remove sequences of length 0
-   $command = "convert-seq -from fasta -to wc -lw 0";
+   $command = "convert-seq -from fasta -to fasta -lw 0 -noempty";
    $command .= " -i ".$family{$family_name}->{seq_file};
 #   $command .= " -i"..$family{$family_name}->{seq_file};
-   $command .= " | grep -v '\\\\\\\\'";
-   $command .= " | purge-sequence -format wc -ml 40 -mis 3";
+#   $command .= " | grep -v '\\\\\\\\'";
+   $command .= " | purge-sequence -format fasta -ml 40 -mis 3";
 #   $command .= " -i ".$family{$family_name}->{seq_file};
    $command .= " -o ".$family{$family_name}->{seq_file_purged};
    if ($batch) {
@@ -2002,12 +2003,14 @@ sub AnalyzeFamilies {
 
    ### Calibrate oligonucleotides for each sequence length
    if (($task{calibrate}) || 
+       ($task{calibN}) || 
 	($sequence_file_list) ||
 	($background eq "calib1") ||
 	($background eq "calibN")
 	) {
-	my @calib_lengths = &CalcCalibrationLengths();
-	&CalibrateOligos(@calib_lengths) if ($task{calibrate});
+       my @calib_lengths = &CalcCalibrationLengths();
+       &CalibrateOligos(@calib_lengths) if ($task{calibrate});
+       &CalibrateOligosN() if ($task{calibN});
 #    } else {
 #	foreach $family_name (@families) {
 #	    $family{$family_name}->{seq_length} = $seq_length*scalar(@{$family{$family_name}->{members}});
@@ -2244,9 +2247,14 @@ OPTIONS
 		Supported: $supported_background
 
 	-calib_dir
-		Directory containing the calibration files. The
-		calibration file name is then calculated automatically
-		from the conditions (seq lengths, seq number, ...)
+
+		Directory containing the calibration files for the
+		negative binomial. The calibration file name is then
+		calculated automatically from the conditions (seq
+		lengths, seq number, ...)
+
+	-calibN #
+		Number of repetitions for the calibration. 
 
 
 	-thosig #
@@ -2405,13 +2413,26 @@ TASK DESCRIPTION
    purge	Purge upstream sequences for the family.
 		(purge-sequences)
 
-   calibrate    Perform a family-secific calibration of expected
+   calibrate    
+   		Perform a word-specific calibration of expected
 		frequencies, by calculating oligonucleotide
 		distributions in the whole genome set of upstream
-		sequences of the same size. Beware: this takes time,
-		but, for higher organisms, it gives much less false
-		positives than the standard background models.
+		sequences of the same size. 
+
+		Beware: this takes time, but, for higher organisms, it
+		gives much less false positives than the standard
+		background models.
   
+   calibN
+		Perform a family-specific calibration of expected
+		oligonucleotide frequencies by calculating occurrences
+		in N random selections of genes.
+
+		Beware: this takes a lot of time, but it strongly
+		reduces the rate of false positives for higher
+		organisms. We did not yet measure the rate of true
+		positives remaining after this calibration.
+
    oligos	Run oligo-analysis on each family.
 
    dyads	Run dyad-analysis on each family.
@@ -2455,17 +2476,17 @@ multiple-family-analysis options
 -help		(must be first argument) display options
 -v		verbose
 -i		family file (incompatible with -seq)
+-seq		sequence file (incompatible with -i)
+-outdir		output directory
+-org		organism
 -skip #		skip the # first data sets
 -last #		stop after the # first data sets
 -task		selected task (supported: $supported_tasks)
 -htmaps		draw html maps (dynamic map with pointers to the features)
--outdir		output directory
--org		organism
 -n      	dry run: print commands without executing them
 -batch	send time-consuming jobs to a batch queue for a PC cluster
 
 ## Sequence options
--seq		sequence file (incompatible with -i)
 -purge		use purged sequences for pattern discovery (default)
 -nopurge	use non-purged sequences for pattern discovery
 -mingenes	minimal number of genes per family
@@ -2750,6 +2771,12 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] =~ /^-calib_dir/) {
 	    $dir{calib1} = $ARGV[$a+1];
 	    $dir{calibN} = $ARGV[$a+1];
+
+	    #### Number of repetitions for the calibration
+	} elsif ($ARGV[$a] =~ /^-calibN/) {
+	    $repetitions = $ARGV[$a+1];
+	    &FatalError("Invalid number of repetitions for the calibrations: should be at least 2, and a much larger value (e.g.100) is highly recommended.") 
+		unless ((&IsNatural($repetitions)) && ($repetitions >= 2));
 
 	    #### background model for expected frequency. 
 	    #### Supported: "upstream", "upstam-noorf", "intergenic", "mncf"
@@ -3353,92 +3380,6 @@ sub CalcCalibrationLengths {
    return @calib_lengths;
 }
 
-################################################################
-## Calibrate oligonucleotide occurrences (mean and variance) for each
-## sequence length
-sub CalibrateOligos {
-   my @calib_lengths = @_;
-   warn ";\n; Calibrating oligonucleotide occurrences\n" if ($verbose >=1);
-
-   ### Analyse upstream occurrence distributions for each sequence length
-   chdir($dir{output}); &RSAT::util::CheckOutDir($dir{calib1});
-   warn "; Calculating oligonucleotide distributions in all upstream sequences\n" if ($verbose >= 1);
-   foreach my $calib_length (sort {$a <=> $b} @calib_lengths) {
-
-	## retrieve all upstream sequence if required
-	my $allup_file = $dir{calib1}."/tmp_all_up_".$calib_length.".fasta";
-	if (-e $allup_file) {
-	    &RSAT::message::Info(join("\t", "All upstream sequence file already exists. Skipping retrieval", $allup_file)) if ($main::verbose >= 1);
-	} else {
-	    $command = "retrieve-seq -imp_pos -org $organism_name -all -from -$calib_length -to -1 -o $allup_file";
-	    &RSAT::message::TimeWarn(join ("\t", "Retrieving all upstream sequences", $allup_file)) if ($main::verbose >= 1);
-	    if ($batch) {
-		push @main::batch_commands, $command;
-	    } else {
-		&doit($command, $dry_run, $die_on_error, $verbose);
-	    }
-	}
-
-	## Calibrate oligonucleotides
-	for my $oligo_len ($min_oligo_len..$max_oligo_len) {
-
-	    ## Names of the calibration files
-	    my $calib_prefix = &CalibrationPrefix($calib_length, $oligo_len);
-	    my $distrib_file = $calib_prefix."_distrib.tab";
-	    my $fitting_file = $calib_prefix."_negbin.tab";
-
-	    ## Skip the calibration if the file already exists
-	    if ((-e $fitting_file.".gz") && !($force_calib)) {
-		warn "Calibration file already exists. Skipping calibration.\t${fitting_file}.gz\n";
-		next;
-	    } else {
-		warn "Calculating oligo calibration\t${fitting_file}.gz\n";
-	    }
-
-	    ## Calculate occurrence distributions
-	    $command = "oligo-analysis -v 3 -l $oligo_len $noov $strands  -i $allup_file -return occ -distrib -o $distrib_file";
-	    warn ";\tAnalysing ",$oligo_len,"nt distributions\t",$distrib_file, "\n" if ($main::verbose >= 1);
-	    if ($batch) {
-		push @main::batch_commands, $command;
-	    } else {
-		&doit($command, $dry_run, 0, $verbose);
-	    }
-
-	    ## Calculate stats and fit negbin on the distributions
-	    $command = "fit-distribution -v 1 -i $distrib_file -distrib negbin -o $fitting_file";
-	    if ($batch) {
-		push @main::batch_commands, $command;
-	    } else {
-		&doit($command, $dry_run, $die_on_error, $verbose);
-	    }
-
-	    ## Compress distrib and fitting file
-	    $command = "gzip -f $distrib_file $fitting_file";
-	    if ($batch) {
-		push @main::batch_commands, $command;
-	    } else {
-  	        &doit($command, $dry_run, $die_on_error, $verbose);
-           }
-	}
-
-	## Delete the file with all upstream sequences
-	$command = "rm -f $allup_file";
-	warn ":\tCleaning all upstream sequences\t", $allup_file, "\n" if ($main::verbose >= 1);
-	if ($batch) {
-	    push @main::batch_commands, $command;
-	} else {
-	    &doit($command, $dry_run, 0, $verbose);
-	}
-
-	## Send the batch script to the queue
-	if ($batch) {
-	    my $batch_script = join "\n\n", @main::batch_commands;
-	    &doit($batch_script, $dry_run, $die_on_error, $verbose, $batch);
-	    @main::batch_commands = ();
-	}
-   }
-
-}
 
 ## ##############################################################
 ## Calculate the prefix of the calibration file
@@ -3453,8 +3394,10 @@ sub CalibrationPrefix {
 	## Dirtectories containing the calibration files
 	unless ($dir{calibN}) {
 	    $dir{calibN} = $supported_organism{$organism_name}->{'data'}."/rand_gene_selections";
+#	    ## Temporary
+#	    $dir{calibN} = "~/motif_discovery_competition_2003/results/".$organism_name."/rand_gene_selections/";
 	    ## Temporary
-	    $dir{calibN} = "~/motif_discovery_competition_2003/results/".$organism_name."/rand_gene_selections/";
+	    $dir{calibN} = $dir{output}."/rand_gene_selections/";
 	}
 
 
@@ -3692,4 +3635,163 @@ sub ReadAssemblyFile {
    close $pattern_handle;
    return ($error, @assembled_patterns);
 }
+
+
+
+################################################################
+## Calibrate oligonucleotide occurrences (mean and variance) for each
+## sequence length
+sub CalibrateOligos {
+   my @calib_lengths = @_;
+   warn ";\n; Calibrating oligonucleotide occurrences\n" if ($verbose >=1);
+
+   ### Analyse upstream occurrence distributions for each sequence length
+   chdir($dir{output}); &RSAT::util::CheckOutDir($dir{calib1});
+   warn "; Calculating oligonucleotide distributions in all upstream sequences\n" if ($verbose >= 1);
+   foreach my $calib_length (sort {$a <=> $b} @calib_lengths) {
+
+	## retrieve all upstream sequence if required
+	my $allup_file = $dir{calib1}."/tmp_all_up_".$calib_length.".fasta";
+	if (-e $allup_file) {
+	    &RSAT::message::Info(join("\t", "All upstream sequence file already exists. Skipping retrieval", $allup_file)) if ($main::verbose >= 1);
+	} else {
+	    $command = "retrieve-seq -imp_pos -org $organism_name -all -from -$calib_length -to -1 -o $allup_file";
+	    &RSAT::message::TimeWarn(join ("\t", "Retrieving all upstream sequences", $allup_file)) if ($main::verbose >= 1);
+	    if ($batch) {
+		push @main::batch_commands, $command;
+	    } else {
+		&doit($command, $dry_run, $die_on_error, $verbose);
+	    }
+	}
+
+	## Calibrate oligonucleotides
+	for my $oligo_len ($min_oligo_len..$max_oligo_len) {
+
+	    ## Names of the calibration files
+	    my $calib_prefix = &CalibrationPrefix($calib_length, $oligo_len);
+	    my $distrib_file = $calib_prefix."_distrib.tab";
+	    my $fitting_file = $calib_prefix."_negbin.tab";
+
+	    ## Skip the calibration if the file already exists
+	    if ((-e $fitting_file.".gz") && !($force_calib)) {
+		warn "Calibration file already exists. Skipping calibration.\t${fitting_file}.gz\n";
+		next;
+	    } else {
+		warn "Calculating oligo calibration\t${fitting_file}.gz\n";
+	    }
+
+	    ## Calculate occurrence distributions
+	    $command = "oligo-analysis -v 3 -l $oligo_len $noov $strands  -i $allup_file -return occ -distrib -o $distrib_file";
+	    warn ";\tAnalysing ",$oligo_len,"nt distributions\t",$distrib_file, "\n" if ($main::verbose >= 1);
+	    if ($batch) {
+		push @main::batch_commands, $command;
+	    } else {
+		&doit($command, $dry_run, 0, $verbose);
+	    }
+
+	    ## Calculate stats and fit negbin on the distributions
+	    $command = "fit-distribution -v 1 -i $distrib_file -distrib negbin -o $fitting_file";
+	    if ($batch) {
+		push @main::batch_commands, $command;
+	    } else {
+		&doit($command, $dry_run, $die_on_error, $verbose);
+	    }
+
+	    ## Compress distrib and fitting file
+	    $command = "gzip -f $distrib_file $fitting_file";
+	    if ($batch) {
+		push @main::batch_commands, $command;
+	    } else {
+  	        &doit($command, $dry_run, $die_on_error, $verbose);
+           }
+	}
+
+	## Delete the file with all upstream sequences
+	$command = "rm -f $allup_file";
+	warn ":\tCleaning all upstream sequences\t", $allup_file, "\n" if ($main::verbose >= 1);
+	if ($batch) {
+	    push @main::batch_commands, $command;
+	} else {
+	    &doit($command, $dry_run, 0, $verbose);
+	}
+
+	## Send the batch script to the queue
+	if ($batch) {
+	    my $batch_script = join "\n\n", @main::batch_commands;
+	    &doit($batch_script, $dry_run, $die_on_error, $verbose, $batch);
+	    @main::batch_commands = ();
+	}
+   }
+
+}
+
+
+
+################################################################
+## Calibrate oligo frequencies by selecting R random sets of N genes,
+## counting the occurrences of each word in each set, and estimating
+## the average and standard deviation of the occurrence number.
+#sub CalibrateOligosN {
+sub CalibrateOligosN {
+    &RSAT::message::Info("Calibrating oligo occurrences with random gene selections") if ($main::verbose >= 1);
+    for my $oligo_len ($min_oligo_len..$max_oligo_len) {
+	foreach my $family_name (@families) {
+	    my $gene_nb = scalar(@{$family{$family_name}->{members}});
+	    my $seq_len = $family{$family_name}->{calib_length};
+	    
+	    if ($calib_done{$gene_nb}{$seq_len} > 0) {
+		&RSAT::message::Info(join ("\t", $family_name, "Already done a calibration of oligo occurrences with ",$gene_nb, 
+					   "random gene selections","upstream length", $seq_len) )
+	    } else {
+		
+		&RSAT::message::Info(join ("\t", $family_name, "Calibrating oligo occurrences with ",$gene_nb, 
+					   "random gene selections","upstream length", $seq_len) )
+		    if ($main::verbose >= 1);
+		my $command = "calibrate-oligos -v 1";
+		
+		my $command  .= "-r ".$R." -sn ".$gene_nb." -ol ".$oligo_len." -sl ".$seq_len;
+		my $calibN_task = "all,clean_oligos";
+		$command .= "-task ".$calibN_task;
+#	$command .= "-start ${START}";
+#	$command .= "${END}";
+		$command .= " ".$strands;
+		$command .= " ".$noov;
+		$command .= "-outdir ".$dir{calibN};
+		$command .= "-org ".$organism_name;
+		$calib_done{$gene_nb}{$seq_len}++;
+		&doit($command, $dry_run, $die_on_error, $verbose, $batch, "multi_calibN");
+	    }
+	}
+    }
+}
+
+# sub CalibrateOligosN {
+#     &RSAT::message::Info("Calibrating oligo occurrences with random gene selections") if ($main::verbose >= 1);
+#     for my $oligo_len ($min_oligo_len..$max_oligo_len) {
+# 	foreach my $family_name (@families) {
+# 	    my $gene_nb = scalar(@{$family{$family_name}->{members}});
+# 	    my $seq_len = $family{$family_name}->{calib_length};
+	    
+# 	    next if ($calib_done{$gene_nb}{$seq_len} >= 0);
+	    
+# 	    &RSAT::message::Info(join ("\t", "Calibrating oligo occurrences with ",$gene_nb, 
+# 				       "random gene selections","upstream length", $seq_len) )
+# 		if ($main::verbose >= 1);
+	    
+# 	    my $command = "calibrate-oligos -v 1";
+	    
+# 	    my $command  .= "-r ".$R." -sn ".$gene_nb." -ol ".$oligo_len." -sl ".$seq_len;
+# 	    my $calibN_task = "all,clean_oligos";
+# 	    $command .= "-task ".$calibN_task;
+# #	$command .= "-start ${START}";
+# #	$command .= "${END}";
+# 	    $command .= " ".$strands;
+# 	    $command .= " ".$noov;
+# 	    $command .= "-outdir ".$dir{calibN};
+# 	    $command .= "-org ".$organism_name;
+# 	    $calib_done{$gene_nb}{$seq_len}++;
+# 	    &doit($batch_script, $dry_run, $die_on_error, $verbose, $batch, "multi_calibN");
+# 	}
+#     }
+# }
 
