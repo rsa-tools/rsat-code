@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-ensembl-genome.pl,v 1.18 2005/09/23 09:37:43 rsat Exp $
+# $Id: get-ensembl-genome.pl,v 1.19 2005/10/18 04:51:03 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -585,6 +585,10 @@ DESCRIPTION
 
 	Retrieve information from EnsEMBL (http://www.ensembl.org) to
 	obtain the required data for installing it in RSAT.  
+
+REQUIREMENTS
+
+        This script requires the BioPerl and Bio::EnsEMBL libraries.
 
 CATEGORY
 	util
