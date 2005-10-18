@@ -1,8 +1,13 @@
 #!/usr/bin/perl 
 
+
+## CVS: created a class for graphs, and useed it for dot export
+## CVS: added export in GML format
+## CVS : added rank to the supported return fields
+
 ############################################################
 #
-# $Id: compare-classes,v 1.10 2005/10/09 13:23:00 jvanheld Exp $
+# $Id: compare-classes,v 1.11 2005/10/18 04:50:05 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -14,6 +19,9 @@ if ($0 =~ /([^(\/)]+)$/) {
 require "RSA.lib";
 require "RSA.help.pl";
 require RSAT::Family;
+require RSAT::Graph;
+require RSAT::GraphNode;
+require RSAT::GraphArc;
 #require "RSA.classes";
 
 ################################################################
@@ -24,6 +32,7 @@ local $symmetric = 0;
 local $distinct = 0;
 local $matrix_key = "sig"; ### key to export as similarity index (option -matrix)
 local $dot_file = "";
+local $gml_file = "";
 
 %common = (); ### elements common to query and reference classes
 %ref_only = (); ### elements found in reference but not in query
@@ -35,7 +44,8 @@ $sort_key = "name";
                             occ=>1,
                             proba=>1,
                             percent=>1,
-                            members=>1
+                            members=>1,
+                            rank=>1
                             );
 $supported_return_fields = join ",", keys %supported_return_fields;
 
@@ -129,7 +139,7 @@ if ($infile{rnames}) {
 	my @fields = split '\t';
 	my $id = $fields[0];
 	my $name = $fields[1];
-	warn join ("\t", ";ref class", $id, $name), "\n" if ($main::verbose >= 10);
+#	warn join ("\t", ";ref class", $id, $name), "\n" if ($main::verbose >= 10);
 	if (defined($ref_classes{$id})) {
 	    $ref_classes{$id}->force_attribute("name",$name);
 	}
@@ -147,7 +157,7 @@ if ($infile{qnames}) {
 	my @fields = split '\t';
 	my $id = $fields[0];
 	my $name = $fields[1];
-	warn join ("\t", ";query class", $id, $name), "\n" if ($main::verbose >= 10);
+#	warn join ("\t", ";query class", $id, $name), "\n" if ($main::verbose >= 10);
 	if (defined($query_classes{$id})) {
 	    $query_classes{$id}->force_attribute("name",$name);
 	}
@@ -197,7 +207,21 @@ if ($verbose) {
 close $out if ($outfile{output});
 
 
-&ExportDotFile($dot_file) if ($dot_file);
+## export graph in gml format
+if ($gml_file) {
+    my $graph = &CreateGraph("gml");
+    $gml_handle = &OpenOutputFile($gml_file);
+    $gml = $graph->to_gml();
+    print $gml_handle $gml;
+}
+
+## export graph in dot format
+if ($dot_file) {
+    my $graph = &CreateGraph("dot");
+    $dot_handle = &OpenOutputFile($dot_file);
+    $dot = $graph->to_dot();
+    print $dot_handle $dot;
+}
 
 exit(0);
 
@@ -323,9 +347,15 @@ OPTIONS
 		Supported : $supported_matrix_keys
 	-dot dot_file
 		Export a graph with the associations in a dot
-		files. Dot files can be visualized and motified with
+		file. Dot files can be visualized and modified with
 		the GraphViz package (http://www.graphviz.com/), which
 		contains several methods of automatic layout.
+	-gml gml_file
+		Export a graph with the associations in a gml
+		file, which can be visualized and modified with
+		various visualization packages, including
+         	GraphViz (http://www.graphviz.com/)
+		yed (http://www.yworks.com/en/products_yed_about.htm)
 
 PROBABILITIES
         P-VALUE
@@ -468,6 +498,7 @@ hyergeometric)
 -cat		catalog (supported: $supported_catalogs)
 -org		organism
 -dot		dot file
+-gml		gml file
 End_short_help
   close HELP;
   exit(0);
@@ -557,6 +588,10 @@ sub ReadArguments {
             ### dot file
         } elsif ($ARGV[$a] eq "-dot") {
             $dot_file = $ARGV[$a+1];
+
+            ### gml file
+        } elsif ($ARGV[$a] eq "-gml") {
+            $gml_file = $ARGV[$a+1];
 
             ### prevent to compare each class with itself
         } elsif ($ARGV[$a] eq "-distinct") {
@@ -662,13 +697,6 @@ sub Verbose {
 ################################################################
 #### read class file
 
-################################################################
-##### read input
-#($ref) = &OpenInputFile($infile{ref_classes});
-#while (<$ref>) {
-#    warn $_;
-#}
-#close $ref if ($infile{ref_classes});
 
 
 ################################################################
@@ -958,10 +986,12 @@ sub PrintResult {
     } else {
 	## Print one row per association between a reference and a query class
 	#### header
-	my @header_fields = (
-			     "; ref",
-			     "query",
-			     );
+	my @header_fields = ();
+	if ($return_fields{rank}) {
+	    push @header_fields, ("rank");
+	};
+
+	push @header_fields, ("ref","query");
 
 	if ($return_fields{occ}) {
 	    push @header_fields, "ref#";
@@ -986,7 +1016,7 @@ sub PrintResult {
 	    push @header_fields, "query_only";
 	    push @header_fields, "common_members";
 	}
-	print $out join("\t", @header_fields), "\n";
+	print $out "; ", join("\t", @header_fields), "\n";
 
 	#### sort class comparisons
 	if ($sort_key eq "name") {
@@ -999,14 +1029,21 @@ sub PrintResult {
 	}
 
 	#### class combinations
+	my $rank = 0;
 	foreach my $compa_key (@sorted_keys) {
 	    my ($r, $q) = split "__VERSUS__", $compa_key;
+	    $rank++;
+	    
+	    ## Print the rank of the association
+	    if ($return_fields{rank}) {
+		print $out $rank."\t";
+	    }
 
 	    #### reference family name
 	    my $r_text = $r;
 	    my $rname =  $ref_classes{$r}->get_attribute("name");
-	    if ($rname) {
-		## Replace class ID by class name
+	    if ($rname ne $r) {
+		## Add class name to class ID
 		$r_text .= ":".$rname; 
 	    }
 	    warn join( "\t", ";ref class", $r, $r_text), "\n" if ($main::verbose >= 10);
@@ -1014,7 +1051,7 @@ sub PrintResult {
 	    #### query family name
 	    my $q_text = $q;
 	    my $qname =  $query_classes{$q}->get_attribute("name");
-	    if ($qname) {
+	    if ($qname ne $q) {
 		## Replace class ID by class name
 		$q_text .= ";".$qname; 
 	    }
@@ -1068,91 +1105,116 @@ sub PrintResult {
     }
 }
 
+
 ################################################################
-#### Export dot file
-sub ExportDotFile {
-    my ($file) = @_;
+#### Create a graph with the result
+sub CreateGraph {
+    my ($type) = @_;
 
     my %color = ();
-    $color{'ref_node'} = "blue";
-    $color{'query_node'} = "red";
-    $color{'arc'} = "black";
+
+    ## Specify node and arc colors
+    if ($type eq "dot") {
+	$color{'ref_node'} = "darkgreen";
+	if ($infile{ref_classes} eq $infile{query_classes}) {
+	    $color{'query_node'} = $color{'ref_node'};
+	} else {
+	    $color{'query_node'} = "blue";
+	}
+	$color{'arc'} = "black";
+    } else {
+	$color{'ref_node'} = "#00BB00";
+	if ($infile{ref_classes} eq $infile{query_classes}) {
+	    $color{'query_node'} = $color{'ref_node'};
+	} else {
+	    $color{'query_node'} = "#0000BB";
+	}
+	$color{'arc'} = "#000000";
+    }
     
+#    warn join ("\t", $type, values(%color)), "\n";
+
     my %shape = ();
     $shape{'ref_node'} = "box";
     $shape{'query_node'} = "ellipse";
 
-    $dot = &OpenOutputFile($file);
-
-    #### header
-    print $dot "graph G {\n";
-    print $dot "overlap=scale;\n";
-    print $dot "size=\"7,10\";\n";
-
+    my $graph = new RSAT::Graph();
+    $graph->set_attribute("label", "compare-classes result");
 
     #### class combinations
-    my %ref_nodes = ();
-    my %query_nodes = ();
-    my $arcs = "";
-    my %ref_id = ();
-    my %query_id = ();
+    my %node_obj = (); ## Index of node objects
     foreach my $compa_key (keys %compa) {
-        my ($r, $q) = split "__VERSUS__", $compa_key;
-	my $arc_label = $compa{$compa_key}->{occ};
+	my ($r, $q) = split "__VERSUS__", $compa_key;
+	my $ref_id;
+	my $query_id;
 
-	$ref_nodes{$r}++;
+	## Target node for the association
 	if ($infile{ref_classes} eq $infile{query_classes}) {
 	    #### ref and query set are identical
-	    $ref_id{$r} = $r;
-	    $ref_id{$q} = $q;
-	    $query_id{$q} = $q;
-	    $ref_nodes{$q}++; 
+	    $ref_id = $r;
+	    $query_id = $q;
 	} else {
 	    #### distinct ID prefixes for references and queries
-	    $ref_id{$r} = "r_".$r;
-	    $query_id{$q} = "q_".$q;
-	    $query_nodes{$q}++;
+	    $ref_id = "r_".$r;
+	    $query_id = "q_".$q;
 	}
-	$arcs .=  join ("", "\"", $query_id{$q}, "\" -- \"", $ref_id{$r}, "\" [label=", $arc_label,"]", "\n");
 
+
+	## Source node for the association
+	my $source_node;
+	if (defined($node_obj{$query_id})) {
+	    $source_node = $node_obj{$query_id};
+	} else {
+	    my @members = $query_classes{$q}->get_members();
+	    my $node_label = $query_id." (".scalar(@members).")";
+	    $source_node = $graph->create_node(id=>$query_id, 
+					       color=>$color{query_node},
+					       fontsize=>14,
+					       fontcolor=>$color{query_node},
+					       shape=>$shape{'query_node'},
+					       label=>$node_label);
+	    $node_obj{$query_id} = $source_node;
+	    &RSAT::message::Info(join("\t", "Created source node", 
+				      $q,
+				      $query_id,
+				      "id=".$source_node->get_attribute("id"), 
+				      "label=".$source_node->get_attribute("label"),
+				      "color=".$source_node->get_attribute("color"),
+				     )) if ($main::verbose >= 3);
+	}
+
+	## Target node for the association
+	my $target_node;
+	if (defined($node_obj{$ref_id})) {
+	    $target_node = $node_obj{$ref_id};
+	} else {
+	    my @members = $ref_classes{$r}->get_members();
+	    my $node_label = $ref_id." (".scalar(@members).")";
+	    $target_node = $graph->create_node(id=>$ref_id,
+					       color=>$color{ref_node},
+					       fontsize=>14,
+					       fontcolor=>$color{ref_node},
+					       shape=>$shape{'ref_node'},
+					       label=>$node_label);
+	    $node_obj{$ref_id} = $target_node;
+	    &RSAT::message::Info(join("\t", "Created target node", 
+				      $r,
+				      "id=".$target_node->get_attribute("id"), 
+				      "label=".$target_node->get_attribute("label"),
+				      "color=".$source_node->get_attribute("color"),
+				     )) if ($main::verbose >= 3);
+	}
+
+	my $arc_label = ();
+	$arc_label .= $compa{$compa_key}->{occ};
+	if ($return_fields{proba}) {
+	    $arc_label .= " (";
+	    $arc_label .= sprintf("%.1f", $compa{$compa_key}->{sig});
+	    $arc_label .= ")";
+	}
+	$graph->create_arc($source_node, $target_node, label=>$arc_label);
     }
-
-    #### draw nodes for reference classes
-    foreach $n (sort keys %ref_nodes) {
-	my @members = $ref_classes{$n}->get_members();
-	my $node_label = $n." (".scalar(@members).")";
-	print $dot ("\"", $ref_id{$n}, "\"",  
-		    " [color=",$color{'ref_node'},
-		    ",fontsize=18",
-		    ",fontcolor=", $color{'ref_node'},
-		    ",shape=",$shape{'ref_node'},
-		    ",label=\"", $node_label, 
-		    "\"]",
-		    "\n");
-	
-    }
-
-    #### draw nodes for query classes
-    foreach $n (sort keys %query_nodes) {
-	my @members = $query_classes{$n}->get_members();
-	my $node_label = $n." (".scalar(@members).")";
-	print $dot ("\"", $query_id{$n}, "\"",  
-		    " [color=",$color{'query_node'},
-		    ",fontsize=18",
-		    ",fontcolor=", $color{'query_node'},
-		    ",shape=",$shape{'query_node'},
-		    ",label=\"", $node_label, 
-		    "\"]",
-		    "\n");
-	
-    }
-
-    #### draw arcs
-    print $dot $arcs;
     
-    #### close the graph in the dot file
-    print $dot "}\n";
-
-    close ($dot);
+    return $graph;
 }
 
