@@ -16,8 +16,6 @@ $matrix_from_gibbs_command = "$SCRIPTS/matrix-from-gibbs";
 $convert_seq_command = "$SCRIPTS/convert-seq";
 $features_from_patser_cmd = "$SCRIPTS/features-from-patser -v 1";
 $add_orf_function_command = "$SCRIPTS/add-gene-info -info descr";
-#$add_orf_function_command = "$SCRIPTS/add-orf-function";
-#$add_yeast_link_command = "$SCRIPTS/add-yeast-link";
 $link_command = "$SCRIPTS/add-yeast-link";
 $tmp_file_name = sprintf "genome-scale-patser.%s", &AlphaDate;
 
