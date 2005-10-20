@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.56 2005/10/09 13:33:04 jvanheld Exp $
+# $Id: install-organism,v 1.57 2005/10/20 19:43:01 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -294,8 +294,9 @@ sub UpdateConfig {
     } else {
 	$new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'up_from'} = -400 ;\n";
     }
+
     if (defined($up_to)) {
-	$new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'up_from'} = ".$up_to.";\n";
+	$new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'up_to'} = ".$up_to.";\n";
     } elsif (defined($supported_organism{$organism_short_name}->{'up_to'})) {
 	$new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'up_to'} = ".$supported_organism{$organism_short_name}->{'up_to'}.";\n";
     } else {
