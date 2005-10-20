@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: mirror.mk,v 1.25 2005/10/09 13:42:35 rsat Exp $
+# $Id: mirror.mk,v 1.26 2005/10/20 19:32:17 rsat Exp $
 #
 # Time-stamp: <2003-10-01 12:05:45 jvanheld>
 #
@@ -100,12 +100,16 @@ pub_from_server:
 
 EXCLUDED_GENOMES=				\
 		--exclude Danio_rerio*		\
-		--exclude Mus_musculus		\
-		--exclude Gallus_gallus*		\
+		--exclude Mus_musculus*		\
+		--exclude Gallus_gallus*	\
 		--exclude Canis_familiaris*	\
-		--exclude Pan_troglodytes*	\
+		--exclude Pan_troglodytes	\
 		--exclude Rattus_norvegicus*	\
-		--exclude Homo_sapiens*
+		--exclude Homo_sapiens*		\
+		--exclude Drosophila_melanogaster*	\
+		--exclude Anopheles_gambiae*	\
+		--exclude Caenorhabditis_elegans*	\
+
 
 EXCLUDED_FILES=					\
 		--exclude 'blast_db'		\
