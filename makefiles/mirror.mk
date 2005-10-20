@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: mirror.mk,v 1.26 2005/10/20 19:32:17 rsat Exp $
+# $Id: mirror.mk,v 1.27 2005/10/20 21:55:54 rsat Exp $
 #
 # Time-stamp: <2003-10-01 12:05:45 jvanheld>
 #
@@ -19,7 +19,7 @@ DATE = `date +%Y%m%d_%H%M%S`
 OPT=
 MAKEFILE=${RSAT}/makefiles/mirror.mk
 MAKE=make -sk -f ${MAKEFILE}
-RSYNC_OPT = -ruptvl ${OPT} --exclude '*~'
+RSYNC_OPT = -ruptvl ${OPT} --exclude '*~' --exclude jobs
 SSH=-e ssh
 RSYNC = rsync ${RSYNC_OPT} ${SSH}
 
