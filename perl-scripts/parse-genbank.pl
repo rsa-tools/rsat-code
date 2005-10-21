@@ -1,6 +1,6 @@
 #!/usr/bin/perl 
 #############################################################
-# $Id: parse-genbank.pl,v 1.31 2005/10/09 13:42:09 rsat Exp $
+# $Id: parse-genbank.pl,v 1.32 2005/10/21 05:13:53 rsat Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -139,6 +139,15 @@ package main;
 	chdir ($dir{input});
 	push @genbank_files, glob("*.${ext}");
 	push @genbank_files, glob("*.${ext}.gz");
+	
+
+	## If no genbank files were found in the main directory (Bacteria),
+	## search in CHR_* directories (eukaryotes)
+	if (scalar(@genbank_files) < 1) {
+	    chdir ($dir{input});
+	    push @genbank_files, glob("CHR_*/*.${ext}");
+	    push @genbank_files, glob("CHR_*/*.${ext}.gz");
+	}
     }
     if ($#genbank_files < 0) {
 	&RSAT::error::FatalError("There is no genbank file in the input directory $dir{input}\n");
