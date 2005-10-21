@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.125 2005/10/17 16:49:19 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.126 2005/10/21 08:22:55 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -856,7 +856,7 @@ sub CalcOligoOptions {
 	my $N = scalar(@{$family{$family_name}->{members}});
 	my $calib_file = &CalibrationPrefix($calib_length, $oligo_len, $N);
 	$calib_file .= "_negbin.tab";
-	
+
 	### Check whether the calibration file exists
 	unless ((-e $calib_file) || (-e $calib_file.".gz")) {
 	    ### temporary: if there is no R10000 file, try R1000
@@ -867,7 +867,7 @@ sub CalcOligoOptions {
 		### temporary: if there is no R1000 file, try R100
 		$calib_file =~ s/1000/100/g;
 		if ((-e $calib_file) || (-e $calib_file.".gz")) {
-		    &RSAT::message::Warning("Using calibration with 1000 repetitions\t".$calib_file);
+		    &RSAT::message::Warning("Using calibration with 100 repetitions\t".$calib_file);
 		    
 		} else {
 		    &RSAT::error::FatalError ("Calibration file not found\t".$calib_file);
@@ -879,7 +879,7 @@ sub CalcOligoOptions {
 	warn join ("\t", "; Oligonucleotide calibration", $calib_length, $calib_file), "\n" if ($main::verbose >= 3);
 	
    } else {
-	### Pre-calculated expected frequenccy files
+	### Pre-calculated expected frequency files
 	$oligo_options .= " -org ".$organism_name;
 	$oligo_options .= " -bg ".$background;
 	
@@ -3391,24 +3391,25 @@ sub CalibrationPrefix {
    if ($N) {
 	## set-based calibration (simulations)
 
-	## Dirtectories containing the calibration files
+	## Directories containing the calibration files
 	unless ($dir{calibN}) {
-	    $dir{calibN} = $supported_organism{$organism_name}->{'data'}."/rand_gene_selections";
+#	    $dir{calibN} = $supported_organism{$organism_name}->{'data'}."/rand_gene_selections";
 #	    ## Temporary
 #	    $dir{calibN} = "~/motif_discovery_competition_2003/results/".$organism_name."/rand_gene_selections/";
 	    ## Temporary
-	    $dir{calibN} = $dir{output}."/rand_gene_selections/";
+#	    $dir{calibN} = $dir{output}."/rand_gene_selections/";
+	    $dir{calibN} = $dir{output}."/calibrations";
 	}
 
-
 	## directory for the current calibration
-	$calib_prefix = $dir{calibN}."/";
-	$calib_prefix .= $oligo_len."nt";
-	$calib_prefix .= $strands;
-	$calib_prefix .= $noov;
-	$calib_prefix .= "_N".$N;
-	$calib_prefix .= "_L".$calib_length;
-	$calib_prefix .= "_R".$repetitions;
+#	$calib_prefix = $dir{calibN}."/";
+	$calib_prefix = $dir{calibN};
+#	$calib_prefix .= $oligo_len."nt";
+#	$calib_prefix .= $strands;
+#	$calib_prefix .= $noov;
+#	$calib_prefix .= "_N".$N;
+#	$calib_prefix .= "_L".$calib_length;
+#	$calib_prefix .= "_R".$repetitions;
 
 	## file name
 	$calib_prefix .= "/";
@@ -3429,6 +3430,7 @@ sub CalibrationPrefix {
 	$calib_prefix .= $noov;
 	$calib_prefix .= $strands;
    }
+
    return $calib_prefix;
 }
 
@@ -3748,15 +3750,15 @@ sub CalibrateOligosN {
 					   "random gene selections","upstream length", $seq_len) )
 		    if ($main::verbose >= 1);
 		my $command = "calibrate-oligos -v 1";
-		$command  .= "-r ".$R." -sn ".$gene_nb." -ol ".$oligo_len." -sl ".$seq_len;
+		$command  .= " -r ".$repetitions." -sn ".$gene_nb." -ol ".$oligo_len." -sl ".$seq_len;
 		my $calibN_task = "all,clean_oligos";
-		$command .= "-task ".$calibN_task;
-#	$command .= "-start ${START}";
-#	$command .= "${END}";
+		$command .= " -task ".$calibN_task;
+#		$command .= "-start ${START}";
+#		$command .= "${END}";
 		$command .= " ".$strands;
 		$command .= " ".$noov;
-		$command .= "-outdir ".$dir{calibN};
-		$command .= "-org ".$organism_name;
+		$command .= " -outdir ".$dir{calibN};
+		$command .= " -org ".$organism_name;
 		$calib_done{$gene_nb}{$seq_len}++;
 		&doit($command, $dry_run, $die_on_error, $verbose, $batch, "multi_calibN");
 	    }
