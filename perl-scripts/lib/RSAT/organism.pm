@@ -253,7 +253,7 @@ sub OpenContigs {
 
 	    ## Specify whether the contig is circular
 	    my $circular = 0;
-	    if ($type eq "circular") {
+	    if ((defined($type)) && ($type eq "circular")) {
 		$circular = 1;
 	    }
 	    
