@@ -1,10 +1,12 @@
 ############################################################
 #
-# $Id: mirror.mk,v 1.28 2005/10/20 23:04:16 rsat Exp $
+# $Id: mirror.mk,v 1.29 2005/10/26 14:40:50 rsat Exp $
 #
 # Time-stamp: <2003-10-01 12:05:45 jvanheld>
 #
 ############################################################
+
+include ${RSAT}/makefiles/util.mk
 
 RSA=${HOME}/rsa-tools
 RSA_SERVER=rsat.scmbb.ulb.ac.be
@@ -30,11 +32,6 @@ RSAT_SERVER = ${RSA_SERVER_LOGIN}@rsat.scmbb.ulb.ac.be:/home/rsat/rsa-tools
 
 SERVER=${RSAT_SERVER}
 
-### tags
-usage:
-	@echo "usage: make [-OPT='options'] target"
-	@echo "implemented targets"
-	@perl -ne 'if (/^(\S+):/){ print "\t$$1\n" }' ${MAKEFILE}
 
 ################################################################
 #### from local machine to servers
@@ -98,17 +95,17 @@ pub_from_server:
 		--exclude tmp							\
 		${RSA_SERVER_LOGIN}@${RSA_SERVER}:${RSA_SERVER_DIR}/public_html ${RSA}/
 
-EXCLUDED_GENOMES=				\
-		--exclude Danio_rerio*		\
-		--exclude Mus_musculus*		\
-		--exclude Gallus_gallus*	\
-		--exclude Canis_familiaris*	\
-		--exclude Pan_troglodytes*	\
-		--exclude Rattus_norvegicus*	\
-		--exclude Homo_sapiens*		\
-		--exclude Danio_rerio*
+EXCLUDED_GENOMES=					\
+		--exclude Danio_rerio*			\
+		--exclude Mus_musculus*			\
+		--exclude Gallus_gallus*		\
+		--exclude Canis_familiaris*		\
+		--exclude Pan_troglodytes*		\
+		--exclude Rattus_norvegicus*		\
+		--exclude Homo_sapiens*			\
+		--exclude Danio_rerio*			\
 		--exclude Drosophila_melanogaster*	\
-		--exclude Anopheles_gambiae*	\
+		--exclude Anopheles_gambiae*		\
 		--exclude Caenorhabditis_elegans*
 
 EXCLUDED_FILES=					\
