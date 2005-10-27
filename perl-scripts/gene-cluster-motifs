@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.126 2005/10/21 08:22:55 rsat Exp $
+# $Id: gene-cluster-motifs,v 1.127 2005/10/27 16:25:59 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -107,7 +107,7 @@ $supported_background  = join ",", sort keys %supported_background;
 
 ## input files
 $family_file = "";
-$sequene_file_list = "";
+$sequence_file_list = "";
 
 ## feature-map options
 $htmaps=0;
@@ -425,7 +425,7 @@ sub SetFileNames {
 #	warn join ("\t", "Number of genes", $family_name, $gene_nb), "\n";
 
 	$expected_sites = $gene_nb*$expected_sites_per_gene;	
-	$family{$family_name}->{family_file} = "$family_name/${family_name}.fam";
+	$family{$family_name}->{family_file} = "$family_name/${family_name}_${feature_types}.fam";
 	$family{$family_name}->{known_site_file} = "$family_name/${family_name}_known_sites";
 	$family{$family_name}->{file_prefix} = "${family_name}";
 	$family{$family_name}->{file_prefix} .= "_up".$seq_length unless ($sequence_file_list);
@@ -3218,6 +3218,7 @@ sub Validate {
        &ValidateOneResult($family_name, "dyad") if ($task{validate_dyads});
        &ValidateOneResult($family_name, "orm") if ($task{validate_orm});
 
+
 #        ## Compare oligos with known sites
 #        my $command = "count-matches"; 
 #        $command .= " -v 1";
@@ -3296,7 +3297,7 @@ sub ValidateOneResult {
     
     my $pattern_file = $family{$family_name}->{$pattern_type."_file"};
 
-    ## Compare dyads with known sites
+    ## Compare discovered patterns with known sites
     my $command = "count-matches";
     $command .= " -v 1";
     $command .= " ".$strands;
@@ -3308,7 +3309,7 @@ sub ValidateOneResult {
     $command .= " -o ".$family{$family_name}->{$pattern_type."_vs_known"};
     &doit($command, $dry_run, $die_on_error, $verbose);
     
-    ## Compare dyads with known sites (table output type)
+    ## Compare discovered patterns with known sites (table output type)
     my $command = "count-matches";
     $command .= " -v 1";
     $command .= " ".$strands;
@@ -3320,7 +3321,7 @@ sub ValidateOneResult {
     &doit($command, $dry_run, $die_on_error, $verbose);
     
     
-    ## Compare dyads with known sites (table output type)
+    ## Compare discovered patterns with known sites (table output type)
     my $command = "count-matches";
     $command .= " -v 1";
     $command .= " ".$strands;
