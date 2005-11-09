@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.128 2005/11/09 08:11:43 rsat Exp $
+# $Id: gene-cluster-motifs,v 1.129 2005/11/09 14:39:28 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -747,6 +747,7 @@ sub SetFileNames {
     if ($family_file) {
 	$table_suffix .= "_up".$from     if (defined($from));
 	$table_suffix .= "_".$to     if (defined($to));
+	$table_suffix .= "_".$feature_types  if (defined($feature_types));
 	$table_suffix .= $noorf_string;
     }
     if ($analyze_purged_sequences) {
@@ -3210,13 +3211,14 @@ sub Validate {
        $pattern_suffix = $orm_suffix;
    }
 
-   if ($noorf == "") {
+   if ($noorf != '-noorf') {
        $noorf_status = 'orfov';
    } else {
        $noorf_status = $noorf;
    }
 
    $valid_handle = &OpenOutputFile($pattern_suffix.$from."_".$noorf_status."_".$feature_types."_validation_per_regulon.tab");
+
    ## Print header in validation file
    print $valid_handle join("\t", "; Regulons", "Known sites", "TPsites", "Disc. patterns", "TPpatterns", "PPV", "Sn", "Arith. accu", "Geom. accu", "Harmon. accu"), "\n";
 
