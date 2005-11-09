@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.127 2005/10/27 16:25:59 rsat Exp $
+# $Id: gene-cluster-motifs,v 1.128 2005/11/09 08:11:43 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -2779,7 +2779,7 @@ sub ReadArguments {
 		unless ((&IsNatural($repetitions)) && ($repetitions >= 2));
 
 	    #### background model for expected frequency. 
-	    #### Supported: "upstream", "upstam-noorf", "intergenic", "mncf"
+	    #### Supported: "upstream", "upstream-noorf", "intergenic", "mncf"
 	} elsif (($ARGV[$a] =~ /^-exp/) 
 		 || ($ARGV[$a] =~ /^-bg/)) {
 	    $background = $ARGV[$a+1];
@@ -3199,6 +3199,27 @@ sub ReadSequenceList {
 ## known sites
 sub Validate {
    warn ";\n; Validating discovered patterns\n" if ($verbose >=1);
+   if ($task{validate_oligos}) {
+       $pattern_type = 'oligo';
+       $pattern_suffix = $oligo_suffix;
+   } elsif ($task{validate_dyads}) {
+       $pattern_type = 'dyad';
+       $pattern_suffix = $dyad_suffix;
+   } elsif ($task{validate_orm}) {
+       $pattern_type = 'orm';
+       $pattern_suffix = $orm_suffix;
+   }
+
+   if ($noorf == "") {
+       $noorf_status = 'orfov';
+   } else {
+       $noorf_status = $noorf;
+   }
+
+   $valid_handle = &OpenOutputFile($pattern_suffix.$from."_".$noorf_status."_".$feature_types."_validation_per_regulon.tab");
+   ## Print header in validation file
+   print $valid_handle join("\t", "; Regulons", "Known sites", "TPsites", "Disc. patterns", "TPpatterns", "PPV", "Sn", "Arith. accu", "Geom. accu", "Harmon. accu"), "\n";
+
    foreach my $family_name (@families) {
        ## Create a separate file for count-matches with the current family
        my @sites = @{$known_site{$family_name}};
@@ -3214,10 +3235,11 @@ sub Validate {
        }
        close $known_handle;
 
-       &ValidateOneResult($family_name, "oligo") if ($task{validate_oligos});
-       &ValidateOneResult($family_name, "dyad") if ($task{validate_dyads});
-       &ValidateOneResult($family_name, "orm") if ($task{validate_orm});
+       &ValidateOneResult($family_name, $pattern_type, scalar(@sites));
 
+#       &ValidateOneResult($family_name, "oligo", $#sites) if ($task{validate_oligos});
+#       &ValidateOneResult($family_name, "dyad", $#sites) if ($task{validate_dyads});
+#       &ValidateOneResult($family_name, "orm", $#sites) if ($task{validate_orm});
 
 #        ## Compare oligos with known sites
 #        my $command = "count-matches"; 
@@ -3287,15 +3309,18 @@ sub Validate {
 #        $command .= " -table weight";
 #        $command .= " -o ".$family{$family_name}->{dyad_vs_known_weight_table};
 #        &doit($command, $dry_run, $die_on_error, $verbose);
+   
    }
+   close $valid_handle;
 }
 
 ################################################################
 ## Compare one result file with annotated motifs
 sub ValidateOneResult {
-    my ($family_name, $pattern_type) = @_;
-    
-    my $pattern_file = $family{$family_name}->{$pattern_type."_file"};
+    my ($family_name, $patt_type, $number_sites) = @_;
+
+    my $pattern_file = $family{$family_name}->{$patt_type."_file"};
+    my $match_file = $family{$family_name}->{$patt_type."_vs_known"};
 
     ## Compare discovered patterns with known sites
     my $command = "count-matches";
@@ -3320,7 +3345,6 @@ sub ValidateOneResult {
     $command .= " -o ".$family{$family_name}->{$pattern_type."_vs_known_relw_table"};
     &doit($command, $dry_run, $die_on_error, $verbose);
     
-    
     ## Compare discovered patterns with known sites (table output type)
     my $command = "count-matches";
     $command .= " -v 1";
@@ -3331,11 +3355,57 @@ sub ValidateOneResult {
     $command .= " -table weight";
     $command .= " -o ".$family{$family_name}->{$pattern_type."_vs_known_weight_table"};
     &doit($command, $dry_run, $die_on_error, $verbose);
+
+    ## Count number of annotated sites matching at least one discovered pattern
+    $TPsites = `more $match_file | grep -v ';' | cut -f 6 | sort -u | wc -l`;
+    chomp($TPsites);
+    if ($TPsites > $number_sites) {    # sometimes more TPsites than sites, probably needs fix...
+	$TPsites = $number_sites;
+    }
+
+    ## Calculate sensitivity
+    unless ($number_sites == 0) {
+	$Sn = $TPsites/$number_sites;
+    } else { $Sn = 'N/A';
+	 }
+
+    ## Count number of discovered patterns matching at least one annotated site
+    $TPpatterns = `more $match_file | grep -v ';' | cut -f 7 | sort -u | wc -l`;
+    chomp($TPpatterns);
+
+    ## Count number of discovered patterns
+    $TP_FPpatterns = `more $pattern_file | grep -v ';' | cut -f 1 | awk \'\$0 \!\= \"\"\' | wc -l`;
+    chomp($TP_FPpatterns);
+
+    ## Calculate positive predictive value
+    unless ($TP_FPpatterns == 0) {
+	$PPV = $TPpatterns/$TP_FPpatterns;
+    } else { $PPV = 'N/A';
+	 }
+
+    ## Calculate arithmetic accuracy
+    $arit_acc = ($Sn+$PPV)/2;
+
+    ## Calculate geometric accuracy
+    $geom_acc = sqrt($Sn*$PPV);
+
+    ## Calculate harmonic accuracy
+    unless ($Sn+$PPV == 0) {
+	$harm_acc = 2*($Sn*$PPV)/($Sn+$PPV);
+    } else { $harm_acc = 'N/A';
+	 }
+
+    ## Calculate sig sum and max sig for the current family
+    ## TO DO
+
+
+    ## Print results
+    print $valid_handle join("\t", $family_name, $number_sites, $TPsites, $TP_FPpatterns, $TPpatterns, $PPV, $Sn, $arit_acc, $geom_acc, $harm_acc), "\n";
 }
 
 
 ################################################################
-## Index one sequence length per family
+## INDEX one sequence length per family
 sub CalcCalibrationLengths {
    my %calib_lengths = ();
    &RSAT::message::TimeWarn("Calculating sequence lengths") if ($verbose >=1);
