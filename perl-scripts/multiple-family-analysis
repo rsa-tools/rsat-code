@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.129 2005/11/09 14:39:28 rsat Exp $
+# $Id: multiple-family-analysis,v 1.130 2005/11/10 13:46:13 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -3211,13 +3211,13 @@ sub Validate {
        $pattern_suffix = $orm_suffix;
    }
 
-   if ($noorf != '-noorf') {
-       $noorf_status = 'orfov';
-   } else {
+   if ($noorf eq "-noorf") {
        $noorf_status = $noorf;
+   } else {
+       $noorf_status = "-orfov";
    }
 
-   $valid_handle = &OpenOutputFile($pattern_suffix.$from."_".$noorf_status."_".$feature_types."_validation_per_regulon.tab");
+   $valid_handle = &OpenOutputFile($pattern_suffix.$from.$noorf_status."_".$feature_types."_validation_per_regulon.tab");
 
    ## Print header in validation file
    print $valid_handle join("\t", "; Regulons", "Known sites", "TPsites", "Disc. patterns", "TPpatterns", "PPV", "Sn", "Arith. accu", "Geom. accu", "Harmon. accu"), "\n";
@@ -3398,7 +3398,7 @@ sub ValidateOneResult {
 	 }
 
     ## Calculate sig sum and max sig for the current family
-    ## TO DO
+    ## TO DO?
 
 
     ## Print results
