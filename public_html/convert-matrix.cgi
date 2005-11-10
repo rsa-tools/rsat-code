@@ -30,7 +30,7 @@ $query = new CGI;
 #### update log file ####
 &UpdateLogFile();
 
-&ListParameters() if ($ECHO >= 0);
+&ListParameters() if ($ECHO >= 2);
 
 #### read parameters ####
 $parameters = " -v 1 ";
