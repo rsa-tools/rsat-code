@@ -20,8 +20,8 @@ Position-specific scoring matrices
 <p>
 <ol>
 <li><a href=#intro>Introduction</a>
-<li><a href=#example>Example</a>
 <li><a href=#convert_matrix>Converting and analyzing PSSM</a>
+<li><a href=#next>Next steps</a>
 </ol>
 
 <a name=prerequisite><h2>Introduction</h2>
@@ -37,29 +37,18 @@ Knowledge-based PSSM can be obtained from various transcription factor
 databases (e.g. <a target=_blank
 href=http://www.gene-regulation.com/pub/databases.html#transfac>TRANSFAC</a>).
 
-<p>PSSM can be used to detect occurrences of a motif in
-sequences. Matrix-based pattern matching will be introduced in the
-tutorial on <a href=tut_patser.html>patser</a>.
-
-<P>Several pattern-discovery programs allow to detect significant
-motifs represented as PSSM from a set of unaligned sequences. These
-programs have been used to predict regulatory elements in the
-regulatory regions of sets of co-regulated genes. Matrix-based pattern
-discovery will be discussed in the tutorials on the <a
-href=tut_gibbs.html>gibbs sampler</a> and <a
-href=tut_consensus.html>consensus</a>.
-
-</ul><a name=example><h2>Example</h2><ul>
+<a name=example><h3>Example</h3>
 
 The matrix below was obtained from <a
 href="http://cgsigma.cshl.org/jian" TARGET=_blank> SCPD</a>, the
-Saccharomyces cerevisiae promoter database.  
+<i>Saccharomyces cerevisiae</i> promoter database.  
 
 
-<p>The PHO4 matrix has been built from an alignment of 12 binding sites
-for the yeast transcription factor Pho4p.
+<p>This matrix has been built from an alignment of 12 binding sites
+for the yeast transcription factor Pho4p. 
 
- 
+
+<h4><i>PHO4 matrix (source: SCPD)</i></h4> 
 <PRE>
 A |  3   2   0  12   0   0   0   0   1   3
 C |  5   2  12   0  12   0   1   0   2   1
@@ -76,20 +65,58 @@ two choices (e.g. G or T at position 8), and other position can
 contain any letter, but with different frequencies (e..g first and
 last position).
 
-<P>When the matrix isused to scan sequences for putative Pho4p binding
+
+<h3>Matrix scores</h3>
+
+<P>When the matrix is used to scan sequences for putative Pho4p binding
 sites, the more conserved positions impose stronger constraints than
 those where any nucleotide can be found. This allows thus a more
 quantitative evaluation of the binding affinity than <a
 href=tut_strings.html>string-based representations</a>.
 
-<p>One weakness of these matrices is that they do not take into
-account higher order dependencie, i.e. influence between a residue and
-the successive ones. Thus, it is not possible to specify "either
-CACGTGGG or CACGTTTT" with a PSSM : if one builds a matrix where G and
-T are allowed at the 3 last positions, any combination of them will be
-allowed (e.g.  CACGTGTG, CACGTTGT). Higher order dependencies can be
-represented with more elaborated methods, such as Hidden Markov Models
-(HMM), which are ou of scope for this tutorial.
+<p>Actually, the frequencies are not used as such to score putative
+sites. The score assigned assigned to a piece of sequence <i>S</i> is
+calculated as the log-ratio of two probabilities:
+<ul>
+
+<p><li><i>P(S|M)</i>, the probability to observe sequence <i>S</i> given
+the motif model <i>M</i> (the matrix).
+
+<p><li><i>P(S|B)</i>, the probability to observe sequence <i>S</i> given
+the background model <i>B</i> (the genomic context).
+
+<p><li>The score of a sequence segment is <i>W<sub>S</sub>=log[P(S|M)/P(S|B)]</i>
+</ul>
+
+
+<p>With the matrix above, we could calculate the probability of a
+sequence <i>S</i> of 10 nucleotides, as the product of the relative
+frequencies of these nucleotides in the PSSM. 
+
+<p>A critical issue is to chose an appropriate background model. The
+simplest background models are based on a Bernoulli schema, which
+means that they rely on an assumption that the nucleotides succeed to
+each other independently. More elaborate models have been proposed,
+based on Markov chains (the description of these models can be found
+in my course material).
+
+<h3>Higher order dependencies</h3>
+
+<p>One weakness of PSSM is that they do not take into account higher
+order dependencies between residues, i.e. correlations between the
+residue found at a given position and those found at other
+positions. Even if, with Markov-chain based background models, such
+dependencies are taken into account for the background model,
+correlations between different positions of the binding sites are
+still not taken into account.
+
+<p>For example, a PSSM does not allow to specify a pattern
+like <i>"either <tt>CACGTGGG</tt> or
+<tt>CACGTTTT</tt>"</i> : if one builds a matrix where <tt>G</tt>
+and <tt>T</tt> are allowed at the 3 last positions, any combination of
+them will be allowed (e.g.  CACGTGTG, CACGTTGT). Higher order
+dependencies can be represented with more elaborated methods, such as
+Hidden Markov Models (HMM), which are ou of scope for this tutorial.
 
 
 </ul><h2><a name=convert_matrix>Converting and analyzing PSSM</a></h2><ul>
@@ -107,13 +134,14 @@ but you can already read the <a target=tools
 href=../help.convert-matrix.html>manual</a>, and do your own test with
 the demo data set (click DEMO at the bottom of the form).
 
-<h3>Matrix information</h3>
+<h3>Converting the counts into frequencies, weights and information</h3>
 
 We will import a matrix representing the binding specificity of the
 yeast transcription factor Abf1p, and analyze the different parameters
 which characterize this PSSM.
 
 <ol>
+
 <p><li>Connect <a href="http://cgsigma.cshl.org/jian" target=scpd>
 SCPD</a>, the Saccharomyces cerevisiae promoter database. To access
 the list of sites by factor from the SCPD home page, click on the
@@ -121,7 +149,7 @@ Section "<a target=scpd
 href=http://cgsigma.cshl.org/cgi-bin/jz/getfactorlist>Regulatory
 elements and transcriptional factors</a>".
 
-<li>Click on the link to <a target=scpd
+<p><li>Click on the link to <a target=scpd
 href=http://cgsigma.cshl.org/cgi-bin/jz/getfactor?ABF1,BAF1>ABF1</a>,
 and then on the button <b>Get matrix</b>. The following PSSM is
 displayed.
@@ -147,35 +175,23 @@ C   0  14   1  11   3   2   3   4   6   0  13   0.
 <li>How many Abf1p binding sites are currently stored in SCPD (click on the button <b>Get sites</b>)?
 </ul>
 
-<p><li>We will now analyze the content of this matrix with the program <a
-target=tools
-href=../convert-matrix_form.cgi><b>convert-matrix</b></a>. Copy the
-matrix from SCPD to the text area in the form.
+<p><li>We will now analyze the content of this matrix with the
+program <i>convert-matrix</i>. In the left menu of the RSAT page,
+select the form <a target=tools
+href=../convert-matrix_form.cgi><b>convert matrix</b></a>.
 
-<p><li>The current version of convert-matrix does not support the SCPD
-format (this will be fixed soon), but you can easily enter it in
-consensus format. For this, you need to perform 3 operations: 
+<p><li>Copy the ABF1 matrix from SCPD to the text area in the
+form. 
+
+<ul><b>Beware</b>, you should only copy the 4 rows containing the
+nucleotide information, and not the matrix header.</uL>
+
+<p><li>Make sure that the selected matrix format is <b><i>tab</i></b>.
+
+
+<p><li>For the <b><i>Return fields</i></b>, select the following options:
 <ul>
-<li>replace the header line
-(<tt>>ABF17121SCPD</tt>) by the words <tt>MATRIX 1</tt>. It should
-give the following result:
-<li>Add a pipe character after each residue (A, C, G, T).
-<li>Suppress the dot at the end of the matrix.
-</ul>
-
-The result should look like this:
-<pre>
-MATRIX 1
-
-A |   0   0  11   2   3   7   3   5   5  14   0   1
-T |  14   0   2   1   6   2   7   3   0   0   0   0
-G |   0   0   0   0   2   3   1   2   3   0   1  13
-C |   0  14   1  11   3   2   3   4   6   0  13   0
-</pre>
-
-<p><li>Select the following options proposed as return fields:
-<ul>
-<li>alignment (counts)
+<li>counts
 <li>frequencies
 <li>weights
 <li>information
@@ -185,12 +201,68 @@ C |   0  14   1  11   3   2   3   4   6   0  13   0
 <p><li>click <b>GO</b>.
 </ol>
 
-<h4>Interpretation</h4><ul>
+<h3>Matrix conversions</h3><ul>
 
-<blink><font color=red size=+1>In construction</font></blink>
+The original matrix was converted into different formats. We will briefly
+comment these formats. 
+
+<h4><i>Counts</i></h4><ul>
+
+This is the promary information obtained from SCPD. Counts represent
+the absolute frequencies of each residue at each position of the
+alignment of the annotated binding sites for the transcription factor
+Abf1p.
+
+</ul><h4><i>Frequencies</i></h4><ul> 
+
+You will notice that the frequency matrix does not faithfully reflect
+the relative frequencies calculated from the counts. In particular,
+the cells of the original matrix with count values of 0 have values
+larger than 0 in the frequency matrix.
+
+<p>You can check this by coming back to the convert-matrix form (click
+the <i>Back</i> button of your brower), and redoing the conversion
+with a value of 0 for the option <i><b>pseudo-weight</b></i>.
+
+</ul><h4><i>Weights</i></h4><ul> 
+
+The weight is the score described above, i.e. the log-likelihood between 
+<ul>
+<li><i>P(S|M)</i>, the probability to observe the sequence <i>S</i>
+given the motif model (matrix) <i>M</i>, and
+
+<li><i>P(S|B)</i>, the probability to observe the sequence <i>S</i>
+given the background model <i>B</i>.
 </ul>
 
+<p>Positive weights indicate that the residue is considered to favour
+the binding of the transcription factor, negative weights that it is
+unfavorable.
+
+</ul><h4><i>Information</i></h4><ul> 
+
+The information content of each cell of the matrix is calculated by
+multiplying the weight by the frequency. The information content of a
+row (column) is the sum of information contents of its cells.
+
 </ul>
+
+<a name=next>
+</ul><h2>Next steps</h2><ul>
+
+
+<p>PSSM can be used to detect occurrences of a motif in
+sequences. Matrix-based pattern matching will be introduced in the
+tutorial on <a href=tut_patser.html>patser</a>.
+
+<P>Several pattern-discovery programs allow to detect significant
+motifs represented as PSSM from a set of unaligned sequences. These
+programs have been used to predict regulatory elements in the
+regulatory regions of sets of co-regulated genes. Matrix-based pattern
+discovery will be discussed in the tutorials on the <a
+href=tut_gibbs.html>gibbs sampler</a> and <a
+href=tut_consensus.html>consensus</a>.
+
 <p>
 You can now come back to the <a href=tutorials.html>tutorial main
 page</a> and follow the next tutorials.

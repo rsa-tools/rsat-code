@@ -55,44 +55,56 @@ ORFs</b>.-->
 After a few seconds, the result is displayed, in the form of a link to
 the sequences, followed by a series of Buttons.
 
-<P>
-Click on the link, to see the upstream sequence of the selected
-genes. Check the sizes of the sequences obtained. Click on the
-<b>Back</b> button to come back to the previous result page. 
-
 <p>The reason why sequences are not directly displayed is that users
 usually don't need to see them, since they are retrieved for
-subsequent analysis with other tools. The <i><b>server</b></i> option
-in the previous form specified that the sequence had to be stored on
-the server rather than transferred to your browser. This is
-particularly convenient to avoid transferring large amounts of data
-over the web when you are analyzing large sequence sets (e.g. several
-hundreds of genes).
+subsequent analysis with other tools. This is particularly useful to
+avoid transferring large amounts of data over the web when you are
+analyzing large sequence sets (e.g. several hundreds of genes).  The
+default output mode (in the retrieve-seq form) is thus to maintain the
+output on the <i><b>server</b></i>, rather than displaying them on
+your browser window.
 
-<p>
-Below the link, you can see a series of buttons, which
-will allow you to send the retrieved sequences to the next task (as we
-will see in the next tutorials). For the time being, do not click
-these buttons.
+
+<P>
+Even if this server mode has been used, you still have the possibility
+to check the sequences a posteriori. In the result page, click on the
+link, in order to see the upstream sequence of the selected
+genes. Check the sizes of the sequences obtained. Notice that one
+seqence is shorter than the other ones. Try to figure out the reason
+for this(if you don't know the answer, don't worry, the answer is
+below).
+
+<p>Click on the <b>Back</b> button to come back to the previous result
+page. Below the link, you can see a series of buttons, which will
+allow you to send the retrieved sequences to the next task (as we will
+see in the next tutorials). For the time being, do not click these
+buttons.
 
 
 <p><B>Remarks</B>
-<ul>
-<li>Gene names must be separated by carriage returns, because
-only the first word of each line is considered as a query.
 
-<li>Notice that gene names are case-insensitive. 
+<ol>
 
-<li>Genes can be specified either by the systematic ORF identifier or
-by a common name. Synonyms are supported: a gene can be associated to
-several names. For example, in <i>S.cerevisiae</i>, the ORF YFL021W is
-associated with the names GAT1, MEP80 and NIL1. The multipe names come
-from the fact that this gene was characterized in different
-laboratories independently, and people realized only later that they
-had isolated the same gene. The list of synonyms of each gene can be
-obtained with the tool <b>gene-information</b>.
+<p><li>Gene names must be separated by carriage returns. Actually,
+only the first word of each line is considered as a query. You can add
+additional information on a line, but all the text following the first
+word of a line will be ignored.
 
-</ul>
+<p><li>Notice that gene names are case-insensitive.
+
+<p><li>Genes can be specified either by their identifier
+(e.g. YFL021W) or by their common name (e.g. GAT1).
+
+<p><li>Synonyms are supported: a gene can be associated to several
+names. For example, in <i>S.cerevisiae</i>, the ORF YFL021W is
+associated with the names GAT1, MEP80 and NIL1. Multipe names are
+quite frequent in yeast; they come from the fact that this gene was
+characterized in different laboratories independently, and people
+realized only later that they had isolated the same gene. The list of
+synonyms of each gene can be obtained with the
+tool <b>gene-information</b>.
+
+</ol>
 
 
 </ul>
@@ -123,14 +135,14 @@ its upstream neighbour is about 450 bp. Thus, with a distance of
 sequence from the upstream ORF, which might bias subsequent analyses.
 
 <p>
-The situation is even worst in bacteria, due to the organization of
+The situation is even worse in bacteria, due to the organization of
 genes into operons. In <i>Escherichia coli</i>, 25% of the genes have
 an upstream neighbour closer than 50bp. When this neighbour is on the
 same strand as the gene, it might indicate that they belong to the
 same operon. 
 
 <p>
-It is thus usually preferible to prevent overlap with upstream ORFs. 
+It is thus usually preferable to prevent overlap with upstream ORFs. 
 
 <!--
 <p>A notable exception is the yeast <i>Saccharomyces
@@ -204,8 +216,7 @@ anyway).
 
 <p><li>In the <B>to</b> box, type "50".
 
-<p><li>Select "ORF id + Gene name" in the pop-up menu <B>Sequence
-label</B>
+<p><li>In the pop-up menu <B>Sequence label</B>, select "gene identifier + name".
 
 <p><li>Click <B>GO</B>
 

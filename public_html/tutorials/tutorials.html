@@ -27,12 +27,27 @@ window with the tutorial pages)</a>
 
 <P>
 RSAT home page displays two frames. The left frame contains a menu,
-presenting the tools available. Each time you click on a tool in the
-left frame, the right frame shows you the form page for the
-corresponding tool. The tools are interconnected, allowing you to send
-automatically the result of one request as input for the next request
-(piping). The links between tools are illustrated in the flow chart
-below.
+presenting the available tools. Each time you click on a tool in the
+left frame, the right frame shows you the form for the corresponding
+tool. 
+
+
+<p>
+The tools are organized in a modular way : rather than having a single
+form for the complete analysis, I found it more convenient to present
+separate forms for the successive steps of a given analysis. A typical
+analysis will thus consist in using successivbely different tools (for
+example <i>sequence retrieval</i> -> <i>pattern discovery</i> -> <i>pattern matching</i> ->
+<i>feature-map</i>). For this purpose, the tools interconnected,
+allowing you to send automatically the result of one request as input
+for the next request (piping). The links between tools are illustrated
+in the flow chart below.  An advantage of this modulaar approach is
+that you can directly enter at any step of an analysis with external
+data of your own.
+<P>
+<IMG border=1 SRC="RSAT_flowchart.jpg" ALT="RSAT_flowchart.jpg" HSPACE=20 VSPACE=20>
+
+<p>
 
 <P>
 We will analyze some practical examples to get familiar with the
@@ -43,23 +58,20 @@ situations one can face when analysing regulatory sequences :
 
 <OL>
 
-<LI>
-You know the regulatory motif (e.g. the consensus for a
+<p><li> You know the regulatory motif (e.g. the consensus for a
 transcriptional factor), and you know the genes: you look for the
 matching positions within the upstream regions from your genes
 (<B>pattern matching</B>);</LI>
 
-<LI>
-You know the regulatory motif, you ignore the genes : you want to scan
-the genome to detect genes having this motif in their regulatory
-regions, which are potential target genes for your transcription
-factor (<B>genome-scale pattern matching</B>);</LI>
-
-<LI>
-You know the genes, you ignore the regulatory motif : you look for
-elements shared by a set of functionally related upstream sequences,
-which could reveal unknown regulatory sites (<B>pattern
+<p><li> You know the genes, you ignore the regulatory motif : you look
+for elements shared by a set of functionally related upstream
+sequences, which could reveal unknown regulatory sites (<B>pattern
 discovery</B>).</LI>
+
+<p><li> You know the regulatory motif, you ignore the genes : you want
+to scan the genome to detect genes having this motif in their
+regulatory regions, which are potential target genes for your
+transcription factor (<B>genome-scale pattern matching</B>);</LI>
 
 </OL>
 
@@ -193,8 +205,6 @@ of regulatory motifs from clusters of co-expressed genes.
 
 </ol>
 
-<P>
-<IMG border=1 SRC="RSAT_flowchart.jpg" ALT="RSAT_flowchart.jpg" HSPACE=20 VSPACE=20>
 
 
 
