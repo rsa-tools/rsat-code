@@ -29,7 +29,7 @@ $default{weights}="";
 $default{pseudo_weight}=1;
 $default{margins}="checked";
 $default{max_profile}=10;
-$default{decimals}=2;
+$default{decimals}=4;
 
 
 &ReadMatrixFromFile();
@@ -95,6 +95,18 @@ foreach my $stat qw(counts frequencies weights information margins consensus par
 }
 
 
+## Pseudo weight
+print "<p><A HREF='help.convert-matrix.html#item_weight'><B>Pseudo-weight</B></A>&nbsp; ";
+print $query->textfield(-name=>'pseudo_weight',
+			-default=>$default{pseudo_weight},
+			-size=>2);
+
+## Decimals
+print "&nbsp;"x5;
+print "<A HREF='help.convert-matrix.html#decimals'><B>Decimals</B></A>&nbsp; ";
+print $query->textfield(-name=>'decimals',
+			-default=>$default{decimals},
+			-size=>2);
 
 ################################################################
 ### send results by email or display on the browser
@@ -115,7 +127,7 @@ print $query->start_multipart_form(-action=>"convert-matrix_form.cgi");
 $demo_matrix=`cat convert-matrix_demo_data.txt`;
 print "<TD><B>";
 print $query->hidden(-name=>'matrix',-default=>$demo_matrix);
-print $query->hidden(-name=>'matrix_format',-default=>'consensus');
+print $query->hidden(-name=>'matrix_format',-default=>'tab');
 print $query->hidden(-name=>'information',-default=>"on");
 print $query->hidden(-name=>'weights',-default=>"on");
 print $query->hidden(-name=>'parameters',-default=>"on");

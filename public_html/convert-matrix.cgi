@@ -30,7 +30,7 @@ $query = new CGI;
 #### update log file ####
 &UpdateLogFile();
 
-&ListParameters() if ($ECHO >= 2);
+&ListParameters() if ($ECHO >= 0);
 
 #### read parameters ####
 $parameters = " -v 1 ";
@@ -45,6 +45,26 @@ close MAT;
 &DelayedRemoval($matrix_file);
 
 $parameters .= " -i $matrix_file";
+
+################################################################
+### pseudo-counts
+my $pseudo_weight = $query->param('pseudo_weight');
+if (&IsReal($pseudo_weight)) {
+    $parameters .= " -pseudo ".$pseudo_weight;
+} else {
+    &FatalError("Pseudo-weight should be a real number");
+}
+
+
+################################################################
+### Decimals
+my $decimals = $query->param('decimals');
+if (&IsInteger($decimals)) {
+    $parameters .= " -decimals ".$decimals;
+} else {
+    &FatalError("Decimals should be an integer number");
+}
+
 
 ################################################################
 #### Matrix format
