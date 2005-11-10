@@ -243,8 +243,6 @@ sub init {
 	    $self->setCell($r,$c,0);
 	}
     }
-#    warn $self->toString() if ($verbose >= 10);
-
 }
 
 ################################################################
@@ -804,13 +802,10 @@ sub _readFromMEMEFile {
 		    ${$self->{table}}[$c][$row]++;
 #		    $matrix[$c][$row]++;
 		}
-#		warn $self->toString() if ($main::verbose >= 10);
-		
 	    } elsif (/\/\//) {
 		warn "; BLOCKS format parsed\n" if ($main::verbose >= 5);
 #		$self->setMatrix(@matrix);
 #		$self->force_attribute("ncol", $parsed_width);
-#		print join( ":", $self->toString()), "\n" if ($main::verbose >= 10);
 		$in_blocks = 0;
 	    }
 	    
@@ -1000,39 +995,6 @@ sub _readFromClustalFile {
     close $in if ($file);
 }
 
-# ################################################################
-# =pod
-
-# =item _printSeparator($ncol)
-
-# Print a separator between header/footer and matrix
-
-# =cut
-
-# sub _printSeparator {
-#     my ($self, $ncol) = @_;
-#     my $sep = $self->get_attribute("sep") || "\t";
-#     my $col_width = $self->get_attribute("col_width");
-#     my $separator = "";
-
-#     if (($col_width) && ($col_width < 6)){
-# 	$separator .= ";-";
-#     } else {
-# 	$separator .= "; -----";
-#     }
-#     $separator .= $sep."|-";
-#     for $c (0..($ncol-1)) {
-# 	if ($col_width) {
-# 	    $separator .= "-"x($col_width-1);
-# 	} else {
-# 	    $separator .= "-"x7;
-# 	}
-# 	$separator .= "|";
-#     }
-#     $separator .= "\n";
-#     return $separator;
-# }
-
 ################################################################
 =pod
 
@@ -1076,11 +1038,9 @@ sub toString {
     if ($col_width) {
 	$number_width = $col_width - 1;
     }
-
     if ($type eq "counts") {
 	$decimals = 0;
     } else {
-	
 	unless ($decimals) {
 	    $decimals = $number_width - 2;
 	}
@@ -1090,109 +1050,14 @@ sub toString {
     ################################################################
     ## Print parameters
     if ($type eq "parameters") {
-	$to_print .= ";\n";
-	$to_print .= "; Matrix parameters\n";
+	$to_print .= $self->_printParameters($to_print);
 	
-	## Matrix size
-	$to_print .= ";\t".$self->ncol()."\tcolumns\n";
-	$to_print .= ";\t".$self->nrow()."\trows\n";
-	
-	## Alphabet
-	$to_print .= "; Alphabet\t";
-	$to_print .= join(" ", $self->getAlphabet());
-	$to_print .= "\n";
-	
-	## Prior probabilities
-	my %prior = $self->getPrior();
-	foreach my $letter (sort keys %prior) {
-	    $to_print .= join ("\t", ";", $letter, $prior{$letter})."\n";
-	}
-	
-	## Matrix attributes
-	my @params = $self->get_attribute("parameters");
-	my %printed = ();
-	for my $param (@params) {
-	    ## Print only once if the param was entered several times
-	    next if $printed{$param};
-	    $printed{$param}++;
-	    
-	    if ($self->get_attribute($param)) {
-		if (&main::IsReal($self->get_attribute($param))) {
-		    $to_print .= sprintf "; %-29s\t%g\n", $param, $self->get_attribute($param);
-		} else {
-		    $to_print .= sprintf "; %-29s\t%s\n", $param, $self->get_attribute($param);
-		}
-	    }
-	}
 
 	################################################################
-	## Print a vertical matrix with consensus besides
+	## Print a profile (vertical matrix with consensus on the right side)
     } elsif ($type eq "profile") {
-	@matrix = @{$self->{table}};
-	my @alphabet = $self->getAlphabet();
-	my $ncol = $self->ncol();
-	my $nrow = $self->nrow();
-	my $max_profile = $self->get_attribute("max_profile");
-	my $comment_char = "|";
 
-	$to_print .= "; Profile matrix\n";
-	
-	## Get the consensus
-	$self->calcConsensus();
-	my @consensus_strict = split "|", $self->get_attribute("consensus.strict");
-	my @consensus_IUPAC = split "|", $self->get_attribute("consensus.IUPAC");
-
-	## Get the information per column
-	my @information = $self->getInformation();
-	my @info_sum = &RSAT::matrix::col_sum($nrow, $ncol, @information);
-
-	## profile header
-	$to_print .= $self->_printMatrixRow("pos", 
-					    @alphabet, 
-					    $comment_char,
-					    "sum",
-					    "max",
-					    "max/sum",
-					    "min",
-					    "strict",
-					    "IUPAC",
-					    "inf_sum",
-					    "="x$max_profile
-					    );
-
-	$to_print .= $self->_printSeparator(scalar(@alphabet)+1);
-
-	## print each matrix column as a row in the output
-	my $matrix_max = &main::checked_max(&RSAT::matrix::col_max($nrow, $ncol, @matrix));
-	my $scale = $max_profile/$matrix_max;
-#	die join ("\t", $max_), "\n";
-	
-
-	for my $c (0..($ncol-1)) {
-	    my @row = &RSAT::matrix::get_column($c, $nrow, @matrix);
-	    my $sum = &main::sum(@row);
-	    my $max = &main::checked_max(@row);
-	    my $min = &main::checked_min(@row);
-	    my $profile = &main::round($max*$scale);
-	    if ($sum <= 0) {
-		$rel_max = "NA";
-	    } else {
-		$rel_max = sprintf("%5.2f", $max/$sum);
-	    }
-	    $to_print .= $self->_printMatrixRow($c, 
-						@row, 
-						$comment_char,
-						$sum,
-						$max,
-						$rel_max,
-						$min,
-						$consensus_strict[$c],
-						$consensus_IUPAC[$c],
-						sprintf("%5.2f",$info_sum[$c]),
-						"*"x$profile
-						);
-
-	}
+	$to_print .= $self->_printProfile($to_print);
 
     } else {
 
@@ -1259,31 +1124,6 @@ sub toString {
 	    push @col_min, &main::min(@col_min);
 	    $to_print .= $self->_printMatrixRow("; ".$prefix_letter.".min", @col_min);
 	}
-
-#  	## Print information per column
-#  	if (($type eq "information") && ($main::verbose >= 1)){
-#  	    $to_print .= $self->_printSeparator($ncol, $to_print);
-#  	    my @column_information = $self->get_attribute("column.information");
-#  	    $to_print .= ";I";
-#  	    $to_print .= $sep."|";
-#  	    for my $c (0..($ncol-1)) {
-#  		my $value = $column_information[$c];
-#  		if ($col_width) {
-#  		    my $value_format = "%${number_width}s";
-#  		    if (&main::IsReal($value)){
-#  			if ($type eq "counts") {
-#  			    $value_format = "%${number_width}d";
-#  			} else {
-#  			    $value_format= "%${number_width}.${decimals}f";
-#  			}
-#  		    }
-#  		    $to_print .= sprintf " ${value_format}", $value;
-#  		} else {
-#  		    $to_print .= $sep.$value;
-#  		}
-#  	    }
-#  	    $to_print .= "\n";
-#  	}
     }
     return $to_print;
 }
@@ -1789,6 +1629,135 @@ sub calcConsensus {
 
 }
 
+################################################################
+=pod
+
+=item _printProfile()
+
+Print the matrix in profile format (one column per residue, one row
+per position), with additional columns for the consensus, some
+statistics and the profile (graphical representations)
+
+=cut
+
+sub _printProfile {
+    my ($self, $to_print) = @_;
+    @matrix = @{$self->{table}};
+    my @alphabet = $self->getAlphabet();
+    my $ncol = $self->ncol();
+    my $nrow = $self->nrow();
+    my $max_profile = $self->get_attribute("max_profile");
+    my $comment_char = "|";
+
+    $to_print .= "; Profile matrix\n";
+    
+    ## Get the consensus
+    $self->calcConsensus();
+    my @consensus_strict = split "|", $self->get_attribute("consensus.strict");
+    my @consensus_IUPAC = split "|", $self->get_attribute("consensus.IUPAC");
+
+    ## Get the information per column
+    my @information = $self->getInformation();
+    my @info_sum = &RSAT::matrix::col_sum($nrow, $ncol, @information);
+
+    ## profile header
+    $to_print .= $self->_printMatrixRow("pos", 
+					@alphabet, 
+					$comment_char,
+					"sum",
+					"max",
+					"max/sum",
+					"min",
+					"strict",
+					"IUPAC",
+					"inf_sum",
+					"="x$max_profile
+				       );
+
+    $to_print .= $self->_printSeparator(scalar(@alphabet)+1);
+
+    ## print each matrix column as a row in the output
+    my $matrix_max = &main::checked_max(&RSAT::matrix::col_max($nrow, $ncol, @matrix));
+    my $scale = $max_profile/$matrix_max;
+#	die join ("\t", $max_), "\n";
+    
+
+    for my $c (0..($ncol-1)) {
+	my @row = &RSAT::matrix::get_column($c, $nrow, @matrix);
+	my $sum = &main::sum(@row);
+	my $max = &main::checked_max(@row);
+	my $min = &main::checked_min(@row);
+	my $profile = &main::round($max*$scale);
+	if ($sum <= 0) {
+	    $rel_max = "NA";
+	} else {
+	    $rel_max = sprintf("%5.2f", $max/$sum);
+	}
+	$to_print .= $self->_printMatrixRow($c, 
+					    @row, 
+					    $comment_char,
+					    $sum,
+					    $max,
+					    $rel_max,
+					    $min,
+					    $consensus_strict[$c],
+					    $consensus_IUPAC[$c],
+					    sprintf("%5.2f",$info_sum[$c]),
+					    "*"x$profile
+					   );
+
+    }
+    return ($to_print);
+}
+
+################################################################
+=pod
+
+=item _printParameters()
+
+Return a string with the parameter values
+
+=cut 
+
+sub _printParameters {
+    my ($self, $to_print) = @_;
+    $to_print .= ";\n";
+    $to_print .= "; Matrix parameters\n";
+    
+    ## Matrix size
+    $to_print .= ";\t".$self->ncol()."\tcolumns\n";
+    $to_print .= ";\t".$self->nrow()."\trows\n";
+    
+    ## Alphabet
+    $to_print .= "; Alphabet\t";
+    $to_print .= join(" ", $self->getAlphabet());
+    $to_print .= "\n";
+    
+    ## Prior probabilities
+    my %prior = $self->getPrior();
+    foreach my $letter (sort keys %prior) {
+	$to_print .= join ("\t", ";", $letter, $prior{$letter})."\n";
+    }
+    
+    ## Matrix attributes
+    my @params = $self->get_attribute("parameters");
+    my %printed = ();
+    for my $param (@params) {
+	## Print only once if the param was entered several times
+	next if $printed{$param};
+	$printed{$param}++;
+	
+	if ($self->get_attribute($param)) {
+	    if (&main::IsReal($self->get_attribute($param))) {
+		$to_print .= sprintf "; %-29s\t%g\n", $param, $self->get_attribute($param);
+		} else {
+		    $to_print .= sprintf "; %-29s\t%s\n", $param, $self->get_attribute($param);
+		}
+	}
+    }
+    return ($to_print);
+}
+
 
 ################################################################
 =pod
@@ -1804,27 +1773,33 @@ sub _printMatrixRow {
     my $row_string = $row_name;
     my $ncol = scalar(@values);
 
-#      my ($decimals, $sep, $col_width, $number_width) = $self->_get_format;
-    
+    ## Format for the matrix entries
+    my $col_width = $self->get_attribute("col_width");
+    my $number_width = 0;
+    if ($col_width) {
+  	$number_width = $col_width - 1;
+    } else {
+	$number_width = 5;
+    }
+
+    ## Number of decimals for floating numbers
     my $decimals = $self->get_attribute("decimals");
     unless ($decimals) {
 	if ($type eq "counts") {
   	    $decimals = 0;
   	} else {
-  	    $decimals = $number_width - 2;
+  	    $decimals = $number_width - 3;
   	}
     }
+
+    ## Separator between columns
     my $sep = $self->get_attribute("sep") || "\t";
-    my $col_width = $self->get_attribute("col_width");
-    
-    ## Format for the matrix entries
-    my $number_width = 0;
-    if ($col_width) {
-  	$number_width = $col_width - 1;
-    }
+#    my $sep="boum";
+
+    &RSAT::message::Debug("w=".$col_width, "sep='".$sep."'", "pos=".$pos, "decimals=".$decimals, "number_width=".$number_width) if ($main::verbose >= 10);
     
     ## Print the matrix row
-#    $row_string .= $sep."|";
+    $row_string .= $sep."|";
     for $c (0..($ncol-1)) {
 	my $value = $values[$c];
 	if ($col_width) {
@@ -1842,50 +1817,8 @@ sub _printMatrixRow {
 	}
     }
     $row_string .= "\n";
-    return $row_string
+    return $row_string;
 }
-
-
-#  ################################################################
-#  =pod
-
-#  =_printMatrixColumn($column_name, @values)
-
-#  Print a column for the matrix output (the column is converted to a
-#  text row).
-
-#  =cut
-#  sub _printMatrixColumn {
-#      my ($self, $column_name, @values) = @_;
-#      my $column_string = $column_name;
-#      my $nrow = scalar(@values);
-
-#      my ($decimals, $sep, $col_width, $number_width) = $self->_get_format;
-
-#      ## Print the matrix column
-#      $column_string .= $sep."|";
-#      for $r (0..($nrow-1)) {
-#  	my $value = $values[$c];
-#  	if ($col_width) {
-#  	    my $value_format = "%${number_width}s";
-#  	    if (&main::IsReal($value)){
-#  		if ($type eq "counts") {
-#  		    $value_format = "%${number_width}d";
-#  		} else {
-#  		    $value_format= "%${number_width}.${decimals}f";
-#  		}
-#  	    }
-#  	    $column_string .= sprintf " ${value_format}", $value;
-#  	} else {
-#  	    $column_string .= $sep.$value;
-#  	}
-#      }
-#      $column_string .= "\n";
-#      die $column_string;
-#      return $column_string
-#  }
-
-
 
 ################################################################
 =pod

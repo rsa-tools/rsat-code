@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.11 2005/09/02 15:49:49 jvanheld Exp $
+# $Id: convert-matrix,v 1.12 2005/11/10 10:45:19 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -584,4 +584,6 @@ sub Verbose {
       print $out ";\t$key\t$value\n";
     }
   }
+
+  printf $out "%-22s\t%d\n", "; pseudo-weight", $pseudo_weight;
 }
