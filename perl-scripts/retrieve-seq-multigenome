@@ -1,0 +1,327 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: retrieve-seq-multigenome,v 1.1 2005/11/10 13:39:01 jvanheld Exp $
+#
+# Time-stamp: <2003-07-04 12:48:55 jvanheld>
+#
+############################################################
+#use strict;;
+
+=pod
+
+=head1 NAME
+
+retrieve-seq-multigenome
+
+=head1 DESCRIPTION
+
+Retrieve sequences from multiple genomes. 
+
+=head1 AUTHORS
+
+jvanheld@scmbb.ulb.ac.be
+
+=head1 CATEGORY
+
+util
+
+=head1 USAGE
+    
+retrieve-seq-multigenome [-i inputfile] [-o outputfile] [-v]
+
+=head1 INPUT FORMAT
+
+The input file is a tab-delimited text files with (at least) the two
+following columns:
+
+=over 2
+
+=item 1. gene ID or name
+
+Identifier oor synonyms are supported. 
+
+=item 2. Organism name
+
+For the organism name, spaces must be replaced by underscore character
+(exactly as for retrieve-seq).
+
+=back
+
+If additional columns are included in the input file, they are
+ignored.
+
+
+=head1 OUTPUT FORMAT
+
+The output is a sequence file. The same formats are supported as for
+retrieve-seq.
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+require RSAT::Family;
+
+
+################################################################
+#### initialise parameters
+my $start_time = &AlphaDate();
+
+local $label_specified = 0; ## indicates whether the label is specified in the option lines
+local $default_label = "id,organism_name,name";
+local @to_pass; ## parameters pased to retrieve-seq
+local %infile = ();
+local %outfile = ();
+local $format = "fasta";
+
+local $verbose = 0;
+#local $in = STDIN;
+local $out = STDOUT;
+
+&ReadArguments();
+
+################################################################
+#### check argument values
+
+
+################################################################
+### open output stream
+$out = &OpenOutputFile($outfile{output});
+
+################################################################
+##### read input
+#($in) = &OpenInputFile($infile{input});
+#while (<$in>) {
+#    next if (/^;/); ## Skip comment lines
+#    next if (/^#/);## Skip comment lines
+#    next unless (/\S/);## Skip empty lines
+#    my @fields = split "\t";
+#    push @genes, $fields[0];
+#    push @genes, $fields[1];
+#}
+#close $in if ($infile{input});
+%genes_per_org = &ReadClasses($infile{input});
+
+################################################################
+#### print verbose
+&Verbose() if ($verbose);
+
+################################################################
+###### execute the command
+###### print output
+foreach my $org (sort(keys( %genes_per_org))) {
+    my $geneset = $genes_per_org{$org};
+    my @genes = $geneset->get_members();
+    if (scalar(@genes) > 0) {
+	my $command = "retrieve-seq -org ".$org;
+	unless ($label_specified) {
+	    $command .= " -label ".$default_label;
+	} 
+	foreach my $arg (@to_pass) {
+	    if ($arg =~ /\s/) {
+		$command .= " '".$arg."'";
+	    } else {
+		$command .= " ".$arg;
+	    }
+	}
+	$command .= " -q ";
+	$command .= join(" -q ", @genes);
+	warn "\n", $command, "\n",  if ($main::verbose >= 1);
+	print $out `$command`;
+    }
+}
+
+################################################################
+###### finish verbose
+if ($verbose >= 1) {
+    my $done_time = &AlphaDate();
+    warn "; Job started $start_time\n";
+    warn "; Job done    $done_time\n";
+}
+
+
+################################################################
+###### close output stream
+close $out if ($outfile{output});
+
+
+exit(0);
+
+
+################################################################
+################### subroutine definition ######################
+################################################################
+
+
+################################################################
+#### display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+#### display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+#### Read arguments 
+sub ReadArguments {
+    my $arg = 0;
+    while ($arg = shift (@ARGV)) {
+    
+	## Verbosity
+=pod
+
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($ARGV[0])) {
+		$verbose = shift(@ARGV);
+	    } else {
+		$verbose = 1;
+	    }
+	    
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+	    
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+	    
+
+	    ## Input file
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-i") {
+	    $infile{input} = shift(@ARGV);
+	    
+	    ## Output file
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $outfile{output} = shift(@ARGV);
+	    
+	    ## Sequence format
+=pod
+
+=item	B<-format format>
+
+Sequence format. The same formats are supported as for retrieve-seq.
+
+=cut
+	} elsif ($arg eq "-format") {
+	    $format = shift(@ARGV);
+	    
+=pod
+
+=item B<other parameters>
+
+All other parameters are passed to the command retrieve-seq. 
+
+See the manual of retrieve-seq for a description of supported parameters.
+
+=cut
+
+	} else {
+	    push @to_pass, $arg;
+	    if ($arg eq "-label") {
+		$label_specified = 1;
+	    }
+	}
+    }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    warn "; retrieve-seq-multigenome ";
+    &PrintArguments($out);
+    if (defined(%infile)) {
+	warn "; Input files\n";
+	while (($key,$value) = each %infile) {
+	    warn ";\t$key\t$value\n";
+	}
+    }
+    if (defined(%outfile)) {
+	warn "; Output files\n";
+	while (($key,$value) = each %outfile) {
+	    warn ";\t$key\t$value\n";
+	}
+    }
+
+    ## report genes per organism
+    warn "; Gene sets\n";
+    foreach my $org (keys(%genes_per_org)) {
+	my $geneset = $genes_per_org{$org};
+	warn ";\t", join ("\t", sprintf("%-35s", $org), $geneset->get_size()." genes", join ("; ", $geneset->get_members())), "\n";
+    }
+
+}
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=over
+
+=item retrieve-seq
+
+=item supported-organisms
+
+=back
+
+=cut
