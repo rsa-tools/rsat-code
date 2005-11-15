@@ -210,7 +210,7 @@ sequence against another, and calculating the matching score for each
 offset. The matching score is the weight returned &CountMatches().
 
 usage:
-    my ($match, $weight, $proba, $length, $offset) = &BestMatch($seq1, $seq2);
+    my ($match, $weight, $proba, $length, $best_offset, $n_offsets) = &BestMatch($seq1, $seq2);
 
 =cut
 sub BestMatch {
@@ -219,6 +219,7 @@ sub BestMatch {
     my $len2 = length($seq2);
     my $min_offset = -$len2+1;
     my $max_offset = $len1 -1;
+    my $n_offsets = $max_offset - $min_offset + 1;
 
     my $best_matches = -1;
     my $best_weight = -1;
@@ -246,7 +247,7 @@ sub BestMatch {
 	warn join ("\t", $offset, $of1, $sub1, $of2, $sub2, $weight), "\n" if ($main::verbose >= 10);
     }
     warn join ("\t", $seq1, $seq2, $best_matches, $best_weight, $best_proba, $best_length, $best_offset), "\n" if ($main::verbose >= 5);
-    return ($best_matches, $best_weight, $best_proba, $best_length, $best_offset);
+    return ($best_matches, $best_weight, $best_proba, $best_length, $best_offset, $n_offsets);
 }
 
 ################################################################
