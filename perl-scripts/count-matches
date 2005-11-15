@@ -37,6 +37,8 @@ local $NULL="NA";
 @supported_threshold_fields = qw(
 			      match
 			      proba
+			      Eval
+			      sig
 			      weight
 			      len1
 			      len2
@@ -63,6 +65,9 @@ $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
 @supported_return_fields = qw(
 			      match
 			      proba
+			      Eval
+			      sig
+			      noffsets
 			      weight
 			      seq
 			      id
@@ -81,6 +86,9 @@ $supported_return_fields = join (",", @supported_return_fields);
 my %field_format = (match=>"%d",
 		    weight=>"%.2f",
 		    proba=>"%.2g",
+		    Eval=>"%.2g",
+		    sig=>"%.2f",
+		    noffsets=>"%d",
 		    seq1=>"%s",		
 		    seq2=>"%s",		
 		    id1=>"%s",
@@ -94,9 +102,9 @@ my %field_format = (match=>"%d",
 		    max_w=>"%.2f",
 		    max_w1=>"%.2f",
 		    max_w2=>"%.2f",
-		    rel_w=>"%.3f",
-		    rel_w1=>"%.3f",
-		    rel_w2=>"%.3f",
+		    rel_w=>"%.4f",
+		    rel_w1=>"%.4f",
+		    rel_w2=>"%.4f",
 		    top_s1=>"%s",
 		    top_s2=>"%s",
 		    );
@@ -300,14 +308,18 @@ sub OneMatch {
     ################################################################
     ## Count the matches
     if ($slide) {
-	($match, $weight, $proba, $mlen, $offset) = &BestMatch(&ExpandSeq($one_match->{seq1}),&ExpandSeq($one_match->{seq2}));
+	($match, $weight, $proba, $mlen, $offset, $n_offsets) = &BestMatch(&ExpandSeq($one_match->{seq1}),&ExpandSeq($one_match->{seq2}));
 	$one_match->{offset} = $offset;
     } else {
 	($match, $weight, $proba, $mlen) = &CountMatches(&ExpandSeq($one_match->{seq1}),&ExpandSeq($one_match->{seq2}));
+	$n_offsets = 1;
     }
     $one_match->{match} = $match; ## Number of matching residues
     $one_match->{weight} = $weight; ## Weight
     $one_match->{proba} = $proba; ## P-value
+    $one_match->{noffsets} = $n_offsets; ## P-value
+    $one_match->{Eval} = $proba*$n_offsets; ## E-value
+    $one_match->{sig} = -log($one_match->{Eval})/log(10); ## E-value
     $one_match->{mlen} = $mlen; ## Matching length
 
 
