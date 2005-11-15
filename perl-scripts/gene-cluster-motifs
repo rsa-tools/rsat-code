@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.130 2005/11/10 13:46:13 rsat Exp $
+# $Id: gene-cluster-motifs,v 1.131 2005/11/15 17:06:25 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -44,7 +44,7 @@ $rel_w = 1; ## Threshold on relative weight for count-matches
 $sliding_window_size = 0; 
 $die_on_error = 1;
 $analyze_purged_sequences = 1;
-$repetitions=100; ### Repetitions for the calibN
+$calibN_repet=100; ### Repetitions for the calibN
 %dir = ();
 $dir{main} = `pwd`;
 chomp($dir{main});
@@ -2254,7 +2254,7 @@ OPTIONS
 		calculated automatically from the conditions (seq
 		lengths, seq number, ...)
 
-	-calibN #
+	-calibN_repet #
 		Number of repetitions for the calibration. 
 
 
@@ -2774,10 +2774,10 @@ sub ReadArguments {
 	    $dir{calibN} = $ARGV[$a+1];
 
 	    #### Number of repetitions for the calibration
-	} elsif ($ARGV[$a] =~ /^-calibN/) {
-	    $repetitions = $ARGV[$a+1];
+	} elsif ($ARGV[$a] =~ /^-calibN_repet/) {
+	    $calibN_repet = $ARGV[$a+1];
 	    &FatalError("Invalid number of repetitions for the calibrations: should be at least 2, and a much larger value (e.g.100) is highly recommended.") 
-		unless ((&IsNatural($repetitions)) && ($repetitions >= 2));
+		unless ((&IsNatural($calibN_repet)) && ($calibN_repet >= 2));
 
 	    #### background model for expected frequency. 
 	    #### Supported: "upstream", "upstream-noorf", "intergenic", "mncf"
@@ -3482,7 +3482,7 @@ sub CalibrationPrefix {
 #	$calib_prefix .= $noov;
 #	$calib_prefix .= "_N".$N;
 #	$calib_prefix .= "_L".$calib_length;
-#	$calib_prefix .= "_R".$repetitions;
+#	$calib_prefix .= "_R".$calibN_repet;
 
 	## file name
 	$calib_prefix .= "/";
@@ -3492,7 +3492,7 @@ sub CalibrationPrefix {
 	$calib_prefix .= $noov;
 	$calib_prefix .= "_n".$N;
 	$calib_prefix .= "_l".$calib_length;
-	$calib_prefix .= "_r".$repetitions;
+	$calib_prefix .= "_r".$calibN_repet;
 
    } else {
 	## single-gene-based calibration (all upstream)
@@ -3823,7 +3823,7 @@ sub CalibrateOligosN {
 					   "random gene selections","upstream length", $seq_len) )
 		    if ($main::verbose >= 1);
 		my $command = "calibrate-oligos -v 1";
-		$command  .= " -r ".$repetitions." -sn ".$gene_nb." -ol ".$oligo_len." -sl ".$seq_len;
+		$command  .= " -r ".$calibN_repet." -sn ".$gene_nb." -ol ".$oligo_len." -sl ".$seq_len;
 		my $calibN_task = "all,clean_oligos";
 		$command .= " -task ".$calibN_task;
 #		$command .= "-start ${START}";
