@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.131 2005/11/15 17:06:25 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.132 2005/11/16 17:45:55 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -287,6 +287,7 @@ $verbose_message = &Verbose() if ($verbose >= 1);
 &AnalyzeFamilies();
 &MDCreport() if ($task{report});
 &Validate() if ($task{validate});
+&SigDistrib() if (($task{sig_distrib_oligos}) || ($task{sig_distrib_dyads}) || ($task{sig_distrib_orm}));
 &ExportSQL() if ($task{sql});
 &SyntheticTable() if ($task{synthesis});
 
@@ -914,7 +915,7 @@ sub OligoAnalysis {
    my $dir = "${family_name}/oligos_${family_name}";
    
    chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
-   &RSAT::error::FatalError( "Cannot read file $family{$family_name}->{input_seq_file}") unless (($batch) || (-r $family{$family_name}->{input_seq_file}));
+   &RSAT::error::FatalError( "Cannot read file $family{$family_name}->{input_seq_file}") unless (($batch)  || ($dry_run) || ($dry_run) || (-r $family{$family_name}->{input_seq_file}));
   
    ## initialize the oligo file
 #    system "echo '' > $family{$family_name}->{oligo_file}"; # if ($verbose >=1);
@@ -951,7 +952,7 @@ sub MergeOligoLengths {
    my $dir = "${family_name}/oligos_${family_name}";
 
    chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
-   &RSAT::error::FatalError("Cannot read file ".$family{$family_name}->{input_seq_file}) unless (($batch) ||(-r $family{$family_name}->{input_seq_file}));
+   &RSAT::error::FatalError("Cannot read file ".$family{$family_name}->{input_seq_file}) unless (($batch) || ($dry_run) ||(-r $family{$family_name}->{input_seq_file}));
    
    ## initialize the oligo file
    my @merge_commands = "echo '' > $family{$family_name}->{oligo_file}"; # if ($verbose >=1);    
@@ -990,7 +991,7 @@ sub MatchPatterns {
    $fmap_prefix = $oligo_file unless ($fmap_prefix);
 
    ### pattern matching
-   &RSAT::error::FatalError("Cannot read file $family{$family_name}->{seq_file}") unless (($batch) || (-r $family{$family_name}->{seq_file}));
+   &RSAT::error::FatalError("Cannot read file $family{$family_name}->{seq_file}") unless (($batch) || ($dry_run) || (-r $family{$family_name}->{seq_file}));
    $feature_file = $fmap_prefix.".ft";
    $fmap_file = $fmap_prefix.".".$IMG_FORMAT;
    $htmap_file = $fmap_prefix.".html";
@@ -1030,7 +1031,7 @@ sub DrawFeatureMap {
    $title = &ShortFileName($fmap_prefix) unless ($title);
 
    ### pattern matching
-   &RSAT::error::FatalError("Cannot read file $family{$family_name}->{seq_file}") unless (($batch) || (-r $family{$family_name}->{seq_file}));
+   &RSAT::error::FatalError("Cannot read file $family{$family_name}->{seq_file}") unless (($batch) || ($dry_run) || (-r $family{$family_name}->{seq_file}));
    $feature_file = $fmap_prefix.".ft";
    $fmap_file = $fmap_prefix.".".$IMG_FORMAT;
    $htmap_file = $fmap_prefix.".html";
@@ -1075,7 +1076,7 @@ sub DyadAnalysis {
 	       ), "\n" if ($verbose >= 1);
    $dir = "${family_name}/dyads_${family_name}";
    chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
-   &RSAT::error::FatalError("Cannot read file $family{$family_name}->{input_seq_file}") unless (($batch) || (-r $family{$family_name}->{input_seq_file}));
+   &RSAT::error::FatalError("Cannot read file $family{$family_name}->{input_seq_file}") unless (($batch) || ($dry_run) || (-r $family{$family_name}->{input_seq_file}));
    $command = "dyad-analysis";
    $command .= " -return occ,proba,rank";
    $command .= " -i ".$family{$family_name}->{input_seq_file};
@@ -1132,7 +1133,7 @@ sub MergePatterns {
 sub DrawMergedFeatureMap {
    warn ";\tDrawing feature-map with results of merged oligonucleotides and dyads for family $family_name\n" if ($verbose >= 1);
    ### pattern matching
-   &RSAT::error::FatalError("Cannot read file $family{$family_name}->{seq_file}") unless (($batch) || (-r $family{$family_name}->{seq_file}));
+   &RSAT::error::FatalError("Cannot read file $family{$family_name}->{seq_file}") unless (($batch) || ($dry_run) || (-r $family{$family_name}->{seq_file}));
    $fmap_file = $family{$family_name}->{merged_file}.".${IMG_FORMAT}";
    $htmap_file = $family{$family_name}->{merged_file}.".html";
    $origin = "-0";
@@ -1873,7 +1874,7 @@ sub IndexPatterns {
 #### Draw feature maps
 sub DrawDyadFeatureMap {
    warn ";\tDrawing feature-map with results of dyad-analysis for family $family_name\n" if ($verbose >= 1);
-   &RSAT::error::FatalError("Cannot read file $family{$family_name}->{seq_file}") unless (($batch) || (-r $family{$family_name}->{seq_file}));
+   &RSAT::error::FatalError("Cannot read file $family{$family_name}->{seq_file}") unless (($batch) || ($dry_run) || (-r $family{$family_name}->{seq_file}));
 
    ## pattern matching
    $origin = "-0";
@@ -3199,7 +3200,7 @@ sub ReadSequenceList {
 ## Validate the pattern discovery results by comparing discovered patterns to
 ## known sites
 sub Validate {
-   warn ";\n; Validating discovered patterns\n" if ($verbose >=1);
+   &RSAT::message::Info( ";\n; Validating discovered patterns") if ($verbose >=1);
    if ($task{validate_oligos}) {
        $pattern_type = 'oligo';
        $pattern_suffix = $oligo_suffix;
@@ -3217,16 +3218,61 @@ sub Validate {
        $noorf_status = "-orfov";
    }
 
-   $valid_handle = &OpenOutputFile($pattern_suffix.$from.$noorf_status."_".$feature_types."_validation_per_regulon.tab");
-
+   ## Validation file
+   $outfile{validation_per_family} = join ("", "validation_per_family", $pattern_suffix,$from,$noorf_status,"_",$feature_types,".tab");
+   $valid_handle = &OpenOutputFile($outfile{validation_per_family});
+   
+   ## Print the column descriptions as comments
+   $valid_keys{"Fam"} = "Family name"; 
+   $valid_keys{"members"} = "Number of sequences";
+   $valid_keys{"sites"} = "number of annotated sites";
+   $valid_keys{"sig_max"} = "Maximal significance";
+   $valid_keys{"sig_sum"} = "Sum of significances for the discovered patterns";
+   $valid_keys{"sig_m"} = "Mean of significance for the discovered patterns";
+   $valid_keys{"TPsites"} = "Know sites matched by at least one pattern";
+   $valid_keys{"nb_pat"} = "Number of discovered patterns";
+   $valid_keys{"TP_pat"} = "Number of discovered patterns matching at least one site";
+   $valid_keys{"PPV"} = "Positive predictive value: PVV=TP_pat/nb_pat"; 
+   $valid_keys{"Sn"} = "Sensitivity: Sn=TPsites/sites";
+   $valid_keys{"Acc.a"} = "Arithmetic accuracy: Acc.a = (Sn + PPV)/2";
+   $valid_keys{"Acc.g"} = "Geometric accuracy: Acc.g = sqrt(Sn*PPV)";
+   $valid_keys{"Acc.h"} = "Harmonic accuracy: Acc.h = 2*(Sn*PPV)/(Sn+PPV)";
+   print $valid_handle "; Column contents\n";
+   foreach my $key (keys(%valid_keys)) {
+       print $valid_handle ";\t", $key, "\t", $valid_keys{$key}, "\n";
+   }
+   
    ## Print header in validation file
-   print $valid_handle join("\t", "; Regulons", "Known sites", "TPsites", "Disc. patterns", "TPpatterns", "PPV", "Sn", "Arith. accu", "Geom. accu", "Harmon. accu"), "\n";
-
+   print $valid_handle join("\t", 
+			     "# Fam", 
+			     "members",
+			     "sites",
+			     "sig_max",
+			     "sig_sum",
+			     "sig_m",
+			     "TPsites",
+			     "nb_pat",
+			     "TP_pat",
+			     "PPV", 
+			     "Sn",
+			     "Acc.a",
+			     "Acc.g",
+			     "Acc.h"), "\n";
+   
+   my $f = 0;
    foreach my $family_name (@families) {
+       $f++;
        ## Create a separate file for count-matches with the current family
        my @sites = @{$known_site{$family_name}};
        my @sources = @{$known_site_source{$family_name}};
-       &RSAT::message::Debug("Validating", $family_name, "known sites", $family{$family_name}->{known_sites}, "Number of sites", scalar(@sites)) if ($main::verbose >= 0);
+
+       &RSAT::message::Info(join("\t", "Validating family ".$f."/".scalar(@families), 
+				 $family_name, 
+				 "known sites", 
+				 $family{$family_name}->{known_sites}, 
+				 "Number of sites", 
+				 scalar(@sites))) if ($main::verbose >= 1);
+       
        $known_handle = &OpenOutputFile($family{$family_name}->{known_sites});
        foreach my $s (0..$#sites) {
 	   my $source = $sources[$s];
@@ -3238,82 +3284,9 @@ sub Validate {
        close $known_handle;
 
        &ValidateOneResult($family_name, $pattern_type, scalar(@sites));
-
-#       &ValidateOneResult($family_name, "oligo", $#sites) if ($task{validate_oligos});
-#       &ValidateOneResult($family_name, "dyad", $#sites) if ($task{validate_dyads});
-#       &ValidateOneResult($family_name, "orm", $#sites) if ($task{validate_orm});
-
-#        ## Compare oligos with known sites
-#        my $command = "count-matches"; 
-#        $command .= " -v 1";
-#        $command .= " ".$strands;
-#        $command .= " -file1 ".$family{$family_name}->{known_sites};
-#        $command .= " -file2 ".$family{$family_name}->{oligo_file};
-#        $command .= " -slide"; 
-#        $command .= " -return match,weight,rel_w,seq,strand"; 
-#        $command .= " -lth rel_w ".$rel_w;
-#        $command .= " -o ".$family{$family_name}->{oligo_vs_known};
-#        &doit($command, $dry_run, $die_on_error, $verbose);
-
-#        ## Compare oligos with known sites (table output type)
-#        my $command = "count-matches";
-#        $command .= " -v 1";
-#        $command .= " ".$strands;
-#        $command .= " -file1 ".$family{$family_name}->{known_sites};
-#        $command .= " -file2 ".$family{$family_name}->{oligo_file};
-#        $command .= " -slide";
-#        $command .= " -table rel_w";
-#        $command .= " -o ".$family{$family_name}->{oligo_vs_known_relw_table};
-#        &doit($command, $dry_run, $die_on_error, $verbose);
-
-#        ## Compare oligos with known sites (table output type)
-#        my $command = "count-matches";
-#        $command .= " -v 1";
-#        $command .= " ".$strands;
-#        $command .= " -file1 ".$family{$family_name}->{known_sites};
-#        $command .= " -file2 ".$family{$family_name}->{oligo_file};
-#        $command .= " -slide";
-#        $command .= " -table weight";
-#        $command .= " -o ".$family{$family_name}->{oligo_vs_known_weight_table};
-#        &doit($command, $dry_run, $die_on_error, $verbose);
-
-#        ## Compare dyads with known sites
-#        my $command = "count-matches";
-#        $command .= " -v 1";
-#        $command .= " ".$strands;
-#        $command .= " -file1 ".$family{$family_name}->{known_sites};
-#        $command .= " -file2 ".$family{$family_name}->{dyad_file};
-#        $command .= " -slide";
-#        $command .= " -return match,weight,rel_w,seq,strand";
-#        $command .= " -lth rel_w ".$rel_w;
-#        $command .= " -o ".$family{$family_name}->{dyad_vs_known};
-#        &doit($command, $dry_run, $die_on_error, $verbose);
-
-#        ## Compare dyads with known sites (table output type)
-#        my $command = "count-matches";
-#        $command .= " -v 1";
-#        $command .= " ".$strands;
-#        $command .= " -file1 ".$family{$family_name}->{known_sites};
-#        $command .= " -file2 ".$family{$family_name}->{dyad_file};
-#        $command .= " -slide";
-#        $command .= " -table rel_w";
-#        $command .= " -o ".$family{$family_name}->{dyad_vs_known_relw_table};
-#        &doit($command, $dry_run, $die_on_error, $verbose);
-
-
-#        ## Compare dyads with known sites (table output type)
-#        my $command = "count-matches";
-#        $command .= " -v 1";
-#        $command .= " ".$strands;
-#        $command .= " -file1 ".$family{$family_name}->{known_sites};
-#        $command .= " -file2 ".$family{$family_name}->{dyad_file};
-#        $command .= " -slide";
-#        $command .= " -table weight";
-#        $command .= " -o ".$family{$family_name}->{dyad_vs_known_weight_table};
-#        &doit($command, $dry_run, $die_on_error, $verbose);
-   
    }
    close $valid_handle;
+   &RSAT::message::Info(join ("\t", "Validation per family done", $outfile{validation_per_family}));
 }
 
 ################################################################
@@ -3331,7 +3304,7 @@ sub ValidateOneResult {
     $command .= " -file1 ".$family{$family_name}->{known_sites};
     $command .= " -file2 ".$pattern_file;
     $command .= " -slide";
-    $command .= " -return match,weight,rel_w,seq,strand";
+    $command .= " -return match,weight,rel_w,id,strand,seq";
     $command .= " -lth rel_w ".$rel_w;
     $command .= " -o ".$family{$family_name}->{$pattern_type."_vs_known"};
     &doit($command, $dry_run, $die_on_error, $verbose);
@@ -3361,50 +3334,115 @@ sub ValidateOneResult {
     ## Count number of annotated sites matching at least one discovered pattern
     $TPsites = `more $match_file | grep -v ';' | cut -f 6 | sort -u | wc -l`;
     chomp($TPsites);
-    if ($TPsites > $number_sites) {    # sometimes more TPsites than sites, probably needs fix...
-	$TPsites = $number_sites;
-    }
-
-    ## Calculate sensitivity
-    unless ($number_sites == 0) {
-	$Sn = $TPsites/$number_sites;
-    } else { $Sn = 'N/A';
-	 }
 
     ## Count number of discovered patterns matching at least one annotated site
     $TPpatterns = `more $match_file | grep -v ';' | cut -f 7 | sort -u | wc -l`;
     chomp($TPpatterns);
 
     ## Count number of discovered patterns
-    $TP_FPpatterns = `more $pattern_file | grep -v ';' | cut -f 1 | awk \'\$0 \!\= \"\"\' | wc -l`;
-    chomp($TP_FPpatterns);
+    $nb_patterns = `more $pattern_file | grep -v ';' | cut -f 1 | awk \'\$0 \!\= \"\"\' | wc -l`;
+    chomp($nb_patterns);
 
-    ## Calculate positive predictive value
-    unless ($TP_FPpatterns == 0) {
-	$PPV = $TPpatterns/$TP_FPpatterns;
-    } else { $PPV = 'N/A';
-	 }
+    ## Calculate sensitivity, positive predictive value and accuracy
+    if ($number_sites == 0) {
+	$TPsites = "N/A";
+	$TPpatterns = "N/A";
+	$Sn = "N/A";
+	$PPV = "N/A";
+	$acc_a = "N/A";
+	$acc_g = "N/A";
+	$acc_h = "N/A";
+    } else {
+        $Sn = $TPsites/$number_sites;
+        $Sn = sprintf("%.4f", $Sn);
+	if ($nb_patterns == 0) {
+	    $PPV = 0;
+	    $acc_a = 0;
+            $acc_g = 0;
+            $acc_h = 0;
+	} else {
+	    $PPV = $TPpatterns/$nb_patterns;
+	    $PPV = sprintf("%.4f", $PPV);
+	    $acc_a = ($Sn+$PPV)/2;
+	    $acc_a = sprintf("%.4f", $acc_a);
+	    $acc_g = sqrt($Sn*$PPV);
+	    $acc_g = sprintf("%.4f", $acc_g);
+	    if ($Sn + $PPV == 0) {
+		$acc_h = 0;
+	    } else {
+		$acc_h = 2*($Sn*$PPV)/($Sn+$PPV);
+		$acc_h = sprintf("%.4f", $acc_h);
+	    }
+	}
+    }
 
-    ## Calculate arithmetic accuracy
-    $arit_acc = ($Sn+$PPV)/2;
-
-    ## Calculate geometric accuracy
-    $geom_acc = sqrt($Sn*$PPV);
-
-    ## Calculate harmonic accuracy
-    unless ($Sn+$PPV == 0) {
-	$harm_acc = 2*($Sn*$PPV)/($Sn+$PPV);
-    } else { $harm_acc = 'N/A';
-	 }
-
-    ## Calculate sig sum and max sig for the current family
-    ## TO DO?
-
+    ## Calculate sig sum, max sig and mean sig for the current family
+    if ($patt_type eq "oligo") {
+	chomp($sigs = `more $pattern_file | grep -v ';' | cut -f 9 | awk \'\$0 \!\= \"\"\'`);
+    } elsif ($patt_type eq "dyad") {
+	chomp($sigs = `more $pattern_file | grep -v ';' | cut -f 8 | awk \'\$0 \!\= \"\"\'`);
+    }
+    @sig = split /\n/, $sigs;
+    if (scalar(@sig) == 0) {
+	$max_sig = "N/A";
+	$sum_sig = "N/A";
+	$mean_sig = "N/A";
+    } else { 
+	$max_sig = 0;
+	$sum_sig = 0;
+	foreach $sig (@sig) {
+	    if ($sig > $max_sig) {
+		$max_sig = $sig;
+	    }
+	    $sum_sig = $sum_sig + $sig;
+	}
+	$mean_sig = $sum_sig / scalar(@sig);
+	$mean_sig = sprintf("%.3f", $mean_sig);
+    }
 
     ## Print results
-    print $valid_handle join("\t", $family_name, $number_sites, $TPsites, $TP_FPpatterns, $TPpatterns, $PPV, $Sn, $arit_acc, $geom_acc, $harm_acc), "\n";
+    print $valid_handle join("\t", $family_name, 
+			     scalar(@{$family{$family_name}->{members}}),
+			     $number_sites, 
+			     $max_sig, 
+			     $sum_sig, 
+			     $mean_sig, 
+			     $TPsites, 
+			     $nb_patterns, 
+			     $TPpatterns, 
+			     $PPV, 
+			     $Sn, 
+			     $acc_a, 
+			     $acc_g, 
+			     $acc_h), "\n";
 }
 
+################################################################
+## 
+sub SigDistrib {
+    &RSAT::message::Info( ";\n; Significance distribution of discovered patterns") if ($verbose >=1);
+    if ($task{sig_distrib_oligos}) {
+	$pattern_type = 'oligo';
+	$pattern_suffix = $oligo_suffix;
+    } elsif ($task{sig_distrib_dyads}) {
+	$pattern_type = 'dyad';
+	$pattern_suffix = $dyad_suffix;
+    } elsif ($task{sig_distrib_orm}) {
+	$pattern_type = 'orm';
+	$pattern_suffix = $orm_suffix;
+    }
+
+    if ($noorf eq "-noorf") {
+	$noorf_status = $noorf;
+    } else {
+	$noorf_status = "-orfov";
+    }
+
+   ## Significance distribution file                                                                                                                                                             
+    $outfile{sig_distrib_file} = join ("", "sig_distrib", $pattern_suffix,$from,$noorf_status,"_",$feature_types,".tab");
+    $sig_distrib_handle = &OpenOutputFile($outfile{sig_distrib_file});
+
+}
 
 ################################################################
 ## INDEX one sequence length per family
