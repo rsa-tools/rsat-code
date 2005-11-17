@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.136 2005/11/17 16:27:23 rsat Exp $
+# $Id: gene-cluster-motifs,v 1.137 2005/11/17 17:43:11 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -3388,10 +3388,15 @@ sub ValidateOneResult {
 	$TPpatterns = "NA";
 	$TPpattern = "NA";
 	$Sn = "NA";
+	$Sn_patt = "NA";
 	$PPV = "NA";
+	$PPV_patt = "NA";
 	$acc_a = "NA";
+	$acc_a_patt = "NA";
 	$acc_g = "NA";
+	$acc_g_patt = "NA";
 	$acc_h = "NA";
+	$acc_h_patt = "NA";
     } else {
         $Sn = $TPsites/$number_sites;
         $Sn = sprintf("%.4f", $Sn);
@@ -3465,13 +3470,13 @@ sub ValidateOneResult {
     @patt_sigs = split /\n/, $patt_sigs;
     foreach my $patt_sig (@patt_sigs) {
 	@patt_sig = split /\t/, $patt_sig;
-	chomp($TPsites_patt = `more $match_file | grep '$patt_sig[0]' | wc -l`);
-	if ($TPsites_patt == 0) {
-	    $TPpattern = 0;
-	} else {
-	    $TPpattern = 1;
-	}
 	unless ($number_sites == 0) {
+	    chomp($TPsites_patt = `more $match_file | grep '$patt_sig[0]' | wc -l`);
+	    if ($TPsites_patt == 0) {
+		$TPpattern = 0;
+	    } elsif ($TPsites_patt >= 1) {
+		$TPpattern = 1;
+	    }
 	    $Sn_patt = $TPsites_patt/$number_sites;
 	    $Sn_patt = sprintf("%.4f", $Sn_patt);
 	    if ($nb_patterns == 0) {
@@ -3489,10 +3494,11 @@ sub ValidateOneResult {
 		if ($Sn_patt + $PPV_patt == 0) {
 		    $acc_h_patt = 0;
 		} else {
-		    $acc_h_patt = 2*($S_patt*$PPV_patt)/($Sn_patt+$PPV_patt);
+		    $acc_h_patt = 2*($Sn_patt*$PPV_patt)/($Sn_patt+$PPV_patt);
 		    $acc_h_patt = sprintf("%.4f", $acc_h_patt);
 		}
 	    }
+	}
 	    print $valid_patt_handle join("\t", $family_name, 
 					  scalar(@{$family{$family_name}->{members}}),
 					  $number_sites, 
@@ -3505,7 +3511,6 @@ sub ValidateOneResult {
 					  $acc_a_patt, 
 					  $acc_g_patt, 
 					  $acc_h_patt), "\n";
-	}
     }
 }
 
