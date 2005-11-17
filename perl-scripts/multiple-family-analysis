@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.132 2005/11/16 17:45:55 rsat Exp $
+# $Id: multiple-family-analysis,v 1.133 2005/11/17 08:47:12 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -80,6 +80,8 @@ $dir{calib1} = "calibrations_1gene";
 		       meme
 		       ormbg
 		       orm
+		       sig_distrib_oligos
+		       sig_distrib_dyads
 		       );
 foreach my $task (@supported_tasks) {
     $supported_task{$task} = 1;
@@ -3418,7 +3420,8 @@ sub ValidateOneResult {
 }
 
 ################################################################
-## 
+## Gets for each family all discovered patterns and their significance
+## and prints to a file
 sub SigDistrib {
     &RSAT::message::Info( ";\n; Significance distribution of discovered patterns") if ($verbose >=1);
     if ($task{sig_distrib_oligos}) {
@@ -3438,10 +3441,40 @@ sub SigDistrib {
 	$noorf_status = "-orfov";
     }
 
-   ## Significance distribution file                                                                                                                                                             
+   ## Significance distribution file
     $outfile{sig_distrib_file} = join ("", "sig_distrib", $pattern_suffix,$from,$noorf_status,"_",$feature_types,".tab");
     $sig_distrib_handle = &OpenOutputFile($outfile{sig_distrib_file});
 
+    ## Print the column descriptions as comments
+    $valid_keys{"Fam"} = "Family name";
+    $valid_keys{"Pattern"} = "Discovered patterns";
+    $valid_keys{"Sig"} = "Significance of discovered patterns";
+    print $sig_distrib_handle "; Column contents\n";
+    foreach my $key (keys(%valid_keys)) {
+	print $sig_distrib_handle ";\t", $key, "\t", $valid_keys{$key}, "\n";
+    }
+
+   ## Print header in validation file
+   print $sig_distrib_handle join("\t",
+				  "# Fam",
+				  "Pattern",
+				  "Sig"), "\n";
+
+    ## Getting and printing patterns and their significance
+    foreach my $family_name (@families) {
+	my $pattern_file = $family{$family_name}->{$pattern_type."_file"};
+	if ($pattern_type eq "oligo") {
+	    chomp($patt_sigs = `more $pattern_file | grep -v ';' | cut -f 1,9 | awk \'\$0 \!\= \"\"\'`);
+	} elsif ($pattern_type eq "dyad") {
+	    chomp($patt_sigs = `more $pattern_file | grep -v ';' | cut -f 1,8 | awk \'\$0 \!\= \"\"\'`);
+	}
+	@patt_sigs = split /\n/, $patt_sigs;
+	foreach my $patt_sig (@patt_sigs) {
+	    print $sig_distrib_handle ($family_name, "\t", $patt_sig, "\n");
+	}
+    }
+    close $sig_distrib_handle;
+    &RSAT::message::Info(join ("\t", "Significance distribution done", $outfile{sig_distrib_file}));
 }
 
 ################################################################
