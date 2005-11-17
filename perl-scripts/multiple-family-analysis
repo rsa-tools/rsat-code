@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.134 2005/11/17 09:42:31 rsat Exp $
+# $Id: multiple-family-analysis,v 1.135 2005/11/17 12:08:39 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -3383,13 +3383,15 @@ sub ValidateOneResult {
 
     ## Calculate sensitivity, positive predictive value and accuracy
     if ($number_sites == 0) {
-	$TPsites = "N/A";
-	$TPpatterns = "N/A";
-	$Sn = "N/A";
-	$PPV = "N/A";
-	$acc_a = "N/A";
-	$acc_g = "N/A";
-	$acc_h = "N/A";
+	$TPsites = "NA";
+	$TPsites_patt = "NA";
+	$TPpatterns = "NA";
+	$TPpattern = "NA";
+	$Sn = "NA";
+	$PPV = "NA";
+	$acc_a = "NA";
+	$acc_g = "NA";
+	$acc_h = "NA";
     } else {
         $Sn = $TPsites/$number_sites;
         $Sn = sprintf("%.4f", $Sn);
@@ -3422,9 +3424,9 @@ sub ValidateOneResult {
     }
     @sig = split /\n/, $sigs;
     if (scalar(@sig) == 0) {
-	$max_sig = "N/A";
-	$sum_sig = "N/A";
-	$mean_sig = "N/A";
+	$max_sig = "NA";
+	$sum_sig = "NA";
+	$mean_sig = "NA";
     } else { 
 	$max_sig = 0;
 	$sum_sig = 0;
@@ -3437,18 +3439,6 @@ sub ValidateOneResult {
 	$mean_sig = $sum_sig / scalar(@sig);
 	$mean_sig = sprintf("%.3f", $mean_sig);
     }
-
-    ## Statistics per pattern
-    if ($patt_type eq "oligo") {
-	chomp($patt_sigs = `more $pattern_file | grep -v ';' | cut -f 1,9 | awk \'\$0 \!\= \"\"\'`);
-    } elsif ($patt_type eq "dyad") {
-	chomp($patt_sigs = `more $pattern_file | grep -v ';' | cut -f 1,8 | awk \'\$0 \!\= \"\"\'`);
-    }
-    @patt_sigs = split /\n/, $patt_sigs;
-    foreach my $patt_sig (@patt_sigs) {
-	@patt_sig = split /\t/, $patt_sig;
-    }
-    
 
     ## Print results
     print $valid_fam_handle join("\t", $family_name, 
@@ -3466,18 +3456,57 @@ sub ValidateOneResult {
 			     $acc_g, 
 			     $acc_h), "\n";
 
-    print $valid_patt_handle join("\t", $family_name, 
-			     scalar(@{$family{$family_name}->{members}}),
-			     $number_sites, 
-			     $patt_sig[0],
-			     $patt_sig[1],
-			     $TPsites_patt, 
-			     $TPpattern, 
-			     $PPV_patt, 
-			     $Sn_patt, 
-			     $acc_a_patt, 
-			     $acc_g_patt, 
-			     $acc_h_patt), "\n";
+    ## Statistics per pattern
+    if ($patt_type eq "oligo") {
+	chomp($patt_sigs = `more $pattern_file | grep -v ';' | cut -f 1,9 | awk \'\$0 \!\= \"\"\'`);
+    } elsif ($patt_type eq "dyad") {
+	chomp($patt_sigs = `more $pattern_file | grep -v ';' | cut -f 1,8 | awk \'\$0 \!\= \"\"\'`);
+    }
+    @patt_sigs = split /\n/, $patt_sigs;
+    foreach my $patt_sig (@patt_sigs) {
+	@patt_sig = split /\t/, $patt_sig;
+	chomp($TPsites_patt = `more $match_file | grep '$patt_sig[0]' | wc -l`);
+	if ($TPsites_patt == 0) {
+	    $TPpattern = 0;
+	} else {
+	    $TPpattern = 1;
+	}
+	unless ($number_sites == 0) {
+	    $Sn_patt = $TPsites_patt/$number_sites;
+	    $Sn_patt = sprintf("%.4f", $Sn_patt);
+	    if ($nb_patterns == 0) {
+		$PPV_patt = 0;
+		$acc_a_patt = 0;
+		$acc_g_patt = 0;
+		$acc_h_patt = 0;
+	    } else {
+		$PPV_patt = $TPpattern;
+		$PPV_patt = sprintf("%.4f", $PPV_patt);
+		$acc_a_patt = ($Sn_patt+$PPV_patt)/2;
+		$acc_a_patt = sprintf("%.4f", $acc_a_patt);
+		$acc_g_patt = sqrt($Sn_patt*$PPV_patt);
+		$acc_g_patt = sprintf("%.4f", $acc_g_patt);
+		if ($Sn_patt + $PPV_patt == 0) {
+		    $acc_h_patt = 0;
+		} else {
+		    $acc_h_patt = 2*($S_patt*$PPV_patt)/($Sn_patt+$PPV_patt);
+		    $acc_h_patt = sprintf("%.4f", $acc_h_patt);
+		}
+	    }
+	    print $valid_patt_handle join("\t", $family_name, 
+					  scalar(@{$family{$family_name}->{members}}),
+					  $number_sites, 
+					  $patt_sig[0],
+					  $patt_sig[1],
+					  $TPsites_patt, 
+					  $TPpattern, 
+					  $PPV_patt, 
+					  $Sn_patt, 
+					  $acc_a_patt, 
+					  $acc_g_patt, 
+					  $acc_h_patt), "\n";
+	}
+    }
 }
 
 ################################################################
