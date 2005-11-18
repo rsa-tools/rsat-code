@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.137 2005/11/17 17:43:11 rsat Exp $
+# $Id: gene-cluster-motifs,v 1.138 2005/11/18 00:28:15 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -3319,7 +3319,7 @@ sub Validate {
        }
        close $known_handle;
 
-       &ValidateOneResult($family_name, $pattern_type, scalar(@sites));
+       &ValidateOneResult($family_name, scalar(@sites));
    }
    close $valid_fam_handle;
    &RSAT::message::Info(join ("\t", "Validation per family done", $outfile{validation_per_family}));
@@ -3330,10 +3330,9 @@ sub Validate {
 ################################################################
 ## Compare one result file with annotated motifs
 sub ValidateOneResult {
-    my ($family_name, $patt_type, $number_sites) = @_;
+    my ($family_name, $number_sites) = @_;
 
-    my $pattern_file = $family{$family_name}->{$patt_type."_file"};
-    my $match_file = $family{$family_name}->{$patt_type."_vs_known"};
+    my $pattern_file = $family{$family_name}->{$pattern_type."_file"};
 
     ## Compare discovered patterns with known sites
     my $command = "count-matches";
@@ -3369,6 +3368,96 @@ sub ValidateOneResult {
     $command .= " -o ".$family{$family_name}->{$pattern_type."_vs_known_weight_table"};
     &doit($command, $dry_run, $die_on_error, $verbose);
 
+    my $match_file = $family{$family_name}->{$pattern_type."_vs_known"};
+    my $pattern_handle = &OpenInputFile($pattern_file);
+
+    if ($pattern_type eq "oligo") {
+	$score_col = 9;
+    } elsif ($pattern_type eq "dyad") {
+	$score_col = 8;
+    } else {
+	&FatalError ("Pattern type $pattern_type is not supported yet");
+    }
+
+    ## Statistics per pattern
+    my $nb_patterns = 0;
+    my $max_sig = 0;
+    my $sum_sig = 0;
+    while (<$pattern_handle>) {
+        next if (/^;/); # Skip comment lines
+        next unless (/\S/); # Skip empty lines
+        chomp();
+	$nb_patterns ++;
+        my @fields = split "\t", $_;
+        my $pattern = $fields[0];
+        my $score = $fields[$score_col -1];
+	if ($number_sites == 0) {
+	    $TPsites = "NA";
+	    $TPsites_patt = "NA";
+	    $TPpatterns = "NA";
+	    $TPpattern = "NA";
+	    $Sn = "NA";
+	    $Sn_patt = "NA";
+	    $PPV = "NA";
+	    $PPV_patt = "NA";
+	    $acc_a = "NA";
+	    $acc_a_patt = "NA";
+	    $acc_g = "NA";
+	    $acc_g_patt = "NA";
+	    $acc_h = "NA";
+	    $acc_h_patt = "NA";
+	} else {
+	    chomp($TPsites_patt = `more $match_file | grep '$pattern' | wc -l`);
+	    if ($TPsites_patt == 0) {
+		$TPpattern = 0;
+	    } elsif ($TPsites_patt >= 1) {
+		$TPpattern = 1;
+	    }
+	    $Sn_patt = $TPsites_patt/$number_sites;
+	    $Sn_patt = sprintf("%.4f", $Sn_patt);
+	    if ($nb_patterns == 0) {
+		$PPV_patt = 0;
+		$acc_a_patt = 0;
+		$acc_g_patt = 0;
+		$acc_h_patt = 0;
+		$max_sig = "NA";
+		$sum_sig = "NA";
+		$mean_sig = "NA";
+	    } else {
+		if ($score > $max_sig) {
+		    $max_sig = $score;
+		}
+		$sum_sig = $sum_sig + $score;
+		$PPV_patt = $TPpattern;
+		$PPV_patt = sprintf("%.4f", $PPV_patt);
+		$acc_a_patt = ($Sn_patt+$PPV_patt)/2;
+		$acc_a_patt = sprintf("%.4f", $acc_a_patt);
+		$acc_g_patt = sqrt($Sn_patt*$PPV_patt);
+		$acc_g_patt = sprintf("%.4f", $acc_g_patt);
+		if ($Sn_patt + $PPV_patt == 0) {
+		    $acc_h_patt = 0;
+		} else {
+		    $acc_h_patt = 2*($Sn_patt*$PPV_patt)/($Sn_patt+$PPV_patt);
+		    $acc_h_patt = sprintf("%.4f", $acc_h_patt);
+		}
+	    }
+	}
+	print $valid_patt_handle join("\t", $family_name, 
+				      scalar(@{$family{$family_name}->{members}}),
+				      $number_sites, 
+				      $pattern,
+				      $score,
+				      $TPsites_patt, 
+				      $TPpattern, 
+				      $PPV_patt, 
+				      $Sn_patt, 
+				      $acc_a_patt, 
+				      $acc_g_patt, 
+				      $acc_h_patt), "\n";
+    }
+    $mean_sig = $sum_sig / $nb_patterns;
+    $mean_sig = sprintf("%.3f", $mean_sig);
+
     ## Count number of annotated sites matching at least one discovered pattern
     $TPsites = `more $match_file | grep -v ';' | cut -f 6 | sort -u | wc -l`;
     chomp($TPsites);
@@ -3376,10 +3465,6 @@ sub ValidateOneResult {
     ## Count number of discovered patterns matching at least one annotated site
     $TPpatterns = `more $match_file | grep -v ';' | cut -f 7 | sort -u | wc -l`;
     chomp($TPpatterns);
-
-    ## Count number of discovered patterns
-    $nb_patterns = `more $pattern_file | grep -v ';' | cut -f 1 | awk \'\$0 \!\= \"\"\' | wc -l`;
-    chomp($nb_patterns);
 
     ## Calculate sensitivity, positive predictive value and accuracy
     if ($number_sites == 0) {
@@ -3421,30 +3506,6 @@ sub ValidateOneResult {
 	}
     }
 
-    ## Calculate sig sum, max sig and mean sig for the current family
-    if ($patt_type eq "oligo") {
-	chomp($sigs = `more $pattern_file | grep -v ';' | cut -f 9 | awk \'\$0 \!\= \"\"\'`);
-    } elsif ($patt_type eq "dyad") {
-	chomp($sigs = `more $pattern_file | grep -v ';' | cut -f 8 | awk \'\$0 \!\= \"\"\'`);
-    }
-    @sig = split /\n/, $sigs;
-    if (scalar(@sig) == 0) {
-	$max_sig = "NA";
-	$sum_sig = "NA";
-	$mean_sig = "NA";
-    } else { 
-	$max_sig = 0;
-	$sum_sig = 0;
-	foreach $sig (@sig) {
-	    if ($sig > $max_sig) {
-		$max_sig = $sig;
-	    }
-	    $sum_sig = $sum_sig + $sig;
-	}
-	$mean_sig = $sum_sig / scalar(@sig);
-	$mean_sig = sprintf("%.3f", $mean_sig);
-    }
-
     ## Print results
     print $valid_fam_handle join("\t", $family_name, 
 			     scalar(@{$family{$family_name}->{members}}),
@@ -3461,57 +3522,6 @@ sub ValidateOneResult {
 			     $acc_g, 
 			     $acc_h), "\n";
 
-    ## Statistics per pattern
-    if ($patt_type eq "oligo") {
-	chomp($patt_sigs = `more $pattern_file | grep -v ';' | cut -f 1,9 | awk \'\$0 \!\= \"\"\'`);
-    } elsif ($patt_type eq "dyad") {
-	chomp($patt_sigs = `more $pattern_file | grep -v ';' | cut -f 1,8 | awk \'\$0 \!\= \"\"\'`);
-    }
-    @patt_sigs = split /\n/, $patt_sigs;
-    foreach my $patt_sig (@patt_sigs) {
-	@patt_sig = split /\t/, $patt_sig;
-	unless ($number_sites == 0) {
-	    chomp($TPsites_patt = `more $match_file | grep '$patt_sig[0]' | wc -l`);
-	    if ($TPsites_patt == 0) {
-		$TPpattern = 0;
-	    } elsif ($TPsites_patt >= 1) {
-		$TPpattern = 1;
-	    }
-	    $Sn_patt = $TPsites_patt/$number_sites;
-	    $Sn_patt = sprintf("%.4f", $Sn_patt);
-	    if ($nb_patterns == 0) {
-		$PPV_patt = 0;
-		$acc_a_patt = 0;
-		$acc_g_patt = 0;
-		$acc_h_patt = 0;
-	    } else {
-		$PPV_patt = $TPpattern;
-		$PPV_patt = sprintf("%.4f", $PPV_patt);
-		$acc_a_patt = ($Sn_patt+$PPV_patt)/2;
-		$acc_a_patt = sprintf("%.4f", $acc_a_patt);
-		$acc_g_patt = sqrt($Sn_patt*$PPV_patt);
-		$acc_g_patt = sprintf("%.4f", $acc_g_patt);
-		if ($Sn_patt + $PPV_patt == 0) {
-		    $acc_h_patt = 0;
-		} else {
-		    $acc_h_patt = 2*($Sn_patt*$PPV_patt)/($Sn_patt+$PPV_patt);
-		    $acc_h_patt = sprintf("%.4f", $acc_h_patt);
-		}
-	    }
-	}
-	    print $valid_patt_handle join("\t", $family_name, 
-					  scalar(@{$family{$family_name}->{members}}),
-					  $number_sites, 
-					  $patt_sig[0],
-					  $patt_sig[1],
-					  $TPsites_patt, 
-					  $TPpattern, 
-					  $PPV_patt, 
-					  $Sn_patt, 
-					  $acc_a_patt, 
-					  $acc_g_patt, 
-					  $acc_h_patt), "\n";
-    }
 }
 
 ################################################################
