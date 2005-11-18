@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.140 2005/11/18 12:47:48 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.141 2005/11/18 16:58:00 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -48,6 +48,9 @@ $calibN_repet=100; ### Repetitions for the calibN
 %dir = ();
 $dir{main} = `pwd`;
 chomp($dir{main});
+%family = (); ## Index of families per name
+@families = (); ## Families
+@selected = (); ## Families selected with the option -select
 
 $dir{calib1} = "calibrations_1gene"; 
 %max_score = ();
@@ -340,8 +343,9 @@ exit(0);
 #### set the file names as a function of parameters
 sub SetFileNames {
     $sp = "$min_sp-$max_sp";
-    $dyad_options = "-v ";
-    $dyad_options .= " -sort ";
+    $dyad_options = "-v";
+    $dyad_options .= " -lth occ 1"; ## This is to avoid calculating P-value for patterns not rpesent in the dataset, and for having a correct correction for multi-testing. 
+    $dyad_options .= " -sort";
     $dyad_options .= " ".$strands;
     $dyad_options .= " -type ".$dyad_type;
     $dyad_options .= " ".$noov;
@@ -840,7 +844,8 @@ sub PurgeSequences {
 ### parameters
 sub CalcOligoOptions {
    my ($oligo_len) = @_;
-   $oligo_options = "-v ";
+   $oligo_options = "-v";
+   $oligo_options .= " -lth occ 1 "; ## This is to avoid calculating P-value for patterns not rpesent in the dataset, and for having a correct correction for multi-testing. 
    $oligo_options .= " -pseudo ".$pseudo if ($pseudo);
    $oligo_options .= " -sort ";
    $oligo_options .= " ".$strands;
