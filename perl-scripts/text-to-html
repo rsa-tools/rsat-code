@@ -76,10 +76,13 @@ close $out unless ($outfile{output} eq "");
 exit(0);
 
 
-########################## subroutine definition ############################
+################################################################
+##################### subroutine definition ####################
+################################################################
 
+################################################################
+#### Display full help message 
 sub PrintHelp {
-#### display full help message #####
   open HELP, "| more";
   print HELP <<End_of_help;
 NAME
@@ -128,8 +131,9 @@ End_of_help
   exit (0);
 }
 
+################################################################
+#### Display short help message
 sub PrintOptions {
-#### display short help message #####
   open HELP, "| more";
   print HELP <<End_short_help;
 text-to-html options
@@ -147,7 +151,8 @@ End_short_help
 }
 
 
-
+################################################################
+## Read arguments
 sub ReadArguments {
     foreach $a (0..$#ARGV) {
 	foreach my $a (0..$#ARGV) {

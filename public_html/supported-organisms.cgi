@@ -16,7 +16,7 @@ BEGIN {
 require "RSA.lib";
 require "RSA.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
-$tmp_file_name = sprintf "supported-organisms.%s", &AlphaDate;
+$tmp_file_name = sprintf "supported-organisms.%s", &AlphaDate();
 
 $font{variable} = 1;
 $command = "$SCRIPTS/supported-organisms";
@@ -26,7 +26,6 @@ $query = new CGI;
 
 ### print the header
 &RSA_header("Supported organisms");
-
 
 #### update log file ####
 &UpdateLogFile();
