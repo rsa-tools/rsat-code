@@ -5,7 +5,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.100 2005/10/09 13:35:26 jvanheld Exp $
+# $Id: oligo-analysis,v 1.101 2005/11/18 16:10:25 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -54,7 +54,7 @@ $in_format = "fasta";
 $noov="-ovlp";
 $sum_rc = 1;
 $group_rc = 1;
-$uth{occ_pro} = 1;
+$uth{occ_P} = 1;
 $proba_mseq_threshold = 1;
 
 $markov_order = -2;
@@ -64,6 +64,7 @@ $sum_occurrences = 0;
 $sum_overlaps = 0;
 $sum_noov = 0;
 $nb_possible_oligo = 0;
+$nb_tested_patterns = 0;
 $sum_seq_length = 0;
 
 $max_seq_verbose = 99;
@@ -77,7 +78,6 @@ $residue_proba{'t'} = 0.25;
 
 #### read arguments ####
 &ReadArguments();
-
 
 ##############################
 ### check parameter values ###
@@ -1144,7 +1144,7 @@ sub CalcProba {
     #### converts threshold on occurence significance index into a 
     #### threshold on occurrence probability
 #    if (defined($lth{occ_sig})) {
-#	$uth{occ_pro} = exp(-$lth{occ_sig}*log(10))/$nb_possible_oligo;
+#	$uth{occ_P} = exp(-$lth{occ_sig}*log(10))/$nb_possible_oligo;
 #    }
     
     #### converts threshold on mseq significance index into a 
@@ -1153,7 +1153,6 @@ sub CalcProba {
 	$proba_mseq_threshold = exp(-$mseq_significance_threshold*log(10))/$nb_possible_oligo;
     }
 
-    
     ### calculate oligo probabilities
     foreach $pattern_seq (sort keys %patterns) {
 	warn sprintf("calculating proba $pattern_seq occ %7d exp_occ %7.1f\texp_freq %g\tpos %g\n", 
@@ -1170,7 +1169,7 @@ sub CalcProba {
 	    $patterns{$pattern_seq}->{exp_occ} = "NA";
 	    next;
 	}
-
+	
 	## Select the left or right tail of the theoretical distribution
 	if (($tail eq "left") || 
 	    (($tail eq "two") &&  ($patterns{$pattern_seq}->{occ} < $patterns{$pattern_seq}->{exp_occ}))) {
@@ -1189,20 +1188,20 @@ sub CalcProba {
 	if ($method =~ /calibration/i) {
 	    if ($patterns{$pattern_seq}->{exp_occ} < $patterns{$pattern_seq}->{exp_var}) {
 		#### Fit a negative binomial
-		($p, $k, $patterns{$pattern_seq}->{occ_pro}) = &sum_of_negbin2($patterns{$pattern_seq}->{exp_occ},
+		($p, $k, $patterns{$pattern_seq}->{occ_P}) = &sum_of_negbin2($patterns{$pattern_seq}->{exp_occ},
 									       $patterns{$pattern_seq}->{exp_var},
 									       $occ_from,
 									       $occ_to);
 		$patterns{$pattern_seq}->{fitted} = "negbin";
 	    } else {
 		#### Fit a Poisson
-		$patterns{$pattern_seq}->{occ_pro} = &sum_of_poisson($patterns{$pattern_seq}->{exp_occ},
+		$patterns{$pattern_seq}->{occ_P} = &sum_of_poisson($patterns{$pattern_seq}->{exp_occ},
 								     $occ_from,
 								     $occ_to);
 		$patterns{$pattern_seq}->{fitted} = "Poisson";
 	    }
 	} else {
-	    $patterns{$pattern_seq}->{occ_pro} = &sum_of_binomials($patterns{$pattern_seq}->{exp_freq},
+	    $patterns{$pattern_seq}->{occ_P} = &sum_of_binomials($patterns{$pattern_seq}->{exp_freq},
 								   $sum_occurrences,
 								   $occ_from,
 								   $occ_to);
@@ -1212,27 +1211,20 @@ sub CalcProba {
 #				  $patterns{$pattern_seq}->{notforb},
 #				  $occ_from,
 #				  $occ_to,
-#				  $patterns{$pattern_seq}->{occ_pro}
+#				  $patterns{$pattern_seq}->{occ_P}
 #				 ) if ($main::verbose >= 10);
 	}
 
-	### Significance index for occurrence number
-	if ($nb_possible_oligo > 0) {
-	    $patterns{$pattern_seq}->{occ_E} = $nb_possible_oligo*$patterns{$pattern_seq}->{occ_pro};
-	    if ($patterns{$pattern_seq}->{occ_pro} > 0) {
-		$patterns{$pattern_seq}->{occ_sig} = -log($patterns{$pattern_seq}->{occ_E})/log(10);
-	    } else {
-		$patterns{$pattern_seq}->{occ_sig} = 999; ### arbitrary number to indicate we are over the precision limit
-	    }
-	}
+	## Count the number of tests
+	$main::nb_tested_patterns++;
 
-	#### check thresholds on occurrence probability ####
-	&CheckPatternThresholds("occ_pro", $pattern_seq);
-	next unless (defined($patterns{$pattern_seq})) ;	## Skip pattern if it did not pass the threshold filtering
+#	#### check thresholds on occurrence probability ####
+#	&CheckPatternThresholds("occ_P", $pattern_seq);
+#	next unless (defined($patterns{$pattern_seq})) ;	## Skip pattern if it did not pass the threshold filtering
 	
 	#### check thresholds on occurrence probability ####
-	&CheckPatternThresholds("occ_sig", $pattern_seq);
-	next unless (defined($patterns{$pattern_seq})) ;	## Skip pattern if it did not pass the threshold filtering
+#	&CheckPatternThresholds("occ_sig", $pattern_seq);
+#	next unless (defined($patterns{$pattern_seq})) ;	## Skip pattern if it did not pass the threshold filtering
 	
 	#### matching seq probability
 	if ($return{'mseq'}) {	    
@@ -1257,6 +1249,16 @@ sub CalcProba {
 	    }
 	}
     }  
+
+
+    ## Corrections or multi-testing
+    &MultiTestCorrections($main::nb_tested_patterns, %patterns);
+
+    #### threshold filtering ####
+    &CheckThresholds("occ_P");
+    &CheckThresholds("occ_E");
+    &CheckThresholds("occ_sig");
+	
 } ### CalcProba
 
 
@@ -1273,6 +1275,7 @@ sub PrintHeaderLine {
     $col_description{"exp_occ"} = "expected occurrences"; 
     $col_description{"occ_P"} = "occurrence probability (binomial)";
     $col_description{"occ_E"} = "E-value for occurrences (binomial)";
+#    $col_description{"occ_FWER"} = "Family-Wise Error Rate for occurrences (binomial)";
     $col_description{"occ_sig"} = "occurrence significance (binomial)";
     $col_description{"zscore"} = "z-score (Gaussian approximation)"; 
     $col_description{"occ_likelihood"} = "occurrence likelihood"; 
@@ -1329,6 +1332,7 @@ sub PrintHeaderLine {
 	if ($return{'proba'}) {
 	    push(@out_col,"occ_P");
 	    push(@out_col,"occ_E");
+#	    push(@out_col,"occ_FWER");
 	    push(@out_col,"occ_sig");
 	}
 	push(@out_col,"zscore") if ($return{'zscore'});
@@ -1464,12 +1468,13 @@ sub Verbose {
 	    }
 	    printf $out "; %-29s\t%s\n", "alphabet size", $alphabet_size;
 	    printf $out "; %-29s\t%s\n", "nb possible oligomers", $nb_possible_oligo;
+	    printf $out "; %-29s\t%d\n", "oligomers tested for significance", $main::nb_tested_patterns;
 	    printf $out &PrintThresholdValues();
 #	    printf $out "; %-29s\t%s\n", "threshold on occurrences", $lth{occ} if ($lth{occ} > 0);
 #	    printf $out "; %-29s\t%s\n", "threshold on occ sig", $lth{occ_sig} if (defined($lth{occ_sig}));
 #	    printf $out "; %-29s\t%s\n", "threshold on matching seq sig", $mseq_significance_threshold if (defined($mseq_significance_threshold));
 #	    printf $out "; %-29s\t%s\n", "threshold on matching seq.", $lth{mseq} if ($lth{mseq} > 0);
-#	    printf $out "; %-29s\t%s\n", "threshold on occ proba", $uth{occ_pro} if ($uth{occ_pro} < 1);
+#	    printf $out "; %-29s\t%s\n", "threshold on occ proba", $uth{occ_P} if ($uth{occ_P} < 1);
 #	    printf $out "; %-29s\t%s\n", "threshold on occ ratio", $ratio_threshold if ($ratio_threshold > 0);
 #	    printf $out "; %-29s\t%s\n", "threshold on match. seq proba", $proba_mseq_threshold if ($proba_mseq_threshold < 1);
 
@@ -1607,16 +1612,17 @@ sub PrintResult {
 
 	    ### occurrence probability
 	    if ($return{'proba'}) {
-		if ($patterns{$pattern_seq}->{occ_pro} >= 0.0001) {
-		    printf $out "\t%.5f", $patterns{$pattern_seq}->{occ_pro};
+		if ($patterns{$pattern_seq}->{occ_P} >= 0.0001) {
+		    printf $out "\t%.5f", $patterns{$pattern_seq}->{occ_P};
 		    printf $out "\t%.1e", $patterns{$pattern_seq}->{occ_E};
-		} elsif ($patterns{$pattern_seq}->{occ_pro} <= 1e-100) {
-		    printf $out "\t%.0g", $patterns{$pattern_seq}->{occ_pro};
+		} elsif ($patterns{$pattern_seq}->{occ_P} <= 1e-100) {
+		    printf $out "\t%.0g", $patterns{$pattern_seq}->{occ_P};
 		    printf $out "\t%.0e", $patterns{$pattern_seq}->{occ_E};
 		} else {
-		    printf $out "\t%.2g", $patterns{$pattern_seq}->{occ_pro};
+		    printf $out "\t%.2g", $patterns{$pattern_seq}->{occ_P};
 		    printf $out "\t%.1e", $patterns{$pattern_seq}->{occ_E};
 		}
+#		printf $out "\t%.1e", $patterns{$pattern_seq}->{occ_FWER};
 		printf $out "\t%.2f", $patterns{$pattern_seq}->{occ_sig};
 	    }
 	    
@@ -1944,9 +1950,9 @@ sub ReadArguments {
 	} elsif (($ARGV[$a] eq "-thpo") && 
 		 (&IsReal($ARGV[$a+1]))
 		 && ($ARGV[$a+1] >= 0) && ($ARGV[$a+1] <= 1)) {
-	    $uth{occ_pro} = $ARGV[$a+1];
+	    $uth{occ_P} = $ARGV[$a+1];
 	    $return{'proba'} = 1;
-	    &Warning("Option -thpo is deprecated. Please use '-uth occ_pro' instead.");
+	    &Warning("Option -thpo is deprecated. Please use '-uth occ_P' instead.");
 	    
 	    #### threshold on obs/exp ratio
 	} elsif (($ARGV[$a] =~ /^-thrat/i) && 

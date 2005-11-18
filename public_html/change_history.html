@@ -39,6 +39,33 @@ href=mailto:jvanheld@scmbb.ulb.ac.be>jvanheld@scmbb.ulb.ac.be</a>).
 -->
 
 <tr valign=top>
+<td>2005/11/18</td>
+<td><a href=oligo-analysis_form.cgi>oligo-analysis</a> and <a href=dyad-analysis_form.cgi>dyad-analysis</a></td>
+<td>Changed the correction for multi-testing. Bfore, the E-value was calculated as 
+
+<i><pre>
+  E-value = P-value * nb_possible_patterns
+</pre></i>
+
+The E-value is now calculated according to the number of patterns
+really tested for significance (i.e. after filtering on occurrences,
+frequencies, ...).
+
+<i><pre>
+  E-value = P-value * nb_tested_patterns
+</pre></i>
+
+
+<p>In most cases it should not make any difference with previous
+results, but for small sequence sets (< 10000bp) or large patterns (>
+6nt), the previous correction was too severe, resulting in a loss of
+sensitivity.
+
+</td>
+</tr>
+
+
+<tr valign=top>
 <td>2005/08/31</td>
 <td><a href=dyad-analysis_form.cgi>dyad-analysis</a></td>
 <td>Added an option to select fields to be returned, and specify an upper and a lower thresholds on any of these fields</td>

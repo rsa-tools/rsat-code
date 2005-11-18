@@ -138,6 +138,34 @@ sub CheckPatternThresholds {
 
 
 ################################################################
+### Corrections for multi-testing
+sub MultiTestCorrections {
+    my ($nb_tested_patterns, %patterns) = @_;
+    &RSAT::message::Info(join ("\t", "Correcting for multiple testing", $nb_tested_patterns)) if ($main::verbose >= 2);
+    foreach my $pattern_seq (keys %patterns) {
+	if (&IsReal ($patterns{$pattern_seq}->{occ_P})) {
+	    $patterns{$pattern_seq}->{occ_E} =  $patterns{$pattern_seq}->{occ_P}*$nb_tested_patterns;
+	    if ($patterns{$pattern_seq}->{occ_E} > 0) {
+		$patterns{$pattern_seq}->{occ_sig} =  -log($patterns{$pattern_seq}->{occ_E})/log(10);
+	    } else {
+		$patterns{$pattern_seq}->{occ_sig} =  999;
+	    }
+	} else {
+	    $patterns{$pattern_seq}->{occ_E} = "NA";
+	    $patterns{$pattern_seq}->{occ_sig} = "NA";
+	}
+# 	&RSAT::message::Debug("Calculating E-value",  
+# 			      $pattern_seq,
+# 			      $patterns{$pattern_seq}->{occ},
+# 			      $patterns{$pattern_seq}->{occ_P},
+# 			      $nb_tested_patterns,
+# 			      $patterns{$pattern_seq}->{occ_E},
+# 			      $patterns{$pattern_seq}->{occ_sig},
+# 			     ) if ($main::verbose >= 10);
+     }
+}
+
+################################################################
 #### Calculate observed/expected ratio
 sub CalcRatio {
     if ($return{'freq'}) {
