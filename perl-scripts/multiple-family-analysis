@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.138 2005/11/18 00:28:15 rsat Exp $
+# $Id: multiple-family-analysis,v 1.139 2005/11/18 11:21:35 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -3229,6 +3229,7 @@ sub Validate {
    $valid_patt_handle = &OpenOutputFile($outfile{validation_per_pattern});
 
    ## Print the column descriptions as comments
+   ## Validation per family
    $valid_fam_keys{"Fam"} = "Family name"; 
    $valid_fam_keys{"Members"} = "Number of sequences";
    $valid_fam_keys{"Sites"} = "number of annotated sites";
@@ -3248,6 +3249,8 @@ sub Validate {
        print $valid_fam_handle ";\t", $fam_key, "\t", $valid_fam_keys{$fam_key}, "\n";
    }
 
+   ## Print the column descriptions as comments
+   ## Validation per pattern
    $valid_patt_keys{"Fam"} = "Family name"; 
    $valid_patt_keys{"Members"} = "Number of sequences";
    $valid_patt_keys{"Sites"} = "number of annotated sites";
@@ -3434,7 +3437,7 @@ sub ValidateOneResult {
 		$acc_a_patt = sprintf("%.4f", $acc_a_patt);
 		$acc_g_patt = sqrt($Sn_patt*$PPV_patt);
 		$acc_g_patt = sprintf("%.4f", $acc_g_patt);
-		if ($Sn_patt + $PPV_patt == 0) {
+		if (($Sn_patt + $PPV_patt) == 0) {
 		    $acc_h_patt = 0;
 		} else {
 		    $acc_h_patt = 2*($Sn_patt*$PPV_patt)/($Sn_patt+$PPV_patt);
@@ -3455,8 +3458,13 @@ sub ValidateOneResult {
 				      $acc_g_patt, 
 				      $acc_h_patt), "\n";
     }
-    $mean_sig = $sum_sig / $nb_patterns;
-    $mean_sig = sprintf("%.3f", $mean_sig);
+
+    ## Mean significance per family (only the patterns above the threshold of significance)
+    if ($nb_patterns > 0) {
+	$mean_sig = sprintf("%.3f",  $sum_sig / $nb_patterns);
+    } else {
+	$mean_sig = "NA";
+    }
 
     ## Count number of annotated sites matching at least one discovered pattern
     $TPsites = `more $match_file | grep -v ';' | cut -f 6 | sort -u | wc -l`;
