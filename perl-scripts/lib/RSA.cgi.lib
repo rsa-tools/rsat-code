@@ -285,21 +285,22 @@ sub OrganismPopUpString {
 
 
 
+################################################################
+#### Print a text table in html format
+##
+## usage
+##   PrintHtmlTable(FILE_HANDLE,$mirror_file)
+## reads the content of FILEHANDLE and displays 
+## it in the form of a HTML table.
+## if $mirror_file is specified, a copy of the input text (without HTML formatting)  
+## is saved on the hard drive
+##
+## global variables
+## ================
+## The fixed font type can be switched off 
+## by specifiying a global variable 
+##       $font{variable} = 1;
 sub PrintHtmlTable {
-    #### prints a text table in html format
-    ####
-    #### usage
-    ####   PrintHtmlTable(FILE_HANDLE,$mirror_file)
-    #### reads the content of FILEHANDLE and displays 
-    #### it in the form of a HTML table.
-    #### if $mirror_file is specified, a copy of the input text (without HTML formatting)  
-    #### is saved on the hard drive
-    ####
-    #### global variables
-    #### ================
-    #### The fixed font type can be switched off 
-    #### by specifiying a global variable 
-    ####       $font{variable} = 1;
     my ($FILE, $mirror_file, $mirror_verbose, $chunk, $out, $border) = @_;
     $out = STDOUT unless ($out);
     $chunk = 100 unless (&IsNatural($chunk));
@@ -336,14 +337,14 @@ sub PrintHtmlTable {
 	if (/^\s*$/) {		#nothing on the line
 	} elsif (/^;WARNING/) {		# warning
 	    push @warnings, $_;
-	} elsif (/^;/) {		# comment line
+	} elsif ((/^;/) || (/^\#/)) {		# comment line
 	    if ($table_opened) {
 		print $out "<\/TABLE><PRE>\n";
 		$table_opened = 0;
 	    } 
 	    print $out $last_line;
 	    $last_line = $_;
-	    
+
 	} elsif (!($table_opened)) { # first line of the table
 	    $table_opened = 1;
 	    $line_count = 0;
