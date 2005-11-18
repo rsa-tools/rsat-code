@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.139 2005/11/18 11:21:35 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.140 2005/11/18 12:47:48 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -253,7 +253,22 @@ if ($sequence_file_list) {
 
     ### Read family file
     %family = &ReadClasses($family_file, 1, $organism);
-    @families = sort keys %family;
+    if (scalar(@selected) > 0) {
+
+	## Check selected families
+	my %selected = ();
+	foreach my $family_name (@selected) {
+	    $selected{$family_name}++;
+	    &FatalError(join ("\t", "Selected family", $family_name, "is not found in the family file", $family_file)) unless ($family{$family_name});
+	}
+
+	## Delete non-selected families
+	foreach my $family_name (keys (%family)) {
+	    delete $family{$family_name} unless ($selected{$family_name});
+	}
+    } else {
+	@families = sort keys %family;
+    }
 
 }
 
@@ -269,8 +284,9 @@ foreach my $family_name (@families) {
     }
 }
 
+## Update the list of families
 @families = sort keys %family;
-warn "Remaining families after filtering\t", scalar(@families), "\n";
+&RSAT::message::Info(join("\t", "Remaining families after filtering", scalar(@families)));
 
 ## Set all the file names
 &SetFileNames();
@@ -2209,6 +2225,8 @@ OPTIONS
 		interrupted after a considerable amount of work).
 	-last # stop after the first # data sets when performing the
 		analyses (this si useful to perform quick tests).
+	-select	fam1[,fam2,fam3,...]
+		Perform the analysis of selected families only.
 	-outdir	output directory
 	-mingenes #
 		minimal number of genes per family. Families with less
@@ -2485,6 +2503,7 @@ multiple-family-analysis options
 -org		organism
 -skip #		skip the # first data sets
 -last #		stop after the # first data sets
+-select		fam1[,fam2,fam3,...]. Perform the analysis of selected families only.
 -task		selected task (supported: $supported_tasks)
 -htmaps		draw html maps (dynamic map with pointers to the features)
 -n      	dry run: print commands without executing them
@@ -2609,6 +2628,10 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-last") {
 	    $last = $ARGV[$a+1];
 	    &RSAT::error::FatalError("Invalid number with option -last\t$last") unless &IsNatural($last);
+	    
+	    ### stop after some data sets
+	} elsif ($ARGV[$a] eq "-select") {
+	    @selected = split ",", $ARGV[$a+1];
 	    
 	    ### sequence file list
 	} elsif ($ARGV[$a] eq "-seq") {
