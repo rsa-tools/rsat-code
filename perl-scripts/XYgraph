@@ -966,7 +966,7 @@ sub ReadData {
 	
 	### read X and Y values ###
 	while ($new_data_line = <$in>) {
-	    next if ($new_data_line =~ /^;/);
+	    next if ($new_data_line =~ /^;/); ## Comment line
 	    next unless ($new_data_line =~ /\S/);
 	    
 	    
