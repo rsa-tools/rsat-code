@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.141 2005/11/18 16:58:00 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.142 2005/11/19 13:37:44 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -3586,29 +3586,7 @@ sub SigDistrib {
     $outfile{sig_distrib_file} = join ("", "sig_distrib", $pattern_suffix,$from,$noorf_status,"_",$feature_types);
     $sig_distrib_handle = &OpenOutputFile($outfile{sig_distrib_file}.".tab");
 
-    ## Print the column descriptions as comments
-    $sig_distrib_keys{"Sig"} = "Significance of discovered patterns";
-    $sig_distrib_keys{"pps"} = "Patterns per score (number of patterns with exactly this score)";
-    $sig_distrib_keys{"pps_cum"} = "Patterns per score (number of patterns with at least this score)";
-#    $sig_distrib_keys{"ppf"} = "Patterns per family (number of patterns with exactly this score per family)";
-    $sig_distrib_keys{"ppf_cum"} = "Patterns per family (number of patterns with at least this score per family)";
-    $sig_distrib_keys{"fps_cum"} = "Number of families with at least this score";
-    $sig_distrib_keys{"ffs_cum"} = "Fraction of families with at least this score";
-    print $sig_distrib_handle "; Column contents\n";
-    foreach my $key (sort keys(%sig_distrib_keys)) {
-	print $sig_distrib_handle ";\t", $key, "\t", $sig_distrib_keys{$key}, "\n";
-    }
 
-   ## Print header in validation file
-   print $sig_distrib_handle join("\t",
-				  "# Sig",
-				  "pps",
-				  "pps_cum",
-#				  "ppf",
-				  "ppf_cum",
-				  "fps_cum",
-				  "ffs_cum",
-				  ), "\n";
 
     ## Getting and printing patterns and their significance
     my %max_score = ();
@@ -3644,21 +3622,47 @@ sub SigDistrib {
 	close $pattern_handle;
     }
 
-    ## Print statistics table
+    ## Output columns 
+    @sig_dsitrib_columns = qw(Sig pps pps_cum ppf_cum fps_cum ffs_cum E_ppf E_ffs);
+
+    ## Print the column descriptions as comments
+    $sig_distrib_keys{"Sig"} = "Significance of discovered patterns (s)";
+    $sig_distrib_keys{"pps"} = "Patterns per score (number of patterns with score = s)";
+    $sig_distrib_keys{"pps_cum"} = "Patterns per score (number of patterns with score >= s)";
+#    $sig_distrib_keys{"ppf"} = "Patterns per family (number of patterns with exactly this score per family)";
+    $sig_distrib_keys{"ppf_cum"} = "Patterns per family (number of patterns per family with score >= s)";
+    $sig_distrib_keys{"fps_cum"} = "Number of families with score >= s";
+    $sig_distrib_keys{"ffs_cum"} = "Fraction of families with score >= s";
+    $sig_distrib_keys{"E_ppf"} = "Expected number of patterns per family with score >= s";
+    $sig_distrib_keys{"E_ffs"} = "Expected fraction of families with score >= s";
+    print $sig_distrib_handle "; Column contents\n";
+    foreach my $k (0..$#sig_distrib_columns) {
+	my $key = $sig_distrib_columns[$k];
+	print $sig_distrib_handle join ('\t', ";", $k+1, $key,  $sig_distrib_keys{$key}), "\n";
+    }
+
+   ## Print header in validation file
+   print $sig_distrib_handle "#", join("\t", @sig_distrib_columns), "\n";
     my @sorted_scores = sort {$b <=> $a} keys (%pps);
     my $pps_cum = 0;
     my $fps_cum = 0;
     my $nb_families = scalar(@families);
+
+    ## Print statistics table
     foreach my $score (@sorted_scores) {
 	$pps_cum += $pps{$score};
 	$fps_cum += $fps{$score};
+	my $E_ppf = 10**(-$score);
+	my $E_ffs = 1- &poisson(0, $E_ppf);
 	print $sig_distrib_handle join("\t",
 				       $score,
 				       $pps{$score}, 
 				       $pps_cum,
 				       sprintf("%.3f",$pps_cum/$nb_families),
 				       $fps_cum,
-				       sprintf("%.3f",$fps_cum/$nb_families)
+				       sprintf("%.3f",$fps_cum/$nb_families), ## ffs
+				       sprintf("%.3g",$E_ppf),
+				       sprintf("%.3g",$E_ffs),
 				       ), "\n";
     }
     
@@ -3668,24 +3672,25 @@ sub SigDistrib {
     ## Draw a graph with the number of patterns per family, as a function of the sig score
     my $command = "XYgraph";
     $command .= " -title1 '".$outfile{sig_distrib_file}."'";
-    $command .= " -title2 '(".$nb_families." families)'";
+    $command .= " -title2 '(".$nb_families." families; min".$min_genes."genes)'";
    $command .= " -ymin 0";
 #    $command .= " -xgstep1 5 -xgstep2 1";
     $command .= " -i ".$outfile{sig_distrib_file}.".tab";
     $command .= " -o ".$outfile{sig_distrib_file}."_ppf.jpg";
-    $command .= " -xcol 1 -ycol 4 -lines -header -xsize 800 -xleg1 'score' -yleg1 'patterns per family'";
+    $command .= " -xcol 1 -ycol 4,7 -legend -lines -header -xsize 800 -xleg1 'score' -yleg1 'patterns per family'";
     &doit($command, $dry_run, $die_on_error, $verbose);
     &RSAT::message::Info(join ("\t", "Patterns per family curve", $outfile{sig_distrib_file}."_ppf.jpg"));
 
     ## Draw a graph with the fraction of families per score, as a function of the sig score
     my $command = "XYgraph";
     $command .= " -title1 '".$outfile{sig_distrib_file}."'";
-    $command .= " -title2 '(".$nb_families." families)'";
+    $command .= " -title2 '(".$nb_families." families; min".$min_genes."genes)'";
+#    $command .= " -title2 '(".$nb_families." families)'";
     $command .= " -i ".$outfile{sig_distrib_file}.".tab";
     $command .= " -o ".$outfile{sig_distrib_file}."_ffs.jpg";
     $command .= " -ymin 0 -ymax 1 -ygstep1 0.1 -ygstep2 0.02 -ysize 600";
 #    $command .= " -xgstep1 5 -xgstep2 1";
-    $command .= " -xcol 1 -ycol 6 -lines -header -xsize 800 -xleg1 'score' -yleg1 'fraction of families per score'";
+    $command .= " -xcol 1 -ycol 6,8 -legend -lines -header -xsize 800 -xleg1 'score' -yleg1 'fraction of families per score'";
     &doit($command, $dry_run, $die_on_error, $verbose);
     &RSAT::message::Info(join ("\t", "Families per score curve", $outfile{sig_distrib_file}."_ffs.jpg"));
 }
