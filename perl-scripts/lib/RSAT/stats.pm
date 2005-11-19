@@ -564,6 +564,9 @@ sub sum_of_negbin {
 ##    p(x) = p(x-1) * lambda / x
 sub poisson {
     my ($x,$lambda, $series) = @_;
+    if ($lambda <= 0) {
+	&RSAT::error::FatalError($lambda." is not a valid value for the expected mean of &poisson() . Must be strictly positive.");
+    }
     my $log_lambda = log($lambda);
     my $log_poi;
     my @log_pois = ();
@@ -757,7 +760,7 @@ sub hypergeometric {
 
 
     
-# 	$Id: stats.pm,v 1.1 2005/03/13 10:08:35 jvanheld Exp $	
+# 	$Id: stats.pm,v 1.2 2005/11/19 13:38:41 jvanheld Exp $	
 
     #### initialization
     if (defined($args{previous_value})) {
