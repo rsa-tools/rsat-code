@@ -948,28 +948,30 @@ sub ReadData {
     ################################################################
     #### point series correspond to columns
     if ($data_fields eq "columns") {
-	#### read legend ####
-	if ($header) {
-	    $legend_line = <$in>;
-	    unless ($legend_line =~ /\t/) {   # if there are no tabs,
-		$legend_line =~ s/ {1,}/\t/g; # single or multiple spaces are considered as a singlew tab
-	    }
-	    @legend_fields = split(/[\t\n\r]/, $legend_line);
-	    ### calculate legend width ###
-	    $legend_length = 0;
-	    for $series (0..$#y_col_list) {
-		$new_length = length($legend_fields[$y_col_list[$series]]);
-		$legend_length = &checked_max($legend_length,$new_length);
-	    }
-	    $legend_size = $legend_length * $small_font_width + $point_size + 20;
-	}
 	
 	### read X and Y values ###
+	$l = 0; ## Counter for non-comment and non-empty lines
 	while ($new_data_line = <$in>) {
 	    next if ($new_data_line =~ /^;/); ## Comment line
 	    next unless ($new_data_line =~ /\S/);
-	    
-	    
+	    $l++; 
+	    if (($header) && ($l == 1)) {
+		#### read legend ####
+		$legend_line = $new_data_line;
+		unless ($legend_line =~ /\t/) {   # if there are no tabs,
+		    $legend_line =~ s/ {1,}/\t/g; # single or multiple spaces are considered as a singlew tab
+					      }
+		@legend_fields = split(/[\t\n\r]/, $legend_line);
+		&RSAT::message::Info(join("\t", "Header fields\t", join (";", @legend_fields))) if ($main::verbose >= 0);
+		
+		### calculate legend width ###
+		$legend_length = 0;
+		for $series (0..$#y_col_list) {
+		    $new_length = length($legend_fields[$y_col_list[$series]]);
+		    $legend_length = &checked_max($legend_length,$new_length);
+		}
+		$legend_size = $legend_length * $small_font_width + $point_size + 20;
+	    }
 	    if ($new_data_line =~ /\t/) {  # if column delimiter is the tab character
 		$new_data_line =~ s/ //g; # remove all blank spaces
 	    } else { # if there are no tabs,
