@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.144 2005/11/20 22:20:24 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.145 2005/11/20 22:59:38 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -928,6 +928,11 @@ sub CalcOligoOptions {
    $oligo_options .= " ".$noov;
    
    $oligo_suffix = "_oligos";
+   if ($markov) {
+       $oligo_suffix .= "_mkv".$markov_order;
+   } elsif ($background) {
+       $oligo_suffix .= "_bg_".$background;
+   }
    $oligo_suffix .= "_${oligo_len}nt";
    $oligo_suffix .= $strands;
    $oligo_suffix .= &ThresholdSuffix();
