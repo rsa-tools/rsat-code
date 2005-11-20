@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.145 2005/11/20 22:59:38 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.146 2005/11/20 23:15:29 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -4048,11 +4048,12 @@ sub CalibrateOligos {
 	} else {
 	    $command = "retrieve-seq -imp_pos -org $organism_name -all -from -$calib_length -to -1 -o $allup_file";
 	    &RSAT::message::TimeWarn(join ("\t", "Retrieving all upstream sequences", $allup_file)) if ($main::verbose >= 1);
-	    if ($batch) {
-		push @main::batch_commands, $command;
-	    } else {
+### This should not be done in batch, since the calibrate-oligo commands will be distributed over the nodes of the cluster
+#	    if ($batch) {
+#		push @main::batch_commands, $command;
+#	    } else {
 		&doit($command, $dry_run, $die_on_error, $verbose);
-	    }
+#	    }
 	}
 
 	## Calibrate oligonucleotides
