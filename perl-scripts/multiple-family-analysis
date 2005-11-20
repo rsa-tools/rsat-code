@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.146 2005/11/20 23:15:29 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.147 2005/11/20 23:48:23 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -3761,7 +3761,7 @@ sub CalcCalibrationLengths {
 	    }
 	}
 	close $in;
-	$calib_lengths{$family_name} = $family{$family_name}->{calib_length};
+	$calib_lengths{$family{$family_name}->{calib_length}}++;
 	warn ";\tcalibration length for family ", $family_name, "\t", $calib_lengths{$family_name}, "\n" if ($main::verbose >= 1);
    }  
    my @calib_lengths = keys %calib_lengths;
