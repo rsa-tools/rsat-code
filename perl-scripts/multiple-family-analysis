@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.142 2005/11/19 13:37:44 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.143 2005/11/20 21:24:15 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -2283,7 +2283,6 @@ OPTIONS
 	-calibN_repet #
 		Number of repetitions for the calibration. 
 
-
 	-thosig #
 		Threshold on occurrence significance.
 		(obsolete: use -lth occ_sig instead)
@@ -2542,6 +2541,7 @@ multiple-family-analysis options
 -oligo_exp_freq	expected frequencies for oligo-analysis
 -bg		background frequency model
 -calib_dir	calibration directory
+-calibN_repet #	Number of repetitions for the calibration. 
 -markov #	exp. freq. calcualted with Markov chain model of order #
 -thmsf		threshold on frequency of matching sequences (obsolete)
 -thmssig	threshold on the significance of matching sequences (obsolete)
@@ -3141,7 +3141,7 @@ sub ReadSequenceList {
    ($sequence_dir, $short_sequence_file_list) = &SplitFileName($sequence_file_list);
 
    ## Convert relative to absolute directory
-   if ($dir{main}) {
+   if (($dir{main}) && ($sequence_dir !~ /^\//)) {
 	$sequence_dir = $dir{main}."/".$sequence_dir;
    }
 
@@ -3623,7 +3623,7 @@ sub SigDistrib {
     }
 
     ## Output columns 
-    @sig_dsitrib_columns = qw(Sig pps pps_cum ppf_cum fps_cum ffs_cum E_ppf E_ffs);
+    @sig_distrib_columns = qw(Sig pps pps_cum ppf_cum fps_cum ffs_cum E_ppf E_ffs);
 
     ## Print the column descriptions as comments
     $sig_distrib_keys{"Sig"} = "Significance of discovered patterns (s)";
@@ -3638,7 +3638,7 @@ sub SigDistrib {
     print $sig_distrib_handle "; Column contents\n";
     foreach my $k (0..$#sig_distrib_columns) {
 	my $key = $sig_distrib_columns[$k];
-	print $sig_distrib_handle join ('\t', ";", $k+1, $key,  $sig_distrib_keys{$key}), "\n";
+	print $sig_distrib_handle join ("\t", ";", $k+1, $key,  $sig_distrib_keys{$key}), "\n";
     }
 
    ## Print header in validation file
@@ -3661,8 +3661,8 @@ sub SigDistrib {
 				       sprintf("%.3f",$pps_cum/$nb_families),
 				       $fps_cum,
 				       sprintf("%.3f",$fps_cum/$nb_families), ## ffs
-				       sprintf("%.3g",$E_ppf),
-				       sprintf("%.3g",$E_ffs),
+				       sprintf("%7.2g",$E_ppf),
+				       sprintf("%7.2g",$E_ffs),
 				       ), "\n";
     }
     
@@ -3677,7 +3677,7 @@ sub SigDistrib {
 #    $command .= " -xgstep1 5 -xgstep2 1";
     $command .= " -i ".$outfile{sig_distrib_file}.".tab";
     $command .= " -o ".$outfile{sig_distrib_file}."_ppf.jpg";
-    $command .= " -xcol 1 -ycol 4,7 -legend -lines -header -xsize 800 -xleg1 'score' -yleg1 'patterns per family'";
+    $command .= " -xcol 1 -ycol 4,7 -lines -header -legend -xsize 800 -xleg1 'score' -yleg1 'patterns per family'";
     &doit($command, $dry_run, $die_on_error, $verbose);
     &RSAT::message::Info(join ("\t", "Patterns per family curve", $outfile{sig_distrib_file}."_ppf.jpg"));
 
@@ -3690,7 +3690,7 @@ sub SigDistrib {
     $command .= " -o ".$outfile{sig_distrib_file}."_ffs.jpg";
     $command .= " -ymin 0 -ymax 1 -ygstep1 0.1 -ygstep2 0.02 -ysize 600";
 #    $command .= " -xgstep1 5 -xgstep2 1";
-    $command .= " -xcol 1 -ycol 6,8 -legend -lines -header -xsize 800 -xleg1 'score' -yleg1 'fraction of families per score'";
+    $command .= " -xcol 1 -ycol 6,8 -lines -header -legend -xsize 800 -xleg1 'score' -yleg1 'fraction of families per score'";
     &doit($command, $dry_run, $die_on_error, $verbose);
     &RSAT::message::Info(join ("\t", "Families per score curve", $outfile{sig_distrib_file}."_ffs.jpg"));
 }
@@ -3725,16 +3725,19 @@ sub CalcCalibrationLengths {
 	    $family{$family_name}->{total_length} += $current_len;
 	    ## check that all sequences of one family have the same length
 
-	    if ((defined($family{$family_name}->{calib_length})) && ($task{calibrate})) {
+	    if ((defined($family{$family_name}->{calib_length})) 
+		&& ($task{calibrate})) {
 		unless ($family{$family_name}->{calib_length} == $current_len) {
 		    &RSAT::error::FatalError("Sequences of family $family_name have different lengths.\nThis is not compatible with the option calibrate");
 		}
 	    } else {
-		$family{$family_name}->{calib_length} = $current_len;
-		$calib_lengths{$current_len}++;
+		if ($current_len > $family{$family_name}->{calib_length}) {
+		    $family{$family_name}->{calib_length} = $current_len;
+		}
 	    }
 	}
 	close $in;
+	$calib_lengths{$family_name}} = $family{$family_name}->{calib_length};
 	warn ";\tcalibration length for family ", $family_name, "\t", $calib_lengths{$family_name}, "\n" if ($main::verbose >= 1);
    }  
    my @calib_lengths = keys %calib_lengths;
@@ -4098,6 +4101,9 @@ sub CalibrateOligos {
 #sub CalibrateOligosN {
 sub CalibrateOligosN {
     &RSAT::message::Info("Calibrating oligo occurrences with random gene selections") if ($main::verbose >= 1);
+
+    chdir($dir{main}); ## Calibration directory is specified relative to the main directory
+    &RSAT::message::Info("Chdir to main directory\t".$dir{main});
     for my $oligo_len ($min_oligo_len..$max_oligo_len) {
 	foreach my $family_name (@families) {
 	    my $gene_nb = scalar(@{$family{$family_name}->{members}});
@@ -4126,5 +4132,6 @@ sub CalibrateOligosN {
 	    }
 	}
     }
+    chdir($dir{output});
 }
 
