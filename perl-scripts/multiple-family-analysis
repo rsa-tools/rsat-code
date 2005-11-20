@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.143 2005/11/20 21:24:15 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.144 2005/11/20 22:20:24 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -274,6 +274,21 @@ if ($sequence_file_list) {
     }
 
 }
+
+## Apply the options -skip (suppress first families) and -last (suppress last families)
+if ($skip > 0) {
+    for my $f (1..$skip) {
+	$family_name = $families[$f-1];
+	delete $family{$family_name};
+    }
+}
+if ($last > 0) {
+    for my $f (($last+1)..scalar(@families)) {
+	$family_name = $families[$f-1];
+	delete $family{$family_name};
+    }
+}
+@families = sort keys %family;
 
 ## Check minimum number of genes
 foreach my $family_name (@families) {    
@@ -1560,13 +1575,13 @@ sub SyntheticTable {
 
    ################################################################
    ## Add a link to the MDC report files
-#    if ($task{report}) {
+    if ($task{report}) {
 	print $syn "<h4>Reports for the motif discovery competition</h4>";
 	print $syn "<ul>";
 	print $syn "<li><a href=../".$outfile{results}.">Results</a></li>";
 	print $syn "<li><a href=../".$outfile{parameters}.">Parameters</a></li>";
 	print $syn "</ul>";
-#    }
+    }
 
 
    ################################################################
@@ -2053,8 +2068,8 @@ sub AnalyzeFamilies {
 	my @members = @{$family{$family_name}->{members}};
 	$gene_nb = scalar(@members);
 
-	&CheckSkip($fam_count,$family_name);
-	&CheckLast($fam_count);
+#	&CheckSkip($fam_count,$family_name);
+#	&CheckLast($fam_count);
 
 	## Check minimum number of genes
 	if ($gene_nb < $min_genes) {
@@ -2159,27 +2174,27 @@ sub AnalyzeFamilies {
 #    system $command unless $dry_run;
 #}
 
-## Skip initial families if specified with -skip option
-sub CheckSkip {
-    my ($fam_count,$family_name) = @_;
-    if ($fam_count <= $skip) {
-	warn join ("\t", "; Skipping family", 
-		   $fam_count, $family_name,
-		       $gene_nb." genes",
-		   "\t(skip ".$skip. ")",
-		   ), "\n" if ($main::verbose >= 1);
-	next;
-    }
-}
+# ## Skip initial families if specified with -skip option
+# sub CheckSkip {
+#     my ($fam_count,$family_name) = @_;
+#     if ($fam_count <= $skip) {
+# 	warn join ("\t", "; Skipping family", 
+# 		   $fam_count, $family_name,
+# 		       $gene_nb." genes",
+# 		   "\t(skip ".$skip. ")",
+# 		   ), "\n" if ($main::verbose >= 1);
+# 	next;
+#     }
+# }
 
-## Stop after a few families
-sub CheckLast {
-    my ($fam_count) = @_;
-    if (($last >0) && ($fam_count > $last)) {
-	&RSAT::message::Warning("Stopped after $last genes");
-	last;
-    }
-}
+# ## Stop after a few families
+# sub CheckLast {
+#     my ($fam_count) = @_;
+#     if (($last >0) && ($fam_count > $last)) {
+# 	&RSAT::message::Warning("Stopped after $last genes");
+# 	last;
+#     }
+# }
 
 ########################## subroutine definition ############################
 
@@ -2626,16 +2641,20 @@ sub ReadArguments {
 
 	    ### skip some data sets
 	} elsif ($ARGV[$a] eq "-skip") {
+	    &FatalError("The option -skip is incompatible with the option -select") if (scalar(@selected) > 0);
 	    $skip = $ARGV[$a+1];
 	    &RSAT::error::FatalError("Invalid number with option -skip\t$skip") unless &IsNatural($skip);
 	    
 	    ### stop after some data sets
 	} elsif ($ARGV[$a] eq "-last") {
+	    &FatalError("The option -last is incompatible with the option -select") if (scalar(@selected) > 0);
 	    $last = $ARGV[$a+1];
 	    &RSAT::error::FatalError("Invalid number with option -last\t$last") unless &IsNatural($last);
 	    
 	    ### stop after some data sets
 	} elsif ($ARGV[$a] eq "-select") {
+	    &FatalError("The option -delete is incompatible with the option -last") if ($last > 0);
+	    &FatalError("The option -delete is incompatible with the option -skip") if ($skip > 0);
 	    @selected = split ",", $ARGV[$a+1];
 	    
 	    ### sequence file list
@@ -3703,8 +3722,8 @@ sub CalcCalibrationLengths {
    foreach my $family_name (@families) {
 	$fam_count++;
 
-	&CheckSkip($fam_count,$family_name);
-	&CheckLast($fam_count);
+#	&CheckSkip($fam_count,$family_name);
+#	&CheckLast($fam_count);
 	
 	## Calculate sequence lengths
 	&RSAT::message::Info( join("\t", "", "Calculating sequence lengths for family", 
@@ -3737,7 +3756,7 @@ sub CalcCalibrationLengths {
 	    }
 	}
 	close $in;
-	$calib_lengths{$family_name}} = $family{$family_name}->{calib_length};
+	$calib_lengths{$family_name} = $family{$family_name}->{calib_length};
 	warn ";\tcalibration length for family ", $family_name, "\t", $calib_lengths{$family_name}, "\n" if ($main::verbose >= 1);
    }  
    my @calib_lengths = keys %calib_lengths;
@@ -3763,12 +3782,12 @@ sub CalibrationPrefix {
 #	    $dir{calibN} = "~/motif_discovery_competition_2003/results/".$organism_name."/rand_gene_selections/";
 	    ## Temporary
 #	    $dir{calibN} = $dir{output}."/rand_gene_selections/";
-	    $dir{calibN} = $dir{output}."/calibrations";
+	    $dir{calibN} = "calibrations";
 	}
 
 	## directory for the current calibration
 #	$calib_prefix = $dir{calibN}."/";
-	$calib_prefix = $dir{calibN};
+	$calib_prefix = $dir{main}."/".$dir{calibN};
 #	$calib_prefix .= $oligo_len."nt";
 #	$calib_prefix .= $strands;
 #	$calib_prefix .= $noov;
@@ -3833,10 +3852,10 @@ sub MDCreport {
    my $command = "";
    foreach $family_name (@families) {
 	$fam_count++;
-	if ($fam_count <= $skip) {
-	    warn "; Skipping family\t$fam_count\t$family_name\n" if ($main::verbose >= 1);
-	    next;
-	}
+#	if ($fam_count <= $skip) {
+#	    warn "; Skipping family\t$fam_count\t$family_name\n" if ($main::verbose >= 1);
+#	    next;
+#	}
 
 	my $selection_file = $family{$family_name}->{oligo_selection};
 	unless (-e $selection_file) {
