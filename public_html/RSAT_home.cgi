@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.6 2005/08/23 17:24:31 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.7 2005/11/21 01:12:15 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -115,7 +115,7 @@ print <<EndText;
 <B>
 <font face=arial,helvetica color='#ff0000'>Warnings</font>
 <ul>
-<li><a href=warnings.html>Human, mouse and rat genomes</a>
+<li><a href=warnings.html>Mammalian genomes</a>
 </ul>
 </b>
 </table>
