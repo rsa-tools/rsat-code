@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.147 2005/11/20 23:48:23 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.148 2005/11/21 01:08:49 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -3693,30 +3693,33 @@ sub SigDistrib {
     close $sig_distrib_handle;
     &RSAT::message::Info(join ("\t", "Significance distribution done", $outfile{sig_distrib_file}.".tab"));
 
-    ## Draw a graph with the number of patterns per family, as a function of the sig score
-    my $command = "XYgraph";
-    $command .= " -title1 '".$outfile{sig_distrib_file}."'";
-    $command .= " -title2 '(".$nb_families." families; min".$min_genes."genes)'";
-   $command .= " -ymin 0";
-#    $command .= " -xgstep1 5 -xgstep2 1";
-    $command .= " -i ".$outfile{sig_distrib_file}.".tab";
-    $command .= " -o ".$outfile{sig_distrib_file}."_ppf.jpg";
-    $command .= " -xcol 1 -ycol 4,7 -lines -header -legend -xsize 800 -xleg1 'score' -yleg1 'patterns per family'";
-    &doit($command, $dry_run, $die_on_error, $verbose);
-    &RSAT::message::Info(join ("\t", "Patterns per family curve", $outfile{sig_distrib_file}."_ppf.jpg"));
+    foreach my $log ("", "-ylog") {
+	my $sig_distrib_graph = $outfile{sig_distrib_file}.$log;
 
-    ## Draw a graph with the fraction of families per score, as a function of the sig score
-    my $command = "XYgraph";
-    $command .= " -title1 '".$outfile{sig_distrib_file}."'";
-    $command .= " -title2 '(".$nb_families." families; min".$min_genes."genes)'";
-#    $command .= " -title2 '(".$nb_families." families)'";
-    $command .= " -i ".$outfile{sig_distrib_file}.".tab";
-    $command .= " -o ".$outfile{sig_distrib_file}."_ffs.jpg";
-    $command .= " -ymin 0 -ymax 1 -ygstep1 0.1 -ygstep2 0.02 -ysize 600";
-#    $command .= " -xgstep1 5 -xgstep2 1";
-    $command .= " -xcol 1 -ycol 6,8 -lines -header -legend -xsize 800 -xleg1 'score' -yleg1 'fraction of families per score'";
-    &doit($command, $dry_run, $die_on_error, $verbose);
-    &RSAT::message::Info(join ("\t", "Families per score curve", $outfile{sig_distrib_file}."_ffs.jpg"));
+	## Draw a graph with the number of patterns per family, as a function of the sig score
+	my $command = "XYgraph";
+	$command .= " -title1 '".$sig_distrib_graph."'";
+	$command .= " -title2 $organism_name.' (".$nb_families." families; min ".$min_genes." genes)'";
+	$command .= " -ymin 0";
+	$command .= " -xgstep1 1";
+	$command .= " -i ".$outfile{sig_distrib_file}.".tab";
+	$command .= " -o ".$sig_distrib_graph."_ppf.jpg";
+	$command .= " -xcol 1 -ycol 4,7 -lines -header -legend -xsize 800 -xleg1 'score' -yleg1 'patterns per family'";
+	&doit($command, $dry_run, $die_on_error, $verbose);
+	&RSAT::message::Info(join ("\t", "Patterns per family curve", $sig_distrib_graph."_ppf.jpg"));
+	
+	## Draw a graph with the fraction of families per score, as a function of the sig score
+	my $command = "XYgraph";
+	$command .= " -title1 '".$sig_distrib_graph."'";
+	$command .= " -title2 $organism_name.' (".$nb_families." families; min ".$min_genes." genes)'";
+	$command .= " -i ".$outfile{sig_distrib_file}.".tab";
+	$command .= " -o ".$sig_distrib_graph."_ffs.jpg";
+	$command .= " -ymin 0 -ymax 1 -ygstep1 0.1 -ygstep2 0.02 -ysize 600";
+	$command .= " -xgstep1 1";
+	$command .= " -xcol 1 -ycol 6,8 -lines -header -legend -xsize 800 -xleg1 'score' -yleg1 'fraction of families per score'";
+	&doit($command, $dry_run, $die_on_error, $verbose);
+	&RSAT::message::Info(join ("\t", "Families per score curve", $sig_distrib_graph."_ffs.jpg"));
+    }
 }
 
 ################################################################
@@ -3764,7 +3767,7 @@ sub CalcCalibrationLengths {
 	$calib_lengths{$family{$family_name}->{calib_length}}++;
 	warn ";\tcalibration length for family ", $family_name, "\t", $calib_lengths{$family_name}, "\n" if ($main::verbose >= 1);
    }  
-   my @calib_lengths = keys %calib_lengths;
+   my @calib_lengths = sort {$a <=> $b } keys %calib_lengths;
    &RSAT::message::Info(join("\t", "Calibration lengths", join( ";", @calib_lengths))) if ($main::verbose >= 1);
    return @calib_lengths;
 }
