@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.148 2005/11/21 01:08:49 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.149 2005/11/22 05:09:07 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -1249,7 +1249,7 @@ sub MotifSampler {
 #	$MS_command .= ">& /dev/null";
 #    }
    if ($batch) {
-       push @main::batch_commands, $command;
+       push @main::batch_commands, $MS_command;
    } else {
        &doit($MS_command, $dry_run, $die_on_error, $verbose);
    }
@@ -1279,7 +1279,7 @@ sub Gibbs {
 #	$gibbs_command .= ">& /dev/null";
 #    }
    if ($batch) {
-       push @main::batch_commands, $command;
+       push @main::batch_commands, $gibbs_command;
    } else {
        &doit($gibbs_command, $dry_run, $die_on_error, $verbose);
    }
@@ -1294,7 +1294,7 @@ sub MEME {
    ## run the command
    $meme_command = "meme ".$family{$family_name}->{meme_options};
    if ($batch) {
-       push @main::batch_commands, $command;
+       push @main::batch_commands, $meme_command;
    } else {
        &doit($meme_command, $dry_run, 0, $verbose);
    }
@@ -1313,7 +1313,7 @@ sub orm {
    $orm_command .= " -o ".$family{$family_name}->{orm_assembly_file};
 
    if ($batch) {
-       push @main::batch_commands, $command;
+       push @main::batch_commands, $orm_command;
    } else {
        &doit($orm_command, $dry_run, 0, $verbose);
    }
@@ -1356,7 +1356,7 @@ sub Consensus {
    $consensus_command .= " | consensus ".$family{$family_name}->{consensus_options};
    $consensus_command .= " > ".$family{$family_name}->{consensus_file};
    if ($batch) {
-       push @main::batch_commands, $command;
+       push @main::batch_commands, $consensus_command;
    } else {
        &doit($consensus_command, $dry_run, 0, $verbose);
    }
