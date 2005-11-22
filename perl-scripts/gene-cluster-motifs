@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.150 2005/11/22 06:34:06 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.151 2005/11/22 08:12:27 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -3607,7 +3607,7 @@ sub SigDistrib {
     }
 
    ## Significance distribution file
-    $outfile{sig_distrib_file} = join ("", "sig_distrib", $pattern_suffix,"_",$background, $from,$noorf_status,"_",$feature_types);
+    $outfile{sig_distrib_file} = join ("", "sig_distrib", $pattern_suffix,$from,$noorf_status,"_",$feature_types);
     if ($min_genes > 1) {
 	$outfile{sig_distrib_file} .= "_mingenes".$min_genes;
     }
