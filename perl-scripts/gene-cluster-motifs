@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.149 2005/11/22 05:09:07 rsat Exp $
+# $Id: gene-cluster-motifs,v 1.150 2005/11/22 06:34:06 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -256,9 +256,9 @@ if ($sequence_file_list) {
 
     ### Read family file
     %family = &ReadClasses($family_file, 1, $organism);
-    if (scalar(@selected) > 0) {
 
-	## Check selected families
+    ## Check selected families
+    if (scalar(@selected) > 0) {
 	my %selected = ();
 	foreach my $family_name (@selected) {
 	    $selected{$family_name}++;
@@ -3607,10 +3607,11 @@ sub SigDistrib {
     }
 
    ## Significance distribution file
-    $outfile{sig_distrib_file} = join ("", "sig_distrib", $pattern_suffix,$from,$noorf_status,"_",$feature_types);
+    $outfile{sig_distrib_file} = join ("", "sig_distrib", $pattern_suffix,"_",$background, $from,$noorf_status,"_",$feature_types);
+    if ($min_genes > 1) {
+	$outfile{sig_distrib_file} .= "_mingenes".$min_genes;
+    }
     $sig_distrib_handle = &OpenOutputFile($outfile{sig_distrib_file}.".tab");
-
-
 
     ## Getting and printing patterns and their significance
     my %max_score = ();
@@ -3694,13 +3695,16 @@ sub SigDistrib {
     &RSAT::message::Info(join ("\t", "Significance distribution done", $outfile{sig_distrib_file}.".tab"));
 
     foreach my $log ("", "-ylog") {
+	if ($log) {
+	    $log_option = $log." 10";
+	}
 	my $sig_distrib_graph = $outfile{sig_distrib_file}.$log;
 
 	## Draw a graph with the number of patterns per family, as a function of the sig score
-	my $command = "XYgraph";
+	my $command = "XYgraph ".$log_option;
 	$command .= " -title1 '".$sig_distrib_graph."'";
 	$command .= " -title2 $organism_name.' (".$nb_families." families; min ".$min_genes." genes)'";
-	$command .= " -ymin 0";
+	$command .= " -ymin 0 -ysize 400";
 	$command .= " -xgstep1 1";
 	$command .= " -i ".$outfile{sig_distrib_file}.".tab";
 	$command .= " -o ".$sig_distrib_graph."_ppf.jpg";
@@ -3709,12 +3713,12 @@ sub SigDistrib {
 	&RSAT::message::Info(join ("\t", "Patterns per family curve", $sig_distrib_graph."_ppf.jpg"));
 	
 	## Draw a graph with the fraction of families per score, as a function of the sig score
-	my $command = "XYgraph";
+	my $command = "XYgraph ".$log_option;
 	$command .= " -title1 '".$sig_distrib_graph."'";
 	$command .= " -title2 $organism_name.' (".$nb_families." families; min ".$min_genes." genes)'";
 	$command .= " -i ".$outfile{sig_distrib_file}.".tab";
 	$command .= " -o ".$sig_distrib_graph."_ffs.jpg";
-	$command .= " -ymin 0 -ymax 1 -ygstep1 0.1 -ygstep2 0.02 -ysize 600";
+	$command .= " -ymin 0 -ymax 1 -ygstep1 0.1 -ygstep2 0.02 -ysize 400";
 	$command .= " -xgstep1 1";
 	$command .= " -xcol 1 -ycol 6,8 -lines -header -legend -xsize 800 -xleg1 'score' -yleg1 'fraction of families per score'";
 	&doit($command, $dry_run, $die_on_error, $verbose);
