@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.7 2005/11/21 01:12:15 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.8 2005/11/25 06:57:17 rsat Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -169,6 +169,7 @@ print <<EndText;
   <IMG SRC="images/calanques.jpg" HEIGHT=80 BORDER=0><BR>
   http://gin.uiv-mrs.fr/~jvanheld/rsa-tools/</A>
   </FONT>
+<font size=-2>(photo by <a target=_blank href=http://www.lim.univ-mrs.fr/~guenoche/Walk1.html>Alain Gu&eacute;noche</a>)</font>
   </TD>
 
 </tr></tr>
