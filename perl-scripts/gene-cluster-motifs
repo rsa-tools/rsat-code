@@ -2,9 +2,11 @@
 
 ## Ce script est une usine a gaz
 
+## CVS: added option -ORM_* (passed to ORM)
+
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.151 2005/11/22 08:12:27 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.152 2005/11/29 03:11:02 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -83,6 +85,7 @@ $dir{calib1} = "calibrations_1gene";
 		       meme
 		       ormbg
 		       orm
+		       assemble_orm
 		       sig_distrib_oligos
 		       sig_distrib_dyads
 		       );
@@ -163,8 +166,8 @@ $ormbg_suffix = ""; ## must be global
 $ORM_lth_width = 100; ## Minimal window width for variable window size
 $ORM_uth_wrank = 1; ## Max rank per word
 $ORM_uth_rank=50; ## max rank (all words)
-$ORM_uth_occ_sig=0; ## lower thresold on occurrence significance
-$ORM_fixedsizewindow=0; ## Fixed window size
+$ORM_lth_occ_sig=0; ## lower thresold on occurrence significance
+#$ORM_fixedsizewindow=0; ## Fixed window size
 $ORM_overlap=0; ## Allow overlapping occurrences for self-overlapping words
 $ORM_strand="+-"; ## Strands
 $ORM_word_length=6; ## Word length
@@ -686,8 +689,8 @@ sub SetFileNames {
 	$orm_suffix .= "_rank".$ORM_uth_rank;
 
 	## Occurrence significance
-	$orm_options .= " -d occ_sig ".$ORM_uth_occ_sig;
-	$orm_suffix .= "_occ_sig".$ORM_uth_occ_sig;
+	$orm_options .= " -d occ_sig ".$ORM_lth_occ_sig;
+	$orm_suffix .= "_occ_sig".$ORM_lth_occ_sig;
 	$orm_options .= " --sort=-occ_sig";
 
 	## Window width
@@ -699,10 +702,10 @@ sub SetFileNames {
 	$orm_suffix .= "_wrank".$ORM_uth_wrank;
 
 	## Fixed window size
-	if ($ORM_fixedsizewindow) {
-	    $orm_options .= " --fixedsizewindow";
-	    $orm_suffix .= "_z";
-	}
+#	if ($ORM_fixedsizewindow) {
+#	    $orm_options .= " --fixedsizewindow";
+#	    $orm_suffix .= "_z";
+#	}
 
 	## input file
 	$orm_options .= " --input=".$family{$family_name}->{input_seq_file};
@@ -1308,9 +1311,11 @@ sub orm {
 
    ## run the command
    $orm_command = "orm.py -v1 ".$family{$family_name}->{orm_options};
-   $orm_command .= "; pattern-assembly -v  -maxfl 1 -subst 1 -maxpat 200 ".${strands};
-   $orm_command .= " -i ".$family{$family_name}->{orm_file};
-   $orm_command .= " -o ".$family{$family_name}->{orm_assembly_file};
+   if ($task{assemble_orm}) {
+       $orm_command .= "; pattern-assembly -v  -maxfl 1 -subst 1 -maxpat 200 ".${strands};
+       $orm_command .= " -i ".$family{$family_name}->{orm_file};
+       $orm_command .= " -o ".$family{$family_name}->{orm_assembly_file};
+   }
 
    if ($batch) {
        push @main::batch_commands, $orm_command;
@@ -1336,11 +1341,11 @@ sub ormbg {
    ## orm
    $ormbg_command .= " | ormbg.py -v 1 ".$ormbg_options;
 
-   if ($batch) {
-       push @main::batch_commands, $ormbg_command;
-   } else {
+#   if ($batch) {
+#       push @main::batch_commands, $ormbg_command;
+#   } else {
        &doit($ormbg_command, $dry_run, $die_on_error, $verbose);
-   }
+#   }
 }
 
 
@@ -2720,6 +2725,10 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] =~ /-(MEME_\S+)/) {
 	    $$1 =  $ARGV[$a+1];
 
+	    ### ORM options
+	} elsif ($ARGV[$a] =~ /-(ORM_\S+)/) {
+	    $$1 =  $ARGV[$a+1];
+
 	    ### organism
 	} elsif ($ARGV[$a] eq "-org") {
 	    $organism_name = $ARGV[$a+1];
@@ -3430,6 +3439,8 @@ sub ValidateOneResult {
 	$score_col = 9;
     } elsif ($pattern_type eq "dyad") {
 	$score_col = 8;
+    } elsif ($pattern_type eq "orm") {
+	$score_col = 9;
     } else {
 	&FatalError ("Pattern type $pattern_type is not supported yet");
     }
@@ -3585,8 +3596,7 @@ sub ValidateOneResult {
 }
 
 ################################################################
-## Gets for each family all discovered patterns and their significance
-## and prints to a file
+## Distribution of significance
 sub SigDistrib {
     &RSAT::message::Info( ";\n; Significance distribution of discovered patterns") if ($verbose >=1);
     if ($task{sig_distrib_oligos}) {
@@ -3625,6 +3635,8 @@ sub SigDistrib {
 	    $score_col = 9;
 	} elsif ($pattern_type eq "dyad") {
 	    $score_col = 8;
+	} elsif ($pattern_type eq "orm") {
+	    $score_col = 9;
 	} else {
 	    &FatalError ("Pattern type $pattern_type is not supported yet");
 	}
