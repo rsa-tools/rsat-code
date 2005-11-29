@@ -2,11 +2,9 @@
 
 ## Ce script est une usine a gaz
 
-## CVS: added option -ORM_* (passed to ORM)
-
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.152 2005/11/29 03:11:02 rsat Exp $
+# $Id: gene-cluster-motifs,v 1.153 2005/11/29 04:42:54 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -48,6 +46,9 @@ $die_on_error = 1;
 $analyze_purged_sequences = 1;
 $calibN_repet=100; ### Repetitions for the calibN
 %dir = ();
+%lth = ();
+$lth{occ} = 1;
+%uth = ();
 $dir{main} = `pwd`;
 chomp($dir{main});
 %family = (); ## Index of families per name
@@ -362,7 +363,7 @@ exit(0);
 sub SetFileNames {
     $sp = "$min_sp-$max_sp";
     $dyad_options = "-v";
-    $dyad_options .= " -lth occ 1"; ## This is to avoid calculating P-value for patterns not rpesent in the dataset, and for having a correct correction for multi-testing. 
+#    $dyad_options .= " -lth occ 1"; ## This is to avoid calculating P-value for patterns not rpesent in the dataset, and for having a correct correction for multi-testing. 
     $dyad_options .= " -sort";
     $dyad_options .= " ".$strands;
     $dyad_options .= " -type ".$dyad_type;
@@ -863,7 +864,7 @@ sub PurgeSequences {
 sub CalcOligoOptions {
    my ($oligo_len) = @_;
    $oligo_options = "-v";
-   $oligo_options .= " -lth occ 1 "; ## This is to avoid calculating P-value for patterns not rpesent in the dataset, and for having a correct correction for multi-testing. 
+#   $oligo_options .= " -lth occ 1 "; ## This is to avoid calculating P-value for patterns not rpesent in the dataset, and for having a correct correction for multi-testing. 
    $oligo_options .= " -pseudo ".$pseudo if ($pseudo);
    $oligo_options .= " -sort ";
    $oligo_options .= " ".$strands;
@@ -2034,12 +2035,10 @@ sub CheckParameters {
     }
 
     ## Threshold on occurrence significance
-    if (&IsReal($force{th})) {
-	$lth{occ_sig} = $force{th}; ### force
-    } elsif ($#families > 0) {
-	$lth{occ_sig} = &round(10*abs(log($#families + 1)/log(10)))/10;
-    } else {
+    unless ((defined($lth{occ_sig})) || ($lth{occ_sig} eq $null)){
 	$lth{occ_sig} = 0;
+	&RSAT::message::Warning("Lower threshold on occ_sig automatically set to 0 for oligo-analysis and dyad-analysis.") 
+	    if ($main::verbose >= 1);
     } 
 
 }
@@ -2784,6 +2783,7 @@ sub ReadArguments {
 		&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
 	    }
 	    $lth{$thr_field} = $thr_value;
+	    &RSAT::message::Debug("Lower threshold", $thr_field, $thr_value, $lth{$thr_field});
 
 	    ### Lower threshold
 	} elsif ($ARGV[$a] eq "-uth") {
