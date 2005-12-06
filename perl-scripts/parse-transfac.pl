@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse-transfac.pl,v 1.8 2005/06/20 15:32:10 jvanheld Exp $
+# $Id: parse-transfac.pl,v 1.9 2005/12/06 15:37:58 rsat Exp $
 #
 # Time-stamp: <2003-07-10 11:52:52 jvanheld>
 #
@@ -90,7 +90,7 @@ package TRANSFAC::Factor;
   %_attribute_count = ();
   %_attribute_cardinality = (id=>"SCALAR",              ## internal ID
 			     transfac_id=>"SCALAR",     ## transfac factor ID
-			     organism=>"SCALAR",        ## OS field
+			     organism=>"ARRAY",        ## OS field
 			     name=>"SCALAR",            ## FA field
 			     gene_name => "SCALAR",     ## GE field
 			     factor_class => "SCALAR",  ## CL field
