@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.154 2005/11/29 05:03:58 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.155 2005/12/08 14:31:30 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -50,6 +50,7 @@ $calibN_repet=100; ### Repetitions for the calibN
 $lth{occ} = 1;
 %uth = ();
 $dir{main} = `pwd`;
+$dir{main} = "BOUM";
 chomp($dir{main});
 %family = (); ## Index of families per name
 @families = (); ## Families
@@ -2256,6 +2257,8 @@ OPTIONS
 		analyses (this si useful to perform quick tests).
 	-select	fam1[,fam2,fam3,...]
 		Perform the analysis of selected families only.
+	-maindir
+		main directory (by default, the working directory is used)
 	-outdir	output directory
 	-mingenes #
 		minimal number of genes per family. Families with less
@@ -2527,6 +2530,7 @@ multiple-family-analysis options
 -v		verbose
 -i		family file (incompatible with -seq)
 -seq		sequence file (incompatible with -i)
+-maindir	main directory (by default, the working directory is used
 -outdir		output directory
 -org		organism
 -skip #		skip the # first data sets
@@ -2669,6 +2673,10 @@ sub ReadArguments {
 	    ### sequence file list
 	} elsif ($ARGV[$a] eq "-seq") {
 	    $sequence_file_list = $ARGV[$a+1];
+
+	    ### main directory
+	} elsif ($ARGV[$a] eq "-maindir") {
+	    $dir{main} = $ARGV[$a+1];
 
 	    ### output directory
 	} elsif ($ARGV[$a] eq "-outdir") {
