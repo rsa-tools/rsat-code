@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.155 2005/12/08 14:31:30 rsat Exp $
+# $Id: gene-cluster-motifs,v 1.156 2005/12/09 14:43:35 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -50,7 +50,7 @@ $calibN_repet=100; ### Repetitions for the calibN
 $lth{occ} = 1;
 %uth = ();
 $dir{main} = `pwd`;
-$dir{main} = "BOUM";
+#$dir{main} = "BOUM";
 chomp($dir{main});
 %family = (); ## Index of families per name
 @families = (); ## Families
@@ -1312,7 +1312,13 @@ sub orm {
    chdir($dir{output}); &RSAT::util::CheckOutDir($family{$family_name}->{orm_dir});
 
    ## run the command
-   $orm_command = "orm.py -v1 ".$family{$family_name}->{orm_options};
+   my $orm_command = ""; 
+   if ($ENV{ORM}) {
+       $orm_command = $ENV{ORM};
+   } else {
+       $orm_command = "orm.py";
+   }
+   $orm_command .= " -v1 ".$family{$family_name}->{orm_options};
    if ($task{assemble_orm}) {
        $orm_command .= "; pattern-assembly -v  -maxfl 1 -subst 1 -maxpat 200 ".${strands};
        $orm_command .= " -i ".$family{$family_name}->{orm_file};
@@ -1340,8 +1346,13 @@ sub ormbg {
    $ormbg_command .= " -feattype $feature_types " if ($feature_types);
    $ormbg_command .= " -format fasta";
 
-   ## orm
-   $ormbg_command .= " | ormbg.py -v 1 ".$ormbg_options;
+   ## ormbg command
+   if ($ENV{ORMBG}) {
+       $ormbg_command .= " | " .$ENV{ORMBG};
+   } else {
+       $ormbg_command .= " | ormbg.py";
+   }
+   $ormbg_command .= " -v 1 ".$ormbg_options;
 
 #   if ($batch) {
 #       push @main::batch_commands, $ormbg_command;
@@ -2356,6 +2367,23 @@ OPTIONS
 	-dyad_exp_freq
 		name of a file containing the expected frequencies for
 		dyad-analysis.
+
+   ORM-specific options
+
+	ORM is a pattern discovery program developed by Matthieu
+	Defrance. This program is still in development and under
+	evaluation. It should be installed in the contribution dir:
+		    $RSAT/contrib/ORM/orm.py
+		    $RSAT/contrib/ORM/ormbg.py
+
+	ormbg.py allows to create a background model from a set of sequences.
+	orm.py detects windows containing over-represented words, by
+	comparison with the background model. Moree information can be found
+	in the ORM documentation. 
+
+	All options starting with ORM_ will be passed to the command orm.py.
+	Alternative versions of orm.py and ormbg.py can be specified with
+	environment variables ORM and ORMBG, respectively.
 
    Matrix-based pattern discovery options (consensus, gibbs, meme)
        -width  matrix width (default $matrix_width)
