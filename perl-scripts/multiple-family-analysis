@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.156 2005/12/09 14:43:35 rsat Exp $
+# $Id: multiple-family-analysis,v 1.157 2005/12/09 14:46:15 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -392,6 +392,11 @@ sub SetFileNames {
     if ($markov) {
 	## do nothing. Expected dyad frequencies will be calculated on the basis of monad frequencies
     } elsif ($exp_freq_file{dyads}) {
+       ## Convert relative path in absolute path
+       unless ($exp_freq_file{dyads} =~ /^\//) {
+	   $exp_freq_file{dyads} = $dir{main}."/".$exp_freq_file{dyads};
+       }
+	### Manually specified expected frequencies
 	$dyad_options .= " -expfreq $exp_freq_file{dyads}";
     } elsif ($background) {
 	$dyad_options .= " -bg $background ";
@@ -880,7 +885,11 @@ sub CalcOligoOptions {
 	$oligo_options .= " -markov ".$markov_order;
 	
    } elsif ($exp_freq_file{oligos}) {
-	### Manually specified calibrated frequencies
+       ## Convert relative path in absolute path
+       unless ($exp_freq_file{oligos} =~ /^\//) {
+	   $exp_freq_file{oligos} = $dir{main}."/".$exp_freq_file{oligos};
+       }
+	### Manually specified expected frequencies
 	$oligo_options .= " -expfreq ".$exp_freq_file{oligos};
 	
    } elsif ($background eq "calib1") {
@@ -932,7 +941,7 @@ sub CalcOligoOptions {
    $oligo_options .= " -return occ,mseq,freq,proba,rank";
    $oligo_options .= " ".$noov;
    
-   $oligo_suffix = "_oligos";
+   my $oligo_suffix = "_oligos";
    if ($markov) {
        $oligo_suffix .= "_mkv".$markov_order;
    } elsif ($background) {
@@ -971,7 +980,7 @@ sub OligoAnalysis {
    ## Analyze all oligo lengths
    my @oligo_commands = ();
    for $oligo_len ($min_oligo_len..$max_oligo_len) {
-	my ($one_oligo_command) = &CalcOligoOptions($oligo_len);
+	my ($one_oligo_command, $one_oligo_file) = &CalcOligoOptions($oligo_len);
 	push @oligo_commands, $one_oligo_command;
 #	&doit($command, $dry_run, $die_on_error, $verbose);
 #	system "cat $oligo_file >> $family{$family_name}->{oligo_file}";
