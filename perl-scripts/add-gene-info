@@ -153,7 +153,11 @@ OPTIONS
 	-info	information type (supported: $supported_info_types)
 	
 INPUT FORMAT
-	Any text file containing yeats ORF identifiers.
+	Any text file containing ORF identifiers or gene names.
+
+	The first word of each row is considered as a query name
+	(identifier). Additional text on the same row is not analyzed
+	(it appears unchanged in the output).
 	
 OUTPUT FORMAT
 	After each line containing reference to an ORF, a 
