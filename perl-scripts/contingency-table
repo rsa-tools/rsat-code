@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: contingency-table,v 1.1 2005/12/10 11:14:38 jvanheld Exp $
+# $Id: contingency-table,v 1.2 2005/12/10 21:45:49 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -57,9 +57,10 @@ local $out = STDOUT;
 
 local @cols = (1,2);
 local %counts;
-local %values1;
-local %values2;
-local $null = "";
+local %row_sum;
+local %col_sum;
+local $total=0;
+local $null = 0;
 
 &ReadArguments();
 
@@ -83,8 +84,9 @@ while (<$in>) {
     my @fields = split "\t";
     my $value1 = $fields[$cols[0]-1];
     my $value2 = $fields[$cols[1]-1];
-    $values1{$value1}++;
-    $values2{$value2}++;
+    $row_sum{$value1}++;
+    $col_sum{$value2}++;
+    $total++;
     $counts{$value1}{$value2}++;
 #    &RSAT::message::Debug($value1, $value2, $counts{$value1}{$value2}) if ($main::verbose >= 10);
 }
@@ -97,14 +99,22 @@ close $in if ($infile{input});
 ################################################################
 ###### print output
 
-my @values1 = sort keys %values1;
-my @values2 = sort keys %values2;
-print $out join ("\t", "#", @values2), "\n";
-foreach my $value1 (@values1) {
-    print $out $value1;
-    foreach my $value2 (@values2) {
-	if (defined($counts{$value1}{$value2})) {
-	    printf $out "\t%d", $counts{$value1}{$value2};
+my @row_values = sort keys %row_sum;
+my @col_values = sort keys %col_sum;
+print $out join ("\t", "#", "Sum", @col_values), "\n";
+
+print $out "Sum";
+print $out "\t", $total;
+foreach my $col_value (@col_values) {
+    print $out "\t", $col_sum{$col_value}
+}
+print $out "\n";
+foreach my $row_value (@row_values) {
+    print $out $row_value;
+    print $out "\t", $row_sum{$row_value};    
+    foreach my $col_value (@col_values) {
+	if (defined($counts{$row_value}{$col_value})) {
+	    printf $out "\t%d", $counts{$row_value}{$col_value};
 	} else {
 	    print $out "\t", $null;	    
 	}
