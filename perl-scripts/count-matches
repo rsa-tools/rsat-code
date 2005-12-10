@@ -36,9 +36,11 @@ local $NULL="NA";
 %uth = ();
 @supported_threshold_fields = qw(
 			      match
-			      proba
-			      Eval
-			      sig
+			      Pval
+			      Eval_p
+			      sig_p
+			      Eval_f
+			      sig_f
 			      weight
 			      len1
 			      len2
@@ -64,9 +66,11 @@ $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
 ## Return fields
 @supported_return_fields = qw(
 			      match
-			      proba
-			      Eval
-			      sig
+			      Pval
+			      Eval_p
+			      sig_p
+			      Eval_f
+			      sig_f
 			      noffsets
 			      weight
 			      seq
@@ -85,9 +89,11 @@ $supported_return_fields = join (",", @supported_return_fields);
 
 my %field_format = (match=>"%d",
 		    weight=>"%.2f",
-		    proba=>"%.2g",
-		    Eval=>"%.2g",
-		    sig=>"%.2f",
+		    Pval=>"%.2g",
+		    Eval_p=>"%.2g",
+		    Eval_f=>"%.2g",
+		    sig_p=>"%.2f",
+		    sig_f=>"%.2f",
 		    noffsets=>"%d",
 		    seq1=>"%s",		
 		    seq2=>"%s",		
@@ -112,7 +118,7 @@ my %field_format = (match=>"%d",
 ## accepted fields for a table output
 @supported_table_fields = qw(
 			      match
-			      proba
+			      Pval
 			      weight
 			      offset
 			      strand
@@ -308,18 +314,23 @@ sub OneMatch {
     ################################################################
     ## Count the matches
     if ($slide) {
-	($match, $weight, $proba, $mlen, $offset, $n_offsets) = &BestMatch(&ExpandSeq($one_match->{seq1}),&ExpandSeq($one_match->{seq2}));
+	($match, $weight, $Pval, $mlen, $offset, $n_offsets) = &BestMatch(&ExpandSeq($one_match->{seq1}),&ExpandSeq($one_match->{seq2}));
 	$one_match->{offset} = $offset;
     } else {
-	($match, $weight, $proba, $mlen) = &CountMatches(&ExpandSeq($one_match->{seq1}),&ExpandSeq($one_match->{seq2}));
+	($match, $weight, $Pval, $mlen) = &CountMatches(&ExpandSeq($one_match->{seq1}),&ExpandSeq($one_match->{seq2}));
 	$n_offsets = 1;
     }
     $one_match->{match} = $match; ## Number of matching residues
     $one_match->{weight} = $weight; ## Weight
-    $one_match->{proba} = $proba; ## P-value
+    $one_match->{Pval} = $Pval; ## P-value
     $one_match->{noffsets} = $n_offsets; ## P-value
-    $one_match->{Eval} = $proba*$n_offsets; ## E-value
-    $one_match->{sig} = -log($one_match->{Eval})/log(10); ## E-value
+    $one_match->{Eval_p} = $Pval*$n_offsets; ## E-value
+    if ($both_strands) { ## Taking into account the 2 strands
+	$one_match->{Eval_p} *= 2; 
+    }
+    $one_match->{sig_p} = -log($one_match->{Eval_p})/log(10); ## E-value for  single comparison between two sequences
+    $one_match->{Eval_f} = $one_match->{Eval_p}*scalar(@pattern1)*scalar(@pattern2); ## E-value for the whole analysis
+    $one_match->{sig_f} = -log($one_match->{Eval_f})/log(10); ## E-value
     $one_match->{mlen} = $mlen; ## Matching length
 
 
@@ -511,7 +522,10 @@ OUTPUT FORMAT
 RETURN FIELDS
        match	number of matching positions
 
-       proba    probability to observe a random match. 
+       Pval     P-value for a single comparison. 
+
+       	        This represents the probability, for the comparison
+       	        between two sequences, to return a match.
 
        		When the simple nucleotide alphabet (A, C, G, T) is
        		used, the probability of random match is estimated to
@@ -544,7 +558,7 @@ RETURN FIELDS
 		D	= G, A or T	not C
 		N	= G, A, C or T	aNy)
 
-		The probability of an match between two degenerated
+		The probability of a match between two degenerated
                 nucleotides is calculated with the hypergeometric
                 distribution.
 
@@ -571,7 +585,7 @@ RETURN FIELDS
 		white balls.
 
                                           c      i  n-i     n
-                   P_value = P(X >= c) = SUM  ( C  C     / C  )
+                   Pval = P(X >= c) = SUM  ( C  C     / C  )
                                          i=1     m  4-m     4
 
 		Where
@@ -592,7 +606,7 @@ RETURN FIELDS
 		       IUPAC letter.
 
                 In our example (Y against M), m=2, n=2, c=min(2,2)=2.
-		   P_value=0.83333
+		   Pval=0.83333
 
 		We can check the generality of the formula with some
 		examples : 
@@ -601,7 +615,7 @@ RETURN FIELDS
                    P-value of 1. In this case, m=4, n=1, c=min(4,1)=1.
 
                                            1  0    1
-                   P_value = P(X >= c) =  C  C  / C   = 4*1/4 = 1
+                   Pval = P(X >= c) =  C  C  / C   = 4*1/4 = 1
                                            4  0    4
 
 				   
@@ -610,7 +624,7 @@ RETURN FIELDS
                    n=1, m=1, c=min(1,1)=1.
 
                                            1  0    1
-                   P_value = P(X >= c) =  C  C  / C  = 0.25
+                   Pval = P(X >= c) =  C  C  / C  = 0.25
                                            1  3    4
 
 	         - Interestingly, a match between a IUPAC letter
@@ -620,7 +634,7 @@ RETURN FIELDS
                    c=min(3,2)=2, thus:
 
                                           2      i  2-i    2
-                   P_value = P(X >= c) = SUM  ( C  C    / C  )
+                   Pval = P(X >= c) = SUM  ( C  C    / C  )
                                          i=1     3  1      4
 
 		   This reflects the fact that it is impossible to
@@ -628,13 +642,56 @@ RETURN FIELDS
 		   we select 2 balls among a set of 3 black and 1
 		   white balls.
 
+	Eval_p	   E-value for a single comparison between two sequences. 
+
+		   This is a correction for multiple testing, taking
+		   into account the fact that a comparison between two
+		   sequences (or patterns) can already result in some
+		   multi-testing effects, for two reasons :
+
+		    - with the option -slide, the two sequences are
+                      compared with different offsets.
+		      	       Eval_p = Pval * noffsets
+
+		    - with the option -2str, two comparisons are
+                      performed per pair of sequences. In this case,
+		      		Eval_p = Pval*2*noffsets
+
+		   It is useful to return the Eval together with the
+		   number of offsets analyzed (corresponding to the
+		   number of tests for a given pair of sequences).
+		   	  -return Pval,noffsets,Eval,sig
+
+	sig_p      Significance for a single comparison between two
+		   sequences. 
+		   This is a simple logarithmic conversion of Eval_p.
+
+		   	      sig_p = -log10(Eval_p)
+
+	Eval_f	   E-value for the whole analysis. 
+
+		   This E-value includes a correction for the fact
+		   that, usually, multiple sequences (patterns) are
+		   compared to multiple sequences (patterns).
+
+		   For example, if the program is used to compare an
+		   oligo-analysis result file with a database of
+		   annotated sites, the oligo file can typically
+		   contain a dozen of words, and the database several
+		   hundreds of sites.
+
+	sig_f      Significance for the whole analysis. 
+		   This is a simple logarithmic conversion of Eval_f.
+
+		   	      sig_f = -log10(Eval_f)
+
 
 	weight 	the weight reflects the number of matching positions,
                 with a lower weight for matches between partially
                 specified nucleotides (IUPAC codes).
 
 		The weight is calculated as
-		    -log4(proba)
+		    -log4(Pval)
 
 		For an alignment between non-ambigous nucleotides, the
 		weight is maximal, and its value is the number of
@@ -678,7 +735,7 @@ EXAMPLES
 
 	count-matches -seq1 GATAAG -seq2 GATWAG -seq2 GATAAG \\
 	    -seq2 GATAAT -seq2 gatha -seq2 gatnns -seq2 NNNNNN \\
-	    -v 1 -return match,weight,proba,length,seq
+	    -v 1 -return match,weight,Pval,length,seq
 
         Compares the firsts sequence with each sequence of group 2.
         Notice the difference between the columns match and weight.
@@ -686,12 +743,12 @@ EXAMPLES
 	Sliding sequences
 	-----------------
 	count-matches -v 1 -seq1 gatasg -seq2 twagtt -slide \\
-	    -return match,weight,proba,seq,length
+	    -return match,weight,Pval,seq,length
 
         Thresholds
 	----------
 	count-matches -v 1 -seq1 gatasg -seq2 twagtt -seq2 ccccga \\
-	    -slide -return offset,match,weight,proba,seq,length -lth mlen 3
+	    -slide -return offset,match,weight,Pval,seq,length -lth mlen 3
 
 	This options sets a lower threshold of 3 on matching length.
 
