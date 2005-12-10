@@ -222,7 +222,6 @@ foreach $pattern1 (@pattern1) {
 	    }
 	}
 	
-#	die $best_match;
 	## Print the match and store the parameters in tables
 	&PrintOneMatch($best_match);
 	
@@ -320,6 +319,7 @@ sub OneMatch {
 	($match, $weight, $Pval, $mlen) = &CountMatches(&ExpandSeq($one_match->{seq1}),&ExpandSeq($one_match->{seq2}));
 	$n_offsets = 1;
     }
+
     $one_match->{match} = $match; ## Number of matching residues
     $one_match->{weight} = $weight; ## Weight
     $one_match->{Pval} = $Pval; ## P-value
@@ -336,10 +336,16 @@ sub OneMatch {
 
     ################################################################
     ## Calculate sequence and match lengths
-    if ($return_field{length}) {
+#    if ($return_field{length}) {
 	$one_match->{len1} = length($one_match->{seq1});
 	$one_match->{len2} = length($one_match->{seq2});
 	$one_match->{tlen} = $one_match->{len1} + $one_match->{len2} - $one_match->{mlen}; ## total length of the alignment
+#    }
+
+    ################################################################
+    ## Correct offset for reverse matches
+    if ($reverse) {
+	$one_match->{offset} = $one_match->{len1} -$one_match->{len2} - $one_match->{offset};
     }
 
     ################################################################
