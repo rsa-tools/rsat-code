@@ -190,9 +190,6 @@ if ($pattern_file2) {
 
 
 ## Check input patterns
-
-#&RSAT::error::FatalError("You must specify at least one first sequence") unless (scalar(@pattern1) > 0);
-#&RSAT::error::FatalError("You must specify at least one second sequence") unless (scalar(@pattern2) > 0);
 &RSAT::message::Warning("There is not a single sequence in the first set") unless (scalar(@pattern1) > 0);
 &RSAT::message::Warning("There is not a single sequence in the second set") unless (scalar(@pattern2) > 0);
 
@@ -207,7 +204,7 @@ $out = &OpenOutputFile($outfile{output});
 
 ## Print header
 if ($verbose >= 1) {
-    print $out ";", join ("\t", @return_fields), "\n";
+    print $out "#", join ("\t", @return_fields), "\n";
 }
 
 ## Count matches for each pair of input sequences	
@@ -875,6 +872,7 @@ sub ReadArguments {
     }
 }
 
+
 ################################################################
 #### verbose message
 sub Verbose {
@@ -892,4 +890,49 @@ sub Verbose {
 	    print $out ";\t$key\t$value\n";
 	}
     }
+    
+    printf $out "%-29s\t%d\n", "; Patterns in file1", scalar(@pattern1);
+    printf $out "%-29s\t%d\n", "; Patterns in file2", scalar(@pattern2);
+    &PrintFieldDescriptions();
+    
+}
+
+
+################################################################
+## Print field descriptions
+sub PrintFieldDescriptions {
+    ## Field descriptions
+    my %field_descriptions = ();
+    $field_description{id1} = "Identifier of a sequence of the first set";
+    $field_description{id2} = "Identifier of a sequence of the second set";
+    $field_description{seq1} = "First sequence of a comparison";
+    $field_description{seq2} = "Second sequence of a comparison";
+    $field_description{len1} = "length of the first sequence";
+    $field_description{len2} = "Length of the first sequence";
+    $field_description{mlen} = "Length of the second sequence";
+    $field_description{offset} = "Offset between the two sequences (only with the option -slide)";
+    $field_description{tlen} = "Total length of the alignment (taking into account the offset)";
+    $field_description{match} = "number of matching residues";
+    $field_description{Pval} = "P-value";
+    $field_description{weight} = "match weight. weight=-log4(Pval)";
+    $field_description{noffsets} = "number of offsets tested";
+    $field_description{Eval_p} = "E-value for a single comparison (one sequence against one sequence). Eval_p = Pval*noffsets";
+    $field_description{sig_p} = "significance for a single comparison. sig_p = -log10(Eval_p)";
+    $field_description{Eval_f} = "E-value for the whole analysis (all sequences against all sequences). Eval_f = Eval_p*nb_seq1*nb_seq2";
+    $field_description{sig_f} = "significance for a single comparison. sig_f = -log10(Eval_f)";
+    $field_description{strand} = "Strand (D: direct, R: reverse)";
+    $field_description{max_w1} = "Maximal weight for a match with seq1";
+    $field_description{max_w2} = "Maximal weight for a match with seq2";
+    $field_description{max_w} = "Maximal weight for a match with either seq1 or seq2. max_w = max(max_w1, max_w2)";
+    $field_description{rel_w} = "Weight of a match, relative to match_w";
+    $field_description{rel_w1} = "Weight of the match, relative to match_w1";
+    $field_description{rel_w2} = "Weight of the match, relative to match_w2";
+    $field_description{top_s1} = "";
+    $field_description{top_s2} = "";
+    print $out ";\n";
+    print $out "; Field descriptions\n";
+    foreach my $field (@return_fields) {
+	print $out join ("\t", ";", $field, $field_description{$field}), "\n";
+    }
+    print $out ";\n";
 }
