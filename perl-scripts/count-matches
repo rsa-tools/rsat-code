@@ -908,10 +908,10 @@ sub PrintFieldDescriptions {
     $field_description{seq1} = "First sequence of a comparison";
     $field_description{seq2} = "Second sequence of a comparison";
     $field_description{len1} = "length of the first sequence";
-    $field_description{len2} = "Length of the first sequence";
-    $field_description{mlen} = "Length of the second sequence";
-    $field_description{offset} = "Offset between the two sequences (only with the option -slide)";
+    $field_description{len2} = "Length of the second sequence";
     $field_description{tlen} = "Total length of the alignment (taking into account the offset)";
+    $field_description{mlen} = "Length of the match (intersecting segment between the two aligned sequences)";
+    $field_description{offset} = "Offset between the two sequences (only with the option -slide)";
     $field_description{match} = "number of matching residues";
     $field_description{Pval} = "P-value";
     $field_description{weight} = "match weight. weight=-log4(Pval)";
