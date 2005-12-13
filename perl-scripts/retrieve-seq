@@ -3,7 +3,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.40 2005/04/10 12:54:20 jvanheld Exp $
+# $Id: retrieve-seq,v 1.41 2005/12/13 08:32:17 rsat Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -443,6 +443,7 @@ foreach my  $query (@queries) {
     } else {
 	$current_seq = "";
     }
+    $current_seq = uc($current_seq);
     
     ### print result sequence
     &PrintNextSequence($out,$out_format,$line_width,$current_seq,$current_id, @comments);
