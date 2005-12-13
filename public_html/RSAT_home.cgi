@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.9 2005/11/25 07:01:16 rsat Exp $
+# $Id: RSAT_home.cgi,v 1.10 2005/12/13 08:25:25 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -164,10 +164,10 @@ print <<EndText;
 
   <td align=center>
   <font size=-1>
-  <A HREF="http://gin.univ-mrs.fr/~jvanheld/rsa-tools/" target="_top">
+  <A HREF="http://crfb.univ-mrs.fr/rsaTools/" target="_top">
   <B>Marseille - France</B><BR>
   <IMG SRC="images/calanques.jpg" HEIGHT=80 BORDER=0><BR>
-  http://gin.uiv-mrs.fr/~jvanheld/rsa-tools/</A>
+  http://crfb.univ-mrs.fr/rsaTools/</a>
   </FONT>
 <br><font size=-2>(photo by <a target=_blank href=http://www.lim.univ-mrs.fr/~guenoche/Walk1.html>Alain Gu&eacute;noche</a>)</font>
   </TD>
