@@ -5,7 +5,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.101 2005/11/18 16:10:25 jvanheld Exp $
+# $Id: oligo-analysis,v 1.102 2005/12/14 16:46:44 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -207,7 +207,7 @@ if (($method eq "Frequency file") &&
 ################################################################
 #### Read calibration from a file
 if ($method =~ /calibration/i) {
-    &RSAT::message::TimeWarn( "; Reading calibration file\t",$infile{calibration},"\n") if ($main::verbose >= 1);
+    &RSAT::message::TimeWarn( join('\t', "Reading calibration file",$infile{calibration})) if ($main::verbose >= 1);
     &ReadCalibration($infile{calibration});
 }
 
@@ -252,6 +252,8 @@ if ($return{'table'}) {
     &CheckThresholds("occ") if ($return{occ}); ## Check thresholds on occurrences
     &CheckThresholds("observed_freq") if ($return{'exp_freq'}); ## Check thresholds on frequencies
 
+#    &RSAT::message::Debug ("Number of patterns", scalar(keys(%patterns))) if ($main::verbose >= 0);
+
 #    die join ("\t", "HELLO", $pattern_seq, sort (keys( %patterns)), scalar(keys(%patterns)));
 
     &CalcZscore() if ($return{'zscore'});
@@ -295,22 +297,23 @@ sub CountOligos {
 	&RSAT::message::TimeWarn("Counting oligo frequencies");
     }
     
-    if ($return{'table'}) {
-	
+    ## Calculate all possible oligomers of size k
+    if (($return{'table'}) ||
+	($return{'distrib'}) ||
+	($tail eq 'left') ||
+	($tail eq 'two') ||
+	($zeroocc)
+       ) {
 	if ($seq_type eq "DNA") {
 	    @possible_oligos = &all_oligos($oligo_length);
 	} else {
 	    @possible_oligos = sort keys %patterns;
 	}
+	
+	#### print verbose now for the tables
 
-	#### print verbose
-	&Verbose() if ($verbose >= 1);
-
-    } elsif ($return{'distrib'}) {
-	if ($seq_type eq "DNA") {
-	    @possible_oligos = &all_oligos($oligo_length);
-	} else {
-	    @possible_oligos = sort keys %patterns;
+	if ($return{'table'}) {
+	    &Verbose() if ($verbose >= 1);
 	}
     }
 
@@ -436,6 +439,7 @@ sub CountOligos {
 	}
 	
 	undef %last_pos;
+    
 
 	################################################################
 	#### Specific treatment for occurrence table
@@ -511,7 +515,30 @@ sub CountOligos {
 	&RSAT::error::FatalError("The input contained no readable sequence. The file might be empty or be wronlgy formatted."); 
     }
 
+#    &RSAT::message::Debug ("Number of patterns", scalar(keys(%patterns))) if ($main::verbose >= 0);
+
+    ## Detect patterns with 0 occurrences if the left tail of the distribution is to be tested. 
+    if (($tail eq "left") || 
+	($tail eq "two") || 
+        ($zeroocc)
+       ) {
+	&RSAT::message::Info("Counting patterns with 0 occurrences") if ($main::verbose >= 2);
+	foreach my $pattern_seq (@possible_oligos) {
+	    ## Check if no occurrences were found
+	    unless ($patterns{$pattern_seq}->{occ}) {
+#		&RSAT::message::Debug("\tpattern with 0 occurrences\t$pattern_seq") if ($main::verbose >= 0);
+		$patterns{$pattern_seq}->{occ} = 0;
+		$zero_occ{$pattern_seq}++;
+		if ($return{'mseq'}) {
+		    $patterns{$pattern_seq}->{mseq} = 0;
+		}
+	    }
+	}
+        &RSAT::message::Debug ("Number of patterns with zero occurrences", 
+			       scalar(keys(%zero_occ))) if ($main::verbose >= 2);
+    }
 }
+
 
 ################################################################
 ## Print header for oligo count table
@@ -897,13 +924,6 @@ sub CalcExpected {
 	    } else {
 		$patterns{$pattern_seq}->{exp_freq} = "NA";
 	    }
-#  	    warn join ("\t", "HELLO", 
-#  		       $pattern_seq, 
-#  		       $patterns{$pattern_seq}->{exp_occ}, 
-#  		       $patterns{$pattern_seq}->{exp_var},
-#  		       $patterns{$pattern_seq}->{notforb},
-#  		       $patterns{$pattern_seq}->{exp_freq},
-#  		       );
 	}
 
 
@@ -913,7 +933,6 @@ sub CalcExpected {
     } elsif ($method eq "lexicon") {  
 	my $l  = 1;
 	foreach $pattern_seq (@alphabet ) {
-#	    print join "\t", $l, $pattern_seq, $sub_word[$l]{$pattern_seq}->{observed_freq}, $sub_word[$l]{$pattern_seq}->{occ}, "\n";
 	    $sub_word[$l]{$pattern_seq}->{max_freq} = $sub_word[$l]{$pattern_seq}->{observed_freq};
 	}
 	for $l (2..$oligo_length - 1) {
@@ -922,22 +941,15 @@ sub CalcExpected {
 		$sub_word[$l]{$pattern_seq}->{max_freq} = $sub_word[$l]{$pattern_seq}->{observed_freq};
 		
 		#### all possible segmentations of the word
-		for $s (1..$l-1) {
-		    $head = substr($pattern_seq,0,$s);
-		    $tail = substr($pattern_seq,$s);
-		    $segmentation_freq = $sub_word[$s]{$head}->{max_freq} * $sub_word[$l-$s]{$tail}->{max_freq};
+		for my $s (1..$l-1) {
+		    my $prefix = substr($pattern_seq,0,$s);
+		    my $suffix = substr($pattern_seq,$s);
+		    my $segmentation_freq = $sub_word[$s]{$prefix}->{max_freq} * $sub_word[$l-$s]{$suffix}->{max_freq};
 		    if ($segmentation_freq > $sub_word[$l]{$pattern_seq}->{exp_freq}) {
 			$sub_word[$l]{$pattern_seq}->{exp_freq} = $segmentation_freq;
 			$sub_word[$l]{$pattern_seq}->{max_freq} = &max($sub_word[$l]{$pattern_seq}->{max_freq},
-								     $sub_word[$l]{$pattern_seq}->{exp_freq});
+								       $sub_word[$l]{$pattern_seq}->{exp_freq});
 		    }
-#		    print join ("\t", $l, $pattern_seq, 
-#				$sub_word[$l]{$pattern_seq}->{observed_freq}, 
-#				$sub_word[$l]{$pattern_seq}->{exp_freq}, 
-#				$head, $sub_word[$s]{$head}->{max_freq},
-#				$tail, $sub_word[$l-$s]{$tail}->{max_freq},
-#				$sub_word[$s]{$head}->{max_freq}* $sub_word[$l-$s]{$tail}->{max_freq},
-#				"\n");
 		}
 	    }
 	}
@@ -945,31 +957,22 @@ sub CalcExpected {
 	foreach $pattern_seq (keys %patterns) {
 	    $patterns{$pattern_seq}->{exp_freq} = 0;
 	    #### all possible segmentations of the word
-	    for $s (1..$l-1) {
-		$head = substr($pattern_seq,0,$s);
-		$tail = substr($pattern_seq,$s);
-		$segmentation_freq = $sub_word[$s]{$head}->{max_freq} * $sub_word[$l-$s]{$tail}->{max_freq};
+	    for my $s (1..$l-1) {
+		my $prefix = substr($pattern_seq,0,$s);
+		my $suffix = substr($pattern_seq,$s);
+		my $segmentation_freq = $sub_word[$s]{$prefix}->{max_freq} * $sub_word[$l-$s]{$suffix}->{max_freq};
 		if ($segmentation_freq > $patterns{$pattern_seq}->{exp_freq}) {		
 		    $patterns{$pattern_seq}->{exp_freq} = $segmentation_freq;
 		    $patterns{$pattern_seq}->{segments} = join (" ", 
-							   $head,
-							   $tail,
-							   sprintf("%15.13f", $sub_word[$s]{$head}->{max_freq}),
-							   sprintf("%15.13f", $sub_word[$l-$s]{$tail}->{max_freq})
-								#,$sub_word[$s]{$head}->{max_freq} * $sub_word[$l-$s]{$tail}->{max_freq}
-							   );
-#		    print join ("\t", $l, $pattern_seq, 
-#				$patterns{$pattern_seq}->{observed_freq}, 
-#				$patterns{$pattern_seq}->{exp_freq}, 
-#				$head, $sub_word[$s]{$head}->{max_freq},
-#				$tail, $sub_word[$l-$s]{$tail}->{max_freq},
-#				$sub_word[$s]{$head}->{max_freq}* $sub_word[$l-$s]{$tail}->{max_freq},
-#				"\n");
-		}
-	    
+								$prefix,
+								$suffix,
+								sprintf("%15.13f", $sub_word[$s]{$prefix}->{max_freq}),
+								sprintf("%15.13f", $sub_word[$l-$s]{$suffix}->{max_freq}))
+		    }
+		
 	    }
 	}
-
+	
     } else {    
 	################################################################
 	## Independent nucleotide probabilities 
@@ -1033,8 +1036,6 @@ sub CalcExpected {
 	    ### expected number of matching sequences ###
 	    $avg_seq_length = $sum_seq_length/$sequence_number;
 	    $pos_per_seq = $avg_seq_length - $oligo_length + 1;
-#	    $pos_per_seq *=2 if ($sum_rc);
-	    
 	    $exp_freq_est = $patterns{$pattern_seq}->{exp_freq};
 	    
 	    $one_seq_match_proba =  1 - (1-$exp_freq_est)**$pos_per_seq;
@@ -2089,10 +2090,17 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-under") {
 	    $tail = "left";
 	    
-	} elsif ($ARGV[$a] eq "-two_tail") {
+	} elsif ($ARGV[$a] =~ /^\-two_tail/) {
 	    $tail = "two";
 	    
+	    ################################################################
+	    ## Also count patterns not observed
+	} elsif ($ARGV[$a] eq "-zeroocc") {
+	    $zeroocc = 1;
+	    
 	}
+
+
 	$a++;
     }
     
@@ -2352,9 +2360,21 @@ ARGUMENTS
 	-under	detect under-represented instead of over-represented words
 		(see below for details). 
 
-	-two_tail
+	-two_tails
 		detect under-represented and over-represented words
 		(see below for details). 
+
+	-zeroocc
+		Report also patterns with zero occurrences (provided
+		they fit the other thresholds).
+		By default, the program reports only patterns present
+		in the sequence.
+		If the left tail or two-tail test is applied, patterns
+		with zero occurrences are automatically taken into
+		account.-
+		In some other cases, one would also like to detect
+		patterns absent from the sequence. This is the
+		function of this option.
 
     THRESHOLDS
 	-lth param value
@@ -2772,7 +2792,8 @@ oligo-analysis options
 -onedeg         one degenerate position		
 -sort		sort oligomers by overrepresentation
 -under		detect under-represented instead of over-represented words 
--tow_tail      	detect under-represented and over-represented words 
+-two_tails      detect under-represented and over-represented words 
+-zeroocc	return also patterns with zero occurrences
 -pal		only return reverse palindroms
 End_of_help
     close HELP;
