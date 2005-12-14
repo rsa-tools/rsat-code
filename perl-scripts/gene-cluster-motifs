@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.157 2005/12/09 14:46:15 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.158 2005/12/14 16:43:12 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -853,7 +853,7 @@ sub PurgeSequences {
    $command .= " -i ".$family{$family_name}->{seq_file};
 #   $command .= " -i"..$family{$family_name}->{seq_file};
 #   $command .= " | grep -v '\\\\\\\\'";
-   $command .= " | purge-sequence -format fasta -ml 40 -mis 3";
+   $command .= " | purge-sequence -format fasta -ml 40 -mis 3 -noempty";
 #   $command .= " -i ".$family{$family_name}->{seq_file};
    $command .= " -o ".$family{$family_name}->{seq_file_purged};
    if ($batch) {
