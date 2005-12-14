@@ -28,7 +28,7 @@ $default{strand} = "both strands";
 $default{noov} = 'checked';
 $default{grouprc} = 'checked';
 $default{purge} = 'checked';
-#$default{purge} = '';
+$default{side} = 'over-represented';
 
 $default{freq_estimate} = "Background model";
 
@@ -368,14 +368,18 @@ print $query->table({-border=>1,-cellpadding=>0,-cellspacing=>0},
 
 			  ### binomial proba
 			  $query->td([$query->checkbox(-name=>'proba',
-						    -checked=>$default{proba},
-						    -label=>' Binomial proba '),
-				   $query->textfield(-name=>'lth_occ_pro',
-						     -default=>$default{lth_occ_pro},
-						     -size=>5),
-				   $query->textfield(-name=>'uth_occ_pro',
-						     -default=>$default{uth_occ_pro},
-						     -size=>5)]),
+						       -checked=>$default{proba},
+						       -label=>' Binomial proba '),
+				      $query->textfield(-name=>'lth_occ_pro',
+							-default=>$default{lth_occ_pro},
+							-size=>5),
+				      $query->textfield(-name=>'uth_occ_pro',
+							-default=>$default{uth_occ_pro},
+							-size=>5),
+				      $query->popup_menu(-name=>'side',
+							 -Values=>['over-represented','under-represented','both'],
+							 -default=>$default{side})
+				     ]),
 
 			  ### significance index
 			  $query->td([$query->checkbox(-name=>'proba',
