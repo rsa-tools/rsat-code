@@ -54,9 +54,11 @@ sub ThresholdOptions {
     my $threshold_options = "";
     foreach my $key (keys %lth) {
 	$threshold_options .= join(" ", " -lth", $key, $lth{$key});
+	&RSAT::message::Debug("Lower threshold", $key, $lth{$key}) if ($main::verbose >= 0);
     }
     foreach my $key (keys %uth) {
 	$threshold_options .= join(" ", " -uth", $key, $uth{$key});
+	&RSAT::message::Debug("Upper threshold", $key, $uth{$key}) if ($main::verbose >= 0);
     }
     return ($threshold_options);
 }
@@ -65,10 +67,10 @@ sub ThresholdOptions {
 ## Indicate threshold options in the suffix
 sub ThresholdSuffix {
     my $threshold_suffix = "";
-    foreach my $key (keys %lth) {
+    foreach my $key (sort keys %lth) {
 	$threshold_suffix .= "_lth_".$key.$lth{$key};
     }
-    foreach my $key (keys %uth) {
+    foreach my $key (sort keys %uth) {
 	$threshold_suffix .= "_uth_".$key.$uth{$key};
     }
     return ($threshold_suffix);
