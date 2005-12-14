@@ -45,7 +45,7 @@ $default{lth_ratio} = "none";
 $default{uth_ratio} = "none";
 
 $default{occ} = 'checked';
-$default{lth_occ} = "1";
+$default{lth_occ} = "none";
 $default{uth_occ} = "none";
 
 $default{mseq} = '';
