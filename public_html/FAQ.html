@@ -176,6 +176,45 @@ YPR204W
 <li>without purging, you get no motif (apparently this group contains no significant motif).  
 </ul>
 
+
+</ul><h3>Analyzing larger dyads</h3><ul>
+
+<h4>Question</h4>
+
+<i>How is it possible to set the oligonucleotide size in dyad-analysis to 4 instead of 3?</i>
+
+<h4>Answer</h4>
+
+
+This option is not available on the web interface, because the time of
+computation increases exponentially with the oligonucleotide length.
+In my epxerience, the analysis of spaced pairs of trinucleotides is
+generally sufficient to return larger motifs as well, because if there
+is a pair of tetranucleotides, it is detected as multiple pairs of
+mutually overlapping trinucleotides. For example
+
+<ul><pre>
+TAGT......ACTA
+</pre></ul>
+
+Can be detected in the following form :
+
+<ul><pre>
+TAG........CTA
+TAG.......ACT.
+.AGT.......CTA
+</pre></ul>
+
+But this depends on the sequence type. If you really need to analyse
+pairs of 4nt or llarge, one possibility is to install a local version
+of your computer. For this, you need a unix machine, and some
+xperience with the unix system.
+
+If you wish to download the unix version of the tools, you can find the licence and user instruction on the web site:
+	
+<ul><a href=http://rsat.scmbb.ulb.ac.be/rsat/distrib/>http://rsat.scmbb.ulb.ac.be/rsat/distrib/</a></ul>
+
+
 </ul><hr size=3>
 </blockquote>
 </body>
