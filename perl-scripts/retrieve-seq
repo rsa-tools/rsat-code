@@ -3,7 +3,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.41 2005/12/13 08:32:17 rsat Exp $
+# $Id: retrieve-seq,v 1.42 2005/12/16 23:05:28 rsat Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -182,6 +182,12 @@ if ($noorf) {
 #### retrieve all
 if ($return_all) {
     @queries = $organism->get_attribute("features");
+    if (scalar(@queries < 1)) {
+	&RSAT::message::Warning(join("\t", "There is not a single feature of type", 
+				     join(" or ", sort (keys(%accepted_feature_types))), 
+				     "annotated in the genome of", $organism_name));
+	exit();
+    }
 } 
 
 
