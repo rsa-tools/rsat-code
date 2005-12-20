@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.158 2005/12/14 16:43:12 rsat Exp $
+# $Id: multiple-family-analysis,v 1.159 2005/12/20 10:10:29 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -90,6 +90,7 @@ $dir{calib1} = "calibrations_1gene";
 		       assemble_orm
 		       sig_distrib_oligos
 		       sig_distrib_dyads
+		       sig_distrib_orm
 		       );
 foreach my $task (@supported_tasks) {
     $supported_task{$task} = 1;
