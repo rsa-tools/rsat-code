@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank_lib.pl,v 1.20 2006/01/01 22:28:14 jvanheld Exp $
+# $Id: parse_genbank_lib.pl,v 1.21 2006/01/01 22:50:58 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -42,19 +42,119 @@ sub ReadNextLine {
 }
 
 
+
+################################################################
+=pod
+
+=item ParseGenbankFiles
+
+Parse a list of genbank files (each file normally contains
+information about one chromosome).
+
+This procedure calls &ParseGenbankFile on each input file, and then
+collects the names for each feature type.
+
+=cut
+
+sub ParseGenbankFiles {
+    my (@genbank_files) = @_;
+    foreach my $file (@genbank_files) {
+	$file{input} = $file;
+	
+	#### check whether the file has to be uncompressed on the fly
+	if ($file{input} =~ /.gz/) {
+	    $file{input} = "gunzip -c $file{input} |";
+	} else {
+	    $file{input} = "cat $file{input} |";
+	}
+	
+	#### for quick testing; only parse the first  lines
+	if ($main::test) {
+	    $file{input} .= " head -$test_lines | ";
+	}
+	
+	&ParseGenbankFile($file{input}, 
+			  $features,
+			  $genes,
+			  $mRNAs,
+			  $scRNAs,
+			  $tRNAs,
+			  $rRNAs,
+			  $misc_RNAs,
+			  $misc_features,
+			  $CDSs,
+			  $contigs, 
+			  $organisms, 
+			  $sources,
+#			  source=>"Genbank", 
+			  seq_dir=>$dir{sequences}
+			 );
+    }
+    
+    ## Update name index for genes (since the original IDs have been changed for GeneIDs)
+    $genes->index_ids();
+    $genes->index_names();
+
+    ## Use the locus_tag as unique identifier, and the GeneID as synonym
+    foreach my $holder ($genes, $CDSs, $mRNAs, $scRNAs, $tRNAs, $rRNAs, $misc_RNAs) { 
+	&RSAT::message::TimeWarn("Replacing IDs by locus_tag for class", $holder->get_object_type()) if ($main::verbose >= 1);
+	foreach my $object ($holder->get_objects()) {
+	    if ($object->get_attribute("locus_tag")) {
+		$object->ReplaceID("locus_tag");
+	    } else {
+		&ErrorMessage(join("\t","Feature", $object->get_attribute("id"), "has no locus_tag"));
+	    }
+	}
+    }
+
+    ## DEBUG NOTE: ParseFeatureNames and CheckObjectNames are
+    ## apparently partly redundant. I should check and remove
+    ## redundancy
+
+    ## Parse feature names
+    &ParseFeatureNames($genes, $mRNAs, $scRNAs, $tRNAs, $rRNAs, $CDSs);
+
+    ## Check object for all the parsed features, before building the RSAT features from it
+    &CheckObjectNames($genes, $mRNAs, $scRNAs, $tRNAs, $rRNAs, $misc_RNAs, $misc_features, $CDSs);
+
+    ## parse Gene Ontology terms
+    &ParseGO($CDSs);
+    
+
+    ################################################################
+    ## index names
+    for my $holder ($genes,$mRNAs, $scRNAs,$tRNAs,$rRNAs,$misc_RNAs,$misc_features,$CDSs) {
+	&RSAT::message::TimeWarn("Indexing IDs and names for class" , $holder->get_object_type()) if ($main::verbose >= 1);
+	$holder->index_ids();
+	$holder->index_names();
+    }
+
+    ################################################################
+    ## parse chromosomal positions
+    for my $holder ($genes,$mRNAs, $scRNAs,$tRNAs,$rRNAs,$misc_RNAs,$misc_features,$CDSs) {
+	&ParsePositions($holder);
+    }
+	
+    if ($data_type eq "refseq") {
+	&RefseqPostProcessing();
+    } else {
+	#### Create features from CDSs and RNAs
+	&CreateGenbankFeatures($features, $genes, $mRNAs, $scRNAs, $tRNAs, $rRNAs, $misc_RNAs, $misc_features, $CDSs, $sources, $contigs);
+    }
+}    
+
 ################################################################
 =pod
 
 =item ParseGenbankFile()
 
-Parse a Genbank genome file. Create one object per feature.
+Parse a single Genbank genome file. Create one object per feature.
 
 The sequence is either returned (default), or directly stored in a
 file, when this file is specified with the argument seq_file=>myfile.
 Direct storage is particularly useful for big genomes (e.g.  human),
 where the size of some chromosomes would create an "out of memory"
 error.
-
 
 The option no_seq=>1 prevents from parsing the sequence.
 
@@ -502,40 +602,6 @@ sub ParseGenbankFile {
 # 	    $object->ReplaceID("transcript_id");
 # 	}
 #     }
-    
-    
-
-    ## Update name index for genes (since the original IDs have been changed for GeneIDs)
-    $genes->index_ids();
-    $genes->index_names();
-
-    ## Use the locus_tag as unique identifier, and the GeneID as synonym
-    foreach my $holder ($genes, $CDSs, $mRNAs, $scRNAs, $tRNAs, $rRNAs, $misc_RNAs) { 
-	&RSAT::message::TimeWarn("Replacing IDs by locus_tag for class", $holder->get_object_type()) if ($main::verbose >= 1);
-	foreach my $object ($holder->get_objects()) {
-	    if ($object->get_attribute("locus_tag")) {
-		$object->ReplaceID("locus_tag");
-	    } else {
-		&ErrorMessage(join("\t","Feature", $object->get_attribute("id"), "has no locus_tag"));
-	    }
-	}
-    }
-
-
-
-
-    ## DEBUG NOTE: ParseFeatureNames and CheckObjectNames are
-    ## apparently partly redundant. I should check and remove
-    ## redundancy
-
-    ## Parse feature names
-    &ParseFeatureNames($genes, $mRNAs, $scRNAs, $tRNAs, $rRNAs, $CDSs);
-
-    ## Check object for all the parsed features, before building the RSAT features from it
-    &CheckObjectNames($genes, $mRNAs, $scRNAs, $tRNAs, $rRNAs, $misc_RNAs, $misc_features, $CDSs);
-
-    ## parse Gene Ontology terms
-    &ParseGO($CDSs);
     
     return ($file_description, $sequence);
 }

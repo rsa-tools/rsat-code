@@ -1,6 +1,6 @@
 #!/usr/bin/perl 
 #############################################################
-# $Id: parse-genbank.pl,v 1.33 2006/01/01 22:28:14 jvanheld Exp $
+# $Id: parse-genbank.pl,v 1.34 2006/01/01 22:50:59 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -194,41 +194,9 @@ package main;
     #### verbose ####
     &Verbose() if ($verbose);
 
-    ################################################################
-    #### parse the genbank files
+    ## Parse the genbank files
     chdir $dir{input};
-    foreach my $file (@genbank_files) {
-	$file{input} = $file;
-
-	#### check whether the file has to be uncompressed on the fly
-	if ($file{input} =~ /.gz/) {
-	    $file{input} = "gunzip -c $file{input} |";
-	} else {
-	    $file{input} = "cat $file{input} |";
-	}
-	
-	#### for quick testing; only parse the first  lines
-	if ($test) {
-	    $file{input} .= " head -$test_lines | ";
-	}
-
-	&ParseGenbankFile($file{input}, 
-			  $features,
-			  $genes,
-			  $mRNAs,
-			  $scRNAs,
-			  $tRNAs,
-			  $rRNAs,
-			  $misc_RNAs,
-			  $misc_features,
-			  $CDSs,
-			  $contigs, 
-			  $organisms, 
-			  $sources,
-#			  source=>"Genbank", 
-			  seq_dir=>$dir{sequences}
-			  );
-    }
+    &ParseGenbankFiles(@genbank_files);
 
     #### write the contig file
     chdir $dir{main};
@@ -251,27 +219,6 @@ package main;
 #    $misc_RNAs->index_names();
 #    $misc_features->index_names();
 #    $CDSs->index_names();
-
-    ################################################################
-    ## index names
-    for my $holder ($genes,$mRNAs, $scRNAs,$tRNAs,$rRNAs,$misc_RNAs,$misc_features,$CDSs) {
-	&RSAT::message::TimeWarn("Indexing IDs and names for class" , $holder->get_object_type()) if ($main::verbose >= 1);
-	$holder->index_ids();
-	$holder->index_names();
-    }
-
-    ################################################################
-    ## parse chromosomal positions
-    for my $holder ($genes,$mRNAs, $scRNAs,$tRNAs,$rRNAs,$misc_RNAs,$misc_features,$CDSs) {
-	&ParsePositions($holder);
-    }
-	
-    if ($data_type eq "refseq") {
-	&RefseqPostProcessing();
-    } else {
-	#### Create features from CDSs and RNAs
-	&CreateGenbankFeatures($features, $genes, $mRNAs, $scRNAs, $tRNAs, $rRNAs, $misc_RNAs, $misc_features, $CDSs, $sources, $contigs);
-    }
     
     ################################################################
     ### export result in various formats
