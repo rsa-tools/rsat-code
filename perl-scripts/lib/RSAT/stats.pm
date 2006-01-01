@@ -691,15 +691,15 @@ sub hypergeometric {
     my $w = $n - $m; ### white balls in the urn
 
     #### some verbosity
-    warn join ( "\t", 
- 		"Hypergeometric", 
- 		"m=$m",
- 		"w=$w",
- 		"n=$n",
- 		"k=$k",
- 		"x=$x",
-		"depth=$args{depth}"
-	      ), "\n" if ($main::verbose >= 6);
+#     warn join ( "\t", 
+#  		"Hypergeometric", 
+#  		"m=$m",
+#  		"w=$w",
+#  		"n=$n",
+#  		"k=$k",
+#  		"x=$x",
+# 		"depth=$args{depth}"
+# 	      ), "\n" if ($main::verbose >= 6);
 
     ### error if too high recursion depth
     my $max_depth = 10; 
@@ -760,7 +760,7 @@ sub hypergeometric {
 
 
     
-# 	$Id: stats.pm,v 1.2 2005/11/19 13:38:41 jvanheld Exp $	
+# 	$Id: stats.pm,v 1.3 2006/01/01 22:34:39 jvanheld Exp $	
 
     #### initialization
     if (defined($args{previous_value})) {
@@ -836,51 +836,51 @@ sub hypergeometric {
     #### recursive calculation
     for my $i ($x + 1..$to) {
 	$last_proba = $proba;
-	warn join ( "\t", 
-		    "Hypergeometric", 
-		    "m=$m",
-		    "w=$w",
-		    "n=$n",
-		    "k=$k",
-		    "i=$i",
-		    "to=$to",
-		    "depth=$args{depth}",
-		    "last_proba=$proba"
-		  ), "\n" if ($main::verbose >= 6);
+# 	warn join ( "\t", 
+# 		    "Hypergeometric", 
+# 		    "m=$m",
+# 		    "w=$w",
+# 		    "n=$n",
+# 		    "k=$k",
+# 		    "i=$i",
+# 		    "to=$to",
+# 		    "depth=$args{depth}",
+# 		    "last_proba=$proba"
+# 		  ), "\n" if ($main::verbose >= 6);
 	$log_proba += log($m - $i + 1);
 	$log_proba -= log($i);
 	$log_proba += log($k - $i + 1);
 	$log_proba -= log($w - $k + $i);
 	$proba += &LogToEng($log_proba);
-	warn join ( "\t", 
-		    "Hypergeometric", 
-		    "m=$m",
-		    "w=$w",
-		    "n=$n",
-		    "k=$k",
-		    "i=$i",
-		    "to=$to",
-		    "depth=$args{depth}",
-		    "log(p)=$log_proba",
-		    "proba=$proba"
-		  ), "\n" if ($main::verbose >= 6);
+# 	warn join ( "\t", 
+# 		    "Hypergeometric", 
+# 		    "m=$m",
+# 		    "w=$w",
+# 		    "n=$n",
+# 		    "k=$k",
+# 		    "i=$i",
+# 		    "to=$to",
+# 		    "depth=$args{depth}",
+# 		    "log(p)=$log_proba",
+# 		    "proba=$proba"
+# 		  ), "\n" if ($main::verbose >= 6);
 	last if (($proba == $last_proba) && ($proba >0)); ### beyond precision limit, it is worthless adding more elements
     }
 
     $proba = &min($proba, 1); ### floating point calculation errors
 
-    warn join ( "\t", 
-		"Hypergeometric", 
-		"m=$m",
-		"w=$w",
-		"n=$n",
-		"k=$k",
-		"x=$x",
-		"to=$to",
-		"depth=$args{depth}",
-		"log(p)=$log_proba",
-		"proba=$proba"		    
-	      ), "\n" if ($main::verbose >= 6);
+#     warn join ( "\t", 
+# 		"Hypergeometric", 
+# 		"m=$m",
+# 		"w=$w",
+# 		"n=$n",
+# 		"k=$k",
+# 		"x=$x",
+# 		"to=$to",
+# 		"depth=$args{depth}",
+# 		"log(p)=$log_proba",
+# 		"proba=$proba"		    
+# 	      ), "\n" if ($main::verbose >= 6);
 
 #    my $proba = exp($log_proba);
     return($proba);
