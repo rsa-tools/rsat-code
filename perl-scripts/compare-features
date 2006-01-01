@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: compare-features,v 1.12 2005/08/16 20:58:23 jvanheld Exp $
+# $Id: compare-features,v 1.13 2006/01/01 22:37:53 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -930,7 +930,7 @@ sub Validation {
 #    $field_description{} = "";
     print $out "; VALIDATION STATISTICS", "\n";
     print $out ";\n";
-    print $out ";\tField descrptions\n";
+    print $out ";\tField descriptions\n";
     foreach my $field (@selected_fields) {
 	print $out  join ("\t", ";", $field, $field_description{$field}), "\n";
     }
