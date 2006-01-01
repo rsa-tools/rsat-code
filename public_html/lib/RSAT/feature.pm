@@ -231,8 +231,16 @@ specified format.
 =cut
 sub to_text {
     my ($self, $format, $null) = @_;
-
+    $null = ""
+	unless (defined($null));
+    
     my @cols = @{$columns{$format}};
+
+    ## Fill missing attributes depending on the format
+    if ($format eq "gff") {
+	my $feature_name = $self->get_attribute("source");
+	$self->set_attribute("feature_name", $feature_name);
+    }
 
     ## Index column number by contents
     my ${col_index} = ();
@@ -272,15 +280,15 @@ sub to_text {
     my @strands = @{$strands{$format}};
     my $strand = $self->get_attribute("strand");
     my $f = $col_index{"strand"};
-    my $s = $strand_index{$strand};
+    my $s = $strand_index{$strand} || 2;
     $fields[$f] = $strands[$s];
-#    die join( "\t", "f=$f", "s=$s", $strands[$s], "field=$fields[$f]");
+    &RSAT::message::Debug( "strand", $strand, "f=$f", "s=$s", $strands[$s], "field=$fields[$f]") if ($main::verbose >= 0);
 
     ## Generate the row to be printed
     my $row = join ("\t", @fields);
     $row .= "\n";
 
-    warn (join "\t", "printing in format ", $format, $row) if ($main::verbose >= 10);
+#    &RSAT::message::Debig ("printing in format ", $format, $row) if ($main::verbose >= 10);
 
     return $row;
 }

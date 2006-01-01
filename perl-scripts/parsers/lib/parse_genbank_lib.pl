@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank_lib.pl,v 1.19 2005/06/21 18:57:17 rsat Exp $
+# $Id: parse_genbank_lib.pl,v 1.20 2006/01/01 22:28:14 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -188,7 +188,7 @@ sub ParseGenbankFile {
 	if  ($line =~ /^LOCUS/) {
 	    #### new contig
 	    @fields = split /\s+/, $line;
-	    warn join ("\t", "; New contig", $line), "\n" if ($main::verbose >= 1);
+	    &RSAT::message::Info(join("\t", "; New contig", $line)) if ($main::verbose >= 1);
 	    my $contig_name = $fields[1];
 	    my $length = $fields[2];
 	    my $type = $fields[4];      #### DNA or peptide
@@ -210,7 +210,8 @@ sub ParseGenbankFile {
 	    #### base count
 	    #### currently ignored
 	    
-	    #### read the full sequence
+	    ################################################################
+	    #### read the full sequence (at the end of the contig)
 	} elsif  ($line =~ /^ORIGIN/) {
 	    warn "; Reading sequence\n" if ($main::verbose >= 1);
 	    $in_features = 0;
@@ -232,7 +233,7 @@ sub ParseGenbankFile {
 		$current_contig->set_attribute("seq_dir", $args{seq_dir});
 		$current_contig->set_attribute("file", $seq_file);
 		
-		&RSAT::message::Debug ("Contig sequence file", $current_contig, $contig_id, $seq_file) if ($main::verbose >= 0);
+		&RSAT::message::Debug ("Contig sequence file", $current_contig, $contig_id, $seq_file) if ($main::verbose >= 5);
 		
 		warn ("; Storing sequence ",
 		      $current_contig->get_attribute("id"), 
@@ -271,6 +272,7 @@ sub ParseGenbankFile {
 		}
 	    }
 	
+	    ################################################################
 	    #### new feature
 	} elsif ($line =~ /^ {5}(\S+)\s+/) {
 
@@ -300,7 +302,7 @@ sub ParseGenbankFile {
 	    
 	    #### create an object for the new feature
 	    if ($features_to_parse{$feature_type}) {
-		warn join "\t", $l, "new feature", $feature_type, $position, "\n" if ($main::verbose >= 2);
+		&RSAT::message::Debug($l, "new feature", $feature_type, $position) if ($main::verbose >= 3);
 		
 		if ($feature_type eq "gene") {
 		    $holder = $genes;
@@ -324,7 +326,7 @@ sub ParseGenbankFile {
 		    $holder = $features;
 		}
 		$current_feature = $holder->new_object();
-
+		
 		$current_feature->set_attribute("type",$feature_type);
 		unless ($feature_type eq "source") {
 		    $current_feature->set_attribute("organism",$organism_name);
@@ -353,13 +355,13 @@ sub ParseGenbankFile {
 		    
 		    ## Link the current feature to its parent gene
 		    if ($last_gene) {
-			my $gene_id =  $last_gene->get_attribute("id");
-			$current_feature->set_attribute("gene_id", $gene_id);
+			my $last_gene_id =  $last_gene->get_attribute("id");
+			$current_feature->set_attribute("gene_id", $last_gene_id);
 			
-			warn join ("\t", "feature", $current_feature->get_attribute("id"),
-				   "parent gene", $last_gene->get_attribute("id"),
-				   "gene_id", $gene_id,
-				   ), "\n"if ($main::verbose >= 5);
+#			&RSAT::message::Debug("\t", "feature", $current_feature->get_attribute("id"),
+#				   "parent gene", $last_gene->get_attribute("id"),
+#				   "gene_id", $last_gene_id,
+#				  ), "\n"if ($main::verbose >= 5);
 
 			
 			#### set the type of the last gene to the
@@ -377,7 +379,7 @@ sub ParseGenbankFile {
 		
 		## Other feature types are currently ignored
 	    } else {
-		warn join "\t", $l, "ignoring feature", $feature_type, $position, "\n" if ($main::verbose >= 2);
+		&RSAT::message::Info(join("\t", $l, "Ignoring feature", $feature_type, $position)) if ($main::verbose >= 2);
 		undef($current_feature);
 	    }
 	    
@@ -389,7 +391,7 @@ sub ParseGenbankFile {
 	    ### - followed by a slash (/), 
 	    ### - followed by a word (the name of the attribute), 
 	    ### - followed by the attribute value
-
+	    
 	} elsif ($line =~ /^ {21}\/(\S+)=/) {
 	    $attribute_type=$1;
 	    $attribute_value=&trim("$'");
@@ -402,7 +404,7 @@ sub ParseGenbankFile {
 			$line = &trim($line);
 			$attribute_value .= " ";
 			$attribute_value .= &trim($line);
-			warn join ("\t", $l, "Collecting string attribute", $attribute_type, $attribute_value), "\n" if ($main::verbose >= 10);
+#			&RSAT::message::Debug("\t", $l, "Collecting string attribute", $attribute_type, $attribute_value), "\n" if ($main::verbose >= 10);
 		    } until ($line =~ /\"$/);
 		}
 		$attribute_value =~ s/^\"//;
@@ -410,9 +412,26 @@ sub ParseGenbankFile {
 	    }
 	    if ($current_feature) {
 		$current_feature->new_attribute_value($attribute_type, $attribute_value);
-		warn join "\t", $l, "\tadding attribute", $attribute_type, $attribute_value, "\n" if ($main::verbose >=3);
+#		&RSAT::message::Debug( "\t", $l, "\tadding attribute", $attribute_type, $attribute_value) if ($main::verbose >=3);
 		
-		
+
+		## Detect GeneID
+		if (($attribute_type eq "db_xref") && ($attribute_value =~ /^GeneID:(\d+)/i)){
+		    my $GeneID = $1;
+		    if ($GeneID) {
+			$current_feature->set_attribute("GeneID", $GeneID);
+			&RSAT::message::Warning(join("\t", "Assigning GeneID",$GeneID,
+						     "to feature", $current_feature->get_attribute("id"),
+						     "type",  $current_feature->get_attribute("type"),
+						    )) if ($main::verbose >= 5);
+			if (($current_feature->get_attribute("type") eq "gene") ) {
+			    $current_feature->ReplaceID("GeneID");
+			}
+		    } else {
+			&RSAT::message::Warning(join("\t", "Empty GeneID for feature", $current_feature->get_attribute("id")));
+		    }
+		}
+
 		#### detect taxid
 		if (($current_feature->get_attribute("type") eq "source") ) {
 		    if (($attribute_type eq "db_xref") && ($attribute_value =~ /taxon:(\d+)/)){
@@ -438,29 +457,84 @@ sub ParseGenbankFile {
 		}
 		
 	    } else {
-		warn join "\t", $l, "\tignoring attibute", $attribute_type, $attribute_value, "\n" if ($main::verbose >=5);
+		&RSAT::message::Warning(join("\t", $l, "\tignoring attibute", $attribute_type, $attribute_value)) if ($main::verbose >=5);
 	    }
 	    
 	    
 	} else {
-	    warn ("file ".$short_name{$org}."\tline $l\tnot parsed\t$line\n") if ($main::verbose >= 2);
+	    &RSAT::message::Warning(join("\t", "file ".$short_name{$org}."line",$l,"tnot parsed",$line)) if ($main::verbose >= 2);
 	}
     }
     close GBK;
     
     ################################################################
-    #### this only applies to mRNA and CDS because the other features
-    #### (gene, tRNA, rRNA, misc_RNA, misc_feature) have no IDs in Genbank flat files !!!!
+    #### this only applies to mRNA and CDS 
+#    if ($main::data_source eq "NCBI") {
+#	foreach my $object ($mRNAs->get_objects(),
+#			    $CDSs->get_objects()
+#			   ) {
+#	    $object->UseGenbankGIasID();
+#	}
+#    }
+
+#    ## For Genes, use the GeneID as unique identifier
+#    foreach my $object ($genes->get_objects()) {
+#	$object->UseGeneIDasID();
+#    }
     
-    if ($main::data_source eq "NCBI") {
-	foreach my $object ($mRNAs->get_objects(),
-			    $CDSs->get_objects()
-			   ) {
-	    $object->UseGenbankGIasID();
+
+#     ## For CDS, use the locus_tag or the  protein_id as unique identifier
+#     &RSAT::message::TimeWarn("Replacing CDS IDs by locus_tag or protein_id") if ($main::verbose >= 1);
+#     foreach my $object ($CDSs->get_objects()) {
+# 	if ($object->get_attribute("locus_tag")) {
+# 	    $object->ReplaceID("locus_tag");
+# 	} else {
+# 	    $object->ReplaceID("protein_id");
+# 	}
+#     }
+
+#     ## For mRNA, use the transcript_id as unique identifier
+#     &RSAT::message::TimeWarn("Replacing mRNA IDs by locus_tag or transcript_id") if ($main::verbose >= 1);
+#     foreach my $object ($mRNAs->get_objects()) {
+# 	if ($object->get_attribute("locus_tag")) {
+# 	    $object->ReplaceID("locus_tag");
+# 	} else {
+# 	    $object->ReplaceID("transcript_id");
+# 	}
+#     }
+    
+    
+
+    ## Update name index for genes (since the original IDs have been changed for GeneIDs)
+    $genes->index_ids();
+    $genes->index_names();
+
+    ## Use the locus_tag as unique identifier, and the GeneID as synonym
+    foreach my $holder ($genes, $CDSs, $mRNAs, $scRNAs, $tRNAs, $rRNAs, $misc_RNAs) { 
+	&RSAT::message::TimeWarn("Replacing IDs by locus_tag for class", $holder->get_object_type()) if ($main::verbose >= 1);
+	foreach my $object ($holder->get_objects()) {
+	    if ($object->get_attribute("locus_tag")) {
+		$object->ReplaceID("locus_tag");
+	    } else {
+		&ErrorMessage(join("\t","Feature", $object->get_attribute("id"), "has no locus_tag"));
+	    }
 	}
     }
-    &ParseFeatureNames($genes, $mRNAs, $scRNAs, $CDSs);
-    &ParseFeatureNames($CDSs);
+
+
+
+
+    ## DEBUG NOTE: ParseFeatureNames and CheckObjectNames are
+    ## apparently partly redundant. I should check and remove
+    ## redundancy
+
+    ## Parse feature names
+    &ParseFeatureNames($genes, $mRNAs, $scRNAs, $tRNAs, $rRNAs, $CDSs);
+
+    ## Check object for all the parsed features, before building the RSAT features from it
+    &CheckObjectNames($genes, $mRNAs, $scRNAs, $tRNAs, $rRNAs, $misc_RNAs, $misc_features, $CDSs);
+
+    ## parse Gene Ontology terms
     &ParseGO($CDSs);
     
     return ($file_description, $sequence);
@@ -506,18 +580,14 @@ formats (synonyms, locus_tag, Accession, ...).
 
 sub ParseFeatureNames {
     my (@class_holders) = @_;
-    warn ("; ",
-	  &AlphaDate(),
-	  "\tGuessing feature synonyms\n")
-	if ($verbose >= 1);
     
     foreach my $class_holder (@class_holders) {
-
-	warn "; Adding names to features of type ", $class_holder->get_object_type(), "\n"
-	    if ($main::verbose >= 1);
+	&RSAT::message::TimeWarn("Parsing feature names for class", $class_holder->get_object_type())
+	    if ($verbose >= 1);
 
 	foreach my $feature ($class_holder->get_objects()) {
 	    
+	    ################################################################
 	    ## Attribute "synonym" (e.g. C.elegans genome version July 2003)
 	    foreach my $synonym_line ($feature->get_attribute("synonym")) {
 		my @synonyms = split /\,\s+/, $synonym_line;
@@ -527,30 +597,34 @@ sub ParseFeatureNames {
 		}
 	    }
 
+	    ################################################################
 	    ## Attribute "gene"
 	    my @genes = $feature->get_attribute("gene");
 	    foreach my $gene_name (@genes) {
 		$new_name = &trim($gene_name);
-		warn join( "\t", "Adding gene name as name to feature", 
+		&RSAT::message::Debug( "\t", "Adding gene name as name to feature", 
 			   $feature->get_attribute("id"), 
 			   $new_name
 			   ), "\n" if ($verbose >= 4);
 		$feature->push_attribute("names", $new_name);
 	    }
-	    
-	    
+
+
+	    ################################################################
 	    ## Attribute "locus_tag"
 	    my @locus_tags = $feature->get_attribute("locus_tag");
 	    foreach my $locus_tag (@locus_tags) {
-		$new_name = &trim($locus_tag);
-		warn join( "\t", "Adding locus tag as name to feature", 
+		$locus_tag = &trim($locus_tag);
+		&RSAT::message::Debug( "\t", "Adding locus tag as name to feature", 
 			   $feature->get_attribute("id"), 
-			   $new_name
-			   ), "\n" if ($verbose >= 4);
-		$feature->push_attribute("names", $new_name);
+			   $locus_tag
+			 ), "\n" if ($verbose >= 4);
+		$feature->push_attribute("names", $locus_tag);
 	    }
-	    
-	    ## Some types of notes
+
+
+	    ################################################################
+	    ## Some types of notes contain identifiers or synonyms
 	    my @notes = $feature->get_attribute("note");
 	    foreach my $note (@notes) {
 		$note = &trim($note); ### remove leading and trailing spaces
@@ -562,7 +636,7 @@ sub ParseFeatureNames {
 		    my @synonyms = split /, /, $synonyms;
 		    foreach my $new_name (@synonyms) {
 			$new_name = &trim($new_name);
-			warn join( "\t", "Adding synonym to feature", 
+			&RSAT::message::Debug( "\t", "Adding synonym to feature", 
 				   $feature->get_attribute("id"), 
 				   $new_name
 				   ), "\n" if ($verbose >= 4);
@@ -577,7 +651,7 @@ sub ParseFeatureNames {
 		    my @synonyms = split /, /, $synonyms;
 		    foreach my $new_name (@synonyms) {
 			$new_name = &trim($new_name);
-			warn join( "\t", "Adding synonym to feature", 
+			&RSAT::message::Debug( "\t", "Adding synonym to feature", 
 				   $feature->get_attribute("id"), 
 				   $new_name
 				   ), "\n" if ($verbose >= 4);
@@ -597,7 +671,7 @@ sub ParseFeatureNames {
 			    $name = &RSAT::util::trim($name);
 			    if (($name =~ /^(PF\S+)/) || ($name =~ /^(MAL\S+)/)) {
 				$feature->push_attribute("names", $1);
-# 				warn join ("\t", 
+# 				&RSAT::message::Debug ("\t", 
 # 					   "Plasmodium_falciparum", 
 # 					   $feature->get_attribute("contig"), 
 # 					   $feature->get_attribute("id"), 
@@ -608,20 +682,20 @@ sub ParseFeatureNames {
 		    }
 #		    die "Specific treatment for Plasmodium_falciparum";
 
+
 		} elsif (
-#		($note =~ /^locus_tag\: ([\w_\-\.]+)/i)  ||
-			 ($note =~ /^locus_tag\: (\S+)/i)  ||
-#		($note =~ /^locus_tag\: ([a-z0-9_\-\.]+)/i)  ||
-			 ($note =~ /^Accession ([\w_\-\.]+)/) ||
-			 ($note =~ /^(\S+)\,\s+len:/)
-			 ){
+		    ## For some genomes, the locus_tag, Accession or other IDs have been annotated as "note" !
+		    ($note =~ /^locus_tag\: (\S+)/i)  ||
+		    ($note =~ /^Accession ([\w_\-\.]+)/) ||
+		    ($note =~ /^(\S+)\,\s+len:/)
+		){
 		    
 		    $new_name = $1;
 		    $new_name =~ s/\;$//;
 		    $new_name =~ s/\:$//;
 		    
 		    #### add the new name
-		    warn join( "\t", "Adding name to feature", 
+		    &RSAT::message::Debug( "\t", "Adding name to feature", 
 			       $feature->get_attribute("id"), 
 			       $new_name
 			       ), "\n" if ($verbose >= 4);
@@ -630,17 +704,29 @@ sub ParseFeatureNames {
 		
 	    }	
 	    
-	    warn join ("\t", "names done",
-		       $class_holder->get_object_type(),
-		       $feature->get_attribute("id"),
-		       $feature->get_attribute('gene_id'),
-		       $feature->get_attribute("type"),
-		       join (":", $feature->get_attribute("names")),
-		       ), "\n" if ($main::verbose >= 10);
+	    ## Add GeneId to the list of supported names
+	    my $GeneID = $feature->get_attribute("GeneID");
+	    if ($GeneID) {
+		$feature->push_attribute("names", $GeneID);
+	    }
+	    
+#	    &RSAT::message::Debug ("\t", "names done",
+#				   $class_holder->get_object_type(),
+#				   $feature->get_attribute("id"),
+#				   $feature->get_attribute('gene_id'),
+#				   $feature->get_attribute("type"),
+#				   join (":", $feature->get_attribute("names")),
+#				  ), "\n" if ($main::verbose >= 10);
+	    
 	}
 	
+
     }
 }
+
+
+
+
 
 ################################################################
 
@@ -648,37 +734,30 @@ sub ParseFeatureNames {
 
 =item  CreateGenbankFeatures()
 
-After having parsed genes, CDS and RNA from Genbank, create one
-feature for each CDS and another one for each RNA. This feature
-summarizes information (only retins selected fields) and reformats it
-(multiple gene names) for ease of manipulation.
+After having features of different types from Genbank, create
+RSAT-formatted features for specific types (CDS, mRNA, tRNA, ...).
 
 =cut
 sub CreateGenbankFeatures {
     my ($features, $genes, $mRNAs, $scRNA, $tRNAs, $rRNAs, $misc_RNAs, $misc_features, $CDSs, $sources, $contigs) = @_;
-
-    #### initialize parameters
-    my $xref_as_id = 1;
-
-
-    #### warning message
-    warn ("; ",
-	  &AlphaDate(),
-	  "\tChecking features found in Genbank file\n")
-	if ($verbose >= 1);
-
-
-
-
+    
+    ## Index gene names
+#    &RSAT::message::TimeWarn("Indexing gene names") if ($main::verbose >= 1);
+#    $genes->index_ids();    
+#    $genes->index_names();    
+    
+    
     #### extract taxid for each source object
     foreach my $source ($sources->get_objects()) {
 	$source->get_taxid();
     }
-    
+
     #### Create features for contig limits
+    &RSAT::message::TimeWarn("Creating features for contig limits")
+	if ($main::verbose >= 3);
     foreach my $contig ($contigs->get_objects()) {
 	my $contig_length = $contig->get_attribute("length");
-
+	
 #  	## Contig start position
 #  	my $start_feature = $features->new_object(%args);
 #  	$start_feature->set_attribute("type","SEQ_START");
@@ -690,7 +769,7 @@ sub CreateGenbankFeatures {
 #  	$start_feature->set_attribute("start_pos",1);
 #  	$start_feature->set_attribute("end_pos",1);
 #  	$start_feature->set_attribute("strand","DR");
-
+	
 	## Contig start position
 	my $end_feature = $features->new_object(%args);
 	$end_feature->set_attribute("type","SEQ_END");
@@ -704,105 +783,134 @@ sub CreateGenbankFeatures {
 	$end_feature->set_attribute("strand","DR");
 	
     }
+
+    ################################################################
+    ## Create unified features
+    &RSAT::message::TimeWarn("Creating unified features from parsed features")
+	if ($main::verbose >= 1);
     
-    warn "; Creating unified features from different feature types (CDS, mRNA, tRNA, ...)\n" if ($verbose >= 1);
-    foreach my $parsed_feature ($CDSs->get_objects(),
+    foreach my $parent_feature ($CDSs->get_objects(),
 				$mRNAs->get_objects(),
 				$scRNAs->get_objects(),
 				$tRNAs->get_objects(),
 				$rRNAs->get_objects(),
-				$misc_RNAs->get_objects(),
-				$misc_features->get_objects()
-				) {
-
-	
-	## Collect some attributes of the parsed feature
-	my @products = $parsed_feature->get_attribute("product");
-	my @xrefs = $parsed_feature->get_attribute("db_xref");
-
+#				$misc_RNAs->get_objects(),
+#				$misc_features->get_objects()
+			       ) {
+	&RSAT::message::TimeWarn(join ("\t", "Creating feature for parsed feature",
+				       $parent_feature->get_attribute("id"),
+				       "type", $parent_feature->get_attribute("type"),
+				      ))
+	    if ($main::verbose >= 3);
 
 	## Create a new feature from the parsed feature
 	$created_feature = $features->new_object(%args);
-	
-	$created_feature->set_attribute("type",$parsed_feature->get_attribute("type"));
-	$created_feature->set_attribute("organism",$parsed_feature->get_attribute("organism"));
-	$created_feature->set_attribute("contig",$parsed_feature->get_attribute("contig"));
-	$created_feature->set_attribute("chrom_position",$parsed_feature->get_attribute("chrom_position"));
-	$created_feature->set_attribute("start_pos",$parsed_feature->get_attribute("start_pos"));
-	$created_feature->set_attribute("end_pos",$parsed_feature->get_attribute("end_pos"));
-	$created_feature->set_attribute("strand",$parsed_feature->get_attribute("strand"));
-	
-	warn join ("\t", "feature", 
+
+	$created_feature->set_attribute("type",$parent_feature->get_attribute("type"));
+	$created_feature->set_attribute("organism",$parent_feature->get_attribute("organism"));
+	$created_feature->set_attribute("contig",$parent_feature->get_attribute("contig"));
+	$created_feature->set_attribute("chrom_position",$parent_feature->get_attribute("chrom_position"));
+	$created_feature->set_attribute("start_pos",$parent_feature->get_attribute("start_pos"));
+	$created_feature->set_attribute("end_pos",$parent_feature->get_attribute("end_pos"));
+	$created_feature->set_attribute("strand",$parent_feature->get_attribute("strand"));
+
+	&RSAT::message::Debug ("\t", "feature", 
 		   $created_feature->get_attribute("id"),
 		   "type", $created_feature->get_attribute("type"),
 		   "organism", $created_feature->get_attribute("organism"),
-		   ), "\n" if ($verbose >= 2);
+		  ), "\n" if ($verbose >= 2);
 
 
-	################################################################
-	#### Define names for the new feature
-	warn join ("\t",  "feature",		   
-		   $created_feature->get_attribute("id"),
-		   "Adding gene names", 
-		   ), "\n" if ($verbose >= 5);
-	my $gene_name = "";
-	my $gene_id = "";
-	my $gene = "";
-	if ($parsed_feature->get_attribute("gene_id")) {
-	    ## Primary gene name is the one documented as "gene" attribute in the feature iself
-	    $gene_name = $parsed_feature->get_attribute("gene");
-	    if ($gene_name) {
-		$created_feature->push_attribute("names",$gene_name);
-	    }
+# 	################################################################
+# 	#### Define names for the new feature
+# 	&RSAT::message::Debug ("feature",		   
+# 			       $created_feature->get_attribute("id"),
+# 			       "Adding gene names", 
+# 			      ), "\n" if ($verbose >= 4);
+# 	my $gene_name = "";
+# 	my $ParsedGeneID = $parent_feature->get_attribute("GeneID");
+# 	my $gene = "";
+# 	if ($ParsedGeneID) {
+# 	    ## Primary gene name is the one documented as "gene" attribute in the feature iself
+# 	    $gene_name = $parent_feature->get_attribute("gene");
+# 	    if ($gene_name) {
+# 		$created_feature->force_attribute("name",$gene_name);
+# 		$created_feature->push_attribute("names",$gene_name);
+# 	    }
 	    
-	    ## Identify the parent gene
-	    $gene_id = $parsed_feature->get_attribute("gene_id");
-	    next unless ($gene_id);
-	    next if ($gene_id eq $main::null);
-	    $gene = $genes->get_object($gene_id);
+# 	    ## Identify the parent gene
+# 	    $ParsedGeneID = $parent_feature->get_attribute("GeneID");
+# 	    &RSAT::message::Debug("feature", 
+# 				  $parent_feature->get_attribute("id"), 
+# 				  "type", $parent_feature->get_attribute("type"),
+# 				  "GeneID",$ParsedGeneID,				
+# 				 ) if ($main::verbose >= 4);
+# 	    unless ($ParsedGeneID) {
+# 		&RSAT::message::Warning(join("\t", "There is no GeneID for feature", 
+# 					     $parent_feature->get_attribute("id"), 
+# 					     "type", $parent_feature->get_attribute("type")));
+# 		next;
+# 	    }
+# 	    if ($ParsedGeneID eq $main::null) {
+# 		&RSAT::message::Warning(join("\t", "GeneID is null for feature", 
+# 					     $parent_feature->get_attribute("id"), 
+# 					     "type", $parent_feature->get_attribute("type")));
+# 		next;
+# 	    }
+	    
+# 	    ## Add parent gene names to the current feature
+# 	    $gene = $genes->get_object($ParsedGeneID);
+# 	    if ($gene) {
+# 		&RSAT::message::Debug("Feature parent gene", $created_feature->get_attribute("id"),
+# 				      "gene name", $gene_name,
+# 				      "GeneID", $ParsedGeneID,
+# 				      "gene ID", $gene->get_attribute("id"),
+# 				     ), "\n" if ($verbose >= 10);
 
-	    ## Add parent gene names to the current feature
-	    if ($gene) {
-		warn join ("\t", "feature parent gene", $created_feature->get_attribute("id"),
-			   "gene name", $gene_name,
-			   "gene_id", $gene_id,
-			   "gene ID", $gene->get_attribute("id"),
-			   ), "\n" if ($verbose >= 5);
-		#### use gene name as primary name for the feature
-		$created_feature->set_attribute("name", $gene->get_name());
-		$created_feature->push_attribute("names", $gene->get_name());
-		
-	    	#### accept all gene names for the new feature
-		foreach my $name ($gene->get_attribute("names")) {
-		    $created_feature->push_attribute("names",$name) unless ($names{$name});
-		}
-		
-	    } else {
-		&ErrorMessage( "Cannot identify gene $gene_id for feature ", $parsed_feature, "\n");
-	    }
-	}
+# 		#### use gene name as primary name for the feature
+# 		my $gene_name = $gene->get_name();
+# 		if (($gene_name) && ($gene_name ne $null)) {
+# 		    $created_feature->force_attribute("name", $gene_name);
+# 		    $created_feature->push_attribute("names", $gene_name);
+# 		}
 
-	#### add names from the parsed feature
-	warn join ("\t",  "feature",		   
-		   $created_feature->get_attribute("id"),
-		   "Adding names from original feature", $parsed_feature->get_attribute("id")
-		   ), "\n" if ($verbose >= 5);
-	foreach my $name ($parsed_feature->get_attribute("names")) {
-	    $created_feature->push_attribute("names",$name) unless ($name eq $gene_name);
-	}
-	
+# 	    	#### accept all gene names for the new feature
+# 		foreach my $name ($gene->get_attribute("names")) {
+# 		    $created_feature->push_attribute("names",$name) unless ($names{$name});
+# 		}
+		
+# 	    } else {
+# 		&RSAT::message::Warning(join("\t", "Cannot identify gene",$ParsedGeneID,
+# 					     "for feature", $parent_feature->get_attribute("id"),
+# 					     "type", $parent_feature->get_attribute("type")));
+# 		next;
+# 	    }
+# 	}
+
+
 	################################################################
-	#### cross-references
-	warn join ("\t",  "feature",		   
+	#### Inherit names from the parent feature
+	foreach my $name ($parent_feature->get_attribute("names")) {
+	    $created_feature->push_attribute("names",$name);
+	}
+	&RSAT::message::Debug ("\t",  "feature",		   
+			       $created_feature->get_attribute("id"),
+			       "Added names from original feature", 
+			       $parent_feature->get_attribute("id"),
+			       join(";", $parent_feature->get_attribute("names"))
+			      ) if ($verbose >= 5);
+
+	################################################################
+	#### Inherit cross-references from parent feature
+	&RSAT::message::Debug ("\t",  "feature",		   
 		   $created_feature->get_attribute("id"),
 		   "Cross references", 
 		   ), "\n" if ($verbose >= 5);
-	local $gi = "";
-	local $GeneID = "";
-	local $LocusID = "";
-	local $locus_tag = "";
-	local @preferred_cross_ids = qw (locus_tag GeneID LocusID gi);
-
+	my $gi;
+	my $GeneID;
+	my $LocusID;
+	my $locus_tag;
+	my @xrefs = $parent_feature->get_attribute("db_xrefs");
 	foreach my $xref (@xrefs) {
 	    #### extract GI from cross-references
 	    if ($xref =~ /GI:/) {
@@ -813,6 +921,7 @@ sub CreateGenbankFeatures {
 
 	    } elsif ($xref =~ /GeneID:/) {
 		$GeneID = $';  ##'
+		$created_feature->set_attribute("GeneID", $GeneID); 
 		#### accept GeneID as synonym
 		$created_feature->push_attribute("names", $GeneID); 
 
@@ -825,151 +934,137 @@ sub CreateGenbankFeatures {
 		## Locus tags were previously annotated as cross-references rather than direct attributes
 		$locus_tag = $';  ##'
 		#### accept locus_tag as synonym
+		$created_feature->push_attribute("locus_tags", $locus_tag); 
 		$created_feature->push_attribute("names", $locus_tag); 
-
 	    } 
 	}
 	
-	warn join ("\t", ";", 
-		   "parsed feature", $parsed_feature->get_attribute("id"), 
-		   "GI=$gi", 
-		   "product=$products[0]",
-		   ), "\n" if ($verbose >= 5);
+	&RSAT::message::Debug ("\t", ";", 
+			       "parsed feature", $parent_feature->get_attribute("id"), 
+			       "GI=$gi", 
+			       "locus_tag=$gi", 
+			       "LocusID=$gi", 
+			       "product=$products[0]",
+			      ), "\n" if ($verbose >= 5);
 	
 	################################################################
-	## Locus tag
-	my @locus_tags = $parsed_feature->get_attribute("locus_tag");
-
-	warn join( "\t",
-		  "parsed feature", $parsed_feature->get_attribute("id"), 
-		  "locus tag", join ";", @locus_tags), "\n" if ($main::verbose >= 5);
-
+	## Inherit locus tag from parent feature
+	my @locus_tags = $parent_feature->get_attribute("locus_tag");
+	&RSAT::message::Debug( "\t",
+			       "parsed feature", $parent_feature->get_attribute("id"), 
+			       "locus tag", join ";", @locus_tags) if ($main::verbose >= 5);
+	
 	## Add locus tags to the list of synonyms
 	foreach my $locus_tag (@locus_tags) {
-	    warn join ("\t", "Feature", $created_feature->get_attribute("id"),
-		       "Adding locus tag as synonym", $locus_tag),  "\n" 
+	    &RSAT::message::Debug ("\t", "Feature", $created_feature->get_attribute("id"),
+				   "Adding locus tag as synonym", $locus_tag),  "\n" 
 			   if ($main::verbose >= 5);
+	    $created_feature->push_attribute("locus_tags", $locus_tag); 
 	    $created_feature->push_attribute("names", $locus_tag); 
 	}
-
-	## Check the number of locus tags
-	if (scalar(@locus_tags) > 1) {
-	    &ErrorMessage("There are several locus tags associated to",  
-			  $parsed_feature->get_attribute("locus_tag"), "\t", 
-			  join (";", @locus_tags));
-	} elsif (scalar(@locus_tags) == 1) {
-	    $locus_tag = $locus_tags[0];
-	    ## Use locus tag as identifier
-	    $created_feature->force_attribute("id",$locus_tag);
-	    $parsed_feature->force_attribute("id",$locus_tag);
-	}
 	
-
-
-	################################################################
-	## Use some cross-reference as main identifier for the created feature
-
-	## Use selected cross-references as identifier
-	if ($xref_as_id) {
-	    my $cross_id_found = 0;
-	    foreach my $cross_id (@preferred_cross_ids) {
-		if ($$cross_id) {
-		    warn join ("\t", 
-			       "Using", $cross_id, $$cross_id, 
-			       "as main identifier for feature", 
-			       $created_feature->get_attribute("id"),
-			       $products[0]), "\n" if ($main::verbose >= 3);
-		    
-		    $created_feature->force_attribute("id", $$cross_id);
-		    $cross_id_found = 1;
-		    last;
-		}
-	    }
-	    unless ($cross_id_found) {
-		&ErrorMessage("; Error\tfeature ".$created_feature->get_attribute("id")." has no valid cross-reference to use as main ID.\n"); 
-	    }
-	}
-
 	
 	################################################################
-	#### define a single name  (take the first value in the name list)
+	#### Define a single name  (take the first value in the name list)
+	$single_name = 1;
 	if ($single_name) {
-	    if ($name = $created_feature->get_name()) {
+	    my ($name) = $created_feature->get_attribute("names"); ## Use first name as primary
+	    if ($name) {
 		$created_feature->force_attribute("name",$name);
 	    } else {
 		$created_feature->force_attribute("name",$created_feature->get_id());
 	    }
-	    warn join ("\t", "feature",		   
+	    &RSAT::message::Debug ("\t", "feature",		   
 		       $created_feature->get_attribute("id"),
 		       "single name", $name,, 
 		       ), "\n" if ($verbose >= 5);
 	}
-	
+
+
 	################################################################
 	#### create a description for the new feature
-	if (($products[0]) && ($products[0] ne $main::null)){
-	    $created_feature->set_attribute("description",$products[0]);
+
+	## Use parent feature description
+	my $description = $parent_feature->get_attribute("description");
+	if (($description) && ($description ne $null)) {
+	    $created_feature->set_attribute("description", $description);
 	} else {
-	
-	    #### if there is no product field, use the parsed feature note
-	    my @feature_notes = $parsed_feature->get_attribute("note");
-	    if ($feature_notes[0]) {
-		$created_feature->set_attribute("description",$feature_notes[0]);
+	    ## Use the parent feature product field if any
+	    my @products = $parent_feature->get_attribute("product");
+	    if (($products[0]) && ($products[0] ne $main::null)){
+		$created_feature->set_attribute("description",$products[0]);
 	    } else {
-		#### if there is no feature not, use the gene note
-		my @gene_notes = $gene->get_attribute("note");
-		if ($gene_notes[0]) {
-		    $created_feature->set_attribute("description",$gene_notes[0]);
+		#### use the first parsed feature note
+		my @feature_notes = $parent_feature->get_attribute("note");
+		if ($feature_notes[0]) {
+		    $created_feature->set_attribute("description",$feature_notes[0]);
+		} else {
+		    #### if there is no feature note, use the gene note		
+		    my $GeneID = $parent_feature->get_attribute("DeneID");
+		    if (($GeneID) && ($GeneID ne $null)) {
+			my $gene = $genes->get_object("GeneID");
+			my @gene_notes = $gene->get_attribute("note");
+			if ($gene_notes[0]) {
+			    $created_feature->set_attribute("description",$gene_notes[0]);
+			}
+		    }
 		}
 	    }
 	}
-	warn join ("\t", "feature",		   
+	&RSAT::message::Debug ("\t", "feature",		   
 		   $created_feature->get_attribute("id"),
 		   "description", $created_feature->get_attribute("description"), 
 		   ), "\n" if ($verbose >= 5);
 	
 	################################################################
 	#### protein ID (for CDS)
-	if ($parsed_feature->get_attribute("type") eq "CDS") {
-	    my @protein_ids= $parsed_feature->get_attribute("protein_id");
+	if ($parent_feature->get_attribute("type") eq "CDS") {
+	    my @protein_ids= $parent_feature->get_attribute("protein_id");
 	    foreach my $protein_id (@protein_ids) {
 		if (($protein_id) && ($protein_id ne $main::null)){
 		    ### remove the version number
 		    if ($protein_id =~ /(.*)\.\d+$/) {
 			$no_version = $1;
 			$created_feature->push_attribute("names", $no_version);
-			$parsed_feature->push_attribute("names", $no_version);
+			$parent_feature->push_attribute("names", $no_version);
 		    } else {
 			$created_feature->push_attribute("names", $protein_id);
-			$parsed_feature->push_attribute("names", $protein_id);
+			$parent_feature->push_attribute("names", $protein_id);
 		    }
 		}
 	    }
 	
 	################################################################
 	#### transcript ID (for mRNA)
-	} elsif ($parsed_feature->get_attribute("type") eq "mRNA") {
-	    my @transcript_ids= $parsed_feature->get_attribute("transcript_id");
+	} elsif ($parent_feature->get_attribute("type") eq "mRNA") {
+	    my @transcript_ids= $parent_feature->get_attribute("transcript_id");
 	    foreach my $transcript_id (@transcript_ids) {
 		if (($transcript_id) && ($transcript_id ne $main::null)) {
 		    ### remove the version number
 		    if ($transcript_id =~ /(.*)\.\d+$/) {
 			$no_version = $1;
 			$created_feature->push_attribute("names", $no_version);
-			$parsed_feature->push_attribute("names", $no_version);
+			$parent_feature->push_attribute("names", $no_version);
 		    } else {
 			$created_feature->push_attribute("names", $transcript_id);
-			$parsed_feature->push_attribute("names", $transcript_id);
+			$parent_feature->push_attribute("names", $transcript_id);
 		    }
 		}
 	    }
 	}
 
+	
     }
 
-
-    ## Check object for all the parsed features, before building the RSAT features from it
-    &CheckObjectNames($features, $genes, $mRNAs, $scRNAs, $tRNAs, $rRNAs, $misc_RNAs, $misc_features, $CDSs);
+    ## Use locus tag as ID for the created feature
+    &RSAT::message::TimeWarn("Using locus_tag as identifier for the unified features");
+    foreach my $created_feature ($features->get_objects()) {
+	my ($locus_tag) = $created_feature->get_attribute("locus_tags");
+	if (($locus_tag) && ($locus_tag ne $null)) {
+	    $created_feature->set_attribute("locus_tag", $locus_tag);
+	    $created_feature->ReplaceID("locus_tag");
+	}
+    }
 
 }
 
@@ -985,79 +1080,72 @@ same object.
 
 =cut
 sub CheckObjectNames {
-    my ($feature, $genes, $mRNAs, $scRNAs, $tRNAs, $rRNAs, $misc_RNAs, $misc_features, $CDSs) = @_;
+    my (@holders) = @_;
 
 
     ## Each feature inherits the names of its parent gene
-    warn "; Treating object names\n" if ($main::verbose >= 10);
-    foreach my $object (
-			$genes->get_objects(),
-			$mRNAs->get_objects(),
-			$scRNAs->get_objects(),
-			$tRNAs->get_objects(),
-			$rRNAs->get_objects(),
-			$misc_RNAs->get_objects(),
-			$misc_features->get_objects(),
-			$CDSs->get_objects(),
-			$features->get_objects(),
-			) {
-
-	## Make sure that the object has no null name
-	my $primary_given = 0;
-	my $primary_name = $object->get_name();
-	if (($primary_name) && ($primary_name ne $main::null)) {
-	    $primary_given = 1;
-	}
-
-	## The feature attribute "gene" is used as name
-	my $gene_attr = $object->get_attribute("gene");
-	if ($gene_attr) {
-	    #### add gene name to the list of synonyms
-	    $object->push_attribute("names", $gene_attr);
-
-	    unless ($primary_given) {
-		#### define this name as primary name
-		$object->set_attribute("name",  $gene_attr);
-		$primary_given = 1;
-	    }
-	}
-
-	## The feature attribute "locus_tag" is used as name and
-	## becomes primary name if there is no attribute "gene".
-	my @locus_tags = $object->get_attribute("locus_tag");
-	foreach my $locus_tag_attr (@locus_tags) {
-	    #### add locus_tag name to the list of synonyms
-	    $object->push_attribute("names", $locus_tag_attr);
+    foreach my $holder (@holders) {
+	
+	&RSAT::message::TimeWarn("Checking object names for class", $holder->get_object_type()) if ($main::verbose >= 1);
+	foreach my $object ($holder->get_objects()) {
 	    
-	    unless ($primary_given) {
-		#### define this name as primary name
-		$object->set_attribute("name",  $locus_tag_attr);
+	    ## Make sure that the object has no null name
+	    my $primary_given = 0;
+	    my $primary_name = $object->get_name();
+	    if (($primary_name) && ($primary_name ne $main::null)) {
 		$primary_given = 1;
 	    }
-	}
-
-	################################################################
-	#### Add all the names of the parent gene to the current feature
-	my $gene_id = $object->get_attribute("gene_id");
-	if ($gene_id) {
-	    my $gene = $genes->get_object($gene_id);
-	    if ($gene) {
-		foreach my $gene_name ($gene->get_attribute("names")) {
-		    $object->push_attribute("names", $gene_name);
+	    
+	    ## The feature attribute "gene" is used as name
+	    my $gene_attr = $object->get_attribute("gene");
+	    if ($gene_attr) {
+		#### add gene name to the list of synonyms
+		$object->push_attribute("names", $gene_attr);
+		
+		unless ($primary_given) {
+		    #### define this name as primary name
+		    $object->set_attribute("name",  $gene_attr);
+		    $primary_given = 1;
 		}
-	    } else {
-		&ErrorMessage("Cannot identify gene $gene_id for object ", $object, "\n");
 	    }
-	}
+	    
+	    ## The feature attribute "locus_tag" is used as name and
+	    ## becomes primary name if there is no attribute "gene".
+	    my @locus_tags = $object->get_attribute("locus_tag");
+	    foreach my $locus_tag_attr (@locus_tags) {
+		#### add locus_tag name to the list of synonyms
+		$object->push_attribute("names", $locus_tag_attr);
+		
+		unless ($primary_given) {
+		    #### define this name as primary name
+		    $object->set_attribute("name",  $locus_tag_attr);
+		    $primary_given = 1;
+		}
+	    }
+	    
+	    ################################################################
+# 	    #### Add all the names of the parent gene to the current feature
+# 	    my $ParentGeneID = $object->get_attribute("GeneID");
+# 	    if (($ParentGeneID) && ($ParentGeneID ne $null)) {
+# 		my $gene = $genes->get_object($ParentGeneID);
+# 		if ($gene) {
+# 		    foreach my $gene_name ($gene->get_attribute("names")) {
+# 			$object->push_attribute("names", $gene_name);
+# 		    }
+# 		} else {
+# 		    &ErrorMessage("Cannot identify gene $ParentGeneID for object\t", $object->get_attribute("id"), "\n");
+# 		}
+# 	    }
 
-	unless ($primary_given) {
 	    #### use ID as primary name
-	    $object->set_attribute("name",  $object->get_attribute("id"));
-	    $primary_given = 1;
+	    unless ($primary_given) {
+		$object->set_attribute("name",  $object->get_attribute("id"));
+		$primary_given = 1;
+	    }
+	    
+	    ## Make sure that object has no duplicate names
+	    $object->unique_names();
 	}
-
-	## Make sure that object has no duplicate names
-	$object->unique_names();
     }
     
 }

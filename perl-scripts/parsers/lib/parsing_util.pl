@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parsing_util.pl,v 1.19 2005/05/31 10:12:03 rsat Exp $
+# $Id: parsing_util.pl,v 1.20 2006/01/01 22:28:14 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -446,9 +446,7 @@ Parse position string and add the different fields to each object
 sub ParsePositions {
     my ($features) = @_;
 
-    warn ("; ",
-	  &RSAT::util::AlphaDate(),
-	  "\tparsing feature positions\n")
+    &RSAT::message::TimeWarn("Parsing feature positions", $features->get_object_type())
 	if ($verbose >= 1);
 
     foreach my $feature ($features->get_objects()) {

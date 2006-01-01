@@ -198,7 +198,8 @@ use Data::Dumper;
     return @{$class_holder->{_objects}};
   }
   
-  ### index the names for a single object in the class_holder
+  ################################################################
+  ## index the names for a single object in the class_holder
   sub index_object_id {
     my ($class_holder, $object) = @_;
     unless ($id = $object->get_attribute("id")) {
@@ -210,25 +211,25 @@ use Data::Dumper;
 
 
   ################################################################
-  #### index object names for all the objects of the embedded class 
+  ## index the names for a single object in the class_holder
   sub index_object_names {
-    ### index the names for a single object in the class_holder
-    my ($class_holder, $object) = @_;
-    unless (my $id = $object->get_attribute("id")) {
-	warn "Object $object has no ID\n";	
-	return;
-    }
-    foreach $name  ($id, $object->get_attribute("names")) {
-      my $index_key = uc($name); ### indexes ar case-insensitive
-      $index_key =~ s/^\s+//; ### suppress leading spaces
-      $index_key =~ s/\s+$//; ### suppress trailing spaces
-      push @{$class_holder->{_name_index}{$index_key}}, $id; 
-    }
+      my ($class_holder, $object) = @_;
+      unless (my $id = $object->get_attribute("id")) {
+	  warn "Object $object has no ID\n";	
+	  return;
+      }
+      foreach $name  ($id, $object->get_attribute("names")) {
+	  my $index_key = uc($name); ### indexes ar case-insensitive
+	  $index_key =~ s/^\s+//; ### suppress leading spaces
+	  $index_key =~ s/\s+$//; ### suppress trailing spaces
+	  push @{$class_holder->{_name_index}{$index_key}}, $id; 
+      }
   }
 
+  ################################################################
+  ## delete the previous ID index and recalculates it from 
+  ## from all objects contained in the class holder
   sub index_ids {
-    ### delete the previous ID index and recalculates it from 
-    ### from all objects contained in the class holder
     my ($class_holder) = @_;
     %{$class_holder->{_id_index}} = ();
     foreach $object ($class_holder->get_objects()) {
@@ -238,26 +239,29 @@ use Data::Dumper;
     }
     return %{$class_holder->{_id_index}};
   }
+
   
-  ### Delete the previous ID index and recalculates it 
-  ### from all objects contained in the class holder
-  ### the index is now a has of lists
-  ### this allows to stand for potential homonymy
+  ################################################################
+  ## index object names for all the objects of the embedded class 
+  ## Delete the previous ID index and recalculates it 
+  ## from all objects contained in the class holder
+  ## the index is now a has of lists
+  ## this allows to stand for potential homonymy
   sub index_names {
-    my ($class_holder) = @_;
-
-    warn ("; indexing names for class ", 
-	  $class_holder->get_object_type(), "\n") 
+      my ($class_holder) = @_;
+      
+      warn ("; indexing names for class ", 
+	    $class_holder->get_object_type(), "\n") 
       if ($main::verbose >= 4);
-    %{$class_holder->{_name_index}} = ();
-
-    foreach $object ($class_holder->get_objects()) {
-	$object->unique_names(); #### make sure a name only appears once
-	$class_holder->index_object_names($object);
-    }
-    return %{$class_holder->{_name_index}};
+      %{$class_holder->{_name_index}} = ();
+      
+      foreach $object ($class_holder->get_objects()) {
+	  $object->unique_names(); #### make sure a name only appears once
+	  $class_holder->index_object_names($object);
+      }
+      return %{$class_holder->{_name_index}};
   }
-
+  
   ### generate an index with all input objects
   ### the input is a classes::Index, where 
   ### - keys are pseudo_pointers to the input object (ex classes::Gene::GeneID)

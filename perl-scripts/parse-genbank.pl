@@ -1,6 +1,6 @@
 #!/usr/bin/perl 
 #############################################################
-# $Id: parse-genbank.pl,v 1.32 2005/10/21 05:13:53 rsat Exp $
+# $Id: parse-genbank.pl,v 1.33 2006/01/01 22:28:14 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -86,6 +86,7 @@ package main;
 				 chrom_position
 				 organism
 				 gene_id
+				 GeneID
 
 				 names
 				 db_xref
@@ -149,7 +150,15 @@ package main;
 	    push @genbank_files, glob("CHR_*/*.${ext}.gz");
 	}
     }
+
+    ## For eukaryotes, the genbank files are in sub-directories corresponding to the chromosomes
     if ($#genbank_files < 0) {
+	push @genbank_files, glob("CHR_*/*.${ext}");
+	push @genbank_files, glob("CHR_*/*.${ext}.gz");
+    }
+
+    if ($#genbank_files < 0) {
+	system "ls -l";
 	&RSAT::error::FatalError("There is no genbank file in the input directory $dir{input}\n");
     } else {
 	warn "; Genbank files\n;\t", join("\n;\t", @genbank_files), "\n" if ($verbose >= 1);
@@ -232,28 +241,30 @@ package main;
     }
     close $chrom;
     
-    #### index names
-    warn "; Indexing names\n" if ($main::verbose >= 1);
 
-    $features->index_names();
-    $genes->index_names();
-    $mRNAs->index_names();
-    $scRNAs->index_names();
-    $tRNAs->index_names();
-    $rRNAs->index_names();
-    $misc_RNAs->index_names();
-    $misc_features->index_names();
-    $CDSs->index_names();
+#    $features->index_names();
+#    $genes->index_names();
+#    $mRNAs->index_names();
+#    $scRNAs->index_names();
+#    $tRNAs->index_names();
+#    $rRNAs->index_names();
+#    $misc_RNAs->index_names();
+#    $misc_features->index_names();
+#    $CDSs->index_names();
 
-    #### parse chromosomal positions
-    &ParsePositions($genes);
-    &ParsePositions($mRNAs);
-    &ParsePositions($scRNAs);
-    &ParsePositions($tRNAs);
-    &ParsePositions($rRNAs);
-    &ParsePositions($misc_RNAs);
-    &ParsePositions($misc_features);
-    &ParsePositions($CDSs);
+    ################################################################
+    ## index names
+    for my $holder ($genes,$mRNAs, $scRNAs,$tRNAs,$rRNAs,$misc_RNAs,$misc_features,$CDSs) {
+	&RSAT::message::TimeWarn("Indexing IDs and names for class" , $holder->get_object_type()) if ($main::verbose >= 1);
+	$holder->index_ids();
+	$holder->index_names();
+    }
+
+    ################################################################
+    ## parse chromosomal positions
+    for my $holder ($genes,$mRNAs, $scRNAs,$tRNAs,$rRNAs,$misc_RNAs,$misc_features,$CDSs) {
+	&ParsePositions($holder);
+    }
 	
     if ($data_type eq "refseq") {
 	&RefseqPostProcessing();
@@ -312,11 +323,11 @@ package main;
     }
     
     
+    ### Report the output directory
+    &RSAT::message::Info(join("\t", "Output directory", $dir{output}));
+
     ###### close output file ######
     close $out if ($outfile{output});
-    
-    ### State the output directory
-    warn "; Output directory\t", $dir{output}, "\n";
 
     exit(0);
 }
