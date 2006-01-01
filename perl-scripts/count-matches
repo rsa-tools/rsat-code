@@ -440,8 +440,15 @@ USAGE
 	count-matches seq1 seq2
 
 DESCRIPTION
-	Count matching positions between two sequences provided as
-	command line arguments.
+
+	Count matching residues between each pair of sequences from
+	two sets, and assess the statistical significance of the
+	matches.
+
+	This program is typically used to compare a set of discovered
+	patterns (e.g. oligo-analysis result) with a set of known
+	transcription factor binding sites (e.g. sites stored in the
+	TRANSFAC database).
 
 CATEGORY
 	util
@@ -891,8 +898,8 @@ sub Verbose {
 	}
     }
     
-    printf $out "%-29s\t%d\n", "; Patterns in file1", scalar(@pattern1);
-    printf $out "%-29s\t%d\n", "; Patterns in file2", scalar(@pattern2);
+    printf $out "%-29s\t%d\n", "; Sequences in file1", scalar(@pattern1);
+    printf $out "%-29s\t%d\n", "; Sequences in file2", scalar(@pattern2);
     &PrintFieldDescriptions();
     
 }
