@@ -46,7 +46,7 @@ if (&IsNatural($gene_nb)) {
 #### number of groups
 $group_nb = $query->param('group_nb');
 if (&IsNatural($group_nb)) {
-    $parameters .= " -r $group_nb ";
+    $parameters .= " -g $group_nb ";
 } else {
     &FatalError("Number of groups must be a natural number");
 }
