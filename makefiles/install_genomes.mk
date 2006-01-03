@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_genomes.mk,v 1.22 2005/08/10 06:12:29 rsat Exp $
+# $Id: install_genomes.mk,v 1.23 2006/01/03 08:47:50 rsat Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -50,7 +50,7 @@ PRO=Mycoplasma_genitalium
 
 ### All the prokaryote in NCBI genome directory
 PROKARYOTES = `ls -1 ${NCBI_DIR}/Bacteria | grep _ | sort -u | xargs `
-list_prokaryote:
+list_prokaryotes:
 	@echo "Prokaryote to install	${PROKARYOTES}"
 
 
@@ -93,6 +93,12 @@ EUKARYOTES=					\
 	Drosophila_melanogaster			\
 	Arabidopsis_thaliana			\
 	Caenorhabditis_elegans
+
+### List selected eukaroytes
+list_eukaryotes:
+	@echo "Eukaryote to install	${EUKARYOTES}"
+	@echo "Reference Eukaryote to install	${REF_EUKARYOTES}"
+
 install_all_eukaryotes:
 	@for org in ${EUKARYOTES} ; do \
 		${MAKE} install_one_organism ORG=$${org} INSTALL_TASK=${INSTALL_TASK},clean; \
@@ -100,10 +106,10 @@ install_all_eukaryotes:
 	@for org in ${REF_EUKARYOTES} ; do \
 		${MAKE} install_one_ref_eukaryote ORG=$${org} INSTALL_TASK=${INSTALL_TASK},clean; \
 	done
-	@${MAKE} install_mouse
 	@${MAKE} install_human
 	@${MAKE} install_rat
 	@${MAKE} install_zebrafish
+	@${MAKE} install_mouse
 
 ################################################################
 ## Install organisms found in the root of the NCBI genome distribution. 
