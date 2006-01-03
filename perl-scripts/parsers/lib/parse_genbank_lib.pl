@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank_lib.pl,v 1.21 2006/01/01 22:50:58 jvanheld Exp $
+# $Id: parse_genbank_lib.pl,v 1.22 2006/01/03 08:45:54 rsat Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -519,7 +519,7 @@ sub ParseGenbankFile {
 		if (($attribute_type eq "db_xref") && ($attribute_value =~ /^GeneID:(\d+)/i)){
 		    my $GeneID = $1;
 		    if ($GeneID) {
-			$current_feature->set_attribute("GeneID", $GeneID);
+			$current_feature->force_attribute("GeneID", $GeneID);
 			&RSAT::message::Warning(join("\t", "Assigning GeneID",$GeneID,
 						     "to feature", $current_feature->get_attribute("id"),
 						     "type",  $current_feature->get_attribute("type"),
@@ -987,7 +987,7 @@ sub CreateGenbankFeatures {
 
 	    } elsif ($xref =~ /GeneID:/) {
 		$GeneID = $';  ##'
-		$created_feature->set_attribute("GeneID", $GeneID); 
+		$created_feature->force_attribute("GeneID", $GeneID); 
 		#### accept GeneID as synonym
 		$created_feature->push_attribute("names", $GeneID); 
 
@@ -1068,7 +1068,7 @@ sub CreateGenbankFeatures {
 		    #### if there is no feature note, use the gene note		
 		    my $GeneID = $parent_feature->get_attribute("DeneID");
 		    if (($GeneID) && ($GeneID ne $null)) {
-			my $gene = $genes->get_object("GeneID");
+			my $gene = $genes->get_object($GeneID);
 			my @gene_notes = $gene->get_attribute("note");
 			if ($gene_notes[0]) {
 			    $created_feature->set_attribute("description",$gene_notes[0]);
