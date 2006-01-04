@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: server.mk,v 1.15 2005/09/30 21:10:45 jvanheld Exp $
+# $Id: server.mk,v 1.16 2006/01/04 06:01:52 rsat Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -32,12 +32,12 @@ MAMAZE = jvanheld@164.15.109.52:rsa-tools
 MERLIN = jvanheld@merlin.scmbb.ulb.ac.be:rsa-tools
 FLYCHIP = jvanheld@flychip.org.uk:rsa-tools
 CIFN = jvanheld@itzamna.cifn.unam.mx:rsa-tools
-GIN = jvanheld@gin.univ-mrs.fr:rsa-tools
+PORTPIN = rsat@portpin.univ-mrs.fr:rsa-tools
 LIV = jvanheld@liv.bmc.uu.se:rsa-tools
 TORONTO=jvanheld@ws03.ccb.sickkids.ca:rsa-tools
 MILLIWAYS=jvanheld@milliways.bi.up.ac.za:rsa-tools
-MIRROR_SERVERS = ${MAMAZE} ${MERLIN} ${LIV} ${FLYCHIP} ${GIN} ${TORONTO} ${CIFN}
-LOG_SERVERS= ${LIV} ${FLYCHIP} ${GIN} ${TORONTO} ${CIFN} ${MILLIWAYS} ${RSAT_SERVER}
+MIRROR_SERVERS = ${MAMAZE} ${MERLIN} ${LIV} ${FLYCHIP} ${PORTPIN} ${TORONTO} ${CIFN}
+LOG_SERVERS= ${LIV} ${FLYCHIP} ${PORTPIN} ${TORONTO} ${CIFN} ${MILLIWAYS} ${RSAT_SERVER}
 
 ################################################################
 ## distribution
