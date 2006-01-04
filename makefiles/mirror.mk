@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: mirror.mk,v 1.30 2005/12/29 09:27:00 rsat Exp $
+# $Id: mirror.mk,v 1.31 2006/01/04 07:42:46 rsat Exp $
 #
 # Time-stamp: <2003-10-01 12:05:45 jvanheld>
 #
@@ -110,7 +110,7 @@ EXCLUDED_GENOMES=					\
 		--exclude Caenorhabditis_elegans*
 
 EXCLUDED_FILES=					\
-		--exclude 'blast_db'		\
+		--exclude 'blastdb'		\
 		--exclude 'blast_hits'		\
 		--exclude '*.wc'		\
 		--exclude '*.wc.gz'		
