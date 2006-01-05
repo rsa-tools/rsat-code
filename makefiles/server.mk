@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: server.mk,v 1.16 2006/01/04 06:01:52 rsat Exp $
+# $Id: server.mk,v 1.17 2006/01/05 06:05:47 rsat Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -36,8 +36,8 @@ PORTPIN = rsat@portpin.univ-mrs.fr:rsa-tools
 LIV = jvanheld@liv.bmc.uu.se:rsa-tools
 TORONTO=jvanheld@ws03.ccb.sickkids.ca:rsa-tools
 MILLIWAYS=jvanheld@milliways.bi.up.ac.za:rsa-tools
-MIRROR_SERVERS = ${MAMAZE} ${MERLIN} ${LIV} ${FLYCHIP} ${PORTPIN} ${TORONTO} ${CIFN}
-LOG_SERVERS= ${LIV} ${FLYCHIP} ${PORTPIN} ${TORONTO} ${CIFN} ${MILLIWAYS} ${RSAT_SERVER}
+MIRROR_SERVERS = ${MAMAZE} ${MERLIN} ${LIV} ${FLYCHIP} ${TORONTO} ${CIFN}  ${PORTPIN}
+LOG_SERVERS= ${LIV} ${FLYCHIP} ${TORONTO} ${CIFN} ${MILLIWAYS} ${RSAT_SERVER}  ${PORTPIN}
 
 ################################################################
 ## distribution
