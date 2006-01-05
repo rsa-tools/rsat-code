@@ -38,7 +38,7 @@ Class used to store a family (cluster) of genes.
 ################################################################
 =pod
 
-get_members()
+item get_members()
 
 Return the list of members
 
@@ -52,7 +52,7 @@ sub get_members {
 ################################################################
 =pod
 
-get_size()
+item get_size()
 
 return the number of members
 
@@ -66,16 +66,47 @@ sub get_size {
 ################################################################
 =pod
 
-new_member($member)
+item new_member($new_member, $allow_duplicates)
 
-Add a member to the family
+Add a member to the family, if it has not yet been inserted.
+
+By default, a member fcan be inserted only once in a family. 
+If the argument "allow_duplicates" is set to 1, this check is disabled (the list of members can contain several times the same entry). 
 
 =cut
 sub new_member {
-    my ($self, $new_member) = @_;
-    push @{$self->{members}}, $new_member;
+    my ($self, $new_member, $allow_dup) = @_;
+    if ($allow_duplicates) {
+	$self->push_attribute("members", $new_member);
+    } else {
+	if ($self->is_member($new_member)) {
+	    &RSAT::message::Warning(join("\t", "Family", $self->get_attribute("name"), "skipped duplicate member", $new_member)) if ($main::verbose >= 1);
+	} else {
+	    &RSAT::message::Info(join("\t", "Family", $self->get_attribute("name"), "Adding member", $new_member)) if ($main::verbose >= 3);
+	    $self->add_hash_attribute("member_index", $new_member, 1);
+	    $self->push_attribute("members", $new_member);
+	}
+    }
 }
 
+
+################################################################
+=pod
+
+item is_member($member)
+
+Check whether an element is already member of the family.
+
+=cut
+sub is_member {
+    my ($self, $member) = @_;
+    my %member_index = $self->get_attribute("member_index");
+    if ($member_index{$member}) {
+	return 1;
+    } else {
+	return 0;
+    }
+}
 
 return 1;
 
