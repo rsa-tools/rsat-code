@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: mirror.mk,v 1.31 2006/01/04 07:42:46 rsat Exp $
+# $Id: mirror.mk,v 1.32 2006/01/05 06:42:14 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 12:05:45 jvanheld>
 #
@@ -129,6 +129,16 @@ data_from_server:
 	${RSYNC} ${EXCLUDED}							\
 		${RSA_SERVER_LOGIN}@${RSA_SERVER}:${RSA_SERVER_DIR}/public_html/data/*	\
 		${RSA}/public_html/data/
+
+
+################################################################
+## Use wget to synchronize this mirror from the main server
+RSAT_HTTP=http://rsat.scmbb.scmbb.ulb.ac.be/rsat/
+ORG=Mycoplasma_genitalium
+wget_one_org:
+	wget -rNL -P data/genomes/ http://rsat.scmbb.ulb.ac.be/rsat/data/genomes/${ORG} --cut-dirs=3 -nH
+
+
 
 ################################################################
 #### Server in finland
