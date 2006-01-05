@@ -7,7 +7,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.11 2005/10/18 04:50:05 jvanheld Exp $
+# $Id: compare-classes,v 1.12 2006/01/05 05:50:01 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -33,6 +33,19 @@ local $distinct = 0;
 local $matrix_key = "sig"; ### key to export as similarity index (option -matrix)
 local $dot_file = "";
 local $gml_file = "";
+local $nb_tests = 0;
+local $nb_ref_classes = 0;
+local $nb_query_classes = 0;
+
+local $multi_cor = "nt"; ## Correction for multi-testing
+%supported_multi_cor = (
+    nq=>1,
+    nr=>1,
+    nc=>1,
+    nt=>1,
+);
+$supported_multi_cor = join (",", sort(keys (%supported_multi_cor)));
+
 
 %common = (); ### elements common to query and reference classes
 %ref_only = (); ### elements found in reference but not in query
@@ -47,7 +60,7 @@ $sort_key = "name";
                             members=>1,
                             rank=>1
                             );
-$supported_return_fields = join ",", keys %supported_return_fields;
+$supported_return_fields = join (",", sort(keys( %supported_return_fields)));
 
 
 %supported_matrix_keys = (
@@ -58,7 +71,7 @@ $supported_return_fields = join ",", keys %supported_return_fields;
 			    E_val=>1,
 			    sig=>1
                             );
-$supported_matrix_keys = join ",", keys %supported_matrix_keys;
+$supported_matrix_keys = join (",", sort(keys( %supported_matrix_keys)));
 
 
 %supported_sort_keys = (
@@ -70,7 +83,7 @@ $supported_matrix_keys = join ",", keys %supported_matrix_keys;
                         E_val=>1,
                         sig=>1
                         );
-$supported_sort_keys = join ",", sort (keys %supported_sort_keys);
+$supported_sort_keys = join (",", sort (keys (%supported_sort_keys)));
 
 %supported_catalogs = (
 		       MIPS=>1,
@@ -79,7 +92,7 @@ $supported_sort_keys = join ",", sort (keys %supported_sort_keys);
 		       TF_targets=>1,
 		       regulons=>1
 		       );
-$supported_catalogs = join ",", keys %supported_catalogs;
+$supported_catalogs = join (",", sort(keys( %supported_catalogs)));
 
 
 local %infile = ();
@@ -94,6 +107,9 @@ local $out = STDOUT;
 %lth = ();
 %uth = ();
 
+%member_index = ();
+%ref_member_index = ();
+%query_member_index = ();
 $population_size = 0;
 
 &ReadArguments();
@@ -167,31 +183,29 @@ if ($infile{qnames}) {
 ################################################################
 #### unless specified, calculate population size from the lists of
 #### reference and query members
-unless ($population_size > 0 ) {
-    %member_index = ();
-    foreach my $r (keys %ref_classes) {
-        foreach $m ( $ref_classes{$r}->get_members()) {
-            $member_index{$m}++;
-        }
+foreach my $r (keys %ref_classes) {
+    foreach $m ( $ref_classes{$r}->get_members()) {
+	$member_index{$m}++;
+	$ref_member_index{$m}++;
     }
-    foreach my $q (keys %query_classes) {
-        foreach $m ( $query_classes{$q}->get_members()) {
-            $member_index{$m}++;
-        }
+}
+foreach my $q (keys %query_classes) {
+    foreach $m ( $query_classes{$q}->get_members()) {
+	$member_index{$m}++;
+	$query_member_index{$m}++;
     }
+}
 
 #    die keys %member_index;
+if ($population_size == 0 ) {
     $population_size = scalar(keys %member_index);
 }
 
-################################################################
-#### print verbose
-&Verbose() if ($verbose);
 
 
 &CompareClasses();
-# die;
 
+&Verbose() if ($verbose);
 &PrintResult();
 
 ################################################################
@@ -258,191 +272,277 @@ USAGE
                 [additional options]
 
 OPTIONS
-        -h      (must be first argument) display full help message
-        -help   (must be first argument) display options
-        -v      verbose
-        -r ref_classes
-                A tab-delimited text file containing the dscription of
-                reference classes (see format description below).
-        -q query_classes
-                A tab-delimited text file containing the dscription of
-                query classes (see format description below).
-        -i input_file
-                This file will be used as both reference and query. 
-		This is equivalent to 
-		    -q input_file -r input_file
-        -o outputfile
-                if not specified, the standard output is used.
-                This allows to place the command within a pipe.
-	-rnames class_name_file
-		File containing names for the reference classes.
-		Associate a name to each class, when the classes are
-		specified by an ID (ex Gene Ontology term IDs).  
-		The class name file contains two columns
+    -h      (must be first argument) display full help message
 
-		    1) class ID
-		    2) class name
-	-qnames class_name_file
-		File containing names for the query classes.
-		Same format as for -rnames.
-	-cat catalog
-		Compare the query file to pre-defined catalogs
-		(e.g. GO, MIPS functional classes, ...). These
-		catalogs associate each gene of a genome to one or
-		several classes.  The organism must be specified
-		(option -org).
-		
-		Supported catalogs:
-		$supported_catalogs
+    -help   (must be first argument) display options
 
-		This option is currently supported for Saccharomyces
-		cerevisiae.
-	-org organism (for pre-defined catalogs)	
-        -return return_fields
-                List of fields to return. Supported field :
-                $supported_return_fields
-        -uth field #
-                upper threshold value for a given field
-                Supported_fields:
-                        occ, P_val, E_val, sig, ref_percent, query_percent
-        -lth field #
-                lower threshold value for a given field
-                (same fields as -uth)
-        -pop #
-                Population size. If not specified, the population size
-                is estimated as the number of distinct elemenst in the
-                whole set of referenc classes.
-        -sort key
-                sort on the basis of the specified key.
-                Supported keys: $supported_sort_keys
-        -rep    replacement
-                Sampling was performed with replacement, i.e. a given
-                element can appear several times in the same class.
+    -v      verbose
 
-                In this case, the binomial distribution is used
-                instead of the hypergeometric.
+    -r ref_classes
+        A tab-delimited text file containing the dscription of
+        reference classes (see format description below).
 
-        -sym    symmetric comparison
-                (only useful when -rep is activated, because th
-                hypergeometric is by definition symmetric)
+    -q query_classes
+        A tab-delimited text file containing the dscription of
+        query classes (see format description below).
 
-        -distinct
-                Prevent to compare each class with itself (when the
-                reference and query files contain the same classes).
+    -i input_file
+        This file will be used as both reference and query. 
+        This is equivalent to 
+            -q input_file -r input_file
 
-    	-triangle
-		(ony valid if query file and reference file are the same)
-		Do not perform the reciprocal comparisons: if
-		reference A has already been compared to query B, then
-		reference B does not need to be compared to query A. .
-		With matrix output, this returns only the lower
-		triangle fo the matrix.
+    -o outputfile
+        if not specified, the standard output is used.
+        This allows to place the command within a pipe.
 
-        -matrix [key]
-                Return a pairwise matrix, where each row corresponds
-                to a reference class, each column to a query class,
-                and each cell contains a comparison between the two
-                classes. The next argument indicates which statistics
-                has to be returne in the matrix (default = sig).
-		Supported : $supported_matrix_keys
-	-dot dot_file
-		Export a graph with the associations in a dot
-		file. Dot files can be visualized and modified with
-		the GraphViz package (http://www.graphviz.com/), which
-		contains several methods of automatic layout.
-	-gml gml_file
-		Export a graph with the associations in a gml
-		file, which can be visualized and modified with
-		various visualization packages, including
-         	GraphViz (http://www.graphviz.com/)
-		yed (http://www.yworks.com/en/products_yed_about.htm)
+    -rnames class_name_file
+        File containing names for the reference classes.
+        Associate a name to each class, when the classes are
+        specified by an ID (ex Gene Ontology term IDs).  
+        The class name file contains two columns
+
+            1) class ID
+            2) class name
+
+
+    -qnames class_name_file
+        File containing names for the query classes.
+        Same format as for -rnames.
+
+    -cat catalog
+        Compare the query file to pre-defined catalogs
+        (e.g. GO, MIPS functional classes, ...). These
+        catalogs associate each gene of a genome to one or
+        several classes.  The organism must be specified
+        (option -org).
+        
+        Supported catalogs:
+        $supported_catalogs
+
+        This option is currently supported for Saccharomyces
+        cerevisiae.
+
+    -org organism (for pre-defined catalogs)        
+
+    -return return_fields
+        List of fields to return. Supported field :
+        $supported_return_fields
+
+    -uth field #
+        upper threshold value for a given field
+        Supported_fields:
+                occ, P_val, E_val, sig, ref_percent, query_percent
+
+    -lth field #
+        lower threshold value for a given field
+        (same fields as -uth)
+
+    -pop #
+        Population size. If not specified, the population size
+        is estimated as the number of distinct elemenst in the
+        whole set of referenc classes.
+
+    -sort key
+        sort on the basis of the specified key.
+        Supported keys: $supported_sort_keys
+
+    -rep    replacement
+        Sampling was performed with replacement, i.e. a given
+        element can appear several times in the same class.
+
+        In this case, the binomial distribution is used
+        instead of the hypergeometric.
+
+    -sym    symmetric comparison
+        (only useful when -rep is activated, because th
+        hypergeometric is by definition symmetric)
+
+    -distinct
+        Prevent to compare each class with itself (when the
+        reference and query files contain the same classes).
+
+    -triangle
+        (ony valid if query file and reference file are the same)
+        Do not perform the reciprocal comparisons: if
+        reference A has already been compared to query B, then
+        reference B does not need to be compared to query A. .
+        With matrix output, this returns only the lower
+        triangle fo the matrix.
+
+    -matrix [key]
+        Return a pairwise matrix, where each row corresponds
+        to a reference class, each column to a query class,
+        and each cell contains a comparison between the two
+        classes. The next argument indicates which statistics
+        has to be returne in the matrix (default = sig).
+        Supported : $supported_matrix_keys
+
+    -dot dot_file
+        Export a graph with the associations in a dot
+        file. Dot files can be visualized and modified with
+        the GraphViz package (http://www.graphviz.com/), which
+        contains several methods of automatic layout.
+
+    -gml gml_file
+        Export a graph with the associations in a gml
+        file, which can be visualized and modified with
+        various visualization packages, including
+         GraphViz (http://www.graphviz.com/)
+        yed (http://www.yworks.com/en/products_yed_about.htm)
+
+    -multi_cor
+        Factor used for the multi-testing corrections. 
+        Supported values: 
+           nt  number of significance tests (default)
+           nq  number of query classes
+           nr  number of reference classes
+           nc  number of comparisons (nc = nq * nr)
+        The differences between these four options are
+        explained below (section E-value).
 
 PROBABILITIES
-        P-VALUE
 
-                The P-value is the probability to observe at least c
-                common elements between a given query class and a
-                given reference class. It can be calculated with
-                different formulae, depending on the underlying random
-                model.
+    P-VALUE
 
-                Let us assume that we have :
-                        q       size of the query class
-                        r       size of the reference class
-                        c       number of common elements
-                        n       population size
+        The P-value is the probability for one comparison to return a
+        false positive. In other words, it is the probability to
+        observe at least c common elements between a given query class
+        and a given reference class. It can be calculated with
+        different formulae, depending on the underlying random model.
 
-                HYPERGEOMETRIC
-                                       q     i  q-i     q
-                P_value = P(X >= c) = SUM ( C  C     / C  )
-                                      i=c    r  n-r     n
+        Let us assume that we have :
+                q       size of the query class
+                r       size of the reference class
+                c       number of common elements
+                n       population size
 
-                BINOMIAL
+    HYPERGEOMETRIC
+                       q     i  q-i     q
+        P_value = P(X >= c) = SUM ( C  C     / C  )
+                      i=c    r  n-r     n
 
-                When the option -rep (replacement) is active,
-                probabilities are calculated on the basis of the
-                binomial distribution instead of the hypergeometric.
+    BINOMIAL
+
+        When the option -rep (replacement) is active,
+        probabilities are calculated on the basis of the
+        binomial distribution instead of the hypergeometric.
 
 
-                The binomial formula is applied with
-                        p_r = r/n probability of success at each trial
-                        nb of trials = q
-                        nb of successes = c
+        The binomial formula is applied with
+                p_r = r/n probability of success at each trial
+                nb of trials = q
+                nb of successes = c
 
-                                       q
-                P_value = P(X >= c) = SUM (binom(i,q,p_r))
-                                      i=c
+                       q
+        P_value = P(X >= c) = SUM (binom(i,q,p_r))
+                      i=c
 
-                Beware: the binomial gives an assymmetric result,
-                i.e. the fact to swap query and reference classes
-                changes the probability. This can be circumvented by
-                using the option -sym, described below.
+        Beware: the binomial gives an assymmetric result,
+        i.e. the fact to swap query and reference classes
+        changes the probability. This can be circumvented by
+        using the option -sym, described below.
 
-                SYMMETRICAL COMPARISON WITH THE BINOMIAL
+    SYMMETRICAL COMPARISON WITH THE BINOMIAL
 
-                When the comparison is assumed to be symmetrical, the
-                program calculates the joint probability fo at least c
-                elements to belong to both the query set and the
-                reference set.
+        When the comparison is assumed to be symmetrical, the
+        program calculates the joint probability fo at least c
+        elements to belong to both the query set and the
+        reference set.
 
-                In this case, the binomial is applied with :
-                        p_qr = q/n * r/n
-                          = proba of success at each trial
-                        nb of trials = n
-                        nb of successes = c
+        In this case, the binomial is applied with :
+                p_qr = q/n * r/n
+                  = proba of success at each trial
+                nb of trials = n
+                nb of successes = c
 
-                                       q
-                P_value = P(X >= c) = SUM (binom(i,n,p_qr))
-                                      i=c
+                       q
+        P_value = P(X >= c) = SUM (binom(i,n,p_qr))
+                      i=c
 
-        E-VALUE
+    E-VALUE
 
-                Assuming that there are x query classes and y
-                reference classes, each analysis consists in x*y
-                comparisons. Thus, thhe P-value can be misleading,
-                because even low P-values are expected to emerge by
-                chance alone when the number of query and/or reference
-                classes is very high. The E-value reflects better the
-                degree of exceptionality.
+        Assuming that there are x query classes and y
+        reference classes, each analysis consists in x*y
+        comparisons. Thus, thhe P-value can be misleading,
+        because even low P-values are expected to emerge by
+        chance alone when the number of query and/or reference
+        classes is very high. The E-value reflects better the
+        degree of exceptionality.
 
-                E_val = P_Val * nb_tests
-                      = P_val * x * y
+        The option -multi_cor allows to choose among 4
+        possible multi-testing correction factors. The choice
+        is left to the user, depending on the question he/she
+        wants to answer.
 
-                      where x = number of query classes
-                            y = number of reference classes
+        -multi_cor nr
 
-        SIG
-                The significance index is the minus log of the
-                E-value. It is calculated in base 10.
+            How many false positives do we expect per query
+            class ?
 
-                sig = -log10(E_val)
+                E-value = P-value * nr
 
-                This index gives an intuitive perception of the
-                exceptionality of the common elements : a negative sig
-                indicates that the common matches are likely to come by
-                chanc alone, a ositive value that they are
-                significant. Higher sig values indicate a higher
-                significance.
+            Where nr is the number of reference classes
+            (e.g. the number of classes in the GO
+            classification).
+
+        -multi_cor nq
+
+            How many false positives do we expect per
+            reference class ?
+
+                E-value = P-value * nq
+
+            Where nq is the number of query classes
+            (e.g. the number of co-expression cluster).
+
+
+        -multi_cor nc
+
+            How many false positives do we expect for the
+            whole set of comparisons ?
+
+                nc = nq * nr
+                E-value = P-value * nc
+
+            Where nc is the number of comparisons between a
+            query class and a reference class.
+
+
+        -multi_cor nt
+
+            How many false positives do we expect for the
+            whole set of significance tests actually
+            performed ?
+
+                  E-value = P-value * nt
+
+            where nt is the number of significance tests
+            actually performed (the number of times the
+            hypergeometric or binomial formula was used)
+
+        If you do not use any "pre-filtering" threshold, the
+        options nc and nt give the same result (nt = nq * nr),
+        since a significance test is performed for each pair
+        of query class - reference class.
+
+        If you use pre-filtering thresholds (for example -lth occ 1,
+        to select only the pairs with at least one common member), the
+        actual number of tests can in some cases be much smaller than
+        the number of comparisons (nt <= nc = nq*nr).
+
+    SIG
+
+        The significance index is the minus log of the
+        E-value. It is calculated in base 10.
+
+        sig = -log10(E_val)
+
+        This index gives an intuitive perception of the
+        exceptionality of the common elements : a negative sig
+        indicates that the common matches are likely to come by
+        chanc alone, a ositive value that they are
+        significant. Higher sig values indicate a higher
+        significance.
 
 OUTPUT FORMAT
 
@@ -451,12 +551,12 @@ OUTPUT FORMAT
         return field.
 
         Default return fields:
-                1) ref      reference class
-                2) query    query class
-                3) ref#     number of members in the ref class
-                4) query#   number of members in the query class
-                5) common   number of elements in common between the
-                            query and reference class
+        1) ref      reference class
+        2) query    query class
+        3) ref#     number of members in the ref class
+        4) query#   number of members in the query class
+        5) common   number of elements in common between the query 
+    	   	    and reference class
 
         Additional return values are optionally returned, and can be
         specified with the -return option.
@@ -479,26 +579,26 @@ compare-classes options
 -help           (must be first argument) display options
 -r              reference classes
 -q              query classes
--i		single input file (used as query and reference)
--rnames	reference class names
--qnames	query class names
+-i              single input file (used as query and reference)
+-rnames         reference class names
+-qnames         query class names
 -o              output file
 -v              verbose
 -return         return fields (supported $supported_return_fields)
 -lth            lower threshold on a given field
 -uth            upper threshold on a given field
 -pop            population size
+-multi_cor	multi-testing correction (supoprted: nq,nr,nc,nt)
 -sort           sort key (supported keys: occ, sig)
--rep            sampling with replacement (use binomial instead of
-hyergeometric)
+-rep            sampling with replacement (binomial instead of hyergeometric)
 -sym            symmetric comparison (only with -rep, see detailed help)
 -distinct       prevent to compare each class with itself
--triangle	do not perform reciprocal comparison
+-triangle       do not perform reciprocal comparison
 -matrix [key]   return a similarity matrix
--cat		catalog (supported: $supported_catalogs)
--org		organism
--dot		dot file
--gml		gml file
+-cat            catalog (supported: $supported_catalogs)
+-org            organism
+-dot            dot file
+-gml            gml file
 End_short_help
   close HELP;
   exit(0);
@@ -508,7 +608,7 @@ End_short_help
 #### read arguments
 sub ReadArguments {
     foreach my $a (0..$#ARGV) {
-
+	
         ### verbose
         if ($ARGV[$a] eq "-v") {
             if (&IsNatural($ARGV[$a+1])) {
@@ -528,7 +628,7 @@ sub ReadArguments {
             ### query file
         } elsif ($ARGV[$a] eq "-q") {
             $infile{query_classes} = $ARGV[$a+1];
-	    
+
             ### reference class names
         } elsif ($ARGV[$a] eq "-rnames") {
             $infile{rnames} = $ARGV[$a+1];
@@ -629,11 +729,17 @@ sub ReadArguments {
                 if ($supported_return_fields{$field}) {
                     $return_fields{$field} = 1;
                 } else {
-                    &RSAT::error::FatalError("Invalid return field $field");
-                }
-            }
-        }
+                    &RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_return_fields));
+		}
+	    }
 
+	    #### multi-testing correction
+	} elsif ($ARGV[$a] eq "-multi_cor") {
+	    $multi_cor = $ARGV[$a+1];
+	    unless ($supported_multi_cor{$multi_cor}) {
+		&RSAT::error::FatalError(join("\t", $multi_cor, "Invalid multi-testing correction. Supported:", $supported_multi_cor));
+	    }
+        }
     }
 }
 
@@ -648,23 +754,35 @@ sub Verbose {
             print $out ";\t$key\t$value\n";
         }
     }
-    print $out "; Query classes\t$nb_query_classes\n";
+
+    printf $out "; %-29s\t%d\n", "Query classes (nq)", $nb_query_classes;
     if ($verbose >= 2) {
 	foreach my $f (keys %query_classes) {
 	    printf $out ";\t%d\t%s\n", $query_classes{$f}->get_size(), $query_classes{$f}->get_name();
 	}
     }
-    print $out "; Reference classes\t$nb_ref_classes\n";
+
+    printf $out "; %-29s\t%d\n", "Reference classes (nr)", $nb_ref_classes;
     if ($verbose >= 2) {
 	foreach my $f (keys %ref_classes) {
 	    printf $out ";\t%d\t%s\n", $ref_classes{$f}->get_size(), $ref_classes{$f}->get_name();
 	}
     }
-    printf $out "; %-21s\t%d\n", "Population size", $population_size;
-    printf $out "; %-21s\t%s\n", "Sort key", $sort_key if ($sort_key);
 
+    printf $out "; %-29s\t%d\n", "Comparisons (nq*nr)", $nb_ref_classes*$nb_query_classes;
+    if ($return_fields{proba}) {
+	printf $out "; %-29s\t%d\n", "Significance tests (nt)", $nb_tests;
+    }
+    printf $out "; %-24s (%s)\t%d\n", "Multi-testing correction", $multi_cor, $correction;
+
+    printf $out "; %-29s\t%d\n", "Elements  in ref classes", scalar (keys(%ref_member_index));
+    printf $out "; %-29s\t%d\n", "Elements in query classes", scalar (keys(%query_member_index));
+    printf $out "; %-29s\t%d\n", "Elements in query+ref classes", scalar (keys(%member_index));
+    printf $out "; %-29s\t%d\n", "Population size", $population_size;
     print $out "; Sampling with replacement (binommial proba)\n" if ($replacement);
+    printf $out "; %-29s\t%s\n", "Sort key", $sort_key if ($sort_key);
     print $out "; Symmetric comparison\n" if ($symmetric);
+
 
     print $out "; Thresholds\tlower\tupper\n";
     foreach $f (qw(occ sig)) {
@@ -878,6 +996,7 @@ sub CompareClasses {
 		}
 		
 		my $p; ## Proba for a member to be found in common in the two classes
+		$nb_tests ++; ## Increment the counter for the number of tests
 		if ($replacement) {
 		    #### use binomial distribution of there are replacements
 		    
@@ -903,9 +1022,16 @@ sub CompareClasses {
 		}
 		$compa{$compa_key}->{exp_common} = $p*$n;
 		
-#	$nb_tests = $nb_ref_classes * $nb_query_classes;
-		$nb_tests = $nb_ref_classes;
-		$compa{$compa_key}->{E_val} = $compa{$compa_key}->{P_val} * $nb_tests;
+		if ($multi_cor eq "nc") {
+		    $correction = $nb_ref_classes * $nb_query_classes;
+		} elsif ($multi_cor eq "nq") {
+		    $correction = $nb_query_classes;
+		} elsif ($multi_cor eq "nr") {
+		    $correction = $nb_ref_classes;
+		} elsif ($multi_cor eq "nt") {
+		    $correction = $nb_tests
+		}
+		$compa{$compa_key}->{E_val} = $compa{$compa_key}->{P_val} * $correction;
 		$compa{$compa_key}->{sig} = -log($compa{$compa_key}->{E_val})/$ref_log;
 		
 		#### check thresholds on probabilities
