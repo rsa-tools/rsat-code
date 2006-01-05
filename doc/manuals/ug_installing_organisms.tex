@@ -2,14 +2,19 @@
 %%%% Installing organisms
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\section{Installing additional organisms}
+\section{Installing organisms}
+
 
 \RSAT includes a series of tools to install and maintain the latest
 version of genomes.
 
-\subsection{Data sources}
+\subsection{Original data sources}
 
-Genomes can be obtained from various sources:
+Genomes supported on \RSAT were obtained from various sources.
+
+Genomes can be installed either from the \RSAT web site, or from their
+original sources.  
+
 \begin{itemize}
 \item NCBI/Genbank (\url{ftp://ftp.ncbi.nih.gov/genomes/})
 
@@ -22,8 +27,110 @@ Genomes can be obtained from various sources:
 Other genomes can also be found on the web site of a diversity of
 genome-sequencing centers.
 
+\subsection{Requirement : wget}
 
-\subsection{The genome files}
+The download of genomes relies on the application \program{wget},
+which is part of linux distribution. \program{wget} is a ``web
+aspirator'', which allows to downlaod whole directories from ftp and
+http sites. You can check if the program is installed on your machine.
+
+\begin{verbatim}
+wget -help
+\end{verbatim}
+
+This command should return the help pages for \program{wget}.  If you
+obtain an error message (``command not found''), you need to ask your
+system administrator to install it.
+
+\subsection{Importing organisms from the \RSAT main server}
+
+The simplest way to install organisms on our \RSAT site is to download
+the RSAT-formatted files from the web server. For this, you can use a
+web aspirator (for example the program \program{wget}). 
+
+Beware, the full installation (including Mammals) requires a large
+disk space (several dozens of Gb). You should better start installting
+a small genome and test it before processing to the full
+installation. We illustrate the approach with one of the smallest
+sequenced genome: \textit{Mycoplasma genitalium}.
+
+To download the genome in your \RSAT folder, tye the following
+command.
+
+\begin{small}
+\begin{verbatim}
+cd $RSAT
+wget -rNL http://rsat.scmbb.ulb.ac.be/rsat/data/genomes/Mycoplasma_genitalium/
+\end{verbatim}
+\end{small}
+
+This will create a local mirror of the \RSAT data repository. You can
+check the result by typing.
+
+\begin{small}
+\begin{verbatim}
+ls -l $RSAT/rsat.scmbb.ulb.ac.be/rsat/data/genomes/Mycoplasma_genitalium/
+\end{verbatim}
+\end{small}
+
+When the download is complete, move the newly transferred genome to
+the data directory of your \RSAT installation.
+
+\begin{small}
+\begin{verbatim}
+mv $RSAT/rsat.scmbb.ulb.ac.be/rsat/data/genomes/Mycoplasma_genitalium \
+    $RSAT/data/genomes/
+\end{verbatim}
+\end{small}
+
+You need now to declare the newly installed organism. 
+
+\begin{small}
+\begin{verbatim}
+install-organism -v 1 -task config \
+    -org Mycoplasma_genitalium -up_from -400 -up_to -1
+\end{verbatim}
+\end{small}
+
+You can now check the configuration file.
+
+\begin{small}
+\begin{verbatim}
+tail -20 $RSAT/data/supported_organisms.pl
+\end{verbatim}
+\end{small}
+
+If the installation was successfull, you should see something like this : 
+
+\begin{small}
+\begin{verbatim}
+#### Mycoplasma_genitalium      Mycoplasma genitalium   2006/01/04 22:08:42
+$supported_organism{'Mycoplasma_genitalium'}->{'name'} = "Mycoplasma genitalium";
+$supported_organism{'Mycoplasma_genitalium'}->{'data'} = "$RSA/data/genomes/Mycoplasma_genitalium";
+$supported_organism{'Mycoplasma_genitalium'}->{'last_update'} = "2006/01/04 22:08:42";
+$supported_organism{'Mycoplasma_genitalium'}->{'features'} = "$RSA/data/genomes/Mycoplasma_genitalium/genome/feature.tab";
+$supported_organism{'Mycoplasma_genitalium'}->{'genome'} = "$RSA/data/genomes/Mycoplasma_genitalium/genome/contigs.txt";
+$supported_organism{'Mycoplasma_genitalium'}->{'seq_format'} = "filelist";
+$supported_organism{'Mycoplasma_genitalium'}->{'taxonomy'} = "Bacteria; Firmicutes; Mollicutes; Mycoplasmataceae; Mycoplasma";
+$supported_organism{'Mycoplasma_genitalium'}->{'synonyms'} = "$RSA/data/genomes/Mycoplasma_genitalium/genome/feature_names.tab";
+$supported_organism{'Mycoplasma_genitalium'}->{'up_from'} = -400;
+$supported_organism{'Mycoplasma_genitalium'}->{'up_to'} = -1;
+
+return 1;
+\end{verbatim}
+\end{small}
+
+
+\section{Installing genomes from  their original source}
+
+The parsing of genomes from their original data
+sources is more tricky than the synchronization from the \RSAT server.
+
+In principle, if you succeeded, with the protocol above, to obtain the
+genomes from the \RSAT server, you don't need to proceed to new
+installations yourself and you can skip the rest of this chapter.
+
+\subsection{The \RSAT genome files}
 
 
 \begin{enumerate}
@@ -120,19 +227,6 @@ organisms. To avoid filling up your hard drive, we illustrate the protocol
 with the smallest procaryote genome to date: \textit{Mycoplasma
   genitamlium}.
 
-The script \file{\$RSAT/makefiles/downloads.mk} relies on the
-application \program{wget}, which is part of linux
-distribution. \program{wget} is a ``web aspirator'', which allows to
-downlaod whole directories from ftp and http sites. You can check if
-the program is installed on your machine.
-
-\begin{verbatim}
-wgget -help
-\end{verbatim}
-
-This command should return the help pages for \program{wget}.  If you
-obtain an error message (``command not found''), you need to ask your
-system administrator to install it.
 
 \begin{verbatim}
 ## Creating a directory for downloading genomes in your home account
