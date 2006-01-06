@@ -247,37 +247,6 @@ make -f makefiles/init_RSAT.mk init
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Genome installation
-\section{Installing genomes}
-
-Genomes are distributed via the HTTP server. 
-
-\begin{quote}
-\url{http://rsat.ulb.ac.be/rsat/data/genomes/}
-\end{quote}
-
-Download the genomes you need and store them in your local \RSAT
-genome directory
-
-\begin{quote}
-\file{/home/myaccount/rsa-tools/public\_html/data/genomes/}
-\end{quote}
-
-You also need the file which provides the list of supported genomes.
-
-\begin{quote}
-\url{/home/myaccount/rsa-tools/public\_html/data/supported\_organisms.pl}
-\end{quote}
-
-\begin{quote}
-\file{/home/myaccount/rsa-tools/public\_html/data/}
-\end{quote}
-
-If you only downloaded a subset of genomes, you will need to to edit
-the file \file{supported\_organisms.pl}, in order to delete the
-specification of other genomes.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Config file
 \section{Configuring \RSAT for utilization on the command line}
 
@@ -297,6 +266,11 @@ tools on the command-line.
 You only need to edit it if you want to install a web server of the
 tools, or if you want to specify custom settings (for example the
 installation of additional genomes on a separate hard drive).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Genome Download
+
+\input{ig_installing_genomes.tex}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -323,7 +297,7 @@ Should generate a random sequence.
 
 \subsection{Testing genome installation}
 
-We will now testif the genomes are correctly installed. You will
+We will now test if the genomes are correctly installed. You can
 obtain the list of supported organisms with the command:
 
 \begin{verbatim}

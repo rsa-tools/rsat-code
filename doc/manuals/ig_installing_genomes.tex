@@ -1,0 +1,182 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% Installing organisms
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Downloading genomes}
+
+
+\RSAT includes a series of tools to install and maintain the latest
+version of genomes.
+
+\subsection{Original data sources}
+
+Genomes supported on \RSAT were obtained from various sources.
+
+Genomes can be installed either from the \RSAT web site, or from their
+original sources.  
+
+\begin{itemize}
+\item NCBI/Genbank (\url{ftp://ftp.ncbi.nih.gov/genomes/})
+
+\item ENSEMBL (\url{http://www.ensembl.org/})
+
+\item The EBI genome directory (\url{ftp://ftp.ebi.ac.uk/pub/databases/genomes/Eukaryota/})
+
+\end{itemize}
+
+Other genomes can also be found on the web site of a diversity of
+genome-sequencing centers.
+
+\subsection{Requirement : wget}
+
+The download of genomes relies on the application \program{wget},
+which is part of linux distribution. \program{wget} is a ``web
+aspirator'', which allows to downlaod whole directories from ftp and
+http sites. You can check if the program is installed on your machine.
+
+\begin{verbatim}
+wget -help
+\end{verbatim}
+
+This command should return the help pages for \program{wget}.  If you
+obtain an error message (``command not found''), you need to ask your
+system administrator to install it.
+
+\subsection{Importing organisms from the \RSAT main server}
+
+The simplest way to install organisms on our \RSAT site is to download
+the RSAT-formatted files from the web server. For this, you can use a
+web aspirator (for example the program \program{wget}). 
+
+Beware, the full installation (including Mammals) requires a large
+disk space (several dozens of Gb). You should better start installting
+a small genome and test it before processing to the full
+installation. We illustrate the approach with one of the smallest
+sequenced genome: \textit{Mycoplasma genitalium}.
+
+\subsubsection{Importing a single organism}
+
+The makefile script \file{makefiles\/init\_RSAT.mk} includes a target to
+install and configure a single organism on your RSAT site. 
+
+\begin{small}
+\begin{verbatim}
+cd \$RSAT
+
+# Download a single genome from the RSAT web server. 
+# This requires the program wget.
+make -f makefiles/init_RSAT.mk download_one_genome
+
+# Declare the newly downlaoded genome as a supported organism
+make -f makefiles/init_RSAT.mk configure_one_genome
+
+\end{verbatim}
+\end{small}
+
+You can now check if the configuration file has been correctly updated
+by typing the command.
+
+\begin{verbatim}
+supported-organisms
+\end{verbatim}
+
+In principle, the following information should be displayed on your
+terminal.
+
+\begin{verbatim}
+      Saccharomyces_cerevisiae   Saccharomyces cerevisiae
+\end{verbatim}
+
+\subsubsection{Importing another organism}
+
+You can now proceed exactly in th same way to install any organism of
+your choice. For example, if you want to install Escherichia coli K12?
+you can run the ffollowing commands.
+
+\begin{small}
+\begin{verbatim}
+cd \$RSAT
+
+# Download a single genome from the RSAT web server. 
+# This requires the program wget.
+make -f makefiles/init_RSAT.mk download_one_genome ORG=Escherichia_coli_K12
+
+# Declare the newly downlaoded genome as a supported organism
+make -f makefiles/init_RSAT.mk configure_one_genome ORG=Escherichia_coli_K12
+
+## Check that the new genome has bee added to the list of supported organisms
+supported-organisms
+
+
+\end{verbatim}
+\end{small}
+
+
+
+%% To download the genome in your \RSAT folder, type the following
+%% command.
+
+%% \begin{small}
+%% \begin{verbatim}
+%% cd $RSAT
+%% wget -rNL http://rsat.scmbb.ulb.ac.be/rsat/data/genomes/Mycoplasma_genitalium/
+%% \end{verbatim}
+%% \end{small}
+
+%% This will create a local mirror of the \RSAT data repository. You can
+%% check the result by typing.
+
+%% \begin{small}
+%% \begin{verbatim}
+%% ls -l $RSAT/rsat.scmbb.ulb.ac.be/rsat/data/genomes/Mycoplasma_genitalium/
+%% \end{verbatim}
+%% \end{small}
+
+%% When the download is complete, move the newly transferred genome to
+%% the data directory of your \RSAT installation.
+
+%% \begin{small}
+%% \begin{verbatim}
+%% mv $RSAT/rsat.scmbb.ulb.ac.be/rsat/data/genomes/Mycoplasma_genitalium \
+%%     $RSAT/data/genomes/
+%% \end{verbatim}
+%% \end{small}
+
+%% You need now to declare the newly installed organism. 
+
+%% \begin{small}
+%% \begin{verbatim}
+%% install-organism -v 1 -task config \
+%%     -org Mycoplasma_genitalium -up_from -400 -up_to -1
+%% \end{verbatim}
+%% \end{small}
+
+%% You can now check the configuration file.
+
+%% \begin{small}
+%% \begin{verbatim}
+%% tail -20 $RSAT/data/supported_organisms.pl
+%% \end{verbatim}
+%% \end{small}
+
+%% In principle, if the installation has been successfull, you should see
+%% something like this :
+
+%% \begin{small}
+%% \begin{verbatim}
+%% #### Mycoplasma_genitalium      Mycoplasma genitalium   2006/01/04 22:08:42
+%% $supported_organism{'Mycoplasma_genitalium'}->{'name'} = "Mycoplasma genitalium";
+%% $supported_organism{'Mycoplasma_genitalium'}->{'data'} = "$RSA/data/genomes/Mycoplasma_genitalium";
+%% $supported_organism{'Mycoplasma_genitalium'}->{'last_update'} = "2006/01/04 22:08:42";
+%% $supported_organism{'Mycoplasma_genitalium'}->{'features'} = "$RSA/data/genomes/Mycoplasma_genitalium/genome/feature.tab";
+%% $supported_organism{'Mycoplasma_genitalium'}->{'genome'} = "$RSA/data/genomes/Mycoplasma_genitalium/genome/contigs.txt";
+%% $supported_organism{'Mycoplasma_genitalium'}->{'seq_format'} = "filelist";
+%% $supported_organism{'Mycoplasma_genitalium'}->{'taxonomy'} = "Bacteria; Firmicutes; Mollicutes; Mycoplasmataceae; Mycoplasma";
+%% $supported_organism{'Mycoplasma_genitalium'}->{'synonyms'} = "$RSA/data/genomes/Mycoplasma_genitalium/genome/feature_names.tab";
+%% $supported_organism{'Mycoplasma_genitalium'}->{'up_from'} = -400;
+%% $supported_organism{'Mycoplasma_genitalium'}->{'up_to'} = -1;
+
+%% return 1;
+%% \end{verbatim}
+%% \end{small}
+
