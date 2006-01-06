@@ -1,14 +1,11 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.57 2005/10/20 19:43:01 rsat Exp $
+# $Id: install-organism,v 1.58 2006/01/06 19:02:11 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
 ############################################################
-
-## CVS: suppressed the option -grouprc from the calibration, because it caused the files -1str to be grouped by pairs of reverse complements 
-
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 
@@ -54,6 +51,7 @@ $supported_tasks = join ",", sort (keys %supported_task);
 ################################################################
 
 &ReadArguments();
+
 
 @task = keys %task;
 if ($#task == -1) {
@@ -287,21 +285,30 @@ sub UpdateConfig {
     }
 
     #### default limits of upstream region for retrieve-seq
-    if (defined($up_from)) {
-	$new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'up_from'} = ".$up_from.";\n";
-    } elsif (defined($supported_organism{$organism_short_name}->{'up_from'})) {
-	$new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'up_from'} = ".$supported_organism{$organism_short_name}->{'up_from'}.";\n";
-    } else {
-	$new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'up_from'} = -400 ;\n";
+    unless (defined($up_from)) {
+	if (defined($supported_organism{$organism_short_name}->{'up_from'})) {
+	    $up_from = $supported_organism{$organism_short_name}->{'up_from'};;
+	} else {
+	    if (($taxonomy =~ /^Bacteria/) || ($taxonomy =~ /^Archaea/)) {
+		$up_from=-400;
+	    } elsif ($taxonomy =~ /^Eukaryota; Fungi/) {
+		$up_from=-800;
+	    } else {
+		$up_from=-1000;;
+	    }
+	}
     }
-
-    if (defined($up_to)) {
-	$new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'up_to'} = ".$up_to.";\n";
-    } elsif (defined($supported_organism{$organism_short_name}->{'up_to'})) {
-	$new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'up_to'} = ".$supported_organism{$organism_short_name}->{'up_to'}.";\n";
-    } else {
-	$new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'up_to'} = -1 ;\n";
+    $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'up_from'} = ".$up_from.";\n";
+    
+    unless (defined($up_to)) {
+	if (defined($supported_organism{$organism_short_name}->{'up_to'})) {
+	    $up_to = $supported_organism{$organism_short_name}->{'up_to'};
+	} else {
+	    $up_to = -1;
+	}
     }
+    $new_org_config .=  "\$supported_organism{'$organism_short_name'}->{'up_to'} = ".$up_to.";\n";
+    &RSAT::message::Info(join("\t", "Upstream region limits from", $up_from, "to", $up_to));
 
     #### replace absolute paths by relative paths
     $new_org_config =~ s|$RSA/|\$RSA/|g;
