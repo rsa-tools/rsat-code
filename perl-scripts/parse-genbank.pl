@@ -1,6 +1,6 @@
 #!/usr/bin/perl 
 #############################################################
-# $Id: parse-genbank.pl,v 1.34 2006/01/01 22:50:59 jvanheld Exp $
+# $Id: parse-genbank.pl,v 1.35 2006/01/06 14:18:45 rsat Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -196,7 +196,7 @@ package main;
 
     ## Parse the genbank files
     chdir $dir{input};
-    &ParseGenbankFiles(@genbank_files);
+    &ParseAllGenbankFiles(@genbank_files);
 
     #### write the contig file
     chdir $dir{main};
@@ -258,6 +258,16 @@ package main;
 				     );
     }
 
+#     foreach my $feature ($features->get_objects()) {
+# 	&RSAT::message::Debug ("feature", 
+# 			       $feature->get_attribute("id"),
+# 			       $feature->get_attribute("name"),
+# 			       $feature->get_attribute("type"),
+# 			       $feature->get_attribute("locus_tags"),
+# 			       $feature->get_attribute("GeneID"),
+# 			       ), "\n" if ($verbose >= 10);
+#     }
+    
     &ExportMakefile(@classes);
     &ExportClasses($out_file{features}, $out_format, @classes) if $export{obj};
     &ExportProteinSequences($CDSs,$org);

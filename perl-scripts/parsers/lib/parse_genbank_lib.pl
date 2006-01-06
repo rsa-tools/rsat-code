@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank_lib.pl,v 1.22 2006/01/03 08:45:54 rsat Exp $
+# $Id: parse_genbank_lib.pl,v 1.23 2006/01/06 14:18:45 rsat Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -46,7 +46,7 @@ sub ReadNextLine {
 ################################################################
 =pod
 
-=item ParseGenbankFiles
+=item ParseAllGenbankFiles
 
 Parse a list of genbank files (each file normally contains
 information about one chromosome).
@@ -56,7 +56,7 @@ collects the names for each feature type.
 
 =cut
 
-sub ParseGenbankFiles {
+sub ParseAllGenbankFiles {
     my (@genbank_files) = @_;
     foreach my $file (@genbank_files) {
 	$file{input} = $file;
@@ -91,12 +91,36 @@ sub ParseGenbankFiles {
 			 );
     }
     
+#    ## For Genes, use the GeneID as unique identifier
+#    foreach my $object ($genes->get_objects()) {
+#	$object->UseGeneIDasID();
+#    }
+    
     ## Update name index for genes (since the original IDs have been changed for GeneIDs)
     $genes->index_ids();
     $genes->index_names();
 
-    ## Use the locus_tag as unique identifier, and the GeneID as synonym
-    foreach my $holder ($genes, $CDSs, $mRNAs, $scRNAs, $tRNAs, $rRNAs, $misc_RNAs) { 
+    ################################################################
+    ## Replace IDs for the different feature types.
+    ##
+    ## This is still a bit tricky (2006/01/06), because in NCBI/Genbank there
+    ## is no suitable ID which would be defined for all the feature types.
+    ## For example
+    ## - the locus_tag is not unique : when a gene contains several mRNA and
+    ##   CDS (alternative splicing), they all bear the same locus_tag (see
+    ##   Arabidopsis for an example).
+    ## - transcript_id and GI are unique identifiers for mRNA
+    ## - protein_id and GI are unique identifiers for CDS    
+    ## - tRNA has no GI !
+    ## 
+    ## Temporarily, we use 
+    ## - GeneID for genes
+    ## - protein_id for CDS
+    ## - transcript_id for mRNA
+    ## - locus_tag for all the other feature types
+
+    ## Use the locus_tag as unique identifier
+    foreach my $holder ($scRNAs, $tRNAs, $rRNAs, $misc_RNAs) { 
 	&RSAT::message::TimeWarn("Replacing IDs by locus_tag for class", $holder->get_object_type()) if ($main::verbose >= 1);
 	foreach my $object ($holder->get_objects()) {
 	    if ($object->get_attribute("locus_tag")) {
@@ -105,7 +129,39 @@ sub ParseGenbankFiles {
 		&ErrorMessage(join("\t","Feature", $object->get_attribute("id"), "has no locus_tag"));
 	    }
 	}
+	$holder->index_ids();
     }
+
+#    if ($main::data_source eq "NCBI") {
+#	foreach my $object ($mRNAs->get_objects(),
+#			    $CDSs->get_objects()
+#			   ) {
+#	    $object->UseGenbankGIasID();
+#	}
+#    }
+
+
+    ## For CDS, use the locus_tag or the  protein_id as unique identifier
+    &RSAT::message::TimeWarn("Replacing CDS IDs by protein_id") if ($main::verbose >= 1);
+    foreach my $object ($CDSs->get_objects()) {
+	if ($object->get_attribute("protein_id")) {
+	    $object->ReplaceID("protein_id");
+	} else {
+	    &ErrorMessage(join("\t","CDS", $object->get_attribute("id"), "has no protein_id"));
+	}
+    }
+    $CDSs->index_ids();
+
+    ## For mRNA, use the transcript_id as unique identifier
+    &RSAT::message::TimeWarn("Replacing mRNA IDs by  transcript_id") if ($main::verbose >= 1);
+    foreach my $object ($mRNAs->get_objects()) {
+	if ($object->get_attribute("transcript_id")) {
+	    $object->ReplaceID("transcript_id");
+	} else {
+	    &ErrorMessage(join("\t","CDS", $object->get_attribute("id"), "has no transcript_id"));
+	}
+    }
+    $mRNAs->index_ids();
 
     ## DEBUG NOTE: ParseFeatureNames and CheckObjectNames are
     ## apparently partly redundant. I should check and remove
@@ -567,41 +623,6 @@ sub ParseGenbankFile {
     }
     close GBK;
     
-    ################################################################
-    #### this only applies to mRNA and CDS 
-#    if ($main::data_source eq "NCBI") {
-#	foreach my $object ($mRNAs->get_objects(),
-#			    $CDSs->get_objects()
-#			   ) {
-#	    $object->UseGenbankGIasID();
-#	}
-#    }
-
-#    ## For Genes, use the GeneID as unique identifier
-#    foreach my $object ($genes->get_objects()) {
-#	$object->UseGeneIDasID();
-#    }
-    
-
-#     ## For CDS, use the locus_tag or the  protein_id as unique identifier
-#     &RSAT::message::TimeWarn("Replacing CDS IDs by locus_tag or protein_id") if ($main::verbose >= 1);
-#     foreach my $object ($CDSs->get_objects()) {
-# 	if ($object->get_attribute("locus_tag")) {
-# 	    $object->ReplaceID("locus_tag");
-# 	} else {
-# 	    $object->ReplaceID("protein_id");
-# 	}
-#     }
-
-#     ## For mRNA, use the transcript_id as unique identifier
-#     &RSAT::message::TimeWarn("Replacing mRNA IDs by locus_tag or transcript_id") if ($main::verbose >= 1);
-#     foreach my $object ($mRNAs->get_objects()) {
-# 	if ($object->get_attribute("locus_tag")) {
-# 	    $object->ReplaceID("locus_tag");
-# 	} else {
-# 	    $object->ReplaceID("transcript_id");
-# 	}
-#     }
     
     return ($file_description, $sequence);
 }
@@ -678,15 +699,23 @@ sub ParseFeatureNames {
 
 	    ################################################################
 	    ## Attribute "locus_tag"
-	    my @locus_tags = $feature->get_attribute("locus_tag");
-	    foreach my $locus_tag (@locus_tags) {
-		$locus_tag = &trim($locus_tag);
-		&RSAT::message::Debug( "\t", "Adding locus tag as name to feature", 
-			   $feature->get_attribute("id"), 
-			   $locus_tag
-			 ), "\n" if ($verbose >= 4);
-		$feature->push_attribute("names", $locus_tag);
-	    }
+	    my ($locus_tag) = $feature->get_attribute("locus_tag");
+	    $locus_tag = &trim($locus_tag); ## suppress leading and trainling spaces
+	    &RSAT::message::Debug( "\t", "Adding locus tag as name to feature", 
+				   $feature->get_attribute("id"), 
+				   $locus_tag
+				   ), "\n" if ($verbose >= 4);
+	    $feature->push_attribute("names", $locus_tag);
+
+	    ################################################################
+	    ## Attribute "GeneID"
+	    my ($GeneID) = $feature->get_attribute("GeneID");
+	    $GeneID = &trim($GeneID); ## suppress leading and trainling spaces
+	    &RSAT::message::Debug( "\t", "Adding locus tag as name to feature", 
+				   $feature->get_attribute("id"), 
+				   $GeneID
+				   ), "\n" if ($verbose >= 4);
+	    $feature->push_attribute("names", $GeneID);
 
 
 	    ################################################################
@@ -770,23 +799,7 @@ sub ParseFeatureNames {
 		
 	    }	
 	    
-	    ## Add GeneId to the list of supported names
-	    my $GeneID = $feature->get_attribute("GeneID");
-	    if ($GeneID) {
-		$feature->push_attribute("names", $GeneID);
-	    }
-	    
-#	    &RSAT::message::Debug ("\t", "names done",
-#				   $class_holder->get_object_type(),
-#				   $feature->get_attribute("id"),
-#				   $feature->get_attribute('gene_id'),
-#				   $feature->get_attribute("type"),
-#				   join (":", $feature->get_attribute("names")),
-#				  ), "\n" if ($main::verbose >= 10);
-	    
 	}
-	
-
     }
 }
 
@@ -871,7 +884,7 @@ sub CreateGenbankFeatures {
 
 	## Create a new feature from the parsed feature
 	$created_feature = $features->new_object(%args);
-
+	$created_feature->force_attribute("id",$parent_feature->get_attribute("id"));
 	$created_feature->set_attribute("type",$parent_feature->get_attribute("type"));
 	$created_feature->set_attribute("organism",$parent_feature->get_attribute("organism"));
 	$created_feature->set_attribute("contig",$parent_feature->get_attribute("contig"));
@@ -879,6 +892,9 @@ sub CreateGenbankFeatures {
 	$created_feature->set_attribute("start_pos",$parent_feature->get_attribute("start_pos"));
 	$created_feature->set_attribute("end_pos",$parent_feature->get_attribute("end_pos"));
 	$created_feature->set_attribute("strand",$parent_feature->get_attribute("strand"));
+
+	$created_feature->set_attribute("locus_tag",$parent_feature->get_attribute("locus_tag"));
+	$created_feature->set_attribute("GeneID",$parent_feature->get_attribute("GeneID"));
 
 	&RSAT::message::Debug ("\t", "feature", 
 		   $created_feature->get_attribute("id"),
@@ -965,7 +981,7 @@ sub CreateGenbankFeatures {
 			       $parent_feature->get_attribute("id"),
 			       join(";", $parent_feature->get_attribute("names"))
 			      ) if ($verbose >= 5);
-
+	
 	################################################################
 	#### Inherit cross-references from parent feature
 	&RSAT::message::Debug ("\t",  "feature",		   
@@ -1008,8 +1024,8 @@ sub CreateGenbankFeatures {
 	&RSAT::message::Debug ("\t", ";", 
 			       "parsed feature", $parent_feature->get_attribute("id"), 
 			       "GI=$gi", 
-			       "locus_tag=$gi", 
-			       "LocusID=$gi", 
+			       "locus_tag=$locus_tag", 
+			       "LocusID=$LocusID", 
 			       "product=$products[0]",
 			      ), "\n" if ($verbose >= 5);
 	
@@ -1038,14 +1054,13 @@ sub CreateGenbankFeatures {
 	    if ($name) {
 		$created_feature->force_attribute("name",$name);
 	    } else {
-		$created_feature->force_attribute("name",$created_feature->get_id());
+		$created_feature->force_attribute("name",$created_feature->get_attribute("id"));
 	    }
 	    &RSAT::message::Debug ("\t", "feature",		   
 		       $created_feature->get_attribute("id"),
 		       "single name", $name,, 
 		       ), "\n" if ($verbose >= 5);
 	}
-
 
 	################################################################
 	#### create a description for the new feature
@@ -1110,6 +1125,8 @@ sub CreateGenbankFeatures {
 		    if ($transcript_id =~ /(.*)\.\d+$/) {
 			$no_version = $1;
 			$created_feature->push_attribute("names", $no_version);
+
+
 			$parent_feature->push_attribute("names", $no_version);
 		    } else {
 			$created_feature->push_attribute("names", $transcript_id);
@@ -1120,16 +1137,6 @@ sub CreateGenbankFeatures {
 	}
 
 	
-    }
-
-    ## Use locus tag as ID for the created feature
-    &RSAT::message::TimeWarn("Using locus_tag as identifier for the unified features");
-    foreach my $created_feature ($features->get_objects()) {
-	my ($locus_tag) = $created_feature->get_attribute("locus_tags");
-	if (($locus_tag) && ($locus_tag ne $null)) {
-	    $created_feature->set_attribute("locus_tag", $locus_tag);
-	    $created_feature->ReplaceID("locus_tag");
-	}
     }
 
 }
