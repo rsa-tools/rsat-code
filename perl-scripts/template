@@ -1,12 +1,13 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: template,v 1.21 2005/10/09 13:26:22 jvanheld Exp $
+# $Id: template,v 1.22 2006/01/10 15:57:25 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
 ############################################################
-#use strict;;
+
+## use strict;
 
 =pod
 
@@ -44,62 +45,71 @@ BEGIN {
 }
 require "RSA.lib";
 
-################################################################
-#### initialise parameters
-my $start_time = &AlphaDate();
-
-local %infile = ();
-local %outfile = ();
-
-local $verbose = 0;
-local $in = STDIN;
-local $out = STDOUT;
-
-&ReadArguments();
-
-################################################################
-#### check argument values
 
 
 ################################################################
-### open output stream
-$out = &OpenOutputFile($outfile{output});
+## Main package
+package main;
+{
 
-################################################################
-##### read input
-($in) = &OpenInputFile($infile{input});
-while (<$in>) {
+    ################################################################
+    #### initialise parameters
+    my $start_time = &AlphaDate();
 
+
+    %main::infile = ();
+    %main::outfile = ();
+
+    $main::verbose = 0;
+    $main::in = STDIN;
+    $main::out = STDOUT;
+
+    &ReadArguments();
+
+    ################################################################
+    #### check argument values
+
+    die "DONE\n";
+
+    ################################################################
+    ### open output stream
+    $main::out = &OpenOutputFile($main::outfile{output});
+
+    ################################################################
+    ##### read input
+    ($main::in) = &OpenInputFile($main::infile{input});
+    while (<$main::in>) {
+	
+    }
+    close $main::in if ($main::infile{input});
+    
+    ################################################################
+    #### print verbose
+    &Verbose() if ($main::verbose);
+    
+    ################################################################
+    ###### execute the command
+    
+    ################################################################
+    ###### print output
+    
+    
+    ################################################################
+    ###### finish verbose
+    if ($main::verbose >= 1) {
+	my $done_time = &AlphaDate();
+	print $main::out "; Job started $start_time\n";
+	print $main::out "; Job done    $done_time\n";
+    }
+    
+     
+    ################################################################
+    ###### close output stream
+    close $main::out if ($main::outfile{output});
+    
+    
+    exit(0);
 }
-close $in if ($infile{input});
-
-################################################################
-#### print verbose
-&Verbose() if ($verbose);
-
-################################################################
-###### execute the command
-
-################################################################
-###### print output
-
-
-################################################################
-###### finish verbose
-if ($verbose >= 1) {
-    my $done_time = &AlphaDate();
-    print $out "; Job started $start_time\n";
-    print $out "; Job done    $done_time\n";
-}
-
-
-################################################################
-###### close output stream
-close $out if ($outfile{output});
-
-
-exit(0);
-
 
 ################################################################
 ################### subroutine definition ######################
@@ -125,6 +135,7 @@ sub ReadArguments {
 #    foreach my $a (0..$#ARGV) {
     my $arg = "";
     while ($arg = shift (@ARGV)) {
+
 	## Verbosity
 =pod
 	    
@@ -140,9 +151,9 @@ Level of verbosity (detail in the warning messages during execution)
 =cut
 	if ($arg eq "-v") {
 	    if (&IsNatural($ARGV[0])) {
-		$verbose = shift(@ARGV);
+		$main::verbose = shift(@ARGV);
 	    } else {
-		$verbose = 1;
+		$main::verbose = 1;
 	    }
 	    
 	    ## Help message
@@ -178,7 +189,7 @@ allows to use the command within a pipe.
 
 =cut
 	} elsif ($arg eq "-i") {
-	    $infile{input} = $ARGV[$a+1];
+	    $main::infile{input} = shift(@ARGV);
 	    
 	    ## Output file
 =pod
@@ -190,13 +201,14 @@ allows to use the command within a pipe.
 
 =cut
 	} elsif ($arg eq "-o") {
-	    $outfile{output} = $ARGV[$a+1];
+	    $main::outfile{output} = shift(@ARGV);
 	    
 	} else {
 	    &FatalError(join("\t", "Invalid option", $arg));
 
 	}
     }
+
 
 =pod
 
@@ -209,18 +221,18 @@ allows to use the command within a pipe.
 ################################################################
 #### verbose message
 sub Verbose {
-    print $out "; template ";
-    &PrintArguments($out);
-    if (defined(%infile)) {
-	print $out "; Input files\n";
-	while (($key,$value) = each %infile) {
-	    print $out ";\t$key\t$value\n";
+    print $main::out "; template ";
+    &PrintArguments($main::out);
+    if (defined(%main::infile)) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	    print $main::out ";\t$key\t$value\n";
 	}
     }
-    if (defined(%outfile)) {
-	print $out "; Output files\n";
-	while (($key,$value) = each %outfile) {
-	    print $out ";\t$key\t$value\n";
+    if (defined(%main::outfile)) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	    print $main::out ";\t$key\t$value\n";
 	}
     }
 }
