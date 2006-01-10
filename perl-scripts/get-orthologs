@@ -1,0 +1,567 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: get-orthologs,v 1.1 2006/01/10 15:56:59 rsat Exp $
+#
+# Time-stamp: <2003-07-04 12:48:55 jvanheld>
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+get-orthologs
+
+=head1 DESCRIPTION
+
+Given a gene or a list of genes from a query organism, and a reference taxon,
+this programs returns the orthologs of the query gene(s) in all the organisms
+belonging to the reference taxon.
+
+=head1 AUTHORS
+
+=item rekins@scmbb.ulb.ac.be
+
+=item jvanheld@scmbb.ulb.ac.be
+
+=head1 CATEGORY
+
+comparative genomics
+
+=head1 USAGE
+
+get-orthologs -org query_organism -q GENE1 -q GENE2 ... -taxon ref_taxon
+    [other options]
+
+=head1 INPUT FORMAT
+
+Query genes can be directly entered on the command line (command -q) or in an
+input file.
+
+The first word of each row of input file is considered as a query. Any
+additional information on the same row is ignored.
+
+=head1 OUTPUT FORMAT
+
+A tab-separated file with two (or more) columns.
+
+=over
+
+
+=item 1) ID of the ortholog gene.
+
+=item 2) Name of the reference organism.
+
+=item 3)  ID of the query gene.
+
+=item 4) E-value
+
+=item 5) q_rank	query->reference rank
+
+=over
+
+   rank of this reference gene among all those matching the same query gene
+   for this pair of organisms.
+
+=back
+
+=item 6) r_rank	reference<-query rank
+
+=over
+
+   rank of this query gene among all those matching the same reference
+   gene for this pair of organisms.
+
+=back
+
+=head1 ORTHOLOGY CRITERIA
+
+Actually, this program allows to retrieve orthologs, but also paralogs.
+
+The detection of pairwise similarities is based on a bidirectional BLAST of
+each genome against each other. During the detection phase, multiple hits for
+a single gene are allowed, and the user can decide to filter them out or
+not. 
+
+
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+
+require "RSA.lib";
+require "RSA.disco.lib";
+
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    #### initialise parameters
+    my $start_time = &AlphaDate();
+
+
+    %main::infile = ();
+    %main::outfile = ();
+
+    $main::verbose = 0;
+    $main::in = STDIN;
+    $main::out = STDOUT;
+
+    $main::query_organism = "";
+    @main::query_genes = ();
+    $main::ref_taxon = "";
+    @main::ref_organisms = ();
+    @main::missing_blast_files = ();
+    @main::is_query = ();
+    @main::query_gene_id = ();
+    @main::missing_query_genes = ();
+
+    $main::null = "<NULL>";
+
+
+    ## ##############################################################
+    ## Columns in the BLAST file
+    @main::blast_columns = qw(query_organism
+			      ref_organism
+			      query
+			      level
+			      subject
+			      ident
+			      ali_len
+			      mismat
+			      gap_open
+			      q_start
+			      q_end
+			      s_start
+			      s_end
+			      e_value
+			      bit_sc
+			      q_rank
+			      ref_rank
+			      );
+    ## lower and upper thresholds
+    %lth = ();
+    %uth = ();
+    @supported_threshold_fields = qw(
+				     ali_len
+				     mismat
+				     gap_open
+				     q_start
+				     q_end
+				     s_start
+				     s_end
+				     e_value
+				     bit_sc
+				     q_rank
+				     ref_rank
+				     );
+    foreach my $field (@supported_threshold_fields) {
+	$supported_threshold_field{$field} = 1;
+    }
+    $supported_threshold_fields = join (",", @supported_threshold_fields);
+
+
+    &ReadArguments();
+
+
+    ################################################################
+    #### check argument values
+    
+    ## Select all supported organisms beloging to the reference taxon
+    foreach my $org (keys (%supported_organism)) {
+	my $taxonomy = $supported_organism{$org}->{"taxonomy"};
+	my @taxons = split( /;\s*/, $taxonomy);
+	foreach my $taxon (@taxons) {
+	    if (lc($taxon) eq lc($ref_taxon)) {
+		push @ref_organisms, $org;
+	    }
+	}
+    }
+    if (scalar(@main::ref_organisms) == 0) {
+	&RSAT::error::FatalError(join("\t", "There is no  supported organism corresponding to the reference taxon",
+				      $main::ref_taxon),
+				      "Use the command supported-organisms -format full to obtain the supported taxonomy."
+				 );
+    }
+    
+
+    ################################################################
+    ### open output stream
+    $main::out = &OpenOutputFile($main::outfile{output});
+
+    ################################################################
+    ##### Read queries from input file or STDIN
+    unless (scalar(@query_genes) > 0) {
+	($main::in) = &OpenInputFile($main::infile{input});
+	while (<$main::in>) {
+	    chomp();
+	    s/\r/\n/g; ## Suppress Windows-specific carriage return
+	    next if /^;/;
+	    next if /^\#/;
+	    next unless /\S/;
+	    my ($query_gene) = split "\t";
+	    push @main::query_genes, $query_gene;
+	}
+	close $main::in if ($main::infile{input});
+    }
+
+
+    ################################################################
+    ## load the query organism
+    $organism = new RSAT::organism();
+    $organism->check_name($query_organism);
+    $organism->set_attribute("name", $query_organism);
+    $organism->OpenContigs($query_organism);
+    $organism->LoadFeatures($annotation_table, $feature_types);
+    $organism->LoadSynonyms();
+    $feature_index = $organism->get_attribute("name_index");
+    foreach my $query (@main::query_genes) {
+	if ($feature_index->contains(uc($query))) {
+	    my $current_feature = $feature_index->get_first_value(uc($query));
+	    my $feature_id = $current_feature->get_attribute("id");
+	    $is_query{$feature_id} = $query;
+	    $query_gene_id{$query} = $feature_id;
+	    &RSAT::message::Warning(join("\t", "query gene", $query, $feature_id)) if (); 
+	} else {
+	    push @missing_query_genes, $query;
+	    &RSAT::error::FatalError(join("\t", "Missing query", $query)) if ($main::verbose >= 2);
+	    $query_gene_id{$query} = $main::null;
+	}
+    }
+    
+
+    ################################################################
+    #### print verbose
+    &Verbose() if ($main::verbose);
+    
+    ## ##############################################################
+    ## Identify BLAST matches
+    my $query_org_dir = $supported_organism{$main::query_organism}->{'data'};
+    my $query_org_blast_dir = join("/", $query_org_dir, "blast_hits");
+    foreach my $ref_organism (@main::ref_organisms) {
+	my $blast_file = join("", $query_org_blast_dir, "/", "q_", $main::query_organism, "_db_", $ref_organism, "_ranks.tab");
+
+	## Check if the BLAST file exists
+	if ((-e $blast_file) || (-e $blast_file.".gz")) {
+	    &RSAT::message::TimeWarn(join("\t", "Selecting hits in ref organism", $ref_organism)) if ($main::verbose >= 2);
+	    &RSAT::message::TimeWarn(join("\t", "\tblast file", $blast_file)) if ($main::verbose >= 3);
+	    
+	    my ($hit_handle) = &OpenInputFile($blast_file);
+	    while (<$hit_handle>) {
+		chomp();
+		s/\r/\n/g; ## Suppress Windows-specific carriage return
+		next if /^;/;
+		next if /^\#/;
+		next unless /\S/;
+		
+		my @fields = split "\t";
+#		my $query_id = $main::blast_column{query};
+		my %hit = ();
+		foreach my $field (@main::blast_columns) {
+		    $hit->{$field} = shift @fields;
+		}
+		if ($is_query{$hit->{query}}) {
+		    push @hits, \%hit;
+		    &RSAT::message::Info(join("\t", "query",
+					      $hit->{query},
+					      "hit found", 
+					      $hit->{subject},
+					      $hit->{ali_len},
+					      $hit->{ident},
+					      $hit->{e_value},
+					      ));
+		}
+	    }
+	    close $hit_handle;
+	} else {
+	    push @main::missing_blast_files, $blast_file;
+	    &RSAT::message::Warning(join("\t", "Missing BLAST file", $blast_file));
+	}
+
+    }
+    
+    ################################################################
+    ###### print output
+
+    ## Report missing BLAST files
+    if (scalar(@main::missing_blast_files) > 0) {
+	print $out "; Missing BLAST files\n";
+	foreach my $file (@main::missing_blast_files) {
+	    print $out ";\t", $file, "\n";
+	}
+    }
+
+    ## Report missing query genes
+    if (scalar(@main::missing_query_genes) > 0) {
+	print $out "; Missing query genes\n";
+	foreach my $gene (@main::missing_query_genes) {
+	    print $out ";\t", $gene, "\n";
+	}
+    }
+
+    
+    
+    ################################################################
+    ###### finish verbose
+    if ($main::verbose >= 1) {
+	my $done_time = &AlphaDate();
+	print $main::out "; Job started $start_time\n";
+	print $main::out "; Job done    $done_time\n";
+    }
+    
+     
+    ################################################################
+    ###### close output stream
+    close $main::out if ($main::outfile{output});
+    
+    
+    exit(0);
+}
+
+################################################################
+################### subroutine definition ######################
+################################################################
+
+
+################################################################
+#### display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+#### display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+#### Read arguments 
+sub ReadArguments {
+#    foreach my $a (0..$#ARGV) {
+    my $arg = "";
+    while ($arg = shift (@ARGV)) {
+	
+#	&RSAT::message::Debug("Parsing argument", $arg);
+
+	## Verbosity
+=pod
+	    
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($ARGV[0])) {
+		$main::verbose = shift(@ARGV);
+	    } else {
+		$main::verbose = 1;
+	    }
+	    
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+	    
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+	    
+
+	    ## Input file
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-i") {
+	    &RSAT::error::FatalError("option -i is incompatible with option -q")
+		if (scalar(@main::query_genes) > 0);
+	    $main::infile{input} = shift(@ARGV);
+	    
+	    ## Output file
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $main::outfile{output} = shift(@ARGV);
+	    
+
+=pod
+
+=item B<-org query_organism>
+
+Organisms to whih the query gene(s) belong.
+
+=cut
+
+	} elsif ($arg eq "-org") {
+	    $main::query_organism = shift (@ARGV);
+	    unless (defined($supported_organism{$main::query_organism})) {
+		&RSAT::error::FatalError(join("\t", "Organism", 
+					      $main::query_organism, 
+					      "is not supported.",
+					      "Use the command supported-organisms to get a list of supported organisms. "));
+	    }
+
+=pod
+
+=item B<-q query_gene>
+
+Query gene. The query can be either the gene identifier, or any supported name
+(synonyms, cross-references). 
+
+This option can be used iteratively on the same command to specify multiple
+query genes.
+
+=cut
+        } elsif ($arg eq "-q") {
+           &RSAT::error::FatalError("The option -q is incompatible with the option -i")
+             if ($main::infile{input});
+           push @main::query_genes, shift(@ARGV);
+
+=pod
+
+=item B<-taxon ref_taxon>
+
+Reference taxon. Orthologs are returned for each supported organism belonging
+to the reference taxon.
+
+=cut
+
+	} elsif ($arg eq "-taxon") {
+	    $main::ref_taxon = shift (@ARGV);
+
+
+=pod
+
+=item B<-lth field lower_threshold>
+
+Lower threshold value on the specified field.
+
+=item B<-uth field upper_threshold>
+
+Upper threshold value on the specified field.
+
+Supported threshold values: 
+
+=cut
+
+            #### threshold values
+        } elsif ($arg eq "-lth") {
+            my $field = shift(@ARGV);
+            my $value = shift(@ARGV);
+	    &RSAT::error::FatalError("Invalid threshold criterion\t".$field)
+		unless ($supported_threshold_field{$field});
+            $lth{$field} = $value;
+
+        } elsif ($arg eq "-uth") {
+            my $field = shift(@ARGV);
+            my $value = shift(@ARGV);
+	    &RSAT::error::FatalError("Invalid threshold criterion\t".$field)
+		unless ($supported_threshold_field{$field});
+            $uth{$field} = $value;
+
+
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+
+	}
+    }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $main::out "; get-orthologs ";
+    &PrintArguments($main::out);
+    if (defined(%main::infile)) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+    if (defined(%main::outfile)) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+
+    ## Query organism and genes
+    printf $main::out "; %-21s\t%s\n", "Query organism", $main::query_organism;
+    print $main::out ("; Query genes\n");
+    foreach my $query (@main::query_genes) {
+	print $main::out join("\t", 
+			      ";",
+			      $query,
+			      $query_gene_id{$query}
+			      ), "\n";
+    }
+
+    ## Reference taxon and organisms
+    printf $main::out "; %-21s\t%s\n", "Reference taxon", $main::ref_taxon;
+    print $main::out join ("\n;\t",
+			   join("\t", "; Reference organisms", scalar(@main::ref_organisms)),
+			   @main::ref_organisms
+			   ), "\n";
+
+    ## Threshold values
+    printf $out &PrintThresholdValues();
+
+}
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=cut
