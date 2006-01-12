@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.1 2006/01/10 15:56:59 rsat Exp $
+# $Id: get-orthologs,v 1.2 2006/01/12 16:11:10 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -194,7 +194,7 @@ package main;
 				      "Use the command supported-organisms -format full to obtain the supported taxonomy."
 				 );
     }
-    
+
 
     ################################################################
     ### open output stream
@@ -271,8 +271,40 @@ package main;
 		foreach my $field (@main::blast_columns) {
 		    $hit->{$field} = shift @fields;
 		}
+
 		if ($is_query{$hit->{query}}) {
-		    push @hits, \%hit;
+
+		  ## Check thresholds on fields
+		  my $discarded =0;
+		  foreach my $field (keys(%lth)) {
+		    if ($hit->{$field} < $lth{$field}) {
+		      &RSAT::message::Warning(join("\t","query",
+						   $hit->{query},
+						   "subject",
+						   $hit->{subject},
+						   "hit not selected",
+						   $field,
+						   $hit->{$field},"<=>","lth",$lth{$field}));
+		      $discarded++;
+		    }
+		  }
+		  foreach my $field (keys(%uth)) {
+		    if ($hit->{$field} > $uth{$field}) {
+		      &RSAT::message::Warning(join("\t","query",
+						   $hit->{query},
+						   "subject",
+						   $hit->{subject},
+						   "hit not selected",
+						   $field,
+						   $hit->{$field},"<=>","uth",$uth{$field}));
+		      $discarded++;
+		    }
+		  }
+		  next if ($discarded);
+
+		  # Select hit
+		  $selected_hits{$hit->{query}}{$hit->{subject}}=\%hit;
+		  #		    push @hits, \%hit;
 		    &RSAT::message::Info(join("\t", "query",
 					      $hit->{query},
 					      "hit found", 
@@ -482,7 +514,7 @@ Lower threshold value on the specified field.
 
 Upper threshold value on the specified field.
 
-Supported threshold values: 
+Supported threshold values: ali_len,mismat,gap_open,q_start,q_end,s_start,s_end,e_value,bit_sc,q_rank,ref_rank
 
 =cut
 
