@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: genome-blast.pl,v 1.13 2005/10/09 13:37:54 jvanheld Exp $
+# $Id: genome-blast.pl,v 1.14 2006/01/12 16:04:05 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -533,12 +533,16 @@ sub RankHits {
     chomp($header);
     $header =~ s/\r//;
     
-    my $h = 0;
+    my $h = 0; ## Hit number
+    my $l = 0; ## Line number in the BLAST file
     while (<$in>) {
+	$l++; ## line number in the BLAST file
 	chomp();
 	s/\r//;
 	next unless /\S/;
-	$h++;
+
+	$h++; ## Hit number
+
 	my @fields = split "\t";
 	
 	## Create a new object for the match
@@ -547,13 +551,19 @@ sub RankHits {
 	    $hit->set_attribute($col, shift @fields);
 	}
 	
-	
 	## Index row per pair of sequence IDs
 	my $query = $hit->get_attribute("query");
 	my $subject = $hit->get_attribute("subject");
-	
+
+	## Check required fields
+	unless ($query) {&RSAT::message::Warning(join("\t", "Query fields is empty for hit number", $h, "line", $l, $_)) ; next};
+	unless ($subject) {&RSAT::message::Warning(join("\t", "Subject fields is empty for hit number", $h, "line", $l, $_)) ; next};
+	unless (&IsReal($hit->get_attribute('e_value'))) {&RSAT::message::Warning(join("\t", "e_value fields is not a real number for hit number", $h, "line", $l, $_)) ; next};
+
+	&RSAT::message::Debug($h, $query, $subject, $hit) if ($main::verbose >= 10);
 	push @{$hits_per_query{$query}}, $hit;
 	push @{$hits_per_subject{$subject}}, $hit;
+#	die if ($h >= 1000);
     }
     close $in if ($outfile{blast_result});
     
