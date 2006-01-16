@@ -7,7 +7,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.12 2006/01/05 05:50:01 jvanheld Exp $
+# $Id: compare-classes,v 1.13 2006/01/16 08:08:15 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -139,14 +139,20 @@ $out = &OpenOutputFile($outfile{output});
 
 ################################################################
 ###### read class files
+
+## Query classes
 %query_classes = &ReadClasses($infile{query_classes},0,"",1);
+$nb_query_classes = scalar(keys %query_classes);
+&RSAT::message::Info((join("\t", "Query classes", $nb_query_classes))) if ($main::verbose >= 2);
+
+## Reference classes
 %ref_classes = &ReadClasses($infile{ref_classes},0,"",1);
 $nb_ref_classes = scalar(keys %ref_classes);
-$nb_query_classes = scalar(keys %query_classes);
+&RSAT::message::Info((join("\t", "Reference classes", $nb_ref_classes))) if ($main::verbose >= 2);
 
 ## Read ref class names
 if ($infile{rnames}) {
-    &RSAT::message::Info("Reading reference names\t".$infile{rnames}) if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Reading reference names\t".$infile{rnames}) if ($main::verbose >= 2);
     my ($in) = &OpenInputFile($infile{rnames});
     while (<$in>) {
 	chomp();
@@ -164,7 +170,7 @@ if ($infile{rnames}) {
 
 ## Read query class names
 if ($infile{qnames}) {
-    &RSAT::message::Info("Reading query names\t".$infile{qnames}) if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Reading query names\t".$infile{qnames}) if ($main::verbose >= 2);
     my ($in) = &OpenInputFile($infile{qnames});
     while (<$in>) {
 	chomp;
@@ -183,6 +189,8 @@ if ($infile{qnames}) {
 ################################################################
 #### unless specified, calculate population size from the lists of
 #### reference and query members
+
+&RSAT::message::TimeWarn("Indexing class members") if ($main::verbose >= 2);
 foreach my $r (keys %ref_classes) {
     foreach $m ( $ref_classes{$r}->get_members()) {
 	$member_index{$m}++;
@@ -200,6 +208,7 @@ foreach my $q (keys %query_classes) {
 if ($population_size == 0 ) {
     $population_size = scalar(keys %member_index);
 }
+&RSAT::message::Info((join("\t", "Population size", $population_size))) if ($main::verbose >= 2);
 
 
 
@@ -755,17 +764,18 @@ sub Verbose {
         }
     }
 
+    ## Number of query classes and elements per class
     printf $out "; %-29s\t%d\n", "Query classes (nq)", $nb_query_classes;
     if ($verbose >= 2) {
 	foreach my $f (keys %query_classes) {
-	    printf $out ";\t%d\t%s\n", $query_classes{$f}->get_size(), $query_classes{$f}->get_name();
+	    printf $out ";\t%d\t%s\n", $query_classes{$f}->get_size(), $query_classes{$f}->get_attribute("name");
 	}
     }
 
     printf $out "; %-29s\t%d\n", "Reference classes (nr)", $nb_ref_classes;
     if ($verbose >= 2) {
 	foreach my $f (keys %ref_classes) {
-	    printf $out ";\t%d\t%s\n", $ref_classes{$f}->get_size(), $ref_classes{$f}->get_name();
+	    printf $out ";\t%d\t%s\n", $ref_classes{$f}->get_size(), $ref_classes{$f}->get_attribute("name");
 	}
     }
 
@@ -822,6 +832,9 @@ sub Verbose {
 sub CompareClasses {
     my $reference_classes = scalar(keys(%ref_classes));
     my $rn = 0;
+    
+    &RSAT::message::TimeWarn("Comparing classes") if ($main::verbose >= 2);
+
     foreach my $r (keys %ref_classes) {
 	$rn++;
 	
@@ -832,7 +845,7 @@ sub CompareClasses {
 	&RSAT::message::TimeWarn(join ("\t", "Treating reference class" ,$rn, "of", $reference_classes , $r)) if ($main::verbose >= 3);
 
 	################################################################
-	#### number fo common members 
+	#### number of common members 
 
 	#### collect members of the reference class
 	my @ref_members = $ref_classes{$r}->get_members();
