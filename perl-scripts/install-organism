@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.58 2006/01/06 19:02:11 jvanheld Exp $
+# $Id: install-organism,v 1.59 2006/01/16 08:08:43 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -219,25 +219,28 @@ sub UpdateConfig {
     }
 
     if (defined($supported_organism{$organism_short_name}->{'genome'})) {
-	&Warning ("Organism $organism_short_name already defined in the config file",
-		  "\n\the previous config will be commented\n");
+	&RSAT::message::Warning(join("\t", $organism_short_name, "already defined in the config file",
+		  "the previous config will be commented"));
     }
 
     ### read taxonomy from the parsing result
     $organism_table = $dir{install}."/genome/organism.tab";
 
     ($org_handle) = &OpenInputFile($organism_table);
+    $taxonomy_field = 2;
     while (<$org_handle>) {
 	chomp;
-	if (/^-- field (\d)	taxonomy/) {
+	next unless (/\S/);
+	if (/^-- field\s+(\d)	taxonomy/) {
 	    $taxonomy_field = $1;
 	} elsif (/^--/) {
 	    next;
 	} else {
 	    if (defined($taxonomy_field)) {
 		@fields = split "\t";
+		$id = $fields[0];
 		$taxonomy = $fields[$taxonomy_field - 1];
-		&Warning ("Taxonomy\t$taxonomy\n");
+		&RSAT::message::Info (join("\t", "Parsed taxonomy from organism.tab", "Id",$id, "Taxonomy", $taxonomy));
 	    } else {
 		&Warning("Cannot read taxonomy in file $organism_table\n");
 	    }

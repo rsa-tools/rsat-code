@@ -90,6 +90,7 @@ while ($current_line = <$in>) {
 #		&RSAT::message::Warning(join("\t", "Info for query",$query, $info)) if ($main::verbose >= 10);
 		push @info, $info;
 	    }
+	    &RSAT::message::Info(join ("\t", "Line", $l, "Info found", $query, join("\t", @info))) if ($main::verbose >= 3);
 	} else {
 	    @info = @null;
 	    &RSAT::message::Warning(join ("\t", "Line", $l, "No info found for query", $query)) if ($main::verbose >= 1);
