@@ -2,6 +2,8 @@
 use CGI;
 #require "cgi-lib.pl";
 
+### CVS: moived ENV{SERVER_ADMIN} to the config file
+
 $main::verbose = 0;
 require "RSA.seq.lib";
 require "RSA.stat.lib";
@@ -83,7 +85,7 @@ if ($REMOTE_SERVER) {
 
 $HTML = "$RSA/public_html"; 
 $WWW_TMP = "$WWW_RSA/tmp";
-$ENV{SERVER_ADMIN} = "jvanheld\@scmbb.ulb.ac.be";
+#$ENV{SERVER_ADMIN} = "jvanheld\@scmbb.ulb.ac.be";
 
 $counter_file = "$LOGS/count-file";
 ($sec, $min, $hour,$day,$month,$year) = localtime(time);
