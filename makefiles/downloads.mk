@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: downloads.mk,v 1.26 2005/10/09 17:41:42 rsat Exp $
+# $Id: downloads.mk,v 1.27 2006/01/16 08:06:47 jvanheld Exp $
 #
 # Time-stamp: <2003-10-09 14:02:21 jvanheld>
 #
@@ -426,16 +426,12 @@ prosite:
 #########################################
 #   Gene Ontology database
 #########################################
-GO_URLS= www.godatabase.org/dev/database/archive/latest/README				\
-	www.godatabase.org/dev/database/archive/latest/go_200407-schema-mysql.sql.gz	\
-	www.godatabase.org/dev/database/archive/latest/go_200407-termdb-data.gz		\
-	www.godatabase.org/dev/database/archive/latest/go_200407-termdb-summary.txt.gz	\
-	www.godatabase.org/dev/database/archive/latest/go_200407-termdb-tables.tar.gz	\
-	www.godatabase.org/dev/database/archive/latest/go_200407-termdb.xml.gz		\
-	www.godatabase.org/dev/database/archive/latest/go_200407.dtd.gz			\
-	www.geneontology.org/ontology/gene_ontology.obo
+GO_URLS= \
+	www.geneontology.org/ontology/gene_ontology.obo \
+	www.geneontology.org/doc/GO.terms_and_ids
 
-GO_URL=www.godatabase.org/dev/database/archive/latest/
+GO_URL=www.geneontology.org/ontology/
+GO_COMPLETE=http://archive.godatabase.org/latest/
 GO_HTTP=http://${GO_URL}
 GO_FTP=ftp://ftp.geneontology.org/pub/go/
 go:
@@ -445,6 +441,11 @@ go_one_url:
 	@mkdir -p logs
 	wget -np -r -l 1 -N ${GO_HTTP}
 	chmod -R g+w ${GO_URL}
+
+## Gene Ontology Associations
+goa_ebi:
+#	wget -rNL ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/HUMAN/gene_association.goa_human.gz
+	wget -rNL http://www.geneontology.org/gene-associations/gene_association.goa_human.gz
 
 ################################################################
 ## JASPAR
