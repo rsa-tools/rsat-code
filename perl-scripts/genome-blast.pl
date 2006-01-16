@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: genome-blast.pl,v 1.14 2006/01/12 16:04:05 rsat Exp $
+# $Id: genome-blast.pl,v 1.15 2006/01/16 07:42:07 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -509,7 +509,7 @@ sub FormatDB {
 sub BlastAll {
     &RSAT::message::TimeWarn(join ("\t","Running blastall", "query organism", $query_organism, "DB organism", $db_organism)) if ($main::verbose >= 1);
     &RSAT::util::CheckOutDir($dir{blast_result}); 
-    my $command="blastall -M ".$blast_matrix." -p blastp -d ".$outfile{blast_db}." -i ".$infile{query_org_fasta}." -m 8 -e 0.00001 >> ".$outfile{blast_result};
+    my $command="blastall -M ".$blast_matrix." -p blastp -d ".$outfile{blast_db}." -i ".$infile{query_org_fasta}." -m 8 -e 0.00001 > ".$outfile{blast_result};
     &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
     &RSAT::message::TimeWarn(join("\t","Blastall done", $outfile{blast_result})) if ($main::verbose >= 1);
 }
