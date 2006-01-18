@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.3 2006/01/16 08:05:39 rsat Exp $
+# $Id: get-orthologs,v 1.4 2006/01/18 16:05:00 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -126,6 +126,7 @@ package main;
     @main::is_query = ();
     @main::query_gene_id = ();
     @main::missing_query_genes = ();
+    @main::bidirect_hits = ();
 
     $main::null = "<NULL>";
 
@@ -148,8 +149,14 @@ package main;
 			      e_value
 			      bit_sc
 			      q_rank
-			      ref_rank
+			      s_rank
 			      );
+    %main::blast_col_index = (); ## Index columns by name
+    foreach my $i (0..$#blast_columns) {
+	$blast_col_index{$blast_columns[$i]} = $i;
+    }
+    
+
     ## lower and upper thresholds
     %lth = ();
     %uth = ();
@@ -164,7 +171,7 @@ package main;
 				     e_value
 				     bit_sc
 				     q_rank
-				     ref_rank
+				     s_rank
 				     );
     foreach my $field (@supported_threshold_fields) {
 	$supported_threshold_field{$field} = 1;
@@ -172,6 +179,18 @@ package main;
     $supported_threshold_fields = join (",", @supported_threshold_fields);
 
 
+    ## Output fields
+    my @output_fields = qw(ident
+			   ali_len
+			   mismat
+			   gap_open
+			   e_value
+			   bit_sc
+			   q_rank
+			   s_rank);
+
+    ################################################################
+    ## Read argument values
     &ReadArguments();
 
 
@@ -223,14 +242,14 @@ package main;
     $organism->check_name($query_organism);
     $organism->set_attribute("name", $query_organism);
     $organism->OpenContigs($query_organism);
-    $organism->LoadFeatures($annotation_table, $feature_types);
+    $organism->LoadFeatures();
     $organism->LoadSynonyms();
     $feature_index = $organism->get_attribute("name_index");
     foreach my $query (@main::query_genes) {
 	if ($feature_index->contains(uc($query))) {
 	    my $current_feature = $feature_index->get_first_value(uc($query));
 	    my $feature_id = $current_feature->get_attribute("id");
-	    $is_query{$feature_id} = $query;
+	    $is_query{$feature_id} = uc($query);
 	    $query_gene_id{$query} = $feature_id;
 	    &RSAT::message::Warning(join("\t", "query gene", $query, $feature_id)) if (); 
 	} else {
@@ -258,12 +277,12 @@ package main;
       ## Check if the BLAST file exists and read it
       my $blast_file = join("", $query_org_blast_dir,"/","q_",$main::query_organism,"_db_",$ref_organism,"_ranks.tab");
       #my ($hits)=&readBLAST($blast_file,\@main::blast_columns);
-      my ($hits)=&readBLAST_by_query_gene($blast_file,\@main::blast_columns,"query",\%is_query);
+      my ($hits)=&select_hits($blast_file,\@main::blast_columns,"query",\%is_query);
       #     print Dumper($hits); # DEBUG
 
       my $rev_blast_file = join("", $ref_org_blast_dir,"/","q_",$ref_organism,"_db_",$main::query_organism,"_ranks.tab");
       # my (%rev_hits)=&readBLAST($rev_blast_file,\@main::blast_columns);
-      my ($rev_hits)=&readBLAST_by_query_gene($rev_blast_file,\@main::blast_columns,"subject",\%is_query);
+      my ($rev_hits)=&select_hits($rev_blast_file,\@main::blast_columns,"subject",\%is_query);
 
       ################################################################
       # Let state Reciprocal Best hits (RBH) inferred from one blast
@@ -279,32 +298,38 @@ package main;
       #	my (%bbh)=&GetBidirectionalBesthits(\%hits,\%rev_hits);
 
       # Get bidirectional Hits
-      my (@bidirect_hits) = ();
       foreach my $query_gene (keys (%is_query)) {
 	&RSAT::message::Warning(join("\t", "query gene", $query_gene)) if ($main::verbose >= 4);
 	if ($hits->{$query_gene}) {
 	  foreach my $ref_gene (keys %{$hits->{$query_gene}}) {
 	    &RSAT::message::Warning(join("\t", "ref gene", $ref_gene)) if ($main::verbose >= 4);
 	    if ($rev_hits->{$ref_gene}->{$query_gene}){
-	      my ($found_hit) = $hits->{$query_gene}->{$ref_gene};
-	      my ($found_rev_hit) = $rev_hits->{$ref_gene}->{$query_gene};
-	      &RSAT::message::Info(join("\t", "query",
-					$found_hit->{query},
-					"bidirectional hit",
-					$found_hit->{subject},
-					$found_hit->{ali_len},
-					$found_hit->{ident},
-					$found_hit->{e_value},
-					$found_hit->{q_rank},
-					$found_hit->{ref_rank},
-					$found_rev_hit->{e_value},
-					$found_rev_hit->{ali_len},
-					$found_rev_hit->{ident},
-					$found_rev_hit->{e_value},
-					$found_rev_hit->{q_rank},
-					$found_rev_hit->{ref_rank},
-				       )) if ($main::verbose >= 2);
-	      push @bidirect_hits, $found_hit;
+	      my ($fwd_hit) = $hits->{$query_gene}->{$ref_gene};
+	      my ($rev_hit) = $rev_hits->{$ref_gene}->{$query_gene};
+	      my $hit_info = join("\t",
+				  $fwd_hit->{query},
+				  $main::query_organism,
+				  $fwd_hit->{subject},
+				  $ref_organism);
+
+	      ## add fields for the fwd hit
+	      $hit_info .= "\tFWD";
+	      foreach my $field (@output_fields) {
+		  $hit_info .= "\t";
+		  $hit_info .= $fwd_hit->{$field};
+#		  &RSAT::message::Debug($field, $fwd_hit->{$field}, $hit_info) if ($main::verbose >= 10);
+	      }
+
+	      ## add fields for the rev hit
+	      $hit_info .= "\tREV";
+	      foreach my $field (@output_fields) {
+		  $hit_info .= "\t";
+		  $hit_info .= $rev_hit->{$field};
+#		  &RSAT::message::Debug($field, $rev_hit->{$field}, $hit_info) if ($main::verbose >= 10);
+	      }
+					
+	      &RSAT::message::Info("bidirectional hit\t",$hit_info) if ($main::verbose >= 2);
+	      push @bidirect_hits, $hit_info;
 	    }
 	  }
 	} else {
@@ -332,7 +357,33 @@ package main;
 	}
     }
 
-    
+    ## ##############################################################
+    ## Report bidirectional hits
+
+    ## Header line
+    my $header =  join("\t",
+		       "query_gene",
+		       "query_org",
+		       "ref_gene",
+		       "ref_org");
+    ## add fields for the fwd hit
+    $header .= "\tFWD";
+    foreach my $field (@output_fields) {
+	$header .= "\t";
+	$header .= $field;
+    }
+
+    ## add fields for the rev hit
+    $header .= "\tREV";
+    foreach my $field (@output_fields) {
+	$header .= "\t";
+	$header .= $field;
+    }
+    print $out "#", $header;
+	
+    foreach my $hit_info (@bidirect_hits) {
+	print $out "$hit_info\n";
+    }
     
     ################################################################
     ###### finish verbose
@@ -358,171 +409,187 @@ package main;
 
 ################################################################
 #### READ BLAST FILE
-sub readBLAST{
-  my ($blast_file,$blast_columns) = @_;
-#  my (@blast_columns)=@{$blast_columns};
-  if ((-e $blast_file) || (-e $blast_file.".gz")) {
-    &RSAT::message::TimeWarn(join("\t", "\tblast file", $blast_file)) if ($main::verbose >= 3);
-    my ($hit_handle) = &OpenInputFile($blast_file);
-    my $l =0;			# counter of lines
-    my $selected_hits = {}; # ref to a hash
-    while (<$hit_handle>) {
-      $l++;
-      chomp();
-      s/\r/\n/g;		## Suppress Windows-specific carriage return
-      next if /^;/;
-      next if /^\#/;
-      next unless /\S/;
-      next if ($l==1);		# skip first line header (temporary)
+# sub readBLAST{
+#   my ($blast_file,$blast_columns) = @_;
+# #  my (@blast_columns)=@{$blast_columns};
+#   if ((-e $blast_file) || (-e $blast_file.".gz")) {
+#     &RSAT::message::TimeWarn(join("\t", "\tblast file", $blast_file)) if ($main::verbose >= 3);
+#     my ($hit_handle) = &OpenInputFile($blast_file);
+#     my $l =0;			# counter of lines
+#     my $selected_hits = {}; # ref to a hash
+#     while (<$hit_handle>) {
+#       $l++;
+#       chomp();
+#       s/\r/\n/g;		## Suppress Windows-specific carriage return
+#       next if /^;/;
+#       next if /^\#/;
+#       next unless /\S/;
+#       next if ($l==1);		# skip first line header (temporary)
 
-      my @fields = split "\t";
-      #		my $query_id = $main::blast_column{query};
-      my $hit ={};
-      ## Get hit and check thresholds on fields
-      my $discarded =0;
-      foreach my $field (@{$blast_columns}) {
-	# get hit
-	$hit->{$field} = shift @fields;
+#       my @fields = split "\t";
+#       #		my $query_id = $main::blast_columns{query};
+#       my $hit ={};
+#       ## Get hit and check thresholds on fields
+#       my $discarded =0;
+#       foreach my $field (@{$blast_columns}) {
+# 	# get hit
+# 	$hit->{$field} = shift @fields;
 
-	# check lower threshold
-	if ($lth{$field}) {
-	  if ($hit->{$field} < $lth{$field}) {
-	    &RSAT::message::Warning(join("\t","query",
-					 $hit->{query},
-					 "subject",
-					 $hit->{subject},
-					 "hit not selected",
-					 $field,
-					 $hit->{$field},"<=>","lth",$lth{$field})) if ($main::verbose >=4);
-	    $discarded++;
-	  }
-	}
-	#next if ($discarded);
+# 	# check lower threshold
+# 	if ($lth{$field}) {
+# 	  if ($hit->{$field} < $lth{$field}) {
+# 	    &RSAT::message::Warning(join("\t","query",
+# 					 $hit->{query},
+# 					 "subject",
+# 					 $hit->{subject},
+# 					 "hit not selected",
+# 					 $field,
+# 					 $hit->{$field},"<=>","lth",$lth{$field})) if ($main::verbose >=4);
+# 	    $discarded++;
+# 	  }
+# 	}
+# 	#next if ($discarded);
 
-	# check upper threshold
-	if ($uth{$field}) {
-	  if ($hit->{$field} > $uth{$field}) {
-	    &RSAT::message::Warning(join("\t","query",
-					 $hit->{query},
-					 "subject",
-					 $hit->{subject},
-					 "hit not selected",
-					 $field,
-					 $hit->{$field},"<=>","uth",$uth{$field})) if ($main::verbose >=4);
-	    $discarded++;
-	  }
-	}
-      }
-      next if ($discarded);
+# 	# check upper threshold
+# 	if ($uth{$field}) {
+# 	  if ($hit->{$field} > $uth{$field}) {
+# 	    &RSAT::message::Warning(join("\t","query",
+# 					 $hit->{query},
+# 					 "subject",
+# 					 $hit->{subject},
+# 					 "hit not selected",
+# 					 $field,
+# 					 $hit->{$field},"<=>","uth",$uth{$field})) if ($main::verbose >=4);
+# 	    $discarded++;
+# 	  }
+# 	}
+#       }
+#       next if ($discarded);
       
-      # Select all hit respecting thresholds
-      $selected_hits->{$hit->{query}}->{$hit->{subject}}=$hit;
-      #	push @hits, \%hit;
-      if ($main::verbose >= 4) {
-	&RSAT::message::Info(join("\t", "query",
-				  $hit->{query},
-				  "hit found", 
-				  $hit->{subject},
-				  $hit->{ali_len},
-				  $hit->{ident},
-				  $hit->{e_value},
-				 ));
-      }
+#       # Select all hit respecting thresholds
+#       $selected_hits->{$hit->{query}}->{$hit->{subject}}=$hit;
+#       #	push @hits, \%hit;
+#       if ($main::verbose >= 4) {
+# 	&RSAT::message::Info(join("\t", "query",
+# 				  $hit->{query},
+# 				  "hit found", 
+# 				  $hit->{subject},
+# 				  $hit->{ali_len},
+# 				  $hit->{ident},
+# 				  $hit->{e_value},
+# 				 ));
+#       }
+#     }
+#     close $hit_handle;	
+#     &RSAT::message::TimeWarn("\t",join("\t", scalar(keys %{$selected_hits}), "selected hits by query")) if ($main::verbose >= 2);
+#     return($selected_hits);
+#   } else {
+#     push @main::missing_blast_files, $blast_file;
+#     &RSAT::message::Warning(join("\t", "Missing BLAST file", $blast_file));
+#     return(0);
+#   }
+# }
+
+
+## ##############################################################
+## Read one BLAST file, select the hits corresponding to the query genes, and
+## filter them according to the specified thresholds
+sub select_hits{
+    my ($blast_file,$blast_columns,$query_matching_column,$is_query) = @_;
+    my (%is_query)=%{$is_query};
+    
+    unless ((-e $blast_file) || (-e $blast_file.".gz")) {
+	push @main::missing_blast_files, $blast_file;
+	&RSAT::message::Warning(join("\t", "Missing BLAST file", $blast_file));
+	return(0);
     }
-    close $hit_handle;	
-    &RSAT::message::TimeWarn("\t",join("\t", scalar(keys %{$selected_hits}), "selected hits by query"));
-    return($selected_hits);
-  } else {
-    push @main::missing_blast_files, $blast_file;
-    &RSAT::message::Warning(join("\t", "Missing BLAST file", $blast_file));
-    return(0);
-  }
-}
-################################################################
-#### READ BLAST FILE filetred by query genes
-sub readBLAST_by_query_gene{
-  my ($blast_file,$blast_columns,$gene_column,$is_query) = @_;
-  my (%is_query)=%{$is_query};
-  if ((-e $blast_file) || (-e $blast_file.".gz")) {
-    &RSAT::message::TimeWarn(join("\t", "\tblast file", $blast_file)) if ($main::verbose >= 3);
-    &RSAT::message::TimeWarn(join("\t", "\tqueries", keys (%is_query))) if ($main::verbose >= 1);
+    
+    &RSAT::message::TimeWarn(join("\t", "Selecting hits from BLAST file", $blast_file)) if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn(join("\t", "\tqueries", keys (%is_query))) if ($main::verbose >= 3);
     my ($hit_handle) = &OpenInputFile($blast_file);
     my $l =0;			# counter of lines
     my $hits = {};
-     while (<$hit_handle>) {
-      $l++;
-      chomp();
-      s/\r/\n/g;		## Suppress Windows-specific carriage return
-      next if /^;/;
-      next if /^\#/;
-      next unless /\S/;
-      next if ($l==1);		# skip first line header (temporary)
+    my $match_col_index = $blast_col_index{$query_matching_column};
+    
+    while (<$hit_handle>) {
+	$l++;
+	chomp();
+	s/\r/\n/g;		## Suppress Windows-specific carriage return
+	next if /^;/;
+	next if /^\#/;
+	next unless /\S/;
+	next if ($l==1);		# skip first line header (temporary)
+	
+	my @fields = split "\t";
+	
+	## Check if the query matches the appropriate ccolumn
+	my $query_id = $fields[$match_col_index];
+	unless ($is_query{uc($query_id)}) {
+#	  &RSAT::message::Debug("Skipping line", $l, $query_id) if ($main::verbose >= 10);
+	    next;
+	}     
+	&RSAT::message::Info("Matching line", $l, $query_id) if ($main::verbose >= 3);
+	
+	################################################################
+	## Build a hash table with the attributes of the BLAST hit
+	my $hit = {};
+	my $discarded =0;
+	foreach my $field (@{$blast_columns}) {
+	    # get hit
+	    $hit->{$field} = shift @fields;
+	    
+	    # check lower threshold
+	    if (defined($lth{$field})) {
+		if ($hit->{$field} < $lth{$field}) {
+		    &RSAT::message::Warning(join("\t","query",
+						 $hit->{query},
+						 "subject",
+						 $hit->{subject},
+						 "hit not selected",
+						 $field,
+						 $hit->{$field}," < ","lth",$lth{$field})) if ($main::verbose >=0);
+		    $discarded++;
+		}
+	    }
+	    last if ($discarded);
 
-      my @fields = split "\t";
-      #		my $query_id = $main::blast_column{query};
-      my $hit ={};
-      ## Get hit and check thresholds on fields
-      my $discarded =0;
-      foreach my $field (@{$blast_columns}) {
-	# get hit
-	$hit->{$field} = shift @fields;
-
-	# check lower threshold
-	if ($lth{$field}) {
-	  if ($hit->{$field} < $lth{$field}) {
-	    &RSAT::message::Warning(join("\t","query",
-					 $hit->{query},
-					 "subject",
-					 $hit->{subject},
-					 "hit not selected",
-					 $field,
-					 $hit->{$field},"<=>","lth",$lth{$field})) if ($main::verbose >=4);
-	    $discarded++;
-	  }
+	    # check upper threshold
+	    if (defined($uth{$field})) {
+		if ($hit->{$field} > $uth{$field}) {
+		    &RSAT::message::Warning(join("\t","query",
+						 $hit->{query},
+						 "subject",
+						 $hit->{subject},
+						 "hit not selected",
+						 $field,
+						 $hit->{$field}," > ","uth",$uth{$field})) if ($main::verbose >=0);
+		    $discarded++;
+		}
+	    }
+	    last if ($discarded);
 	}
-	#next if ($discarded);
-
-	# check upper threshold
-	if ($uth{$field}) {
-	  if ($hit->{$field} > $uth{$field}) {
-	    &RSAT::message::Warning(join("\t","query",
-					 $hit->{query},
-					 "subject",
-					 $hit->{subject},
-					 "hit not selected",
-					 $field,
-					 $hit->{$field},"<=>","uth",$uth{$field})) if ($main::verbose >=4);
-	    $discarded++;
-	  }
-	}
-      }
-      next if ($discarded);
-      
-      # Select all hit respecting thresholds and corresponding to query gene
-      if ($is_query{$hit->{$gene_column}}) {
+	next if ($discarded);
+	
+	## Index the hit by query and subject (double index)
 	$hits->{$hit->{query}}->{$hit->{subject}}=$hit;
+	
 	if ($main::verbose >= 4) {
-	  &RSAT::message::Info(join("\t", "query",
-				    $hit->{query},
-				    "hit found", 
-				    $hit->{subject},
-				    $hit->{ali_len},
-				    $hit->{ident},
-				    $hit->{e_value},
-				   ));
+	    &RSAT::message::Info(join("\t", "query",
+				      $hit->{query},
+				      "hit found", 
+				      $hit->{subject},
+				      $hit->{ali_len},
+				      $hit->{ident},
+				      $hit->{e_value},
+				      ));
 	}
-      }
     }
     close $hit_handle;	
-    &RSAT::message::TimeWarn("\t",join("\t", scalar(keys %{$hits}), "selected hits by query"));
+    &RSAT::message::TimeWarn(join("\t", scalar(keys %{$hits}), "hits found")) if ($main::verbose >= 2);
     return($hits);
-  } else {
-    push @main::missing_blast_files, $blast_file;
-    &RSAT::message::Warning(join("\t", "Missing BLAST file", $blast_file));
-    return(0);
-  }
-}
 
+}
+    
 ################################################################
 #### display full help message 
 sub PrintHelp {
@@ -671,7 +738,7 @@ Lower threshold value on the specified field.
 
 Upper threshold value on the specified field.
 
-Supported threshold values: ali_len,mismat,gap_open,q_start,q_end,s_start,s_end,e_value,bit_sc,q_rank,ref_rank
+Supported threshold values: ali_len,mismat,gap_open,q_start,q_end,s_start,s_end,e_value,bit_sc,q_rank,s_rank
 
 =cut
 
@@ -750,6 +817,10 @@ sub Verbose {
 __END__
 
 =pod
+
+=head1 EXAMPLES
+    get-orthologs -q lexA -org Escherichia_coli_K12 -taxon Gammaproteobacteria
+
 
 =head1 SEE ALSO
 
