@@ -17,14 +17,14 @@ require "RSA.lib";
 require "RSA.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $command = "$SCRIPTS/gene-info";
-$tmp_file_name = sprintf "gene-info.%s", &AlphaDate;
+$tmp_file_name = sprintf "gene-info.%s", &AlphaDate();
 $result_file = "$TMP/$tmp_file_name.res";
 
 ### Read the CGI query
 $query = new CGI;
 
 #### update log file ####
-&UpdateLogFile;
+&UpdateLogFile();
 
 ### Print the header
 &RSA_header("gene-info result");
@@ -63,7 +63,7 @@ $parameters .= " -desc" if ($query->param('match_description'));
 #### organism
 my $organism = "";
 unless ($organism = $query->param('organism')) {
-    &cgiError("You should specify an organism to use intergenic frequency calibration");
+    &cgiError("You should specify an organism");
 }
 unless (defined(%{$supported_organism{$organism}})) {
     &cgiError("Organism $org is not supported on this site");
