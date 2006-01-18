@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.5 2006/01/18 17:05:19 jvanheld Exp $
+# $Id: get-orthologs,v 1.6 2006/01/18 17:28:20 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -384,7 +384,7 @@ package main;
 	$header .= "\t";
 	$header .= $field;
     }
-    print $out "#", $header;
+    print $out "#", $header, "\n";
 	
     foreach my $hit_info (@bidirect_hits) {
 	print $out "$hit_info\n";
@@ -550,9 +550,9 @@ sub select_hits{
 						 $hit->{query},
 						 "subject",
 						 $hit->{subject},
-						 "hit not selected",
+						 "hit discarded",
 						 $field,
-						 $hit->{$field}," < ","lth",$lth{$field})) if ($main::verbose >=0);
+						 $hit->{$field}," < ","lth",$lth{$field})) if ($main::verbose >=4);
 		    $discarded++;
 		}
 	    }
@@ -565,9 +565,9 @@ sub select_hits{
 						 $hit->{query},
 						 "subject",
 						 $hit->{subject},
-						 "hit not selected",
+						 "hit discarded",
 						 $field,
-						 $hit->{$field}," > ","uth",$uth{$field})) if ($main::verbose >=0);
+						 $hit->{$field}," > ","uth",$uth{$field})) if ($main::verbose >=4);
 		    $discarded++;
 		}
 	    }
