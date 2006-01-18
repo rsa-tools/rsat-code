@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.4 2006/01/18 16:05:00 rsat Exp $
+# $Id: get-orthologs,v 1.5 2006/01/18 17:05:19 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -196,6 +196,11 @@ package main;
 
     ################################################################
     #### check argument values
+
+    ## Reference taxon
+    &RSAT::error::FatalError("You should select the taxon of interest")
+	unless ($main::ref_taxon);
+
     
     ## Select all supported organisms beloging to the reference taxon
     foreach my $org (keys (%supported_organism)) {
