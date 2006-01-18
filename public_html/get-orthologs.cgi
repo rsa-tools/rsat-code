@@ -66,6 +66,26 @@ unless ($taxon = $query->param('taxon')) {
 }
 $parameters .= " -taxon $taxon";
 
+
+## ##############################################################
+## Thresholds
+my @parameters = $query->param;
+foreach my $param (@parameters) {
+    if ($param =~ /^lth_(.+)/) {
+	my $field = $1 ;
+	my $value = $query->param($param);
+	next unless (&IsReal($value));
+	$parameters .= " -lth ".$field." ".$value;
+    } elsif ($param =~ /^uth_(.+)/) {
+	my $field = $1 ;
+	my $value = $query->param($param);
+	next unless (&IsReal($value));
+	$parameters .= " -uth ".$field." ".$value;
+    }
+}
+
+
+## Report the command
 print "<PRE>$command $parameters </PRE>" if ($ECHO);
 
 ################################################################
@@ -109,6 +129,7 @@ sub PipingForm {
 <TD>
 <FORM METHOD="POST" ACTION="retrieve-seq_form.cgi">
 <INPUT type="hidden" NAME="organism" VALUE="$organism">
+<INPUT type="hidden" NAME="multigenome" VALUE="OK">
 <INPUT type="hidden" NAME="genes" VALUE="selection">
 <INPUT type="hidden" NAME="gene_selection" VALUE="$genes">
 <INPUT type="submit" value="retrieve sequences">

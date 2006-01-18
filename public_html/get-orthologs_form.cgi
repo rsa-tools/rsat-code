@@ -52,7 +52,7 @@ $default{feattype} = "CDS";
 
 $default{lth_ali_len} = 50;
 $default{uth_e_value} = 1e-5;
-$default{uth_r_rank} = 1;
+$default{uth_q_rank} = 1;
 $default{uth_s_rank} = 1;
 
 ### replace defaults by parameters from the cgi call, if defined
@@ -82,7 +82,7 @@ print $query->start_multipart_form(-action=>"get-orthologs.cgi");
 
 ################################################################
 ### gene queries
-print "<B><A HREF='help.get-orthologs.html#queries'>Gene queries</A></B>&nbsp;";
+print "<B><A HREF='help.get-orthologs.html#queries'>Query genes</A></B>&nbsp;";
 print "<BR>\n";
 print $query->textarea(-name=>'queries',
 		       -default=>$default{queries},
@@ -106,14 +106,6 @@ print $query->popup_menu(-name=>'taxon',
 			 -Values=>[@supported_taxons]
 			);
 print "<p>\n";
-
-# ################################################################
-# #### feature type
-# print "<B><A HREF='help.retrieve-seq.html#feattype'>Feature type</A></B>&nbsp;";
-# print $query->radio_group(-name=>'feattype',
-# 			  -values=>"CDS",
-# 			  -default=>$default{feattype});
-# print "<BR>\n";
 
 ################################################################
 ## Return fields + thresholds

@@ -13,7 +13,7 @@ use CGI;
 #  }
 
 
-### for debugging
+### For debugging
 sub ListParameters {
   my($cgi_query) = $_[0];
   @param = $query->param;
