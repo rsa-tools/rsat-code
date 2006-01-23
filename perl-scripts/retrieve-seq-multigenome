@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-seq-multigenome,v 1.1 2005/11/10 13:39:01 jvanheld Exp $
+# $Id: retrieve-seq-multigenome,v 1.2 2006/01/23 13:23:40 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -78,11 +78,13 @@ local $default_label = "id,organism_name,name";
 local @to_pass; ## parameters pased to retrieve-seq
 local %infile = ();
 local %outfile = ();
-local $format = "fasta";
 
 local $verbose = 0;
 #local $in = STDIN;
 local $out = STDOUT;
+
+local $gene_col = 1;
+local $org_col = 2;
 
 &ReadArguments();
 
@@ -106,7 +108,7 @@ $out = &OpenOutputFile($outfile{output});
 #    push @genes, $fields[1];
 #}
 #close $in if ($infile{input});
-%genes_per_org = &ReadClasses($infile{input});
+%genes_per_org = &ReadClasses($infile{input},0,undef,1,$gene_col, $org_col);
 
 ################################################################
 #### print verbose
@@ -245,17 +247,30 @@ allows to use the command within a pipe.
 	} elsif ($arg eq "-o") {
 	    $outfile{output} = shift(@ARGV);
 	    
-	    ## Sequence format
+	    ## Gene column
 =pod
 
-=item	B<-format format>
+=item	B<-gene_col gene_column>
 
-Sequence format. The same formats are supported as for retrieve-seq.
+Number of the column containing the gene names/identifiers (default: 1).
 
 =cut
-	} elsif ($arg eq "-format") {
-	    $format = shift(@ARGV);
+	} elsif ($arg eq "-gene_col") {
+	    $gene_col = shift(@ARGV);
 	    
+	    ## Organism column
+=pod
+
+=item	B<-org_col organism_column>
+
+Number of the column containing the organisms (default: 2)
+
+=cut
+	} elsif ($arg eq "-org_col") {
+	    $org_col = shift(@ARGV);
+	    
+
+	    ## Other argumetns are passed to retrieve-seq
 =pod
 
 =item B<other parameters>
