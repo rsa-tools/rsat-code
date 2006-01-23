@@ -25,11 +25,13 @@ $ECHO=2;
 ### Read the CGI query
 $query = new CGI;
 
+### Print the header
+&RSA_header("get-orthologs result");
+
 #### update log file ####
 &UpdateLogFile();
 
-### Print the header
-&RSA_header("get-orthologs result");
+&ListParameters() if ($ECHO >= 2);
 
 #### read parameters ####
 $parameters .= "";
@@ -69,9 +71,12 @@ $parameters .= " -taxon $taxon";
 
 ## ##############################################################
 ## Thresholds
-my @parameters = $query->param;
+my @parameters = $query->param();
 foreach my $param (@parameters) {
-    if ($param =~ /^lth_(.+)/) {
+    if ($param =~ /^return_(.+)/) {
+	my $field = $1;
+	$parameters .= " -return ".$field;
+    } elsif ($param =~ /^lth_(.+)/) {
 	my $field = $1 ;
 	my $value = $query->param($param);
 	next unless (&IsReal($value));
@@ -86,7 +91,7 @@ foreach my $param (@parameters) {
 
 
 ## Report the command
-print "<PRE>$command $parameters </PRE>" if ($ECHO);
+print "<PRE>$command $parameters </PRE>" if ($ECHO >= 1);
 
 ################################################################
 #### run the command
@@ -128,6 +133,7 @@ sub PipingForm {
 </TD>
 <TD>
 <FORM METHOD="POST" ACTION="retrieve-seq_form.cgi">
+<INPUT type="hidden" NAME="single_multi_org" VALUE="multi">
 <INPUT type="hidden" NAME="organism" VALUE="$organism">
 <INPUT type="hidden" NAME="multigenome" VALUE="OK">
 <INPUT type="hidden" NAME="genes" VALUE="selection">

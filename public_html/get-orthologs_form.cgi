@@ -44,16 +44,24 @@ $field_description{s_rank} = "target rank";
 ################################################################
 ### default values for filling the form
 $default{organism} = "Escherichia_coli_K12";
-$default{taxon} = "Gammaproteobacteria";
+$default{taxon} = "Enterobacteriales";
 $default{queries} = '';
 $default{full} = '';
 $default{match_description} = '';
 $default{feattype} = "CDS";
-
 $default{lth_ali_len} = 50;
 $default{uth_e_value} = 1e-5;
 $default{uth_q_rank} = 1;
 $default{uth_s_rank} = 1;
+
+$default{return_ident} = "checked";
+$default{return_ali_len} = "";
+$default{return_mismat} = "";
+$default{return_gap_open} = "";
+$default{return_e_value} = "checked";
+$default{return_bit_sc} = "";
+$default{return_q_rank} = "";
+$default{return_s_rank} = "";
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
@@ -68,9 +76,11 @@ foreach $key (keys %default) {
 
 ################################################################
 ### header
-&RSA_header("get-orthologs (VERSION IN CONSTRUCTION)");
+&RSA_header("get-orthologs (PROTOTYPE VERSION)");
 print "<CENTER>";
-print "Given a list of genes from a query organism and a taxon of interest, <br>return genes coding for similar proteins in each genome of the taxon.<P>\n";
+print "Given a list of genes from a query organism and a taxon of interest, <br>return genes coding for similar proteins in each genome of the taxon.<br>\n";
+print "Program developed by <A HREF='mailto:rekins\@scmbb.ulb.ac.be'>Rekin's Janky</A>\n";
+print "and <A HREF='mailto:jvanheld\@scmbb.ulb.ac.be'>Jacques van Helden</A>).\n";
 print "</CENTER>";
 print "<BLOCKQUOTE>\n";
 
@@ -113,13 +123,23 @@ print "<p>\n";
 print "<B><A HREF='help.get-organisms.html#return'>Return fields</A>&nbsp;</B>\n";
 print "<ul>\n";
 print "<table cellpadding=3 border=1>\n";
-print "<tr><th>Field</th><th>Lower<br>Threshold</th><th>Upper<br>Threshold</th></tr>";
+print ("<tr>",
+       "<th>Field</th>",
+       "<th>Lower<br>Threshold</th>",
+       "<th>Upper<br>Threshold</th>",
+       "</tr>\n");
 foreach my $field (@output_fields) {
     print "\n<tr>\n";
-    print "<th align=left><a href='help.get-organisms.html#",$field,"'>";
-    print $field_description{$field};
-    print "</a></th>\n";
 
+    my $return_field = "return_".$field;
+    print "<th align=left>";
+    print $query->checkbox(-name=>$return_field,
+			   -checked=>$default{$return_field},
+			   -label=>' ');
+    print join "", "<a href='help.get-organisms.html#",$field,"'>", $field_description{$field}, "</a>\n";
+    print "</th>\n";
+
+				     
     foreach my $th ("lth", "uth") {
 	my $param = $th."_".$field;
 	my $default_param = "none";
@@ -160,7 +180,7 @@ $demo_queries .= "uvrB\n";
 print "<TD><B>";
 print $query->hidden(-name=>'queries',-default=>$demo_queries);
 print $query->hidden(-name=>'organism',-default=>"Escherichia_coli_K12");
-print $query->hidden(-name=>'taxon',-default=>"Gammaproteobacteria");
+print $query->hidden(-name=>'taxon',-default=>"Enterobacteriales");
 print $query->submit(-label=>"DEMO");
 print "</B></TD>\n";
 print $query->end_form;

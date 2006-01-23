@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.7 2006/01/23 13:11:29 rsat Exp $
+# $Id: get-orthologs,v 1.8 2006/01/23 23:27:32 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -46,7 +46,16 @@ additional information on the same row is ignored.
 
 =head1 OUTPUT FORMAT
 
-A tab-separated file with two (or more) columns.
+A tab-separated file with two (or more) columns. Each row of the output file
+describes one similarity between a query gene and another gene (orhtolog or
+paralog, depending on the parameters).
+
+The first column indicates the similar gene (the one identified by BLAST as
+similar to the query), the second column the reference organism (the organism
+in which the BLAST search was performed). 
+
+Additional columns (query gene, query organism, hit rank, e_value, ...) can be
+specified with the option -return.
 
 =over
 
@@ -137,7 +146,7 @@ package main;
 			      ref_organism
 			      query
 			      level
-			      subject
+			      ref_id
 			      ident
 			      ali_len
 			      mismat
@@ -180,14 +189,24 @@ package main;
 
 
     ## Output fields
-    my @output_fields = qw(ident
-			   ali_len
-			   mismat
-			   gap_open
-			   e_value
-			   bit_sc
-			   q_rank
-			   s_rank);
+    @output_fields = ();
+    @supported_output_fields = qw(ref_id
+				     ref_organism
+				     query_id
+				     query_organism
+				     ident
+				     ali_len
+				     mismat
+				     gap_open
+				     e_value
+				     bit_sc
+				     q_rank
+				     s_rank);
+    %supported_output_field = ();
+    foreach my $field (@supported_output_fields) {
+	$supported_output_field{$field}++;
+    }
+    $supported_output_fields = join ",", @supported_output_fields;
 
     ################################################################
     ## Read argument values
@@ -288,7 +307,7 @@ package main;
 
       my $rev_blast_file = join("", $ref_org_blast_dir,"/","q_",$ref_organism,"_db_",$main::query_organism,"_ranks.tab");
       # my (%rev_hits)=&readBLAST($rev_blast_file,\@main::blast_columns);
-      my ($rev_hits)=&select_hits($rev_blast_file,\@main::blast_columns,"subject",\%is_query);
+      my ($rev_hits)=&select_hits($rev_blast_file,\@main::blast_columns,"ref_id",\%is_query);
 
       ################################################################
       # Let state Reciprocal Best hits (RBH) inferred from one blast
@@ -313,25 +332,28 @@ package main;
 	      my ($fwd_hit) = $hits->{$query_gene}->{$ref_gene};
 	      my ($rev_hit) = $rev_hits->{$ref_gene}->{$query_gene};
 	      my $hit_info = join("\t",
-				  $fwd_hit->{query},
-				  $main::query_organism,
-				  $fwd_hit->{subject},
+#				  $fwd_hit->{query},
+#				  $main::query_organism,
+				  $fwd_hit->{ref_id},
 				  $ref_organism);
 
-	      ## add fields for the fwd hit
-	      $hit_info .= "\tFWD";
-	      foreach my $field (@output_fields) {
-		  $hit_info .= "\t";
-		  $hit_info .= $fwd_hit->{$field};
+	      ## Additional output fields (specified with the option -return)
+	      if (scalar(@output_fields) > 0) {
+		  ## add fields for the fwd hit
+		  $hit_info .= "\tFWD";
+		  foreach my $field (@output_fields) {
+		      $hit_info .= "\t";
+		      $hit_info .= $fwd_hit->{$field};
 #		  &RSAT::message::Debug($field, $fwd_hit->{$field}, $hit_info) if ($main::verbose >= 10);
-	      }
-
-	      ## add fields for the rev hit
-	      $hit_info .= "\tREV";
-	      foreach my $field (@output_fields) {
-		  $hit_info .= "\t";
-		  $hit_info .= $rev_hit->{$field};
+		  }
+		  
+		  ## add fields for the rev hit
+		  $hit_info .= "\tREV";
+		  foreach my $field (@output_fields) {
+		      $hit_info .= "\t";
+		      $hit_info .= $rev_hit->{$field};
 #		  &RSAT::message::Debug($field, $rev_hit->{$field}, $hit_info) if ($main::verbose >= 10);
+		  }
 	      }
 					
 	      &RSAT::message::Info("bidirectional hit\t",$hit_info) if ($main::verbose >= 2);
@@ -347,6 +369,37 @@ package main;
     ################################################################
     ###### print output
 
+    ## ##############################################################
+    ## Report bidirectional hits
+
+    ## Header line
+    my $header =  join("\t",
+#		       "query_gene",
+#		       "query_org",
+		       "ref_gene",
+		       "ref_org");
+
+    if (scalar(@output_fields) > 0) {
+	## add fields for the fwd hit
+	$header .= "\tFWD";
+	foreach my $field (@output_fields) {
+	    $header .= "\t";
+	    $header .= $field;
+	}
+	
+	## add fields for the rev hit
+	$header .= "\tREV";
+	foreach my $field (@output_fields) {
+	    $header .= "\t";
+	    $header .= $field;
+	}
+    }
+    print $out "#", $header, "\n";
+	
+    foreach my $hit_info (@bidirect_hits) {
+	print $out "$hit_info\n";
+    }
+    
     ## Report missing BLAST files
     if (scalar(@main::missing_blast_files) > 0) {
 	print $out "; Missing BLAST files\n";
@@ -363,34 +416,6 @@ package main;
 	}
     }
 
-    ## ##############################################################
-    ## Report bidirectional hits
-
-    ## Header line
-    my $header =  join("\t",
-		       "query_gene",
-		       "query_org",
-		       "ref_gene",
-		       "ref_org");
-    ## add fields for the fwd hit
-    $header .= "\tFWD";
-    foreach my $field (@output_fields) {
-	$header .= "\t";
-	$header .= $field;
-    }
-
-    ## add fields for the rev hit
-    $header .= "\tREV";
-    foreach my $field (@output_fields) {
-	$header .= "\t";
-	$header .= $field;
-    }
-    print $out "#", $header, "\n";
-	
-    foreach my $hit_info (@bidirect_hits) {
-	print $out "$hit_info\n";
-    }
-    
     ################################################################
     ###### finish verbose
     if ($main::verbose >= 1) {
@@ -446,8 +471,8 @@ package main;
 # 	  if ($hit->{$field} < $lth{$field}) {
 # 	    &RSAT::message::Warning(join("\t","query",
 # 					 $hit->{query},
-# 					 "subject",
-# 					 $hit->{subject},
+# 					 "ref_id",
+# 					 $hit->{ref_id},
 # 					 "hit not selected",
 # 					 $field,
 # 					 $hit->{$field},"<=>","lth",$lth{$field})) if ($main::verbose >=4);
@@ -461,8 +486,8 @@ package main;
 # 	  if ($hit->{$field} > $uth{$field}) {
 # 	    &RSAT::message::Warning(join("\t","query",
 # 					 $hit->{query},
-# 					 "subject",
-# 					 $hit->{subject},
+# 					 "ref_id",
+# 					 $hit->{ref_id},
 # 					 "hit not selected",
 # 					 $field,
 # 					 $hit->{$field},"<=>","uth",$uth{$field})) if ($main::verbose >=4);
@@ -473,13 +498,13 @@ package main;
 #       next if ($discarded);
       
 #       # Select all hit respecting thresholds
-#       $selected_hits->{$hit->{query}}->{$hit->{subject}}=$hit;
+#       $selected_hits->{$hit->{query}}->{$hit->{ref_id}}=$hit;
 #       #	push @hits, \%hit;
 #       if ($main::verbose >= 4) {
 # 	&RSAT::message::Info(join("\t", "query",
 # 				  $hit->{query},
 # 				  "hit found", 
-# 				  $hit->{subject},
+# 				  $hit->{ref_id},
 # 				  $hit->{ali_len},
 # 				  $hit->{ident},
 # 				  $hit->{e_value},
@@ -552,8 +577,8 @@ sub select_hits{
 		if ($hit->{$field} < $lth{$field}) {
 		    &RSAT::message::Warning(join("\t","query",
 						 $hit->{query},
-						 "subject",
-						 $hit->{subject},
+						 "ref_id",
+						 $hit->{ref_id},
 						 "hit discarded",
 						 $field,
 						 $hit->{$field}," < ","lth",$lth{$field})) if ($main::verbose >=4);
@@ -567,8 +592,8 @@ sub select_hits{
 		if ($hit->{$field} > $uth{$field}) {
 		    &RSAT::message::Warning(join("\t","query",
 						 $hit->{query},
-						 "subject",
-						 $hit->{subject},
+						 "ref_id",
+						 $hit->{ref_id},
 						 "hit discarded",
 						 $field,
 						 $hit->{$field}," > ","uth",$uth{$field})) if ($main::verbose >=4);
@@ -579,14 +604,14 @@ sub select_hits{
 	}
 	next if ($discarded);
 	
-	## Index the hit by query and subject (double index)
-	$hits->{$hit->{query}}->{$hit->{subject}}=$hit;
+	## Index the hit by query and ref_id (double index)
+	$hits->{$hit->{query}}->{$hit->{ref_id}}=$hit;
 	
 	if ($main::verbose >= 4) {
 	    &RSAT::message::Info(join("\t", "query",
 				      $hit->{query},
 				      "hit found", 
-				      $hit->{subject},
+				      $hit->{ref_id},
 				      $hit->{ali_len},
 				      $hit->{ident},
 				      $hit->{e_value},
@@ -766,6 +791,68 @@ Supported threshold values: ali_len,mismat,gap_open,q_start,q_end,s_start,s_end,
 		unless ($supported_threshold_field{$field});
             $uth{$field} = $value;
 
+              ## Return fields
+=pod
+
+=item B<-return output_fields>
+
+Output field(s). 
+
+By default, the output is a two-column file indicating the ID of the gene
+identified as similar to the query gene, and the name of the reference
+organism.
+
+The option -return can be used to specify additional output fields. 
+
+Supported fields: 
+
+=over 
+
+=over
+
+=item ref_id
+
+=item  ref_organism
+
+=item  query_id
+
+=item  query_organism
+
+=item  ident
+
+=item  ali_len
+
+=item  mismat
+
+=item  gap_open
+
+=item  e_value
+
+=item  bit_sc
+
+=item  q_rank
+
+=item  s_rank
+
+=back
+
+=back
+
+The option -return can be used iteratively on the same command line to specify
+several output fields. Another way to specify multiple output fields is to
+enter them separated by commas.
+
+Examples: 
+
+    -return query_id -return e_value -return q_rank
+
+    -return query_id,e_value,q_rank
+
+=cut
+
+       } elsif ($arg eq "-return") {
+          my $output_fields = shift(@ARGV);
+          push @output_fields, split(",", $output_fields);
 
 	} else {
 	    &FatalError(join("\t", "Invalid option", $arg));
