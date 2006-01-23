@@ -17,30 +17,43 @@ require "RSA.lib";
 require "RSA.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
-$command = "$SCRIPTS/retrieve-seq";
+$ECHO=2;
+
 $tmp_file_name = sprintf "retrieve-seq.%s", &AlphaDate;
 
 ### Read the CGI query
 $query = new CGI;
+
+
 
 ### print the header
 &RSA_header("retrieve-seq result");
 
 
 #### update log file ####
-&UpdateLogFile;
+&UpdateLogFile();
 
 &ListParameters() if ($ECHO >= 2);
 
-#### organism
-if (defined($supported_organism{$query->param('organism')})) {
-    $organism = $supported_organism{$query->param('organism')}->{'name'};
-    $parameters .= " -org ".$query->param('organism');
+
+################################################################
+## Single or multi-genome query
+if ($query->param('single_multi_org') eq 'multi') {
+    $command = "$SCRIPTS/retrieve-seq-multigenome";
 } else {
-    &cgiError("Organism '",
-	      $query->param('organism'),
-	      "' is not supported on this web site.");
+    $command = "$SCRIPTS/retrieve-seq";
+    #### organism
+    if (defined($supported_organism{$query->param('organism')})) {
+	$organism = $supported_organism{$query->param('organism')}->{'name'};
+	$parameters .= " -org ".$query->param('organism');
+    } else {
+	&cgiError("Organism '",
+		  $query->param('organism'),
+		  "' is not supported on this web site.");
+    }
 }
+
+
 
 ### feature type
 if ($query->param('feattype')) {
@@ -110,20 +123,14 @@ if ($query->param('genes') eq "all") {
 
 } else {
     $gene_selection = $query->param('gene_selection');
-    unless ($gene_selection =~ /\S/) {
-	&cgiError("You should enter at least one gene identifier in the query box. <P>Read the on-line manual for more information.");
-    }
-    $gene_selection .= "\n";			### make sure there is a carriage return at the end
-    
-    
-    @query_lines = split("\n",$gene_selection);
-    foreach $line (@query_lines) {
-	next if ($line =~ /^;/);
-	next if ($line =~ /^--/);
-	next if ($line =~ /^\#/);
-	if ($line =~ /(\S+)/) {
-	    $parameters .= " -q '$1' "; 
-	}
+    if ($gene_selection =~ /\S/) {
+	open QUERY, ">$TMP/$tmp_file_name";
+	print QUERY $gene_selection, "\n";
+	close QUERY;
+	&DelayedRemoval("$TMP/$tmp_file_name");
+	$parameters .= " -i $TMP/$tmp_file_name";
+    } else {
+	&cgiError("You should enter at least one gene identifier in the query box..");
     }
 }
 

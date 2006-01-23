@@ -23,6 +23,9 @@ $default{genes} = "selection";
 $default{gene_selection} = "";
 $default{sequence_type} = "upstream";
 $default{feattype} = "CDS";
+$default{single_multi_org} = "single_org";
+$default{gene_col} = 1;
+$default{org_col} = 2;
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
@@ -44,7 +47,39 @@ print $query->start_multipart_form(-action=>"retrieve-seq.cgi");
 
 #print "<FONT FACE='Helvetica'>";
 
-&OrganismPopUp;
+#### Single organism query
+print ("<INPUT TYPE='radio' NAME='single_multi_org' VALUE='single' CHECKED>", 
+       "<A HREF=help.retrieve-seq.html#single_multi_org>",
+       "<b>Single organism</b>",
+       "</A>");
+print "&nbsp;"x4, &OrganismPopUpString();
+print "<p>";
+
+#### Markov chain model
+print ("<INPUT TYPE='radio' NAME='single_multi_org' VALUE='multi'>", 
+       "<A HREF=help.retrieve-seq.html#single_multi_org>",
+       "<b>Multiple organisms</b>",
+       "</a>"
+      );
+
+### Gene/organism columns
+print "&nbsp;"x10;
+print "<B><A HREF='help.retrieve-seq.html#gene_col'>Gene column</A></B>&nbsp;\n";
+print $query->textfield(-name=>'gene_col',
+			-default=>$default{gene_col},
+			-size=>5);
+
+print "&nbsp;&nbsp;";
+print "<B><A HREF='help.retrieve-seq.html#org_col'>Organism column</A></B>&nbsp;\n";
+print $query->textfield(-name=>'org_col',
+			-default=>$default{org_col},
+			-size=>5);
+print "<BR>\n";
+print "<p>";
+
+
+
+## &OrganismPopUp;
 
 ### query (gene list)
 print "<B><A HREF='help.retrieve-seq.html#genes'>Genes</A></B>&nbsp;";
@@ -58,7 +93,7 @@ print "<UL>\n";
 print $query->textarea(-name=>'gene_selection',
 		       -default=>$default{gene_selection},
 		       -rows=>6,
-		       -columns=>40);
+		       -columns=>65);
 
 ### option to upload a file with the gene list from the client machine 
 print "<BR>Upload gene list from file<BR>\n";
@@ -84,7 +119,6 @@ print $query->popup_menu(-name=>'sequence_type',
 			 -default=>$default{sequence_type});
 
 ### from to
-
 print "<B><A HREF='help.retrieve-seq.html#from_to'>From</A></B>&nbsp;\n";
 print $query->textfield(-name=>'from',
 			-default=>$default{from},

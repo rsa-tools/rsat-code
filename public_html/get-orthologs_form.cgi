@@ -68,9 +68,9 @@ foreach $key (keys %default) {
 
 ################################################################
 ### header
-&RSA_header("get-orthologs");
+&RSA_header("get-orthologs (VERSION IN CONSTRUCTION)");
 print "<CENTER>";
-print "Given a list of genes from a query organism and a taxon of interest, return genes coding for similar proteins in each genome of the taxon.<P>\n";
+print "Given a list of genes from a query organism and a taxon of interest, <br>return genes coding for similar proteins in each genome of the taxon.<P>\n";
 print "</CENTER>";
 print "<BLOCKQUOTE>\n";
 
