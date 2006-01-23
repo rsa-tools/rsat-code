@@ -164,7 +164,7 @@ print ( "<a href='help.oligo-analysis.html#background'>Background model</a> &nbs
 			   -Values=>["upstream","upstream-noorf","intergenic"],
 			   -default=>$default{background}));
 	
-print "<br>", &OrganismPopUpString;
+print "<br>", &OrganismPopUpString();
 print "</ul>";
 
 
