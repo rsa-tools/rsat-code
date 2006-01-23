@@ -155,6 +155,7 @@ print $query->popup_menu(-name=>'seq_label',
 			 -Values=>['gene identifier', 
 				   'gene name',
 				   'gene identifier + name',
+				   'gene identifier + organism + gene name',
 				   'full identifier'
 				   ],
 			 -default=>$default{seq_label});

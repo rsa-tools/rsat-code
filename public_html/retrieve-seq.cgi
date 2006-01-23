@@ -81,6 +81,8 @@ if ($seq_label eq 'gene identifier') {
     $parameters .= " -label name";
 } elsif ($seq_label eq 'gene identifier + name') {
     $parameters .= " -label id,name";
+} elsif ($seq_label eq 'gene identifier + organism + gene name') {
+    $parameters .= " -label id,organism_name,name";
 } elsif ($seq_label eq 'full identifier') {
     $parameters .= " -label id,name,organism_name,sequence_type,current_from,current_to,ctg,orf_strand,reg_left,reg_right";
 } else {
