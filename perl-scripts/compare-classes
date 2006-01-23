@@ -7,7 +7,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.13 2006/01/16 08:08:15 jvanheld Exp $
+# $Id: compare-classes,v 1.14 2006/01/23 13:24:41 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -1076,7 +1076,7 @@ sub PrintResult {
     #### print a smilarity matrix
     if ($return{matrix}) {
 	my @query_classes = sort keys %query_classes;
-	my $header = ";fam";
+	my $header = "#fam";
 	if ($infile{qnames}) {
 	    ## replace class IDs by class names
 	    foreach my $class (@query_classes) {
