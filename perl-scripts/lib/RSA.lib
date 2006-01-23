@@ -833,14 +833,56 @@ sub ReadFamilies {
     &ReadClasses(@_);
 }
 
-################################################################
-#### read classification file
-#### The file is supposed to contain at least two columns 
-#### - element (e.g. a gene ID)
-#### - class (e.g. a functional class, or a regulon, or a clustering result)
-#### additional columns are allowed, but they are ignored
+## ############################################################
+## Read a file with class composition (groups, families, sets).
+##
+## The file is supposed to contain at least two columns 
+## - element (e.g. a gene ID)
+## - class (e.g. a functional class, or a regulon, or a clustering result)
+## additional columns are allowed, but they are ignored.
+##
+## By default, the first column contains the members, and the secon column the
+## class names. A member can belong to several classes, and each class can
+## contain one or several members.
+
+## Arguments:
+##
+## 1) Family_file: file containing the class compositions. If not specified,
+##    the STDIN is used as input.
+##
+## 2) get_orf_id: when the first column contain gene names, this arguments
+## allow to get the corresponding IDs from the RSAT database. The next
+## argument (organism ) must be specified in this case.
+##
+## 3) organism: only necessary if the option get_orf_idd is active. 
+## 
+## 4) no_subst: by default, probematic characters (white spaces, semicolons,
+##    parentheses) are converted to a dot (for readability with R). This
+##    conversion can be inactivated by entering a value (e.g.1) for the argument
+##    no_subst.
+##
+## 5) member_column: column containing the member names/IDs (default: 1)
+##
+## 6) class_column: column containing the class names/IDs (default: 2)
+##
 sub ReadClasses {
-    my ($family_file, $get_orf_id, $organism, $no_subst) = @_;
+    my ($family_file, $get_orf_id, $organism, $no_subst,$member_column, $class_column) = @_;
+    if ($member_column) {
+	unless (&IsNatural($member_column)) {
+	    &RSAT::error::FatalError(join("\t", $member_column, "Invalid specification of member column for the procedure ReadClasses"));
+	}
+    } else {
+	$member_column=1;
+    }
+
+    if ($class_column) {
+	unless (&IsNatural($class_column)) {
+	    &RSAT::error::FatalError(join("\t", $class_column, "Invalid specification of class column for the procedure ReadClasses"));
+	}
+    } else {
+	$class_column=2;
+    }
+
     &RSAT::message::TimeWarn(join ("\t", "Reading family file",$family_file))
 	if ($main::verbose >=2);
 
@@ -858,7 +900,7 @@ sub ReadClasses {
 	my @fields = split /\t/;
 	
 	### family member
-	$member_name = &trim(uc($fields[0]));
+	$member_name = &trim(uc($fields[$member_column -1]));
 	unless ($member_name =~ /\S/) {
 	    &RSAT::message::Warning(join ("\t", "Error family file", 
 					  $family_file,  "line", 
@@ -867,7 +909,7 @@ sub ReadClasses {
 	}
 
 	### family name
-	$family_name = &trim($fields[1]);
+	$family_name = &trim($fields[$class_column - 1]);
 	unless ($no_subst) {
 	    $subst_char = ".";
 	    $family_name =~ s/ +/${subst_char}/g; ## spaces create problems with file names in Unix
