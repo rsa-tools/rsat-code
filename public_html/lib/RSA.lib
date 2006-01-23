@@ -856,10 +856,11 @@ sub ReadFamilies {
 ##
 ## 3) organism: only necessary if the option get_orf_idd is active. 
 ## 
-## 4) no_subst: by default, probematic characters (white spaces, semicolons,
-##    parentheses) are converted to a dot (for readability with R). This
-##    conversion can be inactivated by entering a value (e.g.1) for the argument
-##    no_subst.
+## 4) no_subst: by default, probematic characters (white spaces,
+##    semicolons, parentheses) are converted to a dot (for
+##    compatibility with the folder creation in
+##    multiple-family-analyss). This conversion can be inactivated by
+##    entering a value (e.g.1) for the argument no_subst.
 ##
 ## 5) member_column: column containing the member names/IDs (default: 1)
 ##
@@ -885,7 +886,7 @@ sub ReadClasses {
 
     &RSAT::message::TimeWarn(join ("\t", "Reading family file",$family_file))
 	if ($main::verbose >=2);
-
+    
     my %family = ();
     my ($fam) = &OpenInputFile($family_file);
 
@@ -910,6 +911,12 @@ sub ReadClasses {
 
 	### family name
 	$family_name = &trim($fields[$class_column - 1]);
+	unless ($family_name) {
+	    &RSAT::message::Warning(join("\t", "Error family file", 
+				    $family_file,  "line", 
+				    $line, "family not specified")) if ($main::verbose >= 1);
+	    next;
+	}
 	unless ($no_subst) {
 	    $subst_char = ".";
 	    $family_name =~ s/ +/${subst_char}/g; ## spaces create problems with file names in Unix
@@ -917,12 +924,6 @@ sub ReadClasses {
 	    $family_name =~ s/\:/${subst_char}/g; ## spaces create problems with file names in Unix
 	    $family_name =~ s/\(/${subst_char}/g; ## paretheses interfere with Unix commands
 	    $family_name =~ s/\)/${subst_char}/g; ## paretheses interfere with Unix commands
-	}
-	unless ($family_name =~ /\S/) {
-	    &RSAT::message::Warning(join("\t", "Error family file", 
-				    $family_file,  "line", 
-				    $line, "family not specified")) if ($main::verbose >= 1);
-	    next;
 	}
 
 	#### create a new family if required

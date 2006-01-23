@@ -121,8 +121,10 @@ Usage: $trimmed = &RSAT::util::trim($to_trim);
 =cut
 sub trim {
     my ($string) = @_;
-    $string =~ s/^\s+//;
-    $string =~ s/\s+$//;
+    if ($string) {
+	$string =~ s/^\s+//;
+	$string =~ s/\s+$//;
+    }
     return $string;
 }
 
