@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.6 2006/01/18 17:28:20 jvanheld Exp $
+# $Id: get-orthologs,v 1.7 2006/01/23 13:11:29 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -235,6 +235,7 @@ package main;
 	    next if /^\#/;
 	    next unless /\S/;
 	    my ($query_gene) = split "\t";
+	    $query_gene = &trim($query_gene); ## Remove leading and trailing spaces
 	    push @main::query_genes, $query_gene;
 	}
 	close $main::in if ($main::infile{input});
@@ -505,7 +506,10 @@ sub select_hits{
     
     unless ((-e $blast_file) || (-e $blast_file.".gz")) {
 	push @main::missing_blast_files, $blast_file;
-	&RSAT::message::Warning(join("\t", "Missing BLAST file", $blast_file));
+	unless ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
+		($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
+	    &RSAT::message::Warning(join("\t", "Missing BLAST file", $blast_file));
+	}
 	return(0);
     }
     
