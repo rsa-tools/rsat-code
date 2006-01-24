@@ -292,10 +292,10 @@ sub OpenInputFile {
 	    }
 	}
 	if ($filename =~ /\.gz$/) { ### gzip file -> decompress it on the fly
-	    warn "; Uncompressing .gz file\n" if ($verbose >= 2);
+	    warn "; Uncompressing .gz file\n" if ($main::verbose >= 2);
 	    $filename = "gunzip -c $filename |";
 				  } elsif ($filename =~ /\.Z$/) { ### gzip file -> decompress it on the fly
-				      warn "; Uncompressing .Z file\n" if ($verbose >= 2);
+				      warn "; Uncompressing .Z file\n" if ($main::verbose >= 2);
 				      $filename = "uncompress -c $filename |";
 								}
 	open (my $input_fh, $filename) || 
