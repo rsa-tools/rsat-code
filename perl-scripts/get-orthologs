@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.8 2006/01/23 23:27:32 rsat Exp $
+# $Id: get-orthologs,v 1.9 2006/01/24 19:48:46 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -642,7 +642,10 @@ sub PrintOptions {
 sub ReadArguments {
 #    foreach my $a (0..$#ARGV) {
     my $arg = "";
-    while ($arg = shift (@ARGV)) {
+
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    
+    while ($arg = shift (@arguments)) {
 	
 #	&RSAT::message::Debug("Parsing argument", $arg);
 
@@ -660,8 +663,8 @@ Level of verbosity (detail in the warning messages during execution)
 
 =cut
 	if ($arg eq "-v") {
-	    if (&IsNatural($ARGV[0])) {
-		$main::verbose = shift(@ARGV);
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
 	    } else {
 		$main::verbose = 1;
 	    }
@@ -701,7 +704,7 @@ allows to use the command within a pipe.
 	} elsif ($arg eq "-i") {
 	    &RSAT::error::FatalError("option -i is incompatible with option -q")
 		if (scalar(@main::query_genes) > 0);
-	    $main::infile{input} = shift(@ARGV);
+	    $main::infile{input} = shift(@arguments);
 	    
 	    ## Output file
 =pod
@@ -713,7 +716,7 @@ allows to use the command within a pipe.
 
 =cut
 	} elsif ($arg eq "-o") {
-	    $main::outfile{output} = shift(@ARGV);
+	    $main::outfile{output} = shift(@arguments);
 	    
 
 =pod
@@ -725,7 +728,7 @@ Organisms to whih the query gene(s) belong.
 =cut
 
 	} elsif ($arg eq "-org") {
-	    $main::query_organism = shift (@ARGV);
+	    $main::query_organism = shift (@arguments);
 	    unless (defined($supported_organism{$main::query_organism})) {
 		&RSAT::error::FatalError(join("\t", "Organism", 
 					      $main::query_organism, 
@@ -747,7 +750,7 @@ query genes.
         } elsif ($arg eq "-q") {
            &RSAT::error::FatalError("The option -q is incompatible with the option -i")
              if ($main::infile{input});
-           push @main::query_genes, shift(@ARGV);
+           push @main::query_genes, shift(@arguments);
 
 =pod
 
@@ -759,7 +762,7 @@ to the reference taxon.
 =cut
 
 	} elsif ($arg eq "-taxon") {
-	    $main::ref_taxon = shift (@ARGV);
+	    $main::ref_taxon = shift (@arguments);
 
 
 =pod
@@ -778,15 +781,15 @@ Supported threshold values: ali_len,mismat,gap_open,q_start,q_end,s_start,s_end,
 
             #### threshold values
         } elsif ($arg eq "-lth") {
-            my $field = shift(@ARGV);
-            my $value = shift(@ARGV);
+            my $field = shift(@arguments);
+            my $value = shift(@arguments);
 	    &RSAT::error::FatalError("Invalid threshold criterion\t".$field)
 		unless ($supported_threshold_field{$field});
             $lth{$field} = $value;
 
         } elsif ($arg eq "-uth") {
-            my $field = shift(@ARGV);
-            my $value = shift(@ARGV);
+            my $field = shift(@arguments);
+            my $value = shift(@arguments);
 	    &RSAT::error::FatalError("Invalid threshold criterion\t".$field)
 		unless ($supported_threshold_field{$field});
             $uth{$field} = $value;
@@ -851,7 +854,7 @@ Examples:
 =cut
 
        } elsif ($arg eq "-return") {
-          my $output_fields = shift(@ARGV);
+          my $output_fields = shift(@arguments);
           push @output_fields, split(",", $output_fields);
 
 	} else {
