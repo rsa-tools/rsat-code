@@ -3,7 +3,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.42 2005/12/16 23:05:28 rsat Exp $
+# $Id: retrieve-seq,v 1.43 2006/01/24 19:49:36 jvanheld Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -19,6 +19,8 @@ require RSAT::organism;
 my $start_time = &AlphaDate();
 my $organism = "";
 my %chomosome = ();
+$return_all = 0;
+$ids_only = 0;
 $imp_pos = 0;
 $no_comments = 0;
 $label_sep = "|";
@@ -164,7 +166,7 @@ if ($sequence_type eq "random fragments") {
 #    &ReadFeatures($organism_name, $annotation_table, $feature_types);
 
     #### read synonyms
-    unless ($return_all) {
+    unless (($return_all) || ($ids_only)) {
 	$organism->LoadSynonyms();
     }
 }
@@ -539,6 +541,11 @@ OPTIONS
 		option.
         -i     query file. The first word of each line is taken as a query.
                 This option is incompatible with -q.
+
+	-ids_only
+		Use this option if the queries are provided as a list
+		of IDs. This avoids to load the table of synonyms, in
+		order tos ave time.
 	-all	return all genomic upstream regions
 	-o	followed by the name of the outputfile. 
 
@@ -676,6 +683,7 @@ retrieve-seq options
 -lf		length file 
 -i		query file. This option is incompatible with -q.
 -q		query
+-ids_only	queries are provideed as IDs, do not load synonyms
 -all		returns all genomic upstream regions
 -o		followed by the name of the outputfile. 
 -from #1 -to #2	limits of the region to extract, relative to orf start 
@@ -756,6 +764,10 @@ sub ReadArguments {
 	    ### return all genomic  upstream regions	
 	} elsif ($ARGV[$a] eq "-all") {
 	    $return_all = 1;
+	    
+	    ### Query is a list of IDs (no necessity to load gene names and synonyms)
+	} elsif ($ARGV[$a] eq "-ids_only") {
+	    $ids_only = 1;
 	    
 	    #### organism
 	} elsif ($ARGV[$a] eq "-org") {
