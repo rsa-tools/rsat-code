@@ -30,7 +30,7 @@ $default{grouprc} = 'checked';
 $default{purge} = 'checked';
 $default{side} = 'over-represented';
 
-$default{freq_estimate} = "Background model";
+$default{freq_estimate} = "background";
 
 $default{zscore} = '';
 $default{lth_zscore} = 'none';
@@ -65,6 +65,15 @@ $default{uth_observed_freq} = "none";
 
 $default{return}="fields";
 
+
+### replace defaults by parameters from the cgi call, if defined
+foreach $key (keys %default) {
+  if ($query->param($key)) {
+    $default{$key} = $query->param($key);
+  }
+} 
+$checked{$default{freq_estimate}} = "CHECKED";
+
 ### print the form ###
 &RSA_header("oligo-analysis");
 print "<CENTER>";
@@ -73,14 +82,7 @@ print "</CENTER>";
 print "<HR>";
 print "<blockquote>";
 
-#&ListParameters;
-
-### replace defaults by parameters from the cgi call, if defined
-foreach $key (keys %default) {
-  if ($query->param($key)) {
-    $default{$key} = $query->param($key);
-  }
-} 
+#&ListParameters();
 
 print $query->start_multipart_form(-action=>"oligo-analysis.cgi");
 
@@ -156,7 +158,7 @@ print "<A HREF='help.oligo-analysis.html#exp_freq'><B>Expected frequency calibra
 
 
 #### pre-defined background frequencies
-print ( "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='background' CHECKED>", 
+print ( "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='background' $checked{background}>", 
 	"Predefined background frequencies");
 print "<ul>";
 print ( "<a href='help.oligo-analysis.html#background'>Background model</a> &nbsp;&nbsp;&nbsp;&nbsp;", 
@@ -171,8 +173,8 @@ print "</ul>";
 print "<p>";
 
 #### Markov chain model
-print ("<INPUT TYPE='radio' NAME='freq_estimate' VALUE='Markov Chain (higher order dependencies)'>", 
-       "Markov Chain (higher order dependencies) ");
+print ("<INPUT TYPE='radio' NAME='freq_estimate' VALUE='Markov Chain (higher order dependencies)' $checked{'Markov Chain (higher order dependencies)'}>", 
+       "Markov Chain (higher order dependencies)");
 
 print "order &nbsp;";
 print $query->textfield(-name=>'markov_order',
@@ -181,16 +183,16 @@ print $query->textfield(-name=>'markov_order',
 print "<p>";
 
 #### Lexicon partitioning
-print "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='Lexicon partitioning'>Lexicon partitioning<p>";
+print "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='Lexicon partitioning' $checked{'Lexicon partitioning'}>Lexicon partitioning<p>";
 
 #### Bernouilli model
-print "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='Residue frequencies from input sequence'>Residue frequencies from input sequence<p>";
+print "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='Residue frequencies from input sequence' $checked{'Residue frequencies from input sequence'}>Residue frequencies from input sequence<p>";
 
 #### equiprobable residues
-print "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='Equiprobable residues'>Equiprobable residues (<A HREF='help.oligo-analysis.html#equiprobable'>usually NOT recommended</a>)<p>";
+print "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='Equiprobable residues' $checked{'Equiprobable residues'}>Equiprobable residues (<A HREF='help.oligo-analysis.html#equiprobable'>usually NOT recommended</a>)<p>";
 
 #### custom expected frequency file
-print "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='file_upload'><a href='help.oligo-analysis.html#upload_freq_file'>Upload your own expected frequency file</a><BR>";
+print "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='file_upload' $checked{'file_upload'}><a href='help.oligo-analysis.html#upload_freq_file'>Upload your own expected frequency file</a><BR>";
 
 print $query->filefield(-name=>'upload_freq_file',
 			-default=>'starting value',

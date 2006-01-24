@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis_form.cgi,v 1.11 2005/09/02 15:45:51 jvanheld Exp $
+# $Id: dyad-analysis_form.cgi,v 1.12 2006/01/24 08:10:46 rsat Exp $
 #
 # Time-stamp: <2003-07-11 15:08:24 jvanheld>
 #
@@ -21,6 +21,7 @@ $query = new CGI;
 
 ### default values for filling the form
 $default{organism} = "Saccharomyces cerevisiae";
+$default{freq_estimate} = "background";
 #$default{title} = "";
 $default{sequence} = "";
 $default{sequence_format} = "fasta";
@@ -72,6 +73,7 @@ foreach $key (keys %default) {
     $default{$key} = $query->param($key);
   }
 } 
+$checked{$default{freq_estimate}} = "CHECKED";
 
 ### print the form ###
 &RSA_header("dyad-analysis");
@@ -159,8 +161,7 @@ print "<HR width=550 align=left>\n";
 
 ### expected frequency calculation
 print "<A HREF='help.dyad-analysis.html#exp_freq'><B>Expected frequency calibration</B></A>&nbsp;<p>";
-
-print ( "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='background' CHECKED>", 
+print ( "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='background' $checked{background}>", 
 	"Background model");
 print "<ul>";
 print ( "<a href='help.dyad-analysis.html#background'>Sequence type</a> &nbsp;&nbsp;&nbsp;&nbsp;", 
@@ -171,13 +172,13 @@ print ( "<a href='help.dyad-analysis.html#background'>Sequence type</a> &nbsp;&n
 print "<br>", &OrganismPopUpString();
 print "</ul>";
 
-print ( "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='monads'>", 
+print ( "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='monads' $checked{monads}>", 
 	"Monad frequencies in the input sequence");
 
 print "<BR>\n";
 
 #### custom expected frequency file
-print "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='file_upload'><a href='help.oligo-analysis.html#upload_freq_file'>Upload your own expected frequency file</a><BR>";
+print "<INPUT TYPE='radio' NAME='freq_estimate' VALUE='file_upload' $checked{file_upload}><a href='help.oligo-analysis.html#upload_freq_file'>Upload your own expected frequency file</a><BR>";
 
 print $query->filefield(-name=>'upload_freq_file',
 			-default=>'starting value',
