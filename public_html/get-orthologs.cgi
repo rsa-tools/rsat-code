@@ -33,6 +33,10 @@ $query = new CGI;
 
 &ListParameters() if ($ECHO >= 2);
 
+&cgiMessage(join("<P>",
+		 "The computation can take a more or less important time depending on the taxon size.",
+		 "If the answer does not appear in due time, use the option <i>output email</i>"));
+
 #### read parameters ####
 $parameters .= "";
 
@@ -133,9 +137,9 @@ sub PipingForm {
 </TD>
 <TD>
 <FORM METHOD="POST" ACTION="retrieve-seq_form.cgi">
-<INPUT type="hidden" NAME="single_multi_org" VALUE="multi">
 <INPUT type="hidden" NAME="organism" VALUE="$organism">
-<INPUT type="hidden" NAME="multigenome" VALUE="OK">
+<INPUT type="hidden" NAME="single_multi_org" VALUE="multi">
+<INPUT type="hidden" NAME="seq_label" VALUE="gene identifier + organism + gene name">
 <INPUT type="hidden" NAME="genes" VALUE="selection">
 <INPUT type="hidden" NAME="gene_selection" VALUE="$genes">
 <INPUT type="submit" value="retrieve sequences">
