@@ -17,13 +17,13 @@ require "RSA.lib";
 require "RSA.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
-$ECHO=2;
-
-$tmp_file_name = sprintf "retrieve-seq.%s", &AlphaDate;
+$tmp_file_name = sprintf "retrieve-seq.%s", &AlphaDate();
 
 ### Read the CGI query
 $query = new CGI;
 
+
+#$ECHO=2 if ($query->param('single_multi_org') eq 'multi');
 
 
 ### print the header
@@ -35,24 +35,43 @@ $query = new CGI;
 
 &ListParameters() if ($ECHO >= 2);
 
+$parameters = "";
 
 ################################################################
 ## Single or multi-genome query
 if ($query->param('single_multi_org') eq 'multi') {
     $command = "$SCRIPTS/retrieve-seq-multigenome";
+
+    &cgiMessage(join("<P>",
+		     "The computation can take a more or less important time depending on the taxon size.",
+		     "If the answer does not appear in due time, use the option <i>output email</i>"));
+
+
+#     my $gene_col = $query->param('gene_col');
+#     if (&IsNatural($gene_col) && ($gene_col > 0)) {
+# 	$parameters .= " -gene_col ".$gene_col;
+#     }
+#     my $org_col = $query->param('org_col');
+#     if (&IsNatural($org_col) && ($org_col > 0)) {
+# 	$parameters .= " -org_col ".$org_col;
+#     }
+    
 } else {
     $command = "$SCRIPTS/retrieve-seq";
-    #### organism
-    if (defined($supported_organism{$query->param('organism')})) {
-	$organism = $supported_organism{$query->param('organism')}->{'name'};
-	$parameters .= " -org ".$query->param('organism');
-    } else {
-	&cgiError("Organism '",
-		  $query->param('organism'),
-		  "' is not supported on this web site.");
-    }
+
 }
 
+#### organism
+$organism = $query->param('organism');
+if (defined($supported_organism{$organism})) {
+    $organism_name = $supported_organism{$organism}->{'name'};
+
+    $parameters .= " -org ".$organism unless ($query->param('single_multi_org') eq 'multi'); ## For multi-genome retrieval, the query organism name is passed to pattern discovery programs, but it is not necessary
+} else {
+    &cgiError("Organism '",
+	      $organism,
+	      "' is not supported on this web site.");
+}
 
 
 ### feature type
@@ -124,10 +143,15 @@ if ($query->param('genes') eq "all") {
     $parameters .= " -i $gene_list_file ";
 
 } else {
-    $gene_selection = $query->param('gene_selection');
+    my $gene_selection = $query->param('gene_selection');
+    $gene_selection =~ s/\r/\n/g;
+    my @gene_selection = split ("\n", $gene_selection);
     if ($gene_selection =~ /\S/) {
 	open QUERY, ">$TMP/$tmp_file_name";
-	print QUERY $gene_selection, "\n";
+	foreach my $row (@gene_selection) {
+	    $row =~ s/ +/\t/; ## replace white spaces by a tab for the multiple genomes option. 
+	    print QUERY $row, "\n";
+	}
 	close QUERY;
 	&DelayedRemoval("$TMP/$tmp_file_name");
 	$parameters .= " -i $TMP/$tmp_file_name";
@@ -141,6 +165,8 @@ print  "<PRE><B>Command :</B> $command $parameters</PRE><P>" if ($ECHO >= 1);
 #### execute the command #####
 if (($query->param('output') =~ /display/i) ||
     ($query->param('output') =~ /server/i)) {
+
+#    $ENV{RSA_OUTPUT_CONTEXT} = "text";
     open RESULT, "$command $parameters |";
 
     ### print the result ### 
@@ -151,7 +177,7 @@ if (($query->param('output') =~ /display/i) ||
 
     print '<H3>Result</H3>';
 
-    ### open the mirror file ###
+    ### open the mirror file
     $mirror_file = "$TMP/$tmp_file_name.res";
     if (open MIRROR, ">$mirror_file") {
 	$mirror = 1;
@@ -194,16 +220,25 @@ exit(0);
 # Pipe the result to another command
 #
 sub PipingForm {
-    #### choose background model for oligo-analysis
-    if ($seq_type =~ /upstream/) {
-	if ($noorf) {
-	    $background = "upstream-noorf";
-	} else {
-	    $background = "upstream";
-	}
+    ## Choose organism-specific or alternative background
+    if ($query->param('single_multi_org') eq 'multi') {
+	$oligo_background_model = "<INPUT type=\"hidden\" NAME=\"freq_estimate\" VALUE=\"Residue frequencies from input sequence\">";
+	$dyad_background_model = "<INPUT type=\"hidden\" NAME=\"freq_estimate\" VALUE=\"monads\">";
     } else {
-	$background = "intergenic";
+	#### choose background model for oligo-analysis
+	if ($seq_type =~ /upstream/) {
+	    if ($noorf) {
+		$background = "upstream-noorf";
+	    } else {
+		$background = "upstream";
+	    }
+	} else {
+	    $background = "intergenic";
+	}
+	$oligo_background_model = "\n<INPUT type=\"hidden\" NAME=\"background\" VALUE=\"$background\">";
+	$dyad_background_model = $oligo_background_model;
     }
+
 
   print <<End_of_form;
 <HR SIZE = 3>
@@ -225,33 +260,27 @@ sub PipingForm {
 
     <TD>
 	<FORM METHOD="POST" ACTION="oligo-analysis_form.cgi">
-	<INPUT type="hidden" NAME="organism" VALUE="$organism">
-	<INPUT type="hidden" NAME="from" VALUE="$from">
-	<INPUT type="hidden" NAME="to" VALUE="$to">
+	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
-	<INPUT type="hidden" NAME="background" VALUE="$background">
+	$oligo_background_model
 	<INPUT type="submit" value="oligonucleotide analysis">
 	</FORM>
     </TD>
 
     <TD>
 	<FORM METHOD="POST" ACTION="dyad-analysis_form.cgi">
-	<INPUT type="hidden" NAME="organism" VALUE="$organism">
-	<INPUT type="hidden" NAME="from" VALUE="$from">
-	<INPUT type="hidden" NAME="to" VALUE="$to">
+	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
-	<INPUT type="hidden" NAME="background" VALUE="$background">
+	$dyad_background_model
 	<INPUT type="submit" value="dyad analysis">
 	</FORM>
     </TD>
 
     <TD>
 	<FORM METHOD="POST" ACTION="position-analysis_form.cgi">
-	<INPUT type="hidden" NAME="organism" VALUE="$organism">
-	<INPUT type="hidden" NAME="from" VALUE="$from">
-	<INPUT type="hidden" NAME="to" VALUE="$to">
+	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
 	<INPUT type="hidden" NAME="background" VALUE="$background">
@@ -261,9 +290,7 @@ sub PipingForm {
 
     <TD>
 	<FORM METHOD="POST" ACTION="consensus_form.cgi">
-	<INPUT type="hidden" NAME="organism" VALUE="$organism">
-	<INPUT type="hidden" NAME="from" VALUE="$from">
-	<INPUT type="hidden" NAME="to" VALUE="$to">
+	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
 	<INPUT type="submit" value="consensus">
@@ -272,9 +299,7 @@ sub PipingForm {
 
     <TD>
 	<FORM METHOD="POST" ACTION="gibbs_form.cgi">
-	<INPUT type="hidden" NAME="organism" VALUE="$organism">
-	<INPUT type="hidden" NAME="from" VALUE="$from">
-	<INPUT type="hidden" NAME="to" VALUE="$to">
+	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
 	<INPUT type="submit" value="gibbs sampler">
@@ -293,9 +318,7 @@ sub PipingForm {
 
     <TD>
 	<FORM METHOD="POST" ACTION="dna-pattern_form.cgi">
-	<INPUT type="hidden" NAME="organism" VALUE="$organism">
-	<INPUT type="hidden" NAME="from" VALUE="$from">
-	<INPUT type="hidden" NAME="to" VALUE="$to">
+	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
 	<INPUT type="submit" value="dna-pattern (IUPAC)">
@@ -304,9 +327,7 @@ sub PipingForm {
 
     <TD>
 	<FORM METHOD="POST" ACTION="patser_form.cgi">
-	<INPUT type="hidden" NAME="organism" VALUE="$organism">
-	<INPUT type="hidden" NAME="from" VALUE="$from">
-	<INPUT type="hidden" NAME="to" VALUE="$to">
+	<INPUT type="hidden" NAME="organism" VALUE="$organism_name">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
 	<INPUT type="submit" value="patser (matrices)">

@@ -14,6 +14,7 @@ $query = new CGI;
 
 ### default values for filling the form
 $default{sequence_format} = "fasta";
+#$default{seq_label} = "gene identifier + organism + gene name";
 $default{seq_label} = "gene name";
 $default{organism} = "Saccharomyces cerevisiae";
 $default{noorf} = "checked";
@@ -23,9 +24,9 @@ $default{genes} = "selection";
 $default{gene_selection} = "";
 $default{sequence_type} = "upstream";
 $default{feattype} = "CDS";
-$default{single_multi_org} = "single_org";
-$default{gene_col} = 1;
-$default{org_col} = 2;
+$default{single_multi_org} = "single";
+# $default{gene_col} = 1;
+# $default{org_col} = 2;
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
@@ -47,41 +48,50 @@ print $query->start_multipart_form(-action=>"retrieve-seq.cgi");
 
 #print "<FONT FACE='Helvetica'>";
 
-#### Single organism query
-print ("<INPUT TYPE='radio' NAME='single_multi_org' VALUE='single' CHECKED>", 
-       "<A HREF=help.retrieve-seq.html#single_multi_org>",
+#### Single organism
+if ($default{single_multi_org} eq 'single') {
+    $CHECKED = "checked";
+} else {
+    $CHECKED = "";
+}
+print ("<INPUT TYPE='radio' NAME='single_multi_org' VALUE='single' $CHECKED>", 
+       "<A HREF=help.retrieve-seq.html#single_org>",
        "<b>Single organism</b>",
-       "</A>");
+       "</A>\n");
 print "&nbsp;"x4, &OrganismPopUpString();
-print "<p>";
+print "<p>\n";
 
-#### Markov chain model
-print ("<INPUT TYPE='radio' NAME='single_multi_org' VALUE='multi'>", 
-       "<A HREF=help.retrieve-seq.html#single_multi_org>",
+#### Multiple organisms
+if ($default{single_multi_org} eq 'multi') {
+    $CHECKED = "checked";
+} else {
+    $CHECKED = "";
+}
+print ("<INPUT TYPE='radio' NAME='single_multi_org' VALUE='multi' $CHECKED>", 
+       "<A HREF=help.retrieve-seq.html#multi_org>",
        "<b>Multiple organisms</b>",
-       "</a>"
+       "</a>\n"
       );
 
-### Gene/organism columns
-print "&nbsp;"x10;
-print "<B><A HREF='help.retrieve-seq.html#gene_col'>Gene column</A></B>&nbsp;\n";
-print $query->textfield(-name=>'gene_col',
-			-default=>$default{gene_col},
-			-size=>5);
+# ### Gene/organism columns
+# print "&nbsp;"x10;
+# print "<B><A HREF='help.retrieve-seq.html#gene_col'>Gene column</A></B>&nbsp;\n";
+# print $query->textfield(-name=>'gene_col',
+# 			-default=>$default{gene_col},
+# 			-size=>5);
 
-print "&nbsp;&nbsp;";
-print "<B><A HREF='help.retrieve-seq.html#org_col'>Organism column</A></B>&nbsp;\n";
-print $query->textfield(-name=>'org_col',
-			-default=>$default{org_col},
-			-size=>5);
-print "<BR>\n";
-print "<p>";
-
+# print "&nbsp;&nbsp;";
+# print "<B><A HREF='help.retrieve-seq.html#org_col'>Organism column</A></B>&nbsp;\n";
+# print $query->textfield(-name=>'org_col',
+# 			-default=>$default{org_col},
+# 			-size=>5);
+# print "<BR>\n";
 
 
 ## &OrganismPopUp;
 
 ### query (gene list)
+print "<p>";
 print "<B><A HREF='help.retrieve-seq.html#genes'>Genes</A></B>&nbsp;";
 print $query->radio_group(-name=>'genes',
 			  -values=>['all','selection'],
