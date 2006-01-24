@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.9 2006/01/24 19:48:46 jvanheld Exp $
+# $Id: get-orthologs,v 1.10 2006/01/24 23:14:33 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -134,6 +134,8 @@ package main;
     @main::missing_blast_files = ();
     @main::is_query = ();
     @main::query_gene_id = ();
+    $main::query_filter = "";
+
     @main::missing_query_genes = ();
     @main::bidirect_hits = ();
 
@@ -283,8 +285,14 @@ package main;
 	    $query_gene_id{$query} = $main::null;
 	}
     }
-    
 
+    ## ##############################################################
+    ## Prepare a regexp filter for fast selection with grep
+    $main::query_filter = "(";
+    $main::query_filter .= join (")|(", (keys(%is_query)));
+    $main::query_filter .= ")";
+
+    
     ################################################################
     #### print verbose
     &Verbose() if ($main::verbose);
@@ -322,74 +330,78 @@ package main;
 	
       #	my (%bbh)=&GetBidirectionalBesthits(\%hits,\%rev_hits);
 
-      # Get bidirectional Hits
+      # Get bidirectional hits
       foreach my $query_gene (keys (%is_query)) {
-	&RSAT::message::Warning(join("\t", "query gene", $query_gene)) if ($main::verbose >= 4);
-	if ($hits->{$query_gene}) {
-	  foreach my $ref_gene (keys %{$hits->{$query_gene}}) {
-	    &RSAT::message::Warning(join("\t", "ref gene", $ref_gene)) if ($main::verbose >= 4);
-	    if ($rev_hits->{$ref_gene}->{$query_gene}){
-	      my ($fwd_hit) = $hits->{$query_gene}->{$ref_gene};
-	      my ($rev_hit) = $rev_hits->{$ref_gene}->{$query_gene};
-	      my $hit_info = join("\t",
-#				  $fwd_hit->{query},
+	  &RSAT::message::Warning(join("\t", "query gene", $query_gene)) if ($main::verbose >= 3);
+	  if ($hits->{$query_gene}) {
+	      foreach my $ref_gene (keys %{$hits->{$query_gene}}) {
+		  &RSAT::message::Warning(join("\t", "ref gene", $ref_gene)) if ($main::verbose >= 3);
+		  if ($rev_hits->{$ref_gene}->{$query_gene}){
+		      my ($fwd_hit) = $hits->{$query_gene}->{$ref_gene};
+		      my ($rev_hit) = $rev_hits->{$ref_gene}->{$query_gene};
+		      my $hit_info = join("\t",
+					  $fwd_hit->{ref_id},
+					  $ref_organism,
+					  $fwd_hit->{query},
 #				  $main::query_organism,
-				  $fwd_hit->{ref_id},
-				  $ref_organism);
-
-	      ## Additional output fields (specified with the option -return)
-	      if (scalar(@output_fields) > 0) {
-		  ## add fields for the fwd hit
-		  $hit_info .= "\tFWD";
-		  foreach my $field (@output_fields) {
-		      $hit_info .= "\t";
-		      $hit_info .= $fwd_hit->{$field};
+					  );
+		      
+		      ## Additional output fields (specified with the option -return)
+		      if (scalar(@output_fields) > 0) {
+			  ## add fields for the fwd hit
+			  $hit_info .= "\tFWD";
+			  foreach my $field (@output_fields) {
+			      $hit_info .= "\t";
+			      $hit_info .= $fwd_hit->{$field};
 #		  &RSAT::message::Debug($field, $fwd_hit->{$field}, $hit_info) if ($main::verbose >= 10);
-		  }
-		  
-		  ## add fields for the rev hit
-		  $hit_info .= "\tREV";
-		  foreach my $field (@output_fields) {
-		      $hit_info .= "\t";
-		      $hit_info .= $rev_hit->{$field};
+			  }
+			  
+			  ## add fields for the rev hit
+			  $hit_info .= "\tREV";
+			  foreach my $field (@output_fields) {
+			      $hit_info .= "\t";
+			      $hit_info .= $rev_hit->{$field};
 #		  &RSAT::message::Debug($field, $rev_hit->{$field}, $hit_info) if ($main::verbose >= 10);
+			  }
+		      }
+		      
+		      &RSAT::message::Info("bidirectional hit\t",$hit_info) if ($main::verbose >= 2);
+		      push @bidirect_hits, $hit_info;
+		  } else {
+		      &RSAT::message::TimeWarn(join("\t", "No bidirectional hit in ref organism", $ref_organism,"for query gene",$query_gene)) if ($main::verbose >= 2);
 		  }
-	      }
-					
-	      &RSAT::message::Info("bidirectional hit\t",$hit_info) if ($main::verbose >= 2);
-	      push @bidirect_hits, $hit_info;
-	    }
+	      }  
+	  } else {
+	      &RSAT::message::TimeWarn(join("\t", "No hit in ref organism", $ref_organism,"for query gene",$query_gene)) if ($main::verbose >= 2);
 	  }
-	} else {
-	  &RSAT::message::TimeWarn(join("\t", "No bidirectional hits in ref organism", $ref_organism,"for query gene",$query_gene)) if ($main::verbose >= 2);
-	}
       }
-    }
-
+  }
+      
     ################################################################
     ###### print output
-
+    
     ## ##############################################################
     ## Report bidirectional hits
-
+    
     ## Header line
     my $header =  join("\t",
-#		       "query_gene",
-#		       "query_org",
 		       "ref_gene",
-		       "ref_org");
+		       "ref_org",
+		       "query_gene",
+#		       "query_org",
+		       );
 
     if (scalar(@output_fields) > 0) {
 	## add fields for the fwd hit
 	$header .= "\tFWD";
-	foreach my $field (@output_fields) {
+	foreach $field (@output_fields) {
 	    $header .= "\t";
 	    $header .= $field;
 	}
 	
 	## add fields for the rev hit
 	$header .= "\tREV";
-	foreach my $field (@output_fields) {
+	foreach $field (@output_fields) {
 	    $header .= "\t";
 	    $header .= $field;
 	}
@@ -540,19 +552,37 @@ sub select_hits{
     
     &RSAT::message::TimeWarn(join("\t", "Selecting hits from BLAST file", $blast_file)) if ($main::verbose >= 2);
     &RSAT::message::TimeWarn(join("\t", "\tqueries", keys (%is_query))) if ($main::verbose >= 3);
-    my ($hit_handle) = &OpenInputFile($blast_file);
+
+
+    ## ##############################################################
+    ## Prepare a specific file handle for the BLAST file, in order to apply
+    ## the grep pre-filter
+    if ($blast_file =~ /.gz$/) {
+	$input_cmd = "gunzip -c ".$blast_file." | ";
+    } elsif (-e $blast_file) {
+	$input_cmd = "cat ".$blast_file." | ";
+    } elsif (-e $blast_file.".gz") {
+	$input_cmd = "gunzip -c ".$blast_file.".gz | ";
+    }
+    $input_cmd .= "grep -E '".$main::query_filter."' |";
+
+    &RSAT::message::Debug($input_cmd) if ($main::verbose >= 0);
+    open HIT_HANDLE, $input_cmd;
+
+#    my ($hit_handle) = &OpenInputFile($blast_file);
     my $l =0;			# counter of lines
     my $hits = {};
     my $match_col_index = $blast_col_index{$query_matching_column};
     
-    while (<$hit_handle>) {
+    while (<HIT_HANDLE>) {
+#    while (<$hit_handle>) {
 	$l++;
 	chomp();
 	s/\r/\n/g;		## Suppress Windows-specific carriage return
 	next if /^;/;
 	next if /^\#/;
 	next unless /\S/;
-	next if ($l==1);		# skip first line header (temporary)
+#	next if ($l==1);		# skip first line header (temporary)
 	
 	my @fields = split "\t";
 	
@@ -618,7 +648,8 @@ sub select_hits{
 				      ));
 	}
     }
-    close $hit_handle;	
+    close HIT_HANDLE;	
+#    close $hit_handle;	
     &RSAT::message::TimeWarn(join("\t", scalar(keys %{$hits}), "hits found")) if ($main::verbose >= 2);
     return($hits);
 
@@ -891,7 +922,7 @@ sub Verbose {
 
     ## Query organism and genes
     printf $main::out "; %-21s\t%s\n", "Query organism", $main::query_organism;
-    print $main::out ("; Query genes\n");
+    print $main::out ("; Query genes\t",scalar(@query_genes),"\n");
     foreach my $query (@main::query_genes) {
 	print $main::out join("\t", 
 			      ";",
@@ -899,6 +930,9 @@ sub Verbose {
 			      $query_gene_id{$query}
 			      ), "\n";
     }
+
+    ## Query filter
+    printf $main::out "; %-21s\t%s\n", "Query filter", $main::query_filter;
 
     ## Reference taxon and organisms
     printf $main::out "; %-21s\t%s\n", "Reference taxon", $main::ref_taxon;
