@@ -22,12 +22,6 @@ Returns upstream, downstream or ORF sequences for one or several genes. <P>
 
 <UL>
 
-<A NAME="Organism"></A>
-<h3>Organism</h3>
-<ul>
-A pop-up menu shows the list of organisms supported on this web site. 
-</ul>
-
 <A NAME="genes"></A>
 <h3>Genes</h3>
 <ul>
@@ -43,18 +37,61 @@ the list of genes
 
 </ul>
 <P>
-Valid queries are ORF identifiers (eg: YFL021W) or gene names (eg:
-GAL4, NIL1). Synonyms are accepted (eg: NIL1 = GAT1), but only one
-gene name is returned as sequence identifier (GAT1 in this case). <BR>
-Several queries can be entered simultaneously, separated by carriage
+<ul>
+<li>Several queries can be entered simultaneously, separated by carriage
 returns. The first word of each line is the query; any following
-information is ignored. <P>
+information is ignored. </li>
+
+<li>Valiad queries are ORF identifiers (eg: YFL021W) or gene names (eg:
+GAL4, NIL1).</li>
+
+<li>Synonyms are accepted (eg: NIL1 = GAT1), but only one
+gene name is returned as sequence identifier (GAT1 in this case). </li>
+</ul>
+
+<A NAME="Organism"></A>
+</ul><h3>Organism</h3>
+<ul>
+
+<A NAME="single_org"></A>
+<h4>Single organism</h4><ul>
+All the query genes belong to the same organism. 
+
+When this option is checked, the query organism has to be specified among the
+supported organisms, indicated by the pop-up menu <b>Organism</b>.  
+
+<A NAME="multi_org"></A>
+</ul><h4>Multiple organisms</h4><ul>
+When this option is active, the input must contain two columns, separated by a
+tab character. Each row of the input is considered as a query. 
+<ol>
+<li>The first column indicates the ID or the name of a query gene.</li>
+<li>The second column incitaed the organism to which the gene belongs.</li>
+</ol>
+
+<h5>Example</h5>
+
+<ul><pre>
+NP_310394.1     Escherichia_coli_O157H7
+NP_313053.1     Escherichia_coli_O157H7
+NP_416175.1     Escherichia_coli_K12
+NP_418467.1     Escherichia_coli_K12
+NP_753947.1     Escherichia_coli_CFT073
+NP_756866.1     Escherichia_coli_CFT073
+NP_288094.1     Escherichia_coli_O157H7_EDL933
+NP_290677.1     Escherichia_coli_O157H7_EDL933
+</pre></ul>
+
+<h5>Warning</h5>
+
+For the organism names, all spaces must be replaced by the underscore
+character, as whosn in the example.
 
 </ul>
 
 <A NAME="feattype"></A>
-<h3>Feature type</h3>
-<ul>
+</ul><h3>Feature type</h3><ul>
+
 Currently supported:
 <ul>
 <li><b>CDS:</b> coding sequences (from start to stop codon, unspliced)</li>
@@ -208,8 +245,8 @@ Sequences can be labeled (named) in different ways:
 <H2>Availability</H2>
 <UL>
 The program can be used through its web interface at:
-<A HREF="http://scmbb.ulb.ac.be/bioinformatics/rsa-tools/" target=_blank>
-http://scmbb.ulb.ac.be/bioinformatics/rsa-tools/</A> <BR>
+<A HREF="http://rsat.scmbb.ulb.ac.be/rsat/" target=_blank>
+http://rsat.scmbb.ulb.ac.be/rsat/</A> <BR>
 
 retrieve-seq is a perl script running on unix machines (SUN, SGI
 have been tested). The web interface is a perl-cgi script.
