@@ -125,11 +125,11 @@ sub cgiMessage {
     $color = "#00BB00" unless ($color);
     print  "<h3>$message_type</h3>",
 	    "<blockquote>",
-	    "<FONT SIZE=+1 color=$color><B>",
+	    "<FONT SIZE=+1 color=$color><B>\n",
 	    $message,
-	    "</B></FONT>",
+	    "\n</B></FONT>",
 	    "</blockquote>",
-	    "<BR><HR SIZE=3>";
+	    "<BR><HR SIZE=3>\n";
 }
 
 
