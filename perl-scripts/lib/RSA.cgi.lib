@@ -50,9 +50,10 @@ sub ListParameters {
 # }
 
 
-
+## ##############################################################
+## Start a new HTML page and write the header of a RSAT query form or result
+## page usage &RSA_header($program_name)
 sub RSA_header {
-  ### usage &RSA_header($program_name)
   my ($title) = @_;
   $title =~ s/\"//g;
   $title =~ s/\'//g;
@@ -62,10 +63,11 @@ sub RSA_header {
                          -author=>'jvanheld@ucmb.ulb.ac.be',
                          -BGCOLOR=>'#FFFFFF');
   print "<H3 ALIGN='center'><A HREF='$WWW_RSA/RSA_home.cgi'>RSA-tools</A> - $title</H3>";
-
 }
 
-### send results by e-mail or display on the browser
+
+## ##############################################################
+## send results by e-mail or display on the browser
 sub SelectOutput {
     my ($default_output) = @_;
     $default_output = "display" unless ($default_output);

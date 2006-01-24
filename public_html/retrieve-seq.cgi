@@ -23,7 +23,7 @@ $tmp_file_name = sprintf "retrieve-seq.%s", &AlphaDate();
 $query = new CGI;
 
 
-$ECHO=2:
+#$ECHO=2;
 
 
 ### print the header
