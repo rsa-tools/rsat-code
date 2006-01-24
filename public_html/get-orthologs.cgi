@@ -38,7 +38,7 @@ $query = new CGI;
 		 "If the answer does not appear in due time, use the option <i>output email</i>"));
 
 #### read parameters ####
-$parameters .= "";
+$parameters = " -v 1";
 
 ################################################################
 #### queries
@@ -142,6 +142,7 @@ sub PipingForm {
 <INPUT type="hidden" NAME="seq_label" VALUE="gene identifier + organism + gene name">
 <INPUT type="hidden" NAME="genes" VALUE="selection">
 <INPUT type="hidden" NAME="gene_selection" VALUE="$genes">
+<INPUT type="hidden" NAME="ids_only" VALUE="checked">
 <INPUT type="submit" value="retrieve sequences">
 </FORM>
 </TD>

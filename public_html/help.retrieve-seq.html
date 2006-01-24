@@ -45,13 +45,23 @@ information is ignored. </li>
 <li>Valiad queries are ORF identifiers (eg: YFL021W) or gene names (eg:
 GAL4, NIL1).</li>
 
-<li>Synonyms are accepted (eg: NIL1 = GAT1), but only one
-gene name is returned as sequence identifier (GAT1 in this case). </li>
+<li>By default, synonyms are accepted (eg: NIL1 = GAT1), but only one gene
+name is returned as sequence identifier (GAT1 in this case). </li>
+
 </ul>
 
+<A NAME="ids_only"></A>
+</ul><h3>Query contains only IDs (no synonyms)</h3><ul>
+
+By default, genes can be specified by their ID or by their
+names. Several synonyms are recognized for some genes.
+
+<p>The option <i>IDs only</i> indicates that the input queries contain
+only IDs, no name or synonym. This avoids to load the table of
+synonyms, and reduces thus the delay to obtain the result.
+
 <A NAME="Organism"></A>
-</ul><h3>Organism</h3>
-<ul>
+</ul><h3>Organism</h3><ul>
 
 <A NAME="single_org"></A>
 <h4>Single organism</h4><ul>

@@ -23,7 +23,7 @@ $tmp_file_name = sprintf "retrieve-seq.%s", &AlphaDate();
 $query = new CGI;
 
 
-#$ECHO=2 if ($query->param('single_multi_org') eq 'multi');
+$ECHO=2:
 
 
 ### print the header
@@ -36,6 +36,12 @@ $query = new CGI;
 &ListParameters() if ($ECHO >= 2);
 
 $parameters = "";
+
+## ##############################################################
+## The query contains only identifiers (no need to load synonyms)
+if ($query->param('ids_only')) {
+    $parameters .= " -ids_only";
+}
 
 ################################################################
 ## Single or multi-genome query
@@ -60,6 +66,8 @@ if ($query->param('single_multi_org') eq 'multi') {
     $command = "$SCRIPTS/retrieve-seq";
 
 }
+
+
 
 #### organism
 $organism = $query->param('organism');

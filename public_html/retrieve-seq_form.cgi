@@ -25,6 +25,7 @@ $default{gene_selection} = "";
 $default{sequence_type} = "upstream";
 $default{feattype} = "CDS";
 $default{single_multi_org} = "single";
+$default{ids_only} = "";
 # $default{gene_col} = 1;
 # $default{org_col} = 2;
 
@@ -45,6 +46,7 @@ print "</CENTER>";
 
 
 print $query->start_multipart_form(-action=>"retrieve-seq.cgi");
+
 
 #print "<FONT FACE='Helvetica'>";
 
@@ -104,13 +106,18 @@ print $query->textarea(-name=>'gene_selection',
 		       -default=>$default{gene_selection},
 		       -rows=>6,
 		       -columns=>65);
-
 ### option to upload a file with the gene list from the client machine 
 print "<BR>Upload gene list from file<BR>\n";
 print $query->filefield(-name=>'uploaded_file',
 			-default=>'',
 			-size=>45,
 			-maxlength=>200);
+
+## IDs only
+print "<br>", $query->checkbox(-name=>'ids_only',
+			       -checked=>$default{ids_only},
+			       -label=>'');
+print "<a href=help.retrieve-seq.html#ids_only>Query contains only IDs (no synonyms)</a>";
 
 print "</UL>\n";
 print "<BR>\n";
