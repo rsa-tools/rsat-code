@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: template,v 1.22 2006/01/10 15:57:25 rsat Exp $
+# $Id: template,v 1.23 2006/01/24 19:49:09 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -134,7 +134,11 @@ sub PrintOptions {
 sub ReadArguments {
 #    foreach my $a (0..$#ARGV) {
     my $arg = "";
-    while ($arg = shift (@ARGV)) {
+    
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    
+
+    while ($arg = shift (@arguments)) {
 
 	## Verbosity
 =pod
@@ -150,8 +154,8 @@ Level of verbosity (detail in the warning messages during execution)
 
 =cut
 	if ($arg eq "-v") {
-	    if (&IsNatural($ARGV[0])) {
-		$main::verbose = shift(@ARGV);
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
 	    } else {
 		$main::verbose = 1;
 	    }
@@ -189,7 +193,7 @@ allows to use the command within a pipe.
 
 =cut
 	} elsif ($arg eq "-i") {
-	    $main::infile{input} = shift(@ARGV);
+	    $main::infile{input} = shift(@arguments);
 	    
 	    ## Output file
 =pod
@@ -201,7 +205,7 @@ allows to use the command within a pipe.
 
 =cut
 	} elsif ($arg eq "-o") {
-	    $main::outfile{output} = shift(@ARGV);
+	    $main::outfile{output} = shift(@arguments);
 	    
 	} else {
 	    &FatalError(join("\t", "Invalid option", $arg));
