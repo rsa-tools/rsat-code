@@ -20,7 +20,7 @@ $command = "$SCRIPTS/get-orthologs";
 $tmp_file_name = sprintf "get-orthologs.%s", &AlphaDate();
 $result_file = "$TMP/$tmp_file_name.res";
 
-$ECHO=2;
+#$ECHO=2;
 
 ### Read the CGI query
 $query = new CGI;
