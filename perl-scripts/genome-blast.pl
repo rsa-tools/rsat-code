@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: genome-blast.pl,v 1.16 2006/01/25 00:54:10 rsat Exp $
+# $Id: genome-blast.pl,v 1.17 2006/01/25 07:59:30 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -119,9 +119,6 @@ foreach my $query_taxon (@query_taxons) {
 	my @org_taxons = split /\s*;\s*/, $taxonomy;
 	foreach my $org_taxon (@org_taxons) {
 	    if (lc($org_taxon) eq lc($query_taxon)) {
-		&RSAT::message::Info(join("\t", 
-					  "Adding query organism", $organism,
-					 $query_taxon, $taxonomy)) if ($main::verbose >= 0);
 		push @query_organisms, $organism;
 	    }
 	}
@@ -494,8 +491,8 @@ Run the tasks in batch (only works on our lab cluster, but could be adapted for 
 sub Verbose {
     print $out "; genome-blast.pl ";
     &PrintArguments($out);
-    print $out "; Query organisms\n;\t", join ("\n;\t", @query_organisms), "\n";
-    print $out "; Db organisms\n;\t", join ("\n;\t", @db_organisms), "\n";
+    print $out "; Query organisms\t",scalar(@query_organisms),"\n;\t", join ("\n;\t", @query_organisms), "\n";
+    print $out "; Db organisms\t",scalar(@db_organisms),"\n;\t", join ("\n;\t", @db_organisms), "\n";
     print $out "; Tasks\n;\t", join ("\n;\t", sort (keys(%task))), "\n";
 
     if (defined(%dir)) {
