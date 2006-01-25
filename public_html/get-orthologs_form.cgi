@@ -44,7 +44,7 @@ $field_description{s_rank} = "target rank";
 ################################################################
 ### default values for filling the form
 $default{organism} = "Escherichia_coli_K12";
-$default{taxon} = "Enterobacteriales";
+$default{taxon} = "Gammaproteobacteria";
 $default{queries} = '';
 $default{full} = '';
 $default{match_description} = '';
@@ -180,7 +180,7 @@ $demo_queries .= "uvrB\n";
 print "<TD><B>";
 print $query->hidden(-name=>'queries',-default=>$demo_queries);
 print $query->hidden(-name=>'organism',-default=>"Escherichia_coli_K12");
-print $query->hidden(-name=>'taxon',-default=>"Enterobacteriales");
+print $query->hidden(-name=>'taxon',-default=>"Gammaproteobacteria");
 print $query->submit(-label=>"DEMO");
 print "</B></TD>\n";
 print $query->end_form;
