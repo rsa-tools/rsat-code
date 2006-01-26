@@ -310,8 +310,8 @@ sub TaxonomyPopUpString {
 #			    "Escherichia"=>"Escherichia");
     my @supported_taxons = qw (Bacteria Proteobacteria Gammaproteobacteria Enterobacteriales Enterobacteriaceae);
     my $taxonomyPopup = "";
-    $taxonomyPopup .=  "<B>Taxonomy</B>&nbsp;";
-    $taxonomyPopup .=  "<SELECT NAME='taxonomy'>\n";
+    $taxonomyPopup .=  "<B>Taxon</B>&nbsp;";
+    $taxonomyPopup .=  "<SELECT NAME='taxon'>\n";
     foreach my $taxon (@supported_taxons) {
 	$name = $taxon;
 	if ((lc($taxon) eq lc($main::default{taxon})) ||
