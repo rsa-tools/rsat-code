@@ -3,6 +3,8 @@ if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
 require "RSA.lib";
+require RSAT::Tree;
+require RSAT::TreeNode;
 #use strict;
 
 $out_format = "text";
@@ -18,7 +20,11 @@ $formats = join ",", @formats;
 $out = &OpenOutputFile($outfile{output});
 
 if ($out_format eq "tree") {
-    &SupportedOrganismTree();
+    ## Create a tree with the taxonomy
+    my $tree = new RSAT::Tree();
+    $tree->LoadSupportedTaxonomy();
+    print $out $tree->as_indented_text("--");
+
 } else {
     print $out &ListSupportedOrganisms($out_format);
 }
@@ -31,86 +37,7 @@ exit(0);
 ##################### SUBROUTINE DEFINITION ####################
 ################################################################
 
-################################################################
-##  Export the taxonomy of supported organisms in a tree (nexus)
-##  format
-sub SupportedOrganismTree {
-#    use Bio::TreeIO;
 
-    my %nodes = (); # node index
-
-    ## Create a tree with the taxonomy
-    my $tree = new Bio::Tree::Tree();
-
-    ## Initiate the root of the taxonomy
-    my $root_node = new Bio::Tree::Node(-id=>"organism", -description=>"organism");
-    $nodes{organism} = $root_node;
-    $tree->set_root_node($root_node);
-
-    ## Iterate over all supported organisms
-    my $org_counter = 0;
-    foreach my $org (keys %supported_organism) {
-	$org_counter++;
-#	last if ($org_counter > 2);
-
-	my $org_node = new Bio::Tree::Node(-id=>$org, -description=>$org);
-	$nodes{$org} = $org_node; # index the new node
-	my $taxonomy = $supported_organism{$org}->{taxonomy};
-
-	## Replace prolematic characters by _
-	$taxonomy = &RSAT::util::trim($taxonomy);
-	$taxonomy =~ s|/|_|g; ## / are reserved in phylip format
-	$taxonomy =~ s|; +|;|g; ## 
-	$taxonomy =~ s| |_|g; ## 
-	$taxonomy =~ s|\(|_|g; ## / are reserved in phylip format
-	$taxonomy =~ s|\)|_|g; ## / are reserved in phylip format
-
-	my @taxonomy = split /\s*;\s*/, $taxonomy;
-
-	warn join ("\t", ";", $org_counter, $org, $taxonomy), "\n" if ($main::verbose >= 3);
-	
-	## Initiate child to the level of the organism
-	my $child = $org;
-	$child_node = $org_node; 
-	
-	## traverse the taxonomy bottom->up
-	for my $tr (0..$#taxonomy) {
-	    my $t = $#taxonomy -$tr;
-	    my $parent = $taxonomy[$t];
-	    if (defined $nodes{$parent}) {
-		$nodes{$parent}->add_Descendent($child_node);
-		warn join("\t", ";\t", "parent found", $t, $parent, $nodes{$parent}), "\n" if ($main::verbose >= 4);
-		$child_node = $nodes{$parent};
-		last;
-	    } else {
-		$parent_node = new Bio::Tree::Node(-id=>$parent, -description=>$parent);
-		$nodes{$parent} = $parent_node;
-		$nodes{$parent}->add_Descendent($child_node);
-		warn join("\t", ";\t", 
-			  "new parent", $t, $parent, 
-#			  $nodes{$parent}, 
-			  "child", $child_node->id(), 
-#			  $child_node,
-			 ), "\n" if ($main::verbose >= 4);
-
-		$child_node = $nodes{$parent};
-
-
-		## Attach the top node to the root
-		if ($t == 0) {
-		    $root_node->add_Descendent($child_node);
-		}
-	    }
-	}
-#	$tree->add_Descendent($org_node);
-    }
-    
-    my $out_tree = new Bio::TreeIO(-format=>'newick');
-    if ($outfile{output}) {
-	*STDOUT = $out;
-    }
-    $out_tree->write_tree($tree)
-}
 
 ################################################################
 #### Display full help message
