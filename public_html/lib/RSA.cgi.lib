@@ -265,25 +265,67 @@ sub PipingWarning {
 ### display a pop-up menu with a selection of organism
 ### on the basis of the configuration found in RSA.config
 sub OrganismPopUp {
-    print &OrganismPopUpString();
+    print &OrganismPopUpString(@_);
 }
 sub OrganismPopUpString {
-    my $popUpString = "";
-    $popupString .=  "<B>Organism</B>&nbsp;";
-    $popupString .=  "<SELECT NAME='organism'>\n";
-    foreach $key (&ListSupportedOrganisms("keys")) {
-	$name = $supported_organism{$key}->{'name'};
-	if ((lc($key) eq lc($default{organism})) ||
+    my (@selected_organisms) = @_;
+    if (scalar(@selected_organisms) <= 0) {
+	@selected_organisms = &ListSupportedOrganisms("keys");
+    }
+    my $organismPopup = "";
+    $organismPopup .=  "<B>Organism</B>&nbsp;";
+    $organismPopup .=  "<SELECT NAME='organism'>\n";
+    foreach my $org (@selected_organisms) {
+	$name = $supported_organism{$org}->{'name'};
+	if ((lc($org) eq lc($default{organism})) ||
 	    (lc($name) eq lc($default{organism}))) {
-	    $popupString .=  "<OPTION SELECTED VALUE='$key'>$name\n";
+	    $organismPopup .=  "<OPTION SELECTED VALUE='$org'>$name\n";
 	} else {
-	    $popupString .=  "<OPTION VALUE='$key'>$name\n";
+	    $organismPopup .=  "<OPTION VALUE='$org'>$name\n";
 	}
     }
-    $popupString .=  "</SELECT>";
-    $popupString .=  "<BR>\n";
-    return $popupString;
+    $organismPopup .=  "</SELECT>";
+    $organismPopup .=  "<BR>\n";
+    return $organismPopup;
 }
+
+
+### display a pop-up menu with the supported taxonomy
+### on the basis of the configuration found in RSA.config
+sub TaxonomyPopUp {
+    print &TaxonomyPopUpString();
+}
+sub TaxonomyPopUpString {
+    #require RSAT::Tree;
+    #require RSAT::TreeNode;
+    #my $tree = new RSAT::Tree();
+    #$tree->LoadSupportedTaxonomy();
+    #my %supported_taxons = $tree->as_indented_hash();
+## Supported taxons (TEMPORARY, FIXED LIST)
+#    my %supported_taxons = ("Bacteria"=>"Bacteria",
+#			    "Proteobacteria"=>"Proteobacteria",
+#			    "Gammaproteobacteria"=>"Gammaproteobacteria",
+#			    "Enterobacteriales"=>"Enterobacteriales",
+#			    "Enterobacteriaceae"=>"Enterobacteriaceae",
+#			    "Escherichia"=>"Escherichia");
+    my @supported_taxons = qw (Bacteria Proteobacteria Gammaproteobacteria Enterobacteriales Enterobacteriaceae);
+    my $taxonomyPopup = "";
+    $taxonomyPopup .=  "<B>Taxonomy</B>&nbsp;";
+    $taxonomyPopup .=  "<SELECT NAME='taxonomy'>\n";
+    foreach my $taxon (@supported_taxons) {
+	$name = $taxon;
+	if ((lc($taxon) eq lc($main::default{taxon})) ||
+	    (lc($name) eq lc($main::default{taxon}))) {
+	    $taxonomyPopup .=  "<OPTION SELECTED VALUE='$taxon'>$name\n";
+	} else {
+	    $taxonomyPopup .=  "<OPTION VALUE='$taxon'>$name\n";
+	}
+    }
+    $taxonomyPopup .=  "</SELECT>";
+    $taxonomyPopup .=  "<BR>\n";
+    return $taxonomyPopup;
+}
+
 
 
 
