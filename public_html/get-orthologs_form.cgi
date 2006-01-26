@@ -17,9 +17,7 @@ $query = new CGI;
 ################################################################
 ## Initialize parameters
 
-## Supported taxons (TEMPORARY, FIXED LIST)
-@supported_taxons = qw(Bacteria Proteobacteria Gammaproteobacteria Enterobacteriales Enterobacteriaceae Escherichia);
-
+@selected_organisms = qw(Escherichia_coli_K12 Bacillus_subtilis Brucella_melitensis);
 
 ## Output fields
 my @output_fields = qw(ident
@@ -88,7 +86,7 @@ print $query->start_multipart_form(-action=>"get-orthologs.cgi");
 
 ################################################################
 #### choice of the organism
-&OrganismPopUp();
+&OrganismPopUp(@selected_organisms);
 
 ################################################################
 ### gene queries
@@ -109,13 +107,7 @@ print "<p>\n";
 
 ################################################################
 ## Taxon of interest
-print "<B><A HREF='help.get-organisms.html#taxon'>Taxon of interest</A>&nbsp;</B>\n";
-#&RSAT::error::FatalError($default{taxon});
-print $query->popup_menu(-name=>'taxon',
-			 -default=>$default{taxon},
-			 -Values=>[@supported_taxons]
-			);
-print "<p>\n";
+&TaxonomyPopUp();
 
 ################################################################
 ## Return fields + thresholds
