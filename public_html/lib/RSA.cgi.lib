@@ -296,24 +296,17 @@ sub TaxonomyPopUp {
     print &TaxonomyPopUpString();
 }
 sub TaxonomyPopUpString {
-    #require RSAT::Tree;
+    require RSAT::Tree;
     #require RSAT::TreeNode;
-    #my $tree = new RSAT::Tree();
-    #$tree->LoadSupportedTaxonomy();
-    #my %supported_taxons = $tree->as_indented_hash();
-## Supported taxons (TEMPORARY, FIXED LIST)
-#    my %supported_taxons = ("Bacteria"=>"Bacteria",
-#			    "Proteobacteria"=>"Proteobacteria",
-#			    "Gammaproteobacteria"=>"Gammaproteobacteria",
-#			    "Enterobacteriales"=>"Enterobacteriales",
-#			    "Enterobacteriaceae"=>"Enterobacteriaceae",
-#			    "Escherichia"=>"Escherichia");
-    my @supported_taxons = qw (Bacteria Proteobacteria Gammaproteobacteria Enterobacteriales Enterobacteriaceae);
+    my $tree = new RSAT::Tree();
+    $tree->LoadSupportedTaxonomy(1);
+    my @supported_taxons = $tree->node_names();
+    my %indented_taxon = $tree->as_indented_hash();
     my $taxonomyPopup = "";
     $taxonomyPopup .=  "<B>Taxon</B>&nbsp;";
     $taxonomyPopup .=  "<SELECT NAME='taxon'>\n";
     foreach my $taxon (@supported_taxons) {
-	$name = $taxon;
+	$name = $indented_taxon{$taxon};
 	if ((lc($taxon) eq lc($main::default{taxon})) ||
 	    (lc($name) eq lc($main::default{taxon}))) {
 	    $taxonomyPopup .=  "<OPTION SELECTED VALUE='$taxon'>$name\n";

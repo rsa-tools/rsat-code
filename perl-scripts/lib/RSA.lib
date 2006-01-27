@@ -11,6 +11,7 @@ require RSAT::organism;
 require RSAT::contig;
 require RSAT::error;
 require RSAT::util;
+require RSAT::Tree;
 
 umask 0022;
 

@@ -35,11 +35,13 @@ use RSAT::message;
 use RSAT::TreeNode;
 use Data::Dumper; # useful for debugging (print contents of hashes, objects)
 @ISA = qw( RSAT::GenericObject );
-
+$default_indent_string = ":-";
 
 ################################################################
 #### METHODS TO USE TREE
 ################################################################
+
+=pod
 
 =head2 set root node
 
@@ -58,6 +60,8 @@ sub set_root_node  {
   return $self->get_root_node;
 }
 
+=pod
+
 =head2 get root node
 
  Title   : get_root_node($node)
@@ -71,6 +75,8 @@ sub get_root_node {
   my $self = shift;
   return $self->{'rootnode'};
 }
+
+=pod
 
 =head2 set all levels
 
@@ -91,6 +97,8 @@ sub set_all_levels{
   return();
 }
 
+=pod
+
 =head2 get all nodes
 
  Title   : get_all_nodes()
@@ -110,6 +118,8 @@ sub get_all_nodes{
 ################################################################
 #### IMPORT METHODS
 ################################################################
+
+=pod
 
 =head2 make a tree from ncbi taxonomy
 
@@ -224,9 +234,9 @@ sub LoadSupportedTaxonomy {
 
     ## Initiate the root of the taxonomy
     my $root_node = new RSAT::TreeNode();
-    $root_node->force_attribute("id", "organism");
-    $root_node->set_attribute("name", "organism");
-    $root_node->set_attribute("description", "organism");
+    $root_node->force_attribute("id", "Organism");
+    $root_node->set_attribute("name", "Organism");
+    $root_node->set_attribute("description", "Organism");
     $nodes{organism} = $root_node;
     $self->set_root_node($root_node);
 
@@ -299,7 +309,34 @@ sub LoadSupportedTaxonomy {
 #### EXPORT METHODS
 ################################################################
 
-=head2 export tree as indented text
+
+################################################################
+=pod
+
+=head2 node_names()
+
+ Title    : node_names()
+ Usage    : my @node_labels = $tree->as_list()
+ Function : returnsa a list of node labels
+ Returns  : @node_labels
+
+=cut
+
+sub node_names {
+    my ($self) = @_;
+    my @node_names = ();
+    my @nodes = $self->get_all_nodes();
+    foreach my $node (@nodes) {
+	push @node_labels, $node->get_attribute("name");
+    }
+    return @node_labels;
+}
+
+
+################################################################
+=pod
+
+=head2 as_indented_text()
 
  Title   : as_indented_text()
  Usage   : $tree->as_indented_text($indent_string)
@@ -309,22 +346,23 @@ sub LoadSupportedTaxonomy {
  Argument: $indent [string]
 
 =cut
-
 sub as_indented_text{
-  my ($self,$indent_string) = @_;
-  unless (defined($indent_string)) {
-      $indent_string = "-";
-  }
-  my $output ="";
-  $self->set_all_levels();
-  foreach my $n ($self->get_all_nodes()){
-    $output .= join(" ",$indent_string x $n->get_level(),$n->getid())."\n";
-  }
-  return ($output);
+    my ($self,$indent_string) = @_;
+    unless (defined($indent_string)) {
+	$indent_string = $default_indent_string;;
+    }
+    my $output ="";
+    $self->set_all_levels();
+    foreach my $n ($self->get_all_nodes()){
+	$output .= join(" ",$indent_string x $n->get_level(),$n->getid())."\n";
+    }
+    return ($output);
 }
 
 ################################################################
 #### CGI METHOD
+
+=pod
 
 =head2 export tree as a hash
 
@@ -341,7 +379,7 @@ sub as_indented_text{
 sub as_indented_hash{
   my ($self,$indent_string) = @_;
   unless (defined($indent_string)) {
-      $indent_string = "-";
+      $indent_string = $default_indent_string;;
   }
   my %taxons =();
   $self->set_all_levels();

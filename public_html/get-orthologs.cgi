@@ -1,20 +1,12 @@
 #!/usr/bin/perl
 if ($0 =~ /([^(\/)]+)$/) {
-    push (@INC, "$`lib/");
+    push @INC, "$`lib/";
 }
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
-#### redirect error log to a file
-BEGIN {
-    $ERR_LOG = "/dev/null";
-#    $ERR_LOG = "$TMP/RSA_ERROR_LOG.txt";
-    use CGI::Carp qw(carpout);
-    open (LOG, ">> $ERR_LOG")
-	|| die "Unable to redirect log\n";
-    carpout(*LOG);
-}
 require "RSA.lib";
 require "RSA.cgi.lib";
+
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 $command = "$SCRIPTS/get-orthologs";
 $tmp_file_name = sprintf "get-orthologs.%s", &AlphaDate();
