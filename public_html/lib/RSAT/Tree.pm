@@ -92,7 +92,7 @@ sub set_all_levels{
   my $self =shift;
   my $level=1;
   my $root_node=$self->get_root_node();
-  $root_node->RSAT::TreeNode::set_level($level);
+  $root_node->set_level($level);
   $root_node->set_children_levels($level);
   return();
 }
@@ -123,9 +123,9 @@ sub get_all_nodes{
 
 =head2 make a tree from ncbi taxonomy
 
- Title   : parse_NCBI_taxonomy()
+ Title   : LoadSupportedTaxonomy()
 
- Usage   : my $tree = RSAT::Tree::parse_NCBI_taxonomy($rootname,\%supported_organisms)
+ Usage   : my $tree = RSAT::Tree::LoadSupportedTaxonomy($rootname,\%supported_organisms)
 
  Function: Make a tree object from a hash 
 
@@ -139,70 +139,72 @@ sub get_all_nodes{
 
 =cut
 
-sub parse_NCBI_taxonomy {
-  my ($self,$root_name,$supported_organism)=@_;
-  my %supported_organism=%{$supported_organism};
-  my %nodes = (); # node index
+sub LoadSupportedTaxonomy {
+    my ($self,$root_name,$supported_organism, $no_leaf)=@_;
+    my %supported_organism=%{$supported_organism};
+    my %nodes = (); # node index
 
-  ## Initiate the root of the taxonomy
-  my $root_node = new RSAT::TreeNode("id"=>$root_name,
-					"name"=>$root_name,
-					"type"=>"root"
-				       );
-  $nodes{$root_name} = $root_node;
-  my $root=$self->set_root_node($root_node);
-  RSAT::message::Warning("Root node :\t",$root->getid()) if ($main::verbose >= 3);
-  
-  ## get taxonomy
-  my $c = 0;
-  foreach my $org (sort {$supported_organism{$a}->{"taxonomy"} cmp $supported_organism{$b}->{"taxonomy"}} 
-		   keys (%supported_organism)) {
-    $c++;
-    my @taxons = split /\s*;\s*/, $supported_organism{$org}->{"taxonomy"};
-    &RSAT::message::Warning(join ("\t", $c, $org,scalar(@taxons),"taxons"), "\n") if ($main::verbose >=3);
-    &RSAT::message::Warning(join ("\t","taxons",(@taxons)), "\n") if ($main::verbose >= 4);
-    my $root_found=0;
+    ## Initiate the root of the taxonomy
+    my $root_node = new RSAT::TreeNode("id"=>$root_name,
+				       "name"=>$root_name,
+				       "type"=>"root"
+				      );
+    $nodes{$root_name} = $root_node;
+    my $root=$self->set_root_node($root_node);
+    &RSAT::message::Warning("Root node :\t",$root->getid()) if ($main::verbose >= 3);
+    
+    ## get taxonomy
+    my $c = 0;
+    foreach my $org (sort {$supported_organism{$a}->{"taxonomy"} cmp $supported_organism{$b}->{"taxonomy"}} 
+		     keys (%supported_organism)) {
+	$c++;
+	my @taxons = split /\s*;\s*/, $supported_organism{$org}->{"taxonomy"};
+	&RSAT::message::Warning(join ("\t", $c, $org,scalar(@taxons),"taxons"), "\n") if ($main::verbose >=3);
+	&RSAT::message::Warning(join ("\t","taxons",(@taxons)), "\n") if ($main::verbose >= 4);
+	my $root_found=0;
 
-    # initiate the leaf
-    my $leaf = new RSAT::TreeNode(id=>$org,
-				     name=>$org,
-				     type=>"leaf"
-				    );
-    RSAT::message::Warning(join("\t","Initiate leaf",$leaf->get_name())) if ($main::verbose >= 4);
+	# initiate the leaf
+	my $leaf = new RSAT::TreeNode(id=>$org,
+				      name=>$org,
+				      type=>"leaf"
+				     );
+	&RSAT::message::Warning(join("\t","Initiate leaf",$leaf->get_name())) if ($main::verbose >= 4);
 
-    for my $t (0..$#taxons) {
-      RSAT::message::Warning(3,join("\t","Compare taxon",$taxons[$t],"with root name",$root->get_name())) if ($main::verbose >=3);
-      ## identify root taxon
-      if (($taxons[$t] eq $root->get_name())&&($root_found==0)){
-	RSAT::message::Warning(3,"Taxon identified as root for\t",$org) if ($main::verbose >=3);
-	$root_found=1;
-	next;
-      }
-      # start top->down to increase the tree
-      if ($root_found==1){
-	if (defined $nodes{$taxons[$t-1]}){
-	  my $node = new RSAT::TreeNode(id=>$taxons[$t],
-					   name=>$taxons[$t],
-					   type=>"node",
-					   all_leaves=>[$org]
-					  );
-	  $nodes{$taxons[$t]}=$node;
-	  RSAT::message::Warning(3,join("\t","Adding node",$node->get_name(),
-					"to node",$nodes{$taxons[$t-1]}->get_name())) if ($main::verbose >=3);
-	  $nodes{$taxons[$t-1]}->add_child($node);
-	  # attach organism as leaf if it is the last taxon
-	  if ($t == $#taxons){
-	    RSAT::message::Warning(3,join("\t","Adding leaf",$leaf->get_name(),
-					  "to node",$node->get_name())) if ($main::verbose >=3);
-	    $node->add_child($leaf);
+	for my $t (0..$#taxons) {
+	    &RSAT::message::Warning(3,join("\t","Compare taxon",$taxons[$t],"with root name",$root->get_name())) if ($main::verbose >=3);
+	      ## identify root taxon
+	      if (($taxons[$t] eq $root->get_name())&&($root_found==0)){
+		  &RSAT::message::Warning(3,"Taxon identified as root for\t",$org) if ($main::verbose >=3);
+		    $root_found=1;
+		    next;
+		}
+	      # start top->down to increase the tree
+	      if ($root_found==1){
+		  if (defined $nodes{$taxons[$t-1]}){
+		      my $node = new RSAT::TreeNode(id=>$taxons[$t],
+						    name=>$taxons[$t],
+						    type=>"node",
+						    all_leaves=>[$org]
+						   );
+		      $nodes{$taxons[$t]}=$node;
+		      &RSAT::message::Warning(3,join("\t","Adding node",$node->get_name(),
+						    "to node",$nodes{$taxons[$t-1]}->get_name())) if ($main::verbose >=3);
+		      $nodes{$taxons[$t-1]}->add_child($node);
+		      # attach organism as leaf if it is the last taxon
+		      if ($t == $#taxons){
+			  unless ($no_leaf) {
+			      &RSAT::message::Warning(3,join("\t","Adding leaf",$leaf->get_name(),
+							     "to node",$node->get_name())) if ($main::verbose >=3);
+			      $node->add_child($leaf);
+			  }
+		      }
+		  }else{
+		      next;
+		  }
+	      }
 	  }
-	}else{
-	  next;
-	}
-      }
     }
-  }
-  return $self;
+    return $self;
 }
 
 
@@ -227,7 +229,7 @@ do not create a node for the species, but only for
 
 =cut
 
-sub LoadSupportedTaxonomy {
+sub LoadSupportedTaxonomy_old {
     my ($self, $no_species) = @_;
 
     my %nodes = (); # node index
@@ -253,7 +255,7 @@ sub LoadSupportedTaxonomy {
 
 	my $taxonomy = $main::supported_organism{$org}->{taxonomy};
 
-	## Replace prolematic characters by _
+	## Replace problematic characters by _
 	$taxonomy = &RSAT::util::trim($taxonomy);
 	$taxonomy =~ s|/|_|g; ## / are reserved in phylip format
 	$taxonomy =~ s|; +|;|g; ## 

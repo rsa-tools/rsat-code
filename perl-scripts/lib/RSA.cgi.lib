@@ -299,7 +299,8 @@ sub TaxonomyPopUpString {
     require RSAT::Tree;
     #require RSAT::TreeNode;
     my $tree = new RSAT::Tree();
-    $tree->LoadSupportedTaxonomy(1);
+    $tree->LoadSupportedTaxonomy("Bacteria", \%supported_organism, 1);
+#    $tree->LoadSupportedTaxonomy(1);
     my @supported_taxons = $tree->node_names();
     my %indented_taxon = $tree->as_indented_hash();
     my $taxonomyPopup = "";
