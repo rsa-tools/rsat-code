@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.10 2005/12/13 08:25:25 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.11 2006/01/27 20:46:34 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -146,10 +146,10 @@ print <<EndText;
 
   <TD ALIGN=CENTER>
   <font size=-1>
-  <A HREF="http://embnet.cifn.unam.mx/rsa-tools/" target="_top">
+  <A HREF="http://www.ccg.unam.mx/rsa-tools/" target="_top">
   <B>Cuernavaca - Mexico</B><BR>
   <IMG SRC="images/zapata.jpg" HEIGHT=80 BORDER=0><BR>
-  http://embnet.cifn.unam.mx/rsa-tools/</A>
+  http://www.ccg.unam.mx/rsa-tools/</A>
   </FONT>
   </TD>
   
