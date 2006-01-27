@@ -1,14 +1,19 @@
 #!/usr/bin/perl
 ################################################################
 ## this cgi script fills the HTML form for the program get-orthologs
-
-if ($0 =~ /([^(\/)]+)$/) {
-    push (@INC, "$`lib/");
+#!/usr/bin/perl
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push @INC, "$`lib/";
+    }
 }
 use CGI;
 use CGI::Carp qw/fatalsToBrowser/;
 require "RSA.lib";
 require "RSA.cgi.lib";
+use RSAT::Tree;
+
+
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
 ### Read the CGI query
