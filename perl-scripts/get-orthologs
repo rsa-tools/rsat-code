@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.13 2006/01/27 22:12:45 jvanheld Exp $
+# $Id: get-orthologs,v 1.14 2006/01/27 22:55:30 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -350,7 +350,7 @@ package main;
 		      ## Additional output fields (specified with the option -return)
 		      if (scalar(@output_fields) > 0) {
 			  ## add fields for the fwd hit
-			  $hit_info .= "\tFWD";
+#			  $hit_info .= "\tFWD";
 			  foreach my $field (@output_fields) {
 			      $hit_info .= "\t";
 			      $hit_info .= $fwd_hit->{$field};
@@ -358,12 +358,12 @@ package main;
 			  }
 			  
 			  ## add fields for the rev hit
-			  $hit_info .= "\tREV";
-			  foreach my $field (@output_fields) {
-			      $hit_info .= "\t";
-			      $hit_info .= $rev_hit->{$field};
+#			  $hit_info .= "\tREV";
+#			  foreach my $field (@output_fields) {
+#			      $hit_info .= "\t";
+#			      $hit_info .= $rev_hit->{$field};
 #		  &RSAT::message::Debug($field, $rev_hit->{$field}, $hit_info) if ($main::verbose >= 10);
-			  }
+#			  }
 		      }
 		      
 		      &RSAT::message::Info("bidirectional hit\t",$hit_info) if ($main::verbose >= 2);
@@ -394,18 +394,18 @@ package main;
 
     if (scalar(@output_fields) > 0) {
 	## add fields for the fwd hit
-	$header .= "\tFWD";
+#	$header .= "\tFWD";
 	foreach $field (@output_fields) {
 	    $header .= "\t";
 	    $header .= $field;
 	}
 	
-	## add fields for the rev hit
-	$header .= "\tREV";
-	foreach $field (@output_fields) {
-	    $header .= "\t";
-	    $header .= $field;
-	}
+#	## add fields for the rev hit
+#	$header .= "\tREV";
+#	foreach $field (@output_fields) {
+#	    $header .= "\t";
+#	    $header .= $field;
+#	}
     }
     print $out "#", $header, "\n";
 	
