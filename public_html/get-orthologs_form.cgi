@@ -31,8 +31,7 @@ my @output_fields = qw(ident
 			   gap_open
 			   e_value
 			   bit_sc
-			   q_rank
-			   s_rank);
+			   rank);
 my %field_description = ();
 $field_description{ident} = "Percentage of identity";
 $field_description{ali_len} = "Alignment length";
@@ -40,8 +39,8 @@ $field_description{mismat} = "Number of mismatches";
 $field_description{gap_open} = "Number of gap openings";
 $field_description{e_value} = "E-value";
 $field_description{bit_sc} = "Bit score";
-$field_description{q_rank} = "query rank";
-$field_description{s_rank} = "target rank";
+$field_description{rank} = "Rank";
+#$field_description{s_rank} = "target rank";
 
 
 ################################################################
@@ -54,8 +53,8 @@ $default{match_description} = '';
 $default{feattype} = "CDS";
 $default{lth_ali_len} = 50;
 $default{uth_e_value} = 1e-5;
-$default{uth_q_rank} = 1;
-$default{uth_s_rank} = 1;
+$default{uth_rank} = 1;
+#$default{uth_s_rank} = 1;
 
 $default{return_ident} = "checked";
 $default{return_ali_len} = "";
@@ -63,8 +62,8 @@ $default{return_mismat} = "";
 $default{return_gap_open} = "";
 $default{return_e_value} = "checked";
 $default{return_bit_sc} = "";
-$default{return_q_rank} = "";
-$default{return_s_rank} = "";
+$default{return_rank} = "";
+#$default{return_s_rank} = "";
 
 ### replace defaults by parameters from the cgi call, if defined
 foreach $key (keys %default) {
@@ -172,8 +171,8 @@ print $query->end_form;
 ### data for the demo 
 print $query->start_multipart_form(-action=>"get-orthologs_form.cgi");
 $demo_queries = "lexA\n";
-$demo_queries .= "recA\n";
-$demo_queries .= "uvrB\n";
+#$demo_queries .= "recA\n";
+#$demo_queries .= "uvrB\n";
 print "<TD><B>";
 print $query->hidden(-name=>'queries',-default=>$demo_queries);
 print $query->hidden(-name=>'organism',-default=>"Escherichia_coli_K12");
