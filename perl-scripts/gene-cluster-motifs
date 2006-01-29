@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.159 2005/12/20 10:10:29 rsat Exp $
+# $Id: gene-cluster-motifs,v 1.160 2006/01/29 23:56:03 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -3576,11 +3576,11 @@ sub ValidateOneResult {
     }
 
     ## Count number of annotated sites matching at least one discovered pattern
-    $TPsites = `more $match_file | grep -v ';' | cut -f 6 | sort -u | wc -l`;
+    $TPsites = `more $match_file | grep -v ';' | grep -v '#' | cut -f 6 | sort -u | wc -l`;
     chomp($TPsites);
 
     ## Count number of discovered patterns matching at least one annotated site
-    $TPpatterns = `more $match_file | grep -v ';' | cut -f 7 | sort -u | wc -l`;
+    $TPpatterns = `more $match_file | grep -v ';' | grep -v '#' | cut -f 7 | sort -u | wc -l`;
     chomp($TPpatterns);
 
     ## Calculate sensitivity, positive predictive value and accuracy
