@@ -20,6 +20,7 @@ $WWW_RSA = 	"http://localhost/rsa-tools/";
 ## Prefix for the web server log file.
 $config_site =	`hostname`;
 
+$ENV{SERVER_ADMIN} = "jvanheld\@scmbb.ulb.ac.be";
 
 ################################################################
 #
