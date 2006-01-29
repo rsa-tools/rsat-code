@@ -146,8 +146,9 @@ sub get_children  {
 sub is_leaf  {
   my ($self) = shift;
   my $isleaf=0;
-  if ((defined $self->{'child'} && (keys %{$self->{'child'}} > 0))&&
-      ($self->get_type eq "leaf")){
+#  if ((defined $self->{'child'} && (keys %{$self->{'child'}} > 0))&&
+  if ($self->get_type eq "leaf"){
+    RSAT::message::Warning(join("\t","Node",$self->getid(),"identified as leaf.")) if ($main::verbose >=10);
     $isleaf = 1;
   }
   return $isleaf;
@@ -220,5 +221,83 @@ sub get_all_nodes{
  return ($nodes);
 }
 
+=head2 get all descendents
+
+ Title   : get_all_descendents()
+ Usage   : my @descendants = $node->get_all_desceneants()
+ Function: get all descendant descendants from this node by a depht-first-search algorithm (DFS)
+ Returns : reference to an Array of descendent nodes
+
+=cut
+
+sub get_all_descendents{
+  my $self=shift;
+  my (@descendents) =();
+  # TEMP
+#  foreach my $node (@descendents){
+#    RSAT::message::Warning(join("\t","Descendant node",$node->get_name())) if ($main::verbose >=0);
+#  }
+  foreach my $child ($self->get_children()){
+    push @descendents,($child->get_all_descendents(),$child);
+  }
+  return (@descendents);
+}
+
+
+=head2 get leaves per node
+
+ Title   : get_leaves
+ Usage   : 
+ Function: get the leaves under each node in a tree
+
+=cut
+
+sub get_leaves  {
+   my ($self) = shift;
+   my @leaves=();
+#   RSAT::message::Warning(join("\t","Descendant Nodes", @{$self->get_all_descendents()})) if ($main::verbose >=0);
+   foreach my $node ( $self->get_all_descendents() ) {
+     RSAT::message::Warning(join("\t","Descendant node",$node->get_name())) if ($main::verbose >=10);
+     if ($node->is_leaf){
+       push @leaves,$node;
+     }
+   }
+   $self->{leaves}=@leaves;
+   return (@leaves);
+}
+
+=pod
+
+=head2 get_leaves_names()
+
+ Title    : get_leaves_names()
+ Usage    : my @leaves_labels = $node->get_leaves_names()
+ Function : returns a list of node labels corresponding to the leaves
+ Returns  : @leaves_labels
+
+=cut
+
+#sub get_leaves_names {
+#  my $self = shift;
+#  my $leaves_labels = shift;
+#  my $other_leaves_labels =();
+#  foreach my $child ($self->get_children()){
+#    if ($self->is_leaf){
+#      push @{$leaves_labels},$child->get_name();
+#    }else{
+#      $other_leaves_labels = $child->get_leaves_names($leaves_labels);
+#    }
+#  }
+# return ($leaves_labels,$other_leaves_labels);
+#}
+
+sub get_leaves_names {
+  my $self = shift;
+  my @leaves_labels=();
+  foreach my $leaf ($self->get_leaves()){
+    push @leaves_labels, $leaf->get_name();
+  }
+  return (@leaves_labels);
+}
 
 1;
