@@ -119,13 +119,17 @@ sub doit {
     if ($batch) {
 	## Store the command in a sh script (the job)
 	my $job_dir = "jobs";
+	$job_dir .= "/".`date +%Y%m%d`;
+	chomp($job_dir);
 	my $job_prefix = $job_prefix || "doit";
 	&RSAT::util::CheckOutDir($job_dir);
 	my $job = `mktemp ${job_dir}/${job_prefix}.XXXXXX`;
 	chomp $job;
 	open JOB, ">$job";
-	print JOB "( cd ".$wd." ; ";
-	print JOB $command;
+	print JOB "( cd ", $wd;
+	print JOB "; date > ", $job, ".started"; ## Write a file called [job].started indicating the time when the job was started
+	print JOB "; ", $command;
+	print JOB "; date > ", $job, ".done"; ## Write a file called [job].done indicating the time when the job was done
 	print JOB " )", "\n";
 	close JOB;
 	&RSAT::message::TimeWarn(join("\t", "Job queued", $wd."/".$job)) if ($main::verbose >= 0);
@@ -134,7 +138,7 @@ sub doit {
 	## The default values are for internal use in the SCMBB, but
 	## alternative values can be specified by environment variables
 	my $cluster_queue = $ENV{CLUSTER_QUEUE} || "short";
-	my $cluster_master=$ENV{CLUSTER_MASTER} || "merlin.scmbb.ulb.ac.be";
+	my $cluster_master=$ENV{CLUSTER_MASTER} || "arthur.scmbb.ulb.ac.be";
 	my $batch_mail=$ENV{BATCH_MAIL} || "a";
 	&doit("qsub -m ".$batch_mail." -q ".$cluster_queue."\@".$cluster_master." -N ${job} -j oe -o ${job}.log ${job}", $dry, $die_on_error,$verbose,0);
 
