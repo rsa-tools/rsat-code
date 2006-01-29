@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.14 2006/01/27 22:55:30 rsat Exp $
+# $Id: get-orthologs,v 1.15 2006/01/29 23:22:16 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -139,6 +139,7 @@ package main;
 
     @main::missing_query_genes = ();
     @main::bidirect_hits = ();
+    $main::bbh = ();
 
     $main::null = "<NULL>";
 
@@ -241,6 +242,11 @@ package main;
 				 );
     }
 
+    ################################################################
+    ## Get taxonomy for ordering results
+    my $tree = RSAT::Tree->new();
+    $tree->LoadSupportedTaxonomy($main::ref_taxon,\%supported_organism);
+    my @ordered_ref_organisms = $tree->get_leaves_names();
 
     ################################################################
     ### open output stream
@@ -277,7 +283,8 @@ package main;
 	if ($feature_index->contains(uc($query))) {
 	    my $current_feature = $feature_index->get_first_value(uc($query));
 	    my $feature_id = $current_feature->get_attribute("id");
-	    $is_query{$feature_id} = uc($query);
+	    $is_query{$feature_id} = $query;
+#	    $is_query{$feature_id} = uc($query);
 	    $query_gene_id{$query} = $feature_id;
 	    &RSAT::message::Warning(join("\t", "query gene", $query, $feature_id)) if (); 
 	} else {
@@ -346,7 +353,7 @@ package main;
 					  $fwd_hit->{query},
 #				  $main::query_organism,
 					  );
-		      
+
 		      ## Additional output fields (specified with the option -return)
 		      if (scalar(@output_fields) > 0) {
 			  ## add fields for the fwd hit
@@ -356,7 +363,7 @@ package main;
 			      $hit_info .= $fwd_hit->{$field};
 #		  &RSAT::message::Debug($field, $fwd_hit->{$field}, $hit_info) if ($main::verbose >= 10);
 			  }
-			  
+
 			  ## add fields for the rev hit
 #			  $hit_info .= "\tREV";
 #			  foreach my $field (@output_fields) {
@@ -365,6 +372,9 @@ package main;
 #		  &RSAT::message::Debug($field, $rev_hit->{$field}, $hit_info) if ($main::verbose >= 10);
 #			  }
 		      }
+		      ################
+		      # put all hit info in a hash
+		      $bbh->{$query_gene}->{$ref_organism}->{$fwd_hit->{ref_id}}=$hit_info;
 		      
 		      &RSAT::message::Info("bidirectional hit\t",$hit_info) if ($main::verbose >= 2);
 		      push @bidirect_hits, $hit_info;
@@ -409,10 +419,34 @@ package main;
     }
     print $out "#", $header, "\n";
 	
-    foreach my $hit_info (@bidirect_hits) {
-	print $out "$hit_info\n";
+#    foreach my $hit_info (@bidirect_hits) {
+#	print $out "$hit_info\n";
+#    }
+    my $nb_hits_info="";
+    foreach my $query_gene (keys (%is_query)) {
+      my $nb_hits=0;
+      foreach my $org (@ordered_ref_organisms){
+	if ($bbh->{$query_gene}->{$org}){
+	  foreach my $hit (keys %{$bbh->{$query_gene}->{$org}}){
+	    print $out $bbh->{$query_gene}->{$org}->{$hit},"\n";
+	    $nb_hits++;
+	  }
+	}else{
+	  next;
+	}
+      }
+      # get info about the results
+      $nb_hits_info .= "; Query gene ".$is_query{$query_gene}." $query_gene\n";
+      my $nb_genomes = scalar keys %{$bbh->{$query_gene}};
+      my $total_genomes= scalar(@main::ref_organisms);
+      my $rate = sprintf("%.2f",100 * $nb_genomes/$total_genomes);
+      $nb_hits_info .= join("\t",";","found",$nb_hits,"targets in",$nb_genomes,"organisms ($rate\%)\n");
     }
-    
+
+    ## Report number of hits
+    if ($main::verbose >= 1) {
+      print $out $nb_hits_info;
+    }
     ## Report missing BLAST files
     if (scalar(@main::missing_blast_files) > 0) {
 	print $out "; Missing BLAST files\n";
