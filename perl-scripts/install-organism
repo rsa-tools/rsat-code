@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.59 2006/01/16 08:08:43 jvanheld Exp $
+# $Id: install-organism,v 1.60 2006/01/31 19:50:17 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -643,8 +643,18 @@ USAGE
 DESCRIPTION
 	Add support for an organism in RSA-tools.
 
-	This program performs a series of installation tasks, by
-	calling other programs in RSA-Tools.
+	This script is a task manager, which (depending on the
+	selected tasks) manages different steps necessary for the
+	installation of an organism from the NCBI flat files :
+
+	- parse the .gbk files
+
+	- add the organism in the config file
+
+	- calculate trinucleotide frequencies in the start and stop
+          codons (a way to check consistency of the gene locations)
+
+	- calculates oligonucleotide and dyad frequencies
 
 CATEGORY
 	adminstration
