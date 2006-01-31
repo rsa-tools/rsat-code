@@ -9,7 +9,7 @@ require "RSA.seq.lib";
 $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
 $max_flanking = 1;
 $max_subst = 0;
-$max_cluster_size = 50;
+$max_assembly_size = 50;
 $strand_insensitive = 1;
 $max_pattern_nb = 100;
 
@@ -48,7 +48,7 @@ if ($verbose) {
     }
     printf $out "; %-29s\t%d\n", "max flanking bases", $max_flanking;
     printf $out "; %-29s\t%d\n", "max substitutions", $max_subst;
-    printf $out "; %-29s\t%d\n", "max cluster size", $max_cluster_size;
+    printf $out "; %-29s\t%d\n", "max assembly size", $max_assembly_size;
     printf $out "; %-29s\t%d\n", "max number of patterns", $max_pattern_nb;
     printf $out "; %-29s\t%d\n", "number of input patterns", $pattern_nb;
     printf $out ";\n";
@@ -263,8 +263,8 @@ sub BestOffset {
     return ($best_offset,$best_flanking,$best_score);    
 }
 
-#### print cluster header 
-sub PrintClusterHeader {
+#### print assembly header 
+sub PrintAssemblyHeader {
     $seed_length = length($seed);
     $l = $seed_length -1;
     printf $out ";%${l}s", "alignt"; 
@@ -278,11 +278,11 @@ sub PrintClusterHeader {
 }
 
 
-#### print a cluster
-sub PrintCluster {
-    undef($cluster_score);
+#### print a assembly
+sub PrintAssembly {
+    undef($assembly_score);
     print $out  "\n";
-    $cluster_nb++;
+    $assembly_nb++;
     undef $min_pos;
     undef $max_pos;
     undef($max_length);
@@ -294,15 +294,15 @@ sub PrintCluster {
 	$word_nb++;
     }
     if ($verbose) {
-	print $out  ";cluster # $cluster_nb";
+	print $out  ";assembly # $assembly_nb";
 	    print $out "\tseed: $first_seed";
 	print $out  "\t$word_nb words";
 	print $out "\tlength $seed_length";
 	print $out "\n";
-	&PrintClusterHeader();
+	&PrintAssemblyHeader();
     }
     foreach $word (sort {($position{$a} <=> $position{$b}) || ($score{$b} <=> $score{$a})} keys %position) {
-	$cluster_score = &max($cluster_score, $score{$word}) if (&IsReal($score_column));
+	$assembly_score = &max($assembly_score, $score{$word}) if (&IsReal($score_column));
 	$position = $position{$word} - $min_pos;
 	
 	for $p (0..$position-1) {
@@ -335,7 +335,7 @@ sub PrintCluster {
     
     print $out "$seed";
     printf $out "\t%s", lc(&ReverseComplement($seed)) if ($strand_insensitive);
-    print $out "\t$cluster_score" if (&IsReal($score_column));
+    print $out "\t$assembly_score" if (&IsReal($score_column));
     print $out "\tbest consensus\n";
 }
 
@@ -411,8 +411,8 @@ USAGE
         pattern-assembly [-i inputfile] [-o outputfile] [-v]
 
 DESCRIPTION
-	Assemble a set of oligonucleotides or dyads into clusters of
-	overlapping patterns (the assembly).
+	Assemble a set of oligonucleotides or dyads into groups of
+	overlapping patterns (assemblies).
 
 CATEGORY
 	sequences
@@ -458,8 +458,8 @@ OPTIONS
 		maximum allowed substitutions (default $max_subst)
 
 	-maxcl #
-		maximal cluster size, i.e. the number of patterns per
-		alignment cluster (default: $max_cluster_size)
+		maximal assembly size, i.e. the number of patterns per
+		alignment group (default: $max_cluster_size)
 	-maxpat #
 		maximum number of patterns to assemble (default 100).
 		Assembly takes a huge time when too many patterns are
@@ -475,10 +475,11 @@ INPUT FORMAT
 	Lines starting with a semicolon (;) are ignored.
 	
 OUTPUT FORMAT
-	The program returns clusters of aligned oligonucleotides. 
-	The information associated to each oligo in the input file 
+
+	The program returns groups of aligned patterns (oligonucleotides or
+	dyads).  The information associated to each pattern in the input file
 	is returned besides the same oligo in the output file.
-	
+
 EXAMPLES
        pattern-assembly -v -i mydata -o myresult -2str
 	
@@ -503,7 +504,7 @@ pattern-assembly options
 -sc		score column
 -maxfl #	maximum flanking segment size (default $max_flanking). 
 -subst #	maximum allowed substitutions (default $max_subst).
--maxcl #	maximal cluster size, i.e. number of patterns per cluster (default: $max_cluster_size)
+-maxcl #	maximal assembly size, i.e. number of patterns per assembly (default: $max_assembly_size)
 -maxpat #	maximum bumber of patterns to assemble
 End_short_help
   close HELP;
@@ -572,9 +573,9 @@ sub ReadArguments {
 	    
 	    ### max flank
 	} elsif ($ARGV[$a] =~ /^-maxcl/i) {
-	    $max_cluster_size = $ARGV[$a+1];
-	    unless (&IsNatural($max_cluster_size)) {
-		&RSAT::error::FatalErro("maximal cluster size must be a positive integer");
+	    $max_assembly_size = $ARGV[$a+1];
+	    unless (&IsNatural($max_assembly_size)) {
+		&RSAT::error::FatalErro("maximal assembly size must be a positive integer");
 	    }
 	    
 	    
@@ -591,13 +592,13 @@ sub AssemblePatterns {
     &RSAT::message::TimeWarn(join "\t", "Starting pattern assembly", scalar(@patterns)) if ($main::verbose >= 2);
 #    die;
 
-    #### make a list of words remaining to cluster
+    #### make a list of words remaining to assembly
     while ($#to_assemble > -1) {
 	#### reinitialize variables
 	undef %position;
 	$origin = 0;
 	
-	#### new seed for the next cluster
+	#### new seed for the next assembly
 	$seed = $first_seed = $to_assemble[0];
 	$position{$first_seed} = 0;
 	delete $seed{$to_assemble[0]};
@@ -610,11 +611,11 @@ sub AssemblePatterns {
 	delete $to_align{$first_seed};
 	@to_align =  sort {$score{$b} <=> $score{$a}} keys %to_align;
 
-	#### try to align each input word to the current cluster
-	my $cluster_size = 1;
-	while (($cluster_size < $max_cluster_size) && ($#to_align > -1)) {
+	#### try to align each input word to the current assembly
+	my $assembly_size = 1;
+	while (($assembly_size < $max_assembly_size) && ($#to_align > -1)) {
 	    $found = 0;
-	    while (($cluster_size < $max_cluster_size) && ($#to_align > -1)) {
+	    while (($assembly_size < $max_assembly_size) && ($#to_align > -1)) {
 		$best_offset = "";
 		
 		#### best alignment for the direct word
@@ -666,7 +667,7 @@ sub AssemblePatterns {
 		}
 		
 		if ($found) {
-		    $cluster_size++;
+		    $assembly_size++;
 		    ### -> do not consider this word anymore
 		    delete($to_align{$word});
 		    delete($seed{$word});
@@ -686,7 +687,7 @@ sub AssemblePatterns {
 	if ($#positions <=0) { 	### no pattern matches the initial seed
 	    push @singletons, $seed;
 	} else {
-	    &PrintCluster();
+	    &PrintAssembly();
 	}
 	@to_assemble = sort {$score{$b} <=> $score{$a}} keys %seed;
     }
@@ -694,7 +695,7 @@ sub AssemblePatterns {
     #### singleton patterns ####
     if ($#singletons >=0) {
 	printf $out "\n; Isolated patterns: %d\n", $#singletons+1;
-	&PrintClusterHeader() if ($verbose);
+	&PrintAssemblyHeader() if ($verbose);
 	foreach $word (@singletons) {
 	    print $out "$word";
 	    if ($strand_insensitive) {
