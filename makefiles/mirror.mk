@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: mirror.mk,v 1.33 2006/01/06 22:55:44 rsat Exp $
+# $Id: mirror.mk,v 1.34 2006/01/31 19:50:17 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 12:05:45 jvanheld>
 #
@@ -136,8 +136,7 @@ data_from_server:
 RSAT_HTTP=http://rsat.scmbb.scmbb.ulb.ac.be/rsat/
 ORG=Mycoplasma_genitalium
 wget_one_org:
-	wget -rNL -P data/genomes/ http://rsat.scmbb.ulb.ac.be/rsat/data/genomes/${ORG} --cut-dirs=3 -nH
-
+	wget -rNL -P data/genomes/ ${RSAT_HTTP}/data/genomes/${ORG} --cut-dirs=3 -nH
 
 
 ################################################################
