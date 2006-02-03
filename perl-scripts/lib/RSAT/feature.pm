@@ -282,7 +282,7 @@ sub to_text {
     my $f = $col_index{"strand"};
     my $s = $strand_index{$strand} || 2;
     $fields[$f] = $strands[$s];
-    &RSAT::message::Debug( "strand", $strand, "f=$f", "s=$s", $strands[$s], "field=$fields[$f]") if ($main::verbose >= 0);
+    &RSAT::message::Debug( "strand", $strand, "f=$f", "s=$s", $strands[$s], "field=$fields[$f]") if ($main::verbose >= 10);
 
     ## Generate the row to be printed
     my $row = join ("\t", @fields);
