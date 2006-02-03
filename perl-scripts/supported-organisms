@@ -22,7 +22,8 @@ $out = &OpenOutputFile($outfile{output});
 if ($out_format eq "tree") {
     ## Create a tree with the taxonomy
     my $tree = new RSAT::Tree();
-    $tree->LoadSupportedTaxonomy();
+    $tree->LoadSupportedTaxonomy("Bacteria", \%supported_organism, 1);
+#    $tree->LoadSupportedTaxonomy();
     print $out $tree->as_indented_text("--");
 
 } else {
