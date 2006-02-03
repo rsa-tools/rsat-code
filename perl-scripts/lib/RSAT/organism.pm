@@ -773,16 +773,18 @@ sub SelectRandomGenes {
 
   #### initalize the random generator
   if ($init) {
-      if ($seed) { ### defined seed
+      if ($seed) { 
+	  ## User-defined seed
 	  srand($seed);
       } else {
-	  srand (time); ### current time
+	  ## Use current time as random seed
+	  srand (time); 
       }
   }
-
+  
   my @genes = $self->get_attribute("features");
   for my $i (1..$rand_gene_nb) {
-      my $remaining_genes = $#genes+1;
+      my $remaining_genes = scalar(@genes);
       my $selected = int(rand($remaining_genes));
       warn ";", join ("\t", "Selected gene", $selected, $remaining_genes), "\n" if ($main::verbose >= 2);
       if ($replace) {

@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: random-genes,v 1.12 2005/08/18 04:25:22 jvanheld Exp $
+# $Id: random-genes,v 1.13 2006/02/03 15:37:20 jvanheld Exp $
 #
 # Time-stamp: <2003-09-10 23:21:27 jvanheld>
 #
@@ -24,7 +24,7 @@ local %outfile = ();
 local $verbose = 0;
 local $out = STDOUT;
 local $n = 0; #### number of genes to return
-local $repeat = 1; #### number of repetision of the input families (with option -fam)
+local $repeat = 1; #### number of repetitions of the input families (with option -fam)
 local $groups = 1; #### number of gene families to return
 #local $infile{family} = "";
 local @families = ();
@@ -323,7 +323,7 @@ sub ReadArguments {
 		&RSAT::error::FatalError("$groups\tInvalid number of groups. Should be a natural number.");
 	    }
 	    
-	    ### number of groups
+	    ### number of repetitions of the families from a family file (with the option -fam)
 	} elsif ($ARGV[$a] eq "-repeat") {
 	    $repeat = $ARGV[$a+1];
 	    unless (&IsNatural($repeat)) {

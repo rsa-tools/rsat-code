@@ -203,7 +203,7 @@ for $r (1..$repetitions) {
 	    $sequence .= $next_letter;
 	}
     }
-    PrintNextSequence($out, $out_format, $line_width, $sequence, $seq_id, @comments);
+    &PrintNextSequence($out, $out_format, $line_width, $sequence, $seq_id, @comments);
 }  
 
 ###### close output file ######
