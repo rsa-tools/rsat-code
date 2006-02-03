@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.15 2006/01/29 23:22:16 rsat Exp $
+# $Id: get-orthologs,v 1.16 2006/02/03 12:41:59 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -437,10 +437,10 @@ package main;
       }
       # get info about the results
       $nb_hits_info .= "; Query gene ".$is_query{$query_gene}." $query_gene\n";
-      my $nb_genomes = scalar keys %{$bbh->{$query_gene}};
-      my $total_genomes= scalar(@main::ref_organisms);
-      my $rate = sprintf("%.2f",100 * $nb_genomes/$total_genomes);
-      $nb_hits_info .= join("\t",";","found",$nb_hits,"targets in",$nb_genomes,"organisms ($rate\%)\n");
+      my $genomes_with_hit = scalar keys %{$bbh->{$query_gene}};
+      my $searched_genomes= scalar(@main::ref_organisms);
+      my $rate = sprintf("%.2f",100 * $genomes_with_hit/$searched_genomes);
+      $nb_hits_info .= join("\t",";",$nb_hits,"hits found in",$genomes_with_hit." among the ".$searched_genomes." searched organisms(".$rate."\%)\n");
     }
 
     ## Report number of hits
