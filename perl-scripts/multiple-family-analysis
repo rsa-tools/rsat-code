@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.160 2006/01/29 23:56:03 rsat Exp $
+# $Id: multiple-family-analysis,v 1.161 2006/02/03 12:26:21 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -159,9 +159,13 @@ $MS_x = 1;
 $MS_r = 5;
 
 ## Default MEME options
-$MEME_minw = 6;
-$MEME_maxw = 25;
-$MEME_bfile = "";
+$MEME_optiont{text} = ""; push @MEME_options, "text";
+$MEME_optiont{dna} = ""; push @MEME_options, "dna";
+$MEME_options{mod} = "anr"; push @MEME_options, "mod";
+$MEME_options{minw} = 6; push @MEME_options, "minw";
+$MEME_options{maxw}=25; push @MEME_options, "maxw";
+
+#$MEME_options{bfile}="";
 
 ## Default ORM options
 $ormbg_options = ""; ## must be global
@@ -637,21 +641,19 @@ sub SetFileNames {
 	## input file
 	$meme_options .= " ".$family{$family_name}->{input_seq_file};
 
-	## Sequence type
-	$meme_options .= " -dna";
-
 	## Distribution
-	$MEME_mod = "anr";
-	$meme_options .= " -mod ".$MEME_mod;
-	$meme_suffix .= "_".$MEME_mod;
+#	$MEME_mod = "anr";
+#	$meme_options .= " -mod ".$MEME_mod;
+#	$meme_suffix .= "_".$MEME_mod;
+
 
 	## Matrix width
 #	$meme_options .= " -w ".$matrix_width;
 #	$meme_suffix .= "-w".$matrix_width;
-	$meme_options .= " -minw ".$MEME_minw;
-	$meme_options .= " -maxw ".$MEME_maxw;
-	$meme_suffix .= "-minw".$MEME_minw;
-	$meme_suffix .= "-maxw".$MEME_maxw;
+#	$meme_options .= " -minw ".$MEME_minw;
+#	$meme_options .= " -maxw ".$MEME_maxw;
+#	$meme_suffix .= "-minw".$MEME_minw;
+#	$meme_suffix .= "-maxw".$MEME_maxw;
 
 	## strands
 	$meme_suffix .= $strands;
@@ -666,8 +668,9 @@ sub SetFileNames {
 	    $meme_options .= " -bfile ".$MEME_bfile;
 	}
 
-	## Output type
-	$meme_options .= " -text";
+	foreach my $option (@MEME_options) {
+	    $meme_options .= " -".$option." ".$MEME_options{$option};
+	}
 
 	## Output file
 	$family{$family_name}->{meme_dir} = ${family_name}."/"."meme_".${family_name};
@@ -2412,6 +2415,8 @@ OPTIONS
 	-MS_r	number of times the MotifSampler should be repeated (default = $MS_r).
 
    MEME options (Bailey)
+	Any option starting with -MEME_ will be passed to MEME. 
+	In particular, the following options are passed by default. 
    	-MEME_minw	minimum motif width (default $MEME_minw)
    	-MEME_maxw	maximum motif widht (default $MEME_maxw)
 	-MEME_bfile     name of background Markov model file
@@ -2767,8 +2772,10 @@ sub ReadArguments {
 	    $$1 =  $ARGV[$a+1];
 
 	    ### MEME options
-	} elsif ($ARGV[$a] =~ /-(MEME_\S+)/) {
+	} elsif ($ARGV[$a] =~ /-MEME_(\S+)/) {
 	    $$1 =  $ARGV[$a+1];
+	    $MEME_options{$1} = $$1;
+	    push @MEME_options, $1;
 
 	    ### ORM options
 	} elsif ($ARGV[$a] =~ /-(ORM_\S+)/) {
