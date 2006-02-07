@@ -21,6 +21,7 @@ $accepted_input_seq{'gcg'} = 1;
 $accepted_input_seq{'ncbi'} = 1;
 $accepted_input_seq{'genbank'} = 1;
 $accepted_input_seq{'embl'} = 1;
+$accepted_input_seq{'maf'} = 1;
 $accepted_input_seq = join ",", sort keys %accepted_input_seq;
 
 $accepted_output_seq{'raw'} = 1;
@@ -961,18 +962,23 @@ sub CheckFormat {
     return;
 }
 
-##### Reads a DNA sequence
-##### various formats are accepted (see the hash %accepted_raw_formats
-##### Usage:
-##### ($sequence, $seq_id, @seq_comments) = &ReadNextSequence(FILE, $seq_format, $input_dir])
-##### where   FILE is a file handle
-#####         $format is one of the accepted sequence formats 
-#####                 (see CheckFormat) 
+################################################################
+## Reads a DNA sequence
+## various formats are accepted (see the hash %accepted_raw_formats
+## Usage:
+## ($sequence, $seq_id, @seq_comments) = &ReadNextSequence(FILE, $seq_format, $input_dir, $seq_type, $mask)
+## where
+## where   FILE is a file handle
+##         $format is one of the accepted sequence formats 
+##                 (see CheckFormat) 
+##         $input_dir is the input directory
+##         $seq_type
+##         $mask (accepted values: "upper" or "lower"). Mask upper or lowercases by replacing them by N
 sub ReadNextSequence {
-
-    my ($SEQ, $sequence_format, $input_dir, $seq_type) = @_;
+    
+    my ($SEQ, $sequence_format, $input_dir, $seq_type, $mask) = @_;
     $sequence_format = lc($sequence_format);
-
+    
     local $sequence = "";
     local $seq_id = "";
     local @comments = ();
@@ -991,9 +997,10 @@ sub ReadNextSequence {
 	    $sequence .= $_;
 	}
 	if ($sequence) {
-	    $sequence = &FoldSequence($sequence, 0);
-	    &CheckFormat($sequence, $sequence_format, $seq_type);
-	    return ($sequence, $seq_id, @comments);
+#	    $sequence = &FoldSequence($sequence, 0);
+#	    &CheckFormat($sequence, $sequence_format, $seq_type);
+#	    return ($sequence, $seq_id, @comments);
+	    return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
 	} else {
 	    return ("","");
 	}
@@ -1012,9 +1019,9 @@ sub ReadNextSequence {
 	while ((defined($SEQ)) && ($sequence = <$SEQ>) && !($gotit)) {
 	    next if ($sequence =~ /^;/);
 	    $gotit = 1;
-	    $sequence = &FoldSequence($sequence, 0);
-	    &CheckFormat($sequence, $sequence_format, $seq_type);
-	    return ($sequence, $seq_id, @comments);
+#	    $sequence = &FoldSequence($sequence, 0);
+#	    &CheckFormat($sequence, $sequence_format, $seq_type);
+	    return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
 	} 
 	return ("","") unless $gotit;
 	
@@ -1028,7 +1035,7 @@ sub ReadNextSequence {
 	    if ($next_line =~ /^\s*(\S+)/) { ### make sure to take a non-empty line
 		$next_file = $1;	### file name is the first word of the line
 		$found = 1;
-	    }
+					   }
 	} 
 	
 #	die join "\t", $next_file, $input_dir, "$input_dir/$next_file", "\n";
@@ -1050,9 +1057,9 @@ sub ReadNextSequence {
 		$sequence .= $_;
 	    }
 	    close NEXT_SEQ;
-	    $sequence = &FoldSequence($sequence, 0);
-	    &CheckFormat($sequence, $sequence_format, $seq_type);
-	    return ($sequence, $seq_id, @comments);
+#	    $sequence = &FoldSequence($sequence, 0);
+#	    &CheckFormat($sequence, $sequence_format, $seq_type);
+	    return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
 	} else {
 	    die "\tError: cannot open sequence file $next_file\n";
 	}
@@ -1060,15 +1067,18 @@ sub ReadNextSequence {
 	### IntelliGenetics format ###
     } elsif ($sequence_format eq "ig") {
 	while (<$SEQ>) {
-	    if (/^;(.*)/) {		### comment line
+	    if (/^;(.*)/) {		
+		## comment line
 		@comments = (@comments, $1);
-	    } elsif (($seq_id eq "") && (/(\S+)\s/)) { ### identifier for the next sequence
+	    } elsif (($seq_id eq "") && (/(\S+)\s/)) { 
+		## identifier for the next sequence
 		$seq_id = $1;
-	    } elsif (/(.*)[12]/) {	### end of the current sequence
+	    } elsif (/(.*)[12]/) {	
+		## end of the current sequence
 		$sequence .= $1;
-		$sequence = &FoldSequence($sequence, 0);
-		&CheckFormat($sequence, "raw", $seq_type);
-		return ($sequence, $seq_id, @comments);
+#		$sequence = &FoldSequence($sequence, 0);
+#		&CheckFormat($sequence, "raw", $seq_type);
+		return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
 	    } else {
 		$sequence .= $_;
 	    }
@@ -1079,7 +1089,8 @@ sub ReadNextSequence {
 	### Wconsensus format ###
     } elsif (($sequence_format eq "wc") || ($sequence_format eq "wconsensus")) {
 	while (<$SEQ>) {
-	    if (/^;(.*)/) {		### comment line
+	    if (/^;(.*)/) {		
+		## comment line
 		@comments = (@comments, $1);
 	    } elsif (($seq_id eq "") && (/(\S+)\s+\\(.*)/)) { 
 		$seq_id = $1;
@@ -1102,8 +1113,9 @@ sub ReadNextSequence {
 			}
 		    } until ($end_of_seq);
 		}
-		$sequence = &FoldSequence($sequence, 0);
-		return ($sequence, $seq_id, @comments);
+#		$sequence = &FoldSequence($sequence, 0);
+#		return ($sequence, $seq_id, @comments);
+		return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
 	    }
 	}
 	return ("","");		### when input file has been totally read
@@ -1114,33 +1126,85 @@ sub ReadNextSequence {
 	while (<$SEQ>) {
 #	    die $_;
 	    next if ((/^;/) || (/^\#/) || (/^--/));
-	    if (/^\s*>\s*(\S+)\s*(.*)/) { ### new identifier
+	    if (/^\s*>\s*(\S+)\s*(.*)/) { 
+		## new identifier
 		@comment = ($2);
 		unless ((defined($current_seq_id)) && 
-			($current_seq_id ne "")) { ###  first id from the seq file
+			($current_seq_id ne "")) { 
+		    ##  first id from the seq file
 		    $current_seq_id = $1;
 		} else  {
-		    $sequence = &FoldSequence($sequence, 0);
-		    $done_seq_id = $current_seq_id;
+#		    $sequence = &FoldSequence($sequence, 0);
+		    $seq_id = $current_seq_id;
 		    $current_seq_id = $1;
-		    &CheckFormat($sequence, "raw", $seq_type);
-		    return ($sequence, $done_seq_id, @comments);
+#		    &CheckFormat($sequence, "raw", $seq_type);
+		    return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
 		}
 		
-	    } else {			### sequence continues
+	    } else {			
+		## sequence continues
 		$sequence .= $_;
 	    }
 	}
 	unless ($current_seq_id) {
-	    return ("","");		### when input file has been totally read
+	    return ("",""); ## when input file has been totally read
 	} else {
-	    $sequence = &FoldSequence($sequence, 0);
-	    $done_seq_id = $current_seq_id;
+#	    $sequence = &FoldSequence($sequence, 0);
+	    $seq_id = $current_seq_id;
 	    $current_seq_id = "";
-	    return ($sequence, $done_seq_id, @comments);
+	    return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
 	}
 	
 	
+        ## ##############################################################
+	## maf format (multiple alignment file)
+    } elsif ($sequence_format eq "maf") {
+	while (<$SEQ>) {
+	    if (/^a\s/) {
+		## Start a new alignment
+	    } elsif (/^s\s/) {
+		&RSAT::message::Debug("New sequence", $_) if ($main::verbose >= 10);
+		## Start a new sequence
+		if (/^s\s+(\S+)\s+(\d+)\s+(\d+)\s+([\+\-])\s+(\d+)\s+(.+)/) {
+		    my $contig = $1;
+		    my $start_pos = $2;
+		    my $length = $3;
+		    my $strand = $4;
+		    if ($strand eq "+") {
+			$strand = "D";
+		    } elsif ($strand eq "-") {
+			$strand = "R";
+		    } else {
+			&RSAT::message::Warning(join ("\t", "Invalid strand specification", $strand, $_));
+		    }
+		    my $contig_len = $5;
+		    ## Aligned sequence (may contain gaps)
+		    my $aligned_seq = $6;
+		    ## "Desalign" the sequence, i.e. suppress gap symbols
+		    my $desaligned_seq = $aligned_seq;
+		    $desaligned_seq =~ s/\-//g;
+		    $desaligned_seq =~ s/\.//g;
+
+		    ## Generate sequence ID
+		    my $seq_id = join ("_", $contig, $start_pos, $length, $strand, $contig_len);
+		    my @comments = ();
+		    push @comments, "Desaligned sequence (converted from maf file)";
+		    push @comments, "contig: ".$contig;
+		    push @comments, "fragment length: ".$length;
+		    push @comments, "start position: ".$start_pos;
+		    push @comments, "strand: ".$strand;
+		    push @comments, "contig length: ".$contig_len;
+		    
+		    &RSAT::message::Debug($seq_id, @comments) if ($main::verbose >= 3);
+
+		    return(&ReturnSequence($desaligned_seq, $seq_id, $mask, @comments));
+		} else {
+		    &RSAT::message::Warning(join ("\t", "Invalid sequence header for maf format", $_));
+		}
+
+	    }
+	}
+
 	### GCG format ###
     } elsif ($sequence_format eq "gcg") {
 	$seq_id = "";
@@ -1149,10 +1213,12 @@ sub ReadNextSequence {
 	$in_sequence = 0;
 	
 	while (<$SEQ>) {
-	    if (/^\/\/$/) {		### end of record
+	    if (/^\/\/$/) {		
+		## end of record
 		$sequence = &FoldSequence($sequence, 0);
-		return ($sequence, $seq_id, @comments);
-	    } elsif (/^\s*(\S+).+\.\.\s*$/) {	### dividing line
+		return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
+	    } elsif (/^\s*(\S+).+\.\.\s*$/) {	
+		## dividing line
 		$seq_id = $1;
 		$sequence = "";
 		chomp;
@@ -1167,8 +1233,8 @@ sub ReadNextSequence {
 	    }
 	}
 	
-	$sequence = &FoldSequence($sequence, 0);
-	return ($sequence, $seq_id, @comments);
+#	$sequence = &FoldSequence($sequence, 0);
+	return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
 	
 	### NCBI/GENBANK format ###
     } elsif (($sequence_format eq "ncbi") ||
@@ -1186,9 +1252,9 @@ sub ReadNextSequence {
 	    chomp;
 	    if (/^\/\/$/) {		### end of record
 		warn "Folding sequence $seq_id\n" if ($verbose >=3);
-		$sequence = &FoldSequence($sequence, 0);
+#		$sequence = &FoldSequence($sequence, 0);
 		warn "Read sequence $seq_id\n" if ($verbose >=3);
-		return ($sequence, $seq_id, @comments);
+		return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
 	    } elsif ((/^ACCESSION\s+(\S+)/) ||
 		     (/^LOCUS\s+(\S+)/)) {
 		$seq_id = $1;
@@ -1207,8 +1273,8 @@ sub ReadNextSequence {
 	    } 
 	}
 	
-	$sequence = &FoldSequence($sequence, 0);
-	return ($sequence, $seq_id, @comments);
+#	$sequence = &FoldSequence($sequence, 0);
+	return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
 	
 	### EMBL format ###
     } elsif ($sequence_format eq "embl") {
@@ -1220,8 +1286,8 @@ sub ReadNextSequence {
 	while (<$SEQ>) {
 	    chomp;
 	    if (/^\/\/$/) {		### end of record
-		$sequence = &FoldSequence($sequence, 0);
-		return ($sequence, $seq_id, @comments);
+#		$sequence = &FoldSequence($sequence, 0);
+		return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
 	    } elsif (/^AC\s+(\S+);/) {	### accession number
 		$seq_id = $1;
 		$sequence = "";
@@ -1237,8 +1303,8 @@ sub ReadNextSequence {
 	    } 
 	}
 	
-	$sequence = &FoldSequence($sequence, 0);
-	return ($sequence, $seq_id, @comments);
+#	$sequence = &FoldSequence($sequence, 0);
+	return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
 	
 	### end of sequence file ###
     } else {
@@ -1246,14 +1312,48 @@ sub ReadNextSequence {
     }
 }
 
+################################################################
+## Check a sequence, mask cases if required, and return it
+## Usage: 
+##    &ReturnSequence($sequence, $seq_id, $mask, @comments)
+## Arguments:
+##    $sequence: identifier of the sequence
+##    $seq_id: identifier of the sequence
+##    $mask (accepted values: "upper" or "lower"). Mask upper or lowercases by replacing them by N
+sub ReturnSequence {
+    my ($sequence, $seq_id, $mask, @comments) = @_;
+    $sequence = &FoldSequence($sequence, 0);
+    if ($mask) {
+	&CheckMask($mask);
+	if ($mask eq "lower") {
+	    $sequence =~ s/[a-z]/n/g;
+	} elsif ($mask eq "upper") {	
+	    $sequence =~ s/[A-Z]/N/g;
+	}
+    }
+    return($sequence, $seq_id, @comments);
+} 
+
+################################################################
+## Check that the mask case option is valid
+sub CheckMask {
+    my ($mask) = @_;
+    my %supported_mask = ("lower"=>1, "upper"=>1);
+    my $supported_mask = join(",", sort (keys(%supported_mask)));
+    unless ($supported_mask{$mask}) {
+	&RSAT::error::FatalError(join("\t", $mask, "Invalid value for the mask parameter. Supported", $supported_mask));
+    }
+}
+
+## ##############################################################
+#### Read a multiple sequence file, 
+#### according to the output format from PILEUP (GCG package)
+####
+#### Usage:
+#### ======
+#### %seq_hash = ReadMsf(FILE);
+####
 sub ReadMSF {
-  #### reads a multiple sequence file, 
-  #### according to the output format from PILEUP (GCG package)
-  ####
-  #### Usage:
-  #### ======
-  #### %seq_hash = ReadMsf(FILE);
-  ####
   local $SEQ = $_[0];
   local(%seq_hash);
   local($id);

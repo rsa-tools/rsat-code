@@ -1,7 +1,10 @@
 #!/usr/bin/perl
+
+### CVS: added the option -mask
+
 ############################################################
 #
-# $Id: convert-seq,v 1.17 2005/09/02 15:56:43 jvanheld Exp $
+# $Id: convert-seq,v 1.18 2006/02/07 21:49:58 jvanheld Exp $
 #
 # Time-stamp: <2002-09-24 21:24:13 jvanheld>
 #
@@ -11,7 +14,6 @@ if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
 require "RSA.lib";
-
 
 #### initialise parameters ####
 $start_time = `date`;
@@ -67,9 +69,9 @@ if ($verbose) {
     print ";Output format\t$out_format\n";
 }
 
-###### execute the command #########
-#die join "\t", $in_format, $input_dir , "\n";
-while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir)) &&
+## ##############################################################
+## Read the sequences and convert them
+while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir, "",$mask)) &&
        (($current_seq ne "") || ($current_id ne ""))) {
 
     $seq_nb++;
@@ -92,19 +94,22 @@ while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_form
         $current_seq = &CleanDNA($current_seq);
     }
 
-    #### identifier specified with the -id option
     if ($seq_identifier) {
+	#### identifier specified with the -id option
 	$current_id = $seq_identifier;
-    }
-
-    #### sequence id from file name
-    if ($in_format eq "raw") {
+    } elsif ($in_format eq "raw") {
+	#### sequence id from file name
 	$current_id =~ s/\.raw$//;
     }
 
     #### check that the a sequence identifier has a value
     unless ($current_id) {
 	$current_id = $seq_nb;
+    }
+    
+    ## Add sequence prefix
+    if ($seq_prefix) {
+	$current_id = join ("", $seq_prefix, $current_id);
     }
 
     if ($out_format eq "filelist") {
@@ -208,11 +213,15 @@ OPTIONS
 		if not specified, the standard input is used.
 		This allows to place the command within a pipe.
 
+	-mask upper|lower
+		Mask lower or uppercases, respecively, i.e. replace
+		selected case by N characters.
+
 	-o outputfile
 		if not specified, the standard output is used.
 		This allows to place the command within a pipe.
 
-	-from   input format 
+	-from   input format
 		    Supported input formats : $accepted_input_string
 
         -to     output format
@@ -238,6 +247,10 @@ OPTIONS
 		sequence identifier (useful for converting a raw
 		sequence from the STDIN)
 
+	-prefix prefix
+		sequence prefix (useful for converting from a multi
+		sequence)
+
 	-nocheckid
 		Prevent to check sequence IDs for conversion to file list
 
@@ -259,21 +272,23 @@ sub PrintOptions {
   print HELP <<End_shorthelp;
 consvert-seq options
 --------------------
--h		detailed help message
--help		short help message (shows the present message)
--v #		verbose level
--i		inputfile
--o		outputfile
--from		input format (see below for accepted formats)
--to		output format (see below for accepted formats)
--lw #		line width. 
--addrc		adds the reverse complement of each input sequence
--lc		lowercase
--uc		uppsercase
--dna		convert any non-acgt character into "." 
--id		identifier
--nocheckid	Prevent to check sequence IDs for conversion to the format filelist.
--noempty	Remove empty sequences from the set. 
+-h			detailed help message
+-help			short help message (shows the present message)
+-v #			verbose level
+-i			inputfile
+-mask upper|lower	mask upper- or lowercases, respectively
+-o			outputfile
+-from			input format (see below for accepted formats)
+-to			output format (see below for accepted formats)
+-lw #			line width. 
+-addrc			add the reverse complement of each input sequence
+-lc			convert all letters to lowercase
+-uc			convert all letters to uppercase
+-dna			convert any non-acgt character into "." 
+-id			sequence identifier
+-prefix			sequence prefix
+-nocheckid		Prevent to check sequence IDs for conversion to the format filelist.
+-noempty		Remove empty sequences from the set. 
 SUPPORTED FORMATS
     INPUT $accepted_input_string
 	
@@ -284,9 +299,9 @@ End_shorthelp
 }
 
 
-
+################################################################
+## Read arguments 
 sub ReadArguments {
-#### read arguments ####
     foreach $a (0..$#ARGV) {
 	
 	if ($ARGV[$a] eq "-v") {
@@ -304,11 +319,20 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-help") {
 	    &PrintOptions();
 	    
+	    ## Input file
 	} elsif ($ARGV[$a] eq "-i") {
 	    $inputfile = $ARGV[$a+1];
-	    
+
+	    ## mask
+	} elsif ($ARGV[$a] eq "-mask") {
+	    $mask = $ARGV[$a+1];
+	    &CheckMask($mask);	    
+
 	} elsif ($ARGV[$a] eq "-id") {
 	    $seq_identifier = $ARGV[$a+1];
+	    
+	} elsif ($ARGV[$a] eq "-prefix") {
+	    $seq_prefix = $ARGV[$a+1];
 	    
 	} elsif ($ARGV[$a] eq "-o") {
 	    $outputfile = $ARGV[$a+1];
@@ -336,7 +360,6 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-dna") {
 	    $dna = 1;
 	    
-
 	    ## Remove empty sequences from the set
 	} elsif ($ARGV[$a] eq "-noempty") {
 	    $noempty = 1;

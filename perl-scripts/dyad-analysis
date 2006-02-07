@@ -2,10 +2,11 @@
 
 ## CVS: added options -lth and -uth, valid for the fields occ, exp_occ, obs_freq, exp_freq, occ_P, occ_E, occ_sig
 ## CVS: reactivated the option -return ratio
+### CVS: added the option -mask
 
 ############################################################
 #
-# $Id: dyad-analysis,v 1.24 2005/11/18 16:10:26 jvanheld Exp $
+# $Id: dyad-analysis,v 1.25 2006/02/07 21:49:59 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 23:46:08 jvanheld>
 #
@@ -749,7 +750,12 @@ sub ReadArguments {
 	    ### input format ###
 	} elsif ($ARGV[$a] eq "-format") {
 	    $input_format = lc($ARGV[$a+1]);
-	    
+
+	    ## mask
+	} elsif ($ARGV[$a] eq "-mask") {
+	    $mask = $ARGV[$a+1];
+	    &CheckMask($mask);	    
+
 	    ### output file ###
 	} elsif ($ARGV[$a] eq "-o") {
 	    $outputfile = $ARGV[$a+1];
@@ -959,6 +965,10 @@ OPTIONS
 	-i input_file
 		The sequence to be analyzed. Multiple sequences can 
 		be entered at once with most sequence formats (see below).
+
+	-mask upper|lower
+		Mask lower or uppercases, respecively, i.e. replace
+		selected case by N characters.
 
 	-format format
 		Input sequence format. Various standards are 
@@ -1255,6 +1265,7 @@ dyad-analysis options
 -help		(must be first argument) display options
 -o		output file
 -i		input file
+-mask upper|lower	mask upper- or lowercases, respectively
 -format		input sequence format
 -seqtype       	sequence type (dna|prot|other)
 -v		verbose
@@ -1414,7 +1425,7 @@ sub CountDyads {
     &RSAT::message::TimeWarn("Counting dyad occurrences") if ($main::verbose >= 2);
     ($in, $input_dir) = &OpenInputFile($inputfile);
     $sequence_number = 0;
-    while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $input_format, $input_dir, $seq_type)) &&
+    while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $input_format, $input_dir, $seq_type, $mask)) &&
        (($current_seq ne "") || ($current_id ne ""))) {
 	
 	### Remove tabs and blank spaces

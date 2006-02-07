@@ -1,4 +1,7 @@
 #!/usr/bin/perl
+
+### CVS: added the option -mask
+
 if ($0 =~ /([^(\/)]+)$/) {
     push (@INC, "$`lib/");
 }
@@ -54,7 +57,7 @@ if ($main::verbose >= 1) {
 
 ################################################################
 ###### execute the command #########
-while ((($current_seq, $current_id) = &ReadNextSequence($in, $in_format, $input_dir)) &&
+while ((($current_seq, $current_id) = &ReadNextSequence($in, $in_format, $input_dir, "", $mask)) &&
        (($current_seq ne "") || ($current_id ne ""))) {
     $current_seq =~ s/\s//g;
     $seq_length = length($current_seq);
@@ -139,6 +142,10 @@ OPTIONS
 		if not specified, the standard input is used.
 		This allows to place the command within a pipe.
 
+	-mask upper|lower
+		Mask lower or uppercases, respecively, i.e. replace
+		selected case by N characters.
+
 	-o outputfile
 		if not specified, the standard output is used.
 		This allows to place the command within a pipe.
@@ -199,6 +206,7 @@ sub-sequence options
 -h		(must be first argument) display full help message
 -help		(must be first argument) display options
 -i		input file
+-mask upper|lower	mask upper- or lowercases, respectively
 -o		output file
 -v		verbose
 -from #		start position
@@ -229,11 +237,16 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-help") {
 	    &PrintOptions();
 	    
-	    ### input file ###
+	    ### Input file
 	} elsif ($ARGV[$a] eq "-i") {
 	    $inputfile = $ARGV[$a+1];
 
-	    ### output file ###
+	    ## Mask
+	} elsif ($ARGV[$a] eq "-mask") {
+	    $mask = $ARGV[$a+1];
+	    &CheckMask($mask);	    
+
+	    ### Output file
 	} elsif ($ARGV[$a] eq "-o") {
 	    $outputfile = $ARGV[$a+1];
 

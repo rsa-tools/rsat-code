@@ -31,7 +31,7 @@ my $out = &OpenOutputFile($outputfile);
 
 ##### read sequences #####
 my ($in, $input_dir) = &OpenInputFile($inputfile);
-while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $seq_format, $input_dir)) &&
+while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $seq_format, $input_dir,"","")) &&
        (($current_seq) || ($current_id))) {
   $seq_count++;
   $seq[$seq_count] = new RSAT::Sequence(id=>$current_id, 
@@ -160,17 +160,23 @@ USAGE
 
 OPTIONS
 	-h	(must be first argument) display full help message
+
 	-help	(must be first argument) display options
+
 	-v	verbose
-	-vv	hyperverbose
+
 	-i inputfile
 		if not specified, the standard input is used.
 		This allows to place the command within a pipe.
+
 	-format seq_format
+
 	-o outputfile
 		if not specified, the standard output is used.
 		This allows to place the command within a pipe.
+
 	-1str	calculate distance between direct strand only
+
 	-2str	calculate the min distance between both direct and
 		reverse complement strands (default)
 End_of_help
@@ -184,21 +190,20 @@ sub PrintOptions {
   print HELP <<End_short_help;
 seq-distances options
 ---------------------
--h	(must be first argument) display full help message
--help	(must be first argument) display options
--i	input file
--format seq_format
--o	output file
--v	verbose
--vv	hyperverbose
+-h		(must be first argument) display full help message
+-help		(must be first argument) display options
+-i		input file
+-format 	seq_format
+-o		output file
+-v		verbose
 End_short_help
   close HELP;
   exit;
 }
 
 
+#### read arguments
 sub ReadArguments {
-#### read arguments ####
   foreach my $a (0..$#ARGV) {
     ### verbose ###
     if ($ARGV[$a] eq "-v") {
