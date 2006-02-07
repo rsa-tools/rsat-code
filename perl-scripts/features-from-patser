@@ -83,6 +83,28 @@ if ($verbose) {
     }
 }
 
+################################################################
+## Print sequence limits to draw the backbone
+if ($sequence_file) {
+    print $out ";Sequence file\t$sequence_file\n";
+    print $out ";\tsequence id\tlength\n";
+    foreach my $id (sort keys %sequence) {
+	my $length = length($sequence{$id});
+	my $end;
+	my $start;
+	if ($origin eq "-0") {
+	    $end = 0;
+	    $start = -$length;
+	} else {
+	    $end = $length - $origin;
+	    $start = - $length;
+	}
+
+	print $out join("\t", $id, "LIMIT", "SEQ_START", "DR", 1, 1, "-", 0), "\n";
+	print $out join("\t", $id, "LIMIT", "SEQ_END", "DR", $length, $length, "-", 0), "\n";
+    }
+}
+
 #### read and parse patser file
 $header_printed=0;
 while (<$in>) {

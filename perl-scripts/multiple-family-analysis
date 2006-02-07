@@ -1,10 +1,12 @@
 #!/usr/bin/perl
 
+### CVS: added the option -mask
+
 ## Ce script est une usine a gaz
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.161 2006/02/03 12:26:21 rsat Exp $
+# $Id: multiple-family-analysis,v 1.162 2006/02/07 21:49:59 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -2266,38 +2268,59 @@ CATEGORY
 
 OPTIONS
 	-h	(must be first argument) display full help message
+
 	-help	(must be first argument) display options
+
 	-v	verbose
+
 	-i	family file (incompatible with -seq)
+
+	-mask upper|lower
+		Mask lower or uppercases, respecively, i.e. replace
+		selected case by N characters.
+
 	-seq	input sequences (incompatible with -i)
 		This option allows to specify a file containing a list
 		of sequence files. The first word of each line must
 		specify the path of a sequence file. Each sequence
 		file must be in fasta format.
+
 	-skip # skip the first # data sets when performing the
 		analyses (this si useful when the program has been
 		interrupted after a considerable amount of work).
+
 	-last # stop after the first # data sets when performing the
 		analyses (this si useful to perform quick tests).
+
 	-select	fam1[,fam2,fam3,...]
 		Perform the analysis of selected families only.
+
 	-maindir
 		main directory (by default, the working directory is used)
+
 	-outdir	output directory
+
 	-mingenes #
 		minimal number of genes per family. Families with less
 		than this number are skiped.
 
    Sequence retrieval options
 	-org	organism
+
 	-noorf	exclude upstream ORFs from upstream sequences
+
 	-orfov  do not exclude upstream ORFs from upstream sequences
+
 	-from	upstream region left limit
+
 	-to	upstream region right limit
+
        -feattype
 		feature type (e.g. CDS, mRNA)
+
 	-purge	use purged sequences for pattern discovery
 		(default)
+
 	-nopurge	
 		use non-purged sequences for pattern discovery
 
@@ -2360,23 +2383,32 @@ OPTIONS
 	-thmsf threshold on frequency of matching sequences (propotion
 	        of sequences with at least one occurrence of the
 	        pattern)
+
 	-thmssig threshold on the significance of matching sequences
 	        (sequences with at least one occurrence of the
 	        pattern). 
+
 	-maxol	maximum oligonucleotide length
+
 	-minol	minimum oligonucleotide length
+
 	-oligo_exp_freq
 		name of a file containing the expected frequencies for
 		oligo-analysis.
+
 	-pseudo	pseudo-weight (see oligo-analysis manual)
+
 	-markov #	
 		calculate expected frequencies on the basis of a
 		Markov chain model of order #
 
    dyad-analysis specific options
 	-monad  monad length for dyad-analysis
+
 	-minsp	maximum spacing for dyad-analysis
+
 	-maxsp	maximum spacing for dyad-analysis
+
 	-dyad_exp_freq
 		name of a file containing the expected frequencies for
 		dyad-analysis.
@@ -2572,6 +2604,7 @@ multiple-family-analysis options
 -help		(must be first argument) display options
 -v		verbose
 -i		family file (incompatible with -seq)
+-mask upper|lower	mask upper- or lowercases, respectively
 -seq		sequence file (incompatible with -i)
 -maindir	main directory (by default, the working directory is used
 -outdir		output directory
@@ -2716,6 +2749,11 @@ sub ReadArguments {
 	    ### sequence file list
 	} elsif ($ARGV[$a] eq "-seq") {
 	    $sequence_file_list = $ARGV[$a+1];
+
+	    ## mask
+	} elsif ($ARGV[$a] eq "-mask") {
+	    $mask = $ARGV[$a+1];
+	    &CheckMask($mask);	    
 
 	    ### main directory
 	} elsif ($ARGV[$a] eq "-maindir") {
@@ -3295,7 +3333,7 @@ sub ReadSequenceList {
    foreach my $family_name (@families) {
        my ($in, $input_dir) =  &OpenInputFile($family{$family_name}->{seq_file});
        my $seq_type = "dna";
-       while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $seq_format, $input_dir, $seq_type)) &&
+       while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $seq_format, $input_dir, $seq_type, $mask)) &&
 	      (($current_seq) || ($current_id))) {
            $family{$family_name}->new_member($current_id);
            &RSAT::message::Info (join ("\t", 

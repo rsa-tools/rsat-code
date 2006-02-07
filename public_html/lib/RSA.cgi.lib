@@ -118,6 +118,7 @@ sub SequenceChoice {
 	$sequenceChoiceString .=  "<INPUT type='hidden' NAME='sequence_format' VALUE='$sequence_format'>\n";
 	$sequenceChoiceString .=  "<INPUT type='hidden' NAME='sequence_file' VALUE='$sequence_file'>\n";
     } else {
+
 	#### sequence format (pop-up menu)
 	$sequenceChoiceString .=  "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n";
 	$sequenceChoiceString .=  "<B><A HREF='help.formats.html'>Format</A></B>&nbsp;";
@@ -130,6 +131,7 @@ sub SequenceChoice {
 							      'multi'],
 						    -default=>$sequence_format);
 	$sequenceChoiceString .=  "<BR>\n";
+
 	### text area to copy-paste the sequence
 	$sequenceChoiceString .=  "Paste your sequence in the box below<BR>\n";
 	$sequenceChoiceString .=  $query->textarea(-name=>'sequence',
@@ -137,15 +139,26 @@ sub SequenceChoice {
 						  -rows=>4,
 						  -columns=>55);
 	$sequenceChoiceString .=  "<BR>\n";
-	
+
 	### option to upload the sequence file from the client machine 
 	$sequenceChoiceString .=  "Or select a file to upload<BR>\n";
 	$sequenceChoiceString .=  $query->filefield(-name=>'uploaded_file',
 						    -default=>'',
 						    -size=>45,
 						    -maxlength=>200);
+	$sequenceChoiceString .=  "<BR>\n";
+
+	#### Mask option
+	$sequenceChoiceString .=  "<B><A HREF='help.formats.html'>Mask</A></B>&nbsp;";
+	$sequenceChoiceString .=  $query->popup_menu(-name=>'mask',
+						    -Values=>['none', 
+							      'upper',
+							      'lower'],
+						    -default=>"none");
     }
     $sequenceChoiceString .=  "<BR>\n";
+    
+    
     #$sequenceChoiceString .=  "</UL>\n";
     return $sequenceChoiceString;
 }
@@ -162,19 +175,15 @@ sub SequenceChoice {
 ####    ($sequence_file,$sequence_format) = &GetSequenceFile($required_format, $add_rc);
 sub GetSequenceFile {
     my ($required_format, $no_format, $add_rc) = @_;
-#    my ($required_format, $add_rc) = @_;
     
     ### sequence file format
     my $sequence_format = lc($query->param("sequence_format"));
-    if ($accepted_input_seq{$sequence_format}) {
-#	$parameters .= " -format $sequence_format" unless ($no_format);
-	#$parameters .= " -format $sequence_format";
-    } else {
+    unless ($accepted_input_seq{$sequence_format}) {
 	&cgiError("Invalid sequence format : '$sequence_format'.");
     }
     
-    
-    unless ($sequence_file = $query->param('sequence_file')) { ### sequence file already on the server side
+    unless ($sequence_file = $query->param('sequence_file')) { 
+	### sequence file already on the server side
 	### create a new temporary sequence file
 	$sequence_file = "$TMP/$tmp_file_name.seq"; 
     
@@ -206,22 +215,47 @@ sub GetSequenceFile {
 	&DelayedRemoval($sequence_file);
     }
 
+    ## Mask option
+    my $mask = "";
+    if ($query->param('mask')) {
+	unless ($query->param('mask') eq "none") {
+	    $mask = $query->param('mask');
+	    &CheckMask($mask);
+	}
+    }
+
     #### convert-seq
     if (($add_rc) ||
+	($mask) ||
 	((defined($required_format)) && (lc($sequence_format) ne lc($required_format)))
-	) {
-	unless ($accepted_output_seq{$required_format}) {  ### use convert-seq
+       ) {
+
+	## Check required format
+	unless ($required_format) {
+	    $required_format = $sequence_format;
+	}
+	unless ($accepted_output_seq{$required_format}) { 
 	    &cgiError("Invalid sequence format : ${required_format}.");
 	}
 	my $converted_seq_file = $sequence_file.".".$required_format;
 	my $convert_seq_command = "$SCRIPTS/convert-seq ";
 	$convert_seq_command .= " -i $sequence_file -o $converted_seq_file ";
 	$convert_seq_command .= " -from  $sequence_format -to $required_format ";
-	
+
+
+	## Add reverse complement
 	if ($add_rc) {
-	    $convert_seq_command .= "-addrc ";
+	    $convert_seq_command .= " -addrc ";
 	}
-	system $convert_seq_command;
+
+
+	## Mask
+	if ($mask) {
+	    $convert_seq_command .= " -mask ".$mask;
+	}
+
+	## Execute the sequence conversion
+	system($convert_seq_command);
 	
 	#print "<PRE>$convert_seq_command</PRE>\n";
 	&DelayedRemoval($converted_seq_file);

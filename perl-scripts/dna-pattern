@@ -1,8 +1,10 @@
 #!/usr/bin/perl
 
+### CVS: added the option -mask
+
 ############################################################
 #
-# $Id: dna-pattern,v 1.39 2005/06/12 21:39:13 jvanheld Exp $
+# $Id: dna-pattern,v 1.40 2006/02/07 21:49:58 jvanheld Exp $
 #
 # Time-stamp: <2003-08-13 12:16:03 jvanheld>
 #
@@ -147,7 +149,7 @@ $out = &OpenOutputFile($outputfile);
 ($in, $input_dir) = &OpenInputFile($inputfile);
 
 ### read input sequences
-while ((($current_seq, $sequence_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir)) &&
+while ((($current_seq, $sequence_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir, "", $mask)) &&
        (($current_seq) || ($sequence_id))) {
     push @sequence_ids, $sequence_id;
 
@@ -605,7 +607,8 @@ dna-pattern options
 -help		short help message
 -p		pattern
 -pl		pattern list file
--s		sequence file. 
+-i		sequence file. 
+-mask upper|lower	mask upper- or lowercases, respectively
 -subst		allowed substitutions
 -sc		score column
 -o		output file.
@@ -820,6 +823,11 @@ sub ReadArguments {
 	    #### sort
 	} elsif ($ARGV[$a] eq "-sort") {
 	    $sort = 1;
+
+	    ## mask
+	} elsif ($ARGV[$a] eq "-mask") {
+	    $mask = $ARGV[$a+1];
+	    &CheckMask($mask);
 
 	    #### flanking (return flanking residues)
 	} elsif (($ARGV[$a] eq "-N") && (&IsNatural($ARGV[$a+1]))) {
@@ -1161,12 +1169,19 @@ USAGE
 
 ARGUMENTS
 	-h	help (displays the current message)
+
 	-help	short help message
+
 	-i	input sequence file. This file contains the sequences where the pattern(s)
 		will be searched for. 
 		Various format are accepted
 		If omitted, standard input (eg keyboard) will be used. 
 		This allows to use the program within a pipe.
+
+	-mask upper|lower
+		Mask lower or uppercases, respecively, i.e. replace
+		selected case by N characters.
+
 	-format	input sequence format. The accepted formats are
 		fasta	       FastA format
 		IG	       IntelliGenetics format
@@ -1177,70 +1192,101 @@ ARGUMENTS
 	-o	output file.
 		If omitted, standard output (eg screen) will be used. 
 		This allows to use the program within a pipe.
+
 	-p	pattern entered directly after -p. 
 		Alternatively use -pl.
+
 	-pl	name of the file containing the patterns to search .
 		(see format below)
+
 	-subst #
-        allow # substitutions. 
+               allow # substitutions. 
+
 	-sc #	
 		score column
-		the #th column of the pattern file contains a number indicating 
-		the score for a match of this pattern. This option allows to 
-		weight the matches according to a user-defined scheme.
+
+		the #th column of the pattern file contains a number
+		indicating the score for a match of this pattern. This
+		option allows to weight the matches according to a
+		user-defined scheme.
+
 	-noid	
-		do not search pattern identifier in the second column of 
-		pattern file. instead the id takes the same content as the
-		pattern sequence.
-	-noov	
-		prevents detection of overlapping pattern
+		do not search pattern identifier in the second column
+		of pattern file. instead the id takes the same content
+		as the pattern sequence.
+
+	-noov
+		Do not count overlapping matches for self-overlapping
+		patterns.
+
 	-DR	search matches on both strands (direct and reverse complement)
+
 	-D	search matches only on the direct strand.
+
 	-R 	search matches only on the reverse complement strand.
+
 	-id	pattern identifier (one word). 
 		Use this option combined with -p.
+
 	-pos	return match positions (default)
+
 	-match_format	
 		format for returning matches (supported: fasta, table)
+
 	-c	return the count of matches rather than the list of
 		positions and matching words. 
 		If a list of sequence files is given (-sl), the count of 
                 matches within each file is returned, as well as the 
                 cumulative count.
+
 	-table	return the count of pattern matches per sequence
 		in the form of a table.
 		(one line per sequence, one column per pattern)
+
 	-colsum	(together with -table)
 		prints an extra column with the total occurrences per sequence
+
 	-rowsum	(together with -table)
 		prints an extra row with total occurrences per pattern
+
 	-total	(together with -table)
 		prints an extra column with the total occurrences per sequence
 		and an extra row with total occurrences per pattern.
 		(amounts to combine -colsum and -rowsum)
+
 	-stats	return matching statistics
+
         -th #   Threshold. 
                 Return match count only for sequences with >= # matches.
                 Only valid in combination with -c.
+
 	-merge  merge mutually overlapping matches. When succesive
 		matches overlap, they are converted into a single
 		match. The merged match takes the ID "merged". The
 		score is the highest score of the matching patterns.
+
 	-ct	same as c, except that it returns the sum of matches in all 
 		the files of the sequence file list, instead of the count 
 		within each separate file. 
+
 	-N #	return matching sequences with # flanking nucleotides
+
 	-NL #	return matching sequences with # left flanking nucleotides
+
 	-NR #	return matching sequences with # right flanking nucleotides
+
 	-v	verbose.
+
         -origin #
                 define # as the origin for the calculation of positions.
                 -origin -0 defines the end of each sequence as the 
                 origin. The matching positions are then negative values, 
                 providing the distance between the match and the end of the 
                 sequence.
+
 	-limit
 		return start and end positions for each input sequence
+
 	-window #	
 		Sliding window size. The score at each position is
 		calculated by summing the scores of all patterns
@@ -1248,14 +1294,17 @@ ARGUMENTS
 		option automatically returns matching positions. 
 		A threshold can be specified to specify the minimal
 		matching score to be returned.
+
 	-top	(with sliding window only)
 		only return the top score obtained with the sliding
 		window for each sequence.
+
 	-sort	(with -top only)
 		sort sequences according to their top score
+
 PATTERN FORMATS
 
-	PATTERN SEQUENCE
+    PATTERN SEQUENCE
 
 	The standard degenerate nucleotide code of the IUPAC-IUB
 	commission is supported (http://www.iupac.org/, see
@@ -1289,11 +1338,13 @@ PATTERN FORMATS
         - GATAAGN{0,30}GATAAG means two GATAAG spaced by 0 to 30 
           nucleotides.
 
-	DIRECT PATTERN INPUT
+    DIRECT PATTERN INPUT
+
 	Type the -p option directly followed by a pattern sequence. 
 	An optional identifier can be further entered after the -id option.
 
-	PATTERN FILE
+    PATTERN FILE
+
 	A pattern file is a tab-delimited text file. Each row contains
 	the description of one pattern. Column content:
 	  1) Pattern sequence. This is the only mandatory column.
@@ -1304,8 +1355,9 @@ PATTERN FORMATS
 	score column.
 
 SEQUENCE FILE FORMAT
-        3 formats are supported:
+        Different formats are supported:
         - raw
+	- wc (=wconsensus)
         - filelist
         - IG (intelligenetics)
 

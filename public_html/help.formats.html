@@ -1,40 +1,56 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
-<HTML>
-<HEAD>
-   <TITLE>RSA-tools - supported sequence formats</TITLE>
-   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META NAME="GENERATOR" CONTENT="Mozilla/3.01Gold (X11; I; SunOS 5.5.1 sun4u) [Netscape]">
-</HEAD>
-<BODY TEXT="#000000" BGCOLOR="#FFEEDD" LINK="#0000EE" VLINK="#55008B" ALINK="#FF0000">
+<html>
+<head>
+   <title>RSA-tools - supported sequence formats</title>
+</head>
+<body text="#000000" bgcolor="#ffeedd" link="#0000ee" vlink="#55008b" alink="#ff0000">
+<blockquote>
 
-<H3 ALIGN=CENTER><A HREF="RSAT_home.cgi">RSA-tools</A> - supported sequence formats</H3>
+<h3 align=center><a href="RSAT_home.cgi">RSA-tools</A> - supported sequence formats</h3>
 RSA-tools are dedicted to the analysis of regulatory sequences and thus only deals with DNA sequences. The following formats are supported. <P>
 
-<UL>
-<A NAME="raw"><LI><B>raw</B><BR></A>
-The text contains a single DNA sequence without any comment or other text. The sequence should only contain the letters corresponding to nucleotides (A, C, G, T). Uppercases and lowercases are onsidered equivalent. Tabs (\t), blank spaces and newline characters (\n) are accepted (they will be automatically removed before analysis). <P>
+<ul>
+<a name="raw"><LI><B>raw</b><br></a>
+
+The text contains a single DNA sequence without any comment or other
+text. The sequence should only contain the letters corresponding to
+nucleotides (A, C, G, T). Uppercases and lowercases are onsidered
+equivalent. Tabs (\t), blank spaces and newline characters (\n) are
+accepted (they will be automatically removed before analysis). <P>
 
 <UL>
-<B>raw format example (a single 60 bp sequences)</B>
+<B>Example of raw format (a single 60 bp sequences)</B>
 <PRE>GCGGTGCCCGGCCCAGCCACATATATATAGGTGTGTGCCA
 CTCCCGGCCCCGGTATTAGC</PRE>
 </UL>
 
-<A NAME="multi"><LI><B>multi</B><BR></A>
-This is a variant of the raw format, allowing to include several sequences within the same text. As in the raw format, there are neither comments nor sequence identifiers. Tabs and white spaces are ignored. The difference is that each new line is considered to contain a distinct sequence.<P>
+<a name="multi"><LI><B>multi</b><br></a>
+
+This is a variant of the raw format, allowing to include several
+sequences within the same text. As in the raw format, there are
+neither comments nor sequence identifiers. Tabs and white spaces are
+ignored. The difference is that each new line is considered to contain
+a distinct sequence.<P>
 
 <UL>
-<B>multi format example (two distinct sequences, 60 bp each)</B>
+<B>Example of multi format (two distinct sequences, 60 bp each)</B>
 <PRE>GCGGTGCCCGGCCCAGCCACATATATATAGGTGTGTGCCACTCCCGGCCCCGGTATTAGC
 CCCTTCCAGTTTCTTTTATTCTTTGCTGTTTCGAAGAATCACACCATCAATGAATAAATC</PRE>
 </UL>
 
-<A NAME="ig"><LI><B>IG</B><BR></A>
-IntelliGenetics format. All lines beginning with a semicolon ";" are considered as comments. The first non-comment line contains the sequence identifier (a single word without spaces). The sequence follows on the next lines. It can include spaces, tabs or newlines, that will be ignored for sequence analysis. The end of one sequence is indicated by termination character: 1 for linear, 2 for circular sequences. Several sequences can be concatenated within the same text. <P>
+<a name="ig"><LI><B>IG</b><br></a>
 
-<UL>
-<B>IG format example</B>
-<PRE>;sequence of the region upstream from gat1
+IntelliGenetics format. All lines beginning with a semicolon ";" are
+considered as comments. The first non-comment line contains the
+sequence identifier (a single word without spaces). The sequence
+follows on the next lines. It can include spaces, tabs or newlines,
+that will be ignored for sequence analysis. The end of one sequence is
+indicated by termination character: 1 for linear, 2 for circular
+sequences. Several sequences can be concatenated within the same
+text. <P>
+
+<ul>
+<b>Example of IG format</b>
+<pre>;sequence of the region upstream from gat1
 ;Locus GAT1
 ;ORF YFL021W  coord:    VI 95964 97496
 ;upstream region size:  60
@@ -50,13 +66,35 @@ CTCCCGGCCCCGGTATTAGC1
 PUT4_up
 CCCTTCCAGTTTCTTTTATTCTTTGCTGTTTCGAAGAATC
 ACACCATCAATGAATAAATC1</PRE>
-</UL>
+</ul>
 
-<A NAME="fasta"><LI><B>fasta</B><BR></A>
-The program defined for the program FastA, and used by a wide variety of programs (FastA, BLAST, gibbs sampler, ...). The first character of the first line is a ">". It is immediately followed by the sequence identifier, a single word. Further words on the same line are considered as comments. The sequence begins on the next line, and follows until the end of file is reached or another line is found which begins with a ">". White spaces, tabulations and newline characters can be inserted within the sequence, and will be ignored for analysis. Several sequence can be concatenated within the same text. <P>
+<a name="fasta"><LI><B>fasta</B><BR></A>
 
-<UL>
-<B>FastA format example (2 sequences, 60 bp each)</B>
+This format was originally defined for the program FastA, and has been
+used by a wide variety of other programs (FastA, BLAST, gibbs sampler,
+...). 
+
+<ul>
+<li>A raw starting with a ">" indicates that a new sequence will begin
+on the next row. The symbol ">" is immediately followed by the
+sequence identifier, a single word.
+
+<li>After the ID, additional text on the same line is considered as
+comment (it is ignored in the sequence analysis).
+
+<li>The sequence starts on the next line.
+
+<li>White spaces, tabulations and newline characters can be inserted
+within the sequence, and will be ignored for analysis.
+
+<li>The sequence is read until the end of file is reached or another
+line is found which begins with a ">".
+
+<li>Several sequence can be concatenated within the same text.
+</ul>
+
+<p><UL>
+<B>Example of FastA format (2 sequences, 60 bp each)</B>
 <PRE>>GAT1_up
 GCGGTGCCCGGCCCAGCCACATATATATAGGTGTGTGCCA
 CTCCCGGCCCCGGTATTAGC
@@ -70,7 +108,7 @@ ACACCATCAATGAATAAATC</PRE>
 This is the format defined by Jerry Hertz for his programs patser, consensus and wconsensus. Lines beginning with a semiolon ";" or a "#" are considered as comments. The first word of the first non-comment sequence is the sequence identifier. The sequence follows, embraced in backslashes (\). <P>
 
 <UL>
-<B>Wconsensus format example (2 sequences, 60 bp each)</B>
+<B>Example of Wconsensus format (2 sequences, 60 bp each)</B>
 <PRE>
 ;sequence of the region upstream from gat1
 ;Locus GAT1
@@ -87,9 +125,29 @@ PUT4_up \CCCTTCCAGTTTCTTTTATTCTTTGCTGTTTCGAAGAATCACACCATCAATGAATAAATC\
 </PRE>
 </UL>
 
-</UL>
-Most formats (except raw) allow to include several sequences within the same text. This is convenient for analyzing a family of sequences (oligo analysis, pattern search). <P>
-The program <A HREF="convert-seq.html"><B>convert sequence</B></A> performs interconversions between these sequence formats. <P>
+</ul><h4>Mask option</h4><ul>
 
-</BODY>
-</HTML>
+<p>Mask lower- or uppercases, respecively, i.e. replace
+selected cases by N characters. 
+
+<p>This option is useful with some sequence formats where lowercases
+indicated "soft masked" fragments. Soft masking is used by some genome
+centers to indicate exonic sequences.
+
+</ul><h4>Remarks</h4>
+
+<ul>
+<p><li>Most formats (except raw) support multiple sequences within the same
+text. This is convenient for analyzing a family of sequences (oligo
+analysis, pattern search).</li>
+
+<p><li>The program <A HREF="convert-seq.html"><B>convert sequence</B></A>
+performs interconversions between these sequence formats.</li>
+
+</ul>
+
+<hr size=3>
+
+<blockquote>
+</body>
+</html>

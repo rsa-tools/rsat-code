@@ -1,11 +1,13 @@
 #!/usr/bin/perl
 
+### CVS: added the option -mask
+
 ## BUG: with markov order 0, exp freq of mononucleotides are set to 0. should be the observed frequency
 ## TO DO: option -table freq
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.102 2005/12/14 16:46:44 jvanheld Exp $
+# $Id: oligo-analysis,v 1.103 2006/02/07 21:50:00 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -317,7 +319,7 @@ sub CountOligos {
 	}
     }
 
-    while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir, $seq_type)) &&
+    while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir, $seq_type, $mask)) &&
 	   (($current_seq) || ($current_id))) {
 	
 	### remove tabs and blank spaces ###    
@@ -1740,6 +1742,11 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-i") {
 	    $inputfile = $ARGV[$a+1];
 	    
+	    ## mask
+	} elsif ($ARGV[$a] eq "-mask") {
+	    $mask = $ARGV[$a+1];
+	    &CheckMask($mask);	    
+
 	} elsif ($ARGV[$a] eq "-format") {
 	    $in_format = lc($ARGV[$a+1]);
 	    
@@ -2141,7 +2148,14 @@ USAGE
 
 ARGUMENTS
     INPUT OPTIONS
-	-i file	inputfile. This file should contain the sequences.
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+
+	-mask upper|lower
+		Mask lower or uppercases, respecively, i.e. replace
+		selected case by N characters.
+
 	-format	input file format. Must be followed by one of the 
 		following options:
 		   fasta (default)
@@ -2751,6 +2765,7 @@ oligo-analysis options
 -h              display complete help message
 -help           display this list of options
 -i              input file
+-mask upper|lower	mask upper- or lowercases, respectively
 -format         input format. Accepted: fasta (default), wconsensus, IG, raw, filelist
 -seqtype       	sequence type (dna|prot|other)
 -o              output file

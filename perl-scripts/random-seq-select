@@ -1,7 +1,10 @@
 #!/usr/bin/perl -w
+
+### CVS: added the option -mask
+
 ############################################################
 #
-# $Id: random-seq-select,v 1.1 2006/02/03 15:35:36 jvanheld Exp $
+# $Id: random-seq-select,v 1.2 2006/02/07 21:50:00 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -90,7 +93,7 @@ package main;
     local %indexed_sequence = ();
     local @sequence_ids = ();
     my @comments = ();
-    while  ((($current_seq, $current_id, @comments) = &ReadNextSequence($main::in, $sequence_format, $input_dir, $seq_type)) &&
+    while  ((($current_seq, $current_id, @comments) = &ReadNextSequence($main::in, $sequence_format, $input_dir, $seq_type, $mask)) &&
 	    (($current_seq) || ($current_id))) {
 	push @sequence_ids, $current_id;
 	$indexed_sequence{$current_id} = $current_seq;
@@ -246,6 +249,30 @@ allows to use the command within a pipe.
 	} elsif ($arg eq "-i") {
 	    $main::infile{input} = shift(@arguments);
 	    
+	    ## Sequence format
+=pod
+
+=item B<-format sequence_format>
+
+Sequence format. 
+
+=cut
+	} elsif ($arg eq "-format") {
+	    $main::sequence_format = shift(@arguments);
+	    
+	    ## mask
+=pod
+
+=item B<-mask lower|upper>
+
+Mask lower or uppercases, respecively, i.e. replace selected case by N
+characters.
+
+=cut
+	} elsif ($arg eq "-mask") {
+	    $main::mask = shift(@arguments);
+	    &CheckMask($main::mask);
+
 	    ## Output file
 =pod
 
@@ -276,9 +303,9 @@ Number of sequences to return in the random selection.
 	    
 =pod
 
-=item    B<-g >
+=item    B<-g groups>
 
-Number of sequences to return in the random selection.
+Number of repetitions (groups of sequences) of the random sampling.
 
 =cut
 
