@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: downloads.mk,v 1.27 2006/01/16 08:06:47 jvanheld Exp $
+# $Id: downloads.mk,v 1.28 2006/02/09 11:07:17 jvanheld Exp $
 #
 # Time-stamp: <2003-10-09 14:02:21 jvanheld>
 #
@@ -495,3 +495,25 @@ anopheles:
 MACHIN=worm
 current_machin:
 	${MAKE} one_ensembl_dir ENSEMBL_DIR=current_${MACHIN}/data/flatfiles/genbank/
+
+
+
+################################################################
+## Drosophila genomes
+
+pseudoobscura:
+	${WGET} ftp://flybase.net/genomes/Drosophila_pseudoobscura/current/gff/
+	${WGET} ftp://flybase.net/genomes/Drosophila_pseudoobscura/current/dna/
+
+
+DROSO=dpse
+one_drosophila:
+#	${WGET} http://rana.lbl.gov/drosophila/sechellia.html
+	wget -rNL http://insects.eugenes.org/species/data/${DROSO}/gff
+#	wget -rNL http://insects.eugenes.org/species/data/${DROSO}/fasta/
+
+ALL_DROSO=dpse dmel dmel2 
+all_drosophila:
+	for d in ${ALL_DROSO} ; do \
+		${MAKE} one_drosophila DROSO=$${d} ; \
+	done
