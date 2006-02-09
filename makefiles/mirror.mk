@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: mirror.mk,v 1.34 2006/01/31 19:50:17 jvanheld Exp $
+# $Id: mirror.mk,v 1.35 2006/02/09 02:00:42 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 12:05:45 jvanheld>
 #
@@ -109,9 +109,11 @@ EXCLUDED_GENOMES=					\
 		--exclude Anopheles_gambiae*		\
 		--exclude Caenorhabditis_elegans*
 
-EXCLUDED_FILES=					\
+EXCLUDED_BLAST= \
 		--exclude 'blastdb'		\
-		--exclude 'blast_hits'		\
+		--exclude 'blast_hits'		
+
+EXCLUDED_FILES=					\
 		--exclude '*.wc'		\
 		--exclude '*.wc.gz'		
 #		--exclude '*.fasta'		\
@@ -124,7 +126,7 @@ EXCLUDED_DIRS=					\
 		--exclude upstream_calibrations	\
 		--exclude comparative_genomics
 
-EXCLUDED=${EXCLUDED_GENOMES} ${EXCLUDED_DIRS} ${EXCLUDED_FILES}
+EXCLUDED=${EXCLUDED_GENOMES} ${EXCLUDED_DIRS} ${EXCLUDED_FILES} ${EXCLUDED_BLAST}
 data_from_server:
 	${RSYNC} ${EXCLUDED}							\
 		${RSA_SERVER_LOGIN}@${RSA_SERVER}:${RSA_SERVER_DIR}/public_html/data/*	\
