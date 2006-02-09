@@ -1,7 +1,10 @@
 #!/usr/bin/perl
+
+### CVS: added the option -mask
+
 ############################################################
 #
-# $Id: position-analysis,v 1.26 2005/08/18 04:25:22 jvanheld Exp $
+# $Id: position-analysis,v 1.27 2006/02/09 19:56:12 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -311,7 +314,7 @@ sub ReadSequence {
 
     #### read all sequences and count oligo occurrences per class interval
     $sequence_number = 0;
-    while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir)) &&
+    while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir, "", $mask)) &&
 	   (($current_seq ne "") || ($current_id ne ""))) {
 	
 	$sequence_number++;  
@@ -618,7 +621,14 @@ USAGE
 
 
 OPTIONS
-	-i file	inputfile. This file should contain the sequences.
+	-i inputfile
+		if not specified, the standard input is used.
+		This allows to place the command within a pipe.
+
+	-mask upper|lower
+		Mask lower or uppercases, respecively, i.e. replace
+		selected case by N characters.
+
 	-format	input file format. Must be followed by one of the 
 		following options:
 		   fasta (default)
@@ -627,26 +637,37 @@ OPTIONS
 		   filelist
 		   raw
 		See below for the description of these formats.
+
 	-o file	outputfile. Returns a list of the oligonucleotides 
 		encountered in the sequences, with their frequencies.
+
 	-v \#	verbose level. 
+
 	-l	oligonucleotide length.
+
 	-ci	class interval (default 20 bases). 
 		The width of the position classes (in number of bases)
+
 	-grouprc        group reverse complement pairs
+
 	-nogrouprc      do not group reverse complement pairs
+
 	-sort		
 		sort oligonucleotides according to the bias in
 		distribution profile
+
 	-1str	
 		inactivates the summation of occurrences on both
 		strands.
+
 	-2str
 		oligonucleotide occurrences found on both stands are
 		summed.
+
 	-noov	no overlap
 			overlapping occurrences of the same pattern are 
 			only taken into account once
+
 	-return	fields_to_return
 		supported fields:
 			distrib	occurrences found in each position class
@@ -656,28 +677,35 @@ OPTIONS
 			rank	rank of the pattern according to the
 				sorting criterion
 		several fields can be entered, separated by commas
+
 	-lth #	lower threshold on chi2
 		return only words with a chi2 value > #
+
 	-oth #	lower threshold on occurrences
 		return only words with a number of occurrences > #
+
 	-pl pattern_file
 		A file containing a selection of patterns.  The
 		analysis is then restricted to these patterns.  The
 		first word of each new line is considered as a new
 		pattern.  A score can be associated to each pattern
 		with the option -sc.
+
 	-sc #	score column
 		(only valid whith the option -pl)
 		The column containing a score value for each pattern
 		of the pattern file
+
 	-minpos #
 		minimal position to take into account for the
 		chi-square calculation This value must be a multiple
 		of the class interval.
+
 	-maxpos #
 		maximal position to take into account for the
 		chi-square calculation This value must be a multiple
 		of the class interval.
+
 	-nocheck
 		do not check the applicability condition on the
 		chi-square. By default, the program checks that each
@@ -688,10 +716,12 @@ OPTIONS
 		with smaller clas effective. We allow to suppress the
 		checking, but the responsibility is left to the user,
 		to decide whether the chi2 is or not significant.
+
 	-nofilter
 		Do not discard oligos which do not fit the condition
 		of applicability. Instead, mark them by including the
 		chi2 value in curly brackets.
+
 	-origin
 		reference for calculating positions. 
 
@@ -721,6 +751,7 @@ position-analysis options
 -h		display complete help message
 -help		display this list of options
 -i		input file
+-mask upper|lower	mask upper- or lowercases, respectively
 -format		input sequence format
 -o 		output file
 -v \#		verbose level
@@ -771,6 +802,11 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-i") {
 	    $inputfile = $ARGV[$a+1];
 	    
+	    ## mask
+	} elsif ($ARGV[$a] eq "-mask") {
+	    $mask = $ARGV[$a+1];
+	    &CheckMask($mask);	    
+
 	    ### output file
 	} elsif ($ARGV[$a] eq "-o") {
 	    $outputfile = $ARGV[$a+1];
