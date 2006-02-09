@@ -952,12 +952,12 @@ sub ReadData {
 	### read X and Y values ###
 	$l = 0; ## Counter for non-comment and non-empty lines
 	while ($new_data_line = <$in>) {
-	    next if ($new_data_line =~ /^;/); ## Comment line
 	    next unless ($new_data_line =~ /\S/);
 	    $l++; 
 	    if (($header) && ($l == 1)) {
 		#### read legend ####
 		$legend_line = $new_data_line;
+		$legend_line =~ s/^;//; ## Suppress leading comment char
 		unless ($legend_line =~ /\t/) {   # if there are no tabs,
 		    $legend_line =~ s/ {1,}/\t/g; # single or multiple spaces are considered as a singlew tab
 					      }
@@ -972,6 +972,7 @@ sub ReadData {
 		}
 		$legend_size = $legend_length * $small_font_width + $point_size + 20;
 	    }
+	    next if ($new_data_line =~ /^;/); ## Comment line
 	    if ($new_data_line =~ /\t/) {  # if column delimiter is the tab character
 		$new_data_line =~ s/ //g; # remove all blank spaces
 	    } else { # if there are no tabs,
