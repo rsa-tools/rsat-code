@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: compare-profiles,v 1.4 2005/04/07 22:19:27 jvanheld Exp $
+# $Id: compare-profiles,v 1.5 2006/02/13 21:54:06 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -14,6 +14,9 @@
 ## - in verbosity: size of the table
 ## In verbosity : average probability over columns and rows
 ## - add the possibility to put a threshold on either 
+
+## CVS: added a conversion from any table to binary profiles; added the option -return; added option -return dotprod
+
 BEGIN {
     if ($0 =~ /([^(\/)]+)$/) {
 	push (@INC, "$`lib/");
@@ -103,6 +106,14 @@ names).
 
 The first column contains row headers (e.g. gene names).
 
+The values of the input file are not necessarily boolean, the table
+can contain real and NA (undefined) values. 
+
+For the statistics relying on boolean values, the table is
+automatically converted in the following way: strictly positive values
+are converted to 1, and all other values (0, negative, non-numerical)
+to 0.
+
 =head1 OUTPUT FORMAT
 
 The output file contains one row per pair of profiles, and one column
@@ -151,6 +162,10 @@ Number of true columns (1) for B but not A.
 =item B<N{!A!B}>
 
 Number of false columns (0) for both B and A.
+
+=item B<dotprod>
+
+Dot product between profiles A and B.
 
 =item B<P{A}>
 
@@ -323,7 +338,7 @@ sig = max(sig_R, sig_L)
 ################################################################
 #### initialise parameters
 my $start_time = &AlphaDate();
-
+local $distinct = 0;
 local $header=1;
 local $base=exp(1); ## Base for the logarithms
 $ncompa = "NA";
@@ -348,10 +363,66 @@ local $verbose = 0;
 #local $in = STDIN;
 local $out = STDOUT;
 
+## Output fields
+%supported_return_fields = (
+                            counts=>1,
+                            entropy=>1,
+                            hyper=>1,
+                            dotprod=>1,
+                            );
+$supported_return_fields = join (",", sort(keys( %supported_return_fields)));
+
+local %return_fields = ();
+
+## Field descriptions for the verbosity above the header
+$field_description{"ID A"} = "Identifier of the first profile to compare";
+$field_description{"ID B"} = "Identifier of the second proile to compare";
+$field_description{"name A"} = "Name of profile A";
+$field_description{"name B"} = "Name of profile B";
+$field_description{"N{A}"} = "Number of elements in profile A";
+$field_description{"N{B}"} = "Number of elements in profile B";
+$field_description{"N{AB}"} = "Number of elements in common between profiles A and B";
+$field_description{"N{A!B}"} = "Number of elements in A but not B";
+$field_description{"N{!AB}"} = "Number of elements in B but not A";
+$field_description{"N{!A!B}"} = "Number of elements neigher found in A nor in B";
+$field_description{"H(A)"} = "Entropy of profile A";
+$field_description{"H(B)"} = "Entropy of profile B";
+$field_description{"H(A,B)"} = "Join entropy";
+$field_description{"H(A|B)"} = "Conditional entropy";
+$field_description{"H(B|A)"} = "Conditional entropy";
+$field_description{"D(A||B)"} = "Relative entropy (=Kullback-Leiber distance)";
+$field_description{"D(B||A)"} = "Relative entropy (=Kullback-Leiber distance)";
+$field_description{"I(A,B)"} = "Mutual information";
+$field_description{"U(A|B)"} = "Uncertainty coefficient (Bowers et al., 2004)";
+$field_description{"U(B|A)"} = "Uncertainty coefficient (Bowers et al., 2004)";
+$field_description{"Pval_L"} = "Hypergeometric probability, left tail";
+$field_description{"Eval_L"} = "Hypergeometric E-value, left tail";
+$field_description{"sig_L"} = "Hypergeometric significance, left tail";
+$field_description{"Pval_R"} = "Hypergeometric probability, right tail";
+$field_description{"Eval_R"} = "Hypergeometric E-value, right tail";
+$field_description{"sig_R"} = "Hypergeometric significance, right tail";
+$field_description{"Pval"} = "Hypergeometric probability, smallest value";
+$field_description{"Eval"} = "Hypergeometric E-value, smallest value";
+$field_description{"sig"} = "Hypergeometric significance, greatest value";
+$field_description{"dotprod"} = "Dot product between profiles A and B";
+
+@out_fields = ();
+
 &ReadArguments();
+
+
 
 ################################################################
 #### check argument values
+
+## Return fields
+unless (scalar(keys(%return_fields)) > 0) {
+    $return_fields{counts}=1;
+    $return_fields{entropy}=1;
+    $return_fields{hyper}=1;
+}
+
+## Logarithm base
 $log_base = log($base); ## Calcualte it only once
 
 ## Row names
@@ -392,8 +463,42 @@ $profiles->readFromFile($infile{input}, "tab",header=>$header);
 $nrow = $profiles->nrow();
 $ncol = $profiles->ncol();
 $ncompa = $nrow*($nrow+1)/2;
+if ($main::verbose >= 0) {
+    &RSAT::message::TimeWarn(join("\t", "", "Rows", $nrow));
+    &RSAT::message::TimeWarn(join("\t", "", "Columns", $ncol));
+    &RSAT::message::TimeWarn(join("\t", "", "Comparisons", $ncompa));
+}
 my @row_names = $profiles->getAlphabet();
 my @header = $profiles->get_attribute("header");
+
+## ##############################################################
+## Derive binary profiles (take value 1 if X >+ 0, 0 otherwise)
+&RSAT::message::TimeWarn("Converting profiles to binary values");
+my $binary_profiles = new RSAT::table();
+$binary_profiles->setAlphabet($profiles->getAlphabet());
+my $positive_count = 0;
+my $null_count = 0;
+foreach my $c (1..$ncol) {
+    for my $r (1..$nrow) {
+#	my $value = $ori_table[$c-1][$r-1];
+	my $value = $profiles->getCell($r, $c);
+	if (&IsReal($value) && ($value > 0)) {
+	    $binary_table[$c-1][$r-1] = 1;
+	    $positive_count++;
+	} else {
+	    $binary_table[$c-1][$r-1] = 0;
+	    $null_count++;
+	}
+#	&RSAT::message::Debug("row", $r, "column", $c, $value, $binary_table[$c-1][$r-1], $positive_count, $null_count) if ($main::verbose >= 10);
+    }
+}
+$binary_profiles->setTable($nrow, $ncol, @binary_table);
+&RSAT::message::TimeWarn(join("\t", "", "Positive values", $positive_count));
+&RSAT::message::TimeWarn(join("\t", "", "Null values", $null_count));
+
+#print $out ($profiles->toString());
+#print $out "; BINARY TABLE\n";
+#print $out ($binary_profiles->toString());
 
 ################################################################
 #### print verbose
@@ -402,7 +507,7 @@ my @header = $profiles->get_attribute("header");
 ## ##############################################################
 ## Calculate row statistics (probability, entropy)
 ## Print the header
-if ($return{row_stats})  {
+if ($return_fields{row_stats})  {
     print $out join ("\t", 
 		     "; ID",
 		     "sum",
@@ -417,7 +522,7 @@ my @row_mean = ();
 my @row_proba = ();
 my @row_H = (); ## Entropy per row
 for my $r (1..$nrow) {
-    my @row = $profiles->get_row($r);
+    my @row = $binary_profiles->get_row($r);
 #    print $out join("\t", "row", $r, "length", $#row+1), "\n";
 #    print $out join "", @row, "\n";
     my $row_sum = 0;
@@ -440,7 +545,7 @@ for my $r (1..$nrow) {
     push @row_proba, $row_proba;
     push @row_H, $row_H;
     
-    if ($return{row_stats}) {
+    if ($return_fields{row_stats}) {
 	print $out join ("\t", 
 			 $row_names[$r-1], 
 			 $row_sum,
@@ -452,47 +557,75 @@ for my $r (1..$nrow) {
 }
 
 ## Store proba and entropy values
-$profiles->set_array_attribute("row_sum", @row_sum);
-$profiles->set_array_attribute("row_mean", @row_mean);
-$profiles->set_array_attribute("row_proba", @row_proba);
-$profiles->set_array_attribute("row_H", @row_H);
+$binary_profiles->set_array_attribute("row_sum", @row_sum);
+$binary_profiles->set_array_attribute("row_mean", @row_mean);
+$binary_profiles->set_array_attribute("row_proba", @row_proba);
+$binary_profiles->set_array_attribute("row_H", @row_H);
 
 ## ##############################################################
 ## Compare profiles (pairwise)
 &RSAT::message::TimeWarn("Calculating pairwise statistics") if ($main::verbose >= 1);
 
+
+## Profile IDs and names
+push @out_fields, (
+    "ID A",
+    "ID B",
+    "name A",
+    "name B");
+
+## Number of elements
+if ($return_fields{counts}) {
+    push @out_fields, (
+	"N{A}",
+	"N{B}",
+	"N{AB}",
+	"N{A!B}",
+	"N{!AB}",
+	"N{!A!B}");
+}
+
+## Dot product
+push @out_fields, ("dotprod") if ($return_fields{dotprod});
+
+## Entropy and information
+if ($return_fields{entropy}) {
+    push @out_fields, (
+	"H(A)",
+	"H(B)",
+	"H(A,B)",
+	"H(A|B)", 
+	"H(B|A)", 
+	"I(A,B)", 
+	"U(A|B)", 
+	"U(B|A)");
+}
+
+## Hypergeometric probabilities
+if ($return_fields{hyper}) {
+    push @out_fields, (
+	"Pval_L", 
+	"Eval_L", 
+	"sig_L", 
+	"Pval_R", 
+	"Eval_R", 
+	"sig_R", 
+	"Pval", 
+	"Eval", 
+	"sig", 
+    );
+}
+
 ## Print header for pairwise statistics
-print $out join ("\t", 
-		 "ID A",
-		 "ID B",
-		 "name A",
-		 "name B",
-		 "N{A}",
-		 "N{B}",
-		 "N{AB}",
-		 "N{A!B}",
-		 "N{!AB}",
-		 "N{!A!B}",
-		 "H(A)",
-		 "H(B)",
-		 "H(A,B)", ## Join entropy
-		 "H(A|B)", ## Conditional entropy
-		 "H(B|A)", ## Conditional entropy
-#		 "D(A||B)", ## Relative entropy (=Kullback-Leiber distance)
-#		 "D(B||A)", ## Relative entropy (=Kullback-Leiber distance)
-		 "I(A,B)", ## Mutual information
-		 "U(A|B)", ## Uncertainty coefficient (Bowers et al., 2004)
-		 "U(B|A)", ## Uncertainty coefficient (Bowers et al., 2004)
-		 "Pval_L", ## Hypergeometric probability, left tail
-		 "Eval_L", ## Hypergeometric E-value, left tail
-		 "sig_L", ## Hypergeometric significance, left tail
-		 "Pval_R", ## Hypergeometric probability, right tail
-		 "Eval_R", ## Hypergeometric E-value, right tail
-		 "sig_R", ## Hypergeometric significance, right tail
-		 "Pval", ## Hypergeometric probability, smallest value
-		 "Eval", ## Hypergeometric E-value, smallest value
-		 "sig", ## Hypergeometric significance, greatest value
-		), "\n";
+if ($main::verbose >= 1) {
+    print $out "; Column contents\n";
+    foreach my $f (0..$#out_fields) {
+	my $field = $out_fields[$f];
+	printf $out ";\t%d\t%-14s\t%s\n", $f+1, $field, $field_description{$field};
+    }
+}
+print $out join("\t", @out_fields), "\n";
+
 for my $r1 (1..$nrow) {
     
     &RSAT::message::TimeWarn(join (" ", "Starting row", $r1, "of", $nrow)) if ($main::verbose >= 2);
@@ -507,9 +640,16 @@ for my $r1 (1..$nrow) {
     if (defined($row_names{lc($ID_A)})) {
 	$name_A = $row_names{lc($ID_A)};
     };
+    local @binary_row1 = $binary_profiles->get_row($r1);
     local @row1 = $profiles->get_row($r1);
-    
-    for my $r2 ($r1..$nrow) {
+
+    if ($distinct) {
+	$first_compa = $r1+1;
+	next  if ($first_compa > $nrow); 
+    } else {
+	$first_compa = $r1;
+    }
+    for my $r2 ($first_compa..$nrow) {
 	## IDentifier for the second row
 	local $ID_B = $row_names[$r2-1];
 	if (defined($row_names{lc($ID_B)})) {
@@ -525,6 +665,7 @@ for my $r1 (1..$nrow) {
 	next unless &check_thresholds("B", $B);
 
 	## Count frequencies of all A, B combinations
+	local @binary_row2 = $binary_profiles->get_row($r2);
 	local @row2 = $profiles->get_row($r2);
 	local %N = (AB=>0,
 		 AnotB=>0,
@@ -532,13 +673,13 @@ for my $r1 (1..$nrow) {
 		 notAnotB=>0
 		);
 	for my $c (0..($ncol-1)) {
-	    if ($row1[$c]) {
-		if ($row2[$c]) {
+	    if ($binary_row1[$c]) {
+		if ($binary_row2[$c]) {
 		    $N{AB}++;
 		} else {
 		    $N{AnotB}++;
 		}
-	    } elsif ($row2[$c]) {
+	    } elsif ($binary_row2[$c]) {
 		$N{notAB}++;
 	    } else {
 		$N{notAnotB}++;
@@ -553,122 +694,158 @@ for my $r1 (1..$nrow) {
 # 	    next;
 # 	}
 
-	## Hypergeometric P-value for P(X>=N{AB})
-	$Pval_R = &cache_sum_of_hypergeometrics($A, $ncol, $B, $N{AB}, &min($A, $B));
-	$Eval_R = $Pval_R*$ncompa;
-	$sig_R = -log($Eval_R)/log(10);
-	## check thresholds on Pval_R
-	next unless &check_thresholds("Pval_R", $Pval_R);
-	next unless &check_thresholds("Eval_R", $Eval_R);
-	next unless &check_thresholds("sig_R", $sig_R);
+	if ($return_fields{dotprod}) {
+	    $dotprod = 0;
+	    for my $c (0..($ncol-1)) {
+		$dotprod += $row1[$c]*$row2[$c];
+	    }
+	}
+
+	if ($return_fields{hyper}) {
+	    ## Hypergeometric P-value for P(X>=N{AB})
+	    $Pval_R = &cache_sum_of_hypergeometrics($A, $ncol, $B, $N{AB}, &min($A, $B));
+	    $Eval_R = $Pval_R*$ncompa;
+	    if ($Eval_R > 0) {
+		$sig_R = -log($Eval_R)/log(10);
+	    } else {
+		$sig_R = "Inf";
+	    }
+	    ## check thresholds on Pval_R
+	    next unless &check_thresholds("Pval_R", $Pval_R);
+	    next unless &check_thresholds("Eval_R", $Eval_R);
+	    next unless &check_thresholds("sig_R", $sig_R);
 # 	if ((defined($uth{Pval_R}) && ($Pval_R > $uth{Pval_R}))
 # 	    || ((defined($lth{Pval_R})) && ($Pval_R < $lth{Pval_R}))) {
 # 	    warn join ("\t", "threshold skipped", $ID_A, $ID_B, "Pval_R", $Pval_R), "\n" if ($main::verbose >= 4);
 # 	    next;	    
 # 	}
-	if ($outfile{table_sig_R}) {
-	    $table_sig_R[$r1][$r2] = $sig_R;
-	}
+	    if ($outfile{table_sig_R}) {
+		$table_sig_R[$r1][$r2] = $sig_R;
+	    }
 
-	## Hypergeometric P-value for P(X<=N{AB})
-	$Pval_L = &cache_sum_of_hypergeometrics($A, $ncol, $B, 0, $N{AB});
-	$Eval_L = $Pval_L*$ncompa;
-	$sig_L = -log($Eval_L)/log(10);
- 	## check thresholds on Pval_L
-	next unless &check_thresholds("Pval_L", $Pval_L);
-	next unless &check_thresholds("Eval_L", $Eval_L);
-	next unless &check_thresholds("sig_L", $sig_L);
+	    ## Hypergeometric P-value for P(X<=N{AB})
+	    $Pval_L = &cache_sum_of_hypergeometrics($A, $ncol, $B, 0, $N{AB});
+	    $Eval_L = $Pval_L*$ncompa;
+	    if ($Eval_L > 0) {
+		$sig_L = -log($Eval_L)/log(10);
+	    } else {
+		$sig_L = "Inf";
+	    }
+	    
+	    ## check thresholds on Pval_L
+	    next unless &check_thresholds("Pval_L", $Pval_L);
+	    next unless &check_thresholds("Eval_L", $Eval_L);
+	    next unless &check_thresholds("sig_L", $sig_L);
 # 	if ((defined($uth{Pval_L}) && ($Pval_L > $uth{Pval_L}))
 # 		 || ((defined($lth{Pval_L})) && ($Pval_L < $lth{Pval_L}))) {
 # 	    warn join ("\t", "threshold skipped", $ID_A, $ID_B, "Pval_L", $Pval_L), "\n" if ($main::verbose >= 4);
 # 	    next;
 # 	}
-	if ($outfile{table_sig_L}) {
-	    $table_sig_L[$r1][$r2] = $sig_R;
-	}
+	    if ($outfile{table_sig_L}) {
+		$table_sig_L[$r1][$r2] = $sig_R;
+	    }
+	    
 
-
-	## Check threshold on P-value (each side separately)
-	## Beware, this selects genes which are OK for either of both sites (L or R)
-	$Pval = &RSAT::stats::min($Pval_L, $Pval_R);
-	$Eval = &RSAT::stats::min($Eval_L, $Eval_R);
-	$sig = &RSAT::stats::max($sig_L, $sig_R);
-	next unless &check_thresholds("Pval", $Pval);
-	next unless &check_thresholds("Eval", $Eval);
-	next unless &check_thresholds("sig", $sig);
+	    ## Check threshold on P-value (each side separately)
+	    ## Beware, this selects genes which are OK for either of both sites (L or R)
+	    $Pval = &RSAT::stats::min($Pval_L, $Pval_R);
+	    $Eval = &RSAT::stats::min($Eval_L, $Eval_R);
+	    $sig = &RSAT::stats::max($sig_L, $sig_R);
+	    next unless &check_thresholds("Pval", $Pval);
+	    next unless &check_thresholds("Eval", $Eval);
+	    next unless &check_thresholds("sig", $sig);
 # 	if ((defined($uth{Pval}) && ($Pval > $uth{Pval}))
 # 	    || ((defined($lth{Pval})) && ($Pval < $lth{Pval}))) {
 # 	    warn join ("\t", "threshold on Pval skipped", $ID_A, $ID_B, "Pval", $Pval), "\n" if ($main::verbose >= 4);
 # 	    next;	    
 # 	}
+	}
 
-	## Row entropy
-	local $H_A = $row_H[$r1-1];
-	local $H_B = $row_H[$r2-1];
 
-	## Probabilities and join entropy
-	local %P = ();
-	local $H_join = 0;
-	foreach $k (keys %N) {
-	    $P{$k} = $N{$k}/$ncol;
-	    if ($P{$k} > 0) {
-		$H_join -= $P{$k}*log($P{$k});
+	if ($return_fields{entropy}) {
+	    ## Row entropy
+	    local $H_A = $row_H[$r1-1];
+	    local $H_B = $row_H[$r2-1];
+	    
+	    ## Probabilities and join entropy
+	    local %P = ();
+	    local $H_join = 0;
+	    foreach $k (keys %N) {
+		$P{$k} = $N{$k}/$ncol;
+		if ($P{$k} > 0) {
+		    $H_join -= $P{$k}*log($P{$k});
+		}
 	    }
+	    $H_join /= $log_base;
+	    
+	    ## Conditional entropy
+	    local $H_AgivenB = $H_join - $H_A;
+	    local $H_BgivenA = $H_join - $H_B;
+	    
+	    ## Mutual information
+	    local $I = $H_A + $H_B  - $H_join;
+	    if ($outfile{table_info}) {
+		$table_info[$r1][$r2] = $I;
+	    }
+	    
+	    ## Uncertainty coefficient (as defined by Bowers et al, 2004)
+	    local $U_AgivenB = 0;
+	    if ($H_A > 0) {
+		$U_AgivenB = $I/$H_A;
+	    }
+	    local $U_BgivenA = 0;
+	    if ($H_B > 0) {
+		$U_BgivenA = $I/$H_B;
+	    }
+	    
+	    
+	    $entropy_format = "%.5f";
 	}
-	$H_join /= $log_base;
 
-	## Conditional entropy
-	local $H_AgivenB = $H_join - $H_A;
-	local $H_BgivenA = $H_join - $H_B;
-	
-	## Mutual information
-	local $I = $H_A + $H_B  - $H_join;
-	if ($outfile{table_info}) {
-	    $table_info[$r1][$r2] = $I;
-	}
-
-	## Uncertainty coefficient (as defined by Bowers et al, 2004)
-	local $U_AgivenB = 0;
-	if ($H_A > 0) {
-	    $U_AgivenB = $I/$H_A;
-	}
-	local $U_BgivenA = 0;
-	if ($H_B > 0) {
-	    $U_BgivenA = $I/$H_B;
-	}
-
-
-	$entropy_format = "%.5f";
-	
+	## Print the output row
 	print $out join ("\t",  
 			 $ID_A,
 			 $ID_B,
 			 $name_A,
-			 $name_B,
-			 $A,
-			 $B,
-			 $N{AB},
-			 $N{AnotB},
-			 $N{notAB},
-			 $N{notAnotB},
-			 sprintf($entropy_format, $H_A),
-			 sprintf($entropy_format, $H_B),
-			 sprintf($entropy_format, $H_join),
-			 sprintf($entropy_format, $H_AgivenB),
-			 sprintf($entropy_format, $H_BgivenA),
-			 sprintf($entropy_format, $I),
-			 sprintf($entropy_format, $U_AgivenB),
-			 sprintf($entropy_format, $U_BgivenA),
-			 sprintf("%-.2g", $Pval_L),
-			 sprintf("%-.2g", $Eval_L),
-			 sprintf("%-.2g", $sig_L),
-			 sprintf("%-.2g", $Pval_R),
-			 sprintf("%-.2g", $Eval_R),
-			 sprintf("%-.2g", $sig_R),
-			 sprintf("%-.2g", $Pval),
-			 sprintf("%-.2g", $Eval),
-			 sprintf("%-.2g", $sig),
-			), "\n";
+			 $name_B);
+	
+	if ($return_fields{counts}) {
+	    print $out "\t", join ("\t",  
+				   $A,
+				   $B,
+				   $N{AB},
+				   $N{AnotB},
+				   $N{notAB},
+				   $N{notAnotB});
+	}
+
+	print $out "\t", $dotprod if ($return_fields{dotprod});
+	
+	if ($return_fields{entropy}) {
+	    print $out "\t", join ("\t",  
+				   sprintf($entropy_format, $H_A),
+				   sprintf($entropy_format, $H_B),
+				   sprintf($entropy_format, $H_join),
+				   sprintf($entropy_format, $H_AgivenB),
+				   sprintf($entropy_format, $H_BgivenA),
+				   sprintf($entropy_format, $I),
+				   sprintf($entropy_format, $U_AgivenB),
+				   sprintf($entropy_format, $U_BgivenA));
+	}
+
+	if ($return_fields{hyper}) {
+	    print $out "\t", join ("\t",  
+				   sprintf("%-.2g", $Pval_L),
+				   sprintf("%-.2g", $Eval_L),
+				   sprintf("%-.2g", $sig_L),
+				   sprintf("%-.2g", $Pval_R),
+				   sprintf("%-.2g", $Eval_R),
+				   sprintf("%-.2g", $sig_R),
+				   sprintf("%-.2g", $Pval),
+				   sprintf("%-.2g", $Eval),
+				   sprintf("%-.2g", $sig));
+	}
+	print $out "\n";
     }
 }
 
@@ -852,6 +1029,40 @@ allows to use the command within a pipe.
 	} elsif ($ARGV[$a] eq "-o") {
 	    $outfile{output} = $ARGV[$a+1];
 	    
+	    ## Return fields
+=pod
+
+=item B<-return return_fields>
+
+List of fields to return. 
+
+Supported fields: counts, entropy, hyper
+
+=cut
+        } elsif ($ARGV[$a] eq "-return") {
+            chomp($ARGV[$a+1]);
+            my @fields_to_return = split ",", $ARGV[$a+1];
+            foreach $field (@fields_to_return) {
+                if ($supported_return_fields{$field}) {
+                    $return_fields{$field} = 1;
+                } else {
+                    &RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_return_fields));
+		}
+	    }
+
+
+	    ## Distinct
+=pod
+
+=item B<-distinct>
+
+Prevent to compare each profile with itself.
+
+=cut
+	} elsif ($ARGV[$a] eq "-distinct") {
+	    $distinct = 1;
+	  
+
 	    ## Export information table
 =pod
 
@@ -1016,10 +1227,12 @@ sub Verbose {
 	    print $out ";\t$key\t$lower\t$upper\n";
 	}
     }
-    print $out "; Logarithm base\t",$base, "\n";
-    print $out "; Rows\t", $nrow, "\n";
-    print $out "; Columns\t", $ncol, "\n";
-    print $out "; Comparisons\t", $ncompa, "\n";
+    printf $out ";  %-13s\t%d\n", "Rows", $nrow;
+    printf $out ";  %-13s\t%d\n", "Columns", $ncol;
+    printf $out ";  %-13s\t%d\n", "Positive values", $positive_count;
+    printf $out ";  %-13s\t%d\n", "Null values", $null_count;
+    printf $out ";  %-13s\t%d\n", "Comparisons", $ncompa, "\n";
+    printf $out ";  %-13s\t%g\n", "Logarithm base",$base;
 }
 
 ## ##############################################################
