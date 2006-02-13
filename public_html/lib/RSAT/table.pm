@@ -17,13 +17,15 @@ use RSAT::GenericObject;
 
 Generic class for manipuating tables. 
 
+=head1 METHODS
+
 =cut
 
 
 ################################################################
 =pod
 
-=item new()
+=item B<new()>
 
 Create an empty table.
 
@@ -41,7 +43,7 @@ sub new {
 ################################################################
 =pod
 
-=item transpose($nrow, $ncol, @table)
+=item B<transpose($nrow, $ncol, @table)>
 
 transpose a table (rows become columns and reciprocally)
 
@@ -62,7 +64,7 @@ sub transpose {
 ################################################################
 =pod
 
-=item calc_col_sums
+=item B<calc_col_sums>
 
 Calculate the sum of each column
 
@@ -90,7 +92,7 @@ sub calc_col_sums {
 ################################################################
 =pod
 
-=item calc_row_sums
+=item B<calc_row_sums>
 
 Calculate the sum of each rowumn
 
@@ -118,7 +120,7 @@ sub calc_row_sums {
 ################################################################
 =pod
 
-=item addColumn()
+=item B<addColumn()>
 
 Add a new column to the table
 
@@ -152,7 +154,7 @@ sub addColumn {
 ################################################################
 =pod
 
-=item addRow(@new_row)
+=item B<addRow(@new_row)>
 
 Add a new row to the table
 
@@ -181,7 +183,7 @@ sub addRow {
 ################################################################
 =pod
 
-=item setAlphabet(@alphabet)
+=item B<setAlphabet(@alphabet)>
 
 Specify the alphabet (i.e. the list of valid letters) for the table.
 
@@ -200,7 +202,7 @@ sub setAlphabet {
 ################################################################
 =pod
 
-=item getAlphabet()
+=item B<getAlphabet()>
 
 Return the list of valid letters for the table
 
@@ -213,7 +215,7 @@ sub getAlphabet {
 ################################################################
 =pod
 
-=item addIndexedRow($index, @new_row)
+=item B<addIndexedRow($index, @new_row)>
 
 Add a new row and append its symbol to the alphabet
 
@@ -229,7 +231,7 @@ sub addIndexedRow {
 ################################################################
 =pod
 
-=item ncol()
+=item B<ncol()>
 
 Return number of columns
 
@@ -242,7 +244,7 @@ sub ncol {
 ################################################################
 =pod
 
-=item nrow()
+=item B<nrow()>
 
 Return number of rows
 
@@ -255,7 +257,7 @@ sub nrow {
 ################################################################
 =pod
 
-=item size()
+=item B<size()>
 
 Return table size
 
@@ -269,9 +271,9 @@ sub size {
 ################################################################
 =pod
 
-=item getTable()
+=item B<getTable()>
 
-Return the whole table as a vector
+Return the whole table (a vector of vectors)
 
 =cut
 sub getTable {
@@ -282,7 +284,7 @@ sub getTable {
 ################################################################
 =pod
 
-=item setTable($nrow, $ncol, @table)
+=item B<setTable($nrow, $ncol, @table)>
 
 Specify the whole table
 
@@ -298,7 +300,7 @@ sub setTable {
 ################################################################
 =pod
 
-=item setCell($row, $col, $value)
+=item B<setCell($row, $col, $value)>
 
 Specify the content of a single cell. 
 
@@ -317,7 +319,7 @@ sub setCell {
 ################################################################
 =pod
 
-=item getCell($row, $col)
+=item B<getCell($row, $col)>
 
 Return the content of a single cell. 
 
@@ -332,7 +334,7 @@ sub getCell {
 ################################################################
 =pod
 
-=item readFromFile($file, $format)
+=item B<readFromFile($file, $format)>
 
 Read a table from a file
 
@@ -360,7 +362,7 @@ sub readFromFile {
 ################################################################
 =pod
     
-    =item _readFromTabFile($file)
+=item B<_readFromTabFile($file)>
 
 Read a table from a tab-delimited file. This method is called by the
 method C<readFromFile($file, "tab")>.
@@ -419,7 +421,7 @@ sub _readFromTabFile {
 ################################################################
 =pod
 
-=item init
+=item B<init>
 
 Initialize the table.
 
@@ -442,7 +444,7 @@ sub init {
 ################################################################
 =pod
 
-=item _printSeparator($ncol)
+=item B<_printSeparator($ncol)>
 
 Print a separator between header/footer and table
 
@@ -477,7 +479,7 @@ sub _printSeparator {
 ################################################################
 =pod
 
-=item get_row()
+=item B<get_row()>
 
 Return a row of the table as a list.
 
@@ -498,7 +500,7 @@ sub get_row {
 ################################################################
 =pod
 
-=item get_column($col_nb, $nrow, @table)
+=item B<get_column($col_nb, $nrow, @table)>
 
 Return a column of the table as a list.
 
@@ -520,7 +522,7 @@ sub get_column {
 ################################################################
 =pod
 
-=item toString(sep=>$sep, col_width=>$col_width, $decimals=>$decimals)
+=item B<toString(sep=>$sep, col_width=>$col_width, $decimals=>$decimals)>
 
 Return a string representing the table. 
 
@@ -555,7 +557,7 @@ sub toString {
     
     ################################################################
     ## Print a table
-    my @table = @table = @{$self->{table}};
+    my @table = @{$self->{table}};
     my @alphabet = $self->getAlphabet();
     my $ncol = $self->ncol();
     my $nrow = $self->nrow();
@@ -585,10 +587,11 @@ sub toString {
     
     ## Print the table
     for $a (0..$#alphabet) {
-	my @row = &get_row($a, $ncol, @table);
+	my @row = $self->get_row($a+1, $ncol, @table);
 	$to_print .= $self->_printTableRow($alphabet[$a], @row);
     }
-    
+
+#    die "HELLO";
     ################################################################
     ##Print column statistics
     if ($self->get_attribute("margins")) {
@@ -596,17 +599,20 @@ sub toString {
 	$to_print .= $self->_printSeparator($ncol, $to_print);
 	
 	## Sum per column
-	my @col_sum = &col_sum($nrow, $ncol, @table);
+#	my @col_sum = &col_sum($nrow, $ncol, @table);
+	my @col_sum = $self->col_sum($nrow, $ncol, @table);
 	push @col_sum, &main::sum(@col_sum);
 	$to_print .= $self->_printTableRow("; ".$prefix_letter.".sum", @col_sum);
 	
 	## Maximum per column
-	my @col_max = &col_max($nrow, $ncol, @table);
+#	my @col_max = &col_max($nrow, $ncol, @table);
+	my @col_max = $self->col_max($nrow, $ncol, @table);
 	push @col_max, &main::max(@col_max);
 	$to_print .= $self->_printTableRow("; ".$prefix_letter.".max", @col_max);
 	
 	## Minimum per column
-	my @col_min = &col_min($nrow, $ncol, @table);
+#	my @col_min = &col_min($nrow, $ncol, @table);
+	my @col_min = $self->col_min($nrow, $ncol, @table);
 	push @col_min, &main::min(@col_min);
 	$to_print .= $self->_printTableRow("; ".$prefix_letter.".min", @col_min);
     }
@@ -617,7 +623,7 @@ sub toString {
 ################################################################
 =pod
 
-=item _printTableRow($row_name, @values)
+=item B<_printTableRow($row_name, @values)>
 
 Print a row for the table output.
 
@@ -673,7 +679,7 @@ Print a row for the table output.
 ################################################################
 =pod
 
-=item _get_format()
+=item B<_get_format()>
 
 Return the parameters for formatting output columns.
 
