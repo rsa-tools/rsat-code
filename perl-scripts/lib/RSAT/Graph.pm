@@ -8,10 +8,12 @@ use RSAT::GenericObject;
 use RSAT::error;
 use RSAT::GraphNode;
 use RSAT::GraphArc;
+use RSAT::util;
 
 ### class attributes
 @ISA = qw( RSAT::GenericObject );
-
+#$node_color="#000088";
+#$arc_color="#000044";
 
 =pod
 
@@ -26,6 +28,9 @@ directed graphs and export them in different formats.
 
 Graph class. 
 
+
+=head1 METHODS
+
 =cut
 
 
@@ -33,7 +38,7 @@ Graph class.
 ################################################################
 =pod
 
-=item add_node()
+=item B<add_node()>
 
 Create a node and add it to the graph. 
 
@@ -46,13 +51,34 @@ sub create_node {
 			       $node->get_attribute("label"), 
 			       $node)) if ($main::verbose >= 4);
     $self->push_attribute("nodes", $node);
+    $self->add_hash_attribute("nodes_by_id", $node->get_attribute("id"), $node);
     return $node;
 }
 
 ################################################################
 =pod
 
-=item add_arc()
+=item B<node_by_id()>
+
+Returns a node specified by its ID. 
+
+=cut
+sub node_by_id {
+    my ($self, $node_id) = @_;    
+    my %node_index = $self->get_attribute("nodes_by_id");
+    if (defined($node_index{$node_id})) {
+	return($node_index{$node_id});
+    } else {
+#	&RSAT::message::Debug("The graph does not contain a node with ID ".$node_id) if ($main::verbose >= 5);
+	return();
+    }
+    return $node;
+}
+
+################################################################
+=pod
+
+=item B<add_arc()>
 
 Create an arc between two existing nodes, and add the new 
 graph.
@@ -71,9 +97,129 @@ sub create_arc {
 ################################################################
 =pod
 
-=item to_dot()
+=item B<read_from_table>
 
-Return the graph indot format.
+Read the graph from a tab-delimited text file.
+
+
+ Title    : from_table
+ Usage    : $graph->->read_from_table($input_file)
+ Function : Read the graph from a tab-delimited text file.
+ Returns  : void
+
+=cut
+
+sub read_from_table {
+    my ($self, $inputfile, $source_col, $target_col, $weight_col) = @_;
+    ($main::in) = &RSAT::util::OpenInputFile($inputfile);
+    my $no_weight = 0;
+    my $default_weight = 1;
+    my $node_color = $self->get_attribute("node_color") || "#000088";
+    my $arc_color = $self->get_attribute("arc_color") || "#000044";
+
+    ## Check input parameters
+    unless (&RSAT::util::IsNatural($source_col) && ($source_col > 0)) {
+	&RSAT::error::FatalError(join("\t", $source_col, "Invalid source column secification for graph loading. Should be a strictly positive natural number."));
+    }
+    unless (&RSAT::util::IsNatural($target_col) && ($target_col > 0)) {
+	&FatalError(join("\t", $target_col, "Invalid target column specification for graph loading. Should be a strictly positive natural number."));
+    }
+    unless (&RSAT::util::IsNatural($weight_col) && ($weight_col > 0)) {
+	$no_weigth = 1;
+    }
+    
+    ## Load the graph
+    while (<$main::in>) {
+	next if (/^;/);
+	next if (/^#/);
+	next unless (/\S/);
+	chomp;
+	my @fields = split("\t");
+	my $source_name = $fields[$source_col-1];
+	my $target_name = $fields[$target_col-1];
+	my $weight = $default_weight;
+	unless ($no_weight) {
+	    $weight = $fields[$weight_col-1];
+	}
+
+	## Source node
+	my $source_node = $self->node_by_id($source_name);
+	unless ($source_node) {
+	    $source_node = $self->create_node(id=>$source_name, 
+					      label=>$source_name,
+					      color=>$node_color,
+					     );
+	    &RSAT::message::Info(join("\t", "Created source node", 
+				      $source_name,
+				      "id=".$source_node->get_attribute("id"), 
+				      "label=".$source_node->get_attribute("label"),
+				     )) if ($main::verbose >= 3);
+	}
+
+	## Target node
+	my $target_node = $self->node_by_id($target_name);
+	unless ($target_node) {
+	    $target_node = $self->create_node(id=>$target_name, 
+					      label=>$target_name,
+					      color=>$node_color,
+					     );
+	    &RSAT::message::Info(join("\t", "Created target node", 
+				      $target_name,
+				      "id=".$target_node->get_attribute("id"), 
+				      "label=".$target_node->get_attribute("label"),
+				     )) if ($main::verbose >= 3);
+	}
+
+	## Create the arc
+	my $arc_label = "";
+	if ($no_weight) {
+	    $arc_label = join ("_", $source_name, $target_name);
+	} else {
+	    $arc_label = $weight;
+	}
+	my $arc = $self->create_arc($source_node, 
+				    $target_node, 
+				    color=>$arc_color,
+				    label=>$arc_label,
+				    weight=>$weight);
+	&RSAT::message::Info(join("\t", "Created arc", 
+				  $source_node->get_attribute("id"), 
+				  $target_node->get_attribute("id"), 
+				  $arc,
+				  $arc->get_attribute("label"),
+				  $arc->get_attribute("weight"),
+				 )) if ($main::verbose >= 4);
+    }
+    close $main::in if ($inputfile);    
+}
+
+################################################################
+=pod
+
+=item B<to_text()>
+
+Return the graph in various format.
+
+Supported formats: dot, gml
+
+=cut
+sub to_text {
+    my ($self, $out_format) = @_;
+    if ($out_format eq "dot") {
+	return $self->to_dot();
+    } elsif ($out_format eq "gml") {
+	return $self->to_gml();
+    } else {
+	&RSAT::error::FatalError(join ("\t", $out_format, "Invlid format for a graph."));
+    }
+}
+
+################################################################
+=pod
+
+=item B<to_dot()>
+
+Return the graph in dot format.
 
 =cut
 sub to_dot {
@@ -99,7 +245,7 @@ sub to_dot {
 	my $source_id = $source->get_attribute("id");
 	my $target = $arc->get_attribute("target");
 	my $target_id = $target->get_attribute("id");
-	my $label = $arc->get_attribute("label");
+	my $label = $arc->get_attribute("label") || "";
 	$dot .=  join ("", "\"", $source_id, "\" -- \"", $target_id, "\" [label=\"", $label,"\"]", "\n");
     }
     
@@ -109,7 +255,13 @@ sub to_dot {
 }
 
 ################################################################
-## Export the graph in GML format
+=pod
+
+=item B<to_gml()>
+
+Return the graph in gml format. 
+
+=cut
 sub to_gml {
     my ($self) = @_;    
     my $gml = "";
