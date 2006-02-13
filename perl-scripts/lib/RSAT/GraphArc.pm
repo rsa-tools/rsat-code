@@ -51,6 +51,7 @@ sub new {
     } else {
 	&RSAT::error::FatalError( "Cannot create an arc without source node");
     }
+
     ## check target node
     my $target;
     my $target_id;
@@ -63,6 +64,7 @@ sub new {
     } else {
 	&RSAT::error::FatalError( "Cannot create an arc without target node");
     }
+
 
     ## Report the creation of the arc
     &RSAT::message::Info(join("\t", "Created arc",
