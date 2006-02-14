@@ -17,8 +17,6 @@ require "RSA.lib";
 require "RSA.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
-$ECHO=1;
-
 ### intialization
 $feature_map_command = "$SCRIPTS/feature-map ";
 $tmp_file_name = sprintf "feature-map.%s", &AlphaDate;
@@ -256,18 +254,19 @@ $map_file = "$tmp_file_name.${image_format}";
 $html_file = "$tmp_file_name.html";
 $parameters .= " -o $TMP/$map_file > $TMP/$html_file";
 
-
-### executre the command
+## report the command (for debugging)
+#$ECHO = 2;
 if ($ECHO >= 2) {
     print $query->header();
     print $query->start_html;
     &ListParameters();
 
-    print "<PRE>command = $feature_map_command $parameters \n</PRE>";
-    print $query->end_html;
+    print "<PRE>command = $feature_map_command $parameters \n\n\n</PRE>";
+    print $query->end_html();
     exit(0)
 } 
 
+### execute the command
 system "$feature_map_command $parameters ";
 &DelayedRemoval($feature_file);
 &DelayedRemoval("$TMP/$map_file");
