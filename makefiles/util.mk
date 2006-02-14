@@ -30,6 +30,7 @@ my_command:
 	@echo "${WHEN} command ${MY_COMMAND}"
 	${MAKE} command_${WHEN}
 
+DATE=`date +%Y%m%d`
 JOB_DIR=jobs
 JOB_PREFIX=job
 JOB=`mktemp ${JOB_DIR}/${JOB_PREFIX}.XXXXXX`
@@ -39,7 +40,7 @@ command_queue:
 		echo "Job $${job}" ;						\
 		echo "echo running on node "'$$HOST' > $${job}; 		\
 		echo "${MY_COMMAND}" >> $${job} ;				\
-		qsub -m e -q rsa@merlin.scmbb.ulb.ac.be -N $${job} -j oe	\
+		qsub -m e -q short@arthur.scmbb.ulb.ac.be -N $${job} -j oe	\
 			-o $${job}.log $${job} ;				\
 	done
 
