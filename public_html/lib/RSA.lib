@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-use CGI;
+#use CGI;
 #require "cgi-lib.pl";
 
 ### CVS: moived ENV{SERVER_ADMIN} to the config file
@@ -140,7 +140,8 @@ sub doit {
 	my $cluster_queue = $ENV{CLUSTER_QUEUE} || "short";
 	my $cluster_master=$ENV{CLUSTER_MASTER} || "arthur.scmbb.ulb.ac.be";
 	my $batch_mail=$ENV{BATCH_MAIL} || "a";
-	&doit("qsub -m ".$batch_mail." -q ".$cluster_queue."\@".$cluster_master." -N ${job} -j oe -o ${job}.log ${job}", $dry, $die_on_error,$verbose,0);
+	$selected_nodes = " -l nodes=1:k2.6 ";
+	&doit("qsub ".$selected_nodes." -m ".$batch_mail." -q ".$cluster_queue."\@".$cluster_master." -N ${job} -j oe -o ${job}.log ${job}", $dry, $die_on_error,$verbose,0);
 
     } else {
 	## Verbose
