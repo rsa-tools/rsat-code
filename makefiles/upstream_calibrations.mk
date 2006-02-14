@@ -405,8 +405,6 @@ oligo_distrib_one_org_one_size:
 	@echo "Done oligo distributions for one organism	${ORG}	${OL}	${UP_LEN}	${NOORF}"
 
 
-
-
 ################################################################
 ## Organism-specific settings
 oligo_distrib_all_organisms: oligo_distrib_fungi oligo_distrib_procaryotes oligo_distrib_other_orgs
@@ -446,6 +444,9 @@ MS_markov_models:
 MS_MARKOV_FILE=${MS_MARKOV_DIR}/MS_mkv${MKV}_${SEQ_PREFIX}.txt
 MS_one_markov_model: dirs
 	CreateBackgroundModel -n ${ORG} -f ${SEQ_FILE} -o ${MKV} -b ${MS_MARKOV_FILE}
+
+################################################################
+## Drosophila analysis
 
 
 ################################################################
