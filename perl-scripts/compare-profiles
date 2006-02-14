@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: compare-profiles,v 1.5 2006/02/13 21:54:06 jvanheld Exp $
+# $Id: compare-profiles,v 1.6 2006/02/14 12:43:33 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -418,8 +418,20 @@ $field_description{"dotprod"} = "Dot product between profiles A and B";
 ## Return fields
 unless (scalar(keys(%return_fields)) > 0) {
     $return_fields{counts}=1;
-    $return_fields{entropy}=1;
     $return_fields{hyper}=1;
+}
+
+
+## Fields to calculate
+## Manage dependencies between the different fields
+foreach my $field (keys %return_fields) {
+    $calc_fields{$field} = 1;
+}
+if ($calc_fields{hyper}) {
+    $calc_fields{counts} = 1;
+}
+if ($calc_fields{counts}) {
+    $calc_fields{binary_profiles} = 1;
 }
 
 ## Logarithm base
@@ -473,28 +485,30 @@ my @header = $profiles->get_attribute("header");
 
 ## ##############################################################
 ## Derive binary profiles (take value 1 if X >+ 0, 0 otherwise)
-&RSAT::message::TimeWarn("Converting profiles to binary values");
-my $binary_profiles = new RSAT::table();
-$binary_profiles->setAlphabet($profiles->getAlphabet());
-my $positive_count = 0;
-my $null_count = 0;
-foreach my $c (1..$ncol) {
-    for my $r (1..$nrow) {
+if ($calc_fields{binary_profiles}) {
+    &RSAT::message::TimeWarn("Converting profiles to binary values");
+    my $binary_profiles = new RSAT::table();
+    $binary_profiles->setAlphabet($profiles->getAlphabet());
+    my $positive_count = 0;
+    my $null_count = 0;
+    foreach my $c (1..$ncol) {
+	for my $r (1..$nrow) {
 #	my $value = $ori_table[$c-1][$r-1];
-	my $value = $profiles->getCell($r, $c);
-	if (&IsReal($value) && ($value > 0)) {
-	    $binary_table[$c-1][$r-1] = 1;
-	    $positive_count++;
-	} else {
-	    $binary_table[$c-1][$r-1] = 0;
-	    $null_count++;
-	}
+	    my $value = $profiles->getCell($r, $c);
+	    if (&IsReal($value) && ($value > 0)) {
+		$binary_table[$c-1][$r-1] = 1;
+		$positive_count++;
+	    } else {
+		$binary_table[$c-1][$r-1] = 0;
+		$null_count++;
+	    }
 #	&RSAT::message::Debug("row", $r, "column", $c, $value, $binary_table[$c-1][$r-1], $positive_count, $null_count) if ($main::verbose >= 10);
+	}
     }
+    $binary_profiles->setTable($nrow, $ncol, @binary_table);
+    &RSAT::message::TimeWarn(join("\t", "", "Positive values", $positive_count));
+    &RSAT::message::TimeWarn(join("\t", "", "Null values", $null_count));
 }
-$binary_profiles->setTable($nrow, $ncol, @binary_table);
-&RSAT::message::TimeWarn(join("\t", "", "Positive values", $positive_count));
-&RSAT::message::TimeWarn(join("\t", "", "Null values", $null_count));
 
 #print $out ($profiles->toString());
 #print $out "; BINARY TABLE\n";
@@ -565,7 +579,6 @@ $binary_profiles->set_array_attribute("row_H", @row_H);
 ## ##############################################################
 ## Compare profiles (pairwise)
 &RSAT::message::TimeWarn("Calculating pairwise statistics") if ($main::verbose >= 1);
-
 
 ## Profile IDs and names
 push @out_fields, (
@@ -665,44 +678,42 @@ for my $r1 (1..$nrow) {
 	next unless &check_thresholds("B", $B);
 
 	## Count frequencies of all A, B combinations
-	local @binary_row2 = $binary_profiles->get_row($r2);
-	local @row2 = $profiles->get_row($r2);
-	local %N = (AB=>0,
-		 AnotB=>0,
-		 notAB=>0,
-		 notAnotB=>0
-		);
-	for my $c (0..($ncol-1)) {
-	    if ($binary_row1[$c]) {
-		if ($binary_row2[$c]) {
-		    $N{AB}++;
+	if ($calc_fields{counts}) {
+	    @binary_row2 = $binary_profiles->get_row($r2);
+	    @row2 = $profiles->get_row($r2);
+	    %N = (AB=>0,
+		  AnotB=>0,
+		  notAB=>0,
+		  notAnotB=>0
+		  );
+	    for my $c (0..($ncol-1)) {
+		if ($binary_row1[$c]) {
+		    if ($binary_row2[$c]) {
+			$N{AB}++;
+		    } else {
+			$N{AnotB}++;
+		    }
+		} elsif ($binary_row2[$c]) {
+		    $N{notAB}++;
 		} else {
-		    $N{AnotB}++;
+		    $N{notAnotB}++;
 		}
-	    } elsif ($binary_row2[$c]) {
-		$N{notAB}++;
-	    } else {
-		$N{notAnotB}++;
 	    }
+	    
+	    ## check thresholds on N{AB}
+	    next unless &check_thresholds("AB", $N{AB});
 	}
 
-	## check thresholds on N{AB}
-	next unless &check_thresholds("AB", $N{AB});
-# 	if ((defined($uth{AB}) && ($N{AB} > $uth{AB}))
-# 	    || ((defined($lth{AB})) && ($N{AB} < $lth{AB}))) {
-# 	    warn join ("\t", "threshold skipped", $ID_A, $ID_B, "AB", $N{AB}), "\n" if ($main::verbose >= 4);
-# 	    next;
-# 	}
-
-	if ($return_fields{dotprod}) {
+	## Dot products
+	if ($calc_fields{dotprod}) {
 	    $dotprod = 0;
 	    for my $c (0..($ncol-1)) {
 		$dotprod += $row1[$c]*$row2[$c];
 	    }
 	}
-
-	if ($return_fields{hyper}) {
-	    ## Hypergeometric P-value for P(X>=N{AB})
+	
+	## Hypergeometric P-value for P(X>=N{AB})
+	if ($calc_fields{hyper}) {
 	    $Pval_R = &cache_sum_of_hypergeometrics($A, $ncol, $B, $N{AB}, &min($A, $B));
 	    $Eval_R = $Pval_R*$ncompa;
 	    if ($Eval_R > 0) {
@@ -714,11 +725,7 @@ for my $r1 (1..$nrow) {
 	    next unless &check_thresholds("Pval_R", $Pval_R);
 	    next unless &check_thresholds("Eval_R", $Eval_R);
 	    next unless &check_thresholds("sig_R", $sig_R);
-# 	if ((defined($uth{Pval_R}) && ($Pval_R > $uth{Pval_R}))
-# 	    || ((defined($lth{Pval_R})) && ($Pval_R < $lth{Pval_R}))) {
-# 	    warn join ("\t", "threshold skipped", $ID_A, $ID_B, "Pval_R", $Pval_R), "\n" if ($main::verbose >= 4);
-# 	    next;	    
-# 	}
+
 	    if ($outfile{table_sig_R}) {
 		$table_sig_R[$r1][$r2] = $sig_R;
 	    }
@@ -762,7 +769,7 @@ for my $r1 (1..$nrow) {
 	}
 
 
-	if ($return_fields{entropy}) {
+	if ($calc_fields{entropy}) {
 	    ## Row entropy
 	    local $H_A = $row_H[$r1-1];
 	    local $H_B = $row_H[$r2-1];
@@ -848,6 +855,7 @@ for my $r1 (1..$nrow) {
 	print $out "\n";
     }
 }
+&RSAT::message::TimeWarn("Pairwise statistics done") if ($main::verbose >= 1);
 
 
 ################################################################
@@ -1227,10 +1235,14 @@ sub Verbose {
 	    print $out ";\t$key\t$lower\t$upper\n";
 	}
     }
-    printf $out ";  %-13s\t%d\n", "Rows", $nrow;
-    printf $out ";  %-13s\t%d\n", "Columns", $ncol;
-    printf $out ";  %-13s\t%d\n", "Positive values", $positive_count;
-    printf $out ";  %-13s\t%d\n", "Null values", $null_count;
+    print $out ";  Table dimensionts";
+    printf $out ";\t%-13s\t%d\n", "Rows", $nrow;
+    printf $out "; \t%-13s\t%d\n", "Columns", $ncol;
+    if ($calc_fields{binary_profiles}) {
+	print $out ";  Binary profiles";
+	printf $out ";\t%-13s\t%d\n", "\tPositive values", $positive_count;
+	printf $out "; \t%-13s\t%d\n", "\tNull values", $null_count;
+    }
     printf $out ";  %-13s\t%d\n", "Comparisons", $ncompa, "\n";
     printf $out ";  %-13s\t%g\n", "Logarithm base",$base;
 }
