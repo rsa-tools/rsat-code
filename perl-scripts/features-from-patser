@@ -93,15 +93,15 @@ if ($sequence_file) {
 	my $end;
 	my $start;
 	if ($origin eq "-0") {
-	    $end = 0;
+	    $end = -1;
 	    $start = -$length;
 	} else {
 	    $end = $length - $origin;
-	    $start = - $length;
+	    $start = 1 - $origin;
 	}
 
-	print $out join("\t", $id, "LIMIT", "SEQ_START", "DR", 1, 1, "-", 0), "\n";
-	print $out join("\t", $id, "LIMIT", "SEQ_END", "DR", $length, $length, "-", 0), "\n";
+	print $out join("\t", $id, "LIMIT", "SEQ_START", "DR", $start,$start, "-", 0), "\n";
+	print $out join("\t", $id, "LIMIT", "SEQ_END", "DR", $end,$end, "-", 0), "\n";
     }
 }
 
