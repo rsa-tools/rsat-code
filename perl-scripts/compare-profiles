@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: compare-profiles,v 1.6 2006/02/14 12:43:33 rsat Exp $
+# $Id: compare-profiles,v 1.7 2006/02/17 20:11:29 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -415,11 +415,54 @@ $field_description{"dotprod"} = "Dot product between profiles A and B";
 ################################################################
 #### check argument values
 
-## Return fields
+## Output fields
 unless (scalar(keys(%return_fields)) > 0) {
     $return_fields{counts}=1;
     $return_fields{hyper}=1;
 }
+push @out_fields, (
+    "ID A",
+    "ID B",
+    "name A",
+    "name B");
+push @out_fields, ("dotprod") if ($return_fields{dotprod});
+
+if ($return_fields{counts}) {
+    push @out_fields, (
+	"N{A}",
+	"N{B}",
+	"N{AB}",
+	"N{A!B}",
+	"N{!AB}",
+	"N{!A!B}");
+}
+
+if ($return_fields{hyper}) {
+    push @out_fields, (
+	"Pval_L", 
+	"Eval_L", 
+	"sig_L", 
+	"Pval_R", 
+	"Eval_R", 
+	"sig_R", 
+	"Pval", 
+	"Eval", 
+	"sig", 
+    );
+}
+
+if ($return_fields{entropy}) {
+    push @out_fields, (
+	"H(A)",
+	"H(B)",
+	"H(A,B)",
+	"H(A|B)", 
+	"H(B|A)", 
+	"I(A,B)", 
+	"U(A|B)", 
+	"U(B|A)");
+}
+
 
 
 ## Fields to calculate
@@ -485,9 +528,10 @@ my @header = $profiles->get_attribute("header");
 
 ## ##############################################################
 ## Derive binary profiles (take value 1 if X >+ 0, 0 otherwise)
+my $binary_profiles;
 if ($calc_fields{binary_profiles}) {
     &RSAT::message::TimeWarn("Converting profiles to binary values");
-    my $binary_profiles = new RSAT::table();
+    $binary_profiles = new RSAT::table();
     $binary_profiles->setAlphabet($profiles->getAlphabet());
     my $positive_count = 0;
     my $null_count = 0;
@@ -530,104 +574,58 @@ if ($return_fields{row_stats})  {
 		     "H"
 		    ), "\n";
 }
-&RSAT::message::TimeWarn("Calculating row statistics") if ($main::verbose >= 1);
 my @row_sum = ();
 my @row_mean = ();
 my @row_proba = ();
 my @row_H = (); ## Entropy per row
-for my $r (1..$nrow) {
-    my @row = $binary_profiles->get_row($r);
-#    print $out join("\t", "row", $r, "length", $#row+1), "\n";
-#    print $out join "", @row, "\n";
-    my $row_sum = 0;
-    my $row_proba = 0;
-    for my $c (1..$ncol) {
-	$row_sum += $row[$c-1];
-	$row_proba += 1 if ($row[$c-1]);
+if ($calc_fields{binary_profiles}) {
+    &RSAT::message::TimeWarn("Calculating row statistics") if ($main::verbose >= 1);
+    for my $r (1..$nrow) {
+	local @binary_row = ();
+	if ($calc_fields{binary_profiles}) {
+	    @binary_row = $binary_profiles->get_row($r);
+	}
+	my $row_sum = 0;
+	my $row_proba = 0;
+	for my $c (1..$ncol) {
+	    $row_sum += $row[$c-1];
+	    $row_proba += 1 if ($row[$c-1]);
 #	die join "\t", "sum != proba", $r, $c, $row[$c-1], $row_sum, $row_proba, "\n", if ($row_proba != $row_sum);
+	}
+	my $row_mean = $row_sum / $ncol;
+	$row_proba = $row_proba / $ncol;
+	my $row_H = 0;
+	if (($row_proba > 0) && ($row_proba < 1)) {
+	    $row_H = - $row_proba*log($row_proba) - (1-$row_proba)*log(1-$row_proba);
+	    $row_H /= $log_base;
+	}
+	
+	push @row_sum, $row_sum;
+	push @row_mean, $row_mean;
+	push @row_proba, $row_proba;
+	push @row_H, $row_H;
+	
+	if ($return_fields{row_stats}) {
+	    print $out join ("\t", 
+			     $row_names[$r-1], 
+			     $row_sum,
+			     $row_mean,
+			     $row_proba,
+			     $row_H
+			     ), "\n";
+	}
     }
-    my $row_mean = $row_sum / $ncol;
-    $row_proba = $row_proba / $ncol;
-    my $row_H = 0;
-    if (($row_proba > 0) && ($row_proba < 1)) {
-	$row_H = - $row_proba*log($row_proba) - (1-$row_proba)*log(1-$row_proba);
-	$row_H /= $log_base;
-    }
-
-    push @row_sum, $row_sum;
-    push @row_mean, $row_mean;
-    push @row_proba, $row_proba;
-    push @row_H, $row_H;
-    
-    if ($return_fields{row_stats}) {
-	print $out join ("\t", 
-			 $row_names[$r-1], 
-			 $row_sum,
-			 $row_mean,
-			 $row_proba,
-			 $row_H
-			), "\n";
-    }
+    ## Store proba and entropy values
+    $binary_profiles->set_array_attribute("row_sum", @row_sum);
+    $binary_profiles->set_array_attribute("row_mean", @row_mean);
+    $binary_profiles->set_array_attribute("row_proba", @row_proba);
+    $binary_profiles->set_array_attribute("row_H", @row_H);
 }
-
-## Store proba and entropy values
-$binary_profiles->set_array_attribute("row_sum", @row_sum);
-$binary_profiles->set_array_attribute("row_mean", @row_mean);
-$binary_profiles->set_array_attribute("row_proba", @row_proba);
-$binary_profiles->set_array_attribute("row_H", @row_H);
 
 ## ##############################################################
 ## Compare profiles (pairwise)
 &RSAT::message::TimeWarn("Calculating pairwise statistics") if ($main::verbose >= 1);
 
-## Profile IDs and names
-push @out_fields, (
-    "ID A",
-    "ID B",
-    "name A",
-    "name B");
-
-## Number of elements
-if ($return_fields{counts}) {
-    push @out_fields, (
-	"N{A}",
-	"N{B}",
-	"N{AB}",
-	"N{A!B}",
-	"N{!AB}",
-	"N{!A!B}");
-}
-
-## Dot product
-push @out_fields, ("dotprod") if ($return_fields{dotprod});
-
-## Entropy and information
-if ($return_fields{entropy}) {
-    push @out_fields, (
-	"H(A)",
-	"H(B)",
-	"H(A,B)",
-	"H(A|B)", 
-	"H(B|A)", 
-	"I(A,B)", 
-	"U(A|B)", 
-	"U(B|A)");
-}
-
-## Hypergeometric probabilities
-if ($return_fields{hyper}) {
-    push @out_fields, (
-	"Pval_L", 
-	"Eval_L", 
-	"sig_L", 
-	"Pval_R", 
-	"Eval_R", 
-	"sig_R", 
-	"Pval", 
-	"Eval", 
-	"sig", 
-    );
-}
 
 ## Print header for pairwise statistics
 if ($main::verbose >= 1) {
@@ -653,7 +651,11 @@ for my $r1 (1..$nrow) {
     if (defined($row_names{lc($ID_A)})) {
 	$name_A = $row_names{lc($ID_A)};
     };
-    local @binary_row1 = $binary_profiles->get_row($r1);
+
+    local @binary_row1 = ();
+    if ($calc_fields{binary_profiles}) {
+	@binary_row1 = $binary_profiles->get_row($r1);
+    }
     local @row1 = $profiles->get_row($r1);
 
     if ($distinct) {
@@ -676,11 +678,16 @@ for my $r1 (1..$nrow) {
 
 	## check thresholds on N{B}
 	next unless &check_thresholds("B", $B);
-
+	
+	local @binary_row2 = ();
+	if ($calc_fields{binary_profiles}) {
+	    @binary_row2 = $binary_profiles->get_row($r2);
+	}
+#	    @binary_row2 = $binary_profiles->get_row($r2);
+	local @row2 = $profiles->get_row($r2);
+	
 	## Count frequencies of all A, B combinations
 	if ($calc_fields{counts}) {
-	    @binary_row2 = $binary_profiles->get_row($r2);
-	    @row2 = $profiles->get_row($r2);
 	    %N = (AB=>0,
 		  AnotB=>0,
 		  notAB=>0,
@@ -816,6 +823,8 @@ for my $r1 (1..$nrow) {
 			 $name_A,
 			 $name_B);
 	
+	print $out "\t", $dotprod if ($return_fields{dotprod});
+	
 	if ($return_fields{counts}) {
 	    print $out "\t", join ("\t",  
 				   $A,
@@ -824,20 +833,6 @@ for my $r1 (1..$nrow) {
 				   $N{AnotB},
 				   $N{notAB},
 				   $N{notAnotB});
-	}
-
-	print $out "\t", $dotprod if ($return_fields{dotprod});
-	
-	if ($return_fields{entropy}) {
-	    print $out "\t", join ("\t",  
-				   sprintf($entropy_format, $H_A),
-				   sprintf($entropy_format, $H_B),
-				   sprintf($entropy_format, $H_join),
-				   sprintf($entropy_format, $H_AgivenB),
-				   sprintf($entropy_format, $H_BgivenA),
-				   sprintf($entropy_format, $I),
-				   sprintf($entropy_format, $U_AgivenB),
-				   sprintf($entropy_format, $U_BgivenA));
 	}
 
 	if ($return_fields{hyper}) {
@@ -852,6 +847,19 @@ for my $r1 (1..$nrow) {
 				   sprintf("%-.2g", $Eval),
 				   sprintf("%-.2g", $sig));
 	}
+
+	if ($return_fields{entropy}) {
+	    print $out "\t", join ("\t",  
+				   sprintf($entropy_format, $H_A),
+				   sprintf($entropy_format, $H_B),
+				   sprintf($entropy_format, $H_join),
+				   sprintf($entropy_format, $H_AgivenB),
+				   sprintf($entropy_format, $H_BgivenA),
+				   sprintf($entropy_format, $I),
+				   sprintf($entropy_format, $U_AgivenB),
+				   sprintf($entropy_format, $U_BgivenA));
+	}
+
 	print $out "\n";
     }
 }
