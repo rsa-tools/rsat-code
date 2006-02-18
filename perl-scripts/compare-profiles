@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: compare-profiles,v 1.7 2006/02/17 20:11:29 rsat Exp $
+# $Id: compare-profiles,v 1.8 2006/02/18 10:12:02 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -365,6 +365,7 @@ local $out = STDOUT;
 
 ## Output fields
 %supported_return_fields = (
+                            row_stats=>1,
                             counts=>1,
                             entropy=>1,
                             hyper=>1,
@@ -506,7 +507,7 @@ $out = &OpenOutputFile($outfile{output});
 
 ## ##############################################################
 ## Read the profile table
-&RSAT::message::TimeWarn(join ("\t", "Reading profiles from file", $infile{input}));
+&RSAT::message::TimeWarn(join ("\t", "Reading profiles from file", $infile{input})) if ($main::verbose >= 1);
 my $profiles = new RSAT::table();
 $profiles->readFromFile($infile{input}, "tab",header=>$header);
 
@@ -518,7 +519,7 @@ $profiles->readFromFile($infile{input}, "tab",header=>$header);
 $nrow = $profiles->nrow();
 $ncol = $profiles->ncol();
 $ncompa = $nrow*($nrow+1)/2;
-if ($main::verbose >= 0) {
+if ($main::verbose >= 1) {
     &RSAT::message::TimeWarn(join("\t", "", "Rows", $nrow));
     &RSAT::message::TimeWarn(join("\t", "", "Columns", $ncol));
     &RSAT::message::TimeWarn(join("\t", "", "Comparisons", $ncompa));
@@ -529,12 +530,12 @@ my @header = $profiles->get_attribute("header");
 ## ##############################################################
 ## Derive binary profiles (take value 1 if X >+ 0, 0 otherwise)
 my $binary_profiles;
+my $positive_count = 0;
+my $null_count = 0;
 if ($calc_fields{binary_profiles}) {
-    &RSAT::message::TimeWarn("Converting profiles to binary values");
+    &RSAT::message::TimeWarn("Converting profiles to binary values") if ($main::verbose >= 1);
     $binary_profiles = new RSAT::table();
     $binary_profiles->setAlphabet($profiles->getAlphabet());
-    my $positive_count = 0;
-    my $null_count = 0;
     foreach my $c (1..$ncol) {
 	for my $r (1..$nrow) {
 #	my $value = $ori_table[$c-1][$r-1];
@@ -550,8 +551,8 @@ if ($calc_fields{binary_profiles}) {
 	}
     }
     $binary_profiles->setTable($nrow, $ncol, @binary_table);
-    &RSAT::message::TimeWarn(join("\t", "", "Positive values", $positive_count));
-    &RSAT::message::TimeWarn(join("\t", "", "Null values", $null_count));
+    &RSAT::message::TimeWarn(join("\t", "", "Positive values", $positive_count)) if ($main::verbose >= 1);
+    &RSAT::message::TimeWarn(join("\t", "", "Null values", $null_count)) if ($main::verbose >= 1);
 }
 
 #print $out ($profiles->toString());
@@ -568,50 +569,62 @@ if ($calc_fields{binary_profiles}) {
 if ($return_fields{row_stats})  {
     print $out join ("\t", 
 		     "; ID",
+		     "count",
+		     "sum",
 		     "sum",
 		     "mean",
 		     "proba",
 		     "H"
 		    ), "\n";
 }
+my @row_count = ();
 my @row_sum = ();
 my @row_mean = ();
 my @row_proba = ();
 my @row_H = (); ## Entropy per row
-if ($calc_fields{binary_profiles}) {
+if ($calc_fields{counts}) {
     &RSAT::message::TimeWarn("Calculating row statistics") if ($main::verbose >= 1);
     for my $r (1..$nrow) {
-	local @binary_row = ();
-	if ($calc_fields{binary_profiles}) {
-	    @binary_row = $binary_profiles->get_row($r);
-	}
+	local @row = $profiles->get_row($r);
+	my $row_count = 0;
 	my $row_sum = 0;
-	my $row_proba = 0;
 	for my $c (1..$ncol) {
-	    $row_sum += $row[$c-1];
-	    $row_proba += 1 if ($row[$c-1]);
-#	die join "\t", "sum != proba", $r, $c, $row[$c-1], $row_sum, $row_proba, "\n", if ($row_proba != $row_sum);
+	    my $value = $row[$c-1];
+	    if ((&IsReal($value)) && ($value > 0))  {
+		$row_count++;
+		$row_sum += $value;
+	    }
 	}
 	my $row_mean = $row_sum / $ncol;
-	$row_proba = $row_proba / $ncol;
+	my $row_proba = $row_count / $ncol;
+
+	## Entropy of a profile
 	my $row_H = 0;
 	if (($row_proba > 0) && ($row_proba < 1)) {
 	    $row_H = - $row_proba*log($row_proba) - (1-$row_proba)*log(1-$row_proba);
 	    $row_H /= $log_base;
 	}
 	
+	push @row_count, $row_count;
 	push @row_sum, $row_sum;
 	push @row_mean, $row_mean;
 	push @row_proba, $row_proba;
 	push @row_H, $row_H;
 	
+#	&RSAT::message::Debug("count=".$row_count,
+#			      "sum=".$row_sum,
+#			      "mean=".sprintf("%.2g",$row_mean),
+#			      "proba=".sprintf("%.2g",$row_proba),
+#			     ) if ($main::verbose >= 5);
+
 	if ($return_fields{row_stats}) {
-	    print $out join ("\t", 
-			     $row_names[$r-1], 
-			     $row_sum,
-			     $row_mean,
-			     $row_proba,
-			     $row_H
+	    print $out  join ("\t", 
+			      $row_names[$r-1], 
+			      $row_count,
+			      $row_sum,
+			      $row_mean,
+			      $row_proba,
+			      $row_H
 			     ), "\n";
 	}
     }
@@ -643,7 +656,7 @@ for my $r1 (1..$nrow) {
 
     ## Identifier for the first row
     local $ID_A = $row_names[$r1-1];
-    local $A = $row_sum[$r1-1];
+    local $A = $row_count[$r1-1];
     ## check thresholds on N{A}
     next unless &check_thresholds("A", $A);
 
@@ -674,7 +687,7 @@ for my $r1 (1..$nrow) {
 	};
 
 	## sum per row
-	local $B = $row_sum[$r2-1];
+	local $B = $row_count[$r2-1];
 
 	## check thresholds on N{B}
 	next unless &check_thresholds("B", $B);
@@ -823,7 +836,7 @@ for my $r1 (1..$nrow) {
 			 $name_A,
 			 $name_B);
 	
-	print $out "\t", $dotprod if ($return_fields{dotprod});
+	printf $out "\t%7.2f", $dotprod if ($return_fields{dotprod});
 	
 	if ($return_fields{counts}) {
 	    print $out "\t", join ("\t",  
@@ -1052,7 +1065,7 @@ allows to use the command within a pipe.
 
 List of fields to return. 
 
-Supported fields: counts, entropy, hyper
+Supported fields: counts, entropy, hyper, dotprod, row_stats
 
 =cut
         } elsif ($ARGV[$a] eq "-return") {
@@ -1243,13 +1256,13 @@ sub Verbose {
 	    print $out ";\t$key\t$lower\t$upper\n";
 	}
     }
-    print $out ";  Table dimensionts";
+    print $out ";  Table dimensions\n";
     printf $out ";\t%-13s\t%d\n", "Rows", $nrow;
     printf $out "; \t%-13s\t%d\n", "Columns", $ncol;
     if ($calc_fields{binary_profiles}) {
-	print $out ";  Binary profiles";
-	printf $out ";\t%-13s\t%d\n", "\tPositive values", $positive_count;
-	printf $out "; \t%-13s\t%d\n", "\tNull values", $null_count;
+	print $out ";  Binary profiles\n";
+	printf $out ";\t%-13s\t%d\n", "Positive values", $positive_count;
+	printf $out "; \t%-13s\t%d\n", "Null values", $null_count;
     }
     printf $out ";  %-13s\t%d\n", "Comparisons", $ncompa, "\n";
     printf $out ";  %-13s\t%g\n", "Logarithm base",$base;
