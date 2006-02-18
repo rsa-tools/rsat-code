@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: compare-profiles,v 1.8 2006/02/18 10:12:02 jvanheld Exp $
+# $Id: compare-profiles,v 1.9 2006/02/18 19:01:59 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -10,8 +10,6 @@
 
 ## TO DO
 ## - Add columns for join probability P{A|B} and P{B|A}
-## - add a return option
-## - in verbosity: size of the table
 ## In verbosity : average probability over columns and rows
 ## - add the possibility to put a threshold on either 
 
@@ -155,13 +153,23 @@ Number of true columns (1) in both A and B.
 
 Number of true columns (1) for A but not B.
 
-=item B<N{!AB}>
+=item B<N{B!A}>
 
 Number of true columns (1) for B but not A.
 
 =item B<N{!A!B}>
 
 Number of false columns (0) for both B and A.
+
+=item B<Jaccard similarity and dissimilarity>
+
+Jaccard distance and similarity. These metrics are interesting when
+the number of double negatives (!A!B) is considered as
+irrelevant. This is often the case for sparse profiles.
+
+Jac_sim = N{AB}/(N{AB}+N{A!B}+N{B!A})
+
+Jac_dis = 1 - Jac_sim
 
 =item B<dotprod>
 
@@ -196,7 +204,7 @@ Probability of true columns (1) for A but not B.
 
 Probability of true columns (1) for A but not B.
 
-=item B<P{!AB}>
+=item B<P{B!A}>
 
 Probability of true columns (1) for B but not A.
 
@@ -222,7 +230,7 @@ Join entropy for rows A and B.
 
     H(A,B) = - P(AB)*log[P(AB)]
              - P(A!B)*log[P(A!B)]
-             - P(!AB)*log[P(!AB)]
+             - P(B!A)*log[P(B!A)]
              - P(!A!B)*log[P(!A!B)]
 
 =end text
@@ -348,7 +356,7 @@ $ncol = "NA";
 ## Threshold parameters
 %lth = (); # lower threshold values
 %uth = (); # upper threshold values
-@supported_thresholds = qw( A B AB Pval_R Pval_L Pval Eval_R Eval_L Eval sig_R sig_L sig );
+@supported_thresholds = qw( A B AB Pval_R Pval_L Pval Eval_R Eval_L Eval sig_R sig_L sig dotprod jac_sim jac_dis);
 $supported_thresholds = join ",", @supported_thresholds;
 %supported_threshold = ();
 foreach my $thr (@supported_thresholds) {
@@ -370,6 +378,7 @@ local $out = STDOUT;
                             entropy=>1,
                             hyper=>1,
                             dotprod=>1,
+                            jaccard=>1,
                             );
 $supported_return_fields = join (",", sort(keys( %supported_return_fields)));
 
@@ -384,7 +393,7 @@ $field_description{"N{A}"} = "Number of elements in profile A";
 $field_description{"N{B}"} = "Number of elements in profile B";
 $field_description{"N{AB}"} = "Number of elements in common between profiles A and B";
 $field_description{"N{A!B}"} = "Number of elements in A but not B";
-$field_description{"N{!AB}"} = "Number of elements in B but not A";
+$field_description{"N{B!A}"} = "Number of elements in B but not A";
 $field_description{"N{!A!B}"} = "Number of elements neigher found in A nor in B";
 $field_description{"H(A)"} = "Entropy of profile A";
 $field_description{"H(B)"} = "Entropy of profile B";
@@ -406,6 +415,8 @@ $field_description{"Pval"} = "Hypergeometric probability, smallest value";
 $field_description{"Eval"} = "Hypergeometric E-value, smallest value";
 $field_description{"sig"} = "Hypergeometric significance, greatest value";
 $field_description{"dotprod"} = "Dot product between profiles A and B";
+$field_description{"jac_sim"} = "Jaccard similarity";
+$field_description{"jac_dis"} = "Jaccard dissimilarity";
 
 @out_fields = ();
 
@@ -434,8 +445,14 @@ if ($return_fields{counts}) {
 	"N{B}",
 	"N{AB}",
 	"N{A!B}",
-	"N{!AB}",
+	"N{B!A}",
 	"N{!A!B}");
+}
+
+
+if ($return_fields{jaccard}) {
+    push @out_fields, ("jac_sim");
+    push @out_fields, ("jac_dis");
 }
 
 if ($return_fields{hyper}) {
@@ -471,9 +488,19 @@ if ($return_fields{entropy}) {
 foreach my $field (keys %return_fields) {
     $calc_fields{$field} = 1;
 }
-if ($calc_fields{hyper}) {
+
+foreach my $field qw (A B AB jac_sim jac_dis) {
+    if ((defined($lth{$field})) ||
+	(defined($uth{$field}))) {
+	$calc_fields{counts} = 1;
+    }
+}
+
+if (($calc_fields{hyper}) || 
+    ($calc_fields{jaccard})) {
     $calc_fields{counts} = 1;
 }
+
 if ($calc_fields{counts}) {
     $calc_fields{binary_profiles} = 1;
 }
@@ -703,7 +730,7 @@ for my $r1 (1..$nrow) {
 	if ($calc_fields{counts}) {
 	    %N = (AB=>0,
 		  AnotB=>0,
-		  notAB=>0,
+		  BnotA=>0,
 		  notAnotB=>0
 		  );
 	    for my $c (0..($ncol-1)) {
@@ -714,7 +741,7 @@ for my $r1 (1..$nrow) {
 			$N{AnotB}++;
 		    }
 		} elsif ($binary_row2[$c]) {
-		    $N{notAB}++;
+		    $N{BnotA}++;
 		} else {
 		    $N{notAnotB}++;
 		}
@@ -722,6 +749,24 @@ for my $r1 (1..$nrow) {
 	    
 	    ## check thresholds on N{AB}
 	    next unless &check_thresholds("AB", $N{AB});
+	    
+	}
+
+	## Calculate Jaccard's distance and similarity
+	if ($calc_fields{jaccard}) {
+	    $jac_sum = $N{AB}+$N{AnotB}+$N{BnotA};
+	    if ($jac_sum > 0) {
+		$jac_sim = $N{AB}/($jac_sum);
+		$jac_dis = 1-$jac_sim;
+	    } else {
+		$jac_sim = "NA";
+		$jac_dis = "NA";
+	    }
+	    ## Check threshold on Jaccard
+	    next unless &check_thresholds("jac_sim", $jac_sim);
+	    next unless &check_thresholds("jac_dis", $jac_dis);
+	    
+#	    &RSAT::message::Debug("Jaccard", "sum", $jac_sum, "sim", $jac_sim, "dis", $jac_dis) if ($main::verbose >= 0);
 	}
 
 	## Dot products
@@ -730,6 +775,9 @@ for my $r1 (1..$nrow) {
 	    for my $c (0..($ncol-1)) {
 		$dotprod += $row1[$c]*$row2[$c];
 	    }
+
+	    ## Check threshold on dot product
+	    next unless &check_thresholds("dotprod", $dotprod);
 	}
 	
 	## Hypergeometric P-value for P(X>=N{AB})
@@ -836,7 +884,7 @@ for my $r1 (1..$nrow) {
 			 $name_A,
 			 $name_B);
 	
-	printf $out "\t%7.2f", $dotprod if ($return_fields{dotprod});
+	printf $out "\t%-7.2f", $dotprod if ($return_fields{dotprod});
 	
 	if ($return_fields{counts}) {
 	    print $out "\t", join ("\t",  
@@ -844,8 +892,15 @@ for my $r1 (1..$nrow) {
 				   $B,
 				   $N{AB},
 				   $N{AnotB},
-				   $N{notAB},
+				   $N{BnotA},
 				   $N{notAnotB});
+	}
+
+	if ($return_fields{jaccard}) {
+	    print $out "\t", join ("\t",  
+				   sprintf("%-.5f", $jac_sim),
+				   sprintf("%-.5f", $jac_dis),
+				  );
 	}
 
 	if ($return_fields{hyper}) {
@@ -1065,7 +1120,7 @@ allows to use the command within a pipe.
 
 List of fields to return. 
 
-Supported fields: counts, entropy, hyper, dotprod, row_stats
+Supported fields: dotprod, counts, jaccard, hyper, entropy, row_stats
 
 =cut
         } elsif ($ARGV[$a] eq "-return") {
@@ -1167,11 +1222,29 @@ Supported paramaters:
 
 =over 8
 
+=item B<A> Number of elements in the first profile
+
+=item B<B> Number of elements in the second profile
+
 =item B<AB> number of common elements between two profiles
+
+=item B<Pval_L> P-value (left tail of the hypergeometric distribution)
 
 =item B<Pval_R> P-value (right tail of the hypergeometric distribution)
 
-=item B<Pval_R> P-value (left tail of the hypergeometric distribution)
+=item B<Pval> P-value (smallest value between Pval_R and Pval_L)
+
+=item B<sig_L> significance of the left tail of the hypergeometric distribution
+
+=item B<sig_R> significanceof the right tail of the hypergeometric distribution
+
+=item B<sig> E-value (smallest value between sig_R and sig_L)
+
+=item B<dotprod> Dot product
+
+=item B<jac_sim> Jaccard similarity
+
+=item B<jac_dis> Jaccard distance
 
 =back
 
