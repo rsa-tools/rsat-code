@@ -158,14 +158,16 @@ index_one_result:
 ## Compare dyads discovered in the different genes
 COMPA_DIR=${RESULT_DIR}/comparisons
 COMPA_TABLE=${COMPA_DIR}/${REF_ORG}_${TAXON}_dyad_profiles.tab
+COMPA_CLASSES=${COMPA_DIR}/${REF_ORG}_${TAXON}_dyad_classes.tab
 DYAD_FILE_LIST=${RESULT_DIR}/dyad_files.txt
 dyad_file_list:
 	(cd ${RESULT_DIR}; find . -name '*_${REF_ORG}_${TAXON}_dyads.tab'  > ${DYAD_FILE_LIST})
 	@echo ${DYAD_FILE_LIST}
 	@echo "Number of dyad files	`wc -l ${DYAD_FILE_LIST}`"
 
-compare_dyads: dyad_file_list
-	@mkdir -p ${COMPA_DIR}
+dyad_profiles: dyad_file_list
+	@echo "Calculating dyad profiles"
+	@mkdir -p ${COMPA_DIR}	
 	(cd ${RESULT_DIR}; compare-scores -null "NA" -sc 8 \
 		-suppress "\./" \
 		-suppress "_dyads.tab" \
@@ -177,20 +179,46 @@ compare_dyads: dyad_file_list
 	@echo ${COMPA_TABLE}
 	@echo "`grep -v '^;' ${COMPA_TABLE} | grep -v '^#' | wc -l`	profiles"
 
+dyad_classes: dyad_file_list
+	@echo "Calculating dyad classes"
+	(cd ${RESULT_DIR}; compare-scores -null "NA" -sc 8 \
+		-format classes \
+		-suppress "\./" \
+		-suppress "_dyads.tab" \
+		-suppress "_${REF_ORG}_${TAXON}" \
+		-filelist ${DYAD_FILE_LIST}  \
+		| perl -pe 's/\/\S+//' \
+		| sort +1 \
+		> ${COMPA_CLASSES})
+	@echo ${COMPA_CLASSES}
+	@echo "`grep -v '^;' ${COMPA_CLASSES} | cut -f 2 | sort -u | wc -l`	genes"
+	@echo "`grep -v '^;' ${COMPA_CLASSES} | cut -f 1 | sort -u | wc -l`	dyads"
+
 ################################################################
 ## Compare profiles of dyad significance between each pair of genes
+PROFILE_PAIRS=${COMPA_DIR}/${REF_ORG}_${TAXON}_profile_pairs
 GENE_PAIRS=${COMPA_DIR}/${REF_ORG}_${TAXON}_gene_pairs
 #GENE_PAIRS=boum
 gene_pairs:
-	compare-profiles -v ${V} -i ${COMPA_TABLE} -base 2 -distinct -return dotprod -lth AB 1 \
+	@echo "Calculating gene pairs"
+	compare-classes -v ${V} -i ${COMPA_CLASSES} \
+		-return occ,proba -lth occ 1 -distinct -triangle \
 		-o ${GENE_PAIRS}.tab
 	@echo ${GENE_PAIRS}.tab
 	@echo "`grep -v ';' ${GENE_PAIRS}.tab | grep -v '^#' |  wc -l`	gene pairs"
+
+profile_pairs:
+	@echo "Calculating profile pairs"
+	compare-profiles -v ${V} -i ${COMPA_TABLE} -base 2 -distinct -return dotprod -lth AB 1 \
+		-o ${PROFILE_PAIRS}.tab
+	@echo ${PROFILE_PAIRS}.tab
+	@echo "`grep -v ';' ${PROFiLE_PAIRS}.tab | grep -v '^#' |  wc -l`	profile pairs"
 
 MIN_DP=1
 PAIR_GRAPH=${GENE_PAIRS}_dp${MIN_DP}
 SCORE_COL=5
 gene_pair_graphs:
+	@echo "Generating gene pair graphs"
 	awk -F '\t' '$$${SCORE_COL} >= ${MIN_DP}' ${GENE_PAIRS}.tab \
 		| grep -v '^;' \
 		| convert-graph -from tab -scol 1 -tcol 3 -wcol ${SCORE_COL} -to gml \
@@ -202,8 +230,8 @@ gene_pair_graphs:
 	@echo ${PAIR_GRAPH}.gml
 
 comparisons:
-	@${MAKE} compare_dyads
-	@${MAKE} gene_pairs V=2
+	@${MAKE} dyad_classes
+	@${MAKE} gene_pairs
 	@${MAKE} gene_pair_graphs MIN_DP=0
 	@${MAKE} gene_pair_graphs MIN_DP=1
 	@${MAKE} gene_pair_graphs MIN_DP=2
