@@ -7,7 +7,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.16 2006/02/19 22:16:11 rsat Exp $
+# $Id: compare-classes,v 1.17 2006/02/19 22:46:31 rsat Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -65,21 +65,39 @@ $supported_return_fields = join (",", sort(keys( %supported_return_fields)));
 
 
 %supported_matrix_keys = (
-			    ref_percent=>1,
-			    query_percent=>1,
-			    occ=>1,
+			    R_perc=>1,
+			    Q_perc=>1,
+			    RandQ=>1,
 			    P_val=>1,
 			    E_val=>1,
 			    sig=>1,
                             );
 $supported_matrix_keys = join (",", sort(keys( %supported_matrix_keys)));
 
+%supported_threshold_field = (
+			      rank=>1,
+			      jac_sim=>1,
+			      RandQ=>1,
+			      R=>1,
+			      Q=>1,
+			      RorQ=>1,
+			      P_val=>1,
+			      E_val=>1,
+			      sig=>1,
+			      R_perc=>1,
+			      Q_perc=>1,
+			      );
+$supported_threshold_fields = join (",", sort(keys( %supported_threshold_field)));
+
 
 %supported_sort_keys = (
                         name=>1,
-			ref_percent=>1,
-			query_percent=>1,
-                        occ=>1,
+			R=>1,
+			Q=>1,
+			R_perc=>1,
+			Q_perc=>1,
+                        RandQ=>1,
+                        RorQ=>1,
                         P_val=>1,
                         E_val=>1,
                         jac_sim=>1,
@@ -341,8 +359,7 @@ OPTIONS
 
     -uth field #
         upper threshold value for a given field
-        Supported_fields:
-                occ, P_val, E_val, sig, ref_percent, query_percent
+        Supported_fields: $supported_threshold_fields
 
     -lth field #
         lower threshold value for a given field
@@ -685,7 +702,7 @@ sub ReadArguments {
         } elsif ($ARGV[$a] eq "-sort") {
             $sort_key = $ARGV[$a+1];
             unless ($supported_sort_keys{$sort_key}) {
-                &RSAT::error::FatalError ("Invalid sort key $sort_key. Supported: $supported_sort_keys" );
+                &RSAT::error::FatalError (join("\t", $sort_key, "Invalid sort key. Supported:", $supported_sort_keys));
             }
 
             ### export a distance matrix
@@ -725,10 +742,14 @@ sub ReadArguments {
             #### threshold values
         } elsif ($ARGV[$a] eq "-lth") {
             my $field = $ARGV[$a+1];
+	    &RSAT::error::FatalError(join("\t", $field, "Invalid threshold field. Supported:", $supported_threshold_fields))
+		unless ($supported_threshold_field{$field});
             my $value = $ARGV[$a+2];
             $lth{$field} = $value;
         } elsif ($ARGV[$a] eq "-uth") {
             my $field = $ARGV[$a+1];
+	    &RSAT::error::FatalError(join("\t", $field, "Invalid threshold field. Supported:", $supported_threshold_fields))
+		unless ($supported_threshold_field{$field});
             my $value = $ARGV[$a+2];
             $uth{$field} = $value;
 
@@ -855,7 +876,8 @@ sub CompareClasses {
 	my $R = scalar(@ref_members);
 
 	#### check if the number of ref members is above the threshold    
-	next if ((defined($lth{occ})) && ($#ref_members + 1 < $lth{occ}));
+	next if ((defined($lth{R})) && ($R < $lth{R}));
+	next if ((defined($lth{RandQ})) && ($R < $lth{RandQ}));
 	
 	#### index members of the reference class
 	foreach $m (@ref_members) {
@@ -882,8 +904,10 @@ sub CompareClasses {
 	    my @query_members = $query_classes{$q}->get_members();
 	    my $Q = scalar(@query_members);
 
+
 	    #### check if the number of ref members is above the threshold    
-	    next if ((defined($lth{occ})) && ($#query_members +1 < $lth{occ}));
+	    next if ((defined($lth{Q})) && ($Q < $lth{Q}));
+	    next if ((defined($lth{RandQ})) && ($Q < $lth{RandQ}));
 
 	    #### compare query and reference classes
 	    foreach my $m (@query_members) {
@@ -904,10 +928,14 @@ sub CompareClasses {
 		}
 	    }
 
-	    ## RQ: intersection between group R and group Q
-	    my $RQ = scalar(keys %{$matching_elements->{$compa_key}});
-	    $compa{$compa_key}->{RQ} = $RQ;
+	    ## RandQ: intersection between group R and group Q
+	    my $RandQ = scalar(keys %{$matching_elements->{$compa_key}});
+	    $compa{$compa_key}->{R} = $R;
+	    $compa{$compa_key}->{Q} = $Q;
+	    $compa{$compa_key}->{RandQ} = $RandQ;
 
+	    my $RorQ = $Q + $R - $RandQ;
+	    $compa{$compa_key}->{RorQ} = $RorQ;
 
 	    ### clear memory if members are not required
 	    unless ($return_fields{members}) {
@@ -918,8 +946,8 @@ sub CompareClasses {
 	    }
 
 	    #### check thresholds for number of common members
-	    if ((defined($lth{occ})) &&
-		($RQ< $lth{occ})) {
+	    if ((defined($lth{RandQ})) &&
+		($RandQ< $lth{RandQ})) {
 		delete $compa{$compa_key};
 		undef @{$common{$compa_key}};
 		undef @{$ref_only{$compa_key}};
@@ -927,7 +955,7 @@ sub CompareClasses {
 		next;
 	    } 
 	    if ((defined($uth{occ})) &&
-		($RQ > $uth{occ})) {
+		($RandQ > $uth{occ})) {
 		delete $compa{$compa_key};
 		undef @{$common{$compa_key}};
 		undef @{$ref_only{$compa_key}};
@@ -937,13 +965,12 @@ sub CompareClasses {
 	    
 	    ## Calculate Jaccard's similarity
 	    if ($return_fields{jac_sim}) {
-		my $RorQ = $Q + $R - $RQ;
 		if ($RorQ > 0) {
-		    $compa{$compa_key}->{jac_sim} = $RQ/$RorQ;
+		    $compa{$compa_key}->{jac_sim} = $RandQ/$RorQ;
 		} else {
 		    $compa{$compa_key}->{jac_sim} = "NA";
 		}
-		&RSAT::message::Debug($Q, $R,  $RQ, $compa{$compa_key}->{jac_sim}) if ($main::verbose >= 0);
+		&RSAT::message::Debug($Q, $R,  $RandQ, $compa{$compa_key}->{jac_sim}) if ($main::verbose >= 0);
 		if ((defined($lth{jac_sim})) &&
 		    ($compa{$compa_key}->{jac_sim}< $lth{jac_sim})) {
 		    delete $compa{$compa_key};
@@ -968,20 +995,20 @@ sub CompareClasses {
 		warn "; calculating percentages for ", $compa_key, "\n" if ($verbose >= 5);
 		my $n_q = $query_classes{$q}->get_size(); ### number of elements in query class
 		my $n_r = $ref_classes{$r}->get_size(); ### number of elements in the reference class
-#		my $c = $RQ; ### number of common elements
-		$compa{$compa_key}->{ref_percent} = 100*$RQ/$n_r;
-		$compa{$compa_key}->{query_percent} = 100*$RQ/$n_q;
+#		my $c = $RandQ; ### number of common elements
+		$compa{$compa_key}->{R_perc} = 100*$RandQ/$n_r;
+		$compa{$compa_key}->{Q_perc} = 100*$RandQ/$n_q;
 
 		#### check thresholds for query percent
-		if ((defined($lth{"query_percent"})) &&
-		    ($compa{$compa_key}->{"query_percent"}< $lth{"query_percent"})) {
+		if ((defined($lth{"Q_perc"})) &&
+		    ($compa{$compa_key}->{"Q_perc"}< $lth{"Q_perc"})) {
 		    delete $compa{$compa_key};
 		    undef @{$common{$compa_key}};
 		    undef @{$ref_only{$compa_key}};
 		    undef @{$query_only{$compa_key}};
 		    next;
-		} elsif ((defined($uth{"query_percent"})) &&
-			 ($compa{$compa_key}->{"query_percent"} > $uth{"query_percent"})) {
+		} elsif ((defined($uth{"Q_perc"})) &&
+			 ($compa{$compa_key}->{"Q_perc"} > $uth{"Q_perc"})) {
 		    delete $compa{$compa_key};
 		    undef @{$common{$compa_key}};
 		    undef @{$ref_only{$compa_key}};
@@ -990,15 +1017,15 @@ sub CompareClasses {
 		}
 
 		#### check thresholds for reference percent
-		if ((defined($lth{"ref_percent"})) &&
-		    ($compa{$compa_key}->{"ref_percent"}< $lth{"ref_percent"})) {
+		if ((defined($lth{"R_perc"})) &&
+		    ($compa{$compa_key}->{"R_perc"}< $lth{"R_perc"})) {
 		    delete $compa{$compa_key};
 		    undef @{$common{$compa_key}};
 		    undef @{$ref_only{$compa_key}};
 		    undef @{$query_only{$compa_key}};
 		    next;
-		} elsif ((defined($uth{"ref_percent"})) &&
-			 ($compa{$compa_key}->{"ref_percent"} > $uth{"ref_percent"})) {
+		} elsif ((defined($uth{"R_perc"})) &&
+			 ($compa{$compa_key}->{"R_perc"} > $uth{"R_perc"})) {
 		    delete $compa{$compa_key};
 		    undef @{$common{$compa_key}};
 		    undef @{$ref_only{$compa_key}};
@@ -1024,7 +1051,7 @@ sub CompareClasses {
 		warn "; calculating proba for ", $compa_key, "\n" if ($verbose >= 5);
 		my $n_q = $query_classes{$q}->get_size(); ### number of elements in query class
 		my $n_r = $ref_classes{$r}->get_size(); ### number of elements in the reference class
-		my $c = $compa{$compa_key}->{RQ}; ### number of common elements
+#		my $c = $compa{$compa_key}->{RandQ}; ### number of common elements
 		
 		#### check number of elements in the reference class
 		if ($n_r > $n) {
@@ -1037,11 +1064,11 @@ sub CompareClasses {
 		}
 		
 		#### check number of common elements
-		if ($c > $n_q) {
-		    &RSAT::error::FatalError("Number of common elements ($c) cannot be higher than query size ($n_q)");
+		if ($RandQ > $n_q) {
+		    &RSAT::error::FatalError("Number of common elements ($RandQ) cannot be higher than query size ($n_q)");
 		}
-		if ($c > $n_r) {
-		    &RSAT::error::FatalError("Number of common elements ($c) cannot be higher than reference size ($n_r)");
+		if ($RandQ > $n_r) {
+		    &RSAT::error::FatalError("Number of common elements ($RandQ) cannot be higher than reference size ($n_r)");
 		}
 		
 		my $p; ## Proba for a member to be found in common in the two classes
@@ -1054,22 +1081,22 @@ sub CompareClasses {
 			#### query and reference classes, for each element of
 			#### the population
 			$p = $n_r/$n * $n_q/$n;
-			$compa{$compa_key}->{P_val} = &sum_of_binomials($p,$n,$c,$n);
+			$compa{$compa_key}->{P_val} = &sum_of_binomials($p,$n,$RandQ,$n);
 		    } else {
 			#### test the probability to belong to the
 			#### reference class, for each element of the
 			#### query class
 			$p = $n_r/$n;
-			$compa{$compa_key}->{P_val} = &sum_of_binomials($p,$n_q,$c,$n_q);
+			$compa{$compa_key}->{P_val} = &sum_of_binomials($p,$n_q,$RandQ,$n_q);
 		    }
 		    
 		} else{
 		    #### use hypergeometric distribution
 		    $p = $n_r/$n * $n_q/$n;
-		    $compa{$compa_key}->{P_val} = &sum_of_hypergeometrics($n_r, $n, $n_q, $c, &min($n_r, $n_q));
+		    $compa{$compa_key}->{P_val} = &sum_of_hypergeometrics($n_r, $n, $n_q, $RandQ, &min($n_r, $n_q));
 		    
 		}
-		$compa{$compa_key}->{exp_com} = $p*$n;
+		$compa{$compa_key}->{exp_RandQ} = $p*$n;
 		
 		if ($multi_cor eq "nc") {
 		    $correction = $nb_ref_classes * $nb_query_classes;
@@ -1177,11 +1204,12 @@ sub PrintResult {
 	if ($return_fields{occ}) {
 	    push @header_fields, "R";
 	    push @header_fields, "Q";
-	    push @header_fields, "RQ";
+	    push @header_fields, "RandQ";
+	    push @header_fields, "RorQ";
 	}
 	if ($return_fields{percent}) {
-	    push @header_fields, "R%" ;
-	    push @header_fields, "Q%" ;
+	    push @header_fields, "R_perc" ;
+	    push @header_fields, "Q_perc" ;
 	}
 	if ($return_fields{jac_sim}) {
 	    push @header_fields, "jac_sim" ;
@@ -1209,9 +1237,10 @@ sub PrintResult {
 	$field_description{query}  = "Name of the query class";
 	$field_description{R} = "Number of elements in the reference class";
 	$field_description{Q}  = "Number of elements in the query class";
-	$field_description{RQ}  = "Number of elements found in the intersecion between reference and query classes";
-	$field_description{"R%"} = "Percentage of elements of the reference class in the intersection";
-	$field_description{"Q%"}  = "Number of elements in the query class";
+	$field_description{RandQ}  = "Number of elements found in the intersecion between reference and query classes (R and Q)";
+	$field_description{RorQ}  = "Number of elements found in the union between reference and query classes (R or Q)";
+	$field_description{R_perc} = "Percentage of elements of the reference class in the intersection";
+	$field_description{Q_perc}  = "Number of elements in the query class";
 	$field_description{jac_sim}  = "Jaccard' similarity";
 	$field_description{exp_RQ}  = "Expected number of elements in the intersection";
 	$field_description{P_val}  = "P-value of the intersection";
@@ -1276,15 +1305,18 @@ sub PrintResult {
 
 	    #### occurrence counts
 	    if ($return_fields{occ}) {
-		printf $out "\t%d", $ref_classes{$r}->get_size();
-		printf $out "\t%d", $query_classes{$q}->get_size();
-		printf $out "\t%d",  $compa{$compa_key}->{RQ};
+#		printf $out "\t%d", $ref_classes{$r}->get_size();
+#		printf $out "\t%d", $query_classes{$q}->get_size();
+		printf $out "\t%d",  $compa{$compa_key}->{R};
+		printf $out "\t%d",  $compa{$compa_key}->{Q};
+		printf $out "\t%d",  $compa{$compa_key}->{RandQ};
+		printf $out "\t%d",  $compa{$compa_key}->{RorQ};
 	    }
 
 	    #### percentages
 	    if ($return_fields{percent}) {
-		printf $out "\t%7.2f", $compa{$compa_key}->{ref_percent};
-		printf $out "\t%7.2f", $compa{$compa_key}->{query_percent};
+		printf $out "\t%7.2f", $compa{$compa_key}->{R_perc};
+		printf $out "\t%7.2f", $compa{$compa_key}->{Q_perc};
 	    }
 	    
 	    #### Jaccard's similarituy
@@ -1295,7 +1327,7 @@ sub PrintResult {
 
 	    #### probabilities
 	    if ($return_fields{proba}) {
-		printf $out "\t%7.2f", $compa{$compa_key}->{exp_com};
+		printf $out "\t%7.2f", $compa{$compa_key}->{exp_RandQ};
 
 		if ($compa{$compa_key}->{P_val} >= 0.0001) {
 		    printf $out "\t%.5f", $compa{$compa_key}->{P_val};
@@ -1426,7 +1458,7 @@ sub CreateGraph {
 	}
 
 	my $arc_label = ();
-	$arc_label .= $compa{$compa_key}->{RQ};
+	$arc_label .= $compa{$compa_key}->{RandQ};
 	if ($return_fields{proba}) {
 	    $arc_label .= " (";
 	    $arc_label .= sprintf("%.1f", $compa{$compa_key}->{sig});
