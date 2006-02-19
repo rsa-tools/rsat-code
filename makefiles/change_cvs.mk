@@ -16,7 +16,7 @@ NEW_SERVER=www.scmbb.ulb.ac.be
 NEW_CONNECT=${NEW_LOGIN}\@${NEW_SERVER}:${NEW_ROOT}
 
 change_roots:
-	find . -name Root -exec echo Modifying {} \;  -exec perl -pe 's|${OLD_CONNECT}|${NEW_CONNECT}|' -i {} \;
+	find . -name Root -exec echo Modifying {} \;  -exec perl -pe "s|${OLD_CONNECT}|${NEW_CONNECT}|" -i {} \;
 
 change_repositories:
-	find . -name Repository -exec echo Modifying {} \;  -exec perl -pe 's|${OLD_ROOT}|${NEW_ROOT}|' -i {} \;
+	find . -name Repository -exec echo Modifying {} \;  -exec perl -pe "s|${OLD_ROOT}|${NEW_ROOT}|" -i {} \;
