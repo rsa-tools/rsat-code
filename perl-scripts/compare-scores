@@ -28,7 +28,7 @@ if ($filelist) {
 
 &RSAT::message::Info(join ("\n\t", "Input files", @input_files)) if ($main::verbose >= 2);
 
-### read input file ###
+### read input file
 $last_col;
 foreach $f (0..$#input_files) {
     #### select the input file
@@ -65,11 +65,11 @@ foreach $f (0..$#input_files) {
 
 	if (defined($sc[$f])) {
 	    $col = $last_col + 1;
-	    $score{$key}[$col] = $fields[$sc[$f]-1];
+	    $score{$key}{$col} = $fields[$sc[$f]-1];
 	} else {
 	    for $c (1..$#fields) {
 		$col = $last_col + $c;
-		$score{$key}[$col] = $fields[$c];
+		$score{$key}{$col} = $fields[$c];
 	    }
 	}
 
@@ -139,7 +139,7 @@ if ($numeric_IDs) {
 foreach $key (@sorted_keys) {
     print $out $id{$key};
     for $f (1..$last_col) {
-	$score = $score{$key}[$f];
+	$score = $score{$key}{$f};
 	if ($score eq "") {
 	    print $out "\t$null";
 	} else {
