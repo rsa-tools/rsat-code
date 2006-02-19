@@ -7,7 +7,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.14 2006/01/23 13:24:41 jvanheld Exp $
+# $Id: compare-classes,v 1.15 2006/02/19 16:27:45 rsat Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -1033,7 +1033,7 @@ sub CompareClasses {
 		    $compa{$compa_key}->{P_val} = &sum_of_hypergeometrics($n_r, $n, $n_q, $c, &min($n_r, $n_q));
 		    
 		}
-		$compa{$compa_key}->{exp_common} = $p*$n;
+		$compa{$compa_key}->{exp_com} = $p*$n;
 		
 		if ($multi_cor eq "nc") {
 		    $correction = $nb_ref_classes * $nb_query_classes;
@@ -1142,7 +1142,7 @@ sub PrintResult {
 	    push @header_fields, "query_%" ;
 	}
 	if ($return_fields{proba}) {
-	    push @header_fields, "exp_common" ;
+	    push @header_fields, "exp_com" ;
 	    push @header_fields, "P_val" ;
 	    push @header_fields, "E_val";
 	    push @header_fields, "sig";
@@ -1214,7 +1214,7 @@ sub PrintResult {
 
 	    #### probabilities
 	    if ($return_fields{proba}) {
-		printf $out "\t%7.2f", $compa{$compa_key}->{exp_common};
+		printf $out "\t%7.2f", $compa{$compa_key}->{exp_com};
 
 		if ($compa{$compa_key}->{P_val} >= 0.0001) {
 		    printf $out "\t%.5f", $compa{$compa_key}->{P_val};
