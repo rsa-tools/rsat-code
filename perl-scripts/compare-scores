@@ -118,8 +118,10 @@ if ($numeric_IDs) {
 
 ## Calculate header names
 my @column_names = ();
+my $col_nb = 0;
 foreach $f (0..$#input_files) {
     foreach $c (1..$max_fields{$f}) {
+	$col_nb++;
 	my $column_name = $input_files[$f];
 	
 	## Basename
@@ -137,7 +139,7 @@ foreach $f (0..$#input_files) {
 	    $column_name .=  "_$c";
 	}
 	
-	$column_names[$f][$c] = $column_name;
+	$column_names[$col_nb] = $column_name;
 #	&RSAT::message::Debug($column_name) if ($main::verbose >= 10);
     }
 }
@@ -147,9 +149,11 @@ foreach $f (0..$#input_files) {
 if ($export_format eq "profiles") {
     #### print header line
     print $out ";key";
+    $col_nb = 0;
     foreach $f (0..$#input_files) {
 	foreach $c (1..$max_fields{$f}) {
-	    my $column_name = $column_names[$f][$c];
+	    $col_nb++;
+	    my $column_name = $column_names[$col_nb];
 	    print $out "\t", $column_name;
 	}
     }
@@ -171,16 +175,16 @@ if ($export_format eq "profiles") {
 } elsif ($export_format eq "classes") {
     ## Print the scores
     foreach $key (@sorted_keys) {
-	foreach $f (0..$#input_files) {
-	    foreach $c (1..$max_fields{$f}) {
-		my $column_name = $column_names[$f][$c];
+	for $f (1..$last_col) {
+	    my $column_name = $column_names[$f]; ## TEMPORARY
+	    if (defined($score{$key}{$f})) {
 		my $score = $score{$key}{$f};
-		unless ($score eq "") {
-		    print $out join("\t", 
-				    $id{$key},
-				    $column_name,
-				    $score),  "\n";
-		}
+		print $out join("\t", 
+				$id{$key},
+				$column_name,
+				$score,
+				$f
+				),  "\n";
 	    }
 	}
     }
