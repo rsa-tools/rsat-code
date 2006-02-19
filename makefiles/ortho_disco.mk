@@ -161,12 +161,14 @@ COMPA_TABLE=${COMPA_DIR}/${REF_ORG}_${TAXON}_dyad_profiles.tab
 COMPA_CLASSES=${COMPA_DIR}/${REF_ORG}_${TAXON}_dyad_classes.tab
 DYAD_FILE_LIST=${RESULT_DIR}/dyad_files.txt
 dyad_file_list:
+	@echo
 	@echo "Generating the list of dyad files"
 	(cd ${RESULT_DIR}; find . -name '*_${REF_ORG}_${TAXON}_dyads.tab'  > ${DYAD_FILE_LIST})
 	@echo ${DYAD_FILE_LIST}
-	@echo "	Number of dyad files	`wc -l ${DYAD_FILE_LIST}`"
+	@echo "	`cat ${DYAD_FILE_LIST} | wc -l `	dyad files"
 
-dyad_profiles: dyad_file_list
+dyad_profiles: 
+	@echo
 	@echo "Calculating dyad profiles"
 	@mkdir -p ${COMPA_DIR}	
 	(cd ${RESULT_DIR}; compare-scores -null "NA" -sc 8 \
@@ -180,8 +182,9 @@ dyad_profiles: dyad_file_list
 	@echo ${COMPA_TABLE}
 	@echo "	`grep -v '^;' ${COMPA_TABLE} | grep -v '^#' | wc -l`	profiles"
 
-dyad_classes: dyad_file_list
-	@echo "Calculating dyad classes"
+dyad_classes: 
+	@echo
+	@echo "Generating dyads/gene file"
 	@mkdir -p ${COMPA_DIR}	
 	(cd ${RESULT_DIR}; compare-scores -null "NA" -sc 8 \
 		-format classes \
@@ -193,7 +196,7 @@ dyad_classes: dyad_file_list
 		| sort +1 \
 		> ${COMPA_CLASSES})
 	@echo ${COMPA_CLASSES}
-	@echo " `grep -v '^;' ${COMPA_CLASSES} | cut -f 2 | sort -u | wc -l`	genes"
+	@echo "	`grep -v '^;' ${COMPA_CLASSES} | cut -f 2 | sort -u | wc -l`	genes"
 	@echo "	`grep -v '^;' ${COMPA_CLASSES} | cut -f 1 | sort -u | wc -l`	dyads"
 
 ################################################################
@@ -202,6 +205,7 @@ PROFILE_PAIRS=${COMPA_DIR}/${REF_ORG}_${TAXON}_profile_pairs
 GENE_PAIRS=${COMPA_DIR}/${REF_ORG}_${TAXON}_gene_pairs
 #GENE_PAIRS=boum
 gene_pairs:
+	@echo
 	@echo "Calculating gene pairs"
 	compare-classes -v ${V} -i ${COMPA_CLASSES} \
 		-return occ,proba -lth occ 1 -distinct -triangle \
@@ -210,6 +214,7 @@ gene_pairs:
 	@echo "	`grep -v ';' ${GENE_PAIRS}.tab | grep -v '^#' |  wc -l`	gene pairs"
 
 profile_pairs:
+	@echo
 	@echo "Calculating profile pairs"
 	compare-profiles -v ${V} -i ${COMPA_TABLE} -base 2 -distinct -return dotprod -lth AB 1 \
 		-o ${PROFILE_PAIRS}.tab
@@ -220,6 +225,7 @@ MIN_DP=1
 PAIR_GRAPH=${GENE_PAIRS}_dp${MIN_DP}
 SCORE_COL=5
 gene_pair_graphs:
+	@echo
 	@echo "Generating gene pair graphs"
 	awk -F '\t' '$$${SCORE_COL} >= ${MIN_DP}' ${GENE_PAIRS}.tab \
 		| grep -v '^;' \
