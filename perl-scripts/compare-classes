@@ -7,7 +7,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.15 2006/02/19 16:27:45 rsat Exp $
+# $Id: compare-classes,v 1.16 2006/02/19 22:16:11 rsat Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -58,7 +58,8 @@ $sort_key = "name";
                             proba=>1,
                             percent=>1,
                             members=>1,
-                            rank=>1
+                            rank=>1,
+			    jac_sim=>1
                             );
 $supported_return_fields = join (",", sort(keys( %supported_return_fields)));
 
@@ -69,7 +70,7 @@ $supported_return_fields = join (",", sort(keys( %supported_return_fields)));
 			    occ=>1,
 			    P_val=>1,
 			    E_val=>1,
-			    sig=>1
+			    sig=>1,
                             );
 $supported_matrix_keys = join (",", sort(keys( %supported_matrix_keys)));
 
@@ -81,6 +82,7 @@ $supported_matrix_keys = join (",", sort(keys( %supported_matrix_keys)));
                         occ=>1,
                         P_val=>1,
                         E_val=>1,
+                        jac_sim=>1,
                         sig=>1
                         );
 $supported_sort_keys = join (",", sort (keys (%supported_sort_keys)));
@@ -795,7 +797,8 @@ sub Verbose {
 
 
     print $out "; Thresholds\tlower\tupper\n";
-    foreach $f (qw(occ sig)) {
+    my %th_keys = (%lth, %uth);
+    foreach $f (sort keys %th_keys) {
         print $out ";\t$f";
         if (defined($lth{$f})) {
             printf $out "\t%-5g", $lth{$f};
@@ -849,6 +852,7 @@ sub CompareClasses {
 
 	#### collect members of the reference class
 	my @ref_members = $ref_classes{$r}->get_members();
+	my $R = scalar(@ref_members);
 
 	#### check if the number of ref members is above the threshold    
 	next if ((defined($lth{occ})) && ($#ref_members + 1 < $lth{occ}));
@@ -876,6 +880,7 @@ sub CompareClasses {
 
 	    #### collect members of the query class
 	    my @query_members = $query_classes{$q}->get_members();
+	    my $Q = scalar(@query_members);
 
 	    #### check if the number of ref members is above the threshold    
 	    next if ((defined($lth{occ})) && ($#query_members +1 < $lth{occ}));
@@ -899,7 +904,10 @@ sub CompareClasses {
 		}
 	    }
 
-	    $compa{$compa_key}->{occ} = scalar(keys %{$matching_elements->{$compa_key}});
+	    ## RQ: intersection between group R and group Q
+	    my $RQ = scalar(keys %{$matching_elements->{$compa_key}});
+	    $compa{$compa_key}->{RQ} = $RQ;
+
 
 	    ### clear memory if members are not required
 	    unless ($return_fields{members}) {
@@ -911,14 +919,15 @@ sub CompareClasses {
 
 	    #### check thresholds for number of common members
 	    if ((defined($lth{occ})) &&
-		($compa{$compa_key}->{occ}< $lth{occ})) {
+		($RQ< $lth{occ})) {
 		delete $compa{$compa_key};
 		undef @{$common{$compa_key}};
 		undef @{$ref_only{$compa_key}};
 		undef @{$query_only{$compa_key}};
 		next;
-	    } elsif ((defined($uth{occ})) &&
-		     ($compa{$compa_key}->{occ} > $uth{occ})) {
+	    } 
+	    if ((defined($uth{occ})) &&
+		($RQ > $uth{occ})) {
 		delete $compa{$compa_key};
 		undef @{$common{$compa_key}};
 		undef @{$ref_only{$compa_key}};
@@ -926,15 +935,42 @@ sub CompareClasses {
 		next;
 	    }
 	    
+	    ## Calculate Jaccard's similarity
+	    if ($return_fields{jac_sim}) {
+		my $RorQ = $Q + $R - $RQ;
+		if ($RorQ > 0) {
+		    $compa{$compa_key}->{jac_sim} = $RQ/$RorQ;
+		} else {
+		    $compa{$compa_key}->{jac_sim} = "NA";
+		}
+		&RSAT::message::Debug($Q, $R,  $RQ, $compa{$compa_key}->{jac_sim}) if ($main::verbose >= 0);
+		if ((defined($lth{jac_sim})) &&
+		    ($compa{$compa_key}->{jac_sim}< $lth{jac_sim})) {
+		    delete $compa{$compa_key};
+		    undef @{$common{$compa_key}};
+		    undef @{$ref_only{$compa_key}};
+		    undef @{$query_only{$compa_key}};
+		    next;
+		} 
+		if ((defined($uth{jac_sim})) &&
+		    ($compa{$compa_key}->{jac_sim} > $uth{jac_sim})) {
+		    delete $compa{$compa_key};
+		    undef @{$common{$compa_key}};
+		    undef @{$ref_only{$compa_key}};
+		    undef @{$query_only{$compa_key}};
+		    next;
+		}
+	    }
+
 	    ################################################################	
 	    #### calculate percentages
 	    if ($return_fields{percent}) {
 		warn "; calculating percentages for ", $compa_key, "\n" if ($verbose >= 5);
 		my $n_q = $query_classes{$q}->get_size(); ### number of elements in query class
 		my $n_r = $ref_classes{$r}->get_size(); ### number of elements in the reference class
-		my $c = $compa{$compa_key}->{occ}; ### number of common elements
-		$compa{$compa_key}->{ref_percent} = 100*$c/$n_r;
-		$compa{$compa_key}->{query_percent} = 100*$c/$n_q;
+#		my $c = $RQ; ### number of common elements
+		$compa{$compa_key}->{ref_percent} = 100*$RQ/$n_r;
+		$compa{$compa_key}->{query_percent} = 100*$RQ/$n_q;
 
 		#### check thresholds for query percent
 		if ((defined($lth{"query_percent"})) &&
@@ -988,7 +1024,7 @@ sub CompareClasses {
 		warn "; calculating proba for ", $compa_key, "\n" if ($verbose >= 5);
 		my $n_q = $query_classes{$q}->get_size(); ### number of elements in query class
 		my $n_r = $ref_classes{$r}->get_size(); ### number of elements in the reference class
-		my $c = $compa{$compa_key}->{occ}; ### number of common elements
+		my $c = $compa{$compa_key}->{RQ}; ### number of common elements
 		
 		#### check number of elements in the reference class
 		if ($n_r > $n) {
@@ -1045,7 +1081,11 @@ sub CompareClasses {
 		    $correction = $nb_tests
 		}
 		$compa{$compa_key}->{E_val} = $compa{$compa_key}->{P_val} * $correction;
-		$compa{$compa_key}->{sig} = -log($compa{$compa_key}->{E_val})/$ref_log;
+		if ($compa{$compa_key}->{E_val} > 0) {
+		    $compa{$compa_key}->{sig} = -log($compa{$compa_key}->{E_val})/$ref_log;
+		} else {
+		    $compa{$compa_key}->{sig} = 999;
+		}
 		
 		#### check thresholds on probabilities
 		foreach my $key (qw(P_val E_val sig)) {
@@ -1073,7 +1113,7 @@ sub CompareClasses {
 ###### print result
 sub PrintResult {
 
-    #### print a smilarity matrix
+    #### print a similarity matrix
     if ($return{matrix}) {
 	my @query_classes = sort keys %query_classes;
 	my $header = "#fam";
@@ -1096,7 +1136,7 @@ sub PrintResult {
 	$header .= "\n";
 	print $out $header;
 
-	#### print the result
+	#### print the result in the form of a matrix
 	foreach my $r (sort keys %ref_classes ) {
 	    if ($infile{rnames}) {
 		my $rname =  $ref_classes{$r}->get_attribute("name");
@@ -1123,7 +1163,9 @@ sub PrintResult {
 
 
     } else {
+	################################################################
 	## Print one row per association between a reference and a query class
+
 	#### header
 	my @header_fields = ();
 	if ($return_fields{rank}) {
@@ -1133,16 +1175,19 @@ sub PrintResult {
 	push @header_fields, ("ref","query");
 
 	if ($return_fields{occ}) {
-	    push @header_fields, "ref#";
-	    push @header_fields, "query#";
-	    push @header_fields, "common#";
+	    push @header_fields, "R";
+	    push @header_fields, "Q";
+	    push @header_fields, "RQ";
 	}
 	if ($return_fields{percent}) {
-	    push @header_fields, "ref_%" ;
-	    push @header_fields, "query_%" ;
+	    push @header_fields, "R%" ;
+	    push @header_fields, "Q%" ;
+	}
+	if ($return_fields{jac_sim}) {
+	    push @header_fields, "jac_sim" ;
 	}
 	if ($return_fields{proba}) {
-	    push @header_fields, "exp_com" ;
+	    push @header_fields, "exp_RQ" ;
 	    push @header_fields, "P_val" ;
 	    push @header_fields, "E_val";
 	    push @header_fields, "sig";
@@ -1155,7 +1200,37 @@ sub PrintResult {
 	    push @header_fields, "query_only";
 	    push @header_fields, "common_members";
 	}
-	print $out "; ", join("\t", @header_fields), "\n";
+
+
+	## Print header descriptions
+	my %field_descrition = ();
+	$field_description{rank}  = "Rank of the comparison";
+	$field_description{ref}  = "Name of the reference class";
+	$field_description{query}  = "Name of the query class";
+	$field_description{R} = "Number of elements in the reference class";
+	$field_description{Q}  = "Number of elements in the query class";
+	$field_description{RQ}  = "Number of elements found in the intersecion between reference and query classes";
+	$field_description{"R%"} = "Percentage of elements of the reference class in the intersection";
+	$field_description{"Q%"}  = "Number of elements in the query class";
+	$field_description{jac_sim}  = "Jaccard' similarity";
+	$field_description{exp_RQ}  = "Expected number of elements in the intersection";
+	$field_description{P_val}  = "P-value of the intersection";
+	$field_description{E_val}  = "E-value of the intersection";
+	$field_description{sig}  = "Significance of the intersection";
+	$field_description{ref_only}  = "Elements found in the reference class only";
+	$field_description{query_only}  = "Elements found in the query class only";
+	$field_description{common_members}  = "Elements found in both reference and query classes";
+	if ($main::verbose >= 1) {
+	    print $out "; Column contents\n";
+	    foreach my $f (0..$#header_fields) {
+		my $field = $header_fields[$f];
+		printf $out ";\t%d\t%-14s\t%s\n", $f+1, $field, $field_description{$field};
+	    }
+	}
+	
+
+	## Print hte header row
+	print $out "#", join("\t", @header_fields), "\n";
 
 	#### sort class comparisons
 	if ($sort_key eq "name") {
@@ -1203,7 +1278,7 @@ sub PrintResult {
 	    if ($return_fields{occ}) {
 		printf $out "\t%d", $ref_classes{$r}->get_size();
 		printf $out "\t%d", $query_classes{$q}->get_size();
-		printf $out "\t%d",  $compa{$compa_key}->{occ};
+		printf $out "\t%d",  $compa{$compa_key}->{RQ};
 	    }
 
 	    #### percentages
@@ -1211,6 +1286,12 @@ sub PrintResult {
 		printf $out "\t%7.2f", $compa{$compa_key}->{ref_percent};
 		printf $out "\t%7.2f", $compa{$compa_key}->{query_percent};
 	    }
+	    
+	    #### Jaccard's similarituy
+	    if ($return_fields{jac_sim}) {
+		printf $out "\t%-7.4f", $compa{$compa_key}->{jac_sim};
+	    }
+	    
 
 	    #### probabilities
 	    if ($return_fields{proba}) {
@@ -1345,7 +1426,7 @@ sub CreateGraph {
 	}
 
 	my $arc_label = ();
-	$arc_label .= $compa{$compa_key}->{occ};
+	$arc_label .= $compa{$compa_key}->{RQ};
 	if ($return_fields{proba}) {
 	    $arc_label .= " (";
 	    $arc_label .= sprintf("%.1f", $compa{$compa_key}->{sig});
