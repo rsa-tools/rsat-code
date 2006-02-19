@@ -9,6 +9,12 @@ $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
 $null = $default_null = "<NULL>"; 
 $default_ic = 1;
 
+%supported_export_format = (profiles=>1,
+			     classes=>1
+			     );
+$supported_export_formats = join ",", sort keys %supported_export_format;
+$export_format = "profiles";
+
 &ReadArguments();
 
 ## read file list
@@ -97,34 +103,8 @@ if ($verbose) {
 }
 
 
-#### print header line
-print $out ";key";
-foreach $f (0..$#input_files) {
-    foreach $c (1..$max_fields{$f}) {
-	my $column_name = $input_files[$f];
-
-	## Basename
-	if ($basename) {
-	    $column_name = &ShortFileName($column_name);
-	}
-
-	## Suppress substrings
-	for my $sub (@suppress) {
-	    $column_name =~ s/$sub//g;
-	}
-
-
-	## Column number
-	if ($max_fields[$f] > 1 ) {
-	    $column_name .=  "_$c"
-	}
-
-	print $out "\t", $column_name;
-    }
-}
-print $out "\n";
-
-#### print result
+################################################################
+## Print result
 my @sorted_keys = ();
 if ($numeric_IDs) {
     if ($decreasing) {
@@ -136,17 +116,74 @@ if ($numeric_IDs) {
     @sorted_keys = sort keys %id;
 }
 
-foreach $key (@sorted_keys) {
-    print $out $id{$key};
-    for $f (1..$last_col) {
-	$score = $score{$key}{$f};
-	if ($score eq "") {
-	    print $out "\t$null";
-	} else {
-	    print $out "\t$score";
+## Calculate header names
+my @column_names = ();
+foreach $f (0..$#input_files) {
+    foreach $c (1..$max_fields{$f}) {
+	my $column_name = $input_files[$f];
+	
+	## Basename
+	if ($basename) {
+	    $column_name = &ShortFileName($column_name);
+	}
+	
+	## Suppress substrings
+	for my $sub (@suppress) {
+	    $column_name =~ s/$sub//g;
+	}
+	
+	## Add column number
+	if ($max_fields[$f] > 1 ) {
+	    $column_name .=  "_$c";
+	}
+	
+	$column_names[$f][$c] = $column_name;
+#	&RSAT::message::Debug($column_name) if ($main::verbose >= 10);
+    }
+}
+
+
+## Print result  as score profiles
+if ($export_format eq "profiles") {
+    #### print header line
+    print $out ";key";
+    foreach $f (0..$#input_files) {
+	foreach $c (1..$max_fields{$f}) {
+	    my $column_name = $column_names[$f][$c];
+	    print $out "\t", $column_name;
 	}
     }
     print $out "\n";
+
+    ## Print the score profiles
+    foreach $key (@sorted_keys) {
+	print $out $id{$key};
+	for $f (1..$last_col) {
+	    $score = $score{$key}{$f};
+	    if ($score eq "") {
+		print $out "\t$null";
+	    } else {
+		print $out "\t$score";
+	    }
+	}
+	print $out "\n";
+    }
+} elsif ($export_format eq "classes") {
+    ## Print the scores
+    foreach $key (@sorted_keys) {
+	foreach $f (0..$#input_files) {
+	    foreach $c (1..$max_fields{$f}) {
+		my $column_name = $column_names[$f][$c];
+		my $score = $score{$key}{$f};
+		unless ($score eq "") {
+		    print $out join("\t", 
+				    $id{$key},
+				    $column_name,
+				    $score),  "\n";
+		}
+	    }
+	}
+    }
 }
 
 
@@ -189,14 +226,18 @@ CATEGORY
 
 OPTIONS
         -h      (must be first argument) display full help message
+
         -help   (must be first argument) display options
+
 	-v	verbose
+
 	-i input_file (use recursively to indicate several input files)
 		input file. 
 		At least 2 different input files must be specified.
 		The input files each contain a table with several columns,
 		separated by tabulations (\t). 
 		The first column of each input file contains the key.
+
 	-files	list of files specified on the command line. 
 		All following arguments are considered as input file
 
@@ -204,21 +245,43 @@ OPTIONS
 		Specify a file containing the list of files to be compared.
 		This is especially useful for long file lists of input files
 		(e.g. > 500 files).
+
 	-o outputfile
 		if not specified, the standard output is used.
 		This allows to place the command within a pipe.
+
+	-format	export format (default: $export_format)
+		Supported formats: $supported_export_formats
+		
+		Profiles: tab-delimited file with one column per file, and one
+		row per object to which a score was assigned. 
+
+		Classes: 3-column tab-delimited files. The respective columns
+		indicate: 
+			  - object
+			  - input file
+			  - score
+
 	-sc	score column. 
+
 	-sc#	score column for the #th file
+
 	-ic	Identifier column (default 1) 
+
 	-ic#	identifier column for the #th file
+
 	-null   null string (default $default_null) displayed when one
 		file contains no value for a given key)
+
 	-numeric
 		sort IDs numerically rather than alphabetically
+
 	-decreasing
 		sort IDs numerically in a decreasing order
+
 	-basename
 		remove path (directory) from file names in the header
+
 	-suppress
 		Suppress a given substring from file names in the header
 		This option can be used iteratively to suppress different
@@ -257,6 +320,7 @@ compare-scores options
 -files		input files (all following arguments are used as input file)
 -filelist	specify a file containing the list of input files
 -o		output file
+-format		export format (default: $export_format). Supported: $supported_export_formats
 -v		verbose
 -sc		score column
 -sc#		score column for the #th file
@@ -304,6 +368,12 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-o") {
 	    $outputfile = $ARGV[$a+1];
 	    
+	    ### Export format
+	} elsif ($ARGV[$a] eq "-format") {
+	    $export_format = $ARGV[$a+1];
+	    &RSAT::error::FatalError($export_format." Invalid export format. Supported: ".$supported_export_formats)
+		unless $supported_export_format{$export_format};
+
 	    ### null string ###
 	} elsif ($ARGV[$a] eq "-null") {
 	    $null = $ARGV[$a+1];
