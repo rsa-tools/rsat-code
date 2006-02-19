@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: compare-profiles,v 1.9 2006/02/18 19:01:59 rsat Exp $
+# $Id: compare-profiles,v 1.10 2006/02/19 12:50:13 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -675,7 +675,7 @@ if ($main::verbose >= 1) {
 	printf $out ";\t%d\t%-14s\t%s\n", $f+1, $field, $field_description{$field};
     }
 }
-print $out join("\t", @out_fields), "\n";
+print $out "#", join("\t", @out_fields), "\n";
 
 for my $r1 (1..$nrow) {
     
