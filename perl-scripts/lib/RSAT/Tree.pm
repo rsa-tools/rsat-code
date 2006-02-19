@@ -179,7 +179,7 @@ sub LoadSupportedTaxonomy_rj {
 				    );
   $nodes{$root_name} = $root_node;
   my $root=$self->set_root_node($root_node);
-  &RSAT::message::Warning("Root node :\t",$root->getid()) if ($main::verbose >= 3);
+  &RSAT::message::Warning("Root node :\t",$root->getid()) if ($main::verbose >= 4);
     
   ## get taxonomy
   my $c = 0;
@@ -194,8 +194,8 @@ sub LoadSupportedTaxonomy_rj {
     #	die (join("\t","org",$org,"taxon",$supported_organism{$org}->{"taxonomy"}));
 
     my @taxons = split /\s*;\s*/, $supported_organism{$org}->{"taxonomy"};
-    &RSAT::message::Warning(join ("\t", $c, $org,scalar(@taxons),"taxons"), "\n") if ($main::verbose >=3);
-    &RSAT::message::Warning(join ("\t","taxons",(@taxons)), "\n") if ($main::verbose >= 4);
+    &RSAT::message::Warning(join ("\t", $c, $org,scalar(@taxons),"taxons")) if ($main::verbose >=5);
+    &RSAT::message::Warning(join ("\t","taxons",(@taxons))) if ($main::verbose >= 5);
     my $root_found=0;
 	
     # initiate the leaf
@@ -203,13 +203,13 @@ sub LoadSupportedTaxonomy_rj {
 				  name=>$org,
 				  type=>"leaf"
 				 );
-    &RSAT::message::Warning(join("\t","Initiate leaf",$leaf->get_name())) if ($main::verbose >= 5);
+    &RSAT::message::Warning(join("\t","Initiate leaf",$leaf->get_name())) if ($main::verbose >= 6);
 	
     for my $t (0..$#taxons) {
-      &RSAT::message::Warning(join("\t","Compare taxon",$taxons[$t],"with root name",$root->get_name())) if ($main::verbose >=5);
+      &RSAT::message::Warning(join("\t","Compare taxon",$taxons[$t],"with root name",$root->get_name())) if ($main::verbose >=6);
       ## identify root taxon
       if (($taxons[$t] eq $root->get_name())&&($root_found==0)) {
-	&RSAT::message::Warning("Taxon identified as root for\t",$org) if ($main::verbose >=4);
+	&RSAT::message::Warning("Taxon identified as root for\t",$org) if ($main::verbose >=5);
 	$root_found=1;
 	next;
       }
