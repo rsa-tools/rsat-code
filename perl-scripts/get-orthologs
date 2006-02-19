@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.16 2006/02/03 12:41:59 rsat Exp $
+# $Id: get-orthologs,v 1.17 2006/02/19 12:51:38 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -310,84 +310,85 @@ package main;
     my $query_org_dir = $supported_organism{$main::query_organism}->{'data'};
     my $query_org_blast_dir = join("/", $query_org_dir, "blast_hits");
     foreach my $ref_organism (@main::ref_organisms) {
-      #$ref_organism = "Brucella_melitensis"; ## FOR TESTING
-      my $ref_org_dir = $supported_organism{$ref_organism}->{'data'};
-      my $ref_org_blast_dir = join("/", $ref_org_dir, "blast_hits");
-      &RSAT::message::TimeWarn(join("\t", "Selecting hits in ref organism", $ref_organism)) if ($main::verbose >= 2);
-
-      ## Check if the BLAST file exists and read it
-      my $blast_file = join("", $query_org_blast_dir,"/","q_",$main::query_organism,"_db_",$ref_organism,"_ranks.tab");
-      #my ($hits)=&readBLAST($blast_file,\@main::blast_columns);
-      my ($hits)=&select_hits($blast_file,\@main::blast_columns,"query",\%is_query);
-      #     print Dumper($hits); # DEBUG
-
-      my $rev_blast_file = join("", $ref_org_blast_dir,"/","q_",$ref_organism,"_db_",$main::query_organism,"_ranks.tab");
-      # my (%rev_hits)=&readBLAST($rev_blast_file,\@main::blast_columns);
-      my ($rev_hits)=&select_hits($rev_blast_file,\@main::blast_columns,"ref_id",\%is_query);
-
-      ################################################################
-      # Let state Reciprocal Best hits (RBH) inferred from one blast
-      # file in opposition with Bidirectionnal Bests Hits (BBH)
-      # which is inferred from blast files in both direction (genome
-      # A against genome B, and B against A).
-      ################################################################
-
-      ## my (%rbh) = &GetReciprocalBestHits(\%hits);
-      ## This option (NOT IMPLEMENTED YET) may be obsolete as it is
-      ## included in genome-blast.pl -task bbh
+	#$ref_organism = "Brucella_melitensis"; ## FOR TESTING
+	my $ref_org_dir = $supported_organism{$ref_organism}->{'data'};
+	my $ref_org_blast_dir = join("/", $ref_org_dir, "blast_hits");
+	&RSAT::message::TimeWarn(join("\t", "Selecting hits in ref organism", $ref_organism)) if ($main::verbose >= 2);
 	
-      #	my (%bbh)=&GetBidirectionalBesthits(\%hits,\%rev_hits);
+	## Check if the BLAST file exists and read it
+	my $blast_file = join("", $query_org_blast_dir,"/","q_",$main::query_organism,"_db_",$ref_organism,"_ranks.tab");
+	#my ($hits)=&readBLAST($blast_file,\@main::blast_columns);
+	my ($hits)=&select_hits($blast_file,\@main::blast_columns,"query",\%is_query);
+	#     print Dumper($hits); # DEBUG
+	
+	my $rev_blast_file = join("", $ref_org_blast_dir,"/","q_",$ref_organism,"_db_",$main::query_organism,"_ranks.tab");
+	# my (%rev_hits)=&readBLAST($rev_blast_file,\@main::blast_columns);
+	my ($rev_hits)=&select_hits($rev_blast_file,\@main::blast_columns,"ref_id",\%is_query);
+	
+	################################################################
+	# Let us define Reciprocal Best hits (RBH) as a relationship inferred
+	# from a single blast file, in contrast with Bidirectionnal Bests Hits
+	# (BBH), which is inferred from blast files in both direction (genome
+	# A against genome B, and B against A).
+	################################################################
+	
+	## my (%rbh) = &GetReciprocalBestHits(\%hits);
+	## This option (NOT IMPLEMENTED YET) may be obsolete as it is
+	## included in genome-blast.pl -task bbh
+	
+	#	my (%bbh)=&GetBidirectionalBesthits(\%hits,\%rev_hits);
 
-      # Get bidirectional hits
-      foreach my $query_gene (keys (%is_query)) {
-	  &RSAT::message::Warning(join("\t", "query gene", $query_gene)) if ($main::verbose >= 3);
-	  if ($hits->{$query_gene}) {
-	      foreach my $ref_gene (keys %{$hits->{$query_gene}}) {
-		  &RSAT::message::Warning(join("\t", "ref gene", $ref_gene)) if ($main::verbose >= 3);
-		  if ($rev_hits->{$ref_gene}->{$query_gene}){
-		      my ($fwd_hit) = $hits->{$query_gene}->{$ref_gene};
-		      my ($rev_hit) = $rev_hits->{$ref_gene}->{$query_gene};
-		      my $hit_info = join("\t",
-					  $fwd_hit->{ref_id},
-					  $ref_organism,
-					  $fwd_hit->{query},
+	################################################################
+	## Get bidirectional hits
+	foreach my $query_gene (keys (%is_query)) {
+	    &RSAT::message::Warning(join("\t", "query gene", $query_gene)) if ($main::verbose >= 3);
+	    if ($hits->{$query_gene}) {
+		foreach my $ref_gene (keys %{$hits->{$query_gene}}) {
+		    &RSAT::message::Warning(join("\t", "ref gene", $ref_gene)) if ($main::verbose >= 3);
+		    if ($rev_hits->{$ref_gene}->{$query_gene}){
+			my ($fwd_hit) = $hits->{$query_gene}->{$ref_gene};
+			my ($rev_hit) = $rev_hits->{$ref_gene}->{$query_gene};
+			my $hit_info = join("\t",
+					    $fwd_hit->{ref_id},
+					    $ref_organism,
+					    $fwd_hit->{query},
 #				  $main::query_organism,
-					  );
-
-		      ## Additional output fields (specified with the option -return)
-		      if (scalar(@output_fields) > 0) {
-			  ## add fields for the fwd hit
+					    );
+			
+			## Additional output fields (specified with the option -return)
+			if (scalar(@output_fields) > 0) {
+			    ## add fields for the fwd hit
 #			  $hit_info .= "\tFWD";
-			  foreach my $field (@output_fields) {
-			      $hit_info .= "\t";
-			      $hit_info .= $fwd_hit->{$field};
+			    foreach my $field (@output_fields) {
+				$hit_info .= "\t";
+				$hit_info .= $fwd_hit->{$field};
 #		  &RSAT::message::Debug($field, $fwd_hit->{$field}, $hit_info) if ($main::verbose >= 10);
-			  }
-
-			  ## add fields for the rev hit
+			    }
+			    
+			    ## add fields for the rev hit
 #			  $hit_info .= "\tREV";
 #			  foreach my $field (@output_fields) {
 #			      $hit_info .= "\t";
 #			      $hit_info .= $rev_hit->{$field};
 #		  &RSAT::message::Debug($field, $rev_hit->{$field}, $hit_info) if ($main::verbose >= 10);
 #			  }
-		      }
-		      ################
-		      # put all hit info in a hash
-		      $bbh->{$query_gene}->{$ref_organism}->{$fwd_hit->{ref_id}}=$hit_info;
-		      
-		      &RSAT::message::Info("bidirectional hit\t",$hit_info) if ($main::verbose >= 2);
-		      push @bidirect_hits, $hit_info;
-		  } else {
-		      &RSAT::message::TimeWarn(join("\t", "No bidirectional hit in ref organism", $ref_organism,"for query gene",$query_gene)) if ($main::verbose >= 2);
-		  }
-	      }  
-	  } else {
-	      &RSAT::message::TimeWarn(join("\t", "No hit in ref organism", $ref_organism,"for query gene",$query_gene)) if ($main::verbose >= 2);
-	  }
-      }
-  }
-      
+			}
+			################
+			# put all hit info in a hash
+			$bbh->{$query_gene}->{$ref_organism}->{$fwd_hit->{ref_id}}=$hit_info;
+			
+			&RSAT::message::Info("bidirectional hit\t",$hit_info) if ($main::verbose >= 2);
+			push @bidirect_hits, $hit_info;
+		    } else {
+			&RSAT::message::TimeWarn(join("\t", "No bidirectional hit in ref organism", $ref_organism,"for query gene",$query_gene)) if ($main::verbose >= 2);
+		    }
+		}  
+	    } else {
+		&RSAT::message::TimeWarn(join("\t", "No hit in ref organism", $ref_organism,"for query gene",$query_gene)) if ($main::verbose >= 2);
+	    }
+	}
+    }
+    
     ################################################################
     ###### print output
     
@@ -587,8 +588,8 @@ sub select_hits{
     
     &RSAT::message::TimeWarn(join("\t", "Selecting hits from BLAST file", $blast_file)) if ($main::verbose >= 2);
     &RSAT::message::TimeWarn(join("\t", "\tqueries", keys (%is_query))) if ($main::verbose >= 3);
-
-
+    
+    
     ## ##############################################################
     ## Prepare a specific file handle for the BLAST file, in order to apply
     ## the grep pre-filter
@@ -600,10 +601,10 @@ sub select_hits{
 	$input_cmd = "gunzip -c ".$blast_file.".gz | ";
     }
     $input_cmd .= "grep -E '".$main::query_filter."' |";
-
+    
     &RSAT::message::Debug($input_cmd) if ($main::verbose >= 4);
     open HIT_HANDLE, $input_cmd;
-
+    
 #    my ($hit_handle) = &OpenInputFile($blast_file);
     my $l =0;			# counter of lines
     my $hits = {};
