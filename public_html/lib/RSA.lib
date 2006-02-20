@@ -873,7 +873,16 @@ sub ReadFamilies {
 ## 6) class_column: column containing the class names/IDs (default: 2)
 ##
 sub ReadClasses {
-    my ($family_file, $get_orf_id, $organism, $no_subst,$member_column, $class_column) = @_;
+    my ($family_file, $get_orf_id, $organism, $no_subst,$member_column, $class_column, $score_column) = @_;
+
+    ## Check score column
+    if ($score_column) {
+	unless (&IsNatural($score_column)) {
+	    &RSAT::error::FatalError(join("\t", $score_column, "Invalid specification of score column for the procedure ReadClasses()"));
+	}
+    }
+
+    ## Check member column
     if ($member_column) {
 	unless (&IsNatural($member_column)) {
 	    &RSAT::error::FatalError(join("\t", $member_column, "Invalid specification of member column for the procedure ReadClasses"));
@@ -882,6 +891,7 @@ sub ReadClasses {
 	$member_column=1;
     }
 
+    ## Check class column
     if ($class_column) {
 	unless (&IsNatural($class_column)) {
 	    &RSAT::error::FatalError(join("\t", $class_column, "Invalid specification of class column for the procedure ReadClasses"));
@@ -923,6 +933,9 @@ sub ReadClasses {
 				    $line, "family not specified")) if ($main::verbose >= 1);
 	    next;
 	}
+
+
+	## Substitute problematic characters
 	unless ($no_subst) {
 	    $subst_char = ".";
 	    $family_name =~ s/ +/${subst_char}/g; ## spaces create problems with file names in Unix
@@ -953,18 +966,38 @@ sub ReadClasses {
 	} else {
 	    $member_key = $member_name;
 	}
+
+
 	if ($member_key) {
-	    $family{$family_name}->new_member($member_key);
+	    if ($score_column) {
+		### score
+		local $score = &trim($fields[$score_column - 1]);
+		unless (&IsReal($score)) {
+		    &RSAT::error::FatalError(join("\t", $score, "Invalid score (must be a Real number).", 
+						  "family file", $family_file,  
+						  "line", $line,
+						  "member", $member_name,
+						  "family", $family_name,
+						  ));
+		}
+		$family{$family_name}->new_member($member_key, 0, score=>$score);
+#		&RSAT::message::Debug("member score", $family_name, $member_name, $score) if ($main::verbose >= 0);
+	    } else {
+		$family{$family_name}->new_member($member_key);
+	    }
 	    &RSAT::message::Warning( join ("\t",  ";", $family_name,
 					   $member_name,
 					   $member_key,
 					   $name{$id}) ) if ($main::verbose >= 5);
+#	    &RSAT::message::Debug("Scores", $family_name, $family{$family_name}->get_attribute("scores")) if ($main::verbose >= 0);
 	} else {
 	    &RSAT::message::Warning ($member_name." unknown gene name");
 	}
 	
     }
     close $fam if ($family_file);
+
+
     return %family;
 }
 
