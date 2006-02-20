@@ -182,8 +182,7 @@ if ($export_format eq "profiles") {
 		print $out join("\t", 
 				$id{$key},
 				$column_name,
-				$score,
-				$f
+				$score
 				),  "\n";
 	    }
 	}
