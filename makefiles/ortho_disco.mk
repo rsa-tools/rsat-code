@@ -208,7 +208,7 @@ gene_pairs:
 	@echo
 	@echo "Calculating gene pairs"
 	compare-classes -v ${V} -i ${COMPA_CLASSES} \
-		-return occ,proba -lth occ 1 -distinct -triangle \
+		-return occ,dotprod,jac_sim,proba -lth RandQ 1 -distinct -triangle -sort dotprod \
 		-o ${GENE_PAIRS}.tab
 	@echo ${GENE_PAIRS}.tab
 	@echo "	`grep -v ';' ${GENE_PAIRS}.tab | grep -v '^#' |  wc -l`	gene pairs"
@@ -221,18 +221,19 @@ profile_pairs:
 	@echo ${PROFILE_PAIRS}.tab
 	@echo "	`grep -v ';' ${PROFiLE_PAIRS}.tab | grep -v '^#' |  wc -l`	profile pairs"
 
-MIN_DP=1
-PAIR_GRAPH=${GENE_PAIRS}_dp${MIN_DP}
-SCORE_COL=5
+MIN_SCORE=1
+SCORE_COL=11
+SCORE=sig
+PAIR_GRAPH=${GENE_PAIRS}_${SCORE}${MIN_SCORE}
 gene_pair_graphs:
 	@echo
 	@echo "Generating gene pair graphs"
-	awk -F '\t' '$$${SCORE_COL} >= ${MIN_DP}' ${GENE_PAIRS}.tab \
+	awk -F '\t' '$$${SCORE_COL} >= ${MIN_SCORE}' ${GENE_PAIRS}.tab \
 		| grep -v '^;' \
 		| convert-graph -from tab -scol 1 -tcol 3 -wcol ${SCORE_COL} -to gml \
 		-o ${PAIR_GRAPH}.gml
 	@echo ${PAIR_GRAPH}.dot
-	awk -F '\t' '$$${SCORE_COL} >= ${MIN_DP}' ${GENE_PAIRS}.tab \
+	awk -F '\t' '$$${SCORE_COL} >= ${MIN_SCORE}' ${GENE_PAIRS}.tab \
 		| convert-graph -from tab -wcol ${SCORE_COL} -to dot \
 		-o ${PAIR_GRAPH}.dot
 	@echo ${PAIR_GRAPH}.gml
@@ -241,12 +242,12 @@ comparisons:
 	@${MAKE} dyad_file_list
 	@${MAKE} dyad_classes
 	@${MAKE} gene_pairs
-	@${MAKE} gene_pair_graphs MIN_DP=0
-	@${MAKE} gene_pair_graphs MIN_DP=1
-	@${MAKE} gene_pair_graphs MIN_DP=2
-	@${MAKE} gene_pair_graphs MIN_DP=5
-	@${MAKE} gene_pair_graphs MIN_DP=10
-	@${MAKE} gene_pair_graphs MIN_DP=20
+	@${MAKE} gene_pair_graphs MIN_SCORE=0
+	@${MAKE} gene_pair_graphs MIN_SCORE=1
+	@${MAKE} gene_pair_graphs MIN_SCORE=2
+	@${MAKE} gene_pair_graphs MIN_SCORE=5
+	@${MAKE} gene_pair_graphs MIN_SCORE=10
+	@${MAKE} gene_pair_graphs MIN_SCORE=20
 
 
 ################################################################

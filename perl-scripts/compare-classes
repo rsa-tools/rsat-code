@@ -7,7 +7,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.17 2006/02/19 22:46:31 rsat Exp $
+# $Id: compare-classes,v 1.18 2006/02/20 01:24:57 rsat Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -36,6 +36,7 @@ local $gml_file = "";
 local $nb_tests = 0;
 local $nb_ref_classes = 0;
 local $nb_query_classes = 0;
+local $score_column = 0; ## By default, the file is read without score
 
 local $multi_cor = "nt"; ## Correction for multi-testing
 %supported_multi_cor = (
@@ -59,7 +60,8 @@ $sort_key = "name";
                             percent=>1,
                             members=>1,
                             rank=>1,
-			    jac_sim=>1
+			    jac_sim=>1,
+			    dotprod=>1,
                             );
 $supported_return_fields = join (",", sort(keys( %supported_return_fields)));
 
@@ -76,11 +78,12 @@ $supported_matrix_keys = join (",", sort(keys( %supported_matrix_keys)));
 
 %supported_threshold_field = (
 			      rank=>1,
-			      jac_sim=>1,
 			      RandQ=>1,
 			      R=>1,
 			      Q=>1,
 			      RorQ=>1,
+			      jac_sim=>1,
+			      dotprod=>1,
 			      P_val=>1,
 			      E_val=>1,
 			      sig=>1,
@@ -101,6 +104,7 @@ $supported_threshold_fields = join (",", sort(keys( %supported_threshold_field))
                         P_val=>1,
                         E_val=>1,
                         jac_sim=>1,
+                        dotprod=>1,
                         sig=>1
                         );
 $supported_sort_keys = join (",", sort (keys (%supported_sort_keys)));
@@ -161,12 +165,12 @@ $out = &OpenOutputFile($outfile{output});
 ###### read class files
 
 ## Query classes
-%query_classes = &ReadClasses($infile{query_classes},0,"",1);
+%query_classes = &ReadClasses($infile{query_classes},0,"",1,1,2,$score_col);
 $nb_query_classes = scalar(keys %query_classes);
 &RSAT::message::Info((join("\t", "Query classes", $nb_query_classes))) if ($main::verbose >= 2);
 
 ## Reference classes
-%ref_classes = &ReadClasses($infile{ref_classes},0,"",1);
+%ref_classes = &ReadClasses($infile{ref_classes},0,"",1,1,2, $score_col);
 $nb_ref_classes = scalar(keys %ref_classes);
 &RSAT::message::Info((join("\t", "Reference classes", $nb_ref_classes))) if ($main::verbose >= 2);
 
@@ -319,6 +323,10 @@ OPTIONS
         This file will be used as both reference and query. 
         This is equivalent to 
             -q input_file -r input_file
+
+    -sc score column
+	Specify a column of the input file containing a score associated to
+	each member. The score is used for some metrics like the dot product.
 
     -o outputfile
         if not specified, the standard output is used.
@@ -608,6 +616,7 @@ compare-classes options
 -r              reference classes
 -q              query classes
 -i              single input file (used as query and reference)
+-sc		score column
 -rnames         reference class names
 -qnames         query class names
 -o              output file
@@ -686,6 +695,13 @@ sub ReadArguments {
             $infile{ref_classes} = $ARGV[$a+1];
             $infile{query_classes} = $ARGV[$a+1];
 
+            ### Score column
+        } elsif ($ARGV[$a] eq "-sc") {
+	    $score_col = $ARGV[$a+1];
+	    unless ((&IsNatural($score_col)) && ($score_col >= 1)) {
+		&RSAT::error::FatalError( join("\t", $score_col, "Invalid score column: must be an integer >= 1"));
+	    }
+	    
             ### replacement
         } elsif ($ARGV[$a] eq "-rep") {
             $replacement = 1;
@@ -892,9 +908,9 @@ sub CompareClasses {
 	    
 	    next if (($distinct) && ($r eq $q));
 	    next if (($infile{ref_classes} eq $infile{query_classes} ) && ($r lt $q)) && $triangle;
-
+	    
 	    my $compa_key = $r."__VERSUS__".$q;
-
+	    
 	    #### initialize comparison structures
 	    @{$common{$compa_key}} = ();
 	    @{$ref_only{$compa_key}} = ();
@@ -904,11 +920,10 @@ sub CompareClasses {
 	    my @query_members = $query_classes{$q}->get_members();
 	    my $Q = scalar(@query_members);
 
-
 	    #### check if the number of ref members is above the threshold    
 	    next if ((defined($lth{Q})) && ($Q < $lth{Q}));
 	    next if ((defined($lth{RandQ})) && ($Q < $lth{RandQ}));
-
+	    
 	    #### compare query and reference classes
 	    foreach my $m (@query_members) {
 		if ($ref_member{$m}) {
@@ -918,10 +933,10 @@ sub CompareClasses {
 		    push @{$query_only{$compa_key}}, $m; ### elements found in the query fmily only
 		}
 	    }
-
+	    
 	    #### identify elements found in the reference class only
 	    if ($return_fields{members}) {
-		foreach $m (sort( $ref_classes{$r}->get_members())) {
+		foreach $m (sort($ref_classes{$r}->get_members())) {
 		    unless ($matching_elements->{$compa_key}->{$m}) {
 			push @{$ref_only{$compa_key}}, $m;
 		    }
@@ -937,7 +952,27 @@ sub CompareClasses {
 	    my $RorQ = $Q + $R - $RandQ;
 	    $compa{$compa_key}->{RorQ} = $RorQ;
 
-	    ### clear memory if members are not required
+
+	    ## Calculate dot product (use only the matching elements -> thus
+	    ## must be done here)
+	    if ($return_fields{dotprod}) {
+		local $dp = 0;
+		local @matching_elements = keys %{$matching_elements->{$compa_key}};
+		local %ref_scores = $ref_classes{$r}->get_attribute("scores");
+		local %query_scores =$query_classes{$q}->get_attribute("scores");
+		foreach my $element (@matching_elements) {
+		    my $r_score = $ref_scores{$element};
+		    my $q_score = $query_scores{$element};
+		    $dp += $r_score*$q_score; 
+		}
+		$compa{$compa_key}->{dotprod} = $dp;
+#		&RSAT::message::Debug("dot product", 
+#				      $r, $q, "matching", scalar(@matching_elements),
+#				      "dp", $dp) if ($main::verbose >= 0);
+	    }
+
+	    ## Suppress the lists of members to free memory if members are
+	    ## not required
 	    unless ($return_fields{members}) {
 		undef @{$common{$compa_key}};
 		undef @{$ref_only{$compa_key}};
@@ -970,7 +1005,6 @@ sub CompareClasses {
 		} else {
 		    $compa{$compa_key}->{jac_sim} = "NA";
 		}
-		&RSAT::message::Debug($Q, $R,  $RandQ, $compa{$compa_key}->{jac_sim}) if ($main::verbose >= 0);
 		if ((defined($lth{jac_sim})) &&
 		    ($compa{$compa_key}->{jac_sim}< $lth{jac_sim})) {
 		    delete $compa{$compa_key};
@@ -1214,6 +1248,9 @@ sub PrintResult {
 	if ($return_fields{jac_sim}) {
 	    push @header_fields, "jac_sim" ;
 	}
+	if ($return_fields{dotprod}) {
+	    push @header_fields, "dotprod" ;
+	}
 	if ($return_fields{proba}) {
 	    push @header_fields, "exp_RQ" ;
 	    push @header_fields, "P_val" ;
@@ -1242,6 +1279,7 @@ sub PrintResult {
 	$field_description{R_perc} = "Percentage of elements of the reference class in the intersection";
 	$field_description{Q_perc}  = "Number of elements in the query class";
 	$field_description{jac_sim}  = "Jaccard' similarity";
+	$field_description{dotprod}  = "Dot product (using the score column)";
 	$field_description{exp_RQ}  = "Expected number of elements in the intersection";
 	$field_description{P_val}  = "P-value of the intersection";
 	$field_description{E_val}  = "E-value of the intersection";
@@ -1319,9 +1357,14 @@ sub PrintResult {
 		printf $out "\t%7.2f", $compa{$compa_key}->{Q_perc};
 	    }
 	    
-	    #### Jaccard's similarituy
+	    #### Jaccard's similarity
 	    if ($return_fields{jac_sim}) {
 		printf $out "\t%-7.4f", $compa{$compa_key}->{jac_sim};
+	    }
+	    
+	    #### Dot product
+	    if ($return_fields{dotprod}) {
+		printf $out "\t%7g", $compa{$compa_key}->{dotprod};
 	    }
 	    
 
