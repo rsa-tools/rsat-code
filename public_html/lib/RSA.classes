@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: RSA.classes,v 1.12 2005/10/09 13:23:00 jvanheld Exp $
+# $Id: RSA.classes,v 1.13 2006/02/20 02:03:57 rsat Exp $
 #
 # Time-stamp: <2003-10-02 17:58:27 jvanheld>
 #
@@ -18,99 +18,6 @@ BEGIN {
     push @INC, "$RSA/perl-scripts/parsers/";
     require "classes/DatabaseObject.pl";
 }
-
-################################################################
-#### generic RSA object, from which all other objects inherit
-# package RSA::Object;
-# {
-#     @ISA = qw ( classes::DatabaseObject );
-# }
-
-################################################################
-#### Gene
-# package RSA::Gene;
-# {
-#     @ISA = qw( RSA::Object );
-#     my $_count = 0;
-#     my $_prefix = "gn_";
-
-#     sub init() {
-# 	my ($object) = @_;
-#     }
-
-#     #### class accessors
-#     sub get_prefix {
-# 	my ($class) = @_;
-# 	return $_prefix;
-#     }
-
-#     #### organism
-#     sub get_organism {
-# 	my ($object) = @_;
-# 	return $object->{organism};
-#     }
-#     sub set_organism {
-# 	my ($object, $new_organism) = @_;
-# 	$object->{organism} = $new_organism;
-#     }
-
-#     #### exons
-#     sub get_exons {
-# 	my ($object) = @_;
-# 	return @{$object->{exons}};
-#     }
-#     sub add_exon {
-#         my ($object, $new_exon) = @_;
-#         push @{$object->{exons}}, $new_exon;
-#     }
-
-# }
-
-
-################################################################
-#
-# Family manipulation
-#
-
-# ################################################################
-# ### family
-# package RSA::family;
-# @RSA::family::ISA = qw( RSA::Object );
-# {
-# #    my @members = ();
-
-#     ### creator
-#     sub new {
-# 	my ($class, %args) = @_;
-# 	my $object = bless {
-# 	    id=>$args{id} || $args{seq}
-# 	}, $class;
-# 	$object->push_attribute("names",$args{name});
-# 	return $object;
-#     }
-    
-
-#     #### return the list of members
-#     sub get_members {
-# 	my ($self) = @_;
-# 	return @{$self->{members}};
-#     }
-
-#     #### return the number of members
-#     sub get_size {
-# 	my ($self) = @_;
-# 	my $size = scalar(@{$self->{members}});
-# 	return $size;
-#     }
-    
-#      #### add a member to the family
-#     sub new_member {
-#  	my ($self, $new_member) = @_;
-#  	push @{$self->{members}}, $new_member;
-#     }
-	
-# }
-
 
 1;
 

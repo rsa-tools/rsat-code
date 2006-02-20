@@ -70,12 +70,23 @@ item new_member($new_member, $allow_duplicates)
 
 Add a member to the family, if it has not yet been inserted.
 
-By default, a member fcan be inserted only once in a family. 
-If the argument "allow_duplicates" is set to 1, this check is disabled (the list of members can contain several times the same entry). 
+By default, a member fcan be inserted only once in a family.  If the argument
+"allow_duplicates" is set to 1, this check is disabled (the list of members
+can contain several times the same entry).
+
+Usage: $family->new_member($member);
+
+A score can be assigned to the new member with the argument score=>$score
+
+Usage: $family->new_member($member,score=>$score);
+
+A hash table with the scores can be otbained with the command
+
+%scores = $family->get_attribute("scores");
 
 =cut
 sub new_member {
-    my ($self, $new_member, $allow_dup) = @_;
+    my ($self, $new_member, $allow_dup, %args) = @_;
     if ($allow_duplicates) {
 	$self->push_attribute("members", $new_member);
     } else {
@@ -86,6 +97,10 @@ sub new_member {
 	    $self->add_hash_attribute("member_index", $new_member, 1);
 	    $self->push_attribute("members", $new_member);
 	}
+    }
+    if(defined($args{score})) {
+	$self->add_hash_attribute("scores", $new_member, $args{score});
+#	&RSAT::message::Debug("Family", $self->get_attribute("name"), "member", $new_member, "score", $args{score}) if ($main::verbose >= 0);
     }
 }
 
