@@ -208,7 +208,8 @@ gene_pairs:
 	@echo
 	@echo "Calculating gene pairs"
 	compare-classes -v ${V} -i ${COMPA_CLASSES} \
-		-return occ,dotprod,jac_sim,proba -lth RandQ 1 -distinct -triangle -sort dotprod \
+		-return occ,dotprod,jac_sim,proba \
+		-sc 3 -lth RandQ 1 -distinct -triangle -sort dotprod \
 		-o ${GENE_PAIRS}.tab
 	@echo ${GENE_PAIRS}.tab
 	@echo "	`grep -v ';' ${GENE_PAIRS}.tab | grep -v '^#' |  wc -l`	gene pairs"
@@ -222,8 +223,8 @@ profile_pairs:
 	@echo "	`grep -v ';' ${PROFiLE_PAIRS}.tab | grep -v '^#' |  wc -l`	profile pairs"
 
 MIN_SCORE=1
-SCORE_COL=11
-SCORE=sig
+SCORE_COL=8
+SCORE=dp
 PAIR_GRAPH=${GENE_PAIRS}_${SCORE}${MIN_SCORE}
 gene_pair_graphs:
 	@echo
@@ -245,9 +246,13 @@ comparisons:
 	@${MAKE} gene_pair_graphs MIN_SCORE=0
 	@${MAKE} gene_pair_graphs MIN_SCORE=1
 	@${MAKE} gene_pair_graphs MIN_SCORE=2
+	@${MAKE} gene_pair_graphs MIN_SCORE=3
 	@${MAKE} gene_pair_graphs MIN_SCORE=5
 	@${MAKE} gene_pair_graphs MIN_SCORE=10
+	@${MAKE} gene_pair_graphs MIN_SCORE=10
 	@${MAKE} gene_pair_graphs MIN_SCORE=20
+	@${MAKE} gene_pair_graphs MIN_SCORE=30
+	@${MAKE} gene_pair_graphs MIN_SCORE=50
 
 
 ################################################################

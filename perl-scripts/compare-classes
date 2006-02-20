@@ -7,7 +7,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.18 2006/02/20 01:24:57 rsat Exp $
+# $Id: compare-classes,v 1.19 2006/02/20 01:55:33 rsat Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -156,6 +156,10 @@ unless ($infile{ref_classes}) {
     &RSAT::error::FatalError("You must specify a file containing reference classes");
 }
 
+## Dot product requires score column
+if (($return_fields{dotprod}) && !($score_col)) {
+    &RSAT::error::FatalError("To calcualte a dot product, you need to specify a score column (option -sc).");
+}
 
 ################################################################
 ### open output stream
