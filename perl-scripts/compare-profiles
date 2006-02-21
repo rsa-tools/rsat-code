@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: compare-profiles,v 1.10 2006/02/19 12:50:13 rsat Exp $
+# $Id: compare-profiles,v 1.11 2006/02/21 07:55:05 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -349,9 +349,12 @@ my $start_time = &AlphaDate();
 local $distinct = 0;
 local $header=1;
 local $base=exp(1); ## Base for the logarithms
-$ncompa = "NA";
-$nrow = "NA";
-$ncol = "NA";
+local $inf = 999;
+local $na = "NA";
+
+$ncompa = $na;
+$nrow = $na;
+$ncol = $na;
 
 ## Threshold parameters
 %lth = (); # lower threshold values
@@ -759,8 +762,8 @@ for my $r1 (1..$nrow) {
 		$jac_sim = $N{AB}/($jac_sum);
 		$jac_dis = 1-$jac_sim;
 	    } else {
-		$jac_sim = "NA";
-		$jac_dis = "NA";
+		$jac_sim = $na;
+		$jac_dis = $na;
 	    }
 	    ## Check threshold on Jaccard
 	    next unless &check_thresholds("jac_sim", $jac_sim);
@@ -787,7 +790,7 @@ for my $r1 (1..$nrow) {
 	    if ($Eval_R > 0) {
 		$sig_R = -log($Eval_R)/log(10);
 	    } else {
-		$sig_R = "Inf";
+		$sig_R = $inf;
 	    }
 	    ## check thresholds on Pval_R
 	    next unless &check_thresholds("Pval_R", $Pval_R);
@@ -804,7 +807,7 @@ for my $r1 (1..$nrow) {
 	    if ($Eval_L > 0) {
 		$sig_L = -log($Eval_L)/log(10);
 	    } else {
-		$sig_L = "Inf";
+		$sig_L = $inf;
 	    }
 	    
 	    ## check thresholds on Pval_L
@@ -825,7 +828,11 @@ for my $r1 (1..$nrow) {
 	    ## Beware, this selects genes which are OK for either of both sites (L or R)
 	    $Pval = &RSAT::stats::min($Pval_L, $Pval_R);
 	    $Eval = &RSAT::stats::min($Eval_L, $Eval_R);
-	    $sig = &RSAT::stats::max($sig_L, $sig_R);
+	    if (($sig_L eq $inf) || ($sig_T eq $inf)) {
+		$sig =$inf;
+	    } else {
+		$sig = &RSAT::stats::max($sig_L, $sig_R);
+	    }
 	    next unless &check_thresholds("Pval", $Pval);
 	    next unless &check_thresholds("Eval", $Eval);
 	    next unless &check_thresholds("sig", $sig);
@@ -903,17 +910,43 @@ for my $r1 (1..$nrow) {
 				  );
 	}
 
+
+
 	if ($return_fields{hyper}) {
+	    ## Special treatment for sig because it can be a string like "Inf" (depending of the value of the variable $inf)
+	    if ($sig eq $inf) {
+		$sig_string = $sig;
+	    } elsif (&IsReal($sig)) {
+		$sig_string = sprintf("%-.2f", $sig);
+	    } else {
+		$sig_string = $na;
+	    }
+	    if ($sig_L eq $inf) {
+		$sig_L_string = $sig_L;
+	    } elsif (&IsReal($sig_L)) {
+		$sig_L_string = sprintf("%-.2f", $sig_L);
+	    } else {
+		$sig_L_string = $na;
+	    }
+	    if ($sig_R eq $inf) {
+		$sig_R_string = $sig_R;
+	    } elsif (&IsReal($sig_R)) {
+		$sig_R_string = sprintf("%-.2f", $sig_R);
+	    } else {
+		$sig_R_string = $na;
+	    }
+	    
 	    print $out "\t", join ("\t",  
 				   sprintf("%-.2g", $Pval_L),
 				   sprintf("%-.2g", $Eval_L),
-				   sprintf("%-.2g", $sig_L),
+				   $sig_L_string,
 				   sprintf("%-.2g", $Pval_R),
 				   sprintf("%-.2g", $Eval_R),
-				   sprintf("%-.2g", $sig_R),
+				   $sig_R_string,
 				   sprintf("%-.2g", $Pval),
 				   sprintf("%-.2g", $Eval),
-				   sprintf("%-.2g", $sig));
+				   $sig_string,
+				  );
 	}
 
 	if ($return_fields{entropy}) {
@@ -1207,6 +1240,36 @@ Base for the logarithms (default: $base)
 	    &RSAT::error::FatalError("base should be a real number") unless (&IsReal($base));
 	    &RSAT::error::FatalError("base should be larger than 1") if ($base <= 1);
 
+	    ## NA string
+=pod
+
+=item	B<-na na_string>
+
+String to indicate undefined values (default: NA)
+
+=cut
+	} elsif ($ARGV[$a] eq "-na") {
+	    $na = $ARGV[$a+1];
+
+	    ## Inf string
+=pod
+
+=item	B<-inf inf_string>
+
+String to indicate infinite values (default: 999)
+
+Infinite values can be obtained from the calculation of the
+significance : the limit of precision for the P-value and E-value is
+around e-300. Below this limit, the P-value and E-values are set to 0,
+and sig=-log10(E-value) = Inf.
+
+The infinite string can be either a number (e.g. 999) or a string
+(e.g. Inf).
+
+=cut
+	} elsif ($ARGV[$a] eq "-inf") {
+	    $inf = $ARGV[$a+1];
+
 =pod
     
 =item	B<-lth param lower_threshold>
@@ -1318,8 +1381,8 @@ sub Verbose {
 	print $out "; Thresholds on parameters\n";
 	print $out ";\tparam\tlower\tupper\n";
 	foreach my $key (@th_keys) {
-	    my $lower = "NA";
-	    my $upper = "NA";
+	    my $lower = $na;
+	    my $upper = $na;
 	    if (defined($lth{$key})) {
 		$lower = $lth{$key};
 	    }
