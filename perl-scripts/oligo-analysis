@@ -7,7 +7,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.103 2006/02/07 21:50:00 jvanheld Exp $
+# $Id: oligo-analysis,v 1.104 2006/02/22 15:26:49 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -250,8 +250,8 @@ if ($return{'table'}) {
 
     ## Check somte thresholds before calculating other scores
     &CheckThresholds("exp_freq") if ($return{'exp_freq'}); ## Check thresholds on expected frequencies
-    &CheckThresholds("mseq") if ($return{mseq}); ## Check thresholds on matching sequences
     &CheckThresholds("occ") if ($return{occ}); ## Check thresholds on occurrences
+    &CheckThresholds("mseq") if ($return{mseq}); ## Check thresholds on matching sequences
     &CheckThresholds("observed_freq") if ($return{'exp_freq'}); ## Check thresholds on frequencies
 
 #    &RSAT::message::Debug ("Number of patterns", scalar(keys(%patterns))) if ($main::verbose >= 0);
@@ -1261,6 +1261,9 @@ sub CalcProba {
     &CheckThresholds("occ_P");
     &CheckThresholds("occ_E");
     &CheckThresholds("occ_sig");
+    &CheckThresholds("ms_P");
+    &CheckThresholds("ms_E");
+    &CheckThresholds("ms_sig");
 	
 } ### CalcProba
 
