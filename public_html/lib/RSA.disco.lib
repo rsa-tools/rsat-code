@@ -9,12 +9,16 @@
 %uth = (); # upper threshold values
 @supported_thresholds = qw(
 			   occ
+			   occ_P
+			   occ_E
 			   occ_sig
 			   observed_freq
 			   exp_freq
-			   occ_pro
 			   zscore
 			   mseq
+			   ms_P
+			   ms_E
+			   ms_sig
 			   ratio
 			   rank
 			 );
