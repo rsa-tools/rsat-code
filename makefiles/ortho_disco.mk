@@ -76,7 +76,7 @@ orthologs:
 ## Retrieve upstream sequences of set of orthologous genes
 SEQ=${PREFIX}_up.fasta
 PURGED=${PREFIX}_up_purged.fasta
-RETRIEVE_CMD=retrieve-seq-multigenome -i ${ORTHOLOGS} -o ${SEQ} -noorf ; purge-sequence -i ${SEQ} -o ${PURGED}
+RETRIEVE_CMD=retrieve-seq-multigenome -i ${ORTHOLOGS} -o ${SEQ} -noorf ; purge-sequence -i ${SEQ} -o ${PURGED} -ml 20 -mis 2 -2str
 upstream:
 	@echo "${RETRIEVE_CMD}"
 	@${RETRIEVE_CMD}
@@ -287,11 +287,11 @@ regulondb_gf: regulondb_genes regulondb_factors
 REGULONDB=`cat ${REGULONDB_GF}| grep -v '^;' | xargs`
 regulondb_analysis:
 	@echo "Analyzing genes from RegulonDB"
-	@${MAKE} all_tasks_all_genes REF_ORG=Escherichia_coli_K12 TAXON=Gammaproteobacteria ALL_GENES='${REGULONDB}'
+	@${MAKE} all_tasks_all_genes REF_ORG=Escherichia_coli_K12 TAXON=Gammaproteobacteria ALL_GENES="${REGULONDB}"
 	@${MAKE} index_regulondb
 
 ## Index the results obtained with RegulonDB
 index_regulondb:
-	@${MAKE} index_results REF_ORG=Escherichia_coli_K12 TAXON=Gammaproteobacteria ALL_GENES='${REGULONDB}'
+	@${MAKE} index_results REF_ORG=Escherichia_coli_K12 TAXON=Gammaproteobacteria ALL_GENES="${REGULONDB}"
 
 
