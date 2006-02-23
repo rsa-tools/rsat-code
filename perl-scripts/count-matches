@@ -71,7 +71,7 @@ $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
 			      sig_p
 			      Eval_f
 			      sig_f
-			      noffsets
+			      noffs
 			      weight
 			      seq
 			      id
@@ -94,7 +94,7 @@ my %field_format = (match=>"%d",
 		    Eval_f=>"%.2g",
 		    sig_p=>"%.2f",
 		    sig_f=>"%.2f",
-		    noffsets=>"%d",
+		    noffs=>"%d",
 		    seq1=>"%s",		
 		    seq2=>"%s",		
 		    id1=>"%s",
@@ -119,6 +119,10 @@ my %field_format = (match=>"%d",
 @supported_table_fields = qw(
 			      match
 			      Pval
+			      Eval_p
+			      sig_p
+			      Eval_f
+			      sig_f
 			      weight
 			      offset
 			      strand
@@ -320,7 +324,7 @@ sub OneMatch {
     $one_match->{match} = $match; ## Number of matching residues
     $one_match->{weight} = $weight; ## Weight
     $one_match->{Pval} = $Pval; ## P-value
-    $one_match->{noffsets} = $n_offsets; ## P-value
+    $one_match->{noffs} = $n_offsets; ## P-value
     $one_match->{Eval_p} = $Pval*$n_offsets; ## E-value
     if ($both_strands) { ## Taking into account the 2 strands
 	$one_match->{Eval_p} *= 2; 
@@ -661,16 +665,16 @@ RETURN FIELDS
 
 		    - with the option -slide, the two sequences are
                       compared with different offsets.
-		      	       Eval_p = Pval * noffsets
+		      	       Eval_p = Pval * noffs
 
 		    - with the option -2str, two comparisons are
                       performed per pair of sequences. In this case,
-		      		Eval_p = Pval*2*noffsets
+		      		Eval_p = Pval*2*noffs
 
 		   It is useful to return the Eval together with the
 		   number of offsets analyzed (corresponding to the
 		   number of tests for a given pair of sequences).
-		   	  -return Pval,noffsets,Eval,sig
+		   	  -return Pval,noffs,Eval,sig
 
 	sig_p      Significance for a single comparison between two
 		   sequences. 
@@ -922,8 +926,8 @@ sub PrintFieldDescriptions {
     $field_description{match} = "number of matching residues";
     $field_description{Pval} = "P-value";
     $field_description{weight} = "match weight. weight=-log4(Pval)";
-    $field_description{noffsets} = "number of offsets tested";
-    $field_description{Eval_p} = "E-value for a single comparison (one sequence against one sequence). Eval_p = Pval*noffsets";
+    $field_description{noffs} = "number of offsets tested";
+    $field_description{Eval_p} = "E-value for a single comparison (one sequence against one sequence). Eval_p = Pval*noffs";
     $field_description{sig_p} = "significance for a single comparison. sig_p = -log10(Eval_p)";
     $field_description{Eval_f} = "E-value for the whole analysis (all sequences against all sequences). Eval_f = Eval_p*nb_seq1*nb_seq2";
     $field_description{sig_f} = "significance for a single comparison. sig_f = -log10(Eval_f)";
