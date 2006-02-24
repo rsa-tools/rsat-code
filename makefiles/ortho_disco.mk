@@ -76,7 +76,8 @@ orthologs:
 ## Retrieve upstream sequences of set of orthologous genes
 SEQ=${PREFIX}_up.fasta
 PURGED=${PREFIX}_up_purged.fasta
-RETRIEVE_CMD=retrieve-seq-multigenome -i ${ORTHOLOGS} -o ${SEQ} -noorf ; purge-sequence -i ${SEQ} -o ${PURGED} -ml 20 -mis 2 -2str
+PURGE_ML=30
+RETRIEVE_CMD=retrieve-seq-multigenome -i ${ORTHOLOGS} -o ${SEQ} -noorf ; purge-sequence -i ${SEQ} -o ${PURGED} -ml ${PURGE_ML} -mis 0 -2str
 upstream:
 	@echo "${RETRIEVE_CMD}"
 	@${RETRIEVE_CMD}
