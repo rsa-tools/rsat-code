@@ -16,18 +16,43 @@ $out_format = "fasta";
 $null = "NA";
 $from = $null;
 $to =$null;
+$strand = "D";
 
 &ReadArguments();
 
 #### check argument values ####
+
 &CheckInputSeqFormat($in_format);
 &CheckInputSeqFormat($out_format);
-&RSAT::error::FatalError("You must specify the starting position (option -from)") if ($from eq $null);
-&RSAT::error::FatalError("You must specify the ending position (option -to)") if ($to eq $null);
-if ($from > $to) {
-    my $tmp = $from;
-    $from = $to;
-    $to = $tmp;
+my %fragments = ();
+my %fragments_per_seq = ();
+if ($fragment_file) {
+    ## Fragment file
+    if (($from ne $null) || ($to ne $null)) {
+	&RSAT::message::FatalError("The option -frag is incompatible with the options -from and -to");
+    }
+    my ($in, $input_dir) = &OpenInputFile($fragment_file);
+    my $l = 0;
+    while (<$in>) {
+	$l++;
+	chomp();
+	s/\r//;
+	next if (/^;/);
+	next if (/^#/);
+	next unless (/\S/);
+	my ($frag_id, $seq_id, $frag_from, $frag_to, $frag_strand) = split "\t";
+	push @{$fragments_per_seq{$seq_id}}, $frag_id;
+	$fragment{$frag_id}->{seq_id} = $seq_id;
+	$fragment{$frag_id}->{from} = $frag_from;
+	$fragment{$frag_id}->{to} = $frag_to;
+	$fragment{$frag_id}->{strand} = $frag_strand;
+    }
+    close $in;
+
+} else {
+    ## Same from and to for all the sequences
+    &RSAT::error::FatalError("You must specify the starting position (option -from)") if ($from eq $null);
+    &RSAT::error::FatalError("You must specify the ending position (option -to)") if ($to eq $null);
 }
 
 ### open input file ###
@@ -49,7 +74,7 @@ if ($main::verbose >= 1) {
     print $out "; Output format\t$out_format\n";
     print $out "; From\t$from\n";
     print $out "; To\t$to\n";
-    if ($reverse_complement) {
+    if ($strand eq "R") {
 	print $out "; Output is the reverse complement of input sequence\n";
     }
 }
@@ -57,37 +82,26 @@ if ($main::verbose >= 1) {
 
 ################################################################
 ###### execute the command #########
-while ((($current_seq, $current_id) = &ReadNextSequence($in, $in_format, $input_dir, "", $mask)) &&
-       (($current_seq ne "") || ($current_id ne ""))) {
+while ((($current_seq, $seq_id) = &ReadNextSequence($in, $in_format, $input_dir, "", $mask)) &&
+       (($current_seq ne "") || ($seq_id ne ""))) {
     $current_seq =~ s/\s//g;
     $seq_length = length($current_seq);
-    if ($from < 0) {
-	$current_from = length($current_seq) + $from + 1;
-    } else {
-	$current_from = $from;
-    }
-    if ($to < 0) {
-	$current_to = length($current_seq) + $to + 1;
-    } else {
-	$current_to = $to;
-    }
-    $current_from = &max($current_from, 1);
-    $current_from = &min($current_from, $seq_length);
-    $current_to = &max($current_to, 1);
-    $current_to = &min($current_to, $seq_length);
-    $current_length = $current_to - $current_from + 1;
 
-    push @comments, join(" ", "sub-sequence from", $current_from, "to", $current_to);
-    if ($limits) {
-	$current_id .= "_".$from."_".$to;
-    }
-    $sub_seq = substr($current_seq, $current_from -1, $current_length);
-    if ($reverse_complement) {
-	$sub_seq = &ReverseComplement($sub_seq);
+    if ($fragment_file) {
+	my $frag_list = $fragments_per_seq{$seq_id};
+	my @fragments = @$frag_list;
+	foreach my $frag_id (@fragments) {
+	    my $fragment = $fragment{$frag_id};
+	    my $frag_from = $fragment->{from};
+	    my $frag_to = $fragment->{to};
+	    my $frag_strand = $fragment->{strand};
+	    &RSAT::message::Debug($seq_id, $frag_id, $frag_from, $frag_to, $frag_strand);
+	    &OneFragment($frag_from, $frag_to, $frag_strand, $frag_id);
+	}
+    } else {
+	&OneFragment($from, $to, $strand, $seq_id);
     }
 
-    &PrintNextSequence($out, $out_format, $line_width, $sub_seq, $current_id, @comments);
-    @comments = ();
 }
 
 ###### verbose ######
@@ -111,6 +125,42 @@ exit(0);
 ##################### SUBROUTINE DEFINITION ####################
 ################################################################
 
+sub OneFragment {
+    my ($current_from, $current_to, $current_strand, $current_id) = @_;
+    if ($current_from > $current_to) {
+	my $tmp = $current_from;
+	$current_from = $current_to;
+	$current_to = $tmp;
+    }
+    if ($current_from < 0) {
+	$sequence_from = length($current_seq) + $current_from + 1;
+    } else {
+	$sequence_from = $current_from;
+    }
+    if ($current_to < 0) {
+	$sequence_to = length($current_seq) + $current_to + 1;
+    } else {
+	$sequence_to = $current_to;
+    }
+    $sequence_from = &max($sequence_from, 1);
+    $sequence_from = &min($sequence_from, $seq_length);
+    $sequence_to = &max($sequence_to, 1);
+    $sequence_to = &min($sequence_to, $seq_length);
+    $current_length = $sequence_to - $sequence_from + 1;
+
+    push @comments, join(" ", "sub-sequence from", $sequence_from, "to", $sequence_to);
+    if ($limits) {
+	$current_id .= "_".$current_from."_".$current_to;
+    }
+    $sub_seq = substr($current_seq, $sequence_from -1, $current_length);
+    if ($current_strand eq "R") {
+	$sub_seq = &ReverseComplement($sub_seq);
+    }
+    &RSAT::message::Debug($seq_id, $current_id, $current_from, $current_to, $sequence_from, $sequence_to, $current_strand);
+
+    &PrintNextSequence($out, $out_format, $line_width, $sub_seq, $current_id, @comments);
+    @comments = ();
+}
 
 ################################################################
 #### display full help message 
@@ -149,6 +199,26 @@ OPTIONS
 	-o outputfile
 		if not specified, the standard output is used.
 		This allows to place the command within a pipe.
+
+	-frag	fragment_file
+
+		This option allows to specify a list of fragments t be
+		retrieved from each sequence of the input file.
+
+		Each row contains the coordinates of a fragment in 4
+		or 5 columns:
+
+		     1) fragment ID
+		     2) sequence ID (must be the same as in the sequence file)
+		     3) fragment start
+		     4) fragment end
+		     5) strand (optional). If not specified, all
+                        fragments are taken on the direct strand.
+
+    		example: 
+		frag1	chr2L	344641	348496	D
+		frag2	chr2L	346419	350309	R
+		frag3	chr2R	350781	354418	D
 
 	-from #	starting position
 		if not specified, the subsequence starts at 1st position.
@@ -209,6 +279,7 @@ sub-sequence options
 -mask upper|lower	mask upper- or lowercases, respectively
 -o		output file
 -v		verbose
+-frag		fragment_file
 -from #		start position
 -to #		end position
 -iformat	input format. Default is fasta
@@ -250,9 +321,16 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-o") {
 	    $outputfile = $ARGV[$a+1];
 
+
+	    ## Fragment file
+	} elsif ($ARGV[$a] eq "-frag") {
+	    $fragment_file = $ARGV[$a+1];
+
+	    ## starting position
 	} elsif ($ARGV[$a] eq "-from") {
 	    $from = $ARGV[$a+1];
 
+	    ## ending position
 	} elsif ($ARGV[$a] eq "-to") {
 	    $to = $ARGV[$a+1];
 
@@ -267,7 +345,7 @@ sub ReadArguments {
 	    $out_format = $ARGV[$a+1];
 
 	} elsif ($ARGV[$a] eq "-rc") {
-	    $reverse_complement = 1;
+	    $strand = "R";
 
 	} elsif ($ARGV[$a] eq "-limits") {
 	    $limits = 1;
