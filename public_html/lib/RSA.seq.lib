@@ -10,6 +10,7 @@ require RSAT::pattern;
 # - replaced class RSA::pattern  by module RSAT::pattern
 
 ### initialization
+$accepted_input_seq{'tab'} = 1;
 $accepted_input_seq{'raw'} = 1;
 $accepted_input_seq{'multi'} = 1;
 $accepted_input_seq{'ig'} = 1;
@@ -25,6 +26,7 @@ $accepted_input_seq{'maf'} = 1;
 $accepted_input_seq = join ",", sort keys %accepted_input_seq;
 
 $accepted_output_seq{'raw'} = 1;
+$accepted_output_seq{'tab'} = 1;
 $accepted_output_seq{'multi'} = 1;
 $accepted_output_seq{'ig'} = 1;
 $accepted_output_seq{'wconsensus'} = 1;
@@ -893,6 +895,13 @@ sub PrintNextSequence {
 	}
 	print $OUTFILE "\\$sequence\\";
 	print $OUTFILE "\n";
+    } elsif ($out_format eq "tab") {
+	print $OUTFILE join "\t", $seq_id, $sequence;
+	my $comments = join "; ", @comments;
+	if ($comments) {
+	    print $OUTFILE "\t".$comments;
+	}
+	print $OUTFILE "\n";
     } elsif ($out_format eq "raw") {
 	print $OUTFILE "$sequence\n";
     } elsif ($out_format eq "multi") {
@@ -976,9 +985,14 @@ sub CheckFormat {
 ##         $mask (accepted values: "upper" or "lower"). Mask upper or lowercases by replacing them by N
 sub ReadNextSequence {
     
-    my ($SEQ, $sequence_format, $input_dir, $seq_type, $mask) = @_;
+    my ($SEQ, $sequence_format, $input_dir, $seq_type, $mask, %args) = @_;
     $sequence_format = lc($sequence_format);
     
+    ## Columns for the tab-delimited format
+    my $id_column = $args{'id_column'} || 1;
+    my $seq_column = $args{'seq_column'} || 2;
+    my $comment_column = $args{'comment_column'} || 0;
+
     local $sequence = "";
     local $seq_id = "";
     local @comments = ();
@@ -1086,6 +1100,24 @@ sub ReadNextSequence {
 	return ("","");		### when input file has been totally read
 	
 	
+	### tab-delimited text file
+    } elsif ($sequence_format eq "tab") {
+	while (<$SEQ>) {
+	    next if (/^;/);
+	    next if (/^\#/);
+	    next unless (/\S/);
+	    chomp();
+	    my @fields = split "\t";
+	    my $seq_id = $fields[$id_column-1];
+	    my $sequence = $fields[$seq_column -1];
+	    my @comments =  ();
+	    if ($comment_column) {
+		push @comments, $fields[$comment_column -1];
+	    }
+	    return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
+	}
+	return ("","");		### when input file has been totally read
+
 	### Wconsensus format ###
     } elsif (($sequence_format eq "wc") || ($sequence_format eq "wconsensus")) {
 	while (<$SEQ>) {
