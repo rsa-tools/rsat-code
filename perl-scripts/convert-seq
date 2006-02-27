@@ -1,10 +1,10 @@
 #!/usr/bin/perl
 
-### CVS: added the option -mask
+### CVS: added tab as supported input format
 
 ############################################################
 #
-# $Id: convert-seq,v 1.18 2006/02/07 21:49:58 jvanheld Exp $
+# $Id: convert-seq,v 1.19 2006/02/27 16:38:16 rsat Exp $
 #
 # Time-stamp: <2002-09-24 21:24:13 jvanheld>
 #
@@ -20,8 +20,10 @@ $start_time = `date`;
 $line_width = 60;
 $check_id = 1;
 
-$accepted_input_string = join "\n\t\t\t", "",keys %accepted_input_seq;
-$accepted_output_string = join "\n\t\t\t", "", keys %accepted_output_seq; 
+$accepted_input_string = join "\n\t\t\t", "", sort(keys %accepted_input_seq);
+$accepted_output_string = join "\n\t\t\t", "", sort(keys %accepted_output_seq); 
+
+%args=();
 
 &ReadArguments();
 
@@ -71,7 +73,7 @@ if ($verbose) {
 
 ## ##############################################################
 ## Read the sequences and convert them
-while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir, "",$mask)) &&
+while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir, "",$mask, %args)) &&
        (($current_seq ne "") || ($current_id ne ""))) {
 
     $seq_nb++;
@@ -337,12 +339,44 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-o") {
 	    $outputfile = $ARGV[$a+1];
 	    
+
+	    ## Input formaat
 	} elsif ($ARGV[$a] eq "-from") {
 	    $in_format = lc($ARGV[$a+1]);
 	    
+	    ## Output format
 	} elsif ($ARGV[$a] eq "-to") {
 	    $out_format = lc($ARGV[$a+1]);
 	    
+	    ## ID column for the tab format
+	} elsif ($ARGV[$a] eq "-id_col") {
+	    $args{'id_column'} = $ARGV[$a+1];
+	    &RSAT::error::FatalError(join("\t", 
+					  $args{"id_column"},
+					  "Invalid column specification for sequence ID. ". 
+					  "Must be a strictly positive natural number"))
+		unless &IsNatural($args{'id_column'}) && ($args{'id_column'} > 0);
+
+
+	    ## Sequence column for the tab format
+	} elsif ($ARGV[$a] eq "-seq_col") {
+	    $args{'seq_column'} = $ARGV[$a+1];
+	    &RSAT::error::FatalError(join("\t", 
+					  $args{"seq_column"},
+					  "Invalid column specification for sequence. ". 
+					  "Must be a strictly positive natural number"))
+		unless &IsNatural($args{'seq_column'}) && ($args{'seq_column'} > 0);
+
+	    ## Comment column for the tab format
+	} elsif ($ARGV[$a] eq "-comment_col") {
+	    $args{'comment_column'} = $ARGV[$a+1];
+	    &RSAT::error::FatalError(join("\t", 
+					  $args{"comment_column"},
+					  "Invalid column specification for sequence COMMENT. ". 
+					  "Must be a strictly positive natural number"))
+		unless &IsNatural($args{'comment_column'}) && ($args{'comment_column'} > 0);
+
+	    ## Line width
 	} elsif ($ARGV[$a] eq "-lw") {
 	    $line_width = $ARGV[$a+1];
 	    
