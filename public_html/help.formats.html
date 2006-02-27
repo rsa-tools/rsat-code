@@ -37,38 +37,19 @@ a distinct sequence.<P>
 CCCTTCCAGTTTCTTTTATTCTTTGCTGTTTCGAAGAATCACACCATCAATGAATAAATC</PRE>
 </UL>
 
-<a name="ig"><LI><B>IG</b><br></a>
+<a name="tab"><LI><B>tab</B><BR></A>
 
-IntelliGenetics format. All lines beginning with a semicolon ";" are
-considered as comments. The first non-comment line contains the
-sequence identifier (a single word without spaces). The sequence
-follows on the next lines. It can include spaces, tabs or newlines,
-that will be ignored for sequence analysis. The end of one sequence is
-indicated by termination character: 1 for linear, 2 for circular
-sequences. Several sequences can be concatenated within the same
-text. <P>
+Tab-delimited text file with at least two columns. 
+<br>Each row contains information about one sequence. 
 
-<ul>
-<b>Example of IG format</b>
-<pre>;sequence of the region upstream from gat1
-;Locus GAT1
-;ORF YFL021W  coord:    VI 95964 97496
-;upstream region size:  60
-;upstream region coord: VI 95904 95963
-GAT1_up
-GCGGTGCCCGGCCCAGCCACATATATATAGGTGTGTGCCA
-CTCCCGGCCCCGGTATTAGC1
-;sequence of the region upstream from put4
-;Locus PUT4
-;ORF YOR348C  coord:    XV 988773 986890
-;upstream region size:  60
-;upstream region coord: XV 988833 988774
-PUT4_up
-CCCTTCCAGTTTCTTTTATTCTTTGCTGTTTCGAAGAATC
-ACACCATCAATGAATAAATC1</PRE>
-</ul>
+<ol>
+<li>The first column contains the sequence ID.</li>
+<li>The second column contains the sequence, without any space. </li>
+<li>Additional columns are ignored.
+</ol>
 
-<a name="fasta"><LI><B>fasta</B><BR></A>
+
+<p><a name="fasta"><LI><B>fasta</B><BR></A>
 
 This format was originally defined for the program FastA, and has been
 used by a wide variety of other programs (FastA, BLAST, gibbs sampler,
@@ -123,6 +104,39 @@ GAT1_up \GCGGTGCCCGGCCCAGCCACATATATATAGGTGTGTGCCACTCCCGGCCCCGGTATTAGC\
 ;upstream region coord: XV 988833 988774
 PUT4_up \CCCTTCCAGTTTCTTTTATTCTTTGCTGTTTCGAAGAATCACACCATCAATGAATAAATC\
 </PRE>
+</ul>
+
+<p>
+<a name="ig"><LI><B>IG</b><br></a>
+
+IntelliGenetics format. All lines beginning with a semicolon ";" are
+considered as comments. The first non-comment line contains the
+sequence identifier (a single word without spaces). The sequence
+follows on the next lines. It can include spaces, tabs or newlines,
+that will be ignored for sequence analysis. The end of one sequence is
+indicated by termination character: 1 for linear, 2 for circular
+sequences. Several sequences can be concatenated within the same
+text. <P>
+
+<ul>
+<b>Example of IG format</b>
+<pre>;sequence of the region upstream from gat1
+;Locus GAT1
+;ORF YFL021W  coord:    VI 95964 97496
+;upstream region size:  60
+;upstream region coord: VI 95904 95963
+GAT1_up
+GCGGTGCCCGGCCCAGCCACATATATATAGGTGTGTGCCA
+CTCCCGGCCCCGGTATTAGC1
+;sequence of the region upstream from put4
+;Locus PUT4
+;ORF YOR348C  coord:    XV 988773 986890
+;upstream region size:  60
+;upstream region coord: XV 988833 988774
+PUT4_up
+CCCTTCCAGTTTCTTTTATTCTTTGCTGTTTCGAAGAATC
+ACACCATCAATGAATAAATC1</PRE>
+</ul>
 </UL>
 
 </ul><h4>Mask option</h4><ul>
