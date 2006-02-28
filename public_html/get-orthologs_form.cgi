@@ -22,14 +22,18 @@ $query = new CGI;
 ################################################################
 ## Initialize parameters
 
-@selected_organisms = qw(Escherichia_coli_K12
+@selected_organisms = qw(
 			 Bacillus_subtilis
 			 Brucella_melitensis
+			 Escherichia_coli_O157H7
+			 Escherichia_coli_K12
 			 Pseudomonas_putida_KT2440
 			 Porphyromonas_gingivalis_W83
 			 Salmonella_typhimurium_LT2
+			 Streptococcus_mutans
 			 Streptomyces_coelicolor
-			 Treponema_denticola_ATCC_35405);
+			 Treponema_denticola_ATCC_35405
+			 );
 
 ## Output fields
 my @output_fields = qw(ident
