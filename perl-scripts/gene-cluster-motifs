@@ -6,7 +6,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.162 2006/02/07 21:49:59 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.163 2006/03/02 16:04:52 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -93,6 +93,8 @@ $dir{calib1} = "calibrations_1gene";
 		       sig_distrib_oligos
 		       sig_distrib_dyads
 		       sig_distrib_orm
+		       db_match_oligos
+		       db_match_dyads
 		       );
 foreach my $task (@supported_tasks) {
     $supported_task{$task} = 1;
@@ -338,6 +340,7 @@ $verbose_message = &Verbose() if ($verbose >= 1);
 &SigDistrib() if (($task{sig_distrib_oligos}) || ($task{sig_distrib_dyads}) || ($task{sig_distrib_orm}));
 &ExportSQL() if ($task{sql});
 &SyntheticTable() if ($task{synthesis});
+&DatabaseMatch() if ($task{db_match});
 
 ### Warn output dir and files
 if ($main::verbose >= 1) {
@@ -516,6 +519,9 @@ sub SetFileNames {
 	$family{$family_name}->{oligo_vs_known} = $family{$family_name}->{oligo_file}."__vs__known_relw".$rel_w.".tab";
 	$family{$family_name}->{oligo_vs_known_weight_table} = $family{$family_name}->{oligo_file}."__vs__known_weigth_table.tab";
 	$family{$family_name}->{oligo_vs_known_relw_table} = $family{$family_name}->{oligo_file}."__vs__known_relw_table.tab";
+	$family{$family_name}->{oligo_vs_db} = $family{$family_name}->{oligo_file}."__vs__db_relw".$rel_w.".tab";
+	$family{$family_name}->{oligo_vs_db_weight_table} = $family{$family_name}->{oligo_file}."__vs__db_weigth_table.tab";
+	$family{$family_name}->{oligo_vs_db_relw_table} = $family{$family_name}->{oligo_file}."__vs__db_relw_table.tab";
 
 	################################################################
 	## dyad-analysis results
@@ -528,6 +534,9 @@ sub SetFileNames {
         $family{$family_name}->{dyad_vs_known} = $family{$family_name}->{dyad_file}."__vs__known_relw".$rel_w.".tab";
         $family{$family_name}->{dyad_vs_known_weight_table} = $family{$family_name}->{dyad_file}."__vs__known_weight_table.tab";
         $family{$family_name}->{dyad_vs_known_relw_table} = $family{$family_name}->{dyad_file}."__vs__known_relw_table.tab";
+	$family{$family_name}->{dyad_vs_db} = $family{$family_name}->{dyad_file}."__vs__db_relw".$rel_w.".tab";
+	$family{$family_name}->{dyad_vs_db_weight_table} = $family{$family_name}->{dyad_file}."__vs__db_weigth_table.tab";
+	$family{$family_name}->{dyad_vs_db_relw_table} = $family{$family_name}->{dyad_file}."__vs__db_relw_table.tab";
 
 	################################################################
 	## oligos + dyads
@@ -881,6 +890,7 @@ sub CalcOligoOptions {
    $oligo_options .= " -sort ";
    $oligo_options .= " ".$strands;
    $oligo_options .= " -l ".$oligo_len;
+   $oligo_options .= " -mask ".$mask;
    $oligo_options .= &ThresholdOptions();
 #   $oligo_options .= " -lth occ_sig ".$lth{occ_sig};
 #   if (&IsReal($lth{ms_freq})) {$oligo_options .= " -thmsf ".$lth{ms_freq} ; }
@@ -1144,6 +1154,7 @@ sub DyadAnalysis {
    $command .= " -return occ,proba,rank";
    $command .= " -i ".$family{$family_name}->{input_seq_file};
    $command .= " -format ".$seq_format;
+   $command .= " -mask ".$mask;
    $command .= " -o ".$family{$family_name}->{dyad_file};
    $command .= " ".$dyad_options;
    ### fragment assembly
@@ -2031,6 +2042,14 @@ sub CheckParameters {
 	&FatalError("For the task 'validate', you must specify a list of known sites with the option -known")
 	    unless ($known_site_file);
     }
+
+    ## Db match
+    if (($task{db_match_oligos}) ||
+	($task{db_match_dyads})) {
+	$task{db_match} = 1;
+	&FatalError("For the task 'db_match', you must specify a list of known sites with the option -db")
+	    unless ($db_site_file);
+    }
     
     ### family file ###
     unless (($family_file) || ($sequence_file_list)) {
@@ -2507,6 +2526,9 @@ OPTIONS
 		filter out some sites with large sequences annotated in
 		TRANSFAC (default: $known_site_max_len)
 
+        -db     database_file
+                A file containing a list of known sites (from a database)
+
 	-batch (advanced users)
 		Send time-consuming jobs on a batch queue which will be
 		executed on a PC cluster. This option requires a PC cluster
@@ -2586,6 +2608,10 @@ TASK DESCRIPTION
    validate	Validate discovered patterns by comparing them to the list
    		of known sites. This requires to specify a collection
    		of know sites with the option -known.
+
+   db_match     Compare discovered patterns to a list of known sites
+                (for instance a whole database). This requires to specify
+                the list of known sites with the option -db.
 
 End_of_help
  close HELP;
@@ -2681,6 +2707,9 @@ multiple-family-analysis options
 ## Validation
 -known		file containing a list of known sites/motifs
 -known_max_len 	maximal length for using known sites (default: $known_site_max_len)
+
+## Database comparison
+-db             file containing a list of known sites (from a database)
 
 ## Database
 -schema		database schema (default: $schema)
@@ -2828,6 +2857,10 @@ sub ReadArguments {
 	    $known_site_file = $ARGV[$a+1];
 	} elsif ($ARGV[$a] eq "-known_max_len") {
 	    $known_site_max_len = $ARGV[$a+1];
+
+	    ### file with a collection of known motifs, for comparison between discovered and known motifs
+	} elsif ($ARGV[$a] eq "-db") {
+	    $db_site_file = $ARGV[$a+1];
 
 	    #### task selection
 	} elsif ($ARGV[$a] eq "-task") {
@@ -3684,6 +3717,90 @@ sub ValidateOneResult {
 			     $acc_g, 
 			     $acc_h), "\n";
 
+}
+
+################################################################
+## Database comparison
+sub DatabaseMatch {
+    &RSAT::message::Info( ";\n; Comparison of discovered patterns to database of known sites") if ($verbose >=1);
+   if ($task{db_match_oligos}) {
+       $pattern_type = 'oligo';
+       $pattern_suffix = $oligo_suffix;
+   } elsif ($task{db_match_dyads}) {
+       $pattern_type = 'dyad';
+       $pattern_suffix = $dyad_suffix;
+   } elsif ($task{db_match_orm}) {
+       $pattern_type = 'orm';
+       $pattern_suffix = $orm_suffix;
+   }
+
+   if ($noorf eq "-noorf") {
+       $noorf_status = $noorf;
+   } else {
+       $noorf_status = "-orfov";
+   }
+
+   ## Database comparison synthetic file
+#   $outfile{db_match} = join ("", "database_match", $pattern_suffix,$from,$noorf_status,"_",$feature_types,".tab");
+#   $db_match_handle = &OpenOutputFile($outfile{db_match});
+
+   foreach my $family_name (@families) {
+       $f++;
+       &RSAT::message::Info(join("\t", "Matching patterns discovered for family ".$f."/".scalar(@families), 
+				 $family_name)) if ($main::verbose >= 1);
+       
+       my $pattern_file = $family{$family_name}->{$pattern_type."_file"};
+
+       ## Compare discovered patterns with database sites
+       my $command = "count-matches";
+       $command .= " -v 1";
+       $command .= " ".$strands;
+       $command .= " -file1 ".$db_site_file;
+       $command .= " -file2 ".$pattern_file;
+       $command .= " -slide";
+       $command .= " -return match,weight,rel_w,id,strand,seq";
+       $command .= " -lth rel_w ".$rel_w;
+       $command .= " -o ".$family{$family_name}->{$pattern_type."_vs_db"};
+       &doit($command, $dry_run, $die_on_error, $verbose);
+    
+       ## Compare discovered patterns with database sites (relw table output type)
+       my $command = "count-matches";
+       $command .= " -v 1";
+       $command .= " ".$strands;
+       $command .= " -file1 ".$db_site_file;
+       $command .= " -file2 ".$pattern_file;
+       $command .= " -slide";
+       $command .= " -table rel_w";
+       $command .= " -o ".$family{$family_name}->{$pattern_type."_vs_db_relw_table"};
+       &doit($command, $dry_run, $die_on_error, $verbose);
+    
+       ## Compare discovered patterns with database sites (weight table output type)
+       my $command = "count-matches";
+       $command .= " -v 1";
+       $command .= " ".$strands;
+       $command .= " -file1 ".$db_site_file;
+       $command .= " -file2 ".$pattern_file;
+       $command .= " -slide";
+       $command .= " -table weight";
+       $command .= " -o ".$family{$family_name}->{$pattern_type."_vs_db_weight_table"};
+       &doit($command, $dry_run, $die_on_error, $verbose);
+
+#       my $db_match_file = $family{$family_name}->{$pattern_type."_vs_db"};
+
+
+
+       ## Print results in synthetic file
+#       print $db_match_handle join("\t", $family_name, 
+#				      scalar(@{$family{$family_name}->{members}}),
+#				      $number_sites, 
+#				      $pattern,
+#				      $score,
+#				      $site,
+#				      $site_id), "\n";
+
+   }
+#   close $db_match_handle;
+#   &RSAT::message::Info(join ("\t", "Database match done", $outfile{db_match}));
 }
 
 ################################################################
