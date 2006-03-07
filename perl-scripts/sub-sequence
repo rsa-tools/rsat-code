@@ -87,6 +87,8 @@ while ((($current_seq, $seq_id) = &ReadNextSequence($in, $in_format, $input_dir,
     $current_seq =~ s/\s//g;
     $seq_length = length($current_seq);
 
+    &RSAT::message::TimeWarn(join("\t", "Read sequence", $seq_id, $seq_length)) if ($main::verbose >= 2);
+
     if ($fragment_file) {
 	my $frag_list = $fragments_per_seq{$seq_id};
 	my @fragments = @$frag_list;
@@ -156,8 +158,7 @@ sub OneFragment {
     if ($current_strand eq "R") {
 	$sub_seq = &ReverseComplement($sub_seq);
     }
-    &RSAT::message::Debug("Fragment", $current_id, $seq_id, $current_from, $current_to, $sequence_from, $sequence_to, $current_strand)  if ($main::verbose >= 3);;
-
+    &RSAT::message::Debug("Fragment", $current_id, $seq_id, $current_from, $current_to, $sequence_from, $sequence_to, $current_strand, $out_format) if ($main::verbose >= 3);
     &PrintNextSequence($out, $out_format, $line_width, $sub_seq, $current_id, @comments);
     @comments = ();
 }
