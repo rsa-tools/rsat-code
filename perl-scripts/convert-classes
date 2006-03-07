@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-classes,v 1.1 2006/03/07 19:26:07 jvanheld Exp $
+# $Id: convert-classes,v 1.2 2006/03/07 22:46:46 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -31,9 +31,17 @@ util
     
 convert-classes [-i inputfile] [-o outputfile] [-v]
 
-=head1 INPUT FORMAT
+=head1 INPUT/OUTPUT FORMATS
 
-=head1 OUTPUT FORMAT
+
+=head2 mcl
+
+The output format of the MCL algorithm. MCL is a graph-based
+clustering algorithm developed by Stijn Van Dongen
+(http://micans.org/mcl/).
+
+The output format has one row per cluster, each row giving a list of
+elements, separated by tabulations.
 
 =cut
 
@@ -73,12 +81,14 @@ package main;
     local $input_format = "tab";
     %supported_input_format =(
 	mcl=>1,
+	tab=>1,
     );
     $supported_input_formats = join (",", keys %supported_input_format);
 
     ## Output formats
     local $output_format = "dot";
     %supported_output_format =(
+	mcl=>1,
 	tab=>1,
     );
     $supported_output_formats = join (",", keys %supported_output_format);
