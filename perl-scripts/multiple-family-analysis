@@ -6,7 +6,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.163 2006/03/02 16:04:52 rsat Exp $
+# $Id: multiple-family-analysis,v 1.164 2006/03/07 22:48:46 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -4101,7 +4101,7 @@ sub MDCreport {
 	my $selection_ft_prefix =  $family{$family_name}->{oligo_selection};
 	my $feature_file = $selection_ft_prefix.".ft";
  	my $matching_options = " -N 0"; ## Make sure flanking sequences are not considered
-	$matching_options = " -merge"; ## merge overlapping matches
+	$matching_options .= " -merge"; ## merge overlapping matches
 
 #  	## Threshold for reporting a match
 #  	my $threshold = 0;
