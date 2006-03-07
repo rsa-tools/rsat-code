@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: dna-pattern,v 1.41 2006/03/07 08:38:00 jvanheld Exp $
+# $Id: dna-pattern,v 1.42 2006/03/07 19:24:36 jvanheld Exp $
 #
 # Time-stamp: <2003-08-13 12:16:03 jvanheld>
 #
@@ -161,8 +161,10 @@ while ((($current_seq, $sequence_id, @comments) = &ReadNextSequence($in, $in_for
 
     #### verbose
     $s++;
-    warn join ("\t", "; Scanning sequence", $s, $sequence_id, $sequence_length), "\n" if ($verbose >= 2);
-
+    &RSAT::message::Info(join ("\t", "; Scanning sequence", $s, $sequence_id, $sequence_length)) if ($verbose >= 2);
+    
+#    &RSAT::message::Debug($sequence_id, $current_seq) if ($main::verbose >= 10);
+    
     if (($origin <  0) || ($origin eq "-0")) {
 	$orig_pos = $sequence_length + $origin + 1; 
     } else {
@@ -275,16 +277,25 @@ sub RegExpSearch {
 	     (lc($a) cmp lc($b)))
 	    } keys %pat_hash;
     foreach my $regular_pattern (@keys) {
-	my $seq_to_crop = $current_seq;
+	$seq_to_crop = $current_seq;
 	while ($seq_to_crop =~ /($regular_pattern)(.*)/i) {
+#	    &RSAT::message::Debug("Matching pattern", $regular_pattern, $seq_to_crop) if ($main::verbose >= 10);
 	    $match_count++;
-	    if ($strand eq "DR") {
-		$match_count++;
-	    }
+#	    if ($strand eq "DR") {
+#		$match_count++;
+#	    }
 	    $matching_seq = $1;
 	    $matching_seq_length = length($matching_seq);
 	    $remaining_seq = $2;
-	    $offset = $matching_seq_length + length($remaining_seq)-1;
+	    $remaining_seq_len =  length($remaining_seq);
+	    $offset = $matching_seq_length + $remaining_seq_len -1;
+
+#	    &RSAT::message::Debug("Offset calculation", 
+#				  "match len:".$matching_seq_length, 
+#				  "remaining len:".$remaining_seq_len, 
+#				  "offset:".$offset, 
+#				  "matching:".$matching_seq, 
+#				  "remaining:".$remaining_seq) if ($main::verbose >= 0);
 	    $up_flank = "";
 	    $down_flank = "";
 	    if ($return{match_positions}) {
@@ -330,8 +341,12 @@ sub RegExpSearch {
 	    }
 	    if ($no_overlap) {
 		$seq_to_crop = $remaining_seq;
-	    } else {
+	    } elsif ($remaining_seq) {
+#		&RSAT::message::Debug("cropping sequence", length($seq_to_crop), $matching_seq_length, $offset, $regular_pattern, $seq_to_crop);
 		$seq_to_crop = substr($seq_to_crop,-$offset);
+#		&RSAT::message::Debug("cropped sequence", length($seq_to_crop), $offset, $regular_pattern, $seq_to_crop);
+	    } else {
+		$seq_to_crop = "";
 	    }
 	}
     }
