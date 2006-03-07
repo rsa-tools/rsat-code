@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: dna-pattern,v 1.40 2006/02/07 21:49:58 jvanheld Exp $
+# $Id: dna-pattern,v 1.41 2006/03/07 08:38:00 jvanheld Exp $
 #
 # Time-stamp: <2003-08-13 12:16:03 jvanheld>
 #
@@ -616,8 +616,8 @@ dna-pattern options
 -id		pattern identifier (one word). 
 -noid		use pattern sequence as id
 -noov		prevent detection of overlapping pattern
--DR		search matches on both strands (default)
--D		search matches on the Direct strand only
+-2str		search matches on both strands (default)
+-1str		search matches on the Direct strand only
 -R		search matches on the Reverse complementary strand only
 -pos		return match positions (default)
 -match_format	format for returning matches (supported: fasta, table)
@@ -729,11 +729,15 @@ sub ReadArguments {
             #### matching options
 
 	    #### strands
-	} elsif (($ARGV[$a] eq "-D") ||($ARGV[$a] eq "-W") || ($ARGV[$a] eq "-1str")) {
+	} elsif (($ARGV[$a] eq "-1str") ||
+		 ($ARGV[$a] eq "-D") ||
+		 ($ARGV[$a] eq "-W") || 
+		 ($ARGV[$a] eq "-1str")) {
 	    $strands_to_search = "D";
 	} elsif (($ARGV[$a] eq "-R") ||($ARGV[$a] eq "-C")) {
 	    $strands_to_search = "R";
-	} elsif (($ARGV[$a] eq "-DR") || 
+	} elsif (($ARGV[$a] eq "-2str") || 
+		 ($ARGV[$a] eq "-DR") || 
 		 ($ARGV[$a] eq "-RD") ||
 		 ($ARGV[$a] eq "-CW") ||
 		 ($ARGV[$a] eq "-CW") ||
@@ -1159,12 +1163,12 @@ USAGE
 
 	(directly enter the sequence to search)
 	dna-pattern  -i sequencefile -format seq_format -p pattern [-id identifier] 
-			[-D|-R|-DR] [-c|-ct] [-noov]
+			[-1str|-2str|-R] [-c|-ct] [-noov]
 			[-N flanking] [-v]
 
 	(read a list of patterns from a file)
 	dna-pattern -i sequencefile -format seq_format -pl pattern_file 
-   			[-D|-R|-DR] [-c|-ct]  [-noov] 
+   			[-1str|-2str|-R] [-c|-ct]  [-noov] 
    			[-N flanking] [-v]
 
 ARGUMENTS
@@ -1219,9 +1223,9 @@ ARGUMENTS
 		Do not count overlapping matches for self-overlapping
 		patterns.
 
-	-DR	search matches on both strands (direct and reverse complement)
+	-2str	search matches on both strands (direct and reverse complement)
 
-	-D	search matches only on the direct strand.
+	-1str	search matches only on the direct strand.
 
 	-R 	search matches only on the reverse complement strand.
 

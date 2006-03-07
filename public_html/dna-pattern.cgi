@@ -110,8 +110,10 @@ if (lc($query->param('noov')) eq "on") {
 
 
 ### strands
-if ($query->param('strands') =~ /direct/i) {
-  $parameters .= " -D";
+if ($query->param('strands') =~ /both/i) {
+  $parameters .= " -2str";
+} elsif ($query->param('strands') =~ /direct/i) {
+  $parameters .= " -1str";
 } elsif  ($query->param('strands') =~ /reverse/i) {
   $parameters .= " -R";
 }
