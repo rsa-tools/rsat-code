@@ -7,7 +7,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.19 2006/02/20 01:55:33 rsat Exp $
+# $Id: compare-classes,v 1.20 2006/03/07 23:48:17 rsat Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -1143,7 +1143,8 @@ sub CompareClasses {
 		} elsif ($multi_cor eq "nr") {
 		    $correction = $nb_ref_classes;
 		} elsif ($multi_cor eq "nt") {
-		    $correction = $nb_tests
+#		    $correction = $nb_tests;
+		    $correction = $nb_ref_classes*$nb_query_classes;
 		}
 		$compa{$compa_key}->{E_val} = $compa{$compa_key}->{P_val} * $correction;
 		if ($compa{$compa_key}->{E_val} > 0) {
