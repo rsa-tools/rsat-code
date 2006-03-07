@@ -102,9 +102,10 @@ sub read_mcl {
 	next unless (/\S/);
 	chomp;
 	$class_number++;
+	my $class_name = "cl_".$class_number;
 	my @labels = split(/\s+/);
-	my $class = new RSAT::Family(name=>$class_number);
-	&RSAT::message::Debug("Reading", $class, $class_number);
+	my $class = new RSAT::Family(name=>$class_name);
+	&RSAT::message::Info("Reading", $class, $class_number, $class_name) if ($main::verbose >= 3);
 	foreach my $label (@labels) {
 	    $class->new_member($label);
 	}
@@ -267,7 +268,7 @@ sub to_tab {
     $string .= join ("\t", "#element", "class");
     foreach my $class (@classes) {
 	my $class_name = $class->get_attribute("name");
-	&RSAT::message::Debug("Printing", $class, $class_name);
+#	&RSAT::message::Debug("Printing", $class, $class_name) if ($main::verbose >= 5);
 	foreach my $member ($class->get_members()) {
 	    $string .= join ("\t", $member, $class_name);
 	    $string .= "\n";
@@ -300,7 +301,7 @@ sub to_mcl {
     my $string = "";
     foreach my $class (@classes) {
 	my $class_name = $class->get_attribute("name");
-	&RSAT::message::Debug("Printing", $class, $class_name) if ($main::verbose >= 5);
+#	&RSAT::message::Debug("Printing", $class, $class_name) if ($main::verbose >= 5);
 	my @members = $class->get_members();
 	$string .= join ("\t", @members);
 	$string .= "\n";
