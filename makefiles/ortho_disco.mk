@@ -286,13 +286,14 @@ regulondb_gf: regulondb_genes regulondb_factors
 
 ## Run all the tasks for reuglonDB analysis
 REGULONDB=`cat ${REGULONDB_GF}| grep -v '^;' | xargs`
+REGULON_TAXON=
 regulondb_analysis:
 	@echo "Analyzing genes from RegulonDB"
-	@${MAKE} all_tasks_all_genes REF_ORG=Escherichia_coli_K12 TAXON=Gammaproteobacteria ALL_GENES="${REGULONDB}"
+	@${MAKE} all_tasks_all_genes REF_ORG=Escherichia_coli_K12 TAXON=${REGULON_TAXON}  ALL_GENES="${REGULONDB}"
 	@${MAKE} index_regulondb
 
 ## Index the results obtained with RegulonDB
 index_regulondb:
-	@${MAKE} index_results REF_ORG=Escherichia_coli_K12 TAXON=Gammaproteobacteria ALL_GENES="${REGULONDB}"
+	@${MAKE} index_results REF_ORG=Escherichia_coli_K12 TAXON=${REGULON_TAXON} ALL_GENES="${REGULONDB}"
 
 
