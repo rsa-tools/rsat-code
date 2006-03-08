@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence,v 1.25 2005/08/18 04:25:22 jvanheld Exp $
+# $Id: purge-sequence,v 1.26 2006/03/08 20:12:44 jvanheld Exp $
 #
 # Time-stamp: <2003-10-05 23:01:33 jvanheld>
 #
@@ -65,13 +65,12 @@ if ($inputfile) {
     $basename = $start_time;
 }
 
-
-
 #### create a temp file to filter out non-conform lines 
 $tmp_file = "tmp_".$basename.".fasta";
 
 #$command = "cd $TMP ; ";
 $command = " $convert_seq_command -from $in_format -to fasta -o ${TMP}/$tmp_file";
+$command .= " -mask_short ".$mask_short if ($mask_short);
 $command .= " -i $dir{input}/$basename" if ($inputfile);
 &doit($command, $dry_run, $die_on_error, $verbose);
 
@@ -194,6 +193,14 @@ OPTIONS
 		means that one sequence of input can be converted to
 		several fragments in the output.
 
+	-mask_short min_seq_len
+		Mask (replace by N characters) sequences shorter than
+		the specified length. This can be useful to discard
+		short intergenic segments from the pattern discovery
+		step, especially when working with bacterial genomes,
+		where short intergenic sequences generally correspond
+		to intra-operon segments.
+
 End_of_help
   close HELP;
   exit;
@@ -205,26 +212,28 @@ sub PrintOptions {
   print HELP <<End_short_help;
 purge-sequence options
 ----------------
--h	(must be first argument) display full help message
--help	(must be first argument) display options
--i	input file
--o	output file
--v	verbose
--n	dry run
--format sequence format
--ml #	match length (default: $match_len)
--mis #	mismatches (default: $mismatches)
--1str	discard duplications on the direct strand only
--2str	discard duplications on the reverse complement as well
--del	delete repeats instead of masking them
+-h			(must be first argument) display full help message
+-help			(must be first argument) display options
+-i			input file
+-o			output file
+-v			verbose
+-n			dry run
+-format 		sequence format
+-ml #			match length (default: $match_len)
+-mis #			mismatches (default: $mismatches)
+-1str			discard duplications on the direct strand only
+-2str			discard duplications on the reverse complement as well
+-del			delete repeats instead of masking them
+-mask_short min_seq_len	Mask sequences shorter than the specified length
 End_short_help
   close HELP;
   exit;
 }
 
 
+################################################################
+## Read arguments
 sub ReadArguments {
-#### read arguments ####
     foreach my $a (0..$#ARGV) {
 	### verbose ###
 	if ($ARGV[$a] eq "-v") {
@@ -278,6 +287,16 @@ sub ReadArguments {
 	    ### mismatches
 	} elsif (($ARGV[$a] eq "-mis") && (&IsInteger($ARGV[$a+1]))) {
 	    $mismatches = $ARGV[$a+1];
+
+	    ## mask short sequences
+	} elsif ($ARGV[$a] eq "-mask_short") {
+	    $mask_short = $ARGV[$a+1];
+	    &RSAT::error::FatalError(join("\t", 
+					  $mask_short,
+					  "Invalid value for the minimal masking length. ". 
+					  "Must be a strictly positive natural number"))
+		unless &IsNatural($mask_short) && ($mask_short > 0);
+	    
 	    
 	}
     }
