@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-features,v 1.5 2005/07/27 17:30:36 jvanheld Exp $
+# $Id: convert-features,v 1.6 2006/03/08 22:15:58 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -31,6 +31,7 @@ local $null = "";
     ft=>1,
     gft=>1,
     gff=>1,
+    gff3=>1,
     dnapat=>1,
 );
 $supported_input_formats = join (",", keys %supported_input_format);
@@ -40,6 +41,7 @@ local $output_format = "ft";
     ft=>1,
     gft=>1,
     gff=>1,
+    gff3=>1,
     dnapat=>1
 );
 $supported_output_formats = join (",", keys %supported_output_format);
@@ -139,14 +141,23 @@ OPTIONS
 	-to	output format (Supported: $supported_output_formats)
 
 INPUT FORMATS
-       gft: RSAT Genome features (file Feature.tab in the directory data/genomes)
        ft: RSAT feature-map (extension .ft)
+
        dnapat: RSAT dna-pattern (extension .tab)
-       gff: Sanger general feature file (extension .gff)
+
+       gft: RSAT Genome features (file Feature.tab in the directory data/genomes)
+
+       gff: General Feature Format as specified by the Sanger insitute (extension .gff)
+       	    http://www.sanger.ac.uk/Software/formats/GFF/GFF_Spec.shtml
+       
+       gff3: Generic feature format version 3
+       	     An adaptation of GFF by Lincoln Stein
+       	     http://flybase.net/annot/gff3.html
 
 OUTPUT FORMATS
-       ft: RSAT feature-map (extension .ft)
-       gff: Sanger general feature file (extension .gff)
+       ft
+       gff
+       gff3
 
 FORMAT DESCRIPTIONS
 
@@ -184,13 +195,35 @@ FORMAT DESCRIPTIONS
            Information: http://www.sanger.ac.uk/Software/formats/GFF/GFF_Spec.shtml
 		col 1	seqname (contig or sequence ID)
 		col 2	source
-		col 3	feature (the deature type name)
+		col 3	feature (feature type)
 		col 4	start
 		col 5	end
 		col 6	score
 		col 7	strand (+, - or .)
 		col 8	frame (0, 1, 2 or .)
 		col 9	attribute
+
+       gff3: Generic Feature Format version 3
+           Information: http://flybase.net/annot/gff3.html
+		col 1	seqid (contig or sequence ID)
+		col 2	source
+		col 3	feature type
+		col 4	start
+		col 5	end
+		col 6	score
+		col 7	strand (+, - or .)
+		col 8	frame (=phase) (0, 1 or 2)
+		col 9	attributes
+		    	ID:		name of the feature
+			Name: 		display name for the feature
+			Alias:		secondary name for the feature
+			Parent:		parent of the feature
+			Target:		target (of an alignment)
+			Gap:		alignment of the feature to the target
+			Note:		A free text note
+			Dbxref:		database cross reference
+			Ontology_term:	cross-reference to an ontology term
+
 
 End_of_help
   close HELP;
