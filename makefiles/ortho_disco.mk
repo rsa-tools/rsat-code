@@ -46,8 +46,9 @@ list_all_genes:
 ## Run all the tasks on all the genes
 all_tasks_all_genes:
 	@echo "All tasks applied on all genes	${REF_ORG}	${TAXON}"
-	@${MAKE} list_all_genes 
+	@${MAKE} list_all_genes ALL_GENES="${ALL_GENES}"
 	@${MAKE} list_parameters
+	@echo ""
 	@for g in ${ALL_GENES} ; do \
 		${MAKE} all_tasks REF_ORG=${REF_ORG} TAXON=${TAXON} MAIN_DIR=${MAIN_DIR} GENE=$${g} ; \
 	done
