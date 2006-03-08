@@ -55,7 +55,8 @@ $comment_char{dnapat} = "; ";
 @{$strands{gft}} = ("D", "R", "DR");
 $comment_char{gft} = "; ";
 
-# Sanger general feature format
+## Sanger general feature format
+## http://www.sanger.ac.uk/Software/formats/GFF/GFF_Spec.shtml
 @{$columns{gff}} = qw (seq_name
 		       source
 		       ft_type
@@ -68,6 +69,21 @@ $comment_char{gft} = "; ";
 		       );
 @{$strands{gff}} = ("+", "-", ".");
 $comment_char{gff} = "## ";
+
+## Generic Feature Formaat version 3
+## http://flybase.net/annot/gff3.html
+@{$columns{gff3}} = qw (seq_name
+		       source
+		       ft_type
+		       start
+		       end
+		       score
+		       strand
+		       frame
+		       attribute
+		       );
+@{$strands{gff3}} = ("+", "-", ".");
+$comment_char{gff3} = "## ";
 
 require "RSA.seq.lib";
 
@@ -151,6 +167,42 @@ Information: http://www.sanger.ac.uk/Software/formats/GFF/GFF_Spec.shtml
 
 =back
 
+=item  gff3: Generic Feature Format version 3
+           
+Information: http://flybase.net/annot/gff3.html
+
+=over
+
+=item column 1: seqname (contig or sequence ID)
+
+=item column 2: source
+
+=item column 3: feature (the deature type name)
+
+=item column 4: start
+
+=item column 5: end
+
+=item column 6: score
+
+=item column 7: strand (+, - or .)
+
+=item column 8: frame (0, 1, 2 or .)
+
+=item column 9: attribute
+
+ ID:     name of the feature
+ Name: 	 display name for the feature
+ Alias:	 secondary name for the feature
+ Parent: parent of the feature
+ Target: target (of an alignment)
+ Gap:    alignment of the feature to the target
+ Note:   A free text note
+ Dbxref: database cross reference
+ Ontology_term:	cross-reference to an ontology term
+
+=back
+
 =head1 METHODS
 
 =over
@@ -201,13 +253,36 @@ sub parse_from_row {
     $self->force_attribute("strand", $strand);
 
     ## Format-specific conversions
+    if (($format eq "gff") || ($format eq "gff3")){
+	$self->set_attribute("feature_name", $self->get_attribute("source"));
+	$self->set_attribute("description", $self->get_attribute("attribute"));
+
+	## parse the description of the gff format
+	my @attributes = split /; */, $self->get_attribute("attribute");
+	foreach my $attribute (@attributes) {
+	    if ($attribute =~ /(\S+) +(\S.+)/) {
+		my $key = $1;
+		my $value = $2;
+		$value =~ s/^"//;
+		$value =~ s/"$//;
+		$self->force_attribute($key, $value);
+		if ((lc($key) eq "name") || (lc($key) eq "id")) {
+		    $self->force_attribute("feature_name", $value);
+		}
+		if (lc($key) eq "site") {
+		    $self->force_attribute("pattern_sequence", $value);
+		}
+	    }
+	}
+    }
+    
 
     ## dna-pattern
     if ($format eq "dnapat") {
 	$self->force_attribute("type", "dnapat");
     }
     &RSAT::message::Info(join("\t",
-			      "new feature",			      
+			      "Parsed new feature",			      
 			      $self->get_attribute("seq_name"),
 			      $self->get_attribute("feature_type"),
 			      $self->get_attribute("feature_name"),
@@ -236,11 +311,6 @@ sub to_text {
     
     my @cols = @{$columns{$format}};
 
-    ## Fill missing attributes depending on the format
-    if ($format eq "gff") {
-	my $feature_name = $self->get_attribute("source");
-	$self->set_attribute("feature_name", $feature_name);
-    }
 
     ## Index column number by contents
     my ${col_index} = ();
