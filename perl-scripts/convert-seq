@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-seq,v 1.19 2006/02/27 16:38:16 rsat Exp $
+# $Id: convert-seq,v 1.20 2006/03/08 19:53:13 jvanheld Exp $
 #
 # Time-stamp: <2002-09-24 21:24:13 jvanheld>
 #
@@ -83,6 +83,14 @@ while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_form
 	next;
     }
 
+    ## Mask short sequences
+    if ($mask_short) {
+	my $seq_len = length($current_seq);
+	if ($seq_len < $mask_short) {
+	    $current_seq = "N"x$seq_len;
+	}
+    }
+
     #### case conversion
     if ($lowercases) {
         $current_seq = lc($current_seq);
@@ -104,12 +112,13 @@ while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_form
 	$current_id =~ s/\.raw$//;
     }
 
-    #### check that the a sequence identifier has a value
+
+    ## check that the a sequence identifier is defined
     unless ($current_id) {
 	$current_id = $seq_nb;
     }
     
-    ## Add sequence prefix
+    ## Add a prefix to the sequence ID
     if ($seq_prefix) {
 	$current_id = join ("", $seq_prefix, $current_id);
     }
@@ -120,7 +129,7 @@ while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_form
 	#    $current_id = $';
 	#}
 
-	#### ensure that the id is a valid filename
+	#### Make sure that the id is a valid filename
 	chomp $current_id;
 	if ($check_id) {
 	    $current_id =~ s/\|/_/g;
@@ -219,6 +228,14 @@ OPTIONS
 		Mask lower or uppercases, respecively, i.e. replace
 		selected case by N characters.
 
+	-mask_short min_seq_len
+		Mask (replace by N characters) sequences shorter than
+		the specified length. This can be useful to discard
+		short intergenic segments from the pattern discovery
+		step, especially when working with bacterial genomes,
+		where short intergenic sequences generally correspond
+		to intra-operon segments.
+
 	-o outputfile
 		if not specified, the standard output is used.
 		This allows to place the command within a pipe.
@@ -279,6 +296,7 @@ consvert-seq options
 -v #			verbose level
 -i			inputfile
 -mask upper|lower	mask upper- or lowercases, respectively
+-mask_short min_seq_len	Mask sequences shorter than the specified length
 -o			outputfile
 -from			input format (see below for accepted formats)
 -to			output format (see below for accepted formats)
@@ -325,10 +343,14 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-i") {
 	    $inputfile = $ARGV[$a+1];
 
-	    ## mask
+	    ## mask upper or lower cases
 	} elsif ($ARGV[$a] eq "-mask") {
 	    $mask = $ARGV[$a+1];
 	    &CheckMask($mask);	    
+
+	    ## mask short sequences
+	} elsif ($ARGV[$a] eq "-mask_short") {
+	    $mask_short = $ARGV[$a+1];
 
 	} elsif ($ARGV[$a] eq "-id") {
 	    $seq_identifier = $ARGV[$a+1];
