@@ -79,7 +79,7 @@ orthologs:
 SEQ=${PREFIX}_up.fasta
 PURGED=${PREFIX}_up_purged.fasta
 PURGE_ML=30
-RETRIEVE_CMD=retrieve-seq-multigenome -i ${ORTHOLOGS} -o ${SEQ} -noorf ; purge-sequence -i ${SEQ} -o ${PURGED} -ml ${PURGE_ML} -mis 0 -2str
+RETRIEVE_CMD=retrieve-seq-multigenome -i ${ORTHOLOGS} -o ${SEQ} -noorf ; purge-sequence -i ${SEQ} -o ${PURGED} -ml ${PURGE_ML} -mis 0 -2str -mask_short 30
 upstream:
 	@echo "${RETRIEVE_CMD}"
 	@${RETRIEVE_CMD}
