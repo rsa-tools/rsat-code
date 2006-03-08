@@ -46,7 +46,7 @@ list_all_genes:
 ## Run all the tasks on all the genes
 all_tasks_all_genes:
 	@echo "All tasks applied on all genes	${REF_ORG}	${TAXON}"
-	@${MAKE} list_all_genes ALL_GENES="${ALL_GENES}"
+#	@${MAKE} list_all_genes ALL_GENES='${ALL_GENES}'
 	@${MAKE} list_parameters
 	@echo ""
 	@for g in ${ALL_GENES} ; do \
@@ -63,7 +63,7 @@ all_tasks:
 ## Identify orthologs for a given gene (${GENE}) in the taxon of
 ## interest (${TAXON})
 RESULT_DIR=${MAIN_DIR}/results/${REF_ORG}/${TAXON}
-GENE_DIR=${RESULT_DIR}/${GENE}
+GENE_DIR=${RESULT_DIR}/motifs/${GENE}
 PREFIX=${GENE_DIR}/${GENE}_${REF_ORG}_${TAXON}
 ORTHOLOGS = ${PREFIX}_orthologs.tab
 ORTHO_CMD=mkdir -p ${GENE_DIR} ; \
