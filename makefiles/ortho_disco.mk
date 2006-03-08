@@ -23,6 +23,7 @@ MAKE=make -s -f ${MAKEFILE} REF_ORG=${REF_ORG} TAXON=${TAXON} GENE=${GENE} MAIN_
 ## Verbosity level
 V=1
 
+## ##############################################################
 ## List the parameters
 list_parameters:
 	@echo ""
@@ -31,6 +32,7 @@ list_parameters:
 	@echo "MAIN_DIR     ${MAIN_DIR}"
 	@echo "RESULT_DIR   ${RESULT_DIR}"
 
+################################################################
 ## List of all genes to be analyzed. 
 ## By default, all the genes of the considered organism (REF_ORG)
 ALL_GENES=` grep -v '^--' ${RSAT}/data/genomes/${REF_ORG}/genome/feature.tab | awk -F '\t' '$$2=="CDS"'| cut -f 3 | sort -u | xargs`
@@ -168,6 +170,13 @@ dyad_file_list:
 	@echo ${DYAD_FILE_LIST}
 	@echo "	`cat ${DYAD_FILE_LIST} | wc -l `	dyad files"
 
+## ##############################################################
+## Generate dyad profiles: one row per gene, one column per dyad,
+## cells indicate significance.
+## Beware : the resulting matrix is very sparse (most values are NA),
+## and takes A LOT of space (>100Mb for Pseudomonas only).  It is not
+## necessary to use it anymore, the target "dyad_classes" gives
+## similar results but is MUCH faster and takes MUCH less space
 dyad_profiles: 
 	@echo
 	@echo "Calculating dyad profiles"
@@ -183,6 +192,12 @@ dyad_profiles:
 	@echo ${COMPA_TABLE}
 	@echo "	`grep -v '^;' ${COMPA_TABLE} | grep -v '^#' | wc -l`	profiles"
 
+## ##############################################################
+## Collect the significant dyads for each gene and store the result in
+## a single file with 3 columns:
+## - dyad
+## - gene
+## - significance
 dyad_classes: 
 	@echo
 	@echo "Generating dyads/gene file"
@@ -200,8 +215,10 @@ dyad_classes:
 	@echo "	`grep -v '^;' ${COMPA_CLASSES} | cut -f 2 | sort -u | wc -l`	genes"
 	@echo "	`grep -v '^;' ${COMPA_CLASSES} | cut -f 1 | sort -u | wc -l`	dyads"
 
-################################################################
-## Compare profiles of dyad significance between each pair of genes
+## ##############################################################
+## Compare discovered dyads between each pair of gene and return the
+## results as a table with one row per pair of genes, and different
+## significance statistics.
 PROFILE_PAIRS=${COMPA_DIR}/${REF_ORG}_${TAXON}_profile_pairs
 GENE_PAIRS=${COMPA_DIR}/${REF_ORG}_${TAXON}_gene_pairs
 #GENE_PAIRS=boum
@@ -209,11 +226,14 @@ gene_pairs:
 	@echo
 	@echo "Calculating gene pairs"
 	compare-classes -v ${V} -i ${COMPA_CLASSES} \
-		-return occ,dotprod,jac_sim,proba \
+		-return occ,dotprod,jac_sim,proba,members,rank \
 		-sc 3 -lth RandQ 1 -distinct -triangle -sort dotprod \
 		-o ${GENE_PAIRS}.tab
 	@echo ${GENE_PAIRS}.tab
+	@text-to-html -i ${GENE_PAIRS}.tab -o  ${GENE_PAIRS}.html -font variable
+	@echo ${GENE_PAIRS}.html
 	@echo "	`grep -v ';' ${GENE_PAIRS}.tab | grep -v '^#' |  wc -l`	gene pairs"
+
 
 profile_pairs:
 	@echo
@@ -223,6 +243,84 @@ profile_pairs:
 	@echo ${PROFILE_PAIRS}.tab
 	@echo "	`grep -v ';' ${PROFiLE_PAIRS}.tab | grep -v '^#' |  wc -l`	profile pairs"
 
+################################################################
+## Compare dot product, hypergeometric sig, adn jaccard distance
+gene_pair_score_compa:
+	@echo Comparing scores
+	XYgraph -i ${GENE_PAIRS}.tab \
+		-ylog 10 \
+		-xlog 10 \
+		-format png -xcol 8 -ycol 12 \
+		-size 300 \
+		-pointsize 4 \
+		-xleg1 "dot product" \
+		-yleg1 "hypergeometric sig = -log10(E-value)" \
+		-o ${GENE_PAIRS}_dp_vs_sig.png
+	XYgraph -i ${GENE_PAIRS}.tab \
+		-ylog 10 \
+		-xlog 10 \
+		-format png -xcol 8 -ycol 7 \
+		-size 300 \
+		-pointsize 4 \
+		-xleg1 "dot product" \
+		-yleg1 "Jaccard distance" \
+		-o ${GENE_PAIRS}_dp_vs_jaccard.png
+	XYgraph -i ${GENE_PAIRS}.tab \
+		-ylog 10 \
+		-xlog 10 \
+		-format png -xcol 12 -ycol 7 \
+		-size 300 \
+		-pointsize 4 \
+		-xleg1 "hypergeometric sig = -log10(E-value)" \
+		-yleg1 "Jaccard distance" \
+		-o ${GENE_PAIRS}_sig_vs_jaccard.png
+	@echo ${GENE_PAIRS}_sig_vs_jaccard.png
+
+
+
+## ##############################################################
+## Use MCL to extract clusters from the graph of pairwse relationships
+## between genes showing similar over-represened motifs in their
+## upstream sequences.
+## MCL can be obtained at: http://micans.org/mcl/
+
+GRAPH=coli_gamma_common_motifs_dotprod
+GRAPH_FILE=data/${GRAPH}.tab
+INFLATION=2.0
+MCL_DIR=results/clusters/mcl
+MCL_FILE=${MCL_DIR}/${GRAPH}_mcl_I${INFLATION}
+MCL_CMD=mcl ${GRAPH_FILE} --abc -I ${INFLATION} -o ${MCL_FILE}.mic >& mcl_log.txt ;\
+	convert-classes -from mcl -to tab -i ${MCL_FILE}.mic -o ${MCL_FILE}.tab
+mcl:
+	@mkdir -p ${MCL_DIR}
+	@echo "${MCL_CMD}"
+	@${MCL_CMD}
+	@echo ${MCL_FILE}.tab
+
+################################################################
+## Compare the clustering result to RegulonDB (for E.coli only)
+REGULONDB=data/gene_factor_Escherichia_coli_K12_uc.tab
+MCL_VS_REG=${MCL_FILE}__vs__regulonDB
+mcl_vs_regulondb:
+	compare-classes -v 1 -r ${REGULONDB} -q ${MCL_FILE}.tab -return occ,percent,proba,members,rank -lth RandQ 2 -sort sig -o ${MCL_VS_REG}.tab
+	@echo ${MCL_VS_REG}.tab
+	@text-to-html -i  ${MCL_VS_REG}.tab -o  ${MCL_VS_REG}.html -font variable
+	@echo ${MCL_VS_REG}.html
+
+INFLATION_VALUES=1.2 1.4 1.6 1.8 \
+	2.0 2.2 2.4 2.6 2.8 \
+	3.0 3.2 3.4 3.6 3.8 \
+	4.0 4.2 4.4 4.6 4.8 \
+	5.0 5.2 5.4 5.6 5.8
+iterate_inflations:
+	@for i in ${INFLATION_VALUES}; do \
+		${MAKE} mcl INFLATION=$${i}; \
+		${MAKE} mcl_vs_regulondb INFLATION=$${i}; \
+	done
+
+
+################################################################
+## Convert the gene pairs into a graph (2 formats : .dot and .gml)
 MIN_SCORE=1
 SCORE_COL=8
 SCORE=dp
@@ -240,6 +338,12 @@ gene_pair_graphs:
 		-o ${PAIR_GRAPH}.dot
 	@echo ${PAIR_GRAPH}.gml
 
+################################################################
+## Dun all the post-discovery tasks
+## - dyad classes
+## - gene pairs
+## - gene pair graphs
+## - clustering on the gene pairs
 comparisons:
 	@${MAKE} dyad_file_list
 	@${MAKE} dyad_classes
