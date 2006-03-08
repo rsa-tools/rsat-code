@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-seq,v 1.20 2006/03/08 19:53:13 jvanheld Exp $
+# $Id: convert-seq,v 1.21 2006/03/08 20:01:33 jvanheld Exp $
 #
 # Time-stamp: <2002-09-24 21:24:13 jvanheld>
 #
@@ -351,6 +351,12 @@ sub ReadArguments {
 	    ## mask short sequences
 	} elsif ($ARGV[$a] eq "-mask_short") {
 	    $mask_short = $ARGV[$a+1];
+	    &RSAT::error::FatalError(join("\t", 
+					  $mask_short,
+					  "Invalid value for the minimal masking length. ". 
+					  "Must be a strictly positive natural number"))
+		unless &IsNatural($mask_short) && ($mask_short > 0);
+	    
 
 	} elsif ($ARGV[$a] eq "-id") {
 	    $seq_identifier = $ARGV[$a+1];
