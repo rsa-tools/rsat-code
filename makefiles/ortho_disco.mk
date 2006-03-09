@@ -178,12 +178,12 @@ dyad_file_list:
 ## and takes A LOT of space (>100Mb for Pseudomonas only).  It is not
 ## necessary to use it anymore, the target "dyad_classes" gives
 ## similar results but is MUCH faster and takes MUCH less space
-dyad_profiles: 
+dyad_profiles: dyad_file_list
 	@echo
 	@echo "Calculating dyad profiles"
 	@mkdir -p ${COMPA_DIR}	
 	(cd ${RESULT_DIR}; compare-scores -null "NA" -sc 8 \
-		-suppress "\./" \
+		-suppress "\./motifs/" \
 		-suppress "_dyads.tab" \
 		-suppress "_${REF_ORG}_${TAXON}" \
 		-filelist ${DYAD_FILE_LIST}  \
@@ -199,13 +199,13 @@ dyad_profiles:
 ## - dyad
 ## - gene
 ## - significance
-dyad_classes: 
+dyad_classes: dyad_file_list
 	@echo
 	@echo "Generating dyads/gene file"
 	@mkdir -p ${COMPA_DIR}	
 	(cd ${RESULT_DIR}; compare-scores -null "NA" -sc 8 \
 		-format classes \
-		-suppress "\./" \
+		-suppress "\./motifs/" \
 		-suppress "_dyads.tab" \
 		-suppress "_${REF_ORG}_${TAXON}" \
 		-filelist ${DYAD_FILE_LIST}  \
@@ -284,28 +284,28 @@ gene_pair_score_compa:
 ## between genes showing similar over-represened motifs in their
 ## upstream sequences.
 ## MCL can be obtained at: http://micans.org/mcl/
-
-GRAPH=coli_gamma_common_motifs_dotprod
-GRAPH_FILE=data/${GRAPH}.tab
+#GRAPH=coli_gamma_common_motifs_dotprod
 INFLATION=2.0
-MCL_DIR=results/clusters/mcl
-MCL_FILE=${MCL_DIR}/${GRAPH}_mcl_I${INFLATION}
-MCL_CMD=mcl ${GRAPH_FILE} --abc -I ${INFLATION} -o ${MCL_FILE}.mic >& mcl_log.txt ;\
-	convert-classes -from mcl -to tab -i ${MCL_FILE}.mic -o ${MCL_FILE}.tab
+MCL_DIR=${RESULT_DIR}/clusters/mcl
+MCL_FILE=${MCL_DIR}/${REF_ORG}_${TAXON}_sc${SCORE_COL}_mcl_I${INFLATION}
+GRAPH_FILE=${GENE_PAIRS}_sc${SC0RE_COL}.tab
+MCL_CMD=grep -v '^;' ${GENE_PAIRS}.tab \
+	| cut -f 2,3,${SCORE_COL} > ${GRAPH_FILE} ; \
+	mcl ${GRAPH_FILE} --abc -I ${INFLATION} -o ${MCL_FILE}.mic >& mcl_log.txt ;\
+	convert-classes -from mcl -to tab -i ${MCL_FILE}.mic -o ${MCL_FILE}.tab ; echo ${MCL_FILE}.tab \
+	convert-graph -from tab -to gml -i ${MCL_FILE}.tab -o ${MCL_FILE}.gml ; echo ${MCL_FILE}.gml
 mcl:
 	@mkdir -p ${MCL_DIR}
-	@echo "${MCL_CMD}"
 	@${MCL_CMD}
-	@echo ${MCL_FILE}.tab
 
 ################################################################
 ## Compare the clustering result to RegulonDB (for E.coli only)
-REGULONDB=data/gene_factor_Escherichia_coli_K12_uc.tab
 MCL_VS_REG=${MCL_FILE}__vs__regulonDB
 mcl_vs_regulondb:
-	compare-classes -v 1 -r ${REGULONDB} -q ${MCL_FILE}.tab -return occ,percent,proba,members,rank -lth RandQ 2 -sort sig -o ${MCL_VS_REG}.tab
+	cat ${REGULONDB_TABLE}.tab | tr a-z A-Z > ${REGULONDB_TABLE}_uc.tab
+	compare-classes -v 1 -r ${REGULONDB_TABLE}_uc.tab -q ${MCL_FILE}.tab -return occ,percent,proba,members,rank -lth RandQ 2 -sort sig -o ${MCL_VS_REG}.tab
 	@echo ${MCL_VS_REG}.tab
-	@text-to-html -i  ${MCL_VS_REG}.tab -o  ${MCL_VS_REG}.html -font variable
+	@text-to-html -i  ${MCL_VS_REG}.tab -o  ${MCL_VS_REG}.html -font variable -chunk 250
 	@echo ${MCL_VS_REG}.html
 
 INFLATION_VALUES=1.2 1.4 1.6 1.8 \
@@ -315,29 +315,31 @@ INFLATION_VALUES=1.2 1.4 1.6 1.8 \
 	5.0 5.2 5.4 5.6 5.8
 iterate_inflations:
 	@for i in ${INFLATION_VALUES}; do \
-		${MAKE} mcl INFLATION=$${i}; \
-		${MAKE} mcl_vs_regulondb INFLATION=$${i}; \
+		${MAKE} -s mcl INFLATION=$${i}; \
+		${MAKE} -s mcl_vs_regulondb INFLATION=$${i}; \
 	done
 
 
 ################################################################
 ## Convert the gene pairs into a graph (2 formats : .dot and .gml)
 MIN_SCORE=1
-SCORE_COL=8
+SCORE_COL=9
 SCORE=dp
 PAIR_GRAPH=${GENE_PAIRS}_${SCORE}${MIN_SCORE}
 gene_pair_graphs:
 	@echo
 	@echo "Generating gene pair graphs"
-	awk -F '\t' '$$${SCORE_COL} >= ${MIN_SCORE}' ${GENE_PAIRS}.tab \
-		| grep -v '^;' \
-		| convert-graph -from tab -scol 1 -tcol 3 -wcol ${SCORE_COL} -to gml \
-		-o ${PAIR_GRAPH}.gml
-	@echo ${PAIR_GRAPH}.dot
-	awk -F '\t' '$$${SCORE_COL} >= ${MIN_SCORE}' ${GENE_PAIRS}.tab \
-		| convert-graph -from tab -wcol ${SCORE_COL} -to dot \
+	grep -v '^;' ${GENE_PAIRS}.tab \
+		| awk -F '\t' '$$${SCORE_COL} >= ${MIN_SCORE}'  \
+		| convert-graph -from tab -scol 2 -tcol 3 -wcol ${SCORE_COL} -to dot \
 		-o ${PAIR_GRAPH}.dot
 	@echo ${PAIR_GRAPH}.gml
+	grep -v '^;' ${GENE_PAIRS}.tab \
+		| awk -F '\t' '$$${SCORE_COL} >= ${MIN_SCORE}' \
+		| grep -v '^;' \
+		| convert-graph -from tab -scol 2 -tcol 3 -wcol ${SCORE_COL} -to gml \
+		-o ${PAIR_GRAPH}.gml
+	@echo ${PAIR_GRAPH}.dot
 
 ################################################################
 ## Dun all the post-discovery tasks
@@ -370,16 +372,16 @@ comparisons:
 ##   (to be done)
 
 ## Select target genes from RegulonDB
-REGULONDB_TABLE=data/gene_factor_Escherichia_coli_K12.tab 
+REGULONDB_TABLE=data/gene_factor_Escherichia_coli_K12
 REGULONDB_GENES=data/regulondb_genes.tab
 regulondb_genes:
-	@cut -f 1 ${REGULONDB_TABLE} | sort -u > ${REGULONDB_GENES}
+	@cut -f 1 ${REGULONDB_TABLE}.tab | sort -u > ${REGULONDB_GENES}
 	@echo "${REGULONDB_GENES}"
 
 ## Select transcription factors from RegulonDB
 REGULONDB_FACTORS=data/regulondb_factors.tab
 regulondb_factors:
-	@cut -f 2 ${REGULONDB_TABLE} | sort -u  > ${REGULONDB_FACTORS}
+	@cut -f 2 ${REGULONDB_TABLE}.tab | sort -u  > ${REGULONDB_FACTORS}
 	@echo "${REGULONDB_FACTORS}"
 
 ## Select genes and transcription factors from RegulonDB, both will be used
