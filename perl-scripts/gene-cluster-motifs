@@ -6,7 +6,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.164 2006/03/07 22:48:46 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.165 2006/03/09 11:52:56 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -39,7 +39,7 @@ $null="NA"; ## Null character for the exports
 $skip=0; ## Skip the first families
 $last=-1; ## Stop after a few families
 $batch = 0; ## Run task in batch mode (on a PC cluster)
-@batch_commands = (); ## Set of commandst to run in batch mode
+@batch_commands = (); ## Set of commands to run in batch mode
 #$batch_script = ""; ## Script collecting the commands to be run on the same node of the PC cluster
 $min_genes = 1; ## Min number of genes per family
 $rel_w = 1; ## Threshold on relative weight for count-matches
@@ -47,6 +47,7 @@ $sliding_window_size = 0;
 $die_on_error = 1;
 $analyze_purged_sequences = 1;
 $calibN_repet=100; ### Repetitions for the calibN
+$db_site_name="";
 %dir = ();
 %lth = ();
 $lth{occ} = 1;
@@ -519,9 +520,9 @@ sub SetFileNames {
 	$family{$family_name}->{oligo_vs_known} = $family{$family_name}->{oligo_file}."__vs__known_relw".$rel_w.".tab";
 	$family{$family_name}->{oligo_vs_known_weight_table} = $family{$family_name}->{oligo_file}."__vs__known_weigth_table.tab";
 	$family{$family_name}->{oligo_vs_known_relw_table} = $family{$family_name}->{oligo_file}."__vs__known_relw_table.tab";
-	$family{$family_name}->{oligo_vs_db} = $family{$family_name}->{oligo_file}."__vs__db_relw".$rel_w.".tab";
-	$family{$family_name}->{oligo_vs_db_weight_table} = $family{$family_name}->{oligo_file}."__vs__db_weigth_table.tab";
-	$family{$family_name}->{oligo_vs_db_relw_table} = $family{$family_name}->{oligo_file}."__vs__db_relw_table.tab";
+	$family{$family_name}->{oligo_vs_db} = $family{$family_name}->{oligo_file}."__vs__db_".$db_site_name."_relw".$rel_w.".tab";
+	$family{$family_name}->{oligo_vs_db_weight_table} = $family{$family_name}->{oligo_file}."__vs__db_".$db_site_name."_weigth_table.tab";
+	$family{$family_name}->{oligo_vs_db_relw_table} = $family{$family_name}->{oligo_file}."__vs__db_".$db_site_name."_relw_table.tab";
 
 	################################################################
 	## dyad-analysis results
@@ -534,9 +535,9 @@ sub SetFileNames {
         $family{$family_name}->{dyad_vs_known} = $family{$family_name}->{dyad_file}."__vs__known_relw".$rel_w.".tab";
         $family{$family_name}->{dyad_vs_known_weight_table} = $family{$family_name}->{dyad_file}."__vs__known_weight_table.tab";
         $family{$family_name}->{dyad_vs_known_relw_table} = $family{$family_name}->{dyad_file}."__vs__known_relw_table.tab";
-	$family{$family_name}->{dyad_vs_db} = $family{$family_name}->{dyad_file}."__vs__db_relw".$rel_w.".tab";
-	$family{$family_name}->{dyad_vs_db_weight_table} = $family{$family_name}->{dyad_file}."__vs__db_weigth_table.tab";
-	$family{$family_name}->{dyad_vs_db_relw_table} = $family{$family_name}->{dyad_file}."__vs__db_relw_table.tab";
+	$family{$family_name}->{dyad_vs_db} = $family{$family_name}->{dyad_file}."__vs__db_".$db_site_name."relw".$rel_w.".tab";
+	$family{$family_name}->{dyad_vs_db_weight_table} = $family{$family_name}->{dyad_file}."__vs__db_".$db_site_name."weigth_table.tab";
+	$family{$family_name}->{dyad_vs_db_relw_table} = $family{$family_name}->{dyad_file}."__vs__db_".$db_site_name."relw_table.tab";
 
 	################################################################
 	## oligos + dyads
@@ -2861,6 +2862,10 @@ sub ReadArguments {
 	    ### file with a collection of known motifs, for comparison between discovered and known motifs
 	} elsif ($ARGV[$a] eq "-db") {
 	    $db_site_file = $ARGV[$a+1];
+
+	    ### file with a collection of known motifs, for comparison between discovered and known motifs
+	} elsif ($ARGV[$a] eq "-dbname") {
+	    $db_site_name = $ARGV[$a+1];
 
 	    #### task selection
 	} elsif ($ARGV[$a] eq "-task") {
