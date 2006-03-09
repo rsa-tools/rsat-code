@@ -308,6 +308,10 @@ mcl_vs_regulondb:
 	@text-to-html -i  ${MCL_VS_REG}.tab -o  ${MCL_VS_REG}.html -font variable -chunk 250
 	@echo ${MCL_VS_REG}.html
 
+it:
+	compare-classes -v 1 -r ${REGULONDB_TABLE}_uc.tab -q ${MCL_FILE}.tab -return occ -matrix RandQ -o ${MCL_VS_REG}_conting.tab
+	@echo ${MCL_VS_REG}_conting.tab
+
 INFLATION_VALUES=1.2 1.4 1.6 1.8 \
 	2.0 2.2 2.4 2.6 2.8 \
 	3.0 3.2 3.4 3.6 3.8 \
@@ -315,6 +319,8 @@ INFLATION_VALUES=1.2 1.4 1.6 1.8 \
 	5.0 5.2 5.4 5.6 5.8
 iterate_inflations:
 	@for i in ${INFLATION_VALUES}; do \
+		echo ; \
+		echo "Inflation $${i}" ; \
 		${MAKE} -s mcl INFLATION=$${i}; \
 		${MAKE} -s mcl_vs_regulondb INFLATION=$${i}; \
 	done
