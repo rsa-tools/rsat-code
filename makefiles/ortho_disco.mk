@@ -292,7 +292,7 @@ GRAPH_FILE=${GENE_PAIRS}_sc${SC0RE_COL}.tab
 MCL_CMD=grep -v '^;' ${GENE_PAIRS}.tab \
 	| cut -f 2,3,${SCORE_COL} > ${GRAPH_FILE} ; \
 	mcl ${GRAPH_FILE} --abc -I ${INFLATION} -o ${MCL_FILE}.mic >& mcl_log.txt ;\
-	convert-classes -from mcl -to tab -i ${MCL_FILE}.mic -o ${MCL_FILE}.tab ; echo ${MCL_FILE}.tab \
+	convert-classes -from mcl -to tab -i ${MCL_FILE}.mic -o ${MCL_FILE}.tab ; echo ${MCL_FILE}.tab ; \
 	convert-graph -from tab -to gml -i ${MCL_FILE}.tab -o ${MCL_FILE}.gml ; echo ${MCL_FILE}.gml
 mcl:
 	@mkdir -p ${MCL_DIR}
