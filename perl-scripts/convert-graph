@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.1 2006/02/13 21:47:16 jvanheld Exp $
+# $Id: convert-graph,v 1.2 2006/03/10 02:20:11 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -72,7 +72,6 @@ package main;
 
 
     ## Input formats
-
     local $input_format = "tab";
     %supported_input_format =(
 	tab=>1,
