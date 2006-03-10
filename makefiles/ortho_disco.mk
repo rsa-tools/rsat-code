@@ -146,15 +146,16 @@ index_results:
 ################################################################
 ## Add the analysis of a single gene to the index file
 MAX_SIG=`grep -v '^;' ${DYADS} | cut -f 8 | sort -nr | head -1`
+ROOT_DIR=${RESULT_DIR}/
 index_one_result:
 	@echo "<tr>" >> ${INDEX_FILE}
-	@echo "<td><a href=${GENE_DIR}>${GENE}</a></td>" >> ${INDEX_FILE}
-	@echo "<td>${MAX_SIG}</td>" >> ${INDEX_FILE}
-	@echo "<td><a href=${SEQ}>seq</a></td>" >> ${INDEX_FILE}
-	@echo "<td><a href=${PURGED}>purged</a></td>" >> ${INDEX_FILE}
-	@echo "<td><a href=${DYADS}>dyads</a></td>" >> ${INDEX_FILE}
-	@echo "<td><a href=${ASSEMBLY}>assembly</a></td>" >> ${INDEX_FILE}
-	@echo "<td><a href=${MAP}>map</a></td>" >> ${INDEX_FILE}
+	@echo "<td><a href=${GENE_DIR}>${GENE}</a></td>" | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_FILE}
+	@echo "<td>${MAX_SIG}</td>"  >> ${INDEX_FILE}
+	@echo "<td><a href=${SEQ}>seq</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_FILE}
+	@echo "<td><a href=${PURGED}>purged</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_FILE}
+	@echo "<td><a href=${DYADS}>dyads</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_FILE}
+	@echo "<td><a href=${ASSEMBLY}>assembly</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_FILE}
+	@echo "<td><a href=${MAP}>map</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_FILE}
 	@echo "</tr>" >> ${INDEX_FILE}
 
 
