@@ -67,11 +67,13 @@ Read the classification from a text file.
 =cut
 
 sub read_from_file {
-    my ($self, $input_file, $input_format) = @_;
+    my ($self, $input_file, $input_format, %args) = @_;
     if ($input_format eq "mcl") {
 	$self->read_mcl($input_file);
     } elsif ($input_format eq "tab") {
-	$self->read_tab($input_file);
+	$self->read_tab($input_file, %args);
+    } elsif ($input_format eq "profiles") {
+	$self->read_profiles($input_file);
     } else {
 	&RSAT::error::FatalError(join ("\t", "Classification::read_from_file", $input_format, "is not a supported input format"));
     }
@@ -146,17 +148,16 @@ sub read_tab {
     $member_column = $args{member_column} || 1;
     $class_column = $args{class_column} || 2;
     $score_column = $args{score_column} || 0;
-
+    
     ## Verbosity
-    if ($main::verbose >= 0) {
-	&RSAT::message::TimeWarn(join("\t", 
+    &RSAT::message::TimeWarn(join("\t", 
 				  "Reading classification from tab file", $input_file) ) if ($main::verbose >= 2);
-	&RSAT::message::Info(join("\t", 
-				  "member column: ".$member_column,
-				  "class column: ".$class_column,
-				  "score column: ".$score_column,
-				 )) if ($main::verbose >= 3);
-    }
+    &RSAT::message::Info(join("\n\t",
+			      "Columns",
+			      "member column: ".$member_column,
+			      "class column: ".$class_column,
+			      "score column: ".$score_column,
+			     )) if ($main::verbose >= 3);
 
     ## Load the classification
     my $line = 0;
@@ -197,7 +198,7 @@ sub read_tab {
 	if ($score_column) {
 	    ### read score
 	    local $score = &RSAT::util::trim($fields[$score_column - 1]);
-	    unless (&IsReal($score)) {
+	    unless (&RSAT::util::IsReal($score)) {
 		&RSAT::error::FatalError(join("\t", $score, "Invalid score (must be a Real number).", 
 					      "class file", $class_file,  
 					      "line", $line,
@@ -214,6 +215,111 @@ sub read_tab {
 				       $member_name,
 				       $name{$id}) ) if ($main::verbose >= 5);
 #	    &RSAT::message::Debug("Scores", $class_name, $class{$class_name}->get_attribute("scores")) if ($main::verbose >= 0);
+	
+    }
+    close $in if ($input_file);
+
+}
+
+################################################################
+=pod
+
+=item B<read_profiles>
+
+Read the classification from a profile file.  Each row
+describes one member, each column one class. 
+
+ Title    : read_profiles
+ Usage    : $classificaion->->read_profiles($input_file)
+ Function : Read the Classification from a profile file.
+
+Rows starting with ";" are ignored.
+
+The first row is suppose to contain the header (description of
+classes), describing the member names. This row must start with a "#'.
+
+The first word off each following row contains the class name. 
+
+=cut
+
+sub read_profiles {
+    my ($self, $input_file) = @_;
+    my ($in) = &RSAT::util::OpenInputFile($input_file);
+
+    my %class = (); ## classes indexed by name
+    my $got_header = 0;
+
+    ## Verbosity
+    if ($main::verbose >= 1) {
+	&RSAT::message::TimeWarn(join("\t", 
+				  "Reading classification from profile file", $input_file) ) if ($main::verbose >= 2);
+    }
+
+    ## Load the classification
+    my $line = 0;
+    my @class_names = ();
+    while (<$in>) {
+	$line++;
+	next if (/^;/);
+	next unless (/\S/);
+	chomp();
+	s/\r$//;
+
+	## read class names from the header line, and create all the classes
+	unless ($got_header) {
+	    if (/^\#/) {
+		$got_header = 1;
+		@class_names = split /\t/;
+		shift @class_names;
+		&RSAT::message::Info(join("\t", "class names",join( "; ", @class_names))) if ($main::verbose >= 0);
+		foreach my $class_name (@class_names) {
+		    ### Check class name
+		    unless ($class_name) {
+			&RSAT::error::FatalError(join("\t", "Error profile file", $class_file,  
+						      "line", $line, 
+						      "empty class name in the header"));
+		    }
+		    
+		    #### create a new class if required
+		    if ($class{$class_name}) {
+			&RSAT::error::FatalError("The file contains several columns with the same name in the header\t".$classname);
+		    } else {
+			$class{$class_name} = new RSAT::Family(name=>$class_name);
+			$self->push_attribute("classes", $class{$class_name});
+		    }
+		}
+		next;
+	    } else {
+		&RSAT::error::FatalError("Reading classes from profile file. The first non-comment line should contain the header and start with #");
+	    }
+	}
+
+	my @fields = split /\t/;
+	
+	### class members
+	$member_name = shift @fields;
+	&RSAT::message::Info(join("\t", "Treating row", $line, $member_name)) if ($main::verbose >= 3);
+	unless ($member_name =~ /\S/) {
+	    &RSAT::message::Warning(join ("\t", "Error class file", 
+					  $class_file,  "line", 
+					  $line, "member not specified")) if ($main::verbose >= 1);
+	    next;
+	}
+	foreach my $class_name (@class_names) {
+	    my $score = shift (@fields);
+	    if ($score) {
+		unless (&RSAT::util::IsReal($score)) {
+		    &RSAT::error::FatalError(join("\t", $score, "Invalid score (must be a Real number).", 
+						  "class file", $class_file,  
+						  "line", $line,
+						  "member", $member_name,
+						  "class", $class_name,
+						 ));
+		}
+		$class{$class_name}->new_member($member_name, 0, score=>$score);
+		&RSAT::message::Info(join("\t", "New member", $line, $class_name, $member_name, $score)) if ($main::verbose >= 4);
+	    }
+	}
 	
     }
     close $in if ($input_file);
@@ -241,6 +347,8 @@ sub to_text {
 	$self->to_tab();
     } elsif ($output_format eq "mcl") {
 	$self->to_mcl();
+    } elsif ($output_format eq "profiles") {
+	$self->to_profiles();
     } else {
 	&RSAT::error::FatalError(join ("\t", "Classification::to_text", $output_format, "is not a supported output format"));
     }
@@ -265,14 +373,75 @@ sub to_tab {
     my ($self) = @_;
     my @classes = $self->get_attribute("classes");
     my $string = "";
+
     $string .= join ("\t", "#element", "class");
     foreach my $class (@classes) {
+	my %scores = $class->get_attribute("scores");
 	my $class_name = $class->get_attribute("name");
-#	&RSAT::message::Debug("Printing", $class, $class_name) if ($main::verbose >= 5);
+#	&RSAT::message::Debug( "SCORES", "class", $class_name, "members", %scores);
 	foreach my $member ($class->get_members()) {
 	    $string .= join ("\t", $member, $class_name);
+	    if ($scores{$member}) {
+		$string .= "\t".$scores{$member};
+	    }
 	    $string .= "\n";
 	}
+    }
+    return $string;
+}
+
+################################################################
+=pod
+
+=item B<to_profiles>
+
+Convert the classification to a profile file. 
+One row per element. 
+One column per class.
+
+ Title    : to_profiles
+ Usage    : $classificaion->->to_tab()
+
+=cut
+
+sub to_profiles {
+    my ($self) = @_;
+    my @classes = $self->get_attribute("classes");
+
+    ## Index class-member associations
+    my %cross_table = ();
+    my @class_names = ();
+    my $class_name;
+    my $member;
+    foreach my $class (@classes) {
+	my %scores = $class->get_attribute("scores");
+#	&RSAT::message::Debug( "SCORES", "class", $class_name, "members", %scores);
+	$class_name = $class->get_attribute("name");
+	push @class_names, $class_name;
+	foreach $member ($class->get_members()) {
+	    if (defined($scores{$member})) {
+		$cross_tab{$member}{$class_name} = $scores{$member};		
+	    } else {
+		$cross_tab{$member}{$class_name}++;
+	    }
+	}
+    }
+    my @members = sort(keys %cross_tab);
+
+    ## Header
+    my $string = join ("\t", "#", @class_names);
+    $string .= "\n";
+    foreach $member (@members) {
+	$string .= $member;
+	foreach $class_name (@class_names) {
+	    $string .= "\t";
+	    if ($cross_tab{$member}{$class_name}) {
+		$string .= $cross_tab{$member}{$class_name};
+	    } else {
+		$string .= 0;
+	    }
+	}
+	$string .= "\n";
     }
     return $string;
 }
