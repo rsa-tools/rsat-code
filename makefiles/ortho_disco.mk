@@ -161,7 +161,7 @@ index_one_result:
 
 ################################################################
 ## Compare dyads discovered in the different genes
-COMPA_DIR=${RESULT_DIR}/comparisons
+COMPA_DIR=${RESULT_DIR}/gene_pair_network
 COMPA_TABLE=${COMPA_DIR}/${REF_ORG}_${TAXON}_dyad_profiles.tab
 COMPA_CLASSES=${COMPA_DIR}/${REF_ORG}_${TAXON}_dyad_classes.tab
 DYAD_FILE_LIST=${RESULT_DIR}/dyad_files.txt
@@ -357,7 +357,10 @@ gene_pair_graphs:
 ## - gene pairs
 ## - gene pair graphs
 ## - clustering on the gene pairs
-comparisons:
+comparisons: 
+	@echo "This target is obsolete. Try	make gene_pair_network"
+
+gene_pair_network:
 	@${MAKE} dyad_file_list
 	@${MAKE} dyad_classes
 	@${MAKE} gene_pairs
