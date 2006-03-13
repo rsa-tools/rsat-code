@@ -290,17 +290,17 @@ INFLATION=2.0
 MCL_DIR=${RESULT_DIR}/clusters/mcl
 MCL_FILE=${MCL_DIR}/${REF_ORG}_${TAXON}_sc${SCORE_COL}_mcl_I${INFLATION}
 GRAPH_FILE=${GENE_PAIRS}_sc${SC0RE_COL}.tab
-MCL_CMD=grep -v '^;' ${GENE_PAIRS}.tab \
-	| grep -v '^\#' \
-	| awk '{print $$2"\t"$$3"\t"${SCORE_COL}}' \
-	> ${GRAPH_FILE} ; echo ${GRAPH_FILE} ; \
-	mcl ${GRAPH_FILE} --abc -I ${INFLATION} -o ${MCL_FILE}.mic >& mcl_log.txt ;\
-	convert-classes -from mcl -to tab -i ${MCL_FILE}.mic -o ${MCL_FILE}.tab ; echo ${MCL_FILE}.tab ; \
-	convert-graph -from tab -to dot -i ${MCL_FILE}.tab -o ${MCL_FILE}.dot ; echo ${MCL_FILE}.dot ; \
-	convert-graph -from tab -to gml -i ${MCL_FILE}.tab -o ${MCL_FILE}.gml ; echo ${MCL_FILE}.gml
 mcl:
+	@echo
 	@mkdir -p ${MCL_DIR}
-	@${MCL_CMD}
+	grep -v '^;' ${GENE_PAIRS}.tab \
+		| grep -v '^\#' \
+		| awk '{print $$2"\t"$$3"\t"$$${SCORE_COL}}' \
+		> ${GRAPH_FILE} ; echo ${GRAPH_FILE} 
+	mcl ${GRAPH_FILE} --abc -I ${INFLATION} -o ${MCL_FILE}.mic >& mcl_log.txt 
+	convert-classes -from mcl -to tab -i ${MCL_FILE}.mic -o ${MCL_FILE}.tab ; echo ${MCL_FILE}.tab 
+	convert-graph -from tab -to dot -i ${MCL_FILE}.tab -o ${MCL_FILE}.dot ; echo ${MCL_FILE}.dot 
+	convert-graph -from tab -to gml -i ${MCL_FILE}.tab -o ${MCL_FILE}.gml ; echo ${MCL_FILE}.gml
 
 ################################################################
 ## Compare the clustering result to RegulonDB (for E.coli only)
