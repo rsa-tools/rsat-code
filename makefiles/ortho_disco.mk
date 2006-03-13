@@ -291,9 +291,12 @@ MCL_DIR=${RESULT_DIR}/clusters/mcl
 MCL_FILE=${MCL_DIR}/${REF_ORG}_${TAXON}_sc${SCORE_COL}_mcl_I${INFLATION}
 GRAPH_FILE=${GENE_PAIRS}_sc${SC0RE_COL}.tab
 MCL_CMD=grep -v '^;' ${GENE_PAIRS}.tab \
-	| cut -f 2,3,${SCORE_COL} > ${GRAPH_FILE} ; \
+	| grep -v '^\#' \
+	| awk '{print $$2"\t"$$3"\t"${SCORE_COL}}' \
+	> ${GRAPH_FILE} ; echo ${GRAPH_FILE} ; \
 	mcl ${GRAPH_FILE} --abc -I ${INFLATION} -o ${MCL_FILE}.mic >& mcl_log.txt ;\
 	convert-classes -from mcl -to tab -i ${MCL_FILE}.mic -o ${MCL_FILE}.tab ; echo ${MCL_FILE}.tab ; \
+	convert-graph -from tab -to dot -i ${MCL_FILE}.tab -o ${MCL_FILE}.dot ; echo ${MCL_FILE}.dot ; \
 	convert-graph -from tab -to gml -i ${MCL_FILE}.tab -o ${MCL_FILE}.gml ; echo ${MCL_FILE}.gml
 mcl:
 	@mkdir -p ${MCL_DIR}
@@ -318,12 +321,12 @@ INFLATION_VALUES=1.2 1.4 1.6 1.8 \
 	3.0 3.2 3.4 3.6 3.8 \
 	4.0 4.2 4.4 4.6 4.8 \
 	5.0 5.2 5.4 5.6 5.8
+INFLATION_TASK=mcl
 iterate_inflations:
 	@for i in ${INFLATION_VALUES}; do \
 		echo ; \
 		echo "Inflation $${i}" ; \
-		${MAKE} -s mcl INFLATION=$${i}; \
-		${MAKE} -s mcl_vs_regulondb INFLATION=$${i}; \
+		${MAKE} -s ${INFLATION_TASK} INFLATION=$${i}; \
 	done
 
 
