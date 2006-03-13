@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-classes,v 1.2 2006/03/07 22:46:46 jvanheld Exp $
+# $Id: convert-classes,v 1.3 2006/03/13 23:43:42 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -82,6 +82,7 @@ package main;
     %supported_input_format =(
 	mcl=>1,
 	tab=>1,
+	profiles=>1,
     );
     $supported_input_formats = join (",", keys %supported_input_format);
 
@@ -90,8 +91,11 @@ package main;
     %supported_output_format =(
 	mcl=>1,
 	tab=>1,
+	profiles=>1,
     );
     $supported_output_formats = join (",", keys %supported_output_format);
+
+    %args = ();
 
     &ReadArguments();
 
@@ -100,8 +104,8 @@ package main;
 
 
     ################################################################
-    ##### read input
-    $classification->read_from_file($main::infile{input}, $input_format);
+    ##### Read input
+    $classification->read_from_file($main::infile{input}, $input_format, %args);
     
     ################################################################
     ### open output stream
@@ -235,7 +239,7 @@ allows to use the command within a pipe.
 
 =item B<-from input_format>
 
-Input format. Supported: tab
+Input format. Supported: tab, mcl, profiles
 
 =cut
 	} elsif ($arg eq "-from") {
@@ -243,13 +247,56 @@ Input format. Supported: tab
 	    &RSAT::error::FatalError("$input_format\tInvalid input format. Supported: $supported_input_formats")
 		unless ($supported_input_format{$input_format});
 
+	    ## Member column
+=pod
+
+=item B<-mcol>
+
+Member column. Column containing the member names in the tab format (default 1). 
+
+=cut
+	} elsif ($arg eq "-mcol") {
+	    $args{member_column} = shift (@arguments);
+	    unless (&IsNatural($args{member_column}) && ($args{member_column} > 0)) {
+		&RSAT::error::FatalError(join("\t", $args{member_column}, "Invalid value for the member column. Must be a strictly positive natural number"));
+	    }
+
+	    ## Class column
+=pod
+
+=item B<-ccol>
+
+Class column. Column containing the class names in the tab format (default 1). 
+
+=cut
+	} elsif ($arg eq "-ccol") {
+	    $args{class_column} = shift (@arguments);
+	    unless (&IsNatural($args{class_column}) && ($args{class_column} > 0)) {
+		&RSAT::error::FatalError(join("\t", $args{class_column}, "Invalid value for the class column. Must be a strictly positive natural number"));
+	    }
+
+	    ## Score column
+=pod
+
+=item B<-scol>
+
+Score column. Column containing the scores in tab format. If not
+specified, scores are not defined.
+
+=cut
+	} elsif ($arg eq "-scol") {
+	    $args{score_column} = shift (@arguments);
+	    unless (&IsNatural($args{score_column}) && ($args{score_column} > 0)) {
+		&RSAT::error::FatalError(join("\t", $args{score_column}, "Invalid value for the score column. Must be a strictly positive natural number"));
+	    }
+
 
 	    ### Output format  
 =cut
 
 =item B<-to output_format>
 
-Output format. Supported: tab, dot, gml
+Output format. Supported: tab, mcl,profiles
 
 =cut 
 	} elsif ($arg eq "-to") {
