@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: compare-profiles,v 1.12 2006/03/14 00:33:04 jvanheld Exp $
+# $Id: compare-profiles,v 1.13 2006/03/14 02:04:45 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -251,7 +251,7 @@ H(B|A) = H(A,B) - H(B)
 
 Mutual information between rows A and B.
 
-I(A;B) = H(A) + H(B) - H(A,B)
+I(A,B) = H(A) + H(B) - H(A,B)
 
 =item B<U(A|B)>
 
@@ -615,7 +615,8 @@ my @row_count = ();
 my @row_sum = ();
 my @row_mean = ();
 my @row_proba = ();
-my @row_H = (); ## Entropy per row
+## Entropy per row
+my @row_H = (); 
 if ($calc_fields{counts}) {
     &RSAT::message::TimeWarn("Calculating row statistics") if ($main::verbose >= 1);
     for my $r (1..$nrow) {
@@ -852,12 +853,13 @@ for my $r1 (1..$nrow) {
 	## Entropy and information
 	if ($calc_fields{entropy}) {
 	    ## Row entropy
-	    local $H_A = $row_H[$r1-1];
-	    local $H_B = $row_H[$r2-1];
+	    $H_A = $row_H[$r1-1];
+	    $H_B = $row_H[$r2-1];
+	    
 	    
 	    ## Probabilities and join entropy
-	    local %P = ();
-	    local $H_join = 0;
+	    %P = ();
+	    $H_join = 0;
 	    foreach $k (keys %N) {
 		$P{$k} = $N{$k}/$ncol;
 		if ($P{$k} > 0) {
@@ -865,29 +867,40 @@ for my $r1 (1..$nrow) {
 		}
 	    }
 	    $H_join /= $log_base;
-	    
+
+	    	    
 	    ## Conditional entropy
-	    local $H_AgivenB = $H_join - $H_A;
-	    local $H_BgivenA = $H_join - $H_B;
+	    $H_AgivenB = $H_join - $H_A;
+	    $H_BgivenA = $H_join - $H_B;
 	    
 	    ## Mutual information
-	    local $I = $H_A + $H_B  - $H_join;
+	    $I = $H_A + $H_B  - $H_join;
 	    if ($outfile{table_info}) {
 		$table_info[$r1][$r2] = $I;
 	    }
 	    
+# 	    &RSAT::message::Debug("Entropy", 
+# 				  "A=".$ID_A, 
+# 				  "P=".$row_proba[$r1-1], 
+# 				  "H=".$row_H[$r1-1], 
+# 				  "B=".$ID_B, 
+# 				  "P=".$row_proba[$r2-1], 
+# 				  "H=".$row_H[$r2-1], 
+# 				  "H(A,B)=".$H_join,
+# 				  "I(A,B)=".$I,
+# 				 );
+
 	    ## Uncertainty coefficient (as defined by Bowers et al, 2004)
-	    local $U_AgivenB = 0;
+	    $U_AgivenB = 0;
 	    if ($H_A > 0) {
 		$U_AgivenB = $I/$H_A;
 	    }
-	    local $U_BgivenA = 0;
+	    $U_BgivenA = 0;
 	    if ($H_B > 0) {
 		$U_BgivenA = $I/$H_B;
 	    }
 	    
 	    
-	    $entropy_format = "%.5f";
 	}
 
 	## Print the output row
@@ -956,6 +969,7 @@ for my $r1 (1..$nrow) {
 	}
 
 	if ($return_fields{entropy}) {
+	    $entropy_format = "%.5f";
 	    print $out "\t", join ("\t",  
 				   sprintf($entropy_format, $H_A),
 				   sprintf($entropy_format, $H_B),
