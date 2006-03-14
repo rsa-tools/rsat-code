@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.60 2006/01/31 19:50:17 jvanheld Exp $
+# $Id: install-organism,v 1.61 2006/03/14 02:17:36 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -293,6 +293,8 @@ sub UpdateConfig {
 	    $up_from = $supported_organism{$organism_short_name}->{'up_from'};;
 	} else {
 	    if (($taxonomy =~ /^Bacteria/) || ($taxonomy =~ /^Archaea/)) {
+		$up_from=-400;
+	    } elsif ($taxonomy =~ /^Viruses/) {
 		$up_from=-400;
 	    } elsif ($taxonomy =~ /^Eukaryota; Fungi/) {
 		$up_from=-800;
@@ -680,6 +682,13 @@ OPTIONS
 		Absolute path of the installation directory. 
 		BEWARE : you should provide the absolute path of the
 		installation directory, not the relative path.
+	
+	-config
+		Specify an alternative organism configuration file for the
+		genome to be installed.
+
+		By default, the organism configuration file is 
+			   \$RSAT/data/genomes/supported_organisms.pl
 
 	-local
 		Absolute path of a RSA local config file. 
@@ -689,8 +698,8 @@ OPTIONS
 		has write access to the RSA config file).
 
 		In addition to the organisms installed by the RSA
-		system administrator (found in $RSA/RSA.config), any
-		user can install some organisms locally. 
+		system administrator (found in $RSA/RSA.config), users
+		can install some organisms locally. 
 
 		For this, the user must first define an environment
 		variable called RSA_LOCAL_CONFIG, and indicating the
@@ -789,6 +798,7 @@ install_organism options
 -organism	full organism name (e.g. Saccharomyces cerevisiae)
 -source		data source (e.g. ncbi);
 -dir		absolute path of the installation directory
+-config		alternative organism configuration file
 -local		update local config file 
 		(specified by the environment variable RSA_LOCAL_CONFIG)
 -genbank	genbank directory
@@ -884,8 +894,16 @@ sub ReadArguments {
 		}
 	    }
 
-	    #### installation dir
+	    #### local configuration file specified with an environment variable
 	} elsif ($ARGV[$a] =~ /^-local/) {
+	    unless ($ENV{'RSA_LOCAL_CONFIG'}) {
+		die "Error : local config file must be specified \nin an environment variable RSA_LOCAL_CONFIG\n";
+	    }
+	    $local_config = 1;
+
+	    #### alternative configuration file
+	} elsif ($ARGV[$a] =~ /^-config/) {
+	    $ENV{'RSA_LOCAL_CONFIG'}  = $ARGV[$a+1];
 	    unless ($ENV{'RSA_LOCAL_CONFIG'}) {
 		die "Error : local config file must be specified \nin an environment variable RSA_LOCAL_CONFIG\n";
 	    }
