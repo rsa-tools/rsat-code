@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: compare-profiles,v 1.11 2006/02/21 07:55:05 jvanheld Exp $
+# $Id: compare-profiles,v 1.12 2006/03/14 00:33:04 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -548,7 +548,11 @@ $profiles->readFromFile($infile{input}, "tab",header=>$header);
 ## Get matrix dimensions
 $nrow = $profiles->nrow();
 $ncol = $profiles->ncol();
-$ncompa = $nrow*($nrow+1)/2;
+if ($distinct) {
+    $ncompa = $nrow*($nrow-1)/2;
+} else {
+    $ncompa = $nrow*($nrow+1)/2;
+}
 if ($main::verbose >= 1) {
     &RSAT::message::TimeWarn(join("\t", "", "Rows", $nrow));
     &RSAT::message::TimeWarn(join("\t", "", "Columns", $ncol));
@@ -844,6 +848,8 @@ for my $r1 (1..$nrow) {
 	}
 
 
+	## ##############################################################
+	## Entropy and information
 	if ($calc_fields{entropy}) {
 	    ## Row entropy
 	    local $H_A = $row_H[$r1-1];
