@@ -229,7 +229,7 @@ gene_pairs:
 	@echo "Calculating gene pairs"
 	compare-classes -v ${V} -i ${COMPA_CLASSES} \
 		-return occ,dotprod,jac_sim,proba,members,rank \
-		-sc 3 -lth RandQ 1 -distinct -triangle -sort dotprod \
+		-sc 3 -lth QR 1 -distinct -triangle -sort dotprod \
 		-o ${GENE_PAIRS}.tab
 	@echo ${GENE_PAIRS}.tab
 	@text-to-html -i ${GENE_PAIRS}.tab -o  ${GENE_PAIRS}.html -font variable
@@ -307,13 +307,11 @@ mcl:
 MCL_VS_REG=${MCL_FILE}__vs__regulonDB
 mcl_vs_regulondb:
 	cat ${REGULONDB_TABLE}.tab | tr a-z A-Z > ${REGULONDB_TABLE}_uc.tab
-	compare-classes -v 1 -r ${REGULONDB_TABLE}_uc.tab -q ${MCL_FILE}.tab -return occ,percent,proba,members,rank -lth RandQ 2 -sort sig -o ${MCL_VS_REG}.tab
+	compare-classes -v 1 -r ${REGULONDB_TABLE}_uc.tab -q ${MCL_FILE}.tab -return occ,percent,proba,members,rank -lth QR 2 -sort sig -o ${MCL_VS_REG}.tab
 	@echo ${MCL_VS_REG}.tab
 	@text-to-html -i  ${MCL_VS_REG}.tab -o  ${MCL_VS_REG}.html -font variable -chunk 250
 	@echo ${MCL_VS_REG}.html
-
-it:
-	compare-classes -v 1 -r ${REGULONDB_TABLE}_uc.tab -q ${MCL_FILE}.tab -return occ -matrix RandQ -o ${MCL_VS_REG}_conting.tab
+	compare-classes -v 1 -r ${REGULONDB_TABLE}_uc.tab -q ${MCL_FILE}.tab -return occ -matrix QR -o ${MCL_VS_REG}_conting.tab
 	@echo ${MCL_VS_REG}_conting.tab
 
 INFLATION_VALUES=1.2 1.4 1.6 1.8 \
