@@ -10,9 +10,9 @@ OLD_SERVER=cvs.scmbb.ulb.ac.be
 OLD_ROOT=/cvs
 OLD_CONNECT=${OLD_LOGIN}\@${OLD_SERVER}:${OLD_ROOT}
 
-NEW_ROOT=/cvs
 NEW_LOGIN=`logname`
 NEW_SERVER=www.scmbb.ulb.ac.be
+NEW_ROOT=/cvs
 NEW_CONNECT=${NEW_LOGIN}\@${NEW_SERVER}:${NEW_ROOT}
 
 change_roots:
