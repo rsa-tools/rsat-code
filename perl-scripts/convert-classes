@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-classes,v 1.3 2006/03/13 23:43:42 jvanheld Exp $
+# $Id: convert-classes,v 1.4 2006/03/19 08:52:40 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -43,6 +43,32 @@ clustering algorithm developed by Stijn Van Dongen
 The output format has one row per cluster, each row giving a list of
 elements, separated by tabulations.
 
+=head2 tab
+
+A tab-delimited text file with 2 columns (+1 optional).  The first
+column indicates the element, the second column the class
+(cluster). The third column is optional, it can be used to indicate
+the score for the assignation of the element to the class (e.g. a
+posterior probability). Any real value is accepted as score.
+
+=head2 profiles
+
+A tab-delimited text file with a table containing one row per element,
+and one column per class. The first row starting with a '#' (the
+header row) indicates the class names. The first column contains the
+element names. The cells of the table contain either boolean or real
+values. Boolean values indicate the membership (1 if the element is
+member of the class, 0 otherwise). Real values can specify a score for
+the membership of the element to the class (e.g. posterior
+probability).
+
+
+=head2 ermg
+
+Erdros-Renyi Mixture of Graphs. format defined by Stephane Robin for
+his ERMG algorithm (submitted).
+
+
 =cut
 
 
@@ -80,6 +106,7 @@ package main;
     ## Input formats
     local $input_format = "tab";
     %supported_input_format =(
+	ermg=>1,
 	mcl=>1,
 	tab=>1,
 	profiles=>1,
@@ -290,6 +317,31 @@ specified, scores are not defined.
 		&RSAT::error::FatalError(join("\t", $args{score_column}, "Invalid value for the score column. Must be a strictly positive natural number"));
 	    }
 
+	    ## Assign each node to each cluster with the ERMG
+	    ## format, using the posterior probability as score
+=pod
+
+=item B<-all_scores>
+
+Assign each node to all the clusters with the ERMG format, with the
+posterior probability as score.
+
+=cut
+	} elsif ($arg eq "-all_scores") {
+	    $args{all_scores} = 1;
+
+	    ## Minimal score value for the assignation
+=pod
+
+=item B<-min_score>
+
+Minimal score value for member to class assignation.
+
+=cut
+	} elsif ($arg eq "-min_score") {
+	    $args{min_score} = shift(@arguments);
+	    &RSAT::error::FatalError(join("\t", $args{min_score}, "Invalid minimal score specification. ust be a real number")) 
+		unless (&IsReal($args{min_score}));
 
 	    ### Output format  
 =cut

@@ -69,11 +69,13 @@ Read the classification from a text file.
 sub read_from_file {
     my ($self, $input_file, $input_format, %args) = @_;
     if ($input_format eq "mcl") {
-	$self->read_mcl($input_file);
+	$self->read_mcl($input_file, %args);
     } elsif ($input_format eq "tab") {
 	$self->read_tab($input_file, %args);
     } elsif ($input_format eq "profiles") {
-	$self->read_profiles($input_file);
+	$self->read_profiles($input_file, %args);
+    } elsif ($input_format eq "ermg") {
+	$self->read_ermg($input_file, %args);
     } else {
 	&RSAT::error::FatalError(join ("\t", "Classification::read_from_file", $input_format, "is not a supported input format"));
     }
@@ -206,6 +208,9 @@ sub read_tab {
 					      "class", $class_name,
 					     ));
 	    }
+	    
+	    ## Check threshold on score
+	    next if ((defined($args{min_score})) && ($score < $args{min_score}));
 	    $class{$class_name}->new_member($member_name, 0, score=>$score);
 #		&RSAT::message::Debug("member score", $class_name, $member_name, $score) if ($main::verbose >= 0);
 	} else {
@@ -316,6 +321,8 @@ sub read_profiles {
 						  "class", $class_name,
 						 ));
 		}
+		## Check threshold on score
+		next if ((defined($args{min_score})) && ($score < $args{min_score}));
 		$class{$class_name}->new_member($member_name, 0, score=>$score);
 		&RSAT::message::Info(join("\t", "New member", $line, $class_name, $member_name, $score)) if ($main::verbose >= 4);
 	    }
@@ -325,6 +332,113 @@ sub read_profiles {
     close $in if ($input_file);
 
 }
+
+
+################################################################
+=pod
+
+=item B<read_ermg>
+
+Read the classification from the output file of ERMG algorithm
+developed by Stephane Robin (submitted).
+
+ Title    : read_ermg
+ Usage    : $classificaion->->read_ermg($input_file)
+ Function : Read the Classification from an output file of the ERMG program.
+
+=cut
+
+sub read_ermg {
+    my ($self, $input_file, %args) = @_;
+    my ($in) = &RSAT::util::OpenInputFile($input_file);
+    my %class = (); ## classes
+    my $all_scores = 0;
+    if (defined($args{all_scores})) {
+	$all_scores = 1;
+    }
+    
+    ## Verbosity
+    &RSAT::message::TimeWarn(join("\t", 
+				  "Reading classification from ERMG file", 
+				  $input_file) ) if ($main::verbose >= 2);
+
+    ## Load the classification
+    my $line = 0;
+    my $started = 0;
+    my $clusters = 0;
+    while (<$in>) {
+	$line++;
+	next unless (/\S/);
+	chomp();
+	s/\r$//;
+	
+	if (/^MAP \+ Posterior probabilities/) {
+	    $started = 1;
+	    &RSAT::message::Debug("Starting to read class elements", "line", $line) if ($main::verbose >= 5);
+	    next;
+	} elsif (/Number of groups: Q = (\d+)/) {
+	    ## Number of clusters
+	    $clusters = $1;
+	    unless ((&RSAT::util::IsNatural($clusters)) && ($clusters >= 1)) {
+		&FatalError(join("\t", "read_ermg", $clusters, "Invalid number of clustrers, must be a strictly positive natural number."));
+	    }
+	    
+	    #### create all the classes
+	    for my $cl (1..$clusters) {
+		&RSAT::message::Info(join("\t", "Creating class for cluster", $cl)) if ($main::verbose >= 4);
+		my $class = new RSAT::Family(name=>$cl);
+		$self->push_attribute("classes", $class);
+		$classes{$cl} = $class;
+	    }
+	    next;
+	}
+	next unless ($started);
+
+	my @fields = split /\s+/;
+	
+	### class member
+	$member_name = shift(@fields);
+	unless ($member_name =~ /\S/) {
+	    &RSAT::message::Warning(join ("\t", "Error class file", $class_file,  
+					  "line", $line, "element not specified")) if ($main::verbose >= 1);
+	    next;
+	}
+	
+	### class name
+	$class_name = shift(@fields);
+	unless ((&RSAT::util::IsNatural($class_name)) && ($class_name >= 0)) {
+	    &RSAT::message::Warning(join("\t", "Error class file", $class_file,  
+					 "line", $line, "class not specified")) if ($main::verbose >= 1);
+	    next;
+	}
+	if ($class_name > $clusters) {
+	    &RSAT::message::Warning(join("\t", "Error class file", $class_file,  
+					 "line", $line, "class number is larger than the number of clusters")) if ($main::verbose >= 1);
+	    next;	    
+	}
+	
+
+	## Use the posterior probabiliy as score
+	for my $cl (1..$clusters) {
+	    my $score = shift @fields;
+
+	    ## Check threshold on score
+	    next if ((defined($args{min_score})) && ($score < $args{min_score}));
+
+	    if (($cl == $class_name) || ($all_scores)) {
+		## Add the member to the class
+		$classes{$cl}->new_member($member_name, 0, score=>$score);
+		&RSAT::message::Info(join("\t", "Element", $member_name, 
+					  "Class", $class_name,
+					  "Score", $score
+					 )) if ($main::verbose >= 4);
+	    }
+	}
+    }
+    close $in if ($input_file);
+
+}
+
 
 
 ################################################################
@@ -373,21 +487,28 @@ sub to_tab {
     my ($self) = @_;
     my @classes = $self->get_attribute("classes");
     my $string = "";
+    my $some_scores = 0;
 
-    $string .= join ("\t", "#element", "class");
     foreach my $class (@classes) {
 	my %scores = $class->get_attribute("scores");
 	my $class_name = $class->get_attribute("name");
-#	&RSAT::message::Debug( "SCORES", "class", $class_name, "members", %scores);
 	foreach my $member ($class->get_members()) {
 	    $string .= join ("\t", $member, $class_name);
 	    if ($scores{$member}) {
+		$some_scores = 1;
 		$string .= "\t".$scores{$member};
 	    }
 	    $string .= "\n";
 	}
     }
-    return $string;
+
+    my $header = join ("\t", "#element", "class");
+    if ($some_scores) {
+	$header .= "\tscore";
+    };
+    $header .= "\n";
+    $string = $header.$string;
+    return($string);
 }
 
 ################################################################
