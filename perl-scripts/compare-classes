@@ -1,13 +1,8 @@
 #!/usr/bin/perl 
 
-
-## CVS: created a class for graphs, and useed it for dot export
-## CVS: added export in GML format
-## CVS : added rank to the supported return fields
-
 ############################################################
 #
-# $Id: compare-classes,v 1.22 2006/03/14 02:05:16 jvanheld Exp $
+# $Id: compare-classes,v 1.23 2006/03/19 10:37:42 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -39,6 +34,7 @@ local $nb_query_classes = 0;
 local $score_column = 0; ## By default, the file is read without score
 local $inf = 999;
 local $base=exp(1); ## Base for the logarithms
+local $null = "NA";
 
 local $multi_cor = "nt"; ## Correction for multi-testing
 %supported_multi_cor = (
@@ -56,67 +52,44 @@ $supported_multi_cor = join (",", sort(keys (%supported_multi_cor)));
 
 $sort_key = "name";
 
-%supported_return_fields = (
-    rank=>1, 
-    occ=>1,
-    freq=>1,
-    jac_sim=>1,
-    dotprod=>1,
-    proba=>1,
-    entropy=>1,
-    members=>1,
+## Groups of calculation
+%calc_groups = (
+    'rank'=>'rank',
+    'QR'=>'occ',
+    'R'=>'occ',
+    'Q'=>'occ',
+    'QvR'=>'occ',
+    'jac_sim'=>'jac_sim',
+    'dotprod'=>'dotprod',
+    'P_val'=>'proba',
+    'E_val'=>'proba',
+    'sig'=>'proba',
+    'P(R)'=>'freq',
+    'P(Q)'=>'freq',
+    'QR/R'=>'freq',
+    'QR/Q'=>'freq',
+    'H_R'=>'entropy',
+    'H_Q'=>'entropy',
+    'I(Q,R)'=>'entropy',
 );
+@calc_keys = keys %calc_groups;
+@calc_values = values %calc_groups;
+
+
+## Define supported return, sort, matrix, and threshold fields
+while (my ($key,$value) = each (%calc_groups)) {
+    $supported_return_fields{$value} = 1;
+    $supported_threshold_fields{$key} = 1;
+    $supported_matrix_fields{$key} = 1;
+    $supported_sort_fields{$key} = 1;
+}
+$supported_return_fields{members} = 1,
+$supported_sort_fields{names} = 1,
+
+$supported_matrix_fields = join (",", sort(keys( %supported_matrix_fields)));
+$supported_sort_fields = join (",", sort(keys( %supported_sort_fields)));
 $supported_return_fields = join (",", sort(keys( %supported_return_fields)));
-
-
-%supported_matrix_keys = (
-    'QR/R'=>1,
-    'QR/Q'=>1,
-    'QR'=>1,
-    P_val=>1,
-    E_val=>1,
-    sig=>1,
-);
-$supported_matrix_keys = join (",", sort(keys( %supported_matrix_keys)));
-
-%supported_threshold_field = (
-    rank=>1,
-    'QR'=>1,
-    R=>1,
-    Q=>1,
-    'QvR'=>1,
-    jac_sim=>1,
-    dotprod=>1,
-    P_val=>1,
-    E_val=>1,
-    sig=>1,
-    'P(R)'=>1,
-    'P(Q)'=>1,
-    'QR/R'=>1,
-    'QR/Q'=>1,
-    H_R=>1,
-    H_Q=>1,
-);
-$supported_threshold_fields = join (",", sort(keys( %supported_threshold_field)));
-
-
-%supported_sort_keys = (
-    name=>1,
-    R=>1,
-    Q=>1,
-    'P(R)'=>1,
-    'P(Q)'=>1,
-    'QR/R'=>1,
-    'QR/Q'=>1,
-    'QR'=>1,
-    'QvR'=>1,
-    P_val=>1,
-    E_val=>1,
-    jac_sim=>1,
-    dotprod=>1,
-    sig=>1
-);
-$supported_sort_keys = join (",", sort (keys (%supported_sort_keys)));
+$supported_threshold_fields = join (",", sort(keys( %supported_threshold_fields)));
 
 %supported_catalogs = (
     MIPS=>1,
@@ -127,7 +100,6 @@ $supported_sort_keys = join (",", sort (keys (%supported_sort_keys)));
 );
 $supported_catalogs = join (",", sort(keys( %supported_catalogs)));
 
-
 local %infile = ();
 local %outfile = ();
 
@@ -135,8 +107,18 @@ local $verbose = 0;
 # local $in = STDIN;
 local $out = STDOUT;
 
+## Fields to return in the output
 %return_fields = ();
-%calc_cields = (occ=>1);
+
+## Fields to calculate can be diffferent from those to return, due to
+## dependencies (e.g. returning frequencies requires the computation
+## of occurrences)
+%calc_fields = (occ=>1);
+
+
+## Any statistics that can be computed can be returned as a matrix
+%supported_matrix_fields = %calc_groups;
+$supported_matrix_fields = join (",", sort(keys( %supported_matrix_fields)));
 
 %lth = ();
 %uth = ();
@@ -145,6 +127,36 @@ local $out = STDOUT;
 %ref_member_index = ();
 %query_member_index = ();
 $population_size = 0;
+
+## ##############################################################
+## Field formats for the output
+%field_formats = ();
+$field_formats{'Q'} = "%d";
+$field_formats{'R'} = "%d";
+$field_formats{'QR'} = "%d";
+$field_formats{'QvR'} = "%d";
+$field_formats{'Q!R'} = "%d";
+$field_formats{'R!Q'} = "%d";
+$field_formats{'!Q!R'} = "%d";
+$field_formats{'QR/Q'} = "%.5f";
+$field_formats{'P(R)'} = "%.5f";
+$field_formats{'P(Q)'} = "%.5f";
+$field_formats{'P(QR)'} = "%.5f";
+$field_formats{'P(Q!R)'} = "%.5f";
+$field_formats{'P(R!Q)'} = "%.5f";
+$field_formats{'P(!Q!R)'} = "%.5f";
+$field_formats{'jac_sim'} = "%.5f";
+$field_formats{'dotprod'} = "%7g";
+$field_formats{'exp_QR'} = "%7.2f";
+$field_formats{'P_val'} = "%.2g";
+$field_formats{'E_val'} = "%.2gf";
+$field_formats{'sig'} = "%.2f";
+$field_formats{'H(Q)'} = "%.5f";
+$field_formats{'H(R)'} = "%.5f";
+$field_formats{'H(Q,R)'} = "%.4f";
+$field_formats{'H(Q|R)'} = "%.4f";
+$field_formats{'H(R|Q)'} = "%.4f";
+$field_formats{'I(Q,R)'} = "%.4f";
 
 &ReadArguments();
 
@@ -179,13 +191,13 @@ foreach my $field (keys %return_fields) {
     $calc_fields{$field} = 1;
 }
 
-if ($return_fields{freq}) {
-    $calc_fields{occ} = 1;
-}
 if ($return_fields{entropy}) {
     $calc_fields{freq} = 1;
 }
 
+&RSAT::message::Info(join("\t", "Fields to calculate", 
+			  join("; ", sort(keys(%calc_fields)))
+			 )) if ($main::verbose >= 2);
 
 
 ################################################################
@@ -411,7 +423,7 @@ OPTIONS
 
     -sort key
         sort on the basis of the specified key.
-        Supported keys: $supported_sort_keys
+        Supported keys: $supported_sort_fields
 
     -rep    replacement
         Sampling was performed with replacement, i.e. a given
@@ -442,7 +454,10 @@ OPTIONS
         and each cell contains a comparison between the two
         classes. The next argument indicates which statistics
         has to be returne in the matrix (default = sig).
-        Supported : $supported_matrix_keys
+        Supported : $supported_matrix_fields
+
+    -null 
+    	null string (default $null) displayed for undefined values.
 
     -dot dot_file
         Export a graph with the associations in a dot
@@ -662,9 +677,10 @@ compare-classes options
 -sym            symmetric comparison (only with -rep, see detailed help)
 -distinct       prevent to compare each class with itself
 -triangle       do not perform reciprocal comparison
--matrix [key]   return a similarity matrix
+-matrix [key]   return a similarity/dissimilarity matrix with the specified statistics
 -cat            catalog (supported: $supported_catalogs)
 -org            organism
+-null    	null string (default $null) displayed for undefined values.
 -dot            dot file
 -gml            gml file
 End_short_help
@@ -716,6 +732,10 @@ sub ReadArguments {
 		&RSAT::error::FatalError("$catalog is not a valid catalog. Supported: $supported_catalogs");
 	    }
 
+	    #### null value
+	} elsif ($ARGV[$a] eq "-null") {	    
+	    $null =$ARGV[$a+1];
+
 	    #### organism
 	} elsif ($ARGV[$a] eq "-org") {	    
 	    $organism_name =$ARGV[$a+1];
@@ -748,17 +768,18 @@ sub ReadArguments {
             ### sort key
         } elsif ($ARGV[$a] eq "-sort") {
             $sort_key = $ARGV[$a+1];
-            unless ($supported_sort_keys{$sort_key}) {
-                &RSAT::error::FatalError (join("\t", $sort_key, "Invalid sort key. Supported:", $supported_sort_keys));
+            unless ($supported_sort_fields{$sort_key}) {
+                &RSAT::error::FatalError (join("\t", $sort_key, "Invalid sort key. Supported:", $supported_sort_fields));
             }
 
             ### export a distance matrix
         } elsif ($ARGV[$a] eq "-matrix") {
             $return{matrix} = 1;
-	    my $possible_key = $ARGV[$a+1];
-	    if ($supported_matrix_keys{$possible_key}) {
-		$matrix_key = $possible_key;
-	    }
+	    $matrix_key = $ARGV[$a+1];
+            unless ($supported_matrix_fields{$matrix_key}) {
+                &RSAT::error::FatalError (join("\t", $matrix_key, "Invalid matrix key. Supported:", $supported_matrix_fields));
+            }
+	    $calc_fields{$calc_groups{$matrix_key}} = 1;
 
             ### dot file
         } elsif ($ARGV[$a] eq "-dot") {
@@ -790,13 +811,13 @@ sub ReadArguments {
         } elsif ($ARGV[$a] eq "-lth") {
             my $field = $ARGV[$a+1];
 	    &RSAT::error::FatalError(join("\t", $field, "Invalid threshold field. Supported:", $supported_threshold_fields))
-		unless ($supported_threshold_field{$field});
+		unless ($supported_threshold_fields{$field});
             my $value = $ARGV[$a+2];
             $lth{$field} = $value;
         } elsif ($ARGV[$a] eq "-uth") {
             my $field = $ARGV[$a+1];
 	    &RSAT::error::FatalError(join("\t", $field, "Invalid threshold field. Supported:", $supported_threshold_fields))
-		unless ($supported_threshold_field{$field});
+		unless ($supported_threshold_fields{$field});
             my $value = $ARGV[$a+2];
             $uth{$field} = $value;
 
@@ -972,7 +993,7 @@ sub CompareClasses {
 	    my $Q = scalar(@query_members);
 
 	    #### check if the number of ref members is above the threshold    
-	    next if ((defined($lth{Q})) && ($Q < $lth{Q}));
+	    next if ((defined($lth{'Q'})) && ($Q < $lth{Q}));
 	    next if ((defined($lth{'QR'})) && ($Q < $lth{'QR'}));
 	    
 	    #### compare query and reference classes
@@ -996,8 +1017,8 @@ sub CompareClasses {
 
 	    ## QR : intersection between group R and group Q
 	    my $QR = scalar(keys %{$matching_elements->{$compa_key}});
-	    $compa{$compa_key}->{R} = $R;
-	    $compa{$compa_key}->{Q} = $Q;
+	    $compa{$compa_key}->{'R'} = $R;
+	    $compa{$compa_key}->{'Q'} = $Q;
 	    $compa{$compa_key}->{'QR'} = $QR;
 
 	    my $QvR = $Q + $R - $QR;
@@ -1280,13 +1301,16 @@ sub CompareClasses {
 }
 
 
-################################################################
-###### print result
+## ##############################################################
+## Print the result
 sub PrintResult {
-
-    #### print a similarity matrix
+    
+    ## ##############################################################
+    ## Print the result in the form of a matrix
     if ($return{matrix}) {
 	my @query_classes = sort keys %query_classes;
+
+	## Print the matrix header
 	my $header = "#fam";
 	if ($infile{qnames}) {
 	    ## replace class IDs by class names
@@ -1307,7 +1331,8 @@ sub PrintResult {
 	$header .= "\n";
 	print $out $header;
 
-	#### print the result in the form of a matrix
+	#### print the matrix
+	my $field_format = $field_formats{$matrix_key};
 	foreach my $r (sort keys %ref_classes ) {
 	    if ($infile{rnames}) {
 		my $rname =  $ref_classes{$r}->get_attribute("name");
@@ -1323,10 +1348,11 @@ sub PrintResult {
 	    }
 	    foreach my $q (sort keys %query_classes ) {
 		my $compa_key = $r."__VERSUS__".$q;
+#		die "HELLO", $matrix_key;
 		if (defined($compa{$compa_key}->{$matrix_key})) {
-		    print $out "\t",  $compa{$compa_key}->{$matrix_key};
+		    print $out "\t", sprintf($field_format, $compa{$compa_key}->{$matrix_key});
 		} else {
-		    print $out "\t", "NA";
+		    print $out "\t", $null;
 		}
 	    }
 	    print $out "\n";
@@ -1399,13 +1425,13 @@ sub PrintResult {
 	}
 
 
-	## Print header descriptions
+	## Define header descriptions
 	my %field_descrition = ();
-	$field_description{rank}  = "Rank of the comparison";
-	$field_description{query}  = "Name of the second class (called class R hereafter)";
-	$field_description{ref}  = "Name of the first class (called class Q hereafter)";
-	$field_description{Q}  = "Number of elements in class Q";
-	$field_description{R} = "Number of elements in class R";
+	$field_description{'rank'}  = "Rank of the comparison";
+	$field_description{'query'}  = "Name of the second class (called class R hereafter)";
+	$field_description{'ref'}  = "Name of the first class (called class Q hereafter)";
+	$field_description{'Q'}  = "Number of elements in class Q";
+	$field_description{'R'} = "Number of elements in class R";
 	$field_description{'QR'}  = "Number of elements found in the intersecion between classes R and Q";
 	$field_description{'QvR'}  = "Number of elements found in the union of classes R and Q. This is R or Q.";
 	$field_description{'R!Q'}  = "Number of elements found in class R but not class Q";
@@ -1419,16 +1445,16 @@ sub PrintResult {
 	$field_description{'P(Q!R)'}  = "Frequency of Q!R elements relative to population size. P(Q!R)=Q!R/P";
 	$field_description{'P(R!Q)'}  = "Frequency of R!Q elements relative to population size. P(R!Q)=R!Q/P";
 	$field_description{'P(!Q!R)'}  = "Frequency of !Q!R elements relative to population size. P(!Q!R)=!Q!R/P";
-	$field_description{jac_sim}  = "Jaccard' similarity";
-	$field_description{dotprod}  = "Dot product (using the score column)";
-	$field_description{exp_QR}  = "Expected number of elements in the intersection";
-	$field_description{P_val}  = "P-value of the intersection";
-#	$field_description{mtest}  = "Correction for the multi-testing.";
-	$field_description{E_val}  = "E-value of the intersection";
-	$field_description{sig}  = "Significance of the intersection";
-	$field_description{R_only}  = "Elements found in the class R only";
-	$field_description{Q_only}  = "Elements found in the class Q only";
-	$field_description{common_members}  = "Elements found in both reference and query classes";
+	$field_description{'jac_sim'}  = "Jaccard' similarity";
+	$field_description{'dotprod'}  = "Dot product (using the score column)";
+	$field_description{'exp_QR'}  = "Expected number of elements in the intersection";
+	$field_description{'P_val'}  = "P-value of the intersection";
+#	$field_description{'mtest'}  = "Correction for the multi-testing.";
+	$field_description{'E_val'}  = "E-value of the intersection";
+	$field_description{'sig'}  = "Significance of the intersection";
+	$field_description{'R_only'}  = "Elements found in the class R only";
+	$field_description{'Q_only'}  = "Elements found in the class Q only";
+	$field_description{'common_members'}  = "Elements found in both reference and query classes";
 	$field_description{'H(Q)'} = "Entropy of class Q. H(Q) = - P(Q)*log[P(Q)] - P(!Q)*log[P(!Q)]";
 	$field_description{'H(R)'} = "Entropy of class R. H(R) = - P(R)*log[P(R)] - P(!R)*log[P(!R)]";
 	$field_description{'H(Q,R)'} = "Join entropy for classes Q and R. H(Q,R) = - P(QR)*log[P(QR)] - P(Q!R)*log[P(Q!R)] - P(R!Q)*log[P(R!Q)] - P(!Q!R)*log[P(!Q!R)]";
@@ -1443,19 +1469,23 @@ sub PrintResult {
 		printf $out ";\t%d\t%-14s\t%s\n", $f+1, $field, $field_description{$field};
 	    }
 	}
-	
 
-	## Print hte header row
+	## Print the header row
 	print $out "#", join("\t", @header_fields), "\n";
 
-	#### sort class comparisons
+	#### Sort the result
 	if ($sort_key eq "name") {
-	    @sorted_keys = sort (keys %compa); ### alphabetical order
+	    ## alphabetical order
+	    @sorted_keys = sort (keys %compa); 
+
 	} elsif (($sort_key eq 'E_val') ||
 		 ($sort_key eq 'P_val')){
-	    @sorted_keys = sort {$compa{$a}->{$sort_key} <=> $compa{$b}->{$sort_key}} (keys %compa); ### numerical ascendent
-	} else {
-	    @sorted_keys = sort {$compa{$b}->{$sort_key} <=> $compa{$a}->{$sort_key}} (keys %compa); ### numerical descendent
+	    ## numerical ascendent
+	    @sorted_keys = sort {$compa{$a}->{$sort_key} <=> $compa{$b}->{$sort_key}} (keys %compa); 
+
+	} elsif ($sort_key) {
+	    ## numerical descendent
+	    @sorted_keys = sort {$compa{$b}->{$sort_key} <=> $compa{$a}->{$sort_key}} (keys %compa); 
 	}
 
 	#### class combinations
@@ -1464,6 +1494,14 @@ sub PrintResult {
 	    my ($r, $q) = split "__VERSUS__", $compa_key;
 	    $rank++;
 	    
+	    ## Check thresholds on rank
+	    if ((defined($uth{rank})) && ($rank > $uth{rank})) {
+		last;
+	    }
+	    if ((defined($lth{rank})) && ($rank < $lth{rank})) {
+		next;
+	    }
+
 	    ## Print the rank of the association
 	    if ($return_fields{rank}) {
 		print $out $rank."\t";
@@ -1490,12 +1528,11 @@ sub PrintResult {
 	    print $out join "\t", ($r_text,
 				   $q_text);
 
+
 	    #### occurrence counts
 	    if ($return_fields{occ}) {
-#		printf $out "\t%d", $ref_classes{$r}->get_size();
-#		printf $out "\t%d", $query_classes{$q}->get_size();
-		printf $out "\t%d",  $compa{$compa_key}->{R};
-		printf $out "\t%d",  $compa{$compa_key}->{Q};
+		printf $out "\t%d",  $compa{$compa_key}->{'R'};
+		printf $out "\t%d",  $compa{$compa_key}->{'Q'};
 		printf $out "\t%d",  $compa{$compa_key}->{'QR'};
 		printf $out "\t%d",  $compa{$compa_key}->{'QvR'};
 		printf $out "\t%d",  $compa{$compa_key}->{'R!Q'};
@@ -1503,7 +1540,7 @@ sub PrintResult {
 		printf $out "\t%d",  $compa{$compa_key}->{'!Q!R'};
 	    }
 
-	    #### frequencies
+	    #### Frequencies
 	    if ($return_fields{freq}) {
 		printf $out "\t%.5f", $compa{$compa_key}->{'QR/R'};
 		printf $out "\t%.5f", $compa{$compa_key}->{'QR/Q'};
@@ -1524,7 +1561,6 @@ sub PrintResult {
 	    if ($return_fields{dotprod}) {
 		printf $out "\t%7g", $compa{$compa_key}->{dotprod};
 	    }
-	    
 
 	    #### probabilities
 	    if ($return_fields{proba}) {
@@ -1547,6 +1583,7 @@ sub PrintResult {
 		printf $out ( "\t%.2f", $compa{$compa_key}->{sig});
 	    }
 
+
 	    ## Entropy 
 	    if ($return_fields{entropy}) {
 		printf $out ( "\t%.5f", $compa{$compa_key}->{'H(Q)'});
@@ -1557,7 +1594,7 @@ sub PrintResult {
 		printf $out ( "\t%.5f", $compa{$compa_key}->{'I(Q,R)'});
 	    }
 
-	    #### members of the intersection
+	    #### Members
 	    if ($return_fields{members}) {
 		print $out "\t", join( " ", @{$R_only{$compa_key}}) ;
 		print $out "\t", join( " ", @{$Q_only{$compa_key}}) ;
