@@ -7,7 +7,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.104 2006/02/22 15:26:49 jvanheld Exp $
+# $Id: oligo-analysis,v 1.105 2006/03/20 10:11:36 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -216,6 +216,8 @@ if ($method =~ /calibration/i) {
 
 #### open sequence stream
 ($in, $input_dir) = &OpenInputFile($inputfile);
+
+#die join "\t", "BOUM",  $inputfile, $input_dir;
 
 #### open output stream
 $out = &OpenOutputFile($outputfile);
