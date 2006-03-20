@@ -300,22 +300,13 @@ sub OpenInputFile {
 								}
 	open (my $input_fh, $filename) || 
 	    &RSAT::error::FatalError ("Cannot read input file ".$filename);
-	return ($input_fh)
+	return ($input_fh, $input_dir)
     } else {
 	my $input_fh = *STDIN;
-	return $input_fh;
-
-# 	unless (open(INPUT, $filename)) {
-# 	    &RSAT::error::FatalError("Cannot read input file\t".$filename);
-# 	}
-# 	$input_stream = *INPUT;
-#     } else {
-# 	### use standard input if no file name was specified
-# 	$input_stream = *STDIN;
-	
+	return ($input_fh, $input_dir);
     }
 
-#    &RSAT::message::Debug(join ("\t",  "Input stream has been open", $filename, $input_dir, $input_stream)) if ($main::verbose >= 10);
+#    &RSAT::message::Debug("Input stream has been open", $filename, $input_dir, $input_stream) if ($main::verbose >= 10);
 
    return ($input_stream, $input_dir);
 }

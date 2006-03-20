@@ -987,7 +987,7 @@ sub ReadNextSequence {
     
     my ($SEQ, $sequence_format, $input_dir, $seq_type, $mask, %args) = @_;
     $sequence_format = lc($sequence_format);
-    
+
     ## Columns for the tab-delimited format
     my $id_column = $args{'id_column'} || 1;
     my $seq_column = $args{'seq_column'} || 2;
@@ -1052,9 +1052,11 @@ sub ReadNextSequence {
 					   }
 	} 
 	
-#	die join "\t", $next_file, $input_dir, "$input_dir/$next_file", "\n";
+	&RSAT::message::Debug("ReadNextSequence", $next_file, "input directory", $input_dir) 
+	    if ($main::verbose >= 4);
+
 	unless (-e $next_file) {
-	    if (-e "$input_dir/$next_file") {
+	    if (-e ${input_dir}."/".${next_file}) {
 		$next_file = "$input_dir/$next_file";
 	    }
 	}
