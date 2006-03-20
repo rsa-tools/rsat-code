@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.23 2006/03/19 10:37:42 jvanheld Exp $
+# $Id: compare-classes,v 1.24 2006/03/20 17:28:22 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -19,13 +19,15 @@ require RSAT::GraphNode;
 require RSAT::GraphArc;
 #require "RSA.classes";
 
+#### TO DO : add parameter -base
+
 ################################################################
 #### initialise parameters
 my $start_time = &AlphaDate();
 local $replacement = 0;
 local $symmetric = 0;
 local $distinct = 0;
-local $matrix_key = "sig"; ### key to export as similarity index (option -matrix)
+local @matrix_keys = ();
 local $dot_file = "";
 local $gml_file = "";
 local $nb_tests = 0;
@@ -55,22 +57,35 @@ $sort_key = "name";
 ## Groups of calculation
 %calc_groups = (
     'rank'=>'rank',
+
     'QR'=>'occ',
     'R'=>'occ',
     'Q'=>'occ',
     'QvR'=>'occ',
-    'jac_sim'=>'jac_sim',
-    'dotprod'=>'dotprod',
-    'P_val'=>'proba',
-    'E_val'=>'proba',
-    'sig'=>'proba',
+
+
     'P(R)'=>'freq',
     'P(Q)'=>'freq',
     'QR/R'=>'freq',
     'QR/Q'=>'freq',
-    'H_R'=>'entropy',
-    'H_Q'=>'entropy',
+
+    'jac_sim'=>'jac_sim',
+
+    'dotprod'=>'dotprod',
+
+    'P_val'=>'proba',
+    'E_val'=>'proba',
+    'sig'=>'proba',
+
+    'H(R)'=>'entropy',
+    'H(Q)'=>'entropy',
+    'H(Q,R)'=>'entropy',
+    'H(Q|R)'=>'entropy',
+    'H(R|Q)'=>'entropy',
     'I(Q,R)'=>'entropy',
+    'U(Q|R)'=>'entropy',
+    'U(R|Q)'=>'entropy',
+    'IC'=>'entropy',
 );
 @calc_keys = keys %calc_groups;
 @calc_values = values %calc_groups;
@@ -85,6 +100,7 @@ while (my ($key,$value) = each (%calc_groups)) {
 }
 $supported_return_fields{members} = 1,
 $supported_sort_fields{names} = 1,
+delete($supported_sort_fields{rank}),
 
 $supported_matrix_fields = join (",", sort(keys( %supported_matrix_fields)));
 $supported_sort_fields = join (",", sort(keys( %supported_sort_fields)));
@@ -157,6 +173,7 @@ $field_formats{'H(Q,R)'} = "%.4f";
 $field_formats{'H(Q|R)'} = "%.4f";
 $field_formats{'H(R|Q)'} = "%.4f";
 $field_formats{'I(Q,R)'} = "%.4f";
+$field_formats{'IC'} = "%.4f";
 
 &ReadArguments();
 
@@ -186,18 +203,41 @@ if (($return_fields{dotprod}) && !($score_col)) {
 ## Logarithm base
 $log_base = log($base); ## Calcualte it only once
 
+## ##############################################################
 ## Fields to calculate
+foreach my $field (@matrix_keys) {
+    my $calc_group = $calc_groups{$field};
+    $calc_fields{$calc_group} = 1;
+}
+
 foreach my $field (keys %return_fields) {
     $calc_fields{$field} = 1;
 }
 
-if ($return_fields{entropy}) {
+## Dependencies between fields
+if ($calc_fields{entropy}) {
     $calc_fields{freq} = 1;
+}
+
+if ($calc_fields{jac_sim}) {
+    $calc_fields{freq} = 1;
+}
+
+if ($calc_fields{dotprod}) {
+    $calc_fields{occ} = 1;
+}
+
+if ($calc_fields{proba}) {
+    $calc_fields{occ} = 1;
+}
+
+if ($calc_fields{freq}) {
+    $calc_fields{occ} = 1;
 }
 
 &RSAT::message::Info(join("\t", "Fields to calculate", 
 			  join("; ", sort(keys(%calc_fields)))
-			 )) if ($main::verbose >= 2);
+			 )) if ($main::verbose >= 0);
 
 
 ################################################################
@@ -455,6 +495,11 @@ OPTIONS
         classes. The next argument indicates which statistics
         has to be returne in the matrix (default = sig).
         Supported : $supported_matrix_fields
+
+    	The argument -matrix can be used iteratively to export several
+    	matrices in the same output file.
+	Example: 
+		-matrix QR -matrix sig -matrix 'I(Q,R)' 
 
     -null 
     	null string (default $null) displayed for undefined values.
@@ -774,11 +819,12 @@ sub ReadArguments {
 
             ### export a distance matrix
         } elsif ($ARGV[$a] eq "-matrix") {
-            $return{matrix} = 1;
 	    $matrix_key = $ARGV[$a+1];
+            push @matrix_keys, $matrix_key;
             unless ($supported_matrix_fields{$matrix_key}) {
                 &RSAT::error::FatalError (join("\t", $matrix_key, "Invalid matrix key. Supported:", $supported_matrix_fields));
             }
+
 	    $calc_fields{$calc_groups{$matrix_key}} = 1;
 
             ### dot file
@@ -903,8 +949,8 @@ sub Verbose {
         print $out "\n";
     }
 
-    if ($return{matrix}) {
-	print $out "; matrix\t$matrix_key\n";
+    if (scalar(@matrix_keys) >= 1) {
+	print $out "; matrix\t", join ";", @matrix_keys, "\n";
     }
 
     if (defined(%outfile)) {
@@ -1206,6 +1252,15 @@ sub CompareClasses {
 
 		## Mutual information
 		$compa{$compa_key}->{'I(Q,R)'} = $compa{$compa_key}->{'H(Q)'} + $compa{$compa_key}->{'H(R)'} - $compa{$compa_key}->{'H(Q,R)'};
+
+		## Information content
+		my $exp_freq = $compa{$compa_key}->{'P(Q)'}*$compa{$compa_key}->{'P(R)'};
+		if ($compa{$compa_key}->{'QR'} <= 0) {
+		    $compa{$compa_key}->{'IC'} = 0;
+		} else {
+		    $compa{$compa_key}->{'IC'} = $compa{$compa_key}->{'P(QR)'} * 
+			log(  $compa{$compa_key}->{'P(QR)'} / $exp_freq )/$log_base;
+		}
 	    }
 
 	    ################################################################
@@ -1305,70 +1360,16 @@ sub CompareClasses {
 ## Print the result
 sub PrintResult {
     
-    ## ##############################################################
-    ## Print the result in the form of a matrix
-    if ($return{matrix}) {
-	my @query_classes = sort keys %query_classes;
-
-	## Print the matrix header
-	my $header = "#fam";
-	if ($infile{qnames}) {
-	    ## replace class IDs by class names
-	    foreach my $class (@query_classes) {
-		my $qname = $query_class{$class}->get_attribute("name");
-		if (defined($qname)) {
-		    $header .= "\t".$qname; 
-		} else {
-		    &Warning("There is no name associated to query class $r\n", 1),
-		    $header .= "\t".$class; 
-		}
-	    }
-	} else {
-	    $header .= "\t";
-	    $header .= join "\t", @query_classes;
-	}
-
-	$header .= "\n";
-	print $out $header;
-
-	#### print the matrix
-	my $field_format = $field_formats{$matrix_key};
-	foreach my $r (sort keys %ref_classes ) {
-	    if ($infile{rnames}) {
-		my $rname =  $ref_classes{$r}->get_attribute("name");
-		if ($rname) {
-		    ## Replace class ID by class name
-		    print $out $rname; 
-		} else {
-		    &Warning("There is no name associated to reference class $r\n", 1),
-		    print $out $r;
-		}
-	    } else {
-		print $out $r;
-	    }
-	    foreach my $q (sort keys %query_classes ) {
-		my $compa_key = $r."__VERSUS__".$q;
-#		die "HELLO", $matrix_key;
-		if (defined($compa{$compa_key}->{$matrix_key})) {
-		    print $out "\t", sprintf($field_format, $compa{$compa_key}->{$matrix_key});
-		} else {
-		    print $out "\t", $null;
-		}
-	    }
-	    print $out "\n";
-	}
-
-
-    } else {
-	################################################################
-	## Print one row per association between a reference and a query class
+    ################################################################
+    ## Print one row per association between a reference and a query class
+    if (scalar(keys(%return_fields)) >= 1) {
 
 	#### header
 	my @header_fields = ();
 	if ($return_fields{rank}) {
 	    push @header_fields, ("rank");
 	};
-
+	
 	push @header_fields, ("ref","query");
 
 	if ($return_fields{occ}) {
@@ -1414,6 +1415,7 @@ sub PrintResult {
 	    push @header_fields, "H(Q|R)";
 	    push @header_fields, "H(R|Q)";
 	    push @header_fields, "I(Q,R)";
+	    push @header_fields, "IC";
 	}
 
 	if ($return_fields{members}) {
@@ -1461,6 +1463,7 @@ sub PrintResult {
 	$field_description{'I(Q,R)'} = "Mutual information of classs Q and R. I(Q,R) = H(Q) + H(R) - H(Q,R)";
 	$field_description{'H(Q|R)'} = "Conditional entropy of Q given R. H(Q|R) = H(Q,R) - H(R)";
 	$field_description{'H(R|Q)'} = "Conditional entropy of R given Q. H(R|Q) = H(Q,R) - H(Q)";
+	$field_description{'IC'} = "Information content (as defined by Schneider, 1986). IC = P(QR) log[P(QR)/P(Q)P(R)]";
 
 	if ($main::verbose >= 1) {
 	    print $out "; Column contents\n";
@@ -1592,6 +1595,7 @@ sub PrintResult {
 		printf $out ( "\t%.5f", $compa{$compa_key}->{'H(Q|R)'});
 		printf $out ( "\t%.5f", $compa{$compa_key}->{'H(R|Q)'});
 		printf $out ( "\t%.5f", $compa{$compa_key}->{'I(Q,R)'});
+		printf $out ( "\t%.5f", $compa{$compa_key}->{'IC'});
 	    }
 
 	    #### Members
@@ -1604,6 +1608,16 @@ sub PrintResult {
 	    print $out "\n";
 	}
     }
+
+    ## ##############################################################
+    ## Print the result in the form of a matrix
+    if (scalar(@matrix_keys >= 1)) {
+	foreach my $matrix_key (@matrix_keys) {
+	    &PrintOneMatrix($matrix_key);
+	}
+    }
+	
+
 }
 
 
@@ -1719,3 +1733,61 @@ sub CreateGraph {
     return $graph;
 }
 
+################################################################
+## Print one comparison matrix
+sub PrintOneMatrix {
+    my ($matrix_key) = @_;
+
+    my @query_classes = sort keys %query_classes;
+
+    ## Print the matrix type
+    print $out "; Matrix", "\t", $matrix_key, "\n";
+    
+    ## Print the matrix header
+    my $header = "#fam";
+    if ($infile{qnames}) {
+	## replace class IDs by class names
+	foreach my $class (@query_classes) {
+	    my $qname = $query_class{$class}->get_attribute("name");
+	    if (defined($qname)) {
+		$header .= "\t".$qname; 
+	    } else {
+		&Warning("There is no name associated to query class $r\n", 1),
+		$header .= "\t".$class; 
+	    }
+	}
+    } else {
+	$header .= "\t";
+	$header .= join "\t", @query_classes;
+    }
+    
+    $header .= "\n";
+    print $out $header;
+    
+    #### print the matrix
+    my $field_format = $field_formats{$matrix_key};
+    foreach my $r (sort keys %ref_classes ) {
+	if ($infile{rnames}) {
+	    my $rname =  $ref_classes{$r}->get_attribute("name");
+	    if ($rname) {
+		## Replace class ID by class name
+		print $out $rname; 
+	    } else {
+		&Warning("There is no name associated to reference class $r\n", 1),
+		print $out $r;
+	    }
+	} else {
+	    print $out $r;
+	}
+	foreach my $q (sort keys %query_classes ) {
+	    my $compa_key = $r."__VERSUS__".$q;
+#		die "HELLO", $matrix_key;
+	    if (defined($compa{$compa_key}->{$matrix_key})) {
+		print $out "\t", sprintf($field_format, $compa{$compa_key}->{$matrix_key});
+	    } else {
+		print $out "\t", $null;
+	    }
+	}
+	print $out "\n";
+    }
+}
