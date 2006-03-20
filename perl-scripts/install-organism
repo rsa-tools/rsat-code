@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.61 2006/03/14 02:17:36 rsat Exp $
+# $Id: install-organism,v 1.62 2006/03/20 13:53:53 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -357,6 +357,8 @@ sub CreatePhylogeny {
 	$taxonomy =~ s|\s+|_|g; ## I prefer to avoid spaces in directory names
 	$taxonomy =~ s|\(|_|g; ## this character cannot be used for a directory name
 	$taxonomy =~ s|\)|_|g; ## this character cannot be used for a directory name
+	$taxonomy =~ s|\,|.|g; ## Not fatal, but usually not found in folder names.
+	$taxonomy =~ s|\:|.|g; ## Not fatal, but usually not found in folder names.
 	my $dir = $RSA."/data/phylogeny/".$taxonomy;
 	warn "; Taxonomy directory\t", $dir, "\n" if ($main::verbose >= 1);
 	&RSAT::util::CheckOutDir($dir);
