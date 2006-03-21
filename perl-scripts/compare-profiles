@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: compare-profiles,v 1.13 2006/03/14 02:04:45 jvanheld Exp $
+# $Id: compare-profiles,v 1.14 2006/03/21 08:41:19 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -257,13 +257,13 @@ I(A,B) = H(A) + H(B) - H(A,B)
 
 Uncertainty of A given B.
 
-U(A|B) = I(A;B)/U(A)
+U(A|B) = I(A;B)/H(A)
 
 =item B<U(B|A)>
 
 Uncertainty of B given A.
 
-U(B|A) = I(A;B)/U(B)
+U(B|A) = I(A;B)/H(B)
 
 =item B<Pval_R> 
 
