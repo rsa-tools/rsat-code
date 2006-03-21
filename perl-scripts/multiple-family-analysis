@@ -6,7 +6,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.165 2006/03/09 11:52:56 rsat Exp $
+# $Id: multiple-family-analysis,v 1.166 2006/03/21 21:02:37 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -891,11 +891,14 @@ sub CalcOligoOptions {
    $oligo_options .= " -sort ";
    $oligo_options .= " ".$strands;
    $oligo_options .= " -l ".$oligo_len;
-   $oligo_options .= " -mask ".$mask;
    $oligo_options .= &ThresholdOptions();
 #   $oligo_options .= " -lth occ_sig ".$lth{occ_sig};
 #   if (&IsReal($lth{ms_freq})) {$oligo_options .= " -thmsf ".$lth{ms_freq} ; }
 #   if (&IsReal($lth{ms_sig})) {$oligo_options .= " -thmssig ".$lth{ms_sig} ; }
+
+   if ($mask) {
+       $oligo_options .= " -mask ".$mask;
+   }
    
    if ($markov) {
 	### Markov chain model
@@ -1155,9 +1158,13 @@ sub DyadAnalysis {
    $command .= " -return occ,proba,rank";
    $command .= " -i ".$family{$family_name}->{input_seq_file};
    $command .= " -format ".$seq_format;
-   $command .= " -mask ".$mask;
    $command .= " -o ".$family{$family_name}->{dyad_file};
    $command .= " ".$dyad_options;
+
+   if ($mask) {
+       $command .= " -mask ".$mask;
+   }
+
    ### fragment assembly
    $command .= "; pattern-assembly -v -i $family{$family_name}->{dyad_file} -o $family{$family_name}->{dyad_assembly_file} ${strands} -maxfl 1 -maxpat 200 ";
    
