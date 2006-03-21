@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.25 2006/03/21 08:41:40 jvanheld Exp $
+# $Id: compare-classes,v 1.26 2006/03/21 10:10:58 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -1729,18 +1729,26 @@ sub CreateGraph {
     return $graph;
 }
 
+
 ################################################################
 ## Print one comparison matrix
 sub PrintOneMatrix {
     my ($matrix_key) = @_;
 
+
+    ## Calculate marggins if required
+    if ($margins) {
+	&CalcMargins($matrix_key);
+    }
+
     my @query_classes = sort keys %query_classes;
+    my @ref_classes = sort keys %ref_classes;
 
     ## Print the matrix type
     print $out "; Matrix", "\t", $matrix_key, "\n";
     
     ## Print the matrix header
-    my $header = "#fam";
+    my $header = "#Q\R";
     if ($infile{qnames}) {
 	## replace class IDs by class names
 	foreach my $class (@query_classes) {
@@ -1757,12 +1765,17 @@ sub PrintOneMatrix {
 	$header .= join "\t", @query_classes;
     }
     
+    if ($margins) {
+	$header .= "\t"."R_sum(".$matrix_key.")";
+	$header .= "\t"."R_avg(".$matrix_key.")";
+    }
+
     $header .= "\n";
     print $out $header;
     
     #### print the matrix
     my $field_format = $field_formats{$matrix_key};
-    foreach my $r (sort keys %ref_classes ) {
+    foreach my $r (@ref_classes ) {
 	if ($infile{rnames}) {
 	    my $rname =  $ref_classes{$r}->get_attribute("name");
 	    if ($rname) {
@@ -1775,18 +1788,113 @@ sub PrintOneMatrix {
 	} else {
 	    print $out $r;
 	}
-	foreach my $q (sort keys %query_classes ) {
+	foreach my $q (@query_classes ) {
 	    my $compa_key = $r."__VERSUS__".$q;
-#		die "HELLO", $matrix_key;
 	    if (defined($compa{$compa_key}->{$matrix_key})) {
 		print $out "\t", sprintf($field_format, $compa{$compa_key}->{$matrix_key});
 	    } else {
 		print $out "\t", $null;
 	    }
 	}
+
+	## Print row margins
+	if ($margins) {
+	    print $out ("\t", join("\t", 
+				  sprintf("%6g", $sum_per_R{$matrix_key}{$r}),
+				  sprintf("%6g", $avg_per_R{$matrix_key}{$r}),
+				 ));
+	}
 	print $out "\n";
     }
+
+    ## Print column margins
+    if ($margins) {
+
+	## marginal sum
+	print $out "Q_sum(",$matrix_key,")";
+	foreach my $q (@query_classes) {
+	    print $out "\t",  sprintf("%6g", $sum_per_Q{$matrix_key}{$q});
+	}
+	print $out "\t", sprintf("%6g", $sum{$matrix_key});
+	print $out "\t", ".";
+	print $out "\n";
+
+	## marginal average
+	print $out "Q_avg(",$matrix_key,")";
+	foreach my $q (@query_classes) {
+	    print $out "\t",  sprintf("%6g", $avg_per_Q{$matrix_key}{$q});
+	}
+	print $out "\t", ".";
+	print $out "\t", sprintf("%6g", $avg{$matrix_key});
+	print $out "\n";
+    }
+
 }
+
+
+################################################################
+## Calculate marginal values for a given parameter
+sub CalcMargins {
+    my ($margin_key) = @_;
+
+    &RSAT::message::TimeWarn("Calcualting margins for key\t".$margin_key) if ($main::verbose >= 0);
+
+    my @query_classes = sort keys %query_classes;
+    my @ref_classes = sort keys %ref_classes;
+
+    ## Calcualte counts and sums
+    foreach my $q (@query_classes) {
+	foreach my $r (@ref_classes) {
+	    my $compa_key = $r."__VERSUS__".$q;
+	    if (defined($compa{$compa_key}->{$margin_key})) {
+		my $value = $compa{$compa_key}->{$margin_key};
+		$count_per_Q{$margin_key}{$q} += 1;
+		$sum_per_Q{$margin_key}{$q} += $value;
+
+		$count_per_R{$margin_key}{$r} += 1;
+		$sum_per_R{$margin_key}{$r} += $value;
+		
+		
+	    } else {
+		&RSAT::message::Warning(join("\t", "undefined parameter", 
+					     $compa_key, $margin_key, "Margin computation might be biased"));
+	    }
+	}
+	$count{$margin_key} += $count_per_Q{$margin_key}{$q};
+	$sum{$margin_key} += $sum_per_Q{$margin_key}{$q};
+    }
+    if ($count{$margin_key} > 0) {
+	$avg{$margin_key} = $sum{$margin_key}/$count{$margin_key};
+    } else {
+	$avg{$margin_key} = 0;
+    }
+
+    &RSAT::message::Debug("Total", 
+			  "key=".$margin_key,
+			  "count=".$count{$margin_key},
+			  "sum=".$sum{$margin_key},
+			  "avg=".$avg{$margin_key},
+			 ) if ($main::verbose >= 4);
+
+    ## Calculate averages per Q class
+    foreach my $q (@query_classes) {
+	if ($count_per_Q{$margin_key}{$q} > 0) {
+	    $avg_per_Q{$margin_key}{$q} = $sum_per_Q{$margin_key}{$q}/$count_per_Q{$margin_key}{$q};
+	} else {
+	    $avg_per_Q{$margin_key}{$q} = 0;
+	}
+    }
+
+    ## Calculate averages per R class
+    foreach my $r (@ref_classes) {
+	if ($count_per_R{$margin_key}{$r} > 0) {
+	    $avg_per_R{$margin_key}{$r} = $sum_per_R{$margin_key}{$r}/$count_per_R{$margin_key}{$r};
+	} else {
+	    $avg_per_R{$margin_key}{$r} = 0;
+	}
+    }
+}
+
 
 ################################################################
 ## Define header descriptions
