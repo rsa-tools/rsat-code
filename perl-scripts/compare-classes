@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.26 2006/03/21 10:10:58 jvanheld Exp $
+# $Id: compare-classes,v 1.27 2006/03/21 10:26:05 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -17,9 +17,6 @@ require RSAT::Family;
 require RSAT::Graph;
 require RSAT::GraphNode;
 require RSAT::GraphArc;
-#require "RSA.classes";
-
-#### TO DO : add parameter -base
 
 ################################################################
 #### initialise parameters
@@ -88,6 +85,7 @@ local %field_description = &DescribeFields();
     'H(R)'=>'entropy',
     'H(Q)'=>'entropy',
     'H(Q,R)'=>'entropy',
+    'dH(Q,R)'=>'entropy',
     'H(Q|R)'=>'entropy',
     'H(R|Q)'=>'entropy',
     'I(Q,R)'=>'entropy',
@@ -162,6 +160,7 @@ $field_formats{'QvR'} = "%d";
 $field_formats{'Q!R'} = "%d";
 $field_formats{'R!Q'} = "%d";
 $field_formats{'!Q!R'} = "%d";
+$field_formats{'P(Q|R)'} = "%.5f";
 $field_formats{'P(R|Q)'} = "%.5f";
 $field_formats{'F(R)'} = "%.5f";
 $field_formats{'F(Q)'} = "%.5f";
@@ -178,6 +177,7 @@ $field_formats{'sig'} = "%.2f";
 $field_formats{'H(Q)'} = "%.5f";
 $field_formats{'H(R)'} = "%.5f";
 $field_formats{'H(Q,R)'} = "%.4f";
+$field_formats{'dH(Q,R)'} = "%.4f";
 $field_formats{'H(Q|R)'} = "%.4f";
 $field_formats{'H(R|Q)'} = "%.4f";
 $field_formats{'I(Q,R)'} = "%.4f";
@@ -1272,6 +1272,10 @@ sub CompareClasses {
 
 		$compa{$compa_key}->{'H(Q,R)'} = 
 		    ($contrib{'F(QR)'} + $contrib{'F(Q!R)'} + $contrib{'F(R!Q)'} + $contrib{'F(!Q!R)'})/$log_base;
+		
+		$compa{$compa_key}->{'dH(Q,R)'} = 
+		    $compa{$compa_key}->{'H(Q,R)'} - $compa{$compa_key}->{'H(Q)'}/2 - $compa{$compa_key}->{'H(R)'}/2;
+
 
 		## Conditional entropy
 		$compa{$compa_key}->{'H(Q|R)'} = $compa{$compa_key}->{'H(Q,R)'} - $compa{$compa_key}->{'H(R)'};
@@ -1446,6 +1450,7 @@ sub PrintResult {
 	    push @header_fields, "H(R)";
 	    push @header_fields, "H(Q)";
 	    push @header_fields, "H(Q,R)";
+	    push @header_fields, "dH(Q,R)";
 	    push @header_fields, "H(Q|R)";
 	    push @header_fields, "H(R|Q)";
 	    push @header_fields, "I(Q,R)";
@@ -1588,6 +1593,7 @@ sub PrintResult {
 		printf $out ( "\t%.5f", $compa{$compa_key}->{'H(Q)'});
 		printf $out ( "\t%.5f", $compa{$compa_key}->{'H(R)'});
 		printf $out ( "\t%.5f", $compa{$compa_key}->{'H(Q,R)'});
+		printf $out ( "\t%.5f", $compa{$compa_key}->{'dH(Q,R)'});
 		printf $out ( "\t%.5f", $compa{$compa_key}->{'H(Q|R)'});
 		printf $out ( "\t%.5f", $compa{$compa_key}->{'H(R|Q)'});
 		printf $out ( "\t%.5f", $compa{$compa_key}->{'I(Q,R)'});
@@ -1748,7 +1754,7 @@ sub PrintOneMatrix {
     print $out "; Matrix", "\t", $matrix_key, "\n";
     
     ## Print the matrix header
-    my $header = "#Q\R";
+    my $header = "#Q_vs_R";
     if ($infile{qnames}) {
 	## replace class IDs by class names
 	foreach my $class (@query_classes) {
@@ -1931,6 +1937,7 @@ sub DescribeFields {
     $field_description{'H(Q)'} = "Entropy of class Q. H(Q) = - F(Q)*log[F(Q)] - F(!Q)*log[F(!Q)]";
     $field_description{'H(R)'} = "Entropy of class R. H(R) = - F(R)*log[F(R)] - F(!R)*log[F(!R)]";
     $field_description{'H(Q,R)'} = "Join entropy for classes Q and R. H(Q,R) = - F(QR)*log[F(QR)] - F(Q!R)*log[F(Q!R)] - F(R!Q)*log[F(R!Q)] - F(!Q!R)*log[F(!Q!R)]";
+    $field_description{'dH(Q,R)'} = "Entropy distance between classes Q and R. dH(Q,R) = H(Q,R) - H(Q)/2 - H(R)/2";
     $field_description{'I(Q,R)'} = "Mutual information of classs Q and R. I(Q,R) = H(Q) + H(R) - H(Q,R)";
     $field_description{'H(Q|R)'} = "Conditional entropy of Q given R. H(Q|R) = H(Q,R) - H(R)";
     $field_description{'H(R|Q)'} = "Conditional entropy of R given Q. H(R|Q) = H(Q,R) - H(Q)";
