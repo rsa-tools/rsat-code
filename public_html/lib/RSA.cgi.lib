@@ -334,21 +334,23 @@ sub TaxonomyPopUpString {
     require RSAT::Tree;
     #require RSAT::TreeNode;
     my $tree = new RSAT::Tree();
-    $tree->LoadSupportedTaxonomy("Bacteria", \%supported_organism, 1);
+    $tree->LoadSupportedTaxonomy(undef, \%supported_organism, 1);
 #    $tree->LoadSupportedTaxonomy(1);
     my @supported_taxons = $tree->node_names();
-    my %indented_taxon = $tree->as_indented_hash();
+    my %indented_taxon = $tree->as_indented_hash(":-","Bacteria");
     my $taxonomyPopup = "";
     $taxonomyPopup .=  "<B>Taxon</B>&nbsp;";
     $taxonomyPopup .=  "<SELECT NAME='taxon'>\n";
     foreach my $taxon (@supported_taxons) {
+      if ($indented_taxon{$taxon}){
 	$name = $indented_taxon{$taxon};
 	if ((lc($taxon) eq lc($main::default{taxon})) ||
 	    (lc($name) eq lc($main::default{taxon}))) {
 	    $taxonomyPopup .=  "<OPTION SELECTED VALUE='$taxon'>$name\n";
-	} else {
+	  } else {
 	    $taxonomyPopup .=  "<OPTION VALUE='$taxon'>$name\n";
-	}
+	  }
+      }
     }
     $taxonomyPopup .=  "</SELECT>";
     $taxonomyPopup .=  "<BR>\n";
