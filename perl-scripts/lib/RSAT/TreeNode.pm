@@ -1,3 +1,5 @@
+=pod
+
 =head1 NAME
 
 RSAT::TreeNode - A Tree object
@@ -17,6 +19,8 @@ use RSAT::Tree;
 
 @ISA = qw( RSAT::GenericObject RSAT::Tree );
 
+=pod
+
 =head2 getid
 
  Title   : getid()
@@ -33,6 +37,8 @@ sub getid{
   my $self = shift;
   return $self->{id};
 }
+
+=pod
 
 =head2 get_name
 
@@ -51,6 +57,8 @@ sub get_name{
   return $self->{name};
 }
 
+=pod
+
 =head2 get_type
 
  Title   : get_type()
@@ -67,6 +75,9 @@ sub get_type{
   my $self = shift;
   return $self->{type};
 }
+
+
+=pod
 
 =head2 get_level
 
@@ -86,6 +97,8 @@ sub get_level{
   return $self->{level};
 }
 
+=pod
+
 =head2 add_child
 
  Title   : add_child()
@@ -103,6 +116,8 @@ sub add_child  {
   $self->{'child'}->{$node->getid()} = $node;
   return scalar keys %{$self->{'child'}};
 }
+
+=pod
 
 =head2 get_children
 
@@ -124,6 +139,8 @@ sub get_children  {
   }
 }
 
+=pod
+
 =head2 is this node a leaf ?
 
  Title   : is_leaf()
@@ -144,6 +161,8 @@ sub is_leaf  {
   return $isleaf;
 }
 
+=pod
+
 =head2 set level
 
  Title   : set_level()
@@ -162,6 +181,8 @@ sub set_level  {
   return $self->get_level();
 }
 
+
+=pod
 
 =head2 set children levels
 
@@ -188,6 +209,8 @@ sub set_children_levels{
  return ();
 }
 
+=pod
+
 =head2 get all nodes
 
  Title   : get_all_nodes()
@@ -210,6 +233,8 @@ sub get_all_nodes{
   }
  return ($nodes);
 }
+
+=pod
 
 =head2 get all descendents
 
@@ -286,6 +311,8 @@ sub get_all_descendents_by_DFS{
   return (@descendents);
 }
 
+=pod
+
 =head2 get all descendents by BFS (TO BE IMPLEMENTED)
 
  Title   : get_all_descendents_by_BFS()
@@ -294,6 +321,11 @@ sub get_all_descendents_by_DFS{
  Returns : reference to an Array of descendent nodes
 
 =cut
+
+### TO BE IMPLEMENTED
+
+
+=pod
 
 =head2 get leaves per node
 

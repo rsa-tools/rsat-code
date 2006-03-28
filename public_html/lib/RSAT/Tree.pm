@@ -1,39 +1,42 @@
+package RSAT::Tree;
+
+=pod
+
 =head1 NAME
 
-RSAT::Tree - A Tree object
+RSAT::Tree - Class for handling taxonomic trees in RSAT. 
 
 =head1 SYNOPSIS
 
 {
-   my %organisms=();
-   my $select = "SELECT names, taxonomy FROM organism";
-   my $result = $dba->execute_SQL($select);
-   while (my($name,$taxonomy) = $result->fetchrow_array() ) {
-     $organisms{$name}=$taxonomy;
-   }
-   my $tree = &RSAT::Tree::makeTree("organism",%organisms);
+    my %organisms=();
+    my $select = "SELECT names, taxonomy FROM organism";
+    my $result = $dba->execute_SQL($select);
+    while (my($name,$taxonomy) = $result->fetchrow_array() ) {
+	$organisms{$name}=$taxonomy;
+    }
+    my $tree = &RSAT::Tree::makeTree("organism",%organisms);
 }
 
 =head1 DESCRIPTION
-
-This module make a RSAT::Tree object from a hash associating organism name and their taxonomy.
-
+    
+Class for the maipulation of taxonomic trees in RSAT.
+    
 =head1 AUTHOR
 
 Email rekins@scmbb.ulb.ac.be
 
 =cut
 
-package RSAT::Tree;
 use vars qw(@ISA);
-#use RSAT::util;
 use RSAT::GenericObject;
 use RSAT::error;
 use RSAT::message;
-
-#use RSAT::Object;
 use RSAT::TreeNode;
-use Data::Dumper; # useful for debugging (print contents of hashes, objects)
+
+# useful for debugging (print contents of hashes, objects)
+use Data::Dumper; 
+
 @ISA = qw( RSAT::GenericObject );
 $default_indent_string = ":-";
 
@@ -54,10 +57,10 @@ $default_indent_string = ":-";
 =cut
 
 sub set_root_node  {
-  my $self = shift;
-  my $value = shift;
-  $self->{'rootnode'} = $value;
-  return $self->get_root_node;
+    my $self = shift;
+    my $value = shift;
+    $self->{'rootnode'} = $value;
+    return $self->get_root_node;
 }
 
 =pod
@@ -72,8 +75,8 @@ sub set_root_node  {
 =cut
 
 sub get_root_node {
-  my $self = shift;
-  return $self->{'rootnode'};
+    my $self = shift;
+    return $self->{'rootnode'};
 }
 
 =pod
@@ -89,12 +92,12 @@ sub get_root_node {
 =cut
 
 sub set_all_levels{
-  my $self =shift;
-  my $level=1;
-  my $root_node=$self->get_root_node();
-  $root_node->set_level($level);
-  $root_node->set_children_levels($level);
-  return();
+    my ($self) =@_;
+    my $level=1;
+    my $root_node=$self->get_root_node();
+    $root_node->set_level($level);
+    $root_node->set_children_levels($level);
+    return();
 }
 
 =pod
@@ -109,11 +112,13 @@ sub set_all_levels{
 =cut
 
 sub get_all_nodes{
-  my $self =shift;
-  my $root_node=$self->get_root_node();
-  my ($descendants) = $root_node->get_all_nodes();
-  return ($root_node,@{$descendants});
+    my ($self) = @_;
+    my $root_node=$self->get_root_node();
+    my ($descendants) = $root_node->get_all_nodes();
+    return ($root_node,@{$descendants});
 }
+
+=pod
 
 =head2 get all descendents
 
@@ -124,16 +129,20 @@ sub get_all_nodes{
 
 =cut
 
-sub get_all_descendents{
-  my $self =shift;
-  my $order=shift;
-  my $type=shift; # all, leave, node
-  my $max_depth=shift;
-  my $max_leaves=shift;
-  my $root_node=$self->get_root_node();
-  my (@descendents) = $root_node->get_all_descendents($order,$type,$max_depth,$max_leaves);
-  return ($root_node,@descendents);
+
+ sub get_all_descendents {
+     my ($self, $order, $type, $max_depth, $max_leaves) = @_;
+#     my $self = =shift;
+#     my $order=shift;
+#     my $type=shift; # all, leave, node
+#     my $max_depth=shift;
+#     my $max_leaves=shift;
+     my $root_node=$self->get_root_node();
+     my (@descendents) = $root_node->get_all_descendents($order,$type,$max_depth,$max_leaves);
+     return ($root_node,@descendents);
 }
+
+=pod
 
 =head2 get node descendents
 
@@ -160,6 +169,34 @@ sub get_node_descendents{
   }
 }
 
+=pod
+
+=head2 get node descendents names
+
+ Title   : get_node_descendents()
+ Usage   : my @descendants = $tree->get_node_descendents("Gammaproteobacteria")
+ Function: Get node descendents of the tree from the root by DFS algorithm
+ Returns : Array of nodes
+
+=cut
+
+sub get_node_descendents_names{
+  my $self =shift;
+  my $node_id=shift;
+  my $order=shift;
+  my $type=shift; # all, leave, node
+  my $max_depth=shift;
+  my $max_leaves=shift;
+  my (@descendents) = $self->get_node_descendents($node_id,$order,$type,$max_depth,$max_leaves);
+  my @node_names=();
+  foreach my $n (@descendents){
+    push @node_names, $n->getid();
+  }
+  return (@node_names);
+}
+
+
+=pod
 
 =head2 get node by id
 
@@ -184,6 +221,82 @@ sub get_node_by_id  {
   }
   return(0);
 }
+
+# =pod 
+
+# =head2 get all descendents
+
+#  Title   : get_all_descendents()
+#  Usage   : my @descendants = $tree->get_all_descendents()
+#  Function: Get all descendents of the tree from the root by DFS algorithm
+#  Returns : Array of nodes
+
+# =cut
+
+# sub get_all_descendents{
+#   my $self =shift;
+#   my $order=shift;
+#   my $type=shift; # all, leave, node
+#   my $max_depth=shift;
+#   my $max_leaves=shift;
+#   my $root_node=$self->get_root_node();
+#   my (@descendents) = $root_node->get_all_descendents($order,$type,$max_depth,$max_leaves);
+#   return ($root_node,@descendents);
+# }
+
+# =pod
+
+# =head2 get node descendents
+
+#  Title   : get_node_descendents()
+#  Usage   : my @descendants = $tree->get_node_descendents("Gammaproteobacteria")
+#  Function: Get node descendents of the tree from the root by DFS algorithm
+#  Returns : Array of nodes
+
+# =cut
+
+# sub get_node_descendents{
+#   my $self =shift;
+#   my $node_id=shift;
+#   my $order=shift;
+#   my $type=shift; # all, leave, node
+#   my $max_depth=shift;
+#   my $max_leaves=shift;
+#   if ($node_id){
+#     my $node=$self->get_node_by_id($node_id);
+#     my (@descendents) = $node->get_all_descendents($order,$type,$max_depth,$max_leaves);
+#     return ($node,@descendents);
+#   }else{
+#     die("No valid node id !");
+#   }
+# }
+
+
+# =pod
+
+# =head2 get node by id
+
+#  Title   : get_node_by_id()
+#  Usage   : my $node = $tree->get_node_by_id($id)
+#  Function: Return a node object if exists in the tree.
+#  Returns : node object
+
+# =cut
+
+# sub get_node_by_id  {
+#   my $self = shift;
+#   my $id = shift;
+#   my $rootnode = $self->get_root_node();
+#   if ( ($rootnode->getid) && ($rootnode->getid eq $id) ) {
+#     return $rootnode;
+#   }
+#   foreach my $node ( $rootnode->get_all_descendents(undef,"node") ) {
+#     if ( ($node->getid) and ($node->getid eq $id ) ) {
+#       return $node;
+#     }
+#   }
+#   return(0);
+# }
 
 ################################################################
 =pod
@@ -215,6 +328,9 @@ sub LoadSupportedTaxonomy {
     &LoadSupportedTaxonomy_rj(@_);
 }
 
+
+=pod
+
 =head2 make a tree from taxonomy
 
  Title   : loadSupportedTaxonomy()
@@ -228,20 +344,22 @@ sub LoadSupportedTaxonomy {
 =cut
 
 sub LoadSupportedTaxonomy_rj {
-  my $self =shift;
-  my $root_name = shift||"Organisms";
-  my ($supported_organism) =@_;
+  my ($self,$root_name,$supported_organism)=@_;
+  unless ($root_name) {
+      $root_name = "Organisms";
+  }
   my %supported_organism=%{$supported_organism};
   my %nodes = (); # node index
-  ## Initiate the root of the taxonomy
+  
+  ## Instantiate the root of the taxonomy
   my $root_node = new RSAT::TreeNode("id"=>$root_name,
-					"name"=>$root_name,
-					"type"=>"root"
-				       );
+				     "name"=>$root_name,
+				     "type"=>"root"
+				     );
   $nodes{$root_name} = $root_node;
   my $root=$self->set_root_node($root_node);
-
-  ## get taxonomy
+  
+  ## Get  thetaxonomy
   my $c = 0;
   foreach my $org (sort {$supported_organism{$a}->{"taxonomy"} cmp $supported_organism{$b}->{"taxonomy"}}
 		   keys (%supported_organism)) {
@@ -250,50 +368,48 @@ sub LoadSupportedTaxonomy_rj {
     &RSAT::message::Warning(join ("\t", $c, $org,scalar(@taxons),"taxons"), "\n")  if ($main::verbose >= 5);
     &RSAT::message::Warning(join ("\t","taxons",(@taxons)), "\n") if ($main::verbose >= 6);;
 
-    # initiate the leaf
+    # Instantiate the leaf
     my $leaf = new RSAT::TreeNode(id=>$org,
-				     name=>$org,
-				     type=>"leaf"
-				    );
-    RSAT::message::Warning(join("\t","Initiate leaf",$leaf->get_name())) if ($main::verbose >= 5);
-
+				  name=>$org,
+				  type=>"leaf"
+				  );
+    &RSAT::message::Warning(join("\t","Initiate leaf",$leaf->get_name())) if ($main::verbose >= 5);
+    
     for my $t (0..$#taxons) {
-
-      # TEMPORARY 
-      # correct the taxon name for weird taxon name due to parsing error (cases of Salmonella enterica)
-      if (($taxons[$t] =~ "^SC-B67")||($taxons[$t] =~ "^9150")){
-	$taxons[$t]="Bacteria";
-      }
-      
-      # start top->down to increase the tree
-      if (defined $nodes{$taxons[$t]}){
-	if ($t == $#taxons){
-	  $nodes{$taxons[$t]}->add_child($leaf);
-	}else{
-	  next;
+	# TEMPORARY 
+	# correct the taxon name for weird taxon name due to parsing error (cases of Salmonella enterica)
+	if (($taxons[$t] =~ "^SC-B67")||($taxons[$t] =~ "^9150")){
+	    $taxons[$t]="Bacteria";
 	}
-      }else{
-	my $node = new RSAT::TreeNode(id=>$taxons[$t],
-					 name=>$taxons[$t],
-					 type=>"node",
+	# start top->down to increase the tree
+	if (defined $nodes{$taxons[$t]}){
+	    if ($t == $#taxons){
+		$nodes{$taxons[$t]}->add_child($leaf);
+	    }else{
+		next;
+	    }
+	}else{
+	    my $node = new RSAT::TreeNode(id=>$taxons[$t],
+					  name=>$taxons[$t],
+					  type=>"node",
 #               			 all_leaves=>[$org]
-					);
-	$nodes{$taxons[$t]}=$node;
-	
-	if ((defined $nodes{$taxons[$t-1]})&&($t-1>=0)){
-	  $nodes{$taxons[$t-1]}->add_child($node);
-	}else{
-	  # attach first taxon to the root
-	  $nodes{$root_name}->add_child($node);
+					  );
+	    $nodes{$taxons[$t]}=$node;
+	    
+	    if ((defined $nodes{$taxons[$t-1]})&&($t-1>=0)){
+		$nodes{$taxons[$t-1]}->add_child($node);
+	    }else{
+		# attach first taxon to the root
+		$nodes{$root_name}->add_child($node);
+	    }
+	    
+	    # attach organism as leaf if it is the last taxon
+	    if ($t == $#taxons){
+		$node->add_child($leaf);
+	    }
 	}
-
-	# attach organism as leaf if it is the last taxon
-	if ($t == $#taxons){
-	  $node->add_child($leaf);
-	}
-      }
     }
-  }
+}
   return $self;
 }
 
@@ -427,6 +543,8 @@ sub node_names {
 #### EXPORT METHODS
 ################################################################
 
+=pod
+
 =head2 export tree as indented text
 
  Title   : as_indented_text()
@@ -497,17 +615,32 @@ sub as_indented_hash{
   }
   my %taxons =();
   $self->set_all_levels();
+
+
+#   my $start_node=$self->get_node_by_id($start_node_id);
+#   if (! $start_node){
+#       die("No node with this id in the tree : \"$start_node_id\" !");
+#   }
+#   my $initlevel = $start_node->get_level();
+#   foreach my $n ($start_node,$start_node->get_all_descendents(undef,"node")){
+#       if ($n->is_leaf()){
+# 	  die("This node must not be a leaf ! ".$n->getid());
+#       }else{
+# 	  $taxons{$n->getid()} = join(" ",$indent_string x ($n->get_level() - $initlevel),$n->getid())."\n";
+#       }
+#   }
+
   my $start_node=$self->get_node_by_id($start_node_id);
   if (! $start_node){
-    die("No node with this id in the tree : \"$start_node_id\" !");
+      die("No node with this id in the tree : \"$start_node_id\" !");
   }
   my $initlevel = $start_node->get_level();
   foreach my $n ($start_node,$start_node->get_all_descendents("DFS","node",undef,undef)){
-    if ($n->is_leaf()){
-      die("This node must not be a leaf ! ".$n->getid());
-    }else{
-      $taxons{$n->getid()} = join(" ",$indent_string x ($n->get_level() - $initlevel),$n->getid())."\n";
-    }
+      if ($n->is_leaf()){
+	  die("This node must not be a leaf ! ".$n->getid());
+      }else{
+	  $taxons{$n->getid()} = join(" ",$indent_string x ($n->get_level() - $initlevel),$n->getid())."\n";
+      }
   }
   return (%taxons);
 }
