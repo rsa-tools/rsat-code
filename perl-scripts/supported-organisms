@@ -7,25 +7,47 @@ require RSAT::Tree;
 require RSAT::TreeNode;
 #use strict;
 
-$out_format = "text";
+## Initialize parameters
 
-@formats = qw (html_list html_table array text keys names sizes full tree);
+## Ouptut formats
+$out_format = "text";
+@formats = qw (html_list html_table array text keys names sizes full tree html_tree);
 foreach $f (@formats) {
     $supported_format{$f} = 1;
 }
 $formats = join ",", @formats;
 
+
+## Read arguments
 &ReadArguments();
 
+## Open the output stream
 $out = &OpenOutputFile($outfile{output});
 
-if ($out_format eq "tree") {
+
+if (($out_format eq "tree")||($out_format eq "html_tree")) {
     ## Create a tree with the taxonomy
     my $tree = new RSAT::Tree();
-    $tree->LoadSupportedTaxonomy("Bacteria", \%supported_organism, 1);
-#    $tree->LoadSupportedTaxonomy();
-    print $out $tree->as_indented_text("--");
+    $tree->LoadSupportedTaxonomy("Organisms", \%supported_organism);
+    print $out $tree->as_indented_text("--",$root_taxon,$out_format,"all",undef);
+    
+# list only organisms names with option -taxon alone
 
+} elsif ($root_taxon){
+    my $tree = new RSAT::Tree();
+    $tree->LoadSupportedTaxonomy("Organisms", \%supported_organism);
+    if (my $node = $tree->get_node_by_id($root_taxon)){
+	my @organisms = $node->get_leaves_names();
+	if ($out_format eq "text"){
+	    print $out join("\n",@organisms)."\n";
+	}else{
+	    ## Add here use of -format full,...
+	    &RSAT::error::FatalError("Option -taxon not yet compatible with this output format\n");
+	}
+    }else{
+	&RSAT::error::FatalError("Taxon $root_taxon is not supported\n");
+    }
+    
 } else {
     print $out &ListSupportedOrganisms($out_format);
 }
@@ -66,6 +88,7 @@ OPTIONS
 	-help	(must be first argument) display options
 	-format	output format
 		supported: $formats
+        -taxon  root taxon
 End_of_help
   close HELP;
   exit;
@@ -84,6 +107,7 @@ template options
 -o	output file
 -v	verbose
 -format	output format ($formats)
+-taxon  root taxon
 End_short_help
   close HELP;
   exit;
@@ -116,6 +140,9 @@ sub ReadArguments {
 	    unless ($supported_format{$out_format}) {
 		&RSAT::error::FatalError("Format $out_format is not supported\n");
 	    }
+	    ### root taxon
+	} elsif ($ARGV[$a] eq "-taxon") {
+	    $root_taxon = $ARGV[$a+1];
 	    
 	    ### output file  
 	} elsif ($ARGV[$a] eq "-o") {
