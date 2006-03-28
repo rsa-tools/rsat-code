@@ -2,13 +2,6 @@
 
 RSAT::TreeNode - A Tree object
 
-=head1 SYNOPSIS
-
-
-=head1 DESCRIPTION
-
-This module make a Bio::Tree object from a hash asoociating organism name and their taxonomy.
-
 =head1 AUTHOR
 
 Email rekins@scmbb.ulb.ac.be
@@ -17,22 +10,19 @@ Email rekins@scmbb.ulb.ac.be
 
 package RSAT::TreeNode;
 use vars qw(@ISA);
-#use RSAT::util;
 use RSAT::GenericObject;
 use RSAT::error;
 use RSAT::message;
 use RSAT::Tree;
-#use RSAT::Object;
+
 @ISA = qw( RSAT::GenericObject RSAT::Tree );
 
 =head2 getid
 
  Title   : getid()
-
  Usage   : my $node = new RSAT::TreeNode("id"=>$nodeid,
 					   "name"=>$nodename);
           $node->getid();
-
  Function: Get id of a tree node
  Returns : L<RSAT::TreeNode>
 
@@ -224,25 +214,86 @@ sub get_all_nodes{
 =head2 get all descendents
 
  Title   : get_all_descendents()
- Usage   : my @descendants = $node->get_all_desceneants()
- Function: get all descendant descendants from this node by a depht-first-search algorithm (DFS)
+ Usage   : my @descendants = $node->get_all_descendents()
+ Function: get all descendant descendants from this node
  Returns : reference to an Array of descendent nodes
 
 =cut
 
 sub get_all_descendents{
   my $self=shift;
-  my (@descendents) =();
-  # TEMP
-#  foreach my $node (@descendents){
-#    RSAT::message::Warning(join("\t","Descendant node",$node->get_name())) if ($main::verbose >=0);
-#  }
-  foreach my $child ($self->get_children()){
-    push @descendents,($child->get_all_descendents(),$child);
+  my $order=shift||"DFS"; # BFS DFS
+  my $type=shift||"all"; # all, leave, node
+  my $max_depth=shift;
+  my $max_leaves=shift;
+  my @descendents =();
+
+  if ($order eq 'DFS'){
+    (@descendents) = $self->get_all_descendents_by_DFS($type,$max_depth,$max_leaves);
+#  }elsif ($order eq 'BFS'){
+#    (@descendents) = $self->get_all_descendents_by_BFS($type,$max_depth,$max_leaves);
+  }else{
+#    RSAT::message::Warning(0,join("\t","Order error : Please specify a order (DFS or BFS).")) if ($main::verbose >=0);
+    RSAT::message::Warning(0,join("\t","Order error : Please specify a DFS order (BFS not yet implemented).")) if ($main::verbose >=0);
   }
   return (@descendents);
 }
 
+
+=head2 get all descendents DFS
+
+  Title   : get_all_descendents_by_DFS()
+  Usage   : my @descendants = $node->get_all_desceneants_by_DFS()
+  Function: get all descendant descendants from this node by a breadth-first-search algorithm (DFS)
+  Returns : reference to an Array of descendent nodes
+
+=cut
+
+sub get_all_descendents_by_DFS{
+  my $self=shift;
+  my $type=shift; # all, leave, node
+  my $max_depth=shift;
+  my $max_leaves=shift;
+  my $depth=shift||0;
+  my (@descendents) =();
+  if ($max_depth){
+    RSAT::message::Warning(1,join("\t",
+				  "Node",$self->get_name(),
+				  "Level",$self->get_level(),
+				  "Depth",$depth,
+				  "max_depth",$max_depth)) if ($main::verbose >=0);
+    if ($depth >= $max_depth){
+      return (@descendents);
+    }
+  }
+  $depth++;
+  foreach my $child (sort {$a->get_name cmp $b->get_name} $self->get_children()) {
+    if ($type eq "all"){
+      push @descendents,$child,($child->get_all_descendents_by_DFS($type,$max_depth,$max_leaves,$depth));
+    }elsif ($child->get_type() eq "$type"){
+      if ($child->get_type() eq "leaf"){
+	push @descendents,$child;
+      }else{
+	push @descendents,$child,($child->get_all_descendents_by_DFS($type,$max_depth,$max_leaves,$depth));
+      }
+    }else{
+      if($child->get_type() eq "node"){
+	push @descendents,($child->get_all_descendents_by_DFS($type,$max_depth,$max_leaves,$depth));
+      }
+      next;
+    }
+  }
+  return (@descendents);
+}
+
+=head2 get all descendents by BFS (TO BE IMPLEMENTED)
+
+ Title   : get_all_descendents_by_BFS()
+ Usage   : my @descendants = $node->get_all_desceneants_by_BFS()
+ Function: get all descendant descendants from this node by a breadth-first-search algorithm (BFS)
+ Returns : reference to an Array of descendent nodes
+
+=cut
 
 =head2 get leaves per node
 
@@ -255,7 +306,6 @@ sub get_all_descendents{
 sub get_leaves  {
    my ($self) = shift;
    my @leaves=();
-#   RSAT::message::Warning(join("\t","Descendant Nodes", @{$self->get_all_descendents()})) if ($main::verbose >=0);
    foreach my $node ( $self->get_all_descendents() ) {
      RSAT::message::Warning(join("\t","Descendant node",$node->get_name())) if ($main::verbose >=10);
      if ($node->is_leaf){
@@ -276,20 +326,6 @@ sub get_leaves  {
  Returns  : @leaves_labels
 
 =cut
-
-#sub get_leaves_names {
-#  my $self = shift;
-#  my $leaves_labels = shift;
-#  my $other_leaves_labels =();
-#  foreach my $child ($self->get_children()){
-#    if ($self->is_leaf){
-#      push @{$leaves_labels},$child->get_name();
-#    }else{
-#      $other_leaves_labels = $child->get_leaves_names($leaves_labels);
-#    }
-#  }
-# return ($leaves_labels,$other_leaves_labels);
-#}
 
 sub get_leaves_names {
   my $self = shift;
