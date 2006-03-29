@@ -223,18 +223,22 @@ dyad_classes: dyad_file_list
 ## significance statistics.
 PROFILE_PAIRS=${COMPA_DIR}/${REF_ORG}_${TAXON}_profile_pairs
 GENE_PAIRS=${COMPA_DIR}/${REF_ORG}_${TAXON}_gene_pairs
-#GENE_PAIRS=boum
+GENE_PAIR_RETURN=occ,dotprod,jac_sim,proba,entropy,rank
 gene_pairs:
 	@echo
 	@echo "Calculating gene pairs"
 	compare-classes -v ${V} -i ${COMPA_CLASSES} \
-		-return occ,dotprod,jac_sim,proba,members,rank \
+		-return ${GENE_PAIR_RETURN} \
 		-sc 3 -lth QR 1 -distinct -triangle -sort dotprod \
 		-o ${GENE_PAIRS}.tab
 	@echo ${GENE_PAIRS}.tab
-	@text-to-html -i ${GENE_PAIRS}.tab -o  ${GENE_PAIRS}.html -font variable
+	@text-to-html -chunk 200 -i ${GENE_PAIRS}.tab -o  ${GENE_PAIRS}.html -font variable
 	@echo ${GENE_PAIRS}.html
 	@echo "	`grep -v ';' ${GENE_PAIRS}.tab | grep -v '^#' |  wc -l`	gene pairs"
+
+gene_pairs_members:
+	${MAKE} gene_pairs GENE_PAIR_RETURN=occ,dotprod,jac_sim,proba,members,rank \
+		GENE_PAIRS=${COMPA_DIR}/${REF_ORG}_${TAXON}_gene_pairs_dyads
 
 
 profile_pairs:
@@ -289,7 +293,7 @@ gene_pair_score_compa:
 INFLATION=2.0
 MCL_DIR=${RESULT_DIR}/clusters/mcl
 MCL_FILE=${MCL_DIR}/${REF_ORG}_${TAXON}_sc${SCORE_COL}_mcl_I${INFLATION}
-GRAPH_FILE=${GENE_PAIRS}_sc${SC0RE_COL}.tab
+GRAPH_FILE=${GENE_PAIRS}_sc${SCORE_COL}.tab
 mcl:
 	@echo
 	@mkdir -p ${MCL_DIR}
@@ -299,8 +303,8 @@ mcl:
 		> ${GRAPH_FILE} ; echo ${GRAPH_FILE} 
 	mcl ${GRAPH_FILE} --abc -I ${INFLATION} -o ${MCL_FILE}.mic >& mcl_log.txt 
 	convert-classes -from mcl -to tab -i ${MCL_FILE}.mic -o ${MCL_FILE}.tab ; echo ${MCL_FILE}.tab 
-	convert-graph -from tab -to dot -i ${MCL_FILE}.tab -o ${MCL_FILE}.dot ; echo ${MCL_FILE}.dot 
 	convert-graph -from tab -to gml -i ${MCL_FILE}.tab -o ${MCL_FILE}.gml ; echo ${MCL_FILE}.gml
+	convert-graph -from tab -to dot -i ${MCL_FILE}.tab -o ${MCL_FILE}.dot ; echo ${MCL_FILE}.dot 
 
 ################################################################
 ## Compare the clustering result to RegulonDB (for E.coli only)
@@ -372,46 +376,4 @@ gene_pair_network:
 	@${MAKE} gene_pair_graphs MIN_SCORE=20
 	@${MAKE} gene_pair_graphs MIN_SCORE=30
 	@${MAKE} gene_pair_graphs MIN_SCORE=50
-
-
-################################################################
-## Validation of the method : 
-## - Discover patterns in upstream regions of all genes from RegulonDB
-## - create a graph with genes as nodes and arcs representing co-dicovered
-##   patterns
-## - compare the discovered graph with the co-factor graph off regulonDB
-##   (to be done)
-
-## Select target genes from RegulonDB
-REGULONDB_TABLE=data/gene_factor_Escherichia_coli_K12
-REGULONDB_GENES=data/regulondb_genes.tab
-regulondb_genes:
-	@cut -f 1 ${REGULONDB_TABLE}.tab | sort -u > ${REGULONDB_GENES}
-	@echo "${REGULONDB_GENES}"
-
-## Select transcription factors from RegulonDB
-REGULONDB_FACTORS=data/regulondb_factors.tab
-regulondb_factors:
-	@cut -f 2 ${REGULONDB_TABLE}.tab | sort -u  > ${REGULONDB_FACTORS}
-	@echo "${REGULONDB_FACTORS}"
-
-## Select genes and transcription factors from RegulonDB, both will be used
-## for pattern discovery
-REGULONDB_GF=data/regulondb_genes_and_factors.tab
-regulondb_gf: regulondb_genes regulondb_factors
-	cat ${REGULONDB_GENES} ${REGULONDB_FACTORS} | tr 'a-z' 'A-Z'  | sort -u > ${REGULONDB_GF}
-	@echo "${REGULONDB_GF}"
-
-## Run all the tasks for reuglonDB analysis
-REGULONDB=`cat ${REGULONDB_GF}| grep -v '^;' | xargs`
-REGULON_TAXON=
-regulondb_analysis:
-	@echo "Analyzing genes from RegulonDB"
-	@${MAKE} all_tasks_all_genes REF_ORG=Escherichia_coli_K12 TAXON=${REGULON_TAXON}  ALL_GENES="${REGULONDB}"
-	@${MAKE} index_regulondb
-
-## Index the results obtained with RegulonDB
-index_regulondb:
-	@${MAKE} index_results REF_ORG=Escherichia_coli_K12 TAXON=${REGULON_TAXON} ALL_GENES="${REGULONDB}"
-
 
