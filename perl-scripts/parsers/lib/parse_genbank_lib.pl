@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank_lib.pl,v 1.23 2006/01/06 14:18:45 rsat Exp $
+# $Id: parse_genbank_lib.pl,v 1.24 2006/03/29 20:00:24 rsat Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -306,6 +306,19 @@ sub ParseGenbankFile {
 			last;
 		    } else {
 			$taxonomy .= $line;
+			## A horrible fix for the fact that there is no clear
+			## separation between organism name and taxonomy
+			## For example
+			##      ORGANISM  Salmonella enterica subsp. enterica serovar Choleraesuis str.
+			##           SC-B67
+			##           Bacteria; Proteobacteria; Gammaproteobacteria; Enterobacteriales;
+			##			 Enterobacteriaceae; 
+			##
+			## I delete the taxonomy until there is at least one
+			## semilcolon in the string.
+			unless ($taxonomy =~ /;/) {
+			    $taxonomy = "";
+			}
 		    }
 		}
 	    }
@@ -391,12 +404,12 @@ sub ParseGenbankFile {
 		
 		&RSAT::message::Debug ("Contig sequence file", $current_contig, $contig_id, $seq_file) if ($main::verbose >= 5);
 		
-		warn ("; Storing sequence ",
-		      $current_contig->get_attribute("id"), 
-		      " in file $args{seq_dir}/$seq_file\n" )
+		&RSAT::message::Info ("; Storing sequence ",
+				      $current_contig->get_attribute("id"), 
+				      " in file $args{seq_dir}/$seq_file\n" )
 		    if ($main::verbose >= 1);
 		
-		open SEQ, ">$args{seq_dir}/$seq_file" 
+		open SEQ, ">".$args{seq_dir}."/".$seq_file 
 		    || die "Error: cannot write sequence file $args{seq_file}\n";
 		while ($line = &ReadNextLine()) {
 		    if ($line =~ /^\s+\d+\s+/) {
@@ -411,8 +424,12 @@ sub ParseGenbankFile {
 		    } else {
 			&ErrorMessage("Invalid sequence format, skipped\t$line\n");
 		    }
+		    
+#		    &RSAT::message::Debug("Sequence parsing", length($sequence), $sequence) if (main::verbose >= 10);
 		}
 		close SEQ;
+
+#		warn "HELLO\t", "$args{seq_dir}/$seq_file", "\n";
 	    } else {
 		#### load sequence in memory and return it
 		while ($line = &ReadNextLine()) {
