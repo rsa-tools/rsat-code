@@ -1,12 +1,10 @@
 #!/usr/bin/perl
 
-### CVS: added the option -mask
-
 ## Ce script est une usine a gaz
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.166 2006/03/21 21:02:37 rsat Exp $
+# $Id: gene-cluster-motifs,v 1.167 2006/03/30 11:09:04 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -42,7 +40,7 @@ $batch = 0; ## Run task in batch mode (on a PC cluster)
 @batch_commands = (); ## Set of commands to run in batch mode
 #$batch_script = ""; ## Script collecting the commands to be run on the same node of the PC cluster
 $min_genes = 1; ## Min number of genes per family
-$rel_w = 1; ## Threshold on relative weight for count-matches
+$rel_w = 1; ## Threshold on relative weight for compare-patterns
 $sliding_window_size = 0; 
 $die_on_error = 1;
 $analyze_purged_sequences = 1;
@@ -2906,7 +2904,7 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] =~ /^-orfov/) {
 	    $noorf = "";
 
-	    #### Threshold on relative weight for count-matches
+	    #### Threshold on relative weight for compare-patterns
 	} elsif ($ARGV[$a] eq '-rel_w') {
 	    $rel_w = $ARGV[$a+1];
 	    &FatalError("Relative weight should be a real value comprised between 0 and 1") unless ((&IsReal($rel_w)) && ($rel_w >= 0) && ($rel_w <= 1));
@@ -3498,7 +3496,7 @@ sub Validate {
    my $f = 0;
    foreach my $family_name (@families) {
        $f++;
-       ## Create a separate file for count-matches with the current family
+       ## Create a separate file for compare-patterns with the current family
        my @sites = @{$known_site{$family_name}};
        my @sources = @{$known_site_source{$family_name}};
 
@@ -3535,7 +3533,7 @@ sub ValidateOneResult {
     my $pattern_file = $family{$family_name}->{$pattern_type."_file"};
 
     ## Compare discovered patterns with known sites
-    my $command = "count-matches";
+    my $command = "compare-patterns";
     $command .= " -v 1";
     $command .= " ".$strands;
     $command .= " -file1 ".$family{$family_name}->{known_sites};
@@ -3547,7 +3545,7 @@ sub ValidateOneResult {
     &doit($command, $dry_run, $die_on_error, $verbose);
     
     ## Compare discovered patterns with known sites (table output type)
-    my $command = "count-matches";
+    my $command = "compare-patterns";
     $command .= " -v 1";
     $command .= " ".$strands;
     $command .= " -file1 ".$family{$family_name}->{known_sites};
@@ -3558,7 +3556,7 @@ sub ValidateOneResult {
     &doit($command, $dry_run, $die_on_error, $verbose);
     
     ## Compare discovered patterns with known sites (table output type)
-    my $command = "count-matches";
+    my $command = "compare-patterns";
     $command .= " -v 1";
     $command .= " ".$strands;
     $command .= " -file1 ".$family{$family_name}->{known_sites};
@@ -3764,7 +3762,7 @@ sub DatabaseMatch {
        my $pattern_file = $family{$family_name}->{$pattern_type."_file"};
 
        ## Compare discovered patterns with database sites
-       my $command = "count-matches";
+       my $command = "compare-patterns";
        $command .= " -v 1";
        $command .= " ".$strands;
        $command .= " -file1 ".$db_site_file;
@@ -3776,7 +3774,7 @@ sub DatabaseMatch {
        &doit($command, $dry_run, $die_on_error, $verbose);
     
        ## Compare discovered patterns with database sites (relw table output type)
-       my $command = "count-matches";
+       my $command = "compare-patterns";
        $command .= " -v 1";
        $command .= " ".$strands;
        $command .= " -file1 ".$db_site_file;
@@ -3787,7 +3785,7 @@ sub DatabaseMatch {
        &doit($command, $dry_run, $die_on_error, $verbose);
     
        ## Compare discovered patterns with database sites (weight table output type)
-       my $command = "count-matches";
+       my $command = "compare-patterns";
        $command .= " -v 1";
        $command .= " ".$strands;
        $command .= " -file1 ".$db_site_file;
