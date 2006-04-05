@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: compare-profiles,v 1.14 2006/03/21 08:41:19 jvanheld Exp $
+# $Id: compare-profiles,v 1.15 2006/04/05 13:53:24 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -1333,7 +1333,7 @@ Supported paramaters:
 
 =cut
 	    
-	    ### Upper threshold
+	    ### Lower threshold
 	    
 	} elsif ($ARGV[$a] eq "-lth") {
 	    my $thr_field = $ARGV[$a+1];
@@ -1343,7 +1343,7 @@ Supported paramaters:
 	    }
 	    $lth{$thr_field} = $thr_value;
 	    
-	    ### Lower threshold
+	    ### Upper threshold
 	} elsif ($ARGV[$a] eq "-uth") {
 	    my $thr_field = $ARGV[$a+1];
 	    my $thr_value =  $ARGV[$a+2];
