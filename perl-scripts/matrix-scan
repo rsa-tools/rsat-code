@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.4 2006/04/05 16:24:05 rsat Exp $
+# $Id: matrix-scan,v 1.5 2006/04/05 18:39:34 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -85,6 +85,9 @@ package main;
     %main::infile = ();
     %main::outfile = ();
 
+    
+    $main::both_strands = 0;
+    $main::sum_seq_len = 0;
     $main::origin = 0;
     $main::matrix_name = "matrix";
     $main::pseudo_weight = 1;
@@ -115,7 +118,7 @@ package main;
     
     ################################################################
     ## Read the position-specific scoring matrix
-    my $current_matrix = new RSAT::matrix();
+    $current_matrix = new RSAT::matrix();
     $current_matrix->readFromFile($infile{matrix}, $matrix_format);
     $current_matrix->set_attribute("pseudo", $pseudo_weight);
     $current_matrix->push_attribute("parameters", "pseudo");
@@ -153,9 +156,9 @@ package main;
     ##### read input
     my ($in, $input_dir) = &OpenInputFile($main::infile{input});
     my $sequence_number = 0;
-    local $sum_seq_len = 0;
-    while ((($current_seq, $current_id,) = &ReadNextSequence($in, $seq_format, $input_dir, "",$mask)) &&
-       (($current_seq ne "") || ($current_id ne ""))) {
+    $sum_seq_len = 0;
+    while ((($current_seq, $seq_id,) = &ReadNextSequence($in, $seq_format, $input_dir, "",$mask)) &&
+       (($current_seq ne "") || ($seq_id ne ""))) {
 
 	$current_seq = lc($current_seq);
 
@@ -164,7 +167,7 @@ package main;
         my $sequence_len = length($current_seq);
 	$sum_seq_len += $sequence_len;
 
-	my $orig_pos = 0;
+	$orig_pos = 0;
 	if (($main::origin <  0) || ($main::origin eq "-0")) {
 	    $orig_pos = $sequence_len + $main::origin + 1; 
 	} else {
@@ -172,47 +175,16 @@ package main;
 	}
 
 	
-	&RSAT::message::TimeWarn(join ("\t", $sequence_number,  $current_id, "len=".$sequence_len, "orig=".$orig_pos))
+	&RSAT::message::TimeWarn(join ("\t", $sequence_number,  $seq_id, "len=".$sequence_len, "orig=".$orig_pos))
             if ($main::verbose >= 2);
 	
         my $max_pos = $sequence_len -$ncol + 1;
         for my $pos (1..$max_pos) {
-	    my $strand = "D",
 	    my $segment = substr($current_seq, $pos-1, $ncol);
-#	    &RSAT::message::Debug($current_id, "L=".$sequence_len, "pos=".$pos, "ncol=".$ncol, "segment=".$segment) if ($main::verbose >= 5);
-	    my $segm_proba_M = $current_matrix->segment_proba($segment);
-	    my $segm_proba_B = $bg_model->segment_proba($segment);
-	    my $segm_score = "NA";
-	    if (($segm_proba_M > 0) && ($segm_proba_B > 0)) {
-		$segm_score = sprintf("%.3f", log($segm_proba_M/$segm_proba_B));
-	    }
-	    if ((defined($lth{score})) && 
-		(($segm_score eq "NA") || ($segm_score < $lth{score}))
-		) {
-		next;
-	    }
-	    if ((defined($uth{score})) && 
-		(($segm_score eq "NA") || ($segm_score > $uth{score}))
-		) {
-		next;
-	    }
-
-	    my $start_pos = $pos - $orig_pos;
-	    my $end_pos = $start_pos + $ncol -1;
-
-	    print $out join ("\t", 
-			     $current_id,
-			     "matrix-scan",
-			     $main::matrix_name,
-			     $strand,
-			     $start_pos,
-			     $end_pos,
-			     $segment,
-			     $segm_score,
-			     sprintf("%5.2g\t%5.2g",
-				     $segm_proba_M,
-				     $segm_proba_B)
-			     ), "\n";
+	    &score_segment($segment, $seq_id, $pos, "D");
+	    if ($main::both_strands) {
+		&score_segment($segment, &ReverseComplement($seq_id), $pos, "R");
+	    };
         }
        
     }
@@ -473,18 +445,34 @@ Supported threshold fields : score
 	    $uth{$thr_field} = $thr_value;
 
 
+	    ## Scan both strands
+=pod
+
+=item B<-2str>
+
+Scan both strands for DNA sequences.
+
+=cut
+	} elsif ($arg eq "-2str") {
+	    $main::both_strands = 1;
+
+	    ## Scan direct strand only
+=pod
+
+=item B<-1str>
+
+single-strand search for DNA sequences.
+
+=cut
+	} elsif ($arg eq "-1str") {
+	    $main::both_strands = 0;
+
 	} else {
 	    &FatalError(join("\t", "Invalid option", $arg));
 
 	}
     }
 
-
-=pod
-
-=back
-
-=cut
 
 }
 
@@ -540,8 +528,56 @@ sub Verbose {
 }
 
 
-__END__
+################################################################
+=pod
 
+=item B<score_segment>
+
+Assign a score to a sequence segment and report it if it passes the
+thresholds.
+
+=cut
+sub score_segment {
+    my ($segment, $seq_id, $pos, $strand) = @_;
+    my $segm_proba_M = $current_matrix->segment_proba($segment);
+    my $segm_proba_B = $bg_model->segment_proba($segment);
+    my $segm_score = "NA";
+    &RSAT::message::Debug("scoring segment", $seq_id, $segment, $strand) if ($main::verbose >= 10);
+
+    if (($segm_proba_M > 0) && ($segm_proba_B > 0)) {
+	$segm_score = sprintf("%.3f", log($segm_proba_M/$segm_proba_B));
+    }
+    if ((defined($lth{score})) && 
+	(($segm_score eq "NA") || ($segm_score < $lth{score}))
+       ) {
+	return;
+    }
+    if ((defined($uth{score})) && 
+	(($segm_score eq "NA") || ($segm_score > $uth{score}))
+       ) {
+	return;
+    }
+    
+    my $start_pos = $pos - $orig_pos;
+    my $end_pos = $start_pos + $ncol -1;
+    
+    print $main::out join ("\t", 
+			   $seq_id,
+			   "matrix-scan",
+			   $main::matrix_name,
+			   $strand,
+			   $start_pos,
+			   $end_pos,
+			   $segment,
+			   $segm_score,
+			   sprintf("%5.2g\t%5.2g",
+				   $segm_proba_M,
+				   $segm_proba_B)
+			  ), "\n";
+}
+
+__END__
+    
 =pod
 
 =head1 SEE ALSO
