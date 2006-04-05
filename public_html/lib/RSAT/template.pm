@@ -26,7 +26,7 @@ Template class.
 ################################################################
 =pod
 
-=item new()
+=item B<new()>
 
 Create a new Template.
 
