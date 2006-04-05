@@ -376,12 +376,13 @@ sub _readFromTabFile {
 #
     
     ## open input stream
-#    my ($in) = &OpenInputFile($file);
-     my $in = STDIN;
-     if ($file) {
- 	open INPUT, $file;
- 	$in = INPUT;
-     }
+    my ($in, $dir) = &OpenInputFile($file);
+#     my $in = STDIN;
+#     if ($file) {
+#	 open $in, $file;
+# 	open INPUT, $file;
+# 	$in = INPUT;
+#     }
     my $current_table_nb = 0;
     my $l=0;
     ## read header
