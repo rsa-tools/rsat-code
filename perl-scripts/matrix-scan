@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.2 2006/04/05 15:10:04 rsat Exp $
+# $Id: matrix-scan,v 1.3 2006/04/05 16:08:00 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -84,7 +84,8 @@ package main;
     
     %main::infile = ();
     %main::outfile = ();
-    
+
+    $main::origin = 0;
     $main::matrix_name = "matrix";
     $main::pseudo_weight = 1;
     $main::matrix_format = "tab";
@@ -152,42 +153,67 @@ package main;
     ##### read input
     my ($in, $input_dir) = &OpenInputFile($main::infile{input});
     my $sequence_number = 0;
-    
+    local $sum_seq_len = 0;
     while ((($current_seq, $current_id,) = &ReadNextSequence($in, $seq_format, $input_dir, "",$mask)) &&
        (($current_seq ne "") || ($current_id ne ""))) {
 
 	$current_seq = lc($current_seq);
 
         $sequence_number++;
-        my $L = length($current_seq);
-	&RSAT::message::TimeWarn(join ("\t", $sequence_number,  $current_id, $L))
+
+	last if ($sequence_number > 4);
+
+        my $sequence_len = length($current_seq);
+	$sum_seq_len += $sequence_len;
+
+	my $orig_pos = 0;
+	if (($main::origin <  0) || ($main::origin eq "-0")) {
+	    $orig_pos = $sequence_len + $main::origin + 1; 
+	} else {
+	    $orig_pos = $main::origin;
+	}
+
+	
+	&RSAT::message::TimeWarn(join ("\t", $sequence_number,  $current_id, "len=".$sequence_len, "orig=".$orig_pos))
             if ($main::verbose >= 2);
 	
-        my $max_pos = $L -$ncol + 1;
-        for my $pos (0..$max_pos) {
+        my $max_pos = $sequence_len -$ncol + 1;
+        for my $pos (1..$max_pos) {
 	    my $strand = "D",
 	    my $segment = substr($current_seq, $pos-1, $ncol);
+#	    &RSAT::message::Debug($current_id, "L=".$sequence_len, "pos=".$pos, "ncol=".$ncol, "segment=".$segment) if ($main::verbose >= 5);
 	    my $segm_proba_M = $current_matrix->segment_proba($segment);
-	    my $segm_proba_B = 1;
-	    my $segm_score = log($segm_proba_M/$segm_proba_B);
-	    if ((defined($lth{score})) && ($segm_score < $lth{score})) {
+	    my $segm_proba_B = $bg_model->segment_proba($segment);
+	    my $segm_score = "NA";
+	    if (($segm_proba_M > 0) && ($segm_proba_B > 0)) {
+		$segm_score = sprintf("%.3f", log($segm_proba_M/$segm_proba_B));
+	    }
+	    if ((defined($lth{score})) && 
+		(($segm_score eq "NA") || ($segm_score < $lth{score}))
+		) {
 		next;
 	    }
-	    if ((defined($uth{score})) && ($segm_score > $uth{score})) {
+	    if ((defined($uth{score})) && 
+		(($segm_score eq "NA") || ($segm_score > $uth{score}))
+		) {
 		next;
 	    }
+
+	    my $start_pos = $pos - $orig_pos;
+	    my $end_pos = $start_pos + $ncol -1;
 
 	    print $out join ("\t", 
 			     $current_id,
 			     "matrix-scan",
 			     $main::matrix_name,
 			     $strand,
-			     $pos, ## start position
-			     $pos+$ncol-1, ## end position
+			     $start_pos,
+			     $end_pos,
 			     $segment,
 			     $segm_score,
-			     $segm_proba_M,
-			     $segm_proba_B,
+			     sprintf("%5.2g\t%5.2g",
+				     $segm_proba_M,
+				     $segm_proba_B)
 			     ), "\n";
         }
        
@@ -398,7 +424,25 @@ Pseudo-weight.
 					  "Invalid value for a pseudo-weight. Must be a positive real number."))
 		unless ((&RSAT::util::IsReal($main::pseudo_weight) )
 			&& ($main::pseudo_weight >= 0));
-	    
+
+
+	## Origin
+=pod
+
+=item B<origin pos>
+
+Define pos as the origin for the calculation of positions.
+
+-origin -0 defines the end of each sequence as the origin. The matching
+positions are then negative values, providing the distance between the match
+and the end of the sequence.
+
+=cut
+
+	} elsif ($arg eq "-origin") {
+	    $main::origin = shift(@arguments);
+	    &RSAT::error::FatalError("$main::origin. Invalid origin, should be a natural number.")
+		unless (($main::origin eq "-0") || (&RSAT::util::IsNatural($main::origin)));
 	    
 =pod
     
@@ -464,6 +508,7 @@ sub Verbose {
 	}
     }
     printf $main::out "; %-21s\t%s\n", "Sequence format", $seq_format;
+    printf $main::out "; %-21s\t%s\n", "Sum of sequence lengths", $sum_seq_len;
     printf $main::out "; %-21s\t%s\n", "Matrix format", $matrix_format;
     printf $main::out "; %-21s\n", "Matrix size", $nrow, $ncol;
     printf $main::out "; \t%d\trows\n", $nrow;
@@ -471,8 +516,8 @@ sub Verbose {
 
     printf $main::out "; %-21s\t%d\n", "Markov order", $bg_model->get_attribute("order");
     if (defined($main::infile{bg})) {
-	if ($main::verbose >= 2) {
-	    print $out $bg_model->to_string();
+	if ($main::verbose >= 3) {
+	    print $out $bg_model->to_string(comment_string=>"; ");
 	}
     }
 
