@@ -3,11 +3,7 @@
 require "RSA.stat.lib";
 require RSAT::pattern;
 
-## CVS
-# - implemented &IUPAC();
-# - implemented &ReverseIUPAC();
-# - improved the treatment of CountMatches: matches between two ambiguous nucleotides are now supported
-# - replaced class RSA::pattern  by module RSAT::pattern
+package main;
 
 ### initialization
 $accepted_input_seq{'tab'} = 1;
@@ -34,9 +30,6 @@ $accepted_output_seq{'wc'} = 1;
 $accepted_output_seq{'fasta'} = 1;
 $accepted_output_seq{'filelist'} = 1;
 $accepted_output_seq = join ",", sort keys %accepted_output_seq;
-
-
-&InitMatchScores();
 
 
 ################################################################

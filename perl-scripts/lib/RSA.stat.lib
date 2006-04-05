@@ -6,6 +6,8 @@
 ###
 ################################################################
 
+package main;
+
 ################################################################
 ## Calculate basic statistics on a list of values
 sub summary {
@@ -710,7 +712,7 @@ sub hypergeometric {
 
 
     
-# 	$Id: RSA.stat.lib,v 1.26 2005/11/19 13:38:41 jvanheld Exp $	
+# 	$Id: RSA.stat.lib,v 1.27 2006/04/05 13:50:06 rsat Exp $	
 
     #### initialization
     if (defined($args{previous_value})) {
@@ -869,7 +871,6 @@ sub sum_of_hypergeometrics {
     #### maximum number of successes
     $to = &min($to,$m);
 
-    
     warn join( "\t", "sum_of_hypergeometrics", "m=$m", "n=$n", "k=$k", "from=$from", "to=$to", "min_x=$min_x"), "\n" if ($main::verbose >= 6);
     
     if ($min_x > $to) {

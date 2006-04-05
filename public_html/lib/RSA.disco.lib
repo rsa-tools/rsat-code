@@ -3,6 +3,7 @@
 ## Libraries for shared tasks between pattern discovery programs
 ## (oligo-analysis and dyad-analysis)
 
+package main;
 
 ## Supported thresholds
 %lth = (); # lower threshold values
