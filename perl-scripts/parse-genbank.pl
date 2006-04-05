@@ -1,6 +1,6 @@
 #!/usr/bin/perl 
 #############################################################
-# $Id: parse-genbank.pl,v 1.35 2006/01/06 14:18:45 rsat Exp $
+# $Id: parse-genbank.pl,v 1.36 2006/04/05 08:05:09 rsat Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -585,7 +585,17 @@ sub ExportProteinSequences {
 	next unless ($translation =~ /\S+/);
 
 # 	my $id = $data_source;
-	my $pp_id = $cds->get_attribute("id");
+	my $id = $cds->get_attribute("id");
+	my $gene = $cds->get_attribute("gene");
+	if (!($gene) || ($gene eq $null)) {
+	    $gene = $id;
+	}
+
+	my $pp_id = join ("|", 
+			  $id,
+			  $org,
+			  $gene,
+			  );
 
         ## Get CDS description
         my $description = $cds->get_attribute("description");
