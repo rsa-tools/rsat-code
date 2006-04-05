@@ -375,6 +375,8 @@ sub ReadExpectedFrequencies {
 	    $patterns{$pattern_seq}->{exp_freq} /= $freq_sum;
 	}
     }
+
+    return %patterns;
     
 }
 
@@ -421,7 +423,7 @@ sub CalcConditionalProbabilities {
 
     &ReadExpectedFrequencies($exp_freq_file) ;
 
-    warn "; Calculating conditional probabilities\n" if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Calculating Markov model from file $exp_freq_file") if ($main::verbose >= 2);
     
     foreach my $pattern_seq (keys %patterns) {
 	$expected_freq{$pattern_seq} = $patterns{$pattern_seq}->{exp_freq};
