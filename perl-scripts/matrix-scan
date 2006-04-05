@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.1 2006/04/05 13:50:36 rsat Exp $
+# $Id: matrix-scan,v 1.2 2006/04/05 15:10:04 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -17,6 +17,7 @@ require "RSA.lib";
 require "RSA.seq.lib";
 
 use RSAT::matrix;
+use RSAT::MarkovModel;
 
 
 =pod
@@ -128,6 +129,14 @@ package main;
     ## Calculate frequency matrix
     $current_matrix->calcFrequencies();
     
+
+    ################################################################
+    ## Read bakground model from a file
+    local $bg_model = new RSAT::MarkovModel();
+    if (defined($infile{bg})) {
+	$bg_model->load_from_file($infile{bg});
+    }
+
     ################################################################
     #### print verbose
     &Verbose() if ($main::verbose);
@@ -146,7 +155,9 @@ package main;
     
     while ((($current_seq, $current_id,) = &ReadNextSequence($in, $seq_format, $input_dir, "",$mask)) &&
        (($current_seq ne "") || ($current_id ne ""))) {
-	
+
+	$current_seq = lc($current_seq);
+
         $sequence_number++;
         my $L = length($current_seq);
 	&RSAT::message::TimeWarn(join ("\t", $sequence_number,  $current_id, $L))
@@ -458,6 +469,12 @@ sub Verbose {
     printf $main::out "; \t%d\trows\n", $nrow;
     printf $main::out "; \t%d\tcolumns\n", $ncol;
 
+    printf $main::out "; %-21s\t%d\n", "Markov order", $bg_model->get_attribute("order");
+    if (defined($main::infile{bg})) {
+	if ($main::verbose >= 2) {
+	    print $out $bg_model->to_string();
+	}
+    }
 
     my %th_keys = (%lth, %uth);
     print $main::out "; Thresholds\tlower\tupper\n";
