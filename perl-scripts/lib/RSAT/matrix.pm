@@ -2038,10 +2038,14 @@ sub segment_proba {
     my ($self, $segment) = @_;
     my $segment_proba = 1;
     my $seq_len = length($segment);
+    my $r;
     for my $c (0..($seq_len-1)) {
 	my $letter = uc(substr($segment, $c, 1));
-	my $r = $self->{"alphabet_index"}->{$letter};
-	my $letter_proba = $self->{"frequencies"}[$c][$r];
+	my  $letter_proba = 0;
+	if (defined($self->{"alphabet_index"}->{$letter})) {
+	    $r = $self->{"alphabet_index"}->{$letter};
+	    $letter_proba = $self->{"frequencies"}[$c][$r];
+	}
 	$segment_proba *= $letter_proba;
 #	&RSAT::message::Debug("segment_proba", "letter:".$letter, "col:".$c, "row:".$r, "P(letter)=".$letter_proba, "P(segm)=".$segment_proba) if ($main::verbose >= 10);
     }
