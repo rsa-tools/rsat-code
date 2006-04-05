@@ -12,6 +12,10 @@ require RSAT::match;
 
 ################################################################
 #### initialise parameters
+
+&InitMatchScores();
+
+
 my $start_time = &AlphaDate();
 
 local %infile = ();
