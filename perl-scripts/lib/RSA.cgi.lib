@@ -1,5 +1,8 @@
 #!/usr/bin/perl
 use CGI;
+
+package main;
+
 #use CGI::Carp;
 
 #  #### redirect error log to a file

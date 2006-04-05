@@ -13,6 +13,8 @@ require RSAT::error;
 require RSAT::util;
 require RSAT::Tree;
 
+package main;
+
 umask 0022;
 
 ## CVS: created separate objects for handling different methods
