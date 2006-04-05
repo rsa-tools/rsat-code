@@ -72,6 +72,7 @@ sub load_from_file {
     #### Calculate alphabet from expected frequency keys
     foreach my $pattern_seq (keys %patterns) {
 	## Check pattern length
+	$pattern_seq = lc($pattern_seq);
 	my $pattern_len = length($pattern_seq);
 	my $pattern_freq =  $patterns{$pattern_seq}->{exp_freq};
 	&RSAT::error::FatalError("All patterns should have the same length in a Markov model file.") 
@@ -142,6 +143,55 @@ sub to_string {
 
     return $string;
 }
+
+
+
+################################################################
+=pod 
+
+=item B<segment_proba($segment)>
+
+Calculate the probability of a segment of sequence. The sequence segment must
+by larger than the Markov order + 1.
+
+=cut
+
+sub segment_proba {
+    my ($self, $segment) = @_;
+
+    my $seq_len = length($segment);
+    my $order = $self->get_attribute("order");
+
+    &RSAT::error::FatalError("&RSAT::MarkovModel->segment_proba. The segment ($segment) length ($seq_len) must be larger than the markov order ($order) + 1.") 
+	if ($seq_len < $order + 1);
+
+    my $prefix = substr($segment,0,$order);
+    my $segment_proba = 0;
+    if (defined($self->{prefix_proba}->{$prefix})) {
+	$segment_proba = $self->{prefix_proba}->{$prefix};
+    }
+    
+    for my $c ($order..($seq_len-1)) {
+	my $suffix = lc(substr($segment, $c, 1));
+	my $prefix = substr($segment,($c-$order),$order);
+	my $letter_proba = 0;
+	if (defined($self->{transition}->{$prefix}->{$suffix})) {
+	    $letter_proba = $self->{transition}->{$prefix}->{$suffix};
+	}
+	$segment_proba *= $letter_proba;
+#	&RSAT::message::Debug("segment_proba", 
+#			      "prefix=".$prefix, 
+#			      "suffix:".$suffix, 
+#			      "offset:".$c, 
+#			      "P(letter)=".$letter_proba, 
+#			      "P(segm)=".$segment_proba) if ($main::verbose >= 0);
+    }
+    
+    &RSAT::message::Debug("segment_proba", $segment, "P(segm)=".$segment_proba) if ($main::verbose >= 10);
+#    die;
+    return $segment_proba;
+}
+
 
 return 1;
 
