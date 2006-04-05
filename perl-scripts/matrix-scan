@@ -1,0 +1,489 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: matrix-scan,v 1.1 2006/04/05 13:50:36 rsat Exp $
+#
+# Time-stamp: <2003-07-04 12:48:55 jvanheld>
+#
+############################################################
+
+## use strict;
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+require "RSA.seq.lib";
+
+use RSAT::matrix;
+
+
+=pod
+
+=head1 NAME
+
+matrix-scan
+
+=head1 DESCRIPTION
+
+Scan sequences with a position-specific scoring matrix (PSSM) to identify
+putative sites for the motif described by the PSSM.
+
+The background model is either provided in the form of a background file
+(option -bgfile) or calculated from the input sequence, by computing a Markov
+model of a given order (-bgorder) on a sliding window of a given size
+(-bgwind), and adaptively updating the model during the scanning process.
+
+=head1 AUTHORS
+
+=item Jean Valéry Turatsinze jturatsi@scmbb.ulb.ac.be
+
+=item Jacques van Helden jvanheld@scmbb.ulb.ac.be
+
+=head1 CATEGORY
+
+util
+
+=head1 USAGE
+    
+matrix-scan -m matrixfile [-i inputfile] [-o outputfile] [-v]
+    [-bgfile backgroundfile|-bgorder #]
+
+=head1 INPUT FORMATS
+
+=over
+
+=head2 Sequence file
+
+All the formats supported in RSAT can be used as input (default: fasta).  
+
+
+=head2 Matrix file
+
+The matrix format is specified with the option -matrix_format.  Supported :
+consensus,gibbs,meme,tab. Default : tab.
+
+=back
+
+=head1 OUTPUT FORMAT
+
+=cut
+
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    #### initialise parameters
+    my $start_time = &AlphaDate();
+
+    
+    %main::infile = ();
+    %main::outfile = ();
+    
+    $main::matrix_name = "matrix";
+    $main::pseudo_weight = 1;
+    $main::matrix_format = "tab";
+    $main::seq_format = "fasta";
+    $main::verbose = 0;
+#    $main::in = STDIN;
+#    $main::out = STDOUT;
+    
+    ## Threshold parameters
+    local %lth = (); # lower threshold values
+    local %uth = (); # upper threshold values
+    @supported_thresholds = qw( score );
+    $supported_thresholds = join ",", @supported_thresholds;
+    %supported_threshold = ();
+    foreach my $thr (@supported_thresholds) {
+	$supported_threshold{$thr} = 1;
+    }
+
+    &ReadArguments();
+    
+    ################################################################
+    #### check argument values
+    
+    ################################################################
+    ### open output stream
+    $main::out = &OpenOutputFile($main::outfile{output});
+    
+    ################################################################
+    ## Read the position-specific scoring matrix
+    my $current_matrix = new RSAT::matrix();
+    $current_matrix->readFromFile($infile{matrix}, $matrix_format);
+    $current_matrix->set_attribute("pseudo", $pseudo_weight);
+    $current_matrix->push_attribute("parameters", "pseudo");
+    $current_matrix->index_alphabet();
+    local ($nrow, $ncol) = $current_matrix->size();
+    
+#    $main::matrix_name = $current_matrix->get_attribute("id");
+#    if ($args{matrix_name}) {
+#	$current_matrix->set_attribute("name");
+#    }
+    
+    ## Calculate frequency matrix
+    $current_matrix->calcFrequencies();
+    
+    ################################################################
+    #### print verbose
+    &Verbose() if ($main::verbose);
+    
+    ## Report the count matrix as comment
+    print $out $current_matrix->toString(sep=>"\t",type=>"counts",format=>"tab",comment_string=>"; ") if ($main::verbose >= 1);
+    
+    ## Report the frequency matrix as comment
+    print $out $current_matrix->toString(col_width=>8, decimals=>4, type=>"frequencies",format=>"tab",comment_string=>"; ") if ($main::verbose >= 1);
+    
+    
+    ################################################################
+    ##### read input
+    my ($in, $input_dir) = &OpenInputFile($main::infile{input});
+    my $sequence_number = 0;
+    
+    while ((($current_seq, $current_id,) = &ReadNextSequence($in, $seq_format, $input_dir, "",$mask)) &&
+       (($current_seq ne "") || ($current_id ne ""))) {
+	
+        $sequence_number++;
+        my $L = length($current_seq);
+	&RSAT::message::TimeWarn(join ("\t", $sequence_number,  $current_id, $L))
+            if ($main::verbose >= 2);
+	
+        my $max_pos = $L -$ncol + 1;
+        for my $pos (0..$max_pos) {
+	    my $strand = "D",
+	    my $segment = substr($current_seq, $pos-1, $ncol);
+	    my $segm_proba_M = $current_matrix->segment_proba($segment);
+	    my $segm_proba_B = 1;
+	    my $segm_score = log($segm_proba_M/$segm_proba_B);
+	    if ((defined($lth{score})) && ($segm_score < $lth{score})) {
+		next;
+	    }
+	    if ((defined($uth{score})) && ($segm_score > $uth{score})) {
+		next;
+	    }
+
+	    print $out join ("\t", 
+			     $current_id,
+			     "matrix-scan",
+			     $main::matrix_name,
+			     $strand,
+			     $pos, ## start position
+			     $pos+$ncol-1, ## end position
+			     $segment,
+			     $segm_score,
+			     $segm_proba_M,
+			     $segm_proba_B,
+			     ), "\n";
+        }
+       
+    }
+    close $in if ($main::infile{input});
+    
+    
+    ################################################################
+    ###### execute the command
+    
+    ################################################################
+    ###### print output
+    
+    
+    ################################################################
+    ###### finish verbose
+    if ($main::verbose >= 1) {
+	my $done_time = &AlphaDate();
+	print $main::out "; Job started $start_time\n";
+	print $main::out "; Job done    $done_time\n";
+    }
+    
+     
+    ################################################################
+    ###### close output stream
+    close $main::out if ($main::outfile{output});
+    
+    
+    exit(0);
+}
+
+################################################################
+################### subroutine definition ######################
+################################################################
+
+
+################################################################
+#### display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+#### display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+#### Read arguments 
+sub ReadArguments {
+#    foreach my $a (0..$#ARGV) {
+    my $arg = "";
+    
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    
+
+    while ($arg = shift (@arguments)) {
+
+	## Verbosity
+=pod
+	    
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+	    
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+	    
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+
+	    ## Background model file
+=pod
+
+=item B<-bgfile background_file>
+
+Background model file. 
+
+=cut
+	} elsif ($arg eq "-bgfile") {
+	    $main::infile{bg} = shift(@arguments);
+	    
+	    ## Matrix file
+=pod
+
+=item B<-m matrixfile>
+
+Matrix file. 
+
+=cut
+	} elsif ($arg eq "-m") {
+	    $main::infile{matrix} = shift(@arguments);
+	    
+	    ## Matrix name
+=pod
+
+=item B<-mname matrix_name>
+
+Matrix name. 
+
+=cut
+	} elsif ($arg eq "-mname") {
+	    $main::matrix_name = shift(@arguments);
+	    
+	    ## Sequence format
+=pod
+
+=item B<-seq_format sequence_format>
+
+Sequence format. 
+
+=cut
+	} elsif ($arg eq "-seq_format") {
+	    $seq_format = shift(@arguments);
+	    
+	    ## Matrix format
+=pod
+
+=item B<-matrix_format matrix_format>
+
+Matrix format. 
+
+=cut
+	} elsif ($arg eq "-matrix_format") {
+	    $matrix_format = shift(@arguments);
+	    
+	    ## Input file
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-i") {
+	    $main::infile{input} = shift(@arguments);
+
+	    ## mask
+=pod
+
+=item B<-mask upper|lower>
+
+Mask lower or uppercases, respecively, i.e. replace selected case by N
+characters.
+
+=cut
+
+	} elsif ($arg eq "-mask") {
+	    $main::mask = shift(@arguments);
+	    &CheckMask($main::mask);	    
+
+
+	    ## Output file
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $main::outfile{output} = shift(@arguments);
+	    
+	    ## Pseudo weight
+=pod
+
+=item B<-pseudo pseudo_weight>
+
+Pseudo-weight.
+
+=cut
+	} elsif ($arg eq "-pseudo") {
+	    $main::pseudo_weight = shift(@arguments);
+	    &RSAT::error::FatalError(join("\t", $main::pseudo_weight, 
+					  "Invalid value for a pseudo-weight. Must be a positive real number."))
+		unless ((&RSAT::util::IsReal($main::pseudo_weight) )
+			&& ($main::pseudo_weight >= 0));
+	    
+	    
+=pod
+    
+=item	B<-lth param lower_threshold>
+
+=item	B<-uth param upper_threshold>
+
+Threshold on some parameter (-lth: lower, -uth: upper threshold). 
+
+Supported threshold fields : score
+
+=cut
+	    
+	    ### Lower threshold
+	} elsif ($arg eq "-lth") {
+	    my $thr_field = shift(@arguments);
+	    my $thr_value =  shift(@arguments);
+	    unless ($supported_threshold{$thr_field}) {
+		&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
+	    }
+	    $lth{$thr_field} = $thr_value;
+	    
+	    ### Upper threshold
+	} elsif ($arg eq "-uth") {
+	    my $thr_field = shift(@arguments);
+	    my $thr_value = shift(@arguments);
+	    unless ($supported_threshold{$thr_field}) {
+		&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
+	    }
+	    $uth{$thr_field} = $thr_value;
+
+
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+
+	}
+    }
+
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $main::out "; matrix-scan ";
+    &PrintArguments($main::out);
+    if (defined(%main::infile)) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+    if (defined(%main::outfile)) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+    printf $main::out "; %-21s\t%s\n", "Sequence format", $seq_format;
+    printf $main::out "; %-21s\t%s\n", "Matrix format", $matrix_format;
+    printf $main::out "; %-21s\n", "Matrix size", $nrow, $ncol;
+    printf $main::out "; \t%d\trows\n", $nrow;
+    printf $main::out "; \t%d\tcolumns\n", $ncol;
+
+
+    my %th_keys = (%lth, %uth);
+    print $main::out "; Thresholds\tlower\tupper\n";
+    foreach $f (sort keys %th_keys) {
+	print $main::out ";\t$f";
+	if (defined($lth{$f})) {
+	    printf $main::out "\t%-5g", $lth{$f};
+	} else {
+	    print $main::out "\tNA";
+	}
+	if (defined($uth{$f})) {
+	    printf $main::out "\t%-5g", $uth{$f};
+	} else {
+	    print $main::out "\tNA";
+	}
+	print $main::out "\n";
+    }
+
+
+}
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=cut
