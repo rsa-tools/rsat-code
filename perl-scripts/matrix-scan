@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.5 2006/04/05 18:39:34 jvanheld Exp $
+# $Id: matrix-scan,v 1.6 2006/04/06 08:27:46 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -85,7 +85,7 @@ package main;
     %main::infile = ();
     %main::outfile = ();
 
-    
+    $main::base=exp(1); ## Base for the logarithms
     $main::both_strands = 0;
     $main::sum_seq_len = 0;
     $main::origin = 0;
@@ -111,7 +111,8 @@ package main;
     
     ################################################################
     #### check argument values
-    
+    $main::log_base = log($base);
+
     ################################################################
     ### open output stream
     $main::out = &OpenOutputFile($main::outfile{output});
@@ -144,16 +145,31 @@ package main;
     ################################################################
     #### print verbose
     &Verbose() if ($main::verbose);
-    
+
     ## Report the count matrix as comment
     print $out $current_matrix->toString(sep=>"\t",type=>"counts",format=>"tab",comment_string=>"; ") if ($main::verbose >= 1);
     
     ## Report the frequency matrix as comment
     print $out $current_matrix->toString(col_width=>8, decimals=>4, type=>"frequencies",format=>"tab",comment_string=>"; ") if ($main::verbose >= 1);
     
+    ## Print header
+    print $out "#", join ("\t", 
+			   "seq_id",
+			   "ft_type",
+			   "ft_name",
+			   "strand",
+			   "start",
+			   "end",
+			   "sequence",
+			   "score",
+			  "P(S|M)",
+			  "P(S|B)",
+			  "info",
+			 ), "\n";
+    
     
     ################################################################
-    ##### read input
+    ##### Scan the sequences
     my ($in, $input_dir) = &OpenInputFile($main::infile{input});
     my $sequence_number = 0;
     $sum_seq_len = 0;
@@ -175,7 +191,7 @@ package main;
 	}
 
 	
-	&RSAT::message::TimeWarn(join ("\t", $sequence_number,  $seq_id, "len=".$sequence_len, "orig=".$orig_pos))
+	&RSAT::message::TimeWarn(join ("\t", $sequence_number,  "len=".$sequence_len, "orig=".$orig_pos,  $seq_id))
             if ($main::verbose >= 2);
 	
         my $max_pos = $sequence_len -$ncol + 1;
@@ -183,7 +199,7 @@ package main;
 	    my $segment = substr($current_seq, $pos-1, $ncol);
 	    &score_segment($segment, $seq_id, $pos, "D");
 	    if ($main::both_strands) {
-		&score_segment($segment, &ReverseComplement($seq_id), $pos, "R");
+		&score_segment( &ReverseComplement($segment),$seq_id, $pos, "R");
 	    };
         }
        
@@ -413,7 +429,23 @@ and the end of the sequence.
 	    $main::origin = shift(@arguments);
 	    &RSAT::error::FatalError("$main::origin. Invalid origin, should be a natural number.")
 		unless (($main::origin eq "-0") || (&RSAT::util::IsNatural($main::origin)));
-	    
+
+
+	    ## base for the logarihtms
+=pod
+
+=item	B<-base #>
+
+Base for the logarithms (default: $base)
+
+=cut
+	} elsif ($arg eq "-base") {
+	    $base = shift @arguments;
+	    &RSAT::error::FatalError("base should be a real number") unless (&IsReal($base));
+	    &RSAT::error::FatalError("base should be larger than 1") if ($base <= 1);
+
+
+	    ## Thresholds
 =pod
     
 =item	B<-lth param lower_threshold>
@@ -539,25 +571,25 @@ thresholds.
 =cut
 sub score_segment {
     my ($segment, $seq_id, $pos, $strand) = @_;
-    my $segm_proba_M = $current_matrix->segment_proba($segment);
-    my $segm_proba_B = $bg_model->segment_proba($segment);
-    my $segm_score = "NA";
+
+    my $score = "NA";
+    my $info = "NA";
+
+    my $proba_M = $current_matrix->segment_proba($segment);
+    my $proba_B = $bg_model->segment_proba($segment);
+
     &RSAT::message::Debug("scoring segment", $seq_id, $segment, $strand) if ($main::verbose >= 10);
 
-    if (($segm_proba_M > 0) && ($segm_proba_B > 0)) {
-	$segm_score = sprintf("%.3f", log($segm_proba_M/$segm_proba_B));
+    if (($proba_M > 0) && ($proba_B > 0)) {
+	$score = sprintf("%.3f", log($proba_M/$proba_B))/$log_base;
     }
-    if ((defined($lth{score})) && 
-	(($segm_score eq "NA") || ($segm_score < $lth{score}))
-       ) {
-	return;
-    }
-    if ((defined($uth{score})) && 
-	(($segm_score eq "NA") || ($segm_score > $uth{score}))
-       ) {
-	return;
-    }
+    return unless (&check_thresholds("score", $score));
     
+    ## Calculate information
+    $info = $score * $proba_B;
+    return unless (&check_thresholds("info", $info));
+
+    ## Calculate start and end position
     my $start_pos = $pos - $orig_pos;
     my $end_pos = $start_pos + $ncol -1;
     
@@ -569,11 +601,37 @@ sub score_segment {
 			   $start_pos,
 			   $end_pos,
 			   $segment,
-			   $segm_score,
-			   sprintf("%5.2g\t%5.2g",
-				   $segm_proba_M,
-				   $segm_proba_B)
+			   $score,
+			   sprintf("%5.2g\t%5.2g\t%5.2g",
+				   $proba_M,
+				   $proba_B,
+				   $info
+				  )
 			  ), "\n";
+}
+
+################################################################
+=pod
+
+=itm B<check_thresholds>
+
+Check the lower and upper threshold for a given score. 
+
+=cut
+
+sub check_thresholds {
+    my ($key, $value) = @_;
+    if ((defined($lth{$key})) && 
+	(($value eq "NA") || ($value < $lth{$key}))
+       ) {
+	return 0;
+    }
+    if ((defined($uth{$value})) && 
+	(($value eq "NA") || ($value > $uth{$key}))
+       ) {
+	return 0;
+    }
+    return 1;
 }
 
 __END__
