@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.13 2006/04/06 18:57:40 jvanheld Exp $
+# $Id: matrix-scan,v 1.14 2006/04/06 19:05:39 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -143,7 +143,7 @@ package main;
 	
 	## Calculate min and max values for P(S|M) and ffor the weight
 	$matrix->proba_range();
-#	$matrix->weight_range();
+	$matrix->weight_range();
 	push @matrices, $matrix;
 
 	&RSAT::message::Info(join("\t", "read matrix", scalar(@matrices), 
@@ -562,24 +562,22 @@ sub Verbose {
     print $main::out "; Matrices\n";
     print $out join ("\t", ";", 
 		     "name",
-		     "format",
 		     "ncol",
 		     "nrow",
 		     "min(P(S|M))",
 		     "max(P(S|M))",
-		     "min(weight)",
-		     "max(weight)",
+		     "min(W)",
+		     "max(W)",
 		    ), "\n";
     foreach my $matrix (@matrices) {
 	print $out join ("\t", ";", 
 			 $matrix->get_attribute("name"),
-			 $matrix->get_attribute("format"),
 			 $matrix->get_attribute("ncol"),
 			 $matrix->get_attribute("nrow"),
-			 sprintf("%5.2g", $matrix->get_attribute("min(P(S|M))")),
-			 sprintf("%5.2g", $matrix->get_attribute("max(P(S|M))")),
-#			 sprintf("%.3f", $matrix->get_attribute("min(weight)")),
-#			 sprintf("%.3f", $matrix->get_attribute("max(weight)")),
+			 sprintf("%-12.4g", $matrix->get_attribute("min(P(S|M))")),
+			 sprintf("%-12.4g", $matrix->get_attribute("max(P(S|M))")),
+			 sprintf("%.3f", $matrix->get_attribute("min(weight)")),
+			 sprintf("%.3f", $matrix->get_attribute("max(weight)")),
 			), "\n";
     }
 

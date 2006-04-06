@@ -2131,7 +2131,7 @@ sub weight_range {
 
     ## Calculate frequencies if required
     unless ($self->get_attribute("weight_specified")) {
-	$self->calcWeight();
+	$self->calcWeights();
     }
 
     my ($nrow, $ncol) = $self->size();
