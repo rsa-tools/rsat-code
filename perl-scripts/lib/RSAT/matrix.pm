@@ -317,7 +317,7 @@ sub getPrior() {
 	%prior = $self->get_attribute("prior");
     } else {
 	if (scalar(keys %prior) <= 0) {
-	    &main::Warning( "No prior defined: using equiprobable residues") if ($main::verbose >= 2);
+	    &main::Warning( "No prior defined: using equiprobable residues") if ($main::verbose >= 3);
 	    my @alphabet = $self->getAlphabet();
 	    my $alphabet_size = scalar(@alphabet);
 	    foreach my $letter (@alphabet) {
@@ -501,7 +501,7 @@ sub readFromFile {
 		  "nrow = ".$self->nrow(),
 		  "ncol = ".$self->ncol(),
 		  "prior : ".join (" ", $self->getPrior()),
-		  ), "\n" if ($main::verbose >= 2);
+		  ), "\n" if ($main::verbose >= 3);
     } else {
 	&main::FatalError("The file $file does not seem to contain a matrix in format $format. Please check the file format and contents.");
     }
@@ -602,7 +602,7 @@ method C<readFromFile($file, "consensus")>.
 =cut
 sub _readFromConsensusFile {
     my ($self, $file) = @_;
-    warn ("; Reading matrix from consensus file\t",$file, "\n") if ($main::verbose >= 2);
+    warn ("; Reading matrix from consensus file\t",$file, "\n") if ($main::verbose >= 3);
     
 #	($in, $dir) = &main::OpenInputFile($file);
 #
@@ -693,7 +693,7 @@ method C<readFromFile($file, "tab")>.
 =cut
 sub _readFromTabFile {
     my ($self, $file, %args) = @_;
-    warn ("; Reading matrix from tab file\t",$file, "\n") if ($main::verbose >= 2);
+    warn ("; Reading matrix from tab file\t",$file, "\n") if ($main::verbose >= 3);
     
 #	($in, $dir) = &main::OpenInputFile($file);
 #
@@ -750,7 +750,7 @@ method C<readFromFile($file, "MEME")>.
 
 sub _readFromMEMEFile {
     my ($self, $file) = @_;
-    warn ("; Reading matrix from consensus file\t",$file, "\n") if ($main::verbose >= 2);
+    warn ("; Reading matrix from consensus file\t",$file, "\n") if ($main::verbose >= 3);
     
     ## open input stream
 #    ($in, $dir) = &main::OpenInputFile($file);
@@ -1290,7 +1290,7 @@ sub calcInformation {
 
     ## Caching
     if (($self->get_attribute("information_calculated")) && !($force)) {
-	warn "Information already calculated before\n" if ($main::verbose >= 2);
+	warn "Information already calculated before\n" if ($main::verbose >= 3);
 	return;
     }
 
@@ -1444,7 +1444,7 @@ sub calcFrequencies {
     ## Get or calculate prior residue probabilities
     my %prior = $self->get_attribute("prior");
     if (scalar(keys %prior) <= 0) {
-	&main::Warning( "No prior defined: using equiprobable residues") if ($main::verbose >= 2);
+	&main::Warning( "No prior defined: using equiprobable residues") if ($main::verbose >= 3);
 	my $alphabet_size = scalar(@alphabet);
 	foreach my $letter (@alphabet) {
 	    $prior{$letter} = 1/$alphabet_size;
@@ -1525,7 +1525,7 @@ sub calcProbabilities {
     ## Get or calculate prior residue probabilities
     my %prior = $self->get_attribute("prior");
     if (scalar(keys %prior) <= 0) {
-	&main::Warning( "No prior defined: using equiprobable residues") if ($main::verbose >= 2);
+	&main::Warning( "No prior defined: using equiprobable residues") if ($main::verbose >= 3);
 	my $alphabet_size = scalar(@alphabet);
 	foreach my $letter (@alphabet) {
 	    $prior{$letter} = 1/$alphabet_size;
@@ -1592,7 +1592,7 @@ sub calcConsensus {
 
     ## Caching
     if (($self->get_attribute("consensus_calculated")) && !($force)) {
-	warn "Consensus already calculated before\n" if ($main::verbose >= 2);
+	warn "Consensus already calculated before\n" if ($main::verbose >= 3);
 	return;
     }
 
