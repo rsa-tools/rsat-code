@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.7 2006/04/06 08:33:34 jvanheld Exp $
+# $Id: matrix-scan,v 1.8 2006/04/06 16:54:59 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -18,7 +18,6 @@ require "RSA.seq.lib";
 
 use RSAT::matrix;
 use RSAT::MarkovModel;
-
 
 =pod
 
@@ -85,11 +84,12 @@ package main;
     %main::infile = ();
     %main::outfile = ();
 
+    @main::matrix_files = ();
+    @matrices = ();
     $main::base=exp(1); ## Base for the logarithms
     $main::both_strands = 0;
     $main::sum_seq_len = 0;
     $main::origin = 0;
-    $main::matrix_name = "matrix";
     $main::pseudo_weight = 1;
     $main::matrix_format = "tab";
     $main::seq_format = "fasta";
@@ -113,26 +113,40 @@ package main;
     #### check argument values
     $main::log_base = log($base);
 
+    unless (scalar(@matrix_files >= 1)) {
+	&RSAT::error::FatalError("You must specify at least one matrix file.");
+    }
+
     ################################################################
     ### open output stream
     $main::out = &OpenOutputFile($main::outfile{output});
     
     ################################################################
-    ## Read the position-specific scoring matrix
-    $current_matrix = new RSAT::matrix();
-    $current_matrix->readFromFile($infile{matrix}, $matrix_format);
-    $current_matrix->set_attribute("pseudo", $pseudo_weight);
-    $current_matrix->push_attribute("parameters", "pseudo");
-    $current_matrix->index_alphabet();
-    local ($nrow, $ncol) = $current_matrix->size();
-    
-#    $main::matrix_name = $current_matrix->get_attribute("id");
-#    if ($args{matrix_name}) {
-#	$current_matrix->set_attribute("name");
-#    }
-    
-    ## Calculate frequency matrix
-    $current_matrix->calcFrequencies();
+    ## Read the position-specific scoring matrices
+    foreach my $matrix_file (@matrix_files) {
+	my ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
+	$matrix_name =~ s/\.\S+$//; ## suppress the extensin from the file name
+	my $matrix = new RSAT::matrix();
+	$matrix->readFromFile($matrix_file, $matrix_format);
+	$matrix->set_attribute("pseudo", $pseudo_weight);
+	$matrix->set_attribute("file", $matrix_file);
+	$matrix->set_attribute("name", $matrix_name);
+	$matrix->push_attribute("parameters", "pseudo");
+	$matrix->index_alphabet();
+	
+	## Calculate frequency matrix
+	$matrix->calcFrequencies();
+	
+	## Calculate min and max values for P(S|M) and ffor the weight
+	$matrix->proba_range();
+#	$matrix->weight_range();
+	push @matrices, $matrix;
+
+	&RSAT::message::Info(join("\t", "read matrix", scalar(@matrices), 
+				 $matrix->get_attribute("name"),
+				 $matrix->get_attribute("file")
+				 )) if ($main::verbose >= 0);
+    }
     
 
     ################################################################
@@ -145,12 +159,6 @@ package main;
     ################################################################
     #### print verbose
     &Verbose() if ($main::verbose);
-
-    ## Report the count matrix as comment
-    print $out $current_matrix->toString(sep=>"\t",type=>"counts",format=>"tab",comment_string=>"; ") if ($main::verbose >= 1);
-    
-    ## Report the frequency matrix as comment
-    print $out $current_matrix->toString(col_width=>8, decimals=>4, type=>"frequencies",format=>"tab",comment_string=>"; ") if ($main::verbose >= 1);
     
     ## Print header
     print $out "#", join ("\t", 
@@ -191,16 +199,19 @@ package main;
 	}
 
 	
-	&RSAT::message::TimeWarn(join ("\t", $sequence_number,  "len=".$sequence_len, "orig=".$orig_pos,  $seq_id))
+	&RSAT::message::TimeWarn(join ("\t", "Scanning sequence", $sequence_number,  "len=".$sequence_len, "orig=".$orig_pos,  $seq_id))
             if ($main::verbose >= 2);
 	
-        my $max_pos = $sequence_len -$ncol + 1;
-        for my $pos (1..$max_pos) {
-	    my $segment = substr($current_seq, $pos-1, $ncol);
-	    &score_segment($segment, $seq_id, $pos, "D");
-	    if ($main::both_strands) {
-		&score_segment( &ReverseComplement($segment),$seq_id, $pos, "R");
-	    };
+        for my $pos (1..$sequence_len) {
+	    foreach my $matrix (@matrices) {
+		my $ncol = $matrix->{ncol};
+		next if ($sequence_len - $pos < $ncol);
+		my $segment = substr($current_seq, $pos-1, $ncol);
+		&score_segment($segment, $matrix, $seq_id, $pos, "D");
+		if ($main::both_strands) {
+		    &score_segment( &ReverseComplement($segment),$matrix, $seq_id, $pos, "R");
+		};
+	    }
         }
        
     }
@@ -320,20 +331,24 @@ Background model file.
 
 Matrix file. 
 
+This argument can be used iteratively to scan the sequence with
+multiple matrices.
+
 =cut
 	} elsif ($arg eq "-m") {
-	    $main::infile{matrix} = shift(@arguments);
+	    push @matrix_files, shift(@arguments);
+#	    $main::infile{matrix} = shift(@arguments);
 	    
-	    ## Matrix name
-=pod
-
-=item B<-mname matrix_name>
-
-Matrix name. 
-
-=cut
-	} elsif ($arg eq "-mname") {
-	    $main::matrix_name = shift(@arguments);
+# 	    ## Matrix name
+# =pod
+#
+# =item B<-mname matrix_name>
+#
+# Matrix name. 
+#
+# =cut
+# 	} elsif ($arg eq "-mname") {
+# 	    $main::matrix_name = shift(@arguments);
 	    
 	    ## Sequence format
 =pod
@@ -527,10 +542,30 @@ sub Verbose {
     }
     printf $main::out "; %-21s\t%s\n", "Sequence format", $seq_format;
     printf $main::out "; %-21s\t%s\n", "Sum of sequence lengths", $sum_seq_len;
-    printf $main::out "; %-21s\t%s\n", "Matrix format", $matrix_format;
-    printf $main::out "; %-21s\n", "Matrix size", $nrow, $ncol;
-    printf $main::out "; \t%d\trows\n", $nrow;
-    printf $main::out "; \t%d\tcolumns\n", $ncol;
+
+    print $main::out "; Matrices\n";
+    print $out join ("\t", ";", 
+		     "name",
+		     "format",
+		     "ncol",
+		     "nrow",
+		     "min(P(S|M))",
+		     "max(P(S|M))",
+		     "min(weight)",
+		     "max(weight)",
+		    ), "\n";
+    foreach my $matrix (@matrices) {
+	print $out join ("\t", ";", 
+			 $matrix->get_attribute("name"),
+			 $matrix->get_attribute("format"),
+			 $matrix->get_attribute("ncol"),
+			 $matrix->get_attribute("nrow"),
+			 sprintf("%5.2g", $matrix->get_attribute("min(P(S|M))")),
+			 sprintf("%5.2g", $matrix->get_attribute("max(P(S|M))")),
+#			 sprintf("%.3f", $matrix->get_attribute("min(weight)")),
+#			 sprintf("%.3f", $matrix->get_attribute("max(weight)")),
+			), "\n";
+    }
 
     printf $main::out "; %-21s\t%d\n", "Markov order", $bg_model->get_attribute("order");
     if (defined($main::infile{bg})) {
@@ -570,12 +605,13 @@ thresholds.
 
 =cut
 sub score_segment {
-    my ($segment, $seq_id, $pos, $strand) = @_;
+    my ($segment, $matrix, $seq_id, $pos, $strand) = @_;
 
+    my $ncol = $matrix->{ncol};
     my $score = "NA";
     my $info = "NA";
 
-    my $proba_M = $current_matrix->segment_proba($segment);
+    my $proba_M = $matrix->segment_proba($segment);
     my $proba_B = $bg_model->segment_proba($segment);
 
     &RSAT::message::Debug("scoring segment", $seq_id, $segment, $strand) if ($main::verbose >= 10);
@@ -596,7 +632,7 @@ sub score_segment {
     print $main::out join ("\t", 
 			   $seq_id,
 			   "site",
-			   $main::matrix_name,
+			   $matrix->{name},
 			   $strand,
 			   $start_pos,
 			   $end_pos,
