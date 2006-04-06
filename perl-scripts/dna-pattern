@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: dna-pattern,v 1.43 2006/04/05 13:52:36 rsat Exp $
+# $Id: dna-pattern,v 1.44 2006/04/06 18:51:35 jvanheld Exp $
 #
 # Time-stamp: <2003-08-13 12:16:03 jvanheld>
 #
@@ -1468,8 +1468,8 @@ sub PrintSequenceLimits {
 	sequence_id => $sequence_id,
 	pattern_id=>"SEQ_START",
 	strand => "DR",
-	start_pos => -$orig_pos,
-	end_pos => -$orig_pos,
+	start_pos => 1-$orig_pos,
+	end_pos => 1-$orig_pos,
 	pattern_seq => "-",
 	matching_seq => "-",
 	score=>0,
