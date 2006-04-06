@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.8 2006/04/06 16:54:59 jvanheld Exp $
+# $Id: matrix-scan,v 1.9 2006/04/06 17:50:19 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -86,6 +86,9 @@ package main;
 
     @main::matrix_files = ();
     @matrices = ();
+
+    $sequence_number = 0;
+    $sum_seq_len = 0;
     $main::base=exp(1); ## Base for the logarithms
     $main::both_strands = 0;
     $main::sum_seq_len = 0;
@@ -179,8 +182,6 @@ package main;
     ################################################################
     ##### Scan the sequences
     my ($in, $input_dir) = &OpenInputFile($main::infile{input});
-    my $sequence_number = 0;
-    $sum_seq_len = 0;
     while ((($current_seq, $seq_id,) = &ReadNextSequence($in, $seq_format, $input_dir, "",$mask)) &&
        (($current_seq ne "") || ($seq_id ne ""))) {
 
@@ -229,6 +230,8 @@ package main;
     ###### finish verbose
     if ($main::verbose >= 1) {
 	my $done_time = &AlphaDate();
+	printf $main::out "; %-21s\t%s\n", "Number os sequences scanned", $sequence_number;
+	printf $main::out "; %-21s\t%s\n", "Sum of sequence lengths", $sum_seq_len;
 	print $main::out "; Job started $start_time\n";
 	print $main::out "; Job done    $done_time\n";
     }
@@ -541,7 +544,6 @@ sub Verbose {
 	}
     }
     printf $main::out "; %-21s\t%s\n", "Sequence format", $seq_format;
-    printf $main::out "; %-21s\t%s\n", "Sum of sequence lengths", $sum_seq_len;
 
     print $main::out "; Matrices\n";
     print $out join ("\t", ";", 
