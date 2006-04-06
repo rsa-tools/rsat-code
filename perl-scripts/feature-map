@@ -2164,54 +2164,54 @@ sub DrawMapBackbone {
 ################################################################
 ## Print verbosity
 sub Verbose {
-  print "; feature-map";
-  &PrintArguments;
-  print "\n";
-  print ";Title		$title\n";
-  if ($horizontal_map) {
-    print ";Horizontal map\n";
-  } else {
-    print ";Vertical map\n";
-  }
-  print ";Nb of maps	", $#map_list+1, "\n";
-  print ";Map names:\n";
-  foreach $map (keys %features) {
-    print ";\t$map\n";
-  }
-  
-  print ";Feature IDs:\n";
-  for $i (0..$#id_list) {
-    print ";\t$id_list[$i]";
-    print "\tselected" if ($selected{$id_list[$i]});
+    print "; feature-map";
+    &PrintArguments;
     print "\n";
-  }
-  
-  print ";Feature selection:\n";
-  foreach $id (@selected_ids) {
-    print ";\t$id\n";
-  }
-  
-  print ";min data pos	$min_pos\n";
-  print ";max data pos	$max_pos\n";
-  print ";view from	$view_from\n";
-  print ";     to	$view_to\n";
-  if ($labels) {
-    print ";label keys	";
-    foreach $k (@label_keys) {
-      print "$k ";
+    print ";Title		$title\n";
+    if ($horizontal_map) {
+	print ";Horizontal map\n";
+    } else {
+	print ";Vertical map\n";
     }
-    print "\n";
-    print ";max D label length	$max_label_length{'D'}\n";
-    print ";max R label length	$max_label_length{'R'}\n";
-  }
-  
-  print ";Graph dimensions	$graph_x_size x $graph_y_size\n";
-  print ";map length		$map_length\n";
-  print ";map thickness	$map_thick\n";
-  print ";map border  	$map_border\n";
-  print ";map spacing 	$map_spacing\n";
-  print ";max feature thickness	$max_feature_thick\n";
-  print ";scale		$scale\n";
+    print ";Nb of maps	", $#map_list+1, "\n";
+    print ";Map names:\n";
+    foreach $map (keys %features) {
+	print ";\t$map\n";
+    }
+    
+    print ";Feature IDs:\n";
+    for $i (0..$#id_list) {
+	print ";\t$id_list[$i]";
+	print "\tselected" if ($selected{$id_list[$i]});
+	print "\n";
+    }
+    
+    print ";Feature selection:\n";
+    foreach $id (@selected_ids) {
+	print ";\t$id\n";
+    }
+    
+    print ";min data pos	$min_pos\n";
+    print ";max data pos	$max_pos\n";
+    print ";view from	$view_from\n";
+    print ";     to	$view_to\n";
+    if ($labels) {
+	print ";label keys	";
+	foreach $k (@label_keys) {
+	    print "$k ";
+	}
+	print "\n";
+	print ";max D label length	$max_label_length{'D'}\n";
+	print ";max R label length	$max_label_length{'R'}\n";
+    }
+    
+    print ";Graph dimensions	$graph_x_size x $graph_y_size\n";
+    print ";map length		$map_length\n";
+    print ";map thickness	$map_thick\n";
+    print ";map border  	$map_border\n";
+    print ";map spacing 	$map_spacing\n";
+    print ";max feature thickness	$max_feature_thick\n";
+    print ";scale		$scale\n";
 }
 
 
