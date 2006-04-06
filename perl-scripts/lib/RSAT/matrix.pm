@@ -7,8 +7,9 @@ package RSAT::matrix;
 #%alphabet_index = ();
 
 require "RSA.seq.lib";
-
 use RSAT::table;
+use RSAT::stats;
+
 @ISA = qw( RSAT::GenericObject RSAT::table);
 
 =pod
@@ -1154,6 +1155,9 @@ sub toString {
     return $to_print;
 }
 
+
+
+
 ################################################################
 =pod
 
@@ -1766,6 +1770,9 @@ sub _printParameters {
     }
     
     ## Matrix attributes
+    my ($proba_min, $proba_max) = $self->proba_range();
+    my ($weight_min, $weight_max) = $self->weight_range();
+
     my @params = $self->get_attribute("parameters");
     my %printed = ();
     for my $param (@params) {
@@ -2053,6 +2060,103 @@ sub segment_proba {
 #    &RSAT::message::Debug("segment_proba", $segment, "P(segm)=".$segment_proba) if ($main::verbose >= 0);
     return $segment_proba;
 }
+
+################################################################
+=pod
+
+=item B<proba_range()>
+
+Return the range (min and max possible values) for a sequence segment
+probability. 
+
+The min (max) value is the product of the minimal (maximal) per column
+from the matrix of corrrected frequencies.
+
+Usage: my ($proba_min, proba_max)  = $matrix->proba_range();
+
+=cut
+
+sub proba_range {
+    my ($self) = @_;
+    my $proba_min = 1;
+    my $proba_max = 1;
+
+    ## Calculate frequencies if required
+    unless ($self->get_attribute("frequencies_specified")) {
+	$self->calcFrequencies();
+    }
+
+    my ($nrow, $ncol) = $self->size();
+    my @frequencies = $self->getFrequencies();    
+
+    foreach my $c (0..($ncol-1)) {
+	my $col_min = 1;
+	my $col_max = 0;
+	foreach my $r (0..($nrow-1)) {
+	    my $freq = $frequencies[$c][$r];
+	    $col_min = &RSAT::stats::min($col_min, $freq);
+	    $col_max = &RSAT::stats::max($col_max, $freq);
+	}
+	$proba_min *= $col_min;
+	$proba_max *= $col_max;
+    }
+    
+    $self->set_parameter("min(P(S|M))", $proba_min);
+    $self->set_parameter("max(P(S|M))", $proba_max);
+    &RSAT::message::Info(join("\t", "min(P(S|M))", $proba_min)) if ($main::verbose >= 0);
+    &RSAT::message::Info(join("\t", "max(P(S|M))", $proba_max)) if ($main::verbose >= 0);
+    return ($proba_min, $proba_max);
+}
+
+
+################################################################
+=pod
+
+=item B<weight_range()>
+
+Return the range (min and max possible values) for a sequence segment
+weight. Attention, these values are only correct for Bernoulli models.
+
+The min (max) value is the sum of the minimal (maximal) per column
+from the matrix of weights.
+
+Usage: my ($weight_min, weight_max)  = $matrix->weight_range();
+
+=cut
+
+sub weight_range {
+    my ($self) = @_;
+    my $weight_min;
+    my $weight_max;
+
+    ## Calculate frequencies if required
+    unless ($self->get_attribute("weight_specified")) {
+	$self->calcWeight();
+    }
+
+    my ($nrow, $ncol) = $self->size();
+    my @weights = $self->getWeights();    
+
+    foreach my $c (0..($ncol-1)) {
+	my $col_min = 0;
+	my $col_max = 1;
+	foreach my $r (0..($nrow-1)) {
+	    my $freq = $weights[$c][$r];
+	    $col_min = &RSAT::stats::min($col_min, $freq);
+	    $col_max = &RSAT::stats::max($col_max, $freq);
+	}
+	$weight_min += $col_min;
+	$weight_max += $col_max;
+    }
+
+    $self->set_parameter("min(weight)", $weight_min);
+    $self->set_parameter("max(weight)", $weight_max);
+    &RSAT::message::Info(join("\t", "min(weight)", $weight_min)) if ($main::verbose >= 0);
+    &RSAT::message::Info(join("\t", "max(weight)", $weight_max)) if ($main::verbose >= 0);
+
+    return ($weight_min, $weight_max);
+}
+
 
 
 return 1;
