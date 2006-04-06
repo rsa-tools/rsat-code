@@ -2103,8 +2103,8 @@ sub proba_range {
     
     $self->set_parameter("min(P(S|M))", $proba_min);
     $self->set_parameter("max(P(S|M))", $proba_max);
-    &RSAT::message::Info(join("\t", "min(P(S|M))", $proba_min)) if ($main::verbose >= 0);
-    &RSAT::message::Info(join("\t", "max(P(S|M))", $proba_max)) if ($main::verbose >= 0);
+    &RSAT::message::Info(join("\t", "min(P(S|M))", $proba_min)) if ($main::verbose >= 4);
+    &RSAT::message::Info(join("\t", "max(P(S|M))", $proba_max)) if ($main::verbose >= 4);
     return ($proba_min, $proba_max);
 }
 
@@ -2151,8 +2151,8 @@ sub weight_range {
 
     $self->set_parameter("min(weight)", $weight_min);
     $self->set_parameter("max(weight)", $weight_max);
-    &RSAT::message::Info(join("\t", "min(weight)", $weight_min)) if ($main::verbose >= 0);
-    &RSAT::message::Info(join("\t", "max(weight)", $weight_max)) if ($main::verbose >= 0);
+    &RSAT::message::Info(join("\t", "min(weight)", $weight_min)) if ($main::verbose >= 4);
+    &RSAT::message::Info(join("\t", "max(weight)", $weight_max)) if ($main::verbose >= 4);
 
     return ($weight_min, $weight_max);
 }
