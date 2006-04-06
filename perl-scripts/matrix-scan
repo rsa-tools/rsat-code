@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.6 2006/04/06 08:27:46 jvanheld Exp $
+# $Id: matrix-scan,v 1.7 2006/04/06 08:33:34 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -595,7 +595,7 @@ sub score_segment {
     
     print $main::out join ("\t", 
 			   $seq_id,
-			   "matrix-scan",
+			   "site",
 			   $main::matrix_name,
 			   $strand,
 			   $start_pos,
