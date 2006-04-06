@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.12 2006/04/06 18:31:59 jvanheld Exp $
+# $Id: matrix-scan,v 1.13 2006/04/06 18:57:40 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -184,31 +184,33 @@ package main;
     ################################################################
     ##### Scan the sequences
     my ($in, $input_dir) = &OpenInputFile($main::infile{input});
-    while ((($current_seq, $seq_id,) = &ReadNextSequence($in, $seq_format, $input_dir, "",$mask)) &&
+    while ((($current_seq, $seq_id) = &ReadNextSequence($in, $seq_format, $input_dir, "",$mask)) &&
        (($current_seq ne "") || ($seq_id ne ""))) {
 
 	$current_seq = lc($current_seq);
 
         $sequence_number++;
 
-        my $sequence_len = length($current_seq);
-	$sum_seq_len += $sequence_len;
+        my $seq_len = length($current_seq);
+	$sum_seq_len += $seq_len;
 
 	$orig_pos = 0;
 	if (($main::origin <  0) || ($main::origin eq "-0")) {
-	    $orig_pos = $sequence_len + $main::origin + 1; 
+	    $orig_pos = $seq_len + $main::origin + 1; 
 	} else {
 	    $orig_pos = $main::origin;
 	}
 
+	&PrintSequenceLimits($seq_id, $seq_len, $orig_pos);
+
 	
-	&RSAT::message::TimeWarn(join ("\t", "Scanning sequence", $sequence_number,  "len=".$sequence_len, "orig=".$orig_pos,  $seq_id))
+	&RSAT::message::TimeWarn(join ("\t", "Scanning sequence", $sequence_number,  "len=".$seq_len, "orig=".$orig_pos,  $seq_id))
             if ($main::verbose >= 2);
 	
-        for my $pos (1..$sequence_len) {
+        for my $pos (1..$seq_len) {
 	    foreach my $matrix (@matrices) {
 		my $ncol = $matrix->{ncol};
-		next if ($sequence_len - $pos < $ncol);
+		next if ($seq_len - $pos < $ncol);
 		my $segment = substr($current_seq, $pos-1, $ncol);
 		&score_segment($segment, $matrix, $seq_id, $pos, "D");
 		if ($main::both_strands) {
@@ -689,6 +691,33 @@ sub check_thresholds {
     }
     return 1;
 }
+
+
+################################################################
+## Print the start and end positions of the sequence
+sub PrintSequenceLimits {
+    my ($seq_id, $seq_len, $orig_pos) = @_;
+
+    print $main::out join ("\t", 
+			   $seq_id,
+			   "limit",
+			   "SEQ_START",
+			   "DR",
+			   1-$orig_pos,
+			   1-$orig_pos,
+			   ".",
+			  ), "\n";
+    print $main::out join ("\t", 
+			   $seq_id,
+			   "limit",
+			   "SEQ_END",
+			   "DR",
+			   $seq_len-$orig_pos,
+			   $seq_len-$orig_pos,
+			   ".",
+			  ), "\n";
+}
+
 
 __END__
     
