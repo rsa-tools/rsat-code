@@ -561,6 +561,7 @@ sub ReadMapData {
     warn "; Reading map data\n" if ($main::verbose >= 2);
 
     while ($new_data_line = <$in>) {
+	next if ($new_data_line =~ /^#/); ### skip header lines
 	next if ($new_data_line =~ /^;/); ### skip comment lines
 	next unless ($new_data_line =~ /\S/); ## skip empty lines
 	$new_data_line =~ s/\r//g; ## Remove DOS-specific carriage return
