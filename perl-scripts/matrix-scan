@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.10 2006/04/06 18:16:32 jvanheld Exp $
+# $Id: matrix-scan,v 1.11 2006/04/06 18:25:21 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -131,6 +131,7 @@ package main;
 	$matrix_name =~ s/\.\S+$//; ## suppress the extensin from the file name
 	my $matrix = new RSAT::matrix();
 	$matrix->readFromFile($matrix_file, $matrix_format);
+	$matrix->set_attribute("matches", 0); ## Initialize the match counter
 	$matrix->set_attribute("pseudo", $pseudo_weight);
 	$matrix->set_attribute("file", $matrix_file);
 	$matrix->set_attribute("name", $matrix_name);
@@ -233,6 +234,11 @@ package main;
 	my $done_time = &AlphaDate();
 	printf $main::out "; %-21s\t%s\n", "Number os sequences scanned", $sequence_number;
 	printf $main::out "; %-21s\t%s\n", "Sum of sequence lengths", $sum_seq_len;
+	print $main::out "; Matches per matrix\n";
+
+	foreach my $matrix (@matrices) {
+	    printf $main::out "; %-21s\t%d\n", $matrix->get_attribute("name"), $matrix->get_attribute("matches");
+	}
 	print $main::out "; Job started $start_time\n";
 	print $main::out "; Job done    $done_time\n";
     }
@@ -606,6 +612,8 @@ sub Verbose {
 Assign a score to a sequence segment and report it if it passes the
 thresholds.
 
+Return value is 1 if the segment passed the thresholds. 
+
 =cut
 sub score_segment {
     my ($segment, $matrix, $seq_id, $pos, $strand) = @_;
@@ -622,11 +630,11 @@ sub score_segment {
     if (($proba_M > 0) && ($proba_B > 0)) {
 	$score = sprintf("%.3f", log($proba_M/$proba_B))/$log_base;
     }
-    return unless (&check_thresholds("score", $score));
+    return(0) unless (&check_thresholds("score", $score));
     
     ## Calculate information
     $info = $score * $proba_B;
-    return unless (&check_thresholds("info", $info));
+    return(0) unless (&check_thresholds("info", $info));
 
     ## Calculate start and end position
     my $start_pos = $pos - $orig_pos;
@@ -647,6 +655,10 @@ sub score_segment {
 				   $info
 				  )
 			  ), "\n";
+
+    $matrix->{matches}++;
+
+    return(1);
 }
 
 ################################################################
@@ -678,5 +690,11 @@ __END__
 =pod
 
 =head1 SEE ALSO
+
+=over
+
+=item convert-matrix
+
+=back
 
 =cut
