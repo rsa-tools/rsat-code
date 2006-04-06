@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.11 2006/04/06 18:25:21 jvanheld Exp $
+# $Id: matrix-scan,v 1.12 2006/04/06 18:31:59 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -236,9 +236,14 @@ package main;
 	printf $main::out "; %-21s\t%s\n", "Sum of sequence lengths", $sum_seq_len;
 	print $main::out "; Matches per matrix\n";
 
+	my $total_matches = 0;
 	foreach my $matrix (@matrices) {
-	    printf $main::out "; %-21s\t%d\n", $matrix->get_attribute("name"), $matrix->get_attribute("matches");
+	    my $matches = $matrix->get_attribute("matches");
+	    $total_matches += $matches;
+	    printf $main::out ";\t%-15s\t%d\n", $matrix->get_attribute("name"), $matches;
 	}
+	printf $main::out ";\t%-15s\t%d\n", "Total matches", $total_matches;
+	
 	print $main::out "; Job started $start_time\n";
 	print $main::out "; Job done    $done_time\n";
     }
