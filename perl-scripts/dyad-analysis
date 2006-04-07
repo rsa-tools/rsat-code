@@ -1,12 +1,8 @@
 #!/usr/bin/perl
 
-## CVS: added options -lth and -uth, valid for the fields occ, exp_occ, obs_freq, exp_freq, occ_P, occ_E, occ_sig
-## CVS: reactivated the option -return ratio
-### CVS: added the option -mask
-
 ############################################################
 #
-# $Id: dyad-analysis,v 1.25 2006/02/07 21:49:59 jvanheld Exp $
+# $Id: dyad-analysis,v 1.26 2006/04/07 23:45:22 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 23:46:08 jvanheld>
 #
@@ -75,19 +71,19 @@ $SIG{ALRM} = sub {die "timeout" };
 #$ENV{SERVER_ADMIN} = "jvanheld\@localhost.localdomain";
 eval {
     alarm($timeout);
-    if ($verbose >= 2) {
-	$current_time = `date '+%H:%M:%S'`;
-	chomp($current_time);
-	warn ";dyad-analysis\t$current_time\tStarting\n";
-    }
+    
+    ## Verbositu
+    &RSAT::message::TimeWarn("Starting dyad-analysis")
+	if ($verbose >= 2);
 
-    #### check argument values ####
+    ################################################################
+    ## Check argument values 
 
-    ### check pre-defined frequency tables
-    ### intergenic frequency calibration
+    ## check pre-defined frequency table for intergenic frequency
+    ## calibration
     if (($background_model) || ($mncf)) {
 	
-	#### organism
+	## Check organism
 	&CheckOrganism($organism_name);
 	
 	$data_dir = $supported_organism{$organism_name}->{'data'};
@@ -98,22 +94,21 @@ eval {
 	    } else { 
 		$noov_suffix = "-ovlp";
 	    }
-	    $exp_freq_file = $data_dir."/oligo-frequencies/dyads_3nt_sp0-20_".${background_model}."_".${organism_name}.${noov_suffix}.${strands}.".freq";
-
+	    $exp_freq_file = join("", 
+				  $data_dir,
+				  "/oligo-frequencies/dyads_3nt_sp0-20_",
+				  ${background_model},
+				  "_",
+				  ${organism_name},
+				  ${noov_suffix}.${strands},
+				  ".freq");
+	    
  	    unless ((-e $exp_freq_file) || (-e "$exp_freq_file.gz") ) {
 		&RSAT::error::FatalError("Expected frequency file does not exist\t$exp_freq_file");
-# 	    #### TEMPORARY: the previous format is still supported
-# 	    #### until integrenic dyad frequencies are recalculated
-# 	    #### for all the supported genomes
-# 		$exp_freq_file = "$data_dir/oligo-frequencies/dyads_3nt_sp0-20_intergenic_${organism_name}_noov.freq";
- 	    }
-
-#	    &RSAT::error::FatalError("Cannot read expected frequency file $exp_freq_file.") unless (-r  $exp_freq_file);
-
+	    }	
 	} elsif ($mncf) {
 	    ### localize monad intergenic frequency file
 	    $monad_exp_freq_file .= "$data_dir/oligo-frequencies/${oligo_length}nt_intergenic_${organism_name}.freq";
-#	    &RSAT::error::FatalError("Cannot read expected frequency file $monad_exp_freq_file.") unless (-r  $monad_exp_freq_file);
 	}
     }
 
@@ -180,10 +175,11 @@ eval {
 	}
     }
 
-    &PrintVerbose() if ($verbose); ### print analysis parameters
-    &PrintResult(); ### print the result
+    &PrintVerbose() if ($verbose); ## print analysis parameters
+    &PrintResult(); ## print the result
 
-    ###### verbose
+
+    ## verbose
     if ($verbose) {
 	$done_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
 	print $out ";Job started $start_time";
@@ -799,7 +795,7 @@ sub ReadArguments {
 	    
 	    ### use oligo non-coding frequencies as expected frequencies
 	} elsif ($ARGV[$a] =~ /^-ncf/i) {
-	    &Warning ("option -ncf is deprecated, use '-bg intergenic' instead");
+	    &RSAT::message::Warning ("option -ncf is deprecated, use '-bg intergenic' instead");
 	    $background_model = "intergenic";
 #	    $rescale_freq = 1;
 
@@ -1436,6 +1432,7 @@ sub CountDyads {
 	$sequence_number++;  
 	$id_list[$sequence_number] = $current_id;
 	$seq_length[$sequence_number] = length($current_seq);
+	my $prev_sum_seq_len = $sum_seq_length;
 	$sum_seq_length += $seq_length[$sequence_number];
 
 	
@@ -1444,38 +1441,47 @@ sub CountDyads {
 	$new_pos_nb =  max(0,$seq_length[$sequence_number] - 2*$oligo_length - $min_spacing + 1); 
 	$nb_possible_pos += $new_pos_nb if ($new_pos_nb > 0); 
 
+	
+	#### Count monads and dyads
+	my $last_pos = $seq_length[$sequence_number] - $oligo_length;
+	$chunk = 10000;
+	$pos1 = 0;
+
 	## Verbosity
 	&RSAT::message::TimeWarn(join ("\t", "\tsequence",
 				       $sequence_number,
-				       $seq_length[$sequence_number],
-				       $sum_seq_length,
-				       $nb_possible_pos,
-				       $current_id,
+				       "seq_id=".$current_id,
+				       "len=".$seq_length[$sequence_number],
+				       "last_pos=".$last_pos,
+				       "sum_len=".$sum_seq_length,
+				       "nb_possible_oligos=".$nb_possible_pos,
 				      )) if ($main::verbose >= 2);
-	
-	#### Count monads and dyads
-	$last_pos = $seq_length[$sequence_number] - $oligo_length;
-	$chunk = 10000;
-	$pos1 = 0;
+
+	################################################################
+	## Iteration to get teh first monad of the dyad
 	while ($pos1 <= $last_pos) {
+#	    &RSAT::message::Debug("p1= ".$pos1, "last= ".$last_pos) if ($main::verbose >= 10);
 	    
-	    if ($verbose >= 2) {
-		if (($pos1%$chunk ==0 ) && ($pos1 > 0)) {
+	    if ($main::verbose >= 3) {
+		if ((($prev_sum_seq_len+$pos1)%$chunk ==0 ) && ($pos1 > 0)) {
 		    $chunk_nb++;
-		    $ps = `ps v  -p $$ | grep -v TIME`;
+		    $ps = `ps v -c -p $$ | grep -v TIME`;
 		    chomp $ps;
-		    warn join ("\t", 
-			       ";", 
-			       "seq position", $pos1,
-			       "total", $nb_possible_pos,
-			       $ps), "\n";
+		    &RSAT::message::TimeWarn (
+			"seq=".$sequence_number,
+			"pos1=".$pos1,
+			"last_pos=".$last_pos,
+			"total", $nb_possible_pos,
+			$ps), "\n";
 		}
 	    }
 	    
-	    #### count oligont occurrences
-	    #### will be used for estimation of expected dyad frequencies
+	    ################################################################
+	    ## Get the first monad
 	    $oligo1 = lc(substr($current_seq,$pos1,$oligo_length));
 
+	    ################################################################
+	    ## For DNA, filter out dyads containing unspecified nucleotides
 	    if ($seq_type eq "DNA") {
 		unless ($allowed_monads{$oligo1}) {
 		    $discarded_monad_positions++;
@@ -1487,16 +1493,36 @@ sub CountDyads {
 #		    } else {
 #			#### TO CALCULATE #### 
 #		    }
+
+# 		    &RSAT::message::Warning(
+# 			"Invalid first monad",
+# 			$pos1,
+# 			$oligo1,
+# 		    ) if ($main::verbose >= 5);
 		    $pos1++;
 		    next;
 		}
 	    }
 
+	    ################################################################
+	    ## Count monad occurrences. 
+	    ## These will be used to estimate expected dyad frequencies. 
 	    $oligo{$oligo1}->{occ}++;
 	    $sum_oligo_count++;
+
+# 	    &RSAT::message::Debug(
+# 		"First monad",
+# 		"p1= ".$pos1,
+# 		"oligo1= ".$oligo1,
+# 		"occ= ".$oligo{oligo1}->{occ},
+# 		"sum_oligos= ".$sum_oligo_counts,
+# 	    ) if ($main::verbose >= 10);
 	    
-	    #### count dyad occurrences
-	    foreach $spacing ($min_spacing..$max_spacing) {
+	    ################################################################
+	    ## Iterate spacings to obtain the second monad and the dyad
+	    my $spacing = $min_spacing;
+	    while ($spacing <= $max_spacing) {
+#	    foreach $spacing ($min_spacing..$max_spacing) {
 		$pos2 = $pos1 + $oligo_length + $spacing;
 		#      $min_overlap_dist = $oligo_length;
 		$min_overlap_dist{$spacing} = 2*$oligo_length + $spacing;
@@ -1504,25 +1530,54 @@ sub CountDyads {
 		if ($pos2 <= $last_pos) {
 		    $oligo2 = lc(substr($current_seq,$pos2,$oligo_length));
 		    
+# 		    &RSAT::message::Debug(
+# 			"p1= ".$pos1,
+# 			"oligo1= ".$oligo1,
+# 			"p2= ".$pos2,
+# 			"oligo2= ".$oligo2,
+# 		    ) if ($main::verbose >= 10);
+		    
 		    if ($seq_type eq "DNA") {
 			unless ($allowed_monads{$oligo2}) {
 			    $discarded_dyad_positions++;
 			    $discarded_monad_positions++ 
-				if ($last_pos = $pos2 < $max_spacing); #### only if it the same position not be counted as discarded pos1. 
+				if ($last_pos + $pos2 < $max_spacing); ## only if it the same position not be counted as discarded pos1. 
+# 			    &RSAT::message::Debug(
+# 				    "Invalid second monad",
+# 				    "p1=".$pos1,
+# 				    "sp=".$spacing,
+# 				    "p2=".$pos2,
+# 				    $oligo2,
+# 				) if ($main::verbose >= 10);
+			    $spacing++;
 			    next;
 			}
 		    }
 
-		    next if (($dyad_type eq "dr") && ($oligo1 ne $oligo2)); ### count only direct repeats
-		    next if (($dyad_type eq "ir") && ($oligo2 ne &SmartRC($oligo1))); ### count only inverted repeats
-		    next if (($dyad_type eq "rep") && ($oligo1 ne $oligo2) &&($oligo2 ne &SmartRC($oligo1))); ### count only repeats
+		    ################################################################
+		    ## Check for specific dyad types
+
+		    ## count only direct repeats
+		    next if (($dyad_type eq "dr") && ($oligo1 ne $oligo2)); 
 		    
+		    ## count only inverted repeats
+		    next if (($dyad_type eq "ir") && ($oligo2 ne &SmartRC($oligo1))); 
+		    
+		    ## count only repeats
+		    next if (($dyad_type eq "rep") && ($oligo1 ne $oligo2) &&($oligo2 ne &SmartRC($oligo1))); 
+		    
+
+		    ################################################################
+		    ## Generate the dyad name (grouping all spacings or not)
 		    if ($sp_group) {
 			$pattern_seq = "${oligo1}n\{$min_spacing,$max_spacing\}${oligo2}";
 		    } else {
 			$pattern_seq = "${oligo1}n\{$spacing\}${oligo2}";
 		    }
 		    
+		    ################################################################
+		    ## Prevent self-overlap: store last position where
+		    ## the dyad has been found
 		    if ($noov) {
 			$dist = $pos1 - $last_pos{$pattern_seq};
 			if  ((&IsNatural($last_pos{$pattern_seq})) &&
@@ -1538,8 +1593,27 @@ sub CountDyads {
 			} 
 		    }
 		    $patterns{$pattern_seq}->{occ}++;
+		    
+# 		    &RSAT::message::Debug(
+# 			"Incremented counter", 
+# 			$pos1, 
+# 			$pos2,
+# 			$pattern_seq,
+# 			$patterns{$pattern_seq}->{occ},
+# 			$patterns{$pattern_seq}->{overlaps},
+# 			$last_pos{$pattern_seq},
+# 		    ) if ($main::verbose >= 5);
+
 		}
+		$spacing++;
 	    }
+# 	    &RSAT::message::Debug(
+# 		"End of iteration for monad 2",
+# 		"p1= ".$pos1,
+# 		"sp= ".$spacing,
+# 		"p2= ".$pos2,
+# 		"last_pos=".$last_pos,
+# 	    ) if ($main::verbose >= 0);
 	    $pos1++;
 	}
 	undef %last_pos;
