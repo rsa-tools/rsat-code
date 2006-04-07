@@ -2043,6 +2043,9 @@ corrected frequencies.
 
 sub segment_proba {
     my ($self, $segment) = @_;
+    
+#    return(1);
+
     my $segment_proba = 1;
     my $seq_len = length($segment);
     my $r;
@@ -2103,6 +2106,7 @@ sub proba_range {
     
     $self->set_parameter("min(P(S|M))", $proba_min);
     $self->set_parameter("max(P(S|M))", $proba_max);
+    $self->set_parameter("proba_range", $proba_max-$proba_min);
     &RSAT::message::Info(join("\t", "min(P(S|M))", $proba_min)) if ($main::verbose >= 4);
     &RSAT::message::Info(join("\t", "max(P(S|M))", $proba_max)) if ($main::verbose >= 4);
     return ($proba_min, $proba_max);
@@ -2126,8 +2130,8 @@ Usage: my ($weight_min, weight_max)  = $matrix->weight_range();
 
 sub weight_range {
     my ($self) = @_;
-    my $weight_min;
-    my $weight_max;
+    my $weight_min = 0;
+    my $weight_max = 0;
 
     ## Calculate frequencies if required
     unless ($self->get_attribute("weight_specified")) {
@@ -2138,8 +2142,8 @@ sub weight_range {
     my @weights = $self->getWeights();    
 
     foreach my $c (0..($ncol-1)) {
-	my $col_min = 0;
-	my $col_max = 1;
+	my $col_min="";
+	my $col_max="";
 	foreach my $r (0..($nrow-1)) {
 	    my $freq = $weights[$c][$r];
 	    $col_min = &RSAT::stats::min($col_min, $freq);
@@ -2151,6 +2155,7 @@ sub weight_range {
 
     $self->set_parameter("min(weight)", $weight_min);
     $self->set_parameter("max(weight)", $weight_max);
+    $self->set_parameter("weight_range", $weight_max-$weight_min);
     &RSAT::message::Info(join("\t", "min(weight)", $weight_min)) if ($main::verbose >= 4);
     &RSAT::message::Info(join("\t", "max(weight)", $weight_max)) if ($main::verbose >= 4);
 
