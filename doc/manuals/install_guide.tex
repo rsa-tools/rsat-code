@@ -113,6 +113,28 @@ Before being able to retrieve \RSAT from the CVS repository, you need
 an account on our server. For this, please contact Jacques van Helden
 (\email{jvanheld@scmbb.ulb.ac.be}).
 
+\subsubsection{CVS configuration}
+
+You need to indictate your \program{cvs} client to use \program{ssh}
+as remote shell application. For this, you can specify an environment
+variable.
+
+if your shell is tcsh, the simplest way is to addd the following
+line to the \file{.cshrc} file in your home directory.
+
+\begin{verbatim}
+setenv CVS_RSH ssh
+\end{verbatim}
+
+If your shell is bash, the simplest way is to addd the following line
+to the \file{.bashrc} file in your home directory.
+
+\begin{verbatim}
+export CVS_RSH=ssh
+\end{verbatim}
+
+
+
 \subsubsection{First installation}
 
 The following command should be used the first time you retrieve the
