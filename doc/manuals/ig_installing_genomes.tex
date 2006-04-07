@@ -51,8 +51,8 @@ web aspirator (for example the program \program{wget}).
 Beware, the full installation (including Mammals) requires a large
 disk space (several dozens of Gb). You should better start installting
 a small genome and test it before processing to the full
-installation. We illustrate the approach with one of the smallest
-sequenced genome: \textit{Mycoplasma genitalium}.
+installation. We illustrate the approach with the genome of our
+preferred model organism: the yeast \textit{Saccharomyces cerevisiae}.
 
 \subsubsection{Importing a single organism}
 
@@ -65,10 +65,10 @@ cd \$RSAT
 
 # Download a single genome from the RSAT web server. 
 # This requires the program wget.
-make -f makefiles/init_RSAT.mk download_one_genome
+make -f makefiles/init_RSAT.mk download_one_genome ORG=Saccharomyces_cerevisiae
 
 # Declare the newly downlaoded genome as a supported organism
-make -f makefiles/init_RSAT.mk configure_one_genome
+make -f makefiles/init_RSAT.mk configure_one_genome ORG=Saccharomyces_cerevisiae
 
 \end{verbatim}
 \end{small}
