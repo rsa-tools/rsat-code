@@ -159,6 +159,8 @@ by larger than the Markov order + 1.
 sub segment_proba {
     my ($self, $segment) = @_;
 
+#    return(1);
+
     my $seq_len = length($segment);
     my $order = $self->get_attribute("order");
 
@@ -187,7 +189,7 @@ sub segment_proba {
 #			      "P(segm)=".$segment_proba) if ($main::verbose >= 0);
     }
     
-    &RSAT::message::Debug("segment_proba", $segment, "P(segm)=".$segment_proba) if ($main::verbose >= 10);
+#    &RSAT::message::Debug("segment_proba", $segment, "P(segm)=".$segment_proba) if ($main::verbose >= 10);
 #    die;
     return $segment_proba;
 }
