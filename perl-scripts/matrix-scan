@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.14 2006/04/06 19:05:39 jvanheld Exp $
+# $Id: matrix-scan,v 1.15 2006/04/07 05:48:52 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -103,12 +103,20 @@ package main;
     ## Threshold parameters
     local %lth = (); # lower threshold values
     local %uth = (); # upper threshold values
-    @supported_thresholds = qw( score );
+    @supported_thresholds = qw( score norm_W );
     $supported_thresholds = join ",", @supported_thresholds;
     %supported_threshold = ();
     foreach my $thr (@supported_thresholds) {
 	$supported_threshold{$thr} = 1;
     }
+
+    ## Return fields
+    %supported_return_fields = (
+	sites=>1,
+	limits=>1,
+    );
+    $supported_return_fields = join (",", sort(keys( %supported_return_fields)));
+    @return_fields = qw(sites);
 
     &ReadArguments();
     
@@ -167,17 +175,17 @@ package main;
     
     ## Print header
     print $out "#", join ("\t", 
-			   "seq_id",
-			   "ft_type",
-			   "ft_name",
-			   "strand",
-			   "start",
-			   "end",
-			   "sequence",
-			   "score",
+			  "seq_id",
+			  "ft_type",
+			  "ft_name",
+			  "strand",
+			  "start",
+			  "end",
+			  "sequence",
+			  "weight",
+			  "norm_W",
 			  "P(S|M)",
 			  "P(S|B)",
-			  "info",
 			 ), "\n";
     
     
@@ -201,16 +209,17 @@ package main;
 	    $orig_pos = $main::origin;
 	}
 
-	&PrintSequenceLimits($seq_id, $seq_len, $orig_pos);
+	&PrintSequenceLimits($seq_id, $seq_len, $orig_pos) if ($return_fields{"limits"});
 
 	
 	&RSAT::message::TimeWarn(join ("\t", "Scanning sequence", $sequence_number,  "len=".$seq_len, "orig=".$orig_pos,  $seq_id))
             if ($main::verbose >= 2);
 	
+	
         for my $pos (1..$seq_len) {
 	    foreach my $matrix (@matrices) {
 		my $ncol = $matrix->{ncol};
-		next if ($seq_len - $pos < $ncol);
+		next if ($seq_len - $pos +1 < $ncol);
 		my $segment = substr($current_seq, $pos-1, $ncol);
 		&score_segment($segment, $matrix, $seq_id, $pos, "D");
 		if ($main::both_strands) {
@@ -531,6 +540,31 @@ single-strand search for DNA sequences.
 	} elsif ($arg eq "-1str") {
 	    $main::both_strands = 0;
 
+
+	    ## Return fields
+=pod
+
+=item B<-return return_fields>
+
+List of fields to return. 
+
+Supported fields: sites, limits.
+
+=cut
+        } elsif ($arg eq "-return") {
+	    $arg = shift (@arguments);
+            chomp($arg);
+            my @fields_to_return = split ",", $arg;
+            foreach $field (@fields_to_return) {
+                if ($supported_return_fields{$field}) {
+                    $return_fields{$field} = 1;
+                } else {
+                    &RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_return_fields));
+		}
+	    }
+
+
+
 	} else {
 	    &FatalError(join("\t", "Invalid option", $arg));
 
@@ -623,23 +657,30 @@ Return value is 1 if the segment passed the thresholds.
 sub score_segment {
     my ($segment, $matrix, $seq_id, $pos, $strand) = @_;
 
+#    &RSAT::message::Debug("scoring segment", $seq_id, $segment, $strand) if ($main::verbose >= 10);
+
     my $ncol = $matrix->{ncol};
-    my $score = "NA";
-    my $info = "NA";
 
     my $proba_M = $matrix->segment_proba($segment);
     my $proba_B = $bg_model->segment_proba($segment);
 
-    &RSAT::message::Debug("scoring segment", $seq_id, $segment, $strand) if ($main::verbose >= 10);
+#    my $proba_M = 1;
+#    my $proba_B = 1;
 
+    ## Calculate segment weight
+    my $score = "NA";
     if (($proba_M > 0) && ($proba_B > 0)) {
 	$score = sprintf("%.3f", log($proba_M/$proba_B))/$log_base;
     }
     return(0) unless (&check_thresholds("score", $score));
-    
+
+    ## Calculate normalized segment weight
+    my $norm_W = ($score - $matrix->{'min(weight)'})/($matrix->{'weight_range'});
+    return(0) unless (&check_thresholds("norm_W", $norm_W));
+
     ## Calculate information
-    $info = $score * $proba_B;
-    return(0) unless (&check_thresholds("info", $info));
+#    my $info = $score * $proba_B;
+#    return(0) unless (&check_thresholds("info", $info));
 
     ## Calculate start and end position
     my $start_pos = $pos - $orig_pos;
@@ -654,12 +695,12 @@ sub score_segment {
 			   $end_pos,
 			   $segment,
 			   $score,
-			   sprintf("%5.2g\t%5.2g\t%5.2g",
+			   sprintf("%6.4f\t%5.2g\t%5.2g",
+				   $norm_W,
 				   $proba_M,
 				   $proba_B,
-				   $info
 				  )
-			  ), "\n";
+			  ), "\n"  if ($main::return_fields{"sites"});
 
     $matrix->{matches}++;
 
