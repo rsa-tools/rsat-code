@@ -7,7 +7,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.105 2006/03/20 10:11:36 rsat Exp $
+# $Id: oligo-analysis,v 1.106 2006/04/08 00:58:24 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -526,7 +526,7 @@ sub CountOligos {
 	($tail eq "two") || 
         ($zeroocc)
        ) {
-	&RSAT::message::Info("Counting patterns with 0 occurrences") if ($main::verbose >= 2);
+	&RSAT::message::TimeWarn("Counting patterns with 0 occurrences") if ($main::verbose >= 2);
 	foreach my $pattern_seq (@possible_oligos) {
 	    ## Check if no occurrences were found
 	    unless ($patterns{$pattern_seq}->{occ}) {
@@ -538,7 +538,7 @@ sub CountOligos {
 		}
 	    }
 	}
-        &RSAT::message::Debug ("Number of patterns with zero occurrences", 
+        &RSAT::message::Info("Number of patterns with zero occurrences", 
 			       scalar(keys(%zero_occ))) if ($main::verbose >= 2);
     }
 }
@@ -2099,6 +2099,8 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-sort") {
 	    $sort_result = 1;
 	    
+	    ################################################################
+	    #### Left-tail or two-tail significance test  
 	} elsif ($ARGV[$a] eq "-under") {
 	    $tail = "left";
 	    
