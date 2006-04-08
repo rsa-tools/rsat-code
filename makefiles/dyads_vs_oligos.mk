@@ -36,7 +36,7 @@ oligos:
 ## Run dyad-analysis
 DYADS=dyads_sp${SP}${SUFFIX}.tab
 DYADS_NOSPACING=dyads_sp${SP}_${SUFFIX}_nospacing.tab
-SP=0-9
+SP=0-20
 dyads:
 	dyad-analysis -l 3 -sp ${SP} ${OPTIONS} -o ${DYADS} 
 	@echo ${DYADS}
