@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: dyad-analysis,v 1.28 2006/04/08 01:16:36 jvanheld Exp $
+# $Id: dyad-analysis,v 1.29 2006/04/08 01:44:38 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 23:46:08 jvanheld>
 #
@@ -239,7 +239,7 @@ sub PrintHeaderLine {
     $col_description{"occ_E"} = "E-value for occurrences (binomial)";
     $col_description{"occ_sig"} = "occurrence significance (binomial)";
     $col_description{"zscore"} = "z-score (normal)"; 
-    $col_description{"occ_lkh"} = "occurrence likelihood"; 
+#    $col_description{"occ_lkh"} = "occurrence likelihood"; 
     $col_description{"all_occ"} = "number of non-overlapping + overlapping occurrences"; 
     $col_description{"ovl_occ"} = "number of overlapping occurrences"; 
     $col_description{"ratio"} = "observed/expected ratio"; 
@@ -249,7 +249,8 @@ sub PrintHeaderLine {
 
     @out_col = ();
 
-    ### print header line ###
+    ################################################################
+    ## Print header line
     my $dyad_len = 2*$oligo_length+5;
     my $dyad_id_len = $dyad_len;
     if ($sum_rc) {
@@ -266,25 +267,42 @@ sub PrintHeaderLine {
 	push @out_col, "dyad_seque";
 	push @out_col, "dyad_ident";    
     }
+
+    ## Frequencies
     push @out_col, "observed_freq" if ($return{freq});
     push @out_col, "expected_freq" if ($return{exp_freq});
+
+    ## Occurrences
     push @out_col, "occ" if ($return{occ});
     push @out_col, "exp_occ"  if ($return{exp_occ});
+
+
+    ## Binomial probability
     if ($return{proba}) {
 	push @out_col, "occ_P";
 	push @out_col, "occ_E";
 	push @out_col, "occ_sig";
     }
-    if ($return{zscore}) {
-	push @out_col, "zscore";
-	push @out_col, "occ_var";
-    }
+
+    ## Rank
+    push @out_col, "rank"  if ($return{rank});
+    
+    ## Overlapping occurrences
     if ($noov) {
 	push @out_col, "ovl_occ";
 	push @out_col, "all_occ";
     }
+
+
+    ## z-score
+    if ($return{zscore}) {
+	push @out_col, "zscore";
+	push @out_col, "occ_var";
+    }
+
+    ## Ratio
     push @out_col, "ratio"  if ($return{ratio});
-    push @out_col, "rank"  if ($return{rank});
+
 
     if (($return{proba})|| ($return{zscore})) {
 	push @out_col, "ov_coef" ;
@@ -351,10 +369,16 @@ sub PrintResult {
 	    $rc_dyad = &SmartRC($pattern_seq);
 	    print $out "|$rc_dyad";
 	}
+
+	## Frequencies
 	printf $out "\t%15.13f", $patterns{$pattern_seq}->{obs_freq} if ($return{freq});
 	printf $out "\t%15.13f", $patterns{$pattern_seq}->{exp_freq} if ($return{exp_freq});
+
+	## Occurrences
 	printf $out "\t%7d", $patterns{$pattern_seq}->{occ} if ($return{occ});
 	printf $out "\t%7.2f", $patterns{$pattern_seq}->{exp_occ} if ($return{exp_occ});
+
+	## Binomial probability
 	if ($return{proba}) {
 	    if ($patterns{$pattern_seq}->{occ_P} >= 0.0001) {
 		printf $out "\t%7.5f", $patterns{$pattern_seq}->{occ_P};
@@ -364,14 +388,23 @@ sub PrintResult {
 	    printf $out "\t%7.1e", $patterns{$pattern_seq}->{occ_E};
 	    printf $out "\t%7.2f", $patterns{$pattern_seq}->{occ_sig};
 	}
-	if ($return{zscore}) {
-	    printf $out "\t%7.2f", $patterns{$pattern_seq}->{zscore};
-	    printf $out "\t%7.2f", $patterns{$pattern_seq}->{var_est};
-	}
+
+	## Rank
+	printf $out "\t%7d", $patterns{$pattern_seq}->{rank} if ($return{rank});
+
+	## Overlapping occurrences
 	if ($noov) {
 	    printf $out "\t%d", $patterns{$pattern_seq}->{overlaps};
 	    printf $out "\t%d", $patterns{$pattern_seq}->{overlaps} + $patterns{$pattern_seq}->{occ};
 	}
+
+	## z-score
+	if ($return{zscore}) {
+	    printf $out "\t%7.2f", $patterns{$pattern_seq}->{zscore};
+	    printf $out "\t%7.2f", $patterns{$pattern_seq}->{var_est};
+	}
+
+	## Ratio
 	if ($return{ratio}) {
 	    if ($patterns{$pattern_seq}->{exp_occ} > 0) {
 		printf $out "\t%7.2f", $patterns{$pattern_seq}->{occ}/$patterns{$pattern_seq}->{exp_occ};
@@ -379,7 +412,8 @@ sub PrintResult {
 		print $out "\tNA";
 	    }
 	}
-	printf $out "\t%7d", $patterns{$pattern_seq}->{rank} if ($return{rank});
+
+	## Miscelaneous
 	if (($return{proba}) || ($return{zscore})) {
 	    printf $out "\t%7.4f", $overlap_coeff{$pattern_seq};
 	    print $out "\t", $patterns{$pattern_seq}->{remark};

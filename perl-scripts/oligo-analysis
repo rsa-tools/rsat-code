@@ -7,7 +7,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.106 2006/04/08 00:58:24 jvanheld Exp $
+# $Id: oligo-analysis,v 1.107 2006/04/08 01:44:38 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -1310,13 +1310,15 @@ sub PrintHeaderLine {
     $col_description{"remark"} = "remark"; 
     $col_description{"segments"} = "word segmentation"; 
     @out_col = ();
-    ### print header line ###
+    
+    ################################################################
+    ## Print header line 
     if ($oligo_length < 8) {
 	push(@out_col,"seq");
     } else {
 	push(@out_col,"sequence");
     }
-
+    
     my $id_width = $oligo_length;
     if ($sum_rc) {
 	$id_width += $oligo_length + 1;
@@ -1329,30 +1331,46 @@ sub PrintHeaderLine {
 	push(@out_col,"id");
     }
     
-    ### occurrence frequencies
+    ### Frequencies
     push(@out_col,"observed_freq") if ($return{'freq'});
     push(@out_col,"exp_freq") if ($return{'exp_freq'});
     
-    ### occurrences
+    ### Occurrences
     if ($return{'occ'}) {
 	push(@out_col,"occ");
 	push(@out_col,"exp_occ") if ($return{'exp_freq'});
+	
+	## Binomial probability
 	if ($return{'proba'}) {
 	    push(@out_col,"occ_P");
 	    push(@out_col,"occ_E");
 #	    push(@out_col,"occ_FWER");
 	    push(@out_col,"occ_sig");
 	}
-	push(@out_col,"zscore") if ($return{'zscore'});
-	push(@out_col,"occ_likelihood") if ($return{'like'});
-    if ($noov eq "-noov") {
+    }
+    
+    ### rank
+    push(@out_col,"rank") if ($return{'rank'});
+    
+    ## Overlapping occurrences
+    if (($return{occ}) && ($noov eq "-noov")) {
 	push(@out_col,"ovl_occ");
 	push(@out_col,"forbocc");
 #	push(@out_col,"notforb");
-     }
     }
+
+    ## z-score and variance estimate
+    if ($return{'zscore'}) {
+        push(@out_col,"zscore");
+	push(@out_col,"exp_var");
+    }
+
+    ## Ratio
     push(@out_col,"ratio") if ($return{'ratio'});
     
+    ## Log likelihood
+    push(@out_col,"occ_likelihood") if ($return{'like'});
+
     ### matching sequences
     if ($return{'mseq'}) {
 	push(@out_col,"ms");
@@ -1369,15 +1387,11 @@ sub PrintHeaderLine {
 	push(@out_col,"ms_likelihood") if ($return{'like'});
     }
     
-    ### rank
-    push(@out_col,"rank") if ($return{'rank'});
-
     ### positions
     push(@out_col,"positions") if ($return{'pos'});
     
     ### miscellaneous
     push(@out_col,"ovlp") if ($return{'ovlp'});
-    push(@out_col,"exp_var") if ($return{'exp_var'});
     push(@out_col,"fitted") if ($return{'fitted'});
     push(@out_col,"test") if ($tail="two");
     push(@out_col,"remark") if ($return{'remark'});
@@ -1633,32 +1647,39 @@ sub PrintResult {
 #		printf $out "\t%.1e", $patterns{$pattern_seq}->{occ_FWER};
 		printf $out "\t%.2f", $patterns{$pattern_seq}->{occ_sig};
 	    }
-	    
-	    
-	    ### zscore
-	    if ($return{'zscore'}) {
-		if (&IsReal($patterns{$pattern_seq}->{zscore})) {
-		    printf $out "\t%.2f", $patterns{$pattern_seq}->{zscore};
-		} else {
-		    printf $out "\t%s", $patterns{$pattern_seq}->{zscore};
-		}
-	    }
-	    
-	    ### log likelihood of occurrences
-	    printf $out "\t%15.12f", $patterns{$pattern_seq}->{occ_lkh} if ($return{'like'});
-	    
-	    ### overlapping occurrences
-	    if ($noov eq "-noov") {
-		$patterns{$pattern_seq}->{overlaps} = 0 if ($patterns{$pattern_seq}->{overlaps} eq "");
-		print $out "\t", $patterns{$pattern_seq}->{overlaps};
-		printf $out "\t%d", $patterns{$pattern_seq}->{forbocc};
-#	    printf $out "\t%d", $patterns{$pattern_seq}->{notforb};
-	    }
+	}	    
+	
+	### rank ###
+	if ($return{'rank'}) {
+	    print $out "\t", $patterns{$pattern_seq}->{rank};
 	}
+	
+	### Overlapping occurrences
+	if (($return{occ}) && ($noov eq "-noov")) {
+	    $patterns{$pattern_seq}->{overlaps} = 0 if ($patterns{$pattern_seq}->{overlaps} eq "");
+	    print $out "\t", $patterns{$pattern_seq}->{overlaps};
+	    printf $out "\t%d", $patterns{$pattern_seq}->{forbocc};
+#	    printf $out "\t%d", $patterns{$pattern_seq}->{notforb};
+	}
+	
+	### zscore and variance estimate
+	if ($return{'zscore'}) {
+	    if (&IsReal($patterns{$pattern_seq}->{zscore})) {
+		printf $out "\t%.2f", $patterns{$pattern_seq}->{zscore};
+	    } else {
+		printf $out "\t%s", $patterns{$pattern_seq}->{zscore};
+	    }
+	    printf $out "\t%.3f", $patterns{$pattern_seq}->{exp_var};
+	}
+	
+	
 	### obs/exp ratio
 	if ($return{'ratio'}) {
 	    printf $out "\t%.2f", $patterns{$pattern_seq}->{ratio};
 	}
+	
+	### log likelihood of occurrences
+	printf $out "\t%15.12f", $patterns{$pattern_seq}->{occ_lkh} if ($return{'like'});
 	
 	### matching sequences ###
 	if ($return{'mseq'}) {
@@ -1685,11 +1706,6 @@ sub PrintResult {
 	    
 	}
 	
-	### rank ###
-	if ($return{'rank'}) {
-	    print $out "\t", $patterns{$pattern_seq}->{rank};
-	}
-
 	### positions ###
 	if ($return{'pos'}) {
 	    print $out "\t";
@@ -1702,7 +1718,6 @@ sub PrintResult {
 	
 	### miscellaneous info
 	printf $out "\t%.5f", $patterns{$pattern_seq}->{ovlp} if ($return{'ovlp'});
-	printf $out "\t%.3f", $patterns{$pattern_seq}->{exp_var} if ($return{'exp_var'});
 	printf $out "\t%s", $patterns{$pattern_seq}->{fitted} if ($return{'fitted'});
 	printf $out "\t%s", $patterns{$pattern_seq}->{test} if ($tail="two");
 	printf $out "\t%s", $patterns{$pattern_seq}->{remark} if ($return{'remark'});
