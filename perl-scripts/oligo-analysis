@@ -7,7 +7,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.107 2006/04/08 01:44:38 jvanheld Exp $
+# $Id: oligo-analysis,v 1.108 2006/04/08 21:00:43 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -1432,12 +1432,12 @@ sub Verbose {
 	printf $out "; %-29s\t%s\n", "Input file",	$inputfile if ($inputfile);
 	printf $out "; %-29s\t%s\n", "Input format", $in_format;
 
-	    printf $out "; %-29s\t%s\n", "Output file", $outputfile if ($outputfile);
-	    if ($noov eq "-noov") {
-		print $out "; Discard overlapping matches\n";
-	    } else {
-		print $out "; Count overlapping matches\n";
-	    }
+	printf $out "; %-29s\t%s\n", "Output file", $outputfile if ($outputfile);
+	if ($noov eq "-noov") {
+	    print $out "; Discard overlapping matches\n";
+	} else {
+	    print $out "; Count overlapping matches\n";
+	}
 	if ($sum_rc) {
 	    print $out "; Counted on both strands\n";
 	    if ($group_rc) {
