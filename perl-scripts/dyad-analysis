@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: dyad-analysis,v 1.30 2006/04/08 20:27:02 jvanheld Exp $
+# $Id: dyad-analysis,v 1.31 2006/04/08 20:59:27 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 23:46:08 jvanheld>
 #
@@ -234,7 +234,7 @@ if ($@) {
 				    "Please contact this person for more details");
     } else {
 	alarm(0);
-	&RSAT::message::FatalError( "dyad-analysis : unknown error during the eval.");
+	&RSAT::error::FatalError( "dyad-analysis : unknown error during the eval.");
     }
 }
 
@@ -257,15 +257,16 @@ sub CalcExpectedMonadFreq {
 	while (<$exp>) {
 	    next if (/^;/);
 	    chomp;
-	    @fields = split;
-	    $oligo_seq = lc($fields[0]);
-	    $freq = $fields[1];
+	    my ($oligo_seq, $freq) = split;
+	    $oligo_seq = lc($oligo_seq);
+#	    @fields = split;
+#	    $oligo_seq = lc($fields[0]);
+#	    $freq = $fields[1];
 	    if ((&IsReal($freq)) && (defined($oligo{$oligo_seq}))) {
 		$oligo{$oligo_seq}->{exp_freq} = $freq;
 	    }
 	}
 	close $exp;
-	
 	
 	################################################################
 	## Use monad frequencies observed in the input file to
@@ -290,7 +291,6 @@ sub CalcExpectedDyadFreq {
 	# Read expected dyad frequencies from a user-specified file
 	&ReadExpectedFrequencies($exp_freq_file, $sum_rc);
 	
-	
 	################################################################
 	## Calculate expected dyad freq on basis of monad frequencies 
 	## observed in the input sequence.
@@ -299,6 +299,7 @@ sub CalcExpectedDyadFreq {
 	foreach my $oligo1 (keys %oligo) {
 	    foreach my $spacing (@spacing_list) {
 		foreach my $oligo2 (&SecondElement($oligo1)) {
+		    next unless (defined($patterns{$pattern_seq}->{occ}));
 		    ### build the dyad
 		    my $pattern_seq= "${oligo1}n\{$spacing\}${oligo2}";
 		        $patterns{$pattern_seq}->{exp_freq} = &CalcExpFreqFromMonads($oligo1, $oligo2);
@@ -355,8 +356,9 @@ sub CalcExpFreqFromMonads {
 ## Sum occurrences of reverse complementary dyads
 sub SumReverseComplements {
     &RSAT::message::TimeWarn("Summing occurrences of reverse complement pairs") if ($main::verbose >= 2);
-    
-    #### Sum dyad occurrences
+
+    ################################################################
+    ## Sum dyad occurrences
     foreach my $pattern_seq (keys %patterns) {
 	my $rc_dyad = &SmartRC($pattern_seq);
 	if ($rc_dyad eq $pattern_seq) {
@@ -377,7 +379,8 @@ sub SumReverseComplements {
     undef %overlaps_2str;
     
     
-    #### Sum oligo occurrences
+    ################################################################
+    ## Sum monad (oligo) occurrences
     foreach my $oligo_seq (sort keys %oligo) {
 	my $rc_oligo = &SmartRC($oligo_seq);
 	if ($rc_oligo eq $pattern_seq) {
@@ -390,7 +393,14 @@ sub SumReverseComplements {
     foreach $oligo_seq (sort keys %oligo) {
 	$oligo{$oligo_seq}->{occ} = $oligo_occ_2str{$oligo_seq};
     }
-#    $sum_oligo_count *= 2;
+
+    ################################################################
+    ## I don't understand why I have to multiply the sum of monad
+    ## occurrences by 2, but if I don't do it, all the expected
+    ## frequencies are 4 times too high ! I guess I knew the reason
+    ## the first time I implemented it.
+    $sum_oligo_count *= 2; 
+
     undef %oligo_occ_2str;
 
     &GroupRC();
@@ -447,33 +457,33 @@ sub CalcFrequencies {
 ## Calculate expected occurrences
 sub CalcExpectedOcc {
     &RSAT::message::TimeWarn("Calculating expected occurrences") if ($main::verbose >= 2);
-    foreach my $pattern_seq (keys %patterns) {
-	$patterns{$pattern_seq}->{exp_occ} =  $patterns{$pattern_seq}->{exp_freq}*$dyad_occ_sum{$spacing};
+#    foreach my $pattern_seq (keys %patterns) {
+#	$patterns{$pattern_seq}->{exp_occ} =  $patterns{$pattern_seq}->{exp_freq}*$dyad_occ_sum{$spacing};
+#    }
+
+    foreach my $spacing (@spacing_list) {
+	foreach my $oligo1 (sort keys %oligo) {
+	    foreach my $oligo2 (&SecondElement($oligo1)) {
+		### build the dyad
+		my $pattern_seq= "${oligo1}n\{$spacing\}${oligo2}";
+		next unless (defined($patterns{$pattern_seq}->{occ})); 
+  		### calculate expected occurrences
+#  		if ($noov) {
+#  		    $patterns{$pattern_seq}->{exp_occ} =  $patterns{$pattern_seq}->{exp_freq} * 
+#  			($dyad_occ_sum{$spacing} - ($min_overlap_dist{$spacing} - 1) * $patterns{$pattern_seq}->{occ});
+#  		} else {
+  		    $patterns{$pattern_seq}->{exp_occ} =  $patterns{$pattern_seq}->{exp_freq}*$dyad_occ_sum{$spacing};
+#  		}
+
+# 		&RSAT::message::Debug("Expected occ", 
+# 				      $pattern_seq, 
+# 				      "exp_freq:". $patterns{$pattern_seq}->{exp_freq},
+# 				      "occ sum for spacing:", $dyad_occ_sum{$spacing},
+# 				      "exp_occ:". $patterns{$pattern_seq}->{exp_occ},
+# 				     ) if ($main::verbose >= 5);
+	    }
+	}
     }
-
-#     foreach my $spacing (@spacing_list) {
-# 	foreach my $oligo1 (sort keys %oligo) {
-# 	    foreach my $oligo2 (&SecondElement($oligo1)) {
-# 		### build the dyad
-# 		my $pattern_seq= "${oligo1}n\{$spacing\}${oligo2}";
-# 		next unless (defined($patterns{$pattern_seq}->{occ})); 
-#   		### calculate expected occurrences
-# #  		if ($noov) {
-# #  		    $patterns{$pattern_seq}->{exp_occ} =  $patterns{$pattern_seq}->{exp_freq} * 
-# #  			($dyad_occ_sum{$spacing} - ($min_overlap_dist{$spacing} - 1) * $patterns{$pattern_seq}->{occ});
-# #  		} else {
-#   		    $patterns{$pattern_seq}->{exp_occ} =  $patterns{$pattern_seq}->{exp_freq}*$dyad_occ_sum{$spacing};
-# #  		}
-
-# # 		&RSAT::message::Debug("Expected occ", 
-# # 				      $pattern_seq, 
-# # 				      "exp_freq:". $patterns{$pattern_seq}->{exp_freq},
-# # 				      "occ sum for spacing:", $dyad_occ_sum{$spacing},
-# # 				      "exp_occ:". $patterns{$pattern_seq}->{exp_occ},
-# # 				     ) if ($main::verbose >= 5);
-# 	    }
-# 	}
-#     }
 }
 
 ## ##############################################################
