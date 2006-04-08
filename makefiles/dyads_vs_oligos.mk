@@ -17,13 +17,17 @@ SEQ_FILE=ACEB.fasta
 
 ################################################################
 ## Common parmeters for oligo-analysis and dyad-analysis
+## The option zeroocc is used to make sure that all patterns are
+## counted, including those which are not found in the sequence set.
 NOOV=-noov
 STR=-2str
 RETURN=-return occ,freq,proba,rank,zscore,ratio
 ORG=Escherichia_coli_K12
-BG=-bg upstream-noorf -org ${ORG}
-OPTIONS=-v ${V} -i ${SEQ_FILE} ${STR} ${NOOV} ${BG} ${RETURN} -zeroocc -sort
-SUFFIX=${STR}${NOOV}
+BG=upstream-noorf
+BG_OPT=-org ${ORG} -bg ${BG}
+ZEROOCC=-zeroocc
+OPTIONS=-v ${V} -i ${SEQ_FILE} ${STR} ${NOOV} ${RETURN} ${BG_OPT} ${ZEROOCC} -sort
+SUFFIX=${STR}${NOOV}${ZEROOCC}_${BG}
 
 ################################################################
 ## Run oligo-analysis
