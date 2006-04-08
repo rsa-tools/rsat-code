@@ -92,7 +92,7 @@ upstream:
 ## orthologous genes
 DYADS=${PREFIX}_dyads.tab
 DYAD_CMD=dyad-analysis -v ${V} -i ${PURGED} -sort -type any -2str -noov \
-		-lth occ 1 -lth occ_sig 0 -return occ,rank,proba -l 3 -spacing 0-20 \
+		-lth occ 1 -lth occ_sig 0 -return occ,freq,proba,rank -l 3 -spacing 0-20 \
 		-o ${DYADS}
 dyads:
 	@echo "${DYAD_CMD}"
