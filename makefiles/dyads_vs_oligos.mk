@@ -22,7 +22,7 @@ STR=-1str
 RETURN=-return occ,freq,proba,rank,zscore,ratio
 ORG=Escherichia_coli_K12
 BG=-bg upstream-noorf -org ${ORG}
-OPTIONS=-v ${V} -i ${SEQ_FILE} ${STR} ${NOOV} ${BG} ${RETURN} -zeroocc
+OPTIONS=-v ${V} -i ${SEQ_FILE} ${STR} ${NOOV} ${BG} ${RETURN} -zeroocc -sort
 SUFFIX=${STR}${NOOV}
 
 ################################################################
@@ -34,9 +34,9 @@ oligos:
 
 ################################################################
 ## Run dyad-analysis
-DYADS=dyads_sp${SP}_${SUFFIX}.tab
+DYADS=dyads_sp${SP}${SUFFIX}.tab
 DYADS_NOSPACING=dyads_sp${SP}_${SUFFIX}_nospacing.tab
-SP=0-4
+SP=0-9
 dyads:
 	dyad-analysis -l 3 -sp ${SP} ${OPTIONS} -o ${DYADS} 
 	@echo ${DYADS}
