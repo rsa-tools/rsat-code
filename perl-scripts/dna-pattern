@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: dna-pattern,v 1.44 2006/04/06 18:51:35 jvanheld Exp $
+# $Id: dna-pattern,v 1.45 2006/04/08 21:04:38 jvanheld Exp $
 #
 # Time-stamp: <2003-08-13 12:16:03 jvanheld>
 #
@@ -15,7 +15,7 @@ if ($0 =~ /([^(\/)]+)$/) {
 require "RSA.lib";
 require RSAT::pattern;
 require RSAT::match;
-&InitMatchscores();
+&InitMatchScores();
 
 $start_date = &AlphaDate();
 
