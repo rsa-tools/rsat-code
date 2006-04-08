@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: dyad-analysis,v 1.26 2006/04/07 23:45:22 jvanheld Exp $
+# $Id: dyad-analysis,v 1.27 2006/04/08 00:57:48 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 23:46:08 jvanheld>
 #
@@ -220,21 +220,19 @@ if ($@) {
 
 exit(0);
 
-
-########################## subroutine definition ############################
+################################################################
+##################### SUBROUTINE DEFINITION ####################
+################################################################
 
 ################################################################
-#### print header line for the output file
+## Print header line for the output file
 sub PrintHeaderLine {
     $col_description{"seq"} = "dyad sequence";
     $col_description{"sequence"} = "dyad sequence";
-    $col_description{"id"} = "dyad identifier";
-    $col_description{"identifier"} = "dyad identifier";
-    $col_description{"dyad_identifier       "} = "dyad identifier";
-    $col_description{"dyad_id"} = "dyad identifier";
-    $col_description{"observed_freq"} = "observed relative frequency"; 
-    $col_description{"obs_frq"} = "expected relative frequency"; 
-    $col_description{"exp_frq"} = "expected relative frequency"; 
+    $col_description{"dyad_seque"} = "dyad sequence";
+    $col_description{"dyad_ident"} = "dyad identifier";
+    $col_description{"observed_freq"} = "observed frequency"; 
+    $col_description{"expected_frq"} = "expected frequency"; 
     $col_description{"occ"} = "observed occurrences";
     $col_description{"exp_occ"} = "expected occurrences"; 
     $col_description{"occ_P"} = "occurrence probability (binomial)";
@@ -584,12 +582,13 @@ sub CalcExpectedOcc {
 #  		} else {
   		    $patterns{$pattern_seq}->{exp_occ} =  $patterns{$pattern_seq}->{exp_freq}*$dyad_occ_sum{$spacing};
 #  		}
-		&RSAT::message::Debug("Expected occ", 
-				      $pattern_seq, 
-				      "exp_freq:". $patterns{$pattern_seq}->{exp_freq},
-				      "occ sum for spacing:", $dyad_occ_sum{$spacing},
-				      "exp_occ:". $patterns{$pattern_seq}->{exp_occ},
-				     ) if ($main::verbose >= 3);
+
+# 		&RSAT::message::Debug("Expected occ", 
+# 				      $pattern_seq, 
+# 				      "exp_freq:". $patterns{$pattern_seq}->{exp_freq},
+# 				      "occ sum for spacing:", $dyad_occ_sum{$spacing},
+# 				      "exp_occ:". $patterns{$pattern_seq}->{exp_occ},
+# 				     ) if ($main::verbose >= 5);
 	    }
 	}
     }
@@ -782,6 +781,19 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] =~ /^-sort/i) {
 	    $sort_results = 1;
 	    
+	    ################################################################
+	    #### Left-tail or two-tail significance test  
+	} elsif ($ARGV[$a] eq "-under") {
+	    $tail = "left";
+	    
+	} elsif ($ARGV[$a] =~ /^\-two_tail/) {
+	    $tail = "two";
+	    
+	    ################################################################
+	    ## Also count patterns not observed
+	} elsif ($ARGV[$a] eq "-zeroocc") {
+	    $zeroocc = 1;
+	    
 	    ### expected frequency table ###
 	} elsif ($ARGV[$a] =~ /^-exp/i) {
 	    $exp_freq_file = $ARGV[$a+1];
@@ -913,6 +925,7 @@ sub ReadArguments {
 		$sum_rc = 0;
 		$group_rc = 0;
 		$seq_type = "other";
+
 
 	    } else {
 		die "\tError: sequence type '$ARGV[$a]' is not supported\n";
@@ -1098,6 +1111,27 @@ OPTIONS
 		the fields have to be separated by commas
 		By default, only occurrences are returned.
 
+
+	-under  detect under-represented instead of over-represented
+         	dyads (left tail significance test).
+
+
+	-two_tails
+		detect under-represented and over-represented dyads
+		(two-fail significance test).
+
+	-zeroocc
+		Report also dyads with zero occurrences (provided they
+		fit the other thresholds).  By default, the program
+		reports only patterns present in the sequence.  If the
+		left tail or two-tail test is applied, patterns with
+		zero occurrences are automatically taken into
+		account.
+
+		In some other cases, one would also like to detect
+		patterns absent from the sequence. This is the
+		function of the option -zeroocc.
+
 	-noov	do not allow overlapping matches of the same word
 
 	-timeout #
@@ -1273,6 +1307,9 @@ dyad-analysis options
 -org		organism 
 -type		ir|dr|rep|any
 -sort		sort results by decreasing significance
+-under		detect under-represented instead of over-represented words 
+-two_tails      detect under-represented and over-represented words 
+-zeroocc	return also patterns with zero occurrences
 -thosig		threshold on occurrence significance (obsolete)
 -lth param \#	lower threshold on parameter. Supported: $supported_thresholds
 -uth param \#	upwer threshold on parameter. Supported: $supported_thresholds
@@ -1435,13 +1472,10 @@ sub CountDyads {
 	my $prev_sum_seq_len = $sum_seq_length;
 	$sum_seq_length += $seq_length[$sequence_number];
 
-	
-	
-	## cannot be negative ven if new seq is shorter than dyad length
+	## Can never be negative, even if the new seq is shorter than dyad length
 	$new_pos_nb =  max(0,$seq_length[$sequence_number] - 2*$oligo_length - $min_spacing + 1); 
 	$nb_possible_pos += $new_pos_nb if ($new_pos_nb > 0); 
 
-	
 	#### Count monads and dyads
 	my $last_pos = $seq_length[$sequence_number] - $oligo_length;
 	$chunk = 10000;
@@ -1520,9 +1554,9 @@ sub CountDyads {
 	    
 	    ################################################################
 	    ## Iterate spacings to obtain the second monad and the dyad
-	    my $spacing = $min_spacing;
-	    while ($spacing <= $max_spacing) {
-#	    foreach $spacing ($min_spacing..$max_spacing) {
+#	    my $spacing = $min_spacing;
+#	    while ($spacing <= $max_spacing) {
+	    foreach $spacing ($min_spacing..$max_spacing) {
 		$pos2 = $pos1 + $oligo_length + $spacing;
 		#      $min_overlap_dist = $oligo_length;
 		$min_overlap_dist{$spacing} = 2*$oligo_length + $spacing;
@@ -1549,7 +1583,7 @@ sub CountDyads {
 # 				    "p2=".$pos2,
 # 				    $oligo2,
 # 				) if ($main::verbose >= 10);
-			    $spacing++;
+#			    $spacing++;
 			    next;
 			}
 		    }
@@ -1576,16 +1610,33 @@ sub CountDyads {
 		    }
 		    
 		    ################################################################
-		    ## Prevent self-overlap: store last position where
-		    ## the dyad has been found
+		    ## Treatment of self-overlapping occurrences
 		    if ($noov) {
-			$dist = $pos1 - $last_pos{$pattern_seq};
+
+			################################################################
+			## Prevent self-overlap
+			my $dist = $pos1 - $last_pos{$pattern_seq};
+			
+# 			&RSAT::message::Debug(
+# 			    "Checkin self-overlap", 
+# 			    $pos1."<".$spacing.">".$pos2,
+# 			    "dist=".$dist,
+# 			    $pattern_seq,
+# 			    "last=".$last_pos{$pattern_seq},
+# 			) if ($main::verbose >= 10);
+			
 			if  ((&IsNatural($last_pos{$pattern_seq})) &&
 			     ($dist < $min_overlap_dist{$spacing})) {
-			    ### new position can overlap with either the first of the second element of the previous dyad occurrence
+			    ### new position overlaps with the previous occurrence of the same dyad
 			    $patterns{$pattern_seq}->{overlaps}++;
+#			    $spacing++;
 			    next;
 			} 
+
+			################################################################
+			## Index the last position where the current
+			## dyad has been found (i.e. the current
+			## position)
 			$last_pos{$pattern_seq} = $pos1;
 			if ($sum_rc) {
 			    $rc_pattern_seq = &SmartRC($pattern_seq);
@@ -1602,10 +1653,10 @@ sub CountDyads {
 # 			$patterns{$pattern_seq}->{occ},
 # 			$patterns{$pattern_seq}->{overlaps},
 # 			$last_pos{$pattern_seq},
-# 		    ) if ($main::verbose >= 5);
+# 		    ) if ($main::verbose >= 10);
 
 		}
-		$spacing++;
+#		$spacing++;
 	    }
 # 	    &RSAT::message::Debug(
 # 		"End of iteration for monad 2",
@@ -1620,4 +1671,38 @@ sub CountDyads {
     }
 
     $nb_valid_pos = $nb_possible_pos - $discarded_dyad_positions;
+
+    if (($tail eq "left") || 
+	($tail eq "two") || 
+        ($zeroocc)
+       ) {
+	&CountZeroOcc();
+    }
+}
+
+
+## Detect patterns with 0 occurrences if the left tail of the distribution is to be tested. 
+sub CountZeroOcc {
+    &RSAT::message::TimeWarn("Counting patterns with 0 occurrences") if ($main::verbose >= 2);
+
+    foreach my $oligo1 (&all_oligos($oligo_length)) {
+	foreach my $spacing (@spacing_list) {
+	    foreach my $oligo2 (&all_oligos($oligo_length)) {
+		### build the dyad
+		my $pattern_seq= "${oligo1}n\{$spacing\}${oligo2}";
+		
+		## Check if no occurrences were found
+		unless ($patterns{$pattern_seq}->{occ}) {
+#		&RSAT::message::Debug("\tpattern with 0 occurrences\t$pattern_seq") if ($main::verbose >= 0);
+		    $patterns{$pattern_seq}->{occ} = 0;
+		    $zero_occ{$pattern_seq}++;
+		}
+	    }
+	}
+    }
+    
+    &RSAT::message::TimeWarn(join ("\t", 
+			       scalar(keys(%zero_occ)),
+			       "patterns with zero occurrences",
+			      )) if ($main::verbose >= 2);
 }
