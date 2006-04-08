@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: dyad-analysis,v 1.31 2006/04/08 20:59:27 jvanheld Exp $
+# $Id: dyad-analysis,v 1.32 2006/04/08 21:09:55 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 23:46:08 jvanheld>
 #
@@ -299,7 +299,7 @@ sub CalcExpectedDyadFreq {
 	foreach my $oligo1 (keys %oligo) {
 	    foreach my $spacing (@spacing_list) {
 		foreach my $oligo2 (&SecondElement($oligo1)) {
-		    next unless (defined($patterns{$pattern_seq}->{occ}));
+#		    next unless (defined($patterns{$pattern_seq}->{occ}));
 		    ### build the dyad
 		    my $pattern_seq= "${oligo1}n\{$spacing\}${oligo2}";
 		        $patterns{$pattern_seq}->{exp_freq} = &CalcExpFreqFromMonads($oligo1, $oligo2);
@@ -526,7 +526,9 @@ sub CalcProba {
 			$patterns{$pattern_seq}->{remark} = "monad exp freq ".$patterns{$pattern_seq}->{remark};
 
 		    } else {
-			&RSAT::message::Warning ("Expected frequency must be > 0 for dyad\t$pattern_seq\t$patterns{$pattern_seq}->{exp_freq}\n");
+			&RSAT::message::Warning (join("\t", "Expected frequency must be > 0 for dyad", 
+						      $pattern_seq,
+						      $patterns{$pattern_seq}->{exp_freq}));
 			delete $patterns{$pattern_seq};
 		    }
 		}
