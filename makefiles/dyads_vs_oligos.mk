@@ -18,7 +18,7 @@ SEQ_FILE=ACEB.fasta
 ################################################################
 ## Common parmeters for oligo-analysis and dyad-analysis
 NOOV=-noov
-STR=-1str
+STR=-2str
 RETURN=-return occ,freq,proba,rank,zscore,ratio
 ORG=Escherichia_coli_K12
 BG=-bg upstream-noorf -org ${ORG}
@@ -36,7 +36,7 @@ oligos:
 ## Run dyad-analysis
 DYADS=dyads_sp${SP}${SUFFIX}.tab
 DYADS_NOSPACING=dyads_sp${SP}_${SUFFIX}_nospacing.tab
-SP=0-20
+SP=0-1
 dyads:
 	dyad-analysis -l 3 -sp ${SP} ${OPTIONS} -o ${DYADS} 
 	@echo ${DYADS}
