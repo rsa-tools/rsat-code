@@ -146,7 +146,7 @@ index_results:
 
 ################################################################
 ## Add the analysis of a single gene to the index file
-MAX_SIG=`grep -v '^;' ${DYADS} | cut -f 8 | sort -nr | head -1`
+MAX_SIG=`grep -v '^;' ${DYADS} | cut -f 9 | sort -nr | grep -v "Binary" | head -1`
 ROOT_DIR=${RESULT_DIR}/
 index_one_result:
 	@echo "<tr>" >> ${INDEX_FILE}
