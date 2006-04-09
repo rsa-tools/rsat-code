@@ -9,7 +9,14 @@
 
 include ${RSAT}/makefiles/util.mk
 
-all: oligos dyads all_compa
+all_tests:
+	@for str in -1str -2str ; do  					\
+		for noov in -noov -ovlp; do 				\
+			${MAKE} one_test NOOV=$${noov} STR=$${str} ;	\
+		done 							\
+	done
+
+one_test: oligos dyads all_compa
 
 V=1 
 #SEQ_FILE=PURA_Escherichia_coli_K12_Gammaproteobacteria_up_purged.fasta
@@ -36,11 +43,16 @@ oligos:
 	oligo-analysis -l 6 ${OPTIONS} -o ${OLIGOS}
 	@echo ${OLIGOS}
 
+## oligo-analysis with a Markov chain model estimated from the input sequence
+MKV=2
+markov:
+	${MAKE} oligos BG='mkv${MKV}' BG_OPT=' -markov ${MKV}'
+
 ################################################################
 ## Run dyad-analysis
 DYADS=dyads_sp${SP}${SUFFIX}.tab
 DYADS_NOSPACING=dyads_sp${SP}_${SUFFIX}_nospacing.tab
-SP=0-1
+SP=0-20
 dyads:
 	dyad-analysis -l 3 -sp ${SP} ${OPTIONS} -o ${DYADS} 
 	@echo ${DYADS}
