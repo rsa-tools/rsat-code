@@ -148,7 +148,7 @@ sub CheckPatternThresholds {
 ### Corrections for multi-testing
 sub MultiTestCorrections {
     my ($nb_tested_patterns, %patterns) = @_;
-    &RSAT::message::Info(join ("\t", "Correcting for multiple testing", $nb_tested_patterns)) if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn(join ("\t", "Correcting for multiple testing", $nb_tested_patterns)) if ($main::verbose >= 2);
     foreach my $pattern_seq (keys %patterns) {
 	if (&IsReal ($patterns{$pattern_seq}->{occ_P})) {
 	    $patterns{$pattern_seq}->{occ_E} =  $patterns{$pattern_seq}->{occ_P}*$nb_tested_patterns;

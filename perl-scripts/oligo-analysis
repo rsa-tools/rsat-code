@@ -7,7 +7,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.108 2006/04/08 21:00:43 jvanheld Exp $
+# $Id: oligo-analysis,v 1.109 2006/04/09 00:09:29 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -85,7 +85,14 @@ $residue_proba{'t'} = 0.25;
 ### check parameter values ###
 ##############################
 
-### check output fields
+## Special cases where we need to ccount patterns with zero occurrences
+if (($tail eq "left") || 
+    ($tail eq "two")) {
+    $zeroocc = 1; 
+}
+
+
+### Check output fields
 if (@output_fields == ()) { #default output is occurrence numbers
     @output_fields = ("occurrences");
     $return{'occ'} = 1;
@@ -304,8 +311,6 @@ sub CountOligos {
     ## Calculate all possible oligomers of size k
     if (($return{'table'}) ||
 	($return{'distrib'}) ||
-	($tail eq 'left') ||
-	($tail eq 'two') ||
 	($zeroocc)
        ) {
 	if ($seq_type eq "DNA") {
@@ -522,10 +527,7 @@ sub CountOligos {
 #    &RSAT::message::Debug ("Number of patterns", scalar(keys(%patterns))) if ($main::verbose >= 0);
 
     ## Detect patterns with 0 occurrences if the left tail of the distribution is to be tested. 
-    if (($tail eq "left") || 
-	($tail eq "two") || 
-        ($zeroocc)
-       ) {
+    if  ($zeroocc) {
 	&RSAT::message::TimeWarn("Counting patterns with 0 occurrences") if ($main::verbose >= 2);
 	foreach my $pattern_seq (@possible_oligos) {
 	    ## Check if no occurrences were found
