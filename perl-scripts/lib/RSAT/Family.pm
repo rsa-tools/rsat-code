@@ -93,7 +93,7 @@ sub new_member {
 	if ($self->is_member($new_member)) {
 	    &RSAT::message::Warning(join("\t", "Family", $self->get_attribute("name"), "skipped duplicate member", $new_member)) if ($main::verbose >= 1);
 	} else {
-	    &RSAT::message::Info(join("\t", "Family", $self->get_attribute("name"), "Adding member", $new_member)) if ($main::verbose >= 3);
+	    &RSAT::message::Info(join("\t", "Family", $self->get_attribute("name"), "Adding member", $new_member)) if ($main::verbose >= 4);
 	    $self->add_hash_attribute("member_index", $new_member, 1);
 	    $self->push_attribute("members", $new_member);
 	}
