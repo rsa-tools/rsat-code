@@ -148,7 +148,7 @@ sub checked_min {
     $c = -1;
     do {
 	$c++;
-    } until (($c > $#sorted_values) || (&IsReal($sorted_values[$c])));
+    } until (($c > $#sorted_values) || (&RSAT::util::IsReal($sorted_values[$c])));
     return $sorted_values[$c];
 }
 
@@ -163,7 +163,7 @@ sub checked_max {
     $c = -1;
     do {
 	$c++;
-    } until (($c > $#sorted_values) || (&IsReal($sorted_values[$c])));
+    } until (($c > $#sorted_values) || (&RSAT::util::IsReal($sorted_values[$c])));
     return $sorted_values[$c];
 }
 
@@ -760,7 +760,7 @@ sub hypergeometric {
 
 
     
-# 	$Id: stats.pm,v 1.3 2006/01/01 22:34:39 jvanheld Exp $	
+# 	$Id: stats.pm,v 1.4 2006/04/10 08:35:13 rsat Exp $	
 
     #### initialization
     if (defined($args{previous_value})) {
