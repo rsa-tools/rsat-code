@@ -60,11 +60,7 @@ sub load_from_file {
     &RSAT::message::TimeWarn("Loading Markov model from file $bg_file") if ($main::verbose >= 2);
 
     my %patterns = &main::ReadExpectedFrequencies($bg_file) ;
-    my %prefix_sum = ();
-    my %prefix_proba = ();
-    my %suffix_sum = ();
     my @patterns = keys(%patterns);
-    my $freq_sum = 0;
 
     my $order = length($patterns[0]) -1 ; ## Use the first pattern to calculate model order
     $self->force_attribute("order", $order);
@@ -80,11 +76,46 @@ sub load_from_file {
 	my $prefix = substr($pattern_seq,0,$order);
 	my $suffix = substr($pattern_seq,$order, 1);
 	$self->{transition}->{$prefix}->{$suffix} = $pattern_freq;
-	$prefix_sum{$prefix} += $pattern_freq;
-	$freq_sum += $pattern_freq;
-	$suffix_sum{$suffix} += $pattern_freq;
     }
     
+    
+    $self->normalize_transition_frequencies();
+}
+
+
+################################################################
+=pod
+
+=item B<normalize_transition_frequencies>
+
+Normalize transition frequencies, i.e. make sure that, for each prfix, the sum
+of transition frequencies (frequency of all possible siffuxed given the
+prefix) is 1.
+
+=cut
+    
+sub normalize_transition_frequencies {
+    my ($self) = @_;
+
+
+    ## Calculate sum of frequencies per prefix and suffix
+    my %prefix_sum = ();
+    my %suffix_sum = ();
+    my $freq_sum = 0;
+    my $p=0;
+    my $s=0;
+    foreach my $prefix (keys(%{$self->{transition}})) {
+	$p++;
+	foreach my $suffix (keys (%{$self->{transition}->{$prefix}})) {
+	    $s++;
+	    my $pattern_freq = $self->{transition}->{$prefix}->{$suffix};	    
+	    $prefix_sum{$prefix} += $pattern_freq;
+	    $freq_sum += $pattern_freq;
+	    $suffix_sum{$suffix} += $pattern_freq;
+	}
+    }
+    
+
     ## Calculate transition probabilities
     foreach my $prefix (keys(%prefix_sum)) {
 	foreach my $suffix (keys (%suffix_sum)) {
@@ -92,11 +123,15 @@ sub load_from_file {
 		$self->{transition}->{$prefix}->{$suffix} /= $prefix_sum{$prefix};
 	    } else {
 		$self->{transition}->{$prefix}->{$suffix} = 0;
+		&RSAT::message::Warning(join(" ",
+					     "No transition between prefix",$prefix, 
+					     "and suffix", $suffix)) if ($main::verbose >= 2);
 	    };
 	}
     }
 
     ## Calculate prefix probabilities
+    my %prefix_proba = ();
     foreach my $prefix (keys(%prefix_sum)) {
 	$prefix_proba{$prefix} = $prefix_sum{$prefix}/$freq_sum;
     }    
@@ -105,7 +140,64 @@ sub load_from_file {
     $self->set_hash_attribute("prefix_proba", %prefix_proba);
     $self->set_hash_attribute("prefix_sum", %prefix_sum);
     $self->set_hash_attribute("suffix_sum", %suffix_sum);
+
+    &RSAT::message::TimeWarn(join("\t", 
+				  "Normalized background model", 
+				  "prefixes: ".$p,
+				  "transitions: ".$s)) if ($main::verbose >= 2);
+#    die;    
 }
+
+################################################################
+=pod
+
+=item B<calc_from_seq($sequence)>
+
+Calculate background model from a sequence. 
+
+=cut
+sub calc_from_seq {
+    my ($self, $sequence) = @_;
+    my $seq_len = length($sequence);
+    my $order = $self->get_attribute("order");
+    
+    &RSAT::message::TimeWarn(join(" ", 
+				  "Calculating markov model (order ".$order.")",
+				  "from sequence of length", $seq_len)) if ($main::verbose >= 2);
+
+    &RSAT::error::FatalErrorr("RSAT::MarkovModel->calc_from_seq: sequence must be MUCH larger than order +1")
+	unless ($seq_len > $order + 1);
+    
+    ## Transition counts
+    my $last_pos = $seq_len - $order;
+    for my $offset (0..($last_pos-1)) {
+	my $prefix = substr($sequence, $offset, $order);
+	my $suffix = substr($sequence, $offset + $order,1);
+	$self->{transition}->{$prefix}->{$suffix}++;
+    }
+
+    ## Convert counts to transition frequencies
+    $self->normalize_transition_frequencies();
+   
+    $self->force_attribute("training_words", $last_pos);
+}
+
+################################################################
+=pod
+
+=item B<two_words_update($added_word, $deleted_word)>
+
+Update the model by adding a word and deleting another word. 
+
+This invovles to update only a few transition frequencies : those including
+the prefix of the added and deleted words. 
+
+=cut
+sub two_words_update {
+    my ($self, $added_word, $deleted_word) = @_;
+    
+}
+
 
 ################################################################
 =pod
@@ -163,6 +255,7 @@ sub segment_proba {
 
     my $seq_len = length($segment);
     my $order = $self->get_attribute("order");
+    $segment =  lc($segment);
 
     &RSAT::error::FatalError("&RSAT::MarkovModel->segment_proba. The segment ($segment) length ($seq_len) must be larger than the markov order ($order) + 1.") 
 	if ($seq_len < $order + 1);
@@ -174,14 +267,25 @@ sub segment_proba {
     }
     
     for my $c ($order..($seq_len-1)) {
-	my $suffix = lc(substr($segment, $c, 1));
-	my $prefix = substr($segment,($c-$order),$order);
 	my $letter_proba = 0;
+
+	my $suffix = substr($segment, $c, 1);
+	my $prefix = substr($segment,($c-$order),$order);
 	if (defined($self->{transition}->{$prefix}->{$suffix})) {
 	    $letter_proba = $self->{transition}->{$prefix}->{$suffix};
 	}
+	
+#	my $word = substr($segment,($c-$order),$order+1);
+#	if (defined($self->{transition_quick}->{$word})) {
+#	    $letter_proba = $self->{transition_quick}->{$word};
+#	}
+	
+#	&RSAT::message::Debug("letter proba", $word,$letter_proba) if ($main::verbose >= 0);
+
 	$segment_proba *= $letter_proba;
+
 #	&RSAT::message::Debug("segment_proba", 
+#			      "prefix=".$word, 
 #			      "prefix=".$prefix, 
 #			      "suffix:".$suffix, 
 #			      "offset:".$c, 
