@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: permute-table,v 1.2 2005/03/22 17:22:12 jvanheld Exp $
+# $Id: permute-table,v 1.3 2006/04/10 11:59:21 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -16,8 +16,13 @@ permute-table
 
 =head1 DESCRIPTION
 
-Permute the entries of a table. This function is useful for checking
-random expectations of programs such as compare-profiles.
+Permute the entries of a table. By default, the program permutes columns and
+rows, but the options -col and -rows allow to permute only columns or rows,
+respectively.
+
+This function is useful for checking random expectations of programs such as
+compare-profiles.
+
 
 =head1 CATEGORY
 
@@ -48,6 +53,7 @@ BEGIN {
     }
 }
 require "RSA.lib";
+use RSAT::stats;
 
 ################################################################
 #### initialise parameters
@@ -66,6 +72,8 @@ local $sep = "\t";
 local $row_names = 0;
 local $header = 0;
 local @header = ();
+local $permute_cols = 0;
+local $permute_rows = 0;
 
 &ReadArguments();
 
@@ -93,6 +101,8 @@ if ($header) {
 }
 
 my $l = 0;
+my $row_index = -1; ## effective rowindex (skipping comments, header and empty rows)
+my $max_fields = 0;
 while (my $line = <$in>) {
     $l++;
     ## echo the comment lines
@@ -103,6 +113,8 @@ while (my $line = <$in>) {
     next unless ($line =~ /\S/);
     chomp($line);
     $line =~ s/\r//g; ## Suppress Windows-specific carriage return
+
+    $row_index++; ## update effective row index
     my @fields =  split($sep, $line);
 
 #    &RSAT::message::Debug($line) if ($main::verbose >= 10);
@@ -115,9 +127,19 @@ while (my $line = <$in>) {
     ## Number of elements in this row
     push @row_len, scalar(@fields);
 
+    $max_fields = &RSAT::stats::max($max_fields, scalar(@fields));
+
     ## Take the elements
-    push @values,  @fields;
-    
+    if ($permute_rows) {
+	push @values,  &RSAT::stats::permute(@fields);
+    } elsif ($permute_cols) {
+	foreach my $c (0..$#fields) {
+	    push @{$values->[$c]}, $fields[$c];
+	}
+    } else {
+	push @values,  @fields;
+    }
+
 #    &RSAT::message::Debug(join ("\t", "Reading table", "line: ".$l, "rows: ".scalar(@row_len), "cells: ".scalar(@fields), "total cells: ".scalar(@values))) if ($main::verbose >= 10);
 }
 close $in if ($infile{input});
@@ -125,7 +147,28 @@ close $in if ($infile{input});
 &RSAT::message::TimeWarn(join ("\t", "Finished reading the table", "rows: ".scalar(@row_len), "cells: ".scalar(@values))) if ($main::verbose >= 1);
 #die;
 
-@values = &RSAT::stats::permute(@values);
+
+if ($permute_rows) {
+    ## done above
+} elsif ($permute_cols) {
+    my $perm_col_values;
+    foreach my $c (0..($max_fields-1)) {
+	my @values = @{$values->[$c]};
+#	&RSAT::message::Debug("Column", $c,"values", @values);
+	my @perm_values = &RSAT::stats::permute(@values);
+#	&RSAT::message::Debug("Permuted column", $c,"values", @perm_values);
+	push @{$perm_col_values[$c]}, @perm_values;
+#	&RSAT::message::Debug("Permuted column", $c,"values", @{$perm_col_values[$c]});
+    }
+    foreach my $r (0..$row_index) {
+	foreach my $c (0..($max_fields-1)) {
+#	    &RSAT::message::Debug($r, $c, ${$perm_col_values[$c]}[$r]);
+	    push @values, ${$perm_col_values[$c]}[$r];
+	}
+    }
+} else {
+    @values = &RSAT::stats::permute(@values);
+}
 
 ################################################################
 ## Print the output
@@ -241,6 +284,30 @@ allows to use the command within a pipe.
 =cut
 	} elsif ($ARGV[$a] eq "-o") {
 	    $outfile{output} = $ARGV[$a+1];
+	    
+	    ## Permute columns only
+=pod
+
+=item B<-col>
+
+Permute columns only, i.e. perumte the elements within each column separately.
+
+=cut
+	} elsif ($ARGV[$a] eq "-col") {
+	    $permute_cols = 1;
+	    &RSAT::error::FatalError("The options -col and -row are mutually exclusive") if ($permute_rows);
+	    
+	    ## Permute rows only
+=pod
+
+=item B<-row>
+
+Permute rows only, i.e. perumte the elements within each row separately.
+
+=cut
+	} elsif ($ARGV[$a] eq "-row") {
+	    $permute_rows = 1;
+	    &RSAT::error::FatalError("The options -row and -col are mutually exclusive") if ($permute_cols);
 	    
 	    ## Column separator
 =pod
