@@ -972,7 +972,7 @@ sub ReadClasses {
 	}
 
 
-	if ($member_key) {
+	if ($member_key ne "") {
 	    if ($score_column) {
 		### score
 		local $score = &trim($fields[$score_column - 1]);
