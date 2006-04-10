@@ -2146,8 +2146,8 @@ sub weight_range {
 	my $col_max="";
 	foreach my $r (0..($nrow-1)) {
 	    my $freq = $weights[$c][$r];
-	    $col_min = &RSAT::stats::min($col_min, $freq);
-	    $col_max = &RSAT::stats::max($col_max, $freq);
+	    $col_min = &RSAT::stats::checked_min($col_min, $freq);
+	    $col_max = &RSAT::stats::checked_max($col_max, $freq);
 	}
 	$weight_min += $col_min;
 	$weight_max += $col_max;
