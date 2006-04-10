@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.16 2006/04/10 08:34:49 rsat Exp $
+# $Id: matrix-scan,v 1.17 2006/04/10 14:50:30 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -87,6 +87,7 @@ package main;
     @main::matrix_files = ();
     @matrices = ();
 
+    $markov = -1;
     $sequence_number = 0;
     $sum_seq_len = 0;
     $main::base=exp(1); ## Base for the logarithms
@@ -122,6 +123,8 @@ package main;
     ################################################################
     #### check argument values
 
+
+
     ## Calculate only once the denominator for the logarithms
     $main::log_base = log($base);
 
@@ -143,6 +146,20 @@ package main;
     $main::out = &OpenOutputFile($main::outfile{output});
     
     ################################################################
+    ## Background model specification
+    local $bg_model = new RSAT::MarkovModel();
+    if ($infile{bg}) {
+	## Read background model from a file
+	&RSAT::message::TimeWarn(join("\t", "Reading background model from file", $infile{bg})) 
+	    if ($main::verbose >= 2);
+	$bg_model->load_from_file($infile{bg});
+    } elsif ($main::markov >= 0) {
+	$bg_model->set_attribute("order", $main::markov);
+    } else {
+	&RSAT::error::FatalError("you should either define the Markov order (-markov) or specify a file (-bgfile) for the background model.");
+    }
+
+    ################################################################
     ## Read the position-specific scoring matrices
     foreach my $matrix_file (@matrix_files) {
 	my ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
@@ -155,6 +172,17 @@ package main;
 	$matrix->set_attribute("name", $matrix_name);
 	$matrix->push_attribute("parameters", "pseudo");
 	$matrix->index_alphabet();
+
+	## Check that the matrix width is smaller than markov order + 1
+	my $matrix_width = $matrix->ncol();
+	my $markov_order = $bg_model->get_attribute("order");
+	if ($matrix_width < $markov_order + 1) {
+	    &RSAT::error::FatalError(join (" ", 
+					   "Markov order (".$markov_order.")",
+					   "is too large for matrix",
+					   $matrix->get_attribute("name"),
+					   "of width ".$matrix_width."."));
+	}
 	
 	## Calculate frequency matrix
 	$matrix->calcFrequencies();
@@ -171,14 +199,6 @@ package main;
 				  )) if ($main::verbose >= 2);
     }
     
-
-    ################################################################
-    ## Read bakground model from a file
-    &RSAT::message::TimeWarn(join("\t", "Reading bacground model deom file", $infile{bg})) if ($main::verbose >= 2);
-    local $bg_model = new RSAT::MarkovModel();
-    if (defined($infile{bg})) {
-	$bg_model->load_from_file($infile{bg});
-    }
 
     ################################################################
     #### print verbose
@@ -224,13 +244,17 @@ package main;
 	## Report sequence limits
 	&PrintSequenceLimits($seq_id, $seq_len, $orig_pos) if ($return_fields{"limits"});
 
-	
-	&RSAT::message::TimeWarn(join ("\t", "Scanning sequence", $sequence_number,  "len=".$seq_len, "orig=".$orig_pos,  $seq_id))
-            if ($main::verbose >= 2);
-	
 
 	################################################################
+	## Calculate background model from the current sequence
+	if ($main::markov >= 0) {
+	    $bg_model->calc_from_seq($current_seq);
+	}
+	
+	################################################################
 	## Detect sites
+	&RSAT::message::TimeWarn(join ("\t", "Scanning sequence", $sequence_number,  "len=".$seq_len, "orig=".$orig_pos,  $seq_id))
+            if ($main::verbose >= 2);
 	if ($return_fields{"sites"}) {
 	    for my $pos (1..$seq_len) {
 		foreach my $matrix (@matrices) {
@@ -366,6 +390,25 @@ Background model file.
 =cut
 	} elsif ($arg eq "-bgfile") {
 	    $main::infile{bg} = shift(@arguments);
+	    &RSAT::error::FatalError("The options -markov and -bgfile are mutually exclusive.") 
+		if ($main::markov >= 0);
+	    
+	    ## Calculate background model from the input sequence
+=pod
+
+=item B<-markov>
+
+Order of the markov chain for the background model. 
+
+This option is incompatible with the option -bgfile. 
+
+=cut
+	} elsif ($arg eq "-markov") {
+	    $main::markov = shift(@arguments);
+	    &RSAT::error::FatalError("Markov order must be a natural number.") 
+		unless &RSAT::util::IsNatural($main::markov);
+	    &RSAT::error::FatalError("The options -markov and -bgfile are mutually exclusive.") 
+		if defined($main::infile{bg});
 	    
 	    ## Matrix file
 =pod
@@ -678,11 +721,12 @@ sub score_segment {
 
     my $ncol = $matrix->{ncol};
 
-    my $proba_M = $matrix->segment_proba($segment);
-    my $proba_B = $bg_model->segment_proba($segment);
+    my $proba_M = 1;
+    my $proba_B = 1;
 
-#    my $proba_M = 1;
-#    my $proba_B = 1;
+    $proba_M = $matrix->segment_proba($segment);
+    $proba_B = $bg_model->segment_proba($segment);
+
 
     ## Calculate segment weight
     my $score = "NA";
