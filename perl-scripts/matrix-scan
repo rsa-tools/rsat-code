@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.15 2006/04/07 05:48:52 jvanheld Exp $
+# $Id: matrix-scan,v 1.16 2006/04/10 08:34:49 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -116,13 +116,23 @@ package main;
 	limits=>1,
     );
     $supported_return_fields = join (",", sort(keys( %supported_return_fields)));
-    @return_fields = qw(sites);
 
     &ReadArguments();
     
     ################################################################
     #### check argument values
+
+    ## Calculate only once the denominator for the logarithms
     $main::log_base = log($base);
+
+    ## Return fields
+    if (scalar(keys(%return_fields)) < 1) {
+	$return_fields{sites} = 1;
+    } else {
+	foreach my $field (keys(%return_fields)) {
+	    $return_fields{$field} = 1;
+	}
+    }
 
     unless (scalar(@matrix_files >= 1)) {
 	&RSAT::error::FatalError("You must specify at least one matrix file.");
@@ -154,10 +164,11 @@ package main;
 	$matrix->weight_range();
 	push @matrices, $matrix;
 
-	&RSAT::message::Info(join("\t", "read matrix", scalar(@matrices), 
-				 $matrix->get_attribute("name"),
-				 $matrix->get_attribute("file")
-				 )) if ($main::verbose >= 0);
+	&RSAT::message::Info(join("\t", "read matrix", 
+				  scalar(@matrices), 
+				  $matrix->get_attribute("name"),
+				  $matrix->get_attribute("file")
+				  )) if ($main::verbose >= 2);
     }
     
 
@@ -195,13 +206,13 @@ package main;
     while ((($current_seq, $seq_id) = &ReadNextSequence($in, $seq_format, $input_dir, "",$mask)) &&
        (($current_seq ne "") || ($seq_id ne ""))) {
 
+	## Sequence length
 	$current_seq = lc($current_seq);
-
         $sequence_number++;
-
         my $seq_len = length($current_seq);
 	$sum_seq_len += $seq_len;
 
+	## Calculate the origin
 	$orig_pos = 0;
 	if (($main::origin <  0) || ($main::origin eq "-0")) {
 	    $orig_pos = $seq_len + $main::origin + 1; 
@@ -209,24 +220,30 @@ package main;
 	    $orig_pos = $main::origin;
 	}
 
+	################################################################
+	## Report sequence limits
 	&PrintSequenceLimits($seq_id, $seq_len, $orig_pos) if ($return_fields{"limits"});
 
 	
 	&RSAT::message::TimeWarn(join ("\t", "Scanning sequence", $sequence_number,  "len=".$seq_len, "orig=".$orig_pos,  $seq_id))
             if ($main::verbose >= 2);
 	
-	
-        for my $pos (1..$seq_len) {
-	    foreach my $matrix (@matrices) {
-		my $ncol = $matrix->{ncol};
-		next if ($seq_len - $pos +1 < $ncol);
-		my $segment = substr($current_seq, $pos-1, $ncol);
-		&score_segment($segment, $matrix, $seq_id, $pos, "D");
-		if ($main::both_strands) {
-		    &score_segment( &ReverseComplement($segment),$matrix, $seq_id, $pos, "R");
-		};
+
+	################################################################
+	## Detect sites
+	if ($return_fields{"sites"}) {
+	    for my $pos (1..$seq_len) {
+		foreach my $matrix (@matrices) {
+		    my $ncol = $matrix->{ncol};
+		    next if ($seq_len - $pos +1 < $ncol);
+		    my $segment = substr($current_seq, $pos-1, $ncol);
+		    &score_segment($segment, $matrix, $seq_id, $pos, "D");
+		    if ($main::both_strands) {
+			&score_segment( &ReverseComplement($segment),$matrix, $seq_id, $pos, "R");
+		    };
+		}
 	    }
-        }
+	}
        
     }
     close $in if ($main::infile{input});
@@ -686,22 +703,22 @@ sub score_segment {
     my $start_pos = $pos - $orig_pos;
     my $end_pos = $start_pos + $ncol -1;
     
-    print $main::out join ("\t", 
-			   $seq_id,
-			   "site",
-			   $matrix->{name},
-			   $strand,
-			   $start_pos,
-			   $end_pos,
-			   $segment,
-			   $score,
-			   sprintf("%6.4f\t%5.2g\t%5.2g",
-				   $norm_W,
-				   $proba_M,
-				   $proba_B,
-				  )
-			  ), "\n"  if ($main::return_fields{"sites"});
-
+    print $out join ("\t", 
+		     $seq_id,
+		     "site",
+		     $matrix->{name},
+		     $strand,
+		     $start_pos,
+		     $end_pos,
+		     $segment,
+		     $score,
+		     sprintf("%6.4f\t%5.2g\t%5.2g",
+			     $norm_W,
+			     $proba_M,
+			     $proba_B,
+			     )
+		     ), "\n"  if ($main::return_fields{"sites"});
+    
     $matrix->{matches}++;
 
     return(1);
