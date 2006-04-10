@@ -276,12 +276,15 @@ sub read_profiles {
 		$got_header = 1;
 		@class_names = split /\t/;
 		shift @class_names;
-		&RSAT::message::Info(join("\t", "class names",join( "; ", @class_names))) if ($main::verbose >= 0);
-		foreach my $class_name (@class_names) {
+#		&RSAT::message::Info(join("\t", "class names",join( "; ", @class_names))) if ($main::verbose >= 10);
+		foreach my $c (0..$#class_names) {
+		    my $class_name = $class_names[$c];
 		    ### Check class name
-		    unless ($class_name) {
+		    if ($class_name eq "") {
 			&RSAT::error::FatalError(join("\t", "Error profile file", $class_file,  
 						      "line", $line, 
+						      "class nb", $c+1, 
+						      "file column", $c+2, 
 						      "empty class name in the header"));
 		    }
 		    
@@ -323,8 +326,8 @@ sub read_profiles {
 		}
 		## Check threshold on score
 		next if ((defined($args{min_score})) && ($score < $args{min_score}));
-		$class{$class_name}->new_member($member_name, 0, score=>$score);
 		&RSAT::message::Info(join("\t", "New member", $line, $class_name, $member_name, $score)) if ($main::verbose >= 4);
+		$class{$class_name}->new_member($member_name, 0, score=>$score);
 	    }
 	}
 	
