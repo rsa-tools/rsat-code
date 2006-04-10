@@ -5,6 +5,7 @@
 package RSAT::table;
 
 use RSAT::GenericObject;
+use RSAT::util;
 @ISA = qw( RSAT::GenericObject );
 
 =pod
@@ -376,7 +377,7 @@ sub _readFromTabFile {
 #
     
     ## open input stream
-    my ($in, $dir) = &OpenInputFile($file);
+    my ($in, $dir) = &RSAT::util::OpenInputFile($file);
 #     my $in = STDIN;
 #     if ($file) {
 #	 open $in, $file;
