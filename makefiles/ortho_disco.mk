@@ -63,7 +63,7 @@ all_tasks:
 ## Identify orthologs for a given gene (${GENE}) in the taxon of
 ## interest (${TAXON})
 BG=monads
-RESULT_DIR=${MAIN_DIR}/results/${REF_ORG}/${TAXON}/${BG}
+RESULT_DIR=${MAIN_DIR}/results/${REF_ORG}/${TAXON}
 GENE_DIR=${RESULT_DIR}/motifs/${GENE}
 PREFIX=${GENE_DIR}/${GENE}_${REF_ORG}_${TAXON}
 ORTHOLOGS = ${PREFIX}_orthologs.tab
@@ -94,7 +94,7 @@ upstream:
 STR=-2str
 NOOV=-noov
 RETURN=occ,freq,proba,rank
-DYADS=${PREFIX}${STR}${NOOV}${BG}_dyads
+DYADS=${PREFIX}${STR}${NOOV}_${BG}_dyads
 DYAD_CMD=dyad-analysis -v ${V} -i ${PURGED} -sort -type any ${STR} ${NOOV} \
 		-lth occ 1 -lth occ_sig 0 -return ${RETURN} -l 3 -spacing 0-20 \
 		-o ${DYADS}.tab
@@ -142,7 +142,7 @@ map:
 
 ################################################################
 ## Index the results for the whole set of genes
-INDEX_FILE=${MAIN_DIR}/results/${REF_ORG}/${TAXON}/index_${REF_ORG}_${TAXON}.html
+INDEX_FILE=${MAIN_DIR}/results/${REF_ORG}/${TAXON}/index_${REF_ORG}_${TAXON}_${BG}.html
 index_results:
 	@echo "Indexing results	${REF_ORG}	${TAXON}	${INDEX_FILE}"
 	@echo "<html>" > ${INDEX_FILE}
