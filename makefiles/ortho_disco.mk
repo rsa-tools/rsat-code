@@ -62,7 +62,8 @@ all_tasks:
 ################################################################
 ## Identify orthologs for a given gene (${GENE}) in the taxon of
 ## interest (${TAXON})
-RESULT_DIR=${MAIN_DIR}/results/${REF_ORG}/${TAXON}
+BG=monads
+RESULT_DIR=${MAIN_DIR}/results/${REF_ORG}/${TAXON}/${BG}
 GENE_DIR=${RESULT_DIR}/motifs/${GENE}
 PREFIX=${GENE_DIR}/${GENE}_${REF_ORG}_${TAXON}
 ORTHOLOGS = ${PREFIX}_orthologs.tab
@@ -90,26 +91,38 @@ upstream:
 ################################################################
 ## Discover over-represented dyads in the promoters of the set of
 ## orthologous genes
+STR=-2str
+NOOV=-noov
 RETURN=occ,freq,proba,rank
-DYADS=${PREFIX}_dyads.tab
-DYAD_CMD=dyad-analysis -v ${V} -i ${PURGED} -sort -type any -2str -noov \
+DYADS=${PREFIX}${STR}${NOOV}${BG}_dyads
+DYAD_CMD=dyad-analysis -v ${V} -i ${PURGED} -sort -type any ${STR} ${NOOV} \
 		-lth occ 1 -lth occ_sig 0 -return ${RETURN} -l 3 -spacing 0-20 \
-		-o ${DYADS}
+		-o ${DYADS}.tab
+ifneq (${BG}, monads) 
+	bgopt=-bg ${BG} -org ${REF_ORG}
+endif
 dyads:
-	@echo "${DYAD_CMD}"
-	@${DYAD_CMD}
-	@echo ${DYADS}
+	echo "${DYAD_CMD} ${bgopt}"
+	@${DYAD_CMD} ${bgopt}
+	@echo ${DYADS}.tab
 
 ################################################################
 ## Count matches between discovered dyads and known sites
-KNOWN_SITES=data/CRP_known_sites.tab
-count_matches:
-	count-matches -file1 ${DYADS} -file2 ${KNOWN_SITES}  -return id,match,weight,seq -lth weight 6 -2str
+KNOWN_SITES=data/sites_per_gene.tab
+KNOWN_SITES_GENE=${GENE_DIR}/${GENE}_gene_known_sites.tab
+MIN_W=6
+KNOWN_SITE_MATCHES=${DYADS}_vs_known_sites_w${MIN_W}
+match_known_sites:
+	awk '$$5 == "${GENE}"' ${KNOWN_SITES} > ${KNOWN_SITES_GENE}
+	@echo ${KNOWN_SITES_GENE}
+	compare-patterns -slide -v 1 -file1 ${DYADS}.tab -file2 ${KNOWN_SITES_GENE}  -return id,match,weight,seq -lth weight ${MIN_W} -2str -o ${KNOWN_SITE_MATCHES}.tab
+	compare-patterns -slide -v 1 -file1 ${DYADS}.tab -file2 ${KNOWN_SITES_GENE}  -table weight -null "." -lth weight ${MIN_W} -2str -o ${KNOWN_SITE_MATCHES}_weight_table.tab
+	@echo ${KNOWN_SITE_MATCHES}
 
 ################################################################
 ## Assemble the over-represented dyad to form motif
-ASSEMBLY=${PREFIX}_dyads.asmb
-ASSEMBLE_CMD=pattern-assembly -v ${V} -i ${DYADS} -o ${ASSEMBLY} -subst 0 -2str -maxfl 1 -maxpat 50
+ASSEMBLY=${DYADS}.asmb
+ASSEMBLE_CMD=pattern-assembly -v ${V} -i ${DYADS}.tab -o ${ASSEMBLY} -subst 0 ${STR} -maxfl 1 -maxpat 50
 assemble:
 	@echo "${ASSEMBLE_CMD}"
 	@${ASSEMBLE_CMD}
@@ -118,7 +131,7 @@ assemble:
 ################################################################
 ## draw a feature-map with the instances of the over-represented dyads
 MAP=${PREFIX}_dyads.png
-MAP_CMD=dna-pattern -i ${SEQ} -pl ${DYADS} -limits -origin -0 \
+MAP_CMD=dna-pattern -i ${SEQ} -pl ${DYADS}.tab -limits -origin -0 \
 		| convert-features -from dnapat -to ft \
 		| feature-map -scorethick -legend -scalebar -scalestep 50 \
 		 -format png -title '${GENE} ${REF_ORG} ${TAXON}' -o ${MAP}
@@ -146,7 +159,7 @@ index_results:
 
 ################################################################
 ## Add the analysis of a single gene to the index file
-MAX_SIG=`grep -v '^;' ${DYADS} | cut -f 9 | sort -nr | grep -v "Binary" | head -1`
+MAX_SIG=`grep -v '^;' ${DYADS}.tab | cut -f 9 | sort -nr | grep -v "Binary" | head -1`
 ROOT_DIR=${RESULT_DIR}/
 index_one_result:
 	@echo "<tr>" >> ${INDEX_FILE}
@@ -154,7 +167,7 @@ index_one_result:
 	@echo "<td>${MAX_SIG}</td>"  >> ${INDEX_FILE}
 	@echo "<td><a href=${SEQ}>seq</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_FILE}
 	@echo "<td><a href=${PURGED}>purged</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_FILE}
-	@echo "<td><a href=${DYADS}>dyads</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_FILE}
+	@echo "<td><a href=${DYADS}.tab>dyads</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_FILE}
 	@echo "<td><a href=${ASSEMBLY}>assembly</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_FILE}
 	@echo "<td><a href=${MAP}>map</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_FILE}
 	@echo "</tr>" >> ${INDEX_FILE}
