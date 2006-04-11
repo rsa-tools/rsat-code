@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.17 2006/04/10 14:50:30 rsat Exp $
+# $Id: matrix-scan,v 1.18 2006/04/11 13:46:41 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -87,7 +87,9 @@ package main;
     @main::matrix_files = ();
     @matrices = ();
 
-    $markov = -1;
+    $markov = -1; ## To make the distinction with 0, which is a valid value for the markov order
+    $window = -1; 
+    $bg_input = 0; ## Calculate bg model from the whole set of input sequences
     $sequence_number = 0;
     $sum_seq_len = 0;
     $main::base=exp(1); ## Base for the logarithms
@@ -123,8 +125,6 @@ package main;
     ################################################################
     #### check argument values
 
-
-
     ## Calculate only once the denominator for the logarithms
     $main::log_base = log($base);
 
@@ -155,6 +155,13 @@ package main;
 	$bg_model->load_from_file($infile{bg});
     } elsif ($main::markov >= 0) {
 	$bg_model->set_attribute("order", $main::markov);
+	if (($main::window >= 0) && ($main::window < $main::markov+1)) {
+	    &RSAT::error::FatalError(join("", 
+					  "Window size (",
+					  $main::window,
+					  ") must be larger than Markov order + 1 (",
+					  $main::markov."+1)."));
+	}
     } else {
 	&RSAT::error::FatalError("you should either define the Markov order (-markov) or specify a file (-bgfile) for the background model.");
     }
@@ -221,6 +228,27 @@ package main;
     
     
     ################################################################
+    ## If the model is taken from the whole set of input sequences, read them
+    ## first without scanning, just to calculate the model
+
+    if ($main::bg_input) {
+	unless ($main::infile{input}) {
+	    &RSAT::message::FatalError("The optin -bg_input requires to specify an input file.");
+	}
+	my ($in, $input_dir) = &OpenInputFile($main::infile{input});
+	while ((($current_seq, $seq_id) = &ReadNextSequence($in, $seq_format, $input_dir, "",$mask)) &&
+	       (($current_seq ne "") || ($seq_id ne ""))) {
+	    
+	    ## Sequence length
+	    $current_seq = lc($current_seq);
+	    $bg_model->calc_from_seq($current_seq, add=>1);
+	    
+	}
+	close $in;
+    }
+
+
+    ################################################################
     ##### Scan the sequences
     my ($in, $input_dir) = &OpenInputFile($main::infile{input});
     while ((($current_seq, $seq_id) = &ReadNextSequence($in, $seq_format, $input_dir, "",$mask)) &&
@@ -247,8 +275,26 @@ package main;
 
 	################################################################
 	## Calculate background model from the current sequence
-	if ($main::markov >= 0) {
-	    $bg_model->calc_from_seq($current_seq);
+	my $window_offset = 0;
+	if (($main::markov >= 0) && (!$bg_input)){
+	    if ($main::window >= $main::markov + 1) {
+		if ($main::window > $seq_len) {
+		    &RSAT::message::Warning(join("\t",
+						 $seq_id,
+						 "sequence length",
+						 $seq_len,
+						 "smaller than sliding window size",
+						 $main::window,
+						 ));
+		    $bg_model->calc_from_seq($current_seq);
+		} else {
+		    ## initialize the model with the first window
+		    $bg_model->calc_from_seq(substr($current_seq,0,$main::window));
+		}
+	    } else {
+		## calculate the model from the entire current sequence
+		$bg_model->calc_from_seq($current_seq);
+	    }
 	}
 	
 	################################################################
@@ -257,6 +303,18 @@ package main;
             if ($main::verbose >= 2);
 	if ($return_fields{"sites"}) {
 	    for my $pos (1..$seq_len) {
+		
+		## Update background model if required
+		if (($main::window > 0) &&
+		    ($pos > $main::window/2) &&
+		    ($pos + $main::window <= $seq_len)) {
+		    my $added_word = substr($current_seq, $window_offset + $main::window - $main::markov, $markov+1);
+		    my $deleted_word = substr($current_seq, $window_offset, $markov+1);
+		    $bg_model->two_words_update($added_word, $deleted_word, $window_offset);
+		    $window_offset++;
+		}
+
+		## Detect sites
 		foreach my $matrix (@matrices) {
 		    my $ncol = $matrix->{ncol};
 		    next if ($seq_len - $pos +1 < $ncol);
@@ -393,6 +451,21 @@ Background model file.
 	    &RSAT::error::FatalError("The options -markov and -bgfile are mutually exclusive.") 
 		if ($main::markov >= 0);
 	    
+	    ## Background calculated from the input sequence set
+=pod
+
+=item B<-bginput>
+
+Calculate background model from the input sequence set.
+
+=cut
+	} elsif ($arg eq "-bginput") {
+	    $main::bg_input = 1;
+	    &RSAT::error::FatalError("The options -bginput and -window are mutually exclusive.") 
+		if ($main::window >= 0);
+	    &RSAT::error::FatalError("The options -bginput and -bgfile are mutually exclusive.") 
+		if defined($main::infile{bg});
+	    
 	    ## Calculate background model from the input sequence
 =pod
 
@@ -409,6 +482,21 @@ This option is incompatible with the option -bgfile.
 		unless &RSAT::util::IsNatural($main::markov);
 	    &RSAT::error::FatalError("The options -markov and -bgfile are mutually exclusive.") 
 		if defined($main::infile{bg});
+
+=pod
+
+=item B<-window>
+
+Size of the sliding window for the background model calculation. 
+
+=cut
+	} elsif ($arg eq "-window") {
+	    $main::window = shift(@arguments);
+	    &RSAT::error::FatalError("Window size must be a natural number.") 
+		unless &RSAT::util::IsNatural($main::window);
+	    &RSAT::error::FatalError("The options -window and -bgfile are mutually exclusive.") 
+		if defined($main::infile{bg});
+
 	    
 	    ## Matrix file
 =pod

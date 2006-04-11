@@ -75,10 +75,9 @@ sub load_from_file {
 	    unless $pattern_len = $order+1;
 	my $prefix = substr($pattern_seq,0,$order);
 	my $suffix = substr($pattern_seq,$order, 1);
-	$self->{transition}->{$prefix}->{$suffix} = $pattern_freq;
+	$self->{transition_count}->{$prefix}->{$suffix} = $pattern_freq;
     }
-    
-    
+        
     $self->normalize_transition_frequencies();
 }
 
@@ -98,34 +97,35 @@ sub normalize_transition_frequencies {
     my ($self) = @_;
 
 
-    ## Calculate sum of frequencies per prefix and suffix
+    ## Calculate sum of counts (frequencies) per prefix and suffix
     my %prefix_sum = ();
     my %suffix_sum = ();
     my $freq_sum = 0;
     my $p=0;
     my $s=0;
-    foreach my $prefix (keys(%{$self->{transition}})) {
+    foreach my $prefix (keys(%{$self->{transition_count}})) {
 	$p++;
-	foreach my $suffix (keys (%{$self->{transition}->{$prefix}})) {
+	foreach my $suffix (keys (%{$self->{transition_count}->{$prefix}})) {
 	    $s++;
-	    my $pattern_freq = $self->{transition}->{$prefix}->{$suffix};	    
-	    $prefix_sum{$prefix} += $pattern_freq;
-	    $freq_sum += $pattern_freq;
-	    $suffix_sum{$suffix} += $pattern_freq;
+	    my $pattern_count = $self->{transition_count}->{$prefix}->{$suffix};	    
+	    $prefix_sum{$prefix} += $pattern_count;
+	    $freq_sum += $pattern_count;
+	    $suffix_sum{$suffix} += $pattern_count;
 	}
     }
     
 
-    ## Calculate transition probabilities
+    ## Calculate transition frequencies
     foreach my $prefix (keys(%prefix_sum)) {
 	foreach my $suffix (keys (%suffix_sum)) {
-	    if (defined($self->{transition}->{$prefix}->{$suffix})) {	
-		$self->{transition}->{$prefix}->{$suffix} /= $prefix_sum{$prefix};
+	    if (defined($self->{transition_count}->{$prefix}->{$suffix})) {	
+		$self->{transition_freq}->{$prefix}->{$suffix} =  
+		    $self->{transition_count}->{$prefix}->{$suffix}/$prefix_sum{$prefix};
 	    } else {
-		$self->{transition}->{$prefix}->{$suffix} = 0;
+		$self->{transition_freq}->{$prefix}->{$suffix} = 0;
 		&RSAT::message::Warning(join(" ",
 					     "No transition between prefix",$prefix, 
-					     "and suffix", $suffix)) if ($main::verbose >= 2);
+					     "and suffix", $suffix)) if ($main::verbose >= 1);
 	    };
 	}
     }
@@ -141,29 +141,45 @@ sub normalize_transition_frequencies {
     $self->set_hash_attribute("prefix_sum", %prefix_sum);
     $self->set_hash_attribute("suffix_sum", %suffix_sum);
 
+    ## Store preffixes and suffixes in arrays for quick access
+    $self->set_array_attribute("prefixes", sort(keys(%prefix_sum)));
+    $self->set_array_attribute("suffixes", sort(keys(%suffix_sum)));
+
     &RSAT::message::TimeWarn(join("\t", 
 				  "Normalized background model", 
 				  "prefixes: ".$p,
 				  "transitions: ".$s)) if ($main::verbose >= 2);
-#    die;    
 }
+
+
+
 
 ################################################################
 =pod
 
-=item B<calc_from_seq($sequence)>
+=item B<calc_from_seq($sequence, [add=>0|1])>
 
-Calculate background model from a sequence. 
+Calculate background model from a sequence.
+
+If the argument add=>1 is specified, the new sequence is added to the background model.
 
 =cut
 sub calc_from_seq {
-    my ($self, $sequence) = @_;
+    my ($self, $sequence, %args) = @_;
     my $seq_len = length($sequence);
     my $order = $self->get_attribute("order");
     
-    &RSAT::message::TimeWarn(join(" ", 
-				  "Calculating markov model (order ".$order.")",
-				  "from sequence of length", $seq_len)) if ($main::verbose >= 2);
+    if ($args{add}) {
+	&RSAT::message::TimeWarn(join(" ", 
+				      "Updating markov model (order ".$order.")",
+				      "by adding sequence of length", $seq_len)) if ($main::verbose >= 2);
+    } else {
+	$self->set_hash_attribute("transition_count",());
+	&RSAT::message::TimeWarn(join(" ", 
+				      "Calculating markov model (order ".$order.")",
+				      "from sequence of length", $seq_len)) if ($main::verbose >= 2);
+    }
+
 
     &RSAT::error::FatalErrorr("RSAT::MarkovModel->calc_from_seq: sequence must be MUCH larger than order +1")
 	unless ($seq_len > $order + 1);
@@ -173,8 +189,11 @@ sub calc_from_seq {
     for my $offset (0..($last_pos-1)) {
 	my $prefix = substr($sequence, $offset, $order);
 	my $suffix = substr($sequence, $offset + $order,1);
-	$self->{transition}->{$prefix}->{$suffix}++;
+	$self->{transition_count}->{$prefix}->{$suffix}++;
     }
+
+    ## Initialize transition frequencies
+    $self->set_hash_attribute("transition_freq", %transition_count);
 
     ## Convert counts to transition frequencies
     $self->normalize_transition_frequencies();
@@ -194,8 +213,55 @@ the prefix of the added and deleted words.
 
 =cut
 sub two_words_update {
-    my ($self, $added_word, $deleted_word) = @_;
+    my ($self, $added_word, $deleted_word, $window_offset) = @_;
+
+    ## No need to update if added word equald deleted word
+    return(0) if ($added_word eq $deleted_word) ;
     
+    ## Update transition count for the added word
+    my $added_prefix = substr($added_word, 0, $self->{order});
+    my $added_suffix = substr($added_word, $self->{order}, 1);
+    $self->{transition_count}->{$added_prefix}->{$added_suffix}++;
+    $self->{prefix_sum}->{$added_prefix}++;
+    if (($self->{transition_count}->{$added_prefix}->{$added_suffix} == 1) 
+	&&($main::verbose >= 0)){
+	&RSAT::message::Warning(join (" ", "Model update:", $added_word, 
+				      "appeared in updated window starting at", $window_offset));
+    }
+    
+    ## Update transition count for the deleted word
+    my $deleted_prefix = substr($deleted_word, 0, $self->{order});
+    my $deleted_suffix = substr($deleted_word, $self->{order}, 1);
+    $self->{transition_count}->{$deleted_prefix}->{$deleted_suffix}--;
+    if (($self->{transition_count}->{$deleted_prefix}->{$deleted_suffix} == 0) 
+	&&($main::verbose >= 0)){
+	&RSAT::message::Warning(join (" ", "Model update:", $deleted_word, 
+				      "disappeared from updated window starting at", $window_offset));
+    }
+    $self->{prefix_sum}->{$deleted_prefix}--;
+
+    ## Update transition frequencies for the added and deleted prefix
+    foreach my $suffix ($self->{suffixes}) {
+	$self->{transition_freq}->{$added_prefix}->{$suffix} = 
+	    $self->{transition_count}->{$added_prefix}->{$added_suffix}/$self->{prefix_sum}->{$added_prefix}++;
+	$self->{transition_freq}->{$deleted_prefix}->{$suffix} = 
+	    $self->{transition_count}->{$deleted_prefix}->{$deleted_suffix}/$self->{prefix_sum}->{$deleted_prefix}++;
+    }
+
+    
+    
+#     &RSAT::message::Debug("Updated model", 
+# 			  "added",$added_word,
+# 			  $added_prefix, 
+# 			  $self->{prefix_sum}->{$added_prefix},
+# 			  $added_suffix,
+# 			  $self->{transition_freq}->{$added_prefix}->{$added_suffix},
+# 			  "deleted", $deleted_word,
+# 			  $deleted_prefix, 
+# 			  $self->{prefix_sum}->{$deleted_prefix},
+# 			  $deleted_suffix,
+# 			  $self->{transition_freq}->{$deleted_prefix}->{$deleted_suffix},
+# 			  ) if ($main::verbose >= 10);
 }
 
 
@@ -227,7 +293,7 @@ sub to_string {
 	}
 	$string .= $prefix;
 	foreach my $suffix (@suffix) {
-	    $string .= sprintf "\t%.5f",  $self->{transition}->{$prefix}->{$suffix};
+	    $string .= sprintf "\t%.5f",  $self->{transition_freq}->{$prefix}->{$suffix};
 	}
 	$string .= sprintf "\t%.5f", $prefix_proba{$prefix};
 	$string .= "\n";
@@ -271,8 +337,8 @@ sub segment_proba {
 
 	my $suffix = substr($segment, $c, 1);
 	my $prefix = substr($segment,($c-$order),$order);
-	if (defined($self->{transition}->{$prefix}->{$suffix})) {
-	    $letter_proba = $self->{transition}->{$prefix}->{$suffix};
+	if (defined($self->{transition_freq}->{$prefix}->{$suffix})) {
+	    $letter_proba = $self->{transition_freq}->{$prefix}->{$suffix};
 	}
 	
 #	my $word = substr($segment,($c-$order),$order+1);
