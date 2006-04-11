@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: dyad-analysis,v 1.36 2006/04/09 01:15:37 jvanheld Exp $
+# $Id: dyad-analysis,v 1.37 2006/04/11 13:44:47 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 23:46:08 jvanheld>
 #
@@ -175,7 +175,8 @@ if ($seq_type eq "DNA") {
 	&CountZeroOcc2str(); ## Count patterns with zero occurrences on both strands
     }
     &CalcOccSum() if ($return{freq} || $return{exp_occ}); ## Calculate the sum of occurrences
-    &CalcFrequencies() if ($return{freq}); ### Calculate observed frequencies
+    &CalcMonadFrequencies() if ($return{freq}); ### Calculate observed monad frequencies
+    &CalcDyadFrequencies() if ($return{freq}); ### Calculate observed dyad frequencies
 
     ## Open output stream
     $out = &OpenOutputFile($outputfile); 
@@ -259,6 +260,22 @@ exit(0);
 
 
 ################################################################
+## Calculate monad frequencies
+sub CalcMonadFrequencies {
+    ## Single-strand frequencies
+    foreach $oligo (keys %oligo) {
+	$oligo{$oligo}->{freq} = $oligo{$oligo}->{occ}/$sum_oligo_count;
+    }
+
+    ## Two-strands frequencies
+    if ($sum_rc) {
+	foreach $oligo (keys %oligo) {
+	    $oligo{$oligo}->{freq_2str} = $oligo{$oligo}->{occ_2str}/$sum_oligo_count;
+	}
+    }
+}
+
+################################################################
 ## Calculate expected monad frequencies
 sub CalcExpectedMonadFreq {
     &RSAT::message::TimeWarn("Calculating expected monad frequencies") if ($main::verbose >= 2);
@@ -284,11 +301,10 @@ sub CalcExpectedMonadFreq {
 	################################################################
 	## Use monad frequencies observed in the input file to
 	## estimated expected monad frequencies
-    } else { 
+    } else {
 	foreach $oligo (keys %oligo) {
-	    $oligo{$oligo}->{exp_freq} = $oligo{$oligo}->{occ}/$sum_oligo_count;
+	    $oligo{$oligo}->{exp_freq} = $oligo{$oligo}->{freq};
 	}
-	
     }
 }
 
@@ -308,19 +324,19 @@ sub CalcExpectedDyadFreq {
 	## Calculate expected dyad freq on basis of monad frequencies 
 	## observed in the input sequence.
     } else {
-	
-	my $sum_exp_freq = 0;
+
 	foreach my $oligo1 (keys %oligo) {
 	    foreach my $spacing (@spacing_list) {
 		foreach my $oligo2 (&SecondElement($oligo1)) {
-#		    next unless (defined($patterns{$pattern_seq}->{occ}));
 		    ### build the dyad
 		    my $pattern_seq= "${oligo1}n\{$spacing\}${oligo2}";
+		    next unless (defined($patterns{$pattern_seq}->{occ}));
 		    $patterns{$pattern_seq}->{exp_freq} = &CalcExpFreqFromMonads($oligo1, $oligo2);
-		    $sum_exp_freq += $patterns{$pattern_seq}->{exp_freq};
+#		    &RSAT::message::Debug("Expected dyad frequency", $pattern_seq, $patterns{$pattern_seq}->{exp_freq}) if ($main::verbose >= 0);
 		}
 	    }	
 	}
+
 	
 # 	################################################################
 # 	## Normalize expected frequencies to make sure that the sum is
@@ -356,7 +372,7 @@ sub CalcExpectedDyadFreq {
 # 	    undef(%patterns_2str);
 # 	    &GroupRC();
 # 	}
-
+    
     }
 
 
@@ -384,24 +400,31 @@ sub CalcExpFreqFromMonads {
     my $freq1 = $oligo{$oligo1}->{exp_freq};
     my $freq2 = $oligo{$oligo2}->{exp_freq};
     my $exp_freq =  $freq1*$freq2;
-    
+
     if ($sum_rc) {
  	$oligo1_rc = &SmartRC($oligo1);
  	$oligo2_rc = &SmartRC($oligo2);
- 	if ($oligo1 ne $oligo2_rc) {
- 	    $freq1_rc = $oligo{$oligo1_rc}->{exp_freq};
- 	    $freq2_rc = $oligo{$oligo2_rc}->{exp_freq};
- 	    $exp_freq += $freq1_rc*$freq2_rc;
- 	}
+	if ($oligo1_rc ne $oligo2) {
+	    $freq1_rc = $oligo{$oligo1_rc}->{exp_freq};
+	    $freq2_rc = $oligo{$oligo2_rc}->{exp_freq};
+	}
+	$exp_freq += $freq1_rc*$freq2_rc;
     }
     
     if ($sp_group) {
 	$exp_freq *= ($max_spacing-$min_spacing + 1);
     }
-#    &RSAT::message::Debug("Expected frequency calculated from monads", 
-#			  $oligo1, $freq1, $oligo2, $freq2, 
-#			  $oligo1_rc, $freq1_rc, $oligo2_rc, $freq2_rc, 
-#			  $exp_freq) if ($main::verbose >= 5);
+
+    &RSAT::message::Debug (
+	"Expected dyad frequency calculated from monads", 
+	$oligo1.":".$freq1, 
+	$oligo2.":".$freq2, 
+	"rc", 
+	$oligo1_rc.":".$freq1_rc, 
+	$oligo2_rc.":".$freq2_rc, 	
+	$exp_freq,
+    ) if ($main::verbose >= 0);
+
     return ($exp_freq);
 }
 
@@ -414,23 +437,32 @@ sub SumReverseComplements {
     ################################################################
     ## Sum dyad occurrences
     foreach my $pattern_seq (keys %patterns) {
-	my $rc_dyad = &SmartRC($pattern_seq);
-	if ($rc_dyad eq $pattern_seq) {
+	my $rc_pattern = &SmartRC($pattern_seq);
+	if ($rc_pattern eq $pattern_seq) {
 	    #### don't count twice the reverse palindroms !!!!!!!
 	    $patterns{$pattern_seq}->{'remark'} = "inv_rep";
-	    $dyad_occ_2str{$rc_dyad} = $patterns{$pattern_seq}->{occ};
-	    $overlaps_2str{$rc_dyad} = $patterns{$pattern_seq}->{overlaps} ;
-	} else {
-	    $dyad_occ_2str{$rc_dyad} = $dyad_occ_2str{$pattern_seq} =  $patterns{$pattern_seq}->{occ} + $patterns{$rc_dyad}->{occ};
-	    $overlaps_2str{$rc_dyad} = $overlaps_2str{$pattern_seq} =  $patterns{$pattern_seq}->{overlaps} + $patterns{$rc_dyad}->{overlaps};
+	    $patterns{$pattern_seq}->{occ_2str} = $patterns{$pattern_seq}->{occ};;
+	    $patterns{$pattern_seq}->{overlaps_2str} = $patterns{$pattern_seq}->{overlaps};;
+#	    $dyad_occ_2str{$rc_pattern} = $patterns{$pattern_seq}->{occ};
+#	    $overlaps_2str{$rc_pattern} = $patterns{$pattern_seq}->{overlaps} ;
+#	} else {
+	} elsif ($rc_pattern gt $pattern_seq) {
+	    $patterns{$rc_pattern}->{occ_2str} = $patterns{$pattern_seq}->{occ_2str} =  
+		$patterns{$pattern_seq}->{occ} + $patterns{$rc_pattern}->{occ};
+	    $patterns{$rc_pattern}->{overlaps_2str} = $patterns{$pattern_seq}->{overlaps_2str} =  
+		$patterns{$pattern_seq}->{overlaps} + $patterns{$rc_pattern}->{overlaps};
+#	    $dyad_occ_2str{$rc_pattern} = $dyad_occ_2str{$pattern_seq} =  $patterns{$pattern_seq}->{occ} + $patterns{$rc_pattern}->{occ};
+#	    $overlaps_2str{$rc_pattern} = $overlaps_2str{$pattern_seq} =  $patterns{$pattern_seq}->{overlaps} + $patterns{$rc_pattern}->{overlaps};
 	}
     }
     foreach my $pattern_seq (keys %patterns) {
-	$patterns{$pattern_seq}->{occ} = $dyad_occ_2str{$pattern_seq};
-	$patterns{$pattern_seq}->{overlaps} = $overlaps_2str{$pattern_seq};
+	$patterns{$pattern_seq}->{occ} = $patterns{$pattern_seq}->{occ_2str};
+	$patterns{$pattern_seq}->{overlaps} = $patterns{$pattern_seq}->{overlaps_2str};
+#	$patterns{$pattern_seq}->{occ} = $dyad_occ_2str{$pattern_seq};
+#	$patterns{$pattern_seq}->{overlaps} = $overlaps_2str{$pattern_seq};
     }
-    undef %patterns_occ_2str;
-    undef %overlaps_2str;
+#    undef %patterns_occ_2str;
+#    undef %overlaps_2str;
     
     
     ################################################################
@@ -439,14 +471,17 @@ sub SumReverseComplements {
 	my $rc_oligo = &SmartRC($oligo_seq);
 	if ($rc_oligo eq $pattern_seq) {
 	    $patterns{$pattern_seq}->{'remark'} = "palindrom";
-	    $oligo_occ_2str{$rc_oligo} = $oligo{$oligo_seq}->{occ};
+	    $oligo{$oligo_seq}->{occ_2str} = $oligo{$oligo_seq}->{occ};
+#	    $oligo_occ_2str{$rc_oligo} = $oligo{$oligo_seq}->{occ};
 	} else {
-	    $oligo_occ_2str{$rc_oligo} = $oligo_occ_2str{$oligo_seq} =  $oligo{$oligo_seq}->{occ} + $oligo{$rc_oligo}->{occ};
+	    $oligo{$oligo_seq}->{occ_2str} = $oligo{$oligo_seq}->{occ} + $oligo{$rc_oligo}->{occ};
+#	    $oligo_occ_2str{$rc_oligo} = $oligo_occ_2str{$oligo_seq} =  $oligo{$oligo_seq}->{occ} + $oligo{$rc_oligo}->{occ};
 	}
     }
-    foreach $oligo_seq (sort keys %oligo) {
-	$oligo{$oligo_seq}->{occ} = $oligo_occ_2str{$oligo_seq};
-    }
+#     foreach $oligo_seq (sort keys %oligo) {
+# 	$oligo{$oligo_seq}->{occ} = $oligo_occ_2str{$oligo_seq};
+#     }
+#     undef %oligo_occ_2str;
 
 #     ################################################################
 #     ## I don't understand why I have to multiply the sum of monad
@@ -455,7 +490,6 @@ sub SumReverseComplements {
 #     ## the first time I implemented it.
 #     $sum_oligo_count *= 2; 
 
-    undef %oligo_occ_2str;
 
     &GroupRC();
 }
@@ -483,7 +517,7 @@ sub CalcOccSum {
 
 ################################################################
 ## Calculate observed dyad frequencies
-sub CalcFrequencies {
+sub CalcDyadFrequencies {
     &RSAT::message::TimeWarn("Calculating dyad frequencies") if ($main::verbose >= 2);
 
     foreach $spacing (@spacing_list) {
@@ -507,7 +541,7 @@ sub CalcFrequencies {
 	}
     }
 
-}  ### /CalcFrequencies
+}  ### /CalcDyadFrequencies
 
 
 ################################################################
@@ -859,6 +893,10 @@ sub ReadArguments {
 		    $return{ratio} = 1;
 		} elsif  ($field eq "rank") {
 		    $return{rank} = 1;
+		} elsif  ($field eq "monad_freq") {
+		    $return{monad_freq} = 1;
+		} else {
+		    &RSAT::error::FatalError("Invalid return field $field.");
 		}
 	    }
 	    
@@ -933,9 +971,9 @@ sub CalcPossibleDyads {
 
 
 ################################################################
-### given an oligonucleotide, return 
-### the list of oligos that can be combined with it to form a dyad
-### this list depends on the variable $dyad_type (ir, dr or any)
+## Given an oligonucleotide, return the list of oligos that can be
+## combined with it to form a dyad this list depends on the variable
+## $dyad_type (ir, dr or any)
 sub SecondElement {
     my ($oligo1) = @_;
     my @oligo2 = ();
@@ -1277,6 +1315,36 @@ sub PrintVerbose {
     }
     printf $out "; \t%-29s%d\n", "distinct monads", $nb_possible_oligo;
 
+    if ($return{monad_freq}) {
+	print $out ";\tMonad frequencies\n";
+	print $out join("\t", ";\t\t", "monad", "occ_1s", "occ_sum", "freq", "frq_sum");
+	print $out "\t", join("\t", "rc_pair", "occ_2s", "freq_2s") if ($sum_rc);
+	print $out "\n";
+	my $monad_occ_sum = 0;
+	my $monad_freq_sum = 0;
+	foreach my $oligo (sort keys %oligo) {
+	    $monad_occ_sum += $oligo{$oligo}->{occ};
+	    $monad_freq_sum += $oligo{$oligo}->{freq};
+	    print $out join("\t", ";\t", "mon_f", 
+			    $oligo, 
+			    $oligo{$oligo}->{occ},
+			    $monad_occ_sum,
+			    sprintf("%7.3f", $oligo{$oligo}->{freq}),
+			    sprintf("%7.3f", $monad_freq_sum),
+			   );
+
+	    if ($sum_rc) {
+		print $out ("\t", 
+			    join ("\t", 
+				  $oligo."|".&SmartRC($oligo), 
+				  $oligo{$oligo}->{occ_2str},
+				  sprintf "%7.3f", $oligo{$oligo}->{freq_2str}));
+	    }
+	    print $out "\n";
+	}
+    }
+
+
     ################################################################
     #### dyads
     printf $out "; %-29s\n", "Dyad parameters";
@@ -1499,8 +1567,8 @@ sub PrintResult {
 	print $out "$pattern_seq";
 	print $out "\t$pattern_seq";
 	if ($sum_rc){
-	    $rc_dyad = &SmartRC($pattern_seq);
-	    print $out "|$rc_dyad";
+	    $rc_pattern = &SmartRC($pattern_seq);
+	    print $out "|$rc_pattern";
 	}
 
 	## Frequencies
