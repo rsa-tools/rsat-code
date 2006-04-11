@@ -62,7 +62,6 @@ all_tasks:
 ################################################################
 ## Identify orthologs for a given gene (${GENE}) in the taxon of
 ## interest (${TAXON})
-BG=monads
 RESULT_DIR=${MAIN_DIR}/results/${REF_ORG}/${TAXON}
 GENE_DIR=${RESULT_DIR}/motifs/${GENE}
 PREFIX=${GENE_DIR}/${GENE}_${REF_ORG}_${TAXON}
@@ -91,19 +90,19 @@ upstream:
 ################################################################
 ## Discover over-represented dyads in the promoters of the set of
 ## orthologous genes
+BG=monads
 STR=-2str
 NOOV=-noov
 RETURN=occ,freq,proba,rank
-DYADS=${PREFIX}${STR}${NOOV}_${BG}_dyads
+SUFFIX=${STR}${NOOV}_${BG}_dyads
+DYADS=${PREFIX}${SUFFIX}
 DYAD_CMD=dyad-analysis -v ${V} -i ${PURGED} -sort -type any ${STR} ${NOOV} \
 		-lth occ 1 -lth occ_sig 0 -return ${RETURN} -l 3 -spacing 0-20 \
+		-bg ${BG} -org ${REF_ORG} \
 		-o ${DYADS}.tab
-ifneq (${BG}, monads) 
-	bgopt=-bg ${BG} -org ${REF_ORG}
-endif
 dyads:
-	echo "${DYAD_CMD} ${bgopt}"
-	@${DYAD_CMD} ${bgopt}
+	@echo "${DYAD_CMD}"
+	@${DYAD_CMD}
 	@echo ${DYADS}.tab
 
 ################################################################
@@ -112,12 +111,15 @@ KNOWN_SITES=data/sites_per_gene.tab
 KNOWN_SITES_GENE=${GENE_DIR}/${GENE}_gene_known_sites.tab
 MIN_W=6
 KNOWN_SITE_MATCHES=${DYADS}_vs_known_sites_w${MIN_W}
+COMPARE_PATTERNS_CMD=awk '$$5 == "${GENE}"' ${KNOWN_SITES} > ${KNOWN_SITES_GENE} ; \
+	compare-patterns -slide -v 1 -file1 ${DYADS}.tab -file2 ${KNOWN_SITES_GENE}  -return id,match,weight,seq -lth weight ${MIN_W} -2str -o ${KNOWN_SITE_MATCHES}.tab ; \
+	compare-patterns -slide -v 1 -file1 ${DYADS}.tab -file2 ${KNOWN_SITES_GENE}  -table weight -null "." -lth weight ${MIN_W} -2str -o ${KNOWN_SITE_MATCHES}_weight_table.tab 
 match_known_sites:
-	awk '$$5 == "${GENE}"' ${KNOWN_SITES} > ${KNOWN_SITES_GENE}
+	@echo "${COMPARE_PATTERNS_CMD}"
+	@${COMPARE_PATTERNS_CMD}
 	@echo ${KNOWN_SITES_GENE}
-	compare-patterns -slide -v 1 -file1 ${DYADS}.tab -file2 ${KNOWN_SITES_GENE}  -return id,match,weight,seq -lth weight ${MIN_W} -2str -o ${KNOWN_SITE_MATCHES}.tab
-	compare-patterns -slide -v 1 -file1 ${DYADS}.tab -file2 ${KNOWN_SITES_GENE}  -table weight -null "." -lth weight ${MIN_W} -2str -o ${KNOWN_SITE_MATCHES}_weight_table.tab
-	@echo ${KNOWN_SITE_MATCHES}
+	@echo ${KNOWN_SITE_MATCHES}.tab
+	@echo ${KNOWN_SITE_MATCHES}_weight_table.tab
 
 ################################################################
 ## Assemble the over-represented dyad to form motif
@@ -130,7 +132,7 @@ assemble:
 
 ################################################################
 ## draw a feature-map with the instances of the over-represented dyads
-MAP=${PREFIX}_dyads.png
+MAP=${DYADS}.png
 MAP_CMD=dna-pattern -i ${SEQ} -pl ${DYADS}.tab -limits -origin -0 \
 		| convert-features -from dnapat -to ft \
 		| feature-map -scorethick -legend -scalebar -scalestep 50 \
@@ -142,7 +144,7 @@ map:
 
 ################################################################
 ## Index the results for the whole set of genes
-INDEX_FILE=${MAIN_DIR}/results/${REF_ORG}/${TAXON}/index_${REF_ORG}_${TAXON}_${BG}.html
+INDEX_FILE=${MAIN_DIR}/results/${REF_ORG}/${TAXON}/index_${REF_ORG}_${TAXON}_${SUFFIX}.html
 index_results:
 	@echo "Indexing results	${REF_ORG}	${TAXON}	${INDEX_FILE}"
 	@echo "<html>" > ${INDEX_FILE}
@@ -176,13 +178,13 @@ index_one_result:
 ################################################################
 ## Compare dyads discovered in the different genes
 COMPA_DIR=${RESULT_DIR}/gene_pair_network
-COMPA_TABLE=${COMPA_DIR}/${REF_ORG}_${TAXON}_dyad_profiles.tab
-COMPA_CLASSES=${COMPA_DIR}/${REF_ORG}_${TAXON}_dyad_classes.tab
+COMPA_TABLE=${COMPA_DIR}/${REF_ORG}_${TAXON}_${SUFFIX}_dyad_profiles.tab
+COMPA_CLASSES=${COMPA_DIR}/${REF_ORG}_${TAXON}_${SUFFIX}_dyad_classes.tab
 DYAD_FILE_LIST=${RESULT_DIR}/dyad_files.txt
 dyad_file_list:
 	@echo
 	@echo "Generating the list of dyad files"
-	(cd ${RESULT_DIR}; find . -name '*_${REF_ORG}_${TAXON}_dyads.tab'  > ${DYAD_FILE_LIST})
+	(cd ${RESULT_DIR}; find . -name '*${SUFFIX}.tab'  > ${DYAD_FILE_LIST})
 	@echo ${DYAD_FILE_LIST}
 	@echo "	`cat ${DYAD_FILE_LIST} | wc -l `	dyad files"
 
@@ -235,8 +237,8 @@ dyad_classes: dyad_file_list
 ## Compare discovered dyads between each pair of gene and return the
 ## results as a table with one row per pair of genes, and different
 ## significance statistics.
-PROFILE_PAIRS=${COMPA_DIR}/${REF_ORG}_${TAXON}_profile_pairs
-GENE_PAIRS=${COMPA_DIR}/${REF_ORG}_${TAXON}_gene_pairs
+PROFILE_PAIRS=${COMPA_DIR}/${REF_ORG}_${TAXON}_${SUFFIX}_profile_pairs
+GENE_PAIRS=${COMPA_DIR}/${REF_ORG}_${TAXON}_${SUFFIX}_gene_pairs
 GENE_PAIR_RETURN=occ,dotprod,jac_sim,proba,entropy,rank
 gene_pairs:
 	@echo
@@ -252,7 +254,7 @@ gene_pairs:
 
 gene_pairs_members:
 	${MAKE} gene_pairs GENE_PAIR_RETURN=occ,dotprod,jac_sim,proba,members,rank \
-		GENE_PAIRS=${COMPA_DIR}/${REF_ORG}_${TAXON}_gene_pairs_dyads
+		GENE_PAIRS=${COMPA_DIR}/${REF_ORG}_${TAXON}_${SUFFIX}_gene_pairs_dyads
 
 
 profile_pairs:
@@ -306,7 +308,7 @@ gene_pair_score_compa:
 #GRAPH=coli_gamma_common_motifs_dotprod
 INFLATION=2.0
 MCL_DIR=${RESULT_DIR}/clusters/mcl
-MCL_FILE=${MCL_DIR}/${REF_ORG}_${TAXON}_sc${SCORE_COL}_mcl_I${INFLATION}
+MCL_FILE=${MCL_DIR}/${REF_ORG}_${TAXON}_${SUFFIX}_sc${SCORE_COL}_mcl_I${INFLATION}
 GRAPH_FILE=${GENE_PAIRS}_sc${SCORE_COL}.tab
 mcl:
 	@echo
