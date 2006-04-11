@@ -19,8 +19,11 @@ all_tests:
 one_test: oligos dyads all_compa
 
 V=1 
+
+## Sequence file
 #SEQ_FILE=PURA_Escherichia_coli_K12_Gammaproteobacteria_up_purged.fasta
-SEQ_FILE=ACEB.fasta
+SEQ=ACEB
+SEQ_FILE=${SEQ}.fasta
 
 ################################################################
 ## Common parmeters for oligo-analysis and dyad-analysis
@@ -38,10 +41,11 @@ SUFFIX=${STR}${NOOV}${ZEROOCC}_${BG}
 
 ################################################################
 ## Run oligo-analysis
-OLIGOS=oligos${SUFFIX}.tab
+OLIGOS=oligos_${SEQ}_${OL}nt${SUFFIX}
+OL=6
 oligos:
-	oligo-analysis -l 6 ${OPTIONS} -o ${OLIGOS}
-	@echo ${OLIGOS}
+	oligo-analysis -l ${OL} ${OPTIONS} -o ${OLIGOS}.tab
+	@echo ${OLIGOS}.tab
 
 ## oligo-analysis with a Markov chain model estimated from the input sequence
 MKV=2
@@ -50,26 +54,27 @@ markov:
 
 ################################################################
 ## Run dyad-analysis
-DYADS=dyads_sp${SP}${SUFFIX}.tab
-DYADS_NOSPACING=dyads_sp${SP}_${SUFFIX}_nospacing.tab
+DYADS=dyads_${SEQ}_${ML}nt_sp${SP}${SUFFIX}
+DYADS_NOSPACING=${DYADS}_nospacing
+ML=3
 SP=0-20
 dyads:
-	dyad-analysis -l 3 -sp ${SP} ${OPTIONS} -o ${DYADS} 
-	@echo ${DYADS}
-	grep 'n{0}' ${DYADS} \
+	dyad-analysis -l ${ML} -sp ${SP} -return monad_freq ${OPTIONS} -o ${DYADS}.tab 
+	@echo ${DYADS}.tab
+	grep 'n{0}' ${DYADS}.tab \
 		| perl -pe 's/n\{0\}//g' \
-		> ${DYADS_NOSPACING}
-	@echo ${DYADS_NOSPACING}
+		> ${DYADS_NOSPACING}.tab
+	@echo ${DYADS_NOSPACING}.tab
 
 ################################################################
 ## Compare one column of the oligo-analysis and dyad-analysis result
 ## files
-COMPA=compa${SP}_${SUFFIX}_sc${SC}
+COMPA=compa${SP}_${SEQ}${SUFFIX}_sc${SC}
 SC=3
 LOG=
 DIFF=diff_${COMPA}
 one_compa:
-	compare-scores -i ${OLIGOS} -i ${DYADS_NOSPACING} -sc ${SC} -o ${COMPA}.tab
+	compare-scores -i ${OLIGOS}.tab -i ${DYADS_NOSPACING}.tab -sc ${SC} -o ${COMPA}.tab
 	awk -F'\t' '$$2 != $$3 {print $$0"\t"($$3-$$2)}' ${COMPA}.tab > ${DIFF}
 	@echo ${COMPA}.tab
 	XYgraph -i ${COMPA}.tab \
@@ -96,3 +101,29 @@ all_compa:
 	${MAKE} one_compa SC=11
 	${MAKE} one_compa SC=13
 	${MAKE} one_compa SC=14
+
+
+################################################################
+## Check the distribution of different statistics in the pattern
+## discovery file.
+
+## Generate random sequences
+RAND_SEQ=rand_l${RAND_L}_r${RAND_R}
+RAND_L=50
+RAND_R=10
+RAND_BG=
+rand_seq:
+	random-seq -l ${RAND_L} -r ${RAND_R} ${RAND_BG} -o ${RAND_SEQ}.fasta
+	@echo ${RAND_SEQ}.fasta
+
+## Test the distribution of score in the random sequences
+RAND_PARAM=SEQ='${RAND_SEQ}' BG='monad' BG_OPT=''
+rand_dyads:
+	${MAKE} dyads ${RAND_PARAM}
+
+rand_dyad_distrib:
+	${MAKE} score_distrib ${RAND_PARAM}
+
+DISCO_FILE=${DYADS}
+score_distrib:
+	grep -v "^;" ${DISCO_FILE}.tab | cut -f ${SC} | classfreq -v -o ${DISCO_FILE}_sc${SC}_distrib.tab
