@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: dyad-analysis,v 1.38 2006/04/11 21:21:14 jvanheld Exp $
+# $Id: dyad-analysis,v 1.39 2006/04/11 23:48:20 rsat Exp $
 #
 # Time-stamp: <2003-10-22 23:46:08 jvanheld>
 #
@@ -22,10 +22,11 @@ $timeout = 900;
 #### background models
 %supported_bg = ('upstream'=>1,
 		 'upstream-noorf'=>1,
-		 'intergenic'=>1
+		 'intergenic'=>1,
+		 'monads'=>1,
 		 );
 $supported_bg = join ",", sort keys %supported_bg;
-
+$background_model="monads"; ## Default background model : estimate expected dyad freq from observed monad freq
 
 ## Dyad parameters
 $oligo_length = 3;
@@ -98,13 +99,13 @@ if ($seq_type eq "DNA") {
 
     ## check pre-defined frequency table for intergenic frequency
     ## calibration
-    if (($background_model) || ($mncf)) {
+    if (($background_model ne "monads") || ($mncf)) {
 	
 	## Check organism
 	&CheckOrganism($organism_name);
 	
 	$data_dir = $supported_organism{$organism_name}->{'data'};
-	if ($background_model) {
+	if ($background_model ne "monad") {
 	    ### localise expected frequency file for dyads in intergenic sequences
 	    if ($noov) {
 		$noov_suffix = "-noov";
@@ -1401,10 +1402,9 @@ sub PrintVerbose {
 
     #### expected frequencies
     printf $out "; %s\n", "Estimation of expected dyad frequencies";
-    if ($background_model) {
-	print $out ";\tBackground model\n";
+    print $out ";\tBackground model:\t", $background_model, "\n";
+    unless ($background_model eq "monads") {
 	printf $out ";\t%-29s\t%s\n", "    organism", ($supported_organism{$organism_name}->{name} || $organism_name);
-	printf $out ";\t%-29s\t%s\n", "    sequence type", $background_model;
     }
     if ($mncf) {
 	print $out ";\tMonad frequencies in intergenic region\n";
@@ -1413,7 +1413,7 @@ sub PrintVerbose {
     } elsif ($exp_freq_file) {
 	printf $out ";\t%-29s\t%s\n", "exp. freq. file", $exp_freq_file;
     } else {
-	print $out ";\tMonad calibration in input sequences\n";
+	print $out ";\tMonad calibration from input sequences\n";
     }
     
     unless ($#id_list > $max_seq_verbose) {
