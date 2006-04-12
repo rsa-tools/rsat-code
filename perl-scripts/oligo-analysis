@@ -7,7 +7,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.109 2006/04/09 00:09:29 jvanheld Exp $
+# $Id: oligo-analysis,v 1.110 2006/04/12 15:15:49 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -27,7 +27,8 @@ $start_time = &AlphaDate();
 %supported_bg = ('upstream'=>1,
 		 'upstreamL'=>1,
 		 'upstream-noorf'=>1,
-		 'intergenic'=>1
+		 'intergenic'=>1,
+		 'input'=>1,
 		 );
 $supported_bg = join ",", sort keys %supported_bg;
 
@@ -151,7 +152,7 @@ if ($method eq "Markov chain") {
 
 ### Pre-defined frequency tables
 ### for background frequency calibration
-if ($background_model) {
+if (($background_model) && ($background_model ne "input")) {
     
     ### localize dyad non-coding frequency file
     $method = "Frequency file";
@@ -191,7 +192,7 @@ if ($background_model) {
 }
 
 #### normalize alphabet (sum must be 1)
-if (($alphabet) && !($input_alphabet)) {
+if (($alphabet) && ($background_model ne "input")) {
     my $proba_sum = 0;
     foreach my $r (keys %residue_proba) {
 	$proba_sum += $residue_proba{$r};
@@ -239,7 +240,7 @@ if ($return{'table'}) {
 } else {
     &CalibrateSetFromSingleSequence() if ($method eq "Calibration per sequence");
     &CalcSubWordFrequencies() if (($method eq "Markov chain") || ($method eq "lexicon"));
-    &CalcAlphabet() if ($input_alphabet); # || ($return{'zscore'}));
+    &CalcAlphabet() if ($background_model eq "input"); # || ($return{'zscore'}));
     &Degenerate() if ($one_var_position);
     &SumReverseComplements() if ($sum_rc);
     &CalcOccSum();
@@ -348,7 +349,6 @@ sub CountOligos {
 	$last_pos = $seq_length[$sequence_number] - $oligo_length; ### note: the first position has index 0	
 	
 	### calculate alphabet from input sequence ####
-#    if (($input_alphabet) || ($return{'zscore'}) || ($method eq "Markov chain")) {
 	&RSAT::message::TimeWarn("$current_id\tcalculating alphabet") if ($verbose >= 4);
 	
 	for $pos (0..$seq_length[$sequence_number]-1) {
@@ -1927,7 +1927,8 @@ sub ReadArguments {
 		$residue_proba{'a'} = $residue_proba{'t'} = 0.308512197555054;
 		$residue_proba{'c'} = $residue_proba{'g'} = 0.191487802444946;
 	    } elsif ($ARGV[$a+1] eq "input") {
-		$input_alphabet = 1;
+		&RSAT::message::Warning("The option -a input is obsolete. Use -bg input instead");
+		$background_model = "input";
 	    } elsif (("$ARGV[$a+1] $ARGV[$a+2] $ARGV[$a+3] $ARGV[$a+4]" =~ /a:t (\S+) c:g (\S+)/i) && ($1 >=0) && ($2 >=0) && ($1 + $2 > 0)) {
 		$residue_proba{'a'} = $residue_proba{'t'} = $1/(2*($1+$2));
 		$residue_proba{'c'} = $residue_proba{'g'} = $2/(2*($1+$2));
@@ -2199,8 +2200,9 @@ ARGUMENTS
 		-a a:t 0.3 c:g 0.2
 		
 		Special alphabet options
-                -a input
-                        use the alphabet of the input sequence
+        -a input
+                use the alphabet of the input sequence
+		(deprecated, use "-bg input" instead)
 	-expfreq
 		(mutually exclusive with -calibN, -calib1 and -a)
 		file containing the estimations for expected oligomer 
@@ -2246,6 +2248,10 @@ ARGUMENTS
 		         intergenic frequencies 
 			 Whole set of intergenic regions, including
 			 upstream and downstream sequences
+		-bg input
+			 Estimate word frequency from residue
+			 frequencies in the input sequences (Bernoulli
+			 model).
 
 	-org	organism 
 		This is necessary with the option -bg, to determine
@@ -2797,7 +2803,7 @@ oligo-analysis options
 -l              oligomer length
 -a a:t \# c:g \#  alphabet utilization
 -a yeast        use yeast genomic alphabet
--a input        use alphabet from input sequence
+-a input        use alphabet from input sequence (deprecated, use -bg input instead)
 -expfreq        file with expected frequency table
 -calibN		file with calibration table based on random gene sets (N genes per set)
 -calib1		file with calibration table based on single sequence analysis
