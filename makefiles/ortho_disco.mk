@@ -172,12 +172,38 @@ ROOT_DIR=${RESULT_DIR}/
 index_one_result:
 	@echo "<tr>" >> ${INDEX_FILE}
 	@echo "<td><a href=${GENE_DIR}>${GENE}</a></td>" | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_FILE}
-	@echo "<td>${MAX_SIG}</td>"  >> ${INDEX_FILE}
-	@echo "<td><a href=${SEQ}>seq</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_FILE}
-	@echo "<td><a href=${PURGED}>purged</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_FILE}
-	@echo "<td><a href=${DYADS}.tab>dyads</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_FILE}
-	@echo "<td><a href=${ASSEMBLY}>assembly</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_FILE}
-	@echo "<td><a href=${MAP}>map</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_FILE}
+	if [ -f "${DYADS}.tab" ] ; then \
+		echo "<td>${MAX_SIG}</td>"  >> ${INDEX_FILE} ; \
+	else echo "<td></td>" >> ${INDEX_FILE} ; \
+	fi
+	if [ -f "${SEQ}" ] ; then \
+		echo "<td><a href=${SEQ}>seq</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_FILE} ; \
+	else echo "<td></td>" >> ${INDEX_FILE} ; \
+	fi
+	if [ -f "${PURGED}" ] ; then \
+		echo "<td><a href=${PURGED}>purged</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_FILE} ; \
+	else echo "<td></td>" >> ${INDEX_FILE} ; \
+	fi
+	if [ -f "${DYADS}.tab" ] ; then \
+		echo "<td><a href=${DYADS}.tab>dyads</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_FILE} ; \
+	else echo "<td></td>" >> ${INDEX_FILE} ; \
+	fi
+	if [ -f "${ASSEMBLY}" ] ; then \
+		echo "<td><a href=${ASSEMBLY}>assembly</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_FILE} ; \
+	else echo "<td></td>" >> ${INDEX_FILE} ; \
+	fi
+	if [ -f "${MAP}" ] ; then \
+		echo "<td><a href=${MAP}>map</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_FILE} ; \
+	else echo "<td></td>" >> ${INDEX_FILE} ; \
+	fi
+	if [ -f "${KNOWN_SITE_MATCHES}.tab" ] ; then \
+		echo "<td><a href=${KNOWN_SITE_MATCHES}.tab>matches</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_FILE} ; \
+	else echo "<td></td>" >> ${INDEX_FILE} ; \
+	fi
+	if [ -f "${KNOWN_SITE_MATCHES}_weight_table.tab" ] ; then \
+		echo "<td><a href=${KNOWN_SITE_MATCHES}_weight_table.tab>match table</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_FILE} ; \
+	else echo "<td></td>" >> ${INDEX_FILE} ; \
+	fi
 	@echo "</tr>" >> ${INDEX_FILE}
 
 
