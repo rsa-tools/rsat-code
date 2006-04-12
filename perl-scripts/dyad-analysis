@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: dyad-analysis,v 1.40 2006/04/12 13:55:43 jvanheld Exp $
+# $Id: dyad-analysis,v 1.41 2006/04/12 14:40:54 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 23:46:08 jvanheld>
 #
@@ -59,9 +59,13 @@ $nb_possible_dyads = 0;
 $nb_tested_patterns = 0;
 $nb_possible_pos = 0;
 $sum_seq_length = 0;
-$discarded_dyad_positions = 0;
-%nb_possible_pos = (); ## Depends on the dyad spacing
-%discarded_dyad_positions_per_spacing = ();
+
+## The number of possible positions depends on the dyad spacing
+%nb_possible_pos = (); 
+
+## Discard dyad that contains non-ACGT characters, if the sequence type is DNA.
+%discarded_dyad_positions = (); 
+%valid_dyad_positions = ();
 
 $discarded_monad_positions = 0;
 
@@ -635,7 +639,7 @@ sub CalcProba {
 		
 		### calculate Z-scores ###
 		if ($return{zscore}) {
-		    $patterns{$pattern_seq}->{var_est} = $nb_valid_pos{$spacing}*$patterns{$pattern_seq}->{exp_freq}*(2*$overlap_coeff{$pattern_seq} - 1 - (4*$oligo_length+1)*$patterns{$pattern_seq}->{exp_freq});
+		    $patterns{$pattern_seq}->{var_est} = $valid_dyad_positions{$spacing}*$patterns{$pattern_seq}->{exp_freq}*(2*$overlap_coeff{$pattern_seq} - 1 - (4*$oligo_length+1)*$patterns{$pattern_seq}->{exp_freq});
 		    if ($patterns{$pattern_seq}->{var_est} <= 0) {
 			$patterns{$pattern_seq}->{zscore} = "NA";
 		    } else {
@@ -646,11 +650,11 @@ sub CalcProba {
 		
 		### calculate occurrence probability ####
 		if ($return{proba}) {
-		    $patterns{$pattern_seq}->{occ_P} =  &binomial_boe($patterns{$pattern_seq}->{exp_freq},$nb_valid_pos{$spacing},$patterns{$pattern_seq}->{occ});
+		    $patterns{$pattern_seq}->{occ_P} =  &binomial_boe($patterns{$pattern_seq}->{exp_freq},$valid_dyad_positions{$spacing},$patterns{$pattern_seq}->{occ});
 		    $main::nb_tested_patterns++;
 #		    &RSAT::message::Debug("binomial test",
 #					  "p= ".$patterns{$pattern_seq}->{exp_freq},
-#					  "T= ".$nb_valid_pos{$spacing},
+#					  "T= ".$valid_dyad_positions{$spacing},
 #					  "x= ".$patterns{$pattern_seq}->{occ},
 #					 ) if ($main::verbose >= 10);
 		}
@@ -1026,7 +1030,7 @@ sub CountDyads {
 	my $last_pos = $seq_length[$sequence_number] - $oligo_length;
 
 	## chunks for high verbosity
-	$chunk = 10000;
+	my $chunk = 10000;
 
 	## Verbosity
 	&RSAT::message::TimeWarn(join ("\t", "\tsequence",
@@ -1039,7 +1043,7 @@ sub CountDyads {
 
 	################################################################
 	## Iteration to get teh first monad of the dyad
-	$pos1 = 0;
+	my $pos1 = 0;
 	while ($pos1 <= $last_pos) {
 #	    &RSAT::message::Debug("p1= ".$pos1, "last= ".$last_pos) if ($main::verbose >= 10);
 	    
@@ -1059,7 +1063,7 @@ sub CountDyads {
 	    
 	    ################################################################
 	    ## Get the first monad
-	    $oligo1 = lc(substr($current_seq,$pos1,$oligo_length));
+	    my $oligo1 = lc(substr($current_seq,$pos1,$oligo_length));
 
 	    ################################################################
 	    ## For DNA, filter out dyads containing unspecified residues
@@ -1070,8 +1074,13 @@ sub CountDyads {
 		    ## Count dyad positions which are discarded
 		    ## because the first monad contains unspecified
 		    ## residues
-		    if ($pos1 <= $last_pos - $max_spacing) {
-			$discarded_dyad_positions++; 
+		    foreach my $spacing ($min_spacing..$max_spacing) {
+			if ($pos1 + $oligo_length + $spacing <= $last_pos) {
+			    $discarded_dyad_positions{$spacing}++; 
+#			    &RSAT::message::Debug("Discarded because of monad 1", ++$discarded_monad1, $pos1, $oligo1, $spacing, $last_pos, $current_id, $seq_length[$sequence_number]) if ($main::verbose >= 10);
+			} else {
+#			    &RSAT::message::Debug("Not discarded because end of sequence reached", ++$not_discarded_too_late, $pos1, $oligo1, $spacing, $last_pos, , $current_id, $seq_length[$sequence_number]) if ($main::verbose >= 10);
+			}
 		    }
 
 # 		    &RSAT::message::Warning(
@@ -1100,13 +1109,13 @@ sub CountDyads {
 	    
 	    ################################################################
 	    ## Iterate spacings to obtain the second monad and the dyad
-	    foreach $spacing ($min_spacing..$max_spacing) {
-		$pos2 = $pos1 + $oligo_length + $spacing;
+	    foreach my $spacing ($min_spacing..$max_spacing) {
+		my $pos2 = $pos1 + $oligo_length + $spacing;
 		#      $min_overlap_dist = $oligo_length;
 		$min_overlap_dist{$spacing} = 2*$oligo_length + $spacing;
 		
 		if ($pos2 <= $last_pos) {
-		    $oligo2 = lc(substr($current_seq,$pos2,$oligo_length));
+		    my $oligo2 = lc(substr($current_seq,$pos2,$oligo_length));
 		    
 # 		    &RSAT::message::Debug(
 # 			"p1= ".$pos1,
@@ -1119,7 +1128,8 @@ sub CountDyads {
 			unless ($allowed_monads{$oligo2}) {
 
 			    ## Dyads which are discarded because the second monad contains unspecified residues
-			    $discarded_dyad_positions_per_spacing{$spacing}++;
+			    $discarded_dyad_positions{$spacing}++;
+#			    &RSAT::message::Debug("Discarded because of monad 2", ++$discarded_monad2, $pos1, $oligo1, $spacing, $pos2, $oligo2, $last_pos, $quick_test, $current_id, $seq_length[$sequence_number]) if ($main::verbose >= 10);
 
 			    ## Discard this monad only if it the same
 			    ## position cannot be discarded as first
@@ -1230,8 +1240,8 @@ sub CountDyads {
 	    unless (defined($nb_possible_pos{$spacing})) ;
 
 	## Calculate the number of valid positions per spacing
-	$discarded_dyad_positions_per_spacing{$spacing} += $discarded_dyad_positions;
-	$nb_valid_pos{$spacing} = $nb_possible_pos{$spacing} - $discarded_dyad_positions_per_spacing{$spacing};
+#	$discarded_dyad_positions{$spacing} += $discarded_dyad_positions;
+	$valid_dyad_positions{$spacing} = $nb_possible_pos{$spacing} - $discarded_dyad_positions{$spacing};
     }
 
 }
@@ -1379,9 +1389,6 @@ sub PrintVerbose {
     }
 
     ## Dyad positions
-#    printf $out "; \t%-29s%d\n", "Possible dyad positions", $nb_possible_pos;
-#	printf $out "; \t%-29s\t%s\n", "    valid", $nb_valid_pos;
-#	printf $out "; \t%-29s\t%d\t%s\n", "    discarded", $discarded_dyad_positions, " (contain other letters than ACGT)";
     printf $out ";\tDyad counts per spacing\n";
 
     print $out join("\t", ";\t", "spacing", "max_pos", "occ");
@@ -1391,8 +1398,8 @@ sub PrintVerbose {
     }
     if ($seq_type eq "DNA") {
 	print $out "\t", join("\t", 
-			      "ATGC", 
-			      "nonATGC",
+			      "ACGT", 
+			      "nonACGT",
 			     );
     }
     print $out "\n";
@@ -1406,8 +1413,9 @@ sub PrintVerbose {
 	}
     	if ($seq_type eq "DNA") {
 	    print $out "\t", join ("\t", 
-				   $nb_valid_pos{$spacing}, 
-				   $discarded_dyad_positions_per_spacing{$spacing},
+				   $valid_dyad_positions{$spacing}, 
+				   $discarded_dyad_positions{$spacing},
+				   $dyad_occ_sum{$spacing} - $valid_dyad_positions{$spacing}, ## Should always be 0
 				  );
 	}
 	print $out "\n";
