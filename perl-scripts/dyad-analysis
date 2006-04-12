@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: dyad-analysis,v 1.39 2006/04/11 23:48:20 rsat Exp $
+# $Id: dyad-analysis,v 1.40 2006/04/12 13:55:43 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 23:46:08 jvanheld>
 #
@@ -31,6 +31,7 @@ $background_model="monads"; ## Default background model : estimate expected dyad
 ## Dyad parameters
 $oligo_length = 3;
 %dyad_occ_sum = ();
+%dyad_ovl_sum = ();
 $min_spacing = $max_spacing = 0;
 $accepted_dyad_type{rep} = 1;  #direct or inverted repeats
 $accepted_dyad_type{dr} = 1;  #direct repeats
@@ -171,11 +172,11 @@ if ($seq_type eq "DNA") {
     &CalcPossibleDyads(); ### Calculate all possible dyads
     &CountDyads(); ### Read sequence and count dyads 
     &CountZeroOcc() if ($zeroocc); ## Count patterns with zero occurrences
+    &CalcOccSum(); ## Calculate the sum of occurrences
     if ($sum_rc) {
 	&SumReverseComplements() ; ## Group dyads by pairs of reverse complements
 	&CountZeroOcc2str(); ## Count patterns with zero occurrences on both strands
     }
-    &CalcOccSum() if ($return{freq} || $return{exp_occ}); ## Calculate the sum of occurrences
     &CalcMonadFrequencies() if ($return{freq}); ### Calculate observed monad frequencies
     &CalcDyadFrequencies() if ($return{freq}); ### Calculate observed dyad frequencies
 
@@ -508,8 +509,11 @@ sub CalcOccSum {
 		} else {
 		    $pattern_seq = "${oligo1}n\{$spacing\}${oligo2}";
 		}
-		next unless (defined($patterns{$pattern_seq}->{occ}));
+		next unless ((defined($patterns{$pattern_seq}->{occ})) ||
+			      (defined($patterns{$pattern_seq}->{overlaps}))
+			      );
 		$dyad_occ_sum{$spacing} += $patterns{$pattern_seq}->{occ};
+		$dyad_ovl_sum{$spacing} += $patterns{$pattern_seq}->{overlaps};
 	    }
 	}
     }
@@ -1002,23 +1006,27 @@ sub CountDyads {
 	$current_seq = &FoldSequence($current_seq,0);
 	$current_seq = &CleanDNA($current_seq) if ($seq_type eq "DNA");
 	
-	### Statistics about sequences
+	### Index sequence lengths
 	$sequence_number++;  
 	$id_list[$sequence_number] = $current_id;
 	$seq_length[$sequence_number] = length($current_seq);
 	my $prev_sum_seq_len = $sum_seq_length;
 	$sum_seq_length += $seq_length[$sequence_number];
 
-	## Can never be negative, even if the new seq is shorter than dyad length
+	################################################################
+	## Calculate the number of possible positions, as a function of
+	## dyad spacing (the number of forbidden positions at the end
+	## of the sequecne depends on the spacing)
 	foreach my $spacing (@spacing_list) {
 	    my $new_pos_nb =  max(0,$seq_length[$sequence_number] - 2*$oligo_length - $spacing + 1); 
 	    $nb_possible_pos{$spacing} += $new_pos_nb if ($new_pos_nb > 0); 
 	}
 
-	#### Count monads and dyads
+	## Calculate las position
 	my $last_pos = $seq_length[$sequence_number] - $oligo_length;
+
+	## chunks for high verbosity
 	$chunk = 10000;
-	$pos1 = 0;
 
 	## Verbosity
 	&RSAT::message::TimeWarn(join ("\t", "\tsequence",
@@ -1031,9 +1039,11 @@ sub CountDyads {
 
 	################################################################
 	## Iteration to get teh first monad of the dyad
+	$pos1 = 0;
 	while ($pos1 <= $last_pos) {
 #	    &RSAT::message::Debug("p1= ".$pos1, "last= ".$last_pos) if ($main::verbose >= 10);
 	    
+	    ## High verbostity
 	    if ($main::verbose >= 3) {
 		if ((($prev_sum_seq_len+$pos1)%$chunk ==0 ) && ($pos1 > 0)) {
 		    $chunk_nb++;
@@ -1159,7 +1169,7 @@ sub CountDyads {
 			my $dist = $pos1 - $last_pos{$pattern_seq};
 			
 # 			&RSAT::message::Debug(
-# 			    "Checkin self-overlap", 
+# 			    "Checking self-overlap", 
 # 			    $pos1."<".$spacing.">".$pos2,
 # 			    "dist=".$dist,
 # 			    $pattern_seq,
@@ -1374,12 +1384,15 @@ sub PrintVerbose {
 #	printf $out "; \t%-29s\t%d\t%s\n", "    discarded", $discarded_dyad_positions, " (contain other letters than ACGT)";
     printf $out ";\tDyad counts per spacing\n";
 
-    print $out join("\t", ";\t", "spacing", "max_pos", "counts");
+    print $out join("\t", ";\t", "spacing", "max_pos", "occ");
+    if ($noov) {
+	print $out "\t", "ovlps";
+	print $out "\t", "ovl+occ";
+    }
     if ($seq_type eq "DNA") {
 	print $out "\t", join("\t", 
-			      "valid", 
-			      "discard",
-			      "v+d",
+			      "ATGC", 
+			      "nonATGC",
 			     );
     }
     print $out "\n";
@@ -1387,11 +1400,14 @@ sub PrintVerbose {
 	print $out join("\t", ";\t", "sp ".$spacing, 
 			$nb_possible_pos{$spacing},
 			$dyad_occ_sum{$spacing});
+	if ($noov) {
+	    print $out "\t", $dyad_ovl_sum{$spacing};
+	    print $out "\t", $dyad_ovl_sum{$spacing} + $dyad_occ_sum{$spacing};
+	}
     	if ($seq_type eq "DNA") {
 	    print $out "\t", join ("\t", 
 				   $nb_valid_pos{$spacing}, 
 				   $discarded_dyad_positions_per_spacing{$spacing},
-				   $nb_valid_pos{$spacing} + $discarded_dyad_positions_per_spacing{$spacing},
 				  );
 	}
 	print $out "\n";
