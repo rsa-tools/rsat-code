@@ -155,7 +155,7 @@ index_results:
 	@echo "Indexing results	${REF_ORG}	${TAXON}	${INDEX_FILE}"
 	@echo "<html>" > ${INDEX_FILE}
 	@echo "<body>" >> ${INDEX_FILE}
-	@echo "<h1>${REF_ORG} ; ${TAXON}</h1>" >> ${INDEX_FILE}
+	@echo "<h1>${REF_ORG} ; ${TAXON} ; ${SUFFIX}</h1>" >> ${INDEX_FILE}
 	@echo "<table border=1 cellpadding=3 cellspacing=3 align=center>" >> ${INDEX_FILE}
 #	${MAKE} index_one_result GENE=lexA
 	@for g in ${ALL_GENES} ; do  \
