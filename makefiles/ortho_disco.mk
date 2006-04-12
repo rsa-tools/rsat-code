@@ -53,6 +53,12 @@ all_tasks_all_genes:
 		${MAKE} all_tasks REF_ORG=${REF_ORG} TAXON=${TAXON} MAIN_DIR=${MAIN_DIR} GENE=$${g} ; \
 	done
 
+GENE_TASK=match_known_sites
+iterate_genes:
+	@for g in ${ALL_GENES} ; do \
+		${MAKE} ${GENE_TASK} REF_ORG=${REF_ORG} TAXON=${TAXON} MAIN_DIR=${MAIN_DIR} GENE=$${g} ; \
+	done
+
 ################################################################
 ## Run all the tasks for a single gene
 ALL_TASKS_CMD=${ORTHO_CMD} ; ${RETRIEVE_CMD} ; ${DYAD_CMD} ; ${ASSEMBLE_CMD}; ${MAP_CMD}
