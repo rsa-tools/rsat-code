@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.62 2006/03/20 13:53:53 rsat Exp $
+# $Id: install-organism,v 1.63 2006/04/12 12:35:24 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -52,6 +52,12 @@ $supported_tasks = join ",", sort (keys %supported_task);
 
 &ReadArguments();
 
+################################################################
+## Initialize parameters
+$start_time = &AlphaDate();
+
+## Store the starting directory
+$dir{main} = `pwd`; 
 
 @task = keys %task;
 if ($#task == -1) {
@@ -159,7 +165,18 @@ for $noov ("-noov", "-ovlp") {
 
 close $out if ($outputfile);
 
+## Touch the installation dir to indicate the last modification date
+$dir{main};
+chdir($dir{main});
+&RSAT::message::Info(join("\t", "working dir",  `pwd`));
 system "touch $dir{install}";
+
+if ($verbose >= 1) {
+    $done_time  = &AlphaDate();
+    print $out "; Job started $start_time\n";
+    print $out "; Job done    $done_time\n";
+}
+
 
 exit(0);
 
@@ -399,7 +416,7 @@ sub IntergenicSegments {
 	
     }
 
-    chdir "../";
+    chdir $dir{main};
 }
 
 
@@ -407,7 +424,7 @@ sub IntergenicSegments {
 ### extract the complete set of upstream sequences
 sub AllUpstream {
     warn "; Retrieving all upstream sequences\n" if ($verbose >= 1);
-    chdir $dir{genome};
+#    chdir $dir{genome};
 
     foreach my $noorf ("", "-noorf") {
 	my $seq_type = "upstream${noorf}";
@@ -431,7 +448,7 @@ sub AllUpstream {
 	&PurgeSequences($seq_file) if ($purged_frequencies);
     }
 	
-    chdir "../";
+    chdir $dir{main};
 }
     
 ################################################################
@@ -546,7 +563,7 @@ sub CalcFrequencies {
 	&CalcDyadFreq($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{dyads});
     }
 
-    chdir '../';
+    chdir $dir{main};
     
 }
 
@@ -1292,6 +1309,7 @@ sub ParseGenome {
 	&RSAT::error::FatalError("Cannot find a directory $organism_short_name in genbank dir $dir{genbank}" );
     }
     my $command = "$RSA/perl-scripts/parse-genbank.pl -v 1 -i $dir{source}";
+    $command .= " -o ".$dir{genome};
     if ($dir{ensembl}) {
 	$command .= " -ext dat";
 	$command .= " -org ".$organism_short_name;
