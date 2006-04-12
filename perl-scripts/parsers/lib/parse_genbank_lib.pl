@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank_lib.pl,v 1.24 2006/03/29 20:00:24 rsat Exp $
+# $Id: parse_genbank_lib.pl,v 1.25 2006/04/12 12:35:24 rsat Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -87,7 +87,7 @@ sub ParseAllGenbankFiles {
 			  $organisms, 
 			  $sources,
 #			  source=>"Genbank", 
-			  seq_dir=>$dir{sequences}
+			  seq_dir=>$main::dir{sequences}
 			 );
     }
     
@@ -243,10 +243,11 @@ sub ParseGenbankFile {
 			     gene=>1
 			     );
 
-    if ($main::verbose >= 1) {
-	warn ";\n; Parsing file $input_file.\n"; 
-	warn ";\n; Features to parse\t", join (",", keys %features_to_parse), "\n";
-    }
+    &RSAT::message::TimeWarn(join("\t", "Parsing gbk file", 
+				   $input_file, 
+				   "Features", join (",", keys %features_to_parse))) 
+	if ($main::verbose >= 1);
+    &RSAT::message::TimeWarn(join("\t", "Sequence directory", $args{sequence_dir})) if ($main::verbose <= 1);
 
     open GBK, $input_file 
 	|| die "Error: cannot open input file $input_file.\n";
@@ -401,16 +402,17 @@ sub ParseGenbankFile {
 		$seq_file =~ s/:/_/g;
 		$current_contig->set_attribute("seq_dir", $args{seq_dir});
 		$current_contig->set_attribute("file", $seq_file);
+		my $seq_file_path = $args{seq_dir}."/".$seq_file;
 		
-		&RSAT::message::Debug ("Contig sequence file", $current_contig, $contig_id, $seq_file) if ($main::verbose >= 5);
+		&RSAT::message::Debug ("Contig sequence file", $current_contig, $contig_id, $seq_file) if ($main::verbose >= 2);
 		
-		&RSAT::message::Info ("; Storing sequence ",
-				      $current_contig->get_attribute("id"), 
-				      " in file $args{seq_dir}/$seq_file\n" )
+		&RSAT::message::Info (join("\t", "Storing sequence ",
+					   $current_contig->get_attribute("id"), 
+					   "in file", $seq_file_path))
 		    if ($main::verbose >= 1);
-		
-		open SEQ, ">".$args{seq_dir}."/".$seq_file 
-		    || die "Error: cannot write sequence file $args{seq_file}\n";
+
+		open SEQ, ">".$seq_file_path
+		    || die "Error: cannot write sequence file $seq_file_path\n";
 		while ($line = &ReadNextLine()) {
 		    if ($line =~ /^\s+\d+\s+/) {
 			$sequence = "$'";
@@ -429,7 +431,9 @@ sub ParseGenbankFile {
 		}
 		close SEQ;
 
-#		warn "HELLO\t", "$args{seq_dir}/$seq_file", "\n";
+		$pwd = `pwd`;
+		&RSAT::message::Debug("working dir", $pwd,  "Sequence saved in file", $seq_file_path) if ($main::verbose >= 1);
+
 	    } else {
 		#### load sequence in memory and return it
 		while ($line = &ReadNextLine()) {
@@ -914,10 +918,10 @@ sub CreateGenbankFeatures {
 	$created_feature->set_attribute("GeneID",$parent_feature->get_attribute("GeneID"));
 
 	&RSAT::message::Debug ("\t", "feature", 
-		   $created_feature->get_attribute("id"),
-		   "type", $created_feature->get_attribute("type"),
-		   "organism", $created_feature->get_attribute("organism"),
-		  ), "\n" if ($verbose >= 2);
+			       $created_feature->get_attribute("id"),
+			       "type", $created_feature->get_attribute("type"),
+			       "organism", $created_feature->get_attribute("organism"),
+			       ), "\n" if ($verbose >= 4);
 
 
 # 	################################################################

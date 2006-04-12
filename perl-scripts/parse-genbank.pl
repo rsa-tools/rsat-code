@@ -1,6 +1,6 @@
 #!/usr/bin/perl 
 #############################################################
-# $Id: parse-genbank.pl,v 1.36 2006/04/05 08:05:09 rsat Exp $
+# $Id: parse-genbank.pl,v 1.37 2006/04/12 12:35:24 rsat Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -137,25 +137,25 @@ package main;
     ################################################################
     #### find genbank files in the input directory
     unless ($inputfiles) {
-	chdir ($dir{input});
-	push @genbank_files, glob("*.${ext}");
-	push @genbank_files, glob("*.${ext}.gz");
+#	chdir ($dir{input});
+	push @genbank_files, glob($dir{input}."/*.${ext}");
+	push @genbank_files, glob($dir{input}."/*.${ext}.gz");
 	
 
 	## If no genbank files were found in the main directory (Bacteria),
 	## search in CHR_* directories (eukaryotes)
 	if (scalar(@genbank_files) < 1) {
 	    chdir ($dir{input});
-	    push @genbank_files, glob("CHR_*/*.${ext}");
-	    push @genbank_files, glob("CHR_*/*.${ext}.gz");
+	    push @genbank_files, glob($dir{input}."/CHR_*/*.${ext}");
+	    push @genbank_files, glob($dir{input}."/CHR_*/*.${ext}.gz");
 	}
     }
 
     ## For eukaryotes, the genbank files are in sub-directories corresponding to the chromosomes
-    if ($#genbank_files < 0) {
-	push @genbank_files, glob("CHR_*/*.${ext}");
-	push @genbank_files, glob("CHR_*/*.${ext}.gz");
-    }
+#    if ($#genbank_files < 0) {
+#	push @genbank_files, glob("CHR_*/*.${ext}");
+#	push @genbank_files, glob("CHR_*/*.${ext}.gz");
+#    }
 
     if ($#genbank_files < 0) {
 	system "ls -l";
@@ -164,7 +164,7 @@ package main;
 	warn "; Genbank files\n;\t", join("\n;\t", @genbank_files), "\n" if ($verbose >= 1);
     }
     chdir($dir{main});     #### come back to the starting directory
-
+    
     #### output directory
     unless (defined($dir{output})) {
 	if (($dir{input} =~ /refseq/) ||
@@ -195,7 +195,7 @@ package main;
     &Verbose() if ($verbose);
 
     ## Parse the genbank files
-    chdir $dir{input};
+#    chdir $dir{input};
     &ParseAllGenbankFiles(@genbank_files);
 
     #### write the contig file
