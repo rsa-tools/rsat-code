@@ -248,11 +248,12 @@ dyad_profiles: dyad_file_list
 ## - dyad
 ## - gene
 ## - significance
+DYAD_SIG_COL=9
 dyad_classes: dyad_file_list
 	@echo
 	@echo "Generating dyads/gene file"
 	@mkdir -p ${COMPA_DIR}	
-	(cd ${RESULT_DIR}; compare-scores -null "NA" -sc 8 \
+	(cd ${RESULT_DIR}; compare-scores -null "NA" -sc ${DYAD_SIG_COL} \
 		-format classes \
 		-suppress "\./motifs/" \
 		-suppress "_dyads.tab" \
