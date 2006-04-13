@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: dyad-analysis,v 1.42 2006/04/12 15:17:09 jvanheld Exp $
+# $Id: dyad-analysis,v 1.43 2006/04/13 05:24:58 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 23:46:08 jvanheld>
 #
@@ -16,7 +16,7 @@ require "RSA.disco.lib";
 ################################################################
 #### Initialise parameters
 $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
-%default_return = (occ=>1,proba=>1);
+%default_return_fields = (occ=>1,proba=>1);
 $timeout = 900;
 
 #### background models
@@ -25,7 +25,7 @@ $timeout = 900;
 		 'intergenic'=>1,
 		 'monads'=>1,
 		 'input'=>1,
-		 );
+		);
 $supported_bg = join ",", sort keys %supported_bg;
 $background_model="monads"; ## Default background model : estimate expected dyad freq from observed monad freq
 
@@ -90,9 +90,9 @@ if ($seq_type eq "DNA") {
 ## block, in order to stop it if it lasts more than 10'. This eval was
 ## essentially conceived for the web server. On the command-line, the
 ## timeout can be extended with the option -timeout.
-#$SIG{ALRM} = sub {die "timeout" };
-#eval {
-#    alarm($timeout);
+$SIG{ALRM} = sub {die "timeout" };
+eval {
+    alarm($timeout);
 
     ################################################################
     ## Check argument values 
@@ -102,7 +102,7 @@ if ($seq_type eq "DNA") {
 	($tail eq "two")) {
 	$zeroocc = 1; 
     }
-
+    
     ## check pre-defined frequency table for intergenic frequency
     ## calibration
     if (($background_model ne "monads") || ($mncf)) {
@@ -112,7 +112,8 @@ if ($seq_type eq "DNA") {
 	
 	$data_dir = $supported_organism{$organism_name}->{'data'};
 	if ($background_model ne "monad") {
-	    ### localise expected frequency file for dyads in intergenic sequences
+
+	    ## localise expected frequency file for dyads in intergenic sequences
 	    if ($noov) {
 		$noov_suffix = "-noov";
 	    } else { 
@@ -127,33 +128,19 @@ if ($seq_type eq "DNA") {
 				  ${noov_suffix}.${strands},
 				  ".freq");
 	    
- 	    unless ((-e $exp_freq_file) || (-e "$exp_freq_file.gz") ) {
+	    unless ((-e $exp_freq_file) || (-e "$exp_freq_file.gz") ) {
 		&RSAT::error::FatalError("Expected frequency file does not exist\t$exp_freq_file");
 	    }	
 	} elsif ($mncf) {
-	    ### localize monad intergenic frequency file
+	    ## localize monad intergenic frequency file
 	    $monad_exp_freq_file .= "$data_dir/oligo-frequencies/${oligo_length}nt_intergenic_${organism_name}.freq";
 	}
     }
 
-    ### Check stats to return
-    %return = %default_return unless (defined(%return));
-    if ((defined($lth{occ_sig})) || (defined($uth{occ_sig}))) {
-	$return{proba} = 1;
-    }
-
-    if (($return{proba}) || ($return{zscore})) {
-	$return{occ} = 1;
-	$return{exp_occ} = 1;
-	$return{exp_freq} = 1;
-    }
-    if ($return{ratio}) {
-	$return{occ} = 1;
-	$return{exp_occ} = 1;
-	$return{exp_freq} = 1;
-    }
-
-    ### check spacing values and order
+    ## Check fields to calculate
+    &CheckCalcFields();
+    
+    ## Check spacing values and order
     if ($sp_group) {
 	@spacing_list = ("$min_spacing,$max_spacing");
     } else {
@@ -163,7 +150,7 @@ if ($seq_type eq "DNA") {
 	&RSAT::error::FatalError("Invalid oligonucleotide length specification.");
     }
     
-    ### check sequence format
+    ## check sequence format
     if ($input_format eq "") {
 	die ("\tError: you did not specify the input sequence format\n",
 	     "\tType dyad-analysis -help for info\n");
@@ -171,7 +158,7 @@ if ($seq_type eq "DNA") {
 	die ("\tError: $input_format is not a valid input sequence format\n",
 	     "\tType dyad-analysis -help for info\n");
     }
-
+    
     ################################################################
     ## Start the analysis
     &CalcPossibleDyads(); ### Calculate all possible dyads
@@ -182,16 +169,16 @@ if ($seq_type eq "DNA") {
 	&SumReverseComplements() ; ## Group dyads by pairs of reverse complements
 	&CountZeroOcc2str(); ## Count patterns with zero occurrences on both strands
     }
-    &CalcMonadFrequencies() if ($return{freq}); ### Calculate observed monad frequencies
-    &CalcDyadFrequencies() if ($return{freq}); ### Calculate observed dyad frequencies
-
+    &CalcMonadFrequencies() if ($calc_fields{freq}); ### Calculate observed monad frequencies
+    &CalcDyadFrequencies() if ($calc_fields{freq}); ### Calculate observed dyad frequencies
+    
     ## Open output stream
     $out = &OpenOutputFile($outputfile); 
-
+    
     &CalcExpectedMonadFreq(); ## Calculate expected monad frequencies
-    &CalcExpectedDyadFreq() if ($return{exp_freq}); ### Calculate expected dyad frequencies
-    &CalcExpectedOcc() if ($return{exp_occ}); ### Calculate expected dyad occurrences
-
+    &CalcExpectedDyadFreq() if ($calc_fields{exp_freq}); ### Calculate expected dyad frequencies
+    &CalcExpectedOcc() if ($calc_fields{exp_occ}); ### Calculate expected dyad occurrences
+    
     ################################################################
     ## Check some thresholds to filter out undue dyads before starting
     ## the time-consuming computation of probabilities
@@ -199,11 +186,11 @@ if ($seq_type eq "DNA") {
     &CheckThresholds("obs_freq");
     &CheckThresholds("exp_freq");
     &CheckThresholds("exp_occ");
-
-    &CalcRatio() if ($return{ratio}); ### Calculate obs/exp ratio
-
-    &CalcProba() if ($return{proba}); ### Calculate probabilities
-
+    
+    &CalcRatio() if ($calc_fields{ratio}); ### Calculate obs/exp ratio
+    
+    &CalcProba() if ($calc_fields{proba}); ### Calculate probabilities
+    
     ################################################################
     ## Choose between a single row per pair of reverse complements, or
     ## two separate rows (with identical statistics)
@@ -235,8 +222,8 @@ if ($seq_type eq "DNA") {
     ###### close output stream
     close $out if ($outputfile);
 
-#    alarm(0);
-#}; ###eval 
+    alarm(0);
+}; ###eval 
 
 
 
@@ -265,6 +252,62 @@ exit(0);
 ##################### SUBROUTINE DEFINITION ####################
 ################################################################
 
+################################################################
+## Check if thresholds have been defined on a given field, and
+## activate the calculation of a dependent field
+sub CheckThresholdDependencies {
+    my ($field, $dependency) = @_;
+    if ((defined($lth{$field})) || (defined($uth{$field}))) {
+	$calc_fields{$dependency} = 1;
+    }
+}
+
+################################################################
+## Check fields to calculate, as a function of those to return
+## There are dependencies betwen these fields. 
+sub CheckCalcFields {
+    %return_fields = %default_return_fields unless (defined(%return_fields));
+    %calc_fields = %return_fields;
+
+    ## Check depencencies between fields and thresholds
+    &CheckThresholdDependencies("occ", "occ");
+    &CheckThresholdDependencies("occ_P", "occ");
+    &CheckThresholdDependencies("occ_E", "occ");
+    &CheckThresholdDependencies("occ_sig", "occ");
+    &CheckThresholdDependencies("occ_P", "proba");
+    &CheckThresholdDependencies("occ_E", "proba");
+    &CheckThresholdDependencies("occ_sig", "proba");
+    &CheckThresholdDependencies("observed_freq", "freq");
+    &CheckThresholdDependencies("exp_freq", "exp_freq");
+    &CheckThresholdDependencies("zscore", "zscore");
+    &CheckThresholdDependencies("mseq", "mseq");
+    &CheckThresholdDependencies("ms_P", "proba");
+    &CheckThresholdDependencies("ms_E", "proba");
+    &CheckThresholdDependencies("ms_sig", "proba");
+    &CheckThresholdDependencies("ms_P", "mseq");
+    &CheckThresholdDependencies("ms_E", "mseq");
+    &CheckThresholdDependencies("ms_sig", "mseq");
+    &CheckThresholdDependencies("ratio", "mseq");
+
+    ## Check dependencies between fields
+    if (($calc_fields{proba}) || 
+	($calc_fields{ratio}) || 
+	($calc_fields{zscore})) {
+	$calc_fields{exp_occ} = 1;
+	$calc_fields{exp_freq} = 1;
+    }
+
+    if ($calc_fields{exp_freq}) {
+	$calc_fields{freq} = 1;	
+    }
+
+    if ($calc_fields{exp_occ}) {
+	$calc_fields{occ} = 1;	
+    }
+    if ($calc_fields{freq}) {
+	$calc_fields{occ} = 1;	
+    }
+}
 
 ################################################################
 ## Calculate monad frequencies
@@ -614,7 +657,11 @@ sub CalcProba {
 		}
 		
 		## Check expected frequency
-		if ($patterns{$pattern_seq}->{exp_freq} <= 0) {
+		if (!defined($patterns{$pattern_seq}->{exp_freq})) {
+		    
+		    &RSAT::message::Warning (join("\t", "Undefined expected frequency for dyad", 
+						  $pattern_seq));
+		} if ($patterns{$pattern_seq}->{exp_freq} <= 0) {
 		    
 		    #### Expected frequency might not be defined if
 		    #### max_spacing is > than the max spacing of the
@@ -628,18 +675,19 @@ sub CalcProba {
 			&RSAT::message::Warning (join("\t", "Expected frequency must be > 0 for dyad", 
 						      $pattern_seq,
 						      $patterns{$pattern_seq}->{exp_freq}));
-			delete $patterns{$pattern_seq};
+			next;
+#			delete $patterns{$pattern_seq};
 		    }
 		}
 
 		### self-overlap coefficient
-		if (($return{proba}) || ($return{zscore})) {
+		if (($calc_fields{proba}) || ($calc_fields{zscore})) {
 		    $oligo_pair = $oligo1.$oligo2;
 		    $overlap_coeff{$pattern_seq} = &OverlapCoeff($oligo_pair);
 		}
 		
 		### calculate Z-scores ###
-		if ($return{zscore}) {
+		if ($calc_fields{zscore}) {
 		    $patterns{$pattern_seq}->{var_est} = $valid_dyad_positions{$spacing}*$patterns{$pattern_seq}->{exp_freq}*(2*$overlap_coeff{$pattern_seq} - 1 - (4*$oligo_length+1)*$patterns{$pattern_seq}->{exp_freq});
 		    if ($patterns{$pattern_seq}->{var_est} <= 0) {
 			$patterns{$pattern_seq}->{zscore} = "NA";
@@ -650,7 +698,7 @@ sub CalcProba {
 		
 		
 		### calculate occurrence probability ####
-		if ($return{proba}) {
+		if ($calc_fields{proba}) {
 		    $patterns{$pattern_seq}->{occ_P} =  &binomial_boe($patterns{$pattern_seq}->{exp_freq},$valid_dyad_positions{$spacing},$patterns{$pattern_seq}->{occ});
 		    $main::nb_tested_patterns++;
 #		    &RSAT::message::Debug("binomial test",
@@ -891,21 +939,21 @@ sub ReadArguments {
 	    @return_fields = split ",", $ARGV[$a+1];
 	    foreach $field (@return_fields) {
 		if ($field =~ /^proba/i) {
-		    $return{proba} = 1;
+		    $return_fields{proba} = 1;
 		} elsif  ($field =~ /^zsc/i) {
-		    $return{zscore} = 1;
+		    $return_fields{zscore} = 1;
 		} elsif  ($field =~ /^freq/i) {
-		    $return{freq} = 1;
+		    $return_fields{freq} = 1;
 		} elsif  ($field =~ /^exp_freq/i) {
-		    $return{exp_freq} = 1;
+		    $return_fields{exp_freq} = 1;
 		} elsif  ($field =~ /^occ/i) {
-		    $return{occ} = 1;
+		    $return_fields{occ} = 1;
 		} elsif  ($field eq "ratio") {
-		    $return{ratio} = 1;
+		    $return_fields{ratio} = 1;
 		} elsif  ($field eq "rank") {
-		    $return{rank} = 1;
+		    $return_fields{rank} = 1;
 		} elsif  ($field eq "monad_freq") {
-		    $return{monad_freq} = 1;
+		    $return_fields{monad_freq} = 1;
 		} else {
 		    &RSAT::error::FatalError("Invalid return field $field.");
 		}
@@ -1301,8 +1349,8 @@ sub PrintVerbose {
     printf $out "; %-29s\t%s\n", "Nb of sequences", $sequence_number;
     printf $out "; %-29s\t%s\n", "Sum of sequence lengths", $sum_seq_length;
     printf $out "; %-29s\t%s\n", "Output file", $outputfile if ($outputfile);
-    printf $out "; %-29s\t%s\n", "default return values", join(",", keys(%default_return));
-    printf $out "; %-29s\t%s\n", "return values", join(",", keys(%return));
+    printf $out "; %-29s\t%s\n", "default return values", join(",", keys(%default_return_fields));
+    printf $out "; %-29s\t%s\n", "return values", join(",", keys(%return_fields));
 
     ################################################################
     ## Counting mode
@@ -1338,7 +1386,7 @@ sub PrintVerbose {
     }
     printf $out "; \t%-29s%d\n", "distinct monads", $nb_possible_oligo;
 
-    if ($return{monad_freq}) {
+    if ($return_fields{monad_freq}) {
 	print $out ";\tMonad frequencies\n";
 	print $out join("\t", ";\t\t", "monad", "occ_1s", "occ_sum", "freq", "frq_sum");
 	print $out "\t", join("\t", "rc_pair", "occ_2s", "freq_2s") if ($sum_rc);
@@ -1495,23 +1543,23 @@ sub PrintHeaderLine {
     }
 
     ## Frequencies
-    push @out_col, "observed_freq" if ($return{freq});
-    push @out_col, "expected_freq" if ($return{exp_freq});
+    push @out_col, "observed_freq" if ($return_fields{freq});
+    push @out_col, "expected_freq" if ($return_fields{exp_freq});
 
     ## Occurrences
-    push @out_col, "occ" if ($return{occ});
-    push @out_col, "exp_occ"  if ($return{exp_occ});
+    push @out_col, "occ" if ($return_fields{occ});
+    push @out_col, "exp_occ"  if ($return_fields{exp_occ});
 
 
     ## Binomial probability
-    if ($return{proba}) {
+    if ($return_fields{proba}) {
 	push @out_col, "occ_P";
 	push @out_col, "occ_E";
 	push @out_col, "occ_sig";
     }
 
     ## Rank
-    push @out_col, "rank"  if ($return{rank});
+    push @out_col, "rank"  if ($return_fields{rank});
     
     ## Overlapping occurrences
     if ($noov) {
@@ -1521,16 +1569,16 @@ sub PrintHeaderLine {
 
 
     ## z-score
-    if ($return{zscore}) {
+    if ($return_fields{zscore}) {
 	push @out_col, "zscore";
 	push @out_col, "occ_var";
     }
 
     ## Ratio
-    push @out_col, "ratio"  if ($return{ratio});
+    push @out_col, "ratio"  if ($return_fields{ratio});
 
 
-    if (($return{proba})|| ($return{zscore})) {
+    if (($return_fields{proba})|| ($return_fields{zscore})) {
 	push @out_col, "ov_coef" ;
 	push @out_col, "remark";
     }
@@ -1560,9 +1608,9 @@ sub PrintResult {
     
     #### sort dyads according to significance ####
     if ($sort_results) {
-	if ($return{proba}) { ### sort by decreasing order of significance
+	if ($return_fields{proba}) { ### sort by decreasing order of significance
 	    @sorted_patterns = sort { $patterns{$b}->{occ_sig} <=> $patterns{$a}->{occ_sig}} keys %patterns;
-	} elsif ($return{zscore}) { ### sort by decreasing order of zscore
+	} elsif ($return_fields{zscore}) { ### sort by decreasing order of zscore
 	    @sorted_patterns = sort {$patterns{$b}->{zscore} <=> $patterns{$a}->{zscore}} keys %patterns;
 	} else { ### sort by decreasing order of occurrences
 	    @sorted_patterns = sort {$patterns{$b}->{occ} <=> $patterns{$a}->{occ}} keys %patterns;
@@ -1597,15 +1645,15 @@ sub PrintResult {
 	}
 
 	## Frequencies
-	printf $out "\t%15.13f", $patterns{$pattern_seq}->{obs_freq} if ($return{freq});
-	printf $out "\t%15.13f", $patterns{$pattern_seq}->{exp_freq} if ($return{exp_freq});
+	printf $out "\t%15.13f", $patterns{$pattern_seq}->{obs_freq} if ($return_fields{freq});
+	printf $out "\t%15.13f", $patterns{$pattern_seq}->{exp_freq} if ($return_fields{exp_freq});
 
 	## Occurrences
-	printf $out "\t%7d", $patterns{$pattern_seq}->{occ} if ($return{occ});
-	printf $out "\t%7.2f", $patterns{$pattern_seq}->{exp_occ} if ($return{exp_occ});
+	printf $out "\t%7d", $patterns{$pattern_seq}->{occ} if ($return_fields{occ});
+	printf $out "\t%7.2f", $patterns{$pattern_seq}->{exp_occ} if ($return_fields{exp_occ});
 
 	## Binomial probability
-	if ($return{proba}) {
+	if ($return_fields{proba}) {
 	    if ($patterns{$pattern_seq}->{occ_P} >= 0.0001) {
 		printf $out "\t%7.5f", $patterns{$pattern_seq}->{occ_P};
 	    } else {
@@ -1616,7 +1664,7 @@ sub PrintResult {
 	}
 
 	## Rank
-	printf $out "\t%7d", $patterns{$pattern_seq}->{rank} if ($return{rank});
+	printf $out "\t%7d", $patterns{$pattern_seq}->{rank} if ($return_fields{rank});
 
 	## Overlapping occurrences
 	if ($noov) {
@@ -1625,13 +1673,13 @@ sub PrintResult {
 	}
 
 	## z-score
-	if ($return{zscore}) {
+	if ($return_fields{zscore}) {
 	    print $out "\t", $patterns{$pattern_seq}->{zscore};
 	    printf $out "\t%7.2f", $patterns{$pattern_seq}->{var_est};
 	}
 
 	## Ratio
-	if ($return{ratio}) {
+	if ($return_fields{ratio}) {
 	    if ($patterns{$pattern_seq}->{exp_occ} > 0) {
 		printf $out "\t%7.2f", $patterns{$pattern_seq}->{occ}/$patterns{$pattern_seq}->{exp_occ};
 	    } else {
@@ -1640,7 +1688,7 @@ sub PrintResult {
 	}
 
 	## Miscelaneous
-	if (($return{proba}) || ($return{zscore})) {
+	if (($return_fields{proba}) || ($return_fields{zscore})) {
 	    printf $out "\t%7.4f", $overlap_coeff{$pattern_seq};
 	    print $out "\t", $patterns{$pattern_seq}->{remark};
 	}
