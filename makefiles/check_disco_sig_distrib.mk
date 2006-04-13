@@ -86,3 +86,6 @@ score_distrib: list_disco_files
 		-o ${SCORE_FILE}.jpg
 
 	@echo ${SCORE_FILE}.jpg
+
+problem:
+	dyad-analysis  -i ${SEQ_FILE} -v 1 -sort -timeout 3600 -type any -2str -noov -org Saccharomyces_cerevisiae -lth occ 1 -lth occ_sig 0 -return occ -l 3 -spacing 0-0 -v 2
