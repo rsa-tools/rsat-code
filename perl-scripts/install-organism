@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.63 2006/04/12 12:35:24 rsat Exp $
+# $Id: install-organism,v 1.64 2006/04/13 13:50:25 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -458,6 +458,13 @@ sub SeqLengthDistribution {
     $ci = 50 unless $ci;
     $format = "fasta" unless $format;
     my $classfreq_from = 0;
+    chdir $dir{genome};
+
+    if ($main::verbose >= 2) {
+	my $pwd = `pwd`;
+	chomp $pwd;
+	&RSAT::message::TimeWarn(join"\t", "SeqLengthDistribution", $seq_file, $seq_type, "Working dir", $pwd);
+    }
 
     my $command = "sequence-lengths -i $seq_file -format ".$format;
     $command .= " -o ${organism_short_name}_${seq_type}_segments_lengths.tab";
