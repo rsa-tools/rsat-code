@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: dyad-analysis,v 1.43 2006/04/13 05:24:58 jvanheld Exp $
+# $Id: dyad-analysis,v 1.44 2006/04/13 05:34:19 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 23:46:08 jvanheld>
 #
@@ -188,7 +188,6 @@ eval {
     &CheckThresholds("exp_occ");
     
     &CalcRatio() if ($calc_fields{ratio}); ### Calculate obs/exp ratio
-    
     &CalcProba() if ($calc_fields{proba}); ### Calculate probabilities
     
     ################################################################
