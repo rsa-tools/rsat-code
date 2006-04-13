@@ -354,6 +354,20 @@ mcl:
 	convert-classes -from mcl -to tab -i ${MCL_FILE}.mic -o ${MCL_FILE}.tab ; echo ${MCL_FILE}.tab 
 	convert-graph -from tab -to gml -i ${MCL_FILE}.tab -o ${MCL_FILE}.gml ; echo ${MCL_FILE}.gml
 	convert-graph -from tab -to dot -i ${MCL_FILE}.tab -o ${MCL_FILE}.dot ; echo ${MCL_FILE}.dot 
+################################################################
+## Test various values for the inflation parameter of mcl
+INFLATION_VALUES=1.2 1.5 \
+	2.0 2.5 \
+	3.0 3.5 \
+	4.0 4.5 \
+	5.0 5.5
+INFLATION_TASK=mcl
+mcl_inflation_series:
+	@for i in ${INFLATION_VALUES}; do \
+		echo ; \
+		echo "Inflation $${i}" ; \
+		${MAKE} -s ${INFLATION_TASK} INFLATION=$${i}; \
+	done
 
 ################################################################
 ## Compare the clustering result to RegulonDB (for E.coli only)
@@ -367,24 +381,11 @@ mcl_vs_regulondb:
 	compare-classes -v 1 -r ${REGULONDB_TABLE}_uc.tab -q ${MCL_FILE}.tab -return occ -matrix QR -o ${MCL_VS_REG}_conting.tab
 	@echo ${MCL_VS_REG}_conting.tab
 
-INFLATION_VALUES=1.2 1.4 1.6 1.8 \
-	2.0 2.2 2.4 2.6 2.8 \
-	3.0 3.2 3.4 3.6 3.8 \
-	4.0 4.2 4.4 4.6 4.8 \
-	5.0 5.2 5.4 5.6 5.8
-INFLATION_TASK=mcl
-iterate_inflations:
-	@for i in ${INFLATION_VALUES}; do \
-		echo ; \
-		echo "Inflation $${i}" ; \
-		${MAKE} -s ${INFLATION_TASK} INFLATION=$${i}; \
-	done
-
 
 ################################################################
 ## Convert the gene pairs into a graph (2 formats : .dot and .gml)
 MIN_SCORE=1
-SCORE_COL=9
+SCORE_COL=15
 SCORE=dp
 PAIR_GRAPH=${GENE_PAIRS}_${SCORE}${MIN_SCORE}
 gene_pair_graphs:
