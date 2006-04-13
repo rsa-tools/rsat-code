@@ -150,7 +150,7 @@ map:
 
 ################################################################
 ## Index the results for the whole set of genes
-INDEX_FILE=${MAIN_DIR}/results/${REF_ORG}/${TAXON}/index_${REF_ORG}_${TAXON}_${SUFFIX}.html
+INDEX_FILE=${MAIN_DIR}/results/${REF_ORG}/${TAXON}/index_${REF_ORG}_${TAXON}${SUFFIX}.html
 index_results:
 	@echo "Indexing results	${REF_ORG}	${TAXON}	${INDEX_FILE}"
 	@echo "<html>" > ${INDEX_FILE}
@@ -210,9 +210,9 @@ index_one_result:
 ################################################################
 ## Compare dyads discovered in the different genes
 COMPA_DIR=${RESULT_DIR}/gene_pair_network
-COMPA_TABLE=${COMPA_DIR}/${REF_ORG}_${TAXON}_${SUFFIX}_dyad_profiles.tab
-COMPA_CLASSES=${COMPA_DIR}/${REF_ORG}_${TAXON}_${SUFFIX}_dyad_classes.tab
-DYAD_FILE_LIST=${RESULT_DIR}/dyad_files.txt
+COMPA_TABLE=${COMPA_DIR}/${REF_ORG}_${TAXON}${SUFFIX}_dyad_profiles.tab
+COMPA_CLASSES=${COMPA_DIR}/${REF_ORG}_${TAXON}${SUFFIX}_dyad_classes.tab
+DYAD_FILE_LIST=${RESULT_DIR}/dyad_files${SUFFIX}.txt
 dyad_file_list:
 	@echo
 	@echo "Generating the list of dyad files"
@@ -270,8 +270,8 @@ dyad_classes: dyad_file_list
 ## Compare discovered dyads between each pair of gene and return the
 ## results as a table with one row per pair of genes, and different
 ## significance statistics.
-PROFILE_PAIRS=${COMPA_DIR}/${REF_ORG}_${TAXON}_${SUFFIX}_profile_pairs
-GENE_PAIRS=${COMPA_DIR}/${REF_ORG}_${TAXON}_${SUFFIX}_gene_pairs
+PROFILE_PAIRS=${COMPA_DIR}/${REF_ORG}_${TAXON}${SUFFIX}_profile_pairs
+GENE_PAIRS=${COMPA_DIR}/${REF_ORG}_${TAXON}${SUFFIX}_gene_pairs
 GENE_PAIR_RETURN=occ,dotprod,jac_sim,proba,entropy,rank
 gene_pairs:
 	@echo
@@ -287,7 +287,7 @@ gene_pairs:
 
 gene_pairs_members:
 	${MAKE} gene_pairs GENE_PAIR_RETURN=occ,dotprod,jac_sim,proba,members,rank \
-		GENE_PAIRS=${COMPA_DIR}/${REF_ORG}_${TAXON}_${SUFFIX}_gene_pairs_dyads
+		GENE_PAIRS=${COMPA_DIR}/${REF_ORG}_${TAXON}${SUFFIX}_gene_pairs_dyads
 
 
 profile_pairs:
@@ -341,7 +341,7 @@ gene_pair_score_compa:
 #GRAPH=coli_gamma_common_motifs_dotprod
 INFLATION=2.0
 MCL_DIR=${RESULT_DIR}/clusters/mcl
-MCL_FILE=${MCL_DIR}/${REF_ORG}_${TAXON}_${SUFFIX}_sc${SCORE_COL}_mcl_I${INFLATION}
+MCL_FILE=${MCL_DIR}/${REF_ORG}_${TAXON}${SUFFIX}_sc${SCORE_COL}_mcl_I${INFLATION}
 GRAPH_FILE=${GENE_PAIRS}_sc${SCORE_COL}.tab
 mcl:
 	@echo
