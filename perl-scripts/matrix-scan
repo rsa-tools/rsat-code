@@ -1,11 +1,14 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.18 2006/04/11 13:46:41 rsat Exp $
+# $Id: matrix-scan,v 1.19 2006/04/14 16:48:10 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
 ############################################################
+
+## TO DO
+## - calcualte and display residue priors for each matrix, according to the background
 
 ## use strict;
 BEGIN {
@@ -96,7 +99,7 @@ package main;
     $main::both_strands = 0;
     $main::sum_seq_len = 0;
     $main::origin = 0;
-    $main::pseudo_weight = 1;
+    $main::pseudo_counts = 1;
     $main::matrix_format = "tab";
     $main::seq_format = "fasta";
     $main::verbose = 0;
@@ -117,6 +120,7 @@ package main;
     %supported_return_fields = (
 	sites=>1,
 	limits=>1,
+	bg_model=>1,
     );
     $supported_return_fields = join (",", sort(keys( %supported_return_fields)));
 
@@ -148,6 +152,13 @@ package main;
     ################################################################
     ## Background model specification
     local $bg_model = new RSAT::MarkovModel();
+
+    if ($main::both_strands) {
+	$bg_model->set_attribute("strand", "insensitive");
+    } else {
+	$bg_model->set_attribute("strand", "sensitive");
+    }
+
     if ($infile{bg}) {
 	## Read background model from a file
 	&RSAT::message::TimeWarn(join("\t", "Reading background model from file", $infile{bg})) 
@@ -174,7 +185,7 @@ package main;
 	my $matrix = new RSAT::matrix();
 	$matrix->readFromFile($matrix_file, $matrix_format);
 	$matrix->set_attribute("matches", 0); ## Initialize the match counter
-	$matrix->set_attribute("pseudo", $pseudo_weight);
+	$matrix->set_attribute("pseudo", $pseudo_counts);
 	$matrix->set_attribute("file", $matrix_file);
 	$matrix->set_attribute("name", $matrix_name);
 	$matrix->push_attribute("parameters", "pseudo");
@@ -358,6 +369,11 @@ package main;
 	print $main::out "; Job done    $done_time\n";
     }
     
+
+    ## Report background model
+    if ($return_fields{bg_model}) {
+	print $out $bg_model->to_string(comment_string=>"; ");
+    }
      
     ################################################################
     ###### close output stream
@@ -588,17 +604,17 @@ allows to use the command within a pipe.
 	    ## Pseudo weight
 =pod
 
-=item B<-pseudo pseudo_weight>
+=item B<-pseudo pseudo_counts>
 
 Pseudo-weight.
 
 =cut
 	} elsif ($arg eq "-pseudo") {
-	    $main::pseudo_weight = shift(@arguments);
-	    &RSAT::error::FatalError(join("\t", $main::pseudo_weight, 
+	    $main::pseudo_counts = shift(@arguments);
+	    &RSAT::error::FatalError(join("\t", $main::pseudo_counts, 
 					  "Invalid value for a pseudo-weight. Must be a positive real number."))
-		unless ((&RSAT::util::IsReal($main::pseudo_weight) )
-			&& ($main::pseudo_weight >= 0));
+		unless ((&RSAT::util::IsReal($main::pseudo_counts) )
+			&& ($main::pseudo_counts >= 0));
 
 
 	## Origin
@@ -725,22 +741,30 @@ Supported fields: sites, limits.
 ################################################################
 #### verbose message
 sub Verbose {
+
+    ## Report the command line
     print $main::out "; matrix-scan ";
     &PrintArguments($main::out);
+
+    ## Input files
     if (defined(%main::infile)) {
 	print $main::out "; Input files\n";
 	while (my ($key,$value) = each %main::infile) {
 	    print $main::out ";\t$key\t$value\n";
 	}
     }
+
+    ## Output files
     if (defined(%main::outfile)) {
 	print $main::out "; Output files\n";
 	while (my ($key,$value) = each %main::outfile) {
 	    print $main::out ";\t$key\t$value\n";
 	}
     }
+
     printf $main::out "; %-21s\t%s\n", "Sequence format", $seq_format;
 
+    ## Matrices PSSM
     print $main::out "; Matrices\n";
     print $out join ("\t", ";", 
 		     "name",
@@ -763,12 +787,14 @@ sub Verbose {
 			), "\n";
     }
 
-    printf $main::out "; %-21s\t%d\n", "Markov order", $bg_model->get_attribute("order");
-    if (defined($main::infile{bg})) {
-	if ($main::verbose >= 3) {
-	    print $out $bg_model->to_string(comment_string=>"; ");
-	}
-    }
+    ## Pseudo counts
+    printf $main::out "; %-21s\t%s\n", "Pseudo counts", $pseudo_counts;
+
+    ## Background model
+
+    printf $main::out "; Background model\n";
+    printf $main::out ";\t%-14s\t%d\n", "Markov order", $bg_model->get_attribute("order");
+    printf $main::out ";\t%-14s\t%s\n", "Strand", $bg_model->get_attribute("strand");
 
     my %th_keys = (%lth, %uth);
     print $main::out "; Thresholds\tlower\tupper\n";
