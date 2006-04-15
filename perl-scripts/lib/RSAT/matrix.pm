@@ -347,15 +347,18 @@ where keys are residues and values prior probabilities.
 =cut
 sub setPrior {
     my ($self, %prior) = @_;
-    warn "; CHECK setPrior\t", join(" ", %prior), "\n" if ($main::verbose >= 10);
+    &RSAT::message::Info (join("\t", "setPrior", join(" ", %prior))) if ($main::verbose >= 3);
     $self->set_hash_attribute("prior", %prior);
+    $self->set_array_attribute("alphabet", keys(%prior));
 
-#    %check = $self->get_attribute("prior");
-
+    
     $self->force_attribute("prior_specified", 1);
+    $self->force_attribute("weight_specified", 0); ## The previously calculated weights are not valid anymore
+
     if ($main::verbose >= 10) {
-	warn "setPrior\n";
-	foreach my $letter (sort keys %prior) {
+	%check = $self->get_attribute("prior");
+	&RSAT::message::Info (join("\t", "setPrior", join(" ", %prior))) if ($main::verbose >= 0);
+	foreach my $letter (sort keys %check) {
 	    warn join("\t", "; setPrior", $letter, $prior{$letter}), "\n";
 	}
     }
@@ -1168,8 +1171,8 @@ Return the weight matrix
 =cut
 sub getWeights {
     my ($self) = @_;
-    unless ($self->get_attribute("weight_specified")) {
-	$self->calcWeight();
+    unless ($self->get_attribute("weight_specified") >= 1) {
+	$self->calcWeights();
     }
     return @{$self->{weights}};
 }
@@ -1201,12 +1204,7 @@ Calculate weights from the frequency matrix.
 sub calcWeights {
     my ($self) = @_;
 
-    ## Calculate frequencies if required
-    unless ($self->get_attribute("frequencies_specified")) {
-	$self->calcFrequencies();
-    }
     my @frequencies = $self->getFrequencies();    
-
     
     ## Get alphabet
     my @alphabet = $self->get_attribute("alphabet");
@@ -1227,7 +1225,6 @@ sub calcWeights {
 	for my $r (0..($nrow-1)) {
 	    my $letter = $alphabet[$r];
 	    my $prior = $prior{$letter};
-#	    my $prior = 0.25;
 	    my $freq = $frequencies[$c][$r];
 	    if ($freq == 0) {
 		$weights[$c][$r] = "-Inf";
@@ -1236,11 +1233,11 @@ sub calcWeights {
 	    } else {
 		$weights[$c][$r] = log($freq/$prior);
 	    }
-	    warn join "\t", "weight", "r:".$r, "c:".$c, "l:".$letter, "f:".$freq, "pr:".$prior, $weights[$c][$r], "\n" 
-		if ($main::verbose >= 10);
+#	    &RSAT::message::Debug("weight", "r:".$r, "c:".$c, "l:".$letter, "f:".$freq, "pr:".$prior, "w:".$weights[$c][$r]) if ($main::verbose >= 10);
 	}
     }
     $self->setWeights($nrow,$ncol,@weights);
+    $self->force_attribute("weight_specified", 1);
 }
 
 ################################################################
@@ -2000,8 +1997,7 @@ sub seq_proba {
     my $L = length($sequence);
     my ($nrow, $ncol) = $self->size();
 
-    &RSAT::message::TimeWarn("seq_proba", $L) if ($main::verbose >= 0);
-
+    &RSAT::message::TimeWarn(join("\t", "seq_proba", "sequence length:".$L)) if ($main::verbose >= 5);
 
     if ($L < $ncol) {
 	&RSAT::message::Warning("Sequence length ($L) is shorter than the matrix width ($ncol). Skipped.");
@@ -2132,32 +2128,42 @@ sub weight_range {
     my ($self) = @_;
     my $weight_min = 0;
     my $weight_max = 0;
-
-    ## Calculate frequencies if required
-    unless ($self->get_attribute("weight_specified")) {
-	$self->calcWeights();
-    }
-
     my ($nrow, $ncol) = $self->size();
     my @weights = $self->getWeights();    
 
     foreach my $c (0..($ncol-1)) {
-	my $col_min="";
-	my $col_max="";
+	my $col_min="NA";
+	my $col_max="NA";
 	foreach my $r (0..($nrow-1)) {
-	    my $freq = $weights[$c][$r];
-	    $col_min = &RSAT::stats::checked_min($col_min, $freq);
-	    $col_max = &RSAT::stats::checked_max($col_max, $freq);
+	    my $weight = "NA";
+	    if (defined($weights[$c][$r])) {
+		$weight = $weights[$c][$r];
+		if ($col_min eq "NA") {
+		    $col_min = $weight;
+		} else {
+		    $col_min = &RSAT::stats::min($col_min, $weight);
+		}
+		if ($col_max eq "NA") {
+		    $col_max = $weight;
+		} else {
+		    $col_max = &RSAT::stats::max($col_max, $weight);
+		}
+	    }
+	    &RSAT::message::Debug("weight_range", "weight", $c, $r, $weight) if ($main::verbose >= 5);
 	}
 	$weight_min += $col_min;
 	$weight_max += $col_max;
+	&RSAT::message::Debug("Weights", "column:".$c, "min:".$weight_min, "max:".$weight_max, "range:", $weight_max - $weight_min) if ($main::verbose >= 5);
     }
 
     $self->set_parameter("min(weight)", $weight_min);
     $self->set_parameter("max(weight)", $weight_max);
     $self->set_parameter("weight_range", $weight_max-$weight_min);
-    &RSAT::message::Info(join("\t", "min(weight)", $weight_min)) if ($main::verbose >= 4);
-    &RSAT::message::Info(join("\t", "max(weight)", $weight_max)) if ($main::verbose >= 4);
+    if ($main::verbose >= 3) {
+	&RSAT::message::Info(join("\t", "min(weight)", $self->get_attribute("min(weight)"))) ;
+	&RSAT::message::Info(join("\t", "max(weight)", $self->get_attribute("max(weight)"))) ;
+	&RSAT::message::Info(join("\t", "range(weight)", $self->get_attribute("weight_range"))) ;
+    }
 
     return ($weight_min, $weight_max);
 }
