@@ -4,6 +4,8 @@
 #
 package RSAT::MarkovModel;
 
+## TO DO : for the model update, take into account the strand-insensitive models
+
 use RSAT::GenericObject;
 use RSAT::error;
 @ISA = qw( RSAT::GenericObject );
@@ -65,7 +67,7 @@ sub load_from_file {
     my $order = length($patterns[0]) -1 ; ## Use the first pattern to calculate model order
     $self->force_attribute("order", $order);
 
-    #### Calculate alphabet from expected frequency keys
+    ## Calculate alphabet from expected frequency keys
     foreach my $pattern_seq (keys %patterns) {
 	## Check pattern length
 	$pattern_seq = lc($pattern_seq);
@@ -77,7 +79,7 @@ sub load_from_file {
 	my $suffix = substr($pattern_seq,$order, 1);
 	$self->{transition_count}->{$prefix}->{$suffix} = $pattern_freq;
     }
-        
+    
     $self->normalize_transition_frequencies();
 }
 
@@ -156,7 +158,9 @@ sub normalize_transition_frequencies {
     $self->set_hash_attribute("prefix_proba", %prefix_proba);
     $self->set_hash_attribute("suffix_proba", %suffix_proba);
 
-    ## Average coutns and frequencies on both strands if required
+#    &RSAT::message::Debug("SUFFIX PROBA", $self->set_hash_attribute("suffix_proba", %suffix_proba));
+
+    ## Average counts and frequencies on both strands if required
     my $strand = $self->get_attribute("strand");
     if ($strand eq "insensitive") {
 	$self->average_strands();
@@ -379,25 +383,13 @@ sub average_strands {
 	my $suffix_rc = &main::SmartRC($suffix);	
 	next if ($suffix_rc ge $suffix);
 
-	&RSAT::message::Debug("averaging sum between suffixes", 
-			      $suffix, $self->{suffix_sum}->{$suffix},
-			      $suffix_rc, $self->{suffix_sum}->{$suffix_rc}) if ($main::verbose >= 0);
 	$self->{suffix_sum}->{$suffix} 
 	= $self->{suffix_sum}->{$suffix_rc}
 	= ($self->{suffix_sum}->{$suffix} +$self->{suffix_sum}->{$suffix_rc})/2 ;
-	&RSAT::message::Debug("averaged sum between suffixes", 
-			      $suffix, $self->{suffix_sum}->{$suffix},
-			      $suffix_rc, $self->{suffix_sum}->{$suffix_rc}) if ($main::verbose >= 0);
 
-	&RSAT::message::Debug("averaging proba between suffixes", 
-			      $suffix, $self->{suffix_proba}->{$suffix},
-			      $suffix_rc, $self->{suffix_proba}->{$suffix_rc}) if ($main::verbose >= 0);
 	$self->{suffix_proba}->{$suffix} 
 	= $self->{suffix_proba}->{$suffix_rc}
 	= ($self->{suffix_proba}->{$suffix} +$self->{suffix_proba}->{$suffix_rc})/2 ;
-	&RSAT::message::Debug("averaged proba between suffixes", 
-			      $suffix, $self->{suffix_proba}->{$suffix},
-			      $suffix_rc, $self->{suffix_proba}->{$suffix_rc}) if ($main::verbose >= 0);
     }
 
     ## Transition matrix

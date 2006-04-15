@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.19 2006/04/14 16:48:10 jvanheld Exp $
+# $Id: matrix-scan,v 1.20 2006/04/15 06:39:03 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -205,9 +205,9 @@ package main;
 	## Calculate frequency matrix
 	$matrix->calcFrequencies();
 	
-	## Calculate min and max values for P(S|M) and ffor the weight
+	## Calculate min and max values for P(S|M) 
 	$matrix->proba_range();
-	$matrix->weight_range();
+#	$matrix->weight_range();
 	push @matrices, $matrix;
 
 	&RSAT::message::Info(join("\t", "read matrix", 
@@ -217,6 +217,40 @@ package main;
 				  )) if ($main::verbose >= 2);
     }
     
+    ################################################################
+    ## If the model is taken from the whole set of input sequences, read them
+    ## first without scanning, just to calculate the model
+    if ($main::bg_input) {
+	unless ($main::infile{input}) {
+	    &RSAT::message::FatalError("The optin -bg_input requires to specify an input file.");
+	}
+	my ($in, $input_dir) = &OpenInputFile($main::infile{input});
+	while ((($current_seq, $seq_id) = &ReadNextSequence($in, $seq_format, $input_dir, "",$mask)) &&
+	       (($current_seq ne "") || ($seq_id ne ""))) {
+	    
+	    ## Sequence length
+	    $current_seq = lc($current_seq);
+	    $bg_model->calc_from_seq($current_seq, add=>1);
+	}
+	close $in;
+    }
+
+    ################################################################
+    ## Set prior matrix frequencies from the bg model
+    ## PROBLEM : with the adpative option, this does not work since
+    ## the BG model has not yet been calculated
+    my %prior = $bg_model->get_attribute("suffix_proba");
+    &RSAT::message::Info(join("\t", "PRIOR", %prior)) if ($main::verbose >= 2);
+    foreach my $matrix (@matrices) {
+
+	&RSAT::message::Info(join("\t", "Setting matrix priors and weight range for matrix", $matrix->get_attribute("name"))) if ($main::verbose >= 2);
+
+	## Set prior residue frequencies
+	$matrix->setPrior(%prior);
+
+	## Calculate min and max weight values
+	$matrix->weight_range();
+    }
 
     ################################################################
     #### print verbose
@@ -238,27 +272,6 @@ package main;
 			 ), "\n";
     
     
-    ################################################################
-    ## If the model is taken from the whole set of input sequences, read them
-    ## first without scanning, just to calculate the model
-
-    if ($main::bg_input) {
-	unless ($main::infile{input}) {
-	    &RSAT::message::FatalError("The optin -bg_input requires to specify an input file.");
-	}
-	my ($in, $input_dir) = &OpenInputFile($main::infile{input});
-	while ((($current_seq, $seq_id) = &ReadNextSequence($in, $seq_format, $input_dir, "",$mask)) &&
-	       (($current_seq ne "") || ($seq_id ne ""))) {
-	    
-	    ## Sequence length
-	    $current_seq = lc($current_seq);
-	    $bg_model->calc_from_seq($current_seq, add=>1);
-	    
-	}
-	close $in;
-    }
-
-
     ################################################################
     ##### Scan the sequences
     my ($in, $input_dir) = &OpenInputFile($main::infile{input});
@@ -282,7 +295,6 @@ package main;
 	################################################################
 	## Report sequence limits
 	&PrintSequenceLimits($seq_id, $seq_len, $orig_pos) if ($return_fields{"limits"});
-
 
 	################################################################
 	## Calculate background model from the current sequence
@@ -770,21 +782,32 @@ sub Verbose {
 		     "name",
 		     "ncol",
 		     "nrow",
+		     "pseudo",
 		     "min(P(S|M))",
 		     "max(P(S|M))",
-		     "min(W)",
-		     "max(W)",
+		     "Wmin",
+		     "Wmax",
+		     "Wrange",
+		     "prior",
 		    ), "\n";
     foreach my $matrix (@matrices) {
 	print $out join ("\t", ";", 
 			 $matrix->get_attribute("name"),
 			 $matrix->get_attribute("ncol"),
 			 $matrix->get_attribute("nrow"),
+			 $matrix->get_attribute("pseudo"),
 			 sprintf("%-12.4g", $matrix->get_attribute("min(P(S|M))")),
 			 sprintf("%-12.4g", $matrix->get_attribute("max(P(S|M))")),
 			 sprintf("%.3f", $matrix->get_attribute("min(weight)")),
 			 sprintf("%.3f", $matrix->get_attribute("max(weight)")),
-			), "\n";
+			 sprintf("%.3f", $matrix->get_attribute("weight_range")),
+			);
+	my %prior = $matrix->getPrior();
+	print $out "\t";
+	foreach my $letter (keys %prior) {
+	    printf $out "%s:%.3f ", $letter, $prior{$letter};
+	}
+	print $out "\n";
     }
 
     ## Pseudo counts
