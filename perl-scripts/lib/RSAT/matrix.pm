@@ -322,7 +322,7 @@ sub getPrior() {
 	    my $alphabet_size = scalar(@alphabet);
 	    foreach my $letter (@alphabet) {
 		$prior{$letter} = 1/$alphabet_size;
-		warn join "\t", ";", $letter, $prior{$letter}, "\n" if ($main::verbose >= 10);
+		&RSAT::message::Debug("RSAT::matrix::setPrior", $letter, $prior{$letter}) if ($main::verbose >= 10);
 	    }
 	    $self->setPrior(%prior);
 	}
@@ -347,14 +347,18 @@ where keys are residues and values prior probabilities.
 =cut
 sub setPrior {
     my ($self, %prior) = @_;
+
     &RSAT::message::Info (join("\t", "setPrior", join(" ", %prior))) if ($main::verbose >= 3);
-    $self->set_hash_attribute("prior", %prior);
-    $self->set_array_attribute("alphabet", keys(%prior));
-
-    
+    $self->set_array_attribute("prior", %prior);
     $self->force_attribute("prior_specified", 1);
-    $self->force_attribute("weight_specified", 0); ## The previously calculated weights are not valid anymore
 
+#    ## Update the alphabet
+#    $self->set_array_attribute("alphabet", keys(%prior));
+
+    ## The previously calculated weights are not valid anymore
+    $self->force_attribute("weight_specified", 0);
+
+    ## Report the new prior
     if ($main::verbose >= 10) {
 	%check = $self->get_attribute("prior");
 	&RSAT::message::Info (join("\t", "setPrior", join(" ", %prior))) if ($main::verbose >= 0);
@@ -500,11 +504,11 @@ sub readFromFile {
 
     ## Check that the matrix contains at least one row and one col
     if (($self->nrow() > 0) && ($self->ncol() > 0)) {
-	warn join("\t", "; Matrix read", 
+	&RSAT::message::Info(join("\t", "; Matrix read", 
 		  "nrow = ".$self->nrow(),
 		  "ncol = ".$self->ncol(),
 		  "prior : ".join (" ", $self->getPrior()),
-		  ), "\n" if ($main::verbose >= 3);
+		  )) if ($main::verbose >= 3);
     } else {
 	&main::FatalError("The file $file does not seem to contain a matrix in format $format. Please check the file format and contents.");
     }
@@ -696,13 +700,10 @@ method C<readFromFile($file, "tab")>.
 =cut
 sub _readFromTabFile {
     my ($self, $file, %args) = @_;
-    warn ("; Reading matrix from tab file\t",$file, "\n") if ($main::verbose >= 3);
-    
-#	($in, $dir) = &main::OpenInputFile($file);
-#
-    
+    &RSAT::message::Info(join("\t", "Reading matrix from tab file\t",$file)) if ($main::verbose >= 3);
+
     ## open input stream
-    my $in = STDIN;
+    my ($in, $dir) = &main::OpenInputFile($file);
     if ($file) {
 	open INPUT, $file;
 	$in = INPUT;
@@ -726,8 +727,6 @@ sub _readFromTabFile {
 	if (/^\s*(\S+)\s+/) {
 	    my @fields = split /\t/, $_;
 
-#	    warn join("\t", @fields), "\n" if ($main::verbose >= 0);
-
 	    ## residue associated to the row
 	    my $residue = shift @fields;
 	    
@@ -738,6 +737,24 @@ sub _readFromTabFile {
 	}
     }
     close $in if ($file);
+
+
+    ## Initialize prior as equiprobable alphabet
+    my @alphabet = $self->getAlphabet();
+    my %tmp_prior = ();
+    my $prior = 1/scalar(@alphabet);
+    foreach my $residue (@alphabet) {
+	$tmp_prior{$residue} = $prior;
+#	&RSAT::message::Debug("initial prior", $residue, $prior) if ($main::verbose >= 0);
+    }
+    $self->setPrior(%tmp_prior);
+
+    if ($main::verbose >= 3) {
+	&RSAT::message::Debug("Read matrix with alphabet", join(":", $self->getAlphabet()));
+	&RSAT::message::Debug("Initialized prior as equiprobable", join(":", $self->getPrior()));
+	&RSAT::message::Debug("Matrix size", $self->nrow()." rows",  $self->ncol()." columns");
+    }
+
 }
 
 
@@ -1204,12 +1221,13 @@ Calculate weights from the frequency matrix.
 sub calcWeights {
     my ($self) = @_;
 
+    ## Get frequency matrix
     my @frequencies = $self->getFrequencies();    
-    
+
     ## Get alphabet
-    my @alphabet = $self->get_attribute("alphabet");
+    my @alphabet = $self->getAlphabet();
     if (scalar(@alphabet) <= 0) {
-	&main::FatalError("Cannot calculate weigths for an empty matrix.");
+	&main::FatalError("&RSAT::matrix::calcWeights()\tCannot calculate weigths, because the alphabet has not been specified yet.");
     }
     
     ## Get or calculate prior residue probabilities
@@ -1301,7 +1319,7 @@ sub calcInformation {
     ## Get alphabet
     my @alphabet = $self->get_attribute("alphabet");
     if (scalar(@alphabet) <= 0) {
-	&main::FatalError("Cannot calculate weigths for an empty matrix.");
+	&main::FatalError("&RSAT::matrix::calcInformation()\tCannot calculate weigths, because the alphabet has not been specified yet.");
     }
 
     ## Get or calculate prior residue probabilities
@@ -1427,14 +1445,14 @@ sub calcFrequencies {
     ## Get alphabet
     my @alphabet = $self->get_attribute("alphabet");
     if (scalar(@alphabet) <= 0) {
-	&main::FatalError("Cannot calculate weigths for an empty matrix.");
+	&main::FatalError("&RSAT::matrix::calcFrequencies()\tCannot calculate weigths, because the alphabet has not been specified yet.");
     }
 
     ## Matrix size
     my ($nrow, $ncol) = $self->size();
     if (($nrow <= 0) ||
 	($ncol <= 0)) {
-	&main::FatalError("Cannot calculate weigths for an empty matrix.");
+	&main::FatalError("&RSAT::matrix::calcFrequencies()\tCannot calculate weigths for an empty matrix.");
     }
 
     
@@ -1459,6 +1477,7 @@ sub calcFrequencies {
     my @frequencies = ();
     my @crude_frequencies = ();
 #    my @col_sum = &RSAT::matrix::col_sum(@matrix);
+    my $alphabet_size = scalar(keys(%prior));
     
     for my $c (0..($ncol-1)) {
 	my $col_sum = 0;
@@ -1468,7 +1487,8 @@ sub calcFrequencies {
 	    my $occ = $matrix[$c][$r];
 	    $col_sum += $occ;
 	    $frequencies[$c][$r] = $occ + $pseudo*$prior{$letter};
-	    warn join "\t", "freq", $r, $c, $letter, $prior, $pseudo, $occ, $col_sum, "\n" if ($main::verbose >= 10);
+#	    $frequencies[$c][$r] = $occ + $pseudo/$alphabet_size;
+#	    &RSAT::message::Debug("freq", $r, $c, $letter, $prior, $pseudo, $occ, $col_sum) if ($main::verbose >= 10);
 	}
 	for my $r (0..($nrow-1)) {
 	    if ($col_sum eq 0) {
@@ -1501,21 +1521,20 @@ count matrix.
 =cut
 sub calcProbabilities {
     my ($self) = @_;
-    
 
     die "The procedure calcProbabilities() is in construction";
 
     ## Get alphabet
     my @alphabet = $self->get_attribute("alphabet");
     if (scalar(@alphabet) <= 0) {
-	&main::FatalError("Cannot calculate weigths for an empty matrix.");
+	&main::FatalError("&RSAT::matrix::calcProbabilities()\tCannot calculate weigths, because the alphabet has not been specified yet.");
     }
 
     ## Matrix size
     my ($nrow, $ncol) = $self->size();
     if (($nrow <= 0) ||
 	($ncol <= 0)) {
-	&main::FatalError("Cannot calculate weigths for an empty matrix.");
+	&main::FatalError("&RSAT::matrix::calcProbabilities()\tCannot calculate weigths for an empty matrix.");
     }
 
     
@@ -1768,7 +1787,7 @@ sub _printParameters {
     
     ## Matrix attributes
     my ($proba_min, $proba_max) = $self->proba_range();
-    my ($weight_min, $weight_max) = $self->weight_range();
+    my ($Wmin, $Wmax) = $self->weight_range();
 
     my @params = $self->get_attribute("parameters");
     my %printed = ();
@@ -2120,14 +2139,14 @@ weight. Attention, these values are only correct for Bernoulli models.
 The min (max) value is the sum of the minimal (maximal) per column
 from the matrix of weights.
 
-Usage: my ($weight_min, weight_max)  = $matrix->weight_range();
+Usage: my ($Wmin, $Wmax, $Wrange)  = $matrix->weight_range();
 
 =cut
 
 sub weight_range {
     my ($self) = @_;
-    my $weight_min = 0;
-    my $weight_max = 0;
+    my $tmp_Wmin = 0;
+    my $tmp_Wmax = 0;
     my ($nrow, $ncol) = $self->size();
     my @weights = $self->getWeights();    
 
@@ -2151,21 +2170,22 @@ sub weight_range {
 	    }
 	    &RSAT::message::Debug("weight_range", "weight", $c, $r, $weight) if ($main::verbose >= 5);
 	}
-	$weight_min += $col_min;
-	$weight_max += $col_max;
-	&RSAT::message::Debug("Weights", "column:".$c, "min:".$weight_min, "max:".$weight_max, "range:", $weight_max - $weight_min) if ($main::verbose >= 5);
+	$tmp_Wmin += $col_min;
+	$tmp_Wmax += $col_max;
+	&RSAT::message::Debug("Weights", "column:".$c, "min:".$tmp_Wmin, "max:".$tmp_Wmax, "range:", $tmp_Wmax - $tmp_Wmin) if ($main::verbose >= 5);
     }
 
-    $self->set_parameter("min(weight)", $weight_min);
-    $self->set_parameter("max(weight)", $weight_max);
-    $self->set_parameter("weight_range", $weight_max-$weight_min);
+    my $tmp_Wrange = $tmp_Wmax-$tmp_Wmin;
+    $self->set_parameter("Wmin", $tmp_Wmin);
+    $self->set_parameter("Wmax", $tmp_Wmax);
+    $self->set_parameter("Wrange", $tmp_Wrange);
     if ($main::verbose >= 3) {
-	&RSAT::message::Info(join("\t", "min(weight)", $self->get_attribute("min(weight)"))) ;
-	&RSAT::message::Info(join("\t", "max(weight)", $self->get_attribute("max(weight)"))) ;
-	&RSAT::message::Info(join("\t", "range(weight)", $self->get_attribute("weight_range"))) ;
+	&RSAT::message::Info(join("\t", "Wmin", $self->get_attribute("Wmin"))) ;
+	&RSAT::message::Info(join("\t", "Wmax", $self->get_attribute("Wmax"))) ;
+	&RSAT::message::Info(join("\t", "Wrange", $self->get_attribute("Wrange"))) ;
     }
 
-    return ($weight_min, $weight_max);
+    return ($tmp_Wmin, $tmp_Wmax, $tmp_Wrange);
 }
 
 

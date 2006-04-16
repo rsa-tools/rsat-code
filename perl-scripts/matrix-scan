@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.20 2006/04/15 06:39:03 jvanheld Exp $
+# $Id: matrix-scan,v 1.21 2006/04/16 07:16:07 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -207,10 +207,10 @@ package main;
 	
 	## Calculate min and max values for P(S|M) 
 	$matrix->proba_range();
-#	$matrix->weight_range();
+	$matrix->weight_range();
 	push @matrices, $matrix;
 
-	&RSAT::message::Info(join("\t", "read matrix", 
+	&RSAT::message::TimeWarn(join("\t", "read matrix", 
 				  scalar(@matrices), 
 				  $matrix->get_attribute("name"),
 				  $matrix->get_attribute("file")
@@ -239,23 +239,39 @@ package main;
     ## Set prior matrix frequencies from the bg model
     ## PROBLEM : with the adpative option, this does not work since
     ## the BG model has not yet been calculated
-    my %prior = $bg_model->get_attribute("suffix_proba");
-    &RSAT::message::Info(join("\t", "PRIOR", %prior)) if ($main::verbose >= 2);
+    %prior = $bg_model->get_attribute("suffix_proba");
+    &RSAT::message::TimeWarn(join("\t", "PRIOR", join(" ", %prior))) if ($main::verbose >= 2);
     foreach my $matrix (@matrices) {
-
-	&RSAT::message::Info(join("\t", "Setting matrix priors and weight range for matrix", $matrix->get_attribute("name"))) if ($main::verbose >= 2);
 
 	## Set prior residue frequencies
 	$matrix->setPrior(%prior);
+	&RSAT::message::TimeWarn(join("\t", "Setting matrix priors for matrix", 
+				  $matrix->get_attribute("name"),
+				  join(" ", %prior),
+				 )) if ($main::verbose >= 2);
 
 	## Calculate min and max weight values
-	$matrix->weight_range();
+	my ($Wmin, $Wmax, $Wrange) = $matrix->weight_range();
+	&RSAT::message::TimeWarn(join("\t", "Calculated weight range for matrix", 
+				  $matrix->get_attribute("name"), 
+				  $Wmin, $Wmax, $Wrange,
+				 )) if ($main::verbose >= 2);
     }
 
     ################################################################
     #### print verbose
     &Verbose() if ($main::verbose);
-    
+
+    if ($main::verbose >= 4) {
+	foreach my $matrix (@matrices) {
+	    print $out "; Weight matrix\t", $matrix->get_attribute("name"), "\n";
+	    print $out $matrix->toString(col_width=>(7), 
+					 decimals=>3, 
+					 type=>"weights",
+					 format=>"tab");
+      }
+    }
+
     ## Print header
     print $out "#", join ("\t", 
 			  "seq_id",
@@ -765,6 +781,7 @@ sub Verbose {
 	    print $main::out ";\t$key\t$value\n";
 	}
     }
+    printf $main::out "; %-21s\t%s\n", "Sequence format", $seq_format;
 
     ## Output files
     if (defined(%main::outfile)) {
@@ -774,17 +791,15 @@ sub Verbose {
 	}
     }
 
-    printf $main::out "; %-21s\t%s\n", "Sequence format", $seq_format;
-
-    ## Matrices PSSM
+    ## Matrices
     print $main::out "; Matrices\n";
     print $out join ("\t", ";", 
 		     "name",
 		     "ncol",
 		     "nrow",
 		     "pseudo",
-		     "min(P(S|M))",
-		     "max(P(S|M))",
+		     "Pmin",
+		     "Pmax",
 		     "Wmin",
 		     "Wmax",
 		     "Wrange",
@@ -796,11 +811,11 @@ sub Verbose {
 			 $matrix->get_attribute("ncol"),
 			 $matrix->get_attribute("nrow"),
 			 $matrix->get_attribute("pseudo"),
-			 sprintf("%-12.4g", $matrix->get_attribute("min(P(S|M))")),
-			 sprintf("%-12.4g", $matrix->get_attribute("max(P(S|M))")),
-			 sprintf("%.3f", $matrix->get_attribute("min(weight)")),
-			 sprintf("%.3f", $matrix->get_attribute("max(weight)")),
-			 sprintf("%.3f", $matrix->get_attribute("weight_range")),
+			 sprintf("%5.2g", $matrix->get_attribute("min(P(S|M))")),
+			 sprintf("%5.2g", $matrix->get_attribute("max(P(S|M))")),
+			 sprintf("%.3f", $matrix->get_attribute("Wmin")),
+			 sprintf("%.3f", $matrix->get_attribute("Wmax")),
+			 sprintf("%.3f", $matrix->get_attribute("Wrange")),
 			);
 	my %prior = $matrix->getPrior();
 	print $out "\t";
@@ -814,11 +829,19 @@ sub Verbose {
     printf $main::out "; %-21s\t%s\n", "Pseudo counts", $pseudo_counts;
 
     ## Background model
-
     printf $main::out "; Background model\n";
-    printf $main::out ";\t%-14s\t%d\n", "Markov order", $bg_model->get_attribute("order");
+    my $order = $bg_model->get_attribute("order");
+    if ($order == 0) {
+	printf $main::out ";\t%-14s\n", "Bernoulli model (order=0)";
+    } else {
+	printf $main::out ";\t%-14s\t%d\n", "Markov order", $order;
+    }
     printf $main::out ";\t%-14s\t%s\n", "Strand", $bg_model->get_attribute("strand");
+    if ($window > 0) {
+	printf $main::out ";\t%-14s\t%d\n", "Background window", $window;
+    }
 
+    ## Thresholds
     my %th_keys = (%lth, %uth);
     print $main::out "; Thresholds\tlower\tupper\n";
     foreach $f (sort keys %th_keys) {
@@ -865,15 +888,14 @@ sub score_segment {
     $proba_B = $bg_model->segment_proba($segment);
 
 
-    ## Calculate segment weight
+    ## Calculate segment weight and  normalized weight
     my $score = "NA";
+    my $norm_W = "NA";
     if (($proba_M > 0) && ($proba_B > 0)) {
 	$score = sprintf("%.3f", log($proba_M/$proba_B))/$log_base;
+	$norm_W = sprintf("%6.4f", ($score - $matrix->{'Wmin'})/($matrix->{'Wrange'}));
     }
     return(0) unless (&check_thresholds("score", $score));
-
-    ## Calculate normalized segment weight
-    my $norm_W = ($score - $matrix->{'min(weight)'})/($matrix->{'weight_range'});
     return(0) unless (&check_thresholds("norm_W", $norm_W));
 
     ## Calculate information
@@ -893,8 +915,8 @@ sub score_segment {
 		     $end_pos,
 		     $segment,
 		     $score,
-		     sprintf("%6.4f\t%5.2g\t%5.2g",
-			     $norm_W,
+		     $norm_W,
+		     sprintf("%5.2g\t%5.2g",
 			     $proba_M,
 			     $proba_B,
 			     )
