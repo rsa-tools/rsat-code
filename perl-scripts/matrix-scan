@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.21 2006/04/16 07:16:07 jvanheld Exp $
+# $Id: matrix-scan,v 1.22 2006/04/18 14:51:43 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -30,17 +30,18 @@ matrix-scan
 
 =head1 DESCRIPTION
 
-Scan sequences with a position-specific scoring matrix (PSSM) to identify
-putative sites for the motif described by the PSSM.
+Scan sequences with a position-specific scoring matrix (PSSM) to
+identify putative sites for the motif described by the PSSM.
 
-The background model is either provided in the form of a background file
-(option -bgfile) or calculated from the input sequence, by computing a Markov
-model of a given order (-bgorder) on a sliding window of a given size
-(-bgwind), and adaptively updating the model during the scanning process.
+The background model is either provided in the form of a background
+file (option -bgfile) or calculated from the input sequence, by
+computing a Markov model of a given order (-bgorder) on a sliding
+window of a given size (-bgwind), and adaptively updating the model
+during the scanning process.
 
 =head1 AUTHORS
 
-=item Jean Valéry Turatsinze jturatsi@scmbb.ulb.ac.be
+=item Jean Valery Turatsinze jturatsi@scmbb.ulb.ac.be
 
 =item Jacques van Helden jvanheld@scmbb.ulb.ac.be
 
@@ -109,7 +110,7 @@ package main;
     ## Threshold parameters
     local %lth = (); # lower threshold values
     local %uth = (); # upper threshold values
-    @supported_thresholds = qw( score norm_W );
+    @supported_thresholds = qw( score normw );
     $supported_thresholds = join ",", @supported_thresholds;
     %supported_threshold = ();
     foreach my $thr (@supported_thresholds) {
@@ -121,6 +122,7 @@ package main;
 	sites=>1,
 	limits=>1,
 	bg_model=>1,
+	normw=>1,
     );
     $supported_return_fields = join (",", sort(keys( %supported_return_fields)));
 
@@ -222,7 +224,7 @@ package main;
     ## first without scanning, just to calculate the model
     if ($main::bg_input) {
 	unless ($main::infile{input}) {
-	    &RSAT::message::FatalError("The optin -bg_input requires to specify an input file.");
+	    &RSAT::error::FatalError("The optin -bg_input requires to specify an input file.");
 	}
 	my ($in, $input_dir) = &OpenInputFile($main::infile{input});
 	while ((($current_seq, $seq_id) = &ReadNextSequence($in, $seq_format, $input_dir, "",$mask)) &&
@@ -239,23 +241,26 @@ package main;
     ## Set prior matrix frequencies from the bg model
     ## PROBLEM : with the adpative option, this does not work since
     ## the BG model has not yet been calculated
-    %prior = $bg_model->get_attribute("suffix_proba");
-    &RSAT::message::TimeWarn(join("\t", "PRIOR", join(" ", %prior))) if ($main::verbose >= 2);
-    foreach my $matrix (@matrices) {
-
-	## Set prior residue frequencies
-	$matrix->setPrior(%prior);
-	&RSAT::message::TimeWarn(join("\t", "Setting matrix priors for matrix", 
-				  $matrix->get_attribute("name"),
-				  join(" ", %prior),
-				 )) if ($main::verbose >= 2);
-
-	## Calculate min and max weight values
-	my ($Wmin, $Wmax, $Wrange) = $matrix->weight_range();
-	&RSAT::message::TimeWarn(join("\t", "Calculated weight range for matrix", 
-				  $matrix->get_attribute("name"), 
-				  $Wmin, $Wmax, $Wrange,
-				 )) if ($main::verbose >= 2);
+    ## This is thus only done with the options -bginput and -bgfiles. 
+    if (($bg_input) || ($infile{bg})) {
+	my %prior = $bg_model->get_attribute("suffix_proba");
+	&RSAT::message::TimeWarn(join("\t", "PRIOR", join(" ", %prior))) if ($main::verbose >= 2);
+	foreach my $matrix (@matrices) {
+	    
+	    ## Set prior residue frequencies
+	    $matrix->setPrior(%prior);
+	    &RSAT::message::TimeWarn(join("\t", "Setting matrix priors for matrix", 
+					  $matrix->get_attribute("name"),
+					  join(" ", %prior),
+					 )) if ($main::verbose >= 2);
+	    
+	    ## Calculate min and max weight values
+	    my ($Wmin, $Wmax, $Wrange) = $matrix->weight_range();
+	    &RSAT::message::TimeWarn(join("\t", "Calculated weight range for matrix", 
+					  $matrix->get_attribute("name"), 
+					  $Wmin, $Wmax, $Wrange,
+					 )) if ($main::verbose >= 2);
+	}
     }
 
     ################################################################
@@ -282,10 +287,11 @@ package main;
 			  "end",
 			  "sequence",
 			  "weight",
-			  "norm_W",
 			  "P(S|M)",
 			  "P(S|B)",
-			 ), "\n";
+			 );
+    print $out "\tnormW" if ($return_fields{normW});
+    print $out "\n";
     
     
     ################################################################
@@ -740,14 +746,25 @@ single-strand search for DNA sequences.
 
 List of fields to return. 
 
-Supported fields: sites, limits.
+Supported fields: sites, limits.normw
+
+=over
+
+=item B<sites:> position of matching sites.
+
+=item B<limits:> limits (start, end) of the input sequences. This is useful for drawing feature maps with sequences of different lengths. 
+
+=item B<normw:> normalized weights. Normailzed weights are calculated according to Thijs' formula : normW = (W -Wmin)/(Wmax - Wmin).
+
+=back
 
 =cut
         } elsif ($arg eq "-return") {
 	    $arg = shift (@arguments);
             chomp($arg);
             my @fields_to_return = split ",", $arg;
-            foreach $field (@fields_to_return) {
+            foreach my $field (@fields_to_return) {
+		$field = lc($field);
                 if ($supported_return_fields{$field}) {
                     $return_fields{$field} = 1;
                 } else {
@@ -890,13 +907,16 @@ sub score_segment {
 
     ## Calculate segment weight and  normalized weight
     my $score = "NA";
-    my $norm_W = "NA";
+    my $normW = "NA";
     if (($proba_M > 0) && ($proba_B > 0)) {
 	$score = sprintf("%.3f", log($proba_M/$proba_B))/$log_base;
-	$norm_W = sprintf("%6.4f", ($score - $matrix->{'Wmin'})/($matrix->{'Wrange'}));
+
+	if ($return_fields{normw}) {
+	    $normW = sprintf("%6.4f", ($score - $matrix->{'Wmin'})/($matrix->{'Wrange'}));
+	}
     }
     return(0) unless (&check_thresholds("score", $score));
-    return(0) unless (&check_thresholds("norm_W", $norm_W));
+    return(0) unless (&check_thresholds("normW", $normW));
 
     ## Calculate information
 #    my $info = $score * $proba_B;
@@ -905,23 +925,26 @@ sub score_segment {
     ## Calculate start and end position
     my $start_pos = $pos - $orig_pos;
     my $end_pos = $start_pos + $ncol -1;
-    
-    print $out join ("\t", 
-		     $seq_id,
-		     "site",
-		     $matrix->{name},
-		     $strand,
-		     $start_pos,
-		     $end_pos,
-		     $segment,
-		     $score,
-		     $norm_W,
-		     sprintf("%5.2g\t%5.2g",
-			     $proba_M,
-			     $proba_B,
-			     )
-		     ), "\n"  if ($main::return_fields{"sites"});
-    
+
+    if ($main::return_fields{sites}) {
+	print $out join ("\t", 
+			 $seq_id,
+			 "site",
+			 $matrix->{name},
+			 $strand,
+			 $start_pos,
+			 $end_pos,
+			 $segment,
+			 $score,
+			 sprintf("%5.2g\t%5.2g",
+				 $proba_M,
+				 $proba_B,
+				)
+			);
+      
+	print $out "\t", $normW if ($return_fields{normw});
+	print $out "\n";
+    }
     $matrix->{matches}++;
 
     return(1);
