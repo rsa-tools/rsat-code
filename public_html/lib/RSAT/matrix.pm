@@ -546,8 +546,10 @@ sub _readFromGibbsFile {
 	chomp();
 	if (/Information \(relative entropy\) contribution in tenth bits\:/) {
 	    $in_matrix = 1;
-	    $self->setAlphabet("A","C","G","T");   # default nucletodide alphabet
+	    # default nucletodide alphabet
+	    $self->setAlphabet_uc("A","C","G","T");   
 	    next;
+
 	} elsif (/site/) {
 	    ### Empty the previous matrix because it was not the definitive result
 	    $in_matrix = 0;
@@ -557,14 +559,14 @@ sub _readFromGibbsFile {
 	    @matrix = ();
 	    $nrow = 0;
 	    $ncol = 0;
-#		$self->reset();
+
 	    next;
 	} elsif ((/^\s*POS/) && ($in_matrix)) {
 	    s/\r//;
 	    chomp;
 	    @header = split " +";
 	    @alphabet = @header[1..$#header-1];
-#		$self->setAlphabet(@alphabet);
+#		$self->setAlphabet_uc(@alphabet);
 	} elsif (/model map = (\S+); betaprior map = (\S+)/) {
 	    $self->set_parameter("model.map", $1);
 	    $self->set_parameter("betaprior.map", $2);
@@ -591,7 +593,7 @@ sub _readFromGibbsFile {
     }
     close $in if ($file);
 
-    $self->setAlphabet (@alphabet);
+    $self->setAlphabet_uc (@alphabet);
     $self->force_attribute("nrow", $last_nrow);
     $self->force_attribute("ncol", $last_ncol);
     $self->setMatrix ($last_nrow, $last_ncol, @last_matrix);
@@ -662,7 +664,7 @@ sub _readFromConsensusFile {
 	    if (/^\s*(\S+)\s+\|/) {
 		my @fields = split / +/, $_;
 		## residue associated to the row
-		my $residue = shift @fields;
+		my $residue = uc(shift @fields);
 		
 		## skip the | between residue and numbers
 		shift @fields unless &main::IsReal($fields[0]);	
@@ -728,7 +730,7 @@ sub _readFromTabFile {
 	    my @fields = split /\t/, $_;
 
 	    ## residue associated to the row
-	    my $residue = shift @fields;
+	    my $residue = uc(shift @fields);
 	    
 	    ## skip the | between residue and numbers
 	    shift @fields unless &main::IsReal($fields[0]);	
@@ -817,7 +819,7 @@ sub _readFromMEMEFile {
 	    $self->setPrior(%residue_frequencies);
 
 	    my @alphabet = sort (keys %residue_frequencies);
-	    $self->setAlphabet(@alphabet);
+	    $self->setAlphabet_uc(@alphabet);
 	    
 	    ## Index the alphabet
 	    foreach my $l (0..$#alphabet) {
@@ -1026,7 +1028,7 @@ sub _readFromClustalFile {
 	$self->addRow(@row);
 	warn join ("\t", "Adding row", $r, $res, join ":", @row, "\n"), "\n" if ($main::verbose >= 4); 
     }
-    $self->setAlphabet(@alphabet);
+    $self->setAlphabet_uc(@alphabet);
     $self->force_attribute("ncol", $ncol);
     $self->force_attribute("nrow", $nrow);
 
@@ -2059,13 +2061,14 @@ corrected frequencies.
 sub segment_proba {
     my ($self, $segment) = @_;
     
+    $segment = uc($segment);
 #    return(1);
 
     my $segment_proba = 1;
     my $seq_len = length($segment);
     my $r;
     for my $c (0..($seq_len-1)) {
-	my $letter = uc(substr($segment, $c, 1));
+	my $letter = substr($segment, $c, 1);
 	my  $letter_proba = 0;
 	if (defined($self->{"alphabet_index"}->{$letter})) {
 	    $r = $self->{"alphabet_index"}->{$letter};

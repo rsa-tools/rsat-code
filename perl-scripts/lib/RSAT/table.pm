@@ -184,6 +184,28 @@ sub addRow {
 ################################################################
 =pod
 
+=item B<setAlphabet_uc(@alphabet)>
+
+Same as setAlphabet(), but first converts the alphabet to uppercases,
+to ensure case-insensitivvity.
+
+=cut
+sub setAlphabet_uc {
+    my ($self, @new_alphabet) = @_;
+
+    ## Convert alphabet to uppercases
+    for my $i (0..$#new_alphabet) {
+	$new_alphabet[$i] = uc($new_alphabet[$i]);
+    }
+
+    $self->setAlphabet(@new_alphabet);
+}
+
+
+
+################################################################
+=pod
+
 =item B<setAlphabet(@alphabet)>
 
 Specify the alphabet (i.e. the list of valid letters) for the table.
@@ -191,6 +213,7 @@ Specify the alphabet (i.e. the list of valid letters) for the table.
 =cut
 sub setAlphabet {
     my ($self, @new_alphabet) = @_;
+
     @{$self->{alphabet}} = @new_alphabet;	
 
 #    warn join("\t", "; Alphabet", $self->getAlphabet()), "\n" if ($main::verbose >= 10);
@@ -218,14 +241,14 @@ sub getAlphabet {
 
 =item B<addIndexedRow($index, @new_row)>
 
-Add a new row and append its symbol to the alphabet
+Add a new row and append its symbol to the alphabet.
 
 =cut
 sub addIndexedRow {
     my ($self, $index, @new_row) = @_;
+
     $self->addRow(@new_row);
     $self->push_attribute("alphabet", $index);    
-#    push @{$self->{alphabet}}, $index;
 }
 
 
