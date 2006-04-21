@@ -1,6 +1,6 @@
 #!/usr/bin/perl 
 #############################################################
-# $Id: parse-genbank.pl,v 1.37 2006/04/12 12:35:24 rsat Exp $
+# $Id: parse-genbank.pl,v 1.38 2006/04/21 14:05:45 rsat Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -63,6 +63,8 @@ package main;
     
     $rRNAs = classes::ClassFactory->new_class(object_type=>"Genbank::rRNA", prefix=>"rRNA");
 
+    $repeat_regions = classes::ClassFactory->new_class(object_type=>"Genbank::repeat_region", prefix=>"rep_");
+
     $misc_RNAs = classes::ClassFactory->new_class(object_type=>"Genbank::misc_RNA", prefix=>"misc_RNA");
 
     $misc_features = classes::ClassFactory->new_class(object_type=>"Genbank::misc_feature", prefix=>"misc_feature");
@@ -104,6 +106,7 @@ package main;
 		   Genbank::scRNA 
 		   Genbank::tRNA 
 		   Genbank::rRNA 
+		   Genbank::repeat_region
 		   Genbank::misc_RNA 
 		   Genbank::misc_feature 
 		   Genbank::Source);
@@ -140,14 +143,16 @@ package main;
 #	chdir ($dir{input});
 	push @genbank_files, glob($dir{input}."/*.${ext}");
 	push @genbank_files, glob($dir{input}."/*.${ext}.gz");
-	
+#	push @genbank_files, glob($dir{input}."/*.${ext}.gz");
+	&RSAT::message::Info("Genbank files found in the directory", join("; ", @genbank_files));
 
 	## If no genbank files were found in the main directory (Bacteria),
 	## search in CHR_* directories (eukaryotes)
 	if (scalar(@genbank_files) < 1) {
-	    chdir ($dir{input});
-	    push @genbank_files, glob($dir{input}."/CHR_*/*.${ext}");
-	    push @genbank_files, glob($dir{input}."/CHR_*/*.${ext}.gz");
+#	    chdir ($dir{input});
+	    push @genbank_files, glob($dir{input}."/CHR*/*.${ext}");
+	    push @genbank_files, glob($dir{input}."/CHR*/*.${ext}.gz");
+	    &RSAT::message::Info("Genbank files found in the CHR_* subdirectories", join("; ", @genbank_files));
 	}
     }
 
@@ -236,6 +241,7 @@ package main;
 			   scRNAs
 			   tRNAs
 			   rRNAs
+			   repeat_regions
 			   misc_RNAs
 			   misc_features
 			   CDSs
@@ -270,8 +276,13 @@ package main;
     
     &ExportMakefile(@classes);
     &ExportClasses($out_file{features}, $out_format, @classes) if $export{obj};
+
+    ## Export protein sequences
     &ExportProteinSequences($CDSs,$org);
-    
+
+    ## Export masked sequences
+    &ExportMaskedSequences() unless ($noseq);
+
     ###### verbose ######
     if ($verbose) {
 	my $done_time = &AlphaDate();
@@ -613,4 +624,48 @@ sub ExportProteinSequences {
         &PrintNextSequence(PP,"fasta",60,$translation,$pp_id, $pp_description);
     }
     close PP;
+}
+
+
+################################################################
+##
+sub ExportMaskedSequences {
+    chdir $dir{sequences};
+    foreach my $contig ($contigs->get_objects()) {
+	my $file =    $contig->get_attribute("file");
+	my $contig_id = $contig->get_attribute("id");
+	my $sequence = `cat $file`;
+	foreach my $region ($repeat_regions->get_objects) {
+	    my $region_contig = $region->get_attribute("contig");
+	    next unless ($region_contig eq $contig_id);
+	    my $start = $region->get_attribute("start_pos");
+	    my $offset = $start -1;
+	    my $end = $region->get_attribute("end_pos");
+	    my $len = $end - $start + 1;
+#	    my $before = substr($sequence, $offset - 3, $len + 6);
+	    substr($sequence, $offset, $len) = "n"x$len;
+#	    my $after = substr($sequence, $offset - 3, $len + 6);
+#	    &RSAT::message::Debug("Masking region", 
+#				  $region_contig,
+#				  $start,
+#				  $end,
+##				  $before,
+##				  $after,
+#				  ) if ($main::verbose >= 0);
+	    
+	}
+	my $masked_sequence_file = $contig_id."_repeat_masked.raw";
+	my ($masked, $dir) = &OpenOutputFile($masked_sequence_file);
+	print $masked $sequence;
+	close $masked;
+	&RSAT::message::TimeWarn(join("\t", "Exported masked sequence",
+				      "contig", 
+				      $contig_id,
+				      "dir", 
+				      $dir{sequence},
+				      "file", 
+				      $masked_sequence_file)
+				 ) if ($main::verbose >= 1);
+
+    }
 }

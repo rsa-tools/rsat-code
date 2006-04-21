@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank_lib.pl,v 1.25 2006/04/12 12:35:24 rsat Exp $
+# $Id: parse_genbank_lib.pl,v 1.26 2006/04/21 14:05:45 rsat Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -80,6 +80,7 @@ sub ParseAllGenbankFiles {
 			  $scRNAs,
 			  $tRNAs,
 			  $rRNAs,
+			  $repeat_regions,
 			  $misc_RNAs,
 			  $misc_features,
 			  $CDSs,
@@ -187,7 +188,7 @@ sub ParseAllGenbankFiles {
 
     ################################################################
     ## parse chromosomal positions
-    for my $holder ($genes,$mRNAs, $scRNAs,$tRNAs,$rRNAs,$misc_RNAs,$misc_features,$CDSs) {
+    for my $holder ($genes,$mRNAs, $scRNAs,$tRNAs,$rRNAs, $repeat_regions, $misc_RNAs,$misc_features,$CDSs) {
 	&ParsePositions($holder);
     }
 	
@@ -224,12 +225,13 @@ sub ParseGenbankFile {
 	$scRNAs, 
 	$tRNAs, 
 	$rRNAs, 
+	$repeat_regions,
 	$misc_RNAs, 
 	$misc_features, 
 	$CDSs, 
 	$contigs, 
 	$organisms, 
-	$sources, 
+	$sources,
 	%args) = @_;
 
     my %features_to_parse = (CDS=>1,
@@ -238,6 +240,7 @@ sub ParseGenbankFile {
 			     scRNA=>1,
 			     tRNA=>1,
 			     rRNA=>1,
+			     repeat_region=>1,
 			     misc_RNA=>1,
 			     misc_feature=>1,
 			     gene=>1
@@ -455,6 +458,7 @@ sub ParseGenbankFile {
 
 	    $feature_type = $1;
 	    $value = "$'";
+
 	    
 	    #### parse feature  position
 	    $position = &trim($value);
@@ -477,6 +481,8 @@ sub ParseGenbankFile {
 		}
 	    }
 	    
+#	    &RSAT::message::Debug("feature type", $feature_type, $value, $position) if ($main::verbose >= 0);
+
 	    #### create an object for the new feature
 	    if ($features_to_parse{$feature_type}) {
 		&RSAT::message::Debug($l, "new feature", $feature_type, $position) if ($main::verbose >= 3);
@@ -491,6 +497,10 @@ sub ParseGenbankFile {
  		    $holder = $tRNAs;
  		} elsif ($feature_type eq "rRNA") {
  		    $holder = $rRNAs;
+		} elsif ($feature_type eq "repeat_region") {
+		    $holder = $repeat_regions;
+#		    &RSAT::message::Debug("repeat region", $feature_type) if ($main::verbose >= 0);
+#		    die "HELLO";
  		} elsif ($feature_type eq "misc_RNA") {
  		    $holder = $misc_RNAs;
  		} elsif ($feature_type eq "misc_feature") {
@@ -623,6 +633,7 @@ sub ParseGenbankFile {
 					   $scRNAs, 
 					   $tRNAs, 
 					   $rRNAs, 
+					   $repeat_regions, 
 					   $misc_RNAs, 
 					   $misc_features, 
 					   $CDSs, 
@@ -668,6 +679,7 @@ sub ParseGO {
 	    }
 	}
     }
+
 }
 
 ################################################################
@@ -839,7 +851,9 @@ RSAT-formatted features for specific types (CDS, mRNA, tRNA, ...).
 
 =cut
 sub CreateGenbankFeatures {
-    my ($features, $genes, $mRNAs, $scRNA, $tRNAs, $rRNAs, $misc_RNAs, $misc_features, $CDSs, $sources, $contigs) = @_;
+    my ($features, $genes, $mRNAs, $scRNA, $tRNAs, $rRNAs, $misc_RNAs, $misc_features, $CDSs, $sources, 
+#	$repeat_regions, 
+	$contigs) = @_;
     
     ## Index gene names
 #    &RSAT::message::TimeWarn("Indexing gene names") if ($main::verbose >= 1);

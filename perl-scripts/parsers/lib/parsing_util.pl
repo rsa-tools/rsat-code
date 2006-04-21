@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parsing_util.pl,v 1.20 2006/01/01 22:28:14 jvanheld Exp $
+# $Id: parsing_util.pl,v 1.21 2006/04/21 14:05:45 rsat Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -468,7 +468,6 @@ sub ParsePositions {
 	my $start_pos = $null;
 	my $end_pos = $null;
 
-
 	################################################################
 	#### separate chromosome from chromosomal position
 	if ($position =~ /^(\S+)\:(.*)/) {
@@ -592,6 +591,19 @@ sub ParsePositions {
 	$feature->force_attribute("strand",$strand);
 	$feature->force_attribute("start_pos",$start_pos);
 	$feature->force_attribute("end_pos",$end_pos);
+
+
+# 	&RSAT::message::Debug("ParsePositions", 
+# 			      $feature->get_attribute("id"),
+# 			      $feature->get_attribute("type"),
+# 			      $feature->get_attribute("position"),
+# 			      $feature->get_attribute("chromosome"),
+# 			      $feature->get_attribute("end_pos"),
+# 			      $feature->get_attribute("start_pos"),
+# 			      $feature->get_attribute("strand"),
+# 			      ) if ($main::verbose >= 0);
+
+
     }
 
 }
