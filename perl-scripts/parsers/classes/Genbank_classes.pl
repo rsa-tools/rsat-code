@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: Genbank_classes.pl,v 1.6 2005/12/13 08:46:16 jvanheld Exp $
+# $Id: Genbank_classes.pl,v 1.7 2006/04/21 14:05:45 rsat Exp $
 #
 # Time-stamp: <2003-08-09 00:37:11 jvanheld>
 #
@@ -419,7 +419,7 @@ package Genbank::rRNA;
 }
 
 ################################################################
-#### Ribosomial RNA
+#### Miscellaneous RNA
 package Genbank::misc_RNA;
 {
   @ISA = qw ( Genbank::Feature );
@@ -442,6 +442,26 @@ package Genbank::misc_RNA;
 			     #### multi-value attributes
 			     note=>"ARRAY",
 			     function=>"ARRAY",
+			     );
+}
+
+################################################################
+## repeat region
+package Genbank::repeat_region;
+{
+  @ISA = qw ( Genbank::Feature );
+  ### class attributes
+  $_count = 0;
+  $_prefix = "ft_";
+  @_objects = ();
+  %_name_index = ();
+  %_id_index = ();
+  %_attribute_count = ();
+  %_attribute_cardinality = (id=>"SCALAR",
+
+			     ### raw info found in Genbank flat files
+			     chrom_position=>"SCALAR",
+
 			     );
 }
 
