@@ -1,7 +1,7 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: parse-embl.pl,v 1.13 2005/05/12 05:26:55 jvanheld Exp $
+# $Id: parse-embl.pl,v 1.14 2006/04/21 14:06:20 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:17:49 jvanheld>
 #
@@ -763,7 +763,7 @@ sub ParseEMBLFile {
 
 	} elsif ($line =~ /^AC\s+/) {
 	    #### accession number for the currrent contig
-	    my $AC = $';
+	    my $AC = $'; ## '
 	    $AC =~ s/;$//;
 	    $contig->set_attribute("accession", $AC);
 
@@ -911,7 +911,11 @@ sub ParseEMBLFile {
 
 
 	    #### add the new attribtue to the feature
-	    $current_feature->new_attribute_value($key, $value);
+	    if (($key eq "id") || ($key eq "type")) {
+		$current_feature->force_attribute($key, $value);
+	    } else {
+		$current_feature->new_attribute_value($key, $value);
+	    }
 	    warn join ("\t", "; attribute", $feature_count, $start_l, $l, $key, $value), "\n" if ($main::verbose >= 4);
 
 	}
