@@ -49,7 +49,7 @@ one_disco:
 	@echo
 	@echo ${DISCO_CMD}
 	make my_command MY_COMMAND="${DISCO_CMD}"
-	@echo ${PATTERNS}.tab
+	@echo ${PATTERNS}.tab.gz
 
 ################################################################
 ## Generate one set of random sequence 
@@ -109,21 +109,36 @@ list_disco_files:
 ## Calculate score distribution and draw the graph
 SC=7
 SCORE_FILE=${DIR}/${SEQ_PREFIX}_${SUFFIX}_distrib
-score_distrib: list_disco_files
-	@echo
-	@echo "Score distribution"
-	zcat ${DISCO_FILES} | grep -v "^;" | cut -f ${SC} | classfreq -v -o ${SCORE_FILE}.tab ${OPT}
-	@echo ${SCORE_FILE}.tab 
-	XYgraph	-i ${SCORE_FILE}.tab \
+SCORE_DISTRIB_CMD=zcat ${DISCO_FILES} | grep -v '^;' | cut -f ${SC} | classfreq -v -o ${SCORE_FILE}.tab ${OPT}
+SCORE_DISTRIB_GRAPH_CMD=XYgraph	-i ${SCORE_FILE}.tab \
 		-lines \
 		-xcol 3 -ycol 4,5,6 -legend \
+		-xmin -5 -xmax 5 \
 		-xleg1 'score column ${SC}' \
 		-yleg1 'Absolute frequency' -ylog \
 		-title1 '${SEQ_PREFIX}' \
 		-title2 '${SUFFIX}' \
 		-o ${SCORE_FILE}.jpg
+score_distrib: 
+	@echo
+	@echo "Score distribution	L=${L}	N=${N}"
+	${SCORE_DISTRIB_CMD}
+	@echo ${SCORE_FILE}.tab 
+	@${MAKE} score_distrib_graph
 
+score_distrib_graph:
+	${SCORE_DISTRIB_GRAPH_CMD}
 	@echo ${SCORE_FILE}.jpg
+
+N_VALUES=5 1à 20 50 100
+L_VALUES=20 50 200 1000
+NL_TASK=test_series
+iterate_NL:
+	@for l in ${L_VALUES}; do \
+		for n in ${N_VALUES}; do \
+			${MAKE} WD=`pwd` ${NL_TASK} L=$${l} N=$${n} ; \
+		done ; \
+	done
 
 ################################################################
 ## Remove random sequences
