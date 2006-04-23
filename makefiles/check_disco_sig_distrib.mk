@@ -10,7 +10,7 @@ include ${RSAT}/makefiles/util.mk
 DISCO_CMD=${DYAD_CMD}
 PATTERNS=${DYADS}
 SUFFIX=${DYAD_SUFFIX}
-DISCO_FILES=${DYAD_FILES}
+DISCO_FILES=${DYAD_FILES}.gz
 
 ## Model organism
 ORG=Saccharomyces_cerevisiae
@@ -22,6 +22,11 @@ SEQ=${RAND_SEQ}
 SEQ_FILE=${RAND_SEQ_FILE}
 SEQ_PREFIX=${RAND_SEQ_PREFIX}
 
+
+################################################################
+## Apply pattern discovery algorithm to one sequence file
+
+## dyad-analysis command
 STR=-2str
 NOOV=-noov
 BG=monads
@@ -29,7 +34,7 @@ SP=0-20
 ML=3
 DYAD_SUFFIX=dyads_${ML}nt_sp${SP}${STR}${NOOV}_${BG}
 DYADS=${DIR}/${SEQ}_${DYAD_SUFFIX}
-DYAD_FILES=`ls ${DIR}/${SEQ_PREFIX}_test*_${DYAD_SUFFIX}.tab`
+DYAD_FILES=`ls ${DIR}/${SEQ_PREFIX}_test*_${DYAD_SUFFIX}.tab*`
 V=1
 DYAD_CMD=dyad-analysis -v ${V}\
 	-i ${SEQ_FILE} \
@@ -39,8 +44,7 @@ DYAD_CMD=dyad-analysis -v ${V}\
 	-o ${DYADS}.tab \
 	${OPT}
 
-################################################################
-## Apply pattern discovery algorithm to one sequence file
+## Run pattern discovery on one sequence set
 one_disco:
 	@echo
 	@echo ${DISCO_CMD}
