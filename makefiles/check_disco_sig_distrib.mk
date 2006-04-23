@@ -125,5 +125,6 @@ rm_all_rand_seq:
 	done
 
 rm_one_rand_seq:
+	@echo "deleting file	${RAND_SEQ_FILE}"
 	@rm -f "${RAND_SEQ_FILE}"
 
