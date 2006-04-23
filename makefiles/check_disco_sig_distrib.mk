@@ -51,7 +51,7 @@ one_disco:
 RAND_OL=6
 SEQ_LEN=1000
 SEQ_NB=10
-RAND_DIR=rand_seq_n${SEQ_NB}_l${SEQ_LEN}
+RAND_DIR=results/rand_seq_n${SEQ_NB}_l${SEQ_LEN}
 RAND_SEQ_PREFIX=rand_L${SEQ_LEN}_n${SEQ_NB}_bg_${RAND_OL}nt_${ORG}
 RAND_SEQ=${RAND_SEQ_PREFIX}_test${TEST}
 RAND_SEQ_FILE=${DIR}/${SEQ}.fasta.gz
@@ -79,7 +79,6 @@ test_series:
 		date ; \
 		${MAKE} one_test TEST=$${t}; \
 	done
-	${MAKE} score_distrib
 
 list_disco_files:
 	@echo ${DISCO_FILES}
