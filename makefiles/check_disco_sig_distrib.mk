@@ -58,11 +58,17 @@ RAND_SEQ_FILE=${DIR}/${SEQ}.fasta.gz
 RAND_SEQ_CMD=mkdir -p ${RAND_DIR}; random-seq -org ${ORG} -bg upstream-noorf -ol ${RAND_OL} -l ${SEQ_LEN} -r ${SEQ_NB} -o ${RAND_SEQ_FILE}
 one_rand_seq: 
 	@echo
-	@echo ${RAND_SEQ_CMD}
+	@echo "${RAND_SEQ_CMD}"
 	${RAND_SEQ_CMD}
 	@echo "${RAND_SEQ_FILE}"
 
-one_test: one_rand_seq one_disco
+ONE_TEST_CMD=${RAND_SEQ_CMD}; ${DISCO_CMD}
+one_test: 
+	@echo
+#	@echo "${ONE_TEST_CMD}"
+	@${MAKE} my_command MY_COMMAND="${ONE_TEST_CMD}"
+	@echo "${RAND_SEQ_FILE}"
+	@echo ${PATTERNS}.tab
 
 ################################################################
 ## Run a series of tests
