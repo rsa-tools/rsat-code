@@ -16,7 +16,7 @@ DISCO_FILES=${DYAD_FILES}
 ORG=Saccharomyces_cerevisiae
 
 ## Directory and sequences
-DIR=rand_seq
+DIR=${RAND_DIR}
 SEQ=${RAND_SEQ}
 SEQ_FILE=${RAND_SEQ_FILE}
 SEQ_PREFIX=${RAND_SEQ_PREFIX}
@@ -41,22 +41,31 @@ DYAD_CMD=dyad-analysis -v ${V}\
 ################################################################
 ## Apply pattern discovery algorithm to one sequence file
 one_disco:
-	${DISCO_CMD}
+	@echo
+	@echo ${DISCO_CMD}
+	make my_command MY_COMMAND="${DISCO_CMD}"
 	@echo ${PATTERNS}.tab
 
+################################################################
+## Generate one set of random sequence 
 RAND_OL=6
 SEQ_LEN=1000
 SEQ_NB=10
+RAND_DIR=rand_seq_n${SEQ_NB}_l${SEQ_LEN}
 RAND_SEQ_PREFIX=rand_L${SEQ_LEN}_n${SEQ_NB}_bg_${RAND_OL}nt_${ORG}
 RAND_SEQ=${RAND_SEQ_PREFIX}_test${TEST}
-RAND_SEQ_FILE=${DIR}/${SEQ}.fasta
+RAND_SEQ_FILE=${DIR}/${SEQ}.fasta.gz
+RAND_SEQ_CMD=mkdir -p ${RAND_DIR}; random-seq -org ${ORG} -bg upstream-noorf -ol ${RAND_OL} -l ${SEQ_LEN} -r ${SEQ_NB} -o ${RAND_SEQ_FILE}
 one_rand_seq: 
-	@mkdir -p ${DIR}
-	random-seq -org ${ORG} -bg upstream-noorf -ol ${RAND_OL} -l ${SEQ_LEN} -r ${SEQ_NB} -o ${RAND_SEQ_FILE}
+	@echo
+	@echo ${RAND_SEQ_CMD}
+	${RAND_SEQ_CMD}
 	@echo "${RAND_SEQ_FILE}"
 
 one_test: one_rand_seq one_disco
 
+################################################################
+## Run a series of tests
 TEST=1
 TESTS=1 2 3 4 5 6 7 8 9 10
 test_series:
@@ -69,6 +78,8 @@ test_series:
 list_disco_files:
 	@echo ${DISCO_FILES}
 
+################################################################
+## Calculate score distribution and draw the graph
 SC=9
 SCORE_FILE=${DIR}/${SEQ_PREFIX}_${SUFFIX}_distrib
 score_distrib: list_disco_files
