@@ -16,6 +16,7 @@ DISCO_FILES=${DYAD_FILES}
 ORG=Saccharomyces_cerevisiae
 
 ## Directory and sequences
+WD=`pwd`
 DIR=${RAND_DIR}
 SEQ=${RAND_SEQ}
 SEQ_FILE=${RAND_SEQ_FILE}
@@ -51,7 +52,7 @@ one_disco:
 RAND_OL=6
 SEQ_LEN=1000
 SEQ_NB=10
-RAND_DIR=results/rand_seq_n${SEQ_NB}_l${SEQ_LEN}
+RAND_DIR=${WD}/results/rand_seq_n${SEQ_NB}_l${SEQ_LEN}
 RAND_SEQ_PREFIX=rand_L${SEQ_LEN}_n${SEQ_NB}_bg_${RAND_OL}nt_${ORG}
 RAND_SEQ=${RAND_SEQ_PREFIX}_test${TEST}
 RAND_SEQ_FILE=${DIR}/${SEQ}.fasta.gz
@@ -61,6 +62,7 @@ one_rand_seq:
 	@echo "${RAND_SEQ_CMD}"
 	${RAND_SEQ_CMD}
 	@echo "${RAND_SEQ_FILE}"
+
 
 ONE_TEST_CMD=${RAND_SEQ_CMD}; ${DISCO_CMD}
 one_test: 
@@ -91,6 +93,7 @@ test_series:
 		${MAKE} one_test TEST=$${t}; \
 	done
 
+
 list_disco_files:
 	@echo ${DISCO_FILES}
 
@@ -113,4 +116,14 @@ score_distrib: list_disco_files
 		-o ${SCORE_FILE}.jpg
 
 	@echo ${SCORE_FILE}.jpg
+
+################################################################
+## Remove random sequences
+rm_all_rand_seq:
+	@for t in ${TESTS} ; do \
+		${MAKE} rm_one_rand_seq TEST=$${t}; \
+	done
+
+rm_one_rand_seq:
+	@rm -f "${RAND_SEQ_FILE}"
 
