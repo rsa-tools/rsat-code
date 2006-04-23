@@ -10,7 +10,7 @@ include ${RSAT}/makefiles/util.mk
 DISCO_CMD=${DYAD_CMD}
 PATTERNS=${DYADS}
 SUFFIX=${DYAD_SUFFIX}
-DISCO_FILES=${DYAD_FILES}.gz
+DISCO_FILES=${DYAD_FILES}
 
 ## Model organism
 ORG=Saccharomyces_cerevisiae
@@ -34,14 +34,14 @@ SP=0-20
 ML=3
 DYAD_SUFFIX=dyads_${ML}nt_sp${SP}${STR}${NOOV}_${BG}
 DYADS=${DIR}/${SEQ}_${DYAD_SUFFIX}
-DYAD_FILES=`ls ${DIR}/${SEQ_PREFIX}_test*_${DYAD_SUFFIX}.tab*`
+DYAD_FILES=`ls ${RAND_DIR}/${SEQ_PREFIX}_test*_${DYAD_SUFFIX}.tab*`
 V=1
 DYAD_CMD=dyad-analysis -v ${V}\
 	-i ${SEQ_FILE} \
 	-sort -type any ${STR} ${NOOV} \
 	-org ${ORG} -return occ,freq,rank,proba,monad_freq \
 	-l ${ML} -spacing ${SP} -bg ${BG} \
-	-o ${DYADS}.tab \
+	-o ${DYADS}.tab.gz \
 	${OPT}
 
 ## Run pattern discovery on one sequence set
@@ -54,13 +54,15 @@ one_disco:
 ################################################################
 ## Generate one set of random sequence 
 RAND_OL=6
-SEQ_LEN=1000
-SEQ_NB=10
-RAND_DIR=${WD}/results/rand_seq_n${SEQ_NB}_l${SEQ_LEN}
-RAND_SEQ_PREFIX=rand_L${SEQ_LEN}_n${SEQ_NB}_bg_${RAND_OL}nt_${ORG}
+L=200
+N=20
+BG_DESC=bg_${RAND_BG}_${RAND_OL}nt_${ORG}
+RAND_DIR=${WD}/results/rand_seq_${BG_DESC}_n${N}_l${L}
+RAND_SEQ_PREFIX=rand_L${L}_n${N}_${BG_DESC}
 RAND_SEQ=${RAND_SEQ_PREFIX}_test${TEST}
 RAND_SEQ_FILE=${DIR}/${SEQ}.fasta.gz
-RAND_SEQ_CMD=mkdir -p ${RAND_DIR}; random-seq -org ${ORG} -bg upstream-noorf -ol ${RAND_OL} -l ${SEQ_LEN} -r ${SEQ_NB} -o ${RAND_SEQ_FILE}
+RAND_BG=equi
+RAND_SEQ_CMD=mkdir -p ${RAND_DIR}; random-seq -org ${ORG} -bg ${RAND_BG} -ol ${RAND_OL} -l ${L} -r ${N} -o ${RAND_SEQ_FILE}
 one_rand_seq: 
 	@echo
 	@echo "${RAND_SEQ_CMD}"
@@ -99,16 +101,18 @@ test_series:
 
 
 list_disco_files:
+	@echo ${WD}
+	@echo ${DIR}
 	@echo ${DISCO_FILES}
 
 ################################################################
 ## Calculate score distribution and draw the graph
-SC=9
+SC=7
 SCORE_FILE=${DIR}/${SEQ_PREFIX}_${SUFFIX}_distrib
 score_distrib: list_disco_files
 	@echo
 	@echo "Score distribution"
-	cat ${DISCO_FILES} | grep -v "^;" | cut -f ${SC} | classfreq -v -o ${SCORE_FILE}.tab ${OPT}
+	zcat ${DISCO_FILES} | grep -v "^;" | cut -f ${SC} | classfreq -v -o ${SCORE_FILE}.tab ${OPT}
 	@echo ${SCORE_FILE}.tab 
 	XYgraph	-i ${SCORE_FILE}.tab \
 		-lines \
@@ -132,3 +136,9 @@ rm_one_rand_seq:
 	@echo "deleting file	${RAND_SEQ_FILE}"
 	@rm -f "${RAND_SEQ_FILE}"
 
+
+################################################################
+## Synchronize result files from merlin
+## Exclude sequence and dyad files, only synchronize the distributions
+from_merlin:
+	rsync --exclude '*fasta*' --exclude '*.tab.gz' -ruptvl -e ssh merlin.scmbb.ulb.ac.be:test/dyad_sig_distrib/results .
