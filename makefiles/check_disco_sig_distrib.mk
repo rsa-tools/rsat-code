@@ -7,10 +7,16 @@ include ${RSAT}/makefiles/util.mk
 
 
 ## Choice of the pattern discovery program
-DISCO_CMD=${DYAD_CMD}
-PATTERNS=${DYADS}
-SUFFIX=${DYAD_SUFFIX}
-DISCO_FILES=${DYAD_FILES}
+# DISCO_CMD=${DYAD_CMD}
+# PATTERNS=${DYADS}
+# SUFFIX=${DYAD_SUFFIX}
+# DISCO_FILES=${DYAD_FILES}
+
+## oligo-analysis
+DISCO_CMD=${OLIGO_CMD}
+PATTERNS=${OLIGOS}
+SUFFIX=${OLIGO_SUFFIX}
+DISCO_FILES=${OLIGO_FILES}
 
 ## Model organism
 ORG=Saccharomyces_cerevisiae
@@ -26,13 +32,30 @@ SEQ_PREFIX=${RAND_SEQ_PREFIX}
 ################################################################
 ## Apply pattern discovery algorithm to one sequence file
 
-## dyad-analysis command
+## Default parameters
 STR=-2str
 NOOV=-noov
-BG=monads
+
+## oligo-analysis command
+OL=6
+OLIGO_BG=equi
+OLIGO_SUFFIX=oligos_${OL}nt${STR}${NOOV}_${OLIGO_BG}
+OLIGOS=${DIR}/${SEQ}_${OLIGO_SUFFIX}
+OLIGO_FILES=`ls ${RAND_DIR}/${SEQ_PREFIX}_test*_${OLIGO_SUFFIX}.tab*`
+V=1
+OLIGO_CMD=oligo-analysis -v ${V}\
+	-i ${SEQ_FILE} \
+	-sort -type any ${STR} ${NOOV} \
+	-org ${ORG} -return occ,freq,rank,proba \
+	-l ${OL} -bg ${OLIGO_BG} \
+	-o ${OLIGOS}.tab.gz \
+	${OPT}
+
+## dyad-analysis command
+DYAD_BG=monads
 SP=0-20
 ML=3
-DYAD_SUFFIX=dyads_${ML}nt_sp${SP}${STR}${NOOV}_${BG}
+DYAD_SUFFIX=dyads_${ML}nt_sp${SP}${STR}${NOOV}_${DYAD_BG}
 DYADS=${DIR}/${SEQ}_${DYAD_SUFFIX}
 DYAD_FILES=`ls ${RAND_DIR}/${SEQ_PREFIX}_test*_${DYAD_SUFFIX}.tab*`
 V=1
@@ -40,7 +63,7 @@ DYAD_CMD=dyad-analysis -v ${V}\
 	-i ${SEQ_FILE} \
 	-sort -type any ${STR} ${NOOV} \
 	-org ${ORG} -return occ,freq,rank,proba,monad_freq \
-	-l ${ML} -spacing ${SP} -bg ${BG} \
+	-l ${ML} -spacing ${SP} -bg ${DYAD_BG} \
 	-o ${DYADS}.tab.gz \
 	${OPT}
 
@@ -113,7 +136,7 @@ SCORE_DISTRIB_CMD=zcat ${DISCO_FILES} | grep -v '^;' | cut -f ${SC} | classfreq 
 SCORE_DISTRIB_GRAPH_CMD=XYgraph	-i ${SCORE_FILE}.tab \
 		-lines \
 		-xcol 3 -ycol 4,5,6 -legend \
-		-xmin -5 -xmax 5 \
+		-xmin -5 -xmax 5 -xgstep1 1 \
 		-xleg1 'score column ${SC}' \
 		-yleg1 'Absolute frequency' -ylog \
 		-title1 '${SEQ_PREFIX}' \
@@ -130,7 +153,7 @@ score_distrib_graph:
 	${SCORE_DISTRIB_GRAPH_CMD}
 	@echo ${SCORE_FILE}.jpg
 
-N_VALUES=5 1à 20 50 100
+N_VALUES=5 10 20 50 100
 L_VALUES=20 50 200 1000
 NL_TASK=test_series
 iterate_NL:
