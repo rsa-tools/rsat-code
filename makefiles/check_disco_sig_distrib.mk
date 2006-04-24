@@ -6,7 +6,7 @@
 include ${RSAT}/makefiles/util.mk
 
 
-## Choice of the pattern discovery program
+# ## Choice of the pattern discovery program
 # DISCO_CMD=${DYAD_CMD}
 # PATTERNS=${DYADS}
 # SUFFIX=${DYAD_SUFFIX}
@@ -38,8 +38,9 @@ NOOV=-noov
 
 ## oligo-analysis command
 OL=6
-OLIGO_BG=equi
-OLIGO_SUFFIX=oligos_${OL}nt${STR}${NOOV}_${OLIGO_BG}
+#OLIGO_BG=equi
+OLIGO_BG=upstream-noorf
+OLIGO_SUFFIX=oligos_${OL}nt_${STR}${NOOV}_${OLIGO_BG}
 OLIGOS=${DIR}/${SEQ}_${OLIGO_SUFFIX}
 OLIGO_FILES=`ls ${RAND_DIR}/${SEQ_PREFIX}_test*_${OLIGO_SUFFIX}.tab*`
 V=1
@@ -79,12 +80,13 @@ one_disco:
 RAND_OL=6
 L=200
 N=20
+#RAND_BG=equi
+RAND_BG=upstream-noorf
 BG_DESC=bg_${RAND_BG}_${RAND_OL}nt_${ORG}
 RAND_DIR=${WD}/results/rand_seq_${BG_DESC}_n${N}_l${L}
 RAND_SEQ_PREFIX=rand_L${L}_n${N}_${BG_DESC}
 RAND_SEQ=${RAND_SEQ_PREFIX}_test${TEST}
 RAND_SEQ_FILE=${DIR}/${SEQ}.fasta.gz
-RAND_BG=equi
 RAND_SEQ_CMD=mkdir -p ${RAND_DIR}; random-seq -org ${ORG} -bg ${RAND_BG} -ol ${RAND_OL} -l ${L} -r ${N} -o ${RAND_SEQ_FILE}
 one_rand_seq: 
 	@echo
@@ -99,7 +101,7 @@ one_test:
 #	@echo "${ONE_TEST_CMD}"
 	@${MAKE} my_command MY_COMMAND="${ONE_TEST_CMD}"
 	@echo "${RAND_SEQ_FILE}"
-	@echo ${PATTERNS}.tab
+	@echo ${PATTERNS}.tab.gz
 
 ################################################################
 ## Run a series of tests
@@ -171,12 +173,32 @@ rm_all_rand_seq:
 	done
 
 rm_one_rand_seq:
-	@echo "deleting file	${RAND_SEQ_FILE}"
+#	@echo "deleting file	${RAND_SEQ_FILE}"
 	@rm -f "${RAND_SEQ_FILE}"
 
+################################################################
+## Remove all the pattern discovery result files
+rm_disco_files:
+#	@echo "Removing ${DISCO_FILES}"
+	@rm -f ${DISCO_FILES}
 
 ################################################################
 ## Synchronize result files from merlin
 ## Exclude sequence and dyad files, only synchronize the distributions
 from_merlin:
 	rsync --exclude '*fasta*' --exclude '*.tab.gz' -ruptvl -e ssh merlin.scmbb.ulb.ac.be:test/dyad_sig_distrib/results .
+
+
+################################################################
+## Soem example of typical tests
+
+oligos_equi_test:
+	@${MAKE} OLIGO_BG=equi RAND_BG=equi \
+		iterate_NL
+
+MARKOV_OL=6
+oligos_markov_test:
+	@${MAKE} OLIGO_BG=upstream-noorf RAND_BG=upstream-noorf \
+		RAND_OL=${MARKOV_OL} \
+		OL=${MARKOV_OL} \
+		iterate_NL 
