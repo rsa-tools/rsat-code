@@ -1,6 +1,6 @@
 #!/usr/bin/perl 
 #############################################################
-# $Id: parse-genbank.pl,v 1.38 2006/04/21 14:05:45 rsat Exp $
+# $Id: parse-genbank.pl,v 1.39 2006/04/25 06:05:51 rsat Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -203,6 +203,12 @@ package main;
 #    chdir $dir{input};
     &ParseAllGenbankFiles(@genbank_files);
 
+    ## Export masked sequences
+    my @repeats = $repeat_regions->get_objects();
+    if (scalar(@repeats) > 1) {
+	&ExportMaskedSequences() unless ($noseq);
+    }
+    
     #### write the contig file
     chdir $dir{main};
     $chrom = &OpenOutputFile("$dir{output}/contigs.txt"); # file with contig IDs
@@ -280,8 +286,6 @@ package main;
     ## Export protein sequences
     &ExportProteinSequences($CDSs,$org);
 
-    ## Export masked sequences
-    &ExportMaskedSequences() unless ($noseq);
 
     ###### verbose ######
     if ($verbose) {
@@ -635,24 +639,39 @@ sub ExportMaskedSequences {
 	my $file =    $contig->get_attribute("file");
 	my $contig_id = $contig->get_attribute("id");
 	my $sequence = `cat $file`;
+	&RSAT::message::TimeWarn(join("\t", "Masking sequence",
+				      "contig", 
+				      $contig_id,
+				      "length", $contig_len)) if ($main::verbose >= 1);
+
 	foreach my $region ($repeat_regions->get_objects) {
+	    my $contig_len = length($sequence);
 	    my $region_contig = $region->get_attribute("contig");
 	    next unless ($region_contig eq $contig_id);
 	    my $start = $region->get_attribute("start_pos");
+	    $start =~ s/\<//g;
+	    $start =~ s/\>//g;
 	    my $offset = $start -1;
 	    my $end = $region->get_attribute("end_pos");
+	    $end =~ s/\<//g;
+	    $end =~ s/\>//g;
+	    next unless ((&IsReal($start)) && (&IsReal($end)));
 	    my $len = $end - $start + 1;
-#	    my $before = substr($sequence, $offset - 3, $len + 6);
-	    substr($sequence, $offset, $len) = "n"x$len;
-#	    my $after = substr($sequence, $offset - 3, $len + 6);
-#	    &RSAT::message::Debug("Masking region", 
-#				  $region_contig,
-#				  $start,
-#				  $end,
-##				  $before,
-##				  $after,
-#				  ) if ($main::verbose >= 0);
 	    
+#	    my $before = substr($sequence, $offset - 3, $len + 6);
+#	    my $after = substr($sequence, $offset - 3, $len + 6);
+# 	    &RSAT::message::Debug("Masking region", 
+# 				  $region_contig,
+# 				  "contig len=".$contig_len,
+# 				  "start=".$start,
+# 				  "end=".$end,
+# 				  "offset=".$offset,
+# 				  "len=".$len,
+# ##				  $before,
+# ##				  $after,
+# 				  ) if ($main::verbose >= 0);
+	    
+	    substr($sequence, $offset, $len) = "n"x$len;
 	}
 	my $masked_sequence_file = $contig_id."_repeat_masked.raw";
 	my ($masked, $dir) = &OpenOutputFile($masked_sequence_file);

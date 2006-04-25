@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.167 2006/03/30 11:09:04 rsat Exp $
+# $Id: multiple-family-analysis,v 1.168 2006/04/25 06:05:51 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -130,6 +130,7 @@ $scalestep = 100;
 
 ## retrieve-seq options
 $noorf = "-noorf"; 
+$repeat_masked = 0;
 $seq_format = "fasta";
 $seq_dir = "";
 $seq_ext = "fasta";
@@ -843,6 +844,7 @@ sub UpstreamSequences {
    warn ";\tRetrieving upstream sequences for family $family_name\n" if ($verbose >= 1);
    $command = "retrieve-seq -imp_pos -type upstream -org $organism_name";
    $command .= " -noorf " if ($noorf);
+   $command .= " -rm " if ($repeat_masked);
    $command .= " -i $family{$family_name}->{family_file}";
    $command .= " -o $family{$family_name}->{seq_file}";
    $command .= " -from $from" if (defined($from));
@@ -2334,6 +2336,8 @@ OPTIONS
 
 	-noorf	exclude upstream ORFs from upstream sequences
 
+	-rm	use repeat masked version  of the genome
+
 	-orfov  do not exclude upstream ORFs from upstream sequences
 
 	-from	upstream region left limit
@@ -2656,6 +2660,7 @@ multiple-family-analysis options
 -from		upstream region left limit
 -to		upstream region right limit
 -noorf		exclude upstream ORFs from upstream sequences
+-rm		use repeat masked version of the genome
 -orfov		do not exclude upstream ORFs from upstream sequences
 -feattype	feature type for sequence retrieval (e.g. CDS, mRNA)
 
@@ -2899,6 +2904,10 @@ sub ReadArguments {
 	    #### clip upstream ORFs fom upstream regions
 	} elsif ($ARGV[$a] =~ /^-noorf/) {
 	    $noorf = "-noorf";
+
+	    #### use repeat masked version of the genome
+	} elsif ($ARGV[$a] eq "-rm") {
+	    $repeat_masked = 1;
 
 	    #### do not clip upstream ORFs fom upstream regions
 	} elsif ($ARGV[$a] =~ /^-orfov/) {
@@ -3479,6 +3488,7 @@ sub Validate {
 			     "Acc.a",
 			     "Acc.g",
 			     "Acc.h"), "\n";
+
    print $valid_patt_handle join("\t",
 				 "# Fam",
 				 "Members",
@@ -3544,7 +3554,7 @@ sub ValidateOneResult {
     $command .= " -o ".$family{$family_name}->{$pattern_type."_vs_known"};
     &doit($command, $dry_run, $die_on_error, $verbose);
     
-    ## Compare discovered patterns with known sites (table output type)
+    ## Compare discovered patterns with known sites (relw table output type)
     my $command = "compare-patterns";
     $command .= " -v 1";
     $command .= " ".$strands;
@@ -3555,7 +3565,7 @@ sub ValidateOneResult {
     $command .= " -o ".$family{$family_name}->{$pattern_type."_vs_known_relw_table"};
     &doit($command, $dry_run, $die_on_error, $verbose);
     
-    ## Compare discovered patterns with known sites (table output type)
+    ## Compare discovered patterns with known sites (weight table output type)
     my $command = "compare-patterns";
     $command .= " -v 1";
     $command .= " ".$strands;
@@ -3567,7 +3577,7 @@ sub ValidateOneResult {
     &doit($command, $dry_run, $die_on_error, $verbose);
 
     my $match_file = $family{$family_name}->{$pattern_type."_vs_known"};
-    my $pattern_handle = &OpenInputFile($pattern_file);
+    my ($pattern_handle) = &OpenInputFile($pattern_file);
 
     if ($pattern_type eq "oligo") {
 	$score_col = 9;
@@ -3583,51 +3593,36 @@ sub ValidateOneResult {
     my $nb_patterns = 0;
     my $max_sig = 0;
     my $sum_sig = 0;
+
     while (<$pattern_handle>) {
         next if (/^;/); # Skip comment lines
         next unless (/\S/); # Skip empty lines
         chomp();
 	$nb_patterns ++;
-        my @fields = split "\t", $_;
-        my $pattern = $fields[0];
-        my $score = $fields[$score_col -1];
-	if ($number_sites == 0) {
-	    $TPsites = "NA";
-	    $TPsites_patt = "NA";
-	    $TPpatterns = "NA";
-	    $TPpattern = "NA";
-	    $Sn = "NA";
-	    $Sn_patt = "NA";
-	    $PPV = "NA";
-	    $PPV_patt = "NA";
-	    $acc_a = "NA";
-	    $acc_a_patt = "NA";
-	    $acc_g = "NA";
-	    $acc_g_patt = "NA";
-	    $acc_h = "NA";
-	    $acc_h_patt = "NA";
-	} else {
-	    chomp($TPsites_patt = `more $match_file | grep '$pattern' | wc -l`);
-	    if ($TPsites_patt == 0) {
-		$TPpattern = 0;
-	    } elsif ($TPsites_patt >= 1) {
-		$TPpattern = 1;
+	    my @fields = split "\t", $_;
+	    my $pattern = $fields[0];
+	    my $score = $fields[$score_col -1];
+	    if ($score > $max_sig) {
+		$max_sig = $score;
 	    }
-	    $Sn_patt = $TPsites_patt/$number_sites;
-	    $Sn_patt = sprintf("%.4f", $Sn_patt);
-	    if ($nb_patterns == 0) {
-		$PPV_patt = 0;
-		$acc_a_patt = 0;
-		$acc_g_patt = 0;
-		$acc_h_patt = 0;
-		$max_sig = "NA";
-		$sum_sig = "NA";
-		$mean_sig = "NA";
+	    $sum_sig = $sum_sig + $score;
+	    if ($number_sites == 0) {
+		$TPsites_patt = "NA";
+		$TPpattern = "NA";
+		$Sn_patt = "NA";
+		$PPV_patt = "NA";
+		$acc_a_patt = "NA";
+		$acc_g_patt = "NA";
+		$acc_h_patt = "NA";
 	    } else {
-		if ($score > $max_sig) {
-		    $max_sig = $score;
+		chomp($TPsites_patt = `more $match_file | grep '$pattern' | wc -l`);
+		if ($TPsites_patt == 0) {
+		    $TPpattern = 0;
+		} elsif ($TPsites_patt >= 1) {
+		    $TPpattern = 1;
 		}
-		$sum_sig = $sum_sig + $score;
+		$Sn_patt = $TPsites_patt/$number_sites;
+		$Sn_patt = sprintf("%.4f", $Sn_patt);
 		$PPV_patt = $TPpattern;
 		$PPV_patt = sprintf("%.4f", $PPV_patt);
 		$acc_a_patt = ($Sn_patt+$PPV_patt)/2;
@@ -3641,7 +3636,6 @@ sub ValidateOneResult {
 		    $acc_h_patt = sprintf("%.4f", $acc_h_patt);
 		}
 	    }
-	}
 	print $valid_patt_handle join("\t", $family_name, 
 				      scalar(@{$family{$family_name}->{members}}),
 				      $number_sites, 
@@ -3660,6 +3654,8 @@ sub ValidateOneResult {
     if ($nb_patterns > 0) {
 	$mean_sig = sprintf("%.3f",  $sum_sig / $nb_patterns);
     } else {
+	$max_sig = "NA";
+	$sum_sig = "NA";
 	$mean_sig = "NA";
     }
 
@@ -3674,19 +3670,12 @@ sub ValidateOneResult {
     ## Calculate sensitivity, positive predictive value and accuracy
     if ($number_sites == 0) {
 	$TPsites = "NA";
-	$TPsites_patt = "NA";
 	$TPpatterns = "NA";
-	$TPpattern = "NA";
 	$Sn = "NA";
-	$Sn_patt = "NA";
 	$PPV = "NA";
-	$PPV_patt = "NA";
 	$acc_a = "NA";
-	$acc_a_patt = "NA";
 	$acc_g = "NA";
-	$acc_g_patt = "NA";
 	$acc_h = "NA";
-	$acc_h_patt = "NA";
     } else {
         $Sn = $TPsites/$number_sites;
         $Sn = sprintf("%.4f", $Sn);
@@ -3847,7 +3836,7 @@ sub SigDistrib {
     my %fps = ();
     foreach my $family_name (@families) {
 	my $pattern_file = $family{$family_name}->{$pattern_type."_file"};
-	my $pattern_handle = &OpenInputFile($pattern_file);
+	my ($pattern_handle) = &OpenInputFile($pattern_file);
 	my $score_col;
 	if ($pattern_type eq "oligo") {
 	    $score_col = 9;
