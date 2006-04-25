@@ -1,4 +1,4 @@
-################################################################
+###############################################################
 ## Check the distibution of significance returned by string-based
 ## pattern discovery programs, by analyzing random sequences or random
 ## selections of promoters.
@@ -11,12 +11,14 @@ include ${RSAT}/makefiles/util.mk
 # PATTERNS=${DYADS}
 # SUFFIX=${DYAD_SUFFIX}
 # DISCO_FILES=${DYAD_FILES}
+# SC=${DYAD_SC}
 
 ## oligo-analysis
 DISCO_CMD=${OLIGO_CMD}
 PATTERNS=${OLIGOS}
 SUFFIX=${OLIGO_SUFFIX}
 DISCO_FILES=${OLIGO_FILES}
+SC=${OLIGO_SC}
 
 ## Model organism
 ORG=Saccharomyces_cerevisiae
@@ -39,21 +41,24 @@ NOOV=-noov
 ## oligo-analysis command
 OL=6
 #OLIGO_BG=equi
-OLIGO_BG=upstream-noorf
-OLIGO_SUFFIX=oligos_${OL}nt_${STR}${NOOV}_${OLIGO_BG}
+OLIGO_SC=9
+OLIGO_BG=-bg upstream-noorf -org ${ORG}
+OLIGO_BG_SUFFIX=upstream-noorf
+OLIGO_SUFFIX=oligos_${OL}nt_${STR}${NOOV}_${OLIGO_BG_SUFFIX}
 OLIGOS=${DIR}/${SEQ}_${OLIGO_SUFFIX}
 OLIGO_FILES=`ls ${RAND_DIR}/${SEQ_PREFIX}_test*_${OLIGO_SUFFIX}.tab*`
 V=1
 OLIGO_CMD=oligo-analysis -v ${V}\
 	-i ${SEQ_FILE} \
 	-sort -type any ${STR} ${NOOV} \
-	-org ${ORG} -return occ,freq,rank,proba \
-	-l ${OL} -bg ${OLIGO_BG} \
+	-return occ,freq,rank,proba \
+	-l ${OL} ${OLIGO_BG} \
 	-o ${OLIGOS}.tab.gz \
 	${OPT}
 
 ## dyad-analysis command
 DYAD_BG=monads
+DYAD_SC=7
 SP=0-20
 ML=3
 DYAD_SUFFIX=dyads_${ML}nt_sp${SP}${STR}${NOOV}_${DYAD_BG}
@@ -132,7 +137,6 @@ list_disco_files:
 
 ################################################################
 ## Calculate score distribution and draw the graph
-SC=7
 SCORE_FILE=${DIR}/${SEQ_PREFIX}_${SUFFIX}_distrib
 SCORE_DISTRIB_CMD=zcat ${DISCO_FILES} | grep -v '^;' | cut -f ${SC} | classfreq -v -o ${SCORE_FILE}.tab ${OPT}
 SCORE_DISTRIB_GRAPH_CMD=XYgraph	-i ${SCORE_FILE}.tab \
@@ -142,7 +146,7 @@ SCORE_DISTRIB_GRAPH_CMD=XYgraph	-i ${SCORE_FILE}.tab \
 		-xleg1 'score column ${SC}' \
 		-yleg1 'Absolute frequency' -ylog \
 		-title1 '${SEQ_PREFIX}' \
-		-title2 '${SUFFIX}' \
+		-title2 '${SUFFIX} score column ${SC}' \
 		-o ${SCORE_FILE}.jpg
 score_distrib: 
 	@echo
@@ -193,11 +197,21 @@ from_merlin:
 
 oligos_equi_test:
 	@${MAKE} OLIGO_BG=equi RAND_BG=equi \
+		SC=${OLIGO_SC} \
 		iterate_NL
 
-MARKOV_OL=6
+MKV=3
+MKV_RAND_OL=4
 oligos_markov_test:
-	@${MAKE} OLIGO_BG=upstream-noorf RAND_BG=upstream-noorf \
-		RAND_OL=${MARKOV_OL} \
-		OL=${MARKOV_OL} \
-		iterate_NL 
+	@${MAKE} OLIGO_BG='-markov ${MKV}' OLIGO_BG_SUFFIX='markov${MKV}' \
+		RAND_BG=upstream-noorf RAND_OL=${MKV_RAND_OL} \
+		OL=6 \
+		SC=${OLIGO_SC} \
+		iterate_NL NL_TASK=score_distrib WD=.
+
+oligo_markov_tests:
+	@${MAKE} oligos_markov_test MKV=0 MKV_RAND_OL=1
+	@${MAKE} oligos_markov_test MKV=1 MKV_RAND_OL=2
+	@${MAKE} oligos_markov_test MKV=2 MKV_RAND_OL=3
+	@${MAKE} oligos_markov_test MKV=3 MKV_RAND_OL=4
+	@${MAKE} oligos_markov_test MKV=4 MKV_RAND_OL=5

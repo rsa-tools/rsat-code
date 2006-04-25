@@ -7,7 +7,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.110 2006/04/12 15:15:49 jvanheld Exp $
+# $Id: oligo-analysis,v 1.111 2006/04/25 06:05:51 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -29,8 +29,10 @@ $start_time = &AlphaDate();
 		 'upstream-noorf'=>1,
 		 'intergenic'=>1,
 		 'input'=>1,
+		 'equi'=>1,
 		 );
 $supported_bg = join ",", sort keys %supported_bg;
+#$background_model = "equi";  ## Default background model
 
 #### return fields
 %supported_return_fields = ('occ'=>1,
@@ -152,7 +154,15 @@ if ($method eq "Markov chain") {
 
 ### Pre-defined frequency tables
 ### for background frequency calibration
-if (($background_model) && ($background_model ne "input")) {
+
+if ($background_model eq "equi") {
+    $method = "Equiprobable residues";
+
+} elsif ($background_model eq "markov") {
+    $method = "Markov chain";
+
+} elsif (($background_model) && 
+    ($background_model ne "input")) {
     
     ### localize dyad non-coding frequency file
     $method = "Frequency file";
@@ -169,6 +179,7 @@ if (($background_model) && ($background_model ne "input")) {
 
 #### read alphabet from a file
 } elsif ($infile{alphabet}) {
+    $method="Bernoulli with specific residue freqencies";
     ($alpha) = &OpenInputFile($infile{alphabet});
     while (<$alpha>) {
 	next if (/^;/);
@@ -983,7 +994,7 @@ sub CalcExpected {
 	################################################################
 	## Independent nucleotide probabilities 
 	## calculate probability for ambiguous nucleotide codes  ####
-	$method = "alphabet";
+#	$method = "alphabet";
 	if ($seq_type eq "DNA") {
 	    $residue_proba{'r'} = $residue_proba{'a'}+$residue_proba{'g'};
 	    $residue_proba{'y'} = $residue_proba{'c'}+$residue_proba{'t'};
@@ -1896,6 +1907,7 @@ sub ReadArguments {
 
 	    #### markov chain
 	} elsif ($ARGV[$a] =~ /^-markov/i) { ### Markov chains
+	    $background_model = "markov";
 	    $method = "Markov chain";
 	    $return{'exp_freq'} = 1;
 	    if (&IsInteger($ARGV[$a+1])) {

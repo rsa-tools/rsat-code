@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: downloads.mk,v 1.28 2006/02/09 11:07:17 jvanheld Exp $
+# $Id: downloads.mk,v 1.29 2006/04/25 06:05:51 rsat Exp $
 #
 # Time-stamp: <2003-10-09 14:02:21 jvanheld>
 #
@@ -517,3 +517,12 @@ all_drosophila:
 	for d in ${ALL_DROSO} ; do \
 		${MAKE} one_drosophila DROSO=$${d} ; \
 	done
+
+
+################################################################
+## Plasmodium genome
+PLASMO_SANGER=ftp://ftp.sanger.ac.uk/pub/pathogens/Plasmodium/falciparum/3D7/genome.version.2.1.1
+plasmo_sanger:
+	${WGET} ${PLASMO_SANGER}
+
+

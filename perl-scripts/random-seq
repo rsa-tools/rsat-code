@@ -11,6 +11,16 @@ $repetitions = 1;
 $line_width = 70;
 $sequence_type = "dna";
 
+################################################################
+## Supported background models
+%supported_bg = (
+		 equi=>1,
+		 intergenic=>1,
+		 upstream=>1,
+		 upstream-noorf=>1,
+		 );
+$supported_bg = sort keys %supported_bg;
+
 &ReadArguments();
 
 
@@ -43,11 +53,12 @@ if (defined(%alphabet)) {
 ################################################################
 #### check argument values ####
 
+## Output formaat
 &CheckOutputSeqFormat($out_format);
     
 
-
-#### length file
+################################################################
+## File with the specification of sequence lengths
 if ($length_file) {
     ($len_handle, $input_dir) = &OpenInputFile($length_file);
 #    open LEN, $length_file;
@@ -70,22 +81,28 @@ if ($length_file) {
     }
 }
  
-#### intergenic frequencies
-if ($background_model) {
+################################################################
+## Background model
+if ($background_model eq "equi") {
+    $method = "equiprobable residues";
+
+} elsif ($background_model) {
   
-    ### localize dyad intergenic frequency file
+    ### Localize frequency file in the RSAT data directory for the specified organism
     $method = "Frequency file";
     $exp_freq_file = &ExpectedFreqFile($organism_name, $oligo_length, $background_model, 
 				       $noov=>"-ovlp", str=>"-1str");
 } 
 
 
-### expected frequency file
+################################################################
+## Calculate residue probabilities (conditional or Bernoulli
 if ($exp_freq_file) {
+    ## Load expected frequency file
     &CalcConditionalProbabilities($exp_freq_file);
 } else {
-### calculate cumulated frequencies ###
-### for individual residues ###
+
+    ## Calculate cumulated frequencies for individual residues
     $cum_letter_freq[0] = $freq{$letters[0]};
     for $l (1..$#letters) {
 	$cum_letter_freq[$l] = $cum_letter_freq[$l-1]+$freq{$letters[$l]};
@@ -101,12 +118,13 @@ if ($exp_freq_file) {
 
 
 
-### open output file ###
+################################################################
+## open output stream
 $out = &OpenOutputFile($outputfile);
 
 
-
-#### verbose ####
+################################################################
+## verbose
 if ($verbose) {
     print $out "; random sequence\n";
     print $out "; sequence length	$seq_length\n";
@@ -115,7 +133,7 @@ if ($verbose) {
     if ($outputfile ne "") {
 	print $out "; Output file	$outputfile\n";
     }
-    print $out "; residue frequencies: \n";
+    print $out "; residue frequencies: $method\n";
     if ($exp_freq_file) {
 	print $out "; Calibrated oligomer frequencies\n";
 	print $out "; 	oligomer length:         $oligo_length\n";
@@ -147,9 +165,7 @@ if ($verbose) {
 
 
 ################################################################
-#
-# generate the random sequence
-#
+## Generate the random sequence
 if (defined($seed)) {
     srand($seed);
 } else {
@@ -215,8 +231,9 @@ exit(0);
 
 
 
+################################################################
+## Read arguments
 sub ReadArguments {
-    #### read arguments ####
     foreach $a (0..$#ARGV) {
 	
 	if ($ARGV[$a] eq "-v") {
@@ -294,6 +311,9 @@ sub ReadArguments {
     }
 }
 
+
+################################################################
+## Print detailed help message
 sub PrintHelp {
     open HELP, "| more";
     print HELP <<End_of_help;
@@ -367,18 +387,21 @@ OPTIONS
 		estimating expected oligonucleotide frequencies.
 		
 		Supported models: 
+		-bg equi
+		    equiprobable residue frequencies (default)
+
 		-bg upstream 
 			 all upstream sequences, allowing overlap with
-		         upstream ORFs
+		         upstream ORFs. Requires to speciy a model organism.
 
 		-bg upstream-noorf
-			  all upstream sequences, preventing overlap
-			  with upstream ORFs
+			  all upstream sequences, preventing overlap with
+			  upstream ORFs. Requires to speciy a model organism.
 
 		-bg intergenic
-		         intergenic frequencies 
-			 Whole set of intergenic regions, including
-			 upstream and downstream sequences
+		         intergenic frequencies Whole set of intergenic
+			 regions, including upstream and downstream
+			 sequences. Requires to speciy a model organism.
 
 	-org	organism 
 		This is necessary with the option -bg, to determine
@@ -403,7 +426,8 @@ End_of_help
     exit(0);
 }
 
-
+################################################################
+## Print a summary of available options
 sub PrintOptions {
     open HELP, "| more";
     print HELP <<End_short_help;

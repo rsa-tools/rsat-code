@@ -3,7 +3,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.43 2006/01/24 19:49:36 jvanheld Exp $
+# $Id: retrieve-seq,v 1.44 2006/04/25 06:05:51 rsat Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -19,6 +19,8 @@ require RSAT::organism;
 my $start_time = &AlphaDate();
 my $organism = "";
 my %chomosome = ();
+$noorf = 0;
+$repeat_masked = 0;
 $return_all = 0;
 $ids_only = 0;
 $imp_pos = 0;
@@ -89,7 +91,7 @@ if ($input_sequence_file) {
 } else {
     if ($organism_name) {
 	#### automatic selection of genome file (and feature file)
-	$organism->OpenContigs($organism_name, $annotation_table);
+	$organism->OpenContigs($organism_name, $annotation_table, "", "", rm=>$repeat_masked);
     } else {
 	&RSAT::error::FatalError("You should specify an organism name.", 
 				 "Run the command supported-organism to obtain the list of supported organisms.");
@@ -594,6 +596,10 @@ OPTIONS
 		- there is no a priori reason to exclude a regulatory site
 		  which would overlap the upstream coding sequence.
 
+	-rm	Use the repeat masked version of the genome. 
+		Attention : rerpeated regions are annotated for some genomes
+		only. 
+
 	-nocom	no comments. Only the identifier and the sequence are
 		returned. By default, the comment indicates the orf and
 		upstream sequence coordinates.
@@ -692,6 +698,7 @@ retrieve-seq options
 -label 		label field(s) (Supported: $supported_label_fields)
 -labelsep	separator between label fields. Default: $label_sep
 -noorf		the upstream sequence can only contain non-coding sequence.
+-rm		Use the repeat masked version of the genome. 
 -nowarn		prevents warning when a gene can not be identified
 -imp_pos	admit imprecise positions.
 -nocom		do not print related information (start, end position, ...)
@@ -872,6 +879,10 @@ sub ReadArguments {
 	} elsif (($ARGV[$a] =~ /^-nocds/i) || 
 		 ($ARGV[$a] =~ /^-noorf/i)) {
 	    $noorf = 1;
+
+	    #### Use the repeat masked version of the genome
+	} elsif ($ARGV[$a] eq "-rm") {
+	    $repeat_masked = 1;
 
 	    #### do not print the comments field
 	} elsif ($ARGV[$a] =~ /^-nocom/i) {
