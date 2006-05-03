@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.27 2006/03/21 10:26:05 jvanheld Exp $
+# $Id: compare-classes,v 1.28 2006/05/03 23:12:21 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -1182,6 +1182,11 @@ sub CompareClasses {
 		$compa{$compa_key}->{'F(R)'} = $n_r/$population_size;
 		$compa{$compa_key}->{'F(Q)'} = $n_q/$population_size;
 
+		$compa{$compa_key}->{'F(QR)'} = $compa{$compa_key}->{'QR'}/$population_size;
+		$compa{$compa_key}->{'F(Q!R)'} = $compa{$compa_key}->{'Q!R'}/$population_size;
+		$compa{$compa_key}->{'F(R!Q)'} = $compa{$compa_key}->{'R!Q'}/$population_size;
+		$compa{$compa_key}->{'F(!Q!R)'} = $compa{$compa_key}->{'!Q!R'}/$population_size;
+
 		$compa{$compa_key}->{'P(Q|R)'} = $QR/$n_r;
 		$compa{$compa_key}->{'P(R|Q)'} = $QR/$n_q;
 
@@ -1221,6 +1226,7 @@ sub CompareClasses {
 
 	    }
 
+
 	    ################################################################
 	    ## Entropy
 	    if ($calc_fields{entropy}) {
@@ -1242,28 +1248,24 @@ sub CompareClasses {
 		}
 		
 		## Join entropy
-		$compa{$compa_key}->{'F(QR)'} = $compa{$compa_key}->{'QR'}/$population_size;
 		if (($compa{$compa_key}->{'F(QR)'} <= 0) || ($compa{$compa_key}->{'F(QR)'} >= 1)) {
 		    $contrib{'F(QR)'} = 0;
 		} else {
 		    $contrib{'F(QR)'} = - $compa{$compa_key}->{'F(QR)'}*log($compa{$compa_key}->{'F(QR)'});
 		}
 
-		$compa{$compa_key}->{'F(Q!R)'} = $compa{$compa_key}->{'Q!R'}/$population_size;
 		if (($compa{$compa_key}->{'F(Q!R)'} <= 0) || ($compa{$compa_key}->{'F(Q!R)'} >= 1)) {
 		    $contrib{'F(Q!R)'} = 0;
 		} else {
 		    $contrib{'F(Q!R)'} = - $compa{$compa_key}->{'F(Q!R)'}*log($compa{$compa_key}->{'F(Q!R)'});
 		}
 
-		$compa{$compa_key}->{'F(R!Q)'} = $compa{$compa_key}->{'R!Q'}/$population_size;
 		if (($compa{$compa_key}->{'F(R!Q)'} <= 0) || ($compa{$compa_key}->{'F(R!Q)'} >= 1)) {
 		    $contrib{'F(R!Q)'} = 0;
 		} else {
 		    $contrib{'F(R!Q)'} = - $compa{$compa_key}->{'F(R!Q)'}*log($compa{$compa_key}->{'F(R!Q)'});
 		}
 
-		$compa{$compa_key}->{'F(!Q!R)'} = $compa{$compa_key}->{'!Q!R'}/$population_size;
 		if (($compa{$compa_key}->{'F(!Q!R)'} <= 0) || ($compa{$compa_key}->{'F(!Q!R)'} >= 1)) {
 		    $contrib{'F(!Q!R)'} = 0;
 		} else {
