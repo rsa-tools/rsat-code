@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.18 2006/05/04 07:37:39 rsat Exp $
+# $Id: get-orthologs,v 1.19 2006/05/04 08:22:46 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -137,7 +137,7 @@ package main;
     @main::query_gene_id = ();
     $main::query_filter = "";
 
-    @main::missing_query_genes = ();
+    @main::unknown_query_genes = ();
     @main::bidirect_hits = ();
     $main::bbh = ();
 
@@ -285,10 +285,10 @@ package main;
 	    $is_query{$feature_id} = $query;
 #	    $is_query{$feature_id} = uc($query);
 	    $query_gene_id{$query} = $feature_id;
-	    &RSAT::message::Warning(join("\t", "query gene", $query, $feature_id)) if (); 
+#	    &RSAT::message::Warning(join("\t", "query gene", $query, $feature_id)) if ($main::verbose >= 3); 
 	} else {
-	    push @missing_query_genes, $query;
-	    &RSAT::error::FatalError(join("\t", "Unknown query gene", $query)) if ($main::verbose >= 2);
+	    push @unknown_query_genes, $query;
+	    &RSAT::message::Warning(join("\t", "Unknown query gene", $query));
 	    $query_gene_id{$query} = $main::null;
 	}
     }
@@ -452,10 +452,10 @@ package main;
 	}
     }
 
-    ## Report missing query genes
-    if (scalar(@main::missing_query_genes) > 0) {
-	print $out "; Missing query genes\n";
-	foreach my $gene (@main::missing_query_genes) {
+    ## Report unknown query genes
+    if (scalar(@main::unknown_query_genes) > 0) {
+	print $out "; Unknown query genes\n";
+	foreach my $gene (@main::unknown_query_genes) {
 	    print $out ";\t", $gene, "\n";
 	}
     }
