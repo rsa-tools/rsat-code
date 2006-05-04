@@ -356,6 +356,7 @@ sub setPrior {
 #    $self->set_array_attribute("alphabet", keys(%prior));
 
     ## The previously calculated weights are not valid anymore
+    $self->force_attribute("frequencies_specified", 0);
     $self->force_attribute("weight_specified", 0);
 
     ## Report the new prior
@@ -1049,6 +1050,16 @@ sub _readFromClustalFile {
 Return a string description of the matrix in the same format as Jerry
 Hertz programs. Additional parameters are also exported as comments,
 when the verbosity is > 0.
+
+Supported parameters:
+
+=over
+
+=item comment_string
+
+A character or string to print before each row of the matrix.
+
+=back
 
 =cut
 sub toString {
