@@ -200,14 +200,14 @@ sub read_tab {
 	if ($score_column) {
 	    ### read score
 	    local $score = &RSAT::util::trim($fields[$score_column - 1]);
-	    unless (&RSAT::util::IsReal($score)) {
-		&RSAT::error::FatalError(join("\t", $score, "Invalid score (must be a Real number).", 
-					      "class file", $class_file,  
-					      "line", $line,
-					      "member", $member_name,
-					      "class", $class_name,
-					     ));
-	    }
+#	    unless (&RSAT::util::IsReal($score)) {
+#		&RSAT::error::FatalError(join("\t", $score, "Invalid score (must be a Real number).", 
+#					      "class file", $class_file,  
+#					      "line", $line,
+#					      "member", $member_name,
+#					      "class", $class_name,
+#					     ));
+#	    }
 	    
 	    ## Check threshold on score
 	    next if ((defined($args{min_score})) && ($score < $args{min_score}));
@@ -459,13 +459,13 @@ Convert the classification into a string for export to a text file.
 =cut
 
 sub to_text {
-    my ($self, $output_format) = @_;
+    my ($self, $output_format, %args) = @_;
     if ($output_format eq "tab") {
-	$self->to_tab();
+	$self->to_tab(%args);
     } elsif ($output_format eq "mcl") {
-	$self->to_mcl();
+	$self->to_mcl(%args);
     } elsif ($output_format eq "profiles") {
-	$self->to_profiles();
+	$self->to_profiles(%args);
     } else {
 	&RSAT::error::FatalError(join ("\t", "Classification::to_text", $output_format, "is not a supported output format"));
     }
@@ -529,8 +529,13 @@ One column per class.
 =cut
 
 sub to_profiles {
-    my ($self) = @_;
+    my ($self, %args) = @_;
     my @classes = $self->get_attribute("classes");
+    my $null = 0;
+    &RSAT::message::Debug("RSAT::Classification::to_protiles()", keys %args);
+    if (defined($args{null})) {
+	$null = $args{null};
+    }
 
     ## Index class-member associations
     my %cross_table = ();
@@ -555,6 +560,9 @@ sub to_profiles {
     ## Header
     my $string = join ("\t", "#", @class_names);
     $string .= "\n";
+
+
+    ## Print profiles
     foreach $member (@members) {
 	$string .= $member;
 	foreach $class_name (@class_names) {
@@ -562,7 +570,7 @@ sub to_profiles {
 	    if ($cross_tab{$member}{$class_name}) {
 		$string .= $cross_tab{$member}{$class_name};
 	    } else {
-		$string .= 0;
+		$string .= $null;
 	    }
 	}
 	$string .= "\n";
