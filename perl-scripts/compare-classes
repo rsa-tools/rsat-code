@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.28 2006/05/03 23:12:21 jvanheld Exp $
+# $Id: compare-classes,v 1.29 2006/05/04 04:55:05 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -1926,7 +1926,7 @@ sub DescribeFields {
     $field_description{'F(!Q!R)'}  = "Frequency of !Q!R elements relative to population size. F(!Q!R)=!Q!R/P";
     $field_description{'P(Q|R)'} = "Probability of Q given R. P(Q|R) = F(QR)/F(R)";
     $field_description{'P(Q|R)'} = "Probability of R given Q. P(R|Q) = F(QR)/F(Q)";
-    $field_description{'jac_sim'}  = "Jaccard' similarity";
+    $field_description{'jac_sim'}  = "Jaccard' similarity. jac_sim = intersection/union = (Q and R)/(Q or R)";
     $field_description{'dotprod'}  = "Dot product (using the score column)";
     $field_description{'E(QR)'}  = "Expected number of elements in the intersection";
     $field_description{'P_val'}  = "P-value of the intersection";
