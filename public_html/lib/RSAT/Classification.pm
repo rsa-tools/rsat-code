@@ -532,7 +532,6 @@ sub to_profiles {
     my ($self, %args) = @_;
     my @classes = $self->get_attribute("classes");
     my $null = 0;
-    &RSAT::message::Debug("RSAT::Classification::to_protiles()", keys %args);
     if (defined($args{null})) {
 	$null = $args{null};
     }
