@@ -142,7 +142,7 @@ SCORE_DISTRIB_CMD=zcat ${DISCO_FILES} | grep -v '^;' | cut -f ${SC} | classfreq 
 SCORE_DISTRIB_GRAPH_CMD=XYgraph	-i ${SCORE_FILE}.tab \
 		-lines \
 		-xcol 3 -ycol 4,5,6 -legend \
-		-xmin -5 -xmax 5 -xgstep1 1 \
+		-xmin -5 -xmax 5 -ymin 1 -ymax 1e+6 -xgstep1 1 \
 		-xleg1 'score column ${SC}' \
 		-yleg1 'Absolute frequency' -ylog \
 		-title1 '${SEQ_PREFIX}' \
