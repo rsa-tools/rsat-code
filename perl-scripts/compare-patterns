@@ -216,7 +216,12 @@ if ($verbose >= 1) {
 }
 
 ## Count matches for each pair of input sequences	
+my $pattern1_nb = scalar(@pattern1);
+my $p1 = 0;
+&RSAT::message::TimeWarn("Comparing patterns") if ($main::verbose >= 2);
 foreach $pattern1 (@pattern1) {
+    $p1++;
+    &RSAT::message::Info(join("\t", "pattern1", $p1."/".$pattern1_nb)) if ($main::verbose >= 3);
     foreach $pattern2 (@pattern2) {
 	local $reverse_match;
 	local $best_match = &OneMatch($pattern1, $pattern2, 0);
@@ -233,8 +238,9 @@ foreach $pattern1 (@pattern1) {
     }
 }
 
-
+################################################################
 ## Print contingency tables
+&RSAT::message::TimeWarn("Printing contingency table") if ($main::verbose >= 2);
 foreach my $field (@table_fields) {
     my $table_name = $field."_table";
     print $out join("\t", "; Contingency table", $field), "\n" if ($main::verbose >= 1);
@@ -946,8 +952,9 @@ sub PrintFieldDescriptions {
     $field_description{top_s2} = "";
     print $out ";\n";
     print $out "; Field descriptions\n";
-    foreach my $field (@return_fields) {
-	print $out join ("\t", ";", $field, $field_description{$field}), "\n";
+    foreach my $f (1..scalar(@return_fields)) {
+	my $field = $return_fields[$f-1];
+	print $out join ("\t", ";", $f, $field, $field_description{$field}), "\n";
     }
     print $out ";\n";
 }
