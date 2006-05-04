@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.22 2006/04/18 14:51:43 jvanheld Exp $
+# $Id: matrix-scan,v 1.23 2006/05/04 04:40:29 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -72,6 +72,9 @@ consensus,gibbs,meme,tab. Default : tab.
 
 =head1 OUTPUT FORMAT
 
+The output is a tab-delimited file, with one row per match. This file
+can directly be used as input for the program I<feature-map>.
+
 =cut
 
 
@@ -121,8 +124,11 @@ package main;
     %supported_return_fields = (
 	sites=>1,
 	limits=>1,
-	bg_model=>1,
 	normw=>1,
+	matrix=>1,
+	freq_matrix=>1,
+	weight_matrix=>1,
+	bg_model=>1,
     );
     $supported_return_fields = join (",", sort(keys( %supported_return_fields)));
 
@@ -204,12 +210,8 @@ package main;
 					   "of width ".$matrix_width."."));
 	}
 	
-	## Calculate frequency matrix
-	$matrix->calcFrequencies();
-	
 	## Calculate min and max values for P(S|M) 
 	$matrix->proba_range();
-	$matrix->weight_range();
 	push @matrices, $matrix;
 
 	&RSAT::message::TimeWarn(join("\t", "read matrix", 
@@ -231,51 +233,16 @@ package main;
 	       (($current_seq ne "") || ($seq_id ne ""))) {
 	    
 	    ## Sequence length
-	    $current_seq = lc($current_seq);
+	    $current_seq = uc($current_seq);
 	    $bg_model->calc_from_seq($current_seq, add=>1);
 	}
 	close $in;
     }
 
-    ################################################################
-    ## Set prior matrix frequencies from the bg model
-    ## PROBLEM : with the adpative option, this does not work since
-    ## the BG model has not yet been calculated
-    ## This is thus only done with the options -bginput and -bgfiles. 
-    if (($bg_input) || ($infile{bg})) {
-	my %prior = $bg_model->get_attribute("suffix_proba");
-	&RSAT::message::TimeWarn(join("\t", "PRIOR", join(" ", %prior))) if ($main::verbose >= 2);
-	foreach my $matrix (@matrices) {
-	    
-	    ## Set prior residue frequencies
-	    $matrix->setPrior(%prior);
-	    &RSAT::message::TimeWarn(join("\t", "Setting matrix priors for matrix", 
-					  $matrix->get_attribute("name"),
-					  join(" ", %prior),
-					 )) if ($main::verbose >= 2);
-	    
-	    ## Calculate min and max weight values
-	    my ($Wmin, $Wmax, $Wrange) = $matrix->weight_range();
-	    &RSAT::message::TimeWarn(join("\t", "Calculated weight range for matrix", 
-					  $matrix->get_attribute("name"), 
-					  $Wmin, $Wmax, $Wrange,
-					 )) if ($main::verbose >= 2);
-	}
-    }
 
     ################################################################
     #### print verbose
     &Verbose() if ($main::verbose);
-
-    if ($main::verbose >= 4) {
-	foreach my $matrix (@matrices) {
-	    print $out "; Weight matrix\t", $matrix->get_attribute("name"), "\n";
-	    print $out $matrix->toString(col_width=>(7), 
-					 decimals=>3, 
-					 type=>"weights",
-					 format=>"tab");
-      }
-    }
 
     ## Print header
     print $out "#", join ("\t", 
@@ -301,7 +268,7 @@ package main;
        (($current_seq ne "") || ($seq_id ne ""))) {
 
 	## Sequence length
-	$current_seq = lc($current_seq);
+	$current_seq = uc($current_seq);
         $sequence_number++;
         my $seq_len = length($current_seq);
 	$sum_seq_len += $seq_len;
@@ -377,20 +344,112 @@ package main;
     
     
     ################################################################
-    ###### execute the command
-    
+    ## Print additional information
+
     ################################################################
-    ###### print output
+    ## Matrices
+
+    ################################################################
+    ## Set prior matrix frequencies from the bg model and calculate
+    ## derived statistics
+    ##
+    ## PROBLEM : with the adpative option, this does not work since
+    ## the BG model has not yet been calculated
+    ## This is thus only done with the options -bginput and -bgfiles. 
+    my %prior = $bg_model->get_attribute("suffix_proba");
+    &RSAT::message::TimeWarn(join("\t", "PRIOR", join(" ", %prior))) if ($main::verbose >= 2);
+    foreach my $matrix (@matrices) {
+	
+	## Set prior residue frequencies
+	$matrix->setPrior(%prior);
+	&RSAT::message::TimeWarn(join("\t", "Setting matrix priors for matrix", 
+				      $matrix->get_attribute("name"),
+				      join(" ", %prior),
+				     )) if ($main::verbose >= 2);
+	
+	## Calculate min and max weight values
+	my ($Wmin, $Wmax, $Wrange) = $matrix->weight_range();
+	&RSAT::message::TimeWarn(join("\t", "Calculated weight range for matrix", 
+				      $matrix->get_attribute("name"), 
+				      $Wmin, $Wmax, $Wrange,
+				     )) if ($main::verbose >= 2);
+    }
+
+    ## Print summary statistics of each matrix
+    print $main::out ";\n; Matrices\n";
+    print $out join ("\t", ";", 
+		     "name",
+		     "ncol",
+		     "nrow",
+		     "pseudo",
+		     "Pmin",
+		     "Pmax",
+		     "Wmin",
+		     "Wmax",
+		     "Wrange",
+		     "prior",
+		    ), "\n";
+    foreach my $matrix (@matrices) {
+	print $out join ("\t", ";", 
+			 $matrix->get_attribute("name"),
+			 $matrix->get_attribute("ncol"),
+			 $matrix->get_attribute("nrow"),
+			 $matrix->get_attribute("pseudo"),
+			 sprintf("%5.2g", $matrix->get_attribute("min(P(S|M))")),
+			 sprintf("%5.2g", $matrix->get_attribute("max(P(S|M))")),
+			 sprintf("%.3f", $matrix->get_attribute("Wmin")),
+			 sprintf("%.3f", $matrix->get_attribute("Wmax")),
+			 sprintf("%.3f", $matrix->get_attribute("Wrange")),
+			);
+	my %prior = $matrix->getPrior();
+	print $out "\t";
+	foreach my $letter (sort keys %prior) {
+	    printf $out "%s:%.3f ", $letter, $prior{$letter};
+	}
+	print $out "\n";
+    }
     
     
+    ## Return count matrices
+    if ($return_fields{matrix}) {
+	foreach my $matrix (@matrices) {
+	    print $out ";\n; Count matrix\t", $matrix->get_attribute("name"), "\n";
+	    print $out $matrix->toString(col_width=>(7), decimals=>0, type=>"counts",format=>"tab", comment_string=>";");
+	}
+    }
+    
+    ## Return frequency matrices
+    if ($return_fields{matrix}) {
+	foreach my $matrix (@matrices) {
+	    print $out ";\n; Frequency matrix\t", $matrix->get_attribute("name"), "\n";
+		print $out $matrix->toString(col_width=>(7), decimals=>0, type=>"frequencies",format=>"tab", comment_string=>";");
+	}
+    }
+    
+    ## Return weight matrices
+    if ($return_fields{weight_matrix}) {
+	foreach my $matrix (@matrices) {
+	    print $out ";\n; Weight matrix\t", $matrix->get_attribute("name"), "\n";
+	    print $out $matrix->toString(col_width=>(7), decimals=>3, type=>"weights", format=>"tab", comment_string=>";");
+	}
+    }
+    
+    ## Report background model
+    if ($return_fields{bg_model}) {
+	print $out ";\n; Background model\n";
+	print $out $bg_model->to_string(comment_string=>"; ");
+    }
+     
     ################################################################
     ###### finish verbose
     if ($main::verbose >= 1) {
-	my $done_time = &AlphaDate();
+
+	## Sequence statistics
 	printf $main::out "; %-21s\t%s\n", "Number os sequences scanned", $sequence_number;
 	printf $main::out "; %-21s\t%s\n", "Sum of sequence lengths", $sum_seq_len;
-	print $main::out "; Matches per matrix\n";
 
+	## Matching statistics
+	print $main::out "; Matches per matrix\n";
 	my $total_matches = 0;
 	foreach my $matrix (@matrices) {
 	    my $matches = $matrix->get_attribute("matches");
@@ -399,16 +458,12 @@ package main;
 	}
 	printf $main::out ";\t%-15s\t%d\n", "Total matches", $total_matches;
 	
+	my $done_time = &AlphaDate();
 	print $main::out "; Job started $start_time\n";
 	print $main::out "; Job done    $done_time\n";
     }
     
 
-    ## Report background model
-    if ($return_fields{bg_model}) {
-	print $out $bg_model->to_string(comment_string=>"; ");
-    }
-     
     ################################################################
     ###### close output stream
     close $main::out if ($main::outfile{output});
@@ -654,7 +709,7 @@ Pseudo-weight.
 	## Origin
 =pod
 
-=item B<origin pos>
+=item B<-origin pos>
 
 Define pos as the origin for the calculation of positions.
 
@@ -746,15 +801,32 @@ single-strand search for DNA sequences.
 
 List of fields to return. 
 
-Supported fields: sites, limits.normw
+Supported fields: sites, limits. normw, bg_model
 
 =over
 
-=item B<sites:> position of matching sites.
+=item B<sites:> Matching sites. 
 
-=item B<limits:> limits (start, end) of the input sequences. This is useful for drawing feature maps with sequences of different lengths. 
+Return the osition of matching sites in aformat which can be sed as
+input by I<feature-map>.
 
-=item B<normw:> normalized weights. Normailzed weights are calculated according to Thijs' formula : normW = (W -Wmin)/(Wmax - Wmin).
+=item B<limits:> limits (start, end) of the input sequences. 
+
+This is useful for drawing feature maps with sequences of different
+lengths.
+
+=item B<normw:> normalized weights. 
+
+Normailzed weights are calculated according to Thijs' formula : normW
+= (W -Wmin)/(Wmax - Wmin). Note that Wmin and Wmax are approximated
+using a Bernoulli model, for reasons of commputational efficiency.
+
+=item B<bg_model:> Background model. 
+
+Transition matrix of the background model. Note that this option only
+makes sense for fixed background models (-bgfile or -bginput), since
+when the background model is adaptive (-mindow), the transition matrix
+changes along he sequence.
 
 =back
 
@@ -808,40 +880,6 @@ sub Verbose {
 	}
     }
 
-    ## Matrices
-    print $main::out "; Matrices\n";
-    print $out join ("\t", ";", 
-		     "name",
-		     "ncol",
-		     "nrow",
-		     "pseudo",
-		     "Pmin",
-		     "Pmax",
-		     "Wmin",
-		     "Wmax",
-		     "Wrange",
-		     "prior",
-		    ), "\n";
-    foreach my $matrix (@matrices) {
-	print $out join ("\t", ";", 
-			 $matrix->get_attribute("name"),
-			 $matrix->get_attribute("ncol"),
-			 $matrix->get_attribute("nrow"),
-			 $matrix->get_attribute("pseudo"),
-			 sprintf("%5.2g", $matrix->get_attribute("min(P(S|M))")),
-			 sprintf("%5.2g", $matrix->get_attribute("max(P(S|M))")),
-			 sprintf("%.3f", $matrix->get_attribute("Wmin")),
-			 sprintf("%.3f", $matrix->get_attribute("Wmax")),
-			 sprintf("%.3f", $matrix->get_attribute("Wrange")),
-			);
-	my %prior = $matrix->getPrior();
-	print $out "\t";
-	foreach my $letter (keys %prior) {
-	    printf $out "%s:%.3f ", $letter, $prior{$letter};
-	}
-	print $out "\n";
-    }
-
     ## Pseudo counts
     printf $main::out "; %-21s\t%s\n", "Pseudo counts", $pseudo_counts;
 
@@ -883,18 +921,22 @@ sub Verbose {
 ################################################################
 =pod
 
+=head1 INTERNAL PROCEDURES
+
+=cut
+
+################################################################
+=pod
+
 =item B<score_segment>
 
-Assign a score to a sequence segment and report it if it passes the
-thresholds.
-
-Return value is 1 if the segment passed the thresholds. 
+Assign a score to a sequence segment and print it if it passes the
+thresholds. Return value is 1 if the segment passed the thresholds.
 
 =cut
 sub score_segment {
     my ($segment, $matrix, $seq_id, $pos, $strand) = @_;
 
-#    &RSAT::message::Debug("scoring segment", $seq_id, $segment, $strand) if ($main::verbose >= 10);
 
     my $ncol = $matrix->{ncol};
 
@@ -915,6 +957,10 @@ sub score_segment {
 	    $normW = sprintf("%6.4f", ($score - $matrix->{'Wmin'})/($matrix->{'Wrange'}));
 	}
     }
+
+#    &RSAT::message::Debug("scoring segment", $segment, $seq_id, $pos, $strand, 
+#			  $proba_M , $proba_B, $score) if ($main::verbose >= 10);
+
     return(0) unless (&check_thresholds("score", $score));
     return(0) unless (&check_thresholds("normW", $normW));
 
@@ -953,7 +999,7 @@ sub score_segment {
 ################################################################
 =pod
 
-=itm B<check_thresholds>
+=item B<check_thresholds>
 
 Check the lower and upper threshold for a given score. 
 
@@ -1009,7 +1055,9 @@ __END__
 
 =over
 
-=item convert-matrix
+=item I<convert-matrix>
+
+=item I<feature-map>
 
 =back
 

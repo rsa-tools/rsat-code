@@ -4,7 +4,12 @@
 #
 package RSAT::MarkovModel;
 
-## TO DO : for the model update, take into account the strand-insensitive models
+## CVS: fixed bugs with the method average_strands()
+
+## TO DO : 
+## - for the model update, take into account the strand-insensitive models
+## - Would it be appropriate to have a pseudo-count for the estimation
+##  of markov chain models from input sequenes ?
 
 use RSAT::GenericObject;
 use RSAT::error;
@@ -308,7 +313,7 @@ sub to_string {
 
 
     ## Print header
-    $string .= join ("\t", ";prefix",
+    $string .= join ("\t", ";pr\\suf",
 		     @suffix,
 		     "P(pre)",
 		     "N(pre)",
@@ -368,9 +373,15 @@ sub average_strands {
 	if ($main::verbose >= 2);
 
     ## Sum per prefix
+    my %prefixes_2str = ();
     foreach my $prefix ($self->get_attribute("prefixes")) {
+	next if (defined($prefixes_2str{$prefix}));
 	my $prefix_rc = uc(&main::SmartRC($prefix));
-	next if ($prefix_rc ge $prefix);	
+
+	## Make sure that both the prefix and its reverse complement are indexed
+	$prefixes_2str{$prefix} = 1;
+	$prefixes_2str{$prefix_rc} = 1;
+#	&RSAT::message::Debug("average_strands sum for prefix", $prefix, $prefix_rc) if ($main::verbose >= 0);
 
 	$self->{prefix_sum}->{$prefix} 
 	= $self->{prefix_sum}->{$prefix_rc}
@@ -380,11 +391,18 @@ sub average_strands {
 	= $self->{prefix_proba}->{$prefix_rc}
 	= ($self->{prefix_proba}->{$prefix} +$self->{prefix_proba}->{$prefix_rc})/2 ;
     }
+    $self->set_array_attribute("prefixes", sort keys %prefixes_2str);
 
     ## Sum per suffix
+    my %suffixes_2str = ();
     foreach my $suffix ($self->get_attribute("suffixes")) {
+	next if (defined($suffixes_2str{$suffix}));
 	my $suffix_rc = uc(&main::SmartRC($suffix));
-	next if ($suffix_rc ge $suffix);
+
+	## Make sure that both the suffix and its reverse complement are indexed
+	$suffixes_2str{$suffix} = 1;
+	$suffixes_2str{$suffix_rc} = 1;
+#	&RSAT::message::Debug("average_strands sum for suffix", $suffix, $suffix_rc) if ($main::verbose >= 0);
 
 	$self->{suffix_sum}->{$suffix} 
 	= $self->{suffix_sum}->{$suffix_rc}
@@ -394,27 +412,38 @@ sub average_strands {
 	= $self->{suffix_proba}->{$suffix_rc}
 	= ($self->{suffix_proba}->{$suffix} +$self->{suffix_proba}->{$suffix_rc})/2 ;
     }
+    $self->set_array_attribute("suffixes", sort keys %suffixes_2str);
 
     ## Transition matrix
     foreach my $prefix ($self->get_attribute("prefixes")) {
-	my $prefix_rc = uc(&main::SmartRC($prefix));
-#	&RSAT::message::Debug("average_strands for prefix", $prefix, $prefix_rc) if ($main::verbose >= 10);
-	next if ($prefix_rc ge $prefix);
+#	my $prefix_rc = uc(&main::SmartRC($prefix));
+#	next if ($prefix_rc ge $prefix);
 	foreach my $suffix ($self->get_attribute("suffixes")) {
-	    my $suffix_rc = uc(&main::SmartRC($suffix));
-	    next if ($suffix_rc ge $suffix);
+	    my $word = $prefix.$suffix;
+	    my $rc_word = uc(&main::SmartRC($word));
+	    next if ($rc_word ge $word);
+	    my $rc_prefix = substr($rc_word, 0, $self->{order});
+	    my $rc_suffix = substr($rc_word, $self->{order}, 1);
 	    $self->{transition_freq}->{$prefix}->{$suffix} 
-	    = $self->{transition_freq}->{$prefix_rc}->{$suffix_rc} 
+	    = $self->{transition_freq}->{$rc_prefix}->{$rc_suffix} 
 	    = ($self->{transition_freq}->{$prefix}->{$suffix} +
-	       $self->{transition_freq}->{$prefix_rc}->{$suffix_rc})/2;
+	       $self->{transition_freq}->{$rc_prefix}->{$rc_suffix})/2;
 	    
+	    unless (defined($self->{transition_count}->{$prefix}->{$suffix})) {
+		$self->{transition_count}->{$prefix}->{$suffix} = 0;
+	    }
+	    unless (defined($self->{transition_count}->{$rc_prefix}->{$rc_suffix})) {
+		$self->{transition_count}->{$rc_prefix}->{$rc_suffix} = 0;
+	    }
 	    $self->{transition_count}->{$prefix}->{$suffix} 
-	    = $self->{transition_count}->{$prefix_rc}->{$suffix_rc} 
+	    = $self->{transition_count}->{$rc_prefix}->{$rc_suffix} 
 	    = ($self->{transition_count}->{$prefix}->{$suffix} +
-	       $self->{transition_count}->{$prefix_rc}->{$suffix_rc})/2;
-#	    &RSAT::message::Debug("average_strands", $prefix, $suffix, $prefix_rc, $suffix_rc) if ($main::verbose >= 10);
+	       $self->{transition_count}->{$rc_prefix}->{$rc_suffix})/2;
+
+#	    &RSAT::message::Debug("average_strands transitions", $prefix, $suffix, $rc_word, $rc_prefix, $rc_suffix) if ($main::verbose >= 0);
 	}
     }
+#    die "HELLO";
 }
 
 
@@ -453,6 +482,13 @@ sub segment_proba {
 	my $prefix = substr($segment,($c-$order),$order);
 	if (defined($self->{transition_freq}->{$prefix}->{$suffix})) {
 	    $letter_proba = $self->{transition_freq}->{$prefix}->{$suffix};
+	    unless ($letter_proba > 0) {
+		&RSAT::error::FatalError(join("\t", "MarkovModel::segment_proba",
+					 "null transition between prefix ", $prefix, " and suffix", $suffix)) if ($main::verbose >= 0);
+	    }
+	} else {
+		&RSAT::error::FatalError(join("\t", "MarkovModel::segment_proba",
+					 "undefined transition between prefix ", $prefix, " and suffix", $suffix)) if ($main::verbose >= 0);
 	}
 	
 #	my $word = substr($segment,($c-$order),$order+1);
@@ -473,7 +509,7 @@ sub segment_proba {
 #			      "P(segm)=".$segment_proba) if ($main::verbose >= 0);
     }
     
-#    &RSAT::message::Debug("segment_proba", $segment, "P(segm)=".$segment_proba) if ($main::verbose >= 10);
+#    &RSAT::message::Debug("segment_proba", $segment, "P(segm)=".$segment_proba) if ($main::verbose >= 0);
 #    die;
     return $segment_proba;
 }
