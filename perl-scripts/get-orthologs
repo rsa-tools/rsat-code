@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.17 2006/02/19 12:51:38 rsat Exp $
+# $Id: get-orthologs,v 1.18 2006/05/04 07:37:39 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -196,7 +196,6 @@ package main;
     @output_fields = ();
     @supported_output_fields = qw(ref_id
 				     ref_organism
-				     query_id
 				     query_organism
 				     ident
 				     ali_len
@@ -289,7 +288,7 @@ package main;
 	    &RSAT::message::Warning(join("\t", "query gene", $query, $feature_id)) if (); 
 	} else {
 	    push @missing_query_genes, $query;
-	    &RSAT::error::FatalError(join("\t", "Missing query", $query)) if ($main::verbose >= 2);
+	    &RSAT::error::FatalError(join("\t", "Unknown query gene", $query)) if ($main::verbose >= 2);
 	    $query_gene_id{$query} = $main::null;
 	}
     }
@@ -419,10 +418,7 @@ package main;
 #	}
     }
     print $out "#", $header, "\n";
-	
-#    foreach my $hit_info (@bidirect_hits) {
-#	print $out "$hit_info\n";
-#    }
+
     my $nb_hits_info="";
     foreach my $query_gene (keys (%is_query)) {
       my $nb_hits=0;
@@ -611,7 +607,6 @@ sub select_hits{
     my $match_col_index = $blast_col_index{$query_matching_column};
     
     while (<HIT_HANDLE>) {
-#    while (<$hit_handle>) {
 	$l++;
 	chomp();
 	s/\r/\n/g;		## Suppress Windows-specific carriage return
