@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.29 2006/05/04 04:55:05 jvanheld Exp $
+# $Id: compare-classes,v 1.30 2006/05/05 12:32:57 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -249,11 +249,11 @@ if ($calc_fields{freq}) {
 
 
 ################################################################
-### open output stream
+## Open output stream
 $out = &OpenOutputFile($outfile{output});
 
 ################################################################
-###### read class files
+## Read class files
 
 ## Query classes
 %query_classes = &ReadClasses($infile{query_classes},0,"",1,1,2,$score_col);
@@ -300,6 +300,9 @@ if ($infile{qnames}) {
 	}
     }
 }
+
+&FilterClasses();
+
 
 ################################################################
 #### unless specified, calculate population size from the lists of
@@ -364,11 +367,11 @@ if ($dot_file) {
 exit(0);
 
 ################################################################
-################### subroutine definition ######################
+################### SUBROUTINE DEFINITION ######################
 ################################################################
 
 ################################################################
-#### display full help message
+## Display full help message
 sub PrintHelp {
     my $HELP_CLASS_FILE = &help_message("class file");
     open HELP, "| more";
@@ -711,7 +714,7 @@ End_of_help
 }
 
 ################################################################
-#### display short help message
+## Display short help message
 sub PrintOptions {
   open HELP, "| more";
   print HELP <<End_short_help;
@@ -732,7 +735,7 @@ compare-classes options
 -uth            upper threshold on a given field
 -pop            population size
 -multi_cor	multi-testing correction (supoprted: nq,nr,nc,nt)
--sort           sort key (supported keys: occ, sig)
+-sort           sort key (supported keys: $supported_sort_fields)
 -rep            sampling with replacement (binomial instead of hyergeometric)
 -sym            symmetric comparison (only with -rep, see detailed help)
 -distinct       prevent to compare each class with itself
@@ -751,7 +754,7 @@ End_short_help
 }
 
 ################################################################
-#### read arguments
+## Read arguments
 sub ReadArguments {
     foreach my $a (0..$#ARGV) {
 	
@@ -917,7 +920,7 @@ sub ReadArguments {
 }
 
 ################################################################
-#### verbose message
+## Verbose message
 sub Verbose {
     print $out "; compare-classes ";
     &PrintArguments($out);
@@ -987,10 +990,6 @@ sub Verbose {
         }
     }
 }
-
-################################################################
-#### read class file
-
 
 
 ################################################################
@@ -1945,4 +1944,60 @@ sub DescribeFields {
     $field_description{'H(R|Q)'} = "Conditional entropy of R given Q. H(R|Q) = H(Q,R) - H(Q)";
     $field_description{'IC'} = "Information content (as defined by Schneider, 1986). IC = F(QR) log[F(QR)/F(Q)F(R)]";
     return %field_description;
+}
+
+################################################################
+## Apply threshold on the number of members per class
+sub FilterClasses {
+    ## Lower threshold on query classes
+    if (defined($lth{Q})) {
+	&RSAT::message::TimeWarn("Applying threshold on number of members for query classes") if ($main::verbose >= 2);
+	foreach my $q  (keys %query_classes) {
+	    my $members = scalar($query_classes{$q}->get_members());
+	    if ($members < $lth{Q}) {
+		delete($query_classes{$q});
+	    }
+	}
+    }
+
+    ## Upper threshold on query classes
+    if (defined($uth{Q})) {
+	&RSAT::message::TimeWarn("Applying threshold on number of members for query classes") if ($main::verbose >= 2);
+	foreach my $q  (keys %query_classes) {
+	    my $members = scalar($query_classes{$q}->get_members());
+	    if ($members > $uth{Q}) {
+		delete($query_classes{$q});
+	    }
+	}
+    }
+
+    ## Report number of remaining query classes
+    $nb_query_classes = scalar(keys %query_classes);
+    &RSAT::message::Info((join("\t", "Query classes after filtering", $nb_query_classes))) if ($main::verbose >= 2);
+
+    ## Lower threshold on ref classes
+    if (defined($lth{R})) {
+	&RSAT::message::TimeWarn("Applying threshold on number of members for ref classes") if ($main::verbose >= 2);
+	foreach my $r  (keys %ref_classes) {
+	    my $members = scalar($ref_classes{$r}->get_members());
+	    if ($members < $lth{R}) {
+		delete($ref_classes{$r});
+	    }
+	}
+    }
+
+    ## Upper threshold on ref classes
+    if (defined($uth{R})) {
+	&RSAT::message::TimeWarn("Applying threshold on number of members for ref classes") if ($main::verbose >= 2);
+	foreach my $r  (keys %ref_classes) {
+	    my $members = scalar($ref_classes{$r}->get_members());
+	    if ($members > $uth{R}) {
+		delete($ref_classes{$r});
+	    }
+	}
+    }
+
+    ## Report number of remaining ref classes
+    $nb_ref_classes = scalar(keys %ref_classes);
+    &RSAT::message::Info((join("\t", "Reference classes after filtering", $nb_ref_classes))) if ($main::verbose >= 2);
 }
