@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence,v 1.26 2006/03/08 20:12:44 jvanheld Exp $
+# $Id: purge-sequence,v 1.27 2006/05/16 08:51:44 rsat Exp $
 #
 # Time-stamp: <2003-10-05 23:01:33 jvanheld>
 #
@@ -69,7 +69,7 @@ if ($inputfile) {
 $tmp_file = "tmp_".$basename.".fasta";
 
 #$command = "cd $TMP ; ";
-$command = " $convert_seq_command -from $in_format -to fasta -o ${TMP}/$tmp_file";
+$command = " $convert_seq_command -from $in_format -to fasta -o ${TMP}/$tmp_file -noempty ";
 $command .= " -mask_short ".$mask_short if ($mask_short);
 $command .= " -i $dir{input}/$basename" if ($inputfile);
 &doit($command, $dry_run, $die_on_error, $verbose);
