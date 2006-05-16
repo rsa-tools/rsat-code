@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_genomes.mk,v 1.23 2006/01/03 08:47:50 rsat Exp $
+# $Id: install_genomes.mk,v 1.24 2006/05/16 08:48:35 rsat Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -33,7 +33,9 @@ V=1
 ### Install one organism
 ORG=Arabidopsis_thaliana
 ORG_DIR=${NCBI_DIR}/${ORG}
-INSTALL_TASK=allup,config,dyads,oligos,parse,start_stop,upstream_freq,phylogeny
+INSTALL_TASK_NOW=config,parse
+INSTALL_TASK_QUEUE=allup,dyads,oligos,start_stop,upstream_freq,phylogeny
+INSTALL_TASK=${INSTALL_TASK_NOW},${INSTALL_TASK_QUEUE}
 INSTALL_CMD=install-organism -v ${V}		\
 		-genbank ${NCBI_DIR}		\
 		-org ${ORG}			\
@@ -57,7 +59,7 @@ list_prokaryotes:
 ### Install all prokaryotel genomes on RSAT
 install_all_prokaryotes:
 	@for pro in ${PROKARYOTES}; do				\
-		${MAKE} install_one_prokaryote PRO=$${pro} ;	\
+		${MAKE} install_one_prokaryote PRO=$${pro};	\
 	done
 
 ### Install a single prokaryote genome
@@ -65,7 +67,27 @@ install_one_prokaryote:
 	@echo
 	@echo "${DATE}	Installing prokaryote ${PRO}"
 	@${MAKE} install_one_organism ORG=${PRO}		\
-		ORG_DIR=${NCBI_DIR}/Prokaryote/${PRO}
+		NCBI_DIR=${NCBI_DIR}/Bacteria
+
+### All the fungi in NCBI genome directory
+FUNGI = `ls -1 ${NCBI_DIR}/Fungi | grep _ | sort -u | xargs `
+list_fungi:
+	@echo "Fungi to install	${FUNGI}"
+
+
+### Install all fungi genomes on RSAT
+install_all_fungi:
+	@for fungus in ${FUNGI}; do				\
+		${MAKE} install_one_fungus FUNGUS=$${fungus} ;	\
+	done
+
+FUNGUS=Saccharomyces_cerevisiae
+### Install a single fungus genome
+install_one_fungus:
+	@echo
+	@echo "${DATE}	Installing fungus ${FUNGUS}"
+	@${MAKE} install_one_organism ORG=${FUNGUS}		\
+		NCBI_DIR=${NCBI_DIR}/Fungi 
 
 ### Parse one organism
 parse_organism:

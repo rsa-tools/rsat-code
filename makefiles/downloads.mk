@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: downloads.mk,v 1.29 2006/04/25 06:05:51 rsat Exp $
+# $Id: downloads.mk,v 1.30 2006/05/16 08:48:35 rsat Exp $
 #
 # Time-stamp: <2003-10-09 14:02:21 jvanheld>
 #
@@ -526,3 +526,16 @@ plasmo_sanger:
 	${WGET} ${PLASMO_SANGER}
 
 
+################################################################
+## Ciona intestinalis genome
+ciona:
+	${WGET} ftp://ftp.jgi-psf.org/pub/JGI_data/Ciona/v2.0/
+#	${WGET} ftp://ftp.jgi-psf.org/pub/JGI_data/Ciona/v2.0/ciona050324.unmasked.fasta.gz
+#	${WGET} ftp://ftp.jgi-psf.org/pub/JGI_data/Ciona/v1.0/ciona.fasta.gz
+#	${WGET} ftp://ftp.jgi-psf.org/pub/JGI_data/Ciona/v1.0/ciona_genes.gff.gz
+#	${WGET} ftp://ftp.jgi-psf.org/pub/JGI_data/Ciona/v1.0/ciona_utr.fasta.gz
+#	${WGET} ftp://ftp.jgi-psf.org/pub/JGI_data/Ciona/v1.0/ciona.prot.fasta.gz
+#	${WGET} ftp://ftp.jgi-psf.org/pub/JGI_data/Ciona/v1.0/ciona.mrna.fasta.gz
+	${WGET} http://crfb.univ-mrs.fr/aniseed/downloads/ci-GO-annotations.gz
+	${WGET} http://crfb.univ-mrs.fr/aniseed/downloads/ci-interpro-annotations.gz
+	${WGET} http://crfb.univ-mrs.fr/aniseed/downloads/ci-ortholog.gz
