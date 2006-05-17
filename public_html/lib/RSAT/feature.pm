@@ -247,9 +247,11 @@ sub parse_from_row {
 
     ## Convert strand format
     my $strand = $self->get_attribute("strand");
-    $strand =~ s/\+/D/;
-    $strand =~ s/\-/R/;
-    $strand =~ s/\./DR/;
+    if ($strand) {
+	$strand =~ s/\+/D/;
+	$strand =~ s/\-/R/;
+	$strand =~ s/\./D/;
+    }
     $self->force_attribute("strand", $strand);
 
     ## Format-specific conversions
@@ -258,24 +260,35 @@ sub parse_from_row {
 	$self->set_attribute("description", $self->get_attribute("attribute"));
 
 	## parse the description of the gff format
-	my @attributes = split /; */, $self->get_attribute("attribute");
-	foreach my $attribute (@attributes) {
-	    if ($attribute =~ /(\S+) +(\S.+)/) {
-		my $key = $1;
-		my $value = $2;
-		$value =~ s/^"//;
-		$value =~ s/"$//;
-		$self->force_attribute($key, $value);
-		if ((lc($key) eq "name") || (lc($key) eq "id")) {
-		    $self->force_attribute("feature_name", $value);
-		}
-		if (lc($key) eq "site") {
-		    $self->force_attribute("pattern_sequence", $value);
+	my $attributes = $self->get_attribute("attribute");
+	if ($attributes) {
+	    my @attributes = split /; */, $attributes;
+	    foreach my $attribute (@attributes) {
+		if (($attribute =~ /(\S+) +(\S.+)/) ||
+		    ($attribute =~ /(\S+)\s*=\s*(\S+)/)) {
+		    my $key = $1;
+		    my $value = $2;
+		    $value =~ s/^\"//; 
+ 		    $value =~ s/\"$//;
+		    $self->force_attribute($key, $value);
+		    if (lc($key) eq "name") {
+			$self->force_attribute("feature_name", $value);
+			$self->force_attribute("name", $value);
+		    }
+		    if ((lc($key) eq "id") ||
+			(lc($key) eq "parent")) { ## In http://
+			$self->force_attribute("feature_name", $value);
+			$self->force_attribute("ft_id", $value);
+			$self->force_attribute("id", $value);
+		    }
+		    if (lc($key) eq "site") {
+			$self->force_attribute("pattern_sequence", $value);
+		    }
+		    &RSAT::message::Debug("parsed attribute", $attribute, $key, $value) if ($main::verbose >= 5);
 		}
 	    }
 	}
     }
-    
 
     ## dna-pattern
     if ($format eq "dnapat") {
@@ -350,7 +363,11 @@ sub to_text {
     my @strands = @{$strands{$format}};
     my $strand = $self->get_attribute("strand");
     my $f = $col_index{"strand"};
-    my $s = $strand_index{$strand} || 2;
+    my $s = 2;
+    if ($strand) {
+	$s = $strand_index{$strand} || 2;
+    }
+
     $fields[$f] = $strands[$s];
     &RSAT::message::Debug( "strand", $strand, "f=$f", "s=$s", $strands[$s], "field=$fields[$f]") if ($main::verbose >= 10);
 
