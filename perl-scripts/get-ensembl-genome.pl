@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-ensembl-genome.pl,v 1.19 2005/10/18 04:51:03 jvanheld Exp $
+# $Id: get-ensembl-genome.pl,v 1.20 2006/05/23 14:08:20 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -172,8 +172,8 @@ package main;
     ## Connection to the EnsEMBL MYSQL database
     $ensembl_host = 'ensembldb.ensembl.org';
     $ensembl_user = "anonymous";
-    $dbname = 'homo_sapiens_core_33_35f';
-    $org = 'schtroumpf';
+    $dbname = '';
+    $org = '';
     
     #### Options for the exported SQL database
     $host= "localhost";
@@ -247,22 +247,31 @@ package main;
     ## Read arguments
     &ReadArguments();
 
- 
+    # Either an organism or a database name must be provided
+    unless ($org || $dbname) {
+	die "; You must provide either an organism name (-org) or a database name (-dbname)\n";
+    }
+
+    # Database name has priority over organism if both provided
+    if ($org && $dbname) {
+	$org = '';
+    }
+
     ################################################################
     ## Connect to ensembldb to get list of databases and pick the one corresponding to chosen organism
-    my $dbh = DBI->connect("DBI:mysql:host=$ensembl_host", "$ensembl_user", "", {'RaiseError' => 1});
-    my $sth = $dbh->prepare("SHOW DATABASES");
-    $sth->execute();
-    while (my $ref = $sth->fetchrow_hashref()) {
-        if ($ref->{'Database'} =~ /($org)_core/) {
-            $dbname = $ref->{'Database'};
-        }
+    if ($org) {
+	my $dbh = DBI->connect("DBI:mysql:host=$ensembl_host", "$ensembl_user", "", {'RaiseError' => 1});
+	my $sth = $dbh->prepare("SHOW DATABASES");
+	$sth->execute();
+	while (my $ref = $sth->fetchrow_hashref()) {
+	    if ($ref->{'Database'} =~ /($org)_core_\d+/) {
+		$dbname = $ref->{'Database'};
+	    }
+	}
+	warn "; dbname = ", $dbname, "\n" if ($main::verbose >= 1);
+	$sth->finish();
+	$dbh->disconnect();
     }
-    warn "; dbname = ", $dbname, "\n" if ($main::verbose >= 1);
-    $sth->finish();
-    $dbh->disconnect();
-
-   
     ################################################################
     ### open output streams
     unless ($dir{output}) {
@@ -332,8 +341,6 @@ package main;
     &RSAT::message::Info(join ("\t", "Db", $db)) if ($main::verbose >= 3);
     my $slice_adaptor = $db->get_SliceAdaptor();
     warn join ("\t", "; Adaptor", $slice_adaptor), "\n" if ($main::verbose >= 3);
-    
-
     
     my @slices;
     if (scalar(@chromnames) > 0) {
@@ -614,8 +621,8 @@ OPTIONS
 			-chrom 21,22,X
 
    Connection to the EnsEMBL MYSQL server
-        -org organism (default: $org) ; No caps, underscore separated
-	-dbname	EnsEMBL database name (default: $dbname)
+        -org organism (example: saccharomyces_cerevisiae) ; No caps, underscore separated
+	-dbname	EnsEMBL database name (example: saccharomyces_cerevisiae_core_33_1b)
 
    Options for the automaticaly generated SQL scripts
 	-schema database schema (default: $schema)
@@ -693,8 +700,8 @@ get-ensembl-genome.pl options
 -chrom  	import a selected chromosome
 -test #  	perform a test on # genes (default: $test_number)
 -v		verbose
--org		organism (default: $org) ; No caps, underscore separate
--dbname		EnsEMBL database name (default: $dbname)
+-org		organism (example: saccharomyces_cerevisiae) ; No caps, underscore separated
+-dbname		EnsEMBL database name (example: saccharomyces_cerevisiae_core_33_1b)
 -schema		database schema (default: $schema)
 -host		database host (default: $host)
 -user		database user (default: $user)
