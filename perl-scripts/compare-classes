@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.30 2006/05/05 12:32:57 jvanheld Exp $
+# $Id: compare-classes,v 1.31 2006/06/09 21:27:07 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -608,7 +608,7 @@ PROBABILITIES
 
         Assuming that there are x query classes and y
         reference classes, each analysis consists in x*y
-        comparisons. Thus, thhe P-value can be misleading,
+        comparisons. Thus, the P-value can be misleading,
         because even low P-values are expected to emerge by
         chance alone when the number of query and/or reference
         classes is very high. The E-value reflects better the
