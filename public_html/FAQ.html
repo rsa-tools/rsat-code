@@ -11,7 +11,72 @@
 <hr size=6 width="100%">
 
 
+<h3>P-value and E-value</h3>
 
+<b>Remark: </b> the discussion below was about <i>compare-classes</i>,
+but it applies to all the RSAT programs involving multiple tests, for
+example <i>oligo-analysis</i>, <i>dyad-analysis</i>, <i>position-analysis</i>, <i>compare-progiles</i>,
+...
+
+<h4>Question</h4>
+
+I am using your program at
+http://rsat.ccb.sickkids.ca/compare-classes_form.cgi.  Could you
+please comment on the significant number of P and E cut off?  I guess
+if a number is less than 0.05 for p values, then we have a significant
+overlap.  Just like in any other statistical techniques.  How about
+E-value?  What is the significant threshold?
+
+<h4>Answer</h4>
+
+<p>
+There is an essential difference between P-value and E-value.
+
+<p>
+The P-value represents the risk to consider as significant one
+intersection, whereas it is not.  It is somehow the probability for
+one intersection to be selected as false positive.
+
+<p>Thus, if you have a query group with Q elements, and a reference group
+with R elements, and the intersection is X, a P-value of 0.05 means
+that there is 5% chances that two random groups of the same sizes
+would have at least X elements at their intersection.
+
+<p>
+This P-value should be interpreted with an extreme caution, because
+you generally compare several query classes with several reference
+classes, you take the same risk (e.g.5%) for each comparison. For
+example, if you are comparing a set 50 clusters of co-expression with
+a database containing 150 regulons, you will perform 50*150=7500
+comparisons. And for each of these comparisons, you take a risk of 5%
+to select a false positive. Thus, for the whole battery of tests, you
+would expect to select 7500*5%=375 false positives !
+
+<p>
+The E-value is precisely an estimation of the expected number of false
+positives. For a battery of T tests.
+
+<pre>
+E-value = Pvalue * T
+	= 7500*5% = 375
+</pre>
+
+<p>
+Some authors call the E-value "Bonferoni-corrected P-value", but I
+dont' like this expression, because the E-value is not a
+probability. Indeed, P-values must by definition be comprized between
+0 and 1, whereas the E-value can take any value between 0 and T (the
+number of tests).
+
+<p>
+Actually, Bonferoni's rule consists in selecting a threshold on
+P-value < 1/T. In practice, this is equivalent to select a threshold
+on E-value < 1, which means that you expect less than 1 false positive
+for the whole battery of tests.
+
+<p>
+In short, I recommend to interpret the results on the basis of the
+E-value, NOT the P-value.
 
 <h3>Supported genomes</h3><ul>
 
