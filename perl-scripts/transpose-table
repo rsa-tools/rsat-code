@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: transpose-table,v 1.7 2006/06/10 22:19:19 jvanheld Exp $
+# $Id: transpose-table,v 1.8 2006/06/10 22:27:48 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:59:01 jvanheld>
 #
@@ -57,7 +57,7 @@ close $in if ($infile{input});
 
 ###### print output ######
 for $j (0..($max_col-1)) {
-    if (defined( $out $fields[1][$j])) {
+    if (defined($fields[1][$j])) {
 	print $out $fields[1][$j];
     }
     for $i (2..$row_nb) {
