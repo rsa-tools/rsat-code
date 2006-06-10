@@ -7,7 +7,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.111 2006/04/25 06:05:51 rsat Exp $
+# $Id: oligo-analysis,v 1.112 2006/06/10 22:19:55 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -561,7 +561,7 @@ sub CountOligos {
 ## Print header for oligo count table
 sub PrintTableHeader {
     my @output_patterns = @_;
-    print $out "; seq";
+    print $out "# seq";
     foreach my $pattern_seq (@output_patterns) {
 	print $out "\t", &PatternID($pattern_seq, $sum_rc);
     }
