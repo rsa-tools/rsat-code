@@ -3,7 +3,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.44 2006/04/25 06:05:51 rsat Exp $
+# $Id: retrieve-seq,v 1.45 2006/06/10 22:21:58 jvanheld Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -237,16 +237,18 @@ $out = &OpenOutputFile($outputfile);
 #### Get the index of GenomeFeatures by names and ID
 $feature_index = $organism->get_attribute("name_index");
 
-#&RSAT::message::Debug("Feature keys", scalar(keys (%feature_index))) if ($main::verbose >= 0);
+#&RSAT::message::Debug("Feature keys", scalar(keys (%feature_index))) if ($main::verbose >= 10);
 
 ################################################################
 #### retrieve the sequences ####
 my $q = 0;
-warn "; ", &AlphaDate(), "\tRetrieving sequences\n" if ($verbose >= 1);
+&RSAT::message::TimeWarn("Retrieving sequences") if ($verbose >= 1);
 foreach my  $query (@queries) {
     $q++;
 
     $query = &trim($query); ### make sure there are no leading or trailing spaces
+
+     &RSAT::message::Info(join("\t", "Searching query", $q, $query)) if ($main::verbose >= 3);
 
     #### check the validity of the query
     my $current_feature;
@@ -274,14 +276,14 @@ foreach my  $query (@queries) {
     $current_from = $from;
     $current_to = $to;
 
-#     &RSAT::message::Debug($query,
-# 			  $id,
-# 			  $name,
-# 			  $ctg,
-# 			  $orf_left,
-# 			  $orf_right,
-# 			  $orf_strand,
-# 			 ) if ($main::verbose >= 10);
+#      &RSAT::message::Debug($query,
+#  			  $id,
+#  			  $name,
+#  			  $ctg,
+#  			  $orf_left,
+#  			  $orf_right,
+#  			  $orf_strand,
+#  			 ) if ($main::verbose >= 10);
 
     ### upstream region
     if ($sequence_type eq "upstream") {
