@@ -7,7 +7,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.112 2006/06/10 22:19:55 jvanheld Exp $
+# $Id: oligo-analysis,v 1.113 2006/06/10 23:06:55 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -489,6 +489,10 @@ sub CountOligos {
 	    ## Print patern counts for the current sequence
 	    print $out $current_id;
 	    foreach my $pattern_seq (@output_patterns) {
+		if (($seq_type eq "DNA") && ($pattern_seq !~ /^[acgt\|]+$/i)) {
+		    &RSAT::message::Warning(join("\t", "Skipping pattern with non-DNA letters", $pattern_seq)) if ($main::verbose >= 2);
+		    next;
+		}
 		print $out "\t", $patterns{$pattern_seq}->{occ};
 	    }
 	    print $out "\n";
