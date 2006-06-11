@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-ensembl-genome.pl,v 1.20 2006/05/23 14:08:20 rsat Exp $
+# $Id: get-ensembl-genome.pl,v 1.21 2006/06/11 22:19:12 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -381,6 +381,7 @@ package main;
 	$rsat_contig->set_attribute("length", $slice->length());
 	$rsat_contig->set_attribute("description", $slice->desc());
 	$rsat_contig->set_attribute("chromosome", $slice->seq_region_name());
+#	$rsat_contig->set_attribute("is_circular", $slice->is_circular());
 
 	## Get all Gene objects
 	unless ($seqonly){
@@ -496,6 +497,11 @@ package main;
 	$seq_file .= ".raw";
 	my $masked_seq_file = $seq_file;
 	$masked_seq_file =~ s/\.raw$/_masked.raw/;
+#	if ($rsat_contig->get_attribute("is_circular")) {
+#	    $contig_shape = 'circular';
+#	} else {
+#	    $contig_shape = 'linear';
+#	}
 	print CTG join ("\t", $seq_file,  $rsat_contig->get_attribute("id")), "\n";
 	unless ($no_seq) {
 
@@ -821,7 +827,7 @@ sub collect_attributes {
     $rsat_object->force_attribute("id", $id);
 
     ## Type
-    my $type = $ensembl_object->type();
+    my $type = $ensembl_object->biotype();
     push @feature, $type;
     $rsat_object->set_attribute("type", $type);
 
