@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: dna-pattern,v 1.46 2006/06/10 22:20:58 jvanheld Exp $
+# $Id: dna-pattern,v 1.47 2006/06/13 10:22:08 oly Exp $
 #
 # Time-stamp: <2003-08-13 12:16:03 jvanheld>
 #
@@ -452,7 +452,7 @@ sub MergeMatches {
     my (@matches) = @_;
     my @merged_matches = ();
 
-    &RSAT::messahe::Info(join "\t", "Merging matches", @matches) if ($main::verbose >= 3);
+    &RSAT::message::Info(join "\t", "Merging matches", @matches) if ($main::verbose >= 3);
 
     ## Check that there are at least two patterns
     unless (scalar(@matches) >= 2) {
