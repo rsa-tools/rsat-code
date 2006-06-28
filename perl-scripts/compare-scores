@@ -148,7 +148,7 @@ foreach $f (0..$#input_files) {
 ## Print result  as score profiles
 if ($export_format eq "profiles") {
     #### print header line
-    print $out ";key";
+    print $out "#key";
     $col_nb = 0;
     foreach $f (0..$#input_files) {
 	foreach $c (1..$max_fields{$f}) {
