@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.27 2006/02/09 19:56:12 jvanheld Exp $
+# $Id: position-analysis,v 1.28 2006/07/05 09:37:57 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -22,6 +22,7 @@ $class_interval = 20;
 $in_format = "fasta";
 $strands = "1str";
 $group_rc = 0;
+$image_format = $IMG_FORMAT; ### By default, take the image format defined in the RSAT config file
 $XYgraph_command = "$SCRIPTS/XYgraph";
 
 $reference_pos = 0;
@@ -173,7 +174,7 @@ if ($return{'graph'}) {
     foreach $oligo_seq (@sorted_keys) {
 	next unless (&IsReal($chi_square{$oligo_seq}) || ($no_filter_graphs));
 
-	$graph_file_name = "${oligo_seq}_ci${class_interval}_${strands}_pos_distrib.gif";
+	$graph_file_name = "${oligo_seq}_ci${class_interval}_${strands}_pos_distrib.".$image_format;
 	$xmax = ($max_class+1) * $class_interval;
 	$title2 = "$in_bound_occurrences{$oligo_seq} occurrences";
 	$title2 .= ", class interval=$class_interval";
@@ -736,6 +737,10 @@ OPTIONS
 		To calculate the positions relative to sequence end,
 		use the option:
 			     -origin -0
+
+	-img_format
+		Image format (this parameter is passed to XYgraph)
+
 End_of_help
   close HELP;
   exit(0);
@@ -768,6 +773,7 @@ position-analysis options
 -oth		lower threshold on occurrences
 -pl		pattern list
 -origin		origin (-0 to calculate positions relative to sequence end)
+-img_format	image format (this parameter is passed to XYgraph)
 -sc		score column
 -minpos		minimal position for chi-square calculation
 -maxpos		maximal position for chi-square calculation
@@ -919,6 +925,9 @@ sub ReadArguments {
 		&RSAT::error::FatalError( "Invalid value $origin\tOrigin must be an integer number\n");
 	    }
 	    
+	} elsif ($ARGV[$a] eq "-img_format") {
+	    $image_format = $ARGV[$a+1];
+
 	    ### min and max positions
 	} elsif (($ARGV[$a] eq "-minpos") && (&IsInteger($ARGV[$a+1]))) {
 	    $min_pos = $ARGV[$a+1];
