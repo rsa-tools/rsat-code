@@ -155,7 +155,7 @@ while (<$in>) {
 	      my $offset = $position - 1;
 		my $sub_sequence = uc(sub_sequence($sequence{$map}, $offset, $matrix_length));
 
-		&RSAT::message::Debug($sub_sequence, $offset, $matrix_length, length($sequence{$map}), $sequence{$map}) if ($main::verbose >= 0);
+#		&RSAT::message::Debug($sub_sequence, $offset, $matrix_length, length($sequence{$map}), $sequence{$map}) if ($main::verbose >= 0);
 
 		my $left_flank =  lc(sub_sequence($sequence{$map}, $offset - $flank_len, $flank_len));
 		my $right_flank =  lc(sub_sequence($sequence{$map}, $offset + $matrix_length, $flank_len));

@@ -46,8 +46,8 @@ sub sub_sequence {
     if ($offset < 0) {
 	$len += $offset;
 	$offset = 0;
-    } elsif ($offset + $len > $seq_len - 1) {
-	$len = $seq_len -1 - $offset;
+    } elsif ($offset + $len > $seq_len) {
+	$len = $seq_len - $offset;
     }
     my $result = substr($sequence, $offset, $len);
     return ($result);
