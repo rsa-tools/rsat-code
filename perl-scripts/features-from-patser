@@ -11,6 +11,7 @@ $type="site";
 $id = "patser";
 $matrix_length = 1;
 $seq_format = "wconsensus";  ### because this is the usual format for patser
+$limits = 0; ## Report sequence limits for the feature map (requires the option -seq)
 $flank_len = 0;
 
 @supported_table_fields = qw (score start end strand position);
@@ -100,9 +101,10 @@ if ($sequence_file) {
 	    $end = $length - $origin;
 	    $start = 1 - $origin;
 	}
-
-	print $out join("\t", $id, "LIMIT", "SEQ_START", "DR", $start,$start, "-", 0), "\n";
-	print $out join("\t", $id, "LIMIT", "SEQ_END", "DR", $end,$end, "-", 0), "\n";
+	if ($limits) {
+	    print $out join("\t", $id, "LIMIT", "SEQ_START", "DR", $start,$start, "-", 0), "\n";
+	    print $out join("\t", $id, "LIMIT", "SEQ_END", "DR", $end,$end, "-", 0), "\n";
+	}
     }
 }
 
@@ -350,33 +352,50 @@ CATEGORY
 OPTIONS
         -h      (must be first argument) display full help message
         -help   (must be first argument) display options
+
 	-v	verbose
+
 	-i inputfile
 		if not specified, the standard input is used.
 		This allows to place the command within a pipe.
+
 	-o outputfile
 		if not specified, the standard output is used.
 		This allows to place the command within a pipe.
+
 	-id	feature identifier
 		the same identifier is used for all features
+
 	-mlen #	
 		matrix length
+
 	-strand	D, R or DR. Strand on which to draw the feature.
+
 	-origin	#
 		each position is recalculated using this value as reference.
+
 	-origfile	origin file	
 		each line indicates the specific origin for one of the 
 		sequences. It must contain 2 words separate by a tab.
 		The first word is the sequence identifier (= the map name),
 		the second word is the origin for that sequence.
+
+
 	-seq seq_file
 		indicates the sequence file which had been used as 
 		input for patser. This file must be in wconsensus format.
+
+	-limit
+		return start and end positions for each input sequence.
+		Requires to specify the sequence file with the option -seq. 
+
 	-format
 		sequence file format 
 		(default is wcconsensus, since this is the usual format for patser)
+
 	-N #	return matching sequences with # flanking nucleotides
 		(only valid with the -seq option)
+
 	-table return_fields
 		Return a table with one row per sequence and one column per match. 
 
@@ -385,6 +404,7 @@ OPTIONS
 
 		Beware: this format is not supported by feature-map,
 		but it is very convenient for post-processing.
+
 	-maxcol	# 
 		max number of columns per sequence for the table
 		This prevents from obtaining more columns than the
@@ -434,6 +454,7 @@ features-from-patser options
 -N #		return matching sequences with # flanking nucleotides
 -origfile	origin file
 -seq		sequence file
+-limit		return start and end positions for each input sequence.
 -format		sequence file format (default wc)
 -table		return a table with specified fields (Supported: $supported_table_fields).
 -maxcol	# 	max number of columns per sequence for the table
@@ -444,8 +465,9 @@ End_short_help
 
 
 
+################################################################
+## Read arguments 
 sub ReadArguments {
-#### read arguments ####
     foreach $a (0..$#ARGV) {
 	### verbose ###
 	if ($ARGV[$a] eq "-v") {
@@ -457,11 +479,11 @@ sub ReadArguments {
 	    
 	    ### detailed help
 	} elsif ($ARGV[$a] eq "-h") {
-	    &PrintHelp;
+	    &PrintHelp();
 	    
 	    ### list of options
 	} elsif ($ARGV[0] eq "-help") {
-	    &PrintOptions;
+	    &PrintOptions();
 	    
 	    ### input file ###
 	} elsif ($ARGV[$a] eq "-i") {
@@ -495,6 +517,10 @@ sub ReadArguments {
 	    ### sequence file 
 	} elsif ($ARGV[$a] =~ /^-seq/) {
 	    $sequence_file = $ARGV[$a+1];
+
+	    ## Report sequence limits
+	} elsif ($ARGV[$a] =~ /^-limit/) {
+	    $limits = 1;
 
 	    ### sequence file format 
 	} elsif ($ARGV[$a] eq "-format") {
