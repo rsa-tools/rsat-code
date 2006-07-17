@@ -1,0 +1,300 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: convert-background-model,v 1.1 2006/07/17 16:46:43 rsat Exp $
+#
+# Time-stamp: <2003-07-04 12:48:55 jvanheld>
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+convert-backgound-model
+
+=head1 DESCRIPTION
+
+Interconversions between formats of background models supported by different
+programs (oligo-analysis, matrix-scan, patser, consensus, MotifLocator, MEME,
+...).
+
+This is a beta version, with only some formats supported. Additional formats
+will be progressively added. 
+
+=head1 AUTHORS
+
+jvanheld@scmbb.ulb.ac.be
+
+=head1 CATEGORY
+
+util
+
+=head1 USAGE
+    
+convert-backgound-model [-i inputfile] [-o outputfile] [-v]
+
+=head1 INPUT FORMAT
+
+=head1 OUTPUT FORMAT
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+use RSAT::MarkovModel;
+
+
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    #### initialise parameters
+    my $start_time = &AlphaDate();
+    local $bg_model = new RSAT::MarkovModel();
+    
+    
+    $input_format = "oligo-analysis";
+    %supported_input_format = $bg_model->get_supported_input_formats();
+    $supported_input_formats = join (",", keys %supported_input_format);
+
+
+    $output_format = "patser";
+    %supported_output_format = $bg_model->get_supported_output_formats();
+    $supported_output_formats = join (",", keys %supported_output_format);
+    
+
+    %main::infile = ();
+    %main::outfile = ();
+
+    $main::verbose = 0;
+#    $main::in = STDIN;
+    $main::out = STDOUT;
+
+    &ReadArguments();
+
+    ################################################################
+    #### check argument values
+    unless ($input_format) {
+	&RSAT::error::FatalError("You should define the input format");
+    }
+
+    unless ($output_format) {
+	&RSAT::error::FatalError("You should define the output format");
+    }
+
+
+    ################################################################
+    ### open output stream
+    $main::out = &OpenOutputFile($main::outfile{output});
+
+    ################################################################
+    ##### Read input
+    $bg_model->load_from_file($main::infile{input}, $input_format);
+    
+    ################################################################
+    #### print verbose
+    &Verbose() if ($main::verbose);
+    
+    ################################################################
+    ###### print output
+    print $out $bg_model->to_string($output_format);
+    
+    
+    ################################################################
+    ###### finish verbose
+    if ($main::verbose >= 1) {
+	my $done_time = &AlphaDate();
+	print $main::out "; Job started $start_time\n";
+	print $main::out "; Job done    $done_time\n";
+    }
+    
+     
+    ################################################################
+    ###### close output stream
+    close $main::out if ($main::outfile{output});
+    
+    
+    exit(0);
+}
+
+################################################################
+################### subroutine definition ######################
+################################################################
+
+
+################################################################
+#### display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+#### display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+#### Read arguments 
+sub ReadArguments {
+#    foreach my $a (0..$#ARGV) {
+    my $arg = "";
+    
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    
+
+    while ($arg = shift (@arguments)) {
+
+	## Verbosity
+=pod
+	    
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+	    
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+	    
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+	    
+
+	    ## Input file
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-i") {
+	    $main::infile{input} = shift(@arguments);
+	    
+	    ## Output file
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $main::outfile{output} = shift(@arguments);
+	    
+	    ## Input format
+=pod
+
+=item B<-from input_format>
+
+Input format.
+
+=cut
+	} elsif ($arg eq "-from") {
+	    $main::input_format = shift(@arguments);
+	    &RSAT::error::FatalError(join("\t", $main::input_format,
+					  "Invalid input format.",
+					  "Supported: ", $main::supported_input_formats))
+		unless ($main::supported_input_format{$main::input_format});
+
+
+	    ## Output format
+=pod
+
+=item B<-to output_format>
+
+Output format.
+
+=cut
+	} elsif ($arg eq "-to") {
+	    $main::output_format = shift(@arguments);
+	    &RSAT::error::FatalError(join("\t", $main::output_format,
+					  "Invalid output format.",
+					  "Supported: ", $main::supported_output_formats))
+		unless ($main::supported_output_format{$main::output_format});
+
+	    
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+
+	}
+    }
+
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $main::out "; convert-backgound-model ";
+    &PrintArguments($main::out);
+    if (defined(%main::infile)) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+    if (defined(%main::outfile)) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+}
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=cut
