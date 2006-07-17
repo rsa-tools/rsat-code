@@ -54,8 +54,9 @@ foreach $f (0..$#input_files) {
     ($in, $input_dir) = &OpenInputFile($inputfile);
     $max_fields{$f} = 0;
     while (<$in>) {
-	next unless (/\S/);
-	next if (/^;/);
+	next unless (/\S/); ## Skip empty lines
+	next if (/^\#/); ## Skip header or comment lines
+	next if (/^;/); ## Skip comment lines
 	chomp;
 	@fields = split "\t";
 	if (defined($sc[$f])) {

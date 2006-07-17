@@ -78,10 +78,11 @@ if ($verbose) {
 	print $out ";\tsequence id\tlength\n";
 	foreach $id (sort keys %sequence) {
 	    $length = length($sequence{$id});
-	    print $out ";\t$id\t$length\n";
+	    print $out join ("\t", ";", $id, $length), "\n";
 	}
     }
 }
+
 
 ################################################################
 ## Print sequence limits to draw the backbone
@@ -151,10 +152,14 @@ while (<$in>) {
 
 	    #### get the sub sequence
 	    if ($sequence_file) {
-		my $sub_sequence = uc(sub_sequence($sequence{$map}, $position -1, $matrix_length));
-		my $left_flank =  lc(sub_sequence($sequence{$map}, $position -1 - $flank_len, $flank_len));
-		my $right_flank =  lc(sub_sequence($sequence{$map}, $position + $matrix_length -1, $flank_len));
-		if ($strand eq "C") {
+	      my $offset = $position - 1;
+		my $sub_sequence = uc(sub_sequence($sequence{$map}, $offset, $matrix_length));
+
+		&RSAT::message::Debug($sub_sequence, $offset, $matrix_length, length($sequence{$map}), $sequence{$map}) if ($main::verbose >= 0);
+
+		my $left_flank =  lc(sub_sequence($sequence{$map}, $offset - $flank_len, $flank_len));
+		my $right_flank =  lc(sub_sequence($sequence{$map}, $offset + $matrix_length, $flank_len));
+		if ($strand eq "R") {
 		    $sub_sequence = &ReverseComplement($sub_sequence);
 		    $left_flank = lc(&ReverseComplement($left_flank));
 		    $right_flank = lc(&ReverseComplement($right_flank));
