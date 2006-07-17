@@ -309,7 +309,7 @@ sub ReadExpectedFrequencies {
 	$pattern_seq = lc($fields[0]);
 	next unless $pattern_seq;
 
-	warn join "\t", "fields", join ("\t", @fields), "\n" if ($main::verbose >= 10);
+	&RSAT::message::Debug( "fields", join ("\t", @fields)) if ($main::verbose >= 10);
 
 	#### check the format and extract expected frequency
 	if (&IsReal($fields[1])) {
