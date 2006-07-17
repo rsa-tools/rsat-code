@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.12 2005/11/10 10:45:19 jvanheld Exp $
+# $Id: convert-matrix,v 1.13 2006/07/17 10:03:02 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -89,7 +89,7 @@ if ($prior_file) {
     %prior = ();
     &ReadExpectedFrequencies($prior_file, 1, 1);    
     foreach my $key (sort keys %patterns) {
-	my $residue = uc($key);
+	my $residue = lc($key);
 	$prior{$residue} = $patterns{$key}->{exp_freq};
 #	&RSAT::message::Debug("residue", $residue, "prior", $prior{$residue}) if ($main::verbose >= 10);
     }

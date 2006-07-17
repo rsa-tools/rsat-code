@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.31 2006/06/09 21:27:07 jvanheld Exp $
+# $Id: compare-classes,v 1.32 2006/07/17 10:03:02 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -205,11 +205,11 @@ unless ($infile{ref_classes}) {
 
 ## Dot product requires score column
 if (($return_fields{dotprod}) && !($score_col)) {
-    &RSAT::error::FatalError("To calcualte a dot product, you need to specify a score column (option -sc).");
+    &RSAT::error::FatalError("To calculate a dot product, you need to specify a score column (option -sc).");
 }
 
 ## Logarithm base
-$log_base = log($base); ## Calcualte it only once
+$log_base = log($base); ## Calculate it only once
 
 ## ##############################################################
 ## Fields to calculate
@@ -1591,8 +1591,8 @@ sub PrintResult {
 
 	    ## Entropy and information 
 	    if ($return_fields{entropy}) {
-		printf $out ( "\t%.5f", $compa{$compa_key}->{'H(Q)'});
 		printf $out ( "\t%.5f", $compa{$compa_key}->{'H(R)'});
+		printf $out ( "\t%.5f", $compa{$compa_key}->{'H(Q)'});
 		printf $out ( "\t%.5f", $compa{$compa_key}->{'H(Q,R)'});
 		printf $out ( "\t%.5f", $compa{$compa_key}->{'dH(Q,R)'});
 		printf $out ( "\t%.5f", $compa{$compa_key}->{'H(Q|R)'});
@@ -1844,12 +1844,12 @@ sub PrintOneMatrix {
 sub CalcMargins {
     my ($margin_key) = @_;
 
-    &RSAT::message::TimeWarn("Calcualting margins for key\t".$margin_key) if ($main::verbose >= 0);
+    &RSAT::message::TimeWarn("Calculating margins for key\t".$margin_key) if ($main::verbose >= 0);
 
     my @query_classes = sort keys %query_classes;
     my @ref_classes = sort keys %ref_classes;
 
-    ## Calcualte counts and sums
+    ## Calculate counts and sums
     foreach my $q (@query_classes) {
 	foreach my $r (@ref_classes) {
 	    my $compa_key = $r."__VERSUS__".$q;
@@ -1860,8 +1860,7 @@ sub CalcMargins {
 
 		$count_per_R{$margin_key}{$r} += 1;
 		$sum_per_R{$margin_key}{$r} += $value;
-		
-		
+
 	    } else {
 		&RSAT::message::Warning(join("\t", "undefined parameter", 
 					     $compa_key, $margin_key, "Margin computation might be biased"));
