@@ -293,7 +293,7 @@ sub index_alphabet {
     my @alphabet = $self->getAlphabet();
     my $row = 0;
     foreach my $letter (@alphabet) {
-	$self->add_hash_attribute("alphabet_index", uc($letter), $row);
+	$self->add_hash_attribute("alphabet_index", lc($letter), $row);
 #	$alphabet_index{$letter} = $row;
 #	&RSAT::message::Debug("Alphabet index", $letter, $row) if ($main::verbose >= 0);
 	$row++;
@@ -548,7 +548,7 @@ sub _readFromGibbsFile {
 	if (/Information \(relative entropy\) contribution in tenth bits\:/) {
 	    $in_matrix = 1;
 	    # default nucletodide alphabet
-	    $self->setAlphabet_uc("A","C","G","T");   
+	    $self->setAlphabet_lc("A","C","G","T");   
 	    next;
 
 	} elsif (/site/) {
@@ -567,7 +567,7 @@ sub _readFromGibbsFile {
 	    chomp;
 	    @header = split " +";
 	    @alphabet = @header[1..$#header-1];
-#		$self->setAlphabet_uc(@alphabet);
+#		$self->setAlphabet_lc(@alphabet);
 	} elsif (/model map = (\S+); betaprior map = (\S+)/) {
 	    $self->set_parameter("model.map", $1);
 	    $self->set_parameter("betaprior.map", $2);
@@ -665,7 +665,7 @@ sub _readFromConsensusFile {
 	    if (/^\s*(\S+)\s+\|/) {
 		my @fields = split / +/, $_;
 		## residue associated to the row
-		my $residue = uc(shift @fields);
+		my $residue = lc(shift @fields);
 		
 		## skip the | between residue and numbers
 		shift @fields unless &main::IsReal($fields[0]);	
@@ -731,7 +731,7 @@ sub _readFromTabFile {
 	    my @fields = split /\t/, $_;
 
 	    ## residue associated to the row
-	    my $residue = uc(shift @fields);
+	    my $residue = lc(shift @fields);
 	    
 	    ## skip the | between residue and numbers
 	    shift @fields unless &main::IsReal($fields[0]);	
@@ -820,7 +820,7 @@ sub _readFromMEMEFile {
 	    $self->setPrior(%residue_frequencies);
 
 	    my @alphabet = sort (keys %residue_frequencies);
-	    $self->setAlphabet_uc(@alphabet);
+	    $self->setAlphabet_lc(@alphabet);
 	    
 	    ## Index the alphabet
 	    foreach my $l (0..$#alphabet) {
@@ -990,7 +990,7 @@ sub _readFromClustalFile {
 	warn join ("\t", ";", "Sequence", $seq_id, length($sequence)),"\n" if ($main::verbose >= 5);
 	my @sequence = split '|', $sequence;
 	foreach my $i (0..$#sequence) {
-	    my $res = uc($sequence[$i]);
+	    my $res = lc($sequence[$i]);
 	    next if ($res eq "N"); ## BEWARE: THIS IS FOR DNA ONLY
 #	    next if ($res eq "-");
 	    next if ($res eq "."); ## leading and trailing gaps
@@ -1029,7 +1029,7 @@ sub _readFromClustalFile {
 	$self->addRow(@row);
 	warn join ("\t", "Adding row", $r, $res, join ":", @row, "\n"), "\n" if ($main::verbose >= 4); 
     }
-    $self->setAlphabet_uc(@alphabet);
+    $self->setAlphabet_lc(@alphabet);
     $self->force_attribute("ncol", $ncol);
     $self->force_attribute("nrow", $nrow);
 
@@ -1235,14 +1235,14 @@ sub calcWeights {
     my ($self) = @_;
 
     ## Get frequency matrix
-    my @frequencies = $self->getFrequencies();    
+    my @frequencies = $self->getFrequencies();
 
     ## Get alphabet
     my @alphabet = $self->getAlphabet();
     if (scalar(@alphabet) <= 0) {
 	&main::FatalError("&RSAT::matrix::calcWeights()\tCannot calculate weigths, because the alphabet has not been specified yet.");
     }
-    
+
     ## Get or calculate prior residue probabilities
     my %prior = $self->getPrior();
     
@@ -1454,7 +1454,7 @@ Calculate frequencies from the count matrix (corrected with pseudo-weights).
 =cut
 sub calcFrequencies {
     my ($self) = @_;
-    
+
     ## Get alphabet
     my @alphabet = $self->get_attribute("alphabet");
     if (scalar(@alphabet) <= 0) {
@@ -1468,7 +1468,6 @@ sub calcFrequencies {
 	&main::FatalError("&RSAT::matrix::calcFrequencies()\tCannot calculate weigths for an empty matrix.");
     }
 
-    
     ## Get or calculate prior residue probabilities
     my %prior = $self->get_attribute("prior");
     if (scalar(keys %prior) <= 0) {
@@ -1482,16 +1481,16 @@ sub calcFrequencies {
 
     ## pseudo-weight
     my $pseudo = $self->get_attribute("pseudo");
-    
+
     ## count matrix
     my @matrix = $self->getMatrix();
-    
+
     ## Calculate the frequencies
     my @frequencies = ();
     my @crude_frequencies = ();
 #    my @col_sum = &RSAT::matrix::col_sum(@matrix);
     my $alphabet_size = scalar(keys(%prior));
-    
+
     for my $c (0..($ncol-1)) {
 	my $col_sum = 0;
 	for my $r (0..($nrow-1)) {
@@ -1501,7 +1500,7 @@ sub calcFrequencies {
 	    $col_sum += $occ;
 	    $frequencies[$c][$r] = $occ + $pseudo*$prior{$letter};
 #	    $frequencies[$c][$r] = $occ + $pseudo/$alphabet_size;
-#	    &RSAT::message::Debug("freq", $r, $c, $letter, $prior, $pseudo, $occ, $col_sum) if ($main::verbose >= 10);
+#	    &RSAT::message::Debug("freq", $r, $c, $letter, $prior, $pseudo, $occ, $col_sum) if ($main::verbose >= 0);
 	}
 	for my $r (0..($nrow-1)) {
 	    if ($col_sum eq 0) {
@@ -1665,8 +1664,8 @@ sub calcConsensus {
 	
 	## Use uppercase for scores >= 1
 	if ($col_max >= 1) {
-	    $consensus_strict .= uc($col_consensus);
-	    $consensus .= uc($regular);
+	    $consensus_strict .= lc($col_consensus);
+	    $consensus .= lc($regular);
 	} else {
 	    $consensus_strict .= lc($col_consensus);
 	    $consensus .= lc($regular);
@@ -2072,7 +2071,7 @@ corrected frequencies.
 sub segment_proba {
     my ($self, $segment) = @_;
     
-    $segment = uc($segment);
+    $segment = lc($segment);
 #    return(1);
 
     my $segment_proba = 1;

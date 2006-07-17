@@ -58,6 +58,8 @@ produced with the ccmmand oligo-analysis. When new genomes are installed,
 background files are automatically calculated for upstream sequences, and
 stored in $RSAT/data/genomes/[Organism_name]/oligo-frequencies.
 
+In order to ensure case-insensivity, Markov models are automatically
+converted to lowercases.
 
 =cut
 sub load_from_file {
@@ -75,15 +77,21 @@ sub load_from_file {
     ## Calculate alphabet from expected frequency keys
     foreach my $pattern_seq (keys %patterns) {
 	## Check pattern length
-	$pattern_seq = uc($pattern_seq);
+	$pattern_seq = lc($pattern_seq);
 	my $pattern_len = length($pattern_seq);
 	my $pattern_freq =  $patterns{$pattern_seq}->{exp_freq};
+
+#	&RSAT::message::Debug($pattern_seq, $pattern_len, $pattern_freq, 
+#			      join(";", keys %{$patterns{$pattern_seq}})) if ($main::verbose >= 0);
 	&RSAT::error::FatalError("All patterns should have the same length in a Markov model file.") 
 	    unless $pattern_len = $order+1;
 	my $prefix = substr($pattern_seq,0,$order);
 	my $suffix = substr($pattern_seq,$order, 1);
 	$self->{transition_count}->{$prefix}->{$suffix} = $pattern_freq;
+#	&RSAT::message::Debug("transition count", $prefix.".".$suffix, $pattern_freq, $self->{transition_count}->{$prefix}->{$suffix}) if ($main::verbose >= 0);
     }
+    
+#    &RSAT::message::Debug("MARKOV MODEL", $order, join (' ', @patterns)) if ($main::verbose >= 5);
     
     $self->normalize_transition_frequencies();
 }
@@ -103,7 +111,7 @@ prefix) is 1.
 sub normalize_transition_frequencies {
     my ($self) = @_;
     
-    &RSAT::message::Info(join("\t", "MarkovModel", "Normalizing transition frequencies")) if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn(join("\t", "MarkovModel", "Normalizing transition frequencies")) if ($main::verbose >= 2);
 
     ## Calculate sum of counts (frequencies) per prefix and suffix
     my %prefix_sum = ();
@@ -112,15 +120,16 @@ sub normalize_transition_frequencies {
     my $p=0;
     my $s=0;
 #    foreach my $prefix (keys(%prefix_sum)) {
-    foreach my $prefix (keys(%{$self->{transition_count}})) {
+    foreach my $prefix (sort keys(%{$self->{transition_count}})) {
 	$p++;
 #	foreach my $suffix (keys (%suffix_sum)) {
-	foreach my $suffix (keys (%{$self->{transition_count}->{$prefix}})) {
+	foreach my $suffix (sort keys (%{$self->{transition_count}->{$prefix}})) {
 	    $s++;
 	    my $pattern_count = $self->{transition_count}->{$prefix}->{$suffix};	    
 	    $prefix_sum{$prefix} += $pattern_count;
 	    $freq_sum += $pattern_count;
 	    $suffix_sum{$suffix} += $pattern_count;
+#	    &RSAT::message::Debug("Count sum", $p, $prefix.".".$suffix, $pattern_count, $freq_sum) if ($main::verbose >= 0);
 	}
     }
     $self->set_hash_attribute("prefix_sum", %prefix_sum);
@@ -196,7 +205,7 @@ sub calc_from_seq {
     my ($self, $sequence, %args) = @_;
     my $seq_len = length($sequence);
     my $order = $self->get_attribute("order");
-    $sequence = uc($sequence);
+    $sequence = lc($sequence);
     
     if ($args{add}) {
 	&RSAT::message::TimeWarn(join(" ", 
@@ -376,7 +385,7 @@ sub average_strands {
     my %prefixes_2str = ();
     foreach my $prefix ($self->get_attribute("prefixes")) {
 	next if (defined($prefixes_2str{$prefix}));
-	my $prefix_rc = uc(&main::SmartRC($prefix));
+	my $prefix_rc = lc(&main::SmartRC($prefix));
 
 	## Make sure that both the prefix and its reverse complement are indexed
 	$prefixes_2str{$prefix} = 1;
@@ -397,7 +406,7 @@ sub average_strands {
     my %suffixes_2str = ();
     foreach my $suffix ($self->get_attribute("suffixes")) {
 	next if (defined($suffixes_2str{$suffix}));
-	my $suffix_rc = uc(&main::SmartRC($suffix));
+	my $suffix_rc = lc(&main::SmartRC($suffix));
 
 	## Make sure that both the suffix and its reverse complement are indexed
 	$suffixes_2str{$suffix} = 1;
@@ -416,11 +425,11 @@ sub average_strands {
 
     ## Transition matrix
     foreach my $prefix ($self->get_attribute("prefixes")) {
-#	my $prefix_rc = uc(&main::SmartRC($prefix));
+#	my $prefix_rc = lc(&main::SmartRC($prefix));
 #	next if ($prefix_rc ge $prefix);
 	foreach my $suffix ($self->get_attribute("suffixes")) {
 	    my $word = $prefix.$suffix;
-	    my $rc_word = uc(&main::SmartRC($word));
+	    my $rc_word = lc(&main::SmartRC($word));
 	    next if ($rc_word ge $word);
 	    my $rc_prefix = substr($rc_word, 0, $self->{order});
 	    my $rc_suffix = substr($rc_word, $self->{order}, 1);
@@ -464,7 +473,7 @@ sub segment_proba {
 
     my $seq_len = length($segment);
     my $order = $self->get_attribute("order");
-    $segment =  uc($segment);
+    $segment =  lc($segment);
 
     &RSAT::error::FatalError("&RSAT::MarkovModel->segment_proba. The segment ($segment) length ($seq_len) must be larger than the markov order ($order) + 1.") 
 	if ($seq_len < $order + 1);

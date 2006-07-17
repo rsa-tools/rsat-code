@@ -1,12 +1,11 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.23 2006/05/04 04:40:29 jvanheld Exp $
+# $Id: matrix-scan,v 1.24 2006/07/17 10:03:02 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
 ############################################################
-
 ## TO DO
 ## - calcualte and display residue priors for each matrix, according to the background
 
@@ -153,6 +152,7 @@ package main;
 	&RSAT::error::FatalError("You must specify at least one matrix file.");
     }
 
+
     ################################################################
     ### open output stream
     $main::out = &OpenOutputFile($main::outfile{output});
@@ -166,24 +166,26 @@ package main;
     } else {
 	$bg_model->set_attribute("strand", "sensitive");
     }
-
+    
     if ($infile{bg}) {
-	## Read background model from a file
-	&RSAT::message::TimeWarn(join("\t", "Reading background model from file", $infile{bg})) 
-	    if ($main::verbose >= 2);
-	$bg_model->load_from_file($infile{bg});
+      ## Read background model from a file
+      &RSAT::message::TimeWarn(join("\t", "Reading background model from file", $infile{bg})) 
+	if ($main::verbose >= 2);
+      $bg_model->load_from_file($infile{bg});
+      &RSAT::message::Debug($bg_model->to_string()) if ($main::verbose >= 0);
     } elsif ($main::markov >= 0) {
-	$bg_model->set_attribute("order", $main::markov);
-	if (($main::window >= 0) && ($main::window < $main::markov+1)) {
-	    &RSAT::error::FatalError(join("", 
-					  "Window size (",
-					  $main::window,
-					  ") must be larger than Markov order + 1 (",
-					  $main::markov."+1)."));
-	}
+      $bg_model->set_attribute("order", $main::markov);
+      if (($main::window >= 0) && ($main::window < $main::markov+1)) {
+	&RSAT::error::FatalError(join("", 
+				      "Window size (",
+				      $main::window,
+				      ") must be larger than Markov order + 1 (",
+				      $main::markov."+1)."));
+      }
     } else {
-	&RSAT::error::FatalError("you should either define the Markov order (-markov) or specify a file (-bgfile) for the background model.");
+      &RSAT::error::FatalError("You should either define the Markov order (-markov) or specify a file (-bgfile) for the background model.");
     }
+
 
     ################################################################
     ## Read the position-specific scoring matrices
@@ -233,7 +235,7 @@ package main;
 	       (($current_seq ne "") || ($seq_id ne ""))) {
 	    
 	    ## Sequence length
-	    $current_seq = uc($current_seq);
+	    $current_seq = lc($current_seq);
 	    $bg_model->calc_from_seq($current_seq, add=>1);
 	}
 	close $in;
@@ -268,7 +270,7 @@ package main;
        (($current_seq ne "") || ($seq_id ne ""))) {
 
 	## Sequence length
-	$current_seq = uc($current_seq);
+	$current_seq = lc($current_seq);
         $sequence_number++;
         my $seq_len = length($current_seq);
 	$sum_seq_len += $seq_len;
@@ -347,7 +349,7 @@ package main;
     ## Print additional information
 
     ################################################################
-    ## Matrices
+    ## Report the PSSM Matrices
 
     ################################################################
     ## Set prior matrix frequencies from the bg model and calculate
@@ -358,15 +360,14 @@ package main;
     ## This is thus only done with the options -bginput and -bgfiles. 
     my %prior = $bg_model->get_attribute("suffix_proba");
     &RSAT::message::TimeWarn(join("\t", "PRIOR", join(" ", %prior))) if ($main::verbose >= 2);
+
     foreach my $matrix (@matrices) {
-	
 	## Set prior residue frequencies
 	$matrix->setPrior(%prior);
 	&RSAT::message::TimeWarn(join("\t", "Setting matrix priors for matrix", 
 				      $matrix->get_attribute("name"),
 				      join(" ", %prior),
 				     )) if ($main::verbose >= 2);
-	
 	## Calculate min and max weight values
 	my ($Wmin, $Wmax, $Wrange) = $matrix->weight_range();
 	&RSAT::message::TimeWarn(join("\t", "Calculated weight range for matrix", 
