@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.26 2006/07/17 14:29:41 rsat Exp $
+# $Id: matrix-scan,v 1.27 2006/07/17 16:48:06 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -96,6 +96,8 @@ package main;
     $markov = -1; ## To make the distinction with 0, which is a valid value for the markov order
     $window = -1; 
     $bg_input = 0; ## Calculate bg model from the whole set of input sequences
+    $bg_in_format = "oligo-analysis";
+    $bg_out_format = "tab";
     $sequence_number = 0;
     $sum_seq_len = 0;
     $main::base=exp(1); ## Base for the logarithms
@@ -171,8 +173,8 @@ package main;
       ## Read background model from a file
       &RSAT::message::TimeWarn(join("\t", "Reading background model from file", $infile{bg})) 
 	if ($main::verbose >= 2);
-      $bg_model->load_from_file($infile{bg});
-#      &RSAT::message::Debug($bg_model->to_string()) if ($main::verbose >= 0);
+      $bg_model->load_from_file($infile{bg}, $bg_in_format);
+#      &RSAT::message::Debug($bg_model->to_string($bg_out_format)) if ($main::verbose >= 0);
     } elsif ($main::markov >= 0) {
       $bg_model->set_attribute("order", $main::markov);
       if (($main::window >= 0) && ($main::window < $main::markov+1)) {
@@ -228,7 +230,7 @@ package main;
     ## first without scanning, just to calculate the model
     if ($main::bg_input) {
 	unless ($main::infile{input}) {
-	    &RSAT::error::FatalError("The optin -bg_input requires to specify an input file.");
+	    &RSAT::error::FatalError("The option -bg_input requires to specify an input file.");
 	}
 	my ($in, $input_dir) = &OpenInputFile($main::infile{input});
 	while ((($current_seq, $seq_id) = &ReadNextSequence($in, $seq_format, $input_dir, "",$mask)) &&
@@ -438,7 +440,7 @@ package main;
     ## Report background model
     if ($return_fields{bg_model}) {
 	print $out ";\n; Background model\n";
-	print $out $bg_model->to_string(comment_string=>"; ");
+	print $out $bg_model->to_string($bg_out_format, comment_string=>"; ");
     }
      
     ################################################################

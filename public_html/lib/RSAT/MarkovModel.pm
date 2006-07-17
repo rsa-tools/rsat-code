@@ -16,6 +16,11 @@ use RSAT::error;
 @ISA = qw( RSAT::GenericObject );
 
 ### class attributes
+%supported_input_formats = ("oligo-analysis"=>1);
+%supported_output_formats = ("tab"=>1, 
+			     "patser"=>1);
+@supported_input_formats = sort keys %supported_input_formats;
+@supported_output_formats = sort keys %supported_output_formats;
 
 =pod
 
@@ -45,12 +50,71 @@ sub new {
     return $object;
 }
 
+
+
 ################################################################
 =pod
 
-=item B<load_from_file($bg_file)>
+=item B<get_supported_input_formats()>
+
+Return input formats supported by the function load_from_file().
+
+=cut
+sub get_supported_input_formats { 
+    my $class = ref($_[0]) || $_[0];
+    return %{$class."::supported_input_formats"}; 
+}
+
+################################################################
+=pod
+
+=item B<get_supported_output_formats()>
+
+Return output formats supported by the function to_string().
+
+=cut
+sub get_supported_output_formats { 
+    my $class = ref($_[0]) || $_[0];
+    return %{$class."::supported_output_formats"}; 
+}
+
+
+
+
+################################################################
+=pod
+
+=item B<load_from_file($bg_file, $format)>
 
 Load the markov model from a file. 
+
+In order to ensure case-insensivity, Markov models are automatically
+converted to lowercases.
+
+=cut
+sub load_from_file {
+    my ($self, $bg_file, $format) = @_;
+    if ($format eq "oligo-analysis") {
+	$self->load_from_file_oligos($bg_file);
+    } elsif ($format eq "") {
+	&RSAT::error::FatalError(join("\t", "MarkovModel::load_from_file", 
+				      "the format of the backgroun model must be specified"));
+    } else {
+	&RSAT::error::FatalError(join("\t", "MarkovModel::load_from_file", 
+				      $format, "invalid format. Supported:",
+				      join(",", @supported_input_formats)));
+    }
+    
+    $self->normalize_transition_frequencies();
+}
+
+
+################################################################
+=pod
+
+=item B<load_from_file_oligos($bg_file)>
+
+Load the markov model from a result file from oligo-analysis. 
 
 The model file is a tab-delimited text file indicating the expected frequency
 of each word of length m+1, for a model of order m. These files can be
@@ -62,7 +126,7 @@ In order to ensure case-insensivity, Markov models are automatically
 converted to lowercases.
 
 =cut
-sub load_from_file {
+sub load_from_file_oligos {
     my ($self, $bg_file) = @_;
     
 
@@ -71,8 +135,16 @@ sub load_from_file {
     my %patterns = &main::ReadExpectedFrequencies($bg_file) ;
     my @patterns = keys(%patterns);
 
+
+    ## This is a bit tricky: ReadExpectedFrequencies sets a global variable
+    ## $file_type to "2str" if the model is strand-insensitive/
+    if ($main::file_type eq "2str") {
+	$self->force_attribute("strand", "insensitive");
+    }
+
     my $order = length($patterns[0]) -1 ; ## Use the first pattern to calculate model order
     $self->force_attribute("order", $order);
+
 
     ## Calculate alphabet from expected frequency keys
     foreach my $pattern_seq (keys %patterns) {
@@ -92,8 +164,6 @@ sub load_from_file {
     }
     
 #    &RSAT::message::Debug("MARKOV MODEL", $order, join (' ', @patterns)) if ($main::verbose >= 5);
-    
-    $self->normalize_transition_frequencies();
 }
 
 
@@ -306,13 +376,47 @@ sub two_words_update {
 ################################################################
 =pod
 
-=item B<to_string()>
+=item B<to_string($format, %args)>
 
-Return a string describing the transition matrix
+Return a string describing the transition matrix.
+
+Supported formats:
+
+=over
+
+=item tab
+
+tab-delimited format
+
+=item patser
+
+Format supported by the programs patser and consensus, developed by
+Gerald Z. Hertz.
+
+=back
 
 =cut
 
 sub to_string {
+    my ($self, $format, %args) = @_;
+    if ($format eq ("tab")) {
+	$self->to_string_tab(%args);
+    } elsif ($format eq ("patser")) {
+	$self->to_string_patser(%args); 
+    } elsif ($format eq "") {
+	&RSAT::error::FatalError(join("\t", "MarkovModel::to_string()", 
+				      "the format of the backgroun model must be specified"));
+    } else {
+	&RSAT::error::FatalError(join("\t", "MarkovModel::to_string()", 
+				      $format, "invalid output format for a background model. Supported:",
+				      join(",", @supported_output_formats)));
+    }
+}
+
+
+################################################################
+## Export the Markov model in a tab-delimited format.
+sub to_string_tab {
     my ($self, %args) = @_;
     my $string = "";
     my %prefix_proba = $self->get_attribute("prefix_proba");
@@ -362,6 +466,56 @@ sub to_string {
 
 
     return $string;
+}
+
+
+################################################################
+## Export the Markov model in patser format
+## Beware:  patser only supports Bernoulli models !
+## If the Markov order is superior to 0, this function issues a fatal error.
+sub to_string_patser {
+    my ($self, %args) = @_;
+    my $string = "";
+    my @prefix = sort($self->get_attribute("prefixes"));
+    my @suffix = sort($self->get_attribute("suffixes"));
+    
+    ## Check that the model is Bernoulli (Markov order = 0)
+    &RSAT::error::FatalError(join("\t",
+				  "MarkovModel::to_string_patser()",
+				  "The patser format only supports Bernoulli models (Markov order must be 0)"
+				  ))
+	unless ($self->get_attribute("order") == 0);
+    
+    ## The output ormat differs between strand-sensitive and strand-insensitive models
+    my $strand = $self->get_attribute("strand");
+    if ($strand eq "insensitive") {
+	foreach my $prefix (@prefix) {
+ 	    foreach my $suffix (@suffix) {
+		my $suffix_rc = lc(&main::SmartRC($suffix));
+
+		next if ($suffix gt $suffix_rc);
+		if (defined($args{comment_string})) {
+		    $string .= $args{comment_string};
+		}
+		$string .= $suffix.":".$suffix_rc;
+		$string .= sprintf ("\t%.5f\n",$self->{transition_freq}->{$prefix}->{$suffix});
+	    }
+	}
+	
+    } else {
+	foreach my $prefix (@prefix) {
+	    foreach my $suffix (@suffix) {
+		if (defined($args{comment_string})) {
+		    $string .= $args{comment_string};
+		}
+		$string .= $suffix;
+		$string .= sprintf ("\t%.5f\n",$self->{transition_freq}->{$prefix}->{$suffix});
+	    }
+	}
+	
+    }
+    return $string;
+
 }
 
 
