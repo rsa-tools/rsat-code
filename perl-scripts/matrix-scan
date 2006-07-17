@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.25 2006/07/17 11:19:49 jvanheld Exp $
+# $Id: matrix-scan,v 1.26 2006/07/17 14:29:41 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -956,6 +956,13 @@ sub score_segment {
 
 	if ($return_fields{normw}) {
 	    $normW = sprintf("%6.4f", ($score - $matrix->{'Wmin'})/($matrix->{'Wrange'}));
+	}
+    } elsif ($proba_M == 0) {
+	if ($proba_B > 0) {
+	    $score = "-Inf";
+	    if ($return_fields{normw}) {
+		$normW = 0;
+	    }
 	}
     }
 
