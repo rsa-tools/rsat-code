@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.24 2006/07/17 10:03:02 jvanheld Exp $
+# $Id: matrix-scan,v 1.25 2006/07/17 11:19:49 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -172,7 +172,7 @@ package main;
       &RSAT::message::TimeWarn(join("\t", "Reading background model from file", $infile{bg})) 
 	if ($main::verbose >= 2);
       $bg_model->load_from_file($infile{bg});
-      &RSAT::message::Debug($bg_model->to_string()) if ($main::verbose >= 0);
+#      &RSAT::message::Debug($bg_model->to_string()) if ($main::verbose >= 0);
     } elsif ($main::markov >= 0) {
       $bg_model->set_attribute("order", $main::markov);
       if (($main::window >= 0) && ($main::window < $main::markov+1)) {
