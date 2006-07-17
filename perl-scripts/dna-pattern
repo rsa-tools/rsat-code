@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: dna-pattern,v 1.47 2006/06/13 10:22:08 oly Exp $
+# $Id: dna-pattern,v 1.48 2006/07/17 14:07:27 rsat Exp $
 #
 # Time-stamp: <2003-08-13 12:16:03 jvanheld>
 #
@@ -682,6 +682,8 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] =~ /^-ori/) {
 	    $origin = $ARGV[$a+1];
 	    
+
+	    ## Report sequence limits
 	} elsif ($ARGV[$a] =~ /^-limit/) {
 	    $limits = 1;
 	    
