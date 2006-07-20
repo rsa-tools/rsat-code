@@ -1,6 +1,6 @@
 #!/usr/bin/perl 
 #############################################################
-# $Id: parse-genbank.pl,v 1.39 2006/04/25 06:05:51 rsat Exp $
+# $Id: parse-genbank.pl,v 1.40 2006/07/20 23:02:11 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -632,7 +632,7 @@ sub ExportProteinSequences {
 
 
 ################################################################
-##
+## Export masked sequences
 sub ExportMaskedSequences {
     chdir $dir{sequences};
     foreach my $contig ($contigs->get_objects()) {

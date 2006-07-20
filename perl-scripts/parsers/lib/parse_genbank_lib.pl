@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank_lib.pl,v 1.26 2006/04/21 14:05:45 rsat Exp $
+# $Id: parse_genbank_lib.pl,v 1.27 2006/07/20 23:02:11 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -696,17 +696,16 @@ considered as a synonym (this is of course not optimal)
 For some genomes, additional identifiers/synonyms have specific
 formats (synonyms, locus_tag, Accession, ...).
 
-=cut 
-
+=cut
 sub ParseFeatureNames {
     my (@class_holders) = @_;
-    
+
     foreach my $class_holder (@class_holders) {
 	&RSAT::message::TimeWarn("Parsing feature names for class", $class_holder->get_object_type())
 	    if ($verbose >= 1);
 
 	foreach my $feature ($class_holder->get_objects()) {
-	    
+
 	    ################################################################
 	    ## Attribute "synonym" (e.g. C.elegans genome version July 2003)
 	    foreach my $synonym_line ($feature->get_attribute("synonym")) {
@@ -757,7 +756,7 @@ sub ParseFeatureNames {
 	    foreach my $note (@notes) {
 		$note = &trim($note); ### remove leading and trailing spaces
 		warn "NOTE\t'$note'\n" if ($verbose >= 4);
-		
+
 		if ($note =~ /synonyms:/) {
 		    ## For some genomes there is a note of type 'synonyms:' (e.g. Saccharomyces cerevisiae),
 		    my $synonyms = $'; ##'
@@ -1079,22 +1078,21 @@ sub CreateGenbankFeatures {
 	    $created_feature->push_attribute("locus_tags", $locus_tag); 
 	    $created_feature->push_attribute("names", $locus_tag); 
 	}
-	
-	
+
 	################################################################
 	#### Define a single name  (take the first value in the name list)
 	$single_name = 1;
 	if ($single_name) {
-	    my ($name) = $created_feature->get_attribute("names"); ## Use first name as primary
-	    if ($name) {
-		$created_feature->force_attribute("name",$name);
-	    } else {
-		$created_feature->force_attribute("name",$created_feature->get_attribute("id"));
-	    }
-	    &RSAT::message::Debug ("\t", "feature",		   
-		       $created_feature->get_attribute("id"),
-		       "single name", $name,, 
-		       ), "\n" if ($verbose >= 5);
+	  my ($name) = $created_feature->get_attribute("names"); ## Use first name as primary
+	  if ($name) {
+	    $created_feature->force_attribute("name",$name);
+	  } else {
+	    $created_feature->force_attribute("name",$created_feature->get_attribute("id"));
+	  }
+	  &RSAT::message::Debug ("\t", "feature",
+				 $created_feature->get_attribute("id"),
+				 "single name", $name,, 
+				), "\n" if ($verbose >= 5);
 	}
 
 	################################################################
@@ -1149,7 +1147,7 @@ sub CreateGenbankFeatures {
 		    }
 		}
 	    }
-	
+
 	################################################################
 	#### transcript ID (for mRNA)
 	} elsif ($parent_feature->get_attribute("type") eq "mRNA") {
@@ -1170,10 +1168,7 @@ sub CreateGenbankFeatures {
 		}
 	    }
 	}
-
-	
     }
-
 }
 
 ################################################################
