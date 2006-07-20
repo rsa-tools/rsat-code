@@ -151,7 +151,6 @@ sub check_name {
 
 =item OpenContigs
 
-
 Check if an organism is supported on the current installation,
 and open streams to read its genome sequence.
 
@@ -164,6 +163,7 @@ Usage:
                               $annotation_table, 
                               $input_sequence_file,  
                               $input_sequence_format);
+
 =cut
 sub OpenContigs {
     my ($self, 
@@ -381,213 +381,237 @@ Usage: &LoadFeatures($annotation_table, $feature_types)
 
 @param $annotation_table  name of the file containing the annotations
 @param $feature_types     
+@param $imp_pos accept to load imperfectly specified positions
 
 The features are embedded in the organism object, and indexed by contig.
 
 =cut
 sub LoadFeatures {
-    my ($self, 
-	$annotation_table,
-	$feature_types,
-	$imp_pos)= @_;
+  my ($self, 
+      $annotation_table,
+#      $feature_types,
+      $imp_pos)= @_;
 
-    ## Organism name
-    my $organism_name = $self->get_attribute("name");
-    my %contig = $self->get_contigs();
-    my $name_index = $self->get_attribute("name_index");
+  ## Organism name
+  my $organism_name = $self->get_attribute("name");
+  my %contig = $self->get_contigs();
+  my $name_index = $self->get_attribute("name_index");
 
-    ## Annotation table
-    unless ($annotation_table) {
-	$annotation_table = $main::supported_organism{$organism_name}->{'features'};
-	$self->set_attribute("annotation_table", $annotation_table);
+  ## Parse feature types
+#  my @feature_types = ();
+#  my %accepted_feature_types = ();
+#  if ($feature_types) {
+#    @feature_types = split ",", $feature_types;
+#  } else {
+#    @feature_types = qw (cds);
+#  }
+  my @feature_types = $self->get_attribute("feature_types");
+  if (scalar(@feature_types) < 1) {
+    @feature_types = qw (cds);
+  }
+
+  foreach my $feature_type (@feature_types) {
+    warn join ("\t", ";", "accepting feature type", $feature_type), "\n" if ($main::verbose >= 10);
+    $accepted_feature_types{$feature_type}++;
+  }
+  warn join ("\t", "; Accepted feature types", 
+	     join( ",", keys %accepted_feature_types)), "\n" 
+	       if ($main::verbose >= 2);
+    
+  ## Annotation table
+  if ($annotation_table) {
+    $self->push_attribute("annotation_tables", $annotation_table);
+  } else {
+    #	$annotation_table = $main::supported_organism{$organism_name}->{'features'};
+    foreach my $type (@feature_types) {
+      $annotation_table = join("", $main::supported_organism{$organism_name}->{'data'}, "/genome/", $type, ".tab");
+      $self->push_attribute("annotation_tables", $annotation_table);
     }
+  }
+
+  foreach my $annotation_table ($self->get_attribute("annotation_tables")) {
 
     &RSAT::message::Info(join ("\t", 
 			       &RSAT::util::AlphaDate(),
 			       "Loading annotation table",
 			       $self->get_attribute("name"),
-			       $annotation_table,
-			       $feature_types)
+			       $annotation_table)
 			) if ($main::verbose >= 2);
-    
-    ## Parse feature types
-    my @feature_types = ();
-    my %accepted_feature_types = ();
-    if ($feature_types) {
-	@feature_types = split ",", $feature_types;
-    } else {
-  	@feature_types = qw (cds);
-    }
-    foreach my $feature_type (@feature_types) {
-	warn join ("\t", ";", "accepting feature type", $feature_type), "\n" if ($main::verbose >= 10);
-  	$accepted_feature_types{$feature_type}++;
-    }
-    warn join ("\t", "; Accepted feature types", 
-	       join( ",", keys %accepted_feature_types)), "\n" 
-	if ($main::verbose >= 2);
-    
-    ## Annotation table
-    unless ($annotation_table) {
-	$annotation_table = $supported_organism{$organism_name}->{'features'};
-    }
-    &RSAT::message::Info(join("\t", "Annotation table", $annotation_table)) if ($main::verbose >= 2);
-
-    $col{'id'} = 0;
-    $col{'type'} = 1;
-    $col{'name'} = 2;
-    $col{'ctg'} = 3;
-    $col{'left'} = 4;
-    $col{'right'} = 5;
-    $col{'strand'} = 6;
-    $col{'descr'} = 7;
-    $col{'location'} = 8;
-
+      
+    ## Default column order for genomic features
+    ## Note that this order can be redefined by the header of the
+    ## annotation table (see below)
+    my %col = ();
+#     $col{'id'} = 0;
+#     $col{'type'} = 1;
+#     $col{'name'} = 2;
+#     $col{'ctg'} = 3;
+#     $col{'left'} = 4;
+#     $col{'right'} = 5;
+#     $col{'strand'} = 6;
+#     $col{'descr'} = 7;
+#     $col{'location'} = 8;
+      
     ### Read feature positions (genome annotations)
     my ($annot, $annot_dir) = &main::OpenInputFile($annotation_table);
-#    my ($annot, $annot_dir) = $self->OpenInputFile($annotation_table);
-    my $linenb = 0;
     my %type = ();
- #   &RSAT::message::Debug($annot, $annot_dir) if ($main::verbose >= 10);
-    while (<$annot>) {
-	$linenb++;
-#	warn join ("\t", $linenb, $_) if ($main::verbose >= 10);
-	next unless (/\S/);
-	next if ((/^;/) || (/^\#/) || (/^--/));
-	next if (/^--/);
-	chomp();
-
-	## Split the columns of the input row
-	my @fields = split "\t";
-	foreach $f (keys %col) {
-	    $$f = $fields[$col{$f}];
+    my $linenb = 0;
+    while (my $line = <$annot>) {
+      $linenb++;
+      chomp($line);
+      next unless ($line =~ /\S/);
+      if ($line =~ /^\-\-/) {
+	## Internal colunm specification in tables resulting from RSAT parsers
+	if ($line =~ /^-- field (\d+)\t(\S+)/) {
+	  my $field_column = $1;
+	  my $field = lc($2);
+	  ## Convert field names
+	  $field =~ s/contig/ctg/;
+	  $field =~ s/start_pos/left/;
+	  $field =~ s/end_pos/right/;
+	  $field =~ s/description/descr/;
+	  $field =~ s/chrom_position/location/;
+	  $col{$field} = $field_column - 1;
+	  &RSAT::message::Info(join("\t", "Column specification", $field_column, $field)) if ($main::verbose >= 3);
 	}
+	next;
+      }
+      next if (($line =~ /^;/) || ($line =~ /^\#/));
 
-	## Check if the type of this feature is accepted
-	unless ($accepted_feature_types{lc($type)}) {
-	    &RSAT::message::Info(join( "\t","skipping feature", $id, "Non-selected feature type",$type)) 
-		if ($main::verbose >= 10);
-	    next;
-	}
+      ## Split the columns of the input row
+      my @fields = split "\t", $line;
+      foreach $f (keys %col) {
+	$$f = $fields[$col{$f}];
+#	&RSAT::message::Debug("field",$f, $$f, "column", $col{$f}) if ($main::verbose >= 0);
+      }
 	
-	################################################################
-	#### check mandatory attributes
-
-	## Check ID
-	unless ($id) {
-	    &RSAT::message::Warning("invalid orf identifier specification in the feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 3);
-	    next;
-	}
+      ## Check if the type of this feature is accepted
+      unless ($accepted_feature_types{lc($type)}) {
+	&RSAT::message::Info(join( "\t","skipping feature", $id, "Non-selected feature type",$type))
+	  if ($main::verbose >= 3);
+	next;
+      }
 	
-	## Check contig
-	unless ($ctg) {
-	    &RSAT::message::Warning("invalid contig specification in the feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 3);
-	    next;
-	}
-
-	## Check left
-	unless ($left) {
-	    &RSAT::message::Warning("left position not specified in the feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 3);
-	    next;
-	}
-	unless (&RSAT::util::IsNatural($left) ) {
-	    if ($imp_pos) {
-		&RSAT::message::Warning("imprecise specification of the left position for gene $id\n;\t",join "\t", @fields) if ($main::verbose >= 2);
-		$left =~ s/\>//;
-		$left =~ s/\<//;
-	    } else {
-		&RSAT::message::Warning("invalid left position specification in the feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 3);
-		next;
-	    }
-	}
-
-	## Check right
-	unless ($right) {
-	    &RSAT::message::Warning("Right position not specified in the feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 3);
-	    next;
-	}
-	unless (&RSAT::util::IsNatural($right) ) {
-	    if ($imp_pos) {
-		&RSAT::message::Warning("imprecise specification of the right position for gene $id\n;\t",join "\t", @fields) if ($main::verbose >= 2);
-		$right =~ s/\>//;
-		$right =~ s/\<//;
-	    } else {
-		&RSAT::message::Warning("invalid right position specification in the feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 3);
-		next;
-	    }
-	}
-
-	unless ($left < $right) {
-	    &RSAT::message::Warning("left should be smaller than right position specification in in  feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 3);
-	    next;
-	}
-
-	## Check strand
-	unless ($strand) {
-	    &RSAT::message::Warning("invalid strand specification in the feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 3);
-	    next;
-	}
+      ################################################################
+      #### check mandatory attributes
 	
-	#### make sure the strand format is correct
-	$strand = &RSAT::util::ConvertStrand($strand);
+      ## Check ID
+      unless ($id) {
+	&RSAT::message::Warning("invalid orf identifier specification in the feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 3);
+	next;
+      }
 	
-	### Create a new genomic feature
-	my $feature = new RSAT::GenomeFeature();
-	foreach $f (keys %col) {
-	    $feature->set_attribute($f, $$f);
+      ## Check contig
+      unless ($ctg) {
+	&RSAT::message::Warning("invalid contig specification in the feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 3);
+	next;
+      }
+	
+      ## Check left
+      unless ($left) {
+	&RSAT::message::Warning("left position not specified in the feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 3);
+	next;
+      }
+      unless (&RSAT::util::IsNatural($left) ) {
+	if ($imp_pos) {
+	  &RSAT::message::Warning("imprecise specification of the left position for gene $id\n;\t",join "\t", @fields) if ($main::verbose >= 2);
+	  $left =~ s/\>//;
+	  $left =~ s/\<//;
+	} else {
+	  &RSAT::message::Warning("invalid left position specification in the feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 3);
+	  next;
 	}
-	$self->push_attribute("features", $feature);
-
-	## Accept ID as name
-	$feature->push_attribute("names", $id);
-	if ($name ne $id) {
-	    $feature->push_attribute("names", $name);
+      }
+	
+      ## Check right
+      unless ($right) {
+	&RSAT::message::Warning("Right position not specified in the feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 3);
+	next;
+      }
+      unless (&RSAT::util::IsNatural($right) ) {
+	if ($imp_pos) {
+	  &RSAT::message::Warning("imprecise specification of the right position for gene $id\n;\t",join "\t", @fields) if ($main::verbose >= 2);
+	  $right =~ s/\>//;
+	  $right =~ s/\<//;
+	} else {
+	  &RSAT::message::Warning("invalid right position specification in the feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 3);
+	  next;
 	}
-	$feature->force_attribute("name", $id) unless ($name);
-
- 	$type{$id} = $type; ## For the loading statistics
-
-	################################################################
-	## Index genome features by names and ID
-	## The key is the name, the value is the RSAT::GenomeFeature object
-	## The key is converted to uppercases to allow case-insensitive searches
-	my $null = "<NULL>";
-	$name_index->add_value(uc($name), $feature) if (($name) && ($name ne $null)) ;
-	$name_index->add_value(uc($id), $feature) if (($id) && ($id ne $null)) ;
-
-
-	## Add the new GenomeFeature to the contig
-	unless (defined($contig{$ctg})) {
-	    &RSAT::message::Info(join("\t", "Creating new contig", $ctg)) if ($main::verbose >= 3);
-	    $contig{$ctg} = new RSAT::contig(id=>$ctg);
-	    $contig{$ctg}->set_organism($organism_name);
-	}
-	$contig{$ctg}->add_gene($feature);
-	&RSAT::message::Debug($id, $ctg, $strand, $left, $right, $descr{$id}, $contig{$ctg}->count_genes()) if ($main::verbose >= 10);
+      }
+	
+      unless ($left < $right) {
+	&RSAT::message::Warning("left should be smaller than right position specification in in  feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 3);
+	next;
+      }
+	
+      ## Check strand
+      unless ($strand) {
+	&RSAT::message::Warning("invalid strand specification in the feature table line $linenb\n;\t",join "\t", @fields) if ($main::verbose >= 3);
+	next;
+      }
+	
+      #### make sure the strand format is correct
+      $strand = &RSAT::util::ConvertStrand($strand);
+	
+      ### Create a new genomic feature
+      my $feature = new RSAT::GenomeFeature();
+      foreach $f (keys %col) {
+	$feature->set_attribute($f, $$f);
+      }
+      $self->push_attribute("features", $feature);
+	
+      ## Accept ID as name
+      $feature->push_attribute("names", $id);
+      if ($name ne $id) {
+	$feature->push_attribute("names", $name);
+      }
+      if (($name eq "<NULL>") || ($name eq "")) {
+	$feature->force_attribute("name", $id);
+      }
+      $type{$id} = $type;	## For the loading statistics
+	
+      ################################################################
+      ## Index genome features by names and ID
+      ## The key is the name, the value is the RSAT::GenomeFeature object
+      ## The key is converted to uppercases to allow case-insensitive searches
+      my $null = "<NULL>";
+      $name_index->add_value(uc($name), $feature) if (($name) && ($name ne $null)) ;
+      $name_index->add_value(uc($id), $feature) if (($id) && ($id ne $null)) ;
+	
+	
+      ## Add the new GenomeFeature to the contig
+      unless (defined($contig{$ctg})) {
+	&RSAT::message::Info(join("\t", "Creating new contig", $ctg)) if ($main::verbose >= 3);
+	$contig{$ctg} = new RSAT::contig(id=>$ctg);
+	$contig{$ctg}->set_organism($organism_name);
+      }
+      $contig{$ctg}->add_gene($feature);
+      #	&RSAT::message::Debug($id, $ctg, $strand, $left, $right, $descr{$id}, $contig{$ctg}->count_genes()) if ($main::verbose >= 10);
     }
     close $annot if ($annotation_table);
-    
-    ## Check the number of features
-    if (scalar($self->get_attribute("features")) < 1) {
-	&RSAT::message::Warning("There is no annotated feature of type ".$feature_types." in the genome of ".$organism_name);
-    } elsif ($main::verbose >= 2) {
-	## Print stats on the features
-	&RSAT::message::Info(join ("\t", 
-				   "Loaded", 
-				   scalar($self->get_attribute("features")), 
-				   "features for organism", 
-				   $self->get_attribute("name"),
-				  ));
-	my %stats = ();
-	foreach my $id (keys %type) {
-	    $stats{$type{$id}}++;
-	}
-	foreach my $type (sort keys %stats) {
-	    &RSAT::message::Info(join ("\t", "", $stats{$type}, $type));
-	}
+  }
+      
+  ## Check the number of features
+  if (scalar($self->get_attribute("features")) < 1) {
+    &RSAT::message::Warning("There is no annotated feature of type ".$feature_types." in the genome of ".$organism_name);
+  } elsif ($main::verbose >= 2) {
+    ## Print stats on the features
+    &RSAT::message::Info(join ("\t", 
+			       "Loaded", 
+			       scalar($self->get_attribute("features")), 
+			       "features for organism", 
+			       $self->get_attribute("name"),
+			      ));
+    my %stats = ();
+    foreach my $id (keys %type) {
+      $stats{$type{$id}}++;
     }
-    
-#    my %test = $self->get_attribute("feature_id");
-#    &RSAT::message::Debug("Feature keys", scalar(keys(%test))) if ($main::verbose >= 10);
+    foreach my $type (sort keys %stats) {
+      &RSAT::message::Info(join ("\t", "", $stats{$type}, $type));
+    }
+  }
+  #    my %test = $self->get_attribute("feature_id");
+  #    &RSAT::message::Debug("Feature keys", scalar(keys(%test))) if ($main::verbose >= 10);
 }
 
 
@@ -616,7 +640,6 @@ sub CalcNeighbourLimits {
 	&RSAT::message::Info(join ("\t", "Features per contig", $ctg, scalar(@genes))) if ($main::verbose >= 2);
 	@ctg_lefts = sort {$a <=> $b} @left{@genes};
 	@ctg_rights = sort {$a <=> $b} @right{@genes};
-	
 
 	for my $g (0..$#genes) {
 	    my $gene = $genes[$g];
@@ -624,17 +647,31 @@ sub CalcNeighbourLimits {
 	    my $rn = $g +1; ### first guess for right neighbour
 	    my $found = 0;
 
-	    #### Calculate intergenic limit on the left side of the gene 
-	    #### Treat the case of completely overlapping genes	   	    
+	    
+
+	    #### Calculate intergenic limit on the left side of the gene
+	    #### Treat the case of completely overlapping genes
 	    do {
-		if (($ctg_rights[$ln] > $left{$gene}) && ($ctg_lefts[$ln] > $left{$gene})) {
-		    ## gene completely embedded in the gene
-		    $ln--;
-		} elsif ($ctg_rights[$ln+1] < $left{$gene}) {
-		    $ln++;
-		} else {
-		    $found = 1;
-		}
+	      &RSAT::message::Debug("gene",  $g, $gene, $gene->get_attribute("geneid"), 
+				    "candidate left neighbour", $ln, $genes[$ln], $genes[$ln]->get_attribute("geneid")) if ($main::verbose >= 0);
+	      
+	      if ($gene->get_attribute("geneid") eq $genes[$ln]->get_attribute("geneid")) {
+		## Skip the features having the same GeneID as the
+		## current feature (e.g. multiple mRNA for a same
+		## gene, due to the presence of alternative
+		## transcription start site (TSS).
+		$ln--;
+
+	      } elsif (($ctg_rights[$ln] > $left{$gene}) && ($ctg_lefts[$ln] > $left{$gene})) {
+		## candidate left neighour gene is completely embedded in current gene -> select the next left candidate
+		$ln--;
+
+	      } elsif ($ctg_rights[$ln+1] < $left{$gene}) {
+		$ln++;
+
+	      } else {
+		$found = 1;
+	      }
 	    } until (($found) || ($ln < 0) || ($ln > $#ctg_rights));
 
 	    if ($found) {
@@ -741,35 +778,49 @@ Usage : $organism->LoadSynonyms();
 
 =cut
 sub LoadSynonyms {  
-    my ($self) = @_;
-    my $organism_name = $self->get_attribute("name");
-    my $name_index = $self->get_attribute("name_index");
-    my $synonym_file = $main::supported_organism{$organism_name}->{'synonyms'};
-    unless ($synonym_file) {
-	&RSAT::message::Warning(join "\t", "no synonym table for organism",$organism_name) 
-	    if ($main::verbose >= 1);
-	return;
-    }
+  my ($self) = @_;
+  my $organism_name = $self->get_attribute("name");
+  my $name_index = $self->get_attribute("name_index");
+  
+  
+  ## Annotation table
+  my @feature_types = $self->get_attribute("feature_types");
+  if (scalar(@feature_types) < 1) {
+    @feature_types = qw (cds);
+  }
+  foreach my $type (@feature_types) {
+    $synonym_file = join("", $main::supported_organism{$organism_name}->{'data'}, "/genome/", $type, "_names.tab");
+    $self->push_attribute("synonym_files", $synonym_file);
+  }
+  
+  foreach my $synonym_file ($self->get_attribute("synonym_files")) {
     
+    #    my $synonym_file = $main::supported_organism{$organism_name}->{'synonyms'};
+#    unless ($synonym_file) {
+      #	&RSAT::message::Warning(join "\t", "no synonym table for organism",$organism_name) 
+      #	  if ($main::verbose >= 1);
+      #	return;
+      #      }
+      
     my ($syn) = &RSAT::util::OpenInputFile( $synonym_file);
-    while(<$syn>) {
-	next if ((/^;/) || (/^\#/) || (/^--/)); ## skip comment lines
-	next unless (/\S/); ## skip empty lines
-	chomp();
-	my @fields = split "\t";
-	my $id = uc($fields[0]);
-	my $name = $fields[1];
-	my $feature = $self->get_feature_for_name($id);
-	if ($feature) {
-	    $feature->push_attribute("names", $name);
-	    $name_index->add_value(uc($name), $feature);
-#	    &RSAT::message::Debug(join ("\t", "Added synonym", $id, $name)) if ($main::verbose >= 0);
+    while (<$syn>) {
+      next if ((/^;/) || (/^\#/) || (/^--/)); ## skip comment lines
+      next unless (/\S/);			## skip empty lines
+      chomp();
+      my @fields = split "\t";
+      my $id = uc($fields[0]);
+      my $name = $fields[1];
+      my $feature = $self->get_feature_for_name($id);
+      if ($feature) {
+	$feature->push_attribute("names", $name);
+	$name_index->add_value(uc($name), $feature);
+	#	    &RSAT::message::Debug(join ("\t", "Added synonym", $id, $name)) if ($main::verbose >= 0);
 	} else {
-	    &RSAT::message::Debug(join ("\t", "Cannot add synonym", "no feature with ID", $id)) if ($main::verbose >= 4);
+	  &RSAT::message::Warning(join ("\t", "Cannot add synonym", "no feature with ID", $id)) if ($main::verbose >= 4);
 	}
     }
     close $syn if ($synonym_file);
-
+  }
 }
 
 
