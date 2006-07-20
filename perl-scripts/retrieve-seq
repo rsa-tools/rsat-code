@@ -1,9 +1,8 @@
 #!/usr/bin/perl
 
-
 ############################################################
 #
-# $Id: retrieve-seq,v 1.45 2006/06/10 22:21:58 jvanheld Exp $
+# $Id: retrieve-seq,v 1.46 2006/07/20 23:01:03 jvanheld Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -54,12 +53,6 @@ if (scalar(@label_fields) <= 0) {
     @label_fields = "name";
 } 
 
-#### accepted feature types
-unless (defined %accepted_feature_types) {
-    $accepted_feature_types{cds} = 1;
-}
-$feature_types = join ",", keys (%accepted_feature_types);
-
 
 ################################################################
 ## Instantiate organism
@@ -75,11 +68,22 @@ if ($organism_name) {
 }
 $organism->set_attribute("name", $organism_name);
 
-#### Specify the file containing genome annotations
-unless ($annotation_table) {
-    $annotation_table = $supported_organism{$organism_name}->{'features'};
+#### accepted feature types
+unless (defined %accepted_feature_types) {
+    $accepted_feature_types{cds} = 1;
 }
+#$feature_types = join ",", keys (%accepted_feature_types);
+foreach my $feature_type (sort keys %accepted_feature_types) {
+  $organism->push_attribute("feature_types", $feature_type);
+}
+
+#### Specify the file containing genome annotations
+if ($annotation_table) {
 $organism->set_attribute("annotation_table", $annotation_table);
+# } else {
+#   $annotation_table = $supported_organism{$organism_name}->{'features'};
+#   $organism->set_attribute("annotation_table", $annotation_table);
+}
 
 ################################################################
 #### Specify the input sequence file
@@ -163,19 +167,19 @@ if ($sequence_type eq "random fragments") {
 	if ($verbose >= 2);
     
 } else {
-    ### read feature attributes (position, description, ...)
-    $organism->LoadFeatures($annotation_table, $feature_types, $imp_pos);
-#    &ReadFeatures($organism_name, $annotation_table, $feature_types);
-
-    #### read synonyms
-    unless (($return_all) || ($ids_only)) {
-	$organism->LoadSynonyms();
-    }
+  ### read feature attributes (position, description, ...)
+  $organism->LoadFeatures($annotation_table, $imp_pos);
+  #    $organism->LoadFeatures($annotation_table, $feature_types, $imp_pos);
+  
+  #### read synonyms
+  unless (($return_all) || ($ids_only)) {
+    $organism->LoadSynonyms();
+  }
 }
 
 #### no overlapping with upstream orfs
 if ($noorf) {
-    warn "; ", &AlphaDate(), "\tCalculating neighbour ORF limits\n" if ($verbose >= 1);
+    &RSAT::message::TimeWarn("Calculating neighbour ORF limits") if ($verbose >= 1);
     $organism->CalcNeighbourLimits();
 }
 
@@ -914,7 +918,7 @@ sub Verbose {
     &PrintArguments($out);
     printf $out "; %-14s\t%s\n", "organism", $organism_name;
     printf $out "; %-14s\t%s\n", "sequence type", $sequence_type;
-    printf $out "; %-14s\t%s\n", "feature type", $feature_types;
+    printf $out "; %-14s\t%s\n", "feature type", join ",", $organism->get_attribute("feature_types");
     if ($input_sequence_file) {
 	printf $out "; %-14s\t%s\n", "input sequence file", $input_sequence_file;
 	printf $out "; %-14s\t%s\n", "input sequence format", $input_sequence_format;
