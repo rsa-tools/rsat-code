@@ -44,7 +44,7 @@ foreach my $type (@types) {
 $organism = new RSAT::organism();
 $organism->check_name($organism_name);
 $organism->set_attribute("name", $organism_name);
-$organism->LoadFeatures($annotation_table, $feature_types);
+$organism->LoadFeatures($annotation_table);
 $organism->LoadSynonyms();
 
 

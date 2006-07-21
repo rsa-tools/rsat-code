@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: random-genes,v 1.13 2006/02/03 15:37:20 jvanheld Exp $
+# $Id: random-genes,v 1.14 2006/07/21 02:20:36 jvanheld Exp $
 #
 # Time-stamp: <2003-09-10 23:21:27 jvanheld>
 #
@@ -14,6 +14,9 @@ if ($0 =~ /([^(\/)]+)$/) {
 require "RSA.lib";
 require "RSA.help.pl";
 require RSAT::organism;
+
+
+package main;
 
 #### initialise parameters 
 my $start_time = &AlphaDate();
@@ -30,6 +33,7 @@ local $groups = 1; #### number of gene families to return
 local @families = ();
 local %family_count = ();
 local $pairs = 0;
+local %accepted_feature_types = ();
 
 &ReadArguments();
 
@@ -37,11 +41,6 @@ local $pairs = 0;
 ################################################################
 #### check argument values 
 
-#### accepted feature types
-unless (defined %accepted_feature_types) {
-    $accepted_feature_types{cds} = 1;
-}
-$feature_types = join ",", keys (%accepted_feature_types);
 
 ## Organism
 unless ($organism_name) {
@@ -49,10 +48,12 @@ unless ($organism_name) {
 }
 
 $organism = new RSAT::organism();
+$organism->DefineAcceptedFeatureTypes(sort keys %accepted_feature_types);
+&RSAT::message::Debug($organism->get_attribute("feature_types")) if ($main::verbose >= 0);
 $organism->check_name($organism_name);
 $organism->set_attribute("name", $organism_name);
 $organism->OpenContigs($organism_name);
-$organism->LoadFeatures($annotation_table, $feature_types);
+$organism->LoadFeatures($annotation_table);
 
 ### open output file ###
 $out = &OpenOutputFile($outfile{output});

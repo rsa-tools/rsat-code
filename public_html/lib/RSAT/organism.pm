@@ -369,6 +369,29 @@ sub index_attribute_by_feature {
     return %index;
 }
 
+################################################################
+=pod
+
+=item DefineAcceptedFeatureTypes(@accepted_feature_types)
+
+Define the accepted feature types.
+If the parameter @accepted_feature_table is empty, the default feature type is set to cds.
+
+=cut
+sub DefineAcceptedFeatureTypes {
+  my ($self, @accepted_feature_types) = @_;
+
+  unless (scalar(@accepted_feature_types) > 0) {
+    @accepted_feature_types = 'cds';
+  }
+  
+
+  foreach my $feature_type (@accepted_feature_types) {
+    &RSAT::message::Info(join("\t", "Adding feature type", $feature_type)) if ($main::verbose >= 0);
+    $self->push_attribute("feature_types", $feature_type);
+  }
+}
+
 
 ################################################################
 =pod
@@ -387,7 +410,7 @@ The features are embedded in the organism object, and indexed by contig.
 
 =cut
 sub LoadFeatures {
-  my ($self, 
+  my ($self,
       $annotation_table,
 #      $feature_types,
       $imp_pos)= @_;
@@ -652,19 +675,30 @@ sub CalcNeighbourLimits {
 	    #### Calculate intergenic limit on the left side of the gene
 	    #### Treat the case of completely overlapping genes
 	    do {
-	      &RSAT::message::Debug("gene",  $g, $gene, $gene->get_attribute("geneid"), 
-				    "candidate left neighbour", $ln, $genes[$ln], $genes[$ln]->get_attribute("geneid")) if ($main::verbose >= 0);
+	      &RSAT::message::Debug("gene",  $g, $gene, $gene->get_attribute("geneid"), $gene->get_attribute("name"), 
+				    "candidate left neighbour", $ln, $genes[$ln], $genes[$ln]->get_attribute("geneid"), $genes[$ln]->get_attribute("name")
+				   ) if ($main::verbose >= 10);
 	      
-	      if ($gene->get_attribute("geneid") eq $genes[$ln]->get_attribute("geneid")) {
+	      if ($ln < 0) {
+		#		last;
+		
+	      } elsif ($gene->get_attribute("geneid") eq $genes[$ln]->get_attribute("geneid")) {
 		## Skip the features having the same GeneID as the
 		## current feature (e.g. multiple mRNA for a same
 		## gene, due to the presence of alternative
 		## transcription start site (TSS).
 		$ln--;
+		die "HELLO";
+		&RSAT::message::Debug("genomic feature", $ln, $genes[$ln], $genes[$ln]->get_attribute("geneid"), $genes[$ln]->get_attribute("name"),
+				      "has same GeneID as genomic feature", $g, $gene, $gene->get_attribute("geneid"), $gene->get_attribute("name"),
+				     ) if ($main::verbose >= 0);
 
 	      } elsif (($ctg_rights[$ln] > $left{$gene}) && ($ctg_lefts[$ln] > $left{$gene})) {
 		## candidate left neighour gene is completely embedded in current gene -> select the next left candidate
 		$ln--;
+		&RSAT::message::Debug("genomic feature", $ln, $genes[$ln], $genes[$ln]->get_attribute("geneid"), $genes[$ln]->get_attribute("name"),
+				      "is embedded in genomic feature", $g, $gene, $gene->get_attribute("geneid"), $gene->get_attribute("name"),
+				     ) if ($main::verbose >= 0);
 
 	      } elsif ($ctg_rights[$ln+1] < $left{$gene}) {
 		$ln++;
