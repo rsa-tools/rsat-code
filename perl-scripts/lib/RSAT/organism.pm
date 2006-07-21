@@ -387,7 +387,7 @@ sub DefineAcceptedFeatureTypes {
   
 
   foreach my $feature_type (@accepted_feature_types) {
-    &RSAT::message::Info(join("\t", "Adding feature type", $feature_type)) if ($main::verbose >= 0);
+    &RSAT::message::Info(join("\t", "Adding feature type", $feature_type)) if ($main::verbose >= 3);
     $self->push_attribute("feature_types", $feature_type);
   }
 }
@@ -585,11 +585,13 @@ sub LoadFeatures {
 	
       ## Accept ID as name
       $feature->push_attribute("names", $id);
+      $name = $id unless defined($name);
+      if (($name eq "<NULL>") || ($name eq "")) {
+	$name = $id;
+	$feature->force_attribute("name", $id);
+      }
       if ($name ne $id) {
 	$feature->push_attribute("names", $name);
-      }
-      if (($name eq "<NULL>") || ($name eq "")) {
-	$feature->force_attribute("name", $id);
       }
       $type{$id} = $type;	## For the loading statistics
 	
@@ -688,17 +690,16 @@ sub CalcNeighbourLimits {
 		## gene, due to the presence of alternative
 		## transcription start site (TSS).
 		$ln--;
-		die "HELLO";
 		&RSAT::message::Debug("genomic feature", $ln, $genes[$ln], $genes[$ln]->get_attribute("geneid"), $genes[$ln]->get_attribute("name"),
 				      "has same GeneID as genomic feature", $g, $gene, $gene->get_attribute("geneid"), $gene->get_attribute("name"),
-				     ) if ($main::verbose >= 0);
+				     ) if ($main::verbose >= 2);
 
 	      } elsif (($ctg_rights[$ln] > $left{$gene}) && ($ctg_lefts[$ln] > $left{$gene})) {
 		## candidate left neighour gene is completely embedded in current gene -> select the next left candidate
 		$ln--;
 		&RSAT::message::Debug("genomic feature", $ln, $genes[$ln], $genes[$ln]->get_attribute("geneid"), $genes[$ln]->get_attribute("name"),
 				      "is embedded in genomic feature", $g, $gene, $gene->get_attribute("geneid"), $gene->get_attribute("name"),
-				     ) if ($main::verbose >= 0);
+				     ) if ($main::verbose >= 2);
 
 	      } elsif ($ctg_rights[$ln+1] < $left{$gene}) {
 		$ln++;
