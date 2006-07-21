@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: random-genes,v 1.14 2006/07/21 02:20:36 jvanheld Exp $
+# $Id: random-genes,v 1.15 2006/07/21 02:30:17 jvanheld Exp $
 #
 # Time-stamp: <2003-09-10 23:21:27 jvanheld>
 #
@@ -49,7 +49,6 @@ unless ($organism_name) {
 
 $organism = new RSAT::organism();
 $organism->DefineAcceptedFeatureTypes(sort keys %accepted_feature_types);
-&RSAT::message::Debug($organism->get_attribute("feature_types")) if ($main::verbose >= 0);
 $organism->check_name($organism_name);
 $organism->set_attribute("name", $organism_name);
 $organism->OpenContigs($organism_name);
