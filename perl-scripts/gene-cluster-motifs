@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.168 2006/04/25 06:05:51 rsat Exp $
+# $Id: gene-cluster-motifs,v 1.169 2006/07/21 02:20:36 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -265,7 +265,8 @@ if ($sequence_file_list) {
     }
     $organism->set_attribute("name", $organism_name);
 
-    $organism->LoadFeatures($annotation_table, $feature_types);
+    $organism->DefineAcceptedFeatureTypes(sort keys %accepted_feature_types);
+    $organism->LoadFeatures($annotation_table);
     $organism->LoadSynonyms();
 
     ### Read family file
@@ -2016,7 +2017,6 @@ sub CheckParameters {
     #### accepted feature types
     unless (defined %accepted_feature_types) {
 	## By default, accept all feature types
-#       %accepted_feature_types = %supported_feature_types;
 	$accepted_feature_types{cds} = 1;
     }
     $feature_types = join ",", keys (%accepted_feature_types);

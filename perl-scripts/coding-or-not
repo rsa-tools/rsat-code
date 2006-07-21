@@ -25,13 +25,6 @@ $supported_return = join (",", @supported_return);
 &ReadArguments();
 
 
-#### accepted feature types
-#unless (defined %accepted_feature_types) {
-#    %accepted_feature_types = %supported_feature_types;
-#}
-#$feature_types = join ",", keys (%accepted_feature_types);
-@feature_types = qw(CDS tRNA rRNA); # do not include mRNA to avoid counting all the genes twice in the statistics
-$feature_types = lc(join ",", @feature_types);
 
 #### default : return sequences of all types
 unless (defined(%return)) {
@@ -47,12 +40,17 @@ unless (defined(%return)) {
    
 ### read feature attributes (position, description, ...)
 $organism = new RSAT::organism();
+
+#### accepted feature types
+@accepted_feature_types = ("CDS", "tRNA", "rRNA"); # do not include mRNA to avoid counting all the genes twice in the statistics
 $organism->check_name($organism_name);
 $organism->set_attribute("name", $organism_name);
+
+$organism->DefineAcceptedFeatureTypes(@accepted_feature_types);
 $annotation_table = $supported_organism{$organism_name}->{'features'};
 $organism->set_attribute("annotation_table", $annotation_table);
 $organism->OpenContigs($organism_name, $annotation_table);
-$organism->LoadFeatures($annotation_table, $feature_types);
+$organism->LoadFeatures($annotation_table);
 
 &PrintVerbose() if ($verbose);
 

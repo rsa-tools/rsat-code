@@ -3,7 +3,7 @@
 
 ############################################################
 #
-# $Id: gene-info,v 1.4 2005/03/13 10:23:23 jvanheld Exp $
+# $Id: gene-info,v 1.5 2006/07/21 02:20:36 jvanheld Exp $
 #
 # Time-stamp: <2003-07-06 20:30:09 jvanheld>
 #
@@ -31,11 +31,6 @@ $match_description = 0;
 ################################################################
 #### check parameter values
 
-#### accepted feature types
-unless (defined %accepted_feature_types) {
-    %accepted_feature_types = %supported_feature_types;
-}
-$feature_types = join ",", keys (%accepted_feature_types);
 
 #### organism
 my $organism = new RSAT::organism();
@@ -43,6 +38,8 @@ $organism->set_attribute("name", $organism_name);
 $organism->check_name();
 #&CheckOrganism($organism_name);
 
+#### accepted feature types
+$organism->DefineAcceptedFeatureTypes(sort keys %accepted_feature_types);
 
 ### open output file ###
 $out = &RSAT::util::OpenOutputFile($outputfile);
@@ -50,9 +47,8 @@ $out = &RSAT::util::OpenOutputFile($outputfile);
 &Verbose();
 
 ### read ORF information
-$organism->LoadFeatures("",$feature_types); 
+$organism->LoadFeatures();
 $organism->LoadSynonyms();
-
 
 ################################################################
 #### read query file

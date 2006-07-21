@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.19 2006/05/04 08:22:46 rsat Exp $
+# $Id: get-orthologs,v 1.20 2006/07/21 02:20:36 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -272,6 +272,7 @@ package main;
     ################################################################
     ## load the query organism
     $organism = new RSAT::organism();
+    $organism->DefineAcceptedFeatureTypes("cds");
     $organism->check_name($query_organism);
     $organism->set_attribute("name", $query_organism);
     $organism->OpenContigs($query_organism);
