@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-ensembl-genome.pl,v 1.21 2006/06/11 22:19:12 rsat Exp $
+# $Id: get-ensembl-genome.pl,v 1.22 2006/07/24 09:55:34 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -60,6 +60,248 @@ package EMBL::Feature;
 			      );
 }
 
+################################################################
+#### Class for mRNA
+package EMBL::mRNA;
+{
+    @ISA = qw ( classes::DatabaseObject );
+    ### class attributes
+    $_count = 0;
+    $_prefix = "mRNA_";
+    @_objects = ();
+    %_name_index = ();
+    %_id_index = ();
+    %_attribute_count = ();
+    %_attribute_cardinality = (id=>"SCALAR",
+			       names=>"ARRAY",
+			       organism=>"SCALAR",
+			       type=>"SCALAR",
+			       description=>"SCALAR",
+			       position=>"SCALAR",
+			       contig=>"SCALAR",
+			       strand=>"SCALAR",
+			       start_pos=>"SCALAR",
+			       end_pos=>"SCALAR",
+			       xrefs=>"EXPANDED"
+			      );
+}
+
+
+################################################################
+#### Class for scRNA
+package EMBL::scRNA;
+{
+    @ISA = qw ( classes::DatabaseObject );
+    ### class attributes
+    $_count = 0;
+    $_prefix = "scRNA_";
+    @_objects = ();
+    %_name_index = ();
+    %_id_index = ();
+    %_attribute_count = ();
+    %_attribute_cardinality = (id=>"SCALAR",
+			       names=>"ARRAY",
+			       organism=>"SCALAR",
+			       type=>"SCALAR",
+			       description=>"SCALAR",
+			       position=>"SCALAR",
+			       contig=>"SCALAR",
+			       strand=>"SCALAR",
+			       start_pos=>"SCALAR",
+			       end_pos=>"SCALAR",
+			       xrefs=>"EXPANDED"
+			      );
+}
+
+
+################################################################
+#### Class for tRNA
+package EMBL::tRNA;
+{
+    @ISA = qw ( classes::DatabaseObject );
+    ### class attributes
+    $_count = 0;
+    $_prefix = "tRNA_";
+    @_objects = ();
+    %_name_index = ();
+    %_id_index = ();
+    %_attribute_count = ();
+    %_attribute_cardinality = (id=>"SCALAR",
+			       names=>"ARRAY",
+			       organism=>"SCALAR",
+			       type=>"SCALAR",
+			       description=>"SCALAR",
+			       position=>"SCALAR",
+			       contig=>"SCALAR",
+			       strand=>"SCALAR",
+			       start_pos=>"SCALAR",
+			       end_pos=>"SCALAR",
+			       xrefs=>"EXPANDED"
+			      );
+}
+
+
+################################################################
+#### Class for rRNA
+package EMBL::rRNA;
+{
+    @ISA = qw ( classes::DatabaseObject );
+    ### class attributes
+    $_count = 0;
+    $_prefix = "rRNA_";
+    @_objects = ();
+    %_name_index = ();
+    %_id_index = ();
+    %_attribute_count = ();
+    %_attribute_cardinality = (id=>"SCALAR",
+			       names=>"ARRAY",
+			       organism=>"SCALAR",
+			       type=>"SCALAR",
+			       description=>"SCALAR",
+			       position=>"SCALAR",
+			       contig=>"SCALAR",
+			       strand=>"SCALAR",
+			       start_pos=>"SCALAR",
+			       end_pos=>"SCALAR",
+			       xrefs=>"EXPANDED"
+			      );
+}
+
+
+################################################################
+#### Class for miscellaneous RNA
+package EMBL::misc_RNA;
+{
+    @ISA = qw ( classes::DatabaseObject );
+    ### class attributes
+    $_count = 0;
+    $_prefix = "misc_RNA_";
+    @_objects = ();
+    %_name_index = ();
+    %_id_index = ();
+    %_attribute_count = ();
+    %_attribute_cardinality = (id=>"SCALAR",
+			       names=>"ARRAY",
+			       organism=>"SCALAR",
+			       type=>"SCALAR",
+			       description=>"SCALAR",
+			       position=>"SCALAR",
+			       contig=>"SCALAR",
+			       strand=>"SCALAR",
+			       start_pos=>"SCALAR",
+			       end_pos=>"SCALAR",
+			       xrefs=>"EXPANDED"
+			      );
+}
+
+
+################################################################
+#### Class for repeat regions
+package EMBL::repeat_region;
+{
+    @ISA = qw ( classes::DatabaseObject );
+    ### class attributes
+    $_count = 0;
+    $_prefix = "rep_";
+    @_objects = ();
+    %_name_index = ();
+    %_id_index = ();
+    %_attribute_count = ();
+    %_attribute_cardinality = (id=>"SCALAR",
+			       names=>"ARRAY",
+			       organism=>"SCALAR",
+			       type=>"SCALAR",
+			       description=>"SCALAR",
+			       position=>"SCALAR",
+			       contig=>"SCALAR",
+			       strand=>"SCALAR",
+			       start_pos=>"SCALAR",
+			       end_pos=>"SCALAR",
+			       xrefs=>"EXPANDED"
+			      );
+}
+
+
+################################################################
+#### Class for CDS
+package EMBL::CDS;
+{
+    @ISA = qw ( classes::DatabaseObject );
+    ### class attributes
+    $_count = 0;
+    $_prefix = "cds_";
+    @_objects = ();
+    %_name_index = ();
+    %_id_index = ();
+    %_attribute_count = ();
+    %_attribute_cardinality = (id=>"SCALAR",
+			       names=>"ARRAY",
+			       organism=>"SCALAR",
+			       type=>"SCALAR",
+			       description=>"SCALAR",
+			       position=>"SCALAR",
+			       contig=>"SCALAR",
+			       strand=>"SCALAR",
+			       start_pos=>"SCALAR",
+			       end_pos=>"SCALAR",
+			       xrefs=>"EXPANDED"
+			      );
+}
+
+
+################################################################
+#### Class for sources
+package EMBL::Source;
+{
+    @ISA = qw ( classes::DatabaseObject );
+    ### class attributes
+    $_count = 0;
+    $_prefix = "src_";
+    @_objects = ();
+    %_name_index = ();
+    %_id_index = ();
+    %_attribute_count = ();
+    %_attribute_cardinality = (id=>"SCALAR",
+			       names=>"ARRAY",
+			       organism=>"SCALAR",
+			       type=>"SCALAR",
+			       description=>"SCALAR",
+			       position=>"SCALAR",
+			       contig=>"SCALAR",
+			       strand=>"SCALAR",
+			       start_pos=>"SCALAR",
+			       end_pos=>"SCALAR",
+			       xrefs=>"EXPANDED"
+			      );
+}
+
+
+################################################################
+#### Class for miscellaneous features
+package EMBL::misc_feature;
+{
+    @ISA = qw ( classes::DatabaseObject );
+    ### class attributes
+    $_count = 0;
+    $_prefix = "misc_feature_";
+    @_objects = ();
+    %_name_index = ();
+    %_id_index = ();
+    %_attribute_count = ();
+    %_attribute_cardinality = (id=>"SCALAR",
+			       names=>"ARRAY",
+			       organism=>"SCALAR",
+			       type=>"SCALAR",
+			       description=>"SCALAR",
+			       position=>"SCALAR",
+			       contig=>"SCALAR",
+			       strand=>"SCALAR",
+			       start_pos=>"SCALAR",
+			       end_pos=>"SCALAR",
+			       xrefs=>"EXPANDED"
+			      );
+}
+
 
 ################################################################
 #### Class for Gene
@@ -68,7 +310,7 @@ package EMBL::Gene;
     @ISA = qw ( classes::DatabaseObject );
     ### class attributes
     $_count = 0;
-    $_prefix = "ft_";
+    $_prefix = "gn_";
     @_objects = ();
     %_name_index = ();
     %_id_index = ();
@@ -80,20 +322,20 @@ package EMBL::Gene;
 
 ################################################################
 #### Class for Transcript
-package EMBL::Transcript;
-{
-    @ISA = qw ( classes::DatabaseObject );
-    ### class attributes
-    $_count = 0;
-    $_prefix = "ft_";
-    @_objects = ();
-    %_name_index = ();
-    %_id_index = ();
-    %_attribute_count = ();
-    %_attribute_cardinality = (id=>"SCALAR",
-			       names=>"ARRAY",
-			      );
-}
+#package EMBL::Transcript;
+#{
+#    @ISA = qw ( classes::DatabaseObject );
+#    ### class attributes
+#    $_count = 0;
+#    $_prefix = "ft_";
+#    @_objects = ();
+#    %_name_index = ();
+#    %_id_index = ();
+#    %_attribute_count = ();
+#    %_attribute_cardinality = (id=>"SCALAR",
+#			       names=>"ARRAY",
+#			      );
+#}
 
 ################################################################
 #### Class for EMBL organism
@@ -102,7 +344,7 @@ package EMBL::Organism;
     @ISA = qw ( classes::DatabaseObject );
     ### class attributes
     $_count = 0;
-    $_prefix = "ft_";
+    $_prefix = "org_";
     @_objects = ();
     %_name_index = ();
     %_id_index = ();
@@ -120,7 +362,7 @@ package EMBL::Contig;
     @ISA = qw ( classes::DatabaseObject );
     ### class attributes
     $_count = 0;
-    $_prefix = "ft_";
+    $_prefix = "ctg_";
     @_objects = ();
     %_name_index = ();
     %_id_index = ();
@@ -220,7 +462,7 @@ package main;
 			      ));
 
     ## Transcript factory
-    my $transcripts = classes::ClassFactory->new_class(object_type=>"EMBL::Transcript",prefix=>"trans_");
+#    my $transcripts = classes::ClassFactory->new_class(object_type=>"EMBL::Transcript",prefix=>"trans_");
     
     ## Feature factory
     my $features = classes::ClassFactory->new_class(object_type=>"EMBL::Feature",prefix=>"ft_");
@@ -232,7 +474,150 @@ package main;
 			      end_pos
 			      strand
 			      description
+			      names
+			      db_xref
+			      introns
+			      exons
+                             ));
 
+    ## mRNA factory
+    my $mRNAs = classes::ClassFactory->new_class(object_type=>"EMBL::mRNA",prefix=>"mRNA_");
+    $mRNAs->set_out_fields(qw( id
+			      type
+			      name
+			      contig
+			      start_pos
+			      end_pos
+			      strand
+			      description
+			      names
+			      db_xref
+			      introns
+			      exons
+                             ));
+
+    ## scRNA factory
+    my $scRNAs = classes::ClassFactory->new_class(object_type=>"EMBL::scRNA",prefix=>"scRNA_");
+    $scRNAs->set_out_fields(qw( id
+			      type
+			      name
+			      contig
+			      start_pos
+			      end_pos
+			      strand
+			      description
+			      names
+			      db_xref
+			      introns
+			      exons
+                             ));
+
+    ## tRNA factory
+    my $tRNAs = classes::ClassFactory->new_class(object_type=>"EMBL::tRNA",prefix=>"tRNA_");
+    $tRNAs->set_out_fields(qw( id
+			      type
+			      name
+			      contig
+			      start_pos
+			      end_pos
+			      strand
+			      description
+			      names
+			      db_xref
+			      introns
+			      exons
+                             ));
+
+    ## rRNA factory
+    my $rRNAs = classes::ClassFactory->new_class(object_type=>"EMBL::rRNA",prefix=>"rRNA_");
+    $rRNAs->set_out_fields(qw( id
+			      type
+			      name
+			      contig
+			      start_pos
+			      end_pos
+			      strand
+			      description
+			      names
+			      db_xref
+			      introns
+			      exons
+                             ));
+
+    ## Repeated regions factory
+    my $repeat_regions = classes::ClassFactory->new_class(object_type=>"EMBL::repeat_region",prefix=>"rep_");
+    $repeat_regions->set_out_fields(qw( id
+			      type
+			      name
+			      contig
+			      start_pos
+			      end_pos
+			      strand
+			      description
+			      names
+			      db_xref
+			      introns
+			      exons
+                             ));
+
+    ## Miscellaneous RNA factory
+    my $misc_RNAs = classes::ClassFactory->new_class(object_type=>"EMBL::misc_RNA",prefix=>"misc_RNA_");
+    $misc_RNAs->set_out_fields(qw( id
+			      type
+			      name
+			      contig
+			      start_pos
+			      end_pos
+			      strand
+			      description
+			      names
+			      db_xref
+			      introns
+			      exons
+                             ));
+
+    ## CDS factory
+    my $CDSs = classes::ClassFactory->new_class(object_type=>"EMBL::CDS",prefix=>"cds_");
+    $CDSs->set_out_fields(qw( id
+			      type
+			      name
+			      contig
+			      start_pos
+			      end_pos
+			      strand
+			      description
+			      names
+			      db_xref
+			      introns
+			      exons
+                             ));
+
+    ## Miscellaneous features factory
+    my $misc_features = classes::ClassFactory->new_class(object_type=>"EMBL::misc_feature",prefix=>"misc_feature_");
+    $misc_features->set_out_fields(qw( id
+			      type
+			      name
+			      contig
+			      start_pos
+			      end_pos
+			      strand
+			      description
+			      names
+			      db_xref
+			      introns
+			      exons
+                             ));
+
+    ## Sources factory
+    my $sources = classes::ClassFactory->new_class(object_type=>"EMBL::Source",prefix=>"src_");
+    $sources->set_out_fields(qw( id
+			      type
+			      name
+			      contig
+			      start_pos
+			      end_pos
+			      strand
+			      description
 			      names
 			      db_xref
 			      introns
@@ -240,7 +625,7 @@ package main;
                              ));
 
     #### classes
-    @classes = qw (EMBL::Organism EMBL::Contig EMBL::Gene EMBL::Transcript EMBL::Feature);
+    @classes = qw (EMBL::Organism EMBL::Contig EMBL::Gene EMBL::mRNA EMBL::scRNA EMBL::tRNA EMBL::rRNA EMBL::misc_RNA EMBL::repeat_region EMBL::CDS EMBL::Feature EMBL::misc_feature EMBL::Source);
     
 
     ################################################################
@@ -299,7 +684,39 @@ package main;
     ## feature file
     $FT_TABLE =  &OpenOutputFile($outfile{feature});
     &PrintFtHeader();
-    
+
+   ## mRNA file
+#    $mRNA_TABLE =  &OpenOutputFile($outfile{mRNA});
+#    &PrintFtHeader();
+
+   ## scRNA file
+#    $scRNA_TABLE =  &OpenOutputFile($outfile{scRNA});
+#    &PrintFtHeader();
+
+   ## tRNA file
+#    $tRNA_TABLE =  &OpenOutputFile($outfile{tRNA});
+#    &PrintFtHeader();
+
+   ## rRNA file
+#    $rRNA_TABLE =  &OpenOutputFile($outfile{rRNA});
+#    &PrintFtHeader();
+
+   ## misc_RNA file
+#    $misc_RNA_TABLE =  &OpenOutputFile($outfile{misc_RNA});
+#    &PrintFtHeader();
+
+   ## repeat region file
+#    $REP_TABLE =  &OpenOutputFile($outfile{rep});
+#    &PrintFtHeader();
+
+   ## Miscellaneous feature file
+#    $MISC_FT_TABLE =  &OpenOutputFile($outfile{misc_feature});
+#    &PrintFtHeader();
+
+   ## Source file
+#    $SRC_TABLE =  &OpenOutputFile($outfile{source});
+#    &PrintFtHeader();
+
     ## xref file
     open $XREF_TABLE, ">".$outfile{xreference} || die "cannot open error log file".$outfile{xreference}."\n";
     
@@ -438,7 +855,7 @@ package main;
 		my $coding_region_end = $trans->coding_region_end();
 		my $ensembl_translation = $trans->translation();
 		if($ensembl_translation) {
-		    my $rsat_cds = $features->new_object();
+		    my $rsat_cds = $CDSs->new_object();
 		    $rsat_cds->force_attribute("id", $ensembl_translation->stable_id());
 		    $rsat_cds->set_attribute("type","CDS");
 		    $rsat_cds->set_attribute("name",  $rsat_transcript->get_attribute("name"));
@@ -466,7 +883,7 @@ package main;
 
 		}
 
-		## Tests to make sure a transcripts includes UTRs (are also in first and last exons!)
+		## Tests to make sure a transcript includes UTRs (are also in first and last exons!)
 #        print $feature[0], " : ", $trans->spliced_seq(), "\n";
 #        print $feature[0], " : ", $trans->translateable_seq(), "\n";
 #        my $fiv_utr = $trans->five_prime_utr();
