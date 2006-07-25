@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-ensembl-genome.pl,v 1.22 2006/07/24 09:55:34 rsat Exp $
+# $Id: get-ensembl-genome.pl,v 1.23 2006/07/25 14:37:23 oly Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -547,18 +547,13 @@ package main;
     ## Repeated regions factory
     my $repeat_regions = classes::ClassFactory->new_class(object_type=>"EMBL::repeat_region",prefix=>"rep_");
     $repeat_regions->set_out_fields(qw( id
-			      type
-			      name
-			      contig
-			      start_pos
-			      end_pos
-			      strand
-			      description
-			      names
-			      db_xref
-			      introns
-			      exons
-                             ));
+					type
+					name
+					contig
+					start_pos
+					end_pos
+					strand
+					));
 
     ## Miscellaneous RNA factory
     my $misc_RNAs = classes::ClassFactory->new_class(object_type=>"EMBL::misc_RNA",prefix=>"misc_RNA_");
@@ -800,6 +795,31 @@ package main;
 	$rsat_contig->set_attribute("chromosome", $slice->seq_region_name());
 #	$rsat_contig->set_attribute("is_circular", $slice->is_circular());
 
+	## Get all repeat regions (features)
+	unless ($seqonly){
+	    	&RSAT::message::TimeWarn("Getting all repeats for slice", $slice_name) if ($main::verbose >= 1);
+		my $rep = 0;
+		my @ensembl_repeats = @{$slice->get_all_RepeatFeatures()};
+		foreach my $ensembl_repeat (@ensembl_repeats){
+		    $rep++;
+		    my $repeat_name = $ensembl_repeat->display_id();
+		    $repeat_id = $repeat_name.".".$rep;
+		    warn join("\t", ";", $slice_type, $slice->seq_region_name(),  $s."/".scalar(@slices), "repeat", "/".scalar(@ensembl_repeats), $repeat_name), "\n" if ($main::verbose >= 3);
+		    my $rsat_repeat = $repeat_regions->new_object(source=>"ensembl", name=>$repeat_name);
+		    $rsat_repeat->force_attribute("id", $repeat_id);
+		    $rsat_repeat->force_attribute("type", "repeat_region");
+		    $rsat_repeat->set_attribute("contig", $slice_id);
+		    $rsat_repeat->set_attribute("start_pos", $ensembl_repeat->hstart);
+		    $rsat_repeat->set_attribute("end_pos", $ensembl_repeat->hend);
+		    my $ensembl_repeat_strand = $ensembl_repeat->hstrand;
+		    if ($ensembl_repeat_strand == 1){
+			$rsat_repeat->set_attribute("strand", "D");
+		    } else {
+			$rsat_repeat->set_attribute("strand", "R");
+		    }
+		}
+	}
+
 	## Get all Gene objects
 	unless ($seqonly){
 	&RSAT::message::TimeWarn("Getting all genes for slice", $slice_name) if ($main::verbose >= 1);
@@ -812,7 +832,7 @@ package main;
 		&RSAT::message::TimeWarn(join ("\t","TEST", $test_number, "skipping next genes for contig", 
 					       $rsat_contig->get_attribute("name")));
 		last;
-	    } 
+	    }
 
 	    my $gene_name = $ensembl_gene->external_name() || $ensembl_gene->stable_id();
 	    warn join("\t", ";", $slice_type, $slice->seq_region_name(),  $s."/".scalar(@slices), "gene", $g."/".scalar(@ensembl_genes), $gene_name), "\n" if ($main::verbose >= 3);
@@ -827,12 +847,12 @@ package main;
 
 	    ## Get all Transcript objects
 	    my $tr = 0;
-	    foreach my $trans (@{$ensembl_gene->get_all_Transcripts()}) {
+	    my @ensembl_transcript = @{$ensembl_gene->get_all_Transcripts()};
+	    foreach my $trans (@ensembl_transcript) {
 		$tr++;
 		warn join("\t", "transcript", $trans), "\n" if ($main::verbose >= 5);
 		my $rsat_transcript = $features->new_object(source=>"ensembl");
 		my @feature = &collect_attributes($trans, $rsat_transcript);
-		$rsat_transcript->force_attribute("type", "mRNA");
 		$rsat_transcript->force_attribute("organism", $organism_name);
 		my $transcript_name = $rsat_transcript->get_attribute("name");
 		$transcript_name .= ".".$tr;
@@ -841,8 +861,79 @@ package main;
 		$rsat_transcript->push_attribute("names", $rsat_gene->get_attribute("id"));
 		$rsat_transcript->push_attribute("names", $transcript_name);
 		$rsat_transcript->set_attribute("gene", $rsat_gene->get_attribute("id"));
-		unless($rsat_transcript->get_attribute("description")) {
-		    $rsat_transcript->set_attribute("description", $rsat_gene->get_attribute("description"));
+		if ($rsat_transcript->get_attribute("description") eq "<no description>") {
+		    $rsat_transcript->force_attribute("description", $rsat_gene->get_attribute("description"));
+		}
+		if ($rsat_transcript->get_attribute("type") eq "protein_coding"){
+		    my $rsat_mrna = $mRNAs->new_object(source=>"ensembl");
+		    $rsat_transcript->force_attribute("type", "mRNA");
+		    $rsat_mrna->force_attribute("id", $rsat_transcript->get_attribute("id"));
+		    $rsat_mrna->set_attribute("type", $rsat_transcript->get_attribute("type"));
+		    $rsat_mrna->set_attribute("organism", $organism_name);
+		    $rsat_mrna->set_attribute("name", $rsat_transcript->get_attribute("name"));
+		    $rsat_mrna->push_attribute("names", $rsat_transcript->get_attribute("names"));
+		    $rsat_mrna->set_attribute("gene", $rsat_transcript->get_attribute("gene"));
+		    $rsat_mrna->set_attribute("description", $rsat_transcript->get_attribute("description"));
+		    $rsat_mrna->set_attribute("start_pos", $rsat_transcript->get_attribute("start_pos"));
+		    $rsat_mrna->set_attribute("end_pos", $rsat_transcript->get_attribute("end_pos"));
+		    $rsat_mrna->set_attribute("strand", $rsat_transcript->get_attribute("strand"));
+		    $rsat_mrna->set_attribute("contig", $rsat_transcript->get_attribute("contig"));
+		}
+		if ($rsat_transcript->get_attribute("type") eq "tRNA"){
+		    my $rsat_trna = $tRNAs->new_object(source=>"ensembl");
+		    $rsat_trna->force_attribute("id", $rsat_transcript->get_attribute("id"));
+		    $rsat_trna->set_attribute("type", $rsat_transcript->get_attribute("type"));
+		    $rsat_trna->set_attribute("organism", $organism_name);
+		    $rsat_trna->set_attribute("name", $rsat_transcript->get_attribute("name"));
+		    $rsat_trna->push_attribute("names", $rsat_transcript->get_attribute("names"));
+		    $rsat_trna->set_attribute("gene", $rsat_transcript->get_attribute("gene"));
+		    $rsat_trna->set_attribute("description", $rsat_transcript->get_attribute("description"));
+		    $rsat_trna->set_attribute("start_pos", $rsat_transcript->get_attribute("start_pos"));
+		    $rsat_trna->set_attribute("end_pos", $rsat_transcript->get_attribute("end_pos"));
+		    $rsat_trna->set_attribute("strand", $rsat_transcript->get_attribute("strand"));
+		    $rsat_trna->set_attribute("contig", $rsat_transcript->get_attribute("contig"));
+		}
+		if ($rsat_transcript->get_attribute("type") eq "rRNA"){
+		    my $rsat_rrna = $rRNAs->new_object(source=>"ensembl");
+		    $rsat_rrna->force_attribute("id", $rsat_transcript->get_attribute("id"));
+		    $rsat_rrna->set_attribute("type", $rsat_transcript->get_attribute("type"));
+		    $rsat_rrna->set_attribute("organism", $organism_name);
+		    $rsat_rrna->set_attribute("name", $rsat_transcript->get_attribute("name"));
+		    $rsat_rrna->push_attribute("names", $rsat_transcript->get_attribute("names"));
+		    $rsat_rrna->set_attribute("gene", $rsat_transcript->get_attribute("gene"));
+		    $rsat_rrna->set_attribute("description", $rsat_transcript->get_attribute("description"));
+		    $rsat_rrna->set_attribute("start_pos", $rsat_transcript->get_attribute("start_pos"));
+		    $rsat_rrna->set_attribute("end_pos", $rsat_transcript->get_attribute("end_pos"));
+		    $rsat_rrna->set_attribute("strand", $rsat_transcript->get_attribute("strand"));
+		    $rsat_rrna->set_attribute("contig", $rsat_transcript->get_attribute("contig"));
+		}
+		if ($rsat_transcript->get_attribute("type") eq "scRNA"){
+		    my $rsat_scrna = $scRNAs->new_object(source=>"ensembl");
+		    $rsat_scrna->force_attribute("id", $rsat_transcript->get_attribute("id"));
+		    $rsat_scrna->set_attribute("type", $rsat_transcript->get_attribute("type"));
+		    $rsat_scrna->set_attribute("organism", $organism_name);
+		    $rsat_scrna->set_attribute("name", $rsat_transcript->get_attribute("name"));
+		    $rsat_scrna->push_attribute("names", $rsat_transcript->get_attribute("names"));
+		    $rsat_scrna->set_attribute("gene", $rsat_transcript->get_attribute("gene"));
+		    $rsat_scrna->set_attribute("description", $rsat_transcript->get_attribute("description"));
+		    $rsat_scrna->set_attribute("start_pos", $rsat_transcript->get_attribute("start_pos"));
+		    $rsat_scrna->set_attribute("end_pos", $rsat_transcript->get_attribute("end_pos"));
+		    $rsat_scrna->set_attribute("strand", $rsat_transcript->get_attribute("strand"));
+		    $rsat_scrna->set_attribute("contig", $rsat_transcript->get_attribute("contig"));
+		}
+		if ($rsat_transcript->get_attribute("type") eq "misc_RNA"){
+		    my $rsat_miscrna = $misc_RNAs->new_object(source=>"ensembl");
+		    $rsat_miscrna->force_attribute("id", $rsat_transcript->get_attribute("id"));
+		    $rsat_miscrna->set_attribute("type", $rsat_transcript->get_attribute("type"));
+		    $rsat_miscrna->set_attribute("organism", $organism_name);
+		    $rsat_miscrna->set_attribute("name", $rsat_transcript->get_attribute("name"));
+		    $rsat_miscrna->push_attribute("names", $rsat_transcript->get_attribute("names"));
+		    $rsat_miscrna->set_attribute("gene", $rsat_transcript->get_attribute("gene"));
+		    $rsat_miscrna->set_attribute("description", $rsat_transcript->get_attribute("description"));
+		    $rsat_miscrna->set_attribute("start_pos", $rsat_transcript->get_attribute("start_pos"));
+		    $rsat_miscrna->set_attribute("end_pos", $rsat_transcript->get_attribute("end_pos"));
+		    $rsat_miscrna->set_attribute("strand", $rsat_transcript->get_attribute("strand"));
+		    $rsat_miscrna->set_attribute("contig", $rsat_transcript->get_attribute("contig"));
 		}
 
 		$feature[1] = "transcript";
@@ -870,7 +961,7 @@ package main;
 		    $rsat_cds->push_attribute("names", $rsat_gene->get_attribute("id"));
 		    $rsat_cds->push_attribute("names", $rsat_transcript->get_attribute("name"));
 #		    print PP $header, "\n";
-			&PrintNextSequence(PP,"fasta",60,$ensembl_translation->seq(),$ensembl_translation->stable_id(),$rsat_gene->get_attribute("description"));
+		    &PrintNextSequence(PP,"fasta",60,$ensembl_translation->seq(),$ensembl_translation->stable_id(),$rsat_gene->get_attribute("description"));
 
 		    ## VERIFIER SI CECI EST TOUJOURS UTILE
 		    if ($feature[6] eq 'D') {
@@ -947,8 +1038,7 @@ package main;
     chdir $dir{main};
     warn "; Main directory\t", $dir{main}, "\n" if ($main::verbose >= 3);
 
-    foreach $class_factory ($organisms, $contigs,  $features, $genes) {
-#    foreach $class_factory ($organisms, $contigs, $features) {
+    foreach $class_factory ($organisms, $contigs,  $features, $genes, $repeat_regions, $CDSs, $mRNAs, $tRNAs, $rRNAs, $scRNAs, $misc_RNAs) {
 	$class_factory->dump_tables();
 	$class_factory->generate_sql(dir=>"$dir{output}/sql_scripts",
 				schema=>$schema,
@@ -975,7 +1065,7 @@ package main;
 
 
     ################################################################
-    ###### close output stream
+    ###### Close output stream
     close $log if ($outfile{log});
     close ERR if ($outfile{err});
     close CTG if ($outfile{contigs});
@@ -990,7 +1080,6 @@ package main;
 
     exit(0);
 }
-
 ################################################################
 ################### SUBROUTINE DEFINITION ######################
 ################################################################
