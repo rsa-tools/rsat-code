@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-ensembl-genome.pl,v 1.23 2006/07/25 14:37:23 oly Exp $
+# $Id: get-ensembl-genome.pl,v 1.24 2006/07/26 13:09:26 oly Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -56,7 +56,8 @@ package EMBL::Feature;
 			       strand=>"SCALAR",
 			       start_pos=>"SCALAR",
 			       end_pos=>"SCALAR",
-			       xrefs=>"EXPANDED"
+			       xrefs=>"EXPANDED",
+			       gene=>"SCALAR"
 			      );
 }
 
@@ -82,7 +83,8 @@ package EMBL::mRNA;
 			       strand=>"SCALAR",
 			       start_pos=>"SCALAR",
 			       end_pos=>"SCALAR",
-			       xrefs=>"EXPANDED"
+			       xrefs=>"EXPANDED",
+			       gene=>"SCALAR"
 			      );
 }
 
@@ -109,7 +111,8 @@ package EMBL::scRNA;
 			       strand=>"SCALAR",
 			       start_pos=>"SCALAR",
 			       end_pos=>"SCALAR",
-			       xrefs=>"EXPANDED"
+			       xrefs=>"EXPANDED",
+			       gene=>"SCALAR"
 			      );
 }
 
@@ -136,7 +139,8 @@ package EMBL::tRNA;
 			       strand=>"SCALAR",
 			       start_pos=>"SCALAR",
 			       end_pos=>"SCALAR",
-			       xrefs=>"EXPANDED"
+			       xrefs=>"EXPANDED",
+			       gene=>"SCALAR"
 			      );
 }
 
@@ -163,7 +167,8 @@ package EMBL::rRNA;
 			       strand=>"SCALAR",
 			       start_pos=>"SCALAR",
 			       end_pos=>"SCALAR",
-			       xrefs=>"EXPANDED"
+			       xrefs=>"EXPANDED",
+			       gene=>"SCALAR"
 			      );
 }
 
@@ -190,7 +195,8 @@ package EMBL::misc_RNA;
 			       strand=>"SCALAR",
 			       start_pos=>"SCALAR",
 			       end_pos=>"SCALAR",
-			       xrefs=>"EXPANDED"
+			       xrefs=>"EXPANDED",
+			       gene=>"SCALAR"
 			      );
 }
 
@@ -478,6 +484,7 @@ package main;
 			      db_xref
 			      introns
 			      exons
+			      gene
                              ));
 
     ## mRNA factory
@@ -494,6 +501,7 @@ package main;
 			      db_xref
 			      introns
 			      exons
+			      gene
                              ));
 
     ## scRNA factory
@@ -510,6 +518,7 @@ package main;
 			      db_xref
 			      introns
 			      exons
+			      gene
                              ));
 
     ## tRNA factory
@@ -526,6 +535,7 @@ package main;
 			      db_xref
 			      introns
 			      exons
+			      gene
                              ));
 
     ## rRNA factory
@@ -542,6 +552,7 @@ package main;
 			      db_xref
 			      introns
 			      exons
+			      gene
                              ));
 
     ## Repeated regions factory
@@ -569,6 +580,7 @@ package main;
 			      db_xref
 			      introns
 			      exons
+			      gene
                              ));
 
     ## CDS factory
