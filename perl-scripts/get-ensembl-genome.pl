@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-ensembl-genome.pl,v 1.24 2006/07/26 13:09:26 oly Exp $
+# $Id: get-ensembl-genome.pl,v 1.25 2006/07/26 17:51:34 oly Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -250,7 +250,8 @@ package EMBL::CDS;
 			       strand=>"SCALAR",
 			       start_pos=>"SCALAR",
 			       end_pos=>"SCALAR",
-			       xrefs=>"EXPANDED"
+			       xrefs=>"EXPANDED",
+			       transcript=>"SCALAR"
 			      );
 }
 
@@ -597,6 +598,7 @@ package main;
 			      db_xref
 			      introns
 			      exons
+			      transcript
                              ));
 
     ## Miscellaneous features factory
@@ -867,11 +869,17 @@ package main;
 		my @feature = &collect_attributes($trans, $rsat_transcript);
 		$rsat_transcript->force_attribute("organism", $organism_name);
 		my $transcript_name = $rsat_transcript->get_attribute("name");
-		$transcript_name .= ".".$tr;
+#		$transcript_name .= ".".$tr;
 		$rsat_transcript->force_attribute("name", $transcript_name);
-		$rsat_transcript->push_attribute("names", $rsat_gene->get_attribute("name"));
-		$rsat_transcript->push_attribute("names", $rsat_gene->get_attribute("id"));
-		$rsat_transcript->push_attribute("names", $transcript_name);
+		unless (($rsat_transcript->get_attribute("id") eq $rsat_gene->get_attribute("id")) ||
+		($rsat_transcript->get_attribute("name") eq $rsat_gene->get_attribute("id"))){
+		    $rsat_transcript->push_attribute("names", $rsat_gene->get_attribute("id"));
+		}
+		unless (($rsat_transcript->get_attribute("id") eq $rsat_gene->get_attribute("name")) ||
+		($rsat_transcript->get_attribute("name") eq $rsat_gene->get_attribute("name"))){
+		    $rsat_transcript->push_attribute("names", $rsat_gene->get_attribute("name"));
+		}
+#		$rsat_transcript->push_attribute("names", $transcript_name);
 		$rsat_transcript->set_attribute("gene", $rsat_gene->get_attribute("id"));
 		if ($rsat_transcript->get_attribute("description") eq "<no description>") {
 		    $rsat_transcript->force_attribute("description", $rsat_gene->get_attribute("description"));
@@ -958,7 +966,7 @@ package main;
 		my $coding_region_end = $trans->coding_region_end();
 		my $ensembl_translation = $trans->translation();
 		if($ensembl_translation) {
-		    my $rsat_cds = $CDSs->new_object();
+		    my $rsat_cds = $CDSs->new_object(source=>"ensembl");
 		    $rsat_cds->force_attribute("id", $ensembl_translation->stable_id());
 		    $rsat_cds->set_attribute("type","CDS");
 		    $rsat_cds->set_attribute("name",  $rsat_transcript->get_attribute("name"));
@@ -970,8 +978,13 @@ package main;
 		    $rsat_cds->set_attribute("organism", $rsat_transcript->get_attribute("organism"));
 		    $rsat_cds->set_attribute("transcript",  $rsat_transcript->get_attribute("id"));
 		    $rsat_cds->push_attribute("names", $rsat_gene->get_attribute("name"));
-		    $rsat_cds->push_attribute("names", $rsat_gene->get_attribute("id"));
-		    $rsat_cds->push_attribute("names", $rsat_transcript->get_attribute("name"));
+		    unless ($rsat_gene->get_attribute("name") eq $rsat_gene->get_attribute("id")){
+			$rsat_cds->push_attribute("names", $rsat_gene->get_attribute("id"));
+		    }
+		    unless (($rsat_gene->get_attribute("id") eq $rsat_transcript->get_attribute("name")) ||
+			    ($rsat_gene->get_attribute("name") eq $rsat_transcript->get_attribute("name"))){
+			$rsat_cds->push_attribute("names", $rsat_transcript->get_attribute("name"));
+		    }
 #		    print PP $header, "\n";
 		    &PrintNextSequence(PP,"fasta",60,$ensembl_translation->seq(),$ensembl_translation->stable_id(),$rsat_gene->get_attribute("description"));
 
@@ -1349,15 +1362,18 @@ sub collect_attributes {
     push @feature, $type;
     $rsat_object->set_attribute("type", $type);
 
-    ## Gene name
+    ## Name(s)
     my $name = $ensembl_object->external_name();
     unless ($name) {
 	$name = $id;
 	print ERR join ("\t", "No name for gene", $id, "Using ID instead"), "\n";
     }
     push @feature, $name;
-    $rsat_object->push_attribute("names", $name);
     $rsat_object->force_attribute("name", $name);
+    $rsat_object->push_attribute("names", $name);
+    if ($id ne $name) {
+	$rsat_object->push_attribute("names", $id);
+    }    
 
     ## Contig
     my $contig = $ensembl_object->slice->id(); 
