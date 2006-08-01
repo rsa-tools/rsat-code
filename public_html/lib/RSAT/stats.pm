@@ -105,9 +105,10 @@ sub summary {
 }
 
 
-#### returns the sumi of a list of numeric values
+################################################################
+#### returns the sum of a list of numeric values
 #### usage:
-#### $sum = &sum(@value_list);
+#### $sum = &RSAT::stats::sum(@value_list);
 sub sum {
     my (@values) = @_;
     my $sum = 0;
@@ -118,9 +119,27 @@ sub sum {
 }
 
 
+################################################################
+#### returns the mean of a list of numeric values
+#### usage:
+#### my $mean = &RSAT::stats::mean(@value_list);
+sub mean {
+    my (@values) = @_;
+    my $mean = 0;
+    my $n = scalar(@values);
+    if ($n == 0) {
+      $mean = "NA";
+      &RSAT::message::Warning("Cannot calculate the mean of an empty list");
+    } else {
+      $mean = &RSAT::stats::sum(@values)/$n;
+    }
+    return $mean;
+}
+
+
 #### returns the maximum of a list of numeric values
 #### usage:
-#### $max_value = &max(@value_list);
+#### $max_value = &RSAT::stats::max(@value_list);
 sub max {
     my @sorted_values = sort {$a <=> $b} @_;
     return $sorted_values[$#sorted_values];
@@ -129,7 +148,7 @@ sub max {
 
 #### returns the minimum of a list of numeric values
 #### usage:
-#### $min_value = &min(@value_list);
+#### $min_value = &RSAT::stats::min(@value_list);
 sub min {
     my @sorted_values = sort {
 	$a <=> $b
@@ -139,7 +158,7 @@ sub min {
 
 #### returns the minimum of a list of numeric values
 #### usage:
-#### $min_value = &min(@value_list);
+#### $min_value = &RSAT::stats::min(@value_list);
 sub checked_min {
     my @sorted_values = sort {
 	$a <=> $b
@@ -154,7 +173,7 @@ sub checked_min {
 
 #### returns the minimum of a list of numeric values
 #### usage:
-#### $min_value = &min(@value_list);
+#### $min_value = &RSAT::stats::min(@value_list);
 sub checked_max {
     my @sorted_values = sort {
 	$b <=> $a
@@ -199,7 +218,7 @@ sub checked_avg {
 
 ################################################################
 ### usage:
-###     &binomial($proba,$trials,$successes)
+###     &RSAT::stats::binomial($proba,$trials,$successes)
 ### this routine uses the recursive formula for the calculation of binomial:
 ###
 ###           P(x) * p(r-x)
@@ -264,7 +283,7 @@ sub LogToEng {
 
 ################################################################
 ### usage:
-###     &sum_of_binomials($proba,$trials,$from,$to)
+###     &RSAT::stats::sum_of_binomials($proba,$trials,$from,$to)
 ### Calculates the sum of binomial probabilities between two values.
 ###
 ### This routine uses the recursive formula for the calculation of
@@ -347,7 +366,7 @@ sub sum_of_binomials {
 
 
 ### usage:
-###     &binomial_boe($proba,$trials,$successes)
+###     &RSAT::stats::binomial_boe($proba,$trials,$successes)
 ### Calculates the probability of observing >=s successes with a
 ### probability $p and $r repeats, with the sum of binomials for j
 ### varying from s to r.
@@ -760,7 +779,7 @@ sub hypergeometric {
 
 
     
-# 	$Id: stats.pm,v 1.4 2006/04/10 08:35:13 rsat Exp $	
+# 	$Id: stats.pm,v 1.5 2006/08/01 10:01:00 jvanheld Exp $	
 
     #### initialization
     if (defined($args{previous_value})) {
