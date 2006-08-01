@@ -1,0 +1,374 @@
+#!/usr/bin/perl
+############################################################
+#
+# $Id: contingency-stats,v 1.1 2006/08/01 04:36:06 jvanheld Exp $
+#
+# Time-stamp: <2003-07-04 12:48:55 jvanheld>
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+contingency-stats
+
+=head1 DESCRIPTION
+
+This programs takes as input a contingency table, and calculates
+various matching statistics between the rows and columns.
+
+=head1 AUTHORS
+
+jvanheld@scmbb.ulb.ac.be
+
+=head1 CATEGORY
+
+util
+
+=head1 USAGE
+    
+contingency-stats [-i inputfile] [-o outputfile] [-v]
+
+=head1 INPUT FORMAT
+
+A contingency table is a N*M table used to compare the contents of two
+classifications. Rows represent the clusters of the first
+classification (considered as reference), and columns the clusters of
+the second classification (query).
+
+Contingency tables can be generated with the program
+contingency-table, or with compare-classes (option -matrix QR).
+
+=head1 OUTPUT FORMAT
+
+A tab-delimited text file with one row per statistics. 
+
+=head1 STATISTICS
+
+=over 4
+
+=item B<Sn>
+
+Sensitivity. This parameter indicates the fraction of each reference
+cluster (row) covered by its best matching query cluster (column).
+
+Sensitivity is calculated at the level of each cell (cell-wise Sn), of
+each row (cluster-wise Sn) and of the whole contingency table
+(table-wise Sn).
+
+=item I<Cell-wise sensitivity>
+
+Sn_{i,j} = X_{i,j}/SUM_j(X_{i,j})
+
+=item I<cluster-wise sensitivity> 
+
+Sn_{i.} = MAX_j(Sn_{i,j})
+
+The cluster-wise sensitivity of a row is the maximal value of
+sensitivity for all the cells of this row.
+
+=item I<cluster-wise sensitivity> 
+
+Sn = SUM_i(Sn_{i.})/M
+
+The table-wise sensitivity is the average of the cluster-wise
+sensitivity over all the rows of the contingency table.
+
+=item B<PPV>
+
+Positive Predictive Value. This parameter indicates the fraction of
+each query cluster (column) covered by its best matching reference
+cluster (row).
+
+PPV is calculated at the level of each cell (cell-wise PPV), of each
+column (cluster-wise PPV) and of the whole contingency table
+(table-wise PPV).
+
+=item I<Cell-wise PPV>
+
+PPV_{i,j} = X_{i,j}/SUM_i(X_{i,j})
+
+=item I<cluster-wise PPV> 
+
+PPV_{.j} = MAX_i(PPV_{i,j})
+
+The cluster-wise PPV of a column is the maximal value of PPV for all
+the cells of this column.
+
+=item I<cluster-wise PPV> 
+
+PPV = SUM_j(PPV_{j.})/N
+
+The table-wise PPV is the average of the cluster-wise PPV over
+all the columns of the contingency table.
+
+=item B<Acc.geom>
+
+Geometric accuracy. This reflects the tradeoff between sensitivity and
+positive predictive value, by computing the geometric accuracy between
+Sn and PPV.
+
+Acc.geom = sqrt(Sn*PPV)
+
+=item B<Comp>
+
+Compactness.
+
+=back
+
+=head1 SEE ALSO
+
+=item contingency-table
+
+=item compare-classes
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+use RSAT::table;
+
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    #### initialise parameters
+    my $start_time = &AlphaDate();
+    my $header=1;
+    my $margins = 1;
+
+    %main::infile = ();
+    %main::outfile = ();
+
+    $main::verbose = 0;
+#    $main::in = STDIN;
+    $main::out = STDOUT;
+
+    &ReadArguments();
+
+    ################################################################
+    #### check argument values
+
+    ################################################################
+    ### open output stream
+    $main::out = &OpenOutputFile($main::outfile{output});
+
+    ################################################################
+    ##### read input
+    my $counts = new RSAT::table();
+    $counts->readFromFile($infile{input}, "tab",header=>$header);
+    my $ncol = $counts->ncol();
+    my $nrow = $counts->nrow();
+    $counts->set_attribute("type", "counts");
+    $counts->force_attribute("margins", $margins);
+
+    ## PPV
+    my $PPV = new RSAT::table();
+    $PPV->setAlphabet($counts->getAlphabet);
+    $PPV->push_attribute("header", $counts->get_attribute("header"));
+    $PPV->setTable($nrow, $ncol, $counts->col_freq());
+    $PPV->set_attribute("type", "freq");
+    $PPV->force_attribute("margins", $margins);
+
+    ## Sn
+    my $Sn = new RSAT::table();
+    $Sn->setAlphabet($counts->getAlphabet);
+    $Sn->push_attribute("header", $counts->get_attribute("header"));
+    $Sn->setTable($nrow, $ncol, $counts->row_freq());
+    $Sn->set_attribute("type", "freq");
+    $Sn->force_attribute("margins", $margins);
+
+    ## Compactness
+    my $comp = new RSAT::table();
+    $comp->setAlphabet($counts->getAlphabet);
+    $comp->push_attribute("header", $counts->get_attribute("header"));
+    my @Sn_table = $Sn->getTable();
+    my @PPV_table = $PPV->getTable();
+    my @comp_table = ();
+    foreach my $r (0..($nrow-1)) {
+      for my $c (0..($ncol-1)) {
+	$comp_table[$c][$r]=$Sn_table[$c][$r]*$PPV_table[$c][$r];
+      }
+    }
+    $comp->setTable($nrow, $ncol, @comp_table);
+    $comp->set_attribute("type", "freq");
+    $comp->force_attribute("margins", $margins);
+
+    ## Calculate table-wise statistics
+    
+
+    ################################################################
+    #### print verbose
+    &Verbose() if ($main::verbose);
+
+    ################################################################
+    ###### execute the command
+
+    ################################################################
+    ###### print output
+    print $out $counts->toString(corner=>"Count");
+    print $out $PPV->toString(decimals=>2, corner=>"PPV");
+    print $out $Sn->toString(decimals=>2, corner=>"Sn");
+    print $out $comp->toString(decimals=>2, corner=>"Comp");
+
+    ################################################################
+    ###### finish verbose
+    if ($main::verbose >= 1) {
+	my $done_time = &AlphaDate();
+	print $main::out "; Job started $start_time\n";
+	print $main::out "; Job done    $done_time\n";
+    }
+
+ 
+    ################################################################
+    ###### close output stream
+    close $main::out if ($main::outfile{output});
+
+
+    exit(0);
+}
+
+################################################################
+################### subroutine definition ######################
+################################################################
+
+
+################################################################
+#### display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+#### display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+#### Read arguments 
+sub ReadArguments {
+#    foreach my $a (0..$#ARGV) {
+    my $arg = "";
+
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+
+
+    while ($arg = shift (@arguments)) {
+
+	## Verbosity
+=pod
+
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+
+
+	    ## Input file
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-i") {
+	    $main::infile{input} = shift(@arguments);
+
+	    ## Output file
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $main::outfile{output} = shift(@arguments);
+
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+
+	}
+    }
+
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $main::out "; contingency-stats ";
+    &PrintArguments($main::out);
+    if (defined(%main::infile)) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+    if (defined(%main::outfile)) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+}
+
+
+__END__
+
