@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.32 2006/07/17 10:03:02 jvanheld Exp $
+# $Id: compare-classes,v 1.33 2006/08/01 04:37:01 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -1752,10 +1752,10 @@ sub PrintOneMatrix {
     my @ref_classes = sort keys %ref_classes;
 
     ## Print the matrix type
-    print $out "; Matrix", "\t", $matrix_key, "\n";
+    print $out "; Matrix", "\t", $matrix_key, "\n" if ($main::verbose >= 1);
     
     ## Print the matrix header
-    my $header = "#Q_vs_R";
+    my $header = "#$matrix_key Q\R";
     if ($infile{qnames}) {
 	## replace class IDs by class names
 	foreach my $class (@query_classes) {
