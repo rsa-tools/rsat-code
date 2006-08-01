@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: contingency-stats,v 1.1 2006/08/01 04:36:06 jvanheld Exp $
+# $Id: contingency-stats,v 1.2 2006/08/01 04:43:58 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -56,25 +56,25 @@ Sensitivity. This parameter indicates the fraction of each reference
 cluster (row) covered by its best matching query cluster (column).
 
 Sensitivity is calculated at the level of each cell (cell-wise Sn), of
-each row (cluster-wise Sn) and of the whole contingency table
+each row (row-wise Sn) and of the whole contingency table
 (table-wise Sn).
 
 =item I<Cell-wise sensitivity>
 
 Sn_{i,j} = X_{i,j}/SUM_j(X_{i,j})
 
-=item I<cluster-wise sensitivity> 
+=item I<row-wise sensitivity> 
 
 Sn_{i.} = MAX_j(Sn_{i,j})
 
-The cluster-wise sensitivity of a row is the maximal value of
+The row-wise sensitivity of a row is the maximal value of
 sensitivity for all the cells of this row.
 
-=item I<cluster-wise sensitivity> 
+=item I<table-wise sensitivity> 
 
 Sn = SUM_i(Sn_{i.})/M
 
-The table-wise sensitivity is the average of the cluster-wise
+The table-wise sensitivity is the average of the row-wise
 sensitivity over all the rows of the contingency table.
 
 =item B<PPV>
@@ -84,25 +84,25 @@ each query cluster (column) covered by its best matching reference
 cluster (row).
 
 PPV is calculated at the level of each cell (cell-wise PPV), of each
-column (cluster-wise PPV) and of the whole contingency table
+column (column-wise PPV) and of the whole contingency table
 (table-wise PPV).
 
 =item I<Cell-wise PPV>
 
 PPV_{i,j} = X_{i,j}/SUM_i(X_{i,j})
 
-=item I<cluster-wise PPV> 
+=item I<column-wise PPV> 
 
 PPV_{.j} = MAX_i(PPV_{i,j})
 
-The cluster-wise PPV of a column is the maximal value of PPV for all
+The column-wise PPV of a column is the maximal value of PPV for all
 the cells of this column.
 
-=item I<cluster-wise PPV> 
+=item I<table-wise PPV> 
 
 PPV = SUM_j(PPV_{j.})/N
 
-The table-wise PPV is the average of the cluster-wise PPV over
+The table-wise PPV is the average of the column-wise PPV over
 all the columns of the contingency table.
 
 =item B<Acc.geom>
@@ -116,6 +116,19 @@ Acc.geom = sqrt(Sn*PPV)
 =item B<Comp>
 
 Compactness.
+
+The compactness is defined, at the level of each cell (cell-wise
+compactnes) as the product between Sn and PPV.
+
+=item I<Cell-wise compactness>
+
+Comp_{i,j}=Sn_{i,j}*PPV_{i,j}
+
+=item I<Column-wise compactness>
+
+=item I<Row-wise compactness>
+
+=item I<Table-wise compactness>
 
 =back
 
