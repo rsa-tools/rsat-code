@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.13 2006/07/17 10:03:02 jvanheld Exp $
+# $Id: convert-matrix,v 1.14 2006/08/01 04:38:13 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -403,7 +403,7 @@ OUTPUT FORMATS
 
     margins
 	Calculate marginal values (column and row sum, min, max) for each 
-        matrix. 
+        matrix.
 
     parameters
         Returns a series of parameters associated to the matrix. The
