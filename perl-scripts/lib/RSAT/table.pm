@@ -792,44 +792,54 @@ method C<readFromFile($file, "tab")>.
 sub _readFromTabFile {
     my ($self, $file, %args) = @_;
     warn ("; Reading table from tab file\t",$file, "\n") if ($main::verbose >= 2);
-    
-    
+
     ## open input stream
     my ($in, $dir) = &RSAT::util::OpenInputFile($file);
     my $current_table_nb = 0;
     my $l=0;
     ## read header
+    my $header = "";
     if ($args{header}) {
+      do {
 	$header = <$in>;
-	chomp ($header);
-	@header = split "\t", $header;
-	shift @header;
-	$self->push_attribute("header", @header);
-	$l++;
+      } until ($header !~ /^;/);
+      chomp ($header);
+      $l++;
     }
     while (<$in>) {
 	$l++;
 	next unless (/\S/);
-	s/\r//;
+	next if (/^;/);
 	chomp();
+	if (/^#/) {
+	  $header = $1;
+	  next;
+	}
+	s/\r//;
 	if (/^\s*(\S+)\s+/) {
 	    my @fields = split /\t/, $_;
-	    
+
 #	    warn join("\t", @fields), "\n" if ($main::verbose >= 10);
-	    
+
 	    ## residue associated to the row
 	    my $residue = shift @fields;
-	    
+
 #	    warn join("\t", "line", $l, "row name", $residue), "\n" if ($main::verbose >= 10);
-	    	    
+
 	    ## skip the | between residue and numbers
 	    shift @fields unless &main::IsReal($fields[0]);	
-	    
+
 	    $self->addIndexedRow($residue, @fields);
 	}
     }
     close $in if ($file);
 
+    ## Assign the header
+    if ($header) {
+      @header = split "\t", $header;
+      shift @header;
+      $self->push_attribute("header", @header);
+    }
 }
 
 
