@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: transpose-table,v 1.8 2006/06/10 22:27:48 jvanheld Exp $
+# $Id: transpose-table,v 1.9 2006/08/01 18:32:02 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:59:01 jvanheld>
 #
@@ -38,7 +38,10 @@ $out = &OpenOutputFile($outfile{output});
 $row_nb = 0;
 $max_col = 0;
 while (my $line = <$in>) {
-#    next if (/^;/);
+  if ($line =~ /^;/) {
+    print $out $line;
+    next;
+  }
 #    warn $line if ($main::verbose >= 3);
     chomp($line);
     $row_nb++;
