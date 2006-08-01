@@ -409,7 +409,7 @@ Calculate the mean of each column.
 =cut
 sub calc_col_mean {
     my ($self) = @_;
-    my @row_mean = ();
+    my @col_mean = ();
     my $ncol = $self->ncol();
     my $nrow = $self->nrow();
     warn join("\t", "; Calculating mean per column","rows:".$nrow, "columns:".$ncol),"\n"
@@ -1007,7 +1007,7 @@ sub toString {
     }
 
     if ($self->get_attribute("margins")) {
-      push @header, "|", "row.sum", "row.max", "row.min";
+      push @header, "|", "r.mean", "r.sum", "r.max", "r.min";
     }
 
     if ($main::verbose >= 1) {
@@ -1034,10 +1034,12 @@ sub toString {
     }
     
     ## Print the table
+    my @row_mean;
     my @row_sum;
     my @row_max;
     my @row_min;
     if ($self->get_attribute("margins")) {
+      @row_mean = $self->row_mean();
       @row_sum = $self->row_sum();
       @row_max = $self->row_max();
       @row_min = $self->row_min();
@@ -1045,7 +1047,7 @@ sub toString {
     for $a (0..$#alphabet) {
 	my @row = $self->get_row($a+1, $ncol, @table);
 	if ($self->get_attribute("margins")) {
-	  push @row, "|", $row_sum[$a], $row_max[$a], $row_min[$a];
+	  push @row, "|", sprintf("%.3g", $row_mean[$a]), $row_sum[$a], $row_max[$a], $row_min[$a];
 	}
 	$to_print .= $self->_printTableRow($alphabet[$a], @row);
     }
@@ -1053,25 +1055,27 @@ sub toString {
     ################################################################
     ##Print column statistics
     if ($self->get_attribute("margins")) {
-	$prefix_letter = substr($type, 0, 1);
+	$prefix_letter = substr($type, 0, 1) || "c";
 	$to_print .= $self->_printSeparator($ncol+4, $to_print);
-	
+
+	## Mean per column
+	my @col_mean = $self->col_mean($nrow, $ncol, @table);
+	push @col_mean, "|", &RSAT::stats::mean(@col_mean);
+	$to_print .= $self->_printTableRow("; ".$prefix_letter.".mea", @col_mean);
+
 	## Sum per column
-#	my @col_sum = &col_sum($nrow, $ncol, @table);
 	my @col_sum = $self->col_sum($nrow, $ncol, @table);
-	push @col_sum, "|", &RSAT::stats::sum(@col_sum);
+	push @col_sum, "|", "", &RSAT::stats::sum(@col_sum);
 	$to_print .= $self->_printTableRow("; ".$prefix_letter.".sum", @col_sum);
-	
+
 	## Maximum per column
-#	my @col_max = &col_max($nrow, $ncol, @table);
 	my @col_max = $self->col_max($nrow, $ncol, @table);
-	push @col_max, "|", "", &RSAT::stats::checked_max(@col_max);
+	push @col_max, "|", "", "", &RSAT::stats::checked_max(@col_max);
 	$to_print .= $self->_printTableRow("; ".$prefix_letter.".max", @col_max);
-	
+
 	## Minimum per column
-#	my @col_min = &col_min($nrow, $ncol, @table);
 	my @col_min = $self->col_min($nrow, $ncol, @table);
-	push @col_min, "|", "", "", &RSAT::stats::checked_min(@col_min);
+	push @col_min, "|", "", "", "", &RSAT::stats::checked_min(@col_min);
 	$to_print .= $self->_printTableRow("; ".$prefix_letter.".min", @col_min);
     }
 
