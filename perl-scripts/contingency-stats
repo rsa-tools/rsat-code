@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: contingency-stats,v 1.4 2006/08/01 18:32:38 jvanheld Exp $
+# $Id: contingency-stats,v 1.5 2006/08/01 23:26:16 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -59,6 +59,8 @@ Sensitivity is calculated at the level of each cell (cell-wise Sn), of
 each row (row-wise Sn) and of the whole contingency table
 (table-wise Sn).
 
+=over
+
 =item I<Cell-wise sensitivity>
 
 Sn_{i,j} = X_{i,j}/SUM_j(X_{i,j})
@@ -77,6 +79,8 @@ Sn = SUM_i(Sn_{i.})/M
 The table-wise sensitivity is the average of the row-wise
 sensitivity over all the rows of the contingency table.
 
+=back
+
 =item B<PPV>
 
 Positive Predictive Value. This parameter indicates the fraction of
@@ -86,6 +90,8 @@ cluster (row).
 PPV is calculated at the level of each cell (cell-wise PPV), of each
 column (column-wise PPV) and of the whole contingency table
 (table-wise PPV).
+
+=over
 
 =item I<Cell-wise PPV>
 
@@ -105,6 +111,8 @@ PPV = SUM_j(PPV_{j.})/N
 The table-wise PPV is the average of the column-wise PPV over
 all the columns of the contingency table.
 
+=back
+
 =item B<Acc.geom>
 
 Geometric accuracy. This reflects the tradeoff between sensitivity and
@@ -120,15 +128,47 @@ Compactness.
 The compactness is defined, at the level of each cell (cell-wise
 compactnes) as the product between Sn and PPV.
 
+=over
+
 =item I<Cell-wise compactness>
 
-Comp_{i,j}=Sn_{i,j}*PPV_{i,j}
+comp_{i,j}=Sn_{i,j}*PPV_{i,j}
 
 =item I<Column-wise compactness>
 
+Column-wise compactness is defined at the level of each column, as the
+sum of compactness value for all the cells of this column.
+
+comp_{.j} = SUM_i( comp_{i,j})
+
 =item I<Row-wise compactness>
 
+Row-wise compactness is defined at the level of each row, as the
+sum of compactness value for all the cells of this row.
+
+comp_{i.} = SUM_j(comp_{i,j})
+
 =item I<Table-wise compactness>
+
+Three table-wise statistics are computed for compactness.
+
+=over
+
+=item average column-wise compactness
+
+comp_c = AVG_j(comp_{.j})
+
+=item average row-wise compactness
+
+comp_r = AVG_i(comp_{i.})
+
+=item table-wise compactness
+
+comp = sqrt(comp_r*comp_c)
+
+=back
+
+=back
 
 =back
 
@@ -160,7 +200,7 @@ package main;
     #### initialise parameters
     my $start_time = &AlphaDate();
     my $header=1;
-    local $decimals = 2;
+    local $decimals = 3;
 
     %main::infile = ();
     %main::outfile = ();
@@ -171,6 +211,8 @@ package main;
     ## Output fields
     %supported_return_fields = (
 				stats=>1,
+				rowstats=>1,
+				colstats=>1,
 				tables=>1,
 				margins=>1,
 			       );
@@ -233,21 +275,46 @@ package main;
     $comp->set_attribute("type", "freq");
     $comp->force_attribute("margins", $return_fields{margins});
 
-    ## Calculate table-wise statistics
+    ## Calculate basic table-wise statistics
     my %table_wise_stats = ();
     $table_wise_stats->{ncol} = $counts->ncol();
     $table_wise_stats->{nrow} = $counts->nrow();
     $table_wise_stats->{sum} = &RSAT::stats::sum($counts->row_sum());
     $table_wise_stats->{min} = &RSAT::stats::min($counts->row_min());
     $table_wise_stats->{max} = &RSAT::stats::max($counts->row_max());
-    $table_wise_stats->{mean} = &RSAT::stats::mean($counts->row_mean());
+#    my @counts = $counts->getTable();
+#    for my $r (0..($nrow-1)) {
+#      for my $c (0..($ncol-1)) {
+#	$table_wise_stats->{sum}+=$counts[$c][$r];
+#      }
+#    }
+    $table_wise_stats->{mean} = $table_wise_stats->{sum}/($ncol*$nrow);
 
+    ## Calculate table-wise Sn, PPV, and geometric accuracy
     $table_wise_stats->{Sn} = &RSAT::stats::mean(@row_wise_Sn);
     $table_wise_stats->{PPV} = &RSAT::stats::mean(@col_wise_PPV);
+    $table_wise_stats->{acc} = ($table_wise_stats->{Sn} + $table_wise_stats->{PPV})/2;
     $table_wise_stats->{acc_g} = sqrt($table_wise_stats->{Sn} * $table_wise_stats->{PPV});
 
-    $table_wise_stats->{comp_r} = &RSAT::stats::sum($comp->row_mean());
-    $table_wise_stats->{comp_c} = &RSAT::stats::sum($comp->col_mean());
+    ## Calculate weigthed Sn, PPV and  geometric accuracy
+    my @row_weights = $counts->row_sum();
+    $table_wise_stats->{Sn_w} = 0;
+    for my $r (0..($nrow-1)) {
+      $table_wise_stats->{Sn_w} += $row_weights[$r]*$row_wise_Sn[$r];
+    }
+    $table_wise_stats->{Sn_w} /= &RSAT::stats::sum(@row_weights);
+    my @col_weights = $counts->col_sum();
+    $table_wise_stats->{PPV_w} = 0;
+    for my $c (0..($ncol-1)) {
+      $table_wise_stats->{PPV_w} += $col_weights[$c]*$col_wise_PPV[$c];
+    }
+    $table_wise_stats->{PPV_w} /= &RSAT::stats::sum(@row_weights);
+    $table_wise_stats->{acc_w} = ($table_wise_stats->{Sn_w} + $table_wise_stats->{PPV_w})/2;
+    $table_wise_stats->{acc_g_w} = sqrt($table_wise_stats->{Sn_w} * $table_wise_stats->{PPV_w});
+
+    ## Calculate table-wise compactness
+    $table_wise_stats->{comp_r} = &RSAT::stats::mean($comp->row_sum());
+    $table_wise_stats->{comp_c} = &RSAT::stats::mean($comp->col_sum());
     $table_wise_stats->{comp} = sqrt($table_wise_stats->{comp_r} * $table_wise_stats->{comp_c});
 
     ################################################################
@@ -260,20 +327,87 @@ package main;
     ################################################################
     ###### print output
 
+    if ($return_fields{stats}) {
+      for my $stat  (qw(ncol nrow sum min max)) {
+	printf $out "%s\t%d\n", $stat, $table_wise_stats->{$stat};
+      }
+      for my $stat  (qw(mean Sn PPV acc acc_g Sn_w PPV_w acc_w acc_g_w comp_r comp_c comp)) {
+	printf $out "%s\t%.${decimals}g\n", $stat, $table_wise_stats->{$stat};
+      }
+    }
+
+    ################################################################
+    ## Print row-wise statistics
+    if ($return_fields{rowstats}) {
+      print $out join("\t", 
+		     "; Row", 
+		     "mean", 
+		     "sum", 
+		     "min", 
+		     "max",
+		      "Sn",
+		      "comp_r",
+		    ), "\n";
+      my @row_names = $counts->getAlphabet();
+      my @row_sum = $counts->row_sum();
+      my @row_min = $counts->row_min();
+      my @row_max = $counts->row_max();
+      my @row_mean = $counts->row_mean();
+      my @row_Sn = $Sn->row_max();
+      my @row_comp = $comp->row_sum();
+      for my $r (0..($nrow-1)) {
+	print $out join("\t", 
+			$row_names[$r],
+			sprintf ("%.${decimals}g", $row_mean[$r]),
+			$row_sum[$r],
+			$row_min[$r],
+			$row_max[$r],
+			sprintf ("%.${decimals}g", $row_Sn[$r]),
+			sprintf ("%.${decimals}g", $row_comp[$r]),
+		       ), "\n";
+      }
+    }
+
+
+    ################################################################
+    ## Print column-wise statistics
+    if ($return_fields{colstats}) {
+      print $out join("\t", 
+		      "; Col", 
+		      "mean", 
+		      "sum", 
+		      "min", 
+		      "max",
+		      "PPV",
+		      "comp_c",
+		     ), "\n";
+      my @col_names = $counts->get_attribute("header");
+      my @col_sum = $counts->col_sum();
+      my @col_min = $counts->col_min();
+      my @col_max = $counts->col_max();
+      my @col_mean = $counts->col_mean();
+      my @col_PPV = $PPV->col_max();
+      my @col_comp = $comp->col_sum();
+      for my $r (0..($ncol-1)) {
+	print $out join("\t", 
+			$col_names[$r],
+			sprintf ("%.${decimals}g", $col_mean[$r]),
+			$col_sum[$r],
+			$col_min[$r],
+			$col_max[$r],
+			sprintf ("%.${decimals}g", $col_PPV[$r]),
+			sprintf ("%.${decimals}g", $col_comp[$r]),
+		       ), "\n";
+      }
+    }
+
+    ################################################################
+    ## Full tables
     if ($return_fields{tables}) {
       print $out $counts->toString(corner=>"Count");
       print $out $PPV->toString(decimals=>$decimals, corner=>"PPV");
       print $out $Sn->toString(decimals=>$decimals, corner=>"Sn");
       print $out $comp->toString(decimals=>$decimals, corner=>"Comp");
-    }
-
-    if ($return_fields{stats}) {
-      for my $stat  (qw(ncol nrow sum min max)) {
-	printf $out "%s\t%d\n", $stat, $table_wise_stats->{$stat};
-      }
-      for my $stat  (qw(mean Sn PPV acc_g comp_r comp_c comp)) {
-	printf $out "%s\t%.${decimals}g\n", $stat, $table_wise_stats->{$stat};
-      }
     }
 
     ################################################################
@@ -403,9 +537,33 @@ Number of decimals to display for the computed statistics.
 
 =item B<-return return_fields>
 
-List of fields to return. 
+List of fields to return.
 
-Supported fields: stats, tables, margins
+Supported fields: stats, rowstats, colstats, tables, margins
+
+=over
+
+=item I<stats>
+
+table-wise statistics
+
+=item I<rowstats>
+
+row-wise statistics (one line per row of the contingency table)
+
+=item I<colstats>
+
+column-wise statistics (one line per column of the contingency table)
+
+=item I<tables>
+
+full tables for each statistics (counts, Sn, PPV, compactness).
+
+=item I<margins>
+
+marginal statistics besides the tables (requires to return tables).
+
+=back
 
 =cut
         } elsif ($arg eq "-return") {
