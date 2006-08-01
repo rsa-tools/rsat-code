@@ -344,6 +344,88 @@ sub calc_row_sum {
 ################################################################
 =pod
 
+=item B<row_mean>
+
+Return the mean of each row. Computation is cached (computed only
+once for the life of the object).
+
+=cut
+sub row_mean {
+  my ($self) = @_;
+  unless ($self->get_attribute("row_mean_calculated")) {
+    $self->calc_row_mean();
+  }
+  return $self->get_attribute("row_mean");
+}
+
+################################################################
+=pod
+
+=item B<calc_row_mean>
+
+Calculate the mean of each row.
+
+=cut
+sub calc_row_mean {
+    my ($self) = @_;
+    my $ncol = $self->ncol();
+    my $nrow = $self->nrow();
+    warn join("\t", "; Calculating mean per row","rows:".$nrow, "columns:".$ncol),"\n"
+	if ($main::verbose > 2);
+    my @row_mean = ();
+    my @row_sum = $self->row_sum();
+    foreach my $r (0..($nrow-1)) {
+	my $row_mean = $row_sum[$r]/$ncol;
+	push @row_mean, $row_mean;
+    }
+    @{$self->{row_mean}} = @row_mean;
+    $self->force_attribute("row_mean_calculated", 1);
+}
+
+################################################################
+=pod
+
+=item B<col_mean>
+
+Return the mean of each column. Computation is cached (computed only
+once for the life of the object).
+
+=cut
+sub col_mean {
+  my ($self) = @_;
+  unless ($self->get_attribute("col_mean_calculated")) {
+    $self->calc_col_mean();
+  }
+  return $self->get_attribute("col_mean");
+}
+
+################################################################
+=pod
+
+=item B<calc_col_mean>
+
+Calculate the mean of each column.
+
+=cut
+sub calc_col_mean {
+    my ($self) = @_;
+    my @row_mean = ();
+    my $ncol = $self->ncol();
+    my $nrow = $self->nrow();
+    warn join("\t", "; Calculating mean per column","rows:".$nrow, "columns:".$ncol),"\n"
+	if ($main::verbose > 2);
+    my @col_sum = $self->col_sum();
+    foreach my $c (0..($ncol-1)) {
+	my $col_mean = $col_sum[$c]/$nrow;
+	push @col_mean, $col_mean;
+    }
+    @{$self->{col_mean}} = @col_mean;
+    $self->force_attribute("col_mean_calculated", 1);
+}
+
+################################################################
+=pod
+
 =item B<row_max>
 
 Return the max of each row. Computation is cached (computed only
