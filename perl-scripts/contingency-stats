@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: contingency-stats,v 1.2 2006/08/01 04:43:58 jvanheld Exp $
+# $Id: contingency-stats,v 1.3 2006/08/01 10:00:25 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -147,6 +147,7 @@ BEGIN {
     }
 }
 require "RSA.lib";
+use RSAT::stats;
 use RSAT::table;
 
 
@@ -159,7 +160,7 @@ package main;
     #### initialise parameters
     my $start_time = &AlphaDate();
     my $header=1;
-    my $margins = 1;
+    local $decimals = 2;
 
     %main::infile = ();
     %main::outfile = ();
@@ -167,11 +168,23 @@ package main;
     $main::verbose = 0;
 #    $main::in = STDIN;
     $main::out = STDOUT;
+    ## Output fields
+    %supported_return_fields = (
+				stats=>1,
+				tables=>1,
+				margins=>1,
+			       );
+    $supported_return_fields = join (",", sort(keys( %supported_return_fields)));
+    
+    local %return_fields = ();
 
     &ReadArguments();
 
     ################################################################
     #### check argument values
+    unless (scalar(keys(%return_fields)) > 0) {
+      $return_fields{stats} = 1;
+    }
 
     ################################################################
     ### open output stream
@@ -184,7 +197,7 @@ package main;
     my $ncol = $counts->ncol();
     my $nrow = $counts->nrow();
     $counts->set_attribute("type", "counts");
-    $counts->force_attribute("margins", $margins);
+    $counts->force_attribute("margins", $return_fields{margins});
 
     ## PPV
     my $PPV = new RSAT::table();
@@ -192,7 +205,8 @@ package main;
     $PPV->push_attribute("header", $counts->get_attribute("header"));
     $PPV->setTable($nrow, $ncol, $counts->col_freq());
     $PPV->set_attribute("type", "freq");
-    $PPV->force_attribute("margins", $margins);
+    $PPV->force_attribute("margins", $return_fields{margins});
+    my @col_wise_PPV = $PPV->col_max();
 
     ## Sn
     my $Sn = new RSAT::table();
@@ -200,7 +214,8 @@ package main;
     $Sn->push_attribute("header", $counts->get_attribute("header"));
     $Sn->setTable($nrow, $ncol, $counts->row_freq());
     $Sn->set_attribute("type", "freq");
-    $Sn->force_attribute("margins", $margins);
+    $Sn->force_attribute("margins", $return_fields{margins});
+    my @row_wise_Sn = $Sn->row_max();
 
     ## Compactness
     my $comp = new RSAT::table();
@@ -216,10 +231,17 @@ package main;
     }
     $comp->setTable($nrow, $ncol, @comp_table);
     $comp->set_attribute("type", "freq");
-    $comp->force_attribute("margins", $margins);
+    $comp->force_attribute("margins", $return_fields{margins});
 
     ## Calculate table-wise statistics
-    
+    my %table_wise_stats = ();
+    $table_wise_stats->{Sn} = &RSAT::stats::mean(@row_wise_Sn);
+    $table_wise_stats->{PPV} = &RSAT::stats::mean(@col_wise_PPV);
+    $table_wise_stats->{acc_g} = sqrt($table_wise_stats->{Sn} * $table_wise_stats->{PPV});
+
+    $table_wise_stats->{comp_r} = &RSAT::stats::sum($comp->row_mean());
+    $table_wise_stats->{comp_c} = &RSAT::stats::sum($comp->col_mean());
+    $table_wise_stats->{comp} = sqrt($table_wise_stats->{comp_r} * $table_wise_stats->{comp_c});
 
     ################################################################
     #### print verbose
@@ -230,10 +252,19 @@ package main;
 
     ################################################################
     ###### print output
-    print $out $counts->toString(corner=>"Count");
-    print $out $PPV->toString(decimals=>2, corner=>"PPV");
-    print $out $Sn->toString(decimals=>2, corner=>"Sn");
-    print $out $comp->toString(decimals=>2, corner=>"Comp");
+
+    if ($return_fields{tables}) {
+      print $out $counts->toString(corner=>"Count");
+      print $out $PPV->toString(decimals=>$decimals, corner=>"PPV");
+      print $out $Sn->toString(decimals=>$decimals, corner=>"Sn");
+      print $out $comp->toString(decimals=>$decimals, corner=>"Comp");
+    }
+
+    if ($return_fields{stats}) {
+      for my $stat  (qw(Sn PPV acc_g comp_r comp_c comp)) {
+	printf $out "%s\t%.${decimals}f\n", $stat, $table_wise_stats->{$stat};
+      }
+    }
 
     ################################################################
     ###### finish verbose
@@ -348,10 +379,42 @@ allows to use the command within a pipe.
 	} elsif ($arg eq "-o") {
 	    $main::outfile{output} = shift(@arguments);
 
+	    ## Output file
+=pod
+
+=item	B<-decimals #>
+
+Number of decimals to display for the computed statistics.
+
+=cut
+	} elsif ($arg eq "-decimals") {
+	    $main::decimals = shift(@arguments);
+
+
+=item B<-return return_fields>
+
+List of fields to return. 
+
+Supported fields: stats, tables, margins
+
+=cut
+        } elsif ($arg eq "-return") {
+            $to_return = shift @arguments;
+            my @fields_to_return = split ",", $to_return;
+            foreach $field (@fields_to_return) {
+                if ($supported_return_fields{$field}) {
+                    $return_fields{$field} = 1;
+                } else {
+                    &RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_return_fields));
+		}
+	    }
+
+
 	} else {
 	    &FatalError(join("\t", "Invalid option", $arg));
 
 	}
+
     }
 
 
