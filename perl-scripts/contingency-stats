@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: contingency-stats,v 1.3 2006/08/01 10:00:25 jvanheld Exp $
+# $Id: contingency-stats,v 1.4 2006/08/01 18:32:38 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -235,6 +235,13 @@ package main;
 
     ## Calculate table-wise statistics
     my %table_wise_stats = ();
+    $table_wise_stats->{ncol} = $counts->ncol();
+    $table_wise_stats->{nrow} = $counts->nrow();
+    $table_wise_stats->{sum} = &RSAT::stats::sum($counts->row_sum());
+    $table_wise_stats->{min} = &RSAT::stats::min($counts->row_min());
+    $table_wise_stats->{max} = &RSAT::stats::max($counts->row_max());
+    $table_wise_stats->{mean} = &RSAT::stats::mean($counts->row_mean());
+
     $table_wise_stats->{Sn} = &RSAT::stats::mean(@row_wise_Sn);
     $table_wise_stats->{PPV} = &RSAT::stats::mean(@col_wise_PPV);
     $table_wise_stats->{acc_g} = sqrt($table_wise_stats->{Sn} * $table_wise_stats->{PPV});
@@ -261,8 +268,11 @@ package main;
     }
 
     if ($return_fields{stats}) {
-      for my $stat  (qw(Sn PPV acc_g comp_r comp_c comp)) {
-	printf $out "%s\t%.${decimals}f\n", $stat, $table_wise_stats->{$stat};
+      for my $stat  (qw(ncol nrow sum min max)) {
+	printf $out "%s\t%d\n", $stat, $table_wise_stats->{$stat};
+      }
+      for my $stat  (qw(mean Sn PPV acc_g comp_r comp_c comp)) {
+	printf $out "%s\t%.${decimals}g\n", $stat, $table_wise_stats->{$stat};
       }
     }
 
