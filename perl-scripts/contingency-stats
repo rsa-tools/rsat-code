@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: contingency-stats,v 1.5 2006/08/01 23:26:16 jvanheld Exp $
+# $Id: contingency-stats,v 1.6 2006/08/02 08:17:59 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -201,6 +201,8 @@ package main;
     my $start_time = &AlphaDate();
     my $header=1;
     local $decimals = 3;
+    local @param_keys = ();
+    local @param_values = ();
 
     %main::infile = ();
     %main::outfile = ();
@@ -328,6 +330,10 @@ package main;
     ###### print output
 
     if ($return_fields{stats}) {
+      for my $p  (0..$#param_keys) {
+	printf $out "%s\t%s\n", $param_keys[$p], $param_values[$p];
+      }
+
       for my $stat  (qw(ncol nrow sum min max)) {
 	printf $out "%s\t%d\n", $stat, $table_wise_stats->{$stat};
       }
@@ -339,14 +345,16 @@ package main;
     ################################################################
     ## Print row-wise statistics
     if ($return_fields{rowstats}) {
+      print $out ";\n";
+      print $out "; Row statistics\n";
       print $out join("\t", 
-		     "; Row", 
-		     "mean", 
-		     "sum", 
-		     "min", 
-		     "max",
+		      "; mean", 
+		      "sum", 
+		      "min", 
+		      "max",
 		      "Sn",
 		      "comp_r",
+		      "row_name",
 		    ), "\n";
       my @row_names = $counts->getAlphabet();
       my @row_sum = $counts->row_sum();
@@ -357,13 +365,13 @@ package main;
       my @row_comp = $comp->row_sum();
       for my $r (0..($nrow-1)) {
 	print $out join("\t", 
-			$row_names[$r],
 			sprintf ("%.${decimals}g", $row_mean[$r]),
 			$row_sum[$r],
 			$row_min[$r],
 			$row_max[$r],
 			sprintf ("%.${decimals}g", $row_Sn[$r]),
 			sprintf ("%.${decimals}g", $row_comp[$r]),
+			$row_names[$r],
 		       ), "\n";
       }
     }
@@ -372,14 +380,16 @@ package main;
     ################################################################
     ## Print column-wise statistics
     if ($return_fields{colstats}) {
+      print $out ";\n";
+      print $out "; Column statistics\n";
       print $out join("\t", 
-		      "; Col", 
-		      "mean", 
+		      "; mean", 
 		      "sum", 
 		      "min", 
 		      "max",
 		      "PPV",
 		      "comp_c",
+		      "column_name",
 		     ), "\n";
       my @col_names = $counts->get_attribute("header");
       my @col_sum = $counts->col_sum();
@@ -388,15 +398,15 @@ package main;
       my @col_mean = $counts->col_mean();
       my @col_PPV = $PPV->col_max();
       my @col_comp = $comp->col_sum();
-      for my $r (0..($ncol-1)) {
+      for my $c (0..($ncol-1)) {
 	print $out join("\t", 
-			$col_names[$r],
-			sprintf ("%.${decimals}g", $col_mean[$r]),
-			$col_sum[$r],
-			$col_min[$r],
-			$col_max[$r],
-			sprintf ("%.${decimals}g", $col_PPV[$r]),
-			sprintf ("%.${decimals}g", $col_comp[$r]),
+			sprintf ("%.${decimals}g", $col_mean[$c]),
+			$col_sum[$c],
+			$col_min[$c],
+			$col_max[$c],
+			sprintf ("%.${decimals}g", $col_PPV[$c]),
+			sprintf ("%.${decimals}g", $col_comp[$c]),
+			$col_names[$c] || "col $c+1",
 		       ), "\n";
       }
     }
@@ -534,6 +544,23 @@ Number of decimals to display for the computed statistics.
 	} elsif ($arg eq "-decimals") {
 	    $main::decimals = shift(@arguments);
 
+	    ## Output file
+=pod
+
+=item	B<-param param_value>
+
+Include a user-specified parameter value in the table-wise
+statistics. Can be used iteratively on the same commande line.
+
+This is useful when the script is used iteratively, to calculate
+statistics under various conditions (for example various parameter
+values for a clustering algorithm). The table-wise statistics can then
+be integrated in a single table with the program clompare-scores.
+
+=cut
+	} elsif ($arg eq "-param") {
+	    push @param_keys, shift(@arguments);
+	    push @param_values, shift(@arguments);
 
 =item B<-return return_fields>
 
