@@ -95,8 +95,8 @@ sub calc_col_freq {
   my $ncol = $self->ncol();
   my $nrow = $self->nrow();
   my @table = $self->getTable();
-  warn join("\t", "; Calculating frequencies per column","rows:".$nrow, "columns:".$ncol),"\n"
-    if ($main::verbose > 2);
+  &RSAT::message::Info(join("\t", "Calculating frequencies per column","rows:".$nrow, "columns:".$ncol))
+    if ($main::verbose >= 3);
   foreach my $c (0..($ncol-1)) {
     for my $r (0..($nrow-1)) {
       if ($col_sum[$c] > 0) {
@@ -144,8 +144,8 @@ sub calc_row_freq {
   my $ncol = $self->ncol();
   my $nrow = $self->nrow();
   my @table = $self->getTable();
-  warn join("\t", "; Calculating frequencies per row","rows:".$nrow, "columns:".$ncol),"\n"
-    if ($main::verbose > 2);
+  &RSAT::message::Info(join("\t", "Calculating frequencies per row","rows:".$nrow, "columns:".$ncol))
+    if ($main::verbose >= 3);
   foreach my $r (0..($nrow-1)) {
     for my $c (0..($ncol-1)) {
       if ($row_sum[$r] > 0) {
@@ -191,15 +191,15 @@ sub calc_col_sum {
     my $ncol = $self->ncol();
     my $nrow = $self->nrow();
     my @table = $self->getTable();
-    warn join("\t", "; Calculating sum per column","rows:".$nrow, "columns:".$ncol),"\n"
-	if ($main::verbose > 2);
+    &RSAT::message::Info(join("\t", "Calculating sum per column","rows:".$nrow, "columns:".$ncol))
+	if ($main::verbose >= 3);
     foreach my $c (0..($ncol-1)) {
 	my $col_sum = 0;
 	for my $r (0..($nrow-1)) {
 	    $col_sum += $table[$c][$r];
 	}
 	push @col_sum, $col_sum;
-#	warn join ("\t", ";", "column", $c, "sum", $col_sum), "\n"  if ($main::verbose >= 5);
+#	&RSAT::message::Debug("column", $c, "sum", $col_sum)  if ($main::verbose >= 10);
     }
     @{$self->{col_sum}} = @col_sum;
     $self->force_attribute("col_sum_calculated", 1);
@@ -236,8 +236,8 @@ sub calc_col_max {
     my $ncol = $self->ncol();
     my $nrow = $self->nrow();
     my @table = $self->getTable();
-    warn join("\t", "; Calculating max per column","rows:".$nrow, "columns:".$ncol),"\n"
-	if ($main::verbose > 2);
+    &RSAT::message::Info(join("\t", "Calculating max per column","rows:".$nrow, "columns:".$ncol))
+	if ($main::verbose >= 4);
     foreach my $c (0..($ncol-1)) {
 	my $col_max;
 	for my $r (0..($nrow-1)) {
@@ -281,8 +281,8 @@ sub calc_col_min {
     my $ncol = $self->ncol();
     my $nrow = $self->nrow();
     my @table = $self->getTable();
-    warn join("\t", "; Calculating min per column","rows:".$nrow, "columns:".$ncol),"\n"
-	if ($main::verbose > 2);
+    &RSAT::message::Info(join("\t", "Calculating min per column","rows:".$nrow, "columns:".$ncol))
+	if ($main::verbose >= 4);
     foreach my $c (0..($ncol-1)) {
 	my $col_min;
 	for my $r (0..($nrow-1)) {
@@ -327,19 +327,62 @@ sub calc_row_sum {
     my $ncol = $self->ncol();
     my $nrow = $self->nrow();
     my @table = $self->getTable();
-    warn join("\t", "; Calculating sum per row","rows:".$nrow, "columns:".$ncol),"\n"
-	if ($main::verbose > 2);
+    &RSAT::message::Info(join("\t", "Calculating sum per row","rows:".$nrow, "columns:".$ncol))
+	if ($main::verbose >= 3);
     foreach my $r (0..($nrow-1)) {
 	my $row_sum = 0;
 	for my $c (0..($ncol-1)) {
 	    $row_sum += $table[$c][$r];
 	}
 	push @row_sum, $row_sum;
-#	warn join ("\t", ";", "column", $c, "sum", $col_sum), "\n"  if ($main::verbose >= 5);
+#	&RSAT::message::Debug( "row", $r, "sum", $row_sum)  if ($main::verbose >= 10);
     }
     @{$self->{row_sum}} = @row_sum;
     $self->force_attribute("row_sum_calculated", 1);
 }
+
+################################################################
+=pod
+
+=item B<force_row_sum>
+
+Force the row sums to take specified values rather than calculating
+them from the table itself.
+
+=cut
+sub force_row_sum {
+  my ($self, @row_sum) = @_;
+  my $nrow = $self->nrow();
+  unless (scalar(@row_sum) == $nrow) {
+    &RSAT::error::FatalError(join("\t", "RSAT::table::force_row_sum", 
+				  "number of specified values", scalar(@row_sum),
+				  "differs from the number of rows", $nrow));
+  }
+  @{$self->{row_sum}} = @row_sum;
+  $self->force_attribute("row_sum_calculated", 1);
+}
+
+################################################################
+=pod
+
+=item B<force_col_sum>
+
+Force the column sums to take specified values rather than calculating
+them from the table itself.
+
+=cut
+sub force_col_sum {
+  my ($self, @col_sum) = @_;
+  my $ncol = $self->ncol();
+  unless (scalar(@col_sum) == $ncol) {
+    &RSAT::error::FatalError(join("\t", "RSAT::table::force_col_sum", 
+				  "number of specified values", scalar(@col_sum),
+				  "differs from the number of cols", $ncol));
+  }
+  @{$self->{col_sum}} = @col_sum;
+  $self->force_attribute("col_sum_calculated", 1);
+}
+
 
 ################################################################
 =pod
@@ -370,8 +413,8 @@ sub calc_row_mean {
     my ($self) = @_;
     my $ncol = $self->ncol();
     my $nrow = $self->nrow();
-    warn join("\t", "; Calculating mean per row","rows:".$nrow, "columns:".$ncol),"\n"
-	if ($main::verbose > 2);
+    &RSAT::message::Info(join("\t", "Calculating mean per row","rows:".$nrow, "columns:".$ncol))
+	if ($main::verbose >= 4);
     my @row_mean = ();
     my @row_sum = $self->row_sum();
     foreach my $r (0..($nrow-1)) {
@@ -412,8 +455,8 @@ sub calc_col_mean {
     my @col_mean = ();
     my $ncol = $self->ncol();
     my $nrow = $self->nrow();
-    warn join("\t", "; Calculating mean per column","rows:".$nrow, "columns:".$ncol),"\n"
-	if ($main::verbose > 2);
+    &RSAT::message::Info(join("\t", "Calculating mean per column","rows:".$nrow, "columns:".$ncol))
+	if ($main::verbose >= 4);
     my @col_sum = $self->col_sum();
     foreach my $c (0..($ncol-1)) {
 	my $col_mean = $col_sum[$c]/$nrow;
@@ -454,8 +497,8 @@ sub calc_row_max {
     my $ncol = $self->ncol();
     my $nrow = $self->nrow();
     my @table = $self->getTable();
-    warn join("\t", "; Calculating max per row","rows:".$nrow, "columns:".$ncol),"\n"
-	if ($main::verbose > 2);
+    &RSAT::message::Info(join("\t", "Calculating max per row","rows:".$nrow, "columns:".$ncol))
+	if ($main::verbose >= 4);
     foreach my $r (0..($nrow-1)) {
 	my $row_max;
 	for my $c (0..($ncol-1)) {
@@ -499,8 +542,8 @@ sub calc_row_min {
     my $ncol = $self->ncol();
     my $nrow = $self->nrow();
     my @table = $self->getTable();
-    warn join("\t", "; Calculating min per row","rows:".$nrow, "columns:".$ncol),"\n"
-	if ($main::verbose > 2);
+    &RSAT::message::Info(join("\t", "Calculating min per row","rows:".$nrow, "columns:".$ncol))
+	if ($main::verbose >= 4);
     foreach my $r (0..($nrow-1)) {
 	my $row_min;
 	for my $c (0..($ncol-1)) {
@@ -528,17 +571,17 @@ sub addColumn {
 #	push @{$self->{table}}, [@new_col];
     
     
-    warn ("Table: adding column\t", join (" ", @new_col), "\n") if ($main::verbose >= 5);
+    &RSAT::message::Debug("Table: adding column", join (" ", @new_col)) if ($main::verbose >= 5);
     
     ## Update number of columns
     my $ncol = $self->ncol()+1;
     $self->force_attribute("ncol", $ncol);
-    warn ("Table: updating number of columns\t", $self->ncol(), "\n") if ($main::verbose >= 5);
+    &RSAT::message::Debug("Table: updating number of columns", $self->ncol()) if ($main::verbose >= 5);
     
     ## update number of rows
     my $column_size = scalar(@new_col);
     if ($column_size >= $self->nrow()) {
-	warn ("Table: updating number of rows\t", $column_size, "\n") if ($main::verbose >= 5);
+	&RSAT::message::Debug ("Table: updating number of rows", $column_size) if ($main::verbose >= 5);
 	$self->force_attribute("nrow", scalar(@new_col));
     }
     
@@ -563,12 +606,12 @@ sub addRow {
     ## Update number of rows
     my $nrow = $self->nrow()+1;
 	$self->force_attribute("nrow", $nrow);
-    warn ("Table: updating number of rows\t", $self->nrow(), "\n") if ($main::verbose >= 5);
+    &RSAT::message::Debug("Table: updating number of rows", $self->nrow()) if ($main::verbose >= 5);
     
     ## update number of colmuns
     my $row_size = scalar(@new_row);
     if ($row_size >= $self->ncol()) {
-	warn ("Table: updating number of columns\t", $row_size, "\n") if ($main::verbose >= 5);
+	&RSAT::message::Debug("Table: updating number of columns", $row_size) if ($main::verbose >= 5);
 	$self->force_attribute("ncol", scalar(@new_row));
     }
     
@@ -770,10 +813,10 @@ sub readFromFile {
     
     ## Check that the table contains at least one row and one col
     if (($self->nrow() > 0) && ($self->ncol() > 0)) {
-	warn join("\t", "; Table read", 
-		  "nrow = ".$self->nrow(),
-		  "ncol = ".$self->ncol(),
-		 ), "\n" if ($main::verbose >= 2);
+      &RSAT::message::Info(join("\t", "Table read", 
+				"nrow = ".$self->nrow(),
+				"ncol = ".$self->ncol(),
+			       )) if ($main::verbose >= 2);
     } else {
 	&main::FatalError("The file $file does not seem to contain a table in format $format. Please check the file format and contents.");
     }
@@ -791,7 +834,7 @@ method C<readFromFile($file, "tab")>.
 =cut
 sub _readFromTabFile {
     my ($self, $file, %args) = @_;
-    warn ("; Reading table from tab file\t",$file, "\n") if ($main::verbose >= 2);
+    &RSAT::message::Info(join("\t", "Reading table from tab file",$file)) if ($main::verbose >= 2);
 
     ## open input stream
     my ($in, $dir) = &RSAT::util::OpenInputFile($file);
