@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: contingency-stats,v 1.6 2006/08/02 08:17:59 jvanheld Exp $
+# $Id: contingency-stats,v 1.7 2006/08/14 22:15:10 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -29,7 +29,7 @@ jvanheld@scmbb.ulb.ac.be
 util
 
 =head1 USAGE
-    
+
 contingency-stats [-i inputfile] [-o outputfile] [-v]
 
 =head1 INPUT FORMAT
@@ -217,31 +217,48 @@ package main;
 				colstats=>1,
 				tables=>1,
 				margins=>1,
+				all=>1,
 			       );
     $supported_return_fields = join (",", sort(keys( %supported_return_fields)));
-    
+
     local %return_fields = ();
 
     &ReadArguments();
 
     ################################################################
     #### check argument values
+
+    ## Return fields
     unless (scalar(keys(%return_fields)) > 0) {
       $return_fields{stats} = 1;
     }
+    if ($return_fields{all}) {
+      foreach my $field (keys %supported_return_fields) {
+	$return_fields{$field} = 1;
+      }
+    }
+
 
     ################################################################
     ### open output stream
     $main::out = &OpenOutputFile($main::outfile{output});
 
     ################################################################
-    ##### read input
-    my $counts = new RSAT::table();
+    ### Read input table
+    local $counts = new RSAT::table();
     $counts->readFromFile($infile{input}, "tab",header=>$header);
     my $ncol = $counts->ncol();
     my $nrow = $counts->nrow();
     $counts->set_attribute("type", "counts");
     $counts->force_attribute("margins", $return_fields{margins});
+
+    ## Read group sizes if specified
+    if ($infile{rsizes}) {
+      &read_row_sizes();
+    }
+    if ($infile{csizes}) {
+      &read_col_sizes();
+    }
 
     ## PPV
     my $PPV = new RSAT::table();
@@ -593,25 +610,53 @@ marginal statistics besides the tables (requires to return tables).
 =back
 
 =cut
-        } elsif ($arg eq "-return") {
+	  } elsif ($arg eq "-return") {
             $to_return = shift @arguments;
             my @fields_to_return = split ",", $to_return;
             foreach $field (@fields_to_return) {
-                if ($supported_return_fields{$field}) {
-                    $return_fields{$field} = 1;
-                } else {
-                    &RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_return_fields));
-		}
+	      if ($supported_return_fields{$field}) {
+		$return_fields{$field} = 1;
+	      } else {
+		&RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_return_fields));
+	      }
 	    }
 
+=pod
 
-	} else {
+=item B<-rsizes row_size_file>
+
+Specify row group sizes in a separate file. This option can be used in
+particular cases where the marginal sum of the contingency table does
+not correspond to the group sizes (for example if a classification
+supoprts the same elements assigned to multiple groups, or on the
+contrary if some elements can be unassigned).
+
+The row size file must contain one row per row of the contingency
+table, and two columns. The first column indicated the name of the row
+(the same name as in the contingency table), and the second the size
+of the corresponding group.
+
+=cut
+	  } elsif ($arg eq "-rsizes") {
+	    $main::infile{rsizes} = shift(@arguments);
+
+=pod
+
+=item B<-csizes column_size_file>
+
+Specify column group sizes in a separate file.
+
+Same description as for -rsizes.
+
+=cut
+	  } elsif ($arg eq "-csizes") {
+	    $main::infile{csizes} = shift(@arguments);
+
+	  } else {
 	    &FatalError(join("\t", "Invalid option", $arg));
+	  }
 
-	}
-
-    }
-
+      }
 
 =pod
 
@@ -640,6 +685,66 @@ sub Verbose {
     }
 }
 
+
+################################################################
+## Read row sizes
+sub read_row_sizes {
+  my %rsizes = ();
+  my @rsizes = ();
+  my ($rsize_stream) = &OpenInputFile($infile{rsizes});
+  while (<$rsize_stream>) {
+    chomp();
+    next if (/^;/);
+    next if (/^#/);
+    next if (/^--/);
+    next unless (/\S/);
+    my @fields = split "\t";
+    my $group = $fields[0];
+    my $size = $fields[1];
+    &RSAT::error::FatalError(join("\t", $size, "Invalid size specification for group", $group))
+      unless (&RSAT::util::IsNatural($size));
+    $rsizes{$group} = $size;
+  }
+  close $rsize_stream;
+  foreach my $row_label ($counts->getAlphabet()) {
+    if (defined($rsizes{$row_label})) {
+      push @rsizes, $rsizes{$row_label};
+    } else {
+      &RSAT::error::FatalError(join("\t", "Invalid row size file: no specified value for row", $row_label));
+    }
+  }
+  $counts->force_row_sum(@rsizes);
+}
+
+################################################################
+## Read col sizes
+sub read_col_sizes {
+  my %csizes = ();
+  my @csizes = ();
+  my ($csize_stream) = &OpenInputFile($infile{csizes});
+  while (<$csize_stream>) {
+    chomp();
+    next if (/^;/);
+    next if (/^#/);
+    next if (/^--/);
+    next unless (/\S/);
+    my @fields = split "\t";
+    my $group = $fields[0];
+    my $size = $fields[1];
+    &RSAT::error::FatalError(join("\t", $size, "Invalid size specification for group", $group))
+      unless (&RSAT::util::IsNatural($size));
+    $csizes{$group} = $size;
+  }
+  close $csize_stream;
+  foreach my $col_label ($counts->get_attribute("header")) {
+    if (defined($csizes{$col_label})) {
+      push @csizes, $csizes{$col_label};
+    } else {
+      &RSAT::error::FatalError(join("\t", "Invalid col size file: no specified value for col", $col_label));
+    }
+  }
+  $counts->force_col_sum(@csizes);
+}
 
 __END__
 
