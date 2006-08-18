@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: dyad-analysis,v 1.46 2006/08/18 19:21:57 jvanheld Exp $
+# $Id: dyad-analysis,v 1.47 2006/08/18 19:37:49 rsat Exp $
 #
 # Time-stamp: <2003-10-22 23:46:08 jvanheld>
 #
@@ -1548,11 +1548,19 @@ sub PrintHeaderLine {
 
     ## Frequencies
     push @out_col, "observed_freq" if ($return_fields{freq});
-    push @out_col, "expected_freq" if ($return_fields{exp_freq});
+    push @out_col, "expected_freq" if (($return_fields{exp_freq}) 
+				       || ($return_fields{proba})
+				       || ($return_fields{ratio})
+				       || ($return_fields{zscore})
+				       );
 
     ## Occurrences
     push @out_col, "occ" if ($return_fields{occ});
-    push @out_col, "exp_occ"  if ($return_fields{exp_occ});
+    push @out_col, "exp_occ"  if (($return_fields{exp_occ}) 
+				  || $return_fields{proba}
+				  || ($return_fields{ratio})
+				  || ($return_fields{zscore})
+				  );
 
 
     ## Binomial probability
@@ -1650,11 +1658,19 @@ sub PrintResult {
 
 	## Frequencies
 	printf $out "\t%15.13f", $patterns{$pattern_seq}->{obs_freq} if ($return_fields{freq});
-	printf $out "\t%15.13f", $patterns{$pattern_seq}->{exp_freq} if ($return_fields{exp_freq});
+	printf $out "\t%15.13f", $patterns{$pattern_seq}->{exp_freq} if (($return_fields{exp_freq})
+									 || ($return_fields{ratio})
+									 || ($return_fields{ratio})
+									 || ($return_fields{zscore})
+									 );
 
 	## Occurrences
 	printf $out "\t%7d", $patterns{$pattern_seq}->{occ} if ($return_fields{occ});
-	printf $out "\t%7.2f", $patterns{$pattern_seq}->{exp_occ} if ($return_fields{exp_occ});
+	printf $out "\t%7.2f", $patterns{$pattern_seq}->{exp_occ} if (($return_fields{exp_occ})
+								      || ($return_fields{ratio})
+								      || ($return_fields{ratio})
+								      || ($return_fields{zscore})
+								      );
 
 	## Binomial probability
 	if ($return_fields{proba}) {
