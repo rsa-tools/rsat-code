@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.27 2006/07/17 16:48:06 rsat Exp $
+# $Id: matrix-scan,v 1.28 2006/08/18 14:44:16 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -105,6 +105,7 @@ package main;
     $main::sum_seq_len = 0;
     $main::origin = 0;
     $main::pseudo_counts = 1;
+    $main::equi_pseudo = 0;
     $main::matrix_format = "tab";
     $main::seq_format = "fasta";
     $main::verbose = 0;
@@ -170,27 +171,53 @@ package main;
     }
     
     if ($infile{bg}) {
-      ## Read background model from a file
-      &RSAT::message::TimeWarn(join("\t", "Reading background model from file", $infile{bg})) 
-	if ($main::verbose >= 2);
-      $bg_model->load_from_file($infile{bg}, $bg_in_format);
+	## Read background model from a file
+	&RSAT::message::TimeWarn(join("\t", "Reading background model from file", $infile{bg})) 
+	    if ($main::verbose >= 2);
+	$bg_model->load_from_file($infile{bg}, $bg_in_format);
 #      &RSAT::message::Debug($bg_model->to_string($bg_out_format)) if ($main::verbose >= 0);
     } elsif ($main::markov >= 0) {
-      $bg_model->set_attribute("order", $main::markov);
-      if (($main::window >= 0) && ($main::window < $main::markov+1)) {
-	&RSAT::error::FatalError(join("", 
-				      "Window size (",
-				      $main::window,
-				      ") must be larger than Markov order + 1 (",
-				      $main::markov."+1)."));
-      }
+	$bg_model->set_attribute("order", $main::markov);
+	if (($main::window >= 0) && ($main::window < $main::markov+1)) {
+	    &RSAT::error::FatalError(join("", 
+					  "Window size (",
+					  $main::window,
+					  ") must be larger than Markov order + 1 (",
+					  $main::markov."+1)."));
+	}
+
+	## TO DO: read the sequences once to determine prior frequencies, in
+	## order to set the pseudo-weight distribution
+
+	################################################################
+	## If the model is taken from the whole set of input sequences, read them
+	## first without scanning, just to calculate the model
+	if ($main::bg_input) {
+	    unless ($main::infile{input}) {
+		&RSAT::error::FatalError("The option -bg_input requires to specify an input file.");
+	    }
+	    my ($in, $input_dir) = &OpenInputFile($main::infile{input});
+	    while ((($current_seq, $seq_id) = &ReadNextSequence($in, $seq_format, $input_dir, "",$mask)) &&
+		   (($current_seq ne "") || ($seq_id ne ""))) {
+		
+		## Sequence length
+		$current_seq = lc($current_seq);
+		$bg_model->calc_from_seq($current_seq, add=>1);
+	    }
+	    close $in;
+	}
     } else {
-      &RSAT::error::FatalError("You should either define the Markov order (-markov) or specify a file (-bgfile) for the background model.");
+	&RSAT::error::FatalError("You should either define the Markov order (-markov) or specify a file (-bgfile) for the background model.");
     }
-
-
+    
+    
     ################################################################
     ## Read the position-specific scoring matrices
+    ################################################################
+    ## Set prior matrix frequencies from the bg model and calculate
+    ## derived statistics
+    my %prior = $bg_model->get_attribute("suffix_proba");
+    &RSAT::message::TimeWarn(join("\t", "PRIOR", join(" ", %prior))) if ($main::verbose >= 2);
     foreach my $matrix_file (@matrix_files) {
 	my ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
 	$matrix_name =~ s/\.\S+$//; ## suppress the extensin from the file name
@@ -198,11 +225,14 @@ package main;
 	$matrix->readFromFile($matrix_file, $matrix_format);
 	$matrix->set_attribute("matches", 0); ## Initialize the match counter
 	$matrix->set_attribute("pseudo", $pseudo_counts);
+	$matrix->set_attribute("equi_pseudo", $main::equi_pseudo);
+	
+	
 	$matrix->set_attribute("file", $matrix_file);
 	$matrix->set_attribute("name", $matrix_name);
 	$matrix->push_attribute("parameters", "pseudo");
 	$matrix->index_alphabet();
-
+	
 	## Check that the matrix width is smaller than markov order + 1
 	my $matrix_width = $matrix->ncol();
 	my $markov_order = $bg_model->get_attribute("order");
@@ -216,6 +246,20 @@ package main;
 	
 	## Calculate min and max values for P(S|M) 
 	$matrix->proba_range();
+
+	## Set the matrix prior
+	$matrix->setPrior(%prior);
+	&RSAT::message::TimeWarn(join("\t", "Setting matrix priors for matrix", 
+				      $matrix->get_attribute("name"),
+				      join(" ", $matrix->getPrior()),
+				     )) if ($main::verbose >= 2);
+	## Calculate min and max weight values
+	my ($Wmin, $Wmax, $Wrange) = $matrix->weight_range();
+	&RSAT::message::TimeWarn(join("\t", "Calculated weight range for matrix", 
+				      $matrix->get_attribute("name"), 
+				      $Wmin, $Wmax, $Wrange,
+				     )) if ($main::verbose >= 2);
+
 	push @matrices, $matrix;
 
 	&RSAT::message::TimeWarn(join("\t", "read matrix", 
@@ -224,24 +268,9 @@ package main;
 				  $matrix->get_attribute("file")
 				  )) if ($main::verbose >= 2);
     }
+
+#    die join ("\t", "HELLO", $main::equi_pseudo), "\n";
     
-    ################################################################
-    ## If the model is taken from the whole set of input sequences, read them
-    ## first without scanning, just to calculate the model
-    if ($main::bg_input) {
-	unless ($main::infile{input}) {
-	    &RSAT::error::FatalError("The option -bg_input requires to specify an input file.");
-	}
-	my ($in, $input_dir) = &OpenInputFile($main::infile{input});
-	while ((($current_seq, $seq_id) = &ReadNextSequence($in, $seq_format, $input_dir, "",$mask)) &&
-	       (($current_seq ne "") || ($seq_id ne ""))) {
-	    
-	    ## Sequence length
-	    $current_seq = lc($current_seq);
-	    $bg_model->calc_from_seq($current_seq, add=>1);
-	}
-	close $in;
-    }
 
 
     ################################################################
@@ -353,30 +382,6 @@ package main;
     ################################################################
     ## Report the PSSM Matrices
 
-    ################################################################
-    ## Set prior matrix frequencies from the bg model and calculate
-    ## derived statistics
-    ##
-    ## PROBLEM : with the adpative option, this does not work since
-    ## the BG model has not yet been calculated
-    ## This is thus only done with the options -bginput and -bgfiles. 
-    my %prior = $bg_model->get_attribute("suffix_proba");
-    &RSAT::message::TimeWarn(join("\t", "PRIOR", join(" ", %prior))) if ($main::verbose >= 2);
-
-    foreach my $matrix (@matrices) {
-	## Set prior residue frequencies
-	$matrix->setPrior(%prior);
-	&RSAT::message::TimeWarn(join("\t", "Setting matrix priors for matrix", 
-				      $matrix->get_attribute("name"),
-				      join(" ", %prior),
-				     )) if ($main::verbose >= 2);
-	## Calculate min and max weight values
-	my ($Wmin, $Wmax, $Wrange) = $matrix->weight_range();
-	&RSAT::message::TimeWarn(join("\t", "Calculated weight range for matrix", 
-				      $matrix->get_attribute("name"), 
-				      $Wmin, $Wmax, $Wrange,
-				     )) if ($main::verbose >= 2);
-    }
 
     ## Print summary statistics of each matrix
     print $main::out ";\n; Matrices\n";
@@ -709,6 +714,21 @@ Pseudo-weight.
 			&& ($main::pseudo_counts >= 0));
 
 
+	    ## Equiprobable distribution of the pseudo-weight
+=pod
+
+=item B<-equi_pseudo>
+
+If this option is called, the pseudo-weight is distributed in an equiprobable
+way between residues.
+
+By default, the pseudo-weight is distributed proportionally to residue priors.
+
+=cut
+
+	} elsif ($arg eq "-equi_pseudo") {
+	    $main::equi_pseudo = 1;
+
 	## Origin
 =pod
 
@@ -872,6 +892,11 @@ sub Verbose {
 	while (my ($key,$value) = each %main::infile) {
 	    print $main::out ";\t$key\t$value\n";
 	}
+	print $main::out "; Matrix files\n";
+	for my $m (0..$#matrix_files) {
+	    printf $out ";\tmatrix %d\t%s\n", $m+1, $matrix_files[$m];
+	}
+
     }
     printf $main::out "; %-21s\t%s\n", "Sequence format", $seq_format;
 

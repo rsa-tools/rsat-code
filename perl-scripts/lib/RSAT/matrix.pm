@@ -1498,8 +1498,16 @@ sub calcFrequencies {
 	    my $prior = $prior{$letter};
 	    my $occ = $matrix[$c][$r];
 	    $col_sum += $occ;
-	    $frequencies[$c][$r] = $occ + $pseudo*$prior{$letter};
-#	    $frequencies[$c][$r] = $occ + $pseudo/$alphabet_size;
+
+	    if ($self->get_attribute("equi_pseudo")) {
+		## Equiprobable repartition of the pseudo-weight
+		$frequencies[$c][$r] = $occ + $pseudo/$alphabet_size;
+#		&RSAT::message::Info("Equiprobable distribution of the pseudo-weight") if ($main::verbose >= 0);
+	    } else {
+		## Distribute pseudo-weight according to prior
+		$frequencies[$c][$r] = $occ + $pseudo*$prior{$letter};
+#		&RSAT::message::Info("Pseudo-weight distributed according to prior") if ($main::verbose >= 0);
+	    }
 #	    &RSAT::message::Debug("freq", $r, $c, $letter, $prior, $pseudo, $occ, $col_sum) if ($main::verbose >= 0);
 	}
 	for my $r (0..($nrow-1)) {
