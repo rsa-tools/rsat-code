@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: dyad-analysis,v 1.45 2006/05/17 11:49:40 jvanheld Exp $
+# $Id: dyad-analysis,v 1.46 2006/08/18 19:21:57 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 23:46:08 jvanheld>
 #
@@ -943,10 +943,15 @@ sub ReadArguments {
 		    $return_fields{zscore} = 1;
 		} elsif  ($field =~ /^freq/i) {
 		    $return_fields{freq} = 1;
+		    $return_fields{exp_freq} = 1;
 		} elsif  ($field =~ /^exp_freq/i) {
 		    $return_fields{exp_freq} = 1;
+		} elsif  ($field =~ /^observed_freq/i) {
+		    $return_fields{freq} = 1;
 		} elsif  ($field =~ /^occ/i) {
 		    $return_fields{occ} = 1;
+		} elsif  ($field =~ /^exp_occ/i) {
+		    $return_fields{exp_occ} = 1;
 		} elsif  ($field eq "ratio") {
 		    $return_fields{ratio} = 1;
 		} elsif  ($field eq "rank") {
