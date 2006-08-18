@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: contingency-stats,v 1.7 2006/08/14 22:15:10 jvanheld Exp $
+# $Id: contingency-stats,v 1.8 2006/08/18 19:23:20 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -121,50 +121,50 @@ Sn and PPV.
 
 Acc.geom = sqrt(Sn*PPV)
 
-=item B<Comp>
+=item B<Sep>
 
-Compactness.
+Separation.
 
-The compactness is defined, at the level of each cell (cell-wise
-compactnes) as the product between Sn and PPV.
-
-=over
-
-=item I<Cell-wise compactness>
-
-comp_{i,j}=Sn_{i,j}*PPV_{i,j}
-
-=item I<Column-wise compactness>
-
-Column-wise compactness is defined at the level of each column, as the
-sum of compactness value for all the cells of this column.
-
-comp_{.j} = SUM_i( comp_{i,j})
-
-=item I<Row-wise compactness>
-
-Row-wise compactness is defined at the level of each row, as the
-sum of compactness value for all the cells of this row.
-
-comp_{i.} = SUM_j(comp_{i,j})
-
-=item I<Table-wise compactness>
-
-Three table-wise statistics are computed for compactness.
+The separation is defined, at the level of each cell (cell-wise
+separation) as the product between Sn and PPV.
 
 =over
 
-=item average column-wise compactness
+=item I<Cell-wise separation>
 
-comp_c = AVG_j(comp_{.j})
+sep_{i,j}=Sn_{i,j}*PPV_{i,j}
 
-=item average row-wise compactness
+=item I<Column-wise separation>
 
-comp_r = AVG_i(comp_{i.})
+Column-wise separation is defined at the level of each column, as the
+sum of separation value for all the cells of this column.
 
-=item table-wise compactness
+sep_{.j} = SUM_i( sep_{i,j})
 
-comp = sqrt(comp_r*comp_c)
+=item I<Row-wise separation>
+
+Row-wise separation is defined at the level of each row, as the
+sum of separation value for all the cells of this row.
+
+sep_{i.} = SUM_j(sep_{i,j})
+
+=item I<Table-wise separation>
+
+Three table-wise statistics are computed for separation.
+
+=over
+
+=item average column-wise separation
+
+sep_c = AVG_j(sep_{.j})
+
+=item average row-wise separation
+
+sep_r = AVG_i(sep_{i.})
+
+=item table-wise separation
+
+sep = sqrt(sep_r*sep_c)
 
 =back
 
@@ -278,21 +278,21 @@ package main;
     $Sn->force_attribute("margins", $return_fields{margins});
     my @row_wise_Sn = $Sn->row_max();
 
-    ## Compactness
-    my $comp = new RSAT::table();
-    $comp->setAlphabet($counts->getAlphabet);
-    $comp->push_attribute("header", $counts->get_attribute("header"));
+    ## Separation
+    my $sep = new RSAT::table();
+    $sep->setAlphabet($counts->getAlphabet);
+    $sep->push_attribute("header", $counts->get_attribute("header"));
     my @Sn_table = $Sn->getTable();
     my @PPV_table = $PPV->getTable();
-    my @comp_table = ();
+    my @sep_table = ();
     foreach my $r (0..($nrow-1)) {
       for my $c (0..($ncol-1)) {
-	$comp_table[$c][$r]=$Sn_table[$c][$r]*$PPV_table[$c][$r];
+	$sep_table[$c][$r]=$Sn_table[$c][$r]*$PPV_table[$c][$r];
       }
     }
-    $comp->setTable($nrow, $ncol, @comp_table);
-    $comp->set_attribute("type", "freq");
-    $comp->force_attribute("margins", $return_fields{margins});
+    $sep->setTable($nrow, $ncol, @sep_table);
+    $sep->set_attribute("type", "freq");
+    $sep->force_attribute("margins", $return_fields{margins});
 
     ## Calculate basic table-wise statistics
     my %table_wise_stats = ();
@@ -331,10 +331,10 @@ package main;
     $table_wise_stats->{acc_w} = ($table_wise_stats->{Sn_w} + $table_wise_stats->{PPV_w})/2;
     $table_wise_stats->{acc_g_w} = sqrt($table_wise_stats->{Sn_w} * $table_wise_stats->{PPV_w});
 
-    ## Calculate table-wise compactness
-    $table_wise_stats->{comp_r} = &RSAT::stats::mean($comp->row_sum());
-    $table_wise_stats->{comp_c} = &RSAT::stats::mean($comp->col_sum());
-    $table_wise_stats->{comp} = sqrt($table_wise_stats->{comp_r} * $table_wise_stats->{comp_c});
+    ## Calculate table-wise separation
+    $table_wise_stats->{sep_r} = &RSAT::stats::mean($sep->row_sum());
+    $table_wise_stats->{sep_c} = &RSAT::stats::mean($sep->col_sum());
+    $table_wise_stats->{sep} = sqrt($table_wise_stats->{sep_r} * $table_wise_stats->{sep_c});
 
     ################################################################
     #### print verbose
@@ -354,7 +354,7 @@ package main;
       for my $stat  (qw(ncol nrow sum min max)) {
 	printf $out "%s\t%d\n", $stat, $table_wise_stats->{$stat};
       }
-      for my $stat  (qw(mean Sn PPV acc acc_g Sn_w PPV_w acc_w acc_g_w comp_r comp_c comp)) {
+      for my $stat  (qw(mean Sn PPV acc acc_g Sn_w PPV_w acc_w acc_g_w sep_r sep_c sep)) {
 	printf $out "%s\t%.${decimals}g\n", $stat, $table_wise_stats->{$stat};
       }
     }
@@ -370,7 +370,7 @@ package main;
 		      "min", 
 		      "max",
 		      "Sn",
-		      "comp_r",
+		      "sep_r",
 		      "row_name",
 		    ), "\n";
       my @row_names = $counts->getAlphabet();
@@ -379,7 +379,7 @@ package main;
       my @row_max = $counts->row_max();
       my @row_mean = $counts->row_mean();
       my @row_Sn = $Sn->row_max();
-      my @row_comp = $comp->row_sum();
+      my @row_sep = $sep->row_sum();
       for my $r (0..($nrow-1)) {
 	print $out join("\t", 
 			sprintf ("%.${decimals}g", $row_mean[$r]),
@@ -387,7 +387,7 @@ package main;
 			$row_min[$r],
 			$row_max[$r],
 			sprintf ("%.${decimals}g", $row_Sn[$r]),
-			sprintf ("%.${decimals}g", $row_comp[$r]),
+			sprintf ("%.${decimals}g", $row_sep[$r]),
 			$row_names[$r],
 		       ), "\n";
       }
@@ -405,7 +405,7 @@ package main;
 		      "min", 
 		      "max",
 		      "PPV",
-		      "comp_c",
+		      "sep_c",
 		      "column_name",
 		     ), "\n";
       my @col_names = $counts->get_attribute("header");
@@ -414,7 +414,7 @@ package main;
       my @col_max = $counts->col_max();
       my @col_mean = $counts->col_mean();
       my @col_PPV = $PPV->col_max();
-      my @col_comp = $comp->col_sum();
+      my @col_sep = $sep->col_sum();
       for my $c (0..($ncol-1)) {
 	print $out join("\t", 
 			sprintf ("%.${decimals}g", $col_mean[$c]),
@@ -422,7 +422,7 @@ package main;
 			$col_min[$c],
 			$col_max[$c],
 			sprintf ("%.${decimals}g", $col_PPV[$c]),
-			sprintf ("%.${decimals}g", $col_comp[$c]),
+			sprintf ("%.${decimals}g", $col_sep[$c]),
 			$col_names[$c] || "col $c+1",
 		       ), "\n";
       }
@@ -434,7 +434,7 @@ package main;
       print $out $counts->toString(corner=>"Count");
       print $out $PPV->toString(decimals=>$decimals, corner=>"PPV");
       print $out $Sn->toString(decimals=>$decimals, corner=>"Sn");
-      print $out $comp->toString(decimals=>$decimals, corner=>"Comp");
+      print $out $sep->toString(decimals=>$decimals, corner=>"Sep");
     }
 
     ################################################################
@@ -601,7 +601,7 @@ column-wise statistics (one line per column of the contingency table)
 
 =item I<tables>
 
-full tables for each statistics (counts, Sn, PPV, compactness).
+full tables for each statistics (counts, Sn, PPV, separation).
 
 =item I<margins>
 
