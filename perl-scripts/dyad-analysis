@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: dyad-analysis,v 1.47 2006/08/18 19:37:49 rsat Exp $
+# $Id: dyad-analysis,v 1.48 2006/08/18 19:42:23 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 23:46:08 jvanheld>
 #
@@ -294,6 +294,10 @@ sub CheckCalcFields {
 	($calc_fields{zscore})) {
 	$calc_fields{exp_occ} = 1;
 	$calc_fields{exp_freq} = 1;
+
+	## Automatically return exp freq and exp occ in the output
+	$return_fields{exp_occ} = 1;
+	$return_fields{exp_freq} = 1;
     }
 
     if ($calc_fields{exp_freq}) {
@@ -1548,20 +1552,11 @@ sub PrintHeaderLine {
 
     ## Frequencies
     push @out_col, "observed_freq" if ($return_fields{freq});
-    push @out_col, "expected_freq" if (($return_fields{exp_freq}) 
-				       || ($return_fields{proba})
-				       || ($return_fields{ratio})
-				       || ($return_fields{zscore})
-				       );
+    push @out_col, "expected_freq" if ($return_fields{exp_freq});
 
     ## Occurrences
     push @out_col, "occ" if ($return_fields{occ});
-    push @out_col, "exp_occ"  if (($return_fields{exp_occ}) 
-				  || $return_fields{proba}
-				  || ($return_fields{ratio})
-				  || ($return_fields{zscore})
-				  );
-
+    push @out_col, "exp_occ"  if ($return_fields{exp_occ});
 
     ## Binomial probability
     if ($return_fields{proba}) {
@@ -1658,19 +1653,11 @@ sub PrintResult {
 
 	## Frequencies
 	printf $out "\t%15.13f", $patterns{$pattern_seq}->{obs_freq} if ($return_fields{freq});
-	printf $out "\t%15.13f", $patterns{$pattern_seq}->{exp_freq} if (($return_fields{exp_freq})
-									 || ($return_fields{ratio})
-									 || ($return_fields{ratio})
-									 || ($return_fields{zscore})
-									 );
+	printf $out "\t%15.13f", $patterns{$pattern_seq}->{exp_freq} if ($return_fields{exp_freq});
 
 	## Occurrences
 	printf $out "\t%7d", $patterns{$pattern_seq}->{occ} if ($return_fields{occ});
-	printf $out "\t%7.2f", $patterns{$pattern_seq}->{exp_occ} if (($return_fields{exp_occ})
-								      || ($return_fields{ratio})
-								      || ($return_fields{ratio})
-								      || ($return_fields{zscore})
-								      );
+	printf $out "\t%7.2f", $patterns{$pattern_seq}->{exp_occ} if ($return_fields{exp_occ});
 
 	## Binomial probability
 	if ($return_fields{proba}) {
