@@ -1,6 +1,6 @@
 #!/usr/bin/perl 
 #############################################################
-# $Id: parse-genbank.pl,v 1.40 2006/07/20 23:02:11 jvanheld Exp $
+# $Id: parse-genbank.pl,v 1.41 2006/08/22 18:36:26 rsat Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -32,7 +32,9 @@ $user="rsat";
 $password="rsat";
 $full_path = 0;
 
-$test_lines = 10000;
+$test = 0; 
+$test_contigs = 2; ## Maximal number of genbank files to parse for a given organism (there is generally one contig per chromosome)
+$test_lines = 10000; ## macimal number of lines to parse per file
 
 ################################################################
 #### main package
