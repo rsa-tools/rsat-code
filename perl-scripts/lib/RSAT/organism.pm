@@ -825,10 +825,15 @@ sub LoadSynonyms {
   }
   foreach my $type (@feature_types) {
     $synonym_file = join("", $main::supported_organism{$organism_name}->{'data'}, "/genome/", $type, "_names.tab");
-    $self->push_attribute("synonym_files", $synonym_file);
+    if (-e $synonym_file) {
+	$self->push_attribute("synonym_files", $synonym_file);
+    } else {
+	&RSAT::message::Warning(join("\t", "synonym file does not exist", $synonym_file));
+    }
   }
   
   foreach my $synonym_file ($self->get_attribute("synonym_files")) {
+      &RSAT::message::Info(join("\t","Loading synonyms from file", $synonym_file)) if ($main::verbose >= 2);
     
     #    my $synonym_file = $main::supported_organism{$organism_name}->{'synonyms'};
 #    unless ($synonym_file) {
