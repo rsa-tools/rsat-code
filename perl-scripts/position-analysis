@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.28 2006/07/05 09:37:57 jvanheld Exp $
+# $Id: position-analysis,v 1.29 2006/08/22 20:35:14 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -94,7 +94,7 @@ $out = &OpenOutputFile($outputfile);
 
 
 ### statistics on oligo occurrences
-warn "; Calculating sums of occurrences\n" if ($verbose >= 2);
+warn "; Calculating sums of occurrences\n" if ($main::verbose >= 2);
 foreach $oligo_seq (sort keys %occurrences) {
   $sum_occurrences += $occurrences{$oligo_seq};	
   $sum_overlaps += $overlaps{$oligo_seq};	
@@ -126,7 +126,7 @@ if (&IsNatural($low_thr{'occ'})) {
 
 &CalcChi() if ($return{'chi'});
 
-&Verbose() if ($verbose >= 1);
+&Verbose() if ($main::verbose >= 1);
 
 
 &PrintResult();
@@ -148,7 +148,7 @@ if ($return{'graph'}) {
     mkdir $dir{graphs}, 0755 
 	|| &RSAT::error::FatalError("Could not create directory $dir{graphs}");
     unless (-d $dir{graphs}) {
-	warn "Creating directory $dir{graphs}\n" if ($verbose >= 1);
+	warn "Creating directory $dir{graphs}\n" if ($main::verbose >= 1);
 	mkdir $dir{graphs}, 0755;
 	unless (-d $dir{graphs}) {
 	    &RSAT::error::FatalError("Cannot create graph directory $dir{gtaph}");
@@ -158,7 +158,7 @@ if ($return{'graph'}) {
 
     $date = `date +%H:%M:%S`;
     chomp $date;
-    print ";$date\tgenerating the graphs ... \n" if ($verbose >= 2);
+    print ";$date\tgenerating the graphs ... \n" if ($main::verbose >= 2);
 
     #### index for the graphs
     if ($outputfile) {
@@ -196,7 +196,7 @@ if ($return{'graph'}) {
 	$command .= " -xleg1 'position' -yleg1 'class frequency' ";
 	$command .= " -ymin 0 -xmin $class_min[0] -xmax $class_max[$max_class] ";
 	$command .= " -xgstep2 $class_interval -xsize 600";
-	print "; $command\n" if ($verbose >= 2);
+	print "; $command\n" if ($main::verbose >= 2);
 	open XY, "| $command";
 	print XY ";class\tocc_$oligo_seq\texp_$oligo_seq\n"; ### header line
 	foreach $class ($min_class..$max_class) {
@@ -219,7 +219,7 @@ if ($return{'graph'}) {
 
 
 ## end of job message
-if ($verbose >= 1) {
+if ($main::verbose >= 1) {
   $done_time  = `date '+%d/%m/%y %H:%M:%S %Z'`;
   print $out ";Job started ".$start_time."\n";
   print $out ";Job done    ".$done_time;
@@ -235,7 +235,7 @@ sub SumStrands {
   ### sum profiles of reverse complement patterns for strand insensitive analysis ###
   $date = `date '+%H:%M:%S'`;
   chomp $date;
-  print ";$date\tsumming occurrences of reverse complementary patterns ...\n" if ($verbose >= 2);
+  print ";$date\tsumming occurrences of reverse complementary patterns ...\n" if ($main::verbose >= 2);
   
   ### occurrences
   foreach $oligo_seq (keys %occurrences) {
@@ -268,7 +268,7 @@ sub SumStrands {
   if ($group_rc) {
     $date = `date '+%H:%M:%S'`;
     chomp $date;
-    print ";$date\tgrouping patterns by pairs of reverse complements ...\n" if ($verbose >= 2);
+    print ";$date\tgrouping patterns by pairs of reverse complements ...\n" if ($main::verbose >= 2);
     foreach $oligo_seq (keys %occurrences) {
       $rc_oligo_seq = lc(&ReverseComplement($oligo_seq));
       if ($rc_oligo_seq gt $oligo_seq) { ### only suppress one oligo from the dyad 
@@ -286,7 +286,7 @@ sub SumStrands {
 sub LocalReadPatterns {
     $date = `date '+%H:%M:%S'`;
     chomp $date;
-    warn ";$date\treading pattern file ...\n" if ($verbose >= 1);
+    warn ";$date\treading pattern file ...\n" if ($main::verbose >= 1);
     open PATTERNS, "$pattern_file" || die "Error: cannot open pattern file $pattern_file\n";
     while (<PATTERNS>) {
 	next if (/^;/);
@@ -294,7 +294,7 @@ sub LocalReadPatterns {
 	chomp;
 	@fields = split, "\t";
 	$pattern = lc($fields[0]);
-	warn ";\t$pattern\n" if ($verbose >= 2);
+	warn ";\t$pattern\n" if ($main::verbose >= 2);
 	$selected_pattern{$pattern} = 1;
 	$score{$pattern} = $fields[$score_column-1] if ($score_column > 0);
     }
@@ -306,7 +306,7 @@ sub LocalReadPatterns {
 ################################################################
 #### Read input sequence and calculate oligo distributions 
 sub ReadSequence {
-    if ($verbose >= 2) {
+    if ($main::verbose >= 2) {
 	$date = `date '+%H:%M:%S'`;
 	chomp $date;
 	warn ";$date\tReading sequences\n";
@@ -320,12 +320,10 @@ sub ReadSequence {
 	
 	$sequence_number++;  
 
-	warn "; ", join ("\t", 
-			 $start_time,
-			 &AlphaDate(), 
-			 "Analysing sequence",
-			 $sequence_number,
-			 $current_id), "\n" if ($verbose >= 2);
+	&RSAT::message::TimeWarn (join("\t",
+				  "Analysing sequence",
+				  $sequence_number,
+				  $current_id)) if ($main::verbose >= 3);
 	### remove tabs and blank spaces ###    
 	$current_seq = &FoldSequence($current_seq,0);
 	
@@ -347,7 +345,7 @@ sub ReadSequence {
 		    "seq len = ".$seq_length[$sequence_number],
 		    "last_pos = ". $last_pos,
 		    "ref_pos = ". $reference_pos,
-		    ), "\n" if ($verbose >= 3);
+		    ), "\n" if ($main::verbose >= 3);
 	
 	#### count oligonucleotides ####
 	$offset = 0;
@@ -375,7 +373,7 @@ sub ReadSequence {
 		       "class = ".$class,
 		       "oligo_seq = ".$oligo_seq
 		       ), "\n"
-			   if ($verbose >= 4); 
+			   if ($main::verbose >= 4); 
 	    if ((defined(%selected_pattern)) && 
 		!($selected_pattern{$oligo_seq}) && 
 		!($selected_pattern{$rc})) {
@@ -413,7 +411,7 @@ sub ReadSequence {
 		  "min_class = ".$min_class,
 		  "current_max_class = ".$current_max_class,
 		  "max_class = ".$max_class,
-		  ), "\n" if ($verbose >= 4);
+		  ), "\n" if ($main::verbose >= 4);
 
 	for my $class ($current_min_class..$current_max_class) {
 	    $seq_per_class{$class}++;
@@ -429,7 +427,7 @@ sub ReadSequence {
 
 
     ### return sequence lengthes
-    if ($verbose >= 2) {
+    if ($main::verbose >= 2) {
 	for $s (1..$sequence_number) {
 	    print ";\t$s\t$id_list[$sequence_number] \t$seq_length[$s]\n";
 	}
@@ -438,7 +436,7 @@ sub ReadSequence {
     ### statistics on sequence lengthes
     $date = `date '+%H:%M:%S'`;
     chomp $date;
-    warn ";$date\tcalculating stats on sequence lengths ...\n" if ($verbose >= 2);
+    warn ";$date\tcalculating stats on sequence lengths ...\n" if ($main::verbose >= 2);
     for $s (1..$sequence_number) {
 	$sum_seq_length += $seq_length[$s];
 	if ($seq_length[$s] >= $oligo_length) {
@@ -450,7 +448,7 @@ sub ReadSequence {
 	}
 	$max_seq_length = &max($max_seq_length, $seq_length[$s]);
 
-	warn join ("\t", $s, $seq_length[$s], $sum_seq_length, $nb_possible_pos), "\n" if ($verbose >= 4);
+	warn join ("\t", $s, $seq_length[$s], $sum_seq_length, $nb_possible_pos), "\n" if ($main::verbose >= 4);
     }
 }
 
@@ -458,7 +456,7 @@ sub ReadSequence {
 ################################################################
 #### calculate class intervals
 sub CalcClasses {
-    warn "; Calculating classes\n" if ($verbose >= 2);
+    warn "; Calculating classes\n" if ($main::verbose >= 2);
     
     ### class definition
     $class_nb = $max_class + 1;
@@ -478,7 +476,7 @@ sub CalcClasses {
 		   "class_min=".$class_min{$class},
 		   "class_max=".$class_max{$class},
 		   "class_center=".$class_center{$class},
-		   ), "\n" if ($verbose >= 4);
+		   ), "\n" if ($main::verbose >= 4);
     }
 
     #### min and max classes for calculating the chi2
@@ -510,7 +508,7 @@ sub CalcExpected {
     ### calculate expected occurrences for each class
     $date = `date '+%H:%M:%S'`;
     chomp $date;
-    warn ";$date\tCalculating expected occurrences ...\n" if ($verbose >= 2);
+    warn ";$date\tCalculating expected occurrences ...\n" if ($main::verbose >= 2);
     foreach $oligo_seq (sort keys %occurrences) {
 	foreach $class ($min_calc_class..$max_calc_class) {
 	    $in_bound_occurrences{$oligo_seq} += $class_freq{$oligo_seq}{$class};
@@ -545,7 +543,7 @@ sub CalcChi {
     ### calculate chi2 to compare the position distribution with a flat line
     $date = `date '+%H:%M:%S'`;
     chomp $date;
-    warn ";$date\tcalculating chi values ...\n" if ($verbose >= 2);
+    warn ";$date\tcalculating chi values ...\n" if ($main::verbose >= 2);
     foreach $oligo_seq (sort keys %occurrences) {
 
 	@chi_values = ();
@@ -566,10 +564,10 @@ sub CalcChi {
 	} else {
 	    unless (&IsReal($chi_square{$oligo_seq})) {
 		print $out "; WARNING: $oligo_seq $chi_square{$oligo_seq}  does not fit conditions for the chi-square\n" 
-		    if ($verbose >= 2);
+		    if ($main::verbose >= 2);
 		unless ($no_filter) {
 		    print $out "; WARNING: $oligo_seq discarded\n" 
-			if ($verbose >= 3);
+			if ($main::verbose >= 3);
 		    delete $occurrences{$oligo_seq};
 		    delete $chi_square{$oligo_seq};
 		}
@@ -584,7 +582,7 @@ sub CalcChi {
 	if ((&IsReal($low_thr{'chi'})) && 
 	    ($chi_square{$oligo_seq} < $low_thr{'chi'})) {	
 	    print $out "; WARNING: $oligo_seq below the chi threshold $chi_square{$oligo_seq} < $low_thr{'chi'}\n" 
-		if ($verbose >= 3);
+		if ($main::verbose >= 3);
 
 	    delete $occurrences{$oligo_seq};
 	    delete $chi_square{$oligo_seq};
@@ -791,9 +789,9 @@ sub ReadArguments {
 	### verbose ###
 	if ($ARGV[$a] eq "-v") {
 	    if (&IsNatural($ARGV[$a+1])) {
-		$verbose = $ARGV[$a+1];
+		$main::verbose = $ARGV[$a+1];
 	    } else {
-		$verbose = 1;
+		$main::verbose = 1;
 	    }
 	    
 	    ### detailed help
@@ -1028,7 +1026,7 @@ sub PrintResult {
     if ($sort_result) {
 	$date = `date '+%H:%M:%S'`;
 	chomp $date;
-	print ";$date\tsorting results ...\n" if ($verbose >= 2);
+	print ";$date\tsorting results ...\n" if ($main::verbose >= 2);
 	if ($score_column > 0) {
 	    @sorted_keys = sort { 
 		$sccore{$b} <=>  $score{$a}
@@ -1071,7 +1069,7 @@ sub PrintResult {
 	}
     }
     
-    if ($verbose >= 1) {
+    if ($main::verbose >= 1) {
 	print $out "; column headers\n";
 	foreach $c (0..$#out_col) {
 	    printf $out ";\t%d\t%-15s\t%s\n", $c+1, $out_col[$c], $col_descriptions[$c];
@@ -1081,7 +1079,7 @@ sub PrintResult {
     ### header 
     $date = `date '+%H:%M:%S'`;
     chomp $date;
-    print ";$date\tprinting results ...\n" if ($verbose >= 2);
+    print ";$date\tprinting results ...\n" if ($main::verbose >= 2);
     print $out ";", join("\t", @out_col), "\n";
 
 
@@ -1101,9 +1099,10 @@ sub PrintResult {
 	
 	### chi-square value
 	if ($return{'chi'}) {
-	    print $out "\t$chi_square{$oligo_seq}" ;
+	    printf $out "\t%.1f", $chi_square{$oligo_seq};
+
 	    ### Degrees of freedom
-	    print $out "\t$df{$oligo_seq}" if ($return{'chi'});
+	    printf $out "\t%d", $df{$oligo_seq};
 	}
 	
 	#### Rank
@@ -1146,7 +1145,7 @@ sub PrintResult {
 # Filter out all oligos with non-canonical alphabet
 
 sub CheckDNA {
-    warn "; Checking DNA\n" if ($verbose >= 2);
+    warn "; Checking DNA\n" if ($main::verbose >= 2);
 
     foreach $oligo_seq (sort keys %occurrences) {
 	if ($oligo_seq =~ /[^atcg]/i) {
