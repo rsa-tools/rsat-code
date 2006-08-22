@@ -5,6 +5,8 @@ if ($0 =~ /([^(\/)]+)$/) {
 require "RSA.lib";
 require "RSA.seq.lib";
 
+## TO DO: use the matching weight rather than the number of matches as criterion
+
 #### initialise parameters ####
 $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
 $max_flanking = 1;
@@ -505,7 +507,7 @@ pattern-assembly options
 -maxfl #	maximum flanking segment size (default $max_flanking). 
 -subst #	maximum allowed substitutions (default $max_subst).
 -maxcl #	maximal assembly size, i.e. number of patterns per assembly (default: $max_assembly_size)
--maxpat #	maximum bumber of patterns to assemble
+-maxpat #	maximum number of patterns to assemble
 End_short_help
   close HELP;
   exit(0);
