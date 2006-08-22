@@ -1,13 +1,12 @@
 #!/usr/bin/perl
 
-### CVS: added the option -mask
-
+## BUG: with the options -two_tail and -2str, a ot of patterns have 0  occurrences (I suspect these are the reverse complements after grouping).
 ## BUG: with markov order 0, exp freq of mononucleotides are set to 0. should be the observed frequency
 ## TO DO: option -table freq
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.113 2006/06/10 23:06:55 jvanheld Exp $
+# $Id: oligo-analysis,v 1.114 2006/08/22 18:35:23 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
