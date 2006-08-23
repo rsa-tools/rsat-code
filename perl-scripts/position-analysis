@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.29 2006/08/22 20:35:14 rsat Exp $
+# $Id: position-analysis,v 1.30 2006/08/23 13:51:28 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -683,6 +683,9 @@ OPTIONS
 	-oth #	lower threshold on occurrences
 		return only words with a number of occurrences > #
 
+	-rth #	upper threshold on rank
+		return maximum # words
+
 	-pl pattern_file
 		A file containing a selection of patterns.  The
 		analysis is then restricted to these patterns.  The
@@ -769,6 +772,7 @@ position-analysis options
 -return		chi,distrib,exp,graph,rank
 -lth		lower threshold on chi2
 -oth		lower threshold on occurrences
+-rth		lower threshold on rank
 -pl		pattern list
 -origin		origin (-0 to calculate positions relative to sequence end)
 -img_format	image format (this parameter is passed to XYgraph)
@@ -866,6 +870,13 @@ sub ReadArguments {
 	    $low_thr{'occ'} = $ARGV[$a+1];
 	    unless (&IsNatural($low_thr{'occ'})) {
 		&RSAT::error::FatalError("Threshold on occurrences must be a natural number") ;
+	    }
+	    
+	    ### Upper threshold on rank
+	} elsif ($ARGV[$a] =~ /^-rth/) { 
+	    $upper_thr{'rank'} = $ARGV[$a+1];
+	    unless (&IsNatural($upper_thr{'rank'})) {
+		&RSAT::error::FatalError("Threshold on rank must be a natural number") ;
 	    }
 	    
 	    ### return values
@@ -1086,56 +1097,57 @@ sub PrintResult {
     ### pattern distributions
     my $rank = 0;
     foreach $oligo_seq (@sorted_keys) {
-	print $out "$oligo_seq"; ### Pattern sequence
-	print $out "\t", &PatternID($oligo_seq, $sum_rc); ### Pattern ID
-#	print $out "\t$oligo_seq"; ### Pattern ID
-#	if ($group_rc) {
-#	    print $out "|", lc(ReverseComplement($oligo_seq));
-#	}
+      $rank++;
+      last if ((defined($upper_thr{rank})) && ($rank > $upper_thr{rank}));
+      print $out "$oligo_seq"; ### Pattern sequence
+      print $out "\t", &PatternID($oligo_seq, $sum_rc); ### Pattern ID
+      #	print $out "\t$oligo_seq"; ### Pattern ID
+      #	if ($group_rc) {
+      #	    print $out "|", lc(ReverseComplement($oligo_seq));
+      #	}
+      
+      ### Occurrences
+      print $out "\t$in_bound_occurrences{$oligo_seq}";
+      print $out "\t$overlaps{$oligo_seq}" if ($no_overlaps);
+      
+      ### chi-square value
+      if ($return{'chi'}) {
+	printf $out "\t%.1f", $chi_square{$oligo_seq};
 	
-	### Occurrences
-	print $out "\t$in_bound_occurrences{$oligo_seq}";
-	print $out "\t$overlaps{$oligo_seq}" if ($no_overlaps);
-	
-	### chi-square value
-	if ($return{'chi'}) {
-	    printf $out "\t%.1f", $chi_square{$oligo_seq};
-
-	    ### Degrees of freedom
-	    printf $out "\t%d", $df{$oligo_seq};
+	### Degrees of freedom
+	printf $out "\t%d", $df{$oligo_seq};
+      }
+      
+      #### Rank
+      if ($return{'rank'}) {
+	print $out "\t$rank";
+      }
+      
+      ### Position distribution
+      if ($return{'distrib'}) {
+	for $class ($min_calc_class..$max_calc_class) {
+	  print $out "\t$class_freq{$oligo_seq}{$class}";
+	  #			printf $out " (%.1f)", $exp_occ{$oligo_seq}{$class} if ($return{'exp'});
 	}
+      }
+      
+      #	print $out "\n";
+      
+      if (($return{'exp'}) && ($return{'distrib'})) {
+	#	    print $out "$oligo_seq";
+	#	    print $out "\t$oligo_seq";
+	#	    if ($group_rc) {
+	#		print $out "|", lc(ReverseComplement($oligo_seq));
+	#	    }
+	#	    print $out "\t$in_bound_occurrences{$oligo_seq}";
+	#	    print $out "\t$overlaps{$oligo_seq}" if ($no_overlaps);
+	#	    print $out "\texpected";
 	
-	#### Rank
-	if ($return{'rank'}) {
-	    $rank++;
-	    print $out "\t$rank";
-	}
-	
-	### Position distribution
-	if ($return{'distrib'}) {
-	    for $class ($min_calc_class..$max_calc_class) {
-		print $out "\t$class_freq{$oligo_seq}{$class}";
-		#			printf $out " (%.1f)", $exp_occ{$oligo_seq}{$class} if ($return{'exp'});
-	    }
-	}
-	
-#	print $out "\n";
-	
-	if (($return{'exp'}) && ($return{'distrib'})) {
-#	    print $out "$oligo_seq";
-#	    print $out "\t$oligo_seq";
-#	    if ($group_rc) {
-#		print $out "|", lc(ReverseComplement($oligo_seq));
-#	    }
-#	    print $out "\t$in_bound_occurrences{$oligo_seq}";
-#	    print $out "\t$overlaps{$oligo_seq}" if ($no_overlaps);
-#	    print $out "\texpected";
-	    
-	    for $class ($min_calc_class..$max_calc_class) {
-		printf $out "\t%.1f", $exp_occ{$oligo_seq}{$class}; 
-	    }       
-	}
-	print $out "\n";
+	for $class ($min_calc_class..$max_calc_class) {
+	  printf $out "\t%.1f", $exp_occ{$oligo_seq}{$class}; 
+	}       
+      }
+      print $out "\n";
     }
 }
 
