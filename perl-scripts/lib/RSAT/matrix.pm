@@ -2091,6 +2091,11 @@ sub segment_proba {
 	if (defined($self->{"alphabet_index"}->{$letter})) {
 	    $r = $self->{"alphabet_index"}->{$letter};
 	    $letter_proba = $self->{"frequencies"}[$c][$r];
+	} else {
+	  if ((lc($letter) eq "n") &&
+	      ($self->get_attribute("n_treatment") eq "score")) {
+	    $letter_proba = 1;
+	  }
 	}
 	$segment_proba *= $letter_proba;
 #	&RSAT::message::Debug("segment_proba", "letter:".$letter, "col:".$c, "row:".$r, "P(letter)=".$letter_proba, "P(segm)=".$segment_proba) if ($main::verbose >= 10);
