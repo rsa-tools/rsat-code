@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.28 2006/08/18 14:44:16 rsat Exp $
+# $Id: matrix-scan,v 1.29 2006/08/23 12:51:32 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -121,6 +121,11 @@ package main;
     foreach my $thr (@supported_thresholds) {
 	$supported_threshold{$thr} = 1;
     }
+
+    ## Treatment of N characters
+    %supported_n_treatment = (skip=>1, score=>1);
+    $supported_n_treatment = join ",", keys %supported_n_treatment;
+    $n_treatment = "score";
 
     ## Return fields
     %supported_return_fields = (
@@ -347,6 +352,7 @@ package main;
 	&RSAT::message::TimeWarn(join ("\t", "Scanning sequence", $sequence_number,  "len=".$seq_len, "orig=".$orig_pos,  $seq_id))
             if ($main::verbose >= 2);
 	if ($return_fields{"sites"}) {
+	  my $n_containing_region = 0;
 	    for my $pos (1..$seq_len) {
 		
 		## Update background model if required
@@ -361,18 +367,36 @@ package main;
 
 		## Detect sites
 		foreach my $matrix (@matrices) {
-		    my $ncol = $matrix->{ncol};
-		    next if ($seq_len - $pos +1 < $ncol);
-		    my $segment = substr($current_seq, $pos-1, $ncol);
-		    &score_segment($segment, $matrix, $seq_id, $pos, "D");
-		    if ($main::both_strands) {
-			&score_segment( &ReverseComplement($segment),$matrix, $seq_id, $pos, "R");
-		    };
+		  my $ncol = $matrix->{ncol};
+		  next if ($seq_len - $pos +1 < $ncol);
+		  my $segment = substr($current_seq, $pos-1, $ncol);
+
+		  ## Skip N-containing segments
+		  if (($n_treatment eq "skip") &&
+		      ($segment =~ /n/i)) {
+		    unless ($n_containing_region) {
+		      ## Start of an N-containing region
+		      &RSAT::message::Info(join("\t", "N-containing segment start at position", $pos))
+			if ($main::verbose >= 3);
+		    }
+		    $n_containing_region = 1;
+		    next;
+		  }
+
+		  ## Report the end of the N-containing region
+		  if (($n_treatment eq "skip") && ($n_containing_region)) {
+		    &RSAT::message::Info(join("\t", "N-containing segment ended at position", $pos -1))
+		      if ($main::verbose >= 3);
+		    $n_containing_region = 0;
+		  }
+		  &score_segment($segment, $matrix, $seq_id, $pos, "D");
+		  if ($main::both_strands) {
+		    &score_segment( &ReverseComplement($segment),$matrix, $seq_id, $pos, "R");
+		  };
 		}
-	    }
-	}
-       
-    }
+	      }
+	  }
+      }
     close $in if ($main::infile{input});
     
     
@@ -595,6 +619,37 @@ This option is incompatible with the option -bgfile.
 		unless &RSAT::util::IsNatural($main::markov);
 	    &RSAT::error::FatalError("The options -markov and -bgfile are mutually exclusive.") 
 		if defined($main::infile{bg});
+
+=pod 
+
+=item B<-n [skip|score]>
+
+Treatment of N characters. These characters are often used in DNA
+sequences to represent undefined or masked nucleotides.
+
+=over
+
+=item I<skip>
+
+N-containing regions are skipped.
+
+=item I<score>
+
+N-containing regions are scored. The probability of an N is 1 for both
+the background model and the matrix. The N residues will thus
+contribute neither positively nor negatively to the weight score of
+the N-containing fragment. This option can be useful to detect sites
+which are at the border of N-containing regions, or in cases there are
+isolated N in the sequences.
+
+=back
+
+=cut
+	} elsif ($arg eq "-n") {
+	    $main::n_treatment = shift(@arguments);
+	    &RSAT::error::FatalError("Invalid value for the -n option. supported: ".$supported_n_treatment)
+	      unless ($supported_n_treatment{$main::n_treatment});
+
 
 =pod
 
