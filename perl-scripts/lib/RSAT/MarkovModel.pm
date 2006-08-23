@@ -640,20 +640,27 @@ sub segment_proba {
     
     for my $c ($order..($seq_len-1)) {
 	my $letter_proba = 0;
-
+	
 	my $suffix = substr($segment, $c, 1);
 	my $prefix = substr($segment,($c-$order),$order);
 	if (defined($self->{transition_freq}->{$prefix}->{$suffix})) {
-	    $letter_proba = $self->{transition_freq}->{$prefix}->{$suffix};
-	    unless ($letter_proba > 0) {
-		&RSAT::error::FatalError(join("\t", "MarkovModel::segment_proba",
-					 "null transition between prefix ", $prefix, " and suffix", $suffix)) if ($main::verbose >= 0);
-	    }
+	  $letter_proba = $self->{transition_freq}->{$prefix}->{$suffix};
+	  if ($letter_proba <= 0) {
+	    &RSAT::error::FatalError(join("\t", "MarkovModel::segment_proba",
+					  "null transition between prefix ", $prefix, " and suffix", $suffix)) if ($main::verbose >= 0);
+	  }
 	} else {
-		&RSAT::error::FatalError(join("\t", "MarkovModel::segment_proba",
-					 "undefined transition between prefix ", $prefix, " and suffix", $suffix)) if ($main::verbose >= 0);
+	  if ((lc($suffix) eq "n") && 
+	      ($self->get_attribute("n_treatment") eq "score")) {
+	    $letter_proba = 1;
+	  } else { 
+	    &RSAT::error::FatalError(join("\t", "MarkovModel::segment_proba",
+					  "undefined transition between prefix ", 
+					  $prefix, "and suffix", 
+					  $suffix));
+	  }
 	}
-	
+
 #	my $word = substr($segment,($c-$order),$order+1);
 #	if (defined($self->{transition_quick}->{$word})) {
 #	    $letter_proba = $self->{transition_quick}->{$word};
