@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.31 2006/08/23 14:57:36 jvanheld Exp $
+# $Id: position-analysis,v 1.32 2006/08/23 15:14:26 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -1055,6 +1055,10 @@ sub PrintResult {
 	@sorted_keys = sort keys %occurrences;
     }
 
+    if (defined($upper_thr{rank})) {
+      @sorted_keys = @sorted_keys[0..($upper_thr{rank}-1)];
+    } 
+
 
     #### output columns
     @out_col = (); @col_descriptions = ();
@@ -1098,7 +1102,6 @@ sub PrintResult {
     my $rank = 0;
     foreach $oligo_seq (@sorted_keys) {
       $rank++;
-      last if ((defined($upper_thr{rank})) && ($rank > $upper_thr{rank}));
       print $out "$oligo_seq"; ### Pattern sequence
       print $out "\t", &PatternID($oligo_seq, $sum_rc); ### Pattern ID
       #	print $out "\t$oligo_seq"; ### Pattern ID
