@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.29 2006/08/23 12:51:32 jvanheld Exp $
+# $Id: matrix-scan,v 1.30 2006/08/23 13:05:32 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -174,6 +174,7 @@ package main;
     } else {
 	$bg_model->set_attribute("strand", "sensitive");
     }
+    $bg_model->set_attribute("n_treatment", $n_treatment);
     
     if ($infile{bg}) {
 	## Read background model from a file
@@ -231,9 +232,8 @@ package main;
 	$matrix->set_attribute("matches", 0); ## Initialize the match counter
 	$matrix->set_attribute("pseudo", $pseudo_counts);
 	$matrix->set_attribute("equi_pseudo", $main::equi_pseudo);
-	
-	
 	$matrix->set_attribute("file", $matrix_file);
+	$matrix->set_attribute("n_treatment", $n_treatment);
 	$matrix->set_attribute("name", $matrix_name);
 	$matrix->push_attribute("parameters", "pseudo");
 	$matrix->index_alphabet();
