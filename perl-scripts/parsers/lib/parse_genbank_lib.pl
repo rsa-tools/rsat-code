@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank_lib.pl,v 1.27 2006/07/20 23:02:11 jvanheld Exp $
+# $Id: parse_genbank_lib.pl,v 1.28 2006/08/23 06:19:06 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -166,17 +166,16 @@ sub ParseAllGenbankFiles {
 
     ## DEBUG NOTE: ParseFeatureNames and CheckObjectNames are
     ## apparently partly redundant. I should check and remove
-    ## redundancy
+    ## redundancy.
 
     ## Parse feature names
     &ParseFeatureNames($genes, $mRNAs, $scRNAs, $tRNAs, $rRNAs, $CDSs);
 
-    ## Check object for all the parsed features, before building the RSAT features from it
+    ## Check object names for all the parsed features, before building the RSAT features from it
     &CheckObjectNames($genes, $mRNAs, $scRNAs, $tRNAs, $rRNAs, $misc_RNAs, $misc_features, $CDSs);
 
-    ## parse Gene Ontology terms
+    ## Parse Gene Ontology terms
     &ParseGO($CDSs);
-    
 
     ################################################################
     ## index names
@@ -1189,42 +1188,70 @@ sub CheckObjectNames {
     ## Each feature inherits the names of its parent gene
     foreach my $holder (@holders) {
 	
-	&RSAT::message::TimeWarn("Checking object names for class", $holder->get_object_type()) if ($main::verbose >= 1);
+	&RSAT::message::TimeWarn("Checking object names for class", 
+				 $holder->get_object_type()) if ($main::verbose >= 1);
 	foreach my $object ($holder->get_objects()) {
+#	  &RSAT::message::Debug("Checking object names for object", 
+#				$holder->get_object_type(), 
+#				"id=".$object->get_attribute("id"),
+#				"name=".$object->get_attribute("name"),
+#				"gene=".$object->get_attribute("gene"),
+#				"names=", join(";", $object->get_attribute("names")),
+#				  ) if ($main::verbose >= 10);
 	    
 	    ## Make sure that the object has no null name
 	    my $primary_given = 0;
-	    my $primary_name = $object->get_name();
+	    my $primary_name = $object->get_attribute("name");
 	    if (($primary_name) && ($primary_name ne $main::null)) {
 		$primary_given = 1;
 	    }
-	    
-	    ## The feature attribute "gene" is used as name
-	    my $gene_attr = $object->get_attribute("gene");
-	    if ($gene_attr) {
+
+
+	  ## Test different attributes which can be considered as primary name
+	  for my $attribute ("gene", "synonym", "synonyms", "locus_tag", "GeneID", "id") {
+	    my @names = $object->get_attribute($attribute);
+	    foreach my $name (@names) {
+	      if (($name) && ($name ne $main::null)) {
 		#### add gene name to the list of synonyms
-		$object->push_attribute("names", $gene_attr);
-		
+		$object->push_attribute("names", $name);
 		unless ($primary_given) {
-		    #### define this name as primary name
-		    $object->set_attribute("name",  $gene_attr);
-		    $primary_given = 1;
+		  #### define this name as primary name
+		  $object->set_attribute("name",  $name);
+#		  &RSAT::message::Debug("Assigned field", $attribute, "value", $name, 
+#					"as primary name for object", 
+#					$object->get_attribute("id")) if ($main::verbose >= 10);
+		  $primary_given = 1;
 		}
+	      }
 	    }
+	  }
+
+# 	    ## The feature attribute "gene" is used as name
+# 	    my $gene_attr = $object->get_attribute("gene");
+# 	    if ($gene_attr) {
+# 		#### add gene name to the list of synonyms
+# 		$object->push_attribute("names", $gene_attr);
+		
+# 		unless ($primary_given) {
+# 		    #### define this name as primary name
+# 		    $object->set_attribute("name",  $gene_attr);
+# 		    $primary_given = 1;
+# 		}
+# 	    }
 	    
-	    ## The feature attribute "locus_tag" is used as name and
-	    ## becomes primary name if there is no attribute "gene".
-	    my @locus_tags = $object->get_attribute("locus_tag");
-	    foreach my $locus_tag_attr (@locus_tags) {
-		#### add locus_tag name to the list of synonyms
-		$object->push_attribute("names", $locus_tag_attr);
+# 	    ## The feature attribute "locus_tag" is used as name and
+# 	    ## becomes primary name if there is no attribute "gene".
+# 	    my @locus_tags = $object->get_attribute("locus_tag");
+# 	    foreach my $locus_tag_attr (@locus_tags) {
+# 		#### add locus_tag name to the list of synonyms
+# 		$object->push_attribute("names", $locus_tag_attr);
 		
-		unless ($primary_given) {
-		    #### define this name as primary name
-		    $object->set_attribute("name",  $locus_tag_attr);
-		    $primary_given = 1;
-		}
-	    }
+# 		unless ($primary_given) {
+# 		    #### define this name as primary name
+# 		    $object->set_attribute("name",  $locus_tag_attr);
+# 		    $primary_given = 1;
+# 		}
+# 	    }
 	    
 	    ################################################################
 # 	    #### Add all the names of the parent gene to the current feature
@@ -1240,11 +1267,11 @@ sub CheckObjectNames {
 # 		}
 # 	    }
 
-	    #### use ID as primary name
-	    unless ($primary_given) {
-		$object->set_attribute("name",  $object->get_attribute("id"));
-		$primary_given = 1;
-	    }
+# 	    #### use ID as primary name
+# 	    unless ($primary_given) {
+# 		$object->set_attribute("name",  $object->get_attribute("id"));
+# 		$primary_given = 1;
+# 	    }
 	    
 	    ## Make sure that object has no duplicate names
 	    $object->unique_names();
