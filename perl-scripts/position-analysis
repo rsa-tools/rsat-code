@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: position-analysis,v 1.30 2006/08/23 13:51:28 jvanheld Exp $
+# $Id: position-analysis,v 1.31 2006/08/23 14:57:36 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -874,8 +874,8 @@ sub ReadArguments {
 	    
 	    ### Upper threshold on rank
 	} elsif ($ARGV[$a] =~ /^-rth/) { 
-	    $upper_thr{'rank'} = $ARGV[$a+1];
-	    unless (&IsNatural($upper_thr{'rank'})) {
+	    $upper_thr{rank} = $ARGV[$a+1];
+	    unless (&IsNatural($upper_thr{rank})) {
 		&RSAT::error::FatalError("Threshold on rank must be a natural number") ;
 	    }
 	    
