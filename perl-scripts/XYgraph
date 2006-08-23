@@ -962,7 +962,7 @@ sub ReadData {
 		    $legend_line =~ s/ {1,}/\t/g; # single or multiple spaces are considered as a singlew tab
 					      }
 		@legend_fields = split(/[\t\n\r]/, $legend_line);
-		&RSAT::message::Info(join("\t", "Header fields\t", join (";", @legend_fields))) if ($main::verbose >= 0);
+		&RSAT::message::Info(join("\t", "Header fields\t", join (";", @legend_fields))) if ($main::verbose >= 2);
 		
 		### calculate legend width ###
 		$legend_length = 0;
