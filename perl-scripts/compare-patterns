@@ -940,7 +940,7 @@ sub PrintFieldDescriptions {
     $field_description{Eval_p} = "E-value for a single comparison (one sequence against one sequence). Eval_p = Pval*noffs";
     $field_description{sig_p} = "significance for a single comparison. sig_p = -log10(Eval_p)";
     $field_description{Eval_f} = "E-value for the whole analysis (all sequences against all sequences). Eval_f = Eval_p*nb_seq1*nb_seq2";
-    $field_description{sig_f} = "significance for a single comparison. sig_f = -log10(Eval_f)";
+    $field_description{sig_f} = "significance for the whole analysis. sig_f = -log10(Eval_f)";
     $field_description{strand} = "Strand (D: direct, R: reverse)";
     $field_description{max_w1} = "Maximal weight for a match with seq1";
     $field_description{max_w2} = "Maximal weight for a match with seq2";
