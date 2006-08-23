@@ -1,6 +1,6 @@
 #!/usr/bin/perl 
 #############################################################
-# $Id: parse-genbank.pl,v 1.41 2006/08/22 18:36:26 rsat Exp $
+# $Id: parse-genbank.pl,v 1.42 2006/08/23 06:19:06 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -22,6 +22,7 @@ require "classes/Genbank_classes.pl";
 
 ################################################################
 #### initialization
+$null = "<NULL_VALUE>";
 $data_source = "NCBI";
 $ext = "gbk";
 $data_type = "gbk";
@@ -33,7 +34,7 @@ $password="rsat";
 $full_path = 0;
 
 $test = 0; 
-$test_contigs = 2; ## Maximal number of genbank files to parse for a given organism (there is generally one contig per chromosome)
+$test_files = 2; ## Maximal number of genbank files to parse for a given organism (there is generally one contig per chromosome)
 $test_lines = 10000; ## macimal number of lines to parse per file
 
 ################################################################
@@ -200,6 +201,11 @@ package main;
 
     #### verbose ####
     &Verbose() if ($verbose);
+
+    ## Restrict the number of genbank file for quick tests
+    if ($test) {
+      @genbank_files = @genbank_files[0..(${test_files})];
+    }
 
     ## Parse the genbank files
 #    chdir $dir{input};
