@@ -1,10 +1,8 @@
 #!/usr/bin/perl
 
-### CVS: added the option -mask
-
 ############################################################
 #
-# $Id: position-analysis,v 1.32 2006/08/23 15:14:26 jvanheld Exp $
+# $Id: position-analysis,v 1.33 2006/08/25 11:55:31 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:16:40 jvanheld>
 #
@@ -15,6 +13,8 @@ if ($0 =~ /([^(\/)]+)$/) {
 require "RSA.lib";
 require RSAT::util;
 use POSIX qw(sysconf _PC_CHOWN_RESTRICTED);
+use Math::CDF;
+
 
 ################################################################
 ###### default values for parameters
@@ -24,11 +24,10 @@ $strands = "1str";
 $group_rc = 0;
 $image_format = $IMG_FORMAT; ### By default, take the image format defined in the RSAT config file
 $XYgraph_command = "$SCRIPTS/XYgraph";
-
-$reference_pos = 0;
+$log_base = log(10);
 
 #### initialize other variables
-$start_time = &AlphaDate;
+$start_time = &RSAT::util::AlphaDate();
 $sequence_number = 0;
 
 $max_seq_length = 0;
@@ -83,30 +82,25 @@ $out = &OpenOutputFile($outputfile);
 &CheckInputSeqFormat($in_format);
 ($in, $input_dir) = &OpenInputFile($inputfile);
 
-
-#die "POUET\t$pattern_file\n" if ($pattern_file);
 &LocalReadPatterns() if ($pattern_file);
 &ReadSequence();
-
 &CheckDNA() if ($seq_type == "dna");
-
 &CalcClasses();
 
-
 ### statistics on oligo occurrences
-warn "; Calculating sums of occurrences\n" if ($main::verbose >= 2);
-foreach $oligo_seq (sort keys %occurrences) {
-  $sum_occurrences += $occurrences{$oligo_seq};	
-  $sum_overlaps += $overlaps{$oligo_seq};	
+&RSAT::message::TimeWarn("Calculating sums of occurrences") if ($main::verbose >= 2);
+foreach my $oligo_seq (sort keys %pattern) {
+  $sum_occurrences += $pattern{$oligo_seq}->{occ};
+  $sum_overlaps += $pattern{$oligo_seq}->{overlaps};
 }
 
 &SumStrands() if ($strands eq "2str");
 
 #### if a pattern file has been specified, forget info about other patterns
 if ($pattern_file) {
-    foreach $oligo_seq (sort keys %occurrences) {
+    foreach my $oligo_seq (sort keys %pattern) {
 	unless ($selected_pattern{$oligo_seq}) {
-	    delete $occurrences{$oligo_seq};
+	    delete $pattern{$oligo_seq}->{occ};
 	}
     }
 }
@@ -114,9 +108,9 @@ if ($pattern_file) {
 
 #### check threshold on occurrences
 if (&IsNatural($low_thr{'occ'})) {
-    foreach $oligo_seq (sort keys %occurrences) {
-	if ($occurrences{$oligo_seq} < $low_thr{'occ'}) {
-	    delete $occurrences{$oligo_seq};
+    foreach my $oligo_seq (sort keys %pattern) {
+	if ($pattern{$oligo_seq}->{occ} < $low_thr{'occ'}) {
+	    delete $pattern{$oligo_seq}->{occ};
 	}
     }
 }
@@ -166,30 +160,40 @@ if ($return{'graph'}) {
     } else {
 	$index_file = "$dir{output}/graph_index_${oligo_length}nt_ci${class_interval}_$strands.html";
     }
+
+    &RSAT::message::Info(join('\t', $index_file)) if ($main::verbose >= 0);
     open INDEX, ">$index_file";
-    print INDEX "<HTML><BODY><PRE>\n";
+    print INDEX "<HTML><BODY>\n";
+    print INDEX "<TABLE>\n";
+    print INDEX "<TR>\n";
+    print INDEX "<TH>Sequence</TH>\n";
+    print INDEX "<TH>Occ</TH>\n";
+    print INDEX "<TH>Chi2</TH>\n";
+    print INDEX "<TH>Rank</TH>\n";
+    print INDEX "</TR>\n";
     close INDEX;
 
     #### generate one graph for each oligo
-    foreach $oligo_seq (@sorted_keys) {
-	next unless (&IsReal($chi_square{$oligo_seq}) || ($no_filter_graphs));
-
-	$graph_file_name = "${oligo_seq}_ci${class_interval}_${strands}_pos_distrib.".$image_format;
-	$xmax = ($max_class+1) * $class_interval;
-	$title2 = "$in_bound_occurrences{$oligo_seq} occurrences";
+    foreach my $oligo_seq (@sorted_keys) {
+	next unless (&IsReal($pattern{$oligo_seq}->{chi_square}) || ($no_filter_graphs));
+	my $score = "NA";
+	my $graph_file_name = join("", $oligo_seq, "_ci", $class_interval, "_", $strands, "_pos_distrib.", 
+				   ".",$image_format);
+	my $xmax = ($max_class+1) * $class_interval;
+	my $title2 = $pattern{$oligo_seq}->{in_bound_occ}." occurrences";
 	$title2 .= ", class interval=$class_interval";
 	if ($score_column > 0) {
-	    $score = sprintf "score = %.2f", $score{$oligo_seq};
+	  $score = sprintf "score = %.2f", $pattern{$oligo_seq}->{score};
 	} elsif ($return{'chi'}) {
-	    if (&IsReal($chi_square{$oligo_seq})) {
-		$score = sprintf "%.2f", $chi_square{$oligo_seq};
-	    } else {
-		$score = $chi_square{$oligo_seq};
-	    }
-	    $title2 .= ", score = $score";
-	} 
-	
-	$command = "$XYgraph_command -o $dir{graphs}/$graph_file_name";
+	  if (&IsReal($pattern{$oligo_seq}->{chi_square})) {
+	    $score = sprintf "%.2f", $pattern{$oligo_seq}->{chi_square};
+	  } else {
+	    $score = $pattern{$oligo_seq}->{chi_square};
+	  }
+	  $title2 .= ", score = $score";
+	}
+
+	my $command = "$XYgraph_command -o $dir{graphs}/$graph_file_name";
 	$command .= " -lines -xcol 1 -ycol 2,3 -legend ";
 	$command .= " -title1 '$oligo_seq distribution profile' ";
 	$command .= " -title2 '$title2' ";
@@ -197,23 +201,26 @@ if ($return{'graph'}) {
 	$command .= " -ymin 0 -xmin $class_min[0] -xmax $class_max[$max_class] ";
 	$command .= " -xgstep2 $class_interval -xsize 600";
 	print "; $command\n" if ($main::verbose >= 2);
-	open XY, "| $command";
-	print XY ";class\tocc_$oligo_seq\texp_$oligo_seq\n"; ### header line
-	foreach $class ($min_class..$max_class) {
-	    print XY "$class_center{$class}\t";
-	    print XY "$class_freq{$oligo_seq}{$class}\t";
-	    print XY "$exp_occ{$oligo_seq}{$class}\n";
-	}
+# 	open XY, "| $command";
+# 	print XY ";class\tocc_$oligo_seq\texp_$oligo_seq\n"; ### header line
+# 	foreach my $class ($min_class..$max_class) {
+# 	    print XY "$class_center{$class}\t";
+# 	    print XY "$class_freq{$oligo_seq}{$class}\t";
+# 	    print XY "$exp_occ{$oligo_seq}{$class}\n";
+# 	}
 	close XYgraph;
 	open INDEX, ">>$index_file";
-	print INDEX "<A HREF=\"$rel_dir{graphs}/$graph_file_name\">$oligo_seq</A>";
-	print INDEX "\t$in_bound_occurrences{$oligo_seq}";
-	print INDEX "\t$score";
-	print INDEX "\n";
+	print INDEX "<tr>\n";
+	print INDEX "<td><A HREF=\"$rel_dir{graphs}/$graph_file_name\">$oligo_seq</A></td>\n";
+	print INDEX "<td>$pattern{$oligo_seq}->{in_bound_occ}</td>\n";
+	print INDEX "<td>$score</td>\n";
+	print INDEX "<td>$pattern{$oligo_seq}->{rank}</td>\n";
+	print INDEX "</tr>\n";
 	close INDEX;
-    }
+      }
     open INDEX, ">>$index_file";
-    print INDEX "</PRE></BODY></HTML>\n";
+    print INDEX "<TABLE>\n";
+    print INDEX "</BODY></HTML>\n";
     close INDEX;
 }
 
@@ -231,26 +238,27 @@ close $out;
 exit(0);
 
 
+################################################################
+## Sum occurrences and profiles of reverse complement patterns for strand insensitive analysis ###
 sub SumStrands {
-  ### sum profiles of reverse complement patterns for strand insensitive analysis ###
-  $date = `date '+%H:%M:%S'`;
-  chomp $date;
-  print ";$date\tsumming occurrences of reverse complementary patterns ...\n" if ($main::verbose >= 2);
-  
-  ### occurrences
-  foreach $oligo_seq (keys %occurrences) {
+  &RSAT::message::TimeWarn("Summing occurrences of reverse complementary patterns") if ($main::verbose >= 2);
+
+  ################################################################
+  ## Sum occurrences
+  foreach my $oligo_seq (keys %pattern) {
     $rc_oligo_seq = lc(&ReverseComplement($oligo_seq));
-    $occurrences_2strands{$oligo_seq} = $occurrences{$oligo_seq} + $occurrences{$rc_oligo_seq};
+    $occurrences_2strands{$oligo_seq} = $pattern{$oligo_seq}->{occ} + $occurrences{$rc_oligo_seq};
     $occurrences_2strands{$rc_oligo_seq} = $occurrences_2strands{$oligo_seq};
   }
-  foreach $oligo_seq (keys %occurrences_2strands) {
-    $occurrences{$oligo_seq} = $occurrences_2strands{$oligo_seq};
+  foreach my $oligo_seq (keys %pattern_2strands) {
+    $pattern{$oligo_seq}->{occ} = $occurrences_2strands{$oligo_seq};
   }
-  undef %occurrences_2strands;
+  undef %pattern_2strands;
   
-  ### positions ###
-  for $class ($min_class..$max_class) {
-    foreach $oligo_seq (sort keys %occurrences) {
+  ################################################################
+  ## Sum position profiles
+  for my $class ($min_class..$max_class) {
+    foreach my $oligo_seq (sort keys %pattern) {
       $rc_oligo_seq = lc(&ReverseComplement($oligo_seq));
       if ($rc_oligo_seq eq $oligo_seq) {
 	$m_pos_bothstrands{$oligo_seq}{$class} = $class_freq{$oligo_seq}{$class};
@@ -258,7 +266,7 @@ sub SumStrands {
 	$m_pos_bothstrands{$oligo_seq}{$class} = $class_freq{$oligo_seq}{$class} + $class_freq{$rc_oligo_seq}{$class};
       }	  
     }
-    foreach $oligo_seq (sort keys %occurrences) {
+    foreach my $oligo_seq (sort keys %pattern) {
       $class_freq{$oligo_seq}{$class} = $m_pos_bothstrands{$oligo_seq}{$class};
       undef $m_pos_bothstrands{$oligo_seq}{$class};
     }   
@@ -266,14 +274,11 @@ sub SumStrands {
   
   #### if requested, group results by pairs of reverse complements ####
   if ($group_rc) {
-    $date = `date '+%H:%M:%S'`;
-    chomp $date;
-    print ";$date\tgrouping patterns by pairs of reverse complements ...\n" if ($main::verbose >= 2);
-    foreach $oligo_seq (keys %occurrences) {
-      $rc_oligo_seq = lc(&ReverseComplement($oligo_seq));
+    &RSAT::message::TimeWarn("Grouping patterns by pairs of reverse complements") if ($main::verbose >= 2);
+    foreach my $oligo_seq (keys %pattern) {
+      my $rc_oligo_seq = lc(&ReverseComplement($oligo_seq));
       if ($rc_oligo_seq gt $oligo_seq) { ### only suppress one oligo from the dyad 
-	delete $occurrences{$rc_oligo_seq};
-	delete $mseq{$rc_oligo_seq};
+	delete $pattern{$rc_oligo_seq};
 	delete $class_freq{$rc_oligo_seq};
       }
     }
@@ -306,53 +311,48 @@ sub LocalReadPatterns {
 ################################################################
 #### Read input sequence and calculate oligo distributions 
 sub ReadSequence {
-    if ($main::verbose >= 2) {
-	$date = `date '+%H:%M:%S'`;
-	chomp $date;
-	warn ";$date\tReading sequences\n";
-    }
-    
+  &RSAT::message::TimeWarn(join("\t", "Reading sequences"))
+			   if ($main::verbose >= 2);
 
     #### read all sequences and count oligo occurrences per class interval
     $sequence_number = 0;
     while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_format, $input_dir, "", $mask)) &&
 	   (($current_seq ne "") || ($current_id ne ""))) {
-	
-	$sequence_number++;  
 
-	&RSAT::message::TimeWarn (join("\t",
-				  "Analysing sequence",
-				  $sequence_number,
-				  $current_id)) if ($main::verbose >= 3);
+	$sequence_number++;
+
 	### remove tabs and blank spaces ###    
 	$current_seq = &FoldSequence($current_seq,0);
-	
+
 	### statistics about sequences ###
 	$seq_length[$sequence_number] = length($current_seq);
 	$id_list[$sequence_number] = $current_id;
-	$last_pos = $seq_length[$sequence_number] - $oligo_length + 1;
+	my $last_pos = $seq_length[$sequence_number] - $oligo_length + 1;
 	$max_last_pos = &max($max_last_pos, $last_pos);
 
-	$reference_pos = 0;
+	my $ref_pos = 0;
 	if (($origin eq "-0") || ($origin < 0)) {
-	    $reference_pos = $seq_length[$sequence_number] + $origin + 1;
+	    $ref_pos = $seq_length[$sequence_number] + $origin + 1;
 	} else {
-	    $reference_pos = $origin;
+	    $ref_pos = $origin;
 	}
 
-	warn join ( "\t", 
-		    $sequence_number,
-		    "seq len = ".$seq_length[$sequence_number],
-		    "last_pos = ". $last_pos,
-		    "ref_pos = ". $reference_pos,
-		    ), "\n" if ($main::verbose >= 3);
-	
+	&RSAT::message::TimeWarn (join("\t",
+				       "",
+				       "Reading sequence",
+				       $sequence_number,
+				       $current_id,
+				       "len=".$seq_length[$sequence_number],
+				       "last_pos=".$last_pos,
+				       "ref_pos=".$ref_pos,
+				      )) if ($main::verbose >= 3);
+
 	#### count oligonucleotides ####
-	$offset = 0;
-	$current_pos = 1;
+	my $offset = 0;
+	my $current_pos = 1;
 	my %classes_in_this_seq = ();
 	while ($current_pos <= $last_pos) {
-	    $relative_pos = $current_pos - $reference_pos;
+	    $relative_pos = $current_pos - $ref_pos;
 	    if (($origin eq "-0") || ($origin < 0)) {
 		$class = POSIX::floor($relative_pos/$class_interval);
 	    } else {
@@ -362,18 +362,18 @@ sub ReadSequence {
 	    $classes_in_this_seq{$class}++;
 	    $oligo_seq = lc(substr($current_seq,$current_pos-1,$oligo_length));
 	    $rc = lc(&ReverseComplement($oligo_seq));
-	    warn join ("\t",
-		       ";",
-		       $sequence_number,
-		       "len = ".$seq_length[$sequence_number],
-		       "pos = ".$current_pos,
-		       "last_pos = ".$last_pos,
-		       "ref_pos = ".$reference_pos,
-		       "rel_pos = ".$relative_pos,
-		       "class = ".$class,
-		       "oligo_seq = ".$oligo_seq
-		       ), "\n"
-			   if ($main::verbose >= 4); 
+#	    warn join ("\t",
+#		       ";",
+#		       $sequence_number,
+#		       "len = ".$seq_length[$sequence_number],
+#		       "pos = ".$current_pos,
+#		       "last_pos = ".$last_pos,
+#		       "ref_pos = ".$ref_pos,
+#		       "rel_pos = ".$relative_pos,
+#		       "class = ".$class,
+#		       "oligo_seq = ".$oligo_seq
+#		       ), "\n"
+#			   if ($main::verbose >= 4); 
 	    if ((defined(%selected_pattern)) && 
 		!($selected_pattern{$oligo_seq}) && 
 		!($selected_pattern{$rc})) {
@@ -382,9 +382,9 @@ sub ReadSequence {
 	    if (($no_overlap) 
 		&& ($last_pos{$oligo_seq} > 0) 
 		&& ($current_pos < ($last_pos{$oligo_seq} + $oligo_length))) {
-		$overlaps{$oligo_seq}++;
+		$pattern{$oligo_seq}->{overlaps}++;
 	    } else {
-		$occurrences{$oligo_seq}++;
+		$pattern{$oligo_seq}->{occ}++;
 		$class_freq{$oligo_seq}{$class}++;
 		$last_pos{$oligo_seq} = $current_pos;
 	    }
@@ -406,38 +406,29 @@ sub ReadSequence {
 	    $max_class = $current_max_class;
 	}
 
-	warn join ("\t",  
-		  "current_min_class = ".$current_min_class,
-		  "min_class = ".$min_class,
-		  "current_max_class = ".$current_max_class,
-		  "max_class = ".$max_class,
-		  ), "\n" if ($main::verbose >= 4);
+	&RSAT::message::Debug (
+			       "current_min_class = ".$current_min_class,
+			       "min_class = ".$min_class,
+			       "current_max_class = ".$current_max_class,
+			       "max_class = ".$max_class,
+			      ) if ($main::verbose >= 4);
 
 	for my $class ($current_min_class..$current_max_class) {
 	    $seq_per_class{$class}++;
 	    $sum_seq_per_class++;
-#	    warn join ("\t",  ";", $current_min_class,$current_max_class, $class, $last_pos, $pos_per_class{$class}), "\n";
 	}
 
-#	warn join ("\t",  ";", $current_min_class,$current_max_class,$class, $last_pos, $pos_per_class{$current_max_class}), "\n";
 	undef %last_pos;
     }
     undef $current_seq; ### release the memory occupied
     close $in;
 
 
-    ### return sequence lengthes
-    if ($main::verbose >= 2) {
-	for $s (1..$sequence_number) {
-	    print ";\t$s\t$id_list[$sequence_number] \t$seq_length[$s]\n";
-	}
-    }
-    
-    ### statistics on sequence lengthes
-    $date = `date '+%H:%M:%S'`;
-    chomp $date;
-    warn ";$date\tcalculating stats on sequence lengths ...\n" if ($main::verbose >= 2);
-    for $s (1..$sequence_number) {
+    ### statistics on sequence lengths
+    &RSAT::message::TimeWarn ("Calculating stats on sequence lengths")
+      if ($main::verbose >= 2);
+
+    for my $s (1..$sequence_number) {
 	$sum_seq_length += $seq_length[$s];
 	if ($seq_length[$s] >= $oligo_length) {
 	    if ($strands eq "2str") {
@@ -448,19 +439,22 @@ sub ReadSequence {
 	}
 	$max_seq_length = &max($max_seq_length, $seq_length[$s]);
 
-	warn join ("\t", $s, $seq_length[$s], $sum_seq_length, $nb_possible_pos), "\n" if ($main::verbose >= 4);
+	&RSAT::message::Debug($s, $seq_length[$s], $sum_seq_length, $nb_possible_pos) if ($main::verbose >= 4);
     }
+    &RSAT::message::TimeWarn(join("\t", "Finished reading sequence. Number of patterns", scalar(keys %pattern))) 
+      if ($main::verbose >= 2);
+
 }
 
 
 ################################################################
 #### calculate class intervals
 sub CalcClasses {
-    warn "; Calculating classes\n" if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Calculating classes") if ($main::verbose >= 2);
     
     ### class definition
     $class_nb = $max_class + 1;
-    for $class ($min_class..$max_class) {
+    for my $class ($min_class..$max_class) {
 
 	if (($origin eq  '-0') || ($origin < 0)) {
 	    $class_min{$class} = $class *$class_interval;
@@ -481,7 +475,7 @@ sub CalcClasses {
 
     #### min and max classes for calculating the chi2
     if (&IsInteger($min_pos)) {
-	$min_calc_class = POSIX::floor($min_pos/$class_interval);	
+	$min_calc_class = POSIX::floor($min_pos/$class_interval);
     } else {
 	$min_calc_class = $min_class;
     }
@@ -495,7 +489,7 @@ sub CalcClasses {
 
     #### positions per class
     $sum_pos_per_class  = 0;
-    for $class ($min_calc_class..$max_calc_class) {
+    for my $class ($min_calc_class..$max_calc_class) {
 	$sum_pos_per_class += $pos_per_class{$class};
     }
 }
@@ -506,14 +500,12 @@ sub CalcClasses {
 #### calcualte expected frequencies per class interval
 sub CalcExpected {
     ### calculate expected occurrences for each class
-    $date = `date '+%H:%M:%S'`;
-    chomp $date;
-    warn ";$date\tCalculating expected occurrences ...\n" if ($main::verbose >= 2);
-    foreach $oligo_seq (sort keys %occurrences) {
-	foreach $class ($min_calc_class..$max_calc_class) {
-	    $in_bound_occurrences{$oligo_seq} += $class_freq{$oligo_seq}{$class};
+    &RSAT::message::TimeWarn("Calculating expected occurrences") if ($main::verbose >= 2);
+    foreach my $oligo_seq (sort keys %pattern) {
+	foreach my $class ($min_calc_class..$max_calc_class) {
+	    $pattern{$oligo_seq}->{in_bound_occ} += $class_freq{$oligo_seq}{$class};
 	}
-	foreach $class ($min_calc_class..$max_calc_class) {
+	foreach my $class ($min_calc_class..$max_calc_class) {
 	    ### check that the class_freq has been defined
 	    unless (&IsNatural($class_freq{$oligo_seq}{$class})) {
 		$class_freq{$oligo_seq}{$class} = 0;
@@ -525,7 +517,7 @@ sub CalcExpected {
 	    #			$rel_freq{$oligo_seq}{$class} = 0;
 	    #		}
 	    if ($sum_pos_per_class > 0) {
-		$exp_occ{$oligo_seq}{$class} =  $in_bound_occurrences{$oligo_seq} * $pos_per_class{$class}/$sum_pos_per_class;
+		$exp_occ{$oligo_seq}{$class} =  $pattern{$oligo_seq}->{in_bound_occ} * $pos_per_class{$class}/$sum_pos_per_class;
 	    } else {
 		$exp_occ{$oligo_seq}{$class} =  "NA";
 	    }
@@ -541,51 +533,62 @@ sub CalcExpected {
 sub CalcChi {
 
     ### calculate chi2 to compare the position distribution with a flat line
-    $date = `date '+%H:%M:%S'`;
-    chomp $date;
-    warn ";$date\tcalculating chi values ...\n" if ($main::verbose >= 2);
-    foreach $oligo_seq (sort keys %occurrences) {
+    &RSAT::message::TimeWarn("Calculating chi values") if ($main::verbose >= 2);
+    my $nb_tests = scalar(keys(%pattern));
+    foreach my $oligo_seq (sort keys %pattern) {
 
 	@chi_values = ();
-	foreach $class ($min_calc_class..$max_calc_class) {
+	foreach my $class ($min_calc_class..$max_calc_class) {
 	    push @chi_values, $class_freq{$oligo_seq}{$class};
 	}
-	foreach $class ($min_calc_class..$max_calc_class) {
+	foreach my $class ($min_calc_class..$max_calc_class) {
 	    push @chi_values, $exp_occ{$oligo_seq}{$class};
 	}
-	($chi_square{$oligo_seq}, $df{$oligo_seq}) = &ChiSquare("goodfit", 2, $calc_class_nb, @chi_values);
-	
+	($pattern{$oligo_seq}->{chi_square}, $pattern{$oligo_seq}->{df}) = &ChiSquare("goodfit", 2, $calc_class_nb, @chi_values);
+
+	## Calculate P-value
+	$pattern{$oligo_seq}->{Pval} = 1 - &Math::CDF::pchisq($pattern{$oligo_seq}->{chi_square},
+							      $pattern{$oligo_seq}->{df});
+	if ($pattern{$oligo_seq}->{Pval} <= 0) {
+	  $pattern{$oligo_seq}->{Pval} = 0;
+	  $pattern{$oligo_seq}->{Eval} = 0;
+	  $pattern{$oligo_seq}->{sig} = 20;
+	} else {
+	  $pattern{$oligo_seq}->{Eval} = $pattern{$oligo_seq}->{Pval}*$nb_tests;
+	  $pattern{$oligo_seq}->{sig} = -log($pattern{$oligo_seq}->{Eval})/$log_base;
+	}
+
 
 	#### chek or not the applicability condition for the chi2
 	if ($no_check) {
 	    #### suppress parentheses in the output
-	    $chi_square{$oligo_seq} =~ s/\(//;
-	    $chi_square{$oligo_seq} =~ s/\)//;
+	    $pattern{$oligo_seq}->{chi_square} =~ s/\(//;
+	    $pattern{$oligo_seq}->{chi_square} =~ s/\)//;
 	} else {
-	    unless (&IsReal($chi_square{$oligo_seq})) {
-		print $out "; WARNING: $oligo_seq $chi_square{$oligo_seq}  does not fit conditions for the chi-square\n" 
+	    unless (&IsReal($pattern{$oligo_seq}->{chi_square})) {
+		print $out "; WARNING: $oligo_seq $pattern{$oligo_seq}->{chi_square}  does not fit conditions for the chi-square\n" 
 		    if ($main::verbose >= 2);
 		unless ($no_filter) {
 		    print $out "; WARNING: $oligo_seq discarded\n" 
 			if ($main::verbose >= 3);
-		    delete $occurrences{$oligo_seq};
-		    delete $chi_square{$oligo_seq};
+		    delete $pattern{$oligo_seq}->{occ};
+		    delete $pattern{$oligo_seq}->{chi_square};
 		}
 	    }
 	}
-	
 
-##	warn join ("\t", $oligo_seq, $occurrences{$oligo_seq}, ${chi_square{$oligo_seq}}, $low_th{'chi'}), "\n";	
 
-	
+##	warn join ("\t", $oligo_seq, $pattern{$oligo_seq}->{occ}, ${chi_square{$oligo_seq}}, $low_th{'chi'}), "\n";
+
+
 	#### check the threshold on chi-square
 	if ((&IsReal($low_thr{'chi'})) && 
-	    ($chi_square{$oligo_seq} < $low_thr{'chi'})) {	
-	    print $out "; WARNING: $oligo_seq below the chi threshold $chi_square{$oligo_seq} < $low_thr{'chi'}\n" 
+	    ($pattern{$oligo_seq}->{chi_square} < $low_thr{'chi'})) {
+	    print $out "; WARNING: $oligo_seq below the chi threshold $pattern{$oligo_seq}->{chi_square} < $low_thr{'chi'}\n" 
 		if ($main::verbose >= 3);
 
-	    delete $occurrences{$oligo_seq};
-	    delete $chi_square{$oligo_seq};
+	    delete $pattern{$oligo_seq}->{occ};
+	    delete $pattern{$oligo_seq}->{chi_square};
 	}
     }
 
@@ -598,9 +601,9 @@ sub PrintHelp {
   print HELP <<End_of_help; 
 NAME
 	position-analysis
-	
+
         1998 by Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
-	
+
 DESCRIPTION
 	Calculates the positional distribution of oligonucleotides in
 	a set of sequences, and detects those which significantly
@@ -651,11 +654,11 @@ OPTIONS
 
 	-nogrouprc      do not group reverse complement pairs
 
-	-sort		
+	-sort	
 		sort oligonucleotides according to the bias in
 		distribution profile
 
-	-1str	
+	-1str
 		inactivates the summation of occurrences on both
 		strands.
 
@@ -789,7 +792,7 @@ End_of_help
 ################################################################
 #### read arguments ####
 sub ReadArguments {
-    foreach $a (0..$#ARGV) {
+    foreach my $a (0..$#ARGV) {
 	### verbose ###
 	if ($ARGV[$a] eq "-v") {
 	    if (&IsNatural($ARGV[$a+1])) {
@@ -882,7 +885,7 @@ sub ReadArguments {
 	    ### return values
 	} elsif ($ARGV[$a] eq "-return") {
 	    @fields_to_return = split ",", $ARGV[$a+1];
-	    foreach $field (@fields_to_return) {
+	    foreach my $field (@fields_to_return) {
 		if ($field =~ /dist/) {
 		    $return{'distrib'} = 1;
 		    
@@ -984,7 +987,7 @@ sub Verbose {
     unless ($sequence_number > 100) {
 	print $out "; Sequences:\n";
 	print $out ";\t#\tlength\tID\n";
-	foreach $s (1..$sequence_number) {
+	foreach my $s (1..$sequence_number) {
 	    print $out ";\t$s\t$seq_length[$s]\t$id_list[$s]\n";
 	}
     }
@@ -994,7 +997,7 @@ sub Verbose {
     }
     
 
-    print $out "; Oligonucleotide statistics:\n";	
+    print $out "; Oligonucleotide statistics:\n";
     printf $out ";\t%-21s\t%d\n", "Total occurrences", $sum_occurrences;
     if ($no_overlap) {
 	printf $out ";\t%-21s\t%d\n", "Total overlaps", $sum_overlaps;
@@ -1013,7 +1016,7 @@ sub Verbose {
 
     print $out "; Sequences per class:\n";
     print $out join ("\t", ";", "class", "\[min", "max\]", "mid", "seq", "occ"), "\n";
-    for $class ($min_calc_class..$max_calc_class) {
+    for my $class ($min_calc_class..$max_calc_class) {
 	print $out join ("\t",  ";", 
 			 $class - $min_calc_class + 1, 
 			 "\[".$class_min{$class}, 
@@ -1028,31 +1031,29 @@ sub Verbose {
 
 
 ################################################################
-### print the result file
+## Print the result file
 sub PrintResult {
 
 
     #### sort oligonucleotides, either according to their significance
     #### or alphabetically
     if ($sort_result) {
-	$date = `date '+%H:%M:%S'`;
-	chomp $date;
-	print ";$date\tsorting results ...\n" if ($main::verbose >= 2);
+	&RSAT::message::TimeWarn("Sorting results") if ($main::verbose >= 2);
 	if ($score_column > 0) {
 	    @sorted_keys = sort { 
-		$sccore{$b} <=>  $score{$a}
-	    } keys %occurrences;
+		$pattern{$b}->{score} <=>  $pattern{$a}->{score}
+	    } keys %pattern;
 	} elsif ($return{'chi'}) {
 	    @sorted_keys = sort { 
-		$chi_square{$b} <=>  $chi_square{$a}
-	    } keys %occurrences;
+		$pattern{$b}->{chi_square} <=>  $pattern{$a}->{chi_square}
+	    } keys %pattern;
 	} else {
 	    @sorted_keys = sort { 
-		$in_bound_occurrences{$b} <=>  $in_bound_occurrences{$a}
-	    } keys %occurrences;
+		$pattern{$b}->{in_bound_occ} <=>  $pattern{$a}->{in_bound_occ}
+	    } keys %pattern;
 	}
     } else {
-	@sorted_keys = sort keys %occurrences;
+	@sorted_keys = sort keys %pattern;
     }
 
     if (defined($upper_thr{rank})) {
@@ -1069,16 +1070,19 @@ sub PrintResult {
     if ($return{'chi'}) {
 	push @out_col, "chi2" ; push @col_descriptions, 'observed chi-square';
 	push @out_col, "df" ; push @col_descriptions, 'degrees of freedom';
+	push @out_col, "Pval" ; push @col_descriptions, 'P-value (probability for one word to be a false positive)';
+	push @out_col, "Eval" ; push @col_descriptions, 'E-value; expected number of false positives (Eval = Pval * nb_tests)';
+	push @out_col, "sig" ; push @col_descriptions, 'Significance (sig = -log10(Eval))';
     }
     if ($return{'rank'}) {
 	push @out_col, "rank"; push @col_descriptions, 'rank of the pattern according to sorting criterion';
     }
     if ($return{'distrib'}) {
-	for $class ($min_calc_class..$max_calc_class) {
+	for my $class ($min_calc_class..$max_calc_class) {
 	    push @out_col, $class_center{$class}; push @col_descriptions, 'observed class occurrences';
 	}
 	if ($return{'exp'}) {
-	    for $class ($min_calc_class..$max_calc_class) {
+	    for my $class ($min_calc_class..$max_calc_class) {
 		push @out_col, $class_center{$class}; push @col_descriptions ,'expected class occurrences';
 	    }
 	}
@@ -1086,69 +1090,69 @@ sub PrintResult {
     
     if ($main::verbose >= 1) {
 	print $out "; column headers\n";
-	foreach $c (0..$#out_col) {
+	foreach my $c (0..$#out_col) {
 	    printf $out ";\t%d\t%-15s\t%s\n", $c+1, $out_col[$c], $col_descriptions[$c];
 	}
     }
     
-    ### header 
-    $date = `date '+%H:%M:%S'`;
-    chomp $date;
-    print ";$date\tprinting results ...\n" if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Printing results") if ($main::verbose >= 2);
+    ### Print header 
     print $out ";", join("\t", @out_col), "\n";
 
 
     ### pattern distributions
     my $rank = 0;
-    foreach $oligo_seq (@sorted_keys) {
+    foreach my $oligo_seq (@sorted_keys) {
       $rank++;
+      $pattern{$oligo_seq}->{rank} = $rank;
       print $out "$oligo_seq"; ### Pattern sequence
       print $out "\t", &PatternID($oligo_seq, $sum_rc); ### Pattern ID
       #	print $out "\t$oligo_seq"; ### Pattern ID
       #	if ($group_rc) {
       #	    print $out "|", lc(ReverseComplement($oligo_seq));
       #	}
-      
+
       ### Occurrences
-      print $out "\t$in_bound_occurrences{$oligo_seq}";
-      print $out "\t$overlaps{$oligo_seq}" if ($no_overlaps);
-      
+      print $out "\t", $pattern{$oligo_seq}->{in_bound_occ};
+      print $out "\t", $pattern{$oligo_seq}->{overlaps} if ($no_overlaps);
+
       ### chi-square value
       if ($return{'chi'}) {
-	printf $out "\t%.1f", $chi_square{$oligo_seq};
-	
-	### Degrees of freedom
-	printf $out "\t%d", $df{$oligo_seq};
+	printf $out "\t%.1f", $pattern{$oligo_seq}->{chi_square};
+	printf $out "\t%d", $pattern{$oligo_seq}->{df};
+	printf $out "\t%.1g", $pattern{$oligo_seq}->{Pval};
+	printf $out "\t%.1g", $pattern{$oligo_seq}->{Eval};
+	printf $out "\t%.2f", $pattern{$oligo_seq}->{sig};
       }
-      
+
       #### Rank
       if ($return{'rank'}) {
 	print $out "\t$rank";
       }
-      
+
       ### Position distribution
       if ($return{'distrib'}) {
-	for $class ($min_calc_class..$max_calc_class) {
+	for my $class ($min_calc_class..$max_calc_class) {
 	  print $out "\t$class_freq{$oligo_seq}{$class}";
 	  #			printf $out " (%.1f)", $exp_occ{$oligo_seq}{$class} if ($return{'exp'});
 	}
       }
-      
+
       #	print $out "\n";
-      
+
       if (($return{'exp'}) && ($return{'distrib'})) {
 	#	    print $out "$oligo_seq";
 	#	    print $out "\t$oligo_seq";
 	#	    if ($group_rc) {
 	#		print $out "|", lc(ReverseComplement($oligo_seq));
 	#	    }
-	#	    print $out "\t$in_bound_occurrences{$oligo_seq}";
-	#	    print $out "\t$overlaps{$oligo_seq}" if ($no_overlaps);
+	#	    print $out "\t$pattern{$oligo_seq}->{in_bound_occ}";
+	#	    print $out "\t$pattern{$oligo_seq}->{overlaps}" if ($no_overlaps);
 	#	    print $out "\texpected";
-	
-	for $class ($min_calc_class..$max_calc_class) {
+
+	for my $class ($min_calc_class..$max_calc_class) {
 	  printf $out "\t%.1f", $exp_occ{$oligo_seq}{$class}; 
-	}       
+	}
       }
       print $out "\n";
     }
@@ -1160,11 +1164,11 @@ sub PrintResult {
 # Filter out all oligos with non-canonical alphabet
 
 sub CheckDNA {
-    warn "; Checking DNA\n" if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Checking DNA") if ($main::verbose >= 2);
 
-    foreach $oligo_seq (sort keys %occurrences) {
+    foreach my $oligo_seq (sort keys %pattern) {
 	if ($oligo_seq =~ /[^atcg]/i) {
-	    delete $occurrences{$oligo_seq};
+	    delete $pattern{$oligo_seq}->{occ};
 	}
     }
 }
