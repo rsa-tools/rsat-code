@@ -65,7 +65,7 @@ $default{title} =~ s/\"//g;
 &RSA_header("feature map");
 
 print "<CENTER>";
-print "Generates a physical map of genetic features for one or several sequences<P>\n";
+print "Generates a graphical map of features localized on one or several sequences.<P>\n";
 print "</CENTER>";
 
 print "<FONT FACE='Helvetica'>";
@@ -349,7 +349,7 @@ PHO84	dnapat	aaacgt|acgttt	D	538	543	AAACGT	0.79
 ";
 print "<TD><B>";
 print $query->hidden(-name=>'data',-default=>$demo_data);
-print $query->hidden(-name=>'title',-default=>'Motifs discovered in PHO genes');
+print $query->hidden(-name=>'title',-default=>'Motifs discovered in upstream sequences of 5 PHO genes');
 print $query->hidden(-name=>'scalestep',-default=>'50');
 print $query->hidden(-name=>'from',-default=>'0');
 print $query->hidden(-name=>'to',-default=>'801');
