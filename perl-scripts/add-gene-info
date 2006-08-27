@@ -65,24 +65,32 @@ my $l = 0;
 while ($current_line = <$in>) {
     $l++;
     chomp($current_line);
+    $current_line =~ s/\r//g; ## Suppress Windows-specific carriage return
+
+    ## Skip empty lines
     unless ($current_line =~ /\S/) {
 	print $out $current_line, "\n";
 	next;
     }
+
+    ## Print header line + info column names
+    if ($current_line =~ /^#/) {
+      print $out join ("\t", $current_line, @header), "\n";
+      next;
+    }
+
+    ## Print comment line as such
     if ($current_line =~ /^;/) {
-#	print $out join ("\t", $current_line, @header), "\n";
 	print $out join ("\t", $current_line), "\n";
 	next;
     }
-    $current_line =~ s/\r//g;
+
     if ($ORF_column > 0) {
 	@columns = split("\t", $current_line);
 	$query = uc($columns[$ORF_column - 1]);
 
 	my $feature = $organism->get_feature_for_name($query);
 #	&RSAT::message::Debug($query, $feature) if ($main::verbose >= 10);
-	
-	
 	my @info = ();
 	if ($feature) {
 	    foreach my $type (@types) {
@@ -95,7 +103,6 @@ while ($current_line = <$in>) {
 	    @info = @null;
 	    &RSAT::message::Warning(join ("\t", "Line", $l, "No info found for query", $query)) if ($main::verbose >= 1);
 	}
-	
 
 	print $out join ("\t", $current_line, @info), "\n";
     }
