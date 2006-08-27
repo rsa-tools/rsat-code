@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank_lib.pl,v 1.28 2006/08/23 06:19:06 jvanheld Exp $
+# $Id: parse_genbank_lib.pl,v 1.29 2006/08/27 23:07:03 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -173,6 +173,13 @@ sub ParseAllGenbankFiles {
 
     ## Check object names for all the parsed features, before building the RSAT features from it
     &CheckObjectNames($genes, $mRNAs, $scRNAs, $tRNAs, $rRNAs, $misc_RNAs, $misc_features, $CDSs);
+
+    ## Find a description for the different classes
+    &SetDescriptions($CDSs, "product", "locus_tag", "gene", "name");
+    &SetDescriptions($mRNAs, "locus_tag", "gene", "name");
+    &SetDescriptions($scRNAs, "product", "locus_tag", "note");
+    &SetDescriptions($tRNAs, "product", "locus_tag", "note");
+    &SetDescriptions($rRNAs, "product", "locus_tag", "note");
 
     ## Parse Gene Ontology terms
     &ParseGO($CDSs);
@@ -1280,6 +1287,48 @@ sub CheckObjectNames {
     
 }
 
+
+################################################################
+## Set the description for a given class of objects, by taking the
+## value of one or several specified field. If several fields are
+## specified, the first field having a non-null value is used as
+## description.
+sub SetDescriptions {
+  my ($holder, @fields) = @_;
+  &RSAT::message::TimeWarn("Setting descriptions for class", 
+			   $holder->get_object_type()) if ($main::verbose >= 1);
+  foreach my $object ($holder->get_objects()) {
+#    &RSAT::message::Debug("Searching description  for object", 
+#			  $holder->get_object_type(), 
+#			  "id=".$object->get_attribute("id"),
+#			  "name=".$object->get_attribute("name"),
+#			 ) if ($main::verbose >= 10);
+    
+    ## Make sure that the object has no null name
+    my $description_given = 0;
+    my $description = $object->get_attribute("description");
+    if (($description) && ($description ne $main::null)) {
+      $description_given = 1;
+    }
+
+    ## Test different attributes which can be used as description
+    for my $attribute (@fields) {
+      my @values = $object->get_attribute($attribute);
+      foreach my $value (@values) {
+	if (($value) && ($value ne $main::null)) {
+	  #### add gene name to the list of synonyms
+	  unless ($description_given) {
+	    #### define this name as description name
+	    $object->force_attribute("description",  $value);
+#	    &RSAT::message::Debug("Assigned description", $object->get_attribute("id"), "field", $attribute, "value", $value,
+#				 ) if ($main::verbose >= 0);
+	    $description_given = 1;
+	  }
+	}
+      }
+    }
+  }
+}
 
 1;
 
