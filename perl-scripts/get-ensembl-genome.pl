@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-ensembl-genome.pl,v 1.26 2006/08/30 10:11:00 rsat Exp $
+# $Id: get-ensembl-genome.pl,v 1.27 2006/08/31 14:11:20 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -856,7 +856,7 @@ package main;
     if (scalar(@chromnames) > 0) {
 	## Get selected chromosomes
 	foreach $chromname (@chromnames)  {
-	    &RSAT::message::Info(join("Getting slice", $slice_type, $chromname)) if ($main::verbose >= 1);
+	    &RSAT::message::Info(join("\t", "Getting slice", $slice_type, $chromname)) if ($main::verbose >= 1);
 	    push @slices, $slice_adaptor->fetch_by_region($slice_type, $chromname);
 	}
     } else {
@@ -885,16 +885,7 @@ package main;
 	    next;
 	}
 
-	if ($main::verbose >= 0) {
-	    my $pid = $$;
-	    my $ps_cmd = "ps -p $pid -O '%mem size rss vsize'";
-	    my $ps = `$ps_cmd`;
-	    &RSAT::message::Debug("BEFORE GETTING SLICE: ".$s."/".scalar(@slices), 
-				  "PID: ".$pid,
-				  "cmd:".$ps_cmd,
-				  "\n".$ps,
-				  );
-	}
+	&RSAT::message::psWarn("BEFORE GETTING SLICE: ".$s."/".scalar(@slices)) if ($main::verbose >= 0);
 
 
 	&RSAT::message::TimeWarn("Collecting data for slice", $slice_type, 
@@ -917,10 +908,17 @@ package main;
 
 	## Get all repeat regions (features)
 	unless (($no_rep) || ($seq_only)) {
+
+	    &RSAT::message::psWarn("Before collecting repeats for slice", $slice_name) if ($main::verbose >= 0);
 	    &RSAT::message::TimeWarn("\tGetting repeats for slice", $slice_name) if ($main::verbose >= 1);
 	    my $rep = 0;
 	    my @ensembl_repeats = @{$slice->get_all_RepeatFeatures()};
+
+	    &RSAT::message::psWarn("After collecting repeats for slice", $slice_name) if ($main::verbose >= 0);
+
 	    foreach my $ensembl_repeat (@ensembl_repeats){
+
+#	    while (my $ensembl_repeat = pop(@ensembl_repeats)){
 		$rep++;
 		if (($test) && ($rep > $test_number)) {
 		    &RSAT::message::Info(join ("\t","TEST", $test_number, "skipping next repeats for contig", 
@@ -936,6 +934,7 @@ package main;
 					  "repeat", $rep."/".scalar(@ensembl_repeats), $repeat_name))  if ($main::verbose >= 3);
 
 		my $rsat_repeat = $repeat_regions->new_object(source=>"ensembl", name=>$repeat_name);
+
 		$rsat_repeat->force_attribute("id", $repeat_id);
 		$rsat_repeat->force_attribute("type", "repeat_region");
 		$rsat_repeat->set_attribute("contig", $slice_id);
@@ -948,10 +947,13 @@ package main;
 		    $rsat_repeat->set_attribute("strand", "R");
 		}
 	    }
+	    undef(@ensembl_repeats);
+	    &RSAT::message::psWarn("After undefining repeats for slice", $slice_name) if ($main::verbose >= 0);
 	}
 
 	## Get all Gene objects
-	unless ($seq_only){
+	unless ($seq_only) {
+	    &RSAT::message::psWarn("Before collecting genes for slice", $slice_name) if ($main::verbose >= 0);
 	    &RSAT::message::TimeWarn("\tGetting genes for slice", $slice_name) if ($main::verbose >= 1);
 	    my $g = 0;
 	    my @ensembl_genes = @{$slice->get_all_Genes()};
@@ -966,6 +968,7 @@ package main;
 		
 		## Create a new gene object
 		my $gene_name = $ensembl_gene->external_name() || $ensembl_gene->stable_id();
+
 		warn join("\t", ";", $slice_type, $slice->seq_region_name(),  $s."/".scalar(@slices), "gene", $g."/".scalar(@ensembl_genes), $gene_name), "\n" if ($main::verbose >= 3);
 		
 		my $rsat_gene = $genes->new_object(source=>"ensembl", name=>$gene_name);
@@ -986,7 +989,7 @@ package main;
 		    my @feature = &collect_attributes($trans, $rsat_transcript);
 		    $rsat_transcript->force_attribute("organism", $organism_name);
 		    my $transcript_name = $rsat_transcript->get_attribute("name");
-#		$transcript_name .= ".".$tr;
+#		    $transcript_name .= ".".$tr;
 		    $rsat_transcript->force_attribute("name", $transcript_name);
 		    unless (($rsat_transcript->get_attribute("id") eq $rsat_gene->get_attribute("id")) ||
 			    ($rsat_transcript->get_attribute("name") eq $rsat_gene->get_attribute("id"))){
@@ -996,7 +999,7 @@ package main;
 			    ($rsat_transcript->get_attribute("name") eq $rsat_gene->get_attribute("name"))){
 			$rsat_transcript->push_attribute("names", $rsat_gene->get_attribute("name"));
 		    }
-#		$rsat_transcript->push_attribute("names", $transcript_name);
+#		    $rsat_transcript->push_attribute("names", $transcript_name);
 		    $rsat_transcript->set_attribute("gene", $rsat_gene->get_attribute("id"));
 		    if ($rsat_transcript->get_attribute("description") eq "<no description>") {
 			$rsat_transcript->force_attribute("description", $rsat_gene->get_attribute("description"));
@@ -1144,6 +1147,9 @@ package main;
 		    }
 		}
 	    }
+	    &RSAT::message::psWarn("After collecting genes for slice", $s, $slice_name) if ($main::verbose >= 0);
+	    undef(@ensembl_genes);
+	    &RSAT::message::psWarn("After undefining genes for slice", $s, $slice_name) if ($main::verbose >= 0);
 	}
 
 	################################################################
@@ -1162,33 +1168,34 @@ package main;
 	unless ($no_seq) {
 
 	    ## Export slice sequence (unmasked)
-	    &RSAT::message::TimeWarn("Getting sequence for slice", $s."/".scalar(@slices), 
+	    &RSAT::message::TimeWarn("Saving sequence for slice", $s."/".scalar(@slices), 
 				     $slice_type, $slice->seq_region_name(), $slice_name) if ($main::verbose >= 1);
 	    open SEQ, ">".$seq_file || die "cannot open error log file".$seq_file."\n";
 	    print SEQ $slice->seq();
 	    close SEQ;
+	    ## not sure this is useful, but to try improving garbage collection
+	    &RSAT::message::psWarn("After saving sequence for slice", $s, $slice_name) if ($main::verbose >= 0);
 
 	    ## Export slice sequence (hard masked)
 	    unless ($no_masked) {
 		&RSAT::message::TimeWarn("Getting masked sequence for slice", $s."/".scalar(@slices), 
 					 $slice_type, $slice->seq_region_name(), $slice_name) if ($main::verbose >= 1);
+		&RSAT::message::psWarn("Before collecting repeatmasked sequence for slice", $s, $slice_name) if ($main::verbose >= 0);
 		my $masked_sequence_slice = $slice->get_repeatmasked_seq();
 		open MASKED_SEQ, ">".$masked_seq_file || die "cannot open error log file".$masked_seq_file."\n";
 		print MASKED_SEQ $masked_sequence_slice->seq();
 		close MASKED_SEQ;
+
+		## not sure this is useful, but to try improving garbage collection
+		&RSAT::message::psWarn("After collecting repeatmasked sequence for slice", $s, $slice_name) if ($main::verbose >= 0);
+#		$masked_sequence_slice->DESTROY();
+#		&RSAT::message::psWarn("After destroying repeatmasked sequence for slice", $s, $slice_name) if ($main::verbose >= 0);
 	    }
 	}
 
-	if ($main::verbose >= 0) {
-	    my $pid = $$;
-	    my $ps_cmd = "ps -p $pid -O '%mem size rss vsize'";
-	    my $ps = `$ps_cmd`;
-	    &RSAT::message::Debug("AFTER GETTING SLICE: ".$s."/".scalar(@slices), 
-				  "PID: ".$pid,
-				  "cmd:".$ps_cmd,
-				  "\n".$ps,
-				  );
-	}
+	&RSAT::message::psWarn("AFTER COLLECTING INFO FOR SLICE: ".$s."/".scalar(@slices)) if ($main::verbose >= 0);
+#	$slice->delete();
+#	&RSAT::message::psWarn("AFTER F***ING SLICE: ".$s."/".scalar(@slices)) if ($main::verbose >= 0);
 
     }
 
@@ -1434,7 +1441,7 @@ sub ReadArguments {
 
             ### organism
         } elsif ($ARGV[$a] eq "-org") {
-            $org = $ARGV[$a+1]; 
+            $org = lc($ARGV[$a+1]); 
 
 	    ################################################################
 	    #### SQL database parameters for the export
