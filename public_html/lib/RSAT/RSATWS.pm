@@ -104,14 +104,17 @@ sub purge_seq {
 
 sub purge_seq_cmd {
     my ($self, %args) = @_;
-    my $sequence = $args{"sequence"};
-    chomp $sequence;
-#    my $tmp_infile = $args{"tmp_infile"};
-    my $tmp_infile = `mktemp $TMP/purge-seq.XXXXXXXXXX`;
-    open TMP_IN, ">".$tmp_infile or die "cannot open temp file ".$tmp_infile."\n";
-    print TMP_IN $sequence;
-    close TMP_IN;
-    chomp $tmp_infile;
+    if ($args{"sequence"}) {
+	my $sequence = $args{"sequence"};
+	chomp $sequence;
+	$tmp_infile = `mktemp $TMP/purge-seq.XXXXXXXXXX`;
+	open TMP_IN, ">".$tmp_infile or die "cannot open temp file ".$tmp_infile."\n";
+	print TMP_IN $sequence;
+	close TMP_IN;
+    } elsif ($args{"tmp_infile"}) {
+	$tmp_infile = $args{"tmp_infile"};
+	chomp $tmp_infile;
+    }
     my $format = $args{"format"};
     my $match_length = $args{"match_length"};
     my $mismatch = $args{"mismatch"};
@@ -119,22 +122,42 @@ sub purge_seq_cmd {
     my $delete = $args{"delete"};
     my $mask_short = $args{"mask_short"};
 
-    my $command = "$SCRIPTS/purge-sequence -i $tmp_infile $format $match_length $mismatch $str $delete $mask_short";
+    my $command = "$SCRIPTS/purge-sequence $format $match_length $mismatch $str $delete $mask_short -i $tmp_infile";
     return $command;
 }
 
 sub oligo_analysis {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
+    my $return_choice = $args{"return"};
     my $command = $self->oligo_analysis_cmd(%args);
     my $result = `$command`;
-    my @results = ($command, $result);
-    return @results;
+    my $tmp_outfile = `mktemp $TMP/oligo.XXXXXXXXXX`;
+    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+    print TMP_OUT $result;
+    close TMP_OUT;
+    if ($return_choice eq 'file') {
+	return ($command, $tmp_outfile);
+    } elsif ($return_choice eq 'oligos') {
+	return ($command, $result);
+    } elsif ($return_choice eq 'both') {
+	return ($tmp_outfile, $command, $result);
+    }
 }
 
 sub oligo_analysis_cmd {
     my ($self, %args) =@_;
-    my $sequence = $args{"sequence"};
+    if ($args{"sequence"}) {
+	my $sequence = $args{"sequence"};
+	chomp $sequence;
+	$tmp_infile = `mktemp $TMP/oligo.XXXXXXXXXX`;
+	open TMP_IN, ">".$tmp_infile or die "cannot open temp file ".$tmp_infile."\n";
+	print TMP_IN $sequence;
+	close TMP_IN;
+    } elsif ($args{"tmp_infile"}) {
+	$tmp_infile = $args{"tmp_infile"};
+	chomp $tmp_infile;
+    }
     my $format = $args{"format"};
     my $length = $args{"length"};
     my $organism = $args{"organism"};
@@ -144,13 +167,8 @@ sub oligo_analysis_cmd {
     my $str = $args{"str"};
     my $sort = $args{"sort"};
     my $lth = $args{"lth"};
-    my $tmp_infile = $args{"tmp_infile"};
-#    my $tmp_infile = `mktemp $TMP/oligo_analysis.XXXXXXXXXX`;
-    chomp $tmp_infile;
-#    open TMP, ">".$tmp_infile or die "cannot open temp file ".$tmp_infile."\n";
-#    print TMP $sequence;
-#    close TMP;
-    my $command = "$SCRIPTS/oligo-analysis -i $tmp_infile $format $length $organism $background $stats $noov $str $sort $lth";
+
+    my $command = "$SCRIPTS/oligo-analysis $format $length $organism $background $stats $noov $str $sort $lth -i $tmp_infile";
     return $command;
 }
 
