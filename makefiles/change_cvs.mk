@@ -11,7 +11,7 @@ OLD_ROOT=/cvs
 OLD_CONNECT=${OLD_LOGIN}\@${OLD_SERVER}:${OLD_ROOT}
 
 NEW_LOGIN=`logname`
-NEW_SERVER=www.scmbb.ulb.ac.be
+NEW_SERVER=cvs.scmbb.ulb.ac.be
 NEW_ROOT=/cvs/rsat
 NEW_CONNECT=${NEW_LOGIN}\@${NEW_SERVER}:${NEW_ROOT}
 
@@ -20,3 +20,5 @@ change_roots:
 
 change_repositories:
 	find . -name Repository -exec echo Modifying {} \;  -exec perl -pe "s|${OLD_ROOT}|${NEW_ROOT}|" -i {} \;
+
+change_cvs: change_roots change_repositories
