@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-ensembl-genome.pl,v 1.27 2006/08/31 14:11:20 rsat Exp $
+# $Id: get-ensembl-genome.pl,v 1.28 2006/09/07 05:02:38 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -714,13 +714,13 @@ package main;
 
     ### verbose ###
     if ($verbose >= 1) {
-	print "; oligo-analysis ";
+	print "; get-ensembl-genome ";
 	&PrintArguments();
     }
 	
     ################################################################
-    ## Connect to ensembldb to get list of databases and pick the one
-    ## corresponding to chosen organism
+    ## If option -org is used, connect to ensembldb to get list of 
+    ## databases and pick the latest one corresponding to chosen organism
     if ($org) {
 	&RSAT::message::TimeWarn (join("\t", "Connecting EnsEMBL to get the dbname for organism ", $org, 
 				       "host=".$ensembl_host, 
@@ -835,13 +835,6 @@ package main;
 			       "NCBI taxid = ", $tax_id))
 	if ($main::verbose >= 1);
 
-    ## The method species does not return the name of the organism !
-    ## TEMPORARY: I use a trick until we find the organism name in EnsEMBL API
-    #if (($organism_name eq "") || ($organism_name eq "DEFAULT")) {
-    #   $organism_name = ucfirst($dbname);
-    #   $organism_name =~ s/_core.*//;
-    #}
-
     ## Instantiate an object for the organism
     my $rsat_organism = $organisms->new_object(name=>$organism_name);
     $rsat_organism->push_attribute("names", $organism_name);
@@ -853,6 +846,7 @@ package main;
 
     ## Collect the list of chromosomes
     my @slices;
+#    my $slices_ref;
     if (scalar(@chromnames) > 0) {
 	## Get selected chromosomes
 	foreach $chromname (@chromnames)  {
@@ -862,13 +856,17 @@ package main;
     } else {
 	## get all the chromosomes
 	@slices = @{$slice_adaptor->fetch_all($slice_type)};
+#	$slices_ref = $slice_adaptor->fetch_all($slice_type);
     }
-
     
     my $s=0;
-    foreach  my $slice (@slices) {
-#	&RSAT::message::Debug("MEMORY USAGE", &Devel::Peek::mstat()) if ($main::verbose >= 0);
 
+#    my $slice;
+    while (my $slice = shift(@slices)) {
+#    while (scalar(@$slices_ref)) {
+#	$slice = shift(@$slices_ref);
+
+#	&RSAT::message::Debug("MEMORY USAGE", &Devel::Peek::mstat()) if ($main::verbose >= 0);
 
 	$s++;
 	my $slice_id = $slice->id();
@@ -877,7 +875,7 @@ package main;
 	################################################################
 	## TEMPORARY : a tricky fix for human genome, which contains 109 chromosome slices !
 	## We discard slices which do not correspond to full chromosomes.
-	## these slices have a different name (they contain _NT_)
+	## These slices have a different name (they contain _NT_)
 	if ($slice_name =~ /_NT_/) {
 	    &RSAT::message::Warning(join "\t", "Skipping slice (fragment of chromosome)", 
 				    $s."/".scalar(@slices), 
@@ -913,12 +911,11 @@ package main;
 	    &RSAT::message::TimeWarn("\tGetting repeats for slice", $slice_name) if ($main::verbose >= 1);
 	    my $rep = 0;
 	    my @ensembl_repeats = @{$slice->get_all_RepeatFeatures()};
+#	    my $ensembl_repeats = $slice->get_all_RepeatFeatures();
 
 	    &RSAT::message::psWarn("After collecting repeats for slice", $slice_name) if ($main::verbose >= 0);
 
-	    foreach my $ensembl_repeat (@ensembl_repeats){
-
-#	    while (my $ensembl_repeat = pop(@ensembl_repeats)){
+	    while (my $ensembl_repeat = shift(@ensembl_repeats)){
 		$rep++;
 		if (($test) && ($rep > $test_number)) {
 		    &RSAT::message::Info(join ("\t","TEST", $test_number, "skipping next repeats for contig", 
@@ -947,8 +944,6 @@ package main;
 		    $rsat_repeat->set_attribute("strand", "R");
 		}
 	    }
-	    undef(@ensembl_repeats);
-	    &RSAT::message::psWarn("After undefining repeats for slice", $slice_name) if ($main::verbose >= 0);
 	}
 
 	## Get all Gene objects
@@ -957,7 +952,7 @@ package main;
 	    &RSAT::message::TimeWarn("\tGetting genes for slice", $slice_name) if ($main::verbose >= 1);
 	    my $g = 0;
 	    my @ensembl_genes = @{$slice->get_all_Genes()};
-	    foreach my $ensembl_gene (@ensembl_genes) {
+	    while (my $ensembl_gene = shift(@ensembl_genes)) {
 		$g++;
 		
 		if (($test) && ($g > $test_number)) {
@@ -972,7 +967,7 @@ package main;
 		warn join("\t", ";", $slice_type, $slice->seq_region_name(),  $s."/".scalar(@slices), "gene", $g."/".scalar(@ensembl_genes), $gene_name), "\n" if ($main::verbose >= 3);
 		
 		my $rsat_gene = $genes->new_object(source=>"ensembl", name=>$gene_name);
-		@feature = &collect_attributes($ensembl_gene, $rsat_gene);
+		my @feature = &collect_attributes($ensembl_gene, $rsat_gene);
 		$rsat_gene->force_attribute("type", "gene");
 		$rsat_gene->force_attribute("organism", $organism_name);
 		
@@ -982,7 +977,7 @@ package main;
 		## Get all Transcript objects for the current gene
 		my $tr = 0;
 		my @ensembl_transcript = @{$ensembl_gene->get_all_Transcripts()};
-		foreach my $trans (@ensembl_transcript) {
+		while (my $trans = shift(@ensembl_transcript)) {
 		    $tr++;
 		    warn join("\t", "transcript", $trans), "\n" if ($main::verbose >= 5);
 		    my $rsat_transcript = $transcripts->new_object(source=>"ensembl");
@@ -1148,8 +1143,8 @@ package main;
 		}
 	    }
 	    &RSAT::message::psWarn("After collecting genes for slice", $s, $slice_name) if ($main::verbose >= 0);
-	    undef(@ensembl_genes);
-	    &RSAT::message::psWarn("After undefining genes for slice", $s, $slice_name) if ($main::verbose >= 0);
+	    @ensembl_genes = undef;
+	    &RSAT::message::psWarn("After emptying genes for slice", $s, $slice_name) if ($main::verbose >= 0);
 	}
 
 	################################################################
@@ -1192,11 +1187,8 @@ package main;
 #		&RSAT::message::psWarn("After destroying repeatmasked sequence for slice", $s, $slice_name) if ($main::verbose >= 0);
 	    }
 	}
-
+	$slice = undef;
 	&RSAT::message::psWarn("AFTER COLLECTING INFO FOR SLICE: ".$s."/".scalar(@slices)) if ($main::verbose >= 0);
-#	$slice->delete();
-#	&RSAT::message::psWarn("AFTER F***ING SLICE: ".$s."/".scalar(@slices)) if ($main::verbose >= 0);
-
     }
 
     ################################################################
