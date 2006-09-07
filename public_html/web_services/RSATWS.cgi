@@ -1,6 +1,14 @@
 #!/usr/bin/perl
 # RSATWS.cgi - SOAP server for rsa-tools.
 
+=pod
+
+=head1 DESCRIPTION
+
+Server for RSAT web services
+
+=cut
+
 use strict;
 
 use SOAP::Transport::HTTP;
