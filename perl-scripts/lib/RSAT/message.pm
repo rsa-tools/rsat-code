@@ -82,8 +82,8 @@ Information message
 
 =cut
 sub Info {
-    my @info_message = @_;
-    my $message = join "\n\t", @info_message;
+    my (@info_message) = @_;
+    my $message = join "\t", @info_message;
     if (defined($ENV{RSA_OUTPUT_CONTEXT}) 
 	 && ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
 	$message =~ s/\n/<br>\n/g;
@@ -150,6 +150,28 @@ sub TimeWarn {
     warn ($message);
 }
 
+################################################################
+=pod
+
+=item psWarn
+
+Warning with details about hte current Perl process (memory usage, cpu usage,
+...). This is useful to track problems during the execution of perl scripts.
+
+=cut
+sub psWarn {
+    my (@prefix) = @_;
+    my $message = join "\t", "; PROCESS", @prefix;
+
+    ## Get information on the current process
+    my $pid = $$;
+    my $ps_cmd = "ps -p $pid -O '%mem %cpu size rss vsize'";
+    my $ps = `$ps_cmd`;
+    $message .= "\n";
+    $message .= $ps;
+    $message .= "\n";
+    warn ($message);
+}
 
 ################################################################
 =pod
