@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank_lib.pl,v 1.29 2006/08/27 23:07:03 jvanheld Exp $
+# $Id: parse_genbank_lib.pl,v 1.30 2006/09/09 11:15:09 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -133,19 +133,13 @@ sub ParseAllGenbankFiles {
 	$holder->index_ids();
     }
 
-#    if ($main::data_source eq "NCBI") {
-#	foreach my $object ($mRNAs->get_objects(),
-#			    $CDSs->get_objects()
-#			   ) {
-#	    $object->UseGenbankGIasID();
-#	}
-#    }
-
 
     ## For CDS, use the locus_tag or the  protein_id as unique identifier
     &RSAT::message::TimeWarn("Replacing CDS IDs by protein_id") if ($main::verbose >= 1);
     foreach my $object ($CDSs->get_objects()) {
-	if ($object->get_attribute("protein_id")) {
+	if ($object->get_attribute("locus_tag")) {
+	    $object->ReplaceID("locus_tag");
+	} elsif ($object->get_attribute("protein_id")) {
 	    $object->ReplaceID("protein_id");
 	} else {
 	    &ErrorMessage(join("\t","CDS", $object->get_attribute("id"), "has no protein_id"));
@@ -156,7 +150,9 @@ sub ParseAllGenbankFiles {
     ## For mRNA, use the transcript_id as unique identifier
     &RSAT::message::TimeWarn("Replacing mRNA IDs by  transcript_id") if ($main::verbose >= 1);
     foreach my $object ($mRNAs->get_objects()) {
-	if ($object->get_attribute("transcript_id")) {
+	if ($object->get_attribute("locus_tag")) {
+	    $object->ReplaceID("locus_tag");
+	} elsif ($object->get_attribute("transcript_id")) {
 	    $object->ReplaceID("transcript_id");
 	} else {
 	    &ErrorMessage(join("\t","CDS", $object->get_attribute("id"), "has no transcript_id"));
