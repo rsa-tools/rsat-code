@@ -75,6 +75,14 @@ for some other specific programs.
   \program{XYgraph} and \program{feature-map}.
 \item[PostScript::Simple] Produce PostScript files from Perl. Used by
   \program{feature-map}.
+\item[Math::CDF] Is used to calculate some probability distribution
+  functions. In particular, it is used by the program
+  \program{position-analysis} to calculate the P-value of the
+  chi2. Note that this librairy is currently restricted to a precision
+  of 1e-16. For the discrete functions (binomial , Poisson,
+  hypergeometric) \RSAT relies on a custom library (
+  \$RSAT/perl-scripts/lib/RSAT/stats.pm) which reaches a precision of
+  1e-300.
 \item[bioperl] \RSAT was developed independently of the bioperl
   project, but for some recent programs, I used bioperl classes
   (e.g. for reading and exporting taxonomic trees). It is thus useful
@@ -138,10 +146,13 @@ export CVS_RSH=ssh
 \subsubsection{First installation}
 
 The following command should be used the first time you retrieve the
-tools from the server:
+tools from the server (you need to replace \texttt{[mylogin]} by the
+login name you received when signing the \RSAT license).
+
 \begin{verbatim}
-cvs -d mylogin@cvs.scmbb.ulb.ac.be:/cvs co rsa-tools
+cvs -d [mylogin]@cvs.scmbb.ulb.ac.be:/cvs/rsat co rsa-tools
 \end{verbatim}
+
 
 This will create a directory \file{rsa-tools} on your computer, and
 store the programs in it. Note that at this stage the programs are not
