@@ -42,12 +42,12 @@ unless (defined(%return)) {
 $organism = new RSAT::organism();
 
 #### accepted feature types
-@accepted_feature_types = ("CDS", "tRNA", "rRNA"); # do not include mRNA to avoid counting all the genes twice in the statistics
+@accepted_feature_types = ("cds", "trna", "rrna"); # do not include mRNA to avoid counting all the genes twice in the statistics
 $organism->check_name($organism_name);
 $organism->set_attribute("name", $organism_name);
-
 $organism->DefineAcceptedFeatureTypes(@accepted_feature_types);
-$annotation_table = $supported_organism{$organism_name}->{'features'};
+
+#$annotation_table = $supported_organism{$organism_name}->{'features'};
 $organism->set_attribute("annotation_table", $annotation_table);
 $organism->OpenContigs($organism_name, $annotation_table);
 $organism->LoadFeatures($annotation_table);
