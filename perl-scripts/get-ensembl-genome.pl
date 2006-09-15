@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-ensembl-genome.pl,v 1.28 2006/09/07 05:02:38 rsat Exp $
+# $Id: get-ensembl-genome.pl,v 1.29 2006/09/15 08:26:04 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -944,6 +944,7 @@ package main;
 		    $rsat_repeat->set_attribute("strand", "R");
 		}
 	    }
+	    @ensembl_repeats = undef;
 	}
 
 	## Get all Gene objects
@@ -973,7 +974,8 @@ package main;
 		
 		print $FT_TABLE join("\t", @feature), "\n";
 #	    print_DBEntries($ensembl_gene->get_all_DBLinks());
-		
+		@feature = undef;
+
 		## Get all Transcript objects for the current gene
 		my $tr = 0;
 		my @ensembl_transcript = @{$ensembl_gene->get_all_Transcripts()};
@@ -1140,11 +1142,13 @@ package main;
 			    print $FT_TABLE join("\t", @intronfeature), "\n";
 			}
 		    }
+		    @feature = undef;
 		}
+		@ensembl_transcript = undef;
 	    }
 	    &RSAT::message::psWarn("After collecting genes for slice", $s, $slice_name) if ($main::verbose >= 0);
 	    @ensembl_genes = undef;
-	    &RSAT::message::psWarn("After emptying genes for slice", $s, $slice_name) if ($main::verbose >= 0);
+	    &RSAT::message::psWarn("After undefining genes for slice", $s, $slice_name) if ($main::verbose >= 0);
 	}
 
 	################################################################
@@ -1187,8 +1191,9 @@ package main;
 #		&RSAT::message::psWarn("After destroying repeatmasked sequence for slice", $s, $slice_name) if ($main::verbose >= 0);
 	    }
 	}
-	$slice = undef;
 	&RSAT::message::psWarn("AFTER COLLECTING INFO FOR SLICE: ".$s."/".scalar(@slices)) if ($main::verbose >= 0);
+	$slice = undef;
+	&RSAT::message::psWarn("AFTER UNDEFINING INFO FOR SLICE: ".$s."/".scalar(@slices)) if ($main::verbose >= 0);
     }
 
     ################################################################
