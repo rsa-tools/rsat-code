@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_genomes.mk,v 1.24 2006/05/16 08:48:35 rsat Exp $
+# $Id: install_genomes.mk,v 1.25 2006/09/15 23:41:06 rsat Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -34,7 +34,7 @@ V=1
 ORG=Arabidopsis_thaliana
 ORG_DIR=${NCBI_DIR}/${ORG}
 INSTALL_TASK_NOW=config,parse
-INSTALL_TASK_QUEUE=allup,dyads,oligos,start_stop,upstream_freq,phylogeny
+INSTALL_TASK_QUEUE=allup,phylogeny,dyads,oligos,start_stop,upstream_freq,genome_segments,intergenic_freq
 INSTALL_TASK=${INSTALL_TASK_NOW},${INSTALL_TASK_QUEUE}
 INSTALL_CMD=install-organism -v ${V}		\
 		-genbank ${NCBI_DIR}		\
@@ -42,9 +42,17 @@ INSTALL_CMD=install-organism -v ${V}		\
 		-task ${INSTALL_TASK}		\
 		${OPT}
 
-install_one_organism:
-	@echo "install log	${INSTALL_LOG}"
-	@echo "Installing organism ${ORG}" 
+parse_one_organism:
+	@echo "Parsing organism ${ORG}" 
+	@${MAKE}  one_install_command WHEN=now INSTALL_TASK=${INSTALL_TASK_NOW}
+
+calibrate_one_organism:
+	@echo "Calibrating organism ${ORG}" 
+	@${MAKE}  one_install_command INSTALL_TASK=${INSTALL_TASK_QUEUE}
+
+install_one_organism: parse_one_organism calibrate_one_organism
+
+one_install_command:
 	${MAKE} my_command MY_COMMAND="${INSTALL_CMD}" JOB_PREFIX=install_${ORG}
 
 ### Prokaryote with a small genome for quick testing
@@ -70,7 +78,35 @@ install_one_prokaryote:
 		NCBI_DIR=${NCBI_DIR}/Bacteria
 
 ### All the fungi in NCBI genome directory
-FUNGI = `ls -1 ${NCBI_DIR}/Fungi | grep _ | sort -u | xargs `
+NCBI_FUNGI = `ls -1 ${NCBI_DIR}/Fungi | grep _ | sort -u | xargs `
+OTHER_FUNGI=					\
+	Aspergillus_nidulans			\
+	Aspergillus_oryzae			\
+	Aspergillus_terreus			\
+	Candida_dubliniensis			\
+	Candida_guilliermondii			\
+	Candida_lusitaniae			\
+	Candida_tropicalis			\
+	Chaetomium_globosum			\
+	Coccidioides_immitis			\
+	Kluyveromyces_waltii			\
+	Magnaporthe_grisea			\
+	Neurospora_crassa			\
+	Phanerochaete_chrysosporium		\
+	Rhizopus_oryzae				\
+	Saccharomyces_bayanus			\
+	Saccharomyces_castellii			\
+	Saccharomyces_kluyveri			\
+	Saccharomyces_kudriavzevii		\
+	Saccharomyces_mikatae			\
+	Saccharomyces_paradoxus			\
+	Sclerotinia_sclerotiorum		\
+	Staganospora_nodorum			\
+	Trichoderma_reesei			\
+	Uncinocarpus_reesii			\
+	Ustilago_maydis
+
+FUNGI= ${NCBI_FUNGI} ${OTHER_FUNGI}
 list_fungi:
 	@echo "Fungi to install	${FUNGI}"
 
