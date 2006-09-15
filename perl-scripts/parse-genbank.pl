@@ -1,6 +1,6 @@
 #!/usr/bin/perl 
 #############################################################
-# $Id: parse-genbank.pl,v 1.42 2006/08/23 06:19:06 jvanheld Exp $
+# $Id: parse-genbank.pl,v 1.43 2006/09/15 23:39:46 rsat Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -597,9 +597,11 @@ sub RefseqPostProcessing {
 ## Export protein sequences in fasta format
 sub ExportProteinSequences {
     my ($CDSs, $org) = @_;
+    my $separator="; ";
     $out_file{pp} = $dir{output}."/".$org."_aa.fasta";
 
-    warn join ("\t", "; Exporting translated sequences to file", $out_file{pp}), "\n" if ($main::verbose >= 1);
+    &RSAT::message::TimeWarn(join ("\t", "; Exporting translated sequences to file", $out_file{pp})) 
+	if ($main::verbose >= 1);
     
     open PP, ">$out_file{pp}";
     foreach my $cds ($CDSs->get_objects()) {
@@ -614,14 +616,17 @@ sub ExportProteinSequences {
 	    $gene = $id;
 	}
 
-	my $pp_id = join ("|", 
-			  $id,
-			  $org,
-			  $gene,
-			  );
+#	my $pp_id = join ($separator, 
+#			  $id,
+#			  $org,
+#			  $gene,
+#			  );
+	my $pp_id = $id;
 
         ## Get CDS description
-        my $description = $cds->get_attribute("description");
+        my $description = join($separator, 
+			       $org,$id,$gene,
+			       $cds->get_attribute("description"));
        unless ($description) {
           $description =  join ("; ", $cds->get_attribute("note"));   
        }
@@ -633,7 +638,8 @@ sub ExportProteinSequences {
         $pp_description .= "; ".join ("|", $cds->get_attribute("names"));
 
         print PP $header, "\n";
-        &PrintNextSequence(PP,"fasta",60,$translation,$pp_id, $pp_description);
+#        &PrintNextSequence(PP,"fasta",60,$translation,$pp_id, $pp_description);
+        &PrintNextSequence(PP,"fasta",60,$translation,$pp_id);
     }
     close PP;
 }
