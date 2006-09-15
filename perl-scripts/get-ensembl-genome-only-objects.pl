@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-ensembl-genome-only-objects.pl,v 1.1 2006/09/15 08:28:05 rsat Exp $
+# $Id: get-ensembl-genome-only-objects.pl,v 1.2 2006/09/15 13:42:51 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -846,7 +846,7 @@ package main;
 		&RSAT::message::Info(join("\t", ";", $slice_type, 
 					  $slice->seq_region_name(),  
 					  $s."/".$slices_number, 
-					  "repeat", $rep."/".$repeats_number), $repeat_name))  if ($main::verbose >= 3);
+					  "repeat", $rep."/".$repeats_number, $repeat_name))  if ($main::verbose >= 3);
 
 		my $rsat_repeat = $repeat_regions->new_object(source=>"ensembl", name=>$repeat_name);
 
@@ -885,7 +885,7 @@ package main;
 		## Create a new gene object
 		my $gene_name = $ensembl_gene->external_name() || $ensembl_gene->stable_id();
 
-		warn join("\t", ";", $slice_type, $slice->seq_region_name(),  $s."/".$slices_number), "gene", $g."/".$genes_number), $gene_name), "\n" if ($main::verbose >= 3);
+		warn join("\t", ";", $slice_type, $slice->seq_region_name(),  $s."/".$slices_number, "gene", $g."/".$genes_number, $gene_name), "\n" if ($main::verbose >= 3);
 		
 		my $rsat_gene = $genes->new_object(source=>"ensembl", name=>$gene_name);
 		$rsat_gene->force_attribute("id", $ensembl_gene->stable_id());
@@ -1092,7 +1092,7 @@ package main;
 	unless ($no_seq) {
 
 	    ## Export slice sequence (unmasked)
-	    &RSAT::message::TimeWarn("Saving sequence for slice", $s."/".$slices_number), 
+	    &RSAT::message::TimeWarn("Saving sequence for slice", $s."/".$slices_number, 
 				     $slice_type, $slice->seq_region_name(), $slice_name) if ($main::verbose >= 1);
 	    open SEQ, ">".$seq_file || die "cannot open error log file".$seq_file."\n";
 	    print SEQ $slice->seq();
