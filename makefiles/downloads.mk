@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: downloads.mk,v 1.30 2006/05/16 08:48:35 rsat Exp $
+# $Id: downloads.mk,v 1.31 2006/09/15 23:40:59 rsat Exp $
 #
 # Time-stamp: <2003-10-09 14:02:21 jvanheld>
 #
@@ -189,6 +189,67 @@ yeasts: yeast_mti
 SGD_FUNGAL_GENOMES=ftp://genome-ftp.stanford.edu/pub/yeast/data_download/sequence/fungal_genomes/
 fungal_genomes:
 	${WGET} -X '*archive' -X '*.gcg'  ${SGD_FUNGAL_GENOMES}
+
+SPECIES=saccharomyces_bayanus
+one_fungal_genome_duke:
+	@echo "Getting genome from duke	${SPECIES}"
+	${WGET} http://fungal.genome.duke.edu/annotations/${SPECIES}/gff/
+	${WGET} http://fungal.genome.duke.edu/annotations/${SPECIES}/nt/${SPECIES}'*'.nt.gz
+	${WGET} http://fungal.genome.duke.edu/annotations/${SPECIES}/gff/${SPECIES}.SGD.gff3.gz
+	${WGET} http://fungal.genome.duke.edu/annotations/${SPECIES}/gff/${SPECIES}.SNAP.gff3.gz
+
+DUKE_SPECIES= \
+	ashbya_gossypii \
+	aspergillus_fumigatus \
+	aspergillus_nidulans \
+	aspergillus_oryzae \
+	aspergillus_terreus \
+	botrytis_cinerea \
+	candida_albicans \
+	candida_dubliniensis \
+	candida_glabrata \
+	candida_guilliermondii \
+	candida_lusitaniae \
+	candida_tropicalis \
+	chaetomium_globosum \
+	coccidioides_immitis \
+	coprinus_cinereus \
+	cryptococcus_neoformans_H99 \
+	cryptococcus_neoformans_JEC21 \
+	cryptococcus_neoformans_R265 \
+	cryptococcus_neoformans_WM276 \
+	debaryomyces_hansenii \
+	fusarium_graminearum \
+	fusarium_verticillioides \
+	histoplasma_capsulatum_186R \
+	kluyveromyces_lactis \
+	kluyveromyces_waltii \
+	magnaporthe_grisea \
+	neurospora_crassa \
+	phanerochaete_chrysosporium \
+	pneumocystis_carnii \
+	podospora_anserina \
+	rhizopus_oryzae \
+	saccharomyces_bayanus \
+	saccharomyces_castellii \
+	saccharomyces_cerevisiae_rm11-1a_1 \
+	saccharomyces_cerevisiae_s288c \
+	saccharomyces_cerevisiae_yjm789 \
+	saccharomyces_kluyveri \
+	saccharomyces_kudriavzevii \
+	saccharomyces_mikatae_MIT \
+	saccharomyces_paradoxus \
+	schizosaccharomyces_pombe \
+	sclerotinia_sclerotiorum \
+	stagonospora_nodorum \
+	trichoderma_reesei \
+	uncinocarpus_reesii \
+	ustilago_maydis \
+	yarrowia_lipolytica
+fungal_genomes_duke:
+	@for sp in ${DUKE_SPECIES} ; do \
+		${MAKE} one_fungal_genome_duke SPECIES=$${sp} ; \
+	done
 
 ################################################################
 # Several Saccharomyces genomes from the MIT 
