@@ -34,13 +34,14 @@ DATE=`date +%Y%m%d`
 JOB_DIR=jobs
 JOB_PREFIX=job
 JOB=`mktemp ${JOB_DIR}/${JOB_PREFIX}.XXXXXX`
+QUEUE=medium
 command_queue:
 	@mkdir -p ${JOB_DIR}
 	@for job in ${JOB} ; do							\
 		echo "Job $${job}" ;						\
 		echo "echo running on node "'$$HOST' > $${job}; 		\
 		echo "${MY_COMMAND}" >> $${job} ;				\
-		qsub -m e -q short@arthur.scmbb.ulb.ac.be -N $${job} -j oe	\
+		qsub -m e -q ${QUEUE}@arthur.scmbb.ulb.ac.be -N $${job} -j oe	\
 			-o $${job}.log $${job} ;				\
 	done
 
