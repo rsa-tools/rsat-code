@@ -160,8 +160,8 @@ Warning with details about hte current Perl process (memory usage, cpu usage,
 
 =cut
 sub psWarn {
-    my (@prefix) = @_;
-    my $message = join "\t", "; PROCESS", @prefix;
+    my (@message) = @_;
+    my $message = join "\t", "; PROCESS", @message;
 
     ## Get information on the current process
     my $pid = $$;
