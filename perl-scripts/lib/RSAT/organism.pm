@@ -479,6 +479,11 @@ sub LoadFeatures {
     my $linenb = 0;
     while (my $line = <$annot>) {
       $linenb++;
+
+      if (($main::verbose >= 3) && ($linenb % 1000 == 1)) {
+	&RSAT::message::psWarn("Loaded features", $linenb);
+      }
+
       chomp($line);
       next unless ($line =~ /\S/);
       if ($line =~ /^\-\-/) {
@@ -694,7 +699,7 @@ sub CalcNeighbourLimits {
 			      "ln=".$ln,
 			      "GeneID:".$genes[$ln]->get_attribute("geneid"),
 			      "name=".$genes[$ln]->get_attribute("name"),
-			     ) if ($main::verbose >= 2);
+			     ) if ($main::verbose >= 4);
 
 	if ($ln < 0) {
 	  ## Leftmost gene of a contig
@@ -728,7 +733,7 @@ sub CalcNeighbourLimits {
 				"ID=".$gene->get_attribute("id"),
 				"GeneID=".$gene->get_attribute("geneid"),
 				"name=".$gene->get_attribute("name"),
-			       ) if ($main::verbose >= 10);
+			       ) if ($main::verbose >= 0);
 
 	  $ln -= 1;
 	  next;
@@ -743,7 +748,7 @@ sub CalcNeighbourLimits {
 				"is embedded in genomic feature", $g,
 				$gene->get_attribute("geneid"),
 				$gene->get_attribute("name"),
-			       ) if ($main::verbose >= 2);
+			       ) if ($main::verbose >= 4);
 
 	} elsif ($ctg_rights[$ln+1] < $left{$gene}) {
 	  $ln++;
@@ -883,6 +888,8 @@ sub CalcNeighbourLimits {
 
     }
   }
+  &RSAT::message::TimeWarn("Calculated neighbour limits") if ($main::verbose >= 2);
+  &RSAT::message::psWarn("Calculated neighbour limits") if ($main::verbose >= 2);
 }
 
 
