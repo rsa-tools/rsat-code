@@ -1,0 +1,675 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: genome-blast,v 1.1 2006/09/21 12:47:32 rsat Exp $
+#
+# Time-stamp: <2003-07-04 12:48:55 jvanheld>
+#
+############################################################
+#use strict;
+
+## TO DO
+## - treat the case of ex-aequos (same E-value for distinct subjects)
+## - fix a problem with the column "level" of the BLAST file. Apparently the comments of the fasta files are considered as "level".
+## Export phylogenetic profiles
+
+
+=pod
+
+=head1 NAME
+
+genome-blast.pl
+
+=head1 DESCRIPTION
+
+Run blastall to compare all protein sequences between a query organism and a
+reference organism (db_organism).
+
+The blast result is exported as a tab-delimited file, contining one row per
+hit. This hit table cis in turn processed to rank the hits and identify the
+bidirectional best hits (BBH).
+
+=head1 CATEGORY
+
+util
+
+=head1 USAGE
+    
+genome-blast.pl -q query_organism -db db_organism [-i inputfile] [-o outputfile] [-v #]
+
+=head1 INPUT FORMAT
+
+=head1 OUTPUT FORMAT
+
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+push @INC, $RSA."/perl-scripts/parsers/" if ($RSA);
+require "lib/load_classes.pl";
+require RSAT::blast_hit;
+
+################################################################
+#### initialise parameters
+my $start_time = &AlphaDate();
+#local $null = "<NULL>";
+
+## Blast matrix
+$blast_matrix = "BLOSUM62";
+
+local %infile = ();
+local %outfile = ();
+
+local $verbose = 0;
+#local $in = STDIN;
+local $out = STDOUT;
+
+local @blast_columns = qw(query level subject ident ali_len mismat gap_open q_start q_end s_start s_end e_value bit_sc);
+local @output_columns = qw(query subject ident ali_len mismat gap_open q_start q_end s_start s_end e_value bit_sc q_rank s_rank);
+
+local @query_organisms = ();
+local @db_organisms = ();
+
+local @query_taxons = ();
+local @db_taxons = ();
+
+
+## Options for the command &doit()
+local $dry = 0;
+local $batch = 0;
+local $die_on_error = 1;
+
+## Supported tasks
+@supported_tasks = qw (formatdb blastall cleandb all);
+foreach my $task (@supported_tasks) {
+    $supported_task{$task} = 1;
+}
+$supported_tasks = join ",", @supported_tasks;
+%task = ();
+
+&ReadArguments();
+
+
+
+################################################################
+#### check argument values
+
+## Tasks
+if (scalar(keys(%task)) < 1) {
+    &FatalError("You should specify at least one task");
+}
+if ($task{all}) {
+    foreach my $task (@supported_tasks) {
+	$task{$task} = 1;
+    }
+    delete($task{all});
+}
+
+
+## Query taxons
+foreach my $query_taxon (@query_taxons) {
+    foreach my $organism (sort keys %supported_organism) {
+	my $taxonomy = $supported_organism{$organism}->{'taxonomy'};
+	my @org_taxons = split /\s*;\s*/, $taxonomy;
+	foreach my $org_taxon (@org_taxons) {
+	    if (lc($org_taxon) eq lc($query_taxon)) {
+		push @query_organisms, $organism;
+	    }
+	}
+    }
+}
+
+## Db taxons
+foreach my $db_taxon (@db_taxons) {
+    foreach my $organism (sort keys %supported_organism) {
+	my $taxonomy = $supported_organism{$organism}->{'taxonomy'};
+	my @org_taxons = split /\s*;\s*/, $taxonomy;
+	foreach my $org_taxon (@org_taxons) {
+	    if (lc($org_taxon) eq lc($db_taxon)) {
+		push @db_organisms, $organism;
+	    }
+	}
+    }
+}
+
+## Query organisms
+unless (scalar(@query_organisms) >= 1) {
+    &RSAT::error::FatalError("You should define at least one query organism");
+}
+foreach $db_organism (@db_organisms) {
+    unless ($supported_organism{$db_organism}) {
+	&FatalError(join("\t", $db_organism, "is not a supported organism"));
+    }
+}
+
+## DB organisms
+unless (scalar(@db_organisms) >= 1) {
+    &RSAT::error::FatalError("You should define at least one db organism");
+}
+foreach $query_organism (@query_organisms) {
+    unless ($supported_organism{$query_organism}) {
+	&FatalError(join("\t", $query_organism, "is not a supported organism"));
+    }
+}
+
+
+################################################################
+#### print verbose
+$out = &OpenOutputFile($outfile{output});
+&Verbose() if ($verbose);
+foreach $db_organism (@db_organisms) {
+
+    ## DB organism
+    $dir{db_org_dir} = $supported_organism{$db_organism}->{'data'};
+    $dir{db_org_genome} = $dir{db_org_dir}."/genome";
+    $infile{db_org_fasta}=$dir{db_org_genome}."/".$db_organism."_aa.fasta";
+    if ($dir{output}) {
+	$dir{blast_db}=$dir{output}."/blastdb";
+    } else {
+	$dir{blast_db}= $dir{db_org_dir}."/blastdb";
+    }
+    $outfile{blast_db}=$dir{blast_db}."/".$db_organism."_db"; 
+    
+    &FormatDB() if ($task{formatdb});
+
+    ## Query organism(s)
+    foreach $query_organism (@query_organisms) {
+	################################################################
+	## Directories and files
+	
+	## Query organism
+	$dir{query_org_dir} = $supported_organism{$query_organism}->{'data'};
+	$dir{query_org_genome} = $dir{query_org_dir}."/genome";
+	$infile{query_org_fasta}=$dir{query_org_genome}."/".$query_organism."_aa.fasta";
+	
+	## Blast result
+	if ($dir{output}) {
+	    $dir{blast_result}=$dir{output}."/blast_hits";
+	} else {
+	    $dir{blast_result}=$dir{query_org_dir}."/blast_hits";
+	}
+
+	## Name of the output file
+	$compa_prefix="q_".${query_organism}."_db_".${db_organism};
+	$outfile{blast_ranks}=$dir{blast_result}."/".$compa_prefix."_ranks.tab.gz";
+
+	if ($batch) {
+	    my $batch_command = "genome-blast.pl";
+	    $batch_command .= " -q ".$query_organism;
+	    $batch_command .= " -db ".$db_organism;
+
+	    ## pass the other arguments to the batch command
+	    my @args_to_pass = @ARGV; ## Arguments to pass for the batch genome-blast.pl
+	    while ($arg = shift(@args_to_pass)) {
+		if (($arg eq "-dbtaxon") ||
+		    ($arg eq "-db") ||
+		    ($arg eq "-q") ||
+		    ($arg eq "-qtaxon")) {
+		    shift @args_to_pass;
+		    next;
+		} elsif ($arg eq "-batch") {
+		    next;
+		} else {
+		    if ($arg =~ /\s/) {
+			$batch_command .= " '".$arg."'"; ## quote argument if it contains quotes
+		    } else {
+			$batch_command .= " ".$arg; 
+		    }
+		}
+	    }
+	    &RSAT::message::Debug($batch_command) if ($main::verbose >= 4);
+	    $job_prefix="q_".$query_organism."_db_".$db_organism;
+	    &doit($batch_command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+	    
+	} else {
+	    &BlastAndRank() if ($task{blastall});
+	}
+    }
+    if ($task{cleandb}) {
+	my $clean_command = "rm -f ".$outfile{blast_db}.".*";
+	&doit($clean_command,$dry, $die_on_error, $verbose);
+    }
+}
+
+################################################################
+###### finish verbose
+if ($verbose >= 1) {
+    my $done_time = &AlphaDate();
+    print $out "; Job started $start_time\n";
+    print $out "; Job done    $done_time\n";
+}
+
+
+
+close $out if ($outfile{output});
+
+exit(0);
+
+
+################################################################
+################### subroutine definition ######################
+################################################################
+
+
+################################################################
+#### display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+#### display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+#### Read arguments 
+sub ReadArguments {
+    foreach my $a (0..$#ARGV) {
+	
+	## Verbosity
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($ARGV[$a] eq "-v") {
+	    if (&IsNatural($ARGV[$a+1])) {
+		$verbose = $ARGV[$a+1];
+	    } else {
+		$verbose = 1;
+	    }
+	    
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($ARGV[$a] eq "-h") {
+	    &PrintHelp();
+	    
+	    ## List of options
+=pod
+
+=item B<-help>
+
+display options
+
+=cut
+	} elsif ($ARGV[$a] eq "-help") {
+	    &PrintOptions();
+	    
+	    ## Query organism
+=pod
+
+=item	B<-q query_organism>
+
+Name of the query organism. This option can be used iteratively to specify
+several query organisms.
+
+=cut
+	} elsif ($ARGV[$a] eq "-q") {
+	    push @query_organisms, $ARGV[$a+1];
+	    
+	    ## Db organism
+=pod
+
+=item	B<-db db_organism>
+
+Name of the db organism. This option can be used iteratively to specify
+several db organisms.
+
+=cut
+	} elsif ($ARGV[$a] eq "-db") {
+	    push @db_organisms, $ARGV[$a+1];
+	    
+	    
+	    ## Query taxon
+=pod
+
+=item	B<-qtaxon query_taxon>
+
+Name of the query taxon. All the organisms included in this taxon will
+be used as QUERY organisms. This option can be used iteratively to
+specify several taxons.
+
+=cut
+	} elsif ($ARGV[$a] eq "-qtaxon") {
+	    push @query_taxons, $ARGV[$a+1];
+	    
+	    
+	    ## Db taxon
+=pod
+
+=item	B<-dbtaxon db_taxon>
+
+Name of the db taxon. All the organisms included in this taxon will be
+used as DB organisms. This option can be used iteratively to specify
+several taxons.
+
+
+=cut
+	} elsif ($ARGV[$a] eq "-dbtaxon") {
+	    push @db_taxons, $ARGV[$a+1];
+	    
+	    
+# 	    ## BLAST file
+# =pod
+
+# =item B<-i blast_file>
+
+# The input file should be the result of the genome-to-genome BLAST,
+# obtained with the option blastall -m 8 (table output). 
+
+# The input file is the result of a BLAST for all protein sequences of
+# the query organism against all protein sequences of the DB organism.
+
+# =cut
+# 	} elsif ($ARGV[$a] eq "-i") {
+# 	    $infile{input} = $ARGV[$a+1];
+
+# =pod
+	    
+# =item	B<-o outputfile>
+
+# If no output file is specified, the standard output is used.  This
+# allows to use the command within a pipe.
+
+# =cut
+# 	} elsif ($ARGV[$a] eq "-o") {
+# 	    $outfile{blast_ranks} = $ARGV[$a+1];
+
+=pod
+
+=item B<-outdir output_directory>
+
+Specify the ourput directory. 
+
+By default, blast results are exported in the RSAT genome directory
+($RSAT/data/genomes), but for this you need to have write access to that
+directory. If this is not the case, the output can be redirected to another
+directory of your choice.
+
+=cut
+ 	} elsif ($ARGV[$a] eq "-outdir") {
+ 	    $dir{output} = $ARGV[$a+1];
+
+
+=pod
+
+=item B<-task selected_task>
+
+Select the tasks to be performed.  Supported tasks:
+formatdb,blastall,rank,cleandb,all.
+
+This option can be used iteratively on the same command line to select
+multiple tasks.
+
+Example:
+		    
+-task formatdb,blastall
+		
+For a full analysis, simply type '-task all'
+		
+=cut
+	} elsif ($ARGV[$a] eq "-task") {
+	    my @requested_tasks = split ",", $ARGV[$a+1];
+	    foreach my $task (@requested_tasks) {
+		next unless $task;
+		if ($supported_task{$task}) {
+		    $task{$task} = 1;
+		} else {
+		    &RSAT::error::FatalError("Unsupported task '$task'. \n\tSupported: $supported_tasks");
+		}
+	    }
+
+
+	    #### dry run
+=pod
+
+=item B<-n>
+
+Dry run: echo the tasks but do not execute them. 
+
+=cut
+	} elsif ($ARGV[$a] eq "-n") {
+	    $dry = 1;
+
+	    #### don't die on error
+=pod
+
+=item B<-nodie>
+
+Don't die on error.
+
+=cut
+	} elsif ($ARGV[$a] eq "-nodie") {
+	    $die_on_error = 0;
+
+	    #### batch
+=pod
+
+=item B<-batch>
+
+Run the tasks in batch (only works on our lab cluster, but could be adapted for other configurations)
+
+=cut
+	} elsif ($ARGV[$a] eq "-batch") {
+	    $batch = 1;
+
+	}
+
+    }
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $out "; genome-blast.pl ";
+    &PrintArguments($out);
+    print $out "; Query organisms\t",scalar(@query_organisms),"\n;\t", join ("\n;\t", @query_organisms), "\n";
+    print $out "; Db organisms\t",scalar(@db_organisms),"\n;\t", join ("\n;\t", @db_organisms), "\n";
+    print $out "; Tasks\n;\t", join ("\n;\t", sort (keys(%task))), "\n";
+
+    if (defined(%dir)) {
+	print $out "; Directories\n";
+	while (($key,$value) = each %dir) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+    if (defined(%infile)) {
+	print $out "; Input files\n";
+	while (($key,$value) = each %infile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+    if (defined(%outfile)) {
+	print $out "; Output files\n";
+	while (($key,$value) = each %outfile) {
+	    print $out ";\t$key\t$value\n";
+	}
+    }
+}
+
+
+################################################################
+## Format one genome
+sub FormatDB {
+    &RSAT::message::TimeWarn(join ("\t","Formatting DB for organism", $db_organism)) if ($main::verbose >= 1);
+    &RSAT::util::CheckOutDir($dir{blast_db}); 
+    my $command = "formatdb -i ".$infile{db_org_fasta}." -p t -o t -n ".$outfile{blast_db};
+    &doit($command, $dry, $die_on_error, $verbose);
+    &RSAT::message::Info(join("\t", "DB formatted", $outfile{blast_db}.".*"));
+}
+
+
+# ################################################################
+# ## Blast one genome against another one
+# #HEADER="Query	level	Subject	%_ident	ali_len	mismat	gap_opn	q.start	q.end	s.start	s.end	e-value	bit_sc"
+# sub BlastAll {
+#     &RSAT::message::TimeWarn(join ("\t","Running blastall", "query organism", $query_organism, "DB organism", $db_organism)) if ($main::verbose >= 1);
+#     &RSAT::util::CheckOutDir($dir{blast_result}); 
+#     my $command="blastall -M ".$blast_matrix." -p blastp -d ".$outfile{blast_db}." -i ".$infile{query_org_fasta}." -m 8 -e 0.00001 > ".$outfile{blast_result};
+#     &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+#     &RSAT::message::TimeWarn(join("\t","Blastall done", $outfile{blast_result})) if ($main::verbose >= 1);
+# }
+
+################################################################
+## Rank the blast hits
+sub BlastAndRank {
+    my %hits_per_query = ();
+    my %hits_per_subject = ();
+
+    ## Class factory for managing blast hits
+    my $blast_hits = classes::ClassFactory->new_class(object_type=>"RSAT::blast_hit",prefix=>"hit_");
+    
+    ## Check the existence of the output  directory
+    &RSAT::util::CheckOutDir($dir{blast_result}); 
+
+    ## Run the blastall command
+    my $blast_command="blastall -M ".$blast_matrix." -p blastp -d ".$outfile{blast_db}." -i ".$infile{query_org_fasta}." -m 8 -e 0.00001";
+    &RSAT::message::TimeWarn(join("\t", "Running blastall", $blast_command)) if ($main::verbose >= 1);
+    open BLAST, $blast_command." |";
+
+    ## ##############################################################
+    ## Read the blast output and rank the hits
+    my $blast_header = <BLAST>; ## Skip header line
+    chomp($blast_header);
+    $blast_header =~ s/\r//;
+    my $h = 0; ## Initialize hit number
+    my $l = 1; ## Initialize line number (in the BLAST file, taking the header into account)
+    while (<BLAST>) {
+	$l++; ## line number in the BLAST file
+	chomp();
+	s/\r//;
+	next unless /\S/;
+
+	$h++; ## Hit number
+
+	my @fields = split "\t";
+	
+	## Create a new object for the match
+	my $hit = $blast_hits->new_object(id=>$query_organism."_".$db_organism."_".$h);
+	foreach my $col (@blast_columns) {
+	    $hit->set_attribute($col, shift @fields);
+	}
+	
+	## Index row per pair of sequence IDs
+	my $query = $hit->get_attribute("query");
+	my $subject = $hit->get_attribute("subject");
+
+	## Check required fields
+	unless ($query) {&RSAT::message::Warning(join("\t", "Query fields is empty for hit number", $h, "line", $l, $_)) ; next};
+	unless ($subject) {&RSAT::message::Warning(join("\t", "Subject fields is empty for hit number", $h, "line", $l, $_)) ; next};
+	unless (&IsReal($hit->get_attribute('e_value'))) {&RSAT::message::Warning(join("\t", "e_value fields is not a real number for hit number", $h, "line", $l, $_)) ; next};
+
+	&RSAT::message::Debug($h, $query, $subject, $hit) if ($main::verbose >= 10);
+	push @{$hits_per_query{$query}}, $hit;
+	push @{$hits_per_subject{$subject}}, $hit;
+    }
+    close BLAST;
+    
+    
+    ## Calculate hit rank per query
+    &RSAT::message::Info("Ranking BLAST hits per query") if ($main::verbose >= 1);
+    foreach my $query (sort keys %hits_per_query) {
+	my @sorted_hits = sort {$a->get_attribute("e_value") <=> $b->get_attribute("e_value") }  @{$hits_per_query{$query}};
+	
+	my $rank=0;
+	foreach my $hit (@sorted_hits) {
+	    ## Assign rank attribute
+	    $rank++;
+#	&RSAT::message::Debug("Hit rank", $query, $rank, $hit) if ($main::verbose >= 10);
+	$hit->set_attribute("q_rank", $rank);
+	    
+	    ## Index best hits
+	    if ($rank == 1) {
+		$best_hit{$hit->get_attribute("query")} = $hit->get_attribute("subject");
+	    }
+	    
+	}
+	&RSAT::message::Info(join ("\t", "Sorted hits for query", $query, scalar(@hits))) if ($main::verbose >= 3);
+    }
+    
+    ## Calculate hit rank per subject
+    &RSAT::message::Info("Ranking BLAST hits per subject") if ($main::verbose >= 1);
+    foreach my $query (sort keys %hits_per_subject) {
+	my @sorted_hits = sort {$a->get_attribute("e_value") <=> $b->get_attribute("e_value") }  @{$hits_per_subject{$query}};
+	
+	my $rank=0;
+	foreach my $hit (@sorted_hits) {
+	    ## Assign rank attribute
+	    $rank++;
+#	&RSAT::message::Debug("Hit rank", $query, $rank, $hit) if ($main::verbose >= 10);
+	    $hit->set_attribute("s_rank", $rank);
+	    
+	    ## Index best hits
+	    if ($rank == 1) {
+		$best_hit{$hit->get_attribute("query")} = $hit->get_attribute("subject");
+	    }
+	    
+	}
+	&RSAT::message::Info(join ("\t", "Sorted hits for query", $query, scalar(@hits))) if ($main::verbose >= 3);
+    }
+    
+    
+    ###### Print the result
+    &RSAT::message::Info("Printing the result") if ($main::verbose >= 1);
+    my @header = join "\t", @output_columns;
+    &RSAT::message::Info(join("\t", "Ranked BLAST hits", $outfile{blast_ranks})) if ($main::verbose >= 1);
+    $output = &OpenOutputFile($outfile{blast_ranks});
+    print $output join ("\t", "query_organism", "db_organism", @header, "q_rank", "s_rank"), "\n";
+
+
+    foreach my $blast_hit ($blast_hits->get_objects()) {
+	my @fields = ();
+	foreach my $col (@output_columns) {
+	    next if 
+	    push @fields, $blast_hit->get_attribute($col);
+	}
+	
+#	if ($task{rank}) {
+	print $output join("\t",
+			   $query_organism,
+			   $db_organism,
+			   @fields), "\n";
+#	}
+#	if (($task{bbh}) &&
+#	    ($blast_hit->get_attribute("q_rank")==1) &&
+#	    ($blast_hit->get_attribute("s_rank")==1)) {
+#	    print $bbh join("\t",
+#			    $query_organism,
+#			    $db_organism,
+#			    @fields[0..($#fields-2)]), "\n";
+#	}
+    }
+#    close $bbh if ($task{blast_bbh});
+    close $output if ($task{blast_ranks});
+}
+
+__END__
+    
