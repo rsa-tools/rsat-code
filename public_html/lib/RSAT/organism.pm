@@ -480,7 +480,7 @@ sub LoadFeatures {
     while (my $line = <$annot>) {
       $linenb++;
 
-      if (($main::verbose >= 3) && ($linenb % 1000 == 1)) {
+      if (($main::verbose >= 2) && ($linenb % 1000 == 1)) {
 	&RSAT::message::psWarn("Loaded features", $linenb);
       }
 
@@ -733,7 +733,7 @@ sub CalcNeighbourLimits {
 				"ID=".$gene->get_attribute("id"),
 				"GeneID=".$gene->get_attribute("geneid"),
 				"name=".$gene->get_attribute("name"),
-			       ) if ($main::verbose >= 0);
+			       ) if ($main::verbose >= 3);
 
 	  $ln -= 1;
 	  next;
