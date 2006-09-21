@@ -167,9 +167,11 @@ index_results:
 
 ################################################################
 ## Add the analysis of a single gene to the index file
-MAX_SIG=`grep -v '^;' ${DYADS}.tab | cut -f 9 | sort -nr | grep -v "Binary" | head -1`
+SIG_COLUMN=9
+MAX_SIG=`grep -v '^;' ${DYADS}.tab | cut -f ${SIG_COLUMN} | sort -nr | grep -v "Binary" | head -1`
 ROOT_DIR=${RESULT_DIR}/
 index_one_result:
+	@echo "Indexing result for gene	${GENE}"
 	@echo "<tr>" >> ${INDEX_FILE}
 	@echo "<td><a href=${GENE_DIR}>${GENE}</a></td>" | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_FILE}
 	if [ -f "${DYADS}.tab" ] ; then \
