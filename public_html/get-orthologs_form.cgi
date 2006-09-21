@@ -89,7 +89,7 @@ foreach $key (keys %default) {
 
 ################################################################
 ### header
-&RSA_header("get-orthologs (PROTOTYPE VERSION)");
+&RSA_header("get-orthologs");
 print "<CENTER>";
 print "Given a list of genes from a query organism and a taxon of interest, <br>return genes coding for similar proteins in each genome of the taxon.<br>\n";
 print "Program developed by <A HREF='mailto:rekins\@scmbb.ulb.ac.be'>Rekin's Janky</A>\n";
