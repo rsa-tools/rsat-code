@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-ensembl-genome-only-objects.pl,v 1.2 2006/09/15 13:42:51 rsat Exp $
+# $Id: get-ensembl-genome-only-objects.pl,v 1.3 2006/09/21 17:27:49 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -53,7 +53,7 @@ package EMBL::Feature;
 			       names=>"ARRAY",
 			       organism=>"SCALAR",
 			       type=>"SCALAR",
-			       description=>"SCALAR",
+ 			       description=>"SCALAR",
 			       position=>"SCALAR",
 			       contig=>"SCALAR",
 			       strand=>"SCALAR",
@@ -727,11 +727,13 @@ package main;
     open CTG, ">", $outfile{contigs} || die "cannot open contig file".$outfile{contigs}."\n"; # file with contig IDs
 
     ## cds sequences in fasta format
-    @dbsplit = split /_core_/, $dbname;
-    $org = $dbsplit[0];
-    $outfile{pp} = $org."_aa.fasta";
-    open PP, ">", $outfile{pp} || die "cannot open sequence file".$outfile{pp}."\n";
-    
+    unless ($seqonly) {
+	@dbsplit = split /_core_/, $dbname;
+	$org = $dbsplit[0];
+	$outfile{pp} = $org."_aa.fasta";
+	open PP, ">", $outfile{pp} || die "cannot open sequence file".$outfile{pp}."\n";
+    }
+
     #### print verbose
     &Verbose() if ($verbose);
     
@@ -899,7 +901,7 @@ package main;
 		$rsat_gene->set_attribute("end_pos", $ensembl_gene->end());
 		if ($ensembl_gene->strand() == 1) {
 		    $rsat_gene->set_attribute("strand", "D");
-		} elsif ($ensembl_gene->strand() == 0) {
+		} else {
 		    $rsat_gene->set_attribute("strand", "R");
 		}
 		if ($ensembl_gene->description()) {
@@ -928,7 +930,7 @@ package main;
 		    $rsat_transcript->set_attribute("end_pos", $trans->end());
 		    if ($trans->strand() == 1) {
 			$rsat_transcript->set_attribute("strand", "D");
-		    } elsif ($trans->strand() == 0) {
+		    } else {
 			$rsat_transcript->set_attribute("strand", "R");
 		    }
 		    if ($trans->description()) {
@@ -1169,7 +1171,7 @@ package main;
     close $log if ($outfile{log});
     close ERR if ($outfile{err});
     close CTG if ($outfile{contigs});
-    close PP;
+    close PP if ($outfile{pp});
 
     ################################################################
     ## Report the output directory
