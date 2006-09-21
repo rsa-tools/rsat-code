@@ -68,13 +68,17 @@ later is recommended.
 \subsection{Perl modules}
 
 Some perl modules are required for the graphical tools of \RSAT, and
-for some other specific programs.
+for some other specific programs. The perl modules can be found in the
+Comprehensive Perl Archive Network (\url{http://www.cpan.org/}), or
+can be installed with the command \program{cpan}.
 
 \begin{description}
 \item[GD.pm] Interface to Gd Graphics Library. Used by
   \program{XYgraph} and \program{feature-map}.
+
 \item[PostScript::Simple] Produce PostScript files from Perl. Used by
   \program{feature-map}.
+
 \item[Math::CDF] Is used to calculate some probability distribution
   functions. In particular, it is used by the program
   \program{position-analysis} to calculate the P-value of the
@@ -83,17 +87,19 @@ for some other specific programs.
   hypergeometric) \RSAT relies on a custom library (
   \$RSAT/perl-scripts/lib/RSAT/stats.pm) which reaches a precision of
   1e-300.
-\item[bioperl] \RSAT was developed independently of the bioperl
-  project, but for some recent programs, I used bioperl classes
-  (e.g. for reading and exporting taxonomic trees). It is thus useful
-  to install a recent version of bioperl to take benefit of the full
-  functionalities of \RSAT.
+
+  % \item[bioperl] \RSAT was developed independently of the bioperl
+  %   project, but for some recent programs, I used bioperl classes
+  %   (e.g. for reading and exporting taxonomic trees). It is thus
+  %   useful to install a recent version of bioperl to take benefit of
+  %   the full functionalities of \RSAT.  For \program{bioperl}, we
+  %   recommend to use the CVS distribution
+  %   (\url{http://cvs.open-bio.org/}), which includes more recent
+  %   updates.
+
 \end{description}
 
-These modules can be found in the Comprehensive Perl Archive Network
-(\url{http://www.cpan.org/}). For \program{bioperl}, we recommend to
-use the CVS distribution (\url{http://cvs.open-bio.org/}), which
-includes more recent updates.
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -101,41 +107,35 @@ includes more recent updates.
 \section{Installation}
 
 For the time being, \RSAT is distributed as a compressed archive. In a
-near future, we will also distribute it via a CVS server, which will
-greatly facilitate the updates.
-
-
-\RSAT can be distributed either as a compressed archive, or via the CVS
-server. The CVS distribution greatly facilitates updates.
+near future, we will also distribute it via an anonymous CVS server,
+which will greatly facilitate the updates.
 
 \textbf{Note} The CVS distribution will soon be available for external
 users, but we still need to configure the CVS server to accept a guest
 login. For the time being, the CVS distribution is still restricted to
 the people from the lab. Inbetween, the only distribution mode for
-external users is the compressed archive.
+external users is the compressed archive. If you are not member of the
+SCMBB laboratory, please skip the section \textit{Installation from
+  the CVS repository}.
 
 \subsection{Installation from the CVS repository}
 
 
-Before being able to retrieve \RSAT from the CVS repository, you need
-an account on our server. For this, please contact Jacques van Helden
-(\email{jvanheld@scmbb.ulb.ac.be}).
-
 \subsubsection{CVS configuration}
 
-You need to indictate your \program{cvs} client to use \program{ssh}
+You need to indicate your \program{cvs} client to use \program{ssh}
 as remote shell application. For this, you can specify an environment
 variable.
 
-if your shell is tcsh, the simplest way is to addd the following
-line to the \file{.cshrc} file in your home directory.
+if your shell is tcsh, add the following line to the \file{.cshrc}
+file in your home directory.
 
 \begin{verbatim}
 setenv CVS_RSH ssh
 \end{verbatim}
 
-If your shell is bash, the simplest way is to addd the following line
-to the \file{.bashrc} file in your home directory.
+If your shell is bash, add the following line to the \file{.bashrc}
+file in your home directory.
 
 \begin{verbatim}
 export CVS_RSH=ssh
@@ -152,7 +152,6 @@ login name you received when signing the \RSAT license).
 \begin{verbatim}
 cvs -d [mylogin]@cvs.scmbb.ulb.ac.be:/cvs/rsat co rsa-tools
 \end{verbatim}
-
 
 This will create a directory \file{rsa-tools} on your computer, and
 store the programs in it. Note that at this stage the programs are not
@@ -174,35 +173,25 @@ cvs update -d
 \subsection{Installation from a compressed archive}
 
 Uncompress the archive containing the programs. The archive is
-distributed in \texttt{zip} or \texttt{tar} format.
+distributed \texttt{tar} format.
 
-The \texttt{.zip} files can be uncompressed with the command
-\program{unzip}.
-
-\begin{verbatim}
-unzip rsa-tools_yyyymmdd.zip
-\end{verbatim}
-where yyyymmdd stands for the version number (delivery date).
-
-If the \program{unzip} command is not supported on your system, you
-can uncompress the \texttt{.tar.gz} archive with the commands
-\program{gunzip} and \program{tar}, which are part of the default unix
-installation.
+The \texttt{.tar.gz} file can be uncompressed with the command
+\program{tar}, which are part of the default unix installation.
 
 \begin{verbatim}
-gunzip rsa-tools_yyyymmdd.tar.gz
-tar -xpf rsa-tools_yyyymmdd.tar
+tar -xpzf rsa-tools_yyyymmdd.tar.gz
 \end{verbatim}
 
 \section{Adding \RSAT to your path}
 
 \begin{enumerate}
 
-\item Create an environment variable named RSAT and containing the
-  path of rsa-tools. 
+\item Create an environment variable named \textit{RSAT} and
+  containing the path of rsa-tools.
 
-The precise command depends on your shell. To know you shell, you can
-type
+  The way to create an environment variable depends on your shell. To
+  know you shell, you can type
+
 \begin{verbatim}
 echo $SHELL
 \end{verbatim}
@@ -210,22 +199,22 @@ echo $SHELL
 Now, if we assume that \RSAT have been installed in the directory
 
 \begin{verbatim}
-/home/myaccount/rsa-tools
+/home/rsat/rsa-tools
 \end{verbatim}
 
 you should type the following command.
 
 If your shell is bash:
 \begin{verbatim}
-export RSAT=/home/myaccount/rsa-tools
+export RSAT=/home/rsat/rsa-tools
 \end{verbatim}
 
-If your shell is csh or tcsh:
+If your shell is csh or tcsh, you need to type a slightly different
+command:
+
 \begin{verbatim}
-setenv RSAT /home/myaccount/rsa-tools
+setenv RSAT /home/rsat/rsa-tools
 \end{verbatim}
-
-
 
 \item Add the path of the \RSAT perl scripts and binaries to your
   path.
@@ -248,9 +237,9 @@ rehash
 \end{enumerate}
 
 If you are using a different shell than bash, csh or tcsh, the
-specification of environment variables is slightly different.  In case
-of doubt, ask your system administrator how to configure your
-environment variables and your path.
+specification of environment variables might differ from the syntax
+above.  In case of doubt, ask your system administrator how to
+configure your environment variables and your path.
 
 The specification of the environment variables and paths are required
 each time you want to use \RSAT. You can add these specification to
@@ -304,7 +293,6 @@ installation of additional genomes on a separate hard drive).
 % Genome Download
 
 \input{ig_installing_genomes.tex}
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Tests for the command line tools
