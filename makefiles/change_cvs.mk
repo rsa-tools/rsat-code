@@ -7,7 +7,7 @@ MAKEFILE=${RSAT}/makefiles/change_cvs.mk
 
 OLD_LOGIN=`logname`
 OLD_SERVER=www.scmbb.ulb.ac.be
-OLD_ROOT=/cvs
+OLD_ROOT=/cvs/rsat
 OLD_CONNECT=${OLD_LOGIN}\@${OLD_SERVER}:${OLD_ROOT}
 
 NEW_LOGIN=`logname`
