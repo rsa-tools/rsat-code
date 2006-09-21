@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.49 2006/09/21 17:48:41 jvanheld Exp $
+# $Id: retrieve-seq,v 1.50 2006/09/21 23:27:22 rsat Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -157,7 +157,7 @@ if ($sequence_type eq "random fragments") {
 	    if ($verbose >= 2);
     }
     $genome_len = $ctg_start[$#ctgs+1];
-    warn join ("\t", ";", "genome length", $genome_len), "\n"	    
+    &RSAT::message::Info("genome length", $genome_len)
 	if ($verbose >= 2);
     
 } else {
@@ -243,6 +243,9 @@ my $q = 0;
 &RSAT::message::TimeWarn("Retrieving sequences") if ($verbose >= 1);
 foreach my  $query (@queries) {
     $q++;
+    if (($main::verbose >= 2) && ($q % 1000 == 1)) {
+	&RSAT::message::psWarn("Retrieved sequences", $q);
+    }
 
     $query = &trim($query); ### make sure there are no leading or trailing spaces
 
@@ -431,8 +434,7 @@ foreach my  $query (@queries) {
     }
     
     ### substring retrieval
-    warn (join "\t", 
-	  ";",
+    &RSAT::message::Debug(
 	  "query: ".$query, 
 	  "id: ".$id, 
 	  "ctg: ".$ctg, 
@@ -444,7 +446,6 @@ foreach my  $query (@queries) {
 	  "reg_left: ".$reg_left,
 	  "reg_right: ".$reg_right,
 	  "reg_size: ".$reg_size,
-	  "\n"
 	 )
 	if ($main::verbose >= 3); 
     if ($reg_left < $reg_right) {
