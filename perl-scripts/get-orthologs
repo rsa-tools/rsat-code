@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.22 2006/09/23 11:09:35 jvanheld Exp $
+# $Id: get-orthologs,v 1.23 2006/09/23 14:14:22 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -200,12 +200,7 @@ package main;
     ## Output fields
     @output_fields = ();
 
-
-
-    @supported_output_fields = qw(ref_id
-				  ref_organism
-				  query_organism
-				  query_id
+    @supported_output_fields = qw(query_organism
 				  ident
 				  ali_len
 				  mismat
@@ -214,13 +209,12 @@ package main;
 				  bit_sc
 				  rank
 				  s_rank
-				  all
 				 );
     %supported_output_field = ();
     foreach my $field (@supported_output_fields) {
 	$supported_output_field{$field}++;
     }
-    $supported_output_fields = join ",", @supported_output_fields;
+    $supported_output_fields = join ",", (@supported_output_fields, "all");
 
     ################################################################
     ## Read argument values
@@ -268,9 +262,10 @@ package main;
 	while (<$main::in>) {
 	    chomp();
 	    s/\r/\n/g; ## Suppress Windows-specific carriage return
-	    next if /^;/;
-	    next if /^\#/;
-	    next unless /\S/;
+	    next if /^;/; ## Comment line
+	    next if /^\#/; ## Header line
+	    next if /^\--/; ## SQL comment line
+	    next unless /\S/; ## Empty line
 	    my ($query_gene) = split "\t";
 	    $query_gene = &trim($query_gene); ## Remove leading and trailing spaces
 	    push @main::query_genes, $query_gene;
@@ -378,7 +373,7 @@ package main;
 			    foreach my $field (@output_fields) {
 				$hit_info .= "\t";
 				$hit_info .= $fwd_hit->{$field};
-#		  &RSAT::message::Debug($field, $fwd_hit->{$field}, $hit_info) if ($main::verbose >= 10);
+#		  &RSAT::message::Debug("Adding output field", $field, $fwd_hit->{$field}, $hit_info) if ($main::verbose >= 0);
 			    }
 			    
 			    ## add fields for the rev hit
@@ -393,14 +388,14 @@ package main;
 			# put all hit info in a hash
 			$bbh->{$query_gene}->{$ref_organism}->{$fwd_hit->{ref_id}}=$hit_info;
 			
-			&RSAT::message::Info("bidirectional hit\t",$hit_info) if ($main::verbose >= 2);
+			&RSAT::message::Info("bidirectional hit\t",$hit_info) if ($main::verbose >= 3);
 			push @bidirect_hits, $hit_info;
 		    } else {
-			&RSAT::message::TimeWarn(join("\t", "No bidirectional hit in ref organism", $ref_organism,"for query gene",$query_gene)) if ($main::verbose >= 2);
+			&RSAT::message::TimeWarn(join("\t", "No bidirectional hit in ref organism", $ref_organism,"for query gene",$query_gene)) if ($main::verbose >= 3);
 		    }
 		}  
 	    } else {
-		&RSAT::message::TimeWarn(join("\t", "No hit in ref organism", $ref_organism,"for query gene",$query_gene)) if ($main::verbose >= 2);
+		&RSAT::message::TimeWarn(join("\t", "No hit in ref organism", $ref_organism,"for query gene",$query_gene)) if ($main::verbose >= 3);
 	    }
 	}
     }
@@ -413,9 +408,9 @@ package main;
     
     ## Header line
     my $header =  join("\t",
-		       "ref_gene",
+		       "ref_id",
 		       "ref_org",
-		       "query_gene",
+		       "query",
 #		       "query_org",
 		       );
 
@@ -937,12 +932,10 @@ Examples:
           my $output_fields = shift(@arguments);
 	  my @new_output_fields = split(",", $output_fields);
 	  foreach my $field (@new_output_fields) {
-	    if ($supported_output_field{$field}) {
-	      if ($field eq "all") {
-		push @output_fields, @supported_output_fields;
-	      } else {
-		push @output_fields, $field;
-	      }
+	    if ($field eq "all") {
+	      push @output_fields, @supported_output_fields;
+	    } elsif ($supported_output_field{$field}) {
+	      push @output_fields, $field;
 	    } else {
 	      &RSAT::error::FatalError(join("\t", $field, "Invalid output field. Supported:", $supported_output_fields));
 	    }
@@ -983,12 +976,14 @@ sub Verbose {
     ## Query organism and genes
     printf $main::out "; %-21s\t%s\n", "Query organism", $main::query_organism;
     print $main::out ("; Query genes\t",scalar(@query_genes),"\n");
-    foreach my $query (@main::query_genes) {
+    if (scalar(@main::query_genes) <= 100) {
+      foreach my $query (@main::query_genes) {
 	print $main::out join("\t", 
 			      ";",
 			      $query,
 			      $query_gene_id{$query}
-			      ), "\n";
+			     ), "\n";
+      }
     }
 
     ## Query filter
