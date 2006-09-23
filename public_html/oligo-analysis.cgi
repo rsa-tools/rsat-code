@@ -148,7 +148,7 @@ if ($query->param('freq_estimate') =~ /background/i) {
     }
 
 } elsif ($query->param('freq_estimate') =~ /residue frequenc/i) {
-  $freq_option = " -a input";
+  $freq_option = " -bg input";
 } elsif ($query->param('freq_estimate') =~ /markov/i) {
   $freq_option = " -markov";
   if (&IsNatural($query->param('markov_order'))) {
