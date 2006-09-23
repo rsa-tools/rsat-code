@@ -1,11 +1,13 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.20 2006/07/21 02:20:36 jvanheld Exp $
+# $Id: get-orthologs,v 1.21 2006/09/23 11:05:32 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
 ############################################################
+
+## CVS: added $max_filter_queries; added an option -return all; added a control of vaildity for the -return fields; xife a bug which prevented to find queryes if the gene ID was not in uppercase.
 
 ## use strict;
 
@@ -135,6 +137,12 @@ package main;
     @main::missing_blast_files = ();
     @main::is_query = ();
     @main::query_gene_id = ();
+
+    ## Max number of queries for which the grep filter is applied.
+    ## This filter speeds up the search of orthologs when there are a
+    ## few genes to be searched for, but when there are hundreds of
+    ## queries, the regular expression becomes too heavy for grep.
+    $main::max_filter_queries = 100;
     $main::query_filter = "";
 
     @main::unknown_query_genes = ();
@@ -167,7 +175,6 @@ package main;
     foreach my $i (0..$#blast_columns) {
 	$blast_col_index{$blast_columns[$i]} = $i;
     }
-    
 
     ## lower and upper thresholds
     %lth = ();
@@ -194,17 +201,23 @@ package main;
 
     ## Output fields
     @output_fields = ();
+
+
+
     @supported_output_fields = qw(ref_id
-				     ref_organism
-				     query_organism
-				     ident
-				     ali_len
-				     mismat
-				     gap_open
-				     e_value
-				     bit_sc
-				     rank
-				     s_rank);
+				  ref_organism
+				  query_organism
+				  query_id
+				  ident
+				  ali_len
+				  mismat
+				  gap_open
+				  e_value
+				  bit_sc
+				  rank
+				  s_rank
+				  all
+				 );
     %supported_output_field = ();
     foreach my $field (@supported_output_fields) {
 	$supported_output_field{$field}++;
@@ -217,28 +230,27 @@ package main;
 
 
     ################################################################
-    #### check argument values
+    ## Check argument values
 
     ## Reference taxon
     &RSAT::error::FatalError("You should select the taxon of interest")
 	unless ($main::ref_taxon);
 
-    
     ## Select all supported organisms beloging to the reference taxon
     foreach my $org (keys (%supported_organism)) {
-	my $taxonomy = $supported_organism{$org}->{"taxonomy"};
-	my @taxons = split( /;\s*/, $taxonomy);
-	foreach my $taxon (@taxons) {
-	    if (lc($taxon) eq lc($ref_taxon)) {
-		push @ref_organisms, $org;
-	    }
+      my $taxonomy = $supported_organism{$org}->{"taxonomy"};
+      my @taxa = split( /;\s*/, $taxonomy);
+      foreach my $taxon (@taxa) {
+	if (lc($taxon) eq lc($ref_taxon)) {
+	  push @ref_organisms, $org;
 	}
+      }
     }
     if (scalar(@main::ref_organisms) == 0) {
-	&RSAT::error::FatalError(join("\t", "There is no  supported organism corresponding to the reference taxon",
-				      $main::ref_taxon),
-				      "Use the command supported-organisms -format full to obtain the supported taxonomy."
-				 );
+      &RSAT::error::FatalError(join("\t", "There is no  supported organism corresponding to the reference taxon",
+				    $main::ref_taxon),
+			       "Use the command supported-organisms -format full to obtain the supported taxonomy."
+			      );
     }
 
     ################################################################
@@ -283,10 +295,11 @@ package main;
 	if ($feature_index->contains(uc($query))) {
 	    my $current_feature = $feature_index->get_first_value(uc($query));
 	    my $feature_id = $current_feature->get_attribute("id");
+# 	    $is_query{uc($feature_id)} = $query;
 	    $is_query{$feature_id} = $query;
-#	    $is_query{$feature_id} = uc($query);
+#	    $is_query{$feature_id)} = uc($query);
 	    $query_gene_id{$query} = $feature_id;
-#	    &RSAT::message::Warning(join("\t", "query gene", $query, $feature_id)) if ($main::verbose >= 3); 
+	    &RSAT::message::Warning("query gene", $query, $feature_id) if ($main::verbose >= 3); 
 	} else {
 	    push @unknown_query_genes, $query;
 	    &RSAT::message::Warning(join("\t", "Unknown query gene", $query));
@@ -294,33 +307,38 @@ package main;
 	}
     }
 
+    &RSAT::message::Info("Query keys", join("; ", keys(%is_query))) if ($main::verbose >= 3);
+#    die();
+
     ## ##############################################################
     ## Prepare a regexp filter for fast selection with grep
-    $main::query_filter = "(";
-    $main::query_filter .= join (")|(", (keys(%is_query)));
-    $main::query_filter .= ")";
+    if (scalar(keys(%is_query)) < $max_filter_queries) {
+      $main::query_filter = "(";
+      $main::query_filter .= join (")|(", (keys(%is_query)));
+      $main::query_filter .= ")";
+    } else {
+      $main::query_filter = "";
+    }
 
-    
-    ################################################################
+   ################################################################
     #### print verbose
-    &Verbose() if ($main::verbose);
-    
+    &Verbose() if ($main::verbose >= 1);
+
     ## ##############################################################
     ## Identify BLAST matches
     my $query_org_dir = $supported_organism{$main::query_organism}->{'data'};
     my $query_org_blast_dir = join("/", $query_org_dir, "blast_hits");
     foreach my $ref_organism (@main::ref_organisms) {
-	#$ref_organism = "Brucella_melitensis"; ## FOR TESTING
 	my $ref_org_dir = $supported_organism{$ref_organism}->{'data'};
 	my $ref_org_blast_dir = join("/", $ref_org_dir, "blast_hits");
 	&RSAT::message::TimeWarn(join("\t", "Selecting hits in ref organism", $ref_organism)) if ($main::verbose >= 2);
-	
+
 	## Check if the BLAST file exists and read it
 	my $blast_file = join("", $query_org_blast_dir,"/","q_",$main::query_organism,"_db_",$ref_organism,"_ranks.tab");
 	#my ($hits)=&readBLAST($blast_file,\@main::blast_columns);
 	my ($hits)=&select_hits($blast_file,\@main::blast_columns,"query",\%is_query);
-	#     print Dumper($hits); # DEBUG
-	
+#	print &Dumper($hits) if ($main::verbose >= 0); # DEBUG
+
 	my $rev_blast_file = join("", $ref_org_blast_dir,"/","q_",$ref_organism,"_db_",$main::query_organism,"_ranks.tab");
 	# my (%rev_hits)=&readBLAST($rev_blast_file,\@main::blast_columns);
 	my ($rev_hits)=&select_hits($rev_blast_file,\@main::blast_columns,"ref_id",\%is_query);
@@ -571,122 +589,123 @@ package main;
 ## Read one BLAST file, select the hits corresponding to the query genes, and
 ## filter them according to the specified thresholds
 sub select_hits{
-    my ($blast_file,$blast_columns,$query_matching_column,$is_query) = @_;
-    my (%is_query)=%{$is_query};
-    
-    unless ((-e $blast_file) || (-e $blast_file.".gz")) {
-	push @main::missing_blast_files, $blast_file;
-	unless ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
-		($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
-	    &RSAT::message::Warning(join("\t", "Missing BLAST file", $blast_file));
-	}
-	return(0);
-    }
-    
-    &RSAT::message::TimeWarn(join("\t", "Selecting hits from BLAST file", $blast_file)) if ($main::verbose >= 2);
-    &RSAT::message::TimeWarn(join("\t", "\tqueries", keys (%is_query))) if ($main::verbose >= 3);
-    
-    
-    ## ##############################################################
-    ## Prepare a specific file handle for the BLAST file, in order to apply
-    ## the grep pre-filter
-    if ($blast_file =~ /.gz$/) {
-	$input_cmd = "gunzip -c ".$blast_file." | ";
-    } elsif (-e $blast_file) {
-	$input_cmd = "cat ".$blast_file." | ";
-    } elsif (-e $blast_file.".gz") {
-	$input_cmd = "gunzip -c ".$blast_file.".gz | ";
-    }
-    $input_cmd .= "grep -E '".$main::query_filter."' |";
-    
-    &RSAT::message::Debug($input_cmd) if ($main::verbose >= 4);
-    open HIT_HANDLE, $input_cmd;
-    
-#    my ($hit_handle) = &OpenInputFile($blast_file);
-    my $l =0;			# counter of lines
-    my $hits = {};
-    my $match_col_index = $blast_col_index{$query_matching_column};
-    
-    while (<HIT_HANDLE>) {
-	$l++;
-	chomp();
-	s/\r/\n/g;		## Suppress Windows-specific carriage return
-	next if /^;/;
-	next if /^\#/;
-	next unless /\S/;
-#	next if ($l==1);		# skip first line header (temporary)
-	
-	my @fields = split "\t";
-	
-	## Check if the query matches the appropriate ccolumn
-	my $query_id = $fields[$match_col_index];
-	unless ($is_query{uc($query_id)}) {
-#	  &RSAT::message::Debug("Skipping line", $l, $query_id) if ($main::verbose >= 10);
-	    next;
-	}     
-	&RSAT::message::Info("Matching line", $l, $query_id) if ($main::verbose >= 3);
-	
-	################################################################
-	## Build a hash table with the attributes of the BLAST hit
-	my $hit = {};
-	my $discarded =0;
-	foreach my $field (@{$blast_columns}) {
-	    # get hit
-	    $hit->{$field} = shift @fields;
-	    
-	    # check lower threshold
-	    if (defined($lth{$field})) {
-		if ($hit->{$field} < $lth{$field}) {
-		    &RSAT::message::Warning(join("\t","query",
-						 $hit->{query},
-						 "ref_id",
-						 $hit->{ref_id},
-						 "hit discarded",
-						 $field,
-						 $hit->{$field}," < ","lth",$lth{$field})) if ($main::verbose >=4);
-		    $discarded++;
-		}
-	    }
-	    last if ($discarded);
+  my ($blast_file,$blast_columns,$query_matching_column,$is_query) = @_;
+  my (%is_query)=%{$is_query};
 
-	    # check upper threshold
-	    if (defined($uth{$field})) {
-		if ($hit->{$field} > $uth{$field}) {
-		    &RSAT::message::Warning(join("\t","query",
-						 $hit->{query},
-						 "ref_id",
-						 $hit->{ref_id},
-						 "hit discarded",
-						 $field,
-						 $hit->{$field}," > ","uth",$uth{$field})) if ($main::verbose >=4);
-		    $discarded++;
-		}
-	    }
-	    last if ($discarded);
-	}
-	next if ($discarded);
-	
-	## Index the hit by query and ref_id (double index)
-	$hits->{$hit->{query}}->{$hit->{ref_id}}=$hit;
-	
-	if ($main::verbose >= 4) {
-	    &RSAT::message::Info(join("\t", "query",
-				      $hit->{query},
-				      "hit found", 
-				      $hit->{ref_id},
-				      $hit->{ali_len},
-				      $hit->{ident},
-				      $hit->{e_value},
-				      ));
-	}
+  unless ((-e $blast_file) || (-e $blast_file.".gz")) {
+    push @main::missing_blast_files, $blast_file;
+    unless ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
+	    ($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
+      &RSAT::message::Warning(join("\t", "Missing BLAST file", $blast_file));
     }
-    close HIT_HANDLE;	
-#    close $hit_handle;	
-    &RSAT::message::TimeWarn(join("\t", scalar(keys %{$hits}), "hits found")) if ($main::verbose >= 2);
-    return($hits);
+    return(0);
+  }
+
+  &RSAT::message::TimeWarn(join("\t", "Selecting hits from BLAST file", $blast_file)) if ($main::verbose >= 2);
+  &RSAT::message::TimeWarn(join("\t", "\tqueries", keys (%is_query))) if ($main::verbose >= 3);
+
+  ## ##############################################################
+  ## Prepare a specific file handle for the BLAST file, in order to apply
+  ## the grep pre-filter
+  if ($blast_file =~ /.gz$/) {
+    $input_cmd = "gunzip -c ".$blast_file." | ";
+  } elsif (-e $blast_file) {
+    $input_cmd = "cat ".$blast_file." | ";
+  } elsif (-e $blast_file.".gz") {
+    $input_cmd = "gunzip -c ".$blast_file.".gz | ";
+  }
+  if ($main::query_filter) {
+    $input_cmd .= "grep -E '".$main::query_filter."' |";
+  }
+  &RSAT::message::Debug($input_cmd) if ($main::verbose >= 3);
+
+  open HIT_HANDLE, $input_cmd;
+  #    my ($hit_handle) = &OpenInputFile($blast_file);
+  my $l =0;			# line counter
+  my $hits = {};
+  my $match_col_index = $blast_col_index{$query_matching_column};
+
+  while (<HIT_HANDLE>) {
+    $l++;
+    chomp();
+    s/\r/\n/g;		  ## Suppress Windows-specific carriage return
+    next if /^;/; ## Comment lines
+    next if /^\#/; ## Header lines
+    next unless /\S/; ## Empty lines
+
+    my @fields = split "\t";
+
+    ## Check if the query matches the appropriate ccolumn
+    my $query_id = $fields[$match_col_index];
+#    &RSAT::message::Debug("Query ID", $l, $query_id) if ($main::verbose >= 5);
+    unless ($is_query{$query_id}) {
+#    unless ($is_query{uc($query_id)}) {
+      #	  &RSAT::message::Debug("Skipping line", $l, $query_id) if ($main::verbose >= 10);
+      next;
+    }
+    &RSAT::message::Info("Matching line", $l, $query_id) if ($main::verbose >= 3);
+	
+    ################################################################
+    ## Build a hash table with the attributes of the BLAST hit
+    my $hit = {};
+    my $discarded =0;
+    foreach my $field (@{$blast_columns}) {
+      # get hit
+      $hit->{$field} = shift @fields;
+	    
+      # check lower threshold
+      if (defined($lth{$field})) {
+	if ($hit->{$field} < $lth{$field}) {
+	  &RSAT::message::Warning(join("\t","query",
+				       $hit->{query},
+				       "ref_id",
+				       $hit->{ref_id},
+				       "hit discarded",
+				       $field,
+				       $hit->{$field}," < ","lth",$lth{$field})) if ($main::verbose >=4);
+	  $discarded++;
+	}
+      }
+      last if ($discarded);
+
+      # check upper threshold
+      if (defined($uth{$field})) {
+	if ($hit->{$field} > $uth{$field}) {
+	  &RSAT::message::Warning(join("\t","query",
+				       $hit->{query},
+				       "ref_id",
+				       $hit->{ref_id},
+				       "hit discarded",
+				       $field,
+				       $hit->{$field}," > ","uth",$uth{$field})) if ($main::verbose >=4);
+	  $discarded++;
+	}
+      }
+      last if ($discarded);
+    }
+    next if ($discarded);
+	
+    ## Index the hit by query and ref_id (double index)
+    $hits->{$hit->{query}}->{$hit->{ref_id}}=$hit;
+	
+    if ($main::verbose >= 4) {
+      &RSAT::message::Info(join("\t", "query",
+				$hit->{query},
+				"hit found", 
+				$hit->{ref_id},
+				$hit->{ali_len},
+				$hit->{ident},
+				$hit->{e_value},
+			       ));
+    }
+  }
+  close HIT_HANDLE;	
+  #    close $hit_handle;	
+  &RSAT::message::TimeWarn(join("\t", scalar(keys %{$hits}), "hits found")) if ($main::verbose >= 2);
+  return($hits);
 
 }
-    
+
 ################################################################
 #### display full help message 
 sub PrintHelp {
@@ -918,7 +937,18 @@ Examples:
 
        } elsif ($arg eq "-return") {
           my $output_fields = shift(@arguments);
-          push @output_fields, split(",", $output_fields);
+	  my @new_output_fields = split(",", $output_fields);
+	  foreach my $field (@new_output_fields) {
+	    if ($supported_output_field{$field}) {
+	      if ($field eq "all") {
+		push @output_fields, @supported_output_fields;
+	      } else {
+		push @output_fields, $field;
+	      }
+	    } else {
+	      &RSAT::error::FatalError(join("\t", $field, "Invalid output field. Supported:", $supported_output_fields));
+	    }
+	  }
 
 	} else {
 	    &FatalError(join("\t", "Invalid option", $arg));
