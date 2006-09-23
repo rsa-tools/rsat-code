@@ -1,13 +1,11 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.21 2006/09/23 11:05:32 jvanheld Exp $
+# $Id: get-orthologs,v 1.22 2006/09/23 11:09:35 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
 ############################################################
-
-## CVS: added $max_filter_queries; added an option -return all; added a control of vaildity for the -return fields; xife a bug which prevented to find queryes if the gene ID was not in uppercase.
 
 ## use strict;
 
