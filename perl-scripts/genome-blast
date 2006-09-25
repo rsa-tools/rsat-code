@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: genome-blast,v 1.1 2006/09/21 12:47:32 rsat Exp $
+# $Id: genome-blast,v 1.2 2006/09/25 16:19:39 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -70,7 +70,7 @@ local $verbose = 0;
 #local $in = STDIN;
 local $out = STDOUT;
 
-local @blast_columns = qw(query level subject ident ali_len mismat gap_open q_start q_end s_start s_end e_value bit_sc);
+local @blast_columns = qw(query subject ident ali_len mismat gap_open q_start q_end s_start s_end e_value bit_sc);
 local @output_columns = qw(query subject ident ali_len mismat gap_open q_start q_end s_start s_end e_value bit_sc q_rank s_rank);
 
 local @query_organisms = ();
