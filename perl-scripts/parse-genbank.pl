@@ -1,6 +1,6 @@
 #!/usr/bin/perl 
 #############################################################
-# $Id: parse-genbank.pl,v 1.43 2006/09/15 23:39:46 rsat Exp $
+# $Id: parse-genbank.pl,v 1.44 2006/09/25 16:19:39 rsat Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -624,11 +624,13 @@ sub ExportProteinSequences {
 	my $pp_id = $id;
 
         ## Get CDS description
-        my $description = join($separator, 
-			       $org,$id,$gene,
-			       $cds->get_attribute("description"));
-       unless ($description) {
-          $description =  join ("; ", $cds->get_attribute("note"));   
+
+        my $description = join($separator, $org,$id,$gene);
+	$description .= $separator;
+	if ($cds->get_attribute("description")) {
+          $description .= $cds->get_attribute("description"); 
+	} else {
+          $description .= join ("; ", $org, $gene, $cds->get_attribute("note"));   
        }
 
         my $pp_description;

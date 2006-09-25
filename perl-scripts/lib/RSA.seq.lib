@@ -874,7 +874,11 @@ sub PrintNextSequence {
 	print $OUTFILE "1\n";
     } elsif ($out_format eq "fasta") {  #### fastA format
 	my $first_comment = $comments[0] || "";
-	print $OUTFILE  ">$seq_id\t${first_comment}\n";
+	print $OUTFILE  ">".$seq_id;
+	if ($first_comment) {
+	    print $OUTFILE "\t".$first_comment;
+	}
+	print $OUTFILE "\n";
 	print $OUTFILE $sequence;
 	print $OUTFILE "\n";
     } elsif (($out_format eq "wc") || ($out_format eq "wconsensus")) {     #### wconsensus format
