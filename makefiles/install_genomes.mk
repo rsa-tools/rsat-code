@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_genomes.mk,v 1.25 2006/09/15 23:41:06 rsat Exp $
+# $Id: install_genomes.mk,v 1.26 2006/09/25 16:19:39 rsat Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -33,9 +33,9 @@ V=1
 ### Install one organism
 ORG=Arabidopsis_thaliana
 ORG_DIR=${NCBI_DIR}/${ORG}
-INSTALL_TASK_NOW=config,parse
-INSTALL_TASK_QUEUE=allup,phylogeny,dyads,oligos,start_stop,upstream_freq,genome_segments,intergenic_freq
-INSTALL_TASK=${INSTALL_TASK_NOW},${INSTALL_TASK_QUEUE}
+PARSE_TASK=config,parse
+CALIBRATE_TASK=allup,phylogeny,dyads,oligos,start_stop,upstream_freq,genome_segments,intergenic_freq
+INSTALL_TASK=${PARSE_TASK},${CALIBRATE_TASK}
 INSTALL_CMD=install-organism -v ${V}		\
 		-genbank ${NCBI_DIR}		\
 		-org ${ORG}			\
@@ -44,13 +44,15 @@ INSTALL_CMD=install-organism -v ${V}		\
 
 parse_one_organism:
 	@echo "Parsing organism ${ORG}" 
-	@${MAKE}  one_install_command WHEN=now INSTALL_TASK=${INSTALL_TASK_NOW}
+	@${MAKE}  one_install_command WHEN=now INSTALL_TASK=${PARSE_TASK}
 
 calibrate_one_organism:
 	@echo "Calibrating organism ${ORG}" 
-	@${MAKE}  one_install_command INSTALL_TASK=${INSTALL_TASK_QUEUE}
+	@${MAKE}  one_install_command INSTALL_TASK=${CALIBRATE_TASK}
 
-install_one_organism: parse_one_organism calibrate_one_organism
+install_one_organism:
+	@echo "Installing organism ${ORG}" 
+	@${MAKE}  one_install_command 
 
 one_install_command:
 	${MAKE} my_command MY_COMMAND="${INSTALL_CMD}" JOB_PREFIX=install_${ORG}
