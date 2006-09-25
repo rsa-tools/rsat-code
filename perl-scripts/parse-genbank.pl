@@ -1,6 +1,7 @@
 #!/usr/bin/perl 
+
 #############################################################
-# $Id: parse-genbank.pl,v 1.44 2006/09/25 16:19:39 rsat Exp $
+# $Id: parse-genbank.pl,v 1.45 2006/09/25 16:22:09 rsat Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
