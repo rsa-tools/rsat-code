@@ -41,11 +41,15 @@ sub retrieve_seq {
     print TMP $result;
     close TMP;
     if ($return_choice eq 'file') {
-	return ($command, $tmp_outfile);
-    } elsif ($return_choice eq 'sequence') {
-	return ($command, $result);
+	return {'command' => $command, 
+		'file' => $tmp_outfile};
+    } elsif ($return_choice eq 'result') {
+	return {'command' => $command,
+		'result' => $result};
     } elsif ($return_choice eq 'both') {
-	return ($tmp_outfile, $command, $result);
+	return {'file' => $tmp_outfile,
+		'command' => $command, 
+		'result' => $result};
     }
 }
 
@@ -94,11 +98,15 @@ sub purge_seq {
     print TMP_OUT $result;
     close TMP_OUT;
     if ($return_choice eq 'file') {
-	return ($command, $tmp_outfile);
-    } elsif ($return_choice eq 'sequence') {
-	return ($command, $result);
+	return {'command' => $command, 
+		'file' => $tmp_outfile};
+    } elsif ($return_choice eq 'result') {
+	return {'command' => $command,
+		'result' => $result};
     } elsif ($return_choice eq 'both') {
-	return ($tmp_outfile, $command, $result);
+	return {'file' => $tmp_outfile,
+		'command' => $command, 
+		'result' => $result};
     }
 }
 
@@ -137,11 +145,15 @@ sub oligo_analysis {
     print TMP_OUT $result;
     close TMP_OUT;
     if ($return_choice eq 'file') {
-	return ($command, $tmp_outfile);
-    } elsif ($return_choice eq 'oligos') {
-	return ($command, $result);
+	return {'command' => $command, 
+		'file' => $tmp_outfile};
+    } elsif ($return_choice eq 'result') {
+	return {'command' => $command,
+		'result' => $result};
     } elsif ($return_choice eq 'both') {
-	return ($tmp_outfile, $command, $result);
+	return {'file' => $tmp_outfile,
+		'command' => $command, 
+		'result' => $result};
     }
 }
 
