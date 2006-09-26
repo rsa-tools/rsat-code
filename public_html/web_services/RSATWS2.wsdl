@@ -1,0 +1,86 @@
+<?xml version="1.0"?>
+<definitions name="RSATWS2"
+	  targetNamespace="urn:RSATWS2"
+          xmlns:tns="urn:RSATWS2"
+          xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xmlns="http://schemas.xmlsoap.org/wsdl/"
+          xmlns:enc="http://schemas.xmlsoap.org/soap/encoding/"
+          xmlns:rsat="http://rsat.scmbb.ulb.ac.be/rsa-tools/web_services/schema"
+	  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+	  xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">
+
+  <types>
+    <xsd:schema targetNamespace="urn:RSATWS2" xmlns="http://www.w3.org/2001/XMLSchema">
+
+      <xsd:element name="RetrieveSequencesRequest">
+        <xsd:complexType>
+          <!--xsd:element name="param" type="parameters"/-->
+	    <!--xsd:complexType name="parameters"-->
+              <!--xsd:sequence minOccurs="0" maxOccurs="1"-->
+	        <xsd:element name="return" type="xsd:string"/>
+	        <xsd:element name="organism" type="xsd:string"/>
+	        <xsd:element name="query" type="xsd:string"/>
+		<xsd:element name="noorf" type="xsd:string"/>
+		<xsd:element name="from" type="xsd:string"/>
+		<xsd:element name="to" type="xsd:string"/>
+	        <xsd:element name="feattype" type="xsd:string"/>
+	        <xsd:element name="type" type="xsd:string"/>
+		<xsd:element name="format" type="xsd:string"/>
+	        <xsd:element name="all" type="xsd:string"/>
+	        <xsd:element name="number" type="xsd:string"/>
+	        <xsd:element name="label" type="xsd:string"/>
+	        <xsd:element name="label_sep" type="xsd:string"/>
+	        <xsd:element name="nocom" type="xsd:string"/>
+	      <!--/xsd:sequence-->
+	    <!--/xsd:complexType-->
+	  <!--/xsd:element-->
+	</xsd:complexType>   
+      </xsd:element>
+
+      <!--xsd:element name="RetrieveSequencesResponse"-->
+        <xsd:complexType name="RetrieveSequencesResponse">
+	  <xsd:element name="file" type="xsd:string"/>
+	  <xsd:element name="command" type="xsd:string"/>
+	  <xsd:element name="result" type="xsd:string"/>
+	</xsd:complexType>
+      <!--/xsd:element-->
+
+    </xsd:schema>
+  </types>
+
+  <message name="RetrieveSequenceInput">
+      <part name="request" element="tns:RetrieveSequencesRequest"/>
+  </message>
+
+  <message name="RetrieveSequenceOutput">
+      <part name="response" type="tns:RetrieveSequencesResponse"/>
+  </message>
+
+  <portType name="RSATWSPortType">
+      <operation name="retrieve_seq">
+         <input message="tns:RetrieveSequenceInput"/>
+         <output message="tns:RetrieveSequenceOutput"/>
+      </operation>
+  </portType>
+
+  <binding name="RSATWSBinding" type="tns:RSATWSPortType">
+      <soap:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
+      <operation name="retrieve_seq">
+         <soap:operation soapAction="urn:RSATWS2#retrieve_seq"/>
+         <input>
+             <soap:body use="encoded" namespace="urn:RSATWS2" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+         </input>
+         <output>
+             <soap:body use="encoded" namespace="urn:RSATWS2" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+         </output>
+      </operation>
+  </binding>
+
+  <service name="RSAT Web Services">
+    <documentation>RSA Tools web services</documentation>
+    <port name="RSATWSPortType" binding="tns:RSATWSBinding">
+	<soap:address location="http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS2.cgi"/>
+    </port>
+  </service>
+</definitions>
