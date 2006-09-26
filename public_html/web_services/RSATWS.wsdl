@@ -12,6 +12,7 @@ targetNamespace="urn:RSATWS"
 
   <types>
     <xsd:schema targetNamespace="urn:RSATWS" xmlns="http://www.w3.org/2001/XMLSchema">
+
       <xsd:complexType name="ArrayOfString">
          <xsd:complexContent>
             <xsd:restriction base="enc:Array">
@@ -21,19 +22,58 @@ targetNamespace="urn:RSATWS"
       </xsd:complexType>
 
       <xsd:complexType name="RetrieveSequencesRequest">
-        <xsd:all>
-          <xsd:element name="param" type="tns:param"/>
-	    <xsd:complexType name="param">
-              <xsd:sequence minOccurs="0" maxOccurs="1">
-	        <xsd:element name="organism" type="xsd:string"/>
-	        <xsd:element name="query" type="tns:ArrayOfString"/>
-		<xsd:element name="noorf" type="xsd:string"/>
-		<xsd:element name="from" type="xsd:string"/>
-		<xsd:element name="to" type="xsd:string"/>
-		<xsd:element name="format" type="xsd:string"/>
-	      </xsd:sequence>
-	    </xsd:complexType>
-        </xsd:all>
+        <!--xsd:sequence minOccurs="0" maxOccurs="1"-->
+	  <xsd:element name="return" type="xsd:string"/>
+	  <xsd:element name="organism" type="xsd:string"/>
+	  <!--xsd:element name="query" type="tns:ArrayOfString"/-->
+	  <xsd:element name="query" type="xsd:string"/>
+	  <xsd:element name="noorf" type="xsd:string"/>
+	  <xsd:element name="from" type="xsd:string"/>
+	  <xsd:element name="to" type="xsd:string"/>
+	  <xsd:element name="feattype" type="xsd:string"/>
+	  <xsd:element name="type" type="xsd:string"/>
+	  <xsd:element name="format" type="xsd:string"/>
+	  <xsd:element name="all" type="xsd:string"/>
+	  <xsd:element name="number" type="xsd:string"/>
+	  <xsd:element name="label" type="xsd:string"/>
+	  <xsd:element name="label_sep" type="xsd:string"/>
+	  <xsd:element name="nocom" type="xsd:string"/>
+	<!---/xsd:sequence-->
+      </xsd:complexType>
+
+      <xsd:element name="RetrieveSequencesResponse">
+        <xsd:complexType>
+	  <xsd:element name="file" type="xsd:string"/>
+	  <xsd:element name="command" type="xsd:string"/>
+	  <xsd:element name="result" type="xsd:string"/>
+	</xsd:complexType>
+      </xsd:element>
+
+      <xsd:complexType name="PurgeSequencesRequest">
+        <xsd:element name="return" type="xsd:string"/>
+	<xsd:element name="sequence" type="xsd:string"/>
+	<xsd:element name="tmp_infile" type="xsd:string"/>
+	<xsd:element name="format" type="xsd:string"/>
+	<xsd:element name="match_length" type="xsd:string"/>
+	<xsd:element name="mismatch" type="xsd:string"/>
+	<xsd:element name="str" type="xsd:string"/>
+	<xsd:element name="delete" type="xsd:string"/>
+	<xsd:element name="mask_short" type="xsd:string"/>
+      </xsd:complexType>
+
+      <xsd:complexType name="OligoAnalysisRequest">
+        <xsd:element name="return" type="xsd:string"/>
+	<xsd:element name="sequence" type="xsd:string"/>
+	<xsd:element name="tmp_infile" type="xsd:string"/>
+	<xsd:element name="format" type="xsd:string"/>
+	<xsd:element name="length" type="xsd:string"/>
+	<xsd:element name="organism" type="xsd:string"/>
+	<xsd:element name="background" type="xsd:string"/>
+	<xsd:element name="stats" type="xsd:string"/>
+	<xsd:element name="noov" type="xsd:string"/>
+	<xsd:element name="str" type="xsd:string"/>
+	<xsd:element name="sort" type="xsd:string"/>
+	<xsd:element name="lth" type="xsd:string"/>
       </xsd:complexType>
 
     </xsd:schema>
@@ -44,11 +84,13 @@ targetNamespace="urn:RSATWS"
   </message>
 
   <message name="RetrieveSequenceOutput">
-      <part name="response" type="xsd:string"/>
+      <!--part name="response" type="xsd:string"/-->
+      <!--part name="response" type="tns:RetrieveSequencesResponse"/-->
+      <part name="response" element="tns:RetrieveSequencesResponse"/>
   </message>
 
   <message name="PurgeSequenceInput">
-      <part name="request" type="xsd:string"/>
+      <part name="request" type="tns:PurgeSequencesRequest"/>
   </message>
 
   <message name="PurgeSequenceOutput">
@@ -56,7 +98,7 @@ targetNamespace="urn:RSATWS"
   </message>
 
   <message name="OligoAnalysisInput">
-      <part name="request" type="xsd:string"/>
+      <part name="request" type="tns:OligoAnalysisRequest"/>
   </message>
 
   <message name="OligoAnalysisOutput">
