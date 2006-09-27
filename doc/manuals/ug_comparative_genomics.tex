@@ -5,13 +5,210 @@
 
 \subsection{Genome-wise comparison of protein sequences}
 
-In this section, I will explain how to use the program
-\program{genome-blast}.
+In this section, I explain how to use the program
+\program{genome-blast}, which runs the sequence similarity search
+program \program{BLAST} to detect significant similarities between all
+the proteins of a set of genomes. This operation can take time, and
+the result tables occupy a considerable amount of space on the hard
+disk. The \RSAT distribution does thus not include the complete
+comparison of all genomes against all other ones. The current \RSAT
+distribution includes the complete comparisons for some model genomes
+(\organism{Escherchia coli K12} versus all bacteria,
+\organism{Saccharomyces cerevisiae} against all Fungi, ...), but you
+might need to perform additional comparisons for your own purpose.
+
+In order to install the tables of gene similarities in the \RSAT data,
+you need to have the writing permission in the $\$RSAT$ directory. If
+this is not the case, ask your system administrator to do it for you.
+
+\textbf{TO BE WRITTEN}
 
 \subsection{Getting putative homologs, orthologs and paralogs}
 
 In this section, I will explain how to use the program
-\program{get-orthologs}.
+\program{get-orthologs}. This program takes as input on or several
+query genes belonging to a given organism (the \concept{reference
+  organsm}), and return the genes whose product (peptidic sequence)
+show significant similarities with the products of the query
+genes. The primary usage of \program{get-orthologs} is thus to return
+lists of similar genes, not specialy orthologs. Additional criteria
+can be imposed to infer orthology.  In particular, one of the most
+common criterion is to select \concept{bidirectional best hits
+  (BBH)}. This can be achieved by imposing the rank 1 with the option
+\option{-uth rank 1}.
+
+We will illustrate the concept by retrieving the genes whose product
+is similar to the protein LexA of \organism{Escherichia coli K12}, in
+all the Gammaproteobacteria. We will then refine the wuery to extract
+putative orthologs.
+
+\subsubsection{Getting genes by similarities}
+
+\begin{small}
+\begin{verbatim}
+get-orthologs -v 1 -org Escherichia_coli_K12 \
+  -taxon Gammaproteobacteria \
+  -q lexA -o lexA_orthologs_Gammaproteobacteria.tab
+\end{verbatim}
+\end{small}
+
+The result file is a list of all the Gammaproteobacterial genes whose
+product shows some similarity with the LexA protein from E.coli K12.  
+
+\begin{scriptsize}
+\begin{verbatim}
+...
+#ref_id ref_org query
+Sde_1787        Saccharophagus_degradans_2-40   b4043
+CPS_0237        Colwellia_psychrerythraea_34H   b4043
+CPS_2683        Colwellia_psychrerythraea_34H   b4043
+CPS_1635        Colwellia_psychrerythraea_34H   b4043
+IL0262  Idiomarina_loihiensis_L2TR      b4043
+...
+c5014   Escherichia_coli_CFT073 b4043
+c3190   Escherichia_coli_CFT073 b4043
+b4043   Escherichia_coli_K12    b4043
+...
+\end{verbatim}
+\end{scriptsize}
+
+Each similarity is reported by the ID of the gene, the organism to
+which is belong, and the ID of the query gene. In this case, the third
+column contains the same ID on all lines: b4043, which is the ID of
+the gene lexA in \organism{Escherichia coli K12}. It seems thus poorly
+informative, but this column becomes useful when several queries are
+submitted simultaneously.
+
+\subsubsection{Obtaining information on the BLAST hits}
+
+The program \program{get-othologs} allows to return additional
+information on the hits. The list of supporeted return fields is
+obtained by calling the command with the option \option{-help}. For
+example, we can ask to return the percentage of identity, the
+alignment length, the E-value and the rank of each hit.
+
+\begin{small}
+\begin{verbatim}
+get-orthologs -v 1 -org Escherichia_coli_K12 \
+  -taxon Gammaproteobacteria \
+  -q lexA -o lexA_orthologs_Gammaproteobacteria.tab \
+  -return ident,ali_len,e_value,rank 
+\end{verbatim}
+\end{small}
+
+Which gives the following result:
+
+\begin{scriptsize}
+\begin{verbatim}
+...
+#ref_id ref_org query   ident   ali_len e_value rank
+Sde_1787        Saccharophagus_degradans_2-40   b4043   65.33   199     1e-68   1
+CPS_0237        Colwellia_psychrerythraea_34H   b4043   65.69   204     6e-75   1
+CPS_2683        Colwellia_psychrerythraea_34H   b4043   33.94   109     1e-10   2
+CPS_1635        Colwellia_psychrerythraea_34H   b4043   34.12   85      1e-06   3
+IL0262  Idiomarina_loihiensis_L2TR      b4043   66.83   202     1e-75   1
+...
+c5014   Escherichia_coli_CFT073 b4043   100.00  202     2e-111  1
+c3190   Escherichia_coli_CFT073 b4043   43.33   90      2e-14   2
+b4043   Escherichia_coli_K12    b4043   100.00  202     2e-111  1
+...
+\end{verbatim}
+\end{scriptsize}
+
+Not surprisingly, the answer includes the self-match of lexA (ID
+b4043) in \organism{Escherichia coli K12}, with 100\% of identify.
+
+\subsubsection{Selecting bidirectional best hits}
+
+We can see that the output contains several matches per genome. For
+instance, there are 3 matches in \organism{Colwellia psychrerythraea
+  34H}. If we assume that these similarities reflect homologies, the
+result contains thus a combination of paralogs and orthologs. 
+
+The simplest criterion to select ortholog is that of
+\concept{bidirectional best hit (BBH)}. We can select BBH by imposing
+an upper threshold on the rank, with the option \option{-uth}.
+
+\begin{small}
+\begin{verbatim}
+get-orthologs -v 1 -org Escherichia_coli_K12 \
+  -taxon Gammaproteobacteria \
+  -q lexA -o lexA_orthologs_Gammaproteobacteria_bbh.tab \
+  -return ident,ali_len,e_value,rank \
+  -uth rank 1 
+\end{verbatim}
+\end{small}
+
+The result has now been reduced to admit at most one hit per genome.
+
+\begin{scriptsize}
+\begin{verbatim}
+...
+#ref_id ref_org query   ident   ali_len e_value rank
+Sde_1787        Saccharophagus_degradans_2-40   b4043   65.33   199     1e-68   1
+CPS_0237        Colwellia_psychrerythraea_34H   b4043   65.69   204     6e-75   1
+IL0262  Idiomarina_loihiensis_L2TR      b4043   66.83   202     1e-75   1
+...
+c5014   Escherichia_coli_CFT073 b4043   100.00  202     2e-111  1
+b4043   Escherichia_coli_K12    b4043   100.00  202     2e-111  1
+...
+\end{verbatim}
+\end{scriptsize}
+
+\subsubsection{Selecting hits with more stringent criteria}
+
+It is well known that the sole criterion of BBH is not sufficient to
+infer orthology between two genes. In particular, there is a riks to
+obtain irrelevant matches, due to partial matches between a protein
+and some spurious domains. To avoid this, we can add a constraint on
+the percentage of identity (min 30\%), and on the alignment length
+(min 50 aa). These limits are somewhat arbitrary, we use them to
+illustrate the principe, and leave to each user the responsibility to
+choose the criteria that she/he considers as relevant. Finally, we
+will use a more stringent threshold on E-value than the default one,
+by imposing an upper threshold of 1e-10.
+
+\begin{small}
+\begin{verbatim}
+## Note that or this test we suppress the BBH constraint (-uth rank 1)
+get-orthologs -v 1 -org Escherichia_coli_K12 \
+  -taxon Gammaproteobacteria \
+  -q lexA -o lexA_orthologs_Gammaproteobacteria_id30_len50_eval-10.tab \
+  -return ident,ali_len,e_value,rank \
+  -lth ident 30 -lth ali_len 50 -uth e_value 1e-10
+\end{verbatim}
+\end{small}
+
+We can now combine the constrains above with the criterion of BBH.
+
+\begin{small}
+\begin{verbatim}
+## Note that or this test we include the BBH constraint (-uth rank 1)
+get-orthologs -v 1 -org Escherichia_coli_K12 \
+  -taxon Gammaproteobacteria \
+  -q lexA -o lexA_orthologs_Gammaproteobacteria_bbh_id30_len50_eval-10.tab \
+  -return ident,ali_len,e_value,rank \
+  -lth ident 30 -lth ali_len 50  -uth e_value 1e-10 \
+  -uth rank 1 
+\end{verbatim}
+\end{small}
+
+As expected, the number of selected hits is reduced by adding these
+constraints. In Sept 2006, we obtained the following number of hits
+for lexA in Gammaproteobacteria.
+
+\begin{itemize}
+\item 122 hits without any constraint;
+\item 107 hits with contrains on ident,ali\_len and e\_value;
+\item 69 hits with the constraint of BBH;
+\item 69 hits with the combined constraint of BBH, at least 30\%
+  identity and an alignment over more than 50 aminoacids, and an
+  E-value <= 1.e-10.
+\end{itemize}
+
+Actually, in the particular case of \gene{lexA}, the BBH constraint
+already filtered out the spurious matches, but inother cases they can
+be useful.
 
 \subsection{Phylogenetic profiles}
 
@@ -46,17 +243,6 @@ We will illustrate this by calculating the phylogenetic profiles of
 all the genes from \organism{Saccharomyces cerevisiae} across all the
 Fungi. We use a level of verbosity of 2, in order to get information
 about the progress of the calculations.
-
-It is well known that the sole criterion of BBH presents problem for
-the identification of putative orthologs. In particular, there is a
-riks to obtain irrelevant matches, due to partial matches between a
-protein and some spurious domains. To avoid this, we will add a
-constraint on the percentage of identity (min 30\%), and on the
-alignment length (min 50 aa). These limits are somewhat arbitrary, we
-use them to illustrate the principe, and leave to each user the
-responsibility to choose the criteria that she/he considers as
-relevant. Finally, we will use a more stringent threshold on E-value
-than the default one.
 
 \begin{small}
 \begin{verbatim}
