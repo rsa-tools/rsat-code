@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: genome-blast.pl,v 1.17 2006/01/25 07:59:30 rsat Exp $
+# $Id: genome-blast.pl,v 1.18 2006/09/27 03:38:54 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -54,6 +54,8 @@ require "RSA.lib";
 push @INC, $RSA."/perl-scripts/parsers/" if ($RSA);
 require "lib/load_classes.pl";
 require RSAT::blast_hit;
+
+&RSAT::error::FatalError("genome-blast.pl is obsolete, it has been renamed genome-blast");
 
 ################################################################
 #### initialise parameters
