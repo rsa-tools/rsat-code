@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: genome-blast,v 1.3 2006/09/25 16:22:09 rsat Exp $
+# $Id: genome-blast,v 1.4 2006/09/27 06:08:41 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -15,7 +15,7 @@
 
 =head1 NAME
 
-genome-blast.pl
+genome-blast
 
 =head1 DESCRIPTION
 
@@ -32,7 +32,7 @@ util
 
 =head1 USAGE
     
-genome-blast.pl -q query_organism -db db_organism [-i inputfile] [-o outputfile] [-v #]
+genome-blast -q query_organism -db db_organism [-i inputfile] [-o outputfile] [-v #]
 
 =head1 INPUT FORMAT
 
@@ -197,12 +197,12 @@ foreach $db_organism (@db_organisms) {
 	$outfile{blast_ranks}=$dir{blast_result}."/".$compa_prefix."_ranks.tab.gz";
 
 	if ($batch) {
-	    my $batch_command = "genome-blast.pl";
+	    my $batch_command = "genome-blast";
 	    $batch_command .= " -q ".$query_organism;
 	    $batch_command .= " -db ".$db_organism;
 
 	    ## pass the other arguments to the batch command
-	    my @args_to_pass = @ARGV; ## Arguments to pass for the batch genome-blast.pl
+	    my @args_to_pass = @ARGV; ## Arguments to pass for the batch genome-blast
 	    while ($arg = shift(@args_to_pass)) {
 		if (($arg eq "-dbtaxon") ||
 		    ($arg eq "-db") ||
@@ -486,7 +486,7 @@ Run the tasks in batch (only works on our lab cluster, but could be adapted for 
 ################################################################
 #### verbose message
 sub Verbose {
-    print $out "; genome-blast.pl ";
+    print $out "; genome-blast ";
     &PrintArguments($out);
     print $out "; Query organisms\t",scalar(@query_organisms),"\n;\t", join ("\n;\t", @query_organisms), "\n";
     print $out "; Db organisms\t",scalar(@db_organisms),"\n;\t", join ("\n;\t", @db_organisms), "\n";
