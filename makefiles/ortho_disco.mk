@@ -3,7 +3,7 @@
 ## of a genome, and infer a graph of co-regulation by comparing discovered
 ## motifs between each pair of genes
 
-## THE FOLLOWING VARIABLES HAVE TO BE DEFINED
+## THE FOLLOWING VARIABLES HAVE TO BE DEFINED FOR EACH NEW ANALYSIS
 ## GENE
 ## REF_ORG
 ## TAXON
@@ -35,7 +35,7 @@ list_parameters:
 ################################################################
 ## List of all genes to be analyzed. 
 ## By default, all the genes of the considered organism (REF_ORG)
-ALL_GENES=` grep -v '^--' ${RSAT}/data/genomes/${REF_ORG}/genome/feature.tab | awk -F '\t' '$$2=="CDS"'| cut -f 3 | sort -u | xargs`
+ALL_GENES=`grep -v '^--' ${RSAT}/data/genomes/${REF_ORG}/genome/cds_names.tab | grep primary | cut -f 2 | sort -u | perl -pe 's/\n/ /g'`
 list_all_genes:
 	@echo ""
 	@echo "All genes"
@@ -212,13 +212,12 @@ index_one_result:
 ################################################################
 ## Compare dyads discovered in the different genes
 COMPA_DIR=${RESULT_DIR}/gene_pair_network
-COMPA_TABLE=${COMPA_DIR}/${REF_ORG}_${TAXON}${SUFFIX}_dyad_profiles.tab
-COMPA_CLASSES=${COMPA_DIR}/${REF_ORG}_${TAXON}${SUFFIX}_dyad_classes.tab
-DYAD_FILE_LIST=${RESULT_DIR}/dyad_files${SUFFIX}.txt
+DYAD_FILE_LIST=${RESULT_DIR}/files${SUFFIX}.txt
 dyad_file_list:
 	@echo
 	@echo "Generating the list of dyad files"
-	(cd ${RESULT_DIR}; find . -name '*${SUFFIX}.tab'  > ${DYAD_FILE_LIST})
+	find ${RESULT_DIR} -name '*${SUFFIX}.tab' \
+		> ${DYAD_FILE_LIST}
 	@echo ${DYAD_FILE_LIST}
 	@echo "	`cat ${DYAD_FILE_LIST} | wc -l `	dyad files"
 
@@ -229,20 +228,37 @@ dyad_file_list:
 ## and takes A LOT of space (>100Mb for Pseudomonas only).  It is not
 ## necessary to use it anymore, the target "dyad_classes" gives
 ## similar results but is MUCH faster and takes MUCH less space
+DYAD_PROFILES=${COMPA_DIR}/${REF_ORG}_${TAXON}${SUFFIX}_dyad_profiles.tab
 dyad_profiles: dyad_file_list
 	@echo
 	@echo "Calculating dyad profiles"
 	@mkdir -p ${COMPA_DIR}	
-	(cd ${RESULT_DIR}; compare-scores -null "NA" -sc 8 \
-		-suppress "\./motifs/" \
+	compare-scores -null "NA" -sc ${DYAD_SIG_COL} \
+		-suppress "${RESULT_DIR}/motifs/" \
 		-suppress "_dyads.tab" \
 		-suppress "_${REF_ORG}_${TAXON}" \
 		-filelist ${DYAD_FILE_LIST}  \
 		| transpose-table \
-		| perl -pe 's/\/\S+//' \
-		> ${COMPA_TABLE})
-	@echo ${COMPA_TABLE}
-	@echo "	`grep -v '^;' ${COMPA_TABLE} | grep -v '^#' | wc -l`	profiles"
+		| perl -pe 's/\/\S+//g' \
+		> ${DYAD_PROFILES}
+	@echo ${DYAD_PROFILES}
+	@echo "	`grep -v '^;' ${DYAD_PROFILES} | grep -v '^#' | wc -l`	dyad profiles"
+
+
+## ##############################################################
+## Compare each pair of genes on the basis of their dyad profiles, and
+## select pairs of genes profiles having a significant intersection
+## between their dyad profiles.
+## 
+## This is computationally much heavier than gene_pairs, I just leave
+## it for history and cross-validation
+profile_pairs:
+	@echo
+	@echo "Calculating profile pairs"
+	compare-profiles -v ${V} -i ${DYAD_PROFILES} -base 2 -distinct -return dotprod -lth AB 1 \
+		-o ${PROFILE_PAIRS}.tab
+	@echo ${PROFILE_PAIRS}.tab
+	@echo "	`grep -v ';' ${PROFiLE_PAIRS}.tab | grep -v '^#' |  wc -l`	profile pairs"
 
 ## ##############################################################
 ## Collect the significant dyads for each gene and store the result in
@@ -251,22 +267,23 @@ dyad_profiles: dyad_file_list
 ## - gene
 ## - significance
 DYAD_SIG_COL=9
+DYAD_CLASSES=${COMPA_DIR}/${REF_ORG}_${TAXON}${SUFFIX}_dyad_classes.tab
 dyad_classes: dyad_file_list
 	@echo
 	@echo "Generating dyads/gene file"
 	@mkdir -p ${COMPA_DIR}	
-	(cd ${RESULT_DIR}; compare-scores -null "NA" -sc ${DYAD_SIG_COL} \
+	compare-scores -null "NA" -sc ${DYAD_SIG_COL} \
 		-format classes \
-		-suppress "\./motifs/" \
+		-suppress "${RESULT_DIR}/motifs/" \
 		-suppress "_dyads.tab" \
 		-suppress "_${REF_ORG}_${TAXON}" \
 		-filelist ${DYAD_FILE_LIST}  \
-		| perl -pe 's/\/\S+//' \
+		| perl -pe 's/\/\S+//g' \
 		| sort +1 \
-		> ${COMPA_CLASSES})
-	@echo ${COMPA_CLASSES}
-	@echo "	`grep -v '^;' ${COMPA_CLASSES} | cut -f 2 | sort -u | wc -l`	genes"
-	@echo "	`grep -v '^;' ${COMPA_CLASSES} | cut -f 1 | sort -u | wc -l`	dyads"
+		> ${DYAD_CLASSES}
+	@echo ${DYAD_CLASSES}
+	@echo "	`grep -v '^;' ${DYAD_CLASSES} | cut -f 2 | sort -u | wc -l`	genes"
+	@echo "	`grep -v '^;' ${DYAD_CLASSES} | cut -f 1 | sort -u | wc -l`	dyads"
 
 ## ##############################################################
 ## Compare discovered dyads between each pair of gene and return the
@@ -278,7 +295,7 @@ GENE_PAIR_RETURN=occ,dotprod,jac_sim,proba,entropy,rank
 gene_pairs:
 	@echo
 	@echo "Calculating gene pairs"
-	compare-classes -v ${V} -i ${COMPA_CLASSES} \
+	compare-classes -v ${V} -i ${DYAD_CLASSES} \
 		-return ${GENE_PAIR_RETURN} \
 		-sc 3 -lth QR 1 -distinct -triangle -sort dotprod \
 		-o ${GENE_PAIRS}.tab
@@ -287,18 +304,42 @@ gene_pairs:
 	@echo ${GENE_PAIRS}.html
 	@echo "	`grep -v ';' ${GENE_PAIRS}.tab | grep -v '^#' |  wc -l`	gene pairs"
 
+
+################################################################
+## Convert the gene pairs into a graph (2 formats : .dot and .gml)
+MIN_SCORE=1
+SCORE_COL=15
+SCORE=dp
+PAIR_GRAPH=${GENE_PAIRS}_${SCORE}${MIN_SCORE}
+gene_pair_graph:
+	@echo
+	@echo "Generating gene pair graph"
+	grep -v '^;' ${GENE_PAIRS}.tab \
+		| awk -F '\t' '$$${SCORE_COL} >= ${MIN_SCORE}'  \
+		| convert-graph -from tab -scol 2 -tcol 3 -wcol ${SCORE_COL} -to dot \
+		-o ${PAIR_GRAPH}.dot
+	@echo ${PAIR_GRAPH}.gml
+	grep -v '^;' ${GENE_PAIRS}.tab \
+		| awk -F '\t' '$$${SCORE_COL} >= ${MIN_SCORE}' \
+		| grep -v '^;' \
+		| convert-graph -from tab -scol 2 -tcol 3 -wcol ${SCORE_COL} -to gml \
+		-o ${PAIR_GRAPH}.gml
+	@echo ${PAIR_GRAPH}.dot
+
+################################################################
+## Generate gene pair graphs with various levels of threshold
+PAIR_GRAPH_SCORES=0 1 2 3 5 10 20 30 50
+gene_pair_graph_series:
+	@for s in ${PAIR_GRAPH_SCORES} ; do \
+		${MAKE} gene_pair_graph MIN_SCORE=$${s} ; \
+	done
+
+## ##############################################################
+## Same as gene_pairs but return the dyads characterizing each pair of
+## gene (intersection, differences)
 gene_pairs_members:
 	${MAKE} gene_pairs GENE_PAIR_RETURN=occ,dotprod,jac_sim,proba,members,rank \
 		GENE_PAIRS=${COMPA_DIR}/${REF_ORG}_${TAXON}${SUFFIX}_gene_pairs_dyads
-
-
-profile_pairs:
-	@echo
-	@echo "Calculating profile pairs"
-	compare-profiles -v ${V} -i ${COMPA_TABLE} -base 2 -distinct -return dotprod -lth AB 1 \
-		-o ${PROFILE_PAIRS}.tab
-	@echo ${PROFILE_PAIRS}.tab
-	@echo "	`grep -v ';' ${PROFiLE_PAIRS}.tab | grep -v '^#' |  wc -l`	profile pairs"
 
 ################################################################
 ## Compare dot product, hypergeometric sig, adn jaccard distance
@@ -332,8 +373,6 @@ gene_pair_score_compa:
 		-yleg1 "Jaccard distance" \
 		-o ${GENE_PAIRS}_sig_vs_jaccard.png
 	@echo ${GENE_PAIRS}_sig_vs_jaccard.png
-
-
 
 ## ##############################################################
 ## Use MCL to extract clusters from the graph of pairwse relationships
@@ -387,27 +426,6 @@ mcl_vs_regulondb:
 
 
 ################################################################
-## Convert the gene pairs into a graph (2 formats : .dot and .gml)
-MIN_SCORE=1
-SCORE_COL=15
-SCORE=dp
-PAIR_GRAPH=${GENE_PAIRS}_${SCORE}${MIN_SCORE}
-gene_pair_graphs:
-	@echo
-	@echo "Generating gene pair graphs"
-	grep -v '^;' ${GENE_PAIRS}.tab \
-		| awk -F '\t' '$$${SCORE_COL} >= ${MIN_SCORE}'  \
-		| convert-graph -from tab -scol 2 -tcol 3 -wcol ${SCORE_COL} -to dot \
-		-o ${PAIR_GRAPH}.dot
-	@echo ${PAIR_GRAPH}.gml
-	grep -v '^;' ${GENE_PAIRS}.tab \
-		| awk -F '\t' '$$${SCORE_COL} >= ${MIN_SCORE}' \
-		| grep -v '^;' \
-		| convert-graph -from tab -scol 2 -tcol 3 -wcol ${SCORE_COL} -to gml \
-		-o ${PAIR_GRAPH}.gml
-	@echo ${PAIR_GRAPH}.dot
-
-################################################################
 ## Dun all the post-discovery tasks
 ## - dyad classes
 ## - gene pairs
@@ -420,14 +438,5 @@ gene_pair_network:
 	@${MAKE} dyad_file_list
 	@${MAKE} dyad_classes
 	@${MAKE} gene_pairs
-	@${MAKE} gene_pair_graphs MIN_SCORE=0
-	@${MAKE} gene_pair_graphs MIN_SCORE=1
-	@${MAKE} gene_pair_graphs MIN_SCORE=2
-	@${MAKE} gene_pair_graphs MIN_SCORE=3
-	@${MAKE} gene_pair_graphs MIN_SCORE=5
-	@${MAKE} gene_pair_graphs MIN_SCORE=10
-	@${MAKE} gene_pair_graphs MIN_SCORE=10
-	@${MAKE} gene_pair_graphs MIN_SCORE=20
-	@${MAKE} gene_pair_graphs MIN_SCORE=30
-	@${MAKE} gene_pair_graphs MIN_SCORE=50
-
+	@${MAKE} gene_pair_graph_series
+	@${MAKE} mcl_inflation_series
