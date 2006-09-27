@@ -1,5 +1,7 @@
 RSA.config
 data
 logs
+tmp
 public_html/logs
 public_html/data
+public_html/tmp
