@@ -1,12 +1,12 @@
 #!/usr/bin/perl
 
-## BUG: with the options -two_tail and -2str, a ot of patterns have 0  occurrences (I suspect these are the reverse complements after grouping).
+## BUG: with the options -two_tail and -2str, a lot of patterns have 0  occurrences (I suspect these are the reverse complements after grouping).
 ## BUG: with markov order 0, exp freq of mononucleotides are set to 0. should be the observed frequency
 ## TO DO: option -table freq
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.114 2006/08/22 18:35:23 rsat Exp $
+# $Id: oligo-analysis,v 1.115 2006/09/27 03:33:14 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -489,7 +489,10 @@ sub CountOligos {
 	    print $out $current_id;
 	    foreach my $pattern_seq (@output_patterns) {
 		if (($seq_type eq "DNA") && ($pattern_seq !~ /^[acgt\|]+$/i)) {
-		    &RSAT::message::Warning(join("\t", "Skipping pattern with non-DNA letters", $pattern_seq)) if ($main::verbose >= 2);
+		    &RSAT::message::Warning(join("\t", "Skipping pattern with non-DNA letters", $pattern_seq));
+		    next;
+		} elsif ((lc($seq_type) eq "protein") && ($pattern_seq !~ /^[acdefghiklmnpqrstvwxy]+$/i)) {
+		    &RSAT::message::Warning(join("\t", "Skipping pattern with invalid characters for protein sequence", $pattern_seq));
 		    next;
 		}
 		print $out "\t", $patterns{$pattern_seq}->{occ};
@@ -510,25 +513,33 @@ sub CountOligos {
 	    }
 	    undef(%patterns);
 	}
-	
     }
     undef $current_seq; ### release the memory occupied
     close $in;
 
-    #### filter out undefined residues for DNA sequences
-    if ($seq_type eq "DNA") {
+    #### filter out undefined residues for DNA or protein sequences
+    if (($seq_type eq "DNA") || ($seq_type eq "protein")) {
 	foreach $pattern_seq (keys %patterns) {
-	    if ($pattern_seq =~ /[^atcg]/i) {
+	    if ((($seq_type eq "DNA") && ($pattern_seq =~ /[^atcg]/i)) ||
+		(($seq_type eq "protein") && ($pattern_seq =~ /[^acdefghiklmnpqrstvwxy]/i))) {
 		$discarded_occurrences += $patterns{$pattern_seq}->{occ};
 		$discarded_occurrences += $patterns{$pattern_seq}->{overlaps};
-#		&RSAT::message::Debug("Discarded occurrences for pattern", $pattern_seq, "occ", $patterns{$pattern_seq}->{occ}, "overlaps", $patterns{$pattern_seq}->{overlaps}, "total", $discarded_occurrences) if ($main::verbose >= 10);
+		&RSAT::message::Warning(join("\t", "Discarded occurrences for pattern", $pattern_seq, 
+					     "occ", $patterns{$pattern_seq}->{occ}, 
+					     "overlaps", $patterns{$pattern_seq}->{overlaps}, 
+					     "total", $discarded_occurrences)) if ($main::verbose >= 0);
 		delete $patterns{$pattern_seq};
 	    }
 	}
 	$nb_possible_pos -= $discarded_occurrences;
 	foreach $letter (keys %residue_occ) {
-	    if ($letter =~ /[^atcg]/i) {
+	    if ((($seq_type eq "DNA") && ($letter =~ /[^atcg]/i)) ||
+		(($seq_type eq "protein") && ($letter =~ /[^acdefghiklmnpqrstvwxy]/i))) {
+#	    if ($letter =~ /[^atcg]/i) {
 		$discarded_residues += $residue_occ{$letter};
+		&RSAT::message::Warning(join("\t", "Discarded residue", $letter,
+					     "occ", $residue_occ{$letter},
+					     "total", $discarded_residues)) if ($main::verbose >= 0);
 		delete $residue_occ{$letter};
 	    }
 	}
@@ -866,7 +877,7 @@ sub NbPossibleOligo {
     @alphabet = keys %residue_occ;
     if ($seq_type eq "DNA") {
 	$alphabet_size = 4;
-    } elsif ($seq_type eq "protein") {
+    } elsif (lc($seq_type) eq "protein") {
 	$alphabet_size = 20;
     } else {
 	$alphabet_size = $#alphabet + 1;
