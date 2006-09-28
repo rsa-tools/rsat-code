@@ -480,7 +480,7 @@ sub LoadFeatures {
     while (my $line = <$annot>) {
       $linenb++;
 
-      if (($main::verbose >= 2) && ($linenb % 1000 == 1)) {
+      if (($main::verbose >= 3) && ($linenb % 1000 == 1)) {
 	&RSAT::message::psWarn("Loaded features", $linenb);
       }
 
@@ -648,6 +648,7 @@ sub LoadFeatures {
     foreach my $type (sort keys %stats) {
       &RSAT::message::Info(join ("\t", "", $stats{$type}, $type));
     }
+    &RSAT::message::psWarn("Features loaded");
   }
   #    my %test = $self->get_attribute("feature_id");
   #    &RSAT::message::Debug("Feature keys", scalar(keys(%test))) if ($main::verbose >= 10);
@@ -690,7 +691,13 @@ sub CalcNeighbourLimits {
       my $ln = $g -1;		### first guess for left neighbour
       my $found = 0;
 
+      if (($main::verbose >= 3) && ($g % 1000 == 1)) {
+	&RSAT::message::psWarn("Calculated neighbours for genes", $g);
+      }
+
+
       do {
+	my $same_gene = 0;
 	&RSAT::message::Debug("contig", $ctg, "gene",
 			      "g=".$g,
 			      "geneId=".$gene->get_attribute("geneid"),
@@ -733,9 +740,10 @@ sub CalcNeighbourLimits {
 				"ID=".$gene->get_attribute("id"),
 				"GeneID=".$gene->get_attribute("geneid"),
 				"name=".$gene->get_attribute("name"),
-			       ) if ($main::verbose >= 3);
+			       ) if ($main::verbose >= 2);
 
 	  $ln -= 1;
+	  $same_gene = 1;
 	  next;
 
 	} elsif (($ctg_rights[$ln] > $left{$gene}) && ($ctg_lefts[$ln] > $left{$gene})) {
@@ -756,7 +764,9 @@ sub CalcNeighbourLimits {
 	} else {
 	  $found = 1;
 	}
-      } until (($found) || ($ln < 0) || ($ln > $#ctg_rights));
+      } until (($ln < 0) ||
+	       ($found) ||
+	       (($ln > $#ctg_rights) && ($same_gene == 0)));
 
       if ($found) {
 	$neighb_left_limit = $ctg_rights[$ln];
