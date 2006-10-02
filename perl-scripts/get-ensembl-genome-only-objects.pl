@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-ensembl-genome-only-objects.pl,v 1.3 2006/09/21 17:27:49 rsat Exp $
+# $Id: get-ensembl-genome-only-objects.pl,v 1.4 2006/10/02 13:06:32 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -1084,7 +1084,7 @@ package main;
 	$seq_file =~ s/\:/_/g;
 	$seq_file .= ".raw";
 	my $masked_seq_file = $seq_file;
-	$masked_seq_file =~ s/\.raw$/_masked.raw/;
+	$masked_seq_file =~ s/\.raw$/_repeat_masked.raw/;
 #	if ($rsat_contig->get_attribute("is_circular")) {
 #	    $contig_shape = 'circular';
 #	} else {

@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-ensembl-genome-no-objects.pl,v 1.1 2006/09/15 08:27:10 rsat Exp $
+# $Id: get-ensembl-genome-no-objects.pl,v 1.2 2006/10/02 13:07:19 rsat Exp $
 #
 # Time-stamp
 #
@@ -521,7 +521,7 @@ package main;
 	$seq_file =~ s/\:/_/g;
 	$seq_file .= ".raw";
 	my $masked_seq_file = $seq_file;
-	$masked_seq_file =~ s/\.raw$/_masked.raw/;
+	$masked_seq_file =~ s/\.raw$/_repeat_masked.raw/;
 #	if ($slice->is_circular()) {
 #	    $slice_shape = 'circular';
 #	} else {
