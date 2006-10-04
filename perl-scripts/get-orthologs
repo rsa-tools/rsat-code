@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.23 2006/09/23 14:14:22 jvanheld Exp $
+# $Id: get-orthologs,v 1.24 2006/10/04 14:44:46 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -69,7 +69,7 @@ can be specified with the option -return.
 
 =item 4) E-value
 
-=item 5) rank	query->reference rank
+=item 5) rank	query -> reference rank
 
 =over
 
@@ -78,7 +78,7 @@ can be specified with the option -return.
 
 =back
 
-=item 6) r_rank	reference<-query rank
+=item 6) s_rank	reference <- query rank
 
 =over
 
@@ -94,9 +94,7 @@ Actually, this program allows to retrieve orthologs, but also paralogs.
 The detection of pairwise similarities is based on a bidirectional BLAST of
 each genome against each other. During the detection phase, multiple hits for
 a single gene are allowed, and the user can decide to filter them out or
-not. 
-
-
+not.
 
 =cut
 
