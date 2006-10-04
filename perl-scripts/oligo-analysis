@@ -6,7 +6,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.115 2006/09/27 03:33:14 jvanheld Exp $
+# $Id: oligo-analysis,v 1.116 2006/10/04 14:30:00 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -75,10 +75,13 @@ $max_seq_verbose = 99;
 
 ### default residue probabilities      
 $seq_type = "DNA";
-$residue_proba{'a'} = 0.25;
-$residue_proba{'c'} = 0.25;
-$residue_proba{'g'} = 0.25;
-$residue_proba{'t'} = 0.25;
+@dna_alphabet = qw (a c g t);
+foreach my $residue (@dna_alphabet) {
+  $residue_proba{$residure} = 0.25;
+}
+
+## Alphabet for protein sequences
+@protein_alphabet = qw(a c d e f g h i k l m n p q r s t v w y);
 
 #### read arguments ####
 &ReadArguments();
@@ -86,6 +89,10 @@ $residue_proba{'t'} = 0.25;
 ##############################
 ### check parameter values ###
 ##############################
+
+################################################################
+## Sequence type
+
 
 ## Special cases where we need to ccount patterns with zero occurrences
 if (($tail eq "left") || 
@@ -274,7 +281,7 @@ if ($return{'table'}) {
     &CheckThresholds("mseq") if ($return{mseq}); ## Check thresholds on matching sequences
     &CheckThresholds("observed_freq") if ($return{'exp_freq'}); ## Check thresholds on frequencies
 
-#    &RSAT::message::Debug ("Number of patterns", scalar(keys(%patterns))) if ($main::verbose >= 0);
+#    &RSAT::message::Debug ("Number of patterns", scalar(keys(%patterns))) if ($main::verbose >= 10);
 
 #    die join ("\t", "HELLO", $pattern_seq, sort (keys( %patterns)), scalar(keys(%patterns)));
 
@@ -313,23 +320,28 @@ exit(0);
 
 
 ################################################################
-#### Read input sequences and count oligomers ####
+#### Read input sequences and count oligomers
 sub CountOligos {
     if ($verbose >= 2) {
 	&RSAT::message::TimeWarn("Counting oligo frequencies");
     }
-    
+
     ## Calculate all possible oligomers of size k
     if (($return{'table'}) ||
 	($return{'distrib'}) ||
 	($zeroocc)
        ) {
 	if ($seq_type eq "DNA") {
-	    @possible_oligos = &all_oligos($oligo_length);
+	  @possible_oligos = &all_oligos($oligo_length, @dna_alphabet);
+	  &RSAT::message::Info("Reporting all oligonucleotides", scalar(@possible_oligos)) if ($main::verbose >= 2);
+	} elsif ($seq_type eq "protein") {
+	  @possible_oligos = &all_oligos($oligo_length, @protein_alphabet);
+	  &RSAT::message::Info("Reporting all oligopeptides", "alphabet size", scalar(@protein_alphabet), "oligos", scalar(@possible_oligos)) if ($main::verbose >= 2);
 	} else {
+	  ## TO DO : CHECK WHETHER THIS WORKS WITH ANY TEXT
 	    @possible_oligos = sort keys %patterns;
 	}
-	
+
 	#### print verbose now for the tables
 
 	if ($return{'table'}) {
@@ -491,8 +503,11 @@ sub CountOligos {
 		if (($seq_type eq "DNA") && ($pattern_seq !~ /^[acgt\|]+$/i)) {
 		    &RSAT::message::Warning(join("\t", "Skipping pattern with non-DNA letters", $pattern_seq));
 		    next;
-		} elsif ((lc($seq_type) eq "protein") && ($pattern_seq !~ /^[acdefghiklmnpqrstvwxy]+$/i)) {
-		    &RSAT::message::Warning(join("\t", "Skipping pattern with invalid characters for protein sequence", $pattern_seq));
+		} elsif ((lc($seq_type) eq "protein") 
+			 && ($pattern_seq !~ /^[acdefghiklmnpqrstvwxy]+$/i)) {
+		    &RSAT::message::Warning(join("\t", 
+						 "Skipping pattern with invalid characters for protein sequence", 
+						 $pattern_seq));
 		    next;
 		}
 		print $out "\t", $patterns{$pattern_seq}->{occ};
@@ -527,7 +542,7 @@ sub CountOligos {
 		&RSAT::message::Warning(join("\t", "Discarded occurrences for pattern", $pattern_seq, 
 					     "occ", $patterns{$pattern_seq}->{occ}, 
 					     "overlaps", $patterns{$pattern_seq}->{overlaps}, 
-					     "total", $discarded_occurrences)) if ($main::verbose >= 0);
+					     "total", $discarded_occurrences)) if ($main::verbose >= 3);
 		delete $patterns{$pattern_seq};
 	    }
 	}
@@ -539,7 +554,7 @@ sub CountOligos {
 		$discarded_residues += $residue_occ{$letter};
 		&RSAT::message::Warning(join("\t", "Discarded residue", $letter,
 					     "occ", $residue_occ{$letter},
-					     "total", $discarded_residues)) if ($main::verbose >= 0);
+					     "total", $discarded_residues)) if ($main::verbose >= 3);
 		delete $residue_occ{$letter};
 	    }
 	}
@@ -549,24 +564,26 @@ sub CountOligos {
 	&RSAT::error::FatalError("The input contained no readable sequence. The file might be empty or be wronlgy formatted."); 
     }
 
-#    &RSAT::message::Debug ("Number of patterns", scalar(keys(%patterns))) if ($main::verbose >= 0);
+#    &RSAT::message::Debug ("Number of patterns", scalar(keys(%patterns))) if ($main::verbose >= 10);
 
     ## Detect patterns with 0 occurrences if the left tail of the distribution is to be tested. 
     if  ($zeroocc) {
 	&RSAT::message::TimeWarn("Counting patterns with 0 occurrences") if ($main::verbose >= 2);
 	foreach my $pattern_seq (@possible_oligos) {
-	    ## Check if no occurrences were found
-	    unless ($patterns{$pattern_seq}->{occ}) {
-#		&RSAT::message::Debug("\tpattern with 0 occurrences\t$pattern_seq") if ($main::verbose >= 0);
-		$patterns{$pattern_seq}->{occ} = 0;
-		$zero_occ{$pattern_seq}++;
-		if ($return{'mseq'}) {
-		    $patterns{$pattern_seq}->{mseq} = 0;
-		}
+	  &RSAT::message::Debug("Detecting patterns with 0 occ", $pattern_seq, 
+			       $patterns{$pattern_seq}->{occ}) if ($main::verbose >= 5);
+	  ## Check if no occurrences were found
+	  unless ($patterns{$pattern_seq}->{occ}) {
+	    #		&RSAT::message::Debug("\tpattern with 0 occurrences\t$pattern_seq") if ($main::verbose >= 10);
+	    $patterns{$pattern_seq}->{occ} = 0;
+	    $zero_occ{$pattern_seq}++;
+	    if ($return{'mseq'}) {
+	      $patterns{$pattern_seq}->{mseq} = 0;
 	    }
+	  }
 	}
         &RSAT::message::Info("Number of patterns with zero occurrences", 
-			       scalar(keys(%zero_occ))) if ($main::verbose >= 2);
+			     scalar(keys(%zero_occ))) if ($main::verbose >= 2);
     }
 }
 
@@ -874,31 +891,24 @@ sub Degenerate {
 ################################################################
 #### calculate number of possible oligomers
 sub NbPossibleOligo {
-    @alphabet = keys %residue_occ;
-    if ($seq_type eq "DNA") {
-	$alphabet_size = 4;
-    } elsif (lc($seq_type) eq "protein") {
-	$alphabet_size = 20;
-    } else {
-	$alphabet_size = $#alphabet + 1;
-    }
+  @alphabet = &alphabet();
+  $alphabet_size = scalar(@alphabet);
+  $nb_possible_oligo = $alphabet_size**$oligo_length;
 
-    $nb_possible_oligo = $alphabet_size**$oligo_length;      
-
-    if ($seq_type eq "DNA") {
-	if ($one_var_position) {
-	    $nb_possible_oligo = $oligo_length * ($#degenerate_code+1) * $alphabet_size**($oligo_length-1);      
-	}
-	if ($sum_rc) {  
-	    if ($oligo_length%2 == 0) {
-		### take into account the fact that palindromes have not to be grouped by pairs
-		$nb_possible_palindroms = $alphabet_size**($oligo_length/2);
-	    } else {
-		$nb_possible_palindroms = 0;
-	    }
-	    $nb_possible_oligo -= ($nb_possible_oligo - $nb_possible_palindroms)/2;
-	}
+  if ($seq_type eq "DNA") {
+    if ($one_var_position) {
+      $nb_possible_oligo = $oligo_length * ($#degenerate_code+1) * $alphabet_size**($oligo_length-1);      
     }
+    if ($sum_rc) {  
+      if ($oligo_length%2 == 0) {
+	### take into account the fact that palindromes have not to be grouped by pairs
+	$nb_possible_palindroms = $alphabet_size**($oligo_length/2);
+      } else {
+	$nb_possible_palindroms = 0;
+      }
+      $nb_possible_oligo -= ($nb_possible_oligo - $nb_possible_palindroms)/2;
+    }
+  }
 }
 
 ################################################################
@@ -963,7 +973,7 @@ sub CalcExpected {
 	## into 2 sub-oligos)
     } elsif ($method eq "lexicon") {  
 	my $l  = 1;
-	foreach $pattern_seq (@alphabet ) {
+	foreach $pattern_seq (&alphabet()) {
 	    $sub_word[$l]{$pattern_seq}->{max_freq} = $sub_word[$l]{$pattern_seq}->{observed_freq};
 	}
 	for $l (2..$oligo_length - 1) {
@@ -2954,4 +2964,19 @@ sub CalibrateSetFromSingleSequence {
 		  $patterns{$pattern_seq}->{exp_var},
 		  ), "\n" if ($main::verbose >= 5);
     }
+}
+
+
+################################################################
+## Return the alphabet (list of possible letters/residues)
+sub alphabet {
+  if ($zeroocc) {
+    if ($seq_type eq "DNA") {
+      return @dna_alphabet;
+    } elsif ($seq_type eq "protein") {
+      return  @protein_alphabet;
+    }
+  } else {
+    return keys %residue_occ;
+  }
 }
