@@ -1508,22 +1508,25 @@ sub EditDistance {
 
 
 
-#### usage : all_oligos($length)
-#### returns an array with all possible oligonucleotids of the specified length.
+################################################################
+## Return an array with all possible oligomers of the specified length, with a given alphabet.
+## Usage : &all_oligos($length, @alphabet);
+##
 sub all_oligos {
-    my $len = $_[0];
-    my @alphabet = ("a", "c", "g", "t");
-    my @oligos = ();
-    if  ($len == 1) {
-	@oligos = @alphabet;
-    } elsif ($len > 1) {
-	foreach my $letter (@alphabet) {
-	    foreach my $oligo (&all_oligos($len-1)) {
-		push @oligos, $letter.$oligo;
-	    }
-	}
+  my ($len, @alphabet) = @_;
+  my @oligos = ();
+  if  ($len == 1) {
+    @oligos = @alphabet;
+  } elsif ($len > 1) {
+    my @sub_oligos = &all_oligos($len-1, @alphabet);
+    foreach my $letter (@alphabet) {
+      foreach my $oligo (@sub_oligos) {
+	push @oligos, $letter.$oligo;
+      }
     }
-    return @oligos;
+  }
+  &RSAT::message::Info("&all_oligos()", "len", $len, "alphabet", scalar(@alphabet), "oligos", scalar(@oligos)) if ($main::verbose >= 3);
+  return @oligos;
 }
 
 
