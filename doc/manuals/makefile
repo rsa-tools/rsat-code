@@ -3,7 +3,7 @@
 
 ############################################################
 #
-# $Id: makefile,v 1.5 2004/05/17 15:33:28 jvanheld Exp $
+# $Id: makefile,v 1.6 2006/10/05 01:12:12 jvanheld Exp $
 #
 # Time-stamp: <2003-10-02 15:13:34 jvanheld>
 #
@@ -126,3 +126,10 @@ SPLIT=4
 
 .dvi.xdvi:
 	xdvi $<
+
+
+################################################################
+## Publish the pdf documents on the web site
+DOC_SITE=rsat@rsat.scmbb.ulb.ac.be:rsa-tools/public_html/distrib/
+publish:
+	rsync -ruptvl -e ssh *.pdf ${DOC_SITE}
