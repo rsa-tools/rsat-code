@@ -26,9 +26,9 @@ this is not the case, ask your system administrator to do it for you.
 \subsection{Getting putative homologs, orthologs and paralogs}
 
 In this section, I will explain how to use the program
-\program{get-orthologs}. This program takes as input on or several
+\program{get-orthologs}. This program takes as input one or several
 query genes belonging to a given organism (the \concept{reference
-  organsm}), and return the genes whose product (peptidic sequence)
+  organism}), and return the genes whose product (peptidic sequence)
 show significant similarities with the products of the query
 genes. The primary usage of \program{get-orthologs} is thus to return
 lists of similar genes, not specialy orthologs. Additional criteria
@@ -39,7 +39,7 @@ common criterion is to select \concept{bidirectional best hits
 
 We will illustrate the concept by retrieving the genes whose product
 is similar to the protein LexA of \organism{Escherichia coli K12}, in
-all the Gammaproteobacteria. We will then refine the wuery to extract
+all the Gammaproteobacteria. We will then refine the query to extract
 putative orthologs.
 
 \subsubsection{Getting genes by similarities}
@@ -81,8 +81,8 @@ submitted simultaneously.
 
 \subsubsection{Obtaining information on the BLAST hits}
 
-The program \program{get-othologs} allows to return additional
-information on the hits. The list of supporeted return fields is
+The program \program{get-orthologs} allows to return additional
+information on the hits. The list of supported return fields is
 obtained by calling the command with the option \option{-help}. For
 example, we can ask to return the percentage of identity, the
 alignment length, the E-value and the rank of each hit.
@@ -158,7 +158,7 @@ b4043   Escherichia_coli_K12    b4043   100.00  202     2e-111  1
 \subsubsection{Selecting hits with more stringent criteria}
 
 It is well known that the sole criterion of BBH is not sufficient to
-infer orthology between two genes. In particular, there is a riks to
+infer orthology between two genes. In particular, there is a risk to
 obtain irrelevant matches, due to partial matches between a protein
 and some spurious domains. To avoid this, we can add a constraint on
 the percentage of identity (min 30\%), and on the alignment length
@@ -210,6 +210,49 @@ Actually, in the particular case of \gene{lexA}, the BBH constraint
 already filtered out the spurious matches, but inother cases they can
 be useful.
 
+\subsection{Retrieving sequences for multiple organisms}
+
+The program \program{retrieve-seq-multigenome} can be used to retrieve
+sequences for a group of genes belonging to different organisms.This
+program takes as input a file with two columns. Each row of this file
+specifies one query gene.
+
+\begin{enumerate}
+
+\item The first column contains the name or identifier of the gene
+  (exactly as for the single-genome program \program{retrieve-seq}).
+
+\item The second column indicates the organism to which the gne belongs.
+
+\end{enumerate}
+
+The output of \program{get-orthologs} can thus directly be used as
+input for \program{retrieve-seq-multigenome}.
+
+\begin{small}
+\begin{verbatim}
+retrieve-seq-multigenome -noorf \
+  -i lexA_orthologs_Gammaproteobacteria_bbh_id30_len50_eval-10.tab \
+  -o lexA_orthologs_Gammaproteobacteria_up-noorf.fasta
+\end{small}
+\end{verbatim}
+\end{small}
+
+\subsection{Detection of phylogenetic footprints}
+
+\textbf{TO BE WRITTEN}
+
+\begin{small}
+\begin{verbatim}
+dyad-analysis  -v 1 \
+  -i lexA_orthologs_Gammaproteobacteria_up-noorf.fasta \
+  -sort -2str -noov -lth occ 1 -lth occ_sig 0 \
+  -return occ,freq,proba,rank \
+  -l 3 -spacing 0-20 -bg monads \
+  -o lexA_orthologs_Gammaproteobacteria_up-noorf_dyads-2str-noov.tab
+\end{verbatim}
+\end{small}
+
 \subsection{Phylogenetic profiles}
 
 The notion of \concept{phylogenetic profile} was introduced by
@@ -220,7 +263,7 @@ column per genome. Each cell of this table indicates if an ortholog of
 the considered gene (row) has been identified in the considered genome
 (column). Pellegrini et al. (1999) showed that genes having similar
 phylogenetic profiles are generally involved in common biological
-processes. The analysis of phylogenetic footprints is thus a powerful
+processes. The analysis of phylogenetic profiles is thus a powerful
 way to identify functional grouping in completely sequenced genomes.
 
 The program \program{get-orthologs} can be used to obtain the
@@ -292,3 +335,16 @@ convert-classes -v 2 \
 \end{verbatim}
 \end{small}
 
+\subsection{Detecting pairs of genes with similar phylogenetic profiles}
+
+\textbf{TO BE WRITTEN}
+
+
+\begin{small}
+\begin{verbatim}
+compare-profiles -v 1 \
+  -i profiles.tab \
+  -return counts,jaccard,hyper,entropy \
+  -o phyloprof_gene_pairs.tab
+\end{verbatim}
+\end{small}
