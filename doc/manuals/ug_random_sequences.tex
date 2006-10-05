@@ -1,0 +1,155 @@
+\section{Generating random sequences}
+
+Th program \program{random-seq} allows to generate random sequences
+wih different random models.
+
+It supports Bernoulli models (independence between successive
+residues) and Markov models of any order. Markov models are generally
+more suitable to represent biological sequences. 
+
+
+We will briely illustrate different ways to use this program. 
+
+\subsection{Sequences with identically and independently distributed (IID) nucleotides}
+
+\begin{small}
+\begin{verbatim}
+random-seq -l 200 -r 20 -o rand_L200_N20.fasta
+\end{verbatim}
+\end{small}
+
+We can now check th residue cmposition of this random sequence.
+
+\begin{small}
+\begin{verbatim}
+oligo-analysis -v 1 \
+  -i rand_L200_N20.fasta \
+  -l 1 -1str -return occ,freq \
+  -o rand_L200_N20_1nt-1str.tab
+\end{verbatim}
+\end{small}
+
+\subsection{Sequences with nucleotide-specific frequencies}
+
+In general, the residue composition of biological sequences is
+biased. We can impose residue-specific probabilities for the random
+sequence generation.
+
+\begin{small}
+\begin{verbatim}
+random-seq -l 200 -r 20 -a a:t 0.3 c:g 0.2 \
+  -o rand_L200_N20_at30.fasta 
+
+oligo-analysis -v 1 \
+  -i rand_L200_N20_at30.fasta \
+  -l 1 -1str -return occ,freq \
+  -o rand_L200_N20_at30_1nt-1str.tab
+\end{verbatim}
+\end{small}
+
+
+\subsection{Introduction to Markov order}
+
+Markov chain models involve local dependencies between successive
+residues.
+
+A Markov model of order $m$ means that the
+probability of the residue at each position $i$ of the sequence
+depends on the $m$ preceding residues.
+
+\RSAT includes organism-specific Markov models, stored in the form of
+oligonucleotide frequency tables (see chapter on pattern
+discovery). for example, the calibration tables for Escherichia coli
+K12 can be found in the following directory.
+
+\begin{small}
+\begin{verbatim}
+ls -ltr $RSAT/data/genomes/Escherichia\_coli\_K12/oligo-frequencies
+\end{verbatim}
+\end{small}
+
+For example, the file
+\file{4nt\_upstream-noorf\_Escherichia\_coli\_K12-1str.freq.gz}
+indicates the tetranucleotide frequencies for all the upstream
+sequences of \organism{E.coli}.
+
+\begin{small}
+\begin{verbatim}
+cd $RSAT/data/genomes/Escherichia_coli_K12/oligo-frequencies/
+
+## Have a look at the content of the 4nt frequency file
+zless zless 4nt_upstream-noorf_Escherichia_coli_K12-1str.freq.gz
+
+\end{verbatim}
+\end{small}
+
+However, Markov models are described by transition frequencies
+$P(r|W_m)$, i.e. the probability to osberve a given residue $r$ given
+the preceding word $W_m$ of size $m$.
+
+Transition frequencies are automatically derived from the table of
+oligonucleotide frequencies, but one should take care of the fact
+that, order to generate a random sequence with a Markov model of order
+$m$, we need to use the frequency tables for oligonucleotides of size
+$m+1$.
+
+We can illustrate this convertion by converting the table of
+dinucleotide frequencies into a transition matrix of first order. each
+row of the matrix indicates the prefix $W_m$, and each column the
+following residue $r$. For a Markov model of order 1, the prefixes are
+single residues.
+
+\begin{small}
+\begin{verbatim}
+convert-background-model \
+  -i 2nt_upstream-noorf_Escherichia_coli_K12-1str.freq.gz  \
+  -from oligo-analysis -to tab
+\end{verbatim}
+\end{small}
+
+We can now obtain a Markov model of 2nd order, from the table of
+trinucleotide frequencies.
+
+\begin{small}
+\begin{verbatim}
+convert-background-model \
+  -i 3nt_upstream-noorf_Escherichia_coli_K12-1str.freq.gz  \
+  -from oligo-analysis -to tab
+\end{verbatim}
+\end{small}
+
+The same operation can be extended to higher order markov models.
+
+\subsection{Markov chain-based random sequences}
+
+The random generator \program{random-seq} supports Markov chains of
+any order (as far as the corresponding ferquency table has previously
+been calculated). The Markov model is specified by indicating an
+oligonucleotide frequency table. The table of oligonucleotides of
+length $k$ is automatically converted in a transition table of order
+$m=k-1$ duing the execution of \program{random-seq}. 
+
+
+\begin{small}
+\begin{verbatim}
+random-seq -l 200 -r 20 \
+  -expfreq $RSAT/data/genomes/Escherichia_coli_K12/oligo-frequencies/3nt_upstream-noorf_Escherichia_coli_K12-1str.freq.gz \
+  -o rand_L200_N20_mkv2.fasta 
+\end{verbatim}
+\end{small}
+
+A simpler way to obtain organism-specific Markov models is to use the
+options \option{-bg} and \option{-org} of \program{random-seq}. 
+
+\begin{small}
+\begin{verbatim}
+## This command generates random sequences with a Markov model of order 2,
+## calibrated on all the non-coding upstream sequences of E.coli.
+random-seq -l 200 -r 20 \
+  -org Escherichia_coli_K12 -bg upstream-noorf -ol 3 \
+  -o rand_L200_N20_mkv2.fasta 
+\end{verbatim}
+\end{small}
+
+
+
