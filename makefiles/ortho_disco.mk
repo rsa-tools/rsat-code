@@ -35,7 +35,7 @@ list_parameters:
 ################################################################
 ## List of all genes to be analyzed. 
 ## By default, all the genes of the considered organism (REF_ORG)
-ALL_GENES=`grep -v '^--' ${RSAT}/data/genomes/${REF_ORG}/genome/cds_names.tab | grep primary | cut -f 2 | sort -u | perl -pe 's/\n/ /g'`
+ALL_GENES=`grep -v '^--' ${RSAT}/data/genomes/${REF_ORG}/genome/cds_names.tab | grep primary | cut -f 2 | sort -u  | perl -pe 's/\n/ /g'`
 list_all_genes:
 	@echo ""
 	@echo "All genes"
