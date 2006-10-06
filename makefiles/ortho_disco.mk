@@ -156,12 +156,11 @@ index_results:
 	@echo "<html>" > ${INDEX_FILE}
 	@echo "<body>" >> ${INDEX_FILE}
 	@echo "<h1>${REF_ORG} ; ${TAXON} ; ${SUFFIX}</h1>" >> ${INDEX_FILE}
-	@echo "<table border=1 cellpadding=3 cellspacing=3 align=center>" >> ${INDEX_FILE}
-#	${MAKE} index_one_result GENE=lexA
+	@echo "<TT>" >> ${INDEX_FILE}
 	@for g in ${ALL_GENES} ; do  \
 		${MAKE} index_one_result GENE=$${g}  ; \
 	done
-	@echo "</table>" >> ${INDEX_FILE}
+	@echo "</TT>" >> ${INDEX_FILE}
 	@echo "</body></html>" >> ${INDEX_FILE}
 	@echo "Results indexed	${INDEX_FILE}"
 
@@ -172,41 +171,101 @@ MAX_SIG=`grep -v '^;' ${DYADS}.tab | cut -f ${SIG_COLUMN} | sort -nr | grep -v "
 ROOT_DIR=${RESULT_DIR}/
 index_one_result:
 	@echo "Indexing result for gene	${GENE}"
-	@echo "<tr>" >> ${INDEX_FILE}
-	@echo "<td><a href=${GENE_DIR}>${GENE}</a></td>" | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_FILE}
+	@echo "<a href=${GENE_DIR}>${GENE}</a>" | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_FILE}
 	if [ -f "${DYADS}.tab" ] ; then \
-		echo "<td>${MAX_SIG}</td>"  >> ${INDEX_FILE} ; \
-	else echo "<td></td>" >> ${INDEX_FILE} ; \
+		echo "	${MAX_SIG}"  >> ${INDEX_FILE} ; \
+	else echo "	None" >> ${INDEX_FILE} ; \
 	fi
 	if [ -f "${SEQ}" ] ; then \
-		echo "<td><a href=${SEQ}>seq</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_FILE} ; \
-	else echo "<td></td>" >> ${INDEX_FILE} ; \
+		echo "	<a href=${SEQ}>seq</a>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_FILE} ; \
+	else echo "	[]" >> ${INDEX_FILE} ; \
 	fi
 	if [ -f "${PURGED}" ] ; then \
-		echo "<td><a href=${PURGED}>purged</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_FILE} ; \
-	else echo "<td></td>" >> ${INDEX_FILE} ; \
+		echo "	<a href=${PURGED}>purged</a>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_FILE} ; \
+	else echo "	[]" >> ${INDEX_FILE} ; \
 	fi
 	if [ -f "${DYADS}.tab" ] ; then \
-		echo "<td><a href=${DYADS}.tab>dyads</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_FILE} ; \
-	else echo "<td></td>" >> ${INDEX_FILE} ; \
+		echo "	<a href=${DYADS}.tab>dyads</a>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_FILE} ; \
+	else echo "	" >> ${INDEX_FILE} ; \
 	fi
 	if [ -f "${ASSEMBLY}" ] ; then \
-		echo "<td><a href=${ASSEMBLY}>assembly</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_FILE} ; \
-	else echo "<td></td>" >> ${INDEX_FILE} ; \
+		echo "	<a href=${ASSEMBLY}>assembly</a>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_FILE} ; \
+	else echo "	" >> ${INDEX_FILE} ; \
 	fi
 	if [ -f "${MAP}" ] ; then \
-		echo "<td><a href=${MAP}>map</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_FILE} ; \
-	else echo "<td></td>" >> ${INDEX_FILE} ; \
+		echo "	<a href=${MAP}>map</a>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_FILE} ; \
+	else echo "	" >> ${INDEX_FILE} ; \
 	fi
 	if [ -f "${KNOWN_SITE_MATCHES}.tab" ] ; then \
-		echo "<td><a href=${KNOWN_SITE_MATCHES}.tab>matches</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_FILE} ; \
-	else echo "<td></td>" >> ${INDEX_FILE} ; \
+		echo "	<a href=${KNOWN_SITE_MATCHES}.tab>matches</a>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_FILE} ; \
+	else echo "	" >> ${INDEX_FILE} ; \
 	fi
 	if [ -f "${KNOWN_SITE_MATCHES}_weight_table.tab" ] ; then \
-		echo "<td><a href=${KNOWN_SITE_MATCHES}_weight_table.tab>match table</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_FILE} ; \
-	else echo "<td></td>" >> ${INDEX_FILE} ; \
+		echo "	<a href=${KNOWN_SITE_MATCHES}_weight_table.tab>match table</a>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_FILE} ; \
+	else echo "	" >> ${INDEX_FILE} ; \
 	fi
-	@echo "</tr>" >> ${INDEX_FILE}
+	@echo "<p>" >> ${INDEX_FILE}
+
+
+################################################################
+## Index the results for the whole set of genes
+## Index all results in a HTML table
+## This is convenient to read, but heavy to load when there are 5000 genes
+INDEX_TABLE=${MAIN_DIR}/results/${REF_ORG}/${TAXON}/index_table_${REF_ORG}_${TAXON}${SUFFIX}.html
+index_results_html_table:
+	@echo "Indexing results	${REF_ORG}	${TAXON}	${INDEX_TABLE}"
+	@echo "<html>" > ${INDEX_TABLE}
+	@echo "<body>" >> ${INDEX_TABLE}
+	@echo "<h1>${REF_ORG} ; ${TAXON} ; ${SUFFIX}</h1>" >> ${INDEX_TABLE}
+	@echo "<table border=1 cellpadding=3 cellspacing=3 align=center>" >> ${INDEX_TABLE}
+#	${MAKE} index_one_result GENE=lexA
+	@for g in ${ALL_GENES} ; do  \
+		${MAKE} index_one_result_html_table GENE=$${g}  ; \
+	done
+	@echo "</table>" >> ${INDEX_TABLE}
+	@echo "</body></html>" >> ${INDEX_TABLE}
+	@echo "Results indexed	${INDEX_TABLE}"
+
+################################################################
+## Index one result in a HTML table
+## This is convenient to read, but heavy to load when there are 5000 genes
+index_one_result_html_table:
+	@echo "Indexing result for gene	${GENE}"
+	@echo "<tr>" >> ${INDEX_TABLE}
+	@echo "<td><a href=${GENE_DIR}>${GENE}</a></td>" | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_TABLE}
+	if [ -f "${DYADS}.tab" ] ; then \
+		echo "<td>${MAX_SIG}</td>"  >> ${INDEX_TABLE} ; \
+	else echo "<td></td>" >> ${INDEX_TABLE} ; \
+	fi
+	if [ -f "${SEQ}" ] ; then \
+		echo "<td><a href=${SEQ}>seq</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_TABLE} ; \
+	else echo "<td></td>" >> ${INDEX_TABLE} ; \
+	fi
+	if [ -f "${PURGED}" ] ; then \
+		echo "<td><a href=${PURGED}>purged</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_TABLE} ; \
+	else echo "<td></td>" >> ${INDEX_TABLE} ; \
+	fi
+	if [ -f "${DYADS}.tab" ] ; then \
+		echo "<td><a href=${DYADS}.tab>dyads</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_TABLE} ; \
+	else echo "<td></td>" >> ${INDEX_TABLE} ; \
+	fi
+	if [ -f "${ASSEMBLY}" ] ; then \
+		echo "<td><a href=${ASSEMBLY}>assembly</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_TABLE} ; \
+	else echo "<td></td>" >> ${INDEX_TABLE} ; \
+	fi
+	if [ -f "${MAP}" ] ; then \
+		echo "<td><a href=${MAP}>map</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_TABLE} ; \
+	else echo "<td></td>" >> ${INDEX_TABLE} ; \
+	fi
+	if [ -f "${KNOWN_SITE_MATCHES}.tab" ] ; then \
+		echo "<td><a href=${KNOWN_SITE_MATCHES}.tab>matches</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_TABLE} ; \
+	else echo "<td></td>" >> ${INDEX_TABLE} ; \
+	fi
+	if [ -f "${KNOWN_SITE_MATCHES}_weight_table.tab" ] ; then \
+		echo "<td><a href=${KNOWN_SITE_MATCHES}_weight_table.tab>match table</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_TABLE} ; \
+	else echo "<td></td>" >> ${INDEX_TABLE} ; \
+	fi
+	@echo "</tr>" >> ${INDEX_TABLE}
 
 
 ################################################################
@@ -233,7 +292,7 @@ dyad_profiles: dyad_file_list
 	@echo
 	@echo "Calculating dyad profiles"
 	@mkdir -p ${COMPA_DIR}	
-	compare-scores -null "NA" -sc ${DYAD_SIG_COL} \
+	compare-scores -null "NA" -sc ${SIG_COLUMN} \
 		-suppress "${RESULT_DIR}/motifs/" \
 		-suppress "_dyads.tab" \
 		-suppress "_${REF_ORG}_${TAXON}" \
@@ -266,13 +325,12 @@ profile_pairs:
 ## - dyad
 ## - gene
 ## - significance
-DYAD_SIG_COL=9
 DYAD_CLASSES=${COMPA_DIR}/${REF_ORG}_${TAXON}${SUFFIX}_dyad_classes.tab
 dyad_classes: dyad_file_list
 	@echo
 	@echo "Generating dyads/gene file"
 	@mkdir -p ${COMPA_DIR}	
-	compare-scores -null "NA" -sc ${DYAD_SIG_COL} \
+	compare-scores -null "NA" -sc ${SIG_COLUMN} \
 		-format classes \
 		-suppress "${RESULT_DIR}/motifs/" \
 		-suppress "_dyads.tab" \
@@ -292,10 +350,11 @@ dyad_classes: dyad_file_list
 PROFILE_PAIRS=${COMPA_DIR}/${REF_ORG}_${TAXON}${SUFFIX}_profile_pairs
 GENE_PAIRS=${COMPA_DIR}/${REF_ORG}_${TAXON}${SUFFIX}_gene_pairs
 GENE_PAIR_RETURN=occ,dotprod,jac_sim,proba,entropy,rank
+V2=3
 gene_pairs:
 	@echo
 	@echo "Calculating gene pairs"
-	compare-classes -v ${V} -i ${DYAD_CLASSES} \
+	compare-classes -v ${V2} -i ${DYAD_CLASSES} \
 		-return ${GENE_PAIR_RETURN} \
 		-sc 3 -lth QR 1 -distinct -triangle -sort dotprod \
 		-o ${GENE_PAIRS}.tab
@@ -417,11 +476,11 @@ mcl_inflation_series:
 MCL_VS_REG=${MCL_FILE}__vs__regulonDB
 mcl_vs_regulondb:
 	cat ${REGULONDB_TABLE}.tab | tr a-z A-Z > ${REGULONDB_TABLE}_uc.tab
-	compare-classes -v 1 -r ${REGULONDB_TABLE}_uc.tab -q ${MCL_FILE}.tab -return occ,percent,proba,members,rank -lth QR 2 -sort sig -o ${MCL_VS_REG}.tab
+	compare-classes -v ${V} -r ${REGULONDB_TABLE}_uc.tab -q ${MCL_FILE}.tab -return occ,percent,proba,members,rank -lth QR 2 -sort sig -o ${MCL_VS_REG}.tab
 	@echo ${MCL_VS_REG}.tab
 	@text-to-html -i  ${MCL_VS_REG}.tab -o  ${MCL_VS_REG}.html -font variable -chunk 250
 	@echo ${MCL_VS_REG}.html
-	compare-classes -v 1 -r ${REGULONDB_TABLE}_uc.tab -q ${MCL_FILE}.tab -return occ -matrix QR -o ${MCL_VS_REG}_conting.tab
+	compare-classes -v ${V} -r ${REGULONDB_TABLE}_uc.tab -q ${MCL_FILE}.tab -return occ -matrix QR -o ${MCL_VS_REG}_conting.tab
 	@echo ${MCL_VS_REG}_conting.tab
 
 
