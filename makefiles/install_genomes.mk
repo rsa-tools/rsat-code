@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_genomes.mk,v 1.26 2006/09/25 16:19:39 rsat Exp $
+# $Id: install_genomes.mk,v 1.27 2006/10/06 14:24:31 rsat Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -31,14 +31,15 @@ V=1
 ### Targets
 
 ### Install one organism
-ORG=Arabidopsis_thaliana
+ORG=Saccharomyces_cerevisiae
+MASKING=''
 ORG_DIR=${NCBI_DIR}/${ORG}
 PARSE_TASK=config,parse
 CALIBRATE_TASK=allup,phylogeny,dyads,oligos,start_stop,upstream_freq,genome_segments,intergenic_freq
 INSTALL_TASK=${PARSE_TASK},${CALIBRATE_TASK}
 INSTALL_CMD=install-organism -v ${V}		\
 		-genbank ${NCBI_DIR}		\
-		-org ${ORG}			\
+		-org ${ORG} ${MASKING}		\
 		-task ${INSTALL_TASK}		\
 		${OPT}
 
