@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.65 2006/09/15 23:40:22 rsat Exp $
+# $Id: install-organism,v 1.66 2006/10/06 14:25:47 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -14,6 +14,7 @@ require "RSA.lib";
 require RSAT::util;
 
 #### initialisation
+@masking_modes = (""); ## by default, use no masking
 @oligo_lengths=(6,1,2,3,4,5,7,8);
 $verbose = 0;
 $batch = 0;
@@ -426,28 +427,30 @@ sub AllUpstream {
     warn "; Retrieving all upstream sequences\n" if ($verbose >= 1);
 #    chdir $dir{genome};
 
-    foreach my $noorf ("", "-noorf") {
-	my $seq_type = "upstream${noorf}";
-	my $seq_file = "$dir{genome}/${organism_short_name}_${seq_type}.fasta";
-	my $format = "fasta";
-    
-	#### retrieve intergenic sequences
-	my $command = "retrieve-seq ${noorf} -format $format";
-	$command .= " -type upstream -all -org $organism_short_name ";
-	$command .= " -all -o $seq_file\n\n";
-	&doit($command, $dry_run, $die_on_error, $verbose);
-	
-	#### draw sequence length distributions
-	&SeqLengthDistribution($seq_file, $format, $seq_type, 50) if ($noorf);
-	
-	#### compress sequence file
-	$command = "gzip -f $seq_file";
-	&doit($command, $dry_run, $die_on_error, $verbose);
-	
-	#### purge sequences
-	&PurgeSequences($seq_file) if ($purged_frequencies);
+    foreach my $masking (@masking_modes) {
+	foreach my $noorf ("", "-noorf") {
+	    my $seq_type = "upstream${noorf}${masking}";
+	    my $seq_file = "$dir{genome}/${organism_short_name}_${seq_type}.fasta";
+	    my $format = "fasta";
+	    
+	    #### retrieve intergenic sequences
+	    my $command = "retrieve-seq ${noorf} ${masking} -format $format";
+	    $command .= " -type upstream -all -org $organism_short_name ";
+	    $command .= " -all -o $seq_file\n\n";
+	    &doit($command, $dry_run, $die_on_error, $verbose);
+	    
+	    #### draw sequence length distributions
+	    &SeqLengthDistribution($seq_file, $format, $seq_type, 50) if ($noorf);
+	    
+	    #### compress sequence file
+	    $command = "gzip -f $seq_file";
+	    &doit($command, $dry_run, $die_on_error, $verbose);
+	    
+	    #### purge sequences
+	    &PurgeSequences($seq_file) if ($purged_frequencies);
+	}
     }
-	
+
     chdir $dir{main};
 }
     
@@ -511,22 +514,24 @@ sub CalcFrequencies {
     ################################################################
     # calculate oligont frequencies in all upstream sequences
     if ($task{upstream_freq}) {
-	foreach my $noorf ("-noorf", "") {
-	    $seq_type = "upstream${noorf}";
-	    if ($purged_frequencies) {
-		$seq_file = "${organism_short_name}_${seq_type}_purged.fasta";
-		$seq_format = "fasta";
-	    } else {
-		$seq_file = "${organism_short_name}_${seq_type}.fasta";
-		$seq_format = "fasta";
+	foreach my $masking (@masking_modes) {
+	    foreach my $noorf ("-noorf", "") {
+		$seq_type = "upstream${noorf}${masking}";
+		if ($purged_frequencies) {
+		    $seq_file = "${organism_short_name}_${seq_type}_purged.fasta";
+		    $seq_format = "fasta";
+		} else {
+		    $seq_file = "${organism_short_name}_${seq_type}.fasta";
+		    $seq_format = "fasta";
+		}
+		&RSAT::message::TimeWarn("Calculating upstream oligo and dyad frequencies",$strands, $noov) if ($main::verbose >= 1);
+		&CalcOligoFreq($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{oligos});
+		&CalcOligoDistrib($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{distrib} && !($noorf));
+		&CalcDyadFreq($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{dyads});
 	    }
-	    &RSAT::message::TimeWarn("Calculating upstream oligo and dyad frequencies",$strands, $noov) if ($main::verbose >= 1);
-	    &CalcOligoFreq($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{oligos});
-	    &CalcOligoDistrib($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{distrib} && !($noorf));
-	    &CalcDyadFreq($dir{genome}."/".$seq_file, $seq_format, $seq_type) if ($task{dyads});
 	}
     }
-    
+
     ################################################################
     # calculate oligont frequencies in all intergenic sequences
     if ($task{intergenic_freq}) {
@@ -805,6 +810,9 @@ OPTIONS
 
 		clean	     remove unnecessary sequence files
 
+	-rm	calibrate oligo and dyad frequncies on repeat masked
+		sequences, in addition to the non-masked sequences.
+
 End_of_help
     close HELP;
     exit(0);
@@ -831,6 +839,7 @@ install_organism options
 -genbank	genbank directory
 -ensembl	ensembl directory
 -task		installation task ($supported_tasks)
+-rm		calibrate oligo and dyad frequncies on repeat masked sequences
 -syn		synonym table
 -up_from       	distal limit of the upstream regions (e.g. -800 for yeast)
 -up_to		proximal limit of the upstream regions (e.g. -1)
@@ -907,6 +916,10 @@ sub ReadArguments {
 	    #### Batch mode
 	} elsif ($ARGV[$a] eq "-batch") {
 	    $batch = 1;
+
+	    #### Masking modes
+	} elsif ($ARGV[$a] eq "-rm") {
+	    push @masking_modes, "-rm";;
 
 	    #### task selection
 	} elsif (($ARGV[$a] =~ /^-task/) 
