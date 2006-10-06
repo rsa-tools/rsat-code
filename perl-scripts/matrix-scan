@@ -1,13 +1,15 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.30 2006/08/23 13:05:32 jvanheld Exp $
+# $Id: matrix-scan,v 1.31 2006/10/06 14:22:25 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
 ############################################################
-## TO DO
-## - calcualte and display residue priors for each matrix, according to the background
+## TO DO:  calcualte and display residue priors for each matrix, according to the background
+## TO DO: add an option -t to select the top scores or each sequence
+## TO DO: add -return rank + uth and lth on this field. This should return the rank per sequence, and thus allow tos elect the X top scores. 
+## TO DO: ad an option to sort hits either by position or by score
 
 ## use strict;
 BEGIN {
@@ -837,8 +839,10 @@ Supported threshold fields : score
 	    unless ($supported_threshold{$thr_field}) {
 		&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
 	    }
+	    &RSAT::error::FatalError($thr_value, "Invalid value for a lower threshold. Should be a real number. ") 
+	      unless (&RSAT::util::IsReal($thr_value));
 	    $lth{$thr_field} = $thr_value;
-	    
+
 	    ### Upper threshold
 	} elsif ($arg eq "-uth") {
 	    my $thr_field = shift(@arguments);
@@ -846,6 +850,8 @@ Supported threshold fields : score
 	    unless ($supported_threshold{$thr_field}) {
 		&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
 	    }
+	    &RSAT::error::FatalError($thr_value, "Invalid value for an upper threshold. Should be a real number. ") 
+	      unless (&RSAT::util::IsReal($thr_value));
 	    $uth{$thr_field} = $thr_value;
 
 
