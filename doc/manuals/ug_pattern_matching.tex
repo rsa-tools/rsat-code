@@ -408,3 +408,38 @@ retrieve-seq -type upstream -from -1 -to -800  \
 
 more PHO_matrix_matches_allup.txt
 \end{verbatim}
+
+\subsection{Scanning sequences with \program{matrix-scan}}
+
+The program \program{matrix-scan} allows to scan sequences with a
+position-specific scoring matrix (\concept{PSSM}), in the same way as
+patser. However, it presents some differences:
+
+\begin{enumerate}
+
+\item \program{matrix-scan} is much slower than \program{patser},
+  because it is a perl script (whereas \program{patser} is
+  compiled). However, for most tasks, we can affor dto spend a few
+  minuts per genome rather than a few seconds.
+
+\item \program{matrix-scan} does not (yet) calculate the P-value
+  associated to each match. I intend to implement it in a next
+  version.
+
+\item \program{matrix-scan} supports higher-order Markov chain models,
+  whereas \program{paters} only supports Bernoulli models. The markov
+  models can be defined from different sequence sets: external
+  sequences, input sequences, or even locally (\concept{adaptive
+    background models}).
+
+\end{enumerate}
+
+
+
+\begin{small}
+\begin{verbatim}
+
+
+
+\end{verbatim}
+\end{small}
