@@ -274,7 +274,7 @@ COMPA_DIR=${RESULT_DIR}/gene_pair_network
 DYAD_FILE_LIST=${RESULT_DIR}/files${SUFFIX}.txt
 dyad_file_list:
 	@echo
-	@echo "Generating the list of dyad files"
+	@echo "Generating the list of dyad files	${REF_ORG}	${TAXON}"
 	find ${RESULT_DIR} -name '*${SUFFIX}.tab' \
 		> ${DYAD_FILE_LIST}
 	@echo ${DYAD_FILE_LIST}
@@ -290,7 +290,7 @@ dyad_file_list:
 DYAD_PROFILES=${COMPA_DIR}/${REF_ORG}_${TAXON}${SUFFIX}_dyad_profiles.tab
 dyad_profiles: dyad_file_list
 	@echo
-	@echo "Calculating dyad profiles"
+	@echo "Calculating dyad profiles	${REF_ORG}	${TAXON}"
 	@mkdir -p ${COMPA_DIR}	
 	compare-scores -null "NA" -sc ${SIG_COLUMN} \
 		-suppress "${RESULT_DIR}/motifs/" \
@@ -313,7 +313,7 @@ dyad_profiles: dyad_file_list
 ## it for history and cross-validation
 profile_pairs:
 	@echo
-	@echo "Calculating profile pairs"
+	@echo "Calculating profile pairs	${REF_ORG}	${TAXON}"
 	compare-profiles -v ${V} -i ${DYAD_PROFILES} -base 2 -distinct -return dotprod -lth AB 1 \
 		-o ${PROFILE_PAIRS}.tab
 	@echo ${PROFILE_PAIRS}.tab
@@ -328,7 +328,7 @@ profile_pairs:
 DYAD_CLASSES=${COMPA_DIR}/${REF_ORG}_${TAXON}${SUFFIX}_dyad_classes.tab
 dyad_classes: dyad_file_list
 	@echo
-	@echo "Generating dyads/gene file"
+	@echo "Generating dyads/gene file	${REF_ORG}	${TAXON}"
 	@mkdir -p ${COMPA_DIR}	
 	compare-scores -null "NA" -sc ${SIG_COLUMN} \
 		-format classes \
@@ -353,7 +353,7 @@ GENE_PAIR_RETURN=occ,dotprod,jac_sim,proba,entropy,rank
 V2=3
 gene_pairs:
 	@echo
-	@echo "Calculating gene pairs"
+	@echo "Calculating gene pairs	${REF_ORG}	${TAXON}"
 	compare-classes -v ${V2} -i ${DYAD_CLASSES} \
 		-return ${GENE_PAIR_RETURN} \
 		-sc 3 -lth QR 1 -distinct -triangle -sort dotprod \
@@ -372,7 +372,7 @@ SCORE=dp
 PAIR_GRAPH=${GENE_PAIRS}_${SCORE}${MIN_SCORE}
 gene_pair_graph:
 	@echo
-	@echo "Generating gene pair graph"
+	@echo "Generating gene pair graph	${REF_ORG}	${TAXON}"
 	grep -v '^;' ${GENE_PAIRS}.tab \
 		| awk -F '\t' '$$${SCORE_COL} >= ${MIN_SCORE}'  \
 		| convert-graph -from tab -scol 2 -tcol 3 -wcol ${SCORE_COL} -to dot \
