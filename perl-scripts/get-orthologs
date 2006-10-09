@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.24 2006/10/04 14:44:46 jvanheld Exp $
+# $Id: get-orthologs,v 1.25 2006/10/09 12:58:06 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -138,8 +138,9 @@ package main;
     ## This filter speeds up the search of orthologs when there are a
     ## few genes to be searched for, but when there are hundreds of
     ## queries, the regular expression becomes too heavy for grep.
-    $main::max_filter_queries = 100;
-    $main::query_filter = "";
+    $main::grep_filtering = 1; ## grep pre-filtering is active by default
+    $main::max_filter_queries = 100; ## Max number of queries for the grep pre-filtering
+    $main::query_filter = ""; ## The string with the regexp for grep pre-filtering
 
     @main::unknown_query_genes = ();
     @main::bidirect_hits = ();
@@ -303,7 +304,11 @@ package main;
 
     ## ##############################################################
     ## Prepare a regexp filter for fast selection with grep
-    if (scalar(keys(%is_query)) < $max_filter_queries) {
+    if (scalar(keys(%is_query)) > $max_filter_queries) {
+      $main::grep_filtering = 0;
+    }
+    
+    if ($main::grep_filtering) {
       $main::query_filter = "(";
       $main::query_filter .= join (")|(", (keys(%is_query)));
       $main::query_filter .= ")";
@@ -608,7 +613,7 @@ sub select_hits{
   if ($main::query_filter) {
     $input_cmd .= "grep -E '".$main::query_filter."' |";
   }
-  &RSAT::message::Debug($input_cmd) if ($main::verbose >= 3);
+  &RSAT::message::Debug($input_cmd) if ($main::verbose >= 2);
 
   open HIT_HANDLE, $input_cmd;
   #    my ($hit_handle) = &OpenInputFile($blast_file);
@@ -938,6 +943,20 @@ Examples:
 	      &RSAT::error::FatalError(join("\t", $field, "Invalid output field. Supported:", $supported_output_fields));
 	    }
 	  }
+=pod
+
+=item B<-nogrep>
+
+Disable the pre-filtering with grep. This pre-filtering accelerates
+the selection of hits, but some grep versions do not support the -E
+option. If this is the case on your operating system, you can still
+obtain the correct results by inactivating the grep filter.
+
+=cut
+
+	} elsif ($arg eq "-nogrep") {
+	    $main::grep_filtering = 0;
+
 
 	} else {
 	    &FatalError(join("\t", "Invalid option", $arg));
