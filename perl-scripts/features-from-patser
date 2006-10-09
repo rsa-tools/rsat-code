@@ -24,6 +24,12 @@ $supported_table_fields = join ",", @supported_table_fields;
 #### read arguments ####
 &ReadArguments();
 
+################################################################
+## Check parameter values
+if (($fixed_origin) && !($sequence_file)) {
+  &RSAT::error::FatalError("The option -origin requires to specify a sequence file (option -seq).");
+}
+
 #### default return format
 unless (defined(%return)) {
     $return{matches} = 1;
@@ -110,7 +116,9 @@ if ($sequence_file) {
 
 #### read and parse patser file
 $header_printed=0;
+my $l = 0; ## Line count
 while (<$in>) {
+  $l++;
     if (($matrix_length == 1) && (/width of the alignment matrix\:\s+(\d+)/)) {
 	$matrix_length = $1;
 	print $out "; $_" if ($verbose >= 1);
@@ -123,10 +131,17 @@ while (<$in>) {
 	$position = $2;
 	$strand = $3;
 	$score = $4;
+	$the_rest= $5; ## These fields are ocasionally present, depending on th options used with patser
+	$descr = "";
 
 	#### P-value
-	if ($5 =~ /ln\(p-value\)=\s+(\S+)/) {
+	if ($the_rest =~ /ln\(p-value\)=\s+(\S+)/) {
 	    $lnP = $1;
+	}
+
+	#### sequence (only available with the option patser -s, for version >=3e)
+	if ($the_rest =~ /sequence=\s+(\S+)/) {
+	    $descr = $1;
 	}
 
 	#### adapt coordinates to the selected origin
@@ -149,31 +164,32 @@ while (<$in>) {
 	    }
 	}
 
+
 	#### parse information about the match
 	if ($return{matches}) {
 
-	    #### get the sub sequence
-	    if ($sequence_file) {
-	      my $offset = $position - 1;
-		my $sub_sequence = uc(sub_sequence($sequence{$map}, $offset, $matrix_length));
-
-#		&RSAT::message::Debug($sub_sequence, $offset, $matrix_length, length($sequence{$map}), $sequence{$map}) if ($main::verbose >= 0);
-
-		my $left_flank =  lc(sub_sequence($sequence{$map}, $offset - $flank_len, $flank_len));
-		my $right_flank =  lc(sub_sequence($sequence{$map}, $offset + $matrix_length, $flank_len));
-		if ($strand eq "R") {
-		    $sub_sequence = &ReverseComplement($sub_sequence);
-		    $left_flank = lc(&ReverseComplement($left_flank));
-		    $right_flank = lc(&ReverseComplement($right_flank));
-		    $sub_sequence = $right_flank.$sub_sequence.$left_flank;
-		} else {
-		    $sub_sequence = $left_flank.$sub_sequence.$right_flank;
-		}
-		
-		
-		#### description
-		$descr = "${sub_sequence}";
+	  #### get the sub sequence
+	  if ($sequence_file) {
+	    my $offset = $position - 1;
+	    my $sub_sequence = uc(sub_sequence($sequence{$map}, $offset, $matrix_length));
+	    
+	    #		&RSAT::message::Debug($sub_sequence, $offset, $matrix_length, length($sequence{$map}), $sequence{$map}) if ($main::verbose >= 0);
+	    
+	    my $left_flank =  lc(sub_sequence($sequence{$map}, $offset - $flank_len, $flank_len));
+	    my $right_flank =  lc(sub_sequence($sequence{$map}, $offset + $matrix_length, $flank_len));
+	    if ($strand eq "R") {
+	      $sub_sequence = &ReverseComplement($sub_sequence);
+	      $left_flank = lc(&ReverseComplement($left_flank));
+	      $right_flank = lc(&ReverseComplement($right_flank));
+	      $sub_sequence = $right_flank.$sub_sequence.$left_flank;
+	    } else {
+	      $sub_sequence = $left_flank.$sub_sequence.$right_flank;
 	    }
+	    
+	    
+	    #### description
+	    $descr = "${sub_sequence}";
+	  }
 
 	    ################################################################
 	    ### print the header line if it has not yet been done
@@ -192,6 +208,7 @@ while (<$in>) {
 		$header_printed=1;
 	    }
 
+#	&RSAT::message::Debug("patser line parsed", $l,  $map, $position, $strand, $score, $descr, $the_rest, $lnP) if ($main::verbose >= 5);
 	    #### print the match
 	    &PrintFeature();
 	}
@@ -503,10 +520,11 @@ sub ReadArguments {
 	} elsif (($ARGV[$a] eq "-N") && (&IsNatural($ARGV[$a+1]))) {
 	    $flank_len = $ARGV[$a+1];
 
-	} elsif (($ARGV[$a] =~ /^-orig/i) &&
-		 ((&IsInteger($ARGV[$a+1]) || ($ARGV[$a+1] eq "-0")))) {
+	} elsif ($ARGV[$a] =~ /^-orig/i) {
 	    $fixed_origin = 1;
 	    $origin = $ARGV[$a+1];
+	    &RSAT::error::FatalError(join("\t", $origin, "Invalid value for the origin: should be an integer number or -0"))
+	      unless ((&RSAT::util::IsInteger($origin)) || ($origin eq "-0"));
 
 	} elsif ($ARGV[$a] =~ /^-origfile/i) {
 	    $origin_file = $ARGV[$a+1];
