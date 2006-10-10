@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: genome-blast.pl,v 1.18 2006/09/27 03:38:54 jvanheld Exp $
+# $Id: genome-blast.pl,v 1.19 2006/10/10 17:43:12 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -470,9 +470,12 @@ Don't die on error.
 
 =item B<-batch>
 
-Run the tasks in batch (only works on our lab cluster, but could be adapted for other configurations)
+Run the tasks in batch. This option only works on our lab's cluster,
+but could be adapted for other configurations by adapting the method
+&doit() in the utilities ($RSAT/lib/RSA.lib).
 
 =cut
+
 	} elsif ($ARGV[$a] eq "-batch") {
 	    $batch = 1;
 

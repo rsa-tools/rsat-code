@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.169 2006/07/21 02:20:36 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.170 2006/10/10 17:43:12 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -2540,9 +2540,12 @@ OPTIONS
                 A file containing a list of known sites (from a database)
 
 	-batch (advanced users)
-		Send time-consuming jobs on a batch queue which will be
-		executed on a PC cluster. This option requires a PC cluster
-		with a specific configuration. 
+		Send time-consuming jobs on a batch queue which will
+		be executed on a PC cluster. This option only works on
+		our lab's cluster, but could be adapted for other
+		configurations by adapting the method &doit() in the
+		utilities ($RSAT/lib/RSA.lib).
+
 
 FILE FORMAT
    $HELP_FAMILY_FILE
