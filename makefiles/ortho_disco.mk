@@ -150,27 +150,45 @@ map:
 
 ################################################################
 ## Index the results for the whole set of genes
+index_results: index_results_tab index_results_html
+
+#INDEX_FILE=${MAIN_DIR}/results/${REF_ORG}/${TAXON}/index_${REF_ORG}_${TAXON}${SUFFIX}.tab
+#index_results_tab:
+#	@echo "Indexing results	${REF_ORG}	${TAXON}	${INDEX_FILE}"
+#	@echo "; ${REF_ORG} ; ${TAXON} ; ${SUFFIX}" > ${INDEX_FILE}
+#	@for g in ${ALL_GENES} ; do  \
+#		${MAKE} index_one_result_tab GENE=$${g}  ; \
+#	done
+#	@echo "Results indexed"
+#	@echo ${INDEX_FILE}
+
 INDEX_FILE=${MAIN_DIR}/results/${REF_ORG}/${TAXON}/index_${REF_ORG}_${TAXON}${SUFFIX}.html
-index_results:
+index_results_tab:
 	@echo "Indexing results	${REF_ORG}	${TAXON}	${INDEX_FILE}"
 	@echo "<html>" > ${INDEX_FILE}
 	@echo "<body>" >> ${INDEX_FILE}
 	@echo "<h1>${REF_ORG} ; ${TAXON} ; ${SUFFIX}</h1>" >> ${INDEX_FILE}
-	@echo "<TT>" >> ${INDEX_FILE}
+	@echo "<PRE>" >> ${INDEX_FILE}
 	@for g in ${ALL_GENES} ; do  \
 		${MAKE} index_one_result GENE=$${g}  ; \
 	done
-	@echo "</TT>" >> ${INDEX_FILE}
+	@echo "</PRE>" >> ${INDEX_FILE}
 	@echo "</body></html>" >> ${INDEX_FILE}
-	@echo "Results indexed	${INDEX_FILE}"
+	@echo "Results indexed"
+	@echo ${INDEX_FILE}
 
 ################################################################
 ## Add the analysis of a single gene to the index file
 SIG_COLUMN=9
 MAX_SIG=`grep -v '^;' ${DYADS}.tab | cut -f ${SIG_COLUMN} | sort -nr | grep -v "Binary" | head -1`
 ROOT_DIR=${RESULT_DIR}/
+#MATCH_LINKS="	<a href=${KNOWN_SITE_MATCHES}.tab>matches</a>	<a href=${KNOWN_SITE_MATCHES}_weight_table.tab>match table</a>"
+MATCH_LINKS=
 index_one_result:
 	@echo "Indexing result for gene	${GENE}"
+	@echo "${GENE}	<a href=${SEQ}>seq</a>	<a href=${PURGED}>purged</a>	${MAX_SIG}	<a href=${DYADS}.tab>dyads</a>	<a href=${ASSEMBLY}>asmb</a>	<a href=${MAP}>map</a>	${MATCH_LINKS}" >> ${INDEX_FILE}
+
+index_one_result_prev:
 	@echo "<a href=${GENE_DIR}>${GENE}</a>" | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_FILE}
 	if [ -f "${DYADS}.tab" ] ; then \
 		echo "	${MAX_SIG}"  >> ${INDEX_FILE} ; \
@@ -212,7 +230,7 @@ index_one_result:
 ## Index all results in a HTML table
 ## This is convenient to read, but heavy to load when there are 5000 genes
 INDEX_TABLE=${MAIN_DIR}/results/${REF_ORG}/${TAXON}/index_table_${REF_ORG}_${TAXON}${SUFFIX}.html
-index_results_html_table:
+index_results_html:
 	@echo "Indexing results	${REF_ORG}	${TAXON}	${INDEX_TABLE}"
 	@echo "<html>" > ${INDEX_TABLE}
 	@echo "<body>" >> ${INDEX_TABLE}
@@ -220,7 +238,7 @@ index_results_html_table:
 	@echo "<table border=1 cellpadding=3 cellspacing=3 align=center>" >> ${INDEX_TABLE}
 #	${MAKE} index_one_result GENE=lexA
 	@for g in ${ALL_GENES} ; do  \
-		${MAKE} index_one_result_html_table GENE=$${g}  ; \
+		${MAKE} index_one_result_html GENE=$${g}  ; \
 	done
 	@echo "</table>" >> ${INDEX_TABLE}
 	@echo "</body></html>" >> ${INDEX_TABLE}
@@ -229,7 +247,7 @@ index_results_html_table:
 ################################################################
 ## Index one result in a HTML table
 ## This is convenient to read, but heavy to load when there are 5000 genes
-index_one_result_html_table:
+index_one_result_html:
 	@echo "Indexing result for gene	${GENE}"
 	@echo "<tr>" >> ${INDEX_TABLE}
 	@echo "<td><a href=${GENE_DIR}>${GENE}</a></td>" | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_TABLE}
