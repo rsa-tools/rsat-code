@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.31 2006/10/06 14:22:25 jvanheld Exp $
+# $Id: matrix-scan,v 1.32 2006/10/18 00:12:32 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -10,6 +10,8 @@
 ## TO DO: add an option -t to select the top scores or each sequence
 ## TO DO: add -return rank + uth and lth on this field. This should return the rank per sequence, and thus allow tos elect the X top scores. 
 ## TO DO: ad an option to sort hits either by position or by score
+
+## CVS: added thresholds on P(S|M) and  P(S|B); fixed a bug: upper thresholds did not work !
 
 ## use strict;
 BEGIN {
@@ -20,6 +22,7 @@ BEGIN {
 require "RSA.lib";
 require "RSA.seq.lib";
 
+use RSAT::feature;
 use RSAT::matrix;
 use RSAT::MarkovModel;
 
@@ -87,7 +90,7 @@ package main;
     ################################################################
     #### initialise parameters
     my $start_time = &AlphaDate();
-
+    $decimals=2;
     
     %main::infile = ();
     %main::outfile = ();
@@ -117,7 +120,7 @@ package main;
     ## Threshold parameters
     local %lth = (); # lower threshold values
     local %uth = (); # upper threshold values
-    @supported_thresholds = qw( score normw );
+    @supported_thresholds = qw ( score normw proba_M proba_B rank );
     $supported_thresholds = join ",", @supported_thresholds;
     %supported_threshold = ();
     foreach my $thr (@supported_thresholds) {
@@ -294,10 +297,10 @@ package main;
 			  "end",
 			  "sequence",
 			  "weight",
-			  "P(S|M)",
-			  "P(S|B)",
+			  "proba_M",
+			  "proba_B",
 			 );
-    print $out "\tnormW" if ($return_fields{normW});
+    print $out "\tnormw" if ($return_fields{normw});
     print $out "\n";
     
     
@@ -391,6 +394,10 @@ package main;
 		      if ($main::verbose >= 3);
 		    $n_containing_region = 0;
 		  }
+
+		  ## TO DO: test if this piece of code can be
+		  ## optimized by passing the pointer rather than the
+		  ## whole matrix
 		  &score_segment($segment, $matrix, $seq_id, $pos, "D");
 		  if ($main::both_strands) {
 		    &score_segment( &ReverseComplement($segment),$matrix, $seq_id, $pos, "R");
@@ -818,6 +825,18 @@ Base for the logarithms (default: $base)
 	    &RSAT::error::FatalError("base should be a real number") unless (&IsReal($base));
 	    &RSAT::error::FatalError("base should be larger than 1") if ($base <= 1);
 
+	    ## Number of decimals for the score
+=pod
+
+=item B<-decimals #>
+
+Number of decimals displayed for the score.
+
+=cut
+
+	} elsif ($arg eq "-decimals") {
+	    $decimals = shift @arguments;
+	    &RSAT::error::FatalError("decimals should be a positive integer") unless ((&IsNatural($decimals)) && ($decimals >= 0));
 
 	    ## Thresholds
 =pod
@@ -901,7 +920,7 @@ lengths.
 
 =item B<normw:> normalized weights. 
 
-Normailzed weights are calculated according to Thijs' formula : normW
+Normailzed weights are calculated according to Thijs' formula : normw
 = (W -Wmin)/(Wmax - Wmin). Note that Wmin and Wmax are approximated
 using a Bernoulli model, for reasons of commputational efficiency.
 
@@ -1033,23 +1052,26 @@ sub score_segment {
     my $proba_B = 1;
 
     $proba_M = $matrix->segment_proba($segment);
+    return(0) unless (&check_thresholds("proba_M", $proba_M));
+
     $proba_B = $bg_model->segment_proba($segment);
+    return(0) unless (&check_thresholds("proba_B", $proba_B));
 
 
     ## Calculate segment weight and  normalized weight
     my $score = "NA";
-    my $normW = "NA";
+    my $normw = "NA";
     if (($proba_M > 0) && ($proba_B > 0)) {
-	$score = sprintf("%.3f", log($proba_M/$proba_B))/$log_base;
+	$score = sprintf("%.${decimals}f", log($proba_M/$proba_B))/$log_base;
 
 	if ($return_fields{normw}) {
-	    $normW = sprintf("%6.4f", ($score - $matrix->{'Wmin'})/($matrix->{'Wrange'}));
+	    $normw = sprintf("%6.4f", ($score - $matrix->{'Wmin'})/($matrix->{'Wrange'}));
 	}
     } elsif ($proba_M == 0) {
 	if ($proba_B > 0) {
 	    $score = "-Inf";
 	    if ($return_fields{normw}) {
-		$normW = 0;
+		$normw = 0;
 	    }
 	}
     }
@@ -1058,38 +1080,79 @@ sub score_segment {
 #			  $proba_M , $proba_B, $score) if ($main::verbose >= 10);
 
     return(0) unless (&check_thresholds("score", $score));
-    return(0) unless (&check_thresholds("normW", $normW));
+    return(0) unless (&check_thresholds("normw", $normw));
 
     ## Calculate information
 #    my $info = $score * $proba_B;
 #    return(0) unless (&check_thresholds("info", $info));
-
+    
     ## Calculate start and end position
     my $start_pos = $pos - $orig_pos;
     my $end_pos = $start_pos + $ncol -1;
 
+#    &RSAT::message::Debug("Creating a fteaure for new match") if ($main::verbose >= 10);
+    my $match = new RSAT::feature();
+    $match->set_attribute('seq_name', $seq_id);
+    $match->set_attribute('ft_type', 'site');
+    $match->set_attribute('feature_name', $matrix->get_attribute('name'));
+    $match->set_attribute('strand',$strand);
+    $match->set_attribute('start',$start_pos);
+    $match->set_attribute('end',$end_pos);
+    $match->set_attribute('description',$segment);
+    $match->set_attribute('score',$score);
+    $match->set_attribute('proba_M',$proba_M);
+    $match->set_attribute('proba_B',$proba_B);
+    $match->set_attribute('normw',$normw) if ($return_fields{normw});
+
     if ($main::return_fields{sites}) {
-	print $out join ("\t", 
-			 $seq_id,
-			 "site",
-			 $matrix->{name},
-			 $strand,
-			 $start_pos,
-			 $end_pos,
-			 $segment,
-			 $score,
-			 sprintf("%5.2g\t%5.2g",
-				 $proba_M,
-				 $proba_B,
-				)
-			);
-      
-	print $out "\t", $normW if ($return_fields{normw});
-	print $out "\n";
+	&print_match($match);
+	$matrix->{matches}++;
     }
-    $matrix->{matches}++;
 
     return(1);
+}
+
+################################################################
+=pod
+
+=item B<print_match>
+
+Print the matching site.
+
+=cut
+
+sub print_match {
+    my ($match) = @_;
+
+    print $out join ("\t", 
+		     $match->get_attribute('seq_name'),
+		     $match->get_attribute('ft_type'),
+		     $match->get_attribute('feature_name'),
+		     $match->get_attribute('strand'),
+		     $match->get_attribute('start'),
+		     $match->get_attribute('end'),
+		     $match->get_attribute('description'),
+		     $match->get_attribute('score'),
+		     sprintf("%5.2g\t%5.2g",
+			     $match->get_attribute('proba_M'),
+			     $match->get_attribute('proba_B')
+			     )
+		     );
+#			 "site",
+#			 $matrix->{name},
+#			 $strand,
+#			 $start_pos,
+#			 $end_pos,
+#			 $segment,
+#			 $score,
+#			 sprintf("%5.2g\t%5.2g",
+#				 $proba_M,
+#				 $proba_B,
+#				)
+    
+    print $out "\t", $match->get_attribute('normw') if ($return_fields{normw});
+    print $out "\t", $match->get_attribute('rank') if ($return_fields{rank});
+    print $out "\n";
 }
 
 ################################################################
@@ -1108,7 +1171,7 @@ sub check_thresholds {
        ) {
 	return 0;
     }
-    if ((defined($uth{$value})) && 
+    if ((defined($uth{$key})) && 
 	(($value eq "NA") || ($value > $uth{$key}))
        ) {
 	return 0;
