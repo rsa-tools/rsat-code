@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.32 2006/10/18 00:12:32 rsat Exp $
+# $Id: matrix-scan,v 1.33 2006/10/18 22:34:46 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -9,7 +9,10 @@
 ## TO DO:  calcualte and display residue priors for each matrix, according to the background
 ## TO DO: add an option -t to select the top scores or each sequence
 ## TO DO: add -return rank + uth and lth on this field. This should return the rank per sequence, and thus allow tos elect the X top scores. 
-## TO DO: ad an option to sort hits either by position or by score
+## TO DO: add an option to sort hits either by position or by score
+## TO DO: add a pseudo-weight to the bg odel (for the time being, it only affects the matrix)
+
+## CVS: added thresholds on P(S|M) and  P(S|B); fixed a bug: upper thresholds did not work !
 
 ## CVS: added thresholds on P(S|M) and  P(S|B); fixed a bug: upper thresholds did not work !
 
@@ -34,14 +37,10 @@ matrix-scan
 
 =head1 DESCRIPTION
 
-Scan sequences with a position-specific scoring matrix (PSSM) to
-identify putative sites for the motif described by the PSSM.
-
-The background model is either provided in the form of a background
-file (option -bgfile) or calculated from the input sequence, by
-computing a Markov model of a given order (-bgorder) on a sliding
-window of a given size (-bgwind), and adaptively updating the model
-during the scanning process.
+Scan sequences with one or several position-specific scoring matrices
+(PSSM) to identify instances of the corresponding motifs (putative
+sites). This program supports a variety of background models
+(Bernoulli, Markov chains of any order).
 
 =head1 AUTHORS
 
@@ -79,12 +78,122 @@ consensus,gibbs,meme,tab. Default : tab.
 The output is a tab-delimited file, with one row per match. This file
 can directly be used as input for the program I<feature-map>.
 
+
+=head1 SCORING SCHEME
+
+The program scans the input sequences with a position-specific scoring
+matrix (PSSM) by selecting, at each position, a sequence segment (S)
+of the same length as the matrix, and assigning a score to this
+segment.
+
+The secgment score (weight) is calculated according to the theory
+developed by Jerry Hertz and Gary Stormo, but with the capability to
+use Markov chain-based background models, as prposed by Thijs et
+al. (2001).
+
+
+The weight of a sequence segment (Ws) is calculated as the log-ratio
+between two probabilities:
+
+Ws = log[P(S|M)/P(S|B)]
+
+=over 
+
+=item I<proba_M = P(S|M)>: 
+
+The probability to generate the sequence segment given the matrix.
+
+=item I<proba_B = P(S|B)>: 
+
+The probability to generate the sequence segment given the background
+model.
+
+=back
+
+By default, the program uses natural logarithms, but the option -base
+allows to specify any alternative base (e.g. 2 to obtain bit units);
+
+
+=head1 BACKGROUND MODELS
+
+=over
+
+An essential parameter of any pattern detection approach is the choice
+of an appropriate background model. This model is used to estimate the
+probability for each site to occur by chance, rather than as an
+instance of the motif.
+
+The program matrix-scan supports Markov models of arbitrary order as
+background models. A Markov model of order m means that the
+probability of each residue depends on the m preceding residues in the
+sequence. Note that a Markov model of order 0 corresponds to a
+Bernoulli model, since eahc residue is independent from the preceding
+ones.
+
+A variety of options for specifying the background model.
+
+=over
+
+=item I<-bgfile>
+
+This option allows to enter the background model from a background
+model file. Background model files are tab-delimited files containing
+the specification of oligonucleotide frequencies. A Markov model of
+order m=k-1 is automatically obtained from the frequencies of
+oligonucleotides of length k. There is thus no need to use the option
+-markov when the background model is secified with a bg file.
+
+The RSAT data folder contains pre-calibrated background model files
+for all the supported organisms.
+
+$RSAT/data/genomes/My_organism/oligo-frequencies/
+
+=item I<-bginput>
+
+The backgound model is calculated from the whole set of input
+sequences. This option requires to specify the order of the background
+model with the option -markov.
+
+=item I<-window>
+
+The background model is calculated locally at each step of the scan,
+by computing transition frequencies from a sliding window centred
+around the considered segment. The model is thus updated at each
+scanned position. This model is called "adaptive". Note that the
+sliding window must be large enough to train the local Markov
+model. The required sequence length increases exponentially with the
+Markov order. This option is thus usually suitable for short order
+models only (-markov 0 to 1).
+
+=back
+
+
+=back
+
+=head1 REFERENCES
+
+=over
+
+1. Hertz, G.Z. and G.D. Stormo, Identifying DNA and protein patterns
+   with statistically significant alignments of multiple
+   sequences. Bioinformatics, 1999. 15(7-8): p. 563-77.
+
+2. Hertz, G.Z., G.W. Hartzell, 3rd, and G.D. Stormo, Identification of
+   consensus patterns in unaligned DNA sequences known to be
+   functionally related. Comput Appl Biosci, 1990. 6(2): p. 81-92.
+
+3. Thijs, G., et al., A higher-order background model improves the
+   detection of promoter regulatory elements by Gibbs
+   sampling. Bioinformatics, 2001. 17(12): p. 1113-22.
+
+=back
+
 =cut
 
 
 ################################################################
 ## Main package
-package main;
+    package main;
 {
 
     ################################################################
@@ -134,14 +243,15 @@ package main;
 
     ## Return fields
     %supported_return_fields = (
-	sites=>1,
-	limits=>1,
-	normw=>1,
-	matrix=>1,
-	freq_matrix=>1,
-	weight_matrix=>1,
-	bg_model=>1,
-    );
+				sites=>1,
+				rank=>1,
+				limits=>1,
+				normw=>1,
+				matrix=>1,
+				freq_matrix=>1,
+				weight_matrix=>1,
+				bg_model=>1,
+				);
     $supported_return_fields = join (",", sort(keys( %supported_return_fields)));
 
     &ReadArguments();
@@ -159,6 +269,12 @@ package main;
 	foreach my $field (keys(%return_fields)) {
 	    $return_fields{$field} = 1;
 	}
+    }
+    if ((defined($uth{normw})) || (defined($lth{normw}))) {
+	$return_fields{normw} = 1;
+    }
+    if ((defined($uth{rank})) || (defined($lth{rank}))) {
+	$return_fields{rank} = 1;
     }
 
     unless (scalar(@matrix_files >= 1)) {
@@ -186,6 +302,8 @@ package main;
 	&RSAT::message::TimeWarn(join("\t", "Reading background model from file", $infile{bg})) 
 	    if ($main::verbose >= 2);
 	$bg_model->load_from_file($infile{bg}, $bg_in_format);
+	$bg_model->check_missing_transitions();
+
 #      &RSAT::message::Debug($bg_model->to_string($bg_out_format)) if ($main::verbose >= 0);
     } elsif ($main::markov >= 0) {
 	$bg_model->set_attribute("order", $main::markov);
@@ -214,8 +332,10 @@ package main;
 		## Sequence length
 		$current_seq = lc($current_seq);
 		$bg_model->calc_from_seq($current_seq, add=>1);
+		
 	    }
 	    close $in;
+	    $bg_model->check_missing_transitions();
 	}
     } else {
 	&RSAT::error::FatalError("You should either define the Markov order (-markov) or specify a file (-bgfile) for the background model.");
@@ -262,24 +382,24 @@ package main;
 	&RSAT::message::TimeWarn(join("\t", "Setting matrix priors for matrix", 
 				      $matrix->get_attribute("name"),
 				      join(" ", $matrix->getPrior()),
-				     )) if ($main::verbose >= 2);
+				      )) if ($main::verbose >= 2);
 	## Calculate min and max weight values
 	my ($Wmin, $Wmax, $Wrange) = $matrix->weight_range();
 	&RSAT::message::TimeWarn(join("\t", "Calculated weight range for matrix", 
 				      $matrix->get_attribute("name"), 
 				      $Wmin, $Wmax, $Wrange,
-				     )) if ($main::verbose >= 2);
+				      )) if ($main::verbose >= 2);
 
 	push @matrices, $matrix;
 
 	&RSAT::message::TimeWarn(join("\t", "read matrix", 
-				  scalar(@matrices), 
-				  $matrix->get_attribute("name"),
-				  $matrix->get_attribute("file")
-				  )) if ($main::verbose >= 2);
+				      scalar(@matrices), 
+				      $matrix->get_attribute("name"),
+				      $matrix->get_attribute("file")
+				      )) if ($main::verbose >= 2);
     }
 
-#    die join ("\t", "HELLO", $main::equi_pseudo), "\n";
+#   die join ("\t", "HELLO", $main::equi_pseudo), "\n";
     
 
 
@@ -299,8 +419,9 @@ package main;
 			  "weight",
 			  "proba_M",
 			  "proba_B",
-			 );
+			  );
     print $out "\tnormw" if ($return_fields{normw});
+    print $out "\trank" if ($return_fields{rank});
     print $out "\n";
     
     
@@ -308,7 +429,12 @@ package main;
     ##### Scan the sequences
     my ($in, $input_dir) = &OpenInputFile($main::infile{input});
     while ((($current_seq, $seq_id) = &ReadNextSequence($in, $seq_format, $input_dir, "",$mask)) &&
-       (($current_seq ne "") || ($seq_id ne ""))) {
+	   (($current_seq ne "") || ($seq_id ne ""))) {
+	
+
+	## If the rank is required, it is calculated for each input sequence independently
+	local @matches = (); ## Only used whe the rank of the site is required
+	local %matches_per_matrix = ();
 
 	## Sequence length
 	$current_seq = lc($current_seq);
@@ -357,7 +483,7 @@ package main;
 	&RSAT::message::TimeWarn(join ("\t", "Scanning sequence", $sequence_number,  "len=".$seq_len, "orig=".$orig_pos,  $seq_id))
             if ($main::verbose >= 2);
 	if ($return_fields{"sites"}) {
-	  my $n_containing_region = 0;
+	    my $n_containing_region = 0;
 	    for my $pos (1..$seq_len) {
 		
 		## Update background model if required
@@ -372,40 +498,64 @@ package main;
 
 		## Detect sites
 		foreach my $matrix (@matrices) {
-		  my $ncol = $matrix->{ncol};
-		  next if ($seq_len - $pos +1 < $ncol);
-		  my $segment = substr($current_seq, $pos-1, $ncol);
+		    my $ncol = $matrix->{ncol};
+		    next if ($seq_len - $pos +1 < $ncol);
+		    my $segment = substr($current_seq, $pos-1, $ncol);
 
-		  ## Skip N-containing segments
-		  if (($n_treatment eq "skip") &&
-		      ($segment =~ /n/i)) {
-		    unless ($n_containing_region) {
-		      ## Start of an N-containing region
-		      &RSAT::message::Info(join("\t", "N-containing segment start at position", $pos))
-			if ($main::verbose >= 3);
+		    ## Skip N-containing segments
+		    if (($n_treatment eq "skip") &&
+			($segment =~ /n/i)) {
+			unless ($n_containing_region) {
+			    ## Start of an N-containing region
+			    &RSAT::message::Info(join("\t", "N-containing segment start at position", $pos))
+				if ($main::verbose >= 3);
+			}
+			$n_containing_region = 1;
+			next;
 		    }
-		    $n_containing_region = 1;
-		    next;
-		  }
 
-		  ## Report the end of the N-containing region
-		  if (($n_treatment eq "skip") && ($n_containing_region)) {
-		    &RSAT::message::Info(join("\t", "N-containing segment ended at position", $pos -1))
-		      if ($main::verbose >= 3);
-		    $n_containing_region = 0;
-		  }
+		    ## Report the end of the N-containing region
+		    if (($n_treatment eq "skip") && ($n_containing_region)) {
+			&RSAT::message::Info(join("\t", "N-containing segment ended at position", $pos -1))
+			    if ($main::verbose >= 3);
+			$n_containing_region = 0;
+		    }
 
-		  ## TO DO: test if this piece of code can be
-		  ## optimized by passing the pointer rather than the
-		  ## whole matrix
-		  &score_segment($segment, $matrix, $seq_id, $pos, "D");
-		  if ($main::both_strands) {
-		    &score_segment( &ReverseComplement($segment),$matrix, $seq_id, $pos, "R");
-		  };
+		    ## TO DO: test if this piece of code can be
+		    ## optimized by passing the pointer rather than the
+		    ## whole matrix
+		    &score_segment($segment, $matrix, $seq_id, $pos, "D");
+		    if ($main::both_strands) {
+			&score_segment( &ReverseComplement($segment),$matrix, $seq_id, $pos, "R");
+		    };
 		}
-	      }
-	  }
-      }
+	    }
+	}
+
+	################################################################
+	## Return ranked matches
+	if ($return_fields{rank}) {
+	    &RSAT::message::TimeWarn("Ranking matches for sequence", $seq_id) if ($main::verbose >= 2); 
+	    foreach my $matrix (@matrices) {
+		
+#		my @ranked_matches = sort {$b->get_attribute('score') <=> $a->get_attribute('score')} @matches;
+
+		## Sort the matches per score
+		my @ranked_matches = 
+		    sort {$b->get_attribute('score') <=> $a->get_attribute('score')} 
+		@{$matches_per_matrix{$matrix->get_attribute('name')}};
+		
+		my $rank = 0;
+		foreach my $match (@ranked_matches) {
+		    $rank++;
+		    $match->force_attribute('rank', $rank);
+		    next if ((defined($lth{rank})) && ($rank < $lth{rank}));
+		    &print_match($match);
+		    last if ((defined($uth{rank})) && ($rank >= $uth{rank}));
+		}
+	    }
+	}
+    }
     close $in if ($main::infile{input});
     
     
@@ -429,7 +579,7 @@ package main;
 		     "Wmax",
 		     "Wrange",
 		     "prior",
-		    ), "\n";
+		     ), "\n";
     foreach my $matrix (@matrices) {
 	print $out join ("\t", ";", 
 			 $matrix->get_attribute("name"),
@@ -441,7 +591,7 @@ package main;
 			 sprintf("%.3f", $matrix->get_attribute("Wmin")),
 			 sprintf("%.3f", $matrix->get_attribute("Wmax")),
 			 sprintf("%.3f", $matrix->get_attribute("Wrange")),
-			);
+			 );
 	my %prior = $matrix->getPrior();
 	print $out "\t";
 	foreach my $letter (sort keys %prior) {
@@ -463,7 +613,7 @@ package main;
     if ($return_fields{matrix}) {
 	foreach my $matrix (@matrices) {
 	    print $out ";\n; Frequency matrix\t", $matrix->get_attribute("name"), "\n";
-		print $out $matrix->toString(col_width=>(7), decimals=>0, type=>"frequencies",format=>"tab", comment_string=>";");
+	    print $out $matrix->toString(col_width=>(7), decimals=>0, type=>"frequencies",format=>"tab", comment_string=>";");
 	}
     }
     
@@ -480,7 +630,7 @@ package main;
 	print $out ";\n; Background model\n";
 	print $out $bg_model->to_string($bg_out_format, comment_string=>"; ");
     }
-     
+    
     ################################################################
     ###### finish verbose
     if ($main::verbose >= 1) {
@@ -629,36 +779,6 @@ This option is incompatible with the option -bgfile.
 	    &RSAT::error::FatalError("The options -markov and -bgfile are mutually exclusive.") 
 		if defined($main::infile{bg});
 
-=pod 
-
-=item B<-n [skip|score]>
-
-Treatment of N characters. These characters are often used in DNA
-sequences to represent undefined or masked nucleotides.
-
-=over
-
-=item I<skip>
-
-N-containing regions are skipped.
-
-=item I<score>
-
-N-containing regions are scored. The probability of an N is 1 for both
-the background model and the matrix. The N residues will thus
-contribute neither positively nor negatively to the weight score of
-the N-containing fragment. This option can be useful to detect sites
-which are at the border of N-containing regions, or in cases there are
-isolated N in the sequences.
-
-=back
-
-=cut
-	} elsif ($arg eq "-n") {
-	    $main::n_treatment = shift(@arguments);
-	    &RSAT::error::FatalError("Invalid value for the -n option. supported: ".$supported_n_treatment)
-	      unless ($supported_n_treatment{$main::n_treatment});
-
 
 =pod
 
@@ -748,6 +868,37 @@ characters.
 	} elsif ($arg eq "-mask") {
 	    $main::mask = shift(@arguments);
 	    &CheckMask($main::mask);	    
+
+=pod 
+
+=item B<-n [skip|score]>
+
+Treatment of N characters. These characters are often used in DNA
+sequences to represent undefined or masked nucleotides.
+
+=over
+
+=item I<skip>
+
+N-containing regions are skipped.
+
+=item I<score>
+
+N-containing regions are scored. The probability of an N is 1 for both
+the background model and the matrix. The N residues will thus
+contribute neither positively nor negatively to the weight score of
+the N-containing fragment. This option can be useful to detect sites
+which are at the border of N-containing regions, or in cases there are
+isolated N in the sequences.
+
+=back
+
+=cut
+	} elsif ($arg eq "-n") {
+	    $main::n_treatment = shift(@arguments);
+	    &RSAT::error::FatalError("Invalid value for the -n option. supported: ".$supported_n_treatment)
+	      unless ($supported_n_treatment{$main::n_treatment});
+
 
 
 	    ## Output file
@@ -904,7 +1055,7 @@ single-strand search for DNA sequences.
 
 List of fields to return. 
 
-Supported fields: sites, limits. normw, bg_model
+Supported fields: sites,limits,normw,bg_model,rank
 
 =over
 
@@ -912,6 +1063,16 @@ Supported fields: sites, limits. normw, bg_model
 
 Return the osition of matching sites in aformat which can be sed as
 input by I<feature-map>.
+
+=item B<rank:> Rank.
+
+Sort the sites per decreasing values of score (weight), and return the
+rank value. The rank is calculated independently for each sequence and
+each matrix. 
+
+A common usage of the rank is to select the top scoring site per
+matrix and per sequence (-th rank 1) or the 3 top scoring sites per
+matrix and per sequence (-uth rank 3). 
 
 =item B<limits:> limits (start, end) of the input sequences. 
 
@@ -1098,17 +1259,26 @@ sub score_segment {
     $match->set_attribute('strand',$strand);
     $match->set_attribute('start',$start_pos);
     $match->set_attribute('end',$end_pos);
-    $match->set_attribute('description',$segment);
+    $match->set_attribute('description',uc($segment));
     $match->set_attribute('score',$score);
     $match->set_attribute('proba_M',$proba_M);
     $match->set_attribute('proba_B',$proba_B);
     $match->set_attribute('normw',$normw) if ($return_fields{normw});
 
-    if ($main::return_fields{sites}) {
+    if ($return_fields{rank}) {
+#	if (defined($uth{rank})) {
+#	    my @ranked_matches = sort 
+#	    {$b->get_attribute('score') <=> $a->get_attribute('score')}
+#	    (@ranked_matches, $match);
+#	    @ranked_matches = @ranked_matches[1..$uth{rank}];
+#	} else {
+	    push @matches , $match;
+	    push @{$matches_per_matrix{$matrix->get_attribute('name')}} , $match;
+#	}
+    } elsif ($main::return_fields{sites}) {
 	&print_match($match);
 	$matrix->{matches}++;
     }
-
     return(1);
 }
 
@@ -1154,6 +1324,49 @@ sub print_match {
     print $out "\t", $match->get_attribute('rank') if ($return_fields{rank});
     print $out "\n";
 }
+
+# ################################################################
+# =pod
+
+# =item B<print_match>
+
+# Print the matching site.
+
+# =cut
+
+# sub print_match {
+#     my ($match) = @_;
+
+#     print $out join ("\t", 
+# 		     $match->get_attribute('seq_name'),
+# 		     $match->get_attribute('ft_type'),
+# 		     $match->get_attribute('feature_name'),
+# 		     $match->get_attribute('strand'),
+# 		     $match->get_attribute('start'),
+# 		     $match->get_attribute('end'),
+# 		     $match->get_attribute('description'),
+# 		     $match->get_attribute('score'),
+# 		     sprintf("%5.2g\t%5.2g",
+# 			     $match->get_attribute('proba_M'),
+# 			     $match->get_attribute('proba_B')
+# 			     )
+# 		     );
+# #			 "site",
+# #			 $matrix->{name},
+# #			 $strand,
+# #			 $start_pos,
+# #			 $end_pos,
+# #			 $segment,
+# #			 $score,
+# #			 sprintf("%5.2g\t%5.2g",
+# #				 $proba_M,
+# #				 $proba_B,
+# #				)
+    
+#     print $out "\t", $match->get_attribute('normw') if ($return_fields{normw});
+#     print $out "\t", $match->get_attribute('rank') if ($return_fields{rank});
+#     print $out "\n";
+# }
 
 ################################################################
 =pod
@@ -1215,6 +1428,8 @@ __END__
 =over
 
 =item I<convert-matrix>
+
+=item I<convert-background-model>
 
 =item I<feature-map>
 
