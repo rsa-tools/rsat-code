@@ -83,7 +83,13 @@ if ($verbose) {
     if ($sequence_file) {
 	print $out ";Sequence file\t$sequence_file\n";
 	print $out ";\tsequence id\tlength\n";
+	my $i = 0;
 	foreach $id (sort keys %sequence) {
+	    $i++;
+	    if ($i >= 50) {
+		print $out join ("\t", ";", "...", scalar(keys %sequence)- $i +1, "additional sequences skipped ..."), "\n";
+		last;
+	    }
 	    $length = length($sequence{$id});
 	    print $out join ("\t", ";", $id, $length), "\n";
 	}
