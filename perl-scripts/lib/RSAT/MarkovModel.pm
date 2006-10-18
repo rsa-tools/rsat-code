@@ -211,20 +211,28 @@ sub normalize_transition_frequencies {
     
 
     ## Calculate transition frequencies
+    my $missing_transitions = 0;
     foreach my $prefix ($self->get_attribute("prefixes")) {
 	foreach my $suffix ($self->get_attribute("suffixes")) {
 #	foreach my $suffix (keys (%suffix_sum)) {
 	    if (defined($self->{transition_count}->{$prefix}->{$suffix})) {	
-		$self->{transition_freq}->{$prefix}->{$suffix} =  
-		    $self->{transition_count}->{$prefix}->{$suffix}/$prefix_sum{$prefix};
+		if ($prefix_sum{$prefix} > 0) {
+		    $self->{transition_freq}->{$prefix}->{$suffix} =  
+			$self->{transition_count}->{$prefix}->{$suffix}/$prefix_sum{$prefix};
+		} else {
+		    $self->{transition_freq}->{$prefix}->{$suffix} =  0;
+		}
 	    } else {
+		$missing_transitions++;
 		$self->{transition_freq}->{$prefix}->{$suffix} = 0;
-		&RSAT::message::Warning(join(" ",
-					     "No transition between prefix",$prefix, 
-					     "and suffix", $suffix)) if ($main::verbose >= 1);
+#		&RSAT::message::Warning(join(" ",
+#					     "No transition between prefix",$prefix, 
+#					     "and suffix", $suffix)) if ($main::verbose >= 2);
 	    };
 	}
     }
+    $self->force_attribute("missing_transitions", $missing_transitions);
+
 
 
     ## Calculate prefix probabilities
@@ -259,6 +267,39 @@ sub normalize_transition_frequencies {
 }
 
 
+################################################################
+=pod
+
+=item B<check_missing_transitions>
+
+Check that the transition matrix contains values >0 in all cells. If
+not, report the number of missing transitions.
+
+=cut 
+sub check_missing_transitions {
+    my ($self) = @_;
+
+    my $missing_transitions = 0;
+    foreach my $prefix ($self->get_attribute("prefixes")) {
+	foreach my $suffix ($self->get_attribute("suffixes")) {
+	    unless ((defined($self->{transition_freq}->{$prefix}->{$suffix})) 
+		    && ($self->{transition_freq}->{$prefix}->{$suffix} > 0)) {
+		$missing_transitions++;
+		&RSAT::message::Warning(join(" ",
+					     "No transition between prefix",$prefix, 
+					     "and suffix", $suffix)) if ($main::verbose >= 3);
+	    };
+	}
+    }
+    $self->force_attribute("missing_transitions", $missing_transitions);
+    if ($missing_transitions > 0) {
+	
+	&RSAT::message::Warning(join(" ", $missing_transitions,
+				     "missing transition in the transition matrix.",
+				     "Over-fitting risk.You should better sequences or a lower order Markov model. ")) if
+					 ($main::verbose >= 0);
+    }
+}
 
 
 ################################################################
@@ -546,13 +587,25 @@ sub average_strands {
 	$prefixes_2str{$prefix_rc} = 1;
 #	&RSAT::message::Debug("average_strands sum for prefix", $prefix, $prefix_rc) if ($main::verbose >= 0);
 
+	unless (defined($self->{prefix_sum}->{$prefix} )) {
+	    $self->{prefix_sum}->{$prefix}  = 0;
+	}
+	unless (defined($self->{prefix_sum}->{$prefix_rc} )) {
+	    $self->{prefix_sum}->{$prefix_rc}  = 0;
+	}
 	$self->{prefix_sum}->{$prefix} 
 	= $self->{prefix_sum}->{$prefix_rc}
 	= ($self->{prefix_sum}->{$prefix} +$self->{prefix_sum}->{$prefix_rc})/2 ;
 
+	unless (defined($self->{prefix_proba}->{$prefix} )) {
+	    $self->{prefix_proba}->{$prefix}  = 0;
+	}
+	unless (defined($self->{prefix_proba}->{$prefix_rc} )) {
+	    $self->{prefix_proba}->{$prefix_rc}  = 0;
+	}
 	$self->{prefix_proba}->{$prefix} 
 	= $self->{prefix_proba}->{$prefix_rc}
-	= ($self->{prefix_proba}->{$prefix} +$self->{prefix_proba}->{$prefix_rc})/2 ;
+	= ($self->{prefix_proba}->{$prefix} + $self->{prefix_proba}->{$prefix_rc})/2 ;
     }
     $self->set_array_attribute("prefixes", sort keys %prefixes_2str);
 
@@ -587,6 +640,12 @@ sub average_strands {
 	    next if ($rc_word ge $word);
 	    my $rc_prefix = substr($rc_word, 0, $self->{order});
 	    my $rc_suffix = substr($rc_word, $self->{order}, 1);
+	    unless (defined($self->{transition_freq}->{$prefix}->{$suffix})) {
+		$self->{transition_freq}->{$prefix}->{$suffix} = 0;
+	    }
+	    unless (defined($self->{transition_freq}->{$rc_prefix}->{$rc_suffix})) {
+		$self->{transition_freq}->{$rc_prefix}->{$rc_suffix} = 0;
+	    }
 	    $self->{transition_freq}->{$prefix}->{$suffix} 
 	    = $self->{transition_freq}->{$rc_prefix}->{$rc_suffix} 
 	    = ($self->{transition_freq}->{$prefix}->{$suffix} +
