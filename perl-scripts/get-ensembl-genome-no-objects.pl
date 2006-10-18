@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-ensembl-genome-no-objects.pl,v 1.2 2006/10/02 13:07:19 rsat Exp $
+# $Id: get-ensembl-genome-no-objects.pl,v 1.3 2006/10/18 13:52:17 rsat Exp $
 #
 # Time-stamp
 #
@@ -237,7 +237,7 @@ package main;
     my $organism_name = $species->binomial();
     my $common_name = $species->common_name();
     my @classification = $species->classification();
-    &RSAT::message::Info (join (":", "; Classification ", @classification))  if ($main::verbose >= 1);
+    &RSAT::message::Info (join (":", "; Classification ", reverse(@classification)))  if ($main::verbose >= 1);
     &RSAT::message::Info(join ("\t", "; Organism = ", $organism_name, 
 			       "common name = ", $common_name, 
 			       "NCBI taxid = ", $tax_id))
@@ -245,7 +245,7 @@ package main;
 
     &RSAT::message::Debug("Db", $db) if ($main::verbose >= 3);
 
-    print $ORG join ("\t", $tax_id, join (":", @classification), $organism_name), "\n";
+    print $ORG join ("\t", $tax_id, join (";", reverse(@classification)), $organism_name), "\n";
     print $ORG_NAME join ("\t", $tax_id, $organism_name, "primary"), "\n";
     print $ORG_NAME join ("\t", $tax_id, $common_name, "alternate"), "\n";
 
