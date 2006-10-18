@@ -30,6 +30,7 @@ ZIP =zip -ry ${ARCHIVE}.zip
 
 POST_CMD=
 
+TAR_ROOT=..
 
 DISTRIB_FILES= rsa-tools/perl-scripts					\
 	rsa-tools/RSA.config.default					\
@@ -37,7 +38,7 @@ DISTRIB_FILES= rsa-tools/perl-scripts					\
 	rsa-tools/makefiles						\
 	rsa-tools/doc/manuals/*.pdf
 fill_archive:
-	(cd ..;						\
+	(cd ${TAR_ROOT};						\
 	for f in ${DISTRIB_FILES}; do			\
 		${MAKE} add_one_file FILE=$${f};	\
 	done)
@@ -45,7 +46,7 @@ fill_archive:
 
 create_tar_archive:
 	@echo ${TAR_CREATE} 
-	(cd ..; ${TAR_CREATE})
+	(cd ${TAR_ROOT}; ${TAR_CREATE})
 
 FILE=rsa-tools/perl-scripts
 add_one_file:
@@ -55,7 +56,7 @@ add_one_file:
 tar_archive:
 	${MAKE} create_tar_archive
 	${MAKE} fill_archive ARCHIVE_CMD='${TAR}' POST_CMD=''
-	(cd ..; gzip -f ${ARCHIVE}.tar)
+	(cd ${TAR_ROOT}; gzip -f ${ARCHIVE}.tar)
 
 zip_archive:
 	${MAKE} fill_archive ARCHIVE_CMD='${ZIP}' POST_CMD='${ZIP_EXCLUDE}'
