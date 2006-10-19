@@ -40,7 +40,7 @@ sub FatalError {
 	$message =~ s/\t/ /g;
 	&cgiError($message);
     } else {
-	die("Error\n\t", $message, "\n");
+      die("Error\n\t", $message, "\n");
     }
 }
 
