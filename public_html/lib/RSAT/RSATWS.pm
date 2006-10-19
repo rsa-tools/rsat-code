@@ -2,6 +2,8 @@
 
 package RSATWS;
 
+use SOAP::Lite;
+
 my $RSAT = $0; $RSAT =~ s|/public_html/+web_services/.*||;
 my $SCRIPTS = $RSAT.'/perl-scripts';
 my $TMP = $RSAT.'/public_html/tmp';
@@ -35,6 +37,10 @@ sub retrieve_seq {
     my %args = %$args_ref;
     my $return_choice = $args{"return"};
     my $command = $self->retrieve_seq_cmd(%args);
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr");
+    }
     my $result = `$command`;
     my $tmp_outfile = `mktemp $TMP/retrieve-seq.XXXXXXXXXX`;
     open TMP, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
