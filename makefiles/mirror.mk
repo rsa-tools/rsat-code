@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: mirror.mk,v 1.35 2006/02/09 02:00:42 jvanheld Exp $
+# $Id: mirror.mk,v 1.36 2006/10/19 23:25:32 rsat Exp $
 #
 # Time-stamp: <2003-10-01 12:05:45 jvanheld>
 #
@@ -120,6 +120,7 @@ EXCLUDED_FILES=					\
 #		--exclude '*.fasta.gz'
 
 EXCLUDED_DIRS=					\
+		--exclude 'published_data'	\
 		--exclude embl_genomes		\
 		--exclude previous_version	\
 		--exclude tmp			\
