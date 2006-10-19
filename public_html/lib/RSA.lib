@@ -2,7 +2,7 @@
 #use CGI;
 #require "cgi-lib.pl";
 
-### CVS: moived ENV{SERVER_ADMIN} to the config file
+### CVS: moved ENV{SERVER_ADMIN} to the config file
 
 $main::verbose = 0;
 require "RSA.seq.lib";
