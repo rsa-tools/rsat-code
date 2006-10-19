@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: RSAT_home.cgi,v 1.12 2006/02/09 01:48:34 jvanheld Exp $
+# $Id: RSAT_home.cgi,v 1.13 2006/10/19 12:55:07 rsat Exp $
 #
 # Time-stamp: <2003-10-22 11:53:22 jvanheld>
 #
@@ -23,113 +23,114 @@ print $query->start_html(-title=>'Regulatory Sequence Analysis Tools',
 			 -author=>'jvanheld@scmbb.ulb.ac.be',
 			 -BGCOLOR=>'#FFEEDD');
 
+print "<blockquote>";
+  
 print <<EndText;
 
-  
-  <table cellpadding=10 align=center>
-  <tr>
-
-  
-  <td valign=top width="160">
-  <center>
-  <img src="images/ULB_Blue_215.gif" alt="ULB_Blue_215.gif" border=0 height=75 width=75>
-  <br>
-  <font color="#0000dd" size=-2>
-  <a href="http://www.scmbb.ulb.ac.be" target=_blank>SCMBB</a> - <a href="http://www.ulb.ac.be" target=_blank>ULB</a>
-  </font>
-  </center>
-  </td>
-
-  <td align=center valign=center>
-  <font face="Helvetica,Arial" SIZE=+1><B>Regulatory Sequence Analysis Tools</B></font>
-  </td>
-  
-  
-  <TD VALIGN=TOP WIDTH="160">
-  <CENTER>
-  <A HREF="http://embnet.ccg.unam.mx/Computational_Genomics/"
-  target=_blank> <IMG SRC="images/lablogo.gif" ALT="lab logo" BORDER=0
-  HEIGHT=48 WIDTH=75></A>
-  <BR>
-  <FONT COLOR="#006600" SIZE=-2>
-  LABORATORIO DE BIOLOGIA COMPUTACIONAL
-  </FONT>
-  </CENTER>
-  </TD>
-  
-  </TR>
-  </TABLE>
-  
-  <HR SIZE=4 WIDTH="100%">
-  
-  <TABLE BORDER=0 CELLSPACING=3 CELLPADDING=7 ALIGN=CENTER BGCOLOR="#FFDDCC">
-  <TR>
-  <TD><FONT FACE="Helvetica" SIZE=-1><A HREF="intro.html"><B>
-  Introduction</B></A></FONT></TD>
-  
-  <TD><FONT FACE="Helvetica" SIZE=-1><A HREF="FAQ.html"><B>
-  FAQ</B></A></FONT></TD>
-  
-  <TD><FONT FACE="Helvetica" SIZE=-1><A HREF="tutorials/tutorials.html"><B>
-  Tutorials</B></A></FONT></TD>
-  
-  <TD><FONT FACE="Helvetica" SIZE=-1><A HREF="publications.html"><B>
-  Publications</B></A></FONT></TD>
-  
-  <TD><FONT FACE="Helvetica" SIZE=-1><A HREF="credits.html"><B>
-  Credits</B></A></FONT></TD>
-  
-  <TD><FONT FACE="Helvetica" SIZE=-1><A HREF="data/"><B>
-  Data</B></A></FONT></TD>
-  
-  <TD><FONT FACE="Helvetica" SIZE=-1><A HREF="change_history.html"><B>
-  Change history</B></A></FONT></TD>
-  
-  <TD><FONT FACE="Helvetica" SIZE=-1><A HREF="links.html"><B>
-  Links</B></A></FONT></TD>
-  
-  </TR>
-  </TABLE>
-
-<font face=Arial,Helvetica size=-1>  
-  
-<table> 
-<tr  valign=top>
-<td>
-  <P>
-  Welcome to Regulatory Sequence Analysis Tools (<B>RSAT</B>). This
-  site provides a series of modular computer programs specifically
-  designed for the detection of regulatory signals in non-coding
-  sequences.  <P>
-
-  <P>
-  This web site is freely available for academic users. For users from
-  commercial companies, please read our <A
-  HREF="disclaimer.html">disclaimer</A>.
+<table cellpadding=10 width=600>
+    <tr>
+    
+    
+    <td valign=top width="160">
+    <center>
+    <img src="images/ULB_Blue_215.gif" alt="ULB_Blue_215.gif" border=0 height=75 width=75>
+    <br>
+    <font color="#0000dd" size=-2>
+    <a href="http://www.scmbb.ulb.ac.be" target=_blank>SCMBB</a> - <a href="http://www.ulb.ac.be" target=_blank>ULB</a>
     </font>
-</td>
-
-
-<td>
-<table  border=1 bgcolor='#ffcccc' cellpadding=5 cellspacing=5 border=3><tr><td>
-<B>
-<font face=arial,helvetica color='#ff0000'>Warnings</font>
-<ul>
-<li><a href=warnings.html>Mammalian genomes</a>
-</ul>
-</b>
-</table>
-</td>
-
-</tr>
-</table>
-
-
-  <P>
-  <h2 align=center>Regulatory Sequence Analysis Tools - Web servers</h2>
+    </center>
+    </td>
+    
+    <td align=center valign=center>
+    <font face="Helvetica,Arial" SIZE=+1><B>Regulatory Sequence Analysis Tools</B></font>
+    </td>
+    
+    
+    <td valign=top width="160">
+    <center>
+    <a href="http://embnet.ccg.unam.mx/Computational_Genomics/" target=_blank>
+    <img src="images/lablogo.gif" alt="lab logo" border=0 height=48 width=75></a>
+    <br>
+    <font color="#006600" size=-2>LABORATORIO DE BIOLOGIA COMPUTACIONAL
+    </FONT>
+    </CENTER>
+    </TD>
+    
+    </TR>
+    </TABLE>
+    
+    <HR SIZE=4 WIDTH="100%">
+    
+    <table border=0 cellspacing=3 cellpadding=7  bgcolor="#FFDDCC" width=600>
+    <TR>
+    <TD><FONT FACE="Helvetica" SIZE=-1><A HREF="intro.html"><B>
+    Introduction</B></A></FONT></TD>
+    
+    <TD><FONT FACE="Helvetica" SIZE=-1><A HREF="FAQ.html"><B>
+    FAQ</B></A></FONT></TD>
+    
+    <TD><FONT FACE="Helvetica" SIZE=-1><A HREF="tutorials/tutorials.html"><B>
+    Tutorials</B></A></FONT></TD>
+    
+    <TD><FONT FACE="Helvetica" SIZE=-1><A HREF="publications.html"><B>
+    Publications</B></A></FONT></TD>
+    
+    <TD><FONT FACE="Helvetica" SIZE=-1><A HREF="credits.html"><B>
+    Credits</B></A></FONT></TD>
+    
+    <TD><FONT FACE="Helvetica" SIZE=-1><A HREF="data/"><B>
+    Data</B></A></FONT></TD>
+    
+    <TD><FONT FACE="Helvetica" SIZE=-1><A HREF="change_history.html"><B>
+    Change history</B></A></FONT></TD>
+    
+    <TD><FONT FACE="Helvetica" SIZE=-1><A HREF="links.html"><B>
+    Links</B></A></FONT></TD>
+    
+    </tr>
+    </table>
+    
+    <font face=Arial,Helvetica size=-1>  
+    
+    <table width=600> 
+    <tr  valign=top>
+    <td>
+    <P>
+    Welcome to Regulatory Sequence Analysis Tools (<B>RSAT</B>). This
+    site provides a series of modular computer programs specifically
+    designed for the detection of regulatory signals in non-coding
+    sequences.  <P>
+    
+    <P>
+    This web site is freely available for academic users. For users from
+    commercial companies, please read our <A
+    HREF="disclaimer.html">disclaimer</A>.
+    </font>
+    </td>
+    
+    
+    <td>
+    <table  border=1 bgcolor='#ffcccc' cellpadding=5 cellspacing=5 border=3><tr><td>
+    <B>
+    <font face=arial,helvetica color='#ff0000'>Warnings</font>
+    <ul>
+    <li><a href=warnings.html>Mammalian genomes</a>
+    </ul>
+    </b>
+    </table>
+    </td>
+    
+    </tr>
+    </table>
+    
+    
+    <P>
   
-<table border=5 cellspacing=5 cellpadding=5 align=center>
+<table border=5 cellspacing=5 cellpadding=5>
 
+<tr>
+    <td align=center colspan=3><h3>Regulatory Sequence Analysis Tools - Web servers</h3></td>
+</tr>
 <tr align=center valign=bottom>
 
   <td colspan=3>
@@ -203,10 +204,10 @@ print <<EndText;
   </td>
 
 
-</tr>
-
-  </TABLE>
-  
+    </tr>
+    
+    </TABLE>
+    
 EndText
 
 @orgs =  &ListSupportedOrganisms("keys");
@@ -237,6 +238,7 @@ Jacques van Helden (jvanheld\@scmbb.ulb.ac.be)
 </FONT>
 EndAddress
 
+print "</blockquote>";
 print $query->end_html, "\n";
 
 exit(0);
