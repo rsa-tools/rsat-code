@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: dyad-analysis,v 1.49 2006/10/04 14:30:54 jvanheld Exp $
+# $Id: dyad-analysis,v 1.50 2006/10/19 13:05:19 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 23:46:08 jvanheld>
 #
@@ -103,14 +103,13 @@ eval {
 	($tail eq "two")) {
 	$zeroocc = 1; 
     }
-    
+
     ## check pre-defined frequency table for intergenic frequency
     ## calibration
     if (($background_model ne "monads") || ($mncf)) {
-	
 	## Check organism
 	&CheckOrganism($organism_name);
-	
+
 	$data_dir = $supported_organism{$organism_name}->{'data'};
 	if ($background_model ne "monad") {
 
@@ -128,7 +127,7 @@ eval {
 				  ${organism_name},
 				  ${noov_suffix}.${strands},
 				  ".freq");
-	    
+
 	    unless ((-e $exp_freq_file) || (-e "$exp_freq_file.gz") ) {
 		&RSAT::error::FatalError("Expected frequency file does not exist\t$exp_freq_file");
 	    }	
@@ -140,7 +139,7 @@ eval {
 
     ## Check fields to calculate
     &CheckCalcFields();
-    
+
     ## Check spacing values and order
     if ($group_sp) {
 	@spacing_list = ("$min_spacing,$max_spacing");
@@ -230,20 +229,23 @@ eval {
 ################################################################
 #### report out of time errors to the rsa-tools administrator
 if ($@) {
-    if ($@ =~ /timeout/) {
-	open ERROR_REPORT, "| $mail_command $ENV{SERVER_ADMIN}";
-	$out = ERROR_REPORT;
-	print $out "!!!!!!!!!!!!!!!! Time out ($timeout seconds) during execution of dyad-analysis !!!!!!!!!!!!!!!!\n";
-	&PrintArguments($out);
-	&PrintVerbose();
-	close ERROR_REPORT;
-	&RSAT::message::FatalError( "Timeout (after $timeout seconds of processing)",
-				    "The error has automatically been reported to $ENV{SERVER_ADMIN}",
-				    "Please contact this person for more details");
-    } else {
-	alarm(0);
-#	&RSAT::error::FatalError( "dyad-analysis : unknown error during the eval.");
-    }
+  if ($@ =~ /timeout/) {
+    open ERROR_REPORT, "| $mail_command $ENV{SERVER_ADMIN}";
+    $out = ERROR_REPORT;
+    print $out "!!!!!!!!!!!!!!!! Time out ($timeout seconds) during execution of dyad-analysis !!!!!!!!!!!!!!!!\n";
+    &PrintArguments($out);
+    &PrintVerbose();
+    close ERROR_REPORT;
+    &RSAT::error::FatalError( "Timeout (after $timeout seconds of processing)",
+			      "The error has automatically been reported to $ENV{SERVER_ADMIN}",
+			      "Please contact this person for more details");
+  } else {
+    &RSAT::error::FatalError($@);
+    #      alarm(0);
+    #	&RSAT::error::FatalError( "dyad-analysis : unknown error during the eval.");
+  }
+    
+  die "HERE\n";
 }
 
 exit(0);
