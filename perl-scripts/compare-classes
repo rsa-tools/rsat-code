@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.35 2006/10/04 14:47:24 jvanheld Exp $
+# $Id: compare-classes,v 1.36 2006/10/20 06:24:54 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -271,6 +271,7 @@ if ($infile{rnames}) {
     my ($in) = &OpenInputFile($infile{rnames});
     while (<$in>) {
 	chomp();
+	next if (/^--/);
 	next if (/^;/);
 	next unless (/^\S/);
 	my @fields = split '\t';
@@ -289,6 +290,7 @@ if ($infile{qnames}) {
     my ($in) = &OpenInputFile($infile{qnames});
     while (<$in>) {
 	chomp;
+	next if (/^--/);
 	next if (/^;/);
 	next unless (/^\S/);
 	my @fields = split '\t';
