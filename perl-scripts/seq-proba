@@ -1,0 +1,373 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: seq-proba,v 1.1 2006/10/20 06:19:19 jvanheld Exp $
+#
+# Time-stamp: <2003-07-04 12:48:55 jvanheld>
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+seq-proba
+
+=head1 DESCRIPTION
+
+Calculates the probability of a sequence, given a background model. 
+
+=head1 AUTHORS
+
+jvanheld@scmbb.ulb.ac.be
+
+=head1 CATEGORY
+
+util
+
+=head1 USAGE
+    
+seq-proba [-i inputfile] [-o outputfile] [-v]
+
+=head1 INPUT FORMAT
+
+A sequence file, in any of the supported formats.
+
+=head1 OUTPUT FORMAT
+
+A tab-delimited file with one row per sequence, and two columns
+indicating (1) sequence ID; (2) sequence probability given the
+background model.
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+use RSAT::MarkovModel;
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    #### initialise parameters
+    my $start_time = &AlphaDate();
+
+    $seq_format = "fasta";
+    $mask = ""; ## No sequence masking
+
+    ## Background model
+    local $bg_model = new RSAT::MarkovModel();
+    $bg_model->set_attribute("strand", "sensitive");
+    $bg_format = "oligo-analysis";
+    %supported_bg_format = $bg_model->get_supported_input_formats();
+    $supported_bg_formats = join (",", keys %supported_bg_format);
+
+    %main::infile = ();
+    %main::outfile = ();
+
+    $main::verbose = 0;
+    $main::in = STDIN;
+    $main::out = STDOUT;
+
+    ## Return fields
+    %supported_return_fields = (
+				id=>1,
+				proba_b=>1,
+				len=>1,
+				seq=>1,
+				);
+    $supported_return_fields = join (",", sort(keys( %supported_return_fields)));
+
+    &ReadArguments();
+
+    ################################################################
+    #### check argument values
+    unless ($infile{bg}) {
+      &RSAT::error::FatalError("You should specify a background model (-bgfile).");
+    }
+
+    ## Return fields
+    if (scalar(keys(%return_fields)) < 1) {
+	$return_fields{id} = 1;
+	$return_fields{proba_B} = 1;
+    }
+
+    ################################################################
+    ## Load the background model
+    $bg_model->load_from_file($infile{bg}, $bg_format);
+
+    ################################################################
+    ### open output stream
+    $main::out = &OpenOutputFile($main::outfile{output});
+
+    ################################################################
+    #### print verbose
+    &Verbose() if ($main::verbose);
+
+    ################################################################
+    ##### Read sequences and calculate their probabilities
+    ($main::in, $input_dir) = &OpenInputFile($main::infile{input});
+    while ((($current_seq, $current_id) = 
+	    &ReadNextSequence($in, $seq_format, $input_dir, "",$mask)) &&
+	   (($current_seq ne "") || ($current_id ne ""))) {
+      my $proba_B = $bg_model->segment_proba($current_seq);
+      my $seq_len = length($current_seq);
+
+
+      my @return_fields = ();
+      push @return_fields, $current_id if ($return_fields{id});
+      push @return_fields, sprintf("%.4e", $proba_B) if ($return_fields{proba_b});
+      push @return_fields, $seq_len if ($return_fields{len});
+      push @return_fields, $current_seq if ($return_fields{seq});
+
+      print $out join ("\t", @return_fields), "\n";
+    }
+    close $main::in if ($main::infile{input});
+
+    ################################################################
+    ###### finish verbose
+    if ($main::verbose >= 1) {
+	my $done_time = &AlphaDate();
+	print $main::out "; Job started $start_time\n";
+	print $main::out "; Job done    $done_time\n";
+    }
+
+    ################################################################
+    ###### close output stream
+    close $main::out if ($main::outfile{output});
+
+    exit(0);
+}
+
+################################################################
+################### subroutine definition ######################
+################################################################
+
+
+################################################################
+#### display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+#### display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+#### Read arguments 
+sub ReadArguments {
+#    foreach my $a (0..$#ARGV) {
+    my $arg = "";
+    
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    
+
+    while ($arg = shift (@arguments)) {
+
+	## Verbosity
+=pod
+	    
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+	    
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+	    
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+	    
+
+	    ## Input file
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-i") {
+	    $main::infile{input} = shift(@arguments);
+	    
+	    ## Sequence format
+=pod
+
+=item B<-format seq_format>
+
+Sequence format.
+
+=cut
+	} elsif ($arg eq "-seq_format") {
+	    $main::seq_format = shift(@arguments);
+
+	    ## Background model file
+=pod
+
+=item B<-bgfile background_file>
+
+Background model file. 
+
+=cut
+	} elsif ($arg eq "-bgfile") {
+	    $main::infile{bg} = shift(@arguments);
+	    
+	    ## Format of the background model
+=pod
+
+=item B<-bg_format bg_format>
+
+Format of the background model. Supported: oligo-analysis. 
+
+=cut
+	} elsif ($arg eq "-from") {
+	    $main::bg_format = shift(@arguments);
+	    &RSAT::error::FatalError(join("\t", $main::bg_format,
+					  "Invalid input format.",
+					  "Supported: ", $main::supported_bg_formats))
+		unless ($main::supported_bg_format{$main::bg_format});
+
+	    ## Output file
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $main::outfile{output} = shift(@arguments);
+	    
+	    ## Return fields
+=pod
+
+=item B<-return return_fields>
+
+List of fields to return (default: id,proba_B).
+
+Supported fields: id,proba_B,len,seq
+
+=over
+
+=item B<id>
+
+Sequence identifier.
+
+=item B<proba_B> 
+
+Probability of the sequence given the background model.
+
+=item B<len> 
+
+Sequence length.
+
+=item B<seq> 
+
+Sequence.
+
+
+=back
+
+=cut
+        } elsif ($arg eq "-return") {
+	    $arg = shift (@arguments);
+            chomp($arg);
+            my @fields_to_return = split ",", $arg;
+            foreach my $field (@fields_to_return) {
+		$field = lc($field);
+                if ($supported_return_fields{$field}) {
+                    $return_fields{$field} = 1;
+                } else {
+                    &RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_return_fields));
+		}
+	    }
+
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+
+	}
+    }
+
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $main::out "; seq-proba ";
+    &PrintArguments($main::out);
+    if (defined(%main::infile)) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+    if (defined(%main::outfile)) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+}
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=item convert-background-model
+
+=item matrix-scan
+
+=cut
