@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: seq-proba,v 1.1 2006/10/20 06:19:19 jvanheld Exp $
+# $Id: seq-proba,v 1.2 2006/10/20 07:00:47 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -64,8 +64,13 @@ package main;
     $seq_format = "fasta";
     $mask = ""; ## No sequence masking
 
-    ## Background model
-    local $bg_model = new RSAT::MarkovModel();
+    ## Background models
+    @bg_files = ();
+    @bg_models = ();
+
+    ## Null bg model for obtaining the supported formats (I should
+    ## rather implement it as a class attribute).
+    $bg_model = new RSAT::MarkovModel();
     $bg_model->set_attribute("strand", "sensitive");
     $bg_format = "oligo-analysis";
     %supported_bg_format = $bg_model->get_supported_input_formats();
@@ -91,8 +96,8 @@ package main;
 
     ################################################################
     #### check argument values
-    unless ($infile{bg}) {
-      &RSAT::error::FatalError("You should specify a background model (-bgfile).");
+    if (scalar(@bg_files) < 1) {
+      &RSAT::error::FatalError("You should specify at least one background model (-bgfile).");
     }
 
     ## Return fields
@@ -103,7 +108,13 @@ package main;
 
     ################################################################
     ## Load the background model
-    $bg_model->load_from_file($infile{bg}, $bg_format);
+    foreach my $file (@bg_files) {
+      my $bg_model = new RSAT::MarkovModel();
+      $bg_model->set_attribute("strand", "sensitive");
+      $bg_format = "oligo-analysis";
+      $bg_model->load_from_file($file, $bg_format);
+      push @bg_models, $bg_model;
+    }
 
     ################################################################
     ### open output stream
@@ -114,19 +125,50 @@ package main;
     &Verbose() if ($main::verbose);
 
     ################################################################
+    ## Header
+    my @header = ();
+    push @header, "id" if ($return_fields{id});
+    push @header, "length" if ($return_fields{len});
+    if ($return_fields{proba_b}) {
+      if (scalar(@bg_files) == 1) {
+	push @header, "proba_b";
+      } else {
+	foreach my $file (@bg_files) {
+	  my $basename = `basename $file`;
+	  chomp $basename;
+	  push @header, $basename;
+	}
+      }
+    }
+    push @header, "sequence" if ($return_fields{seq});
+
+    print $out "#", join ("\t", @header), "\n";
+
+    ################################################################
     ##### Read sequences and calculate their probabilities
     ($main::in, $input_dir) = &OpenInputFile($main::infile{input});
     while ((($current_seq, $current_id) = 
 	    &ReadNextSequence($in, $seq_format, $input_dir, "",$mask)) &&
 	   (($current_seq ne "") || ($current_id ne ""))) {
-      my $proba_B = $bg_model->segment_proba($current_seq);
-      my $seq_len = length($current_seq);
 
+      &RSAT::message::Warning(join("\t", "sequence", $current_id)) if ($main::verbose >= 3);
 
       my @return_fields = ();
       push @return_fields, $current_id if ($return_fields{id});
-      push @return_fields, sprintf("%.4e", $proba_B) if ($return_fields{proba_b});
-      push @return_fields, $seq_len if ($return_fields{len});
+
+      ## Sequence length
+      if ($return_fields{len}) {
+	my $seq_len = length($current_seq);
+	push @return_fields, $seq_len;
+      }
+
+      #Background probabilities
+      foreach my $bg_model (@bg_models) {
+	my $proba_B = $bg_model->segment_proba($current_seq);
+	push @return_fields, sprintf("%.4e", $proba_B) if ($return_fields{proba_b});
+      }
+
+      ## Report sequence
       push @return_fields, $current_seq if ($return_fields{seq});
 
       print $out join ("\t", @return_fields), "\n";
@@ -250,9 +292,13 @@ Sequence format.
 
 Background model file. 
 
+This argument cn b used iteratively to speciy alternative backgound
+models. In this case, the program returns the probabilities
+corresponding to each model in separate columns.
+
 =cut
 	} elsif ($arg eq "-bgfile") {
-	    $main::infile{bg} = shift(@arguments);
+	    push @bg_files, shift(@arguments);
 	    
 	    ## Format of the background model
 =pod
