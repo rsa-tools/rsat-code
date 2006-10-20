@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank_lib.pl,v 1.30 2006/09/09 11:15:09 jvanheld Exp $
+# $Id: parse_genbank_lib.pl,v 1.31 2006/10/20 06:23:36 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -673,10 +673,25 @@ Extract GO identifiers from the feature notes
 
 sub ParseGO {
     my ($CDSs) = @_;
+    &RSAT::message::TimeWarn("Parsing Gene Ontology for CDS") if ($main::verbose >= 1);
     foreach my $cds ($CDSs->get_objects()) {
 	foreach my $note ($cds->get_attribute("note")) {
-	    if ($note =~ /\[goid GO\:(\d+)\]/) {
+	    if ($note =~ /\[goid (\S+)]/) {
 		my $goid = $1;
+
+		## The GO: is present some genomes
+		## (e.g. S.cerevisiae), absent from others
+		## (e.g. E.coli K12). I am pretty sure that it will
+		## sometimes be in lowercases, sometimes in
+		## uppercases. I check them for the sake of robustness. 
+		if ($goid =~ /^\d+$/) {
+		  $goid = "GO:".$goid;
+		} elsif ($goid =~ /^GO:(\d+)/i) {
+		  $goid = uc($goid);
+		} else {
+		  &RSAT::message::Warning(join("\t", "Invalid GO identifier", $goid));
+		}
+#		$goid =~ s/GO\://i; 
 		$cds->push_attribute("GO", $goid);
 	    }
 	}
