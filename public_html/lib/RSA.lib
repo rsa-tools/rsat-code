@@ -914,6 +914,7 @@ sub ReadClasses {
     my $line = 0;
     while (<$fam>) {
 	$line++;
+	next if (/^--/);
 	next if (/^;/);
 	next if (/^\#/);
 	next unless (/\S/);
