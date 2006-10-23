@@ -1,7 +1,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% PATTERN DISCOVERY
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Pattern discovery}
+\chapter{Pattern discovery}
 
 In a pattern discovery problem, you start from a set of
 functionally related sequences (e.g.  upstream sequences for a set of
@@ -40,7 +40,7 @@ are much more sensitive for pattern matching problems (see below). The
 ideal would thus be to combine string-based pattern discovery and
 matrix-based pattern matching.
 
-\subsection{Requirements}
+\section{Requirements}
 This part of the tutorial assumes that you already performed the
 tutorial about sequence retrieval (above), and that you have the
 result files in the current directory. Check with the command:
@@ -57,7 +57,7 @@ Escherichia_coli_K12_start_codons.wc
 Escherichia_coli_K12_stop_codons.wc
 \end{verbatim}
 
-\subsection{oligo-analysis}
+\section{oligo-analysis}
 
 The program \texttt{oligo-analysis} is the simplest pattern discovery
 program. It counts the number of occurrences of all oligonucleotides
@@ -81,7 +81,7 @@ will then use the sub-optimal settings to illustrate the fact that the
 success of word-based pattern-discovery crucially depends on a
 rigorous statistical approach.
 
-\subsubsection{Counting word occurrences and frequencies}
+\subsection{Counting word occurrences and frequencies}
 
 Try the following command:
 
@@ -123,7 +123,7 @@ columns, ...
 
 \textbf{Exercise:} check the frequencies of \textit{E.coli} stop codons.
 
-\subsubsection{Pattern discovery in yeast upstream regions}
+\subsection{Pattern discovery in yeast upstream regions}
 
 Try the following command:
 
@@ -165,7 +165,7 @@ A few questions:
 \item Do you see some similarity between some of the selected patterns ?
 \end{enumerate}
 
-\subsubsection{Answers}
+\subsection{Answers}
 
 \begin{enumerate}
 \item $4^6=4,096$
@@ -177,7 +177,7 @@ complement.
   (e.g. \texttt{cACGTG} and \texttt{ACGTGc}).
 \end{enumerate}
 
-\subsubsection{Assembling the patterns}
+\subsection{Assembling the patterns}
 
 A separate program, \texttt{pattern-assembly}, allows to assemble a
 list of patterns, in order to group those that overlap mutually. Try:
@@ -207,7 +207,7 @@ the transcriptional response to some PHO genes.
 more PHO_up800_6nt_2str_ncf_sig0.assemb
 \end{verbatim}
 
-\subsubsection{Suboptimal settings}
+\subsection{Suboptimal settings}
 
 This chapter only aims at emphasizing how crucial is the choice of
 appropriate statistical parameters. We saw above that the optimal
@@ -326,23 +326,23 @@ with a Markov chain of order 2, and higher orders don't return any
 single significant word.
 \end{itemize}
 
-\subsection{dyad-analysis}
+\section{dyad-analysis}
 
 
 
-\subsection{gibbs motif sampler (program developed by Andrew Neuwald)}
+\section{gibbs motif sampler (program developed by Andrew Neuwald)}
 
 
 
 
-\subsection{consensus (program developed by Jerry Hertz)}
+\section{consensus (program developed by Jerry Hertz)}
 
 An alternative approach for matrix-based pattern discovery is
 \textit{consensus}, a program written by Jerry hertz, an based on a
 greedy algorithm. We will see how to extract a profile matrix from
 upstream regions of the PHO genes.
 
-\subsubsection{Getting help}
+\subsection{Getting help}
 
 As for RSAT programs, there are two ways to get help from Jerry Hertz'
 proigrams: a detailed manual can be obtained with the option
@@ -354,7 +354,7 @@ consensus -h
 consensus -help
 \end{verbatim}
 
-\subsubsection{Sequence conversion}
+\subsection{Sequence conversion}
 
 
 \textit{consensus} uses a custom sequence format. Fortunately, the RSAT
@@ -367,7 +367,7 @@ convert-seq -i PHO_up800.fasta -from fasta -to wc \
     -o PHO_up800.wc
 \end{verbatim}
 
-\subsubsection{Running consensus}
+\subsection{Running consensus}
 
 Using consensus requires to choose the appropriate value for a series
 of parameters. We found the following combination of parameters quite

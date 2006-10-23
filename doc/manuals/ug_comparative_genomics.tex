@@ -1,9 +1,9 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% COMPARATIVE GENOMICS
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Comparative genomics}
+\chapter{Comparative genomics}
 
-\subsection{Genome-wise comparison of protein sequences}
+\section{Genome-wise comparison of protein sequences}
 
 In this section, I explain how to use the program
 \program{genome-blast}, which runs the sequence similarity search
@@ -23,7 +23,7 @@ this is not the case, ask your system administrator to do it for you.
 
 \textbf{TO BE WRITTEN}
 
-\subsection{Getting putative homologs, orthologs and paralogs}
+\section{Getting putative homologs, orthologs and paralogs}
 
 In this section, I will explain how to use the program
 \program{get-orthologs}. This program takes as input one or several
@@ -42,7 +42,7 @@ is similar to the protein LexA of \organism{Escherichia coli K12}, in
 all the Gammaproteobacteria. We will then refine the query to extract
 putative orthologs.
 
-\subsubsection{Getting genes by similarities}
+\subsection{Getting genes by similarities}
 
 \begin{small}
 \begin{verbatim}
@@ -79,7 +79,7 @@ the gene lexA in \organism{Escherichia coli K12}. It seems thus poorly
 informative, but this column becomes useful when several queries are
 submitted simultaneously.
 
-\subsubsection{Obtaining information on the BLAST hits}
+\subsection{Obtaining information on the BLAST hits}
 
 The program \program{get-orthologs} allows to return additional
 information on the hits. The list of supported return fields is
@@ -118,7 +118,7 @@ b4043   Escherichia_coli_K12    b4043   100.00  202     2e-111  1
 Not surprisingly, the answer includes the self-match of lexA (ID
 b4043) in \organism{Escherichia coli K12}, with 100\% of identify.
 
-\subsubsection{Selecting bidirectional best hits}
+\subsection{Selecting bidirectional best hits}
 
 We can see that the output contains several matches per genome. For
 instance, there are 3 matches in \organism{Colwellia psychrerythraea
@@ -155,7 +155,7 @@ b4043   Escherichia_coli_K12    b4043   100.00  202     2e-111  1
 \end{verbatim}
 \end{scriptsize}
 
-\subsubsection{Selecting hits with more stringent criteria}
+\subsection{Selecting hits with more stringent criteria}
 
 It is well known that the sole criterion of BBH is not sufficient to
 infer orthology between two genes. In particular, there is a risk to
@@ -210,7 +210,7 @@ Actually, in the particular case of \gene{lexA}, the BBH constraint
 already filtered out the spurious matches, but inother cases they can
 be useful.
 
-\subsection{Retrieving sequences for multiple organisms}
+\section{Retrieving sequences for multiple organisms}
 
 The program \program{retrieve-seq-multigenome} can be used to retrieve
 sequences for a group of genes belonging to different organisms.This
@@ -238,7 +238,7 @@ retrieve-seq-multigenome -noorf \
 \end{verbatim}
 \end{small}
 
-\subsection{Detection of phylogenetic footprints}
+\section{Detection of phylogenetic footprints}
 
 \textbf{TO BE WRITTEN}
 
@@ -253,7 +253,7 @@ dyad-analysis  -v 1 \
 \end{verbatim}
 \end{small}
 
-\subsection{Phylogenetic profiles}
+\section{Phylogenetic profiles}
 
 The notion of \concept{phylogenetic profile} was introduced by
 Pellegrini et al. (1999). They identified putative orthologs for all
@@ -335,7 +335,7 @@ convert-classes -v 2 \
 \end{verbatim}
 \end{small}
 
-\subsection{Detecting pairs of genes with similar phylogenetic profiles}
+\section{Detecting pairs of genes with similar phylogenetic profiles}
 
 \textbf{TO BE WRITTEN}
 
