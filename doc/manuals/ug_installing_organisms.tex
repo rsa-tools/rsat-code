@@ -2,13 +2,13 @@
 %%%% Installing organisms
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\section{Installing organisms}
+\chapter{Installing organisms}
 
 
 \RSAT includes a series of tools to install and maintain the latest
 version of genomes.
 
-\subsection{Original data sources}
+\section{Original data sources}
 
 Genomes supported on \RSAT were obtained from various sources.
 
@@ -27,7 +27,7 @@ original sources.
 Other genomes can also be found on the web site of a diversity of
 genome-sequencing centers.
 
-\subsection{Requirement : wget}
+\section{Requirement : wget}
 
 The download of genomes relies on the application \program{wget},
 which is part of linux distribution. \program{wget} is a ``web
@@ -42,7 +42,7 @@ This command should return the help pages for \program{wget}.  If you
 obtain an error message (``command not found''), you need to ask your
 system administrator to install it.
 
-\subsection{Importing organisms from the \RSAT main server}
+\section{Importing organisms from the \RSAT main server}
 
 The simplest way to install organisms on our \RSAT site is to download
 the RSAT-formatted files from the web server. For this, you can use a
@@ -210,14 +210,14 @@ head -30 feature_names.tab
 \end{verbatim}
 
 
-\subsection{Parsing genomes from NCBI/Genbank}
+\section{Parsing genomes from NCBI/Genbank}
 
 The easiest way to install an organism in \RSAT is to download the
 complete genome files from the NCBI
 \urlref{ftp://ftp.ncbi.nih.gov/genomes/}, and to parse it with the
 program \program{parse-genbank.pl}.
 
-\subsubsection{Downloading genomes from NCBI/Genbank}
+\subsection{Downloading genomes from NCBI/Genbank}
 
 \RSAT includes a makefile to download genomes from different sources.
 We provide hereafter a protocol to create a download directory in your
@@ -247,7 +247,7 @@ make one_genbank_dir GB_DIR=genomes/Bacteria/Mycoplasma_genitalium
 \end{verbatim}
 
 
-\subsubsection{Parsing genomes from NCBI/Genbank}
+\subsection{Parsing genomes from NCBI/Genbank}
 
 The program \program{parse-genbank.pl} extract genome information
 (sequence, gene location, ...) from Genbank flat files, and exports
@@ -260,7 +260,7 @@ the result in a set of tab-delimited files.
 \end{verbatim}
 
 
-\subsection{Parsing genomes from EMBL files}
+\section{Parsing genomes from EMBL files}
 
 The program \program{parse-embl.pl} reads flat files in EMBL format,
 and exports genome sequences and features (CDS, tRNA, ...) in
@@ -318,7 +318,7 @@ directory, something like
 \file{\$HOME/parsed\_data/embl/20050309/Debaryomyces\_hanseni}.
 
 
-\subsubsection{Installing a genome in the main \RSAT directory}
+\subsection{Installing a genome in the main \RSAT directory}
 
 Once the genome has been parsed, the simplest way to make it available
  for all the users is to install it in the \RSAT genome directory. You
@@ -349,7 +349,7 @@ mv $HOME/parsed_data/embl/20050309/Debaryomyces_hanseni/* \
 ls -ltr $RSAT/data/genomes/Debaryomyces_hansenii/genome
 \end{verbatim}
 
-\subsubsection{Updating the configuration file}
+\subsection{Updating the configuration file}
 
 The fact to add a directory is not sufficient for \RSAT to be aware of
 the new organism. For this, we must update the configuration file. We
@@ -364,8 +364,7 @@ install-organism -v 1 -org Debaryomyces_hansenii -task config -up_from -800
 tail -15 $RSAT/data/supported_organisms.pl
 \end{verbatim}
 
-
-\subsubsection{Checking that the organism is installed properly}
+\section{Checking that the organism is installed properly}
 
 To check the installation, start by checking whether your newly
 installed now appears in the list of supported organisms.
@@ -377,7 +376,7 @@ supported-organisms
 Will give you a list of installed organisms.
 
 
-\subsubsection{Retrieving some sequences}
+\subsection{Retrieving sequences}
 
 As soon as the configuration file has been updated, we should be in
 state to retrieve sequences for the newly installed genome. We will
@@ -387,7 +386,7 @@ check this by retrieving a the start codons.
 retrieve-seq -org Debaryomyces_hansenii -all -from 0 -to 2
 \end{verbatim}
 
-\subsubsection{Checking the start codons}
+\subsection{Checking the composition of start codons}
 
 Once the organism is found in your configuration, you need to check
 whether sequences are retrieved properly. A good test for this is to
@@ -404,7 +403,7 @@ retrieve-seq -org Debaryomyces_hansenii -all -from 0 -to 2 \
     | oligo-analysis -l 3 -1str -v 1 -return occ,freq -sort
 \end{verbatim}
 
-\subsubsection{Checking the start and stop codons with \program{install-organisms}}
+\subsection{Checking the start and stop codons with \program{install-organisms}}
 
 The program \program{install-organisms} includes an option to
 automatically check all the start and stop codons from a parsed
@@ -426,7 +425,7 @@ The stop codons should be TAA, TAG or TGA, for any organism. For
 eucaryotes, all start codons should be ATG. For some procaryotes,
 alternative start codons (GTG, TGG) are frequent.
 
-\subsubsection{Calibrating oligonucleotide and dyad frequencies with \program{install-organisms}}
+\subsection{Calibrating oligonucleotide and dyad frequencies with \program{install-organisms}}
 
 The programs \program{oligo-analysis} and \program{dyad-analysis}
   require calibrated frequencies for the background models. These
@@ -442,7 +441,7 @@ install-organism -v 1 -org Debaryomyces_hansenii \
     -task allup,oligos,dyads,upstream_freq,clean
 \end{verbatim}
 
-\subsubsection{Installing a genome in your own account}
+\subsection{Installing a genome in your own account}
 
 We describe below how this information should be formatted to be used
 in rsa-tools.
@@ -464,7 +463,7 @@ One you have this information, start the program
 \program{install-organism}. You will be asked to enter the information
 needed for genome installation.
 
-\subsection{Updating your local configuration}
+\section{Updating your local configuration}
 
 
 \begin{itemize}

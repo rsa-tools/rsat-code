@@ -2,10 +2,10 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% Introduction
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Introduction}
+\chapter{Introduction}
 
 This tutorial aims at introducing how to use Regulatory Sequence
-Analysis Tools (\RSAT) directly from the unix shell.
+Analysis Tools (\RSAT) directly from the Unix shell.
 
 \RSAT is a package combining a series of specialized programs for the
 detection of regulatory signals in non-coding sequences. A variety of
@@ -16,12 +16,112 @@ regulatory regions, sequence conversions, \ldots.
 A web interface has been developed for the most common tools, and is
 freely available for academic users.
 
-\url{http://www.ucmb.ulb.ac.be/bioinformatics/rsa-tools/}
+\url{http://rsat.scmbb.ulb.ac.be/rsat/}
 
-All programs can also be used directly from the unix shell. The shell
-access is less intuitive than the web interface, but is very
-convenient for automatizing repetitive tasks.
+All the programs in \RSAT can also be used directly from the Unix
+shell. The shell access is less intuitive than the web interface, but
+it allows to perform more complex analyses, and it is very convenient
+for automatizing repetitive tasks.
 
 This tutorial was written by Jacques van Helden
-(\email{jvanheld@ucmb.ulb.ac.be}).  Unless otherwise specified, the
-programs presented here were written by Jacques van Helden.
+(\email{Jacques.van.Helden@ulb.ac.be}).  Unless otherwise specified,
+the programs presented here were written by Jacques van Helden.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Prerequisites
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Prerequisites}
+
+This program requires a basic knowledge of the Unix
+environment. Before starting you should be familiar with the concepts
+of Unix shell, directory, file, path.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% Accessing the programs
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Configuration}
+
+In order to use the command-line version of \RSAT, you first need an
+account on a Unix machine where \RSAT has been installed, and you
+should know the directory where the tools have been installed (if you
+don't know, ask assistance to your system administrator).
+
+For this tutorial, let us assume that \RSAT is installed in the
+directory \texttt{/home/rsat/rsa-tools}
+
+\subsection{\RSAT environment and path}
+
+Before starting to use the tools, you need to define an environment
+variable (\texttt{RSAT}), and to add some directories to your path.
+
+\begin{enumerate}
+
+\item Open a terminal and login in your account.
+
+\item check your shell environment by typing the following command.
+  \command{echo \$SHELL}
+  The answer should be something like
+  \command{/sbin/bash} 
+  or
+  \command{/bin/tcsh}.
+
+\item If your default shell is \textbf{tcsh}, type the following
+  commands (you probably need to update the firts command to specify
+  the RSAT path of your machine.
+
+\begin{footnotesize}
+\begin{verbatim}
+setenv RSAT /home/rsat/rsa-tools
+set path=($path $RSAT/perl-scripts)
+set path=($path $RSAT/perl-scripts/parsers)
+set path=($path $RSAT/bin/)
+rehash
+\end{verbatim}
+\end{footnotesize}
+
+\item If your default shell is \textbf{bash}, the commands are
+  slightly different.
+
+\begin{footnotesize}
+\begin{verbatim}
+export RSAT=/home/rsat/rsa-tools
+export path=($path $RSAT/perl-scripts)
+export path=($path $RSAT/perl-scripts/parsers)
+export path=($path $RSAT/bin/)
+rehash
+\end{verbatim}
+\end{footnotesize}
+
+If you are using yet a different shell, you might need a slightly
+different command to obtain the same result. See you system manager in
+case of doubt.
+
+\end{enumerate}
+
+\subsection{Checking the RSAT path}
+
+ The previous step should have included all the \RSAT programs in
+your path.  To check if it worked, just type:
+
+\command{random-seq -l 350}
+
+If your configuration is correct, this command should return a random
+sequence of 350 nucleotides.
+
+You are now able to use any program from the \RSAT package, untill you
+quit your session. It is however not very convenient to set the path
+manually each time you open a new connection. You can modify your
+default configuration by including the above commands in the file
+\file{.cshrc} (in tcsh) or \file{.bashrc} (in bash) which should be
+found at the root of your home directory. If you don't know how to
+modify this file, see the system administrator.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% Wargning
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Warning}
+
+This tutorial is under construction. Some sections are still to be
+written, and only appear as a title without any further text. The
+tutorial will be progressively completed. We provided it as it is.
