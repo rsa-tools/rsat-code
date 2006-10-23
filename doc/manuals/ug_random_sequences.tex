@@ -1,4 +1,4 @@
-\section{Generating random sequences}
+\chapter{Generating random sequences}
 
 Th program \program{random-seq} allows to generate random sequences
 wih different random models.
@@ -10,7 +10,7 @@ more suitable to represent biological sequences.
 
 We will briely illustrate different ways to use this program. 
 
-\subsection{Sequences with identically and independently distributed (IID) nucleotides}
+\section{Sequences with identically and independently distributed (IID) nucleotides}
 
 \begin{small}
 \begin{verbatim}
@@ -29,7 +29,7 @@ oligo-analysis -v 1 \
 \end{verbatim}
 \end{small}
 
-\subsection{Sequences with nucleotide-specific frequencies}
+\section{Sequences with nucleotide-specific frequencies}
 
 In general, the residue composition of biological sequences is
 biased. We can impose residue-specific probabilities for the random
@@ -48,7 +48,7 @@ oligo-analysis -v 1 \
 \end{small}
 
 
-\subsection{Introduction to Markov order}
+\section{Introduction to Markov order}
 
 Markov chain models involve local dependencies between successive
 residues.
@@ -120,7 +120,7 @@ convert-background-model \
 
 The same operation can be extended to higher order markov models.
 
-\subsection{Markov chain-based random sequences}
+\section{Markov chain-based random sequences}
 
 The random generator \program{random-seq} supports Markov chains of
 any order (as far as the corresponding ferquency table has previously

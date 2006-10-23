@@ -1,7 +1,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% PATTERN MATCHING
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Pattern matching}
+\chapter{Pattern matching}
 
 In a pattern matching problem, you start from one or several
 predefined patterns, and you match this pattern against a sequence,
@@ -10,7 +10,7 @@ i.e. you locate all occurrences of this pattern in the sequences.
 Patterns can be represented as strings (with \textit{dna-pattern}) or
 position-weight matrices (with \textit{patser}). 
 
-\subsection{dna-pattern}
+\section{dna-pattern}
 
 \textit{dna-pattern} is a string-based pattern matching program,
 specialized for searching patterns in DNA sequences. 
@@ -50,7 +50,7 @@ distinguishing between these types of imperfect matches.
 \end{itemize}
 
 
-\subsubsection{Matching a single pattern}
+\subsection{Matching a single pattern}
 
 We will start by searching all positions of a single pattern in a
 sequence set. The sequence is the set of upstream regions from the PHO
@@ -80,7 +80,7 @@ information:
 \item matching score
 \end{enumerate}
 
-\subsubsection{Matching on both strands}
+\subsection{Matching on both strands}
 
 To perform the search on both strands, type:
 \begin{verbatim}
@@ -91,7 +91,7 @@ dna-pattern -v 1 -i PHO_up800.fasta -format fasta \
 Notice that the strand column now contains two possible values: D for
 ``direct'' and R for ``reverse complement''.
 
-\subsubsection{Allowing substitutions}
+\subsection{Allowing substitutions}
 
 To allow one substitutions, type:
 \begin{verbatim}
@@ -108,7 +108,7 @@ Actually, for regulatory patterns, allowing substitutions usually
 returns many false positive, and this option is usually avoided. We
 will not use it further in the tutorial.
 
-\subsubsection{Extracting flanking sequences}
+\subsection{Extracting flanking sequences}
 
 The matching positions can be extracted along with their flanking nucleotides. Try:
 
@@ -122,7 +122,7 @@ Notice the change in the matched sequence column: each matched
 sequence contains the pattern CACGTT in uppercase, and 4 lowercase
 letters on each side (the flanks).
 
-\subsubsection{Changing the origin}
+\subsection{Changing the origin}
 
 When working with upstream sequences, it is convenient to work with
 coordinates relative to the start codon (i.e. the right side of the
@@ -161,7 +161,7 @@ dna-pattern -i PHO_up800.fasta -format fasta \
 In the current example, since all sequences have exactly 800bp length,
 the result is identical to the one obtained with \texttt{-origin 801}.
 
-\subsubsection{Matching degenerate patterns}
+\subsection{Matching degenerate patterns}
 
 As we said before, there are two forms of Pho4p binding sites: the
 protein has high affinity for motifs containing the core CACGTG, but
@@ -197,7 +197,7 @@ dna-pattern -i PHO_up800.fasta -format fasta \
     -id  'Pho4p_site' -N 4 -origin -0
 \end{verbatim}
 
-\subsubsection{Matching regular expressions}
+\subsection{Matching regular expressions}
 
 Another way to represent partly specified strings is by using regular
 expressions. This not only allows to represent combinations of letters
@@ -233,7 +233,7 @@ between special characters used in the regular expression and the unix
 shell.
 
 
-\subsubsection{Matching several patterns}
+\subsection{Matching several patterns}
 
 TO match a series of patterns, you first need to store these patterns
 in a file. Let create a pattern file:
@@ -264,7 +264,7 @@ dna-pattern -i PHO_up800.fasta -format fasta \
     -pl test_patterns.txt
 \end{verbatim}
 
-\subsubsection{Counting pattern matches}
+\subsection{Counting pattern matches}
 
 In the previous examples, we were interested in matching positions. It
 is sometimes interesting to get a more synthetic information, in the
@@ -297,7 +297,7 @@ dna-pattern -i PHO_up800.fasta -format fasta -2str \
 
 This time, only two rows are returned, one per pattern. 
 
-\subsubsection{Getting a count table}
+\subsection{Getting a count table}
 
 Another way to display the count information is in the form of a
 table, where each row represents a gene and each column a pattern.
@@ -322,13 +322,13 @@ dna-pattern -i PHO_up800.fasta -format fasta -2str \
 
 
 
-\subsection{patser (program developed by by Jerry Hertz)}
+\section{patser (program developed by by Jerry Hertz)}
 
 We will now see how to match a profile matrix against a sequence
 set. For this, we use \textit{patser}, a program written by Jerry
 Hertz. 
 
-\subsubsection{Getting help}
+\subsection{Getting help}
 
 help can be obtained with the two usual options.
 
@@ -337,7 +337,7 @@ patser -h
 patser -help
 \end{verbatim}
 
-\subsubsection{Matrix conversion}
+\subsection{Matrix conversion}
 
 Patser expects as input a matrix like the 4 matrices we obtained above
 with \textit{consensus}. The output from \textit{consensus} can however
@@ -372,7 +372,7 @@ Additional information can be otbained with the on-line help for
 convert-matrix -h
 \end{verbatim}
 
-\subsubsection{Detecting Pho4p sites in the PHO genes}
+\subsection{Detecting Pho4p sites in the PHO genes}
 
 After having extracted the matrix, we can match it against the PHO
 sequences to detect putative regulatory sites.
@@ -381,7 +381,7 @@ sequences to detect putative regulatory sites.
 patser -m PHO_matrix -f PHO_up800.wc -A a:t c:g -c -ls 9
 \end{verbatim}
 
-\subsubsection{Detecting Pho4p sites in all upstream regions}
+\subsection{Detecting Pho4p sites in all upstream regions}
 
 We will now match our PHO matrix against the whole set of upstream
 regions from the 6200 yeast genes. This should allow us to detect new
@@ -409,7 +409,7 @@ retrieve-seq -type upstream -from -1 -to -800  \
 more PHO_matrix_matches_allup.txt
 \end{verbatim}
 
-\subsection{Scanning sequences with \program{matrix-scan}}
+\section{Scanning sequences with \program{matrix-scan}}
 
 The program \program{matrix-scan} allows to scan sequences with a
 position-specific scoring matrix (\concept{PSSM}), in the same way as

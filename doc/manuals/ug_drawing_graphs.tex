@@ -1,11 +1,10 @@
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% DRAWING GRAPHS
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Drawing graphs}
+\chapter{Drawing graphs}
 
 
-\subsection{feature-map}
+\section{feature-map}
 
 The program \program{feature-map} draws a graphical map of a list of
 features. A typical usage of feature-map is to draw maps with the
@@ -13,7 +12,7 @@ positions of regulatory motifs detected by pattern matching programs
 such \program{dna-pattern} (string-based matching) or \program{patser}
 (matrix-based matching).
 
-\subsubsection{Converting \textit{dna-pattern} matches into features}
+\subsection{Converting \textit{dna-pattern} matches into features}
 
 We will analyze the same PHO family as in the tutorial on pattern
 discovery. We will use successively \program{oligo-analysis},
@@ -59,7 +58,7 @@ convert-features                               \
 We will now play with this feature file, in order to obtain different
 drawings.
 
-\subsubsection{Basic feature maps}
+\subsection{Basic feature maps}
 
 \begin{verbatim}
 feature-map -format jpg                            \
@@ -74,7 +73,7 @@ browser or a drawing application.
 This is a very simple representation: each feature is represented as a
 box. A specific color is associated to each pattern (feature ID). 
 
-\subsubsection{Refining the feature map}
+\subsection{Refining the feature map}
 
 We will use a few additional options to add information on this
 feature map. 
@@ -103,7 +102,7 @@ as its score.
 
 \end{itemize}
 
-\subsubsection{Map orientation}
+\subsection{Map orientation}
 
 Feature-maps can be oriented horizontally or vertically. The
 horizontal orientation is usually the most convenient, but when labels
@@ -125,7 +124,7 @@ feature box. In addition, a \concept{symbol} has been attached to each
 feature ID (pattern). This symbol improves the readability of the map, 
 and is convenient for monochrome printers. 
 
-\subsubsection{Export formats}
+\subsection{Export formats}
 
 Feature-map can be exported in different formats, specified with the
 option \option{-format}.
@@ -151,7 +150,7 @@ option \option{-format}.
 
 \end{description}
 
-\subsubsection{HTML maps}
+\subsection{HTML maps}
 
 A HTML map can be created, which allows to display dynamically the
 feature-map in a web browser. When the users positions the mouse over
@@ -178,7 +177,7 @@ mouse cursor over a feature (either the box or the filled circle
 attached to it), and look the status bar at the bottom of the browser
 window.
 
-\subsubsection{Other options}
+\subsection{Other options}
 
 The program \program{feature-map} includes a few other options.
 
@@ -193,7 +192,7 @@ the help pages.
 feature-map -h
 \end{verbatim}
 
-\subsubsection{Feature converters}
+\subsection{Feature converters}
 
 In the previous tutorial, we used the program
 \program{convert-features} to convert matches from
@@ -247,12 +246,12 @@ one column per attribute.
 \item (optional) score
 \end{enumerate}
 
-\subsection{XYgraph}
+\section{XYgraph}
 
 The program \program{XYgraph} is a simple utility which plots graphs
 from a series of (x,y) coordinates.
 
-\subsubsection{Exercise: drawing features from patser}
+\subsection{Exercise: drawing features from patser}
 
 In the section on pattern-matching, we scanned all yeast upstream
 sequences with the PHO matrix and stored the result in a file
