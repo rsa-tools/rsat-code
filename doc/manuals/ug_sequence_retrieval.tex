@@ -1,7 +1,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Sequence retrieval
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Retrieving sequences}
+\chapter{Retrieving sequences}
 
 The program \texttt{retrieve-seq} allows you to retrieve sequences
 from a genome (provided this genome is supported on your machine). In
@@ -10,7 +10,7 @@ sequences located upstream the start codon of a series of genes, where
 regulatory elements are generally found, at least in microbial
 organisms.
 
-\subsubsection{Retrieving a single upstream sequence}
+\section{Retrieving a single upstream sequence}
 First trial: we will extract the upstream sequence for a single yeast
 gene. Try:
 
@@ -24,7 +24,7 @@ This command retrieves a 200 bp upstream sequence for the gene metA of
 upstream side. Also note that all coordinates are calculated starting
 relative to the start codon (position 0 is the A from the start ATG).
 
-\subsubsection{Combining upstream and coding sequence}
+\section{Combining upstream and coding sequence}
 For coli genes, regulatory signals sometimes overlap the 5' side of
 the coding sequence. By doing so, they exert a repression effect by
 preventing RNA-polymerase from binding DNA. \texttt{retrieve-seq}
@@ -36,7 +36,7 @@ retrieve-seq -type upstream -org Escherichia_coli_K12 \
     -q metA -from -200 -to 49
 \end{verbatim}
 
-\subsubsection{Retrieving a few upstream sequences}
+\section{Retrieving a few upstream sequences}
 
 The option \texttt{-q} can be used iteratively in a command to
 retrieve sequences for several genes.
@@ -46,9 +46,7 @@ retrieve-seq -org Escherichia_coli_K12 \
     -from -200 -to 49 -q metA -q metB -q metC
 \end{verbatim}
 
-
-
-\subsubsection{Retrieving many upstream sequences}
+\section{Retrieving many upstream sequences}
 
 If you have to retrieve a large number of sequences, it might become
 cumbersome to type each gene name on the command-line. A list of gene
@@ -83,7 +81,6 @@ cat PHO_genes.txt
 
 \end{enumerate}
 
-
 This file can now be used as input to indicate the list of genes.
 
 \begin{verbatim}
@@ -108,7 +105,7 @@ Check the sequence file:
 more PHO_up800.fasta
 \end{verbatim}
 
-\subsubsection{Retrieving all upstream sequences}
+\section{Retrieving all upstream sequences}
 
 For genome-scale analyses, it is convenient to retrieve upstream
 sequences for all the genes of a given genome, without having to
@@ -134,7 +131,7 @@ Check the result:
 more Escherichia_coli_K12_start_codons.wc
 \end{verbatim}
 
-\subsubsection{Preventing the inclusion of upstream ORFs}
+\section{Preventing the inclusion of upstream ORFs}
 
 With the command above, we retrieved sequences covering precisely 200
 bp upstream the start codon of the selected genes. Intergenic regions
@@ -201,7 +198,7 @@ sequence-lengths -i his.up200.noorf.fasta
 Notice that some genes have very short upstream sequences (no more
 than a few bp).
 
-\subsubsection{Retrieving downstream sequences}
+\section{Retrieving downstream sequences}
 
 \texttt{retrieve-seq} can also be used to retrieve downstream
 sequences. In this case, the origin (position 0) is the third base of
@@ -219,7 +216,7 @@ retrieve-seq -type downstream -org Escherichia_coli_K12 \
     -o Escherichia_coli_K12_stop_codons.wc
 \end{verbatim}
 
-\subsubsection{Retrieving random sequences}
+\section{Retrieving random sequences}
 
 \texttt{retrieve-seq} can also be used to retrieve random sequences,
 with two flavours :
