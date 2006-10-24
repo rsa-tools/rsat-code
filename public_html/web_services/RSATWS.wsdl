@@ -38,6 +38,7 @@ targetNamespace="urn:RSATWS"
 	  <xsd:element name="label" type="xsd:string"/>
 	  <xsd:element name="label_sep" type="xsd:string"/>
 	  <xsd:element name="nocom" type="xsd:string"/>
+	  <xsd:element name="repeat" type="xsd:string"/>
 	<!---/xsd:sequence-->
       </xsd:complexType>
 
