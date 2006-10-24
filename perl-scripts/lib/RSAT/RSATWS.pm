@@ -10,23 +10,95 @@ my $TMP = $RSAT.'/public_html/tmp';
 
 =pod
 
-=head2 retrieve-seq
+=head2 retrieve_seq
 
 WS interface to the script B<I<retrieve-seq>>.
 
 =head3 Usage
-
-my ($server_file, $command, $result) = $service->retrieve_seq(SOAP::Data->name('param' => \SOAP::Data->value([parameters]))); 
+my %args = ('return' => $return_choice,
+            'organism' => $organism,
+            'query' => \@gene,  # an array in a hash has to be referenced (correct?)
+            'noorf' => $noorf,
+            'from' => $from,
+            'to' => $to,
+            'feattype' => $feattype,
+            'type' => $type,
+            'format' => $format,
+            'all' => $all,
+            'number' => $n,
+            'label' => $label,
+            'label_sep' => $label_sep,
+            'nocom' => $nocom,
+            'repeat' => $repeat);
+my $results_ref = $soap->call('retrieve_seq' => 'request' => \%args)->result;
+my %results = %$results_ref;
+my $command = $results{'command'};
+my $server_file = $results{'file'};
+my $result = $results{'result'};
 
 =head3 Parameters
 
 =over
 
+=item I<return>
+
+return choice (file,result,both)
+
 =item I<organism>
 
 organism name
 
-=item I<...>
+=item I<query>
+
+array of gene names
+
+=item I<noorf>
+
+cut overlapping orf
+
+=item I<from>
+
+upstream coordinate
+
+=item I<to>
+
+downstream coordinate
+
+=item I<feattype>
+
+feature type (CDS,mRNA,tRNA,rRNA,scRNA)
+
+=item I<type>
+
+sequence type (upstream,downstream,orf,random)
+
+=item I<format>
+
+output format (IG,WC,raw,FastA))
+
+=item I<all>
+
+all genomic upstream regions
+
+=item I<number>
+
+number of sequences (only with type random)
+
+=item I<label>
+
+field used to label sequence (id,name,organism_name,sequence_type,current_from,current_to,ctg,orf_strand,reg_left,reg_right)
+
+=item I<label_sep>
+
+separator between label fields
+
+=item I<nocom>
+
+no comments, only identifier
+
+=item I<repeat>
+
+repeat masked
 
 =back
 
@@ -88,10 +160,72 @@ sub retrieve_seq_cmd {
     my $label = $args{"label"};
     my $label_sep = $args{"label_sep"};
     my $nocom = $args{"nocom"};
+    my $repeat = $args{'repeat'};
 
-    my $command = "$SCRIPTS/retrieve-seq $organism $query -lw 0 $noorf $from $to $feattype $type $format $all $n $label $label_sep $nocom";
+    my $command = "$SCRIPTS/retrieve-seq $organism $query -lw 0 $noorf $from $to $feattype $type $format $all $n $label $label_sep $nocom $repeat";
     return $command;
 }
+
+=pod
+
+=head2 purge_seq
+
+WS interface to the script B<I<purge-sequence>>.
+
+=head3 Usage
+my %args = ('return'=> $return_choice,
+            'sequence'=> $sequence,
+            'format'=> $format,
+            'match_length'=> $match_length,
+            'mismatch'=> $mismatch,
+            'str'=> $str,
+            'delete'=> $delete,
+            'mask_short'=> $mask_short);
+my $results_ref = $soap->call('purge_seq' => 'request' => \%args)->result;
+my %results = %$results_ref;
+my $command = $results{'command'};
+my $server_file = $results{'file'};
+my $result = $results{'result'};
+
+=head3 Parameters
+
+=over
+
+=item I<return>
+
+return choice (file,result,both)
+
+=item I<sequence>
+
+sequence(s)
+
+=item I<format>
+
+input sequence format
+
+=item I<match_length>
+
+match length
+
+=item I<mismatch>
+
+number of mismatches
+
+=item I<str>
+
+discard duplications on direct only or both strands (-1str,-2str)
+
+=item I<delete>
+
+delete repeats
+
+=item I<mask_short>
+
+mask sequences shorter than specified length
+
+=back
+
+=cut
 
 sub purge_seq {
     my ($self, $args_ref) = @_;
@@ -115,6 +249,14 @@ sub purge_seq {
 		'result' => $result};
     }
 }
+
+=pod
+
+=head2 purge_seq_cmd
+
+Generates the appropriate purge-seq command given a hash of parameters.
+
+=cut
 
 sub purge_seq_cmd {
     my ($self, %args) = @_;
@@ -140,6 +282,82 @@ sub purge_seq_cmd {
     return $command;
 }
 
+=pod
+
+=head2 oligo_analysis
+
+WS interface to the script B<I<oligo-analysis>>.
+
+=head3 Usage
+my %args = ('return' => $return_choice, 
+            'sequence' => $sequence, 
+            'format' => $format,
+            'length' => $length,
+            'organism' => $organism, 
+            'background' => $background,
+            'stats' => $stats,
+            'noov' => $noov,
+            'str' => $str,
+            'sort' => $sort,
+            'lth' => $lth);
+my $results_ref = $soap->call('purge_seq' => 'request' => \%args)->result;
+my %results = %$results_ref;
+my $command = $results{'command'};
+my $server_file = $results{'file'};
+my $result = $results{'result'};
+
+=head3 Parameters
+
+=over
+
+=item I<return>
+
+return choice (file,result,both)
+
+=item I<sequence>
+
+sequence(s)
+
+=item I<format>
+
+input sequence format
+
+=item I<length>
+
+oligo length
+
+=item I<organism>
+
+organism name
+
+=item I<background>
+
+background model (upstream,upstream-noorf,intergenic,upstreamL,input)
+
+=item I<stats>
+
+list of statistics to return (occ,mseq,freq,proba,ratio,zscore,like,pos,rank)
+
+=item I<noov>
+
+no overlapping
+
+=item I<str>
+
+oligo occurences on one or both strands (-1str,-2str)
+
+=item I<sort>
+
+sort oligos according to overrepresentation
+
+=item I<lth>
+
+lower threshold parameter (occ,occ_P,occ_E,occ_sig,observed_freq,exp_freq,zscore,mseq,ms_P,ms_E,ms_sig,ratio,rank) value
+
+=back
+
+=cut
+
 sub oligo_analysis {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
@@ -162,6 +380,14 @@ sub oligo_analysis {
 		'result' => $result};
     }
 }
+
+=pod
+
+=head2 oligo_analysis_cmd
+
+Generates the appropriate oligo-analysis command given a hash of parameters.
+
+=cut
 
 sub oligo_analysis_cmd {
     my ($self, %args) =@_;
