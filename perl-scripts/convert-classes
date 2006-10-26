@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-classes,v 1.5 2006/05/04 06:56:22 rsat Exp $
+# $Id: convert-classes,v 1.6 2006/10/26 20:16:29 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -276,6 +276,19 @@ Input format. Supported: tab, mcl, profiles
 	    &RSAT::error::FatalError("$input_format\tInvalid input format. Supported: $supported_input_formats")
 		unless ($supported_input_format{$input_format});
 
+	    ### Output format  
+=cut
+
+=item B<-to output_format>
+
+Output format. Supported: tab, mcl,profiles
+
+=cut 
+	} elsif ($arg eq "-to") {
+	    $output_format = shift(@arguments);
+	    &RSAT::error::FatalError("$output_format\tInvalid output format. Supported: $supported_output_formats")
+		unless ($supported_output_format{$output_format});
+
 	    ## Member column
 =pod
 
@@ -356,19 +369,6 @@ Minimal score value for member to class assignation.
 	    $args{min_score} = shift(@arguments);
 	    &RSAT::error::FatalError(join("\t", $args{min_score}, "Invalid minimal score specification. ust be a real number")) 
 		unless (&IsReal($args{min_score}));
-
-	    ### Output format  
-=cut
-
-=item B<-to output_format>
-
-Output format. Supported: tab, mcl,profiles
-
-=cut 
-	} elsif ($arg eq "-to") {
-	    $output_format = shift(@arguments);
-	    &RSAT::error::FatalError("$output_format\tInvalid output format. Supported: $supported_output_formats")
-		unless ($supported_output_format{$output_format});
 
 
 
