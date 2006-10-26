@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: seq-proba,v 1.2 2006/10/20 07:00:47 jvanheld Exp $
+# $Id: seq-proba,v 1.3 2006/10/26 05:41:07 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -103,7 +103,7 @@ package main;
     ## Return fields
     if (scalar(keys(%return_fields)) < 1) {
 	$return_fields{id} = 1;
-	$return_fields{proba_B} = 1;
+	$return_fields{proba_b} = 1;
     }
 
     ################################################################
@@ -164,8 +164,8 @@ package main;
 
       #Background probabilities
       foreach my $bg_model (@bg_models) {
-	my $proba_B = $bg_model->segment_proba($current_seq);
-	push @return_fields, sprintf("%.4e", $proba_B) if ($return_fields{proba_b});
+	my $proba_b = $bg_model->segment_proba($current_seq);
+	push @return_fields, sprintf("%.4e", $proba_b) if ($return_fields{proba_b});
       }
 
       ## Report sequence
@@ -308,10 +308,10 @@ corresponding to each model in separate columns.
 Format of the background model. Supported: oligo-analysis. 
 
 =cut
-	} elsif ($arg eq "-from") {
+	} elsif ($arg eq "-bg_format") {
 	    $main::bg_format = shift(@arguments);
 	    &RSAT::error::FatalError(join("\t", $main::bg_format,
-					  "Invalid input format.",
+					  "Invalid format for a background model.",
 					  "Supported: ", $main::supported_bg_formats))
 		unless ($main::supported_bg_format{$main::bg_format});
 
@@ -332,9 +332,9 @@ allows to use the command within a pipe.
 
 =item B<-return return_fields>
 
-List of fields to return (default: id,proba_B).
+List of fields to return (default: id,proba_b).
 
-Supported fields: id,proba_B,len,seq
+Supported fields: id,proba_b,len,seq
 
 =over
 
@@ -342,7 +342,7 @@ Supported fields: id,proba_B,len,seq
 
 Sequence identifier.
 
-=item B<proba_B> 
+=item B<proba_b> 
 
 Probability of the sequence given the background model.
 
