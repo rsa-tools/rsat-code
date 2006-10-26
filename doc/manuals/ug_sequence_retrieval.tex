@@ -3,51 +3,96 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter{Retrieving sequences}
 
-The program \texttt{retrieve-seq} allows you to retrieve sequences
+The program \program{retrieve-seq} allows you to retrieve sequences
 from a genome (provided this genome is supported on your machine). In
 particular (and by default), this program extracts the non-coding
-sequences located upstream the start codon of a series of genes, where
-regulatory elements are generally found, at least in microbial
-organisms.
+sequences located upstream the start codon of the query genes. The
+reason for selecting upstream sequences (rather than coding) is that
+regulatory elements are generally found upstream of the coding
+regions, at least in microbial organisms.
 
 \section{Retrieving a single upstream sequence}
-First trial: we will extract the upstream sequence for a single yeast
+
+First trial: we will extract the upstream sequence for a single
 gene. Try:
 
 {\color{blue} \begin{footnotesize} 
 \begin{verbatim}
 retrieve-seq -type upstream -org Escherichia_coli_K12 \
     -q metA -from -200 -to -1
-\end{verbatim}\end{footnotesize}}
+\end{verbatim} \end{footnotesize}
+}
 
-This command retrieves a 200 bp upstream sequence for the gene metA of
-\textit{Escherichia coli}. Note the negative coordinates, indicating the
-upstream side. Also note that all coordinates are calculated starting
-relative to the start codon (position 0 is the A from the start ATG).
+This command retrieves a 200 bp upstream sequence for the gene
+\gene{metA} of the bacteria \org{Escherichia coli K12}. 
+
+By default, coordinates are calculated from the start codon. Ideally,
+we would prefer to retrieve sequences upstream of the Transcription
+Start Site (\concept{TSS}), since this is the place where the RNA
+polymerase starts to transcribe the gene. Unfortunately, the precise
+location of the TSS is unknown for most genes, in most sequecned
+genome. For this reason, the default reference is the start codon
+rather than the TSS.
+
+Note that for some organisms (e.g. \org{Homo sapiens}), genome
+annotations include mRNA boundaries. In this case, the option
+\option{-feattype mRNA} allows you to specify that the reference point
+is the start of the mRNA (thus the TSS) rather than the start codon.
+
+Whichever reference point you decide to use, negative coordinates
+indicate sequences upstream to this reference point, and positive
+coordinates downstream sequences. 
+
+\begin{samepage}
+With the default parameters, 
+\begin{itemize}
+\item[-] the reference point is the start codon;
+\item[-] position $-1$ corresponds to the first residue upstream of
+  the coding sequence; 
+\item[-] position 0 is the first letter from the start codon (the A from
+  ATG);
+\item[-] positive coordinates indicate the coding sequence (downstream
+  from the start codon).
+\end{itemize}
+\end{samepage}
+
+To better understand the system of coordinates, try to locate the
+start codon in the sequence obtained with the following commands.
+
+{\color{blue} \begin{footnotesize}
+\begin{verbatim}
+retrieve-seq -type upstream -org Escherichia_coli_K12 \
+    -q metA -from -5 -to 6
+\end{verbatim} \end{footnotesize}
+}
+
 
 \section{Combining upstream and coding sequence}
-For coli genes, regulatory signals sometimes overlap the 5' side of
-the coding sequence. By doing so, they exert a repression effect by
-preventing RNA-polymerase from binding DNA. \texttt{retrieve-seq}
-allows you to extract a sequence that combines an upstream and a
-coding segment. Try:
+
+For \org{E.coli} genes, regulatory signals sometimes overlap the 5'
+side of the coding sequence. By doing so, they exert a repression
+effect by preventing RNA-polymerase from binding DNA. The command
+\program{retrieve-seq} allows you to extract a sequence that overlaps
+the start codon, to combine an upstream and a coding segment.
 
 {\color{blue} \begin{footnotesize}
 \begin{verbatim}
 retrieve-seq -type upstream -org Escherichia_coli_K12 \
     -q metA -from -200 -to 49
-\end{verbatim}\end{footnotesize}}
+\end{verbatim} \end{footnotesize}
+}
 
 \section{Retrieving a few upstream sequences}
 
-The option \texttt{-q} can be used iteratively in a command to
-retrieve sequences for several genes.
+The option \option{-q} (query gene) can be used iteratively in a
+command to retrieve sequences for several genes.
 
 {\color{blue} \begin{footnotesize}
 \begin{verbatim}
 retrieve-seq -org Escherichia_coli_K12 \
     -from -200 -to 49 -q metA -q metB -q metC
-\end{verbatim}\end{footnotesize}}
+\end{verbatim} \end{footnotesize}
+}
 
 \section{Retrieving many upstream sequences}
 
@@ -63,18 +108,35 @@ To create a test file, you can execute the following steps:
 {\color{blue} \begin{footnotesize}
 \begin{verbatim}
 cat > PHO_genes.txt
-\end{verbatim}\end{footnotesize}} 
+\end{verbatim} \end{footnotesize}
+} 
 
+\begin{samepage}
 \item You can now type a list of gene names, for example:
-
 {\color{blue} \begin{footnotesize}
 \begin{verbatim}
-PHO5
-PHO8
 PHO11
+PHO3
+PHO5
+PHO88
+PHO89
+PHO87
+PHO13
+PHO2
+PHO8
+PHO4
 PHO81
+PHO12
+PHO90
+PHO86
 PHO84
-\end{verbatim}\end{footnotesize}} 
+PHO23
+PHO91
+PHO80
+PHO85
+\end{verbatim} \end{footnotesize}
+} 
+\end{samepage}
 
 \item Once you have finished typing gene names, press \texttt{Ctrl-D}
 
@@ -83,46 +145,50 @@ PHO84
 {\color{blue} \begin{footnotesize}
 \begin{verbatim}
 cat PHO_genes.txt
-\end{verbatim}\end{footnotesize}} 
+\end{verbatim} \end{footnotesize}
+} 
 
 \end{enumerate}
 
-This file can now be used as input to indicate the list of genes.
+This file can now be used as input to indicate the list of genes. The option \option{-i} 
 
 {\color{blue} \begin{footnotesize}
 \begin{verbatim}
 retrieve-seq -type upstream -i PHO_genes.txt \
     -org Saccharomyces_cerevisiae \
-    -from -800 -to -1 -label orf
-\end{verbatim}\end{footnotesize}} 
+    -from -800 -to -1 
+\end{verbatim} \end{footnotesize}
+} 
 
-The option \texttt{-o} allows you to indicate a file where the
-sequence will be stored.
+The option \option{-o} allows you to indicate the name of a file where
+the sequence will be stored.
 
 {\color{blue} \begin{footnotesize}
 \begin{verbatim}
 retrieve-seq -type upstream -i PHO_genes.txt \
     -org Saccharomyces_cerevisiae \
-    -from -800 -to -1 -label gene \
+    -from -800 -to -1 -label name \
     -o PHO_up800.fasta
-\end{verbatim}\end{footnotesize}} 
+\end{verbatim} \end{footnotesize}
+} 
 
 Check the sequence file:
 
 {\color{blue} \begin{footnotesize}
 \begin{verbatim}
 more PHO_up800.fasta
-\end{verbatim}\end{footnotesize}}
+\end{verbatim} \end{footnotesize}
+}
 
 \section{Retrieving all upstream sequences}
 
 For genome-scale analyses, it is convenient to retrieve upstream
 sequences for all the genes of a given genome, without having to
 specify the complete list of names. For this, simply use the option
-\texttt{-all}.
+\option{-all}.
 
 As an illustration, we will use \command{retrieve-seq} to retrieve all
-the start codons from \organism{Escherichia coli}. As we saw before,
+the start codons from \org{Escherichia coli}. As we saw before,
 negative coordinates specify upstream positions, 0 being the first
 base of the coding sequence. Thus, by specifying positions 0 to 2, we
 will extract the three first coding bases, i.e. the start codon. 
@@ -133,14 +199,16 @@ retrieve-seq -type upstream -org Escherichia_coli_K12 \
     -from 0 -to 2 \
     -all -format wc -nocomments -label id,name \
     -o Escherichia_coli_K12_start_codons.wc
-\end{verbatim}\end{footnotesize}}
+\end{verbatim} \end{footnotesize}
+}
 
 Check the result:
 
 {\color{blue} \begin{footnotesize}
 \begin{verbatim}
 more Escherichia_coli_K12_start_codons.wc
-\end{verbatim}\end{footnotesize}}
+\end{verbatim} \end{footnotesize}
+}
 
 \section{Preventing the inclusion of upstream ORFs}
 
@@ -153,15 +221,15 @@ many intra-operon genes, the sequences will be mainly composed of
 coding sequences (more precisely ORF, open reading frame), which will
 bias subsequent analyses.
 
-The option \texttt{-noorf} of \textit{retrieve-seq} indicates that, if
+The option \option{-noorf} of \textit{retrieve-seq} indicates that, if
 the upstream gene is closer than the specified limit, the sequence
 should be clipped in order to return only intergenic regions.
 
 As an example, we will store the list of histidin genes in a file and
 compare the results obtained with and without the option
-\texttt{-noorf}.
+\option{-noorf}.
 
-Create a text file named \texttt{his.genes.txt} with the following
+Create a text file named \file{his.genes.txt} with the following
 genes.
 
 {\color{blue} \begin{footnotesize}
@@ -179,8 +247,8 @@ hisM
 hisQ
 hisJ
 hisS
-hisR
-\end{verbatim}\end{footnotesize}}
+\end{verbatim} \end{footnotesize}
+}
 
 The default behaviour will return 200bp for each gene. 
 
@@ -188,9 +256,10 @@ The default behaviour will return 200bp for each gene.
 \begin{verbatim}
 retrieve-seq -type upstream -org Escherichia_coli_K12 \
     -i his.genes.txt -from -200 -to -1
-\end{verbatim}\end{footnotesize}}
+\end{verbatim} \end{footnotesize}
+}
 
-With the option \texttt{-noorf}, sequences are clipped depending on
+With the option \option{-noorf}, sequences are clipped depending on
 the position of the closest upstream neighbour.
 
 {\color{blue} \begin{footnotesize}
@@ -200,69 +269,75 @@ retrieve-seq -type upstream -org Escherichia_coli_K12 \
     -o his.up200.noorf.fasta
 
 more his.up200.noorf.fasta
-\end{verbatim}\end{footnotesize}}
+\end{verbatim} \end{footnotesize}
+}
 
 You can measure the length of the resulting sequences with the program
-\textit{sequence-lengths}.
+\program{sequence-lengths}.
 
 {\color{blue} \begin{footnotesize}
 \begin{verbatim}
 sequence-lengths -i his.up200.noorf.fasta
-\end{verbatim}\end{footnotesize}}
+\end{verbatim} \end{footnotesize}
+}
 
 Notice that some genes have very short upstream sequences (no more
-than a few bp).
+than a few bp, or even 0bp). These are the internal genes of the
+\gene{his} operon. 
 
 \section{Retrieving downstream sequences}
 
-\texttt{retrieve-seq} can also be used to retrieve downstream
+\program{retrieve-seq} can also be used to retrieve downstream
 sequences. In this case, the origin (position 0) is the third base of
 the stop codon, positive coordinates indicate downstream (3')
 location, and negative coordinates locations upstream (5') from the
 stop codon (i.e. coding sequences). 
 
 For example, the following command returns all the stop codons for
-\organism{Escherichia coli}.
+\org{Escherichia coli}.
 
 {\color{blue} \begin{footnotesize}
 \begin{verbatim}
 retrieve-seq -type downstream -org Escherichia_coli_K12 \
     -from -2 -to 0 \
-    -all -format wc -nocomments -label orf_gene \
+    -all -format wc -nocomments -label id,name \
     -o Escherichia_coli_K12_stop_codons.wc
-\end{verbatim}\end{footnotesize}}
+\end{verbatim} \end{footnotesize}
+}
 
-\section{Retrieving random sequences}
+% \section{Retrieving upstream sequences of a random gene selection}
 
-\texttt{retrieve-seq} can also be used to retrieve random sequences,
-with two flavours :
+% \program{retrieve-seq} can also be used to retrieve random sequences,
+% with two flavours :
 
-\begin{itemize}
-\item retrieving upstream, downstream or ORF sequence for a random
-selection of ORFs
-\item retrieving random genomic fragments
-\end{itemize}
+% \begin{itemize}
+% \item retrieving upstream, downstream or ORF sequence for a random
+% selection of ORFs
+% \item retrieving random genomic fragments
+% \end{itemize}
 
-In both cases, the number of sequences to retrieve is specified with
-the option \option{-random}, followed by a natural number.
+% In both cases, the number of sequences to retrieve is specified with
+% the option \option{-random}, followed by a natural number.
 
-The type of sequence is specified with the option \option{-type}, as
-usual. Random genomic segments can be obtained by specifying
-``random'' as sequence type.
+% The type of sequence is specified with the option \option{-type}, as
+% usual. Random genomic segments can be obtained by specifying
+% ``random'' as sequence type.
 
-For example, To retrieve upstream sequences for a random selection of
-100 yeast ORFs :
-{\color{blue} \begin{footnotesize}
-\begin{verbatim}
-retrieve-seq -org Saccharomyces_cerevisiae \
-    -randsel 100 -type upstream
-\end{verbatim}\end{footnotesize}}
+% For example, To retrieve upstream sequences for a random selection of
+% 100 yeast ORFs :
+% {\color{blue} \begin{footnotesize}
+% \begin{verbatim}
+% retrieve-seq -org Saccharomyces_cerevisiae \
+%     -randsel 100 -type upstream
+% \end{verbatim} \end{footnotesize}
+% }
 
-Another example: to retrieve 100 random genomic segments of size 200
-in \organism{Saccharomyces cerevisiae} :
-{\color{blue} \begin{footnotesize}
-\begin{verbatim}
-retrieve-seq  -org Saccharomyces_cerevisiae \
-    -randsel 100 -type random
-\end{verbatim}\end{footnotesize}}
+% Another example: to retrieve 100 random genomic segments of size 200
+% in \org{Saccharomyces cerevisiae} :
+% {\color{blue} \begin{footnotesize}
+% \begin{verbatim}
+% retrieve-seq  -org Saccharomyces_cerevisiae \
+%     -randsel 100 -type random
+% \end{verbatim} \end{footnotesize}
+% }
 
