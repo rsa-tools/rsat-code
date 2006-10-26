@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-background-model,v 1.1 2006/07/17 16:46:43 rsat Exp $
+# $Id: convert-background-model,v 1.2 2006/10/26 05:39:52 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -38,6 +38,7 @@ convert-backgound-model [-i inputfile] [-o outputfile] [-v]
 
 =head1 INPUT FORMAT
 
+
 =head1 OUTPUT FORMAT
 
 =cut
@@ -62,14 +63,14 @@ package main;
     #### initialise parameters
     my $start_time = &AlphaDate();
     local $bg_model = new RSAT::MarkovModel();
-    
+    local $decimals = 5;
     
     $input_format = "oligo-analysis";
     %supported_input_format = $bg_model->get_supported_input_formats();
     $supported_input_formats = join (",", keys %supported_input_format);
 
 
-    $output_format = "patser";
+    $output_format = "tab";
     %supported_output_format = $bg_model->get_supported_output_formats();
     $supported_output_formats = join (",", keys %supported_output_format);
     
@@ -108,7 +109,7 @@ package main;
     
     ################################################################
     ###### print output
-    print $out $bg_model->to_string($output_format);
+    print $out $bg_model->to_string($output_format, decimals=>$decimals);
     
     
     ################################################################
@@ -229,7 +230,7 @@ allows to use the command within a pipe.
 
 =item B<-from input_format>
 
-Input format.
+Input format. Supported: oligo-analysis. 
 
 =cut
 	} elsif ($arg eq "-from") {
@@ -245,7 +246,7 @@ Input format.
 
 =item B<-to output_format>
 
-Output format.
+Output format. Supported: tab (default), patser.
 
 =cut
 	} elsif ($arg eq "-to") {
@@ -254,6 +255,20 @@ Output format.
 					  "Invalid output format.",
 					  "Supported: ", $main::supported_output_formats))
 		unless ($main::supported_output_format{$main::output_format});
+
+	    ## Number of decimals
+=pod
+
+=item B<-decimals #>
+
+Number of decimals to print or the transition probabilities. 
+
+=cut
+	} elsif ($arg eq "-decimals") {
+	    $main::decimals = shift(@arguments);
+	    &RSAT::error::FatalError(join("\t", $main::decimals,
+					  "Invalid format for decimals, should be a Natural number."))
+		unless (&IsNatural($main::decimals));
 
 	    
 	} else {
@@ -296,5 +311,21 @@ __END__
 =pod
 
 =head1 SEE ALSO
+
+=over
+
+=item B<seq-proba>
+
+Calculate the probability of a sequence fiven a background model. 
+
+=item B<matrix-scan>
+
+Scan sequences with a PSSM, accepting various background models. 
+
+=item B<patser>
+
+Scan sequences with a PSSM. Program developed by Jerry Hertz.
+
+=back
 
 =cut
