@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.51 2006/10/26 08:18:03 jvanheld Exp $
+# $Id: retrieve-seq,v 1.52 2006/10/26 20:15:07 jvanheld Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -193,7 +193,7 @@ if ($return_all) {
 				     "annotated in the genome of", $organism_name));
 	exit();
     }
-} 
+}
 
 
 #### select random ORFs

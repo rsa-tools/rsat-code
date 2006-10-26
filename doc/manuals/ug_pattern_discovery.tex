@@ -431,7 +431,7 @@ equiprobable here), regulatory sites were lost within a majority of
 false positive, and their description is much less accurate than with
 the option \option{-bg upstream}.
 
-\subsectio{{Markov chains}
+\subsubsection{Markov chains}
 
 Another possibility is to use Markov chain models to estimate expected
 word frequencies. Try the following commands and compare the
@@ -492,9 +492,79 @@ oligo-analysis -v 1 -markov 4 \
   single significant word.
 \end{itemize}
 
+
 \section{Genome-scale pattern discovery}
 
-\tbw
+The detection of exceptional words can also be used to detect signals
+in large sequence sets, such as th whole set of upstream sequences for
+a given organism, or even its complete genome. We will illustrate this
+with two examples.
+
+\subsection{Detection of over-represented words in all the yeast
+  upstream   sequences}
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+retrieve-seq -org Saccharomyces_cerevisiae -type upstream -all \
+    -from -1 -to -800 -noorf -o Saccharomyces_cerevisiae_allup_800-noorf.fasta.gz
+\end{verbatim} \end{footnotesize}
+}
+
+Note that we added the extension \texttt{.gz} to the name of the
+output file. This suffix is interpreted by all the \RSAT programs as
+an indication to compress the result using the command
+\command{gzip}. The result file occupies a much smaller space on your
+hard drive.
+
+We will now analyze the frequency of all the hexanucleotides, and
+analyze their level of over- or under-representation (for this, we use
+the option \option{-two\_tails}). To estimate expected frequencies, we
+will use a Markov model of order 3 (the other models are left as
+exercise).
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+oligo-analysis -v 1 -i Saccharomyces_cerevisiae_allup_800-noorf.fasta.gz \
+    -l 6 -2str -noov -return occ,freq,proba,zscore,rank -sort -markov 3 \
+    -two_tails \
+    -o   Saccharomyces_cerevisiae_allup_800-noorf_6nt-2str-noov_mkv3.tab
+\end{verbatim} \end{footnotesize}
+}
+
+
+\subsection{Detection of under-represented words in bacterial genomes}
+
+
+
+\begin{exercise}
+
+  Analyze the frequencies of al the hexanucleotides in
+  \org{Escherichia coli K12}. One of them shows a very high degree of
+  under-representation. Try to understand the reason why this
+  hexanucleotide is avoided in this genome.
+
+  \textbf{Info:} the full genome of \org{Escherichia coli K12} can be
+  found in the \RSAT genome directory.
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+ls $RSAT/data/genomes/Escherichia_coli_K12/genome/contigs.txt
+\end{verbatim} \end{footnotesize}
+}
+
+This file contais the list of chromosomes of the bacteria (in this
+cxase there is a single one, but for \org{S.cerevisiae} there are 16 nuclear
+and one mitochondrial chromosomes). It can be idrectly used as input
+by specifying the format \option{-format filelist}.
+
+\end{exercise}
+
+
+% {\color{Blue} \begin{footnotesize} 
+% \begin{verbatim}
+% oligo-analysis -v 1 -format filelist -i $RSAT/data/genomes/Escherichia_coli_K12/genome/contigs.txt -return occ,proba,zscore,rank -two_tail -l 6 -sort -o Escherichia_coli_K12_genome_6nt-2str-noov -2str -noov -markov 3
+% \end{verbatim} \end{footnotesize}
+% }
 
 \section{dyad-analysis}
 
