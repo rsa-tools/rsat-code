@@ -85,15 +85,17 @@ You should see the following file list:
 \begin{verbatim}
 Escherichia_coli_K12_start_codons.wc
 Escherichia_coli_K12_stop_codons.wc
-PHO_genes.txt
-PHO_up800-noorf.fasta
 MET_genes.txt
 MET_up800-noorf.fasta
+PHO_genes.txt
+PHO_up800-noorf.fasta
+PHO_up800.fasta
+RAND_genes.txt
+RAND_up800-noorf.fasta
 his.genes.txt
 his.up200.noorf.fasta
 \end{verbatim} \end{footnotesize}
 }
-
 
 \section{oligo-analysis}
 
@@ -125,7 +127,7 @@ Try the following command:
 
 {\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
-oligo-analysis -i Escherichia_coli_K12_start_codons.wc \
+oligo-analysis -v 1 -i Escherichia_coli_K12_start_codons.wc \
     -format wc -l 3 -1str
 \end{verbatim} \end{footnotesize}
 }
@@ -148,20 +150,16 @@ oligo-analysis -h
 \end{verbatim} \end{footnotesize}
 }
 
-
-
 You can also ask some more information (verbose) and store the result
 in a file:
 
 {\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
-oligo-analysis -i Escherichia_coli_K12_start_codons.wc \
-    -format wc -l 3 -1str \
-    -return occ,freq -v 1 \
+oligo-analysis -v 1 -i Escherichia_coli_K12_start_codons.wc \
+    -format wc -l 3 -1str -return occ,freq \
     -o Escherichia_coli_K12_start_codon_frequencies.tab
 \end{verbatim} \end{footnotesize}
 }
-
 
 Read the result file:
 
@@ -176,7 +174,12 @@ Note the effect of the verbose option (\option{-v 1}). You receive
 information about sequence length, number of possible
 oligonucleotides, the content of the output columns, ...
 
-\textbf{Exercise:} check the frequencies of \textit{E.coli} stop codons.
+
+\begin{exercise}
+  Follow the same procedure as above to check the frequencies of stop
+  codons in the genomes of \org{Escherichia coli K12}, and
+  \org{Saccharomyces cerevisia}, respectively.
+\end{exercise}
 
 \subsection{Pattern discovery in yeast upstream regions}
 
@@ -240,7 +243,7 @@ A few questions:
   strands. Each oligonucleotide is thus regrouped with its reverse
   complement.
 \item Among the 2080 tested oligonucleotides (+reverse complement), no
-  more than $10$ were selected as significantly over-represented.
+  more than $7$ were selected as significantly over-represented.
 \item Some pairs of words are mutually overlapping
   (e.g. \seq{ACGTGc} and \seq{cACGTG}).
 \end{enumerate}
@@ -283,8 +286,7 @@ different depending on the version of the genome).
 
 {\color{OliveGreen} \begin{footnotesize} 
 \begin{verbatim}
-; pattern-assembly  -i PHO_up800-noorf_6nt-2str-noov_ncf_sig0 -v 1 -subst 1 \\
-       -2str -o PHO_up800-noorf_6nt-2str-noov_ncf_sig0.asmb
+; pattern-assembly  -i PHO_up800-noorf_6nt-2str-noov_ncf_sig0 -v 1 -subst 1 -2str -o PHO_up800-noorf_6nt-2str-noov_ncf_sig0.asmb
 ; Input file    PHO_up800-noorf_6nt-2str-noov_ncf_sig0
 ; Output file   PHO_up800-noorf_6nt-2str-noov_ncf_sig0.asmb
 ; Input score column            8
@@ -294,46 +296,74 @@ different depending on the version of the genome).
 ; max substitutions             1
 ; max assembly size             50
 ; max number of patterns        100
-; number of input patterns      10
+; number of input patterns      7
 ;
 
-;assembly # 1   seed: acgtgc    13 words        length 
-;     alignt         rev_cpl    score
-tcgcac......    ......gtgcga    0.40
-.cgcacg.....    .....cgtgcg.    2.55
-.cccacg.....    .....cgtggg.    1.20
-..gcacgt....    ....acgtgc..    4.52
-..ccacgt....    ....acgtgg..    1.54
-...cacgtg...    ...cacgtg...    1.84
-...aacgtg...    ...cacgtt...    0.28
-...cacgtt...    ...aacgtg...    0.28
-....acgtgc..    ..gcacgt....    4.52
-....acgtgg..    ..ccacgt....    1.54
-.....cgtgcg.    .cgcacg.....    2.55
-.....cgtggg.    .cccacg.....    1.20
-......gtgcga    tcgcac......    0.40
-tcgcacgtgcga    tcgcacgtgcga    4.52    best consensus
+;assembly # 1   seed: acgtgc    9 words length 
+;   alignt         rev_cpl      score
+cccacg....      ....cgtggg      2.37
+cgcacg....      ....cgtgcg      2.10
+.gcacgt...      ...acgtgc.      4.76
+.ccacgt...      ...acgtgg.      2.23
+..cacgtg..      ..cacgtg..      2.17
+...acgtgc.      .gcacgt...      4.76
+...acgtgg.      .ccacgt...      2.23
+....cgtggg      cccacg....      2.37
+....cgtgcg      cgcacg....      2.10
+cgcacgtgcg      cgcacgtgcg      4.76    best consensus
 
-; Isolated patterns: 3
+; Isolated patterns: 2
 ;alignt rev_cpl score
-atacgc  gcgtat  0.62    isol
-acaggg  ccctgt  0.43    isol
-tgcaca  tgtgca  0.01    isol
-;Job started 26/10/06 04:00:51 CDT
-;Job done    26/10/06 04:00:51 CDT
+cgtata  tatacg  0.65    isol
+agagat  atctct  0.01    isol
+;Job started 26/10/06 09:58:21 CDT
+;Job done    26/10/06 09:58:21 CDT
 \end{verbatim} \end{footnotesize}
 }
 
-There are two alignments (with two contigs), and two isolated
-patterns. Each alignment is made of strongly overlapping patterns. The
-first alignment contains the motif CACGTG, which corresponds to the
-high affinity binding site for Pho4p, the protein controlling
-transcriptional response to Phosphate in yeast. the second alignment
-corresponds to the medium affinity binding site for Pho4p. Medium
-affinity binding sites have been shown to participate in the
-transcriptional response to some PHO genes.
+The result of the assembly shows us that several of the significant
+hexanucleotides actuall reflect various fragments of a same motif.  We
+also see that, despite the fact that \program{oligo-analysis} only
+analyzed the 4-letters DNA alphabet, the assembly indicates some
+degeneracy in the motif, revealed by the presence of alternative
+letters at the same position. For instance, in the penultimate
+position of the assembly, we can observe either \seq{C} or \seq{G}. In
+addition, the scores besides each oligonucleotide indicate us that
+these alternative letters can be more or less significantly
+over-represented in our sequence set. In summary, the result of
+\concept{pattern-assembly} is the real key to the interpretation of
+\concept{oligo-analysis}: the discovered motifs are not each separate
+oligo-analysis, but the assemblies that can be formet out of them.
 
-\subsection{Suboptimal settings}
+The \concept{best consensus} indicates, for each position of the
+alignment, the letter corresponding to the oligonucleotide with the
+highest significance. This consensus should be considered with
+caution, because its complete sequence is built from the collection of
+various oligonucleotides, and might not correspond to any real site in
+the input sequences. Also, this ``best consensus'' is generally too
+stringent to perform pattern matching (see next chapters), and we
+usually prefer to search all the oligonucleotides separately, and
+analyze their feature-map to identify the putative cis-acting
+elements.
+
+\begin{exercise}
+  Use the same procedure as above to discover over-represented
+  hexanucleotides in the upstream sequences of the MET genes obtained
+  in the chapter on sequence retrieval. Analyze the results of
+  \program{oligo-analysi} and \program{pattern-assembly}.
+\end{exercise}
+
+
+\begin{exercise}
+  Use the same procedure as above to discover over-represented
+  hexanucleotides in the upstream sequences of the RAND genes (randoms
+  election of genes) obtained in the chapter on sequence
+  retrieval. Analyze the results of \program{oligo-analysi} and
+  \program{pattern-assembly}.
+\end{exercise}
+
+
+\subsection{Alternative background models}
 
 This chapter only aims at emphasizing how crucial is the choice of
 appropriate statistical parameters. We saw above that a background
@@ -366,13 +396,15 @@ appear on the screen.
 
 Note that
 \begin{itemize} 
-\item The number of selected motifs is higher (27) than in the previous trial
-\item The most significant motifs have nothing to do with Pho4p binding
-sites. All these false positives are A-rich motifs (or T-rich, since we
-are grouping patterns with their reverse-complement).
-\item Two patterns (\seq{acgttt} and \seq{acgtgc}) are selected
-which are related to Pho4p binding site. However, they come at the
-12th and 14th positions only.
+\item The number of selected motifs is higher (27) than in the
+  previous trial.
+\item The most significant motifs have nothing to do with Pho4p
+  binding sites. All these false positives are A-rich motifs (or
+  T-rich, since we are grouping patterns with their
+  reverse-complement).
+\item Two of the selected patterns (\seq{acgttt} and \seq{acgtgc}) are
+  related to Pho4p binding site. However, they come at the 12th and
+  14th positions only.
 \end{itemize}
 
 You can combine oligo-analysis and pattern-assembly in a single
@@ -399,7 +431,7 @@ equiprobable here), regulatory sites were lost within a majority of
 false positive, and their description is much less accurate than with
 the option \option{-bg upstream}.
 
-\textit{\textbf{Markov chains}}
+\subsectio{{Markov chains}
 
 Another possibility is to use Markov chain models to estimate expected
 word frequencies. Try the following commands and compare the
@@ -443,27 +475,30 @@ oligo-analysis -v 1 -markov 4 \
 }
 
 
-\textit{\textbf{Remarks}}
+\subsection{Remarks}
+
 \begin{itemize}
-\item 
-Markov 0 returns AT-rich patterns with the highest significance, but
-the Pho4p high affinity site is described with a good accuracy. The
-medium affinity site appears as a single word (acgttt) in the isolated
-patterns.
-\item 
-Markov order 1 returns less AT-rich motifs. The poly-A (aaaaaa) is
-however still associated with the highest significance, but comes as
-isolated pattern.
-\item 
-The higher the order of the markov chain, the most stringent are the
-conditions. For small sequence sets, selecting a too high order
-prevents from selecting any pattern. Most of the patterns are missed
-with a Markov chain of order 2, and higher orders don't return any
-single significant word.
+\item Markov 0 returns AT-rich patterns with the highest significance,
+  but the Pho4p high affinity site is described with a good
+  accuracy. The medium affinity site appears as a single word (acgttt)
+  in the isolated patterns.
+\item Markov order 1 returns less AT-rich motifs. The poly-A (aaaaaa)
+  is however still associated with the highest significance, but comes
+  as isolated pattern.
+\item The higher the order of the markov chain, the most stringent are
+  the conditions. For small sequence sets, selecting a too high order
+  prevents from selecting any pattern. Most of the patterns are missed
+  with a Markov chain of order 2, and higher orders don't return any
+  single significant word.
 \end{itemize}
+
+\section{Genome-scale pattern discovery}
+
+\tbw
 
 \section{dyad-analysis}
 
+\tbw
 
 
 \section{gibbs motif sampler (program developed by Andrew Neuwald)}
