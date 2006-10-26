@@ -1,4 +1,5 @@
 .DS_Store
+*/.DS_Store
 RSA.config
 data
 logs
@@ -20,4 +21,10 @@ lib-sources
 matrices
 rsa-problem
 stats_login
-
+cvs_backup
+agent
+bin_linux
+ensembl_genomes
+*.txt
+problem*
+doc/pod
