@@ -34,7 +34,8 @@ if (scalar(@types < 1)) {
 
 @null = ();
 foreach my $type (@types) {
-    &RSAT::error::FatalError("Invalid information type $type. Supported: $supported_info_types") unless ($supported_info_types{$type});
+    &RSAT::error::FatalError("Invalid information type $type. Supported: $supported_info_types") 
+      unless ($supported_info_types{$type});
     push @null, $null;
     push @header, $type;
 }
@@ -88,14 +89,15 @@ while ($current_line = <$in>) {
     if ($ORF_column > 0) {
 	@columns = split("\t", $current_line);
 	$query = uc($columns[$ORF_column - 1]);
+	$query = &RSAT::util::trim($query);
 
 	my $feature = $organism->get_feature_for_name($query);
-#	&RSAT::message::Debug($query, $feature) if ($main::verbose >= 10);
+	&RSAT::message::Debug("identified feature", $query, $feature) if ($main::verbose >= 3);
 	my @info = ();
 	if ($feature) {
 	    foreach my $type (@types) {
 		my $info = join( ";", $feature->get_attribute($type));
-#		&RSAT::message::Warning(join("\t", "Info for query",$query, $info)) if ($main::verbose >= 10);
+		&RSAT::message::Warning(join("\t", "Info for query",$query, $info)) if ($main::verbose >= 6);
 		push @info, $info;
 	    }
 	    &RSAT::message::Info(join ("\t", "Line", $l, "Info found", $query, join("\t", @info))) if ($main::verbose >= 3);
