@@ -8,6 +8,7 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%% commands %%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\tbw}{\textbf{TO BE WRITTEN}}
 \newcommand{\RSAT}{\textbf{\textit{RSAT}}}
 \newcommand{\file}[1]{\textit{#1}}
 \newcommand{\concept}[1]{\index{#1}\textsl{#1}}
@@ -34,5 +35,15 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%% environments %%%%%%%%%%%%%%%%%%%%%%%%%
+
+\def\ex@mple{example}
+\def\ex@rcise{exercise}
+\def\theoremfont{\ifx\@currenvir\ex@mple
+	\def\@thmfont{\rm} \else
+	\ifx\@currenvir\ex@rcise
+	\def\@thmfont{\rm} \else
+	\def\@thmfont{\it}\fi\fi}
+\newtheorem{exercise}{Exercise}[chapter]
+\newtheorem{example}{Example}[chapter]
 
 
