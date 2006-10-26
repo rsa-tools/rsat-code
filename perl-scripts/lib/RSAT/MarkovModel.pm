@@ -255,7 +255,7 @@ sub normalize_transition_frequencies {
 #    &RSAT::message::Debug("SUFFIX PROBA", $self->set_hash_attribute("suffix_proba", %suffix_proba));
 
     ## Average counts and frequencies on both strands if required
-    my $strand = $self->get_attribute("strand");
+    my $strand = $self->get_attribute("strand") || "sensitive";
     if ($strand eq "insensitive") {
 	$self->average_strands();
     }
@@ -456,9 +456,18 @@ sub to_string {
 
 
 ################################################################
-## Export the Markov model in a tab-delimited format.
+=pod
+
+=item B<to_string_tab(%args)>
+
+Export the Markov model in a tab-delimited format.
+
+Supported arguments: comment_string, decimals
+
+=cut
 sub to_string_tab {
     my ($self, %args) = @_;
+    my $decimals = $args{decimals} || "5";
     my $string = "";
     my %prefix_proba = $self->get_attribute("prefix_proba");
     my @prefix = sort($self->get_attribute("prefixes"));
@@ -481,10 +490,10 @@ sub to_string_tab {
 	}
 	$string .= $prefix;
 	foreach my $suffix (@suffix) {
-	    $string .= sprintf "\t%.5f",  $self->{transition_freq}->{$prefix}->{$suffix};
+	    $string .= sprintf "\t%.${decimals}f",  $self->{transition_freq}->{$prefix}->{$suffix};
 	}
-	$string .= sprintf "\t%.5f", $self->{prefix_proba}->{$prefix};
-	$string .= sprintf "\t%.5f", $self->{prefix_sum}->{$prefix};
+	$string .= sprintf "\t%.${decimals}f", $self->{prefix_proba}->{$prefix};
+	$string .= sprintf "\t%.${decimals}f", $self->{prefix_sum}->{$prefix};
 	$string .= "\n";
     }
 
@@ -493,7 +502,7 @@ sub to_string_tab {
     $string .= sprintf("; %${row_name_len}s", "P(su)");
 #    $string .= "; P(su)";
     foreach my $suffix (@suffix) {
-	$string .= sprintf "\t%.5f",  $self->{suffix_proba}->{$suffix};
+	$string .= sprintf "\t%.${decimals}f",  $self->{suffix_proba}->{$suffix};
     }
     $string .= "\n";
 
@@ -501,7 +510,7 @@ sub to_string_tab {
     $string .= sprintf("; %${row_name_len}s", "N(su)");
 #    $string .= "; N(su)";
     foreach my $suffix (@suffix) {
-	$string .= sprintf "\t%.5f",  $self->{suffix_sum}->{$suffix};
+	$string .= sprintf "\t%.${decimals}f",  $self->{suffix_sum}->{$suffix};
     }
     $string .= "\n";
 
@@ -517,6 +526,7 @@ sub to_string_tab {
 sub to_string_patser {
     my ($self, %args) = @_;
     my $string = "";
+    my $decimals = $args{decimals} || "5";
     my @prefix = sort($self->get_attribute("prefixes"));
     my @suffix = sort($self->get_attribute("suffixes"));
     
@@ -539,7 +549,7 @@ sub to_string_patser {
 		    $string .= $args{comment_string};
 		}
 		$string .= $suffix.":".$suffix_rc;
-		$string .= sprintf ("\t%.5f\n",$self->{transition_freq}->{$prefix}->{$suffix});
+		$string .= sprintf ("\t%.${decimals}f\n",$self->{transition_freq}->{$prefix}->{$suffix});
 	    }
 	}
 	
@@ -550,7 +560,7 @@ sub to_string_patser {
 		    $string .= $args{comment_string};
 		}
 		$string .= $suffix;
-		$string .= sprintf ("\t%.5f\n",$self->{transition_freq}->{$prefix}->{$suffix});
+		$string .= sprintf ("\t%.${decimals}f\n",$self->{transition_freq}->{$prefix}->{$suffix});
 	    }
 	}
 	
@@ -693,11 +703,17 @@ sub segment_proba {
 
     my $prefix = substr($segment,0,$order);
     my $segment_proba = 0;
+    my $c = 0;
     if (defined($self->{prefix_proba}->{$prefix})) {
 	$segment_proba = $self->{prefix_proba}->{$prefix};
+	&RSAT::message::Info("MarkovModel::segment_proba()",
+			     "offset:".$c,
+			     "i=".($c+1),
+			     "P(".$prefix.")=".$self->{prefix_proba}->{$prefix},
+			     "P(segm)=".$segment_proba) if ($main::verbose >= 4);
     }
     
-    for my $c ($order..($seq_len-1)) {
+    for $c ($order..($seq_len-1)) {
 	my $letter_proba = 0;
 	
 	my $suffix = substr($segment, $c, 1);
@@ -725,17 +741,22 @@ sub segment_proba {
 #	    $letter_proba = $self->{transition_quick}->{$word};
 #	}
 	
-#	&RSAT::message::Debug("letter proba", $word,$letter_proba) if ($main::verbose >= 0);
+#	&RSAT::message::Info("letter proba", $prefix,$letter_proba) if ($main::verbose >= 3);
 
 	$segment_proba *= $letter_proba;
 
-#	&RSAT::message::Debug("segment_proba", 
+	&RSAT::message::Info("MarkovModel::segment_proba()",
+			     "offset:".$c,
+			     "i=".($c+1),
+			     "P(".$suffix."|".$prefix.")=".$letter_proba,
+			     "P(segm)=".$segment_proba) if ($main::verbose >= 4);
+#	&RSAT::message::Info("segment_proba", 
 #			      "prefix=".$word, 
 #			      "prefix=".$prefix, 
 #			      "suffix:".$suffix, 
 #			      "offset:".$c, 
 #			      "P(letter)=".$letter_proba, 
-#			      "P(segm)=".$segment_proba) if ($main::verbose >= 0);
+#			      "P(segm)=".$segment_proba) if ($main::verbose >= 4);
     }
     
 #    &RSAT::message::Debug("segment_proba", $segment, "P(segm)=".$segment_proba) if ($main::verbose >= 0);
