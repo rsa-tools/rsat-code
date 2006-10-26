@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.50 2006/09/21 23:27:22 rsat Exp $
+# $Id: retrieve-seq,v 1.51 2006/10/26 08:18:03 jvanheld Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -143,7 +143,10 @@ my %contig = $organism->get_attribute("contigs");
 
 &RSAT::message::Info(join ("\t", "Contig IDs\t", join (";", sort keys %contig))) if ($main::verbose >= 10);
 
-#### random fragments
+## ##############################################################
+## Random fragments.
+##
+## This routine does not work anymore
 if ($sequence_type eq "random fragments") {
     #### calculate contig lengths
     @ctgs = sort keys %contig;
@@ -195,7 +198,7 @@ if ($return_all) {
 
 #### select random ORFs
 if ($random_orfs > 0) {
-  @queries = &SelectRandomORFs($random_orfs);
+  @queries = $organism->SelectRandomGenes($random_orfs);
 } elsif ($length_file) {
     ($len_handle, $input_dir) = &OpenInputFile($length_file);
 #    open LEN, $length_file;
@@ -258,8 +261,8 @@ foreach my  $query (@queries) {
 	## current feature and query for the sequence comments
 	$current_feature = $query;
 	$query = $current_feature->get_attribute("id");
-   } elsif ($sequence_type eq "random fragments") {
-       ## TO BE CHECKED
+#   } elsif ($sequence_type eq "random fragments") {
+#       ## TO BE CHECKED
    } elsif ($feature_index->contains(uc($query))) {
        $current_feature = $feature_index->get_first_value(uc($query));
    } else {
@@ -329,7 +332,8 @@ foreach my  $query (@queries) {
 	$reg_left = $orf_left;
 	$reg_right = $orf_right;
 	
-    #### select random genommic positions
+	#### select random genommic positions
+	## THIS IS NOT WORKING ANYMORE
     } elsif ($sequence_type eq "random fragments") {
 #	foreach my $seq_length (@seq_lengths) {
 	my $seq_length = $query;
@@ -616,9 +620,11 @@ OPTIONS
 	-nowarn
 		Prevents warning when a gene cannot be identified.
 
-	-randsels #	
-		Return the sequences (specified by the option -type)
-		for a random selection of # ORFs.
+	-randsels #
+		Select a random set of # genes in the genome annotations. 
+		This option ois obsolete, it has been replaced by a
+		separate command: random-genes. The option is
+		maintained for backward compatibility.
 
 	-lf	length file 
 		(only with the option '-type random')
@@ -686,7 +692,7 @@ retrieve-seq options
 -feattype	accepted feature types. Supported: $supported_feature_types
 -type		upstream | downstream | orf | random
 -n		number of sequences (only with -type random)
--randsels #	random selection of # ORFs.
+-randsels #	Select a random set of # genes in the genome annotations. 
 -lf		length file 
 -i		query file. This option is incompatible with -q.
 -q		query
@@ -768,6 +774,7 @@ sub ReadArguments {
 	    unless ($random_orfs > 0) {
 		&RSAT::error::FatalError("The number of ORFs must be > 0");
 	    }
+	    &RSAT::message::Warning("The option -randsel is obsolete. Please use the program random-genes instead"); 
 	    
 	    ### return all genomic  upstream regions	
 	} elsif ($ARGV[$a] eq "-all") {
@@ -832,6 +839,7 @@ sub ReadArguments {
 		
 	    } elsif ($ARGV[$a+1] =~ /^rand/i) {
 		$sequence_type = "random fragments";
+		&RSAT::error::FatalError("The option -type random is not supported anymore. ");
 		
 #	    } elsif ($ARGV[$a+1] =~ /^exon/i) {
 #		$sequence_type = "exons";
