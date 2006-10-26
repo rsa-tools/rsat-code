@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-orthologs,v 1.25 2006/10/09 12:58:06 jvanheld Exp $
+# $Id: get-orthologs,v 1.26 2006/10/26 20:14:34 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -123,6 +123,7 @@ package main;
     %main::outfile = ();
 
     $main::verbose = 0;
+    $main::return_all = 0;
     $main::in = STDIN;
     $main::out = STDOUT;
 
@@ -251,8 +252,33 @@ package main;
     my @ordered_ref_organisms = $tree->get_leaves_names();
 
     ################################################################
+    ## Load the query organism
+    $organism = new RSAT::organism();
+    $organism->DefineAcceptedFeatureTypes("cds");
+    $organism->check_name($query_organism);
+    $organism->set_attribute("name", $query_organism);
+    $organism->OpenContigs($query_organism);
+    $organism->LoadFeatures();
+    $organism->LoadSynonyms();
+    $feature_index = $organism->get_attribute("name_index");
+
+    ################################################################
     ### open output stream
     $main::out = &OpenOutputFile($main::outfile{output});
+
+    ################################################################
+    ## Get orthologs for all the gnes of the query organism
+    if ($return_all) {
+      @all_features = $organism->get_attribute("features");
+      foreach my $feature (@all_features) {
+	push @query_genes, $feature->get_attribute("id");
+      }
+
+      if (scalar(@query_genes < 1)) {
+	&RSAT::error::FatalError("There is not a single CDS annotated for the query organism.");
+      }
+    }
+
 
     ################################################################
     ##### Read queries from input file or STDIN
@@ -275,14 +301,6 @@ package main;
 
     ################################################################
     ## load the query organism
-    $organism = new RSAT::organism();
-    $organism->DefineAcceptedFeatureTypes("cds");
-    $organism->check_name($query_organism);
-    $organism->set_attribute("name", $query_organism);
-    $organism->OpenContigs($query_organism);
-    $organism->LoadFeatures();
-    $organism->LoadSynonyms();
-    $feature_index = $organism->get_attribute("name_index");
     foreach my $query (@main::query_genes) {
 	if ($feature_index->contains(uc($query))) {
 	    my $current_feature = $feature_index->get_first_value(uc($query));
@@ -456,9 +474,8 @@ package main;
     }
 
     ## Report number of hits
-    if ($main::verbose >= 1) {
-      print $out $nb_hits_info;
-    }
+    print $out $nb_hits_info if ($main::verbose >= 3);
+
     ## Report missing BLAST files
     if (scalar(@main::missing_blast_files) > 0) {
 	print $out "; Missing BLAST files\n";
@@ -784,6 +801,18 @@ allows to use the command within a pipe.
 		if (scalar(@main::query_genes) > 0);
 	    $main::infile{input} = shift(@arguments);
 	    
+	    ## Get orthologs for all genes
+=pod
+
+=item B<-all>
+
+Get orthologs for all the genes of the query organism. This option is
+particularly convenient to extract phylogenetic profiles.
+
+=cut
+	} elsif ($arg eq "-all") {
+	    $main::return_all = 1;
+	    
 	    ## Output file
 =pod
 
@@ -808,10 +837,10 @@ Organisms to whih the query gene(s) belong.
 	} elsif ($arg eq "-org") {
 	    $main::query_organism = shift (@arguments);
 	    unless (defined($supported_organism{$main::query_organism})) {
-		&RSAT::error::FatalError(join("\t", "Organism", 
-					      $main::query_organism, 
-					      "is not supported.",
-					      "Use the command supported-organisms to get a list of supported organisms. "));
+	      &RSAT::error::FatalError(join("\t", "Organism", 
+					    $main::query_organism, 
+					    "is not supported.",
+					    "Use the command supported-organisms to get a list of supported organisms. "));
 	    }
 
 =pod
