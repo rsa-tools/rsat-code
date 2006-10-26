@@ -41,7 +41,6 @@ $RSA =    	$ENV{RSAT};
 # Default image export format (feature--map and XYgraph)
 $IMG_FORMAT =   "png";
 
-
 ################################################################
 # Level of echoing for the web server. This is only used for debugging
 # during the installation of the web server
