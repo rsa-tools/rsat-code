@@ -755,9 +755,9 @@ sub hypergeometric {
 	&RSAT::error::FatalError( "Number of black balls in the sample ($x) must be strictly positive\n");
     }
 
-    #### impossible events
-    #### A probability of 0 is returned, unless the routine is called
-    #### with an argument &hypergeometric(..., check=>1)
+    #### In the case of impossible events, a probability of 0 is
+    #### returned, unless the routine is called with an argument
+    #### &hypergeometric(..., check=>1)
     if ($x > $m) {
 	if ($args{check}) {
 	    &RSAT::error::FatalError("Number of black balls in the sample ($x) cannot be larger than number of black balls in the urn ($m)");	
@@ -779,7 +779,7 @@ sub hypergeometric {
 
 
     
-# 	$Id: stats.pm,v 1.5 2006/08/01 10:01:00 jvanheld Exp $	
+# 	$Id: stats.pm,v 1.6 2006/10/26 05:42:26 jvanheld Exp $	
 
     #### initialization
     if (defined($args{previous_value})) {
