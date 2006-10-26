@@ -997,26 +997,30 @@ sub ReadNextSequence {
     
     ### single raw file ###
     if ($sequence_format eq "raw") {
-	if ($inputfile =~ /([\S]*\/)*([\S^\/]+)$/ ) {
-	    $seq_id = $2;
+      if (defined($inputfile)) {
+	if ($inputfile =~ /([\S]*\/)*([\S^\/]+)$/) {
+	  $seq_id = $2;
 	} else {
-	    $seq_id = $inputfile;
+	  $seq_id = $inputfile;
 	}
-	
-	$sequence = "";
-	while (<$SEQ>) {
-	    next if ((/^;/) || (/^\#/) || (/^--/));
-	    $sequence .= $_;
-	}
-	if ($sequence) {
-#	    $sequence = &FoldSequence($sequence, 0);
-#	    &CheckFormat($sequence, $sequence_format, $seq_type);
-#	    return ($sequence, $seq_id, @comments);
-	    return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
-	} else {
-	    return ("","");
-	}
-	
+      } else {
+	$seq_id = "seq";
+      };
+      
+      $sequence = "";
+      while (<$SEQ>) {
+	next if ((/^;/) || (/^\#/) || (/^--/));
+	$sequence .= $_;
+      }
+      if ($sequence) {
+	#	    $sequence = &FoldSequence($sequence, 0);
+	#	    &CheckFormat($sequence, $sequence_format, $seq_type);
+	#	    return ($sequence, $seq_id, @comments);
+	return(&ReturnSequence($sequence, $seq_id, $mask, @comments));
+      } else {
+	return ("","");
+      }
+      
 	#### multi: several raw sequences in the same file, separated by a newline
     } elsif ($sequence_format eq "multi") {
 	$seq_counter++;
