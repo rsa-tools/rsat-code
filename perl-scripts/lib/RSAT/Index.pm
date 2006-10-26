@@ -44,12 +44,10 @@ sub get_values {
 #    } else {
 #	&RSAT::message::Warning("Index contains no value associated to key $key") if ($main::verbose >= 0);
     }
-#    &RSAT::message::Debug("index contains ",
-#			  scalar(@values), 
-#			  "values for key", 
-#			  "'".$key."'", 
-#			  join(";", @values)) 
-#	if ($main::verbose >= 10);
+
+#    &RSAT::message::Debug("RSAT::index::get_values()", scalar(@values), "values for key", 
+#			  "'".$key."'", join(";", @values)) if ($main::verbose >= 10);
+
     return @values;
 }
 

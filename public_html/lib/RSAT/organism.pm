@@ -955,10 +955,10 @@ sub LoadSynonyms {
       if ($feature) {
 	$feature->push_attribute("names", $name);
 	$name_index->add_value(uc($name), $feature);
-	#	    &RSAT::message::Debug(join ("\t", "Added synonym", $id, $name)) if ($main::verbose >= 10);
-	} else {
-	  &RSAT::message::Warning(join ("\t", "Cannot add synonym", "no feature with ID", $id)) if ($main::verbose >= 4);
-	}
+	&RSAT::message::Info(join ("\t", "Added synonym", $id, $name)) if ($main::verbose >= 4);
+      } else {
+	&RSAT::message::Warning(join ("\t", "Cannot add synonym", "no feature with ID", $id)) if ($main::verbose >= 4);
+      }
     }
     close $syn if ($synonym_file);
   }
@@ -1031,7 +1031,8 @@ sub get_features_for_name {
     my ($self, $query) = @_;
     my $name_index = $self->get_attribute("name_index");
     my @values = $name_index->get_values(uc($query));
-#    &RSAT::message::Debug("getting features for name", $query, scalar(@values), join(";", @values));
+    &RSAT::message::Debug("RSAT::organism::get_features_for_name()", $query, scalar(@values), join(";", @values)) 
+      if ($main::verbose >= 6);
     return  @values;
 }
 
@@ -1049,7 +1050,10 @@ Usage: my $ft = $organism->get_feature_for_name($query);
 sub get_feature_for_name {
     my ($self, $query) = @_;
     my @result = $self->get_features_for_name($query);
-    return $result[0];
+    my $result = shift(@result);
+    &RSAT::message::Debug("RSAT::organism::get_feature_for_name()", $query, $result)
+      if ($main::verbose >= 6);
+    return $result;
 }
 
 return 1;
