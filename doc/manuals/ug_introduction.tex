@@ -61,36 +61,34 @@ variable (\texttt{RSAT}), and to add some directories to your path.
 \item check your shell environment by typing the following command.
   \command{echo \$SHELL}
   The answer should be something like
-  \command{/sbin/bash} 
+  \result{/sbin/bash} 
   or
-  \command{/bin/tcsh}.
+  \result{/bin/tcsh}.
 
 \item If your default shell is \textbf{tcsh}, type the following
   commands (you probably need to update the firts command to specify
   the RSAT path of your machine.
 
-\begin{footnotesize}
+{\color{blue} \begin{footnotesize}
 \begin{verbatim}
 setenv RSAT /home/rsat/rsa-tools
 set path=($path $RSAT/perl-scripts)
 set path=($path $RSAT/perl-scripts/parsers)
 set path=($path $RSAT/bin/)
 rehash
-\end{verbatim}
-\end{footnotesize}
+\end{verbatim} \end{footnotesize}}
 
 \item If your default shell is \textbf{bash}, the commands are
   slightly different.
 
-\begin{footnotesize}
+{\color{blue} \begin{footnotesize}
 \begin{verbatim}
 export RSAT=/home/rsat/rsa-tools
 export path=($path $RSAT/perl-scripts)
 export path=($path $RSAT/perl-scripts/parsers)
 export path=($path $RSAT/bin/)
 rehash
-\end{verbatim}
-\end{footnotesize}
+\end{verbatim} \end{footnotesize}}
 
 If you are using yet a different shell, you might need a slightly
 different command to obtain the same result. See you system manager in
