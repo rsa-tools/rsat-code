@@ -13,8 +13,8 @@ the result tables occupy a considerable amount of space on the hard
 disk. The \RSAT distribution does thus not include the complete
 comparison of all genomes against all other ones. The current \RSAT
 distribution includes the complete comparisons for some model genomes
-(\organism{Escherchia coli K12} versus all bacteria,
-\organism{Saccharomyces cerevisiae} against all Fungi, ...), but you
+(\org{Escherchia coli K12} versus all bacteria,
+\org{Saccharomyces cerevisiae} against all Fungi, ...), but you
 might need to perform additional comparisons for your own purpose.
 
 In order to install the tables of gene similarities in the \RSAT data,
@@ -38,7 +38,7 @@ common criterion is to select \concept{bidirectional best hits
 \option{-uth rank 1}.
 
 We will illustrate the concept by retrieving the genes whose product
-is similar to the protein LexA of \organism{Escherichia coli K12}, in
+is similar to the protein LexA of \org{Escherichia coli K12}, in
 all the Gammaproteobacteria. We will then refine the query to extract
 putative orthologs.
 
@@ -75,7 +75,7 @@ b4043   Escherichia_coli_K12    b4043
 Each similarity is reported by the ID of the gene, the organism to
 which is belong, and the ID of the query gene. In this case, the third
 column contains the same ID on all lines: b4043, which is the ID of
-the gene lexA in \organism{Escherichia coli K12}. It seems thus poorly
+the gene lexA in \org{Escherichia coli K12}. It seems thus poorly
 informative, but this column becomes useful when several queries are
 submitted simultaneously.
 
@@ -116,12 +116,12 @@ b4043   Escherichia_coli_K12    b4043   100.00  202     2e-111  1
 \end{scriptsize}
 
 Not surprisingly, the answer includes the self-match of lexA (ID
-b4043) in \organism{Escherichia coli K12}, with 100\% of identify.
+b4043) in \org{Escherichia coli K12}, with 100\% of identify.
 
 \subsection{Selecting bidirectional best hits}
 
 We can see that the output contains several matches per genome. For
-instance, there are 3 matches in \organism{Colwellia psychrerythraea
+instance, there are 3 matches in \org{Colwellia psychrerythraea
   34H}. If we assume that these similarities reflect homologies, the
 result contains thus a combination of paralogs and orthologs. 
 
@@ -257,7 +257,7 @@ dyad-analysis  -v 1 \
 
 The notion of \concept{phylogenetic profile} was introduced by
 Pellegrini et al. (1999). They identified putative orthologs for all
-the genes of \organism{Escherichia coli K12} in all the complete genomes
+the genes of \org{Escherichia coli K12} in all the complete genomes
 available at that time, and built a table with one row per gene, one
 column per genome. Each cell of this table indicates if an ortholog of
 the considered gene (row) has been identified in the considered genome
@@ -283,7 +283,7 @@ protein-coding genes of the query organism. We process in two steps :
 \end{enumerate}
 
 We will illustrate this by calculating the phylogenetic profiles of
-all the genes from \organism{Saccharomyces cerevisiae} across all the
+all the genes from \org{Saccharomyces cerevisiae} across all the
 Fungi. We use a level of verbosity of 2, in order to get information
 about the progress of the calculations.
 
