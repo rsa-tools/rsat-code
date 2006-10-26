@@ -72,20 +72,28 @@ This part of the tutorial assumes that you already performed the
 tutorial about sequence retrieval (above), and that you have the
 result files in the current directory. Check with the command:
 
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
 cd ${HOME}/practical_rsat
 ls -1
-\end{verbatim}
+\end{verbatim} \end{footnotesize}
+}
+
 
 You should see the following file list:
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
 Escherichia_coli_K12_start_codons.wc
 Escherichia_coli_K12_stop_codons.wc
 PHO_genes.txt
-PHO_up800.fasta
+PHO_up800-noorf.fasta
+MET_genes.txt
+MET_up800-noorf.fasta
 his.genes.txt
 his.up200.noorf.fasta
-\end{verbatim}
+\end{verbatim} \end{footnotesize}
+}
+
 
 \section{oligo-analysis}
 
@@ -115,39 +123,54 @@ background model and of the scoring function).
 
 Try the following command:
 
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
 oligo-analysis -i Escherichia_coli_K12_start_codons.wc \
     -format wc -l 3 -1str
-\end{verbatim}
+\end{verbatim} \end{footnotesize}
+}
+
 
 Call the on-line option description to understand the meaning of the
 options you used:
 
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
 oligo-analysis -help
-\end{verbatim}
+\end{verbatim} \end{footnotesize}
+}
+
 
 Or, to obtain more details:
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
 oligo-analysis -h
-\end{verbatim}
+\end{verbatim} \end{footnotesize}
+}
+
 
 
 You can also ask some more information (verbose) and store the result
 in a file:
 
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
 oligo-analysis -i Escherichia_coli_K12_start_codons.wc \
     -format wc -l 3 -1str \
     -return occ,freq -v 1 \
     -o Escherichia_coli_K12_start_codon_frequencies.tab
-\end{verbatim}
+\end{verbatim} \end{footnotesize}
+}
+
 
 Read the result file:
 
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
 more Escherichia_coli_K12_start_codon_frequencies.tab
-\end{verbatim}
+\end{verbatim} \end{footnotesize}
+}
+
 
 Note the effect of the verbose option (\option{-v 1}). You receive
 information about sequence length, number of possible
@@ -159,21 +182,27 @@ oligonucleotides, the content of the output columns, ...
 
 Try the following command:
 
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim} 
-oligo-analysis -i PHO_up800.fasta -format fasta    \
+oligo-analysis -i PHO_up800-noorf.fasta -format fasta    \
     -v 1 -l 6 -2str -lth occ_sig 0 -noov \
     -return occ,proba,rank -sort \
     -bg upstream -org Saccharomyces_cerevisiae \
-    -o PHO_up800_6nt-2str-noov_ncf_sig0 
-\end{verbatim}
+    -o PHO_up800-noorf_6nt-2str-noov_ncf_sig0 
+\end{verbatim} \end{footnotesize}
+}
+
 
 Note that the return fields (``occ'', ``proba'', and ``rank'') are
 separated by a comma \textit{without} space. Call the on-line help to
 understand the meaning of the parameters.
 
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim} 
 oligo-analysis -h
-\end{verbatim}
+\end{verbatim} \end{footnotesize}
+}
+
 
 In the previous analysis, the expected frequency of each word was
 estimate on the basis of pre-calibrated frequency tables.  These
@@ -185,9 +214,12 @@ co-regulated genes.
 
 Look the result file:
 
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
-more PHO_up800_6nt-2str-noov_ncf_sig0
-\end{verbatim}
+more PHO_up800-noorf_6nt-2str-noov_ncf_sig0
+\end{verbatim} \end{footnotesize}
+}
+
 
 A few questions:
 \begin{enumerate}
@@ -218,46 +250,104 @@ A few questions:
 A separate program, \program{pattern-assembly}, allows to assemble a
 list of patterns, in order to group those that overlap mutually. Try:
 
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
-pattern-assembly -i PHO_up800_6nt-2str-noov_ncf_sig0 \
+pattern-assembly -i PHO_up800-noorf_6nt-2str-noov_ncf_sig0 \
     -v  1 -subst 1 \
-    -2str -o PHO_up800_6nt-2str-noov_ncf_sig0.asmb
-\end{verbatim}
+    -2str -o PHO_up800-noorf_6nt-2str-noov_ncf_sig0.asmb
+\end{verbatim} \end{footnotesize}
+}
+
 
 
 Call the on-line help to have a look at the assembly parameters. 
 
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
 pattern-assembly -h
-\end{verbatim}
+\end{verbatim} \end{footnotesize}
+}
 
-Look at the result. There are two alignments (with two contigs), and
-two isolated patterns. Each alignment is made of strongly overlapping
-patterns. The first alignment contains the motif CACGTG, which
-corresponds to the high affinity binding site for Pho4p, the protein
-controlling transcriptional response to Phosphate in yeast. the second
-alignment  corresponds to the medium affinity binding site
-for Pho4p. Medium affinity binding sites have been shown to
-participate in the transcriptional response to some PHO genes.
 
+Let us have a look at the assembled motifs.
+ 
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
-more PHO_up800_6nt-2str-noov_ncf_sig0.asmb
-\end{verbatim}
+more PHO_up800-noorf_6nt-2str-noov_ncf_sig0.asmb
+\end{verbatim} \end{footnotesize}
+}
+
+
+Should give something llike this (the precise result might be slightly
+different depending on the version of the genome).
+
+{\color{OliveGreen} \begin{footnotesize} 
+\begin{verbatim}
+; pattern-assembly  -i PHO_up800-noorf_6nt-2str-noov_ncf_sig0 -v 1 -subst 1 \\
+       -2str -o PHO_up800-noorf_6nt-2str-noov_ncf_sig0.asmb
+; Input file    PHO_up800-noorf_6nt-2str-noov_ncf_sig0
+; Output file   PHO_up800-noorf_6nt-2str-noov_ncf_sig0.asmb
+; Input score column            8
+; Output score column           0
+; two strand assembly
+; max flanking bases            1
+; max substitutions             1
+; max assembly size             50
+; max number of patterns        100
+; number of input patterns      10
+;
+
+;assembly # 1   seed: acgtgc    13 words        length 
+;     alignt         rev_cpl    score
+tcgcac......    ......gtgcga    0.40
+.cgcacg.....    .....cgtgcg.    2.55
+.cccacg.....    .....cgtggg.    1.20
+..gcacgt....    ....acgtgc..    4.52
+..ccacgt....    ....acgtgg..    1.54
+...cacgtg...    ...cacgtg...    1.84
+...aacgtg...    ...cacgtt...    0.28
+...cacgtt...    ...aacgtg...    0.28
+....acgtgc..    ..gcacgt....    4.52
+....acgtgg..    ..ccacgt....    1.54
+.....cgtgcg.    .cgcacg.....    2.55
+.....cgtggg.    .cccacg.....    1.20
+......gtgcga    tcgcac......    0.40
+tcgcacgtgcga    tcgcacgtgcga    4.52    best consensus
+
+; Isolated patterns: 3
+;alignt rev_cpl score
+atacgc  gcgtat  0.62    isol
+acaggg  ccctgt  0.43    isol
+tgcaca  tgtgca  0.01    isol
+;Job started 26/10/06 04:00:51 CDT
+;Job done    26/10/06 04:00:51 CDT
+\end{verbatim} \end{footnotesize}
+}
+
+There are two alignments (with two contigs), and two isolated
+patterns. Each alignment is made of strongly overlapping patterns. The
+first alignment contains the motif CACGTG, which corresponds to the
+high affinity binding site for Pho4p, the protein controlling
+transcriptional response to Phosphate in yeast. the second alignment
+corresponds to the medium affinity binding site for Pho4p. Medium
+affinity binding sites have been shown to participate in the
+transcriptional response to some PHO genes.
 
 \subsection{Suboptimal settings}
 
 This chapter only aims at emphasizing how crucial is the choice of
-appropriate statistical parameters. We saw above that the optimal
-parameters give good results with the PHO family: despite the
-simplicity of the algorithm (counting non-degenerate hexanucleotide
-occurrences), we were able to extract a description of the regulatory
-motif over a larger width than 6 (by pattern assembly), and we got
-some description of the degeneracy (the high and low affinity sites).
+appropriate statistical parameters. We saw above that a background
+model calibrated on all the yeast upstream sequences gives good
+results with the PHO family: despite the simplicity of the algorithm
+(counting non-degenerate hexanucleotide occurrences), we were able to
+extract a description of the regulatory motif over a larger width than
+6 (by pattern assembly), and we got some description of the degeneracy
+(the high and low affinity sites).
 
 We will now intentionally try other parameter settings and see how
 they affect the quality of the results.
 
-\textit{\textbf{Equiprobable oligonucleotides}}
+\subsubsection{Equiprobable oligonucleotides}
 
 Let us try the simplest approach: each word is considered
 equiprobable. For this, we simply suppress the options \option{-bg
@@ -265,11 +355,14 @@ equiprobable. For this, we simply suppress the options \option{-bg
 also omit to specify the output file, so results will immediately
 appear on the screen.
 
-\begin{verbatim} 
-oligo-analysis -i PHO_up800.fasta -format fasta \ 
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+ oligo-analysis -i PHO_up800-noorf.fasta -format fasta \ 
     -v 1 -l 6 -2str \
     -return occ,proba -lth occ_sig 0 -sort 
-\end{verbatim}
+\end{verbatim} \end{footnotesize}
+}
+
 
 Note that
 \begin{itemize} 
@@ -285,11 +378,14 @@ which are related to Pho4p binding site. However, they come at the
 You can combine oligo-analysis and pattern-assembly in a single
 command, by using the pipe character as below.
 
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
-oligo-analysis -i PHO_up800.fasta -format fasta -v 1 \
+oligo-analysis -i PHO_up800-noorf.fasta -format fasta -v 1 \
     -l 6 -2str  -return occ,proba -lth occ_sig 0 -sort \
     | pattern-assembly -2str -sc 7 -subst 1 -v 1 
-\end{verbatim}
+\end{verbatim} \end{footnotesize}
+}
+
 
 On unix systems, this special character is used to concatenate
 commands, i.e. the output of the first command (in this case
@@ -312,37 +408,40 @@ but in case one would not have the pre-calibrated non-coding
 frequencies (for instance if the organism has not been completely
 sequenced), markov chains can provide an interesting approach.
 
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
 oligo-analysis -v 1 -markov 0 \
-    -i PHO_up800.fasta -format fasta \
+    -i PHO_up800-noorf.fasta -format fasta \
     -l 6 -lth occ_sig 0 -sort \
     -2str -return occ,proba \
     | pattern-assembly -2str -sc 7 -subst 1 -v 1
 
 oligo-analysis -v 1 -markov 1 \
-    -i PHO_up800.fasta -format fasta \
+    -i PHO_up800-noorf.fasta -format fasta \
     -2str -return occ,proba \
     -l 6 -lth occ_sig 0 -sort \
     | pattern-assembly -2str -sc 7 -subst 1 -v 1
 	
 oligo-analysis -v 1 -markov 2 \
-    -i PHO_up800.fasta -format fasta \
+    -i PHO_up800-noorf.fasta -format fasta \
     -2str -return occ,proba \
     -l 6 -lth occ_sig 0 -sort \
     | pattern-assembly -2str -sc 7 -subst 1 -v 1
 	
 oligo-analysis -v 1 -markov 3 \
-    -i PHO_up800.fasta -format fasta \
+    -i PHO_up800-noorf.fasta -format fasta \
     -2str -return occ,proba \
     -l 6 -lth occ_sig 0 -sort \
     | pattern-assembly -2str -sc 7 -subst 1 -v 1
 	
 oligo-analysis -v 1 -markov 4 \
-    -i PHO_up800.fasta -format fasta \
+    -i PHO_up800-noorf.fasta -format fasta \
     -2str -return occ,proba \
     -l 6 -lth occ_sig 0 -sort \
     | pattern-assembly -2str -sc 7 -subst 1 -v 1
-\end{verbatim}
+\end{verbatim} \end{footnotesize}
+}
+
 
 \textit{\textbf{Remarks}}
 \begin{itemize}
@@ -386,10 +485,13 @@ proigrams: a detailed manual can be obtained with the option
 \option{-h}, and a summary of options with \option{-help}. Try these
 options and read the manual.
 
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
 consensus -h
 consensus -help
-\end{verbatim}
+\end{verbatim} \end{footnotesize}
+}
+
 
 \subsection{Sequence conversion}
 
@@ -399,10 +501,13 @@ package contains a sequence conversion program (\textit{convert-seq})
 which supports Jerry Hertz' format. We will thus start by converting
 the fasta sequences in this format. 
 
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
-convert-seq -i PHO_up800.fasta -from fasta -to wc \ 
-    -o PHO_up800.wc
-\end{verbatim}
+convert-seq -i PHO_up800-noorf.fasta -from fasta -to wc \ 
+    -o PHO_up800-noorf.wc
+\end{verbatim} \end{footnotesize}
+}
+
 
 \subsection{Running consensus}
 
@@ -410,9 +515,12 @@ Using consensus requires to choose the appropriate value for a series
 of parameters. We found the following combination of parameters quite
 efficient for discovering patterns in yeast upstream sequences.
 
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
-consensus -L 10 -f PHO_up800.wc -A a:t c:g -c2 -N 10
-\end{verbatim}
+consensus -L 10 -f PHO_up800-noorf.wc -A a:t c:g -c2 -N 10
+\end{verbatim} \end{footnotesize}
+}
+
 
 The two main options of this command are 
 
@@ -440,15 +548,21 @@ alignment in order to get the highest information content. The option
 To save the result in a file, you can use the symbol ``greater than''
 ($>$) which redirects the output of a program to a file.
 
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
-consensus -L 10 -f PHO_up800.wc -A a:t c:g -c2 -N 10 \
+consensus -L 10 -f PHO_up800-noorf.wc -A a:t c:g -c2 -N 10 \
     > PHO_consensus
-\end{verbatim}
+\end{verbatim} \end{footnotesize}
+}
+
 
 (this may take a few minutes)
 
 Once the task is achieved, check the result.
 
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
 more PHO_consensus
-\end{verbatim}
+\end{verbatim} \end{footnotesize}
+}
+
