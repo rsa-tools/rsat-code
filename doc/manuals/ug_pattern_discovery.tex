@@ -3,83 +3,113 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter{Pattern discovery}
 
-In a pattern discovery problem, you start from a set of
-functionally related sequences (e.g.  upstream sequences for a set of
-co-regulated genes) and you try to extract motifs (e.g. regulatory
-elements) that are characteristic of these sequences.
+In a pattern discovery problem, you start from a set of functionally
+related sequences (e.g.  upstream sequences for a set of co-regulated
+genes) and you try to extract motifs (e.g. regulatory elements) that
+are characteristic of these sequences.
 
-Several approaches exist, either string-based or matrix-based. For
-yeast regulatory elements, string-based approaches give excellent
-results. The advantages:
+Several approaches exist, either string-based or
+matrix-based. \concept{String-based pattern discovery} is based on an
+analysis of the number of occurrences of all possibles words
+(\program{oligo-analysis}), or spaced pairs
+(\program{dyad-analysis}). The methods for \concept{matrix-based
+  pattern discovery} rely on the utlisation of some machine-learning
+method (e.g. greedy algorithm, expectation-maxiisation, gibbs
+sampling, ...) in order to optimise of some scoring function
+(log-likelihood, information,...) which is likely to return
+significant motifs.
+
+In this chapter we will mainly focus on string-based approaches, and
+illustrate some of their advantages. A further chapter will be
+dedicated to matrix-based pattern discovery.
+
+For microbial cis-acting elements, string-based approaches give
+excellent results. The main advantages of these methods:
 
 \begin{itemize}
-\item Simple to use
-\item Deterministic (if you run it repeatedly, you always get the same result)
-\item Easily parametrizable
-\item Easy to interpret
-\item Fast
-\item Able to return a negative answer: if no motif is significant,
-the programs return an empty list of motifs. This is particularly
-important to reduce the rate of false positive.
+\item[+] Simple to use
+\item[+] Deterministic (if you run it repeatedly, you always get the
+  same result), in contrast with stochastic optimization methods.
+\item[+] Exhaustive : each word or space pair is tested
+  independently. Consequently, if a set of sequences contains several
+  exceptional motifs, all of them can be detected in a single run. 
+\item[+] The tests of significances can be performed on both tails of
+  the theoretical distribution, in order to detect either
+  over-represented, or under-represented patterns.
+\item[+] Fast. 
+\item[+] Able to return a negative answer: if no motif is significant,
+  the programs return no motif at all. This is particularly important
+  to reduce the rate of false positive.
 \end{itemize}
 
-Matrix-based approach can provide a more refined description of motifs
-presenting a high degree of degeneracy. The problem of matrix-based
-approaches is that it is impossible to analyze all possible
-position-weight matrices, and thus one has to use heuristics. There is
-thus a risk to miss the global optimum because the program is
-attracted to local maxima. Another problem is that there are more
-parameters to select (typically, matrix width and expected number of
-occurrences of the motif), and their choice drastically affects the
-quality of the result. Last problem: the result is not easily
-interpretable because the programs always return an answer.
+
+An obvious advantage of matrix-based approach is that they provide a
+more refined description of motifs presenting a high degree of
+degeneracy. However, a general problem of matrix-based approaches is
+that it is impossible to analyze all possible position-weight
+matrices, and thus one has to use heuristics. There is thus a risk to
+miss the global optimum because the program is attracted to local
+maxima. Another problem is that there are more parameters to select
+(typically, matrix width and expected number of occurrences of the
+motif), and their choice drastically affects the quality of the
+result.
 
 Basically, I would tend to prefer string-based approaches for any
 problem of pattern discovery. On the contrary, matrix-based approaches
-are much more sensitive for pattern matching problems (see below). The
-ideal would thus be to combine string-based pattern discovery and
+are much more sensitive for pattern matching problems (see below). My
+preference is thus to combine string-based pattern discovery and
 matrix-based pattern matching.
 
+But I am obviously biased because I developed string-based
+approaches. An important factor in the success obtained with a program
+is to understand precisely its functioning. I thus think that each
+user should test different programs, compare them and select the one
+that best suits his/her needs.
+
 \section{Requirements}
+
 This part of the tutorial assumes that you already performed the
 tutorial about sequence retrieval (above), and that you have the
 result files in the current directory. Check with the command:
 
 \begin{verbatim}
+cd ${HOME}/practical_rsat
 ls -1
 \end{verbatim}
 
 You should see the following file list:
 \begin{verbatim}
-PHO_genes.txt
-PHO_up800.fasta
 Escherichia_coli_K12_start_codons.wc
 Escherichia_coli_K12_stop_codons.wc
+PHO_genes.txt
+PHO_up800.fasta
+his.genes.txt
+his.up200.noorf.fasta
 \end{verbatim}
 
 \section{oligo-analysis}
 
-The program \texttt{oligo-analysis} is the simplest pattern discovery
+The program \program{oligo-analysis} is the simplest pattern discovery
 program. It counts the number of occurrences of all oligonucleotides
-(word) of a given length (typically 6), and compares, for each word,
-the observed and expected occurrences, and return words with a
-significant level of over-representation.  
+(words) of a given length (typically 6), and calculates the
+statistical significance of each word by comparing its observed and
+expected occurrences. The program returns words with a significant
+level of over-representation.
 
-Despite its simplicity, this program already returns good results for
-many families of co-regulated genes in yeast.
+Despite its simplicity, this program generally returns good results
+for groups of co-regulated genes in microbes.
 
 For a first trial, we will simply use the program to count word
 occurrences. The application will be to check the start and stop
-codons retrieved above.
-
-We will then use \texttt{oligo-analysis} in a pattern discovery
-process, to detect over-represented words from the set of 5 upstream
-sequences retrieved above (the PHO family).  In a first time, we will
-use the appropriate parameters, which have been optimized for pattern
-discovery in yeast upstream sequences (van Helden et al., 1998). We
-will then use the sub-optimal settings to illustrate the fact that the
-success of word-based pattern-discovery crucially depends on a
-rigorous statistical approach.
+codons retrieved above. We will then use \program{oligo-analysis} in a
+pattern discovery process, to detect over-represented words from the
+set of upstream sequences retrieved above (the PHO family).  In a
+first time, we will use the appropriate parameters, which have been
+optimized for pattern discovery in yeast upstream sequences (van
+Helden et al., 1998). We will then use the sub-optimal settings to
+illustrate the fact that the success of word-based pattern-discovery
+crucially depends on a rigorous statistical approach (choice of the
+background model and of the scoring function).
 
 \subsection{Counting word occurrences and frequencies}
 
@@ -90,7 +120,9 @@ oligo-analysis -i Escherichia_coli_K12_start_codons.wc \
     -format wc -l 3 -1str
 \end{verbatim}
 
-Call the on-line option description to understand the meaning of the options you used:
+Call the on-line option description to understand the meaning of the
+options you used:
+
 \begin{verbatim}
 oligo-analysis -help
 \end{verbatim}
@@ -107,19 +139,19 @@ in a file:
 \begin{verbatim}
 oligo-analysis -i Escherichia_coli_K12_start_codons.wc \
     -format wc -l 3 -1str \
-    -return occ,freq -v \
-    -o Escherichia_coli_K12_start_codon_frequencies
+    -return occ,freq -v 1 \
+    -o Escherichia_coli_K12_start_codon_frequencies.tab
 \end{verbatim}
 
 Read the result file:
 
 \begin{verbatim}
-more Escherichia_coli_K12_start_codon_frequencies
+more Escherichia_coli_K12_start_codon_frequencies.tab
 \end{verbatim}
 
-Note the effect of the verbose. You receive information about sequence
-length, number of possible oligonucleotides, the content of the output
-columns, ...
+Note the effect of the verbose option (\option{-v 1}). You receive
+information about sequence length, number of possible
+oligonucleotides, the content of the output columns, ...
 
 \textbf{Exercise:} check the frequencies of \textit{E.coli} stop codons.
 
@@ -128,83 +160,88 @@ columns, ...
 Try the following command:
 
 \begin{verbatim} 
-oligo-analysis -i PHO_up800.fasta -format fasta      \
-    -v -l 6 -2str                                    \
-    -return occ,proba -lth occ_sig 0 -bg upstream \
-    -org Saccharomyces_cerevisiae -sort              \
-    -o PHO_up800_6nt_2str_ncf_sig0 
+oligo-analysis -i PHO_up800.fasta -format fasta    \
+    -v 1 -l 6 -2str -lth occ_sig 0 -noov \
+    -return occ,proba,rank -sort \
+    -bg upstream -org Saccharomyces_cerevisiae \
+    -o PHO_up800_6nt-2str-noov_ncf_sig0 
 \end{verbatim}
 
-Note that the return fields (``occ'', and ``proba'') are separated by
-a comma \textit{without} space.
-
-Call the on-line help to understand the meaning of the parameters.
+Note that the return fields (``occ'', ``proba'', and ``rank'') are
+separated by a comma \textit{without} space. Call the on-line help to
+understand the meaning of the parameters.
 
 \begin{verbatim} 
 oligo-analysis -h
 \end{verbatim}
 
-Note that we used pre-calibrated tables as estimators of expected word
-frequencies. These tables have been previously calculated (with
-oligo-analysis) by counting hexanucleotide frequencies in the whole
-set of yeast upstream regions. Our experience is that these
-frequencies are the optimal estimator for discovering regulatory
-elements in upstream sequences of co-regulated genes.
+In the previous analysis, the expected frequency of each word was
+estimate on the basis of pre-calibrated frequency tables.  These
+tables have been previously calculated (with oligo-analysis) by
+counting hexanucleotide frequencies in the whole set of yeast upstream
+regions. Our experience is that these frequencies are the optimal
+estimator for discovering regulatory elements in upstream sequences of
+co-regulated genes.
 
 Look the result file:
 
 \begin{verbatim}
-more PHO_up800_6nt_2str_ncf_sig0
+more PHO_up800_6nt-2str-noov_ncf_sig0
 \end{verbatim}
 
 A few questions:
 \begin{enumerate}
 \item How many hexanucleotides can be formed with the 4-letter alphabet A,T,G,C ?
-\item How many possible oligonucleotides are indicated ? Is it the number you would expect ? Why ?
+\item How many possible oligonucleotides were analysed here ? Is it the
+  number you would expect ? Why ?
 \item How many patterns have been selected as significant ?
-\item Do you see some similarity between some of the selected patterns ?
+\item By simple visual inspection, can you identify some sequence
+  similarities between the selected patterns?
 \end{enumerate}
 
 \subsection{Answers}
 
 \begin{enumerate}
-\item $4^6=4,096$
-\item $2,080$. This is due to the fact that the analysis was performed on
-both strands. Each oligonucleotide is thus equivalent to its reverse
-complement.
-\item $9$
-\item some pairs of words are mutually overlapping
-  (e.g. \texttt{cACGTG} and \texttt{ACGTGc}).
+\item The number of possible hexanucleotides is $4^6=4,096$. 
+\item The result file reports $2,080$ possible oligonucleotides. This
+  is due to the fact that the analysis was performed on both
+  strands. Each oligonucleotide is thus regrouped with its reverse
+  complement.
+\item Among the 2080 tested oligonucleotides (+reverse complement), no
+  more than $10$ were selected as significantly over-represented.
+\item Some pairs of words are mutually overlapping
+  (e.g. \seq{ACGTGc} and \seq{cACGTG}).
 \end{enumerate}
 
 \subsection{Assembling the patterns}
 
-A separate program, \texttt{pattern-assembly}, allows to assemble a
+A separate program, \program{pattern-assembly}, allows to assemble a
 list of patterns, in order to group those that overlap mutually. Try:
 
 \begin{verbatim}
-pattern-assembly -i PHO_up800_6nt_2str_ncf_sig0 \
-    -v -sc 7 -subst 1 \
-    -2str -o PHO_up800_6nt_2str_ncf_sig0.assemb
+pattern-assembly -i PHO_up800_6nt-2str-noov_ncf_sig0 \
+    -v  1 -subst 1 \
+    -2str -o PHO_up800_6nt-2str-noov_ncf_sig0.asmb
 \end{verbatim}
 
 
 Call the on-line help to have a look at the assembly parameters. 
+
 \begin{verbatim}
 pattern-assembly -h
 \end{verbatim}
 
 Look at the result. There are two alignments (with two contigs), and
 two isolated patterns. Each alignment is made of strongly overlapping
-patterns. The first alignment (cgcacgtgcg) corresponds to the high
-affinity binding site for Pho4p, the protein controlling
-transcriptional response to Phosphate in yeast. the second alignment
-(cgcacgttt) corresponds to the medium affinity binding site for
-Pho4p. Medium affinity binding sites have been shown to participate in
-the transcriptional response to some PHO genes.
+patterns. The first alignment contains the motif CACGTG, which
+corresponds to the high affinity binding site for Pho4p, the protein
+controlling transcriptional response to Phosphate in yeast. the second
+alignment  corresponds to the medium affinity binding site
+for Pho4p. Medium affinity binding sites have been shown to
+participate in the transcriptional response to some PHO genes.
 
 \begin{verbatim}
-more PHO_up800_6nt_2str_ncf_sig0.assemb
+more PHO_up800_6nt-2str-noov_ncf_sig0.asmb
 \end{verbatim}
 
 \subsection{Suboptimal settings}
@@ -223,14 +260,14 @@ they affect the quality of the results.
 \textit{\textbf{Equiprobable oligonucleotides}}
 
 Let us try the simplest approach: each word is considered
-equiprobable. For this, we simply suppress the options
-\texttt{-bg upstream -org yeast} fom the above commands. We
+equiprobable. For this, we simply suppress the options \option{-bg
+  upstream -org Saccharomyces\_cerevisiae} fom the above commands. We
 also omit to specify the output file, so results will immediately
 appear on the screen.
 
 \begin{verbatim} 
 oligo-analysis -i PHO_up800.fasta -format fasta \ 
-    -v -l 6 -2str \
+    -v 1 -l 6 -2str \
     -return occ,proba -lth occ_sig 0 -sort 
 \end{verbatim}
 
@@ -240,7 +277,7 @@ Note that
 \item The most significant motifs have nothing to do with Pho4p binding
 sites. All these false positives are A-rich motifs (or T-rich, since we
 are grouping patterns with their reverse-complement).
-\item Two patterns (\texttt{acgttt} and \texttt{acgtgc}) are selected
+\item Two patterns (\seq{acgttt} and \seq{acgtgc}) are selected
 which are related to Pho4p binding site. However, they come at the
 12th and 14th positions only.
 \end{itemize}
@@ -249,9 +286,9 @@ You can combine oligo-analysis and pattern-assembly in a single
 command, by using the pipe character as below.
 
 \begin{verbatim}
-oligo-analysis -i PHO_up800.fasta -format fasta -v \
+oligo-analysis -i PHO_up800.fasta -format fasta -v 1 \
     -l 6 -2str  -return occ,proba -lth occ_sig 0 -sort \
-    | pattern-assembly -2str -sc 7 -subst 1 -v
+    | pattern-assembly -2str -sc 7 -subst 1 -v 1 
 \end{verbatim}
 
 On unix systems, this special character is used to concatenate
@@ -264,47 +301,47 @@ Note that the most significant patterns are associated to the poly-A
 choice of expected frequencies (all hexanucleotides were considered
 equiprobable here), regulatory sites were lost within a majority of
 false positive, and their description is much less accurate than with
-the option \texttt{-bg upstream}.
+the option \option{-bg upstream}.
 
 \textit{\textbf{Markov chains}}
 
 Another possibility is to use Markov chain models to estimate expected
 word frequencies. Try the following commands and compare the
-results. None is as good as the option \texttt{-bg upstream},
+results. None is as good as the option \option{-bg upstream},
 but in case one would not have the pre-calibrated non-coding
 frequencies (for instance if the organism has not been completely
 sequenced), markov chains can provide an interesting approach.
 
 \begin{verbatim}
-oligo-analysis -markov 0 \
+oligo-analysis -v 1 -markov 0 \
     -i PHO_up800.fasta -format fasta \
     -l 6 -lth occ_sig 0 -sort \
     -2str -return occ,proba \
-    | pattern-assembly -2str -sc 7 -subst 1 -v
+    | pattern-assembly -2str -sc 7 -subst 1 -v 1
 
-oligo-analysis -markov 1 \
+oligo-analysis -v 1 -markov 1 \
     -i PHO_up800.fasta -format fasta \
     -2str -return occ,proba \
     -l 6 -lth occ_sig 0 -sort \
-    | pattern-assembly -2str -sc 7 -subst 1 -v
+    | pattern-assembly -2str -sc 7 -subst 1 -v 1
 	
-oligo-analysis -markov 2 \
+oligo-analysis -v 1 -markov 2 \
     -i PHO_up800.fasta -format fasta \
     -2str -return occ,proba \
     -l 6 -lth occ_sig 0 -sort \
-    | pattern-assembly -2str -sc 7 -subst 1 -v
+    | pattern-assembly -2str -sc 7 -subst 1 -v 1
 	
-oligo-analysis -markov 3 \
+oligo-analysis -v 1 -markov 3 \
     -i PHO_up800.fasta -format fasta \
     -2str -return occ,proba \
     -l 6 -lth occ_sig 0 -sort \
-    | pattern-assembly -2str -sc 7 -subst 1 -v
+    | pattern-assembly -2str -sc 7 -subst 1 -v 1
 	
-oligo-analysis -markov 4 \
+oligo-analysis -v 1 -markov 4 \
     -i PHO_up800.fasta -format fasta \
     -2str -return occ,proba \
     -l 6 -lth occ_sig 0 -sort \
-    | pattern-assembly -2str -sc 7 -subst 1 -v
+    | pattern-assembly -2str -sc 7 -subst 1 -v 1
 \end{verbatim}
 
 \textit{\textbf{Remarks}}
@@ -346,7 +383,7 @@ upstream regions of the PHO genes.
 
 As for RSAT programs, there are two ways to get help from Jerry Hertz'
 proigrams: a detailed manual can be obtained with the option
-\texttt{-h}, and a summary of options with \texttt{-help}. Try these
+\option{-h}, and a summary of options with \option{-help}. Try these
 options and read the manual.
 
 \begin{verbatim}
@@ -398,7 +435,7 @@ contain one occurrence of the medium affinity site CACGTT.
 Also notice that these matrices are not made of exactly 10 sites
 each. \textit{consensus} is able to adapt the number of sites in the
 alignment in order to get the highest information content. The option
-\texttt{-N 10} was an indication rather than a rigid requirement.
+\option{-N 10} was an indication rather than a rigid requirement.
 
 To save the result in a file, you can use the symbol ``greater than''
 ($>$) which redirects the output of a program to a file.
