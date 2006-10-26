@@ -74,8 +74,13 @@ $SCRIPTS = "$RSA/perl-scripts";
 my $login = getlogin();
 
 ################################################################
-## Redirect queries to a remote server
-## 
+## Redirect queries to a remote server 
+##
+## This piece of code used to ensure load balancing between several
+## machines, but it relies on rsh, which is not a safe protocol. In
+## case of need, it could be adapted to work with ssh in the
+## future. Anyway, this will probably be replaced by more efficient
+## protocols for grid computation.
 if ($REMOTE_SERVER) {
     if (($login eq "webserv") || !($login)) {
 	$NICE = "nice +5";
