@@ -344,19 +344,20 @@ profile_pairs:
 ## - gene
 ## - significance
 DYAD_CLASSES=${COMPA_DIR}/${REF_ORG}_${TAXON}${SUFFIX}_dyad_classes.tab
-dyad_classes: dyad_file_list
-	@echo
-	@echo "Generating dyads/gene file	${REF_ORG}	${TAXON}"
-	@mkdir -p ${COMPA_DIR}	
-	compare-scores -null "NA" -sc ${SIG_COLUMN} \
+DYAD_CLASS_CMD= mkdir -p ${COMPA_DIR}	 ; \
+	compare-scores -null NA -sc ${SIG_COLUMN} \
 		-format classes \
-		-suppress "${RESULT_DIR}/motifs/" \
-		-suppress "_dyads.tab" \
-		-suppress "_${REF_ORG}_${TAXON}" \
+		-suppress '${RESULT_DIR}/motifs/' \
+		-suppress '_dyads.tab' \
+		-suppress '_${REF_ORG}_${TAXON}' \
 		-filelist ${DYAD_FILE_LIST}  \
 		| perl -pe 's/\/\S+//g' \
 		| sort +1 \
 		> ${DYAD_CLASSES}
+dyad_classes: dyad_file_list
+	@echo
+	@echo "Generating dyads/gene file	${REF_ORG}	${TAXON}"
+	${MAKE} my_command MY_COMMAND="${DYAD_CLASS_CMD}"
 	@echo ${DYAD_CLASSES}
 	@echo "	`grep -v '^;' ${DYAD_CLASSES} | cut -f 2 | sort -u | wc -l`	genes"
 	@echo "	`grep -v '^;' ${DYAD_CLASSES} | cut -f 1 | sort -u | wc -l`	dyads"
@@ -369,16 +370,18 @@ PROFILE_PAIRS=${COMPA_DIR}/${REF_ORG}_${TAXON}${SUFFIX}_profile_pairs
 GENE_PAIRS=${COMPA_DIR}/${REF_ORG}_${TAXON}${SUFFIX}_gene_pairs
 GENE_PAIR_RETURN=occ,dotprod,jac_sim,proba,entropy,rank
 V2=3
-gene_pairs:
-	@echo
-	@echo "Calculating gene pairs	${REF_ORG}	${TAXON}"
+GENE_PAIR_CMD= \
 	compare-classes -v ${V2} -i ${DYAD_CLASSES} \
 		-return ${GENE_PAIR_RETURN} \
 		-sc 3 -lth QR 1 -distinct -triangle -sort dotprod \
-		-o ${GENE_PAIRS}.tab
-	@echo ${GENE_PAIRS}.tab
-	@text-to-html -chunk 200 -i ${GENE_PAIRS}.tab -o  ${GENE_PAIRS}.html -font variable
-	@echo ${GENE_PAIRS}.html
+		-o ${GENE_PAIRS}.tab ; \
+	text-to-html -chunk 200 -i ${GENE_PAIRS}.tab -o  ${GENE_PAIRS}.html -font variable 
+gene_pairs:
+	@echo ; \
+	@echo "Calculating gene pairs	${REF_ORG}	${TAXON}" ; \
+	${MAKE} my_command MY_COMMAND="${GENE_PAIR_CMD}"
+	echo ${GENE_PAIRS}.tab
+	@echo ${GENE_PAIRS}.html 
 	@echo "	`grep -v ';' ${GENE_PAIRS}.tab | grep -v '^#' |  wc -l`	gene pairs"
 
 
@@ -388,20 +391,29 @@ MIN_SCORE=1
 SCORE_COL=15
 SCORE=dp
 PAIR_GRAPH=${GENE_PAIRS}_${SCORE}${MIN_SCORE}
-gene_pair_graph:
-	@echo
-	@echo "Generating gene pair graph	${REF_ORG}	${TAXON}"
-	grep -v '^;' ${GENE_PAIRS}.tab \
+PAIR_GRAPH_CMD=	grep -v '^;' ${GENE_PAIRS}.tab \
 		| awk -F '\t' '$$${SCORE_COL} >= ${MIN_SCORE}'  \
 		| convert-graph -from tab -scol 2 -tcol 3 -wcol ${SCORE_COL} -to dot \
-		-o ${PAIR_GRAPH}.dot
-	@echo ${PAIR_GRAPH}.gml
+		-o ${PAIR_GRAPH}.dot ; \
 	grep -v '^;' ${GENE_PAIRS}.tab \
 		| awk -F '\t' '$$${SCORE_COL} >= ${MIN_SCORE}' \
 		| grep -v '^;' \
 		| convert-graph -from tab -scol 2 -tcol 3 -wcol ${SCORE_COL} -to gml \
 		-o ${PAIR_GRAPH}.gml
+
+gene_pair_graph:
+	@echo
+	@echo "Generating gene pair graph	${REF_ORG}	${TAXON}"
+	${MAKE} my_command MY_COMMAND="${PAIR_GRAPH_CMD}"
+	@echo ${PAIR_GRAPH}.gml
 	@echo ${PAIR_GRAPH}.dot
+
+## ##############################################################
+## This task combines dyad_classes, gene_pairs and pair_graph, in order tos
+## end them in one shot to the cluster.
+gene_network:
+#	${MAKE} my_command MY_COMMAND="${DYAD_CLASS_CMD} ${GENE_PAIR_CMD}; ${PAIR_GRAPH_CMD}"
+	${MAKE} my_command MY_COMMAND="${DYAD_CLASS_CMD} ${GENE_PAIR_CMD}; ${PAIR_GRAPH_CMD}"
 
 ################################################################
 ## Generate gene pair graphs with various levels of threshold
