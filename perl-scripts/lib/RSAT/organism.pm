@@ -968,11 +968,12 @@ sub LoadSynonyms {
 ################################################################
 =pod
 
-=item SelectRandomORFs
+=item SelectRandomGenes
 
-return a random ORF selection
+Select a random set of genes among those annotated for the current
+organism.
 
-Usage: @random_orfs = $organism->SelectRandomORFs($n, $replace, $init, $seed);
+Usage: @random_genes = $organism->SelectRandomGenes($n, $replace, $init, $seed);
 
 @param $replace  if true, the selections is made with replacement
 @param $init     if true, the random generator is initialized (srand)
