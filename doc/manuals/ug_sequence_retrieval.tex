@@ -16,7 +16,7 @@ regions, at least in microbial organisms.
 First trial: we will extract the upstream sequence for a single
 gene. Try:
 
-{\color{blue} \begin{footnotesize} 
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
 retrieve-seq -type upstream -org Escherichia_coli_K12 \
     -q metA -from -200 -to -1
@@ -59,7 +59,7 @@ With the default parameters,
 To better understand the system of coordinates, try to locate the
 start codon in the sequence obtained with the following commands.
 
-{\color{blue} \begin{footnotesize}
+{\color{Blue} \begin{footnotesize}
 \begin{verbatim}
 retrieve-seq -type upstream -org Escherichia_coli_K12 \
     -q metA -from -5 -to 6
@@ -75,7 +75,7 @@ effect by preventing RNA-polymerase from binding DNA. The command
 \program{retrieve-seq} allows you to extract a sequence that overlaps
 the start codon, to combine an upstream and a coding segment.
 
-{\color{blue} \begin{footnotesize}
+{\color{Blue} \begin{footnotesize}
 \begin{verbatim}
 retrieve-seq -type upstream -org Escherichia_coli_K12 \
     -q metA -from -200 -to 49
@@ -87,14 +87,14 @@ retrieve-seq -type upstream -org Escherichia_coli_K12 \
 The option \option{-q} (query gene) can be used iteratively in a
 command to retrieve sequences for several genes.
 
-{\color{blue} \begin{footnotesize}
+{\color{Blue} \begin{footnotesize}
 \begin{verbatim}
 retrieve-seq -org Escherichia_coli_K12 \
     -from -200 -to 49 -q metA -q metB -q metC
 \end{verbatim} \end{footnotesize}
 }
 
-\section{Retrieving many upstream sequences}
+\section{Retrieving a larger list of upstream sequences}
 
 If you have to retrieve a large number of sequences, it might become
 cumbersome to type each gene name on the command-line. A list of gene
@@ -105,7 +105,7 @@ To create a test file, you can execute the following steps:
 \begin{enumerate}
 \item to create a new file, call the standard unix command 
 
-{\color{blue} \begin{footnotesize}
+{\color{Blue} \begin{footnotesize}
 \begin{verbatim}
 cat > PHO_genes.txt
 \end{verbatim} \end{footnotesize}
@@ -113,7 +113,7 @@ cat > PHO_genes.txt
 
 \begin{samepage}
 \item You can now type a list of gene names, for example:
-{\color{blue} \begin{footnotesize}
+{\color{Blue} \begin{footnotesize}
 \begin{verbatim}
 PHO11
 PHO3
@@ -142,7 +142,7 @@ PHO85
 
 \item Check the content of your file by typing 
 
-{\color{blue} \begin{footnotesize}
+{\color{Blue} \begin{footnotesize}
 \begin{verbatim}
 cat PHO_genes.txt
 \end{verbatim} \end{footnotesize}
@@ -152,63 +152,34 @@ cat PHO_genes.txt
 
 This file can now be used as input to indicate the list of genes. The option \option{-i} 
 
-{\color{blue} \begin{footnotesize}
+{\color{Blue} \begin{footnotesize}
 \begin{verbatim}
 retrieve-seq -type upstream -i PHO_genes.txt \
     -org Saccharomyces_cerevisiae \
-    -from -800 -to -1 
+    -from -800 -to -1  
 \end{verbatim} \end{footnotesize}
 } 
 
 The option \option{-o} allows you to indicate the name of a file where
 the sequence will be stored.
 
-{\color{blue} \begin{footnotesize}
+{\color{Blue} \begin{footnotesize}
 \begin{verbatim}
 retrieve-seq -type upstream -i PHO_genes.txt \
     -org Saccharomyces_cerevisiae \
-    -from -800 -to -1 -label name \
+    -from -800 -to -1   -label name \
     -o PHO_up800.fasta
 \end{verbatim} \end{footnotesize}
 } 
 
 Check the sequence file:
 
-{\color{blue} \begin{footnotesize}
+{\color{Blue} \begin{footnotesize}
 \begin{verbatim}
 more PHO_up800.fasta
 \end{verbatim} \end{footnotesize}
 }
 
-\section{Retrieving all upstream sequences}
-
-For genome-scale analyses, it is convenient to retrieve upstream
-sequences for all the genes of a given genome, without having to
-specify the complete list of names. For this, simply use the option
-\option{-all}.
-
-As an illustration, we will use \command{retrieve-seq} to retrieve all
-the start codons from \org{Escherichia coli}. As we saw before,
-negative coordinates specify upstream positions, 0 being the first
-base of the coding sequence. Thus, by specifying positions 0 to 2, we
-will extract the three first coding bases, i.e. the start codon. 
-
-{\color{blue} \begin{footnotesize}
-\begin{verbatim}
-retrieve-seq -type upstream -org Escherichia_coli_K12 \
-    -from 0 -to 2 \
-    -all -format wc -nocomments -label id,name \
-    -o Escherichia_coli_K12_start_codons.wc
-\end{verbatim} \end{footnotesize}
-}
-
-Check the result:
-
-{\color{blue} \begin{footnotesize}
-\begin{verbatim}
-more Escherichia_coli_K12_start_codons.wc
-\end{verbatim} \end{footnotesize}
-}
 
 \section{Preventing the inclusion of upstream ORFs}
 
@@ -232,7 +203,7 @@ compare the results obtained with and without the option
 Create a text file named \file{his.genes.txt} with the following
 genes.
 
-{\color{blue} \begin{footnotesize}
+{\color{Blue} \begin{footnotesize}
 \begin{verbatim}
 hisL
 hisG
@@ -252,7 +223,7 @@ hisS
 
 The default behaviour will return 200bp for each gene. 
 
-{\color{blue} \begin{footnotesize}
+{\color{Blue} \begin{footnotesize}
 \begin{verbatim}
 retrieve-seq -type upstream -org Escherichia_coli_K12 \
     -i his.genes.txt -from -200 -to -1
@@ -262,7 +233,7 @@ retrieve-seq -type upstream -org Escherichia_coli_K12 \
 With the option \option{-noorf}, sequences are clipped depending on
 the position of the closest upstream neighbour.
 
-{\color{blue} \begin{footnotesize}
+{\color{Blue} \begin{footnotesize}
 \begin{verbatim}
 retrieve-seq -type upstream -org Escherichia_coli_K12 \
     -i his.genes.txt -from -200 -to -1 -noorf \
@@ -275,7 +246,7 @@ more his.up200.noorf.fasta
 You can measure the length of the resulting sequences with the program
 \program{sequence-lengths}.
 
-{\color{blue} \begin{footnotesize}
+{\color{Blue} \begin{footnotesize}
 \begin{verbatim}
 sequence-lengths -i his.up200.noorf.fasta
 \end{verbatim} \end{footnotesize}
@@ -284,6 +255,166 @@ sequence-lengths -i his.up200.noorf.fasta
 Notice that some genes have very short upstream sequences (no more
 than a few bp, or even 0bp). These are the internal genes of the
 \gene{his} operon. 
+
+
+We will now apply the same option to the list of PHO genes entered
+above, in order to obtaine the corresponding non-coding upstream
+sequences, with a size up to 800bp.
+
+{\color{Blue} \begin{footnotesize}
+\begin{verbatim}
+retrieve-seq -type upstream -i PHO_genes.txt \
+    -org Saccharomyces_cerevisiae \
+    -from -800 -to -1 -noorf  -label name \
+    -o PHO_up800-noorf.fasta
+\end{verbatim} \end{footnotesize}
+} 
+
+Check the sequence file:
+
+{\color{Blue} \begin{footnotesize}
+\begin{verbatim}
+more PHO_up800-noorf.fasta
+\end{verbatim} \end{footnotesize}
+}
+
+We can now use the command \command{sequence-lengths} to compare the
+sequence sizes of the files \file{PHO_up800.fasta}, and
+\file{PHO_up800-noorf.fasta}, respectively.
+
+{\color{Blue} \begin{footnotesize}
+\begin{verbatim}
+sequence-lengths -i PHO_up800.fasta
+
+sequence-lengths -i PHO_up800-noorf.fasta
+\end{verbatim} \end{footnotesize}
+}
+
+\section{Getting information about genes}
+
+\RSAT include several utilities to obtain information about a set of
+genes, we will illustrate some basic features. 
+
+\subsection{Getting gene location, names and description}
+
+In the previous section, we created a text file with the names of a
+set of genes related to phosphate metabolism. The command
+\command{gene-info} returns the complete information concerning a set
+of genes. By default, the first word of each row of the input file is
+considered as a query.
+
+{\color{Blue} \begin{footnotesize}
+\begin{verbatim}
+gene-info -i PHO_genes.txt -org Saccharomyces_cerevisiae
+\end{verbatim} \end{footnotesize}
+}
+
+
+\subsection{Adding selected fields to a list of gene}
+
+The program \concept{add-gene-info} allows add columns to an input
+file, with user-selected fields of information about the genes. For
+example, the options below will add the gene identifier and the list
+of synonym to each row of our PHO gene listq. 
+
+{\color{Blue} \begin{footnotesize}
+\begin{verbatim}
+add-gene-info -i PHO_genes.txt -org Saccharomyces_cerevisiae -info id,names
+\end{verbatim} \end{footnotesize}
+}
+
+\subsection{Selecting gene by name or description}
+
+Another common need is to search all the names whose name or
+description matches some string. For example, let us assume that we
+want to ollect all the genes whose name indicates a role in the
+methionine metabolism, in the yeast \org{Saccharomyces cerevisiae}.
+The program \concept{gene-info} allows us to specify this type of
+query. according to the naming convention in the yeast community, gene
+names start with three letters indicating the function (e.g. PHO for
+phosphate, MET for methionine), wollowed by a number. We can ask the
+program to return all the gene names having the prefix MET followe by
+some number.
+
+{\color{Blue} \begin{footnotesize}
+\begin{verbatim}
+gene-info -q 'MET\d+' -org Saccharomyces_cerevisiae
+\end{verbatim} \end{footnotesize}
+}
+
+In this case, we entered the query string with the option \option{-q}
+on the command line, rather than in a file. The query is formulatd as
+a \concept{regular expression}, where \texttt{$\backslash$d} indicates
+a number, and the symbol $+$ is a multiplier, so
+\textt{$\backslash$d+}, indicates that we accept a succession of one
+or more numbers after the string ``MET''.
+
+We can now store this list of genes in a separate file, and retrieve
+the coresponding upstream sequences.
+
+
+{\color{Blue} \begin{footnotesize}
+\begin{verbatim}
+gene-info -q 'MET\d+' -org Saccharomyces_cerevisiae -o MET_genes.txt
+
+retrieve-seq -type upstream -i MET_genes.txt \
+    -org Saccharomyces_cerevisiae \
+    -from -800 -to -1 -noorf  -label name \
+    -o MET_up800-noorf.fasta
+\end{verbatim} \end{footnotesize}
+}
+
+
+\section{Retrieving sequences of a random selection of genes}
+
+It is also sometimes interesting to select a set of random genes,
+which canbe used as negative control or some analyses. This is exactly
+the purporse of the program \program{random-genes}. We will perform a
+random selection of 20 yeast genes, and retrieve their upstream
+sequences. This selection will also be used in the next chapters.
+
+
+{\color{Blue} \begin{footnotesize}
+\begin{verbatim}
+random-genes -org Saccharomyces_cerevisiae -n 20 -o RAND_genes.txt
+
+retrieve-seq -type upstream -i RAND_genes.txt \
+    -org Saccharomyces_cerevisiae \
+    -from -800 -to -1 -noorf  -label name \
+    -o RAND_up800-noorf.fasta
+\end{verbatim} \end{footnotesize}
+}
+
+\section{Retrieving all upstream sequences}
+
+For genome-scale analyses, it is convenient to retrieve upstream
+sequences for all the genes of a given genome, without having to
+specify the complete list of names. For this, simply use the option
+\option{-all}.
+
+As an illustration, we will use \command{retrieve-seq} to retrieve all
+the start codons from \org{Escherichia coli}. As we saw before,
+negative coordinates specify upstream positions, 0 being the first
+base of the coding sequence. Thus, by specifying positions 0 to 2, we
+will extract the three first coding bases, i.e. the start codon. 
+
+{\color{Blue} \begin{footnotesize}
+\begin{verbatim}
+retrieve-seq -type upstream -org Escherichia_coli_K12 \
+    -from 0 -to 2 \
+    -all -format wc -nocomments -label id,name \
+    -o Escherichia_coli_K12_start_codons.wc
+\end{verbatim} \end{footnotesize}
+}
+
+Check the result:
+
+{\color{Blue} \begin{footnotesize}
+\begin{verbatim}
+more Escherichia_coli_K12_start_codons.wc
+\end{verbatim} \end{footnotesize}
+}
+
 
 \section{Retrieving downstream sequences}
 
@@ -296,7 +427,7 @@ stop codon (i.e. coding sequences).
 For example, the following command returns all the stop codons for
 \org{Escherichia coli}.
 
-{\color{blue} \begin{footnotesize}
+{\color{Blue} \begin{footnotesize}
 \begin{verbatim}
 retrieve-seq -type downstream -org Escherichia_coli_K12 \
     -from -2 -to 0 \
@@ -325,7 +456,7 @@ retrieve-seq -type downstream -org Escherichia_coli_K12 \
 
 % For example, To retrieve upstream sequences for a random selection of
 % 100 yeast ORFs :
-% {\color{blue} \begin{footnotesize}
+% {\color{Blue} \begin{footnotesize}
 % \begin{verbatim}
 % retrieve-seq -org Saccharomyces_cerevisiae \
 %     -randsel 100 -type upstream
@@ -334,7 +465,7 @@ retrieve-seq -type downstream -org Escherichia_coli_K12 \
 
 % Another example: to retrieve 100 random genomic segments of size 200
 % in \org{Saccharomyces cerevisiae} :
-% {\color{blue} \begin{footnotesize}
+% {\color{Blue} \begin{footnotesize}
 % \begin{verbatim}
 % retrieve-seq  -org Saccharomyces_cerevisiae \
 %     -randsel 100 -type random
