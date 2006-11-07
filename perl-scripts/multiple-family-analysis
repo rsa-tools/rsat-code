@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.170 2006/10/10 17:43:12 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.171 2006/11/07 08:10:16 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -116,6 +116,8 @@ $supported_sort_keys  = join ",", sort keys %supported_sort_key;
 			 "upstream-noorf"=>1,
 			 "calib1"=>1,
 			 "calibN"=>1,
+			 "upstream-rm"=>1,
+			 "upstream-noorf-rm"=>1
 			 );
 $supported_background  = join ",", sort keys %supported_background;
 
@@ -389,6 +391,9 @@ sub SetFileNames {
     if ($markov) {
 	$dyad_suffix .= "_monad"; ### TEMP
     } elsif ($background) {
+	if ($repeat_masked) {        ### Should be here?
+	    $background .= "-rm";    ### Should be here?
+	}                            ### Should be here?
 	$dyad_suffix .= "_bg_".$background; ### TEMP
     }
     $dyad_suffix .= "_l".$monad_length;
@@ -2990,7 +2995,7 @@ sub ReadArguments {
 		unless ((&IsNatural($calibN_repet)) && ($calibN_repet >= 2));
 
 	    #### background model for expected frequency. 
-	    #### Supported: "upstream", "upstream-noorf", "intergenic", "mncf"
+	    #### Supported: "upstream", "upstream-noorf", "intergenic", "mncf", "upstream-rm", "upstream-noorf-rm"
 	} elsif (($ARGV[$a] =~ /^-exp/) 
 		 || ($ARGV[$a] =~ /^-bg/)) {
 	    $background = $ARGV[$a+1];
