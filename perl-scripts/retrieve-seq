@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.53 2006/11/07 08:15:29 jvanheld Exp $
+# $Id: retrieve-seq,v 1.54 2006/11/07 14:10:36 jvanheld Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -736,29 +736,24 @@ sub ReadArguments {
 	    ### limits of the region to retrieve
 	} elsif ($ARGV[$a] eq "-from") {
 	    $from = $ARGV[$a+1];
-	    &RSAT::error::FatalError($from, "Invalid value for the option -from, should  be a Natural number.") unless (&IsNatural($from)); 
+	    &RSAT::error::FatalError($from, "Invalid value for the option -from, should  be a Integer number.") unless (&IsInteger($from)); 
 
 	} elsif ($ARGV[$a] eq "-to") {
 	    $to = $ARGV[$a+1];
-	    &RSAT::error::FatalError($to, "Invalid value for the option -to, should  be a Natural number.") unless (&IsNatural($to)); 
+	    &RSAT::error::FatalError($to, "Invalid value for the option -to, should  be a Integer number.") unless (&IsInteger($to)); 
 	    
 	    ### verbose
 	} elsif ($ARGV[$a] eq "-v") {
-	    if (&IsReal($ARGV[$a+1])) {
+	    if (&IsNatural($ARGV[$a+1])) {
 		$verbose = $ARGV[$a+1];
 	    } else {
 		$verbose = 1;
 	    }
 
-	    ### verbose
-	} elsif (($ARGV[$a] eq "-w") &&
-		 (&IsNatural($ARGV[$a+1]))){
-	    $verbose = $ARGV[$a+1];
-
 	    #### new query
 	} elsif ($ARGV[$a] eq "-q") {
 	    @queries = (@queries, $ARGV[$a+1]);
-	    
+
 	    #### input file (one query per line)
 	} elsif ($ARGV[$a] eq "-i") {
 	    $query_file =$ARGV[$a+1];
