@@ -548,7 +548,7 @@ sub _readFromGibbsFile {
 	if (/Information \(relative entropy\) contribution in tenth bits\:/) {
 	    $in_matrix = 1;
 	    # default nucletodide alphabet
-	    $self->setAlphabet_lc("A","C","G","T");   
+	    $self->setAlphabet_uc("A","C","G","T");   
 	    next;
 
 	} elsif (/site/) {
@@ -567,7 +567,7 @@ sub _readFromGibbsFile {
 	    chomp;
 	    @header = split " +";
 	    @alphabet = @header[1..$#header-1];
-#		$self->setAlphabet_lc(@alphabet);
+#		$self->setAlphabet_uc(@alphabet);
 	} elsif (/model map = (\S+); betaprior map = (\S+)/) {
 	    $self->set_parameter("model.map", $1);
 	    $self->set_parameter("betaprior.map", $2);
@@ -820,7 +820,7 @@ sub _readFromMEMEFile {
 	    $self->setPrior(%residue_frequencies);
 
 	    my @alphabet = sort (keys %residue_frequencies);
-	    $self->setAlphabet_lc(@alphabet);
+	    $self->setAlphabet_uc(@alphabet);
 	    
 	    ## Index the alphabet
 	    foreach my $l (0..$#alphabet) {
@@ -1029,7 +1029,7 @@ sub _readFromClustalFile {
 	$self->addRow(@row);
 	warn join ("\t", "Adding row", $r, $res, join ":", @row, "\n"), "\n" if ($main::verbose >= 4); 
     }
-    $self->setAlphabet_lc(@alphabet);
+    $self->setAlphabet_uc(@alphabet);
     $self->force_attribute("ncol", $ncol);
     $self->force_attribute("nrow", $nrow);
 
