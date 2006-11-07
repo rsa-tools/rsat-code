@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_genomes.mk,v 1.27 2006/10/06 14:24:31 rsat Exp $
+# $Id: install_genomes.mk,v 1.28 2006/11/07 08:14:03 rsat Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -67,11 +67,19 @@ list_prokaryotes:
 	@echo "Prokaryote to install	${PROKARYOTES}"
 
 
-### Install all prokaryotel genomes on RSAT
+### Install all prokaryotes genomes on RSAT
 install_all_prokaryotes:
 	@for pro in ${PROKARYOTES}; do				\
 		${MAKE} install_one_prokaryote PRO=$${pro};	\
 	done
+
+### Install all prokaryotes genomes on RSAT
+NEW_PROKARYOTES=`cat ${RSAT}/downloads/new_bact.txt`
+install_new_prokaryotes:
+	@for pro in ${NEW_PROKARYOTES}; do				\
+		${MAKE} install_one_prokaryote PRO=$${pro};	\
+	done
+
 
 ### Install a single prokaryote genome
 install_one_prokaryote:
