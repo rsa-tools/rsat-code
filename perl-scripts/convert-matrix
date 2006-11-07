@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.14 2006/08/01 04:38:13 jvanheld Exp $
+# $Id: convert-matrix,v 1.15 2006/11/07 08:11:27 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -22,7 +22,7 @@ use RSAT::matrix;
 my $start_time = &AlphaDate();
 $decimals = 4;
 $pseudo_weight = 1;
-$max_profile = 10;
+$max_profile = 20;
 $sep="\t";
 
 local %infile = ();
