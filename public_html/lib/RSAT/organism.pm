@@ -95,8 +95,8 @@ Add a contig to the list.
 =cut
 sub add_contig {
     my ($self, $contig_id, $contig_obj) = @_;
-    &RSAT::message::Info(join("\t", "Adding contig", $contig_id, $contig_obj)) if ($main::verbose >= 0);
     $self->add_hash_attribute("contigs", $contig_id, $contig_obj);
+    &RSAT::message::Info(join("\t", "Added contig", $contig_id, $contig_obj)) if ($main::verbose >= 3);
 }
 
 
