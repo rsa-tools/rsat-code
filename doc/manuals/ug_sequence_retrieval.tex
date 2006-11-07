@@ -310,19 +310,6 @@ gene-info -i PHO_genes.txt -org Saccharomyces_cerevisiae
 }
 
 
-\subsection{Adding selected fields to a list of gene}
-
-The program \concept{add-gene-info} allows add columns to an input
-file, with user-selected fields of information about the genes. For
-example, the options below will add the gene identifier and the list
-of synonym to each row of our PHO gene listq. 
-
-{\color{Blue} \begin{footnotesize}
-\begin{verbatim}
-add-gene-info -i PHO_genes.txt -org Saccharomyces_cerevisiae -info id,names
-\end{verbatim} \end{footnotesize}
-}
-
 \subsection{Selecting gene by name or description}
 
 Another common need is to search all the names whose name or
@@ -333,21 +320,34 @@ The program \concept{gene-info} allows us to specify this type of
 query. according to the naming convention in the yeast community, gene
 names start with three letters indicating the function (e.g. PHO for
 phosphate, MET for methionine), wollowed by a number. We can ask the
-program to return all the gene names having the prefix MET followe by
-some number.
+program to return all the gene names having the string ``MET'' in
+their names. 
+
+In this example, we will enter the query string with the option
+\option{-q} on the command line, rather than in a file.
 
 {\color{Blue} \begin{footnotesize}
 \begin{verbatim}
-gene-info -q 'MET\d+' -org Saccharomyces_cerevisiae
+gene-info -q 'MET' -org Saccharomyces_cerevisiae
 \end{verbatim} \end{footnotesize}
 }
 
-In this case, we entered the query string with the option \option{-q}
-on the command line, rather than in a file. The query is formulatd as
-a \concept{regular expression}, where \texttt{$\backslash$d} indicates
-a number, and the symbol $+$ is a multiplier, so
- \texttt{$\backslash$d+}, indicates that we accept a succession of one
-or more numbers after the string ``MET''.
+We could also refine the query by taking advantage of our knowledge of
+th yeast gene nomenclature, and selecting the genes whose name starts
+with the prefix ``MET'', followed by one or several numbers.
+
+{\color{Blue} \begin{footnotesize}
+\begin{verbatim}
+gene-info -q '^MET\d+' -org Saccharomyces_cerevisiae
+\end{verbatim} \end{footnotesize}
+}
+
+The query is formulatd as a \concept{regular expression}, where
+\texttt{$\backslash$d} indicates a number, and the symbol $+$ is a
+multiplier, so \texttt{$\backslash$d+}, indicates that we accept a
+succession of one or more numbers after the string ``MET''. The
+character $^$ indicates that the string MET should be at the start of
+the name (thus, there can be no letter before MET).
 
 We can now store this list of genes in a separate file, and retrieve
 the coresponding upstream sequences.
@@ -355,7 +355,7 @@ the coresponding upstream sequences.
 
 {\color{Blue} \begin{footnotesize}
 \begin{verbatim}
-gene-info -q 'MET\d+' -org Saccharomyces_cerevisiae -o MET_genes.txt
+gene-info -q '^MET\d+' -org Saccharomyces_cerevisiae -o MET_genes.txt
 
 retrieve-seq -type upstream -i MET_genes.txt \
     -org Saccharomyces_cerevisiae \
@@ -364,6 +364,53 @@ retrieve-seq -type upstream -i MET_genes.txt \
 \end{verbatim} \end{footnotesize}
 }
 
+
+\subsection{Selecting genes by their description}
+
+By default, the program \concept{gene-info} matches a query string
+against the list of gene names for the selected organism. The option
+\option{-descr} extends the search to the gene descriptions. For
+instance, we could search all the genes having the word ``methionine''
+in their description. 
+
+{\color{Blue} \begin{footnotesize}
+\begin{verbatim}
+gene-info -descr -q 'methionine' -org Saccharomyces_cerevisiae
+\end{verbatim} \end{footnotesize}
+}
+
+\subsection{Adding selected fields to a list of gene}
+
+As we saw in the previous section, the program \program{gene-info}
+takes as input a list of gene names or identifiers, and return the
+complete description of each gene.
+
+In some cases, one needs only a part of this information (e.g. the
+common name, or the descripion), in order to to add some columns to a
+pre-existing tab-delimited file where each row represents one
+gene. For example, imagine that you have a file containing expression
+profiles for 6000 yeast genes, measured by microarray experiments
+under 200 conditions. The file contains 201 columns: the first column
+indicates the ID of each gene, and the 200 next column give expression
+values measured in the 200 microarrays. In such case, you would
+typically use \program{add-gene-info} to add a few columns after each
+profile, in order to indicate the common name and the description of
+each gene.
+
+The program \concept{add-gene-info} allows add columns to an input
+file, with user-selected fields of information about the genes. For
+example, the options below will add the gene identifier and the list
+of synonym to each row of our PHO gene list. 
+
+{\color{Blue} \begin{footnotesize}
+\begin{verbatim}
+add-gene-info -i PHO_genes.txt -org Saccharomyces_cerevisiae -info id,names
+\end{verbatim} \end{footnotesize}
+}
+
+If the input file contains additional columns (e.g. expression
+profiles), these will be preserved in the output, and the requested
+information columns will be added at the end of each row.
 
 \section{Retrieving sequences of a random selection of genes}
 
