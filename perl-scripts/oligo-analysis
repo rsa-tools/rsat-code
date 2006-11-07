@@ -7,7 +7,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.118 2006/11/07 08:05:34 jvanheld Exp $
+# $Id: oligo-analysis,v 1.119 2006/11/07 08:10:16 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -30,6 +30,8 @@ $start_time = &AlphaDate();
 		 'intergenic'=>1,
 		 'bernoulli'=>1,
 		 'equi'=>1,
+		 'upstream-rm'=>1,
+		 'upstream-noorf-rm'=>1
 		 );
 $supported_bg = join ",", sort keys %supported_bg;
 $background_model = "bernoulli";  ## Default background model
