@@ -3,7 +3,7 @@
 
 ############################################################
 #
-# $Id: gene-info,v 1.5 2006/07/21 02:20:36 jvanheld Exp $
+# $Id: gene-info,v 1.6 2006/11/07 08:14:58 jvanheld Exp $
 #
 # Time-stamp: <2003-07-06 20:30:09 jvanheld>
 #
@@ -81,7 +81,7 @@ foreach $query (@queries) {
     foreach my $feature ($organism->get_attribute("features")) {
 	if ($feature->matches($query, $match_description, $full)) {
 	    $found = 1;
-	    &PrintInfo($expression, $feature);
+	    &PrintInfo($query, $feature);
 	}
     }
 
@@ -135,12 +135,23 @@ sub PrintInfo {
     print $out join ("\t", 
 		     $feature->get_attribute("id"),
 		     $feature->get_attribute("name"),
-		     $feature->get_attribute("contig"),
+		     $feature->get_attribute("ctg"),
 		     $feature->get_attribute("strand"),
 		     $feature->get_attribute("left"),
 		     $feature->get_attribute("right"),
 		     $feature->get_attribute("descr"),
 		     );
+#     &RSAT::message::Debug ("Gene info",
+# 			   "id: ".$feature->get_attribute("id"),
+# 			   "name: ".$feature->get_attribute("name"),
+# 			   "ctg: ".$feature->get_attribute("ctg"),
+# 			   "strand: ".$feature->get_attribute("strand"),
+# 			   "left: ".$feature->get_attribute("left"),
+# 			   "right: ".$feature->get_attribute("right"),
+# 			   "descr: ".$feature->get_attribute("descr"),
+# 			   "query: ".$query,
+# 			  ) if ($main:verbose >= 5);
+    
     my @names = $feature->get_attribute("names");
     if (scalar(@names) >= 1) {
 	print $out " [", join (";", @names), "]";
