@@ -152,8 +152,7 @@ sub read_tab {
     $score_column = $args{score_column} || 0;
     
     ## Verbosity
-    &RSAT::message::TimeWarn(join("\t", 
-				  "Reading classification from tab file", $input_file) ) if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Reading classification from tab file", $input_file) if ($main::verbose >= 2);
     &RSAT::message::Info(join("\n\t",
 			      "Columns",
 			      "member column: ".$member_column,
@@ -216,10 +215,15 @@ sub read_tab {
 	} else {
 	    $class{$class_name}->new_member($member_name);
 	}
-	&RSAT::message::Warning( join ("\t",  ";", $class_name,
-				       $member_name,
-				       $name{$id}) ) if ($main::verbose >= 5);
-#	    &RSAT::message::Debug("Scores", $class_name, $class{$class_name}->get_attribute("scores")) if ($main::verbose >= 0);
+	&RSAT::message::Debug( join ("\t",  $class_name,
+				     $member_name,
+				     $name{$id}) ) if ($main::verbose >= 5);
+	
+	if ($line % 10000 == 0) {
+	  &RSAT::message::TimeWarn( "Reading classes from file", $input_file, "lines read",  $line)
+	    if ($main::verbose >= 2);
+	}
+#	&RSAT::message::Debug("Scores", $class_name, $class{$class_name}->get_attribute("scores")) if ($main::verbose >= 0);
 	
     }
     close $in if ($input_file);
