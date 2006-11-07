@@ -1,6 +1,6 @@
 ################################################################
 ## Calculate oligonucleotide distributions in the whole set of
-## upstreal sequences of a given organism
+## upstream sequences of a given organism
 
 include ${RSAT}/makefiles/util.mk
 MAKEFILE=${RSAT}/makefiles/calibrate_oligos.mk
