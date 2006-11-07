@@ -1,7 +1,7 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: parse-embl.pl,v 1.14 2006/04/21 14:06:20 rsat Exp $
+# $Id: parse-embl.pl,v 1.15 2006/11/07 08:16:27 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:17:49 jvanheld>
 #
@@ -278,12 +278,13 @@ package main;
     #### Postprocessing : we interpret the features to extract more information
     #### check some feature attributes (name, description, ...)
 
-    warn "; Processing features\n" if ($main::verbose >= 1);
+    &RSAT::message::TimeWarn("Processing features") if ($main::verbose >= 1);
     my $organism_name = $org; #### first guess
     my $contig = "";
     foreach $feature ($features->get_objects()) {
 
-	#### the real organism name is annotated in the feature of type "source"
+	#### the real organism name is annotated in the feature of
+	#### type "source"
 	if ($feature->get_attribute("type") eq "source") {
             $organism_name = $feature->get_attribute("organism");
             $contig = $feature->get_attribute("contig");
@@ -299,16 +300,25 @@ package main;
 	    }
         } else {
            $feature->set_attribute("organism", $organism_name);
-	   $feature->force_attribute("contig", $contig);
+#	   $feature->force_attribute("contig", $contig);
         }
+
 	
         ### use gene attribute as name
-	foreach my $name ($feature->get_attribute("gene")) {
+	my @gene = $feature->get_attribute("gene");
+	if (scalar(@gene) >= 1) {
+	  foreach my $gene (@gene) {
 	    if ($feature->get_attribute("type") eq "CDS") {
-		$feature->push_attribute("names",$name);
+	      $feature->push_attribute("names",$gene);
 	    } else {
-		$feature->push_attribute("names",$name." ".$feature->get_attribute("type"));
+	      $feature->push_attribute("names",$gene." ".$feature->get_attribute("type"));
 	    }
+	  }
+	  ## Use gene name as main ID for the CDS 
+	  ## (this is just a first guess, it will be replaced by protein_id or locus_tag if these are defined)
+	  if ($gene[0] =~ /(\S+)/) {
+	    $feature->force_attribute('id', $1);
+	  }
 	}
 
 #	## Use attribute "accession" as main ID if there is one
@@ -316,7 +326,6 @@ package main;
 #	if ($accession =~ /(\S+)/) {
 #	    $feature->force_attribute('id', $1);
 #	}
-
 
 
 	### add protein_id as valid name
@@ -327,6 +336,7 @@ package main;
 	    }
 
 	    ## Use protein_id as main ID for the CDS
+	    ## (this is just a second guess, it will be replaced by locus_tag if it is defined)
 	    if ($protein_ids[0] =~ /(\S+)/) {
 		$feature->force_attribute('id', $1);
 	    }
@@ -345,6 +355,7 @@ package main;
 	    }
 	}
 	
+
 	#### add SWISS-PROT/Uniprot/TrEMBL ID as valid name
 	my @xrefs = $feature->get_attribute("db_xref");
 	my $gi = "";
@@ -700,7 +711,7 @@ sub Verbose {
 #### parse one EMBL file
 sub ParseEMBLFile {
     my ($input_file, $organisms, $contigs, $features, %args) = @_;
-    warn ";\n; Parsing file $input_file\n" if ($main::verbose >= 1);
+    &RSAT::message::TimeWarn (join ("\t", "Parsing file", $input_file)) if ($main::verbose >= 1);
     
     my ($file,$dir) = &OpenInputFile($input_file);
 #    open EMBL, $input_file 
@@ -744,7 +755,9 @@ sub ParseEMBLFile {
 	
 	if  ($line =~ /^ID\s+(\S+)\s*/) {
 	    #### contig ID line
-	    $contig = $contigs->new_object(id=>$1);
+	    my $contig_id = $1;
+	    $contig_id =~ s/\;$//;
+	    $contig = $contigs->new_object(id=>$contig_id);
 	    my $contig_description = "$'"; 
 	    $contig->set_attribute("description",$contig_description);
 	    $contig->set_attribute("file",$input_file);
@@ -850,7 +863,8 @@ sub ParseEMBLFile {
 	    #### create a new object for the feature
 	    $current_feature = $features->new_object(%args);
 	    $feature_count++;
-	    warn join "\t",  "; file $input_file", "line $l", "feature $feature_count", $feature_type, "\n" if ($main::verbose >= 2);
+	    &RSAT::message::Debug( "file", $input_file, "line", $l, "feature", $feature_count, $feature_type) 
+	      if ($main::verbose >= 2);
 	    $current_feature->set_attribute("type",$feature_type);
 	    $current_feature->set_attribute("contig",$contig->get_attribute("id"));
 #	    $current_feature->set_attribute("organism",$organism_name);
