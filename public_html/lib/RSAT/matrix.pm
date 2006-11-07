@@ -963,7 +963,7 @@ sub _readFromClustalFile {
     my %prior = ();
     my $ncol = 0;
     my $nrow = 0;
-    warn "; Calculating profile matrix from sequences\n" if ($main::verbose >= 3);
+    &RSAT::message::Info("Calculating profile matrix from sequences") if ($main::verbose >= 3);
     foreach my $seq_id (sort keys %sequences) {
 	my $sequence = $sequences{$seq_id};
 	$sequence =~ s/\s+//g;
@@ -1672,8 +1672,8 @@ sub calcConsensus {
 	
 	## Use uppercase for scores >= 1
 	if ($col_max >= 1) {
-	    $consensus_strict .= lc($col_consensus);
-	    $consensus .= lc($regular);
+	    $consensus_strict .= uc($col_consensus);
+	    $consensus .= uc($regular);
 	} else {
 	    $consensus_strict .= lc($col_consensus);
 	    $consensus .= lc($regular);
@@ -1712,7 +1712,7 @@ sub _printProfile {
     my @alphabet = $self->getAlphabet();
     my $ncol = $self->ncol();
     my $nrow = $self->nrow();
-    my $max_profile = $self->get_attribute("max_profile");
+    my $max_profile = $self->get_attribute("max_profile") || 20;
     my $comment_char = "|";
 
     $to_print .= "; Profile matrix\n";
@@ -1727,20 +1727,20 @@ sub _printProfile {
     my @info_sum = &RSAT::matrix::col_sum($nrow, $ncol, @information);
 
     ## profile header
-    $to_print .= $self->_printMatrixRow("pos", 
+    $to_print .= $self->_printMatrixRow(";pos", 
 					@alphabet, 
-					$comment_char,
-					"sum",
-					"max",
-					"max/sum",
-					"min",
+#					$comment_char,
+#					"sum",
+#					"max",
+#					"min",
+#					"inf_sum",
+					"max_frq",
 					"strict",
 					"IUPAC",
-					"inf_sum",
 					"="x$max_profile
 				       );
 
-    $to_print .= $self->_printSeparator(scalar(@alphabet)+1);
+    $to_print .= $self->_printSeparator(scalar(@alphabet));
 
     ## print each matrix column as a row in the output
     my $matrix_max = &main::checked_max(&RSAT::matrix::col_max($nrow, $ncol, @matrix));
@@ -1761,14 +1761,14 @@ sub _printProfile {
 	}
 	$to_print .= $self->_printMatrixRow($c, 
 					    @row, 
-					    $comment_char,
-					    $sum,
-					    $max,
+#					    $comment_char,
+#					    $sum,
+#					    $max,
+#					    $min,
+#					    sprintf("%5.2f",$info_sum[$c]),
 					    $rel_max,
-					    $min,
 					    $consensus_strict[$c],
 					    $consensus_IUPAC[$c],
-					    sprintf("%5.2f",$info_sum[$c]),
 					    "*"x$profile
 					   );
 
