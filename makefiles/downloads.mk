@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: downloads.mk,v 1.31 2006/09/15 23:40:59 rsat Exp $
+# $Id: downloads.mk,v 1.32 2006/11/07 08:19:03 jvanheld Exp $
 #
 # Time-stamp: <2003-10-09 14:02:21 jvanheld>
 #
@@ -560,8 +560,48 @@ current_machin:
 
 
 ################################################################
-## Drosophila genomes
+## Drosophila genomes from UCSC
+UCSC_DIR=dp3
+UCSC_URL=http://hgdownload.cse.ucsc.edu/goldenPath/${UCSC_DIR}/
+UCSC_FILE=bigZips/chromFa.zip 
+UCSC_FILES= \
+	database/blastDm2FB.sql \
+	database/blastDm2FB.txt.gz \
+	database/cds.sql \
+	database/cds.txt.gz \
+	database/all_mrna.sql  \
+	database/all_mrna.txt.gz  \
+	database/description.sql  \
+	database/description.txt.gz  \
+	database/organism.sql   \
+	database/organism.txt.gz   \
+	database/geneName.sql  \
+	database/geneName.txt.gz  \
+	database/refLink.sql \
+	database/refLink.txt.gz \
+	database/source.sql \
+	database/source.txt.gz \
+	database/tableDescriptions.sql \
+	database/tableDescriptions.txt.gz \
+	bigZips/chromFa.zip \
+	bigZips/chromFaMasked.zip
+ucsc_one_dir:
+	@for f in ${UCSC_FILES} ; do  \
+		${MAKE} ucsc_one_file UCSC_FILE=$${f}; \
+	done
 
+ucsc_one_file:
+	${WGET} ${UCSC_URL}/${UCSC_FILE}
+
+UCSC_DROSO_DIRS=dp3 dm2 droSim1 droSec1 droYak2 droEre1 droAna2 droPer1 droVir2 droGri1 apiMel anoGam1
+ucsc_droso:
+	@for d in ${UCSC_DROSO_DIRS} ; do \
+		${MAKE} ucsc_one_dir UCSC_DIR=$${d}; \
+	done
+
+################################################################
+## Drosophila genomes from Flybase
+## Obsolete: these genomes are distibuted in a better shape at UCSC
 pseudoobscura:
 	${WGET} ftp://flybase.net/genomes/Drosophila_pseudoobscura/current/gff/
 	${WGET} ftp://flybase.net/genomes/Drosophila_pseudoobscura/current/dna/
