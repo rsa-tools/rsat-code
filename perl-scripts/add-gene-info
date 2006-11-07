@@ -6,14 +6,23 @@ require "RSA.lib";
 
 ## Initialization
 $start_time = `date`;
+$calc_neighbours = 0;
+$info_before = 0;
 $ORF_column = 1;
 $null = "<NULL>";
 
-@supported_info_types = qw (id descr name names);
+@supported_info_types = qw(id ctg strand left right name descr names 
+                           upstr_neighb_name upstr_neighb_id upstr_limit upstr_size
+                           downstr_neighb_name downstr_neighb_id downstr_limit downstr_size
+                           right_neighb_name right_neighb_id right_limit right_size
+                           left_neighb_name left_neighb_id left_limit left_size
+                           );
+
 %supported_info_types = ();
 foreach my $type (@supported_info_types) {
     $supported_info_types{lc($type)} = 1;
 }
+$supported_info_types{all} = 1;
 $supported_info_types = join ",", @supported_info_types;
 
 &ReadArguments();
@@ -28,14 +37,30 @@ $out = &OpenOutputFile($outputfile);
 $feature_types = sort keys %supported_feature_types;
 
 #### Information types
-if (scalar(@types < 1)) {
-    @types = "descr";
+if (scalar(@info_types < 1)) {
+    @info_types = "descr";
 }
 
 @null = ();
-foreach my $type (@types) {
+
+## Check if all the info types were requested
+foreach my $type (@info_types) {
+    if ($type eq "all") {
+	@info_types = @supported_info_types;
+	last;
+    }
+}
+
+## Check the requested info types
+foreach my $type (@info_types) {
     &RSAT::error::FatalError("Invalid information type $type. Supported: $supported_info_types") 
       unless ($supported_info_types{$type});
+    if (($type =~ /^up_/) ||
+	($type =~ /^down_/) ||
+	($type =~ /^right_/) ||
+	($type =~ /^left_/) ) {
+	$calc_neighbours = 1;
+    }
     push @null, $null;
     push @header, $type;
 }
@@ -45,8 +70,13 @@ foreach my $type (@types) {
 $organism = new RSAT::organism();
 $organism->check_name($organism_name);
 $organism->set_attribute("name", $organism_name);
+$organism->OpenContigs($organism_name, $annotation_table);
 $organism->LoadFeatures($annotation_table);
 $organism->LoadSynonyms();
+if ($calc_neighbours) {
+    &RSAT::message::TimeWarn("Calculating neighbour ORF limits") if ($verbose >= 1);
+    $organism->CalcNeighbourLimits();
+}
 
 
 #### verbose ####
@@ -55,7 +85,6 @@ if ($verbose) {
     &PrintArguments($out);
     print $out "; Input file	$inputfile\n" if ($inputfile);
     print $out "; Output file	$outputfile\n" if ($outputfile);
-
 }
 
 #### input file ####
@@ -76,7 +105,12 @@ while ($current_line = <$in>) {
 
     ## Print header line + info column names
     if ($current_line =~ /^#/) {
-      print $out join ("\t", $current_line, @header), "\n";
+	if ($info_before) {
+	    $current_line =~ s/^#//;
+	    print $out "#", join ("\t", @header, $current_line), "\n";
+	} else {
+	    print $out join ("\t", $current_line, @header), "\n";
+	}
       next;
     }
 
@@ -95,7 +129,7 @@ while ($current_line = <$in>) {
 	&RSAT::message::Debug("identified feature", $query, $feature) if ($main::verbose >= 3);
 	my @info = ();
 	if ($feature) {
-	    foreach my $type (@types) {
+	    foreach my $type (@info_types) {
 		my $info = join( ";", $feature->get_attribute($type));
 		&RSAT::message::Warning(join("\t", "Info for query",$query, $info)) if ($main::verbose >= 6);
 		push @info, $info;
@@ -106,7 +140,11 @@ while ($current_line = <$in>) {
 	    &RSAT::message::Warning(join ("\t", "Line", $l, "No info found for query", $query)) if ($main::verbose >= 1);
 	}
 
-	print $out join ("\t", $current_line, @info), "\n";
+	if ($info_before) {
+	  print $out join ("\t", @info, $current_line), "\n";
+	} else {
+	  print $out join ("\t", $current_line, @info), "\n";
+	}
     }
 }
 
@@ -151,16 +189,25 @@ USAGE
 	
 OPTIONS
 	-h	display full help message
+
 	-help	display options
+
 	-v	verbose
+
 	-i inputfile
 		if not specified, the standard input is used.
 		This allows to place the command within a pipe.
+
 	-o outputfile
 		if not specified, the standard output is used.
 		This allows to place the command within a pipe.
+
 	-org organism
+
 	-info	information type (supported: $supported_info_types)
+
+	-before add the informaiton before the input line (by default,
+         	the info is added at the end of each input line).
 	
 INPUT FORMAT
 	Any text file containing ORF identifiers or gene names.
@@ -193,6 +240,7 @@ add-gene-info options
 -col #  ORF column
 -org	organism
 -info	information type (supported: $supported_info_types)
+-before	add info before rather than afte the input line
 End_short_help
   close HELP;
   exit;
@@ -237,7 +285,11 @@ sub ReadArguments() {
 
 	    #### information type
 	} elsif ($ARGV[$a] eq "-info") {
-	    @types = split ",", lc($ARGV[$a+1]);
+	    @info_types = split ",", lc($ARGV[$a+1]);
+
+	    #### add info before the input line
+	} elsif ($ARGV[$a] eq "-before") {
+	    $info_before = 1;
 	}
     }
 }
