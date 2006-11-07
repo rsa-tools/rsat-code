@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.52 2006/10/26 20:15:07 jvanheld Exp $
+# $Id: retrieve-seq,v 1.53 2006/11/07 08:15:29 jvanheld Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -734,10 +734,13 @@ sub ReadArguments {
 	    $out_format = lc($ARGV[$a+1]);
 	    
 	    ### limits of the region to retrieve
-	} elsif (($ARGV[$a] eq "-from") && ($ARGV[$a+1] =~ /^[+-]{0,1}(\d+)$/)) {
+	} elsif ($ARGV[$a] eq "-from") {
 	    $from = $ARGV[$a+1];
-	} elsif (($ARGV[$a] eq "-to") && ($ARGV[$a+1] =~ /^[+-]{0,1}(\d+)$/)) {
+	    &RSAT::error::FatalError($from, "Invalid value for the option -from, should  be a Natural number.") unless (&IsNatural($from)); 
+
+	} elsif ($ARGV[$a] eq "-to") {
 	    $to = $ARGV[$a+1];
+	    &RSAT::error::FatalError($to, "Invalid value for the option -to, should  be a Natural number.") unless (&IsNatural($to)); 
 	    
 	    ### verbose
 	} elsif ($ARGV[$a] eq "-v") {
@@ -826,8 +829,6 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-type") {
 	    if ($ARGV[$a+1] =~ /^up/i) {
 		$sequence_type = "upstream";
-		$default{from} = -400;
-		$default{to} = -1;
 		
 	    } elsif ($ARGV[$a+1] =~ /^down/i) {
 		$sequence_type = "downstream";
