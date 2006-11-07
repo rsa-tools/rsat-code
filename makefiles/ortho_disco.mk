@@ -117,12 +117,14 @@ KNOWN_SITES=data/sites_per_gene.tab
 KNOWN_SITES_GENE=${GENE_DIR}/${GENE}_gene_known_sites.tab
 MIN_W=6
 KNOWN_SITE_MATCHES=${DYADS}_vs_known_sites_w${MIN_W}
-COMPARE_PATTERNS_CMD=awk '$$5 == "${GENE}"' ${KNOWN_SITES} > ${KNOWN_SITES_GENE} ; \
+COMPARE_PATTERNS_CMD=awk '$$5 == "${GENE}" {print $$1"\t"$$3"_"$$2"_"$$4}' ${KNOWN_SITES} > ${KNOWN_SITES_GENE} ; \
 	compare-patterns -slide -v 1 -file1 ${DYADS}.tab -file2 ${KNOWN_SITES_GENE}  -return id,match,weight,seq -lth weight ${MIN_W} -2str -o ${KNOWN_SITE_MATCHES}.tab ; \
 	compare-patterns -slide -v 1 -file1 ${DYADS}.tab -file2 ${KNOWN_SITES_GENE}  -table weight -null "." -lth weight ${MIN_W} -2str -o ${KNOWN_SITE_MATCHES}_weight_table.tab 
 match_known_sites:
-	@echo "${COMPARE_PATTERNS_CMD}"
-	@${COMPARE_PATTERNS_CMD}
+	@echo 
+	@echo "Matching known sites for gene	${GENE}"
+#	@echo "${COMPARE_PATTERNS_CMD}"
+	${COMPARE_PATTERNS_CMD}
 	@echo ${KNOWN_SITES_GENE}
 	@echo ${KNOWN_SITE_MATCHES}.tab
 	@echo ${KNOWN_SITE_MATCHES}_weight_table.tab
