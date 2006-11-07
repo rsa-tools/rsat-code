@@ -95,7 +95,7 @@ Add a contig to the list.
 =cut
 sub add_contig {
     my ($self, $contig_id, $contig_obj) = @_;
-    &RSAT::message::Info(join("\t", "Adding contig", $contig_id, $contig_obj)) if ($main::verbose >= 10);
+    &RSAT::message::Info(join("\t", "Adding contig", $contig_id, $contig_obj)) if ($main::verbose >= 0);
     $self->add_hash_attribute("contigs", $contig_id, $contig_obj);
 }
 
@@ -435,9 +435,9 @@ sub LoadFeatures {
     warn join ("\t", ";", "accepting feature type", $feature_type), "\n" if ($main::verbose >= 10);
     $accepted_feature_types{$feature_type}++;
   }
-  warn join ("\t", "; Accepted feature types",
-	     join( ",", keys %accepted_feature_types)), "\n"
-	       if ($main::verbose >= 2);
+  &RSAT::message::Info (join("\t", "Accepted feature types",
+			     join( ",", keys %accepted_feature_types)))
+    if ($main::verbose >= 2);
 
   ## Annotation table
   if ($annotation_table) {
@@ -451,39 +451,38 @@ sub LoadFeatures {
   }
 
   foreach my $annotation_table ($self->get_attribute("annotation_tables")) {
-
     &RSAT::message::Info(join ("\t",
 			       &RSAT::util::AlphaDate(),
 			       "Loading annotation table",
 			       $self->get_attribute("name"),
 			       $annotation_table)
 			) if ($main::verbose >= 2);
-
+    
     ## Default column order for genomic features
     ## Note that this order can be redefined by the header of the
     ## annotation table (see below)
     my %col = ();
-#     $col{'id'} = 0;
-#     $col{'type'} = 1;
-#     $col{'name'} = 2;
-#     $col{'ctg'} = 3;
-#     $col{'left'} = 4;
-#     $col{'right'} = 5;
-#     $col{'strand'} = 6;
-#     $col{'descr'} = 7;
-#     $col{'location'} = 8;
-
+    #     $col{'id'} = 0;
+    #     $col{'type'} = 1;
+    #     $col{'name'} = 2;
+    #     $col{'ctg'} = 3;
+    #     $col{'left'} = 4;
+    #     $col{'right'} = 5;
+    #     $col{'strand'} = 6;
+    #     $col{'descr'} = 7;
+    #     $col{'location'} = 8;
+    
     ### Read feature positions (genome annotations)
     my ($annot, $annot_dir) = &main::OpenInputFile($annotation_table);
     my %type = ();
     my $linenb = 0;
     while (my $line = <$annot>) {
       $linenb++;
-
+      
       if (($main::verbose >= 3) && ($linenb % 1000 == 1)) {
 	&RSAT::message::psWarn("Loaded features", $linenb);
       }
-
+      
       chomp($line);
       next unless ($line =~ /\S/);
       if ($line =~ /^\-\-/) {
@@ -679,6 +678,7 @@ sub CalcNeighbourLimits {
     my $contig_length = $contig{$ctg}->get_length();
 
     &RSAT::message::Info(join ("\t", "Features per contig", $ctg, scalar(@genes))) if ($main::verbose >= 2);
+
     @ctg_lefts = sort {$a <=> $b} @left{@genes};
     @ctg_rights = sort {$a <=> $b} @right{@genes};
 
@@ -719,6 +719,8 @@ sub CalcNeighbourLimits {
 			       ) if ($main::verbose >= 10);
 
 	  $gene->set_attribute("left_neighbour", "<NULL>");
+	  $gene->set_attribute("left_neighb_id", "<NULL>");
+	  $gene->set_attribute("left_neighb_name", "<NULL>");
 	  $gene->set_attribute("left_limit", 1);
 	  $gene->set_attribute("left_size", $ctg_lefts[$g]);
 	  next;
@@ -786,6 +788,8 @@ sub CalcNeighbourLimits {
 # 			   ) if ($main::verbose >= 10);
 
       $gene->set_attribute("left_neighbour", $genes[$ln]);
+      $gene->set_attribute("left_neighb_id", $genes[$ln]->get_attribute("id"));
+      $gene->set_attribute("left_neighb_name", $genes[$ln]->get_attribute("name"));
       $gene->set_attribute("left_limit", $neighb_left_limit);
       $gene->set_attribute("left_size", $neighb_left_size);
     }
@@ -810,6 +814,8 @@ sub CalcNeighbourLimits {
 # 				"name=".$genes[$g]->get_attribute("name"),
 # 			       ) if ($main::verbose >= 10);
 	  $gene->set_attribute("right_neighbour", "<NULL>");
+	  $gene->set_attribute("right_neighb_id", "<NULL>");
+	  $gene->set_attribute("right_neighb_name", "<NULL>");
 	  $gene->set_attribute("right_limit", $contig_length);
 	  $gene->set_attribute("right_size", $contig_lenth - $ctg_rights[$g]);
 	  next;
@@ -853,6 +859,8 @@ sub CalcNeighbourLimits {
       $neighb_right_size = &RSAT::stats::max(0, $neighb_right_limit - $right{$gene} -1);
 
       $gene->set_attribute("right_neighbour", $genes[$rn]);
+      $gene->set_attribute("right_neighb_id", $genes[$rn]->get_attribute("id"));
+      $gene->set_attribute("right_neighb_name", $genes[$rn]->get_attribute("name"));
       $gene->set_attribute("right_limit", $neighb_right_limit);
       $gene->set_attribute("right_size", $neighb_right_size);
     }
@@ -868,22 +876,30 @@ sub CalcNeighbourLimits {
 
 	## Upstream neighbour is on the right side
 	$gene->set_attribute("upstr_neighbour", $gene->get_attribute("right_neighbour"));
+	$gene->set_attribute("upstr_neighb_id", $gene->get_attribute("right_neighb_id"));
+	$gene->set_attribute("upstr_neighb_name", $gene->get_attribute("right_neighb_name"));
 	$gene->set_attribute("upstr_limit", $gene->get_attribute("right_limit"));
 	$gene->set_attribute("upstr_size", $gene->get_attribute("right_size"));
 
 	## Downstream neighbour is on the left side
 	$gene->set_attribute("downstr_neighbour", $gene->get_attribute("left_neighbour"));
+	$gene->set_attribute("downstr_neighb_id", $gene->get_attribute("left_neighb_id"));
+	$gene->set_attribute("downstr_neighb_name", $gene->get_attribute("left_neighb_name"));
 	$gene->set_attribute("downstr_limit", $gene->get_attribute("left_limit"));
 	$gene->set_attribute("downstr_size", $gene->get_attribute("left_size"));
 
       } else {
 	## Upstream neighbour is on the left side
 	$gene->set_attribute("upstr_neighbour", $gene->get_attribute("left_neighbour"));
+	$gene->set_attribute("upstr_neighb_id", $gene->get_attribute("left_neighb_id"));
+	$gene->set_attribute("upstr_neighb_name", $gene->get_attribute("left_neighb_name"));
 	$gene->set_attribute("upstr_limit", $gene->get_attribute("left_limit"));
 	$gene->set_attribute("upstr_size", $gene->get_attribute("left_size"));
 
 	## Downstream neighbour is on the right side
 	$gene->set_attribute("downstr_neighbour", $gene->get_attribute("right_neighbour"));
+	$gene->set_attribute("downstr_neighb_id", $gene->get_attribute("right_neighb_id"));
+	$gene->set_attribute("downstr_neighb_name", $gene->get_attribute("right_neighb_name"));
 	$gene->set_attribute("downstr_limit", $gene->get_attribute("right_limit"));
 	$gene->set_attribute("downstr_size", $gene->get_attribute("right_size"));
       }
