@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: dyad-analysis,v 1.51 2006/11/07 08:08:51 rsat Exp $
+# $Id: dyad-analysis,v 1.52 2006/11/08 03:48:34 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 23:46:08 jvanheld>
 #
@@ -42,6 +42,7 @@ $accepted_dyad_type{dr} = 1;  #direct repeats
 $accepted_dyad_type{ir} = 1;  #inverted repeats
 $accepted_dyad_type{any} = 1; #any dyad, repeat or not
 $dyad_type = "any";
+$infile{accepted_dyads} = ""; ## File containing a restricted list of dyads to be analyzed. 
 
 ## Count dyads on single or boths strand
 $strands = "-2str";
@@ -56,7 +57,7 @@ $input_format = "fasta";
 $max_seq_verbose = 50; 
 
 ## Expected frequency file
-$exp_freq_file = "";
+$infile{exp_freq} = "";
 
 ## Counters
 $nb_possible_dyads = 0;
@@ -106,6 +107,43 @@ eval {
 	$zeroocc = 1; 
     }
 
+    ################################################################
+    ## File containing a selection of accepted dyads
+    if ($infile{accepted_dyads}) {
+	($acc) = &OpenInputFile($infile{accepted_dyads});
+	while (<$acc>) {
+	    next if (/^;/);
+	    next if (/^--/);
+	    next if (/^#/);
+	    next unless (/\S/);
+	    chomp;
+	    my @fields = split /\s+/;
+	    my $accepted_dyad = lc($fields[0]);
+	    if ($accepted_dyad =~ /[a-z]+n\{\d+}[a-z]/) {
+		$accepted_dyads{$accepted_dyad} = 1;
+	    } else {
+		&RSAT::message::Warning($accepted_dyad, "Invalid dyad specitifcation in the accepted dyad files line", $l);
+	    }
+	}
+	close $acc;
+	
+	## Also accept reverse complementary dyads if dyads are counted on both strands
+	if ($sum_rc) {
+	    foreach my $dyad (keys %accepted_dyads) {
+		my $dyad_rc = lc(&SmartRC($dyad));
+		$accepted_dyads{$dyad_rc} = 1;
+	    }
+	}
+	
+	if ($main::verbose >= 2) {
+	    ## Report the number of accepted dyads
+	    &RSAT::message::Info(join("\n\t", "Accepted dyads", scalar(keys %accepted_dyads)));
+	    ## Report the list of accepted dyads
+	    &RSAT::message::Info(join(";\n\t", "", sort keys %accepted_dyads))
+		if ($main::verbose >= 5);
+	}
+    }
+
     ## check pre-defined frequency table for intergenic frequency
     ## calibration
     if (($background_model ne "monads") || ($mncf)) {
@@ -121,7 +159,7 @@ eval {
 	    } else { 
 		$noov_suffix = "-ovlp";
 	    }
-	    $exp_freq_file = join("", 
+	    $infile{exp_freq} = join("", 
 				  $data_dir,
 				  "/oligo-frequencies/dyads_3nt_sp0-20_",
 				  ${background_model},
@@ -130,12 +168,12 @@ eval {
 				  ${noov_suffix}.${strands},
 				  ".freq");
 
-	    unless ((-e $exp_freq_file) || (-e "$exp_freq_file.gz") ) {
-		&RSAT::error::FatalError("Expected frequency file does not exist\t$exp_freq_file");
+	    unless ((-e $infile{exp_freq}) || (-e $infile{exp_freq}.".gz") ) {
+		&RSAT::error::FatalError("Expected frequency file does not exist\t".$infile{exp_freq});
 	    }	
 	} elsif ($mncf) {
 	    ## localize monad intergenic frequency file
-	    $monad_exp_freq_file .= "$data_dir/oligo-frequencies/${oligo_length}nt_intergenic_${organism_name}.freq";
+	    $infile{monad_exp_freq} .= "$data_dir/oligo-frequencies/${oligo_length}nt_intergenic_${organism_name}.freq";
 	}
     }
 
@@ -218,7 +256,7 @@ eval {
 
 
     ###### close input stream
-    close $in if ($inputfile);
+    close $in if ($infile{input});
     
     ###### close output stream
     close $out if ($outputfile);
@@ -341,7 +379,7 @@ sub CalcExpectedMonadFreq {
     if ($mncf) {
 	################################################################
 	## Read expected monad frequencies from a file
-	($exp) = &OpenInputFile($exp_freq_file);
+	($exp) = &OpenInputFile($infile{exp_freq});
 	while (<$exp>) {
 	    next if (/^;/);
 	    chomp;
@@ -373,10 +411,10 @@ sub CalcExpectedDyadFreq {
     &RSAT::message::TimeWarn("Calculating expected dyad frequencies") if ($main::verbose >= 2);
 
 
-    if ($exp_freq_file) {
+    if ($infile{exp_freq}) {
 	################################################################
 	# Read expected dyad frequencies from a user-specified file
-	&ReadExpectedFrequencies($exp_freq_file, $sum_rc);
+	&ReadExpectedFrequencies($infile{exp_freq}, $sum_rc);
 	
 	################################################################
 	## Calculate expected dyad freq on basis of monad frequencies 
@@ -785,12 +823,10 @@ sub ReadArguments {
 	    } else {
 		$verbose = 1;
 	    }
-	} elsif ($ARGV[$a] eq "-vv") {
-	    $verbose = 10;
 
 	    ### detailed help
 	} elsif ($ARGV[$a] eq "-h") {
-	    &PrintHelp;
+	    &PrintHelp();
 	    
 	    ### list of options
 	} elsif ($ARGV[$a] eq "-help") {
@@ -798,7 +834,7 @@ sub ReadArguments {
 	    
 	    ### input file ###
 	} elsif ($ARGV[$a] eq "-i") {
-	    $inputfile = $ARGV[$a+1];
+	    $infile{input} = $ARGV[$a+1];
 	    
 	    ### input format ###
 	} elsif ($ARGV[$a] eq "-format") {
@@ -835,6 +871,10 @@ sub ReadArguments {
 	    $dyad_type = lc($ARGV[$a+1]);
 	    die "Error : '$dyad_type' is not a valid dyad type" unless $accepted_dyad_type{$dyad_type};
 	    
+	    ### analyze only selected dyads
+	} elsif ($ARGV[$a] =~ /^-accept/i) {
+	    $infile{accepted_dyads} = $ARGV[$a+1];
+	    
 	    ### sort results ###
 	} elsif ($ARGV[$a] =~ /^-sort/i) {
 	    $sort_results = 1;
@@ -854,8 +894,8 @@ sub ReadArguments {
 	    
 	    ### expected frequency table ###
 	} elsif ($ARGV[$a] =~ /^-exp/i) {
-	    $exp_freq_file = $ARGV[$a+1];
-#	    die "Error: cannot read expected frequency file $exp_freq_file\n" unless (-r  $exp_freq_file);
+	    $infile{exp_freq} = $ARGV[$a+1];
+#	    die "Error: cannot read expected frequency file $infile{exp_freq}\n" unless (-r  $infile{exp_freq});
 	    
 	    ### timeout setting
 	} elsif ($ARGV[$a] =~ /^-timeout/i) {
@@ -1064,7 +1104,7 @@ sub SecondElement {
 #### Read sequences and count dyads
 sub CountDyads {
     &RSAT::message::TimeWarn("Counting dyad occurrences") if ($main::verbose >= 2);
-    ($in, $input_dir) = &OpenInputFile($inputfile);
+    ($in, $input_dir) = &OpenInputFile($infile{input});
     $sequence_number = 0;
     while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $input_format, $input_dir, $seq_type, $mask)) &&
        (($current_seq ne "") || ($current_id ne ""))) {
@@ -1179,17 +1219,10 @@ sub CountDyads {
 		
 		if ($pos2 <= $last_pos) {
 		    my $oligo2 = lc(substr($current_seq,$pos2,$oligo_length));
-		    
-# 		    &RSAT::message::Debug(
-# 			"p1= ".$pos1,
-# 			"oligo1= ".$oligo1,
-# 			"p2= ".$pos2,
-# 			"oligo2= ".$oligo2,
-# 		    ) if ($main::verbose >= 10);
-		    
+		    		    
 		    if ($seq_type eq "DNA") {
 			unless ($allowed_monads{$oligo2}) {
-
+			    
 			    ## Dyads which are discarded because the second monad contains unspecified residues
 			    $discarded_dyad_positions{$spacing}++;
 #			    &RSAT::message::Debug("Discarded because of monad 2", ++$discarded_monad2, $pos1, $oligo1, $spacing, $pos2, $oligo2, $last_pos, $quick_test, $current_id, $seq_length[$sequence_number]) if ($main::verbose >= 10);
@@ -1223,7 +1256,6 @@ sub CountDyads {
 		    
 		    ## count only repeats
 		    next if (($dyad_type eq "rep") && ($oligo1 ne $oligo2) &&($oligo2 ne &SmartRC($oligo1))); 
-		    
 
 		    ################################################################
 		    ## Generate the dyad name (grouping all spacings or not)
@@ -1233,6 +1265,14 @@ sub CountDyads {
 			$pattern_seq = "${oligo1}n\{$spacing\}${oligo2}";
 		    }
 		    
+		    ## Check accepted dyads
+		    if ($infile{accepted_dyads}) {
+			unless ($accepted_dyads{$pattern_seq}) {
+#			    &RSAT::message::Debug("Discarded dyad", $pattern_seq) if ($main::verbose >= 5);
+			    next;
+			}
+		    } 
+
 		    ################################################################
 		    ## Treatment of self-overlapping occurrences
 		    if ($noov) {
@@ -1357,24 +1397,28 @@ sub PrintVerbose {
     print $out "; dyad-analysis ";
     &PrintArguments($out);
     print $out "; Citation: van Helden et al. (2000). Nucleic Acids Res. 28(8):1808-18.\n";
-    printf $out "; %-29s\t%s\n", "Input file", $inputfile if ($inputfile);
+    printf $out "; %-29s\t%s\n", "Input file", $infile{input} if ($infile{input});
+    if ($infile{accepted_dyads}) {
+	printf $out "; %-29s\t%s\n", "Accepted dyad file", $infile{accepted_dyads}; 
+	printf $out "; %-29s\t%s\n", "Accepted dyads", scalar(keys(%accepted_dyads)); 
+    }
     printf $out "; %-29s\t%s\n", "Sequence type", $seq_type;
     printf $out "; %-29s\t%s\n", "Nb of sequences", $sequence_number;
     printf $out "; %-29s\t%s\n", "Sum of sequence lengths", $sum_seq_length;
     printf $out "; %-29s\t%s\n", "Output file", $outputfile if ($outputfile);
     printf $out "; %-29s\t%s\n", "default return values", join(",", keys(%default_return_fields));
     printf $out "; %-29s\t%s\n", "return values", join(",", keys(%return_fields));
-
+    
     ################################################################
     ## Counting mode
-
+    
     ## overlaps
     if ($noov eq "-noov") {
 	print $out "; Discard overlapping matches\n";
     } else {
 	print $out "; Count overlapping matches\n";
     }
-
+    
     ## Strands
     if ($sum_rc) {
 	print $out "; Counted on both strands\n";
@@ -1384,7 +1428,7 @@ sub PrintVerbose {
     } else {
 	print $out "; Counted on a single strand\n";
     }
-
+    
     ################################################################
     #### monads
     printf $out "; %-29s\n", "Monad parameters";
@@ -1398,7 +1442,7 @@ sub PrintVerbose {
 	printf $out "; \t%-29s\t%d%s\n", "    discarded", $discarded_monad_positions, " (contain other letters than ACGT)";
     }
     printf $out "; \t%-29s%d\n", "distinct monads", $nb_possible_oligo;
-
+    
     if ($return_fields{monad_freq}) {
 	print $out ";\tMonad frequencies\n";
 	print $out join("\t", ";\t\t", "monad", "occ_1s", "occ_sum", "freq", "frq_sum");
@@ -1495,9 +1539,9 @@ sub PrintVerbose {
     if ($mncf) {
 	print $out ";\tMonad frequencies in intergenic region\n";
 	printf $out ";\t%-29s\t%s\n", "organism", $organism_name;
-	printf $out ";\t%-29s\t%s\n", "exp. monad freq. file", $monad_exp_freq_file;
-    } elsif ($exp_freq_file) {
-	printf $out ";\t%-29s\t%s\n", "exp. freq. file", $exp_freq_file;
+	printf $out ";\t%-29s\t%s\n", "exp. monad freq. file", $infile{monad_exp_freq};
+    } elsif ($infile{exp_freq}) {
+	printf $out ";\t%-29s\t%s\n", "exp. freq. file", $infile{exp_freq};
     } else {
 	print $out ";\tMonad calibration from input sequences\n";
     }
@@ -1792,6 +1836,18 @@ OPTIONS
 		   any	(default)
 			When selecting the option any, the analysis is 
 			performed on all non-symmetric dyads as well. 
+
+	-accept accepted_dyad_file
+		Specify a file containing a list of accepted
+		dyads. The analysis is then restricted to these
+		dyads. Since the number of tested dyads is reduced by
+		this selection, the multitesting correction is
+		generally lower, which increases the significance of
+		the accepted dyads, compared to the default situation
+		where all dyads are analyzed.
+
+		File format: the first word of each row indicates a
+		dyad. Subsequent words are ignored.
 
 	-groupsp
 		Group dyads made of the same words (monads) but with
@@ -2093,6 +2149,7 @@ dyad-analysis options
 -bg		background model (supported: $supported_bg)
 -org		organism 
 -type		ir|dr|rep|any
+-accept 	accepted_dyad_file
 -groupsp	Group dyads made of the same words (monads) but with different spacings.
 -sort		sort results by decreasing significance
 -under		detect under-represented instead of over-represented words 
