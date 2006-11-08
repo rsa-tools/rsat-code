@@ -395,23 +395,21 @@ sub ReadArguments {
 	} elsif ($ARGV[$a] eq "-sc") {
 	    $default_sc = $ARGV[$a+1];
 	    unless ((&IsNatural($default_sc)) && ($default_sc >= 1)) {
-		warn "Error : score column must be an integer >= 1\n";
-		&PrintHelp();
+		&RSAT::error::FatalError("Score column must be an integer >= 1");
 	    }
 	    
 	} elsif ($ARGV[$a] =~ /^-sc(\d+)/)  {
 	    $sc[$1-1] = $ARGV[$a+1]; ### substract 1 from the index
 	    unless ((&IsNatural($sc[$1-1])) && ($sc[$1-1] >= 1)) {
-		warn "Error : score column must be an integer and >= 1\n";
-		&PrintHelp();
+		&RSAT::error::FatalError("Score column must be an integer >= 1");
 	    }
 	    
 	    ### identifier column
 	} elsif ($ARGV[$a] eq "-ic") {
 	    $default_ic = $ARGV[$a+1];
 	    unless ((&IsNatural($default_ic)) && ($default_ic >= 1)) {
-		&Fatalerror("Identifier column must be an integer >= 1");
-	    }	    
+		&RSAT::error::Fatalerror("Identifier column must be an integer >= 1");
+	    }
 	} elsif ($ARGV[$a] =~ /^-ic(\d+)/)  {
 	    $ic[$1-1] = $ARGV[$a+1]; ### substract 1 from the index
 	    unless ((&IsNatural($ic[$1-1])) && ($ic[$1-1] >= 1)) {
