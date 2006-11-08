@@ -83,10 +83,11 @@ orthologs:
 
 ################################################################
 ## Retrieve upstream sequences of set of orthologous genes
+NOORF=-noorf
 SEQ=${PREFIX}_up.fasta
 PURGED=${PREFIX}_up_purged.fasta
 PURGE_ML=30
-RETRIEVE_CMD=retrieve-seq-multigenome -i ${ORTHOLOGS} -o ${SEQ} -noorf ; purge-sequence -i ${SEQ} -o ${PURGED} -ml ${PURGE_ML} -mis 0 -2str -mask_short ${PURGE_ML}
+RETRIEVE_CMD=retrieve-seq-multigenome -i ${ORTHOLOGS} -o ${SEQ} ${NOORF} ; purge-sequence -i ${SEQ} -o ${PURGED} -ml ${PURGE_ML} -mis 0 -2str -mask_short ${PURGE_ML}
 upstream:
 	@echo "${RETRIEVE_CMD}"
 	@${RETRIEVE_CMD}
@@ -105,11 +106,47 @@ DYADS=${PREFIX}${SUFFIX}
 DYAD_CMD=dyad-analysis -v ${V} -i ${PURGED} -sort -type any ${STR} ${NOOV} \
 		-lth occ 1 -lth occ_sig 0 -return ${RETURN} -l 3 -spacing 0-20 \
 		-bg ${BG} -org ${REF_ORG} \
-		-o ${DYADS}.tab
+		-o ${DYADS}.tab ${DYAD_OPT} 
 dyads:
 	@echo "${DYAD_CMD}"
 	@${DYAD_CMD}
 	@echo ${DYADS}.tab
+
+
+# ################################################################
+# ## Run dyad analysis using the sequence of the reference organism as filter
+# FILTER_SEQ=${GENE_DIR}/${GENE}_${REF_ORG}_up${NOORF}.fasta.gz
+# DYAD_FILTER=${GENE_DIR}/${GENE}_${REF_ORG}_dyad_filter
+# FILTERED_DYADS=${PREFIX}${SUFFIX}_filtered
+# FILTER_DYADS_CMD=retrieve-seq -org ${REF_ORG} -q ${GENE} ${NOORF} -o ${FILTER_SEQ} ; echo "Filter sequence	${FILTER_SEQ}"; \
+# 	dyad-analysis -v 0 -i ${FILTER_SEQ} -type any ${STR} ${NOOV} \
+# 		-lth occ 1 -return occ -l 3 -spacing 0-20 | grep -v ';' | cut -f 1 > ${DYAD_FILTER} ; echo "Dyad filter	${DYAD_FILTER}"; \
+# 	compare-scores -i ${DYADS}.tab -i ${DYAD_FILTER} -sc 1 -null '<NULL>' | grep -v '<NULL>' | grep -v '\#' | cut -f 1 >> ${DYAD_FILTER}_selected ; echo "Selected dyads	${DYAD_FILTER}_selected" ; \
+# 	grep "^;" ${DYADS}.tab | grep -v 'Job' > ${FILTERED_DYADS}.tab ; \
+# 	grep -f ${DYAD_FILTER}_selected ${DYADS}.tab >> ${FILTERED_DYADS}.tab ; echo "Filtered dyads	${FILTERED_DYADS}.tab" ; \
+# 	${MAKE} -s assemble DYADS=${FILTERED_DYADS} ; echo "Filtered dyad assembly	${FILTERED_DYADS}.asmb" ; \
+# 	${MAKE} -s map DYADS=${FILTERED_DYADS} ; echo "Filtered dyad map	${FILTERED_DYADS}.png" 
+# filter_dyads:
+# 	@echo
+# 	@echo "Filtering dyads	${GENE}	${TAXON}"
+# 	@${FILTER_DYADS_CMD}
+
+################################################################
+## Run dyad analysis using the sequence of the reference organism as filter
+FILTER_SEQ=${GENE_DIR}/${GENE}_${REF_ORG}_up${NOORF}.fasta.gz
+DYAD_FILTER=${GENE_DIR}/${GENE}_${REF_ORG}_dyad_filter
+FILTERED_DYADS=${PREFIX}${SUFFIX}_filtered
+FILTER_DYADS_CMD= \
+	retrieve-seq -org ${REF_ORG} -q ${GENE} ${NOORF} -o ${FILTER_SEQ} ; echo "Filter sequence	${FILTER_SEQ}"; \
+	dyad-analysis -v 0 -i ${FILTER_SEQ} -type any ${STR} ${NOOV} -lth occ 1 -return occ -l 3 -spacing 0-20 -o ${DYAD_FILTER} ; echo "Dyad filter	${DYAD_FILTER}"; \
+	${MAKE} -s dyads DYADS=${FILTERED_DYADS} DYAD_OPT='-accept ${DYAD_FILTER}' ; echo "Filtered dyads	${FILTERED_DYADS}.tab" ; \
+	${MAKE} -s assemble DYADS=${FILTERED_DYADS} ; echo "Filtered dyad assembly	${FILTERED_DYADS}.asmb" ; \
+	${MAKE} -s map DYADS=${FILTERED_DYADS} ; echo "Filtered dyad map	${FILTERED_DYADS}.png" 
+filtered_dyads:
+	@echo
+	@echo "Filtering dyads	${GENE}	${TAXON}"
+	@${FILTER_DYADS_CMD}
+
 
 ################################################################
 ## Count matches between discovered dyads and known sites
@@ -117,22 +154,29 @@ KNOWN_SITES=data/sites_per_gene.tab
 KNOWN_SITES_GENE=${GENE_DIR}/${GENE}_gene_known_sites.tab
 MIN_W=6
 KNOWN_SITE_MATCHES=${DYADS}_vs_known_sites_w${MIN_W}
-COMPARE_PATTERNS_CMD=awk '$$5 == "${GENE}" {print $$1"\t"$$3"_"$$2"_"$$4}' ${KNOWN_SITES} > ${KNOWN_SITES_GENE} ; \
-	compare-patterns -slide -v 1 -file1 ${DYADS}.tab -file2 ${KNOWN_SITES_GENE}  -return id,match,weight,seq -lth weight ${MIN_W} -2str -o ${KNOWN_SITE_MATCHES}.tab ; \
-	compare-patterns -slide -v 1 -file1 ${DYADS}.tab -file2 ${KNOWN_SITES_GENE}  -table weight -null "." -lth weight ${MIN_W} -2str -o ${KNOWN_SITE_MATCHES}_weight_table.tab 
+COMPARE_PATTERNS_CMD= \
+	awk '$$5 == "${GENE}" {print $$1"\t"$$3"_"$$2"_"$$4}' ${KNOWN_SITES} > ${KNOWN_SITES_GENE}.tab ; \
+	perl -pe 's|[a-z]||g' ${KNOWN_SITES_GENE}.tab  > ${KNOWN_SITES_GENE}_noflanks.tab ; \
+	compare-patterns -slide -v 1 -file2 ${DYADS}.tab -file1 ${KNOWN_SITES_GENE}.tab  -return id,match,strand,offset,weight,rel_w,Pval,Eval_p,sig_p,Eval_f,sig_f,seq -lth weight ${MIN_W} -2str -o ${KNOWN_SITE_MATCHES}.tab ; \
+	compare-patterns -slide -v 1 -file2 ${DYADS}.tab -file1 ${KNOWN_SITES_GENE}_noflanks.tab  -return id,match,strand,offset,weight,rel_w,Pval,Eval_p,sig_p,Eval_f,sig_f,seq -lth weight ${MIN_W} -2str -o ${KNOWN_SITE_MATCHES}_noflanks.tab ; \
+	compare-patterns -slide -v 1 -file1 ${DYADS}.tab -file2 ${KNOWN_SITES_GENE}.tab  -table weight -null "." -lth weight ${MIN_W} -2str -o ${KNOWN_SITE_MATCHES}_weight_table.tab ; \
+	compare-patterns -slide -v 1 -file1 ${DYADS}.tab -file2 ${KNOWN_SITES_GENE}_noflanks.tab  -table weight -null "." -lth weight ${MIN_W} -2str -o ${KNOWN_SITE_MATCHES}_noflanks_weight_table.tab 
 match_known_sites:
 	@echo 
 	@echo "Matching known sites for gene	${GENE}"
 #	@echo "${COMPARE_PATTERNS_CMD}"
 	${COMPARE_PATTERNS_CMD}
-	@echo ${KNOWN_SITES_GENE}
+	@echo ${KNOWN_SITES_GENE}.tab
 	@echo ${KNOWN_SITE_MATCHES}.tab
 	@echo ${KNOWN_SITE_MATCHES}_weight_table.tab
+	@echo ${KNOWN_SITES_GENE}_noflanks.tab
+	@echo ${KNOWN_SITE_MATCHES}_noflanks.tab
+	@echo ${KNOWN_SITE_MATCHES}_noflanks_weight_table.tab
 
 ################################################################
 ## Assemble the over-represented dyad to form motif
 ASSEMBLY=${DYADS}.asmb
-ASSEMBLE_CMD=pattern-assembly -v ${V} -i ${DYADS}.tab -o ${ASSEMBLY} -subst 0 ${STR} -maxfl 1 -maxpat 50
+ASSEMBLE_CMD=pattern-assembly -v ${V} -i ${DYADS}.tab -o ${ASSEMBLY} -subst 0 ${STR} -maxfl 1 -maxpat 100
 assemble:
 	@echo "${ASSEMBLE_CMD}"
 	@${ASSEMBLE_CMD}
@@ -531,3 +575,44 @@ gene_pair_network:
 	@${MAKE} gene_pairs
 	@${MAKE} gene_pair_graph_series
 	@${MAKE} mcl_inflation_series
+
+
+################################################################
+## Motif discovery using MEME
+MEME=meme
+MEME_MOD=anr
+MEME_NMOTIFS=5
+MEME_EVT=1
+MEME_MINW=6
+MEME_MAXW=25
+MEME_SUFFIX=_MEME_${MEME_MOD}_nmotifs${MEME_NMOTIFS}_evt${MEME_EVT}_minw${MEME_MINW}_maxw${MEME_MAXW}
+MEME_FILE=${PREFIX}${MEME_SUFFIX}
+MEME_CMD=gunzip -f ${PURGED}; \
+	${MEME} ${PURGED} -dna -mod ${MEME_MOD} -nmotifs ${MEME_NMOTIFS} \
+	-evt ${MEME_EVT} -revcomp -text \
+	-minw ${MEME_MINW} -maxw ${MEME_MAXW} \
+	${MEME_OPT} > ${MEME_FILE}; \
+	gzip -f ${PURGED}
+#dyad-analysis -v ${V} -i ${PURGED} -sort -type any ${STR} ${NOOV} \
+#		-lth occ 1 -lth occ_sig 0 -return ${RETURN} -l 3 -spacing 0-20 \
+#		-bg ${BG} -org ${REF_ORG} \
+#		-o ${DYADS}.tab
+meme:
+	@echo
+	@echo "Starting MEME for gene ${GENE}"
+	${MAKE} my_command MY_COMMAND="${MEME_CMD}" JOB_PREFIX=meme_${REF_ORG}_${TAXON}_${GENE}
+	@echo ${MEME_FILE}
+
+## match MEME motifs with MAST
+MAST=mast
+MAST_FILE=${MEME_FILE}_mast
+MAST_CMD=gunzip -f ${SEQ} ; \
+	${MAST} ${MEME_FILE} -d ${SEQ} -mev ${MEME_EVT} -stdout > ${MAST_FILE}.html; \
+	mast ${MEME_FILE} -d ${SEQ} -mev ${MEME_EVT} -text -stdout > ${MAST_FILE}.txt; \
+	gzip -f ${SEQ}
+mast:
+	@echo
+	@echo "Starting MAST for gene ${GENE}"
+	${MAKE} my_command MY_COMMAND="${MAST_CMD}" JOB_PREFIX=mast_${REF_ORG}_${TAXON}_${GENE}
+	@echo ${MAST_FILE}.html
+	@echo ${MAST_FILE}.txt
