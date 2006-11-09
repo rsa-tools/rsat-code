@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: matrix-scan.cgi,v 1.1 2006/11/09 07:28:46 jvanheld Exp $
+# $Id: matrix-scan.cgi,v 1.2 2006/11/09 17:48:01 rsat Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -25,7 +25,7 @@ require "RSA.lib";
 require "RSA.cgi.lib";
 $ENV{RSA_OUTPUT_CONTEXT} = "cgi";
 
-$command = "$SCRIPTS/matrix-scan";
+$command = "$SCRIPTS/matrix-scan -v 1 ";
 $tmp_file_name = sprintf "matrix-scan.%s", &AlphaDate();
 
 ### Read the CGI query
@@ -165,6 +165,12 @@ sub ReadMatrixScanParameters {
     my $bg_method = $query->param('bg_method');
     if ($bg_method eq "bginput") {
       $parameters .= " -bginput";
+    } elsif ($bg_method eq "window") {
+      my $window_size = $query->param('window_size');
+
+      &RSAT::message::FatalError(join("\t",$window_size, "Invalid value for the window size. Should be a Natural number." )) unless (&IsNatural($window_size));
+      
+      $parameters .= " -window ".$window_size;
     } else {
       &RSAT::error::FatalError($bg_method," is not a valid method for background specification");
     }
