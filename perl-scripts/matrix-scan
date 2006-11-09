@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.34 2006/10/20 23:22:13 jvanheld Exp $
+# $Id: matrix-scan,v 1.35 2006/11/09 07:28:46 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -205,7 +205,8 @@ models only (-markov 0 to 1).
 
     $markov = -1; ## To make the distinction with 0, which is a valid value for the markov order
     $window = -1; 
-    $bg_input = 0; ## Calculate bg model from the whole set of input sequences
+    $bg_method = "";
+
     $bg_in_format = "oligo-analysis";
     $bg_out_format = "tab";
     $sequence_number = 0;
@@ -254,6 +255,8 @@ models only (-markov 0 to 1).
     
     ################################################################
     #### check argument values
+
+    &RSAT::error::FatalError("You must specify the method for bagkground estimation (an option among -bgfile, -bginput, -window)") unless ($bg_method);
 
     ## Calculate only once the denominator for the logarithms
     $main::log_base = log($base);
@@ -317,9 +320,9 @@ models only (-markov 0 to 1).
 	################################################################
 	## If the model is taken from the whole set of input sequences, read them
 	## first without scanning, just to calculate the model
-	if ($main::bg_input) {
+	if ($bg_method eq "input") {
 	    unless ($main::infile{input}) {
-		&RSAT::error::FatalError("The option -bg_input requires to specify an input file.");
+		&RSAT::error::FatalError("The option -bg_input requires to specify an input file (STDIN is not supported with this option.");
 	    }
 	    my ($in, $input_dir) = &OpenInputFile($main::infile{input});
 	    while ((($current_seq, $seq_id) = &ReadNextSequence($in, $seq_format, $input_dir, "",$mask)) &&
@@ -453,7 +456,7 @@ models only (-markov 0 to 1).
 	################################################################
 	## Calculate background model from the current sequence
 	my $window_offset = 0;
-	if (($main::markov >= 0) && (!$bg_input)){
+	if (($main::markov >= 0) && ($bg_method ne "input")){
 	    if ($main::window >= $main::markov + 1) {
 		if ($main::window > $seq_len) {
 		    &RSAT::message::Warning(join("\t",
@@ -462,7 +465,7 @@ models only (-markov 0 to 1).
 						 $seq_len,
 						 "smaller than sliding window size",
 						 $main::window,
-						 ));
+						 )) if ($main::verbose >= 2);
 		    $bg_model->calc_from_seq($current_seq);
 		} else {
 		    ## initialize the model with the first window
@@ -753,15 +756,17 @@ Same as -h
 
 =item B<-bgfile background_file>
 
-Background model file. 
+Background model file.
 
 =cut
 	} elsif ($arg eq "-bgfile") {
-	    $main::infile{bg} = shift(@arguments);
-	    &RSAT::error::FatalError("The options -markov and -bgfile are mutually exclusive.") 
-		if ($main::markov >= 0);
-	    
-	    ## Background calculated from the input sequence set
+	  &RSAT::error::FatalError("Options -bgfile, -bginput and -window are mutually exclusive") if ($main::bg_method);
+	  $main::bg_method = "file";
+	  $main::infile{bg} = shift(@arguments);
+	  &RSAT::error::FatalError("The options -markov and -bgfile are mutually exclusive.") 
+	    if ($main::markov >= 0);
+	  
+	  ## Background calculated from the input sequence set
 =pod
 
 =item B<-bginput>
@@ -770,13 +775,14 @@ Calculate background model from the input sequence set.
 
 =cut
 	} elsif ($arg eq "-bginput") {
-	    $main::bg_input = 1;
-	    &RSAT::error::FatalError("The options -bginput and -window are mutually exclusive.") 
-		if ($main::window >= 0);
-	    &RSAT::error::FatalError("The options -bginput and -bgfile are mutually exclusive.") 
+	  &RSAT::error::FatalError("Options -bgfile, -bginput and -window are mutually exclusive") if ($main::bg_method);
+	  $main::bg_method = "input";
+	  &RSAT::error::FatalError("The options -bginput and -window are mutually exclusive.") 
+	    if ($main::window >= 0);
+	  &RSAT::error::FatalError("The options -bginput and -bgfile are mutually exclusive.") 
 		if defined($main::infile{bg});
-	    
-	    ## Calculate background model from the input sequence
+	  
+	  ## Calculate background model from the input sequence
 =pod
 
 =item B<-markov>
@@ -802,13 +808,15 @@ Size of the sliding window for the background model calculation.
 
 =cut
 	} elsif ($arg eq "-window") {
-	    $main::window = shift(@arguments);
-	    &RSAT::error::FatalError("Window size must be a natural number.") 
-		unless &RSAT::util::IsNatural($main::window);
-	    &RSAT::error::FatalError("The options -window and -bgfile are mutually exclusive.") 
-		if defined($main::infile{bg});
-
-	    
+	  &RSAT::error::FatalError("Options -bgfile, -bginput and -window are mutually exclusive") if ($main::bg_method);
+	  $main::bg_method = "window";
+	  $main::window = shift(@arguments);
+	  &RSAT::error::FatalError("Window size must be a natural number.") 
+	    unless &RSAT::util::IsNatural($main::window);
+	  &RSAT::error::FatalError("The options -window and -bgfile are mutually exclusive.") 
+	    if defined($main::infile{bg});
+	  
+	  
 	    ## Matrix file
 =pod
 
@@ -1069,7 +1077,7 @@ single-strand search for DNA sequences.
 
 List of fields to return. 
 
-Supported fields: sites,limits,normw,bg_model,rank
+Supported fields: sites,ranks,limits,normw,bg_model,matrix,freq_matrix,weight_matrix
 
 =over
 
@@ -1169,6 +1177,7 @@ sub Verbose {
     ## Background model
     printf $main::out "; Background model\n";
     my $order = $bg_model->get_attribute("order");
+    printf $main::out ";\t%-14s\t%s\n", "Method", $bg_method;
     if ($order == 0) {
 	printf $main::out ";\t%-14s\n", "Bernoulli model (order=0)";
     } else {
