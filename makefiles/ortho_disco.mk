@@ -196,7 +196,7 @@ map:
 
 ################################################################
 ## Index the results for the whole set of genes
-index_results: index_results_tab index_results_html
+index_results: index_results_html index_results_tab 
 
 #INDEX_FILE=${MAIN_DIR}/results/${REF_ORG}/${TAXON}/index_${REF_ORG}_${TAXON}${SUFFIX}.tab
 #index_results_tab:
@@ -227,6 +227,7 @@ index_results_tab:
 ## Add the analysis of a single gene to the index file
 SIG_COLUMN=9
 MAX_SIG=`grep -v '^;' ${DYADS}.tab | cut -f ${SIG_COLUMN} | sort -nr | grep -v "Binary" | head -1`
+MAX_SIG_FILTERED=`grep -v '^;' ${DYADS}_filtered.tab | cut -f ${SIG_COLUMN} | sort -nr | grep -v "Binary" | head -1`
 ROOT_DIR=${RESULT_DIR}/
 #MATCH_LINKS="	<a href=${KNOWN_SITE_MATCHES}.tab>matches</a>	<a href=${KNOWN_SITE_MATCHES}_weight_table.tab>match table</a>"
 MATCH_LINKS=
@@ -301,14 +302,6 @@ index_one_result_html:
 		echo "<td>${MAX_SIG}</td>"  >> ${INDEX_TABLE} ; \
 	else echo "<td></td>" >> ${INDEX_TABLE} ; \
 	fi
-	if [ -f "${SEQ}" ] ; then \
-		echo "<td><a href=${SEQ}>seq</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_TABLE} ; \
-	else echo "<td></td>" >> ${INDEX_TABLE} ; \
-	fi
-	if [ -f "${PURGED}" ] ; then \
-		echo "<td><a href=${PURGED}>purged</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_TABLE} ; \
-	else echo "<td></td>" >> ${INDEX_TABLE} ; \
-	fi
 	if [ -f "${DYADS}.tab" ] ; then \
 		echo "<td><a href=${DYADS}.tab>dyads</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_TABLE} ; \
 	else echo "<td></td>" >> ${INDEX_TABLE} ; \
@@ -321,12 +314,44 @@ index_one_result_html:
 		echo "<td><a href=${MAP}>map</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_TABLE} ; \
 	else echo "<td></td>" >> ${INDEX_TABLE} ; \
 	fi
+	if [ -f "${DYADS}_filtered.tab" ] ; then \
+		echo "<td>${MAX_SIG_FILTERED}</td>"  >> ${INDEX_TABLE} ; \
+	else echo "<td></td>" >> ${INDEX_TABLE} ; \
+	fi
+	if [ -f "${DYADS}_filtered.tab" ] ; then \
+		echo "<td><a href=${DYADS}_filtered.tab>f.dyads</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_TABLE} ; \
+	else echo "<td></td>" >> ${INDEX_TABLE} ; \
+	fi
+	if [ -f "${DYADS}_filtered.asmb" ] ; then \
+		echo "<td><a href=${DYADS}_filtered.asmb>f.assembly</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_TABLE} ; \
+	else echo "<td></td>" >> ${INDEX_TABLE} ; \
+	fi
+	if [ -f "${DYADS}_filtered.png" ] ; then \
+		echo "<td><a href=${DYADS}_filtered.png>f.map</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_TABLE} ; \
+	else echo "<td></td>" >> ${INDEX_TABLE} ; \
+	fi
 	if [ -f "${KNOWN_SITE_MATCHES}.tab" ] ; then \
 		echo "<td><a href=${KNOWN_SITE_MATCHES}.tab>matches</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_TABLE} ; \
 	else echo "<td></td>" >> ${INDEX_TABLE} ; \
 	fi
 	if [ -f "${KNOWN_SITE_MATCHES}_weight_table.tab" ] ; then \
 		echo "<td><a href=${KNOWN_SITE_MATCHES}_weight_table.tab>match table</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_TABLE} ; \
+	else echo "<td></td>" >> ${INDEX_TABLE} ; \
+	fi
+	if [ -f "${SEQ}" ] ; then \
+		echo "<td><a href=${SEQ}>seq</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_TABLE} ; \
+	else echo "<td></td>" >> ${INDEX_TABLE} ; \
+	fi
+	if [ -f "${SEQ}.gz" ] ; then \
+		echo "<td><a href=${SEQ}.gz>seq</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_TABLE} ; \
+	else echo "<td></td>" >> ${INDEX_TABLE} ; \
+	fi
+	if [ -f "${PURGED}" ] ; then \
+		echo "<td><a href=${PURGED}>purged</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_TABLE} ; \
+	else echo "<td></td>" >> ${INDEX_TABLE} ; \
+	fi
+	if [ -f "${PURGED}.gz" ] ; then \
+		echo "<td><a href=${PURGED}.gz>purged</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_TABLE} ; \
 	else echo "<td></td>" >> ${INDEX_TABLE} ; \
 	fi
 	@echo "</tr>" >> ${INDEX_TABLE}
