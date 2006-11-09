@@ -200,7 +200,7 @@ As an example, we will store the list of histidin genes in a file and
 compare the results obtained with and without the option
 \option{-noorf}.
 
-Create a text file named \file{his.genes.txt} with the following
+Create a text file named \file{his\_genes.txt} with the following
 genes.
 
 {\color{Blue} \begin{footnotesize}
@@ -226,7 +226,7 @@ The default behaviour will return 200bp for each gene.
 {\color{Blue} \begin{footnotesize}
 \begin{verbatim}
 retrieve-seq -type upstream -org Escherichia_coli_K12 \
-    -i his.genes.txt -from -200 -to -1
+    -i his_genes.txt -from -200 -to -1
 \end{verbatim} \end{footnotesize}
 }
 
@@ -236,10 +236,10 @@ the position of the closest upstream neighbour.
 {\color{Blue} \begin{footnotesize}
 \begin{verbatim}
 retrieve-seq -type upstream -org Escherichia_coli_K12 \
-    -i his.genes.txt -from -200 -to -1 -noorf \
-    -o his.up200.noorf.fasta
+    -i his_genes.txt -from -200 -to -1 -noorf \
+    -o his_up200_noorf.fasta
 
-more his.up200.noorf.fasta
+more his_up200_noorf.fasta
 \end{verbatim} \end{footnotesize}
 }
 
@@ -248,7 +248,7 @@ You can measure the length of the resulting sequences with the program
 
 {\color{Blue} \begin{footnotesize}
 \begin{verbatim}
-sequence-lengths -i his.up200.noorf.fasta
+sequence-lengths -i his_up200_noorf.fasta
 \end{verbatim} \end{footnotesize}
 }
 
@@ -333,7 +333,7 @@ gene-info -q 'MET' -org Saccharomyces_cerevisiae
 }
 
 We could also refine the query by taking advantage of our knowledge of
-th yeast gene nomenclature, and selecting the genes whose name starts
+the yeast gene nomenclature, and selecting the genes whose name starts
 with the prefix ``MET'', followed by one or several numbers.
 
 {\color{Blue} \begin{footnotesize}
@@ -346,7 +346,7 @@ The query is formulatd as a \concept{regular expression}, where
 \texttt{$\backslash$d} indicates a number, and the symbol $+$ is a
 multiplier, so \texttt{$\backslash$d+}, indicates that we accept a
 succession of one or more numbers after the string ``MET''. The
-character $^$ indicates that the string MET should be at the start of
+character $\hat{ }$ indicates that the string MET should be at the start of
 the name (thus, there can be no letter before MET).
 
 We can now store this list of genes in a separate file, and retrieve
@@ -375,7 +375,7 @@ in their description.
 
 {\color{Blue} \begin{footnotesize}
 \begin{verbatim}
-gene-info -descr -q 'methionine' -org Saccharomyces_cerevisiae
+gene-info -descr -q methionine -org Saccharomyces_cerevisiae
 \end{verbatim} \end{footnotesize}
 }
 
@@ -389,7 +389,7 @@ In some cases, one needs only a part of this information (e.g. the
 common name, or the descripion), in order to to add some columns to a
 pre-existing tab-delimited file where each row represents one
 gene. For example, imagine that you have a file containing expression
-profiles for 6000 yeast genes, measured by microarray experiments
+profiles for 6,000 yeast genes, measured by microarray experiments
 under 200 conditions. The file contains 201 columns: the first column
 indicates the ID of each gene, and the 200 next column give expression
 values measured in the 200 microarrays. In such case, you would
@@ -404,13 +404,24 @@ of synonym to each row of our PHO gene list.
 
 {\color{Blue} \begin{footnotesize}
 \begin{verbatim}
-add-gene-info -i PHO_genes.txt -org Saccharomyces_cerevisiae -info id,names
+add-gene-info -i PHO_genes.txt -org Saccharomyces_cerevisiae \
+  -info id,names
 \end{verbatim} \end{footnotesize}
 }
 
 If the input file contains additional columns (e.g. expression
 profiles), these will be preserved in the output, and the requested
 information columns will be added at the end of each row.
+
+You can check the list of fields supported by \program{add-gene-info}
+by consulting the help message.
+
+{\color{Blue} \begin{footnotesize}
+\begin{verbatim}
+add-gene-info -help
+\end{verbatim} \end{footnotesize}
+}
+
 
 \section{Retrieving sequences of a random selection of genes}
 
@@ -471,8 +482,21 @@ the stop codon, positive coordinates indicate downstream (3')
 location, and negative coordinates locations upstream (5') from the
 stop codon (i.e. coding sequences). 
 
-For example, the following command returns all the stop codons for
-\org{Escherichia coli}.
+For example, the following command will retrieve 200pb downstream
+sequences for a few yeast genes. The first nucleotides of the
+retrieved sequences are those immediately after the stop codon.
+
+{\color{Blue} \begin{footnotesize}
+\begin{verbatim}
+retrieve-seq -type downstream -org Saccharomyces_cerevisiae \
+    -from 1 -to 200 -label id,name -q PHO5 -q MET4
+\end{verbatim} \end{footnotesize}
+}
+
+Since with the option \option{-type downstream}, the coordinates
+smaller than 1 indicate positions upstream of the stop codon, we can
+use \program{retrieve-seq} to extract the stop codons for all the
+genes of \org{Escherichia coli}.
 
 {\color{Blue} \begin{footnotesize}
 \begin{verbatim}
@@ -482,40 +506,3 @@ retrieve-seq -type downstream -org Escherichia_coli_K12 \
     -o Escherichia_coli_K12_stop_codons.wc
 \end{verbatim} \end{footnotesize}
 }
-
-% \section{Retrieving upstream sequences of a random gene selection}
-
-% \program{retrieve-seq} can also be used to retrieve random sequences,
-% with two flavours :
-
-% \begin{itemize}
-% \item retrieving upstream, downstream or ORF sequence for a random
-% selection of ORFs
-% \item retrieving random genomic fragments
-% \end{itemize}
-
-% In both cases, the number of sequences to retrieve is specified with
-% the option \option{-random}, followed by a natural number.
-
-% The type of sequence is specified with the option \option{-type}, as
-% usual. Random genomic segments can be obtained by specifying
-% ``random'' as sequence type.
-
-% For example, To retrieve upstream sequences for a random selection of
-% 100 yeast ORFs :
-% {\color{Blue} \begin{footnotesize}
-% \begin{verbatim}
-% retrieve-seq -org Saccharomyces_cerevisiae \
-%     -randsel 100 -type upstream
-% \end{verbatim} \end{footnotesize}
-% }
-
-% Another example: to retrieve 100 random genomic segments of size 200
-% in \org{Saccharomyces cerevisiae} :
-% {\color{Blue} \begin{footnotesize}
-% \begin{verbatim}
-% retrieve-seq  -org Saccharomyces_cerevisiae \
-%     -randsel 100 -type random
-% \end{verbatim} \end{footnotesize}
-% }
-
