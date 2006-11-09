@@ -61,7 +61,7 @@ iterate_genes:
 
 ################################################################
 ## Run all the tasks for a single gene
-ALL_TASKS_CMD=${ORTHO_CMD} ; ${RETRIEVE_CMD} ; ${DYAD_CMD} ; ${ASSEMBLE_CMD}; ${MAP_CMD}
+ALL_TASKS_CMD=${ORTHO_CMD} ; ${RETRIEVE_CMD} ; ${DYAD_CMD} ; ${ASSEMBLE_CMD}; ${MAP_CMD}; ${DYAD_CMD_FILTERED}
 all_tasks:
 	${MAKE} my_command MY_COMMAND="${ALL_TASKS_CMD}" JOB_PREFIX=${REF_ORG}_${TAXON}_${GENE}
 
@@ -112,40 +112,21 @@ dyads:
 	@${DYAD_CMD}
 	@echo ${DYADS}.tab
 
-
-# ################################################################
-# ## Run dyad analysis using the sequence of the reference organism as filter
-# FILTER_SEQ=${GENE_DIR}/${GENE}_${REF_ORG}_up${NOORF}.fasta.gz
-# DYAD_FILTER=${GENE_DIR}/${GENE}_${REF_ORG}_dyad_filter
-# FILTERED_DYADS=${PREFIX}${SUFFIX}_filtered
-# FILTER_DYADS_CMD=retrieve-seq -org ${REF_ORG} -q ${GENE} ${NOORF} -o ${FILTER_SEQ} ; echo "Filter sequence	${FILTER_SEQ}"; \
-# 	dyad-analysis -v 0 -i ${FILTER_SEQ} -type any ${STR} ${NOOV} \
-# 		-lth occ 1 -return occ -l 3 -spacing 0-20 | grep -v ';' | cut -f 1 > ${DYAD_FILTER} ; echo "Dyad filter	${DYAD_FILTER}"; \
-# 	compare-scores -i ${DYADS}.tab -i ${DYAD_FILTER} -sc 1 -null '<NULL>' | grep -v '<NULL>' | grep -v '\#' | cut -f 1 >> ${DYAD_FILTER}_selected ; echo "Selected dyads	${DYAD_FILTER}_selected" ; \
-# 	grep "^;" ${DYADS}.tab | grep -v 'Job' > ${FILTERED_DYADS}.tab ; \
-# 	grep -f ${DYAD_FILTER}_selected ${DYADS}.tab >> ${FILTERED_DYADS}.tab ; echo "Filtered dyads	${FILTERED_DYADS}.tab" ; \
-# 	${MAKE} -s assemble DYADS=${FILTERED_DYADS} ; echo "Filtered dyad assembly	${FILTERED_DYADS}.asmb" ; \
-# 	${MAKE} -s map DYADS=${FILTERED_DYADS} ; echo "Filtered dyad map	${FILTERED_DYADS}.png" 
-# filter_dyads:
-# 	@echo
-# 	@echo "Filtering dyads	${GENE}	${TAXON}"
-# 	@${FILTER_DYADS_CMD}
-
 ################################################################
 ## Run dyad analysis using the sequence of the reference organism as filter
 FILTER_SEQ=${GENE_DIR}/${GENE}_${REF_ORG}_up${NOORF}.fasta.gz
 DYAD_FILTER=${GENE_DIR}/${GENE}_${REF_ORG}_dyad_filter
 FILTERED_DYADS=${PREFIX}${SUFFIX}_filtered
-FILTER_DYADS_CMD= \
-	retrieve-seq -org ${REF_ORG} -q ${GENE} ${NOORF} -o ${FILTER_SEQ} ; echo "Filter sequence	${FILTER_SEQ}"; \
-	dyad-analysis -v 0 -i ${FILTER_SEQ} -type any ${STR} ${NOOV} -lth occ 1 -return occ -l 3 -spacing 0-20 -o ${DYAD_FILTER} ; echo "Dyad filter	${DYAD_FILTER}"; \
-	${MAKE} -s dyads DYADS=${FILTERED_DYADS} DYAD_OPT='-accept ${DYAD_FILTER}' ; echo "Filtered dyads	${FILTERED_DYADS}.tab" ; \
-	${MAKE} -s assemble DYADS=${FILTERED_DYADS} ; echo "Filtered dyad assembly	${FILTERED_DYADS}.asmb" ; \
-	${MAKE} -s map DYADS=${FILTERED_DYADS} ; echo "Filtered dyad map	${FILTERED_DYADS}.png" 
+DYAD_CMD_FILTERED= \
+	retrieve-seq -org ${REF_ORG} -q ${GENE} ${NOORF} -o ${FILTER_SEQ} ; echo 'Filter sequence	${FILTER_SEQ}'; \
+	dyad-analysis -v 0 -i ${FILTER_SEQ} -type any ${STR} ${NOOV} -lth occ 1 -return occ -l 3 -spacing 0-20 -o ${DYAD_FILTER} ; echo 'Dyad filter	${DYAD_FILTER}'; \
+	${MAKE} -s dyads DYADS=${FILTERED_DYADS} DYAD_OPT='-accept ${DYAD_FILTER}' ; echo 'Filtered dyads	${FILTERED_DYADS}.tab' ; \
+	${MAKE} -s assemble DYADS=${FILTERED_DYADS} ; echo 'Filtered dyad assembly	${FILTERED_DYADS}.asmb' ; \
+	${MAKE} -s map DYADS=${FILTERED_DYADS} ; echo 'Filtered dyad map	${FILTERED_DYADS}.png' 
 filtered_dyads:
 	@echo
-	@echo "Filtering dyads	${GENE}	${TAXON}"
-	@${FILTER_DYADS_CMD}
+	@echo 'Filtering dyads	${GENE}	${TAXON}'
+	@${DYAD_CMD_FILTERED}
 
 
 ################################################################
