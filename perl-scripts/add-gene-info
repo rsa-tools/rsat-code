@@ -55,7 +55,7 @@ foreach my $type (@info_types) {
 foreach my $type (@info_types) {
     &RSAT::error::FatalError("Invalid information type $type. Supported: $supported_info_types") 
       unless ($supported_info_types{$type});
-    if (($type =~ /^up_/) ||
+    if (($type =~ /^upstr_/) ||
 	($type =~ /^down_/) ||
 	($type =~ /^right_/) ||
 	($type =~ /^left_/) ) {
