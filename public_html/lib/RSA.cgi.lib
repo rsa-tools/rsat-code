@@ -134,6 +134,13 @@ sub SequenceChoice {
 							      "tab",
 							      'multi'],
 						    -default=>$sequence_format);
+	#### Mask option
+	$sequenceChoiceString .=  "<B><A HREF='help.formats.html'>Mask</A></B>&nbsp;";
+	$sequenceChoiceString .=  $query->popup_menu(-name=>'mask',
+						    -Values=>['none', 
+							      'upper',
+							      'lower'],
+						    -default=>"none");
 	$sequenceChoiceString .=  "<BR>\n";
 
 	### text area to copy-paste the sequence
@@ -152,13 +159,6 @@ sub SequenceChoice {
 						    -maxlength=>200);
 	$sequenceChoiceString .=  "<BR>\n";
 
-	#### Mask option
-	$sequenceChoiceString .=  "<B><A HREF='help.formats.html'>Mask</A></B>&nbsp;";
-	$sequenceChoiceString .=  $query->popup_menu(-name=>'mask',
-						    -Values=>['none', 
-							      'upper',
-							      'lower'],
-						    -default=>"none");
     }
     $sequenceChoiceString .=  "<BR>\n";
     
