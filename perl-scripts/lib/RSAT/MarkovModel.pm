@@ -293,9 +293,8 @@ sub check_missing_transitions {
     }
     $self->force_attribute("missing_transitions", $missing_transitions);
     if ($missing_transitions > 0) {
-	
 	&RSAT::message::Warning(join(" ", $missing_transitions,
-				     "missing transition in the transition matrix.",
+				     "missing transitions in the transition matrix.",
 				     "Over-fitting risk.You should better sequences or a lower order Markov model. ")) if
 					 ($main::verbose >= 0);
     }
@@ -327,11 +326,13 @@ sub calc_from_seq {
 	&RSAT::message::TimeWarn(join(" ", 
 				      "Calculating markov model (order ".$order.")",
 				      "from sequence of length", $seq_len)) if ($main::verbose >= 2);
-    }
+	if ($main::verbose >= 2) {
+	  &RSAT::message::Warning(join("", "RSAT::MarkovModel->calc_from_seq: sequence is too short (len=",$seq_len,
+				       "). It must be larger than Markov order + 1 = ", $order+1))
+	    unless ($seq_len > $order + 1);
+	}
+      }
 
-
-    &RSAT::error::FatalErrorr("RSAT::MarkovModel->calc_from_seq: sequence must be MUCH larger than order +1")
-	unless ($seq_len > $order + 1);
     
     ## Transition counts
     my $last_pos = $seq_len - $order;
