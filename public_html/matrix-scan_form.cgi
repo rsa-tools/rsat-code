@@ -26,10 +26,10 @@ $default{return_sites} = "CHECKED";
 $default{return_limits} = "CHECKED";
 $default{return_rank} = "CHECKED";
 $default{return_normw} = "CHECKED";
-$default{return_bg_model} = "CHECKED";
-$default{return_matrix} = "";
-$default{return_freq_matrix} = "";
-$default{return_weight_matrix} = "";
+$default{return_matrix} = "CHECKED";
+$default{return_freq_matrix} = "CHECKED";
+$default{return_weight_matrix} = "CHECKED";
+$default{return_bg_model} = "";
 
 ## Threshold values
 $default{lth_score} = "6";
