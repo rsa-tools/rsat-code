@@ -1,7 +1,7 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: parse-embl.pl,v 1.15 2006/11/07 08:16:27 jvanheld Exp $
+# $Id: parse-embl.pl,v 1.16 2006/11/09 17:48:27 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:17:49 jvanheld>
 #
@@ -41,6 +41,7 @@ package EMBL::Feature;
 			     strand=>"SCALAR",
 			     start_pos=>"SCALAR",
 			     end_pos=>"SCALAR",
+			     GeneID=>"SCALAR",
 			     xrefs=>"EXPANDED"
 			     );
 }
@@ -156,6 +157,7 @@ package main;
 			      end_pos
 			      strand
 			      description
+			      GeneID
 			      organism
 			      position
 			      names
@@ -402,6 +404,14 @@ package main;
 				    $xref), "\n");
 	    }
 	}
+
+    }
+
+    ## Specify the GeneID (required for retrieve-seq)
+    &RSAT::message::TimeWarn("Specifying GeneIDs") if ($main::verbose >= 1);
+    foreach my $feature ($features->get_objects()) {
+	$feature->set_attribute("GeneID", $feature->get_attribute("id"));
+#	&RSAT::message::Debug("Using ID as GeneID for feature", $feature->get_attribute("id"),$feature->get_attribute("GeneID")) if ($main::verbose >= 10);
     }
 
     ################################################################
@@ -812,6 +822,8 @@ sub ParseEMBLFile {
 	    
 	    #### organism taxonomy
 	    if ($organism) {
+		$taxonomy = &trim($taxonomy);
+		$taxonomy =~ s/\.$//;
 		$organism->set_attribute("taxonomy", $taxonomy);
 	    }
 	} 
