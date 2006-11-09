@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.67 2006/10/10 17:43:12 jvanheld Exp $
+# $Id: install-organism,v 1.68 2006/11/09 17:47:39 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -120,9 +120,16 @@ if ($task{parse}) {
 ##################### installation directories #################
 ################################################################
 umask 0002;
-unless ($dir{install}) {
+if ($dir{install}) {
+    &RSAT::message::Info("Installing genome in directory specified on the command line", $dir{install}) if ($main::verbose >= 1);
+} elsif ($supported_organism{$organism_short_name}->{'data'}) {
+    $dir{install} = $supported_organism{$organism_short_name}->{'data'};
+    &RSAT::message::Info("Installing genome in directory previously specified in the config file", $dir{install}) if ($main::verbose >= 1);
+} else {
     $dir{install} = $RSA."/data/genomes/".$organism_short_name;
+    &RSAT::message::Info("Installing genome in default directory", $dir{install}) if ($main::verbose >= 1);
 }
+
 &RSAT::util::CheckOutDir($dir{install});
 
 $dir{genome} = "$dir{install}/genome";
