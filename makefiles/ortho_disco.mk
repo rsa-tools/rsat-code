@@ -15,6 +15,8 @@ GENE=CRP
 REF_ORG=Escherichia_coli_K12
 TAXON=Gammaproteobacteria
 MAIN_DIR=.
+SEQ_DIR=data/sequences/per_gene/${TAXON}
+GENE_DIR=${RESULT_DIR}/motifs/${GENE}
 
 include ${RSAT}/makefiles/util.mk
 MAKEFILE=${RSAT}/makefiles/ortho_disco.mk
@@ -31,6 +33,9 @@ list_parameters:
 	@echo "TAXON        ${TAXON}"
 	@echo "MAIN_DIR     ${MAIN_DIR}"
 	@echo "RESULT_DIR   ${RESULT_DIR}"
+	@echo "SEQ_DIR      ${SEQ_DIR}"
+	@echo "SEQ          ${SEQ}"
+	@echo "GENE_DIR     ${GENE_DIR}"
 
 ################################################################
 ## List of all genes to be analyzed. 
@@ -70,11 +75,10 @@ all_tasks:
 ## Identify orthologs for a given gene (${GENE}) in the taxon of
 ## interest (${TAXON})
 RESULT_DIR=${MAIN_DIR}/results/${REF_ORG}/${TAXON}
-GENE_DIR=${RESULT_DIR}/motifs/${GENE}
-PREFIX=${GENE_DIR}/${GENE}_${REF_ORG}_${TAXON}
-ORTHOLOGS = ${PREFIX}_orthologs.tab
+PREFIX=${GENE}_${REF_ORG}_${TAXON}
+ORTHOLOGS = ${SEQ_DIR}/${PREFIX}_orthologs.tab
 ORTHO_CMD=mkdir -p ${GENE_DIR} ; \
-	get-orthologs -q ${GENE} -org ${REF_ORG} -taxon ${TAXON} -uth rank 1 -o ${ORTHOLOGS}
+	get-orthologs -q ${GENE} -org ${REF_ORG} -taxon ${TAXON} -uth rank 1 -o ${ORTHOLOGS} -info all
 orthologs:
 	@echo
 	@echo "Getting orthologs	${GENE}		${REF_ORG}	${TAXON}"
@@ -85,8 +89,9 @@ orthologs:
 ################################################################
 ## Retrieve upstream sequences of set of orthologous genes
 NOORF=-noorf
-SEQ=${PREFIX}_up.fasta
-PURGED=${PREFIX}_up_purged.fasta
+#SEQ_DIR=${GENE_DIR}
+SEQ=${SEQ_DIR}/${PREFIX}_up.fasta
+PURGED=${SEQ_DIR}/${PREFIX}_up_purged.fasta
 PURGE_ML=30
 RETRIEVE_CMD=retrieve-seq-multigenome -i ${ORTHOLOGS} -o ${SEQ} ${NOORF} ; purge-sequence -i ${SEQ} -o ${PURGED} -ml ${PURGE_ML} -mis 0 -2str -mask_short ${PURGE_ML}
 upstream:
@@ -103,7 +108,7 @@ STR=-2str
 NOOV=-noov
 RETURN=occ,freq,proba,rank
 SUFFIX=${STR}${NOOV}_${BG}_dyads
-DYADS=${PREFIX}${SUFFIX}
+DYADS=${GENE_DIR}/${PREFIX}${SUFFIX}
 DYAD_CMD=dyad-analysis -v ${V} -i ${PURGED} -sort -type any ${STR} ${NOOV} \
 		-lth occ 1 -lth occ_sig 0 -return ${RETURN} -l 3 -spacing 0-20 \
 		-bg ${BG} -org ${REF_ORG} \
@@ -117,7 +122,7 @@ dyads:
 ## Run dyad analysis using the sequence of the reference organism as filter
 FILTER_SEQ=${GENE_DIR}/${GENE}_${REF_ORG}_up${NOORF}.fasta.gz
 DYAD_FILTER=${GENE_DIR}/${GENE}_${REF_ORG}_dyad_filter
-FILTERED_DYADS=${PREFIX}${SUFFIX}_filtered
+FILTERED_DYADS=${GENE_DIR}/${PREFIX}${SUFFIX}_filtered
 DYAD_CMD_FILTERED= \
 	retrieve-seq -org ${REF_ORG} -q ${GENE} ${NOORF} -o ${FILTER_SEQ} ; echo 'Filter sequence	${FILTER_SEQ}'; \
 	dyad-analysis -v 0 -i ${FILTER_SEQ} -type any ${STR} ${NOOV} -lth occ 1 -return occ -l 3 -spacing 0-20 -o ${DYAD_FILTER} ; echo 'Dyad filter	${DYAD_FILTER}'; \
@@ -594,7 +599,7 @@ MEME_EVT=1
 MEME_MINW=6
 MEME_MAXW=25
 MEME_SUFFIX=_MEME_${MEME_MOD}_nmotifs${MEME_NMOTIFS}_evt${MEME_EVT}_minw${MEME_MINW}_maxw${MEME_MAXW}
-MEME_FILE=${PREFIX}${MEME_SUFFIX}
+MEME_FILE=${GENE_DIR}/${PREFIX}${MEME_SUFFIX}
 #meme SREBP_I/SREBP_I_up2000_mrna_purged.fasta -revcomp -dna -mod anr -minw 6 -maxw 25 
 MEME_CMD=gunzip -f ${PURGED}; \
 	${MEME} ${PURGED} -dna -mod ${MEME_MOD} -nmotifs ${MEME_NMOTIFS} \
