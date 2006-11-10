@@ -11,7 +11,7 @@
 ##
 
 ## Default parameters
-GENE=FRUR
+GENE=CRP
 REF_ORG=Escherichia_coli_K12
 TAXON=Gammaproteobacteria
 MAIN_DIR=.
