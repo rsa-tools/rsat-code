@@ -20,12 +20,13 @@ $default{bg_method} = "bginput";
 $checked{$default{bg_method}} = "CHECKED";
 $default{markov_order} = 0;
 $default{window_size} = 200;
+$default{organism} = "Saccharomyces cerevisiae";
 
 ## Return fields
 $default{return_sites} = "CHECKED";
 $default{return_limits} = "CHECKED";
 $default{return_rank} = "CHECKED";
-$default{return_normw} = "CHECKED";
+$default{return_normw} = "";
 $default{return_matrix} = "CHECKED";
 $default{return_freq_matrix} = "CHECKED";
 $default{return_weight_matrix} = "CHECKED";
@@ -124,18 +125,19 @@ print ("<b><a href=help.matrix-scan.html#bg_method>Estimation method</a></b>");
 print ("<br><INPUT TYPE='radio' NAME='bg_method' VALUE='bginput' $checked{'bginput'}>", 
        "<b>Estimate from input sequences</b>");
 
-## Sliding window
-print ("<br><INPUT TYPE='radio' NAME='bg_method' VALUE='window' $checked{'window'}>",
-       "<b>Sliding window</b> &nbsp;");
-print $query->textfield(-name=>'window_size',
-			-default=>$default{window_size},
-			-size=>5);
+# ## Sliding window
+# print ("<br><INPUT TYPE='radio' NAME='bg_method' VALUE='window' $checked{'window'}>",
+#        "<b>Sliding window</b> &nbsp;");
+# print $query->textfield(-name=>'window_size',
+# 			-default=>$default{window_size},
+# 			-size=>5);
 
 #### Pre-defined background frequencies
-print ("<br><INPUT TYPE='radio' NAME='bg_method' VALUE='file' $checked{file}>");
-print ("<b>Genome subtype</b> &nbsp; ", $query->popup_menu(-name=>'background',
-			   -Values=>["upstream","upstream-noorf","intergenic"],
-				  -default=>$default{background}));
+print ("<br><INPUT TYPE='radio' NAME='bg_method' VALUE='bgfile' $checked{bgfile}>");
+print ("<b>Genome subset</b> &nbsp; ", 
+       $query->popup_menu(-name=>'background',
+			  -Values=>["upstream","upstream-noorf","intergenic"],
+			  -default=>$default{background}));
 print  &OrganismPopUpString();
 	
 print "<hr>";
@@ -262,6 +264,7 @@ G | 1  2  3  0  0  0  8  0  5  4  5  2
 T | 4  1  0  0  0  0  0  8  3  2  2  2";
 
 print "<TD><B>";
+print $query->hidden(-name=>'organism',-default=>'Saccharomyces_cerevisiae');
 print $query->hidden(-name=>'matrix',-default=>$demo_matrix);
 print $query->hidden(-name=>'sequence',-default=>$demo_sequence);
 print $query->hidden(-name=>'sequence_format',-default=>$default{sequence_format});
@@ -289,7 +292,7 @@ sub ReturnTable {
   print "<p><b>Return</b>\n";
   
   ### Sites
-  @return_fields = qw(sites rank normw limits bg_model matrix freq_matrix weight_matrix);
+  @return_fields = qw(sites rank normw limits matrix freq_matrix weight_matrix bg_model);
   foreach my $field (@return_fields) {
     print $query->checkbox(-name=>'return_'.$field,
 			   -checked=>$default{'return_'.$field},
