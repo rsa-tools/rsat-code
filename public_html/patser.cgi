@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: patser.cgi,v 1.23 2005/10/09 13:40:05 jvanheld Exp $
+# $Id: patser.cgi,v 1.24 2006/11/10 07:28:09 jvanheld Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -118,8 +118,8 @@ print $query->end_html;
 exit(0);
 
 
+## Prepare data for piping
 sub PipingForm {
-    ### prepare data for piping
     print <<End_of_form;
 <CENTER>
 <TABLE>

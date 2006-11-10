@@ -17,6 +17,11 @@ $default{sequence_file} = ""; ### [-f <Name of sequence file---default: standard
 $default{sequence} = ""; ### [-f <Name of sequence file---default: standard input>]
 $default{sequence_format} = "fasta"; ### automatic conversion from any format to wc
 
+# $default{matrix_format} = "consensus";
+# $default{matrix} = ""; ### [-m <Name of matrix file---default name is "matrix">]
+# $default{pseudo_counts} = 1; ### [-b <Correction added to the elements of the alignment matrix (default: 1)>]
+# $default{strands} = "both"; ### [-c <Score the complementary strand>]
+
 
 ################################################################
 #### STILL TO BE TREATED
