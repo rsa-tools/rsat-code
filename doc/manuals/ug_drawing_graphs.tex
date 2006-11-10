@@ -26,32 +26,38 @@ hexanucleotides.
 hexanucleotides in the upstream sequences of the PHO
 genes.
 
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim} 
 oligo-analysis -i PHO_up800.fasta -format fasta      \
     -v -l 6 -2str                                    \
     -return occ,proba -lth occ_sig 0 -bg upstream         \
     -org Saccharomyces_cerevisiae -sort              \
     -o PHO_up800_6nt_2str_ncf_sig0 
-\end{verbatim}
+\end{verbatim} \end{footnotesize}
+}
 
 \item Run \program{dna-pattern} to locate these patterns in 
 the upstream sequences.
 
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim} 
 dna-pattern -i PHO_up800.fasta -format fasta    \
     -pl PHO_up800_6nt_2str_ncf_sig0 -origin -0  \
     -o  PHO_up800_6nt_2str_ncf_sig0_matches.tab
-\end{verbatim}
+\end{verbatim} \end{footnotesize}
+}
 
 \item Run \program{convert-features} to convert these pattern matches
   into features.
 
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
 convert-features                               \
     -from dnapat -to ft                        \
     -i PHO_up800_6nt_2str_ncf_sig0_matches.tab \
     -o PHO_up800_6nt_2str_ncf_sig0_matches.ft 
-\end{verbatim}
+\end{verbatim} \end{footnotesize}
+}
 
 \end{enumerate}
 
@@ -60,11 +66,13 @@ drawings.
 
 \subsection{Basic feature maps}
 
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
 feature-map -format jpg                            \
     -i PHO_up800_6nt_2str_ncf_sig0_matches.ft  \
     -o PHO_up800_6nt_2str_ncf_sig0_matches.jpg
-\end{verbatim}
+\end{verbatim} \end{footnotesize}
+}
 
 You can now open the file
 \file{PHO\_up800\_6nt\_2str\_ncf\_sig0\_matches.jpg} with a web
@@ -78,6 +86,7 @@ box. A specific color is associated to each pattern (feature ID).
 We will use a few additional options to add information on this
 feature map. 
 
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
 feature-map -format jpg                        \
     -i PHO_up800_6nt_2str_ncf_sig0_matches.ft  \
@@ -85,7 +94,8 @@ feature-map -format jpg                        \
     -from -800 -to 0 -scorethick               \
     -title 'Over-represented 6nt in PHO upstream sequences' \
     -o PHO_up800_6nt_2str_ncf_sig0_matches.jpg
-\end{verbatim}
+\end{verbatim} \end{footnotesize}
+}
 
 This example illustrates some capabilities of \program{feature-map}:
 
@@ -109,6 +119,7 @@ horizontal orientation is usually the most convenient, but when labels
 are attached to each feature, the vertical orientation prevents them
 from expanding over each other.
 
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
 feature-map -format jpg                        \
     -i PHO_up800_6nt_2str_ncf_sig0_matches.ft  \
@@ -117,7 +128,8 @@ feature-map -format jpg                        \
     -vertical -symbol -label pos               \
     -title 'Over-represented 6nt in PHO upstream sequences'  \
     -o PHO_up800_6nt_2str_ncf_sig0_matches.jpg 
-\end{verbatim}
+\end{verbatim} \end{footnotesize}
+}
 
 In this representation, a \concept{label} is written besides each
 feature box. In addition, a \concept{symbol} has been attached to each
@@ -157,6 +169,7 @@ feature-map in a web browser. When the users positions the mouse over
 a feature, the corresponding information is displayed in the status
 bar.
 
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
 feature-map -format jpg                        \
     -i PHO_up800_6nt_2str_ncf_sig0_matches.ft  \
@@ -166,7 +179,8 @@ feature-map -format jpg                        \
     -title 'Over-represented 6nt in PHO upstream sequences' \
     -o PHO_up800_6nt_2str_ncf_sig0_matches.jpg \
     -htmap > PHO_up800_6nt_2str_ncf_sig0_matches.html
-\end{verbatim}
+\end{verbatim} \end{footnotesize}
+}
 
 Notice that we used the option \option{-dot} to attach a colored filled 
 circle to each feature box. 
@@ -181,16 +195,20 @@ window.
 
 The program \program{feature-map} includes a few other options.
 
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
 feature-map -help
-\end{verbatim}
+\end{verbatim} \end{footnotesize}
+}
 
 A complete description of their functionality is provided in 
 the help pages.
 
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
 feature-map -h
-\end{verbatim}
+\end{verbatim} \end{footnotesize}
+}
 
 \subsection{Feature converters}
 
