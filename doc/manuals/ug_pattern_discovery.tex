@@ -189,7 +189,7 @@ Try the following command:
 oligo-analysis -i PHO_up800-noorf.fasta -format fasta    \
     -v 1 -l 6 -2str -lth occ_sig 0 -noov \
     -return occ,proba,rank -sort \
-    -bg upstream -org Saccharomyces_cerevisiae \
+    -bg upstream-noorf -org Saccharomyces_cerevisiae \
     -o PHO_up800-noorf_6nt-2str-noov_ncf_sig0 
 \end{verbatim} \end{footnotesize}
 }
@@ -414,7 +414,7 @@ various oligonucleotides, and might not correspond to any real site in
 the input sequences. Also, this ``best consensus'' is generally too
 stringent to perform pattern matching (see next chapters), and we
 usually prefer to search all the oligonucleotides separately, and
-analyze their feature-map to identify the putative cis-acting
+analyze their feature map to identify the putative cis-acting
 elements.
 
 \begin{exercise}
@@ -503,7 +503,7 @@ Note that
 
 Another possibility is to use Markov chain models to estimate expected
 word frequencies. Try the following commands and compare the
-results. None is as good as the option \option{-bg upstream},
+results. None is as good as the option \option{-bg upstream-noorf},
 but in case one would not have the pre-calibrated non-coding
 frequencies (for instance if the organism has not been completely
 sequenced), Markov chains can provide an interesting approach. 

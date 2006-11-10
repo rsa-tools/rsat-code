@@ -1,0 +1,132 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% MATRIX-BASED PATTERN MATCHING
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Matrix-based pattern matching}
+
+\section{patser (program developed by by Jerry Hertz)}
+
+We will now see how to match a profile matrix against a sequence
+set. For this, we use \textit{patser}, a program written by Jerry
+Hertz. 
+
+\subsection{Getting help}
+
+help can be obtained with the two usual options.
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+patser -h
+patser -help
+\end{verbatim} \end{footnotesize}
+}
+
+\subsection{Matrix conversion}
+
+Patser expects as input a matrix like the 4 matrices we obtained above
+with \textit{consensus}. The output from \textit{consensus} can however
+not be used directly because it contains several matrices, and a lot
+of additional information. One possibility is to copy-paste the matrix
+of interest to a separate file.
+
+To avoid manual editing, RSAT contains a program
+\textit{convert-matrix}, which automaticaly extracts a matrix from
+various file formats, including consensus.
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+convert-matrix -format consensus -i PHO_consensus \
+    -return counts -o PHO_matrix 
+
+more PHO_matrix
+\end{verbatim} \end{footnotesize}
+}
+
+Note that the program \textit{convert-matrix} includes many other
+output options, fo example you can obtain the degenerate consensus
+from a matrix with the following options.
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+convert-matrix -format consensus -i PHO_consensus \
+    -return consensus
+\end{verbatim} \end{footnotesize}
+}
+
+Additional information can be otbained with the on-line help for
+\textit{convert-matrix}.
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+convert-matrix -h
+\end{verbatim} \end{footnotesize}
+}
+
+\subsection{Detecting Pho4p sites in the PHO genes}
+
+After having extracted the matrix, we can match it against the PHO
+sequences to detect putative regulatory sites.
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+patser -m PHO_matrix -f PHO_up800.wc -A a:t c:g -c -ls 9
+\end{verbatim} \end{footnotesize}
+}
+
+\subsection{Detecting Pho4p sites in all upstream regions}
+
+We will now match our PHO matrix against the whole set of upstream
+regions from the 6200 yeast genes. This should allow us to detect new
+genes potentially regulated by Pho4p.
+
+One possibility would be to use \textit{retrieve-seq} to extract all
+yeast upstream regions, and save the result in a file, which will then
+be used as input by \textit{patser}. To avoid occupying too much space
+on the disk, we could combine both tasks in a single command, and
+immediately redirect the output of \textit{retrieve-seq} as input for
+\textit{patser}. This can be done with the pipe character | as
+below.
+
+\textit{patser} result can be redirected to a file with the unix
+``greater than'' ($>$) symbol. We will store the result of the
+genome-scale search in a file \file{PHO\_matrix\_matches\_allup.txt}.
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+retrieve-seq -type upstream -from -1 -to -800  \
+    -org Saccharomyces_cerevisiae \
+    -all -format wc -label gene  \
+    | patser -m PHO_matrix -ls 9 -A a:t c:g \
+    > PHO_matrix_matches_allup.txt
+
+more PHO_matrix_matches_allup.txt
+\end{verbatim} \end{footnotesize}
+}
+
+\section{Scanning sequences with \program{matrix-scan}}
+
+The program \program{matrix-scan} allows to scan sequences with a
+position-specific scoring matrix (\concept{PSSM}), in the same way as
+patser. However, it presents some differences:
+
+\begin{enumerate}
+
+\item \program{matrix-scan} is much slower than \program{patser},
+  because it is a perl script (whereas \program{patser} is
+  compiled). However, for most tasks, we can affor dto spend a few
+  minuts per genome rather than a few seconds.
+
+\item \program{matrix-scan} does not (yet) calculate the P-value
+  associated to each match. I intend to implement it in a next
+  version.
+
+\item \program{matrix-scan} supports higher-order Markov chain models,
+  whereas \program{paters} only supports Bernoulli models. The markov
+  models can be defined from different sequence sets: external
+  sequences, input sequences, or even locally (\concept{adaptive
+    background models}).
+
+\end{enumerate}
+
+
+
