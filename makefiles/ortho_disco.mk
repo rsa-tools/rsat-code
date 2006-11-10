@@ -61,8 +61,8 @@ iterate_genes:
 
 ################################################################
 ## Run all the tasks for a single gene
-#ALL_TASKS_CMD=${ORTHO_CMD} ; ${RETRIEVE_CMD} ; ${DYAD_CMD} ; ${ASSEMBLE_CMD}; ${MAP_CMD}; ${DYAD_CMD_FILTERED}
-ALL_TASKS_CMD=${DYAD_CMD_FILTERED}
+ALL_TASKS_CMD=${ORTHO_CMD} ; ${RETRIEVE_CMD} ; ${DYAD_CMD} ; ${ASSEMBLE_CMD}; ${MAP_CMD}; ${DYAD_CMD_FILTERED}
+#ALL_TASKS_CMD=${DYAD_CMD_FILTERED}
 all_tasks:
 	${MAKE} my_command MY_COMMAND="${ALL_TASKS_CMD}" JOB_PREFIX=${REF_ORG}_${TAXON}_${GENE}
 
@@ -128,7 +128,6 @@ filtered_dyads:
 	@echo
 	@echo 'Filtering dyads	${GENE}	${TAXON}'
 	@${DYAD_CMD_FILTERED}
-
 
 ################################################################
 ## Count matches between discovered dyads and known sites
@@ -280,6 +279,7 @@ index_one_result_html:
 	@echo "Indexing result for gene	${GENE}"
 	@echo "<tr>" >> ${INDEX_TABLE}
 	@echo "<td><a href=${GENE_DIR}>${GENE}</a></td>" | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_TABLE}
+	echo "<td width=5></td>" >> ${INDEX_TABLE} ; \
 	if [ -f "${DYADS}.tab" ] ; then \
 		echo "<td>${MAX_SIG}</td>"  >> ${INDEX_TABLE} ; \
 	else echo "<td></td>" >> ${INDEX_TABLE} ; \
@@ -296,6 +296,7 @@ index_one_result_html:
 		echo "<td><a href=${MAP}>map</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_TABLE} ; \
 	else echo "<td></td>" >> ${INDEX_TABLE} ; \
 	fi
+	echo "<td width=5></td>" >> ${INDEX_TABLE} ; \
 	if [ -f "${DYADS}_filtered.tab" ] ; then \
 		echo "<td>${MAX_SIG_FILTERED}</td>"  >> ${INDEX_TABLE} ; \
 	else echo "<td></td>" >> ${INDEX_TABLE} ; \
@@ -594,6 +595,7 @@ MEME_MINW=6
 MEME_MAXW=25
 MEME_SUFFIX=_MEME_${MEME_MOD}_nmotifs${MEME_NMOTIFS}_evt${MEME_EVT}_minw${MEME_MINW}_maxw${MEME_MAXW}
 MEME_FILE=${PREFIX}${MEME_SUFFIX}
+#meme SREBP_I/SREBP_I_up2000_mrna_purged.fasta -revcomp -dna -mod anr -minw 6 -maxw 25 
 MEME_CMD=gunzip -f ${PURGED}; \
 	${MEME} ${PURGED} -dna -mod ${MEME_MOD} -nmotifs ${MEME_NMOTIFS} \
 	-evt ${MEME_EVT} -revcomp -text \
