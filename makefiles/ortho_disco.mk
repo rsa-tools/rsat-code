@@ -11,7 +11,7 @@
 ##
 
 ## Default parameters
-GENE=lexA
+GENE=FRUR
 REF_ORG=Escherichia_coli_K12
 TAXON=Gammaproteobacteria
 MAIN_DIR=.
