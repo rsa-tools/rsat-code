@@ -1,7 +1,8 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%% PATTERN MATCHING
+%%%% STRING-BASED PATTERN MATCHING
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\chapter{Pattern matching}
+
+\chapter{String-based pattern matching}
 
 In a pattern matching problem, you start from one or several
 predefined patterns, and you match this pattern against a sequence,
@@ -50,7 +51,7 @@ distinguishing between these types of imperfect matches.
 \end{itemize}
 
 
-\subsection{Matching a single pattern}
+\section{Matching a single pattern}
 
 We will start by searching all positions of a single pattern in a
 sequence set. The sequence is the set of upstream regions from the PHO
@@ -60,10 +61,12 @@ medium affinity binding site (\texttt{CACGTT}) in this sequence set.
 
 Try the following command:
 
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
 dna-pattern -v 1 -i PHO_up800.fasta -format fasta \ 
     -1str -p cacgtt -id 'Pho4p_site'
-\end{verbatim}
+\end{verbatim} \end{footnotesize}
+}
 
 You see a list of positions for all the occurrences of CACGTT in the sequence.
 
@@ -80,24 +83,28 @@ information:
 \item matching score
 \end{enumerate}
 
-\subsection{Matching on both strands}
+\section{Matching on both strands}
 
 To perform the search on both strands, type:
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
 dna-pattern -v 1 -i PHO_up800.fasta -format fasta \ 
     -2str -p cacgtt -id 'Pho4p_site'
-\end{verbatim}
+\end{verbatim} \end{footnotesize}
+}
 
 Notice that the strand column now contains two possible values: D for
 ``direct'' and R for ``reverse complement''.
 
-\subsection{Allowing substitutions}
+\section{Allowing substitutions}
 
 To allow one substitutions, type:
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
 dna-pattern -i PHO_up800.fasta -format fasta \
     -2str -p cacgtt -id 'Pho4p_site' -subst 1
-\end{verbatim}
+\end{verbatim} \end{footnotesize}
+}
 
 Notice that the score column now contains 2 values: 1.00 for perfect
 matches, 0.83 (=5/6) for single substitutions. This si one possible
@@ -108,21 +115,23 @@ Actually, for regulatory patterns, allowing substitutions usually
 returns many false positive, and this option is usually avoided. We
 will not use it further in the tutorial.
 
-\subsection{Extracting flanking sequences}
+\section{Extracting flanking sequences}
 
 The matching positions can be extracted along with their flanking nucleotides. Try:
 
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
 dna-pattern -i PHO_up800.fasta -format fasta \
      -2str -p cacgtt \
      -id  'Pho4p_site' -N 4
-\end{verbatim}
+\end{verbatim} \end{footnotesize}
+}
 
 Notice the change in the matched sequence column: each matched
 sequence contains the pattern CACGTT in uppercase, and 4 lowercase
 letters on each side (the flanks).
 
-\subsection{Changing the origin}
+\section{Changing the origin}
 
 When working with upstream sequences, it is convenient to work with
 coordinates relative to the start codon (i.e. the right side of the
@@ -133,11 +142,13 @@ the option \texttt{-origin}. In this case, we retrieved upstream
 sequences over 800bp. the start codon is thus located at position
 801. Try:
 
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
 dna-pattern -i PHO_up800.fasta -format fasta \
     -2str -p cacgtt \
     -id  'Pho4p_site' -N 4 -origin 801
-\end{verbatim}
+\end{verbatim} \end{footnotesize}
+}
 
 Notice the change in coordinates.
 
@@ -152,16 +163,18 @@ our case we want to take as origin the position immediately after the
 last nucleotide. For this, there is a special convention: \texttt{-origin
 -0}.
 
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
 dna-pattern -i PHO_up800.fasta -format fasta \
     -2str -p cacgtt \
     -id  'Pho4p_site' -N 4 -origin -0
-\end{verbatim}
+\end{verbatim} \end{footnotesize}
+}
 
 In the current example, since all sequences have exactly 800bp length,
 the result is identical to the one obtained with \texttt{-origin 801}.
 
-\subsection{Matching degenerate patterns}
+\section{Matching degenerate patterns}
 
 As we said before, there are two forms of Pho4p binding sites: the
 protein has high affinity for motifs containing the core CACGTG, but
@@ -191,13 +204,15 @@ Thus, we could use the string CACGT\textbf{K} to represent the Pho4p
 consensus, and search both high and medium affinity sites in a single
 run of the program.
 
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
 dna-pattern -i PHO_up800.fasta -format fasta \
     -2str -p cacgtk \
     -id  'Pho4p_site' -N 4 -origin -0
-\end{verbatim}
+\end{verbatim} \end{footnotesize}
+}
 
-\subsection{Matching regular expressions}
+\section{Matching regular expressions}
 
 Another way to represent partly specified strings is by using regular
 expressions. This not only allows to represent combinations of letters
@@ -205,9 +220,11 @@ as we did above, but also spacings of variable width. For example, we
 could search for tandem repeats of 2 Pho4p binding sites, separated by
 less than 100bp. This can be represented by the following regular expression: 
 
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
 cacgt[gt].{0,100}cacgt[gt]
-\end{verbatim}
+\end{verbatim} \end{footnotesize}
+}
 
 which means
 \begin{itemize}
@@ -220,12 +237,14 @@ which means
 
 Let us try to use it with dna-pattern
 
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
 dna-pattern -i PHO_up800.fasta -format fasta \
     -2str -id 'Pho4p_pair' \
     -N 4 -origin -0 \
     -p 'cacgt[gt].{0,100}cacgt[gt]'
-\end{verbatim}
+\end{verbatim} \end{footnotesize}
+}
 
 
 Note that the pattern has to be quoted, to avoid possible conflicts
@@ -233,22 +252,26 @@ between special characters used in the regular expression and the unix
 shell.
 
 
-\subsection{Matching several patterns}
+\section{Matching several patterns}
 
 TO match a series of patterns, you first need to store these patterns
 in a file. Let create a pattern file:
 
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
 cat > test_patterns.txt
 cacgtg	high
 cacgtt	medium
-\end{verbatim}
+\end{verbatim} \end{footnotesize}
+}
 (then type Ctrl-d to close)
 
 check the content of your pattern file.
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
 more test_patterns.txt
-\end{verbatim}
+\end{verbatim} \end{footnotesize}
+}
 
 There are two lines, each representing a pattern. The first word of
 each line contains the pattern, the second word the identifier for
@@ -258,23 +281,27 @@ is used as identifier.
 We can now use this file to search all matching positions of both
 patterns in the PHO sequences.
 
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
 dna-pattern -i PHO_up800.fasta -format fasta \
     -2str  -N 4 -origin -0 \
     -pl test_patterns.txt
-\end{verbatim}
+\end{verbatim} \end{footnotesize}
+}
 
-\subsection{Counting pattern matches}
+\section{Counting pattern matches}
 
 In the previous examples, we were interested in matching positions. It
 is sometimes interesting to get a more synthetic information, in the
 form of a count of matching positions for each sequences. Try:
 
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
 dna-pattern -i PHO_up800.fasta -format fasta \ 
      -2str  -N 4 -origin -0 -c \
      -pl test_patterns.txt
-\end{verbatim}
+\end{verbatim} \end{footnotesize}
+}
 
 With the option \texttt{-c}, the program returns the number of
 occurrences of each pattern in each sequence. The output format is
@@ -290,22 +317,26 @@ columns indicate respectively
 An even more synthetic result can be obtained with the option
 \texttt{-ct} (count total).
 
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
 dna-pattern -i PHO_up800.fasta -format fasta -2str \
     -pl test_patterns.txt -N 4 -origin -0 -ct
-\end{verbatim}
+\end{verbatim} \end{footnotesize}
+}
 
 This time, only two rows are returned, one per pattern. 
 
-\subsection{Getting a count table}
+\section{Getting a count table}
 
 Another way to display the count information is in the form of a
 table, where each row represents a gene and each column a pattern.
 
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
 dna-pattern -i PHO_up800.fasta -format fasta -2str \
     -pl test_patterns.txt -N 4 -origin -0 -table
-\end{verbatim}
+\end{verbatim} \end{footnotesize}
+}
 
 This representation is very convenient for applying multivariate
 statistics on the results (e.g. classifying genes according to the
@@ -314,132 +345,10 @@ patterns found in their upstream sequences)
 Last detail: we can add one column and one row for the totals per
 gene and per pattern.
 
+{\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
 dna-pattern -i PHO_up800.fasta -format fasta -2str \
     -pl test_patterns.txt -N 4 -origin -0 -table -total
-\end{verbatim}
+\end{verbatim} \end{footnotesize}
+}
 
-
-
-
-\section{patser (program developed by by Jerry Hertz)}
-
-We will now see how to match a profile matrix against a sequence
-set. For this, we use \textit{patser}, a program written by Jerry
-Hertz. 
-
-\subsection{Getting help}
-
-help can be obtained with the two usual options.
-
-\begin{verbatim}
-patser -h
-patser -help
-\end{verbatim}
-
-\subsection{Matrix conversion}
-
-Patser expects as input a matrix like the 4 matrices we obtained above
-with \textit{consensus}. The output from \textit{consensus} can however
-not be used directly because it contains several matrices, and a lot
-of additional information. One possibility is to copy-paste the matrix
-of interest to a separate file.
-
-To avoid manual editing, RSAT contains a program
-\textit{convert-matrix}, which automaticaly extracts a matrix from
-various file formats, including consensus.
-
-\begin{verbatim}
-convert-matrix -format consensus -i PHO_consensus \
-    -return counts -o PHO_matrix 
-
-more PHO_matrix
-\end{verbatim}
-
-Note that the program \textit{convert-matrix} includes many other
-output options, fo example you can obtain the degenerate consensus
-from a matrix with the following options.
-
-\begin{verbatim}
-convert-matrix -format consensus -i PHO_consensus \
-    -return consensus
-\end{verbatim}
-
-Additional information can be otbained with the on-line help for
-\textit{convert-matrix}.
-
-\begin{verbatim}
-convert-matrix -h
-\end{verbatim}
-
-\subsection{Detecting Pho4p sites in the PHO genes}
-
-After having extracted the matrix, we can match it against the PHO
-sequences to detect putative regulatory sites.
-
-\begin{verbatim}
-patser -m PHO_matrix -f PHO_up800.wc -A a:t c:g -c -ls 9
-\end{verbatim}
-
-\subsection{Detecting Pho4p sites in all upstream regions}
-
-We will now match our PHO matrix against the whole set of upstream
-regions from the 6200 yeast genes. This should allow us to detect new
-genes potentially regulated by Pho4p.
-
-One possibility would be to use \textit{retrieve-seq} to extract all
-yeast upstream regions, and save the result in a file, which will then
-be used as input by \textit{patser}. To avoid occupying too much space
-on the disk, we could combine both tasks in a single command, and
-immediately redirect the output of \textit{retrieve-seq} as input for
-\textit{patser}. This can be done with the pipe character | as
-below.
-
-\textit{patser} result can be redirected to a file with the unix
-``greater than'' ($>$) symbol. We will store the result of the
-genome-scale search in a file \file{PHO\_matrix\_matches\_allup.txt}.
-
-\begin{verbatim}
-retrieve-seq -type upstream -from -1 -to -800  \
-    -org Saccharomyces_cerevisiae \
-    -all -format wc -label gene  \
-    | patser -m PHO_matrix -ls 9 -A a:t c:g \
-    > PHO_matrix_matches_allup.txt
-
-more PHO_matrix_matches_allup.txt
-\end{verbatim}
-
-\section{Scanning sequences with \program{matrix-scan}}
-
-The program \program{matrix-scan} allows to scan sequences with a
-position-specific scoring matrix (\concept{PSSM}), in the same way as
-patser. However, it presents some differences:
-
-\begin{enumerate}
-
-\item \program{matrix-scan} is much slower than \program{patser},
-  because it is a perl script (whereas \program{patser} is
-  compiled). However, for most tasks, we can affor dto spend a few
-  minuts per genome rather than a few seconds.
-
-\item \program{matrix-scan} does not (yet) calculate the P-value
-  associated to each match. I intend to implement it in a next
-  version.
-
-\item \program{matrix-scan} supports higher-order Markov chain models,
-  whereas \program{paters} only supports Bernoulli models. The markov
-  models can be defined from different sequence sets: external
-  sequences, input sequences, or even locally (\concept{adaptive
-    background models}).
-
-\end{enumerate}
-
-
-
-\begin{small}
-\begin{verbatim}
-
-
-
-\end{verbatim}
-\end{small}
