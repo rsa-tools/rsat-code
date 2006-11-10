@@ -234,7 +234,6 @@ sub normalize_transition_frequencies {
     $self->force_attribute("missing_transitions", $missing_transitions);
 
 
-
     ## Calculate prefix probabilities
     my %prefix_proba = ();
     foreach my $prefix ($self->get_attribute("prefixes")) {
@@ -296,7 +295,7 @@ sub check_missing_transitions {
 	&RSAT::message::Warning(join(" ", $missing_transitions,
 				     "missing transitions in the transition matrix.",
 				     "Over-fitting risk.You should better sequences or a lower order Markov model. ")) if
-					 ($main::verbose >= 0);
+					 ($main::verbose >= 2);
     }
 }
 
@@ -374,17 +373,17 @@ sub two_words_update {
     $self->{transition_count}->{$added_prefix}->{$added_suffix}++;
     $self->{prefix_sum}->{$added_prefix}++;
     if (($self->{transition_count}->{$added_prefix}->{$added_suffix} == 1) 
-	&&($main::verbose >= 0)){
+	&&($main::verbose >= 4)){
 	&RSAT::message::Warning(join (" ", "Model update:", $added_word, 
 				      "appeared in updated window starting at", $window_offset));
     }
-    
+
     ## Update transition count for the deleted word
     my $deleted_prefix = substr($deleted_word, 0, $self->{order});
     my $deleted_suffix = substr($deleted_word, $self->{order}, 1);
     $self->{transition_count}->{$deleted_prefix}->{$deleted_suffix}--;
     if (($self->{transition_count}->{$deleted_prefix}->{$deleted_suffix} == 0) 
-	&&($main::verbose >= 0)){
+	&&($main::verbose >= 4)){
 	&RSAT::message::Warning(join (" ", "Model update:", $deleted_word, 
 				      "disappeared from updated window starting at", $window_offset));
     }
@@ -710,8 +709,11 @@ sub segment_proba {
 	&RSAT::message::Info("MarkovModel::segment_proba()",
 			     "offset:".$c,
 			     "i=".($c+1),
-			     "P(".$prefix.")=".$self->{prefix_proba}->{$prefix},
-			     "P(segm)=".$segment_proba) if ($main::verbose >= 4);
+			     "P(".$prefix.")", $self->{prefix_proba}->{$prefix},
+			     "P(S)", $segment_proba,
+			     $prefix.uc($suffix),
+			     $prefix.uc($suffix),
+			    ) if ($main::verbose >= 4);
     }
     
     for $c ($order..($seq_len-1)) {
@@ -749,15 +751,18 @@ sub segment_proba {
 	&RSAT::message::Info("MarkovModel::segment_proba()",
 			     "offset:".$c,
 			     "i=".($c+1),
-			     "P(".$suffix."|".$prefix.")=".$letter_proba,
-			     "P(segm)=".$segment_proba) if ($main::verbose >= 4);
+			     "P(".$suffix."|".$prefix.")", $letter_proba,
+			     "P(S)", $segment_proba,
+			     $prefix.uc($suffix),
+			     substr($segment,0,$c+1),
+			    ) if ($main::verbose >= 4);
 #	&RSAT::message::Info("segment_proba", 
 #			      "prefix=".$word, 
 #			      "prefix=".$prefix, 
 #			      "suffix:".$suffix, 
 #			      "offset:".$c, 
 #			      "P(letter)=".$letter_proba, 
-#			      "P(segm)=".$segment_proba) if ($main::verbose >= 4);
+#			      "P(S)=".$segment_proba) if ($main::verbose >= 4);
     }
     
 #    &RSAT::message::Debug("segment_proba", $segment, "P(segm)=".$segment_proba) if ($main::verbose >= 0);
