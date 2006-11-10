@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: matrix-scan.cgi,v 1.2 2006/11/09 17:48:01 rsat Exp $
+# $Id: matrix-scan.cgi,v 1.3 2006/11/10 07:26:43 jvanheld Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -148,38 +148,55 @@ sub ReadMatrixScanParameters {
 
     ################################################################
     ## strands 
+    my $str = "-1str";
     if ($query->param('strands') =~ /both/i) {
-	$parameters .= " -2str";
+      $str = "-2str";
+      $parameters .= " -2str";
     } else {
-	$parameters .= " -1str";
+      $str = "-1str";
+      $parameters .= " -1str";
     }
 
+    ################################################################
     #### origin
     if ($query->param('origin') =~ /end/i) {
 	$parameters .= " -origin -0";
-    }
-
-
-    ################################################################
-    ## Background model method
-    my $bg_method = $query->param('bg_method');
-    if ($bg_method eq "bginput") {
-      $parameters .= " -bginput";
-    } elsif ($bg_method eq "window") {
-      my $window_size = $query->param('window_size');
-
-      &RSAT::message::FatalError(join("\t",$window_size, "Invalid value for the window size. Should be a Natural number." )) unless (&IsNatural($window_size));
-      
-      $parameters .= " -window ".$window_size;
-    } else {
-      &RSAT::error::FatalError($bg_method," is not a valid method for background specification");
     }
 
     ################################################################
     ## Markov order
     my $markov_order = $query->param('markov_order');
     &RSAT::error::FatalError("Markov model should be a Natural number") unless &IsNatural($markov_order);
-    $parameters .= " -markov ".$markov_order;
+
+    ################################################################
+    ## Background model method
+    my $bg_method = $query->param('bg_method');
+    if ($bg_method eq "bginput") {
+      $parameters .= " -bginput";
+      $parameters .= " -markov ".$markov_order;
+
+    } elsif ($bg_method eq "window") {
+      my $window_size = $query->param('window_size');
+      &RSAT::message::FatalError(join("\t",$window_size, "Invalid value for the window size. Should be a Natural number." )) unless (&IsNatural($window_size));
+
+      $parameters .= " -window ".$window_size;
+      $parameters .= " -markov ".$markov_order;
+
+    } elsif ($bg_method eq "bgfile") {
+
+      my $organism_name = $query->param("organism");
+      my $noov = "ovlp";
+      my $background_model = $query->param("background");
+      my $oligo_length = $markov_order + 1;
+      $bg_file = &ExpectedFreqFile($organism_name,
+				   $oligo_length, $background_model,
+				   noov=>$noov, str=>$str);
+      $parameters .= " -bgfile ".$bg_file;
+
+    } else {
+      &RSAT::error::FatalError($bg_method," is not a valid method for background specification");
+    }
+
 
     ################################################################
     ## Return fields
