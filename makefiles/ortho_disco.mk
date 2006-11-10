@@ -61,7 +61,8 @@ iterate_genes:
 
 ################################################################
 ## Run all the tasks for a single gene
-ALL_TASKS_CMD=${ORTHO_CMD} ; ${RETRIEVE_CMD} ; ${DYAD_CMD} ; ${ASSEMBLE_CMD}; ${MAP_CMD}; ${DYAD_CMD_FILTERED}
+#ALL_TASKS_CMD=${ORTHO_CMD} ; ${RETRIEVE_CMD} ; ${DYAD_CMD} ; ${ASSEMBLE_CMD}; ${MAP_CMD}; ${DYAD_CMD_FILTERED}
+ALL_TASKS_CMD=${DYAD_CMD_FILTERED}
 all_tasks:
 	${MAKE} my_command MY_COMMAND="${ALL_TASKS_CMD}" JOB_PREFIX=${REF_ORG}_${TAXON}_${GENE}
 
