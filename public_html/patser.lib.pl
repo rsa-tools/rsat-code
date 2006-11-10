@@ -61,7 +61,7 @@ sub DisplayPatserOptions {
 				       'gibbs',
 				       'transfac'
 				       ],
-			     -default=>$matrix_format);
+			     -default=>$default{matrix_format});
     
     #### weight matrix
     print "&nbsp;"x6;
