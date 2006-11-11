@@ -73,10 +73,7 @@ $organism->set_attribute("name", $organism_name);
 $organism->OpenContigs($organism_name, $annotation_table);
 $organism->LoadFeatures($annotation_table);
 $organism->LoadSynonyms();
-if ($calc_neighbours) {
-    &RSAT::message::TimeWarn("Calculating neighbour ORF limits") if ($verbose >= 1);
-    $organism->CalcNeighbourLimits();
-}
+$organism->CalcNeighbourLimits() if ($calc_neighbours);
 
 
 #### verbose ####
