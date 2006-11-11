@@ -1,0 +1,428 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: infer-operon,v 1.1 2006/11/11 17:25:25 jvanheld Exp $
+#
+# Time-stamp: <2003-07-04 12:48:55 jvanheld>
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+infer-operon
+
+=head1 DESCRIPTION
+
+Given a list of input genes, infer the operon to which each of these
+genes belong.
+
+The inferrence is based on a B<very> simplistic distance-based method,
+inspired from the Salgao-Moreno method (Proc Natl Acad Sci U S
+A. 2000;97:6652-7). The difference is that we do not use the
+log-likelihood (which presents risks of over-fitting), but a simple
+threshold on distance. The Salgado-Moreno method classifies intergenic
+distances as TUB (transcription unit border) or OP (inside operon).
+
+=head1 ALGORITHM
+
+=item divergently transcribed genes
+
+If the gene found upstream of a query gene is transcribed in opposite
+direction, then the intergenic region is considered as a TUB. This
+prediction is rather reliable (as far as genome annotation is
+correct), since operons only contain genes on the same strand.
+
+=item tandem genes (adjacent genes on the same strand)
+
+If two adjacent genes are on the same strand, then a distance
+threshold (option -dist) is applied to decide whether they belong to
+the same operon (dist <= thredhold) or not (dst > threshold).
+
+=head1 AUTHORS
+
+jvanheld@scmbb.ulb.ac.be
+
+=head1 CATEGORY
+
+util
+
+=head1 USAGE
+    
+infer-operon [-i inputfile] [-o outputfile] [-v]
+
+=head1 INPUT FORMAT
+
+Each row of the input file specifies one query gene. The first word of
+a gene is the query, the rest of the row is ignored.
+
+=head1 OUTPUT FORMAT
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+
+
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    #### initialise parameters
+    my $start_time = &AlphaDate();
+    local @queries = ();
+    local $organism_name = "";
+    local $dist_threshold = 55;
+    local $null = "<NULL>";
+
+    %main::infile = ();
+    %main::outfile = ();
+
+    $main::verbose = 0;
+    $main::in = STDIN;
+    $main::out = STDOUT;
+
+    &ReadArguments();
+
+    ################################################################
+    #### check argument values
+
+    ## Organism
+    &RSAT::error::FatalError("You should specify an organism") unless ($organism_name);
+    &CheckOrganism($organism_name);
+    $organism = new RSAT::organism();
+    $organism->check_name($organism_name);
+    $organism->set_attribute("name", $organism_name);
+    $organism->OpenContigs($organism_name, $annotation_table);
+    $organism->LoadFeatures($annotation_table);
+    $organism->LoadSynonyms();
+    $organism->CalcNeighbourLimits();
+
+
+    ################################################################
+    ### open output stream
+    $main::out = &OpenOutputFile($main::outfile{output});
+
+    ################################################################
+    ##### Read input
+
+    if (scalar(@queries) == 0) {
+      ($main::in) = &OpenInputFile($main::infile{input});
+      while (<$main::in>) {
+	next if (/^;/);
+	next if (/^--/);
+	next if (/^#/);
+	next unless (/\S/);
+	chomp();
+	my @fields = split /\s+/;
+	my $query = shift @fields;
+	&RSAT::message::Info(join("\t", "Query", $query)) if ($main::verbose >= 3);
+	push @queries, $query;
+      }
+      close $main::in if ($main::infile{input});
+    }
+    &RSAT::message::Info(join(" ", scalar(@queries), "queries")) if ($main::verbose >= 2);
+
+    ################################################################
+    #### print verbose
+    &Verbose() if ($main::verbose);
+
+    ################################################################
+    ## Print header
+    print $out join ("\t", "#query",
+		     "id",
+		     "name",
+		     "strand",
+		     "up_size",
+		     "operon_role",
+		     "operon_rule",
+		     "up_id",
+		     "up_name",
+		     "up_str",
+		    ), "\n";
+
+
+
+    ################################################################
+    ###### execute the command
+
+    foreach my $query (@queries) {
+      my $feature = $organism->get_feature_for_name($query);
+      my @info = ();
+      if ($feature) {
+	## Attributes of the curent feature
+	my $id = $feature->get_attribute("id");
+	my $name = $feature->get_attribute("name");
+	my $strand = $feature->get_attribute("strand");
+	my $upstr_size = $feature->get_attribute("upstr_size");
+
+	## Result of the inferrence
+	my $operon_role = $null;
+	my $operon_rule = $null;
+
+	## Attributes of the upstream neighbour
+	my $upstr_neighb_id = $null;
+	my $upstr_neighb_strand = $null;
+	my $upstr_neighb_name = $null;
+	my $upstr_neighb = $feature->get_attribute("upstr_neighbour");
+	if ($upstr_neighb) {
+	  $upstr_neighb_id = $upstr_neighb->get_attribute("id");
+	  $upstr_neighb_strand = $upstr_neighb->get_attribute("strand");
+	  $upstr_neighb_name = $upstr_neighb->get_attribute("name");
+
+	  ## Apply classification rules
+	  if ($upstr_neighb_strand ne $strand) {
+	    ## Rule 1: if two genes are on opposie strand, they belong
+	    ## to distinct operons
+	    $feature->set_attribute("operon_role", "leader");
+	    $feature->set_attribute("operon_rule", "div");
+	    
+	  } else {
+	    ## Rule 2: if the intergenic distance is larger than the
+	    ## threshold, the genes are considered to belong to distinct
+	    ## operons
+	    if ($upstr_size > $dist_threshold) {
+	      $feature->set_attribute("operon_role", "leader");
+	      $feature->set_attribute("operon_rule", "dist");
+	    } else {
+	      $feature->set_attribute("operon_role", "inside");
+	      $feature->set_attribute("operon_rule", "dist");
+	    }
+	  }
+	} else {
+	  $upstr_neighb = $null;
+	}
+
+	## Print the results for the current feature
+	print $out join ("\t", $query,
+			 $feature->get_attribute("id"),
+			 $feature->get_attribute("name"),
+			 $feature->get_attribute("strand"),
+			 $feature->get_attribute("upstr_size"),
+			 $feature->get_attribute("operon_role"),
+			 $feature->get_attribute("operon_rule"),
+			 $upstr_neighb->get_attribute("id"),
+			 $upstr_neighb->get_attribute("name"),
+			 $upstr_neighb->get_attribute("strand"),
+			), "\n";
+
+      } else {
+	&RSAT::message::Warning(join ("\t", "No info found for query", $query)) if ($main::verbose >= 1);
+	push @warnings, join("\t", "; WARNING", "no features for query", $query);
+      }
+    }
+
+    foreach my $warning (@warnings) {
+      print $out $warning, "\n";
+    }
+
+    ################################################################
+    ###### finish verbose
+    if ($main::verbose >= 1) {
+	my $done_time = &AlphaDate();
+	print $main::out "; Job started $start_time\n";
+	print $main::out "; Job done    $done_time\n";
+    }
+    
+     
+    ################################################################
+    ###### close output stream
+    close $main::out if ($main::outfile{output});
+    
+    
+    exit(0);
+}
+
+################################################################
+################### subroutine definition ######################
+################################################################
+
+
+################################################################
+#### display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+#### display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+#### Read arguments 
+sub ReadArguments {
+#    foreach my $a (0..$#ARGV) {
+    my $arg = "";
+    
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    
+
+    while ($arg = shift (@arguments)) {
+
+	## Verbosity
+=pod
+	    
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+	    
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+	    
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+	    
+
+	    ## Input file
+=pod
+
+=item B<-i inputfile>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-i") {
+	    $main::infile{input} = shift(@arguments);
+	    
+	    ## Queries on the command line
+=pod
+
+=item B<-org organism>
+
+Organism name. 
+
+=cut
+	} elsif ($arg eq "-org") {
+	    $main::organism_name = shift(@arguments);
+
+	    ## Queries on the command line
+=pod
+
+=item B<-q query_gene>
+
+Query gene. This option can be used iteratively on the same command
+line to specify several query genes. Example: 
+
+infer-operon -org Escherischia_coli_K12 -q LACZ -q hisA
+
+=cut
+	} elsif ($arg eq "-q") {
+	    push @queries, shift(@arguments);
+	    
+	    ## Output file
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $main::outfile{output} = shift(@arguments);
+	    
+	    ## Distance threshold
+=pod
+
+=item	B<-dist #>
+
+Distance threshold.
+
+=cut
+	} elsif ($arg eq "-dist") {
+	    $main::dist_threshold = shift(@arguments);
+	    
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+
+	}
+    }
+
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $main::out "; infer-operon ";
+    &PrintArguments($main::out);
+    if (defined(%main::infile)) {
+	print $main::out "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+    if (defined(%main::outfile)) {
+	print $main::out "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	    print $main::out ";\t$key\t$value\n";
+	}
+    }
+}
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=item retrieve-seq
+
+=item neighbour-genes
+
+=item add-gene-info
+
+
+
+=cut
