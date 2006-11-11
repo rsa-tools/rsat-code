@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.35 2006/11/09 07:28:46 jvanheld Exp $
+# $Id: matrix-scan,v 1.36 2006/11/11 17:34:17 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -256,6 +256,7 @@ models only (-markov 0 to 1).
     ################################################################
     #### check argument values
 
+
     &RSAT::error::FatalError("You must specify the method for bagkground estimation (an option among -bgfile, -bginput, -window)") unless ($bg_method);
 
     ## Calculate only once the denominator for the logarithms
@@ -276,6 +277,21 @@ models only (-markov 0 to 1).
 	$return_fields{rank} = 1;
     }
 
+
+    ## normw is incompatible with sliding windows
+    if (($return_fields{normw}) && ($bg_method eq "window")) {
+      &RSAT::message::Warning("The normw computation cannot be done with a sliding window. Normw will not be returned.");
+      undef($return_fields{normw});
+    }
+
+    ## weight_matrix is incompatible with orders > 0
+    if (($return_fields{weight_matrix}) && ($markov > 0)) {
+      &RSAT::message::Warning("The concept of weight matrix is incompatible with higher order Markov chains. Weight matrix will not be returned.");
+      undef($return_fields{weight_matrix});
+    }
+
+    ################################################################
+    ## Check that there is at least one input matrix
     unless (scalar(@matrix_files >= 1)) {
 	&RSAT::error::FatalError("You must specify at least one matrix file.");
     }
@@ -284,7 +300,7 @@ models only (-markov 0 to 1).
     ################################################################
     ### open output stream
     $main::out = &OpenOutputFile($main::outfile{output});
-    
+
     ################################################################
     ## Background model specification
     local $bg_model = new RSAT::MarkovModel();
@@ -295,7 +311,7 @@ models only (-markov 0 to 1).
 	$bg_model->set_attribute("strand", "sensitive");
     }
     $bg_model->set_attribute("n_treatment", $n_treatment);
-    
+
     if ($infile{bg}) {
 	## Read background model from a file
 	&RSAT::message::TimeWarn(join("\t", "Reading background model from file", $infile{bg})) 
@@ -361,7 +377,7 @@ models only (-markov 0 to 1).
 	$matrix->set_attribute("name", $matrix_name);
 	$matrix->push_attribute("parameters", "pseudo");
 	$matrix->index_alphabet();
-	
+
 	## Check that the matrix width is smaller than markov order + 1
 	my $matrix_width = $matrix->ncol();
 	my $markov_order = $bg_model->get_attribute("order");
@@ -372,8 +388,8 @@ models only (-markov 0 to 1).
 					   $matrix->get_attribute("name"),
 					   "of width ".$matrix_width."."));
 	}
-	
-	## Calculate min and max values for P(S|M) 
+
+	## Calculate min and max values for P(S|M)
 	$matrix->proba_range();
 
 	## Set the matrix prior
@@ -398,10 +414,6 @@ models only (-markov 0 to 1).
 				      )) if ($main::verbose >= 2);
     }
 
-#   die join ("\t", "HELLO", $main::equi_pseudo), "\n";
-    
-
-
     ################################################################
     #### print verbose
     &Verbose() if ($main::verbose);
@@ -422,14 +434,12 @@ models only (-markov 0 to 1).
     print $out "\tnormw" if ($return_fields{normw});
     print $out "\trank" if ($return_fields{rank});
     print $out "\n";
-    
-    
+
     ################################################################
     ##### Scan the sequences
     my ($in, $input_dir) = &OpenInputFile($main::infile{input});
     while ((($current_seq, $seq_id) = &ReadNextSequence($in, $seq_format, $input_dir, "",$mask)) &&
 	   (($current_seq ne "") || ($seq_id ne ""))) {
-	
 
 	## If the rank is required, it is calculated for each input sequence independently
 	local @matches = (); ## Only used whe the rank of the site is required
@@ -476,7 +486,7 @@ models only (-markov 0 to 1).
 		$bg_model->calc_from_seq($current_seq);
 	    }
 	}
-	
+
 	################################################################
 	## Detect sites
 	&RSAT::message::TimeWarn(join ("\t", "Scanning sequence", $sequence_number,  "len=".$seq_len, "orig=".$orig_pos,  $seq_id))
@@ -484,7 +494,7 @@ models only (-markov 0 to 1).
 	if ($return_fields{"sites"}) {
 	    my $n_containing_region = 0;
 	    for my $pos (1..$seq_len) {
-		
+
 		## Update background model if required
 		if (($main::window > 0) &&
 		    ($pos > $main::window/2) &&
@@ -567,7 +577,7 @@ models only (-markov 0 to 1).
 		    $rank++;
 		    $match->force_attribute('rank', $rank);
 		    next if ((defined($lth{rank})) && ($rank < $lth{rank}));
-		    &print_match($match);
+		    &print_match($match); $matrix->{matches}++;
 		    last if ((defined($uth{rank})) && ($rank >= $uth{rank}));
 		}
 	    }
@@ -625,7 +635,7 @@ models only (-markov 0 to 1).
 	    print $out $matrix->toString(col_width=>(7), decimals=>0, type=>"counts",format=>"tab", comment_string=>";");
 	}
     }
-    
+
     ## Return frequency matrices
     if ($return_fields{matrix}) {
 	foreach my $matrix (@matrices) {
@@ -633,7 +643,7 @@ models only (-markov 0 to 1).
 	    print $out $matrix->toString(col_width=>(7), decimals=>0, type=>"frequencies",format=>"tab", comment_string=>";");
 	}
     }
-    
+
     ## Return weight matrices
     if ($return_fields{weight_matrix}) {
 	foreach my $matrix (@matrices) {
@@ -641,19 +651,19 @@ models only (-markov 0 to 1).
 	    print $out $matrix->toString(col_width=>(7), decimals=>3, type=>"weights", format=>"tab", comment_string=>";");
 	}
     }
-    
+
     ## Report background model
     if ($return_fields{bg_model}) {
 	print $out ";\n; Background model\n";
 	print $out $bg_model->to_string($bg_out_format, comment_string=>"; ");
     }
-    
+
     ################################################################
     ###### finish verbose
     if ($main::verbose >= 1) {
 
 	## Sequence statistics
-	printf $main::out "; %-21s\t%s\n", "Number os sequences scanned", $sequence_number;
+	printf $main::out "; %-21s\t%s\n", "Number of sequences scanned", $sequence_number;
 	printf $main::out "; %-21s\t%s\n", "Sum of sequence lengths", $sum_seq_len;
 
 	## Matching statistics
@@ -1020,7 +1030,7 @@ Number of decimals displayed for the score.
 
 Threshold on some parameter (-lth: lower, -uth: upper threshold). 
 
-Supported threshold fields : score
+Supported threshold fields : score normw proba_M proba_B rank
 
 =cut
 	    
@@ -1188,6 +1198,12 @@ sub Verbose {
 	printf $main::out ";\t%-14s\t%d\n", "Background window", $window;
     }
 
+    my $missing_transitions = $bg_model->get_attribute("missing_transitions");
+    if ($missing_transitions > 0) {
+      printf $main::out ";\t%-14s\t%d %s\n", "WARNING", , $missing_transitions, "missing transitions. You should reduce the Markov order";
+    }
+
+
     ## Thresholds
     my %th_keys = (%lth, %uth);
     print $main::out "; Thresholds\tlower\tupper\n";
@@ -1228,10 +1244,7 @@ thresholds. Return value is 1 if the segment passed the thresholds.
 =cut
 sub score_segment {
     my ($segment, $matrix, $seq_id, $pos, $strand) = @_;
-
-
     my $ncol = $matrix->{ncol};
-
     my $proba_M = 1;
     my $proba_B = 1;
 
@@ -1249,7 +1262,7 @@ sub score_segment {
 	$score = sprintf("%.${decimals}f", log($proba_M/$proba_B))/$log_base;
 
 	if ($return_fields{normw}) {
-	    $normw = sprintf("%6.4f", ($score - $matrix->{'Wmin'})/($matrix->{'Wrange'}));
+	  $normw = sprintf("%6.4f", ($score - $matrix->{'Wmin'})/($matrix->{'Wrange'}));
 	}
     } elsif ($proba_M == 0) {
 	if ($proba_B > 0) {
@@ -1299,8 +1312,7 @@ sub score_segment {
 	    push @{$matches_per_matrix{$matrix->get_attribute('name')}} , $match;
 #	}
     } elsif ($main::return_fields{sites}) {
-	&print_match($match);
-	$matrix->{matches}++;
+	&print_match($match); $matrix->{matches}++;
     }
     return(1);
 }
