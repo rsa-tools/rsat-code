@@ -7,7 +7,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.119 2006/11/07 08:10:16 rsat Exp $
+# $Id: oligo-analysis,v 1.120 2006/11/11 17:41:08 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -1229,13 +1229,13 @@ sub CalcProba {
 	    ## Left tail
 	    $occ_from = 0;
 	    $occ_to = $patterns{$pattern_seq}->{occ};
-	    $patterns{$pattern_seq}->{test} = "left";
+	    $patterns{$pattern_seq}->{tail} = "left";
 	} else {
 	    ## Right tail
 	    $occ_from = $patterns{$pattern_seq}->{occ};
 #	    $occ_to = $patterns{$pattern_seq}->{notforb};	    
 	    $occ_to = $sum_occurrences;
-	    $patterns{$pattern_seq}->{test} = "right";
+	    $patterns{$pattern_seq}->{tail} = "right";
 	}
 
 	if ($method =~ /calibration/i) {
@@ -1441,7 +1441,7 @@ sub PrintHeaderLine {
     ### miscellaneous
     push(@out_col,"ovlp") if ($return{'ovlp'});
     push(@out_col,"fitted") if ($return{'fitted'});
-    push(@out_col,"test") if (($return{proba}) && ($tail="two"));
+    push(@out_col,"tail") if (($return{proba}) && ($tail eq "two"));
     push(@out_col,"remark") if ($return{'remark'});
     push(@out_col,"segments") if ($return{'segments'});
 
@@ -1767,7 +1767,7 @@ sub PrintResult {
 	### miscellaneous info
 	printf $out "\t%.5f", $patterns{$pattern_seq}->{ovlp} if ($return{'ovlp'});
 	printf $out "\t%s", $patterns{$pattern_seq}->{fitted} if ($return{'fitted'});
-	printf $out "\t%s", $patterns{$pattern_seq}->{test} if ($tail="two");
+	printf $out "\t%s", $patterns{$pattern_seq}->{tail} if ($tail="two");
 	printf $out "\t%s", $patterns{$pattern_seq}->{remark} if ($return{'remark'});
 	printf $out "\t%s", $patterns{$pattern_seq}->{segments} if ($return{'segments'});
 	
