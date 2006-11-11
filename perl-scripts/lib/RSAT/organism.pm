@@ -669,18 +669,18 @@ sub CalcNeighbourLimits {
 
   my %contig = $self->get_contigs();
 
-  &RSAT::message::TimeWarn("Calculating neighbour limits") if ($main::verbose >= 1);
+  &RSAT::message::TimeWarn("Calculating neighbour limits") if ($main::verbose >= 2);
 
   my %left = $self->index_attribute_by_feature("left");
   my %right = $self->index_attribute_by_feature("right");
   foreach my $ctg (sort keys %contig) {
     my @genes = sort { $left{$a} <=> $left{$b} } $contig{$ctg}->get_genes();
-    my $contig_length = $contig{$ctg}->get_length();
+    local $contig_length = $contig{$ctg}->get_length();
 
     &RSAT::message::Info(join ("\t", "Features per contig", $ctg, scalar(@genes))) if ($main::verbose >= 2);
 
-    @ctg_lefts = sort {$a <=> $b} @left{@genes};
-    @ctg_rights = sort {$a <=> $b} @right{@genes};
+    @gene_lefts = sort {$a <=> $b} @left{@genes};
+    @gene_rights = sort {$a <=> $b} @right{@genes};
 
 
     ################################################################
@@ -722,7 +722,7 @@ sub CalcNeighbourLimits {
 	  $gene->set_attribute("left_neighb_id", "<NULL>");
 	  $gene->set_attribute("left_neighb_name", "<NULL>");
 	  $gene->set_attribute("left_limit", 1);
-	  $gene->set_attribute("left_size", $ctg_lefts[$g]);
+	  $gene->set_attribute("left_size", $gene_lefts[$g]);
 	  next;
 
 	} elsif ($gene->get_attribute("geneid") eq $genes[$ln]->get_attribute("geneid")) {
@@ -748,7 +748,7 @@ sub CalcNeighbourLimits {
 	  $same_gene = 1;
 	  next;
 
-	} elsif (($ctg_rights[$ln] > $left{$gene}) && ($ctg_lefts[$ln] > $left{$gene})) {
+	} elsif (($gene_rights[$ln] > $left{$gene}) && ($gene_lefts[$ln] > $left{$gene})) {
 	  ## candidate left neighour gene is completely embedded in current gene -> select the next left candidate
 	  $ln--;
 	  &RSAT::message::Debug("genomic feature",
@@ -760,7 +760,7 @@ sub CalcNeighbourLimits {
 				$gene->get_attribute("name"),
 			       ) if ($main::verbose >= 4);
 
-	} elsif ($ctg_rights[$ln+1] < $left{$gene}) {
+	} elsif ($gene_rights[$ln+1] < $left{$gene}) {
 	  $ln++;
 
 	} else {
@@ -768,10 +768,10 @@ sub CalcNeighbourLimits {
 	}
       } until (($ln < 0) ||
 	       ($found) ||
-	       (($ln > $#ctg_rights) && ($same_gene == 0)));
+	       (($ln > $#gene_rights) && ($same_gene == 0)));
 
       if ($found) {
-	$neighb_left_limit = $ctg_rights[$ln];
+	$neighb_left_limit = $gene_rights[$ln];
       } elsif ($ln < 0) {
 	$neighb_left_limit = 0;
       } else {
@@ -817,7 +817,7 @@ sub CalcNeighbourLimits {
 	  $gene->set_attribute("right_neighb_id", "<NULL>");
 	  $gene->set_attribute("right_neighb_name", "<NULL>");
 	  $gene->set_attribute("right_limit", $contig_length);
-	  $gene->set_attribute("right_size", $contig_lenth - $ctg_rights[$g]);
+	  $gene->set_attribute("right_size", $contig_lenth - $gene_rights[$g]);
 	  next;
 	} elsif ($gene->get_attribute("geneid") eq $genes[$rn]->get_attribute("geneid")) {
 
@@ -841,16 +841,16 @@ sub CalcNeighbourLimits {
 	  $rn += 1;
 	  next;
 
-	} elsif (($ctg_lefts[$rn] < $right{$gene}) && ($ctg_rights[$rn] < $right{$gene})) {
+	} elsif (($gene_lefts[$rn] < $right{$gene}) && ($gene_rights[$rn] < $right{$gene})) {
 	  $rn++;
-	} elsif ($ctg_lefts[$rn-1] > $right{$gene}) {
+	} elsif ($gene_lefts[$rn-1] > $right{$gene}) {
 	  $rn--;
 	} else {
 	  $found = 1;
 	}
-      } until (($found) || ($rn < 0) || ($rn > $#ctg_lefts));
+      } until (($found) || ($rn < 0) || ($rn > $#gene_lefts));
       if ($found) {
-	$neighb_right_limit = $ctg_lefts[$rn];
+	$neighb_right_limit = $gene_lefts[$rn];
       } elsif ($rn < 0) {
 	$neighb_right_limit = undef;
       } else {
