@@ -15,8 +15,6 @@ GENE=CRP
 REF_ORG=Escherichia_coli_K12
 TAXON=Gammaproteobacteria
 MAIN_DIR=.
-SEQ_DIR=data/sequences/per_gene/${TAXON}
-GENE_DIR=${RESULT_DIR}/motifs/${GENE}
 
 include ${RSAT}/makefiles/util.mk
 MAKEFILE=${RSAT}/makefiles/ortho_disco.mk
@@ -27,14 +25,16 @@ V=1
 
 ## ##############################################################
 ## List the parameters
+RESULT_DIR=${MAIN_DIR}/results/${REF_ORG}/${TAXON}
+SEQ_DIR=${MAIN_DIR}/data/sequences/per_gene/${REF_ORG}/${TAXON}
+GENE_DIR=${RESULT_DIR}/motifs/${GENE}
 list_parameters:
 	@echo ""
 	@echo "REF_ORG      ${REF_ORG}"
 	@echo "TAXON        ${TAXON}"
 	@echo "MAIN_DIR     ${MAIN_DIR}"
-	@echo "RESULT_DIR   ${RESULT_DIR}"
 	@echo "SEQ_DIR      ${SEQ_DIR}"
-	@echo "SEQ          ${SEQ}"
+	@echo "RESULT_DIR   ${RESULT_DIR}"
 	@echo "GENE_DIR     ${GENE_DIR}"
 
 ################################################################
@@ -66,15 +66,24 @@ iterate_genes:
 
 ################################################################
 ## Run all the tasks for a single gene
-ALL_TASKS_CMD=${ORTHO_CMD} ; ${RETRIEVE_CMD} ; ${DYAD_CMD} ; ${ASSEMBLE_CMD}; ${MAP_CMD}; ${DYAD_CMD_FILTERED}
-#ALL_TASKS_CMD=${DYAD_CMD_FILTERED}
+ALL_TASKS_CMD=${ORTHO_CMD} ; ${RETRIEVE_CMD} ; ${DYAD_CMD} ; ${ASSEMBLE_CMD}; ${MAP_CMD}; ${FILTER_DYADS_CMD}
+#ALL_TASKS_CMD=${FILTER_DYADS_CMD}
 all_tasks:
 	${MAKE} my_command MY_COMMAND="${ALL_TASKS_CMD}" JOB_PREFIX=${REF_ORG}_${TAXON}_${GENE}
+
+all_sequences:
+	${MAKE} my_command MY_COMMAND="${ORTHO_CMD} ; ${RETRIEVE_CMD}" JOB_PREFIX=${REF_ORG}_${TAXON}_${GENE}
+
+all_dyads:
+	${MAKE} my_command MY_COMMAND="${DYAD_CMD} ; ${ASSEMBLE_CMD}; ${MAP_CMD}" JOB_PREFIX=${REF_ORG}_${TAXON}_${GENE}
+
+all_dyads_filtered:
+	${MAKE} my_command MY_COMMAND="${FILTER_DYADS_CMD}; ${DYAD_CMD} ; ${ASSEMBLE_CMD}; ${MAP_CMD}" JOB_PREFIX=${REF_ORG}_${TAXON}_${GENE} \
+		dyads DYADS=${DYADS_FILTERED} DYAD_OPT='-accept ${DYAD_FILTER}'
 
 ################################################################
 ## Identify orthologs for a given gene (${GENE}) in the taxon of
 ## interest (${TAXON})
-RESULT_DIR=${MAIN_DIR}/results/${REF_ORG}/${TAXON}
 PREFIX=${GENE}_${REF_ORG}_${TAXON}
 ORTHOLOGS = ${SEQ_DIR}/${PREFIX}_orthologs.tab
 ORTHO_CMD=mkdir -p ${GENE_DIR} ; \
@@ -120,19 +129,22 @@ dyads:
 
 ################################################################
 ## Run dyad analysis using the sequence of the reference organism as filter
-FILTER_SEQ=${GENE_DIR}/${GENE}_${REF_ORG}_up${NOORF}.fasta.gz
+FILTER_SEQ=${SEQ_DIR}/${GENE}_${REF_ORG}_up${NOORF}.fasta.gz
 DYAD_FILTER=${GENE_DIR}/${GENE}_${REF_ORG}_dyad_filter
-FILTERED_DYADS=${GENE_DIR}/${PREFIX}${SUFFIX}_filtered
-DYAD_CMD_FILTERED= \
-	retrieve-seq -org ${REF_ORG} -q ${GENE} ${NOORF} -o ${FILTER_SEQ} ; echo 'Filter sequence	${FILTER_SEQ}'; \
-	dyad-analysis -v 0 -i ${FILTER_SEQ} -type any ${STR} ${NOOV} -lth occ 1 -return occ -l 3 -spacing 0-20 -o ${DYAD_FILTER} ; echo 'Dyad filter	${DYAD_FILTER}'; \
-	${MAKE} -s dyads DYADS=${FILTERED_DYADS} DYAD_OPT='-accept ${DYAD_FILTER}' ; echo 'Filtered dyads	${FILTERED_DYADS}.tab' ; \
-	${MAKE} -s assemble DYADS=${FILTERED_DYADS} ; echo 'Filtered dyad assembly	${FILTERED_DYADS}.asmb' ; \
-	${MAKE} -s map DYADS=${FILTERED_DYADS} ; echo 'Filtered dyad map	${FILTERED_DYADS}.png' 
-filtered_dyads:
+DYADS_FILTERED=${GENE_DIR}/${PREFIX}${SUFFIX}_filtered
+FILTER_DYADS_CMD= \
+	mkdir -p ${SEQ_DIR} ; retrieve-seq -org ${REF_ORG} -q ${GENE} ${NOORF} -o ${FILTER_SEQ} ; echo 'Filter sequence	${FILTER_SEQ}'; \
+	dyad-analysis -v 0 -i ${FILTER_SEQ} -type any ${STR} ${NOOV} -lth occ 1 -return occ -l 3 -spacing 0-20 -o ${DYAD_FILTER} ; echo 'Dyad filter	${DYAD_FILTER}'
+filter_dyads:
 	@echo
 	@echo 'Filtering dyads	${GENE}	${TAXON}'
-	@${DYAD_CMD_FILTERED}
+	@${FILTER_DYADS_CMD}
+
+dyads_filtered:
+	@${MAKE} filter_dyads
+	@${MAKE} -s dyads DYADS=${DYADS_FILTERED} DYAD_OPT='-accept ${DYAD_FILTER}' ; echo 'Filtered dyads	${DYADS_FILTERED}.tab' 
+	@${MAKE} -s assemble DYADS=${DYADS_FILTERED} ; echo 'Filtered dyad assembly	${DYADS_FILTERED}.asmb'
+	@${MAKE} -s map DYADS=${DYADS_FILTERED} ; echo 'Filtered dyad map	${DYADS_FILTERED}.png' 
 
 ################################################################
 ## Count matches between discovered dyads and known sites
