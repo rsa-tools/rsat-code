@@ -657,7 +657,32 @@ sub LoadFeatures {
 ################################################################
 =pod
 
-=item CalcNeighbourLimits()
+=item B<get_genes()>
+
+Return all the genes of the organism, by calling the method
+get_genes() on each contig.
+
+=cut
+
+sub get_genes {
+  my ($self) = @_;
+  my @genes = ();
+  my %contig = $self->get_contigs();
+  &RSAT::message::TimeWarn("Getting all genes") if ($main::verbose >= 2);
+
+  foreach my $ctg (sort keys %contig) {
+    my @ctg_genes = $contig{$ctg}->get_genes();
+    push @genes, @ctg_genes;
+    &RSAT::message::TimeWarn("Got all  genes for contig", $ctg, "contig genes", scalar(@genes), "total", scalar(@genes)) if ($main::verbose >= 2);
+  }
+
+  return (@genes);
+}
+
+################################################################
+=pod
+
+=item B<CalcNeighbourLimits()>
 
 Calculate the limits of the non-coding region on both sides of each
 gene
