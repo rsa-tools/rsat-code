@@ -5,8 +5,6 @@ package RSAT::GenericObject;
 $_count = 0;
 # use Data::Dumper
 
-## CVS: added the method auto_id()
-
 ################################################################
 #### Instance methods
 ################################################################
@@ -52,7 +50,7 @@ Automatically assign a unique identifier to the object
 sub auto_id {
     my ($class) = @_;
     my $id = $class->{_prefix} || $class;
-    $id .= sprintf "%6s", $class->{_count}++;
+    $id .= sprintf "_%6s", $class->{_count}++;
     $id =~ s/ /0/g;
     return $id;
 }
@@ -89,7 +87,7 @@ sub init {
     unless ($args{id}) {
 # 	my $auto_id = sprintf "%s%6d", $self->get_prefix, $class->get_count;
 # 	$auto_id =~ s/ /0/g;
-	my $auto_id = $self->auto_id();
+	my $auto_id = $class->auto_id();
  	$self->set_attribute("id",$auto_id);
     }
     
