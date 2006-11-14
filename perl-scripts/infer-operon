@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: infer-operon,v 1.1 2006/11/11 17:25:25 jvanheld Exp $
+# $Id: infer-operon,v 1.2 2006/11/14 06:21:21 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -22,25 +22,50 @@ genes belong.
 
 The inferrence is based on a B<very> simplistic distance-based method,
 inspired from the Salgao-Moreno method (Proc Natl Acad Sci U S
-A. 2000;97:6652-7). The difference is that we do not use the
-log-likelihood (which presents risks of over-fitting), but a simple
-threshold on distance. The Salgado-Moreno method classifies intergenic
-distances as TUB (transcription unit border) or OP (inside operon).
+A. 2000;97:6652-7). The Salgado-Moreno method classifies intergenic
+distances as TUB (transcription unit border) or OP (inside operon),
+and infers operons by iteratively collecting genes until a TUB is
+found. In the original method, the TUB or OP assignation relies on a
+log-likelihood score calculated from a training set.
+
+The difference is that we do not use the log-likelihood (which
+presents risks of over-fitting), but a simple threshold on
+distance. Thus, we infer that the region upstream of a gene is TUB if
+its size is larger than a given distance threshold, and OP
+otherwise. Our validations (Rekins' Janky and Jacques van Helden,
+unpublished results) show that a simple threshold on distance raises a
+similar accuracy as the log-likelihood score (Acc ~ 78% for a
+threshold t=55).
 
 =head1 ALGORITHM
 
-=item divergently transcribed genes
+The algorithm is based on three simple rules, depending on the
+relative orientation of the adjacent genes.
 
-If the gene found upstream of a query gene is transcribed in opposite
-direction, then the intergenic region is considered as a TUB. This
-prediction is rather reliable (as far as genome annotation is
-correct), since operons only contain genes on the same strand.
+=item Rule 1: divergently transcribed genes
 
-=item tandem genes (adjacent genes on the same strand)
+If the gene found upstream of a query gene is transcribed in the
+opposite direction, then the intergenic region is considered as a TUB,
+and the two flanking genes are labelled as operon leaders. This
+prediction is reliable (as far as genome annotation is correct), since
+operons only contain genes on the same strand.
+
+=item Rule 2: convergently transcribed genes
+
+If the gene found downstream of a query gene is transcribed in the
+opposite direction, then the intergenic region is considered as a TUB,
+and the two flanking genes are labelled as operon trailers. This
+prediction is reliable (as far as genome annotation is correct), since
+operons only contain genes on the same strand.
+
+=item Rule 3: tandem genes (adjacent genes on the same strand)
 
 If two adjacent genes are on the same strand, then a distance
 threshold (option -dist) is applied to decide whether they belong to
-the same operon (dist <= thredhold) or not (dst > threshold).
+the same operon (dist <= thredhold) or not (dist > threshold). If they
+are predicted to be in distinct operon, the upstream gene is labelled
+as operon trailer, and the downstream gene as leader of the next
+operon.
 
 =head1 AUTHORS
 
@@ -48,11 +73,30 @@ jvanheld@scmbb.ulb.ac.be
 
 =head1 CATEGORY
 
-util
+genomics
 
 =head1 USAGE
     
-infer-operon [-i inputfile] [-o outputfile] [-v]
+infer-operon [-i inputfile] [-o outputfile] [-v] [options]
+
+=over
+
+=item B<Example 1>
+
+With the following command, we infer the operon for a set of input
+genes.
+
+infer-operon -v 1 -org Escherichia_coli_K12 -q hisD -q mhpR -q mhpA -q mhpD
+
+
+=item B<Example 1>
+
+We now specify different return fields
+
+infer-operon -v 1 -org Escherichia_coli_K12 -q hisD -q lacI \
+  -return leader,trailer,up_info,down_info,operon
+
+=back
 
 =head1 INPUT FORMAT
 
@@ -70,6 +114,7 @@ BEGIN {
     }
 }
 require "RSA.lib";
+use RSAT::Operon;
 
 
 
@@ -85,6 +130,7 @@ package main;
     local $organism_name = "";
     local $dist_threshold = 55;
     local $null = "<NULL>";
+    local @matched_features = ();
 
     %main::infile = ();
     %main::outfile = ();
@@ -93,7 +139,101 @@ package main;
     $main::in = STDIN;
     $main::out = STDOUT;
 
+    ## Return fields
+    @supported_return_fields = qw(
+				  operon
+				  leader
+				  trailer
+				  query
+				  q_info
+				  up_info
+				  down_info
+				 );
+    %supported_return_fields = ();
+    foreach my $field (@supported_return_fields) {
+      $supported_return_fields{$field} = 1;
+    }
+    $supported_return_fields = join (",", sort(@supported_return_fields));
+    @return_subfields = ();
+
+    ## Groups of fields to return together
+    @{$sub_fields{q_info}} = qw(query
+				id
+				name
+				strand
+				start
+				upstr_size
+			       );
+
+    @{$sub_fields{up_info}} = qw(upstr_neighb_id
+				 upstr_neighb_name
+				 upstr_neighb_str
+				 upstr_neighb_pos
+				 up_dir
+				 up_rule
+				 first
+				);
+    
+    @{$sub_fields{down_info}} = qw(downstr_neighb_id
+				   downstr_neighb_name
+				   downstr_neighb_str
+				   downstr_neighb_pos
+				   dn_dir
+				   dn_rule
+				   last
+				  );
+
+
+    ################################################################
+    ## Description of the output fields
+    %field_descr = ();
+    $field_descr{leader} = "Predicted operon leader gene (5' side).";
+    $field_descr{trailer} = "Predicted operon trailer gene (3' side).";
+    $field_descr{operon} = "Member genes of the operon.";
+    $field_descr{query} = "Query string.";
+    $field_descr{id} = "ID of the query gene.";
+    $field_descr{name} = "Name of the query gene."; 
+    $field_descr{strand} = "Strand of the query gene.";
+    $field_descr{start} = "Starting position of the query gene (first nucleotide of the start codon).";
+    $field_descr{upstr_size} = "Size of the non-coding region located upstream of the query gene.";
+
+    $field_descr{upstr_neighb_id} = "ID of the upstream gene.";
+    $field_descr{upstr_neighb_name} = "Name of the upstream gene."; 
+    $field_descr{upstr_neighb_str} = "Strand of the upstream gene.";
+    $field_descr{upstr_neighb_pos} = "Proximal position of the upstream gene.";
+    $field_descr{up_dir} = "Relative direction of the upstream gene (tandem, divergent or convergent).";
+    $field_descr{up_rule} = "Rule used to predict operon membership of the upstream gene (opposite strand, distance).";
+    $field_descr{first} = "1 if the gene is the operon leader; 0 otherwise";
+
+
+    $field_descr{downstr_neighb_id} = "ID of the downstream gene.";
+    $field_descr{downstr_neighb_name} = "Name of the downstream gene."; 
+    $field_descr{downstr_neighb_str} = "Strand of the downstream gene.";
+    $field_descr{downstr_neighb_pos} = "Proximal position of the downstream gene.";
+    $field_descr{dn_dir} = "Relative direction of the downstream gene (tandem, divergent or convergent).";
+    $field_descr{dn_rule} = "Rule used to predict operon membership of the downstream gene (opposite strand, distance).";
+    $field_descr{last} = "1 if the gene is the operon trailer; 0 otherwise";
+
+    ## ##############################################################
+    ## Read argument values
     &ReadArguments();
+
+    ################################################################
+    ## Return fields
+    if (scalar(@return_fields) ==0) {
+      @return_fields = qw(leader q_info operon);
+    }
+
+    ## Treat the case of subfields
+    foreach my $field (@return_fields) {
+      if (defined(@{$sub_fields{$field}})) {
+	push @return_subfields, @{$sub_fields{$field}};
+      } else {
+	push @return_subfields, $field;
+      }
+    }
+    &RSAT::message::Info("Returning fields", join ";", @return_fields) if ($main::verbose >= 2);
+    &RSAT::message::Info("Returning subfields", join ";", @return_subfields) if ($main::verbose >= 2);
 
     ################################################################
     #### check argument values
@@ -138,94 +278,48 @@ package main;
     #### print verbose
     &Verbose() if ($main::verbose);
 
+
     ################################################################
     ## Print header
-    print $out join ("\t", "#query",
-		     "id",
-		     "name",
-		     "strand",
-		     "up_size",
-		     "operon_role",
-		     "operon_rule",
-		     "up_id",
-		     "up_name",
-		     "up_str",
-		    ), "\n";
-
+    my @header = ();
+    print $out "; Column descriptions\n" if ($main::verbose >= 1);
+    my $f = 0;
+    foreach my $field (@return_subfields) {
+      $f++;
+      my $header_field = $field;
+      $header_field =~ s/^upstr_neighb_/up_/;
+      $header_field =~ s/^upstr_/up_/;
+      $header_field =~ s/^downstr_neighb_/dn_/;
+      $header_field =~ s/^downstr_/dn_/;
+      $header_field =~ s/^trailer$/trail/;
+      $header_field =~ s/^leader$/lead/;
+      printf $out ";\t%s\t%-13s\t%s\n", $f, $header_field, $field_descr{$field} if ($main::verbose >= 1);
+      push @header, $header_field;
+    }
+    print $out "#",  join ("\t",  @header), "\n";
 
 
     ################################################################
-    ###### execute the command
-
+    ###### Execute the command
     foreach my $query (@queries) {
       my $feature = $organism->get_feature_for_name($query);
-      my @info = ();
       if ($feature) {
-	## Attributes of the curent feature
-	my $id = $feature->get_attribute("id");
-	my $name = $feature->get_attribute("name");
-	my $strand = $feature->get_attribute("strand");
-	my $upstr_size = $feature->get_attribute("upstr_size");
-
-	## Result of the inferrence
-	my $operon_role = $null;
-	my $operon_rule = $null;
-
-	## Attributes of the upstream neighbour
-	my $upstr_neighb_id = $null;
-	my $upstr_neighb_strand = $null;
-	my $upstr_neighb_name = $null;
-	my $upstr_neighb = $feature->get_attribute("upstr_neighbour");
-	if ($upstr_neighb) {
-	  $upstr_neighb_id = $upstr_neighb->get_attribute("id");
-	  $upstr_neighb_strand = $upstr_neighb->get_attribute("strand");
-	  $upstr_neighb_name = $upstr_neighb->get_attribute("name");
-
-	  ## Apply classification rules
-	  if ($upstr_neighb_strand ne $strand) {
-	    ## Rule 1: if two genes are on opposie strand, they belong
-	    ## to distinct operons
-	    $feature->set_attribute("operon_role", "leader");
-	    $feature->set_attribute("operon_rule", "div");
-	    
-	  } else {
-	    ## Rule 2: if the intergenic distance is larger than the
-	    ## threshold, the genes are considered to belong to distinct
-	    ## operons
-	    if ($upstr_size > $dist_threshold) {
-	      $feature->set_attribute("operon_role", "leader");
-	      $feature->set_attribute("operon_rule", "dist");
-	    } else {
-	      $feature->set_attribute("operon_role", "inside");
-	      $feature->set_attribute("operon_rule", "dist");
-	    }
-	  }
-	} else {
-	  $upstr_neighb = $null;
-	}
-
-	## Print the results for the current feature
-	print $out join ("\t", $query,
-			 $feature->get_attribute("id"),
-			 $feature->get_attribute("name"),
-			 $feature->get_attribute("strand"),
-			 $feature->get_attribute("upstr_size"),
-			 $feature->get_attribute("operon_role"),
-			 $feature->get_attribute("operon_rule"),
-			 $upstr_neighb->get_attribute("id"),
-			 $upstr_neighb->get_attribute("name"),
-			 $upstr_neighb->get_attribute("strand"),
-			), "\n";
+	$feature->force_attribute("query", $query);
+	push @matched_features, $feature;
+	&ExtendOperon($feature);
 
       } else {
-	&RSAT::message::Warning(join ("\t", "No info found for query", $query)) if ($main::verbose >= 1);
-	push @warnings, join("\t", "; WARNING", "no features for query", $query);
+	&RSAT::message::Warning(join ("\t", "No feature corresponds to query", $query)) if ($main::verbose >= 3);
+	push @warnings, join("\t", "; WARNING", "No feature corresponds to query", $query);
       }
     }
 
-    foreach my $warning (@warnings) {
-      print $out $warning, "\n";
-    }
+
+    ## Build operons from gene-per-gene predictions
+    &BuildOperons();
+
+    ## Print the results
+    &PrintResults();
 
     ################################################################
     ###### finish verbose
@@ -248,6 +342,55 @@ package main;
 ################### subroutine definition ######################
 ################################################################
 
+################################################################
+## Build operons
+sub BuildOperons {
+  &RSAT::message::TimeWarn("Buiding operons") if ($main::verbose >= 2);
+  foreach my $operon (@operons) {
+    $operon->sort_genes();
+    &RSAT::message::Debug("Built operon", $operon->get_attribute("id"),
+			  join (";", $operon->get_attribute("sorted_gene_names")),
+			  join (";", $operon->get_attribute("sorted_gene_ids")),
+			  $operon->get_attribute("name"),
+			 ) if ($main::verbose >= 3);
+  }
+}
+
+
+################################################################
+## Print the results of the predictions
+sub PrintResults {
+
+  ## Print the info for the matched features
+  foreach my $feature (@matched_features) {
+    my @info = ();
+    my $operon = $feature->get_attribute("operon");
+    foreach my $field (@return_subfields) {
+      if ($field eq "operon") {
+	if (($operon) && ($operon ne $null)) {
+	  push @info, join ";", $operon->get_attribute("sorted_gene_names");
+	} else {
+	  push @info, $null;
+	}
+      } elsif ($field eq "leader") {
+	push @info, $operon->get_attribute("leader_name") || $null;
+      } elsif ($field eq "trailer") {
+	push @info, $operon->get_attribute("trailer_name") || $null;
+      } elsif (defined($feature->{$field})) {
+	push @info, $feature->get_attribute($field);
+      } else {
+	push @info, $null;
+      }
+    }
+    print $out join ("\t", @info), "\n";
+    
+  }
+
+  ## Print a warning for the no-matched queries
+  foreach my $warning (@warnings) {
+    print $out $warning, "\n";
+  }
+}
 
 ################################################################
 #### display full help message 
@@ -376,6 +519,60 @@ Distance threshold.
 	} elsif ($arg eq "-dist") {
 	    $main::dist_threshold = shift(@arguments);
 	    
+	    ## Return fields
+=pod
+
+=item B<-return return_fields>
+
+List of fields to return.
+
+Supported fields: leader,trailer,operon,query,q_info,up_info,down_info
+
+=over
+
+=item B<leader>
+
+Predicted operon leader. 
+
+=item B<trailer>
+
+Predicted operon trailer. 
+
+=item B<operon>
+
+Full composition of the operon. The names of member genes are
+separated by a semi-column ";".
+
+=item B<q_info>
+
+Detailed info on the query gene(s).
+
+=item B<up_info>
+
+Detailed info on the upstream gene.
+
+=item B<down_info>
+
+Detailed info on the downstream gene.
+
+
+=back
+
+=cut
+        } elsif ($arg eq "-return") {
+	    $arg = shift (@arguments);
+            chomp($arg);
+            my @fields_to_return = split ",", $arg;
+            foreach my $field (@fields_to_return) {
+		$field = lc($field);
+                if ($supported_return_fields{$field}) {
+		  push @return_fields, $field;
+                } else {
+                    &RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_return_fields));
+		}
+	    }
+
+
 	} else {
 	    &FatalError(join("\t", "Invalid option", $arg));
 
@@ -408,8 +605,167 @@ sub Verbose {
 	    print $main::out ";\t$key\t$value\n";
 	}
     }
+    print $main::out sprintf "; %-13s\t%s\n", "Organism", $organism_name;
+    print $main::out sprintf "; %-13s\t%d\n", "Queries", scalar(@queries);
 }
 
+
+################################################################
+## Infer operon for a given gene; 
+##
+## Infer the feature roles in its operon (leader or not, trailer or
+## not) according to its neighbour genes. Note that a gene can be at
+## the same time leader and trailer, in the case of single-gene
+## transcription units.
+##
+## This routine is recursive : it calls itself until the whole operon
+## has been collected from the seed gene.
+##
+sub ExtendOperon {
+  my ($feature) = @_;
+
+  my %to_calc = ();
+  unless  ($feature->get_attribute("up_dir")) {
+    $to_calc{up} = 1;
+    $feature->set_attribute("up_dir", $null);
+  }
+  unless  ($feature->get_attribute("dn_dir")) {
+    $to_calc{dn} = 1;
+    $feature->set_attribute("dn_dir", $null);
+  }
+
+  if (scalar(keys(%to_calc)) == 0) {
+    &RSAT::message::Warning("Operon already extended for feature", $feature) if ($main::verbose >= 3);
+    return;
+  }
+  
+  ## Attributes of the curent feature
+  my $id = $feature->get_attribute("id");
+  my $name = $feature->get_attribute("name");
+  my $strand = $feature->get_attribute("strand");
+  my $upstr_size = $feature->get_attribute("upstr_size");
+  my $downstr_size = $feature->get_attribute("downstr_size");
+
+  ## Check if the gene is already included in a predicted
+  ## operon; if not, create a new operon
+  my $operon = $feature->get_attribute("operon");
+  unless ($operon) {
+    $operon = new RSAT::Operon;
+
+    ## Cross-references between the operon and the gene
+    $operon->add_gene($feature);
+    $feature->set_attribute("operon", $operon);
+    push @operons, $operon;
+  }
+
+  ## Start position (side depends on the strand)
+  if ($strand eq "D") {
+    $start = $feature->get_attribute("left");
+  } else {
+    $start = $feature->get_attribute("right");
+  }
+  $feature->set_attribute("start", $start);
+
+  ################################################################
+  ## Attributes of the upstream neighbour
+  if ($to_calc{up}) {
+    my $upstr_neighb = $feature->get_attribute("upstr_neighbour");
+    if (($upstr_neighb) && ($upstr_neighb ne $null)) {
+      $feature->set_attribute("upstr_neighb_str", $upstr_neighb->get_attribute("strand"));
+
+      ## Apply classification rules
+      if ($feature->get_attribute("upstr_neighb_str") ne $strand) {
+	## Rule 1: if two genes are on opposie strand, they belong
+	## to distinct operons
+	$feature->set_attribute("first", 1);
+	$feature->set_attribute("up_rule", "div");
+	$feature->set_attribute("up_dir", "div");
+	$operon->set_leader($feature);
+      } else {
+	$feature->set_attribute("up_dir", "tandem");
+	## Rule 2: if the intergenic distance is larger than the
+	## threshold, the genes are considered to belong to distinct
+	## operons
+	if ($upstr_size > $dist_threshold) {
+	  $feature->set_attribute("first", 1);
+	  $feature->set_attribute("up_rule", "d >= t");
+	  $operon->set_leader($feature);
+	} else {
+	  $feature->set_attribute("first", 0);
+	  $feature->set_attribute("up_rule", "d < t");
+	  $operon->add_gene($upstr_neighb);
+	  $upstr_neighb->force_attribute("operon", $operon);
+	  &ExtendOperon($upstr_neighb);
+	}
+
+      }
+
+      ## Calculate position of the upstream gene
+      ## This differes forom upstream limit in cases where the two genes mutually overlap
+      my $upstr_neighb_pos = $null;
+      if ($strand eq "D") {
+	$upstr_neighb_pos = $upstr_neighb->get_attribute("right");
+      } else {
+	$upstr_neighb_pos = $upstr_neighb->get_attribute("left");
+      }
+      $feature->set_attribute("upstr_neighb_pos", $upstr_neighb_pos);
+
+
+    } else {
+      $upstr_neighb = $null;
+    }
+  }
+
+  ################################################################
+  ## Attributes of the downstream neighbour
+  if ($to_calc{dn}) {
+    my $downstr_neighb = $feature->get_attribute("downstr_neighbour");
+    if (($downstr_neighb) && ($downstr_neighb ne $null)) {
+      $feature->set_attribute("downstr_neighb_str", $downstr_neighb->get_attribute("strand"));
+
+      ## Apply classification rules
+      if ($feature->get_attribute("downstr_neighb_str") ne $strand) {
+	## Rule 1: if two genes are on opposite strand, they belong
+	## to distinct operons
+	$feature->set_attribute("last", 1);
+	$feature->set_attribute("dn_dir", "conv");
+	$feature->set_attribute("dn_rule", "conv");
+	$operon->set_trailer($feature);
+      } else {
+	$feature->set_attribute("dn_dir", "tandem");
+	## Rule 2: if the intergenic distance is larger than the
+	## threshold, the genes are considered to belong to distinct
+	## operons
+	if ($downstr_size > $dist_threshold) {
+	  $feature->set_attribute("last", 1);
+	  $feature->set_attribute("dn_rule", "d > t");
+	  $operon->set_trailer($feature);
+	} else {
+	  $feature->set_attribute("last", 0);
+	  $feature->set_attribute("dn_rule", "d <= t");
+	  $operon->add_gene($downstr_neighb);
+	  $downstr_neighb->force_attribute("operon", $operon);
+	  &ExtendOperon($downstr_neighb);
+	}
+
+      }
+
+      ## Calculate position of the downstream gene
+      ## This differes forom downstream limit in cases where the two genes mutually overlap
+      my $downstr_neighb_pos = $null;
+      if ($strand eq "D") {
+	$downstr_neighb_pos = $downstr_neighb->get_attribute("right");
+      } else {
+	$downstr_neighb_pos = $downstr_neighb->get_attribute("left");
+      }
+      $feature->set_attribute("downstr_neighb_pos", $downstr_neighb_pos);
+
+
+    } else {
+      $downstr_neighb = $null;
+    }
+  }
+}
 
 __END__
 
