@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.36 2006/11/11 17:34:17 jvanheld Exp $
+# $Id: matrix-scan,v 1.37 2006/11/14 06:21:56 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -46,10 +46,18 @@ sites). This program supports a variety of background models
 
 =head1 CATEGORY
 
-util
+= over
+
+=item sequences
+
+=item pattern matching
+
+=item PSSM
+
+=back
 
 =head1 USAGE
-    
+
 matrix-scan -m matrixfile [-i inputfile] [-o outputfile] [-v]
     [-bgfile backgroundfile|-bgorder #]
 
@@ -91,9 +99,11 @@ al. (2001).
 The weight of a sequence segment (Ws) is calculated as the log-ratio
 between two probabilities:
 
-Ws = log[P(S|M)/P(S|B)]
+=item I<Ws = log[P(S|M)/P(S|B)]>
 
-=over 
+where
+
+=over
 
 =item I<proba_M = P(S|M)>: 
 
