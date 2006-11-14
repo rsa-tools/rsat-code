@@ -666,10 +666,9 @@ gene
 
 sub CalcNeighbourLimits {
   my ($self) = @_;
-
   my %contig = $self->get_contigs();
 
-  &RSAT::message::TimeWarn("Calculating neighbour limits") if ($main::verbose >= 2);
+#  &RSAT::message::TimeWarn("Calculating neighbour limits") if ($main::verbose >= 2);
 
   my %left = $self->index_attribute_by_feature("left");
   my %right = $self->index_attribute_by_feature("right");
@@ -677,7 +676,7 @@ sub CalcNeighbourLimits {
     my @genes = sort { $left{$a} <=> $left{$b} } $contig{$ctg}->get_genes();
     local $contig_length = $contig{$ctg}->get_length();
 
-    &RSAT::message::Info(join ("\t", "Features per contig", $ctg, scalar(@genes))) if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn(join ("\t", "Calculating neighbour limits for contig", $ctg, "features", scalar(@genes), "length", $contig_length)) if ($main::verbose >= 2);
 
     @gene_lefts = sort {$a <=> $b} @left{@genes};
     @gene_rights = sort {$a <=> $b} @right{@genes};
@@ -817,7 +816,7 @@ sub CalcNeighbourLimits {
 	  $gene->set_attribute("right_neighb_id", "<NULL>");
 	  $gene->set_attribute("right_neighb_name", "<NULL>");
 	  $gene->set_attribute("right_limit", $contig_length);
-	  $gene->set_attribute("right_size", $contig_lenth - $gene_rights[$g]);
+	  $gene->set_attribute("right_size", $contig_length - $gene_rights[$g]);
 	  next;
 	} elsif ($gene->get_attribute("geneid") eq $genes[$rn]->get_attribute("geneid")) {
 
