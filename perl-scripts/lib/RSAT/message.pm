@@ -48,7 +48,7 @@ line.
 =cut
 sub Warning {
     my @warning_message = @_;
-    my $message = join "\n\t", @warning_message;
+    my $message = join "\t", @warning_message;
     if ((defined($ENV{RSA_OUTPUT_CONTEXT})) &&
 	($ENV{RSA_OUTPUT_CONTEXT} eq "cgi")) {
 	$message =~ s/\n/<br>\n/g;
