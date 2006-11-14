@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: infer-operon,v 1.2 2006/11/14 06:21:21 jvanheld Exp $
+# $Id: infer-operon,v 1.3 2006/11/14 06:56:36 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -89,12 +89,28 @@ genes.
 infer-operon -v 1 -org Escherichia_coli_K12 -q hisD -q mhpR -q mhpA -q mhpD
 
 
-=item B<Example 1>
+=item B<Example 2>
 
 We now specify different return fields
 
 infer-operon -v 1 -org Escherichia_coli_K12 -q hisD -q lacI \
   -return leader,trailer,up_info,down_info,operon
+
+=item B<Example 3>
+
+Infer operons for all the genes of an organism.
+
+infer-operon -v 1 -org Escherichia_coli_K12 -all -return up_info,leader,operon
+
+=item B<Example 4>
+
+Infer operon from a set of query genes, and retrieve the upstream
+sequence of the inferred leader gene. Note that two of the input genes
+(lacZ, lacY) belong to the same operon. to avoid including twice their
+leader, we use the unix command sort -u (unique).
+
+infer-operon -org Escherichia_coli_K12 -return leader,operon -q lacI
+-q lacZ -q lacY | sort -u | retrieve-seq -org Escherichia_coli_K12 -noov
 
 =back
 
@@ -131,6 +147,7 @@ package main;
     local $dist_threshold = 55;
     local $null = "<NULL>";
     local @matched_features = ();
+    local $infer_all = 0;
 
     %main::infile = ();
     %main::outfile = ();
@@ -162,7 +179,6 @@ package main;
 				name
 				strand
 				start
-				upstr_size
 			       );
 
     @{$sub_fields{up_info}} = qw(upstr_neighb_id
@@ -170,6 +186,7 @@ package main;
 				 upstr_neighb_str
 				 upstr_neighb_pos
 				 up_dir
+				 upstr_size
 				 up_rule
 				 first
 				);
@@ -179,6 +196,7 @@ package main;
 				   downstr_neighb_str
 				   downstr_neighb_pos
 				   dn_dir
+				   downstr_size
 				   dn_rule
 				   last
 				  );
@@ -195,12 +213,12 @@ package main;
     $field_descr{name} = "Name of the query gene."; 
     $field_descr{strand} = "Strand of the query gene.";
     $field_descr{start} = "Starting position of the query gene (first nucleotide of the start codon).";
-    $field_descr{upstr_size} = "Size of the non-coding region located upstream of the query gene.";
 
     $field_descr{upstr_neighb_id} = "ID of the upstream gene.";
     $field_descr{upstr_neighb_name} = "Name of the upstream gene."; 
     $field_descr{upstr_neighb_str} = "Strand of the upstream gene.";
     $field_descr{upstr_neighb_pos} = "Proximal position of the upstream gene.";
+    $field_descr{upstr_size} = "Size of the non-coding region located upstream of the query gene.";
     $field_descr{up_dir} = "Relative direction of the upstream gene (tandem, divergent or convergent).";
     $field_descr{up_rule} = "Rule used to predict operon membership of the upstream gene (opposite strand, distance).";
     $field_descr{first} = "1 if the gene is the operon leader; 0 otherwise";
@@ -210,6 +228,7 @@ package main;
     $field_descr{downstr_neighb_name} = "Name of the downstream gene."; 
     $field_descr{downstr_neighb_str} = "Strand of the downstream gene.";
     $field_descr{downstr_neighb_pos} = "Proximal position of the downstream gene.";
+    $field_descr{downstr_size} = "Size of the non-coding region located downstream of the query gene.";
     $field_descr{dn_dir} = "Relative direction of the downstream gene (tandem, divergent or convergent).";
     $field_descr{dn_rule} = "Rule used to predict operon membership of the downstream gene (opposite strand, distance).";
     $field_descr{last} = "1 if the gene is the operon trailer; 0 otherwise";
@@ -255,9 +274,15 @@ package main;
     $main::out = &OpenOutputFile($main::outfile{output});
 
     ################################################################
-    ##### Read input
+    ##### Queries
 
-    if (scalar(@queries) == 0) {
+    if ($infer_all) {
+      ## Infer operons for all the genes of the query organism
+      my @genes = $organism->get_genes();
+      foreach my $gene (@genes) {
+	push @queries, $gene->get_attribute("id");
+      }
+    } elsif (scalar(@queries) == 0) {
       ($main::in) = &OpenInputFile($main::infile{input});
       while (<$main::in>) {
 	next if (/^;/);
@@ -481,6 +506,17 @@ Organism name.
 =cut
 	} elsif ($arg eq "-org") {
 	    $main::organism_name = shift(@arguments);
+
+	    ## Queries on the command line
+=pod
+
+=item B<-all>
+
+Infer operons for all the genes of the query organism.
+
+=cut
+	} elsif ($arg eq "-all") {
+	    $main::infer_all = 1;
 
 	    ## Queries on the command line
 =pod
