@@ -34,7 +34,6 @@ targetNamespace="urn:RSATWS"
 	  <xsd:element name="type" type="xsd:string"/>
 	  <xsd:element name="format" type="xsd:string"/>
 	  <xsd:element name="all" type="xsd:string"/>
-	  <xsd:element name="number" type="xsd:string"/>
 	  <xsd:element name="label" type="xsd:string"/>
 	  <xsd:element name="label_sep" type="xsd:string"/>
 	  <xsd:element name="nocom" type="xsd:string"/>
