@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.54 2006/11/07 14:10:36 jvanheld Exp $
+# $Id: retrieve-seq,v 1.55 2006/11/14 07:54:11 jvanheld Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -708,7 +708,7 @@ retrieve-seq options
 -rm		Use the repeat masked version of the genome. 
 -nowarn		prevents warning when a gene can not be identified
 -imp_pos	admit imprecise positions.
--nocom		do not print related information (start, end position, ...)
+-nocom		do not print comments  (start, end position, ...) besides each gene identifier
 -features	alternate feature table
 End_short_help
   close HELP;
