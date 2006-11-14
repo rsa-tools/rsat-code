@@ -100,6 +100,7 @@ iterate_genes:
 ################################################################
 ## Run all the tasks for a single gene
 ALL_TASKS_CMD=${ORTHO_CMD} ; ${RETRIEVE_CMD} ; ${DYAD_CMD} ; ${ASSEMBLE_CMD}; ${MAP_CMD}
+#ALL_TASKS_CMD=${FILTER_DYADS_CMD}
 all_tasks:
 	${MAKE} my_command MY_COMMAND="${ALL_TASKS_CMD}" JOB_PREFIX=${REF_ORG}_${TAXON}_${GENE}
 
@@ -113,7 +114,6 @@ dyad_tasks:
 
 _dyad_tasks_filtered:
 	${MAKE} my_command MY_COMMAND="${FILTER_DYADS_CMD}; ${DYAD_CMD} ; ${ASSEMBLE_CMD}; ${MAP_CMD}" JOB_PREFIX=${REF_ORG}_${TAXON}_${GENE}
-
 
 ################################################################
 ## Identify orthologs for a given gene (${GENE}) in the taxon of
