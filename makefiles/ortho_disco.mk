@@ -82,8 +82,7 @@ all_dyads_filtered:
 	@echo
 	@echo "Analyzing dyads  with organism-specific filter for all genes	${REF_ORG}	${TAXON}"
 	@for g in ${ALL_GENES} ; do \
-		${MAKE} _dyad_tasks_filtered REF_ORG=${REF_ORG} TAXON=${TAXON} MAIN_DIR=${MAIN_DIR} GENE=$${g}  \
-		FILTER_SUFFIX=_filtered DYAD_OPT='-accept ${DYAD_FILTER}' ; \
+		${MAKE} _dyad_tasks_filtered REF_ORG=${REF_ORG} TAXON=${TAXON} MAIN_DIR=${MAIN_DIR} GENE=$${g} ; \
 	done
 #	${MAKE} all_tasks_all_genes ALL_TASKS_CMD="${FILTER_DYADS_CMD}; ${DYAD_CMD} ; ${ASSEMBLE_CMD}; ${MAP_CMD}" \
 #		JOB_PREFIX=${REF_ORG}_${TAXON}_${GENE} \
@@ -113,7 +112,9 @@ dyad_tasks:
 	${MAKE} my_command MY_COMMAND="${DYAD_CMD} ; ${ASSEMBLE_CMD}; ${MAP_CMD}" JOB_PREFIX=${REF_ORG}_${TAXON}_${GENE}
 
 _dyad_tasks_filtered:
-	${MAKE} my_command MY_COMMAND="${FILTER_DYADS_CMD}; ${DYAD_CMD} ; ${ASSEMBLE_CMD}; ${MAP_CMD}" JOB_PREFIX=${REF_ORG}_${TAXON}_${GENE}
+	${MAKE} my_command \
+		MY_COMMAND="${FILTER_DYADS_CMD}; ${DYAD_CMD} ; ${ASSEMBLE_CMD}; ${MAP_CMD}" JOB_PREFIX=${REF_ORG}_${TAXON}_${GENE} \
+		FILTER_SUFFIX=_filtered DYAD_OPT='-accept ${DYAD_FILTER}' 
 
 ################################################################
 ## Identify orthologs for a given gene (${GENE}) in the taxon of
@@ -158,7 +159,8 @@ NOOV=-noov
 RETURN=occ,freq,proba,rank
 SUFFIX=${STR}${NOOV}_${BG}_dyads${FILTER_SUFFIX}
 DYADS=${GENE_DIR}/${PREFIX}${SUFFIX}
-DYAD_CMD=dyad-analysis -v ${V} -i ${PURGED} -sort -type any ${STR} ${NOOV} \
+DYAD_CMD=mkdir -p ${GENE_DIR}; \
+	dyad-analysis -v ${V} -i ${PURGED} -sort -type any ${STR} ${NOOV} \
 		-lth occ 1 -lth occ_sig 0 -return ${RETURN} -l 3 -spacing 0-20 \
 		-bg ${BG} -org ${REF_ORG} \
 		-o ${DYADS}.tab ${DYAD_OPT} 
