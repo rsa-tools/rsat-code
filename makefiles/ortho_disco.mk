@@ -112,9 +112,11 @@ dyad_tasks:
 	${MAKE} my_command MY_COMMAND="${DYAD_CMD} ; ${ASSEMBLE_CMD}; ${MAP_CMD}" JOB_PREFIX=${REF_ORG}_${TAXON}_${GENE}
 
 _dyad_tasks_filtered:
+	${MAKE} _dyad_tasks_filtered_sub FILTER_SUFFIX=_filtered DYAD_OPT='-accept ${DYAD_FILTER}' 
+
+_dyad_tasks_filtered_sub:
 	${MAKE} my_command \
-		MY_COMMAND="${FILTER_DYADS_CMD}; ${DYAD_CMD} ; ${ASSEMBLE_CMD}; ${MAP_CMD}" JOB_PREFIX=${REF_ORG}_${TAXON}_${GENE} \
-		FILTER_SUFFIX=_filtered DYAD_OPT='-accept ${DYAD_FILTER}' 
+		MY_COMMAND="${FILTER_DYADS_CMD}; ${DYAD_CMD} ; ${ASSEMBLE_CMD}; ${MAP_CMD}" JOB_PREFIX=${REF_ORG}_${TAXON}_${GENE}
 
 ################################################################
 ## Identify orthologs for a given gene (${GENE}) in the taxon of
