@@ -506,3 +506,199 @@ retrieve-seq -type downstream -org Escherichia_coli_K12 \
     -o Escherichia_coli_K12_stop_codons.wc
 \end{verbatim} \end{footnotesize}
 }
+
+\section{Inferring operons}
+
+In Bacteria, genes are organized in operon, which means that several
+genes are transcribed in a single transcription unit. The
+transcription of a whole operon is driven by a single promoter,
+located upstream of the so-called \concept{leader gene}.
+
+Let us assume that we dispose of a set of bacterial genes for which we
+want to predict cis-acting elements (e.g. co-expressed genes in a
+microarray experiment). A good fraction of these genes might be
+located inside operons. For these, the putative regulatory elements
+should be searched in the promoter of the operon leader gene, rather
+than in the upstream sequence of the gene itself.
+
+The program \program{infer-operon} allows to infer the operons and
+return the corresponding leader genes for a set of input genes.  The
+approach is inspired by the Salgado-Hagelsieb method, which consists
+in predicting, for each upstream region, if it is within an operon
+(WO) or t a transcription unit border (TUB). This prediction is based
+on two rules:
+
+\begin{enumerate}
+\item \textbf{Orientation rule} If the intergenic region is flanked by two
+  genes located on different strands, it is a TUB.
+
+\item \textbf{[Distance rule} If the intergenic region is flanked two
+  \concept{tandem} genes (adjacent genes transcribed in the same
+  direction), it is classified as WO if the intergenic distance is
+  lower than some threshold (by default, 55bp), and as TUB otherwise.
+\end{enumerate}
+
+The default distance threshold was chosen to obtain a good balance
+between \concept{sensitivity} (\concept{Sn}, fraction of annotated WO
+regions which are correctly predicted) and \concept{positive
+  predictive value} (\concept{PPV}, fraction of predicted WO region
+which indeed correspond to annotations).
+
+The option \option{-dist} allows to specify a custom distance
+threshold. By increasing the threshold, the number of regions
+predicted as WO increases, at the expense of those predicted as
+WO. This will thus increase the Sn and decrease PPV.
+
+The \concept{accuracy} measures the balance between Sn and PPV by
+taking their arithmetic average. With the default value, one can
+expect ~78\% of accuracy (Reki's janky and Jacques van Helden,
+unpublished results).
+
+We will illustrate the use of \program{infer-operons} with a few
+examples.
+    
+\subsection{Inferring operon from a list of query genes}
+
+With the following command, we infer the operon for a set of input
+genes.
+
+{\color{Blue} \begin{footnotesize}
+\begin{verbatim}
+infer-operon -v 1 -org Escherichia_coli_K12 -q hisD -q mhpR \
+  -q mhpA -q mhpD
+\end{verbatim} \end{footnotesize}
+}
+
+Note that the prediction is incorrect for the gene \gene{hisD}: the
+program predict \gene{hisG} as operon leader, whereas the well known
+leader of the \gene{his} operon is \gene{hisL}. This is due to the
+fact that the intergenic distance between \gene{hisL} and \gene{hisG}
+is 145bp, which exceeds the default distance threshold (55bp). 
+
+One option would be to increase the distance threshold to 150bp. 
+
+
+{\color{Blue} \begin{footnotesize}
+\begin{verbatim}
+infer-operon -v 1 -org Escherichia_coli_K12 -q hisD -q mhpR \
+  -q mhpA -q mhpD -dist 150
+\end{verbatim} \end{footnotesize}
+}
+
+However, we should be very careful with this option, since it has a
+strong consequence on all the other operon inferenes in the same
+genome. Since a good fraction of promoters of \org{Escherichia coli}
+are shorted than 150bp, by increasing the distance threshold to 150,
+we will undully consider these promoters as WO.
+
+\subsection{Selecting custom return fields}
+
+The option \option{-return} allows to specify custom return fields.
+
+{\color{Blue} \begin{footnotesize}
+\begin{verbatim}
+infer-operon -v 1 -org Escherichia_coli_K12 -q hisD -q lacI -q lacZ \
+  -return q_info,up_info,leader,trailer,operon
+\end{verbatim} \end{footnotesize}
+}
+
+Note that the famous \gene{lac} operon contains three genes:
+\gene{lacZ}, \gene{lacY} and \gene{lacA}, but the inferred operon only
+returns the two first genes because the distance between \gene{lacY}
+and \gene{lacA} is 65bp. This can be checked with the return field
+\option{down\_info}.
+
+{\color{Blue} \begin{footnotesize}
+\begin{verbatim}
+infer-operon -v 1 -org Escherichia_coli_K12 -q lacZ -q lacY \
+  -return q_info,up_info,down_info,operon
+\end{verbatim} \end{footnotesize}
+}
+
+\subsection{Operons with non-CDS genes}
+
+Note that operons can contain non-coding genes. For example, the
+metT operon contains a series of tRNA genes for methionine, leucine
+and glutamina, respectively.
+
+{\color{Blue} \begin{footnotesize}
+\begin{verbatim}
+infer-operon -org Escherichia_coli_K12 -q glnV -q metU -q ileV \
+-return q_info,up_info,operon
+\end{verbatim} \end{footnotesize}
+}
+
+\subsection{Inferring all operons for a given organism}
+
+The option \option{-all} allows to infer operons for all the genes of
+an organism.
+
+{\color{Blue} \begin{footnotesize}
+\begin{verbatim}
+infer-operon -v 1 -org Escherichia_coli_K12 -all \
+  -return q_info,up_info,leader,operon
+\end{verbatim} \end{footnotesize}
+}
+
+\subsection{Retrieving operon leader genes and inferred
+  operon promoters}
+
+As explained above, a common usage of operon inference is to predict a
+list of leader genes from a set of query genes, in order to retrieve
+the corresponding promoter sequences. For this, we will use the option
+\option{-return} to obtain the leader gene in the first column of the
+result table. 
+
+{\color{Blue} \begin{footnotesize}
+\begin{verbatim}
+infer-operon -org Escherichia_coli_K12 -return leader,q_info,up_info,operon \
+   -q lacI -q lacZ -q lacY -q mhpD -q mhpF
+\end{verbatim} \end{footnotesize}
+}
+
+The first column now indicates the inferred leader genes rather than
+tne query genes, and that this column contains some redundancy: the
+same leader gene appears multiple times. This comes from the fact that
+several of our query genes were part of the same operon (e.g.:lacZ and
+lacY).
+
+To avoid including twice their leader, we use the unix command sort -u
+(unique).
+
+
+{\color{Blue} \begin{footnotesize}
+\begin{verbatim}
+infer-operon -org Escherichia_coli_K12 -return leader,q_info,up_info,operon \
+   -q lacI -q lacZ -q lacY -q mhpD -q mhpF \
+   | cut -f 1 \
+   | sort -u 
+\end{verbatim} \end{footnotesize}
+}
+
+We can now use the resulting non-redundant list of operon leaders as
+input for retrieve-seq.
+
+{\color{Blue} \begin{footnotesize}
+\begin{verbatim}
+infer-operon -org Escherichia_coli_K12 -return leader,q_info,up_info,operon \
+   -q lacI -q lacZ -q lacY -q mhpD -q mhpF \
+   | cut -f 1 \
+   | sort -u \
+   | retrieve-seq -org Escherichia_coli_K12 -noorf
+\end{verbatim} \end{footnotesize}
+}
+
+
+\subsection{Collecting all upstream regions from the query gene up to
+  the leader gene}
+
+\textbf{TO BE IMPLEMENTED}
+
+\subsection{Automatic inference}
+
+\textbf{TO BE IMPLEMENTED}
+
+
+\section{Purging sequences}
+
+\tbw
