@@ -29,6 +29,8 @@ We show hereafter some simple examples of clients written in perl.
 
 The following example is a script to retrieve the start codons of three Escherichia coli genes. It uses \program{retrieve-seq} to do so. The various parameters are passed as a hash table to the method. If there is an error ,it will be displayed, otherwise the result is displayed, toghether with the full command generated on the server and the name of the temporary file created on the server to hold the result localy. This file is useful when one wants to feed another program with that output, whithout paying the cost of a useless data transport back and forth between the server and the client.
 
+\begin{footnotesize}
+\begin{verbatim}
 #!/usr/bin/perl -w
 # retrieve-seq_client_soap-wsdl.pl - Client retrieve-seq using the SOAP::WSDL module
 
@@ -117,10 +119,20 @@ if ($som->fault){ ## Report error if any
 	print "Retrieved sequence(s): \n".$result;
     }
 }
+\end{verbatim}
+\end{footnotesize}
 
 \subsection{Work flow using RSATWS}
 
-The following example is the script of a typical workflow of RSA Tools programs. First, the upsrteam sequences of five Saccharomyces cerevisiae genes are retrieved with \program{retrieve-seq}. Then, \program{purge-sequence} is applyed to remove any redundancy in the set of sequences. Finally, \program{oligo-analysis} is applied to discover over-represented six letters words. The result of step 1 and 2 are stored on the server, so that the file name can be sent to the following step as input and only the final result needs to be transported from the server to the client.
+The following example is the script of a typical workflow of RSA Tools
+programs. First, the upsrteam sequences of five Saccharomyces
+cerevisiae genes are retrieved with \program{retrieve-seq}. Then,
+\program{purge-sequence} is applyed to remove any redundancy in the
+set of sequences. Finally, \program{oligo-analysis} is applied to
+discover over-represented six letters words. The result of step 1 and
+2 are stored on the server, so that the file name can be sent to the
+following step as input and only the final result needs to be
+transported from the server to the client.
 
 #!/usr/bin/perl -w
 # retrieve_purge_oligos_client_wsdl.pl - Client retrieve-seq + purge-sequence + oligo-analysis
