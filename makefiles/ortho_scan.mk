@@ -18,7 +18,7 @@ STR=-2str
 PSEUDO=1
 MKV=1
 SCAN_DIR=results/matches/${FACTOR}/per_gene
-SCAN_FILE=${SCAN_DIR}/matches_${FACTOR}_${TAXON}${STR}_ps${PSEUDO}_mkv${MKV}
+SCAN_FILE=${SCAN_DIR}/matches_TF_${FACTOR}_up_${GENE}_${TAXON}${STR}_ps${PSEUDO}_mkv${MKV}
 scan:
 	@mkdir -p ${SCAN_DIR}
 	matrix-scan -v ${V} -i ${SEQ} \
@@ -32,7 +32,7 @@ map:
 	feature-map -i ${SCAN_FILE}.tab \
 		-scalebar -scalestep 25 -xsize 800 -dot \
 		-title "${FACTOR} matches in ${TAXON} ${GENE} promoters" \
-		-o ${SCAN_FILE}.png -htmap
+		-o ${SCAN_FILE}.png 
 	@echo ${SCAN_FILE}.png
 
 all: orthologs upstream scan map
