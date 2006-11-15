@@ -380,7 +380,7 @@ sub DefineAcceptedFeatureTypes {
   my ($self, @accepted_feature_types) = @_;
 
   unless (scalar(@accepted_feature_types) > 0) {
-    @accepted_feature_types = 'cds';
+    @accepted_feature_types = qw(cds trna rrna);
   }
 
 
@@ -428,7 +428,7 @@ sub LoadFeatures {
 #  }
   my @feature_types = $self->get_attribute("feature_types");
   if (scalar(@feature_types) < 1) {
-    @feature_types = qw (cds);
+    @feature_types = qw (cds trna rrna);
   }
 
   foreach my $feature_type (@feature_types) {
