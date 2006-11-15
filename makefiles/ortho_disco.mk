@@ -90,7 +90,7 @@ all_dyads_filtered:
 
 ################################################################
 ## Apply one task to all the genes
-GENE_TASK=match_known_sites
+GENE_TASK=match_known_sites_one_gene
 iterate_genes:
 	@for g in ${ALL_GENES} ; do \
 		${MAKE} ${GENE_TASK} REF_ORG=${REF_ORG} TAXON=${TAXON} MAIN_DIR=${MAIN_DIR} GENE=$${g} ; \
@@ -159,7 +159,8 @@ BG=monads
 STR=-2str
 NOOV=-noov
 RETURN=occ,freq,proba,rank
-SUFFIX=${STR}${NOOV}_${BG}_dyads${FILTER_SUFFIX}
+NO_FILTER_SUFFIX=${STR}${NOOV}_${BG}_dyads
+SUFFIX=${NO_FILTER_SUFFIX}${FILTER_SUFFIX}
 DYADS=${GENE_DIR}/${PREFIX}${SUFFIX}
 DYAD_CMD=mkdir -p ${GENE_DIR}; \
 	dyad-analysis -v ${V} -i ${PURGED} -sort -type any ${STR} ${NOOV} \
@@ -193,7 +194,7 @@ dyads_filtered:
 ################################################################
 ## Count matches between discovered dyads and known sites
 KNOWN_SITES=data/sites_per_gene.tab
-KNOWN_SITES_GENE=${GENE_DIR}/${GENE}_gene_known_sites.tab
+KNOWN_SITES_GENE=${GENE_DIR}/${GENE}_gene_known_sites
 MIN_W=6
 KNOWN_SITE_MATCHES=${DYADS}_vs_known_sites_w${MIN_W}
 COMPARE_PATTERNS_CMD= \
@@ -203,7 +204,7 @@ COMPARE_PATTERNS_CMD= \
 	compare-patterns -slide -v 1 -file2 ${DYADS}.tab -file1 ${KNOWN_SITES_GENE}_noflanks.tab  -return id,match,strand,offset,weight,rel_w,Pval,Eval_p,sig_p,Eval_f,sig_f,seq -lth weight ${MIN_W} -2str -o ${KNOWN_SITE_MATCHES}_noflanks.tab ; \
 	compare-patterns -slide -v 1 -file1 ${DYADS}.tab -file2 ${KNOWN_SITES_GENE}.tab  -table weight -null "." -lth weight ${MIN_W} -2str -o ${KNOWN_SITE_MATCHES}_weight_table.tab ; \
 	compare-patterns -slide -v 1 -file1 ${DYADS}.tab -file2 ${KNOWN_SITES_GENE}_noflanks.tab  -table weight -null "." -lth weight ${MIN_W} -2str -o ${KNOWN_SITE_MATCHES}_noflanks_weight_table.tab 
-match_known_sites:
+match_known_sites_one_gene:
 	@echo 
 	@echo "Matching known sites for gene	${GENE}"
 #	@echo "${COMPARE_PATTERNS_CMD}"
@@ -214,6 +215,9 @@ match_known_sites:
 	@echo ${KNOWN_SITES_GENE}_noflanks.tab
 	@echo ${KNOWN_SITE_MATCHES}_noflanks.tab
 	@echo ${KNOWN_SITE_MATCHES}_noflanks_weight_table.tab
+
+match_known_sites_all_genes:
+	@${MAKE} iterate_genes GENE_TASK=match_known_sites_one_gene
 
 ################################################################
 ## Assemble the over-represented dyad to form motif
@@ -240,7 +244,7 @@ map:
 ## Index the results for the whole set of genes
 index_results: index_results_html index_results_tab 
 
-#INDEX_FILE=${MAIN_DIR}/results/${REF_ORG}/${TAXON}/index_${REF_ORG}_${TAXON}${SUFFIX}.tab
+#INDEX_FILE=${MAIN_DIR}/results/${REF_ORG}/${TAXON}/index_${REF_ORG}_${TAXON}${NO_FILTER_SUFFIX}.tab
 #index_results_tab:
 #	@echo "Indexing results	${REF_ORG}	${TAXON}	${INDEX_FILE}"
 #	@echo "; ${REF_ORG} ; ${TAXON} ; ${SUFFIX}" > ${INDEX_FILE}
@@ -254,7 +258,7 @@ index_results: index_results_html index_results_tab
 ## Index the results in a "tab-delimted html file" (without the HTML
 ## table, which is heavy to load for browsers when there are 5000
 ## rows)
-INDEX_FILE=${MAIN_DIR}/results/${REF_ORG}/${TAXON}/index_${REF_ORG}_${TAXON}${SUFFIX}.html
+INDEX_FILE=${MAIN_DIR}/results/${REF_ORG}/${TAXON}/index_${REF_ORG}_${TAXON}${NO_FILTER_SUFFIX}.html
 index_results_tab:
 	@echo "Indexing results	${REF_ORG}	${TAXON}	${INDEX_FILE}"
 	@echo "<html>" > ${INDEX_FILE}
@@ -285,14 +289,14 @@ index_one_result:
 ## Index the results for the whole set of genes
 ## Index all results in a HTML table
 ## This is convenient to read, but heavy to load when there are 5000 genes
-INDEX_TABLE=${MAIN_DIR}/results/${REF_ORG}/${TAXON}/index_table_${REF_ORG}_${TAXON}${SUFFIX}.html
+INDEX_TABLE=${MAIN_DIR}/results/${REF_ORG}/${TAXON}/index_table_${REF_ORG}_${TAXON}${NO_FILTER_SUFFIX}.html
 index_results_html:
 	@echo "Indexing results	${REF_ORG}	${TAXON}	${INDEX_TABLE}"
 	@echo "<html>" > ${INDEX_TABLE}
 	@echo "<body>" >> ${INDEX_TABLE}
 	@echo "<h1>${REF_ORG} ; ${TAXON} ; ${SUFFIX}</h1>" >> ${INDEX_TABLE}
 	@echo "<table border=1 cellpadding=3 cellspacing=3 align=center>" >> ${INDEX_TABLE}
-#	${MAKE} index_one_result GENE=lexA
+	${MAKE} index_header_html
 	@for g in ${ALL_GENES} ; do  \
 		${MAKE} index_one_result_html GENE=$${g}  ; \
 	done
@@ -301,16 +305,85 @@ index_results_html:
 	@echo "Results indexed	${INDEX_TABLE}"
 
 ################################################################
+## Print the header of the index table
+index_header_html:
+	echo "<tr>" >> ${INDEX_TABLE}
+	echo "<th colspan=1>Gene</th>" >> ${INDEX_TABLE}
+	echo "<td width=3></td>" >> ${INDEX_TABLE} ; \
+	echo "<th colspan=2>Known sites</th>" >> ${INDEX_TABLE}
+	echo "<td width=3></td>" >> ${INDEX_TABLE} ; \
+	echo "<th colspan=6>Dyads</th>" >> ${INDEX_TABLE}
+	echo "<td width=3></td>" >> ${INDEX_TABLE} ; \
+	echo "<th colspan=6>Filtered Dyads</th>" >> ${INDEX_TABLE}
+	echo "<td width=3></td>" >> ${INDEX_TABLE} ; \
+	echo "<th colspan=1>Orthologs</th>" >> ${INDEX_TABLE}
+	echo "<td width=3></td>" >> ${INDEX_TABLE} ; \
+	echo "<th colspan=4>Sequences</th>" >> ${INDEX_TABLE}
+	echo "<tr>" >> ${INDEX_TABLE}
+
+################################################################
 ## Index one result in a HTML table
 ## This is convenient to read, but heavy to load when there are 5000 genes
 index_one_result_html:
 	@echo "Indexing result for gene	${GENE}"
 	@echo "<tr>" >> ${INDEX_TABLE}
 	@echo "<td><a href=${GENE_DIR}>${GENE}</a></td>" | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_TABLE}
-	echo "<td width=5></td>" >> ${INDEX_TABLE} ; \
+	${MAKE} index_known_sites
+	${MAKE} index_dyads
+	${MAKE} index_dyads FILTER_SUFFIX=_filtered
+	${MAKE} index_ortho
+	${MAKE} index_sequences
+
+## Orthologs
+index_ortho:
+	echo "<td width=3></td>" >> ${INDEX_TABLE} ; \
+	if [ -f "${ORTHOLOGS}" ] ; then \
+		echo "<td><a href=${ORTHOLOGS}>${ORTHO_NB} ortho</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_TABLE} ; \
+	else echo "<td></td>" >> ${INDEX_TABLE} ; \
+	fi
+
+## Index sequences
+index_sequences:
+	echo "<td width=3></td>" >> ${INDEX_TABLE} ; \
+	if [ -f "${SEQ}.gz" ] ; then \
+		echo "<td><a href=${SEQ}.gz>seq</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_TABLE} ; \
+	else echo "<td></td>" >> ${INDEX_TABLE} ; \
+	fi
+	if [ -f "${PURGED}.gz" ] ; then \
+		echo "<td><a href=${PURGED}.gz>purged</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_TABLE} ; \
+	else echo "<td></td>" >> ${INDEX_TABLE} ; \
+	fi
+	echo "<td width=3></td>" >> ${INDEX_TABLE} ; \
+	if [ -f "${SEQ}" ] ; then \
+		echo "<td><a href=${SEQ}>seq</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_TABLE} ; \
+	else echo "<td></td>" >> ${INDEX_TABLE} ; \
+	fi
+	if [ -f "${PURGED}" ] ; then \
+		echo "<td><a href=${PURGED}>purged</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_TABLE} ; \
+	else echo "<td></td>" >> ${INDEX_TABLE} ; \
+	fi
+	echo "</tr>" >> ${INDEX_TABLE}
+
+## Index known sites
+index_known_sites:
+	echo "<td width=3></td>" >> ${INDEX_TABLE} ; \
+	if [ -f "${KNOWN_SITES_GENE}_noflanks.tab" ] ; then \
+		echo "<td><a href=${KNOWN_SITES_GENE}_noflanks.tab>sites</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_TABLE} ; \
+	else echo "<td></td>" >> ${INDEX_TABLE} ; \
+	fi
+	if [ -f "${KNOWN_SITES_GENE}.tab" ] ; then \
+		echo "<td><a href=${KNOWN_SITES_GENE}.tab>flanked</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_TABLE} ; \
+	else echo "<td></td>" >> ${INDEX_TABLE} ; \
+	fi
+
+
+## Add discovered dyads to the index file
+index_dyads:
+	echo "<td width=3></td>" >> ${INDEX_TABLE} ; \
+	echo "indexing dyads	${DYADS}	${MAX_SIG}"
 	if [ -f "${DYADS}.tab" ] ; then \
 		echo "<td>${MAX_SIG}</td>"  >> ${INDEX_TABLE} ; \
-	else echo "<td></td>" >> ${INDEX_TABLE} ; \
+	else echo "<td>no file</td>" >> ${INDEX_TABLE} ; \
 	fi
 	if [ -f "${DYADS}.tab" ] ; then \
 		echo "<td><a href=${DYADS}.tab>dyads</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_TABLE} ; \
@@ -332,45 +405,6 @@ index_one_result_html:
 		echo "<td><a href=${KNOWN_SITE_MATCHES}_weight_table.tab>match table</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_TABLE} ; \
 	else echo "<td></td>" >> ${INDEX_TABLE} ; \
 	fi
-	echo "<td width=5></td>" >> ${INDEX_TABLE} ; \
-	if [ -f "${DYADS}_filtered.tab" ] ; then \
-		echo "<td>${MAX_SIG_FILTERED}</td>"  >> ${INDEX_TABLE} ; \
-	else echo "<td></td>" >> ${INDEX_TABLE} ; \
-	fi
-	if [ -f "${DYADS}_filtered.tab" ] ; then \
-		echo "<td><a href=${DYADS}_filtered.tab>f.dyads</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_TABLE} ; \
-	else echo "<td></td>" >> ${INDEX_TABLE} ; \
-	fi
-	if [ -f "${DYADS}_filtered.asmb" ] ; then \
-		echo "<td><a href=${DYADS}_filtered.asmb>f.assembly</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_TABLE} ; \
-	else echo "<td></td>" >> ${INDEX_TABLE} ; \
-	fi
-	if [ -f "${DYADS}_filtered.png" ] ; then \
-		echo "<td><a href=${DYADS}_filtered.png>f.map</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_TABLE} ; \
-	else echo "<td></td>" >> ${INDEX_TABLE} ; \
-	fi
-	echo "<td width=5></td>" >> ${INDEX_TABLE} ; \
-	if [ -f "${ORTHOLOGS}" ] ; then \
-		echo "<td><a href=${ORTHOLOGS}>${ORTHO_NB} ortho</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_TABLE} ; \
-	else echo "<td></td>" >> ${INDEX_TABLE} ; \
-	fi
-	if [ -f "${SEQ}" ] ; then \
-		echo "<td><a href=${SEQ}>seq</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_TABLE} ; \
-	else echo "<td></td>" >> ${INDEX_TABLE} ; \
-	fi
-	if [ -f "${PURGED}" ] ; then \
-		echo "<td><a href=${PURGED}>purged</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_TABLE} ; \
-	else echo "<td></td>" >> ${INDEX_TABLE} ; \
-	fi
-	if [ -f "${SEQ}.gz" ] ; then \
-		echo "<td><a href=${SEQ}.gz>seq</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_TABLE} ; \
-	else echo "<td></td>" >> ${INDEX_TABLE} ; \
-	fi
-	if [ -f "${PURGED}.gz" ] ; then \
-		echo "<td><a href=${PURGED}.gz>purged</a></td>"  | perl -pe 's|${ROOT_DIR}||' >> ${INDEX_TABLE} ; \
-	else echo "<td></td>" >> ${INDEX_TABLE} ; \
-	fi
-	@echo "</tr>" >> ${INDEX_TABLE}
 
 
 ################################################################
