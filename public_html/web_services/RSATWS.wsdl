@@ -6,7 +6,6 @@ targetNamespace="urn:RSATWS"
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xmlns="http://schemas.xmlsoap.org/wsdl/"
           xmlns:enc="http://schemas.xmlsoap.org/soap/encoding/"
-          xmlns:rsat="http://rsat.scmbb.ulb.ac.be/rsa-tools/web_services/schema"
 	  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
 	  xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">
 
@@ -154,7 +153,7 @@ targetNamespace="urn:RSATWS"
   <service name="RSAT Web Services">
     <documentation>RSA Tools web services</documentation>
     <port name="RSATWSPortType" binding="tns:RSATWSBinding">
-	<soap:address location="http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.cgi"/>
+        <soap:address location="http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.cgi"/>
     </port>
   </service>
 </definitions>
