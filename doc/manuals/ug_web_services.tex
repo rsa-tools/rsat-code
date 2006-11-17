@@ -134,6 +134,8 @@ discover over-represented six letters words. The result of step 1 and
 following step as input and only the final result needs to be
 transported from the server to the client.
 
+\begin{footnotesize}
+\begin{verbatim}
 #!/usr/bin/perl -w
 # retrieve_purge_oligos_client_wsdl.pl - Client retrieve-seq + purge-sequence + oligo-analysis
 
@@ -295,6 +297,8 @@ if ($som->fault){  ## Report error if any
 	print "Discovered oligo(s): \n".$result;
     }
 }
+\end{verbatim}
+\end{footnotesize}
 
 \section{Examples of WS client in java}
 
