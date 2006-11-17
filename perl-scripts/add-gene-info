@@ -61,8 +61,16 @@ foreach my $type (@info_types) {
 	($type =~ /^left_/) ) {
 	$calc_neighbours = 1;
     }
+    my $type_header = $type;
+    $type_header =~ s/upstr_neighb_/up_/;
+    $type_header =~ s/upstr_/up_/;
+    $type_header =~ s/downstr_neighb_/dn_/;
+    $type_header =~ s/downstr_/dn_/;
+    $type_header =~ s/up_limit/up_lim/;
+    $type_header =~ s/^descr$/description/;
+
     push @null, $null;
-    push @header, $type;
+    push @header, $type_header;
 }
 
 ################################################################
