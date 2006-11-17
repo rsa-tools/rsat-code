@@ -34,6 +34,7 @@ if (defined($infile{input})) {
 #### verbose ####
 &Verbose if ($verbose);
 
+print $out "#seq", "\t", "length", "\n";
 
 $sum = 0;
 while ((($current_seq, $current_id) = &ReadNextSequence($in, $in_format, $input_dir)) &&
