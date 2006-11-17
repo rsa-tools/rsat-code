@@ -12,7 +12,7 @@ my $TMP = $RSAT.'/public_html/tmp';
 
 =head2 retrieve_seq
 
-WS interface to the script B<I<retrieve-seq>>.
+Web Service (WS) interface to the script B<I<retrieve-seq>>.
 
 =head3 Usage
 my %args = ('return' => $return_choice,
