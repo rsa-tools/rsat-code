@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.16 2006/11/14 06:21:45 jvanheld Exp $
+# $Id: convert-matrix,v 1.17 2006/11/23 16:00:53 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -22,6 +22,7 @@ use RSAT::matrix;
 my $start_time = &AlphaDate();
 $decimals = 4;
 $pseudo_weight = 1;
+$equi_pseudo = 0;
 $max_profile = 20;
 $sep="\t";
 
@@ -109,6 +110,7 @@ my $current_matrix = new RSAT::matrix();
 $current_matrix->readFromFile($infile{input}, $input_format);
 if ($prior_file) { $current_matrix->setPrior(%prior) };
 $current_matrix->set_attribute("pseudo", $pseudo_weight);
+$current_matrix->set_attribute("equi_pseudo", $equi_pseudo);
 $current_matrix->push_attribute("parameters", "pseudo");
 $current_matrix->force_attribute("decimals", $decimals);
 $current_matrix->force_attribute("max_profile", $max_profile);
@@ -297,6 +299,12 @@ OPTIONS
 		pseudo-weight used for the calculation of the weight
 		matrix (default: $pseudo_weight)
 
+	-equi_pseudo
+		If this option is called, the pseudo-weight is
+		distributed in an equiprobable way between residues.
+		By default, the pseudo-weight is distributed
+		proportionally to residue priors.
+
 	-decimals
 		number of decimals to print for real matrices
 		(frequencies, weights, information)
@@ -474,6 +482,7 @@ convert-matrix options
 -return		return type(s). Supported: $supported_return_types
 -prior 		prior frequency file
 -pseudo		pseudo-weight (default: $pseudo_weight)
+-equi_pseudo	equiprobable distribution of pseudo-weights between residues
 -decimals	number of decimals digits to print for real matrices
 -max_profile	Maximal width of the profile histogram 
 End_short_help
@@ -548,6 +557,10 @@ sub ReadArguments {
       unless (&IsReal($pseudo_weight)) {
 	  &RSAT::error::FatalError("Invalid pseudo-weight $pseudo_weight. Must be a real value");
       }
+
+      ## Equiprobable distribution of the pseudo-weight
+	} elsif ($ARGV[$a] eq "-equi_pseudo") {
+	    $equi_pseudo = 1;
 
       ### decimals
     } elsif ($ARGV[$a] eq "-decimals") {
