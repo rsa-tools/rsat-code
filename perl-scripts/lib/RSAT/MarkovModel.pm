@@ -793,6 +793,13 @@ sub segment_proba {
 			  ) if ($main::verbose >= 4);
     } elsif ($self->get_attribute("n_treatment") eq "score") {
       $segment_proba = 1;
+      foreach my $i (1..length($prefix)) {
+	my $residue = substr($prefix,$i-1,1);
+	if (defined($self->{suffix_proba}->{$residue})) {
+	  $segment_proba *= $self->{suffix_proba}->{$residue};
+	}
+      }
+
       #	&RSAT::message::Debug("Ignoring undefined prefix", $prefix,  "proba set to 1") if ($main::verbose >= #0);
     } else {
       &RSAT::error::FatalError("\t", "MarkovModel::segment_proba",
@@ -800,18 +807,22 @@ sub segment_proba {
     }
     
     for $c ($order..($seq_len-1)) {
-	my $letter_proba = 0;
+	my $residue_proba = 0;
 	
 	my $suffix = substr($segment, $c, 1);
 	my $prefix = substr($segment,($c-$order),$order);
 	if (defined($self->{transition_freq}->{$prefix}->{$suffix})) {
-	  $letter_proba = $self->{transition_freq}->{$prefix}->{$suffix};
-	  if ($letter_proba <= 0) {
+	  $residue_proba = $self->{transition_freq}->{$prefix}->{$suffix};
+	  if ($residue_proba <= 0) {
 	    &RSAT::error::FatalError(join("\t", "MarkovModel::segment_proba",
 					  "null transition between prefix ", $prefix, " and suffix", $suffix)) if ($main::verbose >= 0);
 	  }
 	} elsif ($self->get_attribute("n_treatment") eq "score") {
-	  $letter_proba = 1;
+	  if (defined($self->{suffix_proba}->{$suffix})) {
+	    $residue_proba = $self->{suffix_proba}->{$suffix};
+	  } else {
+	    $residue_proba = 1;
+	  }
 	  #	    &RSAT::message::Debug("Ignoring undefined transition", $prefix, $suffix, "proba set to 1") if ($main::verbose >= 10);
 	} else { 
 	  &RSAT::error::FatalError(join("\t", "MarkovModel::segment_proba",
@@ -819,12 +830,12 @@ sub segment_proba {
 					$prefix, "and suffix", 
 					$suffix));
 	}
-	$segment_proba *= $letter_proba;
+	$segment_proba *= $residue_proba;
 	
 	&RSAT::message::Info("MarkovModel::segment_proba()",
 			     "offset:".$c,
 			     "i=".($c+1),
-			     "P(".$suffix."|".$prefix.")", $letter_proba,
+			     "P(".$suffix."|".$prefix.")", $residue_proba,
 			     "P(S)", $segment_proba,
 			     $prefix.uc($suffix),
 			     substr($segment,0,$c+1),
@@ -834,7 +845,7 @@ sub segment_proba {
 #			      "prefix=".$prefix, 
 #			      "suffix:".$suffix, 
 #			      "offset:".$c, 
-#			      "P(letter)=".$letter_proba, 
+#			      "P(letter)=".$residue_proba, 
 #			      "P(S)=".$segment_proba) if ($main::verbose >= 4);
     }
     
