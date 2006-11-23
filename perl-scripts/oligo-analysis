@@ -7,7 +7,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.120 2006/11/11 17:41:08 jvanheld Exp $
+# $Id: oligo-analysis,v 1.121 2006/11/23 13:53:29 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -80,7 +80,7 @@ $max_seq_verbose = 99;
 $seq_type = "DNA";
 @dna_alphabet = qw (a c g t);
 foreach my $residue (@dna_alphabet) {
-  $residue_proba{$residure} = 0.25;
+  $residue_proba{$residue} = 0.25;
 }
 
 ## Alphabet for protein sequences
