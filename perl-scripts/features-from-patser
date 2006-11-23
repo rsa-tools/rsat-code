@@ -13,6 +13,7 @@ $matrix_length = 1;
 $seq_format = "wconsensus";  ### because this is the usual format for patser
 $limits = 0; ## Report sequence limits for the feature map (requires the option -seq)
 $flank_len = 0;
+$null = "NA";
 
 @supported_table_fields = qw (score start end strand position);
 foreach my $field  (@supported_table_fields) {
@@ -143,6 +144,8 @@ while (<$in>) {
 	#### P-value
 	if ($the_rest =~ /ln\(p-value\)=\s+(\S+)/) {
 	    $lnP = $1;
+	} else {
+	  $lnP = $null;
 	}
 
 	#### sequence (only available with the option patser -s, for version >=3e)
@@ -435,6 +438,9 @@ OPTIONS
 		matches with identical scores, patser return ll of
 		them as a single top score.
 
+	-null 	null string (default $default_null) displayed for
+         	undefined values in the column ln(P).
+
 INPUT FORMAT
 	The input file should be the result of patser.
 	
@@ -481,6 +487,7 @@ features-from-patser options
 -format		sequence file format (default wc)
 -table		return a table with specified fields (Supported: $supported_table_fields).
 -maxcol	# 	max number of columns per sequence for the table
+-null 		null string (default $default_null) displayed for undefined values in the column ln(P).
 End_short_help
   close HELP;
   exit;
@@ -557,6 +564,10 @@ sub ReadArguments {
 	    unless (&IsNatural($max_col_per_seq)) {
 		&RSAT::error::FatalError("$max_col_per_seq invalid number of columns");
 	    }
+
+	    ### null string ###
+	} elsif ($ARGV[$a] eq "-null") {
+	    $null = $ARGV[$a+1];
 
 	    ### return a table
 	} elsif ($ARGV[$a] eq "-table") {
