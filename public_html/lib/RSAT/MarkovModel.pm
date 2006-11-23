@@ -12,6 +12,7 @@ package RSAT::MarkovModel;
 ##  of markov chain models from input sequenes ?
 
 use RSAT::GenericObject;
+use RSAT::SeqUtil;
 use RSAT::error;
 @ISA = qw( RSAT::GenericObject );
 
@@ -181,7 +182,7 @@ prefix) is 1.
 sub normalize_transition_frequencies {
     my ($self) = @_;
     
-    &RSAT::message::TimeWarn(join("\t", "MarkovModel", "Normalizing transition frequencies")) if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn(join("\t", "MarkovModel", "Normalizing transition frequencies")) if ($main::verbose >= 3);
 
     ## Calculate sum of counts (frequencies) per prefix and suffix
     my %prefix_sum = ();
@@ -189,6 +190,8 @@ sub normalize_transition_frequencies {
     my $freq_sum = 0;
     my $p=0;
     my $s=0;
+
+
 #    foreach my $prefix (keys(%prefix_sum)) {
     foreach my $prefix (sort keys(%{$self->{transition_count}})) {
 	$p++;
@@ -209,7 +212,6 @@ sub normalize_transition_frequencies {
     $self->set_array_attribute("prefixes", sort(keys(%prefix_sum)));
     $self->set_array_attribute("suffixes", sort(keys(%suffix_sum)));
     
-
     ## Calculate transition frequencies
     my $missing_transitions = 0;
     foreach my $prefix ($self->get_attribute("prefixes")) {
@@ -227,7 +229,7 @@ sub normalize_transition_frequencies {
 		$self->{transition_freq}->{$prefix}->{$suffix} = 0;
 #		&RSAT::message::Warning(join(" ",
 #					     "No transition between prefix",$prefix, 
-#					     "and suffix", $suffix)) if ($main::verbose >= 2);
+#					     "and suffix", $suffix)) if ($main::verbose >= 3);
 	    };
 	}
     }
@@ -262,7 +264,7 @@ sub normalize_transition_frequencies {
     &RSAT::message::TimeWarn(join("\t", 
 				  "Normalized background model", 
 				  "prefixes: ".$p,
-				  "transitions: ".$s)) if ($main::verbose >= 2);
+				  "transitions: ".$s)) if ($main::verbose >= 3);
 }
 
 
@@ -299,6 +301,77 @@ sub check_missing_transitions {
     }
 }
 
+################################################################
+=pod
+
+=item B<check_transition_alphabet>
+
+Check the transition matrix to suppress residues which are not part of
+the accepted alphabet. Such residues can be present in the sequence
+for various reasons. For example, the sequence can contain stretches
+of N corresponding to masked repeats.
+
+=cut
+sub check_transition_alphabet {
+    my ($self) = @_;
+
+    my $seq_type = $self->get_attribute("seq_type") || "dna";
+    my %accepted_residues = &RSAT::SeqUtil::get_accepted_residues($seq_type);
+    my $accepted_expression = join ('', '^[', sort(keys(%accepted_residues)), ']*$');
+
+    my %suppressed_prefixes = ();
+    my %suppressed_suffixes = ();
+    my %checked_prefixes = ();
+    my %checked_suffixes = ();
+    foreach my $prefix (keys(%{$self->{transition_count}})) {
+#    foreach my $prefix ($self->get_attribute("prefixes")) {
+      if ($prefix =~ /${accepted_expression}/) {
+	$checked_prefixes{$prefix} = 1;
+      } else {
+	$suppressed_prefixes{$prefix}++;
+#	delete $self->{transition_freq}->{$prefix};
+	delete $self->{transition_count}->{$prefix};
+	&RSAT::message::Info(join(" ",
+				     "Supressing prefix",$prefix, 
+				     "from transition matrix")) if ($main::verbose >= 5);
+	next;
+      }
+      foreach my $suffix (keys(%{$self->{transition_count}->{$prefix}})) {
+#      foreach my $suffix ($self->get_attribute("suffixes")) {
+	$suppressed_suffixes{$suffix}++;
+	if ($suffix =~ /${accepted_expression}/) {
+	  $checked_suffixes{$suffix} = 1;
+	} else {
+	  delete $self->{transition_freq}->{$prefix}->{$suffix};
+	  delete $self->{transition_count}->{$prefix}->{$suffix};
+	  &RSAT::message::Info(join(" ",
+				    "Supressing transition from",$prefix, "to", $suffix, 
+				    "from transition matrix")) if ($main::verbose >= 5);
+	}
+      }
+    }
+
+    if (scalar(keys(%suppressed_prefixes)) > 0) {
+      $self->set_array_attribute("prefixes", sort(keys(%checked_prefixes)));
+      &RSAT::message::Info("Suppressed", scalar(keys(%suppressed_prefixes)),"prefixes, incompatible with sequence type", $seq_type)
+	if ($main::verbose >= 2);
+      &RSAT::message::Debug("Checked prefixes", join (",", $self->get_attribute("prefixes")),
+			   ) if ($main::verbose >= 5);
+    }
+    if (scalar(keys(%suppressed_suffixes)) > 0) {
+      $self->set_array_attribute("suffixes", sort(keys(%checked_suffixes)));
+      &RSAT::message::Info("Suppressed", scalar(keys(%suppressed_suffixes)),"suffixes, incompatible with sequence type", $seq_type)
+	if ($main::verbose >= 2);
+    }
+
+
+#    &RSAT::message::Debug("Current prefixes", join (",", $self->get_attribute("prefixes")),
+#			  "freq", join(",", sort keys(%{$self->{transition_freq}})),
+#			  "counts", join(",", sort keys(%{$self->{transition_count}})),
+#			  "Current suffixes", join (",", $self->get_attribute("suffixes")),
+#			   ) if ($main::verbose >= 10);
+}
+
 
 ################################################################
 =pod
@@ -322,10 +395,10 @@ sub calc_from_seq {
 				      "by adding sequence of length", $seq_len)) if ($main::verbose >= 2);
     } else {
 	$self->set_hash_attribute("transition_count",());
-	&RSAT::message::TimeWarn(join(" ", 
-				      "Calculating markov model (order ".$order.")",
-				      "from sequence of length", $seq_len)) if ($main::verbose >= 2);
 	if ($main::verbose >= 2) {
+	  &RSAT::message::TimeWarn(join(" ", 
+					"Calculating markov model (order ".$order.")",
+					"from sequence of length", $seq_len));
 	  &RSAT::message::Warning(join("", "RSAT::MarkovModel->calc_from_seq: sequence is too short (len=",$seq_len,
 				       "). It must be larger than Markov order + 1 = ", $order+1))
 	    unless ($seq_len > $order + 1);
@@ -341,13 +414,18 @@ sub calc_from_seq {
 	$self->{transition_count}->{$prefix}->{$suffix}++;
     }
 
+    ## Delet transitions between letters which do not belong to the accepted alphabet
+    $self->check_transition_alphabet();
+
     ## Initialize transition frequencies
     $self->set_hash_attribute("transition_freq", %transition_count);
 
     ## Convert counts to transition frequencies
     $self->normalize_transition_frequencies();
-   
+
     $self->force_attribute("training_words", $last_pos);
+
+
 }
 
 ################################################################
@@ -473,7 +551,6 @@ sub to_string_tab {
     my @prefix = sort($self->get_attribute("prefixes"));
     my %suffix_sum = $self->get_attribute("suffix_sum");
     my @suffix = sort($self->get_attribute("suffixes"));
-
 
     ## Print header
     $string .= join ("\t", ";pr\\suf",
@@ -705,15 +782,21 @@ sub segment_proba {
     my $segment_proba = 0;
     my $c = 0;
     if (defined($self->{prefix_proba}->{$prefix})) {
-	$segment_proba = $self->{prefix_proba}->{$prefix};
-	&RSAT::message::Info("MarkovModel::segment_proba()",
-			     "offset:".$c,
-			     "i=".($c+1),
-			     "P(".$prefix.")", $self->{prefix_proba}->{$prefix},
-			     "P(S)", $segment_proba,
-			     $prefix.uc($suffix),
-			     $prefix.uc($suffix),
-			    ) if ($main::verbose >= 4);
+      $segment_proba = $self->{prefix_proba}->{$prefix};
+      &RSAT::message::Info("MarkovModel::segment_proba()",
+			   "offset:".$c,
+			   "i=".($c+1),
+			   "P(".$prefix.")", $self->{prefix_proba}->{$prefix},
+			   "P(S)", $segment_proba,
+			   $prefix.uc($suffix),
+			   $prefix.uc($suffix),
+			  ) if ($main::verbose >= 4);
+    } elsif ($self->get_attribute("n_treatment") eq "score") {
+      $segment_proba = 1;
+      #	&RSAT::message::Debug("Ignoring undefined prefix", $prefix,  "proba set to 1") if ($main::verbose >= #0);
+    } else {
+      &RSAT::error::FatalError("\t", "MarkovModel::segment_proba",
+			       "Invalid prefix for the selected sequence type", $prefix);
     }
     
     for $c ($order..($seq_len-1)) {
@@ -727,27 +810,17 @@ sub segment_proba {
 	    &RSAT::error::FatalError(join("\t", "MarkovModel::segment_proba",
 					  "null transition between prefix ", $prefix, " and suffix", $suffix)) if ($main::verbose >= 0);
 	  }
-	} else {
-	  if ((lc($suffix) eq "n") && 
-	      ($self->get_attribute("n_treatment") eq "score")) {
-	    $letter_proba = 1;
-	  } else { 
-	    &RSAT::error::FatalError(join("\t", "MarkovModel::segment_proba",
-					  "undefined transition between prefix ", 
-					  $prefix, "and suffix", 
-					  $suffix));
-	  }
+	} elsif ($self->get_attribute("n_treatment") eq "score") {
+	  $letter_proba = 1;
+	  #	    &RSAT::message::Debug("Ignoring undefined transition", $prefix, $suffix, "proba set to 1") if ($main::verbose >= 10);
+	} else { 
+	  &RSAT::error::FatalError(join("\t", "MarkovModel::segment_proba",
+					"undefined transition between prefix ", 
+					$prefix, "and suffix", 
+					$suffix));
 	}
-
-#	my $word = substr($segment,($c-$order),$order+1);
-#	if (defined($self->{transition_quick}->{$word})) {
-#	    $letter_proba = $self->{transition_quick}->{$word};
-#	}
-	
-#	&RSAT::message::Info("letter proba", $prefix,$letter_proba) if ($main::verbose >= 3);
-
 	$segment_proba *= $letter_proba;
-
+	
 	&RSAT::message::Info("MarkovModel::segment_proba()",
 			     "offset:".$c,
 			     "i=".($c+1),

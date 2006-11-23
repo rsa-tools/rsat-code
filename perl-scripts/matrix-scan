@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.37 2006/11/14 06:21:56 jvanheld Exp $
+# $Id: matrix-scan,v 1.38 2006/11/23 12:32:38 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -246,7 +246,7 @@ models only (-markov 0 to 1).
     ## Treatment of N characters
     %supported_n_treatment = (skip=>1, score=>1);
     $supported_n_treatment = join ",", keys %supported_n_treatment;
-    $n_treatment = "score";
+    $n_treatment = "skip";
 
     ## Return fields
     %supported_return_fields = (
@@ -721,7 +721,6 @@ sub PrintOptions {
 ################################################################
 #### Read arguments 
 sub ReadArguments {
-#    foreach my $a (0..$#ARGV) {
     my $arg = "";
     
     my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
@@ -851,7 +850,7 @@ multiple matrices.
 	} elsif ($arg eq "-m") {
 	    push @matrix_files, shift(@arguments);
 #	    $main::infile{matrix} = shift(@arguments);
-	    
+
 # 	    ## Matrix name
 # =pod
 #
@@ -862,7 +861,7 @@ multiple matrices.
 # =cut
 # 	} elsif ($arg eq "-mname") {
 # 	    $main::matrix_name = shift(@arguments);
-	    
+
 	    ## Sequence format
 =pod
 
