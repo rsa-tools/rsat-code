@@ -651,9 +651,9 @@ sub _readFromConsensusFile {
 
 	    ## Read prior frequency for one residue in the consensus header
 	} elsif (/letter\s+\d:\s+(\S+).+prior frequency =\s+(\S+)/) {
-	    my $letter = $1;
+	    my $letter = lc($1);
 	    my $prior = $2;
-	    warn join ("\t", "; prior from consensus file", $letter, $prior), "\n" if ($main::verbose >= 3);
+	    &RSAT::message::Info ("Prior from consensus file", $letter, $prior) if ($main::verbose >= 3);
 	    $prior{$letter} = $prior;
 	    $self->setPrior(%prior);
 #	    $self->add_hash_attribute("prior",$letter, $prior);
@@ -1475,9 +1475,12 @@ sub calcFrequencies {
 	my $alphabet_size = scalar(@alphabet);
 	foreach my $letter (@alphabet) {
 	    $prior{$letter} = 1/$alphabet_size;
-	    warn join "\t", ";", $letter, $prior{$letter}, "\n" if ($main::verbose >= 10);
+	    &RSAT::message::Debug($letter, $prior{$letter}) if ($main::verbose >= 10);
 	}
     }
+
+    &RSAT::message::Debug("&RSAT::matrix::calcFrequencies()", "residue priors", join(" ", %prior)) 
+      if ($main::verbose >= 0);
 
     ## pseudo-weight
     my $pseudo = $self->get_attribute("pseudo");
