@@ -67,9 +67,14 @@ foreach $f (0..$#input_files) {
 
 	### comparison is case-insensitive, but the ID case is maintained in the output
 	$id =  &trim($fields[$ii]);
+
+	## reformat numeric IDs to avoid problems if they have different numbers of digits in the different files
+	if ($numeric_IDs) {
+	  $id = sprintf("%g", $id);
+	}
+
 	$key = lc($id);
 	$id{$key} = $id;
-
 	if (defined($sc[$f])) {
 	    $col = $last_col + 1;
 	    $score{$key}{$col} = $fields[$sc[$f]-1];
@@ -415,6 +420,11 @@ sub ReadArguments {
 	    unless ((&IsNatural($ic[$1-1])) && ($ic[$1-1] >= 1)) {
 		&Fatalerror("Identifier column must be an integer >= 1");
 	    }
+
+	    ## Specify that the scores are numbers
+	} elsif ($ARGV[$a] eq "-numbers") {
+	    $scores_are_numbers = 1;
+	    
 
 	} elsif ($ARGV[$a] eq '-basename') {
 	    $basename = 1;
