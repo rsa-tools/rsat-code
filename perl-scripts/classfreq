@@ -197,9 +197,14 @@ foreach $c (0.. $#ListOfClasses) {
 	$out_line .= sprintf "\t$cum";
 	$out_line .= sprintf "\t$inv_cum";
 	if ($count > 0) {
-	    $out_line .= sprintf "\t%6.5f", $rel;
-	    $out_line .= sprintf "\t%6.5f", $rel_cum;
-	    $out_line .= sprintf "\t%6.5f", $inv_rel_cum;
+	  if ($count > 1e+5) {
+	    $format = "\t%.2g";
+	  } else {
+	    $format = "\t%6.5f";
+	  } 
+	  $out_line .= sprintf $format, $rel;
+	  $out_line .= sprintf $format, $rel_cum;
+	  $out_line .= sprintf $format, $inv_rel_cum;
 	}
 	$out_line .= sprintf "\n";
 	$out_line =~ s/ //g;
