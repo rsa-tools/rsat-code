@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: Genbank_classes.pl,v 1.7 2006/04/21 14:05:45 rsat Exp $
+# $Id: Genbank_classes.pl,v 1.8 2006/11/24 17:04:59 jvanheld Exp $
 #
 # Time-stamp: <2003-08-09 00:37:11 jvanheld>
 #
@@ -518,7 +518,7 @@ package Genbank::CDS;
 			     product=>"SCALAR",
 			     codon_start=>"SCALAR",
 			     protein_id=>"SCALAR",
-			     translation=>"SCALAR",
+			     translation=>"ARRAY", ## This is not an array, it is a single-valued attribute but I prefer to store it in a separate table
 
 			     #### Multivaluted attributes found in Genbank files
 			     EC_number=>"ARRAY",
