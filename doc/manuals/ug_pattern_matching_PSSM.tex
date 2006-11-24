@@ -4,6 +4,31 @@
 
 \chapter{Matrix-based pattern matching}
 
+\section{Prerequisite}
+
+This tutorial assumes that you already followed the tutorial on
+\textit{Matrix-based pattern discovery}. 
+
+To check this, list the files contained in directory with the results
+of your tutorial.
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+cd ${HOME}/practical_rsat
+ls -1
+\end{verbatim} \end{footnotesize}
+}
+
+You should find the following files.
+
+{\color{OliveGreen} \begin{footnotesize} 
+\begin{verbatim}
+PHO_up800-noorf.fasta
+PHO_up800-noorf.wc
+PHO_consensus_L10_N10_c2.matrix
+\end{verbatim} \end{footnotesize}
+}
+
 \section{patser (program developed by by Jerry Hertz)}
 
 We will now see how to match a profile matrix against a sequence
@@ -21,13 +46,21 @@ patser -help
 \end{verbatim} \end{footnotesize}
 }
 
-\subsection{Matrix conversion}
+\subsection{Extracting the matrix from the \program{consensus} result file}
 
-Patser expects as input a matrix like the 4 matrices we obtained above
-with \textit{consensus}. The output from \textit{consensus} can however
-not be used directly because it contains several matrices, and a lot
-of additional information. One possibility is to copy-paste the matrix
-of interest to a separate file.
+Patser requires two input data:  
+
+\begin{itemize}
+\item a sequence file (option \option{-f}),
+\item a position-specific scoring matrix (option \option{-m}), like
+  the one we obtained in the previouschapter, with \textit{consensus}.
+\end{itemize}
+
+The output from \textit{consensus} can however not be used directly
+because it contains additional information (the parameters of
+analysis, the sequences used to build the matrix, \ldots) besides the
+matrix itself. One possibility is to cut the matrix of interest and
+save it in a separate file.
 
 To avoid manual editing, RSAT contains a program
 \textit{convert-matrix}, which automaticaly extracts a matrix from
@@ -35,23 +68,46 @@ various file formats, including consensus.
 
 {\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
-convert-matrix -format consensus -i PHO_consensus \
-    -return counts -o PHO_matrix 
+convert-matrix -in_format consensus -i PHO_consensus_L10_N10_c2.matrix  \
+    -return counts -o PHO_consensus_L10_N10_c2_matrix.tab
 
-more PHO_matrix
+more PHO_consensus_L10_N10_c2_matrix.tab
 \end{verbatim} \end{footnotesize}
 }
 
-Note that the program \textit{convert-matrix} includes many other
-output options, fo example you can obtain the degenerate consensus
-from a matrix with the following options.
+\subsection{Getting information about a matrix}
+
+The program \textit{convert-matrix} includes several output options,
+which allow you to get additional information about your matrix. For
+example you can obtain the degenerate consensus from a matrix with the
+following options.
 
 {\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
-convert-matrix -format consensus -i PHO_consensus \
+convert-matrix -v 1 -pseudo 1 -in_format consensus -i PHO_consensus_L10_N10_c2.matrix \
     -return consensus
 \end{verbatim} \end{footnotesize}
 }
+
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+convert-matrix -v 1 -pseudo 1 -in_format consensus -i PHO_consensus_L10_N10_c2.matrix \
+    -return parameters
+\end{verbatim} \end{footnotesize}
+}
+
+The program \program{convert-matrix} also allows to derive
+frequencies, weights or information from the count matrix.
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+convert-matrix -v 1 -pseudo 1 -in_format consensus -i PHO_consensus_L10_N10_c2.matrix \
+    -return frequencies,weights,information
+\end{verbatim} \end{footnotesize}
+}
+
+
 
 Additional information can be otbained with the on-line help for
 \textit{convert-matrix}.
@@ -69,23 +125,47 @@ sequences to detect putative regulatory sites.
 
 {\color{Blue} \begin{footnotesize} 
 \begin{verbatim}
-patser -m PHO_matrix -f PHO_up800.wc -A a:t c:g -c -ls 9
+patser -m PHO_consensus_L10_N10_c2_matrix.tab -f PHO_up800-noorf.wc -A a:t c:g -c -ls 9 -s
+\end{verbatim} \end{footnotesize}
+}
+
+By default, patser uses equiprobable residue frequencies. However, we
+can impose our own priors in the following way.
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+patser -m PHO_consensus_L10_N10_c2_matrix.tab -f PHO_up800-noorf.wc -A a:t 0.325 c:g 0.175 -c -ls 9 -s
+\end{verbatim} \end{footnotesize}
+}
+
+We an also adapt our expected frequencies from pre-calibrated genome
+frequencies, for example, residue frequencies from all the yeast
+upstream sequences.
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+## Calculate prior frequencies
+convert-background-model -from oligo-analysis -to patser   -i /no_backup/rsa-tools/data/genomes/Saccharomyces_cerevisiae/oligo-frequencies/1nt_upstream-noorf_Saccharomyces_cerevisiae-noov-2str.freq.gz -o 1nt_upstream-noorf_Saccharomyces_cerevisiae-noov-2str_patser.tab
+
+more 1nt_upstream-noorf_Saccharomyces_cerevisiae-noov-2str_patser.tab
+
+patser -m PHO_consensus_L10_N10_c2_matrix.tab -f PHO_up800-noorf.wc -a 1nt_upstream-noorf_Saccharomyces_cerevisiae-noov-2str_patser.tab -c -ls 9 -s
 \end{verbatim} \end{footnotesize}
 }
 
 \subsection{Detecting Pho4p sites in all upstream regions}
 
-We will now match our PHO matrix against the whole set of upstream
-regions from the 6200 yeast genes. This should allow us to detect new
+We will now match the PHO matrix against the whole set of upstream
+regions from the $\approx 6000$ yeast genes. This should allow us to detect new
 genes potentially regulated by Pho4p.
 
 One possibility would be to use \textit{retrieve-seq} to extract all
 yeast upstream regions, and save the result in a file, which will then
-be used as input by \textit{patser}. To avoid occupying too much space
-on the disk, we could combine both tasks in a single command, and
-immediately redirect the output of \textit{retrieve-seq} as input for
-\textit{patser}. This can be done with the pipe character | as
-below.
+be used as input by \textit{patser}. Alternatively, in order to avoid
+occupying too much space on the disk, we can combine both tasks in a
+single command, and immediately redirect the output of
+\textit{retrieve-seq} as input for \textit{patser}. This can be done
+with the pipe character $\|$ as below.
 
 \textit{patser} result can be redirected to a file with the unix
 ``greater than'' ($>$) symbol. We will store the result of the
@@ -95,13 +175,210 @@ genome-scale search in a file \file{PHO\_matrix\_matches\_allup.txt}.
 \begin{verbatim}
 retrieve-seq -type upstream -from -1 -to -800  \
     -org Saccharomyces_cerevisiae \
-    -all -format wc -label gene  \
-    | patser -m PHO_matrix -ls 9 -A a:t c:g \
-    > PHO_matrix_matches_allup.txt
+    -all -format wc -label id,name  \
+    | patser -m PHO_consensus_L10_N10_c2_matrix.tab -ls 9 -A a:t c:g \
+    > PHO_consensus_L10_N10_c2_matrix.tab_matches_allup.txt
 
-more PHO_matrix_matches_allup.txt
+more PHO_consensus_L10_N10_c2_matrix.tab_matches_allup.txt
 \end{verbatim} \end{footnotesize}
 }
+
+\subsection{Interpretation of the P-value returned by \program{patser}}
+
+The program \program{patser} returns a column with the P-value of each
+mach. The P-value indicates the probability of false-positive,
+i.e. the probability to consider a site as an instance of the motif
+whereas it is not.
+
+In other terms, the P-value represents the probability to observe a
+score ($X$) at least as high as that of the current sequence segment
+($x_{i,i+w-1}$)
+
+\begin{displaymath}
+Pval = P(X \ge x_{i,i+w-1} | B)
+\end{displaymath}
+
+where 
+
+\begin{itemize}
+\item[$X$] is a random variable representing the matrix score,
+\item[$x_{i,i+w-1}$] is the score assigned to the sequence segment of
+  width $w$ starting at position $i$ of the sequence,
+\item[$B$] is the background model.
+\end{itemize}
+
+We will evaluate the reliability of this P-value by analyzing the
+distribution of estimated P-value for all the positions of a random
+sequence. By default, \program{patser} only calculates the P-value for
+the weight scores > 0. We will add the option \option{-M -999} to
+force patser to calculate P-values for all the score.
+
+The raw results from patser will be processed in the fillowing way: 
+\begin{enumerate}
+\item \program{features-from-patser} converts the patser result into a
+  tab-delimited file;
+\item \program{awk} is used to cut the $8^{th}$ column of this file,
+  and convert the P-value into a significance (sig=-log10(Pval))
+\item \program{classfreq} calculates the distribution of ln(P-value);
+\item \program{XYgraph} is used to draw an XY plot, representinf the
+  theoretical P-value on the X axis, and on the Y axis the frequency
+  observed for this P-value in the random sequence.
+\end{enumerate}
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+
+random-seq -l 100000 -format wc \
+  | patser  -A a:t c:g -m PHO_consensus_L10_N10_c2_matrix.tab -b 1 -d1  -p -M -999 \
+  | features-from-patser  \
+  | XYgraph -xcol 8 -ycol 9 -o PHO_consensus_L10_N10_c2_rand_score_versus_Pval.png
+
+random-seq -l 100000 -format wc \
+  | patser  -A a:t c:g -m PHO_consensus_L10_N10_c2_matrix.tab -b 1 -d1  -p -M -999 \
+  | features-from-patser  \
+  | awk -F '\t' '{print -$9/log(10)}' \
+  | classfreq -v -ci 0.01 -o PHO_consensus_L10_N10_c2_rand_sig_distrib.tab
+
+more PHO_consensus_L10_N10_c2_rand_sig_distrib.tab
+
+XYgraph -i PHO_consensus_L10_N10_c2_rand_sig_distrib.tab \
+  -title1 'Validation of P-values returned by patser' \
+  -title2 'Distribution of these P-values in random sequences' \
+  -xcol 1 -ycol 9 -xleg1 'theoretical sig=-log10(P-value)' -ymax 1 \
+  -yleg1 'inverse cumulative frequency' -ylog 10 \
+  -xsize 800 -format png -lines \
+  -o PHO_consensus_L10_N10_c2_rand_sig_distrib.png 
+
+\end{verbatim} \end{footnotesize}
+}
+
+
+The image file can be opened with any graphical display application
+(e.g. \program{xv}), or with a web browser (e.g. \program{Mozilla}).
+
+The distribution almost perfectly follows a diagonal, indicating that
+the theoretical P-value calculated by \program{patser} corresponds to
+the empirical one. 
+
+However, we should bear in mind that this P-value is based on the
+basis of a Bernoulli model, i.e. it assumes that successive residues
+are independent from each other. 
+
+
+The previous test was based on th simplest possible model for
+generating the random sequence: equiprobable and independent
+nucleotides.  We can thus wonder if the P-value will still be valid
+with random sequences generated following a more complex model. We
+will successively test two models:
+
+\begin{itemize}
+\item random sequences generated according to a Bernoulli model, with
+  unequal residue frequencies;
+\item random sequences generated according to a higher-order Markov
+  model.
+\end{itemize}
+
+\subsubsection{Bernoulli model with unequal frequencies}
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+## Generate a bg model for patser
+convert-background-model -from oligo-analysis -to patser \
+  -i $RSAT/data/genomes/Saccharomyces_cerevisiae/oligo-frequencies/1nt_upstream-noorf_Saccharomyces_cerevisiae-1str.freq.gz \
+  -o 1nt_upstream-noorf_Saccharomyces_cerevisiae-1str_freq.tab
+\end{verbatim} \end{footnotesize}
+}
+
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+## Generate a random sequence with a Bernouli model 
+## and analyze it with patser using the same expected residue frequencies
+random-seq -l 100000 -format wc -bg upstream-noorf -ol 1 -org Saccharomyces_cerevisiae \
+  | patser  -a 1nt_upstream-noorf_Saccharomyces_cerevisiae-1str_freq.tab \
+    -m PHO_consensus_L10_N10_c2_matrix.tab -b 1 -d1  -p -M -999 \
+  | features-from-patser  \
+  | awk -F '\t' '{print -$9/log(10)}' \
+  | classfreq -v -ci 0.01 -o PHO_consensus_L10_N10_c2_rand_Mkv0_sig_distrib.tab
+
+XYgraph -i PHO_consensus_L10_N10_c2_rand_Mkv0_sig_distrib.tab \
+  -title1 'Validation of P-values returned by patser' \
+  -title2 'Distribution of these P-values in random sequences' \
+  -xcol 1 -ycol 9 -xleg1 'theoretical sig=-log10(P-value)' -ymax 1 \
+  -yleg1 'inverse cumulative frequency' -ylog 10 \
+  -xsize 800 -format png -lines \
+  -o PHO_consensus_L10_N10_c2_rand_Mkv0_sig_distrib.png 
+\end{verbatim} \end{footnotesize}
+}
+
+
+\subsubsection{Markov model of order 1}
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+random-seq -l 100000 -format wc -bg upstream-noorf -ol 2 -org Saccharomyces_cerevisiae \
+  | patser -a  1nt_upstream-noorf_Saccharomyces_cerevisiae-1str_freq.tab \
+    -m PHO_consensus_L10_N10_c2_matrix.tab -b 1 -d1  -p -M -999 \
+  | features-from-patser  \
+  | awk -F '\t' '{print -$9/log(10)}' \
+  | classfreq -v -ci 0.01 -o PHO_consensus_L10_N10_c2_rand_Mkv1_sig_distrib.tab
+
+XYgraph -i PHO_consensus_L10_N10_c2_rand_Mkv1_sig_distrib.tab \
+  -title1 'Validation of P-values returned by patser' \
+  -title2 'Distribution of these P-values in random sequences' \
+  -xcol 1 -ycol 9 -xleg1 'theoretical sig=-log10(P-value)' -ymax 1 \
+  -yleg1 'inverse cumulative frequency' -ylog 10 \
+  -xsize 800 -format png -lines \
+  -o PHO_consensus_L10_N10_c2_rand_Mkv1_sig_distrib.png 
+
+\end{verbatim} \end{footnotesize}
+}
+
+\subsubsection{Markov model of order 5}
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+random-seq -l 100000 -format wc -bg upstream-noorf -ol 6 -org Saccharomyces_cerevisiae \
+  | patser -a 1nt_upstream-noorf_Saccharomyces_cerevisiae-1str_freq.tab \
+    -m PHO_consensus_L10_N10_c2_matrix.tab -b 1 -d1  -p -M -999 \
+  | features-from-patser  \
+  | awk -F '\t' '{print -$9/log(10)}' \
+  | classfreq -v -ci 0.01 -o PHO_consensus_L10_N10_c2_rand_Mkv5_sig_distrib.tab
+
+XYgraph -i PHO_consensus_L10_N10_c2_rand_Mkv5_sig_distrib.tab \
+  -title1 'Validation of P-values returned by patser' \
+  -title2 'Distribution of these P-values in random sequences' \
+  -xcol 1 -ycol 9 -xleg1 'theoretical sig=-log10(P-value)' -ymax 1 \
+  -yleg1 'inverse cumulative frequency' -ylog 10 \
+  -xsize 800 -format png -lines \
+  -o PHO_consensus_L10_N10_c2_rand_Mkv5_sig_distrib.png 
+
+\end{verbatim} \end{footnotesize}
+}
+
+\subsection{Score distributions in promoter sequences}
+
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+retrieve-seq -all -noorf -org Saccharomyces_cerevisiae -format wc \
+  | patser -a 1nt_upstream-noorf_Saccharomyces_cerevisiae-1str_freq.tab \
+    -m PHO_consensus_L10_N10_c2_matrix.tab -b 1 -d1  -p -M -999 \
+  | features-from-patser  \
+  | awk -F '\t' '{print -$9/log(10)}' \
+  | classfreq -v -ci 0.01 -o PHO_consensus_L10_N10_c2_allup_sig_distrib.tab
+
+XYgraph -i PHO_consensus_L10_N10_c2_allup_sig_distrib.tab \
+  -title1 'Validation of P-values returned by patser' \
+  -title2 'Distribution of these P-values in random sequences' \
+  -xcol 1 -ycol 9 -xleg1 'theoretical sig=-log10(P-value)' -ymax 1 \
+  -yleg1 'inverse cumulative frequency' -ylog 10 \
+  -xsize 800 -format png -lines \
+  -o PHO_consensus_L10_N10_c2_allup_sig_distrib.png 
+
+\end{verbatim} \end{footnotesize}
+}
+
 
 \section{Scanning sequences with \program{matrix-scan}}
 
@@ -128,5 +405,28 @@ patser. However, it presents some differences:
 
 \end{enumerate}
 
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+matrix-scan -m PHO_consensus_L10_N10_c2_matrix.tab \
+   -i PHO_up800-noorf.wc -seq_format wc -bginput -markov 0 \
+   -lth score 0 -return sites,limits,bg_model \
+   -origin -0 \
+   -o PHO_consensus_L10_N10_c2_matches_mkv0.tab
+
+feature-map -i PHO_consensus_L10_N10_c2_matches_mkv0.tab \
+  -format png -legend -scalebar -scalestep 50 -scorethick \
+  -o PHO_consensus_L10_N10_c2_matches_mkv0.png 
+
+\end{verbatim} \end{footnotesize}
+}
 
 
+\subsection{Higher order (Markov) background models}
+
+\subsubsection{Global background models}
+
+\subsubsection{Local background models}
+
+\subsection{Adaptive Markov models}
+
+\subsection{Scanning sequences with multiple matrices}
