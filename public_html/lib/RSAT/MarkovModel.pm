@@ -783,7 +783,7 @@ sub segment_proba {
     my $c = 0;
     if (defined($self->{prefix_proba}->{$prefix})) {
       $segment_proba = $self->{prefix_proba}->{$prefix};
-      &RSAT::message::Info("MarkovModel::segment_proba()",
+      &RSAT::message::Info(#"MarkovModel::segment_proba()",
 			   "offset:".$c,
 			   "i=".($c+1),
 			   "P(".$prefix.")", $self->{prefix_proba}->{$prefix},
@@ -832,7 +832,7 @@ sub segment_proba {
 	}
 	$segment_proba *= $residue_proba;
 	
-	&RSAT::message::Info("MarkovModel::segment_proba()",
+	&RSAT::message::Info(#"MarkovModel::segment_proba()",
 			     "offset:".$c,
 			     "i=".($c+1),
 			     "P(".$suffix."|".$prefix.")", $residue_proba,
