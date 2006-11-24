@@ -114,6 +114,7 @@ S<Iij = Fij*ln(Fij/Pi)>
 In addition, we calculate a "corrected" information content which
 takes pseudo-weights into account.
 
+
 S<I''ij = F''ij*ln(F''ij/Pi)>
 
 =item P-value
@@ -362,7 +363,7 @@ sub setPrior {
     ## Report the new prior
     if ($main::verbose >= 10) {
 	%check = $self->get_attribute("prior");
-	&RSAT::message::Info (join("\t", "setPrior", join(" ", %prior))) if ($main::verbose >= 0);
+	&RSAT::message::Info (join("\t", "&RSAT::matrix::setPrior", join(" ", %prior))) if ($main::verbose >= 4);
 	foreach my $letter (sort keys %check) {
 	    warn join("\t", "; setPrior", $letter, $prior{$letter}), "\n";
 	}
@@ -1326,8 +1327,8 @@ sub calcInformation {
     unless ($self->get_attribute("frequencies_specified")) {
 	$self->calcFrequencies();
     }
-    my @frequencies = $self->getFrequencies();    
-#    my @frequencies = $self->getCrudeFrequencies();    
+    my @frequencies = $self->getFrequencies();
+#    my @frequencies = $self->getCrudeFrequencies();
 
     ## Get alphabet
     my @alphabet = $self->get_attribute("alphabet");
@@ -1480,7 +1481,7 @@ sub calcFrequencies {
     }
 
     &RSAT::message::Debug("&RSAT::matrix::calcFrequencies()", "residue priors", join(" ", %prior)) 
-      if ($main::verbose >= 0);
+      if ($main::verbose >= 4);
 
     ## pseudo-weight
     my $pseudo = $self->get_attribute("pseudo");
