@@ -1107,6 +1107,7 @@ sub ReadNextSequence {
 	### tab-delimited text file
     } elsif ($sequence_format eq "tab") {
 	while (<$SEQ>) {
+	    next if (/^--/);
 	    next if (/^;/);
 	    next if (/^\#/);
 	    next unless (/\S/);
