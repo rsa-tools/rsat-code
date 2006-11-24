@@ -135,9 +135,10 @@ use Data::Dumper;
     @{$class_holder->{_out_fields}} = @out_fields;
   }
 
+  ## #############################################################
+  ## Return an object given its ID or one of its names.
+  ## Case insensitive : all keys are converted to uppsercase.
   sub get_object { 
-    ### return an object given its ID or one of its names
-    ### case insensitive : all keys are converted to uppsercase
     my ($class_holder, $key) = @_;
     my $id = undef;
     my $obj = undef;
