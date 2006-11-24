@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.171 2006/11/07 08:10:16 rsat Exp $
+# $Id: multiple-family-analysis,v 1.172 2006/11/24 16:26:39 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -209,6 +209,15 @@ $password="";
 #### Read arguments
 &ReadArguments();
 
+if ($background eq 'upstream-noorf') {
+    unless ($noorf) {
+	$background = 'upstream';
+    }
+}
+if ($repeat_masked) {
+    $background .= '-rm';
+}
+
 #### Check parameters
 &CheckParameters();
 
@@ -391,9 +400,9 @@ sub SetFileNames {
     if ($markov) {
 	$dyad_suffix .= "_monad"; ### TEMP
     } elsif ($background) {
-	if ($repeat_masked) {        ### Should be here?
-	    $background .= "-rm";    ### Should be here?
-	}                            ### Should be here?
+#	if ($repeat_masked) {        ### Should be here?
+#	    $background .= "-rm";    ### Should be here?
+#	}                            ### Should be here?
 	$dyad_suffix .= "_bg_".$background; ### TEMP
     }
     $dyad_suffix .= "_l".$monad_length;
