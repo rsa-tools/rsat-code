@@ -1,7 +1,7 @@
 #!/usr/bin/perl 
 ############################################################
 #
-# $Id: parse-embl.pl,v 1.16 2006/11/09 17:48:27 rsat Exp $
+# $Id: parse-embl.pl,v 1.17 2006/11/26 06:55:28 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:17:49 jvanheld>
 #
@@ -44,6 +44,114 @@ package EMBL::Feature;
 			     GeneID=>"SCALAR",
 			     xrefs=>"EXPANDED"
 			     );
+}
+
+################################################################
+#### Class for CDS
+package EMBL::CDS;
+{
+  @ISA = qw ( classes::DatabaseObject );
+  ### class attributes
+  $_count = 0;
+  $_prefix = "cds_";
+  @_objects = ();
+  %_name_index = ();
+  %_id_index = ();
+  %_attribute_count = ();
+  %_attribute_cardinality = (id=>"SCALAR",
+			     names=>"ARRAY",
+			     organism=>"SCALAR",
+			     type=>"SCALAR",
+			     description=>"SCALAR",
+			     position=>"SCALAR",
+			     contig=>"SCALAR",
+			     strand=>"SCALAR",
+			     start_pos=>"SCALAR",
+			     end_pos=>"SCALAR",
+			     GeneID=>"SCALAR",
+			     xrefs=>"EXPANDED"
+			    );
+}
+
+################################################################
+#### Class for tRNA
+package EMBL::tRNA;
+{
+  @ISA = qw ( classes::DatabaseObject );
+  ### class attributes
+  $_count = 0;
+  $_prefix = "trna_";
+  @_objects = ();
+  %_name_index = ();
+  %_id_index = ();
+  %_attribute_count = ();
+  %_attribute_cardinality = (id=>"SCALAR",
+			     names=>"ARRAY",
+			     organism=>"SCALAR",
+			     type=>"SCALAR",
+			     description=>"SCALAR",
+			     position=>"SCALAR",
+			     contig=>"SCALAR",
+			     strand=>"SCALAR",
+			     start_pos=>"SCALAR",
+			     end_pos=>"SCALAR",
+			     GeneID=>"SCALAR",
+			     xrefs=>"EXPANDED"
+			    );
+}
+
+################################################################
+#### Class for rRNA
+package EMBL::rRNA;
+{
+  @ISA = qw ( classes::DatabaseObject );
+  ### class attributes
+  $_count = 0;
+  $_prefix = "rrna_";
+  @_objects = ();
+  %_name_index = ();
+  %_id_index = ();
+  %_attribute_count = ();
+  %_attribute_cardinality = (id=>"SCALAR",
+			     names=>"ARRAY",
+			     organism=>"SCALAR",
+			     type=>"SCALAR",
+			     description=>"SCALAR",
+			     position=>"SCALAR",
+			     contig=>"SCALAR",
+			     strand=>"SCALAR",
+			     start_pos=>"SCALAR",
+			     end_pos=>"SCALAR",
+			     GeneID=>"SCALAR",
+			     xrefs=>"EXPANDED"
+			    );
+}
+
+################################################################
+#### Class for mRNA
+package EMBL::mRNA;
+{
+  @ISA = qw ( classes::DatabaseObject );
+  ### class attributes
+  $_count = 0;
+  $_prefix = "mrna_";
+  @_objects = ();
+  %_name_index = ();
+  %_id_index = ();
+  %_attribute_count = ();
+  %_attribute_cardinality = (id=>"SCALAR",
+			     names=>"ARRAY",
+			     organism=>"SCALAR",
+			     type=>"SCALAR",
+			     description=>"SCALAR",
+			     position=>"SCALAR",
+			     contig=>"SCALAR",
+			     strand=>"SCALAR",
+			     start_pos=>"SCALAR",
+			     end_pos=>"SCALAR",
+			     GeneID=>"SCALAR",
+			     xrefs=>"EXPANDED"
+			    );
 }
 
 
@@ -126,7 +234,7 @@ package main;
     #### Open class factories
 
     #### Organism
-    my $organisms = classes::ClassFactory->new_class(object_type=>"EMBL::Organism",prefix=>"org_");
+    local $organisms = classes::ClassFactory->new_class(object_type=>"EMBL::Organism",prefix=>"org_");
     $organisms->set_out_fields(qw (id
 				   taxonomy
 				   name
@@ -135,7 +243,7 @@ package main;
     
 
     #### Contig
-    my $contigs = classes::ClassFactory->new_class(object_type=>"EMBL::Contig",prefix=>"ctg_");
+    local $contigs = classes::ClassFactory->new_class(object_type=>"EMBL::Contig",prefix=>"ctg_");
     $contigs->set_out_fields(qw (id
 				 accession
 				 version
@@ -146,9 +254,15 @@ package main;
 				 description
 				 ));
     
+
+    ## Specific feature types
+    local $CDSs = classes::ClassFactory->new_class(object_type=>"EMBL::CDS",prefix=>"cds_", source=>$data_source);
+    local $mRNAs = classes::ClassFactory->new_class(object_type=>"EMBL::mRNA",prefix=>"mrna_", source=>$data_source);
+    local $tRNAs = classes::ClassFactory->new_class(object_type=>"EMBL::tRNA",prefix=>"trna_", source=>$data_source);
+    local $rRNAs = classes::ClassFactory->new_class(object_type=>"EMBL::rRNA",prefix=>"rrna_", source=>$data_source);
     
     #### Features
-    my $features = classes::ClassFactory->new_class(object_type=>"EMBL::Feature",prefix=>"ft_", source=>$data_source);
+    local $features = classes::ClassFactory->new_class(object_type=>"EMBL::Feature",prefix=>"ft_", source=>$data_source);
     @feature_out_fields = qw( id
 			      type
 			      name
@@ -186,6 +300,7 @@ package main;
 			      ); 
     $features->set_out_fields(@feature_out_fields);
 
+
     #### index feature out fields for later checking
     foreach my $field (@feature_out_fields) {
 	$feature_out_fields{$field}++;
@@ -193,10 +308,16 @@ package main;
 #die join "'\n'", keys %feature_out_fields, "\n";
 
     #### classes
-    @classes = qw ( EMBL::Feature
-		  EMBL::Contig
-		  EMBL::Organism
-		    );
+    @feature_holders = ($features, $CDSs, $mRNAs, $tRNAs, $rRNAs);
+
+    @classes = qw ( EMBL::Organism
+		    EMBL::Contig
+		    EMBL::Feature
+		    EMBL::CDS		
+		    EMBL::mRNA
+		    EMBL::tRNA
+		    EMBL::rRNA
+  );
     
     #### working directory
     $wd = `pwd`;
@@ -258,20 +379,8 @@ package main;
     #### parse the embl files
     $contig_handle = &OpenOutputFile("$dir{output}/contigs.txt"); # file with contig IDs
     foreach my $file (@embl_files) {
-	my $sequence = &ParseEMBLFile("$dir{input}/$file", 
-				      $organisms, 
-				      $contigs,
-				      $features, 
-				      source=>$file);
-
-	unless ($noseq) {
-	    my $seq_file = $contig->get_attribute("id");
-	    $seq_file .= ".raw";
-	    open RAW, ">$dir{output}/$seq_file";
-	    &PrintNextSequence(RAW, "raw", 0, $sequence, $contig);
-	    close RAW;
-	    print $contig_handle $seq_file, "\t", $contig->get_attribute("id"), "\n";
-	}
+      &ParseEMBLFile("$dir{input}/$file", 
+		     source=>$file);
     }
     close $contig_handle;
 
@@ -283,28 +392,35 @@ package main;
     &RSAT::message::TimeWarn("Processing features") if ($main::verbose >= 1);
     my $organism_name = $org; #### first guess
     my $contig = "";
-    foreach $feature ($features->get_objects()) {
-
-	#### the real organism name is annotated in the feature of
-	#### type "source"
+    foreach my $class_holder (@feature_holders) {
+      
+      foreach $feature ($class_holder->get_objects()) {
+	
+	################################################################
+	## The organism name is annotated in the feature of type
+	## "source"
 	if ($feature->get_attribute("type") eq "source") {
-            $organism_name = $feature->get_attribute("organism");
-            $contig = $feature->get_attribute("contig");
-	    my @xrefs = $feature->get_attribute("db_xref");
-	    foreach my $xref (@xrefs) {
-		if ($xref =~ /taxon:(\S+)/) {
-		    $taxon = $1;
-		}
+	  $organism_name = $feature->get_attribute("organism");
+	  if (($organism_name) && ($organism_name ne $null)) {
+	    &CreateOrganism($organisms, $organism_name);
+	  }
+	  
+	  $contig = $feature->get_attribute("contig");
+	  my @xrefs = $feature->get_attribute("db_xref");
+	  foreach my $xref (@xrefs) {
+	    if ($xref =~ /taxon:(\S+)/) {
+	      $taxon = $1;
 	    }
-            if (($contig eq "") || ($contig eq $null)) {
-		$contig = $feature->get_attribute("contig");
-		$feature->force_attribute("contig", $contig);
-	    }
-        } else {
-           $feature->set_attribute("organism", $organism_name);
-#	   $feature->force_attribute("contig", $contig);
-        }
-
+	  }
+	  if (!($contig) || ($contig eq $null)) {
+	    $contig = $feature->get_attribute("contig");
+	    $feature->force_attribute("contig", $contig);
+	  }
+	} else {
+	  $feature->set_attribute("organism", $organism_name);
+	  #	   $feature->force_attribute("contig", $contig);
+	}
+	
 	
         ### use gene attribute as name
 	my @gene = $feature->get_attribute("gene");
@@ -322,121 +438,117 @@ package main;
 	    $feature->force_attribute('id', $1);
 	  }
 	}
-
-#	## Use attribute "accession" as main ID if there is one
-#	my $accession = $feature->get_attribute("accession");
-#	if ($accession =~ /(\S+)/) {
-#	    $feature->force_attribute('id', $1);
-#	}
-
-
+	
+	#	## Use attribute "accession" as main ID if there is one
+	#	my $accession = $feature->get_attribute("accession");
+	#	if ($accession =~ /(\S+)/) {
+	#	    $feature->force_attribute('id', $1);
+	#	}
+	
+	
 	### add protein_id as valid name
 	@protein_ids = $feature->get_attribute("protein_id");
 	if ($#protein_ids >= 0) {
-	    foreach my $id (@protein_ids) {
-		$feature->push_attribute("names",$id);
-	    }
-
-	    ## Use protein_id as main ID for the CDS
-	    ## (this is just a second guess, it will be replaced by locus_tag if it is defined)
-	    if ($protein_ids[0] =~ /(\S+)/) {
-		$feature->force_attribute('id', $1);
-	    }
+	  foreach my $id (@protein_ids) {
+	    $feature->push_attribute("names",$id);
+	  }
+	  
+	  ## Use protein_id as main ID for the CDS
+	  ## (this is just a second guess, it will be replaced by locus_tag if it is defined)
+	  if ($protein_ids[0] =~ /(\S+)/) {
+	    $feature->force_attribute('id', $1);
+	  }
 	}
 	
 	### add locus_tag as valid name
 	@locus_tags = $feature->get_attribute("locus_tag");
 	if ($#locus_tags >= 0) {
-	    foreach my $id (@locus_tags) {
-		$feature->push_attribute("names",$id);
-	    }
-
-	    ## Use locus_tag as main ID if there is one
-	    if ($locus_tags[0] =~ /(\S+)/) {
-		$feature->force_attribute('id', $1);
-	    }
+	  foreach my $id (@locus_tags) {
+	    $feature->push_attribute("names",$id);
+	  }
+	  
+	  ## Use locus_tag as main ID if there is one
+	  if ($locus_tags[0] =~ /(\S+)/) {
+	    $feature->force_attribute('id', $1);
+	  }
 	}
 	
-
+	
 	#### add SWISS-PROT/Uniprot/TrEMBL ID as valid name
 	my @xrefs = $feature->get_attribute("db_xref");
 	my $gi = "";
 	foreach my $xref (@xrefs) {
-	    if (($xref =~ /SWISS-PROT:/i) ||
-		($xref =~ /Uniprot\/TrEMBL:/i) ||
-		($xref =~ /SPTREMBL:/i)) {
-		my $name = "$'";
-		$feature->push_attribute("names",$name);		
-	    } 
+	  if (($xref =~ /SWISS-PROT:/i) ||
+	      ($xref =~ /Uniprot\/TrEMBL:/i) ||
+	      ($xref =~ /SPTREMBL:/i)) {
+	    my $name = "$'";
+	    $feature->push_attribute("names",$name);		
+	  } 
 	}
 	
 	### define a single name  (take the first value in the name list)
 	if ($name = $feature->get_name()) {
-	    $feature->set_attribute("name",$name);
+	  $feature->set_attribute("name",$name);
 	} else {
-	    $feature->set_attribute("name",$feature->get_id());
+	  $feature->set_attribute("name",$feature->get_id());
 	}
 	
 	#### check for features without description
 	if (($feature->get_attribute("description") eq $null) 
 	    || ($feature->get_attribute("description") eq "")) {
-            my $description =  join (";", $feature->get_attribute("product"));
-            unless ($description) {
-                $description =  join (";", $feature->get_attribute("note"));
-	    }
-            $feature->set_attribute("description",$description);
+	  my $description =  join (";", $feature->get_attribute("product"));
+	  unless ($description) {
+	    $description =  join (";", $feature->get_attribute("note"));
+	  }
+	  $feature->set_attribute("description",$description);
         }
 	
 	
 	#### parse cross-references
 	my @xrefs = $feature->get_attribute("db_xref");
-	$features->set_attribute_header("db_xref_exp", "xref_db", "xref_id");
+	$class_holder->set_attribute_header("db_xref_exp", "xref_db", "xref_id");
 	my $gi = "";
 	foreach my $xref (@xrefs) {
-	    if ($xref =~ /:/) {
-		my $xref_db = $`;
-		my $xref_id = "$'";
-		$feature->push_expanded_attribute("db_xref_exp", $xref_db, $xref_id);
-	    } else {
-		&ErrorMessage(join ("\t", 
-				    "Invalid cross reference", 
-				    $feature->get_attribute("id"), 
-				    $xref), "\n");
-	    }
+	  if ($xref =~ /:/) {
+	    my $xref_db = $`;
+	    my $xref_id = "$'";
+	    $feature->push_expanded_attribute("db_xref_exp", $xref_db, $xref_id);
+	  } else {
+	    &ErrorMessage(join ("\t", 
+				"Invalid cross reference", 
+				$feature->get_attribute("id"), 
+				$xref), "\n");
+	  }
 	}
-
-    }
-
-    ## Specify the GeneID (required for retrieve-seq)
-    &RSAT::message::TimeWarn("Specifying GeneIDs") if ($main::verbose >= 1);
-    foreach my $feature ($features->get_objects()) {
+	
+      }
+      
+      ## Specify the GeneID (required for retrieve-seq)
+      &RSAT::message::TimeWarn("Specifying GeneIDs") if ($main::verbose >= 1);
+      foreach my $feature ($class_holder->get_objects()) {
 	$feature->set_attribute("GeneID", $feature->get_attribute("id"));
-#	&RSAT::message::Debug("Using ID as GeneID for feature", $feature->get_attribute("id"),$feature->get_attribute("GeneID")) if ($main::verbose >= 10);
+	#	&RSAT::message::Debug("Using ID as GeneID for feature", $feature->get_attribute("id"),$feature->get_attribute("GeneID")) if ($main::verbose >= 10);
+      }
     }
-
     ################################################################
     ### Save result in tab files
     chdir $dir{main};
-#    chdir $dir{output};
-    foreach $class_factory ($organisms, $contigs, $features) {
-	$class_factory->dump_tables();
-	$class_factory->generate_sql(dir=>"$dir{output}/sql_scripts",
-				schema=>$schema,
-				host=>$host,
-				user=>$user,
-				password=>$password
-				);
+    #    chdir $dir{output};
+    foreach $class_factory ($organisms, $contigs, @feature_holders) {
+      $class_factory->dump_tables();
+      $class_factory->generate_sql(dir=>"$dir{output}/sql_scripts",
+				   schema=>$schema,
+				   host=>$host,
+				   user=>$user,
+				   password=>$password
+				  );
     }
-
+    
     &ExportProteinSequences($features,$org);
     &ExportMakefile(@classes);
 
-
-
     chdir($dir{output});
     &PrintStats($out_file{stats}, @classes);
-
-
 
     #### document the ffields which were parsed but not exported
     open STATS, ">>$out_file{stats}";
@@ -458,7 +570,7 @@ package main;
     close $out if ($out_file{output});
     close ERR;
 
-    warn "; Results exported in directory\t", $dir{output}, "\n" if ($main::verbose >= 1);
+    &RSAT::message::TimeWarn("Results exported in directory", $dir{output}) if ($main::verbose >= 1);
 
     exit(0);
 }
@@ -530,10 +642,10 @@ OBJECT TYPES
 	    EMBL::Contig
 	    EMBL::Feature
 
-	Each feature has a type (CDS, tRNA, rRNA, promoter, ...), as
-	found in the original EMBL file. The feature type si indicated
-	by a line starting with FT, followed by 3 white spaces, the
-	type, some additional spaces, and the position.
+	Each feature has a type (CDS, mRNA, tRNA, rRNA, promoter,
+	...), as found in the original EMBL file. The feature type si
+	indicated by a line starting with FT, followed by 3 white
+	spaces, the type, some additional spaces, and the position.
 
 	There is thus one generic object called 'feature', which has a
 	type attribute. An alternative possibility would have been to
@@ -720,7 +832,7 @@ sub Verbose {
 ################################################################
 #### parse one EMBL file
 sub ParseEMBLFile {
-    my ($input_file, $organisms, $contigs, $features, %args) = @_;
+    my ($input_file, %args) = @_;
     &RSAT::message::TimeWarn (join ("\t", "Parsing file", $input_file)) if ($main::verbose >= 1);
     
     my ($file,$dir) = &OpenInputFile($input_file);
@@ -754,11 +866,23 @@ sub ParseEMBLFile {
 	if  ($line =~ /^SQ/) {
 	    $in_FT = 0;
 	    $in_sequence = 1;
-	    while (my $line = <$file>) {
+	    while (($in_sequence) && 
+		   (my $line = <$file>)) {
 		if ($line =~ /\d+\s*$/) {
 		    $sequence .= $`;
 		} elsif ($line =~ /^\/\/$/) {
-		    $in_sequence = 0;
+		  ## The sequence is finished
+		  $in_sequence = 0;
+		  ## Store the sequence if required
+		  unless ($noseq) {
+		    my $seq_file = $contig->get_attribute("id");
+		    $seq_file .= ".raw";
+		    open RAW, ">$dir{output}/$seq_file";
+		    &PrintNextSequence(RAW, "raw", 0, $sequence, $contig);
+		    close RAW;
+		    print $contig_handle $seq_file, "\t", $contig->get_attribute("id"), "\n";
+		  }
+		  undef($sequence);
 		}
 	    }
         }
@@ -767,7 +891,14 @@ sub ParseEMBLFile {
 	    #### contig ID line
 	    my $contig_id = $1;
 	    $contig_id =~ s/\;$//;
-	    $contig = $contigs->new_object(id=>$contig_id);
+	    if ($contig_id =~ /unknown/i) {
+	      ## This is a bit tricky, but in Leishmania genome, most contigs havve as ID "unknown id"
+	      $contig = $contigs->new_object();
+	      $contig_id = $contig->get_attribute("id");
+	    } else {
+	      $contig = $contigs->new_object(id=>$contig_id);
+	    }
+	    &RSAT::message::Info("line", $l, "New contig", $contig->get_attribute("id")) if ($main::verbose >= 0);
 	    my $contig_description = "$'"; 
 	    $contig->set_attribute("description",$contig_description);
 	    $contig->set_attribute("file",$input_file);
@@ -798,13 +929,7 @@ sub ParseEMBLFile {
 	} elsif ($line =~ /^OS\s+/) {
 	    #### organism name
 	    $organism_name = $';
-	    unless ($organism_created{$organism_name}) {
-		warn "; Creating organism Organism name\t", $organism_name, "\n" if ($main::verbose >= 2);
-		$organism = $organisms->new_object(%args);
-		$organism->push_attribute("names", $organism_name);
-		$organism->set_attribute("name",$organism_name);
-		$organism_created{$organism_name} = 1;
-	    }
+	    &CreateOrganism($organisms, $organism_name);
 	} elsif ($line =~ /^OC\s+/) {
 	    my $taxonomy = "$'";
 
@@ -872,8 +997,20 @@ sub ParseEMBLFile {
 #  		}
 	    }
 
-	    #### create a new object for the feature
-	    $current_feature = $features->new_object(%args);
+	    ################################################################
+	    ## Create a new object for the feature
+	    $class_holder = $features;
+	    if ($feature_type eq "CDS") {
+	      $class_holder = $CDSs;
+	    } elsif ($feature_type eq "mRNA") {
+	      $class_holder = $mRNAs;
+	    } elsif ($feature_type eq "tRNA") {
+	      $class_holder = $tRNAs;
+	    } elsif ($feature_type eq "rRNA") {
+	      $class_holder = $rRNAs;
+	    }
+	      
+	    $current_feature = $class_holder->new_object(%args);
 	    $feature_count++;
 	    &RSAT::message::Debug( "file", $input_file, "line", $l, "feature", $feature_count, $feature_type) 
 	      if ($main::verbose >= 2);
@@ -1059,4 +1196,18 @@ sub ExportProteinSequences {
 	}
     }
     close PP;
+}
+
+
+################################################################
+## Create the organism object if it has not ben created
+sub CreateOrganism {
+  my ($organisms, $organism_name) = @_;
+  unless ($organism_created{$organism_name}) {
+    &RSAT::message::Info("Creating organism Organism name", $organism_name) if ($main::verbose >= 1);
+    $organism = $organisms->new_object(%args);
+    $organism->push_attribute("names", $organism_name);
+    $organism->set_attribute("name",$organism_name);
+    $organism_created{$organism_name} = 1;
+  }
 }
