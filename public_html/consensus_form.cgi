@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: consensus_form.cgi,v 1.6 2004/05/07 07:14:23 jvanheld Exp $
+# $Id: consensus_form.cgi,v 1.7 2006/11/29 01:49:28 jvanheld Exp $
 #
 # Time-stamp: <2003-07-11 15:07:43 jvanheld>
 #
@@ -46,9 +46,10 @@ foreach $key (keys %default) {
 print "<CENTER>\n";
 print "Matrix-based pattern discovery using CONSENSUS<BR>\n";
 print "Extract shared motifs from a set of unaligned sequences<BR>\n";
-print "Program developed by <A HREF='mailto:hertz\@colorado.edu (Jerry Hertz)'>JerryHertz</A><br>\n";
-print "Web interface by <A HREF='mailto:jvanheld\@scmbb.ulb.ac.be'>Jacques van Helden</A>).\n";
-print "</CENTER>\n";
+print "Program developed by <A HREF='mailto:hertz\@colorado.edu (Jerry Hertz)'>Jerry Hertz</A>. \n";
+print "Web interface by <A HREF='mailto:jvanheld\@scmbb.ulb.ac.be'>Jacques van Helden</A>.<br>";
+print "The stand-alone version of <i>consensus</i> is available at <a target=_blank href=http://ural.wustl.edu/software.html>http://ural.wustl.edu/software.html</a><P>";
+print "</CENTER><hr>";
 
 
 print $query->start_multipart_form(-action=>"consensus.cgi");
