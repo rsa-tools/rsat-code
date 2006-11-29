@@ -59,11 +59,11 @@ sub ThresholdOptions {
     my $threshold_options = "";
     foreach my $key (keys %lth) {
 	$threshold_options .= join(" ", " -lth", $key, $lth{$key});
-	&RSAT::message::Debug("Lower threshold", $key, $lth{$key}) if ($main::verbose >= 0);
+	&RSAT::message::Debug("Lower threshold", $key, $lth{$key}) if ($main::verbose >= 3);
     }
     foreach my $key (keys %uth) {
 	$threshold_options .= join(" ", " -uth", $key, $uth{$key});
-	&RSAT::message::Debug("Upper threshold", $key, $uth{$key}) if ($main::verbose >= 0);
+	&RSAT::message::Debug("Upper threshold", $key, $uth{$key}) if ($main::verbose >= 3);
     }
     return ($threshold_options);
 }
@@ -84,32 +84,28 @@ sub ThresholdSuffix {
 ################################################################
 #### check threshold on some parameter
 sub CheckThresholds {
-    my ($key) = @_;
+  my ($key) = @_;
 
   ## Lower threshold
   if (defined($lth{$key})) {
-      if ($verbose >= 2) {
-	  &RSAT::message::TimeWarn("Lower threshold on $key\t$lth{$key}");
+    &RSAT::message::TimeWarn("Lower threshold on $key\t$lth{$key}") if ($main::verbose >= 3);
+    foreach $pattern_seq (keys %patterns) {
+      if ($patterns{$pattern_seq}->{$key} < $lth{$key}) {
+	#	      &RSAT::message::Debug("Lower threshold", "deleting pattern", $pattern_seq, $key, $patterns{$pattern_seq}->{$key}, $lth{$key}) if ($main::verbose >= 0);
+	delete $patterns{$pattern_seq};
       }
-      foreach $pattern_seq (keys %patterns) {
-	  if ($patterns{$pattern_seq}->{$key} < $lth{$key}) {
-#	      &RSAT::message::Debug("Lower threshold", "deleting pattern", $pattern_seq, $key, $patterns{$pattern_seq}->{$key}, $lth{$key}) if ($main::verbose >= 0);
-	      delete $patterns{$pattern_seq};
-	  }
-      }  
+    }  
   }
 
   ## Upper threshold
   if (defined($uth{$key})) {
-      if ($verbose >= 2) {
-	  &RSAT::message::TimeWarn("Upper threshold on $key\t$uth{$key}");
+    &RSAT::message::TimeWarn("Upper threshold on $key\t$uth{$key}") if ($main::verbose >= 3);
+    foreach $pattern_seq (keys %patterns) {
+      if ($patterns{$pattern_seq}->{$key} > $uth{$key}) {
+	#	      &RSAT::message::Debug("Upper threshold", "deleting pattern", $pattern_seq, $key, $patterns{$pattern_seq}->{$key}, $lth{$key}) if ($main::verbose >= 0);
+	delete $patterns{$pattern_seq};
       }
-      foreach $pattern_seq (keys %patterns) {
-	  if ($patterns{$pattern_seq}->{$key} > $uth{$key}) {
-#	      &RSAT::message::Debug("Upper threshold", "deleting pattern", $pattern_seq, $key, $patterns{$pattern_seq}->{$key}, $lth{$key}) if ($main::verbose >= 0);
-	      delete $patterns{$pattern_seq};
-	  }
-      }  
+    }  
   }
 }
 
@@ -119,27 +115,23 @@ sub CheckThresholds {
 ################################################################
 #### check threshold on some parameter for one pattern
 sub CheckPatternThresholds {
-    my ($key, $pattern_seq) = @_;
+  my ($key, $pattern_seq) = @_;
 
   ## Lower threshold
   if (defined($lth{$key})) {
-      if ($verbose >= 4) {
-	  &RSAT::message::TimeWarn("Lower threshold on $key\t$lth{$key}");
-      }
-      if ($patterns{$pattern_seq}->{$key} < $lth{$key}) {
-	  delete $patterns{$pattern_seq};
-	  return();
-      }
+    &RSAT::message::TimeWarn("Lower threshold on $key\t$lth{$key}") if ($main::verbose >= 4);
+    if ($patterns{$pattern_seq}->{$key} < $lth{$key}) {
+      delete $patterns{$pattern_seq};
+      return();
+    }
   }
 
   ## Upper threshold
   if (defined($uth{$key})) {
-      if ($verbose >= 4) {
-	  &RSAT::message::TimeWarn("Upper threshold on $key\t$uth{$key}");
-      }
-      if ($patterns{$pattern_seq}->{$key} > $uth{$key}) {
-	  delete $patterns{$pattern_seq};
-      }  
+    &RSAT::message::TimeWarn("Upper threshold on $key\t$uth{$key}") if ($main::verbose >= 4);
+    if ($patterns{$pattern_seq}->{$key} > $uth{$key}) {
+      delete $patterns{$pattern_seq};
+    }  
   }
 }
 
