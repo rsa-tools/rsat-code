@@ -46,11 +46,11 @@ foreach $key (keys %default) {
 
 ### head
 print "<CENTER>";
-print "Scan a DNA sequence with a profile matrix<BR>\n";
-print "Program developed by <A HREF='mailto:hertz\@colorado.edu (Jerry Hertz)'>Jerry Hertz</A><BR>";
-print "Web interface by <A HREF='mailto:jvanheld\@scmbb.ulb.ac.be'>Jacques van Helden</A><P>";
-
-print "</CENTER>";
+print "Scan a DNA sequence with a posiion-specific scoring matrix (PSSM)<BR>\n";
+print "Program developed by <A HREF='mailto:hertz\@colorado.edu (Jerry Hertz)'>Jerry Hertz</A>. \n";
+print "Web interface by <A HREF='mailto:jvanheld\@scmbb.ulb.ac.be'>Jacques van Helden</A>.<br>";
+print "The stand-alone version of <i>patser</i> is available at <a target=_blank href=http://ural.wustl.edu/software.html>http://ural.wustl.edu/software.html</a></p>";
+print "</CENTER><hr>";
 
 print $query->start_multipart_form(-action=>"patser.cgi");
 
