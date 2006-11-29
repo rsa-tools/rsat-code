@@ -5,7 +5,7 @@
 
 =head1 DESCRIPTION
 
-Server for RSAT web services
+Server for RSAT web services.
 
 =cut
 
