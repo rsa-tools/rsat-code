@@ -110,6 +110,7 @@ sub load_from_file {
 }
 
 
+
 ################################################################
 =pod
 
@@ -129,17 +130,16 @@ converted to lowercases.
 =cut
 sub load_from_file_oligos {
     my ($self, $bg_file) = @_;
-    
 
     &RSAT::message::TimeWarn("Loading Markov model from file $bg_file") if ($main::verbose >= 2);
 
-    my %patterns = &main::ReadExpectedFrequencies($bg_file) ;
+    my ($file_type, %patterns) = &main::ReadPatternFrequencies($bg_file) ;
     my @patterns = keys(%patterns);
 
 
     ## This is a bit tricky: ReadExpectedFrequencies sets a global variable
     ## $file_type to "2str" if the model is strand-insensitive/
-    if ($main::file_type eq "2str") {
+    if ($file_type eq "2str") {
 	$self->force_attribute("strand", "insensitive");
     }
 
@@ -161,7 +161,7 @@ sub load_from_file_oligos {
 	my $prefix = substr($pattern_seq,0,$order);
 	my $suffix = substr($pattern_seq,$order, 1);
 	$self->{transition_count}->{$prefix}->{$suffix} = $pattern_freq;
-#	&RSAT::message::Debug("transition count", $prefix.".".$suffix, $pattern_freq, $self->{transition_count}->{$prefix}->{$suffix}) if ($main::verbose >= 0);
+#	&RSAT::message::Debug("transition count", $prefix.".".$suffix, $pattern_freq, $self->{transition_count}->{$prefix}->{$suffix}) if ($main::verbose >= 10);
     }
     
 #    &RSAT::message::Debug("MARKOV MODEL", $order, join (' ', @patterns)) if ($main::verbose >= 5);
@@ -659,7 +659,7 @@ in order to obtain a strand-insensitive model.
 
 sub average_strands {
     my ($self) = @_;
-    
+
     &RSAT::message::Info(join("\t", "MarkovModel", "Averaging transition frequencies on both strands."))
 	if ($main::verbose >= 2);
 
