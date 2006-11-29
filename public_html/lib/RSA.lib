@@ -297,14 +297,111 @@ sub ReadCalibration {
 }
 
 
+
 ################################################################
-# Read pattern expected frequencies from a file
-#
+## Read pattern frequencies
+##
+## Usage: 
+##   my ($file_type, %patterns) = &ReadPatternFrequencies($pattern_freq_file [, $sum_rc, $rescale_freq]);
+##
+sub ReadPatternFrequencies {
+  my ($pattern_freq_file, $sum_rc, $rescale_freq) = @_;
+  &RSAT::message::TimeWarn ("Reading pattern frequency file", $pattern_freq_file) if ($main::verbose >= 2);
+  
+  my ($exp) = &OpenInputFile($pattern_freq_file);
+  my $l=0;
+  my %patterns = ();
+  my $file_type = "undef";
+
+  while (<$exp>) {
+    $l++;
+    chomp();
+    next if (/^--/); ## Skip comment line
+    next if (/^;/); ## Skip comment line
+    next unless (/\S/); ## Skip comment line
+    
+    my @fields =  split /\s+/;
+    my $pattern_seq = lc($fields[0]);
+    next unless $pattern_seq;
+    
+#    &RSAT::message::Debug( "fields", join ("\t", @fields)) if ($main::verbose >= 10);
+    
+    #### check the format and extract expected frequency
+    if (&IsReal($fields[1])) {
+      ### second field contains the expected frequency (old format)
+      $patterns{$pattern_seq}->{exp_freq} = $fields[1];
+      
+    } elsif (($fields[1] =~ /(\S+)\|(\S+)/) && (&IsReal($fields[2]))) {
+      #### second field contains the ID as a pair of reverse complements
+      $file_type = "2str";
+      my $fw = lc($1);
+      my $rc = lc($2);
+      $patterns{$rc}->{exp_freq} = $fields[2];
+      $patterns{$fw}->{exp_freq} = $fields[2];
+      
+    } elsif	(($fields[1] eq $fields[0]) && (&IsReal($fields[2]))) {
+      #### second field contains the ID which is identical to the pattern (single strand pattern)
+      $file_type = "1str";
+      $patterns{$fields[0]}->{exp_freq} = $fields[2];
+      
+    } else {
+      ### unrecognized format
+      &RSAT::error::FatalError("Invalid expected frequency in file $pattern_freq_file at line $l\n");
+    }
+    
+    if ($patterns{$pattern_seq}->{exp_freq} < 0) {
+      &RSAT::error::FatalError("Expected frequency cannot be negative\t$pattern_seq\t".$patterns{$pattern_seq}->{exp_freq});
+    }
+  }
+  close $exp if ($pattern_freq_file);
+  
+  #### Check if reverse complements were included in the fequency file;
+  #### if not, infer them from the direct strand 
+  foreach my $pattern_seq (sort keys %patterns) {
+    my $rc = lc(&SmartRC($pattern_seq));
+    if ((!defined($patterns{$rc}->{exp_freq})) &&
+	($patterns{$pattern_seq}->{exp_freq})) {
+      $patterns{$rc}->{exp_freq} = $patterns{$pattern_seq}->{exp_freq};
+      #	    &RSAT::message::Debug("Checking reverse complement", $pattern_seq,  $patterns{$pattern_seq}->{exp_freq}, $rc, $patterns{$rc}->{exp_freq}, "\n" if ($main::verbose >= 10);
+    }
+  }
+  
+  
+  #### sum expected frequencies by reverse complements
+  if (($sum_rc) && ($file_type eq "1str")) {
+    &SumExpectedFrequencies(%patterns);
+  }
+  
+  #### make sure that the sum of frequencies is positive
+  my $freq_sum = 0;
+  foreach my $pattern_seq (keys %patterns) {
+    $freq_sum += $patterns{$pattern_seq}->{exp_freq};
+  }
+  if ($freq_sum <= 0) {
+    &RSAT::error::FatalError("Error with the expected frequency file : the sum must be strictly positive\t$freq_sum");
+  }
+  
+  #### rescale expected frequencies to have a sum of 1
+  if ($rescale_freq) {
+    &RSAT::message::Info("Rescaling expected frequencies") if ($main::verbose >=1);
+    foreach my $pattern_seq (keys %patterns) {
+      $patterns{$pattern_seq}->{exp_freq} /= $freq_sum;
+    }
+  }
+  return ($file_type, %patterns);
+}
+
+################################################################
+# Read pattern expected frequencies from a file This does the same as
+# ReadOligoFrequencies, but it modifies a global variable
+# %patterns. This is not very elegant, I just maintain it temporarily,
+# until I find a more elegant solution.
 sub ReadExpectedFrequencies {
     my ($exp_freq_file, $sum_rc, $rescale_freq) = @_;
     &RSAT::message::TimeWarn ("Reading expected frequency file", $exp_freq_file) if ($main::verbose >= 2);
     my ($exp) = &OpenInputFile($exp_freq_file);
     my $l=0;
+
     while (<$exp>) {
 	$l++;
 	chomp();
@@ -312,7 +409,7 @@ sub ReadExpectedFrequencies {
 	next unless (/\S/);
 
 	my @fields =  split /\s+/;
-	$pattern_seq = lc($fields[0]);
+	my $pattern_seq = lc($fields[0]);
 	next unless $pattern_seq;
 
 	&RSAT::message::Debug( "fields", join ("\t", @fields)) if ($main::verbose >= 10);
