@@ -1,4 +1,5 @@
 <?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="RSATWS.xsl"?>
 <definitions name="RSATWS"
 targetNamespace="urn:RSATWS"
           xmlns:tns="urn:RSATWS"
@@ -38,6 +39,7 @@ targetNamespace="urn:RSATWS"
 	  <xsd:element name="nocom" type="xsd:string"/>
 	  <xsd:element name="repeat" type="xsd:string"/>
 	<!---/xsd:sequence-->
+	<documentation>Parameters for the operation retrieve_seq</documentation>
       </xsd:complexType>
 
       <xsd:element name="RetrieveSequencesResponse">
@@ -77,11 +79,85 @@ targetNamespace="urn:RSATWS"
 
     </xsd:schema>
   </types>
-
+  
+  <!-- Parameters Definition -->
+  <message name='RetrieveSequenceRequest'>
+    <part name='return' type='string'>
+      <documentation>Return type. Accepted values: 'file' (result is stored on a file on the server), 'result' (result is directl transferred to the client), or  'both'.</documentation>
+    </part>
+    <part name='organism' type='string'>
+      <documentation>Organism</documentation>
+    </part>
+    <part name='query' type='string'>
+      <documentation>A list of query genes</documentation>
+    </part>
+    <part name='noorf' type='string'>
+      <documentation>Prevent overlap with upstream open reading frames (ORF).</documentation>
+    </part>
+    <part name='from' type='string'>
+      <documentation>Inferior limit of the region to retrieve. </documentation>
+    </part>
+    <part name='to' type='string'>
+      <documentation>Superior limit of the region to retrieve. </documentation>
+    </part>
+    <part name='feattype' type='string'>
+      <documentation>Type of genome features to load. Supported: CDS, mRNA, tRNA, rRNA. </documentation>
+    </part>
+    <part name='type' type='string'>
+      <documentation>Sequence type. Supported: upstream, downstream, ORF (unspliced open reading frame).</documentation>
+    </part>
+    <part name='format' type='string'>
+      <documentation>Sequence format.</documentation>
+    </part>
+    <part name='all' type='string'>
+      <documentation>Return sequences for all the genes of the organism. </documentation>
+    </part>
+    <part name='label' type='string'>
+      <documentation>Field(s) to be used in the sequence label.
+      Multiple fields can be specified, separated by commas.  Default:
+      name. Supported:
+      id, name, organism_name, sequence_type, current_from, current_to, ctg, orf_strand, reg_left, reg_right
+</documentation>
+    </part>
+    <part name='label_sep' type='string'>
+      <documentation>Separator between the label fields. Default: | (pipe character)</documentation>
+    </part>
+    <part name='nocom' type='string'>
+      <documentation>
+	No comments. Only the identifier and the sequence are
+        returned. By default, the comment indicates the ORF and
+        upstream sequence coordinates.
+      </documentation>
+    </part>
+    <part name='repeat' type='string'>
+      <documentation>
+	Use the repeat masked version of the genome. 
+        Attention : repeated regions are annotated for some genomes
+        only.
+      </documentation>
+    </part>
+  </message>
+  
+  <message name='RetrieveSequenceResponse'>
+    <part name='file' type='string'>
+      <documentation>Location of the result file on the server. This
+      can be used as input for a further request. </documentation>
+    </part>
+    <part name='command' type='string'>
+      <documentation>The stand alone command executed on the
+      server. </documentation>
+    </part>
+    <part name='result' type='string'>
+      <documentation>The result sequence(s). </documentation>
+    </part>
+  </message>
+  
+  <!-- end of parameters description -->
+  
   <message name="RetrieveSequenceInput">
       <part name="request" type="tns:RetrieveSequencesRequest"/>
   </message>
-
+    
   <message name="RetrieveSequenceOutput">
       <!--part name="response" type="xsd:string"/-->
       <!--part name="response" type="tns:RetrieveSequencesResponse"/-->
@@ -106,16 +182,29 @@ targetNamespace="urn:RSATWS"
 
   <portType name="RSATWSPortType">
       <operation name="retrieve_seq">
-         <input message="tns:RetrieveSequenceInput"/>
-         <output message="tns:RetrieveSequenceOutput"/>
+         <!-- Name of input/output must be specified here -->
+         <input name="RetrieveSequenceRequest" message="tns:RetrieveSequenceInput"/>
+         <output name="RetrieveSequenceResponse" message="tns:RetrieveSequenceOutput"/>
+         
+      <documentation>
+	Returns upstream, downstream or coding DNA sequences for list
+	of query genes.
+      </documentation>
       </operation>
       <operation name="purge_seq">
          <input message="tns:PurgeSequenceInput"/>
          <output message="tns:PurgeSequenceOutput"/>
+      <documentation>Mask repeated fragments of an input sequence.</documentation>
       </operation>
       <operation name="oligo_analysis">
          <input message="tns:OligoAnalysisInput"/>
          <output message="tns:OligoAnalysisOutput"/>
+      <documentation>
+	Analysis of the statistical significance of all the oligomers
+	of a given size in a sequence. Commonly used to detect
+	over-prepresented oligonucleotides in a set of promoter
+	sequences.
+      </documentation>
       </operation>
   </portType>
 
@@ -151,9 +240,14 @@ targetNamespace="urn:RSATWS"
   </binding>
 
   <service name="RSAT Web Services">
-    <documentation>RSA Tools web services</documentation>
+    <documentation>
+      Web services for the Regulatory Sequence Analysis Tools (RSAT).
+      Tools developed by Jacques van Helden
+      (jvanheld@scmbb.ulb.ac.be), SOAP/WSDL interface developed by
+      Olivier Sand (oly@scmbb.ulb.ac.be).
+    </documentation>
     <port name="RSATWSPortType" binding="tns:RSATWSBinding">
-        <soap:address location="http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.cgi"/>
+	<soap:address location="http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.cgi"/>
     </port>
   </service>
 </definitions>
