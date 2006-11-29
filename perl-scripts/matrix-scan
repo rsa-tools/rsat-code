@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.38 2006/11/23 12:32:38 jvanheld Exp $
+# $Id: matrix-scan,v 1.39 2006/11/29 18:18:23 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -260,6 +260,7 @@ models only (-markov 0 to 1).
 				bg_model=>1,
 				);
     $supported_return_fields = join (",", sort(keys( %supported_return_fields)));
+    %return_fields = ();
 
     &ReadArguments();
     
@@ -1000,8 +1001,8 @@ and the end of the sequence.
 
 	} elsif ($arg eq "-origin") {
 	    $main::origin = shift(@arguments);
-	    &RSAT::error::FatalError("$main::origin. Invalid origin, should be a natural number.")
-		unless (($main::origin eq "-0") || (&RSAT::util::IsNatural($main::origin)));
+	    &RSAT::error::FatalError("$main::origin. Invalid origin, should be an Integer number.")
+		unless (($main::origin eq "-0") || (&RSAT::util::IsInteger($main::origin)));
 
 
 	    ## base for the logarihtms
