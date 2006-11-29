@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: dyad-analysis,v 1.52 2006/11/08 03:48:34 jvanheld Exp $
+# $Id: dyad-analysis,v 1.53 2006/11/29 01:52:25 jvanheld Exp $
 #
 # Time-stamp: <2003-10-22 23:46:08 jvanheld>
 #
@@ -791,26 +791,6 @@ sub CalcProba {
 		      
 
 } ### CalcProba
-
-# ################################################################
-# ## Check the thresholds on one parameter value
-# sub CheckThresholds {
-#     my ($key) = @_;
-#     &RSAT::message::TimeWarn(join "\t", "Checking thresholds on", $key) if ($main::verbose >= 2);
-#     foreach my $pattern_seq (keys %patterns) {
-# #	&RSAT::message::Debug("Checking thresholds", $pattern_seq, $key, $patterns{$pattern_seq}->{$key}) if ($main::verbose >= 0);
-# 	if ((defined($lth{$key})) && ($patterns{$pattern_seq}->{$key} < $lth{$key})) {
-# #	    &RSAT::message::Debug("Lower threshold", "deleting pattern", $pattern_seq, $key, $lth{$key}) if ($main::verbose >= 0);
-# 	    delete $patterns{$pattern_seq};
-# 	    next;
-# 	} 		
-# 	if ((defined($uth{$key})) && ($patterns{$pattern_seq}->{$key} > $uth{$key})) {
-# #	    &RSAT::message::Debug("Upper threshold", "deleting pattern", $pattern_seq, $key, $uth{$key}) if ($main::verbose >= 0);
-# 	    delete $patterns{$pattern_seq};
-# 	    next;
-# 	} 	     
-#     }
-# }
 
 
 #### read arguments ####
