@@ -1,5 +1,4 @@
 #!/usr/bin/perl
-# retrieve-seq_client_soap-wsdl.pl - Client retrieve-seq using the SOAP::WSDL module
 
 ################################################################
 ##
@@ -15,26 +14,22 @@ use SOAP::LITE;
 # import SOAP::Lite +trace;
 
 ## WSDL location
-#my $WSDL = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.wsdl';
-#my $proxy = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.cgi';
-#my $WSDL = 'http://localhost/rsa-tools/web_services/RSATWS.wsdl';
-#my $proxy = 'http://localhost/rsa-tools/web_services/RSATWS.cgi';
-#my $WSDL = 'http://embnet.ccg.unam.mx/rsa-tools/web_services/RSATWS.wsdl';
-#my $proxy = 'http://embnet.ccg.unam.mx/rsa-tools/web_services/RSATWS.cgi';
-my $WSDL = 'http://kinich.ccg.unam.mx/rsa-tools/web_services/RSATWS.wsdl';
-my $proxy = 'http://kinich.ccg.unam.mx/rsa-tools/web_services/RSATWS.cgi';
+#my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services/';
+my $server = 'http://localhost/rsat/web_services/';
 
+my $WSDL = $server.'RSATWS.wsdl';
+my $proxy = $server.'RSATWS.cgi';
 my $soap = SOAP::WSDL->new(wsdl => $WSDL)->proxy($proxy);
 $soap->wsdlinit();
 # $soap->wsdl_checkoccurs(0);
 
 my %args = ('return' => 'both', ## Store the result of the server + return it directly
-	    'organism' => '-org Saccharomyces_cerevisiae',
-	    'query' => ['PHO5', 'PHO8', 'PHO11', 'PHO84', 'PHO80'], 
+	    'organism' => '-org Escherichia_coli_K12',
+	    'query' => ['CRP', 'FruR'], 
 	    'noorf' => '-noorf');
 
 ## Send the request to the server
-print "Sending request to the server\t",$proxy,"\n";
+print "Sending request to the server\t",$server,"\n";
 my $som = $soap->call('retrieve_seq' => 'request' => \%args);
 
 ## Get the result
