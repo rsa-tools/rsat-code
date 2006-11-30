@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: downloads.mk,v 1.32 2006/11/07 08:19:03 jvanheld Exp $
+# $Id: downloads.mk,v 1.33 2006/11/30 08:17:36 jvanheld Exp $
 #
 # Time-stamp: <2003-10-09 14:02:21 jvanheld>
 #
@@ -640,3 +640,14 @@ ciona:
 	${WGET} http://crfb.univ-mrs.fr/aniseed/downloads/ci-GO-annotations.gz
 	${WGET} http://crfb.univ-mrs.fr/aniseed/downloads/ci-interpro-annotations.gz
 	${WGET} http://crfb.univ-mrs.fr/aniseed/downloads/ci-ortholog.gz
+
+################################################################
+## Leishmania
+
+LEISHMANIA_DIR=ftp.sanger.ac.uk/pub/databases/L.major_sequences/DATASETS
+leishmania_sanger:
+	${WGET} --exclude 'ARCHIVE' \
+		--exclude 'EMBL_SUBMISSIONS' \
+		--exclude 'T_cruzi' \
+		--exclude 'tribemcl_leishgenome.embl' \
+		${LEISHMANIA_DIR}
