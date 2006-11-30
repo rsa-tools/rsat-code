@@ -16,8 +16,10 @@ use SOAP::WSDL;
 #use SOAP::Lite +trace;
 
 ## Service location
-my $WSDL = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.wsdl';
-my $proxy = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.cgi';
+my $server = 'http://localhost/rsat/web_services';
+#my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
+my $WSDL = $server.'/RSATWS.wsdl';
+my $proxy = $server.'/RSATWS.cgi';
 
 my $soap=SOAP::WSDL->new(wsdl => $WSDL)->proxy($proxy);
 
@@ -58,7 +60,7 @@ my %args = ('return' => $return_choice,
 	    'nocom' => $nocom);
 
 ## Send request to the server
-print "Retrieve-seq: sending request to the server\n";
+print "\nRetrieve-seq: sending request to the server\t", $server, "\n";
 my $som = $soap->call('retrieve_seq' => 'request' => \%args);
 
 ## Get the result
@@ -71,12 +73,13 @@ if ($som->fault){  ## Report error if any
     
     ## Report the remote command
     my $command = $results{'command'};
-    print "Command used on the server: ".$command, "\n";
+    print "Command used on the server:\n\t".$command, "\n";
     
     ## Report the result file name on the server
     $server_file = $results{'file'};
-    print "Result file on the server: ".$server_file;
+    print "Result file on the server:\n\t".$server_file;
 }
+
 #################################################
 ## Purge-sequence part
 
@@ -85,7 +88,7 @@ if ($som->fault){  ## Report error if any
 	 'tmp_infile' => $server_file);  ## Output from retrieve-seq part is used as input here
 
 ## Send the request to the server
-print "Purge-sequence: sending request to the server\n";
+print "\nPurge-sequence: sending request to the server\t", $server, "\n";
 $som = $soap -> call('purge_seq' => 'request' => \%args);
 
 ## Get the result
@@ -97,11 +100,11 @@ if ($som->fault){  ## Report error if any
     
     ## Report the remote command
     my $command = $results{'command'};
-    print "Command used on the server: ".$command, "\n";
+    print "Command used on the server: \n\t".$command, "\n";
 
     ## Report the result file name on the server
     $server_file = $results{'file'};
-    print "Result file on the server: ".$server_file;
+    print "Result file on the server: \n\t".$server_file;
 }
 #################################################
 ## Oligo-analysis part
@@ -131,7 +134,7 @@ my $lth = '-lth occ_sig 0';  ## Lower limit to score is 0, less significant patt
 	 'lth' => $lth);
 
 ## Send request to the server
-print "Oligo-analysis: sending request to the server\n";
+print "\nOligo-analysis: sending request to the server\t", $server, "\n";
 $som = $soap->call('oligo_analysis' => 'request' => \%args);
 
 ## Get the result
@@ -148,14 +151,14 @@ if ($som->fault){  ## Report error if any
     ## Report the result
     if ($return_choice eq 'file') {
 	$server_file = $results{'file'};
-	print "Result file on the server: ".$server_file;
+	print "Result file on the server: \n\t".$server_file;
     } elsif ($return_choice eq 'result') {
 	my $result = $results{'result'};
 	print "Discovered oligo(s): \n".$result;
     } elsif ($return_choice eq 'both') {
 	$server_file = $results{'file'};
 	my $result = $results{'result'};
-	print "Result file on the server: ".$server_file;
+	print "Result file on the server: \n\t".$server_file;
 	print "Discovered oligo(s): \n".$result;
     }
 }
