@@ -626,71 +626,82 @@ sub _readFromConsensusFile {
     }
     my $current_matrix_nb = 0;
     my %prior = ();
+    my $l = 0;
     while (<$in>) {
-	next unless (/\S/);
-	s/\r//;
-	chomp();
+      $l++;
+      next unless (/\S/);
+      s/\r//;
+      chomp();
 
-	## The following information (final cycle) is only exported
-	## when the number of cycles is automatic. I don't understand
-	## the reason for this. I need to ask Jerry. Inbetween, I
-	## always use the same information (THE LIST OF TOP MATRICES
-	## FROM EACH CYCLE).
+      ## The following information (final cycle) is only exported
+      ## when the number of cycles is automatic. I don't understand
+      ## the reason for this. I need to ask Jerry. Inbetween, I
+      ## always use the same information (THE LIST OF TOP MATRICES
+      ## FROM EACH CYCLE).
 
-	last if (/THE LIST OF MATRICES FROM FINAL CYCLE/);
+      last if (/THE LIST OF MATRICES FROM FINAL CYCLE/);
 
-	## Read the command line
-	if (/COMMAND LINE: /) {
-	    $command = $'; # '
-	    $self->set_parameter("command", $command);
+      ## Read the command line
+      if (/COMMAND LINE: /) {
+	$command = $';		# '
+	$self->set_parameter("command", $command);
 
-	    ## Start a new matrix (one consensus file contains several matrices)
-	} elsif (/MATRIX\s(\d+)/) {
-	    $current_matrix_nb = $1;
-	    $self->setPrior(%prior);
-	    next;
+	## Start a new matrix (one consensus file contains several matrices)
+      } elsif (/MATRIX\s(\d+)/) {
+	$current_matrix_nb = $1;
+	$self->setPrior(%prior);
+	next;
 
-	    ## Read prior frequency for one residue in the consensus header
-	} elsif (/letter\s+\d:\s+(\S+).+prior frequency =\s+(\S+)/) {
-	    my $letter = lc($1);
-	    my $prior = $2;
-	    &RSAT::message::Info ("Prior from consensus file", $letter, $prior) if ($main::verbose >= 3);
-	    $prior{$letter} = $prior;
-	    $self->setPrior(%prior);
-#	    $self->add_hash_attribute("prior",$letter, $prior);
-#	    $self->force_attribute("prior_specified", 1);
+	## Read prior frequency for one residue in the consensus header
+      } elsif (/letter\s+\d:\s+(\S+).+prior frequency =\s+(\S+)/) {
+	my $letter = lc($1);
+	my $prior = $2;
+	&RSAT::message::Info ("Prior from consensus file", $letter, $prior) if ($main::verbose >= 3);
+	$prior{$letter} = $prior;
+	$self->setPrior(%prior);
 	    
-	} elsif  ($current_matrix_nb == 1) {
+      } elsif ($current_matrix_nb == 1) {
 
-	    ## Matrix content (counts) for one residue
-	    if (/^\s*(\S+)\s+\|/) {
-		my @fields = split / +/, $_;
-		## residue associated to the row
-		my $residue = lc(shift @fields);
+	## Matrix content (counts) for one residue
+	if (/^\s*(\S+)\s+\|/) {
+	  my @fields = split / +/, $_;
+	  ## residue associated to the row
+	  my $residue = lc(shift @fields);
+	    
+	  ## skip the | between residue and numbers
+	  shift @fields unless &main::IsReal($fields[0]);	
+	    
+	  $self->addIndexedRow($residue, @fields);
 		
-		## skip the | between residue and numbers
-		shift @fields unless &main::IsReal($fields[0]);	
-		
-		$self->addIndexedRow($residue, @fields);
-		
-		## Other matrix parameters
-	    } elsif (/number of sequences = (\d+)/) {
-		$self->set_parameter("nb.sequences", $1); 
-	    } elsif (/unadjusted information = (\S+)/) {
-		$self->set_parameter("unadjusted.information", $1); 
-	    } elsif (/sample size adjusted information = (\S+)/) {
-		$self->set_parameter("adjusted.information", $1); 
-	    } elsif (/ln\(p\-value\) = (\S+)   p\-value = (\S+)/) {
-		$self->set_parameter("ln.Pval", $1); 
-		$self->set_parameter("Pval", $2); 
-	    } elsif (/ln\(expected frequency\) = (\S+)   expected frequency = (\S+)/) {
-		$self->set_parameter("ln.exp", $1); 
-		$self->set_parameter("exp", $2); 
-	    }
+	  ## Sites used to build the matrix
+	} elsif (/(\d+)\|(\d+)\s*\:\s*(-){0,1}(\d+)\/(\d+)\s+(\S+)/) {
+	  	    my $site_nb = $1;
+	  	    my $site_cycle = $2;
+	  	    my $site_strand = $3;
+	  	    my $site_seq_nb = $4;
+	  	    my $site_pos = $5;
+	  	    my $site_sequence = $6;
+	  $self->push_attribute("sites", $site_sequence);
+	  &RSAT::message::Debug("line", $l, "site", $site_sequence) if ($main::verbose >= 4);
+	    
+	  ## Other matrix parameters
+	} elsif (/number of sequences = (\d+)/) {
+	  $self->set_parameter("nb.sequences", $1); 
+	} elsif (/unadjusted information = (\S+)/) {
+	  $self->set_parameter("unadjusted.information", $1); 
+	} elsif (/sample size adjusted information = (\S+)/) {
+	  $self->set_parameter("adjusted.information", $1); 
+	} elsif (/ln\(p\-value\) = (\S+)   p\-value = (\S+)/) {
+	  $self->set_parameter("ln.Pval", $1); 
+	  $self->set_parameter("Pval", $2); 
+	} elsif (/ln\(expected frequency\) = (\S+)   expected frequency = (\S+)/) {
+	  $self->set_parameter("ln.exp", $1); 
+	  $self->set_parameter("exp", $2); 
 	}
+      }
     }
     close $in if ($file);
-}
+  }
 
 
 ################################################################
@@ -1067,6 +1078,13 @@ sub toString {
     my ($self, %args) = @_;
     my $to_print = "";
 
+    ## Separator between row names (residues) and matrix content
+    my $pipe =  "|";
+    if (defined($args{pipe})) {
+      $pipe = $args{pipe};
+    }
+    $self->force_attribute("pipe", $pipe);
+
     ## Matrix type
     $type = $args{type} || "counts";
 
@@ -1140,7 +1158,8 @@ sub toString {
 	    } else {
 		$to_print .= "; Pos";
 	    }
-	    $to_print .= $sep."|";
+	    
+	    $to_print .= $sep.$pipe if ($pipe);
 	    for my $c (0..($ncol-1)) {
 		my $pos = $c+1;
 		if ($col_width) {
@@ -1872,7 +1891,8 @@ sub _printMatrixRow {
 #    &RSAT::message::Debug("w=".$col_width, "sep='".$sep."'", "pos=".$pos, "decimals=".$decimals, "number_width=".$number_width) if ($main::verbose >= 10);
     
     ## Print the matrix row
-    $row_string .= $sep."|";
+    my $pipe = $self->get_attribute("pipe");
+    $row_string .= $sep.$pipe if ($pipe);
     for $c (0..($ncol-1)) {
 	my $value = $values[$c];
 	if ($col_width) {
