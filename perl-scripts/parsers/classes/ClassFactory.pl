@@ -117,8 +117,9 @@ use Data::Dumper;
     return %{$class_holder->{_name_index}};
   }
   
+  ################################################################
+  ### returns all objects of a class holder
   sub get_objects {
-    ### returns all objects of a class holder
     my ($class_holder) = @_;
     return @{$class_holder->{_objects}};
   }
