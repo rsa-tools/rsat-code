@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.172 2006/11/24 16:26:39 rsat Exp $
+# $Id: gene-cluster-motifs,v 1.173 2006/11/30 07:36:08 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -1097,7 +1097,7 @@ sub MatchPatterns {
    $command .= " -format ".$seq_format;
    $command .= " -pl ".$oligo_file;
    $command .= " -origin ".$origin;
-   $command .= " -limit ";
+   $command .= " -return sites,limits ";
    $command .= $options;
    $command .= " | features-from-dnapat -o ".$feature_file;
 
@@ -1234,7 +1234,7 @@ sub DrawMergedFeatureMap {
    $fmap_file = $family{$family_name}->{merged_file}.".${IMG_FORMAT}";
    $htmap_file = $family{$family_name}->{merged_file}.".html";
    $origin = "-0";
-   my $command = "dna-pattern -i $family{$family_name}->{seq_file} -format $seq_format -pl $family{$family_name}->{merged_file} -origin $origin -N 4 -limit ";
+   my $command = "dna-pattern -i $family{$family_name}->{seq_file} -format $seq_format -pl $family{$family_name}->{merged_file} -origin $origin -N 4 -return sites,limits ";
    $command .= " | features-from-dnapat -o $family{$family_name}->{merged_ft_file} ";
 
    if ($batch) {
@@ -1988,7 +1988,7 @@ sub DrawDyadFeatureMap {
 
    ## pattern matching
    $origin = "-0";
-   my $command = "dna-pattern -pl $family{$family_name}->{dyad_file} -format $seq_format -i $family{$family_name}->{seq_file} -origin $origin -N 4 -limit ";
+   my $command = "dna-pattern -pl $family{$family_name}->{dyad_file} -format $seq_format -i $family{$family_name}->{seq_file} -origin $origin -N 4 -return sites,limits ";
    $command .= "| features-from-dnapat -o $family{$family_name}->{dyad_ft_file} ";
    if ($batch) {
        push @main::batch_commands, $command;
@@ -3974,10 +3974,11 @@ sub CalcCalibrationLengths {
 #	&CheckLast($fam_count);
 	
 	## Calculate sequence lengths
-	&RSAT::message::Info( join("\t", "", "Calculating sequence lengths for family", 
-				    $family_name, 
-				    $family{$family_name}->{seq_file},
-				    $family{$family_name}->{seq_len_file})
+	&RSAT::message::Info( join("\t", "", "Calculating sequence lengths for family",
+				   $fam_count."/".scalar(@families),
+				   $family_name, 
+				   $family{$family_name}->{seq_file},
+				   $family{$family_name}->{seq_len_file})
 			     ) if ($verbose >= 2);
 	my $command = "sequence-lengths -i ".$family{$family_name}->{seq_file};
 	$command .= " -o ".$family{$family_name}->{seq_len_file};
@@ -4005,7 +4006,8 @@ sub CalcCalibrationLengths {
 	}
 	close $in;
 	$calib_lengths{$family{$family_name}->{calib_length}}++;
-	warn ";\tcalibration length for family ", $family_name, "\t", $calib_lengths{$family_name}, "\n" if ($main::verbose >= 1);
+	&RSAT::message::TimeWarn("Calibration length for family ", $fam_count."/".scalar(@families), $family_name, 
+				 $family{$family_name}->{total_length}) if ($main::verbose >= 1);
    }  
    my @calib_lengths = sort {$a <=> $b } keys %calib_lengths;
    &RSAT::message::Info(join("\t", "Calibration lengths", join( ";", @calib_lengths))) if ($main::verbose >= 1);
