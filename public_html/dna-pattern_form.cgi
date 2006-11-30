@@ -24,7 +24,7 @@ $default{strands} = "both strands";
 ## Return formats
 $default{match_positions} = 'checked';
 $default{limits} = 'checked';
-$default{match_counts} = '';
+$default{counts} = '';
 $default{table} = '';
 $default{stats} = '';
 
@@ -135,14 +135,15 @@ print CGI::table({-border=>0,-cellpadding=>3,-cellspacing=>0},
 		      CGI::td({-align=>left,-valign=>MIDDLE},
 			      [
 			       '',
-			       $query->checkbox(-name=>'match_counts',
-						-checked=>$default{match_counts},
+			       $query->checkbox(-name=>'counts',
+						-checked=>$default{counts},
 						-label=>' match counts'),
-			       "<A HREF='help.all-upstream-search.html#threshold'><B> threshold on match counts</B></A>",
+			       "<A HREF='help.all-upstream-search.html#threshold'><B>min count</B></A>",
 			       $query->textfield(-name=>'threshold',
 						 -default=>$default{threshold},
 						 -size=>2)
 			       ]),
+
 		      CGI::td({-align=>left,-valign=>MIDDLE},
 			      [
 			       '',
@@ -152,7 +153,15 @@ print CGI::table({-border=>0,-cellpadding=>3,-cellspacing=>0},
 			       $query->checkbox(-name=>'total',
 						-checked=>'checked',
 						-label=>'totals'),
-			       ''
+			       $query->checkbox(-name=>'scores',
+						-checked=>$default{scores},
+						-label=>' match scores'),
+			       $query->checkbox(-name=>'rank',
+						-checked=>$default{rank},
+						-label=>' match rank'),
+			       $query->checkbox(-name=>'sort',
+						-checked=>$default{sort},
+						-label=>' sort'),
 			       ]),
 
 			## Statistics
