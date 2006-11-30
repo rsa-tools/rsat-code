@@ -56,7 +56,7 @@ $parameters .= " -i $sequence_file -format $sequence_format";
 
 ### return matching positions
 if ($query->param('match_positions')) {
-    $parameters .= " -pos";
+    $parameters .= " -return sites";
 
     ### origin ###
     if ($query->param('origin') =~ /end/i) {
@@ -77,30 +77,46 @@ if ($query->param('match_positions')) {
 
 ### return sequence limits
 if ($query->param('limits')) {
-  $parameters .= " -limits";
+  $parameters .= " -return limits";
 }
   
 
 ### return match count ###
-if ($query->param('match_counts')) {
-    $parameters .= " -c";
-    if (($query->param('threshold') =~ /^\d+$/) && ($query->param('threshold') > 0)) {
+if ($query->param('counts')) {
+    $parameters .= " -return counts";
+    if (($query->param('threshold') =~ /^\d+$/) && 
+	($query->param('threshold') > 0)) {
 	$parameters .= " -th ".$query->param('threshold');
     }
 } 
 
+### return match scores
+if ($query->param('scores')) {
+    $parameters .= " -return scores";
+} 
+
+### return match rank
+if ($query->param('rank')) {
+    $parameters .= " -return rank";
+} 
+
+### Sort matches
+if ($query->param('sort')) {
+    $parameters .= " -sort";
+} 
+
 ### return match count table
 if ($query->param('table')) {
-    $parameters .= " -table";
+    $parameters .= " -return table";
     ### add a rwo and a column with the totals
     if ($query->param('total')) {
-	$parameters .= " -total";
+	$parameters .= " -return total";
     }
 }
 
 ### return match statistics
 if ($query->param('stats')) {
-  $parameters .= " -stats";
+  $parameters .= " -return stats";
 }
   
 ### prevent overlapping matches
