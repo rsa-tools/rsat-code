@@ -1503,7 +1503,7 @@ sub calcFrequencies {
       if ($main::verbose >= 4);
 
     ## pseudo-weight
-    my $pseudo = $self->get_attribute("pseudo");
+    my $pseudo = $self->get_attribute("pseudo") || 0;
 
     ## count matrix
     my @matrix = $self->getMatrix();
