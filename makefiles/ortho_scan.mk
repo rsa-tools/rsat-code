@@ -8,8 +8,12 @@ MAKEFILE=${RSAT}/makefiles/ortho_scan.mk
 ortho_disco_targets:
 	${MAKE} usage MAKEFILE=${RSAT}/makefiles/ortho_disco.mk
 
-FACTOR=LexA
-GENE=LEXA
+
+################################################################
+## Scan the promoters of one group of orhtologous genes with one
+## position-specific scoring matrix
+FACTOR=CRP
+GENE=fruR
 MATRIX_DIR=data/RELEASE/Sites_mtx
 MATRIX=${MATRIX_DIR}/${FACTOR}.RegulonDB.mtx 
 RESULT_DIR=results/matches/${FACTOR}
@@ -19,7 +23,7 @@ PSEUDO=1
 MKV=1
 SCAN_DIR=results/matches/${FACTOR}/per_gene
 SCAN_FILE=${SCAN_DIR}/matches_TF_${FACTOR}_up_${GENE}_${TAXON}${STR}_ps${PSEUDO}_mkv${MKV}
-scan:
+one_scan:
 	@mkdir -p ${SCAN_DIR}
 	matrix-scan -v ${V} -i ${SEQ} \
 		-m ${MATRIX} \
@@ -28,11 +32,18 @@ scan:
 		-bginput -markov ${MKV} -o ${SCAN_FILE}.tab
 	@echo ${SCAN_FILE}.tab
 
-map:
+one_map:
 	feature-map -i ${SCAN_FILE}.tab \
 		-scalebar -scalestep 25 -xsize 800 -dot \
 		-title "${FACTOR} matches in ${TAXON} ${GENE} promoters" \
 		-o ${SCAN_FILE}.png 
 	@echo ${SCAN_FILE}.png
+
+one_score_distrib:
+	convert-seq -i ${SEQ} -from fasta -to wc \
+		| patser 
+		| features-from-patser
+
+
 
 all: orthologs upstream scan map
