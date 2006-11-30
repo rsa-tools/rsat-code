@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: seq-proba,v 1.3 2006/10/26 05:41:07 jvanheld Exp $
+# $Id: seq-proba,v 1.4 2006/11/30 07:37:09 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -87,11 +87,17 @@ package main;
     %supported_return_fields = (
 				id=>1,
 				proba_b=>1,
+				log_proba=>1,
 				len=>1,
 				seq=>1,
 				);
     $supported_return_fields = join (",", sort(keys( %supported_return_fields)));
 
+    $log10 = log(10);
+    
+
+    ################################################################
+    ## Read argument values
     &ReadArguments();
 
     ################################################################
@@ -140,6 +146,17 @@ package main;
 	}
       }
     }
+    if ($return_fields{log_proba}) {
+      if (scalar(@bg_files) == 1) {
+	push @header, "log_proba";
+      } else {
+	foreach my $file (@bg_files) {
+	  my $basename = `basename $file`;
+	  chomp $basename;
+	  push @header, $basename;
+	}
+      }
+    }
     push @header, "sequence" if ($return_fields{seq});
 
     print $out "#", join ("\t", @header), "\n";
@@ -166,6 +183,7 @@ package main;
       foreach my $bg_model (@bg_models) {
 	my $proba_b = $bg_model->segment_proba($current_seq);
 	push @return_fields, sprintf("%.4e", $proba_b) if ($return_fields{proba_b});
+	push @return_fields, sprintf("%.2f", log($proba_b/$log10)) if ($return_fields{log_proba});
       }
 
       ## Report sequence
