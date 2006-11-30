@@ -361,6 +361,7 @@ OPTIONS
 		-a yeast
 		will automatically use the residue frequencies from yeast 
 		genome.  
+
 	-expfreq
 		indicate the file that contains expected oligomer 
 		frequencies. When this option is used, the sequences are 
@@ -380,9 +381,17 @@ OPTIONS
 				positions j-3 and j-1
 			Wj-3,j	is the same word with the character B 
 				concatenated at its end
-	-ncf	(deprecated, use "-bg intergenic" instead)
-		use intergenic frequencies as background frequencies
+
 	-bg	background model
+
+		Automatically load a pre-calibrated exected frequency
+		file from the RSAT genome distribution. When this
+		option is used, the options -org and -ol are also
+		required, to indicate the organism and the
+		oligonucleotide length, respectively.
+
+		This option is incompatible with the option -expfreq. 
+		
 		Type of sequences used as background model for
 		estimating expected oligonucleotide frequencies.
 		
