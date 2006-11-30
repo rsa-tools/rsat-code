@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.1 2006/11/30 08:08:35 jvanheld Exp $
+# $Id: matrix-quality,v 1.2 2006/11/30 08:16:26 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -581,7 +581,7 @@ sub CompareDistrib {
   $distrib_compa_cmd .= " -numeric -sc ".$score_column;
   $distrib_compa_cmd .= " -suppress ".$outfile{prefix}."_scan_";
   $distrib_compa_cmd .= " -suppress .tab";
-  $distrib_compa_cmd .= " -o ".$outfile{distrib_compa}.".tab";
+  $distrib_compa_cmd .= " -o ".$outfile{distrib_compa}."_distrib.tab";
   $distrib_compa_cmd .= " -files ";
   $distrib_compa_cmd .= join(" ", @distrib_files);
 
