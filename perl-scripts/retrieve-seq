@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.55 2006/11/14 07:54:11 jvanheld Exp $
+# $Id: retrieve-seq,v 1.56 2006/11/30 08:15:44 jvanheld Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -498,7 +498,7 @@ USAGE
 			[-o outpufile] -q query_orf | -i query file | -all
 
 DESCRIPTION
-	Returns upstream or downstream sequences for list of query
+	Returns upstream, downstream or coding DNA sequences for list of query
 	genes.
 
 CATEGORY
@@ -588,7 +588,8 @@ OPTIONS
 			-label org,name,id
 
 	       In this case, the sequence identifier will contain all
-	       of these fields, separated by underscore.
+	       of these fields, separated by the separator specified
+	       with the option -labelsep.
 
 	-labelsep
 		Separator between label fields. Default: $label_sep
@@ -601,12 +602,11 @@ OPTIONS
 		- there is no a priori reason to exclude a regulatory site
 		  which would overlap the upstream coding sequence.
 
-	-rm	Use the repeat masked version of the genome. 
-		Attention : rerpeated regions are annotated for some genomes
-		only. 
+	-rm     Use the repeat masked version of the genome.  Attention :
+		repeated regions are annotated for some genomes only.
 
 	-nocom	no comments. Only the identifier and the sequence are
-		returned. By default, the comment indicates the orf and
+		returned. By default, the comment indicates the ORF and
 		upstream sequence coordinates.
 
 	-imp_pos

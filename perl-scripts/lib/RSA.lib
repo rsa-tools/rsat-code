@@ -119,7 +119,7 @@ $date = &AlphaDate();
 ## Usage:
 ##   &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 sub doit {
-    my ($command, $dry, $die_on_error, $verbose,$batch, $job_prefix) = @_;
+    my ($command, $dry, $die_on_error, $verbose, $batch, $job_prefix) = @_;
     my $wd = `pwd`;
     chomp $wd;
 
@@ -153,10 +153,10 @@ sub doit {
 
     } else {
 	## Verbose
-	if ($main::verbose >= 1) {
-	    &RSAT::message::TimeWarn("Working dir", $wd);
-	    &RSAT::message::TimeWarn($command);
-	}
+      if ($main::verbose >= 2) {
+	&RSAT::message::TimeWarn("Working dir", $wd);
+	&RSAT::message::TimeWarn($command);
+      }
 
 	## Run the command immediately
 	unless ($dry) {
