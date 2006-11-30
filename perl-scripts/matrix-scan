@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.40 2006/11/30 07:35:40 jvanheld Exp $
+# $Id: matrix-scan,v 1.41 2006/11/30 20:33:47 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -376,6 +376,7 @@ models only (-markov 0 to 1).
     foreach my $matrix_file (@matrix_files) {
 	my $matrix = new RSAT::matrix();
 	$matrix->readFromFile($matrix_file, $matrix_format);
+	$matrix->set_attribute("scored", 0); ## Number of sequence segments for which the matrix calculated a score
 	$matrix->set_attribute("matches", 0); ## Initialize the match counter
 	$matrix->set_attribute("pseudo", $pseudo_counts);
 	$matrix->set_attribute("equi_pseudo", $main::equi_pseudo);
@@ -614,8 +615,11 @@ models only (-markov 0 to 1).
 		     "Wmin",
 		     "Wmax",
 		     "Wrange",
+		     "scored",
+		     "matches",
 		     "prior",
 		     ), "\n";
+
     foreach my $matrix (@matrices) {
 	print $out join ("\t", ";", 
 			 $matrix->get_attribute("name"),
@@ -627,6 +631,8 @@ models only (-markov 0 to 1).
 			 sprintf("%.3f", $matrix->get_attribute("Wmin")),
 			 sprintf("%.3f", $matrix->get_attribute("Wmax")),
 			 sprintf("%.3f", $matrix->get_attribute("Wrange")),
+			 sprintf("%d", $matrix->get_attribute("scored")),
+			 sprintf("%d", $matrix->get_attribute("matches")),
 			 );
 	my %prior = $matrix->getPrior();
 	print $out "\t";
@@ -1245,6 +1251,8 @@ sub score_segment {
     my $ncol = $matrix->{ncol};
     my $proba_M = 1;
     my $proba_B = 1;
+
+    $matrix->{scored}++;
 
     $proba_M = $matrix->segment_proba($segment);
     return(0) unless (&check_thresholds("proba_M", $proba_M));
