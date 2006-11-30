@@ -1,0 +1,641 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: matrix-quality,v 1.1 2006/11/30 08:08:35 jvanheld Exp $
+#
+# Time-stamp: <2003-07-04 12:48:55 jvanheld>
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+matrix-quality
+
+=head1 DESCRIPTION
+
+Evaluate the quality of a Position-Specific Scoring Matrix (PSSM), by
+anlyzing the score distribution in a set of positive (true binding
+sites) and negative sequences (e.g. intergenic sequences between
+"convergently transcribed' genes).
+
+=head2 Leave-One-Out test
+
+An important bias can come from an over-fitting of the matrix to the
+positive set, in case one would use the same sites for building the
+PSSM and for evaluating it. To avoid this bias, the option -loo allows
+to perform a Leave-One-Out (LOO) evaluation o the positive set: one
+sequence (the "left out sequence") is temporarily discarded from the
+positive set, and th remaining sequences are used to build a matrix,
+which is then used to score the left out sequence. The process
+iterates over all the sequences of the positive set.
+
+=head1 AUTHORS
+
+jvanheld@scmbb.ulb.ac.be
+
+=head1 CATEGORY
+
+=over
+
+=item sequences
+
+=item pattern matching
+
+=item PSSM
+
+=item evaluation
+
+=back
+
+=head1 USAGE
+    
+matrix-quality [-i inputfile] [-o outputfile] [-v]
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+
+require "RSA.lib";
+
+use RSAT::matrix;
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    #### initialise parameters
+    my $start_time = &AlphaDate();
+
+    @matrix_scan_options = ();
+    $seq_format = "fasta";
+    $matrix_format = "consensus";
+
+    %main::infile = ();
+    %main::outfile = ();
+
+    $main::verbose = 0;
+    $main::out = STDOUT;
+
+    ## Parameters for the &doit() command
+    $dry = 0;
+    $die_on_error = 1;
+    $job_prefix = "matrix-quality";
+    $batch = 0;
+
+    ## Return fields
+    %supported_return_fields = (
+				roc=>1,
+				sites=>1,
+				);
+    $supported_return_fields = join (",", sort(keys( %supported_return_fields)));
+    %return_fields = ();
+
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+
+    ################################################################
+    ## Check argument values
+
+    ## Matrix+sites file is also matrix
+    if ($infile{matrix_sites}) {
+      $infile{matrix} = $infile{matrix_sites};
+    }
+
+    ## Matrix file is mandatory
+    &RSAT::error::FatalError("You must define a matrix file, with either option -m or -ms")
+      unless ($infile{matrix});
+
+    ## Output prefix is mandatory
+    &RSAT::error::FatalError("You must define a prefix for the output files with the option -o")
+      unless ($outfile{prefix});
+
+    ################################################################
+    ### open output stream
+    $main::out = &OpenOutputFile($main::outfile{prefix}."_log.txt");
+
+    ################################################################
+    ## Read input matrix.
+    my $matrix_file = $infile{matrix};
+    my $matrix = new RSAT::matrix();
+    $matrix->readFromFile($matrix_file, $matrix_format);
+    $matrix->set_attribute("file", $matrix_file);
+    my ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
+    $matrix_name =~ s/\.\S+$//; ## suppress the extensin from the file name
+    $matrix->set_attribute("name", $matrix_name);
+    my ($Wmin, $Wmax, $Wrange)  = $matrix->weight_range();
+
+    ## Export input sites with the matrix
+    &ExportInputSites($matrix, $matrix_file);
+
+    ## Export the matrix in tab-delimited format
+    &ExportTabMatrix($matrix);
+
+    ## Shuffle the matrix
+    &PermuteMatrixColumns();
+
+    ## Score the different sequences
+    my @distrib_files = ();
+
+    ## Score positive sequences with the matrix
+    if ($infile{pos_sequences}) {
+      &ScanSequences($infile{pos_sequences}, $matrix_file, $matrix_format, "positive",  @matrix_scan_options); push @distrib_files, &ScoreDistrib('positive', $Wmin, $Wmax);
+      &ScanSequences($infile{pos_sequences}, $outfile{matrix_perm_col}, "tab", "positive_perm_col",  @matrix_scan_options); push @distrib_files, &ScoreDistrib('positive_perm_col', $Wmin, $Wmax);
+    }
+
+    ## Score negative sequences with the matrix
+    if ($infile{neg_sequences}) {
+      &ScanSequences($infile{neg_sequences}, $matrix_file, $matrix_format, "negative",  @matrix_scan_options); push @distrib_files, &ScoreDistrib('negative', $Wmin, $Wmax);
+      &ScanSequences($infile{neg_sequences}, $outfile{matrix_perm_col}, "tab", "negative_perm_col",  @matrix_scan_options); push @distrib_files, &ScoreDistrib('negative_perm_col', $Wmin, $Wmax);
+    }
+
+    ## Compare the distributions
+    &CompareDistrib(9, @distrib_files);
+
+    ################################################################
+    ###### print output
+
+    #### print verbosity
+    &Verbose() if ($main::verbose);
+
+    ################################################################
+    ###### finish verbose
+    if ($main::verbose >= 1) {
+	my $done_time = &AlphaDate();
+	print $main::out "; Job started $start_time\n";
+	print $main::out "; Job done    $done_time\n";
+    }
+    
+     
+    ################################################################
+    ###### close output stream
+    close $main::out if ($main::outfile{prefix});
+    
+    
+    exit(0);
+}
+
+################################################################
+################### subroutine definition ######################
+################################################################
+
+
+################################################################
+#### display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+#### display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+#### Read arguments 
+sub ReadArguments {
+
+    my $arg = "";
+    
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    
+
+    while ($arg = shift (@arguments)) {
+
+	## Verbosity
+=pod
+	    
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+	    
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+	    
+	    ## Dry run
+=pod
+
+=item B<-dry>
+
+Dry run: print the commands but do not execute them. 
+
+=cut
+	} elsif ($arg eq "-dry") {
+	    $main::dry = 1;;
+	    
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+	    
+	    ## Matrix file
+=pod
+
+=item B<-m matrixfile>
+
+Matrix file.
+
+=cut
+	} elsif ($arg eq "-m") {
+ 	  &RSAT::message::FatalError("Options -ms and -m are mutually incompatible.") 
+	    if ($main::infile{matrix_sites});
+	  &RSAT::message::FatalError("You are not allowed to specify several matrices.") 
+	    if ($main::infile{matrix});
+	  $main::infile{matrix} = shift(@arguments);
+
+
+	    
+	    ## File containing both the matrix and its sites
+=pod
+
+=item B<-ms matrix_sites>
+
+File containing botha matrix and its sites. The sites are then used as
+positive sequence set.
+
+This is equivalent to combine the options "-m" and "-pos".  This
+option is only vaild with the file formats which contain both the
+matrix and its sites (e.g. consensus, MotifSampler, meme).
+
+The format of the matrix+site file can be specified with the option
+-matrix_format. 
+
+=cut
+	} elsif ($arg eq "-ms") {
+ 	  &RSAT::message::FatalError("Options -ms and -m are mutually incompatible.") 
+	    if ($main::infile{matrix});
+	  &RSAT::message::FatalError("You are not allowed to specify several matrices.") 
+	    if ($main::infile{matrix_sites});
+	  $main::infile{matrix_sites} = shift(@arguments);
+
+	    ## Matrix format
+=pod
+
+=item B<-matrix_format matrix_format>
+
+Format of the matrix file.
+
+=cut
+	} elsif ($arg eq "-matrix_format") {
+	    $matrix_format = shift(@arguments);
+	    
+
+	    ## File containing the positive sequence set
+=pod
+
+=item B<-pos pos_seq_file>
+
+File containing the positive sequence set.
+
+=cut
+	} elsif ($arg eq "-pos") {
+	  &RSAT::message::FatalError("Options -pos and -ms are mutually incompatible.") 
+	    if ($main::infile{matrix_sites});
+	  $main::infile{pos_sequences} = shift(@arguments);
+	    
+	    ## File containing the negative sequence set
+=pod
+
+=item B<-neg neg_seq_file>
+
+File containing the negative sequence set.
+
+=cut
+	} elsif ($arg eq "-neg") {
+	    $main::infile{neg_sequences} = shift(@arguments);
+
+	    ## Sequence format
+=pod
+
+=item B<-seq_format sequence_format>
+
+Sequence format. 
+
+=cut
+	} elsif ($arg eq "-seq_format") {
+	    $seq_format = shift(@arguments);
+	    
+	    
+	    ## Output file
+=pod
+
+=item	B<-o output_prefix>
+
+Prefix of the output files. The program generates various files, and
+automatically adds a specific suffix to each output file.
+
+=over
+
+=item I<pos_scores>
+
+Scores of the positive sequence set. 
+
+=back
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $main::outfile{prefix} = shift(@arguments);
+
+	    ## Return fields
+=pod
+
+=item B<-return return_fields>
+
+List of fields to return. 
+
+Supported fields: 
+
+=over
+
+=item B<ROC_data>
+
+Return a table containing the numeric values for the ROC curve. 
+
+=back
+
+=cut
+        } elsif ($arg eq "-return") {
+	    $arg = shift (@arguments);
+            chomp($arg);
+            my @fields_to_return = split ",", $arg;
+            foreach my $field (@fields_to_return) {
+		$field = lc($field);
+                if ($supported_return_fields{$field}) {
+                    $return_fields{$field} = 1;
+                } else {
+                    &RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_return_fields));
+		}
+	    }
+
+
+	    ## Other options
+=pod
+
+=item B<Other options>
+
+All the other options are automatically passed to matrix-scan, in
+order to specify the scanning parameters (strands, background model,
+...).
+
+Note that the option '-return' of matrix-scan cannot be used here,
+beause matrix-quality specifies the reutnr fields required for its
+statistics.
+
+=cut
+
+	} else {
+	  push @matrix_scan_options, $arg;
+
+	}
+    }
+
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $main::out "; matrix-quality ";
+    &PrintArguments($main::out);
+    if (defined(%main::infile)) {
+	print $main::out "; Input files\n";
+	foreach my $key (sort(keys %infile)) {
+	  my $value = $infile{$key};
+#	while (my ($key,$value) = each %main::infile) {
+	    printf $main::out ";\t%-21s\t%s\n", $key , $value;
+	}
+    }
+    if (defined(%main::outfile)) {
+	print $main::out "; Output files\n";
+	foreach my $key (sort(keys %outfile)) {
+	  my $value = $outfile{$key};
+	  printf $main::out ";\t%-21s\t%s\n", $key , $value;
+	}
+    }
+}
+
+
+################################################################
+## Export the sites which were use to build the matrix in a fasta file.
+sub ExportInputSites {
+  my ($matrix, $matrix_file) = @_;
+
+  $main::outfile{sites} = $outfile{prefix}."_sites.fasta";
+  $main::infile{pos_sequences} = $main::outfile{sites};
+  &RSAT::message::Info("Exporting input sites to file", $outfile{sites}) 
+    if ($main::verbose >= 2);
+
+  my $site_handler = &OpenOutputFile($outfile{sites});
+  my $site_nb = 0; 
+  foreach my $site ($matrix->get_attribute("sites")) {
+    $site_nb++;
+    my $site_id = $matrix->get_attribute("name");
+    $site_id .= "_site_".$site_nb;
+    &PrintNextSequence($site_handler, "fasta", 0, $site, $site_id);
+  }
+
+  my $matrix_scan_cmd = "matrix-scan -v 1 ";
+  $matrix_scan_cmd .= " -m ".$matrix_file;
+  
+}
+
+################################################################
+## Score the sites which were use to build the matrix.
+sub ScanSequences {
+  my ($sequence_file, $matrix_file, $matrix_format, $seq_type, @args) = @_;
+
+  $main::outfile{$seq_type} = $outfile{prefix}."_scan_".$seq_type.".tab";  
+  &RSAT::message::Info("Scoring sequences of type", $seq_type,  $outfile{$seq_type}) 
+    if ($main::verbose >= 2);
+
+  my $matrix_scan_cmd = "matrix-scan -v 1 ";
+  $matrix_scan_cmd .= " -i ".$sequence_file;
+  $matrix_scan_cmd .= " -m ".$matrix_file;
+  $matrix_scan_cmd .= " -matrix_format ".$matrix_format;
+  $matrix_scan_cmd .= " -o ".$outfile{$seq_type};
+  $matrix_scan_cmd .=  " -return sites,rank";
+  $matrix_scan_cmd .= join(" ", "", @args);
+
+  ## Execute the command
+  &doit($matrix_scan_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+}
+
+################################################################
+## Calculate the distribution of scores from a given matrix-scan result file
+sub ScoreDistrib {
+  my ($seq_type, $Wmin, $Wmax) = @_;
+
+  $main::outfile{$seq_type."_distrib"} = $outfile{prefix}."_scan_".$seq_type."_distrib.tab";
+  &RSAT::message::Info("Calculating score distribution for sequences of type", $seq_type,  $outfile{$seq_type."_distrib"}) 
+    if ($main::verbose >= 2);
+
+  my $classfreq_cmd = "grep -v '^;' $outfile{$seq_type} | grep -v '^#' | cut -f 8 | classfreq -v 1 ";
+  $classfreq_cmd .= " -ci 0.1 ";
+  $classfreq_cmd .= " -min ".$Wmin;
+  $classfreq_cmd .= " -max ".$Wmax;
+  $classfreq_cmd .= " -o ".$outfile{$seq_type."_distrib"};
+
+  ## Execute the command
+  &doit($classfreq_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  
+  return ($outfile{$seq_type."_distrib"});
+}
+
+################################################################
+## Export the matrix in tab-delimited format. This will be used
+## for permuting the matrix.
+sub ExportTabMatrix {
+  my ($matrix) = @_;
+
+  $outfile{matrix_tab} = $outfile{prefix}."_matrix.tab";
+  &RSAT::message::Info("Exporting matrix in tab-delimited format",  $outfile{matrix_tab}) 
+    if ($main::verbose >= 2);
+
+  my $verbose_bk = $verbose;
+  $verbose = 0;
+  $matrix_handle = &OpenOutputFile($main::outfile{matrix_tab});
+  print $matrix_handle $matrix->toString(sep=>"\t",
+					 type=>"counts",
+					 format=>"tab",
+					 pipe=>"", ## We suppress the pipe for permute-table
+					);
+  close $matrix_handle;
+  $verbose = $verbose_bk;
+}
+
+
+################################################################
+## Export the matrix in tab-delimited format. This will be used
+## for permuting the matrix.
+sub PermuteMatrixColumns {
+  $outfile{matrix_perm_col} = $outfile{prefix}."_matrix_perm_col.tab";
+  &RSAT::message::Info("Permuting matrix columns",  $outfile{matrix_perm_col}) 
+    if ($main::verbose >= 2);
+
+  my $permute_matrix_cmd = "permute-table -rownames -entire_col";
+  $permute_matrix_cmd .= " -i ".$outfile{matrix_tab};
+  $permute_matrix_cmd .= " -o ".$outfile{matrix_perm_col};
+
+  ## Execute the command
+  &doit($permute_matrix_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+}
+
+################################################################
+## Compare the score distribution files
+sub CompareDistrib {
+  my ($score_column, @distrib_files) = @_;
+
+  $outfile{distrib_compa} = $outfile{prefix}."_score_distrib_compa";
+  &RSAT::message::Info("Comparing score distributions",  $outfile{distrib_compa}) 
+    if ($main::verbose >= 2);
+
+  ################################################################
+  ## Compare the distributions
+  my $distrib_compa_cmd = "compare-scores ";
+  $distrib_compa_cmd .= " -numeric -sc ".$score_column;
+  $distrib_compa_cmd .= " -suppress ".$outfile{prefix}."_scan_";
+  $distrib_compa_cmd .= " -suppress .tab";
+  $distrib_compa_cmd .= " -o ".$outfile{distrib_compa}.".tab";
+  $distrib_compa_cmd .= " -files ";
+  $distrib_compa_cmd .= join(" ", @distrib_files);
+
+  ## Execute the command
+  &doit($distrib_compa_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+
+  ################################################################
+  ## draw a graph with all the inverse cumulative distributions
+  my $XYgraph_cmd = "XYgraph ";
+  my $ycols = join ",", 2..(scalar(@distrib_files)+2);
+  $XYgraph_cmd .= " -i ".$outfile{distrib_compa}.".tab";
+  $XYgraph_cmd .= " -format png -lines -pointsize 1 -xsize 1000 -legend";
+  $XYgraph_cmd .= " -title1 matrix-quality ";
+  $XYgraph_cmd .= " -title2 ".$outfile{prefix};
+  $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
+  $XYgraph_cmd .= " -xleg1 'matrix score' ";
+  $XYgraph_cmd .= " -yleg1 'Frequency (inverse cumulative) ' ";
+  $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
+  $XYgraph_cmd .= " -o ".$outfile{distrib_compa}.".png";
+
+  ## Execute the command
+  &doit($XYgraph_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+
+  ################################################################
+  ## Draw a ROC curve
+  my $XYgraph_cmd = "XYgraph ";
+  my $ycols = join ",", 2..(scalar(@distrib_files)+2);
+  $XYgraph_cmd .= " -i ".$outfile{distrib_compa}.".tab";
+  $XYgraph_cmd .= " -format png -lines -pointsize 1 -size 600 ";
+  $XYgraph_cmd .= " -title1 'matrix-quality: ROC curve' ";
+  $XYgraph_cmd .= " -title2 ".$outfile{prefix};
+  $XYgraph_cmd .= " -ycol 2 -xcol 4";
+  $XYgraph_cmd .= " -xleg1 'negative set' ";
+  $XYgraph_cmd .= " -yleg1 'positive set' ";
+  $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
+  $XYgraph_cmd .= " -xmin 0  -xmax 1 ";
+  $XYgraph_cmd .= " -o ".$outfile{distrib_compa}."_roc.png";
+
+  ## Execute the command
+  &doit($XYgraph_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+
+}
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=over
+
+=item B<matrix-scan>
+
+=back
+
+=cut
