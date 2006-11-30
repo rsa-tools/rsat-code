@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.39 2006/11/29 18:18:23 jvanheld Exp $
+# $Id: matrix-scan,v 1.40 2006/11/30 07:35:40 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -266,9 +266,7 @@ models only (-markov 0 to 1).
     
     ################################################################
     #### check argument values
-
-
-    &RSAT::error::FatalError("You must specify the method for bagkground estimation (an option among -bgfile, -bginput, -window)") unless ($bg_method);
+    &RSAT::error::FatalError("You must specify the method for background estimation (an option among -bgfile, -bginput, -window)") unless ($bg_method);
 
     ## Calculate only once the denominator for the logarithms
     $main::log_base = log($base);
@@ -376,8 +374,6 @@ models only (-markov 0 to 1).
     my %prior = $bg_model->get_attribute("suffix_proba");
     &RSAT::message::TimeWarn(join("\t", "PRIOR", join(" ", %prior))) if ($main::verbose >= 2);
     foreach my $matrix_file (@matrix_files) {
-	my ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
-	$matrix_name =~ s/\.\S+$//; ## suppress the extensin from the file name
 	my $matrix = new RSAT::matrix();
 	$matrix->readFromFile($matrix_file, $matrix_format);
 	$matrix->set_attribute("matches", 0); ## Initialize the match counter
@@ -385,9 +381,11 @@ models only (-markov 0 to 1).
 	$matrix->set_attribute("equi_pseudo", $main::equi_pseudo);
 	$matrix->set_attribute("file", $matrix_file);
 	$matrix->set_attribute("n_treatment", $n_treatment);
-	$matrix->set_attribute("name", $matrix_name);
 	$matrix->push_attribute("parameters", "pseudo");
 	$matrix->index_alphabet();
+	my ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
+	$matrix_name =~ s/\.\S+$//; ## suppress the extensin from the file name
+	$matrix->set_attribute("name", $matrix_name);
 
 	## Check that the matrix width is smaller than markov order + 1
 	my $matrix_width = $matrix->ncol();
@@ -852,16 +850,6 @@ multiple matrices.
 	    push @matrix_files, shift(@arguments);
 #	    $main::infile{matrix} = shift(@arguments);
 
-# 	    ## Matrix name
-# =pod
-#
-# =item B<-mname matrix_name>
-#
-# Matrix name. 
-#
-# =cut
-# 	} elsif ($arg eq "-mname") {
-# 	    $main::matrix_name = shift(@arguments);
 
 	    ## Sequence format
 =pod
