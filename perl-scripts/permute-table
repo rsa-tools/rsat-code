@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: permute-table,v 1.3 2006/04/10 11:59:21 rsat Exp $
+# $Id: permute-table,v 1.4 2006/11/30 06:50:48 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -131,11 +131,11 @@ while (my $line = <$in>) {
 
     ## Take the elements
     if ($permute_rows) {
-	push @values,  &RSAT::stats::permute(@fields);
-    } elsif ($permute_cols) {
-	foreach my $c (0..$#fields) {
-	    push @{$values->[$c]}, $fields[$c];
-	}
+      push @values,  &RSAT::stats::permute(@fields);
+    } elsif (($permute_cols) || ($permute_entire_cols)){
+      foreach my $c (0..$#fields) {
+	push @{$values->[$c]}, $fields[$c];
+      }
     } else {
 	push @values,  @fields;
     }
@@ -150,19 +150,32 @@ close $in if ($infile{input});
 
 if ($permute_rows) {
     ## done above
+
 } elsif ($permute_cols) {
+  ## Permute elements inside each column of the input table
     my $perm_col_values;
     foreach my $c (0..($max_fields-1)) {
-	my @values = @{$values->[$c]};
-#	&RSAT::message::Debug("Column", $c,"values", @values);
-	my @perm_values = &RSAT::stats::permute(@values);
-#	&RSAT::message::Debug("Permuted column", $c,"values", @perm_values);
-	push @{$perm_col_values[$c]}, @perm_values;
-#	&RSAT::message::Debug("Permuted column", $c,"values", @{$perm_col_values[$c]});
+      my @values = @{$values->[$c]};
+      my @perm_values = &RSAT::stats::permute(@values);
+      push @{$perm_col_values[$c]}, @perm_values;
     }
     foreach my $r (0..$row_index) {
 	foreach my $c (0..($max_fields-1)) {
-#	    &RSAT::message::Debug($r, $c, ${$perm_col_values[$c]}[$r]);
+	    push @values, ${$perm_col_values[$c]}[$r];
+	}
+    }
+
+} elsif ($permute_entire_cols) {
+  ## Permute entire columns of the input table
+    my $perm_col_values;
+    my @cols = 0..($max_fields-1);
+    my @perm_col = &RSAT::stats::permute(@cols);
+    foreach my $c (@cols) {
+      my @perm_values = @{$values->[$perm_col[$c]]};
+      push @{$perm_col_values[$c]}, @perm_values;
+    }
+    foreach my $r (0..$row_index) {
+	foreach my $c (0..($max_fields-1)) {
 	    push @values, ${$perm_col_values[$c]}[$r];
 	}
     }
@@ -290,19 +303,30 @@ allows to use the command within a pipe.
 
 =item B<-col>
 
-Permute columns only, i.e. perumte the elements within each column separately.
+Permute columns only, i.e. permute the elements within each column separately.
 
 =cut
 	} elsif ($ARGV[$a] eq "-col") {
 	    $permute_cols = 1;
 	    &RSAT::error::FatalError("The options -col and -row are mutually exclusive") if ($permute_rows);
 	    
+	    ## Permute entire columns of the matrix
+=pod
+
+=item B<-entire_col>
+
+Permute entire columns of the matrix. 
+
+=cut
+	} elsif ($ARGV[$a] eq "-entire_col") {
+	    $permute_entire_cols = 1;
+	    
 	    ## Permute rows only
 =pod
 
 =item B<-row>
 
-Permute rows only, i.e. perumte the elements within each row separately.
+Permute rows only, i.e. permute the elements within each row separately.
 
 =cut
 	} elsif ($ARGV[$a] eq "-row") {
@@ -338,7 +362,7 @@ input file is used as header. The header is not permuted.
 =item	B<-rownames>
 
 
-Row names. When this option is ised, the first column of the input
+Row names. When this option is used, the first column of the input
 file is supposed to contain row names, and is not permuted.
 
 =cut
