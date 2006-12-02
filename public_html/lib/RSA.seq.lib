@@ -1435,16 +1435,16 @@ sub FoldSequence {
     return $out_seq;
 }
 
-####### fold sequence ##########
-### usage &CleanDNA($sequence)
-### replaces all non-acgt characters by "."
+################################################################
+## CleanDna
+## usage &CleanDNA($sequence, $mask_char)
+## replaces all non-acgt characters by "n"
 sub CleanDNA {
-    my ($_sequence) = @_;
-
-    $_sequence =~ s/\s//g;  ### remove blank spaces, tabs and newlines
-    $_sequence =~ s/[^acgt]/./ig;  ### remove blank spaces, tabs and newlines
-
-    return $_sequence;
+  my ($_sequence, $mask_char) = @_;
+  $mask_char = "n" || $mask_char;
+  $_sequence =~ s/\s//g;  ### remove blank spaces, tabs and newlines
+  $_sequence =~ s/[^acgt]/${mask_char}/ig;  ### remove blank spaces, tabs and newlines
+  return $_sequence;
 }
 
 ### usage : $dist = EditDistance($string1,$string2);
