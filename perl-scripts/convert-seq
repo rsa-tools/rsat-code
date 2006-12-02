@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-seq,v 1.22 2006/08/22 18:02:07 rsat Exp $
+# $Id: convert-seq,v 1.23 2006/12/02 04:37:50 jvanheld Exp $
 #
 # Time-stamp: <2002-09-24 21:24:13 jvanheld>
 #
@@ -110,7 +110,7 @@ while ((($current_seq, $current_id, @comments) = &ReadNextSequence($in, $in_form
 
     #### DNA only
     if ($dna) {
-        $current_seq = &CleanDNA($current_seq);
+        $current_seq = &CleanDNA($current_seq, "n");
     }
 
     if ($seq_identifier) {
@@ -276,7 +276,7 @@ OPTIONS
 
 	-uc	lowercase. the sequence is printed in uppercase.
 
-	-dna	convert any non-acgt character into "." 
+	-dna	convert any non-acgt character into "n" 
 		This is to filter out partly speciied nucleotides.
 
 	-id identifier
@@ -322,7 +322,7 @@ consvert-seq options
 -addrc			add the reverse complement of each input sequence
 -lc			convert all letters to lowercase
 -uc			convert all letters to uppercase
--dna			convert any non-acgt character into "." 
+-dna			convert any non-acgt character into "n" 
 -id			sequence identifier
 -prefix			sequence prefix
 -nocheckid		Prevent to check sequence IDs for conversion to the format filelist.
