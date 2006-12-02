@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank_lib.pl,v 1.32 2006/11/24 17:04:59 jvanheld Exp $
+# $Id: parse_genbank_lib.pl,v 1.33 2006/12/02 23:05:42 rsat Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -1416,13 +1416,13 @@ sub InheritGeneNames {
 	  my @gene_names = $gene->get_attribute("names");
 	  foreach my $name (@gene_names) {
 	    $feature->push_attribute("names", $name);
-	    &RSAT::message::Info("Added gene name", $name, "to feature", $feature->get_attribute("id")) if ($main::verbose >= 0);
+	    &RSAT::message::Info("Added gene name", $name, "to feature", $feature->get_attribute("id")) if ($main::verbose >= 4);
 	  }
 	} else {
-	  &RSAT::message::Warning("No GeneID for feature", $feature->get_attribute("id")) if ($main::verbose >= 0);
+	  &RSAT::message::Warning("No gene corresponding to GeneID", $GeneId, " for feature", $feature->get_attribute("id")) if ($main::verbose >= 1);
 	}
       } else {
-	&RSAT::message::Warning("No GeneID for feature", $feature->get_attribute("id")) if ($main::verbose >= 0);
+	&RSAT::message::Warning("No GeneID for feature", $feature->get_attribute("id")) if ($main::verbose >= 1);
       }
     }
   }
