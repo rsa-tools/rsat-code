@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: downloads.mk,v 1.33 2006/11/30 08:17:36 jvanheld Exp $
+# $Id: downloads.mk,v 1.34 2006/12/02 23:04:55 rsat Exp $
 #
 # Time-stamp: <2003-10-09 14:02:21 jvanheld>
 #
@@ -51,6 +51,7 @@ GENBANK_DIRS =					\
 
 NCBI_DIR=Saccharomyces_cerevisiae
 NCBI_EXCLUDE=										\
+		--exclude '*_alt_*'							\
 		--exclude Assembled_chromosomes						\
 		--exclude SNP								\
 		--exclude maps								\
