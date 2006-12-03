@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.17 2006/11/23 16:00:53 jvanheld Exp $
+# $Id: convert-matrix,v 1.18 2006/12/03 08:21:04 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -17,6 +17,7 @@ BEGIN {
     require "RSA.lib";
 }
 use RSAT::matrix;
+use RSAT::MatrixReader;
 
 #### initialise parameters ####
 my $start_time = &AlphaDate();
@@ -36,18 +37,19 @@ local $verbose = 0;
 local $out = STDOUT;
 
 ## Return type(s)
-@return_types = ();
+@return_fields = ();
 %supported_return_type = (
-			    "profile"=>1,
-			    "counts"=>1,
-			    "frequencies"=>1,
-			    "weights"=>1,
-			    "information"=>1,
-			    "parameters"=>1,
-			    "consensus"=>1,
-			    "margins"=>1
-			    );
-$supported_return_types = join ",", sort keys %supported_return_type;
+    "profile"=>1,
+    "counts"=>1,
+    "frequencies"=>1,
+    "weights"=>1,
+    "information"=>1,
+    "parameters"=>1,
+    "consensus"=>1,
+    "margins"=>1,
+    "sites"=>1,
+    );
+$supported_return_fields = join ",", sort keys %supported_return_type;
 
 ## input formats
 %supported_input_format = ('consensus'=>1,
@@ -74,13 +76,13 @@ unless ($input_format) {
 }
 
 ## return type(s)
-local %return_types = ();
-&RSAT::error::FatalError("You should define at least one return type") unless (@return_types);
-foreach my $format (@return_types) {
+local %return_fields = ();
+&RSAT::error::FatalError("You should define at least one return type") unless (@return_fields);
+foreach my $format (@return_fields) {
     if ($supported_return_type{$format}) {
 	$return{$format}++;
     } else {
-	&RSAT::error::FatalError("Invalid return type $format. Supported: ".$supported_return_types);
+	&RSAT::error::FatalError("Invalid return type $format. Supported: ".$supported_return_fields);
     }
 }
 
@@ -103,88 +105,35 @@ if ($prior_file) {
 ### open output file ###
 $out = &OpenOutputFile($outfile{output});
 
-#### verbose ####
-my @residues = ();
-##my @matrix = ();
-my $current_matrix = new RSAT::matrix();
-$current_matrix->readFromFile($infile{input}, $input_format);
-if ($prior_file) { $current_matrix->setPrior(%prior) };
-$current_matrix->set_attribute("pseudo", $pseudo_weight);
-$current_matrix->set_attribute("equi_pseudo", $equi_pseudo);
-$current_matrix->push_attribute("parameters", "pseudo");
-$current_matrix->force_attribute("decimals", $decimals);
-$current_matrix->force_attribute("max_profile", $max_profile);
-$current_matrix->force_attribute("sep", $sep);
-# $current_matrix->force_attribute("col_width", $col_width);
-$current_matrix->force_attribute("margins", $return{margins});
-
 ##### print output ######
 &Verbose if ($verbose);
 
-## Print the profile matrix
-if ($return{profile}) {
-    print $out $current_matrix->toString(sep=>"\t",
-					 type=>"profile",
-					 format=>$output_format,
-					 );
+## Read the input matrices
+my @matrices = &RSAT::MatrixReader::readFromFile($infile{input}, $input_format);
+
+#### export the matrices
+my $m = 0;
+foreach my $matrix (@matrices) {
+    $m++;
+    &RSAT::message::Info("Exporting matrix", $m."/".scalar(@matrices))
+	if ($main::verbose >= 3);
+    if ((defined($top_matrices)) && ($m > $top_matrices)) {
+	last;
+    }
+
+    if ($main::verbose >= 1) {
+	print $out  ";\n; MATRIX ", $m."/".scalar(@matrices), "\n;\n";
+    }
+    &ExportMatrix($matrix);
 }
 
-
-## Print the counts matrix
-if ($return{counts}) {
-    print $out $current_matrix->toString(sep=>"\t",
-					 type=>"counts",
-					 format=>$output_format,
-					 );
-}
-
-## Calculate frequency matrix
-if ($return{frequencies}) {
-    $current_matrix->calcFrequencies();
-    print $out $current_matrix->toString(col_width=>($decimals+4), 
-					 decimals=>$decimals, 
-					 type=>"frequencies",
-					 format=>$output_format);
-}
-
-## Calculate weight matrix
-if ($return{weights}) {
-    $current_matrix->calcWeights();
-    print $out $current_matrix->toString(col_width=>($decimals+4), 
-					 decimals=>$decimals, 
-					 type=>"weights",
-					 format=>$output_format);
-}
-
-## Calculate information content matrix
-if ($return{information}) {
-    $current_matrix->calcInformation();
-    print $out $current_matrix->toString(col_width=>($decimals+4), 
-					 decimals=>$decimals, 
-					 type=>"information",
-					 format=>$output_format);
-}
-
-
-## Calculate consensus
-if ($return{consensus}) {
-    $current_matrix->calcConsensus();
-    print $out "; consensus\t", $current_matrix->get_attribute("consensus.IUPAC"), "\n";
-}
-
-## Return parameters
-if ($return{parameters}) {
-    $current_matrix->calcConsensus();
-    print $out $current_matrix->toString(type=>"parameters");
-}
 
 ##### closing verbose
 if ($verbose) {
-  my $done_time = &AlphaDate;
-  print $out "; Job started $start_time\n";
-  print $out "; Job done    $done_time\n";
+    my $done_time = &AlphaDate;
+    print $out "; Job started $start_time\n";
+    print $out "; Job done    $done_time\n";
 }
-
 
 ##### close output file
 close $out if ($outfile{output});
@@ -259,8 +208,16 @@ OPTIONS
 		input matrix format
 		Supported: $supported_input_formats
 
+	-top 
+	        Maximal number of matrices to return. 
+		Some of the input formats can contain several matrices
+		in a single file (e.g. consensus, meme,
+		MotifSampler). By default, all the matrices are parsed
+		and exported. The option -top allows to restrict the
+		number of matrices to be exported.
+
 	-return	return type
-		Supported: $supported_return_types
+		Supported: $supported_return_fields
 
 		convert-matrix allows to perform various conversions, starting
 		from an input occurrence matrix, in order to obtain various
@@ -478,8 +435,9 @@ convert-matrix options
 -o		output file
 -v		verbose
 -in_format	input matrix format. Supported: $supported_input_formats
+-top		maximal number of matrices to return. 
 -out_format	output matrix format. Supported: $supported_output_formats
--return		return type(s). Supported: $supported_return_types
+-return		return type(s). Supported: $supported_return_fields
 -prior 		prior frequency file
 -pseudo		pseudo-weight (default: $pseudo_weight)
 -equi_pseudo	equiprobable distribution of pseudo-weights between residues
@@ -515,6 +473,12 @@ sub ReadArguments {
     } elsif ($ARGV[$a] eq "-i") {
       $infile{input} = $ARGV[$a+1];
       
+      ### Maximal number of matrices to return
+    } elsif ($ARGV[$a] eq "-top") {
+	$top_matrices = $ARGV[$a+1];
+	&FatalError(join("\t", $top_matrices, "Invlaid value for the option -top. Should be a strictly positive Natural number.")) 
+	    unless ((&IsNatural($top_matrices)) && ($top_matrices >= 1));
+
       ### prior frequency file
     } elsif ($ARGV[$a] eq "-prior") {
 	$prior_file = $ARGV[$a+1];
@@ -525,8 +489,8 @@ sub ReadArguments {
       
       ### return type(s)
     } elsif ($ARGV[$a] eq "-return") {
-      my $return_types = $ARGV[$a+1];
-      push @return_types, split(",", $return_types);
+      my $return_fields = $ARGV[$a+1];
+      push @return_fields, split(",", $return_fields);
 
 
       ### input format 
@@ -599,4 +563,91 @@ sub Verbose {
   }
 
   printf $out "%-22s\t%d\n", "; pseudo-weight", $pseudo_weight;
+}
+
+
+################################################################
+## Export one matrix
+sub ExportMatrix {
+  my ($current_matrix) = @_;
+#  $current_matrix->readFromFile($infile{input}, $input_format);
+  if ($prior_file) {
+    $current_matrix->setPrior(%prior);
+  }
+  $current_matrix->set_attribute("pseudo", $pseudo_weight);
+  $current_matrix->set_attribute("equi_pseudo", $equi_pseudo);
+  $current_matrix->push_attribute("parameters", "pseudo");
+  $current_matrix->force_attribute("decimals", $decimals);
+  $current_matrix->force_attribute("max_profile", $max_profile);
+  $current_matrix->force_attribute("sep", $sep);
+  # $current_matrix->force_attribute("col_width", $col_width);
+  $current_matrix->force_attribute("margins", $return{margins});
+
+  ## Print the profile matrix
+  if ($return{profile}) {
+    print $out $current_matrix->toString(sep=>"\t",
+					 type=>"profile",
+					 format=>$output_format,
+					);
+  }
+
+
+  ## Print the counts matrix
+  if ($return{counts}) {
+    print $out $current_matrix->toString(sep=>"\t",
+					 type=>"counts",
+					 format=>$output_format,
+					);
+  }
+
+  ## Calculate frequency matrix
+  if ($return{frequencies}) {
+    $current_matrix->calcFrequencies();
+    print $out $current_matrix->toString(col_width=>($decimals+4), 
+					 decimals=>$decimals, 
+					 type=>"frequencies",
+					 format=>$output_format);
+  }
+
+  ## Calculate weight matrix
+  if ($return{weights}) {
+    $current_matrix->calcWeights();
+    print $out $current_matrix->toString(col_width=>($decimals+4), 
+					 decimals=>$decimals, 
+					 type=>"weights",
+					 format=>$output_format);
+  }
+
+  ## Calculate information content matrix
+  if ($return{information}) {
+    $current_matrix->calcInformation();
+    print $out $current_matrix->toString(col_width=>($decimals+4), 
+					 decimals=>$decimals, 
+					 type=>"information",
+					 format=>$output_format);
+  }
+
+
+  ## Return sites
+  if ($return{sites}) {
+    print $out "; Sites\t",$current_matrix->get_attribute("sites"),"\n";
+    my $s = 0;
+    foreach my $site_seq ($current_matrix->get_attribute("sequences")) {
+      $s++;
+      print $out join ("\t", ";", $s, $site_seq), "\n";
+    }
+  }
+
+  ## Calculate consensus
+  if ($return{consensus}) {
+    $current_matrix->calcConsensus();
+    print $out "; consensus\t", $current_matrix->get_attribute("consensus.IUPAC"), "\n";
+  }
+
+  ## Return parameters
+  if ($return{parameters}) {
+    $current_matrix->calcConsensus();
+    print $out $current_matrix->toString(type=>"parameters");
+  }
+
 }

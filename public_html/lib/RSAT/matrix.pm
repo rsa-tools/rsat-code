@@ -2239,6 +2239,69 @@ sub weight_range {
 }
 
 
+################################################################
+=pod
+
+=item B<treat_null_values>
+
+Replace undefined values by 0 in the count matrix.
+
+=cut
+sub treat_null_values {
+  my ($self) = @_;
+  my $nrow = $self->nrow();
+  my $ncol = $self->ncol();
+  my @matrix = $self->getMatrix();
+  for my $c (0..($ncol-1)) {
+    for my $r (0..($nrow-1)) {
+      unless (defined($matrix[$c][$r])) {
+	$matrix[$c][$r] = 0;
+      }
+    }
+  }
+}
+
+
+################################################################
+=pod
+
+=item B<add_site>
+
+Add a site (sequence) to the matrix and update the count matrix
+accordingly.
+
+=cut
+sub add_site() {
+  my ($self, $site_seq, $site_id) = @_;
+  my @letters = split "|", $site_seq;
+
+  $self->push_attribute("sequences", $site_seq);
+  if ($site_id) {
+    $self->push_attribute("site_ids", $site_id);
+  }
+
+  my @alphabet = $self->getAlphabet();
+  ## Index the alphabet
+  my %alphabet = ();
+  foreach my $l (0..$#alphabet) {
+    $alphabet{$alphabet[$l]} = $l;
+  }
+  
+  &RSAT::message::Debug("Adding site", $site_seq, scalar(@letters), $site_id), 
+    if ($main::verbose >= 0);
+  
+  ## Update the count matrix with the new sequence
+  foreach my $c (0..$#letters) {
+    if (defined($alphabet{$letters[$c]})) {
+      my $row = $alphabet{$letters[$c]};
+      ${$self->{table}}[$c][$row]++;
+      &RSAT::message::Debug("Incremented column", $c, "row", $row, "letter", $letters[$c], ${$self->{table}}[$c][$row])
+	if ($main::verbose >= 5);
+    } else {
+      &RSAT::message::Warning("&RSAT::matrix::add_site()", $site_seq, "Unrecognized character at position", $c, $letters[$c]);
+    }
+  }
+}
 
 return 1;
 
