@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: compare-profiles,v 1.15 2006/04/05 13:53:24 rsat Exp $
+# $Id: compare-profiles,v 1.16 2006/12/03 06:24:23 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -571,18 +571,18 @@ if ($calc_fields{binary_profiles}) {
     $binary_profiles = new RSAT::table();
     $binary_profiles->setAlphabet($profiles->getAlphabet());
     foreach my $c (1..$ncol) {
-	for my $r (1..$nrow) {
-#	my $value = $ori_table[$c-1][$r-1];
-	    my $value = $profiles->getCell($r, $c);
-	    if (&IsReal($value) && ($value > 0)) {
-		$binary_table[$c-1][$r-1] = 1;
-		$positive_count++;
-	    } else {
-		$binary_table[$c-1][$r-1] = 0;
-		$null_count++;
-	    }
-#	&RSAT::message::Debug("row", $r, "column", $c, $value, $binary_table[$c-1][$r-1], $positive_count, $null_count) if ($main::verbose >= 10);
+      for my $r (1..$nrow) {
+	#	my $value = $ori_table[$c-1][$r-1];
+	my $value = $profiles->getCell($r, $c);
+	if (&IsReal($value) && ($value > 0)) {
+	  $binary_table[$c-1][$r-1] = 1;
+	  $positive_count++;
+	} else {
+	  $binary_table[$c-1][$r-1] = 0;
+	  $null_count++;
 	}
+	#	&RSAT::message::Debug("row", $r, "column", $c, $value, $binary_table[$c-1][$r-1], $positive_count, $null_count) if ($main::verbose >= 10);
+      }
     }
     $binary_profiles->setTable($nrow, $ncol, @binary_table);
     &RSAT::message::TimeWarn(join("\t", "", "Positive values", $positive_count)) if ($main::verbose >= 1);
