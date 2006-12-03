@@ -142,7 +142,6 @@ A score column can optionally be specified with the argument score_column.
  Usage :  $classificaion->->read_tab($input_file,score_column=3)
 
 =cut
-
 sub read_tab {
     my ($self, $input_file, %args) = @_;
     my ($in) = &RSAT::util::OpenInputFile($input_file);
@@ -172,7 +171,11 @@ sub read_tab {
 	my @fields = split /\t/;
 	
 	### class member
-	$member_name = &RSAT::util::trim(uc($fields[$member_column -1]));
+	my $member_name = &RSAT::util::trim($fields[$member_column -1]);
+	if ($args{toupper}) {
+	  ## Case-insensitive comparison
+	  $member_name = uc($member_name);
+	}
 	unless ($member_name =~ /\S/) {
 	    &RSAT::message::Warning(join ("\t", "Error class file", 
 					  $class_file,  "line", 
@@ -181,7 +184,11 @@ sub read_tab {
 	}
 	
 	### class name
-	$class_name = &RSAT::util::trim($fields[$class_column - 1]);
+	my $class_name = &RSAT::util::trim($fields[$class_column - 1]);
+	if ($args{toupper}) {
+	  ## Case-insensitive comparison
+	  $class_name = uc($class_name);
+	}
 	unless ($class_name) {
 	    &RSAT::message::Warning(join("\t", "Error class file", 
 					 $class_file,  "line", 
@@ -227,7 +234,6 @@ sub read_tab {
 	
     }
     close $in if ($input_file);
-
 }
 
 ################################################################
