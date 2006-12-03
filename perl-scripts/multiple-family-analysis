@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.173 2006/11/30 07:36:08 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.174 2006/12/03 06:23:51 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -880,12 +880,9 @@ sub PurgeSequences {
    warn ";\tPurging sequences for family $family_name\n" if ($verbose >= 1);
 
    ## Remove sequences of length 0
-   $command = "convert-seq -from fasta -to fasta -lw 0 -noempty";
+   $command = "convert-seq -dna -from fasta -to fasta -lw 0 -noempty";
    $command .= " -i ".$family{$family_name}->{seq_file};
-#   $command .= " -i"..$family{$family_name}->{seq_file};
-#   $command .= " | grep -v '\\\\\\\\'";
    $command .= " | purge-sequence -format fasta -ml 40 -mis 3 -noempty";
-#   $command .= " -i ".$family{$family_name}->{seq_file};
    $command .= " -o ".$family{$family_name}->{seq_file_purged};
    if ($batch) {
        push @main::batch_commands, $command;
