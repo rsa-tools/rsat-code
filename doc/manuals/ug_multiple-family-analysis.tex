@@ -1,7 +1,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% MULTIPLE FAMILY ANALYSIS
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\chapter{Complete analysis of multiple gene clusters}
+\chapter{Automated analysis of multiple gene clusters}
 
 The main interest of using \RSAT from the shell is that it allows to
 automatize the analysis of multiple data sets. The different programs
@@ -17,11 +17,11 @@ automatically performs the following analyses on each cluster :
 
 \begin{description}
 \item[directory management:] the results are stored in a separate
-directory for each cluster. Directories are automatically created
-during the execution, and bear the name of the cluster.
+  directory for each cluster. Directories are automatically created
+  during the execution, and bear the name of the cluster.
 
 \item[sequence retrieval:] upstream sequences are retrieved and stored
-in fasta format
+  in fasta format
 
 \item[sequence purging:] upstream sequences are purged (with the
   program \program{purge-sequences} to remove redundant
@@ -39,13 +39,13 @@ in fasta format
   significant patterns.
 
 \item[other pattern discovery programs:] several matrix-based pattern
-discovery programs developed by other teams can be managed by 
-\program{multiple-family-analysis}. These programs have to be installed 
-separately they are not part of the \RSAT distribution). 
+  discovery programs developed by other teams can be managed by
+  \program{multiple-family-analysis}. These programs have to be
+  installed separately they are not part of the \RSAT distribution).
 
-\item[feature map drawing:] The patterns discovered by the different 
-programs are matched against the  upsteram sequences, and the result 
-is displayed as a feature map.
+\item[feature map drawing:] The patterns discovered by the different
+  programs are matched against the upsteram sequences, and the result
+  is displayed as a feature map.
 
 \item[synthesis of the results:] A synthetic table is generated (in HTML
   format) to facilitate the analysis of the results, and the
