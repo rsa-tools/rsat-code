@@ -44,13 +44,13 @@ putative orthologs.
 
 \subsection{Getting genes by similarities}
 
-\begin{small}
+\begin{footnotesize}
 \begin{verbatim}
 get-orthologs -v 1 -org Escherichia_coli_K12 \
   -taxon Gammaproteobacteria \
   -q lexA -o lexA_orthologs_Gammaproteobacteria.tab
 \end{verbatim}
-\end{small}
+\end{footnotesize}
 
 The result file is a list of all the Gammaproteobacterial genes whose
 product shows some similarity with the LexA protein from E.coli K12.  
@@ -87,14 +87,14 @@ obtained by calling the command with the option \option{-help}. For
 example, we can ask to return the percentage of identity, the
 alignment length, the E-value and the rank of each hit.
 
-\begin{small}
+\begin{footnotesize}
 \begin{verbatim}
 get-orthologs -v 1 -org Escherichia_coli_K12 \
   -taxon Gammaproteobacteria \
   -q lexA -o lexA_orthologs_Gammaproteobacteria.tab \
   -return ident,ali_len,e_value,rank 
 \end{verbatim}
-\end{small}
+\end{footnotesize}
 
 Which gives the following result:
 
@@ -129,7 +129,7 @@ The simplest criterion to select ortholog is that of
 \concept{bidirectional best hit (BBH)}. We can select BBH by imposing
 an upper threshold on the rank, with the option \option{-uth}.
 
-\begin{small}
+\begin{footnotesize}
 \begin{verbatim}
 get-orthologs -v 1 -org Escherichia_coli_K12 \
   -taxon Gammaproteobacteria \
@@ -137,7 +137,7 @@ get-orthologs -v 1 -org Escherichia_coli_K12 \
   -return ident,ali_len,e_value,rank \
   -uth rank 1 
 \end{verbatim}
-\end{small}
+\end{footnotesize}
 
 The result has now been reduced to admit at most one hit per genome.
 
@@ -168,7 +168,7 @@ choose the criteria that she/he considers as relevant. Finally, we
 will use a more stringent threshold on E-value than the default one,
 by imposing an upper threshold of 1e-10.
 
-\begin{small}
+\begin{footnotesize}
 \begin{verbatim}
 ## Note that or this test we suppress the BBH constraint (-uth rank 1)
 get-orthologs -v 1 -org Escherichia_coli_K12 \
@@ -177,11 +177,11 @@ get-orthologs -v 1 -org Escherichia_coli_K12 \
   -return ident,ali_len,e_value,rank \
   -lth ident 30 -lth ali_len 50 -uth e_value 1e-10
 \end{verbatim}
-\end{small}
+\end{footnotesize}
 
 We can now combine the constrains above with the criterion of BBH.
 
-\begin{small}
+\begin{footnotesize}
 \begin{verbatim}
 ## Note that or this test we include the BBH constraint (-uth rank 1)
 get-orthologs -v 1 -org Escherichia_coli_K12 \
@@ -191,7 +191,7 @@ get-orthologs -v 1 -org Escherichia_coli_K12 \
   -lth ident 30 -lth ali_len 50  -uth e_value 1e-10 \
   -uth rank 1 
 \end{verbatim}
-\end{small}
+\end{footnotesize}
 
 As expected, the number of selected hits is reduced by adding these
 constraints. In Sept 2006, we obtained the following number of hits
@@ -229,20 +229,20 @@ specifies one query gene.
 The output of \program{get-orthologs} can thus directly be used as
 input for \program{retrieve-seq-multigenome}.
 
-\begin{small}
+\begin{footnotesize}
 \begin{verbatim}
 retrieve-seq-multigenome -noorf \
   -i lexA_orthologs_Gammaproteobacteria_bbh_id30_len50_eval-10.tab \
   -o lexA_orthologs_Gammaproteobacteria_up-noorf.fasta
-\end{small}
+\end{footnotesize}
 \end{verbatim}
-\end{small}
+\end{footnotesize}
 
 \section{Detection of phylogenetic footprints}
 
 \textbf{TO BE WRITTEN}
 
-\begin{small}
+\begin{footnotesize}
 \begin{verbatim}
 dyad-analysis  -v 1 \
   -i lexA_orthologs_Gammaproteobacteria_up-noorf.fasta \
@@ -251,7 +251,7 @@ dyad-analysis  -v 1 \
   -l 3 -spacing 0-20 -bg monads \
   -o lexA_orthologs_Gammaproteobacteria_up-noorf_dyads-2str-noov.tab
 \end{verbatim}
-\end{small}
+\end{footnotesize}
 
 \section{Phylogenetic profiles}
 
@@ -287,7 +287,7 @@ all the genes from \org{Saccharomyces cerevisiae} across all the
 Fungi. We use a level of verbosity of 2, in order to get information
 about the progress of the calculations.
 
-\begin{small}
+\begin{footnotesize}
 \begin{verbatim}
 
 ## Identify all the putative orthologs (BBH)
@@ -297,18 +297,18 @@ get-orthologs -v 2 \
   -taxon Fungi \
   -uth rank 1 -lth ali_len 50 -lth ident 30 -uth e_value 1e-10 \
   -return e_value,bit_sc,ident,ali_len \
-  -o Saccharomyces_cerevisiae_Fungi_bbh.tab
+  -o Saccharomyces_cerevisiae_vs_Fungi_bbh.tab
 
 ## Convert ortholog table into a profile table
 ## with the IDs of the putative orthologs
 convert-classes -v 2 \
-  -i Saccharomyces_cerevisiae_Fungi_bbh.tab  \
+  -i Saccharomyces_cerevisiae_vs_Fungi_bbh.tab  \
   -from tab -to profiles \
   -ccol 2 -mcol 3 -scol 1 -null "<NA>" \
-  -o Saccharomyces_cerevisiae_Fungi_phyloprofiles_ids.tab
+  -o Saccharomyces_cerevisiae_vs_Fungi_phyloprofiles_ids.tab
 
 \end{verbatim}
-\end{small}
+\end{footnotesize}
 
 
 The resulting table indicates the identifier of the ortholog
@@ -321,30 +321,82 @@ each cell indicates the E-value of the match between the two
 orthologs. This can be done by specifying a different score column
 with the option \option{-scol} of \program{convert-classes}.
 
-\begin{small}
+\begin{footnotesize}
 \begin{verbatim}
-
 ## Convert ortholog table into a profile table
 ## with the E-value of the putative orthologs
 convert-classes -v 2 \
-  -i Saccharomyces_cerevisiae_Fungi_bbh.tab  \
+  -i Saccharomyces_cerevisiae_vs_Fungi_bbh.tab  \
   -from tab -to profiles \
   -ccol 2 -mcol 3 -scol 4 -null "<NA>" \
-  -o Saccharomyces_cerevisiae_Fungi_phyloprofiles_evalue.tab
-
+  -o Saccharomyces_cerevisiae_vs_Fungi_phyloprofiles_evalue.tab
 \end{verbatim}
-\end{small}
+\end{footnotesize}
 
 \section{Detecting pairs of genes with similar phylogenetic profiles}
 
-\textbf{TO BE WRITTEN}
+In the previous section, we generated tables indicating the
+phylogenetic profiles of each gene from \org{Saccharomyces
+  cerevisiae}. This table contains one row per gene, and one column
+per fungal genome. 
 
+We will now use the program \program{compare-profiles} to compare each
+gene profile to each other, to select the pairs of genes with
+significantly similar profiles. The problem is of course to choose our
+criterion of similarity between two gene profiles.
 
-\begin{small}
+\subsection{Comparing binary profiles with \program{compare-profiles}}
+
+For the binary profiles, the most relevant statistics is the
+\concept{hypergeometric significance}.
+
+\begin{footnotesize}
 \begin{verbatim}
-compare-profiles -v 1 \
-  -i profiles.tab \
+## Compare the binary phylogenetic profiles 
+## using the hypergeometric significance
+compare-profiles -v 2 \
+  -i Saccharomyces_cerevisiae_vs_Fungi_phyloprofiles_evalue.tab \
+  -lth AB 1 -lth sig 0 \
   -return counts,jaccard,hyper,entropy \
+  -o Saccharomyces_cerevisiae_vs_Fungi_phyloprof_gene_pairs.tab
+\end{verbatim}
+\end{footnotesize}
+
+In the previous commands, we set the verbosity to 2, in order to keep
+track the progress of the task. Actually, the processing can take a
+few minuts, it is probably the good moment for a coffee break.
+
+\subsection{Comparing binary profiles with \program{compare-classes}}
+
+Another way to compare the phylogenetic profiles is to directly
+analyze with \program{compare-classes} the table of orthology
+(previously obtained from \program{get-orthologs}).
+
+This is just another way of considering the same problem: in order to
+compare genes $A$ and $B$, we will consider as a first class ($Q$) the
+set of genomes in which gene $A$ is present, and as a second class
+($R$) the set of genomes in which gene $B$ is present. We will then
+calculate the intersection between these two classes, and assess the
+significance of this intersection, given the total number of
+genomes.
+
+Thus, \program{compare-classes} will calculate the hypergeometric
+statistics, exactly in the same way as \program{compare-profiles}. 
+
+\begin{footnotesize}
+\begin{verbatim}
+## Convert the orthology into "classes", where each class (second column)
+## corresponds to a gene from Saccharomyces cerevisiae, and indicates 
+## the set of genomes (first column) in which this gene is present. 
+convert-classes -from tab -to tab -mcol 2 -ccol 3 -scol 5 \
+  -i Saccharomyces_cerevisiae_vs_Fungi_bbh.tab \
+  -o Saccharomyces_cerevisiae_vs_Fungi_bbh_classes.tab
+
+## Compare the classes to detect significant overlaps
+compare-classes -v 3 \
+  -i Saccharomyces_cerevisiae_vs_Fungi_bbh_classes.tab \
+  -lth QR 1 -lth sig 0 -sort sig -sc 3 \
+  -return occ,proba,dotprod,jac_sim,rank \
   -o phyloprof_gene_pairs.tab
 \end{verbatim}
-\end{small}
+\end{footnotesize}
