@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.18 2006/12/03 08:21:04 jvanheld Exp $
+# $Id: convert-matrix,v 1.19 2006/12/04 23:21:12 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -52,11 +52,13 @@ local $out = STDOUT;
 $supported_return_fields = join ",", sort keys %supported_return_type;
 
 ## input formats
-%supported_input_format = ('consensus'=>1,
-			   'tab'=>1,
-			   'meme'=>1,
-			   'gibbs'=> 1,
-			   'clustal'=>1);
+%supported_input_format = (
+    'tab'=>1,
+    'assembly'=>1,
+    'consensus'=>1,
+    'meme'=>1,
+    'gibbs'=> 1,
+    'clustal'=>1);
 $supported_input_formats = join ",", sort keys %supported_input_format;
 
 ## output formats
@@ -281,15 +283,28 @@ PRIOR FREQUENCY FILE
       
       oligo-analysis -i reference-seq.fasta -l 1 -return freq -1str -v 1
 
-INPUT FORMATS
-    consensus
-	Output file from consensus, the pattern-discovery program
-	developed by Jerry Hertz (Hertz et al., Comput Appl Biosci,
-	1990:6, 81-92).
+INPUT/OUTPUT FORMATS
 
     tab
 	tab-delimited file. One row per residue, one column per
-	position. The first letter of each row indicates the residue.
+	position. The first column of each row indicates the residue,
+	the following columns give the frequency of that residue
+	at the corresponding position of the matrix.
+
+    assembly
+	Output file from the program pattern-assembly. One assembly
+	file can contain zero, one or several assemblies. Each
+	assembly is converted to a position-specific scoring matrix by
+	taking, for each residue at each position, the score of the
+	most significant pattern (oligonucleotide) containing that
+	residue in this position of the assembly.
+
+    consensus
+	Output file from consensus, the pattern-discovery program
+	developed by Jerry Hertz (Hertz et al., Comput Appl Biosci,
+	1990:6, 81-92). This file contains one or several matrices, +
+	additional information on the parameters used for pattern
+	discovery (e.g. prior residue frequencies).
 
     gibbs
 	Output file from gibbs, the pattern-discovery program
@@ -298,7 +313,9 @@ INPUT FORMATS
 
     meme
 	Output file from MEME, the pattern-discovery program developed by
-	tim Bailey.
+	tim Bailey.This file contains one or several matrices, +
+	additional information on the parameters used for pattern
+	discovery (e.g. prior residue frequencies).
     
     MotifSampler
 	Output file from MotifSampler, the pattern-discovery program
