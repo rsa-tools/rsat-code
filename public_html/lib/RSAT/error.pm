@@ -32,7 +32,7 @@ Send an error message and die
 =cut
 sub FatalError {
     my @error_message = @_;
-    my $message = join "\n\t", @error_message;
+    my $message = join "\t", @error_message;
     $ENV{RSA_ERROR} = "1";
     my $context = $ENV{RSA_OUTPUT_CONTEXT} || "screen";
     if ($context eq "cgi") {
