@@ -253,7 +253,7 @@ sub normalize_transition_frequencies {
     $self->set_hash_attribute("prefix_proba", %prefix_proba);
     $self->set_hash_attribute("suffix_proba", %suffix_proba);
 
-#    &RSAT::message::Debug("SUFFIX PROBA", $self->set_hash_attribute("suffix_proba", %suffix_proba));
+#    &RSAT::message::Debug("SUFFIX PROBA", $self->set_hash_attribute("suffix_proba", %suffix_proba)) if ($main::verbose >= 5);
 
     ## Average counts and frequencies on both strands if required
     my $strand = $self->get_attribute("strand") || "sensitive";
@@ -317,6 +317,8 @@ sub check_transition_alphabet {
 
     my $seq_type = $self->get_attribute("seq_type") || "dna";
     my %accepted_residues = &RSAT::SeqUtil::get_accepted_residues($seq_type);
+    &RSAT::message::Info("Accepted residues", $seq_type, %accepted_residues) if ($main::verbose >= 3);
+
     my $accepted_expression = join ('', '^[', sort(keys(%accepted_residues)), ']*$');
 
     my %suppressed_prefixes = ();
@@ -388,11 +390,13 @@ sub calc_from_seq {
     my $seq_len = length($sequence);
     my $order = $self->get_attribute("order");
     $sequence = lc($sequence);
-    
+    my $previous_words = $self->get_attribute("training_words") || 0;
+
     if ($args{add}) {
 	&RSAT::message::TimeWarn(join(" ", 
 				      "Updating markov model (order ".$order.")",
 				      "by adding sequence of length", $seq_len)) if ($main::verbose >= 2);
+
     } else {
 	$self->set_hash_attribute("transition_count",());
 	if ($main::verbose >= 2) {
@@ -413,8 +417,9 @@ sub calc_from_seq {
 	my $suffix = substr($sequence, $offset + $order,1);
 	$self->{transition_count}->{$prefix}->{$suffix}++;
     }
+    $self->force_attribute("training_words", $last_pos + $previous_words);
 
-    ## Delet transitions between letters which do not belong to the accepted alphabet
+    ## Delete transitions between letters which do not belong to the accepted alphabet
     $self->check_transition_alphabet();
 
     ## Initialize transition frequencies
@@ -422,8 +427,6 @@ sub calc_from_seq {
 
     ## Convert counts to transition frequencies
     $self->normalize_transition_frequencies();
-
-    $self->force_attribute("training_words", $last_pos);
 
 
 }
