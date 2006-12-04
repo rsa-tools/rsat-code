@@ -28,8 +28,8 @@ targetNamespace="urn:RSATWS"
 	  <!--xsd:element name="query" type="tns:ArrayOfString"/-->
 	  <xsd:element name="query" type="xsd:string"/>
 	  <xsd:element name="noorf" type="xsd:string"/>
-	  <xsd:element name="from" type="xsd:string"/>
-	  <xsd:element name="to" type="xsd:string"/>
+	  <xsd:element name="from" type="xsd:int"/>
+	  <xsd:element name="to" type="xsd:int"/>
 	  <xsd:element name="feattype" type="xsd:string"/>
 	  <xsd:element name="type" type="xsd:string"/>
 	  <xsd:element name="format" type="xsd:string"/>
@@ -77,6 +77,15 @@ targetNamespace="urn:RSATWS"
 	<xsd:element name="lth" type="xsd:string"/>
       </xsd:complexType>
 
+      <xsd:complexType name="GeneInfoRequest">
+        <xsd:element name="organism" type="xsd:string"/>
+	<xsd:element name="query" type="xsd:string"/>
+	<xsd:element name="full" type="xsd:string"/>
+	<xsd:element name="noquery" type="xsd:string"/>
+	<xsd:element name="descr" type="xsd:string"/>
+	<xsd:element name="feattype" type="xsd:string"/>
+      </xsd:complexType>
+
     </xsd:schema>
   </types>
   
@@ -94,10 +103,10 @@ targetNamespace="urn:RSATWS"
     <part name='noorf' type='string'>
       <documentation>Prevent overlap with upstream open reading frames (ORF).</documentation>
     </part>
-    <part name='from' type='string'>
+    <part name='from' type='int'>
       <documentation>Inferior limit of the region to retrieve. </documentation>
     </part>
-    <part name='to' type='string'>
+    <part name='to' type='int'>
       <documentation>Superior limit of the region to retrieve. </documentation>
     </part>
     <part name='feattype' type='string'>
@@ -300,6 +309,14 @@ targetNamespace="urn:RSATWS"
       <part name="response" type="xsd:string"/>
   </message>
 
+  <message name="GeneInfoInput">
+      <part name="request" type="tns:GeneInfoRequest"/>
+  </message>
+
+  <message name="GeneInfoOutput">
+      <part name="response" type="xsd:string"/>
+  </message>
+
   <portType name="RSATWSPortType">
       <operation name="retrieve_seq">
          <!-- Name of input/output must be specified here -->
@@ -326,6 +343,13 @@ targetNamespace="urn:RSATWS"
 	sequences.
       </documentation>
       </operation>
+      <operation name="gene_info">
+         <input name="GeneInfoRequest" message="tns:GeneInfoInput"/>
+         <output name="GeneInfoResponse" message="tns:GeneInfoOutput"/>
+      <documentation>
+	Get information about genes.
+      </documentation>
+      </operation>
   </portType>
 
   <binding name="RSATWSBinding" type="tns:RSATWSPortType">
@@ -350,6 +374,15 @@ targetNamespace="urn:RSATWS"
       </operation>
       <operation name="oligo_analysis">
          <soap:operation soapAction="urn:RSATWS#oligo_analysis"/>
+         <input>
+             <soap:body use="literal" namespace="urn:RSATWS" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+         </input>
+         <output>
+             <soap:body use="literal" namespace="urn:RSATWS" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+         </output>
+      </operation>
+      <operation name="gene_info">
+         <soap:operation soapAction="urn:RSATWS#gene_info"/>
          <input>
              <soap:body use="literal" namespace="urn:RSATWS" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
          </input>
