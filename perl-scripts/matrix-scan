@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.41 2006/11/30 20:33:47 jvanheld Exp $
+# $Id: matrix-scan,v 1.42 2006/12/04 22:59:16 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -23,6 +23,7 @@ require "RSA.seq.lib";
 
 use RSAT::feature;
 use RSAT::matrix;
+use RSAT::MatrixReader;
 use RSAT::MarkovModel;
 
 =pod
@@ -73,7 +74,9 @@ All the formats supported in RSAT can be used as input (default: fasta).
 =head2 Matrix file
 
 The matrix format is specified with the option -matrix_format.  Supported :
-consensus,gibbs,meme,tab. Default : tab.
+tab,consensus,gibbs,meme,assembly. Default : tab.
+
+For a description of these format, see I<convert-matrix -h>
 
 =back
 
@@ -221,6 +224,9 @@ models only (-markov 0 to 1).
     $bg_out_format = "tab";
     $sequence_number = 0;
     $sum_seq_len = 0;
+    $n_containing_regions = 0;
+    $n_residues = 0;
+
     $main::base=exp(1); ## Base for the logarithms
     $main::both_strands = 0;
     $main::sum_seq_len = 0;
@@ -258,9 +264,14 @@ models only (-markov 0 to 1).
 				freq_matrix=>1,
 				weight_matrix=>1,
 				bg_model=>1,
+				distrib=>1,
 				);
     $supported_return_fields = join (",", sort(keys( %supported_return_fields)));
-    %return_fields = ();
+    %return_fields = (); ## Fields to return
+    %calc_fields = (); ## Fields to calculate
+
+    %score_distrib = ();
+    $distrib_decimals=1;
 
     &ReadArguments();
     
@@ -297,6 +308,30 @@ models only (-markov 0 to 1).
     if (($return_fields{weight_matrix}) && ($markov > 0)) {
       &RSAT::message::Warning("The concept of weight matrix is incompatible with higher order Markov chains. Weight matrix will not be returned.");
       undef($return_fields{weight_matrix});
+    }
+
+    ## Fields to calculate
+    if (($return_fields{sites}) || ($return_fields{distrib})) {
+      $calc_fields{sites} = 1;
+    }
+
+
+    ################################################################
+    ## Load the matrix list if specified
+    if ($infile{matrix_list}) {
+      my ($mlist, $input_dir) = &OpenInputFile($main::infile{matrix_list});
+      while (<$mlist>) {
+	next if (/'^;'/); # skip comment lines
+	next if (/'^#'/); # skip header lines
+	next if (/'^--'/); # skip mysql-type comment lines
+	next unless (/\S/); # skip empty lines
+
+	my @fields = split /\s+/;
+	my $matrix_file = $fields[0];
+	push @matrix_files, $matrix_file;
+      }
+      close $mlist;
+      &RSAT::message::Info("Read matrix list from file", $infile{matrix_list}, scalar(@matrix_files), "matrices");
     }
 
     ################################################################
@@ -352,7 +387,7 @@ models only (-markov 0 to 1).
 	    my ($in, $input_dir) = &OpenInputFile($main::infile{input});
 	    while ((($current_seq, $seq_id) = &ReadNextSequence($in, $seq_format, $input_dir, "",$mask)) &&
 		   (($current_seq ne "") || ($seq_id ne ""))) {
-		
+	      
 		## Sequence length
 		$current_seq = lc($current_seq);
 		$bg_model->calc_from_seq($current_seq, add=>1);
@@ -360,6 +395,7 @@ models only (-markov 0 to 1).
 	    }
 	    close $in;
 	    $bg_model->check_missing_transitions();
+	    $bg_model->normalize_transition_frequencies();
 	}
     } else {
 	&RSAT::error::FatalError("You should either define the Markov order (-markov) or specify a file (-bgfile) for the background model.");
@@ -374,8 +410,10 @@ models only (-markov 0 to 1).
     my %prior = $bg_model->get_attribute("suffix_proba");
     &RSAT::message::TimeWarn(join("\t", "PRIOR", join(" ", %prior))) if ($main::verbose >= 2);
     foreach my $matrix_file (@matrix_files) {
-	my $matrix = new RSAT::matrix();
-	$matrix->readFromFile($matrix_file, $matrix_format);
+      my @new_matrices = &RSAT::MatrixReader::readFromFile($matrix_file, $matrix_format);
+
+      foreach my $m (0..$#new_matrices) {
+	my $matrix = $new_matrices[$m];
 	$matrix->set_attribute("scored", 0); ## Number of sequence segments for which the matrix calculated a score
 	$matrix->set_attribute("matches", 0); ## Initialize the match counter
 	$matrix->set_attribute("pseudo", $pseudo_counts);
@@ -386,42 +424,44 @@ models only (-markov 0 to 1).
 	$matrix->index_alphabet();
 	my ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
 	$matrix_name =~ s/\.\S+$//; ## suppress the extensin from the file name
+	if (scalar(@new_matrices) > 1) {
+	  $matrix_name .= ".".($m+1);
+	}
 	$matrix->set_attribute("name", $matrix_name);
 
 	## Check that the matrix width is smaller than markov order + 1
 	my $matrix_width = $matrix->ncol();
 	my $markov_order = $bg_model->get_attribute("order");
 	if ($matrix_width < $markov_order + 1) {
-	    &RSAT::error::FatalError(join (" ", 
-					   "Markov order (".$markov_order.")",
-					   "is too large for matrix",
-					   $matrix->get_attribute("name"),
-					   "of width ".$matrix_width."."));
+	  &RSAT::error::FatalError(join (" ", 
+					 "Markov order (".$markov_order.")",
+					 "is too large for matrix",
+					 $matrix->get_attribute("name"),
+					 "of width ".$matrix_width."."));
 	}
-
+	
 	## Calculate min and max values for P(S|M)
 	$matrix->proba_range();
-
+	
 	## Set the matrix prior
 	$matrix->setPrior(%prior);
-	&RSAT::message::TimeWarn(join("\t", "Setting matrix priors for matrix", 
-				      $matrix->get_attribute("name"),
-				      join(" ", $matrix->getPrior()),
-				      )) if ($main::verbose >= 2);
+	&RSAT::message::TimeWarn(join("\t", "Setting matrix priors for matrix", $matrix->get_attribute("name"), 
+				      %prior, join(" ", $matrix->getPrior()))) if ($main::verbose >= 3);
 	## Calculate min and max weight values
 	my ($Wmin, $Wmax, $Wrange) = $matrix->weight_range();
 	&RSAT::message::TimeWarn(join("\t", "Calculated weight range for matrix", 
 				      $matrix->get_attribute("name"), 
 				      $Wmin, $Wmax, $Wrange,
-				      )) if ($main::verbose >= 2);
-
+				     )) if ($main::verbose >= 3);
+	
 	push @matrices, $matrix;
-
-	&RSAT::message::TimeWarn(join("\t", "read matrix", 
-				      scalar(@matrices), 
-				      $matrix->get_attribute("name"),
-				      $matrix->get_attribute("file")
-				      )) if ($main::verbose >= 2);
+	
+	&RSAT::message::TimeWarn("Read matrix", 
+				 scalar(@matrices), 
+				 $matrix->get_attribute("name"),
+				 $matrix->get_attribute("file")
+				) if ($main::verbose >= 3);
+      }
     }
 
     ################################################################
@@ -429,21 +469,23 @@ models only (-markov 0 to 1).
     &Verbose() if ($main::verbose);
 
     ## Print header
-    print $out "#", join ("\t", 
-			  "seq_id",
-			  "ft_type",
-			  "ft_name",
-			  "strand",
-			  "start",
-			  "end",
-			  "sequence",
-			  "weight",
-			  "proba_M",
-			  "proba_B",
-			  );
-    print $out "\tnormw" if ($return_fields{normw});
-    print $out "\trank" if ($return_fields{rank});
-    print $out "\n";
+    if ($return_fields{sites}) {
+      print $out "#", join ("\t", 
+			    "seq_id",
+			    "ft_type",
+			    "ft_name",
+			    "strand",
+			    "start",
+			    "end",
+			    "sequence",
+			    "weight",
+			    "proba_M",
+			    "proba_B",
+			   );
+      print $out "\tnormw" if ($return_fields{normw});
+      print $out "\trank" if ($return_fields{rank});
+      print $out "\n";
+    }
 
     ################################################################
     ##### Scan the sequences
@@ -454,6 +496,11 @@ models only (-markov 0 to 1).
 	## If the rank is required, it is calculated for each input sequence independently
 	local @matches = (); ## Only used whe the rank of the site is required
 	local %matches_per_matrix = ();
+
+	## Count the number of N residues and increment the corresponding counter
+	my $n_seq = $current_seq;
+	$n_seq =~ s/[^N]//gi;
+	$n_residues += length($n_seq);
 
 	## Sequence length
 	$current_seq = lc($current_seq);
@@ -471,7 +518,7 @@ models only (-markov 0 to 1).
 
 	################################################################
 	## Report sequence limits
-	&PrintSequenceLimits($seq_id, $seq_len, $orig_pos) if ($return_fields{"limits"});
+	&PrintSequenceLimits($seq_id, $seq_len, $orig_pos) if ($return_fields{limits});
 
 	################################################################
 	## Calculate background model from the current sequence
@@ -499,58 +546,59 @@ models only (-markov 0 to 1).
 
 	################################################################
 	## Detect sites
-	&RSAT::message::TimeWarn(join ("\t", "Scanning sequence", $sequence_number,  "len=".$seq_len, "orig=".$orig_pos,  $seq_id))
-            if ($main::verbose >= 2);
-	if ($return_fields{"sites"}) {
-	    my $n_containing_region = 0;
-	    for my $pos (1..$seq_len) {
-
-		## Update background model if required
-		if (($main::window > 0) &&
-		    ($pos > $main::window/2) &&
-		    ($pos + $main::window <= $seq_len)) {
-		    my $added_word = substr($current_seq, $window_offset + $main::window - $main::markov, $markov+1);
-		    my $deleted_word = substr($current_seq, $window_offset, $markov+1);
-		    $bg_model->two_words_update($added_word, $deleted_word, $window_offset);
-		    $window_offset++;
-		}
-
-		## Detect sites
-		foreach my $matrix (@matrices) {
-		    my $ncol = $matrix->{ncol};
-		    next if ($seq_len - $pos +1 < $ncol);
-		    my $segment = substr($current_seq, $pos-1, $ncol);
-
-		    ## Skip N-containing segments
-		    if (($n_treatment eq "skip") &&
-			($segment =~ /n/i)) {
-			unless ($n_containing_region) {
-			    ## Start of an N-containing region
-			    &RSAT::message::Info(join("\t", "N-containing segment start at position", $pos))
-				if ($main::verbose >= 3);
-			}
-			$n_containing_region = 1;
-			next;
-		    }
-
-		    ## Report the end of the N-containing region
-		    if (($n_treatment eq "skip") && ($n_containing_region)) {
-			&RSAT::message::Info(join("\t", "N-containing segment ended at position", $pos -1))
-			    if ($main::verbose >= 3);
-			$n_containing_region = 0;
-		    }
-
-		    ## TO DO: test if this piece of code can be
-		    ## optimized by passing the pointer rather than the
-		    ## whole matrix
-		    &score_segment($segment, $matrix, $seq_id, $pos, "D");
-		    if ($main::both_strands) {
-			&score_segment( &ReverseComplement($segment),$matrix, $seq_id, $pos, "R");
-		    };
-		}
+	&RSAT::message::TimeWarn(join ("\t", "Scanning sequence with ".scalar(@matrices)." PSSM", $sequence_number,  "len=".$seq_len, "orig=".$orig_pos,  $seq_id))
+	  if ($main::verbose >= 2);
+	if ($calc_fields{sites}) {
+#	  $n_containing_region = 0;
+	  for my $pos (1..$seq_len) {
+	    
+	    ## Update background model if required
+	    if (($main::window > 0) &&
+		($pos > $main::window/2) &&
+		($pos + $main::window <= $seq_len)) {
+	      my $added_word = substr($current_seq, $window_offset + $main::window - $main::markov, $markov+1);
+	      my $deleted_word = substr($current_seq, $window_offset, $markov+1);
+	      $bg_model->two_words_update($added_word, $deleted_word, $window_offset);
+	      $window_offset++;
 	    }
+	    
+	    ## Detect sites
+	    foreach my $matrix (@matrices) {
+	      my $ncol = $matrix->{ncol};
+	      next if ($seq_len - $pos +1 < $ncol);
+	      my $segment = substr($current_seq, $pos-1, $ncol);
+	      
+	      ## Skip N-containing segments
+	      if (($n_treatment eq "skip") &&
+		  ($segment =~ /n/i)) {
+		unless ($n_containing_region) {
+		  ## Start of an N-containing region
+		  &RSAT::message::Info(join("\t", "N-containing segment start at position", $pos))
+		    if ($main::verbose >= 3);
+		}
+		$n_containing_region = 1;
+		$n_containing_regions ++;
+		next;
+	      }
+	      
+	      ## Report the end of the N-containing region
+	      if (($n_treatment eq "skip") && ($n_containing_region)) {
+		&RSAT::message::Info(join("\t", "N-containing segment ended at position", $pos -1))
+		  if ($main::verbose >= 3);
+		$n_containing_region = 0;
+	      }
+	      
+		    ## TO DO: test if this piece of code can be
+	      ## optimized by passing the pointer rather than the
+	      ## whole matrix
+	      &score_segment($segment, $matrix, $seq_id, $pos, "D");
+	      if ($main::both_strands) {
+		&score_segment( &ReverseComplement($segment),$matrix, $seq_id, $pos, "R");
+	      };
+	    }
+	  }
 	}
-
+	
 	################################################################
 	## Return ranked matches
 	if ($return_fields{rank}) {
@@ -599,28 +647,33 @@ models only (-markov 0 to 1).
     ################################################################
     ## Print additional information
 
+    ## Calculate maximal length of matrix name for the headers
+    my $max_name_len = 0;
+    foreach my $matrix (@matrices) {
+      my $name = $matrix->get_attribute("name");
+      $max_name_len = &max($max_name_len, length($name));
+    }
+
     ################################################################
     ## Report the PSSM Matrices
 
-
     ## Print summary statistics of each matrix
-    print $main::out ";\n; Matrices\n";
-    print $out join ("\t", ";", 
-		     "name",
-		     "ncol",
-		     "nrow",
-		     "pseudo",
-		     "Pmin",
-		     "Pmax",
-		     "Wmin",
-		     "Wmax",
-		     "Wrange",
-		     "scored",
-		     "matches",
-		     "prior",
-		     ), "\n";
+    if ($main::verbose >= 1) {
+      print $main::out ";\n; Matrices\n";
+      print $out join ("\t", ";", 
+		       sprintf("%-${max_name_len}s", "name"),
+		       "ncol",
+		       "nrow",
+		       "pseudo",
+		       "Pmin",
+		       "Pmax",
+		       "Wmin",
+		       "Wmax",
+		       "Wrange",
+		       "prior",
+		      ), "\n";
 
-    foreach my $matrix (@matrices) {
+      foreach my $matrix (@matrices) {
 	print $out join ("\t", ";", 
 			 $matrix->get_attribute("name"),
 			 $matrix->get_attribute("ncol"),
@@ -631,18 +684,16 @@ models only (-markov 0 to 1).
 			 sprintf("%.3f", $matrix->get_attribute("Wmin")),
 			 sprintf("%.3f", $matrix->get_attribute("Wmax")),
 			 sprintf("%.3f", $matrix->get_attribute("Wrange")),
-			 sprintf("%d", $matrix->get_attribute("scored")),
-			 sprintf("%d", $matrix->get_attribute("matches")),
-			 );
+			);
 	my %prior = $matrix->getPrior();
 	print $out "\t";
 	foreach my $letter (sort keys %prior) {
-	    printf $out "%s:%.3f ", $letter, $prior{$letter};
+	  printf $out "%s:%.3f ", $letter, $prior{$letter};
 	}
 	print $out "\n";
+      }
     }
-    
-    
+
     ## Return count matrices
     if ($return_fields{matrix}) {
       foreach my $matrix (@matrices) {
@@ -673,23 +724,114 @@ models only (-markov 0 to 1).
 	print $out $bg_model->to_string($bg_out_format, comment_string=>"; ");
     }
 
+    ## Report score distribution
+    if ($return_fields{distrib}) {
+      
+      
+      ## Collect all score values for all the matrices
+      my %sum_per_score = ();
+      foreach my $matrix (@matrices) {
+	my %current_score_distrib = %{$score_distrib->{$matrix}};
+	my @current_scores = sort {$a <=> $b} (keys (%current_score_distrib));
+	foreach my $score (@current_scores) {
+	  $sum_per_score{$score} += $score_distrib->{$matrix}->{$score};
+#	  &RSAT::message::Debug("score distrib", 
+#				$score, $score_distrib->{$matrix}->{$score}, 
+#				$score, $score_distrib_cum->{$matrix}->{$score}, 
+#				$sum_per_score{$score},
+#	 ) 
+#	    if ($main::verbose >= 10);
+	}
+      }
+
+
+      ################################################################
+      ##  Calculate cumulative frequencies
+      my %cum_sum = ();
+      my %score_distrib_cum = ();
+      foreach my $matrix (@matrices) {
+	$cum_sum{$matrix} = 0;
+	my %current_score_distrib = %{$score_distrib->{$matrix}};
+	foreach my $score (sort {$a <=> $b} keys %sum_per_score) {
+	  unless (defined($score_distrib->{$matrix}->{$score})) {
+	    $score_distrib->{$matrix}->{$score} = 0;
+	  }
+	  $cum_sum{$matrix} += $score_distrib->{$matrix}->{$score};
+	  $score_distrib_cum->{$matrix}->{$score} = $cum_sum{$matrix};
+#	  &RSAT::message::Debug($matrix, "score", $score, "cum_sum", $cum_sum{$matrix}) if ($main::verbose >= 10);
+	}
+      }
+
+      ## Print the header;
+      print $out ";\n; Score distribution\n";
+      my @header = ("Matrix",
+		    "score",
+		    "counts",
+		    "cum",
+		    "inv_cum",
+#		    "frequency",
+#		    "cum_freq",
+		    "inv_cum_freq",
+		   );
+      print $out "#", join  ("\t", @header), "\n";
+
+      ## Print table with one row per score and one column per matrix
+      my @sorted_scores = sort {$a <=> $b} keys (%sum_per_score);
+      foreach my $matrix (@matrices) {
+	foreach my $score (@sorted_scores) {
+	  my $count = $score_distrib->{$matrix}->{$score} || 0;
+	  my $count_cum = $score_distrib_cum->{$matrix}->{$score} || 0;
+	  my $count_cum_inv = $cum_sum{$matrix} - $count_cum + $count;
+	  print $out join ("\t", 
+			   $matrix->get_attribute("name"),
+			   $score,
+			   $count,
+			   $count_cum,
+			   $count_cum_inv,
+#			   sprintf("%.6e", $count/$cum_sum{$matrix}),
+#			   sprintf("%.6e", $count_cum/$cum_sum{$matrix}),
+			   sprintf("%.6e", $count_cum_inv/$cum_sum{$matrix}),
+			  );
+	  print $out "\n";
+	}
+      }
+    }
+
+
     ################################################################
-    ###### finish verbose
+    ###### Finish verbose
     if ($main::verbose >= 1) {
 
 	## Sequence statistics
 	printf $main::out "; %-21s\t%s\n", "Number of sequences scanned", $sequence_number;
 	printf $main::out "; %-21s\t%s\n", "Sum of sequence lengths", $sum_seq_len;
+	printf $main::out "; %-21s\t%s\n", "N-containing regions", $n_containing_regions if ($n_containing_regions >= 0);
+	printf $main::out "; %-21s\t%s\n", "N residues", $n_residues if ($n_residues >= 0);
 
 	## Matching statistics
 	print $main::out "; Matches per matrix\n";
+	print $main::out join("\t", ";",
+			      sprintf("%-${max_name_len}s", "matrix"),
+			      "matches",
+			      "scored",
+			     ), "\n";
+
+	my $total_scored = 0;
 	my $total_matches = 0;
 	foreach my $matrix (@matrices) {
-	    my $matches = $matrix->get_attribute("matches");
-	    $total_matches += $matches;
-	    printf $main::out ";\t%-15s\t%d\n", $matrix->get_attribute("name"), $matches;
+	  $total_matches += $matrix->get_attribute("matches");
+	  $total_scored += $matrix->get_attribute("scored");
+	  print $main::out join ("\t", ";", 
+				  sprintf("%-15s", $matrix->get_attribute("name")),
+				  sprintf("%d", $matrix->get_attribute("matches")),
+				  sprintf("%d", $matrix->get_attribute("scored")),
+				 ), "\n";
 	}
-	printf $main::out ";\t%-15s\t%d\n", "Total matches", $total_matches;
+	print $main::out join ("\t", ";", 
+				sprintf("%-15s", "TOTAL"),
+				$total_matches,
+				$total_scored,
+			       ), "\n";
 	
 	my $done_time = &AlphaDate();
 	print $main::out "; Job started $start_time\n";
@@ -855,6 +997,25 @@ multiple matrices.
 	} elsif ($arg eq "-m") {
 	    push @matrix_files, shift(@arguments);
 #	    $main::infile{matrix} = shift(@arguments);
+
+	    ## Matrix file
+=pod
+
+=item B<-mlist matrix_list>
+
+Matrix list. 
+
+Indicate a file containing a list of matrices to be used for scanning
+the region. This facilitates the scanning of a sequence with a library
+of matrices (e.g. all the matrices from RegulonDB, or TRANSFAC). 
+
+Format: the matrix list file is a text file. The first word of each
+row is suppose to indicate a file name. Any further information on the
+same row is ignored.
+
+=cut
+	} elsif ($arg eq "-mlist") {
+	    $main::infile{matrix_list} = shift(@arguments);
 
 
 	    ## Sequence format
@@ -1115,18 +1276,22 @@ matrix and per sequence (-uth rank 3).
 This is useful for drawing feature maps with sequences of different
 lengths.
 
-=item B<normw:> normalized weights. 
+=item B<normw:> normalized weights.
 
 Normailzed weights are calculated according to Thijs' formula : normw
 = (W -Wmin)/(Wmax - Wmin). Note that Wmin and Wmax are approximated
 using a Bernoulli model, for reasons of commputational efficiency.
 
-=item B<bg_model:> Background model. 
+=item B<bg_model:> Background model.
 
 Transition matrix of the background model. Note that this option only
 makes sense for fixed background models (-bgfile or -bginput), since
 when the background model is adaptive (-mindow), the transition matrix
 changes along he sequence.
+
+=item B<distrib> Score distribution.
+
+Return the score distribution for each matrix. 
 
 =back
 
@@ -1268,7 +1433,7 @@ sub score_segment {
 	$score = sprintf("%.${decimals}f", log($proba_M/$proba_B))/$log_base;
 
 	if ($return_fields{normw}) {
-	  $normw = sprintf("%6.4f", ($score - $matrix->{'Wmin'})/($matrix->{'Wrange'}));
+	  $normw = sprintf("%6.4f", ($score - $matrix->{Wmin})/($matrix->{Wrange}));
 	}
     } elsif ($proba_M == 0) {
 	if ($proba_B > 0) {
@@ -1278,6 +1443,9 @@ sub score_segment {
 	    }
 	}
     }
+
+    my $round_score = sprintf("%.${distrib_decimals}f", $score);
+    $score_distrib->{$matrix}->{$round_score}++;
 
 #    &RSAT::message::Debug("scoring segment", $segment, $seq_id, $pos, $strand, 
 #			  $proba_M , $proba_B, $score) if ($main::verbose >= 10);
@@ -1308,17 +1476,11 @@ sub score_segment {
     $match->set_attribute('normw',$normw) if ($return_fields{normw});
 
     if ($return_fields{rank}) {
-#	if (defined($uth{rank})) {
-#	    my @ranked_matches = sort 
-#	    {$b->get_attribute('score') <=> $a->get_attribute('score')}
-#	    (@ranked_matches, $match);
-#	    @ranked_matches = @ranked_matches[1..$uth{rank}];
-#	} else {
 	    push @matches , $match;
 	    push @{$matches_per_matrix{$matrix->get_attribute('name')}} , $match;
-#	}
-    } elsif ($main::return_fields{sites}) {
-	&print_match($match); $matrix->{matches}++;
+    } else {
+      $matrix->{matches}++;
+      &print_match($match) if ($main::return_fields{sites});
     }
     return(1);
 }
