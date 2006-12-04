@@ -621,6 +621,27 @@ sub addRow {
     }
 }
 
+
+################################################################
+=pod
+
+=item B<setAlphabet(@alphabet)>
+
+Specify the alphabet (i.e. the list of valid letters) for the table.
+
+=cut
+sub setAlphabet {
+    my ($self, @new_alphabet) = @_;
+
+    @{$self->{alphabet}} = @new_alphabet;	
+
+#    warn join("\t", "; Alphabet", $self->getAlphabet()), "\n" if ($main::verbose >= 10);
+    
+    ## update the number of columns
+    $self->force_attribute("nrow", scalar(@alphabet));
+} 
+
+
 ################################################################
 =pod
 
@@ -642,25 +663,25 @@ sub setAlphabet_uc {
 }
 
 
-
 ################################################################
 =pod
 
-=item B<setAlphabet(@alphabet)>
+=item B<setAlphabet_lc(@alphabet)>
 
-Specify the alphabet (i.e. the list of valid letters) for the table.
+Same as setAlphabet(), but first converts the alphabet to lowercases,
+to ensure case-insensitivvity.
 
 =cut
-sub setAlphabet {
+sub setAlphabet_lc {
     my ($self, @new_alphabet) = @_;
 
-    @{$self->{alphabet}} = @new_alphabet;	
+    ## Convert alphabet to uppercases
+    for my $i (0..$#new_alphabet) {
+	$new_alphabet[$i] = lc($new_alphabet[$i]);
+    }
 
-#    warn join("\t", "; Alphabet", $self->getAlphabet()), "\n" if ($main::verbose >= 10);
-    
-    ## update the number of columns
-    $self->force_attribute("nrow", scalar(@alphabet));
-} 
+    $self->setAlphabet(@new_alphabet);
+}
 
 
 ################################################################
