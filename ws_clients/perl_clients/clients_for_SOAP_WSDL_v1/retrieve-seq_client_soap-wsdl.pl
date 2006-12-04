@@ -11,7 +11,7 @@
 
 use strict;
 use SOAP::WSDL;
-# import SOAP::Lite +trace;
+#import SOAP::Lite +trace;
 
 ## WSDL location
 my $WSDL = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.wsdl';
@@ -27,18 +27,18 @@ $soap->wsdlinit;
 my $return_choice = 'both';  ## Accepted values: 'file', 'result', 'both'
 
 ## Retrieve-seq parameters
-my $organism = '-org Escherichia_coli_K12';  ## Name of the query organism
+my $organism = 'Escherichia_coli_K12';  ## Name of the query organism
 # my $organism = '-org Escherichia_colix_K12';
 my @gene = ("metA", "metB", "metC");  ## List of query genes
 # my @gene = ("zorglB");
 my $all = '';  ## the -all option. This option is incompatible with the query list @gene (above)
-my $noorf = '-noorf';  ## Clip sequences to avoid upstream ORFs
-my $from = '-from 0';  ## Start position of the sequence
-my $to = '-to 2';  ## End position of the sequence
+my $noorf = 'noorf';  ## Clip sequences to avoid upstream ORFs
+my $from = 0;  ## Start position of the sequence
+my $to = 2;  ## End position of the sequence
 my $feattype = '';  ## The -feattype option value is  not specified, the default is used
 my $type = '';  ## The -type option value; other example:'-type downstream'
 my $format = '';  ## The -format option value. We use the default (fasta), but other formats could be specified, for example 'multi'
-my $label = '-label id,name';  ## Choice of label for the retrieved sequence(s)
+my $label = 'id,name';  ## Choice of label for the retrieved sequence(s)
 my $label_sep = '';  ## Choice of separator for the label(s) of the retrieved sequence(s)
 my $nocom = '';  ## Other possible value = '-nocom', to get sequence(s) whithout comments
 my $repeat =  '';  ## Other possible value = '-rm', to have annotated repeat regions masked
