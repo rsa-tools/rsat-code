@@ -22,12 +22,13 @@ STR=-2str
 PSEUDO=1
 MKV=1
 SCAN_DIR=results/matches/${FACTOR}/per_gene
-SCAN_FILE=${SCAN_DIR}/matches_TF_${FACTOR}_up_${GENE}_${TAXON}${STR}_ps${PSEUDO}_mkv${MKV}
+SCAN_FILE=${SCAN_DIR}/matches_TF_${FACTOR}_up_${GENE}${PURGE_SUFFIX}_${TAXON}${STR}_ps${PSEUDO}_mkv${MKV}
+SCAN_RETURN=limits,sites,rank
 one_scan:
 	@mkdir -p ${SCAN_DIR}
 	matrix-scan -v ${V} -i ${SEQ} \
 		-m ${MATRIX} \
-		-lth score ${LTH_SCORE} -return limits,sites,rank \
+		-lth score ${LTH_SCORE} -return ${SCAN_RETURN} \
 		${STR} -origin -0 -pseudo ${PSEUDO} \
 		-bginput -markov ${MKV} -o ${SCAN_FILE}.tab
 	@echo ${SCAN_FILE}.tab
@@ -38,11 +39,6 @@ one_map:
 		-title "${FACTOR} matches in ${TAXON} ${GENE} promoters" \
 		-o ${SCAN_FILE}.png 
 	@echo ${SCAN_FILE}.png
-
-one_score_distrib:
-	convert-seq -i ${SEQ} -from fasta -to wc \
-		| patser 
-		| features-from-patser
 
 
 
