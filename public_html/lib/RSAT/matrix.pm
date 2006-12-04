@@ -478,581 +478,581 @@ sub setMatrix {
 
 
 
-################################################################
-=pod
+# ################################################################
+# =pod
 
-=item readFromFile($file, $format)
+# =item readFromFile($file, $format)
 
-Read a matrix from a file
+# Read a matrix from a file
 
-=cut
-sub readFromFile {
-    my ($self, $file, $format, %args) = @_;
-    if (($format =~ /consensus/i) || ($format =~ /^wc/i)) {
-	$self->_readFromConsensusFile($file);
-    } elsif ($format =~ /gibbs/i) {
-	$self->_readFromGibbsFile($file);
-    } elsif ($format =~ /tab/i) {
-	$self->_readFromTabFile($file, %args);
-    } elsif ($format =~ /MotifSampler/i) {
-	$self->_readFromMotifSamplerFile($file);
-    } elsif ($format =~ /meme/i) {
-	$self->_readFromMEMEFile($file);
-    } elsif ($format =~ /clustal/i) {
-	$self->_readFromClustalFile($file);
-    } else {
-	&main::FatalError("Invalid format for reading matrix\t$format");
-    }
+# =cut
+# sub readFromFile {
+#     my ($self, $file, $format, %args) = @_;
+#     if (($format =~ /consensus/i) || ($format =~ /^wc/i)) {
+# 	$self->_readFromConsensusFile($file);
+#     } elsif ($format =~ /gibbs/i) {
+# 	$self->_readFromGibbsFile($file);
+#     } elsif ($format =~ /tab/i) {
+# 	$self->_readFromTabFile($file, %args);
+#     } elsif ($format =~ /MotifSampler/i) {
+# 	$self->_readFromMotifSamplerFile($file);
+#     } elsif ($format =~ /meme/i) {
+# 	$self->_readFromMEMEFile($file);
+#     } elsif ($format =~ /clustal/i) {
+# 	$self->_readFromClustalFile($file);
+#     } else {
+# 	&main::FatalError("Invalid format for reading matrix\t$format");
+#     }
 
-    ## Check that the matrix contains at least one row and one col
-    if (($self->nrow() > 0) && ($self->ncol() > 0)) {
-	&RSAT::message::Info(join("\t", "; Matrix read", 
-		  "nrow = ".$self->nrow(),
-		  "ncol = ".$self->ncol(),
-		  "prior : ".join (" ", $self->getPrior()),
-		  )) if ($main::verbose >= 3);
-    } else {
-	&main::FatalError("The file $file does not seem to contain a matrix in format $format. Please check the file format and contents.");
-    }
-}
+#     ## Check that the matrix contains at least one row and one col
+#     if (($self->nrow() > 0) && ($self->ncol() > 0)) {
+# 	&RSAT::message::Info(join("\t", "; Matrix read", 
+# 		  "nrow = ".$self->nrow(),
+# 		  "ncol = ".$self->ncol(),
+# 		  "prior : ".join (" ", $self->getPrior()),
+# 		  )) if ($main::verbose >= 3);
+#     } else {
+# 	&main::FatalError("The file $file does not seem to contain a matrix in format $format. Please check the file format and contents.");
+#     }
+# }
 
 
-################################################################
-=pod
+# ################################################################
+# =pod
 
-=item _readFromGibbsFile($file)
+# =item _readFromGibbsFile($file)
 
-Read a matrix from a gibbs file. This method is called by the method 
-C<readFromFile($file, "gibbs")>.
+# Read a matrix from a gibbs file. This method is called by the method 
+# C<readFromFile($file, "gibbs")>.
 
-=cut
-sub _readFromGibbsFile {
-    my ($self, $file) = @_;
+# =cut
+# sub _readFromGibbsFile {
+#     my ($self, $file) = @_;
     
-    ## open input stream
-    my $in = STDIN;
-    if ($file) {
-	open INPUT, $file;
-	$in = INPUT;
-    }
-    $in_matrix = 0;
-    my @matrix = ();
-    my @alphabet = ();
-    my $ncol = 0;
-    my $nrow = 0;
-    my $last_ncol = 0;
-    my $last_nrow = 0;
-    while (<$in>) {
-	next unless (/\S/);
-	s/\r//;
-	chomp();
-	if (/Information \(relative entropy\) contribution in tenth bits\:/) {
-	    $in_matrix = 1;
-	    # default nucletodide alphabet
-	    $self->setAlphabet_uc("A","C","G","T");   
-	    next;
+#     ## open input stream
+#     my $in = STDIN;
+#     if ($file) {
+# 	open INPUT, $file;
+# 	$in = INPUT;
+#     }
+#     $in_matrix = 0;
+#     my @matrix = ();
+#     my @alphabet = ();
+#     my $ncol = 0;
+#     my $nrow = 0;
+#     my $last_ncol = 0;
+#     my $last_nrow = 0;
+#     while (<$in>) {
+# 	next unless (/\S/);
+# 	s/\r//;
+# 	chomp();
+# 	if (/Information \(relative entropy\) contribution in tenth bits\:/) {
+# 	    $in_matrix = 1;
+# 	    # default nucletodide alphabet
+# 	    $self->setAlphabet_uc("A","C","G","T");   
+# 	    next;
 
-	} elsif (/site/) {
-	    ### Empty the previous matrix because it was not the definitive result
-	    $in_matrix = 0;
-	    @last_matrix = @matrix;
-	    $last_nrow = $nrow;
-	    $last_ncol = $ncol;
-	    @matrix = ();
-	    $nrow = 0;
-	    $ncol = 0;
+# 	} elsif (/site/) {
+# 	    ### Empty the previous matrix because it was not the definitive result
+# 	    $in_matrix = 0;
+# 	    @last_matrix = @matrix;
+# 	    $last_nrow = $nrow;
+# 	    $last_ncol = $ncol;
+# 	    @matrix = ();
+# 	    $nrow = 0;
+# 	    $ncol = 0;
 
-	    next;
-	} elsif ((/^\s*POS/) && ($in_matrix)) {
-	    s/\r//;
-	    chomp;
-	    @header = split " +";
-	    @alphabet = @header[1..$#header-1];
-#		$self->setAlphabet_uc(@alphabet);
-	} elsif (/model map = (\S+); betaprior map = (\S+)/) {
-	    $self->set_parameter("model.map", $1);
-	    $self->set_parameter("betaprior.map", $2);
-	} elsif (/MAP = (\S+)/) {
-	    $self->set_parameter("MAP", $1);
-	} elsif (/seed: (\S+)/) {
-	    $self->set_parameter("seed", $1);
-	} elsif (/^gibbs /) {
-	    $self->set_parameter("command", $_);
-	} elsif ($in_matrix) {
-	    ## Add a column to the matrix (gibbs rows correspond to our columns)
-	    s/\r//;
-	    chomp;
-	    s/^\s+//;
-	    @fields = split " +";
-	    @values = @fields[1..$#header-1];
-	    $nrow = scalar(@values);
-	    foreach my $v (0..$#values) {
-		$values[$v] =~ s/^\.$/0/;
-		$matrix[$ncol][$v] = $values[$v];
-	    }
-	    $ncol++;
-	}
-    }
-    close $in if ($file);
+# 	    next;
+# 	} elsif ((/^\s*POS/) && ($in_matrix)) {
+# 	    s/\r//;
+# 	    chomp;
+# 	    @header = split " +";
+# 	    @alphabet = @header[1..$#header-1];
+# #		$self->setAlphabet_uc(@alphabet);
+# 	} elsif (/model map = (\S+); betaprior map = (\S+)/) {
+# 	    $self->set_parameter("model.map", $1);
+# 	    $self->set_parameter("betaprior.map", $2);
+# 	} elsif (/MAP = (\S+)/) {
+# 	    $self->set_parameter("MAP", $1);
+# 	} elsif (/seed: (\S+)/) {
+# 	    $self->set_parameter("seed", $1);
+# 	} elsif (/^gibbs /) {
+# 	    $self->set_parameter("command", $_);
+# 	} elsif ($in_matrix) {
+# 	    ## Add a column to the matrix (gibbs rows correspond to our columns)
+# 	    s/\r//;
+# 	    chomp;
+# 	    s/^\s+//;
+# 	    @fields = split " +";
+# 	    @values = @fields[1..$#header-1];
+# 	    $nrow = scalar(@values);
+# 	    foreach my $v (0..$#values) {
+# 		$values[$v] =~ s/^\.$/0/;
+# 		$matrix[$ncol][$v] = $values[$v];
+# 	    }
+# 	    $ncol++;
+# 	}
+#     }
+#     close $in if ($file);
 
-    $self->setAlphabet_uc (@alphabet);
-    $self->force_attribute("nrow", $last_nrow);
-    $self->force_attribute("ncol", $last_ncol);
-    $self->setMatrix ($last_nrow, $last_ncol, @last_matrix);
-}
+#     $self->setAlphabet_uc (@alphabet);
+#     $self->force_attribute("nrow", $last_nrow);
+#     $self->force_attribute("ncol", $last_ncol);
+#     $self->setMatrix ($last_nrow, $last_ncol, @last_matrix);
+# }
 
 
-################################################################
-=pod
+# ################################################################
+# =pod
 
-=item _readFromConsensusFile($file)
+# =item _readFromConsensusFile($file)
 
-Read a matrix from a consensus file. This method is called by the
-method C<readFromFile($file, "consensus")>.
+# Read a matrix from a consensus file. This method is called by the
+# method C<readFromFile($file, "consensus")>.
 
-=cut
-sub _readFromConsensusFile {
-    my ($self, $file) = @_;
-    warn ("; Reading matrix from consensus file\t",$file, "\n") if ($main::verbose >= 3);
+# =cut
+# sub _readFromConsensusFile {
+#     my ($self, $file) = @_;
+#     warn ("; Reading matrix from consensus file\t",$file, "\n") if ($main::verbose >= 3);
     
-#	($in, $dir) = &main::OpenInputFile($file);
-#
+# #	($in, $dir) = &main::OpenInputFile($file);
+# #
     
-    ## open input stream
-    my $in = STDIN;
-    if ($file) {
-	open INPUT, $file;
-	$in = INPUT;
-    }
-    my $current_matrix_nb = 0;
-    my %prior = ();
-    my $l = 0;
-    while (<$in>) {
-      $l++;
-      next unless (/\S/);
-      s/\r//;
-      chomp();
+#     ## open input stream
+#     my $in = STDIN;
+#     if ($file) {
+# 	open INPUT, $file;
+# 	$in = INPUT;
+#     }
+#     my $current_matrix_nb = 0;
+#     my %prior = ();
+#     my $l = 0;
+#     while (<$in>) {
+#       $l++;
+#       next unless (/\S/);
+#       s/\r//;
+#       chomp();
 
-      ## The following information (final cycle) is only exported
-      ## when the number of cycles is automatic. I don't understand
-      ## the reason for this. I need to ask Jerry. Inbetween, I
-      ## always use the same information (THE LIST OF TOP MATRICES
-      ## FROM EACH CYCLE).
+#       ## The following information (final cycle) is only exported
+#       ## when the number of cycles is automatic. I don't understand
+#       ## the reason for this. I need to ask Jerry. Inbetween, I
+#       ## always use the same information (THE LIST OF TOP MATRICES
+#       ## FROM EACH CYCLE).
 
-      last if (/THE LIST OF MATRICES FROM FINAL CYCLE/);
+#       last if (/THE LIST OF MATRICES FROM FINAL CYCLE/);
 
-      ## Read the command line
-      if (/COMMAND LINE: /) {
-	$command = $';		# '
-	$self->set_parameter("command", $command);
+#       ## Read the command line
+#       if (/COMMAND LINE: /) {
+# 	$command = $';		# '
+# 	$self->set_parameter("command", $command);
 
-	## Start a new matrix (one consensus file contains several matrices)
-      } elsif (/MATRIX\s(\d+)/) {
-	$current_matrix_nb = $1;
-	$self->setPrior(%prior);
-	next;
+# 	## Start a new matrix (one consensus file contains several matrices)
+#       } elsif (/MATRIX\s(\d+)/) {
+# 	$current_matrix_nb = $1;
+# 	$self->setPrior(%prior);
+# 	next;
 
-	## Read prior frequency for one residue in the consensus header
-      } elsif (/letter\s+\d:\s+(\S+).+prior frequency =\s+(\S+)/) {
-	my $letter = lc($1);
-	my $prior = $2;
-	&RSAT::message::Info ("Prior from consensus file", $letter, $prior) if ($main::verbose >= 3);
-	$prior{$letter} = $prior;
-	$self->setPrior(%prior);
+# 	## Read prior frequency for one residue in the consensus header
+#       } elsif (/letter\s+\d:\s+(\S+).+prior frequency =\s+(\S+)/) {
+# 	my $letter = lc($1);
+# 	my $prior = $2;
+# 	&RSAT::message::Info ("Prior from consensus file", $letter, $prior) if ($main::verbose >= 3);
+# 	$prior{$letter} = $prior;
+# 	$self->setPrior(%prior);
 	    
-      } elsif ($current_matrix_nb == 1) {
+#       } elsif ($current_matrix_nb == 1) {
 
-	## Matrix content (counts) for one residue
-	if (/^\s*(\S+)\s+\|/) {
-	  my @fields = split / +/, $_;
-	  ## residue associated to the row
-	  my $residue = lc(shift @fields);
+# 	## Matrix content (counts) for one residue
+# 	if (/^\s*(\S+)\s+\|/) {
+# 	  my @fields = split / +/, $_;
+# 	  ## residue associated to the row
+# 	  my $residue = lc(shift @fields);
 	    
-	  ## skip the | between residue and numbers
-	  shift @fields unless &main::IsReal($fields[0]);	
+# 	  ## skip the | between residue and numbers
+# 	  shift @fields unless &main::IsReal($fields[0]);	
 	    
-	  $self->addIndexedRow($residue, @fields);
+# 	  $self->addIndexedRow($residue, @fields);
 		
-	  ## Sites used to build the matrix
-	} elsif (/(\d+)\|(\d+)\s*\:\s*(-){0,1}(\d+)\/(\d+)\s+(\S+)/) {
-	  	    my $site_nb = $1;
-	  	    my $site_cycle = $2;
-	  	    my $site_strand = $3;
-	  	    my $site_seq_nb = $4;
-	  	    my $site_pos = $5;
-	  	    my $site_sequence = $6;
-	  $self->push_attribute("sites", $site_sequence);
-	  &RSAT::message::Debug("line", $l, "site", $site_sequence) if ($main::verbose >= 4);
+# 	  ## Sites used to build the matrix
+# 	} elsif (/(\d+)\|(\d+)\s*\:\s*(-){0,1}(\d+)\/(\d+)\s+(\S+)/) {
+# 	  	    my $site_nb = $1;
+# 	  	    my $site_cycle = $2;
+# 	  	    my $site_strand = $3;
+# 	  	    my $site_seq_nb = $4;
+# 	  	    my $site_pos = $5;
+# 	  	    my $site_sequence = $6;
+# 	  $self->push_attribute("sites", $site_sequence);
+# 	  &RSAT::message::Debug("line", $l, "site", $site_sequence) if ($main::verbose >= 4);
 	    
-	  ## Other matrix parameters
-	} elsif (/number of sequences = (\d+)/) {
-	  $self->set_parameter("nb.sequences", $1); 
-	} elsif (/unadjusted information = (\S+)/) {
-	  $self->set_parameter("unadjusted.information", $1); 
-	} elsif (/sample size adjusted information = (\S+)/) {
-	  $self->set_parameter("adjusted.information", $1); 
-	} elsif (/ln\(p\-value\) = (\S+)   p\-value = (\S+)/) {
-	  $self->set_parameter("ln.Pval", $1); 
-	  $self->set_parameter("Pval", $2); 
-	} elsif (/ln\(expected frequency\) = (\S+)   expected frequency = (\S+)/) {
-	  $self->set_parameter("ln.exp", $1); 
-	  $self->set_parameter("exp", $2); 
-	}
-      }
-    }
-    close $in if ($file);
-  }
+# 	  ## Other matrix parameters
+# 	} elsif (/number of sequences = (\d+)/) {
+# 	  $self->set_parameter("nb.sequences", $1); 
+# 	} elsif (/unadjusted information = (\S+)/) {
+# 	  $self->set_parameter("unadjusted.information", $1); 
+# 	} elsif (/sample size adjusted information = (\S+)/) {
+# 	  $self->set_parameter("adjusted.information", $1); 
+# 	} elsif (/ln\(p\-value\) = (\S+)   p\-value = (\S+)/) {
+# 	  $self->set_parameter("ln.Pval", $1); 
+# 	  $self->set_parameter("Pval", $2); 
+# 	} elsif (/ln\(expected frequency\) = (\S+)   expected frequency = (\S+)/) {
+# 	  $self->set_parameter("ln.exp", $1); 
+# 	  $self->set_parameter("exp", $2); 
+# 	}
+#       }
+#     }
+#     close $in if ($file);
+#   }
 
 
-################################################################
-=pod
+# ################################################################
+# =pod
 
-=item _readFromTabFile($file)
+# =item _readFromTabFile($file)
 
-Read a matrix from a tab-delimited file. This method is called by the
-method C<readFromFile($file, "tab")>.
+# Read a matrix from a tab-delimited file. This method is called by the
+# method C<readFromFile($file, "tab")>.
 
-=cut
-sub _readFromTabFile {
-    my ($self, $file, %args) = @_;
-    &RSAT::message::Info(join("\t", "Reading matrix from tab file\t",$file)) if ($main::verbose >= 3);
+# =cut
+# sub _readFromTabFile {
+#     my ($self, $file, %args) = @_;
+#     &RSAT::message::Info(join("\t", "Reading matrix from tab file\t",$file)) if ($main::verbose >= 3);
 
-    ## open input stream
-    my ($in, $dir) = &main::OpenInputFile($file);
-    if ($file) {
-	open INPUT, $file;
-	$in = INPUT;
-    }
-    my $current_matrix_nb = 0;
+#     ## open input stream
+#     my ($in, $dir) = &main::OpenInputFile($file);
+#     if ($file) {
+# 	open INPUT, $file;
+# 	$in = INPUT;
+#     }
+#     my $current_matrix_nb = 0;
 
-    ## read header
-    if ($args{header}) {
-	$header = <$in>;
-	$header =~ s/\r//;
-	chomp ($header);
-	$header =~ s/\s+/\t/g;
-	@header = split "\t", $header;
-	$self->push_attribute("header", @header);
-    }
-    while (<$in>) {
-	next unless (/\S/);
-	s/\r//;
-	chomp();
-	s/\s+/\t/g;
-	if (/^\s*(\S+)\s+/) {
-	    my @fields = split /\t/, $_;
+#     ## read header
+#     if ($args{header}) {
+# 	$header = <$in>;
+# 	$header =~ s/\r//;
+# 	chomp ($header);
+# 	$header =~ s/\s+/\t/g;
+# 	@header = split "\t", $header;
+# 	$self->push_attribute("header", @header);
+#     }
+#     while (<$in>) {
+# 	next unless (/\S/);
+# 	s/\r//;
+# 	chomp();
+# 	s/\s+/\t/g;
+# 	if (/^\s*(\S+)\s+/) {
+# 	    my @fields = split /\t/, $_;
 
-	    ## residue associated to the row
-	    my $residue = lc(shift @fields);
+# 	    ## residue associated to the row
+# 	    my $residue = lc(shift @fields);
 	    
-	    ## skip the | between residue and numbers
-	    shift @fields unless &main::IsReal($fields[0]);	
+# 	    ## skip the | between residue and numbers
+# 	    shift @fields unless &main::IsReal($fields[0]);	
 	    
-	    $self->addIndexedRow($residue, @fields);
-	}
-    }
-    close $in if ($file);
+# 	    $self->addIndexedRow($residue, @fields);
+# 	}
+#     }
+#     close $in if ($file);
 
 
-    ## Initialize prior as equiprobable alphabet
-    my @alphabet = $self->getAlphabet();
-    my %tmp_prior = ();
-    my $prior = 1/scalar(@alphabet);
-    foreach my $residue (@alphabet) {
-	$tmp_prior{$residue} = $prior;
-#	&RSAT::message::Debug("initial prior", $residue, $prior) if ($main::verbose >= 0);
-    }
-    $self->setPrior(%tmp_prior);
+#     ## Initialize prior as equiprobable alphabet
+#     my @alphabet = $self->getAlphabet();
+#     my %tmp_prior = ();
+#     my $prior = 1/scalar(@alphabet);
+#     foreach my $residue (@alphabet) {
+# 	$tmp_prior{$residue} = $prior;
+# #	&RSAT::message::Debug("initial prior", $residue, $prior) if ($main::verbose >= 10);
+#     }
+#     $self->setPrior(%tmp_prior);
 
-    if ($main::verbose >= 3) {
-	&RSAT::message::Debug("Read matrix with alphabet", join(":", $self->getAlphabet()));
-	&RSAT::message::Debug("Initialized prior as equiprobable", join(":", $self->getPrior()));
-	&RSAT::message::Debug("Matrix size", $self->nrow()." rows",  $self->ncol()." columns");
-    }
+#     if ($main::verbose >= 3) {
+# 	&RSAT::message::Debug("Read matrix with alphabet", join(":", $self->getAlphabet()));
+# 	&RSAT::message::Debug("Initialized prior as equiprobable", join(":", $self->getPrior()));
+# 	&RSAT::message::Debug("Matrix size", $self->nrow()." rows",  $self->ncol()." columns");
+#     }
 
-}
+# }
 
 
-################################################################
-=pod
+# ################################################################
+# =pod
 
-=item _readFromMEMEFile($file)
+# =item _readFromMEMEFile($file)
 
-Read a matrix from a MEME file. This method is called by the
-method C<readFromFile($file, "MEME")>.
+# Read a matrix from a MEME file. This method is called by the
+# method C<readFromFile($file, "MEME")>.
 
-=cut
+# =cut
 
-sub _readFromMEMEFile {
-    my ($self, $file) = @_;
-    warn ("; Reading matrix from consensus file\t",$file, "\n") if ($main::verbose >= 3);
+# sub _readFromMEMEFile {
+#     my ($self, $file) = @_;
+#     warn ("; Reading matrix from consensus file\t",$file, "\n") if ($main::verbose >= 3);
     
-    ## open input stream
-#    ($in, $dir) = &main::OpenInputFile($file);
-    my $in = STDIN;
-    if ($file) {
-	open INPUT, $file;
-	$in = INPUT;
-    }
+#     ## open input stream
+# #    ($in, $dir) = &main::OpenInputFile($file);
+#     my $in = STDIN;
+#     if ($file) {
+# 	open INPUT, $file;
+# 	$in = INPUT;
+#     }
 
-    my $current_matrix_nb = 0;
-    my $current_col = 0;
-    my $in_proba_matrix = 0;
-    my $in_blocks = 0;
-    my $width_to_parse = 0;
-    my %alphabet = ();
-    my @frequencies = ();
-#    my @matrix = ();
-    my $parsed_width = 0;
-    while (<$in>) {
-	next unless (/\S/);
-	s/\r//;
-	chomp();
-	$_ = &main::trim($_);
-	if (/MOTIF\s+(\d+)\s+width =\s+(\d+)\s+sites =\s+(\d+)\s+llr =\s+(\d+)\s+E-value =\s+(\S+)/) {
-	    warn "Parsing matrix parameters\n" if ($main::verbose >= 5);
+#     my $current_matrix_nb = 0;
+#     my $current_col = 0;
+#     my $in_proba_matrix = 0;
+#     my $in_blocks = 0;
+#     my $width_to_parse = 0;
+#     my %alphabet = ();
+#     my @frequencies = ();
+# #    my @matrix = ();
+#     my $parsed_width = 0;
+#     while (<$in>) {
+# 	next unless (/\S/);
+# 	s/\r//;
+# 	chomp();
+# 	$_ = &main::trim($_);
+# 	if (/MOTIF\s+(\d+)\s+width =\s+(\d+)\s+sites =\s+(\d+)\s+llr =\s+(\d+)\s+E-value =\s+(\S+)/) {
+# 	    warn "Parsing matrix parameters\n" if ($main::verbose >= 5);
 
-	    $current_matrix_number = $1;
-	    $width_to_parse = $2;
-	    $self->set_attribute("ncol", $2);
-	    $self->set_parameter("sites", $3);
-	    $self->set_parameter("llr", $4);
-	    $self->set_parameter("E-value", $5);
+# 	    $current_matrix_number = $1;
+# 	    $width_to_parse = $2;
+# 	    $self->set_attribute("ncol", $2);
+# 	    $self->set_parameter("sites", $3);
+# 	    $self->set_parameter("llr", $4);
+# 	    $self->set_parameter("E-value", $5);
 	    
-	    $self->init();
-#	    @matrix = $self->getMatrix();
+# 	    $self->init();
+# #	    @matrix = $self->getMatrix();
 
-	    ## Parse alphabet
-	} elsif (/Letter frequencies in dataset/) {
-	    warn "Reading letter frequencies\n" if ($main::verbose >= 5);
-	    my $alphabet = <$in>;
-	    $alphabet = &main::trim($alphabet);
-	    %residue_frequencies = split /\s+/, $alphabet;
+# 	    ## Parse alphabet
+# 	} elsif (/Letter frequencies in dataset/) {
+# 	    warn "Reading letter frequencies\n" if ($main::verbose >= 5);
+# 	    my $alphabet = <$in>;
+# 	    $alphabet = &main::trim($alphabet);
+# 	    %residue_frequencies = split /\s+/, $alphabet;
 
-	    $self->setPrior(%residue_frequencies);
+# 	    $self->setPrior(%residue_frequencies);
 
-	    my @alphabet = sort (keys %residue_frequencies);
-	    $self->setAlphabet_uc(@alphabet);
+# 	    my @alphabet = sort (keys %residue_frequencies);
+# 	    $self->setAlphabet_uc(@alphabet);
 	    
-	    ## Index the alphabet
-	    foreach my $l (0..$#alphabet) {
-		$alphabet{$alphabet[$l]} = $l;
-	    }
+# 	    ## Index the alphabet
+# 	    foreach my $l (0..$#alphabet) {
+# 		$alphabet{$alphabet[$l]} = $l;
+# 	    }
 
-	    ## Specify the number of rows of the matrix
-	    $self->force_attribute("nrow", scalar(@alphabet));
+# 	    ## Specify the number of rows of the matrix
+# 	    $self->force_attribute("nrow", scalar(@alphabet));
 
-	    ## Parse BLOCKS format
-	} elsif (/Motif (\d+) in BLOCKS format/) {
-	    $current_matrix_number = $1;
-	    $in_blocks = 1;
-	    warn "; Starting to parse BLOCKS format\n" if ($main::verbose >= 5);
-	} elsif ($in_blocks) {
-	    if (/(\S+)\s+\(\s*\d+\)\s+(\S+)/) {
-		my $seq_id = $1;
-		my $seq = $2;
-		my @letters = split "|", $seq;
-		$parsed_width = &main::max($parsed_width, scalar(@letters));
-		warn join ("\t", ";\tAdding site", $seq_id, $seq, scalar(@letters)), "\n" 
-		    if ($main::verbose >= 5);
-		foreach my $c (0..$#letters) {
-		    my $row = $alphabet{$letters[$c]};
-#		    warn join ("\t","Incrementing column", $c, "row", $row, "letter", $letters[$c]), "\n" if ($main::verbose >= 10);
-		    ${$self->{table}}[$c][$row]++;
-#		    $matrix[$c][$row]++;
-		}
-	    } elsif (/\/\//) {
-		warn "; BLOCKS format parsed\n" if ($main::verbose >= 5);
-#		$self->setMatrix(@matrix);
-#		$self->force_attribute("ncol", $parsed_width);
-		$in_blocks = 0;
-	    }
+# 	    ## Parse BLOCKS format
+# 	} elsif (/Motif (\d+) in BLOCKS format/) {
+# 	    $current_matrix_number = $1;
+# 	    $in_blocks = 1;
+# 	    warn "; Starting to parse BLOCKS format\n" if ($main::verbose >= 5);
+# 	} elsif ($in_blocks) {
+# 	    if (/(\S+)\s+\(\s*\d+\)\s+(\S+)/) {
+# 		my $seq_id = $1;
+# 		my $seq = $2;
+# 		my @letters = split "|", $seq;
+# 		$parsed_width = &main::max($parsed_width, scalar(@letters));
+# 		join ("\t", ";\tAdding site", $seq_id, $seq, scalar(@letters)), "\n" 
+# 		    if ($main::verbose >= 5);
+# 		foreach my $c (0..$#letters) {
+# 		    my $row = $alphabet{$letters[$c]};
+# #		    warn join ("\t","Incrementing column", $c, "row", $row, "letter", $letters[$c]), "\n" if ($main::verbose >= 10);
+# 		    ${$self->{table}}[$c][$row]++;
+# #		    $matrix[$c][$row]++;
+# 		}
+# 	    } elsif (/\/\//) {
+# 		warn "; BLOCKS format parsed\n" if ($main::verbose >= 5);
+# #		$self->setMatrix(@matrix);
+# #		$self->force_attribute("ncol", $parsed_width);
+# 		$in_blocks = 0;
+# 	    }
 	    
-#	} elsif (/Motif (\d+) position-specific probability matrix/) {
-#	    $current_matrix_number = $1;
-#	    $in_proba_matrix = 1;
-#	    warn ("; Parsing motif $current_matrix_number\n") if ($main::verbose >= 10);
-#	    next;
-#	}
-#	if (/letter-probability matrix: alength= (\d+) w= (\d+) n= (\d+) E= (\S+)/) {
-#	    warn join ("\t", 
-#		       $1." rows",
-#		       $2." columns",
-#		       "n=".$3,
-#		       "E=".$4,
-#		       ), "\n" if ($main::verbose >= 1);
-#	    $self->force_attribute("nrow", $1);
-#	    $width_to_parse = $2;
-#	    $self->set_parameter("n", $3);
-#	    $self->set_parameter("E", $4);
-#	} elsif ($in_proba_matrix) {
-#	    $current_col++;
-#	    my @fields = split /\s+/;
-#	    warn (join "\t", @fields, "\n") if ($main::verbose >= 10);
-#	    
-#	    foreach my $r (0..$#fields) {
-#		$frequencies[$current_col-1][$r] = $fields[$r];
-#	    }
-#	    
-#	    ## Terminate the reading of this matrix
-#	    if ($current_col == $width_to_parse) {
-#		warn "; Read ".$current_col." columns\n" if ($main::verbose >= 10);
-#		$in_proba_matrix = 0;
-#		$self->setFrequencies(@frequencies);
-#	    }
-	}
-    }
-    close $in if ($file);
-}
+# #	} elsif (/Motif (\d+) position-specific probability matrix/) {
+# #	    $current_matrix_number = $1;
+# #	    $in_proba_matrix = 1;
+# #	    warn ("; Parsing motif $current_matrix_number\n") if ($main::verbose >= 10);
+# #	    next;
+# #	}
+# #	if (/letter-probability matrix: alength= (\d+) w= (\d+) n= (\d+) E= (\S+)/) {
+# #	    warn join ("\t", 
+# #		       $1." rows",
+# #		       $2." columns",
+# #		       "n=".$3,
+# #		       "E=".$4,
+# #		       ), "\n" if ($main::verbose >= 1);
+# #	    $self->force_attribute("nrow", $1);
+# #	    $width_to_parse = $2;
+# #	    $self->set_parameter("n", $3);
+# #	    $self->set_parameter("E", $4);
+# #	} elsif ($in_proba_matrix) {
+# #	    $current_col++;
+# #	    my @fields = split /\s+/;
+# #	    warn (join "\t", @fields, "\n") if ($main::verbose >= 10);
+# #	    
+# #	    foreach my $r (0..$#fields) {
+# #		$frequencies[$current_col-1][$r] = $fields[$r];
+# #	    }
+# #	    
+# #	    ## Terminate the reading of this matrix
+# #	    if ($current_col == $width_to_parse) {
+# #		warn "; Read ".$current_col." columns\n" if ($main::verbose >= 10);
+# #		$in_proba_matrix = 0;
+# #		$self->setFrequencies(@frequencies);
+# #	    }
+# 	}
+#     }
+#     close $in if ($file);
+# }
 
-################################################################
-=pod
+# ################################################################
+# =pod
 
-=item _readFromMotifSamplerFile($file)
+# =item _readFromMotifSamplerFile($file)
 
-Read a matrix from a MotifSampler file. This method is called by the
-method C<readFromFile($file, "MotifSampler")>.
+# Read a matrix from a MotifSampler file. This method is called by the
+# method C<readFromFile($file, "MotifSampler")>.
 
-TO BE IMPLEMENTED
+# TO BE IMPLEMENTED
 
-=cut
+# =cut
 
-sub _readFromMotifSamplerFile {
-    &RSAT::error::FatalError("The MotifSampler format is not yet supported in this version of the program.");
-}
-
-
+# sub _readFromMotifSamplerFile {
+#     &RSAT::error::FatalError("The MotifSampler format is not yet supported in this version of the program.");
+# }
 
 
-################################################################
-=pod
 
-=item _readFromClustalFile($file)
 
-Read a matrix from a multiple alignment in clustal format (extension
- .aln).  This method is called by the method C<readFromFile($file,
- "clustal")>.
+# ################################################################
+# =pod
 
-=cut
-sub _readFromClustalFile {
-    my ($self, $file) = @_;
+# =item _readFromClustalFile($file)
+
+# Read a matrix from a multiple alignment in clustal format (extension
+#  .aln).  This method is called by the method C<readFromFile($file,
+#  "clustal")>.
+
+# =cut
+# sub _readFromClustalFile {
+#     my ($self, $file) = @_;
     
-    ## open input stream
-    my $in = STDIN;
-    if ($file) {
-	open INPUT, $file;
-	$in = INPUT;
-    }
+#     ## open input stream
+#     my $in = STDIN;
+#     if ($file) {
+# 	open INPUT, $file;
+# 	$in = INPUT;
+#     }
 
-    ## Check the header
-    my $header = <$in>;
-    unless ($header =~ /clustal/i) {
-	&main::Warning("This file does not contain the clustal header");
-    }
+#     ## Check the header
+#     my $header = <$in>;
+#     unless ($header =~ /clustal/i) {
+# 	&main::Warning("This file does not contain the clustal header");
+#     }
 
-    ## Read the sequences
-    my %sequences = ();
-    warn "; Reading sequences\n" if ($main::verbose >= 3);
-    while (<$in>) {
-	next unless (/\S/);
-	s/\r//;
-	chomp();
-	if (/^\s*(\S+)\s+(.+)$/) {
-	    my $seq_id = $1;
-	    next if ($seq_id eq "*"); ## asterisks are used to mark conservation
-	    my $new_seq = $2;
+#     ## Read the sequences
+#     my %sequences = ();
+#     warn "; Reading sequences\n" if ($main::verbose >= 3);
+#     while (<$in>) {
+# 	next unless (/\S/);
+# 	s/\r//;
+# 	chomp();
+# 	if (/^\s*(\S+)\s+(.+)$/) {
+# 	    my $seq_id = $1;
+# 	    next if ($seq_id eq "*"); ## asterisks are used to mark conservation
+# 	    my $new_seq = $2;
 	    
-	    ## index the new sequence
-	    $sequences{$seq_id} .= $new_seq;
-	    warn join ("\t", ";", "Sequence", $seq_id, 
-		       length($new_seq), length($sequences{$seq_id}),
-		       ),"\n" if ($main::verbose >= 5);
-	}
-    }
+# 	    ## index the new sequence
+# 	    $sequences{$seq_id} .= $new_seq;
+# 	    warn join ("\t", ";", "Sequence", $seq_id, 
+# 		       length($new_seq), length($sequences{$seq_id}),
+# 		       ),"\n" if ($main::verbose >= 5);
+# 	}
+#     }
     
-    ## Calculate count matrix
-    my %matrix = ();
-    my %prior = ();
-    my $ncol = 0;
-    my $nrow = 0;
-    &RSAT::message::Info("Calculating profile matrix from sequences") if ($main::verbose >= 3);
-    foreach my $seq_id (sort keys %sequences) {
-	my $sequence = $sequences{$seq_id};
-	$sequence =~ s/\s+//g;
+#     ## Calculate count matrix
+#     my %matrix = ();
+#     my %prior = ();
+#     my $ncol = 0;
+#     my $nrow = 0;
+#     &RSAT::message::Info("Calculating profile matrix from sequences") if ($main::verbose >= 3);
+#     foreach my $seq_id (sort keys %sequences) {
+# 	my $sequence = $sequences{$seq_id};
+# 	$sequence =~ s/\s+//g;
 
-	################################################################
-	## Distinguish between insertions and leading/trailing gaps
-	$terminal_gap_char = ".";
+# 	################################################################
+# 	## Distinguish between insertions and leading/trailing gaps
+# 	$terminal_gap_char = ".";
 
-	## Substitute leading gaps
-	if ($sequence =~ /^(\-+)/) {
-	    $leading_gap_len = length($1);
-	    my $leading_gap = ${terminal_gap_char}x$leading_gap_len;
-	    $sequence =~ s|^(\-+)|${leading_gap}|;
-	}
-	## Substitute trailing gaps
-	if ($sequence =~ /(\-+)$/) {
-	    $trailing_gap_len = length($1);
-	    my $trailing_gap = ${terminal_gap_char}x$trailing_gap_len;
-	    $sequence =~ s|(\-+)$|${trailing_gap}|;
-	}
-	warn join ("\t",";", $seq_id,$sequence), "\n" if ($main::verbose >= 5);
+# 	## Substitute leading gaps
+# 	if ($sequence =~ /^(\-+)/) {
+# 	    $leading_gap_len = length($1);
+# 	    my $leading_gap = ${terminal_gap_char}x$leading_gap_len;
+# 	    $sequence =~ s|^(\-+)|${leading_gap}|;
+# 	}
+# 	## Substitute trailing gaps
+# 	if ($sequence =~ /(\-+)$/) {
+# 	    $trailing_gap_len = length($1);
+# 	    my $trailing_gap = ${terminal_gap_char}x$trailing_gap_len;
+# 	    $sequence =~ s|(\-+)$|${trailing_gap}|;
+# 	}
+# 	warn join ("\t",";", $seq_id,$sequence), "\n" if ($main::verbose >= 5);
 	    
-	$ncol = &main::max($ncol, length($sequence));
-	warn join ("\t", ";", "Sequence", $seq_id, length($sequence)),"\n" if ($main::verbose >= 5);
-	my @sequence = split '|', $sequence;
-	foreach my $i (0..$#sequence) {
-	    my $res = lc($sequence[$i]);
-	    next if ($res eq "N"); ## BEWARE: THIS IS FOR DNA ONLY
-#	    next if ($res eq "-");
-	    next if ($res eq "."); ## leading and trailing gaps
-	    next if ($res eq "*");
-	    $prior{$res}++;
-	    $matrix{$res}->[$i] += 1;
-	}
-    }
-    $self->set_attribute("ncol", $ncol);
+# 	$ncol = &main::max($ncol, length($sequence));
+# 	warn join ("\t", ";", "Sequence", $seq_id, length($sequence)),"\n" if ($main::verbose >= 5);
+# 	my @sequence = split '|', $sequence;
+# 	foreach my $i (0..$#sequence) {
+# 	    my $res = lc($sequence[$i]);
+# 	    next if ($res eq "N"); ## BEWARE: THIS IS FOR DNA ONLY
+# #	    next if ($res eq "-");
+# 	    next if ($res eq "."); ## leading and trailing gaps
+# 	    next if ($res eq "*");
+# 	    $prior{$res}++;
+# 	    $matrix{$res}->[$i] += 1;
+# 	}
+#     }
+#     $self->set_attribute("ncol", $ncol);
 
-    ## Define prior probabilities, alphabet, and matrix size
-    my @alphabet = sort keys %prior;
-    my $alpha_sum = 0;
-    foreach my $res (@alphabet) {
-	$alpha_sum += $prior{$res};
-    }
-    foreach my $res (@alphabet) {
-	if ($alpha_sum > 0) {
-	    $prior{$res} /= $alpha_sum;
-	} else {
-	    $prior{$res} = 0;
-	}
-#	warn join "\t", $res, $alpha_sum, $prior{$res};
-    }
-    $self->setPrior(%prior);
+#     ## Define prior probabilities, alphabet, and matrix size
+#     my @alphabet = sort keys %prior;
+#     my $alpha_sum = 0;
+#     foreach my $res (@alphabet) {
+# 	$alpha_sum += $prior{$res};
+#     }
+#     foreach my $res (@alphabet) {
+# 	if ($alpha_sum > 0) {
+# 	    $prior{$res} /= $alpha_sum;
+# 	} else {
+# 	    $prior{$res} = 0;
+# 	}
+# #	warn join "\t", $res, $alpha_sum, $prior{$res};
+#     }
+#     $self->setPrior(%prior);
 
-    ## Store the matrix
-    my @matrix = ();
-    foreach my $r (0..$#alphabet) {
-	my $res = $alphabet[$r];
-	my @row = @{$matrix{$res}};
-	$nrow++;
-	foreach $i (0..($ncol-1)) {
-	    $row[$i] = 0 unless (defined($row[$i]));
-	}
-	$self->addRow(@row);
-	warn join ("\t", "Adding row", $r, $res, join ":", @row, "\n"), "\n" if ($main::verbose >= 4); 
-    }
-    $self->setAlphabet_uc(@alphabet);
-    $self->force_attribute("ncol", $ncol);
-    $self->force_attribute("nrow", $nrow);
+#     ## Store the matrix
+#     my @matrix = ();
+#     foreach my $r (0..$#alphabet) {
+# 	my $res = $alphabet[$r];
+# 	my @row = @{$matrix{$res}};
+# 	$nrow++;
+# 	foreach $i (0..($ncol-1)) {
+# 	    $row[$i] = 0 unless (defined($row[$i]));
+# 	}
+# 	$self->addRow(@row);
+# 	warn join ("\t", "Adding row", $r, $res, join ":", @row, "\n"), "\n" if ($main::verbose >= 4); 
+#     }
+#     $self->setAlphabet_uc(@alphabet);
+#     $self->force_attribute("ncol", $ncol);
+#     $self->force_attribute("nrow", $nrow);
 
-    warn join ("\t", "; Matrix size",  
-	       $nrow,
-	       $ncol,
-	       $self->nrow(), 
-	       $self->ncol()), "\n" 
-		  if ($main::verbose >= 3);
-    close $in if ($file);
-}
+#     warn join ("\t", "; Matrix size",  
+# 	       $nrow,
+# 	       $ncol,
+# 	       $self->nrow(), 
+# 	       $self->ncol()), "\n" 
+# 		  if ($main::verbose >= 3);
+#     close $in if ($file);
+# }
 
 ################################################################
 =pod
@@ -1525,13 +1525,15 @@ sub calcFrequencies {
 	    if ($self->get_attribute("equi_pseudo")) {
 		## Equiprobable repartition of the pseudo-weight
 		$frequencies[$c][$r] = $occ + $pseudo/$alphabet_size;
-#		&RSAT::message::Info("Equiprobable distribution of the pseudo-weight") if ($main::verbose >= 0);
+#		&RSAT::message::Info("Equiprobable distribution of the pseudo-weight") if ($main::verbose >= 10);
 	    } else {
 		## Distribute pseudo-weight according to prior
 		$frequencies[$c][$r] = $occ + $pseudo*$prior{$letter};
-#		&RSAT::message::Info("Pseudo-weight distributed according to prior") if ($main::verbose >= 0);
+#		&RSAT::message::Info("Pseudo-weight distributed according to prior") if ($main::verbose >= 10);
 	    }
-#	    &RSAT::message::Debug("freq", $r, $c, $letter, $prior, $pseudo, $occ, $col_sum) if ($main::verbose >= 0);
+#	    &RSAT::message::Debug("freq", $r, $c, $letter, $prior, $pseudo, $occ, $col_sum) unless ($letter);
+#	    &RSAT::message::Debug("freq", $r, $c, $letter, $prior, $pseudo, $occ, $col_sum) if ($main::verbose >= 10);
+#      die("HELLO");
 	}
 	for my $r (0..($nrow-1)) {
 	    if ($col_sum eq 0) {
@@ -2125,7 +2127,7 @@ sub segment_proba {
 #	&RSAT::message::Debug("segment_proba", "letter:".$letter, "col:".$c, "row:".$r, "P(letter)=".$letter_proba, "P(segm)=".$segment_proba) if ($main::verbose >= 10);
     }
     
-#    &RSAT::message::Debug("segment_proba", $segment, "P(segm)=".$segment_proba) if ($main::verbose >= 0);
+#    &RSAT::message::Debug("segment_proba", $segment, "P(segm)=".$segment_proba) if ($main::verbose >= 10);
     return $segment_proba;
 }
 
@@ -2272,7 +2274,9 @@ accordingly.
 
 =cut
 sub add_site() {
-  my ($self, $site_seq, $site_id) = @_;
+  my ($self, $site_seq, $site_id, $score) = @_;
+  $score = 1 || $score;
+
   my @letters = split "|", $site_seq;
 
   $self->push_attribute("sequences", $site_seq);
@@ -2287,14 +2291,14 @@ sub add_site() {
     $alphabet{$alphabet[$l]} = $l;
   }
   
-  &RSAT::message::Debug("Adding site", $site_seq, scalar(@letters), $site_id), 
-    if ($main::verbose >= 0);
+  &RSAT::message::Debug("Adding site", $site_seq, scalar(@letters), $site_id, "alphabet", join(":", @alphabet)), 
+    if ($main::verbose >= 3);
   
   ## Update the count matrix with the new sequence
   foreach my $c (0..$#letters) {
     if (defined($alphabet{$letters[$c]})) {
       my $row = $alphabet{$letters[$c]};
-      ${$self->{table}}[$c][$row]++;
+      ${$self->{table}}[$c][$row] += $score;
       &RSAT::message::Debug("Incremented column", $c, "row", $row, "letter", $letters[$c], ${$self->{table}}[$c][$row])
 	if ($main::verbose >= 5);
     } else {
