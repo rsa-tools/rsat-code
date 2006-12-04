@@ -162,7 +162,46 @@ sub retrieve_seq_cmd {
     my $nocom = $args{"nocom"};
     my $repeat = $args{'repeat'};
 
-    my $command = "$SCRIPTS/retrieve-seq $organism $query -lw 0 $noorf $from $to $feattype $type $format $all $n $label $label_sep $nocom $repeat";
+    my $command = "$SCRIPTS/retrieve-seq -org $organism $query -lw 0";
+
+    if ($noorf) {
+	$command .= " -".$noorf;
+    }
+    if ($from == 0 || $from < 0 || $from > 0) {
+	$command .= " -from ".$from;
+    }
+    if ($to) {
+	$command .= " -to ".$to;
+    }
+    if ($feattype) {
+	$command .= " -feattype ".$feattype;
+    }
+    if ($type) {
+	$command .= " -type ".$type;
+    }
+    if ($format) {
+	$command .= " -format ".$format;
+    }
+    if ($all) {
+	$command .= " -".$all;
+    }
+    if ($n) {
+	$command .= " -n ".$n;
+    }
+    if ($label) {
+	$command .= " -label ".$label;
+    }
+    if ($label_sep) {
+	$command .= " -labelsep ".$label_sep;
+    }
+    if ($nocom) {
+	$command .= " -".$nocom;
+    }
+    if ($repeat) {
+	$command .= " -".$repeat;
+    }
+
+#    my $command = "$SCRIPTS/retrieve-seq $organism $query -lw 0 $noorf $from $to $feattype $type $format $all $n $label $label_sep $nocom $repeat";
     return $command;
 }
 
@@ -421,5 +460,45 @@ sub oligo_analysis_cmd {
 =back
 
 =cut
+
+sub gene_info {
+    my ($self, $args_ref) = @_;
+    my %args = %$args_ref;
+    my $command = $self->gene_info_cmd(%args);
+    my $result = `$command`;
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr");
+    }
+    return {'command' => $command,
+	    'result' => $result};
+}
+
+sub gene_info_cmd {
+    my ($self, %args) =@_;
+    my $organism = $args{"organism"};
+    my $query = $args{"query"};
+    my $full = $args{"full"};
+    my $noquery = $args{"noquery"};
+    my $descr = $args{"descr"};
+    my $feattype = $args{"feattype"};
+
+    my $command = "$SCRIPTS/gene-info -org $organism -q $query";
+    if ($full){
+	$command .= " -".$full;
+    }
+    if ($noquery){
+	$command .= " -".$noquery;
+    }
+    if ($descr){
+	$command .= " -".$descr;
+    }
+    if ($feattype){
+	$command .= " -feattype ".$feattype;
+    }
+
+    return $command;
+}
+
 
 1;
