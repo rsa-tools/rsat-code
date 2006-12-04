@@ -83,7 +83,7 @@ targetNamespace="urn:RSATWS"
   <!-- Parameters Definition -->
   <message name='RetrieveSequenceRequest'>
     <part name='return' type='string'>
-      <documentation>Return type. Accepted values: 'file' (result is stored on a file on the server), 'result' (result is directl transferred to the client), or  'both'.</documentation>
+      <documentation>Return type. Accepted values: 'file' (result is stored on a file on the server), 'result' (result is directly transferred to the client), or  'both'.</documentation>
     </part>
     <part name='organism' type='string'>
       <documentation>Organism</documentation>
@@ -117,7 +117,7 @@ targetNamespace="urn:RSATWS"
       Multiple fields can be specified, separated by commas.  Default:
       name. Supported:
       id, name, organism_name, sequence_type, current_from, current_to, ctg, orf_strand, reg_left, reg_right
-</documentation>
+      </documentation>
     </part>
     <part name='label_sep' type='string'>
       <documentation>Separator between the label fields. Default: | (pipe character)</documentation>
@@ -145,10 +145,130 @@ targetNamespace="urn:RSATWS"
     </part>
     <part name='command' type='string'>
       <documentation>The stand alone command executed on the
-      server. </documentation>
+      server.
+      </documentation>
     </part>
     <part name='result' type='string'>
       <documentation>The result sequence(s). </documentation>
+    </part>
+  </message>
+
+  <message name='PurgeSequenceRequest'>
+    <part name='return' type='string'>
+      <documentation>Return type. Accepted values: 'file' (result is stored on a file on the server), 'result' (result is directly transferred to the client), or  'both'.
+      </documentation>
+    </part>
+    <part name='sequence' type='string'>
+      <documentation>Sequence to purge.
+      </documentation>
+    </part>
+    <part name='tmp_infile' type='string'>
+      <documentation>Name of the file with input sequence on the server.
+      </documentation>
+    </part>
+    <part name='format' type='string'>
+      <documentation>Sequence format.</documentation>
+    </part>
+    <part name='match_length' type='string'>
+      <documentation>Minimal match length (default: 40)
+      </documentation>
+    </part>
+    <part name='mismatch' type='string'>
+      <documentation>Number of mismatches allowed (default: 3)
+      </documentation>
+    </part>
+    <part name='str' type='string'>
+      <documentation>Discard duplications on the direct strand only (-1str) or
+    on the reverse complement as well (-2str).
+      </documentation>
+    </part>
+    <part name='delete' type='string'>
+      <documentation>Delete repeats instead of masking them.
+      </documentation>
+    </part>
+    <part name='mask_short' type='string'>
+      <documentation>Mask (replace by N characters) sequences shorter than the specified length.
+      </documentation>
+    </part>
+  </message>
+
+  <message name='PurgeSequenceResponse'>
+    <part name='file' type='string'>
+      <documentation>Location of the result file on the server. This can be used as input for a further request. </documentation>
+    </part>
+    <part name='command' type='string'>
+      <documentation>The stand alone command executed on the
+      server.
+      </documentation>
+    </part>
+    <part name='result' type='string'>
+      <documentation>The result sequence(s). </documentation>
+    </part>
+  </message>
+
+<message name='OligoAnalysisRequest'>
+    <part name='return' type='string'>
+      <documentation>Return type. Accepted values: 'file' (result is stored on a file on the server), 'result' (result is directly transferred to the client), or  'both'.
+      </documentation>
+    </part>
+    <part name='sequence' type='string'>
+      <documentation>Input sequence.
+      </documentation>
+    </part>
+    <part name='tmp_infile' type='string'>
+      <documentation>Name of the file with input sequence on the server.
+      </documentation>
+    </part>
+    <part name='format' type='string'>
+      <documentation>Input sequence format.</documentation>
+    </part>
+    <part name='length' type='string'>
+      <documentation>Oligomer length
+      </documentation>
+    </part>
+    <part name='organism' type='string'>
+      <documentation>Organism</documentation>
+    </part>
+    <part name='background' type='string'>
+      <documentation>Background model: Type of sequences used as background model for estimating expected oligonucleotide frequencies.
+      </documentation>
+    </part>
+    <part name='stats' type='string'>
+      <documentation>List of statistics to return. Supported:occ, mseq, freq,
+    proba, ratio, zscore, like, pos, rank
+      </documentation>
+    </part>
+    <part name='noov' type='string'>
+      <documentation>No overlapping. Disable the detection of overlapping matches for self-overlapping patterns (ex TATATA, GATAGA).
+      </documentation>
+    </part>
+    <part name='str' type='string'>
+      <documentation>Oligonucleotide occurrences found on both stands are
+    summed (-2str = default) or not (-1str).
+      </documentation>
+    </part>
+    <part name='sort' type='string'>
+      <documentation>Sort oligomers according to overrepresentation.
+      </documentation>
+    </part>
+    <part name='lth' type='string'>
+      <documentation>Lower threshold on some parameter. Format='param value'
+      </documentation>
+    </part>
+  </message>
+
+  <message name='OligoAnalysisResponse'>
+    <part name='file' type='string'>
+      <documentation>Location of the result file on the server. This
+      can be used as input for a further request. </documentation>
+    </part>
+    <part name='command' type='string'>
+      <documentation>The stand alone command executed on the
+      server.
+      </documentation>
+    </part>
+    <part name='result' type='string'>
+      <documentation>The result discovered pattern(s). </documentation>
     </part>
   </message>
   
@@ -192,17 +312,17 @@ targetNamespace="urn:RSATWS"
       </documentation>
       </operation>
       <operation name="purge_seq">
-         <input message="tns:PurgeSequenceInput"/>
-         <output message="tns:PurgeSequenceOutput"/>
+         <input name="PurgeSequenceRequest" message="tns:PurgeSequenceInput"/>
+         <output name="PurgeSequenceResponse" message="tns:PurgeSequenceOutput"/>
       <documentation>Mask repeated fragments of an input sequence.</documentation>
       </operation>
       <operation name="oligo_analysis">
-         <input message="tns:OligoAnalysisInput"/>
-         <output message="tns:OligoAnalysisOutput"/>
+         <input name="OligoAnalysisRequest" message="tns:OligoAnalysisInput"/>
+         <output name="OligoAnalysisResponse" message="tns:OligoAnalysisOutput"/>
       <documentation>
 	Analysis of the statistical significance of all the oligomers
 	of a given size in a sequence. Commonly used to detect
-	over-prepresented oligonucleotides in a set of promoter
+	over-represented oligonucleotides in a set of promoter
 	sequences.
       </documentation>
       </operation>
