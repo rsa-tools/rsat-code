@@ -37,20 +37,29 @@ sub readFromFile {
     my ($file, $format, %args) = @_;
     my @matrices = ();
 
-    if (($format =~ /consensus/i) || ($format =~ /^wc/i)) {
+    if ((lc($format) eq "consensus") || ($format =~ /^wc/i)) {
 	@matrices = _readFromConsensusFile($file);
-    } elsif ($format =~ /gibbs/i) {
+    } elsif (lc($format) eq "assembly") {
+	@matrices = _readFromAssemblyFile($file);
+    } elsif (lc($format) eq "gibbs") {
 	@matrices = _readFromGibbsFile($file);
-    } elsif ($format =~ /tab/i) {
+    } elsif (lc($format) eq "tab") {
 	@matrices = _readFromTabFile($file, %args);
-    } elsif ($format =~ /MotifSampler/i) {
+    } elsif (lc($format) eq "MotifSampler") {
 	@matrices = _readFromMotifSamplerFile($file);
-    } elsif ($format =~ /meme/i) {
+    } elsif (lc($format) eq "meme") {
 	@matrices = _readFromMEMEFile($file);
-    } elsif ($format =~ /clustal/i) {
+    } elsif (lc($format) eq "clustal") {
 	@matrices = _readFromClustalFile($file);
     } else {
-	&main::FatalError("Invalid format for reading matrix\t$format");
+	&main::FatalError("&RSAT::matrix::readFromFile", "Invalid format for reading matrix\t$format");
+    }
+
+    ## Check that there was at least one matrix in the file
+    if (scalar(@matrices) == 0) {
+      &RSAT::error::FatalError(join("\t", "File",  $file, "does not contain any matrix in format", $format));
+    }  else {
+      &RSAT::message::Info("Read ".scalar(@matrices)." matrices from file ", $file) if ($main::verbose >= 3);
     }
 
     ## Check that each matrix contains at least one row and one col
@@ -107,7 +116,7 @@ sub _readFromGibbsFile {
 	if (/Information \(relative entropy\) contribution in tenth bits\:/) {
 	    $in_matrix = 1;
 	    # default nucletodide alphabet
-	    $matrix->setAlphabet_uc("A","C","G","T");   
+	    $matrix->setAlphabet_lc("A","C","G","T");   
 	    next;
 
 	} elsif (/site/) {
@@ -126,7 +135,7 @@ sub _readFromGibbsFile {
 	    chomp;
 	    @header = split " +";
 	    @alphabet = @header[1..$#header-1];
-#		$matrix->setAlphabet_uc(@alphabet);
+#		$matrix->setAlphabet_lc(@alphabet);
 	} elsif (/model map = (\S+); betaprior map = (\S+)/) {
 	    $matrix->set_parameter("model.map", $1);
 	    $matrix->set_parameter("betaprior.map", $2);
@@ -153,7 +162,7 @@ sub _readFromGibbsFile {
     }
     close $in if ($file);
 
-    $matrix->setAlphabet_uc (@alphabet);
+    $matrix->setAlphabet_lc (@alphabet);
     $matrix->force_attribute("nrow", $last_nrow);
     $matrix->force_attribute("ncol", $last_ncol);
     $matrix->setMatrix ($last_nrow, $last_ncol, @last_matrix);
@@ -267,6 +276,88 @@ sub _readFromConsensusFile {
   return @matrices;
 }
 
+################################################################
+=pod
+
+=item _readFromAssemblyFile($file)
+
+Read a matrix from the output file of pattern-assembly. This method is
+called by the method C<readFromFile($file, "assembly")>.
+
+=cut
+sub _readFromAssemblyFile {
+  my ($file) = @_;
+  &RSAT::message::Info ("Reading matrix from pattern-assembly file", $file) if ($main::verbose >= 3);
+  
+  #    ($in, $dir) = &main::OpenInputFile($file);
+  
+  ## open input stream
+  my $in = STDIN;
+  if ($file) {
+    open INPUT, $file;
+    $in = INPUT;
+  }
+  my $current_matrix_nb = 0;
+  my @matrices = ();
+  my $matrix;
+  my $command = "";
+
+#  my %prior = ();
+  my $l = 0;
+  while (my $line = <$in>) {
+    $l++;
+    next unless (/\S/);
+    chomp();
+
+    ## Read the command line
+    if ($line =~ /;assembly # (\d+)\s+seed:\s+(\S+)/) {
+      $current_matrix_nb = $1;
+      my $seed = $2;
+      $matrix = new RSAT::matrix();
+      push @matrices, $matrix;
+      $matrix->setAlphabet_lc("A","C","G","T");
+      $matrix->set_attribute("number", $current_matrix_nb);
+      $matrix->set_parameter("seed", $seed);
+      &RSAT::message::Debug("new matrix ");
+
+    } elsif ($line =~ /(\S+)\t(\S+)\s+(\S+)\s+isol/) {
+      $current_matrix_nb++;
+      my $pattern = $1;
+      my $pattern_rc = $2;
+      my $score = $3;
+      $matrix = new RSAT::matrix();
+      push @matrices, $matrix;
+      $matrix->setAlphabet_lc("A","C","G","T");
+      $matrix->set_attribute("number", $current_matrix_nb);
+      $matrix->set_parameter("seed", $pattern);
+      $matrix->set_attribute("consensus.assembly", $pattern);
+      $matrix->set_attribute("consensus.assembly.rc", $pattern_rc);
+      $matrix->set_attribute("assembly.top.score", $score);
+      $matrix->add_site($pattern, $pattern."|".$pattern_rc, $score);
+
+    } elsif ($line =~ /^(\S+)\s+(\S+)\s+(\S+)\s+best consensus/) {
+      $matrix->set_attribute("consensus.assembly", $1);
+      $matrix->set_attribute("consensus.assembly.rc", $2);
+      $matrix->set_attribute("assembly.top.score", $3);
+      my $pattern = $1;
+      my $pattern_rc = $2;
+      my $score = $3;
+      $matrix->add_site($pattern, $pattern."|".$pattern_rc, $score);
+
+    } elsif ($line =~ /^;/) {
+      next;
+
+    } elsif ($line =~ /(\S+)\t(\S+)\s+(\S+)/) {
+
+
+    } else {
+      &RSAT::message::Warning("&RSAT::Matrixreader::_readFromAssemblyFile", "line", $l, "not parsed", $_) if ($main::verbose >= 0);
+    }
+  }
+  close $in if ($file);
+  return @matrices;
+}
+
 
 ################################################################
 =pod
@@ -280,6 +371,11 @@ method C<readFromFile($file, "tab")>.
 sub _readFromTabFile {
     my ($file, %args) = @_;
     &RSAT::message::Info(join("\t", "Reading matrix from tab file\t",$file)) if ($main::verbose >= 3);
+
+
+    my @matrices = ();
+    my $matrix = new RSAT::matrix();
+    push @matrices, $matrix;
 
     ## open input stream
     my ($in, $dir) = &main::OpenInputFile($file);
@@ -324,7 +420,7 @@ sub _readFromTabFile {
     my $prior = 1/scalar(@alphabet);
     foreach my $residue (@alphabet) {
 	$tmp_prior{$residue} = $prior;
-#	&RSAT::message::Debug("initial prior", $residue, $prior) if ($main::verbose >= 0);
+#	&RSAT::message::Debug("initial prior", $residue, $prior) if ($main::verbose >= 10);
     }
     $matrix->setPrior(%tmp_prior);
 
@@ -334,6 +430,7 @@ sub _readFromTabFile {
 	&RSAT::message::Debug("Matrix size", $matrix->nrow()." rows",  $matrix->ncol()." columns");
     }
 
+    return (@matrices);
 }
 
 
@@ -389,17 +486,19 @@ sub _readFromMEMEFile {
       $matrix->set_parameter("llr", $4);
       $matrix->set_parameter("E-value", $5);
       $matrix->setPrior(%residue_frequencies);
-      $matrix->setAlphabet_uc(@alphabet);
+#      &RSAT::message::Debug("line", $l, "Read letter frequencies", %residue_frequencies) if ($main::verbose >= 10);
+      $matrix->setAlphabet_lc(@alphabet);
       $matrix->force_attribute("nrow", scalar(@alphabet)); ## Specify the number of rows of the matrix
       push @matrices, $matrix;
 
       ## Parse alphabet
     } elsif (/Letter frequencies in dataset/) {
       my $alphabet = <$in>;
+      $alphabet = lc($alphabet);
       $alphabet = &main::trim($alphabet);
       %residue_frequencies = split /\s+/, $alphabet;
       @alphabet = sort (keys %residue_frequencies);
-      &RSAT::message::Debug("line", $l, "Read letter frequencies", %residue_frequencies) if ($main::verbose >= 5);
+#      &RSAT::message::Debug("line", $l, "Read letter frequencies", %residue_frequencies) if ($main::verbose >= 10);
 
       ## Index the alphabet
       foreach my $l (0..$#alphabet) {
@@ -415,7 +514,7 @@ sub _readFromMEMEFile {
     } elsif ($in_blocks) {
       if (/(\S+)\s+\(\s*\d+\)\s+(\S+)/) {
 	my $seq_id = $1;
-	my $seq = $2;
+	my $seq = lc($2);
 	my $seq_len =  length($seq);
 	if ($seq_len > 0) {
 	  $parsed_width = &main::max($parsed_width, $seq_len);
@@ -433,6 +532,7 @@ sub _readFromMEMEFile {
   }
   close $in if ($file);
   return @matrices;
+#  return $matrices[0];
 }
 
 ################################################################
@@ -576,7 +676,7 @@ sub _readFromClustalFile {
 	$matrix->addRow(@row);
 	warn join ("\t", "Adding row", $r, $res, join ":", @row, "\n"), "\n" if ($main::verbose >= 4); 
     }
-    $matrix->setAlphabet_uc(@alphabet);
+    $matrix->setAlphabet_lc(@alphabet);
     $matrix->force_attribute("ncol", $ncol);
     $matrix->force_attribute("nrow", $nrow);
 
