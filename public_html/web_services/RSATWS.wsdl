@@ -215,7 +215,7 @@ targetNamespace="urn:RSATWS"
     </part>
   </message>
 
-<message name='OligoAnalysisRequest'>
+  <message name='OligoAnalysisRequest'>
     <part name='return' type='string'>
       <documentation>Return type. Accepted values: 'file' (result is stored on a file on the server), 'result' (result is directly transferred to the client), or  'both'.
       </documentation>
@@ -278,6 +278,43 @@ targetNamespace="urn:RSATWS"
     </part>
     <part name='result' type='string'>
       <documentation>The result discovered pattern(s). </documentation>
+    </part>
+  </message>
+
+<message name='GeneInfoRequest'>
+    <part name='organism' type='string'>
+      <documentation>Organism</documentation>
+    </part>
+    <part name='query' type='string'>
+      <documentation>Gene for which you want info on
+      </documentation>
+    </part>
+    <part name='full' type='string'>
+      <documentation>Full match only (no substring matching)
+      </documentation>
+    </part>
+    <part name='noquery' type='string'>
+      <documentation>Do not print the query at the begining of each line
+      </documentation>
+    </part>
+    <part name='descr' type='string'>
+      <documentation>MAtch query against the description, too, not just against gene ID and name
+      </documentation>
+    </part>
+    <part name='feattype' type='string'>
+      <documentation>Feature type (CDS, mRNA, tRNA, rRNA, scRNA)
+      </documentation>
+    </part>
+  </message>
+
+  <message name='GeneInfoResponse'>
+    <part name='command' type='string'>
+      <documentation>The stand alone command executed on the
+      server.
+      </documentation>
+    </part>
+    <part name='result' type='string'>
+      <documentation>The result gene(s) info(s). </documentation>
     </part>
   </message>
   
