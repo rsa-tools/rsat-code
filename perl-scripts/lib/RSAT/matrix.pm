@@ -2275,7 +2275,7 @@ accordingly.
 =cut
 sub add_site() {
   my ($self, $site_seq, $site_id, $score) = @_;
-  $score = 1 || $score;
+  $score =  $score || 1;
 
   my @letters = split "|", $site_seq;
 
@@ -2291,20 +2291,26 @@ sub add_site() {
     $alphabet{$alphabet[$l]} = $l;
   }
   
-  &RSAT::message::Debug("Adding site", $site_seq, scalar(@letters), $site_id, "alphabet", join(":", @alphabet)), 
-    if ($main::verbose >= 3);
+  &RSAT::message::Debug("Adding site", $site_seq, $site_id, "len=".scalar(@letters), "alphabet", join(":", @alphabet)), 
+    if ($main::verbose >= 4);
   
   ## Update the count matrix with the new sequence
   foreach my $c (0..$#letters) {
     if (defined($alphabet{$letters[$c]})) {
       my $row = $alphabet{$letters[$c]};
       ${$self->{table}}[$c][$row] += $score;
-      &RSAT::message::Debug("Incremented column", $c, "row", $row, "letter", $letters[$c], ${$self->{table}}[$c][$row])
-	if ($main::verbose >= 5);
+#      &RSAT::message::Debug("Incremented column", $c, "row", $row, "letter", $letters[$c], ${$self->{table}}[$c][$row])
+#	if ($main::verbose >= 10);
     } else {
-      &RSAT::message::Warning("&RSAT::matrix::add_site()", $site_seq, "Unrecognized character at position", $c, $letters[$c]);
+      &RSAT::message::Warning("&RSAT::matrix::add_site()", $site_seq, "Unrecognized character at position", $c, $letters[$c]) 
+	if ($main::verbose >= 5);
     }
   }
+
+  ## update the number of columns
+  my $ncol = &RSAT::stats::max($self->ncol(), scalar(@letters));
+  $self->force_attribute("ncol",  $ncol);
+
 }
 
 return 1;
