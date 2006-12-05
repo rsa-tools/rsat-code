@@ -306,8 +306,8 @@ sub _readFromAssemblyFile {
   my $l = 0;
   while (my $line = <$in>) {
     $l++;
-    next unless (/\S/);
-    chomp();
+    next unless ($line =~  /\S/);
+    chomp($line);
 
     ## Read the command line
     if ($line =~ /;assembly # (\d+)\s+seed:\s+(\S+)/) {
@@ -316,45 +316,60 @@ sub _readFromAssemblyFile {
       $matrix = new RSAT::matrix();
       push @matrices, $matrix;
       $matrix->setAlphabet_lc("A","C","G","T");
+      $matrix->set_attribute("nrow", 4);
       $matrix->set_attribute("number", $current_matrix_nb);
       $matrix->set_parameter("seed", $seed);
-      &RSAT::message::Debug("new matrix ");
+      &RSAT::message::Debug("New matrix from assembly", $current_matrix_nb."/".scalar(@matrices), "seed", $seed) if ($main::verbose >= 4);
 
     } elsif ($line =~ /(\S+)\t(\S+)\s+(\S+)\s+isol/) {
       $current_matrix_nb++;
-      my $pattern = $1;
-      my $pattern_rc = $2;
+      my $pattern = $1; 
+      my $pattern_rc = $2; 
       my $score = $3;
+      $pattern =~ s/\./n/g;
+      $pattern_rc =~ s/\./n/g;
       $matrix = new RSAT::matrix();
       push @matrices, $matrix;
       $matrix->setAlphabet_lc("A","C","G","T");
+      $matrix->set_attribute("nrow", 4);
       $matrix->set_attribute("number", $current_matrix_nb);
       $matrix->set_parameter("seed", $pattern);
       $matrix->set_attribute("consensus.assembly", $pattern);
       $matrix->set_attribute("consensus.assembly.rc", $pattern_rc);
       $matrix->set_attribute("assembly.top.score", $score);
       $matrix->add_site($pattern, $pattern."|".$pattern_rc, $score);
+      &RSAT::message::Debug("New matrix from isolated pattern", $current_matrix_nb."/".scalar(@matrices), "seed", $seed) if ($main::verbose >= 4);
 
     } elsif ($line =~ /^(\S+)\s+(\S+)\s+(\S+)\s+best consensus/) {
       $matrix->set_attribute("consensus.assembly", $1);
       $matrix->set_attribute("consensus.assembly.rc", $2);
       $matrix->set_attribute("assembly.top.score", $3);
-      my $pattern = $1;
-      my $pattern_rc = $2;
-      my $score = $3;
-      $matrix->add_site($pattern, $pattern."|".$pattern_rc, $score);
+#      &RSAT::message::Debug("Consensus for matrix", $current_matrix_nb, $1) if ($main::verbose >= 5);
 
     } elsif ($line =~ /^;/) {
       next;
 
     } elsif ($line =~ /(\S+)\t(\S+)\s+(\S+)/) {
-
+      my $pattern = $1; 
+      my $pattern_rc = $2;
+      my $score = $3;
+      $pattern =~ s/\./n/g;
+      $pattern_rc =~ s/\./n/g;
+#      &RSAT::message::Debug("ASSEMBLY LINE", $l, $pattern, $pattern_rc, $score) if ($main::verbose >= 5);
+      $matrix->add_site($pattern, $pattern."|", $score);
 
     } else {
       &RSAT::message::Warning("&RSAT::Matrixreader::_readFromAssemblyFile", "line", $l, "not parsed", $_) if ($main::verbose >= 0);
     }
   }
   close $in if ($file);
+
+  ## Replace undefined values by 0
+  foreach my $matrix (@matrices) {
+    $matrix->treat_null_values();
+#    &RSAT::message::Debug("Line added", $matrix->toString()) if ($main::verbose >= 10);
+  }
+
   return @matrices;
 }
 
@@ -518,7 +533,7 @@ sub _readFromMEMEFile {
 	my $seq_len =  length($seq);
 	if ($seq_len > 0) {
 	  $parsed_width = &main::max($parsed_width, $seq_len);
-	  $matrix->add_site($seq, $seq_id);
+	  $matrix->add_site($seq, $seq_id, 1);
 	}
 
       } elsif (/\/\//) {
