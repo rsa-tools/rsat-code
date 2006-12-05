@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.42 2006/12/04 22:59:16 jvanheld Exp $
+# $Id: matrix-scan,v 1.43 2006/12/05 23:16:22 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -209,6 +209,7 @@ models only (-markov 0 to 1).
     #### initialise parameters
     my $start_time = &AlphaDate();
     $decimals=2;
+    $log10 = log(10); ## Calculate it only once for all the tests
     
     %main::infile = ();
     %main::outfile = ();
@@ -219,6 +220,8 @@ models only (-markov 0 to 1).
     $markov = -1; ## To make the distinction with 0, which is a valid value for the markov order
     $window = -1; 
     $bg_method = "";
+    $null = "NA";
+    $infinite = "999"; ## String to print for infinite values (e.g. when the Eval < e-300, it i rounded to 0, thus the significance is infinite)
 
     $bg_in_format = "oligo-analysis";
     $bg_out_format = "tab";
@@ -265,6 +268,7 @@ models only (-markov 0 to 1).
 				weight_matrix=>1,
 				bg_model=>1,
 				distrib=>1,
+				distrib_proba=>1,
 				);
     $supported_return_fields = join (",", sort(keys( %supported_return_fields)));
     %return_fields = (); ## Fields to return
@@ -310,6 +314,14 @@ models only (-markov 0 to 1).
       undef($return_fields{weight_matrix});
     }
 
+    ## Background distribution is required for the distrib probabilities
+    if ($return_fields{distrib_proba}) {
+      $return_fields{distrib} = 1;
+
+      &RSAT::error::FatalError("The option -return score_distrib requires a background score distribution (-bg_distrib)")
+	unless ($infile{bg_distrib});
+    }
+
     ## Fields to calculate
     if (($return_fields{sites}) || ($return_fields{distrib})) {
       $calc_fields{sites} = 1;
@@ -331,7 +343,7 @@ models only (-markov 0 to 1).
 	push @matrix_files, $matrix_file;
       }
       close $mlist;
-      &RSAT::message::Info("Read matrix list from file", $infile{matrix_list}, scalar(@matrix_files), "matrices");
+      &RSAT::message::Info("Read matrix list from file", $infile{matrix_list}, scalar(@matrix_files), "matrices") if ($main::verbose >= 2);
     }
 
     ################################################################
@@ -408,7 +420,7 @@ models only (-markov 0 to 1).
     ## Set prior matrix frequencies from the bg model and calculate
     ## derived statistics
     my %prior = $bg_model->get_attribute("suffix_proba");
-    &RSAT::message::TimeWarn(join("\t", "PRIOR", join(" ", %prior))) if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn(join("\t", "PRIOR", join(" ", %prior))) if ($main::verbose >= 3);
     foreach my $matrix_file (@matrix_files) {
       my @new_matrices = &RSAT::MatrixReader::readFromFile($matrix_file, $matrix_format);
 
@@ -489,6 +501,7 @@ models only (-markov 0 to 1).
 
     ################################################################
     ##### Scan the sequences
+    &RSAT::message::TimeWarn("Scaning sequences with", scalar(@matrices), "matrices") if ($main::verbose >= 2);
     my ($in, $input_dir) = &OpenInputFile($main::infile{input});
     while ((($current_seq, $seq_id) = &ReadNextSequence($in, $seq_format, $input_dir, "",$mask)) &&
 	   (($current_seq ne "") || ($seq_id ne ""))) {
@@ -547,7 +560,7 @@ models only (-markov 0 to 1).
 	################################################################
 	## Detect sites
 	&RSAT::message::TimeWarn(join ("\t", "Scanning sequence with ".scalar(@matrices)." PSSM", $sequence_number,  "len=".$seq_len, "orig=".$orig_pos,  $seq_id))
-	  if ($main::verbose >= 2);
+	  if ($main::verbose >= 3);
 	if ($calc_fields{sites}) {
 #	  $n_containing_region = 0;
 	  for my $pos (1..$seq_len) {
@@ -602,7 +615,7 @@ models only (-markov 0 to 1).
 	################################################################
 	## Return ranked matches
 	if ($return_fields{rank}) {
-	    &RSAT::message::TimeWarn("Ranking matches for sequence", $seq_id) if ($main::verbose >= 2);
+	    &RSAT::message::TimeWarn("Ranking matches for sequence", $seq_id) if ($main::verbose >= 3);
 	    foreach my $matrix (@matrices) {
 		
 	      #		my @ranked_matches = sort {$b->get_attribute('score') <=> $a->get_attribute('score')} @matches;
@@ -724,6 +737,7 @@ models only (-markov 0 to 1).
 	print $out $bg_model->to_string($bg_out_format, comment_string=>"; ");
     }
 
+    ################################################################
     ## Report score distribution
     if ($return_fields{distrib}) {
       
@@ -731,13 +745,14 @@ models only (-markov 0 to 1).
       ## Collect all score values for all the matrices
       my %sum_per_score = ();
       foreach my $matrix (@matrices) {
-	my %current_score_distrib = %{$score_distrib->{$matrix}};
+	my $matrix_name = $matrix->get_attribute("name");
+	my %current_score_distrib = %{$score_distrib->{$matrix_name}};
 	my @current_scores = sort {$a <=> $b} (keys (%current_score_distrib));
 	foreach my $score (@current_scores) {
-	  $sum_per_score{$score} += $score_distrib->{$matrix}->{$score};
+	  $sum_per_score{$score} += $score_distrib->{$matrix_name}->{$score}->{occ};
 #	  &RSAT::message::Debug("score distrib", 
-#				$score, $score_distrib->{$matrix}->{$score}, 
-#				$score, $score_distrib_cum->{$matrix}->{$score}, 
+#				$score, $score_distrib->{$matrix_name}->{$score}->{occ}, 
+#				$score, $score_distrib_cum->{$matrix_name}->{$score}, 
 #				$sum_per_score{$score},
 #	 ) 
 #	    if ($main::verbose >= 10);
@@ -750,15 +765,90 @@ models only (-markov 0 to 1).
       my %cum_sum = ();
       my %score_distrib_cum = ();
       foreach my $matrix (@matrices) {
-	$cum_sum{$matrix} = 0;
-	my %current_score_distrib = %{$score_distrib->{$matrix}};
+	my $matrix_name = $matrix->get_attribute("name");
+	$cum_sum{$matrix_name} = 0;
+	my %current_score_distrib = %{$score_distrib->{$matrix_name}};
 	foreach my $score (sort {$a <=> $b} keys %sum_per_score) {
-	  unless (defined($score_distrib->{$matrix}->{$score})) {
-	    $score_distrib->{$matrix}->{$score} = 0;
+	  unless (defined($score_distrib->{$matrix_name}->{$score}->{occ})) {
+	    $score_distrib->{$matrix_name}->{$score}->{occ} = 0;
 	  }
-	  $cum_sum{$matrix} += $score_distrib->{$matrix}->{$score};
-	  $score_distrib_cum->{$matrix}->{$score} = $cum_sum{$matrix};
-#	  &RSAT::message::Debug($matrix, "score", $score, "cum_sum", $cum_sum{$matrix}) if ($main::verbose >= 10);
+	  $cum_sum{$matrix_name} += $score_distrib->{$matrix_name}->{$score}->{occ};
+	  $score_distrib_cum->{$matrix_name}->{$score} = $cum_sum{$matrix_name};
+#	  &RSAT::message::Debug($matrix, "score", $score, "cum_sum", $cum_sum{$matrix_name}) if ($main::verbose >= 10);
+	}
+      }
+
+      ################################################################
+      ## Calculate inverse cumulative frequencies
+      my @sorted_scores = sort {$a <=> $b} keys (%sum_per_score);
+      foreach my $matrix (@matrices) {
+	my $matrix_name = $matrix->get_attribute("name");
+	foreach my $score (@sorted_scores) {
+	  my $count = $score_distrib->{$matrix_name}->{$score}->{occ} || 0;
+	  my $count_cum = $score_distrib_cum->{$matrix_name}->{$score} || 0;
+	  $score_distrib_inv_cum->{$matrix_name}->{$score} = $cum_sum{$matrix_name} - $count_cum + $count;
+	}
+      }
+
+      ################################################################
+      ## Calculate the significance of the score distribution
+      my $nb_of_tests = 0;
+      if ($return_fields{distrib_proba}) {
+
+	## Load the background score distribution
+	my ($in, $input_dir) = &OpenInputFile($main::infile{bg_distrib});
+	my $l = 0;
+	&RSAT::message::TimeWarn("Loading background score distribution from file", $infile{bg_distrib}) 
+	  if ($main::verbose >= 2);
+	while (<$in>) {
+	  $l++;
+	  next if (/^;/);	# skip comment lines
+	  next if (/^#/);	# skip header lines
+	  next unless (/\S/);	# skip empty lines
+	  chomp;
+	  my ($matrix_name, $score, $count, $count_cum, $count_inv_cum, $freq_inv_cum) = split "\t";
+	  $score_distrib->{$matrix_name}->{$score}->{distrib_prior} = $freq_inv_cum;
+#	  &RSAT::message::Debug("Loading bg distrib", $matrix_name, $score, $freq_inv_cum,
+#			       $score_distrib->{$matrix_name}->{$score}->{distrib_prior}) if ($main::verbose >= 10);
+	}
+	close $in;
+
+#	print join (" ", sort keys (%distrib_prior)), "\n";
+#	die "HERE";
+
+	## Calculate the significance of each distribution
+	&RSAT::message::TimeWarn("Calculating probabilities for the score distribution.") 
+	  if ($main::verbose >= 2);
+	foreach my $matrix (@matrices) {
+	  my $matrix_name = $matrix->get_attribute("name");
+	  my $n = $matrix->{scored};
+	  foreach my $score (@sorted_scores) {
+	    my $x = $score_distrib_inv_cum->{$matrix_name}->{$score} || 0;
+
+	    ## Check that the background file contains the required prior
+	    if (defined($score_distrib->{$matrix_name}->{$score}->{distrib_prior})) {
+	      $score_distrib->{$matrix_name}->{$score}->{distrib_Pval} =
+		&sum_of_binomials($score_distrib->{$matrix_name}->{$score}->{distrib_prior}, ## prior probabilty
+				  $n, ## Number of trials
+				  $x, ## Min number of successes
+				  $n, ## Max number of successes
+				 );
+	      $nb_of_tests++;
+	    } else {
+	      &RSAT::message::Warning("No prior defined for matrix", $matrix->get_attribute("name"), 
+				      "score", $score, 
+				      "in background score distribution file");
+	      $score_distrib->{$matrix_name}->{$score}->{distrib_prior} = $null;
+#	      $distrib_prior{$matrix."_".$score} = $null;
+	      $score_distrib->{$matrix_name}->{$score}->{distrib_Pval} = $null;
+#	      $score_distrib->{$matrix_name}->{$score}->{distrib_Eval} = $null;
+#	      $score_distrib->{$matrix_name}->{$score}->{distrib_sig} = $null;
+	    }
+#	    &RSAT::message::Debug("Calculated significance", $matrix_name, $score, $x,
+#				  $score_distrib->{$matrix_name}->{$score}->{distrib_prior},
+#				  $score_distrib->{$matrix_name}->{$score}->{distrib_Pval},
+#				 ) if ($main::verbose >= 10);
+	  }
 	}
       }
 
@@ -773,29 +863,67 @@ models only (-markov 0 to 1).
 #		    "cum_freq",
 		    "inv_cum_freq",
 		   );
+      if ($return_fields{distrib_proba}) {
+	push @header, ("distrib_prior",
+		       "distrib_Pval",
+		       "distrib_Eval",
+		       "distrib_sig");
+      }
       print $out "#", join  ("\t", @header), "\n";
 
       ## Print table with one row per score and one column per matrix
-      my @sorted_scores = sort {$a <=> $b} keys (%sum_per_score);
       foreach my $matrix (@matrices) {
+	my $matrix_name = $matrix->get_attribute("name");
 	foreach my $score (@sorted_scores) {
-	  my $count = $score_distrib->{$matrix}->{$score} || 0;
-	  my $count_cum = $score_distrib_cum->{$matrix}->{$score} || 0;
-	  my $count_cum_inv = $cum_sum{$matrix} - $count_cum + $count;
-	  print $out join ("\t", 
+	  my $count = $score_distrib->{$matrix_name}->{$score}->{occ} || 0;
+	  my $count_cum = $score_distrib_cum->{$matrix_name}->{$score} || 0;
+	  my $count_inv_cum = $null;
+	  my $freq_inv_cum = $null;
+	  if (defined ($score_distrib_inv_cum->{$matrix_name}->{$score})) {
+	    $count_inv_cum = $score_distrib_inv_cum->{$matrix_name}->{$score};
+	    $freq_inv_cum = $count_inv_cum/$cum_sum{$matrix_name};
+	  }
+
+	  print $out join ("\t",
 			   $matrix->get_attribute("name"),
 			   $score,
 			   $count,
 			   $count_cum,
-			   $count_cum_inv,
-#			   sprintf("%.6e", $count/$cum_sum{$matrix}),
-#			   sprintf("%.6e", $count_cum/$cum_sum{$matrix}),
-			   sprintf("%.6e", $count_cum_inv/$cum_sum{$matrix}),
+			   $count_inv_cum,
+#			   sprintf("%.6e", $count/$cum_sum{$matrix_name}),
+#			   sprintf("%.6e", $count_cum/$cum_sum{$matrix_name}),
+			   sprintf("%.6e", $freq_inv_cum),
 			  );
+	  if ($return_fields{distrib_proba}) {
+	    my $distrib_prior = $null;
+	    if (defined($score_distrib->{$matrix_name}->{$score}->{distrib_prior})) {
+	      $distrib_prior = sprintf("%.6e", $score_distrib->{$matrix_name}->{$score}->{distrib_prior});
+	    }
+	    my $Pval = $null;
+	    my $Eval = $null;
+	    my $sig = $null;
+	    if (defined($score_distrib->{$matrix_name}->{$score}->{distrib_Pval})) {
+	      $Pval = sprintf("%.6e", $score_distrib->{$matrix_name}->{$score}->{distrib_Pval});
+	      $Eval = sprintf("%.6e", 
+			     $score_distrib->{$matrix_name}->{$score}->{distrib_Pval}*$nb_of_tests);
+	      if ($Eval > 0) {
+		$sig = sprintf("%.2f", -log($Eval)/$log10);
+	      } else {
+		$sig = $infinite;
+	      }
+	    }
+	    print $out "\t", join ("\t", 
+				   $distrib_prior,
+				   $Pval,
+				   $Eval,
+				   $sig,
+				   );
+	  }
 	  print $out "\n";
 	}
       }
     }
+
 
 
     ################################################################
@@ -1291,7 +1419,27 @@ changes along he sequence.
 
 =item B<distrib> Score distribution.
 
-Return the score distribution for each matrix. 
+Return the score distribution for each matrix.
+
+=item B<distrib_proba> Probability of the score distribution.
+
+For each matrix and each score value, calculate the statistical
+significance of the number of matches. This allows to select the score
+associated with te maximal significance, on the basis of the
+matrix-specific distribution, rather than by selecting some a priori
+threshold.
+
+For each motif (M) and each score value (s), the program estimates the
+significance of the observed number of matches (x), given the prior
+probability (p) to find an instance of this motif with at least this
+score at a given position of the sequence. The P-value is calculated
+using the binomial distribution (Aerts et al., Nucleic Acids
+Res. 2003, 31:1753-64).
+
+This option requires to specify a background score distribution
+(option -bg_distrib) to estimate the prior probabilities of motif
+instances. 
+
 
 =back
 
@@ -1310,6 +1458,34 @@ Return the score distribution for each matrix.
 	    }
 
 
+	    ## Background score distribution
+=pod
+
+=item B<-bg_distrib bg_distrib_file>
+
+File specifying the background score distribution used to estimate
+prior probabilities with the option -return distrib_proba.
+
+
+This background distribution can be generated by running matrix-scan
+on a set of background sequences, with the options
+
+=over
+
+matrix-proba -v 1 -return distrib -mlist matrix_list.txt -i bg_seq.fta [...]
+
+=back
+
+Various types of background sequences can be used as background model:
+whole genome, whole set of upstream sequences, randomly generated
+sequences, ... The choice of the background model has a strong effect
+on the estimated significance, and should thus be done carefully,
+according to the biological question.
+
+
+=cut
+	} elsif ($arg eq "-bg_distrib") {
+	  $main::infile{bg_distrib} = shift(@arguments);
 
 	} else {
 	    &FatalError(join("\t", "Invalid option", $arg));
@@ -1444,9 +1620,11 @@ sub score_segment {
 	}
     }
 
-    my $round_score = sprintf("%.${distrib_decimals}f", $score);
-    $score_distrib->{$matrix}->{$round_score}++;
-
+    if ($return_fields{distrib}) {
+      my $round_score = sprintf("%.${distrib_decimals}f", $score);
+      my $matrix_name = $matrix->get_attribute("name");
+      $score_distrib->{$matrix_name}->{$round_score}->{occ}++;
+    }
 #    &RSAT::message::Debug("scoring segment", $segment, $seq_id, $pos, $strand, 
 #			  $proba_M , $proba_B, $score) if ($main::verbose >= 10);
 
