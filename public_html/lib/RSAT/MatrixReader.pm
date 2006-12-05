@@ -321,42 +321,56 @@ sub _readFromAssemblyFile {
       $matrix->set_parameter("seed", $seed);
       &RSAT::message::Debug("New matrix from assembly", $current_matrix_nb."/".scalar(@matrices), "seed", $seed) if ($main::verbose >= 4);
 
-    } elsif ($line =~ /(\S+)\t(\S+)\s+(\S+)\s+isol/) {
+    } elsif ($line =~ /^(\S+)\t(\S+)\s+(\S+)\s+isol/) {
       $current_matrix_nb++;
       my $pattern = $1; 
       my $pattern_rc = $2; 
       my $score = $3;
-      $pattern =~ s/\./n/g;
-      $pattern_rc =~ s/\./n/g;
-      $matrix = new RSAT::matrix();
+      $matrix = _from_isolated($pattern, $pattern_rc, $score, @matrices);
       push @matrices, $matrix;
-      $matrix->setAlphabet_lc("A","C","G","T");
-      $matrix->set_attribute("nrow", 4);
-      $matrix->set_attribute("number", $current_matrix_nb);
-      $matrix->set_parameter("seed", $pattern);
-      $matrix->set_attribute("consensus.assembly", $pattern);
-      $matrix->set_attribute("consensus.assembly.rc", $pattern_rc);
-      $matrix->set_attribute("assembly.top.score", $score);
-      $matrix->add_site($pattern, $pattern."|".$pattern_rc, $score);
-      &RSAT::message::Debug("New matrix from isolated pattern", $current_matrix_nb."/".scalar(@matrices), "seed", $seed) if ($main::verbose >= 4);
 
+    } elsif ($line =~ /^(\S+)\s+(\S+)\s+isol/) {
+      $current_matrix_nb++;
+      my $pattern = $1; 
+      my $score = $2;
+      $matrix = _from_isolated($pattern, "", $score, @matrices);
+      push @matrices, $matrix;
+
+
+      ## Consensus from a 2-strand assembly
     } elsif ($line =~ /^(\S+)\s+(\S+)\s+(\S+)\s+best consensus/) {
       $matrix->set_attribute("consensus.assembly", $1);
       $matrix->set_attribute("consensus.assembly.rc", $2);
       $matrix->set_attribute("assembly.top.score", $3);
 #      &RSAT::message::Debug("Consensus for matrix", $current_matrix_nb, $1) if ($main::verbose >= 5);
 
+      ## Consensus from a 1-strand assembly
+    } elsif ($line =~ /^(\S+)\s+(\S+)\s+best consensus/) {
+      $matrix->set_attribute("consensus.assembly", $1);
+      $matrix->set_attribute("assembly.top.score", $3);
+#      &RSAT::message::Debug("Consensus for matrix", $current_matrix_nb, $1) if ($main::verbose >= 5);
+
     } elsif ($line =~ /^;/) {
       next;
 
-    } elsif ($line =~ /(\S+)\t(\S+)\s+(\S+)/) {
+      ## New site from a two-strand assembly
+    } elsif ($line =~ /^(\S+)\t(\S+)\s+(\S+)/) {
       my $pattern = $1; 
       my $pattern_rc = $2;
       my $score = $3;
+      my $pattern_id = $pattern."|";
       $pattern =~ s/\./n/g;
       $pattern_rc =~ s/\./n/g;
 #      &RSAT::message::Debug("ASSEMBLY LINE", $l, $pattern, $pattern_rc, $score) if ($main::verbose >= 5);
-      $matrix->add_site($pattern, $pattern."|", $score);
+      $matrix->add_site($pattern, $pattern_id, $score);
+
+      ## New site from a single-strand assembly
+    } elsif ($line =~ /^(\S+)\s+(\S+)/) {
+      my $pattern = $1; 
+      my $score = $2;
+      $pattern =~ s/\./n/g;
+#      &RSAT::message::Debug("ASSEMBLY LINE", $l, $pattern, $pattern_rc, $score) if ($main::verbose >= 5);
+      $matrix->add_site($pattern, $pattern, $score);
 
     } else {
       &RSAT::message::Warning("&RSAT::Matrixreader::_readFromAssemblyFile", "line", $l, "not parsed", $_) if ($main::verbose >= 0);
@@ -373,6 +387,26 @@ sub _readFromAssemblyFile {
   return @matrices;
 }
 
+sub _from_isolated {
+  my ($pattern, $pattern_rc, $score, @matrices) = @_;
+  my $pattern_id = $pattern;
+  $pattern =~ s/\./n/g;
+  if ($pattern_rc) {
+    $pattern_rc =~ s/\./n/g;
+    $pattern_id = $pattern."|".$pattern_rc;
+  }
+  $matrix = new RSAT::matrix();
+  $matrix->setAlphabet_lc("A","C","G","T");
+  $matrix->set_attribute("nrow", 4);
+  $matrix->set_attribute("number", $current_matrix_nb);
+  $matrix->set_parameter("seed", $pattern);
+  $matrix->set_attribute("consensus.assembly", $pattern);
+  $matrix->set_attribute("consensus.assembly.rc", $pattern_rc);
+  $matrix->set_attribute("assembly.top.score", $score);
+  $matrix->add_site($pattern, $pattern_id, $score);
+  &RSAT::message::Debug("New matrix from isolated pattern", $current_matrix_nb."/".scalar(@matrices), "seed", $seed) if ($main::verbose >= 4);
+  return $matrix;
+}
 
 ################################################################
 =pod
