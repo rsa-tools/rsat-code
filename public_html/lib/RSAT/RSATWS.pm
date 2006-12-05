@@ -271,10 +271,10 @@ sub purge_seq {
     my %args = %$args_ref;
     my $return_choice = $args{"return"};
     my $command = $self->purge_seq_cmd(%args);
-    my $stderr = `$command 2>&1 1>/dev/null`;
-    if ($stderr) {
-	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr");
-    }
+#    my $stderr = `$command 2>&1 1>/dev/null`;
+#    if ($stderr) {
+#	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr");
+#    }
     my $result = `$command`;
     my $tmp_outfile = `mktemp $TMP/purge-seq.XXXXXXXXXX`;
     open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
@@ -406,10 +406,10 @@ sub oligo_analysis {
     my %args = %$args_ref;
     my $return_choice = $args{"return"};
     my $command = $self->oligo_analysis_cmd(%args);
-    my $stderr = `$command 2>&1 1>/dev/null`;
-    if ($stderr) {
-	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr");
-    }
+#    my $stderr = `$command 2>&1 1>/dev/null`;
+#    if ($stderr) {
+#	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr");
+#    }
     my $result = `$command`;
     my $tmp_outfile = `mktemp $TMP/oligo.XXXXXXXXXX`;
     open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
