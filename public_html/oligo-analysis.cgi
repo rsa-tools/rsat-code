@@ -197,24 +197,54 @@ if ($query->param('output') =~ /display/i) {
     if (($query->param('return') ne "table") &&
 	($query->param('return') ne "distrib") &&
 	(&IsReal($query->param('lth_occ_sig')))) {
-	$pattern_assembly_command = "$SCRIPTS/pattern-assembly -v 1 -subst 1";
-	if ($query->param('strand') =~ /single/) {
-	    $pattern_assembly_command .= " -1str";
-	} else {
-	    $pattern_assembly_command .= " -2str";
+
+      ## Pattern-assembly
+      $assembly_file = "$TMP/$tmp_file_name.asmb";
+      $pattern_assembly_command = "$SCRIPTS/pattern-assembly -v 1 -subst 1";
+      if ($query->param('strand') =~ /single/) {
+	$pattern_assembly_command .= " -1str";
+      } else {
+	$pattern_assembly_command .= " -2str";
+      }
+      $pattern_assembly_command .= "  -i $result_file";
+      $pattern_assembly_command .= "  -o $assembly_file";
+      
+      unless ($ENV{RSA_ERROR}) {
+	print "<H2>Pattern assembly</H2>\n";
+	system "$pattern_assembly_command";
+	open ASSEMBLY, $assembly_file;
+	print "<PRE>\n";
+	while (<ASSEMBLY>) {
+	  s|$RSA/||g;
+	  print;
 	}
-	
-	unless ($ENV{RSA_ERROR}) {
-	    print "<H2>Pattern assembly</H2>\n";
-	    open CLUSTERS, "$pattern_assembly_command -i $result_file |";
-	    print "<PRE>\n";
-	    while (<CLUSTERS>) {
-		s|$RSA/||g;
-		print;
-	    }
-	    print "</PRE>\n";
-	    close(CLUSTERS);
+	print "</PRE>\n";
+	close(ASSEMBLY);
+      }
+
+
+      ## Convert pattern-assembly result into PSSM
+      $pssm_file = "$TMP/$tmp_file_name.pssm";
+      $pssm_command = "$SCRIPTS/convert-matrix -v 1 ";
+      $pssm_command .= " -in_format assembly -out_format patser";
+      $pssm_command .= " -return counts,parameters";
+      $pssm_command .= " -i $assembly_file";
+      $pssm_command .= " -o $pssm_file";
+      
+      unless ($ENV{RSA_ERROR}) {
+	print "<H2>Position-specific scoring matrices (PSSM)</H2>\n";
+	system "$pssm_command";
+	open PSSM, $pssm_file;
+	print "<PRE>\n";
+	while (<PSSM>) {
+	  s|$RSA/||g;
+	  print;
 	}
+	print "</PRE>\n";
+	close(PSSM);
+      }
+
+
     }
     
     &PipingForm();
