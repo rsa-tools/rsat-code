@@ -2274,8 +2274,9 @@ accordingly.
 
 =cut
 sub add_site() {
-  my ($self, $site_seq, $site_id, $score) = @_;
-  $score =  $score || 1;
+  my ($self, $site_seq, %args) = @_;
+  my $site_id = $args{id} || $site_seq;
+  my $score =  $args{score} || 1;
 
   my @letters = split "|", $site_seq;
 

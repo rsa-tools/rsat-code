@@ -356,14 +356,14 @@ sub check_transition_alphabet {
     if (scalar(keys(%suppressed_prefixes)) > 0) {
       $self->set_array_attribute("prefixes", sort(keys(%checked_prefixes)));
       &RSAT::message::Info("Suppressed", scalar(keys(%suppressed_prefixes)),"prefixes, incompatible with sequence type", $seq_type)
-	if ($main::verbose >= 2);
+	if ($main::verbose >= 3);
       &RSAT::message::Debug("Checked prefixes", join (",", $self->get_attribute("prefixes")),
 			   ) if ($main::verbose >= 5);
     }
     if (scalar(keys(%suppressed_suffixes)) > 0) {
       $self->set_array_attribute("suffixes", sort(keys(%checked_suffixes)));
       &RSAT::message::Info("Suppressed", scalar(keys(%suppressed_suffixes)),"suffixes, incompatible with sequence type", $seq_type)
-	if ($main::verbose >= 2);
+	if ($main::verbose >= 3);
     }
 
 
@@ -664,7 +664,7 @@ sub average_strands {
     my ($self) = @_;
 
     &RSAT::message::Info(join("\t", "MarkovModel", "Averaging transition frequencies on both strands."))
-	if ($main::verbose >= 2);
+	if ($main::verbose >= 3);
 
     ## Sum per prefix
     my %prefixes_2str = ();
