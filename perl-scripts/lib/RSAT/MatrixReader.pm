@@ -57,7 +57,7 @@ sub readFromFile {
 
     ## Check that there was at least one matrix in the file
     if (scalar(@matrices) == 0) {
-      &RSAT::error::FatalError(join("\t", "File",  $file, "does not contain any matrix in format", $format));
+      &RSAT::message::Warning("File",  $file, "does not contain any matrix in format", $format);
     }  else {
       &RSAT::message::Info("Read ".scalar(@matrices)." matrices from file ", $file) if ($main::verbose >= 3);
     }
