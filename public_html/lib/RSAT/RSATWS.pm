@@ -340,7 +340,17 @@ sub purge_seq_cmd {
     my $delete = $args{"delete"};
     my $mask_short = $args{"mask_short"};
 
-    my $command = "$SCRIPTS/purge-sequence $format $match_length $mismatch $str $delete $mask_short -i $tmp_infile";
+    my $command = "$SCRIPTS/purge-sequence $format $str $delete $mask_short";
+
+    if (defined($match_length)) {
+	$command .= " -ml ".$match_length;
+    }
+    if (defined($mismatch)) {
+	$command .= " -mis ".$mismatch;
+    }
+
+    $command .= " -i ".$tmp_infile;
+
     return $command;
 }
 
@@ -478,7 +488,14 @@ sub oligo_analysis_cmd {
     my $sort = $args{"sort"};
     my $lth = $args{"lth"};
 
-    my $command = "$SCRIPTS/oligo-analysis $format $length $organism $background $stats $noov $str $sort $lth -i $tmp_infile";
+    my $command = "$SCRIPTS/oligo-analysis $format $organism $background $stats $noov $str $sort $lth";
+
+    if (defined($length)) {
+	$command .= " -l ".$length;
+    }
+
+    $command .= " -i ".$tmp_infile;
+
     return $command;
 }
 
