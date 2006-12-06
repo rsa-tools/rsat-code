@@ -38,10 +38,12 @@ my $to = 2;  ## End position of the sequence
 my $feattype = '';  ## The -feattype option value is  not specified, the default is used
 my $type = '';  ## The -type option value; other example:'-type downstream'
 my $format = '';  ## The -format option value. We use the default (fasta), but other formats could be specified, for example 'multi'
+my $lw = 0;  ## Line width. 0 means all on one line
 my $label = 'id,name';  ## Choice of label for the retrieved sequence(s)
 my $label_sep = '';  ## Choice of separator for the label(s) of the retrieved sequence(s)
 my $nocom = '';  ## Other possible value = '-nocom', to get sequence(s) whithout comments
 my $repeat =  '';  ## Other possible value = '-rm', to have annotated repeat regions masked
+my $imp_pos = '';  ## Admit imprecise position (value = 'imp_pos' to do so
 
 my %args = ('return' => $return_choice,
 	    'organism' => $organism,
@@ -52,10 +54,12 @@ my %args = ('return' => $return_choice,
 	    'feattype' => $feattype,
 	    'type' => $type,
 	    'format' => $format,
+	    'lw' => $lw,
 	    'label' => $label,
 	    'label_sep' => $label_sep,
 	    'nocom' => $nocom,
-	    'repeat' => $repeat);
+	    'repeat' => $repeat,
+	    'imp_pos' => $imp_pos);
 
 ## Send the request to the server
 print "Sending request to the server\n";
