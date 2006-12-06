@@ -148,29 +148,41 @@ sub retrieve_seq_cmd {
 
     ## List of query genes
     my $query_ref = $args{"query"};
-    my @query = @{$query_ref};
-    my $query = "-q ";
-    $query .= join " -q ", @query;
+    my $query = "";
+    if ($query_ref) {
+	my @query = @{$query_ref};
+	$query = " -q ";
+	$query .= join " -q ", @query;
+    }
 
     my $feattype = $args{"feattype"};
     my $type = $args{"type"};
     my $format = $args{"format"};
     my $all = $args{"all"};
     my $n = $args{"number"};
+    my $lw = $args{"lw"};
     my $label = $args{"label"};
     my $label_sep = $args{"label_sep"};
     my $nocom = $args{"nocom"};
     my $repeat = $args{'repeat'};
+    my $imp_pos = $args{'imp_pos'};
 
-    my $command = "$SCRIPTS/retrieve-seq -org $organism $query -lw 0";
+    my $command = "$SCRIPTS/retrieve-seq";
+
+    if ($organism) {
+	$command .= " -org ".$organism;
+    }
+    if ($query) {
+	$command .= $query;
+    }
 
     if ($noorf) {
 	$command .= " -".$noorf;
     }
-    if ($from == 0 || $from < 0 || $from > 0) {
+    if (defined($from)) {
 	$command .= " -from ".$from;
     }
-    if ($to) {
+    if (defined($to)) {
 	$command .= " -to ".$to;
     }
     if ($feattype) {
@@ -188,6 +200,9 @@ sub retrieve_seq_cmd {
     if ($n) {
 	$command .= " -n ".$n;
     }
+    if (defined($lw)) {
+	$command .= " -lw ".$lw;
+    }
     if ($label) {
 	$command .= " -label ".$label;
     }
@@ -200,8 +215,12 @@ sub retrieve_seq_cmd {
     if ($repeat) {
 	$command .= " -".$repeat;
     }
+    if ($imp_pos) {
+	$command .= " -".$imp_pos;
+    }
 
 #    my $command = "$SCRIPTS/retrieve-seq $organism $query -lw 0 $noorf $from $to $feattype $type $format $all $n $label $label_sep $nocom $repeat";
+
     return $command;
 }
 
@@ -485,13 +504,29 @@ sub gene_info {
 sub gene_info_cmd {
     my ($self, %args) =@_;
     my $organism = $args{"organism"};
-    my $query = $args{"query"};
+
+    ## List of query genes
+    my $query_ref = $args{"query"};
+    my $query = "";
+    if ($query_ref) {
+	my @query = @{$query_ref};
+	$query = " -q ";
+	$query .= join " -q ", @query;
+    }
+
     my $full = $args{"full"};
     my $noquery = $args{"noquery"};
     my $descr = $args{"descr"};
     my $feattype = $args{"feattype"};
 
-    my $command = "$SCRIPTS/gene-info -org $organism -q $query";
+    my $command = "$SCRIPTS/gene-info";
+
+    if ($organism){
+	$command .= " -org ".$organism;
+    }
+    if ($query){
+	$command .= $query;
+    }
     if ($full){
 	$command .= " -".$full;
     }
