@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.45 2006/12/06 05:21:45 jvanheld Exp $
+# $Id: matrix-scan,v 1.46 2006/12/06 14:12:57 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -227,7 +227,7 @@ models only (-markov 0 to 1).
     $bg_out_format = "tab";
     $sequence_number = 0;
     $sum_seq_len = 0;
-    $n_containing_regions = 0;
+#    $n_containing_regions = 0;
     $n_residues = 0;
 
     $main::base=exp(1); ## Base for the logarithms
@@ -623,7 +623,7 @@ models only (-markov 0 to 1).
 		    if ($main::verbose >= 4);
 		}
 		$n_containing_region = 1;
-		$n_containing_regions ++;
+#		$n_containing_regions ++;
 		next;
 	      }
 	      
@@ -864,7 +864,7 @@ models only (-markov 0 to 1).
 	    if (defined($exp_score_distrib->{$matrix_name}->{$score}->{distrib_prior})) {
 	      my $prior  = $exp_score_distrib->{$matrix_name}->{$score}->{distrib_prior};
 	      &RSAT::message::Debug("Calculating Pval", $matrix_name, $score, $x, $n, $prior)
-		if ($main::verbose >= 0);
+		if ($main::verbose >= 5);
 
 	      $score_distrib->{$matrix_name}->{$score}->{inv_Pval} =
 		&sum_of_binomials($prior, ## prior probabilty
@@ -910,11 +910,13 @@ models only (-markov 0 to 1).
 	  my $inv_sig = $null;
 	  if (defined($score_distrib->{$matrix_name}->{$score}->{inv_Pval})) {
 	    my $Pval = $score_distrib->{$matrix_name}->{$score}->{inv_Pval};
-	    $Eval = $score_distrib->{$matrix_name}->{$score}->{inv_Pval}*$nb_of_tests;
-	    if ($Eval > 0) {
-	      $inv_sig = -log($Eval)/$log10;
-	    } else {
-	      $inv_sig = $infinite;
+	    unless ($Pval eq $null) {
+	      $Eval = $score_distrib->{$matrix_name}->{$score}->{inv_Pval}*$nb_of_tests;
+	      if ($Eval > 0) {
+		$inv_sig = -log($Eval)/$log10;
+	      } else {
+		$inv_sig = $infinite;
+	      }
 	    }
 	  }
 	  $score_distrib->{$matrix_name}->{$score}->{inv_Eval} = $Eval;
@@ -958,7 +960,7 @@ models only (-markov 0 to 1).
 	  @sorted_scores =  sort {
 	    $score_distrib->{$matrix_name}->{$a}->{inv_Pval} <=> $score_distrib->{$matrix_name}->{$b}->{inv_Pval}
 	    } keys %{$score_distrib->{$matrix_name}};
-	  &RSAT::message::Info("Sorting distribution by inv_Pval") if ($main::verbose >= 2);
+	  &RSAT::message::Info("Sorting distribution by inv_Pval") if ($main::verbose >= 4);
 	}
 
 	my $inv_rank = 0;
@@ -1043,7 +1045,7 @@ models only (-markov 0 to 1).
 	## Sequence statistics
 	printf $main::out "; %-21s\t%s\n", "Number of sequences scanned", $sequence_number;
 	printf $main::out "; %-21s\t%s\n", "Sum of sequence lengths", $sum_seq_len;
-	printf $main::out "; %-21s\t%s\n", "N-containing regions", $n_containing_regions if ($n_containing_regions >= 0);
+#	printf $main::out "; %-21s\t%s\n", "N-containing regions", $n_containing_regions if ($n_containing_regions >= 0);
 	printf $main::out "; %-21s\t%s\n", "N residues", $n_residues if ($n_residues >= 0);
 
 	## Matching statistics
@@ -1435,7 +1437,7 @@ Threshold on some parameter (-lth: lower, -uth: upper threshold).
 
 Supported threshold fields for the matches : score, normw, proba_M, proba_B, rank
 
-Supported threshold fields for score distributions: occ occ_sum occ_inv exp_inv inv_Pval inv_Eval inv_sig inv_rank
+Supported threshold fields for score distributions: occ occ_sum inv_cum exp_inv inv_Pval inv_Eval inv_sig inv_rank
 
 =cut
 
