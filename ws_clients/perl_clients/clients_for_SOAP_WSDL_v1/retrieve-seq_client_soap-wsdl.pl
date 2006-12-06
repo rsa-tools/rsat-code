@@ -13,9 +13,15 @@ use strict;
 use SOAP::WSDL;
 #import SOAP::Lite +trace;
 
+warn "\nThis demo script retrieves the start codons for a set of query genes\n\n";
+
 ## WSDL location
-my $WSDL = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.wsdl';
-my $proxy = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.cgi';
+#my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services/';
+my $server = 'http://localhost/rsat/web_services/';
+my $WSDL = $server.'RSATWS.wsdl';
+my $proxy = $server.'RSATWS.cgi';
+#my $WSDL = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.wsdl';
+#my $proxy = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.cgi';
 
 my $soap=SOAP::WSDL->new(wsdl => $WSDL)->proxy($proxy);
 
