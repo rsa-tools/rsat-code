@@ -258,8 +258,13 @@ The first word off each following row contains the class name.
 =cut
 
 sub read_profiles {
-    my ($self, $input_file) = @_;
+    my ($self, $input_file, %args) = @_;
     my ($in) = &RSAT::util::OpenInputFile($input_file);
+
+    my $null = 0;
+    if (defined($args{null})) {
+	$null = $args{null};
+    }
 
     my %class = (); ## classes indexed by name
     my $got_header = 0;
@@ -325,7 +330,7 @@ sub read_profiles {
 	}
 	foreach my $class_name (@class_names) {
 	    my $score = shift (@fields);
-	    if ($score) {
+	    if (($score) && ($score ne $null)) {
 		unless (&RSAT::util::IsReal($score)) {
 		    &RSAT::error::FatalError(join("\t", $score, "Invalid score (must be a Real number).", 
 						  "class file", $class_file,  
