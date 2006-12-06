@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.44 2006/12/06 05:11:41 jvanheld Exp $
+# $Id: matrix-scan,v 1.45 2006/12/06 05:21:45 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -792,7 +792,7 @@ models only (-markov 0 to 1).
 	    $score_distrib->{$matrix_name}->{$score}->{occ} = 0;
 	  }
 	  $cum_sum{$matrix_name} += $score_distrib->{$matrix_name}->{$score}->{occ};
-	  $score_distrib->{$matrix_name}->{$score}->{cum} = $cum_sum{$matrix_name};
+	  $score_distrib->{$matrix_name}->{$score}->{occ_cum} = $cum_sum{$matrix_name};
 #	  &RSAT::message::Debug($matrix, "score", $score, "cum_sum", $cum_sum{$matrix_name}) if ($main::verbose >= 10);
 	}
       }
@@ -805,8 +805,8 @@ models only (-markov 0 to 1).
 	my @sorted_scores = sort {$a <=> $b} keys %{$score_distrib->{$matrix_name}};
 	&RSAT::message::Info("score range", $matrix_name, $sorted_scores[0], $sorted_scores[$#sorted_scores], scalar(@sorted_scores)) if ((scalar(@sorted_scores) >= 1) && ($main::verbose >= 3));
 	foreach my $score (@sorted_scores) {
-	  my $occ = $score_distrib->{$matrix_name}->{$score}->{occ} || 0;
-	  my $occ_cum = $score_distrib->{$matrix_name}->{$score}->{occ_cum} || 0;
+	  my $occ = $score_distrib->{$matrix_name}->{$score}->{occ};
+	  my $occ_cum = $score_distrib->{$matrix_name}->{$score}->{occ_cum};
 	  $score_distrib->{$matrix_name}->{$score}->{inv_cum} = $cum_sum{$matrix_name} - $occ_cum + $occ;
 	  $score_distrib->{$matrix_name}->{$score}->{score} = $score; ## This is just a trick to filter the distrib on score thresholds
 	}
@@ -858,13 +858,14 @@ models only (-markov 0 to 1).
 	  my @sorted_scores = sort {$a <=> $b} keys %{$score_distrib->{$matrix_name}};
 	  &RSAT::message::Info("score range", $matrix_name, $sorted_scores[0], $sorted_scores[$#sorted_scores], scalar(@sorted_scores)) if ((scalar(@sorted_scores) >= 1) && ($main::verbose >= 3));
 	  foreach my $score (@sorted_scores) {
-	    my $x = $score_distrib->{$matrix_name}->{$score}->{inv_cum} || 0;
+	    my $x = $score_distrib->{$matrix_name}->{$score}->{inv_cum};
 
 	    ## Check that the background file contains the required prior
 	    if (defined($exp_score_distrib->{$matrix_name}->{$score}->{distrib_prior})) {
 	      my $prior  = $exp_score_distrib->{$matrix_name}->{$score}->{distrib_prior};
 	      &RSAT::message::Debug("Calculating Pval", $matrix_name, $score, $x, $n, $prior)
 		if ($main::verbose >= 0);
+
 	      $score_distrib->{$matrix_name}->{$score}->{inv_Pval} =
 		&sum_of_binomials($prior, ## prior probabilty
 				  $n, ## Number of trials
@@ -1703,6 +1704,7 @@ sub score_segment {
     my $ncol = $matrix->{ncol};
     my $proba_M = 1;
     my $proba_B = 1;
+    my $matrix_name = $matrix->get_attribute("name");
 
     $matrix->{scored}++;
 
@@ -1733,8 +1735,7 @@ sub score_segment {
 
     if ($return_fields{distrib}) {
       my $round_score = sprintf("%.${distrib_decimals}f", $score);
-#      $round_score =~ s/^-(0.0+)$/$1/; ## Suppress the difference between -0.0 and +0.0 after the rounding
-      my $matrix_name = $matrix->get_attribute("name");
+      $round_score =~ s/^-(0.0+)$/$1/; ## Suppress the difference between -0.0 and +0.0 after the rounding
       $score_distrib->{$matrix_name}->{$round_score}->{occ}++;
     }
 #    &RSAT::message::Debug("scoring segment", $segment, $seq_id, $pos, $strand, 
