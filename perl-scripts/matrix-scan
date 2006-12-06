@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.43 2006/12/05 23:16:22 jvanheld Exp $
+# $Id: matrix-scan,v 1.44 2006/12/06 05:11:41 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -245,7 +245,21 @@ models only (-markov 0 to 1).
     ## Threshold parameters
     local %lth = (); # lower threshold values
     local %uth = (); # upper threshold values
-    @supported_thresholds = qw ( score normw proba_M proba_B rank );
+    @supported_thresholds = qw ( 
+				score
+				normw
+				proba_M
+				proba_B
+				rank
+				occ
+				occ_cum
+				inv_cum
+				exp_inv
+				inv_Pval
+				inv_Eval
+				inv_sig
+				inv_rank
+			       );
     $supported_thresholds = join ",", @supported_thresholds;
     %supported_threshold = ();
     foreach my $thr (@supported_thresholds) {
@@ -320,6 +334,25 @@ models only (-markov 0 to 1).
 
       &RSAT::error::FatalError("The option -return score_distrib requires a background score distribution (-bg_distrib)")
 	unless ($infile{bg_distrib});
+
+      ## Load the background score distribution
+      my ($in, $input_dir) = &OpenInputFile($main::infile{bg_distrib});
+      my $l = 0;
+      &RSAT::message::TimeWarn("Loading background score distribution from file", $infile{bg_distrib}) 
+	if ($main::verbose >= 2);
+      while (<$in>) {
+	$l++;
+	next if (/^;/);	# skip comment lines
+	next if (/^#/);	# skip header lines
+	next unless (/\S/);	# skip empty lines
+	chomp;
+	my ($matrix_name, $score, $occ, $occ_cum, $inv_cum, $freq_inv_cum) = split "\t";
+	$exp_score_distrib->{$matrix_name}->{$score}->{distrib_prior} = $freq_inv_cum;
+		  &RSAT::message::Debug("Loading bg distrib", $matrix_name, $score, $freq_inv_cum,
+				       $exp_score_distrib->{$matrix_name}->{$score}->{distrib_prior}) if ($main::verbose >= 10);
+      }
+      close $in;
+
     }
 
     ## Fields to calculate
@@ -587,7 +620,7 @@ models only (-markov 0 to 1).
 		unless ($n_containing_region) {
 		  ## Start of an N-containing region
 		  &RSAT::message::Info(join("\t", "N-containing segment start at position", $pos))
-		    if ($main::verbose >= 3);
+		    if ($main::verbose >= 4);
 		}
 		$n_containing_region = 1;
 		$n_containing_regions ++;
@@ -597,7 +630,7 @@ models only (-markov 0 to 1).
 	      ## Report the end of the N-containing region
 	      if (($n_treatment eq "skip") && ($n_containing_region)) {
 		&RSAT::message::Info(join("\t", "N-containing segment ended at position", $pos -1))
-		  if ($main::verbose >= 3);
+		  if ($main::verbose >= 4);
 		$n_containing_region = 0;
 	      }
 	      
@@ -669,6 +702,7 @@ models only (-markov 0 to 1).
 
     ################################################################
     ## Report the PSSM Matrices
+    &RSAT::message::TimeWarn ("Reporting matrix information") if ($main::verbose >= 2);
 
     ## Print summary statistics of each matrix
     if ($main::verbose >= 1) {
@@ -740,81 +774,80 @@ models only (-markov 0 to 1).
     ################################################################
     ## Report score distribution
     if ($return_fields{distrib}) {
-      
-      
-      ## Collect all score values for all the matrices
-      my %sum_per_score = ();
-      foreach my $matrix (@matrices) {
-	my $matrix_name = $matrix->get_attribute("name");
-	my %current_score_distrib = %{$score_distrib->{$matrix_name}};
-	my @current_scores = sort {$a <=> $b} (keys (%current_score_distrib));
-	foreach my $score (@current_scores) {
-	  $sum_per_score{$score} += $score_distrib->{$matrix_name}->{$score}->{occ};
-#	  &RSAT::message::Debug("score distrib", 
-#				$score, $score_distrib->{$matrix_name}->{$score}->{occ}, 
-#				$score, $score_distrib_cum->{$matrix_name}->{$score}, 
-#				$sum_per_score{$score},
-#	 ) 
-#	    if ($main::verbose >= 10);
-	}
-      }
-
 
       ################################################################
       ##  Calculate cumulative frequencies
+      &RSAT::message::TimeWarn("Calculating cumulative frequencies") if ($main::verbose >= 2);
       my %cum_sum = ();
       my %score_distrib_cum = ();
       foreach my $matrix (@matrices) {
 	my $matrix_name = $matrix->get_attribute("name");
 	$cum_sum{$matrix_name} = 0;
-	my %current_score_distrib = %{$score_distrib->{$matrix_name}};
-	foreach my $score (sort {$a <=> $b} keys %sum_per_score) {
+	
+	my @sorted_scores = sort {$a <=> $b} keys %{$score_distrib->{$matrix_name}};
+	&RSAT::message::Info("score range", $matrix_name, $sorted_scores[0], $sorted_scores[$#sorted_scores], scalar(@sorted_scores)) if ((scalar(@sorted_scores) >= 1) && ($main::verbose >= 3));
+	
+	foreach my $score (@sorted_scores) {
 	  unless (defined($score_distrib->{$matrix_name}->{$score}->{occ})) {
 	    $score_distrib->{$matrix_name}->{$score}->{occ} = 0;
 	  }
 	  $cum_sum{$matrix_name} += $score_distrib->{$matrix_name}->{$score}->{occ};
-	  $score_distrib_cum->{$matrix_name}->{$score} = $cum_sum{$matrix_name};
+	  $score_distrib->{$matrix_name}->{$score}->{cum} = $cum_sum{$matrix_name};
 #	  &RSAT::message::Debug($matrix, "score", $score, "cum_sum", $cum_sum{$matrix_name}) if ($main::verbose >= 10);
 	}
       }
 
       ################################################################
       ## Calculate inverse cumulative frequencies
-      my @sorted_scores = sort {$a <=> $b} keys (%sum_per_score);
+      &RSAT::message::TimeWarn("Calculating cumulative frequencies") if ($main::verbose >= 2);
       foreach my $matrix (@matrices) {
 	my $matrix_name = $matrix->get_attribute("name");
+	my @sorted_scores = sort {$a <=> $b} keys %{$score_distrib->{$matrix_name}};
+	&RSAT::message::Info("score range", $matrix_name, $sorted_scores[0], $sorted_scores[$#sorted_scores], scalar(@sorted_scores)) if ((scalar(@sorted_scores) >= 1) && ($main::verbose >= 3));
 	foreach my $score (@sorted_scores) {
-	  my $count = $score_distrib->{$matrix_name}->{$score}->{occ} || 0;
-	  my $count_cum = $score_distrib_cum->{$matrix_name}->{$score} || 0;
-	  $score_distrib_inv_cum->{$matrix_name}->{$score} = $cum_sum{$matrix_name} - $count_cum + $count;
+	  my $occ = $score_distrib->{$matrix_name}->{$score}->{occ} || 0;
+	  my $occ_cum = $score_distrib->{$matrix_name}->{$score}->{occ_cum} || 0;
+	  $score_distrib->{$matrix_name}->{$score}->{inv_cum} = $cum_sum{$matrix_name} - $occ_cum + $occ;
+	  $score_distrib->{$matrix_name}->{$score}->{score} = $score; ## This is just a trick to filter the distrib on score thresholds
 	}
       }
+
+      ################################################################
+      ## Check distribution thresholds on score. This can only be done
+      ## after having computed the cumulative and inverse umulative
+      ## frequencies
+      &check_distrib_thresholds('score');
+
+      ################################################################
+      ## Check thresholds on occurrences
+      &check_distrib_thresholds('occ');
+      &check_distrib_thresholds('occ_cum');
+      &check_distrib_thresholds('inv_cum');
 
       ################################################################
       ## Calculate the significance of the score distribution
       my $nb_of_tests = 0;
       if ($return_fields{distrib_proba}) {
 
-	## Load the background score distribution
-	my ($in, $input_dir) = &OpenInputFile($main::infile{bg_distrib});
-	my $l = 0;
-	&RSAT::message::TimeWarn("Loading background score distribution from file", $infile{bg_distrib}) 
+	## Calculate expected number of occurrences with a score >= x 
+	&RSAT::message::TimeWarn("Calculating expected inverse cumulative distribution.") 
 	  if ($main::verbose >= 2);
-	while (<$in>) {
-	  $l++;
-	  next if (/^;/);	# skip comment lines
-	  next if (/^#/);	# skip header lines
-	  next unless (/\S/);	# skip empty lines
-	  chomp;
-	  my ($matrix_name, $score, $count, $count_cum, $count_inv_cum, $freq_inv_cum) = split "\t";
-	  $score_distrib->{$matrix_name}->{$score}->{distrib_prior} = $freq_inv_cum;
-#	  &RSAT::message::Debug("Loading bg distrib", $matrix_name, $score, $freq_inv_cum,
-#			       $score_distrib->{$matrix_name}->{$score}->{distrib_prior}) if ($main::verbose >= 10);
-	}
-	close $in;
+	foreach my $matrix (@matrices) {
+	  my $matrix_name = $matrix->get_attribute("name");
+	  my $n = $matrix->{scored};
+	  my @sorted_scores = sort {$a <=> $b} keys %{$score_distrib->{$matrix_name}};
+	  &RSAT::message::Info("score range", $matrix_name, $sorted_scores[0], $sorted_scores[$#sorted_scores], scalar(@sorted_scores)) if ((scalar(@sorted_scores) >= 1) && ($main::verbose >= 3));
+	  foreach my $score (@sorted_scores) {
+	    my $x = $score_distrib->{$matrix_name}->{$score}->{inv_cum} || 0;
 
-#	print join (" ", sort keys (%distrib_prior)), "\n";
-#	die "HERE";
+	    ## Check that the background file contains the required prior
+	    if (defined($exp_score_distrib->{$matrix_name}->{$score}->{distrib_prior})) {
+	      my $prior  = $exp_score_distrib->{$matrix_name}->{$score}->{distrib_prior};
+	      $score_distrib->{$matrix_name}->{$score}->{exp_inv} = $prior * $n;
+	    }
+	  }
+	}
+	&check_distrib_thresholds('exp_inv');
 
 	## Calculate the significance of each distribution
 	&RSAT::message::TimeWarn("Calculating probabilities for the score distribution.") 
@@ -822,13 +855,18 @@ models only (-markov 0 to 1).
 	foreach my $matrix (@matrices) {
 	  my $matrix_name = $matrix->get_attribute("name");
 	  my $n = $matrix->{scored};
+	  my @sorted_scores = sort {$a <=> $b} keys %{$score_distrib->{$matrix_name}};
+	  &RSAT::message::Info("score range", $matrix_name, $sorted_scores[0], $sorted_scores[$#sorted_scores], scalar(@sorted_scores)) if ((scalar(@sorted_scores) >= 1) && ($main::verbose >= 3));
 	  foreach my $score (@sorted_scores) {
-	    my $x = $score_distrib_inv_cum->{$matrix_name}->{$score} || 0;
+	    my $x = $score_distrib->{$matrix_name}->{$score}->{inv_cum} || 0;
 
 	    ## Check that the background file contains the required prior
-	    if (defined($score_distrib->{$matrix_name}->{$score}->{distrib_prior})) {
-	      $score_distrib->{$matrix_name}->{$score}->{distrib_Pval} =
-		&sum_of_binomials($score_distrib->{$matrix_name}->{$score}->{distrib_prior}, ## prior probabilty
+	    if (defined($exp_score_distrib->{$matrix_name}->{$score}->{distrib_prior})) {
+	      my $prior  = $exp_score_distrib->{$matrix_name}->{$score}->{distrib_prior};
+	      &RSAT::message::Debug("Calculating Pval", $matrix_name, $score, $x, $n, $prior)
+		if ($main::verbose >= 0);
+	      $score_distrib->{$matrix_name}->{$score}->{inv_Pval} =
+		&sum_of_binomials($prior, ## prior probabilty
 				  $n, ## Number of trials
 				  $x, ## Min number of successes
 				  $n, ## Max number of successes
@@ -838,26 +876,59 @@ models only (-markov 0 to 1).
 	      &RSAT::message::Warning("No prior defined for matrix", $matrix->get_attribute("name"), 
 				      "score", $score, 
 				      "in background score distribution file");
-	      $score_distrib->{$matrix_name}->{$score}->{distrib_prior} = $null;
+	      $exp_score_distrib->{$matrix_name}->{$score}->{distrib_prior} = $null;
 #	      $distrib_prior{$matrix."_".$score} = $null;
-	      $score_distrib->{$matrix_name}->{$score}->{distrib_Pval} = $null;
-#	      $score_distrib->{$matrix_name}->{$score}->{distrib_Eval} = $null;
-#	      $score_distrib->{$matrix_name}->{$score}->{distrib_sig} = $null;
+	      $score_distrib->{$matrix_name}->{$score}->{exp_inv} = $null;
+	      $score_distrib->{$matrix_name}->{$score}->{inv_Pval} = $null;
+#	      $score_distrib->{$matrix_name}->{$score}->{inv_Eval} = $null;
+#	      $score_distrib->{$matrix_name}->{$score}->{inv_sig} = $null;
 	    }
 #	    &RSAT::message::Debug("Calculated significance", $matrix_name, $score, $x,
-#				  $score_distrib->{$matrix_name}->{$score}->{distrib_prior},
-#				  $score_distrib->{$matrix_name}->{$score}->{distrib_Pval},
+#				  $exp_score_distrib->{$matrix_name}->{$score}->{distrib_prior},
+#				  $score_distrib->{$matrix_name}->{$score}->{inv_Pval},
 #				 ) if ($main::verbose >= 10);
 	  }
 	}
       }
 
+      ################################################################
+      ## Check thresholds on significance
+      &check_distrib_thresholds('inv_Pval');
+
+
+      ################################################################
+      ## Perform correction for multi-testing (calculate E-value and
+      ## significance).
+      &RSAT::message::TimeWarn("Calculating E-value and significance") if ($main::verbose >= 2);
+      foreach my $matrix (@matrices) {
+	my $matrix_name = $matrix->get_attribute("name");
+	my @sorted_scores = sort {$a <=> $b} keys %{$score_distrib->{$matrix_name}};
+	&RSAT::message::Info("score range", $matrix_name, $sorted_scores[0], $sorted_scores[$#sorted_scores], scalar(@sorted_scores)) if ((scalar(@sorted_scores) >= 1) && ($main::verbose >= 3));
+	foreach my $score (@sorted_scores) {
+	  my $Eval = $null;
+	  my $inv_sig = $null;
+	  if (defined($score_distrib->{$matrix_name}->{$score}->{inv_Pval})) {
+	    my $Pval = $score_distrib->{$matrix_name}->{$score}->{inv_Pval};
+	    $Eval = $score_distrib->{$matrix_name}->{$score}->{inv_Pval}*$nb_of_tests;
+	    if ($Eval > 0) {
+	      $inv_sig = -log($Eval)/$log10;
+	    } else {
+	      $inv_sig = $infinite;
+	    }
+	  }
+	  $score_distrib->{$matrix_name}->{$score}->{inv_Eval} = $Eval;
+	  $score_distrib->{$matrix_name}->{$score}->{inv_sig} = $inv_sig;
+	}
+      }
+      &check_distrib_thresholds('inv_Eval');
+      &check_distrib_thresholds('inv_sig');
+
       ## Print the header;
       print $out ";\n; Score distribution\n";
       my @header = ("Matrix",
 		    "score",
-		    "counts",
-		    "cum",
+		    "occ",
+		    "occ_cum",
 		    "inv_cum",
 #		    "frequency",
 #		    "cum_freq",
@@ -865,58 +936,96 @@ models only (-markov 0 to 1).
 		   );
       if ($return_fields{distrib_proba}) {
 	push @header, ("distrib_prior",
-		       "distrib_Pval",
-		       "distrib_Eval",
-		       "distrib_sig");
+		       "exp_inv",
+		       "inv_Pval",
+		       "inv_Eval",
+		       "inv_sig",
+		       "rank",
+		      );
       }
       print $out "#", join  ("\t", @header), "\n";
 
-      ## Print table with one row per score and one column per matrix
+      ################################################################
+      ## Print score distributions
+      &RSAT::message::TimeWarn("Printing score distributions") if ($main::verbose >= 2);
       foreach my $matrix (@matrices) {
 	my $matrix_name = $matrix->get_attribute("name");
+	my @sorted_scores = sort {$a <=> $b} keys %{$score_distrib->{$matrix_name}};
+	&RSAT::message::Info("score range", $matrix_name, $sorted_scores[0], $sorted_scores[$#sorted_scores], scalar(@sorted_scores)) if ((scalar(@sorted_scores) >= 1) && ($main::verbose >= 3));
+
+	if ($return_fields{distrib_proba}) {
+	  @sorted_scores =  sort {
+	    $score_distrib->{$matrix_name}->{$a}->{inv_Pval} <=> $score_distrib->{$matrix_name}->{$b}->{inv_Pval}
+	    } keys %{$score_distrib->{$matrix_name}};
+	  &RSAT::message::Info("Sorting distribution by inv_Pval") if ($main::verbose >= 2);
+	}
+
+	my $inv_rank = 0;
 	foreach my $score (@sorted_scores) {
-	  my $count = $score_distrib->{$matrix_name}->{$score}->{occ} || 0;
-	  my $count_cum = $score_distrib_cum->{$matrix_name}->{$score} || 0;
-	  my $count_inv_cum = $null;
+
+	  ## Calculate inv_rank and check thresholds on inv_rank
+	  $inv_rank++;
+	  if ((defined($lth{inv_rank})) && ($inv_rank < $lth{inv_rank})) {
+	    delete($score_distrib->{$matrix_name}->{$score});
+	    next;
+	  }
+	  if ((defined($uth{inv_rank})) && ($inv_rank > $uth{inv_rank})) {
+	    delete($score_distrib->{$matrix_name}->{$score});
+	    next;
+	  }
+
+	  my $occ = $score_distrib->{$matrix_name}->{$score}->{occ};
+	  my $occ_cum = $score_distrib->{$matrix_name}->{$score}->{occ_cum};
+	  my $inv_cum = $null;
 	  my $freq_inv_cum = $null;
-	  if (defined ($score_distrib_inv_cum->{$matrix_name}->{$score})) {
-	    $count_inv_cum = $score_distrib_inv_cum->{$matrix_name}->{$score};
-	    $freq_inv_cum = $count_inv_cum/$cum_sum{$matrix_name};
+	  if (defined ($score_distrib->{$matrix_name}->{$score}->{inv_cum})) {
+	    $inv_cum = $score_distrib->{$matrix_name}->{$score}->{inv_cum};
+	    $freq_inv_cum = sprintf("%.6e", $inv_cum/$cum_sum{$matrix_name});
 	  }
 
 	  print $out join ("\t",
 			   $matrix->get_attribute("name"),
 			   $score,
-			   $count,
-			   $count_cum,
-			   $count_inv_cum,
-#			   sprintf("%.6e", $count/$cum_sum{$matrix_name}),
-#			   sprintf("%.6e", $count_cum/$cum_sum{$matrix_name}),
-			   sprintf("%.6e", $freq_inv_cum),
+			   $occ,
+			   $occ_cum,
+			   $inv_cum,
+#			   sprintf("%.6e", $occ/$cum_sum{$matrix_name}),
+#			   sprintf("%.6e", $occ_cum/$cum_sum{$matrix_name}),
+			   $freq_inv_cum,
 			  );
 	  if ($return_fields{distrib_proba}) {
 	    my $distrib_prior = $null;
-	    if (defined($score_distrib->{$matrix_name}->{$score}->{distrib_prior})) {
-	      $distrib_prior = sprintf("%.6e", $score_distrib->{$matrix_name}->{$score}->{distrib_prior});
+	    my $exp_inv = $null;
+	    if (defined($exp_score_distrib->{$matrix_name}->{$score}->{distrib_prior})) {
+	      $distrib_prior = sprintf("%.6e", $exp_score_distrib->{$matrix_name}->{$score}->{distrib_prior});
+	      $exp_inv = sprintf("%.2f", $score_distrib->{$matrix_name}->{$score}->{exp_inv});
 	    }
+
+	    ## Format Pval for printing
 	    my $Pval = $null;
-	    my $Eval = $null;
-	    my $sig = $null;
-	    if (defined($score_distrib->{$matrix_name}->{$score}->{distrib_Pval})) {
-	      $Pval = sprintf("%.6e", $score_distrib->{$matrix_name}->{$score}->{distrib_Pval});
-	      $Eval = sprintf("%.6e", 
-			     $score_distrib->{$matrix_name}->{$score}->{distrib_Pval}*$nb_of_tests);
-	      if ($Eval > 0) {
-		$sig = sprintf("%.2f", -log($Eval)/$log10);
-	      } else {
-		$sig = $infinite;
-	      }
+	    if (defined($score_distrib->{$matrix_name}->{$score}->{inv_Pval})) {
+	      $Pval = sprintf("%.6e", $score_distrib->{$matrix_name}->{$score}->{inv_Pval});
 	    }
+	    
+	    ## Format Eval for printing
+	    my $Eval = $null;
+	    if (defined($score_distrib->{$matrix_name}->{$score}->{inv_Eval})) {
+	      $Eval = sprintf("%.6e", $score_distrib->{$matrix_name}->{$score}->{inv_Eval});
+	    }
+	    
+	    ## Format inv_sig for printing
+	    my $inv_sig = $null;
+	    if (defined($score_distrib->{$matrix_name}->{$score}->{inv_sig})) {
+	      $inv_sig = sprintf("%.2f", $score_distrib->{$matrix_name}->{$score}->{inv_sig});
+	    }
+
 	    print $out "\t", join ("\t", 
 				   $distrib_prior,
+				   $exp_inv,
 				   $Pval,
 				   $Eval,
-				   $sig,
+				   $inv_sig,
+				   $inv_rank,
 				   );
 	  }
 	  print $out "\n";
@@ -1323,10 +1432,12 @@ Number of decimals displayed for the score.
 
 Threshold on some parameter (-lth: lower, -uth: upper threshold). 
 
-Supported threshold fields : score normw proba_M proba_B rank
+Supported threshold fields for the matches : score, normw, proba_M, proba_B, rank
+
+Supported threshold fields for score distributions: occ occ_sum occ_inv exp_inv inv_Pval inv_Eval inv_sig inv_rank
 
 =cut
-	    
+
 	    ### Lower threshold
 	} elsif ($arg eq "-lth") {
 	    my $thr_field = shift(@arguments);
@@ -1557,12 +1668,12 @@ sub Verbose {
 	if (defined($lth{$f})) {
 	    printf $main::out "\t%-5g", $lth{$f};
 	} else {
-	    print $main::out "\tNA";
+	    print $main::out "\t", $null;
 	}
 	if (defined($uth{$f})) {
 	    printf $main::out "\t%-5g", $uth{$f};
 	} else {
-	    print $main::out "\tNA";
+	    print $main::out "\t", $null;
 	}
 	print $main::out "\n";
     }
@@ -1603,8 +1714,8 @@ sub score_segment {
 
 
     ## Calculate segment weight and  normalized weight
-    my $score = "NA";
-    my $normw = "NA";
+    my $score = $null;
+    my $normw = $null;
     if (($proba_M > 0) && ($proba_B > 0)) {
 	$score = sprintf("%.${decimals}f", log($proba_M/$proba_B))/$log_base;
 
@@ -1622,6 +1733,7 @@ sub score_segment {
 
     if ($return_fields{distrib}) {
       my $round_score = sprintf("%.${distrib_decimals}f", $score);
+#      $round_score =~ s/^-(0.0+)$/$1/; ## Suppress the difference between -0.0 and +0.0 after the rounding
       my $matrix_name = $matrix->get_attribute("name");
       $score_distrib->{$matrix_name}->{$round_score}->{occ}++;
     }
@@ -1754,23 +1866,79 @@ sub print_match {
 
 =item B<check_thresholds>
 
-Check the lower and upper threshold for a given score. 
+Check the lower and upper threshold for a given hit.
 
 =cut
-
 sub check_thresholds {
     my ($key, $value) = @_;
     if ((defined($lth{$key})) && 
-	(($value eq "NA") || ($value < $lth{$key}))
+	(($value eq $null) || ($value < $lth{$key}))
        ) {
 	return 0;
     }
     if ((defined($uth{$key})) && 
-	(($value eq "NA") || ($value > $uth{$key}))
+	(($value eq $null) || ($value > $uth{$key}))
        ) {
 	return 0;
     }
     return 1;
+}
+
+################################################################
+=pod
+
+=item B<check_distrib_thresholds>
+
+Check the lower and upper threshold for a given parameter in the score
+distribution.
+
+=cut
+sub check_distrib_thresholds {
+  my ($key) = @_;
+
+  ## Check lower thresholds
+  if (defined($lth{$key})) {
+    &RSAT::message::TimeWarn("Checking lower threshold on score distibution", 
+			     $key, $lth{$key}) if ($main::verbose >= 2);
+    foreach my $matrix (@matrices) {
+      my $matrix_name = $matrix->get_attribute("name");
+      my @sorted_scores = sort {$a <=> $b} keys %{$score_distrib->{$matrix_name}};
+      &RSAT::message::Info("score range", $matrix_name, $sorted_scores[0], $sorted_scores[$#sorted_scores], scalar(@sorted_scores)) if ((scalar(@sorted_scores) >= 1) && ($main::verbose >= 3));
+      foreach my $score (@sorted_scores) {
+	if (($score_distrib->{$matrix_name}->{$score}->{$key} eq $null) || 
+	    ($score_distrib->{$matrix_name}->{$score}->{$key} < $lth{$key})) {
+	  &RSAT::message::Info("Deleting distribution item", $matrix_name, $score, 
+			       $key, $score_distrib->{$matrix_name}->{$score}->{$key},
+			       ' < lth', $lth{$key}) if ($main::verbose >= 5);
+	  delete($score_distrib->{$matrix_name}->{$score});
+	}
+      }
+      &RSAT::message::Info("Remaining distribution items", $matrix_name, 
+			  scalar(keys %{$score_distrib->{$matrix_name}})) if ($main::verbose >= 2);
+    }
+  }
+
+  ## Check upper thresholds
+  if (defined($uth{$key})) {
+    &RSAT::message::TimeWarn("Checking upper threshold on score distibution", 
+			     $key, $uth{$key}) if ($main::verbose >= 2);
+    foreach my $matrix (@matrices) {
+      my $matrix_name = $matrix->get_attribute("name");
+      my @sorted_scores = sort {$a <=> $b} keys %{$score_distrib->{$matrix_name}};
+      &RSAT::message::Info("score range", $matrix_name, $sorted_scores[0], $sorted_scores[$#sorted_scores], scalar(@sorted_scores)) if ((scalar(@sorted_scores) >= 1) && ($main::verbose >= 3));
+      foreach my $score (@sorted_scores) {
+	if (($score_distrib->{$matrix_name}->{$score}->{$key} eq $null) || 
+	    ($score_distrib->{$matrix_name}->{$score}->{$key} > $uth{$key})) {
+	  &RSAT::message::Info("Deleting distribution item", $matrix_name, $score, 
+			       $key, $score_distrib->{$matrix_name}->{$score}->{$key},
+			       ' > uth', $uth{$key}) if ($main::verbose >= 5);
+	  delete($score_distrib->{$matrix_name}->{$score});
+	}
+      }
+      &RSAT::message::Info("Remaining distribution items", $matrix_name, 
+			   scalar(keys %{$score_distrib->{$matrix_name}})) if ($main::verbose >= 2);
+    }
+  }
 }
 
 
