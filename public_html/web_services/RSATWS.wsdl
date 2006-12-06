@@ -57,8 +57,8 @@ targetNamespace="urn:RSATWS"
 	<xsd:element name="sequence" type="xsd:string"/>
 	<xsd:element name="tmp_infile" type="xsd:string"/>
 	<xsd:element name="format" type="xsd:string"/>
-	<xsd:element name="match_length" type="xsd:string"/>
-	<xsd:element name="mismatch" type="xsd:string"/>
+	<xsd:element name="match_length" type="xsd:int"/>
+	<xsd:element name="mismatch" type="xsd:int"/>
 	<xsd:element name="str" type="xsd:string"/>
 	<xsd:element name="delete" type="xsd:string"/>
 	<xsd:element name="mask_short" type="xsd:string"/>
@@ -69,7 +69,7 @@ targetNamespace="urn:RSATWS"
 	<xsd:element name="sequence" type="xsd:string"/>
 	<xsd:element name="tmp_infile" type="xsd:string"/>
 	<xsd:element name="format" type="xsd:string"/>
-	<xsd:element name="length" type="xsd:string"/>
+	<xsd:element name="length" type="xsd:int"/>
 	<xsd:element name="organism" type="xsd:string"/>
 	<xsd:element name="background" type="xsd:string"/>
 	<xsd:element name="stats" type="xsd:string"/>
@@ -188,11 +188,11 @@ targetNamespace="urn:RSATWS"
     <part name='format' type='string'>
       <documentation>Sequence format.</documentation>
     </part>
-    <part name='match_length' type='string'>
+    <part name='match_length' type='int'>
       <documentation>Minimal match length (default: 40)
       </documentation>
     </part>
-    <part name='mismatch' type='string'>
+    <part name='mismatch' type='int'>
       <documentation>Number of mismatches allowed (default: 3)
       </documentation>
     </part>
@@ -241,7 +241,7 @@ targetNamespace="urn:RSATWS"
     <part name='format' type='string'>
       <documentation>Input sequence format.</documentation>
     </part>
-    <part name='length' type='string'>
+    <part name='length' type='int'>
       <documentation>Oligomer length
       </documentation>
     </part>
