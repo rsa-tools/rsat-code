@@ -29,17 +29,15 @@ my $return_choice = 'both';  ## Accepted values: 'file', 'result', 'both'
 ## Gene-info parameters
 my $organism = 'Escherichia_coli_K12';  ## Name of the query organism
 #my $organism = 'Escherichia_colix_K12';
-#my @gene = ("metA", "metB", "metC");  ## List of query genes
-# my @gene = ("zorglB");
-my $query = 'metA';
+my @gene = ("metA", "metB", "metC");  ## List of query genes
+#my @gene = ("zorglB");
 my $full = 'full';  ## The -full option.
 my $noquery = '';  ## 
 my $descr = '';  ## Accepted value: 'descr'
 my $feattype = '';  ## If the -feattype option value is not specified, the default is used
 
 my %args = ('organism' => $organism,
-#	    'query' => \@gene,  ## An array in a hash has to be referenced (correct?)
-	    'query' => $query,
+	    'query' => \@gene,  ## An array in a hash has to be referenced (correct?)
 	    'full' => $full,
 	    'noquery' => $noquery,
 	    'descr' => $descr,
