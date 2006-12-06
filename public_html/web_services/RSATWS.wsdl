@@ -34,10 +34,12 @@ targetNamespace="urn:RSATWS"
 	  <xsd:element name="type" type="xsd:string"/>
 	  <xsd:element name="format" type="xsd:string"/>
 	  <xsd:element name="all" type="xsd:string"/>
+	  <xsd:element name="lw" type="xsd:int"/>
 	  <xsd:element name="label" type="xsd:string"/>
 	  <xsd:element name="label_sep" type="xsd:string"/>
 	  <xsd:element name="nocom" type="xsd:string"/>
 	  <xsd:element name="repeat" type="xsd:string"/>
+	  <xsd:element name="imp_pos" type="xsd:string"/>
 	<!---/xsd:sequence-->
 	<documentation>Parameters for the operation retrieve_seq</documentation>
       </xsd:complexType>
@@ -121,6 +123,9 @@ targetNamespace="urn:RSATWS"
     <part name='all' type='string'>
       <documentation>Return sequences for all the genes of the organism. </documentation>
     </part>
+    <part name='lw' type='int'>
+      <documentation>Line width (0 for all on one line). </documentation>
+    </part>
     <part name='label' type='string'>
       <documentation>Field(s) to be used in the sequence label.
       Multiple fields can be specified, separated by commas.  Default:
@@ -143,6 +148,11 @@ targetNamespace="urn:RSATWS"
 	Use the repeat masked version of the genome. 
         Attention : repeated regions are annotated for some genomes
         only.
+      </documentation>
+    </part>
+    <part name='imp_pos' type='string'>
+      <documentation>
+	Admit imprecise positions (use value 'imp_pos' to do so)
       </documentation>
     </part>
   </message>
