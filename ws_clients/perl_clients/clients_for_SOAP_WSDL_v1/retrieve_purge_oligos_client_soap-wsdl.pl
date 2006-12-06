@@ -36,8 +36,8 @@ my $organism = '-org Saccharomyces_cerevisiae';  ## Name of the query organism
 my @gene = ("PHO5", "PHO8", "PHO11", "PHO81", "PHO84");  ## List of query genes
 my $all = '';  ## -all option. This option is incompatible with the query list @gene (above)
 my $noorf = '-noorf';  ## Clip sequences to avoid pstream ORFs
-my $from = '';  ## Start position of the sequence
-my $to = '';  ## End position of te sequence
+my $from;  ## Start position of the sequence
+my $to;  ## End position of te sequence
 my $feattype = '';  ## -feattype option value is not defined, default is used
 my $type = '';  ## -type option value; other example:'-type downstream'
 my $format = '-format fasta';  ## the format of the retrieved sequence(s)
@@ -113,7 +113,7 @@ if ($som->fault){  ## Report error if any
 $return_choice = 'both';
 ## Parameters
 $format = '-format fasta';  ## The format of input sequences
-my $length = '-l 6';  ## Length of patterns to be discovered
+my $length = 6;  ## Length of patterns to be discovered
 my $background = '-bg upstream-noorf';  ## Type of background used
 my $stats = '-return occ,proba,rank';  ## Returned statistics
 my $noov = '-noov';  ## Do not allow overlapping patterns
