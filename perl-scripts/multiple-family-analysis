@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.174 2006/12/03 06:23:51 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.175 2006/12/06 18:40:28 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -527,6 +527,7 @@ sub SetFileNames {
 	## oligo-analysis results
 	$family{$family_name}->{oligo_file} =  "${family_name}/oligos_${family_name}/".$family{$family_name}->{file_prefix}.$oligo_suffix; 
 	$family{$family_name}->{oligo_assembly_file} = $family{$family_name}->{oligo_file}.".asmb";
+	$family{$family_name}->{oligo_pssm_file} = $family{$family_name}->{oligo_file}.".pssm";
 	$family{$family_name}->{oligo_selection} = $family{$family_name}->{oligo_file}."_selection";
 	$family{$family_name}->{oligo_ft_prefix} = $family{$family_name}->{oligo_file};
 #	$family{$family_name}->{selection_ft_prefix} = $family{$family_name}->{oligo_ft_prefix}."_report";
@@ -542,6 +543,7 @@ sub SetFileNames {
 	## dyad-analysis results
 	$family{$family_name}->{dyad_file} = "$family_name/dyads_${family_name}/".$family{$family_name}->{file_prefix}.$dyad_suffix;
 	$family{$family_name}->{dyad_assembly_file} = $family{$family_name}->{dyad_file}.".asmb";
+	$family{$family_name}->{dyad_pssm_file} = $family{$family_name}->{dyad_file}.".pssm";
 	$family{$family_name}->{dyad_ft_prefix} = $family{$family_name}->{dyad_file};
 	$family{$family_name}->{dyad_ft_file} = $family{$family_name}->{dyad_ft_prefix}.".ft";	
 	$family{$family_name}->{fmap_file} = $family{$family_name}->{dyad_file}.".${IMG_FORMAT}";
@@ -759,6 +761,7 @@ sub SetFileNames {
 	$family{$family_name}->{orm_suffix} = $orm_suffix;
 
 	$family{$family_name}->{orm_assembly_file} = $family{$family_name}->{orm_file}.".asmb";
+	$family{$family_name}->{orm_pssm_file} = $family{$family_name}->{orm_file}.".pssm";
 #	$family{$family_name}->{orm_selection} = $family{$family_name}->{orm_file}."_selection";
 	$family{$family_name}->{orm_ft_prefix} = $family{$family_name}->{orm_file};
 #	$family{$family_name}->{selection_ft_prefix} = $family{$family_name}->{orm_ft_prefix}."_report";
@@ -1050,12 +1053,19 @@ sub MergeOligoLengths {
 	push @merge_commands, "cat ".$oligo_file." >> ".$family{$family_name}->{oligo_file};
    }
    
-   ### fragment assembly
+   ### pattern assembly
    my $assembly_command = "pattern-assembly -v 1 ";
    $assembly_command .= " -i ".$family{$family_name}->{oligo_file};
    $assembly_command .= " -maxfl 1 -maxpat 200 -subst 1 ".$strands;
    $assembly_command .= " -o ".$family{$family_name}->{oligo_assembly_file};
    push @merge_commands, $assembly_command;
+ 
+   ### extract PSSM from pattern assembly
+   my $pssm_command = "convert-matrix -v 1 ";
+   $pssm_command .= " -i ".$family{$family_name}->{oligo_assembly_file};
+   $pssm_command .= " -in_format assembly -out_format patser -return counts,parameters";
+   $pssm_command .= " -o ".$family{$family_name}->{oligo_pssm_file};
+   push @merge_commands, $pssm_command;
  
    my $merge_command = join "; \\\n", @merge_commands;
    if ($task{oligos}) {
@@ -1177,9 +1187,18 @@ sub DyadAnalysis {
        $command .= " -mask ".$mask;
    }
 
-   ### fragment assembly
-   $command .= "; pattern-assembly -v -i $family{$family_name}->{dyad_file} -o $family{$family_name}->{dyad_assembly_file} ${strands} -maxfl 1 -maxpat 200 ";
+   ### pattern assembly
+   $command .= "; pattern-assembly -v";
+   $command .= " -i ".$family{$family_name}->{dyad_file};
+   $command .= " -o ".$family{$family_name}->{dyad_assembly_file};
+   $command .=  " -maxfl 1 -maxpat 200 ".${strands};
    
+   ### extract PSSM from pattern assembly
+   $command .= "; convert-matrix -v 1 ";
+   $command .= " -i ".$family{$family_name}->{dyad_assembly_file};
+   $command .= " -in_format assembly -out_format patser -return counts,parameters";
+   $command .= " -o ".$family{$family_name}->{dyad_pssm_file};
+
    if ($batch) {
        push @main::batch_commands, $command;
    } else {
@@ -1369,6 +1388,12 @@ sub orm {
        $orm_command .= "; pattern-assembly -v  -maxfl 1 -subst 1 -maxpat 200 ".${strands};
        $orm_command .= " -i ".$family{$family_name}->{orm_file};
        $orm_command .= " -o ".$family{$family_name}->{orm_assembly_file};
+
+       ### extract PSSM from pattern assembly
+       $orm_command .= "; convert-matrix -v 1 ";
+       $orm_command .= " -i ".$family{$family_name}->{orm_assembly_file};
+       $orm_command .= " -in_format assembly -out_format patser -return counts,parameters";
+       $orm_command .= " -o ".$family{$family_name}->{orm_pssm_file};
    }
 
    if ($batch) {
@@ -1567,6 +1592,7 @@ sub SyntheticTable {
 		       $col, 
 		       patterns=>$family{$family_name}->{oligo_file}, 
 		       assembly=>$family{$family_name}->{oligo_assembly_file}, 
+		       pssm=>$family{$family_name}->{oligo_pssm_file}, 
 		       validation=>$family{$family_name}->{oligo_vs_known}, 
 		       validation_table_relw=>$family{$family_name}->{oligo_vs_known_relw_table}, 
 		       validation_table_weight=>$family{$family_name}->{oligo_vs_known_weight_table}, 
@@ -1580,6 +1606,7 @@ sub SyntheticTable {
 		       $col, 
 		       patterns=>$family{$family_name}->{dyad_file}, 
 		       assembly=>$family{$family_name}->{dyad_assembly_file}, 
+		       pssm=>$family{$family_name}->{dyad_pssm_file}, 
 		       validation=>$family{$family_name}->{dyad_vs_known}, 
 		       validation_table_relw=>$family{$family_name}->{dyad_vs_known_relw_table}, 
 		       validation_table_weight=>$family{$family_name}->{dyad_vs_known_weight_table}, 
@@ -1593,6 +1620,7 @@ sub SyntheticTable {
 		       $col, 
 		       patterns=>$family{$family_name}->{orm_file}, 
 		       assembly=>$family{$family_name}->{orm_assembly_file}, 
+		       pssm=>$family{$family_name}->{orm_pssm_file}, 
 		       validation=>$family{$family_name}->{orm_vs_known}, 
 		       validation_table_relw=>$family{$family_name}->{orm_vs_known_relw_table}, 
 		       validation_table_weight=>$family{$family_name}->{orm_vs_known_weight_table}, 
@@ -1852,6 +1880,7 @@ sub IndexPatterns {
    my $base = "../";
    my $type = $args{type};
    my $assembly_file = $args{assembly};
+   my $pssm_file = $args{pssm};
    my $pattern_file = $args{patterns};
    my $validation_file = $args{validation};
    my $validation_table_relw_file = $args{validation_table_relw};
@@ -1897,6 +1926,7 @@ sub IndexPatterns {
 	$table[$row][$col] .= "<a href=".$base.$pattern_dir.">[".$type."]</a>\n";
 	$table[$row][$col] .= "<a href=".$base.$pattern_file.">[patt]</a>\n";
 	$table[$row][$col] .= "<a href=".$base.$assembly_file.">[asmb]</a>\n";
+	$table[$row][$col] .= "<a href=".$base.$pssm_file.">[pssm]</a>\n";
 	$table[$row][$col] .= "<a href=".$base.$pattern_file.".".${IMG_FORMAT}.">[".${IMG_FORMAT}."]</a>\n";
 	if ($htmaps) {
 	    $table[$row][$col] .= "<a href=".$base.$pattern_file.".html>[html]</a>\n";
