@@ -12,6 +12,9 @@
 use strict;
 use SOAP::WSDL;
 
+
+warn "\nINFO: This demo script sends a set of sequences to the RSAT web service, and runs oligo-analysis to detect over-represented oligonuclotides\n\n";
+
 ## WSDL location
 my $WSDL = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.wsdl';
 my $proxy = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.cgi';

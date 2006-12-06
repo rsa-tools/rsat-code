@@ -15,6 +15,10 @@ use strict;
 use SOAP::WSDL;
 #use SOAP::Lite +trace;
 
+
+warn "\nThis demo script illustrates a work flow combining three requests to the RSAT web services:\n\tretrieve-seq | purge seq | oligo-analysis\n\n";
+
+
 ## Service location
 my $server = 'http://localhost/rsat/web_services';
 #my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
@@ -40,7 +44,7 @@ my $from;  ## Start position of the sequence
 my $to;  ## End position of te sequence
 my $feattype = '';  ## -feattype option value is not defined, default is used
 my $type = '';  ## -type option value; other example:'-type downstream'
-my $format = '-format fasta';  ## the format of the retrieved sequence(s)
+my $format = 'fasta';  ## the format of the retrieved sequence(s)
 my $label = '';  ## Choice of label for the retrieved sequence(s)
 my $label_sep = '';  ## Choice of separator for the label(s) of the retrieved sequence(s)
 my $nocom = '';  ## Other possible value = '-nocom'
@@ -53,7 +57,7 @@ my %args = ('return' => $return_choice,
 	    'to' => $to,
 	    'feattype' => $feattype,
 	    'type' => $type,
-	    'format' => $format,
+#	    'format' => $format,
 	    'all' => $all,
 	    'label' => $label,
 	    'label_sep' => $label_sep,
@@ -111,8 +115,9 @@ if ($som->fault){  ## Report error if any
 
 ## Return option
 $return_choice = 'both';
+
 ## Parameters
-$format = '-format fasta';  ## The format of input sequences
+my $format = 'fasta';  ## The format of input sequences
 my $length = 6;  ## Length of patterns to be discovered
 my $background = '-bg upstream-noorf';  ## Type of background used
 my $stats = '-return occ,proba,rank';  ## Returned statistics
