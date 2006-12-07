@@ -1,17 +1,15 @@
 <?xml version="1.0"?>
 <?xml-stylesheet type="text/xsl" href="RSATWS.xsl"?>
 <definitions name="RSATWS"
-targetNamespace="urn:RSATWS"
-          xmlns:tns="urn:RSATWS"
+  targetNamespace="http://rsat/RSATWS"
+          xmlns:tns="http://rsat/RSATWS"
+	  xmlns:xsd1="http://rsat/RSATWS.xsd"
           xmlns:xsd="http://www.w3.org/2001/XMLSchema"
-          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xmlns="http://schemas.xmlsoap.org/wsdl/"
-          xmlns:enc="http://schemas.xmlsoap.org/soap/encoding/"
-	  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
-	  xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">
+	  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/">
 
   <types>
-    <xsd:schema targetNamespace="urn:RSATWS" xmlns="http://www.w3.org/2001/XMLSchema">
+    <xsd:schema targetNamespace="http://rsat/RSATWS.xsd">
 
       <xsd:complexType name="ArrayOfString">
          <xsd:complexContent>
@@ -21,12 +19,11 @@ targetNamespace="urn:RSATWS"
          </xsd:complexContent>
       </xsd:complexType>
 
-      <xsd:complexType name="RetrieveSequencesRequest">
-        <!--xsd:sequence minOccurs="0" maxOccurs="1"-->
+      <xsd:complexType name="RetrieveSequenceRequest">
 	  <xsd:element name="return" type="xsd:string"/>
-	  <xsd:element name="organism" type="xsd:string"/>
+	  <xsd:element name="organism" type="xsd:string" minOccurs="1" maxOccurs="1"/>
 	  <!--xsd:element name="query" type="tns:ArrayOfString"/-->
-	  <xsd:element name="query" type="xsd:string"/>
+	  <xsd:element name="query" type="xsd:string" minOccurs="1" maxOccurs="unbounded"/>
 	  <xsd:element name="noorf" type="xsd:string"/>
 	  <xsd:element name="from" type="xsd:int"/>
 	  <xsd:element name="to" type="xsd:int"/>
@@ -40,11 +37,10 @@ targetNamespace="urn:RSATWS"
 	  <xsd:element name="nocom" type="xsd:string"/>
 	  <xsd:element name="repeat" type="xsd:string"/>
 	  <xsd:element name="imp_pos" type="xsd:string"/>
-	<!---/xsd:sequence-->
 	<documentation>Parameters for the operation retrieve_seq</documentation>
       </xsd:complexType>
 
-      <xsd:element name="RetrieveSequencesResponse">
+      <xsd:element name="RetrieveSequenceResponse">
         <xsd:complexType>
 	  <xsd:element name="file" type="xsd:string"/>
 	  <xsd:element name="command" type="xsd:string"/>
@@ -52,7 +48,7 @@ targetNamespace="urn:RSATWS"
 	</xsd:complexType>
       </xsd:element>
 
-      <xsd:complexType name="PurgeSequencesRequest">
+      <xsd:complexType name="PurgeSequenceRequest">
         <xsd:element name="return" type="xsd:string"/>
 	<xsd:element name="sequence" type="xsd:string"/>
 	<xsd:element name="tmp_infile" type="xsd:string"/>
@@ -80,8 +76,8 @@ targetNamespace="urn:RSATWS"
       </xsd:complexType>
 
       <xsd:complexType name="GeneInfoRequest">
-        <xsd:element name="organism" type="xsd:string"/>
-	<xsd:element name="query" type="xsd:string"/>
+        <xsd:element name="organism" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+	<xsd:element name="query" type="xsd:string" minOccurs="1" maxOccurs="unbounded"/>
 	<xsd:element name="full" type="xsd:string"/>
 	<xsd:element name="noquery" type="xsd:string"/>
 	<xsd:element name="descr" type="xsd:string"/>
@@ -96,7 +92,7 @@ targetNamespace="urn:RSATWS"
     <part name='return' type='string'>
       <documentation>Return type. Accepted values: 'file' (result is stored on a file on the server), 'result' (result is directly transferred to the client), or  'both'.</documentation>
     </part>
-    <part name='organism' type='string'>
+    <part name='organism' type='string' minOccurs="1" maxOccurs="1">
       <documentation>Organism</documentation>
     </part>
     <part name='query' type='string'>
@@ -331,17 +327,17 @@ targetNamespace="urn:RSATWS"
   <!-- end of parameters description -->
   
   <message name="RetrieveSequenceInput">
-      <part name="request" type="tns:RetrieveSequencesRequest"/>
+      <part name="request" type="tns:RetrieveSequenceRequest"/>
   </message>
     
   <message name="RetrieveSequenceOutput">
       <!--part name="response" type="xsd:string"/-->
-      <!--part name="response" type="tns:RetrieveSequencesResponse"/-->
-      <part name="response" element="tns:RetrieveSequencesResponse"/>
+      <!--part name="response" type="tns:RetrieveSequenceResponse"/-->
+      <part name="response" element="tns:RetrieveSequenceResponse"/>
   </message>
 
   <message name="PurgeSequenceInput">
-      <part name="request" type="tns:PurgeSequencesRequest"/>
+      <part name="request" type="tns:PurgeSequenceRequest"/>
   </message>
 
   <message name="PurgeSequenceOutput">
@@ -368,73 +364,69 @@ targetNamespace="urn:RSATWS"
       <operation name="retrieve_seq">
          <!-- Name of input/output must be specified here -->
          <input name="RetrieveSequenceRequest" message="tns:RetrieveSequenceInput"/>
-         <output name="RetrieveSequenceResponse" message="tns:RetrieveSequenceOutput"/>
-         
-      <documentation>
-	Returns upstream, downstream or coding DNA sequences for list
-	of query genes.
-      </documentation>
+         <output name="RetrieveSequenceResponse" message="tns:RetrieveSequenceOutput"/>         
+	 <documentation>Returns upstream, downstream or coding DNA sequences
+           for list of query genes.
+         </documentation>
       </operation>
       <operation name="purge_seq">
          <input name="PurgeSequenceRequest" message="tns:PurgeSequenceInput"/>
          <output name="PurgeSequenceResponse" message="tns:PurgeSequenceOutput"/>
-      <documentation>Mask repeated fragments of an input sequence.</documentation>
+         <documentation>Mask repeated fragments of an input sequence.</documentation>
       </operation>
       <operation name="oligo_analysis">
          <input name="OligoAnalysisRequest" message="tns:OligoAnalysisInput"/>
          <output name="OligoAnalysisResponse" message="tns:OligoAnalysisOutput"/>
-      <documentation>
-	Analysis of the statistical significance of all the oligomers
-	of a given size in a sequence. Commonly used to detect
-	over-represented oligonucleotides in a set of promoter
-	sequences.
-      </documentation>
+         <documentation>Analysis of the statistical significance of all the oligomers
+	   of a given size in a sequence. Commonly used to detect
+	   over-represented oligonucleotides in a set of promoter
+	   sequences.
+         </documentation>
       </operation>
       <operation name="gene_info">
          <input name="GeneInfoRequest" message="tns:GeneInfoInput"/>
          <output name="GeneInfoResponse" message="tns:GeneInfoOutput"/>
-      <documentation>
-	Get information about genes.
-      </documentation>
+         <documentation>Get information about genes.
+         </documentation>
       </operation>
   </portType>
 
   <binding name="RSATWSBinding" type="tns:RSATWSPortType">
       <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
       <operation name="retrieve_seq">
-         <soap:operation soapAction="urn:RSATWS#retrieve_seq"/>
+         <soap:operation soapAction="http://rsat/retrieve_seq"/>
          <input>
-             <soap:body use="literal" namespace="urn:RSATWS" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+             <soap:body use="literal" namespace="http://rsat/RSATWS" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
          </input>
          <output>
-             <soap:body use="literal" namespace="urn:RSATWS" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+             <soap:body use="literal" namespace="http://rsat/RSATWS" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
          </output>
       </operation>
       <operation name="purge_seq">
-         <soap:operation soapAction="urn:RSATWS#purge_seq"/>
+         <soap:operation soapAction="http://rsat/purge_seq"/>
          <input>
-             <soap:body use="literal" namespace="urn:RSATWS" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+             <soap:body use="literal" namespace="http://rsat/RSATWS" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
          </input>
          <output>
-             <soap:body use="literal" namespace="urn:RSATWS" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+             <soap:body use="literal" namespace="http://rsat/RSATWS" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
          </output>
       </operation>
       <operation name="oligo_analysis">
-         <soap:operation soapAction="urn:RSATWS#oligo_analysis"/>
+         <soap:operation soapAction="http://rsat/oligo_analysis"/>
          <input>
-             <soap:body use="literal" namespace="urn:RSATWS" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+             <soap:body use="literal" namespace="http://rsat/RSATWS" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
          </input>
          <output>
-             <soap:body use="literal" namespace="urn:RSATWS" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+             <soap:body use="literal" namespace="http://rsat/RSATWS" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
          </output>
       </operation>
       <operation name="gene_info">
-         <soap:operation soapAction="urn:RSATWS#gene_info"/>
+         <soap:operation soapAction="http://rsat/gene_info"/>
          <input>
-             <soap:body use="literal" namespace="urn:RSATWS" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+             <soap:body use="literal" namespace="http://rsat/RSATWS" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
          </input>
          <output>
-             <soap:body use="literal" namespace="urn:RSATWS" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+             <soap:body use="literal" namespace="http://rsat/RSATWS" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
          </output>
       </operation>
   </binding>
