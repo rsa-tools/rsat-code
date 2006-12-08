@@ -20,7 +20,7 @@
       </xsd:complexType>
 
       <xsd:complexType name="RetrieveSequenceRequest">
-	  <xsd:element name="return" type="xsd:string" minOccurs="1"/>
+	  <xsd:element name="output" type="xsd:string"/>
 	  <xsd:element name="organism" type="xsd:string" minOccurs="1" maxOccurs="1"/>
 	  <!--xsd:element name="query" type="tns:ArrayOfString"/-->
 	  <xsd:element name="query" type="xsd:string" minOccurs="1" maxOccurs="unbounded"/>
@@ -42,14 +42,14 @@
 
       <xsd:element name="RetrieveSequenceResponse">
         <xsd:complexType>
-	  <xsd:element name="file" type="xsd:string"/>
+	  <xsd:element name="server" type="xsd:string"/>
 	  <xsd:element name="command" type="xsd:string"/>
-	  <xsd:element name="result" type="xsd:string"/>
+	  <xsd:element name="client" type="xsd:string"/>
 	</xsd:complexType>
       </xsd:element>
 
       <xsd:complexType name="PurgeSequenceRequest">
-        <xsd:element name="return" type="xsd:string" minOccurs="1"/>
+        <xsd:element name="output" type="xsd:string" minOccurs="1"/>
 	<xsd:element name="sequence" type="xsd:string"/>
 	<xsd:element name="tmp_infile" type="xsd:string"/>
 	<xsd:element name="format" type="xsd:string"/>
@@ -61,7 +61,7 @@
       </xsd:complexType>
 
       <xsd:complexType name="OligoAnalysisRequest">
-        <xsd:element name="return" type="xsd:string" minOccurs="1"/>
+        <xsd:element name="output" type="xsd:string" minOccurs="1"/>
 	<xsd:element name="sequence" type="xsd:string"/>
 	<xsd:element name="tmp_infile" type="xsd:string"/>
 	<xsd:element name="format" type="xsd:string"/>
@@ -89,8 +89,8 @@
   
   <!-- Parameters Definition -->
   <message name='RetrieveSequenceRequest'>
-    <part name='return' type='string' minOccurs='1'>
-      <documentation>Return type. Accepted values: 'file' (result is stored on a file on the server), 'result' (result is directly transferred to the client), or  'both'.</documentation>
+    <part name='output' type='string'>
+      <documentation>Return type. Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client), or  'both'.</documentation>
     </part>
     <part name='organism' type='string' minOccurs='1'>
       <documentation>Organism (required)</documentation>
@@ -154,7 +154,7 @@
   </message>
   
   <message name='RetrieveSequenceResponse'>
-    <part name='file' type='string'>
+    <part name='server' type='string'>
       <documentation>Location of the result file on the server. This
       can be used as input for a further request. </documentation>
     </part>
@@ -163,14 +163,14 @@
       server.
       </documentation>
     </part>
-    <part name='result' type='string'>
+    <part name='client' type='string'>
       <documentation>The result sequence(s). </documentation>
     </part>
   </message>
 
   <message name='PurgeSequenceRequest'>
-    <part name='return' type='string' minOccurs='1'>
-      <documentation>Return type. Accepted values: 'file' (result is stored on a file on the server), 'result' (result is directly transferred to the client), or  'both'.
+    <part name='output' type='string'>
+      <documentation>Return type. Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client), or  'both'.
       </documentation>
     </part>
     <part name='sequence' type='string'>
@@ -208,7 +208,7 @@
   </message>
 
   <message name='PurgeSequenceResponse'>
-    <part name='file' type='string'>
+    <part name='server' type='string'>
       <documentation>Location of the result file on the server. This can be used as input for a further request. </documentation>
     </part>
     <part name='command' type='string'>
@@ -216,14 +216,14 @@
       server.
       </documentation>
     </part>
-    <part name='result' type='string'>
+    <part name='client' type='string'>
       <documentation>The result sequence(s). </documentation>
     </part>
   </message>
 
   <message name='OligoAnalysisRequest'>
-    <part name='return' type='string' minOccurs='1'>
-      <documentation>Return type. Accepted values: 'file' (result is stored on a file on the server), 'result' (result is directly transferred to the client), or  'both'.
+    <part name='output' type='string'>
+      <documentation>Return type. Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client), or  'both'.
       </documentation>
     </part>
     <part name='sequence' type='string'>
@@ -273,7 +273,7 @@
   </message>
 
   <message name='OligoAnalysisResponse'>
-    <part name='file' type='string'>
+    <part name='server' type='string'>
       <documentation>Location of the result file on the server. This
       can be used as input for a further request. </documentation>
     </part>
@@ -282,7 +282,7 @@
       server.
       </documentation>
     </part>
-    <part name='result' type='string'>
+    <part name='client' type='string'>
       <documentation>The result discovered pattern(s). </documentation>
     </part>
   </message>
@@ -319,7 +319,7 @@
       server.
       </documentation>
     </part>
-    <part name='result' type='string'>
+    <part name='client' type='string'>
       <documentation>The result gene(s) info(s). </documentation>
     </part>
   </message>
