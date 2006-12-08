@@ -23,8 +23,8 @@ my $soap=SOAP::WSDL->new(wsdl => $WSDL)->proxy($proxy);
 
 $soap->wsdlinit;
 
-## Return option
-my $return_choice = 'both';  ## Accepted values: 'file', 'result', 'both'
+## Output option
+my $output_choice = 'both';  ## Accepted values: 'server', 'client', 'both'
 
 ## Oligo-analysis parameters
 my $sequence = '>NP_009651.1    PHO5; upstream from -800 to -1; size: 800; location: NC_001134.7 430946 431745 R; upstream neighbour: NP_009652.1 (distance: 1084)
@@ -48,7 +48,7 @@ my $str = '-2str';  ## Search on both strands
 my $sort = '-sort';  ## Sort the result according to score
 my $lth = '-lth occ_sig 0';  ## Lower limit to score is 0, less significant patterns are not displayed
 
-my %args = ('return' => $return_choice, 
+my %args = ('output' => $output_choice, 
 	    'sequence' => $sequence, 
 	    'format' => $format,
 	    'length' => $length,
@@ -76,15 +76,15 @@ if ($som->fault){  ## Report error if any
     print "Command used on the server: ".$command, "\n";
 
     ## Report the result
-    if ($return_choice eq 'file') {
-	my $server_file = $results{'file'};
+    if ($output_choice eq 'server') {
+	my $server_file = $results{'server'};
 	print "Result file on the server: ".$server_file;
-    } elsif ($return_choice eq 'result') {
-	my $result = $results{'result'};
+    } elsif ($output_choice eq 'client') {
+	my $result = $results{'client'};
 	print "Discovered oligo(s): \n".$result;
-    } elsif ($return_choice eq 'both') {
-	my $server_file = $results{'file'};
-	my $result = $results{'result'};
+    } elsif ($output_choice eq 'both') {
+	my $server_file = $results{'server'};
+	my $result = $results{'client'};
 	print "Result file on the server: ".$server_file;
 	print "Discovered oligo(s): \n".$result;
     }

@@ -21,8 +21,8 @@ my $soap=SOAP::WSDL->new(wsdl => $WSDL)->proxy($proxy);
 
 $soap->wsdlinit;
 
-## Return option
-my $return_choice = 'both';  ## Accepted values: 'file', 'result', 'both'
+## Output option
+my $output_choice = 'both';  ## Accepted values: 'server', 'client', 'both'
 
 ## Purge-sequence parameters
 my $sequence = '>NP_009576.1    YBR020w; upstream from -800 to -1; size: 800; location: NC_001134.7 278221 279020 D
@@ -36,7 +36,7 @@ my $str = '';  ## Discard duplications on direct or both strands; default is use
 my $delete = '';  ## Other example: '-del' to delete repeats instead of masking them
 my $mask_short = '';  ## -mask_short option to mask sequences shorter than specified length
 
-my %args = ('return'=> $return_choice,
+my %args = ('output'=> $output_choice,
 	    'sequence'=> $sequence,
 	    'format'=> $format,
 	    'match_length'=> $match_length,
@@ -61,15 +61,15 @@ if ($som->fault){  ## Report error if any
     print "Command used on the server: ".$command, "\n";
 
     ## Report the result
-    if ($return_choice eq 'file') {
-	my $server_file = $results{'file'};
+    if ($output_choice eq 'server') {
+	my $server_file = $results{'server'};
 	print "Result file on the server: ".$server_file;
-    } elsif ($return_choice eq 'result') {
-	my $result = $results{'result'};
+    } elsif ($output_choice eq 'client') {
+	my $result = $results{'client'};
 	print "Purged sequence(s): \n".$result;
-    } elsif ($return_choice eq 'both') {
-	my $server_file = $results{'file'};
-	my $result = $results{'result'};
+    } elsif ($output_choice eq 'both') {
+	my $server_file = $results{'server'};
+	my $result = $results{'client'};
 	print "Result file on the server: ".$server_file;
 	print "Purged sequence(s): \n".$result;
     }
