@@ -86,6 +86,26 @@ use Data::Dumper;
     return $object;
   }
 
+  ### Add a previously created  object and store its references in the class holder
+  ### usage : $object = $class_holder->add_object(id=>$id,%other_args);
+  sub add_object {
+    my ($class_holder, $object, %args) = @_;
+    my $object_type = $class_holder->get_object_type();
+    
+    ### make sure the new object has an ID
+    unless ($object->get_attribute("id")) {
+      my $auto_id = sprintf "%s%6d", $class_holder->get_prefix(), $class_holder->get_count + 1;
+      $auto_id =~ s/ /0/g;
+      $args{id} = $auto_id;
+    }
+    $class_holder->{_count}++;
+    push @{$class_holder->{_objects}}, $object;
+    ${$class_holder->{_id_index}}{$args{id}} = $object;
+    $class_holder->index_object_id($object);
+    $class_holder->index_object_names($object);
+    return $object;
+  }
+
   ### accessors for the class holder attributes
   sub get_object_type {
     my ($class_holder) = @_;
