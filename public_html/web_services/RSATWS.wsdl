@@ -20,7 +20,7 @@
       </xsd:complexType>
 
       <xsd:complexType name="RetrieveSequenceRequest">
-	  <xsd:element name="return" type="xsd:string"/>
+	  <xsd:element name="return" type="xsd:string" minOccurs="1"/>
 	  <xsd:element name="organism" type="xsd:string" minOccurs="1" maxOccurs="1"/>
 	  <!--xsd:element name="query" type="tns:ArrayOfString"/-->
 	  <xsd:element name="query" type="xsd:string" minOccurs="1" maxOccurs="unbounded"/>
@@ -49,7 +49,7 @@
       </xsd:element>
 
       <xsd:complexType name="PurgeSequenceRequest">
-        <xsd:element name="return" type="xsd:string"/>
+        <xsd:element name="return" type="xsd:string" minOccurs="1"/>
 	<xsd:element name="sequence" type="xsd:string"/>
 	<xsd:element name="tmp_infile" type="xsd:string"/>
 	<xsd:element name="format" type="xsd:string"/>
@@ -61,7 +61,7 @@
       </xsd:complexType>
 
       <xsd:complexType name="OligoAnalysisRequest">
-        <xsd:element name="return" type="xsd:string"/>
+        <xsd:element name="return" type="xsd:string" minOccurs="1"/>
 	<xsd:element name="sequence" type="xsd:string"/>
 	<xsd:element name="tmp_infile" type="xsd:string"/>
 	<xsd:element name="format" type="xsd:string"/>
@@ -89,13 +89,13 @@
   
   <!-- Parameters Definition -->
   <message name='RetrieveSequenceRequest'>
-    <part name='return' type='string'>
+    <part name='return' type='string' minOccurs="1">
       <documentation>Return type. Accepted values: 'file' (result is stored on a file on the server), 'result' (result is directly transferred to the client), or  'both'.</documentation>
     </part>
-    <part name='organism' type='string' minOccurs="1" maxOccurs="1">
-      <documentation>Organism</documentation>
+    <part name='organism' type='string' minOccurs="1">
+      <documentation>Organism (required)</documentation>
     </part>
-    <part name='query' type='string'>
+    <part name='query' type='string' minOccurs="1">
       <documentation>A list of query genes</documentation>
     </part>
     <part name='noorf' type='string'>
@@ -169,7 +169,7 @@
   </message>
 
   <message name='PurgeSequenceRequest'>
-    <part name='return' type='string'>
+    <part name='return' type='string' minOccurs="1">
       <documentation>Return type. Accepted values: 'file' (result is stored on a file on the server), 'result' (result is directly transferred to the client), or  'both'.
       </documentation>
     </part>
@@ -222,7 +222,7 @@
   </message>
 
   <message name='OligoAnalysisRequest'>
-    <part name='return' type='string'>
+    <part name='return' type='string' minOccurs="1">
       <documentation>Return type. Accepted values: 'file' (result is stored on a file on the server), 'result' (result is directly transferred to the client), or  'both'.
       </documentation>
     </part>
@@ -241,7 +241,7 @@
       <documentation>Oligomer length
       </documentation>
     </part>
-    <part name='organism' type='string'>
+    <part name='organism' type='string' minOccurs="1">
       <documentation>Organism</documentation>
     </part>
     <part name='background' type='string'>
@@ -288,10 +288,10 @@
   </message>
 
 <message name='GeneInfoRequest'>
-    <part name='organism' type='string'>
+    <part name='organism' type='string' minOccurs="1">
       <documentation>Organism</documentation>
     </part>
-    <part name='query' type='string'>
+    <part name='query' type='string' minOccurs="1">
       <documentation>Gene for which you want info on
       </documentation>
     </part>
