@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.21 2006/12/08 15:10:24 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.22 2006/12/08 15:57:57 jvanheld Exp $
 #
 # Time-stamp: <2003-10-11 00:30:17 jvanheld>
 #
@@ -164,23 +164,80 @@ if ($query->param('output') eq "display") {
 
     #### pattern assembly ####
     if ((&IsReal($query->param('lth_occ_sig'))) && ($query->param('lth_occ_sig')>= -1)) {
-	$pattern_assembly_command = "$SCRIPTS/pattern-assembly -v 1 -subst 0";
-	if ($query->param('strand') =~ /single/) {
-	    $pattern_assembly_command .= " -1str";
-	} else {
-	    $pattern_assembly_command .= " -2str";
-	}
-	$pattern_assembly_command .= " -maxfl 1 -subst 0 ";
+
+# 	$pattern_assembly_command = "$SCRIPTS/pattern-assembly -v 1 -subst 0";
+# 	if ($query->param('strand') =~ /single/) {
+# 	    $pattern_assembly_command .= " -1str";
+# 	} else {
+# 	    $pattern_assembly_command .= " -2str";
+# 	}
+# 	$pattern_assembly_command .= " -maxfl 1 -subst 0 ";
+# 	print "<PRE>pattern-assembly command: $pattern_assembly_command<P>\n</PRE>" if ($ECHO >=1);
 	
-	print "<H4>Pattern assembly</H4>\n";
-	open CLUSTERS, "$pattern_assembly_command -i $result_file |";
+# 	print "<H4>Pattern assembly</H4>\n";
+# 	open CLUSTERS, "$pattern_assembly_command -i $result_file |";
+# 	print "<PRE>\n";
+# 	while (<CLUSTERS>) {
+# 	    s|$RSA/||g;
+# 	    print;
+# 	}
+# 	print "</PRE>\n";
+# 	close(CLUSTERS);
+
+
+	## Assemble the significant patterns with pattern-assembly
+	$assembly_file = "$TMP/$tmp_file_name.asmb";
+	$pattern_assembly_command = "$SCRIPTS/pattern-assembly -v 1 -subst 1";
+	if ($query->param('strand') =~ /single/) {
+	  $pattern_assembly_command .= " -1str";
+	} else {
+	  $pattern_assembly_command .= " -2str";
+	}
+	$pattern_assembly_command .= "  -i $result_file";
+	$pattern_assembly_command .= "  -o $assembly_file";
+
+	print "<H2>Pattern assembly</H2>\n";
+	print "<PRE>pattern-assembly command: $pattern_assembly_command<P>\n</PRE>" if ($ECHO >=1);
+	system "$pattern_assembly_command";
+	open ASSEMBLY, $assembly_file;
 	print "<PRE>\n";
-	while (<CLUSTERS>) {
-	    s|$RSA/||g;
-	    print;
+	while (<ASSEMBLY>) {
+	  s|$RSA/||g;
+	  print;
 	}
 	print "</PRE>\n";
-	close(CLUSTERS);
+	close(ASSEMBLY);
+
+
+	## Convert pattern-assembly result into matrix profiles to be displayed on the screen
+	$profile_file = "$TMP/$tmp_file_name.profile";
+	$profile_command = "$SCRIPTS/convert-matrix -v 1 ";
+	$profile_command .= " -in_format assembly -out_format patser";
+	$profile_command .= " -return profile,parameters";
+	$profile_command .= " -i $assembly_file";
+	$profile_command .= " -o $profile_file";
+	print "<PRE>command to generate profiles: $profile_command<P>\n</PRE>" if ($ECHO >=1);
+	system "$profile_command";
+	print "<H2>Position-specific scoring matrices (PSSM)</H2>\n";
+	open PROFILE, $profile_file;
+	print "<PRE>\n";
+	while (<PROFILE>) {
+	  s|$RSA/||g;
+	  print;
+	}
+	print "</PRE>\n";
+	close(PROFILE);
+
+	## Convert pattern-assembly result into PSSM for piping to other tools
+	$pssm_file = "$TMP/$tmp_file_name.pssm";
+	$pssm_command = "$SCRIPTS/convert-matrix -v 0 ";
+	$pssm_command .= " -in_format assembly -out_format patser";
+	$pssm_command .= " -return counts";
+	$pssm_command .= " -i $assembly_file";
+	$pssm_command .= " -o $pssm_file";
+	print "<PRE>command to generate matrices: $pssm_command<P>\n</PRE>" if ($ECHO >=1);
+	system "$pssm_command";
+
     }
 
     &PipingForm();
@@ -225,7 +282,7 @@ sub PipingForm {
 <INPUT type="hidden" NAME="pattern_file" VALUE="$result_file">
 <INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 <INPUT type="hidden" NAME="sequence_format" VALUE="$sequence_format">
-<INPUT type="submit" value="pattern matching (dna-pattern)">
+<INPUT type="submit" value="string-based pattern matching (dna-pattern)">
 </FORM>
 </TD>
 

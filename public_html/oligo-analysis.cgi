@@ -210,7 +210,10 @@ if ($query->param('output') =~ /display/i) {
       $pattern_assembly_command .= "  -o $assembly_file";
       
       unless ($ENV{RSA_ERROR}) {
+
+	## Assemble the significant patterns
 	print "<H2>Pattern assembly</H2>\n";
+	print "<PRE>pattern-assembly command: $pattern_assembly_command<P>\n</PRE>" if ($ECHO >=1);
 	system "$pattern_assembly_command";
 	open ASSEMBLY, $assembly_file;
 	print "<PRE>\n";
@@ -220,28 +223,37 @@ if ($query->param('output') =~ /display/i) {
 	}
 	print "</PRE>\n";
 	close(ASSEMBLY);
-      }
 
 
-      ## Convert pattern-assembly result into PSSM
-      $pssm_file = "$TMP/$tmp_file_name.pssm";
-      $pssm_command = "$SCRIPTS/convert-matrix -v 1 ";
-      $pssm_command .= " -in_format assembly -out_format patser";
-      $pssm_command .= " -return counts,parameters";
-      $pssm_command .= " -i $assembly_file";
-      $pssm_command .= " -o $pssm_file";
-      
-      unless ($ENV{RSA_ERROR}) {
+	## Convert pattern-assembly result into matrix profiles to be displayed on the screen
+	$profile_file = "$TMP/$tmp_file_name.profile";
+	$profile_command = "$SCRIPTS/convert-matrix -v 1 ";
+	$profile_command .= " -in_format assembly -out_format patser";
+	$profile_command .= " -return profile,parameters";
+	$profile_command .= " -i $assembly_file";
+	$profile_command .= " -o $profile_file";
+	print "<PRE>command to generate profiles: $profile_command<P>\n</PRE>" if ($ECHO >=1);
+	system "$profile_command";
 	print "<H2>Position-specific scoring matrices (PSSM)</H2>\n";
-	system "$pssm_command";
-	open PSSM, $pssm_file;
+	open PROFILE, $profile_file;
 	print "<PRE>\n";
-	while (<PSSM>) {
+	while (<PROFILE>) {
 	  s|$RSA/||g;
 	  print;
 	}
 	print "</PRE>\n";
-	close(PSSM);
+	close(PROFILE);
+
+	## Convert pattern-assembly result into PSSM for piping to other tools
+	$pssm_file = "$TMP/$tmp_file_name.pssm";
+	$pssm_command = "$SCRIPTS/convert-matrix -v 0 ";
+	$pssm_command .= " -in_format assembly -out_format patser";
+	$pssm_command .= " -return counts";
+	$pssm_command .= " -i $assembly_file";
+	$pssm_command .= " -o $pssm_file";
+	print "<PRE>command to generate matrices: $pssm_command<P>\n</PRE>" if ($ECHO >=1);
+	system "$pssm_command";
+
       }
 
 
