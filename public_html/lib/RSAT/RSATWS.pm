@@ -15,7 +15,7 @@ my $TMP = $RSAT.'/public_html/tmp';
 Web Service (WS) interface to the script B<I<retrieve-seq>>.
 
 =head3 Usage
-my %args = ('return' => $return_choice,
+my %args = ('output' => $output_choice,
             'organism' => $organism,
             'query' => \@gene,  # an array in a hash has to be referenced (correct?)
             'noorf' => $noorf,
@@ -33,16 +33,16 @@ my %args = ('return' => $return_choice,
 my $results_ref = $soap->call('retrieve_seq' => 'request' => \%args)->result;
 my %results = %$results_ref;
 my $command = $results{'command'};
-my $server_file = $results{'file'};
-my $result = $results{'result'};
+my $server_file = $results{'server'};
+my $result = $results{'client'};
 
 =head3 Parameters
 
 =over
 
-=item I<return>
+=item I<output>
 
-return choice (file,result,both)
+output choice (server,client,both)
 
 =item I<organism>
 
@@ -107,7 +107,10 @@ repeat masked
 sub retrieve_seq {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
-    my $return_choice = $args{"return"};
+    my $output_choice = $args{"output"};
+    unless ($output_choice) {
+	$output_choice = 'both';
+    }
     my $command = $self->retrieve_seq_cmd(%args);
     my $stderr = `$command 2>&1 1>/dev/null`;
     if ($stderr) {
@@ -118,16 +121,16 @@ sub retrieve_seq {
     open TMP, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
     print TMP $result;
     close TMP;
-    if ($return_choice eq 'file') {
+    if ($output_choice eq 'server') {
 	return {'command' => $command, 
-		'file' => $tmp_outfile};
-    } elsif ($return_choice eq 'result') {
+		'server' => $tmp_outfile};
+    } elsif ($output_choice eq 'client') {
 	return {'command' => $command,
-		'result' => $result};
-    } elsif ($return_choice eq 'both') {
-	return {'file' => $tmp_outfile,
+		'client' => $result};
+    } elsif ($output_choice eq 'both') {
+	return {'server' => $tmp_outfile,
 		'command' => $command, 
-		'result' => $result};
+		'client' => $result};
     }
 }
 
@@ -231,7 +234,7 @@ sub retrieve_seq_cmd {
 WS interface to the script B<I<purge-sequence>>.
 
 =head3 Usage
-my %args = ('return'=> $return_choice,
+my %args = ('output'=> $output_choice,
             'sequence'=> $sequence,
             'format'=> $format,
             'match_length'=> $match_length,
@@ -242,16 +245,16 @@ my %args = ('return'=> $return_choice,
 my $results_ref = $soap->call('purge_seq' => 'request' => \%args)->result;
 my %results = %$results_ref;
 my $command = $results{'command'};
-my $server_file = $results{'file'};
-my $result = $results{'result'};
+my $server_file = $results{'server'};
+my $result = $results{'client'};
 
 =head3 Parameters
 
 =over
 
-=item I<return>
+=item I<output>
 
-return choice (file,result,both)
+output choice (server,client,both)
 
 =item I<sequence>
 
@@ -288,9 +291,12 @@ mask sequences shorter than specified length
 sub purge_seq {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
-    my $return_choice = $args{"return"};
+    my $output_choice = $args{"output"};
+    unless ($output_choice) {
+	$output_choice = 'both';
+    }
     my $command = $self->purge_seq_cmd(%args);
-#    my $stderr = `$command 2>&1 1>/dev/null`;
+    my $stderr = `$command 2>&1 1>/dev/null`;
 #    if ($stderr) {
 #	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr");
 #    }
@@ -299,16 +305,16 @@ sub purge_seq {
     open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
     print TMP_OUT $result;
     close TMP_OUT;
-    if ($return_choice eq 'file') {
+    if ($output_choice eq 'server') {
 	return {'command' => $command, 
-		'file' => $tmp_outfile};
-    } elsif ($return_choice eq 'result') {
+		'server' => $tmp_outfile};
+    } elsif ($output_choice eq 'client') {
 	return {'command' => $command,
-		'result' => $result};
-    } elsif ($return_choice eq 'both') {
-	return {'file' => $tmp_outfile,
+		'client' => $result};
+    } elsif ($output_choice eq 'both') {
+	return {'server' => $tmp_outfile,
 		'command' => $command, 
-		'result' => $result};
+		'client' => $result};
     }
 }
 
@@ -361,7 +367,7 @@ sub purge_seq_cmd {
 WS interface to the script B<I<oligo-analysis>>.
 
 =head3 Usage
-my %args = ('return' => $return_choice, 
+my %args = ('output' => $output_choice, 
             'sequence' => $sequence, 
             'format' => $format,
             'length' => $length,
@@ -375,16 +381,16 @@ my %args = ('return' => $return_choice,
 my $results_ref = $soap->call('purge_seq' => 'request' => \%args)->result;
 my %results = %$results_ref;
 my $command = $results{'command'};
-my $server_file = $results{'file'};
-my $result = $results{'result'};
+my $server_file = $results{'server'};
+my $result = $results{'client'};
 
 =head3 Parameters
 
 =over
 
-=item I<return>
+=item I<output>
 
-return choice (file,result,both)
+output choice (server,client,both)
 
 =item I<sequence>
 
@@ -433,7 +439,10 @@ lower threshold parameter (occ,occ_P,occ_E,occ_sig,observed_freq,exp_freq,zscore
 sub oligo_analysis {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
-    my $return_choice = $args{"return"};
+    my $output_choice = $args{"output"};
+    unless ($output_choice) {
+	$output_choice = 'both';
+    }
     my $command = $self->oligo_analysis_cmd(%args);
 #    my $stderr = `$command 2>&1 1>/dev/null`;
 #    if ($stderr) {
@@ -444,16 +453,16 @@ sub oligo_analysis {
     open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
     print TMP_OUT $result;
     close TMP_OUT;
-    if ($return_choice eq 'file') {
+    if ($output_choice eq 'server') {
 	return {'command' => $command, 
-		'file' => $tmp_outfile};
-    } elsif ($return_choice eq 'result') {
+		'server' => $tmp_outfile};
+    } elsif ($output_choice eq 'client') {
 	return {'command' => $command,
-		'result' => $result};
-    } elsif ($return_choice eq 'both') {
-	return {'file' => $tmp_outfile,
+		'client' => $result};
+    } elsif ($output_choice eq 'both') {
+	return {'server' => $tmp_outfile,
 		'command' => $command, 
-		'result' => $result};
+		'client' => $result};
     }
 }
 
@@ -515,7 +524,7 @@ sub gene_info {
 	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr");
     }
     return {'command' => $command,
-	    'result' => $result};
+	    'client' => $result};
 }
 
 sub gene_info_cmd {
