@@ -408,26 +408,25 @@ sub PrintHtmlTable {
     while (<$FILE>) {
 	s|$RSA/(public_html/)*||g; #### avoid exposing the full path through the web interface
 	if ($mirror) {
-	    print MIRROR $_
-		unless ((/^;/) && !($mirror_verbose)); 
+	  print MIRROR $_
+	    unless ((/^;/) && !($mirror_verbose)); 
 	}
-
 	if (/^\s*$/) {		#nothing on the line
 	} elsif (/^;WARNING/) {		# warning
-	    push @warnings, $_;
-	} elsif ((/^;/) || (/^\#/)) {		# comment line
-	    if ($table_opened) {
-		print $out "<\/TABLE><PRE>\n";
-		$table_opened = 0;
-	    } 
-	    print $out $last_line;
-	    $last_line = $_;
+	  push @warnings, $_;
+	} elsif ((/^;/) || (/^\#/) || (/^\/\//)) {		# comment line
+	  if ($table_opened) {
+	    print $out "<\/TABLE><PRE>\n";
+	    $table_opened = 0;
+	  } 
+	  print $out $last_line;
+	  $last_line = $_;
 
 	} elsif (!($table_opened)) { # first line of the table
 	    $table_opened = 1;
 	    $line_count = 0;
 	    print $out "</PRE>\n\n$TABLE\n";
-	    
+
 	    # print the header line
 	    chomp($last_line);
 	    $last_line =~ s/;//;
