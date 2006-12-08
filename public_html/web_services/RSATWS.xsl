@@ -78,7 +78,8 @@
     <xsl:template match='wsdl:part'>
         <tr align='left'>
             <td height='35'>
-                <font color='#228888'><xsl:value-of select='@name'/></font>
+                <font color='#228888'><xsl:value-of select='@name'/></font><br/>
+		<xsl:if test='@minOccurs >= 1'>(required)</xsl:if>
 	    </td>
 	    <td>
 	      <xsl:value-of select='wsdl:documentation'/><br/>
