@@ -76,6 +76,7 @@ sub readFromFile {
 
       ## Replace undefined values by 0
       $matrix->treat_null_values();
+
     }
 
     return @matrices;
@@ -450,6 +451,8 @@ sub _readFromTabFile {
       chomp($line); ## Suppress newline
       $line =~ s/\r//; ## Suppress carriage return
       $line =~ s/\s+/\t/g; ## Replace spaces by tabulation
+
+      next if ($line =~ /^;/) ; # skip comment lines
 
 #	&RSAT::message::Debug("line", $l, $line) if ($main::verbose >= 10);
 	## Create a new matrix if required
