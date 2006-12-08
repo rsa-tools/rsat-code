@@ -72,6 +72,7 @@ print $query->popup_menu(-name=>'matrix_format',
 				   'gibbs',
 				   'MEME',
 				   'clustal',
+				   'assembly',
 				   ],
 			 -default=>$default{matrix_format});
 print "<BR>\n";

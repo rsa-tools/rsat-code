@@ -129,14 +129,14 @@ print "<PRE>command: $command $parameters<P>\n</PRE>" if ($ECHO >= 1);
 
 ### execute the command ###
 if ($query->param('output') eq "display") {
-    $mirror_file = "$TMP/$tmp_file_name.res";
+    $sequence_file = "$TMP/$tmp_file_name.res";
 
     open RESULT, "$command $parameters |";
     
     ### open the mirror file ###
-    if (open MIRROR, ">$mirror_file") {
+    if (open MIRROR, ">$sequence_file") {
 	$mirror = 1;
-	&DelayedRemoval($mirror_file);
+	&DelayedRemoval($sequence_file);
     }
     
     
@@ -155,7 +155,7 @@ if ($query->param('output') eq "display") {
     &PipingForm();
     print "<HR SIZE = 3>";
 
-    &DelayedRemoval($mirror_file);
+    &DelayedRemoval($sequence_file);
 
 } elsif ($query->param('output') =~ /server/i) {
     &ServerOutput("$command $parameters", $query->param('user_email'), $tmp_file_name);
@@ -177,7 +177,7 @@ sub PipingForm {
 <TABLE CELLSPACING=0 CELLPADDING=10 BORDER=0 NOWRAP BGCOLOR= #FFEEDD>
 
 <TR VALIGN="top" ALIGN="center">
-    <TD COLSPAN=5 BGCOLOR=	#FFEEDD>
+    <TD VALIGN=BOTTOM ALIGN=CENTER COLSPAN=5 BGCOLOR=	#FFEEDD>
 	<H3>Next step</H3>
     </TD>
 
@@ -185,61 +185,51 @@ sub PipingForm {
 
 <TR VALIGN="top" ALIGN="center">
 
-    <TD BGCOLOR=		#FFEEDD>
+    <TD VALIGN=BOTTOM ALIGN=CENTER BGCOLOR=		#FFEEDD>
 	<B>Pattern discovery</B><BR>
 	(unknown patterns)
     </TD>
 
-    <TD>
+    <TD VALIGN=BOTTOM ALIGN=CENTER>
 	<FORM METHOD="POST" ACTION="oligo-analysis_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism">
-	<INPUT type="hidden" NAME="from" VALUE="$from">
-	<INPUT type="hidden" NAME="to" VALUE="$to">
-	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
+	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
 	<INPUT type="submit" value="oligonucleotide analysis">
 	</FORM>
     </TD>
 
-    <TD>
+    <TD VALIGN=BOTTOM ALIGN=CENTER>
 	<FORM METHOD="POST" ACTION="dyad-analysis_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism">
-	<INPUT type="hidden" NAME="from" VALUE="$from">
-	<INPUT type="hidden" NAME="to" VALUE="$to">
-	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
+	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
 	<INPUT type="submit" value="dyad analysis">
 	</FORM>
     </TD>
 
-    <TD>
+    <TD VALIGN=BOTTOM ALIGN=CENTER>
 	<FORM METHOD="POST" ACTION="position-analysis_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism">
-	<INPUT type="hidden" NAME="from" VALUE="$from">
-	<INPUT type="hidden" NAME="to" VALUE="$to">
-	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
+	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
 	<INPUT type="submit" value="position analysis">
 	</FORM>
     </TD>
 
-    <TD>
+    <TD VALIGN=BOTTOM ALIGN=CENTER>
 	<FORM METHOD="POST" ACTION="consensus_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism">
-	<INPUT type="hidden" NAME="from" VALUE="$from">
-	<INPUT type="hidden" NAME="to" VALUE="$to">
-	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
+	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
 	<INPUT type="submit" value="consensus">
 	</FORM>
     </TD>
 
-    <TD>
+    <TD VALIGN=BOTTOM ALIGN=CENTER>
 	<FORM METHOD="POST" ACTION="gibbs_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism">
-	<INPUT type="hidden" NAME="from" VALUE="$from">
-	<INPUT type="hidden" NAME="to" VALUE="$to">
-	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
+	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
 	<INPUT type="submit" value="gibbs sampler">
 	</FORM>
@@ -249,38 +239,44 @@ sub PipingForm {
 
 <TR VALIGN="top" ALIGN="center">
 
-    <TD BGCOLOR=#FFEEDD>
+    <TD VALIGN=BOTTOM ALIGN=CENTER BGCOLOR=#FFEEDD>
 	<B>Pattern matching</B><BR>
 	(known patterns)
     </TD>
 
-    <TD>
+    <TD VALIGN=BOTTOM ALIGN=CENTER>
 	<FORM METHOD="POST" ACTION="dna-pattern_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism">
-	<INPUT type="hidden" NAME="from" VALUE="$from">
-	<INPUT type="hidden" NAME="to" VALUE="$to">
-	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
+	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
 	<INPUT type="submit" value="dna-pattern (IUPAC)">
 	</FORM>
     </TD>
 
-    <TD>
+    <TD VALIGN=BOTTOM ALIGN=CENTER>
+	<b><font color=red>New</a></b>
+	<FORM METHOD="POST" ACTION="matrix-scan_form.cgi">
+	<INPUT type="hidden" NAME="organism" VALUE="$organism">
+	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
+	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
+	<INPUT type="submit" value="matrix-scan (matrices)">
+	</FORM>
+    </TD>
+
+    <TD VALIGN=BOTTOM ALIGN=CENTER>
 	<FORM METHOD="POST" ACTION="patser_form.cgi">
 	<INPUT type="hidden" NAME="organism" VALUE="$organism">
-	<INPUT type="hidden" NAME="from" VALUE="$from">
-	<INPUT type="hidden" NAME="to" VALUE="$to">
-	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
+	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
 	<INPUT type="submit" value="patser (matrices)">
 	</FORM>
     </TD>
 
-    <TD>
+    <TD VALIGN=BOTTOM ALIGN=CENTER>
     &nbsp;
     </TD>
 
-    <TD>
+    <TD VALIGN=BOTTOM ALIGN=CENTER>
     &nbsp;
     </TD>
 
@@ -290,27 +286,27 @@ sub PipingForm {
 
 <TR VALIGN="top" ALIGN="center">
 
-    <TD BGCOLOR=		#FFEEDD>
+    <TD VALIGN=BOTTOM ALIGN=CENTER BGCOLOR=		#FFEEDD>
 	<B>Utilities</B>
     </TD>
 
-    <TD>
+    <TD VALIGN=BOTTOM ALIGN=CENTER>
 	<FORM METHOD="POST" ACTION="purge-sequence_form.cgi">
-	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
+	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
 	<INPUT type="submit" value="purge sequence">
 	</FORM>
     </TD>
 
-    <TD>
+    <TD VALIGN=BOTTOM ALIGN=CENTER>
     &nbsp;
     </TD>
 
-    <TD>
+    <TD VALIGN=BOTTOM ALIGN=CENTER>
     &nbsp;
     </TD>
 
-    <TD>
+    <TD VALIGN=BOTTOM ALIGN=CENTER>
     &nbsp;
     </TD>
 
@@ -319,27 +315,27 @@ sub PipingForm {
 <!--
 <TR VALIGN="top" ALIGN="center">
 
-    <TD BGCOLOR=		#FFEEDD>
+    <TD VALIGN=BOTTOM ALIGN=CENTER BGCOLOR=		#FFEEDD>
 	<B>Utilities</B>
     </TD>
 
-    <TD>
+    <TD VALIGN=BOTTOM ALIGN=CENTER>
 	<FORM METHOD="POST" ACTION="purge-sequence_form.cgi">
-	<INPUT type="hidden" NAME="sequence_file" VALUE="$mirror_file">
+	<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
 	<INPUT type="submit" value="purge sequence">
 	</FORM>
     </TD>
 
-    <TD>
+    <TD VALIGN=BOTTOM ALIGN=CENTER>
     &nbsp;
     </TD>
 
-    <TD>
+    <TD VALIGN=BOTTOM ALIGN=CENTER>
     &nbsp;
     </TD>
 
-    <TD>
+    <TD VALIGN=BOTTOM ALIGN=CENTER>
     &nbsp;
     </TD>
 

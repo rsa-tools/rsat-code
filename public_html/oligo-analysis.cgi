@@ -282,18 +282,30 @@ sub PipingForm {
 <TD>
 <H3>Next step</H3>
 </TD>
-<TD>
+
+<td valign=bottom align=center>
 <FORM METHOD="POST" ACTION="dna-pattern_form.cgi">
 <INPUT type="hidden" NAME="title" VALUE="$title">
 <INPUT type="hidden" NAME="pattern_file" VALUE="$result_file">
 <INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
 <INPUT type="hidden" NAME="sequence_format" VALUE="$sequence_format">
-<INPUT type="submit" value="pattern matching (dna-pattern)">
+<INPUT type="submit" value="string-based pattern matching (dna-pattern)">
 </FORM>
 </TD>
 
+<td valign=bottom align=center>
+<b><font color="red">New !</font></b>
+<FORM METHOD="POST" ACTION="matrix-scan_form.cgi">
+<INPUT type="hidden" NAME="title" VALUE="$title">
+<INPUT type="hidden" NAME="matrix_file" VALUE="$pssm_file">
+<INPUT type="hidden" NAME="matrix_format" VALUE="tab">
+<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
+<INPUT type="hidden" NAME="sequence_format" VALUE="$sequence_format">
+<INPUT type="submit" value="matrix-based pattern matching (matrix-scan)">
+</FORM>
 </TD>
-<TD>
+
+<td valign=bottom align=center>
 <FORM METHOD="POST" ACTION="pattern-assembly_form.cgi">
 <INPUT type="hidden" NAME="local_pattern_file" VALUE="$result_file">
 <INPUT type="hidden" NAME="subst" VALUE=1>

@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: gibbs.cgi,v 1.14 2005/03/30 05:52:05 jvanheld Exp $
+# $Id: gibbs.cgi,v 1.15 2006/12/08 15:10:24 jvanheld Exp $
 #
 # Time-stamp: <2003-05-13 11:30:48 jvanheld>
 #
@@ -125,10 +125,11 @@ sub PipingForm {
 <HR SIZE = 3>
 <TABLE>
 <TR>
-<TD>
+<TD VALIGN=BOTTOM ALIGN=CENTER>
 <H3>Next step</H3>
 </TD>
-<TD>
+
+<TD VALIGN=BOTTOM ALIGN=CENTER>
 <FORM METHOD="POST" ACTION="patser_form.cgi">
 <INPUT type="hidden" NAME="title" VALUE="$title">
 <INPUT type="hidden" NAME="matrix_file" VALUE="$matrix_file">
@@ -138,7 +139,20 @@ sub PipingForm {
 <INPUT type="submit" value="pattern matching (patser)">
 </FORM>
 </TD>
-<TD>
+
+<TD VALIGN=BOTTOM ALIGN=CENTER>
+<b><font color=red>New</a></b>
+<FORM METHOD="POST" ACTION="matrix-scan_form.cgi">
+<INPUT type="hidden" NAME="title" VALUE="$title">
+<INPUT type="hidden" NAME="matrix_file" VALUE="$matrix_file">
+<INPUT type="hidden" NAME="matrix_format" VALUE="gibbs">
+<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
+<INPUT type="hidden" NAME="sequence_format" VALUE="fasta">
+<INPUT type="submit" value="pattern matching (matrix-scan)">
+</FORM>
+</TD>
+
+<TD VALIGN=BOTTOM ALIGN=CENTER>
 <FORM METHOD="POST" ACTION="convert-matrix_form.cgi">
 <INPUT type="hidden" NAME="title" VALUE="$title">
 <INPUT type="hidden" NAME="matrix_file" VALUE="$result_file">
@@ -146,6 +160,7 @@ sub PipingForm {
 <INPUT type="submit" value="convert-matrix">
 </FORM>
 </TD>
+
 </TR>
 </TABLE>
 End_of_form

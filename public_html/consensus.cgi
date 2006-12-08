@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: consensus.cgi,v 1.12 2005/03/30 05:52:05 jvanheld Exp $
+# $Id: consensus.cgi,v 1.13 2006/12/08 15:10:24 jvanheld Exp $
 #
 # Time-stamp: <2003-07-03 10:06:42 jvanheld>
 #
@@ -52,7 +52,8 @@ $parameters .= " -f $sequence_file ";
 
 ## Number of matrices to save
 if (&IsNatural($query->param('matrices_to_save'))) {
-    $parameters .= " -q ".$query->param('matrices_to_save');
+    $parameters .= " -pt ".$query->param('matrices_to_save');
+    $parameters .= " -pf ".$query->param('matrices_to_save');
 }
 
 ### strands and pattern symmetry 
@@ -165,10 +166,11 @@ sub PipingForm {
 <TABLE>
 
 <TR>
-<TD>
+<TD VALIGN=BOTTOM ALIGN=CENTER>
 <H3>Next step</H3>
 </TD>
-<TD>
+
+<TD VALIGN=BOTTOM ALIGN=CENTER>
 <FORM METHOD="POST" ACTION="patser_form.cgi">
 <INPUT type="hidden" NAME="title" VALUE="$title">
 <INPUT type="hidden" NAME="matrix_file" VALUE="$matrix_file">
@@ -178,7 +180,20 @@ sub PipingForm {
 <INPUT type="submit" value="pattern matching (patser)">
 </FORM>
 </TD>
-<TD>
+
+<TD VALIGN=BOTTOM ALIGN=CENTER>
+<b><font color=red>New</a></b>
+<FORM METHOD="POST" ACTION="matrix-scan_form.cgi">
+<INPUT type="hidden" NAME="title" VALUE="$title">
+<INPUT type="hidden" NAME="matrix_file" VALUE="$matrix_file">
+<INPUT type="hidden" NAME="matrix_format" VALUE="consensus">
+<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
+<INPUT type="hidden" NAME="sequence_format" VALUE="wconsensus">
+<INPUT type="submit" value="pattern matching (matrix-scan)">
+</FORM>
+</TD>
+
+<TD VALIGN=BOTTOM ALIGN=CENTER>
 <FORM METHOD="POST" ACTION="convert-matrix_form.cgi">
 <INPUT type="hidden" NAME="title" VALUE="$title">
 <INPUT type="hidden" NAME="matrix_file" VALUE="$result_file">
@@ -186,6 +201,7 @@ sub PipingForm {
 <INPUT type="submit" value="convert-matrix">
 </FORM>
 </TD>
+
 </TR>
 
 </TABLE>
