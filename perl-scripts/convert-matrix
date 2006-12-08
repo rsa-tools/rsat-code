@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.19 2006/12/04 23:21:12 jvanheld Exp $
+# $Id: convert-matrix,v 1.20 2006/12/08 05:11:08 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -24,7 +24,7 @@ my $start_time = &AlphaDate();
 $decimals = 4;
 $pseudo_weight = 1;
 $equi_pseudo = 0;
-$max_profile = 20;
+$max_profile = 24;
 $sep="\t";
 
 local %infile = ();
@@ -43,6 +43,7 @@ local $out = STDOUT;
     "counts"=>1,
     "frequencies"=>1,
     "weights"=>1,
+    "info"=>1,
     "information"=>1,
     "parameters"=>1,
     "consensus"=>1,
@@ -71,6 +72,11 @@ $supported_output_formats = join ",", sort keys %supported_output_format;
 ################################################################
 #### check argument values ####
 
+## Information
+if ($return_fields{information}) {
+  $return_fields{info} = 1;
+  &RSAT::message::Warning("Option -return information is obsolete. Please use -return info.");
+}
 
 ## Input format
 unless ($input_format) {
@@ -117,12 +123,16 @@ my @matrices = &RSAT::MatrixReader::readFromFile($infile{input}, $input_format);
 my $m = 0;
 foreach my $matrix (@matrices) {
     $m++;
-    &RSAT::message::Info("Exporting matrix", $m."/".scalar(@matrices))
-	if ($main::verbose >= 3);
     if ((defined($top_matrices)) && ($m > $top_matrices)) {
 	last;
     }
 
+    &RSAT::message::Info("Exporting matrix", $m."/".scalar(@matrices))
+	if ($main::verbose >= 3);
+
+    if ($m > 1) {
+      print $out "//\n";
+    }
     if ($main::verbose >= 1) {
 	print $out  ";\n; MATRIX ", $m."/".scalar(@matrices), "\n;\n";
     }
@@ -636,7 +646,7 @@ sub ExportMatrix {
   }
 
   ## Calculate information content matrix
-  if ($return{information}) {
+  if ($return{info}) {
     $current_matrix->calcInformation();
     print $out $current_matrix->toString(col_width=>($decimals+4), 
 					 decimals=>$decimals, 
