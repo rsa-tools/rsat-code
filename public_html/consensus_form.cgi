@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: consensus_form.cgi,v 1.7 2006/11/29 01:49:28 jvanheld Exp $
+# $Id: consensus_form.cgi,v 1.8 2006/12/08 15:10:24 jvanheld Exp $
 #
 # Time-stamp: <2003-07-11 15:07:43 jvanheld>
 #
@@ -26,7 +26,7 @@ $default{sequence_file} = "";
 $default{upload_file} = "";
 $default{length} = 10;
 $default{cycles} = "auto";
-$default{matrices_to_save} = "auto";
+$default{matrices_to_save} = 1;
 $default{alphabet} = "a:t 0.3 c:g 0.2";
 $default{strands} = "include as a single sequence";
 $default{symmetrical} = '';

@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: purge-sequence.cgi,v 1.4 2003/10/29 09:04:37 jvanheld Exp $
+# $Id: purge-sequence.cgi,v 1.5 2006/12/08 15:10:24 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 00:38:45 jvanheld>
 #
@@ -157,9 +157,6 @@ sub PipingForm {
 
     <TD>
 	<FORM METHOD="POST" ACTION="oligo-analysis_form.cgi">
-	<INPUT type="hidden" NAME="organism" VALUE="$organism">
-	<INPUT type="hidden" NAME="from" VALUE="$from">
-	<INPUT type="hidden" NAME="to" VALUE="$to">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$result_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
 	<INPUT type="submit" value="oligonucleotide analysis">
@@ -168,9 +165,6 @@ sub PipingForm {
 
     <TD>
 	<FORM METHOD="POST" ACTION="dyad-analysis_form.cgi">
-	<INPUT type="hidden" NAME="organism" VALUE="$organism">
-	<INPUT type="hidden" NAME="from" VALUE="$from">
-	<INPUT type="hidden" NAME="to" VALUE="$to">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$result_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
 	<INPUT type="submit" value="dyad analysis">
@@ -179,9 +173,6 @@ sub PipingForm {
 
     <TD>
 	<FORM METHOD="POST" ACTION="consensus_form.cgi">
-	<INPUT type="hidden" NAME="organism" VALUE="$organism">
-	<INPUT type="hidden" NAME="from" VALUE="$from">
-	<INPUT type="hidden" NAME="to" VALUE="$to">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$result_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
 	<INPUT type="submit" value="consensus">
@@ -190,9 +181,6 @@ sub PipingForm {
 
     <TD>
 	<FORM METHOD="POST" ACTION="gibbs_form.cgi">
-	<INPUT type="hidden" NAME="organism" VALUE="$organism">
-	<INPUT type="hidden" NAME="from" VALUE="$from">
-	<INPUT type="hidden" NAME="to" VALUE="$to">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$result_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
 	<INPUT type="submit" value="gibbs sampler">
@@ -211,20 +199,24 @@ sub PipingForm {
 
     <TD>
 	<FORM METHOD="POST" ACTION="dna-pattern_form.cgi">
-	<INPUT type="hidden" NAME="organism" VALUE="$organism">
-	<INPUT type="hidden" NAME="from" VALUE="$from">
-	<INPUT type="hidden" NAME="to" VALUE="$to">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$result_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
 	<INPUT type="submit" value="dna-pattern (IUPAC)">
 	</FORM>
     </TD>
 
+    <TD VALIGN=BOTTOM ALIGN=CENTER>
+        <b><font color=red>New</a></b>
+        <FORM METHOD="POST" ACTION="matrix-scan_form.cgi">
+        <INPUT type="hidden" NAME="sequence_file" VALUE="$result_file">
+        <INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
+        <INPUT type="submit" value="matrix-scan (matrices)">
+        </FORM>
+    </TD>
+
+
     <TD>
 	<FORM METHOD="POST" ACTION="patser_form.cgi">
-	<INPUT type="hidden" NAME="organism" VALUE="$organism">
-	<INPUT type="hidden" NAME="from" VALUE="$from">
-	<INPUT type="hidden" NAME="to" VALUE="$to">
 	<INPUT type="hidden" NAME="sequence_file" VALUE="$result_file">
 	<INPUT type="hidden" NAME="sequence_format" VALUE="$out_format">
 	<INPUT type="submit" value="patser (matrices)";
