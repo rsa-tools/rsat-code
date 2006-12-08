@@ -23,6 +23,7 @@ $default{window_size} = 200;
 $default{organism} = "Saccharomyces cerevisiae";
 $default{matrix_format} = "tab";
 $default{pseudo_counts} = 1;
+$default{consensus_as_name} = "CHECKED";
 
 ## Return fields
 $default{return_sites} = "CHECKED";
@@ -101,6 +102,10 @@ print $query->popup_menu(-name=>'matrix_format',
 				   'transfac'
 				  ],
 			 -default=>$default{matrix_format});
+
+print $query->checkbox(-name=>'consensus_as_name',
+		       -checked=>$default{consensus_as_name},
+		       -label=>' use motif consensus as matrix name ');
 
 #### text area to enter the matrix
 print "<BR>\n";
