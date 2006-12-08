@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: matrix-scan.cgi,v 1.4 2006/12/08 15:10:24 jvanheld Exp $
+# $Id: matrix-scan.cgi,v 1.5 2006/12/08 16:06:25 jvanheld Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -139,6 +139,11 @@ sub ReadMatrixScanParameters {
     close MAT;
     &DelayedRemoval($matrix_file);
     $parameters .= " -m $matrix_file";
+
+    ## Use consensus as matrix name
+    if ($query->param("consensus_as_name") eq "on") {
+      $parameters .= " -consensus_name ";
+    }
 
     ################################################################
     ## pseudo-counts and weights are mutually exclusive
