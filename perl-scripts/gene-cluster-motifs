@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.175 2006/12/06 18:40:28 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.176 2006/12/08 05:11:08 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -1045,28 +1045,28 @@ sub MergeOligoLengths {
 
    chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
    &RSAT::error::FatalError("Cannot read file ".$family{$family_name}->{input_seq_file}) unless (($batch) || ($dry_run) ||(-r $family{$family_name}->{input_seq_file}));
-   
+
    ## initialize the oligo file
    my @merge_commands = "echo '' > $family{$family_name}->{oligo_file}"; # if ($verbose >=1);    
    for $oligo_len ($min_oligo_len..$max_oligo_len) {
 	($command, $oligo_file) = &CalcOligoOptions($oligo_len);
 	push @merge_commands, "cat ".$oligo_file." >> ".$family{$family_name}->{oligo_file};
    }
-   
+
    ### pattern assembly
    my $assembly_command = "pattern-assembly -v 1 ";
    $assembly_command .= " -i ".$family{$family_name}->{oligo_file};
    $assembly_command .= " -maxfl 1 -maxpat 200 -subst 1 ".$strands;
    $assembly_command .= " -o ".$family{$family_name}->{oligo_assembly_file};
    push @merge_commands, $assembly_command;
- 
+
    ### extract PSSM from pattern assembly
    my $pssm_command = "convert-matrix -v 1 ";
    $pssm_command .= " -i ".$family{$family_name}->{oligo_assembly_file};
-   $pssm_command .= " -in_format assembly -out_format patser -return counts,parameters";
+   $pssm_command .= " -in_format assembly -out_format patser -return profile,parameters";
    $pssm_command .= " -o ".$family{$family_name}->{oligo_pssm_file};
    push @merge_commands, $pssm_command;
- 
+
    my $merge_command = join "; \\\n", @merge_commands;
    if ($task{oligos}) {
        return $merge_command;
@@ -1196,7 +1196,7 @@ sub DyadAnalysis {
    ### extract PSSM from pattern assembly
    $command .= "; convert-matrix -v 1 ";
    $command .= " -i ".$family{$family_name}->{dyad_assembly_file};
-   $command .= " -in_format assembly -out_format patser -return counts,parameters";
+   $command .= " -in_format assembly -out_format patser -return profiles,parameters";
    $command .= " -o ".$family{$family_name}->{dyad_pssm_file};
 
    if ($batch) {
@@ -1313,11 +1313,6 @@ sub MotifSampler {
    
    ## run the command
    my $MS_command = $MotifSampler_cmd." ".$family{$family_name}->{MotifSampler_options};
-#   die `pwd`;
-#   $MS_command .= " > ".$family{$family_name}->{MotifSampler_file};
-#    unless ($main::verbose >= 4) {
-#	$MS_command .= ">& /dev/null";
-#    }
    if ($batch) {
        push @main::batch_commands, $MS_command;
    } else {
@@ -1392,7 +1387,7 @@ sub orm {
        ### extract PSSM from pattern assembly
        $orm_command .= "; convert-matrix -v 1 ";
        $orm_command .= " -i ".$family{$family_name}->{orm_assembly_file};
-       $orm_command .= " -in_format assembly -out_format patser -return counts,parameters";
+       $orm_command .= " -in_format assembly -out_format patser -return profiles,parameters";
        $orm_command .= " -o ".$family{$family_name}->{orm_pssm_file};
    }
 
@@ -1493,7 +1488,7 @@ sub SyntheticTable {
    warn "; Generating synthetic table ", $outfile{table}, "\n" if ($verbose >= 1);
    
    unless (-d $dir) {
-	mkdir $dir, 0755 || die "Error: cannot create directory $dir\n";
+	mkdir $dir, 0755 || &RSAT::error::FatalError("Cannot create directory", $dir);
    }
    
    ### synthesize the results of all families into a single file
@@ -2088,7 +2083,7 @@ sub CheckParameters {
 	($task{validate_dyads}) ||
 	($task{validate_orm})) {
 	$task{validate} = 1;
-	&FatalError("For the task 'validate', you must specify a list of known sites with the option -known")
+	&RSAT::error::FatalError("For the task 'validate', you must specify a list of known sites with the option -known")
 	    unless ($known_site_file);
     }
 
@@ -2096,22 +2091,20 @@ sub CheckParameters {
     if (($task{db_match_oligos}) ||
 	($task{db_match_dyads})) {
 	$task{db_match} = 1;
-	&FatalError("For the task 'db_match', you must specify a list of known sites with the option -db")
+	&RSAT::error::FatalError("For the task 'db_match', you must specify a list of known sites with the option -db")
 	    unless ($db_site_file);
     }
-    
     ### family file ###
     unless (($family_file) || ($sequence_file_list)) {
-	die "Error: you should specify either a family file or a sequence file list\n";  
-    } 
-    
+	&RSAT::error::FatalError("Youmust specify either a family file or a sequence file list");
+    }
+
     ### organism ###
     unless ($organism_name) {
-	die "Error: you should specify an organism\n$supported_organisms\n";  
-    } 
+	&RSAT::error::FatalError ("You must specify an organism"); 
+    }
     unless ($supported_organism{$organism_name}) {
-	die ("Error: organism $organism_name is not supported\n",
-	     "Supported organisms:\n$supported_organisms\n");
+      &RSAT::error::FatalError ("organism $organism_name is not supported");
     }
     
     ## Upstream region limits
@@ -3154,13 +3147,12 @@ sub MakeDirectories {
    foreach $family_name(@families) {
 	$dir = "${family_name}/";
 	unless (-d $dir) {
-	    mkdir $dir, 0755 || die "Error: cannot create directory $dir\n";
+	    mkdir $dir, 0755 || &RSAT::error::FatalError("Cannot create directory", $dir);;
 	}
 	open FAM, ">$family{$family_name}->{family_file}" ||
-	    die "Error: cannot write family file $family{$family_name}->{family_file}\n";
+	  &RSAT::error::FatalError("Cannot write family file", $family{$family_name}->{family_file});
 	foreach $id ($family{$family_name}->get_members()) {
-	    print FAM "$id\t$name{$id}\n";
-	    
+	  print FAM "$id\t$name{$id}\n";
 	}
 	close FAM;
    }
@@ -3364,8 +3356,6 @@ sub ReadSequenceList {
    if (($dir{main}) && ($sequence_dir !~ /^\//)) {
 	$sequence_dir = $dir{main}."/".$sequence_dir;
    }
-
-#   die $sequence_dir;
 
    &RSAT::message::Info(join ("\t","Sequence dir", $sequence_dir)) if ($verbose >= 1);
    &RSAT::message::Info(join ("\t","Reading sequence file list", $sequence_file_list)) if ($verbose >= 1);

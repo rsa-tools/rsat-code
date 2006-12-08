@@ -296,7 +296,7 @@ sub index_alphabet {
     foreach my $letter (@alphabet) {
 	$self->add_hash_attribute("alphabet_index", lc($letter), $row);
 #	$alphabet_index{$letter} = $row;
-#	&RSAT::message::Debug("Alphabet index", $letter, $row) if ($main::verbose >= 0);
+#	&RSAT::message::Debug("Alphabet index", $letter, $row) if ($main::verbose >= 10);
 	$row++;
     }
 }
@@ -333,7 +333,7 @@ sub getPrior() {
 	    warn join("\t", "; getPrior", $letter, $prior{$letter}), "\n";
 	}
     }
-    warn "CHECK getPrior\t", join " ", %prior if ($main::verbose >= 10);
+#g    warn "CHECK getPrior\t", join " ", %prior if ($main::verbose >= 10);
     return %prior;
 }
 
@@ -742,16 +742,27 @@ sub calcInformation {
     if (scalar(@alphabet) <= 0) {
 	&main::FatalError("&RSAT::matrix::calcInformation()\tCannot calculate weigths, because the alphabet has not been specified yet.");
     }
+    $self->set_parameter("alphabet.size", scalar(@alphabet));
 
     ## Get or calculate prior residue probabilities
     my %prior = $self->getPrior();
+    my $min_prior = &RSAT::stats::min(values %prior);
+    $self->set_parameter("min.prior", $min_prior);
+
+    ## Maximal number of bits per column
+    my $max_bits = log(scalar(@alphabet))/log(2);
+    $self->set_parameter("max.bits", $max_bits);
+
+    ## Maximal information per column
+    my $max_info_per_col = -log($min_prior);
+    $self->set_parameter("max.info.per.col", $max_info_per_col);
 
     ## Matrix size
     my $nrow = $self->nrow();
     my $ncol = $self->ncol();
 
     ## Calculate information contents
-    my @information = (); ## Informatiion matrix 
+    my @information = (); ## Information matrix 
     my @column_information = (); ## Information per column
     my $total_information = 0; ## Total information for the matrix
     for my $c (0..($ncol-1)) {
@@ -766,7 +777,7 @@ sub calcInformation {
 	    }
 	    $column_information[$c] += $information[$c][$r];
 	    $total_information += $information[$c][$r];
-	    warn join "\t", "information", $r, $c, $information[$c][$r], $total_information, "\n" if ($main::verbose >= 10);
+#	    &RSAT::message::Debug("Information", $r, $c, $information[$c][$r], $total_information) if ($main::verbose >= 10);
 	}
     }
     $self->setInformation($nrow,$ncol,@information);
@@ -924,18 +935,22 @@ sub calcFrequencies {
 #      die("HELLO");
 	}
 	for my $r (0..($nrow-1)) {
-	    if ($col_sum eq 0) {
-		$crude_frequencies[$c][$r] = 0;
-	    } else {
-		$crude_frequencies[$c][$r] = $matrix[$c][$r]/$col_sum;
-	    }
+	  if ($col_sum eq 0) {
+	    $crude_frequencies[$c][$r] = 0;
+	  } else {
+	    $crude_frequencies[$c][$r] = $matrix[$c][$r]/$col_sum;
+	  }
+	  if (($col_sum + $pseudo) > 0) {
 	    $frequencies[$c][$r] /= ($col_sum + $pseudo);
-	    warn join( "\t", "freq", $r, $c, $pseudo, 
-		       $col_sum, 
-		       "a:".$matrix[$c][$r], 
-		       "f:".$crude_frequencies[$c][$r], 
-		       "f':".$frequencies[$c][$r]), "\n" 
-			   if ($main::verbose >= 10);
+	  } else {
+	    $frequencies[$c][$r] = 0;
+	  }
+#	  &RSAT::message::Debug("freq", $r, $c, $pseudo, 
+#				$col_sum, 
+#				"a:".$matrix[$c][$r], 
+#				"f:".$crude_frequencies[$c][$r], 
+#				"f':".$frequencies[$c][$r])
+#	    if ($main::verbose >= 10);
 	}
     }
 
@@ -1067,7 +1082,7 @@ sub calcConsensus {
 	    if ((&main::IsReal($weight)) && ($weight >= 0)) {
 		my $letter = $alphabet[$r];
 		$positive_score{$letter} = $weight;
-		if ($weight >= $col_max) {
+		if ($weight > $col_max) {
 		    $col_max = $weight;
 #		die join "\t", $c, $r, $col_max, $alphabet[$r], $col_consensus;
 		    $col_consensus = $letter;
@@ -1125,8 +1140,21 @@ sub _printProfile {
     my @alphabet = $self->getAlphabet();
     my $ncol = $self->ncol();
     my $nrow = $self->nrow();
-    my $max_profile = $self->get_attribute("max_profile") || 20;
+    my $max_profile = $self->get_attribute("max_profile");
+    unless ($max_profile) {
+      if (scalar(@aqlphabet) == 4) {
+	$max_profile = 24;
+      } else {
+	$max_profile = 20;
+      }
+    }
     my $comment_char = "|";
+
+
+    ## Temporarily suppress the pipe 
+    my $pipe_bk = $self->get_attribute("pipe");
+
+    $self->force_attribute("pipe", "");
 
     $to_print .= "; Profile matrix\n";
 
@@ -1137,23 +1165,37 @@ sub _printProfile {
 
     ## Get the information per column
     my @information = $self->getInformation();
+    my @weights = $self->getWeights();
     my @info_sum = &RSAT::matrix::col_sum($nrow, $ncol, @information);
 
+    ## Maximal information content per column, for scaling the pseudo-logo profile
+    my $max_bits = $self->get_attribute("max.bits");
+    my $max_info_per_col = $self->get_attribute("max.info.per.col");
+
     ## profile header
+    my $profile_scale = "";
+    for my $i (1..$max_profile) {
+      my $scale_value = $i*$max_bits/$max_profile;
+      if ($scale_value == sprintf("%d", $scale_value) ) {
+	$profile_scale .= $scale_value;
+      } else {
+	$profile_scale .= "-";
+      }
+    }
     $to_print .= $self->_printMatrixRow(";pos", 
 					@alphabet, 
-#					$comment_char,
-#					"sum",
+					$comment_char,
+					"sum",
+					"max_frq",
 #					"max",
 #					"min",
-#					"inf_sum",
-					"max_frq",
+					"inf_sum",
 					"strict",
 					"IUPAC",
-					"="x$max_profile
+					$profile_scale,
 				       );
 
-    $to_print .= $self->_printSeparator(scalar(@alphabet));
+#    $to_print .= $self->_printSeparator(scalar(@alphabet));
 
     ## print each matrix column as a row in the output
     my $matrix_max = &main::checked_max(&RSAT::matrix::col_max($nrow, $ncol, @matrix));
@@ -1161,29 +1203,55 @@ sub _printProfile {
 
     for my $c (0..($ncol-1)) {
 	my @row = &RSAT::matrix::get_column($c+1, $nrow, @matrix);
+	my @row_weights = &RSAT::matrix::get_column($c+1, $nrow, @weights);
 	my $sum = &main::sum(@row);
 	my $max = &main::checked_max(@row);
 	my $min = &main::checked_min(@row);
-	my $profile = &main::round($max*$scale);
+	my $profile_length = &main::round($max*$scale);
+
+	## Logo-type profile
+	my $column_info = $info_sum[$c];
+	my $column_info_bits = $column_info / $max_info_per_col;
+
+	my $consensus_profile = "";
+	my $cum_len = 0;
+	my $prev_cum_len = 0;
+	for my $i (0..$#row) {
+	  my $residue = $alphabet[$i];
+	  if (($max_info_per_col > 0) && ($sum > 0)) {
+	    $cum_len += $profile_length * ($row[$i]/$sum) * ($column_info/$max_info_per_col);
+	  }
+	  for my $j (($prev_cum_len+1)..sprintf("%d",$cum_len)) {
+	    if ($row_weights[$i] >= 1) {
+	      $consensus_profile .= uc($alphabet[$i]);
+	    } else {
+	      $consensus_profile .= lc($alphabet[$i]);
+	    }
+	  }
+	  $prev_cum_len = sprintf("%d",$cum_len);
+	}
+
+
 	if ($sum <= 0) {
 	    $rel_max = "NA";
 	} else {
 	    $rel_max = sprintf("%5.2f", $max/$sum);
 	}
-	$to_print .= $self->_printMatrixRow($c,
+	$to_print .= $self->_printMatrixRow($c+1,
 					    @row, 
-#					    $comment_char,
-#					    $sum,
+					    $comment_char,
+					    $sum,
+					    $rel_max,
 #					    $max,
 #					    $min,
-#					    sprintf("%5.2f",$info_sum[$c]),
-					    $rel_max,
+					    sprintf("%5.2f",$info_sum[$c]),
 					    $consensus_strict[$c],
 					    $consensus_IUPAC[$c],
-					    "*"x$profile
+					    $consensus_profile,
 					   );
 
     }
+    $self->force_attribute("pipe", $pipe_bk);
     return ($to_print);
 }
 
@@ -1641,12 +1709,16 @@ sub treat_null_values {
   my $ncol = $self->ncol();
   my @matrix = $self->getMatrix();
   for my $c (0..($ncol-1)) {
+#    &RSAT::message::Debug ("BEFORE", "col", $c, join("; ", @{$matrix[$c]})) if ($main::verbose >= 10);
     for my $r (0..($nrow-1)) {
       unless (defined($matrix[$c][$r])) {
+#	&RSAT::message::Debug("column", $c, "row", $r, "replacing undefined value by 0") if ($main::verbose >= 10);
 	$matrix[$c][$r] = 0;
       }
     }
+#    &RSAT::message::Debug ("AFTER", "col", $c, join("; ", @{$matrix[$c]})) if ($main::verbose >= 10);
   }
+  $self->setMatrix($nrow, $ncol, @matrix);
 }
 
 
@@ -1685,9 +1757,12 @@ sub add_site() {
   foreach my $c (0..$#letters) {
     if (defined($alphabet{$letters[$c]})) {
       my $row = $alphabet{$letters[$c]};
-      ${$self->{table}}[$c][$row] += $score;
-#      &RSAT::message::Debug("Incremented column", $c, "row", $row, "letter", $letters[$c], ${$self->{table}}[$c][$row])
-#	if ($main::verbose >= 10);
+      if (($args{max_score}) &&
+	  (defined(${$self->{table}}[$c][$row]))) {
+	  ${$self->{table}}[$c][$row] = &RSAT::stats::max($score, ${$self->{table}}[$c][$row]);
+      } else {
+	${$self->{table}}[$c][$row] += $score;
+      }
     } else {
       &RSAT::message::Warning("&RSAT::matrix::add_site()", $site_seq, "Unrecognized character at position", $c, $letters[$c]) 
 	if ($main::verbose >= 5);
