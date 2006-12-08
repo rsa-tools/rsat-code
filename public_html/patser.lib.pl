@@ -15,7 +15,7 @@ $default{case} = "insensitive"; ### [-CS <Ascii alphabet is case sensitive (defa
 $default{strands} = "both"; ### [-c <Score the complementary strand>]
 
 $default{lthreshold_method} = "weight score";
-$default{lthreshold} = "0"; ### [-ls <Lower-threshold score, inclusive (formerly the -l option)>]
+$default{lthreshold} = "7"; ### [-ls <Lower-threshold score, inclusive (formerly the -l option)>]
 $default{uthreshold} = "none"; ### [-u <Upper-threshold score, exclusive>]
 
 
