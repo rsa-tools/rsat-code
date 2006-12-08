@@ -62,8 +62,8 @@ sub readFromFile {
       &RSAT::message::Info("Read ".scalar(@matrices)." matrices from file ", $file) if ($main::verbose >= 3);
     }
 
-    ## Check that each matrix contains at least one row and one col
     foreach my $matrix (@matrices) {
+      ## Check that each matrix contains at least one row and one col
       if (($matrix->nrow() > 0) && ($matrix->ncol() > 0)) {
 	&RSAT::message::Info("Matrix read", 
 			     "nrow = ".$matrix->nrow(),
@@ -71,8 +71,11 @@ sub readFromFile {
 			     "prior : ".join (" ", $matrix->getPrior()),
 			    ) if ($main::verbose >= 3);
       } else {
-	&main::FatalError("The file $file does not seem to contain a matrix in format $format. Please check the file format and contents.");
+	&RSAT::message::Warning("The file $file does not seem to contain a matrix in format $format. Please check the file format and contents.");
       }
+
+      ## Replace undefined values by 0
+      $matrix->treat_null_values();
     }
 
     return @matrices;
@@ -362,7 +365,7 @@ sub _readFromAssemblyFile {
       $pattern =~ s/\./n/g;
       $pattern_rc =~ s/\./n/g;
 #      &RSAT::message::Debug("ASSEMBLY LINE", $l, $pattern, $pattern_rc, $score) if ($main::verbose >= 5);
-      $matrix->add_site($pattern, $pattern_id, $score);
+      $matrix->add_site($pattern, , score=>$score, id=>$pattern_id, max_score=>1);
 
       ## New site from a single-strand assembly
     } elsif ($line =~ /^(\S+)\s+(\S+)/) {
@@ -370,19 +373,13 @@ sub _readFromAssemblyFile {
       my $score = $2;
       $pattern =~ s/\./n/g;
 #      &RSAT::message::Debug("ASSEMBLY LINE", $l, $pattern, $pattern_rc, $score) if ($main::verbose >= 5);
-      $matrix->add_site($pattern, $pattern, $score);
+      $matrix->add_site($pattern, score=>$score, id=>$pattern, max_score=>1);
 
     } else {
-      &RSAT::message::Warning("&RSAT::Matrixreader::_readFromAssemblyFile", "line", $l, "not parsed", $_) if ($main::verbose >= 0);
+      &RSAT::message::Warning("&RSAT::Matrixreader::_readFromAssemblyFile", "line", $l, "not parsed", $_) if ($main::verbose >= 4);
     }
   }
   close $in if ($file);
-
-  ## Replace undefined values by 0
-  foreach my $matrix (@matrices) {
-    $matrix->treat_null_values();
-#    &RSAT::message::Debug("Line added", $matrix->toString()) if ($main::verbose >= 10);
-  }
 
   return @matrices;
 }
@@ -403,7 +400,7 @@ sub _from_isolated {
   $matrix->set_attribute("consensus.assembly", $pattern);
   $matrix->set_attribute("consensus.assembly.rc", $pattern_rc);
   $matrix->set_attribute("assembly.top.score", $score);
-  $matrix->add_site($pattern, $pattern_id, $score);
+  $matrix->add_site($pattern, score=>$score, id=>$pattern_id,, max_score=>1);
   &RSAT::message::Debug("New matrix from isolated pattern", $current_matrix_nb."/".scalar(@matrices), "seed", $seed) if ($main::verbose >= 4);
   return $matrix;
 }
@@ -422,17 +419,13 @@ sub _readFromTabFile {
     &RSAT::message::Info(join("\t", "Reading matrix from tab file\t",$file)) if ($main::verbose >= 3);
 
 
-    my @matrices = ();
-    my $matrix = new RSAT::matrix();
-    push @matrices, $matrix;
-
     ## open input stream
     my ($in, $dir) = &main::OpenInputFile($file);
     if ($file) {
 	open INPUT, $file;
 	$in = INPUT;
     }
-    my $current_matrix_nb = 0;
+
 
     ## read header
     if ($args{header}) {
@@ -443,40 +436,64 @@ sub _readFromTabFile {
 	@header = split "\t", $header;
 	$matrix->push_attribute("header", @header);
     }
-    while (<$in>) {
-	next unless (/\S/);
-	s/\r//;
-	chomp();
-	s/\s+/\t/g;
-	if (/^\s*(\S+)\s+/) {
-	    my @fields = split /\t/, $_;
 
-	    ## residue associated to the row
-	    my $residue = lc(shift @fields);
-	    
-	    ## skip the | between residue and numbers
-	    shift @fields unless &main::IsReal($fields[0]);	
-	    
-	    $matrix->addIndexedRow($residue, @fields);
+
+    ## Initialize the matrix list
+    my @matrices = ();
+    my $matrix = new RSAT::matrix();
+    push @matrices, $matrix;
+    my $current_matrix_nb = 1;
+    my $l = 0;
+    while ($line = <$in>) {
+      $l++;
+      next unless ($line =~ /\S/); ## Skip empty lines
+      chomp($line); ## Suppress newline
+      $line =~ s/\r//; ## Suppress carriage return
+      $line =~ s/\s+/\t/g; ## Replace spaces by tabulation
+
+#	&RSAT::message::Debug("line", $l, $line) if ($main::verbose >= 10);
+	## Create a new matrix if required
+	if  ($line =~ /\/\//) {
+	  $matrix = new RSAT::matrix();
+	  push @matrices, $matrix;
+	  $current_matrix_nb++;
+	  &RSAT::message::Info("line", $l, "new matrix", $current_matrix_number) if ($main::verbose >= 5);
+	  next;
 	}
+
+      if ($line =~ /^\s*(\S+)\s+/) {
+
+	my @fields = split /\t/, $line;
+
+
+	## residue associated to the row
+	my $residue = lc(shift @fields);
+
+	## skip the | between residue and numbers
+	shift @fields unless &main::IsReal($fields[0]);
+
+	$matrix->addIndexedRow($residue, @fields);
+      }
     }
     close $in if ($file);
 
 
     ## Initialize prior as equiprobable alphabet
-    my @alphabet = $matrix->getAlphabet();
-    my %tmp_prior = ();
-    my $prior = 1/scalar(@alphabet);
-    foreach my $residue (@alphabet) {
+    foreach my $matrix (@matrices) {
+      my @alphabet = $matrix->getAlphabet();
+      my %tmp_prior = ();
+      my $prior = 1/scalar(@alphabet);
+      foreach my $residue (@alphabet) {
 	$tmp_prior{$residue} = $prior;
-#	&RSAT::message::Debug("initial prior", $residue, $prior) if ($main::verbose >= 10);
-    }
-    $matrix->setPrior(%tmp_prior);
-
-    if ($main::verbose >= 3) {
+	#	&RSAT::message::Debug("initial prior", $residue, $prior) if ($main::verbose >= 10);
+      }
+      $matrix->setPrior(%tmp_prior);
+      
+      if ($main::verbose >= 3) {
 	&RSAT::message::Debug("Read matrix with alphabet", join(":", $matrix->getAlphabet()));
 	&RSAT::message::Debug("Initialized prior as equiprobable", join(":", $matrix->getPrior()));
 	&RSAT::message::Debug("Matrix size", $matrix->nrow()." rows",  $matrix->ncol()." columns");
+      }
     }
 
     return (@matrices);
@@ -567,15 +584,13 @@ sub _readFromMEMEFile {
 	my $seq_len =  length($seq);
 	if ($seq_len > 0) {
 	  $parsed_width = &main::max($parsed_width, $seq_len);
-	  $matrix->add_site($seq, $seq_id, 1);
+	  $matrix->add_site($seq, score=>1, id=>$seq_id, max_score=>0);
 	}
 
       } elsif (/\/\//) {
 	&RSAT::message::Debug("line", $l, "BLOCKS format parsed") if ($main::verbose >= 5);
 	$in_blocks = 0;
 
-	## Replace undefined values by 0
-	$matrix->treat_null_values();
       }
     }
   }
