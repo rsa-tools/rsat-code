@@ -20,8 +20,8 @@ warn "\nThis demo script illustrates a work flow combining three requests to the
 
 
 ## Service location
-my $server = 'http://localhost/rsat/web_services';
-#my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
+#my $server = 'http://localhost/rsat/web_services';
+my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
 my $WSDL = $server.'/RSATWS.wsdl';
 my $proxy = $server.'/RSATWS.cgi';
 
@@ -32,8 +32,8 @@ $soap->wsdlinit;
 #################################################
 ## Retrieve-seq part
 
-## Return option
-my $return_choice = 'file';
+## Output option
+my $output_choice = 'server';
 
 ## Parameters
 my $organism = '-org Saccharomyces_cerevisiae';  ## Name of the query organism
@@ -49,7 +49,7 @@ my $label = '';  ## Choice of label for the retrieved sequence(s)
 my $label_sep = '';  ## Choice of separator for the label(s) of the retrieved sequence(s)
 my $nocom = '';  ## Other possible value = '-nocom'
 
-my %args = ('return' => $return_choice,
+my %args = ('output' => $output_choice,
 	    'organism' => $organism,
 	    'query' => \@gene,  ## An array in a hash has to be referenced
 	    'noorf' => $noorf,
@@ -80,7 +80,7 @@ if ($som->fault){  ## Report error if any
     print "Command used on the server:\n\t".$command, "\n";
     
     ## Report the result file name on the server
-    $server_file = $results{'file'};
+    $server_file = $results{'server'};
     print "Result file on the server:\n\t".$server_file;
 }
 
@@ -88,7 +88,7 @@ if ($som->fault){  ## Report error if any
 ## Purge-sequence part
 
 ## Define hash of parameters
-%args = ('return' => $return_choice,  ## Same 'file' return option
+%args = ('output' => $output_choice,  ## Same 'server' output option
 	 'tmp_infile' => $server_file);  ## Output from retrieve-seq part is used as input here
 
 ## Send the request to the server
@@ -107,14 +107,14 @@ if ($som->fault){  ## Report error if any
     print "Command used on the server: \n\t".$command, "\n";
 
     ## Report the result file name on the server
-    $server_file = $results{'file'};
+    $server_file = $results{'server'};
     print "Result file on the server: \n\t".$server_file;
 }
 #################################################
 ## Oligo-analysis part
 
-## Return option
-$return_choice = 'both';
+## Output option
+$output_choice = 'both';
 
 ## Parameters
 my $format = 'fasta';  ## The format of input sequences
@@ -126,7 +126,7 @@ my $str = '-2str';  ## Search on both strands
 my $sort = '-sort';  ## Sort the result according to score
 my $lth = '-lth occ_sig 0';  ## Lower limit to score is 0, less significant patterns are not displayed
 
-%args = ('return' => $return_choice, 
+%args = ('output' => $output_choice, 
 	 'tmp_infile' => $server_file, 
 	 'format' => $format,
 	 'length' => $length,
@@ -154,15 +154,15 @@ if ($som->fault){  ## Report error if any
     print "Command used on the server: ".$command, "\n";
     
     ## Report the result
-    if ($return_choice eq 'file') {
-	$server_file = $results{'file'};
+    if ($output_choice eq 'server') {
+	$server_file = $results{'server'};
 	print "Result file on the server: \n\t".$server_file;
-    } elsif ($return_choice eq 'result') {
-	my $result = $results{'result'};
+    } elsif ($output_choice eq 'client') {
+	my $result = $results{'client'};
 	print "Discovered oligo(s): \n".$result;
-    } elsif ($return_choice eq 'both') {
-	$server_file = $results{'file'};
-	my $result = $results{'result'};
+    } elsif ($output_choice eq 'both') {
+	$server_file = $results{'server'};
+	my $result = $results{'client'};
 	print "Result file on the server: \n\t".$server_file;
 	print "Discovered oligo(s): \n".$result;
     }

@@ -16,12 +16,10 @@ use SOAP::WSDL;
 warn "\nThis demo script retrieves the start codons for a set of query genes\n\n";
 
 ## WSDL location
-#my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services/';
-my $server = 'http://localhost/rsat/web_services/';
+my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services/';
+#my $server = 'http://localhost/rsat/web_services/';
 my $WSDL = $server.'RSATWS.wsdl';
 my $proxy = $server.'RSATWS.cgi';
-#my $WSDL = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.wsdl';
-#my $proxy = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.cgi';
 
 my $soap=SOAP::WSDL->new(wsdl => $WSDL)->proxy($proxy);
 
@@ -29,8 +27,8 @@ $soap->wsdlinit;
 
 # $soap->wsdl_checkoccurs(0);
 
-## Return option
-my $return_choice = 'both';  ## Accepted values: 'file', 'result', 'both'
+## Output option
+my $output_choice = 'both';  ## Accepted values: 'server', 'client', 'both'
 
 ## Retrieve-seq parameters
 my $organism = 'Escherichia_coli_K12';  ## Name of the query organism
@@ -49,9 +47,10 @@ my $label = 'id,name';  ## Choice of label for the retrieved sequence(s)
 my $label_sep = '';  ## Choice of separator for the label(s) of the retrieved sequence(s)
 my $nocom = '';  ## Other possible value = '-nocom', to get sequence(s) whithout comments
 my $repeat =  '';  ## Other possible value = '-rm', to have annotated repeat regions masked
-my $imp_pos = '';  ## Admit imprecise position (value = 'imp_pos' to do so
+my $imp_pos = '';  ## Admit imprecise position (value = 'imp_pos' to do so)
 
-my %args = ('return' => $return_choice,
+my %args = (
+	    'output' => $output_choice,
 	    'organism' => $organism,
 	    'query' => \@gene,  ## An array in a hash has to be referenced (correct?)
 	    'noorf' => $noorf,
@@ -65,7 +64,8 @@ my %args = ('return' => $return_choice,
 	    'label_sep' => $label_sep,
 	    'nocom' => $nocom,
 	    'repeat' => $repeat,
-	    'imp_pos' => $imp_pos);
+	    'imp_pos' => $imp_pos
+	    );
 
 ## Send the request to the server
 print "Sending request to the server\n";
@@ -83,15 +83,15 @@ if ($som->fault){ ## Report error if any
     print "Command used on the server: ".$command, "\n";
 
     ## Report the result
-    if ($return_choice eq 'file') {
-	my $server_file = $results{'file'};
+    if ($output_choice eq 'server') {
+	my $server_file = $results{'server'};
 	print "Result file on the server: ".$server_file;
-    } elsif ($return_choice eq 'result') {
-	my $result = $results{'result'};
+    } elsif ($output_choice eq 'client') {
+	my $result = $results{'client'};
 	print "Retrieved sequence(s): \n".$result;
-    } elsif ($return_choice eq 'both') {
-	my $server_file = $results{'file'};
-	my $result = $results{'result'};
+    } elsif ($output_choice eq 'both') {
+	my $server_file = $results{'server'};
+	my $result = $results{'client'};
 	print "Result file on the server: ".$server_file;
 	print "Retrieved sequence(s): \n".$result;
     }
