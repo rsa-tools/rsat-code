@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: matrix-scan.cgi,v 1.3 2006/11/10 07:26:43 jvanheld Exp $
+# $Id: matrix-scan.cgi,v 1.4 2006/12/08 15:10:24 jvanheld Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -46,7 +46,7 @@ $ECHO=1;
 
 #### matrix-scan parameters
 &ReadMatrixScanParameters();
-$parameters .= " -i $sequence_file";
+$parameters .= " -i $sequence_file -seq_format $sequence_format";
 
 ################################################################
 ### vertically print the matrix

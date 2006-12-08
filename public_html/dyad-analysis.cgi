@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.20 2005/09/02 15:45:52 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.21 2006/12/08 15:10:24 jvanheld Exp $
 #
 # Time-stamp: <2003-10-11 00:30:17 jvanheld>
 #
@@ -214,10 +214,12 @@ sub PipingForm {
     print <<End_of_form;
 <TABLE>
 <TR>
-<TD>
+
+<TD VALIGN=BOTTOM ALIGN=CENTER>
 <H3>Next step</H3>
 </TD>
-<TD>
+
+<TD VALIGN=BOTTOM ALIGN=CENTER>
 <FORM METHOD="POST" ACTION="dna-pattern_form.cgi">
 <INPUT type="hidden" NAME="title" VALUE="$title">
 <INPUT type="hidden" NAME="pattern_file" VALUE="$result_file">
@@ -227,10 +229,19 @@ sub PipingForm {
 </FORM>
 </TD>
 
-
-
+<td valign=bottom align=center>
+<b><font color="red">New !</font></b>
+<FORM METHOD="POST" ACTION="matrix-scan_form.cgi">
+<INPUT type="hidden" NAME="title" VALUE="$title">
+<INPUT type="hidden" NAME="matrix_file" VALUE="$pssm_file">
+<INPUT type="hidden" NAME="matrix_format" VALUE="tab">
+<INPUT type="hidden" NAME="sequence_file" VALUE="$sequence_file">
+<INPUT type="hidden" NAME="sequence_format" VALUE="$sequence_format">
+<INPUT type="submit" value="matrix-based pattern matching (matrix-scan)">
+</FORM>
 </TD>
-<TD>
+
+<TD VALIGN=BOTTOM ALIGN=CENTER>
 <FORM METHOD="POST" ACTION="pattern-assembly_form.cgi">
 <INPUT type="hidden" NAME="local_pattern_file" VALUE="$result_file">
 <INPUT type="hidden" NAME="subst" VALUE=0>

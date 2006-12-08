@@ -21,6 +21,8 @@ $checked{$default{bg_method}} = "CHECKED";
 $default{markov_order} = 0;
 $default{window_size} = 200;
 $default{organism} = "Saccharomyces cerevisiae";
+$default{matrix_format} = "tab";
+$default{pseudo_counts} = 1;
 
 ## Return fields
 $default{return_sites} = "CHECKED";
@@ -28,8 +30,8 @@ $default{return_limits} = "CHECKED";
 $default{return_rank} = "CHECKED";
 $default{return_normw} = "";
 $default{return_matrix} = "CHECKED";
-$default{return_freq_matrix} = "CHECKED";
-$default{return_weight_matrix} = "CHECKED";
+$default{return_freq_matrix} = "";
+$default{return_weight_matrix} = "";
 $default{return_bg_model} = "";
 
 ## Threshold values
@@ -91,7 +93,10 @@ print "<B>Format</B>&nbsp;";
 
 #### matrix format
 print $query->popup_menu(-name=>'matrix_format',
-			 -Values=>['consensus',
+			 -Values=>[
+				   'tab',
+				   'meme',
+				   'consensus',
 				   'gibbs',
 				   'transfac'
 				  ],
@@ -141,6 +146,14 @@ print ("<b>Genome subset</b> &nbsp; ",
 print  &OrganismPopUpString();
 	
 print "<hr>";
+
+################################################################
+#### pseudo-counts
+print "<BR>\n";
+print "<B><A HREF='help.patser.html#pseudo_counts'>Pseudo-counts</A>\n";
+print $query->textfield(-name=>'pseudo_counts',
+			-default=>$default{pseudo_counts},
+			-size=>2);
 
 ################################################################
 #### strands
