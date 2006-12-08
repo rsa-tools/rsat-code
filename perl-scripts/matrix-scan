@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.46 2006/12/06 14:12:57 jvanheld Exp $
+# $Id: matrix-scan,v 1.47 2006/12/08 03:44:43 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -742,39 +742,43 @@ models only (-markov 0 to 1).
     }
 
     ## Return count matrices
+    my $m = 0;
     if ($return_fields{matrix}) {
       foreach my $matrix (@matrices) {
+	$m++; print "//\n" if ($m >= 1);
 	print $out ";\n; Count matrix\t", $matrix->get_attribute("name"), "\n";
-	    print $out $matrix->toString(col_width=>(7), decimals=>0, type=>"counts",format=>"tab", comment_string=>";");
-	}
+	print $out $matrix->toString(col_width=>(7), decimals=>0, type=>"counts",format=>"tab", comment_string=>";");
+      }
     }
-
+    
     ## Return frequency matrices
     if ($return_fields{matrix}) {
-	foreach my $matrix (@matrices) {
-	    print $out ";\n; Frequency matrix\t", $matrix->get_attribute("name"), "\n";
-	    print $out $matrix->toString(col_width=>(7), decimals=>0, type=>"frequencies",format=>"tab", comment_string=>";");
-	}
+      foreach my $matrix (@matrices) {
+	$m++; print "//\n" if ($m >= 1);
+	print $out ";\n; Frequency matrix\t", $matrix->get_attribute("name"), "\n";
+	print $out $matrix->toString(col_width=>(7), decimals=>0, type=>"frequencies",format=>"tab", comment_string=>";");
+      }
     }
-
+    
     ## Return weight matrices
     if ($return_fields{weight_matrix}) {
-	foreach my $matrix (@matrices) {
-	    print $out ";\n; Weight matrix\t", $matrix->get_attribute("name"), "\n";
-	    print $out $matrix->toString(col_width=>(7), decimals=>3, type=>"weights", format=>"tab", comment_string=>";");
-	}
+      foreach my $matrix (@matrices) {
+	$m++; print "//\n" if ($m >= 1);
+	print $out ";\n; Weight matrix\t", $matrix->get_attribute("name"), "\n";
+	print $out $matrix->toString(col_width=>(7), decimals=>3, type=>"weights", format=>"tab", comment_string=>";");
+      }
     }
-
+    
     ## Report background model
     if ($return_fields{bg_model}) {
-	print $out ";\n; Background model\n";
-	print $out $bg_model->to_string($bg_out_format, comment_string=>"; ");
+      print $out ";\n; Background model\n";
+      print $out $bg_model->to_string($bg_out_format, comment_string=>"; ");
     }
-
+    
     ################################################################
     ## Report score distribution
     if ($return_fields{distrib}) {
-
+      
       ################################################################
       ##  Calculate cumulative frequencies
       &RSAT::message::TimeWarn("Calculating cumulative frequencies") if ($main::verbose >= 2);
