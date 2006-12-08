@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.47 2006/12/08 03:44:43 jvanheld Exp $
+# $Id: matrix-scan,v 1.48 2006/12/08 16:06:25 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -217,6 +217,7 @@ models only (-markov 0 to 1).
     @main::matrix_files = ();
     @matrices = ();
 
+    $consensus_name = ""; # Use consensus as matrix name
     $markov = -1; ## To make the distinction with 0, which is a valid value for the markov order
     $window = -1; 
     $bg_method = "";
@@ -467,12 +468,25 @@ models only (-markov 0 to 1).
 	$matrix->set_attribute("n_treatment", $n_treatment);
 	$matrix->push_attribute("parameters", "pseudo");
 	$matrix->index_alphabet();
-	my ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
-	$matrix_name =~ s/\.\S+$//; ## suppress the extensin from the file name
-	if (scalar(@new_matrices) > 1) {
-	  $matrix_name .= ".".($m+1);
+
+
+
+ 	## Use the matrix consensus as name
+	if ($consensus_name) {
+	  $matrix->calcConsensus();
+	  my $consensus = $matrix->get_attribute("consensus.IUPAC");
+	  if ($consensus) {
+	    &RSAT::message::Warning("Using consensus as name", $consensus) if ($main::verbose >= 3);
+	    $matrix->force_attribute("name", $consensus);
+	  }
+	} else {
+	  my ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
+	  $matrix_name =~ s/\.\S+$//; ## suppress the extension from the file name
+	  if (scalar(@new_matrices) > 1) {
+	    $matrix_name .= ".".($m+1);
+	  }
+	  $matrix->set_attribute("name", $matrix_name);
 	}
-	$matrix->set_attribute("name", $matrix_name);
 
 	## Check that the matrix width is smaller than markov order + 1
 	my $matrix_width = $matrix->ncol();
@@ -752,7 +766,7 @@ models only (-markov 0 to 1).
     }
     
     ## Return frequency matrices
-    if ($return_fields{matrix}) {
+    if ($return_fields{freq_matrix}) {
       foreach my $matrix (@matrices) {
 	$m++; print "//\n" if ($m >= 1);
 	print $out ";\n; Frequency matrix\t", $matrix->get_attribute("name"), "\n";
@@ -1241,6 +1255,17 @@ multiple matrices.
 	} elsif ($arg eq "-m") {
 	    push @matrix_files, shift(@arguments);
 #	    $main::infile{matrix} = shift(@arguments);
+
+	    ## Use consensus as matrix name
+=pod
+
+=item B<-consensus_name>
+
+Use the motif (degenerate) consensus as matrix name.
+
+=cut
+	} elsif ($arg eq "-consensus_name") {
+	  $main::consensus_name = 1;
 
 	    ## Matrix file
 =pod
