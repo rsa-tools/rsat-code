@@ -383,7 +383,7 @@ sub ReadPatternFrequencies {
   
   #### rescale expected frequencies to have a sum of 1
   if ($rescale_freq) {
-    &RSAT::message::Info("Rescaling expected frequencies") if ($main::verbose >=1);
+    &RSAT::message::Info("Rescaling expected frequencies") if ($main::verbose >=2);
     foreach my $pattern_seq (keys %patterns) {
       $patterns{$pattern_seq}->{exp_freq} /= $freq_sum;
     }
@@ -473,7 +473,7 @@ sub ReadExpectedFrequencies {
     
     #### rescale expected frequencies to have a sum of 1
     if ($rescale_freq) {
-	warn "; Rescaling expected frequencies\n" if ($main::verbose >=1);
+	warn "; Rescaling expected frequencies\n" if ($main::verbose >=2);
 	foreach my $pattern_seq (keys %patterns) {
 	    $patterns{$pattern_seq}->{exp_freq} /= $freq_sum;
 	}
