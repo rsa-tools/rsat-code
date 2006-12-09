@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: matrix-scan.cgi,v 1.5 2006/12/08 16:06:25 jvanheld Exp $
+# $Id: matrix-scan.cgi,v 1.6 2006/12/09 22:19:47 jvanheld Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -205,7 +205,7 @@ sub ReadMatrixScanParameters {
 
     ################################################################
     ## Return fields
-    @return_fields = qw(sites rank normw limits bg_model matrix freq_matrix weight_matrix);
+    @return_fields = qw(sites pval rank normw limits bg_model matrix freq_matrix weight_matrix);
     foreach my $field (@return_fields) {
       if ($query->param("return_".$field) eq "on") {
 	$parameters .= " -return ".$field;

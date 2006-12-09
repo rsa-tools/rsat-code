@@ -27,12 +27,13 @@ $default{consensus_as_name} = "CHECKED";
 
 ## Return fields
 $default{return_sites} = "CHECKED";
+$default{return_pval} = "CHECKED";
 $default{return_limits} = "CHECKED";
 $default{return_rank} = "CHECKED";
 $default{return_normw} = "";
-$default{return_matrix} = "CHECKED";
+$default{return_matrix} = "";
 $default{return_freq_matrix} = "";
-$default{return_weight_matrix} = "";
+$default{return_weight_matrix} = "CHECKED";
 $default{return_bg_model} = "";
 
 ## Threshold values
@@ -432,26 +433,13 @@ exit(0);
 sub ReturnTable {
   print "<p><b>Return</b>\n";
   
-  ### Sites
-  @return_fields = qw(sites rank normw limits matrix freq_matrix weight_matrix bg_model);
+  ### Return fields
+  @return_fields = qw(sites pval rank normw limits matrix freq_matrix weight_matrix bg_model);
   foreach my $field (@return_fields) {
     print $query->checkbox(-name=>'return_'.$field,
 			   -checked=>$default{'return_'.$field},
 			   -label=>' '.$field.' ');
   }
-
-#    print $query->checkbox(-name=>'return_limits',
-#			 -checked=>$default{return_limits},
-#			 -label=>' Limits ');
-#  print $query->checkbox(-name=>'return_rank',
-#			 -checked=>$default{return_rank},
-#			 -label=>' Rank ');
-#  print $query->checkbox(-name=>'return_normw',
-#			 -checked=>$default{return_normw},
-#			 -label=>' Normalized weights ');
-#  print $query->checkbox(-name=>'return_model',
-#			 -checked=>$default{return_model},
-#			 -label=>' Background model ');
 
 
   print "<p><b>Thresholds</b>\n";
