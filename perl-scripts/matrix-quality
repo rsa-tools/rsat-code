@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.3 2006/12/04 23:20:14 jvanheld Exp $
+# $Id: matrix-quality,v 1.4 2006/12/09 15:33:10 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -133,7 +133,7 @@ package main;
     my @matrices = &RSAT::MatrixReader::readFromFile($matrix_file, $matrix_format);
     
     ## Check the number of parsed matrices
-    if (scalar(@matrices) > 0) {
+    if (scalar(@matrices) > 1) {
       &RSAT::message::Warning("File",  $matrix_file, 
 			      "contains ".scalar(@matrices)." matrices. ", 
 			      "Only the first one will be evaluated.");
@@ -155,7 +155,10 @@ package main;
     ## Shuffle the matrix
     &PermuteMatrixColumns();
 
-    ## Score the different sequences
+    ## Calcualte theoretical distribution of probabilities
+    &PrintTheorScoreDistribution($matrix);
+
+    ## Calculate score distributions in the different input sequence files
     my @distrib_files = ();
 
     ## Score positive sequences with the matrix
@@ -218,12 +221,14 @@ sub PrintOptions {
 #### Read arguments 
 sub ReadArguments {
 
-    my $arg = "";
-    
-    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
-    
+    my $arg;
 
-    while ($arg = shift (@arguments)) {
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+
+
+    while (scalar(@arguments)) {
+      $arg = shift (@arguments);
+#      &RSAT::message::Debug("argument", $arg) if ($main::verbose >= 10);
 
 	## Verbosity
 =pod
@@ -435,10 +440,8 @@ statistics.
 
 	} else {
 	  push @matrix_scan_options, $arg;
-
 	}
     }
-
 
 =pod
 
@@ -631,7 +634,26 @@ sub CompareDistrib {
   $XYgraph_cmd .= " -o ".$outfile{distrib_compa}."_roc.png";
 
   ## Execute the command
+  die ("HERE");
   &doit($XYgraph_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+
+}
+
+
+################################################################
+## Calculate score distribution
+sub PrintTheorScoreDistribution {
+  my ($matrix) = @_;
+
+  my $wd = &OpenOutputFile($main::outfile{prefix}."_weight_distrib_theor.txt");
+
+  my %weight_proba = $matrix->getTheorScoreDistrib("weights");
+
+  foreach my $weight (sort {$a <=> $b} keys (%weight_proba)) {
+    print $wd join("\t", $weight, $weight_proba{$weight}), "\n";
+  }
+  close $wd;
+
 
 }
 
