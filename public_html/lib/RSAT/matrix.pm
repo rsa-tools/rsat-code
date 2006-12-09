@@ -1775,6 +1775,159 @@ sub add_site() {
 
 }
 
+################################################################
+=pod
+
+=item B<calcTheorScoreDistrib>
+
+Calculate the theoretial score distribution.  The computation is
+performed using the algorithm described by Bailey (Bioinformatics,
+1999).
+
+By default, the score distribution is computed for the weight
+(log-likelihood), but the methods can also be used to calculate the
+distribution of other scores (e.g. counts, crude frequencies,
+frequencies, ...).
+
+Usage:
+ $self->calcTheorScoreDistrib();
+ $self->calcTheorScoreDistrib("counts");
+
+=cut
+sub calcTheorScoreDistrib {
+  my ($self, $score_type) = @_;
+  $score_type = $score_type || "weights";
+
+  ################################################################
+  ## This parameter drastically affects the speed of computation By
+  ## reducing the score to 2 decimals, the nmber of possible scors is
+  ## reduced to ~5000 for a typical weight matrix
+  ## This prevents the comptation time to increase exponentially with
+  ## the matrix width.
+  my $score_format = "%.2f";
+
+  my @scores;
+  if (lc($score_type) eq "counts") {
+    @scores = $self->getMatrix();
+  } elsif (lc($score_type) eq "weights") {
+    @scores = $self->getWeights();
+  } elsif (lc($score_type) eq "crudefrequencies") {
+    @scores = $self->getCrudeFrequencies();
+  } elsif (lc($score_type) eq "frequencies") {
+    @scores = $self->getFrequencies();
+  }
+
+  &RSAT::message::TimeWarn("Calculating theoretical distribution of", $score_type, 
+			   "matrix", $self->get_attribute("name")) if ($main::verbose >= 2);
+
+  my $nrow = $self->nrow();
+  my $ncol = $self->ncol();
+  my @alphabet = $self->getAlphabet();
+  my %prior = $self->getPrior();
+
+  my %score_proba = ();
+  $score_proba{0} = 1; ## Initialize the score probabilities
+
+  ################################################################
+  ## Compute the distribution of scores
+  for my $c (0..($ncol-1)) {
+    my @row = &RSAT::matrix::get_column($c+1, $nrow, @matrix);
+    my @row_scores = &RSAT::matrix::get_column($c+1, $nrow, @scores);
+    my %current_score_proba = ();
+    for my $r (0..($nrow-1)) {
+      my $letter = $alphabet[$r];
+      my $prior = $prior{$letter};
+      my $residue_score = sprintf("${score_format}", $scores[$c][$r]);
+      for my $prev_score (keys %score_proba) {
+	my $current_score = $prev_score + $residue_score;
+	$current_score_proba{$current_score} +=
+	  $score_proba{$prev_score}*$prior;
+#	&RSAT::message::Debug("col=".$c, "row=".$r, $letter, $prior, $residue_score,
+#			      "prev_score",$prev_score,
+#			      "current_score", $current_score,
+#			     ) if ($main::verbose >= 10);
+
+      }
+    }
+
+    &RSAT::message::TimeWarn("calcTheorDistrib()", "column", $c, 
+			     "prev scores: ", scalar(keys(%score_proba)), 
+			     "current scores:", scalar(keys(%current_score_proba)), 
+			    ) if ($main::verbose >= 3);
+    %score_proba = %current_score_proba;
+  }
+  $self->set_hash_attribute($score_type."_proba", %score_proba);
+  $self->force_attribute($score_type."_proba_specified", 1);
+
+  ## Compute the cumulative distribution
+  my $score_proba_cum = 0;
+  my %score_proba_cum = ();
+  my @sorted_scores = sort {$a <=> $b} (keys (%score_proba));
+  foreach my $score (@sorted_scores) {
+    $score_proba_cum += $score_proba{$score};
+    $score_proba_cum{$score} = $score_proba_cum;
+  }
+  $self->set_hash_attribute($score_type."_cum_proba", %score_proba_cum);
+  $self->force_attribute($score_type."_cum_proba_specified", 1);
+
+  ## Compute the inverse cumulative distribution
+  my $score_proba_inv_cum = 0;
+  my %score_proba_inv_cum = ();
+  @sorted_scores = sort {$b <=> $a} (keys (%score_proba));
+  foreach my $score (@sorted_scores) {
+    $score_proba_inv_cum += $score_proba{$score};
+    $score_proba_inv_cum{$score} = $score_proba_inv_cum;
+  }
+  $self->set_hash_attribute($score_type."_inv_cum_proba", %score_proba_inv_cum);
+  $self->force_attribute($score_type."_inv_cum_proba_specified", 1);
+}
+
+
+################################################################
+=pod
+
+=item getTheorScoreDistrib()
+
+Return the weight matrix
+
+Usage:
+
+=over
+
+=item density function
+
+my %weight_proba = $matrix->getTheorScoreDistrib("weights");
+
+=item cumulative density function (CDF)
+
+my %weight_proba = $matrix->getTheorScoreDistrib("weights", "cum");
+
+=item inverse cumulative density function (iCDF)
+
+my %weight_proba = $matrix->getTheorScoreDistrib("weights", "inv_cum");
+
+=back
+
+=cut
+sub getTheorScoreDistrib {
+  my ($self, $score_type, $distrib_type) = @_;
+
+  $score_type = $score_type || "weights";
+  my $distrib_key = $score_type;
+  if ($distrib_type) {
+    $distrib_key .= "_".$distrib_type;
+  }
+  $distrib_key .= "_proba";
+
+  ## Check if the distribution has aleady been calculated
+  unless ($self->get_attribute($distrib_key."_specified")) {
+    $self->calcTheorScoreDistrib($score_type);
+  }
+
+  &RSAT::message::Info("Returning distribution", $distrib_key) if ($main::verbose >= 3);
+  return %{$self->{$distrib_key}};
+}
+
 return 1;
 
 

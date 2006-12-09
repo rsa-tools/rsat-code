@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.20 2006/12/08 05:11:08 jvanheld Exp $
+# $Id: convert-matrix,v 1.21 2006/12/09 15:33:10 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -39,17 +39,18 @@ local $out = STDOUT;
 ## Return type(s)
 @return_fields = ();
 %supported_return_type = (
-    "profile"=>1,
-    "counts"=>1,
-    "frequencies"=>1,
-    "weights"=>1,
-    "info"=>1,
-    "information"=>1,
-    "parameters"=>1,
-    "consensus"=>1,
-    "margins"=>1,
-    "sites"=>1,
-    );
+			  "profile"=>1,
+			  "counts"=>1,
+			  "frequencies"=>1,
+			  "weights"=>1,
+			  "info"=>1,
+			  "information"=>1,
+			  "parameters"=>1,
+			  "consensus"=>1,
+			  "margins"=>1,
+			  "sites"=>1,
+			  "wdistrib"=>1,
+			 );
 $supported_return_fields = join ",", sort keys %supported_return_type;
 
 ## input formats
@@ -444,6 +445,10 @@ OUTPUT FORMATS
             parameters is already returned by the program consensus
             (Hertz), but not by other programs.
 
+	wdistrib
+	    Theoretical distribution of weight probabilities (computed
+	    as in Bailey, Bioinformatics, 1999).
+
 End_of_help
   close HELP;
   exit(0);
@@ -675,6 +680,46 @@ sub ExportMatrix {
   if ($return{parameters}) {
     $current_matrix->calcConsensus();
     print $out $current_matrix->toString(type=>"parameters");
+  }
+
+  ## Return weight distribution
+  if ($return{wdistrib}) {
+    my %weight_proba = $current_matrix->getTheorScoreDistrib("weights");
+    my %weight_proba_cum = $current_matrix->getTheorScoreDistrib("weights", "cum");
+    my %weight_proba_inv_cum = $current_matrix->getTheorScoreDistrib("weights", "inv_cum");
+
+    ## Print the description of column contents
+    my @columns = ("weight", "proba", "cum", "Pval", "ln_Pval", "sig");
+    if ($main::verbose >= 1) {
+      print $out ";\n; Theoretical distribution of weight probabilities\n";
+      my %descr = ();
+      $descr{"weight"} = "log-likelihood score: w=P(S|M)/P(S|B)";
+      $descr{"proba"} = "probability density function: P(W=w)";
+      $descr{"cum"} = "cumulative density function: P(W <= w)";
+      $descr{"Pval"} = "P-value = inverse cumulative density function: Pval = P(W >= w)";
+      $descr{"ln_Pval"} = "natural logarithm of the P-value";
+      $descr{"sig"} = "significance: sig = -log10(Pval)";
+      $c =0;
+      foreach my $col (@columns) {
+	$c++;
+	print $out sprintf(";\t%d\t%-12s\t%s", $c, $col, $descr{$col}), "\n";
+      }
+    }
+
+    ## Print header
+    print $out "#", join ("\t", @columns), "\n";
+
+    ## Print the score distribution
+    my $log10 = log(10);
+    foreach my $weight (sort {$a <=> $b} keys (%weight_proba)) {
+      print $out join("\t", $weight, 
+		      sprintf("%.1e", $weight_proba{$weight}),
+		      sprintf("%.1e", $weight_proba_cum{$weight}),
+		      sprintf("%.1e", $weight_proba_inv_cum{$weight}),
+		      sprintf("%.3f", log($weight_proba_inv_cum{$weight})),
+		      sprintf("%.3f", -log($weight_proba_inv_cum{$weight})/$log10),
+		     ), "\n";
+    }
   }
 
 }
