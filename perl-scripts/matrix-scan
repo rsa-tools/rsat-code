@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.48 2006/12/08 16:06:25 jvanheld Exp $
+# $Id: matrix-scan,v 1.49 2006/12/09 22:05:48 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -210,7 +210,9 @@ models only (-markov 0 to 1).
     my $start_time = &AlphaDate();
     $decimals=2;
     $log10 = log(10); ## Calculate it only once for all the tests
-    
+
+    local %pval = (); ## This variable is defined as local to avoid passing the hash table for each match
+
     %main::infile = ();
     %main::outfile = ();
 
@@ -222,7 +224,7 @@ models only (-markov 0 to 1).
     $window = -1; 
     $bg_method = "";
     $null = "NA";
-    $infinite = "999"; ## String to print for infinite values (e.g. when the Eval < e-300, it i rounded to 0, thus the significance is infinite)
+    $infinite = "999"; ## String to print for infinite values (e.g. when the eval < e-300, it i rounded to 0, thus the significance is infinite)
 
     $bg_in_format = "oligo-analysis";
     $bg_out_format = "tab";
@@ -249,16 +251,18 @@ models only (-markov 0 to 1).
     @supported_thresholds = qw ( 
 				score
 				normw
-				proba_M
-				proba_B
+				pval
+				ln_pval
+				proba_m
+				proba_b
 				rank
 				occ
 				occ_cum
 				inv_cum
 				exp_inv
-				inv_Pval
-				inv_Eval
-				inv_sig
+				hit_pval
+				hit_eval
+				hit_sig
 				inv_rank
 			       );
     $supported_thresholds = join ",", @supported_thresholds;
@@ -275,6 +279,7 @@ models only (-markov 0 to 1).
     ## Return fields
     %supported_return_fields = (
 				sites=>1,
+				pval=>1,
 				rank=>1,
 				limits=>1,
 				normw=>1,
@@ -304,11 +309,17 @@ models only (-markov 0 to 1).
     ## Return fields
     if (scalar(keys(%return_fields)) < 1) {
 	$return_fields{sites} = 1;
-    } else {
-	foreach my $field (keys(%return_fields)) {
-	    $return_fields{$field} = 1;
-	}
+	$return_fields{pval} = 1;
+    } elsif ($return_fields{pval}) {
+      ## It makes no sense to return pval without sites
+      $return_fields{sites} = 1;
     }
+
+    ## Ensute that all the fields to return are calculated
+    foreach my $field (keys(%return_fields)) {
+      $calc_fields{$field} = 1;
+    }
+
     if ((defined($uth{normw})) || (defined($lth{normw}))) {
 	$return_fields{normw} = 1;
     }
@@ -357,7 +368,9 @@ models only (-markov 0 to 1).
     }
 
     ## Fields to calculate
-    if (($return_fields{sites}) || ($return_fields{distrib})) {
+    if (($return_fields{sites}) 
+	|| ($return_fields{distrib}),
+       ) {
       $calc_fields{sites} = 1;
     }
 
@@ -462,14 +475,13 @@ models only (-markov 0 to 1).
 	my $matrix = $new_matrices[$m];
 	$matrix->set_attribute("scored", 0); ## Number of sequence segments for which the matrix calculated a score
 	$matrix->set_attribute("matches", 0); ## Initialize the match counter
-	$matrix->set_attribute("pseudo", $pseudo_counts);
+	$matrix->set_parameter("pseudo", $pseudo_counts);
+#	$matrix->push_attribute("parameters", "pseudo");
 	$matrix->set_attribute("equi_pseudo", $main::equi_pseudo);
 	$matrix->set_attribute("file", $matrix_file);
 	$matrix->set_attribute("n_treatment", $n_treatment);
-	$matrix->push_attribute("parameters", "pseudo");
+	$matrix->force_attribute("decimals", $decimals);
 	$matrix->index_alphabet();
-
-
 
  	## Use the matrix consensus as name
 	if ($consensus_name) {
@@ -524,6 +536,14 @@ models only (-markov 0 to 1).
     }
 
     ################################################################
+    ## Calculate th pval distribution
+    if ($calc_fields{pval}) {
+      foreach my $matrix (@matrices) {
+	%{$pval{$matrix}} = $matrix->getTheorScoreDistrib("weights", "inv_cum");
+      }
+    }
+
+    ################################################################
     #### print verbose
     &Verbose() if ($main::verbose);
 
@@ -541,6 +561,10 @@ models only (-markov 0 to 1).
 			    "proba_M",
 			    "proba_B",
 			   );
+      if ($return_fields{pval}) {
+	print $out "\t", "pval";
+	print $out "\t", "ln_pval";
+      }
       print $out "\tnormw" if ($return_fields{normw});
       print $out "\trank" if ($return_fields{rank});
       print $out "\n";
@@ -658,15 +682,12 @@ models only (-markov 0 to 1).
 	    }
 	  }
 	}
-	
+
 	################################################################
 	## Return ranked matches
 	if ($return_fields{rank}) {
 	    &RSAT::message::TimeWarn("Ranking matches for sequence", $seq_id) if ($main::verbose >= 3);
 	    foreach my $matrix (@matrices) {
-		
-	      #		my @ranked_matches = sort {$b->get_attribute('score') <=> $a->get_attribute('score')} @matches;
-
 	      unless (defined(@{$matches_per_matrix{$matrix->get_attribute('name')}})) {
 		## Sort the matches per score
 		&RSAT::message::Info("No match for matrix", "matrix", 
@@ -674,10 +695,9 @@ models only (-markov 0 to 1).
 				      "in sequence",
 				      $seq_id,
 				     ) if ($main::verbose >= 3);
-		
 		next;
 	      }
-	      
+
 	      ## Sort the matches per score
 	      &RSAT::message::Info("Ranking", scalar(@{$matches_per_matrix{$matrix->get_attribute('name')}}), 
 				    "matches for matrix",
@@ -689,7 +709,7 @@ models only (-markov 0 to 1).
 	      my @ranked_matches = 
 		sort {$b->get_attribute('score') <=> $a->get_attribute('score')} 
 		  @{$matches_per_matrix{$matrix->get_attribute('name')}};
-	      
+
 		my $rank = 0;
 		foreach my $match (@ranked_matches) {
 		    $rank++;
@@ -702,8 +722,7 @@ models only (-markov 0 to 1).
 	}
     }
     close $in if ($main::infile{input});
-    
-    
+
     ################################################################
     ## Print additional information
 
@@ -761,7 +780,7 @@ models only (-markov 0 to 1).
       foreach my $matrix (@matrices) {
 	$m++; print "//\n" if ($m >= 1);
 	print $out ";\n; Count matrix\t", $matrix->get_attribute("name"), "\n";
-	print $out $matrix->toString(col_width=>(7), decimals=>0, type=>"counts",format=>"tab", comment_string=>";");
+	print $out $matrix->toString(col_width=>(7), decimals=>2, type=>"counts",format=>"tab", comment_string=>";");
       }
     }
     
@@ -770,7 +789,7 @@ models only (-markov 0 to 1).
       foreach my $matrix (@matrices) {
 	$m++; print "//\n" if ($m >= 1);
 	print $out ";\n; Frequency matrix\t", $matrix->get_attribute("name"), "\n";
-	print $out $matrix->toString(col_width=>(7), decimals=>0, type=>"frequencies",format=>"tab", comment_string=>";");
+	print $out $matrix->toString(col_width=>(7), decimals=>3, type=>"frequencies",format=>"tab", comment_string=>";");
       }
     }
     
@@ -881,10 +900,10 @@ models only (-markov 0 to 1).
 	    ## Check that the background file contains the required prior
 	    if (defined($exp_score_distrib->{$matrix_name}->{$score}->{distrib_prior})) {
 	      my $prior  = $exp_score_distrib->{$matrix_name}->{$score}->{distrib_prior};
-	      &RSAT::message::Debug("Calculating Pval", $matrix_name, $score, $x, $n, $prior)
+	      &RSAT::message::Debug("Calculating pval", $matrix_name, $score, $x, $n, $prior)
 		if ($main::verbose >= 5);
 
-	      $score_distrib->{$matrix_name}->{$score}->{inv_Pval} =
+	      $score_distrib->{$matrix_name}->{$score}->{hit_pval} =
 		&sum_of_binomials($prior, ## prior probabilty
 				  $n, ## Number of trials
 				  $x, ## Min number of successes
@@ -898,13 +917,13 @@ models only (-markov 0 to 1).
 	      $exp_score_distrib->{$matrix_name}->{$score}->{distrib_prior} = $null;
 #	      $distrib_prior{$matrix."_".$score} = $null;
 	      $score_distrib->{$matrix_name}->{$score}->{exp_inv} = $null;
-	      $score_distrib->{$matrix_name}->{$score}->{inv_Pval} = $null;
-#	      $score_distrib->{$matrix_name}->{$score}->{inv_Eval} = $null;
-#	      $score_distrib->{$matrix_name}->{$score}->{inv_sig} = $null;
+	      $score_distrib->{$matrix_name}->{$score}->{hit_pval} = $null;
+#	      $score_distrib->{$matrix_name}->{$score}->{hit_eval} = $null;
+#	      $score_distrib->{$matrix_name}->{$score}->{hit_sig} = $null;
 	    }
 #	    &RSAT::message::Debug("Calculated significance", $matrix_name, $score, $x,
 #				  $exp_score_distrib->{$matrix_name}->{$score}->{distrib_prior},
-#				  $score_distrib->{$matrix_name}->{$score}->{inv_Pval},
+#				  $score_distrib->{$matrix_name}->{$score}->{hit_pval},
 #				 ) if ($main::verbose >= 10);
 	  }
 	}
@@ -912,7 +931,7 @@ models only (-markov 0 to 1).
 
       ################################################################
       ## Check thresholds on significance
-      &check_distrib_thresholds('inv_Pval');
+      &check_distrib_thresholds('hit_pval');
 
 
       ################################################################
@@ -924,25 +943,25 @@ models only (-markov 0 to 1).
 	my @sorted_scores = sort {$a <=> $b} keys %{$score_distrib->{$matrix_name}};
 	&RSAT::message::Info("score range", $matrix_name, $sorted_scores[0], $sorted_scores[$#sorted_scores], scalar(@sorted_scores)) if ((scalar(@sorted_scores) >= 1) && ($main::verbose >= 3));
 	foreach my $score (@sorted_scores) {
-	  my $Eval = $null;
-	  my $inv_sig = $null;
-	  if (defined($score_distrib->{$matrix_name}->{$score}->{inv_Pval})) {
-	    my $Pval = $score_distrib->{$matrix_name}->{$score}->{inv_Pval};
-	    unless ($Pval eq $null) {
-	      $Eval = $score_distrib->{$matrix_name}->{$score}->{inv_Pval}*$nb_of_tests;
-	      if ($Eval > 0) {
-		$inv_sig = -log($Eval)/$log10;
+	  my $hit_eval = $null;
+	  my $hit_sig = $null;
+	  if (defined($score_distrib->{$matrix_name}->{$score}->{hit_pval})) {
+	    my $hit_pval = $score_distrib->{$matrix_name}->{$score}->{hit_pval};
+	    unless ($hit_pval eq $null) {
+	      $hit_eval = $score_distrib->{$matrix_name}->{$score}->{hit_pval}*$nb_of_tests;
+	      if ($hit_eval > 0) {
+		$hit_sig = -log($hit_eval)/$log10;
 	      } else {
-		$inv_sig = $infinite;
+		$hit_sig = $infinite;
 	      }
 	    }
 	  }
-	  $score_distrib->{$matrix_name}->{$score}->{inv_Eval} = $Eval;
-	  $score_distrib->{$matrix_name}->{$score}->{inv_sig} = $inv_sig;
+	  $score_distrib->{$matrix_name}->{$score}->{hit_eval} = $hit_eval;
+	  $score_distrib->{$matrix_name}->{$score}->{hit_sig} = $hit_sig;
 	}
       }
-      &check_distrib_thresholds('inv_Eval');
-      &check_distrib_thresholds('inv_sig');
+      &check_distrib_thresholds('hit_eval');
+      &check_distrib_thresholds('hit_sig');
 
       ## Print the header;
       print $out ";\n; Score distribution\n";
@@ -958,9 +977,9 @@ models only (-markov 0 to 1).
       if ($return_fields{distrib_proba}) {
 	push @header, ("distrib_prior",
 		       "exp_inv",
-		       "inv_Pval",
-		       "inv_Eval",
-		       "inv_sig",
+		       "hit_pval",
+		       "hit_eval",
+		       "hit_sig",
 		       "rank",
 		      );
       }
@@ -976,9 +995,9 @@ models only (-markov 0 to 1).
 
 	if ($return_fields{distrib_proba}) {
 	  @sorted_scores =  sort {
-	    $score_distrib->{$matrix_name}->{$a}->{inv_Pval} <=> $score_distrib->{$matrix_name}->{$b}->{inv_Pval}
+	    $score_distrib->{$matrix_name}->{$a}->{hit_pval} <=> $score_distrib->{$matrix_name}->{$b}->{hit_pval}
 	    } keys %{$score_distrib->{$matrix_name}};
-	  &RSAT::message::Info("Sorting distribution by inv_Pval") if ($main::verbose >= 4);
+	  &RSAT::message::Info("Sorting distribution by hit_pval") if ($main::verbose >= 4);
 	}
 
 	my $inv_rank = 0;
@@ -1022,30 +1041,30 @@ models only (-markov 0 to 1).
 	      $exp_inv = sprintf("%.2f", $score_distrib->{$matrix_name}->{$score}->{exp_inv});
 	    }
 
-	    ## Format Pval for printing
-	    my $Pval = $null;
-	    if (defined($score_distrib->{$matrix_name}->{$score}->{inv_Pval})) {
-	      $Pval = sprintf("%.6e", $score_distrib->{$matrix_name}->{$score}->{inv_Pval});
+	    ## Format pval for printing
+	    my $hit_pval = $null;
+	    if (defined($score_distrib->{$matrix_name}->{$score}->{hit_pval})) {
+	      $hit_pval = sprintf("%.6e", $score_distrib->{$matrix_name}->{$score}->{hit_pval});
 	    }
 	    
-	    ## Format Eval for printing
-	    my $Eval = $null;
-	    if (defined($score_distrib->{$matrix_name}->{$score}->{inv_Eval})) {
-	      $Eval = sprintf("%.6e", $score_distrib->{$matrix_name}->{$score}->{inv_Eval});
+	    ## Format eval for printing
+	    my $hit_eval = $null;
+	    if (defined($score_distrib->{$matrix_name}->{$score}->{hit_eval})) {
+	      $hit_eval = sprintf("%.6e", $score_distrib->{$matrix_name}->{$score}->{hit_eval});
 	    }
 	    
-	    ## Format inv_sig for printing
-	    my $inv_sig = $null;
-	    if (defined($score_distrib->{$matrix_name}->{$score}->{inv_sig})) {
-	      $inv_sig = sprintf("%.2f", $score_distrib->{$matrix_name}->{$score}->{inv_sig});
+	    ## Format hit_sig for printing
+	    my $hit_sig = $null;
+	    if (defined($score_distrib->{$matrix_name}->{$score}->{hit_sig})) {
+	      $hit_sig = sprintf("%.2f", $score_distrib->{$matrix_name}->{$score}->{hit_sig});
 	    }
 
 	    print $out "\t", join ("\t", 
 				   $distrib_prior,
 				   $exp_inv,
-				   $Pval,
-				   $Eval,
-				   $inv_sig,
+				   $hit_pval,
+				   $hit_eval,
+				   $hit_sig,
 				   $inv_rank,
 				   );
 	  }
@@ -1447,7 +1466,12 @@ Base for the logarithms (default: $base)
 
 =item B<-decimals #>
 
-Number of decimals displayed for the score.
+Number of decimals displayed for the weight score.
+
+Warning: the computation of P-values increases exponentially with the
+number of decimals. For matrices wih many columns, this can become
+non-tractable. We thus recommend to use the default value (2
+decimals).
 
 =cut
 
@@ -1464,16 +1488,16 @@ Number of decimals displayed for the score.
 
 Threshold on some parameter (-lth: lower, -uth: upper threshold). 
 
-Supported threshold fields for the matches : score, normw, proba_M, proba_B, rank
+Supported threshold fields for the matches : score, pval, eval, sig, normw, proba_M, proba_B, rank
 
-Supported threshold fields for score distributions: occ occ_sum inv_cum exp_inv inv_Pval inv_Eval inv_sig inv_rank
+Supported threshold fields for score distributions: occ occ_sum inv_cum exp_inv hit_pval hit_eval hit_sig inv_rank
 
 =cut
 
 	    ### Lower threshold
 	} elsif ($arg eq "-lth") {
-	    my $thr_field = shift(@arguments);
-	    my $thr_value =  shift(@arguments);
+	    my $thr_field = lc(shift(@arguments));
+	    my $thr_value =  lc(shift(@arguments));
 	    unless ($supported_threshold{$thr_field}) {
 		&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
 	    }
@@ -1483,8 +1507,8 @@ Supported threshold fields for score distributions: occ occ_sum inv_cum exp_inv 
 
 	    ### Upper threshold
 	} elsif ($arg eq "-uth") {
-	    my $thr_field = shift(@arguments);
-	    my $thr_value = shift(@arguments);
+	    my $thr_field = lc(shift(@arguments));
+	    my $thr_value = lc(shift(@arguments));
 	    unless ($supported_threshold{$thr_field}) {
 		&RSAT::error::FatalError("Invalid threshold field $thr_field. Supported: $supported_thresholds");
 	    }
@@ -1588,17 +1612,17 @@ instances.
 
 =cut
         } elsif ($arg eq "-return") {
-	    $arg = shift (@arguments);
-            chomp($arg);
-            my @fields_to_return = split ",", $arg;
-            foreach my $field (@fields_to_return) {
-		$field = lc($field);
-                if ($supported_return_fields{$field}) {
-                    $return_fields{$field} = 1;
-                } else {
-                    &RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_return_fields));
-		}
+	  $arg = shift (@arguments);
+	  chomp($arg);
+	  my @fields_to_return = split ",", $arg;
+	  foreach my $field (@fields_to_return) {
+	    $field = lc($field);
+	    if ($supported_return_fields{$field}) {
+	      $return_fields{$field} = 1;
+	    } else {
+	      &RSAT::error::FatalError(join("\t", $field, "Invalid return field. Supported:", $supported_return_fields));
 	    }
+	  }
 
 
 	    ## Background score distribution
@@ -1740,29 +1764,45 @@ sub score_segment {
     $matrix->{scored}++;
 
     $proba_M = $matrix->segment_proba($segment);
-    return(0) unless (&check_thresholds("proba_M", $proba_M));
+    return(0) unless (&check_thresholds("proba_m", $proba_M));
 
     $proba_B = $bg_model->segment_proba($segment);
-    return(0) unless (&check_thresholds("proba_B", $proba_B));
+    return(0) unless (&check_thresholds("proba_b", $proba_B));
 
 
     ## Calculate segment weight and  normalized weight
     my $score = $null;
     my $normw = $null;
+    my $pval = $null;
+    my $ln_pval = $null;
     if (($proba_M > 0) && ($proba_B > 0)) {
 	$score = sprintf("%.${decimals}f", log($proba_M/$proba_B))/$log_base;
-
-	if ($return_fields{normw}) {
+	if ($calc_fields{normw}) {
 	  $normw = sprintf("%6.4f", ($score - $matrix->{Wmin})/($matrix->{Wrange}));
+	}
+	if ($calc_fields{pval}) {
+	  if (defined(${$main::pval{$matrix}}{$score})) {
+	    $pval_value = ${$main::pval{$matrix}}{$score};
+	    $pval = sprintf("%.1e", $pval_value);
+	    if ($pval_value > 0) {
+	      $ln_pval = sprintf("%.3f", log($pval));
+	    } else {
+	      $ln_pval = "-Inf";
+	    }
+	  }
 	}
     } elsif ($proba_M == 0) {
 	if ($proba_B > 0) {
 	    $score = "-Inf";
-	    if ($return_fields{normw}) {
-		$normw = 0;
+	    $normw = 0 if ($calc_fields{normw});
+	    if ($calc_fields{pval}) {
+	      $pval = 0;
+#	      $ln_pval = "-Inf";
 	    }
 	}
     }
+
+
 
     if ($return_fields{distrib}) {
       my $round_score = sprintf("%.${distrib_decimals}f", $score);
@@ -1795,11 +1835,16 @@ sub score_segment {
     $match->set_attribute('score',$score);
     $match->set_attribute('proba_M',$proba_M);
     $match->set_attribute('proba_B',$proba_B);
+    if ($return_fields{pval}) {
+      $match->set_attribute('pval',$pval);
+      $match->set_attribute('ln_pval',$ln_pval);
+    }
     $match->set_attribute('normw',$normw) if ($return_fields{normw});
 
-    if ($return_fields{rank}) {
-	    push @matches , $match;
-	    push @{$matches_per_matrix{$matrix->get_attribute('name')}} , $match;
+    if ($calc_fields{rank}) {
+      # If the hits have to be ranked, store them rather than printing them immediately
+      push @matches , $match;
+      push @{$matches_per_matrix{$matrix->get_attribute('name')}} , $match;
     } else {
       $matrix->{matches}++;
       &print_match($match) if ($main::return_fields{sites});
@@ -1844,7 +1889,10 @@ sub print_match {
 #				 $proba_M,
 #				 $proba_B,
 #				)
-    
+    if ($return_fields{pval}) {
+      print $out "\t", $match->get_attribute('pval');
+      print $out "\t", $match->get_attribute('ln_pval');
+    }
     print $out "\t", $match->get_attribute('normw') if ($return_fields{normw});
     print $out "\t", $match->get_attribute('rank') if ($return_fields{rank});
     print $out "\n";
@@ -1927,6 +1975,7 @@ distribution.
 =cut
 sub check_distrib_thresholds {
   my ($key) = @_;
+  $key = lc($key); ## case-insensitive keys
 
   ## Check lower thresholds
   if (defined($lth{$key})) {
