@@ -1331,13 +1331,15 @@ sub _printMatrixRow {
     }
 
     ## Number of decimals for floating numbers
-    my $decimals = $self->get_attribute("decimals");
-    unless ($decimals) {
-	if ($type eq "counts") {
-  	    $decimals = 0;
-  	} else {
-  	    $decimals = $number_width - 3;
-  	}
+    my $decimals;
+    if (defined($self->{decimals})) {
+      $decimals = $self->get_attribute("decimals");
+    } else {
+      if ($type eq "counts") {
+	$decimals = 0;
+      } else {
+	$decimals = $number_width - 3;
+      }
     }
 
     ## Separator between columns
@@ -1790,8 +1792,27 @@ distribution of other scores (e.g. counts, crude frequencies,
 frequencies, ...).
 
 Usage:
- $self->calcTheorScoreDistrib();
- $self->calcTheorScoreDistrib("counts");
+
+=over
+
+
+=item T<$self->calcTheorScoreDistrib();>
+
+Calculate proba distribution of weight scores (this is the default).
+
+=item T<$self->calcTheorScoreDistrib("weights");>
+
+Explicitly specify to calculate proba distribution of weight scores.
+
+=item T<$self->calcTheorScoreDistrib("frequencies");>
+
+Calculate proba distribution of frequencies.
+
+=item T<$self->calcTheorScoreDistrib("weights", "inv_cum");>
+
+Calculate proba distribution of weights, with a precision of 3
+decimals. WARNING: it can take up to 10x more time to compute
+distributions with 3 decimals than with 2 decimals.
 
 =cut
 sub calcTheorScoreDistrib {
@@ -1804,7 +1825,11 @@ sub calcTheorScoreDistrib {
   ## reduced to ~5000 for a typical weight matrix
   ## This prevents the comptation time to increase exponentially with
   ## the matrix width.
-  my $score_format = "%.2f";
+  my $decimals = $self->get_attribute("decimals");
+  my $score_format = "%.${decimals}f";
+
+
+#  die "SCORE FORMAT \t", "${score_format}", "\n";
 
   my @scores;
   if (lc($score_type) eq "counts") {
@@ -1818,7 +1843,9 @@ sub calcTheorScoreDistrib {
   }
 
   &RSAT::message::TimeWarn("Calculating theoretical distribution of", $score_type, 
-			   "matrix", $self->get_attribute("name")) if ($main::verbose >= 2);
+			   "matrix", $self->get_attribute("name"),
+			   "Precision: ".$decimals." decimals",
+			  ) if ($main::verbose >= 2);
 
   my $nrow = $self->nrow();
   my $ncol = $self->ncol();
@@ -1837,7 +1864,7 @@ sub calcTheorScoreDistrib {
     for my $r (0..($nrow-1)) {
       my $letter = $alphabet[$r];
       my $prior = $prior{$letter};
-      my $residue_score = sprintf("${score_format}", $scores[$c][$r]);
+      my $residue_score = &RSAT::util::trim(sprintf("${score_format}", $scores[$c][$r]));
       for my $prev_score (keys %score_proba) {
 	my $current_score = $prev_score + $residue_score;
 	$current_score_proba{$current_score} +=
@@ -1853,18 +1880,42 @@ sub calcTheorScoreDistrib {
     &RSAT::message::TimeWarn("calcTheorDistrib()", "column", $c, 
 			     "prev scores: ", scalar(keys(%score_proba)), 
 			     "current scores:", scalar(keys(%current_score_proba)), 
-			    ) if ($main::verbose >= 3);
+			    ) if (($main::verbose >= 3) || ($decimals >= 3));
     %score_proba = %current_score_proba;
   }
   $self->set_hash_attribute($score_type."_proba", %score_proba);
   $self->force_attribute($score_type."_proba_specified", 1);
 
-  ## Compute the cumulative distribution
+  ## Calculate the sorted list of score values
   my $score_proba_cum = 0;
   my %score_proba_cum = ();
-  my @sorted_scores = sort {$a <=> $b} (keys (%score_proba));
+  my @sorted_scores;
+  my @sorted_scores_inv;
+  if ($score_type eq "weights") {
+    ## take all possible weights between the min and max values
+    my ($Wmin, $Wmax) = $self->weight_range();
+    ## Round the min and max scores
+    $Wmin = &RSAT::util::trim(sprintf("${score_format}", $Wmin));
+    $Wmax = &RSAT::util::trim(sprintf("${score_format}", $Wmax));
+    my $break_amplif=(10**$decimals);
+    my $break_min = sprintf("%d", $break_amplif*$Wmin)-1;
+    my $break_max = sprintf("%d", $break_amplif*$Wmax)+1;
+    foreach my $break ($break_min..$break_max) {
+      my $break = $break/$break_amplif;
+      push @sorted_scores, $break;
+      unshift @sorted_scores_inv, $break;
+#      &RSAT::message::Debug("BREAKS", $break_min, $break_max, $break_amplif, $break) if ($main::verbose >= 0);
+    }
+  } else {
+    @sorted_scores = sort {$a <=> $b} (keys (%score_proba));
+    @sorted_scores_inv = sort {$b <=> $a} (keys (%score_proba));
+  }
+
+  ## Compute the cumulative distribution
   foreach my $score (@sorted_scores) {
-    $score_proba_cum += $score_proba{$score};
+    if (defined($score_proba{$score})) {
+      $score_proba_cum += $score_proba{$score};
+    }
     $score_proba_cum{$score} = $score_proba_cum;
   }
   $self->set_hash_attribute($score_type."_cum_proba", %score_proba_cum);
@@ -1873,9 +1924,10 @@ sub calcTheorScoreDistrib {
   ## Compute the inverse cumulative distribution
   my $score_proba_inv_cum = 0;
   my %score_proba_inv_cum = ();
-  @sorted_scores = sort {$b <=> $a} (keys (%score_proba));
-  foreach my $score (@sorted_scores) {
-    $score_proba_inv_cum += $score_proba{$score};
+  foreach my $score (@sorted_scores_inv) {
+    if (defined($score_proba{$score})) {
+      $score_proba_inv_cum += $score_proba{$score};
+    }
     $score_proba_inv_cum{$score} = $score_proba_inv_cum;
   }
   $self->set_hash_attribute($score_type."_inv_cum_proba", %score_proba_inv_cum);
