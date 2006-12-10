@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.22 2006/12/08 15:57:57 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.23 2006/12/10 01:54:14 jvanheld Exp $
 #
 # Time-stamp: <2003-10-11 00:30:17 jvanheld>
 #
@@ -213,7 +213,7 @@ if ($query->param('output') eq "display") {
 	$profile_file = "$TMP/$tmp_file_name.profile";
 	$profile_command = "$SCRIPTS/convert-matrix -v 1 ";
 	$profile_command .= " -in_format assembly -out_format patser";
-	$profile_command .= " -return profile,parameters";
+	$profile_command .= " -return profile,counts,parameters";
 	$profile_command .= " -i $assembly_file";
 	$profile_command .= " -o $profile_file";
 	print "<PRE>command to generate profiles: $profile_command<P>\n</PRE>" if ($ECHO >=1);
