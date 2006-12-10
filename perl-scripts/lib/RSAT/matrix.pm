@@ -657,7 +657,15 @@ sub calcWeights {
     ## get matrix size
     my $nrow = $self->nrow();
     my $ncol = $self->ncol();
-    
+
+    ## Number of decimals (precision) for the weights
+    my $decimals;
+    if (defined($self->{decimals})) {
+      $decimals = $self->get_attribute("decimals");
+    } else {
+      $decimals = 3;
+    }
+
     ## Calculate the weights
     my @weights = ();
     for my $c (0..($ncol-1)) {
@@ -671,6 +679,7 @@ sub calcWeights {
 		$weights[$c][$r] = "NA";
 	    } else {
 		$weights[$c][$r] = log($freq/$prior);
+#		$weights[$c][$r] = sprintf("%.${decimals}f", log($freq/$prior));
 	    }
 #	    &RSAT::message::Debug("weight", "r:".$r, "c:".$c, "l:".$letter, "f:".$freq, "pr:".$prior, "w:".$weights[$c][$r]) if ($main::verbose >= 10);
 	}
@@ -1587,6 +1596,48 @@ sub segment_proba {
     return $segment_proba;
 }
 
+
+################################################################
+=pod 
+
+=item B<segment_weight_Bernoulli($segment)>
+
+Calculate the weight of a segment of sequence. The length of the sequence
+segment must equal the matrix width.
+
+The weight of a segment of sequence of lenghth w is computed as the
+sum of the weights of its residues at the corresponding positions of
+the matrix. This method is thus only valid for Bernoulli models. 
+
+=cut
+
+sub segment_weight_Bernoulli {
+    my ($self, $segment) = @_;
+    $segment = lc($segment);
+
+    my $segment_weight = 0;
+    my $seq_len = length($segment);
+    my $r;
+    for my $c (0..($seq_len-1)) {
+	my $letter = substr($segment, $c, 1);
+	my  $letter_weight = 0;
+	if (defined($self->{"alphabet_index"}->{$letter})) {
+	    $r = $self->{"alphabet_index"}->{$letter};
+	    $letter_weight = $self->{"weights"}[$c][$r];
+	} else {
+	  if ((lc($letter) eq "n") &&
+	      ($self->get_attribute("n_treatment") eq "score")) {
+	    $letter_weight = 0;
+	  }
+	}
+	$segment_weight += $letter_weight;
+#	&RSAT::message::Debug("segment_proba", "letter:".$letter, "col:".$c, "row:".$r, "P(letter)=".$letter_proba, "P(segm)=".$segment_proba) if ($main::verbose >= 10);
+    }
+    
+#    &RSAT::message::Debug("segment_proba", $segment, "P(segm)=".$segment_proba) if ($main::verbose >= 10);
+    return $segment_weight;
+}
+
 ################################################################
 =pod
 
@@ -1828,9 +1879,6 @@ sub calcTheorScoreDistrib {
   my $decimals = $self->get_attribute("decimals");
   my $score_format = "%.${decimals}f";
 
-
-#  die "SCORE FORMAT \t", "${score_format}", "\n";
-
   my @scores;
   if (lc($score_type) eq "counts") {
     @scores = $self->getMatrix();
@@ -1864,9 +1912,10 @@ sub calcTheorScoreDistrib {
     for my $r (0..($nrow-1)) {
       my $letter = $alphabet[$r];
       my $prior = $prior{$letter};
-      my $residue_score = &RSAT::util::trim(sprintf("${score_format}", $scores[$c][$r]));
+      my $residue_score = $scores[$c][$r];
+#      $residue_score_round = sprintf($score_format, $residue_score);
       for my $prev_score (keys %score_proba) {
-	my $current_score = $prev_score + $residue_score;
+	my $current_score = sprintf($score_format, $prev_score + $residue_score);
 	$current_score_proba{$current_score} +=
 	  $score_proba{$prev_score}*$prior;
 #	&RSAT::message::Debug("col=".$c, "row=".$r, $letter, $prior, $residue_score,
@@ -1877,14 +1926,13 @@ sub calcTheorScoreDistrib {
       }
     }
 
-    &RSAT::message::TimeWarn("calcTheorDistrib()", "column", $c, 
+    &RSAT::message::TimeWarn("calcTheorDistrib()", "column", ($c+1)."/".$ncol, 
 			     "prev scores: ", scalar(keys(%score_proba)), 
 			     "current scores:", scalar(keys(%current_score_proba)), 
 			    ) if (($main::verbose >= 3) || ($decimals >= 3));
     %score_proba = %current_score_proba;
   }
-  $self->set_hash_attribute($score_type."_proba", %score_proba);
-  $self->force_attribute($score_type."_proba_specified", 1);
+
 
   ## Calculate the sorted list of score values
   my $score_proba_cum = 0;
@@ -1893,18 +1941,22 @@ sub calcTheorScoreDistrib {
   my @sorted_scores_inv;
   if ($score_type eq "weights") {
     ## take all possible weights between the min and max values
+    my $min_score = &RSAT::stats::min(keys(%score_proba));
+    my $max_score = &RSAT::stats::max(keys(%score_proba));
     my ($Wmin, $Wmax) = $self->weight_range();
     ## Round the min and max scores
     $Wmin = &RSAT::util::trim(sprintf("${score_format}", $Wmin));
     $Wmax = &RSAT::util::trim(sprintf("${score_format}", $Wmax));
+    my $distrib_min = &RSAT::stats::min($Wmin, $min_score);
+    my $distrib_max = &RSAT::stats::max($Wmax, $max_score);
     my $break_amplif=(10**$decimals);
-    my $break_min = sprintf("%d", $break_amplif*$Wmin)-1;
-    my $break_max = sprintf("%d", $break_amplif*$Wmax)+1;
+    my $break_min = sprintf("%d", $break_amplif*$distrib_min)-1;
+    my $break_max = sprintf("%d", $break_amplif*$distrib_max)+1;
     foreach my $break ($break_min..$break_max) {
-      my $break = $break/$break_amplif;
-      push @sorted_scores, $break;
-      unshift @sorted_scores_inv, $break;
-#      &RSAT::message::Debug("BREAKS", $break_min, $break_max, $break_amplif, $break) if ($main::verbose >= 0);
+      my $score = sprintf($score_format, $break/$break_amplif);
+      push @sorted_scores, $score;
+      unshift @sorted_scores_inv, $score;
+#      &RSAT::message::Debug("BREAKS", $break_min, $break_max, $break_amplif, $break, $score) if ($main::verbose >= 10);
     }
   } else {
     @sorted_scores = sort {$a <=> $b} (keys (%score_proba));
@@ -1918,19 +1970,46 @@ sub calcTheorScoreDistrib {
     }
     $score_proba_cum{$score} = $score_proba_cum;
   }
-  $self->set_hash_attribute($score_type."_cum_proba", %score_proba_cum);
-  $self->force_attribute($score_type."_cum_proba_specified", 1);
 
   ## Compute the inverse cumulative distribution
-  my $score_proba_inv_cum = 0;
-  my %score_proba_inv_cum = ();
+  my $score_inv_cum_proba = 0;
+  my %score_inv_cum_proba = ();
   foreach my $score (@sorted_scores_inv) {
     if (defined($score_proba{$score})) {
-      $score_proba_inv_cum += $score_proba{$score};
+      $score_inv_cum_proba += $score_proba{$score};
     }
-    $score_proba_inv_cum{$score} = $score_proba_inv_cum;
+    $score_inv_cum_proba{$score} = $score_inv_cum_proba;
   }
-  $self->set_hash_attribute($score_type."_inv_cum_proba", %score_proba_inv_cum);
+
+  ## Tricky way to circumvent a problem of numerical approximation: in
+  ## some cases, the computed distrib proba does not contain the
+  ## highest weight value, but its maximum is close to it. To
+  ## circumvent this, we assign the highest non-null proba value.
+  my $proba = 0;
+  my $inv_cum_proba = 0;
+  my $s = -1;
+  do {
+    $s++;
+    my $score = $sorted_scores_inv[$s];
+    $proba = $score_inv_cum_proba{$score};
+    $inv_cum_proba = $score_inv_cum_proba{$score};
+  } until (($proba > 0) || ($s >= $#sorted_scores_inv));
+  if ($s < 5){
+    for my $i (0..($s-1)) {
+      my $score = $sorted_scores_inv[$i];
+      $score_proba{$score} = $proba;
+      $score_inv_cum_proba{$score} = $inv_cum_proba;
+      &RSAT::message::Debug("Fixing the tail of", $score_type,"distribution for score", 
+			    $i."/".$s, $score, $score_proba{$score}, $score_inv_cum_proba{$score}) if ($main::verbose >= 3);
+    }
+  }
+
+  ## Assign the score distributions to the matrix
+  $self->set_hash_attribute($score_type."_proba", %score_proba);
+  $self->force_attribute($score_type."_proba_specified", 1);
+  $self->set_hash_attribute($score_type."_cum_proba", %score_proba_cum);
+  $self->force_attribute($score_type."_cum_proba_specified", 1);
+  $self->set_hash_attribute($score_type."_inv_cum_proba", %score_inv_cum_proba);
   $self->force_attribute($score_type."_inv_cum_proba_specified", 1);
 }
 

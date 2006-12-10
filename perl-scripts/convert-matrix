@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.22 2006/12/09 22:05:48 jvanheld Exp $
+# $Id: convert-matrix,v 1.23 2006/12/10 08:00:15 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -721,6 +721,7 @@ sub ExportMatrix {
     ## Print the score distribution
     my $log10 = log(10);
     foreach my $weight (sort {$a <=> $b} keys (%weight_proba)) {
+      $weight = sprintf("%.${decimals}f", $weight);
       my $weight_proba = $null;
       my $weight_proba_cum = $null;
       my $weight_proba_inv_cum = $null;
@@ -737,6 +738,7 @@ sub ExportMatrix {
 	if ($weight_proba_inv_cum{$weight} > 0) {
 	  $ln_pval =  sprintf("%.3f",log($weight_proba_inv_cum{$weight}));
 	  $sig =  sprintf("%.3f",-log($weight_proba_inv_cum{$weight})/$log10);
+	  $sig =~ s/^-(0.0+)$/$1/;
 	} else {
 	  $ln_pval = "-Inf";
 	  $sig = "Inf";
