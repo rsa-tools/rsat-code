@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.50 2006/12/10 08:00:15 jvanheld Exp $
+# $Id: matrix-scan,v 1.51 2006/12/11 04:35:32 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -314,13 +314,11 @@ models only (-markov 0 to 1).
       $return_fields{sites} = 1;
     }
 
-    ## Ensute that all the fields to return are calculated
-    foreach my $field (keys(%return_fields)) {
-      $calc_fields{$field} = 1;
-    }
-
     if ((defined($uth{normw})) || (defined($lth{normw}))) {
 	$return_fields{normw} = 1;
+    }
+    if ((defined($uth{pval})) || (defined($lth{pval}))) {
+	$return_fields{pval} = 1;
     }
     if ((defined($uth{rank})) || (defined($lth{rank}))) {
 	$return_fields{rank} = 1;
@@ -373,6 +371,11 @@ models only (-markov 0 to 1).
       $calc_fields{sites} = 1;
     }
 
+
+    ## Ensure that all the fields to return are calculated
+    foreach my $field (keys(%return_fields)) {
+      $calc_fields{$field} = 1;
+    }
 
     ################################################################
     ## Load the matrix list if specified
@@ -1716,6 +1719,11 @@ sub Verbose {
     printf $main::out ";\t%-14s\t%s\n", "Strand", $bg_model->get_attribute("strand");
     if ($window > 0) {
 	printf $main::out ";\t%-14s\t%d\n", "Background window", $window;
+    }
+    my %bg_prior = $bg_model->get_attribute("suffix_proba");
+    print $main::out ";\tResidue probabilities\n";
+    foreach my $residue (sort keys %bg_prior) {
+	printf $main::out ";\t\t%s\t%.5f\n", $residue, $bg_prior{$residue};
     }
 
     my $missing_transitions = $bg_model->get_attribute("missing_transitions");
