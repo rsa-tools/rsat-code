@@ -1803,7 +1803,9 @@ sub add_site() {
     $alphabet{$alphabet[$l]} = $l;
   }
   
-  &RSAT::message::Debug("Adding site", $site_seq, $site_id, "len=".scalar(@letters), "alphabet", join(":", @alphabet)), 
+  &RSAT::message::Debug("RSAT::matrix", $self->get_attribute("name"), 
+			"Adding site", $site_seq, $site_id, "len=".scalar(@letters),
+			"alphabet", join(":", @alphabet)), 
     if ($main::verbose >= 4);
   
   ## Update the count matrix with the new sequence
