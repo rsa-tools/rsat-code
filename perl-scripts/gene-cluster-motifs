@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.177 2006/12/08 16:09:58 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.178 2006/12/11 03:50:26 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -64,37 +64,50 @@ $dir{calib1} = "calibrations_1gene";
 ## Supported tasks
 @supported_tasks = qw (upstream
 		       purge
+
 		       calibrate
 		       calibN
 		       oligos
 		       merge_oligos
 		       oligo_maps
-		       dyad_maps
-		       orm_maps
-		       maps
-		       dyads
-		       merge_patterns
-		       slide
-		       synthesis
-		       sql
+		       db_match_oligos
+		       sig_distrib_oligos
 		       validate_oligos
+
+		       dyads
+		       dyad_maps
+		       db_match_dyads
+		       sig_distrib_dyads
 		       validate_dyads
-		       validate_orm
-		       clean
-		       all
-		       report
-		       consensus
-		       gibbs
-		       MotifSampler
-		       meme
+
 		       ormbg
 		       orm
 		       assemble_orm
-		       sig_distrib_oligos
-		       sig_distrib_dyads
+		       orm_maps
 		       sig_distrib_orm
-		       db_match_oligos
-		       db_match_dyads
+		       validate_orm
+
+		       merge_patterns
+		       maps
+
+		       slide
+
+		       consensus
+		       consensus_maps
+
+		       gibbs
+		       gibbs_maps
+
+		       MotifSampler
+
+		       meme
+		       meme_maps
+
+		       report
+		       synthesis
+		       sql
+		       clean
+		       all
 		       );
 foreach my $task (@supported_tasks) {
     $supported_task{$task} = 1;
@@ -265,8 +278,8 @@ if ($sequence_file_list) {
 } else {
 
     ### read gene name and identifiers
-    warn "; Reading ORF information ...\n" 
-	 if ($verbose >= 1);
+    &RSAT::message::TimeWarn ("Reading ORF information") 
+      if ($verbose >= 1);
     $organism = new RSAT::organism();
     
     #### Check organism name
@@ -321,17 +334,17 @@ if ($last > 0) {
 foreach my $family_name (@families) {    
     my $gene_nb = scalar(@{$family{$family_name}->{members}});
     if ($gene_nb < $min_genes) {
-	warn join ("\t", "; Removing family", 
-		   $fam_count, $family_name,
-		   $gene_nb." genes",
-		   "< min = ".$min_genes), "\n" if ($main::verbose >= 1);
-	delete $family{$family_name};
+      &RSAT::message::Warning("Removing family", 
+			      $fam_count, $family_name,
+			      $gene_nb." genes",
+			      "< min = ".$min_genes), "\n" if ($main::verbose >= 1);
+      delete $family{$family_name};
     }
 }
 
 ## Update the list of families
 @families = sort keys %family;
-&RSAT::message::Info(join("\t", "Remaining families after filtering", scalar(@families)));
+&RSAT::message::Info(join("\t", "Remaining families after filtering", scalar(@families))) if ($main::verbose >= 1);
 
 ## Set all the file names
 &SetFileNames();
@@ -528,7 +541,7 @@ sub SetFileNames {
 	## oligo-analysis results
 	$family{$family_name}->{oligo_file} =  "${family_name}/oligos_${family_name}/".$family{$family_name}->{file_prefix}.$oligo_suffix; 
 	$family{$family_name}->{oligo_assembly_file} = $family{$family_name}->{oligo_file}.".asmb";
-	$family{$family_name}->{oligo_pssm_file} = $family{$family_name}->{oligo_file}.".pssm";
+	$family{$family_name}->{oligo_pssm_file} = $family{$family_name}->{oligo_file}."_pssm";
 	$family{$family_name}->{oligo_selection} = $family{$family_name}->{oligo_file}."_selection";
 	$family{$family_name}->{oligo_ft_prefix} = $family{$family_name}->{oligo_file};
 #	$family{$family_name}->{selection_ft_prefix} = $family{$family_name}->{oligo_ft_prefix}."_report";
@@ -544,7 +557,7 @@ sub SetFileNames {
 	## dyad-analysis results
 	$family{$family_name}->{dyad_file} = "$family_name/dyads_${family_name}/".$family{$family_name}->{file_prefix}.$dyad_suffix;
 	$family{$family_name}->{dyad_assembly_file} = $family{$family_name}->{dyad_file}.".asmb";
-	$family{$family_name}->{dyad_pssm_file} = $family{$family_name}->{dyad_file}.".pssm";
+	$family{$family_name}->{dyad_pssm_file} = $family{$family_name}->{dyad_file}."_pssm";
 	$family{$family_name}->{dyad_ft_prefix} = $family{$family_name}->{dyad_file};
 	$family{$family_name}->{dyad_ft_file} = $family{$family_name}->{dyad_ft_prefix}.".ft";	
 	$family{$family_name}->{fmap_file} = $family{$family_name}->{dyad_file}.".${IMG_FORMAT}";
@@ -762,7 +775,7 @@ sub SetFileNames {
 	$family{$family_name}->{orm_suffix} = $orm_suffix;
 
 	$family{$family_name}->{orm_assembly_file} = $family{$family_name}->{orm_file}.".asmb";
-	$family{$family_name}->{orm_pssm_file} = $family{$family_name}->{orm_file}.".pssm";
+	$family{$family_name}->{orm_pssm_file} = $family{$family_name}->{orm_file}."_pssm";
 #	$family{$family_name}->{orm_selection} = $family{$family_name}->{orm_file}."_selection";
 	$family{$family_name}->{orm_ft_prefix} = $family{$family_name}->{orm_file};
 #	$family{$family_name}->{selection_ft_prefix} = $family{$family_name}->{orm_ft_prefix}."_report";
@@ -860,7 +873,7 @@ sub SetFileNames {
 ################################################################
 #### retrieve upstream sequences
 sub UpstreamSequences {
-   warn ";\tRetrieving upstream sequences for family $family_name\n" if ($verbose >= 1);
+   &RSAT::message::TimeWarn ("Retrieving upstream sequences for family $family_name") if ($verbose >= 1);
    $command = "retrieve-seq -imp_pos -type upstream -org $organism_name";
    $command .= " -noorf " if ($noorf);
    $command .= " -rm " if ($repeat_masked);
@@ -1001,11 +1014,10 @@ sub CalcOligoOptions {
 ################################################################
 ### oligo-analysis
 sub OligoAnalysis {
-   warn join ("\t", 
-	       ";\tAnalyzing oligonucleotides for family $family_name",
-	       "min len: $min_oligo_len",
-	       "max len: $max_oligo_len"), "\n" if ($verbose >= 1);
-   my $dir = "${family_name}/oligos_${family_name}";
+  &RSAT::message::TimeWarn("Analyzing oligonucleotides for family $family_name",
+			   "min len: $min_oligo_len",
+			   "max len: $max_oligo_len") if ($verbose >= 1);
+  my $dir = "${family_name}/oligos_${family_name}";
    
    chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
    &RSAT::error::FatalError( "Cannot read file $family{$family_name}->{input_seq_file}") unless (($batch)  || ($dry_run) || ($dry_run) || (-r $family{$family_name}->{input_seq_file}));
@@ -1037,11 +1049,10 @@ sub OligoAnalysis {
 ################################################################
 ### Merge the results of oligo-analysis for different oligo lengths
 sub MergeOligoLengths {
-   warn join ("\t", 
-	       ";\tMerging oligonucleotides for family ".$family_name,
-	       "min len: ".$min_oligo_len,
-	       "max len:".$max_oligo_len,
-	       $family{$family_name}->{oligo_file}), "\n" if ($verbose >= 1);
+   &RSAT::message::TimeWarn("Merging oligonucleotides for family ".$family_name,
+			    "min len: ".$min_oligo_len,
+			    "max len:".$max_oligo_len,
+			    $family{$family_name}->{oligo_file}) if ($verbose >= 1);
    my $dir = "${family_name}/oligos_${family_name}";
 
    chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
@@ -1062,9 +1073,16 @@ sub MergeOligoLengths {
    push @merge_commands, $assembly_command;
 
    ### extract PSSM from pattern assembly
-   my $pssm_command = "convert-matrix -v 1 ";
-   $pssm_command .= " -i ".$family{$family_name}->{oligo_assembly_file};
-   $pssm_command .= " -in_format assembly -out_format patser -return counts,profile,parameters";
+#   my $pssm_command = "convert-matrix -v 1 ";
+#   $pssm_command .= " -i ".$family{$family_name}->{oligo_assembly_file};
+#   $pssm_command .= " -in_format assembly -out_format patser -return counts,profile,parameters";
+#   $pssm_command .= " -o ".$family{$family_name}->{oligo_pssm_file};
+#   push @merge_commands, $pssm_command;
+
+   my $pssm_command = "matrix-from-patterns -v 1 ";
+   $pssm_command .= " -seq ".$family{$family_name}->{seq_file};
+   $pssm_command .= " -asmb ".$family{$family_name}->{oligo_assembly_file};
+   $pssm_command .= " -bginput -markov 0 ";
    $pssm_command .= " -o ".$family{$family_name}->{oligo_pssm_file};
    push @merge_commands, $pssm_command;
 
@@ -1093,13 +1111,11 @@ sub MatchPatterns {
    ### pattern matching
    &RSAT::error::FatalError("Cannot read file $family{$family_name}->{seq_file}") unless (($batch) || ($dry_run) || (-r $family{$family_name}->{seq_file}));
    $feature_file = $fmap_prefix.".ft";
-   $fmap_file = $fmap_prefix.".".$IMG_FORMAT;
-   $htmap_file = $fmap_prefix.".html";
-   warn( ";\tDrawing feature-map",
-	  "\n;\t", $oligo_file,
-	  "\n;\t", $fmap_file,
-	  "\n")  if ($main::verbose >= 1);
-   
+   &RSAT::message::Info("Matching patterns",
+			"\n;\t", $oligo_file,
+			"\n;\t", $feature_file,
+		       )  if ($main::verbose >= 1);
+
    $origin = "-0";
    my $command = "dna-pattern -i ".$family{$family_name}->{seq_file};
    $command .= " -format ".$seq_format;
@@ -1121,8 +1137,53 @@ sub MatchPatterns {
    }
 }
 
+
 ################################################################
-#### draw feature-map for the result of oligo-analysis
+## Scan the sequences with a position-specific scoring matrix
+sub ScanSequences {
+   my ($matrix_file, $matrix_format, $fmap_prefix, $options) = @_;
+
+   ## check file names
+   &RSAT::error::FatalError("ScanSequences require to specify a matrix file") unless ($matrix_file);
+   &RSAT::error::FatalError("ScanSequences require to specify a matrix format") unless ($matrix_format);
+   &RSAT::error::FatalError("ScanSequences require to specify a prefix for the scanning result") unless ($fmap_prefix);
+
+   ### pattern matching
+   &RSAT::error::FatalError("Cannot read file $family{$family_name}->{seq_file}") unless (($batch) || ($dry_run) || (-r $family{$family_name}->{seq_file}));
+   $feature_file = $fmap_prefix.".ft";
+   &RSAT::message::Info("Scaning sequences with matrix",
+			"\n;\t", $matrix_file,
+			"\n;\t", $feature_file,
+		       )  if ($main::verbose >= 1);
+
+   $origin = "-0";
+   my $command = "matrix-scan -v 1 -bginput -markov 1 -i ".$family{$family_name}->{seq_file};
+   $command .= " -seq_format ".$seq_format;
+   $command .= " -matrix_format ".$matrix_format;
+   $command .= " ".$strands;
+   $command .= " -m ".$matrix_file;
+   $command .= " -consensus_name";
+   $command .= " -origin ".$origin;
+   $command .= " -return limits,sites,pval,normw ";
+   $command .= " -o ".$feature_file;
+   $command .= $options;
+
+#   die $command, "\n";
+
+   ## Check if scanning is OK (sometimes there are no matrices)
+   if ($batch) {
+       push @main::batch_commands, $command;
+   } else {
+       my $error = &doit($command, $dry_run, 0, $verbose);
+       if ($error) {
+	   &RSAT::message::Warning("Feature map skipped because matrix-scan returned an error");
+	   return;
+       }
+   }
+}
+
+################################################################
+#### draw feature-map for the result of dna-pattern
 sub DrawFeatureMap {
    my ($fmap_prefix, $title, $options) = @_;
 
@@ -1135,11 +1196,11 @@ sub DrawFeatureMap {
    $feature_file = $fmap_prefix.".ft";
    $fmap_file = $fmap_prefix.".".$IMG_FORMAT;
    $htmap_file = $fmap_prefix.".html";
-   warn( ";\tDrawing feature-map",
-	  "\n;\t", $oligo_file,
-	  "\n;\t", $fmap_file,
-	  "\n")  if ($main::verbose >= 1);
-   
+   &RSAT::message::Info("Drawing feature-map",
+			"\n;\t", $feature_file,
+			"\n;\t", $fmap_file,
+			"\n;\t", $htmap_file,
+		       )  if ($main::verbose >= 1);
 
    ## feature-map drawing
    if ($family{$family_name}->{calib_length}) {
@@ -1168,12 +1229,11 @@ sub DrawFeatureMap {
 ################################################################
 ### dyad analysis
 sub DyadAnalysis {
-   warn join( "\t", 
-	       ";\tAnalyzing dyads for family $family_name",
-	       "monad length: $monad_length",
-	       "min_sp: $min_sp",
-	       "max_sp: $max_sp",
-	       ), "\n" if ($verbose >= 1);
+  &RSAT::message::TimeWarn("Analyzing dyads for family $family_name",
+			   "monad length: $monad_length",
+			   "min_sp: $min_sp",
+			   "max_sp: $max_sp",
+			  ) if ($verbose >= 1);
    $dir = "${family_name}/dyads_${family_name}";
    chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
    &RSAT::error::FatalError("Cannot read file $family{$family_name}->{input_seq_file}") unless (($batch) || ($dry_run) || (-r $family{$family_name}->{input_seq_file}));
@@ -1195,9 +1255,15 @@ sub DyadAnalysis {
    $command .=  " -maxfl 1 -maxpat 200 ".${strands};
    
    ### extract PSSM from pattern assembly
-   $command .= "; convert-matrix -v 1 ";
-   $command .= " -i ".$family{$family_name}->{dyad_assembly_file};
-   $command .= " -in_format assembly -out_format patser -return profile,parameters";
+#   $command .= "; convert-matrix -v 1 ";
+#   $command .= " -i ".$family{$family_name}->{dyad_assembly_file};
+#   $command .= " -in_format assembly -out_format patser -return profile,parameters";
+#   $command .= " -o ".$family{$family_name}->{dyad_pssm_file};
+
+   $command = "matrix-from-patterns -v 1 ";
+   $command .= " -seq ".$family{$family_name}->{seq_file};
+   $command .= " -asmb ".$family{$family_name}->{dyad_assembly_file};
+   $command .= " -bginput -markov 0 ";
    $command .= " -o ".$family{$family_name}->{dyad_pssm_file};
 
    if ($batch) {
@@ -1213,12 +1279,10 @@ sub DyadAnalysis {
 ## Merge patterns detected by oligo-analysis and dyad-analysis
 sub MergePatterns {
    my $filter_dyads = 1;
-   warn join ("\t", 
-	       ";\tMerging oligonucleotides and dyads for family ",
-	       $family_name,
-	       $family{$family_name}->{merged_file}
-	       ), "\n" if ($verbose >= 1);
-
+   &RSAT::message::TimeWarn("Merging oligonucleotides and dyads for family ",
+			    $family_name,
+			    $family{$family_name}->{merged_file}
+			   ) if ($verbose >= 1);
    my $dir = "${family_name}/merged_${family_name}";
    chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
    my $command = "cat $family{$family_name}->{oligo_file}";
@@ -1245,7 +1309,8 @@ sub MergePatterns {
 ################################################################
 #### draw feature-map for the result of merged oligonucleotides and dyads
 sub DrawMergedFeatureMap {
-   warn ";\tDrawing feature-map with results of merged oligonucleotides and dyads for family $family_name\n" if ($verbose >= 1);
+  &RSAT::message::TimeWarn("Drawing feature-map with results of merged oligonucleotides and dyads for family $family_name")
+    if ($verbose >= 1);
    ### pattern matching
    &RSAT::error::FatalError("Cannot read file $family{$family_name}->{seq_file}") unless (($batch) || ($dry_run) || (-r $family{$family_name}->{seq_file}));
    $fmap_file = $family{$family_name}->{merged_file}.".${IMG_FORMAT}";
@@ -1290,7 +1355,7 @@ sub DrawMergedFeatureMap {
 ################################################################
 ## Run Gert Thijs' MotifSampler
 sub MotifSampler {
-   warn join ("; Running MotifSampler for family $family_name") if ($main::verbose >= 1);
+   &RSAT::message::TimeWarn ("Running MotifSampler for family $family_name") if ($main::verbose >= 1);
    ## Check output directory
    my $dir = $family{$family_name}->{MotifSampler_dir};
    chdir($dir{output}); &RSAT::util::CheckOutDir($dir);
@@ -1386,9 +1451,15 @@ sub orm {
        $orm_command .= " -o ".$family{$family_name}->{orm_assembly_file};
 
        ### extract PSSM from pattern assembly
-       $orm_command .= "; convert-matrix -v 1 ";
-       $orm_command .= " -i ".$family{$family_name}->{orm_assembly_file};
-       $orm_command .= " -in_format assembly -out_format patser -return profile,parameters";
+#       $orm_command .= "; convert-matrix -v 1 ";
+#       $orm_command .= " -i ".$family{$family_name}->{orm_assembly_file};
+#       $orm_command .= " -in_format assembly -out_format patser -return profile,parameters";
+#       $orm_command .= " -o ".$family{$family_name}->{orm_pssm_file};
+
+       $orm_command = "matrix-from-patterns -v 1 ";
+       $orm_command .= " -seq ".$family{$family_name}->{seq_file};
+       $orm_command .= " -asmb ".$family{$family_name}->{orm_assembly_file};
+       $orm_command .= " -bginput -markov 0 ";
        $orm_command .= " -o ".$family{$family_name}->{orm_pssm_file};
    }
 
@@ -1486,7 +1557,7 @@ sub SyntheticTable {
    $outfile{table} .= "_tr" if ($transpose);
    $outfile{table} .= ".html";
 
-   warn "; Generating synthetic table ", $outfile{table}, "\n" if ($verbose >= 1);
+   &RSAT::message::TimeWarn ("Generating synthetic table ", $outfile{table}) if ($verbose >= 1);
    
    unless (-d $dir) {
 	mkdir $dir, 0755 || &RSAT::error::FatalError("Cannot create directory", $dir);
@@ -1524,18 +1595,18 @@ sub SyntheticTable {
 
 	## Check minimum number of genes
 	if ($gene_nb < $min_genes) {
-	    warn join ("\t", "; Skipping family", 
-		       $fam_count, $family_name,
-		       $gene_nb." genes",
-		       "< min = ".$min_genes), "\n" if ($main::verbose >= 1);
+	    &RSAT::message::Warning("Skipping family", 
+				    $fam_count, $family_name,
+				    $gene_nb." genes",
+				    "< min = ".$min_genes), "\n" if ($main::verbose >= 1);
 	    next;
 	}
 
 	$col++;
-	
+
 	#### Index columns associated to each family
 	$column{$family_name} = $col;
-	
+
 	### check directory
 	$dir = "${family_name}/dyads_${family_name}";
 	unless (-d $dir) {
@@ -1931,16 +2002,21 @@ sub IndexPatterns {
 	$table[$row][$col] .= "<a href=".$base.$pattern_dir.">[".$type."]</a>\n";
 	$table[$row][$col] .= "<a href=".$base.$pattern_file.">[patt]</a>\n";
 	$table[$row][$col] .= "<a href=".$base.$assembly_file.">[asmb]</a>\n";
-	$table[$row][$col] .= "<a href=".$base.$pssm_file.">[pssm]</a>\n";
-	$table[$row][$col] .= "<a href=".$base.$pattern_file.".".${IMG_FORMAT}.">[".${IMG_FORMAT}."]</a>\n";
+	$table[$row][$col] .= "<a href=".$base.$pattern_file.".".${IMG_FORMAT}.">[map]</a>\n";
 	if ($htmaps) {
 	    $table[$row][$col] .= "<a href=".$base.$pattern_file.".html>[html]</a>\n";
 	}
+
+	$table[$row][$col] .= "<a href=".$base.$pssm_file."_sig_matrices.txt>[sig matrix]</a>\n";
+	$table[$row][$col] .= "<a href=".$base.$pssm_file."_count_matrices.txt>[count matrix]</a>\n";
+	$table[$row][$col] .= "<a href=".$base.$pssm_file.".png>[scan map]</a>\n";
+
 #	if ($task{validate}) {
 	$table[$row][$col] .= "<a href=".$base.$validation_file.">[matches]</a>\n";
 	$table[$row][$col] .= "<a href=".$base.$validation_table_weight_file.">[match_weight]</a>\n";
 	$table[$row][$col] .= "<a href=".$base.$validation_table_relw_file.">[match_relw]</a>\n";
 #	}
+
 	$table[$row][$col] .= "<table>\n";
 	$table[$row][$col] .="<tr><td align=right>max.score</td><td>".$max_score{$type}{$family_name}."</td></tr>\n";
 	$table[$row][$col] .="</table>\n";
@@ -2015,7 +2091,7 @@ sub IndexPatterns {
 ################################################################
 #### Draw feature maps
 sub DrawDyadFeatureMap {
-   warn ";\tDrawing feature-map with results of dyad-analysis for family $family_name\n" if ($verbose >= 1);
+   &RSAT::message::TimeWarn( "Drawing feature-map with results of dyad-analysis for family $family_name") if ($verbose >= 1);
    &RSAT::error::FatalError("Cannot read file $family{$family_name}->{seq_file}") unless (($batch) || ($dry_run) || (-r $family{$family_name}->{seq_file}));
 
    ## pattern matching
@@ -2180,10 +2256,10 @@ sub AnalyzeFamilies {
 
 	## Check minimum number of genes
 	if ($gene_nb < $min_genes) {
-	    warn join ("\t", "; Skipping family", 
-		       $fam_count, $family_name,
-		       $gene_nb." genes",
-		       "< min = ".$min_genes), "\n" if ($main::verbose >= 1);
+	  &RSAT::message::Warning ("Skipping family", 
+				   $fam_count, $family_name,
+				   $gene_nb." genes",
+				   "< min = ".$min_genes) if ($main::verbose >= 1);
 	    next;
 	}
 
@@ -2202,38 +2278,66 @@ sub AnalyzeFamilies {
 	    &MergeOligoLengths();
 	}
 
-	### oligo feature-maps
 	if ($task{oligo_maps}) {
-	    &MatchPatterns($family{$family_name}->{oligo_file},  
+	  ### feature-maps of oligonucleotide occurrences
+	  &MatchPatterns($family{$family_name}->{oligo_file},
 			   $family{$family_name}->{oligo_file},
 			   " -N 4");
 	    &DrawFeatureMap($family{$family_name}->{oligo_file});
+
+	  ## scan sequences with the PSSM built from significant oligos
+	  &ScanSequences($family{$family_name}->{oligo_pssm_file}."_count_matrices.txt","tab",
+			 $family{$family_name}->{oligo_pssm_file}," -uth Pval 0.00025");
+	  &DrawFeatureMap($family{$family_name}->{oligo_pssm_file});
 	}
 
 	### dyad analysis
 	&DyadAnalysis() if ($task{dyads});
 
 	### dyad feature-maps
-	&DrawDyadFeatureMap() if ($task{dyad_maps});
-	
+	if ($task{dyad_maps}) {
+	  &DrawDyadFeatureMap() 
+	    ## scan sequences with the PSSM built from significant dyads
+	    &ScanSequences($family{$family_name}->{dyad_pssm_file}."_count_matrices.txt","tab",
+			   $family{$family_name}->{dyad_pssm_file}," -uth Pval 0.00025");
+	  &DrawFeatureMap($family{$family_name}->{dyad_pssm_file});
+	}
+
 	### Jerry Hertz' consensus
-	&Consensus() if ($task{consensus});
-	
+	if ($task{consensus}) {
+	  &Consensus();
+	}
+	if ($task{consensus_maps}) {
+	  &ScanSequences($family{$family_name}->{consensus_file}."_count_matrices.txt","consensus",
+		       $family{$family_name}->{consensus_file}," -uth Pval 0.00025");
+	  &DrawFeatureMap($family{$family_name}->{consensus_file});
+	}
+
 	### Andrew Neuwald's gibbs
 	&Gibbs() if ($task{gibbs});
-	
+	if ($task{gibbs_maps}) {
+	  &ScanSequences($family{$family_name}->{gibbs_file}."_count_matrices.txt","gibbs",
+		       $family{$family_name}->{gibbs_file}," -uth Pval 0.00025");
+	  &DrawFeatureMap($family{$family_name}->{gibbs_file});
+	}
+
 	### Gert Thijs' MotifSampler
 	&MotifSampler() if ($task{MotifSampler});
-	
+
 	### MEME
 	&MEME() if ($task{meme});
+	if ($task{meme_maps}) {
+	  &ScanSequences($family{$family_name}->{meme_file}."_count_matrices.txt","meme",
+		       $family{$family_name}->{meme_file}," -uth Pval 0.00025");
+	  &DrawFeatureMap($family{$family_name}->{meme_file});
+	}
 
 	### orm
 	&orm() if ($task{orm});
 
 	### orm feature-maps
 	if ($task{orm_maps}) {
-	    &MatchPatterns($family{$family_name}->{orm_file},  
+	    &MatchPatterns($family{$family_name}->{orm_file},
 			   $family{$family_name}->{orm_file},
 			   " -N 4");
 	    &DrawFeatureMap($family{$family_name}->{orm_file});
@@ -3173,7 +3277,7 @@ sub MakeDirectories {
 ### Generate tab files and SQL scripts for storing the results in a
 ### relational database
 sub ExportSQL {
-   warn "; Generating SQL\n" if ($verbose >= 1);
+   &RSAT::message::TimeWarn ("Generating SQL") if ($verbose >= 1);
 #   my $test = new RSAT::Family;
 
    &RSAT::message::debug($current_analysis, $current_analysis->get_attribute("id")) if ($main::verbose >= 10);
@@ -3367,8 +3471,8 @@ sub ReadSequenceList {
 	$sequence_dir = $dir{main}."/".$sequence_dir;
    }
 
-   &RSAT::message::Info(join ("\t","Sequence dir", $sequence_dir)) if ($verbose >= 1);
-   &RSAT::message::Info(join ("\t","Reading sequence file list", $sequence_file_list)) if ($verbose >= 1);
+   &RSAT::message::Info("Sequence dir", $sequence_dir) if ($verbose >= 1);
+   &RSAT::message::Info("Reading sequence file list", $sequence_file_list) if ($verbose >= 1);
    my ($files) = &OpenInputFile($sequence_file_list);
    my $f = 0;
    while (<$files>) {
@@ -3554,12 +3658,12 @@ sub Validate {
        my @sites = @{$known_site{$family_name}};
        my @sources = @{$known_site_source{$family_name}};
 
-       &RSAT::message::Info(join("\t", "Validating family ".$f."/".scalar(@families), 
-				 $family_name, 
-				 "known sites", 
-				 $family{$family_name}->{known_sites}, 
-				 "Number of sites", 
-				 scalar(@sites))) if ($main::verbose >= 1);
+       &RSAT::message::Info("Validating family ".$f."/".scalar(@families), 
+			    $family_name, 
+			    "known sites", 
+			    $family{$family_name}->{known_sites}, 
+			    "Number of sites", 
+			    scalar(@sites)) if ($main::verbose >= 1);
        
        $known_handle = &OpenOutputFile($family{$family_name}->{known_sites});
        foreach my $s (0..$#sites) {
@@ -3789,8 +3893,8 @@ sub DatabaseMatch {
 
    foreach my $family_name (@families) {
        $f++;
-       &RSAT::message::Info(join("\t", "Matching patterns discovered for family ".$f."/".scalar(@families), 
-				 $family_name)) if ($main::verbose >= 1);
+       &RSAT::message::Info("Matching patterns discovered for family ".$f."/".scalar(@families), 
+			    $family_name) if ($main::verbose >= 1);
        
        my $pattern_file = $family{$family_name}->{$pattern_type."_file"};
 
@@ -4037,7 +4141,7 @@ sub CalcCalibrationLengths {
 				 $family{$family_name}->{total_length}) if ($main::verbose >= 1);
    }  
    my @calib_lengths = sort {$a <=> $b } keys %calib_lengths;
-   &RSAT::message::Info(join("\t", "Calibration lengths", join( ";", @calib_lengths))) if ($main::verbose >= 1);
+   &RSAT::message::Info("Calibration lengths", join( ";", @calib_lengths)) if ($main::verbose >= 1);
    return @calib_lengths;
 }
 
@@ -4141,7 +4245,7 @@ sub MDCreport {
 	    &RSAT::message::Warning("No manual selection: file does not exist $selection_file") if ($main::verbose >= 0);
 	    next;
 	}
-	warn ("; Pattern file for the report $selection_file\n") if ($main::verbose >= 1);
+	&RSAT::message::Info("Pattern file for the report",  $selection_file) if ($main::verbose >= 1);
 
 	my $selection_ft_prefix =  $family{$family_name}->{oligo_selection};
 	my $feature_file = $selection_ft_prefix.".ft";
@@ -4310,16 +4414,17 @@ sub CalibrateOligos {
 
    ### Analyse upstream occurrence distributions for each sequence length
    chdir($dir{output}); &RSAT::util::CheckOutDir($dir{calib1});
-   warn "; Calculating oligonucleotide distributions in all upstream sequences\n" if ($verbose >= 1);
+   &RSAT::message::TimeWarn ("Calculating oligonucleotide distributions in all upstream sequences") 
+     if ($verbose >= 1);
    foreach my $calib_length (sort {$a <=> $b} @calib_lengths) {
 
 	## retrieve all upstream sequence if required
 	my $allup_file = $dir{calib1}."/tmp_all_up_".$calib_length.".fasta";
 	if (-e $allup_file) {
-	    &RSAT::message::Info(join("\t", "All upstream sequence file already exists. Skipping retrieval", $allup_file)) if ($main::verbose >= 1);
+	    &RSAT::message::Info("All upstream sequence file already exists. Skipping retrieval", $allup_file) if ($main::verbose >= 1);
 	} else {
 	    $command = "retrieve-seq -imp_pos -org $organism_name -all -from -$calib_length -to -1 -o $allup_file";
-	    &RSAT::message::TimeWarn(join ("\t", "Retrieving all upstream sequences", $allup_file)) if ($main::verbose >= 1);
+	    &RSAT::message::TimeWarn("Retrieving all upstream sequences", $allup_file) if ($main::verbose >= 1);
 ### This should not be done in batch, since the calibrate-oligo commands will be distributed over the nodes of the cluster
 #	    if ($batch) {
 #		push @main::batch_commands, $command;
@@ -4346,7 +4451,7 @@ sub CalibrateOligos {
 
 	    ## Calculate occurrence distributions
 	    $command = "oligo-analysis -v 3 -l $oligo_len $noov $strands  -i $allup_file -return occ -distrib -o $distrib_file";
-	    warn ";\tAnalysing ",$oligo_len,"nt distributions\t",$distrib_file, "\n" if ($main::verbose >= 1);
+	    &RSAT::message::TimeWarn( "Analysing ",$oligo_len."nt distributions",$distrib_file) if ($main::verbose >= 1);
 	    if ($batch) {
 		push @main::batch_commands, $command;
 	    } else {
@@ -4372,7 +4477,7 @@ sub CalibrateOligos {
 
 	## Delete the file with all upstream sequences
 	$command = "rm -f $allup_file";
-	warn ":\tCleaning all upstream sequences\t", $allup_file, "\n" if ($main::verbose >= 1);
+	&RSAT::message::Info ("Cleaning all upstream sequences", $allup_file) if ($main::verbose >= 1);
 	if ($batch) {
 	    push @main::batch_commands, $command;
 	} else {
@@ -4397,38 +4502,38 @@ sub CalibrateOligos {
 ## the average and standard deviation of the occurrence number.
 #sub CalibrateOligosN {
 sub CalibrateOligosN {
-    &RSAT::message::Info("Calibrating oligo occurrences with random gene selections") if ($main::verbose >= 1);
+  &RSAT::message::Info("Calibrating oligo occurrences with random gene selections") if ($main::verbose >= 1);
 
-    chdir($dir{main}); ## Calibration directory is specified relative to the main directory
-    &RSAT::message::Info("Chdir to main directory\t".$dir{main});
-    for my $oligo_len ($min_oligo_len..$max_oligo_len) {
-	foreach my $family_name (@families) {
-	    my $gene_nb = scalar(@{$family{$family_name}->{members}});
-	    my $seq_len = $family{$family_name}->{calib_length};
+  chdir($dir{main}); ## Calibration directory is specified relative to the main directory
+  &RSAT::message::Info("Chdir to main directory\t".$dir{main});
+  for my $oligo_len ($min_oligo_len..$max_oligo_len) {
+    foreach my $family_name (@families) {
+      my $gene_nb = scalar(@{$family{$family_name}->{members}});
+      my $seq_len = $family{$family_name}->{calib_length};
 	    
-	    if ($calib_done{$gene_nb}{$seq_len} > 0) {
-		&RSAT::message::Info(join ("\t", $family_name, "Already done a calibration of oligo occurrences with ",$gene_nb, 
-					   "random gene selections","upstream length", $seq_len) )
-	    } else {
+      if ($calib_done{$gene_nb}{$seq_len} > 0) {
+	&RSAT::message::Info($family_name, "Already done a calibration of oligo occurrences with ",$gene_nb, 
+			     "random gene selections","upstream length", $seq_len);
+      } else {
 		
-		&RSAT::message::Info(join ("\t", $family_name, "Calibrating oligo occurrences with ",$gene_nb, 
-					   "random gene selections","upstream length", $seq_len) )
-		    if ($main::verbose >= 1);
-		my $command = "calibrate-oligos -v 1";
-		$command  .= " -r ".$calibN_repet." -sn ".$gene_nb." -ol ".$oligo_len." -sl ".$seq_len;
-		my $calibN_task = "all,clean_oligos";
-		$command .= " -task ".$calibN_task;
-#		$command .= "-start ${START}";
-#		$command .= "${END}";
-		$command .= " ".$strands;
-		$command .= " ".$noov;
-		$command .= " -outdir ".$dir{calibN};
-		$command .= " -org ".$organism_name;
-		$calib_done{$gene_nb}{$seq_len}++;
-		&doit($command, $dry_run, $die_on_error, $verbose, $batch, "multi_calibN");
-	    }
-	}
+	&RSAT::message::Info($family_name, "Calibrating oligo occurrences with ",$gene_nb, 
+			     "random gene selections","upstream length", $seq_len)
+	  if ($main::verbose >= 1);
+	my $command = "calibrate-oligos -v 1";
+	$command  .= " -r ".$calibN_repet." -sn ".$gene_nb." -ol ".$oligo_len." -sl ".$seq_len;
+	my $calibN_task = "all,clean_oligos";
+	$command .= " -task ".$calibN_task;
+	#		$command .= "-start ${START}";
+	#		$command .= "${END}";
+	$command .= " ".$strands;
+	$command .= " ".$noov;
+	$command .= " -outdir ".$dir{calibN};
+	$command .= " -org ".$organism_name;
+	$calib_done{$gene_nb}{$seq_len}++;
+	&doit($command, $dry_run, $die_on_error, $verbose, $batch, "multi_calibN");
+      }
     }
-    chdir($dir{output});
+  }
+  chdir($dir{output});
 }
 
