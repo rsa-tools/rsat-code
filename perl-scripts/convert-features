@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-features,v 1.7 2006/07/17 16:46:05 rsat Exp $
+# $Id: convert-features,v 1.8 2006/12/11 03:51:28 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -66,16 +66,15 @@ print $out $header;
 ##### read input
 ($in) = &OpenInputFile($infile{input});
 while (<$in>) {
-    ## Comment lines
-    if ((/^;\s+(.*)/) || (/^--\s+(.*)/)) {
-	next;
-    }
-    next unless (/\S/);
-    chomp;
-    my $feature = new RSAT::feature();
-
-    $feature->parse_from_row($_, $input_format);
-    print $out $feature->to_text($output_format, $null);
+  ## Comment lines
+  next if (/^;/);
+  next if (/^--/);
+  next if (/^#/);
+  next unless (/\S/);
+  chomp;
+  my $feature = new RSAT::feature();
+  $feature->parse_from_row($_, $input_format);
+  print $out $feature->to_text($output_format, $null);
 }
 
 close $in if ($infile{input});
