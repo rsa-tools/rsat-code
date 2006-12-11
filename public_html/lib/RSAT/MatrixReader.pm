@@ -7,6 +7,7 @@ package RSAT::MatrixReader;
 use RSAT::GenericObject;
 use RSAT::matrix;
 use RSAT::error;
+use RSAT::feature;
 @ISA = qw( RSAT::GenericObject );
 
 ### class attributes
@@ -49,6 +50,8 @@ sub readFromFile {
 	@matrices = _readFromMotifSamplerFile($file);
     } elsif (lc($format) eq "meme") {
 	@matrices = _readFromMEMEFile($file);
+    } elsif (lc($format) eq "feature") {
+	@matrices = _readFromFeatureFile($file);
     } elsif (lc($format) eq "clustal") {
 	@matrices = _readFromClustalFile($file);
     } else {
@@ -366,7 +369,7 @@ sub _readFromAssemblyFile {
       $pattern =~ s/\./n/g;
       $pattern_rc =~ s/\./n/g;
 #      &RSAT::message::Debug("ASSEMBLY LINE", $l, $pattern, $pattern_rc, $score) if ($main::verbose >= 5);
-      $matrix->add_site($pattern, , score=>$score, id=>$pattern_id, max_score=>1);
+      $matrix->add_site(lc($pattern), score=>$score, id=>$pattern_id, max_score=>1);
 
       ## New site from a single-strand assembly
     } elsif ($line =~ /^(\S+)\s+(\S+)/) {
@@ -374,7 +377,7 @@ sub _readFromAssemblyFile {
       my $score = $2;
       $pattern =~ s/\./n/g;
 #      &RSAT::message::Debug("ASSEMBLY LINE", $l, $pattern, $pattern_rc, $score) if ($main::verbose >= 5);
-      $matrix->add_site($pattern, score=>$score, id=>$pattern, max_score=>1);
+      $matrix->add_site(lc($pattern), score=>$score, id=>$pattern, max_score=>1);
 
     } else {
       &RSAT::message::Warning("&RSAT::Matrixreader::_readFromAssemblyFile", "line", $l, "not parsed", $_) if ($main::verbose >= 4);
@@ -401,7 +404,7 @@ sub _from_isolated {
   $matrix->set_attribute("consensus.assembly", $pattern);
   $matrix->set_attribute("consensus.assembly.rc", $pattern_rc);
   $matrix->set_attribute("assembly.top.score", $score);
-  $matrix->add_site($pattern, score=>$score, id=>$pattern_id,, max_score=>1);
+  $matrix->add_site(lc($pattern), score=>$score, id=>$pattern_id,, max_score=>1);
   &RSAT::message::Debug("New matrix from isolated pattern", $current_matrix_nb."/".scalar(@matrices), "seed", $seed) if ($main::verbose >= 4);
   return $matrix;
 }
@@ -534,7 +537,7 @@ sub _readFromMEMEFile {
   my %residue_frequencies = ();
   my @alphabet = ();
   my @frequencies = ();
-  my $parsed_width = 0;
+#  my $parsed_width = 0;
   my $l = 0;
   while (<$in>) {
     $l++;
@@ -586,8 +589,8 @@ sub _readFromMEMEFile {
 	my $seq = lc($2);
 	my $seq_len =  length($seq);
 	if ($seq_len > 0) {
-	  $parsed_width = &main::max($parsed_width, $seq_len);
-	  $matrix->add_site($seq, score=>1, id=>$seq_id, max_score=>0);
+#	  $parsed_width = &main::max($parsed_width, $seq_len);
+	  $matrix->add_site(lc($seq), score=>1, id=>$seq_id, max_score=>0);
 	}
 
       } elsif (/\/\//) {
@@ -600,6 +603,90 @@ sub _readFromMEMEFile {
   close $in if ($file);
   return @matrices;
 #  return $matrices[0];
+}
+
+################################################################
+=pod
+
+=item _readFromFeatureFile($file)
+
+Read a matrix from a feature file (he input of feature-map). 
+
+This method is called by the method C<readFromFile($file, "feature")>.
+
+The main usage is to retrieve a collection of sites resulting from
+matrix-scan, in order to build a new collection of matrices from these
+sites. 
+
+The third column of the feature file (containing the feature name) is
+used as matrix name. If several feature names are present in the
+feature file, several matrices are returned accordingly. The 7th
+column, which contains the sequence of the feature, is used to build
+the matrix (or matrices).
+
+=cut
+sub _readFromFeatureFile {
+  my ($file) = @_;
+  &RSAT::message::Info("Reading matrix from consensus file\t", $file) if ($main::verbose >= 3);
+
+  ## open input stream
+  #    ($in, $dir) = &main::OpenInputFile($file);
+  my $in = STDIN;
+  if ($file) {
+    open INPUT, $file;
+    $in = INPUT;
+  }
+  my @matrices = (); 
+  my %matrices = (); ## Matrices are indexed by name
+  my @alphabet =  ("A", "C", "G", "T");
+  my $current_matrix_nb = 0;
+  my $matrix;
+  my $l = 0;
+  while (my $line = <$in>) {
+    $l++;
+    next if ($line =~ /^;/);
+    next if ($line =~ /^--/);
+    next if ($line =~ /^#/);
+    next unless ($line =~ /\S/);
+    $line =~ s/\r//;
+    chomp($line);
+    my $feature = new RSAT::feature();
+    $feature->parse_from_row($line, "ft");
+    my $matrix_name = $feature->get_attribute("feature_name");
+    my $site_sequence = $feature->get_attribute("description");
+    my $site_id = join ("_", 
+			$feature->get_attribute("seq_name"),
+			$feature->get_attribute("feature_name"),
+			$feature->get_attribute("strand"),
+			$feature->get_attribute("start"),
+			$feature->get_attribute("end"),
+		       );
+    &RSAT::message::Debug("&RSAT::MatrixReader", $matrix_name,"feature parsed", $l, $site_sequence, $site_id) if ($main::verbose >= 5);
+    if (defined($matrices{$matrix_name})) {
+      $matrix = $matrices{$matrix_name};
+    } else {
+      $current_matrix_nb++;
+      $matrix = new RSAT::matrix();
+      $matrix->init();
+      $matrix->set_attribute("name", $matrix_name);
+      $matrix->set_attribute("number", $current_matrix_nb);
+      $matrix->set_attribute("ncol", length($site_sequence));
+#      $matrix->set_parameter("sites", $3);
+#      $matrix->setPrior(%residue_frequencies);
+#      &RSAT::message::Debug("line", $l, "Read letter frequencies", %residue_frequencies) if ($main::verbose >= 10);
+      $matrix->setAlphabet_lc(@alphabet);
+      $matrix->force_attribute("nrow", scalar(@alphabet)); ## Specify the number of rows of the matrix
+      $matrices{$matrix_name} = $matrix;
+      push @matrices, $matrix;
+    }
+    $matrix->add_site(lc($site_sequence),
+		      id=>$site_id,
+		      max_score=>0,
+		      "score"=>1, ## Here we don't want to add up the scores, because we want to count the residue occurrences
+		    );
+  }
+  close $in if ($file);
+  return @matrices;
 }
 
 ################################################################
