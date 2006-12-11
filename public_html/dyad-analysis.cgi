@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.23 2006/12/10 01:54:14 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.24 2006/12/11 04:48:50 jvanheld Exp $
 #
 # Time-stamp: <2003-10-11 00:30:17 jvanheld>
 #
@@ -209,34 +209,68 @@ if ($query->param('output') eq "display") {
 	close(ASSEMBLY);
 
 
-	## Convert pattern-assembly result into matrix profiles to be displayed on the screen
-	$profile_file = "$TMP/$tmp_file_name.profile";
-	$profile_command = "$SCRIPTS/convert-matrix -v 1 ";
-	$profile_command .= " -in_format assembly -out_format patser";
-	$profile_command .= " -return profile,counts,parameters";
-	$profile_command .= " -i $assembly_file";
-	$profile_command .= " -o $profile_file";
-	print "<PRE>command to generate profiles: $profile_command<P>\n</PRE>" if ($ECHO >=1);
-	system "$profile_command";
-	print "<H2>Position-specific scoring matrices (PSSM)</H2>\n";
-	open PROFILE, $profile_file;
+# 	## Convert pattern-assembly result into matrix profiles to be displayed on the screen
+# 	$profile_file = "$TMP/$tmp_file_name.profile";
+# 	$profile_command = "$SCRIPTS/convert-matrix -v 1 ";
+# 	$profile_command .= " -in_format assembly -out_format patser";
+# 	$profile_command .= " -return profile,counts,parameters";
+# 	$profile_command .= " -i $assembly_file";
+# 	$profile_command .= " -o $profile_file";
+# 	print "<PRE>command to generate profiles: $profile_command<P>\n</PRE>" if ($ECHO >=1);
+# 	system "$profile_command";
+# 	print "<H2>Position-specific scoring matrices (PSSM)</H2>\n";
+# 	open PROFILE, $profile_file;
+# 	print "<PRE>\n";
+# 	while (<PROFILE>) {
+# 	  s|$RSA/||g;
+# 	  print;
+# 	}
+# 	print "</PRE>\n";
+# 	close(PROFILE);
+
+# 	## Convert pattern-assembly result into PSSM for piping to other tools
+# 	$pssm_file = "$TMP/$tmp_file_name.pssm";
+# 	$pssm_command = "$SCRIPTS/convert-matrix -v 0 ";
+# 	$pssm_command .= " -in_format assembly -out_format patser";
+# 	$pssm_command .= " -return counts";
+# 	$pssm_command .= " -i $assembly_file";
+# 	$pssm_command .= " -o $pssm_file";
+# 	print "<PRE>command to generate matrices: $pssm_command<P>\n</PRE>" if ($ECHO >=1);
+# 	system "$pssm_command";
+
+	## Convert pattern-assembly result into PSSM 
+	$pssm_prefix = $TMP."/".$tmp_file_name."_pssm";
+	$sig_matrix_file = $pssm_prefix."_sig_matrices.txt";
+	$pssm_file = $pssm_prefix."_count_matrices.txt";
+	$pssm_command = "$SCRIPTS/matrix-from-patterns -v 1 ".$str;
+	$pssm_command .= " -seq ".$sequence_file;
+	$pssm_command .= " -format $sequence_format";
+	$pssm_command .= " -asmb ".$assembly_file;
+	$pssm_command .= " -uth Pval 0.00025";
+	$pssm_command .= " -bginput -markov 0";
+	$pssm_command .= " -o ".$pssm_prefix;
+	print "<PRE>command to generate matrices (PSSM): $pssm_command<P>\n</PRE>" if ($ECHO >=1);
+	system "$pssm_command";
+
+	print "<H2>Significance matrices</H2>\n";
+	open SIG, $sig_matrix_file;
 	print "<PRE>\n";
-	while (<PROFILE>) {
+	while (<SIG>) {
 	  s|$RSA/||g;
 	  print;
 	}
 	print "</PRE>\n";
-	close(PROFILE);
+	close(SIG);
 
-	## Convert pattern-assembly result into PSSM for piping to other tools
-	$pssm_file = "$TMP/$tmp_file_name.pssm";
-	$pssm_command = "$SCRIPTS/convert-matrix -v 0 ";
-	$pssm_command .= " -in_format assembly -out_format patser";
-	$pssm_command .= " -return counts";
-	$pssm_command .= " -i $assembly_file";
-	$pssm_command .= " -o $pssm_file";
-	print "<PRE>command to generate matrices: $pssm_command<P>\n</PRE>" if ($ECHO >=1);
-	system "$pssm_command";
+	print "<H2>Count matrices</H2>\n";
+	open PSSM, $pssm_file;
+	print "<PRE>\n";
+	while (<PSSM>) {
+	  s|$RSA/||g;
+	  print;
+	}
+	print "</PRE>\n";
+	close(PSSM);
 
     }
 
