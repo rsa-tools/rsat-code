@@ -1,0 +1,440 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: matrix-from-patterns,v 1.1 2006/12/11 03:50:05 jvanheld Exp $
+#
+# Time-stamp: <2003-07-04 12:48:55 jvanheld>
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+matrix-from-patterns
+
+=head1 DESCRIPTION
+
+Extrat one or several position-specific scoring matrices (PSSM) from a
+set of sequences, using a seeds a set of patterns (the
+output of oligo-analysis or dyad-analysis).
+
+The patterns are first assembled (using the program pattern assembly)
+and converted into one or several significance matrices (using
+convert-matrix). A significance matrix contains one row per residue,
+one column per position of the pattern assembly, and each cell
+indicates the maximal significance value observed for that residue at
+that position in the assembly.
+
+Classically, position-specific scoring matrices are build from an
+alignemnt of sites (e.g. binding sites for a transcription factor).  A
+significance matrix already gives a good indication of the motif, but
+it does not always reflect the real sites present in the sequence,
+because it is built by assembling overlapping oligonucleotides (or
+dyads), irrespective of the fact that these patterns are found
+together or not in the input sequence.
+
+The program matrix-from-pattern solves this problem by using the
+assembled patterns as seeds to perform a matrix-based scanning of the
+input sequences, and collect the most likely instances of the motif
+(putative sites). These sites are then used to build an count matrix,
+reflecting the absolute residue frequencies at each position of the
+collected sites.
+
+=head1 AUTHORS
+
+jvanheld@scmbb.ulb.ac.be
+
+=head1 CATEGORY
+
+=item sequences
+
+=item pattern discovery
+
+=head1 USAGE
+    
+matrix-from-patterns -seq sequence_filfe [-pl pattern_file | -asmb assembly_file] [-o output_prefix] [-v #]
+
+=head1 INPUT FORMAT
+
+=over
+
+=item B<Sequence file>
+
+=item B<Pattern file>
+
+The pattern file must be in the same format as the output from
+pattern-assembly.
+
+=back
+
+=head1 OUTPUT FORMAT
+
+The output file contains the matrix or matrices extrated from the
+sequences. The supported output formats are the same as for
+convert-matrix.
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+
+
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    #### initialise parameters
+
+    ## Generic parameters
+    my $start_time = &AlphaDate();
+    local %infile = ();
+    local %outfile = ();
+
+    local $verbose = 0;
+    local $strands = "-2str";
+
+    ## Parameters for pattern-assembly
+    local $asmb_maxfl = 1;
+    local $asmb_subst = 1;
+    local $asmb_maxcl = 50;
+    local $asmb_maxpat = 100;
+
+    ## Parameters for convert-matrix
+
+    ## Parameters for matrix-scan
+    local $seq_format = "fasta";
+    local $scan_parameters = " -uth Pval 1e-4";
+
+    ## Parameters for the &doit() command
+    $dry = 0;
+    $die_on_error = 1;
+    $job_prefix = "matrix-from-patterns";
+    $batch = 0;
+
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+
+    ################################################################
+    ## Check argument values
+
+    ## The output prefix is mandatory
+    &RSAT::error::FatalError("You must specify the output prefix (option -o)")
+      unless (defined($outfile{output}));
+
+    ## The input sequence is mandatory
+    &RSAT::error::FatalError("You must specify the sequence file (option -seq)")
+      unless (defined($infile{sequence}));
+
+    ## The patterns should be provided, either as a pattern file or as an assembly file
+    &RSAT::error::FatalError("You must give as input either a pattern file (option -pl) or an assembly file (option -asmb)")
+      unless ((defined($infile{patterns})) || (defined($infile{assembly})));
+
+    ################################################################
+    ## Specify output files
+    $outfile{log} = $outfile{output}."_log.txt";
+    if ($infile{assembly}) {
+      $outfile{assembly} = $infile{assembly};
+    } else {
+      $outfile{assembly} = $outfile{output}.".asmb";
+    }
+    $outfile{sig_matrices} = $outfile{output}."_sig_matrices.txt";
+    $outfile{sig_sites} = $outfile{output}."_sig_sites.ft";
+    $outfile{count_matrices} = $outfile{output}."_count_matrices.txt";
+
+    ################################################################
+    ## Open output stream
+    local $log = &OpenOutputFile($outfile{log});
+
+    ################################################################
+    ## Print verbose
+    &Verbose() if ($main::verbose);
+
+    ################################################################
+    ## Assemble the patterns (unless the input is already an assembly
+    ## result)
+    if ($infile{patterns}) {
+      &RSAT::message::TimeWarn("Assembling the patterns") if ($main::verbose >= 2);
+      my $assembly_cmd = "pattern-assembly -v 1 -i ".$infile{patterns};
+      $assembly_cmd .= " ".$strands;
+      $assembly_cmd .= " -maxfl ".$asmb_maxfl;
+      $assembly_cmd .= " -subst ".$asmb_subst;
+      $assembly_cmd .= " -maxpat ".$asmb_maxpat;
+      $assembly_cmd .= " -maxcl ".$asmb_maxcl;
+      $assembly_cmd .= " -o ".$outfile{assembly};
+      print $log "; patterns -> assemblies\n", $assembly_cmd, "\n";
+      &doit($assembly_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+    }
+
+    ################################################################
+    ## Convert assembled patterns into matrices
+    &RSAT::message::TimeWarn("Converting assemblies to significance matrices") if ($main::verbose >= 2);
+    my $convert_cmd = "convert-matrix -v 1 -i ".$outfile{assembly};
+    $convert_cmd .= " -in_format assembly";
+    $convert_cmd .= " -return counts,parameters";
+    $convert_cmd .= " -o ".$outfile{sig_matrices};
+    print $log "; assemblies -> significance matrices\n", $convert_cmd, "\n";
+    &doit($convert_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+
+    ################################################################
+    ## Scan sequences to collect sites
+    &RSAT::message::TimeWarn("Collecting sites with significance matrices") if ($main::verbose >= 2);
+    my $scan_cmd = "matrix-scan -v 1";
+    $scan_cmd .= " -i ".$infile{sequence};
+    $scan_cmd .= " -seq_format ".$seq_format;
+    $scan_cmd .= " -m ".$outfile{sig_matrices};
+    $scan_cmd .= " -matrix_format tab";
+    $scan_cmd .= " ".$strands;
+    $scan_cmd .= " -return sites,pval";
+    $scan_cmd .= " ".$scan_parameters;
+#    $scan_cmd .= " -o ".$outfile{sig_sites};
+    print $log "; significance matrices + sequences -> sites\n", $scan_cmd, "\n";
+#    &doit($scan_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+
+    ################################################################
+    ## Convert the collecte sites to count matrices
+    &RSAT::message::TimeWarn("Converting sites to count matrices") if ($main::verbose >= 2);
+    my $convert2_cmd = "| convert-matrix -v 1";
+#    $convert2_cmd .= " -i ".$outfile{sig_sites};
+    $convert2_cmd .= " -in_format feature";
+    $convert2_cmd .= " -return counts,parameters";
+    $convert2_cmd .= " -o ".$outfile{count_matrices};
+    print $log "; sites -> count matrices\n", $convert2_cmd, "\n";
+    &doit($scan_cmd.$convert2_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+
+    ################################################################
+    ## Finish verbose
+    if ($main::verbose >= 1) {
+	my $done_time = &AlphaDate();
+	print $log "; Job started $start_time\n";
+	print $log "; Job done    $done_time\n";
+    }
+
+    ################################################################
+    ## Close output stream
+    close $log if ($outfile{output});
+
+    &RSAT::message::TimeWarn("matrix-from-pattern log file", $outfile{log})
+      if ($main::verbose >= 1);
+
+    exit(0);
+}
+
+################################################################
+################### subroutine definition ######################
+################################################################
+
+
+################################################################
+#### display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+#### display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+#### Read arguments 
+sub ReadArguments {
+#    foreach my $a (0..$#ARGV) {
+    my $arg;
+    
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    
+
+    while (scalar(@arguments) >= 1) {
+      $arg = shift (@arguments);
+	## Verbosity
+=pod
+	    
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+	    
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+	    
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+	    
+
+	    ## Input file
+=pod
+
+=item B<-seq sequence_file>
+
+If no input file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-seq") {
+	    $infile{sequence} = shift(@arguments);
+
+	    ## Sequence format
+=pod
+
+=item B<-format sequence_format>
+
+Sequence format.
+
+=cut
+	} elsif ($arg eq "-format") {
+	    $seq_format = shift(@arguments);
+
+	    ## Pattern file
+=pod
+
+=item B<-pl pattern_file>
+
+Pattern file. This file contains a list of patterns. typically, this
+file should be the output of the programes oligoanalysi or
+dyad-analysis.
+
+=cut
+	} elsif ($arg eq "-pl") {
+	  &RSAT::error::FatalError("Options -asmb and -pl are mutually exclusive") 
+	    if (defined($infile{assembly}));
+	  $infile{patterns} = shift(@arguments);
+
+	    ## Assembly file
+=pod
+
+=item B<-asmb assembly_file>
+
+Assembly file. As an alternative to the pattern file, the patterns can
+be provided in the form of the result of pattern-assembly.
+
+=cut
+	} elsif ($arg eq "-asmb") {
+	  &RSAT::error::FatalError("Options -asmb and -pl are mutually exclusive") 
+	    if (defined($infile{patterns}));
+	  $infile{assembly} = shift(@arguments);
+
+	    ## Strands
+=pod
+
+=item B<-1str|-2str>
+
+Strands
+
+=over
+
+=item B<-1str> use a single strand to build the motifs
+
+=item B<-2str> use both strands to build the motifs
+
+=back
+
+=cut
+	} elsif ($arg eq "-1str") {
+	    $strands = "-1str";
+	} elsif ($arg eq "-2str") {
+	    $strands = "-2str";
+
+	    ## Output file
+=pod
+
+=item	B<-o output_prefix>
+
+The program exports several files, whose name is specified by the
+output prefix, followed by an extension.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $outfile{output} = shift(@arguments);
+
+=pod
+
+=item B<all other arguments>
+
+All other arguments are passed to matrix-scan (which will raise an
+error if these arguments are not supported).
+
+=cut
+	} else {
+	  $scan_parameters .= " ".$arg;
+
+	}
+    }
+
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print $log "; matrix-from-patterns ";
+    &PrintArguments($log);
+    if (defined(%infile)) {
+	print $log "; Input files\n";
+	while (my ($key,$value) = each %infile) {
+	    print $log ";\t$key\t$value\n";
+	}
+    }
+    if (defined(%outfile)) {
+	print $log "; Output files\n";
+	while (my ($key,$value) = each %outfile) {
+	    print $log ";\t$key\t$value\n";
+	}
+    }
+}
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=cut
