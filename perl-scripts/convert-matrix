@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.23 2006/12/10 08:00:15 jvanheld Exp $
+# $Id: convert-matrix,v 1.24 2006/12/11 03:52:09 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -30,8 +30,6 @@ $null = "NA";
 
 local %infile = ();
 local %outfile = ();
-#local $infile{input} = "";
-#local $outfile{output} = "";
 local $input_format = "";
 local $output_format = "patser";
 local $verbose = 0;
@@ -57,6 +55,7 @@ $supported_return_fields = join ",", sort keys %supported_return_type;
 ## input formats
 %supported_input_format = (
     'tab'=>1,
+    'feature'=>1,
     'assembly'=>1,
     'consensus'=>1,
     'meme'=>1,
