@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-from-patterns,v 1.1 2006/12/11 03:50:05 jvanheld Exp $
+# $Id: matrix-from-patterns,v 1.2 2006/12/11 04:31:49 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -166,7 +166,7 @@ package main;
     ## result)
     if ($infile{patterns}) {
       &RSAT::message::TimeWarn("Assembling the patterns") if ($main::verbose >= 2);
-      my $assembly_cmd = "pattern-assembly -v 1 -i ".$infile{patterns};
+      my $assembly_cmd = "${SCRIPTS}/pattern-assembly -v 1 -i ".$infile{patterns};
       $assembly_cmd .= " ".$strands;
       $assembly_cmd .= " -maxfl ".$asmb_maxfl;
       $assembly_cmd .= " -subst ".$asmb_subst;
@@ -180,7 +180,7 @@ package main;
     ################################################################
     ## Convert assembled patterns into matrices
     &RSAT::message::TimeWarn("Converting assemblies to significance matrices") if ($main::verbose >= 2);
-    my $convert_cmd = "convert-matrix -v 1 -i ".$outfile{assembly};
+    my $convert_cmd = "${SCRIPTS}/convert-matrix -v 1 -i ".$outfile{assembly};
     $convert_cmd .= " -in_format assembly";
     $convert_cmd .= " -return counts,parameters";
     $convert_cmd .= " -o ".$outfile{sig_matrices};
@@ -190,7 +190,7 @@ package main;
     ################################################################
     ## Scan sequences to collect sites
     &RSAT::message::TimeWarn("Collecting sites with significance matrices") if ($main::verbose >= 2);
-    my $scan_cmd = "matrix-scan -v 1";
+    my $scan_cmd = "${SCRIPTS}/matrix-scan -v 1";
     $scan_cmd .= " -i ".$infile{sequence};
     $scan_cmd .= " -seq_format ".$seq_format;
     $scan_cmd .= " -m ".$outfile{sig_matrices};
@@ -205,7 +205,7 @@ package main;
     ################################################################
     ## Convert the collecte sites to count matrices
     &RSAT::message::TimeWarn("Converting sites to count matrices") if ($main::verbose >= 2);
-    my $convert2_cmd = "| convert-matrix -v 1";
+    my $convert2_cmd = "| ${SCRIPTS}/convert-matrix -v 1";
 #    $convert2_cmd .= " -i ".$outfile{sig_sites};
     $convert2_cmd .= " -in_format feature";
     $convert2_cmd .= " -return counts,parameters";
