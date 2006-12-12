@@ -520,7 +520,7 @@ sub oligo_analysis_cmd {
     }
 
     if ($organism) {
-      $command .= " -org ".$format;
+      $command .= " -org ".$organism;
     }
 
     if ($background) {
