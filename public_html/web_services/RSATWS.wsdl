@@ -57,7 +57,7 @@
 	<xsd:element name="mismatch" type="xsd:int"/>
 	<xsd:element name="str" type="xsd:string"/>
 	<xsd:element name="delete" type="xsd:string"/>
-	<xsd:element name="mask_short" type="xsd:string"/>
+	<xsd:element name="mask_short" type="xsd:int"/>
       </xsd:complexType>
 
       <xsd:complexType name="OligoAnalysisRequest">
@@ -93,7 +93,7 @@
       <documentation>Return type. Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client), or  'both'. Default is 'both'</documentation>
     </part>
     <part name='organism' type='string' minOccurs='1'>
-      <documentation>Organism. Words are underscore separated (example: Escherichia_coli_K12).</documentation>
+      <documentation>Organism. Words need to be underscore separated (example: Escherichia_coli_K12).</documentation>
     </part>
     <part name='query' type='string' minOccurs='1'>
       <documentation>A list of query genes</documentation>
@@ -178,11 +178,11 @@
       </documentation>
     </part>
     <part name='tmp_infile' type='string'>
-      <documentation>Name of the file with input sequence on the server. you need to supply either this parameter or the previous one (sequence).
+      <documentation>Name of the file with input sequence on the server. You need to supply either this parameter or the previous one (sequence).
       </documentation>
     </part>
     <part name='format' type='string'>
-      <documentation>Sequence format.</documentation>
+      <documentation>Sequence format. Supported: IG (Intelligenetics), WC (wconsensus), raw, FastA.</documentation>
     </part>
     <part name='match_length' type='int'>
       <documentation>Minimal match length. Default is 40.
@@ -198,10 +198,10 @@
       </documentation>
     </part>
     <part name='delete' type='string'>
-      <documentation>Delete repeats instead of masking them.
+      <documentation>Delete repeats instead of masking them. Recognized value is 'del'.
       </documentation>
     </part>
-    <part name='mask_short' type='string'>
+    <part name='mask_short' type='int'>
       <documentation>Mask (replace by N characters) sequences shorter than the specified length.
       </documentation>
     </part>
@@ -223,29 +223,29 @@
 
   <message name='OligoAnalysisRequest'>
     <part name='output' type='string'>
-      <documentation>Return type. Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client), or  'both'.
+      <documentation>Return type. Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client), or  'both'. Default is 'both'.
       </documentation>
     </part>
     <part name='sequence' type='string'>
-      <documentation>Input sequence.
+      <documentation>Input sequence. You need to supply either this parameter or the next one (tmp_infile).
       </documentation>
     </part>
     <part name='tmp_infile' type='string'>
-      <documentation>Name of the file with input sequence on the server.
+      <documentation>Name of the file with input sequence on the server. You need to supply either this parameter or the previous one (sequence).
       </documentation>
     </part>
     <part name='format' type='string'>
-      <documentation>Input sequence format.</documentation>
+      <documentation>Input sequence format. Supported: IG (Intelligenetics), WC (wconsensus), raw, fasta. Default is fasta</documentation>
     </part>
-    <part name='length' type='int'>
-      <documentation>Oligomer length
+    <part name='length' type='int' minOccurs='1'>
+      <documentation>Oligomer length.
       </documentation>
     </part>
     <part name='organism' type='string' minOccurs='1'>
-      <documentation>Organism</documentation>
+      <documentation>Organism. Words need to be underscore separated (example: Escherichia_coli_K12).</documentation>
     </part>
     <part name='background' type='string'>
-      <documentation>Background model: Type of sequences used as background model for estimating expected oligonucleotide frequencies.
+      <documentation>Background model: Type of sequences used as background model for estimating expected oligonucleotide frequencies. Supported: upstream, upstreamL, upstream-noorf, intergenic, input
       </documentation>
     </part>
     <part name='stats' type='string'>
@@ -259,7 +259,7 @@
     </part>
     <part name='str' type='string'>
       <documentation>Oligonucleotide occurrences found on both stands are
-    summed (-2str = default) or not (-1str).
+    summed (2str) or not (1str). Default is 2str.
       </documentation>
     </part>
     <part name='sort' type='string'>
@@ -289,26 +289,26 @@
 
 <message name='GeneInfoRequest'>
     <part name='organism' type='string' minOccurs='1'>
-      <documentation>Organism</documentation>
+      <documentation>Organism. Words need to be underscore separated (example: Escherichia_coli_K12).</documentation>
     </part>
     <part name='query' type='string' minOccurs='1'>
-      <documentation>Gene for which you want info on
+      <documentation>List of gene(s) for which you want info on.
       </documentation>
     </part>
     <part name='full' type='string'>
-      <documentation>Full match only (no substring matching)
+      <documentation>Full match only (no substring matching).
       </documentation>
     </part>
     <part name='noquery' type='string'>
-      <documentation>Do not print the query at the begining of each line
+      <documentation>Do not print the query at the begining of each line.
       </documentation>
     </part>
     <part name='descr' type='string'>
-      <documentation>MAtch query against the description, too, not just against gene ID and name
+      <documentation>Match query against the description, too, not just against gene ID and name.
       </documentation>
     </part>
     <part name='feattype' type='string'>
-      <documentation>Feature type (CDS, mRNA, tRNA, rRNA, scRNA)
+      <documentation>Feature type (CDS, mRNA, tRNA, rRNA, scRNA).
       </documentation>
     </part>
   </message>
