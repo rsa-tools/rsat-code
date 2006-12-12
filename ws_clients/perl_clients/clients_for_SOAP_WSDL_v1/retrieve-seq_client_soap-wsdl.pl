@@ -21,8 +21,8 @@ my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services/';
 my $WSDL = $server.'RSATWS.wsdl';
 my $proxy = $server.'RSATWS.cgi';
 
+## Service call
 my $soap=SOAP::WSDL->new(wsdl => $WSDL)->proxy($proxy);
-
 $soap->wsdlinit;
 
 # $soap->wsdl_checkoccurs(0);
@@ -32,9 +32,7 @@ my $output_choice = 'both';  ## Accepted values: 'server', 'client', 'both'
 
 ## Retrieve-seq parameters
 my $organism = 'Escherichia_coli_K12';  ## Name of the query organism
-# my $organism = '-org Escherichia_colix_K12';
 my @gene = ("metA", "metB", "metC");  ## List of query genes
-# my @gene = ("zorglB");
 my $all = '';  ## the -all option. This option is incompatible with the query list @gene (above)
 my $noorf = 'noorf';  ## Clip sequences to avoid upstream ORFs
 my $from = 0;  ## Start position of the sequence
@@ -52,7 +50,7 @@ my $imp_pos = '';  ## Admit imprecise position (value = 'imp_pos' to do so)
 my %args = (
 	    'output' => $output_choice,
 	    'organism' => $organism,
-	    'query' => \@gene,  ## An array in a hash has to be referenced (correct?)
+	    'query' => \@gene,  ## An array in a hash has to be referenced (always?)
 	    'noorf' => $noorf,
 	    'from' => $from,
 	    'to' => $to,
