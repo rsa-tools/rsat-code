@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.36 2006/10/20 06:24:54 jvanheld Exp $
+# $Id: compare-classes,v 1.37 2006/12/12 10:44:17 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -52,7 +52,6 @@ $supported_multi_cor = join (",", sort(keys (%supported_multi_cor)));
 
 $sort_key = "name";
 
-local %field_description = &DescribeFields();
 ## Groups of calculation
 %calc_groups = (
     'rank'=>'rank',
@@ -95,6 +94,19 @@ local %field_description = &DescribeFields();
 );
 @calc_keys = keys %calc_groups;
 @calc_values = values %calc_groups;
+
+
+## Field descriptions
+local %field_description = &DescribeFields();
+local $field_description_text = join ("\t", "", "group", "field", "description")."\n";
+foreach my $group qw(rank occ freq proba  jac_sim dotprod entropy) {
+    foreach my $field (sort @calc_keys) {
+	if ($calc_groups{$field} eq $group) {
+	    $field_description_text .= join("\t", "", $group, $field, $field_description{$field});
+	    $field_description_text .= "\n";
+	}
+    }
+}
 
 
 ## Define supported return, sort, matrix, and threshold fields
@@ -460,6 +472,12 @@ OPTIONS
     -return return_fields
         List of fields to return. Supported field :
         $supported_return_fields
+
+	Return fields are grouped, so that each request will return
+        several fields.  For example, the group "proba" returns the
+        P-value, the E-value and the significance.
+
+${field_description_text}
 
     -uth field #
         upper threshold value for a given field
@@ -1932,15 +1950,16 @@ sub DescribeFields {
     $field_description{'F(Q!R)'}  = "Frequency of Q!R elements relative to population size. F(Q!R)=Q!R/P";
     $field_description{'F(R!Q)'}  = "Frequency of R!Q elements relative to population size. F(R!Q)=R!Q/P";
     $field_description{'F(!Q!R)'}  = "Frequency of !Q!R elements relative to population size. F(!Q!R)=!Q!R/P";
+    $field_description{'P(QR)'} = "Probability of Q and R (Q^R), assuming independence. P(QR) = F(Q)*F(R)";
     $field_description{'P(Q|R)'} = "Probability of Q given R. P(Q|R) = F(QR)/F(R)";
-    $field_description{'P(Q|R)'} = "Probability of R given Q. P(R|Q) = F(QR)/F(Q)";
+    $field_description{'P(R|Q)'} = "Probability of R given Q. P(R|Q) = F(QR)/F(Q)";
     $field_description{'jac_sim'}  = "Jaccard' similarity. jac_sim = intersection/union = (Q and R)/(Q or R)";
     $field_description{'dotprod'}  = "Dot product (using the score column)";
     $field_description{'E(QR)'}  = "Expected number of elements in the intersection";
-    $field_description{'P_val'}  = "P-value of the intersection";
+    $field_description{'P_val'}  = "P-value of the intersection, calculated witht he hypergeometric function. Pval = P(X >= QR). ";
 #	$field_description{'mtest'}  = "Correction for the multi-testing.";
-    $field_description{'E_val'}  = "E-value of the intersection";
-    $field_description{'sig'}  = "Significance of the intersection";
+    $field_description{'E_val'}  = "E-value of the intersection. E_val = P_val * nb_tests";
+    $field_description{'sig'}  = "Significance of the intersection. sig = -log10(E_val)";
     $field_description{'R_only'}  = "Elements found in the class R only";
     $field_description{'Q_only'}  = "Elements found in the class Q only";
     $field_description{'common_members'}  = "Elements found in both reference and query classes";
