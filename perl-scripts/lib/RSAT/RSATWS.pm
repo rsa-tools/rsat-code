@@ -313,7 +313,7 @@ sub purge_seq {
 		'client' => $result};
     } elsif ($output_choice eq 'both') {
 	return {'server' => $tmp_outfile,
-		'command' => $command, 
+		'command' => $command,
 		'client' => $result};
     }
 }
@@ -360,8 +360,8 @@ sub purge_seq_cmd {
       $command .= " -".$delete;
     }
 
-    if ($mask_short) {
-      $command .= " -".$mask_short;
+    if (defined($mask_short)) {
+      $command .= " -mask_short ".$mask_short;
     }
 
     if (defined($match_length)) {
