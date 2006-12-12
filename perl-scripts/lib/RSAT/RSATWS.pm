@@ -346,7 +346,23 @@ sub purge_seq_cmd {
     my $delete = $args{"delete"};
     my $mask_short = $args{"mask_short"};
 
-    my $command = "$SCRIPTS/purge-sequence $format $str $delete $mask_short";
+    my $command = "$SCRIPTS/purge-sequence";
+
+    if ($format) {
+      $command .= " -format ".$format;
+    }
+
+    if ($str) {
+      $command .= " -".$str;
+    }
+
+    if ($delete) {
+      $command .= " -".$delete;
+    }
+
+    if ($mask_short) {
+      $command .= " -".$mask_short;
+    }
 
     if (defined($match_length)) {
 	$command .= " -ml ".$match_length;
@@ -497,7 +513,39 @@ sub oligo_analysis_cmd {
     my $sort = $args{"sort"};
     my $lth = $args{"lth"};
 
-    my $command = "$SCRIPTS/oligo-analysis $format $organism $background $stats $noov $str $sort $lth";
+    my $command = "$SCRIPTS/oligo-analysis";
+
+    if ($format) {
+      $command .= " -format ".$format;
+    }
+
+    if ($organism) {
+      $command .= " -org ".$format;
+    }
+
+    if ($background) {
+      $command .= " -bg ".$background;
+    }
+
+    if ($stats) {
+      $command .= " -return ".$stats;
+    }
+
+    if ($noov) {
+      $command .= " -".$noov;
+    }
+
+    if ($str) {
+      $command .= " -".$str;
+    }
+
+    if ($sort) {
+      $command .= " -".$sort;
+    }
+
+    if ($lth) {
+      $command .= " -lth ".$lth;
+    }
 
     if (defined($length)) {
 	$command .= " -l ".$length;
