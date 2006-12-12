@@ -49,7 +49,7 @@
       </xsd:element>
 
       <xsd:complexType name="PurgeSequenceRequest">
-        <xsd:element name="output" type="xsd:string" minOccurs="1"/>
+        <xsd:element name="output" type="xsd:string"/>
 	<xsd:element name="sequence" type="xsd:string"/>
 	<xsd:element name="tmp_infile" type="xsd:string"/>
 	<xsd:element name="format" type="xsd:string"/>
@@ -61,12 +61,12 @@
       </xsd:complexType>
 
       <xsd:complexType name="OligoAnalysisRequest">
-        <xsd:element name="output" type="xsd:string" minOccurs="1"/>
+        <xsd:element name="output" type="xsd:string"/>
 	<xsd:element name="sequence" type="xsd:string"/>
 	<xsd:element name="tmp_infile" type="xsd:string"/>
 	<xsd:element name="format" type="xsd:string"/>
-	<xsd:element name="length" type="xsd:int"/>
-	<xsd:element name="organism" type="xsd:string"/>
+	<xsd:element name="length" type="xsd:int" minOccurs="1"/>
+	<xsd:element name="organism" type="xsd:string" minOccurs="1" maxOccurs="1"/>
 	<xsd:element name="background" type="xsd:string"/>
 	<xsd:element name="stats" type="xsd:string"/>
 	<xsd:element name="noov" type="xsd:string"/>
@@ -90,10 +90,10 @@
   <!-- Parameters Definition -->
   <message name='RetrieveSequenceRequest'>
     <part name='output' type='string'>
-      <documentation>Return type. Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client), or  'both'.</documentation>
+      <documentation>Return type. Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client), or  'both'. Default is 'both'</documentation>
     </part>
     <part name='organism' type='string' minOccurs='1'>
-      <documentation>Organism (required)</documentation>
+      <documentation>Organism. Words are underscore separated (example: Escherichia_coli_K12).</documentation>
     </part>
     <part name='query' type='string' minOccurs='1'>
       <documentation>A list of query genes</documentation>
@@ -102,10 +102,10 @@
       <documentation>Prevent overlap with upstream open reading frames (ORF).</documentation>
     </part>
     <part name='from' type='int'>
-      <documentation>Inferior limit of the region to retrieve. </documentation>
+      <documentation>Inferior limit of the region to retrieve. Default is organism dependant (example: Saccharomyces cerevisiae = -800).</documentation>
     </part>
     <part name='to' type='int'>
-      <documentation>Superior limit of the region to retrieve. </documentation>
+      <documentation>Superior limit of the region to retrieve. Default is '-1'.</documentation>
     </part>
     <part name='feattype' type='string'>
       <documentation>Type of genome features to load. Supported: CDS, mRNA, tRNA, rRNA. </documentation>
@@ -114,23 +114,23 @@
       <documentation>Sequence type. Supported: upstream, downstream, ORF (unspliced open reading frame).</documentation>
     </part>
     <part name='format' type='string'>
-      <documentation>Sequence format.</documentation>
+      <documentation>Sequence format. Supported: IG (Intelligenetics), WC (wconsensus), raw, FastA</documentation>
     </part>
     <part name='all' type='string'>
       <documentation>Return sequences for all the genes of the organism. </documentation>
     </part>
     <part name='lw' type='int'>
-      <documentation>Line width (0 for all on one line). </documentation>
+      <documentation>Line width (0 for whole sequence on one line). </documentation>
     </part>
     <part name='label' type='string'>
       <documentation>Field(s) to be used in the sequence label.
-      Multiple fields can be specified, separated by commas.  Default:
-      name. Supported:
-      id, name, organism_name, sequence_type, current_from, current_to, ctg, orf_strand, reg_left, reg_right
+      Multiple fields can be specified, separated by commas. Supported:
+      id, name, organism_name, sequence_type, current_from, current_to, ctg, orf_strand, reg_left, reg_right. Default:
+      name.
       </documentation>
     </part>
     <part name='label_sep' type='string'>
-      <documentation>Separator between the label fields. Default: | (pipe character)</documentation>
+      <documentation>Separator between the label fields. Default: | (pipe character).</documentation>
     </part>
     <part name='nocom' type='string'>
       <documentation>
@@ -142,13 +142,13 @@
     <part name='repeat' type='string'>
       <documentation>
 	Use the repeat masked version of the genome. 
-        Attention : repeated regions are annotated for some genomes
+        Attention: repeated regions are annotated for some genomes
         only.
       </documentation>
     </part>
     <part name='imp_pos' type='string'>
       <documentation>
-	Admit imprecise positions (use value 'imp_pos' to do so)
+	Admit imprecise positions.
       </documentation>
     </part>
   </message>
@@ -170,31 +170,31 @@
 
   <message name='PurgeSequenceRequest'>
     <part name='output' type='string'>
-      <documentation>Return type. Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client), or  'both'.
+      <documentation>Return type. Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client), or 'both'. Default is 'both'.
       </documentation>
     </part>
     <part name='sequence' type='string'>
-      <documentation>Sequence to purge.
+      <documentation>Sequence to purge. You need to supply either this parameter or the next one (tmp_infile).
       </documentation>
     </part>
     <part name='tmp_infile' type='string'>
-      <documentation>Name of the file with input sequence on the server.
+      <documentation>Name of the file with input sequence on the server. you need to supply either this parameter or the previous one (sequence).
       </documentation>
     </part>
     <part name='format' type='string'>
       <documentation>Sequence format.</documentation>
     </part>
     <part name='match_length' type='int'>
-      <documentation>Minimal match length (default: 40)
+      <documentation>Minimal match length. Default is 40.
       </documentation>
     </part>
     <part name='mismatch' type='int'>
-      <documentation>Number of mismatches allowed (default: 3)
+      <documentation>Number of mismatches allowed. Default is 3.
       </documentation>
     </part>
     <part name='str' type='string'>
-      <documentation>Discard duplications on the direct strand only (-1str) or
-    on the reverse complement as well (-2str).
+      <documentation>Discard duplications on the direct strand only (1str) or
+    on the reverse complement as well (2str). Default is 2str.
       </documentation>
     </part>
     <part name='delete' type='string'>
