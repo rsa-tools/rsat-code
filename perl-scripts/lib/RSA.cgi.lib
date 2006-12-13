@@ -414,11 +414,15 @@ sub PrintHtmlTable {
 	if (/^\s*$/) {		#nothing on the line
 	} elsif (/^;WARNING/) {		# warning
 	  push @warnings, $_;
-	} elsif ((/^;/) || (/^\#/) || (/^\/\//)) {		# comment line
+	} elsif ((/^;/) || 
+		 (/^\#/) 
+		 || (/^\/\//)) {		# comment line
 	  if ($table_opened) {
 	    print $out "<\/TABLE><PRE>\n";
 	    $table_opened = 0;
-	  } 
+	  }
+	  $last_line =~ s/^;//;
+	  $last_line =~ s/^#//;
 	  print $out $last_line;
 	  $last_line = $_;
 
@@ -429,9 +433,10 @@ sub PrintHtmlTable {
 
 	    # print the header line
 	    chomp($last_line);
-	    $last_line =~ s/;//;
-	    $last_line =~ s/\t/ <\/TT><\/B><\/TD>\n<TD><B>$font_spec_start/g;
-	    $header_line = "<TR VALIGN=top>\n<TD><B>".$font_spec_start.$last_line.$font_spec_end."</B></TD>\n</TR>\n\n";
+	    $last_line =~ s/^;//;
+	    $last_line =~ s/^#//;
+	    $last_line =~ s/\t/ <\/TT><\/TH>\n<TH ALIGN=LEFT>$font_spec_start/g;
+	    $header_line = "<TR VALIGN=top>\n<TH ALIGN=LEFT>".$font_spec_start.$last_line.$font_spec_end."</TH>\n</TR>\n\n";
 	    print $out $header_line;
 	    $last_line = "";
 	    
