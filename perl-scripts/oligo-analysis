@@ -7,7 +7,7 @@
 
 ############################################################
 #
-# $Id: oligo-analysis,v 1.121 2006/11/23 13:53:29 jvanheld Exp $
+# $Id: oligo-analysis,v 1.122 2006/12/13 19:23:22 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:06:25 jvanheld>
 #
@@ -1452,9 +1452,7 @@ sub PrintHeaderLine {
 	}
     }
 
-    print $out ";";
-    print $out join("\t",@out_col);
-    print $out "\n";
+    print $out "#", join("\t",@out_col), "\n";
 
 }
 
@@ -1526,6 +1524,7 @@ sub Verbose {
 	    printf $out "; %-29s\t%s\n", "Sequence type", $seq_type;
 	    printf $out "; %-29s\t%s\n", "Nb of sequences", $sequence_number;
 	    printf $out "; %-29s\t%s\n", "Sum of sequence lengths", $sum_seq_length;
+	    printf $out "; %-29s\t%s\n", "Masked characters", $mask if ($mask);
 	    if ($seq_type eq "DNA") {
 		printf $out "; %-29s\t%d\t%s\n", "discarded residues", $discarded_residues, " (other letters than ACGT)";
 		printf $out "; %-29s\t%d\t%s\n", "discarded occurrences", $discarded_occurrences, " (contain discarded residues)";
