@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: compare-classes,v 1.37 2006/12/12 10:44:17 jvanheld Exp $
+# $Id: compare-classes,v 1.38 2006/12/13 14:09:18 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -184,7 +184,7 @@ $field_formats{'jac_sim'} = "%.5f";
 $field_formats{'dotprod'} = "%7g";
 $field_formats{'E(QR)'} = "%7.2f";
 $field_formats{'P_val'} = "%.2g";
-$field_formats{'E_val'} = "%.2gf";
+$field_formats{'E_val'} = "%.1e";
 $field_formats{'sig'} = "%.2f";
 $field_formats{'H(Q)'} = "%.5f";
 $field_formats{'H(R)'} = "%.5f";
