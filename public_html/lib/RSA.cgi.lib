@@ -389,7 +389,7 @@ sub PrintHtmlTable {
 	$border=1;
     }
     
-    $TABLE="<TABLE CELLSPACING=3 BORDER=$border>";
+    $TABLE="<TABLE bgcolor='#EEEEFF' CELLSPACING=1 CELLPADDING=3 BORDER=$border>";
     unless ($font{variable}) {
 	$font_spec_start = "<TT>";
 	$font_spec_end = "</TT>";
@@ -435,8 +435,8 @@ sub PrintHtmlTable {
 	    chomp($last_line);
 	    $last_line =~ s/^;//;
 	    $last_line =~ s/^#//;
-	    $last_line =~ s/\t/ <\/TT><\/TH>\n<TH ALIGN=LEFT>$font_spec_start/g;
-	    $header_line = "<TR VALIGN=top>\n<TH ALIGN=LEFT>".$font_spec_start.$last_line.$font_spec_end."</TH>\n</TR>\n\n";
+	    $last_line =~ s/\t/ <\/TT><\/TH>\n<TH ALIGN=LEFT bgcolor='#BBBBFF'>$font_spec_start/g;
+	    $header_line = "<TR VALIGN=top>\n<TH ALIGN=LEFT bgcolor='#BBBBFF'>".$font_spec_start.$last_line.$font_spec_end."</TH>\n</TR>\n\n";
 	    print $out $header_line;
 	    $last_line = "";
 	    
