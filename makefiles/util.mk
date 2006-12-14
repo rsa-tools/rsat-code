@@ -36,13 +36,14 @@ JOB_PREFIX=job
 JOB=`mktemp ${JOB_DIR}/${JOB_PREFIX}.XXXXXX`
 QUEUE=medium
 MASTER=arthur.scmbb.ulb.ac.be
+CLUSTER_ADDRESS=${QUEUE}@${MASTER}
 command_queue:
 	@mkdir -p ${JOB_DIR}
 	@for job in ${JOB} ; do							\
 		echo "Job $${job}" ;						\
 		echo "echo running on node "'$$HOST' > $${job}; 		\
 		echo "${MY_COMMAND}" >> $${job} ;				\
-		qsub -m e -q ${QUEUE}@${MASTER} -N $${job} -j oe	\
+		qsub -m e -q ${CLUSTER_ADDRESS} -N $${job} -j oe	\
 			-o $${job}.log $${job} ;				\
 	done
 
