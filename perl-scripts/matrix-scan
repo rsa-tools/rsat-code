@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.52 2006/12/12 19:08:36 jvanheld Exp $
+# $Id: matrix-scan,v 1.53 2006/12/14 11:13:23 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -250,7 +250,7 @@ package main;
 
   $bg_in_format = "oligo-analysis";
   $bg_out_format = "tab";
-  $sequence_number = 0;
+  local $sequence_number = 0;
   $sum_seq_len = 0;
   #    $n_containing_regions = 0;
   $n_residues = 0;
@@ -620,6 +620,7 @@ package main;
   ################################################################
   ##### Scan the sequences
   &RSAT::message::TimeWarn("Scaning sequences with", scalar(@matrices), "matrices") if ($main::verbose >= 2);
+
   my ($in, $input_dir) = &OpenInputFile($main::infile{input});
   local($current_seq, $seq_id);
   while ((($current_seq, $seq_id) = &ReadNextSequence($in, $seq_format, $input_dir, "",$mask)) &&
@@ -628,7 +629,12 @@ package main;
     ## If the rank is required, it is calculated for each input sequence independently
     local @matches = (); ## Only used whe the rank of the site is required
     local %matches_per_matrix = ();
+
+    ## Initialize sequence scores
     $sequence_scores->{$seq_id}->{length} = length($current_seq);
+    $sequence_scores->{$seq_id}->{matches} = 0;
+    $sequence_scores->{$seq_id}->{weight_sum} = 0;
+    $sequence_scores->{$seq_id}->{sig_sum} = 0;
 
     ## Count the number of N residues and increment the corresponding counter
     my $n_seq = $current_seq;
@@ -679,8 +685,10 @@ package main;
 
     ################################################################
     ## Detect sites
-    &RSAT::message::TimeWarn(join ("\t", "Scanning sequence with ".scalar(@matrices)." PSSM", $sequence_number,  "len=".$seq_len, "orig=".$orig_pos,  $seq_id))
+    &RSAT::message::TimeWarn("Scanning sequence with ".scalar(@matrices)." PSSM", $sequence_number,  $seq_id,"len=".$seq_len, "orig=".$orig_pos,  $seq_id)
       if ($main::verbose >= 3);
+
+    &RSAT::message::psWarn("Scanning sequence with ".scalar(@matrices)." PSSM", $sequence_number,  $seq_id,"len=".$seq_len, "orig=".$orig_pos,  $seq_id) if (($main::verbose >= 3) && (($sequence_number % 10) == 0));
     if ($calc_fields{sites}) {
       #	  $n_containing_region = 0;
       for my $pos (1..$seq_len) {
@@ -1853,28 +1861,30 @@ sub score_segment {
     ################################################################
     ## Create a new object for the current match
 #    &RSAT::message::Debug("Creating a fteaure for new match") if ($main::verbose >= 10);
-    my $match = new RSAT::feature();
-    $match->set_attribute('seq_name', $seq_id);
-    $match->set_attribute('ft_type', 'site');
-    $match->set_attribute('feature_name', $matrix->get_attribute('name'));
-    $match->set_attribute('strand',$strand);
-    $match->set_attribute('start',$start_pos);
-    $match->set_attribute('end',$end_pos);
-    $match->set_attribute('description',uc($segment));
-    $match->set_attribute('score',$score);
-    $match->set_attribute('proba_M',$proba_M);
-    $match->set_attribute('proba_B',$proba_B);
-    if ($return_fields{pval}) {
-      $match->set_attribute('pval',$pval);
-      $match->set_attribute('ln_pval',$ln_pval);
-      $match->set_attribute('sig',$sig);
-    }
-    $match->set_attribute('normw',$normw) if ($return_fields{normw});
-#    if (($calc_fields{rank}) || ($calc_fields{pval})){
+    if ($return_fields{sites}) {
+      my $match = new RSAT::feature();
+      $match->set_attribute('seq_name', $seq_id);
+      $match->set_attribute('ft_type', 'site');
+      $match->set_attribute('feature_name', $matrix->get_attribute('name'));
+      $match->set_attribute('strand',$strand);
+      $match->set_attribute('start',$start_pos);
+      $match->set_attribute('end',$end_pos);
+      $match->set_attribute('description',uc($segment));
+      $match->set_attribute('score',$score);
+      $match->set_attribute('proba_M',$proba_M);
+      $match->set_attribute('proba_B',$proba_B);
+      if ($return_fields{pval}) {
+	$match->set_attribute('pval',$pval);
+	$match->set_attribute('ln_pval',$ln_pval);
+	$match->set_attribute('sig',$sig);
+      }
+      $match->set_attribute('normw',$normw) if ($return_fields{normw});
+      #    if (($calc_fields{rank}) || ($calc_fields{pval})){
       # If the hits have to be ranked, store them rather than printing them immediately
-    push @matches , $match;
-    push @{$matches_per_matrix{$matrix->get_attribute('name')}} , $match;
-    push @{$matches_per_seq{$seq_id}} , $match;
+      push @matches , $match;
+      push @{$matches_per_matrix{$matrix->get_attribute('name')}} , $match;
+      push @{$matches_per_seq{$seq_id}} , $match;
+    }
 #      push @{$sequence_scores->{$seq_id}->matches} , $match if ($return_fields{seq_scores});
 #    } else {
 #      &print_match($match) if ($main::return_fields{sites});
