@@ -250,7 +250,9 @@ sub ReadCalibration {
     while (<$cal>) {
 	$l++;
 	chomp();
+	next if (/^--/);
 	next if (/^;/);
+	next if (/^\#/);
 	next unless (/\S/);
 	my @fields =  split /\s+/;
 	my $pattern_seq = lc(shift(@fields));
@@ -314,10 +316,12 @@ sub ReadPatternFrequencies {
   my $file_type = "undef";
 
   while (<$exp>) {
+      my $line = $_;
     $l++;
     chomp();
     next if (/^--/); ## Skip comment line
     next if (/^;/); ## Skip comment line
+    next if (/^\#/); ## Skip header line
     next unless (/\S/); ## Skip comment line
     
     my @fields =  split /\s+/;
@@ -346,7 +350,7 @@ sub ReadPatternFrequencies {
       
     } else {
       ### unrecognized format
-      &RSAT::error::FatalError("Invalid expected frequency in file $pattern_freq_file at line $l\n");
+      &RSAT::error::FatalError("Invalid expected frequency in file $pattern_freq_file at line $l\n$line\n");
     }
     
     if ($patterns{$pattern_seq}->{exp_freq} < 0) {
@@ -403,9 +407,11 @@ sub ReadExpectedFrequencies {
     my $l=0;
 
     while (<$exp>) {
+	my $line = $_;
 	$l++;
 	chomp();
 	next if (/^;/);
+	next if (/^\#/); 
 	next unless (/\S/);
 
 	my @fields =  split /\s+/;
@@ -435,7 +441,7 @@ sub ReadExpectedFrequencies {
 
 	} else {
 	    ### unrecognized format
-	    &RSAT::error::FatalError("Invalid expected frequency in file $exp_freq_file at line $l\n");
+	    &RSAT::error::FatalError("Invalid expected frequency in file $exp_freq_file at line $l\n$line\n");
 	}
 	
 	if ($patterns{$pattern_seq}->{exp_freq} < 0) {
