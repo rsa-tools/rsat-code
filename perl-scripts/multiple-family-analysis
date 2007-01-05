@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.179 2006/12/13 18:59:45 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.180 2007/01/05 01:40:03 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -1255,12 +1255,7 @@ sub DyadAnalysis {
    $command .=  " -maxfl 1 -maxpat 200 ".${strands};
    
    ### extract PSSM from pattern assembly
-#   $command .= "; convert-matrix -v 1 ";
-#   $command .= " -i ".$family{$family_name}->{dyad_assembly_file};
-#   $command .= " -in_format assembly -out_format patser -return profile,parameters";
-#   $command .= " -o ".$family{$family_name}->{dyad_pssm_file};
-
-   $command .= "matrix-from-patterns -v 1 ";
+   $command .= "; matrix-from-patterns -v 1 ";
    $command .= " -seq ".$family{$family_name}->{seq_file};
    $command .= " -asmb ".$family{$family_name}->{dyad_assembly_file};
    $command .= " -bginput -markov 0 ";
@@ -1999,8 +1994,9 @@ sub IndexPatterns {
    } else {
 	@sorted_patterns = sort { $score{$b} <=> $score{$a} } @patterns;
 	$table[$row][$col] .= "<a href=".$base.$family_dir.">".$family_name."</a>\n";
-	$table[$row][$col] .= "<a href=".$base.$pattern_dir.">[".$type."]</a>\n";
-	$table[$row][$col] .= "<a href=".$base.$pattern_file.">[patt]</a>\n";
+	$table[$row][$col] .= "<a href=".$base.$pattern_dir.">[dir]</a>\n";
+	$table[$row][$col] .= "<a href=".$base.$pattern_file.">[".$type."]</a>\n";
+#	$table[$row][$col] .= "<a href=".$base.$pattern_file.">[patt]</a>\n";
 	$table[$row][$col] .= "<a href=".$base.$assembly_file.">[asmb]</a>\n";
 	$table[$row][$col] .= "<a href=".$base.$pattern_file.".".${IMG_FORMAT}.">[map]</a>\n";
 	if ($htmaps) {
@@ -2009,7 +2005,7 @@ sub IndexPatterns {
 
 	$table[$row][$col] .= "<a href=".$base.$pssm_file."_sig_matrices.txt>[sig matrix]</a>\n";
 	$table[$row][$col] .= "<a href=".$base.$pssm_file."_count_matrices.txt>[count matrix]</a>\n";
-	$table[$row][$col] .= "<a href=".$base.$pssm_file.".png>[scan map]</a>\n";
+	$table[$row][$col] .= "<a href=".$base.$pssm_file.".${IMG_FORMAT}>[scan map]</a>\n";
 
 #	if ($task{validate}) {
 	$table[$row][$col] .= "<a href=".$base.$validation_file.">[matches]</a>\n";
