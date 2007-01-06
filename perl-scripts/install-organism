@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: install-organism,v 1.68 2006/11/09 17:47:39 rsat Exp $
+# $Id: install-organism,v 1.69 2007/01/06 03:55:25 rsat Exp $
 #
 # Time-stamp: <2003-10-21 01:20:28 jvanheld>
 #
@@ -74,7 +74,7 @@ if ($task{all}) {
 ################################################################
 
 ### if new data is parsed from Genbank, automatically update the config
-$task{config} = 1 if ($task{parse}); 
+#$task{config} = 1 if ($task{parse}); 
 
 #### check organism name
 unless ($organism_short_name) {
