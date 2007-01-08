@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.4 2006/12/09 15:33:10 jvanheld Exp $
+# $Id: matrix-quality,v 1.5 2007/01/08 20:25:42 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -333,7 +333,6 @@ Format of the matrix file.
 =cut
 	} elsif ($arg eq "-matrix_format") {
 	    $matrix_format = shift(@arguments);
-	    
 
 	    ## File containing the positive sequence set
 =pod

@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.53 2006/12/14 11:13:23 jvanheld Exp $
+# $Id: matrix-scan,v 1.54 2007/01/08 20:25:42 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -72,7 +72,7 @@ All the formats supported in RSAT can be used as input (default: fasta).
 =head2 Matrix file
 
 The matrix format is specified with the option -matrix_format.  Supported :
-tab,consensus,gibbs,meme,assembly. Default : tab.
+tab,cb,consensus,gibbs,meme,assembly. Default : tab.
 
 For a description of these format, see I<convert-matrix -h>
 
@@ -1320,7 +1320,7 @@ Matrix format.
 =cut
 	} elsif ($arg eq "-matrix_format") {
 	    $matrix_format = shift(@arguments);
-	    
+
 	    ## Input file
 =pod
 
