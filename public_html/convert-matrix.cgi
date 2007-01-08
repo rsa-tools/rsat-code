@@ -70,6 +70,7 @@ if (&IsInteger($decimals)) {
 #### Matrix format
 my $matrix_format = lc($query->param('matrix_format'));
 ($matrix_format) = split (/\s+/, $matrix_format);
+$matrix_format =~ s/cluster\-buster/cb/i;
 #$matrix_format =~ s/(\S+)/$1/; ## Only retain the first word
 $parameters .= " -in_format $matrix_format";
 
