@@ -68,6 +68,7 @@ print "&nbsp;"x10;
 print "<B><A HREF='help.convert-matrix.html#matrix_format'>format</A></B>&nbsp;";
 print $query->popup_menu(-name=>'matrix_format',
 			 -Values=>['tab',
+				   'Cluster-Buster',
 				   'consensus (warning: requires the whole consensus file)', 
 				   'gibbs',
 				   'MEME',

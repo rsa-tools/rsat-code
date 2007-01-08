@@ -550,6 +550,7 @@ sub _readFromClusterBusterFile {
       if  ($line =~ /^\>(\S*)/) {
 	my $name = $1;
 	$matrix = new RSAT::matrix();
+	$ncol = 0;
 	if ($name) {
 	  $matrix->set_attribute("name", $name);
 	}
