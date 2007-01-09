@@ -517,82 +517,82 @@ sub toString {
     ################################################################
     ## Print parameters
     if ($type eq "parameters") {
-	$to_print .= $self->_printParameters($to_print);
-
-	################################################################
-	## Print a profile (vertical matrix with consensus on the right side)
+      my @information = $self->getInformation();
+      $to_print .= $self->_printParameters($to_print);
+      
+      ################################################################
+      ## Print a profile (vertical matrix with consensus on the right side)
     } elsif ($type eq "profile") {
-
-	$to_print .= $self->_printProfile($to_print);
-
+      
+      $to_print .= $self->_printProfile($to_print);
+      
     } else {
+      
+      ################################################################
+      ## Print a matrix
+      my @matrix = ();
+      if ($type eq "counts") {
+	@matrix = @{$self->{table}};
+      } else {
+	@matrix = @{$self->{$type}};
+      }
+      my @alphabet = $self->getAlphabet();
+      my $ncol = $self->ncol();
+      my $nrow = $self->nrow();
 
-	################################################################
-	## Print a matrix
-	my @matrix = ();
-	if ($type eq "counts") {
-	    @matrix = @{$self->{table}};
+      ## Header of the matrix
+      if ($main::verbose >= 1) {
+	$to_print .= ";\n";
+	$to_print .= "; Matrix type: $type\n";
+	if (($col_width) && ($col_width < 6)) {
+	  $to_print .= ";P";
 	} else {
-	    @matrix = @{$self->{$type}};
+	  $to_print .= "; Pos";
 	}
-	my @alphabet = $self->getAlphabet();
-	my $ncol = $self->ncol();
-	my $nrow = $self->nrow();
-
-	## Header of the matrix
-	if ($main::verbose >= 1) {
-	    $to_print .= ";\n";
-	    $to_print .= "; Matrix type: $type\n";
-	    if (($col_width) && ($col_width < 6)) {
-		$to_print .= ";P";
-	    } else {
-		$to_print .= "; Pos";
-	    }
-	    $to_print .= $sep.$pipe if ($pipe);
-	    for my $c (0..($ncol-1)) {
-		my $pos = $c+1;
-		if ($col_width) {
-		    $to_print .= sprintf "%${col_width}s", $pos;
-		} else {
-		    $to_print .= $sep;
-		    $to_print .= $pos;
-		}
-	    }
-	    $to_print .= "\n";
-
-	    $to_print .= $self->_printSeparator($ncol, $to_print);
+	$to_print .= $sep.$pipe if ($pipe);
+	for my $c (0..($ncol-1)) {
+	  my $pos = $c+1;
+	  if ($col_width) {
+	    $to_print .= sprintf "%${col_width}s", $pos;
+	  } else {
+	    $to_print .= $sep;
+	    $to_print .= $pos;
+	  }
 	}
+	$to_print .= "\n";
+	$to_print .= $self->_printSeparator($ncol, $to_print);
+      }
 
-	## Print the matrix
-	for $a (0..$#alphabet) {
-	    my @row = &RSAT::matrix::get_row($a+1, $ncol, @matrix);
-	    if (defined($args{comment_string})) {
-		$to_print .= $args{comment_string};
-	    }
- 	    $to_print .= $self->_printMatrixRow($alphabet[$a], @row);
+      ## Print the matrix
+      for $a (0..$#alphabet) {
+	my @row = &RSAT::matrix::get_row($a+1, $ncol, @matrix);
+	if (defined($args{comment_string})) {
+	  $to_print .= $args{comment_string};
 	}
+	$to_print .= $self->_printMatrixRow($alphabet[$a], @row);
+      }
 
-	################################################################
-	##Print column statistics
-	if ($self->get_attribute("margins")) {
-	    $prefix_letter = substr($type, 0, 1);
-	    $to_print .= $self->_printSeparator($ncol, $to_print);
-	    
-	    ## Sum per column
-	    my @col_sum = &RSAT::matrix::col_sum($nrow, $ncol, @matrix);
-	    push @col_sum, &main::sum(@col_sum);
-	    $to_print .= $self->_printMatrixRow("; ".$prefix_letter.".sum", @col_sum);
-	    
-	    ## Maximum per column
-	    my @col_max = &RSAT::matrix::col_max($nrow, $ncol, @matrix);
-	    push @col_max, &main::max(@col_max);
-	    $to_print .= $self->_printMatrixRow("; ".$prefix_letter.".max", @col_max);
-	    
-	    ## Minimum per column
-	    my @col_min = &RSAT::matrix::col_min($nrow, $ncol, @matrix);
-	    push @col_min, &main::min(@col_min);
-	    $to_print .= $self->_printMatrixRow("; ".$prefix_letter.".min", @col_min);
-	}
+      ################################################################
+      ##Print column statistics
+      if ($self->get_attribute("margins")) {
+	$prefix_letter = substr($type, 0, 1);
+	$to_print .= $self->_printSeparator($ncol, $to_print);
+
+	## Sum per column
+	my @col_sum = &RSAT::matrix::col_sum($nrow, $ncol, @matrix);
+	push @col_sum, &main::sum(@col_sum);
+	$to_print .= $self->_printMatrixRow("; ".$prefix_letter.".sum", @col_sum);
+
+	## Maximum per column
+	my @col_max = &RSAT::matrix::col_max($nrow, $ncol, @matrix);
+	push @col_max, &main::max(@col_max);
+	$to_print .= $self->_printMatrixRow("; ".$prefix_letter.".max", @col_max);
+
+	## Minimum per column
+	my @col_min = &RSAT::matrix::col_min($nrow, $ncol, @matrix);
+	push @col_min, &main::min(@col_min);
+	$to_print .= $self->_printMatrixRow("; ".$prefix_letter.".min", @col_min);
+      }
     }
     return $to_print;
 }
