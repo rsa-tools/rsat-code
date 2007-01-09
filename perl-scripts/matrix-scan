@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.55 2007/01/09 07:58:41 jvanheld Exp $
+# $Id: matrix-scan,v 1.56 2007/01/09 16:56:35 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -264,6 +264,7 @@ package main;
   local $matrix_format = "tab";
   local $seq_format = "fasta";
   local $verbose = 0;
+  local $sort_distrib = 0;
   #    local $in = STDIN;
   #    local $out = STDOUT;
     
@@ -1633,6 +1634,18 @@ transition matrix changes along he sequence.
 	  }
 
 
+	    ## Sort score distribution by decreasing sig value
+=pod
+
+=item B<-sort_distrib>
+
+Sort score distribution by decreasing value of significance. By
+default, the score distributions are sorted by score (weight).
+
+=cut
+	} elsif ($arg eq "-sort_distrib") {
+	    $main::sort_distrib = 1;
+
 	    ## Background score distribution
 =pod
 
@@ -2119,9 +2132,10 @@ sub PrintScoreDistrib {
   foreach my $matrix (@matrices) {
     my $matrix_name = $matrix->get_attribute("name");
     my @sorted_scores = sort {$a <=> $b} keys %{$score_distrib->{$matrix_name}};
+
     &RSAT::message::Info("score range", $matrix_name, $sorted_scores[0], $sorted_scores[$#sorted_scores], scalar(@sorted_scores)) if ((scalar(@sorted_scores) >= 1) && ($main::verbose >= 3));
-      
-    if ($return_fields{occ_proba}) {
+
+    if (($return_fields{occ_proba}) && ($sort_distrib)) {
       @sorted_scores =  sort {
 	$score_distrib->{$matrix_name}->{$a}->{occ_pval} <=> $score_distrib->{$matrix_name}->{$b}->{occ_pval}
       } keys %{$score_distrib->{$matrix_name}};
