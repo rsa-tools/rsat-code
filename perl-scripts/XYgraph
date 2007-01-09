@@ -570,7 +570,7 @@ sub AssignColors {
 #    $hilight_color = $red;
 #    $highlight_box_color = $yellow;
 
-    &StandardPalette;
+    &StandardPalette();
 
     @color_list = ();
     if ($bg eq "black") {
@@ -624,7 +624,6 @@ sub AssignColors {
 	} else {
 ### here
 	    push @color_list, $blue;
-	    push @color_list, $red;
 	    push @color_list, $green_175;
 	    push @color_list, $pink;
 	    push @color_list, $cyan_200;
@@ -633,6 +632,7 @@ sub AssignColors {
 	    push @color_list, $gray_125;
 	    push @color_list, $brown;
 	    push @color_list, $black;
+	    push @color_list, $red;
 	    push @color_list, $yellow_225;
 	    push @color_list, $cyan;
 	    push @color_list, $pistache;
@@ -954,7 +954,7 @@ sub ReadData {
 	while ($new_data_line = <$in>) {
 	    next unless ($new_data_line =~ /\S/);
 	    $l++; 
-	    if (($header) && ($l == 1)) {
+	    if (($header) && ($l == 1)|| ($new_data_line =~ /^#/)) {
 		#### read legend ####
 		$legend_line = $new_data_line;
 		$legend_line =~ s/^;//; ## Suppress leading comment char
@@ -1568,8 +1568,8 @@ sub ReadArguments {
 	    ### first input line contains Y data legends ###
 	} elsif ($ARGV[$a] eq "-header") {
 	    $header = 1;
+
 	} elsif ($ARGV[$a] eq "-legend") {
-	    $header = 1;
 	    $legend = 1;
 
 	    ### point size ###
