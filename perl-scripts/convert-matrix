@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.25 2007/01/08 20:25:42 jvanheld Exp $
+# $Id: convert-matrix,v 1.26 2007/01/09 16:57:12 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -97,9 +97,9 @@ if ($return_fields{information}) {
 }
 
 ## Prior residue frequencies
-if ($prior_file) {
+if ($infile{prior}) {
     %prior = ();
-    &ReadExpectedFrequencies($prior_file, 1, 1);    
+    &ReadExpectedFrequencies($infile{prior}, 1, 1);    
     foreach my $key (sort keys %patterns) {
 	my $residue = lc($key);
 	$prior{$residue} = $patterns{$key}->{exp_freq};
@@ -527,7 +527,7 @@ sub ReadArguments {
 
       ### prior frequency file
     } elsif ($ARGV[$a] eq "-prior") {
-	$prior_file = $ARGV[$a+1];
+	$infile{prior} = $ARGV[$a+1];
 
       ### output file 
     } elsif ($ARGV[$a] eq "-o") {
@@ -617,7 +617,7 @@ sub Verbose {
 sub ExportMatrix {
   my ($current_matrix) = @_;
 #  $current_matrix->readFromFile($infile{input}, $input_format);
-  if ($prior_file) {
+  if ($infile{prior}) {
     $current_matrix->setPrior(%prior);
   }
   $current_matrix->set_attribute("pseudo", $pseudo_weight);
