@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.54 2007/01/08 20:25:42 jvanheld Exp $
+# $Id: matrix-scan,v 1.55 2007/01/09 07:58:41 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -543,7 +543,7 @@ package main;
 	if (scalar(@new_matrices) > 1) {
 	  $matrix_name .= ".".($m+1);
 	}
-	$matrix->set_attribute("name", $matrix_name);
+	$matrix->force_attribute("name", $matrix_name);
       }
 
       ## Check that the matrix width is smaller than markov order + 1
@@ -688,7 +688,7 @@ package main;
     &RSAT::message::TimeWarn("Scanning sequence with ".scalar(@matrices)." PSSM", $sequence_number,  $seq_id,"len=".$seq_len, "orig=".$orig_pos,  $seq_id)
       if ($main::verbose >= 3);
 
-    &RSAT::message::psWarn("Scanning sequence with ".scalar(@matrices)." PSSM", $sequence_number,  $seq_id,"len=".$seq_len, "orig=".$orig_pos,  $seq_id) if (($main::verbose >= 3) && (($sequence_number % 10) == 0));
+    &RSAT::message::psWarn("Scanning sequence with ".scalar(@matrices)." PSSM", $sequence_number,  $seq_id,"len=".$seq_len, "orig=".$orig_pos,  $seq_id) if (($main::verbose >= 3) && (($sequence_number % 50) == 0));
     if ($calc_fields{sites}) {
       #	  $n_containing_region = 0;
       for my $pos (1..$seq_len) {
@@ -742,7 +742,7 @@ package main;
     }
 
     if (($return_fields{sites})  && (defined(@{$matches_per_seq{$seq_id}}))) {
-      
+
       ################################################################
       ## Sort the matches
       my @ranked_matches = @{$matches_per_seq{$seq_id}};
@@ -752,7 +752,7 @@ package main;
 			    ) if ($main::verbose >= 3);
 	next;
       }
-      
+
       &RSAT::message::TimeWarn("Sorting matches for sequence", $seq_id) if ($main::verbose >= 3);
       if ($calc_fields{rank}) {
 	if ($calc_fields{pval}) {
