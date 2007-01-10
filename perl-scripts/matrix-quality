@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.5 2007/01/08 20:25:42 jvanheld Exp $
+# $Id: matrix-quality,v 1.6 2007/01/10 19:53:12 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -79,8 +79,10 @@ package main;
     my $start_time = &AlphaDate();
 
     @matrix_scan_options = ();
+    @alphabet = ("a","c","g","t");
     $seq_format = "fasta";
     $matrix_format = "consensus";
+    $decimals = 2;
 
     %main::infile = ();
     %main::outfile = ();
@@ -140,6 +142,7 @@ package main;
     }
 
     my $matrix = shift (@matrices);
+    $matrix->set_attribute("decimals", $decimals);
     $matrix->set_attribute("file", $matrix_file);
     my ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
     $matrix_name =~ s/\.\S+$//; ## suppress the extensin from the file name
@@ -148,6 +151,9 @@ package main;
 
     ## Export input sites with the matrix
     &ExportInputSites($matrix, $matrix_file);
+
+    ## LOO scoring of the sites Discard one site (the "left out"
+    &LOO_scores($matrix, @matrix_scan_options);
 
     ## Export the matrix in tab-delimited format
     &ExportTabMatrix($matrix);
@@ -401,7 +407,9 @@ Supported fields:
 
 =over
 
-=item B<ROC_data>
+=back
+
+=item B<ROC_table>
 
 Return a table containing the numeric values for the ROC curve. 
 
@@ -427,6 +435,8 @@ Return a table containing the numeric values for the ROC curve.
 
 =item B<Other options>
 
+=over
+
 All the other options are automatically passed to matrix-scan, in
 order to specify the scanning parameters (strands, background model,
 ...).
@@ -434,6 +444,8 @@ order to specify the scanning parameters (strands, background model,
 Note that the option '-return' of matrix-scan cannot be used here,
 beause matrix-quality specifies the reutnr fields required for its
 statistics.
+
+=back
 
 =cut
 
@@ -493,9 +505,80 @@ sub ExportInputSites {
   }
 
   my $matrix_scan_cmd = "matrix-scan -v 1 ";
+  $matrix_scan_cmd .= " -decimals ".$decimals;
   $matrix_scan_cmd .= " -m ".$matrix_file;
-  
 }
+
+################################################################
+## LOO scoring of the sites Discard one site (the "left out"
+## site), build a partial matrix with the remaining ones, and
+## score the left out site with the partial matrix. Iterate this
+## procedure over all sites.
+sub LOO_scores {
+  my ($matrix, @args) = @_;
+
+  my @sites = $matrix->get_attribute("sequences");
+  my @partial_matrices = ();
+
+  for my $i (0..$#sites) {
+
+    ## Select the left out site
+    my $lo_site_nb = $i+1;
+    my $lo_site = $sites[$i];
+    my $lo_site_id = $matrix->get_attribute("name");
+    $lo_site_id .= "_site_".$lo_site_nb;
+
+    ## Build a partial matrix with the other sites
+    my $partial_matrix = new RSAT::matrix();
+    $matrix->init();
+    my $partial_matrix_name = $matrix->get_attribute("name");
+    $partial_matrix_name .= "_leftout_".$lo_site_nb;
+    $partial_matrix->set_attribute("name", $partial_matrix_name);
+    $partial_matrix->set_attribute("number", $lo_site_nb);
+    $partial_matrix->set_attribute("ncol", length($lo_site));
+    $partial_matrix->setAlphabet_lc(@alphabet);
+    $partial_matrix->force_attribute("nrow", scalar(@alphabet)); ## Specify the number of rows of the matrix
+    $partial_matrix->treat_null_values();
+    push @partial_matrices, $partial_matrix;
+    for my $j (0..$#sites) {
+      next if ($j == $i); ## Leave out the ith site
+      $partial_matrix->add_site(lc($sites[$j]));
+    }
+    ## Save the matrix file
+    my $partial_matrix_file = $outfile{prefix}."_partial_matrix_".$lo_site_nb.".tab";
+    &RSAT::message::Info("Exporting partial matrix to file", $partial_matrix_file) if ($main::verbose >= 3);
+    $partial_matrix_handle = &OpenOutputFile($partial_matrix_file);
+
+    $tmp_verbose = $verbose;
+    $verbose = 0;
+    print $partial_matrix_handle $partial_matrix->toString(sep=>"\t",
+							   type=>"counts",
+							   format=>"tab",
+							  );
+    $verbose = $tmp_verbose;
+    close $partial_matrix_handle;
+
+    ## Score the left out site with the partial matrix
+    my $matrix_scan_cmd = "echo $lo_site | matrix-scan -v 0";
+    $matrix_scan_cmd .= " -seq_format raw";
+    $matrix_scan_cmd .= " -m ".$partial_matrix_file;
+    $matrix_scan_cmd .= " -matrix_format tab";
+    $matrix_scan_cmd .=  " -return sites -1str -uth rank 1";
+    $matrix_scan_cmd .= join(" ", "", @args);
+    #    die "HELLO\t", $matrix_scan_cmd;
+    &RSAT::message::Info("LOO command",  $matrix_scan_cmd) if ($main::verbose >= 2);
+    my $score_result = `$matrix_scan_cmd | grep -v '^#'`;
+#    &RSAT::message::Info("LOO scoring",  $score_result) if ($main::verbose >= 10);
+
+    chomp($score_result);
+    my @fields = split '\t', $score_result;
+    my $lo_site_score = $fields[7];
+    &RSAT::message::Info("LOO scoring", $partial_matrix->get_attribute("name"), "site",
+			 $lo_site_nb, $lo_site_id, $lo_site, $lo_site_score) if ($main::verbose >= 3);
+    push @lo_site_scores, $lo_site_score;
+  }
+}
+
 
 ################################################################
 ## Score the sites which were use to build the matrix.
