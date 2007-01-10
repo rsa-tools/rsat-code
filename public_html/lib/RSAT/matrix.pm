@@ -1569,9 +1569,8 @@ corrected frequencies.
 
 sub segment_proba {
     my ($self, $segment) = @_;
-    
+
     $segment = lc($segment);
-#    return(1);
 
     my $segment_proba = 1;
     my $seq_len = length($segment);
@@ -1591,7 +1590,7 @@ sub segment_proba {
 	$segment_proba *= $letter_proba;
 #	&RSAT::message::Debug("segment_proba", "letter:".$letter, "col:".$c, "row:".$r, "P(letter)=".$letter_proba, "P(segm)=".$segment_proba) if ($main::verbose >= 10);
     }
-    
+
 #    &RSAT::message::Debug("segment_proba", $segment, "P(segm)=".$segment_proba) if ($main::verbose >= 10);
     return $segment_proba;
 }
