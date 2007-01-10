@@ -228,13 +228,11 @@ sub LogToEng {
 sub sum_of_binomials {
     my ($proba, $trials, $from, $to) = @_;
 
-    if ($main::verbose >= 6) {
-	print join ("\t", "sum_of_binomials", "p=$proba", "t=$trials", "from=$from", "to=$to"), "\n";
-    }
+    &RSAT::message::Debug ("RSA.stat.lib", "sum_of_binomials", "p=$proba", "t=$trials", "from=$from", "to=$to") if ($main::verbose >= 6);
 
 #    my $precision_limit = 1.0e-06;
     my $expected = $trials*$proba;
-    
+
     if ($proba <0) {
 	 &RSAT::error::FatalError("Error: invalid probability $proba (must be a positive value)\n");
     }
@@ -245,14 +243,25 @@ sub sum_of_binomials {
 
 
     #### limit cases
-    if ($proba == 0) {
+    if ($proba < 0) {
+      &RSAT::error::FatalError("RSA.stat.lib", "sum_of_binomials",  $proba, "Invalid value for p, should be >= 0");
+    } elsif ($proba == 0) {
 	if ($from == 0) {
 	    return 1;
 	} else {
 	    return 0;
 	}
     }
-    if ($proba == 1) {
+
+    ## Fix rounding problems
+    if (($proba > 1) && ($proba -1 < 1e-15)) {
+      &RSAT::message::Warning("RSA.stat.lib", "sum_of_binomials", "p", $proba, "p-1", $proba-1, "Rounding proba to 1") if ($main::verbose >= 3);
+      $proba = 1;
+    }
+
+    if ($proba > 1) {
+      &RSAT::error::FatalError("RSA.stat.lib", "sum_of_binomials",  $proba, "Invalid value for p, should be <= 1");
+    } elsif ($proba == 1) {
 	if ($to == $trials) {
 	    return 1;
 	} else {
@@ -260,13 +269,10 @@ sub sum_of_binomials {
 	}
     }
 
-
-    #### initialize
-    my $q = 1 - $proba;
-
+    #### initialize q
     my $logproba = log($proba);
+    my $q = &max(0, 1 - $proba);
     my $logq = log($q);
-
     my $sum_of_bin = 0;
     my $x = 0;
     my $logbin;
@@ -712,7 +718,7 @@ sub hypergeometric {
 
 
     
-# 	$Id: RSA.stat.lib,v 1.27 2006/04/05 13:50:06 rsat Exp $	
+# 	$Id: RSA.stat.lib,v 1.28 2007/01/10 00:32:13 jvanheld Exp $	
 
     #### initialization
     if (defined($args{previous_value})) {
