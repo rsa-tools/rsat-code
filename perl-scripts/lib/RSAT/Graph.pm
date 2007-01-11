@@ -58,6 +58,38 @@ sub create_node {
 ################################################################
 =pod
 
+=item B<get_nodes()>
+
+Return the list of nodes of the graph. 
+
+=cut
+sub get_nodes {
+  my ($self) = @_;
+  return $self->get_attribute("nodes");
+}
+
+################################################################
+=pod
+
+=item B<get_size()>
+
+Return the number of nodes and arcs of the graph.
+
+Usage: my ($nodes, $arcs) = $graph->get_size();
+
+=cut
+sub get_size {
+  my ($self) = @_;
+  my $nodes = scalar(@{$self->{nodes}});
+  my $arcs = scalar(@{$self->{arcs}});
+  return ($nodes, $arcs);
+}
+
+
+
+################################################################
+=pod
+
 =item B<node_by_id()>
 
 Returns a node specified by its ID. 
@@ -91,8 +123,19 @@ sub create_arc {
 			       "to", $source_node->get_attribute("id"),
 			       $arc)) if ($main::verbose >= 4);
     $self->push_attribute("arcs", $arc);
+
+    ## Add the arc to the source and target nodes
+    $source_node->push_attribute("out_arcs", $arc);
+    $target_node->push_attribute("in_arcs", $arc);
+
+    ## Cross-linking between source and target nodes
+    $source_node->push_attribute("out_nodes", $target_node);
+    $target_node->push_attribute("in_nodes", $source_node);
+
     return $arc;
 }
+
+
 
 ################################################################
 =pod
@@ -127,7 +170,7 @@ sub read_from_table {
     unless (&RSAT::util::IsNatural($weight_col) && ($weight_col > 0)) {
 	$no_weigth = 1;
     }
-    
+
     ## Load the graph
     while (<$main::in>) {
 	next if (/^;/);
@@ -200,13 +243,15 @@ sub read_from_table {
 
 Return the graph in various format.
 
-Supported formats: dot, gml
+Supported formats: dot, gml,gdl
 
 =cut
 sub to_text {
     my ($self, $out_format) = @_;
     if ($out_format eq "dot") {
 	return $self->to_dot();
+    } elsif ($out_format eq "gdl") {
+	return $self->to_gdl();
     } elsif ($out_format eq "gml") {
 	return $self->to_gml();
     } else {
@@ -254,6 +299,27 @@ sub to_dot {
     return $dot;
 }
 
+################################################################
+=pod
+
+=item B<to_gdl()>
+
+Return the graph in gdl (Graph Data Linker) format.  This is an XML
+description of the graph object used by the Snow system
+(http://www.scmbb.ulb.ac.be/biomaze/).
+
+=cut
+sub to_gdl {
+  require Scmbb::Snow::Graph;
+  require Scmbb::Snow::GraphDataLinker;
+  my ($self) = @_;
+  my $gdl = "";
+  &RSAT::message::TimeWarn("Exporting graph in GDL format") if ($main::verbose >= 0); 
+  
+  return $gdl;
+}
+
+    
 ################################################################
 =pod
 
