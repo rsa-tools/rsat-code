@@ -182,7 +182,9 @@ sub read_from_table {
 	my $target_name = $fields[$target_col-1];
 	my $weight = $default_weight;
 	unless ($no_weight) {
+	  if ($weight_col > 0) {
 	    $weight = $fields[$weight_col-1];
+	  }
 	}
 
 	## Source node
@@ -264,7 +266,8 @@ sub to_text {
 
 =item B<to_dot()>
 
-Return the graph in dot format.
+Return the graph in dot format. This format can be read by the
+GraphViz suite.
 
 =cut
 sub to_dot {
@@ -272,17 +275,17 @@ sub to_dot {
     my $dot = "graph G {;\n";
     $dot .= "overlap=scale;\n";
     $dot .= "size=\"7,10\";\n";
-    
+
     foreach my $node ($self->get_attribute("nodes")) {
-	$dot .= join("", 
-		     "\"", $node->get_attribute("id"), "\"",  
-		     " [color=",$node->get_attribute("color"),
-		     ",fontsize=",$node->get_attribute("fontsize"),
-		     ",fontcolor=", $node->get_attribute("fontcolor"),
-		     ",shape=",$node->get_attribute("shape"),
-		     ",label=\"", $node->get_attribute("label"),
-		     "\"]",
-		     "\n");
+      $dot .= join("", 
+		   "\"", $node->get_attribute("id"), "\"",  
+		   " [color=",$node->get_attribute("color"),
+		   ",fontsize=",$node->get_attribute("fontsize"),
+		   ",fontcolor=", $node->get_attribute("fontcolor"),
+		   ",shape=",$node->get_attribute("shape"),
+		   ",label=\"", $node->get_attribute("label"),
+		   "\"]",
+		   "\n");
     }
 
     foreach my $arc ($self->get_attribute("arcs")) {
