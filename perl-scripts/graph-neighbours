@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-neighbours,v 1.1 2007/01/11 15:46:31 jvanheld Exp $
+# $Id: graph-neighbours,v 1.2 2007/01/11 19:56:36 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -65,6 +65,8 @@ package main;
 
     @seed_names = ();
     @seed_nodes = ();
+    @unknown_nodes = ();
+    $steps = 1;
 
     ################################################################
     ## Initialize the graph
@@ -75,6 +77,8 @@ package main;
     local $source_col = 1;
     local $target_col = 2;
     local $weight_col = 0;
+
+    local $out_format = "classes";
 
     %main::infile = ();
     %main::outfile = ();
@@ -132,6 +136,7 @@ package main;
 	push @seed_nodes, $node;
 	&RSAT::message::Info("Identified node with name", $name, $node->get_attribute("id")) if ($main::verbose >= 3);
       } else {
+	push @unknown_nodes, $name;
 	&RSAT::message::Warning("The graph does not contain any node with name", $name);
       }
     }
@@ -142,10 +147,28 @@ package main;
 
     ################################################################
     ## Extract the neighborhood
-    foreach my $node (@seed_nodes) {
-      my @neighbours = $node->get_neighbours();
+    print $out '#',  join ("\t", 
+			   "neighb",
+			   "seed", 
+#			   "weight",
+			   "steps",
+			   "dir"
+			  ), "\n";
+    foreach my $seed_node (@seed_nodes) {
+      my @neighbours = $seed_node->get_neighbours_step($steps);
       foreach my $neighbour (@neighbours) {
-	print $out join ("\t", $neighbour->get_attribute("id"), $node->get_attribute("id")), "\n";
+	my $neighbour_node = $neighbour->get_attribute("node");
+	my @out_fields = ();
+	## Print the result in the input format for compare-classes
+	if ($out_format eq "classes") {
+	  push @out_fields, $neighbour_node->get_attribute("id");
+	  push @out_fields, $seed_node->get_attribute("id");
+#	  push @out_fields, $neighbour->get_attribute("weight");
+	  push @out_fields, $neighbour->get_attribute("steps");
+	  push @out_fields, $neighbour->get_attribute("direction");
+	  print $out join ("\t", @out_fields,
+			  ), "\n";
+	}
       }
     }
 
@@ -255,6 +278,17 @@ several seed nodes.
 	} elsif ($arg eq "-seed") {
 	    push @seed_names, shift(@arguments);
 
+=pod
+
+=item B<-steps nb_of_steps>
+
+Maximal number of steps between a seed node and its
+neighbours. Default: 1.
+
+=cut
+	} elsif ($arg eq "-steps") {
+	    $main::steps = shift(@arguments);
+
 
 =pod
 
@@ -321,10 +355,14 @@ sub Verbose {
     print $out ";\tarcs\t",$arcs,"\n";
 
     ## Report seed nodes
-    print $out "; Seed nodes\n";
-    print $out ";\tprovided\t",scalar(@seed_names),"\n";
-    print $out ";\tidentified\t",scalar(@seed_nodes),"\n";
-
+    print $out "; Seed nodes\t",scalar(@seed_names),"\n";
+    if (@unknown_nodes) {
+      print $out ";\tidentified\t",scalar(@seed_nodes),"\n";
+      print $out ";\tunknown nodes\t",scalar(@seed_names) - scalar(@seed_nodes),"\n";
+      foreach my $name (@unknown_nodes) {
+	print $out join ("\t", ";\t", "unknown", $name), "\n";
+      }
+    }
 }
 
 
