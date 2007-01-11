@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: template,v 1.27 2006/12/10 08:02:08 jvanheld Exp $
+# $Id: template,v 1.28 2007/01/11 15:46:46 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -29,7 +29,7 @@ util
 
 =head1 USAGE
     
-template [-i inputfile] [-o outputfile] [-v]
+template [-i inputfile] [-o outputfile] [-v #] [...]
 
 =head1 INPUT FORMAT
 
