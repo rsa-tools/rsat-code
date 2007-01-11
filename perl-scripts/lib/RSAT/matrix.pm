@@ -1760,6 +1760,8 @@ sub treat_null_values {
   my $nrow = $self->nrow();
   my $ncol = $self->ncol();
   my @matrix = $self->getMatrix();
+
+
   for my $c (0..($ncol-1)) {
 #    &RSAT::message::Debug ("BEFORE", "col", $c, join("; ", @{$matrix[$c]})) if ($main::verbose >= 10);
     for my $r (0..($nrow-1)) {
