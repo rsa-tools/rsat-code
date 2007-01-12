@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-classes,v 1.7 2006/12/06 14:01:10 jvanheld Exp $
+# $Id: convert-classes,v 1.8 2007/01/12 00:49:54 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -133,13 +133,12 @@ package main;
     ################################################################
     #### check argument values
 
+    ################################################################
+    ## Read input classes
+    $classification->read_from_file($main::infile{input}, $input_format, %args);
 
     ################################################################
-    ##### Read input
-    $classification->read_from_file($main::infile{input}, $input_format, %args);
-    
-    ################################################################
-    ### open output stream
+    ## Open output stream
     $main::out = &OpenOutputFile($main::outfile{output});
 
     ################################################################
@@ -149,8 +148,7 @@ package main;
     ################################################################
     ###### print output
     print $out $classification->to_text($output_format, %output_args);
-    
-    
+
     ################################################################
     ###### finish verbose
     if ($main::verbose >= 1) {
@@ -158,13 +156,11 @@ package main;
 	print $main::out "; Job started $start_time\n";
 	print $main::out "; Job done    $done_time\n";
     }
-    
-     
+
     ################################################################
     ###### close output stream
     close $main::out if ($main::outfile{output});
-    
-    
+
     exit(0);
 }
 
