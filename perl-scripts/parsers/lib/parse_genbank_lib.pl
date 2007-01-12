@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank_lib.pl,v 1.33 2006/12/02 23:05:42 rsat Exp $
+# $Id: parse_genbank_lib.pl,v 1.34 2007/01/12 16:49:43 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -97,6 +97,17 @@ sub ParseAllGenbankFiles {
 #	$object->UseGeneIDasID();
 #    }
     
+
+    ## DEBUG NOTE: ParseFeatureNames and CheckObjectNames are
+    ## apparently partly redundant. I should check and remove
+    ## redundancy.
+
+    ## Parse feature names
+    &ParseFeatureNames($genes, $mRNAs, $scRNAs, $tRNAs, $rRNAs, $CDSs);
+
+    ## Extract cross-references
+    &ExtractCrossReferences($genes, $mRNAs, $scRNAs, $tRNAs, $rRNAs, $CDSs);
+
     ## Update name index for genes (since the original IDs have been changed for GeneIDs)
     $genes->index_ids();
     $genes->index_names();
@@ -111,64 +122,83 @@ sub ParseAllGenbankFiles {
     ##   CDS (alternative splicing), they all bear the same locus_tag (see
     ##   Arabidopsis for an example).
     ## - transcript_id and GI are unique identifiers for mRNA
-    ## - protein_id and GI are unique identifiers for CDS    
+    ## - protein_id and GI are unique identifiers for CDS
     ## - tRNA has no GI !
     ## 
-    ## Temporarily, we use 
+    ## Temporarily, we use
     ## - GeneID for genes
     ## - protein_id for CDS
     ## - transcript_id for mRNA
     ## - locus_tag for all the other feature types
+    ##
+    ## In addition, each genome has its specific problems. 
+    ## For instance, in Debaryomyces_hansenii_CBS767, some CDSs have
+    ## no protein_id, whereas some other CDS do.
 
     ## Use the locus_tag as unique identifier
     foreach my $holder ($scRNAs, $tRNAs, $rRNAs, $misc_RNAs) { 
 	&RSAT::message::TimeWarn("Replacing IDs by locus_tag for class", $holder->get_object_type()) if ($main::verbose >= 1);
 	foreach my $object ($holder->get_objects()) {
-	    if ($object->get_attribute("locus_tag")) {
-		$object->ReplaceID("locus_tag");
-	    } else {
-		&ErrorMessage(join("\t","Feature", $object->get_attribute("id"), "has no locus_tag"));
-	    }
+	  my $locus_tag = $object->get_attribute("locus_tag");
+	  if (($locus_tag) && ($locus_tag ne $main::null)) {
+	    $object->ReplaceID("locus_tag");
+	  } else {
+	    &ErrorMessage(join("\t","Feature", $object->get_attribute("id"), "has no locus_tag"));
+	  }
 	}
 	$holder->index_ids();
     }
 
 
-    ## For CDS, use the locus_tag or the  protein_id as unique identifier
+    ## For CDS, use the GI or the protein_id the locus_tag as unique identifier
     &RSAT::message::TimeWarn("Replacing CDS IDs by protein_id") if ($main::verbose >= 1);
     foreach my $object ($CDSs->get_objects()) {
-	if ($object->get_attribute("locus_tag")) {
-	    $object->ReplaceID("locus_tag");
-	} elsif ($object->get_attribute("protein_id")) {
-	    $object->ReplaceID("protein_id");
-	} else {
-	    &ErrorMessage(join("\t","CDS", $object->get_attribute("id"), "has no protein_id"));
-	}
+      my $GI = $object->get_attribute("GI");
+      my $protein_id = $object->get_attribute("protein_id");
+      my $locus_tag = $object->get_attribute("locus_tag");
+      if (($GI) && ($GI ne $main::null)) {
+	$object->ReplaceID("GI");
+      } elsif (($protein_id) && ($protein_id ne $main::null)) {
+	$object->ReplaceID("protein_id");
+      } elsif (($locus_tag) && ($locus_tag ne $main::null)) {
+	$object->ReplaceID("locus_tag");
+      } else {
+	&ErrorMessage(join("\t","CDS", $object->get_attribute("id"), "has neither GI, nor protein_id, nor locus_tag"));
+      }
     }
     $CDSs->index_ids();
 
-    ## For mRNA, use the transcript_id as unique identifier
-    &RSAT::message::TimeWarn("Replacing mRNA IDs by  transcript_id") if ($main::verbose >= 1);
+#     ## For mRNA, use the transcript_id as unique identifier
+#     &RSAT::message::TimeWarn("Replacing mRNA IDs by  transcript_id") if ($main::verbose >= 1);
+#     foreach my $object ($mRNAs->get_objects()) {
+# 	if ($object->get_attribute("transcript_id")) {
+# 	    $object->ReplaceID("transcript_id");
+# 	} elsif ($object->get_attribute("locus_tag")) {
+# 	    $object->ReplaceID("locus_tag");
+# 	} else {
+# 	    &ErrorMessage(join("\t","CDS", $object->get_attribute("id"), "has no transcript_id"));
+# 	}
+#     }
+#     $mRNAs->index_ids();
+
+    ## For mRNA, use the GI or the transcript_id the locus_tag as unique identifier
+    &RSAT::message::TimeWarn("Replacing mRNA IDs by transcript_id") if ($main::verbose >= 1);
     foreach my $object ($mRNAs->get_objects()) {
-	if ($object->get_attribute("locus_tag")) {
-	    $object->ReplaceID("locus_tag");
-	} elsif ($object->get_attribute("transcript_id")) {
-	    $object->ReplaceID("transcript_id");
-	} else {
-	    &ErrorMessage(join("\t","CDS", $object->get_attribute("id"), "has no transcript_id"));
-	}
+      my $GI = $object->get_attribute("GI");
+      my $transcript_id = $object->get_attribute("transcript_id");
+      my $locus_tag = $object->get_attribute("locus_tag");
+      if (($GI) && ($GI ne $main::null)) {
+	$object->ReplaceID("GI");
+      } elsif (($transcript_id) && ($transcript_id ne $main::null)) {
+	$object->ReplaceID("transcript_id");
+      } elsif (($locus_tag) && ($locus_tag ne $main::null)) {
+	$object->ReplaceID("locus_tag");
+      } else {
+	&ErrorMessage(join("\t","mRNA", $object->get_attribute("id"), "has neither GI, nor transcript_id, nor locus_tag"));
+      }
     }
     $mRNAs->index_ids();
 
-    ## DEBUG NOTE: ParseFeatureNames and CheckObjectNames are
-    ## apparently partly redundant. I should check and remove
-    ## redundancy.
-
-    ## Parse feature names
-    &ParseFeatureNames($genes, $mRNAs, $scRNAs, $tRNAs, $rRNAs, $CDSs);
-
-    ## Extract cross-references
-    &ExtractCrossReferences($genes, $mRNAs, $scRNAs, $tRNAs, $rRNAs, $CDSs);
 
     ## Check object names for all the parsed features, before building the RSAT features from it
     &CheckObjectNames($genes, $mRNAs, $scRNAs, $tRNAs, $rRNAs, $misc_RNAs, $misc_features, $CDSs);
@@ -185,8 +215,6 @@ sub ParseAllGenbankFiles {
     ## Parse Gene Ontology terms
     &ParseGO($CDSs);
 
-
-
     ################################################################
     ## index names
     for my $holder ($genes,$mRNAs, $scRNAs,$tRNAs,$rRNAs,$misc_RNAs,$misc_features,$CDSs) {
@@ -200,14 +228,16 @@ sub ParseAllGenbankFiles {
     for my $holder ($genes,$mRNAs, $scRNAs,$tRNAs,$rRNAs, $repeat_regions, $misc_RNAs,$misc_features,$CDSs) {
 	&ParsePositions($holder);
     }
-	
+
+    ################################################################
+    ## Specific treatment for refseq files (probably obsolete)
     if ($data_type eq "refseq") {
 	&RefseqPostProcessing();
     } else {
-	#### Create features from CDSs and RNAs
+	#### Create features from CDSs and RNAs (obsolete)
 	&CreateGenbankFeatures($features, $genes, $mRNAs, $scRNAs, $tRNAs, $rRNAs, $misc_RNAs, $misc_features, $CDSs, $sources, $contigs);
     }
-}    
+}
 
 ################################################################
 =pod
@@ -402,7 +432,7 @@ sub ParseGenbankFile {
 		#### skip the sequence
 		while ($line = &readNextLine()) {
 		    if ($line =~ /^\/\/$/) {
-			$current_contig = $null;
+			$current_contig = null;
 			last;
 		    }
 		}
@@ -1009,7 +1039,7 @@ sub CreateGenbankFeatures {
 
     # 		#### use gene name as primary name for the feature
     # 		my $gene_name = $gene->get_name();
-    # 		if (($gene_name) && ($gene_name ne $null)) {
+    # 		if (($gene_name) && ($gene_name ne $main::null)) {
     # 		    $created_feature->force_attribute("name", $gene_name);
     # 		    $created_feature->push_attribute("names", $gene_name);
     # 		}
@@ -1091,7 +1121,7 @@ sub CreateGenbankFeatures {
 
     ## Use parent feature description
     my $description = $parent_feature->get_attribute("description");
-    if (($description) && ($description ne $null)) {
+    if (($description) && ($description ne $main::null)) {
       $created_feature->set_attribute("description", $description);
     } else {
       ## Use the parent feature product field if any
@@ -1106,7 +1136,7 @@ sub CreateGenbankFeatures {
 	} else {
 	  #### if there is no feature note, use the gene note		
 	  my $GeneID = $parent_feature->get_attribute("DeneID");
-	  if (($GeneID) && ($GeneID ne $null)) {
+	  if (($GeneID) && ($GeneID ne $main::null)) {
 	    my $gene = $genes->get_object($GeneID);
 	    my @gene_notes = $gene->get_attribute("note");
 	    if ($gene_notes[0]) {
@@ -1248,7 +1278,7 @@ sub CheckObjectNames {
 	    ################################################################
 # 	    #### Add all the names of the parent gene to the current feature
 # 	    my $ParentGeneID = $object->get_attribute("GeneID");
-# 	    if (($ParentGeneID) && ($ParentGeneID ne $null)) {
+# 	    if (($ParentGeneID) && ($ParentGeneID ne $main::null)) {
 # 		my $gene = $genes->get_object($ParentGeneID);
 # 		if ($gene) {
 # 		    foreach my $gene_name ($gene->get_attribute("names")) {
@@ -1361,9 +1391,10 @@ sub ExtractCrossReferencesForFeature {
     #### extract GI from cross-references
     if ($xref =~ /GI:/) {
       $gi = $';  ##'
-      
+
       #### accept GI as synonym
       $feature->push_attribute("names", $gi); 
+      $feature->set_attribute("GI", $gi); 
       
     } elsif ($xref =~ /GeneID:/) {
       $GeneID = $';  ##'
