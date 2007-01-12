@@ -509,7 +509,7 @@ gene_pairs:
 ################################################################
 ## Convert the gene pairs into a graph (2 formats : .dot and .gml)
 MIN_SCORE=1
-SCORE_COL=15
+SCORE_COL=12
 SCORE=dp
 PAIR_GRAPH=${GENE_PAIRS}_${SCORE}${MIN_SCORE}
 PAIR_GRAPH_CMD=	grep -v '^;' ${GENE_PAIRS}.tab \
@@ -529,11 +529,10 @@ gene_pair_graph:
 	@echo ${PAIR_GRAPH}.gml
 	@echo ${PAIR_GRAPH}.dot
 
-## ##############################################################
-## This task combines dyad_classes, gene_pairs and pair_graph, in order tos
-## end them in one shot to the cluster.
+## ############################################################## 
+## This task combines dyad_classes, gene_pairs and gene_pair_graph, in
+## order tos send them in one shot to the cluster.
 gene_network:
-#	${MAKE} my_command MY_COMMAND="${DYAD_CLASS_CMD} ${GENE_PAIR_CMD}; ${PAIR_GRAPH_CMD}"
 	${MAKE} my_command MY_COMMAND="${DYAD_CLASS_CMD} ${GENE_PAIR_CMD}; ${PAIR_GRAPH_CMD}"
 
 ################################################################
