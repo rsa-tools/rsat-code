@@ -43,8 +43,7 @@ command_queue:
 		echo "Job $${job}" ;						\
 		echo "echo running on node "'$$HOST' > $${job}; 		\
 		echo "${MY_COMMAND}" >> $${job} ;				\
-		qsub -m e -q ${CLUSTER_ADDRESS} -N $${job} -j oe	\
-			-o $${job}.log $${job} ;				\
+		qsub -m e -q ${CLUSTER_ADDRESS} -N $${job} -j oe -o $${job}.log $${job} ;	\
 	done
 
 command_now:
