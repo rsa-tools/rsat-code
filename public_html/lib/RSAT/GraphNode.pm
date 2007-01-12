@@ -79,7 +79,14 @@ sub get_neighbours {
 Return the direct and indirect neighbours of the node up to a certain
 number of steps.
 
-Usage: my @neighbours = $node->get_neighbours_step($steps);
+Usage: my @neighbours = $node->get_neighbours_step($steps, $self_included);
+
+Parameters: 
+
+$steps: maximal number of steps from the seed node
+
+$self_included: if this attribute is set, the seed node is included in
+the neighbourhood (with a distance 0), even if there is no self-loop.
 
 The output object is a list containing objects of the class
 RSAT::GraphNeighbour.
@@ -87,30 +94,34 @@ RSAT::GraphNeighbour.
 =cut
 sub get_neighbours_step {
 
-  my ($self, $steps) = @_;
+  my ($self, $steps, $self_included) = @_;
 
-  my @neighbours = ();
+  #  my @neighbours = ();
   my %neighbour_ids = ();
   my @seed_nodes = ();
+  my @neighbours = ();
 
-  $neighbour_ids{$self->get_attribute("id")} = 1;## Avoid including the seed node in the neighbour node
+  $neighbour_ids{$self->get_attribute("id")} = 1; ## Avoid including the seed node in the neighbour node
 
-   ## initialize the neighborhood by including the node itself, with a distance of 0
-#   my $self_neighbour = new RSAT::GraphNeighbour();
-#   $self_neighbour->set_attribute("node", $self);
-#   $self_neighbour->set_attribute("direction", "self");
-#   $self_neighbour->set_attribute("steps", 0);
-#   $self_neighbour->set_attribute("weight", $weight, 0);
-#   $neighbours{$self} = $self_neighbour;
+  ## initialize the neighborhood by including the node itself, with a distance of 0
+  my $self_neighbour = new RSAT::GraphNeighbour();
+  my $self_id = $self->get_attribute("id");
+  $self_neighbour->set_attribute("node", $self);
+  $self_neighbour->set_attribute("direction", "self");
+  $self_neighbour->set_attribute("steps", 0);
+  #   $self_neighbour->set_attribute("weight", $weight, 0);
+  $neighbours_ids{$self_id} = $self_neighbour;
+  if ($self_included) {
+    push @neighbours, $self_neighbour;
+  }
 
-  my @new_neighbours = ();
   for my $s (1..$steps) {
     if ($s == 1) {
       @seed_nodes = ($self);
     } else {
       @seed_nodes = @new_neighbours;
     }
-#    &RSAT::message::TimeWarn("Getting neighbours for node", $self->get_attribute("id"), scalar(@seed_nodes), "seed nodes at step", $s) if ($main::verbose >= 0);
+    #    &RSAT::message::TimeWarn("Getting neighbours for node", $self->get_attribute("id"), scalar(@seed_nodes), "seed nodes at step", $s) if ($main::verbose >= 0);
     @new_neighbours = ();
     foreach my $n (0..$#seed_nodes) {
       $node = $seed_nodes[$n];
@@ -125,7 +136,7 @@ sub get_neighbours_step {
 	} else {
 	  $neighbour->force_attribute("steps", $s);
 	  $neighbour->force_attribute("direction", "na") if ($s > 1);
-#	  $neighbour->force_attribute("weight", $s);
+	  #	  $neighbour->force_attribute("weight", $s);
 	  push @neighbours, $neighbour;
 	  push @new_neighbours, $neighb_node;
 	  $neighbour_ids{$neighb_id}++;
