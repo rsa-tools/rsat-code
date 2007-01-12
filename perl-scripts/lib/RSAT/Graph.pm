@@ -38,15 +38,33 @@ Graph class.
 ################################################################
 =pod
 
-=item B<add_node()>
+=item B<create_node()>
 
-Create a node and add it to the graph. 
+Create a node and add it to the graph.
 
 =cut
 sub create_node {
     my ($self, %args) = @_;    
     my $node = new RSAT::GraphNode(%args);
     &RSAT::message::Info(join ("\t", "Created node", 
+			       $node->get_attribute("id"), 
+			       $node->get_attribute("label"), 
+			       $node)) if ($main::verbose >= 4);
+    $self->add_node($node);
+    return $node;
+}
+
+################################################################
+=pod
+
+=item B<add_node()>
+
+Add a (previously created) node to the graph.
+
+=cut
+sub add_node {
+    my ($self, $node) = @_;    
+    &RSAT::message::Info(join ("\t", "Added node", 
 			       $node->get_attribute("id"), 
 			       $node->get_attribute("label"), 
 			       $node)) if ($main::verbose >= 4);
@@ -154,6 +172,7 @@ Read the graph from a tab-delimited text file.
 
 sub read_from_table {
     my ($self, $inputfile, $source_col, $target_col, $weight_col) = @_;
+    &RSAT::message::TimeWarn("Loading graph from tab file", $infile{graph}) if ($main::verbose >= 2);
     ($main::in) = &RSAT::util::OpenInputFile($inputfile);
     my $no_weight = 0;
     my $default_weight = 1;
@@ -257,7 +276,7 @@ sub to_text {
     } elsif ($out_format eq "gml") {
 	return $self->to_gml();
     } else {
-	&RSAT::error::FatalError(join ("\t", $out_format, "Invlid format for a graph."));
+	&RSAT::error::FatalError(join ("\t", $out_format, "Invalid format for a graph."));
     }
 }
 
@@ -358,7 +377,7 @@ sub to_gml {
 	my $h = 16; ## label height
 	my $x = $node->get_attribute("x") || $n*10;
 	my $y = $node->get_attribute("y") || $n*20;
-	my $box_color = $node->get_attribute("fontcolor") || "#0000EE"; ## color for the box around the node
+	my $box_color = $node->get_attribute("color") || "#0000EE"; ## color for the box around the node
 	$gml .= "\t"."node\n";
 	$gml .= "\t"."[\n";
 	$gml .= "\t\t"."id	".$node_internal_id."\n";
@@ -376,20 +395,27 @@ sub to_gml {
 	$gml .= "\t\t"."]\n";
 	$gml .= "\t"."]\n";
     }
-    
+
     ## Export arcs
     foreach my $arc ($self->get_attribute("arcs")) {
-	my $arc_label = $arc->get_attribute("label");
 	my $source_node = $arc->get_attribute("source");
 	my $target_node = $arc->get_attribute("target");
 	my $source_id = $node_internal_id{$source_node->get_attribute("id")};
 	my $target_id = $node_internal_id{$target_node->get_attribute("id")};
+
+	my $arc_label = $arc->get_attribute("label");
+	unless ($arc_label) {
+	  if ($weight = $arc->get_attribute("weight")) {
+	    $arc_label = $weight;
+	  }
+	}
+
 	my $arc_color = $arc->get_attribute("color") || "#000000";
 	$gml .= "\tedge\n";
 	$gml .= "\t"."[\n";
 	$gml .= "\t\t"."source\t".$source_id."\n";
 	$gml .= "\t\t"."target\t".$target_id."\n";
-	$gml .= "\t\t"."label\t\"".$arc_label."\"\n";
+	$gml .= "\t\t"."label\t\"".$arc_label."\"\n" if ($arc_label);
 	$gml .= "\t\t"."graphics\n";
 	$gml .= "\t\t"."[\n";
 	$gml .= "\t\t\t"."width\t2\n";
