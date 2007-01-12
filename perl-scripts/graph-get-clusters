@@ -1,0 +1,483 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: graph-get-clusters,v 1.1 2007/01/12 02:09:34 jvanheld Exp $
+#
+# Time-stamp: <2003-07-04 12:48:55 jvanheld>
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+graph-get-clusters
+
+=head1 DESCRIPTION
+
+Extract from a graph a subgraph specified by a set of node
+clusters. Return the nodes belonging to the clusters + the
+intra-cluster arcs, and ignore the inter-cluster arcs.
+
+=head1 AUTHORS
+
+=over
+
+=item jvanheld@scmbb.ulb.ac.be
+
+=item sylvain@scmbb.ulb.ac.be
+
+=head1 CATEGORY
+
+graph analysis
+
+=head1 USAGE
+
+graph-get-clusters [-i graph_file] -clusters cluster_file [-o outputfile] [-v #] [...]
+
+=head1 INPUT FORMAT
+
+=head2 Graph format
+
+See I<convert-graph> for a description of the supported input graph
+formats. Default format for the input graph: tab.
+
+=head2 Cluster format
+
+See I<convert-classes> for a description of the supported input
+cluster formats.
+
+=head1 OUTPUT FORMAT
+
+The output file is a graph in GML format.
+
+See I<convert-graph> for a description of the supported input graph
+formats. Note that It is not recommended to use the tab-delimted
+format for the output graph, because orphan nodes (nodes without any
+arc) would not be displayed (the tab format is restricted to a
+description of the arcs).
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+require RSAT::Graph;
+require RSAT::Classification;
+
+################################################################
+## Main package
+package main;
+{
+
+  ################################################################
+  ## Palette for the cluster-specific node colors
+  my @cluster_colors_dot = qw(blue green orange cyan darkviolet red gray magenta black darkgreen darkblue violet darkgray);
+  my @cluster_colors_gml = ('#0000FF',
+			    '#FF0000',
+			    '#FF00FF',
+			    '#004488',
+			    '#00FF00',
+			    '#888888',
+			    '#FF0088',
+			    '#000000',
+			    '#880000',
+			    '#000088',
+			    '#8800FF',
+			    '#444444');
+
+
+    ################################################################
+    ## Initialise parameters
+    my $start_time = &AlphaDate();
+
+    ################################################################
+    ## Initialize the input graph
+    $graph = new RSAT::Graph();
+    $graph->set_attribute("label", "input graph");
+
+    ## Columns of the tab-delimited graph file
+    local $source_col = 1;
+    local $target_col = 2;
+    local $weight_col = 0;
+
+    ################################################################
+    ## Initialize the clusters
+    my $clusters = new RSAT::Classification;
+    $cluster_format = "tab";
+    $cluster_nb = 0;
+    %cluster_args = (); ## arguments for reading the classification
+    $cluster_args{null} = "NA";
+
+    ################################################################
+    ## Initialize the output graph (cluster graph)
+    $cluster_graph = new RSAT::Graph();
+    $cluster_graph->set_attribute("label", "cluster graph");
+
+    ## Output formats
+    %supported_output_format =(
+			       dot=>1,
+			       gml=>1,
+			       gdl=>1,
+    );
+    $supported_output_formats = join (",", keys %supported_output_format);
+    local $output_format = "gml";
+
+    %found_nodes = (); ## Index the names of identified nodes
+    %unknown_nodes = (); ## Index the names of unknown nodes
+
+    %main::infile = ();
+    %main::outfile = ();
+    $main::verbose = 0;
+    $main::out = STDOUT;
+
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+
+    ################################################################
+    ## Check argument values
+  @cluster_colors = ();
+  if ($output_format eq "dot") {
+    @cluster_colors = @cluster_colors_dot;
+  } else {
+    @cluster_colors = @cluster_colors_gml;
+  }
+
+
+    ################################################################
+    ## Open output stream
+    $main::out = &OpenOutputFile($main::outfile{output});
+
+    ################################################################
+    ## Read input graph
+    $graph->read_from_table($infile{graph}, $source_col, $target_col, $weight_col);
+
+    ################################################################
+    ## Read clusters
+    $clusters->read_from_file($main::infile{clusters}, $cluster_format, %cluster_args);
+
+    ################################################################
+    ## Extract the intra-cluster subgraphs
+    &RSAT::message::TimeWarn("Identifying cluster nodes in the graph") if ($main::verbose >= 2);
+    foreach my $cluster ($clusters->get_attribute("classes")) {
+      $cluster_nb++;
+      $current_color=$cluster_colors[($cluster_nb-1) % scalar(@cluster_colors)];
+
+      ## Identify cluster nodes in the graph
+      my @node_names = $cluster->get_members();
+      my @nodes = ();
+      my %cluster_nodes = ();
+      foreach my $name (@node_names) {
+	my $node = $graph->node_by_id($name);
+	if ($node) {
+	  $found_nodes{$name}++;
+	  push @nodes, $node;
+	  unless (defined($cluster_nodes{$name})) {
+	    ## Instantiate a new node for the cluster graph
+	    my $cluster_node = $cluster_graph->create_node();
+	    $cluster_node->force_attribute("id", $name);
+	    $cluster_node->set_attribute("label", $name);
+	    $cluster_node->set_attribute("color", $current_color);
+	    $cluster_nodes{$node->get_attribute("id")} = $cluster_node;
+	  }
+	  &RSAT::message::Info("Identified node with name", $name, $node->get_attribute("id")) if ($main::verbose >= 3);
+	} else {
+	  $unknown_nodes{$name}++;
+	  &RSAT::message::Warning("The graph does not contain any node with name", $name);
+	}
+      }
+
+      ## Collect the arcs
+      foreach my $node1 (@nodes) {
+	&RSAT::message::Info("Collecting arcs for node", $node1->get_attribute("id")) if ($main::verbose >= 3);
+	my @out_nodes = $node1->get_attribute("out_nodes");
+	my $id1 = $node1->get_attribute("id");
+	my $cluster_node1 = $cluster_nodes{$id1};
+	foreach my $node2 (@out_nodes) {
+	  my $id2 = $node2->get_attribute("id");
+	  if (defined($cluster_nodes{$id2})) {
+	    &RSAT::message::Info("Found arc from", $id1, "to", $id2) if ($main::verbose >= 4);
+	    my $cluster_node2 = $cluster_nodes{$id2};
+	    $cluster_graph->create_arc($cluster_node1, $cluster_node2);
+#	  } else {
+#	    &RSAT::message::Info("\tTarget node", $id2 , "is not in the current cluster") if ($main::verbose >= 0);
+	  }
+	}
+      }
+    }
+
+    ################################################################
+    ## Print verbose
+    &Verbose() if ($main::verbose);
+
+    ## Print the output graph
+    print $out $cluster_graph->to_text($output_format);
+
+    ################################################################
+    ## Finish verbose
+    if ($main::verbose >= 1) {
+	my $done_time = &AlphaDate();
+	print STDOUT "; Job started $start_time\n";
+	print STDOUT "; Job done    $done_time\n";
+    }
+
+    ################################################################
+    ## Close output stream
+    close $main::out if ($main::outfile{output});
+
+    exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+    my $arg;
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    while (scalar(@arguments) >= 1) {
+      $arg = shift (@arguments);
+	## Verbosity
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+
+	    ## Graph file
+=pod
+
+=item B<-i graphfile>
+
+If no graph file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-i") {
+	  $main::infile{graph} = shift(@arguments);
+
+	    ## Source column
+=pod
+
+=item B<-scol>
+
+Source column. Column containing the source nodes in the tab-delimited
+graph file.
+
+=cut
+	} elsif ($arg eq "-scol") {
+	    $source_col = shift (@arguments);
+	    unless (&IsNatural($source_col) && ($source_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $source_col, "Invalid value for the source column. Must be a strictly positive natural number"));
+	    }
+
+	    ## Target column
+=pod
+
+=item B<-tcol>
+
+Target column. Column containing the target nodes in the tab-delimited
+graph file.
+
+=cut
+	} elsif ($arg eq "-tcol") {
+	    $target_col = shift (@arguments);
+	    unless (&IsNatural($target_col) && ($target_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $target_col, "Invalid value for the target column. Must be a strictly positive natural number"));
+	    }
+
+	    ## Weight column
+=pod
+
+=item B<-wcol>
+
+Weight column. Column containing the weight nodes in the tab-delimited
+graph file.
+
+=cut
+	} elsif ($arg eq "-wcol") {
+	    $weight_col = shift (@arguments);
+	    unless (&IsNatural($weight_col) && ($weight_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $weight_col, "Invalid value for the weight column. Must be a strictly positive natural number"));
+	    }
+
+
+
+=pod
+
+=item B<-clusters cluster_file>
+
+Cluster file. The seed file specifies a list of node clusters.
+
+=cut
+	} elsif ($arg eq "-clusters") {
+	    $main::infile{clusters} = shift(@arguments);
+
+=pod
+
+=item B<-cluster_format cluster_format>
+
+Format of the cluster file. See I<convert-classes> for the description
+of supported input formats.
+
+=cut
+	} elsif ($arg eq "-cluster_format") {
+	    $main::cluster_format = shift(@arguments);
+
+	    ## Output file
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $main::outfile{output} = shift(@arguments);
+
+
+	    ### Output format  
+=cut
+
+=item B<-to output_format>
+
+Output format. Supported: tab, dot, gml
+
+=cut 
+	} elsif ($arg eq "-out_format") {
+	    $output_format = shift(@arguments);
+	    &RSAT::error::FatalError("$output_format\tInvalid output format. Supported: $supported_output_formats")
+		unless ($supported_output_format{$output_format});
+
+
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+
+	}
+    }
+
+
+=pod
+
+=back
+
+=cut
+
+}
+
+################################################################
+#### verbose message
+sub Verbose {
+    print STDOUT "; graph-neighbnours ";
+    &PrintArguments(STDOUT);
+    if (defined(%main::infile)) {
+	print STDOUT "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	    print STDOUT ";\t$key\t$value\n";
+	}
+    }
+    if (defined(%main::outfile)) {
+	print STDOUT "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	    print STDOUT ";\t$key\t$value\n";
+	}
+    }
+
+    ## Report graph size
+    my ($nodes, $arcs) = $graph->get_size();
+    print STDOUT "; Graph size\n";
+    print STDOUT ";\tnodes\t",$nodes,"\n";
+    print STDOUT ";\tarcs\t",$arcs,"\n";
+
+    ## Report seed nodes
+    print STDOUT "; Clusters\t", $cluster_nb,"\n";
+    print STDOUT ";\tidentified nodes\t",scalar(keys(%found_nodes)),"\n";
+    my @unknown_nodes = keys(%unknown_nodes);
+    my $unknown_node_nb = scalar(@unknown_nodes);
+    if ($unknown_node_nb > 0) {
+      print STDOUT ";\tunknown nodes\t",,"\n";
+      foreach my $name (@unknown_nodes) {
+	print STDOUT join ("\t", ";\t", "unknown", $name), "\n";
+      }
+    }
+}
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=over
+
+=item I<graph-neighbours>
+
+=item I<convert-graph>
+
+
+=item I<compare-classes>
+
+=item I<convert-classes>
+
+=back
+
+=cut
