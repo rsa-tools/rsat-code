@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: convert-graph,v 1.2 2006/03/10 02:20:11 jvanheld Exp $
+# $Id: convert-graph,v 1.3 2007/01/12 02:11:14 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -84,8 +84,9 @@ package main;
     ## Output formats
     local $output_format = "dot";
     %supported_output_format =(
-	dot=>1,
-	gml=>1,
+			       dot=>1,
+			       gml=>1,
+			       gdl=>1,
     );
     $supported_output_formats = join (",", keys %supported_output_format);
 
