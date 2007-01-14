@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: Genbank_classes.pl,v 1.8 2006/11/24 17:04:59 jvanheld Exp $
+# $Id: Genbank_classes.pl,v 1.9 2007/01/14 01:16:30 jvanheld Exp $
 #
 # Time-stamp: <2003-08-09 00:37:11 jvanheld>
 #
@@ -175,6 +175,28 @@ package Genbank::Feature;
       
 #   }
 
+#   ################################################################
+#   ## Replace the ID of the current object by the first attribute for
+#   ## which a value exist, in a specified list of potential ID
+#   ## attributes.
+#   sub SetPreferredID {
+#     my ($self, @preferred_ids) = @_;
+#     my $i = 0;
+#     my $id;
+#     do {
+#       my $attr = $preferred_ids[$i];
+#       $id = $object->get_attribute($attr);
+#       &RSAT::message::Debug("Getting attribute", $i, $attr, $id) if ($main::verbose >= 0);
+#       $i++;
+#     } until (($id) || ($i > $#preferred_ids));
+#     if ($id) {
+#       $object->ReplaceID($attr);
+#     } else {
+#       &ErrorMessage(join("\t","CDS", $object->get_attribute("id"), "has neither GI, nor protein_id, nor locus_tag"));
+#     }
+#   }
+
+
   ################################################################
   ## Replace ID by the value of a single-value attribute
   sub ReplaceID {
@@ -183,45 +205,39 @@ package Genbank::Feature;
       my ($value) = $self->get_attribute($field);
 
       if ($value) {
-	  &RSAT::message::Info(join("\t", "Replacing ID", $self->get_attribute("id"), 
-				    "by attribute", $field, $value, 
-				    "feature type", $self->get_attribute("type"))) 
+	  &RSAT::message::Info("Replacing ID", $self->get_attribute("id"), "by attribute", $field, $value, "feature type", $self->get_attribute("type")) 
 	      if ($verbose >= 5);
 	  $self->force_attribute("id",$value);
       } else {
-	  &RSAT::message::Warning(join("\t", "There is no value in the field",$field,"for feature",  
-				       $self->get_attribute("id"),
-				       "feature type", $self->get_attribute("type")
-				      ));
+	&RSAT::message::Warning("There is no value in the field",$field,"for feature", $self->get_attribute("id"),"feature type", $self->get_attribute("type"));
       }
   }
       
   ################################################################
   ## Use arbitrary cross-reference as IDentifier
   ## This methods is obsolete
-  sub UseXREFasID {
-      my ($self) = @_;
-
-      my $cross_id_found = 0;
-      foreach my $cross_id (@preferred_cross_ids) {
-	  if ($$cross_id) {
-	      warn join ("\t", 
-			 "Using", $cross_id, $$cross_id, 
-			 "as main identifier for feature", 
-			 $self->get_attribute("id"),
-			 $products[0]), "\n" if ($main::verbose >= 3);
-	      
-	      $self->force_attribute("id", $$cross_id);
-	      $cross_id_found = 1;
-	      last;
-	  }
-      }
-      unless ($cross_id_found) {
-	  &RSAT::message::Warning(join ("\t", "Feature ".$self->get_attribute("id")." has no valid cross-reference to use as main ID.\n")); 
-      }
+  sub UseAttributeFasID {
+    my ($self, @attributes) = @_;
+    &RSAT::message::Debug("Use attribute as ID", $self->get_attribute("id"), join(",", @attributes)) if ($main::verbose >= 4);
+    my $i = 0;
+    my $attr;
+    my $id;
+    do {
+      $attr = $attributes[$i];
+      my @values = $self->get_attribute($attr); 
+      $id = shift(@values);
+      &RSAT::message::Debug("Getting attribute", $i, $attr, $id) if ($main::verbose >= 0);
+      $i++;
+    } until (($id) || ($i > $#preferred_ids));
+    if ($id) {
+      &RSAT::message::Info(join("\t","CDS", $self->get_attribute("id"), "has neither GI, nor protein_id, nor locus_tag")) if ($main::verbose >= 4);
+      $self->force_attribute("id", $id);
+    } else {
+      &RSAT::message::Warning(join("\t","CDS", $self->get_attribute("id"), "has neither GI, nor protein_id, nor locus_tag")) if ($main::verbose >= 3);
+    }
   }
-      
 }
+
 
 ################################################################
 #### source
