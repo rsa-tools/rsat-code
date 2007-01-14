@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.183 2007/01/14 15:06:44 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.184 2007/01/14 15:19:33 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -1089,9 +1089,9 @@ sub MergeOligoLengths {
    ### pattern assembly
    &RSAT::message::TimeWarn("Assembling oligo patterns", $family{$family_name}->{oligo_assembly_file}) 
        if ($main::verbose >= 2);
-   my $assembly_command = "pattern-assembly -v 1 ";
-   $assembly_command .= " -i ".$family{$family_name}->{oligo_file};
+   my $assembly_command = "pattern-assembly -v 1";
    $assembly_command .= " -maxfl 1 -toppat ".$toppat." -subst 1 ".$strands;
+   $assembly_command .= " -i ".$family{$family_name}->{oligo_file};
    $assembly_command .= " -o ".$family{$family_name}->{oligo_assembly_file};
    push @merge_commands, $assembly_command;
 
@@ -1276,11 +1276,11 @@ sub DyadAnalysis {
    ### pattern assembly
    &RSAT::message::TimeWarn("Assembling dyad patterns", $family{$family_name}->{dyad_assembly_file}) 
        if ($main::verbose >= 2);
-   $command .= "; pattern-assembly -v";
-   $command .= " -i ".$family{$family_name}->{dyad_file};
-   $command .= " -o ".$family{$family_name}->{dyad_assembly_file};
+   $command .= "; pattern-assembly -v 1";
    $command .=  " -maxfl 1 -toppat ".$toppat;
    $command .=  " ".${strands};
+   $command .= " -i ".$family{$family_name}->{dyad_file};
+   $command .= " -o ".$family{$family_name}->{dyad_assembly_file};
 
    ### extract PSSM from pattern assembly
    &RSAT::message::TimeWarn("Matrix from dyad patterns", $family{$family_name}->{dyad_pssm_file}) 
@@ -1473,7 +1473,8 @@ sub orm {
    if ($task{assemble_orm}) {
        &RSAT::message::TimeWarn("Assembling orm patterns", $family{$family_name}->{orm_assembly_file}) 
 	   if ($main::verbose >= 2);
-       $orm_command .= "; pattern-assembly -v  -maxfl 1 -subst 1 -toppat ".$toppat." ".${strands};
+       $orm_command .= "; pattern-assembly -v 1";
+       $orm_command .= " -maxfl 1 -subst 1 -toppat ".$toppat." ".$strands;
        $orm_command .= " -i ".$family{$family_name}->{orm_file};
        $orm_command .= " -o ".$family{$family_name}->{orm_assembly_file};
 
