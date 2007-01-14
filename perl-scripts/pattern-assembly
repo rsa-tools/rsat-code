@@ -14,6 +14,7 @@ $max_subst = 0;
 $max_assembly_size = 50;
 $strand_insensitive = 1;
 $max_pattern_nb = 100;
+$top_pattern_nb = 0;
 
 &ReadArguments();
 
@@ -51,32 +52,35 @@ if ($verbose) {
     printf $out "; %-29s\t%d\n", "max flanking bases", $max_flanking;
     printf $out "; %-29s\t%d\n", "max substitutions", $max_subst;
     printf $out "; %-29s\t%d\n", "max assembly size", $max_assembly_size;
-    printf $out "; %-29s\t%d\n", "max number of patterns", $max_pattern_nb;
+    printf $out "; %-29s\t%d\n", "max number of patterns", $max_pattern_nb if ($max_pattern_nb);
+    printf $out "; %-29s\t%d\n", "top number of patterns", $top_pattern_nb if ($top_pattern_nb);
     printf $out "; %-29s\t%d\n", "number of input patterns", $pattern_nb;
     printf $out ";\n";
 }
 
 
 #### check that pattern number does not exceed the limit
-if($pattern_nb > $max_pattern_nb) {
-    my @message = ("Too many patterns to assemble. ",
-		   "Number of patterns = $pattern_nb.",
-		   "Maximum nb allowed = $max_pattern_nb.",
-		   "The exceeding patterns will be ignored."
-		  );
-    print $out ";", join ("\n;", @message), "\n";
-    my $message = join "\t", @message;
-    &Warning ($message);
+if (($top_pattern_nb > 0) && 
+    ($pattern_nb > $top_pattern_nb)) {
+    my $message = join("\t", "Number of patterns = $pattern_nb.",
+		       "Exceeds top number = $top_pattern_nb.",
+		       "The exceeding patterns will be ignored.");
+    print $out ";",  $message, "\n";
+    &RSAT::message::Warning ($message);
 
-#     $last = $max_pattern_nb -1;
-#     @to_assemble = @to_assemble[0..$last];
-#     %new_seed = ();
-#     foreach my $pattern (@to_assemble) {
-# 	$new_seed{$to_assemble} = $seed{$to_assemble};
-# 	$new_score{$to_assemble} = $score{$to_assemble};
-#     }
-#     %seed = %new_seed;
-#     %score = %new_score;
+    @patterns = @patterns[0..($top_pattern_nb-1)];;
+    &IndexScores(@patterns);
+#    die "$pattern_nb", "\n";
+}
+
+if (($max_pattern_nb > 0) && 
+    ($pattern_nb > $max_pattern_nb)) {
+    my $message = join("\t", "Too many patterns to assemble. ",
+		       "Number of patterns = $pattern_nb.",
+		       "Maximum nb allowed = $max_pattern_nb.",
+		       "Assembly is cancelled.");
+    print $out ";", $message, "\n";
+    &RSAT::message::Warning ($message);
 } else {
     &AssemblePatterns(@to_assemble);
 }
@@ -98,10 +102,17 @@ exit(0);
 
 ########################## subroutine definition ############################
 
-
-#### create a hash with pattern scores
+################################################################
+## Create a hash with pattern scores
 sub  IndexScores {
     my (@patterns) = @_;
+    &RSAT::message::TimeWarn("Indexing", scalar(@patterns), "patterns by scores");
+
+    ## Make sure the index is empty before starting
+    %score = ();
+    %seed = ();
+    @to_assemble = ();
+
     foreach $pattern (@patterns) {
 	my $word = $pattern->get_attribute("sequence"); 
 	my $score = $pattern->get_attribute("score");
@@ -127,13 +138,16 @@ sub  IndexScores {
 
     #### sort patterns according to their score
     @to_assemble = sort {$score{$b} <=> $score{$a}} keys %seed;
-    $pattern_nb = $#to_assemble+1;
+    $pattern_nb = scalar(@to_assemble);
+
+    &RSAT::message::TimeWarn("Patterns to assemble", scalar(@to_assemble));
 
 }
 
+################################################################
+## Usage 
+## AssembleFragments ($word1,$word2,$offset)
 sub AssembleFragments {
-    ### usage 
-    ### AssembleFragments ($word1,$word2,$offset)
     local($word1) = $_[0];
     local($word2) = $_[1];
     local($offset) = $_[2];
@@ -462,8 +476,12 @@ OPTIONS
 	-maxcl #
 		maximal assembly size, i.e. the number of patterns per
 		alignment group (default: $max_cluster_size)
+
 	-maxpat #
-		maximum number of patterns to assemble (default 100).
+		maximum number of allowed patterns  (default $max_pattern_nb).
+		If the number of patterns in the input file exceeds
+		the maximal number, the assembly is not done. 
+
 		Assembly takes a huge time when too many patterns are
 		submitted. In any cases, when too many patterns are
 		obtained fom a pattern discovery program, it generally
@@ -471,6 +489,13 @@ OPTIONS
 		selection of the threshold). The option can however be
 		changed to any value, but the time increases
 		quadratically.
+
+	-toppat #
+		max number of patterns to assemble.  If the number of
+		patterns in the input file exceeds the maximal number,
+		the assembly is done with the top patterns only.
+
+		The options -toppat and -maxpat are mutually incompatible. 
 
 INPUT FORMAT
 	Each pattern must appear as the first word of a line. 
@@ -507,7 +532,8 @@ pattern-assembly options
 -maxfl #	maximum flanking segment size (default $max_flanking). 
 -subst #	maximum allowed substitutions (default $max_subst).
 -maxcl #	maximal assembly size, i.e. number of patterns per assembly (default: $max_assembly_size)
--maxpat #	maximum number of patterns to assemble
+-maxpat #	maximum number of allowed patterns
+-toppat #	maximum number of patterns to assemble
 End_short_help
   close HELP;
   exit(0);
@@ -547,7 +573,12 @@ sub ReadArguments {
 	    ### max number of allowed patterns
 	} elsif (($ARGV[$a] eq "-maxpat") && (&IsNatural($ARGV[$a+1]))) {
 	    $max_pattern_nb = $ARGV[$a+1];
+	    $top_pattern_nb = 0;
 	    
+	    ### max number of patterns to assemble
+	} elsif (($ARGV[$a] eq "-toppat") && (&IsNatural($ARGV[$a+1]))) {
+	    $top_pattern_nb = $ARGV[$a+1];
+	    $max_pattern_nb = 0;
 	    
 	    ### score column
 	} elsif ($ARGV[$a] eq "-sc") {
@@ -589,10 +620,9 @@ sub ReadArguments {
 ################################################################
 ## Assemble patterns
 sub AssemblePatterns {
-    my @to_assemble = @_;
+    my (@to_assemble) = @_;
     
-    &RSAT::message::TimeWarn(join "\t", "Starting pattern assembly", scalar(@patterns)) if ($main::verbose >= 2);
-#    die;
+    &RSAT::message::TimeWarn(join "\t", "Starting pattern assembly", scalar(@to_assemble)) if ($main::verbose >= 2);
 
     #### make a list of words remaining to assembly
     while ($#to_assemble > -1) {
