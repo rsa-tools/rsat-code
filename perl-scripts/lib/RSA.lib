@@ -963,7 +963,7 @@ sub ReadFamilies {
 ## By default, the first column contains the members, and the secon column the
 ## class names. A member can belong to several classes, and each class can
 ## contain one or several members.
-
+##
 ## Arguments:
 ##
 ## 1) Family_file: file containing the class compositions. If not specified,
@@ -1081,8 +1081,7 @@ sub ReadClasses {
 	    $member_key = $member_name;
 	}
 
-
-	if ($member_key ne "") {
+	if ($member_key) {
 	    if ($score_column) {
 		### score
 		local $score = &trim($fields[$score_column - 1]);
@@ -1107,7 +1106,6 @@ sub ReadClasses {
 	} else {
 	    &RSAT::message::Warning ($member_name." unknown gene name");
 	}
-	
     }
     close $fam if ($family_file);
 
