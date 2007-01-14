@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.181 2007/01/14 01:44:45 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.182 2007/01/14 02:14:14 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -33,6 +33,7 @@ use RSAT::MatrixReader;
 
 ################################################################
 ## initialize global variables
+$toppat = 100;
 $organism = "";
 $taxon = "";
 $force_calib=1;
@@ -1088,7 +1089,7 @@ sub MergeOligoLengths {
    ### pattern assembly
    my $assembly_command = "pattern-assembly -v 1 ";
    $assembly_command .= " -i ".$family{$family_name}->{oligo_file};
-   $assembly_command .= " -maxfl 1 -maxpat 200 -subst 1 ".$strands;
+   $assembly_command .= " -maxfl 1 -toppat ".$toppat." -subst 1 ".$strands;
    $assembly_command .= " -o ".$family{$family_name}->{oligo_assembly_file};
    push @merge_commands, $assembly_command;
 
@@ -1272,8 +1273,9 @@ sub DyadAnalysis {
    $command .= "; pattern-assembly -v";
    $command .= " -i ".$family{$family_name}->{dyad_file};
    $command .= " -o ".$family{$family_name}->{dyad_assembly_file};
-   $command .=  " -maxfl 1 -maxpat 200 ".${strands};
-   
+   $command .=  " -maxfl 1 -toppat ".$toppat;
+   $command .=  " ".${strands};
+
    ### extract PSSM from pattern assembly
    $command .= "; matrix-from-patterns -v 1 ";
    $command .= " -seq ".$family{$family_name}->{seq_file};
@@ -1461,7 +1463,7 @@ sub orm {
    }
    $orm_command .= " -v1 ".$family{$family_name}->{orm_options};
    if ($task{assemble_orm}) {
-       $orm_command .= "; pattern-assembly -v  -maxfl 1 -subst 1 -maxpat 200 ".${strands};
+       $orm_command .= "; pattern-assembly -v  -maxfl 1 -subst 1 -toppat ".$toppat." ".${strands};
        $orm_command .= " -i ".$family{$family_name}->{orm_file};
        $orm_command .= " -o ".$family{$family_name}->{orm_assembly_file};
 
