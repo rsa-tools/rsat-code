@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: util.pl,v 1.10 2005/06/18 13:36:18 jvanheld Exp $
+# $Id: util.pl,v 1.11 2007/01/14 01:16:30 jvanheld Exp $
 #
 # Time-stamp: <2003-07-10 11:46:32 jvanheld>
 #
@@ -172,7 +172,7 @@ sub intersection {
 #### Print a message in th error log file
 sub ErrorMessage {
   my @messages = @_;
-  print ERR @messages;
+  print ERR join ("\n", @messages), "\n";
   warn @messages if ($main::verbose >= 2);
 }
 
