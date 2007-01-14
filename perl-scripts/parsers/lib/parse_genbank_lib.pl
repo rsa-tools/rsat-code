@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parse_genbank_lib.pl,v 1.34 2007/01/12 16:49:43 jvanheld Exp $
+# $Id: parse_genbank_lib.pl,v 1.35 2007/01/14 01:16:30 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -135,70 +135,36 @@ sub ParseAllGenbankFiles {
     ## For instance, in Debaryomyces_hansenii_CBS767, some CDSs have
     ## no protein_id, whereas some other CDS do.
 
-    ## Use the locus_tag as unique identifier
-    foreach my $holder ($scRNAs, $tRNAs, $rRNAs, $misc_RNAs) { 
-	&RSAT::message::TimeWarn("Replacing IDs by locus_tag for class", $holder->get_object_type()) if ($main::verbose >= 1);
-	foreach my $object ($holder->get_objects()) {
-	  my $locus_tag = $object->get_attribute("locus_tag");
-	  if (($locus_tag) && ($locus_tag ne $main::null)) {
-	    $object->ReplaceID("locus_tag");
-	  } else {
-	    &ErrorMessage(join("\t","Feature", $object->get_attribute("id"), "has no locus_tag"));
-	  }
-	}
-	$holder->index_ids();
-    }
-
-
     ## For CDS, use the GI or the protein_id the locus_tag as unique identifier
-    &RSAT::message::TimeWarn("Replacing CDS IDs by protein_id") if ($main::verbose >= 1);
+    my @preferred_ids_cds = qw (locus_tag protein_id GI);
+    &RSAT::message::TimeWarn("Finding preferred CDS IDs", join(",", @preferred_ids_cds)) if ($main::verbose >= 1);
     foreach my $object ($CDSs->get_objects()) {
-      my $GI = $object->get_attribute("GI");
-      my $protein_id = $object->get_attribute("protein_id");
-      my $locus_tag = $object->get_attribute("locus_tag");
-      if (($GI) && ($GI ne $main::null)) {
-	$object->ReplaceID("GI");
-      } elsif (($protein_id) && ($protein_id ne $main::null)) {
-	$object->ReplaceID("protein_id");
-      } elsif (($locus_tag) && ($locus_tag ne $main::null)) {
-	$object->ReplaceID("locus_tag");
-      } else {
-	&ErrorMessage(join("\t","CDS", $object->get_attribute("id"), "has neither GI, nor protein_id, nor locus_tag"));
-      }
+      $object->UseAttributeFasID(@preferred_ids_cds);
     }
     $CDSs->index_ids();
 
-#     ## For mRNA, use the transcript_id as unique identifier
-#     &RSAT::message::TimeWarn("Replacing mRNA IDs by  transcript_id") if ($main::verbose >= 1);
-#     foreach my $object ($mRNAs->get_objects()) {
-# 	if ($object->get_attribute("transcript_id")) {
-# 	    $object->ReplaceID("transcript_id");
-# 	} elsif ($object->get_attribute("locus_tag")) {
-# 	    $object->ReplaceID("locus_tag");
-# 	} else {
-# 	    &ErrorMessage(join("\t","CDS", $object->get_attribute("id"), "has no transcript_id"));
-# 	}
-#     }
-#     $mRNAs->index_ids();
-
     ## For mRNA, use the GI or the transcript_id the locus_tag as unique identifier
-    &RSAT::message::TimeWarn("Replacing mRNA IDs by transcript_id") if ($main::verbose >= 1);
+    my @preferred_ids_mrna = qw (locus_tag transcript_id GI);
+    &RSAT::message::TimeWarn("Finding preferred CDS IDs", join(",", @preferred_ids_mrna)) if ($main::verbose >= 1);
     foreach my $object ($mRNAs->get_objects()) {
-      my $GI = $object->get_attribute("GI");
-      my $transcript_id = $object->get_attribute("transcript_id");
-      my $locus_tag = $object->get_attribute("locus_tag");
-      if (($GI) && ($GI ne $main::null)) {
-	$object->ReplaceID("GI");
-      } elsif (($transcript_id) && ($transcript_id ne $main::null)) {
-	$object->ReplaceID("transcript_id");
-      } elsif (($locus_tag) && ($locus_tag ne $main::null)) {
-	$object->ReplaceID("locus_tag");
-      } else {
-	&ErrorMessage(join("\t","mRNA", $object->get_attribute("id"), "has neither GI, nor transcript_id, nor locus_tag"));
-      }
+      $object->UseAttributeFasID(@preferred_ids_mrna);
     }
     $mRNAs->index_ids();
 
+    ## Use the locus_tag as unique identifier for the other feature types
+    foreach my $holder ($scRNAs, $tRNAs, $rRNAs, $misc_RNAs) { 
+	&RSAT::message::TimeWarn("Replacing IDs by locus_tag for class", $holder->get_object_type()) if ($main::verbose >= 1);
+	foreach my $object ($holder->get_objects()) {
+	  $object->UseAttributeFasID("locus_tag");
+#	  my $locus_tag = $object->get_attribute("locus_tag");
+#	  if (($locus_tag) && ($locus_tag ne $main::null)) {
+#	    $object->ReplaceID("locus_tag");
+#	  } else {
+#	    &ErrorMessage(join("\t","Feature", $object->get_attribute("id"), "has no locus_tag"));
+#	  }
+	}
+	$holder->index_ids();
+    }
 
     ## Check object names for all the parsed features, before building the RSAT features from it
     &CheckObjectNames($genes, $mRNAs, $scRNAs, $tRNAs, $rRNAs, $misc_RNAs, $misc_features, $CDSs);
