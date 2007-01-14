@@ -66,7 +66,7 @@ if (($top_pattern_nb > 0) &&
 		       "Exceeds top number = $top_pattern_nb.",
 		       "The exceeding patterns will be ignored.");
     print $out ";",  $message, "\n";
-    &RSAT::message::Warning ($message);
+    &RSAT::message::Warning($message) if ($main::verbose >= 1);
 
     @patterns = @patterns[0..($top_pattern_nb-1)];;
     &IndexScores(@patterns);
@@ -80,7 +80,7 @@ if (($max_pattern_nb > 0) &&
 		       "Maximum nb allowed = $max_pattern_nb.",
 		       "Assembly is cancelled.");
     print $out ";", $message, "\n";
-    &RSAT::message::Warning ($message);
+    &RSAT::message::Warning ($message) if ($main::vernose >= 1);
 } else {
     &AssemblePatterns(@to_assemble);
 }
@@ -106,7 +106,7 @@ exit(0);
 ## Create a hash with pattern scores
 sub  IndexScores {
     my (@patterns) = @_;
-    &RSAT::message::TimeWarn("Indexing", scalar(@patterns), "patterns by scores");
+    &RSAT::message::TimeWarn("Indexing", scalar(@patterns), "patterns by scores") if ($main::verbose >= 2);
 
     ## Make sure the index is empty before starting
     %score = ();
@@ -140,7 +140,7 @@ sub  IndexScores {
     @to_assemble = sort {$score{$b} <=> $score{$a}} keys %seed;
     $pattern_nb = scalar(@to_assemble);
 
-    &RSAT::message::TimeWarn("Patterns to assemble", scalar(@to_assemble));
+    &RSAT::message::Info("Patterns to assemble", scalar(@to_assemble)) if ($main::verbose >= 3);
 
 }
 
@@ -636,7 +636,7 @@ sub AssemblePatterns {
 	delete $seed{$to_assemble[0]};
 
 #	&RSAT::message::TimeWarn(join ("\t", "new seed", $seed, "remaining", scalar(@to_assemble))) 
-#	    if ($main::verbose >= 0);
+#	    if ($main::verbose >= 10);
 	
 	#### all input oligos are considered for assembly with the new seed
 	%to_align = %score;
@@ -654,7 +654,7 @@ sub AssemblePatterns {
 		$best_word = $word = shift(@to_align);
 		$min_score = &InfoLength($word) - $max_flanking;
 #		&RSAT::message::TimeWarn(join ("\t", "aligning word", $word, "remaining", scalar(@to_align))) 
-#		    if ($main::verbose >= 0);
+#		    if ($main::verbose >= 10);
 		
 		#### alignment by substitutions ####
 		if ($max_subst > 0) {

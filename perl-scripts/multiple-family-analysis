@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.182 2007/01/14 02:14:14 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.183 2007/01/14 15:06:44 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -33,7 +33,7 @@ use RSAT::MatrixReader;
 
 ################################################################
 ## initialize global variables
-$toppat = 100;
+$toppat = 50;
 $organism = "";
 $taxon = "";
 $force_calib=1;
@@ -1087,6 +1087,8 @@ sub MergeOligoLengths {
    }
 
    ### pattern assembly
+   &RSAT::message::TimeWarn("Assembling oligo patterns", $family{$family_name}->{oligo_assembly_file}) 
+       if ($main::verbose >= 2);
    my $assembly_command = "pattern-assembly -v 1 ";
    $assembly_command .= " -i ".$family{$family_name}->{oligo_file};
    $assembly_command .= " -maxfl 1 -toppat ".$toppat." -subst 1 ".$strands;
@@ -1100,6 +1102,8 @@ sub MergeOligoLengths {
 #   $pssm_command .= " -o ".$family{$family_name}->{oligo_pssm_file};
 #   push @merge_commands, $pssm_command;
 
+   &RSAT::message::TimeWarn("Matrix from oligo patterns", $family{$family_name}->{oligo_pssm_file}) 
+       if ($main::verbose >= 2);
    my $pssm_command = "matrix-from-patterns -v 1 ";
    $pssm_command .= " -seq ".$family{$family_name}->{seq_file};
    $pssm_command .= " -asmb ".$family{$family_name}->{oligo_assembly_file};
@@ -1270,6 +1274,8 @@ sub DyadAnalysis {
    }
 
    ### pattern assembly
+   &RSAT::message::TimeWarn("Assembling dyad patterns", $family{$family_name}->{dyad_assembly_file}) 
+       if ($main::verbose >= 2);
    $command .= "; pattern-assembly -v";
    $command .= " -i ".$family{$family_name}->{dyad_file};
    $command .= " -o ".$family{$family_name}->{dyad_assembly_file};
@@ -1277,6 +1283,8 @@ sub DyadAnalysis {
    $command .=  " ".${strands};
 
    ### extract PSSM from pattern assembly
+   &RSAT::message::TimeWarn("Matrix from dyad patterns", $family{$family_name}->{dyad_pssm_file}) 
+       if ($main::verbose >= 2);
    $command .= "; matrix-from-patterns -v 1 ";
    $command .= " -seq ".$family{$family_name}->{seq_file};
    $command .= " -asmb ".$family{$family_name}->{dyad_assembly_file};
@@ -1463,6 +1471,8 @@ sub orm {
    }
    $orm_command .= " -v1 ".$family{$family_name}->{orm_options};
    if ($task{assemble_orm}) {
+       &RSAT::message::TimeWarn("Assembling orm patterns", $family{$family_name}->{orm_assembly_file}) 
+	   if ($main::verbose >= 2);
        $orm_command .= "; pattern-assembly -v  -maxfl 1 -subst 1 -toppat ".$toppat." ".${strands};
        $orm_command .= " -i ".$family{$family_name}->{orm_file};
        $orm_command .= " -o ".$family{$family_name}->{orm_assembly_file};
@@ -1473,6 +1483,8 @@ sub orm {
 #       $orm_command .= " -in_format assembly -out_format patser -return profile,parameters";
 #       $orm_command .= " -o ".$family{$family_name}->{orm_pssm_file};
 
+       &RSAT::message::TimeWarn("Matrix from orm patterns", $family{$family_name}->{orm_pssm_file}) 
+	   if ($main::verbose >= 2);
        $orm_command = "matrix-from-patterns -v 1 ";
        $orm_command .= " -seq ".$family{$family_name}->{seq_file};
        $orm_command .= " -asmb ".$family{$family_name}->{orm_assembly_file};
@@ -2583,6 +2595,12 @@ OPTIONS
 		Example: to select no more than 50 patterns
 		        -uth rank 50
 
+	-toppat # 
+		(default $toppat)
+		Maximal number of patterns to take into account for
+		the assembly. This parameter is passed to the command
+		pattern-assembly.
+
    oligo-analysis specific options
 	-thmsf threshold on frequency of matching sequences (propotion
 	        of sequences with at least one occurrence of the
@@ -2853,7 +2871,8 @@ multiple-family-analysis options
 -lth param \#	lower threshold on parameter. Supported: $supported_thresholds
 -uth param \#	upwer threshold on parameter. Supported: $supported_thresholds
 -thosig		threshold on occurrence significance (obsolete)
-
+-toppat # 	Maximal number of patterns to assemble (default $toppat).
+		
 ## oligo-analysis specific parameters
 -maxol		maximum oligonucleotide length
 -minol		minimum oligonucleotide length
@@ -2985,6 +3004,10 @@ sub ReadArguments {
 	    ### min number of genes
 	} elsif ($ARGV[$a] eq "-mingenes") {
 	    $min_genes = $ARGV[$a+1];
+
+	    ### max number of patterns to assemble
+	} elsif ($ARGV[$a] eq "-toppat") {
+	    $toppat = $ARGV[$a+1];
 
 	    ### upstream sequence lmits
 	} elsif (($ARGV[$a] eq "-from") &&
