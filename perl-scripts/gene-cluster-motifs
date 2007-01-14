@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: gene-cluster-motifs,v 1.180 2007/01/05 01:40:03 jvanheld Exp $
+# $Id: gene-cluster-motifs,v 1.181 2007/01/14 01:44:45 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -33,6 +33,8 @@ use RSAT::MatrixReader;
 
 ################################################################
 ## initialize global variables
+$organism = "";
+$taxon = "";
 $force_calib=1;
 $null="NA"; ## Null character for the exports
 $skip=0; ## Skip the first families
@@ -512,16 +514,20 @@ sub SetFileNames {
 #	warn join ("\t", "Number of genes", $family_name, $gene_nb), "\n";
 
 	$expected_sites = $gene_nb*$expected_sites_per_gene;	
-	$family{$family_name}->{family_file} = "$family_name/${family_name}_${feature_types}.fam";
-	$family{$family_name}->{known_site_file} = "$family_name/${family_name}_known_sites";
-	$family{$family_name}->{file_prefix} = "${family_name}";
+	$family{$family_name}->{family_file} = $family_name."/".$family_name."_".$feature_types.".fam";
+	$family{$family_name}->{known_site_file} = $family_name."/".$family_name."_known_sites";
+	$family{$family_name}->{file_prefix} = $family_name;
 	$family{$family_name}->{file_prefix} .= "_up".$seq_length unless ($sequence_file_list);
-	$family{$family_name}->{file_prefix} .= "_${feature_types}";
-	$family{$family_name}->{file_prefix} .= "${noorf_string}"; 
+	$family{$family_name}->{file_prefix} .= "_".$feature_types;
+	$family{$family_name}->{file_prefix} .= $noorf_string; 
+	if ($taxon) {
+	    $family{$family_name}->{file_prefix} .= "_".$taxon; 
+	    $family{$family_name}->{ortho_file} = $family_name."/".$family_name."_".$feature_types."_orthologs_".$taxon.".fam";
+	}
 	
 	## Sequence files	unless ($sequence_file_list) {
 	unless ($sequence_file_list) {
-	    $family{$family_name}->{seq_file} = $family_name."/".$family{$family_name}->{file_prefix}.".${seq_format}";
+	    $family{$family_name}->{seq_file} = $family_name."/".$family{$family_name}->{file_prefix}.".".$seq_format;
 	    $family{$family_name}->{seq_file_purged} = $family_name."/".$family{$family_name}->{file_prefix}."_purged.${seq_format}";
 	}
 	if ($analyze_purged_sequences) {
@@ -873,22 +879,36 @@ sub SetFileNames {
 ################################################################
 #### retrieve upstream sequences
 sub UpstreamSequences {
-   &RSAT::message::TimeWarn ("Retrieving upstream sequences for family $family_name") if ($verbose >= 1);
-   $command = "retrieve-seq -imp_pos -type upstream -org $organism_name";
-   $command .= " -noorf " if ($noorf);
-   $command .= " -rm " if ($repeat_masked);
-   $command .= " -i $family{$family_name}->{family_file}";
-   $command .= " -o $family{$family_name}->{seq_file}";
-   $command .= " -from $from" if (defined($from));
-   $command .= " -to $to " if (defined($to));
-   $command .= " -label id,name ";
-   $command .= " -feattype $feature_types " if ($feature_types);
-   $command .= " -format $seq_format";
-   if ($batch) {
-       push @main::batch_commands, $command;
-   } else {
-       &doit($command, $dry_run, $die_on_error, $verbose);
-   }
+    &RSAT::message::TimeWarn ("Retrieving upstream sequences for family $family_name") if ($verbose >= 1);
+    my $command;
+    if ($taxon) {
+	$command = "get-orthologs";
+	$command .= " -org ". $organism_name;
+	$command .= " -taxon ". $taxon;
+	$command .= " -i ".$family{$family_name}->{family_file};
+	$command .= " -o ".$family{$family_name}->{ortho_file};
+	$command .= "; retrieve-seq-multigenome";
+	$command .= " -label organism_name,id,name ";
+	$command .= " -i ".$family{$family_name}->{ortho_file};
+    } else {
+	$command = "retrieve-seq";
+	$command .= " -label id,name ";
+	$command .= " -i ".$family{$family_name}->{family_file};
+	$command .= " -org ". $organism_name;
+    }
+    $command .= " -imp_pos -type upstream";
+    $command .= " -noorf " if ($noorf);
+    $command .= " -rm " if ($repeat_masked);
+    $command .= " -o ".$family{$family_name}->{seq_file};
+    $command .= " -from ".$from if (defined($from));
+    $command .= " -to ".$to if (defined($to));
+    $command .= " -feattype $feature_types " if ($feature_types);
+    $command .= " -format $seq_format";
+    if ($batch) {
+	push @main::batch_commands, $command;
+    } else {
+	&doit($command, $dry_run, $die_on_error, $verbose);
+    }
 }
 
 ################################################################
@@ -2478,6 +2498,15 @@ OPTIONS
    Sequence retrieval options
 	-org	organism
 
+	-taxon	taxon
+		If this option is specified, sequences are retrieved
+		for all the orthologs of the input genes in the
+		selected taxon. This approach relies on the detection
+		of phylogenetic footprints (conserved elements in
+		non-coding sequences). If the taxon is chosen in an
+		appropriate way, it increases the sensitivity of the
+		analysis.
+
 	-noorf	exclude upstream ORFs from upstream sequences
 
 	-rm	use repeat masked version  of the genome
@@ -2791,7 +2820,6 @@ multiple-family-analysis options
 -seq		sequence file (incompatible with -i)
 -maindir	main directory (by default, the working directory is used
 -outdir		output directory
--org		organism
 -skip #		skip the # first data sets
 -last #		stop after the # first data sets
 -select		fam1[,fam2,fam3,...]. Perform the analysis of selected families only.
@@ -2801,6 +2829,8 @@ multiple-family-analysis options
 -batch	send time-consuming jobs to a batch queue for a PC cluster
 
 ## Sequence options
+-org		organism
+-taxon		taxon (collect upstream sequences of orthologous genes)
 -purge		use purged sequences for pattern discovery (default)
 -nopurge	use non-purged sequences for pattern discovery
 -mingenes	minimal number of genes per family
@@ -3009,6 +3039,10 @@ sub ReadArguments {
 	    ### organism
 	} elsif ($ARGV[$a] eq "-org") {
 	    $organism_name = $ARGV[$a+1];
+
+	    ### taxon
+	} elsif ($ARGV[$a] eq "-taxon") {
+	    $taxon = $ARGV[$a+1];
 
 	    ### file with a collection of known motifs, for comparison between discovered and known motifs
 	} elsif ($ARGV[$a] eq "-known") {
