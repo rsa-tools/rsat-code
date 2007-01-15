@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: multiple-family-analysis,v 1.184 2007/01/14 15:19:33 jvanheld Exp $
+# $Id: multiple-family-analysis,v 1.185 2007/01/15 23:40:55 jvanheld Exp $
 #
 # Time-stamp: <2003-10-21 01:19:12 jvanheld>
 #
@@ -1336,44 +1336,48 @@ sub MergePatterns {
 sub DrawMergedFeatureMap {
   &RSAT::message::TimeWarn("Drawing feature-map with results of merged oligonucleotides and dyads for family $family_name")
     if ($verbose >= 1);
-   ### pattern matching
-   &RSAT::error::FatalError("Cannot read file $family{$family_name}->{seq_file}") unless (($batch) || ($dry_run) || (-r $family{$family_name}->{seq_file}));
-   $fmap_file = $family{$family_name}->{merged_file}.".${IMG_FORMAT}";
-   $htmap_file = $family{$family_name}->{merged_file}.".html";
-   $origin = "-0";
-   my $command = "dna-pattern -i $family{$family_name}->{seq_file} -format $seq_format -pl $family{$family_name}->{merged_file} -origin $origin -N 4 -return sites,limits ";
-   $command .= " | features-from-dnapat -o $family{$family_name}->{merged_ft_file} ";
+  ### pattern matching
+  &RSAT::error::FatalError("Cannot read file $family{$family_name}->{seq_file}") unless (($batch) || ($dry_run) || (-r $family{$family_name}->{seq_file}));
+  $fmap_file = $family{$family_name}->{merged_file}.".${IMG_FORMAT}";
+  $htmap_file = $family{$family_name}->{merged_file}.".html";
+  $origin = "-0";
+  my $command = "dna-pattern -i $family{$family_name}->{seq_file} -format $seq_format -pl $family{$family_name}->{merged_file} -origin $origin -N 4 -return sites,limits ";
+  $command .= " | features-from-dnapat -o $family{$family_name}->{merged_ft_file} ";
+  
+  if ($batch) {
+    push @main::batch_commands, $command;
+  } else {
+    my $error = &doit($command, $dry_run, 0, $verbose);
+    if ($error) {
+      &RSAT::message::Warning("Feature map skipped because dna-pattern returned an error");
+      return;
+    }
+  }
+  
+  ## feature-map drawing
+  if  ($family{$family_name}->{calib_length}) {
+    $from =  $family{$family_name}->{calib_length};
+    $to = -1;
+  }
+  $command = " feature-map -i $family{$family_name}->{merged_ft_file} -scalebar -scalestep $scalestep -legend ";
+  $command .= " -title ";
+  $command .= &ShortFileName($family{$family_name}->{merged_ft_file});
+  #   $command .= " -from $from" if (defined($from));
+  #   $command .= " -to $to" if (defined($to));
+  $command .= " -o $fmap_file -scorethick ";
+  if ($htmaps) {
+    $command .= " -htmap > $htmap_file ";
+  };
 
-   if ($batch) {
-       push @main::batch_commands, $command;
-   } else {
-       my $error = &doit($command, $dry_run, 0, $verbose);
-       if ($error) {
-	   &RSAT::message::Warning("Feature map skipped because dna-pattern returned an error");
-	   return;
-       }
-   }
+  ## Delete the feature file to save disk space (the feature space
+  ## occupy half od the result directory)
+  $command = "; rm -f ".$family{$family_name}->{merged_ft_file};
 
-   ## feature-map drawing
-   if  ($family{$family_name}->{calib_length}) {
-	$from =  $family{$family_name}->{calib_length};
-	$to = -1;
-   }
-   $command = " feature-map -i $family{$family_name}->{merged_ft_file} -scalebar -scalestep $scalestep -legend ";
-   $command .= " -title ";
-   $command .= &ShortFileName($family{$family_name}->{merged_ft_file});
-#   $command .= " -from $from" if (defined($from));
-#   $command .= " -to $to" if (defined($to));
-   $command .= " -o $fmap_file -scorethick ";
-   if ($htmaps) {
-	$command .= " -htmap > $htmap_file ";
-   };
-   
-   if ($batch) {
-       push @main::batch_commands, $command;
-   } else {
-       &doit($command, $dry_run, 0, $verbose);
-   }
+  if ($batch) {
+    push @main::batch_commands, $command;
+  } else {
+    &doit($command, $dry_run, 0, $verbose);
+  }
 }
 
 
@@ -2151,6 +2155,11 @@ sub DrawDyadFeatureMap {
    if ($htmaps) {
 	$command .= "-htmap >  $family{$family_name}->{htmap_file}";
    }
+
+   ## Delete the feature file to save disk space (the feature space
+   ## occupy half od the result directory)
+   $command = "; rm -f ".$family{$family_name}->{dyad_ft_file};
+
    #  $command .= " ;  xv -o $family{$family_name}->{fmap_file} &";
    if ($batch) {
        push @main::batch_commands, $command;
@@ -2385,7 +2394,8 @@ sub AnalyzeFamilies {
 	   warn ";\tCleaning files from the hard drive for family $family_name\n" if ($verbose >=1);
 	   foreach my $file ($family{$family_name}->{seq_file},
 			     $family{$family_name}->{seq_file_purged},
-			     $family{$family_name}->{oligo_ft_file},
+			     $family{$family_name}->{merged_ft_file},
+			     $family{$family_name}->{orm_ft_file},
 			     $family{$family_name}->{dyad_ft_file}
 			    ) {
 	       warn ";\t\t$file\n" if ($verbose >=1);
