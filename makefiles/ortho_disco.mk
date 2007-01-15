@@ -508,26 +508,26 @@ gene_pairs:
 
 ################################################################
 ## Convert the gene pairs into a graph (2 formats : .dot and .gml)
-MIN_SCORE=1
+MIN_SCORE=2
 SCORE_COL=12
 SCORE=dp
 PAIR_GRAPH=${GENE_PAIRS}_${SCORE}${MIN_SCORE}
 PAIR_GRAPH_CMD=	\
 	grep -v '^;' ${GENE_PAIRS}.tab \
 		| awk -F '\t' '$$${SCORE_COL} >= ${MIN_SCORE}'  \
-		| convert-graph -from tab -scol 2 -tcol 3 -wcol ${SCORE_COL} -to dot \
-		-o ${PAIR_GRAPH}.dot ; \
-	grep -v '^;' ${GENE_PAIRS}.tab \
-		| awk -F '\t' '$$${SCORE_COL} >= ${MIN_SCORE}' \
-		| grep -v '^;' \
-		| convert-graph -from tab -scol 2 -tcol 3 -wcol ${SCORE_COL} -to gml \
-		-o ${PAIR_GRAPH}.gml
+		> ${PAIR_GRAPH}.tab ; echo ${PAIR_GRAPH}.tab ; \
+	convert-graph -i ${PAIR_GRAPH}.tab -from tab -scol 2 -tcol 3 -wcol ${SCORE_COL} -to dot \
+		-o ${PAIR_GRAPH}.dot ; echo ${PAIR_GRAPH}.gml \
+	convert-graph -i ${PAIR_GRAPH}.tab -from tab -scol 2 -tcol 3 -wcol ${SCORE_COL} -to gml \
+		-o ${PAIR_GRAPH}.gml; echo ${PAIR_GRAPH}.dot
+## NOTE: THIS TARGET DOES NOT WORK WIRH MY_COMMAND, because the
+## $$${MIN_SCORE} is not passed correctly. It can thus not be executed
+## in batch mode on the PC cluster. Since it is not too much time
+## consuming, this is not a problem.
 gene_pair_graph:
 	@echo
 	@echo "Generating gene pair graph	${REF_ORG}	${TAXON}	MIN_SCORE=${MIN_SCORE}"
-	${PAIR_GRAPH_CMD}
-	@echo ${PAIR_GRAPH}.gml
-	@echo ${PAIR_GRAPH}.dot
+	@${PAIR_GRAPH_CMD}
 
 ## ############################################################## 
 ## This task combines dyad_classes, gene_pairs and gene_pair_graph, in
@@ -637,7 +637,26 @@ mcl_vs_regulondb:
 ################################################################
 ## Extract the neighborhood of each gene in the inferred co-regulation
 ## network
+MAX_STEPS=1
+NEIGHB_PREFIX=${GENE_PAIRS}_${SCORE}${MIN_SCORE}_neighb${MAX_STEPS}
+NEIGHB_CLUSTERS=${NEIGHB_PREFIX}_clusters.tab
+graph_neighbours:
+	graph-neighbours -v ${V} -i ${PAIR_GRAPH}.tab  -scol 2 -tcol 3 -wcol ${SCORE_COL} \
+		-steps ${MAX_STEPS} -all -o ${NEIGHB_CLUSTERS}
+	@echo ${NEIGHB_CLUSTERS}
 
+GO=${RSAT}/data/genomes/${REF_ORG}/genome/cds_go.tab
+NEIGHB_VS_GO=${NEIGHB_PREFIX}_vs_GO
+neighb_vs_go:
+	add-gene-info -i ${NEIGHB_CLUSTERS}  -info id -before -org ${REF_ORG} \
+		| cut -f 1,3 > ${NEIGHB_CLUSTERS}.ids
+	@echo ${NEIGHB_CLUSTERS}.ids
+	compare-classes -v 1 -r ${GO} -q ${NEIGHB_CLUSTERS}.ids \
+		-lth QR 1 -lth sig 0 -return occ,proba,rank -sort sig \
+		-o ${NEIGHB_VS_GO}.tab
+	@echo ${NEIGHB_VS_GO}.tab
+	@text-to-html -i ${NEIGHB_VS_GO}.tab -font variable -o ${NEIGHB_VS_GO}.html
+	@echo ${NEIGHB_VS_GO}.html
 
 ################################################################
 ## Run all the post-discovery tasks
@@ -645,7 +664,7 @@ mcl_vs_regulondb:
 ## - gene pairs
 ## - gene pair graphs
 ## - clustering on the gene pairs
-comparisons: 
+comparisons_obsolete: 
 	@echo "This target is obsolete. Try	make gene_pair_network"
 
 gene_pair_network:
@@ -654,7 +673,6 @@ gene_pair_network:
 	@${MAKE} gene_pairs
 	@${MAKE} gene_pair_graph_series
 	@${MAKE} mcl_inflation_series
-
 
 ################################################################
 ## Motif discovery using MEME
