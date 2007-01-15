@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.7 2007/01/11 12:27:23 jvanheld Exp $
+# $Id: matrix-quality,v 1.8 2007/01/15 23:43:47 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -726,7 +726,7 @@ sub CompareDistrib {
   my $ycols = join ",", 2..(scalar(@distrib_files)+2);
   $XYgraph_cmd .= " -i ".$outfile{distrib_compa}.".tab";
   $XYgraph_cmd .= " -format png -lines -pointsize 1 -xsize 1000 -legend";
-  $XYgraph_cmd .= " -title1 matrix-quality ";
+  $XYgraph_cmd .= " -title1 'matrix-quality ".$infile{matrix}."'";
   $XYgraph_cmd .= " -title2 ".$outfile{prefix};
   $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
   $XYgraph_cmd .= " -xleg1 'matrix score' ";
@@ -744,7 +744,7 @@ sub CompareDistrib {
   $XYgraph_cmd .= " -i ".$outfile{distrib_compa}.".tab";
   $XYgraph_cmd .= " -format png -lines -pointsize 1 -size 600 ";
   $XYgraph_cmd .= " -title1 'matrix-quality: ROC curve' ";
-  $XYgraph_cmd .= " -title2 ".$outfile{prefix};
+#  $XYgraph_cmd .= " -title2 ".$outfile{prefix};
   $XYgraph_cmd .= " -ycol 2 -xcol 4";
   $XYgraph_cmd .= " -xleg1 'negative set' ";
   $XYgraph_cmd .= " -yleg1 'positive set' ";
