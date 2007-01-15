@@ -430,7 +430,7 @@ DYAD_PROFILES=${COMPA_DIR}/${REF_ORG}_${TAXON}${SUFFIX}_dyad_profiles.tab
 dyad_profiles: dyad_file_list
 	@echo
 	@echo "Calculating dyad profiles	${REF_ORG}	${TAXON}"
-	@mkdir -p ${COMPA_DIR}	
+	@mkdir -p ${COMPA_DIR}
 	compare-scores -null "NA" -sc ${SIG_COLUMN} \
 		-suppress "${RESULT_DIR}/motifs/" \
 		-suppress "_dyads.tab" \
@@ -450,7 +450,8 @@ dyad_profiles: dyad_file_list
 ## 
 ## This is computationally much heavier than gene_pairs, I just leave
 ## it for history and cross-validation
-profile_pairs:
+PROFILE_PAIRS=${COMPA_DIR}/${REF_ORG}_${TAXON}${SUFFIX}_profile_pairs
+profile_pairs_obsolete:
 	@echo
 	@echo "Calculating profile pairs	${REF_ORG}	${TAXON}"
 	compare-profiles -v ${V} -i ${DYAD_PROFILES} -base 2 -distinct -return dotprod -lth AB 1 \
@@ -487,7 +488,6 @@ dyad_classes: dyad_file_list
 ## Compare discovered dyads between each pair of gene and return the
 ## results as a table with one row per pair of genes, and different
 ## significance statistics.
-PROFILE_PAIRS=${COMPA_DIR}/${REF_ORG}_${TAXON}${SUFFIX}_profile_pairs
 GENE_PAIRS=${COMPA_DIR}/${REF_ORG}_${TAXON}${SUFFIX}_gene_pairs
 GENE_PAIR_RETURN=occ,dotprod,jac_sim,proba,entropy,rank
 V2=3
@@ -521,10 +521,9 @@ PAIR_GRAPH_CMD=	grep -v '^;' ${GENE_PAIRS}.tab \
 		| grep -v '^;' \
 		| convert-graph -from tab -scol 2 -tcol 3 -wcol ${SCORE_COL} -to gml \
 		-o ${PAIR_GRAPH}.gml
-
 gene_pair_graph:
 	@echo
-	@echo "Generating gene pair graph	${REF_ORG}	${TAXON}"
+	@echo "Generating gene pair graph	${REF_ORG}	${TAXON}	MIN_SCORE=${MIN_SCORE}"
 	${MAKE} my_command MY_COMMAND="${PAIR_GRAPH_CMD}"
 	@echo ${PAIR_GRAPH}.gml
 	@echo ${PAIR_GRAPH}.dot
@@ -533,7 +532,7 @@ gene_pair_graph:
 ## This task combines dyad_classes, gene_pairs and gene_pair_graph, in
 ## order tos send them in one shot to the cluster.
 gene_network:
-	${MAKE} my_command MY_COMMAND="${DYAD_CLASS_CMD} ${GENE_PAIR_CMD}; ${PAIR_GRAPH_CMD}"
+	${MAKE} my_command MY_COMMAND="${DYAD_CLASS_CMD} ; ${GENE_PAIR_CMD}; ${PAIR_GRAPH_CMD}"
 
 ################################################################
 ## Generate gene pair graphs with various levels of threshold
@@ -635,7 +634,12 @@ mcl_vs_regulondb:
 
 
 ################################################################
-## Dun all the post-discovery tasks
+## Extract the neighborhood of each gene in the inferred co-regulation
+## network
+
+
+################################################################
+## Run all the post-discovery tasks
 ## - dyad classes
 ## - gene pairs
 ## - gene pair graphs
