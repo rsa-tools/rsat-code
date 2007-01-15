@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-get-clusters,v 1.1 2007/01/12 02:09:34 jvanheld Exp $
+# $Id: graph-get-clusters,v 1.2 2007/01/15 23:36:09 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -197,20 +197,50 @@ package main;
       ## Collect the arcs
       foreach my $node1 (@nodes) {
 	&RSAT::message::Info("Collecting arcs for node", $node1->get_attribute("id")) if ($main::verbose >= 3);
-	my @out_nodes = $node1->get_attribute("out_nodes");
 	my $id1 = $node1->get_attribute("id");
 	my $cluster_node1 = $cluster_nodes{$id1};
-	foreach my $node2 (@out_nodes) {
+	my @out_arcs = $node1->get_attribute("out_arcs");
+	foreach my $arc (@out_arcs) {
+	  $node2 = $arc->get_attribute("target");
 	  my $id2 = $node2->get_attribute("id");
 	  if (defined($cluster_nodes{$id2})) {
 	    &RSAT::message::Info("Found arc from", $id1, "to", $id2) if ($main::verbose >= 4);
 	    my $cluster_node2 = $cluster_nodes{$id2};
-	    $cluster_graph->create_arc($cluster_node1, $cluster_node2);
+	    my $cluster_arc = $cluster_graph->create_arc($cluster_node1, $cluster_node2);
+
+	    ## Copy the attributes of the original arc to the intra-cluster arc
+	    for my $key ("weight", "label") {
+	      my $value =  $arc->get_attribute($key);
+	      if ($value) {
+		$cluster_arc->force_attribute($key, $value);
+	      }
+	    }
 #	  } else {
 #	    &RSAT::message::Info("\tTarget node", $id2 , "is not in the current cluster") if ($main::verbose >= 0);
 	  }
 	}
       }
+
+
+#       ## Collect the arcs
+#       foreach my $node1 (@nodes) {
+# 	&RSAT::message::Info("Collecting arcs for node", $node1->get_attribute("id")) if ($main::verbose >= 3);
+# 	my @out_nodes = $node1->get_attribute("out_nodes");
+# 	my $id1 = $node1->get_attribute("id");
+# 	my $cluster_node1 = $cluster_nodes{$id1};
+# 	foreach my $node2 (@out_nodes) {
+# 	  my $id2 = $node2->get_attribute("id");
+# 	  if (defined($cluster_nodes{$id2})) {
+# 	    &RSAT::message::Info("Found arc from", $id1, "to", $id2) if ($main::verbose >= 4);
+# 	    my $cluster_node2 = $cluster_nodes{$id2};
+# 	    $cluster_graph->create_arc($cluster_node1, $cluster_node2);
+# #	  } else {
+# #	    &RSAT::message::Info("\tTarget node", $id2 , "is not in the current cluster") if ($main::verbose >= 0);
+# 	  }
+# 	}
+#       }
+
+
     }
 
     ################################################################
@@ -397,7 +427,7 @@ allows to use the command within a pipe.
 	    ### Output format  
 =cut
 
-=item B<-to output_format>
+=item B<-out_format output_format>
 
 Output format. Supported: tab, dot, gml
 
