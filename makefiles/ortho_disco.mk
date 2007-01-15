@@ -512,7 +512,8 @@ MIN_SCORE=1
 SCORE_COL=12
 SCORE=dp
 PAIR_GRAPH=${GENE_PAIRS}_${SCORE}${MIN_SCORE}
-PAIR_GRAPH_CMD=	grep -v '^;' ${GENE_PAIRS}.tab \
+PAIR_GRAPH_CMD=	\
+	grep -v '^;' ${GENE_PAIRS}.tab \
 		| awk -F '\t' '$$${SCORE_COL} >= ${MIN_SCORE}'  \
 		| convert-graph -from tab -scol 2 -tcol 3 -wcol ${SCORE_COL} -to dot \
 		-o ${PAIR_GRAPH}.dot ; \
@@ -524,7 +525,7 @@ PAIR_GRAPH_CMD=	grep -v '^;' ${GENE_PAIRS}.tab \
 gene_pair_graph:
 	@echo
 	@echo "Generating gene pair graph	${REF_ORG}	${TAXON}	MIN_SCORE=${MIN_SCORE}"
-	${MAKE} my_command MY_COMMAND="${PAIR_GRAPH_CMD}"
+	${PAIR_GRAPH_CMD}
 	@echo ${PAIR_GRAPH}.gml
 	@echo ${PAIR_GRAPH}.dot
 
