@@ -222,7 +222,7 @@ match_known_sites_all_genes:
 ################################################################
 ## Assemble the over-represented dyad to form motif
 ASSEMBLY=${DYADS}.asmb
-ASSEMBLE_CMD=pattern-assembly -v ${V} -i ${DYADS}.tab -o ${ASSEMBLY} -subst 0 ${STR} -maxfl 1 -maxpat 100
+ASSEMBLE_CMD=pattern-assembly -v ${V} -i ${DYADS}.tab -o ${ASSEMBLY} -subst 0 ${STR} -maxfl 1 -toppat 50
 assemble:
 	@echo "${ASSEMBLE_CMD}"
 	@${ASSEMBLE_CMD}
