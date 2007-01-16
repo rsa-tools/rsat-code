@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-node-degree,v 1.1 2007/01/16 12:52:50 rsat Exp $
+# $Id: graph-node-degree,v 1.2 2007/01/16 13:23:55 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -69,7 +69,6 @@ package main;
     @nodes = (); ## Node objects
     @unknown_nodes = (); ## Names of the unidentified nodes
     $all_nodes = 0; ## Search the degree of all nodes
-    $self_included = 0;
 
     ################################################################
     ## Initialize the graph
@@ -80,8 +79,6 @@ package main;
     local $source_col = 1;
     local $target_col = 2;
     local $weight_col = 0;
-
-    local $out_format = "classes";
 
     %main::infile = ();
     %main::outfile = ();
@@ -135,7 +132,6 @@ package main;
 	  chomp($line);
 	  my @fields = split /\s+/, $line;
 	  my $name =  $fields[0];
-          
 	  if ($name) {
 	    push @node_names,$name;
 	  } else {
@@ -159,48 +155,52 @@ package main;
       }
     }
 
+
     ################################################################
     ## Print verbose
     &Verbose() if ($main::verbose);
 
+    ## Print the header and description of output fields
+    my @out_fields = qw(id in_deg out_deg degree ktype);
+    my %field_descr = ();
+    $field_descr{id} = "node identifier";
+    $field_descr{in_deg} = "incoming degree (number of incoming arcs)";
+    $field_descr{out_deg} = "outgoing degree (number of outgoing arcs)";
+    $field_descr{degree} = "total degree (number of incoming + outgoing arcs)";
+    $field_descr{ktype} = "connectivity type. Orphan (degree=0), source (in_deg=0), target (out_deg=0) or intermediate.";
+    print $out "; Field descriptions\n";
+    foreach my $field (@out_fields) {
+      printf $out ";\t%-15s\t%s\n", $field, $field_descr{$field};
+    }
+    print $out '#',  join ("\t", @out_fields), "\n";
+
     ################################################################
-    ## Extract the neighborhood
-    print $out '#',  join ("\t", 
-			   "node",
-			   "inDegree", 
-			   "outDegree",
-			   "degree",
-			   "orphan"
-			  ), "\n";
+    ## Calculate the degree
     foreach my $node (@nodes) {
-      my @neighbours = $node->get_neighbours_step(1, $self_included);
-      my $inNodes = 0;
-      my $outNodes = 0;
-      my $orphan = 0;
-      @out_fields = ();
-      foreach my $neighbour (@neighbours) {
-	my $direction = $neighbour->get_attribute("direction");
-        if ($direction eq 'in') {
-          $inNodes++;
-        } elsif ($direction eq 'out') {
-          $outNodes++;
-        }
-	my @out_fields = ();
+      my $in_deg = scalar($node->get_attribute("in_nodes")) || 0;
+      my $out_deg = scalar($node->get_attribute("out_nodes")) || 0;
+      $node->force_attribute("in_deg", $in_deg);
+      $node->force_attribute("out_deg", $out_deg);
+      $node->force_attribute("degree", $in_deg + $out_deg);
+
+      ## Specify th connectivity type
+      if (($in_deg == 0) && ($out_deg == 0)) {
+	$node->force_attribute("ktype", "orphan");
+      } elsif ($in_deg == 0) {
+	$node->force_attribute("ktype", "source");
+      } elsif ($out_deg == 0) {
+	$node->force_attribute("ktype", "target");
+      } else {
+	$node->force_attribute("ktype", "interm");
       }
-      my $totaldegree = $inNodes + $outNodes;
-      if ($totaldegree == 0) {
-        $orphan = 1;
+
+      ################################################################
+      ## Print the results
+      my @out_values = ();
+      foreach my $field (@out_fields) {
+	push @out_values, $node->get_attribute($field);
       }
-## print the results
-      if ($out_format eq "classes") {
-	push @out_fields, $node->get_attribute("id");
-	push @out_fields, $inNodes;
-	push @out_fields, $outNodes;
-        push @out_fields, $totaldegree;
-        push @out_fields, $orphan;
-	print $out join ("\t", @out_fields,
-			  ), "\n";
-	}
+      print $out join ("\t", @out_values), "\n";
     }
 
     ################################################################
