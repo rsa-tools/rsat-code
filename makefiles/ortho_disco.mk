@@ -237,7 +237,7 @@ MAP_CMD=dna-pattern -i ${SEQ} -pl ${DYADS}.tab -return limits,sites -origin -0 \
 		 -format png -title '${GENE} ${REF_ORG} ${TAXON}' -o ${MAP}
 map:
 	@echo "${MAP_CMD}"
-	${MAKE} my_command MY_COMMAND=${MAP_CMD}
+	${MAKE} my_command MY_COMMAND="${MAP_CMD}"
 	@echo ${MAP} 
 
 ################################################################
