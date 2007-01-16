@@ -275,8 +275,8 @@ index_results_tab:
 
 ## Add the analysis of a single gene to the index file
 SIG_COLUMN=9
-MAX_SIG=`grep -v '^;' ${DYADS}.tab | cut -f ${SIG_COLUMN} | sort -nr | grep -v "Binary" | head -1`
-MAX_SIG_FILTERED=`grep -v '^;' ${DYADS}_filtered.tab | cut -f ${SIG_COLUMN} | sort -nr | grep -v "Binary" | head -1`
+MAX_SIG=`grep -v '^;' ${DYADS}.tab | grep -v '^#' | cut -f ${SIG_COLUMN} | sort -nr | grep -v "Binary" | head -1`
+MAX_SIG_FILTERED=`grep -v '^;' ${DYADS}_filtered.tab | grep -v '^#' | cut -f ${SIG_COLUMN} | sort -nr | grep -v "Binary" | head -1`
 ROOT_DIR=${RESULT_DIR}/
 #MATCH_LINKS="	<a href=${KNOWN_SITE_MATCHES}.tab>matches</a>	<a href=${KNOWN_SITE_MATCHES}_weight_table.tab>match table</a>"
 MATCH_LINKS=
