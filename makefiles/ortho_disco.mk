@@ -231,7 +231,7 @@ assemble:
 ################################################################
 ## draw a feature-map with the instances of the over-represented dyads
 MAP=${DYADS}.png
-MAP_CMD=dna-pattern -i ${SEQ} -pl ${DYADS}.tab -limits -origin -0 \
+MAP_CMD=dna-pattern -i ${SEQ} -pl ${DYADS}.tab -return limits,sites -origin -0 \
 		| convert-features -from dnapat -to ft \
 		| feature-map -scorethick -legend -scalebar -scalestep 50 \
 		 -format png -title '${GENE} ${REF_ORG} ${TAXON}' -o ${MAP}
@@ -642,7 +642,8 @@ NEIGHB_PREFIX=${GENE_PAIRS}_${SCORE}${MIN_SCORE}_neighb${MAX_STEPS}
 NEIGHB_CLUSTERS=${NEIGHB_PREFIX}_clusters.tab
 graph_neighbours:
 	graph-neighbours -v ${V} -i ${PAIR_GRAPH}.tab  -scol 2 -tcol 3 -wcol ${SCORE_COL} \
-		-steps ${MAX_STEPS} -all -o ${NEIGHB_CLUSTERS}
+		-steps ${MAX_STEPS} -self -all \
+		| add-gene-info -org ${REF_ORG} -info id,descr -o ${NEIGHB_CLUSTERS}
 	@echo ${NEIGHB_CLUSTERS}
 
 GO=${RSAT}/data/genomes/${REF_ORG}/genome/cds_go.tab
