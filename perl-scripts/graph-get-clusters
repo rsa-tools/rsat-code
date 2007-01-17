@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-get-clusters,v 1.2 2007/01/15 23:36:09 jvanheld Exp $
+# $Id: graph-get-clusters,v 1.3 2007/01/17 23:42:04 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -78,11 +78,23 @@ package main;
 
   ################################################################
   ## Palette for the cluster-specific node colors
-  my @cluster_colors_dot = qw(blue green orange cyan darkviolet red gray magenta black darkgreen darkblue violet darkgray);
-  my @cluster_colors_gml = ('#0000FF',
-			    '#FF0000',
-			    '#FF00FF',
-			    '#004488',
+  my @cluster_colors_dot = qw(blue 
+			      green
+			      orange
+			      cyan
+			      darkviolet
+			      red
+			      gray
+			      magenta
+			      black
+			      darkgreen
+			      darkblue
+			      violet
+			      darkgray);
+  my @cluster_colors_gml = ('#0000FF', ## Blue
+			    '#FF0000', ## Red
+			    '#FF00FF', ## Magenta
+			    '#004488', ## 
 			    '#00FF00',
 			    '#888888',
 			    '#FF0088',
@@ -429,7 +441,7 @@ allows to use the command within a pipe.
 
 =item B<-out_format output_format>
 
-Output format. Supported: tab, dot, gml
+See convert-graph for a list of supported output formats.
 
 =cut 
 	} elsif ($arg eq "-out_format") {
