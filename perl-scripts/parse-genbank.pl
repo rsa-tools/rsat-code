@@ -1,7 +1,7 @@
 #!/usr/bin/perl 
 
 #############################################################
-# $Id: parse-genbank.pl,v 1.45 2006/09/25 16:22:09 rsat Exp $
+# $Id: parse-genbank.pl,v 1.46 2007/01/17 23:33:35 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 16:17:10 jvanheld>
 #
@@ -22,23 +22,6 @@ require "classes/Genbank_classes.pl";
 
 
 ################################################################
-#### initialization
-$null = "<NULL_VALUE>";
-$data_source = "NCBI";
-$ext = "gbk";
-$data_type = "gbk";
-$no_suffix=1;
-$host= $default{'host'};
-$schema="rsat";
-$user="rsat";
-$password="rsat";
-$full_path = 0;
-
-$test = 0; 
-$test_files = 2; ## Maximal number of genbank files to parse for a given organism (there is generally one contig per chromosome)
-$test_lines = 10000; ## macimal number of lines to parse per file
-
-################################################################
 #### main package
 package main;
 {
@@ -54,6 +37,35 @@ package main;
     local $out = STDOUT;
 
     local $single_name = 1;
+
+    ################################################################
+    #### initialization
+    $null = "<NULL_VALUE>";
+    $data_source = "NCBI";
+    $ext = "gbk";
+    $data_type = "gbk";
+    $no_suffix=1;
+    $host= $default{'host'};
+    $schema="rsat";
+    $user="rsat";
+    $password="rsat";
+    $full_path = 0;
+    
+    $test = 0; 
+    $test_files = 2; ## Maximal number of genbank files to parse for a given organism (there is generally one contig per chromosome)
+    $test_lines = 10000; ## macimal number of lines to parse per file
+
+    
+    %preferred_id = (
+	cds=>protein_id,
+	mrna=>transcript_id,
+	gene=>GeneID,
+	trna=>locus_tag,
+	srna=>locus_tag,
+	rrna=>locus_tag,
+	misc_rna=>locus_tag,
+	scrna=>locus_tag,
+	);
     
     $features = classes::ClassFactory->new_class(object_type=>"Genbank::Feature", prefix=>"ft_");
 
@@ -265,7 +277,7 @@ package main;
 
     foreach my $factory_name (@class_factories) {
 	my $class_factory = $$factory_name;
-	warn "; Dumping class $factory_name $class_factory\n" if ($verbose >= 1);
+	warn "; Dumping class $factory_name $class_factory\n" if ($verbose >= 2);
 	$suffix = "_$org" unless ($no_suffix);
 	$class_factory->dump_tables($suffix);
 	$class_factory->generate_sql(dir=>"$dir{output}/sql_scripts",
@@ -406,6 +418,38 @@ OPTIONS
 
 	-noseq  do not export sequences in .raw files
 
+	-prefid feattype idname
+
+		Specify the preferred ID for a given feature type
+		(feattype). In the original NCBI files, each feature
+		(gene, CDS, mRNA,tRNA, ...) is specified by a unique
+		identifier (GI), which is in principle reserved for
+		internal use at NCBI. However, other databases use
+		distinct IDs.
+
+		For example, 
+		     gene 	   GeneID
+		     gene	   locus_tag
+		     CDS	   protein_id
+		     CDS	   locus_tag
+		     mRNA	   transcript_id
+		     mRNA	   locus_tag
+
+		In order to cross-link RSAT to other databases, it can
+		be useful to impose one or another ID for a given
+		feature type.
+
+		Note that GeneID and locus_tag are attributes of CDS
+		and mRNA, but they are merely cross-references to
+		their gene. It is not a good idea to use gene IDS to
+		specify CDSs or mRNA, car this raises a confusion for
+		genes associated with multiple transcripts and CDS
+		(e.g. alternative splicing).
+
+		Examples of utilization
+			 -prefid cds protein_id
+			 -prefid cds transcript_id
+		     
    Options for the automaticaly generated SQL scripts
 	-schema database schema (default: $schema)
 	-host	database host (efault: $host)
@@ -442,6 +486,7 @@ parse-genbank.pl options
 -o		output dir
 -v		verbose
 -test #		quick test (for debugging)
+-prefid		Specify the preferred ID for a given feature type
 -schema 	database schema (default: $schema)
 -host		database host (default: $host)
 -user		database user (default: $user)
@@ -506,6 +551,10 @@ sub ReadArguments {
 	    ### output file ###
 	} elsif ($ARGV[$a] eq "-o") {
 	    $dir{output} = $ARGV[$a+1];
+
+	    ### Preferred ID
+	} elsif ($ARGV[$a] eq "-prefid") {
+	    $preferred_id{$ARGV[$a+1]} = $ARGV[$a+2];
 
 	    ### quick test
 	} elsif ($ARGV[$a] eq "-test") {
@@ -588,7 +637,7 @@ sub RefseqPostProcessing {
 	$protein->set_attribute("EMBl_XRef", $embl_xref);
 	warn join ("\t", $protein->get_attribute('id'),$version,
 		  $version_id,
-		  $gi, $embl_xref), "\n" if ($main::verbose >= 1);
+		  $gi, $embl_xref), "\n" if ($main::verbose >= 3);
     }
 
 }
@@ -659,7 +708,7 @@ sub ExportMaskedSequences {
 	&RSAT::message::TimeWarn(join("\t", "Masking sequence",
 				      "contig", 
 				      $contig_id,
-				      "length", $contig_len)) if ($main::verbose >= 1);
+				      "length", $contig_len)) if ($main::verbose >= 2);
 
 	foreach my $region ($repeat_regions->get_objects) {
 	    my $contig_len = length($sequence);
@@ -686,7 +735,7 @@ sub ExportMaskedSequences {
 # 				  "len=".$len,
 # ##				  $before,
 # ##				  $after,
-# 				  ) if ($main::verbose >= 0);
+# 				  ) if ($main::verbose >= 10);
 	    
 	    substr($sequence, $offset, $len) = "n"x$len;
 	}
@@ -701,7 +750,7 @@ sub ExportMaskedSequences {
 				      $dir{sequence},
 				      "file", 
 				      $masked_sequence_file)
-				 ) if ($main::verbose >= 1);
+				 ) if ($main::verbose >= 2);
 
     }
 }
