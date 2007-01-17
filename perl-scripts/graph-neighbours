@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-neighbours,v 1.4 2007/01/15 23:19:09 jvanheld Exp $
+# $Id: graph-neighbours,v 1.5 2007/01/17 23:41:43 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -337,8 +337,8 @@ graph file.
 
 Seed file. The seed file specifies a list of seed nodes.
 
-Seed file format: the first word of each row specifies one seed
-file. The rest of the row is ignored.
+Seed file format: the first word of each row specifies one seed. The
+rest of the row is ignored.
 
 =cut
 	} elsif ($arg eq "-seedf") {
