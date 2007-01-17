@@ -628,16 +628,16 @@ sub AssemblePatterns {
     while ($#to_assemble > -1) {
 	#### reinitialize variables
 	undef %position;
-	$origin = 0;
-	
+	my $origin = 0;
+
 	#### new seed for the next assembly
-	$seed = $first_seed = $to_assemble[0];
+	my $seed = $first_seed = $to_assemble[0];
 	$position{$first_seed} = 0;
 	delete $seed{$to_assemble[0]};
 
-#	&RSAT::message::TimeWarn(join ("\t", "new seed", $seed, "remaining", scalar(@to_assemble))) 
-#	    if ($main::verbose >= 10);
-	
+	&RSAT::message::TimeWarn(join ("\t", "new seed", $seed, "remaining", scalar(@to_assemble))) 
+	    if ($main::verbose >= 2);
+
 	#### all input oligos are considered for assembly with the new seed
 	%to_align = %score;
 	delete $to_align{$first_seed};
@@ -649,13 +649,13 @@ sub AssemblePatterns {
 	    $found = 0;
 	    while (($assembly_size < $max_assembly_size) && ($#to_align > -1)) {
 		$best_offset = "";
-		
+
 		#### best alignment for the direct word
 		$best_word = $word = shift(@to_align);
 		$min_score = &InfoLength($word) - $max_flanking;
 #		&RSAT::message::TimeWarn(join ("\t", "aligning word", $word, "remaining", scalar(@to_align))) 
 #		    if ($main::verbose >= 10);
-		
+
 		#### alignment by substitutions ####
 		if ($max_subst > 0) {
 		    $word_length = length($word);
