@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: parsing_util.pl,v 1.21 2006/04/21 14:05:45 rsat Exp $
+# $Id: parsing_util.pl,v 1.22 2007/01/17 23:33:35 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 17:00:56 jvanheld>
 #
@@ -447,7 +447,7 @@ sub ParsePositions {
     my ($features) = @_;
 
     &RSAT::message::TimeWarn("Parsing feature positions", $features->get_object_type())
-	if ($verbose >= 1);
+	if ($verbose >= 2);
 
     foreach my $feature ($features->get_objects()) {
 	my $position = $feature->get_attribute("chrom_position");

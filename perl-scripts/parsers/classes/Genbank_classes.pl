@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: Genbank_classes.pl,v 1.9 2007/01/14 01:16:30 jvanheld Exp $
+# $Id: Genbank_classes.pl,v 1.10 2007/01/17 23:33:35 jvanheld Exp $
 #
 # Time-stamp: <2003-08-09 00:37:11 jvanheld>
 #
@@ -140,63 +140,6 @@ package Genbank::Feature;
       }
   }
 
-#   ################################################################
-#   #### use locus tag as identifier
-#   ## The advantage of locus tag is that 
-#   ## - it corresponds to the commonly accepted IDs in each community (yeast,
-#   ##   Arapbidopsis, E.coli)
-#   ## - it is recognized by many databases. 
-#   ##
-#   ## The disadvantage (for SQL databases) of locus_tag is that it is a
-#   ## string, not a number, which reduces the efficiency of indexing
-#   ## (and thus of subsequent searches).
-#   sub UseLocusTAGasID2 {
-#       my ($self) = @_;
-#       my @locus_tags = $self->get_attribute("locus_tag");
-      
-#       ## Check the cardinality (there should be a single value)
-#       if (scalar(@locus_tags) > 1) {
-# 	  &FatalError("The feature", 
-# 		      $self->get_attribute("id"), 
-# 		      "has several values for the attribute locus_tag");
-#       } elsif (scalar(@locus_tags) == 1) {
-# 	  my $locus_tag = $locus_tags[0];
-# 	  &RSAT::message::Info(join("\t", "Replacing ID", $self->get_attribute("id"), 
-# 				    "by locus_tag", $locus_tag, 
-# 				    "feature type", $self->get_attribute("type"))) 
-# 	      if ($verbose >= 5);
-# 	  $self->force_attribute("id",$locus_tag);
-#       } else {
-# 	  &RSAT::message::Warning(join("\t", "There is no locus tag associated to the feature",  
-# 				       $self->get_attribute("id"),
-# 				      "feature type", $self->get_attribute("type")
-# 				      ));
-#       }
-      
-#   }
-
-#   ################################################################
-#   ## Replace the ID of the current object by the first attribute for
-#   ## which a value exist, in a specified list of potential ID
-#   ## attributes.
-#   sub SetPreferredID {
-#     my ($self, @preferred_ids) = @_;
-#     my $i = 0;
-#     my $id;
-#     do {
-#       my $attr = $preferred_ids[$i];
-#       $id = $object->get_attribute($attr);
-#       &RSAT::message::Debug("Getting attribute", $i, $attr, $id) if ($main::verbose >= 0);
-#       $i++;
-#     } until (($id) || ($i > $#preferred_ids));
-#     if ($id) {
-#       $object->ReplaceID($attr);
-#     } else {
-#       &ErrorMessage(join("\t","CDS", $object->get_attribute("id"), "has neither GI, nor protein_id, nor locus_tag"));
-#     }
-#   }
-
-
   ################################################################
   ## Replace ID by the value of a single-value attribute
   sub ReplaceID {
@@ -212,11 +155,10 @@ package Genbank::Feature;
 	&RSAT::message::Warning("There is no value in the field",$field,"for feature", $self->get_attribute("id"),"feature type", $self->get_attribute("type"));
       }
   }
-      
+
   ################################################################
   ## Use arbitrary cross-reference as IDentifier
-  ## This methods is obsolete
-  sub UseAttributeFasID {
+  sub UseAttributesAsID {
     my ($self, @attributes) = @_;
     &RSAT::message::Debug("Use attribute as ID", $self->get_attribute("id"), join(",", @attributes)) if ($main::verbose >= 4);
     my $i = 0;
@@ -226,17 +168,19 @@ package Genbank::Feature;
       $attr = $attributes[$i];
       my @values = $self->get_attribute($attr); 
       $id = shift(@values);
-      &RSAT::message::Debug("Getting attribute", $i, $attr, $id) if ($main::verbose >= 0);
       $i++;
-    } until (($id) || ($i > $#preferred_ids));
+    } until (($id) || ($i > $#attributes));
     if ($id) {
-      &RSAT::message::Info(join("\t","CDS", $self->get_attribute("id"), "has neither GI, nor protein_id, nor locus_tag")) if ($main::verbose >= 4);
       $self->force_attribute("id", $id);
+      &RSAT::message::Info("feature", $self->get_attribute("id"), "Using attribute", $attr, "as ID", $id) if ($main::verbose >= 4);
     } else {
-      &RSAT::message::Warning(join("\t","CDS", $self->get_attribute("id"), "has neither GI, nor protein_id, nor locus_tag")) if ($main::verbose >= 3);
+      &RSAT::message::Warning("Feature", $self->get_attribute("id"), "has no suitable attribute to reset ID", join (";", @attributes)) if ($main::verbose >= 3);
     }
   }
+
 }
+
+
 
 
 ################################################################
