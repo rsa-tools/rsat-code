@@ -268,13 +268,15 @@ Supported formats: dot, gml,gdl
 
 =cut
 sub to_text {
-    my ($self, $out_format) = @_;
+    my ($self, $out_format, @args) = @_;
     if ($out_format eq "dot") {
-	return $self->to_dot();
+	return $self->to_dot(@args);
     } elsif ($out_format eq "gdl") {
-	return $self->to_gdl();
+	return $self->to_gdl(@args);
     } elsif ($out_format eq "gml") {
-	return $self->to_gml();
+	return $self->to_gml(@args);
+    } elsif ($out_format eq "node_table") {
+	return $self->to_node_table(@args);
     } else {
 	&RSAT::error::FatalError(join ("\t", $out_format, "Invalid format for a graph."));
     }
@@ -341,7 +343,7 @@ sub to_gdl {
   return $gdl;
 }
 
-    
+
 ################################################################
 =pod
 
@@ -428,8 +430,67 @@ sub to_gml {
     ## Close the graph
     $gml .= "]\n";
 
-    
     return $gml;
+}
+
+
+################################################################
+=pod
+
+=item B<to_node_table(@out_fields)>
+
+Returns a tab-delimited string with one row per node, and one column
+per attribute. 
+
+Parameters
+
+=over
+
+=item I<@out_fields>
+
+List of attributes to export for each node. These must be
+single-valued fields.
+
+=back
+
+=cut
+sub to_node_table {
+  my ($self, @out_fields) = @_;
+  &RSAT::message::TimeWarn("Exporting node tables with fields", join(",", @out_fields)) 
+    if ($main::verbose >= 2);
+
+  my $node_table  = "";
+  my $null = $main::null || "<NULL>";
+
+  ## Print the header
+  $node_table .= '#';
+  $node_table .= join ("\t", @out_fields);
+  $node_table .= "\n";
+
+  ## Check if there is a selection of nodes to export
+  my @to_export = ();
+  if (defined($self->{nodes_to_export})) {
+    @to_export = $self->get_attribute("nodes_to_export");
+  } else {
+    @to_export = $self->get_nodes();
+  }
+
+  ## Export one row per node
+  foreach my $node (@to_export) {
+    my @out_values = ();
+    foreach my $field (@out_fields) {
+      my $new_value = $null;
+      my @new_values =  $node->get_attribute($field);
+      if (scalar(@new_values) > 0) {
+	$new_value = $new_values[0];
+      }
+      push @out_values, $new_value;
+    }
+    $node_table .= join ("\t", @out_values);
+    $node_table .= "\n";
+  }
+
+  return $node_table;
 }
 
 
