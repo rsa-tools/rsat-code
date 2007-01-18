@@ -575,46 +575,48 @@ sub gene_info {
 	    'client' => $result};
 }
 
+################################################################
+=pod
+
+=item B<gene_info_cmd>
+
+Build the gene-info command with the passed arguments.
+
+=cut
 sub gene_info_cmd {
-    my ($self, %args) =@_;
-    my $organism = $args{"organism"};
+  my ($self, %args) =@_;
+  my $organism = $args{"organism"};
 
-    ## List of query genes
-    my $query_ref = $args{"query"};
-    my $query = "";
-    if ($query_ref) {
-	my @query = @{$query_ref};
-	$query = " -q ";
-	$query .= join " -q ", @query;
-    }
+  ## List of query genes
+  my $query_ref = $args{"query"};
+  my $query = "";
+  if ($query_ref) {
+    my @query = @{$query_ref};
+    $query = " -q '";
+    $query .= join "' -q '", @query;
+    $query .= "'";
+  }
 
-    my $full = $args{"full"};
-    my $noquery = $args{"noquery"};
-    my $descr = $args{"descr"};
-    my $feattype = $args{"feattype"};
-
-    my $command = "$SCRIPTS/gene-info";
-
-    if ($organism){
-	$command .= " -org ".$organism;
-    }
-    if ($query){
-	$command .= $query;
-    }
-    if ($full){
-	$command .= " -".$full;
-    }
-    if ($noquery){
-	$command .= " -".$noquery;
-    }
-    if ($descr){
-	$command .= " -".$descr;
-    }
-    if ($feattype){
-	$command .= " -feattype ".$feattype;
-    }
-
-    return $command;
+  my $command = "$SCRIPTS/gene-info";
+  if ($organism) {
+    $command .= " -org ".$organism;
+  }
+  if ($query) {
+    $command .= $query;
+  }
+  if ( $args{"full"}) {
+    $command .= " -full";
+  }
+  if ($args{noquery}){
+    $command .= " -noquery";
+  }
+  if ($args{descr}) {
+    $command .= " -descr";
+  }
+  if ($args{feattype}) {
+    $command .= " -feattype ".$feattype;
+  }
+  return $command;
 }
 
 
