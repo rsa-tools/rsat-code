@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: install_genomes.mk,v 1.28 2006/11/07 08:14:03 rsat Exp $
+# $Id: install_genomes.mk,v 1.29 2007/01/18 00:22:10 jvanheld Exp $
 #
 # Time-stamp: <2003-10-10 22:49:55 jvanheld>
 #
@@ -85,11 +85,11 @@ install_new_prokaryotes:
 install_one_prokaryote:
 	@echo
 	@echo "${DATE}	Installing prokaryote ${PRO}"
-	@${MAKE} install_one_organism ORG=${PRO}		\
+	@${MAKE} install_one_organism <ORG=${PRO}		\
 		NCBI_DIR=${NCBI_DIR}/Bacteria
 
 ### All the fungi in NCBI genome directory
-NCBI_FUNGI = `ls -1 ${NCBI_DIR}/Fungi | grep _ | sort -u | xargs `
+NCBI_FUNGI = `ls -1 ${NCBI_DIR}/Fungi | grep _ | grep -v Candida_albicans | sort -u | xargs `
 OTHER_FUNGI=					\
 	Aspergillus_nidulans			\
 	Aspergillus_oryzae			\
