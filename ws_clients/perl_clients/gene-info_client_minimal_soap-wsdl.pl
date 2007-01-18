@@ -4,7 +4,9 @@
 ################################################################
 ##
 ## This script runs a simple demo of the web service interface to the
-## RSAT tool gene-info. It sends a list of 3 gene names to the server, in ordr to obtain the information about these genes. 
+## RSAT tool gene-info. It sends a query to the web serice to ask all
+## the yeast genes whose name starts with MET, followed by one or
+## several numbers.
 ##
 ################################################################
 
@@ -12,7 +14,8 @@ use strict;
 use SOAP::WSDL;
 
 ## Service location
-my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
+my $server = 'http://localhost/rsat/web_services';
+#my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
 my $WSDL = $server.'/RSATWS.wsdl';
 my $proxy = $server.'/RSATWS.cgi';
 
@@ -21,30 +24,30 @@ my $soap=SOAP::WSDL->new(wsdl => $WSDL)->proxy($proxy);
 $soap->wsdlinit;
 
 ## Gene-info parameters
-my $organism = 'Escherichia_coli_K12';  ## Name of the query organism
-my @gene = ("metA", "metB", "metC");  ## List of query genes
+my $organism = 'Saccharomyces_cerevisiae';  ## Name of the query organism
+my @queries = ('MET\d+');  ## This query is a regular expression
 my $full = 'full';  ## Looking for full match, not substring match.
 
 my %args = ('organism' => $organism,
-	    'query' => \@gene,
+	    'query' => \@queries,
 	    'full' => $full);
 
 ## Send the request to the server
-warn "Sending request to the server\n";
+warn "\nSending request to the server $server\n";
 my $call = $soap->call('gene_info' => 'request' => \%args);
 
 ## Get the result
 if ($call->fault){ ## Report error if any
-    printf "A fault (%s) occured: %s\n", $call->faultcode, $call->faultstring;
+    die (sprintf "\nA fault (%s) occured: %s\n", $call->faultcode, $call->faultstring);
 } else {
     my $results_ref = $call->result;  ## A reference to the result hash table
     my %results = %$results_ref;  ## Dereference the result hash table
 
     ## Report the remote command
     my $command = $results{'command'};
-    print "Command used on the server: ".$command, "\n";
+    print "\nCommand used on the server: ".$command, "\n";
 
     ## Report the result
     my $result = $results{'client'};
-    print "Gene(s) info(s): \n".$result;
+    print "\nGene(s) info(s): \n".$result;
 }
