@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.8 2007/01/15 23:43:47 jvanheld Exp $
+# $Id: matrix-quality,v 1.9 2007/01/18 22:17:15 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -84,8 +84,9 @@ package main;
     $seq_format = "fasta";
     $matrix_format = "consensus";
     $decimals = 2;
-    $perm_nb_pos=10; ## Number of permutation tests for the positive set (sites)
+    $perm_nb_pos=100; ## Number of permutation tests for the positive set (sites)
     $perm_nb_neg=1; ## Number of permutation tests for the negative set
+    $perm_separate_distrib = 0; ## Calcualte the distribution for each permuted matrix separately
 
     %main::infile = ();
     %main::outfile = ();
@@ -159,6 +160,7 @@ package main;
     &ExportTabMatrix($matrix);
 
     ## Shuffle the matrix
+    local $perm_nb_max = &max($perm_nb_pos, $perm_nb_neg);
     &PermuteMatrixColumns();
 
     ## Calcualte theoretical distribution of probabilities
@@ -183,16 +185,36 @@ package main;
 
     ## Score negative sequences with the permuted matrices
     if ($infile{neg_sequences}) {
-      for my $i (1..$perm_nb_neg) {
-	&ScanSequences($infile{neg_sequences}, $outfile{'matrix_perm_col_'.$i}, "tab", "negative_perm_col_".$i,  @matrix_scan_options); push @distrib_files, &ScoreDistrib('negative_perm_col_'.$i, $Wmin, $Wmax);
+      ## Calculate the merged distribution for permuted matrices
+      &ScanSequences($infile{neg_sequences}, $outfile{'negative_matrix_perm_col_all'}, "tab", "negative_perm_col_1-".$perm_nb_neg,  @matrix_scan_options); push @distrib_files, &ScoreDistrib('negative_perm_col_1-'.$perm_nb_neg, $Wmin, $Wmax);
+
+      ## Calculate the separate distributions for each permuted matrix
+      ## (this highlights the variability but the graph is noisy)
+      if ($perm_separate_distrib) {
+	for my $i (1..$perm_nb_neg) {
+	  &ScanSequences($infile{neg_sequences}, $outfile{'matrix_perm_col_'.$i}, "tab", "negative_perm_col_".$i,  @matrix_scan_options); push @distrib_files, &ScoreDistrib('negative_perm_col_'.$i, $Wmin, $Wmax);
+	}
       }
     }
 
     ## Score positive sequences with the permuted matrices
     if ($infile{pos_sequences}) {
-      for my $i (1..$perm_nb_pos) {
-	&ScanSequences($infile{pos_sequences}, $outfile{'matrix_perm_col_'.$i}, "tab", "positive_perm_col_".$i,  @matrix_scan_options); push @distrib_files, &ScoreDistrib('positive_perm_col_'.$i, $Wmin, $Wmax);
+      ## Calculate the merged distribution for permuted matrices
+      &ScanSequences($infile{pos_sequences}, $outfile{'positive_matrix_perm_col_all'}, "tab", "positive_perm_col_1-".$perm_nb_pos,  @matrix_scan_options); push @distrib_files, &ScoreDistrib('positive_perm_col_1-'.$perm_nb_pos, $Wmin, $Wmax);
+
+      ## Calculate the separate distributions for each permuted matrix
+      ## (this highlights the variability but the graph is noisy)
+      if ($perm_separate_distrib) {
+	for my $i (1..$perm_nb_pos) {
+	  &ScanSequences($infile{pos_sequences}, $outfile{'matrix_perm_col_'.$i}, "tab", "positive_perm_col_".$i,  @matrix_scan_options); push @distrib_files, &ScoreDistrib('positive_perm_col_'.$i, $Wmin, $Wmax);
+	}
       }
+    }
+
+    ## Remove the single permuted matrix files (all matrices are stored in another file)
+    for my $i (1..$perm_nb_max) {
+      my $clean_cmd = "rm -f ".$outfile{'matrix_perm_col_'.$i};
+      &doit($clean_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
     }
 
     ## Compare the distributions
@@ -321,7 +343,6 @@ Matrix file.
 	  $main::infile{matrix} = shift(@arguments);
 
 
-	    
 	    ## File containing both the matrix and its sites
 =pod
 
@@ -368,7 +389,7 @@ File containing the positive sequence set.
 	  &RSAT::message::FatalError("Options -pos and -ms are mutually incompatible.") 
 	    if ($main::infile{matrix_sites});
 	  $main::infile{pos_sequences} = shift(@arguments);
-	    
+
 	    ## File containing the negative sequence set
 =pod
 
@@ -379,6 +400,46 @@ File containing the negative sequence set.
 =cut
 	} elsif ($arg eq "-neg") {
 	    $main::infile{neg_sequences} = shift(@arguments);
+
+	    ## Number of permutations for the positive set
+=pod
+
+=item B<-perm_pos #>
+
+Number of permutations for the positive set (default 100)
+
+=cut
+	} elsif ($arg eq "-perm_pos") {
+	    $main::perm_nb_pos = shift(@arguments);
+	    &RSAT::error::FatalError($perm_nb_pos, "Invalid value for optin -perm_pos. Should be a Natural number.") 
+	      unless (&IsNatural($main::perm_nb_pos));
+
+	    ## Number of permutations for the negative set
+=pod
+
+=item B<-perm_neg #>
+
+Number of permutations for the negative set (default 1)
+
+=cut
+	} elsif ($arg eq "-perm_neg") {
+	    $main::perm_nb_neg = shift(@arguments);
+	    &RSAT::error::FatalError($perm_nb_neg, "Invalid value for optin -perm_pos. Should be a Natural number.") 
+	      unless (&IsNatural($main::perm_nb_neg));
+
+	    ## perm_sep
+=pod
+
+=item B<-perm_sep>
+
+Calcualte the distributions for each permuted matrix separately. This
+provides an estimate of the variability between permutations, but the
+resulting graph is less readable, because of the multiplicity of
+curves.
+
+=cut
+	} elsif ($arg eq "-perm_sep") {
+	  $main::perm_separate_distrib = 1;
 
 	    ## Sequence format
 =pod
@@ -684,13 +745,36 @@ sub ExportTabMatrix {
 sub PermuteMatrixColumns {
   &RSAT::message::TimeWarn("Permuting matrix columns") 
     if ($main::verbose >= 1);
-  my $perm_nb = &max($perm_nb_pos, $perm_nb_neg);
 
-  for my $i (1..$perm_nb) {
+  ## Single file regrouping all the permuted matrices for the positive set
+  $outfile{'positive_matrix_perm_col_all'} = $outfile{prefix}."_positive_matrix_perm_col_all_".$perm_nb_pos.".tab";
+  my $init_matrix_cmd = "rm -f ".$outfile{'positive_matrix_perm_col_all'};
+  &doit($init_matrix_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+
+  ## Single file regrouping all the permuted matrices for the negative set
+  ## (the number of permuted matrices is not always the same as for the positive set)
+  $outfile{'negative_matrix_perm_col_all'} = $outfile{prefix}."_negative_matrix_perm_col_all_".$perm_nb_neg.".tab";
+  $init_matrix_cmd = "rm -f ".$outfile{'negative_matrix_perm_col_all'};
+  &doit($init_matrix_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+
+  for my $i (1..$perm_nb_max) {
     $outfile{'matrix_perm_col_'.$i} = $outfile{prefix}."_matrix_perm_col_".$i.".tab";
     my $permute_matrix_cmd = "permute-table -rownames -entire_col";
     $permute_matrix_cmd .= " -i ".$outfile{matrix_tab};
     $permute_matrix_cmd .= " -o ".$outfile{'matrix_perm_col_'.$i};
+
+    ## Add the matrix to the list of permuted matrices for the positive set
+    if ($i <= $perm_nb_pos) {
+      $permute_matrix_cmd .= "; cat ".$outfile{'matrix_perm_col_'.$i}." >> ".$outfile{'positive_matrix_perm_col_all'};
+      $permute_matrix_cmd .= "; echo '\/\/' >> ".$outfile{'positive_matrix_perm_col_all'} if ($i < $perm_nb_pos);
+    }
+
+    ## Add the matrix to the list of permuted matrices for the negative set
+    if ($i <= $perm_nb_neg) {
+      $permute_matrix_cmd .= "; cat ".$outfile{'matrix_perm_col_'.$i}." >> ".$outfile{'negative_matrix_perm_col_all'};
+      $permute_matrix_cmd .= "; echo '\/\/' >> ".$outfile{'negative_matrix_perm_col_all'} if ($i < $perm_nb_neg);
+    }
+
 
     ## Execute the command
     &doit($permute_matrix_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
