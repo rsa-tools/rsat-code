@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.9 2007/01/18 22:17:15 jvanheld Exp $
+# $Id: matrix-quality,v 1.10 2007/01/18 23:17:23 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -87,6 +87,7 @@ package main;
     $perm_nb_pos=100; ## Number of permutation tests for the positive set (sites)
     $perm_nb_neg=1; ## Number of permutation tests for the negative set
     $perm_separate_distrib = 0; ## Calcualte the distribution for each permuted matrix separately
+    $calc_loo_scores = 1; ## Calculate the Leave-one-out score distribution for the matrix sites
 
     %main::infile = ();
     %main::outfile = ();
@@ -145,13 +146,13 @@ package main;
 			      "Only the first one will be evaluated.");
     }
 
-    my $matrix = shift (@matrices);
+    local $matrix = shift (@matrices);
     $matrix->set_attribute("decimals", $decimals);
     $matrix->set_attribute("file", $matrix_file);
-    my ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
+    local ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
     $matrix_name =~ s/\.\S+$//; ## suppress the extensin from the file name
     $matrix->set_attribute("name", $matrix_name);
-    my ($Wmin, $Wmax, $Wrange)  = $matrix->weight_range();
+    local ($Wmin, $Wmax, $Wrange)  = $matrix->weight_range();
 
     ## Export input sites with the matrix
     &ExportInputSites($matrix, $matrix_file);
@@ -174,9 +175,10 @@ package main;
     }
 
     ## LOO scoring of the sites 
-    &LOO_scores($matrix, @matrix_scan_options);
-    push @distrib_files, &ScoreDistrib('sites_loo', $Wmin, $Wmax);
-
+    if ($calc_loo_scores) {
+      &LOO_scores($matrix, @matrix_scan_options);
+      push @distrib_files, &ScoreDistrib('sites_loo', $Wmin, $Wmax);
+    }
 
     ## Score negative sequences with the matrix
     if ($infile{neg_sequences}) {
@@ -184,7 +186,7 @@ package main;
     }
 
     ## Score negative sequences with the permuted matrices
-    if ($infile{neg_sequences}) {
+    if (($infile{neg_sequences}) && ($perm_nb_neg > 0)) {
       ## Calculate the merged distribution for permuted matrices
       &ScanSequences($infile{neg_sequences}, $outfile{'negative_matrix_perm_col_all'}, "tab", "negative_perm_col_1-".$perm_nb_neg,  @matrix_scan_options); push @distrib_files, &ScoreDistrib('negative_perm_col_1-'.$perm_nb_neg, $Wmin, $Wmax);
 
@@ -198,7 +200,7 @@ package main;
     }
 
     ## Score positive sequences with the permuted matrices
-    if ($infile{pos_sequences}) {
+    if (($infile{pos_sequences}) && ($perm_nb_pos > 0)){
       ## Calculate the merged distribution for permuted matrices
       &ScanSequences($infile{pos_sequences}, $outfile{'positive_matrix_perm_col_all'}, "tab", "positive_perm_col_1-".$perm_nb_pos,  @matrix_scan_options); push @distrib_files, &ScoreDistrib('positive_perm_col_1-'.$perm_nb_pos, $Wmin, $Wmax);
 
@@ -211,17 +213,9 @@ package main;
       }
     }
 
-    ## Remove the single permuted matrix files (all matrices are stored in another file)
-    for my $i (1..$perm_nb_max) {
-      my $clean_cmd = "rm -f ".$outfile{'matrix_perm_col_'.$i};
-      &doit($clean_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
-    }
-
     ## Compare the distributions
     &CompareDistrib(9, @distrib_files);
 
-    ################################################################
-    ###### print output
 
     #### print verbosity
     &Verbose() if ($main::verbose);
@@ -233,13 +227,27 @@ package main;
 	print $main::out "; Job started $start_time\n";
 	print $main::out "; Job done    $done_time\n";
     }
-    
-     
+
     ################################################################
     ###### close output stream
     close $main::out if ($main::outfile{prefix});
-    
-    
+
+    ################################################################
+    ###### Clean some matrix files
+
+    ## Remove the single permuted matrix files (all matrices are stored in another file)
+    for my $i (1..$perm_nb_max) {
+      my $clean_cmd = "rm -f ".$outfile{'matrix_perm_col_'.$i};
+      &doit($clean_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+    }
+
+    ## Remove the partial matrices
+    if (scalar(@partial_matrix_files) > 0) {
+      my $clean_partial_cmd = "rm -f ";
+      $clean_partial_cmd .= join (" ", @partial_matrix_files);
+      &doit($clean_partial_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+    }
+
     exit(0);
 }
 
@@ -634,6 +642,8 @@ sub LOO_scores {
 
     ## Save the partial matrix in a file
     my $partial_matrix_file = $outfile{prefix}."_partial_matrix_".$lo_site_nb.".tab";
+    push @partial_matrix_files,  $partial_matrix_file;
+
     &RSAT::message::Info("Exporting partial matrix to file", $partial_matrix_file) if ($main::verbose >= 3);
     $partial_matrix_handle = &OpenOutputFile($partial_matrix_file);
     $tmp_verbose = $verbose;
@@ -701,12 +711,13 @@ sub ScoreDistrib {
   my ($seq_type, $Wmin, $Wmax) = @_;
 
   $main::outfile{$seq_type."_distrib"} = $outfile{prefix}."_scan_".$seq_type."_distrib.tab";
-  &RSAT::message::TimeWarn("Calculating score distribution for sequences of type", $seq_type,  $outfile{$seq_type."_distrib"}) 
-    if ($main::verbose >= 1);
 
+  my $classfreq_min = sprintf("%.${decimals}f", $Wmin);
+  &RSAT::message::TimeWarn("Calculating score distribution for sequences of type", $seq_type,  $outfile{$seq_type."_distrib"}, $Wmin, $classfreq_min)
+    if ($main::verbose >= 1);
   my $classfreq_cmd = "grep -v '^;' $outfile{$seq_type} | grep -v '^#' | cut -f 8 | classfreq -v 1 ";
-  $classfreq_cmd .= " -ci 0.1 ";
-  $classfreq_cmd .= " -min ".$Wmin;
+  $classfreq_cmd .= " -min ".$classfreq_min;
+  $classfreq_cmd .= " -ci 0.01 ";
   $classfreq_cmd .= " -max ".$Wmax;
   $classfreq_cmd .= " -o ".$outfile{$seq_type."_distrib"};
 
@@ -794,12 +805,15 @@ sub CompareDistrib {
   ################################################################
   ## Compare the distributions
   my $distrib_compa_cmd = "compare-scores ";
-  $distrib_compa_cmd .= " -numeric -sc ".$score_column;
+  $distrib_compa_cmd .= " -numeric";
+  $distrib_compa_cmd .= " -sc1 2"; # score column for the theoretical distribution
+  $distrib_compa_cmd .= " -sc ".$score_column; # score column for the observed distributions
   $distrib_compa_cmd .= " -suppress ".$outfile{prefix}."_scan_";
+  $distrib_compa_cmd .= " -suppress ".$outfile{prefix}."_";
   $distrib_compa_cmd .= " -suppress .tab";
   $distrib_compa_cmd .= " -o ".$outfile{distrib_compa}.".tab";
   $distrib_compa_cmd .= " -files ";
-  $distrib_compa_cmd .= join(" ", @distrib_files);
+  $distrib_compa_cmd .= join(" ", $main::outfile{'theoretical_distrib'}, @distrib_files);
 
   ## Execute the command
   &doit($distrib_compa_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
@@ -848,15 +862,23 @@ sub CompareDistrib {
 sub PrintTheorScoreDistribution {
   my ($matrix) = @_;
 
-  my $wd = &OpenOutputFile($main::outfile{prefix}."_weight_distrib_theor.txt");
+  $main::outfile{'theoretical_distrib'} = $main::outfile{prefix}."_theor_weight_distrib.tab";
+  my $wd = &OpenOutputFile($main::outfile{'theoretical_distrib'});
 
-  my %weight_proba = $matrix->getTheorScoreDistrib("weights");
+#  my %weight_proba = $matrix->getTheorScoreDistrib("weights");
+#  my %weight_proba_cum = $matrix->getTheorScoreDistrib("weights", "cum");
+  my %weight_proba_inv_cum = $matrix->getTheorScoreDistrib("weights", "inv_cum");
 
-  foreach my $weight (sort {$a <=> $b} keys (%weight_proba)) {
-    print $wd join("\t", $weight, $weight_proba{$weight}), "\n";
+  foreach my $weight (sort {$a <=> $b} keys (%weight_proba_inv_cum)) {
+    print $wd join("\t", $weight, 
+#		   $weight_proba{$weight},
+#		   $weight_proba_cum{$weight},
+		   $weight_proba_inv_cum{$weight},
+		  ), "\n";
   }
   close $wd;
 
+#  push @distrib_files, ;
 
 }
 
