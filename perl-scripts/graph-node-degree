@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-node-degree,v 1.2 2007/01/16 13:23:55 jvanheld Exp $
+# $Id: graph-node-degree,v 1.3 2007/01/18 10:46:12 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -32,7 +32,7 @@ Calculate the node degree of each node and specifies if this node is a seed or a
 graph analysis
 
 =head1 USAGE
-    
+
 graph-node-degree [-i graph_file] -node node1 [-node node2 ...] [-o outputfile] [-v #] [...]
 
 graph-node-degree [-i graph_file] -nodef node_file [-o outputfile] [-v #] [...]
@@ -66,9 +66,11 @@ package main;
     my $start_time = &AlphaDate();
 
     @node_names = (); ## Names of the nodes for which the degree is searched
-    @nodes = (); ## Node objects
+    @found_nodes = (); ## Node objects
     @unknown_nodes = (); ## Names of the unidentified nodes
     $all_nodes = 0; ## Search the degree of all nodes
+
+    @out_fields = qw(id in_deg out_deg degree ktype);
 
     ################################################################
     ## Initialize the graph
@@ -108,11 +110,11 @@ package main;
 
     ## Use all nodes as seeds
     if ($all_nodes) {
-      @nodes = $graph->get_nodes();
-      &RSAT::message::TimeWarn("Describle all",scalar(@seed_nodes), "nodes of the graph") if ($main::verbose >= 2);
+      @found_nodes = $graph->get_nodes();
+      &RSAT::message::TimeWarn("Describle all",scalar(@found_nodes), "nodes of the graph") if ($main::verbose >= 2);
       ## Put the name of each node in the list
       @node_names = ();
-      foreach my $node (@nodes) {
+      foreach my $node (@found_nodes) {
 	my $name = $node->get_attribute("label");
 	push @node_names, $name;
       }
@@ -142,11 +144,14 @@ package main;
       }
 
       ## Identify seed nodes in the graph
+      if (scalar(@node_names) == 0) {
+	&RSAT::message::Warning("The list of input nodes is empty. see the options -all, -node and -nodef fo specify the nodes.");
+      }
       &RSAT::message::TimeWarn("Identifying",scalar(@node_names), "nodes in the graph") if ($main::verbose >= 2);
       foreach my $name (@node_names) {
 	my $node = $graph->node_by_id($name);
 	if ($node) {
-	  push @nodes, $node;
+	  push @found_nodes, $node;
 	  &RSAT::message::Info("Identified node with name", $name, $node->get_attribute("id")) if ($main::verbose >= 3);
 	} else {
 	  push @unknown_nodes, $name;
@@ -160,23 +165,22 @@ package main;
     ## Print verbose
     &Verbose() if ($main::verbose);
 
-    ## Print the header and description of output fields
-    my @out_fields = qw(id in_deg out_deg degree ktype);
-    my %field_descr = ();
-    $field_descr{id} = "node identifier";
-    $field_descr{in_deg} = "incoming degree (number of incoming arcs)";
-    $field_descr{out_deg} = "outgoing degree (number of outgoing arcs)";
-    $field_descr{degree} = "total degree (number of incoming + outgoing arcs)";
-    $field_descr{ktype} = "connectivity type. Orphan (degree=0), source (in_deg=0), target (out_deg=0) or intermediate.";
-    print $out "; Field descriptions\n";
-    foreach my $field (@out_fields) {
-      printf $out ";\t%-15s\t%s\n", $field, $field_descr{$field};
-    }
-    print $out '#',  join ("\t", @out_fields), "\n";
+     ## Print the header
+     my %field_descr = ();
+     $field_descr{id} = "node identifier";
+     $field_descr{in_deg} = "incoming degree (number of incoming arcs)";
+     $field_descr{out_deg} = "outgoing degree (number of outgoing arcs)";
+     $field_descr{degree} = "total degree (number of incoming + outgoing arcs)";
+     $field_descr{ktype} = "connectivity type. Orphan (degree=0), source (in_deg=0), target (out_deg=0) or intermediate.";
+     print $out "; Field descriptions\n";
+     foreach my $field (@out_fields) {
+       printf $out ";\t%-15s\t%s\n", $field, $field_descr{$field};
+     }
+#     print $out '#',  join ("\t", @out_fields), "\n";
 
     ################################################################
     ## Calculate the degree
-    foreach my $node (@nodes) {
+    foreach my $node (@found_nodes) {
       my $in_deg = scalar($node->get_attribute("in_nodes")) || 0;
       my $out_deg = scalar($node->get_attribute("out_nodes")) || 0;
       $node->force_attribute("in_deg", $in_deg);
@@ -194,14 +198,18 @@ package main;
 	$node->force_attribute("ktype", "interm");
       }
 
-      ################################################################
-      ## Print the results
-      my @out_values = ();
-      foreach my $field (@out_fields) {
-	push @out_values, $node->get_attribute($field);
-      }
-      print $out join ("\t", @out_values), "\n";
+#       ################################################################
+#       ## Print the results
+#       my @out_values = ();
+#       foreach my $field (@out_fields) {
+# 	push @out_values, $node->get_attribute($field);
+#       }
+#       print $out join ("\t", @out_values), "\n";
     }
+
+
+    $graph->push_attribute("nodes_to_export", @found_nodes);
+    print $out $graph->to_text("node_table", @out_fields);
 
     ################################################################
     ## Finish verbose
@@ -428,10 +436,14 @@ sub Verbose {
     print $out ";\tarcs\t",$arcs,"\n";
 
     ## Report seed nodes
-    print $out "; Seed nodes\t",scalar(@seed_names),"\n";
+    if ($all_nodes) {
+      print $out "; All nodes\t",scalar(@node_names),"\n";
+    } else {
+      print $out "; Selected nodes\t",scalar(@node_names),"\n";
+    }
     if (@unknown_nodes) {
-      print $out ";\tidentified\t",scalar(@seed_nodes),"\n";
-      print $out ";\tunknown nodes\t",scalar(@seed_names) - scalar(@seed_nodes),"\n";
+      print $out ";\tidentified\t",scalar(@found_nodes),"\n";
+      print $out ";\tunknown nodes\t",scalar(@node_names) - scalar(@found_nodes),"\n";
       foreach my $name (@unknown_nodes) {
 	print $out join ("\t", ";\t", "unknown", $name), "\n";
       }
