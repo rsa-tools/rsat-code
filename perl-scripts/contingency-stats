@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: contingency-stats,v 1.8 2006/08/18 19:23:20 jvanheld Exp $
+# $Id: contingency-stats,v 1.9 2007/01/18 15:51:30 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -18,7 +18,9 @@ contingency-stats
 =head1 DESCRIPTION
 
 This programs takes as input a contingency table, and calculates
-various matching statistics between the rows and columns.
+various matching statistics between the rows and columns. The
+description of these statistics can be found in Brohee and van Helden,
+2006.
 
 =head1 AUTHORS
 
@@ -177,6 +179,12 @@ sep = sqrt(sep_r*sep_c)
 =item contingency-table
 
 =item compare-classes
+
+=head1 REFERENCES
+
+=item Brohee, S. & van Helden, J. (2006). Evaluation of clustering
+algorithms for protein-protein interaction networks. BMC
+Bioinformatics 7, 488.
 
 =cut
 
