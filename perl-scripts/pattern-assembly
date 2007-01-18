@@ -64,7 +64,7 @@ if (($top_pattern_nb > 0) &&
     ($pattern_nb > $top_pattern_nb)) {
     my $message = join("\t", "Number of patterns = $pattern_nb.",
 		       "Exceeds top number = $top_pattern_nb.",
-		       "The exceeding patterns will be ignored.");
+		       "Only the top $top_pattern_nb patterns will be assembled.");
     print $out ";",  $message, "\n";
     &RSAT::message::Warning($message) if ($main::verbose >= 1);
 
