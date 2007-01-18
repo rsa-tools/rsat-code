@@ -4,17 +4,20 @@
 ################################################################
 ##
 ## This script runs a simple demo of the web service interface to the
-## RSAT tool gene-info. It sends a request to the server for
-## obtaining information on 3 E. coli genes.
+## RSAT tool gene-info. It searches all the genes havine the words
+## "mehtionine" or "purine" in their description.
 ##
 ################################################################
 
 use strict;
 use SOAP::WSDL;
 
+
 ## Service location
-my $WSDL = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.wsdl';
-my $proxy = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.cgi';
+my $server = 'http://localhost/rsat/web_services';
+#my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
+my $WSDL = $server.'/RSATWS.wsdl';
+my $proxy = $server.'/RSATWS.cgi';
 
 ## Call the service
 my $soap=SOAP::WSDL->new(wsdl => $WSDL)->proxy($proxy);
@@ -22,18 +25,14 @@ $soap->wsdlinit;
 
 ## Gene-info parameters
 my $organism = 'Escherichia_coli_K12';  ## Name of the query organism
-my @gene = ("metA", "metB", "metC");  ## List of query genes
-my $full = 'full';  ## Looking for full match, not substring match.
-my $noquery = '';  ## Not used here.
-my $descr = '';  ## Accepted value: 'descr'. Not used here.
-my $feattype = '';  ## If the -feattype option value is not specified, the default is used (CDS for E. coli)
+my @queries = ("methionine", "purine");  ## List of queries
+my $full = '';  ## Looking for full match, not substring match.
+my $descr = '1';  ## Accepted value: 'descr'. Not used here.
 
 my %args = ('organism' => $organism,
-	    'query' => \@gene,
+	    'query' => \@queries,
 	    'full' => $full,
-	    'noquery' => $noquery,
-	    'descr' => $descr,
-	    'feattype' => $feattype);
+	    'descr' => $descr);
 
 ## Send the request to the server
 print "Sending request to the server\n";
