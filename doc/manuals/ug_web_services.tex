@@ -5,21 +5,23 @@
 
 \section{Introduction}
 
-\RSAT facilities can be used as web services (\concept{WS}), i.e. external developers
-(you) can use \RSAT facilities in their own code. One important
-advantage of web services is that they are using a standard
-communication interface between client and server, and the libraries
-exist in various languages (Perl, Python, java).
+\RSAT facilities can be used as web services (\concept{WS}),
+i.e. external developers (you) can integrate \RSAT methods in their
+own code. An important advantage of web services is that they are
+using a standard communication interface between client and server
+(e.g. WSDL/SOAP), for which libraries exist in various languages
+(Perl, Python, java).
 
-We explain below how to implement a WS client in Perl. 
+We explain below how to implement a WS client in Perl for \RSAT
+programs.
 
 \section{Requirements}
 
 Before using a WS client, You need to install the Perl modules
-\program{SOAP::Lite} and \program{SOAP::WSDL}. Perl modules can be installed with the program
-\program{cpan}, but for this you need root privileges. If this is not
-your case, please ask your system administrator to install them for
-you.
+\program{SOAP::Lite} and \program{SOAP::WSDL}. Perl modules can be
+installed with the program \program{cpan}, but for this you need root
+privileges. If this is not your case, please ask your system
+administrator to install them for you.
 
 \section{Examples of WS client in Perl}
 
@@ -27,18 +29,22 @@ We show hereafter some simple examples of clients written in perl.
 
 \subsection{Getting gene-info from RSATWS}
 
-The following script allows to get information about three Escherichia coli genes from RSAT. The program \program{gene-info} is used to do so. A list of genes is provided and the info about those genes is returned.
+The following script allows to get information about three
+\org{Escherichia coli} genes from \RSAT. The client script passes
+through the web service to run the \program{gene-info} on the
+server. A list of genes is provided to the server, which returns the
+information about those genes.
 
 \begin{footnotesize}
 \begin{verbatim}
 #!/usr/bin/perl -w
-# gene-info_client_soap-wsdl.pl - Client gene-info using the SOAP::WSDL module
+# gene-info_client_minimal_soap-wsdl.pl - Client gene-info using the SOAP::WSDL module.
 
 ################################################################
 ##
 ## This script runs a simple demo of the web service interface to the
-## RSAT tool gene-info. It sends a request to the server for
-## obtaining information on 3 E. coli genes.
+## RSAT tool gene-info. It sends a list of 3 gene names to the server, 
+## in order to obtain the information about these genes. 
 ##
 ################################################################
 
@@ -46,8 +52,9 @@ use strict;
 use SOAP::WSDL;
 
 ## Service location
-my $WSDL = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.wsdl';
-my $proxy = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.cgi';
+my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
+my $WSDL = $server.'/RSATWS.wsdl';
+my $proxy = $server.'/RSATWS.cgi';
 
 ## Call the service
 my $soap=SOAP::WSDL->new(wsdl => $WSDL)->proxy($proxy);
@@ -57,26 +64,20 @@ $soap->wsdlinit;
 my $organism = 'Escherichia_coli_K12';  ## Name of the query organism
 my @gene = ("metA", "metB", "metC");  ## List of query genes
 my $full = 'full';  ## Looking for full match, not substring match.
-my $noquery = '';  ## Not used here.
-my $descr = '';  ## Accepted value: 'descr'. Not used here.
-my $feattype = '';  ## If the -feattype option value is not specified, the default is used (CDS for E. coli)
 
 my %args = ('organism' => $organism,
 	    'query' => \@gene,
-	    'full' => $full,
-	    'noquery' => $noquery,
-	    'descr' => $descr,
-	    'feattype' => $feattype);
+	    'full' => $full);
 
 ## Send the request to the server
-print "Sending request to the server\n";
-my $som = $soap->call('gene_info' => 'request' => \%args);
+warn "Sending request to the server\n";
+my $call = $soap->call('gene_info' => 'request' => \%args);
 
 ## Get the result
-if ($som->fault){ ## Report error if any
-    printf "A fault (%s) occured: %s\n", $som->faultcode, $som->faultstring;
+if ($call->fault){ ## Report error if any
+    printf "A fault (%s) occured: %s\n", $call->faultcode, $call->faultstring;
 } else {
-    my $results_ref = $som->result;  ## A reference to the result hash table
+    my $results_ref = $call->result;  ## A reference to the result hash table
     my %results = %$results_ref;  ## Dereference the result hash table
 
     ## Report the remote command
@@ -90,10 +91,73 @@ if ($som->fault){ ## Report error if any
 \end{verbatim}
 \end{footnotesize}
 
+We can now use additional parameters of the \program{gene-info}
+program. For example, we could use regular expressions to ask the
+server for all the yeast genes whose name starts with 'MET', followed
+by one or several numbers.
+
+\begin{footnotesize}
+\begin{verbatim}
+... (same as above)
+
+## Gene-info parameters
+my $organism = 'Saccharomyces_cerevisiae';  ## Name of the query organism
+my @queries = ('MET\d+');  ## This query is a regular expression
+my $full = 'full';  ## Looking for full match, not substring match.
+
+my %args = ('organism' => $organism,
+	    'query' => \@queries,
+	    'full' => $full);
+
+... (same as above)
+
+\end{verbatim}
+\end{footnotesize}
+
+We can also extend the search to match the query strings against gene
+descriptions (by default, they are only matched against gene names).
+
+
+\begin{footnotesize}
+\begin{verbatim}
+... (same as above)
+
+## Gene-info parameters
+my $organism = 'Escherichia_coli_K12';  ## Name of the query organism
+my @queries = ("methionine", "purine");  ## List of queries
+my $full = '';  ## Looking for full match, not substring match.
+my $descr = '1';  ## Accepted value: 'descr'. Not used here.
+
+my %args = ('organism' => $organism,
+	    'query' => \@queries,
+	    'full' => $full,
+	    'descr' => $descr);
+
+... (same as above)
+\end{verbatim}
+\end{footnotesize}
+
+
+\subsection{Documentation}
+
+We saw above that the command \command{gene-info} can be called with
+various options. The description of the available options can be found
+in the documentation of the RSATWS web services at the following URL.
+
+\url{http://rsat.scmbb.ulb.ac.be/rsat/web\_services/RSATWS\_documentation.pdf}
 
 \subsection{Retrieving sequences from RSATWS}
 
-The following example is a script to retrieve the start codons of three Escherichia coli genes. It uses \program{retrieve-seq} to do so. The various parameters are passed as a hash table to the method. If there is an error ,it will be displayed, otherwise the result is displayed, toghether with the full command generated on the server and the name of the temporary file created on the server to hold the result localy. This file is useful when one wants to feed another program with that output, whithout paying the cost of a useless data transport back and forth between the server and the client.
+The following example is a script to retrieve the start codons of
+three Escherichia coli genes. It uses \program{retrieve-seq} to do
+so. The various parameters are passed as a hash table to the
+method. If there is an error ,it will be displayed, otherwise the
+result is displayed, toghether with the full command generated on the
+server and the name of the temporary file created on the server to
+hold the result localy. This file is useful when one wants to feed
+another program with that output, whithout paying the cost of a
+useless data transport back and forth between the server and the
+client.
 
 \begin{footnotesize}
 \begin{verbatim}
@@ -164,13 +228,13 @@ my %args = (
 
 ## Send the request to the server
 print "Sending request to the server\n";
-my $som = $soap->call('retrieve_seq' => 'request' => \%args);
+my $call = $soap->call('retrieve_seq' => 'request' => \%args);
 
 ## Get the result
-if ($som->fault){ ## Report error if any
-    printf "A fault (%s) occured: %s\n", $som->faultcode, $som->faultstring;
+if ($call->fault){ ## Report error if any
+    printf "A fault (%s) occured: %s\n", $call->faultcode, $call->faultstring;
 } else {
-    my $results_ref = $som->result;  ## A reference to the result hash table
+    my $results_ref = $call->result;  ## A reference to the result hash table
     my %results = %$results_ref;  ## Dereference the result hash table
 
     ## Report the remote command
@@ -272,14 +336,14 @@ my %args = ('output' => $output_choice,
 
 ## Send request to the server
 print "\nRetrieve-seq: sending request to the server\t", $server, "\n";
-my $som = $soap->call('retrieve_seq' => 'request' => \%args);
+my $call = $soap->call('retrieve_seq' => 'request' => \%args);
 
 ## Get the result
 my $server_file;  ## That variable needs to be declared outside the if..else block to be useable in the next part
-if ($som->fault){  ## Report error if any
-printf "A fault (%s) occured: %s\n", $som->faultcode, $som->faultstring;
+if ($call->fault){  ## Report error if any
+printf "A fault (%s) occured: %s\n", $call->faultcode, $call->faultstring;
 } else {
-my $results_ref = $som->result;  ## A reference to the result hash table
+my $results_ref = $call->result;  ## A reference to the result hash table
 my %results = %$results_ref;  ## Dereference the result hash table
 
 ## Report the remote command
@@ -300,13 +364,13 @@ print "Result file on the server:\n\t".$server_file;
 
 ## Send the request to the server
 print "\nPurge-sequence: sending request to the server\t", $server, "\n";
-$som = $soap -> call('purge_seq' => 'request' => \%args);
+$call = $soap -> call('purge_seq' => 'request' => \%args);
 
 ## Get the result
-if ($som->fault){  ## Report error if any
-printf "A fault (%s) occured: %s\n", $som->faultcode, $som->faultstring;
+if ($call->fault){  ## Report error if any
+printf "A fault (%s) occured: %s\n", $call->faultcode, $call->faultstring;
 } else {
-my $results_ref = $som->result;  ## A reference to the result hash table
+my $results_ref = $call->result;  ## A reference to the result hash table
 my %results = %$results_ref;  ## Dereference the result hash table
 
 ## Report the remote command
@@ -347,13 +411,13 @@ my $lth = 'occ_sig 0';  ## Lower limit to score is 0, less significant patterns 
 
 ## Send request to the server
 print "\nOligo-analysis: sending request to the server\t", $server, "\n";
-$som = $soap->call('oligo_analysis' => 'request' => \%args);
+$call = $soap->call('oligo_analysis' => 'request' => \%args);
 
 ## Get the result
-if ($som->fault){  ## Report error if any
-    printf "A fault (%s) occured: %s\n", $som->faultcode, $som->faultstring;
+if ($call->fault){  ## Report error if any
+    printf "A fault (%s) occured: %s\n", $call->faultcode, $call->faultstring;
 } else {
-    my $results_ref = $som->result;
+    my $results_ref = $call->result;
     my %results = %$results_ref;
     
     ## Report remote commande
@@ -447,13 +511,13 @@ my %args = ('output' => $output_choice,
 
 ## Send request to the server
 print "Sending request to the server\n";
-my $som = $soap->call('oligo_analysis' => 'request' => \%args);
+my $call = $soap->call('oligo_analysis' => 'request' => \%args);
 
 ## Get the result
-if ($som->fault){  ## Report error if any
-    printf "A fault (%s) occured: %s\n", $som->faultcode, $som->faultstring;
+if ($call->fault){  ## Report error if any
+    printf "A fault (%s) occured: %s\n", $call->faultcode, $call->faultstring;
 } else {
-    my $results_ref = $som->result;  ## A reference to the result hash table
+    my $results_ref = $call->result;  ## A reference to the result hash table
     my %results = %$results_ref;  ## Dereference the result hash table
 
     ##Report the remote command
@@ -485,6 +549,7 @@ To do...
 
 The full documentation can be found there:
 
-http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS_documentation.pdf
+\url{http://rsat.scmbb.ulb.ac.be/rsat/web\_services/RSATWS\_documentation.pdf}
 
-Please refer to the documentation of each RSAT application for further detail on each program.
+Please refer to the documentation of each RSAT application for further
+detail on each program.
