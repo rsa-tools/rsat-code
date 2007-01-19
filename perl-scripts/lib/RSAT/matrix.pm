@@ -2034,11 +2034,11 @@ my %weight_proba = $matrix->getTheorScoreDistrib("weights");
 
 =item cumulative density function (CDF)
 
-my %weight_proba = $matrix->getTheorScoreDistrib("weights", "cum");
+my %weight_proba_cum = $matrix->getTheorScoreDistrib("weights", "cum");
 
 =item inverse cumulative density function (iCDF)
 
-my %weight_proba = $matrix->getTheorScoreDistrib("weights", "inv_cum");
+my %weight_proba_invcum = $matrix->getTheorScoreDistrib("weights", "inv_cum");
 
 =back
 
