@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.10 2007/01/18 23:17:23 jvanheld Exp $
+# $Id: matrix-quality,v 1.11 2007/01/19 01:34:28 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -88,6 +88,7 @@ package main;
     $perm_nb_neg=1; ## Number of permutation tests for the negative set
     $perm_separate_distrib = 0; ## Calcualte the distribution for each permuted matrix separately
     $calc_loo_scores = 1; ## Calculate the Leave-one-out score distribution for the matrix sites
+    $pseudo_counts = 1;
 
     %main::infile = ();
     %main::outfile = ();
@@ -147,12 +148,13 @@ package main;
     }
 
     local $matrix = shift (@matrices);
+    $matrix->set_attribute("pseudo", $pseudo_counts);
     $matrix->set_attribute("decimals", $decimals);
     $matrix->set_attribute("file", $matrix_file);
     local ($matrix_name) = &RSAT::util::ShortFileName($matrix_file);
     $matrix_name =~ s/\.\S+$//; ## suppress the extensin from the file name
     $matrix->set_attribute("name", $matrix_name);
-    local ($Wmin, $Wmax, $Wrange)  = $matrix->weight_range();
+    local ($Wmin, $Wmax)  = $matrix->weight_range();
 
     ## Export input sites with the matrix
     &ExportInputSites($matrix, $matrix_file);
@@ -461,6 +463,22 @@ Sequence format.
 	    $seq_format = shift(@arguments);
 	    
 	    
+	    ## Pseudo weight
+=pod
+
+=item B<-pseudo pseudo_counts>
+
+Pseudo-weight.
+
+=cut
+	} elsif ($arg eq "-pseudo") {
+	    $main::pseudo_counts = shift(@arguments);
+	    &RSAT::error::FatalError(join("\t", $main::pseudo_counts, 
+					  "Invalid value for a pseudo-weight. Must be a positive real number."))
+		unless ((&RSAT::util::IsReal($main::pseudo_counts) )
+			&& ($main::pseudo_counts >= 0));
+
+
 	    ## Output file
 =pod
 
@@ -591,6 +609,7 @@ sub ExportInputSites {
 
   my $matrix_scan_cmd = "matrix-scan -v 1 ";
   $matrix_scan_cmd .= " -decimals ".$decimals;
+  $matrix_scan_cmd .= " -pseudo ".$pseudo_counts;
   $matrix_scan_cmd .= " -m ".$matrix_file;
 }
 
