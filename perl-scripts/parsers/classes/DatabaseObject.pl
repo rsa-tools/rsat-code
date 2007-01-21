@@ -215,6 +215,9 @@ sub new_attribute_value {
     my ($self,$attr,@value) = @_;
     my $class = ref($self) || $self;
     my $attr_cardinality = $class->get_attribute_cardinality($attr);
+    unless ($attr_cardinality) {
+      $attr_cardinality = "ARRAY";
+    }
     if ($attr_cardinality eq "SCALAR") {
 	$self->set_attribute($attr,$value[0]);
     } elsif ($attr_cardinality eq "EXPANDED") {
