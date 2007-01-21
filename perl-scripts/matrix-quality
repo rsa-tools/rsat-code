@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-quality,v 1.11 2007/01/19 01:34:28 jvanheld Exp $
+# $Id: matrix-quality,v 1.12 2007/01/21 19:06:38 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -185,6 +185,7 @@ package main;
     ## Score negative sequences with the matrix
     if ($infile{neg_sequences}) {
       &ScanSequences($infile{neg_sequences}, $matrix_file, $matrix_format, "negative",  @matrix_scan_options); push @distrib_files, &ScoreDistrib('negative', $Wmin, $Wmax);
+      $file_nb{neg_sequences} = scalar(@distrib_files);
     }
 
     ## Score negative sequences with the permuted matrices
@@ -855,23 +856,42 @@ sub CompareDistrib {
   &doit($XYgraph_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 
   ################################################################
+  ## draw a graph with all the inverse cumulative distributions
+  ## and a logarithmic Y axis
+  $XYgraph_cmd = "XYgraph ";
+  $XYgraph_cmd .= " -i ".$outfile{distrib_compa}.".tab";
+  $XYgraph_cmd .= " -format png -lines -pointsize 1 -xsize 1000 -legend";
+  $XYgraph_cmd .= " -title1 'matrix-quality ".$infile{matrix}."'";
+  $XYgraph_cmd .= " -title2 ".$outfile{prefix};
+  $XYgraph_cmd .= " -xcol 1 -ycol ".$ycols;
+  $XYgraph_cmd .= " -xleg1 'matrix score' ";
+  $XYgraph_cmd .= " -yleg1 'Frequency (inverse cumulative) ' ";
+  $XYgraph_cmd .= " -ymax 1 -ylog 10";
+  $XYgraph_cmd .= " -o ".$outfile{distrib_compa}."_logy.png";
+
+  ## Execute the command
+  &doit($XYgraph_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+
+  ################################################################
   ## Draw a ROC curve
+  my $ref_column = 2 + $file_nb{neg_sequences};
   $XYgraph_cmd = "XYgraph ";
   $ycols = join ",", 2..(scalar(@distrib_files)+2);
   $XYgraph_cmd .= " -i ".$outfile{distrib_compa}.".tab";
-  $XYgraph_cmd .= " -format png -lines -pointsize 1 -size 600 ";
+  $XYgraph_cmd .= " -format png -lines -pointsize 1 -size 600 -legend";
   $XYgraph_cmd .= " -title1 'matrix-quality: ROC curve' ";
 #  $XYgraph_cmd .= " -title2 ".$outfile{prefix};
-  $XYgraph_cmd .= " -ycol 2 -xcol 4";
-  $XYgraph_cmd .= " -xleg1 'negative set' ";
-  $XYgraph_cmd .= " -yleg1 'positive set' ";
+  $XYgraph_cmd .= " -xcol ".$ref_column;
+  $XYgraph_cmd .= " -ycol ".$ycols;
+  $XYgraph_cmd .= " -xleg1 'negative set (estmation of FPR)' ";
+  $XYgraph_cmd .= " -yleg1 'other distributions' ";
   $XYgraph_cmd .= " -ymin 0  -ymax 1 ";
   $XYgraph_cmd .= " -xmin 0  -xmax 1 ";
   $XYgraph_cmd .= " -o ".$outfile{distrib_compa}."_roc.png";
 
   ## Execute the command
 #  die ("HERE");
-#  &doit($XYgraph_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+  &doit($XYgraph_cmd, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 
 }
 
