@@ -192,9 +192,10 @@ sub read_from_table {
 
     ## Load the graph
     while (<$main::in>) {
-	next if (/^;/);
-	next if (/^#/);
-	next unless (/\S/);
+	next if (/^--/); # Skip mysql-like comments
+	next if (/^;/); # Skip RSAT comments
+	next if (/^#/); # Skip comments and header
+	next unless (/\S/); # Skip empty rows
 	chomp;
 	my @fields = split("\t");
 	my $source_name = $fields[$source_col-1];
