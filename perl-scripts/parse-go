@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: parse-go,v 1.1 2006/10/19 16:04:37 jvanheld Exp $
+# $Id: parse-go,v 1.2 2007/01/21 12:00:06 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -27,9 +27,12 @@ well as a hierarchical classification between these terms (in the form
 of a directed acyclici graph).
 
 Gene Ontology annotations can be obtained from the GO web site
-(http://www.geneontology.org/GO.downloads.shtml), and are included in
-the genome annotations distributed by the NCBI
-(ftp.ncbi.nih.gov/genomes).
+(I<http://www.geneontology.org/GO.downloads.shtml>). They cay be
+downloaded with a make script with the following commands.
+
+    cd ${RSAT}
+    make -f makefiles/downloads.mk go
+
 
 =head1 AUTHORS
 
@@ -62,7 +65,7 @@ BEGIN {
 }
 require "RSA.lib";
 use RSAT::util;
-push @INC, "$RSA/perl-scripts/parsers/";
+push @INC, "$ENV{RSAT}/perl-scripts/parsers/";
 require "lib/load_classes.pl";
 require "lib/util.pl";
 require "lib/parsing_util.pl";
@@ -85,8 +88,22 @@ package GO::Term;
   %_attribute_cardinality = (id=>"SCALAR",
 			     name=>"ARRAY",
 			     namespace=>"SCALAR",
+			     def=>"SCALAR",
+			     is_obsolete=>"SCALAR",
+			     name=>"SCALAR",
+
+			     is_a=>"ARRAY",
+			     part_of=>"ARRAY",
+			     relationship=>"ARRAY",
+			     subset=>"ARRAY",
 			     subsetdef=>"ARRAY",
-			     "remark"=>"ARRAY",
+			     alt_id=>"ARRAY",
+			     comment=>"ARRAY",
+			     remark=>"ARRAY",
+			     exact_synonym=>"ARRAY",
+			     narrow_synonym=>"ARRAY",
+			     related_synonym=>"ARRAY",
+			     broad_synonym=>"ARRAY",
 			     );
 }
 
@@ -125,54 +142,87 @@ package main;
 	|| die "Error: cannot write error file $out_file{error}\n";
 
     ### open log file
-    $out_file{log} = "$dir{output}/go_parsing_log.txt";    
+    $out_file{log} = "$dir{output}/go_parsing_log.txt";   
     open LOG, ">$out_file{log}" 
 	|| die "Error: cannot write log file $out_file{log}\n";
 
     $go_terms = classes::ClassFactory->new_class(object_type=>"GO::Term", prefix=>"ft_");
 
     ################################################################
-    ##### read input
+    ## Read input
     ($main::in) = &OpenInputFile($main::infile{input});
     my $current_term;
     my $l=0;
+    my $id;
     while (<$main::in>) {
       $l++;
+      chomp();
       next unless (/\S/);
       if (/^\[Term\]/) {
 	$current_term = $go_terms->new_object();
+	&RSAT::message::Info("Creating new GO term") if ($main::verbose >= 3);
       } elsif (/^\[/) {
 	$current_term = "";
       } elsif (!($current_term)) {
-	print LOG $_;
-	&RSAT::message::Warning(join("\t", "Skipping header line", $l, $_)) if ($main::verbose >= 3);
+	print LOG $_, "\n";
+	&RSAT::message::Warning("Skipping header line", $l, $_) if ($main::verbose >= 2);
 	next;
       } elsif (/^id:\s+(\S+)/) {
-	$current_term->force_attribute("id", $1);
+	$id = $1;
+	$current_term->force_attribute("id", $id);
+	&RSAT::message::Info("Current GO term ID", $id) if ($main::verbose >= 3);
       } elsif (/^(\S+):\s+(\S.*)$/) {
 	my $key = $1;
 	my $value = $2;
 	$current_term->new_attribute_value($key, $value);
-	if (($key='relationship') && ($value = /part_of (\S+)/)) {
+	if (($key eq 'relationship') && ($value =~ /part_of (\S+)/)) {
 	  $current_term->push_attribute("part_of", $1);
 	}
+	&RSAT::message::Info("New attribute value", $id, $key, $value) if ($main::verbose >= 4);
       } else {
-	&RSAT::message::Warning(join("\t", "Skipping line", $l, $_)) if ($main::verbose >= 0);
+	&RSAT::message::Warning("Skipping line", $l, $_) if ($main::verbose >= 0);
       }
     }
     close $main::in if ($main::infile{input});
-    
+
     ################################################################
-    #### print verbose
+    ## Extract cross-references from the definition (!)
+    &RSAT::message::TimeWarn("Extracting cross-references from the definitions") if ($main::verbose >= 1);
+    foreach my $term ($go_terms->get_objects()) {
+      my $def = $term->get_attribute("def");
+      my $id = $term->get_attribute("id");
+      unless ($def) {
+	&RSAT::message::Warning("No definition for term", $id, $term->get_attribute("name")) if ($main::verbose >= 0);
+      }
+      if ($def =~ /\[(.*)\]/) {
+	my $cross_refs = $1;
+	my @cross_refs = split(/,\s*/, $cross_refs);
+	foreach my $xref (@cross_refs) {
+	  if ($xref =~/(.*):(.*)/) {
+	    my $xref_db = $1;
+	    my $xref_id = $2;
+
+	    ## Special treatment for web links
+	    if ((lc($xref_db) eq 'http')  || (lc($xref_db) eq "ftp")) {
+	      $xref_id = $xref;
+	    }
+
+	    $term->push_expanded_attribute("xrefs", $xref_db, $xref_id);
+	  }
+	}
+	&RSAT::message::Info("Cross-references", $id, scalar(@cross_refs), $cross_refs) if ($main::verbose >= 3);
+      }
+    }
+
+
+    ################################################################
+    #### Print verbose
     &Verbose() if ($main::verbose);
-    
-    ################################################################
-    ###### execute the command
-    
+
     ################################################################
     ###### print output
     $go_terms->dump_tables();
-    
+
     ################################################################
     ###### finish verbose
     if ($main::verbose >= 1) {
@@ -292,7 +342,9 @@ directory named "parsed_go".
 =cut
 	} elsif ($arg eq "-o") {
 	    $main::dir{output} = shift(@arguments);
-	    
+	    ## Input file
+
+
 	} else {
 	    &FatalError(join("\t", "Invalid option", $arg));
 
@@ -334,5 +386,23 @@ __END__
 =pod
 
 =head1 SEE ALSO
+
+
+=head2 parse-genbank
+
+For some organisms (but unfortunately not all), the assignation of
+genes to GI classes is included in the genome annotations distributed
+by the NCBI (I<ftp://ftp.ncbi.nih.gov/genomes/>). The program
+B<parse-genbank> returns these assignations in a file cds_go.tab,
+where the second column gives the IDs of the GO classes. The program
+B<parse-go> provides the names of the GO classes, and their
+relationships (inclusion relationships).
+
+=head2 compare-classes
+
+This program can typically be used to compare clusters of genes
+(e.g. obtained from microarrays, or because they share common
+regulatory elements) with each GO class.
+
 
 =cut
