@@ -670,8 +670,9 @@ use Data::Dumper;
 	  my $file_name = $main::dir{output}."/".$table_name.$file_suffix.".tab";
 	  open TABLE, ">$file_name" || die "Error: cannot write file $file_name\n";
 	  my $dump_date = `date +%Y%m%d_%H%M%S`;
+	  chomp($dump_date);
 	  ### print version
-	  printf TABLE "$comment_symbol %-12s\t%s\n", "dump date", $dump_date; 
+	  printf TABLE "$comment_symbol %-12s\t%s\n", "dump date", $dump_date;
 	  printf TABLE "$comment_symbol %-12s\t%s\n", "class", $class_holder->get_object_type(); 
 	  printf TABLE "$comment_symbol %-12s\t%s\n", "table", $table_name; 
 	  ### print content of the table
