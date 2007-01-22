@@ -307,8 +307,7 @@ sub print_attributes {
 		push @pairs, "$key=>$value";
 	    }
 	    printf "    %-15s { %s }\n", $attr, join(" , ", @pairs);
-	    
-	    
+
 	    ### attribute cardinality EXPANDED
 	} elsif  ($attribute_cardinality eq "EPXANDED") {
 	    foreach $array_pointer ($self->get_attribute($attr)) {
