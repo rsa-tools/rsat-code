@@ -464,8 +464,8 @@ sub to_tab {
 	  }
 	}
 	my $arc_color = $arc->get_attribute("color") || "#000000";
-        my $sourceid = $source_node->get_attribute("id");
-        my $targetid = $target_node->get_attribute("id");
+        my $sourceid = $source_node->get_attribute("label");
+        my $targetid = $target_node->get_attribute("label");
 	$tab .= "$sourceid\t$targetid";
         if ($arc_label) {
           $tab .= "\t$arc_label\n";
