@@ -265,7 +265,7 @@ sub read_from_table {
 
 Return the graph in various format.
 
-Supported formats: dot, gml,gdl
+Supported formats: dot, gml, gdl, tab
 
 =cut
 sub to_text {
@@ -276,6 +276,8 @@ sub to_text {
 	return $self->to_gdl(@args);
     } elsif ($out_format eq "gml") {
 	return $self->to_gml(@args);
+    } elsif ($out_format eq "tab") {
+	return $self->to_tab(@args);
     } elsif ($out_format eq "node_table") {
 	return $self->to_node_table(@args);
     } else {
@@ -434,7 +436,46 @@ sub to_gml {
     return $gml;
 }
 
+################################################################
+=pod
 
+=item B<to_tab()>
+
+Return the graph in a tab-delimited format. 
+
+=cut
+sub to_tab {
+    my ($self) = @_;    
+    my $tab = "";
+    
+
+    ## Graph description
+    my $graph_label = $self->get_attribute("label") || "graph";
+    $tab .= ";source\ttarget\n";
+
+    ## Export arcs
+    foreach my $arc ($self->get_attribute("arcs")) {
+	my $source_node = $arc->get_attribute("source");
+	my $target_node = $arc->get_attribute("target");
+	my $arc_label = $arc->get_attribute("label");
+	unless ($arc_label) {
+	  if ($weight = $arc->get_attribute("weight")) {
+	    $arc_label = $weight;
+	  }
+	}
+	my $arc_color = $arc->get_attribute("color") || "#000000";
+        my $sourceid = $source_node->get_attribute("id");
+        my $targetid = $target_node->get_attribute("id");
+	$tab .= "$sourceid\t$targetid";
+        if ($arc_label) {
+          $tab .= "\t$arc_label\n";
+        } else {
+          $tab .= "\n";
+        }
+    }
+
+    return $tab;
+}
 ################################################################
 =pod
 
