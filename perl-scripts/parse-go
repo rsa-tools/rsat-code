@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: parse-go,v 1.2 2007/01/21 12:00:06 jvanheld Exp $
+# $Id: parse-go,v 1.3 2007/01/22 01:48:36 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -147,11 +147,13 @@ package main;
 	|| die "Error: cannot write log file $out_file{log}\n";
 
     $go_terms = classes::ClassFactory->new_class(object_type=>"GO::Term", prefix=>"ft_");
+    $go_terms->set_attribute_header("xrefs", join("\t", "external_db", "external_id"));
+    $go_terms->set_attribute_header("is_a", join("\t", "parent_id", "parent_name"));
 
     ################################################################
     ## Read input
     ($main::in) = &OpenInputFile($main::infile{input});
-    my $current_term;
+    my $term;
     my $l=0;
     my $id;
     while (<$main::in>) {
@@ -159,25 +161,41 @@ package main;
       chomp();
       next unless (/\S/);
       if (/^\[Term\]/) {
-	$current_term = $go_terms->new_object();
+	$term = $go_terms->new_object();
 	&RSAT::message::Info("Creating new GO term") if ($main::verbose >= 3);
       } elsif (/^\[/) {
-	$current_term = "";
-      } elsif (!($current_term)) {
+	$term = "";
+      } elsif (!($term)) {
 	print LOG $_, "\n";
 	&RSAT::message::Warning("Skipping header line", $l, $_) if ($main::verbose >= 2);
 	next;
       } elsif (/^id:\s+(\S+)/) {
 	$id = $1;
-	$current_term->force_attribute("id", $id);
+	$term->force_attribute("id", $id);
 	&RSAT::message::Info("Current GO term ID", $id) if ($main::verbose >= 3);
       } elsif (/^(\S+):\s+(\S.*)$/) {
 	my $key = $1;
 	my $value = $2;
-	$current_term->new_attribute_value($key, $value);
-	if (($key eq 'relationship') && ($value =~ /part_of (\S+)/)) {
-	  $current_term->push_attribute("part_of", $1);
+
+	## Clean the comment from the is_a field
+	if ($key eq "is_a") {
+	  if ($value =~ /(\S)+ ! (.*)/) {
+	    my ($parent_id, $parent_name) = split ' ! ', $value;
+#	    my $parent_id = $1;
+#	    my $parent_name = 2;
+	    $term->push_expanded_attribute('is_a', $parent_id, $parent_name);
+#	    &RSAT::message::Debug($term->get_attribute("id"), 'is_a', $parent_id, $parent_name, $value) if ($main::verbose >= 10);
+	    next;
+	  }
 	}
+
+	## Create a specific attribute for the relationship "part of"
+	if (($key eq 'relationship') && ($value =~ /part_of (\S+)/)) {
+	  $term->push_attribute("part_of", $1);
+	}
+
+	## Add the new attribute value to the object
+	$term->new_attribute_value($key, $value);
 	&RSAT::message::Info("New attribute value", $id, $key, $value) if ($main::verbose >= 4);
       } else {
 	&RSAT::message::Warning("Skipping line", $l, $_) if ($main::verbose >= 0);
@@ -186,11 +204,13 @@ package main;
     close $main::in if ($main::infile{input});
 
     ################################################################
-    ## Extract cross-references from the definition (!)
+    ## Post-processing of the raw parsing
     &RSAT::message::TimeWarn("Extracting cross-references from the definitions") if ($main::verbose >= 1);
     foreach my $term ($go_terms->get_objects()) {
-      my $def = $term->get_attribute("def");
       my $id = $term->get_attribute("id");
+
+      ## Extract cross-references from the definition (!)
+      my $def = $term->get_attribute("def");
       unless ($def) {
 	&RSAT::message::Warning("No definition for term", $id, $term->get_attribute("name")) if ($main::verbose >= 0);
       }
@@ -206,12 +226,13 @@ package main;
 	    if ((lc($xref_db) eq 'http')  || (lc($xref_db) eq "ftp")) {
 	      $xref_id = $xref;
 	    }
-
 	    $term->push_expanded_attribute("xrefs", $xref_db, $xref_id);
 	  }
 	}
 	&RSAT::message::Info("Cross-references", $id, scalar(@cross_refs), $cross_refs) if ($main::verbose >= 3);
       }
+
+
     }
 
 
