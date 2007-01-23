@@ -16,10 +16,10 @@ use SOAP::WSDL;
 warn "\nThis demo script retrieves the start codons for a set of query genes\n\n";
 
 ## WSDL location
-my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services/';
-#my $server = 'http://localhost/rsat/web_services/';
-my $WSDL = $server.'RSATWS.wsdl';
-my $proxy = $server.'RSATWS.cgi';
+my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
+#my $server = 'http://localhost/rsat/web_services';
+my $WSDL = $server.'/RSATWS.wsdl';
+my $proxy = $server.'/RSATWS.cgi';
 
 ## Service call
 my $soap=SOAP::WSDL->new(wsdl => $WSDL)->proxy($proxy);
@@ -33,8 +33,8 @@ my $output_choice = 'both';  ## Accepted values: 'server', 'client', 'both'
 ## Retrieve-seq parameters
 my $organism = 'Escherichia_coli_K12';  ## Name of the query organism
 my @gene = ("metA", "metB", "metC");  ## List of query genes
-my $all = '';  ## the -all option. This option is incompatible with the query list @gene (above)
-my $noorf = 'noorf';  ## Clip sequences to avoid upstream ORFs
+my $all = 0;  ## the -all option (other accepted value = 1). This option is incompatible with the query list @gene (above)
+my $noorf = 1;  ## Clip sequences to avoid upstream ORFs
 my $from = 0;  ## Start position of the sequence
 my $to = 2;  ## End position of the sequence
 my $feattype = '';  ## The -feattype option value is  not specified, the default is used
@@ -43,9 +43,9 @@ my $format = '';  ## The -format option value. We use the default (fasta), but o
 my $lw = 0;  ## Line width. 0 means all on one line
 my $label = 'id,name';  ## Choice of label for the retrieved sequence(s)
 my $label_sep = '';  ## Choice of separator for the label(s) of the retrieved sequence(s)
-my $nocom = '';  ## Other possible value = '-nocom', to get sequence(s) whithout comments
-my $repeat =  '';  ## Other possible value = '-rm', to have annotated repeat regions masked
-my $imp_pos = '';  ## Admit imprecise position (value = 'imp_pos' to do so)
+my $nocom = 0;  ## Other possible value = 1, to get sequence(s) whithout comments
+my $repeat =  0;  ## Other possible value = 1, to have annotated repeat regions masked
+my $imp_pos = 0;  ## Admit imprecise position (value = 1 to do so)
 
 my %args = (
 	    'output' => $output_choice,
@@ -66,7 +66,7 @@ my %args = (
 	    );
 
 ## Send the request to the server
-print "Sending request to the server\n";
+print "Sending request to the server $server\n";
 my $som = $soap->call('retrieve_seq' => 'request' => \%args);
 
 ## Get the result

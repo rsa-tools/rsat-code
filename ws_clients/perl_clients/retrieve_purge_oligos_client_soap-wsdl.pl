@@ -36,8 +36,8 @@ my $output_choice = 'server'; ## The result will stay in a file on the server
 ## Parameters
 my $organism = 'Saccharomyces_cerevisiae';  ## Name of the query organism
 my @gene = ("PHO5", "PHO8", "PHO11", "PHO81", "PHO84");  ## List of query genes
-my $all = '';  ## -all option. This option is incompatible with the query list @gene (above)
-my $noorf = 'noorf';  ## Clip sequences to avoid upstream ORFs
+my $all = 0;  ## -all option. This option is incompatible with the query list @gene (above)
+my $noorf = 1;  ## Clip sequences to avoid upstream ORFs
 my $from;  ## Start position of the sequence. Default is used (-800).
 my $to;  ## End position of te sequence. Default is used (-1).
 my $feattype = '';  ## -feattype option value is not defined, default is used (CDS).
@@ -45,7 +45,7 @@ my $type = '';  ## -type option value; other example:'-type downstream'
 my $format = 'fasta';  ## the format of the retrieved sequence(s)
 my $label = '';  ## Choice of label for the retrieved sequence(s). Default is used.
 my $label_sep = '';  ## Choice of separator for the label(s) of the retrieved sequence(s). Default is used.
-my $nocom = '';  ## Other possible value = '-nocom'.
+my $nocom = 0;  ## Other possible value = 1.
 
 my %args = ('output' => $output_choice,
     'organism' => $organism,
@@ -119,9 +119,9 @@ my $format = 'fasta';  ## The format of input sequences
 my $length = 6;  ## Length of patterns to be discovered
 my $background = 'upstream-noorf';  ## Type of background used
 my $stats = 'occ,proba,rank';  ## Returned statistics
-my $noov = 'noov';  ## Do not allow overlapping patterns
+my $noov = 1;  ## Do not allow overlapping patterns
 my $str = '2str';  ## Search on both strands
-my $sort = 'sort';  ## Sort the result according to score
+my $sort = 1;  ## Sort the result according to score
 my $lth = 'occ_sig 0';  ## Lower limit to score is 0, less significant patterns are not displayed
 
 %args = ('output' => $output_choice, 
