@@ -3,7 +3,7 @@
 
 ################################################################
 ##
-## This script runs a simple demo of the web service inerface to the
+## This script runs a simple demo of the web service interface to the
 ## RSAT tool purge-sequence. It sends a request to the server for
 ## obtaining the purged sequences of 2 yeast upstream sequences.
 ## Segments repeated in the two sequences will be returned masked.
@@ -14,11 +14,12 @@ use strict;
 use SOAP::WSDL;
 
 ## WSDL location
-my $WSDL = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.wsdl';
-my $proxy = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.cgi';
+my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
+my $WSDL = $server.'/RSATWS.wsdl';
+my $proxy = $server.'/RSATWS.cgi';
 
+## Service call
 my $soap=SOAP::WSDL->new(wsdl => $WSDL)->proxy($proxy);
-
 $soap->wsdlinit;
 
 ## Output option
@@ -32,9 +33,9 @@ CGGTTTAGCATCATAAGCGCTTATAAATTTCTTAATTATGCTCGGGCACTTTTCGGCCAATGGTCTTGGTAATTCCTTTG
 my $format = '';  ## Default sequence format is used
 my $match_length;  ## Default match length (40) is used
 my $mismatch;  ## Default number of mismatch (3) is used
-my $str = '';  ## Discard duplications on direct or both strands; default is used
-my $delete = '';  ## Other example: '-del' to delete repeats instead of masking them
-my $mask_short = '';  ## -mask_short option to mask sequences shorter than specified length
+my $str = '';  ## Discard duplications on direct or both strands; default is used (both strands)
+my $delete = 0;  ## Other example: 1, to delete repeats instead of masking them
+my $mask_short;  ## mask_short option to mask sequences shorter than specified length
 
 my %args = ('output'=> $output_choice,
 	    'sequence'=> $sequence,
@@ -46,7 +47,7 @@ my %args = ('output'=> $output_choice,
 	    'mask_short'=> $mask_short);
 
 ## Send the request to the server
-print "Sending request to the server\n";
+print "Sending request to the server $server\n";
 my $som = $soap -> call('purge_seq' => 'request' => \%args);
 
 ## Get the result
