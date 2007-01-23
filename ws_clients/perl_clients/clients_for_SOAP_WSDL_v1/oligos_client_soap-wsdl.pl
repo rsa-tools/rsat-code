@@ -3,7 +3,7 @@
 
 ################################################################
 ##
-## This script runs a simple demo of the web service inerface to the
+## This script runs a simple demo of the web service interface to the
 ## RSAT tool oligo-analysis. It sends a request to the server for
 ## discovering 6 letter words in the upstream sequences of 5 yeast genes.
 ##
@@ -16,8 +16,9 @@ use SOAP::WSDL;
 warn "\nINFO: This demo script sends a set of sequences to the RSAT web service, and runs oligo-analysis to detect over-represented oligonuclotides\n\n";
 
 ## WSDL location
-my $WSDL = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.wsdl';
-my $proxy = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.cgi';
+my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
+my $WSDL = $server.'/RSATWS.wsdl';
+my $proxy = $server.'/RSATWS.cgi';
 
 my $soap=SOAP::WSDL->new(wsdl => $WSDL)->proxy($proxy);
 
@@ -38,15 +39,15 @@ AAACGAGCATGAGGGTTACAAAGAACTTCCGTTTCAAAAATGAATATAATCGTACGTTTACCTTGTGGCAGCACTAGCTA
 >NP_013583.1    PHO84; upstream from -800 to -1; size: 800; location: NC_001145.2 25802 26601 R; upstream neighbour: NP_013585.1 (distance: 1128)
 AAAAAAAAAGATTCAATAAAAAAAGAAATGAGATCAAAAAAAAAAAAAATTAAAAAAAAAAAGAAACTAATTTATCAGCCGCTCGTTTATCAACCGTTATTACCAAATTATGAATAAAAAAACCATATTATTATGAAAAGACACAACCGGAAGGGGAGATCACAGACCTTGACCAAGAAAACATGCCAAGAAATGACAGCAATCAGTATTACGCACGTTGGTGCTGTTATAGGCGCCCTATACGTGCAGCATTTGCTCGTAAGGGCCCTTTCAACTCATCTAGCGGCTATGAAGAAAATGTTGCCCGGCTGAAAAACACCCGTTCCTCTCACTGCCGCACCGCCCGATGCCAATTTAATAGTTCCACGTGGACGTGTTATTTCCAGCACGTGGGGCGGAAATTAGCGACGGCAATTGATTATGGTTCGCCGCAGTCCATCGAAATCAGTGAGATCGGTGCAGTTATGCACCAAATGTCGTGTGAAAGGCTTTCCTTATCCCTCTTCTCCCGTTTTGCCTGCTTATTAGCTAGATTAAAAACGTGCGTATTACTCATTAATTAACCGACCTCATCTATGAGCTAATTATTATTCCTTTTTGGCAGCATGATGCAACCACATTGCACACCGGTAATGCCAACTTAGATCCACTTACTATTGTGGCTCGTATACGTATATATATAAGCTCATCCTCATCTCTTGTATAAAGTAAAGTTCTAAGTTCACTTCTAAATTTTATCTTTCCTCATCTCGTAGATCACCAGGGCACACAACAAACAAAACTCCACGAATACAATCCAA';
 
-my $format = '-format fasta';  ## The format of input sequences
+my $format = 'fasta';  ## The format of input sequences
 my $length = 6;  ## Length of patterns to be discovered
-my $organism = '-org Saccharomyces_cerevisiae';  ## Name of the query organism
-my $background = '-bg upstream-noorf';  ## Type of background used
-my $stats = '-return occ,proba,rank';  ## Returned statistics
-my $noov = '-noov';  ## Do not allow overlapping patterns
-my $str = '-2str';  ## Search on both strands
-my $sort = '-sort';  ## Sort the result according to score
-my $lth = '-lth occ_sig 0';  ## Lower limit to score is 0, less significant patterns are not displayed
+my $organism = 'Saccharomyces_cerevisiae';  ## Name of the query organism
+my $background = 'upstream-noorf';  ## Type of background used
+my $stats = 'occ,proba,rank';  ## Returned statistics
+my $noov = 1;  ## Do not allow overlapping patterns
+my $str = '2str';  ## Search on both strands
+my $sort = 1;  ## Sort the result according to score when value = 1
+my $lth = 'occ_sig 0';  ## Lower limit to score is 0, less significant patterns are not displayed
 
 my %args = ('output' => $output_choice, 
 	    'sequence' => $sequence, 
@@ -61,7 +62,7 @@ my %args = ('output' => $output_choice,
 	    'lth' => $lth);
 
 ## Send request to the server
-print "Sending request to the server\n";
+print "Sending request to the server $server\n";
 my $som = $soap->call('oligo_analysis' => 'request' => \%args);
 
 ## Get the result
@@ -71,7 +72,7 @@ if ($som->fault){  ## Report error if any
     my $results_ref = $som->result;  ## A reference to the result hash table
     my %results = %$results_ref;  ## Dereference the result hash table
 
-    ##Report the remote command
+    ## Report the remote command
     my $command = $results{'command'};
     print "Command used on the server: ".$command, "\n";
 
