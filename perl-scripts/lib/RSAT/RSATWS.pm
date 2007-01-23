@@ -180,7 +180,7 @@ sub retrieve_seq_cmd {
     }
 
     if ($noorf) {
-	$command .= " -".$noorf;
+	$command .= " -noorf";
     }
     if (defined($from)) {
 	$command .= " -from ".$from;
@@ -198,7 +198,7 @@ sub retrieve_seq_cmd {
 	$command .= " -format ".$format;
     }
     if ($all) {
-	$command .= " -".$all;
+	$command .= " -all";
     }
     if ($n) {
 	$command .= " -n ".$n;
@@ -213,16 +213,14 @@ sub retrieve_seq_cmd {
 	$command .= " -labelsep ".$label_sep;
     }
     if ($nocom) {
-	$command .= " -".$nocom;
+	$command .= " -nocom";
     }
     if ($repeat) {
-	$command .= " -".$repeat;
+	$command .= " -rm";
     }
     if ($imp_pos) {
-	$command .= " -".$imp_pos;
+	$command .= " -imp_pos";
     }
-
-#    my $command = "$SCRIPTS/retrieve-seq $organism $query -lw 0 $noorf $from $to $feattype $type $format $all $n $label $label_sep $nocom $repeat";
 
     return $command;
 }
@@ -357,7 +355,7 @@ sub purge_seq_cmd {
     }
 
     if ($delete) {
-      $command .= " -".$delete;
+      $command .= " -del";
     }
 
     if (defined($mask_short)) {
@@ -532,7 +530,7 @@ sub oligo_analysis_cmd {
     }
 
     if ($noov) {
-      $command .= " -".$noov;
+      $command .= " -noov";
     }
 
     if ($str) {
@@ -540,7 +538,7 @@ sub oligo_analysis_cmd {
     }
 
     if ($sort) {
-      $command .= " -".$sort;
+      $command .= " -sort";
     }
 
     if ($lth) {
@@ -583,11 +581,12 @@ sub gene_info {
 Build the gene-info command with the passed arguments.
 
 =cut
+
 sub gene_info_cmd {
   my ($self, %args) =@_;
   my $organism = $args{"organism"};
 
-  ## List of query genes
+  ## List of queries
   my $query_ref = $args{"query"};
   my $query = "";
   if ($query_ref) {
@@ -598,6 +597,7 @@ sub gene_info_cmd {
   }
 
   my $command = "$SCRIPTS/gene-info";
+
   if ($organism) {
     $command .= " -org ".$organism;
   }
