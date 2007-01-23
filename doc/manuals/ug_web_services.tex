@@ -63,14 +63,14 @@ $soap->wsdlinit;
 ## Gene-info parameters
 my $organism = 'Escherichia_coli_K12';  ## Name of the query organism
 my @gene = ("metA", "metB", "metC");  ## List of query genes
-my $full = 'full';  ## Looking for full match, not substring match.
+my $full = 1;  ## Looking for full match, not substring match.
 
 my %args = ('organism' => $organism,
 	    'query' => \@gene,
 	    'full' => $full);
 
 ## Send the request to the server
-warn "Sending request to the server\n";
+warn "Sending request to the server $server\n";
 my $call = $soap->call('gene_info' => 'request' => \%args);
 
 ## Get the result
@@ -103,7 +103,7 @@ by one or several numbers.
 ## Gene-info parameters
 my $organism = 'Saccharomyces_cerevisiae';  ## Name of the query organism
 my @queries = ('MET\d+');  ## This query is a regular expression
-my $full = 'full';  ## Looking for full match, not substring match.
+my $full = 1;  ## Looking for full match, not substring match.
 
 my %args = ('organism' => $organism,
 	    'query' => \@queries,
@@ -125,8 +125,8 @@ descriptions (by default, they are only matched against gene names).
 ## Gene-info parameters
 my $organism = 'Escherichia_coli_K12';  ## Name of the query organism
 my @queries = ("methionine", "purine");  ## List of queries
-my $full = '';  ## Looking for full match, not substring match.
-my $descr = '1';  ## Accepted value: 'descr'. Not used here.
+my $full = 0;
+my $descr = 1;  ## Search also in description field of genes
 
 my %args = ('organism' => $organism,
 	    'query' => \@queries,
@@ -178,15 +178,13 @@ use SOAP::WSDL;
 warn "\nThis demo script retrieves the start codons for a set of query genes\n\n";
 
 ## WSDL location
-my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services/';
-my $WSDL = $server.'RSATWS.wsdl';
-my $proxy = $server.'RSATWS.cgi';
+my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
+my $WSDL = $server.'/RSATWS.wsdl';
+my $proxy = $server.'/RSATWS.cgi';
 
 ## Service call
 my $soap=SOAP::WSDL->new(wsdl => $WSDL)->proxy($proxy);
 $soap->wsdlinit;
-
-# $soap->wsdl_checkoccurs(0);
 
 ## Output option
 my $output_choice = 'both';  ## Accepted values: 'server', 'client', 'both'
@@ -194,40 +192,25 @@ my $output_choice = 'both';  ## Accepted values: 'server', 'client', 'both'
 ## Retrieve-seq parameters
 my $organism = 'Escherichia_coli_K12';  ## Name of the query organism
 my @gene = ("metA", "metB", "metC");  ## List of query genes
-my $all = '';  ## the -all option. This option is incompatible with the query list @gene (above)
-my $noorf = 'noorf';  ## Clip sequences to avoid upstream ORFs
+my $noorf = 1;  ## Clip sequences to avoid upstream ORFs
 my $from = 0;  ## Start position of the sequence
 my $to = 2;  ## End position of the sequence
-my $feattype = '';  ## The -feattype option value is  not specified, the default is used
-my $type = '';  ## The -type option value; other example:'-type downstream'
-my $format = '';  ## The -format option value. We use the default (fasta), but other formats could be specified, for example 'multi'
-my $lw = 0;  ## Line width. 0 means all on one line
+my $lw = 0;  ## Line width. 0 means all the sequence on one line
 my $label = 'id,name';  ## Choice of label for the retrieved sequence(s)
-my $label_sep = '';  ## Choice of separator for the label(s) of the retrieved sequence(s)
-my $nocom = '';  ## Other possible value = '-nocom', to get sequence(s) whithout comments
-my $repeat =  '';  ## Other possible value = '-rm', to have annotated repeat regions masked
-my $imp_pos = '';  ## Admit imprecise position (value = 'imp_pos' to do so)
 
 my %args = (
 	    'output' => $output_choice,
 	    'organism' => $organism,
-	    'query' => \@gene,  ## An array in a hash has to be referenced
+	    'query' => \@gene,
 	    'noorf' => $noorf,
 	    'from' => $from,
 	    'to' => $to,
-	    'feattype' => $feattype,
-	    'type' => $type,
-	    'format' => $format,
 	    'lw' => $lw,
 	    'label' => $label,
-	    'label_sep' => $label_sep,
-	    'nocom' => $nocom,
-	    'repeat' => $repeat,
-	    'imp_pos' => $imp_pos
 	    );
 
 ## Send the request to the server
-print "Sending request to the server\n";
+print "Sending request to the server $server\n";
 my $call = $soap->call('retrieve_seq' => 'request' => \%args);
 
 ## Get the result
@@ -309,16 +292,14 @@ my $output_choice = 'server'; ## The result will stay in a file on the server
 ## Parameters
 my $organism = 'Saccharomyces_cerevisiae';  ## Name of the query organism
 my @gene = ("PHO5", "PHO8", "PHO11", "PHO81", "PHO84");  ## List of query genes
-my $all = '';  ## -all option. This option is incompatible with the query list @gene (above)
-my $noorf = 'noorf';  ## Clip sequences to avoid upstream ORFs
+my $noorf = 1;  ## Clip sequences to avoid upstream ORFs
 my $from;  ## Start position of the sequence. Default is used (-800).
 my $to;  ## End position of te sequence. Default is used (-1).
-my $feattype = '';  ## -feattype option value is not defined, default is used (CDS).
-my $type = '';  ## -type option value; other example:'-type downstream'
+my $feattype;  ## -feattype option value is not defined, default is used (CDS).
+my $type;  ## -type option value; other example:'-type downstream'
 my $format = 'fasta';  ## the format of the retrieved sequence(s)
-my $label = '';  ## Choice of label for the retrieved sequence(s). Default is used.
-my $label_sep = '';  ## Choice of separator for the label(s) of the retrieved sequence(s). Default is used.
-my $nocom = '';  ## Other possible value = '-nocom'.
+my $label;  ## Choice of label for the retrieved sequence(s). Default is used.
+my $label_sep;  ## Choice of separator for the label(s) of the retrieved sequence(s). Default is used.
 
 my %args = ('output' => $output_choice,
     'organism' => $organism,
@@ -329,10 +310,9 @@ my %args = ('output' => $output_choice,
     'feattype' => $feattype,
     'type' => $type,
     'format' => $format,
-    'all' => $all,
     'label' => $label,
-    'label_sep' => $label_sep,
-    'nocom' => $nocom);
+    'label_sep' => $label_sep
+    );
 
 ## Send request to the server
 print "\nRetrieve-seq: sending request to the server\t", $server, "\n";
@@ -341,18 +321,18 @@ my $call = $soap->call('retrieve_seq' => 'request' => \%args);
 ## Get the result
 my $server_file;  ## That variable needs to be declared outside the if..else block to be useable in the next part
 if ($call->fault){  ## Report error if any
-printf "A fault (%s) occured: %s\n", $call->faultcode, $call->faultstring;
+  printf "A fault (%s) occured: %s\n", $call->faultcode, $call->faultstring;
 } else {
-my $results_ref = $call->result;  ## A reference to the result hash table
-my %results = %$results_ref;  ## Dereference the result hash table
+  my $results_ref = $call->result;  ## A reference to the result hash table
+  my %results = %$results_ref;  ## Dereference the result hash table
 
-## Report the remote command
-my $command = $results{'command'};
-print "Command used on the server:\n\t".$command, "\n";
+  ## Report the remote command
+  my $command = $results{'command'};
+  print "Command used on the server:\n\t".$command, "\n";
 
-## Report the result file name on the server
-$server_file = $results{'server'};
-print "Result file on the server:\n\t".$server_file;
+  ## Report the result file name on the server
+  $server_file = $results{'server'};
+  print "Result file on the server:\n\t".$server_file;
 }
 
 #################################################
@@ -368,18 +348,18 @@ $call = $soap -> call('purge_seq' => 'request' => \%args);
 
 ## Get the result
 if ($call->fault){  ## Report error if any
-printf "A fault (%s) occured: %s\n", $call->faultcode, $call->faultstring;
+  printf "A fault (%s) occured: %s\n", $call->faultcode, $call->faultstring;
 } else {
-my $results_ref = $call->result;  ## A reference to the result hash table
-my %results = %$results_ref;  ## Dereference the result hash table
+  my $results_ref = $call->result;  ## A reference to the result hash table
+  my %results = %$results_ref;  ## Dereference the result hash table
 
-## Report the remote command
-my $command = $results{'command'};
-print "Command used on the server: \n\t".$command, "\n";
+  ## Report the remote command
+  my $command = $results{'command'};
+  print "Command used on the server: \n\t".$command, "\n";
 
-## Report the result file name on the server
-$server_file = $results{'server'};
-print "Result file on the server: \n\t".$server_file;
+  ## Report the result file name on the server
+  $server_file = $results{'server'};
+  print "Result file on the server: \n\t".$server_file;
 }
 #################################################
 ## Oligo-analysis part
@@ -392,9 +372,9 @@ my $format = 'fasta';  ## The format of input sequences
 my $length = 6;  ## Length of patterns to be discovered
 my $background = 'upstream-noorf';  ## Type of background used
 my $stats = 'occ,proba,rank';  ## Returned statistics
-my $noov = 'noov';  ## Do not allow overlapping patterns
+my $noov = 1;  ## Do not allow overlapping patterns
 my $str = '2str';  ## Search on both strands
-my $sort = 'sort';  ## Sort the result according to score
+my $sort = 1;  ## Sort the result according to score
 my $lth = 'occ_sig 0';  ## Lower limit to score is 0, less significant patterns are not displayed
 
 %args = ('output' => $output_choice, 
@@ -465,8 +445,9 @@ use SOAP::WSDL;
 warn "\nINFO: This demo script sends a set of sequences to the RSAT web service, and runs oligo-analysis to detect over-represented oligonuclotides\n\n";
 
 ## WSDL location
-my $WSDL = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.wsdl';
-my $proxy = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services/RSATWS.cgi';
+my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
+my $WSDL = $server.'/RSATWS.wsdl';
+my $proxy = $server.'/RSATWS.cgi';
 
 my $soap=SOAP::WSDL->new(wsdl => $WSDL)->proxy($proxy);
 
@@ -492,9 +473,9 @@ my $length = 6;  ## Length of patterns to be discovered
 my $organism = 'Saccharomyces_cerevisiae';  ## Name of the query organism
 my $background = 'upstream-noorf';  ## Type of background used
 my $stats = 'occ,proba,rank';  ## Returned statistics
-my $noov = 'noov';  ## Do not allow overlapping patterns
+my $noov = 1;  ## Do not allow overlapping patterns
 my $str = '2str';  ## Search on both strands
-my $sort = 'sort';  ## Sort the result according to score
+my $sort = 1;  ## Sort the result according to score
 my $lth = 'occ_sig 0';  ## Lower limit to score is 0, less significant patterns are not displayed
 
 my %args = ('output' => $output_choice, 
@@ -510,7 +491,7 @@ my %args = ('output' => $output_choice,
 	    'lth' => $lth);
 
 ## Send request to the server
-print "Sending request to the server\n";
+print "Sending request to the server $server\n";
 my $call = $soap->call('oligo_analysis' => 'request' => \%args);
 
 ## Get the result
