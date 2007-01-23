@@ -24,19 +24,19 @@
 	  <xsd:element name="organism" type="xsd:string" minOccurs="1" maxOccurs="1"/>
 	  <!--xsd:element name="query" type="tns:ArrayOfString"/-->
 	  <xsd:element name="query" type="xsd:string" minOccurs="1" maxOccurs="unbounded"/>
-	  <xsd:element name="noorf" type="xsd:string"/>
+	  <xsd:element name="noorf" type="xsd:boolean"/>
 	  <xsd:element name="from" type="xsd:int"/>
 	  <xsd:element name="to" type="xsd:int"/>
 	  <xsd:element name="feattype" type="xsd:string"/>
 	  <xsd:element name="type" type="xsd:string"/>
 	  <xsd:element name="format" type="xsd:string"/>
-	  <xsd:element name="all" type="xsd:string"/>
+	  <xsd:element name="all" type="xsd:boolean"/>
 	  <xsd:element name="lw" type="xsd:int"/>
 	  <xsd:element name="label" type="xsd:string"/>
 	  <xsd:element name="label_sep" type="xsd:string"/>
-	  <xsd:element name="nocom" type="xsd:string"/>
-	  <xsd:element name="repeat" type="xsd:string"/>
-	  <xsd:element name="imp_pos" type="xsd:string"/>
+	  <xsd:element name="nocom" type="xsd:boolean"/>
+	  <xsd:element name="repeat" type="xsd:boolean"/>
+	  <xsd:element name="imp_pos" type="xsd:boolean"/>
 	<documentation>Parameters for the operation retrieve_seq</documentation>
       </xsd:complexType>
 
@@ -56,7 +56,7 @@
 	<xsd:element name="match_length" type="xsd:int"/>
 	<xsd:element name="mismatch" type="xsd:int"/>
 	<xsd:element name="str" type="xsd:string"/>
-	<xsd:element name="delete" type="xsd:string"/>
+	<xsd:element name="delete" type="xsd:boolean"/>
 	<xsd:element name="mask_short" type="xsd:int"/>
       </xsd:complexType>
 
@@ -69,18 +69,18 @@
 	<xsd:element name="organism" type="xsd:string" minOccurs="1" maxOccurs="1"/>
 	<xsd:element name="background" type="xsd:string"/>
 	<xsd:element name="stats" type="xsd:string"/>
-	<xsd:element name="noov" type="xsd:string"/>
+	<xsd:element name="noov" type="xsd:boolean"/>
 	<xsd:element name="str" type="xsd:string"/>
-	<xsd:element name="sort" type="xsd:string"/>
+	<xsd:element name="sort" type="xsd:boolean"/>
 	<xsd:element name="lth" type="xsd:string"/>
       </xsd:complexType>
 
       <xsd:complexType name="GeneInfoRequest">
         <xsd:element name="organism" type="xsd:string" minOccurs="1" maxOccurs="1"/>
 	<xsd:element name="query" type="xsd:string" minOccurs="1" maxOccurs="unbounded"/>
-	<xsd:element name="full" type="xsd:string"/>
-	<xsd:element name="noquery" type="xsd:string"/>
-	<xsd:element name="descr" type="xsd:string"/>
+	<xsd:element name="full" type="xsd:boolean"/>
+	<xsd:element name="noquery" type="xsd:boolean"/>
+	<xsd:element name="descr" type="xsd:boolean"/>
 	<xsd:element name="feattype" type="xsd:string"/>
       </xsd:complexType>
 
@@ -98,7 +98,7 @@
     <part name='query' type='string' minOccurs='1'>
       <documentation>A list of query genes</documentation>
     </part>
-    <part name='noorf' type='string'>
+    <part name='noorf' type='boolean'>
       <documentation>Prevent overlap with upstream open reading frames (ORF).</documentation>
     </part>
     <part name='from' type='int'>
@@ -116,7 +116,7 @@
     <part name='format' type='string'>
       <documentation>Sequence format. Supported: IG (Intelligenetics), WC (wconsensus), raw, FastA</documentation>
     </part>
-    <part name='all' type='string'>
+    <part name='all' type='boolean'>
       <documentation>Return sequences for all the genes of the organism. </documentation>
     </part>
     <part name='lw' type='int'>
@@ -132,21 +132,21 @@
     <part name='label_sep' type='string'>
       <documentation>Separator between the label fields. Default: | (pipe character).</documentation>
     </part>
-    <part name='nocom' type='string'>
+    <part name='nocom' type='boolean'>
       <documentation>
 	No comments. Only the identifier and the sequence are
         returned. By default, the comment indicates the ORF and
         upstream sequence coordinates.
       </documentation>
     </part>
-    <part name='repeat' type='string'>
+    <part name='repeat' type='boolean'>
       <documentation>
 	Use the repeat masked version of the genome. 
         Attention: repeated regions are annotated for some genomes
         only.
       </documentation>
     </part>
-    <part name='imp_pos' type='string'>
+    <part name='imp_pos' type='boolean'>
       <documentation>
 	Admit imprecise positions.
       </documentation>
@@ -197,8 +197,8 @@
     on the reverse complement as well (2str). Default is 2str.
       </documentation>
     </part>
-    <part name='delete' type='string'>
-      <documentation>Delete repeats instead of masking them. Recognized value is 'del'.
+    <part name='delete' type='boolean'>
+      <documentation>Delete repeats instead of masking them.
       </documentation>
     </part>
     <part name='mask_short' type='int'>
@@ -253,7 +253,7 @@
     proba, ratio, zscore, like, pos, rank
       </documentation>
     </part>
-    <part name='noov' type='string'>
+    <part name='noov' type='boolean'>
       <documentation>No overlapping. Disable the detection of overlapping matches for self-overlapping patterns (ex TATATA, GATAGA).
       </documentation>
     </part>
@@ -262,7 +262,7 @@
     summed (2str) or not (1str). Default is 2str.
       </documentation>
     </part>
-    <part name='sort' type='string'>
+    <part name='sort' type='boolean'>
       <documentation>Sort oligomers according to overrepresentation.
       </documentation>
     </part>
@@ -295,15 +295,15 @@
       <documentation>List of gene(s) for which you want info on.
       </documentation>
     </part>
-    <part name='full' type='string'>
+    <part name='full' type='boolean'>
       <documentation>Full match only (no substring matching).
       </documentation>
     </part>
-    <part name='noquery' type='string'>
+    <part name='noquery' type='boolean'>
       <documentation>Do not print the query at the begining of each line.
       </documentation>
     </part>
-    <part name='descr' type='string'>
+    <part name='descr' type='boolean'>
       <documentation>Match query against the description, too, not just against gene ID and name.
       </documentation>
     </part>
