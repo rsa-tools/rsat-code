@@ -172,8 +172,8 @@ Read the graph from a tab-delimited text file.
 
 sub read_from_table {
     my ($self, $inputfile, $source_col, $target_col, $weight_col) = @_;
-    &RSAT::message::TimeWarn("Loading graph from tab file", $infile{graph}) if ($main::verbose >= 2);
-    ($main::in) = &RSAT::util::OpenInputFile($inputfile);
+    &RSAT::message::TimeWarn("Loading graph from tab file", $inputfile) if ($main::verbose >= 2);
+    ($main::in) = &RSAT::util::OpenInputFile($inputfile); 
     my $no_weight = 0;
     my $default_weight = 1;
     my $node_color = $self->get_attribute("node_color") || "#000088";
@@ -569,8 +569,12 @@ sub load_classes {
 	my $node_id = $fields[0];
         my $family_name = $fields[1];
         my $node = $self->node_by_id($node_id);
-        $node->push_attribute("clusters", $family_name);
-        $cluster_list{$family_name} = 1;
+        if ($node) {
+          $node->push_attribute("clusters", $family_name);
+          $cluster_list{$family_name} = 1;
+        } else {
+          #&RSAT::message::TimeWarn("Node $node_id does not exist in the graph") if ($main::verbose >= 2);
+        }
   }
   @cluster_list = sort(keys(%cluster_list));
   $self->set_array_attribute("cluster_list", @cluster_list);
