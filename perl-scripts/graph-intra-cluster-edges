@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: graph-intra-cluster-edges,v 1.1 2007/01/24 09:03:00 rsat Exp $
+# $Id: graph-intra-cluster-edges,v 1.2 2007/01/24 12:31:40 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -98,6 +98,7 @@ package main;
     ################################################################
     ## Read input graph
     $graph->read_from_table($infile{graph}, $source_col, $target_col, $weight_col);
+    
     ## Read and add the class specification to each node
     $graph->load_classes($infile{clusters});
 
@@ -163,7 +164,6 @@ package main;
       print $out "\n";
       print $out $node->get_attribute("label");
       my $sum = 0;
-      #&RSAT::message::TimeWarn($node->get_attribute("label"));
       foreach my $cluster(@cluster_list) {
         my %intra_edge_number = $node->get_attribute("cluster_intra_edges");
         my $val = 0; 
