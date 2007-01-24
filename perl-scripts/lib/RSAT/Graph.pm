@@ -534,8 +534,48 @@ sub to_node_table {
 
   return $node_table;
 }
+################################################################
+=pod
 
+=item B<load_classes($class_file)>
 
+Load the $class_file by adding to each node the cluster(s) to which it belongs 
+Clusters are stored within the attribute cluster_list of the graph object.
+
+Parameters
+
+=over
+
+=item I<@out_fields>
+
+The class file
+
+=back
+
+=cut
+
+sub load_classes {
+  my ($self, $inputfile) = @_;
+  &RSAT::message::TimeWarn("Loading class information", $inputfile) if ($main::verbose >= 2);
+  ($main::in) = &RSAT::util::OpenInputFile($inputfile);
+  my %cluster_list;
+  while (<$main::in>) {
+	next if (/^--/); # Skip mysql-like comments
+	next if (/^;/); # Skip RSAT comments
+	next if (/^#/); # Skip comments and header
+	next unless (/\S/); # Skip empty rows
+	chomp;
+	my @fields = split("\t");
+	my $node_id = $fields[0];
+        my $family_name = $fields[1];
+        my $node = $self->node_by_id($node_id);
+        $node->push_attribute("clusters", $family_name);
+        $cluster_list{$family_name} = 1;
+  }
+  @cluster_list = sort(keys(%cluster_list));
+  $self->set_array_attribute("cluster_list", @cluster_list);
+
+}
 return 1;
 
 __END__

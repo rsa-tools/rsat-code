@@ -1,0 +1,420 @@
+#!/usr/bin/perl -w
+############################################################
+#
+# $Id: graph-intra-cluster-edges,v 1.1 2007/01/24 09:03:00 rsat Exp $
+#
+# Time-stamp: <2003-07-04 12:48:55 jvanheld>
+#
+############################################################
+
+## use strict;
+
+=pod
+
+=head1 NAME
+
+graph-intra-cluster-edges
+
+=head1 DESCRIPTION
+
+Count the number (or the sum of the weight) of intra cluster (or class edges) of a graph according to some classification file.
+
+=head1 AUTHORS
+
+=over
+
+=item sylvain@scmbb.ulb.ac.be
+
+=head1 CATEGORY
+
+graph analysis
+
+=head1 USAGE
+
+graph-intra-cluster-edges [-i graph_file] -clusters cluster_file [-o outputfile] [-v #] [-weights] [...] 
+
+=head1 INPUT FORMAT
+
+=head2 Graph format
+
+See I<convert-graph> for a description of the supported input graph
+formats. Default format for the input graph: tab.
+
+=head2 Cluster format
+
+A two column tab delimited file. First column corresponding to the nodes and second column to the classes.
+
+=head1 OUTPUT FORMAT
+
+The output file is a matrix with node labels as rows and clusters (classes) as columns. 
+
+=cut
+
+
+BEGIN {
+    if ($0 =~ /([^(\/)]+)$/) {
+	push (@INC, "$`lib/");
+    }
+}
+require "RSA.lib";
+require RSAT::Graph;
+require RSAT::Classification;
+
+################################################################
+## Main package
+package main;
+{
+
+    ################################################################
+    ## Initialise parameters
+    my $start_time = &AlphaDate();
+
+    ################################################################
+    ## Initialize the input graph
+    $graph = new RSAT::Graph();
+    $graph->set_attribute("label", "input graph");
+
+    ## Columns of the tab-delimited graph file
+    local $source_col = 1;
+    local $target_col = 2;
+    local $weight_col = 0;
+
+    ## Count the sum of the intra cluster edges or count their number
+    local $weights = 0;
+ 
+    %main::infile = ();
+    %main::outfile = ();
+    $main::verbose = 0;
+    $main::out = STDOUT;
+
+    ################################################################
+    ## Read argument values
+    &ReadArguments();
+
+    ################################################################
+    ## Open output stream
+    $main::out = &OpenOutputFile($main::outfile{output});
+
+    ################################################################
+    ## Read input graph
+    $graph->read_from_table($infile{graph}, $source_col, $target_col, $weight_col);
+    ## Read and add the class specification to each node
+    $graph->load_classes($infile{clusters});
+
+    ################################################################
+    ## Count the number of intra-cluster edge by looking for each arc
+    ## if the target node is located in the same cluster than 
+    ## the source node
+    
+    foreach my $arc ($graph->get_attribute("arcs")) {
+      my $source_node = $arc->get_attribute("source");
+      my $target_node = $arc->get_attribute("target");
+      my $source_id = $source_node->get_attribute("id");
+      my $target_id = $target_node->get_attribute("id");
+      my @source_clusters = $source_node->get_attribute("clusters");
+      my @target_clusters = $target_node->get_attribute("clusters");
+      my $add_value = 1;
+      if ($weights) {
+        $add_value = $arc->get_attribute("weight");
+        $add_value /= 2;
+      }
+      foreach my $scluster (@source_clusters) {
+        foreach my $tcluster (@target_clusters) {
+          if ($scluster eq $tcluster) {
+            #print "$scluster $source_id $target_id\n";
+            if ($source_node->get_attribute("cluster_intra_edges")) {
+              my %source_intra_edge_number = $source_node->get_attribute("cluster_intra_edges");
+              my $intra_edge_number = $source_intra_edge_number{$scluster};
+              $intra_edge_number+=$add_value;
+              $source_node->add_hash_attribute("cluster_intra_edges",$scluster,$intra_edge_number);
+            } else {
+              my %source_intra_edge_number = ();
+              my $intra_edge_number = $add_value;
+              $source_intra_edge_number{$scluster} = $intra_edge_number;
+              $source_node->set_hash_attribute("cluster_intra_edges",%source_intra_edge_number);
+            }
+            if ($target_node->get_attribute("cluster_intra_edges")) {
+              my %target_intra_edge_number = $target_node->get_attribute("cluster_intra_edges");
+              my $intra_edge_number = $target_intra_edge_number{$tcluster};
+              $intra_edge_number+=$add_value;
+              $target_node->add_hash_attribute("cluster_intra_edges",$tcluster,$intra_edge_number);
+            } else {
+              my %target_intra_edge_number = ();
+              my $intra_edge_number = $add_value;
+              $target_intra_edge_number{$tcluster} = $intra_edge_number;
+              $target_node->set_hash_attribute("cluster_intra_edges",%target_intra_edge_number);
+            }
+          }
+        }
+      }
+    }
+    
+    ################################################################
+    ## Print the results
+    my @cluster_list = $graph->get_attribute("cluster_list");
+    ## Print cluster names
+    foreach my $cluster (@cluster_list) {
+      print $out "\t$cluster";
+    }
+    print $out "\tsum";
+    
+    ## Print node name and the number of intra-edge cluster
+    foreach my $node ($graph->get_nodes()) {
+      print $out "\n";
+      print $out $node->get_attribute("label");
+      my $sum = 0;
+      #&RSAT::message::TimeWarn($node->get_attribute("label"));
+      foreach my $cluster(@cluster_list) {
+        my %intra_edge_number = $node->get_attribute("cluster_intra_edges");
+        my $val = 0; 
+        if (exists($intra_edge_number{$cluster})) {
+           $val = $intra_edge_number{$cluster};
+        }
+        $sum += $val;
+        print $out "\t$val";
+      }
+      print $out "\t$sum";
+    }
+    print $out "\n";
+    
+    ################################################################
+    ## Print verbose
+    &Verbose() if ($main::verbose);
+
+    ################################################################
+    ## Finish verbose
+    if ($main::verbose >= 1) {
+	my $done_time = &AlphaDate();
+	print STDOUT "; Job started $start_time\n";
+	print STDOUT "; Job done    $done_time\n";
+    }
+
+    ################################################################
+    ## Close output stream
+    close $main::out if ($main::outfile{output});
+
+    exit(0);
+}
+
+################################################################
+################### SUBROUTINE DEFINITION ######################
+################################################################
+
+
+################################################################
+## Display full help message 
+sub PrintHelp {
+    system "pod2text -c $0";
+    exit()
+}
+
+################################################################
+## Display short help message
+sub PrintOptions {
+    &PrintHelp();
+}
+
+################################################################
+## Read arguments 
+sub ReadArguments {
+    my $arg;
+    my @arguments = @ARGV; ## create a copy to shift, because we need ARGV to report command line in &Verbose()
+    while (scalar(@arguments) >= 1) {
+      $arg = shift (@arguments);
+	## Verbosity
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-v #>
+
+Level of verbosity (detail in the warning messages during execution)
+
+=cut
+	if ($arg eq "-v") {
+	    if (&IsNatural($arguments[0])) {
+		$main::verbose = shift(@arguments);
+	    } else {
+		$main::verbose = 1;
+	    }
+
+	    ## Help message
+=pod
+
+=item B<-h>
+
+Display full help message
+
+=cut
+	} elsif ($arg eq "-h") {
+	    &PrintHelp();
+
+	    ## List of options
+=pod
+
+=item B<-help>
+
+Same as -h
+
+=cut
+	} elsif ($arg eq "-help") {
+	    &PrintOptions();
+
+	    ## Graph file
+=pod
+
+=item B<-i graphfile>
+
+If no graph file is specified, the standard input is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-i") {
+	  $main::infile{graph} = shift(@arguments);
+
+	    ## Source column
+=pod
+
+=item B<-scol>
+
+Source column. Column containing the source nodes in the tab-delimited
+graph file.
+
+=cut
+	} elsif ($arg eq "-scol") {
+	    $source_col = shift (@arguments);
+	    unless (&IsNatural($source_col) && ($source_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $source_col, "Invalid value for the source column. Must be a strictly positive natural number"));
+	    }
+
+	    ## Target column
+=pod
+
+=item B<-tcol>
+
+Target column. Column containing the target nodes in the tab-delimited
+graph file.
+
+=cut
+	} elsif ($arg eq "-tcol") {
+	    $target_col = shift (@arguments);
+	    unless (&IsNatural($target_col) && ($target_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $target_col, "Invalid value for the target column. Must be a strictly positive natural number"));
+	    }
+
+	    ## Weight column
+=pod
+
+=item B<-wcol>
+
+Weight column. Column containing the weight nodes in the tab-delimited
+graph file.
+
+=cut
+	} elsif ($arg eq "-wcol") {
+	    $weight_col = shift (@arguments);
+	    unless (&IsNatural($weight_col) && ($weight_col > 0)) {
+		&RSAT::error::FatalError(join("\t", $weight_col, "Invalid value for the weight column. Must be a strictly positive natural number"));
+	    }
+
+
+
+=pod
+
+=item B<-clusters cluster_file>
+
+Cluster file. The cluster file is a two columns tab-delimited indicating for each node the cluster to which it belongs.
+
+=cut
+	} elsif ($arg eq "-clusters") {
+	    $main::infile{clusters} = shift(@arguments);
+
+
+	    ## Output file
+=pod
+
+=item	B<-o outputfile>
+
+If no output file is specified, the standard output is used.  This
+allows to use the command within a pipe.
+
+=cut
+	} elsif ($arg eq "-o") {
+	    $main::outfile{output} = shift(@arguments);
+
+	    ## Weights
+=pod
+
+=item	B<-weights>
+
+Sums the weight of the intra cluster edges instead of counting them. Adds half the weight of each arc.
+
+=cut
+	} elsif ($arg eq "-weights") {
+	    $weights = 1;
+
+
+
+	} else {
+	    &FatalError(join("\t", "Invalid option", $arg));
+
+	}
+    }
+
+
+=pod
+
+=back
+
+=cut
+
+}
+################################################################
+#### verbose message
+sub Verbose {
+    print STDOUT "; graph-neighbnours ";
+    &PrintArguments(STDOUT);
+    if (defined(%main::infile)) {
+	print STDOUT "; Input files\n";
+	while (my ($key,$value) = each %main::infile) {
+	    print STDOUT ";\t$key\t$value\n";
+	}
+    }
+    if (defined(%main::outfile)) {
+	print STDOUT "; Output files\n";
+	while (my ($key,$value) = each %main::outfile) {
+	    print STDOUT ";\t$key\t$value\n";
+	}
+    }
+
+    ## Report graph size
+    my ($nodes, $arcs) = $graph->get_size();
+    print STDOUT "; Graph size\n";
+    print STDOUT ";\tnodes\t",$nodes,"\n";
+    print STDOUT ";\tarcs\t",$arcs,"\n";
+
+}
+
+
+__END__
+
+=pod
+
+=head1 SEE ALSO
+
+=over
+
+=item I<graph-neighbours>
+
+=item I<convert-graph>
+
+
+=item I<compare-classes>
+
+=item I<convert-classes>
+
+=back
+
+=cut
