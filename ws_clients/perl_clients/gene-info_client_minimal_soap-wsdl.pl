@@ -25,7 +25,7 @@ $soap->wsdlinit;
 ## Gene-info parameters
 my $organism = 'Saccharomyces_cerevisiae';  ## Name of the query organism
 my @queries = ('MET\d+');  ## This query is a regular expression
-my $full = 'full';  ## Looking for full match, not substring match.
+my $full = 1;  ## Looking for full match, not substring match.
 
 my %args = ('organism' => $organism,
 	    'query' => \@queries,
