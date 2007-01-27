@@ -1,5 +1,10 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<xsl:stylesheet version='1.0' xmlns:soap='http://schemas.xmlsoap.org/wsdl/soap/' xmlns:wsdl='http://schemas.xmlsoap.org/wsdl/' xmlns:xsl='http://www.w3.org/1999/XSL/Transform' xmlns:fo='http://www.w3.org/1999/XSL/Format'>
+<xsl:stylesheet version='1.0'
+xmlns:soap='http://schemas.xmlsoap.org/wsdl/soap/'
+xmlns:wsdl='http://schemas.xmlsoap.org/wsdl/'
+xmlns:xsl='http://www.w3.org/1999/XSL/Transform'
+xmlns:fo='http://www.w3.org/1999/XSL/Format' 
+xmlns:xsd='http://www.w3.org/2001/XMLSchema'>
     
     <xsl:template match='/'>
         <xsl:apply-templates/>
@@ -64,9 +69,9 @@
                         <th align='left' valign='top'><font color='#888888' size='3'>Parameters</font></th>
                         <td align='left' valign='top'><font color='#444444' size='3'>
                             <font color='#0000DD'>Input Parameters</font>
-                            <xsl:apply-templates select='ancestor::*//wsdl:message[@name=$varInputName]/wsdl:part'/><br/>
+                            <xsl:apply-templates select='ancestor::*//wsdl:types/xsd:schema/xsd:complexType[@name=$varInputName]/xsd:all/xsd:element'/><br/>
                             <font color='#0000DD'>Output Parameters</font>
-                            <xsl:apply-templates select='ancestor::*//wsdl:message[@name=$varOutputName]/wsdl:part'/><br/></font>
+                            <xsl:apply-templates select='ancestor::*//wsdl:types/xsd:schema/xsd:complexType[@name=$varOutputName]/xsd:all/xsd:element'/><br/></font>
                         </td>
                     </tr>
                     
@@ -75,15 +80,17 @@
     </xsl:template>
     
     <!-- Template invoked for each parameter of a method -->	
-    <xsl:template match='wsdl:part'>
+    <xsl:template match='xsd:element'>
         <tr align='left'>
             <td height='35'>
                 <font color='#228888'><xsl:value-of select='@name'/></font><br/>
 		<xsl:if test='@minOccurs >= 1'>(required)</xsl:if>
 	    </td>
 	    <td>
-	      <xsl:value-of select='wsdl:documentation'/><br/>
-              Type = <xsl:value-of select='@type'/>
+	      <xsl:value-of select='xsd:annotation/xsd:documentation'/><br/>
+	      <xsl:if test='@type = "xsd:string"'>Type = String</xsl:if>
+	      <xsl:if test='@type = "xsd:int"'>Type = Integer</xsl:if>
+      	      <xsl:if test='@type = "xsd:boolean"'>Type = Boolean</xsl:if>
             </td>
         </tr>
     </xsl:template>
