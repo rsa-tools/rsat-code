@@ -12,9 +12,9 @@
 use strict;
 use SOAP::WSDL;
 
-
 ## Service location
 my $server = 'http://rsat.scmbb.ulb.ac.be/rsat/web_services';
+#my $server = 'http://localhost/rsat/web_services';
 my $WSDL = $server.'/RSATWS.wsdl';
 my $proxy = $server.'/RSATWS.cgi';
 
@@ -25,8 +25,8 @@ $soap->wsdlinit;
 ## Gene-info parameters
 my $organism = 'Escherichia_coli_K12';  ## Name of the query organism
 my @queries = ("methionine", "purine");  ## List of queries
-my $full = '';  ## Looking for full match, not substring match.
-my $descr = '1';  ## Accepted value: 'descr'. Not used here.
+my $full = 0;  ## Also looking for substring matches, not only full string matches.
+my $descr = 1;  ## Also looking in description field, not just gene name
 
 my %args = ('organism' => $organism,
 	    'query' => \@queries,
@@ -34,7 +34,7 @@ my %args = ('organism' => $organism,
 	    'descr' => $descr);
 
 ## Send the request to the server
-print "Sending request to the server\n";
+print "Sending request to the server $server\n";
 my $som = $soap->call('gene_info' => 'request' => \%args);
 
 ## Get the result
