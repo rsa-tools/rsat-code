@@ -115,7 +115,7 @@ print "Result file on the server: \n\t".$server_file;
 $output_choice = 'both'; ## We want to get the result on the client side, as well as the server file name
 
 ## Parameters
-my $format = 'fasta';  ## The format of input sequences
+$format = 'fasta';  ## The format of input sequences
 my $length = 6;  ## Length of patterns to be discovered
 my $background = 'upstream-noorf';  ## Type of background used
 my $stats = 'occ,proba,rank';  ## Returned statistics
