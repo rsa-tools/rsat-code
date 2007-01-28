@@ -8,7 +8,7 @@
 	  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/">
 
   <types>
-    <xsd:schema targetNamespace="http://rsat/RSATWS">
+    <xsd:schema targetNamespace="urn:RSATWS">
 
       <!--xsd:complexType name="ArrayOfString"-->
          <!--xsd:complexContent-->
