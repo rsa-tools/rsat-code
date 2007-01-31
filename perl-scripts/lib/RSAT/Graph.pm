@@ -23,7 +23,7 @@ use RSAT::util;
 
 =head1 DESCRIPTION
 
-Impementation of basic graph functions. This class allows to create
+Implementation of basic graph functions. This class allows to create
 directed graphs and export them in different formats.
 
 Graph class. 
