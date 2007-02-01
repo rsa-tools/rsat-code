@@ -114,7 +114,7 @@ sub retrieve_seq {
     my $command = $self->retrieve_seq_cmd(%args);
     my $stderr = `$command 2>&1 1>/dev/null`;
     if ($stderr) {
-	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr");
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
     }
     my $result = `$command`;
     my $tmp_outfile = `mktemp $TMP/retrieve-seq.XXXXXXXXXX`;
@@ -296,7 +296,7 @@ sub purge_seq {
     my $command = $self->purge_seq_cmd(%args);
     my $stderr = `$command 2>&1 1>/dev/null`;
 #    if ($stderr) {
-#	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr");
+#	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
 #    }
     my $result = `$command`;
     my $tmp_outfile = `mktemp $TMP/purge-seq.XXXXXXXXXX`;
@@ -460,7 +460,7 @@ sub oligo_analysis {
     my $command = $self->oligo_analysis_cmd(%args);
 #    my $stderr = `$command 2>&1 1>/dev/null`;
 #    if ($stderr) {
-#	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr");
+#	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
 #    }
     my $result = `$command`;
     my $tmp_outfile = `mktemp $TMP/oligo.XXXXXXXXXX`;
@@ -567,7 +567,7 @@ sub gene_info {
     my $result = `$command`;
     my $stderr = `$command 2>&1 1>/dev/null`;
     if ($stderr) {
-	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr");
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
     }
     return {'command' => $command,
 	    'client' => $result};
