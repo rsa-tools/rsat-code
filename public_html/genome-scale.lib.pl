@@ -59,7 +59,19 @@ sub DisplayRetrieveSeqOptions {
 #    print $query->hidden(-name=>'orf_overlap',-default=>'on');
 
     ### sequence label
-    print $query->hidden(-name=>'seq_label',-default=>$default{seq_label});
+    print "<B><A HREF='help.retrieve-seq.html#seq_label'>Sequence label</A></B>&nbsp;";
+    print $query->popup_menu(-name=>'seq_label',
+			     -Values=>['gene identifier', 
+				       'gene name',
+				       'gene identifier + name',
+				       'gene identifier + organism + gene name',
+				       'full identifier'
+				      ],
+			     -default=>$default{seq_label});
+    print "<BR>\n";
+
+    ### sequence label
+#    print $query->hidden(-name=>'seq_label',-default=>$default{seq_label});
 
     print "<BR>\n";
 }
@@ -115,19 +127,23 @@ sub ReadRetrieveSeqParams {
 
 	### sequence label
 	my $seq_label = lc($query->param('seq_label'));
-	$retrieve_seq_parameters .= " -label ".$seq_label;
-#  	if (($seq_label =~ /gene/) && 
-# 	    ($seq_label =~ /orf/)) {
-# 	    $retrieve_seq_parameters .= " -label orf_gene";
-# 	} elsif ($seq_label =~ /gene/) {
-# 	    $retrieve_seq_parameters .= " -label gene";
-# 	} elsif ($seq_label =~ /orf/) {
-# 	    $retrieve_seq_parameters .= " -label orf";
-# 	} elsif ($seq_label =~ /full/) {
-# 	    $retrieve_seq_parameters .= " -label full";
-# 	} else {
-# 	    &cgiError("Invalid option for sequence label '$seq_label'");
-# 	}
+#	$retrieve_seq_parameters .= " -label ".$seq_label;
+  	if (($seq_label =~ /name/) && 
+	    ($seq_label =~ /organism/) && 
+ 	    ($seq_label =~ /identifier/)) {
+ 	    $retrieve_seq_parameters .= " -label id,organism_name,name";
+	  } elsif (($seq_label =~ /name/) && 
+		   ($seq_label =~ /identifier/)) {
+ 	    $retrieve_seq_parameters .= " -label id,name";
+ 	} elsif ($seq_label =~ /name/) {
+ 	    $retrieve_seq_parameters .= " -label name";
+ 	} elsif ($seq_label =~ /identifier/) {
+ 	    $retrieve_seq_parameters .= " -label id";
+ 	} elsif ($seq_label =~ /full/) {
+ 	    $retrieve_seq_parameters .= " -label full";
+ 	} else {
+ 	    &cgiError("Invalid option for sequence label '$seq_label'");
+ 	}
 
 	### limits ###
 	if (&IsInteger($query->param('from'))) {
