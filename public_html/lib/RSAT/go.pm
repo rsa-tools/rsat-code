@@ -59,6 +59,7 @@ sub read_from_obo {
   my @parenttable;
   my %indextable;
   my %functionname;
+  my %name_id;
   my %namespace;
   my %definition;
   while (my $ligne = <$main::in>) {
@@ -71,6 +72,7 @@ sub read_from_obo {
         foreach my $parent (@isa) {
           #print OUTPUT "$id\t$namespace\t$name\t$parent\t$def\n";
           $functionname{$id} = $name;
+          $name_id{$name} = $id;
           $parenttable[$j][$parentnb] = $parent;
           $parentnb++;
           $definition{$id} = $def;
@@ -112,7 +114,7 @@ sub read_from_obo {
   $self->set_hash_attribute("functionname", %functionname);
   $self->set_hash_attribute("namespace", %namespace);
   $self->set_hash_attribute("definition", %definition);
-  
+  $self->set_hash_attribute("name_id", %name_id);
 }
     
 ################################################################
@@ -174,11 +176,13 @@ Read the graph from a tab-delimited text file.
 =cut
 
 sub exists {
-  my ($self, $goid) = @_;
+  my ($self, $arg) = @_;
   my %indextable = $self->get_attribute("indices");
-  my $index = $indextable{$goid};
+  my %name_id = $self->get_attribute("name_id");
+  my $index = $indextable{$arg};
+  my $id = $name_id{$arg};
   my $repRef = 0;
-  if (defined($index)) {
+  if (defined($index) || defined($id)) {
     $repRef = 1;
   }
   return($repRef);
@@ -188,9 +192,6 @@ sub exists {
 =pod
 
 =item B<get_namespace>
-
-Read the graph from a tab-delimited text file.
-
 
  Title    : get_namespace
  Usage    : $go->print_go_class(goid)
@@ -208,7 +209,28 @@ sub get_namespace {
   return($rep);
 }
 
+################################################################
 
+=pod
+
+=item B<get_goid>
+
+
+ Title    : get_goid
+ Usage    : $go->print_go_class(name)
+ Returns  : a string indicating the namespace of the specified go_class
+
+=cut
+
+sub get_goid {
+  my ($self, $name) = @_;
+  my %namespace = $self->get_attribute("name_id");
+  my $rep = $namespace{$name};
+  if (!defined($rep)) {
+    &RSAT::message::Warning("Unable to find the id of class $name\n") if ($main::verbose >= 2);
+  }
+  return($rep);
+}
 ################################################################
 
 =pod

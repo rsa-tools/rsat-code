@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: go-hierarchy,v 1.1 2007/01/31 15:23:14 rsat Exp $
+# $Id: go-hierarchy,v 1.2 2007/02/01 12:15:13 rsat Exp $
 #
 ############################################################
 
@@ -15,7 +15,8 @@ go-hierarchy
 
 =head1 DESCRIPTION
 
-After reading an obo file, able to retrieve the ancesters of one or more go classes
+After reading an obo file, able to retrieve the ancesters of one or more go classes.
+This program also allows to annotate a file of gene and go ids.
 
 =head1 AUTHORS
 
@@ -27,7 +28,9 @@ util
 
 =head1 USAGE
     
-go-hierarchy [-i inputfile] [-o outputfile] [-v #] [-q go_class1] [-q go_class2] [-classfile classfile] [-genefile genefile]
+go-hierarchy [-i inputfile] [-o outputfile] [-v #] [-q go_class1] [-q go_class2] [-classfile classfile] 
+
+go-hierarchy [-i inputfile] [-o outputfile] [-v #] [-genefile genefile] 
 
 =head1 INPUT FORMAT
 
@@ -59,7 +62,7 @@ package main;
      @unknown_classes = ();
      $class = 0;
      $gene = 0;
-     $gene_file = "";
+     #$format_name = 0;
      %required_output_fields = ("name" => 1);
      %available_return_option = ("id" => 1, 
     				   "name" => 1, 
@@ -81,10 +84,11 @@ package main;
 
     ################################################################
     ## Check argument values
-    if ($genes && $class) {
-      &FatalError(join("You cannot specify both a gene file and a list of query go classes"));
+    if ($gene && $class) {
+      &FatalError(join("\t", "You cannot specify both a list of genes to annotate and a query go-class"));
     }
 
+    
     ################################################################
     ## Open output stream
     $main::out = &OpenOutputFile($main::outfile{output});
@@ -94,44 +98,47 @@ package main;
     ## Initialize gene ontology object
     $go = new RSAT::go();
     $go->read_from_obo($infile{inputfile}); 
+    
 
     ################################################################
     ## Determine the go classes for which the hierarchy is searched
-    if ($infile{class_file}) {
-	my $l = 0;
-	&RSAT::message::TimeWarn("Reading classes from file", $infile{class_file}) if ($main::verbose >= 2);
-	my ($class_file_handle) = &OpenInputFile($infile{seeds});
-	while (my $line = <$class_file_handle>) {
-	  $l++;
-	  next if ($line =~ /^\#/); ## Skip header lines
-	  next if ($line =~ /^--/); ## Skip comment lines
-	  next if ($line =~ /^;/); ## Skip comment lines
-	  next unless ($line =~ /\S/); ## Skip empty lines
-	  chomp($line);
-	  my @fields = split /\s+/, $line;
-	  my $name =  $fields[0];
-	  if ($name) {
-	    push @class_names, $name;
-	  } else {
+    if ($class) {
+      if ($infile{class_file}) {
+        my $l = 0;
+        &RSAT::message::TimeWarn("Reading classes from file", $infile{class_file}) if ($main::verbose >= 2);
+        my ($class_file_handle) = &OpenInputFile($infile{class_file});
+        while (my $line = <$class_file_handle>) {
+          $l++;
+          next if ($line =~ /^\#/); ## Skip header lines
+          next if ($line =~ /^--/); ## Skip comment lines
+          next if ($line =~ /^;/); ## Skip comment lines
+          next unless ($line =~ /\S/); ## Skip empty lines
+          chomp($line);
+          my @fields = split /\s+/, $line;
+          my $name =  $fields[0];
+          if ($name) {
+          
+            push @class_names, $name;
+          } else {
 	    &RSAT::message::Warning("Line", $l, "starts with space. Skipped.");
-	  }
-	}
-	close $class_file_handle;
+          }
+        }
+        close $class_file_handle;
       }
-      
       ## Identify class in the go object
       &RSAT::message::TimeWarn("Identifying",scalar(@class_names), "seed nodes in the graph") if ($main::verbose >= 2);
       foreach my $goid (@class_names) {
 	my $exists = $go->exists($goid);
+
 	if ($exists) {
 	  push @known_classes, $goid;
 	  &RSAT::message::Info("Identified class with id", $goid) if ($main::verbose >= 3);
-	} else {
+        } else {
 	  push @unknown_classes, $goid;
 	  &RSAT::message::Warning("The GO obo file you submitted does not contain any class with id", $goid);
 	}
       }
-
+    }
 
     ################################################################
     ## Print verbose
@@ -139,45 +146,115 @@ package main;
     
     ################################################################
     ## Retrieve the ancesters for the queried classes
+    if ($class) {
+      ## Header output
+      print $out "#query_class_name";
+      if (exists($required_output_fields{"name"})) {
+        print $out "\tancester_class_name";
+      }
+      if (exists($required_output_fields{"namespace"})) {
+        print $out "\tnamespace";
+      }  
+      if (exists($required_output_fields{"id"})) {
+        print $out "\tgo_id";
+      }
+      if (exists($required_output_fields{"def"})) {
+        print $out "\tdefinition";
+      }
+      print $out "\n";
+      ## Ancesters search
+      foreach my $goid (@known_classes) {
+        print @class_names."\n";
+        my $goclassesRef = $go->get_parents($goid);
+        @goclasses = @{$goclassesRef};
+        my $goid_name = $go->get_name($goid);
+        foreach my $goclass (@goclasses) {
+          print $out "$goid_name";
+          if (exists($required_output_fields{"name"})) {
+            print $out "\t".$go->get_name($goclass);
+          }
+          if (exists($required_output_fields{"namespace"})) {
+            print $out "\t".$go->get_namespace($goclass);
+          }  
+          if (exists($required_output_fields{"id"})) {
+            print $out "\t".$goclass;
+          }
+          if (exists($required_output_fields{"def"})) {
+            print $out "\t".$go->get_definition($goclass);
+          }
+          print $out "\n";
+        }
+      }
+    } 
     
-        print $out "#query_class_name";
-        if (exists($required_output_fields{"name"})) {
-          print $out "\tancester_class_name";
-        }
-        if (exists($required_output_fields{"namespace"})) {
-          print $out "\tnamespace";
-        }  
-        if (exists($required_output_fields{"id"})) {
-          print $out "\tgo_id";
-        }
-        if (exists($required_output_fields{"def"})) {
-          print $out "\tdefinition";
-        }
-        print $out "\n";
+    ################################################################
+    ## Annotate the gene file by adding the ancesters. Output may be use
+    ## in the compare-classes program
     
-    
-    foreach my $goid (@known_classes) {
-      print @class_names."\n";
-      my $goclassesRef = $go->get_parents($goid);
-      @goclasses = @{$goclassesRef};
-      my $goid_name = $go->get_name($goid);
-      foreach my $goclass (@goclasses) {
-        print $out "$goid_name";
-        if (exists($required_output_fields{"name"})) {
-          print $out "\t".$go->get_name($goclass);
-        }
-        if (exists($required_output_fields{"namespace"})) {
-          print $out "\t".$go->get_namespace($goclass);
-        }  
-        if (exists($required_output_fields{"id"})) {
-          print $out "\t".$goclass;
-        }
-        if (exists($required_output_fields{"def"})) {
-          print $out "\t".$go->get_definition($goclass);
-        }
-        print $out "\n";
+    if ($gene) {
+      ## Header output
+      print $out "#gene_name\tgo_class_name";
+      if (exists($required_output_fields{"namespace"})) {
+        print $out "\tnamespace";
+      }  
+      if (exists($required_output_fields{"id"})) {
+        print $out "\tgo_id";
+      }
+      if (exists($required_output_fields{"def"})) {
+        print $out "\tdefinition";
+      }
+      print $out "\n";
+      ## Ancesters search
+      
+      if ($infile{gene_file}) {
+	my $l = 0;
+	&RSAT::message::TimeWarn("Reading genes from file", $infile{gene_file}) if ($main::verbose >= 2);
+	my ($gene_file_handle) = &OpenInputFile($infile{gene_file});
+	while (my $line = <$gene_file_handle>) {
+	  $l++;
+	  next if ($line =~ /^\#/); ## Skip header lines
+	  next if ($line =~ /^--/); ## Skip comment lines
+	  next if ($line =~ /^;/); ## Skip comment lines
+	  next unless ($line =~ /\S/); ## Skip empty lines
+	  chomp($line);
+	  my @fields = split /\t/, $line;
+	  my $gene =  $fields[0];
+	  my $goid = $fields[1];
+	  if ($gene && $goid) {
+	    if ($go->exists($goid)) {
+	      my $goclassesRef = $go->get_parents($goid);
+              @goclasses = @{$goclassesRef};
+              my $goid_name = $go->get_name($goid);
+              foreach my $goclass (@goclasses) {
+                print $out "$gene";
+                if (exists($required_output_fields{"name"})) {
+                  print $out "\t".$go->get_name($goclass);
+                }
+                if (exists($required_output_fields{"namespace"})) {
+                  print $out "\t".$go->get_namespace($goclass);
+                }  
+                if (exists($required_output_fields{"id"})) {
+                  print $out "\t".$goclass;
+                }
+                if (exists($required_output_fields{"def"})) {
+                  print $out "\t".$go->get_definition($goclass);
+                }
+                print $out "\n";
+              }
+	    } else {
+	      &RSAT::message::Warning("Class $goid unknown at line", $l, ". Skipped.");
+	    }
+	  } else {
+	    &RSAT::message::Warning("Format error at line", $l, ". Skipped.");
+	  }
+	}
+	close $gene_file_handle;
       }
     }
+    
+    
+    
+    
     
     ################################################################
     ## Print output
@@ -313,7 +390,7 @@ rest of the row is ignored.
 	} elsif ($arg eq "-classf") {
 	    $main::infile{class_file} = shift(@arguments);
 	    $class = 1;
-	    
+=pod	    
 =item	B<-genef gene_file>
 
 Gene file. This two-columns tab-delimited file specifies a list 
@@ -322,11 +399,9 @@ of genes and the GO to which the gene belongs.
 	Second column : gene ontology ID
 
 =cut
-	} elsif ($arg eq "-classf") {
-	    $main::infile{class_file} = shift(@arguments);
-	    $class = 1;	    
-	    
-	    
+	} elsif ($arg eq "-genef") {
+	    $main::infile{gene_file} = shift(@arguments);
+	    $gene = 1;	    
 =pod
 
 =item	B<-return fields>
@@ -365,7 +440,7 @@ List of fields to return : goid,name,def,namespace,all (default : name)
 ################################################################
 #### verbose message
 sub Verbose {
-    print $main::out "; template ";
+    print $main::out "; go-hierarchy ";
     &PrintArguments($main::out);
     if (defined(%main::infile)) {
 	print $main::out "; Input files\n";
