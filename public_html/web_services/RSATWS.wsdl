@@ -5,18 +5,19 @@
           xmlns:tns="urn:RSATWS"
           xmlns:xsd="http://www.w3.org/2001/XMLSchema"
           xmlns="http://schemas.xmlsoap.org/wsdl/"
-	  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/">
+	  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+	  xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/">
 
   <types>
-    <xsd:schema targetNamespace="urn:RSATWS">
+    <xsd:schema targetNamespace="urn:RSATWS" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/">
 
-      <!--xsd:complexType name="ArrayOfString"-->
-         <!--xsd:complexContent-->
-            <!--xsd:restriction base="enc:Array"-->
-               <!--xsd:attribute ref="enc:arrayType" arrayType="xsd:string[]"/-->
-            <!--/xsd:restriction-->
-         <!--/xsd:complexContent-->
-      <!--/xsd:complexType-->
+      <xsd:complexType name="StringArray">
+         <xsd:complexContent>
+            <xsd:restriction base="soapenc:Array">
+               <xsd:attribute ref="soapenc:arrayType" arrayType="xsd:string[]"/>
+            </xsd:restriction>
+         </xsd:complexContent>
+      </xsd:complexType>
 
       <xsd:complexType name="RetrieveSequenceRequest">
         <xsd:annotation>
@@ -25,7 +26,7 @@
 	  </xsd:documentation>
         </xsd:annotation>
         <xsd:all>
-	  <xsd:element name="output" type="xsd:string">
+	  <xsd:element name="output" type="xsd:string" minOccurs="0">
 	    <xsd:annotation>
 	      <xsd:documentation>
 	        Return type. Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client), or  'both'. Default is 'both'.
@@ -39,99 +40,103 @@
               </xsd:documentation>
             </xsd:annotation>
           </xsd:element>
-	  <!--xsd:element name="query" type="tns:ArrayOfString"/-->
-	  <xsd:element name="query" type="xsd:string" minOccurs="1">
+	  </xsd:all>
+	  <xsd:choice>
+	  <!--xsd:element name="query" type="tns:ArrayOfString" minOccurs="1"-->
+	  <xsd:element name="query" type="xsd:string" maxOccurs="unbounded">
             <xsd:annotation>
               <xsd:documentation>
                 A list of query genes.
               </xsd:documentation>
             </xsd:annotation>
           </xsd:element>
-	  <xsd:element name="noorf" type="xsd:boolean">
-            <xsd:annotation>
-              <xsd:documentation>
-                Prevent overlap with upstream open reading frames (ORF).
-              </xsd:documentation>
-            </xsd:annotation>
-          </xsd:element>
-	  <xsd:element name="from" type="xsd:int">
-            <xsd:annotation>
-              <xsd:documentation>
-                Inferior limit of the region to retrieve. Default is organism dependant (example: Saccharomyces cerevisiae = -800).
-              </xsd:documentation>
-            </xsd:annotation>
-          </xsd:element>
-	  <xsd:element name="to" type="xsd:int">
-            <xsd:annotation>
-              <xsd:documentation>
-                Superior limit of the region to retrieve. Default is '-1'.
-              </xsd:documentation>
-            </xsd:annotation>
-          </xsd:element>
-	  <xsd:element name="feattype" type="xsd:string">
-            <xsd:annotation>
-              <xsd:documentation>
-                Type of genome features to load. Supported: CDS, mRNA, tRNA, rRNA.
-              </xsd:documentation>
-            </xsd:annotation>
-          </xsd:element>
-	  <xsd:element name="type" type="xsd:string">
-            <xsd:annotation>
-              <xsd:documentation>
-                Sequence type. Supported: upstream, downstream, ORF (unspliced open reading frame).
-              </xsd:documentation>
-            </xsd:annotation>
-          </xsd:element>
-	  <xsd:element name="format" type="xsd:string">
-            <xsd:annotation>
-              <xsd:documentation>
-                Sequence format. Supported: IG (Intelligenetics), WC (wconsensus), raw, FastA
-              </xsd:documentation>
-            </xsd:annotation>
-          </xsd:element>
-	  <xsd:element name="all" type="xsd:boolean">
+	  <xsd:element name="all" type="xsd:int">
             <xsd:annotation>
               <xsd:documentation>
                 Return sequences for all the genes of the organism.
               </xsd:documentation>
             </xsd:annotation>
           </xsd:element>
-	  <xsd:element name="lw" type="xsd:int">
+	  </xsd:choice>
+	  <xsd:all>
+	  <xsd:element name="noorf" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>
+                Prevent overlap with upstream open reading frames (ORF).
+              </xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="from" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>
+                Inferior limit of the region to retrieve. Default is organism dependant (example: Saccharomyces cerevisiae = -800).
+              </xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="to" type="xsd:int" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>
+                Superior limit of the region to retrieve. Default is '-1'.
+              </xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="feattype" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>
+                Type of genome features to load. Supported: CDS, mRNA, tRNA, rRNA.
+              </xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="type" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>
+                Sequence type. Supported: upstream, downstream, ORF (unspliced open reading frame).
+              </xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="format" type="xsd:string" minOccurs="0">
+            <xsd:annotation>
+              <xsd:documentation>
+                Sequence format. Supported: IG (Intelligenetics), WC (wconsensus), raw, FastA
+              </xsd:documentation>
+            </xsd:annotation>
+          </xsd:element>
+	  <xsd:element name="lw" type="xsd:int" minOccurs="0">
             <xsd:annotation>
               <xsd:documentation>
                 Line width (0 for whole sequence on one line).
               </xsd:documentation>
             </xsd:annotation>
           </xsd:element>
-	  <xsd:element name="label" type="xsd:string">
+	  <xsd:element name="label" type="xsd:string" minOccurs="0">
             <xsd:annotation>
               <xsd:documentation>
                 Field(s) to be used in the sequence label. Multiple fields can be specified, separated by commas. Supported: id, name, organism_name, sequence_type, current_from, current_to, ctg, orf_strand, reg_left, reg_right. Default: name.
               </xsd:documentation>
             </xsd:annotation>
           </xsd:element>
-	  <xsd:element name="label_sep" type="xsd:string">
+	  <xsd:element name="label_sep" type="xsd:string" minOccurs="0">
             <xsd:annotation>
               <xsd:documentation>
                 Separator between the label fields. Default: | (pipe character).
               </xsd:documentation>
             </xsd:annotation>
           </xsd:element>
-	  <xsd:element name="nocom" type="xsd:boolean">
+	  <xsd:element name="nocom" type="xsd:int" minOccurs="0">
            <xsd:annotation>
               <xsd:documentation>
                 No comments. Only the identifier and the sequence are returned. By default, the comment indicates the ORF and upstream sequence coordinates.
               </xsd:documentation>
             </xsd:annotation>
           </xsd:element>
-	  <xsd:element name="repeat" type="xsd:boolean">
+	  <xsd:element name="repeat" type="xsd:int" minOccurs="0">
             <xsd:annotation>
               <xsd:documentation>
                 Use the repeat masked version of the genome. Attention: repeated regions are annotated for some genomes only.
               </xsd:documentation>
             </xsd:annotation>
           </xsd:element>
-	  <xsd:element name="imp_pos" type="xsd:boolean">
+	  <xsd:element name="imp_pos" type="xsd:int" minOccurs="0">
             <xsd:annotation>
               <xsd:documentation>
                 Admit imprecise positions.
@@ -143,13 +148,15 @@
 
       <xsd:complexType name="PurgeSequenceRequest">
        <xsd:all>
-        <xsd:element name="output" type="xsd:string">
+        <xsd:element name="output" type="xsd:string" minOccurs="0">
 	  <xsd:annotation>
 	    <xsd:documentation>
 	      Return type. Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client), or 'both'. Default is 'both'.
 	    </xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
+	</xsd:all>
+	<xsd:choice>
 	<xsd:element name="sequence" type="xsd:string">
 	  <xsd:annotation>
 	    <xsd:documentation>
@@ -164,42 +171,44 @@
 	    </xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
-	<xsd:element name="format" type="xsd:string">
+	</xsd:choice>
+	<xsd:all>
+	<xsd:element name="format" type="xsd:string" minOccurs="0">
 	  <xsd:annotation>
 	    <xsd:documentation>
 	      Sequence format. Supported: IG (Intelligenetics), WC (wconsensus), raw, FastA.
 	    </xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
-	<xsd:element name="match_length" type="xsd:int">
+	<xsd:element name="match_length" type="xsd:int" minOccurs="0">
 	  <xsd:annotation>
 	    <xsd:documentation>
 	      Minimal match length. Default is 40.
 	    </xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
-	<xsd:element name="mismatch" type="xsd:int">
+	<xsd:element name="mismatch" type="xsd:int" minOccurs="0">
 	  <xsd:annotation>
 	    <xsd:documentation>
 	      Number of mismatches allowed. Default is 3.
 	    </xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
-	<xsd:element name="str" type="xsd:string">
+	<xsd:element name="str" type="xsd:string" minOccurs="0">
 	  <xsd:annotation>
 	    <xsd:documentation>
 	      Discard duplications on the direct strand only (1str) or on the reverse complement as well (2str). Default is 2str.
 	    </xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
-	<xsd:element name="delete" type="xsd:boolean">
+	<xsd:element name="delete" type="xsd:int" minOccurs="0">
 	  <xsd:annotation>
 	    <xsd:documentation>
 	      Delete repeats instead of masking them.
 	    </xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
-	<xsd:element name="mask_short" type="xsd:int">
+	<xsd:element name="mask_short" type="xsd:int" minOccurs="0">
 	  <xsd:annotation>
 	    <xsd:documentation>
 	      Mask (replace by N characters) sequences shorter than the specified length.
@@ -211,13 +220,15 @@
 
       <xsd:complexType name="OligoAnalysisRequest">
        	<xsd:all>
-        <xsd:element name="output" type="xsd:string">
+        <xsd:element name="output" type="xsd:string" minOccurs="0">
 	  <xsd:annotation>
 	    <xsd:documentation>
 	      Return type. Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client), or  'both'. Default is 'both'.
 	    </xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
+	</xsd:all>
+	<xsd:choice>
 	<xsd:element name="sequence" type="xsd:string">
 	  <xsd:annotation>
 	    <xsd:documentation>
@@ -232,7 +243,9 @@
 	    </xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
-	<xsd:element name="format" type="xsd:string">
+	</xsd:choice>
+	<xsd:all>
+	<xsd:element name="format" type="xsd:string" minOccurs="0">
 	  <xsd:annotation>
 	    <xsd:documentation>
 	      Input sequence format. Supported: IG (Intelligenetics), WC (wconsensus), raw, fasta. Default is fasta.
@@ -253,14 +266,14 @@
 	    </xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
-	<xsd:element name="background" type="xsd:string">
+	<xsd:element name="background" type="xsd:string" minOccurs="0">
 	  <xsd:annotation>
 	    <xsd:documentation>
 	      Background model: Type of sequences used as background model for estimating expected oligonucleotide frequencies. Supported: upstream, upstreamL, upstream-noorf, intergenic, input.
 	    </xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
-	<xsd:element name="stats" type="xsd:string">
+	<xsd:element name="stats" type="xsd:string" minOccurs="0">
 	  <xsd:annotation>
 	    <xsd:documentation>
 	      List of statistics to return. Supported:occ, mseq, freq,
@@ -268,14 +281,14 @@
 	    </xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
-	<xsd:element name="noov" type="xsd:boolean">
+	<xsd:element name="noov" type="xsd:int" minOccurs="0">
 	  <xsd:annotation>
 	    <xsd:documentation>
 	      No overlapping. Disable the detection of overlapping matches for self-overlapping patterns (ex TATATA, GATAGA).
 	    </xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
-	<xsd:element name="str" type="xsd:string">
+	<xsd:element name="str" type="xsd:string" minOccurs="0">
 	  <xsd:annotation>
 	    <xsd:documentation>
 	      Oligonucleotide occurrences found on both stands are
@@ -283,14 +296,14 @@
 	    </xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
-	<xsd:element name="sort" type="xsd:boolean">
+	<xsd:element name="sort" type="xsd:int" minOccurs="0">
 	  <xsd:annotation>
 	    <xsd:documentation>
 	      Sort oligomers according to overrepresentation.
 	    </xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
-	<xsd:element name="lth" type="xsd:string">
+	<xsd:element name="lth" type="xsd:string" minOccurs="0">
 	  <xsd:annotation>
 	    <xsd:documentation>
 	      Lower threshold on some parameter. Format='param value'.
@@ -299,6 +312,18 @@
 	</xsd:element>
        </xsd:all>
       </xsd:complexType>
+
+      <!--xsd:complexType name="Binint"-->
+	<!--xsd:complexContent-->
+	  <!--xsd:restriction base="xsd:int"-->
+	    <!--xsd:sequence-->
+	      <!--xsd:element name="item" type="xsd:int"/-->
+	    <!--/xsd:sequence-->
+	    <!--xsd:enumeration value="0"/-->
+	    <!--xsd:enumeration value="1"/-->
+	  <!--/xsd:restriction-->
+	<!--/xsd:complexContent-->
+      <!--/xsd:complexType-->
 
       <xsd:complexType name="GeneInfoRequest">
        <xsd:all>
@@ -309,7 +334,7 @@
 	  </xsd:documentation>
 	 </xsd:annotation>
 	</xsd:element>
-	<xsd:element name="query" type="xsd:string" minOccurs="1">
+	<xsd:element name="query" type="xsd:string" minOccurs="1" maxOccurs="unbounded">
 	 <xsd:annotation>
 	  <xsd:documentation>
 	   List of gene(s) for which you want info on or list of keywords to
@@ -317,28 +342,28 @@
 	  </xsd:documentation>
 	 </xsd:annotation>
 	</xsd:element>
-	<xsd:element name="full" type="xsd:boolean">
+	<xsd:element name="full" type="xsd:int" minOccurs="0">
 	 <xsd:annotation>
 	  <xsd:documentation>
 	   Full match only (no substring matching).
 	  </xsd:documentation>
 	 </xsd:annotation>
 	</xsd:element>
-	<xsd:element name="noquery" type="xsd:boolean">
+	<xsd:element name="noquery" type="xsd:int" minOccurs="0">
 	 <xsd:annotation>
 	  <xsd:documentation>
 	   Do not print the query at the begining of each line.
 	  </xsd:documentation>
 	 </xsd:annotation>
 	</xsd:element>
-	<xsd:element name="descr" type="xsd:boolean">
+	<xsd:element name="descr" type="xsd:int" minOccurs="0">
 	 <xsd:annotation>
 	  <xsd:documentation>
 	   Match query against the description, too, not just against gene ID and name.
 	  </xsd:documentation>
 	 </xsd:annotation>
 	</xsd:element>
-	<xsd:element name="feattype" type="xsd:string">
+	<xsd:element name="feattype" type="xsd:string" minOccurs="0">
 	 <xsd:annotation>
 	  <xsd:documentation>
 	   Feature type (CDS, mRNA, tRNA, rRNA, scRNA).
@@ -560,7 +585,7 @@
       </operation>
   </binding>
 
-  <service name="RSATWS">
+  <service name="RSATWebServices">
     <documentation>
       Web services for the Regulatory Sequence Analysis Tools (RSAT).
       Tools developed by Jacques van Helden
