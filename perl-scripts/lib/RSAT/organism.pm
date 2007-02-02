@@ -693,109 +693,132 @@ sub CalcNeighbourLimits {
   my ($self) = @_;
   my %contig = $self->get_contigs();
 
-#  &RSAT::message::TimeWarn("Calculating neighbour limits") if ($main::verbose >= 2);
+  #  &RSAT::message::TimeWarn("Calculating neighbour limits") if ($main::verbose >= 2);
 
   my %left = $self->index_attribute_by_feature("left");
   my %right = $self->index_attribute_by_feature("right");
   foreach my $ctg (sort keys %contig) {
-    my @genes = sort { $left{$a} <=> $left{$b} } $contig{$ctg}->get_genes();
     local $contig_length = $contig{$ctg}->get_length();
 
-    &RSAT::message::TimeWarn(join ("\t", "Calculating neighbour limits for contig", $ctg, "features", scalar(@genes), "length", $contig_length)) if ($main::verbose >= 2);
+    &RSAT::message::TimeWarn("Calculating neighbour limits for contig", $ctg, "features", scalar(@genes), "length", $contig_length)
+      if ($main::verbose >= 2);
 
-    @gene_lefts = sort {$a <=> $b} @left{@genes};
-    @gene_rights = sort {$a <=> $b} @right{@genes};
-
+    ## Sort genes 
+#    @gene_lefts = sort {$a <=> $b} @left{@genes};
+#    @gene_rights = sort {$a <=> $b} @right{@genes};
 
     ################################################################
     ## Identify the left neighbour of each feature
     ## TO CHECK: does it correctly treat the case of completely overlapping genes, embedded genes
-    for my $g (0..$#genes) {
-      my $gene = $genes[$g];
-      my $ln = $g -1;		### first guess for left neighbour
+    my @right_sorted_genes = sort { $right{$a} <=> $right{$b} } $contig{$ctg}->get_genes();
+    for my $g (0..$#right_sorted_genes) { ## $g is the index of the gene in the sorted list
       my $found = 0;
+      my $gene = $right_sorted_genes[$g]; ## $gene is the object containing the attributes of gene $g
+      my $gene_id = $gene->get_attribute("geneid");
 
-      if (($main::verbose >= 3) && ($g % 1000 == 1)) {
-	&RSAT::message::psWarn("Calculated neighbours for genes", $g);
+      my $ln = $g -1;		## first guess for left neighbour
+      my $left_candidate = $right_sorted_genes[$ln];
+
+      ## Find the first gene having a different GeneId as the current gene. 
+      ## This is required when there are multiple transcripts per gene (e.g. alternative splicing)
+      if (($gene_id) &&
+	  ($gene_id != $main::null)) {
+	while (($ln >= 0) && ($gene_id eq $left_candidate->get_attribute("geneid"))) {
+	  &RSAT::message::Debug("Skipping feature",$ln, $left_candidate->get_attribute("id"),
+				"with same GeneId", $gene_id,
+				"as feature", $g, $gene->get_attribute("id")) if ($main::verbose >= 0);
+	  $ln--;
+	  $left_candidate = $right_sorted_genes[$ln];
+	}
       }
 
+      ## Check the process
+      if (($main::verbose >= 3) && ($g % 1000 == 1)) {
+	&RSAT::message::psWarn("Calculated neighbours for", $g, "genes");
+      }
+      &RSAT::message::Debug("Calculating neighbours for gene", $g, $gene->get_attribute("id"), $gene_id) 
+	if ($main::verbose >= 0);
 
+      ## Iterate until the left neighbout is identified
       do {
-	my $same_gene = 0;
+
 	&RSAT::message::Debug("contig", $ctg, "gene",
 			      "g=".$g,
 			      "geneId=".$gene->get_attribute("geneid"),
 			      "name=".$gene->get_attribute("name"),
 			      "candidate left neighbour",
 			      "ln=".$ln,
-			      "GeneID:".$genes[$ln]->get_attribute("geneid"),
-			      "name=".$genes[$ln]->get_attribute("name"),
+			      "GeneID:".$left_candidate->get_attribute("geneid"),
+			      "name=".$left_candidate->get_attribute("name"),
 			     ) if ($main::verbose >= 4);
 
 	if ($ln < 0) {
-	  ## Leftmost gene of a contig
-
+	  ## Gene g is the leftmost gene of a contig
 	  &RSAT::message::Debug("No left neighbour for genomic feature",
 				"g=".$g,
-				"ID=".$genes[$g]->get_attribute("id"),
-				"GeneID=".$genes[$g]->get_attribute("geneid"),
-				"name=".$genes[$g]->get_attribute("name"),
-			       ) if ($main::verbose >= 10);
+				"ID=".$gene->get_attribute("id"),
+				"GeneID=".$gene->get_attribute("geneid"),
+				"name=".$gene->get_attribute("name"),
+			       ) if ($main::verbose >= 5);
 
 	  $gene->set_attribute("left_neighbour", "<NULL>");
 	  $gene->set_attribute("left_neighb_id", "<NULL>");
 	  $gene->set_attribute("left_neighb_name", "<NULL>");
 	  $gene->set_attribute("left_limit", 1);
-	  $gene->set_attribute("left_size", $gene_lefts[$g]);
+	  $gene->set_attribute("left_size", $left{$gene}-1);
 	  next;
 
-	} elsif ($gene->get_attribute("geneid") eq $genes[$ln]->get_attribute("geneid")) {
-
-	  ## Skip features having the same GeneID as the current
-	  ## feature (e.g. multiple mRNA for a same gene, due to
-	  ## the presence of alternative transcription start
-	  ## sites (TSS) or to alternative splicing.
-
-	  &RSAT::message::Debug("genomic feature",
-				"ln=".$ln,
-				"ID=".$genes[$ln]->get_attribute("id"),
-				"GeneID=".$genes[$ln]->get_attribute("geneid"),
-				"name=".$genes[$ln]->get_attribute("name"),
-				"has same GeneID as genomic feature",
-				"g=".$g,
-				"ID=".$gene->get_attribute("id"),
-				"GeneID=".$gene->get_attribute("geneid"),
-				"name=".$gene->get_attribute("name"),
-			       ) if ($main::verbose >= 2);
-
-	  $ln -= 1;
-	  $same_gene = 1;
-	  next;
-
-	} elsif (($gene_rights[$ln] > $left{$gene}) && ($gene_lefts[$ln] > $left{$gene})) {
+	} elsif (($right{$left_candidate} <= $right{$gene}) && ($left{$left_candidate} >= $left{$gene})) {
 	  ## candidate left neighour gene is completely embedded in current gene -> select the next left candidate
 	  $ln--;
+	  $left_candidate = $right_sorted_genes[$ln];
 	  &RSAT::message::Debug("genomic feature",
 				$ln,
-				$genes[$ln]->get_attribute("geneid"),
-				$genes[$ln]->get_attribute("name"),
+				$left_candidate->get_attribute("geneid"),
+				$left_candidate->get_attribute("name"),
 				"is embedded in genomic feature", $g,
 				$gene->get_attribute("geneid"),
 				$gene->get_attribute("name"),
 			       ) if ($main::verbose >= 4);
 
-	} elsif ($gene_rights[$ln+1] < $left{$gene}) {
-	  $ln++;
+
+	} elsif ($right{$left_candidate} >= $left{$gene}) {
+	  $found = 1;
+	  ## Overlapping gene: in this case the left size will
+	  ## be 0. there are hundreds of Example: overlapping genes
+	  ## in E.coli operons with a distance of -1 or -4, see
+	  ## Salgado & Hagesieb.
+	  &RSAT::message::Debug("genomic feature",
+				  $ln,
+				  $left_candidate->get_attribute("geneid"),
+				  $left_candidate->get_attribute("name"),
+				  "is embedded in genomic feature", $g,
+				  $gene->get_attribute("geneid"),
+				  $gene->get_attribute("name"),
+				 ) if ($main::verbose >= 4);
+
+	} elsif ($right{$left_candidate} < $left{$gene}) {
+	  $found = 1;
 
 	} else {
-	  $found = 1;
+	  &RSAT::error::FatalError("Untreated case for the identification of left neighbours",
+				   "left candidate", $ln,
+				   $left_candidate->get_attribute("name"),
+				   $left{$left_candidate},
+				   $right{$left_candidate},
+				   "for gene", $g,
+				   $gene->get_attribute("geneid"),
+				   $gene->get_attribute("name"),
+				   $left{$gene},
+				   $right{$gene},
+				  );
+	  ## TO DO: treat circular chromosomes
 	}
-      } until (($ln < 0) ||
-	       ($found) ||
-	       (($ln > $#gene_rights) && ($same_gene == 0)));
+      } until (($ln < 0) || ($found));
 
+	## Once the left neighbour has been found, annotate it in the current gene
       if ($found) {
-	$neighb_left_limit = $gene_rights[$ln];
+	$neighb_left_limit = $right{$left_candidate};
       } elsif ($ln < 0) {
 	$neighb_left_limit = 0;
       } else {
@@ -803,96 +826,230 @@ sub CalcNeighbourLimits {
       }
       $neighb_left_size = &RSAT::stats::max(0, $left{$gene} - $neighb_left_limit -1);
 
-#      &RSAT::message::Debug("Identified left neighbour", $ln,
-# 			    $genes[$ln]->get_attribute("geneid"),
-# 			    $genes[$ln]->get_attribute("name"),
-# 			    "for gene", "g=".$g,
-# 			    $gene->get_attribute("geneid"),
-# 			    $gene->get_attribute("name"),
-# 			   ) if ($main::verbose >= 10);
+      &RSAT::message::Debug("Identified left neighbour", $ln,
+ 			    $left_candidate->get_attribute("id"),
+ 			    $left_candidate->get_attribute("geneid"),
+ 			    $left_candidate->get_attribute("name"),
+ 			    "for gene", "g=".$g,
+ 			    $gene->get_attribute("id"),
+ 			    $gene->get_attribute("geneid"),
+ 			    $gene->get_attribute("name"),
+ 			   ) if ($main::verbose >= 0);
 
-      $gene->set_attribute("left_neighbour", $genes[$ln]);
-      $gene->set_attribute("left_neighb_id", $genes[$ln]->get_attribute("id"));
-      $gene->set_attribute("left_neighb_name", $genes[$ln]->get_attribute("name"));
+      $gene->set_attribute("left_neighbour", $left_candidate);
+      $gene->set_attribute("left_neighb_id", $left_candidate->get_attribute("id"));
+      $gene->set_attribute("left_neighb_name", $left_candidate->get_attribute("name"));
       $gene->set_attribute("left_limit", $neighb_left_limit);
       $gene->set_attribute("left_size", $neighb_left_size);
     }
 
 
+
     ################################################################
-    ## Identify the right neighbour for each feature
-    for my $g (0..$#genes) {
-      my $gene = $genes[$g];
-      my $rn = $g +1;		### first guess for right neighbour
+    ## Identify the right neighbour of each feature
+    ## TO CHECK: does it correctly treat the case of completely overlapping genes, embedded genes
+    my @left_sorted_genes = sort { $left{$a} <=> $left{$b} } $contig{$ctg}->get_genes();
+    for my $g (0..$#left_sorted_genes) { ## $g is the index of the gene in the sorted list
       my $found = 0;
+      my $gene = $left_sorted_genes[$g]; ## $gene is the object containing the attributes of gene $g
+      my $gene_id = $gene->get_attribute("geneid");
 
-      #### Calculate intergenic limit on the right side of the gene
-      $found = 0;
+      my $rn = $g + 1;		## first guess for right neighbour
+      my $right_candidate = $left_sorted_genes[$rn];
+
+      ## Find the first gene having a different GeneId as the current gene. 
+      ## This is required when there are multiple transcripts per gene (e.g. alternative splicing)
+      if (($gene_id) &&
+	  ($gene_id != $main::null)) {
+	while (($rn <= $#left_sorted_genes) && ($gene_id eq $right_candidate->get_attribute("geneid"))) {
+	  &RSAT::message::Debug("Skipping feature",$rn, $right_candidate->get_attribute("id"),
+				"with same GeneId", $gene_id,
+				"as feature", $g, $gene->get_attribute("id")) if ($main::verbose >= 0);
+	  $rn++;
+	  $right_candidate = $left_sorted_genes[$rn];
+	}
+      }
+
+      ## Check the process
+      if (($main::verbose >= 3) && ($g % 1000 == 1)) {
+	&RSAT::message::psWarn("Calculated right neighbours for", $g, "genes");
+      }
+      &RSAT::message::Debug("Calculating right neighbour for gene", $g, $gene->get_attribute("id"), $gene_id) 
+	if ($main::verbose >= 0);
+
+      ## Iterate until the left neighbout is identified
       do {
-	if ($rn > $#genes) {
-	  ## Rightmost gene of a contig
-# 	  &RSAT::message::Debug("No right neighbour for genomic feature",
-# 				"g=".$g,
-# 				"ID=".$genes[$g]->get_attribute("id"),
-# 				"GeneID=".$genes[$g]->get_attribute("geneid"),
-# 				"name=".$genes[$g]->get_attribute("name"),
-# 			       ) if ($main::verbose >= 10);
-	  $gene->set_attribute("right_neighbour", "<NULL>");
-	  $gene->set_attribute("right_neighb_id", "<NULL>");
-	  $gene->set_attribute("right_neighb_name", "<NULL>");
-	  $gene->set_attribute("right_limit", $contig_length);
-	  $gene->set_attribute("right_size", $contig_length - $gene_rights[$g]);
-	  next;
-	} elsif ($gene->get_attribute("geneid") eq $genes[$rn]->get_attribute("geneid")) {
 
-	  ## Skip features having the same GeneID as the current
-	  ## feature (e.g. multiple mRNA for a same gene, due to
-	  ## the presence of alternative transcription start
-	  ## sites (TSS) or to alternative splicing.
+	&RSAT::message::Debug("contig", $ctg, "gene",
+			      "g=".$g,
+			      "geneId=".$gene->get_attribute("geneid"),
+			      "name=".$gene->get_attribute("name"),
+			      "candidate left neighbour",
+			      "ln=".$rn,
+			      "GeneID:".$right_candidate->get_attribute("geneid"),
+			      "name=".$right_candidate->get_attribute("name"),
+			     ) if ($main::verbose >= 4);
 
-	  &RSAT::message::Debug("genomic feature",
-				"rn=".$rn,
-				"ID=".$genes[$rn]->get_attribute("id"),
-				"GeneID=".$genes[$rn]->get_attribute("geneid"),
-				"name=".$genes[$rn]->get_attribute("name"),
-				"has same GeneID as genomic feature",
+	if ($rn > $#left_sorted_genes) {
+	  ## Gene g is the rightmost gene of a contig
+	  &RSAT::message::Debug("No right neighbour for genomic feature",
 				"g=".$g,
 				"ID=".$gene->get_attribute("id"),
 				"GeneID=".$gene->get_attribute("geneid"),
 				"name=".$gene->get_attribute("name"),
-			       ) if ($main::verbose >= 10);
+			       ) if ($main::verbose >= 5);
 
-	  $rn += 1;
+	  $gene->set_attribute("right_neighbour", "<NULL>");
+	  $gene->set_attribute("right_neighb_id", "<NULL>");
+	  $gene->set_attribute("right_neighb_name", "<NULL>");
+	  $gene->set_attribute("right_limit", $contig_size);
+	  $gene->set_attribute("right_size", $contig_size - $right{$gene});
 	  next;
 
-	} elsif (($gene_lefts[$rn] < $right{$gene}) && ($gene_rights[$rn] < $right{$gene})) {
+	} elsif (($left{$right_candidate} >= $left{$gene}) && ($right{$right_candidate} <= $right{$gene})) {
+	  ## candidate right neighour gene is completely embedded in current gene -> select the next left candidate
 	  $rn++;
-	} elsif ($gene_lefts[$rn-1] > $right{$gene}) {
-	  $rn--;
-	} else {
+	  $right_candidate = $left_sorted_genes[$rn];
+	  &RSAT::message::Debug("genomic feature",
+				$rn,
+				$right_candidate->get_attribute("geneid"),
+				$right_candidate->get_attribute("name"),
+				"is embedded in genomic feature", $g,
+				$gene->get_attribute("geneid"),
+				$gene->get_attribute("name"),
+			       ) if ($main::verbose >= 4);
+
+
+	} elsif ($left{$right_candidate} <= $right{$gene}) {
 	  $found = 1;
+	  ## Overlapping gene: in this case the right size will
+	  ## be 0. there are hundreds of Example: overlapping genes
+	  ## in E.coli operons with a distance of -1 or -4, see
+	  ## Salgado & Hagesieb.
+	  &RSAT::message::Debug("genomic feature",
+				  $rn,
+				  $right_candidate->get_attribute("geneid"),
+				  $right_candidate->get_attribute("name"),
+				  "is embedded in genomic feature", $g,
+				  $gene->get_attribute("geneid"),
+				  $gene->get_attribute("name"),
+				 ) if ($main::verbose >= 4);
+
+	} elsif ($left{$right_candidate} > $right{$gene}) {
+	  $found = 1;
+
+	} else {
+	  &RSAT::error::FatalError("Untreated case for the identification of right neighbours",
+				   "right candidate", $rn,
+				   $right_candidate->get_attribute("name"),
+				   $left{$right_candidate},
+				   $right{$right_candidate},
+				   "for gene", $g,
+				   $gene->get_attribute("geneid"),
+				   $gene->get_attribute("name"),
+				   $left{$gene},
+				   $right{$gene},
+				  );
+	  ## TO DO: treat circular chromosomes
 	}
-      } until (($found) || ($rn < 0) || ($rn > $#gene_lefts));
+      } until (($rn > $#left_sorted_genes) || ($found));
+
+	## Once the left neighbour has been found, annotate it in the current gene
       if ($found) {
-	$neighb_right_limit = $gene_lefts[$rn];
+	$neighb_right_limit = $left{$right_candidate};
       } elsif ($rn < 0) {
-	$neighb_right_limit = undef;
+	$neighb_right_limit = $contig_size;
       } else {
-	$neighb_right_limit = $contig_seq{$ctg}->get_length() + 1;
+	$neighb_right_limit = undef;
       }
       $neighb_right_size = &RSAT::stats::max(0, $neighb_right_limit - $right{$gene} -1);
 
-      $gene->set_attribute("right_neighbour", $genes[$rn]);
-      $gene->set_attribute("right_neighb_id", $genes[$rn]->get_attribute("id"));
-      $gene->set_attribute("right_neighb_name", $genes[$rn]->get_attribute("name"));
+      &RSAT::message::Debug("Identified right neighbour", $rn,
+ 			    $right_candidate->get_attribute("id"),
+ 			    $right_candidate->get_attribute("geneid"),
+ 			    $right_candidate->get_attribute("name"),
+ 			    "for gene", "g=".$g,
+ 			    $gene->get_attribute("id"),
+ 			    $gene->get_attribute("geneid"),
+ 			    $gene->get_attribute("name"),
+ 			   ) if ($main::verbose >= 0);
+
+      $gene->set_attribute("right_neighbour", $right_candidate);
+      $gene->set_attribute("right_neighb_id", $right_candidate->get_attribute("id"));
+      $gene->set_attribute("right_neighb_name", $right_candidate->get_attribute("name"));
       $gene->set_attribute("right_limit", $neighb_right_limit);
       $gene->set_attribute("right_size", $neighb_right_size);
     }
 
+
+#     ################################################################
+#     ## Identify the right neighbour for each feature
+#     for my $g (0..$#genes) {
+#       my $gene = $genes[$g];
+#       my $rn = $g +1;		### first guess for right neighbour
+#       my $found = 0;
+#       #### Calculate intergenic limit on the right side of the gene
+#       $found = 0;
+#       do {
+# 	if ($rn > $#genes) {
+# 	  ## Rightmost gene of a contig
+# # 	  &RSAT::message::Debug("No right neighbour for genomic feature",
+# # 				"g=".$g,
+# # 				"ID=".$genes[$g]->get_attribute("id"),
+# # 				"GeneID=".$genes[$g]->get_attribute("geneid"),
+# # 				"name=".$genes[$g]->get_attribute("name"),
+# # 			       ) if ($main::verbose >= 10);
+# 	  $gene->set_attribute("right_neighbour", "<NULL>");
+# 	  $gene->set_attribute("right_neighb_id", "<NULL>");
+# 	  $gene->set_attribute("right_neighb_name", "<NULL>");
+# 	  $gene->set_attribute("right_limit", $contig_length);
+# 	  $gene->set_attribute("right_size", $contig_length - $gene_rights[$g]);
+# 	  next;
+# 	} elsif ($gene->get_attribute("geneid") eq $genes[$rn]->get_attribute("geneid")) {
+# 	  ## Skip features having the same GeneID as the current
+# 	  ## feature (e.g. multiple mRNA for a same gene, due to
+# 	  ## the presence of alternative transcription start
+# 	  ## sites (TSS) or to alternative splicing.
+# 	  &RSAT::message::Debug("genomic feature",
+# 				"rn=".$rn,
+# 				"ID=".$genes[$rn]->get_attribute("id"),
+# 				"GeneID=".$genes[$rn]->get_attribute("geneid"),
+# 				"name=".$genes[$rn]->get_attribute("name"),
+# 				"has same GeneID as genomic feature",
+# 				"g=".$g,
+# 				"ID=".$gene->get_attribute("id"),
+# 				"GeneID=".$gene->get_attribute("geneid"),
+# 				"name=".$gene->get_attribute("name"),
+# 			       ) if ($main::verbose >= 10);
+# 	  $rn += 1;
+# 	  next;
+# 	} elsif (($gene_lefts[$rn] < $right{$gene}) && ($gene_rights[$rn] < $right{$gene})) {
+# 	  $rn++;
+# 	} elsif ($gene_lefts[$rn-1] > $right{$gene}) {
+# 	  $rn--;
+# 	} else {
+# 	  $found = 1;
+# 	}
+#       } until (($found) || ($rn < 0) || ($rn > $#gene_lefts));
+#       if ($found) {
+# 	$neighb_right_limit = $gene_lefts[$rn];
+#       } elsif ($rn < 0) {
+# 	$neighb_right_limit = undef;
+#       } else {
+# 	$neighb_right_limit = $contig_seq{$ctg}->get_length() + 1;
+#       }
+#       $neighb_right_size = &RSAT::stats::max(0, $neighb_right_limit - $right{$gene} -1);
+#       $gene->set_attribute("right_neighbour", $genes[$rn]);
+#       $gene->set_attribute("right_neighb_id", $genes[$rn]->get_attribute("id"));
+#       $gene->set_attribute("right_neighb_name", $genes[$rn]->get_attribute("name"));
+#       $gene->set_attribute("right_limit", $neighb_right_limit);
+#       $gene->set_attribute("right_size", $neighb_right_size);
+#     }
+
     ################################################################
     ## Calculate upstream and downstream limits (according to the strand)
-    for my $g (0..$#genes) {
-      my $gene = $genes[$g];
+    for my $g (0..$#right_sorted_genes) {
+      my $gene = $right_sorted_genes[$g];
       my $un;			## upstream neighbour index
       my $dn;			## upstream neighbour index
 
