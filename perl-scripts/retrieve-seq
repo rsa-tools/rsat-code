@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.56 2006/11/30 08:15:44 jvanheld Exp $
+# $Id: retrieve-seq,v 1.57 2007/02/04 00:22:52 jvanheld Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -436,7 +436,7 @@ foreach my  $query (@queries) {
 				  "gene location: ".$orf_left." ".$orf_right." ".$orf_strand);
 	}
     }
-    
+
     ### substring retrieval
     &RSAT::message::Debug(
 	  "query: ".$query, 
@@ -452,14 +452,14 @@ foreach my  $query (@queries) {
 	  "reg_size: ".$reg_size,
 	 )
 	if ($main::verbose >= 3); 
-    if ($reg_left < $reg_right) {
+    if ($reg_left <= $reg_right) {
 	$current_seq = $contig{$ctg}->get_sequence($reg_left,$reg_right,$orf_strand);
 #	$current_seq = $chromosome_seq{$chrom}->get_sequence($reg_left,$reg_right,$orf_strand);
     } else {
 	$current_seq = "";
     }
     $current_seq = uc($current_seq);
-    
+
     ### print result sequence
     &PrintNextSequence($out,$out_format,$line_width,$current_seq,$current_id, @comments);
 }
@@ -869,7 +869,7 @@ sub ReadArguments {
 		    &RSAT::message::Warning('label field "orf_gene" is obsolete. Please use "-label id,name" instead.');
 		    push @label_fields, ("id","name");		    
 		} elsif ($field eq "full") {
-		    &RSAT::message::Warning('label field "full" is obsolete. Please select manually the desired fields. Supported: '.$supported_label_fields);
+#		    &RSAT::message::Warning('label field "full" is obsolete. Please select manually the desired fields. Supported: '.$supported_label_fields);
 		    push @label_fields, @supported_label_fields;
 		} else {
 		    &RSAT::error::FatalError("$field is not a valid field for sequence label. Supported: $supported_label_fields.");
