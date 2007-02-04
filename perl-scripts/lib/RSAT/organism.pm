@@ -736,8 +736,8 @@ sub CalcNeighbourLimits {
       if (($main::verbose >= 3) && ($g % 1000 == 1)) {
 	&RSAT::message::psWarn("Calculated neighbours for", $g, "genes");
       }
-      &RSAT::message::Debug("Calculating neighbours for gene", $g, $gene->get_attribute("id"), $gene_id) 
-	if ($main::verbose >= 0);
+      &RSAT::message::Debug("Calculating left neighbour for gene", $g, $gene->get_attribute("id"), $gene_id) 
+	if ($main::verbose >= 5);
 
       ## Iterate until the left neighbout is identified
       do {
@@ -826,15 +826,15 @@ sub CalcNeighbourLimits {
       }
       $neighb_left_size = &RSAT::stats::max(0, $left{$gene} - $neighb_left_limit -1);
 
-      &RSAT::message::Debug("Identified left neighbour", $ln,
- 			    $left_candidate->get_attribute("id"),
- 			    $left_candidate->get_attribute("geneid"),
- 			    $left_candidate->get_attribute("name"),
- 			    "for gene", "g=".$g,
- 			    $gene->get_attribute("id"),
- 			    $gene->get_attribute("geneid"),
- 			    $gene->get_attribute("name"),
- 			   ) if ($main::verbose >= 0);
+#      &RSAT::message::Debug("Identified left neighbour", $ln,
+# 			    $left_candidate->get_attribute("id"),
+# 			    $left_candidate->get_attribute("geneid"),
+# 			    $left_candidate->get_attribute("name"),
+# 			    "for gene", "g=".$g,
+# 			    $gene->get_attribute("id"),
+# 			    $gene->get_attribute("geneid"),
+# 			    $gene->get_attribute("name"),
+# 			   ) if ($main::verbose >= 10);
 
       $gene->set_attribute("left_neighbour", $left_candidate);
       $gene->set_attribute("left_neighb_id", $left_candidate->get_attribute("id"));
@@ -875,7 +875,7 @@ sub CalcNeighbourLimits {
 	&RSAT::message::psWarn("Calculated right neighbours for", $g, "genes");
       }
       &RSAT::message::Debug("Calculating right neighbour for gene", $g, $gene->get_attribute("id"), $gene_id) 
-	if ($main::verbose >= 0);
+	if ($main::verbose >= 5);
 
       ## Iterate until the left neighbout is identified
       do {
@@ -964,15 +964,15 @@ sub CalcNeighbourLimits {
       }
       $neighb_right_size = &RSAT::stats::max(0, $neighb_right_limit - $right{$gene} -1);
 
-      &RSAT::message::Debug("Identified right neighbour", $rn,
- 			    $right_candidate->get_attribute("id"),
- 			    $right_candidate->get_attribute("geneid"),
- 			    $right_candidate->get_attribute("name"),
- 			    "for gene", "g=".$g,
- 			    $gene->get_attribute("id"),
- 			    $gene->get_attribute("geneid"),
- 			    $gene->get_attribute("name"),
- 			   ) if ($main::verbose >= 0);
+#      &RSAT::message::Debug("Identified right neighbour", $rn,
+# 			    $right_candidate->get_attribute("id"),
+# 			    $right_candidate->get_attribute("geneid"),
+# 			    $right_candidate->get_attribute("name"),
+# 			    "for gene", "g=".$g,
+# 			    $gene->get_attribute("id"),
+# 			    $gene->get_attribute("geneid"),
+# 			    $gene->get_attribute("name"),
+# 			   ) if ($main::verbose >= 10);
 
       $gene->set_attribute("right_neighbour", $right_candidate);
       $gene->set_attribute("right_neighb_id", $right_candidate->get_attribute("id"));
