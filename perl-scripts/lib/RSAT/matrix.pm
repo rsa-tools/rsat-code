@@ -1789,6 +1789,15 @@ sub add_site() {
   my ($self, $site_seq, %args) = @_;
   my $site_id = $args{id} || $site_seq;
   my $score =  $args{score} || 1;
+  if ($score <  0) {
+    &RSAT::message::Warning("RSAT::matrix::add_site()", 
+			    "site", 
+			    $site_seq, 
+			    "negative score", $score,
+			    "set to 0"
+			   ) if ($main::verbose >= 0);
+    $score = 0;
+  }
 
   my @letters = split "|", $site_seq;
 
