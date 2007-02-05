@@ -390,6 +390,14 @@ sub _readFromAssemblyFile {
   return @matrices;
 }
 
+################################################################
+=pod
+
+=item _from_isolated($pattern, $pattern_rc, $score, @matrices)
+
+Create a matrix from an isolated pattern string.
+
+=cut
 sub _from_isolated {
   my ($pattern, $pattern_rc, $score, @matrices) = @_;
   my $pattern_id = $pattern;
