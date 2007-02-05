@@ -89,7 +89,7 @@ $parameters_dna_pattern .= " -pl $pattern_file";
 
 ### return match count ###
 if ($query->param('return') =~ /count/i) {
-  $parameters_dna_pattern .= " -c";
+  $parameters_dna_pattern .= " -return counts";
   if (($query->param('threshold') =~ /^\d+$/) && ($query->param('threshold') > 0)) {
     $parameters_dna_pattern .= " -th ".$query->param('threshold');
   }
