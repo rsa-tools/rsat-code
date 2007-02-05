@@ -203,7 +203,7 @@ if ($query->param('output') =~ /display/i) {
 
       ## Pattern-assembly
       $assembly_file = "$TMP/$tmp_file_name.asmb";
-      $pattern_assembly_command = "$SCRIPTS/pattern-assembly -v 1 -subst 1";
+      $pattern_assembly_command = "$SCRIPTS/pattern-assembly -v 1 -subst 1 -top 50";
       if ($query->param('strand') =~ /single/) {
 	$pattern_assembly_command .= " -1str";
       } else {
