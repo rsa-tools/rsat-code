@@ -4,7 +4,7 @@
 
 ############################################################
 #
-# $Id: convert-matrix,v 1.26 2007/01/09 16:57:12 jvanheld Exp $
+# $Id: convert-matrix,v 1.27 2007/02/05 00:32:54 jvanheld Exp $
 #
 # Time-stamp: <2002-06-06 13:14:17 jvanheld>
 #
@@ -704,7 +704,7 @@ sub ExportMatrix {
     my %weight_proba_inv_cum = $current_matrix->getTheorScoreDistrib("weights", "inv_cum");
 
     ## Print the description of column contents
-    my @columns = ("weight", "proba", "cum", "Pval", "ln_Pval", "sig");
+    my @columns = ("weight", "proba", "cum", "Pval", "ln_Pval", "log_P", "sig");
     if ($main::verbose >= 1) {
       print $out ";\n; Theoretical distribution of weight probabilities\n";
       my %descr = ();
@@ -713,6 +713,7 @@ sub ExportMatrix {
       $descr{"cum"} = "cumulative density function: P(W <= w)";
       $descr{"Pval"} = "P-value = inverse cumulative density function: Pval = P(W >= w)";
       $descr{"ln_Pval"} = "natural logarithm of the P-value";
+      $descr{"log_P"} = "base 10 logarithm of the P-value";
       $descr{"sig"} = "significance: sig = -log10(Pval)";
       $c =0;
       foreach my $col (@columns) {
@@ -732,6 +733,7 @@ sub ExportMatrix {
       my $weight_proba_cum = $null;
       my $weight_proba_inv_cum = $null;
       my $ln_pval = $null;
+      my $log_P = $null;
       my $sig = $null;
       if (defined($weight_proba{$weight})) {
 	$weight_proba = sprintf("%.1e", $weight_proba{$weight});
@@ -745,8 +747,10 @@ sub ExportMatrix {
 	  $ln_pval =  sprintf("%.3f",log($weight_proba_inv_cum{$weight}));
 	  $sig =  sprintf("%.3f",-log($weight_proba_inv_cum{$weight})/$log10);
 	  $sig =~ s/^-(0.0+)$/$1/;
+	  $log_P = -$sig;
 	} else {
 	  $ln_pval = "-Inf";
+	  $log_P = "-Inf";
 	  $sig = "Inf";
 	}
       }
@@ -755,6 +759,7 @@ sub ExportMatrix {
 		      $weight_proba_cum,
 		      $weight_proba_inv_cum,
 		      $ln_pval,
+		      $log_P,
 		      $sig,
 		     ), "\n";
     }
