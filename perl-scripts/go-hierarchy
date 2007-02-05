@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: go-hierarchy,v 1.2 2007/02/01 12:15:13 rsat Exp $
+# $Id: go-hierarchy,v 1.3 2007/02/05 21:53:10 jvanheld Exp $
 #
 ############################################################
 
@@ -15,12 +15,37 @@ go-hierarchy
 
 =head1 DESCRIPTION
 
-After reading an obo file, able to retrieve the ancesters of one or more go classes.
-This program also allows to annotate a file of gene and go ids.
+Given a description file for the Gene Ontology (GO), return subsets or
+the totality of the GO hierarchy.
+
+If one specifies one or several classes, and the program returns all
+the ancestral classes (super-classes).
+
+Alternatively, one can specify a list of genes, and their class
+memberships will be returned.
+
+=head2 Resources
+
+Official site for the distributio of the GO hierarchy :
+
+  http://www.geneontology.org/ontology/
+
+Description of GO classes in obo format
+
+  http://www.geneontology.org/ontology/gene_ontology.obo
+
+
+=head2 Input files
+
+=item GO file
+
+The GO hierarchy should be provided in "obo" format. This is the
+text-formatted description of the classes and their hierarchical
+relationships.
 
 =head1 AUTHORS
 
-sylvain@scmbb.ulb.ac.be
+Sylvain Brohee <sylvain@scmbb.ulb.ac.be>
 
 =head1 CATEGORY
 
@@ -60,17 +85,15 @@ package main;
      @class_names = ();
      @known_classes = ();
      @unknown_classes = ();
-     $class = 0;
-     $gene = 0;
+     $query_by_class = 0;
+     $query_by_gene = 0;
      #$format_name = 0;
-     %required_output_fields = ("name" => 1);
-     %available_return_option = ("id" => 1, 
-    				   "name" => 1, 
-    				   "def" => 1,
-    				   "namespace" => 1 );
-    
-    
-     
+    %required_output_fields = ("goid"=>1, "name" => 1);
+    %supported_return_option = ("goid" => 1, 
+				"name" => 1, 
+				"def" => 1,
+				"namespace" => 1 );
+
     %main::infile = ();
     %main::outfile = ();
 
@@ -84,11 +107,10 @@ package main;
 
     ################################################################
     ## Check argument values
-    if ($gene && $class) {
+    if ($query_by_gene && $query_by_class) {
       &FatalError(join("\t", "You cannot specify both a list of genes to annotate and a query go-class"));
     }
 
-    
     ################################################################
     ## Open output stream
     $main::out = &OpenOutputFile($main::outfile{output});
@@ -98,11 +120,10 @@ package main;
     ## Initialize gene ontology object
     $go = new RSAT::go();
     $go->read_from_obo($infile{inputfile}); 
-    
 
     ################################################################
     ## Determine the go classes for which the hierarchy is searched
-    if ($class) {
+    if ($query_by_class) {
       if ($infile{class_file}) {
         my $l = 0;
         &RSAT::message::TimeWarn("Reading classes from file", $infile{class_file}) if ($main::verbose >= 2);
@@ -146,19 +167,19 @@ package main;
     
     ################################################################
     ## Retrieve the ancesters for the queried classes
-    if ($class) {
+    if ($query_by_class) {
       ## Header output
       print $out "#query_class_name";
-      if (exists($required_output_fields{"name"})) {
+      if (defined($required_output_fields{"name"})) {
         print $out "\tancester_class_name";
       }
-      if (exists($required_output_fields{"namespace"})) {
+      if (defined($required_output_fields{"namespace"})) {
         print $out "\tnamespace";
       }  
-      if (exists($required_output_fields{"id"})) {
+      if (defined($required_output_fields{"goid"})) {
         print $out "\tgo_id";
       }
-      if (exists($required_output_fields{"def"})) {
+      if (defined($required_output_fields{"def"})) {
         print $out "\tdefinition";
       }
       print $out "\n";
@@ -170,16 +191,16 @@ package main;
         my $goid_name = $go->get_name($goid);
         foreach my $goclass (@goclasses) {
           print $out "$goid_name";
-          if (exists($required_output_fields{"name"})) {
+          if (defined($required_output_fields{"name"})) {
             print $out "\t".$go->get_name($goclass);
           }
-          if (exists($required_output_fields{"namespace"})) {
+          if (defined($required_output_fields{"namespace"})) {
             print $out "\t".$go->get_namespace($goclass);
           }  
-          if (exists($required_output_fields{"id"})) {
+          if (defined($required_output_fields{"goid"})) {
             print $out "\t".$goclass;
           }
-          if (exists($required_output_fields{"def"})) {
+          if (defined($required_output_fields{"def"})) {
             print $out "\t".$go->get_definition($goclass);
           }
           print $out "\n";
@@ -191,16 +212,16 @@ package main;
     ## Annotate the gene file by adding the ancesters. Output may be use
     ## in the compare-classes program
     
-    if ($gene) {
+    if ($query_by_gene) {
       ## Header output
       print $out "#gene_name\tgo_class_name";
-      if (exists($required_output_fields{"namespace"})) {
+      if (defined($required_output_fields{"namespace"})) {
         print $out "\tnamespace";
       }  
-      if (exists($required_output_fields{"id"})) {
+      if (defined($required_output_fields{"goid"})) {
         print $out "\tgo_id";
       }
-      if (exists($required_output_fields{"def"})) {
+      if (defined($required_output_fields{"def"})) {
         print $out "\tdefinition";
       }
       print $out "\n";
@@ -227,16 +248,16 @@ package main;
               my $goid_name = $go->get_name($goid);
               foreach my $goclass (@goclasses) {
                 print $out "$gene";
-                if (exists($required_output_fields{"name"})) {
+                if (defined($required_output_fields{"name"})) {
                   print $out "\t".$go->get_name($goclass);
                 }
-                if (exists($required_output_fields{"namespace"})) {
+                if (defined($required_output_fields{"namespace"})) {
                   print $out "\t".$go->get_namespace($goclass);
                 }  
-                if (exists($required_output_fields{"id"})) {
+                if (defined($required_output_fields{"goid"})) {
                   print $out "\t".$goclass;
                 }
-                if (exists($required_output_fields{"def"})) {
+                if (defined($required_output_fields{"def"})) {
                   print $out "\t".$go->get_definition($goclass);
                 }
                 print $out "\n";
@@ -371,13 +392,14 @@ allows to use the command within a pipe.
 =pod
 
 =item	B<-q query_go_class>
-Specify one GO class for which you want to know the ancesters. This option can be used iteratively to specify
-several query classes.
+
+Specify one GO class for which you want to know the ancesters. This
+option can be used iteratively to specify several query classes.
 
 =cut
 	} elsif ($arg eq "-q") {
 	       push @class_names, shift(@arguments);
-	       $class = 1;
+	       $query_by_class = 1;
 =pod
 
 =item	B<-classf query_file>
@@ -389,19 +411,21 @@ rest of the row is ignored.
 =cut
 	} elsif ($arg eq "-classf") {
 	    $main::infile{class_file} = shift(@arguments);
-	    $class = 1;
+	    $query_by_class = 1;
+
 =pod	    
+
 =item	B<-genef gene_file>
 
-Gene file. This two-columns tab-delimited file specifies a list 
-of genes and the GO to which the gene belongs.
-	First column  : gene name
+Gene file. This two-columns tab-delimited file specifies a list of
+genes and the GO class(es) to which each gene belongs.
+	First column  : gene name or identifier
 	Second column : gene ontology ID
 
 =cut
 	} elsif ($arg eq "-genef") {
 	    $main::infile{gene_file} = shift(@arguments);
-	    $gene = 1;	    
+	    $query_by_gene = 1;	    
 =pod
 
 =item	B<-return fields>
@@ -413,12 +437,12 @@ List of fields to return : goid,name,def,namespace,all (default : name)
 	    my $fields = shift(@arguments);
 	    my @all_fields = split(/,/, $fields);
 	    foreach my $field (@all_fields) {
-	      if (exists($available_return_option{$field})) {
+	      if (defined($supported_return_option{$field})) {
   	        $required_output_fields{$field} = 1;
   	      } elsif ($field eq 'all') {
-  	        %required_output_fields = %available_return_option;
+  	        %required_output_fields = %supported_return_option;
   	      } else {
-  	        &FatalError(join("\t", "Invalid return option", $field,"\n","Allowed options are : ",join(keys(%available_return_option))));
+  	        &FatalError($field, "Invalid return option. Supported:", join(",", sort(keys(%supported_return_option))));
   	      } 
 	    }
 	        
