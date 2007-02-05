@@ -40,7 +40,7 @@
               </xsd:documentation>
             </xsd:annotation>
           </xsd:element>
-	  </xsd:all>
+	  <!--/xsd:all-->
 	  <xsd:choice>
 	  <!--xsd:element name="query" type="tns:ArrayOfString" minOccurs="1"-->
 	  <xsd:element name="query" type="xsd:string" maxOccurs="unbounded">
@@ -58,7 +58,7 @@
             </xsd:annotation>
           </xsd:element>
 	  </xsd:choice>
-	  <xsd:all>
+	  <!--xsd:all-->
 	  <xsd:element name="noorf" type="xsd:int" minOccurs="0">
             <xsd:annotation>
               <xsd:documentation>
@@ -155,7 +155,7 @@
 	    </xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
-	</xsd:all>
+	<!--/xsd:all-->
 	<xsd:choice>
 	<xsd:element name="sequence" type="xsd:string">
 	  <xsd:annotation>
@@ -172,7 +172,7 @@
 	  </xsd:annotation>
 	</xsd:element>
 	</xsd:choice>
-	<xsd:all>
+	<!--xsd:all-->
 	<xsd:element name="format" type="xsd:string" minOccurs="0">
 	  <xsd:annotation>
 	    <xsd:documentation>
@@ -194,10 +194,10 @@
 	    </xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
-	<xsd:element name="str" type="xsd:string" minOccurs="0">
+	<xsd:element name="str" type="xsd:int" minOccurs="0">
 	  <xsd:annotation>
 	    <xsd:documentation>
-	      Discard duplications on the direct strand only (1str) or on the reverse complement as well (2str). Default is 2str.
+	      Discard duplications on the direct strand only (1) or on the reverse complement as well (2). Default is 2.
 	    </xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
@@ -227,7 +227,7 @@
 	    </xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
-	</xsd:all>
+	<!--/xsd:all-->
 	<xsd:choice>
 	<xsd:element name="sequence" type="xsd:string">
 	  <xsd:annotation>
@@ -244,7 +244,7 @@
 	  </xsd:annotation>
 	</xsd:element>
 	</xsd:choice>
-	<xsd:all>
+	<!--xsd:all-->
 	<xsd:element name="format" type="xsd:string" minOccurs="0">
 	  <xsd:annotation>
 	    <xsd:documentation>
@@ -288,11 +288,11 @@
 	    </xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
-	<xsd:element name="str" type="xsd:string" minOccurs="0">
+	<xsd:element name="str" type="xsd:int" minOccurs="0">
 	  <xsd:annotation>
 	    <xsd:documentation>
 	      Oligonucleotide occurrences found on both stands are
-    summed (2str) or not (1str). Default is 2str.
+    summed (2) or not (1). Default is 2.
 	    </xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
@@ -327,6 +327,13 @@
 
       <xsd:complexType name="GeneInfoRequest">
        <xsd:all>
+	<xsd:element name="output" type="xsd:string" minOccurs="0">
+	  <xsd:annotation>
+	    <xsd:documentation>
+	        Return type. Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client), or  'both'. Default is 'both'.
+	    </xsd:documentation>
+	  </xsd:annotation>
+	</xsd:element>
         <xsd:element name="organism" type="xsd:string" minOccurs="1">
 	 <xsd:annotation>
 	  <xsd:documentation>
@@ -485,7 +492,6 @@
   </message>
     
   <message name="RetrieveSequenceOutput">
-      <!--part name="response" type="xsd:string"/-->
       <part name="response" type="tns:RetrieveSequenceResponse"/>
       <!--part name="response" element="tns:RetrieveSequenceResponse"/-->
   </message>
