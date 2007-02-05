@@ -390,7 +390,7 @@ sub PrintHtmlTable {
     }
     
     $TABLE="<TABLE bgcolor='#EEEEFF' CELLSPACING=1 CELLPADDING=3 BORDER=$border>";
-    unless ($font{variable}) {
+    unless ($main::font{variable}) {
 	$font_spec_start = "<TT>";
 	$font_spec_end = "</TT>";
     }
