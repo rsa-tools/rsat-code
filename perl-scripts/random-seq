@@ -64,8 +64,15 @@ if ($length_file) {
 #    open LEN, $length_file;
     while (<$len_handle>) {
 	chomp;
+	next if (/^;/);
+	next if (/^--/);
+	next if (/^#/);
+	next unless (/\S/);
 	my @fields = split "\t";
-	push @lengths, $fields[1];
+	$length = $fields[1];
+	if (&IsNatural($length)) {
+	  push @lengths, $length;
+	}
     }
     close $len_handle;
     $repetitions = $#lengths +1;
