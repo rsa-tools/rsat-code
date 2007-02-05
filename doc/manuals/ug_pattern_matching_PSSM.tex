@@ -356,6 +356,8 @@ XYgraph -i PHO_consensus_L10_N10_c2_rand_Mkv5_sig_distrib.tab \
 \end{verbatim} \end{footnotesize}
 }
 
+
+
 \subsection{Score distributions in promoter sequences}
 
 
@@ -430,3 +432,101 @@ feature-map -i PHO_consensus_L10_N10_c2_matches_mkv0.tab \
 \subsection{Adaptive Markov models}
 
 \subsection{Scanning sequences with multiple matrices}
+
+\section{Computing the theoretical score distribution of a PSSM}
+
+The programs \program{convert-matrix} and \program{matrix-score} can
+return an estimation of the probability to observe a given score, on
+the basis of the theoretical model proposed by Staden (1989).
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+## Calculat the theoretical distribution of a PSSM
+convert-matrix  -v 1 -in_format consensus \
+  -i PHO_consensus_L10_N10_c2.matrix  \
+  -decimals 2 \
+  -prior ${RSAT}/data/genomes/Saccharomyces_cerevisiae/oligo-frequencies/1nt_upstream-noorf_Saccharomyces_cerevisiae-noov-2str.freq.gz \
+  -return parameters,wdistrib \
+  -o PHO_consensus_L10_N10_c2_distrib_theor.tab
+\end{verbatim} \end{footnotesize}
+}
+
+Note that we restricted here the precision to 2 decimals. Indeed, for
+computational reasons, the computing time increases exponentially with
+the number of decimals. You can experiment this by changing the number
+of decimals, and you will see that the computation time increases
+drastically above 3 decimals.  
+
+In any case, for most practical applications, 2 decimals are more than
+enough for the detection of matches with matrices (the first decimal
+would even be sufficient).
+
+We can now draw an XY plot of this distribution. 
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+## Draw the theoretical distribution
+XYgraph -i PHO_consensus_L10_N10_c2_distrib_theor.tab \
+  -xcol 1 -ycol 2 \
+  -title1 'PHO matrix' \
+  -title2 'Theoretical distribution of weight scores' \
+  -ymin 0 -yleg1 'Probability' \
+  -xsize 800 -xleg1 'Weight score' \
+  -format png  -lines -legend \
+  -o PHO_consensus_L10_N10_c2_theor_distrib.png
+\end{verbatim} \end{footnotesize}
+}
+
+
+The raw distribution is not very informative. A more interpretable
+information will be provided by the inverse cumulative distribution,
+which indicates, for each score, the probability to observe by chance
+a site with at least that score. This distribution can be considered
+as an estimation of the P-value, i.e. the risk of error if we consider
+as significant a site with a given score.
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+## Draw the theoretical distribution
+XYgraph -i PHO_consensus_L10_N10_c2_distrib_theor.tab \
+  -xcol 1 -ycol 2,4 \
+  -title1 'PHO matrix' \
+  -title2 'Theoretical distribution of weight scores' \
+  -ymin 0 -ymax 1 -yleg1 'Probability' \
+  -xsize 800 -xleg1 'Weight score' \
+  -format png  -lines -legend \
+  -o PHO_consensus_L10_N10_c2_Pval_distrib.png
+\end{verbatim} \end{footnotesize}
+}
+
+As expected, the distribution of P-value rapidly decreases with
+increasing values of scores. for the purpose of deteecting binding
+sites, the most intersting part of this distribution is the right
+tail, corresponding to high values of weight scores. We would like to
+display this tail with a higher detail, in order to distinguish the
+low P-values. A convenient way to do this is to use a logarithmic
+scale for the Y axis.
+
+{\color{Blue} \begin{footnotesize} 
+\begin{verbatim}
+## Draw the theoretical distribution
+XYgraph -i PHO_consensus_L10_N10_c2_distrib_theor.tab \
+  -xcol 1 -ycol 2,4 \
+  -title1 'PHO matrix' \
+  -title2 'Theoretical distribution of weight scores' \
+  -ymin 0 -ymax 1 -ylog -yleg1 'Probability' \
+  -xsize 800 -xleg1 'Weight score' \
+  -format png  -lines -legend \
+  -o PHO_consensus_L10_N10_c2_Pval_distrib_Ylog.png
+\end{verbatim} \end{footnotesize}
+}
+
+
+\subsection{Estimating the quality of a PSSM}
+
+The program \program{matrix-quality} can be used to estimate the
+quality of a position-specific scoring matrix, by comparing the
+distribution of scores observed in a positive set (typically, the
+known binding sites for a transcriptiojn factor), and a negative set
+(for example, a set of randomly selected promoter sequences).
+
