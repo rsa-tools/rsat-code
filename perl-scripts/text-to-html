@@ -9,48 +9,47 @@ require "RSA.cgi.lib";
 
 #### initialise parameters ####
 $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
+$out_format = 'html';
+
+%supported_output_format = (html=>1,
+			    tex=>1);
+$supported_output_formats = join (",", (sort keys %supported_output_format));
+
+
+$font{variable} = 1;
 
 $chunk = 50;
 
-#### read arguments ####
+################################################################
+## Read arguments 
 &ReadArguments();
 
 
-#### check argument values ####
-
-
-
-### open input file ###
+################################################################
+## Open input file ###
 ($in, $input_dir) = &OpenInputFile($infile{input});
 
-### open output file ###
+
+################################################################
+## Open output file
 $out = &OpenOutputFile($outfile{output});
 
-###### execute the command #########
-#print &HtmlTop ($infile{input});    
-#die "$outfile{output}\t$out";
 
-
-print $out "<HTML>";
-print $out "<TITLE>$infile{input}</TITLE>";
-print $out "<BODY BGCOLOR='#FFFFFF'>";
-
-#### verbose ####
-if ($verbose) {
-    print $out ";text-to-html result\n";
-    if ($infile{input} ne "") {
-	print $out ";Input file	$infile{input}\n";
-    }
-    if ($outfile{output} ne "") {
-	print $out ";Output file	$outfile{output}\n";
-    }
+################################################################
+## Print the header
+if ($out_format eq 'html') {
+  &print_header_html();
+  &print_verbose_html();
+  print &PrintHtmlTable($in, "", "", $chunk, $out, $border);
+  &close_table_html();
+} elsif ($out_format eq 'tex') {
+  my  $tex_table = &read_table_tex();
+  print $out $tex_table;
+} else {
+  &RSAT::error::FatalError();
 }
 
 
-print &PrintHtmlTable($in, "", "", $chunk, $out, $border);
-
-print $out "</BODY>";
-print $out "</HTML>";
 
 
 ###### print output ######
@@ -91,7 +90,7 @@ NAME
         1998 by Jacques van Helden (jacques\@scmbb.ulb.ac.be)
 	
 USAGE
-        text-to-html [-i inputfile] [-o outputfile] [-v] [-font variable]
+        text-to-html [-i inputfile] [-o outputfile] [-v] [-font fixed|variable]
 
 DESCRIPTION
 	Converts a tab-delimited file into a HTML table.
@@ -109,8 +108,8 @@ OPTIONS
 	-o outputfile
 		if not specified, the standard output is used.
 		This allows to place the command within a pipe.
-	-font variable
-		use variable instead of fixed fonts
+	-font fixed|variable
+		use fixed or variable fonts in html.
 	-chunk
 		chunk size (when there are many rows, the program
 		splits the table into several HTML tables, to reduce
@@ -122,7 +121,7 @@ INPUT FORMAT
 	
 OUTPUT FORMAT
 	An HTML file with a HTML table.
-		
+
 EXAMPLES
        text-to-html -v -i mydata -o myresult
 	
@@ -163,39 +162,177 @@ sub ReadArguments {
 		} else {
 		    $verbose = 1;
 		}
-		
+
 		### detailed help
 	    } elsif ($ARGV[$a] eq "-h") {
 		&PrintHelp();
-		
+
 		### list of options
 	    } elsif ($ARGV[$a] eq "-help") {
 		&PrintOptions();
-		
+
 		### input file ###
 	    } elsif ($ARGV[$a] eq "-i") {
 		$infile{input} = $ARGV[$a+1];
-		
+
 		### output file ###
 	    } elsif ($ARGV[$a] eq "-o") {
 		$outfile{output} = $ARGV[$a+1];
-		
+
 		### output file ###
 	    } elsif ($ARGV[$a] eq "-chunk") {
 		$chunk= $ARGV[$a+1];
 		unless (&IsNatural($chunk)) {
 		    &RSAT::error::FatalError("Chunk must be a natural number");
 		}
-		
+
 		### output file ###
 	    } elsif ($ARGV[$a] eq "-border") {
 		$border= $ARGV[$a+1];
 
+		### output format
+	    } elsif ($ARGV[$a] eq "-format") {
+		$out_format= $ARGV[$a+1];
+		unless ($supported_output_format{$out_format}) {
+		  &RSAT::error::FatalError($out_format, "Invalid output format. Supported:", $main::supported_output_formats);
+		}
+
 		### input file ###
-	    } elsif (($ARGV[$a] eq "-font") && ($ARGV[$a+1] =~ /^var/i)) {
+	    } elsif ($ARGV[$a] eq "-font") {
+	      my $font_type = $ARGV[$a+1];
+	      if ($font_type eq "variable") {
 		$font{variable} = 1;
-		
+	      } elsif ($font_type eq "fixed") {
+		$font{variable} = 0;
+	      } else {
+		&RSAT::error::FatalError("Invalid font type", $font_type);
+	      }
 	    }
 	}
     }
+}
+
+
+################################################################
+## Print HTML header
+sub print_header_html {
+  print $out "<HTML>";
+  print $out "<TITLE>$infile{input}</TITLE>";
+  print $out "<BODY BGCOLOR='#FFFFFF'>";
+}
+
+################################################################
+## Close HTML table
+sub close_table_html {
+  print $out "</BODY>";
+  print $out "</HTML>";
+}
+
+################################################################
+## Read the table and store it in a bidimensional array
+sub read_table_tex {
+  my $tex_string = "";
+  my $tex_table = "";
+  my $l = 0; ## Line counter
+  my $in_table = 0; ## Flag to indicate whether a table has been open
+  my $table_nb = 0; ## there can be serveral tables in a single file
+  my $max_col = 0; ## Maximal number of columns
+  my $header_row = 0; ## Boolean variable to indicate whether the current row is a header or not
+  while (my $line = <$in>) {
+    $l++;
+    chomp($line);
+
+    ## Treat header rows
+    if ($line =~ /^#(.*)/) {
+      $line = $1;
+      $header_row = 1;
+    } else {
+      $header_row = 0;
+    }
+    if ($line =~ /^;/) {
+      ## Special treatment for comment rows: if there was a table
+      ## before, this table has to be closed
+      if ($in_table) {
+	$tex_string .= &table_start_tex($max_col, $table_nb);
+	$tex_string .= $tex_table;
+	$tex_string .= &table_end_tex();
+
+	## Initialize variables for the next table
+	$max_col = 0;
+	$tex_table = "";
+      }
+      ## Comment line
+      $tex_string .= $_;
+    } else {
+      unless ($in_table) {
+	$table_nb++;
+	$in_table = 1;
+      }
+      my @tex_columns = split "\t", $line;
+      $max_col = &max($max_col, scalar(@tex_columns));
+#      &RSAT::message::Debug("Adding line", $l, scalar(@tex_columns), $max_col) if ($main::verbose >= 10);
+      $tex_table .= join (" & ", @tex_columns);
+      $tex_table .= ' \\\\';
+      $tex_table .= "\n";
+      $tex_table .= '\hline'."\n" if ($header_row);
+    }
+  }
+  if ($in_table) {
+    $tex_string .= &table_start_tex($max_col, $table_nb);
+    $tex_string .= $tex_table;
+    $tex_string .= &table_end_tex();
+  }
+  return $tex_string;
+}
+
+
+################################################################
+## Print header for a tex-formatted table
+sub table_start_tex {
+  my ($col_nb, $suffix) = @_;
+  my $label = 'tab:';
+  $col_format = '|c'x$col_nb;
+  $col_format .= '|';
+  if ($infile{input}) {
+    $label .= $infile{input}.':';
+  }
+  $label .= $suffix;
+  my $header = join ("\n", 
+	       '\begin{table}[bt]',
+	       '\tableparts',
+	       '{',
+	       '\caption{}',
+	       '\label{'.$label.'}',
+	       '}',
+	       '{',
+	       '\begin{tabular}{'.$col_format.'}',
+	       '\\hline',
+	      );
+  $header .= "\n";
+  return $header;
+}
+
+################################################################
+## Close tex-formatted table
+sub table_end_tex {
+  my $string = join ("\n",
+		     '\hline',
+		     '\end{tabular}',
+		     '}\end{table}');
+  $string .= "\n";
+  return($string);
+}
+
+################################################################
+#### verbose
+sub print_verbose_html {
+  if ($verbose >= 1) {
+    print $out "<PRE>; text-to-html result\n";
+    if ($infile{input}) {
+      print $out "; Input file	$infile{input}\n";
+    }
+    if ($outfile{output}) {
+      print $out "; Output file	$outfile{output}</pre>\n";
+    }
+  }
 }
