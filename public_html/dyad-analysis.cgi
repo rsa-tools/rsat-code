@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis.cgi,v 1.24 2006/12/11 04:48:50 jvanheld Exp $
+# $Id: dyad-analysis.cgi,v 1.25 2007/02/05 00:30:51 jvanheld Exp $
 #
 # Time-stamp: <2003-10-11 00:30:17 jvanheld>
 #
@@ -187,7 +187,7 @@ if ($query->param('output') eq "display") {
 
 	## Assemble the significant patterns with pattern-assembly
 	$assembly_file = "$TMP/$tmp_file_name.asmb";
-	$pattern_assembly_command = "$SCRIPTS/pattern-assembly -v 1 -subst 1";
+	$pattern_assembly_command = "$SCRIPTS/pattern-assembly -v 1 -subst 1 -top 50";
 	if ($query->param('strand') =~ /single/) {
 	  $pattern_assembly_command .= " -1str";
 	} else {
