@@ -41,23 +41,23 @@
             </xsd:annotation>
           </xsd:element>
 	  <!--/xsd:all-->
-	  <xsd:choice>
+	  <!--xsd:choice-->
 	  <!--xsd:element name="query" type="tns:ArrayOfString" minOccurs="1"-->
-	  <xsd:element name="query" type="xsd:string" maxOccurs="unbounded">
+	  <xsd:element name="query" type="xsd:string" minOccurs="0" maxOccurs="unbounded">
             <xsd:annotation>
               <xsd:documentation>
                 A list of query genes.
               </xsd:documentation>
             </xsd:annotation>
           </xsd:element>
-	  <xsd:element name="all" type="xsd:int">
+	  <xsd:element name="all" type="xsd:int" minOccurs="0">
             <xsd:annotation>
               <xsd:documentation>
                 Return sequences for all the genes of the organism.
               </xsd:documentation>
             </xsd:annotation>
           </xsd:element>
-	  </xsd:choice>
+	  <!--/xsd:choice-->
 	  <!--xsd:all-->
 	  <xsd:element name="noorf" type="xsd:int" minOccurs="0">
             <xsd:annotation>
@@ -156,22 +156,22 @@
 	  </xsd:annotation>
 	</xsd:element>
 	<!--/xsd:all-->
-	<xsd:choice>
-	<xsd:element name="sequence" type="xsd:string">
+	<!--xsd:choice-->
+	<xsd:element name="sequence" type="xsd:string" minOccurs="0">
 	  <xsd:annotation>
 	    <xsd:documentation>
 	      Sequence to purge. You need to supply either this parameter or the next one (tmp_infile).
 	    </xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
-	<xsd:element name="tmp_infile" type="xsd:string">
+	<xsd:element name="tmp_infile" type="xsd:string" minOccurs="0">
 	  <xsd:annotation>
 	    <xsd:documentation>
 	      Name of the file with input sequence on the server. You need to supply either this parameter or the previous one (sequence).
 	    </xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
-	</xsd:choice>
+	<!--/xsd:choice-->
 	<!--xsd:all-->
 	<xsd:element name="format" type="xsd:string" minOccurs="0">
 	  <xsd:annotation>
@@ -228,22 +228,22 @@
 	  </xsd:annotation>
 	</xsd:element>
 	<!--/xsd:all-->
-	<xsd:choice>
-	<xsd:element name="sequence" type="xsd:string">
+	<!--xsd:choice-->
+	<xsd:element name="sequence" type="xsd:string" minOccurs="0">
 	  <xsd:annotation>
 	    <xsd:documentation>
 	      Input sequence. You need to supply either this parameter or the next one (tmp_infile).
 	    </xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
-	<xsd:element name="tmp_infile" type="xsd:string">
+	<xsd:element name="tmp_infile" type="xsd:string" minOccurs="0">
 	  <xsd:annotation>
 	    <xsd:documentation>
 	      Name of the file with input sequence on the server. You need to supply either this parameter or the previous one (sequence).
 	    </xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
-	</xsd:choice>
+	<!--/xsd:choice-->
 	<!--xsd:all-->
 	<xsd:element name="format" type="xsd:string" minOccurs="0">
 	  <xsd:annotation>
