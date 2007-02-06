@@ -724,9 +724,9 @@ sub CalcNeighbourLimits {
       if (($gene_id) &&
 	  ($gene_id != $main::null)) {
 	while (($ln >= 0) && ($gene_id eq $left_candidate->get_attribute("geneid"))) {
-	  &RSAT::message::Debug("Skipping feature",$ln, $left_candidate->get_attribute("id"),
-				"with same GeneId", $gene_id,
-				"as feature", $g, $gene->get_attribute("id")) if ($main::verbose >= 0);
+#	  &RSAT::message::Debug("Skipping feature",$ln, $left_candidate->get_attribute("id"),
+#				"with same GeneId", $gene_id,
+#				"as feature", $g, $gene->get_attribute("id")) if ($main::verbose >= 6);
 	  $ln--;
 	  $left_candidate = $right_sorted_genes[$ln];
 	}
@@ -870,9 +870,9 @@ sub CalcNeighbourLimits {
       if (($gene_id) &&
 	  ($gene_id != $main::null)) {
 	while (($rn <= $#left_sorted_genes) && ($gene_id eq $right_candidate->get_attribute("geneid"))) {
-	  &RSAT::message::Debug("Skipping feature",$rn, $right_candidate->get_attribute("id"),
-				"with same GeneId", $gene_id,
-				"as feature", $g, $gene->get_attribute("id")) if ($main::verbose >= 0);
+#	  &RSAT::message::Debug("Skipping feature",$rn, $right_candidate->get_attribute("id"),
+#				"with same GeneId", $gene_id,
+#				"as feature", $g, $gene->get_attribute("id")) if ($main::verbose >= 6);
 	  $rn++;
 	  $right_candidate = $left_sorted_genes[$rn];
 	}
