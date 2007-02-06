@@ -120,7 +120,7 @@ my $length = 6;  ## Length of patterns to be discovered
 my $background = 'upstream-noorf';  ## Type of background used
 my $stats = 'occ,proba,rank';  ## Returned statistics
 my $noov = 1;  ## Do not allow overlapping patterns
-my $str = '2str';  ## Search on both strands
+my $str = 2;  ## Search on both strands
 my $sort = 1;  ## Sort the result according to score
 my $lth = 'occ_sig 0';  ## Lower limit to score is 0, less significant patterns are not displayed
 
