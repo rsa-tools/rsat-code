@@ -81,7 +81,7 @@ sub retrieve_seq_cmd {
 	$command .= $query;
     }
 
-    if ($noorf) {
+    if ($noorf == 1) {
 	$command .= " -noorf";
     }
     if (defined($from)) {
@@ -109,7 +109,7 @@ sub retrieve_seq_cmd {
 	$format =~ s/\"//g;
 	$command .= " -format '".$format."'";
     }
-    if ($all) {
+    if ($all == 1) {
 	$command .= " -all";
     }
     if (defined($lw)) {
@@ -127,13 +127,13 @@ sub retrieve_seq_cmd {
 	$label_sep =~ s/\"//g;
 	$command .= " -labelsep '".$label_sep."'";
     }
-    if ($nocom) {
+    if ($nocom == 1) {
 	$command .= " -nocom";
     }
-    if ($repeat) {
+    if ($repeat == 1) {
 	$command .= " -rm";
     }
-    if ($imp_pos) {
+    if ($imp_pos == 1) {
 	$command .= " -imp_pos";
     }
 
@@ -208,7 +208,7 @@ sub purge_seq_cmd {
 	}
     }
 
-    if ($delete) {
+    if ($delete == 1) {
       $command .= " -del";
     }
 
@@ -313,7 +313,7 @@ sub oligo_analysis_cmd {
       $command .= " -return '".$stats."'";
     }
 
-    if ($noov) {
+    if ($noov == 1) {
       $command .= " -noov";
     }
 
@@ -325,7 +325,7 @@ sub oligo_analysis_cmd {
 	}
     }
 
-    if ($sort) {
+    if ($sort == 1) {
       $command .= " -sort";
     }
 
@@ -404,13 +404,13 @@ sub gene_info_cmd {
   if ($query) {
     $command .= $query;
   }
-  if ($args{full}) {
+  if ($args{full} == 1) {
     $command .= " -full";
   }
-  if ($args{noquery}){
+  if ($args{noquery} == 1){
     $command .= " -noquery";
   }
-  if ($args{descr}) {
+  if ($args{descr} == 1) {
     $command .= " -descr";
   }
   if ($args{feattype}) {

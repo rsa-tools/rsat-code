@@ -53,7 +53,8 @@
 	  <xsd:element name="all" type="xsd:int" minOccurs="0">
             <xsd:annotation>
               <xsd:documentation>
-                Return sequences for all the genes of the organism.
+                Return sequences for all the genes of the organism if value =
+        1. Incompatible with query.
               </xsd:documentation>
             </xsd:annotation>
           </xsd:element>
@@ -62,7 +63,8 @@
 	  <xsd:element name="noorf" type="xsd:int" minOccurs="0">
             <xsd:annotation>
               <xsd:documentation>
-                Prevent overlap with upstream open reading frames (ORF).
+                Prevent overlap with upstream open reading frames (ORF) if
+        value = 1.
               </xsd:documentation>
             </xsd:annotation>
           </xsd:element>
@@ -125,21 +127,21 @@
 	  <xsd:element name="nocom" type="xsd:int" minOccurs="0">
            <xsd:annotation>
               <xsd:documentation>
-                No comments. Only the identifier and the sequence are returned. By default, the comment indicates the ORF and upstream sequence coordinates.
+                No comments if value = 1. Only the identifier and the sequence are returned. By default, the comment indicates the ORF and upstream sequence coordinates.
               </xsd:documentation>
             </xsd:annotation>
           </xsd:element>
 	  <xsd:element name="repeat" type="xsd:int" minOccurs="0">
             <xsd:annotation>
               <xsd:documentation>
-                Use the repeat masked version of the genome. Attention: repeated regions are annotated for some genomes only.
+                Use the repeat masked version of the genome if value = 1. Attention: repeated regions are annotated for some genomes only.
               </xsd:documentation>
             </xsd:annotation>
           </xsd:element>
 	  <xsd:element name="imp_pos" type="xsd:int" minOccurs="0">
             <xsd:annotation>
               <xsd:documentation>
-                Admit imprecise positions.
+                Admit imprecise positions if value = 1.
               </xsd:documentation>
             </xsd:annotation>
           </xsd:element>
@@ -204,7 +206,7 @@
 	<xsd:element name="delete" type="xsd:int" minOccurs="0">
 	  <xsd:annotation>
 	    <xsd:documentation>
-	      Delete repeats instead of masking them.
+	      Delete repeats instead of masking them if value = 1.
 	    </xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
@@ -284,7 +286,7 @@
 	<xsd:element name="noov" type="xsd:int" minOccurs="0">
 	  <xsd:annotation>
 	    <xsd:documentation>
-	      No overlapping. Disable the detection of overlapping matches for self-overlapping patterns (ex TATATA, GATAGA).
+	      No overlapping of oligos allowed if value = 1. Disable the detection of overlapping matches for self-overlapping patterns (ex TATATA, GATAGA).
 	    </xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
@@ -299,7 +301,7 @@
 	<xsd:element name="sort" type="xsd:int" minOccurs="0">
 	  <xsd:annotation>
 	    <xsd:documentation>
-	      Sort oligomers according to overrepresentation.
+	      Sort oligomers according to overrepresentation if value = 1.
 	    </xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
@@ -352,21 +354,22 @@
 	<xsd:element name="full" type="xsd:int" minOccurs="0">
 	 <xsd:annotation>
 	  <xsd:documentation>
-	   Full match only (no substring matching).
+	   Full match only (no substring matching) if value = 1.
 	  </xsd:documentation>
 	 </xsd:annotation>
 	</xsd:element>
 	<xsd:element name="noquery" type="xsd:int" minOccurs="0">
 	 <xsd:annotation>
 	  <xsd:documentation>
-	   Do not print the query at the begining of each line.
+	   Do not print the query at the begining of each line if value = 1.
 	  </xsd:documentation>
 	 </xsd:annotation>
 	</xsd:element>
 	<xsd:element name="descr" type="xsd:int" minOccurs="0">
 	 <xsd:annotation>
 	  <xsd:documentation>
-	   Match query against the description, too, not just against gene ID and name.
+	   Match query against the description, too, not just against gene ID
+       and name if value = 1.
 	  </xsd:documentation>
 	 </xsd:annotation>
 	</xsd:element>
