@@ -20,8 +20,7 @@ use RSAT::util;
 =head1 DESCRIPTION
 
     Implementation of the gene ontology complete directed acyclic graph. 
-    go class. This class allows to look for the ancesters of the each gene ontology
-    annotation.
+    go class. This class allows to look for the ancesters and children of the each gene ontology  annotation.
     
 =cut
 
@@ -51,12 +50,13 @@ sub read_from_obo {
 
   my @ids;
   $ids[0] = "-1";
-  my $j = 0;
+  my $idcpt = 0;
   my $name;
   my $namespace;
   my $def;
   my @isa = ("-1");
   my @parenttable;
+  my @childrentable;
   my %indextable;
   my %functionname;
   my %name_id;
@@ -68,17 +68,34 @@ sub read_from_obo {
     if ($ligne eq "[Term]" && $ids[0] ne "-1") {
       my $parentnb = 0;
       foreach my $id (@ids) {
-        $indextable{$id} = $j;
+        my $parentcpt;
+        if (defined($indextable{$id})) {
+          $parentcpt = $indextable{$id};
+        } else {
+          $parentcpt = $idcpt;
+          $indextable{$id} = $parentcpt;
+          $idcpt++;
+        }
         foreach my $parent (@isa) {
-          #print OUTPUT "$id\t$namespace\t$name\t$parent\t$def\n";
           $functionname{$id} = $name;
           $name_id{$name} = $id;
-          $parenttable[$j][$parentnb] = $parent;
-          $parentnb++;
           $definition{$id} = $def;
           $namespace{$id} = $namespace;
+          ### Add the parents in @parenttable 
+          $parenttable[$parentcpt][$parentnb] = $parent;
+          $parentnb++;
+          ### Add the children in @childrentable 
+          my $childrencpt;
+          if (defined($indextable{$parent})) {
+            $childrencpt = $indextable{$parent};
+          } else {
+            $childrencpt = $idcpt;
+            $indextable{$parent} = $childrencpt;
+            $idcpt++;
+          }
+          push @{$childrentable[$childrencpt]}, $id;
+          
         }
-        $j++;
       }
       @ids = ();
       $name = "";
@@ -109,6 +126,7 @@ sub read_from_obo {
       $def = $ligne;
     }
   }
+  $self->set_array_attribute("children", @childrentable);
   $self->set_array_attribute("parents", @parenttable);
   $self->set_hash_attribute("indices", %indextable);
   $self->set_hash_attribute("functionname", %functionname);
@@ -123,7 +141,7 @@ sub read_from_obo {
 
 =item B<get_parents>
 
-Read the graph from a tab-delimited text file.
+Returns the GOID of the parents of a specific goid
 
 
  Title    : get_parents
@@ -159,6 +177,49 @@ sub get_parents {
   my $repRef = \@uniq;
   return($repRef);
 }
+################################################################
+
+=pod
+
+=item B<get_children>
+
+Returns the GOID of the children of a specific goid
+
+
+ Title    : get_children
+ Usage    : $go->get_children(go_id)
+ Returns  : the list of all children classes of the specified class
+
+=cut
+
+sub get_children {
+  my ($self, $goid) = @_;
+  my %indextable = $self->get_attribute("indices");
+  my @childrentable = $self->get_attribute("children");
+  my @rep;
+  $rep[0] = $goid;
+  for (my $i = 0; $i < scalar(@rep); $i++) {
+    my $index = $indextable{$rep[$i]};
+    my $children = $childrentable[$index];
+    for my $j (0 .. $#{$children}) {
+      if ($children->[$j] ne -1) {
+        push(@rep, $children->[$j]);
+      }
+    }
+  }
+  my %seen = ();
+  my @uniq = ();
+  foreach my $item (@rep) {
+    unless ($seen{$item}) {
+      # if we get here, we have not seen it before
+      $seen{$item} = 1;
+      push(@uniq, $item);
+    }
+  }
+  my $repRef = \@uniq;
+  return($repRef);
+}
+
 
 ################################################################
 
