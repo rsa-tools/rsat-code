@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: go-hierarchy,v 1.4 2007/02/09 09:33:13 rsat Exp $
+# $Id: go-hierarchy,v 1.5 2007/02/09 14:22:09 rsat Exp $
 #
 ############################################################
 
@@ -19,10 +19,10 @@ Given a description file for the Gene Ontology (GO), return subsets or
 the totality of the GO hierarchy.
 
 If one specifies one or several classes, and the program returns all
-the ancestral classes (super-classes).
+the ancestral classes (super-classes) or children classes (sub-classes).
 
-Alternatively, one can specify a list of genes, and their class
-memberships will be returned.
+Alternatively, one can specify a list of genes, and the parent or children classes
+will be returned.
 
 =head2 Resources
 
@@ -53,9 +53,9 @@ util
 
 =head1 USAGE
     
-go-hierarchy [-i inputfile] [-o outputfile] [-v #] [-q go_class1] [-q go_class2] [-classfile classfile] 
+go-hierarchy [-i inputfile] [-o outputfile] [-v #] [-q go_class1] [-q go_class2] [-classfile classfile] [-children]
 
-go-hierarchy [-i inputfile] [-o outputfile] [-v #] [-genefile genefile] 
+go-hierarchy [-i inputfile] [-o outputfile] [-v #] [-genefile genefile] [-children]
 
 =head1 INPUT FORMAT
 
@@ -85,11 +85,12 @@ package main;
      @class_names = ();
      @known_classes = ();
      @unknown_classes = ();
+     $children = 0;
      $query_by_class = 0;
      $query_by_gene = 0;
      #$format_name = 0;
-     @required_output_fields = qw(parent_goid name);
-     %supported_return_option = ("parent_goid" => 1,
+     @required_output_fields = qw(result_goid name);
+     %supported_return_option = ("result_goid" => 1,
      				"query_goid" => 1,
 				"name" => 1, 
 				"def" => 1,
@@ -165,6 +166,7 @@ package main;
     ## Print verbose
     &Verbose() if ($main::verbose);
     
+    
     ################################################################
     ## Retrieve the ancesters for the queried classes
     if ($query_by_class) {
@@ -172,12 +174,16 @@ package main;
       print $out "#query_class_name";
       foreach my $field (@required_output_fields) {
         if ($field eq "name") {
-          print $out "\tancester_class_name";
+          if (!$children) {
+            print $out "\tancester_class_name";
+          } else {
+            print $out "\tchildren_class_name";
+          }
         }
         if ($field eq "namespace") {
           print $out "\tnamespace";
         }  
-        if ($field eq "parent_goid") {
+        if ($field eq "result_goid") {
           print $out "\tancester_go_id";
         }
         if ($field eq "query_goid") {
@@ -191,7 +197,12 @@ package main;
      ## Ancesters search
      foreach my $goid (@known_classes) {
         #print @class_names."\n";
-        my $goclassesRef = $go->get_parents($goid);
+        my $goclassesRef;
+        if (!$children) {
+          $goclassesRef = $go->get_parents($goid);
+        } else {
+          $goclassesRef = $go->get_children($goid);
+        }
         @goclasses = @{$goclassesRef};
         my $goid_name = $go->get_name($goid);
         foreach my $goclass (@goclasses) {
@@ -203,7 +214,7 @@ package main;
             if ($field eq "namespace") {
               print $out "\t".$go->get_namespace($goclass);
             }  
-            if ($field eq "parent_goid") {
+            if ($field eq "result_goid") {
               print $out "\t".$goclass;
             }
             if ($field eq "query_goid") {
@@ -227,13 +238,22 @@ package main;
       print $out "#gene_name";
       foreach my $field (@required_output_fields) {
         if ($field eq "name") {
-          print $out "\tgo_class_name";
+          print $out "\tquery_class_name";
+          if (!$children) {
+            print $out "\tancester_class_name";
+          } else {
+            print $out "\tchildren_class_name";
+          }
         }  
         if ($field eq "namespace") {
           print $out "\tnamespace";
         }  
-        if ($field eq "parent_goid") {
-          print $out "\tparent_goid";
+        if ($field eq "result_goid") {
+          if (!$children) {
+            print $out "\tancester_goid";
+          } else {
+            print $out "\tchildren_goid";
+          }
         }
         if ($field eq "def") {
           print $out "\tdefinition";
@@ -260,19 +280,25 @@ package main;
 	  my $goid = $fields[1];
 	  if ($gene && $goid) {
 	    if ($go->exists($goid)) {
-	      my $goclassesRef = $go->get_parents($goid);
+	      my $goclassesRef;
+              if (!$children) {
+                $goclassesRef = $go->get_parents($goid);
+              } else {
+                $goclassesRef = $go->get_children($goid);
+              }
               @goclasses = @{$goclassesRef};
               my $goid_name = $go->get_name($goid);
               foreach my $goclass (@goclasses) {
                 print $out "$gene";
                 foreach my $field (@required_output_fields) {
                   if ($field eq "name") {
+                    print $out "\t$goid_name";
                     print $out "\t".$go->get_name($goclass);
                   }
                   if ($field eq "namespace") {
                     print $out "\t".$go->get_namespace($goclass);
                   }  
-                  if ($field eq "parent_goid") {
+                  if ($field eq "result_goid") {
                     print $out "\t".$goclass;
                   }
                   if ($field eq "def") {
@@ -452,7 +478,7 @@ genes and the GO class(es) to which each gene belongs.
 
 =item	B<-return fields>
 
-List of fields to return : query_goid,parent_goid,name,def,namespace,all (default : parent_goid,name)
+List of fields to return : query_goid,result_goid,name,def,namespace,all (default : result_goid,name)
 
 =cut
 	} elsif ($arg eq "-return") {
@@ -468,6 +494,17 @@ List of fields to return : query_goid,parent_goid,name,def,namespace,all (defaul
   	        &FatalError($field, "Invalid return option. Supported:", join(",", sort(keys(%supported_return_option))));
   	      } 
 	    }
+	    
+	    ## get children classes instead of parents classes
+=pod
+
+=item B<-children>
+
+
+=cut
+	} elsif ($arg eq "-children") {
+	    $children = 1;
+	
 	} else {
 	    &FatalError(join("\t", "Invalid option", $arg));
 
