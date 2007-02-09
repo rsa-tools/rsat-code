@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: go-hierarchy,v 1.3 2007/02/05 21:53:10 jvanheld Exp $
+# $Id: go-hierarchy,v 1.4 2007/02/09 09:33:13 rsat Exp $
 #
 ############################################################
 
@@ -88,23 +88,23 @@ package main;
      $query_by_class = 0;
      $query_by_gene = 0;
      #$format_name = 0;
-    %required_output_fields = ("goid"=>1, "name" => 1);
-    %supported_return_option = ("goid" => 1, 
+     @required_output_fields = qw(parent_goid name);
+     %supported_return_option = ("parent_goid" => 1,
+     				"query_goid" => 1,
 				"name" => 1, 
 				"def" => 1,
-				"namespace" => 1 );
+				"namespace" => 1);
+     %main::infile = ();
+     %main::outfile = ();
 
-    %main::infile = ();
-    %main::outfile = ();
-
-    $main::verbose = 0;
+     $main::verbose = 0;
 #    $main::in = STDIN;
-    $main::out = STDOUT;
+     $main::out = STDOUT;
 
     ################################################################
     ## Read argument values
     &ReadArguments();
-
+    
     ################################################################
     ## Check argument values
     if ($query_by_gene && $query_by_class) {
@@ -147,7 +147,7 @@ package main;
         close $class_file_handle;
       }
       ## Identify class in the go object
-      &RSAT::message::TimeWarn("Identifying",scalar(@class_names), "seed nodes in the graph") if ($main::verbose >= 2);
+      &RSAT::message::TimeWarn("Identifying",scalar(@class_names), "GO class in the file \t$infile{inputfile}") if ($main::verbose >= 2);
       foreach my $goid (@class_names) {
 	my $exists = $go->exists($goid);
 
@@ -170,38 +170,48 @@ package main;
     if ($query_by_class) {
       ## Header output
       print $out "#query_class_name";
-      if (defined($required_output_fields{"name"})) {
-        print $out "\tancester_class_name";
-      }
-      if (defined($required_output_fields{"namespace"})) {
-        print $out "\tnamespace";
-      }  
-      if (defined($required_output_fields{"goid"})) {
-        print $out "\tgo_id";
-      }
-      if (defined($required_output_fields{"def"})) {
-        print $out "\tdefinition";
-      }
-      print $out "\n";
-      ## Ancesters search
-      foreach my $goid (@known_classes) {
-        print @class_names."\n";
+      foreach my $field (@required_output_fields) {
+        if ($field eq "name") {
+          print $out "\tancester_class_name";
+        }
+        if ($field eq "namespace") {
+          print $out "\tnamespace";
+        }  
+        if ($field eq "parent_goid") {
+          print $out "\tancester_go_id";
+        }
+        if ($field eq "query_goid") {
+          print $out "\tquery_goid";
+        }
+        if ($field eq "def") {
+          print $out "\tdefinition";
+        }
+     }
+     print $out "\n";
+     ## Ancesters search
+     foreach my $goid (@known_classes) {
+        #print @class_names."\n";
         my $goclassesRef = $go->get_parents($goid);
         @goclasses = @{$goclassesRef};
         my $goid_name = $go->get_name($goid);
         foreach my $goclass (@goclasses) {
           print $out "$goid_name";
-          if (defined($required_output_fields{"name"})) {
-            print $out "\t".$go->get_name($goclass);
-          }
-          if (defined($required_output_fields{"namespace"})) {
-            print $out "\t".$go->get_namespace($goclass);
-          }  
-          if (defined($required_output_fields{"goid"})) {
-            print $out "\t".$goclass;
-          }
-          if (defined($required_output_fields{"def"})) {
-            print $out "\t".$go->get_definition($goclass);
+          foreach my $field (@required_output_fields) {
+            if ($field eq "name") {
+              print $out "\t".$go->get_name($goclass);
+            }
+            if ($field eq "namespace") {
+              print $out "\t".$go->get_namespace($goclass);
+            }  
+            if ($field eq "parent_goid") {
+              print $out "\t".$goclass;
+            }
+            if ($field eq "query_goid") {
+              print $out "\t$goid";
+            }   
+            if ($field eq "def") {
+              print $out "\t".$go->get_definition($goclass);
+            }
           }
           print $out "\n";
         }
@@ -214,19 +224,26 @@ package main;
     
     if ($query_by_gene) {
       ## Header output
-      print $out "#gene_name\tgo_class_name";
-      if (defined($required_output_fields{"namespace"})) {
-        print $out "\tnamespace";
-      }  
-      if (defined($required_output_fields{"goid"})) {
-        print $out "\tgo_id";
-      }
-      if (defined($required_output_fields{"def"})) {
-        print $out "\tdefinition";
+      print $out "#gene_name";
+      foreach my $field (@required_output_fields) {
+        if ($field eq "name") {
+          print $out "\tgo_class_name";
+        }  
+        if ($field eq "namespace") {
+          print $out "\tnamespace";
+        }  
+        if ($field eq "parent_goid") {
+          print $out "\tparent_goid";
+        }
+        if ($field eq "def") {
+          print $out "\tdefinition";
+        }
+        if ($field eq "query_goid") {
+          print $out "\tquery_goid";
+        }
       }
       print $out "\n";
       ## Ancesters search
-      
       if ($infile{gene_file}) {
 	my $l = 0;
 	&RSAT::message::TimeWarn("Reading genes from file", $infile{gene_file}) if ($main::verbose >= 2);
@@ -239,7 +256,7 @@ package main;
 	  next unless ($line =~ /\S/); ## Skip empty lines
 	  chomp($line);
 	  my @fields = split /\t/, $line;
-	  my $gene =  $fields[0];
+	  my $gene = $fields[0];
 	  my $goid = $fields[1];
 	  if ($gene && $goid) {
 	    if ($go->exists($goid)) {
@@ -248,17 +265,22 @@ package main;
               my $goid_name = $go->get_name($goid);
               foreach my $goclass (@goclasses) {
                 print $out "$gene";
-                if (defined($required_output_fields{"name"})) {
-                  print $out "\t".$go->get_name($goclass);
-                }
-                if (defined($required_output_fields{"namespace"})) {
-                  print $out "\t".$go->get_namespace($goclass);
-                }  
-                if (defined($required_output_fields{"goid"})) {
-                  print $out "\t".$goclass;
-                }
-                if (defined($required_output_fields{"def"})) {
-                  print $out "\t".$go->get_definition($goclass);
+                foreach my $field (@required_output_fields) {
+                  if ($field eq "name") {
+                    print $out "\t".$go->get_name($goclass);
+                  }
+                  if ($field eq "namespace") {
+                    print $out "\t".$go->get_namespace($goclass);
+                  }  
+                  if ($field eq "parent_goid") {
+                    print $out "\t".$goclass;
+                  }
+                  if ($field eq "def") {
+                    print $out "\t".$go->get_definition($goclass);
+                  }
+                  if ($field eq "query_goid") {
+                    print $out "\t$goid";
+                  }
                 }
                 print $out "\n";
               }
@@ -430,22 +452,22 @@ genes and the GO class(es) to which each gene belongs.
 
 =item	B<-return fields>
 
-List of fields to return : goid,name,def,namespace,all (default : name)
+List of fields to return : query_goid,parent_goid,name,def,namespace,all (default : parent_goid,name)
 
 =cut
 	} elsif ($arg eq "-return") {
 	    my $fields = shift(@arguments);
 	    my @all_fields = split(/,/, $fields);
+	    @required_output_fields = ();
 	    foreach my $field (@all_fields) {
 	      if (defined($supported_return_option{$field})) {
-  	        $required_output_fields{$field} = 1;
+  	        push @required_output_fields, $field;
   	      } elsif ($field eq 'all') {
-  	        %required_output_fields = %supported_return_option;
+  	        @required_output_fields = qw(goid name def namespace);
   	      } else {
   	        &FatalError($field, "Invalid return option. Supported:", join(",", sort(keys(%supported_return_option))));
   	      } 
 	    }
-	        
 	} else {
 	    &FatalError(join("\t", "Invalid option", $arg));
 
