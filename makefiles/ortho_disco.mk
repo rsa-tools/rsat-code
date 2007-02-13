@@ -58,6 +58,7 @@ all_tasks_all_genes:
 	@echo ""
 	@for g in ${ALL_GENES} ; do \
 		${MAKE} all_tasks REF_ORG=${REF_ORG} TAXON=${TAXON} MAIN_DIR=${MAIN_DIR} GENE=$${g} ; \
+		${MAKE} _dyad_tasks_filtered REF_ORG=${REF_ORG} TAXON=${TAXON} MAIN_DIR=${MAIN_DIR} GENE=$${g} ; \
 	done
 
 ## Retrieve ortholog clusters and upstream sequences for all the genes
