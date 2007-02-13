@@ -1,6 +1,6 @@
 ############################################################
 #
-# $Id: mirror.mk,v 1.36 2006/10/19 23:25:32 rsat Exp $
+# $Id: mirror.mk,v 1.37 2007/02/13 04:16:25 jvanheld Exp $
 #
 # Time-stamp: <2003-10-01 12:05:45 jvanheld>
 #
@@ -107,7 +107,10 @@ EXCLUDED_GENOMES=					\
 		--exclude Danio_rerio*			\
 		--exclude Drosophila_melanogaster*	\
 		--exclude Anopheles_gambiae*		\
-		--exclude Caenorhabditis_elegans*
+		--exclude Caenorhabditis_elegans*	\
+		--exclude Tetraodon_nigroviridis*	\
+		--exclue Oryzias_latipes*		\
+		--exclude *_EnsEMBL*
 
 EXCLUDED_BLAST= \
 		--exclude 'blastdb'		\
