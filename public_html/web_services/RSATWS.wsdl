@@ -315,6 +315,100 @@
        </xsd:all>
       </xsd:complexType>
 
+      <xsd:complexType name="DnaPatternRequest">
+       	<xsd:all>
+        <xsd:element name="output" type="xsd:string" minOccurs="0">
+	  <xsd:annotation>
+	    <xsd:documentation>
+	      Return type. Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client), or  'both'. Default is 'both'.
+	    </xsd:documentation>
+	  </xsd:annotation>
+	</xsd:element>
+	<!--/xsd:all-->
+	<!--xsd:choice-->
+	<xsd:element name="sequence" type="xsd:string" minOccurs="0">
+	  <xsd:annotation>
+	    <xsd:documentation>
+	      Input sequence. You need to supply either this parameter or the next one (tmp_infile).
+	    </xsd:documentation>
+	  </xsd:annotation>
+	</xsd:element>
+	<xsd:element name="tmp_infile" type="xsd:string" minOccurs="0">
+	  <xsd:annotation>
+	    <xsd:documentation>
+	      Name of the file with input sequence on the server. You need to supply either this parameter or the previous one (sequence).
+	    </xsd:documentation>
+	  </xsd:annotation>
+	</xsd:element>
+	<!--/xsd:choice-->
+	<!--xsd:all-->
+	<xsd:element name="format" type="xsd:string" minOccurs="0">
+	  <xsd:annotation>
+	    <xsd:documentation>
+	      Input sequence format. Supported: IG (Intelligenetics), WC (wconsensus), raw, fasta. Default is fasta.
+	    </xsd:documentation>
+	  </xsd:annotation>
+	</xsd:element>
+	<xsd:element name="subst" type="xsd:int" minOccurs="0">
+	  <xsd:annotation>
+	    <xsd:documentation>
+	      Number of substitutions allowed.
+	    </xsd:documentation>
+	  </xsd:annotation>
+	</xsd:element>
+	<xsd:element name="pattern" type="xsd:string" minOccurs="1">
+	  <xsd:annotation>
+	    <xsd:documentation>
+	      Pattern to match.
+	    </xsd:documentation>
+	  </xsd:annotation>
+	</xsd:element>
+	<xsd:element name="id" type="xsd:string" minOccurs="0">
+	  <xsd:annotation>
+	    <xsd:documentation>
+	      Pattern identifier.
+	    </xsd:documentation>
+	  </xsd:annotation>
+	</xsd:element>
+	<xsd:element name="origin" type="xsd:int" minOccurs="0">
+	  <xsd:annotation>
+	    <xsd:documentation>
+	      Origin fort he calculation of positions (0 for end of sequence).
+	    </xsd:documentation>
+	  </xsd:annotation>
+	</xsd:element>
+	<xsd:element name="noov" type="xsd:int" minOccurs="0">
+	  <xsd:annotation>
+	    <xsd:documentation>
+	      No overlapping of oligos allowed if value = 1. Disable the detection of overlapping matches for self-overlapping patterns (ex TATATA, GATAGA).
+	    </xsd:documentation>
+	  </xsd:annotation>
+	</xsd:element>
+	<xsd:element name="str" type="xsd:int" minOccurs="0">
+	  <xsd:annotation>
+	    <xsd:documentation>
+	      Oligonucleotide occurrences found on both stands are
+    summed (2) or not (1). Default is 2.
+	    </xsd:documentation>
+	  </xsd:annotation>
+	</xsd:element>
+	<xsd:element name="sort" type="xsd:int" minOccurs="0">
+	  <xsd:annotation>
+	    <xsd:documentation>
+	      Sort oligomers according to overrepresentation if value = 1.
+	    </xsd:documentation>
+	  </xsd:annotation>
+	</xsd:element>
+	<xsd:element name="th" type="xsd:int" minOccurs="0">
+	  <xsd:annotation>
+	    <xsd:documentation>
+	      Threshold on match count.
+	    </xsd:documentation>
+	  </xsd:annotation>
+	</xsd:element>
+       </xsd:all>
+      </xsd:complexType>
+
       <!--xsd:complexType name="Binint"-->
 	<!--xsd:complexContent-->
 	  <!--xsd:restriction base="xsd:int"-->
@@ -487,6 +581,32 @@
 	 </xsd:all>
 	</xsd:complexType>
 
+      <xsd:complexType name="DnaPatternResponse">
+	<xsd:all>
+	  <xsd:element name="server" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>
+	        Location of the result file on the server. This can be used as input for a further request.
+	      </xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="command" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>
+	        The stand alone command executed on the server.
+	      </xsd:documentation>
+	    </xsd:annotation>
+	</xsd:element>
+	  <xsd:element name="client" type="xsd:string">
+	 <xsd:annotation>
+	  <xsd:documentation>
+	   The results.
+	  </xsd:documentation>
+	 </xsd:annotation>
+	</xsd:element>
+	 </xsd:all>
+	</xsd:complexType>
+
     </xsd:schema>
   </types>
 
@@ -513,6 +633,14 @@
 
   <message name="OligoAnalysisOutput">
       <part name="response" type="tns:OligoAnalysisResponse"/>
+  </message>
+
+  <message name="DnaPatternInput">
+      <part name="request" type="tns:DnaPatternRequest"/>
+  </message>
+
+  <message name="DnaPatternOutput">
+      <part name="response" type="tns:DnaPatternResponse"/>
   </message>
 
   <message name="GeneInfoInput">
@@ -546,6 +674,14 @@
 	   sequences.
          </documentation>
       </operation>
+
+      <operation name="dna_pattern">
+         <input name="DnaPatternRequest" message="tns:DnaPatternInput"/>
+         <output name="DnaPatternResponse" message="tns:DnaPatternOutput"/>
+         <documentation>Searches all occurrences of a pattern within DNA sequences.
+         </documentation>
+      </operation>
+
       <operation name="gene_info">
          <input name="GeneInfoRequest" message="tns:GeneInfoInput"/>
          <output name="GeneInfoResponse" message="tns:GeneInfoOutput"/>
@@ -583,6 +719,17 @@
              <soap:body use="literal" namespace="urn:RSATWS" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
          </output>
       </operation>
+
+      <operation name="dna_pattern">
+         <soap:operation soapAction="urn:RSATWS#dna_pattern"/>
+         <input>
+             <soap:body use="literal" namespace="urn:RSATWS" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+         </input>
+         <output>
+             <soap:body use="literal" namespace="urn:RSATWS" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+         </output>
+      </operation>
+
       <operation name="gene_info">
          <soap:operation soapAction="urn:RSATWS#gene_info"/>
          <input>
