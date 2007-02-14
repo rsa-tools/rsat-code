@@ -370,10 +370,10 @@
 	    </xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
-	<xsd:element name="origin" type="xsd:int" minOccurs="0">
+	<xsd:element name="origin" type="xsd:string" minOccurs="0">
 	  <xsd:annotation>
 	    <xsd:documentation>
-	      Origin fort he calculation of positions (0 for end of sequence).
+	      Origin for the calculation of positions (0 for end of sequence).
 	    </xsd:documentation>
 	  </xsd:annotation>
 	</xsd:element>
