@@ -355,10 +355,10 @@ sub dna_pattern {
 	$output_choice = 'both';
     }
     my $command = $self->dna_pattern_cmd(%args);
-#    my $stderr = `$command 2>&1 1>/dev/null`;
-#    if ($stderr) {
-#	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
-#    }
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
     my $result = `$command`;
     my $tmp_outfile = `mktemp $TMP/dna_pattern.XXXXXXXXXX`;
     open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
@@ -448,7 +448,7 @@ sub dna_pattern_cmd {
       $command .= " -th '".$th."'";
     }
 
-    if (defined($origin)) {
+    if ($origin) {
 	$origin =~ s/\'//g;
 	$origin =~ s/\"//g;
 	$command .= " -origin '".$origin."'";
