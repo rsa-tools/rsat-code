@@ -347,6 +347,118 @@ sub oligo_analysis_cmd {
     return $command;
 }
 
+sub dna_pattern {
+    my ($self, $args_ref) = @_;
+    my %args = %$args_ref;
+    my $output_choice = $args{"output"};
+    unless ($output_choice) {
+	$output_choice = 'both';
+    }
+    my $command = $self->dna_pattern_cmd(%args);
+#    my $stderr = `$command 2>&1 1>/dev/null`;
+#    if ($stderr) {
+#	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+#    }
+    my $result = `$command`;
+    my $tmp_outfile = `mktemp $TMP/dna_pattern.XXXXXXXXXX`;
+    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+    print TMP_OUT $result;
+    close TMP_OUT;
+    if ($output_choice eq 'server') {
+	return {'command' => $command, 
+		'server' => $tmp_outfile};
+    } elsif ($output_choice eq 'client') {
+	return {'command' => $command,
+		'client' => $result};
+    } elsif ($output_choice eq 'both') {
+	return {'server' => $tmp_outfile,
+		'command' => $command, 
+		'client' => $result};
+    }
+}
+
+sub dna_pattern_cmd {
+    my ($self, %args) =@_;
+    if ($args{"sequence"}) {
+	my $sequence = $args{"sequence"};
+	chomp $sequence;
+	$tmp_infile = `mktemp $TMP/dna_pattern.XXXXXXXXXX`;
+	open TMP_IN, ">".$tmp_infile or die "cannot open temp file ".$tmp_infile."\n";
+	print TMP_IN $sequence;
+	close TMP_IN;
+    } elsif ($args{"tmp_infile"}) {
+	$tmp_infile = $args{"tmp_infile"};
+    }
+    chomp $tmp_infile;
+    my $format = $args{"format"};
+    my $pattern = $args{"pattern"};
+    my $subst = $args{"subst"};
+    my $id = $args{"id"};
+    my $origin = $args{"origin"};
+    my $noov = $args{"noov"};
+    my $str = $args{"str"};
+    my $sort = $args{"sort"};
+    my $th = $args{"th"};
+
+    my $command = "$SCRIPTS/dna-pattern";
+
+    if ($format) {
+      $format =~ s/\'//g;
+      $format =~ s/\"//g;
+      $command .= " -format '".$format."'";
+    }
+
+    if ($pattern) {
+      $pattern =~ s/\'//g;
+      $pattern =~ s/\"//g;
+      $command .= " -p '".$pattern."'";
+    }
+
+    if (defined($subst)) {
+      $subst =~ s/\'//g;
+      $subst =~ s/\"//g;
+      $command .= " -subst '".$subst."'";
+    }
+
+    if ($id) {
+      $id =~ s/\'//g;
+      $id =~ s/\"//g;
+      $command .= " -id '".$id."'";
+    }
+
+    if ($noov == 1) {
+      $command .= " -noov";
+    }
+
+    if ($str) {
+	if ($str == 1 || $str == 2) {
+	    $command .= " -".$str."str";
+	} else {
+	    die "str value must 1 or 2";
+	}
+    }
+
+    if ($sort == 1) {
+      $command .= " -sort";
+    }
+
+    if (defined($th)) {
+      $th =~ s/\'//g;
+      $th =~ s/\"//g;
+      $command .= " -th '".$th."'";
+    }
+
+    if (defined($origin)) {
+	$origin =~ s/\'//g;
+	$origin =~ s/\"//g;
+	$command .= " -origin '".$origin."'";
+    }
+
+    $command .= " -i '".$tmp_infile."'";
+
+    return $command;
+}
+
 sub gene_info {
     my ($self, $args_ref) = @_;
     my %args = %$args_ref;
