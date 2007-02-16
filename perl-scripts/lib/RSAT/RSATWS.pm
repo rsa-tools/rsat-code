@@ -534,4 +534,53 @@ sub gene_info_cmd {
   return $command;
 }
 
+sub supported_organisms {
+    my ($self, $args_ref) = @_;
+    my %args = %$args_ref;
+    my $output_choice = $args{"output"};
+    unless ($output_choice) {
+	$output_choice = 'both';
+    }
+    my $command = $self->supported_organisms_cmd(%args);
+    my $result = `$command`;
+    my $stderr = `$command 2>&1 1>/dev/null`;
+    if ($stderr) {
+	die SOAP::Fault -> faultcode('Server.ExecError') -> faultstring("Execution error: $stderr\ncommand: $command");
+    }
+    my $tmp_outfile = `mktemp $TMP/oligo.XXXXXXXXXX`;
+    open TMP_OUT, ">".$tmp_outfile or die "cannot open temp file ".$tmp_outfile."\n";
+    print TMP_OUT $result;
+    close TMP_OUT;
+    if ($output_choice eq 'server') {
+	return {'command' => $command, 
+		'server' => $tmp_outfile};
+    } elsif ($output_choice eq 'client') {
+	return {'command' => $command,
+		'client' => $result};
+    } elsif ($output_choice eq 'both') {
+	return {'server' => $tmp_outfile,
+		'command' => $command, 
+		'client' => $result};
+    }
+}
+
+sub supported_organisms_cmd {
+  my ($self, %args) =@_;
+
+  my $command = "$SCRIPTS/supported-organisms";
+
+  if ($args{format}) {
+      $args{format} =~ s/\'//g;
+      $args{format} =~ s/\"//g;
+      $command .= " -format '".$args{format}."'";
+  }
+  if ($args{taxon}) {
+      $args{taxon} =~ s/\'//g;
+      $args{taxon} =~ s/\"//g;
+      $command .= " -taxon '".$args{taxon}."'";
+  }
+
+  return $command;
+}
+
 1;
