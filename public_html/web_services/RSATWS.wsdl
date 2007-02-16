@@ -477,6 +477,32 @@
        </xsd:all>
       </xsd:complexType>
 
+      <xsd:complexType name="SupportedOrganismsRequest">
+       <xsd:all>
+	<xsd:element name="output" type="xsd:string" minOccurs="0">
+	  <xsd:annotation>
+	    <xsd:documentation>
+	        Return type. Accepted values: 'server' (result is stored on a file on the server), 'client' (result is directly transferred to the client), or  'both'. Default is 'both'.
+	    </xsd:documentation>
+	  </xsd:annotation>
+	</xsd:element>
+        <xsd:element name="format" type="xsd:string" minOccurs="0">
+	 <xsd:annotation>
+	  <xsd:documentation>
+	   Output format (supported: html_list,html_table,array,text,keys,names,sizes,full,tree,html_tree).
+	  </xsd:documentation>
+	 </xsd:annotation>
+	</xsd:element>
+	<xsd:element name="taxon" type="xsd:string" minOccurs="0">
+	 <xsd:annotation>
+	  <xsd:documentation>
+	   Root taxon.
+	  </xsd:documentation>
+	 </xsd:annotation>
+	</xsd:element>
+       </xsd:all>
+      </xsd:complexType>
+
       <xsd:complexType name="RetrieveSequenceResponse">
 	<xsd:all>
 	  <xsd:element name="server" type="xsd:string">
@@ -555,6 +581,32 @@
 	 </xsd:all>
 	</xsd:complexType>
 
+      <xsd:complexType name="DnaPatternResponse">
+	<xsd:all>
+	  <xsd:element name="server" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>
+	        Location of the result file on the server. This can be used as input for a further request.
+	      </xsd:documentation>
+	    </xsd:annotation>
+	  </xsd:element>
+	  <xsd:element name="command" type="xsd:string">
+	    <xsd:annotation>
+	      <xsd:documentation>
+	        The stand alone command executed on the server.
+	      </xsd:documentation>
+	    </xsd:annotation>
+	</xsd:element>
+	  <xsd:element name="client" type="xsd:string">
+	 <xsd:annotation>
+	  <xsd:documentation>
+	   The results.
+	  </xsd:documentation>
+	 </xsd:annotation>
+	</xsd:element>
+	 </xsd:all>
+	</xsd:complexType>
+
       <xsd:complexType name="GeneInfoResponse">
 	<xsd:all>
 	  <xsd:element name="server" type="xsd:string">
@@ -581,7 +633,7 @@
 	 </xsd:all>
 	</xsd:complexType>
 
-      <xsd:complexType name="DnaPatternResponse">
+      <xsd:complexType name="SupportedOrganismsResponse">
 	<xsd:all>
 	  <xsd:element name="server" type="xsd:string">
 	    <xsd:annotation>
@@ -651,6 +703,14 @@
       <part name="response" type="tns:GeneInfoResponse"/>
   </message>
 
+  <message name="SupportedOrganismsInput">
+      <part name="request" type="tns:SupportedOrganismsRequest"/>
+  </message>
+
+  <message name="SupportedOrganismsOutput">
+      <part name="response" type="tns:SupportedOrganismsResponse"/>
+  </message>
+
   <portType name="RSATWSPortType">
       <operation name="retrieve_seq">
          <!-- Name of input/output must be specified here -->
@@ -674,18 +734,22 @@
 	   sequences.
          </documentation>
       </operation>
-
       <operation name="dna_pattern">
          <input name="DnaPatternRequest" message="tns:DnaPatternInput"/>
          <output name="DnaPatternResponse" message="tns:DnaPatternOutput"/>
          <documentation>Searches all occurrences of a pattern within DNA sequences.
          </documentation>
       </operation>
-
       <operation name="gene_info">
          <input name="GeneInfoRequest" message="tns:GeneInfoInput"/>
          <output name="GeneInfoResponse" message="tns:GeneInfoOutput"/>
          <documentation>Get information about genes.
+         </documentation>
+      </operation>
+      <operation name="supported_organisms">
+         <input name="SupportedOrganismsRequest" message="tns:SupportedOrganismsInput"/>
+         <output name="SupportedOrganismsResponse" message="tns:SupportedOrganismsOutput"/>
+         <documentation>Get a list of supported organisms.
          </documentation>
       </operation>
   </portType>
@@ -719,7 +783,6 @@
              <soap:body use="literal" namespace="urn:RSATWS" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
          </output>
       </operation>
-
       <operation name="dna_pattern">
          <soap:operation soapAction="urn:RSATWS#dna_pattern"/>
          <input>
@@ -729,9 +792,17 @@
              <soap:body use="literal" namespace="urn:RSATWS" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
          </output>
       </operation>
-
       <operation name="gene_info">
          <soap:operation soapAction="urn:RSATWS#gene_info"/>
+         <input>
+             <soap:body use="literal" namespace="urn:RSATWS" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+         </input>
+         <output>
+             <soap:body use="literal" namespace="urn:RSATWS" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+         </output>
+      </operation>
+      <operation name="supported_organisms">
+         <soap:operation soapAction="urn:RSATWS#supported_organisms"/>
          <input>
              <soap:body use="literal" namespace="urn:RSATWS" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
          </input>
