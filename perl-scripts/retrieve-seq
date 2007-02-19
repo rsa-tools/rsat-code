@@ -2,7 +2,7 @@
 
 ############################################################
 #
-# $Id: retrieve-seq,v 1.57 2007/02/04 00:22:52 jvanheld Exp $
+# $Id: retrieve-seq,v 1.58 2007/02/19 09:56:01 rsat Exp $
 #
 # Time-stamp: <2003-08-05 10:24:33 jvanheld>
 #
@@ -432,7 +432,7 @@ foreach my  $query (@queries) {
 	    }
 	    @comments = ($first_comment_line);
 	    push @comments, join ("; ","Gene: ".$name,
-				  "IDÅ: ".$id,
+				  "IDï¿½ ".$id,
 				  "gene location: ".$orf_left." ".$orf_right." ".$orf_strand);
 	}
     }
@@ -613,7 +613,7 @@ OPTIONS
 		Admit imprecise positions.
 		In the annotation of some genomes, the limits of some genes
 	        are imprecisely specified (e.g. <555245, >898098). By default,
-	        these genes are not laoded. The option -imp_pos allows to
+	        these genes are not loaded. The option -imp_pos allows to
 	        retrieve sequence for these genes as well, using the imprecise
 	        coordinate as reference position.
 
