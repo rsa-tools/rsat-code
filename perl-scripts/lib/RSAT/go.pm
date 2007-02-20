@@ -7,6 +7,7 @@ package RSAT::go;
 use RSAT::GenericObject;
 use RSAT::error;
 use RSAT::util;
+use RSAT::Index;
 @ISA = qw( RSAT::GenericObject );
 
 ### class attributes
@@ -324,7 +325,7 @@ sub get_name {
 
 =item B<get_definition>
 
-Read the graph from a tab-delimited text file.
+Returns the definition for a specified goid.
 
 
  Title    : get_definition
@@ -343,8 +344,129 @@ sub get_definition {
   return($rep);
 }
 
+# ################################################################
+# 
+# =pod
+# 
+# =item B<read_gene_go_file>
+# 
+# Returns an Index object specifying all the genes corresponding to a specified go_id
+# 
+# 
+#  Title    : read_gene_go_file
+#  Usage    : $go->read_gene_go_file($goa_file)
+#  Returns  : an Index object specifying all the genes corresponding to a specified go_id
+# 
+# =cut
+# 
+# sub read_gene_go_file {
+#   my ($self, $goa_file) = @_;
+#   my $rep = new RSAT::Index();
+#   open(GOA, $goa_file);
+#   while (my $line = <GOA>) {
+#     next if ($line =~ /^\#/); ## Skip header lines
+#     next if ($line =~ /^--/); ## Skip comment lines
+#     next if ($line =~ /^;/); ## Skip comment lines
+#     next unless ($line =~ /\S/); ## Skip empty lines
+#     chomp($line);
+#     my @linecp = split(/\t/, $line);
+#     my $name = $linecp[0];
+#     my $goid = $linecp[1];
+#     $rep->add_value($goid, $name);
+#   }
+#   return $rep;
+# 
+# }
+
+################################################################
+
+=pod
+
+=item B<read_gene_go_file>
+
+Returns an Index object specifying all the genes corresponding to a specified go_id
 
 
+ Title    : read_gene_go_file
+ Usage    : $go->read_gene_go_file($goa_file)
+ Returns  : nothing
+
+=cut
+
+sub read_gene_go_file {
+  my ($self, $goa_file) = @_;
+  my %goid_nameIndex;
+  my @goid_names;
+  my %name_goidIndex;
+  my @name_goids;
+  my $goidcpt = 0;
+  my $namecpt = 0;
+  open(GOA, $goa_file);
+  while (my $line = <GOA>) {
+    next if ($line =~ /^\#/); ## Skip header lines
+    next if ($line =~ /^--/); ## Skip comment lines
+    next if ($line =~ /^;/); ## Skip comment lines
+    next unless ($line =~ /\S/); ## Skip empty lines
+    chomp($line);
+    my @linecp = split(/\t/, $line);
+    my $name = $linecp[0];
+    my $goid = $linecp[1];
+    my $goid_index;
+    my $name_index;
+    if (exists($goid_nameIndex{$goid})) {
+      $goid_index = $goid_nameIndex{$goid};
+    } else {
+      $goid_index = $goidcpt;
+      $goid_nameIndex{$goid} = $goidcpt;
+      $goidcpt++;
+    }
+    if (exists($name_goidIndex{$name})) {
+      $name_index = $name_goidIndex{$name};
+    } else {
+      $name_index = $namecpt;
+      $name_goidIndex{$name} = $namecpt;
+      $namecpt++;
+    }
+    push @{$goid_names[$goid_index]}, $name;
+    push @{$name_goids[$name_index]}, $goid;
+  }
+  $self->set_hash_attribute("name_goids_index", %name_goidIndex);
+  $self->set_array_attribute("name_goids", @name_goids);
+  $self->set_hash_attribute("goid_names_index", %goid_nameIndex);
+  $self->set_array_attribute("goid_names", @goid_names);
+}
+
+################################################################
+
+=pod
+
+=item B<get_genes_with_goid>
+
+Returns an Index object specifying all the genes corresponding to a specified go_id
+
+
+ Title    : get_genes_with_goid
+ Usage    : $go->get_genes_with_goid(goid)
+ Returns  : an array of list with the goid
+
+=cut
+
+sub get_genes_with_goid {
+  my ($self, $goid) = @_;
+  my %goid_nameIndex = $self->get_attribute("goid_names_index");
+  my @goid_names = $self->get_attribute("goid_names");
+  my @rep = ();
+  if (exists($goid_nameIndex{$goid})) {
+    my $index = $goid_nameIndex{$goid};
+    my $genes = $goid_names[$index];
+    for my $j (0 .. $#{$genes}) {
+      if ($genes->[$j] ne -1) {
+        push(@rep, $genes->[$j]);
+      }
+    }
+  }
+  return @rep;
+}
 
 return 1;
 

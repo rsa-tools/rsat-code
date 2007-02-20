@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: load-goa,v 1.1 2007/02/19 09:56:01 rsat Exp $
+# $Id: load-goa,v 1.2 2007/02/20 09:52:37 rsat Exp $
 #
 ############################################################
 
@@ -168,7 +168,7 @@ package main;
     sub create_gene_go_table {
       my ($organism, $goainputfile) = @_;
       $feature_index = $organism->get_attribute("name_index");
-      my $rep = new RSAT::Index();;
+      my $rep = new RSAT::Index();
       while (my $line = <$goainputfile>) {
         chomp($line);
         my @linecp = split(/\t/, $line);
@@ -267,7 +267,6 @@ package main;
       $organism->check_name($organism_name);
       $organism->set_attribute("name", $organism_name);
       $organism->DefineAcceptedFeatureTypes("cds");
-      
       $organism->OpenContigs($organism_name, $annotation_table, "", "", rm=>$repeat_masked);
       $organism->LoadFeatures($annotation_table, $imp_pos);
       unless (($return_all) || ($ids_only)) {
