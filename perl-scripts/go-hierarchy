@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: go-hierarchy,v 1.6 2007/02/20 09:52:37 rsat Exp $
+# $Id: go-hierarchy,v 1.7 2007/02/20 13:25:56 rsat Exp $
 #
 ############################################################
 
@@ -94,7 +94,6 @@ package main;
      $children = 0;
      $query_by_class = 0;
      $query_by_gene = 0;
-     #$format_name = 0;
      @required_output_fields = qw(result_goid name);
      %supported_return_option = ("result_goid" => 1,
      				"query_goid" => 1,
@@ -103,7 +102,7 @@ package main;
 				"namespace" => 1);
      %main::infile = ();
      %main::outfile = ();
-     $organism_name;
+#     $organism_name;
      $main::verbose = 0;
 #    $main::in = STDIN;
      $main::out = STDOUT;
@@ -123,6 +122,7 @@ package main;
       my $organism = new RSAT::organism();
       ##  Check whether organism is available in RSAT
       $organism->check_name($organism_name);
+      my $rsa = $RSA;
       $goafile = $RSA."/data/genomes/".$organism_name."/genome/go.tab";
       ##  Check whether there is a go file available for this organism
       if (!-e $goafile || -z $goafile) {
