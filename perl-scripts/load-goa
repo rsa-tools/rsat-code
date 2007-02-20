@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: load-goa,v 1.3 2007/02/20 14:06:22 rsat Exp $
+# $Id: load-goa,v 1.4 2007/02/20 15:09:10 rsat Exp $
 #
 ############################################################
 
@@ -133,18 +133,20 @@ package main;
         my $file = $goa_file_directory[$i][2];
         #print "$organism_name\n";
         my $organism = &load_organism($organism_name);
-        $main::infile{input} = $file;
-        &RSAT::message::TimeWarn("Treating goa file \t".$file." for organism"." $organism_name") if ($main::verbose >= 1);
+        if ($organism) {
+          $main::infile{input} = $file;
+          &RSAT::message::TimeWarn("Treating goa file \t".$file." for organism"." $organism_name") if ($main::verbose >= 1);
         
-        ($main::in) = &OpenInputFile($main::infile{input});
-        if ($outputfile eq "") { 
-          $main::outfile{output} = $RSA."/data/genomes/".$organism_name."/genome/go.tab";
-        } else { 
-          $main::outfile{output} = $outputfile;
+          ($main::in) = &OpenInputFile($main::infile{input});
+          if ($outputfile eq "") { 
+            $main::outfile{output} = $RSA."/data/genomes/".$organism_name."/genome/go.tab";
+          } else { 
+            $main::outfile{output} = $outputfile;
+          }
+          ($main::out) = &OpenOutputFile($main::outfile{output});
+          my $gene_go_index = create_gene_go_table($organism, $main::in);
+          write_gene_go_table($gene_go_index, $main::out);
         }
-        ($main::out) = &OpenOutputFile($main::outfile{output});
-        my $gene_go_index = create_gene_go_table($organism, $main::in);
-        write_gene_go_table($gene_go_index, $main::out);
       }
     }
 
@@ -264,13 +266,18 @@ package main;
     sub load_organism() {
       my $organism_name = $_[0];
       my $organism = new RSAT::organism();
-      $organism->check_name($organism_name);
-      $organism->set_attribute("name", $organism_name);
-      $organism->DefineAcceptedFeatureTypes("cds");
-      $organism->OpenContigs($organism_name, $annotation_table, "", "", rm=>$repeat_masked);
-      $imp_pos = 0;
-      $organism->LoadFeatures($annotation_table, $imp_pos);
-      $organism->LoadSynonyms();
+      my $cdsfile = $ENV{"RSAT"}."/data/genomes/".$organism_name."/genome/cds.tab";
+      if (-e $cdsfile) {
+        $organism->check_name($organism_name);
+        $organism->set_attribute("name", $organism_name);
+        $organism->DefineAcceptedFeatureTypes("cds");
+        $organism->OpenContigs($organism_name, $annotation_table, "", "", rm=>$repeat_masked);
+        $imp_pos = 0;
+        $organism->LoadFeatures($annotation_table, $imp_pos);
+        $organism->LoadSynonyms();
+      } else {
+        $organism = 0;
+      }
       return $organism;
     }
     
