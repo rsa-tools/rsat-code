@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: load-goa,v 1.2 2007/02/20 09:52:37 rsat Exp $
+# $Id: load-goa,v 1.3 2007/02/20 14:06:22 rsat Exp $
 #
 ############################################################
 
@@ -44,7 +44,7 @@ BEGIN {
     }
 }
 require "RSA.lib";
-
+require RSAT::organism;
 
 
 ################################################################
@@ -63,12 +63,9 @@ package main;
     $main::verbose = 0;
     $main::in = STDIN;
     $main::out = STDOUT;
-    $organism_name;
     $annotation_table = "";
     $repeat_masked = 0;
     $outputfile = "";
-    $dir; #Directory containing the GOA file
-    $download; # ftp address for downloading the goafile
     $defaut_download = 'ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/proteomes/';
     
     ################################################################
@@ -111,7 +108,7 @@ package main;
     ## Loading of the go annotation for only one organism
     if ($organism_name) {
       #loading organism
-      my $organism = load_organism($organism_name);
+      my $organism = &load_organism($organism_name);
       ($main::in) = &OpenInputFile($main::infile{input});
       if ($outputfile eq "") { 
         $main::outfile{output} = $RSA."/data/genomes/".$organism_name."/genome/go.tab";
@@ -125,9 +122,9 @@ package main;
       write_gene_go_table($gene_go_index, $main::out);
     } elsif ($dir || $download) { ## Loading of the go annotation for a list of organisms
       # look for the installed organism and their taxid
-      my $taxid_org_ref = taxid_search();
+      my $taxid_org_ref = &taxid_search();
       # compare the taxid of the installed organisms to the taxid contained in the goa files 
-      my $goa_file_directory_ref = read_goafile_directory($dir, $taxid_org_ref);
+      my $goa_file_directory_ref = &read_goafile_directory($dir, $taxid_org_ref);
       my @goa_file_directory = @{$goa_file_directory_ref};
       # install the organisms 
       for (my $i = 0; $i < scalar(@goa_file_directory); $i++) {
@@ -135,9 +132,10 @@ package main;
         my $organism_name = $goa_file_directory[$i][1];
         my $file = $goa_file_directory[$i][2];
         #print "$organism_name\n";
-        my $organism = load_organism($organism_name);
+        my $organism = &load_organism($organism_name);
         $main::infile{input} = $file;
-        print $file."\n";
+        &RSAT::message::TimeWarn("Treating goa file \t".$file." for organism"." $organism_name") if ($main::verbose >= 1);
+        
         ($main::in) = &OpenInputFile($main::infile{input});
         if ($outputfile eq "") { 
           $main::outfile{output} = $RSA."/data/genomes/".$organism_name."/genome/go.tab";
@@ -167,7 +165,7 @@ package main;
     
     sub create_gene_go_table {
       my ($organism, $goainputfile) = @_;
-      $feature_index = $organism->get_attribute("name_index");
+      #$feature_index = $organism->get_attribute("name_index");
       my $rep = new RSAT::Index();
       while (my $line = <$goainputfile>) {
         chomp($line);
@@ -218,7 +216,9 @@ package main;
     
     sub taxid_search() {
       my %rep;
-      foreach my $key (keys %main::supported_organism) {
+      keys %main::supported_organism;
+      my @supported_organisms = keys %main::supported_organism;
+      foreach my $key (@supported_organisms) {
         my $file = $RSA."/data/genomes/".$key."/genome/organism.tab";
         my $taxid =  `cat $file | grep -v '^-' | grep '[0-9]' | cut -f 1`;
         chomp($taxid);
@@ -268,10 +268,9 @@ package main;
       $organism->set_attribute("name", $organism_name);
       $organism->DefineAcceptedFeatureTypes("cds");
       $organism->OpenContigs($organism_name, $annotation_table, "", "", rm=>$repeat_masked);
+      $imp_pos = 0;
       $organism->LoadFeatures($annotation_table, $imp_pos);
-      unless (($return_all) || ($ids_only)) {
-        $organism->LoadSynonyms();
-      }
+      $organism->LoadSynonyms();
       return $organism;
     }
     
