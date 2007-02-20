@@ -344,39 +344,6 @@ sub get_definition {
   return($rep);
 }
 
-# ################################################################
-# 
-# =pod
-# 
-# =item B<read_gene_go_file>
-# 
-# Returns an Index object specifying all the genes corresponding to a specified go_id
-# 
-# 
-#  Title    : read_gene_go_file
-#  Usage    : $go->read_gene_go_file($goa_file)
-#  Returns  : an Index object specifying all the genes corresponding to a specified go_id
-# 
-# =cut
-# 
-# sub read_gene_go_file {
-#   my ($self, $goa_file) = @_;
-#   my $rep = new RSAT::Index();
-#   open(GOA, $goa_file);
-#   while (my $line = <GOA>) {
-#     next if ($line =~ /^\#/); ## Skip header lines
-#     next if ($line =~ /^--/); ## Skip comment lines
-#     next if ($line =~ /^;/); ## Skip comment lines
-#     next unless ($line =~ /\S/); ## Skip empty lines
-#     chomp($line);
-#     my @linecp = split(/\t/, $line);
-#     my $name = $linecp[0];
-#     my $goid = $linecp[1];
-#     $rep->add_value($goid, $name);
-#   }
-#   return $rep;
-# 
-# }
 
 ################################################################
 
