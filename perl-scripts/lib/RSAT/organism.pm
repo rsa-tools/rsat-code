@@ -446,7 +446,11 @@ sub LoadFeatures {
     #	$annotation_table = $main::supported_organism{$organism_name}->{'features'};
     foreach my $type (@feature_types) {
       $annotation_table = join("", $main::supported_organism{$organism_name}->{'data'}, "/genome/", $type, ".tab");
-      $self->push_attribute("annotation_tables", $annotation_table);
+      if (-e $annotation_table) {
+	  $self->push_attribute("annotation_tables", $annotation_table);
+      } else {
+	  &RSAT::message::Warning("Annotation table not found, skipped", $annotation_table);
+      }
     }
   }
 
