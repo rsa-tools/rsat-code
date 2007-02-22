@@ -137,6 +137,7 @@ orthologs:
 	${MAKE} ortho_nb
 
 ortho_nb:
+	@echo ${ORTHOLOGS}
 	@echo "${ORTHO_NB} orthologs found for gene ${GENE} in ${TAXON}"
 
 ################################################################
@@ -146,7 +147,8 @@ NOORF=-noorf
 SEQ=${SEQ_TAX_DIR}/${PREFIX}_up.fasta
 PURGED=${SEQ_TAX_DIR}/${PREFIX}_up_purged.fasta
 PURGE_ML=30
-RETRIEVE_CMD=mkdir -p ${SEQ_TAX_DIR}; retrieve-seq-multigenome -feattype CDS,tRNA,rRNA -i ${ORTHOLOGS} -o ${SEQ} ${NOORF} ; purge-sequence -i ${SEQ} -o ${PURGED} -ml ${PURGE_ML} -mis 0 -2str -mask_short ${PURGE_ML}; gzip -f ${SEQ}; gzip -f ${PURGED}
+FEATTYPE=CDS,tRNA,rRNA
+RETRIEVE_CMD=mkdir -p ${SEQ_TAX_DIR}; retrieve-seq-multigenome -feattype ${FEATTYPE}  -i ${ORTHOLOGS} -o ${SEQ} ${NOORF} ; purge-sequence -i ${SEQ} -o ${PURGED} -ml ${PURGE_ML} -mis 0 -2str -mask_short ${PURGE_ML}; gzip -f ${SEQ}; gzip -f ${PURGED}
 upstream:
 	@echo "${RETRIEVE_CMD}"
 	@${RETRIEVE_CMD}
@@ -179,9 +181,10 @@ FILTER_SEQ=${SEQ_ORG_DIR}/${GENE}_${REF_ORG}_up${NOORF}.fasta.gz
 DYAD_FILTER=${GENE_DIR}/${GENE}_${REF_ORG}_dyad_filter
 #DYADS_FILTERED=${GENE_DIR}/${PREFIX}${SUFFIX}_filtered
 FILTER_DYADS_CMD= \
-	mkdir -p ${SEQ_ORG_DIR} ; retrieve-seq -feattype CDS,tRNA,rRNA  -org ${REF_ORG} -q ${GENE} ${NOORF} -o ${FILTER_SEQ} ; echo 'Filter sequence	${FILTER_SEQ}'; \
+	mkdir -p ${SEQ_ORG_DIR} ; retrieve-seq -feattype ${FEATTYPE}  -org ${REF_ORG} -q ${GENE} ${NOORF} -o ${FILTER_SEQ} ; echo 'Filter sequence	${FILTER_SEQ}'; \
 	dyad-analysis -v 0 -i ${FILTER_SEQ} -type any ${STR} ${NOOV} -lth occ 1 -return occ -l 3 -spacing 0-20 -o ${DYAD_FILTER} ; echo 'Dyad filter	${DYAD_FILTER}'
 filter_dyads:
+	@mkdir -p ${GENE_DIR}
 	@echo
 	@echo 'Filtering dyads	${GENE}	${TAXON}'
 	@${FILTER_DYADS_CMD}
