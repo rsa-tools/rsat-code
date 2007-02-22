@@ -159,6 +159,8 @@ if ($query->param('freq_estimate') =~ /background/i) {
   }
 } elsif ($query->param('freq_estimate') =~ /lexicon/i) {
   $freq_option = " -lexicon";
+} elsif ($query->param('freq_estimate') =~ /equiprobable/i) {
+  $freq_option = " -bg equi";
 } else {
   $freq_option = "";
 } 
