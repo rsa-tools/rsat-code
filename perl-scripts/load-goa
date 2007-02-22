@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: load-goa,v 1.4 2007/02/20 15:09:10 rsat Exp $
+# $Id: load-goa,v 1.5 2007/02/22 10:35:21 rsat Exp $
 #
 ############################################################
 
@@ -28,7 +28,9 @@ util
 =head1 USAGE
     
 load-goa [-i goa_inputfile] [-org Organism_name] [-v #] [...]
+
 load-goa [-dir directory_of_goa_files] [-v #] [...]
+
 load-goa [-download ftp_of_goa_files] [-v #] [...]
 
 =head1 INPUT FORMAT
@@ -71,12 +73,11 @@ package main;
     ################################################################
     ## Read argument values
     &ReadArguments();
-
     ################################################################
     ## Check argument values
     # Check whether there is no specicification of both an organism and of a list of organisms
     if ((!defined($organism_name) && (!defined($dir) && !defined($download))) || (defined($organism_name) && (defined($dir) && defined($download)))) {
-      &RSAT::error::FatalError("You must specify either an organism (-org) or a directory (-dir)");
+      &RSAT::error::FatalError("You must specify either an organism (-org), a directory (-dir) or a ftp address (-download)");
     } 
     # Check whether there is no specicification of both a directory and a url for downloading the goa file
     if (defined($download) && defined($dir)) {
@@ -380,7 +381,7 @@ allows to use the command within a pipe.
 
 =item B<-dir goa_directory>
 
-Specifies a directory containing a list of go annotation file
+Specifies a directory containing a list of go annotation file. The absolute path must be provided.
 
 =cut
 	} elsif ($arg eq "-dir") {
@@ -426,7 +427,7 @@ loads the appropriate organim.
 ################################################################
 #### verbose message
 sub Verbose {
-    print $main::out "; template ";
+    print $main::out "; load-goa ";
     &PrintArguments($main::out);
     if (defined(%main::infile)) {
 	print $main::out "; Input files\n";
