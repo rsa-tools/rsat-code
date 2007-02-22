@@ -328,13 +328,23 @@ sub CGI_return_fields {
 	$return_fields .= "proba,";
 
 	### Lower threshold on probabilities
-	if (&IsReal($query->param('lth_occ_pro'))) {
-	    $parameters .= " -lth occ_pro ".$query->param('lth_occ_pro');
+	if (&IsReal($query->param('lth_occ_P'))) {
+	    $parameters .= " -lth occ_P ".$query->param('lth_occ_P');
 	}
 
 	### Upper threshold on probabilities
-	if (&IsReal($query->param('uth_occ_pro'))) {
-	    $parameters .= " -uth occ_pro ".$query->param('uth_occ_pro');
+	if (&IsReal($query->param('uth_occ_P'))) {
+	    $parameters .= " -uth occ_P ".$query->param('uth_occ_P');
+	}
+
+	### Lower threshold on E-value
+	if (&IsReal($query->param('lth_occ_E'))) {
+	    $parameters .= " -lth occ_E ".$query->param('lth_occ_E');
+	}
+
+	### Upper threshold on E-value
+	if (&IsReal($query->param('uth_occ_E'))) {
+	    $parameters .= " -uth occ_E ".$query->param('uth_occ_E');
 	}
 
 	### Lower threshold on significance
