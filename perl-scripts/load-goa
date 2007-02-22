@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: load-goa,v 1.5 2007/02/22 10:35:21 rsat Exp $
+# $Id: load-goa,v 1.6 2007/02/22 11:27:43 rsat Exp $
 #
 ############################################################
 
@@ -123,9 +123,9 @@ package main;
       write_gene_go_table($gene_go_index, $main::out);
     } elsif ($dir || $download) { ## Loading of the go annotation for a list of organisms
       # look for the installed organism and their taxid
-      my $taxid_org_ref = &taxid_search();
+      my $taxid_org_index = &taxid_search();
       # compare the taxid of the installed organisms to the taxid contained in the goa files 
-      my $goa_file_directory_ref = &read_goafile_directory($dir, $taxid_org_ref);
+      my $goa_file_directory_ref = &read_goafile_directory($dir, $taxid_org_index);
       my @goa_file_directory = @{$goa_file_directory_ref};
       # install the organisms 
       for (my $i = 0; $i < scalar(@goa_file_directory); $i++) {
@@ -146,8 +146,10 @@ package main;
           }
           ($main::out) = &OpenOutputFile($main::outfile{output});
           my $gene_go_index = create_gene_go_table($organism, $main::in);
-          write_gene_go_table($gene_go_index, $main::out);
-        }
+          &write_gene_go_table($gene_go_index, $main::out);
+        } else {
+	  &RSAT::message::Warning("$organism_name\tcould not be loaded. Skipped.");
+	}
       }
     }
 
@@ -214,20 +216,20 @@ package main;
       }
     }
     
-   ## This functions returns a hashmap having key : $taxid, value : $organism_name 
+   ## This functions returns an having key : $taxid, value : some $organism_name 
    ## for all the organisms contained in RSAT
     
     sub taxid_search() {
-      my %rep;
+      my $rep = new RSAT::Index();
       keys %main::supported_organism;
       my @supported_organisms = keys %main::supported_organism;
-      foreach my $key (@supported_organisms) {
-        my $file = $RSA."/data/genomes/".$key."/genome/organism.tab";
+      foreach my $organism (@supported_organisms) {
+        my $file = $RSA."/data/genomes/".$organism."/genome/organism.tab";
         my $taxid =  `cat $file | grep -v '^-' | grep '[0-9]' | cut -f 1`;
         chomp($taxid);
-        $rep{$taxid} = $key;
+	$rep->add_value($taxid, $organism);
       }
-      return \%rep;
+      return $rep;
     }
    
    ## Having the list of supported organism in RSAT, this function returns the files of the directory 
@@ -235,9 +237,8 @@ package main;
     
     
     sub read_goafile_directory() {
-      my ($dir, $taxid_list_ref) = @_;
+      my ($dir, $taxid_list_index) = @_;
       my @rep;
-      my %taxid_list = %{$taxid_list_ref};
       opendir(GOADIR, $dir);
       my @goafiles = readdir(GOADIR);
       my $i = 0;
@@ -250,12 +251,16 @@ package main;
           my @linecp = split /\t/, $line;
           my $taxid = $linecp[12];
           $taxid =~ s/taxon\://;
-          if (exists($taxid_list{$taxid})) {
-            #print "EXISTS : ".$taxid_list{$taxid}." ".$file." ".$taxid."\n";
-            $rep[$i][0] = $taxid;
-            $rep[$i][1] = $taxid_list{$taxid};
-            $rep[$i][2] = $file;
-            $i++;
+          if ($taxid_list_index->contains($taxid)) {
+	    my @organism_names = $taxid_list_index->get_values($taxid);
+	    print scalar(@organism_names);
+	    foreach my $organism_name (@organism_names) {
+              &RSAT::message::TimeWarn("Supported in RSAT\t".$organism_name." ".$file." ".$taxid."\n") if ($main::verbose > 1);	    
+              $rep[$i][0] = $taxid;
+              $rep[$i][1] = $organism_name;
+              $rep[$i][2] = $file;
+              $i++;
+	    }
           }
         }
       }
