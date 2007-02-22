@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: dyad-analysis_form.cgi,v 1.12 2006/01/24 08:10:46 rsat Exp $
+# $Id: dyad-analysis_form.cgi,v 1.13 2007/02/22 09:40:51 jvanheld Exp $
 #
 # Time-stamp: <2003-07-11 15:08:24 jvanheld>
 #
@@ -57,8 +57,12 @@ $default{lth_occ} = "1";
 $default{uth_occ} = "none";
 
 $default{proba} = 'checked';
-$default{lth_occ_pro} = "none";
-$default{uth_occ_pro} = "none";
+$default{lth_occ_P} = "none";
+$default{uth_occ_P} = "none";
+
+$default{eval} = 'checked';
+$default{lth_occ_E} = "none";
+$default{uth_occ_E} = "none";
 
 $default{lth_occ_sig} = "0";
 $default{uth_occ_sig} = "none";
@@ -371,12 +375,23 @@ sub ReturnTable {
 				    $query->td([$query->checkbox(-name=>'proba',
 								 -checked=>$default{proba},
 								 -label=>' Binomial proba '),
-						$query->textfield(-name=>'lth_occ_pro',
-								  -default=>$default{lth_occ_pro},
+						$query->textfield(-name=>'lth_occ_P',
+								  -default=>$default{lth_occ_P},
 								  -size=>5),
-						$query->textfield(-name=>'uth_occ_pro',
-								  -default=>$default{uth_occ_pro},
+						$query->textfield(-name=>'uth_occ_P',
+								  -default=>$default{uth_occ_P},
 								  -size=>5)]),
+				    ### binomial E-value
+				    $query->td([$query->checkbox(-name=>'eval',
+								 -checked=>$default{eval},
+								 -label=>' Binomial E-value '),
+						$query->textfield(-name=>'lth_occ_E',
+								  -default=>$default{lth_occ_E},
+								  -size=>5),
+						$query->textfield(-name=>'uth_occ_E',
+								  -default=>$default{uth_occ_E},
+								  -size=>5),
+					       ]),
 
 				    ### significance index
 				    $query->td([$query->checkbox(-name=>'proba',
