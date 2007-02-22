@@ -53,8 +53,12 @@ $default{uth_mseq} = "none";
 $default{lth_mseq} = "none";
 
 $default{proba} = 'checked';
-$default{lth_occ_pro} = "none";
-$default{uth_occ_pro} = "none";
+$default{lth_occ_P} = "none";
+$default{uth_occ_P} = "none";
+
+$default{eval} = 'checked';
+$default{lth_occ_E} = "none";
+$default{uth_occ_E} = "none";
 
 $default{lth_occ_sig} = "0";
 $default{uth_occ_sig} = "none";
@@ -485,21 +489,35 @@ print $query->table({-border=>1,-cellpadding=>0,-cellspacing=>0},
 			  $query->td([$query->checkbox(-name=>'proba',
 						       -checked=>$default{proba},
 						       -label=>' Binomial proba '),
-				      $query->textfield(-name=>'lth_occ_pro',
-							-default=>$default{lth_occ_pro},
+				      $query->textfield(-name=>'lth_occ_P',
+							-default=>$default{lth_occ_P},
 							-size=>5),
-				      $query->textfield(-name=>'uth_occ_pro',
-							-default=>$default{uth_occ_pro},
+				      $query->textfield(-name=>'uth_occ_P',
+							-default=>$default{uth_occ_P},
 							-size=>5),
 				      $query->popup_menu(-name=>'side',
 							 -Values=>['over-represented','under-represented','both'],
 							 -default=>$default{side})
 				     ]),
 
+			  ### binomial E-value
+			  $query->td(["&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;E-value",
+#				      $query->checkbox(-name=>'proba',
+#						       -checked=>$default{proba},
+#						       -label=>' Binomial E-value '),
+				      $query->textfield(-name=>'lth_occ_E',
+							-default=>$default{lth_occ_E},
+							-size=>5),
+				      $query->textfield(-name=>'uth_occ_E',
+							-default=>$default{uth_occ_E},
+							-size=>5),
+				     ]),
+
 			  ### significance index
-			  $query->td([$query->checkbox(-name=>'proba',
-						    -checked=>$default{proba},
-						    -label=>' Significance '),
+			  $query->td(["&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Significance",
+#				      $query->checkbox(-name=>'proba',
+#						    -checked=>$default{proba},
+#						    -label=>' Significance '),
 				   $query->textfield(-name=>'lth_occ_sig',
 						     -default=>$default{lth_occ_sig},
 						     -size=>5),
