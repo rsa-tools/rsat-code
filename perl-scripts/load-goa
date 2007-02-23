@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: load-goa,v 1.6 2007/02/22 11:27:43 rsat Exp $
+# $Id: load-goa,v 1.7 2007/02/23 12:33:19 jvanheld Exp $
 #
 ############################################################
 
@@ -32,6 +32,13 @@ load-goa [-i goa_inputfile] [-org Organism_name] [-v #] [...]
 load-goa [-dir directory_of_goa_files] [-v #] [...]
 
 load-goa [-download ftp_of_goa_files] [-v #] [...]
+
+=head1 DATA SOURCES
+
+Currently, the most convenient resource for the Gene Ontology is at
+EBI.
+
+ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/proteomes
 
 =head1 INPUT FORMAT
 
@@ -121,7 +128,9 @@ package main;
       my $gene_go_index = create_gene_go_table($organism, $main::in);
       # write gene - goid annotation table in the correct directory
       write_gene_go_table($gene_go_index, $main::out);
-    } elsif ($dir || $download) { ## Loading of the go annotation for a list of organisms
+
+      ## Loading of the go annotation for a list of organisms
+    } elsif ($dir || $download) { 
       # look for the installed organism and their taxid
       my $taxid_org_index = &taxid_search();
       # compare the taxid of the installed organisms to the taxid contained in the goa files 
@@ -137,7 +146,6 @@ package main;
         if ($organism) {
           $main::infile{input} = $file;
           &RSAT::message::TimeWarn("Treating goa file \t".$file." for organism"." $organism_name") if ($main::verbose >= 1);
-        
           ($main::in) = &OpenInputFile($main::infile{input});
           if ($outputfile eq "") { 
             $main::outfile{output} = $RSA."/data/genomes/".$organism_name."/genome/go.tab";
@@ -268,8 +276,8 @@ package main;
     }
     
     ## Having the name of an RSAT organism, this function load the organism and returns it
-    
     sub load_organism() {
+      &RSAT::message::psWarn("Loading organism", $organism_name) if ($main::verbose >= 0);
       my $organism_name = $_[0];
       my $organism = new RSAT::organism();
       my $cdsfile = $ENV{"RSAT"}."/data/genomes/".$organism_name."/genome/cds.tab";
@@ -396,7 +404,12 @@ Specifies a directory containing a list of go annotation file. The absolute path
 
 =item B<-download url_of_goa_files>
 
-Download goa files in a temporary directory
+Download goa files from a web site and store them in a temporary
+directory.
+
+We recommend to download GO annotations from the EBI distribution.
+
+ -download ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/proteomes
 
 =cut
 	} elsif ($arg eq "-download") {
