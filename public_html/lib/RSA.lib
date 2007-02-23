@@ -1022,6 +1022,12 @@ sub ReadClasses {
     my $line = 0;
     while (<$fam>) {
 	$line++;
+	if (($main::verbose >= 2) && ($line % 2000 ==0)) {
+	  &RSAT::message::TimeWarn( "Read", $line, "lines from family file",$family_file);
+	  if ($line % 10000 == 0) {
+	    &RSAT::message::psWarn( "Read", $line, "lines from family file",$family_file);
+	  }
+	}
 	next if (/^--/);
 	next if (/^;/);
 	next if (/^\#/);
@@ -1033,21 +1039,20 @@ sub ReadClasses {
 	### family member
 	$member_name = &trim(uc($fields[$member_column -1]));
 	unless ($member_name =~ /\S/) {
-	    &RSAT::message::Warning(join ("\t", "Error family file", 
-					  $family_file,  "line", 
-					  $line, "member not specified")) if ($main::verbose >= 1);
-	    next;
+	  &RSAT::message::Warning("Error family file", 
+				  $family_file,  "line", 
+				  $line, "member not specified") if ($main::verbose >= 1);
+	  next;
 	}
 
 	### family name
 	$family_name = &trim($fields[$class_column - 1]);
 	unless ($family_name) {
-	    &RSAT::message::Warning(join("\t", "Error family file", 
-				    $family_file,  "line", 
-				    $line, "family not specified")) if ($main::verbose >= 1);
+	  &RSAT::message::Warning("Error family file", 
+				  $family_file,  "line", 
+				  $line, "family not specified") if ($main::verbose >= 1);
 	    next;
 	}
-
 
 	## Substitute problematic characters
 	unless ($no_subst) {
