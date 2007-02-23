@@ -161,15 +161,17 @@ Warning with details about hte current Perl process (memory usage, cpu usage,
 =cut
 sub psWarn {
     my (@message) = @_;
-    my $message = join "\t", "; PROCESS", @message;
+#    my $message = join "\t", "; PROCESS", @message;
 
     ## Get information on the current process
+    my $message;
     my $pid = $$;
     my $ps_cmd = "ps -p $pid -O '%mem %cpu size rss vsize'";
     my $ps = `$ps_cmd`;
     $message .= "\n";
     $message .= $ps;
     $message .= "\n";
+    &TimeWarn($message);
     warn ($message);
 }
 
