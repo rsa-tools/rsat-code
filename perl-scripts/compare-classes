@@ -1,8 +1,8 @@
-#!/usr/bin/perl 
+#!/usr/bin/perl
 
 ############################################################
 #
-# $Id: compare-classes,v 1.38 2006/12/13 14:09:18 jvanheld Exp $
+# $Id: compare-classes,v 1.39 2007/02/23 12:19:51 jvanheld Exp $
 #
 # Time-stamp: <2003-09-11 12:08:41 jvanheld>
 #
@@ -267,15 +267,16 @@ $out = &OpenOutputFile($outfile{output});
 ################################################################
 ## Read class files
 
-## Query classes
-%query_classes = &ReadClasses($infile{query_classes},0,"",1,1,2,$score_col);
-$nb_query_classes = scalar(keys %query_classes);
-&RSAT::message::Info((join("\t", "Query classes", $nb_query_classes))) if ($main::verbose >= 2);
 
 ## Reference classes
 %ref_classes = &ReadClasses($infile{ref_classes},0,"",1,1,2, $score_col);
 $nb_ref_classes = scalar(keys %ref_classes);
 &RSAT::message::Info((join("\t", "Reference classes", $nb_ref_classes))) if ($main::verbose >= 2);
+
+## Query classes
+%query_classes = &ReadClasses($infile{query_classes},0,"",1,1,2,$score_col);
+$nb_query_classes = scalar(keys %query_classes);
+&RSAT::message::Info((join("\t", "Query classes", $nb_query_classes))) if ($main::verbose >= 2);
 
 ## Read ref class names
 if ($infile{rnames}) {
@@ -289,7 +290,6 @@ if ($infile{rnames}) {
 	my @fields = split '\t';
 	my $id = $fields[0];
 	my $name = $fields[1];
-#	warn join ("\t", ";ref class", $id, $name), "\n" if ($main::verbose >= 10);
 	if (defined($ref_classes{$id})) {
 	    $ref_classes{$id}->force_attribute("name",$name);
 	}
@@ -1065,23 +1065,19 @@ sub CompareClasses {
 	#### check if the number of ref members is above the threshold    
 	next if ((defined($lth{R})) && ($R < $lth{R}));
 	next if ((defined($lth{'QR'})) && ($R < $lth{'QR'}));
-	
+
 	#### index members of the reference class
 	foreach $m (@ref_members) {
 	    $ref_member{$m} = 1;
 	}
 
-
 	#### query classes
 	foreach my $q (keys %query_classes) {
-	    
 	    &RSAT::message::TimeWarn("Treating query class $q") if ($main::verbose >= 4);
-	    
 	    next if (($distinct) && ($r eq $q));
 	    next if (($infile{ref_classes} eq $infile{query_classes} ) && ($r lt $q)) && $triangle;
-	    
 	    my $compa_key = $r."__VERSUS__".$q;
-	    
+
 	    #### initialize comparison structures
 	    @{$common{$compa_key}} = ();
 	    @{$R_only{$compa_key}} = ();
@@ -1094,7 +1090,7 @@ sub CompareClasses {
 	    #### check if the number of ref members is above the threshold    
 	    next if ((defined($lth{'Q'})) && ($Q < $lth{Q}));
 	    next if ((defined($lth{'QR'})) && ($Q < $lth{'QR'}));
-	    
+
 	    #### compare query and reference classes
 	    foreach my $m (@query_members) {
 		if ($ref_member{$m}) {
@@ -1104,7 +1100,7 @@ sub CompareClasses {
 		    push @{$Q_only{$compa_key}}, $m; ### elements found in the query fmily only
 		}
 	    }
-	    
+
 	    #### identify elements found in the reference class only
 	    if ($calc_fields{members}) {
 		foreach $m (sort($ref_classes{$r}->get_members())) {
@@ -1977,55 +1973,57 @@ sub DescribeFields {
 ################################################################
 ## Apply threshold on the number of members per class
 sub FilterClasses {
-    ## Lower threshold on query classes
-    if (defined($lth{Q})) {
-	&RSAT::message::TimeWarn("Applying threshold on number of members for query classes") if ($main::verbose >= 2);
-	foreach my $q  (keys %query_classes) {
-	    my $members = scalar($query_classes{$q}->get_members());
-	    if ($members < $lth{Q}) {
-		delete($query_classes{$q});
-	    }
-	}
+  &RSAT::message::TimeWarn("Filtering classes") if ($main::verbose >= 2);
+
+  ## Lower threshold on query classes
+  if (defined($lth{Q})) {
+    &RSAT::message::TimeWarn("Applying threshold on number of members for query classes") if ($main::verbose >= 2);
+    foreach my $q  (keys %query_classes) {
+      my $members = scalar($query_classes{$q}->get_members());
+      if ($members < $lth{Q}) {
+	delete($query_classes{$q});
+      }
     }
+  }
 
-    ## Upper threshold on query classes
-    if (defined($uth{Q})) {
-	&RSAT::message::TimeWarn("Applying threshold on number of members for query classes") if ($main::verbose >= 2);
-	foreach my $q  (keys %query_classes) {
-	    my $members = scalar($query_classes{$q}->get_members());
-	    if ($members > $uth{Q}) {
-		delete($query_classes{$q});
-	    }
-	}
+  ## Upper threshold on query classes
+  if (defined($uth{Q})) {
+    &RSAT::message::TimeWarn("Applying threshold on number of members for query classes") if ($main::verbose >= 2);
+    foreach my $q  (keys %query_classes) {
+      my $members = scalar($query_classes{$q}->get_members());
+      if ($members > $uth{Q}) {
+	delete($query_classes{$q});
+      }
     }
+  }
 
-    ## Report number of remaining query classes
-    $nb_query_classes = scalar(keys %query_classes);
-    &RSAT::message::Info((join("\t", "Query classes after filtering", $nb_query_classes))) if ($main::verbose >= 2);
+  ## Report number of remaining query classes
+  $nb_query_classes = scalar(keys %query_classes);
+  &RSAT::message::Info((join("\t", "Query classes after filtering", $nb_query_classes))) if ($main::verbose >= 2);
 
-    ## Lower threshold on ref classes
-    if (defined($lth{R})) {
-	&RSAT::message::TimeWarn("Applying threshold on number of members for ref classes") if ($main::verbose >= 2);
-	foreach my $r  (keys %ref_classes) {
-	    my $members = scalar($ref_classes{$r}->get_members());
-	    if ($members < $lth{R}) {
-		delete($ref_classes{$r});
-	    }
-	}
+  ## Lower threshold on ref classes
+  if (defined($lth{R})) {
+    &RSAT::message::TimeWarn("Applying threshold on number of members for ref classes") if ($main::verbose >= 2);
+    foreach my $r  (keys %ref_classes) {
+      my $members = scalar($ref_classes{$r}->get_members());
+      if ($members < $lth{R}) {
+	delete($ref_classes{$r});
+      }
     }
+  }
 
-    ## Upper threshold on ref classes
-    if (defined($uth{R})) {
-	&RSAT::message::TimeWarn("Applying threshold on number of members for ref classes") if ($main::verbose >= 2);
-	foreach my $r  (keys %ref_classes) {
-	    my $members = scalar($ref_classes{$r}->get_members());
-	    if ($members > $uth{R}) {
-		delete($ref_classes{$r});
-	    }
-	}
+  ## Upper threshold on ref classes
+  if (defined($uth{R})) {
+    &RSAT::message::TimeWarn("Applying threshold on number of members for ref classes") if ($main::verbose >= 2);
+    foreach my $r  (keys %ref_classes) {
+      my $members = scalar($ref_classes{$r}->get_members());
+      if ($members > $uth{R}) {
+	delete($ref_classes{$r});
+      }
     }
+  }
 
-    ## Report number of remaining ref classes
-    $nb_ref_classes = scalar(keys %ref_classes);
-    &RSAT::message::Info((join("\t", "Reference classes after filtering", $nb_ref_classes))) if ($main::verbose >= 2);
+  ## Report number of remaining ref classes
+  $nb_ref_classes = scalar(keys %ref_classes);
+  &RSAT::message::Info((join("\t", "Reference classes after filtering", $nb_ref_classes))) if ($main::verbose >= 2);
 }
