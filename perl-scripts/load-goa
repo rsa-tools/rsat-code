@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: load-goa,v 1.8 2007/02/26 08:27:22 rsat Exp $
+# $Id: load-goa,v 1.9 2007/02/26 12:21:59 rsat Exp $
 #
 ############################################################
 
@@ -138,9 +138,11 @@ package main;
 	# look for the installed organism and their taxid
 	my $taxid_org_index = &taxid_search();
 	
+	
 	# compare the taxid of the installed organisms to the taxid contained in the goa files 
 	my $goa_file_directory_ref = &read_goafile_directory($dir, $taxid_org_index);
 	my @goa_file_directory = @{$goa_file_directory_ref};
+	
 	my $gene_go_index = '';
 	# install the organisms 
 	for (my $i = 0; $i < scalar(@goa_file_directory); $i++) {
@@ -155,24 +157,7 @@ package main;
 	    my $job_prefix = "load-goa_".$organism_name;
 	    &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 
-#	    my $organism = &load_organism($organism_name);
-#	    if ($organism) {
-#		$main::infile{input} = $file;
-#		&RSAT::message::TimeWarn("Treating goa file", $file,"for organism","$organism_name") if ($main::verbose >= 1);
-#		($main::in) = &OpenInputFile($main::infile{input});
-#		if ($outputfile eq "") { 
-#		    $main::outfile{output} = $RSA."/data/genomes/".$organism_name."/genome/go.tab";
-#		} else { 
-#		    $main::outfile{output} = $outputfile;
-#		}
-#		($main::out) = &OpenOutputFile($main::outfile{output});
-#		my $gene_go_index = &create_gene_go_table($organism, $main::in);
-#		&write_gene_go_table($gene_go_index, $main::out);
-#		close($main::out);
-#		close($main::in);
-#	    } else {
-#		&RSAT::message::Warning("Organism\t$organism_name\tcould not be loaded.\tSkipped.");
-#	    }
+
 	}
     }
     
@@ -467,6 +452,13 @@ sub read_goafile_directory() {
 	    }
 	}
     }
+    ###################################################################"
+    ## SPECIAL CASE : E.coli K12 is an important organism but does not 
+    ## have the same taxid in the goa files and the NCBI 
+    $rep[$i][0] = "562";
+    $rep[$i][1] = "Escherichia_coli_K12";
+    $rep[$i][2] = $RSA."/tempgoa/18.E_coli_K12.goa";
+    
     return \@rep;
 }
 
