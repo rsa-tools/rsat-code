@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: load-goa,v 1.7 2007/02/23 12:33:19 jvanheld Exp $
+# $Id: load-goa,v 1.8 2007/02/26 08:27:22 rsat Exp $
 #
 ############################################################
 
@@ -65,6 +65,9 @@ package main;
     ## Initialise parameters
     my $start_time = &AlphaDate();
 
+    $batch = 0;
+    $dry = 0;
+    $die_on_error = 0;
 
     %main::infile = ();
     %main::outfile = ();
@@ -80,6 +83,7 @@ package main;
     ################################################################
     ## Read argument values
     &ReadArguments();
+
     ################################################################
     ## Check argument values
     # Check whether there is no specicification of both an organism and of a list of organisms
@@ -104,196 +108,76 @@ package main;
     
     ## Download of all goa files of the url $download in the directory $RSAT/tempgoa
     if (defined($download)) {
-      if ($download eq 'default') {
-        $download = $defaut_download;
-      }
-      my $download_dir = $RSA."/tempgoa";
-      system("mkdir ".$download_dir);
-      system("wget -r $download --timeout=900 -nd -P $download_dir -A '*.goa' -N");
-      $dir = $download_dir;
+	&RSAT::message::TimeWarn("Downloading GOA files from URL", $download) if ($main::verbose >= 1);
+	if ($download eq 'default') {
+	    $download = $defaut_download;
+	}
+	my $download_dir = $RSA."/tempgoa";
+	system("mkdir ".$download_dir);
+	system(join(" ","wget -rNL", $download, "--timeout=900 -nd -np -P", $download_dir, "-A '*.goa'"));
+	$dir = $download_dir;
     }
     
     ## Loading of the go annotation for only one organism
     if ($organism_name) {
-      #loading organism
-      my $organism = &load_organism($organism_name);
-      ($main::in) = &OpenInputFile($main::infile{input});
-      if ($outputfile eq "") { 
-        $main::outfile{output} = $RSA."/data/genomes/".$organism_name."/genome/go.tab";
-      } else { 
-        $main::outfile{output} = $outputfile;
-      }
-      ($main::out) = &OpenOutputFile($main::outfile{output});
-      # create gene - goid annotation table
-      my $gene_go_index = create_gene_go_table($organism, $main::in);
-      # write gene - goid annotation table in the correct directory
-      write_gene_go_table($gene_go_index, $main::out);
-
-      ## Loading of the go annotation for a list of organisms
-    } elsif ($dir || $download) { 
-      # look for the installed organism and their taxid
-      my $taxid_org_index = &taxid_search();
-      # compare the taxid of the installed organisms to the taxid contained in the goa files 
-      my $goa_file_directory_ref = &read_goafile_directory($dir, $taxid_org_index);
-      my @goa_file_directory = @{$goa_file_directory_ref};
-      # install the organisms 
-      for (my $i = 0; $i < scalar(@goa_file_directory); $i++) {
-        my $taxid = $goa_file_directory[$i][0];
-        my $organism_name = $goa_file_directory[$i][1];
-        my $file = $goa_file_directory[$i][2];
-        #print "$organism_name\n";
-        my $organism = &load_organism($organism_name);
-        if ($organism) {
-          $main::infile{input} = $file;
-          &RSAT::message::TimeWarn("Treating goa file \t".$file." for organism"." $organism_name") if ($main::verbose >= 1);
-          ($main::in) = &OpenInputFile($main::infile{input});
-          if ($outputfile eq "") { 
-            $main::outfile{output} = $RSA."/data/genomes/".$organism_name."/genome/go.tab";
-          } else { 
-            $main::outfile{output} = $outputfile;
-          }
-          ($main::out) = &OpenOutputFile($main::outfile{output});
-          my $gene_go_index = create_gene_go_table($organism, $main::in);
-          &write_gene_go_table($gene_go_index, $main::out);
-        } else {
-	  &RSAT::message::Warning("$organism_name\tcould not be loaded. Skipped.");
+	#loading organism      
+	my $organism = &load_organism($organism_name);
+	($main::in) = &OpenInputFile($main::infile{input});
+	if ($outputfile eq "") { 
+	    $main::outfile{output} = $RSA."/data/genomes/".$organism_name."/genome/".$organism_name."go.tab";
+	} else { 
+	    $main::outfile{output} = $outputfile;
 	}
-      }
-    }
+	# create gene - goid annotation table
+	my $gene_go_index = &create_gene_go_table($organism, $main::in);
+	# write gene - goid annotation table in the correct directory
+	&write_gene_go_table($gene_go_index, $main::outfile{output});
+	
+	## Loading of the go annotation for a list of organisms
+    } elsif ($dir || $download) { 
+	# look for the installed organism and their taxid
+	my $taxid_org_index = &taxid_search();
+	
+	# compare the taxid of the installed organisms to the taxid contained in the goa files 
+	my $goa_file_directory_ref = &read_goafile_directory($dir, $taxid_org_index);
+	my @goa_file_directory = @{$goa_file_directory_ref};
+	my $gene_go_index = '';
+	# install the organisms 
+	for (my $i = 0; $i < scalar(@goa_file_directory); $i++) {
+	    my $taxid = $goa_file_directory[$i][0];
+	    my $organism_name = $goa_file_directory[$i][1];
+	    my $file = $goa_file_directory[$i][2];
+	    &RSAT::message::TimeWarn("Treating organism", ($i+1)."/".scalar(@goa_file_directory), $organism_name) if ($main::verbose >= 1);
 
-#     if (defined($download)) {
-#       system("rm -r $dir");
-#     }
+	    my $command = "load-goa -v ".$main::verbose;
+	    $command .= " -org ".$organism_name;
+	    $command .= " -i ".$file;
+	    my $job_prefix = "load-goa_".$organism_name;
+	    &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
+
+#	    my $organism = &load_organism($organism_name);
+#	    if ($organism) {
+#		$main::infile{input} = $file;
+#		&RSAT::message::TimeWarn("Treating goa file", $file,"for organism","$organism_name") if ($main::verbose >= 1);
+#		($main::in) = &OpenInputFile($main::infile{input});
+#		if ($outputfile eq "") { 
+#		    $main::outfile{output} = $RSA."/data/genomes/".$organism_name."/genome/go.tab";
+#		} else { 
+#		    $main::outfile{output} = $outputfile;
+#		}
+#		($main::out) = &OpenOutputFile($main::outfile{output});
+#		my $gene_go_index = &create_gene_go_table($organism, $main::in);
+#		&write_gene_go_table($gene_go_index, $main::out);
+#		close($main::out);
+#		close($main::in);
+#	    } else {
+#		&RSAT::message::Warning("Organism\t$organism_name\tcould not be loaded.\tSkipped.");
+#	    }
+	}
+    }
     
     ################################################################
     ## Print output
-    
-    ################################################################
-    ## Functions
-    
-    
-    ## This function creates an Index object. 
-    ## Having an organism and a goa file.
-    ## For each gene name, there is one or more $goid values
-    
-    sub create_gene_go_table {
-      my ($organism, $goainputfile) = @_;
-      #$feature_index = $organism->get_attribute("name_index");
-      my $rep = new RSAT::Index();
-      while (my $line = <$goainputfile>) {
-        chomp($line);
-        my @linecp = split(/\t/, $line);
-        my $goid = $linecp[4];
-        my $ontology = $linecp[8];
-        my $nameList = $linecp[9];
-        $nameList = substr($nameList,0,index($nameList,":"));
-        my @names = split(/\, /, $nameList);
-        foreach my $name (@names) {
-          $name = uc($name);
-          my $feature = $organism->get_feature_for_name($name);
-          if ($feature) {
-            my $id = $feature->get_attribute("id");
-            $rep->add_value($id, $goid);
-          }
-        }
-      }
-      return $rep;
-      close GOA;
-    }
-    
-    ## This function write the Index (one geneid -> several goids) to a file
-    
-    sub write_gene_go_table {
-      my ($gene_go_index, $outputfile) = @_;
-      my @genes = $gene_go_index->get_keys();
-      
-      foreach my $gene(@genes) {
-        my @goids = $gene_go_index->get_values($gene);
-        my @uniqueSet = ();
-        my %seen = ();
-        foreach my $item (@goids) {
-          unless ($seen{$item}) {
-            # if we get here, we have not seen it before
-            $seen{$item} = 1;
-            push(@uniqueSet, $item);
-          }
-        }
-        for my $unique (@uniqueSet) {
-          print $outputfile $gene."\t".$unique."\n";
-        }
-      }
-    }
-    
-   ## This functions returns an having key : $taxid, value : some $organism_name 
-   ## for all the organisms contained in RSAT
-    
-    sub taxid_search() {
-      my $rep = new RSAT::Index();
-      keys %main::supported_organism;
-      my @supported_organisms = keys %main::supported_organism;
-      foreach my $organism (@supported_organisms) {
-        my $file = $RSA."/data/genomes/".$organism."/genome/organism.tab";
-        my $taxid =  `cat $file | grep -v '^-' | grep '[0-9]' | cut -f 1`;
-        chomp($taxid);
-	$rep->add_value($taxid, $organism);
-      }
-      return $rep;
-    }
-   
-   ## Having the list of supported organism in RSAT, this function returns the files of the directory 
-   ## annotating the RSAT organisms.
-    
-    
-    sub read_goafile_directory() {
-      my ($dir, $taxid_list_index) = @_;
-      my @rep;
-      opendir(GOADIR, $dir);
-      my @goafiles = readdir(GOADIR);
-      my $i = 0;
-      foreach my $file(@goafiles) {
-        $file = $dir."/".$file;
-        if (!-z $file && $file =~ /\.goa/ && $file !~ /\.gz/) { 
-          open GOA, $file;
-          my $line = <GOA>;
-          #print "$file\n";
-          my @linecp = split /\t/, $line;
-          my $taxid = $linecp[12];
-          $taxid =~ s/taxon\://;
-          if ($taxid_list_index->contains($taxid)) {
-	    my @organism_names = $taxid_list_index->get_values($taxid);
-	    print scalar(@organism_names);
-	    foreach my $organism_name (@organism_names) {
-              &RSAT::message::TimeWarn("Supported in RSAT\t".$organism_name." ".$file." ".$taxid."\n") if ($main::verbose > 1);	    
-              $rep[$i][0] = $taxid;
-              $rep[$i][1] = $organism_name;
-              $rep[$i][2] = $file;
-              $i++;
-	    }
-          }
-        }
-      }
-      return \@rep;
-    }
-    
-    ## Having the name of an RSAT organism, this function load the organism and returns it
-    sub load_organism() {
-      &RSAT::message::psWarn("Loading organism", $organism_name) if ($main::verbose >= 0);
-      my $organism_name = $_[0];
-      my $organism = new RSAT::organism();
-      my $cdsfile = $ENV{"RSAT"}."/data/genomes/".$organism_name."/genome/cds.tab";
-      if (-e $cdsfile) {
-        $organism->check_name($organism_name);
-        $organism->set_attribute("name", $organism_name);
-        $organism->DefineAcceptedFeatureTypes("cds");
-        $organism->OpenContigs($organism_name, $annotation_table, "", "", rm=>$repeat_masked);
-        $imp_pos = 0;
-        $organism->LoadFeatures($annotation_table, $imp_pos);
-        $organism->LoadSynonyms();
-      } else {
-        $organism = 0;
-      }
-      return $organism;
-    }
     
     
     ################################################################
@@ -304,7 +188,7 @@ package main;
 	print $main::out "; Job done    $done_time\n";
     }
     
-     
+    
     ################################################################
     ## Close output stream
     close $main::out if ($main::outfile{output});
@@ -418,7 +302,7 @@ We recommend to download GO annotations from the EBI distribution.
 	    ## Organism name
 =pod
 
-=item	B<-o Organism_name>
+=item	B<-org Organism_name>
 
 When an organism is specified, the program automatically
 loads the appropriate organim.
@@ -427,6 +311,23 @@ loads the appropriate organim.
 
 	} elsif ($arg eq "-org") {
 	    $organism_name = shift(@arguments);
+
+	    #### batch
+=pod
+
+=item B<-batch>
+
+
+Run the tasks in batch. This option only works on our lab's cluster,
+but could be adapted for other configurations by adapting the method
+&doit() in the utilities ($RSAT/lib/RSA.lib).
+
+=cut
+	} elsif ($arg eq "-batch") {
+	    $batch = 1;
+
+
+
 	} else {
 	    &FatalError(join("\t", "Invalid option", $arg));
 
@@ -461,11 +362,142 @@ sub Verbose {
     }
 }
 
+################################################################
+## This function creates an Index object. 
+## Having an organism and a goa file.
+## For each gene name, there is one or more $goid values    
+sub create_gene_go_table {
+    my ($organism, $goainputfile) = @_;
+    &RSAT::message::TimeWarn("Creating GO table for organism", $organism->get_attribute("name"), "input", $goainputfile);
+    #$feature_index = $organism->get_attribute("name_index");
+    my $rep = new RSAT::Index();
+    while (my $line = <$goainputfile>) {
+	chomp($line);
+	my @linecp = split(/\t/, $line);
+	my $goid = $linecp[4];
+	my $ontology = $linecp[8];
+	my $nameList = $linecp[9];
+	$nameList = substr($nameList,0,index($nameList,":"));
+	my @names = split(/\, /, $nameList);
+	foreach my $name (@names) {
+	    $name = uc($name);
+	    my $feature = $organism->get_feature_for_name($name);
+	    if ($feature) {
+		my $id = $feature->get_attribute("id");
+		$rep->add_value($id, $goid);
+	    }
+	}
+    }
+    close GOA;
+    return $rep;
+}
+
+################################################################
+## This function write the Index (one geneid -> several goids) to a file
+sub write_gene_go_table {
+    my ($gene_go_index, $outputfile) = @_;
+
+    my ($out) = &OpenOutputFile($outputfile);
+
+    my @genes = $gene_go_index->get_keys();
+    
+    foreach my $gene(@genes) {
+	my @goids = $gene_go_index->get_values($gene);
+	my @uniqueSet = ();
+	my %seen = ();
+	foreach my $item (@goids) {
+	    unless ($seen{$item}) {
+		# if we get here, we have not seen it before
+		$seen{$item} = 1;
+		push(@uniqueSet, $item);
+	    }
+	}
+	for my $unique (@uniqueSet) {
+	    print $out $gene."\t".$unique."\n";
+	}
+    }
+}
+
+
+################################################################
+## This functions returns an having key : $taxid, value : some $organism_name 
+## for all the organisms contained in RSAT
+sub taxid_search() {
+    &RSAT::message::TimeWarn("Getting TAXID for all organisms installed in RSAT") if ($main::verbose >= 2);
+    my $rep = new RSAT::Index();
+    keys %main::supported_organism;
+    my @supported_organisms = keys %main::supported_organism;
+    foreach my $organism (@supported_organisms) {
+	my $file = $RSA."/data/genomes/".$organism."/genome/organism.tab";
+	my $taxid =  `cat $file | grep -v '^-' | grep '[0-9]' | cut -f 1`;
+	chomp($taxid);
+	$rep->add_value($taxid, $organism);
+    }
+    return $rep;
+}
+
+################################################################
+## Having the list of supported organism in RSAT, this function returns the
+## files of the directory annotating the RSAT organisms.
+sub read_goafile_directory() {
+    my ($dir, $taxid_list_index) = @_;
+    &RSAT::message::TimeWarn("Identifying TAXID in GOA files") if ($main::verbose >= 2);
+    my @rep;
+    opendir(GOADIR, $dir);
+    my @goafiles = readdir(GOADIR);
+    my $i = 0;
+    foreach my $file(@goafiles) {
+	$file = $dir."/".$file;
+	if (!-z $file && $file =~ /\.goa/ && $file !~ /\.gz/) { 
+	    open GOA, $file;
+	    my $line = <GOA>;
+	    #print "$file\n";
+	    my @linecp = split /\t/, $line;
+	    my $taxid = $linecp[12];
+	    $taxid =~ s/taxon\://;
+	    if ($taxid_list_index->contains($taxid)) {
+		my @organism_names = $taxid_list_index->get_values($taxid);
+		foreach my $organism_name (@organism_names) {
+		    &RSAT::message::TimeWarn("Supported in RSAT\t".$organism_name." ".$file." ".$taxid."\n") if ($main::verbose > 1);	    
+		    $rep[$i][0] = $taxid;
+		    $rep[$i][1] = $organism_name;
+		    $rep[$i][2] = $file;
+		    $i++;
+		}
+	    }
+	}
+    }
+    return \@rep;
+}
+
+
+################################################################
+## Having the name of an RSAT organism, this function load the organism and
+## returns it
+sub load_organism() {
+    &RSAT::message::psWarn("Loading organism", $organism_name) if ($main::verbose >= 2);
+    my $organism_name = $_[0];
+    my $organism = new RSAT::organism();
+    my $cdsfile = $ENV{"RSAT"}."/data/genomes/".$organism_name."/genome/cds.tab";
+    if (-e $cdsfile) {
+	$organism->check_name($organism_name);
+	$organism->set_attribute("name", $organism_name);
+	$organism->DefineAcceptedFeatureTypes("cds");
+	$organism->OpenContigs($organism_name, $annotation_table, "", "", rm=>$repeat_masked);
+	$imp_pos = 0;
+	$organism->LoadFeatures($annotation_table, $imp_pos);
+	$organism->LoadSynonyms();
+    } else {
+	$organism = 0;
+    }
+    return $organism;
+}
+
 
 __END__
 
-=pod
+    =pod
 
-=head1 SEE ALSO
+    =head1 SEE ALSO
 
-=cut
+    =cut
