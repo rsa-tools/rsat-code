@@ -191,7 +191,12 @@ sub read_from_table {
     }
 
     ## Load the graph
+    my $l = 0;
     while (<$main::in>) {
+	$l++;
+	if(($main::verbose >= 2) && ($l % 1000 == 0)) {
+	    &RSAT::message::TimeWarn("\tLoaded", $l, "lines from file", $inputfile);
+	}
 	next if (/^--/); # Skip mysql-like comments
 	next if (/^;/); # Skip RSAT comments
 	next if (/^#/); # Skip comments and header
