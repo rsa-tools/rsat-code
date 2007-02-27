@@ -37,6 +37,7 @@ list_parameters:
 	@echo "SEQ_ORG_DIR  ${SEQ_ORG_DIR}"
 	@echo "SEQ_TAX_DIR  ${SEQ_TAX_DIR}"
 	@echo "RESULT_DIR   ${RESULT_DIR}"
+	@echo "GENE         ${GENE}"
 	@echo "GENE_DIR     ${GENE_DIR}"
 
 ################################################################
@@ -85,8 +86,6 @@ all_dyads_filtered:
 	@for g in ${ALL_GENES} ; do \
 		${MAKE} _dyad_tasks_filtered REF_ORG=${REF_ORG} TAXON=${TAXON} MAIN_DIR=${MAIN_DIR} GENE=$${g} ; \
 	done
-#	${MAKE} all_tasks_all_genes ALL_TASKS_CMD="${FILTER_DYADS_CMD}; ${DYAD_CMD} ; ${ASSEMBLE_CMD}; ${MAP_CMD}" \
-#		JOB_PREFIX=${REF_ORG}_${TAXON}_${GENE} \
 
 
 ################################################################
@@ -100,7 +99,6 @@ iterate_genes:
 ################################################################
 ## Run all the tasks for a single gene
 ALL_TASKS_CMD=${ORTHO_CMD} ; ${RETRIEVE_CMD} ; ${DYAD_CMD} ; ${ASSEMBLE_CMD}; ${MAP_CMD}
-#ALL_TASKS_CMD=${FILTER_DYADS_CMD}
 all_tasks:
 	${MAKE} my_command MY_COMMAND="${ALL_TASKS_CMD}" JOB_PREFIX=${REF_ORG}_${TAXON}_${GENE}
 
@@ -117,7 +115,7 @@ _dyad_tasks_filtered:
 
 _dyad_tasks_filtered_sub:
 	${MAKE} my_command \
-		MY_COMMAND="${FILTER_DYADS_CMD}; ${DYAD_CMD} ; ${ASSEMBLE_CMD}; ${MAP_CMD}" JOB_PREFIX=${REF_ORG}_${TAXON}_${GENE}
+		MY_COMMAND="${FILTER_DYADS_CMD}; ${DYAD_CMD} ; ${CLEAN_DYAD_FILTER_CMD}; ${ASSEMBLE_CMD}; ${MAP_CMD}" JOB_PREFIX=${REF_ORG}_${TAXON}_${GENE}
 
 ################################################################
 ## Identify orthologs for a given gene (${GENE}) in the taxon of
@@ -178,15 +176,16 @@ dyads:
 ################################################################
 ## Run dyad analysis using the sequence of the reference organism as filter
 FILTER_SEQ=${SEQ_ORG_DIR}/${GENE}_${REF_ORG}_up${NOORF}.fasta.gz
-DYAD_FILTER=${GENE_DIR}/${GENE}_${REF_ORG}_dyad_filter
+DYAD_FILTER_DIR=results/${REF_ORG}/dyad_filters
+DYAD_FILTER=${DYAD_FILTER_DIR}/${GENE}_${REF_ORG}_dyad_filter
 #DYADS_FILTERED=${GENE_DIR}/${PREFIX}${SUFFIX}_filtered
 FILTER_DYADS_CMD= \
 	mkdir -p ${SEQ_ORG_DIR} ; retrieve-seq -feattype ${FEATTYPE}  -org ${REF_ORG} -q ${GENE} ${NOORF} -o ${FILTER_SEQ} ; echo 'Filter sequence	${FILTER_SEQ}'; \
-	dyad-analysis -v 0 -i ${FILTER_SEQ} -type any ${STR} ${NOOV} -lth occ 1 -return occ -l 3 -spacing 0-20 -o ${DYAD_FILTER} ; echo 'Dyad filter	${DYAD_FILTER}'
+	mkdir -p ${DYAD_FILTER_DIR}; dyad-analysis -v 0 -i ${FILTER_SEQ} -type any ${STR} ${NOOV} -lth occ 1 -return occ -l 3 -spacing 0-20 | cut -f 1 > ${DYAD_FILTER}; gzip -f ${DYAD_FILTER} ; echo 'Dyad filter	${DYAD_FILTER}.gz'
 filter_dyads:
 	@mkdir -p ${GENE_DIR}
 	@echo
-	@echo 'Filtering dyads	${GENE}	${TAXON}'
+	@echo 'Computing filter dyads	${GENE}	${REF_ORG}'
 	@${FILTER_DYADS_CMD}
 
 dyads_filtered:
@@ -194,6 +193,12 @@ dyads_filtered:
 	@${MAKE} -s dyads FILTER_SUFFIX=_filtered DYAD_OPT='-accept ${DYAD_FILTER}' ; echo 'Filtered dyads	${DYADS}_filtered.tab' 
 	@${MAKE} -s assemble FILTER_SUFFIX=_filtered ; echo 'Filtered dyad assembly	${DYADS}_filtered.asmb'
 	@${MAKE} -s map FILTER_SUFFIX=_filtered ; echo 'Filtered dyad map	${DYADS}_filtered.png' 
+
+## Remove the dyad filter file to save space
+CLEAN_DYAD_FILTER_CMD=rm -f ${DYAD_FILTER}.gz
+clean_dyad_filter:
+	@echo "Cleaning dyad filter file	${DYAD_FILTER}.gz"
+	@${CLEAN_DYAD_FILTER_CMD}
 
 ################################################################
 ## Count matches between discovered dyads and known sites
