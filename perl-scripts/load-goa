@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: load-goa,v 1.9 2007/02/26 12:21:59 rsat Exp $
+# $Id: load-goa,v 1.10 2007/02/27 09:44:36 rsat Exp $
 #
 ############################################################
 
@@ -54,6 +54,7 @@ BEGIN {
 }
 require "RSA.lib";
 require RSAT::organism;
+#require RSAT::go;
 
 
 ################################################################
@@ -78,7 +79,8 @@ package main;
     $annotation_table = "";
     $repeat_masked = 0;
     $outputfile = "";
-    $defaut_download = 'ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/proteomes/';
+    $obo = "http://www.geneontology.org/ontology/gene_ontology_edit.obo";
+    $default_goa_download = 'ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/proteomes';
     
     ################################################################
     ## Read argument values
@@ -94,6 +96,17 @@ package main;
     if (defined($download) && defined($dir)) {
       &RSAT::error::FatalError("You must specify either a directory or an URL containing the GOA file");
     }
+    
+    if ($obo !~ /http\:\/\// && $obo !~ /ftp\:\/\//) {
+      if (!-e $obo) {
+        &RSAT::error::FatalError("Gene ontology obo file $obo does not exist");
+      } 
+    } else {
+      system(join(" ","wget -rNL -nd -np",$obo, "-O",$ENV{"RSAT"}."/tempgoa/go.obo")); 
+      $obo = $ENV{"RSAT"}."/tempgoa/go.obo";
+    }
+
+    
     ################################################################
     ## Open output stream
     $main::out = &OpenOutputFile($main::outfile{output});
@@ -110,7 +123,7 @@ package main;
     if (defined($download)) {
 	&RSAT::message::TimeWarn("Downloading GOA files from URL", $download) if ($main::verbose >= 1);
 	if ($download eq 'default') {
-	    $download = $defaut_download;
+	    $download = $default_goa_download;
 	}
 	my $download_dir = $RSA."/tempgoa";
 	system("mkdir ".$download_dir);
@@ -154,6 +167,7 @@ package main;
 	    my $command = "load-goa -v ".$main::verbose;
 	    $command .= " -org ".$organism_name;
 	    $command .= " -i ".$file;
+	    $command .= " -obo ".$obo;
 	    my $job_prefix = "load-goa_".$organism_name;
 	    &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 
@@ -279,6 +293,8 @@ directory.
 We recommend to download GO annotations from the EBI distribution.
 
  -download ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/proteomes
+ 
+ -download default correspond this address
 
 =cut
 	} elsif ($arg eq "-download") {
@@ -297,6 +313,14 @@ loads the appropriate organim.
 	} elsif ($arg eq "-org") {
 	    $organism_name = shift(@arguments);
 
+=item	B<-obo obo_file>
+
+Specifies an gene ontology obo file. By specifying an URL (starting by 'ftp://' or 'http://'), the obo file will be directly downloaded.
+
+=cut
+
+	} elsif ($arg eq "-obo") {
+	    $obo = shift(@arguments);
 	    #### batch
 =pod
 

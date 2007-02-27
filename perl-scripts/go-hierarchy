@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: go-hierarchy,v 1.8 2007/02/23 11:56:03 rsat Exp $
+# $Id: go-hierarchy,v 1.9 2007/02/27 09:44:36 rsat Exp $
 #
 ############################################################
 
@@ -100,6 +100,12 @@ package main;
 				"name" => 1, 
 				"def" => 1,
 				"namespace" => 1);
+     %required_namespace =  ("molecular_function" => 1,
+     			     "biological_process" => 1,
+     		             "cellular_component" => 1);
+     %supported_namespace =  ("mf" => "molecular_function",
+     			      "bp" => "biological_process",
+     			      "cc" => "cellular_component");
      %main::infile = ();
      %main::outfile = ();
 #     $organism_name;
@@ -128,9 +134,6 @@ package main;
       if (!-e $goafile || -z $goafile) {
         &FatalError(join("\t", "File $goafile does not exist"));
       }
-#       if (!$children) {
-#         &FatalError(join("\t", "Use of option -org without -children option is useless."));
-#       }
     }
     
     ################################################################
@@ -181,10 +184,15 @@ package main;
       &RSAT::message::TimeWarn("Identifying",scalar(@class_names), "GO class in the file \t$infile{inputfile}") if ($main::verbose >= 2);
       foreach my $goid (@class_names) {
 	my $exists = $go->exists($goid);
-
+	my $namespace = $go->get_namespace($goid);
+	
 	if ($exists) {
-	  push @known_classes, $goid;
-	  &RSAT::message::Info("Identified class with id", $goid) if ($main::verbose >= 3);
+	  if (exists($required_namespace{$namespace})) {
+	    push @known_classes, $goid;
+	    &RSAT::message::Info("Identified class with id", $goid) if ($main::verbose >= 3);
+	  } else {
+	    &RSAT::message::Warning("The class with id", $goid, "is of namespace", $namespace) if ($main::verbose >= 2);
+	  }
         } else {
 	  push @unknown_classes, $goid;
 	  &RSAT::message::Warning("The GO obo file you submitted does not contain any class with id", $goid);
@@ -373,40 +381,46 @@ package main;
 	  my @fields = split /\t/, $line;
 	  my $gene = $fields[0];
 	  my $goid = $fields[1];
+	  my $namespace = $go->get_namespace($goid);
 	  if ($gene && $goid) {
-	    if ($go->exists($goid)) {
-	      my $goclassesRef;
-              if (!$children) {
-                $goclassesRef = $go->get_parents($goid);
-              } else {
-                $goclassesRef = $go->get_children($goid);
-              }
-              @goclasses = @{$goclassesRef};
-              my $goid_name = $go->get_name($goid);
-              foreach my $goclass (@goclasses) {
-                print $out "$gene";
-                foreach my $field (@required_output_fields) {
-                  if ($field eq "name") {
-                    print $out "\t$goid_name";
-                    print $out "\t".$go->get_name($goclass);
+	    my $namespace = $go->get_namespace($goid);
+	    if (exists($required_namespace{$namespace})) {
+  	      if ($go->exists($goid)) {
+	        my $goclassesRef;
+                if (!$children) {
+                  $goclassesRef = $go->get_parents($goid);
+                } else {
+                 $goclassesRef = $go->get_children($goid);
+                } 
+                @goclasses = @{$goclassesRef};
+                my $goid_name = $go->get_name($goid);
+                foreach my $goclass (@goclasses) {
+                  print $out "$gene";
+                  foreach my $field (@required_output_fields) {
+                    if ($field eq "name") {
+                      print $out "\t$goid_name";
+                      print $out "\t".$go->get_name($goclass);
+                    }
+                    if ($field eq "namespace") {
+                      print $out "\t".$go->get_namespace($goclass);
+                    }  
+                    if ($field eq "result_goid") {
+                      print $out "\t".$goclass;
+                    }
+                    if ($field eq "def") {
+                      print $out "\t".$go->get_definition($goclass);
+                    }
+                    if ($field eq "query_goid") {
+                      print $out "\t$goid";
+                    }
                   }
-                  if ($field eq "namespace") {
-                    print $out "\t".$go->get_namespace($goclass);
-                  }  
-                  if ($field eq "result_goid") {
-                    print $out "\t".$goclass;
-                  }
-                  if ($field eq "def") {
-                    print $out "\t".$go->get_definition($goclass);
-                  }
-                  if ($field eq "query_goid") {
-                    print $out "\t$goid";
-                  }
+                  print $out "\n";
                 }
-                print $out "\n";
-              }
+	      } else {
+	        &RSAT::message::Warning("Class $goid unknown at line", $l, ". Skipped.");
+	      }
 	    } else {
-	      &RSAT::message::Warning("Class $goid unknown at line", $l, ". Skipped.");
+	      &RSAT::message::Warning("Class $goid is of namespace ", $namespace, "at line", $l,". Skipped.");
 	    }
 	  } else {
 	    &RSAT::message::Warning("Format error at line", $l, ". Skipped.");
@@ -589,6 +603,34 @@ List of fields to return : query_goid,result_goid,name,def,namespace,all (defaul
   	        &FatalError($field, "Invalid return option. Supported:", join(",", sort(keys(%supported_return_option))));
   	      } 
 	    }
+	    
+=pod
+
+=item	B<-namespace fields>
+
+List of namespaces to take into consideration.
+
+cc : cellular component
+bp : biological process
+mf : molecular function
+
+=cut
+	} elsif ($arg eq "-namespace") {
+	    my $fields = shift(@arguments);
+	    my @all_fields = split(/,/, $fields);
+	    %required_namespace = ();
+	    foreach my $field (@all_fields) {
+	      if (defined($supported_namespace{$field})) {
+  	        $required_namespace{$supported_namespace{$field}} = 1;
+  	      } elsif ($field eq 'all') {
+  	        %required_namespace = ("molecular_function" => 1,
+     				       "biological_process" => 1,
+     				       "cellular_component" => 1);
+  	      } else {
+  	        &FatalError($field, "Invalid return option. Supported:", join(",", sort(keys(%supported_return_option))));
+  	      } 
+	    }	    
+	    
 	    
 	    ## get children classes instead of parents classes
 =pod
