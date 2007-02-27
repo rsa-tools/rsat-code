@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: go-hierarchy,v 1.9 2007/02/27 09:44:36 rsat Exp $
+# $Id: go-hierarchy,v 1.10 2007/02/27 14:18:46 rsat Exp $
 #
 ############################################################
 
@@ -129,7 +129,7 @@ package main;
       ##  Check whether organism is available in RSAT
       $organism->check_name($organism_name);
       my $rsa = $RSA;
-      $goafile = $RSA."/data/genomes/".$organism_name."/genome/go.tab";
+      $goafile = $RSA."/data/genomes/".$organism_name."/go/".$organism_name."_go.tab";
       ##  Check whether there is a go file available for this organism
       if (!-e $goafile || -z $goafile) {
         &FatalError(join("\t", "File $goafile does not exist"));

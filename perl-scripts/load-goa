@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: load-goa,v 1.10 2007/02/27 09:44:36 rsat Exp $
+# $Id: load-goa,v 1.11 2007/02/27 14:18:46 rsat Exp $
 #
 ############################################################
 
@@ -81,6 +81,10 @@ package main;
     $outputfile = "";
     $obo = "http://www.geneontology.org/ontology/gene_ontology_edit.obo";
     $default_goa_download = 'ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/proteomes';
+    $hierarchy = 0;
+    %namespaces =  ("mf" => "molecular_function",
+     		    "bp" => "biological_process",
+     		    "cc" => "cellular_component");
     
     ################################################################
     ## Read argument values
@@ -136,17 +140,38 @@ package main;
 	#loading organism      
 	my $organism = &load_organism($organism_name);
 	($main::in) = &OpenInputFile($main::infile{input});
+	my $godir = $RSA."/data/genomes/".$organism_name."/go";
 	if ($outputfile eq "") { 
-	    $main::outfile{output} = $RSA."/data/genomes/".$organism_name."/genome/".$organism_name."go.tab";
+	    system("mkdir $godir");
+	    print "lalala";
+	    $main::outfile{output} = $godir."/".$organism_name."_go.tab";
 	} else { 
 	    $main::outfile{output} = $outputfile;
 	}
+	
 	# create gene - goid annotation table
 	my $gene_go_index = &create_gene_go_table($organism, $main::in);
 	# write gene - goid annotation table in the correct directory
 	&write_gene_go_table($gene_go_index, $main::outfile{output});
-	
 	## Loading of the go annotation for a list of organisms
+	
+	
+	if ($hierarchy) {
+	  foreach my $namespace (keys %namespaces) {
+	    my $file = $godir."/".$organism_name."_".$namespaces{$namespace}."_go.tab";
+	    my $command = "go-hierarchy";
+	    $command .= " -genefile $main::outfile{output}";
+	    $command .= " -o $file";
+	    $command .= " -return result_goid";
+	    $command .= " -namespace $namespace";
+	    $command .= " -i $obo\n";
+	    system ($command);
+	  }
+	}
+	
+	
+	
+	
     } elsif ($dir || $download) { 
 	# look for the installed organism and their taxid
 	my $taxid_org_index = &taxid_search();
@@ -168,6 +193,7 @@ package main;
 	    $command .= " -org ".$organism_name;
 	    $command .= " -i ".$file;
 	    $command .= " -obo ".$obo;
+	    $command .= " -hierarchy";
 	    my $job_prefix = "load-goa_".$organism_name;
 	    &doit($command, $dry, $die_on_error, $verbose, $batch, $job_prefix);
 
@@ -282,6 +308,15 @@ Specifies a directory containing a list of go annotation file. The absolute path
 =cut
 	} elsif ($arg eq "-dir") {
 	    $dir = shift(@arguments);
+	    
+	    
+=item B<-hierarchy>
+
+Uses the program go-hierarchy to get the unfolded gene ontology for the specified organism
+
+=cut
+	} elsif ($arg eq "-hierarchy") {
+	    $hierarchy = 1;	    
 
 =pod
 
