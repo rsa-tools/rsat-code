@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: go-hierarchy,v 1.10 2007/02/27 14:18:46 rsat Exp $
+# $Id: go-hierarchy,v 1.11 2007/02/28 09:29:26 rsat Exp $
 #
 ############################################################
 
@@ -417,13 +417,13 @@ package main;
                   print $out "\n";
                 }
 	      } else {
-	        &RSAT::message::Warning("Class $goid unknown at line", $l, ". Skipped.");
+	        &RSAT::message::Warning("Class $goid unknown at line", $l, ". Skipped.") if ($main::verbose >= 2);
 	      }
 	    } else {
-	      &RSAT::message::Warning("Class $goid is of namespace ", $namespace, "at line", $l,". Skipped.");
+	      &RSAT::message::Warning("Class $goid is of namespace ", $namespace, "at line", $l,". Skipped.") if ($main::verbose >= 2);
 	    }
 	  } else {
-	    &RSAT::message::Warning("Format error at line", $l, ". Skipped.");
+	    &RSAT::message::Warning("Format error at line", $l, ". Skipped.") if ($main::verbose >= 2);
 	  }
 	}
 	close $gene_file_handle;
