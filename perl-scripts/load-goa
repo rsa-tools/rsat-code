@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: load-goa,v 1.11 2007/02/27 14:18:46 rsat Exp $
+# $Id: load-goa,v 1.12 2007/03/02 13:45:44 rsat Exp $
 #
 ############################################################
 
@@ -143,7 +143,6 @@ package main;
 	my $godir = $RSA."/data/genomes/".$organism_name."/go";
 	if ($outputfile eq "") { 
 	    system("mkdir $godir");
-	    print "lalala";
 	    $main::outfile{output} = $godir."/".$organism_name."_go.tab";
 	} else { 
 	    $main::outfile{output} = $outputfile;
