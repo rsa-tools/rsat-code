@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: ortho-dna-pattern,v 1.1 2007/03/02 13:45:44 rsat Exp $
+# $Id: ortho-dna-pattern,v 1.2 2007/03/02 14:20:11 rsat Exp $
 #
 ############################################################
 
@@ -210,11 +210,18 @@ package main;
     $command .= "-i $outputseqfile ";
     $command .= "-v  $main::verbose ";
     $command .= "-pl $outputpatternfile ";
-    
-    
     if (defined($main::outfile{output})) {
       $command .= "-o $main::outfile{output} ";
     }
+    foreach my $arg (@to_pass) {
+      if ($arg =~ /\s/) {
+        $command .= " '".$arg."'";
+      } else {
+	$command .= " ".$arg;
+      }
+    }    
+    
+    &RSAT::message::Info($command) if ($main::verbose >= 2);
     print $command."\n";
     system $command;
     
@@ -432,9 +439,19 @@ Using this option, you remove the sequences file.
 	} elsif ($arg eq "-temp") {
 	    $temp = 1;	
 	    	    	       	
-	} else {
-	    &FatalError(join("\t", "Invalid option", $arg));
+	    ## Other arguments are passed to dna-pattern
+=pod
 
+=item B<other parameters>
+
+All other parameters are passed to the command dna-pattern
+
+See the manual of dna-pattern for a description of supported parameters.
+
+=cut
+
+	} else {
+	    push @to_pass, $arg;
 	}
     }
 
