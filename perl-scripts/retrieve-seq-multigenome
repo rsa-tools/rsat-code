@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: retrieve-seq-multigenome,v 1.4 2006/01/24 19:49:36 jvanheld Exp $
+# $Id: retrieve-seq-multigenome,v 1.5 2007/03/02 14:20:11 rsat Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -276,7 +276,7 @@ Number of the column containing the organisms (default: 2)
 	    $org_col = shift(@ARGV);
 	    
 
-	    ## Other argumetns are passed to retrieve-seq
+	    ## Other arguments are passed to retrieve-seq
 =pod
 
 =item B<other parameters>
