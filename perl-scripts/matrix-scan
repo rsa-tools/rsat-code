@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.57 2007/01/10 19:52:13 jvanheld Exp $
+# $Id: matrix-scan,v 1.58 2007/03/03 19:32:55 morgane Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -23,6 +23,7 @@ use RSAT::feature;
 use RSAT::matrix;
 use RSAT::MatrixReader;
 use RSAT::MarkovModel;
+use File::Spec;
 
 =pod
 
@@ -42,6 +43,8 @@ sites). This program supports a variety of background models
 =item Jean Valery Turatsinze jturatsi@scmbb.ulb.ac.be
 
 =item Jacques van Helden jvanheld@scmbb.ulb.ac.be
+
+=item with the help of Morgane Thomas-Chollier <mthomas@dbm.ulb.ac.be>
 
 =head1 CATEGORY
 
@@ -229,7 +232,7 @@ package main;
 
   ################################################################
   #### initialise parameters
-  my $start_time = &AlphaDate();
+  local $start_time = &AlphaDate();
   local $decimals=2;
   local $base = exp(1);
   local $sig_base = log(10);
@@ -265,6 +268,8 @@ package main;
   local $seq_format = "fasta";
   local $verbose = 0;
   local $sort_distrib = 0;
+  local $batch = 0;
+  local $cluster = 0;
   #    local $in = STDIN;
   #    local $out = STDOUT;
     
@@ -329,12 +334,71 @@ package main;
   local %score_distrib = ();
   local %cum_sum = ();
 #  local %score_distrib_cum = ();
+
+  ## Parameters for the &doit() command
+  local $dry = 0;
+  local $die_on_error = 1;
+  local $job_prefix = "matrix-scan";
+  local $batchmode = 0;
   
   &ReadArguments();
     
   ################################################################
   #### check argument values
   &RSAT::error::FatalError("You must specify the method for background estimation (an option among -bgfile, -bginput, -window)") unless ($bg_method);
+
+
+  #################################################################
+  ## Batch option
+  $batch=1 if ($cluster != 0);
+  
+  if ($batch) {
+  		local @temp_fasta_files;
+  		local @temp_output_files;
+  		
+		### open output stream
+ 		$main::out = &OpenOutputFile($main::outfile{output});
+  		
+  		&Verbose() if ($main::verbose);
+  		&runInBatch();
+  
+  		close $main::out;
+  	
+    	## Clean some temporary files
+    	if ($main::outfile{output_raw}) {
+    		my $clean_partial_cmd = "rm -f $main::outfile{output_raw}";
+    		&doit($clean_partial_cmd, $dry, $die_on_error, $verbose, $batchmode, $job_prefix);
+    	}
+    	
+    	## Remove sequence files    
+    	if (scalar(@temp_fasta_files) > 0) {
+    		my $clean_partial_cmd = "rm -f ";
+    		$clean_partial_cmd .= join (" ", @temp_fasta_files);
+    		&doit($clean_partial_cmd, $dry, $die_on_error, $verbose, $batchmode, $job_prefix);
+    	}
+    	## Remove individual result files    
+    	if (scalar(@temp_output_files) > 0) {
+    		my $clean_partial_cmd = "rm -f ";
+    		$clean_partial_cmd .= join (" ", @temp_output_files);
+    		&doit($clean_partial_cmd, $dry, $die_on_error, $verbose, $batchmode, $job_prefix);
+    	}
+    	
+  		exit(0);
+  }
+  
+
+  ## normw is incompatible with sliding windows
+  if (($return_fields{normw}) && ($bg_method eq "window")) {
+    &RSAT::message::Warning("The normw computation cannot be done with a sliding window. Normw will not be returned.");
+    undef($return_fields{normw});
+  }
+
+  ## weight_matrix is incompatible with orders > 0
+  if (($return_fields{weight_matrix}) && ($markov > 0)) {
+    &RSAT::message::Warning("The concept of weight matrix is incompatible with higher order Markov chains. Weight matrix will not be returned.");
+    undef($return_fields{weight_matrix});
+  }
+ 
 
   ## Calculate only once the denominator for the logarithms
   local $log_base = log($base);
@@ -359,18 +423,7 @@ package main;
   }
 
 
-  ## normw is incompatible with sliding windows
-  if (($return_fields{normw}) && ($bg_method eq "window")) {
-    &RSAT::message::Warning("The normw computation cannot be done with a sliding window. Normw will not be returned.");
-    undef($return_fields{normw});
-  }
-
-  ## weight_matrix is incompatible with orders > 0
-  if (($return_fields{weight_matrix}) && ($markov > 0)) {
-    &RSAT::message::Warning("The concept of weight matrix is incompatible with higher order Markov chains. Weight matrix will not be returned.");
-    undef($return_fields{weight_matrix});
-  }
-
+   
   ## Background distribution is required for the distrib probabilities
   if ($return_fields{occ_proba}) {
     $return_fields{distrib} = 1;
@@ -378,7 +431,7 @@ package main;
 
 #     &RSAT::error::FatalError("The option -return score_distrib requires a background score distribution (-bg_distrib)")
 #       unless ($infile{bg_distrib});
-
+	################################################################
     ## Load the background score distribution
     if ($infile{bg_distrib}) {
       my ($in, $input_dir) = &OpenInputFile($infile{bg_distrib});
@@ -628,8 +681,8 @@ package main;
 	 (($current_seq ne "") || ($seq_id ne ""))) {
 
     ## If the rank is required, it is calculated for each input sequence independently
-    local @matches = (); ## Only used whe the rank of the site is required
-    local %matches_per_matrix = ();
+  #  local @matches = (); ## Only used whe the rank of the site is required
+ #   local %matches_per_matrix = ();
 
     ## Initialize sequence scores
     $sequence_scores->{$seq_id}->{length} = length($current_seq);
@@ -743,7 +796,8 @@ package main;
     }
 
     if (($return_fields{sites})  && (defined(@{$matches_per_seq{$seq_id}}))) {
-
+		&RSAT::message::TimeWarn( "Returning individual matches for sequence", $seq_id )
+		if ($main::verbose >= 2);
       ################################################################
       ## Sort the matches
       my @ranked_matches = @{$matches_per_seq{$seq_id}};
@@ -754,8 +808,9 @@ package main;
 	next;
       }
 
-      &RSAT::message::TimeWarn("Sorting matches for sequence", $seq_id) if ($main::verbose >= 3);
+     
       if ($calc_fields{rank}) {
+      	 &RSAT::message::TimeWarn("Sorting matches for sequence", $seq_id) if ($main::verbose >= 3);
 	if ($calc_fields{pval}) {
 	  ## Sort matches by significance
 	  @ranked_matches =
@@ -1678,12 +1733,41 @@ according to the biological question.
 =cut
 	} elsif ($arg eq "-bg_distrib") {
 	  $main::infile{bg_distrib} = shift(@arguments);
+	  
+	  ## Batch method
+	  
+=pod
+
+=item B<-recursive>
+
+Run matrix-scan separately for each sequence.
+
+=cut
+	} elsif ($arg eq "-recursive") {
+	    $batch = 1;
+	    
+=pod
+
+=item B<-batch #>
+
+Dispatch matrix-scan jobs on a cluster.
+Number of sequences to be analyzed by job (= on each node of the cluster)
+
+=cut
+	} elsif ($arg eq "-batch") {
+	    $cluster = shift(@arguments);
+	   	# set minimum sequences to be analyzed to 1
+	    $cluster =1 if ($cluster eq "");
+	    &RSAT::error::FatalError("# sequences for the cluster must be a natural number.") 
+	    unless &RSAT::util::IsNatural($cluster)&&($cluster > 0);
+
+	    
 
 	} else {
 	    &FatalError(join("\t", "Invalid option", $arg));
 
 	}
-    }
+  }
 
 
 }
@@ -1722,9 +1806,10 @@ sub Verbose {
     printf $main::out "; %-21s\t%s\n", "Pseudo counts", $pseudo_counts;
 
     ## Background model
-    printf $main::out "; Background model\n";
-    my $order = $bg_model->get_attribute("order");
-    printf $main::out ";\t%-14s\t%s\n", "Method", $bg_method;
+    if (defined($bg_model)) {
+   	printf $main::out "; Background model\n";
+	my $order = $bg_model->get_attribute("order");
+   	printf $main::out ";\t%-14s\t%s\n", "Method", $bg_method;
     if ($order == 0) {
 	printf $main::out ";\t%-14s\n", "Bernoulli model (order=0)";
     } else {
@@ -1743,6 +1828,7 @@ sub Verbose {
     my $missing_transitions = $bg_model->get_attribute("missing_transitions");
     if ($missing_transitions > 0) {
       printf $main::out ";\t%-14s\t%d %s\n", "WARNING", , $missing_transitions, "missing transitions. You should reduce the Markov order";
+    }
     }
 
 
@@ -1899,8 +1985,8 @@ sub score_segment {
       $match->set_attribute('normw',$normw) if ($return_fields{normw});
       #    if (($calc_fields{rank}) || ($calc_fields{pval})){
       # If the hits have to be ranked, store them rather than printing them immediately
-      push @matches , $match;
-      push @{$matches_per_matrix{$matrix->get_attribute('name')}} , $match;
+     # push @matches , $match;
+    #  push @{$matches_per_matrix{$matrix->get_attribute('name')}} , $match;
       push @{$matches_per_seq{$seq_id}} , $match;
     }
 #      push @{$sequence_scores->{$seq_id}->matches} , $match if ($return_fields{seq_scores});
@@ -2230,7 +2316,260 @@ sub PrintScoreDistrib {
   }
 }
 
+################################################################
+## Run matrix-scan in batch mode
+sub runInBatch {
+	
+	&RSAT::message::Info("Batch: running matrix-scan for each sequence separately") 
+ 	if ($main::verbose >= 1);
+ 	local($current_seq, $seq_id);
+ 	my $seq_total;
+ 	my $wd = `pwd`;
+    chomp $wd;
+    local $ENV{'CLUSTER_QUEUE'} = "default";
+ 	
+ 	## calculate total number of sequences if cluster
+ 	if ($cluster != 0) {
+ 		my ($in, $input_dir) = &OpenInputFile($main::infile{input});
+ 		while ((($current_seq, $seq_id) = &ReadNextSequence($in, $seq_format, $input_dir, "",$mask)) &&
+			(($current_seq ne "") || ($seq_id ne ""))) {
+			$seq_total++;
+			}
+		close $in;
+		&RSAT::message::Info("Total number of sequences to analyse: $seq_total ") 
+ 		if ($main::verbose >= 2);
+ 	}
+    
+    ## get each sequence
+    my ($in, $input_dir) = &OpenInputFile($main::infile{input});
+  	while ((($current_seq, $seq_id) = &ReadNextSequence($in, $seq_format, $input_dir, "",$mask)) &&
+	(($current_seq ne "") || ($seq_id ne ""))) {
+		
+		$sequence_number++;
+		my $seq_len = length($current_seq);
+    	$sum_seq_len += $seq_len;
+		
+		$main::outfile{"seq".$sequence_number."tab"} = "seq".$sequence_number."_".$seq_id.".matrix_scan.tab";
+		push (@temp_output_files, $main::outfile{"seq".$sequence_number."tab"});
+		
+		##copy the sequence in a file (fasta format)
+		$main::outfile{"seq".$sequence_number} = "seq".$sequence_number."_".$seq_id.".".$seq_format;
+		push (@temp_fasta_files, $main::outfile{"seq".$sequence_number});		
+		$seq_handle = &OpenOutputFile($main::outfile{"seq".$sequence_number});
+    	&PrintNextSequence($seq_handle, $seq_format,60,$current_seq,$seq_id);
+    	close $seq_handle;
+    	    	   	
+		##matrix-scan command with absolute path in case of use with the cluster
+  		my $matrix_scan_cmd = "matrix-scan ";
+  		$matrix_scan_cmd .= " -v ".$main::verbose;
+  		## bg model
+  		if ($bg_method eq "file") {
+  			$matrix_scan_cmd .= " -bgfile ".File::Spec->rel2abs($main::infile{bg},$wd);
+  		} elsif ($bg_method eq "input") {
+  			$matrix_scan_cmd .= " -bginput ";
+  		} elsif ($bg_method eq "window") {
+  			$matrix_scan_cmd .= " -markov ".$main::markov;
+  			$matrix_scan_cmd .= " -window ".$main::window;
+  		}
+  		## matrix
+  		if (scalar(@matrix_files >= 1)) {
+  			$matrix_scan_cmd .= " -m ";
+  			my @matrix_files_absolute =();
+  			foreach my $mpath (@matrix_files){
+  				push (@matrix_files_absolute,File::Spec->rel2abs($mpath,$wd));
+  			}
+  			$matrix_scan_cmd .= join(" ", @matrix_files_absolute);
+  		} elsif ($main::infile{matrix_list}){
+  			$matrix_scan_cmd .= " -mlist ".File::Spec->rel2abs($main::infile{matrix_list},$wd);
+  		}
+  		$matrix_scan_cmd .= " -matrix_format ".$matrix_format;
+  		$matrix_scan_cmd .= " -pseudo ".$main::pseudo_counts;
+  		if ($main::equi_pseudo == 1) {
+  			$matrix_scan_cmd .= " -equi_pseudo ";
+  		}
+  		if ($consensus_name eq 1) {
+  			$matrix_scan_cmd .= " -consensus_name ";
+  		}
+  		## sequence
+  		$matrix_scan_cmd .= " -seq_format ".$seq_format;
+  		$matrix_scan_cmd .= " -i ".File::Spec->rel2abs($main::outfile{"seq".$sequence_number}, $wd);
+  		if ($main::mask){
+  			$matrix_scan_cmd .= " -mask ".$main::mask;
+  		}
+  		
+  		$matrix_scan_cmd .= " -n ".$main::n_treatment;
+  		$matrix_scan_cmd .= " -origin ".$main::origin;
+  		## scoring
+  		if ($base != exp(1)){
+  			$matrix_scan_cmd .= " -base ".$base;
+  		}
+  		$matrix_scan_cmd .= " -decimals ".$decimals;
+  		if ($main::both_strands == 1) {
+  			$matrix_scan_cmd .= " -2str ";
+  		} else {
+  			$matrix_scan_cmd .= " -1str ";
+  		}
+  		## thresholds
+  		if (scalar(keys(%lth)) > 0) {
+  			$matrix_scan_cmd .= " -lth ";
+  			foreach my $field (keys(%lth)) {
+    		$matrix_scan_cmd .= " $field $lth{$field} ";
+  			}
+  		}
+  		if (scalar(keys(%uth)) > 0) {
+  			$matrix_scan_cmd .= " -uth ";
+  			foreach my $field (keys(%uth)) {
+    		$matrix_scan_cmd .= " $field $uth{$field} ";
+  			}
+  		}
+  		## output
+  		$matrix_scan_cmd .= " -o ".File::Spec->rel2abs($main::outfile{"seq".$sequence_number."tab"},$wd);
+		&RSAT::message::Warning("The batch option is intended to report the sites.") unless ($return_fields{sites});
+		$matrix_scan_cmd .=  " -return sites";
+  		if ($return_fields{pval}) {
+  			$matrix_scan_cmd .=  ",pval";
+  		}
+  		if ($return_fields{rank}) {
+  			$matrix_scan_cmd .=  ",rank";
+  		}
+  		if ($return_fields{limits}) {
+  			$matrix_scan_cmd .=  ",limits";
+  		}
+  		if ($return_fields{normw}) {
+  			$matrix_scan_cmd .=  ",normw";
+  		}
+  		if (($return_fields{distrib})||($return_fields{occ_proba})||($return_fields{matrix})||
+  		($return_fields{freq_matrix})||($return_fields{weight_matrix})||($return_fields{bg_model})||
+  		($return_fields{seq_scores})){
+  		&RSAT::error::FatalError("The batch option is incompatible with -return distrib,occ_proba,matrix,freq_matrix,weight_matrix,bg_model,seq_scores");
+  		}
+  		
+  		## send jobs to cluster queue
+  		if ($cluster != 0) {
+  			$cluster_cmd .= "\n".$matrix_scan_cmd;
+  			if (&RSAT::util::IsNatural($sequence_number/$cluster)||($sequence_number == $seq_total)){
+  				&RSAT::message::TimeWarn("Sending $job_prefix job for seq".($sequence_number-$cluster+1)."-".$sequence_number)
+ 				if ($main::verbose >= 2);
+ 				## Execute the command
+  				&doit($cluster_cmd, $dry, $die_on_error, $verbose,1, $job_prefix);
+  				$cluster_cmd="";
+  			}
+  		}
+  		else {
+			&RSAT::message::TimeWarn("Executing $job_prefix for seq #$sequence_number $seq_id ") 
+ 			if ($main::verbose >= 2);
+  			## Execute the command
+  			&doit($matrix_scan_cmd, $dry, $die_on_error, $verbose, $batchmode, $job_prefix);	
+  			}
+	 	}
+	 	
+	 	close $in;
+	 	
+	 	## check that all jobs are finished on the cluster
+	 	if ($cluster != 0) {
+	 		&areJobsDone($wd);
+	 	}
+	 	
+	 	## Merge results
+	 	&RSAT::message::TimeWarn("Merge matrix-scan results of each separate sequence") 
+ 		if ($main::verbose >= 2);
+ 		
+	 	## Put all individual results in one file 
+	 	$main::outfile{output_raw} = $main::outfile{output}.".raw";
+    	if (scalar(@temp_output_files) > 0) {
+    		my $merge_cmd = "cat ";
+    		$merge_cmd .= join (" ", @temp_output_files);
+    		$merge_cmd .= " > $main::outfile{output_raw}";
+    		&doit($merge_cmd, $dry, $die_on_error, $verbose, $batchmode, $job_prefix);
+    	}
+    		
+    	## Extract the names of the fields returned
+    	open (SYSTEM, "grep -m 1 '^#' $main::outfile{output_raw} |");	
+ 		my $header = <SYSTEM>;
+		close (SYSTEM);
+		print $main::out $header;
+		
+    	## Extract the sites from the merged file    
+    	## could add a sort in the command 
+		open (SYSTEM, "grep -v '^;' $main::outfile{output_raw} | grep -v '^#' | ");
+		while (<SYSTEM>) {
+			print $main::out $_;
+			}
+		close (SYSTEM);
 
+	 	## Keep the verbosity lines in a log file    
+		$main::outfile{output_log} = $main::outfile{output}.".log";
+		my $log_cmd = "grep '^;' $main::outfile{output_raw} > $main::outfile{output_log} ";
+		&doit($log_cmd, $dry, $die_on_error, $verbose, $batchmode, $job_prefix);
+	 	
+	 	## Sequence statistics
+    	printf $main::out "; %-21s\t%s\n", "Number of sequences scanned", $sequence_number;
+    	printf $main::out "; %-21s\t%s\n", "Sum of sequence lengths", $sum_seq_len;
+	 	
+	 	my $done_time = &AlphaDate();
+ 	    print $main::out "; Job started $start_time\n";
+ 	    print $main::out "; Job done    $done_time\n";
+}
+
+################################################################
+## Run matrix-scan in batch mode
+sub areJobsDone {
+	my $wd = shift;
+	sleep 15;
+	
+## temporary method using qstat
+#   local $user =  `whoami`;
+#   chomp($user);
+#	 		my $finished = 0;
+#	 		while ($finished == 0){
+#	 			sleep 30;
+#	 			open (SYSTEM, "qstat | grep $user|grep $job_prefix | wc -l|");	
+# 				my $job_running = <SYSTEM>;
+#				close (SYSTEM);
+#				chomp($job_running);
+#				&RSAT::message::TimeWarn("Still $job_running jobs running... ") 
+# 				if ($main::verbose >= 4);
+#				$finished=1 if ($job_running == 0);
+#			}
+##
+	 ## method using the .start and .done files
+	 my %jobs_status = ();	 		
+	 my $job_dir = $wd."/jobs/".`date +%Y%m%d`;
+	 chomp($job_dir);
+	 		
+	 ## get all jobs file
+	 opendir(JOBDIR, $job_dir) || die "can't opendir $job_dir: $!";
+	 my @job_dir_content = grep { !/^\./ } readdir(JOBDIR);
+	 closedir JOBDIR;
+     foreach my $file (@job_dir_content){
+    	unless (($file !~ /^$job_prefix/)||($file =~ /$job_prefix\.\w+\.\w+/)) { #only consider matrix-scan job, not .start or .done files
+    		$jobs_status{$file}= "unknown";
+    	}			
+    }
+    		
+    ## check the .start and .done files
+	my $finished = keys(%jobs_status);
+	my $current_status = 0;
+
+	until ($current_status == $finished) {
+		sleep 30;
+		$current_status = 0;
+    	if (scalar(keys(%jobs_status)) > 0) {
+  			foreach my $job (keys(%jobs_status)) {
+  				if (-e $job_dir."/".$job.".done") {
+  					$jobs_status{$job} = "done";
+  					$current_status += 1;
+  				}
+  				elsif (-e $job_dir."/".$job.".started") {
+  					$jobs_status{$job} = "started";
+  				}
+  			}
+    	}
+    	&RSAT::message::TimeWarn("Still ".($finished-$current_status)."jobs running...") 
+ 		if ($main::verbose >= 2);
+	}
+	return (1);
+}
 
 
 __END__
