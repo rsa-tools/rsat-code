@@ -718,7 +718,7 @@ sub hypergeometric {
 
 
     
-# 	$Id: RSA.stat.lib,v 1.28 2007/01/10 00:32:13 jvanheld Exp $	
+# 	$Id: RSA.stat.lib,v 1.29 2007/03/04 09:53:02 jvanheld Exp $	
 
     #### initialization
     if (defined($args{previous_value})) {
@@ -1368,18 +1368,16 @@ sub ChiSquare {
 #### n+j = sum of all values from the jth column
 #### N = sum of all values from the table
 #### 
-#### The log-likelihood value is then calculated by:
+#### The log-likelihood value is calculated by:
 ####
-####                   
-#### LogLikelihood = N*log(N) + SUM SUM nij*log(nij)
-####                             i   j                    
+#### LogLikelihood = N*log(N) + SUM SUM n_ij*log(n_ij)
+####                             i   j
 ####
-####                          - SUM ni+*log(ni+) - SUM n+j*log(n+j)
-####                             i                  j
+####                          - SUM n_i+*log(n_i+) - SUM n_+j*log(n_+j)
+####                             i                    j
 ####
-####
-#### the input data are reported together with all marginal sums
-#### by setting a global variable called $report_data to 1 
+#### The input data are reported together with all marginal sums
+#### by setting a global variable called $report_data to 1.
 sub LogLikelihood {
     my ($row_nb, $col_nb, @values) = @_;
     my $N;
