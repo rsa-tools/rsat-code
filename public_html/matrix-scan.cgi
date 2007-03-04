@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 ############################################################
 #
-# $Id: matrix-scan.cgi,v 1.6 2006/12/09 22:19:47 jvanheld Exp $
+# $Id: matrix-scan.cgi,v 1.7 2007/03/04 15:24:15 jvanheld Exp $
 #
 # Time-stamp: <2003-06-16 00:59:07 jvanheld>
 #
@@ -31,7 +31,7 @@ $tmp_file_name = sprintf "matrix-scan.%s", &AlphaDate();
 ### Read the CGI query
 $query = new CGI;
 
-$ECHO=1;
+#$ECHO=2;
 
 ### print the result page
 &RSA_header("matrix-scan result");
@@ -188,7 +188,7 @@ sub ReadMatrixScanParameters {
       $parameters .= " -markov ".$markov_order;
 
     } elsif ($bg_method eq "bgfile") {
-
+      ## Select pre-computed background file in RSAT genome directory
       my $organism_name = $query->param("organism");
       my $noov = "ovlp";
       my $background_model = $query->param("background");
@@ -197,6 +197,26 @@ sub ReadMatrixScanParameters {
 				   $oligo_length, $background_model,
 				   noov=>$noov, str=>$str);
       $parameters .= " -bgfile ".$bg_file;
+
+    } elsif ($bg_method =~ /upload/i) {
+      ## Upload user-specified background file
+      my $bgfile = "${TMP}/${tmp_file_name}_bgfile.txt";
+      my $upload_bgfile = $query->param('upload_bgfile');
+      if ($upload_bgfile) {
+	if ($upload_bgfile =~ /\.gz$/) {
+	  $bgfile .= ".gz";
+	}
+	my $type = $query->uploadInfo($upload_bgfile)->{'Content-Type'};
+	open BGFILE, ">$bgfile" ||
+	  &cgiError("Cannot store background file in temp dir.");
+	while (<$upload_bgfile>) {
+	  print BGFILE;
+	}
+	close BGFILE;
+	$parameters .= " -bgfile $bgfile";
+    } else {
+	&FatalError ("If you want to upload a background model file, you should specify the location of this file on your hard drive with the Browse button");
+    }
 
     } else {
       &RSAT::error::FatalError($bg_method," is not a valid method for background specification");
