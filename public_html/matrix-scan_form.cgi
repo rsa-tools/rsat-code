@@ -150,7 +150,13 @@ print ("<b>Genome subset</b> &nbsp; ",
 			  -Values=>["upstream","upstream-noorf","intergenic"],
 			  -default=>$default{background}));
 print  &OrganismPopUpString();
-	
+
+#### custom background model
+print "<INPUT TYPE='radio' NAME='bg_method' VALUE='file_upload' $checked{file_upload}><a href='help.matrix-scan.html#bg_file'>Upload your own file for the background model</a>", "&nbsp;"x5;
+print $query->filefield(-name=>'upload_bgfile',
+			-default=>'starting value',
+			-size=>30,
+			-maxlength=>200);
 print "<hr>";
 
 ################################################################
