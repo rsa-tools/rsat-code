@@ -31,7 +31,7 @@ OPTIONS
 	-v	verbose
 		returns a data report, i.e. a table with the input values
 		and the marginal sums.
-		
+
 	-i inputfile
 		if not specified, the standard input is used.
 		This allows to place the command within a pipe.
@@ -45,6 +45,17 @@ INPUT FORMAT
 	tabulation. All rows must contain the same number of values.
 	All values must be positive numbers.
 	Blank lines are ignored.
+
+STATISTICS
+	The log-likelihood value is calculated by:
+
+	 LL = N*log(N) + SUMi SUMj x_ij*log(x_ij)
+	      - SUMi x_i+*log(x_i+) - SUMj x_+j*log(x_+j)
+
+	where
+	x_ij is the value of the i^th row and j^th column of the table
+	x_i+ is the marginal sum of row i
+	x_+j is the marginal sum of column j
 
 OUTPUT FORMAT
 	The output is a single number comprized between 0 and 1, 
@@ -62,11 +73,11 @@ EXAMPLES
 	
 End_of_help
   close HELP;
-  exit;
+  exit(0);
 }
 
-if ($ARGV[0] eq "-help") {
 #### display short help message #####
+if ($ARGV[0] eq "-help") {
   open HELP, "| more";
   print HELP <<End_short_help;
 log-likelihood options
@@ -78,7 +89,7 @@ log-likelihood options
 -v      verbose
 End_short_help
   close HELP;
-  exit;
+  exit(0);
 }
 
 $start_time = `date '+%d/%m/%y %H:%M:%S %Z'`;
