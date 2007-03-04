@@ -84,12 +84,12 @@ sub retrieve_seq_cmd {
     if ($noorf == 1) {
 	$command .= " -noorf";
     }
-    if (defined($from)) {
+    if ($from =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
 	$from =~ s/\'//g;
 	$from =~ s/\"//g;
 	$command .= " -from '".$from."'";
     }
-    if (defined($to)) {
+    if ($to =~ /\d/) { ## This is to make the difference between unspecified parameter and value 0
 	$to =~ s/\'//g;
 	$to =~ s/\"//g;
 	$command .= " -to '".$to."'";
