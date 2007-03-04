@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: matrix-scan,v 1.58 2007/03/03 19:32:55 morgane Exp $
+# $Id: matrix-scan,v 1.59 2007/03/04 09:54:18 jvanheld Exp $
 #
 # Time-stamp: <2003-07-04 12:48:55 jvanheld>
 #
@@ -40,11 +40,11 @@ sites). This program supports a variety of background models
 
 =head1 AUTHORS
 
-=item Jean Valery Turatsinze jturatsi@scmbb.ulb.ac.be
-
 =item Jacques van Helden jvanheld@scmbb.ulb.ac.be
 
-=item with the help of Morgane Thomas-Chollier <mthomas@dbm.ulb.ac.be>
+=item Jean Valery Turatsinze jturatsi@scmbb.ulb.ac.be
+
+=item Morgane Thomas-Chollier <mthomas@dbm.ulb.ac.be>
 
 =head1 CATEGORY
 
