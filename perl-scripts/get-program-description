@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 ############################################################
 #
-# $Id: get-program-description,v 1.10 2005/08/18 04:25:22 jvanheld Exp $
+# $Id: get-program-description,v 1.11 2007/03/04 09:53:46 jvanheld Exp $
 #
 # Time-stamp: <2003-06-26 17:17:06 jvanheld>
 #
@@ -81,18 +81,19 @@ foreach my $program (@program_names) {
     my @categories = ();
     my $description = "";
     open HELP, "$program -h | ";
-    while (<HELP>) {
-	next unless (/\S/);
-	if (/^([A-Z \t]+)\s*$/) {
+    while ($line = <HELP>) {
+	next unless ($line =~ /\S/);
+	if (($line =~ /^([A-Z \t]+)\s*$/) ||
+	    ($line =~ /1m([A-Z \t]+).+0m/)) {
 	    $type = &trim($1);
+
 	} elsif ($type eq "DESCRIPTION") {
-	    $description .= $_;
+	    $description .= $line;
 
 	} elsif ($type eq "CATEGORY") {
-	    push @categories, &trim($_);
+	    push @categories, &trim($line);
 
 	}
-
     }
     close HELP;
     $description =~ s/\s+/ /mg;
